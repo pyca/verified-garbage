@@ -39,7 +39,7 @@ open VG.PPC64LE hiding wp_add wp_addi wp_and wp_ld wp_li wp_lsl wp_lsr wp_lwz wp
   wp_xor
 open VG.Proof.ChaCha20Poly1305.PPC64LE (Upd Mupd wp_addi wp_li wp_ld wp_std wp_lsl wp_lsr wp_sub wp_subi)
 open VG.Proof.AesCcm.PPC64LE (wp_mv wp_ldbrx)
-open VG.Proof.AesGcm.PPC64LE (GhCall GhPost gh_call)
+open VG.Proof.AesGcm.PPC64LE (GhCallF GhPostF gh_callF)
 open VG.Spec.Aes (bytesAt)
 
 /-! ## Reversing blocks -/
@@ -76,7 +76,7 @@ structure Src (c : Cx) (s : State) (Q : Addr) (k : Nat) : Prop where
   lt : k < 2 ^ 64
   wrap : Q.toNat + k ≤ 2 ^ 64
   y : (⟨Q, k⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 80, 16⟩
-  rev : (⟨Q, k⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 496, 1280⟩
+  rev : (⟨Q, k⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 496, 1024⟩
 
 namespace Src
 
@@ -218,8 +218,8 @@ theorem chunkLen_wp {t : State} {m : Nat} (hm : m < 2 ^ 64) (h24 : t.gpr .r24 = 
 /-- A chunk up to its call: up to 64 blocks reversed at `W + 496`, the
 pointer and the count past them, and the arguments of `vg_ghash`. -/
 structure ChunkPre (c : Cx) (Q : Addr) (m k : Nat) (t t₅ : State) : Prop where
-  call : GhCall t₅ (c.W + BitVec.ofNat 64 64) (c.W + BitVec.ofNat 64 80) (c.W + BitVec.ofNat 64 496)
-    (c.W + BitVec.ofNat 64 1520) k
+  call : GhCallF t₅ (c.W + BitVec.ofNat 64 64) (c.W + BitVec.ofNat 64 80) (c.W + BitVec.ofNat 64 496)
+    k
   pk : PK t t₅
   r23 : t₅.gpr .r23 = Q + BitVec.ofNat 64 (16 * k)
   r24 : t₅.gpr .r24 = BitVec.ofNat 64 (m - 16 * k)
@@ -261,42 +261,35 @@ theorem chunkPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m
   unfold chunkArgs
   refine wp_lsl (by decide) fun t₇ u₇ => wp_sub fun t₈ u₈ => wp_addi (by decide) (by decide) fun t₉ u₉ =>
     wp_addi (by decide) (by decide) fun t₁₀ u₁₀ => wp_addi (by decide) (by decide) fun t₁₁ u₁₁ =>
-    wp_mv fun t₁₂ u₁₂ => wp_addi (by decide) (by decide) fun t₁₃ u₁₃ => WP.block_nil ?_
-  obtain pk₁₃ : PK t₆ t₁₃ := (PK.ofUpd u₇).trans ((PK.ofUpd u₈).trans ((PK.ofUpd u₉).trans ((PK.ofUpd u₁₀).trans
-    ((PK.ofUpd u₁₁).trans ((PK.ofUpd u₁₂).trans (PK.ofUpd u₁₃))))))
-  obtain E₁₃ := E₆.of_pk pk₁₃
-  obtain w14 : ∀ {s : State}, Env c s → s.gpr .r14 = c.W := fun h => h.r14
+    wp_mv fun t₁₂ u₁₂ => WP.block_nil ?_
+  obtain pk₁₂ : PK t₆ t₁₂ := (PK.ofUpd u₇).trans ((PK.ofUpd u₈).trans ((PK.ofUpd u₉).trans ((PK.ofUpd u₁₀).trans
+    ((PK.ofUpd u₁₁).trans (PK.ofUpd u₁₂)))))
+  obtain E₁₂ := E₆.of_pk pk₁₂
   obtain hk : 16 * min (m / 16) 64 ≤ 1024 := by omega_arith
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, by omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, pk₅.trans (pk₆.trans pk₁₃), ?_, ?_,
-    by rw [u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]; exact fr₆,
-    by rw [u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]; exact out₆⟩
-  · rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
+  refine ⟨⟨?_, ?_, ?_, ?_, by omega_arith, ?_, ?_, ?_, ?_⟩, pk₅.trans (pk₆.trans pk₁₂), ?_, ?_,
+    by rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]; exact fr₆,
+    by rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]; exact out₆⟩
+  · rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
       u₉.gpr, u₈.other _ (by decide), u₇.other _ (by decide), E₆.r14] <;> rfl
-  · rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr,
+  · rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr,
       u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), E₆.r14] <;> rfl
-  · rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.other _ (by decide),
+  · rw [u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.other _ (by decide),
       u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), E₆.r14] <;> rfl
-  · rw [u₁₃.other _ (by decide), u₁₂.gpr, u₁₁.other _ (by decide), u₁₀.other _ (by decide),
+  · rw [u₁₂.gpr, u₁₁.other _ (by decide), u₁₀.other _ (by decide),
       u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), r25₆]
-  · rw [u₁₃.gpr, u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
-      u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), E₆.r14] <;> rfl
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by omega_arith)) (by decide) (by omega_arith)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
-  · exact Covers.append_left (Covers.cons (E₁₃.perm.wCR (by decide)) (Covers.cons (E₁₃.perm.wCR (by omega_arith))
-      Covers.nil)) (Covers.cons (E₁₃.perm.wCR (by decide)) (Covers.cons (E₁₃.perm.wCR (by decide)) Covers.nil))
-  · exact Covers.cons (E₁₃.perm.wC (by decide)) (Covers.cons (E₁₃.perm.wC (by decide)) Covers.nil)
-  · rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
+  · exact Covers.append_left (Covers.cons (E₁₂.perm.wCR (by decide)) (Covers.cons (E₁₂.perm.wCR (by omega_arith))
+      Covers.nil)) (Covers.cons (E₁₂.perm.wCR (by decide)) Covers.nil)
+  · exact Covers.cons (E₁₂.perm.wC (by decide)) Covers.nil
+  · rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
       u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), r23₆]
-  · rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
+  · rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
       u₉.other _ (by decide), u₈.gpr, u₇.gpr, u₇.other _ (by decide), r24₆, r25₆, ofNat_shl,
       ofNat_sub (by omega_arith) hm]
 
-/-- What a chunk writes: GHASH's accumulator, the reversed blocks and
-`vg_ghash`'s working space. -/
-abbrev absR (W : Addr) : List Region := [⟨W + BitVec.ofNat 64 80, 16⟩, ⟨W + BitVec.ofNat 64 496, 1280⟩]
+/-- What a chunk writes: GHASH's accumulator and the reversed blocks. -/
+abbrev absR (W : Addr) : List Region := [⟨W + BitVec.ofNat 64 80, 16⟩, ⟨W + BitVec.ofNat 64 496, 1024⟩]
 
 /-- What a chunk leaves, from `t`, after absorbing `k` blocks of the `m`
 bytes at `Q`. -/
@@ -318,7 +311,7 @@ theorem chunk_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} (L : Lay c) {t : State
   obtain hk : 16 * min (m / 16) 64 ≤ 1024 := by omega_arith
   unfold chunk
   refine WP.seq (WP.mono (chunkPre_wp L E hm h16 hQ h23 h24) fun t₅ Pr => ?_)
-  refine WP.seq (WP.mono (gh_call Pr.call) fun t₆ P => ?_)
+  refine WP.seq (WP.mono (gh_callF Pr.call) fun t₆ P => ?_)
   obtain pk₆ : PK t₅ t₆ := PK.ofSaved P.rd P.wr P.sp P.saved
   obtain r24₆ : t₆.gpr .r24 = BitVec.ofNat 64 (m - 16 * min (m / 16) 64) := by
     rw [P.saved _ (by decide), Pr.r24]
@@ -340,9 +333,8 @@ theorem chunk_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} (L : Lay c) {t : State
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega_arith)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
+      rcases hr with rfl
       · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Offset.sub _ (by decide) (by decide)⟩
   · rw [u₇.mem]; exact out₆
 
 /-! ## Absorbing -/
@@ -380,7 +372,7 @@ theorem absR_H {c : Cx} (L : Lay c) : ∀ r ∈ absR c.W, (⟨c.W + BitVec.ofNat
   fun r hr => absorbR_H L r (List.mem_cons_of_mem _ hr)
 
 /-- A buffer apart from `W` misses what absorbing writes. -/
-theorem absorbR_buf {c : Cx} {P : Addr} {k : Nat} (hd : (⟨P, k⟩ : Region).Disjoint ⟨c.W, 3824⟩) :
+theorem absorbR_buf {c : Cx} {P : Addr} {k : Nat} (hd : (⟨P, k⟩ : Region).Disjoint ⟨c.W, 1520⟩) :
     ∀ r ∈ absorbR c.W, (⟨P, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

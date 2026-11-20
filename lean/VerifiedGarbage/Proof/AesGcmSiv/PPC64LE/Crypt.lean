@@ -51,7 +51,7 @@ open VG.PPC64LE hiding wp_add wp_addi wp_and wp_ld wp_li wp_lsl wp_lsr wp_lwz wp
   wp_xor
 open VG.Proof.ChaCha20Poly1305.PPC64LE (Upd Mupd wp_addi wp_li wp_ld wp_std)
 open VG.Proof.AesCcm.PPC64LE (wp_mv)
-open VG.Proof.AesGcm.PPC64LE (CtrCall CtrPost ctr_call)
+open VG.Proof.AesGcm.PPC64LE (CtrCallF CtrPostF ctr_callF)
 open VG.Spec.Aes (bytesAt)
 
 /-- The memory after the copy of the counter block. -/
@@ -68,7 +68,7 @@ theorem copyMem_bytes (m : Mem) (W : Addr) :
 
 /-- What `tag o` writes. -/
 abbrev tagR (W : Addr) (o : Nat) : List Region :=
-  [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩, ⟨W + BitVec.ofNat 64 1776, 2048⟩]
+  [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩]
 
 /-- What `tag o` leaves, from `t`. -/
 structure TagPost (c : Cx) (o : Nat) (t t' : State) : Prop where
@@ -84,8 +84,8 @@ structure TagPost (c : Cx) (o : Nat) (t t' : State) : Prop where
 theorem tagArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o = 0 ∨ o = 240) :
     WP isa (.block (copy16 cbO ccO ++ zero16 o ++ ctrArgs ++ ([.addi .r6 .r14 o, .li .r7 1] : List Instr))) t
       fun t₁₃ => PK t t₁₃ ∧ t₁₃.mem = Proof.Cmac.zero2 (copyMem t.mem c.W) (c.W + BitVec.ofNat 64 o) ∧
-        CtrCall t₁₃ (c.W + BitVec.ofNat 64 256) (c.W + BitVec.ofNat 64 112) (c.W + BitVec.ofNat 64 o)
-          (c.W + BitVec.ofNat 64 1776) c.R 1 ∧ ∀ r ∈ [Reg.r23, .r24, .r25], t₁₃.gpr r = t.gpr r := by
+        CtrCallF t₁₃ (c.W + BitVec.ofNat 64 256) (c.W + BitVec.ofNat 64 112) (c.W + BitVec.ofNat 64 o)
+          c.R 1 ∧ ∀ r ∈ [Reg.r23, .r24, .r25], t₁₃.gpr r = t.gpr r := by
   have hw := L.ww
   obtain o₁ : o + 16 ≤ 256 := by omega_using [ho]
   unfold copy16 zero16 ctrArgs
@@ -111,17 +111,17 @@ theorem tagArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho 
     (by rcases ho with rfl | rfl <;> decide) (by rw [u₆.gpr, w14, Offset.add_add])
     (by rw [u₆.wr, wr₅, Offset.add_add]; exact E.perm.wW (by omega_using [ho])) fun t₇ u₇ => ?_
   refine wp_addi (by decide) (by decide) fun t₈ u₈ => wp_mv fun t₉ u₉ => wp_addi (by decide) (by decide) fun t₁₀ u₁₀ =>
-    wp_addi (by decide) (by decide) fun t₁₁ u₁₁ => wp_addi (by decide) (by rcases ho with rfl | rfl <;> decide)
+    wp_addi (by decide) (by rcases ho with rfl | rfl <;> decide)
     fun t₁₂ u₁₂ => wp_li (by decide) fun t₁₃ u₁₃ => WP.block_nil ?_
   obtain pk : PK t t₁₃ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans ((PK.ofMupd u₄).trans
     ((PK.ofUpd u₅).trans ((PK.ofMupd u₆).trans ((PK.ofMupd u₇).trans ((PK.ofUpd u₈).trans ((PK.ofUpd u₉).trans
-    ((PK.ofUpd u₁₀).trans ((PK.ofUpd u₁₁).trans ((PK.ofUpd u₁₂).trans (PK.ofUpd u₁₃))))))))))))
+    ((PK.ofUpd u₁₀).trans ((PK.ofUpd u₁₂).trans (PK.ofUpd u₁₃)))))))))))
   obtain E₁₃ := E.of_pk pk
   obtain pk₈ : PK t t₈ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofMupd u₃).trans ((PK.ofMupd u₄).trans
     ((PK.ofUpd u₅).trans ((PK.ofMupd u₆).trans ((PK.ofMupd u₇).trans (PK.ofUpd u₈)))))))
   obtain w14' : t₇.gpr .r14 = c.W := by rw [u₇.gpr, u₆.gpr, w14]
   obtain hm : t₁₃.mem = Proof.Cmac.zero2 (copyMem t.mem c.W) (c.W + BitVec.ofNat 64 o) := by
-    rw [u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.gpr, u₆.mem, u₅.gpr, u₅.mem, u₄.mem,
+    rw [u₁₃.mem, u₁₂.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.gpr, u₆.mem, u₅.gpr, u₅.mem, u₄.mem,
       u₃.gpr, u₃.mem, u₂.gpr, u₂.other .r3 (by decide), u₁.gpr, u₂.mem, u₁.mem]
     rfl
   obtain dO : (⟨c.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 112, 16⟩ :=
@@ -130,24 +130,22 @@ theorem tagArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho 
   swap
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;>
-    rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
+    rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₀.other _ (by decide),
       u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.gpr, u₅.other _ (by decide), u₄.gpr, u₃.gpr,
       g₂ _ (by decide) (by decide)]
   exact cargs L E₁₃ (E₁₃.perm.wCR (by decide)) (L.w_w (.inr (by decide)) (by decide) (by decide))
-      (L.w_w (.inl (by decide)) (by decide) (by decide)) (L.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])) dO.symm
-      (L.w_w (.inl (by omega_using [ho])) (by omega_using [ho]) (by decide)) (E₁₃.perm.wC (by omega_using [ho]))
+      (L.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])) dO.symm
+      (E₁₃.perm.wC (by omega_using [ho]))
       (by rw [L.wrapW (by omega_using [ho])]; omega_using [ho, hw]) (by decide)
-      (by rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
+      (by rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₀.other _ (by decide),
         u₉.other _ (by decide), u₈.gpr, w14'] <;> rfl)
-      (by rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide),
+      (by rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₀.other _ (by decide),
         u₉.gpr, (E.of_pk pk₈).r17])
-      (by rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr,
+      (by rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₀.gpr,
         u₉.other _ (by decide), u₈.other _ (by decide), w14'] <;> rfl)
-      (by rw [u₁₃.other _ (by decide), u₁₂.gpr, u₁₁.other _ (by decide), u₁₀.other _ (by decide),
+      (by rw [u₁₃.other _ (by decide), u₁₂.gpr, u₁₀.other _ (by decide),
         u₉.other _ (by decide), u₈.other _ (by decide), w14'])
       u₁₃.gpr
-      (by rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.other _ (by decide),
-        u₉.other _ (by decide), u₈.other _ (by decide), w14'] <;> rfl)
 
 theorem tag_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o = 0 ∨ o = 240) :
     WP isa (tag o) t (TagPost c o t) := by
@@ -176,7 +174,7 @@ theorem tag_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {o : Nat} (ho : o 
       · exact (L.w_w (.inr (by decide)) (by decide) (by decide)).sub_left (Region.sub_prefix L.rb)
       · exact (L.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])).sub_left (Region.sub_prefix L.rb))
       (by have := L.rb; omega_using [this])]
-  refine WP.mono (ctr_call cc) fun t₁₄ P => ?_
+  refine WP.mono (ctr_callF cc) fun t₁₄ P => ?_
   obtain reg : ∀ r, r ∈ [Reg.r23, .r24, .r25] → t₁₄.gpr r = t.gpr r := fun r hr => by
     rw [P.saved r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;>
       decide), reg₁ r hr]
@@ -224,7 +222,7 @@ open VG.PPC64LE hiding wp_add wp_addi wp_and wp_ld wp_li wp_lsl wp_lsr wp_lwz wp
 open VG.Proof.ChaCha20Poly1305.PPC64LE (Upd Mupd wp_addi wp_li wp_ld wp_std wp_lsl wp_lsr wp_lwz wp_stw wp_subi
   wp_or wp_xor wp_sub)
 open VG.Proof.AesCcm.PPC64LE (wp_mv)
-open VG.Proof.AesGcm.PPC64LE (CtrCall CtrPost ctr_call LoopPre LoopOut xorLoop_ok xorBytes)
+open VG.Proof.AesGcm.PPC64LE (CtrCallF CtrPostF ctr_callF LoopPre LoopOut xorLoop_ok xorBytes)
 open VG.WriteBytes (writeBytes_nil)
 open VG.Spec.Aes (bytesAt)
 open VG.WriteBytes (writeBytes)
@@ -267,20 +265,18 @@ theorem frame_outside {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {P : 
     · exact hd _ (Offset.contains_base P (show p + 1 ≤ len by omega_arith) (by omega_arith)) hc
 
 /-- What counter mode writes: the counter block and its copy, the block at
-`W + 240`, the counter blocks, the callees' working space and the data. -/
+`W + 240`, the counter blocks and the data. -/
 abbrev cryR (W D : Addr) (n : Nat) : List Region :=
-  [⟨W + BitVec.ofNat 64 96, 32⟩, ⟨W + BitVec.ofNat 64 240, 16⟩, ⟨W + BitVec.ofNat 64 496, 1024⟩,
-    ⟨W + BitVec.ofNat 64 1776, 2048⟩, ⟨D, n⟩]
+  [⟨W + BitVec.ofNat 64 96, 32⟩, ⟨W + BitVec.ofNat 64 240, 16⟩, ⟨W + BitVec.ofNat 64 496, 1024⟩, ⟨D, n⟩]
 
 /-- The encryption key's schedule misses what counter mode writes. -/
 theorem key_cryR {c : Cx} (L : Lay c) :
     ∀ r ∈ cryR c.W c.D c.n, (⟨c.W + BitVec.ofNat 64 256, 240⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.d_w' (by decide)).symm
 
@@ -558,30 +554,22 @@ theorem encArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {k : Nat} (hk 
     (h25 : t.gpr .r25 = BitVec.ofNat 64 k) :
     WP isa (.block chunkEncArgs) t fun t₅ => PK t t₅ ∧ t₅.mem = t.mem ∧
       (∀ r ∈ [Reg.r23, .r24, .r25], t₅.gpr r = t.gpr r) ∧
-      Proof.AesOcb.PPC64LE.BCallS t₅ (c.W + BitVec.ofNat 64 256) (c.W + BitVec.ofNat 64 496)
-        (c.W + BitVec.ofNat 64 1776) c.R k := by
+      Proof.AesOcb.PPC64LE.BCall t₅ (c.W + BitVec.ofNat 64 256) (c.W + BitVec.ofNat 64 496)
+        c.R k := by
   unfold chunkEncArgs
   refine wp_addi (by decide) (by decide) fun t₁ u₁ => wp_mv fun t₂ u₂ => wp_addi (by decide) (by decide)
-    fun t₃ u₃ => wp_mv fun t₄ u₄ => wp_addi (by decide) (by decide) fun t₅ u₅ => WP.block_nil ?_
-  obtain pk : PK t t₅ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans
-    (PK.ofUpd u₅))))
-  obtain E₅ := E.of_pk pk
-  refine ⟨pk, by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem], fun r hr => ?_, bargs L E₅ (E₅.perm.wCR (by decide)) hk (L.w_w (.inl (by omega_using [])) (by decide) (by omega_using [hk]))
-    (L.w_w (.inl (by decide)) (by decide) (by decide)) ?_ ?_ ?_ ?_ ?_⟩
+    fun t₃ u₃ => wp_mv fun t₄ u₄ => WP.block_nil ?_
+  obtain pk : PK t t₄ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans ((PK.ofUpd u₃).trans (PK.ofUpd u₄)))
+  obtain E₄ := E.of_pk pk
+  refine ⟨pk, by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem], fun r hr => ?_, bargs L E₄ (E₄.perm.wCR (by decide)) hk
+    (L.w_w (.inl (by omega_using [])) (by decide) (by omega_using [hk])) ?_ ?_ ?_ ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;>
-      rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
-        u₁.other _ (by decide)]
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr,
-      E.r14]; rfl
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide),
-      E.r17]
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide),
-      E.r14]; rfl
-  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
-      h25]
-  · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
-      E.r14]; rfl
+      rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, E.r14]; rfl
+  · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), E.r17]
+  · rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), E.r14]; rfl
+  · rw [u₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h25]
 
 /-- The arguments of the XOR of a chunk's keystream into the data. -/
 theorem ksArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {j k : Nat} (hk1 : 1 ≤ k) (hk : k ≤ 64)
@@ -596,7 +584,7 @@ theorem ksArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {j k : Nat} (hk
     WP.block_nil ?_
   obtain pk : PK t t₃ := (PK.ofUpd u₁).trans ((PK.ofUpd u₂).trans (PK.ofUpd u₃))
   obtain E₃ := E.of_pk pk
-  obtain dQ : (⟨c.D + BitVec.ofNat 64 (16 * j), 16 * k⟩ : Region).Disjoint ⟨c.W, 3824⟩ :=
+  obtain dQ : (⟨c.D + BitVec.ofNat 64 (16 * j), 16 * k⟩ : Region).Disjoint ⟨c.W, 1520⟩ :=
     L.d_w.sub_left (Offset.sub_base _ (by omega_using [hjk]))
   refine ⟨pk, by rw [u₃.mem, u₂.mem, u₁.mem], fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -609,11 +597,11 @@ theorem ksArgs_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {j k : Nat} (hk
           lt := by omega_using [hk]
           rd := by
             rw [e8]
-            exact VG.Proof.Gather.PPC64LE.covers_prefix (E₃.perm.wCR (show 496 + 1024 ≤ 3824 by decide)) (by omega_using [hk])
+            exact VG.Proof.Gather.PPC64LE.covers_prefix (E₃.perm.wCR (show 496 + 1024 ≤ 1520 by decide)) (by omega_using [hk])
           wr := by rw [e8]; exact VG.Proof.Gather.PPC64LE.covers_off E₃.perm.d (by omega_using [hjk]) (by omega_using [hn])
           disj := by
             rw [e8]
-            exact (dQ.sub_right (Lay.wSub (show 496 + 1024 ≤ 3824 by decide))).symm.sub_left
+            exact (dQ.sub_right (Lay.wSub (show 496 + 1024 ≤ 1520 by decide))).symm.sub_left
               (Region.sub_prefix (by omega_using [hk])) }
 
 /-- After the XOR: `r23` and `r24` past the chunk, and `r11` zero if no
@@ -660,7 +648,7 @@ theorem cryptChunk_wp {c : Cx} (L : Lay c) {ciph : Spec.GcmSiv.Cipher} {icb x : 
   obtain C₁ : CtrSt c.W icb j t₁.mem := by rw [u₁.mem]; exact P.ctr
   refine WP.seq (WP.mono (ctrBuild_wp L E₁ hk1 hk C₁ u₁.gpr) fun t₂ G => ?_)
   refine WP.seq (WP.mono (encArgs_wp L G.env hk G.r25) fun t₃ ⟨pk₃, m₃, k₃, bc⟩ => ?_)
-  refine WP.seq (WP.mono (Proof.AesOcb.PPC64LE.blk_callS Proof.Aes.PPC64LE.encryptBlocks_correct
+  refine WP.seq (WP.mono (Proof.AesOcb.PPC64LE.blk_call Proof.Aes.PPC64LE.encryptBlocksF_correct
     Proof.AesOcb.PPC64LE.encryptBlocks_noFrames bc) fun t₄ B => ?_)
   obtain pk₄ : PK t₃ t₄ := PK.ofSaved B.rd B.wr B.sp B.saved
   obtain E₄ := G.env.of_pk (pk₃.trans pk₄)
@@ -699,33 +687,28 @@ theorem cryptChunk_wp {c : Cx} (L : Lay c) {ciph : Spec.GcmSiv.Cipher} {icb x : 
   obtain e16 : 8 * (2 * k) = 16 * k := by omega_using []
   rw [e16] at hm₆
   -- What the call and the XOR wrote.
-  obtain dQ : (⟨c.D + BitVec.ofNat 64 (16 * j), 16 * k⟩ : Region).Disjoint ⟨c.W, 3824⟩ :=
+  obtain dQ : (⟨c.D + BitVec.ofNat 64 (16 * j), 16 * k⟩ : Region).Disjoint ⟨c.W, 1520⟩ :=
     L.d_w.sub_left (Offset.sub_base _ (by omega_using [hj, hkd]))
   obtain fX : Frame [⟨c.D + BitVec.ofNat 64 (16 * j), 16 * k⟩] t₄.mem t₇.mem := by
     rw [m₇, hm₆, m₅]
     exact VG.WriteBytes.writeBytes_frame _ _ _ (by
       rw [Proof.AesGcm.PPC64LE.length_xorBytes]; exact Region.contains_self _ _)
-  obtain fB : Frame [⟨c.W + BitVec.ofNat 64 496, 1024⟩, ⟨c.W + BitVec.ofNat 64 1776, 2048⟩] t₃.mem t₄.mem :=
+  obtain fB : Frame [⟨c.W + BitVec.ofNat 64 496, 1024⟩] t₃.mem t₄.mem :=
     B.frame.sub fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨_, List.mem_cons_self, Offset.sub _ (by omega_using []) (by omega_using [hkd])⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_self, Offset.sub _ (by omega_using []) (by omega_using [hkd])⟩
   refine ⟨⟨?_, r23₇, r24₇, ?_, ?_, ?_⟩, r11₇⟩
   · exact P.pk.trans ((PK.ofUpd u₁).trans (G.pk.trans (pk₃.trans (pk₄.trans (pk₅.trans ((PK.ofLoop O).trans pk₇))))))
   · -- The counter block.
     refine ((G.ctr.of_frame (by rw [m₃] at fB; exact fB) fun r hr => ?_).of_frame fX fun r hr => ?_)
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-      · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact L.w_w (.inl (by decide)) (by decide) (by decide)
     · simp only [List.mem_singleton] at hr; subst hr
       exact (dQ.sub_right (Lay.wSub (by decide))).symm
   · -- The data.
     obtain hD₄ : bytesAt t₄.mem c.D c.n = GcmSiv.ctrPart ciph icb x (16 * j) := by
       rw [Proof.Cmac.bytesAt_frame fB (fun r hr => by
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl <;> exact L.d_w' (by decide)) (by omega_using [hn]), m₃,
+          simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by omega_using [hn]), m₃,
         Proof.Cmac.bytesAt_frame fG (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl <;> exact L.d_w' (by decide)) (by omega_using [hn]), P.data]
@@ -749,10 +732,8 @@ theorem cryptChunk_wp {c : Cx} (L : Lay c) {ciph : Spec.GcmSiv.Cipher} {icb x : 
         · exact ⟨_, List.mem_cons_self, Offset.sub _ (by decide) (by decide)⟩
         · exact ⟨_, by simp, fun _ h => h⟩
     · rw [← m₃]; exact fB.sub fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact ⟨_, by simp, fun _ h => h⟩
-        · exact ⟨_, by simp, fun _ h => h⟩
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, by simp, fun _ h => h⟩
     · exact fX.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨⟨c.D, c.n⟩, by simp, Offset.sub_base _ (by omega_using [hj, hkd])⟩
@@ -811,7 +792,7 @@ theorem cryptTail_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t)
   obtain pk₅ : PK t₂ t₅ := (PK.ofUpd u₃).trans ((PK.ofUpd u₄).trans (PK.ofUpd u₅))
   obtain E₅ := E₂.of_pk pk₅
   obtain m₅ : t₅.mem = t₂.mem := by rw [u₅.mem, u₄.mem, u₃.mem]
-  obtain dQ : (⟨c.D + BitVec.ofNat 64 (16 * b), r⟩ : Region).Disjoint ⟨c.W, 3824⟩ :=
+  obtain dQ : (⟨c.D + BitVec.ofNat 64 (16 * b), r⟩ : Region).Disjoint ⟨c.W, 1520⟩ :=
     L.d_w.sub_left (Offset.sub_base _ (by omega_arith))
   obtain lp : LoopPre t₅ (c.W + BitVec.ofNat 64 240) (c.D + BitVec.ofNat 64 (16 * b)) r :=
     { r3 := by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, E₂.r14] <;> rfl
@@ -819,9 +800,9 @@ theorem cryptTail_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t)
       r5 := by rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), T.r24, h24]
       pos := hr1
       lt := by omega_arith
-      rd := VG.Proof.Gather.PPC64LE.covers_prefix (E₅.perm.wCR (show 240 + 16 ≤ 3824 by decide)) (by omega_arith)
+      rd := VG.Proof.Gather.PPC64LE.covers_prefix (E₅.perm.wCR (show 240 + 16 ≤ 1520 by decide)) (by omega_arith)
       wr := VG.Proof.Gather.PPC64LE.covers_off E₅.perm.d (by omega_arith) (by omega_arith)
-      disj := ((dQ.sub_right (Lay.wSub (show 240 + 16 ≤ 3824 by decide))).sub_right
+      disj := ((dQ.sub_right (Lay.wSub (show 240 + 16 ≤ 1520 by decide))).sub_right
         (Region.sub_prefix (by omega_arith))).symm }
   refine WP.mono (xorLoop_ok t₅ lp) fun t₆ ⟨hm₆, O⟩ => ?_
   rw [m₅] at hm₆
@@ -847,9 +828,8 @@ theorem cryptTail_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t)
     rwa [hxl, ← hn] at this
   · refine (T.frame.sub fun q hq => ?_).trans (fw.sub fun q hq => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl
+      rcases hq with rfl | rfl
       · exact ⟨⟨c.W + BitVec.ofNat 64 96, 32⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨_, by simp, fun _ h => h⟩
       · exact ⟨_, by simp, fun _ h => h⟩
     · simp only [List.mem_singleton] at hq; subst hq
       exact ⟨⟨c.D, c.n⟩, by simp, Offset.sub_base _ (by omega_arith)⟩

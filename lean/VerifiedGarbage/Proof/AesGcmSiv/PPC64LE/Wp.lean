@@ -29,7 +29,7 @@ section
 
 Untrusted: everything here is checked by Lean. The public values of a call
 (`Cx`): the key schedule of the key-generating key (240 bytes at `K`), the
-working space (3824 bytes at `W`), the nonce (12 bytes at `N`), the
+working space (1520 bytes at `W`), the nonce (12 bytes at `N`), the
 additional data (`al` bytes at `A`), the data (`n` bytes at `D`), the tag
 (16 bytes at `T`) and the number of rounds; what the precondition says of
 them (`Lay`); what a state may access (`Perm`); and the registers holding
@@ -61,19 +61,19 @@ structure Cx where
 /-- What the precondition says of the public values. -/
 structure Lay (c : Cx) : Prop where
   kw : c.K.toNat + 240 ≤ 2 ^ 64
-  ww : c.W.toNat + 3824 ≤ 2 ^ 64
+  ww : c.W.toNat + 1520 ≤ 2 ^ 64
   nw : c.N.toNat + 12 ≤ 2 ^ 64
   aw : c.A.toNat + c.al ≤ 2 ^ 64
   dw : c.D.toNat + c.n ≤ 2 ^ 64
   tw : c.T.toNat + 16 ≤ 2 ^ 64
-  k_w : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W, 3824⟩
+  k_w : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W, 1520⟩
   k_d : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.D, c.n⟩
-  n_w : (⟨c.N, 12⟩ : Region).Disjoint ⟨c.W, 3824⟩
+  n_w : (⟨c.N, 12⟩ : Region).Disjoint ⟨c.W, 1520⟩
   n_d : (⟨c.N, 12⟩ : Region).Disjoint ⟨c.D, c.n⟩
-  a_w : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W, 3824⟩
+  a_w : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W, 1520⟩
   a_d : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.D, c.n⟩
-  d_w : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W, 3824⟩
-  t_w : (⟨c.T, 16⟩ : Region).Disjoint ⟨c.W, 3824⟩
+  d_w : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W, 1520⟩
+  t_w : (⟨c.T, 16⟩ : Region).Disjoint ⟨c.W, 1520⟩
   t_d : (⟨c.T, 16⟩ : Region).Disjoint ⟨c.D, c.n⟩
   rounds : c.R = 10 ∨ c.R = 14
   n_lt : c.n < 2 ^ 64
@@ -82,7 +82,7 @@ structure Lay (c : Cx) : Prop where
 /-- What a state may access. -/
 structure Perm (c : Cx) (s : State) : Prop where
   k : Covers [⟨c.K, 240⟩] (s.rd ++ s.wr)
-  w : Covers [⟨c.W, 3824⟩] s.wr
+  w : Covers [⟨c.W, 1520⟩] s.wr
   nc : Covers [⟨c.N, 12⟩] (s.rd ++ s.wr)
   a : Covers [⟨c.A, c.al⟩] (s.rd ++ s.wr)
   d : Covers [⟨c.D, c.n⟩] s.wr
@@ -151,33 +151,33 @@ theorem Env.of_pk {c : Cx} {s s' : State} (h : Env c s) (k : PK s s') : Env c s'
 
 namespace Lay
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 3824) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 3824⟩ :=
+theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 1520) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 1520⟩ :=
   Offset.sub_base _ h
 
 variable {c : Cx} (L : Lay c)
 include L
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 3824) (hd : d + k ≤ 3824) :
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 1520) (hd : d + k ≤ 1520) :
     (⟨c.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 omit L in
 /-- `W` and a part of it. -/
-theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 3824) :
+theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 1520) :
     (⟨c.W, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   Offset.base_disjoint _ h (by omega_using [hd])
 
-theorem k_w' {d k : Nat} (hd : d + k ≤ 3824) : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem k_w' {d k : Nat} (hd : d + k ≤ 1520) : (⟨c.K, 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
 
-theorem a_w' {d k : Nat} (hd : d + k ≤ 3824) : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem a_w' {d k : Nat} (hd : d + k ≤ 1520) : (⟨c.A, c.al⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.a_w.sub_right (wSub hd)
 
-theorem d_w' {d k : Nat} (hd : d + k ≤ 3824) : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem d_w' {d k : Nat} (hd : d + k ≤ 1520) : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.d_w.sub_right (wSub hd)
 
-theorem wrapW {d : Nat} (hd : d < 3824) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
+theorem wrapW {d : Nat} (hd : d < 1520) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
   have := L.ww
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
@@ -190,16 +190,16 @@ namespace Perm
 variable {c : Cx} {s : State} (P : Perm c s)
 include P
 
-theorem wW {d n : Nat} (h : d + n ≤ 3824) : InRegions s.wr (c.W + BitVec.ofNat 64 d) n :=
+theorem wW {d n : Nat} (h : d + n ≤ 1520) : InRegions s.wr (c.W + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 
-theorem wC {d n : Nat} (h : d + n ≤ 3824) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] s.wr :=
+theorem wC {d n : Nat} (h : d + n ≤ 1520) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
 
-theorem wCR {d n : Nat} (h : d + n ≤ 3824) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
+theorem wCR {d n : Nat} (h : d + n ≤ 1520) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   Covers.right (P.wC h)
 
-theorem wR {d n : Nat} (h : d + n ≤ 3824) : InRegions (s.rd ++ s.wr) (c.W + BitVec.ofNat 64 d) n :=
+theorem wR {d n : Nat} (h : d + n ≤ 1520) : InRegions (s.rd ++ s.wr) (c.W + BitVec.ofNat 64 d) n :=
   P.wCR h _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
 theorem nR {d n : Nat} (h : d + n ≤ 12) : InRegions (s.rd ++ s.wr) (c.N + BitVec.ofNat 64 d) n :=
@@ -222,8 +222,8 @@ end
 Untrusted: everything here is checked by Lean. Shifts and differences of
 small numbers as 64-bit words; and the arguments of `vg_aes_ctr32` from the
 environment (`cargs`): the encryption key's schedule at `W + 256` or the
-key-generating key's at `K`, the counter block at `W + 112`, `k` blocks at
-`Q` and the working space at `W + 1776`.
+key-generating key's at `K`, the counter block at `W + 112` and `k` blocks
+at `Q`.
 -/
 
 @[expose] public section
@@ -231,7 +231,7 @@ key-generating key's at `K`, the counter block at `W + 112`, `k` blocks at
 namespace VG.Proof.AesGcmSiv.PPC64LE
 
 open VG VG.PPC64LE
-open VG.Proof.AesGcm.PPC64LE (CtrCall)
+open VG.Proof.AesGcm.PPC64LE (CtrCallF)
 
 theorem ofNat_shl (a k : Nat) : BitVec.ofNat 64 a <<< k = BitVec.ofNat 64 (2 ^ k * a) := by
   apply BitVec.eq_of_toNat_eq
@@ -284,37 +284,29 @@ theorem setWidth_32_64 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x := by
   rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
 
 /-- The arguments of `vg_aes_ctr32`: the schedule of `R` rounds at `K'`, the
-counter block at `W + 112`, `k` blocks at `Q`, which it may write, and the
-working space at `W + 1776`. -/
+counter block at `W + 112` and `k` blocks at `Q`, which it may write. -/
 theorem cargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {K' : Addr}
     (hK : Covers [⟨K', 240⟩] (s.rd ++ s.wr)) (hKw : (⟨K', 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 112, 16⟩)
-    (hKs : (⟨K', 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 1776, 2048⟩)
     {Q : Addr} {k : Nat} (hqk : (⟨K', 240⟩ : Region).Disjoint ⟨Q, 16 * k⟩)
     (hqc : (⟨c.W + BitVec.ofNat 64 112, 16⟩ : Region).Disjoint ⟨Q, 16 * k⟩)
-    (hqs : (⟨Q, 16 * k⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 1776, 2048⟩)
     (hqw : Covers [⟨Q, 16 * k⟩] s.wr) (hfit : Q.toNat + 16 * k ≤ 2 ^ 64) (hk : k < 2 ^ 64)
     (r3 : s.gpr .r3 = K') (r4 : s.gpr .r4 = BitVec.ofNat 64 c.R) (r5 : s.gpr .r5 = c.W + BitVec.ofNat 64 112)
-    (r6 : s.gpr .r6 = Q) (r7 : s.gpr .r7 = BitVec.ofNat 64 k) (r8 : s.gpr .r8 = c.W + BitVec.ofNat 64 1776) :
-    CtrCall s K' (c.W + BitVec.ofNat 64 112) Q (c.W + BitVec.ofNat 64 1776) c.R k where
+    (r6 : s.gpr .r6 = Q) (r7 : s.gpr .r7 = BitVec.ofNat 64 k) :
+    CtrCallF s K' (c.W + BitVec.ofNat 64 112) Q c.R k where
   r3 := r3
   r4 := r4
   r5 := r5
   r6 := r6
   r7 := r7
-  r8 := r8
   rounds := by rcases L.rounds with h | h <;> simp [h]
   n_lt := hk
   kc := hKw
   kd := hqk
-  ks := hKs
   cd := hqc
-  cs := L.w_w (.inl (by decide)) (by decide) (by decide)
-  ds := hqs
   fit := hfit
   reads := Covers.append_left (Covers.cons hK Covers.nil)
-    (Covers.cons (E.perm.wCR (by decide)) (Covers.cons (Covers.right hqw) (Covers.cons (E.perm.wCR (by decide))
-      Covers.nil)))
-  writes := Covers.cons (E.perm.wC (by decide)) (Covers.cons hqw (Covers.cons (E.perm.wC (by decide)) Covers.nil))
+    (Covers.cons (E.perm.wCR (by decide)) (Covers.cons (Covers.right hqw) Covers.nil))
+  writes := Covers.cons (E.perm.wC (by decide)) (Covers.cons hqw Covers.nil)
 
 /-- The bytes just past what `writeBytes` writes are unchanged. -/
 theorem bytesAt_writeBytes_past (m : Mem) (q : Addr) (xs : List Byte) (k : Nat) (h : xs.length + k ≤ 2 ^ 64) :
@@ -328,28 +320,23 @@ theorem bytesAt_writeBytes_past (m : Mem) (q : Addr) (xs : List Byte) (k : Nat) 
   simp only [show ¬ xs.length + j < xs.length by omega_using [], ↓reduceIte]
 
 /-- The arguments of `vg_aes_encrypt_blocks`: the schedule of `R` rounds at
-`K'`, `k` blocks at `W + 496` and the working space at `W + 1776`. -/
+`K'` and `k` blocks at `W + 496`. -/
 theorem bargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {K' : Addr}
     (hK : Covers [⟨K', 240⟩] (s.rd ++ s.wr)) {k : Nat} (hk : k ≤ 64)
     (hKd : (⟨K', 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 496, 16 * k⟩)
-    (hKs : (⟨K', 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 1776, 2048⟩)
     (r3 : s.gpr .r3 = K') (r4 : s.gpr .r4 = BitVec.ofNat 64 c.R)
-    (r5 : s.gpr .r5 = c.W + BitVec.ofNat 64 496) (r6 : s.gpr .r6 = BitVec.ofNat 64 k)
-    (r7 : s.gpr .r7 = c.W + BitVec.ofNat 64 1776) :
-    Proof.AesOcb.PPC64LE.BCallS s K' (c.W + BitVec.ofNat 64 496) (c.W + BitVec.ofNat 64 1776) c.R k where
+    (r5 : s.gpr .r5 = c.W + BitVec.ofNat 64 496) (r6 : s.gpr .r6 = BitVec.ofNat 64 k) :
+    Proof.AesOcb.PPC64LE.BCall s K' (c.W + BitVec.ofNat 64 496) c.R k where
   r3 := r3
   r4 := r4
   r5 := r5
   r6 := r6
-  r7 := r7
   rounds := by rcases L.rounds with h | h <;> simp [h]
   wrap := by rw [L.wrapW (by decide)]; have := L.ww; omega_using [hk, this]
   kd := hKd
-  ks := hKs
-  ds := L.w_w (.inl (by omega_using [hk])) (by omega_using [hk]) (by decide)
   reads := Covers.append_left (Covers.cons hK Covers.nil)
-    (Covers.cons (E.perm.wCR (by omega_using [hk])) (Covers.cons (E.perm.wCR (by decide)) Covers.nil))
-  writes := Covers.cons (E.perm.wC (by omega_using [hk])) (Covers.cons (E.perm.wC (by decide)) Covers.nil)
+    (Covers.cons (E.perm.wCR (by omega_using [hk])) Covers.nil)
+  writes := Covers.cons (E.perm.wC (by omega_using [hk])) Covers.nil
 
 /-- A block `vg_aes_encrypt_blocks` replaced: the cipher of the old one. -/
 theorem bytesAt_cipher {m m' : Mem} {D : Addr} {k : Nat} {R : Nat} {w : List Byte}

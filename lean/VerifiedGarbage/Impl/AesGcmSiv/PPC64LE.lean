@@ -45,7 +45,7 @@ of calls of the verified `vg_aes_ctr32`, `vg_aes_encrypt_blocks`,
 
 A call (`bl`) stores nothing in memory and the callees use no stack.
 
-## The working space `W` (3824 bytes)
+## The working space `W` (1520 bytes)
 
 * `[0, 16)`: the tag (the one `seal` computes, or the received one);
   `[16, 32)`: the authentication key; `[32, 64)`: the encryption key;
@@ -54,9 +54,8 @@ A call (`bl`) stores nothing in memory and the callees use no stack.
   `[128, 224)`: our caller's `r14`–`r25`, and `[224, 232)` our return
   address; `[240, 256)`: a block (and the tag `open` computes);
 * `[256, 496)`: the encryption key's schedule; `[496, 1520)`: the reversed
-  blocks (or the blocks of the message keys, or the counter blocks); `[1520, 1776)`: `vg_ghash`'s working
-  space; `[1776, 3824)`: `vg_aes_ctr32`'s and `vg_aes_encrypt_blocks`'s, and
-  `vg_aes_expand_key_scratch`'s at its start.
+  blocks (or the blocks of the message keys, or the counter blocks). The
+  functions called need no working space.
 
 ## Registers
 
@@ -93,8 +92,6 @@ def lrO : Nat := 224
 def bO : Nat := 240
 def skO : Nat := 256
 def revO : Nat := 496
-def ghO : Nat := 1520
-def scrO : Nat := 1776
 
 /-- Our caller's registers, and where we save them (`r14`, the base, last). -/
 def saved : List (Reg × Nat) :=
@@ -109,9 +106,8 @@ def copy16 (s d : Nat) : List Instr :=
   [.load .d .r3 .r14 s, .load .d .r4 .r14 (s + 8), .store .d .r3 .r14 d, .store .d .r4 .r14 (d + 8)]
 
 /-- The arguments of `vg_aes_ctr32` but the data and the number of blocks:
-the encryption key's schedule, the counter block's copy at `W + 112` and the
-working space. -/
-def ctrArgs : List Instr := [.addi .r3 .r14 skO, mov .r4 .r17, .addi .r5 .r14 ccO, .addi .r8 .r14 scrO]
+the encryption key's schedule and the counter block's copy at `W + 112`. -/
+def ctrArgs : List Instr := [.addi .r3 .r14 skO, mov .r4 .r17, .addi .r5 .r14 ccO]
 
 /-! ## The keys -/
 
@@ -134,7 +130,7 @@ def deriveBuild : Prog isa :=
 /-- The arguments of `vg_aes_encrypt_blocks` on the `r25` blocks at `W + 496`
 with the key-generating key's schedule. -/
 def deriveArgs : List Instr :=
-  [mov .r3 .r16, mov .r4 .r17, .addi .r5 .r14 revO, mov .r6 .r25, .addi .r7 .r14 scrO]
+  [mov .r3 .r16, mov .r4 .r17, .addi .r5 .r14 revO, mov .r6 .r25]
 
 /-- The first 8 bytes of the block at `r5` kept at `r4`, advancing both. -/
 def keepBody : List Instr :=
@@ -149,10 +145,9 @@ def deriveKeep : Prog isa :=
 def derive : Prog isa := .seq deriveBuild (.seq (.block deriveArgs) (.seq encCall deriveKeep))
 
 /-- The arguments of `vg_aes_expand_key_scratch`: the encryption key, whose
-length is `4 (rounds − 6)`, its schedule at `W + 256` and the working
-space. -/
+length is `4 (rounds − 6)`, and its schedule at `W + 256`. -/
 def expandArgs : List Instr :=
-  [.addi .r3 .r14 ekO, .subi .r4 .r17 6, .lsl .r4 .r4 2, .addi .r5 .r14 skO, .addi .r6 .r14 scrO]
+  [.addi .r3 .r14 ekO, .subi .r4 .r17 6, .lsl .r4 .r4 2, .addi .r5 .r14 skO]
 
 /-- The encryption key's schedule at `W + 256`. -/
 def expand : Prog isa := .seq (.block expandArgs) keyCall
@@ -187,7 +182,7 @@ def revLoop : Prog isa :=
 `vg_ghash`. -/
 def chunkArgs : List Instr :=
   [.lsl .r5 .r25 4, .sub .r24 .r24 .r5, .addi .r3 .r14 hO, .addi .r4 .r14 yO, .addi .r5 .r14 revO,
-    mov .r6 .r25, .addi .r7 .r14 ghO]
+    mov .r6 .r25]
 
 /-- Up to 64 of the whole blocks of the `r24` bytes at `r23` reversed at
 `W + 496`, `r23` and `r24` past them, and the arguments of `vg_ghash`. -/
@@ -275,7 +270,7 @@ def ctrBuild : Prog isa :=
 /-- The arguments of `vg_aes_encrypt_blocks` on the `r25` counter blocks
 with the encryption key's schedule. -/
 def chunkEncArgs : List Instr :=
-  [.addi .r3 .r14 skO, mov .r4 .r17, .addi .r5 .r14 revO, mov .r6 .r25, .addi .r7 .r14 scrO]
+  [.addi .r3 .r14 skO, mov .r4 .r17, .addi .r5 .r14 revO, mov .r6 .r25]
 
 /-- The `r5` (at least 1) doublewords at `r3` XORed into those at `r4`,
 advancing both. -/
