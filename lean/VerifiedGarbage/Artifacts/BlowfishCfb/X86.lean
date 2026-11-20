@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.Scrub
+public import VerifiedGarbage.Impl.Blowfish.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
@@ -13,9 +14,17 @@ import VerifiedGarbage.Proof.Blowfish.X86.FbFinalLit
 namespace VG.Artifacts.BlowfishCfb.X86
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.cfbEncryptApi.artifact X86.target Proof.Blowfish.X86.Scrub.cfbEncryptReg,
-  Spec.Blowfish.cfbDecryptApi.artifact X86.target Proof.Blowfish.X86.Scrub.cfbDecryptReg,
-  Spec.Blowfish.cfbEncryptFinalApi.artifact X86.target Proof.Blowfish.X86.Scrub.cfbEncryptFinalReg,
-  Spec.Blowfish.cfbDecryptFinalApi.artifact X86.target Proof.Blowfish.X86.Scrub.cfbDecryptFinalReg]
+  Spec.Blowfish.cfbEncryptApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cfbEncrypt_scrubbed },
+  Spec.Blowfish.cfbDecryptApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cfbDecrypt_scrubbed },
+  Spec.Blowfish.cfbEncryptFinalApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cfbEncryptFinal_scrubbed },
+  Spec.Blowfish.cfbDecryptFinalApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.BlowfishCfb.X86

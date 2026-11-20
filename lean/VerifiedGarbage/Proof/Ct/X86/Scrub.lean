@@ -1,21 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ct.X86
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.Ct.X86
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Constant-time comparison on x86 (32-bit), without secret residue
 
-`vg_ct_eq`, followed by the zeroing of the 4 bytes below `esp` its frame
+`vg_ct_eq` as emitted (`Impl.Ct.X86.Fn.eq`), followed by the zeroing of the 4 bytes below `esp` its frame
 (the caller's `ebx`) used and by `Impl.Scrub.X86.tail`
-(`X86.Scrub.scrubFOf`), which clears `eax`, `ecx` and `edx` but the result's
+(`X86.Scrub.verifiedScrubbedF`), which clears `eax`, `ecx` and `edx` but the result's
 bits, the flags and `xmm0`–`xmm7`. Its postcondition reads no memory on
 return: it writes none (`X86.Scrub.PostOut`), as on the other targets
-(`Proof/Ct/PPC64LE/Scrub.lean`). `scrubFOf`'s side condition (`scrubFSide`)
-is proved at the registration, by the kernel's evaluation of it when this
-module is built.
+(`Proof/Ct/PPC64LE/Scrub.lean`). The cleanup's side condition (`scrubFSide`)
+is proved by the kernel's evaluation of it when this module is built.
 -/
 
 @[expose] public section
@@ -38,12 +38,14 @@ theorem eqOut (stack : Nat) : PostOut (Spec.Ct.eqContract abi stack) (Spec.Ct.eq
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     exact h
 
-/-! ## The registration -/
+/-! ## The function as emitted -/
 
-/-- `Spec.Ct.eqApi`. -/
-def eqReg : Registration Spec.Ct.eqApi X86.target :=
-  scrubFOf {
-      code := Impl.Ct.X86.eq
+/-- `Spec.Ct.eqApi` as emitted (`Impl.Ct.X86.Fn.eq`) meets its contract
+in constant time and returns without secret residue. -/
+theorem eq_scrubbed :
+    VerifiedScrubbed X86.target Impl.Ct.X86.Fn.eq (Spec.Ct.eqContract X86.abi 4) 32 :=
+  verifiedScrubbedF (api := Spec.Ct.eqApi)
+    { code := Impl.Ct.X86.eq
       verified := Proof.Ct.X86.verified }
     (eqOut _)
 
