@@ -119,6 +119,25 @@ theorem sha256_finalize : ScrubOk Impl.Sha256.Arm.Stream.finalize 0 := finalize_
 theorem sha512_update : ScrubOk Impl.Sha512.Arm.Stream.update 0 := update_scrubArm _ _ sha512_compress
 theorem sha512_finalize : ScrubOk Impl.Sha512.Arm.Stream.finalize 0 := finalize_scrubArm _ _ sha512_compress
 
+/-- The one-shot digest, from its streaming functions' (for Ed25519's call
+of SHA-512's, `Proof/Ed25519/Arm/Scrub.lean`). -/
+theorem digest_scrubArm (H : Impl.Pbkdf2.Stream.Arm.Hash) (hi : ScrubOk H.initC 0) (hu : ScrubOk H.updC 0)
+    (hf : ScrubOk H.finC 0) :
+    ScrubOk (Impl.MdStream.Arm.Digest.digest H) (16 + Impl.MdStream.Arm.Digest.dbytes H) := by
+  refine withRegScratchWiped_scrubArm (n := 16) ?_
+  simp only [ScrubOk, Nat.le_zero] at hi hu hf
+  simp only [Impl.MdStream.Arm.Digest.digestMain, Impl.Pbkdf2.Stream.Arm.Hash.callInit,
+    Impl.Pbkdf2.Stream.Arm.Hash.callFin, Impl.Pbkdf2.Stream.Arm.copy, armStack, noIcall, hi.1, hi.2, hu.1,
+    hu.2, hf.1, hf.2, List.length_cons, List.length_nil, Bool.and_self, and_true]
+  decide
+
+/-- `init` is one block. -/
+theorem block_scrubArm (is : List Instr) : ScrubOk (.block is) 0 := ⟨Nat.le_refl 0, rfl⟩
+
+theorem sha512_digest : ScrubOk (Impl.MdStream.Arm.Digest.digest Proof.Pbkdf2.Stream.Arm.sha512H')
+    (16 + Impl.MdStream.Arm.Digest.dbytes Proof.Pbkdf2.Stream.Arm.sha512H') :=
+  digest_scrubArm _ (block_scrubArm _) sha512_update sha512_finalize
+
 theorem frameOk_176 : FrameOk 176 := by decide
 theorem frameOk_288 : FrameOk 288 := by decide
 

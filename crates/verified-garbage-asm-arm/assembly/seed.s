@@ -3103,27 +3103,6 @@ vg_seed_expand_key:
 	str r2, [r12, #744]
 	str r2, [r12, #748]
 	add sp, sp, #752
-	sub sp, sp, #752
-	add r12, sp, #0
-	mov r2, #0
-	mov r3, #23
-20:
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	add r12, r12, #32
-	subs r3, r3, #1
-	bne 20b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #752
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
@@ -7906,27 +7885,6 @@ vg_seed_ecb_encrypt:
 	str r2, [r12, #744]
 	str r2, [r12, #748]
 	add sp, sp, #752
-	sub sp, sp, #752
-	add r12, sp, #0
-	mov r2, #0
-	mov r3, #23
-212:
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	add r12, r12, #32
-	subs r3, r3, #1
-	bne 212b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #752
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
@@ -12708,27 +12666,6 @@ vg_seed_ecb_decrypt:
 	str r2, [r12, #740]
 	str r2, [r12, #744]
 	str r2, [r12, #748]
-	add sp, sp, #752
-	sub sp, sp, #752
-	add r12, sp, #0
-	mov r2, #0
-	mov r3, #23
-212:
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	add r12, r12, #32
-	subs r3, r3, #1
-	bne 212b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
 	add sp, sp, #752
 	mov r0, #0
 	mov r1, #0

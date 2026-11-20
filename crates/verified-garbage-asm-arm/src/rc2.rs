@@ -222,19 +222,6 @@ add sp, sp, #592
 sub sp, sp, #600
 add r12, sp, #0
 mov r2, #0
-mov r3, #18
-28:
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
-str r2, [r12, #24]
-str r2, [r12, #28]
-add r12, r12, #32
-subs r3, r3, #1
-bne 28b
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
