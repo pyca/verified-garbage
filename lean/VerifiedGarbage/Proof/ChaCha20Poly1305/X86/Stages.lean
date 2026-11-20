@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86
 import VerifiedGarbage.Proof.Poly1305.X86.Init
 public import VerifiedGarbage.Proof.Poly1305.X86.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86.BlocksFn
 import VerifiedGarbage.Proof.Poly1305.X86.Finalize
 import VerifiedGarbage.Proof.Poly1305.Stream
 public import VerifiedGarbage.Proof.ChaCha20.X86.Variant
