@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.X86.Scrub
+public import VerifiedGarbage.Impl.RsaPss.X86.Fn
 public import VerifiedGarbage.Proof.RsaPss.X86.Inst
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
@@ -28,21 +29,18 @@ end VG.Artifacts.RsaPss.X86.AllSha1AllSha256
 -- RSASSA-PSS signing on x86, with the hash functions as tables
 namespace VG.Artifacts.RsaPss.X86.RsaPrivateCrtAllSha1AllSha256
 
-open VG.Proof.RsaPss.X86 (signP_ok)
-open VG.Proof.Rsa.X86.PrivChecked (crtPBaseline)
-open VG.Proof.MdHashTable.X86 (mvars)
-open VG.Proof.HashTable.X86 (vars)
+open VG.Proof.Rsa.X86.PrivChecked (crtPBaseline privCodeP)
+open VG.Proof.RsaPss.X86.Scrub (allMVars allVars sign_scrubbed sign_spSafe)
 
-def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86.Variants.Backend)
-    (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
-  if h : Proof.RsaPss.X86.Sg.OK (mvars vs1 vs256) (vars vs1 vs256) then [
+def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) : List Artifact :=
+  if h : Proof.RsaPss.X86.Sg.OK allMVars allVars then [
     Spec.RsaPss.signPrecomputedMdTableApi.artifact X86.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
-      tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),
-        ("mgf1", Proof.HashTable.X86.tables (vars vs1 vs256))]
-      code := Proof.RsaPss.X86.Sg.signCodeP (mvars vs1 vs256) (vars vs1 vs256) c crtPBaseline
-      verified := .unscrubbed (signP_ok _ _ h c crtPBaseline)
-      spSafe := Proof.RsaPss.X86.Sg.code_spP h c crtPBaseline }]
+      tables := [("hash", Proof.MdHashTable.X86.tables allMVars), ("mgf1", Proof.HashTable.X86.tables allVars)]
+      code := Impl.RsaPss.X86.Fn.signPrecomputed (Proof.MdHashTable.X86.fnsOf allMVars)
+        (Proof.HashTable.X86.fnsOf allVars) (Proof.RsaPss.X86.Sg.privNameP c) (privCodeP c crtPBaseline)
+      verified := .scrubbed (sign_scrubbed h c)
+      spSafe := sign_spSafe h c }]
   else []
 
 end VG.Artifacts.RsaPss.X86.RsaPrivateCrtAllSha1AllSha256
@@ -51,6 +49,6 @@ namespace VG.Artifacts.RsaPss.X86
 
 def artifacts : List Artifact :=
   AllSha1AllSha256.artifacts ++
-  (VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun v => RsaPrivateCrtAllSha1AllSha256.artifacts v VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants)
+  (VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun v => RsaPrivateCrtAllSha1AllSha256.artifacts v)
 
 end VG.Artifacts.RsaPss.X86
