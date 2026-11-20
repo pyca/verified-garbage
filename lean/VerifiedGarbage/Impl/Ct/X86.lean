@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-! Byte comparison with a four-byte frame holding the caller's EBX. -/
 
@@ -30,3 +31,21 @@ def body : Prog isa :=
 
 def eq : Prog isa := .frame (.push [.ebx]) body (.pop .ebx 1)
 end VG.Impl.Ct.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`, or
+`Impl.Scrub.X86.scrub rb` for code without a frame or calls): the `W` bytes
+of stack below `esp` that its contract reserves zeroed, and the registers
+a callee may change cleared but the `rb` bits of the result, so that it
+returns without secret residue. -/
+
+namespace VG.Impl.Ct.X86.Fn
+
+open VG.X86
+
+/-- `Spec.Ct.eqApi`'s function as emitted. -/
+def eq : Prog isa :=
+  Impl.Scrub.X86.scrubF 32 4 (Impl.Ct.X86.eq)
+
+end VG.Impl.Ct.X86.Fn

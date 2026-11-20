@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.CmacTripleDes.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Impl.Scrub.X86
 
 /-!
 # Streaming TDEA-CMAC: x86 (32-bit) implementation
@@ -184,3 +186,29 @@ def finFrame : Prog isa :=
 def finish : Prog isa := .seq finPre (.seq finFrame (.block (restore 4)))
 
 end VG.Impl.CmacTripleDes.Stream.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`, or
+`Impl.Scrub.X86.scrub rb` for code without a frame or calls): the `W` bytes
+of stack below `esp` that its contract reserves zeroed, and the registers
+a callee may change cleared but the `rb` bits of the result, so that it
+returns without secret residue. -/
+
+namespace VG.Impl.CmacTripleDes.Stream.X86.Fn
+
+open VG.X86
+
+/-- `Spec.Cmac.tdesStreamInitApi`'s function as emitted. -/
+def init : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 680 (Impl.StackScratch.X86.withStackScratch 660 3 Impl.CmacTripleDes.Stream.X86.streamInit)
+
+/-- `Spec.Cmac.tdesAbsorbApi`'s function as emitted. -/
+def absorb : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 740 (Impl.StackScratch.X86.withStackScratch 716 5 Impl.CmacTripleDes.Stream.X86.absorb)
+
+/-- `Spec.Cmac.tdesFinishApi`'s function as emitted. -/
+def finish : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 736 (Impl.StackScratch.X86.withStackScratch 712 4 Impl.CmacTripleDes.Stream.X86.finish)
+
+end VG.Impl.CmacTripleDes.Stream.X86.Fn
