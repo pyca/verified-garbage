@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Variants.Ghash.X86_64
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareScrub
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Scrub
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Leaves
+public import VerifiedGarbage.Proof.AesGcm.X86_64.ScrubGather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
@@ -67,32 +68,32 @@ open VG.Proof.AesGcm.X86_64
 /-- The prepared artifacts of the implementations `v` whose loops read the
 48 prepared powers: by the flag, those or the ones on the key context. -/
 def artifactsR (v : GcmVariant) : List Artifact := [
-  Spec.Gcm.sealPreparedApi.artifact X86_64.target (sealRReg v),
-  Spec.Gcm.openPreparedApi.artifact X86_64.target (openRReg v),
-  Spec.Gcm.openToPreparedApi.artifact X86_64.target (openToRReg v),
-  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptF48Reg v),
-  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptR48Reg v),
-  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target (sealGatherRReg v)]
+  Spec.Gcm.sealPreparedApi.artifact X86_64.target (sealPrepR v),
+  Spec.Gcm.openPreparedApi.artifact X86_64.target (openPrepR v),
+  Spec.Gcm.openToPreparedApi.artifact X86_64.target (openToPrepR v),
+  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptPrepR v),
+  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptPrepR v),
+  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target (sealGatherPrepR v)]
 
 /-- The prepared artifacts of the implementations `v`, which read only the
 key context. -/
 def artifactsW (v : GcmVariant) : List Artifact := [
-  Spec.Gcm.sealPreparedApi.artifact X86_64.target (sealWReg v),
-  Spec.Gcm.openPreparedApi.artifact X86_64.target (openWReg v),
-  Spec.Gcm.openToPreparedApi.artifact X86_64.target (openToWReg v),
-  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptWReg v),
-  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptWReg v),
-  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target (sealGatherWReg v)]
+  Spec.Gcm.sealPreparedApi.artifact X86_64.target (sealPrepW v),
+  Spec.Gcm.openPreparedApi.artifact X86_64.target (openPrepW v),
+  Spec.Gcm.openToPreparedApi.artifact X86_64.target (openToPrepW v),
+  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptPrepW v),
+  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptPrepW v),
+  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target (sealGatherPrepW v)]
 
 /-- The prepared artifacts of the implementations `v` whose loops read 16
 prepared powers: by the count, those or the ones on the key context. -/
 def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
-  Spec.Gcm.sealPreparedApi.artifact X86_64.target (sealF16Reg v r),
-  Spec.Gcm.openPreparedApi.artifact X86_64.target (openR16Reg v r),
-  Spec.Gcm.openToPreparedApi.artifact X86_64.target (openToR16Reg v r),
-  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptF16Reg v),
-  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptR16Reg v),
-  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target (sealGatherR16Reg v r)]
+  Spec.Gcm.sealPreparedApi.artifact X86_64.target (sealPrepR16 v r),
+  Spec.Gcm.openPreparedApi.artifact X86_64.target (openPrepR16 v r),
+  Spec.Gcm.openToPreparedApi.artifact X86_64.target (openToPrepR16 v r),
+  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptPrepR16 v),
+  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptPrepR16 v),
+  Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target (sealGatherPrepR16 v r)]
 
 /-- The artifacts of a variant: its prepared ones, for what its loops read:
 16 prepared powers (`r16`), 48 (`stitchR`), or the key context alone. -/
