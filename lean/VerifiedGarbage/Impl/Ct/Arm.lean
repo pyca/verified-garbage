@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-! Bytewise comparison, saving the one callee-saved scratch register. -/
 
@@ -25,3 +26,13 @@ def body : Prog isa :=
 
 def eq : Prog isa := .frame (.push [.r4]) body (.pop .r4 4)
 end VG.Impl.Ct.Arm
+
+namespace VG.Impl.Ct.Arm.Fn
+open VG.Arm
+
+/-- `vg_ct_eq` as emitted: `eq`, then its cleanup (`Impl/Residue/Arm.lean`):
+the 8 bytes below the stack pointer, where its frame saved `r4`, zeroed, and
+the registers a callee may change, but its 32-bit result, set to constants. -/
+def eq : Prog isa := VG.Impl.Residue.Arm.scrubF 32 8 VG.Impl.Ct.Arm.eq
+
+end VG.Impl.Ct.Arm.Fn
