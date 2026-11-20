@@ -1416,6 +1416,9 @@ structure BlocksImpl where
   encSide : X86_64.Scrub.calleeSide enc.code level.level 0 = true
   decSide : X86_64.Scrub.calleeSide dec.code level.level 0 = true
   expandSide : X86_64.Scrub.calleeSide expand.code level.level 0 = true
+  /-- The bytes of `scratch` `enc` and `dec` write, among those the stubs of
+  their callers' code take. -/
+  writtenOk : (encWritten = 0 ∨ encWritten = 2048) ∧ (decWritten = 224 ∨ decWritten = 2048) := by decide
   /-- The residue analysis of `vg_aes_cfb8_encrypt` over it, if the analysis
   handles it. -/
   cfb8EncRes : Option (RScrub.Analysed Spec.Cfb8.aesEncryptApi.sig 8 []

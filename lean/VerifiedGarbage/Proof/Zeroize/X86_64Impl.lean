@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 public import VerifiedGarbage.Proof.Zeroize.X86_64Avx
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
@@ -41,6 +43,11 @@ structure ZeroizeImpl where
   suffix : String
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide code level.level 0 = true := by lit_decide
 
 /-- `vg_zeroize`'s code. -/
 def ZeroizeImpl.scalar : ZeroizeImpl where
@@ -52,6 +59,7 @@ def ZeroizeImpl.scalar : ZeroizeImpl where
   xd := rfl
   suffix := ""
   features := []
+  level := .sse
 
 /-- `vg_zeroize_avx`'s code. -/
 def ZeroizeImpl.avx : ZeroizeImpl where
@@ -63,5 +71,6 @@ def ZeroizeImpl.avx : ZeroizeImpl where
   xd := rfl
   suffix := "_avx"
   features := ["avx"]
+  level := .avx
 
 end VG.Proof.Zeroize.X86_64

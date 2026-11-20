@@ -237,6 +237,24 @@ theorem verifiedScrubbedAllFill {api : Api} (r : Unscrubbed api target) (v : Vec
   have hic : tablesCall r.code r.tables = true := by rw [tablesCall, hf.inames_eq]; exact ht
   exact verifiedScrubbedAllF r v hpost (Nat.le_trans hf.depth_leH hd) hlv (mxSame_of_noLoad hmx) hic hl rfl rfl
 
+/-- `r`'s code, an implementation's alone (`calleeSide` of it at the level
+`k`, which it proves where it is defined), followed by `scrubAll v rb
+stack`, meets `r`'s contract in constant time and returns without secret
+residue. -/
+theorem verifiedScrubbedAllSide {api : Api} (r : Unscrubbed api target) (v : VecLevel) {k stack rb : Nat}
+    (hpost : PostOut r.contract (retBitsOf r)) (hs : calleeSide r.code k stack = true) (hk : k ≤ v.level)
+    (hn : r.stack = stack := by rfl) (hb : retBitsOf r = rb := by rfl) (htb : r.tables = [] := by rfl)
+    (hl : litSide stack rb = true := by decide) :
+    VerifiedScrubbed target (scrubAll v rb stack r.code) r.contract rb := by
+  subst hn hb
+  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at hs
+  obtain ⟨⟨hd, hi⟩, hn⟩ := hs
+  obtain ⟨hlv, hmx⟩ := allInstrs_level hk hi
+  have hic : tablesCall r.code r.tables = true := by
+    rw [htb]; unfold tablesCall
+    simp only [List.isEmpty_iff] at hn; simp [hn]
+  exact verifiedScrubbedAllF r v hpost hd hlv (mxSame_of_noLoad hmx) hic hl rfl rfl
+
 /-- Proves `Fill k n a b` of a function's code with a stub (`a`) and with
 implementations (`b`), from hypotheses `calleeSide c k n = true` of each
 implementation's code `c`: it walks the function's code, unfolding its
