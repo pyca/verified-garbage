@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.AesOfb.X86
 public import VerifiedGarbage.Impl.AesCfb.X86.Final
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # AES-OFB of a message's last piece: x86 (32-bit) implementation
@@ -41,3 +43,25 @@ def cryptFinal (b : Blocks) (sfx : String) : Prog isa :=
   Impl.AesCfb.X86.final ("vg_aes_ofb" ++ sfx ++ "_core") (crypt b) b
 
 end VG.Impl.AesOfb.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.AesOfb.X86.Fn
+
+open VG.X86
+open VG.Impl.Aes.X86 (Blocks)
+open Impl.StackScratch.X86 (withStackScratchWiped)
+
+/-- `vg_aes_ofb` over the block function `b`, as emitted. -/
+def crypt (b : Blocks) : Prog isa := Impl.Scrub.X86.scrubF 0 24 (Impl.AesOfb.X86.crypt b)
+
+/-- `vg_aes_ofb_final` over `b`, of the variant `sfx`, as emitted. -/
+def cryptFinal (b : Blocks) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 100 (withStackScratchWiped 48 6 4 (Impl.AesOfb.X86.cryptFinal b sfx))
+
+end VG.Impl.AesOfb.X86.Fn
