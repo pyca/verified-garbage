@@ -1,15 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Impl.EcKey.P384.ArmFn
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.EcKey.Arm.P384.Comb
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P384
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P384Decompress
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.CombLit
 import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
-meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Impl.EcKey.P384.ArmFn
 meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Proof.EcKey.Arm.P384.Comb
 meta import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P384
@@ -18,14 +18,15 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.CombLit
 meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
-# P-384 public keys on ARMv7, without secret residue
+# P-384 public keys on 32-bit ARM, without secret residue
 
 `vg_ec_p384_public_key`, `_compress_public_key` and
 `_decompress_public_key`, with and without `umaal`, have no frames: they keep
 the registers they save in their scratch buffer, and the field functions they
-call do too. Each is registered scrubbed (`Arm.Scrub.scrubReg`): followed by
-instructions that set the registers a callee may change, but the result, and
-the flags to constants.
+call do too (`Code.noFrames`, evaluated by `lit_decide` on their literals).
+Each is emitted with its cleanup (`Impl.EcKey.Arm.Fn`), and `Fn` below has the
+theorem of each, that it meets its contract and returns without secret residue
+(`Arm.Scrub.verifiedScrubbed`), which is what its registration binds.
 -/
 
 @[expose] public section
@@ -33,58 +34,77 @@ the flags to constants.
 namespace VG.Proof.EcKey.Arm.P384.Scrub
 
 open VG VG.Arm
-open VG.Proof.Weierstrass (Law)
 
 theorem publicKey_noFrames : Impl.Ecdsa.Arm.publicKeyP384Comb.noFrames = true := by lit_decide
+
 theorem publicKeyU_noFrames : Impl.Ecdsa.Arm.publicKeyP384CombU.noFrames = true := by lit_decide
+
 theorem compress_noFrames : Proof.EcKey.Compressed.Arm.P384.code.noFrames = true := by lit_decide
+
 theorem compressU_noFrames : Proof.EcKey.Compressed.Arm.P384.codeU.noFrames = true := by lit_decide
+
 theorem decompress_noFrames : Proof.EcKey.Compressed.Arm.P384Decompress.code.noFrames = true := by lit_decide
+
 theorem decompressU_noFrames : Proof.EcKey.Compressed.Arm.P384Decompress.codeU.noFrames = true := by lit_decide
 
-/-- `Spec.EcKey.P384.publicKeyApi`. -/
-def publicKeyReg (hL : Law Spec.P384.curve) : Registration Spec.EcKey.P384.publicKeyApi target :=
-  Arm.Scrub.scrubReg {
-      code := Impl.Ecdsa.Arm.publicKeyP384Comb
-      verified := Proof.EcKey.Arm.P384.combPk_verified hL }
-    publicKey_noFrames
-
-/-- `Spec.EcKey.P384.publicKeyApi` with `umaal`. -/
-def publicKeyUReg (hL : Law Spec.P384.curve) : Registration Spec.EcKey.P384.publicKeyApi target :=
-  Arm.Scrub.scrubReg {
-      suffix := "_umaal"
-      code := Impl.Ecdsa.Arm.publicKeyP384CombU
-      verified := Proof.EcKey.Arm.P384.combPkU_verified hL }
-    publicKeyU_noFrames
-
-/-- `Spec.EcKey.P384.inst.compressPublicKeyApi`. -/
-def compressReg : Registration Spec.EcKey.P384.inst.compressPublicKeyApi target :=
-  Arm.Scrub.scrubReg {
-      code := Proof.EcKey.Compressed.Arm.P384.code
-      verified := Proof.EcKey.Compressed.Arm.P384.verified }
-    compress_noFrames
-
-/-- `Spec.EcKey.P384.inst.compressPublicKeyApi` with `umaal`. -/
-def compressUReg : Registration Spec.EcKey.P384.inst.compressPublicKeyApi target :=
-  Arm.Scrub.scrubReg {
-      suffix := "_umaal"
-      code := Proof.EcKey.Compressed.Arm.P384.codeU
-      verified := Proof.EcKey.Compressed.Arm.P384.verifiedU }
-    compressU_noFrames
-
-/-- `Spec.EcKey.P384.inst.decompressPublicKeyApi`. -/
-def decompressReg (hL : Law Spec.P384.curve) : Registration Spec.EcKey.P384.inst.decompressPublicKeyApi target :=
-  Arm.Scrub.scrubReg {
-      code := Proof.EcKey.Compressed.Arm.P384Decompress.code
-      verified := Proof.EcKey.Compressed.Arm.P384Decompress.verified hL }
-    decompress_noFrames
-
-/-- `Spec.EcKey.P384.inst.decompressPublicKeyApi` with `umaal`. -/
-def decompressUReg (hL : Law Spec.P384.curve) : Registration Spec.EcKey.P384.inst.decompressPublicKeyApi target :=
-  Arm.Scrub.scrubReg {
-      suffix := "_umaal"
-      code := Proof.EcKey.Compressed.Arm.P384Decompress.codeU
-      verified := Proof.EcKey.Compressed.Arm.P384Decompress.verifiedU hL }
-    decompressU_noFrames
-
 end VG.Proof.EcKey.Arm.P384.Scrub
+
+namespace VG.Proof.EcKey.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_ec_p384_public_key`, given the group law. -/
+theorem publicKeyP384 (hL : Proof.Weierstrass.Law Spec.P384.curve) :
+    VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyP384
+      Proof.EcKey.Arm.P384.combPkSpec 32 :=
+  verifiedScrubbed (api := Spec.EcKey.P384.publicKeyApi)
+    { code := Impl.Ecdsa.Arm.publicKeyP384Comb
+      verified := Proof.EcKey.Arm.P384.combPk_verified hL }
+    P384.Scrub.publicKey_noFrames
+
+/-- `vg_ec_p384_public_key_umaal`, given the group law. -/
+theorem publicKeyP384U (hL : Proof.Weierstrass.Law Spec.P384.curve) :
+    VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyP384U
+      Proof.EcKey.Arm.P384.combPkSpec 32 :=
+  verifiedScrubbed (api := Spec.EcKey.P384.publicKeyApi)
+    { code := Impl.Ecdsa.Arm.publicKeyP384CombU
+      verified := Proof.EcKey.Arm.P384.combPkU_verified hL }
+    P384.Scrub.publicKeyU_noFrames
+
+/-- `vg_ec_p384_compress_public_key`. -/
+theorem compressP384 :
+    VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressP384
+      (Spec.EcKey.P384.inst.compressPublicKeyContract abi 0) 32 :=
+  verifiedScrubbed (api := Spec.EcKey.P384.inst.compressPublicKeyApi)
+    { code := Proof.EcKey.Compressed.Arm.P384.code
+      verified := Proof.EcKey.Compressed.Arm.P384.verified }
+    P384.Scrub.compress_noFrames
+
+/-- `vg_ec_p384_compress_public_key_umaal`. -/
+theorem compressP384U :
+    VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressP384U
+      (Spec.EcKey.P384.inst.compressPublicKeyContract abi 0) 32 :=
+  verifiedScrubbed (api := Spec.EcKey.P384.inst.compressPublicKeyApi)
+    { code := Proof.EcKey.Compressed.Arm.P384.codeU
+      verified := Proof.EcKey.Compressed.Arm.P384.verifiedU }
+    P384.Scrub.compressU_noFrames
+
+/-- `vg_ec_p384_decompress_public_key`, given the group law. -/
+theorem decompressP384 (hL : Proof.Weierstrass.Law Spec.P384.curve) :
+    VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressP384
+      (Spec.EcKey.P384.inst.decompressPublicKeyContract abi 0) 32 :=
+  verifiedScrubbed (api := Spec.EcKey.P384.inst.decompressPublicKeyApi)
+    { code := Proof.EcKey.Compressed.Arm.P384Decompress.code
+      verified := Proof.EcKey.Compressed.Arm.P384Decompress.verified hL }
+    P384.Scrub.decompress_noFrames
+
+/-- `vg_ec_p384_decompress_public_key_umaal`, given the group law. -/
+theorem decompressP384U (hL : Proof.Weierstrass.Law Spec.P384.curve) :
+    VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressP384U
+      (Spec.EcKey.P384.inst.decompressPublicKeyContract abi 0) 32 :=
+  verifiedScrubbed (api := Spec.EcKey.P384.inst.decompressPublicKeyApi)
+    { code := Proof.EcKey.Compressed.Arm.P384Decompress.codeU
+      verified := Proof.EcKey.Compressed.Arm.P384Decompress.verifiedU hL }
+    P384.Scrub.decompressU_noFrames
+
+end VG.Proof.EcKey.Arm.Fn

@@ -26,12 +26,14 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Impl.AesGcmSiv.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Gcm.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Impl.AesGcmSiv.Arm.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Aes.ScrubLocal
 meta import VerifiedGarbage.Proof.Framework.Lit
@@ -998,12 +1000,14 @@ end VG.Proof.AesGcmSiv.Arm
 a frame within the stack their contracts reserve and make no indirect call
 (evaluated by `lit_decide`), and their postconditions read the memory on
 return only within their buffers (`Arm.Scrub.PostOut`, as on PPC64LE,
-`Proof/AesGcmSiv/PPC64LE/Scrub.lean`). Each is registered followed by a wipe
+`Proof/AesGcmSiv/PPC64LE/Scrub.lean`). Each is emitted followed by a wipe
 of that stack and by instructions that set the registers a callee may
-change, but the result, and the flags to constants (`Arm.Scrub.scrubRegF`).
+change, but the result, and the flags to constants (`Impl.AesGcmSiv.Arm.Fn`), and `Fn` below states
+that it returns without secret residue (`Arm.Scrub.verifiedScrubbedF`), which
+is what its registration binds.
 
 That stack is a frame of the model (`Arm.Scrub.FrameOk`): the 3800 bytes
-their proofs are stated with are not, and they are registered with 3808
+their proofs are stated with are not, and they are stated with 3808
 (`Arm.Scrub.Verified.stack_le`), whose preconditions the same states as
 before satisfy.
 -/
@@ -1072,36 +1076,34 @@ theorem openSat : ∃ s, (Proof.AesGcmSiv.openRoundsContract Arm.abi 3808).pre s
 /-! ## The code: its frames, and no indirect call -/
 
 theorem seal_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 3792 4 «seal») ≤ 3808 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 3792 4 «seal») = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 3792 4 «seal») 3808 := by
   lit_decide
 
 theorem open_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 3792 4 «open») ≤ 3808 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 3792 4 «open») = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 3792 4 «open») 3808 := by
   lit_decide
 
-/-! ## The registrations
+end VG.Proof.AesGcmSiv.Arm.Scrub
 
-Over the law of `vg_ghash` (`Gcm.Arm.GhashLaw`), which the registration file
-gives, so that this module does not import its algebra. -/
+namespace VG.Proof.AesGcmSiv.Arm.Fn
 
-variable [VG.Proof.Gcm.Arm.GhashLaw]
+open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Aes.ScrubLocal VG.Impl.AesGcmSiv.Arm
+
 
 /-- `vg_aes_gcm_siv_seal`. -/
-def sealReg : Registration Spec.GcmSiv.sealApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 3792 4 «seal»
+theorem «seal» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcmSiv.Arm.Fn.«seal» (Spec.GcmSiv.sealContract abi 3808) 0 :=
+  verifiedScrubbedF (api := Spec.GcmSiv.sealApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«seal»
       verified := Proof.AesGcmSiv.seal_keyed (Verified.stack_le (by decide) Proof.AesGcmSiv.Arm.seal_framed
-        sealSat : Verified Arm.target _ (Proof.AesGcmSiv.sealRoundsContract Arm.abi 3808)) }
-    seal_code.1 seal_code.2 frameOk_3808 (sealOut _) rfl
+        Scrub.sealSat : Verified Arm.target _ (Proof.AesGcmSiv.sealRoundsContract Arm.abi 3808)) }
+    (Scrub.sealOut _) (scrubSideF_of Scrub.seal_code Scrub.frameOk_3808 _)
 
 /-- `vg_aes_gcm_siv_open`. -/
-def openReg : Registration Spec.GcmSiv.openApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 3792 4 «open»
+theorem «open» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcmSiv.Arm.Fn.«open» (Spec.GcmSiv.openContract abi 3808) 32 :=
+  verifiedScrubbedF (api := Spec.GcmSiv.openApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«open»
       verified := Proof.AesGcmSiv.open_keyed (Verified.stack_le (by decide) Proof.AesGcmSiv.Arm.open_framed
-        openSat : Verified Arm.target _ (Proof.AesGcmSiv.openRoundsContract Arm.abi 3808)) }
-    open_code.1 open_code.2 frameOk_3808 (openOut _) rfl
+        Scrub.openSat : Verified Arm.target _ (Proof.AesGcmSiv.openRoundsContract Arm.abi 3808)) }
+    (Scrub.openOut _) (scrubSideF_of Scrub.open_code Scrub.frameOk_3808 _)
 
-end VG.Proof.AesGcmSiv.Arm.Scrub
+end VG.Proof.AesGcmSiv.Arm.Fn

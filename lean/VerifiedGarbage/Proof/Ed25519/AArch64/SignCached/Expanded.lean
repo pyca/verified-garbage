@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Scrub
 public import VerifiedGarbage.Spec.Ed25519.ExpandedSign
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Prune
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
@@ -1323,5 +1325,43 @@ theorem signExpanded_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whol
   Verified.of_implies
     (Verified.of_correct (fun _ h => signE_ok v h) (signE_ct v) (.refl signE_implies.sat_left))
     signE_implies
+
+/-! ## The function, as emitted
+
+`vg_ed25519_sign_expanded` over `v` with its cleanup (`Impl.Ed25519.AArch64.SignCached.Fn.signExpanded`): it meets its contract in
+constant time and returns without secret residue (`VerifiedScrubbed`), which
+is what its registration binds. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is proved of the function's own instructions here,
+once, with code that does nothing in the place of the compression function,
+and of each compression function where it is defined (`Compress.scrub`). -/
+
+open VG.AArch64.ScrubAll in
+private theorem signExpanded_all {p : Instr → Bool} (c : Prog isa) (sfx : String)
+    (h0 : sideAll p (Impl.Ed25519.AArch64.SignCached.codeExpanded (.block []) "") = true) (hc : sideAll p c = true) :
+    sideAll p (Impl.Ed25519.AArch64.SignCached.codeExpanded c sfx) = true := by
+  simp only [Impl.Ed25519.AArch64.SignCached.codeExpanded, Impl.Ed25519.AArch64.SignCached.bodyFrom, Impl.Ed25519.AArch64.SignCached.nonceCode, Impl.Ed25519.AArch64.SignCached.challengeCode, Impl.Ed25519.AArch64.SignCached.hashNonce, Impl.Ed25519.AArch64.SignCached.hashChallenge, Impl.Ed25519.AArch64.SignCached.update, Impl.Ed25519.AArch64.SignCached.finalize, Impl.Ed25519.AArch64.Whole.wrap, Impl.Ed25519.AArch64.Whole.callWith, Impl.Sha512.AArch64.Stream.updateWith, Impl.Sha512.AArch64.Stream.finalizeWith, Impl.MdStream.AArch64.update, Impl.MdStream.AArch64.updateMain, Impl.MdStream.AArch64.updateBody, Impl.MdStream.AArch64.compressN, Impl.MdStream.AArch64.compressWith, Impl.MdStream.AArch64.finalize, Impl.MdStream.AArch64.finalizeMain, Impl.MdStream.AArch64.finalizeBody, Impl.MdStream.AArch64.compressAt, sideAll, Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+open VG.AArch64.ScrubAll in
+private theorem signExpanded_own : calleeSide (Impl.Ed25519.AArch64.SignCached.codeExpanded (.block []) "") Impl.Ed25519.AArch64.SignCached.Fn.signExpandedOwn = true := by
+  kernel_rfl
+
+private theorem signExpanded_depth (v : Whole.Backend) : 16 * (Impl.Ed25519.AArch64.SignCached.codeExpanded v.code v.suffix).aarch64Depth ≤ 352 := by
+  simp only [Impl.Ed25519.AArch64.SignCached.codeExpanded, Impl.Ed25519.AArch64.SignCached.bodyFrom, Impl.Ed25519.AArch64.SignCached.nonceCode, Impl.Ed25519.AArch64.SignCached.challengeCode, Impl.Ed25519.AArch64.SignCached.hashNonce, Impl.Ed25519.AArch64.SignCached.hashChallenge, Impl.Ed25519.AArch64.SignCached.update, Impl.Ed25519.AArch64.SignCached.finalize, Impl.Ed25519.AArch64.Whole.wrap, Impl.Ed25519.AArch64.Whole.callWith, Impl.Sha512.AArch64.Stream.updateWith, Impl.Sha512.AArch64.Stream.finalizeWith, Impl.MdStream.AArch64.update, Impl.MdStream.AArch64.finalize, Code.aarch64Depth, Instr.frameUnits, v.updateDepth, v.finalizeDepth]
+  decide
+
+open VG.AArch64.ScrubAll in
+theorem signExpanded_side (v : Whole.Backend) :
+    scrubSide (Impl.Ed25519.AArch64.SignCached.codeExpanded v.code v.suffix) 352 0 (Impl.Ed25519.AArch64.SignCached.Fn.signExpandedOwn.union v.clear) [] = true :=
+  scrubSide_union (by decide) (signExpanded_depth v) (by decide)
+    (signExpanded_all v.code v.suffix (sideAll_union_left signExpanded_own) (sideAll_union_right v.scrub)) (by decide)
+
+/-- `vg_ed25519_sign_expanded` over `v` as emitted, cleanup included. -/
+theorem signExpanded_scrubbed [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) :
+    VerifiedScrubbed AArch64.target (Impl.Ed25519.AArch64.SignCached.Fn.signExpanded v.impl) (Spec.Ed25519.signExpandedContract (AArch64.abi.withConsts combConsts) 352) 0 :=
+  VG.AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ed25519.signExpandedApi)
+    { suffix := v.suffix
+      code := Impl.Ed25519.AArch64.SignCached.codeExpanded v.code v.suffix
+      verified := signExpanded_verified v } _ Proof.Ed25519.AArch64.Scrub.signExpandedOk (signExpanded_side v)
 
 end VG.Proof.Ed25519.AArch64.SignCached

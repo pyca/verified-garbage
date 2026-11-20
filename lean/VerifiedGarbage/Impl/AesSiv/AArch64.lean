@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # AES-SIV: AArch64 implementation
@@ -464,5 +466,57 @@ def openTail (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog
 
 def decrypt (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (encS2v u c sfx) (.seq (.block sivIn) (openTail u c sfx))
+
+/-! ## The functions, as emitted
+
+Each function is its code with its working space in a frame on the stack,
+sized to what the functions it calls need, then its cleanup
+(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+convention does not preserve are cleared, but the bits of its result, and
+that stack is zeroed, so that it returns without secret residue. The
+registers are those its own instructions write, stated here, and those the
+functions it calls write (`ecl`, `ccl`, `ucl`). -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (Clear scrubAll)
+
+/-- The registers `vg_aes_siv_init`'s own instructions write. -/
+def initOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x12, .x16, .x17], [], []⟩
+
+/-- The working space of `vg_aes_siv_init` over an implementation that needs
+`scratch` bytes: the 512 bytes of the key expansion, or what
+`vg_cmac_aes_subkeys` needs (`128 + scratch`), if more. -/
+def initWork (scratch : Nat) : Nat := if scratch = 0 then 512 else 2176
+
+/-- `vg_aes_siv_init`. -/
+def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
+  scrubAll (48 + initWork c.scratch) 0 ((initOwn.union e.clear).union c.clear)
+    (Impl.StackScratch.AArch64.withStackScratch (48 + initWork c.scratch) .x3 (AesSiv.AArch64.init e c sfx))
+
+/-- The registers the own instructions of `vg_aes_siv_encrypt` and of
+`vg_aes_siv_decrypt` write. -/
+def cryptOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x16, .x17], [], []⟩
+
+/-- The working space of the functions `vg_aes_siv_encrypt` and
+`vg_aes_siv_decrypt` call, over implementations that need `uScratch` and
+`cScratch` bytes: `vg_cmac_aes_finalize`'s 128 bytes if neither needs any,
+else 2176. -/
+def cryptWork (uScratch cScratch : Nat) : Nat := if uScratch = 0 ∧ cScratch = 0 then 128 else 2176
+
+/-- `vg_aes_siv_encrypt`. -/
+def encrypt (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
+  scrubAll (272 + cryptWork u.scratch c.scratch) 0 ((cryptOwn.union u.clear).union c.clear)
+    (Impl.StackScratch.AArch64.withStackScratch (272 + cryptWork u.scratch c.scratch) .x7
+      (AesSiv.AArch64.encrypt u c sfx))
+
+/-- `vg_aes_siv_decrypt`; its result is 32 bits. -/
+def decrypt (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
+  scrubAll (272 + cryptWork u.scratch c.scratch) 32 ((cryptOwn.union u.clear).union c.clear)
+    (Impl.StackScratch.AArch64.withStackScratch (272 + cryptWork u.scratch c.scratch) .x7
+      (AesSiv.AArch64.decrypt u c sfx))
+
+end Fn
 
 end VG.Impl.AesSiv.AArch64

@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 
 
 @[expose] public section
@@ -10,4 +10,12 @@ open VG.AArch64
 structure Update where
   name : String
   code : Prog isa
+  /-- The registers its code writes, of those the calling convention does not
+  preserve: what a function that calls it clears for it before returning,
+  with those its own instructions write (`Impl.Residue.AArch64.Clear.union`).
+  The proofs hold it to the code (`Proof.CmacAes.AArch64.UpdateImpl.scrub`). -/
+  clear : Impl.Residue.AArch64.Clear
+  /-- The bytes of working space it needs, none or 2176: a function that calls
+  it has only these in its frame (`Proof.CmacAes.AArch64.UpdateImpl.scratch_eq`). -/
+  scratch : Nat
 end VG.Impl.CmacAes.AArch64

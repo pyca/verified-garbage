@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
+public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
 
 /-!
 # XTS-AES on AArch64 in one pass, with the Cryptographic Extension
@@ -133,5 +134,14 @@ def crypt (setup : List Instr) (f : List VReg → Prog isa) : Prog isa :=
 def encrypt : Prog isa := crypt Aes.AArch64.Aese.encSetup Aes.AArch64.Aese.aes
 
 def decrypt : Prog isa := crypt Aes.AArch64.Aese.decSetup Aes.AArch64.Aese.aesDec
+
+/-- The registers `encrypt` and `decrypt` write, of those the calling
+convention does not preserve: what a function that calls them clears for
+them. -/
+def clear : Impl.Residue.AArch64.Clear :=
+  ⟨[.x2, .x3, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
+    .v26, .v27, .v28, .v29, .v30, .v31],
+   []⟩
 
 end VG.Impl.AesXts.AArch64Aes

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.PcValid
 public import VerifiedGarbage.Impl.Bignum.Arm.R2Normalized
 import VerifiedGarbage.Proof.Bignum.Arm.R2PublicCT
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ### `Bignum.Arm.PublicPrecomputeNormalized`, which only this module used -/
 
@@ -53,14 +54,17 @@ def variant : Proof.Rsa.Arm.CrtImpl where
   crtP := CrtFn.codeGiven baselineWindowKernel.code
   crtPVerified := crt_verifiedP
   crtPStack := by decide +kernel
+  crtPNoIcall := by lit_decide
   pcName := Spec.Rsa.publicPrecomputeApi.name
   pc := PcFn.codeWith normalizedPublicPrecomputeKernel.code
   pcVerified := precompute_verified (kernel := normalizedPublicPrecomputeKernel)
   pcStack := by decide +kernel
+  pcNoIcall := by lit_decide
   pdName := "vg_rsa_public_precomputed_checked"
   pd := PdFn.code
   pdVerified := pd_verified
   pdStack := by decide +kernel
+  pdNoIcall := by lit_decide
   suffix := ""
   features := []
 

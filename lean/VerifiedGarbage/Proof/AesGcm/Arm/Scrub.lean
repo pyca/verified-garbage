@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Impl.AesGcm.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesGcm.Arm.Frame
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
@@ -10,7 +11,8 @@ import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Gcm.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Impl.AesGcm.Arm.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Frame
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
@@ -29,13 +31,15 @@ within the stack its contract reserves and makes no indirect call (evaluated
 by `lit_decide`), and its postcondition reads the memory on return only
 within its buffers (`Arm.Scrub.PostOut`, from the lemmas of
 `Proof/AesGcm/Scratch.lean` and as on PPC64LE, `Proof/AesGcm/PPC64LE/Scrub.lean`).
-Each is registered followed by a wipe of that stack and by instructions that
+Each is emitted followed by a wipe of that stack and by instructions that
 set the registers a callee may change, but the result, and the flags to
-constants (`Arm.Scrub.scrubRegF`).
+constants (`Impl.AesGcm.Arm.Fn`), and `Fn` below states
+that it returns without secret residue (`Arm.Scrub.verifiedScrubbedF`), which
+is what its registration binds.
 
 That stack is a frame of the model (`Arm.Scrub.FrameOk`): where the number
 of bytes a proof is stated with is not one (2568, 2584, 2600, 2620), the
-function is registered with the next that is (2576, 2592, 2608, 2624;
+function is stated with the next that is (2576, 2592, 2608, 2624;
 `Arm.Scrub.Verified.stack_le`), whose precondition the same state as before
 satisfies.
 
@@ -285,153 +289,143 @@ def sealFnEntry [VG.Proof.Gcm.Arm.GhashLaw] : Gather.SealFn :=
   ⟨Spec.Gcm.sealApi.name ++ "_entry", Gather.sealFn.code, Gather.sealFn.verified, Gather.sealFn.depth⟩
 
 theorem init_code :
-    armStack (Impl.StackScratch.Arm.withRegScratch 2560 .r3 init) ≤ 2576 ∧
-      noIcall (Impl.StackScratch.Arm.withRegScratch 2560 .r3 init) = true := by
+    CodeOk (Impl.StackScratch.Arm.withRegScratch 2560 .r3 init) 2576 := by
   lit_decide
 
 theorem streamInit_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2576 0 streamInit) ≤ 2592 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2576 0 streamInit) = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2576 0 streamInit) 2592 := by
   lit_decide
 
 theorem streamAad_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2576 2 streamAad) ≤ 2592 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2576 2 streamAad) = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2576 2 streamAad) 2592 := by
   lit_decide
 
 theorem streamEncrypt_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2592 6 streamEncrypt) ≤ 2608 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2592 6 streamEncrypt) = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2592 6 streamEncrypt) 2608 := by
   lit_decide
 
 theorem streamDecrypt_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2592 6 streamDecrypt) ≤ 2608 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2592 6 streamDecrypt) = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2592 6 streamDecrypt) 2608 := by
   lit_decide
 
 theorem streamFinish_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2592 5 streamFinish) ≤ 2608 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2592 5 streamFinish) = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2592 5 streamFinish) 2608 := by
   lit_decide
 
 theorem streamVerify_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2592 6 streamVerify) ≤ 2608 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2592 6 streamVerify) = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2592 6 streamVerify) 2608 := by
   lit_decide
 
 theorem seal_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2592 5 «seal») ≤ 2608 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2592 5 «seal») = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2592 5 «seal») 2608 := by
   lit_decide
 
 theorem open_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2592 6 «open») ≤ 2608 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2592 6 «open») = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2592 6 «open») 2608 := by
   lit_decide
 
 theorem sealGather_code [VG.Proof.Gcm.Arm.GhashLaw] :
-    armStack (Impl.AesGcm.Arm.SealGather.sealGather sealFnEntry.name sealFnEntry.code) ≤ 2640 ∧
-      noIcall (Impl.AesGcm.Arm.SealGather.sealGather sealFnEntry.name sealFnEntry.code) = true := by
+    CodeOk (Impl.AesGcm.Arm.SealGather.sealGather sealFnEntry.name sealFnEntry.code) 2640 := by
   simp only [sealFnEntry, Gather.sealFn]
   lit_decide
 
 theorem openTo_code :
-    armStack (Impl.StackScratch.Arm.withStackScratch 2608 8 openTo) ≤ 2624 ∧
-      noIcall (Impl.StackScratch.Arm.withStackScratch 2608 8 openTo) = true := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2608 8 openTo) 2624 := by
   lit_decide
 
-/-! ## The registrations
+end VG.Proof.AesGcm.Arm.Scrub
 
-Over the law of `vg_ghash` (`Gcm.Arm.GhashLaw`), which the registration file
-gives, so that this module does not import its algebra. -/
+namespace VG.Proof.AesGcm.Arm.Fn
 
-variable [VG.Proof.Gcm.Arm.GhashLaw]
+open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.AesGcm.Arm VG.Impl.AesGcm.Arm
+open VG.Proof.AesGcm (agree_of bytesAt_congr streamRepr_congr)
+
 
 /-- `vg_aes_gcm_init`. -/
-def initReg : Registration Spec.Gcm.initApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 init
-      verified := (Verified.stack_le (by decide) init_framed initSat :
+theorem init : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.init (Spec.Gcm.initContract abi 2576) 0 :=
+  verifiedScrubbedF (api := Spec.Gcm.initApi)
+    { code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init
+      verified := (Verified.stack_le (by decide) init_framed Scrub.initSat :
         Verified Arm.target _ (Spec.Gcm.initContract Arm.abi 2576)) }
-    init_code.1 init_code.2 frameOk_2576 (initOut _) rfl
+    (Scrub.initOut _) (scrubSideF_of Scrub.init_code Scrub.frameOk_2576 _)
 
 /-- `vg_aes_gcm_stream_init`. -/
-def streamInitReg : Registration Spec.Gcm.streamInitApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2576 0 streamInit
-      verified := (Verified.stack_le (by decide) streamInit_framed streamInitSat :
+theorem streamInit [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamInit (Spec.Gcm.streamInitContract abi 2592) 0 :=
+  verifiedScrubbedF (api := Spec.Gcm.streamInitApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2576 0 Impl.AesGcm.Arm.streamInit
+      verified := (Verified.stack_le (by decide) streamInit_framed Scrub.streamInitSat :
         Verified Arm.target _ (Spec.Gcm.streamInitContract Arm.abi 2592)) }
-    streamInit_code.1 streamInit_code.2 frameOk_2592 (streamInitOut _) rfl
+    (Scrub.streamInitOut _) (scrubSideF_of Scrub.streamInit_code Scrub.frameOk_2592 _)
 
 /-- `vg_aes_gcm_stream_aad`. -/
-def streamAadReg : Registration Spec.Gcm.streamAadApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2576 2 streamAad
-      verified := (Verified.stack_le (by decide) streamAad_framed streamAadSat :
+theorem streamAad [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamAad (Spec.Gcm.streamAadContract abi 2592) 0 :=
+  verifiedScrubbedF (api := Spec.Gcm.streamAadApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2576 2 Impl.AesGcm.Arm.streamAad
+      verified := (Verified.stack_le (by decide) streamAad_framed Scrub.streamAadSat :
         Verified Arm.target _ (Spec.Gcm.streamAadContract Arm.abi 2592)) }
-    streamAad_code.1 streamAad_code.2 frameOk_2592 (streamAadOut _) rfl
+    (Scrub.streamAadOut _) (scrubSideF_of Scrub.streamAad_code Scrub.frameOk_2592 _)
 
 /-- `vg_aes_gcm_stream_encrypt`. -/
-def streamEncryptReg : Registration Spec.Gcm.streamEncryptApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2592 6 streamEncrypt
+theorem streamEncrypt [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamEncrypt (Spec.Gcm.streamEncryptContract abi 2608) 0 :=
+  verifiedScrubbedF (api := Spec.Gcm.streamEncryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamEncrypt
       verified := Proof.AesGcm.streamEncrypt_keyed (Verified.stack_le (by decide) streamEncrypt_framed
-        streamEncryptSat : Verified Arm.target _ (Proof.AesGcm.streamEncryptRoundsContract Arm.abi 2608)) }
-    streamEncrypt_code.1 streamEncrypt_code.2 frameOk_2608 (streamEncryptOut _) rfl
+        Scrub.streamEncryptSat : Verified Arm.target _ (Proof.AesGcm.streamEncryptRoundsContract Arm.abi 2608)) }
+    (Scrub.streamEncryptOut _) (scrubSideF_of Scrub.streamEncrypt_code Scrub.frameOk_2608 _)
 
 /-- `vg_aes_gcm_stream_decrypt`. -/
-def streamDecryptReg : Registration Spec.Gcm.streamDecryptApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2592 6 streamDecrypt
+theorem streamDecrypt [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamDecrypt (Spec.Gcm.streamDecryptContract abi 2608) 0 :=
+  verifiedScrubbedF (api := Spec.Gcm.streamDecryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamDecrypt
       verified := Proof.AesGcm.streamDecrypt_keyed (Verified.stack_le (by decide) streamDecrypt_framed
-        streamDecryptSat : Verified Arm.target _ (Proof.AesGcm.streamDecryptRoundsContract Arm.abi 2608)) }
-    streamDecrypt_code.1 streamDecrypt_code.2 frameOk_2608 (streamDecryptOut _) rfl
+        Scrub.streamDecryptSat : Verified Arm.target _ (Proof.AesGcm.streamDecryptRoundsContract Arm.abi 2608)) }
+    (Scrub.streamDecryptOut _) (scrubSideF_of Scrub.streamDecrypt_code Scrub.frameOk_2608 _)
 
 /-- `vg_aes_gcm_stream_finish`. -/
-def streamFinishReg : Registration Spec.Gcm.streamFinishApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2592 5 streamFinish
+theorem streamFinish [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamFinish (Spec.Gcm.streamFinishContract abi 2608) 0 :=
+  verifiedScrubbedF (api := Spec.Gcm.streamFinishApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.streamFinish
       verified := Proof.AesGcm.streamFinish_keyed (Verified.stack_le (by decide) streamFinish_framed
-        streamFinishSat : Verified Arm.target _ (Proof.AesGcm.streamFinishRoundsContract Arm.abi 2608)) }
-    streamFinish_code.1 streamFinish_code.2 frameOk_2608 (streamFinishOut _) rfl
+        Scrub.streamFinishSat : Verified Arm.target _ (Proof.AesGcm.streamFinishRoundsContract Arm.abi 2608)) }
+    (Scrub.streamFinishOut _) (scrubSideF_of Scrub.streamFinish_code Scrub.frameOk_2608 _)
 
 /-- `vg_aes_gcm_stream_verify`. -/
-def streamVerifyReg : Registration Spec.Gcm.streamVerifyApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2592 6 streamVerify
+theorem streamVerify [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.streamVerify (Spec.Gcm.streamVerifyContract abi 2608) 32 :=
+  verifiedScrubbedF (api := Spec.Gcm.streamVerifyApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamVerify
       verified := Proof.AesGcm.streamVerify_keyed (Verified.stack_le (by decide) streamVerify_framed
-        streamVerifySat : Verified Arm.target _ (Proof.AesGcm.streamVerifyRoundsContract Arm.abi 2608)) }
-    streamVerify_code.1 streamVerify_code.2 frameOk_2608 (streamVerifyOut _) rfl
+        Scrub.streamVerifySat : Verified Arm.target _ (Proof.AesGcm.streamVerifyRoundsContract Arm.abi 2608)) }
+    (Scrub.streamVerifyOut _) (scrubSideF_of Scrub.streamVerify_code Scrub.frameOk_2608 _)
 
 /-- `vg_aes_gcm_seal`. -/
-def sealReg : Registration Spec.Gcm.sealApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2592 5 «seal»
+theorem «seal» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.«seal» (Spec.Gcm.sealContract abi 2608) 0 :=
+  verifiedScrubbedF (api := Spec.Gcm.sealApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.«seal»
       verified := Proof.AesGcm.seal_keyed (Verified.stack_le (by decide) seal_framed
-        sealSat : Verified Arm.target _ (Proof.AesGcm.sealRoundsContract Arm.abi 2608)) }
-    seal_code.1 seal_code.2 frameOk_2608 (sealOut _) rfl
+        Scrub.sealSat : Verified Arm.target _ (Proof.AesGcm.sealRoundsContract Arm.abi 2608)) }
+    (Scrub.sealOut _) (scrubSideF_of Scrub.seal_code Scrub.frameOk_2608 _)
 
 /-- `vg_aes_gcm_open`. -/
-def openReg : Registration Spec.Gcm.openApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2592 6 «open»
+theorem «open» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.«open» (Spec.Gcm.openContract abi 2608) 32 :=
+  verifiedScrubbedF (api := Spec.Gcm.openApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.«open»
       verified := Proof.AesGcm.open_keyed (Verified.stack_le (by decide) open_framed
-        openSat : Verified Arm.target _ (Proof.AesGcm.openRoundsContract Arm.abi 2608)) }
-    open_code.1 open_code.2 frameOk_2608 (openOut _) rfl
+        Scrub.openSat : Verified Arm.target _ (Proof.AesGcm.openRoundsContract Arm.abi 2608)) }
+    (Scrub.openOut _) (scrubSideF_of Scrub.open_code Scrub.frameOk_2608 _)
 
 /-- `vg_aes_gcm_seal_gather`. -/
-def sealGatherReg : Registration Spec.Gcm.sealGatherApi Arm.target :=
-  scrubRegF {
-      code := Impl.AesGcm.Arm.SealGather.sealGather sealFnEntry.name sealFnEntry.code
-      verified := Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified sealFnEntry) }
-    sealGather_code.1 sealGather_code.2 frameOk_2640 (sealGatherOut _) rfl
+theorem sealGather [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.sealGather (Spec.Gcm.sealGatherContract abi 2640) 0 :=
+  verifiedScrubbedF (api := Spec.Gcm.sealGatherApi)
+    { code := Impl.AesGcm.Arm.SealGather.sealGather Scrub.sealFnEntry.name Scrub.sealFnEntry.code
+      verified := Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified Scrub.sealFnEntry) }
+    (Scrub.sealGatherOut _) (scrubSideF_of Scrub.sealGather_code Scrub.frameOk_2640 _)
 
 /-- `vg_aes_gcm_open_to`. -/
-def openToReg : Registration Spec.Gcm.openToApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch 2608 8 openTo
+theorem openTo [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcm.Arm.Fn.openTo (Spec.Gcm.openToContract abi 2624) 32 :=
+  verifiedScrubbedF (api := Spec.Gcm.openToApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2608 8 Impl.AesGcm.Arm.openTo
       verified := Proof.AesGcm.openTo_keyed (Verified.stack_le (by decide) openTo_framed
-        openToSat : Verified Arm.target _ (Proof.AesGcm.openToRoundsContract Arm.abi 2624)) }
-    openTo_code.1 openTo_code.2 frameOk_2624 (openToOut _) rfl
+        Scrub.openToSat : Verified Arm.target _ (Proof.AesGcm.openToRoundsContract Arm.abi 2624)) }
+    (Scrub.openToOut _) (scrubSideF_of Scrub.openTo_code Scrub.frameOk_2624 _)
 
-end VG.Proof.AesGcm.Arm.Scrub
+end VG.Proof.AesGcm.Arm.Fn

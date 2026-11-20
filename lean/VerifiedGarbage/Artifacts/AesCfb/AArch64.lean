@@ -22,7 +22,7 @@ def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) => [
     Spec.Cfb.aesEncryptApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesCfb.AArch64.Fn.encrypt v.encClear v.enc
+      code := Impl.AesCfb.AArch64.Fn.encrypt v.enc
       verified := .scrubbed (Final.encrypt_scrubbed v) },
     Spec.Cfb.aesDecryptApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAllW {
       suffix := v.suffix
@@ -32,7 +32,7 @@ def artifacts : List Artifact :=
       writtenOk := Caller.written_ok v } Proof.Aes.AArch64.ModesScrub.cfbDecryptOk),
     Spec.Cfb.aesEncryptFinalApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesCfb.AArch64.Fn.encryptFinal v.encClear v.enc v.suffix
+      code := Impl.AesCfb.AArch64.Fn.encryptFinal v.enc v.suffix
       verified := .scrubbed (Final.encryptFinal_scrubbed v) },
     Spec.Cfb.aesDecryptFinalApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
       suffix := v.suffix

@@ -11,7 +11,11 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Rc4.Arm
 
 def artifacts : List Artifact := [
-  Spec.Rc4.initApi.artifact Arm.target Proof.Rc4.Arm.Scrub.initReg,
-  Spec.Rc4.applyApi.artifact Arm.target Proof.Rc4.Arm.Scrub.applyReg]
+  Spec.Rc4.initApi.artifact Arm.target {
+    code := Impl.Rc4.Arm.Fn.init
+    verified := .scrubbed Proof.Rc4.Arm.Fn.init },
+  Spec.Rc4.applyApi.artifact Arm.target {
+    code := Impl.Rc4.Arm.Fn.apply
+    verified := .scrubbed Proof.Rc4.Arm.Fn.apply }]
 
 end VG.Artifacts.Rc4.Arm

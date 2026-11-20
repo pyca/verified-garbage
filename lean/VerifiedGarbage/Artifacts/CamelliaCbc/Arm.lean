@@ -11,7 +11,11 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.CamelliaCbc.Arm
 
 def artifacts : List Artifact := [
-  Spec.Camellia.cbcEncryptChainedApi.artifact Arm.target Proof.Camellia.Arm.Scrub.cbcEncryptReg,
-  Spec.Camellia.cbcDecryptChainedApi.artifact Arm.target Proof.Camellia.Arm.Scrub.cbcDecryptReg]
+  Spec.Camellia.cbcEncryptChainedApi.artifact Arm.target {
+    code := Impl.Camellia.Arm.Fn.cbcEncrypt
+    verified := .scrubbed Proof.Camellia.Arm.Fn.cbcEncrypt },
+  Spec.Camellia.cbcDecryptChainedApi.artifact Arm.target {
+    code := Impl.Camellia.Arm.Fn.cbcDecrypt
+    verified := .scrubbed Proof.Camellia.Arm.Fn.cbcDecrypt }]
 
 end VG.Artifacts.CamelliaCbc.Arm

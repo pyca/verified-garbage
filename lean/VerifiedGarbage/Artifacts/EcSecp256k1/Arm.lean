@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.Scrub -- shake: keep (proof binding in exposed artifacts)
+public import VerifiedGarbage.Impl.EcKey.Secp256k1.ArmFn
+public import VerifiedGarbage.Proof.EcKey.Arm.Secp256k1.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Secp256k1.Arm.Law
@@ -14,11 +15,26 @@ namespace VG.Artifacts.EcSecp256k1.Arm
 open VG.Proof.Secp256k1.Arm (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact Arm.target Proof.EcKey.Arm.Secp256k1.Scrub.compressReg,
-  Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact Arm.target (Proof.EcKey.Arm.Secp256k1.Scrub.decompressReg hasLaw.law),
-  Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact Arm.target Proof.EcKey.Arm.Secp256k1.Scrub.compressUReg,
-  Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact Arm.target (Proof.EcKey.Arm.Secp256k1.Scrub.decompressUReg hasLaw.law),
-  Spec.EcKey.Secp256k1.publicKeyApi.artifact Arm.target (Proof.EcKey.Arm.Secp256k1.Scrub.publicKeyReg hasLaw.law),
-  Spec.EcKey.Secp256k1.publicKeyApi.artifact Arm.target (Proof.EcKey.Arm.Secp256k1.Scrub.publicKeyUReg hasLaw.law)]
+  Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact Arm.target {
+    code := Impl.EcKey.Arm.Fn.compressSecp256k1
+    verified := .scrubbed Proof.EcKey.Arm.Fn.compressSecp256k1 },
+  Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact Arm.target {
+    code := Impl.EcKey.Arm.Fn.decompressSecp256k1
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressSecp256k1 hasLaw.law) },
+  Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.EcKey.Arm.Fn.compressSecp256k1U
+    verified := .scrubbed Proof.EcKey.Arm.Fn.compressSecp256k1U },
+  Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.EcKey.Arm.Fn.decompressSecp256k1U
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressSecp256k1U hasLaw.law) },
+  Spec.EcKey.Secp256k1.publicKeyApi.artifact Arm.target {
+    code := Impl.EcKey.Arm.Fn.publicKeySecp256k1
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeySecp256k1 hasLaw.law) },
+  Spec.EcKey.Secp256k1.publicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.EcKey.Arm.Fn.publicKeySecp256k1U
+    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeySecp256k1U hasLaw.law) }]
 
 end VG.Artifacts.EcSecp256k1.Arm

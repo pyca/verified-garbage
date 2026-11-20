@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -2367,6 +2369,33 @@ str r2, [r12, #1500]
 str r2, [r12, #1504]
 str r2, [r12, #1508]
 add sp, sp, #1520
+sub sp, sp, #1520
+add r12, sp, #0
+mov r2, #0
+mov r3, #47
+28:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 28b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #1520
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
     )
@@ -2375,6 +2404,8 @@ bx lr",
 /// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.ctrFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2407,7 +2438,7 @@ mov r6, r1
 and r8, r3, #15
 lsr r3, r3, #4
 add r7, r2, r3, lsl #4
-bl {vg_sm4_ctr}
+bl {vg_sm4_ctr_core}
 cmp r8, #0
 beq 20f
 ldr r12, [sp, #0]
@@ -2420,7 +2451,7 @@ mov r0, r4
 mov r1, r6
 add r2, r12, #40
 mov r3, #1
-bl {vg_sm4_ctr}
+bl {vg_sm4_ctr_core}
 ldr r12, [sp, #0]
 add r0, r12, #40
 mov r6, r7
@@ -2464,7 +2495,38 @@ str r2, [r12, #44]
 str r2, [r12, #48]
 str r2, [r12, #52]
 add sp, sp, #64
+sub sp, sp, #1584
+add r12, sp, #0
+mov r2, #0
+mov r3, #49
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #1584
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_sm4_ctr = sym super::sm4_ctr::vg_sm4_ctr,
+        vg_sm4_ctr_core = sym super::sm4_ctr::vg_sm4_ctr_core::vg_sm4_ctr_core,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_ctr_core.rs"]
+pub(crate) mod vg_sm4_ctr_core;

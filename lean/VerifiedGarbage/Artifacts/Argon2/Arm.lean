@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Verified
-public import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
+public import VerifiedGarbage.Proof.Argon2.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
@@ -14,7 +12,7 @@ namespace VG.Artifacts.Argon2.Arm
 
 def artifacts : List Artifact := [
   Spec.Argon2.deriveApi.artifact Arm.target {
-    code := Impl.Argon2.Arm.Derive.derive
-    verified := .unscrubbed Proof.Argon2.Arm.Derive.deriveShared_verified }]
+    code := Impl.Argon2.Arm.Fn.derive
+    verified := .scrubbed Proof.Argon2.Arm.Fn.derive }]
 
 end VG.Artifacts.Argon2.Arm

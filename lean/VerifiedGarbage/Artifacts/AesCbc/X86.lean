@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesCbc.X86.Wiped
 public import VerifiedGarbage.Proof.AesCbc.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
@@ -14,8 +15,16 @@ namespace VG.Artifacts.AesCbc.X86
 open VG.Proof.AesCbc.X86.Scrub
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) =>
-    (encryptRegs v).map (Spec.Cbc.aesEncryptApi.artifact X86.target) ++
-      (decryptRegs v).map (Spec.Cbc.aesDecryptApi.artifact X86.target)
+  VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
+    Spec.Cbc.aesEncryptApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.AesCbc.X86.Fn.encrypt (Proof.AesCbc.X86.Wiped.encryptCode v) v.suffix (Proof.AesCbc.X86.Wiped.encWritten v)
+      verified := .scrubbed (encrypt_scrubbed v)
+      spSafe := encrypt_fnSpSafe v },
+    Spec.Cbc.aesDecryptApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.AesCbc.X86.Fn.decrypt (Proof.AesCbc.X86.Wiped.decryptCode v) v.suffix (Proof.AesCbc.X86.Wiped.decWritten v)
+      verified := .scrubbed (decrypt_scrubbed v)
+      spSafe := decrypt_fnSpSafe v }]
 
 end VG.Artifacts.AesCbc.X86

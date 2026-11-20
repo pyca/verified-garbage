@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Sha256.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
+public import VerifiedGarbage.Impl.MdStream.Arm.Digest
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-!
 # Streaming SHA-256: 32-bit ARM implementation
@@ -62,4 +64,51 @@ def params224 : MdStream.Arm.Params := { params with out := MdStream.Arm.out32 7
 /-- SHA-224's `finalize`, writing its digest. -/
 def finalize224 : Prog isa := MdStream.Arm.finalize params224 "vg_sha256_compress" compress
 
+/-- SHA-256's streaming functions as HMAC, PBKDF2 and the one-shot digest call
+them (`Impl.Pbkdf2.Stream.Arm.Hash`): a 96-byte streaming state, 20 words of
+working space and a 32-byte digest, under internal names. -/
+def streamFns : Impl.Pbkdf2.Stream.Arm.Hash := ⟨64, 96, 32, 32, 20, "vg_sha256_init_core", init,
+  "vg_sha256_update_scratch", update, "vg_sha256_finalize_scratch", finalize⟩
+
+/-- SHA-224's, as `streamFns` but for its initial hash value and its digest,
+the first 28 of the 32 bytes `finalize` writes. -/
+def streamFns224 : Impl.Pbkdf2.Stream.Arm.Hash := ⟨64, 96, 28, 32, 20, "vg_sha224_init_core", init224,
+  "vg_sha256_update_scratch", update, "vg_sha256_finalize_scratch", finalize⟩
+
 end VG.Impl.Sha256.Arm.Stream
+
+/-! ## The functions as emitted
+
+Each is its code, then its cleanup (`Impl/Residue/Arm.lean`): the registers
+a callee may change set to constants, and for every function but `init` first
+the stack of its contract zeroed: the 176 bytes of the frame of `update` and
+`finalize` (`withStackScratch`), and `digest`'s (`withRegScratchWiped`, and
+the 16 bytes it pushes). None returns a value. -/
+
+namespace VG.Impl.Sha256.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_sha224_init`. -/
+def init224 : Prog isa := scrub 0 Stream.init224
+
+/-- `vg_sha256_init`. -/
+def init : Prog isa := scrub 0 Stream.init
+
+/-- `vg_sha256_update`, which SHA-224 shares. -/
+def update : Prog isa := scrubF 0 176 (Impl.StackScratch.Arm.withStackScratch 176 2 Stream.update)
+
+/-- `vg_sha256_finalize`. -/
+def finalize : Prog isa := scrubF 0 176 (Impl.StackScratch.Arm.withStackScratch 176 1 Stream.finalize)
+
+/-- `vg_sha224_finalize`. -/
+def finalize224 : Prog isa :=
+  scrubF 0 176 (Impl.StackScratch.Arm.withStackScratch 176 1 Stream.finalize224)
+
+/-- `vg_sha224_digest`. -/
+def digest224 : Prog isa := scrubF 0 344 (Impl.MdStream.Arm.Digest.digest Stream.streamFns224)
+
+/-- `vg_sha256_digest`. -/
+def digest : Prog isa := scrubF 0 344 (Impl.MdStream.Arm.Digest.digest Stream.streamFns)
+
+end VG.Impl.Sha256.Arm.Fn

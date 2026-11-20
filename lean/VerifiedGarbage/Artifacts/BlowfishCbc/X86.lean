@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.Scrub
+public import VerifiedGarbage.Impl.Blowfish.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
@@ -12,7 +13,11 @@ import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
 namespace VG.Artifacts.BlowfishCbc.X86
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.cbcEncryptChainedApi.artifact X86.target Proof.Blowfish.X86.Scrub.cbcEncryptChainedReg,
-  Spec.Blowfish.cbcDecryptChainedApi.artifact X86.target Proof.Blowfish.X86.Scrub.cbcDecryptChainedReg]
+  Spec.Blowfish.cbcEncryptChainedApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cbcEncryptChained_scrubbed },
+  Spec.Blowfish.cbcDecryptChainedApi.artifact X86.target {
+    code := Impl.Blowfish.X86.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Blowfish.X86.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.BlowfishCbc.X86

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesXts.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
 
 /-!
 # XTS-AES of whole data units: AArch64 implementation
@@ -130,5 +131,35 @@ def decSteal (f : Blocks) : Prog isa :=
 def decrypt (e d : Blocks) : Prog isa :=
   .seq (tweak e) (.seq (.block split)
     (.seq (.ite (.zero .x .x10) (.seq (.block argsAll) (.call d.name d.code)) (decSteal d)) (.block restore)))
+
+/-! ## The functions, as emitted
+
+Each function is its code, then its cleanup
+(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+convention does not preserve are cleared, so that it returns without secret
+residue; it uses no stack. The registers are those its own instructions
+write, stated here, and those the functions it calls state they write
+(`Blocks.clear`). -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (Clear scrubAll)
+
+/-- The registers `vg_aes_xts_encrypt_unit`'s own instructions write. -/
+def encryptOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x13, .x14, .x16, .x17], [], []⟩
+
+/-- `vg_aes_xts_encrypt_unit`, around `f`. -/
+def encrypt (f : Blocks) : Prog isa :=
+  scrubAll 0 0 (encryptOwn.union f.clear) (AArch64Unit.encrypt f)
+
+/-- The registers `vg_aes_xts_decrypt_unit`'s own instructions write. -/
+def decryptOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x12, .x13, .x14, .x16, .x17], [], []⟩
+
+/-- `vg_aes_xts_decrypt_unit`, around `e` and `d`. -/
+def decrypt (e d : Blocks) : Prog isa :=
+  scrubAll 0 0 ((decryptOwn.union e.clear).union d.clear) (AArch64Unit.decrypt e d)
+
+end Fn
 
 end VG.Impl.AesXts.AArch64Unit

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
 public import VerifiedGarbage.Impl.CmacAes.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # Streaming AES-CMAC: AArch64 implementation
@@ -196,5 +198,55 @@ def finishPost : List Instr := [.ldr .x .x30 .x19 8, .ldr .x .x19 .x19 0]
 def finish (c : Ctr32) (sfx : String) : Prog isa :=
   .seq finPre (.seq (.call ("vg_cmac_aes_finalize" ++ sfx) (Impl.CmacAes.AArch64.finalize c))
     (.block finishPost))
+
+/-! ## The functions, as emitted
+
+Each function is its code with its working space in a frame on the stack,
+sized to what the functions it calls need, then its cleanup
+(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+convention does not preserve are cleared and that stack is zeroed, so that it
+returns without secret residue. The registers are those its own
+instructions write, stated here, and those the functions it calls state
+they write (`clear`). -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (Clear scrubAll)
+
+/-- The registers `vg_cmac_aes_init`'s own instructions write. -/
+def initOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x12, .x16, .x17], [], []⟩
+
+/-- The working space of `vg_cmac_aes_init` over an implementation that needs
+`scratch` bytes: the 512 bytes of the key expansion, or what
+`vg_cmac_aes_subkeys` needs (`128 + scratch`), if more. -/
+def initWork (scratch : Nat) : Nat := if scratch = 0 then 512 else 2176
+
+/-- `vg_cmac_aes_init`. -/
+def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
+  scrubAll (32 + initWork c.scratch) 0 ((initOwn.union e.clear).union c.clear)
+    (Impl.StackScratch.AArch64.withStackScratch (32 + initWork c.scratch) .x3 (Stream.AArch64.init e c sfx))
+
+/-- The registers `vg_cmac_aes_absorb`'s own instructions write. -/
+def absorbOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x16, .x17], [], []⟩
+
+/-- `vg_cmac_aes_absorb`, with the working space `u` needs. -/
+def absorb (u : Impl.CmacAes.AArch64.Update) : Prog isa :=
+  scrubAll (64 + u.scratch) 0 (absorbOwn.union u.clear)
+    (Impl.StackScratch.AArch64.withStackScratch (64 + u.scratch) .x5 (Stream.AArch64.absorb u))
+
+/-- The registers `vg_cmac_aes_finish`'s own instructions write. -/
+def finishOwn : Clear := ⟨[.x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x16, .x17], [], []⟩
+
+/-- The working space of `vg_cmac_aes_finish` over an implementation that
+needs `scratch` bytes: what `vg_cmac_aes_finalize` needs. -/
+def finishWork (scratch : Nat) : Nat := 128 + scratch
+
+/-- `vg_cmac_aes_finish`. -/
+def finish (c : Ctr32) (sfx : String) : Prog isa :=
+  scrubAll (16 + finishWork c.scratch) 0 (finishOwn.union c.clear)
+    (Impl.StackScratch.AArch64.withStackScratch (16 + finishWork c.scratch) .x4 (Stream.AArch64.finish c sfx))
+
+end Fn
 
 end VG.Impl.CmacAes.Stream.AArch64

@@ -8,6 +8,8 @@
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_init_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_INIT_CTR32_SM4_FEATURES`); or else `vg_sm4_gcm_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -57,6 +59,8 @@ pub unsafe fn vg_sm4_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 /// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_seal_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_SEAL_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_seal_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_SEAL_CTR32_SM4_FEATURES`); `vg_sm4_gcm_seal_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_SEAL_GHASH_AES_FEATURES`); `vg_sm4_gcm_seal_ghash_neon` if detection reports some CPU feature; or else `vg_sm4_gcm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -126,6 +130,8 @@ pub unsafe fn vg_sm4_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_open_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_OPEN_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_open_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_OPEN_CTR32_SM4_FEATURES`); `vg_sm4_gcm_open_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_OPEN_GHASH_AES_FEATURES`); `vg_sm4_gcm_open_ghash_neon` if detection reports some CPU feature; or else `vg_sm4_gcm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -194,6 +200,8 @@ pub unsafe fn vg_sm4_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_encrypt_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_encrypt_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_STREAM_ENCRYPT_CTR32_SM4_FEATURES`); `vg_sm4_gcm_stream_encrypt_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_ENCRYPT_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_encrypt_ghash_neon` if detection reports some CPU feature; or else `vg_sm4_gcm_stream_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -260,6 +268,8 @@ pub unsafe fn vg_sm4_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_decrypt_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_decrypt_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_STREAM_DECRYPT_CTR32_SM4_FEATURES`); `vg_sm4_gcm_stream_decrypt_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_DECRYPT_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_decrypt_ghash_neon` if detection reports some CPU feature; or else `vg_sm4_gcm_stream_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -323,6 +333,8 @@ pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_finish_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_finish_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_STREAM_FINISH_CTR32_SM4_FEATURES`); `vg_sm4_gcm_stream_finish_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_FINISH_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_finish_ghash_neon` if detection reports some CPU feature; or else `vg_sm4_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -388,6 +400,8 @@ pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_verify_ctr32_sm4_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_verify_ctr32_sm4` if the CPU supports its features (`VG_SM4_GCM_STREAM_VERIFY_CTR32_SM4_FEATURES`); `vg_sm4_gcm_stream_verify_ghash_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_VERIFY_GHASH_AES_FEATURES`); `vg_sm4_gcm_stream_verify_ghash_neon` if detection reports some CPU feature; or else `vg_sm4_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -456,6 +470,8 @@ pub unsafe fn vg_sm4_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_init_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_INIT_AES_FEATURES`); `vg_sm4_gcm_stream_init_neon` if detection reports some CPU feature; or else `vg_sm4_gcm_stream_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -509,6 +525,8 @@ pub unsafe fn vg_sm4_gcm_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 /// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_gcm_stream_aad_aes` if the CPU supports its features (`VG_SM4_GCM_STREAM_AAD_AES_FEATURES`); `vg_sm4_gcm_stream_aad_neon` if detection reports some CPU feature; or else `vg_sm4_gcm_stream_aad`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

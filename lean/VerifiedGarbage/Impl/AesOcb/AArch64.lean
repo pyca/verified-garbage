@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Impl.AesGcm.AArch64
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
 
 /-!
 # AES-OCB: AArch64 implementation
@@ -471,5 +473,54 @@ def init : Prog isa :=
       (.seq (.block [imm .x9 0, st .x20 240 .x9, st .x20 248 .x9, ptr .x2 .x20 240, imm .x3 1,
           mov .x0 .x20, mov .x1 .x22, ptr .x4 .x19 scrO])
         (.seq (.call c.enc.name c.enc.code) (.block restore))))
+
+/-! ## The functions, as emitted
+
+Each function is its code with its working space in a frame on the stack,
+sized to what the block functions it calls need, then its cleanup
+(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+convention does not preserve are cleared and that stack is zeroed, so that it
+returns without secret residue. The registers are those its own
+instructions write, stated here, and those the functions it calls state
+they write (`clear`). -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (Clear scrubAll)
+
+/-- The registers `vg_aes_ocb_init`'s own instructions write. -/
+def initOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x9, .x16, .x17], [], []⟩
+
+/-- The working space of `vg_aes_ocb_init` over block functions that need
+`scratch` bytes: the code's 512 bytes, then theirs, and at least the 512
+bytes the key expansion needs. -/
+def initWork (scratch : Nat) : Nat := if scratch = 0 then 1024 else 2560
+
+/-- `vg_aes_ocb_init`. -/
+def init : Prog isa :=
+  scrubAll (initWork c.enc.scratch) 0 ((initOwn.union c.key.clear).union c.enc.clear)
+    (Impl.StackScratch.AArch64.withStackScratch (initWork c.enc.scratch) .x3 (AesOcb.AArch64.init c))
+
+/-- The registers the own instructions of `vg_aes_ocb_seal` and of
+`vg_aes_ocb_open` write. -/
+def cryptOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
+   [.v0, .v1, .v2, .v3, .v4, .v5, .v6], []⟩
+
+/-- The working space of `vg_aes_ocb_seal` and `vg_aes_ocb_open` over block
+functions that need `scratch` bytes: the code's 512 bytes, then theirs. -/
+def cryptWork (scratch : Nat) : Nat := 512 + scratch
+
+/-- `vg_aes_ocb_seal`: its frame also holds a copy of its stack arguments. -/
+def «seal» : Prog isa :=
+  scrubAll (cryptWork c.enc.scratch + 32) 0 (cryptOwn.union c.enc.clear)
+    (Impl.StackScratch.AArch64.withStackArgScratch (cryptWork c.enc.scratch + 32) 2 (AesOcb.AArch64.seal c))
+
+/-- `vg_aes_ocb_open`, as `seal`; its result is 32 bits. -/
+def «open» : Prog isa :=
+  scrubAll (cryptWork c.enc.scratch + 32) 32 ((cryptOwn.union c.enc.clear).union c.dec.clear)
+    (Impl.StackScratch.AArch64.withStackArgScratch (cryptWork c.enc.scratch + 32) 2 (AesOcb.AArch64.open c))
+
+end Fn
 
 end VG.Impl.AesOcb.AArch64

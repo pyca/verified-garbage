@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Update
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Proof.Sm3.Md
@@ -91,10 +92,18 @@ structure Compress where
     (finalize Stream.params name code)
   updateDepth : (updateMain Stream.params name code).aarch64Depth = 0
   finalizeDepth : (finalizeMain Stream.params name code).aarch64Depth = 0
+  /-- The registers `code` writes, of those the calling convention does not
+  preserve: what the cleanup of `update` and `finalize` clears for it
+  (`ScrubAll.scrubSide_union`). -/
+  clear : Impl.Residue.AArch64.Clear
+  scrub : AArch64.ScrubAll.calleeSide code clear = true
 
 namespace Compress
 
 variable (v : Compress)
+
+/-- The implementation, as the code calls it (`Impl.Sm3.AArch64.Stream.Fn`). -/
+def impl : Impl.Sm3.AArch64.Stream.Compress := ⟨v.name, v.code, v.clear⟩
 
 def update : Prog isa := Impl.MdStream.AArch64.update Stream.params v.name v.code
 def finalize : Prog isa := Impl.MdStream.AArch64.finalize Stream.params v.name v.code

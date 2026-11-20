@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha512.AArch64
 public import VerifiedGarbage.Impl.MdStream.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
 
 /-!
 # Streaming SHA-512: AArch64 implementation
@@ -79,5 +80,16 @@ def params512_224 : Params := { params with out := out64 3 ++ outHi 3 }
 /-- `finalizeWith`, writing the digest `P.out` writes (`params384`, …). -/
 def finalizeDigestWith (P : Params) (suffix : String) (code : Prog isa) : Prog isa :=
   MdStream.AArch64.finalize P (compressName suffix) code
+
+/-- An implementation of the compression function for a function that hashes
+to call: its code, the suffix of its name (`compressName`) and of the
+streaming functions made with it, and the registers its code writes, of
+those the calling convention does not preserve: what a function that calls
+it clears for it before returning, with those its own instructions write
+(the proofs hold it to the code, `Proof.Sha512.AArch64.Compress.scrub`). -/
+structure Compress where
+  code : Prog isa
+  suffix : String
+  clear : Impl.Residue.AArch64.Clear
 
 end VG.Impl.Sha512.AArch64.Stream

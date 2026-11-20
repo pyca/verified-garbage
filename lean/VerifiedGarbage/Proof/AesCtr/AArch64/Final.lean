@@ -897,14 +897,14 @@ instructions here, once, with code that does nothing in the place of
 open VG.AArch64.ScrubAll
 
 private theorem crypt_all {p : Instr → Bool} (c : Impl.Aes.AArch64.Ctr32)
-    (h0 : sideAll p (crypt ⟨"", .block []⟩) = true) (hc : sideAll p c.code = true) :
+    (h0 : sideAll p (crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true) (hc : sideAll p c.code = true) :
     sideAll p (crypt c) = true := by
   simp only [crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole, sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem cryptFinal_all {p : Instr → Bool} (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
     (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10
-      (cryptFinal ⟨"", .block []⟩ "")) = true) (hc : sideAll p c.code = true) :
+      (cryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) = true) (hc : sideAll p c.code = true) :
     sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal c sfx)) = true := by
   simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
     cryptFinal, final, finalTail, crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole, sideAll,
@@ -912,16 +912,16 @@ private theorem cryptFinal_all {p : Instr → Bool} (c : Impl.Aes.AArch64.Ctr32)
   simp only [h0, hc, and_self]
 
 private theorem crypt_own :
-    calleeSide (crypt ⟨"", .block []⟩) Impl.AesCtr.AArch64.Fn.cryptOwn = true := by
+    calleeSide (crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesCtr.AArch64.Fn.cryptOwn = true := by
   kernel_rfl
 
 private theorem cryptFinal_own :
-    calleeSide (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal ⟨"", .block []⟩ ""))
+    calleeSide (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ""))
       Impl.AesCtr.AArch64.Fn.cryptFinalOwn = true := by
   kernel_rfl
 
 theorem crypt_side (v : Ctr32Impl) :
-    scrubSide (crypt v.callee) 0 0 (Impl.AesCtr.AArch64.Fn.cryptOwn.union v.clear) [] = true := by
+    scrubSide (crypt v.callee) 0 0 (Impl.AesCtr.AArch64.Fn.cryptOwn.union v.callee.clear) [] = true := by
   refine scrubSide_union0 ?_ (by decide)
     (crypt_all v.callee (sideAll_union_left crypt_own) (sideAll_union_right v.scrub)) (by decide)
   simp only [crypt, Impl.AesCtr.AArch64.body, Impl.AesCbc.AArch64.whole, Code.aarch64Depth,
@@ -930,7 +930,7 @@ theorem crypt_side (v : Ctr32Impl) :
 
 theorem cryptFinal_side (v : Ctr32Impl) :
     scrubSide (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal v.callee v.suffix)) 80 0
-      (Impl.AesCtr.AArch64.Fn.cryptFinalOwn.union v.clear) [] = true := by
+      (Impl.AesCtr.AArch64.Fn.cryptFinalOwn.union v.callee.clear) [] = true := by
   refine scrubSide_union (by decide) ?_ (by decide)
     (cryptFinal_all v.callee v.suffix (sideAll_union_left cryptFinal_own) (sideAll_union_right v.scrub))
     (by decide)
@@ -941,7 +941,7 @@ theorem cryptFinal_side (v : Ctr32Impl) :
 
 /-- `vg_aes_ctr` as emitted, cleanup included. -/
 theorem crypt_scrubbed (v : Ctr32Impl) :
-    VerifiedScrubbed AArch64.target (Impl.AesCtr.AArch64.Fn.crypt v.clear v.callee)
+    VerifiedScrubbed AArch64.target (Impl.AesCtr.AArch64.Fn.crypt v.callee)
       (Spec.Ctr.aesContract AArch64.abi) 0 :=
   verifiedScrubbed (api := Spec.Ctr.aesApi)
     { code := crypt v.callee, verified := Proof.AesCtr.keyed (crypt_verified v) } _
@@ -949,7 +949,7 @@ theorem crypt_scrubbed (v : Ctr32Impl) :
 
 /-- `vg_aes_ctr_final` as emitted, cleanup included. -/
 theorem cryptFinal_scrubbed (v : Ctr32Impl) :
-    VerifiedScrubbed AArch64.target (Impl.AesCtr.AArch64.Fn.cryptFinal v.clear v.callee v.suffix)
+    VerifiedScrubbed AArch64.target (Impl.AesCtr.AArch64.Fn.cryptFinal v.callee v.suffix)
       (Spec.Ctr.aesFinalContract AArch64.abi 80) 0 :=
   verifiedScrubbed (api := Spec.Ctr.aesFinalApi)
     { code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal v.callee v.suffix)

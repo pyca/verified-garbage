@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesCfb.X86.Final
 public import VerifiedGarbage.Proof.AesCfb.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
@@ -11,13 +12,27 @@ public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
 namespace VG.Artifacts.AesCfb.X86
 
-open VG.Proof.AesCfb.X86.Scrub
-
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
-    Spec.Cfb.aesEncryptApi.artifact X86.target (encryptReg v),
-    Spec.Cfb.aesDecryptApi.artifact X86.target (decryptReg v),
-    Spec.Cfb.aesEncryptFinalApi.artifact X86.target (encryptFinalReg v),
-    Spec.Cfb.aesDecryptFinalApi.artifact X86.target (decryptFinalReg v)]
+    Spec.Cfb.aesEncryptApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.AesCfb.X86.Fn.encrypt v.enc
+      verified := .scrubbed (Proof.AesCfb.X86.Scrub.encrypt_scrubbed v)
+      spSafe := Proof.AesCfb.X86.Scrub.encrypt_fnSpSafe v },
+    Spec.Cfb.aesDecryptApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.AesCfb.X86.Fn.decrypt v.enc
+      verified := .scrubbed (Proof.AesCfb.X86.Scrub.decrypt_scrubbed v)
+      spSafe := Proof.AesCfb.X86.Scrub.decrypt_fnSpSafe v },
+    Spec.Cfb.aesEncryptFinalApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.AesCfb.X86.Fn.encryptFinal v.enc v.suffix
+      verified := .scrubbed (Proof.AesCfb.X86.Scrub.encryptFinal_scrubbed v)
+      spSafe := Proof.AesCfb.X86.Scrub.encryptFinal_fnSpSafe v },
+    Spec.Cfb.aesDecryptFinalApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.AesCfb.X86.Fn.decryptFinal v.enc v.suffix
+      verified := .scrubbed (Proof.AesCfb.X86.Scrub.decryptFinal_scrubbed v)
+      spSafe := Proof.AesCfb.X86.Scrub.decryptFinal_fnSpSafe v }]
 
 end VG.Artifacts.AesCfb.X86

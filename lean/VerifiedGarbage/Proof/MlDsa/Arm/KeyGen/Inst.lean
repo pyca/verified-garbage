@@ -984,7 +984,7 @@ open VG.Impl.MlDsa.Arm.KeyGen (Prims keyGen)
 
 /-- `vg_mldsa*_keygen` of the parameter set `p` meets its contract with
 40 bytes of stack (a frame size of the model, which a function that returns
-without secret residue wipes: `Arm.Scrub.scrubRegF`), for any verified
+without secret residue wipes: `Impl.Residue.Arm.scrubF`), for any verified
 implementations `P` of the primitives it calls with at most 28 bytes of
 stack. -/
 theorem keyGen_verified {P : Prims} (hP : PrimsOk P 28) (p : Spec.MlDsa.Params)

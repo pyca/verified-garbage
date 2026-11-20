@@ -70,9 +70,9 @@ open VG.Proof.AesGcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
-/-- What `oneCore` gives, with the values of the first run. -/
-structure OneFacts (σ σ₀ : State) (n w : Nat) : Prop where
-  ol : OneLay σ₀ n w
+/-- What `oneCore S` gives, with the values of the first run. -/
+structure OneFacts (S : Nat) (σ σ₀ : State) (n w : Nat) : Prop where
+  ol : OneLay S σ₀ n w
   hW : stackArg σ w = stackArg σ₀ w
   perm : Perm (σ₀.gpr .x0) (stackArg σ₀ w + BitVec.ofNat 64 16) (stackArg σ₀ w) σ
   hsp : ∀ i < n, InRegions (σ.rd ++ σ.wr) (σ.sp + BitVec.ofNat 64 (8 * i)) 8
@@ -81,8 +81,8 @@ structure OneFacts (σ σ₀ : State) (n w : Nat) : Prop where
   dataW : Covers [⟨σ₀.gpr .x5, (σ₀.gpr .x6).toNat⟩] σ.wr
   args : (args σ n).Disjoint (workR (stackArg σ₀ w))
 
-theorem oneFacts {σ₁ σ₂ : State} {n w : Nat} (hw : w < n) (h₁ : oneCore n w σ₁) (h₂ : oneCore n w σ₂)
-    (hq : onePub n σ₁ σ₂) : OneFacts σ₁ σ₁ n w ∧ OneFacts σ₂ σ₁ n w := by
+theorem oneFacts {S : Nat} {σ₁ σ₂ : State} {n w : Nat} (hw : w < n) (h₁ : oneCore S n w σ₁) (h₂ : oneCore S n w σ₂)
+    (hq : onePub n σ₁ σ₂) : OneFacts S σ₁ σ₁ n w ∧ OneFacts S σ₂ σ₁ n w := by
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, -, -, qa⟩ := hq
   obtain qw : stackArg σ₁ w = stackArg σ₂ w := qa w hw
   obtain o₁ := oneLay h₁
@@ -106,7 +106,7 @@ abbrev Entered (w : Nat) (σ σ₀ τ : State) : Prop :=
     τ.mem.readW (stackArg σ₀ w + BitVec.ofNat 64 240) 64 = σ.gpr .x6
 
 /-- `FrontIn` after the entry. -/
-theorem frontIn_of {σ σ₀ τ : State} {n w : Nat} (f : OneFacts σ σ₀ n w)
+theorem frontIn_of {S : Nat} {σ σ₀ τ : State} {n w : Nat} (f : OneFacts S σ σ₀ n w)
     (h1 : σ.gpr .x1 = σ₀.gpr .x1) (h2 : σ.gpr .x2 = σ₀.gpr .x2) (h3 : σ.gpr .x3 = σ₀.gpr .x3)
     (h4 : σ.gpr .x4 = σ₀.gpr .x4) (h5 : σ.gpr .x5 = σ₀.gpr .x5) (h6 : σ.gpr .x6 = σ₀.gpr .x6)
     (a : Entered w σ σ₀ τ) (rd : τ.rd = σ.rd) (wr : τ.wr = σ.wr) :
@@ -132,7 +132,7 @@ theorem SealEntry.entered {σ σ₀ τ : State} (a : SealEntry σ τ) (h0 : σ.g
   exact ⟨he, a.x23, a.x24, a.x26, a.x27, sA, sL, sD, sN⟩
 
 /-- The entry of `seal` in two runs. -/
-theorem sealEntry_rel {σ₁ σ₂ : State} (f₁ : OneFacts σ₁ σ₁ 1 0) (f₂ : OneFacts σ₂ σ₁ 1 0) (qsp : σ₁.sp = σ₂.sp)
+theorem sealEntry_rel {S : Nat} {σ₁ σ₂ : State} (f₁ : OneFacts S σ₁ σ₁ 1 0) (f₂ : OneFacts S σ₂ σ₁ 1 0) (qsp : σ₁.sp = σ₂.sp)
     (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6], σ₁.gpr r = σ₂.gpr r) (q7 : σ₁.gpr .x7 = σ₂.gpr .x7) :
     RelCT isa (Eq2 σ₁ σ₂) (.block (oneEntry 0 ++ ([.str .x .x7 .x19 tlO, mov .x28 .x7] : List Instr))) TT := by
   have hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 0) 64 = stackArg σ₁ 0 := rfl
@@ -147,8 +147,8 @@ theorem sealEntry_rel {σ₁ σ₂ : State} (f₁ : OneFacts σ₁ σ₁ 1 0) (f
       (by agree_tac [a₁.1.x19, a₂.1.x19, a₁.2.2.2.2.2.1, a₂.2.2.2.2.2.1, q7]) ts)
 
 /-- `seal` after its entry, in two runs. -/
-theorem sealRest_rel (v : GcmImpl) {σ₁ σ₂ τ₁ τ₂ : State} (h₁ : sealPre σ₁) (h₂ : sealPre σ₂)
-    (hq : onePub 1 σ₁ σ₂) (a₁ : SealEntry σ₁ τ₁) (a₂ : SealEntry σ₂ τ₂) :
+theorem sealRest_rel {S : Nat} (v : GcmImpl) {σ₁ σ₂ τ₁ τ₂ : State} (h₁ : sealPre S σ₁) (h₂ : sealPre S σ₂)
+    (hq : onePub 1 σ₁ σ₂) (a₁ : SealEntry σ₁ τ₁) (a₂ : SealEntry σ₂ τ₂) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa (Eq2 τ₁ τ₂) (sealRest v.callees) TT := by
   unfold sealRest
   obtain ⟨f₁, f₂⟩ := oneFacts (by decide : 0 < 1) (sealCore h₁) (sealCore h₂) hq
@@ -172,10 +172,10 @@ theorem sealRest_rel (v : GcmImpl) {σ₁ σ₂ τ₁ τ₂ : State} (h₁ : sea
   obtain hal := (σ₁.gpr .x4).isLt
   obtain hn := (σ₁.gpr .x6).isLt
   refine front_rel L v i₁ i₂ fun u₁ u₂ o₁ o₂ => ?_
-  obtain mkB : ∀ {σ τ u : State}, OneFacts σ σ₁ 1 0 → τ.wr = σ.wr →
+  obtain mkB : ∀ {σ τ u : State}, OneFacts S σ σ₁ 1 0 → τ.wr = σ.wr →
       FrontOut (σ₁.gpr .x0) (stackArg σ₁ 0 + BitVec.ofNat 64 16) (stackArg σ₁ 0) σ₁.sp τ.gpr (σ₁.gpr .x5)
         (σ₁.gpr .x4).toNat (σ₁.gpr .x6).toNat τ u →
-      BodyIn (σ₁.gpr .x0) (stackArg σ₁ 0 + BitVec.ofNat 64 16) (stackArg σ₁ 0) σ₁.sp u.gpr
+      BodyIn S (σ₁.gpr .x0) (stackArg σ₁ 0 + BitVec.ofNat 64 16) (stackArg σ₁ 0) σ₁.sp u.gpr
         (σ₁.gpr .x6).toNat 0 (σ₁.gpr .x5) (Spec.Gcm.zeros (σ₁.gpr .x4).toNat) []
         (blockAt u.mem (σ₁.gpr .x0 + BitVec.ofNat 64 240)) u := fun f wr o =>
     ⟨o.env, fun _ _ => rfl, by rw [o.x25, Proof.Gcm.length_zeros],
@@ -189,7 +189,7 @@ theorem sealRest_rel (v : GcmImpl) {σ₁ σ₂ τ₁ τ₂ : State} (h₁ : sea
   obtain sl : ∀ {τ u ω : State},
       FrontOut (σ₁.gpr .x0) (stackArg σ₁ 0 + BitVec.ofNat 64 16) (stackArg σ₁ 0) σ₁.sp τ.gpr (σ₁.gpr .x5)
         (σ₁.gpr .x4).toNat (σ₁.gpr .x6).toNat τ u →
-      Frame (bodyFrame (stackArg σ₁ 0 + BitVec.ofNat 64 16) (stackArg σ₁ 0) σ₁.sp (σ₁.gpr .x5) (σ₁.gpr .x6).toNat)
+      Frame (bodyFrame S (stackArg σ₁ 0 + BitVec.ofNat 64 16) (stackArg σ₁ 0) σ₁.sp (σ₁.gpr .x5) (σ₁.gpr .x6).toNat)
         u.mem ω.mem → ∀ d, 216 ≤ d → d + 8 ≤ 256 →
       ω.mem.readW (stackArg σ₁ 0 + BitVec.ofNat 64 d) 64 = τ.mem.readW (stackArg σ₁ 0 + BitVec.ofNat 64 d) 64 :=
     fun o fb d h₁ h₂ => by
@@ -224,7 +224,7 @@ theorem sealRest_rel (v : GcmImpl) {σ₁ σ₂ τ₁ τ₂ : State} (h₁ : sea
   exact rel_taint [.x19, .x28] (by rw [h₁.1.sp, h₂.1.sp])
     (by agree_tac [h₁.1.x19, h₂.1.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩
 
-theorem seal_ct (v : GcmImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub («seal» v.callees) := by
+theorem seal_ct {S : Nat} (v : GcmImpl) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) : ConstantTime isa (sealAArch64 S).pre (sealAArch64 S).pub («seal» v.callees) := by
   unfold «seal»
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨f₁, f₂⟩ := oneFacts (by decide : 0 < 1) (sealCore h₁) (sealCore h₂) hq
@@ -246,7 +246,7 @@ Untrusted: everything here is checked by Lean. As for `seal` (`SealCT.lean`),
 with the received tag copied in and compared, and the text decrypted, by
 `decAbs_rel` and the taint analysis. The branches on the tag length and on the comparison are public:
 the tag length is an argument, and whether the tag is right is what
-`openAArch64.pub` leaks.
+`(openAArch64 S).pub` leaks.
 -/
 
 @[expose] public section
@@ -264,8 +264,8 @@ open VG.Spec.Sm4.Gcm (ctxCiph)
 open VG.Spec.Gcm (ctxH)
 
 /-- The bit `openMain` computes, after `tagIn`, is whether `open` succeeds. -/
-theorem tagBit {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s₀ t : State}
-    (o : OpenIn Ctx W SP Np A D Tg nl al n tl s₀ t) (rt : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl)
+theorem tagBit {S : Nat} {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s₀ t : State}
+    (o : OpenIn S Ctx W SP Np A D Tg nl al n tl s₀ t) (rt : bytesAt t.mem W tl = bytesAt s₀.mem Tg tl)
     (hok : Spec.Gcm.tagLenOk tl = true) :
     decide ((Spec.Gcm.fullTag (ciphOf t.mem Ctx) (blockAt t.mem (Ctx + BitVec.ofNat 64 240))
       (bytesAt t.mem Np nl) (bytesAt t.mem A al) (bytesAt t.mem D n)).take tl = bytesAt t.mem W tl) =
@@ -278,27 +278,27 @@ theorem tagBit {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s₀ t : State}
   · rw [ite_eq_left hc]; simp [hc]
   · rw [ite_eq_right hc]; simp [hc]
 
-/-- `FrontIn` from `OpenIn`. -/
-theorem OpenIn.front {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s₀ t : State}
-    (o : OpenIn Ctx W SP Np A D Tg nl al n tl s₀ t) :
+/-- `FrontIn` from `OpenIn S`. -/
+theorem OpenIn.front {S : Nat} {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s₀ t : State}
+    (o : OpenIn S Ctx W SP Np A D Tg nl al n tl s₀ t) :
     FrontIn Ctx (W + BitVec.ofNat 64 16) W SP t.gpr Np A D nl al n t :=
   ⟨o.env, fun _ _ => rfl, o.x23, o.x24, o.x26, o.x27, o.non, o.aad, o.sA, o.sL, o.sD, o.sN⟩
 
 /-- `openMain` up to the branch on the tag, in two runs. -/
-theorem omA_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s₁ s₂ t₁ t₂ : State}
-    (o₁ : OpenIn Ctx W SP Np A D Tg nl al n tl s₁ t₁) (o₂ : OpenIn Ctx W SP Np A D Tg nl al n tl s₂ t₂) :
+theorem omA_rel {S : Nat} (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s₁ s₂ t₁ t₂ : State}
+    (o₁ : OpenIn S Ctx W SP Np A D Tg nl al n tl s₁ t₁) (o₂ : OpenIn S Ctx W SP Np A D Tg nl al n tl s₂ t₂) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa (Eq2 t₁ t₂) (omA v.callees) TT := by
   have L := o₁.lay
   have hal := o₁.aad.lt
   have hn := o₁.dat.ok.lt
   have sl := slots_omFrame L o₁.ddW
-  have mF : ∀ {rs : List Region}, (∀ r ∈ rs, r ∈ omFrame W SP) → ∀ {m m' : Mem}, Frame rs m m' →
-      Frame (omFrame W SP) m m' := fun hs _ _ hf => hf.mono hs
+  have mF : ∀ {rs : List Region}, (∀ r ∈ rs, r ∈ omFrame S W SP) → ∀ {m m' : Mem}, Frame rs m m' →
+      Frame (omFrame S W SP) m m' := fun hs _ _ hf => hf.mono hs
   unfold omA
   refine front_rel L v o₁.front o₂.front fun u₁ u₂ p₁ p₂ => ?_
-  have mkB : ∀ {s t u : State}, OpenIn Ctx W SP Np A D Tg nl al n tl s t →
+  have mkB : ∀ {s t u : State}, OpenIn S Ctx W SP Np A D Tg nl al n tl s t →
       FrontOut Ctx (W + BitVec.ofNat 64 16) W SP t.gpr D al n t u →
-      BodyIn Ctx (W + BitVec.ofNat 64 16) W SP u.gpr n 0 D (Spec.Gcm.zeros al) []
+      BodyIn S Ctx (W + BitVec.ofNat 64 16) W SP u.gpr n 0 D (Spec.Gcm.zeros al) []
         (blockAt u.mem (Ctx + BitVec.ofNat 64 240)) u := fun o p =>
     ⟨p.env, fun _ _ => rfl, by rw [p.x25, Proof.Gcm.length_zeros],
       p.x26, p.x27, p.x28, rfl, by decide, o.dat.of_eq (by rw [p.rd]) (by rw [p.wr]), rfl⟩
@@ -306,10 +306,10 @@ theorem omA_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s�
   have B₂ := mkB o₂ p₂
   refine rel_seq (decAbs_rel L v B₁ B₂ rfl) (decAbs_ok L v B₁) (decAbs_ok L v B₂)
     fun w₁ w₂ ⟨e₁, kk₁, _, fr₁, _, _, _⟩ ⟨e₂, kk₂, _, fr₂, _, _, _⟩ => ?_
-  have F₁ : Frame (omFrame W SP) t₁.mem w₁.mem :=
+  have F₁ : Frame (omFrame S W SP) t₁.mem w₁.mem :=
     (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hr))) p₁.frame).trans
       (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ hr))) fr₁)
-  have F₂ : Frame (omFrame W SP) t₂.mem w₂.mem :=
+  have F₂ : Frame (omFrame S W SP) t₂.mem w₂.mem :=
     (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _ hr))) p₂.frame).trans
       (mF (fun r hr => List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ hr))) fr₂)
   refine rel_seq (rel_taint [.x19] (by rw [e₁.sp, e₂.sp]) (by agree_tac [e₁.x19, e₂.x19]) ⟨_, by taint_decide⟩)
@@ -323,9 +323,9 @@ theorem omA_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s�
     (finBody_env v L (.inr rfl) (e₁.of_regs r₁) (fun _ _ => rfl) x26₁ x27₁ hn)
     (finBody_env v L (.inr rfl) (e₂.of_regs r₂) (fun _ _ => rfl) x26₂ x27₂ hn)
     fun g₁ g₂ ⟨ge₁, _, gf₁⟩ ⟨ge₂, _, gf₂⟩ => ?_
-  have G₁ : Frame (omFrame W SP) t₁.mem g₁.mem :=
+  have G₁ : Frame (omFrame S W SP) t₁.mem g₁.mem :=
     F₁.trans (by rw [r₁.mem] at gf₁; exact mF (fun r hr => List.mem_append_left _ (List.mem_append_right _ hr)) gf₁)
-  have G₂ : Frame (omFrame W SP) t₂.mem g₂.mem :=
+  have G₂ : Frame (omFrame S W SP) t₂.mem g₂.mem :=
     F₂.trans (by rw [r₂.mem] at gf₂; exact mF (fun r hr => List.mem_append_left _ (List.mem_append_right _ hr)) gf₂)
   refine rel_seq (rel_taint [.x19] (by rw [ge₁.sp, ge₂.sp]) (by agree_tac [ge₁.x19, ge₂.x19]) ⟨_, by taint_decide⟩)
     (ldr28_ok (V := BitVec.ofNat 64 tl) ge₁ (by rw [slot_kept G₁ sl (by decide) (by decide), o₁.sT]))
@@ -336,11 +336,11 @@ theorem omA_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s�
     ⟨_, by taint_decide⟩
 
 /-- The rest of `openMain`, in two runs that agree on the tag. -/
-theorem omB_rel (v : GcmImpl) {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
-    (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {fr : List Region} {s s' m₁ m₂ : State}
-    (mo₁ : MidO fr Ctx W SP D Np A nl al n tl s m₁) (mo₂ : MidO fr Ctx W SP D Np A nl al n tl s' m₂)
+theorem omB_rel {S : Nat} (v : GcmImpl) {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
+    (L : Lay S Ctx (W + BitVec.ofNat 64 16) W SP) {fr : List Region} {s s' m₁ m₂ : State}
+    (mo₁ : MidO S fr Ctx W SP D Np A nl al n tl s m₁) (mo₂ : MidO S fr Ctx W SP D Np A nl al n tl s' m₂)
     (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
-    (hx : m₁.gpr .x27 = m₂.gpr .x27) :
+    (hx : m₁.gpr .x27 = m₂.gpr .x27) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa (Eq2 m₁ m₂) (omB v.callees) TT := by
   unfold omB
   have tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
@@ -359,14 +359,14 @@ theorem omB_rel (v : GcmImpl) {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
     exact cryptAl_rel L v (oc_in mo₁ h₁) (oc_in mo₂ h₂) rfl
 
 /-- `openMain` in two runs, after `tagIn`, whose tags compare alike. -/
-theorem openMain_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {σ₁ σ₂ t₁ t₂ : State}
-    (p₁ : OpenIn Ctx W SP Np A D Tg nl al n tl σ₁ t₁) (p₂ : OpenIn Ctx W SP Np A D Tg nl al n tl σ₂ t₂)
+theorem openMain_rel {S : Nat} (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {σ₁ σ₂ t₁ t₂ : State}
+    (p₁ : OpenIn S Ctx W SP Np A D Tg nl al n tl σ₁ t₁) (p₂ : OpenIn S Ctx W SP Np A D Tg nl al n tl σ₂ t₂)
     (rt₁ : bytesAt t₁.mem W tl = bytesAt σ₁.mem Tg tl) (rt₂ : bytesAt t₂.mem W tl = bytesAt σ₂.mem Tg tl)
     (hok : Spec.Gcm.tagLenOk tl = true)
     (hb : (Spec.Gcm.openResult (ctxCiph σ₁.mem Ctx) (ctxH σ₁.mem Ctx) tl (bytesAt σ₁.mem Np nl)
         (bytesAt σ₁.mem D n) (bytesAt σ₁.mem A al) (bytesAt σ₁.mem Tg tl)).isSome =
       (Spec.Gcm.openResult (ctxCiph σ₂.mem Ctx) (ctxH σ₂.mem Ctx) tl (bytesAt σ₂.mem Np nl)
-        (bytesAt σ₂.mem D n) (bytesAt σ₂.mem A al) (bytesAt σ₂.mem Tg tl)).isSome) :
+        (bytesAt σ₂.mem D n) (bytesAt σ₂.mem A al) (bytesAt σ₂.mem Tg tl)).isSome) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa (Eq2 t₁ t₂) (openMain v.callees) TT := by
   have L := p₁.lay
   refine (openMain_split v.callees).symm.rel (rel_seq (omA_rel v p₁ p₂)
@@ -378,10 +378,10 @@ theorem openMain_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat
   rw [mo₁.x27, mo₂.x27, tagBit p₁ rt₁ hok, tagBit p₂ rt₂ hok, hb]
 
 /-- `open` after its entry, in two runs from the same public arguments. -/
-theorem openRest_rel (v : GcmImpl) {σ₁ σ₂ s₁ s₂ : State}
-    (o₁ : OpenIn (σ₁.gpr .x0) (stackArg σ₁ 1) σ₁.sp (σ₁.gpr .x1) (σ₁.gpr .x3) (σ₁.gpr .x5) (σ₁.gpr .x7)
+theorem openRest_rel {S : Nat} (v : GcmImpl) {σ₁ σ₂ s₁ s₂ : State}
+    (o₁ : OpenIn S (σ₁.gpr .x0) (stackArg σ₁ 1) σ₁.sp (σ₁.gpr .x1) (σ₁.gpr .x3) (σ₁.gpr .x5) (σ₁.gpr .x7)
       (σ₁.gpr .x2).toNat (σ₁.gpr .x4).toNat (σ₁.gpr .x6).toNat (stackArg σ₁ 0).toNat σ₁ s₁)
-    (o₂ : OpenIn (σ₁.gpr .x0) (stackArg σ₁ 1) σ₁.sp (σ₁.gpr .x1) (σ₁.gpr .x3) (σ₁.gpr .x5) (σ₁.gpr .x7)
+    (o₂ : OpenIn S (σ₁.gpr .x0) (stackArg σ₁ 1) σ₁.sp (σ₁.gpr .x1) (σ₁.gpr .x3) (σ₁.gpr .x5) (σ₁.gpr .x7)
       (σ₁.gpr .x2).toNat (σ₁.gpr .x4).toNat (σ₁.gpr .x6).toNat (stackArg σ₁ 0).toNat σ₂ s₂)
     (x12₁ : s₁.gpr .x12 = σ₁.gpr .x7) (x12₂ : s₂.gpr .x12 = σ₁.gpr .x7)
     (hb : (Spec.Gcm.openResult (ctxCiph σ₁.mem (σ₁.gpr .x0)) (ctxH σ₁.mem (σ₁.gpr .x0)) (stackArg σ₁ 0).toNat
@@ -389,7 +389,7 @@ theorem openRest_rel (v : GcmImpl) {σ₁ σ₂ s₁ s₂ : State}
         (bytesAt σ₁.mem (σ₁.gpr .x3) (σ₁.gpr .x4).toNat) (bytesAt σ₁.mem (σ₁.gpr .x7) (stackArg σ₁ 0).toNat)).isSome =
       (Spec.Gcm.openResult (ctxCiph σ₂.mem (σ₁.gpr .x0)) (ctxH σ₂.mem (σ₁.gpr .x0)) (stackArg σ₁ 0).toNat
         (bytesAt σ₂.mem (σ₁.gpr .x1) (σ₁.gpr .x2).toNat) (bytesAt σ₂.mem (σ₁.gpr .x5) (σ₁.gpr .x6).toNat)
-        (bytesAt σ₂.mem (σ₁.gpr .x3) (σ₁.gpr .x4).toNat) (bytesAt σ₂.mem (σ₁.gpr .x7) (stackArg σ₁ 0).toNat)).isSome) :
+        (bytesAt σ₂.mem (σ₁.gpr .x3) (σ₁.gpr .x4).toNat) (bytesAt σ₂.mem (σ₁.gpr .x7) (stackArg σ₁ 0).toNat)).isSome) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
     RelCT isa (Eq2 s₁ s₂) (openRest v.callees) TT := by
   unfold openRest
   refine rel_seq (rel_taint [.x28] (by rw [o₁.env.sp, o₂.env.sp]) (by agree_tac [o₁.x28, o₂.x28])
@@ -418,7 +418,7 @@ theorem openRest_rel (v : GcmImpl) {σ₁ σ₂ s₁ s₂ : State}
     (by rw [rt₂, p₂.tag]) hok hb
 
 /-- The entry of `open` in two runs. -/
-theorem openEntry_rel {σ₁ σ₂ : State} (f₁ : OneFacts σ₁ σ₁ 2 1) (f₂ : OneFacts σ₂ σ₁ 2 1) (qsp : σ₁.sp = σ₂.sp)
+theorem openEntry_rel {S : Nat} {σ₁ σ₂ : State} (f₁ : OneFacts S σ₁ σ₁ 2 1) (f₂ : OneFacts S σ₂ σ₁ 2 1) (qsp : σ₁.sp = σ₂.sp)
     (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6], σ₁.gpr r = σ₂.gpr r) (q7 : σ₁.gpr .x7 = σ₂.gpr .x7) :
     RelCT isa (Eq2 σ₁ σ₂) (.block openEntry) TT := by
   have hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 8) 64 = stackArg σ₁ 1 := rfl
@@ -434,7 +434,7 @@ theorem openEntry_rel {σ₁ σ₂ : State} (f₁ : OneFacts σ₁ σ₁ 2 1) (f
     fun τ₁ τ₂ a₁ a₂ => rel_taint [.x19, .x7] (by rw [a₁.1.sp, a₂.1.sp, qsp])
       (by agree_tac [a₁.1.x19, a₂.1.x19, a₁.2.2.2.2.2.1, a₂.2.2.2.2.2.1, q7]) ts)
 
-theorem open_ct (v : GcmImpl) : ConstantTime isa openAArch64.pre openAArch64.pub («open» v.callees) := by
+theorem open_ct {S : Nat} (v : GcmImpl) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) : ConstantTime isa (openAArch64 S).pre (openAArch64 S).pub («open» v.callees) := by
   unfold «open»
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨hq, hres⟩ := hq
@@ -488,12 +488,12 @@ open VG.Impl.AesGcm.AArch64 (mov ptr imm tO save)
 open VG.Proof.AesGcm.AArch64
 
 /-- The block before the call of `vg_sm4_expand_key`. -/
-theorem init1_ok {s : State} {K Ctx W : Addr} (hK : s.gpr .x0 = K) (hCtx : s.gpr .x1 = Ctx)
-    (hW : s.gpr .x2 = W) (hsp : 3264 ≤ s.sp.toNat) (hrd : s.rd = [⟨K, 16⟩])
+theorem init1_ok {S : Nat} {s : State} {K Ctx W : Addr} (hK : s.gpr .x0 = K) (hCtx : s.gpr .x1 = Ctx)
+    (hW : s.gpr .x2 = W) (hsp : S ≤ s.sp.toNat) (hrd : s.rd = [⟨K, 16⟩])
     (hwr : s.wr = [⟨Ctx, 256⟩, ⟨W, 768⟩]) (d_kc : (⟨K, 16⟩ : Region).Disjoint ⟨Ctx, 256⟩)
-    (sK : (stk s.sp).Disjoint ⟨K, 16⟩) (sC : (stk s.sp).Disjoint ⟨Ctx, 256⟩)
+    (sK : (stk S s.sp).Disjoint ⟨K, 16⟩) (sC : (stk S s.sp).Disjoint ⟨Ctx, 256⟩)
     (fK : K.toNat + 16 ≤ 2 ^ 64) (fC : Ctx.toNat + 256 ≤ 2 ^ 64) :
-    WP isa (.block initSeg1) s fun s₂ => KeyCall s₂ K Ctx ∧ s₂.gpr .x19 = W ∧
+    WP isa (.block initSeg1) s fun s₂ => KeyCall S s₂ K Ctx ∧ s₂.gpr .x19 = W ∧
       s₂.gpr .x21 = Ctx ∧ s₂.sp = s.sp ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr := by
   have pW : Covers [⟨W, 768⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
   have pC : Covers [⟨Ctx, 256⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
@@ -521,12 +521,12 @@ theorem init1_ok {s : State} {K Ctx W : Addr} (hK : s.gpr .x0 = K) (hCtx : s.gpr
   · rw [wr₂']; exact covers_prefix pC (by decide)
 
 /-- The block before the call of `vg_sm4_ctr32`. -/
-theorem init2_ok {s : State} {Ctx W : Addr} (h19 : s.gpr .x19 = W) (h21 : s.gpr .x21 = Ctx)
-    (hsp : 3264 ≤ s.sp.toNat) (pC : Covers [⟨Ctx, 256⟩] s.wr) (pW : Covers [⟨W, 768⟩] s.wr)
-    (d_cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 768⟩) (sC : (stk s.sp).Disjoint ⟨Ctx, 256⟩)
-    (sW : (stk s.sp).Disjoint ⟨W, 768⟩) (fC : Ctx.toNat + 256 ≤ 2 ^ 64) (fW : W.toNat + 768 ≤ 2 ^ 64) :
+theorem init2_ok {S : Nat} {s : State} {Ctx W : Addr} (h19 : s.gpr .x19 = W) (h21 : s.gpr .x21 = Ctx)
+    (hsp : S ≤ s.sp.toNat) (pC : Covers [⟨Ctx, 256⟩] s.wr) (pW : Covers [⟨W, 768⟩] s.wr)
+    (d_cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 768⟩) (sC : (stk S s.sp).Disjoint ⟨Ctx, 256⟩)
+    (sW : (stk S s.sp).Disjoint ⟨W, 768⟩) (fC : Ctx.toNat + 256 ≤ 2 ^ 64) (fW : W.toNat + 768 ≤ 2 ^ 64) :
     WP isa (.block initSeg2) s fun s₄ =>
-      CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) 1 ∧
+      CtrCall S s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) 1 ∧
       s₄.gpr .x19 = W ∧ s₄.gpr .x21 = Ctx ∧ s₄.sp = s.sp := by
   have w₁ := in_off pC (show 240 + 8 ≤ 256 by decide) (by decide)
   have w₂ := in_off pC (show 248 + 8 ≤ 256 by decide) (by decide)
@@ -564,7 +564,9 @@ theorem init2_ok {s : State} {Ctx W : Addr} (h19 : s.gpr .x19 = W) (h21 : s.gpr 
       (covers_left (covers_off pC' (by decide) (by decide))))
   · exact covers_cons (covers_off pW' (by decide) (by decide)) (covers_off pC' (by decide) (by decide))
 
-theorem init_ct (v : GcmImpl) : ConstantTime isa initAArch64.pre initAArch64.pub (init v.callees) := by
+theorem init_ct {S : Nat} (v : GcmImpl)
+    (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    ConstantTime isa (initAArch64 S).pre (initAArch64 S).pub (init v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, qsp⟩ := hq
   simp only [initAArch64] at h₁ h₂
@@ -576,18 +578,18 @@ theorem init_ct (v : GcmImpl) : ConstantTime isa initAArch64.pre initAArch64.pub
   generalize hW : σ₁.gpr .x2 = W at *
   refine rel_seq (rel_taint [.x0, .x1, .x2] qsp (by agree_tac [hK, hCtx, hW, ← q0, ← q1, ← q2])
       ⟨_, by taint_decide⟩)
-    (init1_ok hK hCtx hW hsp hrd₁ hwr₁ d_kc sK sC fK fC)
-    (init1_ok q0.symm q1.symm q2.symm (by rw [← qsp]; exact hsp) hrd₂ hwr₂ d_kc (by rw [← qsp]; exact sK)
+    (init1_ok (S := S) hK hCtx hW hsp hrd₁ hwr₁ d_kc sK sC fK fC)
+    (init1_ok (S := S) q0.symm q1.symm q2.symm (by rw [← qsp]; exact hsp) hrd₂ hwr₂ d_kc (by rw [← qsp]; exact sK)
       (by rw [← qsp]; exact sC) fK fC)
     fun τ₁ τ₂ ⟨k₁, x19₁, x21₁, sp₁, rd₁, wr₁⟩ ⟨k₂, x19₂, x21₂, sp₂, rd₂, wr₂⟩ => ?_
   refine rel_seq (rel_key v.ctr.key k₁ k₂ (by rw [sp₁, sp₂, qsp])) (key_call v.ctr.key k₁)
       (key_call v.ctr.key k₂)
     fun τ₁' τ₂' g₁ g₂ => ?_
   have pv : ∀ {σ τ τ' : State}, σ.wr = [⟨Ctx, 256⟩, ⟨W, 768⟩] → τ.wr = σ.wr → τ.sp = σ.sp →
-      σ.sp = σ₁.sp → KeyPost τ K Ctx τ' → τ.gpr .x19 = W → τ.gpr .x21 = Ctx →
-      WP isa (.block initSeg2) τ' fun s₄ => CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) 1 ∧
+      σ.sp = σ₁.sp → KeyPost S τ K Ctx τ' → τ.gpr .x19 = W → τ.gpr .x21 = Ctx →
+      WP isa (.block initSeg2) τ' fun s₄ => CtrCall S s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) 1 ∧
         s₄.gpr .x19 = W ∧ s₄.gpr .x21 = Ctx ∧ s₄.sp = τ'.sp :=
-    fun hwr wr sp sp' g h19 h21 => init2_ok (by rw [g.saved .x19 (by decide) (by decide), h19])
+    fun hwr wr sp sp' g h19 h21 => init2_ok (S := S) (by rw [g.saved .x19 (by decide) (by decide), h19])
       (by rw [g.saved .x21 (by decide) (by decide), h21]) (by rw [g.sp, sp, sp']; exact hsp)
       (by rw [g.wr, wr, hwr]; exact covers_of_mem (by simp))
       (by rw [g.wr, wr, hwr]; exact covers_of_mem (by simp)) d_cs (by rw [g.sp, sp, sp']; exact sC)
@@ -650,8 +652,8 @@ theorem sm4BlockAt_eq (m : Mem) (p : Addr) :
   simp [bytesAt, i.isLt]
 
 /-- `vg_sm4_gcm_init`. -/
-theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
-    WP isa (init v.callees) s fun s' => GprAbi s s' ∧ initAArch64.post s s' := by
+theorem init_wp {S : Nat} (v : GcmImpl) {s : State} (hp : (initAArch64 S).pre s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    WP isa (init v.callees) s fun s' => GprAbi s s' ∧ (initAArch64 S).post s s' := by
   simp only [initAArch64] at hp ⊢
   obtain ⟨hsp, hrd, hwr, d_kc, d_ks, d_cs, sK, sC, sW, fK, fC, fW⟩ := hp
   generalize hK : s.gpr .x0 = K at *
@@ -677,7 +679,7 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
   obtain wr₂' : s₂.wr = s.wr := wr₂.trans wr₁
   obtain sp₂' : s₂.sp = s.sp := sp₂.trans sp₁
   -- The key schedule.
-  obtain kc : KeyCall s₂ K Ctx := by
+  obtain kc : KeyCall S s₂ K Ctx := by
     refine ⟨x0₂, x1₂, by rw [sp₂']; exact hsp, fK, by omega_arith, d_kc.sub_right (Region.sub_prefix (by decide)),
       by rw [sp₂']; exact sK, by rw [sp₂']; exact sC.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
     · rw [rd₂', wr₂']
@@ -752,7 +754,7 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
   obtain pC' : Covers [⟨Ctx, 256⟩] s₄.wr := by rw [wr₄']; exact pC
   obtain pW' : Covers [⟨W, 768⟩] s₄.wr := by rw [wr₄']; exact pW
   -- `H = CIPH_K(0¹²⁸)`.
-  obtain cc : CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) 1 := by
+  obtain cc : CtrCall S s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) 1 := by
     refine ⟨x0₄, x1₄, x2₄, x3₄, by rw [sp₄']; exact hsp, by decide, ?_, by omega_arith, ?_,
       ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_arith
@@ -772,7 +774,7 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
   have gout := c.out
   rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq, hT₄, hD₄, hk₄] at gout
   obtain c19 : s₅.gpr .x19 = W := by rw [c.saved .x19 (by decide) (by decide), og₄ _ (by decide), g19]
-  obtain dSvK : ∀ r ∈ [(⟨Ctx, 128⟩ : Region), stk s.sp], (savedR W).Disjoint r := by
+  obtain dSvK : ∀ r ∈ [(⟨Ctx, 128⟩ : Region), stk S s.sp], (savedR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -785,7 +787,7 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
     rcases hr with rfl | rfl
     · exact (dCW 240 16 (by decide) 128 88 (by decide)).symm
     · exact Offset.disjoint W (.inr (by decide)) (by decide) (by omega_arith)
-  obtain dSv₅ : ∀ r ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region), ⟨Ctx + BitVec.ofNat 64 240, 16 * 1⟩, stk s.sp],
+  obtain dSv₅ : ∀ r ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region), ⟨Ctx + BitVec.ofNat 64 240, 16 * 1⟩, stk S s.sp],
       (savedR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -877,32 +879,32 @@ theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true
 
 /-! ## Correctness -/
 
-theorem init_correct (v : GcmImpl) (s : State) (hs : initAArch64.pre s) :
-    ∃ t s', Exec isa (init v.callees) s t s' ∧ abiPreserved s s' ∧ initAArch64.post s s' :=
+theorem init_correct {S : Nat} (v : GcmImpl) (s : State) (hs : (initAArch64 S).pre s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    ∃ t s', Exec isa (init v.callees) s t s' ∧ abiPreserved s s' ∧ (initAArch64 S).post s s' :=
   WP.withPreservedV (init_wp v hs) (init_keepsV v)
 
-theorem streamEncrypt_correct (v : GcmImpl) (s : State) (hs : streamEncryptAArch64.pre s) :
-    ∃ t s', Exec isa (streamEncrypt v.callees) s t s' ∧ abiPreserved s s' ∧ streamEncryptAArch64.post s s' :=
+theorem streamEncrypt_correct {S : Nat} (v : GcmImpl) (s : State) (hs : (streamEncryptAArch64 S).pre s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    ∃ t s', Exec isa (streamEncrypt v.callees) s t s' ∧ abiPreserved s s' ∧ (streamEncryptAArch64 S).post s s' :=
   WP.withPreservedV (streamEncrypt_wp v hs) (streamEncrypt_keepsV v)
 
-theorem streamDecrypt_correct (v : GcmImpl) (s : State) (hs : streamDecryptAArch64.pre s) :
-    ∃ t s', Exec isa (streamDecrypt v.callees) s t s' ∧ abiPreserved s s' ∧ streamDecryptAArch64.post s s' :=
+theorem streamDecrypt_correct {S : Nat} (v : GcmImpl) (s : State) (hs : (streamDecryptAArch64 S).pre s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    ∃ t s', Exec isa (streamDecrypt v.callees) s t s' ∧ abiPreserved s s' ∧ (streamDecryptAArch64 S).post s s' :=
   WP.withPreservedV (streamDecrypt_wp v hs) (streamDecrypt_keepsV v)
 
-theorem streamFinish_correct (v : GcmImpl) (s : State) (hs : streamFinishAArch64.pre s) :
-    ∃ t s', Exec isa (streamFinish v.callees) s t s' ∧ abiPreserved s s' ∧ streamFinishAArch64.post s s' :=
+theorem streamFinish_correct {S : Nat} (v : GcmImpl) (s : State) (hs : (streamFinishAArch64 S).pre s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    ∃ t s', Exec isa (streamFinish v.callees) s t s' ∧ abiPreserved s s' ∧ (streamFinishAArch64 S).post s s' :=
   WP.withPreservedV (streamFinish_wp v hs) (streamFinish_keepsV v)
 
-theorem streamVerify_correct (v : GcmImpl) (s : State) (hs : streamVerifyAArch64.pre s) :
-    ∃ t s', Exec isa (streamVerify v.callees) s t s' ∧ abiPreserved s s' ∧ streamVerifyAArch64.post s s' :=
+theorem streamVerify_correct {S : Nat} (v : GcmImpl) (s : State) (hs : (streamVerifyAArch64 S).pre s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    ∃ t s', Exec isa (streamVerify v.callees) s t s' ∧ abiPreserved s s' ∧ (streamVerifyAArch64 S).post s s' :=
   WP.withPreservedV (streamVerify_wp v hs) (streamVerify_keepsV v)
 
-theorem seal_correct (v : GcmImpl) (s : State) (hs : sealAArch64.pre s) :
-    ∃ t s', Exec isa («seal» v.callees) s t s' ∧ abiPreserved s s' ∧ sealAArch64.post s s' :=
+theorem seal_correct {S : Nat} (v : GcmImpl) (s : State) (hs : (sealAArch64 S).pre s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    ∃ t s', Exec isa («seal» v.callees) s t s' ∧ abiPreserved s s' ∧ (sealAArch64 S).post s s' :=
   WP.withPreservedV (seal_wp v hs) (seal_keepsV v)
 
-theorem open_correct (v : GcmImpl) (s : State) (hs : openAArch64.pre s) :
-    ∃ t s', Exec isa («open» v.callees) s t s' ∧ abiPreserved s s' ∧ openAArch64.post s s' :=
+theorem open_correct {S : Nat} (v : GcmImpl) (s : State) (hs : (openAArch64 S).pre s) (hvS : v.ctr.stack ≤ S := by first | with_reducible assumption | exact Nat.le_refl _) :
+    ∃ t s', Exec isa («open» v.callees) s t s' ∧ abiPreserved s s' ∧ (openAArch64 S).post s s' :=
   WP.withPreservedV (open_wp v hs) (open_keepsV v)
 
 /-! ## States satisfying the preconditions (with empty buffers)
@@ -962,68 +964,75 @@ def openSat : State where
 
 /-! ## The shared contracts -/
 
-theorem init_verified (v : GcmImpl) :
+theorem init_verified (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (init v.callees) (Sig.scratchContract AArch64.abi Spec.Sm4.Gcm.initSig "scratch" .u64 96
-      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.initPost AArch64.abi.ptrBits) true 3264) :=
-  Verified.of_correct (init_correct v) (init_ct v) (by
-    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Sm4.Gcm.initSig,
-      Spec.Sm4.Gcm.initPost, initAArch64, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-      AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow]
-      [initSat] using initSat)
+      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.initPost AArch64.abi.ptrBits) true v.ctr.stack) := by
+  rcases h with h | h <;> rw [h] <;>
+  exact Verified.of_correct (init_correct v (hvS := Nat.le_of_eq h)) (init_ct v (hvS := Nat.le_of_eq h)) (by
+      sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Sm4.Gcm.initSig,
+        Spec.Sm4.Gcm.initPost, initAArch64, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+        AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow]
+        [initSat] using initSat)
 
-theorem streamEncrypt_verified (v : GcmImpl) :
+theorem streamEncrypt_verified (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (streamEncrypt v.callees) (Sig.scratchContract AArch64.abi Spec.Sm4.Gcm.streamCryptSig "scratch" .u64 96
-      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamEncryptPost AArch64.abi.ptrBits) true 3264) :=
-  Verified.of_correct (streamEncrypt_correct v) (streamEncrypt_ct v) (by
-    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-      AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
-      Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamEncryptPost, streamEncryptAArch64, streamCryptPre, streamCryptPub]
-      [streamCryptSat] using streamCryptSat)
+      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamEncryptPost AArch64.abi.ptrBits) true v.ctr.stack) := by
+  rcases h with h | h <;> rw [h] <;>
+  exact Verified.of_correct (streamEncrypt_correct v (hvS := Nat.le_of_eq h)) (streamEncrypt_ct v (hvS := Nat.le_of_eq h)) (by
+      sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+        AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
+        Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamEncryptPost, streamEncryptAArch64, streamCryptPre, streamCryptPub]
+        [streamCryptSat] using streamCryptSat)
 
-theorem streamDecrypt_verified (v : GcmImpl) :
+theorem streamDecrypt_verified (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (streamDecrypt v.callees) (Sig.scratchContract AArch64.abi Spec.Sm4.Gcm.streamCryptSig "scratch" .u64 96
-      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamDecryptPost AArch64.abi.ptrBits) true 3264) :=
-  Verified.of_correct (streamDecrypt_correct v) (streamDecrypt_ct v) (by
-    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-      AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
-      Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost, streamDecryptAArch64, streamCryptPre, streamCryptPub]
-      [streamCryptSat] using streamCryptSat)
+      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamDecryptPost AArch64.abi.ptrBits) true v.ctr.stack) := by
+  rcases h with h | h <;> rw [h] <;>
+  exact Verified.of_correct (streamDecrypt_correct v (hvS := Nat.le_of_eq h)) (streamDecrypt_ct v (hvS := Nat.le_of_eq h)) (by
+      sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+        AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
+        Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost, streamDecryptAArch64, streamCryptPre, streamCryptPub]
+        [streamCryptSat] using streamCryptSat)
 
-theorem streamFinish_verified (v : GcmImpl) :
+theorem streamFinish_verified (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (streamFinish v.callees) (Sig.scratchContract AArch64.abi Spec.Sm4.Gcm.streamFinishSig "work" .u64 96
-      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamFinishPost AArch64.abi.ptrBits) true 3264) :=
-  Verified.of_correct (streamFinish_correct v) (streamFinish_ct v) (by
-    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-      AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
-      Spec.Sm4.Gcm.streamFinishSig, Spec.Sm4.Gcm.streamFinishPost, streamFinishAArch64, finPre]
-      [finSat] using finSat)
+      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamFinishPost AArch64.abi.ptrBits) true v.ctr.stack) := by
+  rcases h with h | h <;> rw [h] <;>
+  exact Verified.of_correct (streamFinish_correct v (hvS := Nat.le_of_eq h)) (streamFinish_ct v (hvS := Nat.le_of_eq h)) (by
+      sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+        AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
+        Spec.Sm4.Gcm.streamFinishSig, Spec.Sm4.Gcm.streamFinishPost, streamFinishAArch64, finPre]
+        [finSat] using finSat)
 
-theorem streamVerify_verified (v : GcmImpl) :
+theorem streamVerify_verified (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (streamVerify v.callees) (Sig.scratchContract AArch64.abi Spec.Sm4.Gcm.streamVerifySig "work" .u64 96
-      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamVerifyPost AArch64.abi.ptrBits) true 3264) :=
-  Verified.of_correct (streamVerify_correct v) (streamVerify_ct v) (by
-    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-      AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
-      Spec.Sm4.Gcm.streamVerifySig, Spec.Sm4.Gcm.streamVerifyPost, streamVerifyAArch64, verPre]
-      [verSat] using verSat)
+      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamVerifyPost AArch64.abi.ptrBits) true v.ctr.stack) := by
+  rcases h with h | h <;> rw [h] <;>
+  exact Verified.of_correct (streamVerify_correct v (hvS := Nat.le_of_eq h)) (streamVerify_ct v (hvS := Nat.le_of_eq h)) (by
+      sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+        AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
+        Spec.Sm4.Gcm.streamVerifySig, Spec.Sm4.Gcm.streamVerifyPost, streamVerifyAArch64, verPre]
+        [verSat] using verSat)
 
-theorem seal_verified (v : GcmImpl) :
+theorem seal_verified (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target («seal» v.callees) (Sig.scratchContract AArch64.abi Spec.Sm4.Gcm.sealSig "work" .u64 96
-      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.sealPost AArch64.abi.ptrBits) true 3264) :=
-  Verified.of_correct (seal_correct v) (seal_ct v) (by
-    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-      AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
-      Spec.Sm4.Gcm.sealSig, Spec.Sm4.Gcm.sealPost, sealAArch64, sealPre, onePub]
-      [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
+      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.sealPost AArch64.abi.ptrBits) true v.ctr.stack) := by
+  rcases h with h | h <;> rw [h] <;>
+  exact Verified.of_correct (seal_correct v (hvS := Nat.le_of_eq h)) (seal_ct v (hvS := Nat.le_of_eq h)) (by
+      sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+        AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
+        Spec.Sm4.Gcm.sealSig, Spec.Sm4.Gcm.sealPost, sealAArch64, sealPre, onePub]
+        [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
-theorem open_verified (v : GcmImpl) :
+theorem open_verified (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target («open» v.callees) (Sig.scratchContract AArch64.abi Spec.Sm4.Gcm.openSig "work" .u64 96
-      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.openPost AArch64.abi.ptrBits) true 3264 (some (Spec.Sm4.Gcm.openLeak AArch64.abi.ptrBits))) :=
-  Verified.of_correct (open_correct v) (open_ct v) (by
-    sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
-      AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
-      Spec.Sm4.Gcm.openSig, Spec.Sm4.Gcm.openPost, openAArch64, openPre, onePub, openRes, openLeakOf, Spec.Sm4.Gcm.openLeak, stackArg, stackArgAddr, Curry.app, Option.map]
-      [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)
+      (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.openPost AArch64.abi.ptrBits) true v.ctr.stack (some (Spec.Sm4.Gcm.openLeak AArch64.abi.ptrBits))) := by
+  rcases h with h | h <;> rw [h] <;>
+  exact Verified.of_correct (open_correct v (hvS := Nat.le_of_eq h)) (open_ct v (hvS := Nat.le_of_eq h)) (by
+      sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
+        AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow,
+        Spec.Sm4.Gcm.openSig, Spec.Sm4.Gcm.openPost, openAArch64, openPre, onePub, openRes, openLeakOf, Spec.Sm4.Gcm.openLeak, stackArg, stackArgAddr, Curry.app, Option.map]
+        [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)
 
 end VG.Proof.Sm4Gcm.AArch64
 
@@ -1058,13 +1067,29 @@ theorem initFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.initContract AArch64.abi 4032).p
   implies_sat [Spec.Sm4.Gcm.initContract, Spec.Sm4.Gcm.initSig, Spec.Sm4.Gcm.initPost, AArch64.abi,
     AArch64.argRegs, stackBelow] [initFrameSat, initSat] using initFrameSat
 
-theorem init_framed (v : GcmImpl) :
+theorem initFrameSat_pre992 : ∃ s, (Spec.Sm4.Gcm.initContract AArch64.abi 992).pre s := by
+  implies_sat [Spec.Sm4.Gcm.initContract, Spec.Sm4.Gcm.initSig, Spec.Sm4.Gcm.initPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [initFrameSat, initSat] using initFrameSat
+
+/-- The stack of the implementations of `vg_sm4_ctr32` the variants name. -/
+theorem CtrName.stack_cases (c : CtrName) : c.impl.stack = 3264 ∨ c.impl.stack = 224 := by
+  cases c
+  · exact .inl rfl
+  · exact .inr rfl
+
+theorem init_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 768 .x2 (init v.callees))
-      (Spec.Sm4.Gcm.initContract AArch64.abi 4032) :=
-  AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 96)
-    (post := Spec.Sm4.Gcm.initPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (init_verified v) (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
+      (Spec.Sm4.Gcm.initContract AArch64.abi (v.ctr.stack + 768)) := by
+  obtain hv := init_verified v h
+  rcases h with h | h <;> rw [h] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 96)
+      (post := Spec.Sm4.Gcm.initPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
+      hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
+  · exact AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 96)
+      (post := Spec.Sm4.Gcm.initPost AArch64.abi.ptrBits) (wa := true) (stack := 224) (bytes := 768)
+      hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre992
 
 /-- A state satisfying `vg_sm4_gcm_stream_encrypt`'s precondition, without the working
 space. -/
@@ -1074,13 +1099,23 @@ theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamEncryptContract A
   implies_sat [Spec.Sm4.Gcm.streamEncryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamEncryptPost, AArch64.abi,
     AArch64.argRegs, stackBelow] [streamEncryptFrameSat, streamCryptSat] using streamEncryptFrameSat
 
-theorem streamEncrypt_framed (v : GcmImpl) :
+theorem streamEncryptFrameSat_pre992 : ∃ s, (Spec.Sm4.Gcm.streamEncryptContract AArch64.abi 992).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamEncryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamEncryptPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamEncryptFrameSat, streamCryptSat] using streamEncryptFrameSat
+
+theorem streamEncrypt_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 768 .x6 (streamEncrypt v.callees))
-      (Spec.Sm4.Gcm.streamEncryptContract AArch64.abi 4032) :=
-  AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 96)
-    (post := Spec.Sm4.Gcm.streamEncryptPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (streamEncrypt_verified v) (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamEncryptPostOut_local _ vs m m₁ m₂ r hl) streamEncryptFrameSat_pre
+      (Spec.Sm4.Gcm.streamEncryptContract AArch64.abi (v.ctr.stack + 768)) := by
+  obtain hv := streamEncrypt_verified v h
+  rcases h with h | h <;> rw [h] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 96)
+      (post := Spec.Sm4.Gcm.streamEncryptPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
+      hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamEncryptPostOut_local _ vs m m₁ m₂ r hl) streamEncryptFrameSat_pre
+  · exact AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 96)
+      (post := Spec.Sm4.Gcm.streamEncryptPost AArch64.abi.ptrBits) (wa := true) (stack := 224) (bytes := 768)
+      hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamEncryptPostOut_local _ vs m m₁ m₂ r hl) streamEncryptFrameSat_pre992
 
 /-- A state satisfying `vg_sm4_gcm_stream_decrypt`'s precondition, without the working
 space. -/
@@ -1090,13 +1125,23 @@ theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract A
   implies_sat [Spec.Sm4.Gcm.streamDecryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost, AArch64.abi,
     AArch64.argRegs, stackBelow] [streamDecryptFrameSat, streamCryptSat] using streamDecryptFrameSat
 
-theorem streamDecrypt_framed (v : GcmImpl) :
+theorem streamDecryptFrameSat_pre992 : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract AArch64.abi 992).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamDecryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamDecryptFrameSat, streamCryptSat] using streamDecryptFrameSat
+
+theorem streamDecrypt_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 768 .x6 (streamDecrypt v.callees))
-      (Spec.Sm4.Gcm.streamDecryptContract AArch64.abi 4032) :=
-  AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 96)
-    (post := Spec.Sm4.Gcm.streamDecryptPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (streamDecrypt_verified v) (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamDecryptPostOut_local _ vs m m₁ m₂ r hl) streamDecryptFrameSat_pre
+      (Spec.Sm4.Gcm.streamDecryptContract AArch64.abi (v.ctr.stack + 768)) := by
+  obtain hv := streamDecrypt_verified v h
+  rcases h with h | h <;> rw [h] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 96)
+      (post := Spec.Sm4.Gcm.streamDecryptPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
+      hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamDecryptPostOut_local _ vs m m₁ m₂ r hl) streamDecryptFrameSat_pre
+  · exact AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64) (n := 96)
+      (post := Spec.Sm4.Gcm.streamDecryptPost AArch64.abi.ptrBits) (wa := true) (stack := 224) (bytes := 768)
+      hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamDecryptPostOut_local _ vs m m₁ m₂ r hl) streamDecryptFrameSat_pre992
 
 /-- A state satisfying `vg_sm4_gcm_stream_finish`'s precondition, without the working
 space. -/
@@ -1106,13 +1151,23 @@ theorem streamFinishFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamFinishContract AAr
   implies_sat [Spec.Sm4.Gcm.streamFinishContract, Spec.Sm4.Gcm.streamFinishSig, Spec.Sm4.Gcm.streamFinishPost, AArch64.abi,
     AArch64.argRegs, stackBelow] [streamFinishFrameSat, finSat] using streamFinishFrameSat
 
-theorem streamFinish_framed (v : GcmImpl) :
+theorem streamFinishFrameSat_pre992 : ∃ s, (Spec.Sm4.Gcm.streamFinishContract AArch64.abi 992).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamFinishContract, Spec.Sm4.Gcm.streamFinishSig, Spec.Sm4.Gcm.streamFinishPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamFinishFrameSat, finSat] using streamFinishFrameSat
+
+theorem streamFinish_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 768 .x5 (streamFinish v.callees))
-      (Spec.Sm4.Gcm.streamFinishContract AArch64.abi 4032) :=
-  AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64) (n := 96)
-    (post := Spec.Sm4.Gcm.streamFinishPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (streamFinish_verified v) (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamFinishPostOut_local _ vs m m₁ m₂ r hl) streamFinishFrameSat_pre
+      (Spec.Sm4.Gcm.streamFinishContract AArch64.abi (v.ctr.stack + 768)) := by
+  obtain hv := streamFinish_verified v h
+  rcases h with h | h <;> rw [h] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64) (n := 96)
+      (post := Spec.Sm4.Gcm.streamFinishPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
+      hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamFinishPostOut_local _ vs m m₁ m₂ r hl) streamFinishFrameSat_pre
+  · exact AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64) (n := 96)
+      (post := Spec.Sm4.Gcm.streamFinishPost AArch64.abi.ptrBits) (wa := true) (stack := 224) (bytes := 768)
+      hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamFinishPostOut_local _ vs m m₁ m₂ r hl) streamFinishFrameSat_pre992
 
 /-- A state satisfying `vg_sm4_gcm_stream_verify`'s precondition, without the working
 space. -/
@@ -1122,13 +1177,23 @@ theorem streamVerifyFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract AAr
   implies_sat [Spec.Sm4.Gcm.streamVerifyContract, Spec.Sm4.Gcm.streamVerifySig, Spec.Sm4.Gcm.streamVerifyPost, AArch64.abi,
     AArch64.argRegs, stackBelow] [streamVerifyFrameSat, verSat] using streamVerifyFrameSat
 
-theorem streamVerify_framed (v : GcmImpl) :
+theorem streamVerifyFrameSat_pre992 : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract AArch64.abi 992).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamVerifyContract, Spec.Sm4.Gcm.streamVerifySig, Spec.Sm4.Gcm.streamVerifyPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamVerifyFrameSat, verSat] using streamVerifyFrameSat
+
+theorem streamVerify_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 768 .x6 (streamVerify v.callees))
-      (Spec.Sm4.Gcm.streamVerifyContract AArch64.abi 4032) :=
-  AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64) (n := 96)
-    (post := Spec.Sm4.Gcm.streamVerifyPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (streamVerify_verified v) (by decide) (by decide)
-    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamVerifyPostOut_local _ vs m m₁ m₂ r hl) streamVerifyFrameSat_pre
+      (Spec.Sm4.Gcm.streamVerifyContract AArch64.abi (v.ctr.stack + 768)) := by
+  obtain hv := streamVerify_verified v h
+  rcases h with h | h <;> rw [h] at hv ⊢
+  · exact AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64) (n := 96)
+      (post := Spec.Sm4.Gcm.streamVerifyPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
+      hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamVerifyPostOut_local _ vs m m₁ m₂ r hl) streamVerifyFrameSat_pre
+  · exact AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64) (n := 96)
+      (post := Spec.Sm4.Gcm.streamVerifyPost AArch64.abi.ptrBits) (wa := true) (stack := 224) (bytes := 768)
+      hv (by decide) (by decide)
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.streamVerifyPostOut_local _ vs m m₁ m₂ r hl) streamVerifyFrameSat_pre992
 
 /-- A state satisfying `vg_sm4_gcm_seal`'s precondition, without the working
 space: no stack arguments. -/
@@ -1141,15 +1206,28 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.sealContract AArch64.abi 4048).p
     List.range.loop, stackBelow] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
-theorem seal_framed (v : GcmImpl) :
+theorem sealFrameSat_pre1008 : ∃ s, (Spec.Sm4.Gcm.sealContract AArch64.abi 1008).pre s := by
+  implies_sat [Spec.Sm4.Gcm.sealContract, Spec.Sm4.Gcm.sealSig, Spec.Sm4.Gcm.sealPost,
+    AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+    List.range.loop, stackBelow] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+    using sealFrameSat
+
+theorem seal_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 784 0 («seal» v.callees))
-      (Spec.Sm4.Gcm.sealContract AArch64.abi 4048) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64)
-    (n := 96) (post := Spec.Sm4.Gcm.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 3264)
-    (bytes := 784) (seal_verified v) (by decide) (by decide) (Proof.Sm4Gcm.pre_local _ _)
-    (Proof.Sm4Gcm.sealPost_local (pb := AArch64.abi.ptrBits))
-    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
+      (Spec.Sm4.Gcm.sealContract AArch64.abi (v.ctr.stack + 784)) := by
+  obtain hv := seal_verified v h
+  rcases h with h | h <;> rw [h] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64)
+      (n := 96) (post := Spec.Sm4.Gcm.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 3264)
+      (bytes := 784) hv (by decide) (by decide) (Proof.Sm4Gcm.pre_local _ _)
+      (Proof.Sm4Gcm.sealPost_local (pb := AArch64.abi.ptrBits))
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64)
+      (n := 96) (post := Spec.Sm4.Gcm.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 224)
+      (bytes := 784) hv (by decide) (by decide) (Proof.Sm4Gcm.pre_local _ _)
+      (Proof.Sm4Gcm.sealPost_local (pb := AArch64.abi.ptrBits))
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.sealPostOut_local _ vs m m₁ m₂ r hl) sealFrameSat_pre1008
 
 /-- A state satisfying `vg_sm4_gcm_open`'s precondition, without the working
 space: `tag_len` 0, its one stack argument. -/
@@ -1163,16 +1241,31 @@ theorem openFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.openContract AArch64.abi 4048).p
     List.getD, List.range, List.range.loop, stackBelow] [openFrameSat, openSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
-theorem open_framed (v : GcmImpl) :
+theorem openFrameSat_pre1008 : ∃ s, (Spec.Sm4.Gcm.openContract AArch64.abi 1008).pre s := by
+  implies_sat [Spec.Sm4.Gcm.openContract, Spec.Sm4.Gcm.openSig, Spec.Sm4.Gcm.openPost,
+    Spec.Sm4.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+    List.getD, List.range, List.range.loop, stackBelow] [openFrameSat, openSat, stackArg, stackArgAddr,
+    Mem.readW, Mem.read] using openFrameSat
+
+theorem open_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 784 1 («open» v.callees))
-      (Spec.Sm4.Gcm.openContract AArch64.abi 4048) :=
-  AArch64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.openSig) (nm := "work") (e := .u64)
-    (n := 96) (post := Spec.Sm4.Gcm.openPost AArch64.abi.ptrBits) (wa := true) (stack := 3264)
-    (bytes := 784) (leak := some (Spec.Sm4.Gcm.openLeak AArch64.abi.ptrBits))
-    (open_verified v) (by decide) (by decide) (Proof.Sm4Gcm.pre_local _ _)
-    (Proof.Sm4Gcm.openPost_local (pb := AArch64.abi.ptrBits))
-    (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre
-    (hleak := Proof.Sm4Gcm.openLeak_local (pb := AArch64.abi.ptrBits))
+      (Spec.Sm4.Gcm.openContract AArch64.abi (v.ctr.stack + 784)) := by
+  obtain hv := open_verified v h
+  rcases h with h | h <;> rw [h] at hv ⊢
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.openSig) (nm := "work") (e := .u64)
+      (n := 96) (post := Spec.Sm4.Gcm.openPost AArch64.abi.ptrBits) (wa := true) (stack := 3264)
+      (bytes := 784) (leak := some (Spec.Sm4.Gcm.openLeak AArch64.abi.ptrBits))
+      hv (by decide) (by decide) (Proof.Sm4Gcm.pre_local _ _)
+      (Proof.Sm4Gcm.openPost_local (pb := AArch64.abi.ptrBits))
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre
+      (hleak := Proof.Sm4Gcm.openLeak_local (pb := AArch64.abi.ptrBits))
+  · exact AArch64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.openSig) (nm := "work") (e := .u64)
+      (n := 96) (post := Spec.Sm4.Gcm.openPost AArch64.abi.ptrBits) (wa := true) (stack := 224)
+      (bytes := 784) (leak := some (Spec.Sm4.Gcm.openLeak AArch64.abi.ptrBits))
+      hv (by decide) (by decide) (Proof.Sm4Gcm.pre_local _ _)
+      (Proof.Sm4Gcm.openPost_local (pb := AArch64.abi.ptrBits))
+      (fun vs m m₁ m₂ r hl _ => Proof.Sm4Gcm.openPostOut_local _ vs m m₁ m₂ r hl) openFrameSat_pre1008
+      (hleak := Proof.Sm4Gcm.openLeak_local (pb := AArch64.abi.ptrBits))
 
 end VG.Proof.Sm4Gcm.AArch64

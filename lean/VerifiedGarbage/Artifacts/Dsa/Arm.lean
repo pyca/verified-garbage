@@ -23,18 +23,34 @@ namespace VG.Artifacts.Dsa.Arm
 open VG Proof.Dsa.Arm.Gen
 
 def artifacts : List Artifact :=
-  [Spec.Dsa.parameterInitApi.artifact Arm.target Proof.Dsa.Arm.Scrub.parameterInitReg] ++
+  [Spec.Dsa.parameterInitApi.artifact Arm.target {
+    code := Impl.Dsa.Arm.Fn.parameterInit
+    verified := .scrubbed Proof.Dsa.Arm.Fn.parameterInit }] ++
   (VG.Proof.Variants.DsaArithmetic.Arm.variants.flatMap fun (v : Proof.Variants.DsaArithmetic.Arm.Variant) => [
-    Spec.Dsa.randomSignPrevalidatedApi.artifact Arm.target
-      (Proof.Dsa.Arm.Scrub.randomSignPrevalidatedReg v.umaal v.suffix),
-    Spec.Dsa.validatePrivateKeyApi.artifact Arm.target
-      (Proof.Dsa.Arm.Scrub.validatePrivateKeyReg v.umaal v.suffix),
-    Spec.Dsa.deriveKeyApi.artifact Arm.target (Proof.Dsa.Arm.Scrub.deriveKeyReg v.umaal v.suffix),
-    Spec.Dsa.generateKeyApi.artifact Arm.target (Proof.Dsa.Arm.Scrub.generateKeyReg v.umaal v.suffix),
-    Spec.Dsa.validatePublicKeyApi.artifact Arm.target
-      (Proof.Dsa.Arm.Scrub.validatePublicKeyReg v.umaal v.suffix),
-    Spec.Dsa.verifyPrevalidatedApi.artifact Arm.target
-      (Proof.Dsa.Arm.Scrub.verifyPrevalidatedReg v.umaal v.suffix)]) ++
+    Spec.Dsa.randomSignPrevalidatedApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Dsa.Arm.Fn.randomSignPrevalidated v.umaal
+      verified := .scrubbed (Proof.Dsa.Arm.Fn.randomSignPrevalidated v.umaal) },
+    Spec.Dsa.validatePrivateKeyApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Dsa.Arm.Fn.validatePrivateKey v.umaal
+      verified := .scrubbed (Proof.Dsa.Arm.Fn.validatePrivateKey v.umaal) },
+    Spec.Dsa.deriveKeyApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Dsa.Arm.Fn.deriveKey v.umaal
+      verified := .scrubbed (Proof.Dsa.Arm.Fn.deriveKey v.umaal) },
+    Spec.Dsa.generateKeyApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Dsa.Arm.Fn.generateKey v.umaal
+      verified := .scrubbed (Proof.Dsa.Arm.Fn.generateKey v.umaal) },
+    Spec.Dsa.validatePublicKeyApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Dsa.Arm.Fn.validatePublicKey v.umaal
+      verified := .scrubbed (Proof.Dsa.Arm.Fn.validatePublicKey v.umaal) },
+    Spec.Dsa.verifyPrevalidatedApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Dsa.Arm.Fn.verifyPrevalidated v.umaal
+      verified := .scrubbed (Proof.Dsa.Arm.Fn.verifyPrevalidated v.umaal) }]) ++
   (searchPairs.flatMap fun (p : Proof.Variants.DsaArithmetic.Arm.Variant × Proof.MillerRabin.Arm.RoundImpl) => [
     Spec.Dsa.parameterSearchApi.artifact Arm.target {
       suffix := p.1.suffix

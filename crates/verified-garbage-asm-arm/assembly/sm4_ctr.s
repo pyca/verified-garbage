@@ -2355,6 +2355,33 @@ vg_sm4_ctr:
 	str r2, [r12, #1504]
 	str r2, [r12, #1508]
 	add sp, sp, #1520
+	sub sp, sp, #1520
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #47
+28:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 28b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #1520
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_ctr_final:
@@ -2379,7 +2406,7 @@ vg_sm4_ctr_final:
 	and r8, r3, #15
 	lsr r3, r3, #4
 	add r7, r2, r3, lsl #4
-	bl {vg_sm4_ctr}
+	bl {vg_sm4_ctr_core}
 	cmp r8, #0
 	beq 20f
 	ldr r12, [sp, #0]
@@ -2392,7 +2419,7 @@ vg_sm4_ctr_final:
 	mov r1, r6
 	add r2, r12, #40
 	mov r3, #1
-	bl {vg_sm4_ctr}
+	bl {vg_sm4_ctr_core}
 	ldr r12, [sp, #0]
 	add r0, r12, #40
 	mov r6, r7
@@ -2436,4 +2463,31 @@ vg_sm4_ctr_final:
 	str r2, [r12, #48]
 	str r2, [r12, #52]
 	add sp, sp, #64
+	sub sp, sp, #1584
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #49
+23:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #1584
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
