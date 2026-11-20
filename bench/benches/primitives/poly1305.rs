@@ -2769,6 +2769,43 @@ mod xcand {
                 });
                 line(mode, "lib-scalar", before, t);
             }
+            // The threshold: the library's MAC of the whole buffer (the
+            // pairs of blocks from 256 bytes on) against the same bytes
+            // fed 240 at a time (a block at a time), per size and mode.
+            // One line each: `xsize <round> <mode> <name> <bytes> xinuse
+            // <before>-><after> min <ns> median <ns> ns` (a call, from 41
+            // timings of 64 calls each below 4 KiB, of one call from there).
+            for size in [256usize, 480, 1024, 16384] {
+                let calls = if size < 4096 { 64 } else { 1 };
+                let report = |name: &str, before: u32, (min, med): (u32, u32)| {
+                    eprintln!(
+                        "xsize {round} {mode} {name:<10} {size:>5} xinuse {before:#x}->{:#x} min {:>8.1} median {:>8.1} ns",
+                        xinuse(), f64::from(min) / f64::from(calls), f64::from(med) / f64::from(calls)
+                    );
+                };
+                if set() {
+                    let before = xinuse();
+                    let t = time(|| {
+                        for _ in 0..calls {
+                            black_box(Poly1305::mac(black_box(key), black_box(&DATA[..size])));
+                        }
+                    });
+                    report("lib-pairs", before, t);
+                }
+                if set() {
+                    let before = xinuse();
+                    let t = time(|| {
+                        for _ in 0..calls {
+                            let mut p = Poly1305::new(black_box(key));
+                            for c in black_box(&DATA[..size]).chunks(240) {
+                                p.update(c);
+                            }
+                            black_box(p.finalize());
+                        }
+                    });
+                    report("lib-scalar", before, t);
+                }
+            }
         }
         super::xprobe::vzeroupper();
     }
