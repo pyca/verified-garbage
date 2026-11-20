@@ -4504,9 +4504,9 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_blake2b_init_core = sym super::argon2::vg_blake2b_init_core::vg_blake2b_init_core,
-        vg_blake2b_update_scratch = sym super::argon2::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
-        vg_blake2b_finalize_scratch = sym super::argon2::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
+        vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
+        vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
+        vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
         vg_argon2_hprime = sym super::argon2::vg_argon2_hprime::vg_argon2_hprime,
         vg_argon2_compress = sym super::argon2::vg_argon2_compress::vg_argon2_compress,
     )
@@ -4519,19 +4519,3 @@ pub(crate) mod vg_argon2_compress;
 #[rustfmt::skip]
 #[path = "internal/vg_argon2_hprime.rs"]
 pub(crate) mod vg_argon2_hprime;
-
-#[rustfmt::skip]
-#[path = "internal/vg_blake2b_compress.rs"]
-pub(crate) mod vg_blake2b_compress;
-
-#[rustfmt::skip]
-#[path = "internal/vg_blake2b_finalize_scratch.rs"]
-pub(crate) mod vg_blake2b_finalize_scratch;
-
-#[rustfmt::skip]
-#[path = "internal/vg_blake2b_init_core.rs"]
-pub(crate) mod vg_blake2b_init_core;
-
-#[rustfmt::skip]
-#[path = "internal/vg_blake2b_update_scratch.rs"]
-pub(crate) mod vg_blake2b_update_scratch;
