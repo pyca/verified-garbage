@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-!
 # Streaming ChaCha20: 32-bit ARM implementation
@@ -150,3 +151,19 @@ def apply : Prog isa :=
     (.seq part1 (.seq part2 (.seq part3 (.block finish)))))
 
 end VG.Impl.ChaCha20.Arm.Stream
+
+namespace VG.Impl.ChaCha20.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_chacha20_init`: `Stream.init`, then the registers a callee may
+change set to constants. -/
+def init : Prog isa := scrub 0 Stream.init
+
+/-- `vg_chacha20_set_nonce`, as `init`. -/
+def setNonce : Prog isa := scrub 0 Stream.setNonce
+
+/-- `vg_chacha20_apply`, as `init`, but its result. -/
+def apply : Prog isa := scrub 32 Stream.apply
+
+end VG.Impl.ChaCha20.Arm.Fn
