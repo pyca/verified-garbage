@@ -15,6 +15,6 @@ pub(crate) unsafe extern "sysv64" fn vg_keccak_pad_scratch() {
 call {vg_keccak_f1600}
 .base64 "ww=="
 .p2align 6"#,
-        vg_keccak_f1600 = sym crate::sha3::vg_keccak_f1600::vg_keccak_f1600,
+        vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

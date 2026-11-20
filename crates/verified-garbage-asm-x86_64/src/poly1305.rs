@@ -113,7 +113,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCT4SI2kJGj///9IjaQkmAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_poly1305_blocks_ifma = sym super::poly1305::vg_poly1305_blocks_ifma::vg_poly1305_blocks_ifma,
     )
@@ -178,7 +178,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCT4SI2kJGj///9IjaQkmAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512::vg_poly1305_blocks_avx512,
     )
@@ -243,7 +243,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCT4SI2kJGj///9IjaQkmAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2::vg_poly1305_blocks_avx2,
     )
@@ -304,7 +304,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAEiNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCT4SI2kJGj///9IjaQkmAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
     )
