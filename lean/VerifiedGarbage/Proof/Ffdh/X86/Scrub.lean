@@ -5,7 +5,8 @@ public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.Ffdh.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Safety
@@ -27,7 +28,8 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.Ffdh.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Verified
 meta import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Safety
@@ -50,9 +52,10 @@ on return only within their outputs (`X86.Scrub.PostOut`): the checks not at
 all, `vg_ffdh_exchange` and `vg_ffdh_derive_public` the octets at `out` and
 `y` (`bytesAt_of`, `written_of`), the precomputation the words at `ctx`
 (`wordsAt_of`), the searches their outputs and states. The functions with
-frames and calls are scrubbed with `X86.Scrub.scrubFOf`, which zeroes the
-stack their contracts reserve and clears the registers; the two `init`
-functions, which call nothing and have no frame, with `X86.Scrub.scrubOf`.
+frames and calls, as emitted (`Impl.Ffdh.X86.Fn`), zero the stack their
+contracts reserve and clear the registers (`X86.Scrub.verifiedScrubbedF`);
+the two `init` functions, which call nothing and have no frame, clear the
+registers (`X86.Scrub.verifiedScrubbed`).
 What the scrub needs of each function's code is one Boolean, which the kernel
 evaluates once, on the code's literal (`lit_decide`).
 -/
@@ -260,78 +263,98 @@ materialize_code ffdhParamSearch := Impl.Ffdh.X86.ParamSearch.code
 materialize_code ffdhKeyInit := Impl.Ffdh.X86.KeyInit.code
 materialize_code ffdhParamInit := Impl.Ffdh.X86.ParamInit.code
 
-/-- `vg_ffdh_check_domain`. -/
-def checkDomainReg : Registration Spec.Ffdh.checkDomainApi target :=
-  scrubFOf {
-      code := Impl.Ffdh.X86.VettedValidation.code
+/-- `vg_ffdh_check_domain` as emitted. -/
+theorem checkDomain_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.checkDomain
+      Proof.Ffdh.X86.VettedValidation.contract 32 :=
+  verifiedScrubbedF (api := Spec.Ffdh.checkDomainApi)
+    { code := Impl.Ffdh.X86.VettedValidation.code
       verified := Proof.Ffdh.X86.VettedValidation.verified
       spSafe := Proof.Ffdh.X86.VettedValidation.spSafe }
     (checkDomainOut 172 Impl.Ffdh.X86.VettedValidation.tableConsts)
 
-/-- `vg_ffdh_check_public`. -/
-def checkPublicReg : Registration Spec.Ffdh.checkPublicApi target :=
-  scrubFOf {
-      code := Impl.Ffdh.X86.CheckPublic.code
+/-- `vg_ffdh_check_public` as emitted. -/
+theorem checkPublic_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.checkPublic
+      (Spec.Ffdh.checkPublicContract X86.abi Proof.Ffdh.X86.stack) 32 :=
+  verifiedScrubbedF (api := Spec.Ffdh.checkPublicApi)
+    { code := Impl.Ffdh.X86.CheckPublic.code
       verified := Proof.Ffdh.X86.CheckPublic.verified
       spSafe := Proof.Ffdh.X86.Shape.checkPublic_spSafe }
     (checkPublicOut _ [])
 
-/-- `vg_ffdh_check_private`. -/
-def checkPrivateReg : Registration Spec.Ffdh.checkPrivateApi target :=
-  scrubFOf {
-      code := Impl.Ffdh.X86.CheckPrivate.code
+/-- `vg_ffdh_check_private` as emitted. -/
+theorem checkPrivate_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.checkPrivate
+      (Spec.Ffdh.checkPrivateContract X86.abi Proof.Ffdh.X86.stack) 32 :=
+  verifiedScrubbedF (api := Spec.Ffdh.checkPrivateApi)
+    { code := Impl.Ffdh.X86.CheckPrivate.code
       verified := Proof.Ffdh.X86.CheckPrivate.verified
       spSafe := Proof.Ffdh.X86.Shape.checkPrivate_spSafe }
     (checkPrivateOut _ [])
 
-/-- `vg_ffdh_exchange`. -/
-def exchangeReg : Registration Spec.Ffdh.exchangeApi target :=
-  scrubFOf {
-      code := Impl.Ffdh.X86.Exchange.code
+/-- `vg_ffdh_exchange` as emitted. -/
+theorem exchange_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.exchange
+      (Spec.Ffdh.exchangeContract X86.abi Proof.Ffdh.X86.stack) 32 :=
+  verifiedScrubbedF (api := Spec.Ffdh.exchangeApi)
+    { code := Impl.Ffdh.X86.Exchange.code
       verified := Proof.Ffdh.X86.Exchange.verified
       spSafe := Proof.Ffdh.X86.Shape.exchange_spSafe }
     (exchangeOut _ [])
 
-/-- `vg_ffdh_derive_public`. -/
-def derivePublicReg : Registration Spec.Ffdh.derivePublicApi target :=
-  scrubFOf {
-      code := Impl.Ffdh.X86.DerivePublic.code
+/-- `vg_ffdh_derive_public` as emitted. -/
+theorem derivePublic_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.derivePublic
+      (Spec.Ffdh.derivePublicContract X86.abi Proof.Ffdh.X86.stack) 32 :=
+  verifiedScrubbedF (api := Spec.Ffdh.derivePublicApi)
+    { code := Impl.Ffdh.X86.DerivePublic.code
       verified := Proof.Ffdh.X86.Derive.verified
       spSafe := Proof.Ffdh.X86.Shape.derivePublic_spSafe }
     (derivePublicOut _ [])
 
-/-- `vg_ffdh_key_generation_init`. -/
-def keyInitReg : Registration Spec.Ffdh.keyInitApi target :=
-  scrubOf {
-    code := Impl.Ffdh.X86.KeyInit.code
-    verified := Proof.Ffdh.X86.KeyInit.verified }
+/-- `vg_ffdh_key_generation_init` as emitted. -/
+theorem keyInit_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.keyInit
+      (Spec.Ffdh.keyInitContract X86.abi) 32 :=
+  verifiedScrubbed (api := Spec.Ffdh.keyInitApi)
+    { code := Impl.Ffdh.X86.KeyInit.code
+      verified := Proof.Ffdh.X86.KeyInit.verified }
 
-/-- `vg_ffdh_generate_key_precompute`. -/
-def generationPrecomputeReg : Registration Spec.Ffdh.generationPrecomputeApi target :=
-  scrubFOf {
-      code := Impl.Ffdh.X86.Cached.Precompute.code
+/-- `vg_ffdh_generate_key_precompute` as emitted. -/
+theorem generationPrecompute_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.generationPrecompute
+      Proof.Ffdh.X86.Cached.Pre.pcContract 32 :=
+  verifiedScrubbedF (api := Spec.Ffdh.generationPrecomputeApi)
+    { code := Impl.Ffdh.X86.Cached.Precompute.code
       verified := Proof.Ffdh.X86.Cached.Pre.pc_verified
       spSafe := Proof.Ffdh.X86.Shape.cachedPrecompute_spSafe }
     (generationPrecomputeOut Proof.Ffdh.X86.stack Proof.Ffdh.X86.Cached.Pre.pcConsts)
 
-/-- `vg_ffdh_generate_key_search_cached`. -/
-def cachedKeySearchReg : Registration Spec.Ffdh.cachedKeySearchApi target :=
-  scrubFOf {
-      code := Impl.Ffdh.X86.Cached.Search.code
+/-- `vg_ffdh_generate_key_search_cached` as emitted. -/
+theorem cachedKeySearch_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.cachedKeySearch
+      (Spec.Ffdh.cachedKeySearchContract X86.abi Proof.Ffdh.X86.Cached.Search.stack) 32 :=
+  verifiedScrubbedF (api := Spec.Ffdh.cachedKeySearchApi)
+    { code := Impl.Ffdh.X86.Cached.Search.code
       verified := Proof.Ffdh.X86.Cached.Search.verified
       spSafe := Proof.Ffdh.X86.Shape.cachedSearch_spSafe }
     (cachedKeySearchOut _ [])
 
-/-- `vg_ffdh_parameter_generation_init`. -/
-def parameterInitReg : Registration Spec.Ffdh.parameterInitApi target :=
-  scrubOf {
-    code := Impl.Ffdh.X86.ParamInit.code
-    verified := Proof.Ffdh.X86.ParamInit.verified }
+/-- `vg_ffdh_parameter_generation_init` as emitted. -/
+theorem parameterInit_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.parameterInit
+      (Spec.Ffdh.parameterInitContract X86.abi) 32 :=
+  verifiedScrubbed (api := Spec.Ffdh.parameterInitApi)
+    { code := Impl.Ffdh.X86.ParamInit.code
+      verified := Proof.Ffdh.X86.ParamInit.verified }
 
-/-- `vg_ffdh_generate_parameters`. -/
-def sievedParameterSearchReg : Registration Spec.Ffdh.sievedParameterSearchApi target :=
-  scrubFOf {
-      code := Impl.Ffdh.X86.ParamSearch.code
+/-- `vg_ffdh_generate_parameters` as emitted. -/
+theorem sievedParameterSearch_scrubbed :
+    VerifiedScrubbed target Impl.Ffdh.X86.Fn.sievedParameterSearch
+      Proof.Ffdh.X86.PSearch.contract 32 :=
+  verifiedScrubbedF (api := Spec.Ffdh.sievedParameterSearchApi)
+    { code := Impl.Ffdh.X86.ParamSearch.code
       verified := Proof.Ffdh.X86.PSearch.verified
       spSafe := Proof.Ffdh.X86.Shape.paramSearch_spSafe }
     (sievedParameterSearchOut Proof.Ffdh.X86.PSearch.stack Impl.RsaKeyGen.TrialTable32.consts)
