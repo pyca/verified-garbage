@@ -154,3 +154,15 @@ bl {vg_blake2b_compress}
 #[rustfmt::skip]
 #[path = "internal/vg_blake2b_compress.rs"]
 pub(crate) mod vg_blake2b_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_finalize_scratch.rs"]
+pub(crate) mod vg_blake2b_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_init_core.rs"]
+pub(crate) mod vg_blake2b_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_blake2b_update_scratch.rs"]
+pub(crate) mod vg_blake2b_update_scratch;

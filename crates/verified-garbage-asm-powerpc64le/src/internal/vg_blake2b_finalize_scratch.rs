@@ -28,6 +28,6 @@ b 23f
 .base64 "AAB6OEAAmjgBAKA4AADfOAEA4DgAABs5"
 bl {vg_blake2b_compress}
 .base64 "AAA66QAAPPkIADrpCAA8+RAAOukQADz5GAA66RgAPPkgADrpIAA8+SgAOukoADz5MAA66TAAPPk4ADrpOAA8+WgAW+t4AJvrgAC764gA2+uQAPvrcAB76yAAAegwACE4pgMIfCAAgE4=""#,
-        vg_blake2b_compress = sym crate::argon2::vg_blake2b_compress::vg_blake2b_compress,
+        vg_blake2b_compress = sym crate::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
 }

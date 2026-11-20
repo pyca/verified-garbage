@@ -72,6 +72,6 @@ b 23f
 22:
 23:
 .base64 "aABb63gAm+uAALvriADb65AA++twAHvrIAAB6DAAITimAwh8IACATg==""#,
-        vg_blake2b_compress = sym crate::argon2::vg_blake2b_compress::vg_blake2b_compress,
+        vg_blake2b_compress = sym crate::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
 }
