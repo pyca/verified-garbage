@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.AesGcm.X86.Top
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Counters
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Rounds
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.Reduce
@@ -554,7 +556,8 @@ theorem callBlocks_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p
 
 /-! ## The whole blocks with AES-NI -/
 
-open VG.Proof.Aes.X86.AesNi (st st_ext st_toList getD_st getD_ofFn byte_xor byte_roundKey ofInt_natCast Keys aes_ok)
+open VG.Proof.Aes.X86.AesNi (st st_ext st_toList getD_st getD_ofFn byte_xor byte_roundKey ofInt_natCast Keys aes_ok
+  xorData_ok)
 
 /-- The bytes of a register. -/
 theorem st_getD (a : BitVec 128) {i : Nat} (hi : i < 16) : (st a).toList.getD i 0 = byte a i := by
@@ -831,13 +834,283 @@ theorem niBlock_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {ciph : Spec.
   · rw [cf₆, h.edi, e16, toNat_ofNat32 (by omega_arith)]
     rfl
 
+/-! ### Six blocks a turn -/
+
+/-- One counter block: `edx` ORed into what `xmm7` holds, and `edx`
+incremented. -/
+theorem niCtr_one (b : XReg) (s : State) (hb : b ≠ .xmm7) :
+    WP isa (.block (niCtrs [b])) s fun s' =>
+      s'.xmm b = XBinOp.eval .por ((0 : BitVec 96) ++ s.gpr .edx) (s.xmm .xmm7) ∧
+      s'.gpr .edx = s.gpr .edx + 1 ∧
+      (∀ r, r ≠ .edx → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r, r ≠ b → s'.xmm r = s.xmm r) := by
+  apply WP.of_runBlock
+  simp only [niCtrs, List.append_nil, imm]
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil,
+    reduceExec, isa, readSrc, XOp.exec, execAlu, gpr_setReg,
+    gpr_setXmm, xmm_setReg, xmm_setXmm, xmm_arithFlags, mem_setReg, rd_setReg,
+    wr_setReg, Ne.symm hb, Option.map_some, Option.bind_some,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · trivial
+  · trivial
+  · intro r hr
+    simp only [hr, ite_false, gpr_arithFlags, gpr_setXmm, gpr_setReg]
+  · simp only [mem_arithFlags, mem_setXmm, mem_setReg]
+  · simp only [rd_arithFlags, rd_setXmm, rd_setReg]
+  · simp only [wr_arithFlags, wr_setXmm, wr_setReg]
+  · intro r hr
+    simp only [hr, ite_false]
+
+/-- The counter blocks of `regs`: `edx`, `edx + 1`, …, each ORed into what
+`xmm7` holds. -/
+theorem niCtrs_ok (regs : List XReg) (s : State) (hnd : regs.Nodup) (h7 : .xmm7 ∉ regs) :
+    WP isa (.block (niCtrs regs)) s fun s' =>
+      (∀ k (h : k < regs.length), s'.xmm regs[k] =
+        XBinOp.eval .por ((0 : BitVec 96) ++ (s.gpr .edx + BitVec.ofNat 32 k)) (s.xmm .xmm7)) ∧
+      s'.gpr .edx = s.gpr .edx + BitVec.ofNat 32 regs.length ∧
+      (∀ r, r ≠ .edx → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r, r ∉ regs → s'.xmm r = s.xmm r) := by
+  induction regs generalizing s with
+  | nil =>
+    exact WP.block_nil ⟨fun _ h => absurd h (by simp), (BitVec.add_zero _).symm, fun _ _ => rfl, rfl, rfl, rfl,
+      fun _ _ => rfl⟩
+  | cons b bs ih =>
+    have hb7 : b ≠ .xmm7 := fun h => h7 (h ▸ List.mem_cons_self)
+    have hb : b ∉ bs := (List.nodup_cons.mp hnd).1
+    rw [niCtrs, WP.block_append_iff]
+    refine WP.mono (niCtr_one b s hb7) fun s₁ ⟨hv₁, hc₁, hg₁, hm₁, hr₁, hw₁, hx₁⟩ => ?_
+    refine WP.mono (ih s₁ (List.nodup_cons.mp hnd).2 (fun h => h7 (List.mem_cons_of_mem _ h)))
+      fun s' ⟨hv, hc, hg, hm, hr, hw, hx⟩ => ⟨?_, ?_, ?_, hm.trans hm₁, hr.trans hr₁, hw.trans hw₁, ?_⟩
+    · intro k hk
+      cases k with
+      | zero =>
+        simp only [List.getElem_cons_zero, BitVec.add_zero]
+        rw [hx b hb, hv₁]
+      | succ k =>
+        simp only [List.getElem_cons_succ]
+        rw [hv k (by simpa using hk), hc₁, hx₁ .xmm7 (Ne.symm hb7), VG.Proof.Aes.X86.AesNi.add_one_index]
+    · rw [hc, hc₁, VG.Proof.Aes.X86.AesNi.add_one_index, List.length_cons]
+    · intro r hr
+      rw [hg r hr, hg₁ r hr]
+    · intro r hr
+      simp only [List.mem_cons, not_or] at hr
+      rw [hx r hr.2, hx₁ r hr.1]
+
+/-- A block of the data XORed with a register, on its bytes. -/
+theorem bytes_of_blockAt {m m' : Mem} {a : Addr} {v : BitVec 128}
+    (h : Spec.Gcm.blockAt m' a = Spec.Gcm.blockAt m a ^^^ XBinOp.eval .pshufb v VG.Proof.Gcm.X86.revMask) :
+    bytesAt m' a 16 = Spec.Cmac.xor (bytesAt m a 16) (st v).toList := by
+  rw [VG.Proof.Gcm.X86.blockAt_eq, VG.Proof.Gcm.X86.blockAt_eq, ← VG.Proof.Gcm.X86.pshufb_rev_xor] at h
+  obtain h' := congrArg (fun y => XBinOp.eval .pshufb y VG.Proof.Gcm.X86.revMask) h
+  simp only [VG.Proof.Gcm.X86.pshufb_rev_rev] at h'
+  rw [← st_readW, h', BitVec.xor_comm, ← st_readW]
+  exact st_pxor v (m.readW a 128)
+
+/-- Six blocks. -/
+theorem niSix_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte}
+    (hxl : x.length = p.n) (C : CtrSt (w64 p.W) icb 0 t.mem)
+    (hc : Spec.GcmSiv.ctxCiph t.mem (w64 p.W + BitVec.ofNat 64 512) p.R = ciph) {j : Nat}
+    (hj : 16 * (j + 6) ≤ p.n) {s : State} (h : NiInv p ciph icb x t j s) :
+    WP isa niSix s fun s' =>
+      NiInv p ciph icb x t (j + 6) s' ∧ s'.cf = some (decide (p.n - 16 * (j + 6) < 96)) := by
+  have h6 : niRegs.length = 6 := rfl
+  have hw := L.ww
+  have hn' := L.n32
+  have hdw := L.dw
+  have hR := L.rounds_le
+  obtain P : Perm p s := E.perm.of_eq h.rd h.wr
+  obtain fW : Frame [⟨w64 p.W + BitVec.ofNat 64 96, 4⟩] t.mem
+      (t.mem.writeW (w64 p.W + BitVec.ofNat 64 96) (BitVec.ofNat 32 0)) :=
+    (Frame.refl _ _).writeW (r := ⟨w64 p.W + BitVec.ofNat 64 96, 4⟩) List.mem_cons_self _ (Region.contains_self _ _)
+  obtain dW : ∀ {d k : Nat}, d + k ≤ 2816 → ∀ q ∈ [(⟨w64 p.D, p.n⟩ : Region)],
+      (⟨w64 p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q := fun hd q hq => by
+    simp only [List.mem_singleton] at hq; subst hq; exact (L.d_w.sub_right (Lay.wSub hd)).symm
+  obtain hcb : bytesAt s.mem (w64 p.W + BitVec.ofNat 64 96) 16 = List.replicate 4 0 ++ icb.drop 4 := by
+    rw [Proof.AesGcm.X86.bytesAt_frame h.frame (dW (by decide)) (by decide), show (16 : Nat) = 4 + 12 from rfl,
+      Proof.Cmac.bytesAt_add, ← Proof.Cmac.le4_readW, Mem.readW_writeW_self32, add_ofNat_assoc,
+      Proof.AesGcm.X86.bytesAt_frame fW (fun q hq => by
+        simp only [List.mem_singleton] at hq; subst hq
+        exact Lay.w_w (.inr (by decide)) (by decide) (by decide)) (by decide), C.rest]
+    rfl
+  obtain hsch : bytesAt s.mem (w64 p.W + BitVec.ofNat 64 512) (16 * (p.R + 1)) =
+      bytesAt t.mem (w64 p.W + BitVec.ofNat 64 512) (16 * (p.R + 1)) := by
+    rw [Proof.AesGcm.X86.bytesAt_frame h.frame (dW (by omega_arith)) (by omega_arith),
+      Proof.AesGcm.X86.bytesAt_frame fW (fun q hq => by
+        simp only [List.mem_singleton] at hq; subst hq
+        exact Lay.w_w (.inr (by decide)) (by omega_arith) (by decide)) (by omega_arith)]
+  -- The counter blocks.
+  obtain eaC : s.ea (at_ .ebp cbO) = w64 p.W + BitVec.ofNat 64 96 := by
+    show w64 (s.gpr .ebp + BitVec.ofNat 32 96) = _
+    rw [h.ebp, L.aW (by decide)]
+  obtain ⟨v, hv⟩ : ∃ v, s.mem.readW (w64 p.W + BitVec.ofNat 64 96) 128 = v := ⟨_, rfl⟩
+  refine WP.seq ?_
+  rw [WP.block_cons_iff]
+  refine ⟨s.setXmm .xmm7 v, by
+    simp only [isa, reduceExec, State.load128, eaC, P.wR (show 96 + 16 ≤ 2816 by decide), ite_true, Option.map_some,
+      hv], ?_⟩
+  refine WP.mono (niCtrs_ok niRegs (s.setXmm .xmm7 v) (by decide) (by decide))
+    fun s₂ ⟨x₂, dx₂, g₂, m₂, rd₂, wr₂, _⟩ => ?_
+  rw [gpr_setXmm] at dx₂
+  rw [mem_setXmm] at m₂
+  rw [rd_setXmm] at rd₂
+  rw [wr_setXmm] at wr₂
+  obtain g₂' : ∀ r, r ≠ .edx → s₂.gpr r = s.gpr r := fun r hr => by rw [g₂ r hr, gpr_setXmm]
+  -- The round keys.
+  obtain hK : Keys p.R (bytesAt t.mem (w64 p.W + BitVec.ofNat 64 512) (16 * (p.R + 1))) s₂ := by
+    obtain hnr : p.R ≤ 14 := by omega_using [hR]
+    obtain he : ∀ k ≤ p.R, s₂.ea (Impl.Aes.X86.AesNi.at_ .eax (16 * k)) =
+        w64 p.W + BitVec.ofNat 64 (512 + 16 * k) := fun k hk => by
+      show w64 (s₂.gpr .eax + BitVec.ofNat 32 (16 * k)) = _
+      rw [g₂' .eax (by decide), h.eax, add32_ofNat_assoc, L.aW (by omega_using [hk, hnr])]
+    refine ⟨hnr, fun k hk => ?_, fun k hk => ?_⟩
+    · rw [he k hk, rd₂, wr₂]
+      exact P.wR (by omega_using [hk, hnr])
+    · rw [he k hk, m₂, ← hsch]
+      have hb := byte_roundKey s.mem (w64 p.W + BitVec.ofNat 64 512) (L := 16 * (p.R + 1)) (j := k)
+        (by omega_using [hk])
+      rw [ofInt_natCast, add_ofNat_assoc] at hb
+      exact hb
+  refine WP.seq (WP.mono (aes_ok niRegs (by decide) (by decide) L.rounds3 s₂ hK (by rw [g₂' .ecx (by decide), h.ecx]))
+    fun s₃ ⟨c₃, f₃⟩ => ?_)
+  -- The keystream blocks.
+  obtain hk : ∀ l, (GcmSiv.ksBlock ciph icb l).length = 16 := fun l => by
+    rw [← hc]; exact GcmSiv.ctxCiph_length _ _ _ _
+  obtain hks : ∀ l (hl : l < niRegs.length), (st (s₃.xmm niRegs[l])).toList = GcmSiv.ksBlock ciph icb (j + l) :=
+    fun l hl => by
+      obtain hb := lane_bytes s.mem (w64 p.W + BitVec.ofNat 64 96) (s.gpr .edx + BitVec.ofNat 32 l) (icb.drop 4) hcb
+      rw [hv, ← xmm_setXmm_self s .xmm7 v, ← gpr_setXmm s .xmm7 v, ← x₂ l hl, gpr_setXmm, h.edx, ← BitVec.ofNat_add,
+        Nat.add_assoc, ← GcmSiv.counterBlock_word] at hb
+      rw [c₃ _ (List.getElem_mem hl), ← hc]
+      show _ = (Spec.Aes.cipher p.R _
+        (Vector.ofFn fun i : Fin 16 => (Spec.GcmSiv.counterBlock icb (j + l)).getD i 0)).toList
+      rw [← hb, ofFn_st]
+  obtain g₃ : ∀ r, r ≠ .edx → s₃.gpr r = s.gpr r := fun r hr => by rw [f₃.gpr, g₂' r hr]
+  obtain m₃ : s₃.mem = s.mem := f₃.mem.trans m₂
+  obtain rd₃ : s₃.rd = s.rd := f₃.rd.trans rd₂
+  obtain wr₃ : s₃.wr = s.wr := f₃.wr.trans wr₂
+  -- The blocks of the data.
+  obtain eD : ∀ l, l < 6 → w64 (s₃.gpr .esi) + BitVec.ofNat 64 (16 * (0 + l)) =
+      w64 p.D + BitVec.ofNat 64 (16 * (j + l)) := fun l hl => by
+    rw [g₃ .esi (by decide), h.esi, L.dA (by omega_arith), add_ofNat_assoc, Nat.zero_add, Nat.mul_add]
+  obtain cD : ∀ l, l < 6 → (⟨w64 p.D, p.n⟩ : Region).Contains (w64 p.D + BitVec.ofNat 64 (16 * (j + l))) 16 :=
+    fun l hl => Offset.contains_base _ (by omega_arith) (by omega_arith)
+  rw [WP.block_append_iff]
+  refine WP.mono (xorData_ok .esi niRegs 0 s₃ (by decide) (by decide)
+    (fun l hl => by
+      rw [eD l hl, rd₃, wr₃]
+      exact covers_left P.d _ _ ⟨_, List.mem_singleton_self _, cD l hl⟩)
+    (fun l hl => by
+      rw [eD l hl, wr₃]
+      exact P.d _ _ ⟨_, List.mem_singleton_self _, cD l hl⟩)
+    (by rw [g₃ .esi (by decide), h.esi, L.dN (by omega_arith)]; omega_arith)
+    (by rw [g₃ .esi (by decide), h.esi, L.dN (by omega_arith)]; omega_arith)
+    (.inl rfl)) fun s₄ ⟨hb, hf, g₄, rd₄, wr₄, _⟩ => ?_
+  -- The pointer and the bytes left.
+  obtain e96 : BitVec.ofNat 32 (p.n - 16 * j) - BitVec.ofNat 32 96 = BitVec.ofNat 32 (p.n - 16 * (j + 6)) := by
+    rw [ofNat_sub32 (by omega_arith) (by omega_arith), show p.n - 16 * j - 96 = p.n - 16 * (j + 6) by omega_arith]
+  obtain ⟨s₆, run₆, m₆, si₆, di₆, cf₆, dx₆, ax₆, cx₆, bp₆, sp₆, rd₆, wr₆⟩ : ∃ s₆ : State, runBlock isa
+      [.alu .add .esi (imm 96), .alu .sub .edi (imm 96), .alu .cmp .edi (imm 96)] s₄ =
+        some s₆ ∧ s₆.mem = s₄.mem ∧
+      s₆.gpr .esi = s₄.gpr .esi + BitVec.ofNat 32 96 ∧ s₆.gpr .edi = s₄.gpr .edi - BitVec.ofNat 32 96 ∧
+      s₆.cf = some (decide ((s₄.gpr .edi - BitVec.ofNat 32 96).toNat < (BitVec.ofNat 32 96).toNat)) ∧
+      s₆.gpr .edx = s₄.gpr .edx ∧ s₆.gpr .eax = s₄.gpr .eax ∧ s₆.gpr .ecx = s₄.gpr .ecx ∧
+      s₆.gpr .ebp = s₄.gpr .ebp ∧ s₆.gpr .esp = s₄.gpr .esp ∧ s₆.rd = s₄.rd ∧ s₆.wr = s₄.wr := by
+    refine ⟨_, by grun [], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · gmems []
+    · gregs []
+    · gregs []
+    · gmems []
+    · gregs []
+    · gregs []
+    · gregs []
+    · gregs []
+    · gregs []
+    all_goals gmems []
+  obtain g₄' : ∀ r, r ≠ .edx → s₄.gpr r = s.gpr r := fun r hr => by rw [g₄, g₃ r hr]
+  obtain e0 : w64 (s₃.gpr .esi) + BitVec.ofNat 64 (16 * 0) = w64 p.D + BitVec.ofNat 64 (16 * j) := by
+    have := eD 0 (by decide)
+    simpa using this
+  rw [e0, m₃] at hf
+  refine WP.of_runBlock ⟨s₆, run₆, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · rw [si₆, g₄' .esi (by decide), h.esi, add32_ofNat_assoc, Nat.mul_add]
+  · rw [di₆, g₄' .edi (by decide), h.edi, e96]
+  · rw [dx₆, g₄, f₃.gpr, dx₂, h.edx, ← BitVec.ofNat_add]
+    rfl
+  · rw [ax₆, g₄' .eax (by decide), h.eax]
+  · rw [cx₆, g₄' .ecx (by decide), h.ecx]
+  · rw [bp₆, g₄' .ebp (by decide), h.ebp]
+  · rw [sp₆, g₄' .esp (by decide), h.esp]
+  · rw [rd₆, rd₄, rd₃, h.rd]
+  · rw [wr₆, wr₄, wr₃, h.wr]
+  · rw [m₆]
+    exact h.frame.trans (hf.sub fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq
+      exact ⟨⟨w64 p.D, p.n⟩, List.mem_singleton_self _, Offset.sub_base _ (by omega_arith)⟩)
+  · rw [m₆, ← hxl]
+    refine GcmSiv.ctrPart_stepN ciph icb x (w64 p.D) (i := j) (k := 6) (fun l _ => hk _) (by rw [hxl]; exact h.data)
+      (frame_outside hf (fun r hr => .inl (List.mem_singleton.mp hr)) (by omega_arith) (by omega_arith)) fun l hl => ?_
+    obtain hbl := hb l hl
+    rw [eD l hl, m₃] at hbl
+    rw [bytes_of_blockAt hbl, hks l hl]
+  · rw [cf₆, g₄' .edi (by decide), h.edi, e96, toNat_ofNat32 (by omega_arith)]
+    rfl
+
+/-- The turns of six blocks, while six are left. -/
+theorem niSixLoop_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte}
+    (hxl : x.length = p.n) (C : CtrSt (w64 p.W) icb 0 t.mem)
+    (hc : Spec.GcmSiv.ctxCiph t.mem (w64 p.W + BitVec.ofNat 64 512) p.R = ciph) (h96 : 96 ≤ p.n) {s : State}
+    (h : NiInv p ciph icb x t 0 s) : WP isa (.loop niSix .ae) s (NiInv p ciph icb x t (6 * (p.n / 96))) := by
+  refine WP.loop (M := isa) (body := niSix) (c := .ae)
+    (fun (k : Nat) (s' : State) => ∃ q, k = p.n / 96 - q ∧ q < p.n / 96 ∧ NiInv p ciph icb x t (6 * q) s') ?_
+    (p.n / 96 - 0) s ⟨0, rfl, by omega_arith, h⟩
+  rintro k s' ⟨q, rfl, hq, P⟩
+  refine WP.mono (niSix_ok L E hxl C hc (j := 6 * q) (by omega_arith) P) fun s'' ⟨Q, cf⟩ => ?_
+  obtain ev : isa.eval .ae s'' = some !decide (p.n - 16 * (6 * q + 6) < 96) := by
+    show s''.cf.map _ = _; rw [cf]; rfl
+  obtain Q' : NiInv p ciph icb x t (6 * (q + 1)) s'' := by rw [Nat.mul_succ]; exact Q
+  by_cases he : q + 1 = p.n / 96
+  · left
+    exact ⟨ev.trans (by simp; omega_arith), he ▸ Q'⟩
+  · right
+    exact ⟨ev.trans (by simp; omega_arith), p.n / 96 - (q + 1), by omega_arith, q + 1, rfl, by omega_arith, Q'⟩
+
+/-- `cmp edi, k`: CF set if fewer than `k` bytes are left. -/
+theorem niCmp_ok {p : Prm} (L : Lay p) {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte} {t : State} {j : Nat}
+    (hj : 16 * j ≤ p.n) (k : Nat) (hk : k < 2 ^ 32) {s : State} (h : NiInv p ciph icb x t j s) :
+    WP isa (.block [.alu .cmp .edi (imm k)]) s fun s' =>
+      NiInv p ciph icb x t j s' ∧ s'.cf = some (decide (p.n - 16 * j < k)) := by
+  have hn' := L.n32
+  obtain ⟨s', run, m, si, di, dx, ax, cx, bp, sp, cf, rd, wr⟩ : ∃ s' : State,
+      runBlock isa [.alu .cmp .edi (imm k)] s = some s' ∧ s'.mem = s.mem ∧ s'.gpr .esi = s.gpr .esi ∧
+      s'.gpr .edi = s.gpr .edi ∧ s'.gpr .edx = s.gpr .edx ∧ s'.gpr .eax = s.gpr .eax ∧ s'.gpr .ecx = s.gpr .ecx ∧
+      s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esp = s.gpr .esp ∧
+      s'.cf = some (decide ((s.gpr .edi).toNat < (BitVec.ofNat 32 k).toNat)) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+    refine ⟨_, by grun [], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · gmems []
+    · gregs []
+    · gregs []
+    · gregs []
+    · gregs []
+    · gregs []
+    · gregs []
+    · gregs []
+    all_goals gmems []
+  refine WP.of_runBlock ⟨s', run, ⟨by rw [si, h.esi], by rw [di, h.edi], by rw [dx, h.edx], by rw [ax, h.eax],
+    by rw [cx, h.ecx], by rw [bp, h.ebp], by rw [sp, h.esp], rd.trans h.rd, wr.trans h.wr, by rw [m]; exact h.frame,
+    by rw [m]; exact h.data⟩, ?_⟩
+  rw [cf, h.edi, toNat_ofNat32 (by omega_arith), toNat_ofNat32 hk]
+
 theorem niLoop_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {ciph : Spec.GcmSiv.Cipher} {icb x : List Byte}
     (hxl : x.length = p.n) (C : CtrSt (w64 p.W) icb 0 t.mem)
-    (hc : Spec.GcmSiv.ctxCiph t.mem (w64 p.W + BitVec.ofNat 64 512) p.R = ciph) (hb1 : 1 ≤ p.n / 16) {s : State}
-    (h : NiInv p ciph icb x t 0 s) : WP isa (.loop niBlock .ae) s (NiInv p ciph icb x t (p.n / 16)) := by
+    (hc : Spec.GcmSiv.ctxCiph t.mem (w64 p.W + BitVec.ofNat 64 512) p.R = ciph) {j₀ : Nat} (hj₀ : j₀ < p.n / 16)
+    {s : State} (h : NiInv p ciph icb x t j₀ s) :
+    WP isa (.loop niBlock .ae) s (NiInv p ciph icb x t (p.n / 16)) := by
   refine WP.loop (M := isa) (body := niBlock) (c := .ae)
     (fun (k : Nat) (s' : State) => ∃ j, k = p.n / 16 - j ∧ j < p.n / 16 ∧ NiInv p ciph icb x t j s') ?_
-    (p.n / 16 - 0) s ⟨0, rfl, hb1, h⟩
+    (p.n / 16 - j₀) s ⟨j₀, rfl, hj₀, h⟩
   rintro k s' ⟨j, rfl, hj, P⟩
   refine WP.mono (niBlock_ok L E hxl C hc (j := j) (by omega_arith) P) fun s'' ⟨Q, cf⟩ => ?_
   obtain ev : isa.eval .ae s'' = some !decide (p.n - 16 * (j + 1) < 16) := by
@@ -925,8 +1198,22 @@ theorem niBlocks_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t)
         rw [hm₁, Proof.AesGcm.X86.bytesAt_frame fW
           (fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact L.d_w' (by decide))
           (Nat.le_of_lt (by omega_arith)), hx, Nat.mul_zero, GcmSiv.ctrPart_zero]⟩
-  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, WP.seq ?_⟩)
-  exact WP.mono (niLoop_ok L E hxl C hc hb1 h0) fun s h => niPost_ok L E C h
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, WP.seq
+    (WP.mono (niCmp_ok L (j := 0) (Nat.zero_le _) 96 (by decide) h0) fun s₁ ⟨I₁, cf₁⟩ => WP.seq ?_)⟩)
+  -- Six blocks a turn, while six are left.
+  refine WP.mono (?_ : WP isa _ s₁ (NiInv p ciph icb x t (6 * (p.n / 96)))) fun s₂ I₂ => ?_
+  · refine WP.ite (decide (p.n - 16 * 0 < 96)) (eval_b cf₁) (fun ht => WP.block_nil ?_) (fun hf => ?_)
+    · rw [show p.n / 96 = 0 by have := of_decide_eq_true ht; omega_arith, Nat.mul_zero]
+      exact I₁
+    · exact niSixLoop_ok L E hxl C hc (by have := of_decide_eq_false hf; omega_arith) I₁
+  -- The blocks left, one a turn.
+  refine WP.seq (WP.mono (niCmp_ok L (j := 6 * (p.n / 96)) (by omega_arith) 16 (by decide) I₂)
+    fun s₃ ⟨I₃, cf₃⟩ => WP.seq ?_)
+  refine WP.mono (?_ : WP isa _ s₃ (NiInv p ciph icb x t (p.n / 16))) fun s h => niPost_ok L E C h
+  refine WP.ite (decide (p.n - 16 * (6 * (p.n / 96)) < 16)) (eval_b cf₃) (fun ht => WP.block_nil ?_) (fun hf => ?_)
+  · rw [show p.n / 16 = 6 * (p.n / 96) by have := of_decide_eq_true ht; omega_arith]
+    exact I₃
+  · exact niLoop_ok L E hxl C hc (j₀ := 6 * (p.n / 96)) (by have := of_decide_eq_false hf; omega_arith) I₃
 
 /-- The whole blocks, with either code. -/
 theorem blocks_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
