@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.ApplyResidue
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Ssse3.Xor
@@ -70,6 +71,12 @@ structure XorImpl where
   /-- It never loads MXCSR. -/
   mxcsr : callee.code.allInstrs (fun i => !loadsMxcsr i) = true
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level, in the 16 bytes of stack its calls take
+  (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide callee.code level.level 16 = true := by lit_decide
   /-- What the names of its callers' instances end with (e.g. `_avx2`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -110,6 +117,7 @@ def scalar : XorImpl where
   nosp := Avx2.xor_nosp
   mxcsr := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  level := .sse
   suffix := ""
   features := []
   poly := .scalar
@@ -143,6 +151,7 @@ def ssse3 : XorImpl where
   nosp := ssse3_nosp
   mxcsr := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  level := .sse
   suffix := "_ssse3"
   features := ["ssse3"]
   poly := .scalar
@@ -174,6 +183,7 @@ def avx2 : XorImpl where
   nosp := avx2_nosp
   mxcsr := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  level := .avx
   suffix := "_avx2"
   features := ["avx", "avx2"]
   poly := .avx2
@@ -205,6 +215,7 @@ def avx512 : XorImpl where
   nosp := avx512_nosp
   mxcsr := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  level := .avx
   suffix := "_avx512"
   features := ["avx", "avx512f"]
   poly := .avx512
@@ -225,6 +236,7 @@ def ifma : XorImpl where
   nosp := avx512_nosp
   mxcsr := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  level := .avx
   suffix := "_ifma"
   features := ["avx", "avx512f"]
   poly := .ifma
@@ -252,6 +264,7 @@ def avx512vl : XorImpl where
   nosp := avx512vl_nosp
   mxcsr := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  level := .avx
   suffix := "_avx512vl"
   features := ["avx", "avx2", "avx512f", "avx512vl"]
   poly := .avx512
@@ -271,6 +284,8 @@ def asAvx2 (v : XorImpl) : XorImpl where
   nosp := v.nosp
   mxcsr := v.mxcsr
   spSafe := v.spSafe
+  level := v.level
+  side := v.side
   suffix := v.suffix
   features := v.features
   poly := .avx2
