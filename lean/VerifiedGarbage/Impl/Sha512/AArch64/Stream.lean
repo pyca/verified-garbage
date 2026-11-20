@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Sha512.AArch64
 public import VerifiedGarbage.Impl.MdStream.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Impl.Residue.AArch64.Union
 
 /-!
@@ -91,5 +94,60 @@ structure Compress where
   code : Prog isa
   suffix : String
   clear : Impl.Residue.AArch64.Clear
+
+/-! ## The functions, as emitted
+
+Each streaming function over a compression function is its code with its
+working space in a frame on the stack, then its cleanup
+(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+write, the compression function's included, and zeroes that stack, so that it
+returns without secret residue. -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.StackScratch.AArch64 (withStackScratch)
+
+/-- `vg_sha512_update` over the compression function `code`, its working space in a frame of its own. -/
+def update (suffix : String) (code : Prog isa) : Prog isa :=
+  scrubOf (16 + 688) 0 (withStackScratch 688 .x4 (updateWith suffix code))
+
+/-- `vg_sha512_finalize` over the compression function `code`, its working space in a frame of its own. -/
+def finalize (suffix : String) (code : Prog isa) : Prog isa :=
+  scrubOf (16 + 688) 0 (withStackScratch 688 .x3 (finalizeWith suffix code))
+
+/-- `vg_sha512_digest`, the one-shot digest over the compression function `code`, in its frame. -/
+def digest512 (suffix : String) (code : Prog isa) : Prog isa :=
+  scrubOf (MdStream.AArch64.OneShot.frameBytes params) 0
+    (MdStream.AArch64.OneShot.digest { params with out := out64 8 } (initPairs Spec.Sha512.H0_512) (compressName suffix) code)
+
+/-- `vg_sha384_finalize` over the compression function `code`, its working space in a frame of its own. -/
+def finalize384 (suffix : String) (code : Prog isa) : Prog isa :=
+  scrubOf (16 + 688) 0 (withStackScratch 688 .x3 (finalizeDigestWith params384 suffix code))
+
+/-- `vg_sha384_digest`, the one-shot digest over the compression function `code`, in its frame. -/
+def digest384 (suffix : String) (code : Prog isa) : Prog isa :=
+  scrubOf (MdStream.AArch64.OneShot.frameBytes params) 0
+    (MdStream.AArch64.OneShot.digest { params with out := out64 6 } (initPairs Spec.Sha512.H0_384) (compressName suffix) code)
+
+/-- `vg_sha512_256_finalize` over the compression function `code`, its working space in a frame of its own. -/
+def finalize512_256 (suffix : String) (code : Prog isa) : Prog isa :=
+  scrubOf (16 + 688) 0 (withStackScratch 688 .x3 (finalizeDigestWith params512_256 suffix code))
+
+/-- `vg_sha512_256_digest`, the one-shot digest over the compression function `code`, in its frame. -/
+def digest512_256 (suffix : String) (code : Prog isa) : Prog isa :=
+  scrubOf (MdStream.AArch64.OneShot.frameBytes params) 0
+    (MdStream.AArch64.OneShot.digest { params with out := out64 4 } (initPairs Spec.Sha512.H0_512_256) (compressName suffix) code)
+
+/-- `vg_sha512_224_finalize` over the compression function `code`, its working space in a frame of its own. -/
+def finalize512_224 (suffix : String) (code : Prog isa) : Prog isa :=
+  scrubOf (16 + 688) 0 (withStackScratch 688 .x3 (finalizeDigestWith params512_224 suffix code))
+
+/-- `vg_sha512_224_digest`, the one-shot digest over the compression function `code`, in its frame. -/
+def digest512_224 (suffix : String) (code : Prog isa) : Prog isa :=
+  scrubOf (MdStream.AArch64.OneShot.frameBytes params) 0
+    (MdStream.AArch64.OneShot.digest { params with out := out64 3 ++ outHi 3 } (initPairs Spec.Sha512.H0_512_224) (compressName suffix) code)
+
+end Fn
 
 end VG.Impl.Sha512.AArch64.Stream

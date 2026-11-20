@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Sha1.AArch64
 public import VerifiedGarbage.Impl.MdStream.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.MdStream.AArch64.OneShot
 
 /-!
 # Streaming SHA-1: AArch64 implementation
@@ -43,5 +46,33 @@ def params : MdStream.AArch64.Params where
 def update : Prog isa := MdStream.AArch64.update params "vg_sha1_compress" compress
 
 def finalize : Prog isa := MdStream.AArch64.finalize params "vg_sha1_compress" compress
+
+/-! ## The functions, as emitted
+
+Each streaming function over a compression function is its code with its
+working space in a frame on the stack, then its cleanup
+(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+write, the compression function's included, and zeroes that stack, so that it
+returns without secret residue. -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.StackScratch.AArch64 (withStackScratch)
+
+/-- `vg_sha1_update` over the compression function `code`, its working space in a frame of its own. -/
+def update (name : String) (code : Prog isa) : Prog isa :=
+  scrubOf (16 + 160) 0 (withStackScratch 160 .x4 (MdStream.AArch64.update params name code))
+
+/-- `vg_sha1_finalize` over the compression function `code`, its working space in a frame of its own. -/
+def finalize (name : String) (code : Prog isa) : Prog isa :=
+  scrubOf (16 + 160) 0 (withStackScratch 160 .x3 (MdStream.AArch64.finalize params name code))
+
+/-- `vg_sha1_digest`, the one-shot digest over the compression function `code`, in its frame. -/
+def digest (name : String) (code : Prog isa) : Prog isa :=
+  scrubOf (MdStream.AArch64.OneShot.frameBytes params) 0
+    (MdStream.AArch64.OneShot.digest params init name code)
+
+end Fn
 
 end VG.Impl.Sha1.AArch64.Stream
