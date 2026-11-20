@@ -16,7 +16,11 @@ import VerifiedGarbage.Proof.Idea.PPC64LE.FbFinalLit
 namespace VG.Artifacts.IdeaOfb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Idea.ofbApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.ofbReg,
-  Spec.Idea.ofbFinalApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.ofbFinalReg]
+  Spec.Idea.ofbApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.ofb
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.ofb_scrubbed },
+  Spec.Idea.ofbFinalApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.ofbFinal
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.IdeaOfb.PPC64LE

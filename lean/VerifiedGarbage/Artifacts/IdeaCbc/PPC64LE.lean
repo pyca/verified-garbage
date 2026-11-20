@@ -14,7 +14,11 @@ import VerifiedGarbage.Proof.Idea.PPC64LE.ModesLit
 namespace VG.Artifacts.IdeaCbc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Idea.cbcEncryptChainedApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.cbcEncryptChainedReg,
-  Spec.Idea.cbcDecryptChainedApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.cbcDecryptChainedReg]
+  Spec.Idea.cbcEncryptChainedApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cbcEncryptChained_scrubbed },
+  Spec.Idea.cbcDecryptChainedApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.IdeaCbc.PPC64LE
