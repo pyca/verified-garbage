@@ -1097,14 +1097,14 @@ place of the block function, and of each implementation where it is defined
 (`BlocksImpl.encScrub`). -/
 
 private theorem encrypt_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch64.Blocks)
-    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩⟩) = true)
+    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true)
     (hc : AArch64.ScrubAll.sideAll p b.code = true) :
     AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.encrypt b) = true := by
   simp only [Impl.AesCfb8.AArch64.encrypt, Impl.AesCfb8.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem encrypt_own :
-    AArch64.ScrubAll.calleeSide (Impl.AesCfb8.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
+    AArch64.ScrubAll.calleeSide (Impl.AesCfb8.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
   kernel_rfl
 
 theorem encrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
@@ -1124,14 +1124,14 @@ theorem encrypt_scrubbed (v : Proof.Aes.AArch64.BlocksImpl) :
     Proof.Aes.AArch64.ModesScrub.cfb8EncryptOk (encrypt_side v)
 
 private theorem decrypt_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch64.Blocks)
-    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩⟩) = true)
+    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true)
     (hc : AArch64.ScrubAll.sideAll p b.code = true) :
     AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.decrypt b) = true := by
   simp only [Impl.AesCfb8.AArch64.decrypt, Impl.AesCfb8.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem decrypt_own :
-    AArch64.ScrubAll.calleeSide (Impl.AesCfb8.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
+    AArch64.ScrubAll.calleeSide (Impl.AesCfb8.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
   kernel_rfl
 
 theorem decrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :

@@ -58,6 +58,10 @@ structure BlocksImpl where
   return. -/
   scratch : Nat
   scratch_ok : scratch = 0 ∨ scratch = 2048
+  /-- `scratch` is what `Impl/` states of both (`enc.scratch`,
+  `dec.scratch`), by which a caller's code sizes its frame. -/
+  encScratch_eq : enc.scratch = scratch
+  decScratch_eq : dec.scratch = scratch
   encOkW : ∀ s, (Proof.Aes.blocksAArch64With scratch Spec.Aes.cipher).pre s →
     ∃ t s', Exec isa enc.code s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64With scratch Spec.Aes.cipher).post s s'
@@ -97,6 +101,7 @@ structure BlocksImpl where
     ∃ t s', Exec isa expand.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.expandKeyAArch64.post s s'
   expandCt : ConstantTime isa Proof.Aes.expandKeyAArch64.pre Proof.Aes.expandKeyAArch64.pub expand.code
   expandKeepsV : expand.code.allInstrs AArch64.keepsV = true
+  expandScrub : AArch64.ScrubAll.calleeSide expand.code expand.clear = true
   /-- The vector registers `vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt`,
   whose code is `enc`'s and `dec`'s where they write nothing in `scratch`,
   clear before they return (`Impl.Residue.AArch64.withClears`), and, where the
@@ -128,6 +133,8 @@ def scalar : BlocksImpl where
   decKeepsV := by lit_decide
   scratch := 2048
   scratch_ok := .inr rfl
+  encScratch_eq := rfl
+  decScratch_eq := rfl
   encOkW := by rw [Proof.Aes.blocksAArch64With_2048]; exact OneBlock.encryptBlocksN_correct
   encCtW := by rw [Proof.Aes.blocksAArch64With_2048]; exact OneBlock.encryptBlocksN_ct
   decOkW := by rw [Proof.Aes.blocksAArch64With_2048]; exact OneBlock.decryptBlocksN_correct
@@ -144,6 +151,7 @@ def scalar : BlocksImpl where
   expandOk := Ctr32Impl.scalar.expandOk
   expandCt := Ctr32Impl.scalar.expandCt
   expandKeepsV := Ctr32Impl.scalar.expandKeepsV
+  expandScrub := Ctr32Impl.scalar.expandScrub
 
 /-- The implementation with the Cryptographic Extension,
 `vg_aes_encrypt_blocks_aes` and `vg_aes_decrypt_blocks_aes`, with
@@ -161,6 +169,8 @@ def aese : BlocksImpl where
   decKeepsV := by lit_decide
   scratch := 0
   scratch_ok := .inl rfl
+  encScratch_eq := rfl
+  decScratch_eq := rfl
   encOkW := Aese.encryptBlocks_correctW 0
   encCtW := Aese.encryptBlocks_ctW 0
   decOkW := Aese.decryptBlocks_correctW 0
@@ -177,6 +187,7 @@ def aese : BlocksImpl where
   expandOk := Ctr32Impl.aese.expandOk
   expandCt := Ctr32Impl.aese.expandCt
   expandKeepsV := Ctr32Impl.aese.expandKeepsV
+  expandScrub := Ctr32Impl.aese.expandScrub
   ecbClear := Aese.blocksLeft
   encRes := some ⟨Aese.encryptBlocks_noResidue⟩
   decRes := some ⟨Aese.decryptBlocks_noResidue⟩

@@ -84,23 +84,23 @@ and of each implementation where it is defined (`XtsImpl.encScrub`,
 open VG.AArch64.ScrubAll
 
 private theorem encrypt_all {p : Instr → Bool} (f : Impl.Aes.AArch64.Blocks)
-    (h0 : sideAll p (encrypt ⟨"", .block [], ⟨[], [], []⟩⟩) = true) (hc : sideAll p f.code = true) :
+    (h0 : sideAll p (encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true) (hc : sideAll p f.code = true) :
     sideAll p (encrypt f) = true := by
   simp only [encrypt, tweak, encSteal, sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem decrypt_all {p : Instr → Bool} (e d : Impl.Aes.AArch64.Blocks)
-    (h0 : sideAll p (decrypt ⟨"", .block [], ⟨[], [], []⟩⟩ ⟨"", .block [], ⟨[], [], []⟩⟩) = true) (he : sideAll p e.code = true)
+    (h0 : sideAll p (decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true) (he : sideAll p e.code = true)
     (hd : sideAll p d.code = true) : sideAll p (decrypt e d) = true := by
   simp only [decrypt, tweak, decSteal, sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, he, hd, and_self]
 
 private theorem encrypt_own :
-    calleeSide (encrypt ⟨"", .block [], ⟨[], [], []⟩⟩) Impl.AesXts.AArch64Unit.Fn.encryptOwn = true := by
+    calleeSide (encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesXts.AArch64Unit.Fn.encryptOwn = true := by
   kernel_rfl
 
 private theorem decrypt_own :
-    calleeSide (decrypt ⟨"", .block [], ⟨[], [], []⟩⟩ ⟨"", .block [], ⟨[], [], []⟩⟩) Impl.AesXts.AArch64Unit.Fn.decryptOwn = true := by
+    calleeSide (decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesXts.AArch64Unit.Fn.decryptOwn = true := by
   kernel_rfl
 
 theorem encrypt_side (v : XtsImpl) :
