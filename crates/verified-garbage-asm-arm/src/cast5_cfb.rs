@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cast5.cfbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -55,7 +57,7 @@ add r2, r8, #40
 mov r3, #1
 add r12, r8, #56
 push {{r12, lr}}
-bl {vg_cast5_ecb_encrypt}
+bl {vg_cast5_ecb_encrypt_entry}
 ldr r12, [sp], #8
 ldr r9, [r6, #0]
 ldr r10, [r8, #40]
@@ -169,14 +171,43 @@ str r2, [r12, #300]
 str r2, [r12, #304]
 str r2, [r12, #308]
 add sp, sp, #328
+sub sp, sp, #336
+add r12, sp, #0
+mov r2, #0
+mov r3, #10
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #336
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_cast5_ecb_encrypt = sym super::cast5::vg_cast5_ecb_encrypt,
+        vg_cast5_ecb_encrypt_entry = sym super::cast5::vg_cast5_ecb_encrypt_entry::vg_cast5_ecb_encrypt_entry,
     )
 }
 
 /// CAST5-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption (also for decryption) with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`.
 ///
 /// Contract: `VG.Spec.Cast5.cfbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -230,7 +261,7 @@ add r2, r8, #40
 mov r3, #1
 add r12, r8, #56
 push {{r12, lr}}
-bl {vg_cast5_ecb_encrypt}
+bl {vg_cast5_ecb_encrypt_entry}
 ldr r12, [sp], #8
 ldr r9, [r6, #0]
 ldr r10, [r8, #40]
@@ -344,14 +375,43 @@ str r2, [r12, #300]
 str r2, [r12, #304]
 str r2, [r12, #308]
 add sp, sp, #328
+sub sp, sp, #336
+add r12, sp, #0
+mov r2, #0
+mov r3, #10
+23:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 23b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #336
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_cast5_ecb_encrypt = sym super::cast5::vg_cast5_ecb_encrypt,
+        vg_cast5_ecb_encrypt_entry = sym super::cast5::vg_cast5_ecb_encrypt_entry::vg_cast5_ecb_encrypt_entry,
     )
 }
 
 /// CAST5-CFB64 encryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Cast5.cfbEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -401,7 +461,7 @@ add r2, r8, #40
 mov r3, #1
 add r12, r8, #56
 push {{r12, lr}}
-bl {vg_cast5_ecb_encrypt}
+bl {vg_cast5_ecb_encrypt_entry}
 ldr r12, [sp], #8
 lsr r9, r7, #3
 cmp r9, #0
@@ -531,14 +591,43 @@ str r2, [r12, #300]
 str r2, [r12, #304]
 str r2, [r12, #308]
 add sp, sp, #328
+sub sp, sp, #336
+add r12, sp, #0
+mov r2, #0
+mov r3, #10
+26:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 26b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #336
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_cast5_ecb_encrypt = sym super::cast5::vg_cast5_ecb_encrypt,
+        vg_cast5_ecb_encrypt_entry = sym super::cast5::vg_cast5_ecb_encrypt_entry::vg_cast5_ecb_encrypt_entry,
     )
 }
 
 /// CAST5-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; RFC 2144 §2) of the last piece of a message, of any length, in place: replaces its whole 8-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 8 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is CAST5 encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_cast5_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Cast5.cfbDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the subkeys, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -588,7 +677,7 @@ add r2, r8, #40
 mov r3, #1
 add r12, r8, #56
 push {{r12, lr}}
-bl {vg_cast5_ecb_encrypt}
+bl {vg_cast5_ecb_encrypt_entry}
 ldr r12, [sp], #8
 lsr r9, r7, #3
 cmp r9, #0
@@ -722,7 +811,34 @@ str r2, [r12, #300]
 str r2, [r12, #304]
 str r2, [r12, #308]
 add sp, sp, #328
+sub sp, sp, #336
+add r12, sp, #0
+mov r2, #0
+mov r3, #10
+26:
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+str r2, [r12, #24]
+str r2, [r12, #28]
+add r12, r12, #32
+subs r3, r3, #1
+bne 26b
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #336
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
-        vg_cast5_ecb_encrypt = sym super::cast5::vg_cast5_ecb_encrypt,
+        vg_cast5_ecb_encrypt_entry = sym super::cast5::vg_cast5_ecb_encrypt_entry::vg_cast5_ecb_encrypt_entry,
     )
 }

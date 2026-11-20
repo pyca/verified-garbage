@@ -1185,6 +1185,12 @@ vg_cast5_expand_key:
 	ldr r10, [r12, #88]
 	ldr r11, [r12, #92]
 	ldr lr, [r12, #96]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_cast5_ecb_encrypt:
@@ -1631,6 +1637,12 @@ vg_cast5_ecb_encrypt:
 	ldr r10, [r12, #88]
 	ldr r11, [r12, #92]
 	ldr lr, [r12, #96]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_cast5_ecb_decrypt:
@@ -2081,4 +2093,10 @@ vg_cast5_ecb_decrypt:
 	ldr r10, [r12, #88]
 	ldr r11, [r12, #92]
 	ldr lr, [r12, #96]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

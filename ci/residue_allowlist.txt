@@ -70,17 +70,6 @@ arm vg_blowfish_ecb_encrypt
 arm vg_blowfish_expand_key
 arm vg_blowfish_ofb
 arm vg_blowfish_ofb_final
-arm vg_cast5_cbc_decrypt_chained
-arm vg_cast5_cbc_encrypt_chained
-arm vg_cast5_cfb64_decrypt
-arm vg_cast5_cfb64_decrypt_final
-arm vg_cast5_cfb64_encrypt
-arm vg_cast5_cfb64_encrypt_final
-arm vg_cast5_ecb_decrypt
-arm vg_cast5_ecb_encrypt
-arm vg_cast5_expand_key
-arm vg_cast5_ofb
-arm vg_cast5_ofb_final
 arm vg_cmac_aes_absorb
 arm vg_cmac_aes_finish
 arm vg_cmac_aes_init
