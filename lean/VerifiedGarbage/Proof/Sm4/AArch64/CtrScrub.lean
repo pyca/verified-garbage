@@ -21,7 +21,7 @@ The postconditions of `vg_sm4_expand_key`, `vg_sm4_ctr` and
 `vg_sm4_ctr_final` read the memory on return only within their buffers
 (`ScrubAll.ScrubAllOk`, from `Proof.Sm4`'s `*PostOut_local`): each
 implementation returns with every register it may leave secret cleared, and
-its whole stack zeroed, if it has one (`ScrubAll.withScrubAll`). The CTR
+its whole stack zeroed, if it has one (`Impl.Residue.AArch64.scrubAll`, in the function as emitted). The CTR
 functions' frames, which no longer zero themselves, are among that stack.
 -/
 
