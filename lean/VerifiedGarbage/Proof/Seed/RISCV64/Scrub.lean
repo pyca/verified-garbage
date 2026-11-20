@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Impl.Seed.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Seed.Contract
 public import VerifiedGarbage.Spec.Seed.Cbc
@@ -2014,14 +2015,14 @@ end
 # Seed on RISC-V, without secret residue
 
 Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
+(`Impl.Seed.RISCV64.Fn`, the functions as emitted), which clears the
+caller-saved registers and the stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Seed/X86_64/Scrub.lean`).
 
 The key expansion and ECB instead clear only the runs of doublewords that the residue
 analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.scrubSelOf`, `scrubSel_noResidue`). Their code wipes most of
+(`Impl.Scrub.RISCV64.scrubSel`). Their code wipes most of
 its own scratch space, which leaves few such doublewords, or none.
 -/
 
@@ -2066,70 +2067,122 @@ theorem ofbOut (stack : Nat) : PostOut (Spec.Seed.ofbContract RISCV64.abi stack)
 theorem ofbFinalOut (stack : Nat) : PostOut (Spec.Seed.ofbFinalContract RISCV64.abi stack) (Spec.Seed.ofbFinalSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Modes.ofbFinalPost_local _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted
 
-/-- `Spec.Seed.expandKeyApi`. -/
-def expandKeyReg : Registration Spec.Seed.expandKeyApi RISCV64.target :=
-  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a2 129 Impl.Seed.RISCV64.expandKey, verified := Proof.Seed.RISCV64.expandKey_framed } [(1040, [(129, 1)])]
-    (expandKeyOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (expandKeyOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a2 129 Impl.Seed.RISCV64.expandKey) 1040 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+Each theorem states that a function as emitted (`Impl.Seed.RISCV64.Fn`) meets its
+contract in constant time and returns without secret residue
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`, or
+`verifiedScrubbedSelT` for the selective cleanup, whose residue analysis the
+kernel evaluates here): what its registration binds. -/
 
-/-- `Spec.Seed.ecbEncryptApi`. -/
-def ecbEncryptReg : Registration Spec.Seed.ecbEncryptApi RISCV64.target :=
-  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .encrypt), verified := Proof.Seed.RISCV64.ecb_framed .encrypt } [(1040, [(129, 1)])]
-    (ecbEncryptOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbEncryptOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .encrypt)) 1040 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+/-- `Spec.Seed.expandKeyApi` as emitted (`Impl.Seed.RISCV64.Fn.expandKey`) meets its contract
+in constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.expandKey
+      (Spec.Seed.expandKeyContract RISCV64.abi 1040) 0 :=
+  verifiedScrubbedSelT (api := Spec.Seed.expandKeyApi) (W := 1040) (rb := 0)
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a2 129 Impl.Seed.RISCV64.expandKey
+      verified := Proof.Seed.RISCV64.expandKey_framed }
+    _ [] (expandKeyOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Seed.ecbDecryptApi`. -/
-def ecbDecryptReg : Registration Spec.Seed.ecbDecryptApi RISCV64.target :=
-  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .decrypt), verified := Proof.Seed.RISCV64.ecb_framed .decrypt } [(1040, [(129, 1)])]
-    (ecbDecryptOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbDecryptOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .decrypt)) 1040 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+/-- `Spec.Seed.ecbEncryptApi` as emitted (`Impl.Seed.RISCV64.Fn.ecbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecbEncrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.ecbEncrypt
+      (Spec.Seed.ecbContract RISCV64.abi Spec.Seed.Direction.encrypt 1040) 0 :=
+  verifiedScrubbedSelT (api := Spec.Seed.ecbEncryptApi) (W := 1040) (rb := 0)
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .encrypt)
+      verified := Proof.Seed.RISCV64.ecb_framed .encrypt }
+    _ [] (ecbEncryptOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Seed.cbcEncryptChainedApi`. -/
-def cbcEncryptChainedReg : Registration Spec.Seed.cbcEncryptChainedApi RISCV64.target :=
-  scrubOf { code := Impl.Seed.RISCV64.cbcEncryptChained, verified := Proof.Seed.RISCV64.Modes.cbcEncryptChained_verified }
-    (cbcEncryptOut _)
+/-- `Spec.Seed.ecbDecryptApi` as emitted (`Impl.Seed.RISCV64.Fn.ecbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecbDecrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.ecbDecrypt
+      (Spec.Seed.ecbContract RISCV64.abi Spec.Seed.Direction.decrypt 1040) 0 :=
+  verifiedScrubbedSelT (api := Spec.Seed.ecbDecryptApi) (W := 1040) (rb := 0)
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 1040 .a3 129 (Impl.Seed.RISCV64.ecb .decrypt)
+      verified := Proof.Seed.RISCV64.ecb_framed .decrypt }
+    _ [] (ecbDecryptOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Seed.cbcDecryptChainedApi`. -/
-def cbcDecryptChainedReg : Registration Spec.Seed.cbcDecryptChainedApi RISCV64.target :=
-  scrubOf { code := Impl.Seed.RISCV64.cbcDecryptChained, verified := Proof.Seed.RISCV64.Modes.cbcDecryptChained_verified }
-    (cbcDecryptOut _)
+/-- `Spec.Seed.cbcEncryptChainedApi` as emitted (`Impl.Seed.RISCV64.Fn.cbcEncryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcEncryptChained_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.cbcEncryptChained
+      (Spec.Seed.cbcEncryptChainedContract RISCV64.abi (Proof.Seed.RISCV64.Modes.frameBytes 1)) 0 :=
+  verifiedScrubbed (api := Spec.Seed.cbcEncryptChainedApi) (W := 1120) (rb := 0)
+    { code := Impl.Seed.RISCV64.cbcEncryptChained
+      verified := Proof.Seed.RISCV64.Modes.cbcEncryptChained_verified }
+    (cbcEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Seed.cfbEncryptApi`. -/
-def cfbEncryptReg : Registration Spec.Seed.cfbEncryptApi RISCV64.target :=
-  scrubOf { code := Impl.Seed.RISCV64.cfbEncrypt, verified := Proof.Seed.RISCV64.Modes.cfbEncrypt_verified }
-    (cfbEncryptOut _)
+/-- `Spec.Seed.cbcDecryptChainedApi` as emitted (`Impl.Seed.RISCV64.Fn.cbcDecryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcDecryptChained_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.cbcDecryptChained
+      (Spec.Seed.cbcDecryptChainedContract RISCV64.abi (Proof.Seed.RISCV64.Modes.frameBytes 16)) 0 :=
+  verifiedScrubbed (api := Spec.Seed.cbcDecryptChainedApi) (W := 1360) (rb := 0)
+    { code := Impl.Seed.RISCV64.cbcDecryptChained
+      verified := Proof.Seed.RISCV64.Modes.cbcDecryptChained_verified }
+    (cbcDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Seed.cfbDecryptApi`. -/
-def cfbDecryptReg : Registration Spec.Seed.cfbDecryptApi RISCV64.target :=
-  scrubOf { code := Impl.Seed.RISCV64.cfbDecrypt, verified := Proof.Seed.RISCV64.Modes.cfbDecrypt_verified }
-    (cfbDecryptOut _)
+/-- `Spec.Seed.cfbEncryptApi` as emitted (`Impl.Seed.RISCV64.Fn.cfbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.cfbEncrypt
+      (Spec.Seed.cfbEncryptContract RISCV64.abi (Proof.Seed.RISCV64.Modes.frameBytes 1)) 0 :=
+  verifiedScrubbed (api := Spec.Seed.cfbEncryptApi) (W := 1120) (rb := 0)
+    { code := Impl.Seed.RISCV64.cfbEncrypt
+      verified := Proof.Seed.RISCV64.Modes.cfbEncrypt_verified }
+    (cfbEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Seed.cfbEncryptFinalApi`. -/
-def cfbEncryptFinalReg : Registration Spec.Seed.cfbEncryptFinalApi RISCV64.target :=
-  scrubOf { code := Impl.Seed.RISCV64.cfbEncryptFinal, verified := Proof.Seed.RISCV64.Modes.cfbEncryptFinal_verified }
-    (cfbEncryptFinalOut _)
+/-- `Spec.Seed.cfbDecryptApi` as emitted (`Impl.Seed.RISCV64.Fn.cfbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.cfbDecrypt
+      (Spec.Seed.cfbDecryptContract RISCV64.abi (Proof.Seed.RISCV64.Modes.frameBytes 16)) 0 :=
+  verifiedScrubbed (api := Spec.Seed.cfbDecryptApi) (W := 1360) (rb := 0)
+    { code := Impl.Seed.RISCV64.cfbDecrypt
+      verified := Proof.Seed.RISCV64.Modes.cfbDecrypt_verified }
+    (cfbDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Seed.cfbDecryptFinalApi`. -/
-def cfbDecryptFinalReg : Registration Spec.Seed.cfbDecryptFinalApi RISCV64.target :=
-  scrubOf { code := Impl.Seed.RISCV64.cfbDecryptFinal, verified := Proof.Seed.RISCV64.Modes.cfbDecryptFinal_verified }
-    (cfbDecryptFinalOut _)
+/-- `Spec.Seed.cfbEncryptFinalApi` as emitted (`Impl.Seed.RISCV64.Fn.cfbEncryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncryptFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.cfbEncryptFinal
+      (Spec.Seed.cfbEncryptFinalContract RISCV64.abi (Proof.Seed.RISCV64.Modes.frameBytes 1)) 0 :=
+  verifiedScrubbed (api := Spec.Seed.cfbEncryptFinalApi) (W := 1120) (rb := 0)
+    { code := Impl.Seed.RISCV64.cfbEncryptFinal
+      verified := Proof.Seed.RISCV64.Modes.cfbEncryptFinal_verified }
+    (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Seed.ofbApi`. -/
-def ofbReg : Registration Spec.Seed.ofbApi RISCV64.target :=
-  scrubOf { code := Impl.Seed.RISCV64.ofb, verified := Proof.Seed.RISCV64.Modes.ofb_verified }
-    (ofbOut _)
+/-- `Spec.Seed.cfbDecryptFinalApi` as emitted (`Impl.Seed.RISCV64.Fn.cfbDecryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecryptFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.cfbDecryptFinal
+      (Spec.Seed.cfbDecryptFinalContract RISCV64.abi (Proof.Seed.RISCV64.Modes.frameBytes 1)) 0 :=
+  verifiedScrubbed (api := Spec.Seed.cfbDecryptFinalApi) (W := 1120) (rb := 0)
+    { code := Impl.Seed.RISCV64.cfbDecryptFinal
+      verified := Proof.Seed.RISCV64.Modes.cfbDecryptFinal_verified }
+    (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Seed.ofbFinalApi`. -/
-def ofbFinalReg : Registration Spec.Seed.ofbFinalApi RISCV64.target :=
-  scrubOf { code := Impl.Seed.RISCV64.ofbFinal, verified := Proof.Seed.RISCV64.Modes.ofbFinal_verified }
-    (ofbFinalOut _)
+/-- `Spec.Seed.ofbApi` as emitted (`Impl.Seed.RISCV64.Fn.ofb`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.ofb
+      (Spec.Seed.ofbContract RISCV64.abi (Proof.Seed.RISCV64.Modes.frameBytes 1)) 0 :=
+  verifiedScrubbed (api := Spec.Seed.ofbApi) (W := 1120) (rb := 0)
+    { code := Impl.Seed.RISCV64.ofb
+      verified := Proof.Seed.RISCV64.Modes.ofb_verified }
+    (ofbOut _) (by dsimp only; lit_decide)
+
+/-- `Spec.Seed.ofbFinalApi` as emitted (`Impl.Seed.RISCV64.Fn.ofbFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Seed.RISCV64.Fn.ofbFinal
+      (Spec.Seed.ofbFinalContract RISCV64.abi (Proof.Seed.RISCV64.Modes.frameBytes 1)) 0 :=
+  verifiedScrubbed (api := Spec.Seed.ofbFinalApi) (W := 1120) (rb := 0)
+    { code := Impl.Seed.RISCV64.ofbFinal
+      verified := Proof.Seed.RISCV64.Modes.ofbFinal_verified }
+    (ofbFinalOut _) (by dsimp only; lit_decide)
 
 end VG.Proof.Seed.RISCV64.Scrub

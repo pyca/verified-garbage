@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Impl.Sm4.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Sm4.Contract
 public import VerifiedGarbage.Spec.Sm4.Cbc
@@ -1249,14 +1250,14 @@ end
 # Sm4 on RISC-V, without secret residue
 
 Each function, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
+(`Impl.Sm4.RISCV64.Fn`, the functions as emitted), which clears the
+caller-saved registers and the stack its frames used. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Sm4/X86_64/Scrub.lean`).
 
 The key expansion and ECB instead clear only the runs of doublewords that the residue
 analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.scrubSelOf`, `scrubSel_noResidue`). Their code wipes most of
+(`Impl.Scrub.RISCV64.scrubSel`). Their code wipes most of
 its own scratch space, which leaves few such doublewords, or none.
 -/
 
@@ -1307,80 +1308,142 @@ theorem ctrOut (stack : Nat) : PostOut (Spec.Sm4.ctrContract RISCV64.abi stack) 
 theorem ctrFinalOut (stack : Nat) : PostOut (Spec.Sm4.ctrFinalContract RISCV64.abi stack) (Spec.Sm4.ctrFinalSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.ctrFinalPostOut_local _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted
 
-/-- `Spec.Sm4.expandKeyApi`. -/
-def expandKeyReg : Registration Spec.Sm4.expandKeyApi RISCV64.target :=
-  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey, verified := Proof.Sm4.RISCV64.expandKey_framed } []
-    (expandKeyOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (expandKeyOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey) 3168 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+Each theorem states that a function as emitted (`Impl.Sm4.RISCV64.Fn`) meets its
+contract in constant time and returns without secret residue
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`, or
+`verifiedScrubbedSelT` for the selective cleanup, whose residue analysis the
+kernel evaluates here): what its registration binds. -/
 
-/-- `Spec.Sm4.ecbEncryptApi`. -/
-def ecbEncryptReg : Registration Spec.Sm4.ecbEncryptApi RISCV64.target :=
-  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt), verified := Proof.Sm4.RISCV64.ecb_framed .encrypt } []
-    (ecbEncryptOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbEncryptOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt)) 3168 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+/-- `Spec.Sm4.expandKeyApi` as emitted (`Impl.Sm4.RISCV64.Fn.expandKey`) meets its contract
+in constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.expandKey
+      (Spec.Sm4.expandKeyContract RISCV64.abi 3168) 0 :=
+  verifiedScrubbedSelT (api := Spec.Sm4.expandKeyApi) (W := 3168) (rb := 0)
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey
+      verified := Proof.Sm4.RISCV64.expandKey_framed }
+    _ [] (expandKeyOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Sm4.ecbDecryptApi`. -/
-def ecbDecryptReg : Registration Spec.Sm4.ecbDecryptApi RISCV64.target :=
-  scrubSelOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt), verified := Proof.Sm4.RISCV64.ecb_framed .decrypt } []
-    (ecbDecryptOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (ecbDecryptOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt)) 3168 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+/-- `Spec.Sm4.ecbEncryptApi` as emitted (`Impl.Sm4.RISCV64.Fn.ecbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecbEncrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.ecbEncrypt
+      (Spec.Sm4.ecbContract RISCV64.abi (Proof.Sm4.specDirRISCV64 Impl.Sm4.RISCV64.Dir.encrypt) 3168) 0 :=
+  verifiedScrubbedSelT (api := Spec.Sm4.ecbEncryptApi) (W := 3168) (rb := 0)
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt)
+      verified := Proof.Sm4.RISCV64.ecb_framed .encrypt }
+    _ [] (ecbEncryptOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Sm4.cbcEncryptChainedApi`. -/
-def cbcEncryptChainedReg : Registration Spec.Sm4.cbcEncryptChainedApi RISCV64.target :=
-  scrubOf { code := Impl.Sm4.RISCV64.cbcEncryptChained, verified := Proof.Sm4.RISCV64.Modes.cbcEncryptChained_verified }
-    (cbcEncryptOut _)
+/-- `Spec.Sm4.ecbDecryptApi` as emitted (`Impl.Sm4.RISCV64.Fn.ecbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecbDecrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.ecbDecrypt
+      (Spec.Sm4.ecbContract RISCV64.abi (Proof.Sm4.specDirRISCV64 Impl.Sm4.RISCV64.Dir.decrypt) 3168) 0 :=
+  verifiedScrubbedSelT (api := Spec.Sm4.ecbDecryptApi) (W := 3168) (rb := 0)
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt)
+      verified := Proof.Sm4.RISCV64.ecb_framed .decrypt }
+    _ [] (ecbDecryptOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Sm4.cbcDecryptChainedApi`. -/
-def cbcDecryptChainedReg : Registration Spec.Sm4.cbcDecryptChainedApi RISCV64.target :=
-  scrubOf { code := Impl.Sm4.RISCV64.cbcDecryptChained, verified := Proof.Sm4.RISCV64.Modes.cbcDecryptChained_verified }
-    (cbcDecryptOut _)
+/-- `Spec.Sm4.cbcEncryptChainedApi` as emitted (`Impl.Sm4.RISCV64.Fn.cbcEncryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcEncryptChained_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.cbcEncryptChained
+      (Spec.Sm4.cbcEncryptChainedContract RISCV64.abi Proof.Sm4.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.cbcEncryptChainedApi) (W := 3248) (rb := 0)
+    { code := Impl.Sm4.RISCV64.cbcEncryptChained
+      verified := Proof.Sm4.RISCV64.Modes.cbcEncryptChained_verified }
+    (cbcEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.cfbEncryptApi`. -/
-def cfbEncryptReg : Registration Spec.Sm4.cfbEncryptApi RISCV64.target :=
-  scrubOf { code := Impl.Sm4.RISCV64.cfbEncrypt, verified := Proof.Sm4.RISCV64.Modes.cfbEncrypt_verified }
-    (cfbEncryptOut _)
+/-- `Spec.Sm4.cbcDecryptChainedApi` as emitted (`Impl.Sm4.RISCV64.Fn.cbcDecryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcDecryptChained_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.cbcDecryptChained
+      (Spec.Sm4.cbcDecryptChainedContract RISCV64.abi Proof.Sm4.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.cbcDecryptChainedApi) (W := 3248) (rb := 0)
+    { code := Impl.Sm4.RISCV64.cbcDecryptChained
+      verified := Proof.Sm4.RISCV64.Modes.cbcDecryptChained_verified }
+    (cbcDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.cfbDecryptApi`. -/
-def cfbDecryptReg : Registration Spec.Sm4.cfbDecryptApi RISCV64.target :=
-  scrubOf { code := Impl.Sm4.RISCV64.cfbDecrypt, verified := Proof.Sm4.RISCV64.Modes.cfbDecrypt_verified }
-    (cfbDecryptOut _)
+/-- `Spec.Sm4.cfbEncryptApi` as emitted (`Impl.Sm4.RISCV64.Fn.cfbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.cfbEncrypt
+      (Spec.Sm4.cfbEncryptContract RISCV64.abi Proof.Sm4.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.cfbEncryptApi) (W := 3248) (rb := 0)
+    { code := Impl.Sm4.RISCV64.cfbEncrypt
+      verified := Proof.Sm4.RISCV64.Modes.cfbEncrypt_verified }
+    (cfbEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.cfbEncryptFinalApi`. -/
-def cfbEncryptFinalReg : Registration Spec.Sm4.cfbEncryptFinalApi RISCV64.target :=
-  scrubOf { code := Impl.Sm4.RISCV64.cfbEncryptFinal, verified := Proof.Sm4.RISCV64.Modes.cfbEncryptFinal_verified }
-    (cfbEncryptFinalOut _)
+/-- `Spec.Sm4.cfbDecryptApi` as emitted (`Impl.Sm4.RISCV64.Fn.cfbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecrypt_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.cfbDecrypt
+      (Spec.Sm4.cfbDecryptContract RISCV64.abi Proof.Sm4.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.cfbDecryptApi) (W := 3248) (rb := 0)
+    { code := Impl.Sm4.RISCV64.cfbDecrypt
+      verified := Proof.Sm4.RISCV64.Modes.cfbDecrypt_verified }
+    (cfbDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.cfbDecryptFinalApi`. -/
-def cfbDecryptFinalReg : Registration Spec.Sm4.cfbDecryptFinalApi RISCV64.target :=
-  scrubOf { code := Impl.Sm4.RISCV64.cfbDecryptFinal, verified := Proof.Sm4.RISCV64.Modes.cfbDecryptFinal_verified }
-    (cfbDecryptFinalOut _)
+/-- `Spec.Sm4.cfbEncryptFinalApi` as emitted (`Impl.Sm4.RISCV64.Fn.cfbEncryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncryptFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.cfbEncryptFinal
+      (Spec.Sm4.cfbEncryptFinalContract RISCV64.abi Proof.Sm4.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.cfbEncryptFinalApi) (W := 3248) (rb := 0)
+    { code := Impl.Sm4.RISCV64.cfbEncryptFinal
+      verified := Proof.Sm4.RISCV64.Modes.cfbEncryptFinal_verified }
+    (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.ctrApi`. -/
-def ctrReg : Registration Spec.Sm4.ctrApi RISCV64.target :=
-  scrubOf { code := Impl.Sm4.RISCV64.ctr, verified := Proof.Sm4.RISCV64.Modes.ctr_verified }
-    (ctrOut _)
+/-- `Spec.Sm4.cfbDecryptFinalApi` as emitted (`Impl.Sm4.RISCV64.Fn.cfbDecryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecryptFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.cfbDecryptFinal
+      (Spec.Sm4.cfbDecryptFinalContract RISCV64.abi Proof.Sm4.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.cfbDecryptFinalApi) (W := 3248) (rb := 0)
+    { code := Impl.Sm4.RISCV64.cfbDecryptFinal
+      verified := Proof.Sm4.RISCV64.Modes.cfbDecryptFinal_verified }
+    (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.ctrFinalApi`. -/
-def ctrFinalReg : Registration Spec.Sm4.ctrFinalApi RISCV64.target :=
-  scrubOf { code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a4 10 Impl.Sm4.RISCV64.ctrFinal, verified := Proof.Sm4.RISCV64.CtrFinal.ctrFinal_framed }
-    (ctrFinalOut _)
+/-- `Spec.Sm4.ctrApi` as emitted (`Impl.Sm4.RISCV64.Fn.ctr`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ctr_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.ctr
+      (Spec.Sm4.ctrContract RISCV64.abi Proof.Sm4.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.ctrApi) (W := 3248) (rb := 0)
+    { code := Impl.Sm4.RISCV64.ctr
+      verified := Proof.Sm4.RISCV64.Modes.ctr_verified }
+    (ctrOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.ofbApi`. -/
-def ofbReg : Registration Spec.Sm4.ofbApi RISCV64.target :=
-  scrubOf { code := Impl.Sm4.RISCV64.ofb, verified := Proof.Sm4.RISCV64.Modes.ofb_verified }
-    (ofbOut _)
+/-- `Spec.Sm4.ctrFinalApi` as emitted (`Impl.Sm4.RISCV64.Fn.ctrFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ctrFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.ctrFinal
+      (Spec.Sm4.ctrFinalContract RISCV64.abi 3328) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.ctrFinalApi) (W := 3328) (rb := 0)
+    { code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a4 10 Impl.Sm4.RISCV64.ctrFinal
+      verified := Proof.Sm4.RISCV64.CtrFinal.ctrFinal_framed }
+    (ctrFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.ofbFinalApi`. -/
-def ofbFinalReg : Registration Spec.Sm4.ofbFinalApi RISCV64.target :=
-  scrubOf { code := Impl.Sm4.RISCV64.ofbFinal, verified := Proof.Sm4.RISCV64.Modes.ofbFinal_verified }
-    (ofbFinalOut _)
+/-- `Spec.Sm4.ofbApi` as emitted (`Impl.Sm4.RISCV64.Fn.ofb`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.ofb
+      (Spec.Sm4.ofbContract RISCV64.abi Proof.Sm4.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.ofbApi) (W := 3248) (rb := 0)
+    { code := Impl.Sm4.RISCV64.ofb
+      verified := Proof.Sm4.RISCV64.Modes.ofb_verified }
+    (ofbOut _) (by dsimp only; lit_decide)
+
+/-- `Spec.Sm4.ofbFinalApi` as emitted (`Impl.Sm4.RISCV64.Fn.ofbFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed RISCV64.target Impl.Sm4.RISCV64.Fn.ofbFinal
+      (Spec.Sm4.ofbFinalContract RISCV64.abi Proof.Sm4.RISCV64.Modes.frameBytes) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.ofbFinalApi) (W := 3248) (rb := 0)
+    { code := Impl.Sm4.RISCV64.ofbFinal
+      verified := Proof.Sm4.RISCV64.Modes.ofbFinal_verified }
+    (ofbFinalOut _) (by dsimp only; lit_decide)
 
 end VG.Proof.Sm4.RISCV64.Scrub
