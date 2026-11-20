@@ -285,6 +285,18 @@ instructions in an ISA model) go in their own PR before either.
    `stubSide` of the stub, which the kernel evaluates once
    (`Proof/Framework/X86_64/ScrubCall.lean`;
    `Proof/TripleDes/X86_64/Batch/Scrub.lean`, `Artifacts/TripleDesCbc/X86_64.lean`).
+   A hole in the stub is a call `.call f (.block [])`, charged the stack
+   `n f` of the kind of implementation it stands for (`depthH`), so give
+   the stub's calls names that tell them apart; pass the stub (`a`), its
+   own level (`ks`) and `n` explicitly, and case-split on any variant data
+   the stub keeps (`rcases v.scrOk …`) so that `stubSide` is of a closed
+   term. Variant structures state `calleeSide` importing only
+   `Proof/Framework/X86_64/CalleeSide.lean`; a variant built over another
+   proves it from the other's by `calleeSide_of_fill` (`UpdateImpl.ctr32`,
+   `Proof/CmacAes/X86_64/Variant.lean`), and a function that is one
+   variant's code alone by `verifiedScrubbedAllSide`. Examples:
+   `Proof/Scrypt/X86_64/Whole/Scrub.lean`, `Proof/AesCbc/X86_64/Wiped.lean`,
+   `Proof/CmacAes/Stream/X86_64/Scrub.lean`.
    Where each variant's function is evaluated anyway (a variant's own
    streaming functions), the variant instead carries what `scrubSel`
    needs of that function's code, `X86_64.Scrub.SelScrub` (its level, the
