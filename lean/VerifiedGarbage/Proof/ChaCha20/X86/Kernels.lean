@@ -1356,7 +1356,7 @@ end
 `sse2Ok` and `ssse3Ok` are what the four-block code needs of its quarter
 round (`Quad.KernelOk`): `vqr` needs nothing; `vqr3` needs its `pshufb`
 controls in `buf[288, 320)`, which `masks` stores there and the four-block
-code never writes. Each has its rounds' schedule (`earlyOk`, `fewLoadsOk`).
+code never writes. Each has its rounds' schedule (`earlyOk`, `earlySsse3Ok`).
 -/
 
 @[expose] public section
@@ -1367,11 +1367,6 @@ open VG VG.X86 VG.Impl.ChaCha20.X86 VG.Impl.ChaCha20.X86.Xor
 open VG.Proof.ChaCha20.X86.Quad (KernelOk SchedOk steps_of qround_comm kR bufR in_buf out_buf w32_other)
 open VG.Spec.ChaCha20 (qround innerBlock)
 
-/-- `fewLoads` fits, and its quarter rounds are in the specification's order. -/
-theorem fewLoadsOk : SchedOk fewLoads :=
-  ⟨by decide, steps_of (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide), by decide, by decide, by decide, fun _ => rfl⟩
-
 /-- `early` fits; its column round is in the order 0, 3, 1, 2 of the
 specification's quarter rounds and its diagonal round in the order 0, 1, 3, 2. -/
 theorem earlyOk : SchedOk early := by
@@ -1380,6 +1375,18 @@ theorem earlyOk : SchedOk early := by
   show qround (qround (qround (qround (qround (qround (qround (qround v 0 4 8 12) 3 7 11 15) 1 5 9 13)
     2 6 10 14) 0 5 10 15) 1 6 11 12) 3 4 9 14) 2 7 8 13 = _
   rw [qround_comm (qround v 0 4 8 12) 3 7 11 15 1 5 9 13 (by decide), qround_comm _ 3 7 11 15 2 6 10 14 (by decide),
+    qround_comm _ 3 4 9 14 2 7 8 13 (by decide)]
+  rfl
+
+/-- `earlySsse3` fits; its column round is in the order 0, 2, 3, 1 of the
+specification's quarter rounds and its diagonal round in the order 1, 3, 0, 2. -/
+theorem earlySsse3Ok : SchedOk earlySsse3 := by
+  refine ⟨by decide, steps_of (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide), by decide, by decide, by decide, fun v => ?_⟩
+  show qround (qround (qround (qround (qround (qround (qround (qround v 0 4 8 12) 2 6 10 14) 3 7 11 15)
+    1 5 9 13) 1 6 11 12) 3 4 9 14) 0 5 10 15) 2 7 8 13 = _
+  rw [qround_comm _ 3 7 11 15 1 5 9 13 (by decide), qround_comm _ 2 6 10 14 1 5 9 13 (by decide),
+    qround_comm _ 3 4 9 14 0 5 10 15 (by decide), qround_comm _ 1 6 11 12 0 5 10 15 (by decide),
     qround_comm _ 3 4 9 14 2 7 8 13 (by decide)]
   rfl
 
@@ -1423,7 +1430,7 @@ def ssse3Ok : KernelOk ssse3 where
         exact h.1,
      by rw [hf.readW (r := kR buf) (Offset.contains _ (by decide) (by decide) (by decide)) hd (by decide)]
         exact h.2⟩
-  sched := fewLoadsOk
+  sched := earlySsse3Ok
   qr_ok := fun {buf} {_ _ _ _ _} hab hac had hbc hbd hcd ha hb hc hd s he hw hi =>
     vqr3_ok hab hac had hbc hbd hcd ha hb hc hd s (he _ (by decide)) (he _ (by decide))
       (in_buf (d := rot16Off) hw (by decide)) (in_buf (d := rot8Off) hw (by decide)) hi.1 hi.2
