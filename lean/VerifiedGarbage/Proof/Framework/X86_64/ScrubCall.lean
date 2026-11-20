@@ -137,6 +137,14 @@ theorem inames_eq (h : Fill k n a b) : UpperLock.inames b = UpperLock.inames a :
   | loop _ _ ih | call _ _ _ ih | frame _ _ _ ih => simp only [UpperLock.inames, ih]
   | icall _ _ _ _ ihb ihx => simp only [UpperLock.inames, ihb, ihx]
 
+/-- `Fill` into code that both the stub and the implementation choose by the
+same condition. -/
+theorem ifp {p : Prop} [Decidable p] {a a' x y : Prog isa} (h : Fill k n a x) (h' : Fill k n a' y) :
+    Fill k n (if p then a else a') (if p then x else y) := by
+  by_cases hp : p
+  · rw [ite_eq_left hp, ite_eq_left hp]; exact h
+  · rw [ite_eq_right hp, ite_eq_right hp]; exact h'
+
 /-- `Fill` into code that the implementation chooses (`if p then x else y`),
 where it chooses `x`. -/
 theorem if_pos {p : Prop} [Decidable p] {x y : Prog isa} (h : Fill k n a x) (hp : p) :
@@ -176,6 +184,24 @@ theorem side_mono {a : Prog isa} {ks k : Nat} (hk : ks ≤ k)
   have := List.all_eq_true.mp hI i hi
   simp only [Bool.and_eq_true, decide_eq_true_eq] at this ⊢
   exact ⟨Nat.le_trans this.1 hk, this.2⟩
+
+/-- What `calleeSide` needs of code `a` with a stub for the implementations
+it calls, which need at most `n f` bytes of stack: its stack with theirs at
+most `m`, vector instructions of at most the level `k`, no load of MXCSR,
+and no indirect call. -/
+noncomputable def stubCallee (a : Prog isa) (k : Nat) (n : String → Nat) (m : Nat) : Bool :=
+  decide (depthH n a ≤ m) && a.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
+    (UpperLock.inames a).isEmpty
+
+/-- Code generic over the implementations it calls meets `calleeSide`, as
+an implementation of a function that others call, from `stubCallee` of its
+code with a stub, which the kernel evaluates once. -/
+theorem calleeSide_of_fill {ks k : Nat} {n : String → Nat} {m : Nat} {a b : Prog isa} (hf : Fill k n a b)
+    (hks : ks ≤ k) (ha : stubCallee a ks n m = true) : calleeSide b k m = true := by
+  simp only [stubCallee, Bool.and_eq_true, decide_eq_true_eq] at ha
+  obtain ⟨⟨hd, hs⟩, hi⟩ := ha
+  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq]
+  exact ⟨⟨Nat.le_trans hf.depth_leH hd, hf.side (side_mono hks hs)⟩, by rw [hf.inames_eq]; exact hi⟩
 
 theorem level_join_left (a b : VecLevel) : a.level ≤ (a.join b).level := by
   cases a <;> cases b <;> decide
@@ -225,6 +251,7 @@ macro "fill_calls" : tactic => `(tactic| repeat' (first
   | refine Fill.call _ _ ?_
   | refine Fill.frame _ _ ?_
   | refine Fill.icall _ _ ?_ ?_
+  | refine Fill.ifp ?_ ?_
   | refine Fill.if_pos ?_ (by assumption)
   | refine Fill.if_neg ?_ (by assumption)))
 

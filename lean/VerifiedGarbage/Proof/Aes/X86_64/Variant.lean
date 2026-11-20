@@ -161,6 +161,14 @@ structure Ctr32Impl where
     (Impl.StackScratch.X86_64.withStackScratch 24 .r8 (Impl.CmacAes.Stream.X86_64.finishF callee suffix))) :=
     none
 
+/-- How much working space it needs, which picks the code and frame of its
+callers (`Impl.Aes.X86_64.Space`). -/
+def Ctr32Impl.space (v : Ctr32Impl) : Impl.Aes.X86_64.Space :=
+  match v.free, v.small with
+  | some _, _ => .free
+  | none, some _ => .small
+  | none, none => .full
+
 namespace Ctr32Impl
 
 theorem scalar_nosp : NoSp Impl.Aes.X86_64.Ctr32.scalar.code := by
