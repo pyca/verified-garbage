@@ -2376,19 +2376,16 @@ def initX86 : Contract X86.isa where
 
 open VG.X86 in
 /-- `vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n:
-usize)`. It may use the 524 bytes below the stack pointer (the frames of
-`pairs`). -/
+usize)`. -/
 def blocksX86 : Contract X86.isa where
   pre s :=
     let state : Region := ⟨(arg s 0).setWidth 64, 128⟩
     let blocks : Region := ⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩
     let args : Region := ⟨argAddr s 0, 12⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 524, 524⟩
     s.rd = [blocks, args] ∧ s.wr = [state] ∧ state.Disjoint blocks ∧ args.Disjoint state ∧
       ret.Disjoint state ∧ (arg s 0).toNat + 128 ≤ 2 ^ 32 ∧
-      (arg s 1).toNat + 16 * (arg s 2).toNat ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧
-      stack.Disjoint state ∧ stack.Disjoint blocks ∧ 524 ≤ (s.gpr .esp).toNat
+      (arg s 1).toNat + 16 * (arg s 2).toNat ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 16 ≤ 2 ^ 32
   post s s' := ∀ key msg, Repr s.mem ((arg s 0).setWidth 64) key msg →
     Repr s'.mem ((arg s 0).setWidth 64) key
       (msg ++ bytesAt s.mem ((arg s 1).setWidth 64) (16 * (arg s 2).toNat))
@@ -2467,14 +2464,7 @@ abbrev Rn : Nat :=
   rval (r0v s₀.mem (stp s₀)) (qv s₀.mem (stp s₀) 1) (qv s₀.mem (stp s₀) 2) (qv s₀.mem (stp s₀) 3)
 /-- The return address's region. -/
 abbrev retR : Region := ⟨(s₀.gpr .esp).setWidth 64, 4⟩
-/-- The stack `pairs` uses. -/
-abbrev stkR : Region := ⟨(s₀.gpr .esp).setWidth 64 - BitVec.ofNat 64 524, 524⟩
 end
-
-/-- What the code writes in the state, it writes in the state or the stack. -/
-theorem frame_stk {s₀ : State} {m m' : Mem} (h : Frame [sR (stp s₀)] m m') :
-    Frame [sR (stp s₀), stkR s₀] m m' :=
-  h.mono fun _ hr => List.mem_cons.mpr (.inl (List.mem_singleton.mp hr))
 
 theorem arg0_eq (s : State) : s.mem.readW (addr (s.gpr .esp) 4) 32 = arg s 0 := rfl
 
@@ -2546,14 +2536,10 @@ structure BPre (s₀ : State) : Prop where
   st_fit : (stp s₀).toNat + 128 ≤ 2 ^ 32
   bl_fit : (bp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 32
   sp_fit : (s₀.gpr .esp).toNat + 16 ≤ 2 ^ 32
-  /-- The stack `pairs` uses is apart from the state and the blocks. -/
-  stk_st : (stkR s₀).Disjoint (sR (stp s₀))
-  stk_bl : (stkR s₀).Disjoint (blR s₀)
-  sp_stk : 524 ≤ (s₀.gpr .esp).toNat
 
 theorem BPre.of (s₀ : State) (h : Proof.Poly1305.blocksX86.pre s₀) : BPre s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩
 
 /-- What holds from `setup` on: the words `F` it left. -/
 structure SetupF (s₀ : State) (F : Nat → Nat) : Prop where
@@ -2585,7 +2571,7 @@ structure BInv (s₀ : State) (F : Nat → Nat) (i : Nat) (s : State) : Prop whe
   ctx : Ctx (stp s₀) s
   esp : s.gpr .esp = s₀.gpr .esp
   esi : s.gpr .esi = bp s₀ + BitVec.ofNat 32 (16 * i)
-  frame : Frame [sR (stp s₀), stkR s₀] s₀.mem s.mem
+  frame : Frame [sR (stp s₀)] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   keep : ∀ k < 32, k ∉ hS → words s.mem (stp s₀) k = F k
@@ -2600,31 +2586,10 @@ theorem argIn {i : Nat} (hi : i < 3) : InRegions (s₀.rd ++ s₀.wr) (addr (s�
   ⟨⟨argAddr s₀ 0, 12⟩, by rw [hp.rd]; simp only [List.cons_append, List.nil_append, List.mem_cons, Region.mk.injEq, true_or, or_true], arg_contains (n := 12) (by have := hp.sp_fit; omega_using [this])
     (by omega_using [hi])⟩
 
-/-- The arguments and the return address are above the stack `pairs` uses. -/
-theorem stk_args : Region.Disjoint ⟨argAddr s₀ 0, 12⟩ (stkR s₀) ∧ (retR s₀).Disjoint (stkR s₀) := by
-  have hs := hp.sp_fit
-  have a := Offset.disjoint_base ((s₀.gpr .esp).setWidth 64 - BitVec.ofNat 64 524) (d := 528) (n := 12)
-    (k := 524) (by decide) (by decide)
-  have r := Offset.disjoint_base ((s₀.gpr .esp).setWidth 64 - BitVec.ofNat 64 524) (d := 524) (n := 4)
-    (k := 524) (by decide) (by decide)
-  rw [BitVec.sub_add_cancel] at r
-  rw [show (s₀.gpr .esp).setWidth 64 - BitVec.ofNat 64 524 + BitVec.ofNat 64 528 =
-      (s₀.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 by
-    rw [BitVec.sub_eq_add_neg, BitVec.add_assoc]; rfl] at a
-  refine ⟨?_, r⟩
-  show Region.Disjoint ⟨addr (s₀.gpr .esp) 4, 12⟩ _
-  rw [addr_eq (by omega_using [hs])]
-  exact a
-
-/-- An argument, in memory the code has written only in the state and the
-stack below `esp`. -/
-theorem arg_same {m : Mem} (hf : Frame [sR (stp s₀), stkR s₀] s₀.mem m) {i : Nat} (hi : i < 3) :
+/-- An argument, in memory the code has written only in the state. -/
+theorem arg_same {m : Mem} (hf : Frame [sR (stp s₀)] s₀.mem m) {i : Nat} (hi : i < 3) :
     m.readW (addr (s₀.gpr .esp) (4 + 4 * i)) 32 = arg s₀ i :=
-  hf.readW (arg_contains (n := 12) (by have := hp.sp_fit; omega_using [this]) (by omega_using [hi]))
-    (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      exacts [hp.arg_st, hp.stk_args.1])
+  hf.readW (arg_contains (n := 12) (by have := hp.sp_fit; omega_using [this]) (by omega_using [hi])) (by simpa using hp.arg_st)
     (by decide)
 
 end BPre
@@ -2680,17 +2645,13 @@ theorem blk_disj {i : Nat} (hi : i < nb s₀) {k : Nat} (_hk : k < 4) :
   (hp.st_bl.sub_right (blk_sub hp.bl_fit hi (by omega_using [_hk]))).symm
 
 /-- The value of block `i`, with the `0x01` byte appended: its four words and `2¹²⁸`. -/
-theorem block_value {m : Mem} (hf : Frame [sR (stp s₀), stkR s₀] s₀.mem m) {i : Nat} (hi : i < nb s₀) :
+theorem block_value {m : Mem} (hf : Frame [sR (stp s₀)] s₀.mem m) {i : Nat} (hi : i < nb s₀) :
     blkv m (bp s₀ + BitVec.ofNat 32 (16 * i)) 1 =
       leNum (bytesAt s₀.mem ((bp s₀).setWidth 64 + BitVec.ofNat 64 (16 * i)) 16 ++ [0x01]) := by
   obtain hw : ∀ k < 4, wv m (bp s₀ + BitVec.ofNat 32 (16 * i)) (4 * k) =
       w32 s₀.mem ((bp s₀).setWidth 64 + BitVec.ofNat 64 (16 * i)) k := fun k hk => by
     show (wd m _ (4 * k)).toNat = _
-    rw [wd_frame hf (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact hp.blk_disj hi hk
-      · exact (hp.stk_bl.sub_right (blk_sub hp.bl_fit hi (by omega_using [hk]))).symm)]
+    rw [wd_frame hf (by simpa using hp.blk_disj hi hk)]
     simp only [wd, w32]
     rw [blk_addr hp.bl_fit hi (by omega_using [hk]), add_ofNat_add]
   rw [Poly1305.leNum_append, Poly1305.length_bytesAt, leNum_bytesAt_16, ← hw 0 (by decide),
@@ -2784,8 +2745,7 @@ theorem body_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} (hF : SetupF s
   obtain c₁ := hL.ctx.keep (S₁.gpr _ (by decide)) S₁.wr
   refine wp_addx (readSrc_imm _ _) fun s₂ u₂ _ => ?_
   obtain esp₂ : s₂.gpr .esp = s₀.gpr .esp := by rw [u₂.other _ (by decide), S₁.gpr _ (by decide), hL.esp]
-  obtain hfr₂ : Frame [sR (stp s₀), stkR s₀] s₀.mem s₂.mem := by
-    rw [u₂.mem]; exact hL.frame.trans (frame_stk S₁.frame)
+  obtain hfr₂ : Frame [sR (stp s₀)] s₀.mem s₂.mem := by rw [u₂.mem]; exact hL.frame.trans S₁.frame
   obtain hrd₂ : s₂.rd = s₀.rd := by rw [u₂.rd, S₁.rd, hL.rd]
   obtain hwr₂ : s₂.wr = s₀.wr := by rw [u₂.wr, S₁.wr, hL.wr]
   obtain hesi₂ : s₂.gpr .esi = bp s₀ + BitVec.ofNat 32 (16 * i) + 16 := by
@@ -2885,16 +2845,13 @@ theorem blocks_epilogue_ok {s₀ : State} (hp : BPre s₀) {F : Nat → Nat} (hF
       fun s' => abiPreserved s₀ s' ∧ Proof.Poly1305.blocksX86.post s₀ s' := by
   have hfit := hp.st_fit
   refine WP.mono (finish_ok hL.ctx) fun s₂ ⟨b₂, si₂, di₂, bp₂, sp₂, _, _, fr₂, z₂, hk₂, _, hr₂⟩ => ?_
-  obtain hframe : Frame [sR (stp s₀), stkR s₀] s₀.mem s₂.mem := hL.frame.trans (frame_stk fr₂)
+  obtain hframe : Frame [sR (stp s₀)] s₀.mem s₂.mem := hL.frame.trans fr₂
   refine ⟨abi_of hF.saved ?_ ?_ ?_ ?_ (by rw [sp₂, hL.esp]) ?_, fun key msg hrep => ?_⟩
   · rw [b₂, hL.keep 29 (by decide) (by decide)]
   · rw [si₂, hL.keep 30 (by decide) (by decide)]
   · rw [di₂, hL.keep 31 (by decide) (by decide)]
   · rw [bp₂, hL.keep 5 (by decide) (by decide)]
-  · exact hframe.readW (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      exacts [hp.ret_st, hp.stk_args.2]) (by decide)
+  · exact hframe.readW (Region.contains_self _ _) (by simpa using hp.ret_st) (by decide)
   · have hA := A0_lt hrep
     obtain ⟨hcl, hac⟩ := repr_acc hfit hrep
     obtain ⟨h4, hv⟩ := hL.acc hA

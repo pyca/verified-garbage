@@ -59,7 +59,7 @@ section
 
 Untrusted: everything here is checked by Lean. The contract the proof of
 `vg_chacha20_poly1305_seal_gather` is written against, which the shared one
-(`Spec.ChaCha20Poly1305.sealGatherContract`, with the 1332 bytes of stack
+(`Spec.ChaCha20Poly1305.sealGatherContract`, with the 824 bytes of stack
 below the stack pointer that its frame and its call use) implies
 (`Gather/Verified.lean`): cdecl, `(key, nonce, aad, aad_len, src, src_count,
 dst, len, tag)` at `[esp + 4]` on, which the function may overwrite.
@@ -100,7 +100,7 @@ abbrev dR : Region := ⟨w64 (Dst s), L s⟩
 abbrev tgR : Region := ⟨w64 (Tg s), 16⟩
 abbrev argR : Region := ⟨argAddr s 0, 36⟩
 abbrev retR : Region := ⟨w64 (s.gpr .esp), 4⟩
-abbrev stkR : Region := ⟨w64 (s.gpr .esp) - BitVec.ofNat 64 1332, 1332⟩
+abbrev stkR : Region := ⟨w64 (s.gpr .esp) - BitVec.ofNat 64 824, 824⟩
 
 /-- The total length of the first `i` slices, and their bytes. -/
 abbrev gl (i : Nat) : Nat := gatheredLen 32 s.mem (w64 (Src s)) i
@@ -126,7 +126,7 @@ def gatherPre (s : State) : Prop :=
     (K s).toNat + 32 ≤ 2 ^ 32 ∧ (Nn s).toNat + 12 ≤ 2 ^ 32 ∧ (Ad s).toNat + AL s ≤ 2 ^ 32 ∧
     (Dst s).toNat + L s ≤ 2 ^ 32 ∧ (Tg s).toNat + 16 ≤ 2 ^ 32 ∧
     (Src s).toNat + Cnt s * 8 ≤ 2 ^ 32 ∧ (∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 32) ∧
-    1332 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 40 ≤ 2 ^ 32 ∧ gl s (Cnt s) = L s ∧ L s ≤ pMax
+    824 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 40 ≤ 2 ^ 32 ∧ gl s (Cnt s) = L s ∧ L s ≤ pMax
 
 /-- What two runs agree on: the stack pointer, the arguments and the descriptors. -/
 def gatherPub (s₁ s₂ : State) : Prop :=
@@ -161,7 +161,7 @@ section
 Untrusted: everything here is checked by Lean. `vg_chacha20_poly1305_seal_gather`
 calls an instance of `vg_chacha20_poly1305_seal` as an artifact (`SealFn`),
 with its working space in a frame of its own, so what the proof needs of it
-is its shared contract (`Spec.ChaCha20Poly1305.sealContract`, with 1280 bytes
+is its shared contract (`Spec.ChaCha20Poly1305.sealContract`, with 772 bytes
 of stack): its precondition from the layout the call gives it (`callPre`,
 `sealSpec_pre`), its postcondition (`sealSpec_post`) and its public data
 (`sealSpec_pub`).
@@ -180,14 +180,14 @@ open VG.Spec.Poly1305 (bytesAt)
 open VG.Spec.ChaCha20Poly1305 (encrypt)
 
 /-- An instance of `vg_chacha20_poly1305_seal`, by its shared contract, which
-never writes `esp` and whose calls and frames use at most the 1280 bytes
+never writes `esp` and whose calls and frames use at most the 772 bytes
 below the stack pointer that the contract reserves. -/
 structure SealFn where
   name : String
   code : Prog isa
-  verified : Verified X86.target code (Spec.ChaCha20Poly1305.sealContract X86.abi 1280)
+  verified : Verified X86.target code (Spec.ChaCha20Poly1305.sealContract X86.abi 772)
   noSp : NoSp code
-  depth : stackUse code ≤ 1280
+  depth : stackUse code ≤ 772
 
 /-- What a call of `vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, data,
 len, tag)` needs. -/
@@ -199,8 +199,8 @@ def callPre (s : State) : Prop :=
   let tag : Region := ⟨w64 (arg s 6), 16⟩
   let args : Region := ⟨argAddr s 0, 28⟩
   let ret : Region := ⟨w64 (s.gpr .esp), 4⟩
-  let stk : Region := ⟨w64 (s.gpr .esp) - BitVec.ofNat 64 1280, 1280⟩
-  1280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 + 28 ≤ 2 ^ 32 ∧
+  let stk : Region := ⟨w64 (s.gpr .esp) - BitVec.ofNat 64 772, 772⟩
+  772 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 + 28 ≤ 2 ^ 32 ∧
     s.rd = [key, nonce, aad] ∧ s.wr = [data, tag, args] ∧
     key.Disjoint data ∧ key.Disjoint tag ∧ key.Disjoint args ∧ nonce.Disjoint data ∧ nonce.Disjoint tag ∧
     nonce.Disjoint args ∧ aad.Disjoint data ∧ aad.Disjoint tag ∧ aad.Disjoint args ∧ data.Disjoint tag ∧
@@ -214,7 +214,7 @@ def callPre (s : State) : Prop :=
     (arg s 6).toNat + 16 ≤ 2 ^ 32
 
 /-- The shared contract's precondition, from the layout the call gives. -/
-theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.ChaCha20Poly1305.sealContract X86.abi 1280).pre s := by
+theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.ChaCha20Poly1305.sealContract X86.abi 772).pre s := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁,
     a₂₂, a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃⟩ := h
   sig_pre [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig, X86.abi, argVal, ↓reduceIte,
@@ -224,7 +224,7 @@ theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.ChaCha20Poly1305.sealCo
     a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃⟩
 
 /-- Its postcondition. -/
-theorem sealSpec_post {s s' : State} (h : (Spec.ChaCha20Poly1305.sealContract X86.abi 1280).post s s') :
+theorem sealSpec_post {s s' : State} (h : (Spec.ChaCha20Poly1305.sealContract X86.abi 772).post s s') :
     encrypt (bytesAt s.mem (w64 (arg s 0)) 32) (bytesAt s.mem (w64 (arg s 1)) 12)
         (bytesAt s.mem (w64 (arg s 2)) (arg s 3).toNat) (bytesAt s.mem (w64 (arg s 4)) (arg s 5).toNat) =
       (bytesAt s'.mem (w64 (arg s 4)) (arg s 5).toNat, bytesAt s'.mem (w64 (arg s 6)) 16) := by
@@ -235,7 +235,7 @@ theorem sealSpec_post {s s' : State} (h : (Spec.ChaCha20Poly1305.sealContract X8
 
 /-- Its public data, from the arguments. -/
 theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 7, arg s₁ i = arg s₂ i) :
-    (Spec.ChaCha20Poly1305.sealContract X86.abi 1280).pub s₁ s₂ := by
+    (Spec.ChaCha20Poly1305.sealContract X86.abi 772).pub s₁ s₂ := by
   obtain ⟨a₁, a₂⟩ := h
   sig_pub [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig, X86.abi, argVal, ↓reduceIte,
     Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd, Nat.reduceMul, sw32,
@@ -402,10 +402,10 @@ theorem contains_off (p : Addr) {d n e k : Nat} (h₁ : e ≤ d) (h₂ : d + n �
 section
 variable (s : State)
 
-/-- The frame, the base of the 1332 bytes of stack below the stack pointer,
+/-- The frame, the base of the 824 bytes of stack below the stack pointer,
 and the frame as a region. -/
 abbrev Pf : BitVec 32 := s.gpr .esp - BitVec.ofNat 32 48
-abbrev Bs : Addr := w64 (s.gpr .esp) - BitVec.ofNat 64 1332
+abbrev Bs : Addr := w64 (s.gpr .esp) - BitVec.ofNat 64 824
 abbrev FR : Region := ⟨w64 (Pf s), 48⟩
 
 /-- The memory after the entry. -/
@@ -446,23 +446,23 @@ structure Lay (s : State) : Prop where
   ot : (Tg s).toNat + 16 ≤ 2 ^ 32
   ods : (Src s).toNat + Cnt s * 8 ≤ 2 ^ 32
   ol : ∀ r ∈ lsR s, r.base.toNat + r.len ≤ 2 ^ 32
-  w₁ : 1332 ≤ (s.gpr .esp).toNat
+  w₁ : 824 ≤ (s.gpr .esp).toNat
   hgl : gl s (Cnt s) = L s
   hP : (Pf s).toNat + 88 ≤ 2 ^ 32
   hPn : (Pf s).toNat = (s.gpr .esp).toNat - 48
-  hBn : (Bs s).toNat + 1372 ≤ 2 ^ 32
-  hA0 : w64 (Pf s) = Bs s + BitVec.ofNat 64 1284
-  hE : w64 (s.gpr .esp) = Bs s + BitVec.ofNat 64 1332
+  hBn : (Bs s).toNat + 864 ≤ 2 ^ 32
+  hA0 : w64 (Pf s) = Bs s + BitVec.ofNat 64 776
+  hE : w64 (s.gpr .esp) = Bs s + BitVec.ofNat 64 824
   sa : ∀ i, i < 9 → s.mem.readW (w64 (Pf s + BitVec.ofNat 32 (52 + 4 * i))) 32 = arg s i
 
 theorem lay {s : State} (hs : gatherPre s) : Lay s := by
   obtain ⟨rd, wr, kd, kt, -, nd, nt, -, ad, at_, -, dt, dds, dls, -, -, -, -, -, -, -, -, -, ed, et, -, -, -,
     bk, bn, ba, bd, bt, bds, bls, -, ok, on, oa, od, ot, ods, ol, w₁, w₂, hgl, -⟩ := hs
   have hPn : (Pf s).toNat = (s.gpr .esp).toNat - 48 := sub_toNat32 (by omega_arith)
-  have hB : Bs s = w64 (s.gpr .esp - BitVec.ofNat 32 1332) := (w64_sub (by omega_arith)).symm
-  have hBn : (Bs s).toNat = (s.gpr .esp).toNat - 1332 := by rw [hB, toNat_w64, sub_toNat32 (by omega_arith)]
-  have hE : w64 (s.gpr .esp) = Bs s + BitVec.ofNat 64 1332 := (BitVec.sub_add_cancel _ _).symm
-  have hA0 : w64 (Pf s) = Bs s + BitVec.ofNat 64 1284 := by
+  have hB : Bs s = w64 (s.gpr .esp - BitVec.ofNat 32 824) := (w64_sub (by omega_arith)).symm
+  have hBn : (Bs s).toNat = (s.gpr .esp).toNat - 824 := by rw [hB, toNat_w64, sub_toNat32 (by omega_arith)]
+  have hE : w64 (s.gpr .esp) = Bs s + BitVec.ofNat 64 824 := (BitVec.sub_add_cancel _ _).symm
+  have hA0 : w64 (Pf s) = Bs s + BitVec.ofNat 64 776 := by
     rw [w64_sub (by omega_arith), hE, add_ofNat_sub_ofNat _ (by decide)]
   refine ⟨rd, wr, kd, kt, nd, nt, ad, at_, dt, dds, dls, ed, et, bk, bn, ba, bd, bt, bds, bls, ok, on, oa, od, ot,
     ods, ol, w₁, hgl, by omega_arith, hPn, by omega_arith, hA0, hE, fun i hi => ?_⟩
@@ -471,8 +471,8 @@ theorem lay {s : State} (hs : gatherPre s) : Lay s := by
     BitVec.sub_add_cancel]
 
 /-- Parts of the stack below the stack pointer. -/
-theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 1332) :
-    (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Sub ⟨Bs s, 1332⟩ :=
+theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 824) :
+    (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Sub ⟨Bs s, 824⟩ :=
   Offset.sub_base _ h'
 
 namespace Lay
@@ -480,13 +480,13 @@ namespace Lay
 variable {s : State} (h : Lay s)
 include h
 
-theorem hA {d : Nat} (hd : d < 88) : w64 (Pf s + BitVec.ofNat 32 d) = Bs s + BitVec.ofNat 64 (1284 + d) := by
+theorem hA {d : Nat} (hd : d < 88) : w64 (Pf s + BitVec.ofNat 32 d) = Bs s + BitVec.ofNat 64 (776 + d) := by
   rw [aP h.hP hd, h.hA0, Offset.add_ofNat_add_ofNat]
 
-theorem fr_sub : (FR s).Sub ⟨Bs s, 1332⟩ := by
-  show Region.Sub ⟨w64 (Pf s), 48⟩ _; rw [h.hA0]; exact stk_sub s 1284 48 (by decide)
+theorem fr_sub : (FR s).Sub ⟨Bs s, 824⟩ := by
+  show Region.Sub ⟨w64 (Pf s), 48⟩ _; rw [h.hA0]; exact stk_sub s 776 48 (by decide)
 
-theorem hArg : argR s = ⟨Bs s + BitVec.ofNat 64 1336, 36⟩ := by
+theorem hArg : argR s = ⟨Bs s + BitVec.ofNat 64 828, 36⟩ := by
   show (⟨w64 (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)), 36⟩ : Region) = _
   have := h.hPn
   have := h.hP
@@ -512,7 +512,7 @@ theorem sa' (i d : Nat) (hi : i < 9) (hd : d = 52 + 4 * i) :
 theorem eM_frame : Frame [FR s] s.mem (eM s) := eMem_frame h.hP _ _ _
 
 /-- The memory the entry left outside the frame. -/
-theorem keepE {r : Region} (hr : r.Disjoint ⟨Bs s, 1332⟩) {x : Addr} (hx : r.Contains x 1) : eM s x = s.mem x :=
+theorem keepE {r : Region} (hr : r.Disjoint ⟨Bs s, 824⟩) {x : Addr} (hx : r.Contains x 1) : eM s x = s.mem x :=
   h.eM_frame x fun r' hr' hc => by
     simp only [List.mem_singleton] at hr'; subst hr'
     exact hr x hx (h.fr_sub x hc)
@@ -619,7 +619,7 @@ variable (s : State)
 /-- The regions the call of `vg_chacha20_poly1305_seal` reads and writes:
 its arguments are the first 28 bytes of our frame. -/
 abbrev rdC : List Region := [kR s, nR s, aR s]
-abbrev wrC : List Region := [dR s, tgR s, ⟨Bs s + BitVec.ofNat 64 1284, 28⟩]
+abbrev wrC : List Region := [dR s, tgR s, ⟨Bs s + BitVec.ofNat 64 776, 28⟩]
 
 end
 
@@ -631,14 +631,14 @@ theorem Gathered.espN : (g.gpr .esp).toNat = (s.gpr .esp).toNat - 48 := by rw [h
 
 /-- The callee's stack pointer, below its return address. -/
 theorem Gathered.cesp (rd wr : List Region) :
-    w64 ((g.callEntry.withRegions rd wr).gpr .esp) = Bs s + BitVec.ofNat 64 1280 := by
+    w64 ((g.callEntry.withRegions rd wr).gpr .esp) = Bs s + BitVec.ofNat 64 772 := by
   have := h.w₁
   have := h.hPn
   simp only [State.withRegions_gpr, State.callEntry_esp, hg.esp]
   rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, w64_sub (by omega_arith), h.hA0, add_ofNat_sub_ofNat _ (by decide)]
 
 theorem Gathered.cargAddr (rd wr : List Region) :
-    argAddr (g.callEntry.withRegions rd wr) 0 = Bs s + BitVec.ofNat 64 1284 := by
+    argAddr (g.callEntry.withRegions rd wr) 0 = Bs s + BitVec.ofNat 64 776 := by
   have e : argAddr (g.callEntry.withRegions rd wr) 0 = argAddr g.callEntry 0 := rfl
   rw [e, argAddr_callEntry, hg.esp, Nat.mul_zero, add_zero32]; exact h.hA0
 
@@ -683,19 +683,19 @@ theorem Gathered.call :
     have espc : ((g.callEntry.withRegions (rdC s) (wrC s)).gpr .esp).toNat = (s.gpr .esp).toNat - 52 := by
       simp only [State.withRegions_gpr, State.callEntry_esp]
       rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_toNat32 (by omega_arith), hesp]; omega_arith
-    have stkArg : (⟨Bs s, 1280⟩ : Region).Disjoint ⟨Bs s + BitVec.ofNat 64 1284, 28⟩ := by
-      have := Offset.disjoint (Bs s) (d := 0) (n := 1280) (e := 1284) (k := 28) (.inl (by decide)) (by decide)
+    have stkArg : (⟨Bs s, 772⟩ : Region).Disjoint ⟨Bs s + BitVec.ofNat 64 776, 28⟩ := by
+      have := Offset.disjoint (Bs s) (d := 0) (n := 772) (e := 776) (k := 28) (.inl (by decide)) (by decide)
         (by decide)
       rwa [BitVec.add_zero] at this
-    have retArg : (⟨Bs s + BitVec.ofNat 64 1280, 4⟩ : Region).Disjoint ⟨Bs s + BitVec.ofNat 64 1284, 28⟩ :=
+    have retArg : (⟨Bs s + BitVec.ofNat 64 772, 4⟩ : Region).Disjoint ⟨Bs s + BitVec.ofNat 64 776, 28⟩ :=
       Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
-    have sb (d n : Nat) (hd : d + n ≤ 1332) {r : Region} (hr : (stkR s).Disjoint r) :
+    have sb (d n : Nat) (hd : d + n ≤ 824) {r : Region} (hr : (stkR s).Disjoint r) :
         (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r := hr.sub_left (stk_sub s d n hd)
-    refine ⟨by omega_arith, by omega_arith, trivial, trivial, h.kd, h.kt, (sb 1284 28 (by decide) h.bk).symm, h.nd, h.nt,
-      (sb 1284 28 (by decide) h.bn).symm, h.ad, h.at_, (sb 1284 28 (by decide) h.ba).symm, h.dt,
-      (sb 1284 28 (by decide) h.bd).symm, (sb 1284 28 (by decide) h.bt).symm,
-      sb 1280 4 (by decide) h.bk, sb 1280 4 (by decide) h.bn, sb 1280 4 (by decide) h.ba,
-      sb 1280 4 (by decide) h.bd, sb 1280 4 (by decide) h.bt, retArg,
+    refine ⟨by omega_arith, by omega_arith, trivial, trivial, h.kd, h.kt, (sb 776 28 (by decide) h.bk).symm, h.nd, h.nt,
+      (sb 776 28 (by decide) h.bn).symm, h.ad, h.at_, (sb 776 28 (by decide) h.ba).symm, h.dt,
+      (sb 776 28 (by decide) h.bd).symm, (sb 776 28 (by decide) h.bt).symm,
+      sb 772 4 (by decide) h.bk, sb 772 4 (by decide) h.bn, sb 772 4 (by decide) h.ba,
+      sb 772 4 (by decide) h.bd, sb 772 4 (by decide) h.bt, retArg,
       h.bk.sub_left (Region.sub_prefix (by decide)), h.bn.sub_left (Region.sub_prefix (by decide)),
       h.ba.sub_left (Region.sub_prefix (by decide)), h.bd.sub_left (Region.sub_prefix (by decide)),
       h.bt.sub_left (Region.sub_prefix (by decide)), stkArg, h.ok, h.on, h.oa, h.od, h.ot⟩
@@ -703,7 +703,7 @@ theorem Gathered.call :
       refine covers_of_mem' (List.mem_append_left _ ?_)
       rw [hg.rd, h.rd]; simp only [List.mem_cons, List.not_mem_nil, or_false] at h'
       rcases h' with rfl | rfl | rfl <;> simp
-    have hfr : Covers [⟨Bs s + BitVec.ofNat 64 1284, 48⟩] (g.rd ++ g.wr) := by
+    have hfr : Covers [⟨Bs s + BitVec.ofNat 64 776, 48⟩] (g.rd ++ g.wr) := by
       rw [← h.hA0]; exact covers_of_mem' (List.mem_append_right _ (by rw [hg.wr]; exact List.mem_cons_self ..))
     have hw' {r : Region} (h' : r ∈ [dR s, tgR s]) : Covers [r] (g.rd ++ g.wr) :=
       covers_of_mem' (List.mem_append_right _ (by
@@ -752,7 +752,7 @@ theorem called_wp (F : SealFn) {s g : State} (h : Lay s) (hg : Gathered s g) :
   have hesp := hg.espN h
   have := h.w₁
   have := h.hBn
-  have e4 : w64 (g.gpr .esp - 4) = Bs s + BitVec.ofNat 64 1280 := by
+  have e4 : w64 (g.gpr .esp - 4) = Bs s + BitVec.ofNat 64 772 := by
     have := hg.cesp h (rdC s) (wrC s)
     simpa only [State.withRegions_gpr, State.callEntry_esp] using this
   refine WP.call F.verified.1 F.noSp (by omega_arith) (sealSpec_pre hcp) hcov hw
@@ -760,35 +760,35 @@ theorem called_wp (F : SealFn) {s g : State} (h : Lay s) (hg : Gathered s g) :
   have hpost := sealSpec_post post'
   rw [a0, a1, a2, a3, a4, a5, a6, m₂] at hpost
   -- The callee's memory on entry: ours, with its return address below our frame.
-  have fc : Frame [⟨Bs s + BitVec.ofNat 64 1280, 4⟩] g.mem (g.callEntry.withRegions (rdC s) (wrC s)).mem := by
+  have fc : Frame [⟨Bs s + BitVec.ofNat 64 772, 4⟩] g.mem (g.callEntry.withRegions (rdC s) (wrC s)).mem := by
     show Frame _ g.mem (g.mem.writeW (w64 (g.gpr .esp - 4)) (g.unknowns 0))
     rw [e4]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have apart {r : Region} (hr : (stkR s).Disjoint r) :
-      ∀ r' ∈ [(⟨Bs s + BitVec.ofNat 64 1280, 4⟩ : Region)], r.Disjoint r' := by
+      ∀ r' ∈ [(⟨Bs s + BitVec.ofNat 64 772, 4⟩ : Region)], r.Disjoint r' := by
     intro r' hr'; simp only [List.mem_singleton] at hr'; subst hr'
-    exact (hr.sub_left (stk_sub s 1280 4 (by decide))).symm
+    exact (hr.sub_left (stk_sub s 772 4 (by decide))).symm
   rw [bytesAt_frame fc (apart h.bk) (by omega_arith), bytesAt_frame fc (apart h.bn) (by omega_arith),
     bytesAt_frame fc (apart h.ba) (by have := h.oa; omega_arith), bytesAt_frame fc (apart h.bd) (by have := h.od; omega_arith),
     hg.mem] at hpost
   -- What the call kept: the frame above its arguments, and our return address.
   have hbelow : below (g.gpr .esp) (stackUse F.code + 4) =
-      ⟨Bs s + BitVec.ofNat 64 (1284 - (stackUse F.code + 4)), stackUse F.code + 4⟩ := by
+      ⟨Bs s + BitVec.ofNat 64 (776 - (stackUse F.code + 4)), stackUse F.code + 4⟩ := by
     show (⟨w64 (g.gpr .esp - BitVec.ofNat 32 (stackUse F.code + 4)), _⟩ : Region) = _
     rw [w64_sub (by omega_arith), hg.esp, h.hA0, add_ofNat_sub_ofNat _ (by omega_arith)]
-  have kept (d : Nat) (h₁ : 1320 ≤ d) (h₂ : d + 4 ≤ 1332 ∨ d = 1332) :
+  have kept (d : Nat) (h₁ : 812 ≤ d) (h₂ : d + 4 ≤ 824 ∨ d = 824) :
       s'.mem.readW (Bs s + BitVec.ofNat 64 d) 32 = g.mem.readW (Bs s + BitVec.ofNat 64 d) 32 := by
     refine Frame.readW fr' (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, hbelow] at hr
     rcases hr with (rfl | rfl | rfl) | rfl
-    · by_cases hd : d + 4 ≤ 1332
+    · by_cases hd : d + 4 ≤ 824
       · exact (h.bd.sub_left (stk_sub s d 4 hd)).symm.symm
       · have e : Bs s + BitVec.ofNat 64 d = w64 (s.gpr .esp) := by
-          rw [h.hE, show d = 1332 by omega_arith]
+          rw [h.hE, show d = 824 by omega_arith]
         rw [e]; exact h.ed
-    · by_cases hd : d + 4 ≤ 1332
+    · by_cases hd : d + 4 ≤ 824
       · exact (h.bt.sub_left (stk_sub s d 4 hd)).symm.symm
       · have e : Bs s + BitVec.ofNat 64 d = w64 (s.gpr .esp) := by
-          rw [h.hE, show d = 1332 by omega_arith]
+          rw [h.hE, show d = 824 by omega_arith]
         rw [e]; exact h.et
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by decide)
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
@@ -800,7 +800,7 @@ theorem called_wp (F : SealFn) {s g : State} (h : Lay s) (hg : Gathered s g) :
   refine ⟨(saved 36 (by decide) (by decide)).trans w36, (saved 40 (by decide) (by decide)).trans w40,
     (saved 44 (by decide) (by decide)).trans w44, ?_, hpost, ?_, ?_, rd'.trans hg.rd, wr'.trans hg.wr⟩
   · -- The return address: neither the entry, nor the copy, nor the call wrote it.
-    rw [h.hE, kept 1332 (by decide) (.inr rfl), hg.mem, ← h.hE]
+    rw [h.hE, kept 824 (by decide) (.inr rfl), hg.mem, ← h.hE]
     rw [h.frame_gM.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.ed) (by decide)]
     refine h.eM_frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
@@ -983,7 +983,7 @@ end
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: `Verified`
 
 Untrusted: everything here is checked by Lean. The shared contract of
-`vg_chacha20_poly1305_seal_gather`, with the 1332 bytes of stack below the
+`vg_chacha20_poly1305_seal_gather`, with the 824 bytes of stack below the
 stack pointer that its frame and its call use
 (`Spec.ChaCha20Poly1305.sealGatherContract`), implies the one the proof is
 written against (`gatherX86`, `gather_implies`), and so the code, calling an
@@ -1028,7 +1028,7 @@ theorem pairFacts_ro_w (l : List Region) (a : Region) :
       Function.comp_def, Bool.false_or, Sig.conj_append, ih, List.forall_mem_cons]
     simp [List.filterMap_cons, Sig.conj, Sig.conj_cons, filterMap_none']
 
-theorem gatherPre_of_spec {s : State} (h : (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 1332).pre s) :
+theorem gatherPre_of_spec {s : State} (h : (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 824).pre s) :
     gatherPre s := by
   sig_pre [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPre, X86.abi] at h
@@ -1050,13 +1050,13 @@ theorem gatherPre_of_spec {s : State} (h : (Spec.ChaCha20Poly1305.sealGatherCont
     by omega_using [w₂], hgl, h⟩
 
 theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
-    (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 1332).post s s' := by
+    (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 824).post s s' := by
   sig_post [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPost, X86.abi, argVal, ↓reduceIte, Nat.reduceEqDiff, argBytes, Nat.reduceDiv,
     List.sum_cons, List.sum_nil, Nat.reduceAdd, Nat.reduceMul, sw32, toNat_w64]
   exact fun _ _ => h
 
-theorem gatherPub_of {s₁ s₂ : State} (hp : (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 1332).pub s₁ s₂) :
+theorem gatherPub_of {s₁ s₂ : State} (hp : (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 824).pub s₁ s₂) :
     gatherPub s₁ s₂ := by
   sig_pub [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPre, X86.abi, argVal, ↓reduceIte, Nat.reduceEqDiff, argBytes, Nat.reduceDiv,
@@ -1080,16 +1080,16 @@ def gatherSat : State where
   rd := [⟨0x1000, 32⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩]
   wr := [⟨0x4100, 0⟩, ⟨0x5000, 16⟩, ⟨0x8004, 36⟩]
 
-theorem gatherSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 1332).pre s := by
+theorem gatherSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 824).pre s := by
   implies_sat [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [gatherSat, X86.arg, X86.argAddr, Mem.readW, Mem.read, Spec.ChaCha20Poly1305.pMax] using gatherSat
 
-theorem gather_implies : gatherX86.Implies (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 1332) :=
+theorem gather_implies : gatherX86.Implies (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 824) :=
   ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
 theorem sealGather_verified (F : SealFn) :
-    Verified X86.target (sealGather F.name F.code) (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 1332) :=
+    Verified X86.target (sealGather F.name F.code) (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 824) :=
   Verified.of_correct (k := gatherX86) (sealGather_correct F) (sealGather_ct F) gather_implies
 
 open VG.Proof.ChaCha20.X86 VG.Impl.StackScratch.X86 in

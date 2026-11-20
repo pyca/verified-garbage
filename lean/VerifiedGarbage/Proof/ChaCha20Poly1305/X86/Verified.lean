@@ -577,7 +577,7 @@ section
 variable {s b : State} (he : Entered s b)
 include he
 
-theorem Entered.stk (h : 540 ≤ (s.gpr .esp).toNat) : stkR b = ⟨(s.gpr .esp).setWidth 64 - 540, 540⟩ := by
+theorem Entered.stk (h : 32 ≤ (s.gpr .esp).toNat) : stkR b = ⟨(s.gpr .esp).setWidth 64 - 32, 32⟩ := by
   simp only [stkR, below, E, he.esp]; rw [Taint.sub_setWidth h]; rfl
 
 theorem Entered.ret : retR b = ⟨(s.gpr .esp).setWidth 64, 4⟩ := by simp only [retR, E, he.esp]
@@ -1492,7 +1492,7 @@ theorem low32 (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
   simp [Nat.mod_eq_of_lt this]
 
 theorem seal_verified (v : XorImpl) :
-    Verified X86.target (Impl.ChaCha20Poly1305.X86.«seal» v.callee) (sealScratchContract X86.abi 88 540) :=
+    Verified X86.target (Impl.ChaCha20Poly1305.X86.«seal» v.callee) (sealScratchContract X86.abi 88 32) :=
   Verified.of_correct (seal_ok v) (seal_ct v) (by
     obtain a0 : arg sealSat 0 = 0x1000 := by decide
     obtain a1 : arg sealSat 1 = 0x1100 := by decide
@@ -1512,7 +1512,7 @@ theorem seal_verified (v : XorImpl) :
 /-- The postconditions match on `decrypt` through different auxiliary
 functions, so the implication splits on it. -/
 theorem open_verified (v : XorImpl) :
-    Verified X86.target (Impl.ChaCha20Poly1305.X86.«open» v.callee) (openZeroScratchContract X86.abi 88 540) :=
+    Verified X86.target (Impl.ChaCha20Poly1305.X86.«open» v.callee) (openZeroScratchContract X86.abi 88 32) :=
   Verified.of_correct (open_ok v) (open_ct v)
     { pre := by
         sig_implies_pre [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
@@ -1558,7 +1558,7 @@ theorem open_verified (v : XorImpl) :
           [a0, a1, a2, a3, a4, a5, a6, a7, e, esp] using openSat }
 
 theorem openTo_verified (v : XorImpl) :
-    Verified X86.target (Impl.ChaCha20Poly1305.X86.openTo v.callee) (openToScratchContract X86.abi 88 540) :=
+    Verified X86.target (Impl.ChaCha20Poly1305.X86.openTo v.callee) (openToScratchContract X86.abi 88 32) :=
   Verified.of_correct (openTo_ok v) (openTo_ct v)
     { pre := by
         sig_implies_pre [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
@@ -1668,12 +1668,12 @@ theorem openTo_noEsp (v : XorImpl) :
     Impl.ChaCha20Poly1305.X86.callWith, Code.allInstrs, noEsp_of v.nosp, Bool.and_true]
   lit_decide
 
-theorem seal_stackUse (v : XorImpl) : stackUse (Impl.ChaCha20Poly1305.X86.«seal» v.callee) ≤ 540 := by
+theorem seal_stackUse (v : XorImpl) : stackUse (Impl.ChaCha20Poly1305.X86.«seal» v.callee) ≤ 32 := by
   simp only [Impl.ChaCha20Poly1305.X86.«seal», Impl.ChaCha20Poly1305.X86.sealBody, Impl.ChaCha20Poly1305.X86.crypt,
     Impl.ChaCha20Poly1305.X86.callWith, stackUse, v.stack, Nat.max_le]
   lit_decide
 
-theorem open_stackUse (v : XorImpl) : stackUse (Impl.ChaCha20Poly1305.X86.«open» v.callee) ≤ 540 := by
+theorem open_stackUse (v : XorImpl) : stackUse (Impl.ChaCha20Poly1305.X86.«open» v.callee) ≤ 32 := by
   simp only [Impl.ChaCha20Poly1305.X86.«open», Impl.ChaCha20Poly1305.X86.openBody, Impl.ChaCha20Poly1305.X86.openMain,
     Impl.ChaCha20Poly1305.X86.openTail, Impl.ChaCha20Poly1305.X86.zeroData, Impl.ChaCha20Poly1305.X86.zeroLoop,
     Impl.ChaCha20Poly1305.X86.crypt,
@@ -1681,7 +1681,7 @@ theorem open_stackUse (v : XorImpl) : stackUse (Impl.ChaCha20Poly1305.X86.«open
   lit_decide
 
 theorem openTo_stackUse (v : XorImpl) :
-    stackUse (Impl.ChaCha20Poly1305.X86.openTo v.callee) ≤ 540 := by
+    stackUse (Impl.ChaCha20Poly1305.X86.openTo v.callee) ≤ 32 := by
   simp only [Impl.ChaCha20Poly1305.X86.openTo, Impl.ChaCha20Poly1305.X86.openBody, Impl.ChaCha20Poly1305.X86.openMain,
     Impl.ChaCha20Poly1305.X86.openTail, Impl.ChaCha20Poly1305.X86.zeroData, Impl.ChaCha20Poly1305.X86.zeroLoop,
     Impl.ChaCha20Poly1305.X86.crypt,
@@ -1691,7 +1691,7 @@ theorem openTo_stackUse (v : XorImpl) :
 /-- A state satisfying `seal`'s precondition, without the working space. -/
 def sealFrameSat : State := { sealSat with wr := [⟨0x2100, 0⟩, ⟨0x3000, 16⟩, ⟨0x5004, 28⟩] }
 
-theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract X86.abi 1280).pre s := by
+theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract X86.abi 772).pre s := by
   implies_sat [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig,
     Spec.ChaCha20Poly1305.sealPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [sealFrameSat, sealSat, satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using sealFrameSat
@@ -1699,16 +1699,16 @@ theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract X86.abi 12
 theorem seal_framed (v : XorImpl) :
     Verified X86.target
       (Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee))
-      (Spec.ChaCha20Poly1305.sealContract X86.abi 1280) :=
+      (Spec.ChaCha20Poly1305.sealContract X86.abi 772) :=
   X86.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
-    (n := 88) (post := Spec.ChaCha20Poly1305.sealPost X86.abi.ptrBits) (wa := true) (stack := 540)
+    (n := 88) (post := Spec.ChaCha20Poly1305.sealPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (bytes := 740) (words := 176) (seal_verified v) (by decide) (seal_noEsp v) (seal_stackUse v) (by decide)
     (pre_local _ _) (sealPost_local _) (sealPost_out _) sealFrameSat_pre
 
 /-- A state satisfying `open`'s precondition, without the working space. -/
 def openFrameSat : State := { openSat with wr := [⟨0x2100, 0⟩, ⟨0x5004, 28⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openZeroContract X86.abi 1280).pre s := by
+theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openZeroContract X86.abi 772).pre s := by
   implies_sat [Spec.ChaCha20Poly1305.openZeroContract, Spec.ChaCha20Poly1305.openSig,
     Spec.ChaCha20Poly1305.openZeroPost, Spec.ChaCha20Poly1305.openLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [openFrameSat, openSat, sealSat, satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using openFrameSat
@@ -1716,9 +1716,9 @@ theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openZeroContract X86.ab
 theorem open_framed (v : XorImpl) :
     Verified X86.target
       (Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee))
-      (Spec.ChaCha20Poly1305.openZeroContract X86.abi 1280) :=
+      (Spec.ChaCha20Poly1305.openZeroContract X86.abi 772) :=
   X86.Verified.stackScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
-    (n := 88) (post := Spec.ChaCha20Poly1305.openZeroPost X86.abi.ptrBits) (wa := true) (stack := 540)
+    (n := 88) (post := Spec.ChaCha20Poly1305.openZeroPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (leak := some (Spec.ChaCha20Poly1305.openLeak X86.abi.ptrBits))
     (bytes := 740) (words := 176) (open_verified v) (by decide) (open_noEsp v) (open_stackUse v) (by decide)
     (pre_local _ _) (openZeroPost_local _) (openZeroPost_out _) openFrameSat_pre
@@ -1727,7 +1727,7 @@ theorem open_framed (v : XorImpl) :
 /-- A state satisfying `open_to`'s precondition, without the working space. -/
 def openToFrameSat : State := { openToSat with wr := [⟨0x2200, 0⟩, ⟨0x5004, 36⟩] }
 
-theorem openToFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openToContract X86.abi 1288).pre s := by
+theorem openToFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openToContract X86.abi 780).pre s := by
   implies_sat [Spec.ChaCha20Poly1305.openToContract, Spec.ChaCha20Poly1305.openToSig,
     Spec.ChaCha20Poly1305.openToPre, Spec.ChaCha20Poly1305.openToPost, Spec.ChaCha20Poly1305.openToLeak,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -1738,10 +1738,10 @@ memory on return only within `dst`. -/
 theorem openTo_framed (v : XorImpl) :
     Verified X86.target
       (Impl.StackScratch.X86.withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo v.callee))
-      (Spec.ChaCha20Poly1305.openToContract X86.abi 1288) :=
+      (Spec.ChaCha20Poly1305.openToContract X86.abi 780) :=
   X86.Verified.stackScratchWipedPre (sig := Spec.ChaCha20Poly1305.openToSig) (nm := "work") (e := .u64)
     (n := 88) (pre := Spec.ChaCha20Poly1305.openToPre X86.abi.ptrBits)
-    (post := Spec.ChaCha20Poly1305.openToPost X86.abi.ptrBits) (wa := true) (stack := 540)
+    (post := Spec.ChaCha20Poly1305.openToPost X86.abi.ptrBits) (wa := true) (stack := 32)
     (leak := some (Spec.ChaCha20Poly1305.openToLeak X86.abi.ptrBits))
     (bytes := 748) (words := 176) (openTo_verified v) (by decide) (openTo_noEsp v) (openTo_stackUse v) (by decide)
     (openToPre_local _) (openToPost_local _) (openToPost_out _) openToFrameSat_pre

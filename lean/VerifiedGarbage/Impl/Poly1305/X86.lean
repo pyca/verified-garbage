@@ -393,9 +393,7 @@ def pairs : Prog isa := .frame (.alloc 512) pairsBody (.free 512)
 /-! ## `blocks(state, blocks, n)`
 
 `esi` walks the blocks; the loop ends where it reaches `blocks + 16 n`,
-recomputed from the arguments after each block. From 16 blocks on, the pairs
-of blocks are absorbed first (`pairs`), and the loop absorbs the block that
-may be left. -/
+recomputed from the arguments after each block. -/
 
 /-- `blocks + 16 n`, compared with `esi`. -/
 def atEnd : List Instr :=
@@ -408,11 +406,9 @@ def body : Prog isa :=
 
 def blocks : Prog isa :=
   .seq (.block (setup ++ ([.mov .esi (.mem (at_ .esp 8)), .mov .ecx (.mem (at_ .esp 12)),
-    .alu .cmp .ecx (.imm 16)] : List Instr)))
-  (.seq (.ite .b (.block []) (.seq (.block [.shift .shr .ecx 1]) pairs))
-  (.seq (.block atEnd)
+    .alu .test .ecx (.reg .ecx)] : List Instr)))
   (.seq (.ite .e (.block []) (.loop body .ne))
-    (.block (reduce ++ restore)))))
+    (.block (reduce ++ restore)))
 
 /-! ## `update(state, count, data, len, scratch)`
 
