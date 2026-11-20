@@ -15,35 +15,33 @@ import VerifiedGarbage.Proof.Gcm.RISCV64.Lit
 
 namespace VG.Artifacts.Sm4Gcm.RISCV64
 
-open VG.Proof.Sm4Gcm.RISCV64.Scrub
-
 def artifacts : List Artifact := [
   Spec.Sm4.Gcm.initApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.init
-    verified := .scrubbed init_scrubbed },
+    verified := .scrubbed Proof.Sm4Gcm.RISCV64.Scrub.init_scrubbed },
   Spec.Sm4.Gcm.sealApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.«seal»
-    verified := .scrubbed seal_scrubbed },
+    verified := .scrubbed Proof.Sm4Gcm.RISCV64.Scrub.seal_scrubbed },
   Spec.Sm4.Gcm.openApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.«open»
-    verified := .scrubbed open_scrubbed },
+    verified := .scrubbed Proof.Sm4Gcm.RISCV64.Scrub.open_scrubbed },
   Spec.Sm4.Gcm.streamInitApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.streamInit
-    verified := .scrubbed streamInit_scrubbed },
+    verified := .scrubbed Proof.Sm4Gcm.RISCV64.Scrub.streamInit_scrubbed },
   Spec.Sm4.Gcm.streamAadApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.streamAad
-    verified := .scrubbed streamAad_scrubbed },
+    verified := .scrubbed Proof.Sm4Gcm.RISCV64.Scrub.streamAad_scrubbed },
   Spec.Sm4.Gcm.streamEncryptApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.streamEncrypt
-    verified := .scrubbed streamEncrypt_scrubbed },
+    verified := .scrubbed Proof.Sm4Gcm.RISCV64.Scrub.streamEncrypt_scrubbed },
   Spec.Sm4.Gcm.streamDecryptApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.streamDecrypt
-    verified := .scrubbed streamDecrypt_scrubbed },
+    verified := .scrubbed Proof.Sm4Gcm.RISCV64.Scrub.streamDecrypt_scrubbed },
   Spec.Sm4.Gcm.streamFinishApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.streamFinish
-    verified := .scrubbed streamFinish_scrubbed },
+    verified := .scrubbed Proof.Sm4Gcm.RISCV64.Scrub.streamFinish_scrubbed },
   Spec.Sm4.Gcm.streamVerifyApi.artifact RISCV64.target {
     code := Impl.Sm4Gcm.RISCV64.Fn.streamVerify
-    verified := .scrubbed streamVerify_scrubbed }]
+    verified := .scrubbed Proof.Sm4Gcm.RISCV64.Scrub.streamVerify_scrubbed }]
 
 end VG.Artifacts.Sm4Gcm.RISCV64
