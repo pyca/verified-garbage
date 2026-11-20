@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
 
 /-!
 # Ed25519 key-pair derivation on AArch64
@@ -38,5 +40,22 @@ def keyPair (dn : String) (dg : Prog isa) (pn : String) (pk : Prog isa) : Prog i
       (.seq (.block digestArgs) (.seq (.call dn dg) (.seq (.block pkArgs) (.call pn pk))))
       (.free 32))
     (.pop .x30)
+
+namespace Fn
+
+/-- `vg_ed25519_key_pair` as emitted, over SHA-512's compression function
+`code`: the code, which calls the one-shot digest made with it as that is
+emitted (`Impl.Sha512.AArch64.Stream.Fn.digest512`) and
+`vg_ed25519_public_key_expanded`, then its cleanup
+(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+write, the functions it calls included, and zeroes the stack it used, so that
+it returns without secret residue. -/
+def keyPair (suffix : String) (code : Prog isa) : Prog isa :=
+  Impl.Residue.AArch64.scrubOf 944 0
+    (VG.Impl.Ed25519.AArch64.KeyPair.keyPair ("vg_sha512_digest" ++ suffix)
+      (Impl.Sha512.AArch64.Stream.Fn.digest512 suffix code) "vg_ed25519_public_key_expanded"
+      Impl.Ed25519.AArch64.PublicKey.codeExpanded)
+
+end Fn
 
 end VG.Impl.Ed25519.AArch64.KeyPair
