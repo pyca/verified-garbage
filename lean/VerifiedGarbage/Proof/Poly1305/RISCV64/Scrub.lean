@@ -12,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Poly1305.Contract
 public import VerifiedGarbage.Impl.Poly1305.RISCV64
+public import VerifiedGarbage.Impl.Poly1305.RISCV64.Fn
+import VerifiedGarbage.Proof.Poly1305.RISCV64.Lit
 public import VerifiedGarbage.TCB.RISCV64.Target
 
 /-! ### `Poly1305.RISCV64.Shared`, which only this module used -/
@@ -86,9 +88,13 @@ end
 /-!
 # Poly1305 on RISC-V, without secret residue
 
-`vg_poly1305_init`, `vg_poly1305_update` and `vg_poly1305_finalize`, each followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), which clears the caller-saved registers and the
-stack its frames used. Their postconditions read the memory on return only
+`vg_poly1305_init`, `vg_poly1305_update` and `vg_poly1305_finalize` as
+emitted (`Impl.Poly1305.RISCV64.Fn`), each followed by
+`Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers
+(none uses the stack). Each theorem below states that one meets its
+contract in constant time and returns without secret residue
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`), which is what its
+registration binds. Their postconditions read the memory on return only
 within the state and the tag (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/Poly1305/X86_64/Scrub.lean`).
 -/
 
@@ -147,27 +153,30 @@ theorem finalizeOut (stack : Nat) : PostOut (finalizeContract RISCV64.abi stack)
       (by simp only [Elem.size]; omega_using [hi])]
     exact h key msg hbf hc
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.Poly1305.initApi`. -/
-def initReg : Registration Spec.Poly1305.initApi RISCV64.target :=
-  scrubOf {
-      code := Impl.Poly1305.RISCV64.init
-      verified := Proof.Poly1305.RISCV64.Shared.init }
-    (initOut _)
+/-- `vg_poly1305_init` as emitted (`Impl.Poly1305.RISCV64.Fn.init`) meets its contract
+in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Poly1305.RISCV64.Fn.init (initContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := initApi) (W := 0)
+    { code := _, verified := Proof.Poly1305.RISCV64.Shared.init } (initOut _)
+    (by dsimp only; lit_decide)
 
-/-- `Spec.Poly1305.updateApi`. -/
-def updateReg : Registration Spec.Poly1305.updateApi RISCV64.target :=
-  scrubOf {
-      code := Impl.Poly1305.RISCV64.update
-      verified := Proof.Poly1305.RISCV64.Shared.update }
-    (updateOut _)
+/-- `vg_poly1305_update` as emitted (`Impl.Poly1305.RISCV64.Fn.update`) meets its contract
+in constant time and returns without secret residue. -/
+theorem update_scrubbed :
+    VerifiedScrubbed target Impl.Poly1305.RISCV64.Fn.update (updateContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := updateApi) (W := 0)
+    { code := _, verified := Proof.Poly1305.RISCV64.Shared.update } (updateOut _)
+    (by dsimp only; lit_decide)
 
-/-- `Spec.Poly1305.finalizeApi`. -/
-def finalizeReg : Registration Spec.Poly1305.finalizeApi RISCV64.target :=
-  scrubOf {
-      code := Impl.Poly1305.RISCV64.finalize
-      verified := Proof.Poly1305.RISCV64.Shared.finalize }
-    (finalizeOut _)
+/-- `vg_poly1305_finalize` as emitted (`Impl.Poly1305.RISCV64.Fn.finalize`) meets its contract
+in constant time and returns without secret residue. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed target Impl.Poly1305.RISCV64.Fn.finalize (finalizeContract RISCV64.abi) 0 :=
+  verifiedScrubbed (api := finalizeApi) (W := 0)
+    { code := _, verified := Proof.Poly1305.RISCV64.Shared.finalize } (finalizeOut _)
+    (by dsimp only; lit_decide)
 
 end VG.Proof.Poly1305.RISCV64.Scrub
