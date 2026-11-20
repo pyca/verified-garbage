@@ -87,6 +87,8 @@ def compress : Proof.Sha256.X86_64.Compress where
     Proof.Sha256.X86_64.Stream.scalar_verified112
   mxcsr := by change Impl.Sha256.X86_64.compress.allInstrs _ = true; lit_decide
   spSafe := Code.all_of_spTest (by change Impl.Sha256.X86_64.compress.allInstrs _ = true; lit_decide)
+  level := .sse
+  side := by change X86_64.Scrub.calleeSide Impl.Sha256.X86_64.compress _ 0 = true; lit_decide
   suffix := ""
   features := []
 

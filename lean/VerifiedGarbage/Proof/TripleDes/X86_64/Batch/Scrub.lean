@@ -1451,7 +1451,7 @@ open VG.X86_64.Scrub in
 /-- `vg_triple_des_cbc_decrypt_chained`'s code over any ECB implementation
 is its code over a stub, with the implementation's code where it calls it. -/
 theorem cbcDecrypt_fill (v : EcbImpl) :
-    Fill v.level.level 1040
+    Fill v.level.level (fun _ => 1040)
       (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt false "" (.block [])))
       (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt false (v.name .decrypt) (v.code .decrypt))) := by
   have := v.side .decrypt
@@ -1460,7 +1460,7 @@ theorem cbcDecrypt_fill (v : EcbImpl) :
 open VG.X86_64.Scrub in
 /-- `vg_triple_des_cfb64_decrypt`'s code over any ECB implementation. -/
 theorem cfbDecrypt_fill (v : EcbImpl) :
-    Fill v.level.level 1040
+    Fill v.level.level (fun _ => 1040)
       (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt true "" (.block [])))
       (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt true (v.name .encrypt) (v.code .encrypt))) := by
   have := v.side .encrypt

@@ -14,12 +14,14 @@ term: it is the function's own code with the implementation's code where it
 calls it, and each implementation is evaluated where it is defined, never in
 its callers.
 
-`Fill k n a b` says that `b` is the code `a` with some of its empty blocks
-replaced by code that needs at most `n` bytes of stack, whose vector
-instructions are at most of level `k`, which loads no MXCSR and calls nothing
-indirectly (`calleeSide`), and its calls' names changed: `a` is the
-function's code with a stub, an implementation whose code is `.block []`, and
-`b` its code with an implementation. A function proves it once of every
+`Fill k n a b` says that `b` is the code `a` with the bodies of some of its
+calls `.call f (.block [])` replaced by code that needs at most `n f` bytes
+of stack, whose vector instructions are at most of level `k`, which loads no
+MXCSR and calls nothing indirectly (`calleeSide`), and its calls' names
+changed: `a` is the function's code with a stub, an implementation whose
+code is `.block []`, called by a name that tells apart the kinds of
+implementation it calls and the stack each needs, and `b` its code with
+implementations. A function proves it once of every
 implementation, by `fill_calls` (which walks the function's code, not the
 implementation's), from `calleeSide` of the implementation's code, a fact
 the variant proves where it is defined. `verifiedScrubbedAllFill` then gives
@@ -40,22 +42,38 @@ noncomputable def calleeSide (c : Prog isa) (k n : Nat) : Bool :=
   decide (c.x86_64Depth ≤ n) && c.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
     (UpperLock.inames c).isEmpty
 
+/-- `Code.x86_64Depth` of code with a stub for the implementations it calls,
+each call `.call f (.block [])` of one (`Fill.hole`) taking `n f` bytes: the
+stack of the code with implementations that need at most that much
+(`Fill.depth_leH`). -/
+def depthH (n : String → Nat) : Prog isa → Nat
+  | .block _ => 0
+  | .call f (.block []) => n f + 8
+  | .seq a b => max (depthH n a) (depthH n b)
+  | .ite _ t e => max (depthH n t) (depthH n e)
+  | .loop b _ => depthH n b
+  | .call _ b => depthH n b + 8
+  | .frame i b _ => depthH n b + i.frameBytes
+  | .icall _ _ b x => max (depthH n b + 8) (depthH n x)
+
 /-- What the cleanup of a function needs of its code `a` with a stub for
 the implementations it calls, which need at most `n` bytes of stack: its
-stack with theirs at most `stack`, vector instructions of at most the level
-`k`, no load of MXCSR, and indirect calls only of its tables' functions. -/
-noncomputable def stubSide (a : Prog isa) (k n stack : Nat) (ts : List (String × List FnTable)) : Bool :=
-  decide (a.x86_64Depth + n ≤ stack) && a.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
+stack with theirs at most `stack` (`depthH`), vector instructions of at most
+the level `k`, no load of MXCSR, and indirect calls only of its tables'
+functions. -/
+noncomputable def stubSide (a : Prog isa) (k : Nat) (n : String → Nat) (stack : Nat) (ts : List (String × List FnTable)) : Bool :=
+  decide (depthH n a ≤ stack) && a.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) &&
     tablesCall a ts
 
-/-- `b` is `a` with some of its empty blocks replaced by code that meets
-`calleeSide _ k n` (`hole`), and the names of its calls changed: `a` is a
-function's code with a stub for the implementations it calls, and `b` its
-code with them. Its blocks, conditions, frames and indirect calls are
-`a`'s. -/
-inductive Fill (k n : Nat) : Prog isa → Prog isa → Prop
+/-- `b` is `a` with the bodies of some of its calls `.call f (.block [])`
+replaced by code that meets `calleeSide _ k (n f)` (`hole`), and the names
+of its calls changed: `a` is a function's code with a stub for the
+implementations it calls, and `b` its code with them. Its blocks,
+conditions, frames and indirect calls are `a`'s. -/
+inductive Fill (k : Nat) (n : String → Nat) : Prog isa → Prog isa → Prop
   | block (is : List Instr) : Fill k n (.block is) (.block is)
-  | hole {d : Prog isa} : calleeSide d k n = true → Fill k n (.block []) d
+  | hole {d : Prog isa} (f g : String) : calleeSide d k (n f) = true →
+      Fill k n (.call f (.block [])) (.call g d)
   | seq {a b a' b' : Prog isa} : Fill k n a a' → Fill k n b b' → Fill k n (.seq a b) (.seq a' b')
   | ite {t e t' e' : Prog isa} (c : Cond) : Fill k n t t' → Fill k n e e' → Fill k n (.ite c t e) (.ite c t' e')
   | loop {b b' : Prog isa} (c : Cond) : Fill k n b b' → Fill k n (.loop b c) (.loop b' c)
@@ -66,20 +84,28 @@ inductive Fill (k n : Nat) : Prog isa → Prog isa → Prop
 
 namespace Fill
 
-variable {k n : Nat} {a b : Prog isa}
+variable {k : Nat} {n : String → Nat} {a b : Prog isa}
 
-theorem depth_le (h : Fill k n a b) : b.x86_64Depth ≤ a.x86_64Depth + n := by
+theorem depthH_call (f : String) (c : Prog isa) : depthH n c + 8 ≤ depthH n (.call f c) := by
+  cases c with
+  | block is => cases is <;> simp [depthH]
+  | _ => simp [depthH]
+
+/-- The stack `b` uses is at most `depthH n a`. -/
+theorem depth_leH (h : Fill k n a b) : b.x86_64Depth ≤ depthH n a := by
   induction h with
-  | block => exact Nat.le_add_right _ _
-  | hole hd =>
+  | block is => simp [Code.x86_64Depth, depthH]
+  | hole f g hd =>
     simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at hd
-    simp only [Code.x86_64Depth, Nat.zero_add]; exact hd.1.1
-  | seq _ _ iha ihb => simp only [Code.x86_64Depth]; omega
-  | ite _ _ _ iht ihe => simp only [Code.x86_64Depth]; omega
-  | loop _ _ ih => simp only [Code.x86_64Depth]; exact ih
-  | call _ _ _ ih => simp only [Code.x86_64Depth]; omega
-  | frame _ _ _ ih => simp only [Code.x86_64Depth]; omega
-  | icall _ _ _ _ ihb ihx => simp only [Code.x86_64Depth]; omega
+    simp only [Code.x86_64Depth, depthH]; omega
+  | seq _ _ iha ihb => simp only [Code.x86_64Depth, depthH]; omega
+  | ite _ _ _ iht ihe => simp only [Code.x86_64Depth, depthH]; omega
+  | loop _ _ ih => simp only [Code.x86_64Depth, depthH]; exact ih
+  | @call b _ f _ _ ih =>
+    have := depthH_call (n := n) f b
+    simp only [Code.x86_64Depth]; omega
+  | frame _ _ _ ih => simp only [Code.x86_64Depth, depthH]; omega
+  | icall _ _ _ _ ihb ihx => simp only [Code.x86_64Depth, depthH]; omega
 
 /-- What `a`'s instructions meet, `b`'s do, if what fills its holes meets it
 too: a level of the vector instructions, and no load of MXCSR. -/
@@ -88,9 +114,9 @@ theorem side (h : Fill k n a b)
     b.allInstrs (fun i => decide (i.vecLevelR ≤ k) && !loadsMxcsr i) = true := by
   induction h with
   | block => exact ha
-  | hole hd =>
+  | hole _ _ hd =>
     simp only [calleeSide, Bool.and_eq_true] at hd
-    exact hd.1.2
+    simp only [Code.allInstrs]; exact hd.1.2
   | seq _ _ iha ihb | ite _ _ _ iha ihb =>
     simp only [Code.allInstrs, Bool.and_eq_true] at ha ⊢; exact ⟨iha ha.1, ihb ha.2⟩
   | loop _ _ ih | call _ _ _ ih => simp only [Code.allInstrs] at ha ⊢; exact ih ha
@@ -104,7 +130,7 @@ calls none (`calleeSide`). -/
 theorem inames_eq (h : Fill k n a b) : UpperLock.inames b = UpperLock.inames a := by
   induction h with
   | block => rfl
-  | hole hd =>
+  | hole _ _ hd =>
     simp only [calleeSide, Bool.and_eq_true] at hd
     simpa [UpperLock.inames] using hd.2
   | seq _ _ iha ihb | ite _ _ _ iha ihb => simp only [UpperLock.inames, iha, ihb]
@@ -151,6 +177,19 @@ theorem side_mono {a : Prog isa} {ks k : Nat} (hk : ks ≤ k)
   simp only [Bool.and_eq_true, decide_eq_true_eq] at this ⊢
   exact ⟨Nat.le_trans this.1 hk, this.2⟩
 
+theorem level_join_left (a b : VecLevel) : a.level ≤ (a.join b).level := by
+  cases a <;> cases b <;> decide
+
+theorem level_join_right (a b : VecLevel) : b.level ≤ (a.join b).level := by
+  cases a <;> cases b <;> decide
+
+/-- What the cleanup needs of an implementation at the level `k` and stack
+`n`, it meets at any level and stack above them. -/
+theorem calleeSide_mono {c : Prog isa} {k k' n n' : Nat} (hk : k ≤ k') (hn : n ≤ n')
+    (h : calleeSide c k n = true) : calleeSide c k' n' = true := by
+  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq] at h ⊢
+  exact ⟨⟨Nat.le_trans h.1.1 hn, side_mono hk h.1.2⟩, h.2⟩
+
 /-- `r`'s code `b`, generic over the implementations it calls (`Fill k n a
 b`), followed by `scrubAll v rb stack`, meets `r`'s contract in constant
 time and returns without secret residue: from `stubSide` of its code with a
@@ -158,7 +197,7 @@ stub (`a`) at the level `ks` of its own instructions, which the kernel
 evaluates once, and what each implementation proves of its own code where it
 is defined, at its level `k` (in `hf`), both at most `v`'s. -/
 theorem verifiedScrubbedAllFill {api : Api} (r : Unscrubbed api target) (v : VecLevel) {a : Prog isa}
-    {ks k n stack rb : Nat}
+    {ks k : Nat} {n : String → Nat} {stack rb : Nat}
     (hpost : PostOut r.contract (retBitsOf r)) (hf : Fill k n a r.code)
     (hks : ks ≤ k) (hk : k ≤ v.level) (ts : List (String × List FnTable) := [])
     (hn : r.stack = stack := by rfl) (hb : retBitsOf r = rb := by rfl) (htb : r.tables = ts := by rfl)
@@ -170,7 +209,7 @@ theorem verifiedScrubbedAllFill {api : Api} (r : Unscrubbed api target) (v : Vec
   obtain ⟨⟨hd, hs⟩, ht⟩ := ha
   obtain ⟨hlv, hmx⟩ := allInstrs_level hk (hf.side (side_mono hks hs))
   have hic : tablesCall r.code r.tables = true := by rw [tablesCall, hf.inames_eq]; exact ht
-  exact verifiedScrubbedAllF r v hpost (Nat.le_trans hf.depth_le hd) hlv (mxSame_of_noLoad hmx) hic hl rfl rfl
+  exact verifiedScrubbedAllF r v hpost (Nat.le_trans hf.depth_leH hd) hlv (mxSame_of_noLoad hmx) hic hl rfl rfl
 
 /-- Proves `Fill k n a b` of a function's code with a stub (`a`) and with
 implementations (`b`), from hypotheses `calleeSide c k n = true` of each
@@ -179,7 +218,7 @@ definitions, and closes each place it calls an implementation by its
 hypothesis (`Fill.hole`). -/
 macro "fill_calls" : tactic => `(tactic| repeat' (first
   | exact Fill.block _
-  | exact Fill.hole (by assumption)
+  | exact Fill.hole _ _ (by assumption)
   | refine Fill.seq ?_ ?_
   | refine Fill.ite _ ?_ ?_
   | refine Fill.loop _ ?_

@@ -100,6 +100,8 @@ def compress : Proof.Sha256.X86_64.Compress where
   okS := Proof.Sha256.X86_64.Stream.callee ok
   mxcsr := by change Impl.Sha256.X86_64.Avx2.compress.allInstrs _ = true; lit_decide
   spSafe := Code.all_of_spTest (by change Impl.Sha256.X86_64.Avx2.compress.allInstrs _ = true; lit_decide)
+  level := .avx
+  side := by change X86_64.Scrub.calleeSide Impl.Sha256.X86_64.Avx2.compress _ 0 = true; lit_decide
   suffix := "_avx2"
   features := ["avx", "avx2", "bmi1", "bmi2"]
 

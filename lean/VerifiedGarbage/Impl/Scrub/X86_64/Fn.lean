@@ -28,6 +28,13 @@ namespace VG.Impl.Scrub.X86_64
 
 open VG.X86_64
 
+/-- The higher of two levels: the cleanup's for code that calls
+implementations of both. -/
+def VecLevel.join : VecLevel → VecLevel → VecLevel
+  | .evex, _ | _, .evex => .evex
+  | .avx, _ | _, .avx => .avx
+  | .sse, .sse => .sse
+
 /-- `n` bytes of stack in chunks whose 16-byte granules are aligned: 8 bytes
 at the top (the stack pointer on entry is 8 off 16), then `chunks`. -/
 def chunksA (n : Nat) : List Nat := if n ≤ 8 then chunks n else 8 :: chunks (n - 8)

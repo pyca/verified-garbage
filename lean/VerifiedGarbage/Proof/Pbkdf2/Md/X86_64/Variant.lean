@@ -25,6 +25,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
@@ -1066,6 +1067,11 @@ structure Compress where
   /-- It uses no stack, so that the streaming functions calling it can keep
   their working space in a frame of their own (`Verified.stackScratch`). -/
   noStack : callee.code.x86_64Depth = 0 := by lit_decide
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide callee.code level.level 0 = true
   /-- What the names of its callers' instances end with (e.g. `_shani`;
   nothing for the baseline implementation). -/
   suffix : String
