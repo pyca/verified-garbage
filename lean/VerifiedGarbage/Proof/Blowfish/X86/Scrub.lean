@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.Blowfish.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Blowfish.Contract
 public import VerifiedGarbage.Spec.Blowfish.Cbc
@@ -25,10 +26,11 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Blowfish on x86 (32-bit), without secret residue
 
 Key expansion, ECB and the CBC, CFB64 and OFB functions run with their
-working space in a frame on the stack (`withStackScratchWiped`), and are
-scrubbed with `X86.Scrub.scrubFOf`, which zeroes the stack their contracts
-reserve below `esp` and clears the registers a callee may change. What the
-scrub needs of the code is one Boolean (`X86.Scrub.scrubFSide`), proved by
+working space in a frame on the stack (`withStackScratchWiped`). As emitted
+(`Impl.Blowfish.X86.Fn`), each then zeroes the stack its contract reserves
+below `esp` and clears the registers a callee may change, and returns without
+secret residue (`X86.Scrub.verifiedScrubbedF`). What the cleanup needs of the
+code is one Boolean (`X86.Scrub.scrubFSide`), proved by
 evaluating the code once (`lit_decide`). Their postconditions read the
 memory on return only within their buffers, as on the other targets
 (`Proof/Blowfish/ScrubLocal.lean`); a length is the low 32 bits of its
@@ -208,82 +210,104 @@ theorem ofbFinalOut (stack : Nat) : PostOut (ofbFinalContract X86.abi stack) (of
     rw [bytesAt_of hb.2.2 (len_le1 ln), bytesAt_of (n := 8) hb.2.1 (Nat.le_refl _)]
     exact h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.Blowfish.expandKeyApi`. -/
-def expandKeyReg : Registration Spec.Blowfish.expandKeyApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 84 3 10 Impl.Blowfish.X86.expandKey
+/-- `Spec.Blowfish.expandKeyApi` as emitted (`Impl.Blowfish.X86.Fn.expandKey`) meets its contract
+in constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.expandKey (Spec.Blowfish.expandKeyContract X86.abi 84) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.expandKeyApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 84 3 10 Impl.Blowfish.X86.expandKey
       verified := Proof.Blowfish.X86.expandKey_framed }
     (expandKeyOut _)
 
-/-- `Spec.Blowfish.ecbEncryptApi`. -/
-def ecbEncryptReg : Registration Spec.Blowfish.ecbEncryptApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 276 3 10 Impl.Blowfish.X86.encrypt
+/-- `Spec.Blowfish.ecbEncryptApi` as emitted (`Impl.Blowfish.X86.Fn.ecbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecbEncrypt_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.ecbEncrypt (Spec.Blowfish.ecbContract X86.abi (Proof.Blowfish.X86.dir true) 276) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.ecbEncryptApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 276 3 10 Impl.Blowfish.X86.encrypt
       verified := Proof.Blowfish.X86.ecb_framed true }
     (ecbOut .encrypt _)
 
-/-- `Spec.Blowfish.ecbDecryptApi`. -/
-def ecbDecryptReg : Registration Spec.Blowfish.ecbDecryptApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 276 3 10 Impl.Blowfish.X86.decrypt
+/-- `Spec.Blowfish.ecbDecryptApi` as emitted (`Impl.Blowfish.X86.Fn.ecbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ecbDecrypt_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.ecbDecrypt (Spec.Blowfish.ecbContract X86.abi (Proof.Blowfish.X86.dir false) 276) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.ecbDecryptApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 276 3 10 Impl.Blowfish.X86.decrypt
       verified := Proof.Blowfish.X86.ecb_framed false }
     (ecbOut .decrypt _)
 
-/-- `Spec.Blowfish.cbcEncryptChainedApi`. -/
-def cbcEncryptChainedReg : Registration Spec.Blowfish.cbcEncryptChainedApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcEncryptChained
+/-- `Spec.Blowfish.cbcEncryptChainedApi` as emitted (`Impl.Blowfish.X86.Fn.cbcEncryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcEncryptChained_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.cbcEncryptChained (Spec.Blowfish.cbcEncryptChainedContract X86.abi 112) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.cbcEncryptChainedApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcEncryptChained
       verified := Proof.Blowfish.X86.Cbc.cbcEncryptChained_framed }
     (cbcEncryptOut _)
 
-/-- `Spec.Blowfish.cbcDecryptChainedApi`. -/
-def cbcDecryptChainedReg : Registration Spec.Blowfish.cbcDecryptChainedApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcDecryptChained
+/-- `Spec.Blowfish.cbcDecryptChainedApi` as emitted (`Impl.Blowfish.X86.Fn.cbcDecryptChained`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cbcDecryptChained_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.cbcDecryptChained (Spec.Blowfish.cbcDecryptChainedContract X86.abi 112) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.cbcDecryptChainedApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcDecryptChained
       verified := Proof.Blowfish.X86.Cbc.cbcDecryptChained_framed }
     (cbcDecryptOut _)
 
-/-- `Spec.Blowfish.cfbEncryptApi`. -/
-def cfbEncryptReg : Registration Spec.Blowfish.cfbEncryptApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncrypt
+/-- `Spec.Blowfish.cfbEncryptApi` as emitted (`Impl.Blowfish.X86.Fn.cfbEncrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncrypt_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.cfbEncrypt (Spec.Blowfish.cfbEncryptContract X86.abi 112) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.cfbEncryptApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncrypt
       verified := Proof.Blowfish.X86.Fb.cfbEncrypt_framed }
     (cfbEncryptOut _)
 
-/-- `Spec.Blowfish.cfbDecryptApi`. -/
-def cfbDecryptReg : Registration Spec.Blowfish.cfbDecryptApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecrypt
+/-- `Spec.Blowfish.cfbDecryptApi` as emitted (`Impl.Blowfish.X86.Fn.cfbDecrypt`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecrypt_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.cfbDecrypt (Spec.Blowfish.cfbDecryptContract X86.abi 112) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.cfbDecryptApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecrypt
       verified := Proof.Blowfish.X86.Fb.cfbDecrypt_framed }
     (cfbDecryptOut _)
 
-/-- `Spec.Blowfish.cfbEncryptFinalApi`. -/
-def cfbEncryptFinalReg : Registration Spec.Blowfish.cfbEncryptFinalApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncryptFinal
+/-- `Spec.Blowfish.cfbEncryptFinalApi` as emitted (`Impl.Blowfish.X86.Fn.cfbEncryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbEncryptFinal_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.cfbEncryptFinal (Spec.Blowfish.cfbEncryptFinalContract X86.abi 112) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.cfbEncryptFinalApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbEncryptFinal
       verified := Proof.Blowfish.X86.FbFinal.cfbEncryptFinal_framed }
     (cfbEncryptFinalOut _)
 
-/-- `Spec.Blowfish.cfbDecryptFinalApi`. -/
-def cfbDecryptFinalReg : Registration Spec.Blowfish.cfbDecryptFinalApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecryptFinal
+/-- `Spec.Blowfish.cfbDecryptFinalApi` as emitted (`Impl.Blowfish.X86.Fn.cfbDecryptFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem cfbDecryptFinal_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.cfbDecryptFinal (Spec.Blowfish.cfbDecryptFinalContract X86.abi 112) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.cfbDecryptFinalApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cfbDecryptFinal
       verified := Proof.Blowfish.X86.FbFinal.cfbDecryptFinal_framed }
     (cfbDecryptFinalOut _)
 
-/-- `Spec.Blowfish.ofbApi`. -/
-def ofbReg : Registration Spec.Blowfish.ofbApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofb
+/-- `Spec.Blowfish.ofbApi` as emitted (`Impl.Blowfish.X86.Fn.ofb`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.ofb (Spec.Blowfish.ofbContract X86.abi 112) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.ofbApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofb
       verified := Proof.Blowfish.X86.Fb.ofb_framed }
     (ofbOut _)
 
-/-- `Spec.Blowfish.ofbFinalApi`. -/
-def ofbFinalReg : Registration Spec.Blowfish.ofbFinalApi X86.target :=
-  scrubFOf {
-      code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofbFinal
+/-- `Spec.Blowfish.ofbFinalApi` as emitted (`Impl.Blowfish.X86.Fn.ofbFinal`) meets its contract
+in constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed X86.target Impl.Blowfish.X86.Fn.ofbFinal (Spec.Blowfish.ofbFinalContract X86.abi 112) 0 :=
+  verifiedScrubbedF (api := Spec.Blowfish.ofbFinalApi)
+    { code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.ofbFinal
       verified := Proof.Blowfish.X86.FbFinal.ofbFinal_framed }
     (ofbFinalOut _)
 

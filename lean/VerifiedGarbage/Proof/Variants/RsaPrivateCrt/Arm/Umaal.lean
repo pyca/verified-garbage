@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm.Base
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtUmaal
 import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
+import VerifiedGarbage.Proof.Framework.Lit
 public meta import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 public import Mathlib.Data.Nat.Basic
 public import Mathlib.Order.Basic
@@ -41,14 +42,17 @@ def variant : Proof.Rsa.Arm.CrtImpl :=
     crtP := CrtFios.codeGiven
     crtPVerified := crtUmaal_verifiedP
     crtPStack := (armStack_umaalArithmetic _).trans stacks.2
+    crtPNoIcall := by lit_decide
     pcName := Spec.Rsa.publicPrecomputeApi.name ++ "_umaal"
     pc := umaalArithmetic Base.variant.pc
     pcVerified := umaalArithmetic_verified Base.variant.pcVerified
     pcStack := (armStack_umaalArithmetic _).trans Base.variant.pcStack
+    pcNoIcall := by lit_decide
     pdName := "vg_rsa_public_precomputed_checked" ++ "_umaal"
     pd := umaalArithmetic Base.variant.pd
     pdVerified := umaalArithmetic_verified Base.variant.pdVerified
     pdStack := (armStack_umaalArithmetic _).trans Base.variant.pdStack
+    pdNoIcall := by lit_decide
     suffix := "_umaal"
     features := ["umaal"] }
 

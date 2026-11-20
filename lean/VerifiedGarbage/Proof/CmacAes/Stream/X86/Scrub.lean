@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Aes.X86.Variant
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86
 public import VerifiedGarbage.Impl.StackScratch.X86
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Impl.CmacAes.Stream.X86
 meta import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
@@ -36,9 +36,10 @@ proves of any implementation by walking only CMAC's code. `vg_cmac_aes_update`
 chains in a register with AES-NI and by calls otherwise
 (`Impl.CmacAes.X86.hardware`), so `absorb` has a stub of each.
 
-The registrations of each variant (`initReg`, `absorbReg`, `finishReg`) give
-these as `scrubFOf`'s `hs`, with the contract's stack as `W`: they evaluate
-no code. Their postconditions read the memory on return only within the
+The functions as emitted (`Impl.CmacAes.Stream.X86.Fn`) return without
+secret residue for each variant (`init_scrubbed`, `absorb_scrubbed`,
+`finish_scrubbed`), from these as `X86.Scrub.verifiedScrubbedF`'s `hs`, with
+the contract's stack as `W`: they evaluate no code. Their postconditions read the memory on return only within the
 state and the tag, by the target-independent lemmas of
 `Proof/CmacAes/Stream/Scratch.lean`.
 -/
@@ -132,33 +133,57 @@ theorem finishOut (stack : Nat) :
     PostOut (Spec.Cmac.aesFinishContract X86.abi stack) (Spec.Cmac.aesFinishSig.retBits 32) :=
   postOut_of_local ScrubAbi.plain (Proof.CmacAes.Stream.finishPostOut_local _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_cmac_aes_init` over `v`. -/
-def initReg (v : Ctr32Impl) : Registration Spec.Cmac.aesInitApi X86.target :=
-  scrubFOf {
+/-- `vg_cmac_aes_init` over `v` as emitted (`Impl.CmacAes.Stream.X86.Fn.init`)
+meets its contract in constant time and returns without secret residue. -/
+theorem init_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed X86.target (Impl.CmacAes.Stream.X86.Fn.init v.expand v.callee v.suffix)
+      (Spec.Cmac.aesInitContract X86.abi 2376) 0 :=
+  verifiedScrubbedF (api := Spec.Cmac.aesInitApi) {
       suffix := v.suffix
       code := withStackScratch 2324 3 (init v.expand v.callee v.suffix)
       verified := Proof.CmacAes.Stream.X86.init_framed v
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.init_spSafe v) }
-    (initOut _) 2376 (init_scrub v)
+    (initOut _) (W := 2376) (hs := init_scrub v)
 
-/-- `vg_cmac_aes_absorb` over `v`. -/
-def absorbReg (v : Ctr32Impl) : Registration Spec.Cmac.aesAbsorbApi X86.target :=
-  scrubFOf {
+/-- `vg_cmac_aes_absorb` over `v` as emitted (`Impl.CmacAes.Stream.X86.Fn.absorb`)
+meets its contract in constant time and returns without secret residue. -/
+theorem absorb_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed X86.target (Impl.CmacAes.Stream.X86.Fn.absorb v.callee v.suffix)
+      (Spec.Cmac.aesAbsorbContract X86.abi 2396) 0 :=
+  verifiedScrubbedF (api := Spec.Cmac.aesAbsorbApi) {
       suffix := v.suffix
       code := withStackScratch 2336 6 (absorb v.callee v.suffix)
       verified := Proof.CmacAes.Stream.X86.absorb_framed v
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.absorb_spSafe v) }
-    (absorbOut _) 2396 (absorb_scrub v)
+    (absorbOut _) (W := 2396) (hs := absorb_scrub v)
 
-/-- `vg_cmac_aes_finish` over `v`. -/
-def finishReg (v : Ctr32Impl) : Registration Spec.Cmac.aesFinishApi X86.target :=
-  scrubFOf {
+/-- `vg_cmac_aes_finish` over `v` as emitted (`Impl.CmacAes.Stream.X86.Fn.finish`)
+meets its contract in constant time and returns without secret residue. -/
+theorem finish_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed X86.target (Impl.CmacAes.Stream.X86.Fn.finish v.callee v.suffix)
+      (Spec.Cmac.aesFinishContract X86.abi 2392) 0 :=
+  verifiedScrubbedF (api := Spec.Cmac.aesFinishApi) {
       suffix := v.suffix
       code := withStackScratch 2332 5 (finish v.callee v.suffix)
       verified := Proof.CmacAes.Stream.X86.finish_framed v
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.finish_spSafe v) }
-    (finishOut _) 2392 (finish_scrub v)
+    (finishOut _) (W := 2392) (hs := finish_scrub v)
+
+/-- `Impl.CmacAes.Stream.X86.Fn.init` writes `esp` only in its frames and calls. -/
+theorem init_fnSpSafe (v : Ctr32Impl) :
+    (Impl.CmacAes.Stream.X86.Fn.init v.expand v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.init_spSafe v))
+
+/-- `Impl.CmacAes.Stream.X86.Fn.absorb` writes `esp` only in its frames and calls. -/
+theorem absorb_fnSpSafe (v : Ctr32Impl) :
+    (Impl.CmacAes.Stream.X86.Fn.absorb v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.absorb_spSafe v))
+
+/-- `Impl.CmacAes.Stream.X86.Fn.finish` writes `esp` only in its frames and calls. -/
+theorem finish_fnSpSafe (v : Ctr32Impl) :
+    (Impl.CmacAes.Stream.X86.Fn.finish v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.finish_spSafe v))
 
 end VG.Proof.CmacAes.Stream.X86.Scrub

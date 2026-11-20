@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.AesCtr.X86.Ctr32
 public import VerifiedGarbage.Proof.AesCtr.X86.Final
 public import VerifiedGarbage.Spec.Ctr.Contract
 public import VerifiedGarbage.Spec.Ctr.Final
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.AesCtr.X86.Final
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -18,6 +20,8 @@ meta import VerifiedGarbage.Spec.Ctr.Final
 meta import VerifiedGarbage.Proof.Aes.ScrubLocal
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.AesCtr.X86.Final
 
 /-!
 # AES-CTR on x86 (32-bit), without secret residue
@@ -27,9 +31,9 @@ the data and the counter block (`ctrOut`, `ctrFinalOut`), as on PPC64LE
 (`Proof/Aes/PPC64LE/Scrub.lean`): what the scrub of their frames and calls
 needs (`X86.Scrub.PostOut`).
 
-Each is registered with `X86.Scrub.scrubFOf` (`ctrReg`, `ctrFinalReg`),
-which zeroes the stack of its contract below `esp` and clears the
-registers. What that needs of the code (`scrubFSide`) holds whatever the
+Each as emitted (`Impl.AesCtr.X86.Fn`) zeroes the stack of its contract
+below `esp` and clears the registers, and returns without secret residue
+(`X86.Scrub.verifiedScrubbedF`: `ctr_scrubbed`, `ctrFinal_scrubbed`). What that needs of the code (`scrubFSide`) holds whatever the
 implementation of AES (`crypt32_scrub`, `final_scrub`): from CTR's code with
 a stub, whose code is `.block []`, which the kernel evaluates once
 (`crypt32_side`, `final_side`), the implementation's own facts
@@ -118,24 +122,40 @@ theorem final_scrub (v : BlocksImpl) :
     scrubFSide (withStackScratchWiped 64 6 8 (Impl.AesCtr.X86.cryptFinal v.enc v.suffix)) [] 116 = true :=
   scrubFSide_of_fill (final_fill _ _ (calleeSide_of_eq v.encStack v.encScrub)) final_side
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_aes_ctr` over `v`, without secret residue. -/
-def ctrReg (v : Ctr32Impl) : Registration Spec.Ctr.aesApi target :=
-  scrubFOf {
+/-- `vg_aes_ctr` over `v` as emitted (`Impl.AesCtr.X86.Fn.crypt32`)
+meets its contract in constant time and returns without secret residue. -/
+theorem ctr_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed X86.target (Impl.AesCtr.X86.Fn.crypt32 v.callee)
+      (Spec.Ctr.aesContract X86.abi 32) 0 :=
+  verifiedScrubbedF (api := Spec.Ctr.aesApi) {
       suffix := v.suffix
       code := Impl.AesCtr.X86.crypt32 v.callee
       verified := Proof.AesCtr.keyed (Ctr32.crypt32_verified v)
       spSafe := Ctr32.crypt32_spSafe v }
     (ctrOut _) (W := 32) (hs := crypt32_scrub v)
 
-/-- `vg_aes_ctr_final` over `v`, without secret residue. -/
-def ctrFinalReg (v : BlocksImpl) : Registration Spec.Ctr.aesFinalApi target :=
-  scrubFOf {
+/-- `vg_aes_ctr_final` over `v` as emitted (`Impl.AesCtr.X86.Fn.cryptFinal`)
+meets its contract in constant time and returns without secret residue. -/
+theorem ctrFinal_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed X86.target (Impl.AesCtr.X86.Fn.cryptFinal v.enc v.suffix)
+      (Spec.Ctr.aesFinalContract X86.abi 116) 0 :=
+  verifiedScrubbedF (api := Spec.Ctr.aesFinalApi) {
       suffix := v.suffix
       code := withStackScratchWiped 64 6 8 (Impl.AesCtr.X86.cryptFinal v.enc v.suffix)
       verified := Proof.AesCtr.final_keyed (cryptFinal_framed v)
       spSafe := cryptFinal_framed_spSafe v }
     (ctrFinalOut _) (W := 116) (hs := final_scrub v)
+
+/-- `Impl.AesCtr.X86.Fn.crypt32` writes `esp` only in its frames and calls. -/
+theorem ctr_fnSpSafe (v : Ctr32Impl) :
+    (Impl.AesCtr.X86.Fn.crypt32 v.callee).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Ctr32.crypt32_spSafe v)
+
+/-- `Impl.AesCtr.X86.Fn.cryptFinal` writes `esp` only in its frames and calls. -/
+theorem ctrFinal_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesCtr.X86.Fn.cryptFinal v.enc v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (cryptFinal_framed_spSafe v)
 
 end VG.Proof.AesCtr.X86.Scrub

@@ -17,11 +17,11 @@ def artifacts : List Artifact :=
   VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
     Spec.Ctr.aesApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesCtr.AArch64.Fn.crypt v.clear v.callee
+      code := Impl.AesCtr.AArch64.Fn.crypt v.callee
       verified := .scrubbed (Final.crypt_scrubbed v) },
     Spec.Ctr.aesFinalApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesCtr.AArch64.Fn.cryptFinal v.clear v.callee v.suffix
+      code := Impl.AesCtr.AArch64.Fn.cryptFinal v.callee v.suffix
       verified := .scrubbed (Final.cryptFinal_scrubbed v) }]
 
 end VG.Artifacts.AesCtr.AArch64

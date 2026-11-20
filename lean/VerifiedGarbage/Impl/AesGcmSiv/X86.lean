@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.AesGcm.X86
 public import VerifiedGarbage.Impl.Aes.X86.AesNi
 public import VerifiedGarbage.Impl.Gcm.X86.Pclmul
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # AES-GCM-SIV: x86 (32-bit) implementation
@@ -454,3 +456,25 @@ def «open» : Prog isa :=
 end
 
 end VG.Impl.AesGcmSiv.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.AesGcmSiv.X86.Fn
+
+open VG.X86
+open Impl.StackScratch.X86 (withStackScratch)
+
+/-- `vg_aes_gcm_siv_seal` over the functions `c`, as emitted. -/
+def «seal» (c : Impl.AesGcm.X86.Callees) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» c))
+
+/-- `vg_aes_gcm_siv_open` over the functions `c`, as emitted. -/
+def «open» (c : Impl.AesGcm.X86.Callees) : Prog isa :=
+  Impl.Scrub.X86.scrubF 32 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» c))
+
+end VG.Impl.AesGcmSiv.X86.Fn

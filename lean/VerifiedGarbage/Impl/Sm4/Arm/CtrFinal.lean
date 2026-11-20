@@ -13,8 +13,10 @@ its own on the stack, `save`, the fifth argument, of 56 bytes: the caller's
 callee-saved registers and its return address, then, at 40, a block of the
 code's own. It is AES-CTR's final function's
 (`Impl/AesCtr/Arm/Final.lean`) with SM4's arguments, around calls of
-`vg_sm4_ctr`, framed by its own working space on the stack (`ctrFramed`),
-whose arguments are all in registers:
+`vg_sm4_ctr`'s code as it is verified, without its cleanup, framed by its own
+working space on the stack (`ctrFramed`), under a name of its own
+(`vg_sm4_ctr_core`, which the emitter writes as an internal function), whose
+arguments are all in registers:
 
 1. the registers saved in `save` (through `r12`), and the arguments kept in
    `r4` (schedule), `r6` (ctr), `r7` (the data after its whole blocks) and
@@ -59,7 +61,7 @@ def ctrFinalMoves : List Instr :=
 def ctrFinalSetup : List Instr := ctrSave ++ finalSave ++ ctrFinalMoves
 
 /-- The call of `vg_sm4_ctr`. -/
-def ctrCall : Prog isa := .call "vg_sm4_ctr" ctrFramed
+def ctrCall : Prog isa := .call "vg_sm4_ctr_core" ctrFramed
 
 /-- The block at `save + 40` zeroed, through `r0`, and the arguments of
 `vg_sm4_ctr` on it: the schedule, the counter block, the block and `n = 1`. -/

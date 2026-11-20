@@ -11,7 +11,11 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.AesEcb.Arm
 
 def artifacts : List Artifact := [
-  Spec.AesEcb.encryptApi.artifact Arm.target Proof.Aes.Arm.Scrub.ecbEncryptReg,
-  Spec.AesEcb.decryptApi.artifact Arm.target Proof.Aes.Arm.Scrub.ecbDecryptReg]
+  Spec.AesEcb.encryptApi.artifact Arm.target {
+    code := Impl.Aes.Arm.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Aes.Arm.Fn.ecbEncrypt },
+  Spec.AesEcb.decryptApi.artifact Arm.target {
+    code := Impl.Aes.Arm.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Aes.Arm.Fn.ecbDecrypt }]
 
 end VG.Artifacts.AesEcb.Arm

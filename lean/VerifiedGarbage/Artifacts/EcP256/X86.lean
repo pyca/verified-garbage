@@ -83,8 +83,14 @@ namespace VG.Artifacts.EcP256.X86
 open VG.Proof.P256.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact X86.target (Proof.EcKey.X86.P256.Scrub.compressReg hasLaw.inv),
-  Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact X86.target (Proof.EcKey.X86.P256.Scrub.decompressReg hasLaw.law hasLaw.inv),
-  Spec.EcKey.P256.publicKeyApi.artifact X86.target (Proof.EcKey.X86.P256.Scrub.publicKeyReg hasLaw.law hasLaw.inv)]
+  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.compressP256
+    verified := .scrubbed (Proof.EcKey.X86.P256.Scrub.compress_scrubbed hasLaw.inv) },
+  Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.decompressP256
+    verified := .scrubbed (Proof.EcKey.X86.P256.Scrub.decompress_scrubbed hasLaw.law hasLaw.inv) },
+  Spec.EcKey.P256.publicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.publicKeyP256
+    verified := .scrubbed (Proof.EcKey.X86.P256.Scrub.publicKey_scrubbed hasLaw.law hasLaw.inv) }]
 
 end VG.Artifacts.EcP256.X86

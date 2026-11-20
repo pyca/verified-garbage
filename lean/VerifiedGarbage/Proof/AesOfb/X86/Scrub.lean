@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.AesOfb.X86.Verified
 public import VerifiedGarbage.Proof.AesOfb.X86.Final
 public import VerifiedGarbage.Spec.Ofb.Contract
 public import VerifiedGarbage.Spec.Ofb.Final
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.AesOfb.X86.Final
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -18,6 +20,8 @@ meta import VerifiedGarbage.Spec.Ofb.Final
 meta import VerifiedGarbage.Proof.Aes.ScrubLocal
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.AesOfb.X86.Final
 
 /-!
 # AES-OFB on x86 (32-bit), without secret residue
@@ -27,9 +31,9 @@ the data and the IV (`ofbOut`, `ofbFinalOut`), as on PPC64LE
 (`Proof/Aes/PPC64LE/Scrub.lean`): what the scrub of their frames and calls
 needs (`X86.Scrub.PostOut`).
 
-Each is registered with `X86.Scrub.scrubFOf` (`ofbReg`, `ofbFinalReg`),
-which zeroes the stack of its contract below `esp` and clears the
-registers. What that needs of the code (`scrubFSide`) holds whatever the
+Each as emitted (`Impl.AesOfb.X86.Fn`) zeroes the stack of its contract
+below `esp` and clears the registers, and returns without secret residue
+(`X86.Scrub.verifiedScrubbedF`: `ofb_scrubbed`, `ofbFinal_scrubbed`). What that needs of the code (`scrubFSide`) holds whatever the
 implementation of the block function (`crypt_scrub`, `final_scrub`): from
 OFB's code with a stub block function, whose code is `.block []`, which the
 kernel evaluates once (`crypt_side`, `final_side`), the implementation's own
@@ -115,24 +119,40 @@ theorem final_scrub (v : BlocksImpl) :
     scrubFSide (withStackScratchWiped 48 6 4 (Impl.AesOfb.X86.cryptFinal v.enc v.suffix)) [] 100 = true :=
   scrubFSide_of_fill (final_fill _ _ (calleeSide_of_eq v.encStack v.encScrub)) final_side
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_aes_ofb` over `v`, without secret residue. -/
-def ofbReg (v : BlocksImpl) : Registration Spec.Ofb.aesApi target :=
-  scrubFOf {
+/-- `vg_aes_ofb` over `v` as emitted (`Impl.AesOfb.X86.Fn.crypt`)
+meets its contract in constant time and returns without secret residue. -/
+theorem ofb_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed X86.target (Impl.AesOfb.X86.Fn.crypt v.enc)
+      (Spec.Ofb.aesContract X86.abi 24) 0 :=
+  verifiedScrubbedF (api := Spec.Ofb.aesApi) {
       suffix := v.suffix
       code := Impl.AesOfb.X86.crypt v.enc
       verified := Proof.AesOfb.keyed (crypt_verified v)
       spSafe := crypt_spSafe v }
     (ofbOut _) (W := 24) (hs := crypt_scrub v)
 
-/-- `vg_aes_ofb_final` over `v`, without secret residue. -/
-def ofbFinalReg (v : BlocksImpl) : Registration Spec.Ofb.aesFinalApi target :=
-  scrubFOf {
+/-- `vg_aes_ofb_final` over `v` as emitted (`Impl.AesOfb.X86.Fn.cryptFinal`)
+meets its contract in constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed X86.target (Impl.AesOfb.X86.Fn.cryptFinal v.enc v.suffix)
+      (Spec.Ofb.aesFinalContract X86.abi 100) 0 :=
+  verifiedScrubbedF (api := Spec.Ofb.aesFinalApi) {
       suffix := v.suffix
       code := withStackScratchWiped 48 6 4 (Impl.AesOfb.X86.cryptFinal v.enc v.suffix)
       verified := Proof.AesOfb.final_keyed (cryptFinal_framed v)
       spSafe := cryptFinal_framed_spSafe v }
     (ofbFinalOut _) (W := 100) (hs := final_scrub v)
+
+/-- `Impl.AesOfb.X86.Fn.crypt` writes `esp` only in its frames and calls. -/
+theorem ofb_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesOfb.X86.Fn.crypt v.enc).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (crypt_spSafe v)
+
+/-- `Impl.AesOfb.X86.Fn.cryptFinal` writes `esp` only in its frames and calls. -/
+theorem ofbFinal_fnSpSafe (v : BlocksImpl) :
+    (Impl.AesOfb.X86.Fn.cryptFinal v.enc v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (cryptFinal_framed_spSafe v)
 
 end VG.Proof.AesOfb.X86.Scrub

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices: 32-bit ARM implementation
@@ -62,3 +64,32 @@ def sealGather (name : String) (code : Prog isa) : Prog isa :=
     (.free 32)
 
 end VG.Impl.ChaCha20Poly1305.Arm.SealGather
+
+namespace VG.Impl.ChaCha20Poly1305.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_chacha20_poly1305_seal`, with either arithmetic of Poly1305: `seal`,
+its working space in a frame of 656 bytes whose first 158 words it zeroes,
+then the 664 bytes of stack its contract reserves zeroed and the registers a
+callee may change set to constants. -/
+def «seal» (umaal : Bool) : Prog isa :=
+  scrubF 0 664 (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Arm.seal umaal))
+
+/-- `vg_chacha20_poly1305_open`, as `seal`, but its result. -/
+def «open» (umaal : Bool) : Prog isa :=
+  scrubF 32 664 (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Arm.open umaal))
+
+/-- `vg_chacha20_poly1305_open_to`, as `open`, in a frame of 664 bytes and
+with 672 bytes of stack zeroed. -/
+def openTo (umaal : Bool) : Prog isa :=
+  scrubF 32 672 (Impl.StackScratch.Arm.withStackScratchWiped 664 5 158 (Arm.openTo umaal))
+
+/-- `vg_chacha20_poly1305_seal_gather`, calling `seal` with the same
+arithmetic (as emitted, `«seal» umaal`), then the 696 bytes of stack its
+contract reserves zeroed and the registers a callee may change set to
+constants. -/
+def sealGather (umaal : Bool) : Prog isa :=
+  scrubF 0 696 (SealGather.sealGather (SealGather.sealName umaal) («seal» umaal))
+
+end VG.Impl.ChaCha20Poly1305.Arm.Fn

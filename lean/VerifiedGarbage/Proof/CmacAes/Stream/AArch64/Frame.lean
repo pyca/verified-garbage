@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Finish
@@ -37,6 +37,7 @@ public import VerifiedGarbage.Proof.Cmac.Block
 meta import VerifiedGarbage.Proof.Cmac.Block
 public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
 meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! ### `CmacAes.Stream.AArch64.Verified`, which only this module used -/
 
@@ -1199,14 +1200,14 @@ theorem finish_keepsV (v : Ctr32Impl) : (finish v.callee v.suffix).allInstrs kee
 
 /-- The working space of `vg_cmac_aes_init` over `v`: the 512 bytes of the key
 expansion, or what `vg_cmac_aes_subkeys` needs (`128 + v.scratch`), if more. -/
-def initW (v : Ctr32Impl) : Nat := if v.scratch = 0 then 512 else 2176
+def initW (v : Ctr32Impl) : Nat := Impl.CmacAes.Stream.AArch64.Fn.initWork v.scratch
 
 /-- The working space of `vg_cmac_aes_finish` over `v`: what
 `vg_cmac_aes_finalize` needs. -/
-def finW (v : Ctr32Impl) : Nat := 128 + v.scratch
+def finW (v : Ctr32Impl) : Nat := Impl.CmacAes.Stream.AArch64.Fn.finishWork v.scratch
 
 theorem initW_ok (v : Ctr32Impl) : 128 + v.scratch ≤ initW v ∧ 512 ≤ initW v := by
-  rcases v.scratch_ok with h | h <;> simp only [initW, h] <;> decide
+  rcases v.scratch_ok with h | h <;> simp only [initW, Impl.CmacAes.Stream.AArch64.Fn.initWork, h] <;> decide
 
 theorem init_correct (v : Ctr32Impl) (s : State) (hs : (initAArch64With (initW v)).pre s) :
     ∃ t s', Exec isa (init v.expand v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧
@@ -1252,7 +1253,7 @@ theorem init_verified (v : Ctr32Impl) :
       (initScratchContractW AArch64.abi ((32 + initW v) / 8)) := by
   obtain hc := init_correct v
   obtain ht := init_ct v (initW_ok v).1 (initW_ok v).2
-  rcases v.scratch_ok with h | h <;> simp only [initW, h, Nat.reduceAdd, Nat.reduceDiv, ite_true,
+  rcases v.scratch_ok with h | h <;> simp only [initW, Impl.CmacAes.Stream.AArch64.Fn.initWork, h, Nat.reduceAdd, Nat.reduceDiv, ite_true,
     show (2048 : Nat) ≠ 0 by decide, ite_false] at hc ht ⊢
   · exact Verified.of_correct hc ht (by
       sig_implies [initScratchContractW, initScratchSigW, Spec.Cmac.aesInitPre, Spec.Cmac.aesInitPost,
@@ -1331,7 +1332,7 @@ theorem finish_verified (v : Ctr32Impl) :
       (finishScratchContractW AArch64.abi ((16 + finW v) / 8)) := by
   obtain hc := finish_correct v
   obtain ht := finish_ct v (W := finW v) (Nat.le_refl _)
-  rcases v.scratch_ok with h | h <;> simp only [finW, h, Nat.reduceAdd, Nat.reduceDiv] at hc ht ⊢
+  rcases v.scratch_ok with h | h <;> simp only [finW, Impl.CmacAes.Stream.AArch64.Fn.finishWork, h, Nat.reduceAdd, Nat.reduceDiv] at hc ht ⊢
   · exact Verified.of_correct hc ht (by
       sig_implies [finishScratchContractW, finishScratchSigW, Spec.Cmac.aesFinishPre, Spec.Cmac.aesFinishPost,
         finishAArch64With, AArch64.abi, AArch64.argRegs] [finishSatW, finishSat] using finishSatW 144)
@@ -1409,7 +1410,7 @@ theorem init_framed (v : Ctr32Impl) :
       (Impl.StackScratch.AArch64.withStackScratch (32 + initW v) .x3 (init v.expand v.callee v.suffix))
       (Spec.Cmac.aesInitContract AArch64.abi (32 + initW v)) := by
   obtain hv := init_verified v
-  rcases v.scratch_ok with h | h <;> simp only [initW, h, Nat.reduceAdd, Nat.reduceDiv, ite_true,
+  rcases v.scratch_ok with h | h <;> simp only [initW, Impl.CmacAes.Stream.AArch64.Fn.initWork, h, Nat.reduceAdd, Nat.reduceDiv, ite_true,
     show (2048 : Nat) ≠ 0 by decide, ite_false] at hv ⊢
   · exact AArch64.Verified.stackScratch (sig := Spec.Cmac.aesInitSig) (nm := "scratch") (e := .u64)
       (n := 68) (pre := Spec.Cmac.aesInitPre AArch64.abi.ptrBits)
@@ -1449,7 +1450,7 @@ theorem finish_framed (v : Ctr32Impl) :
       (Impl.StackScratch.AArch64.withStackScratch (16 + finW v) .x4 (finish v.callee v.suffix))
       (Spec.Cmac.aesFinishContract AArch64.abi (16 + finW v)) := by
   obtain hv := finish_verified v
-  rcases v.scratch_ok with h | h <;> simp only [finW, h, Nat.reduceAdd, Nat.reduceDiv] at hv ⊢
+  rcases v.scratch_ok with h | h <;> simp only [finW, Impl.CmacAes.Stream.AArch64.Fn.finishWork, h, Nat.reduceAdd, Nat.reduceDiv] at hv ⊢
   · exact AArch64.Verified.stackScratch (sig := Spec.Cmac.aesFinishSig) (nm := "scratch") (e := .u64)
       (n := 18) (pre := Spec.Cmac.aesFinishPre AArch64.abi.ptrBits)
       (post := Spec.Cmac.aesFinishPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
@@ -1496,19 +1497,6 @@ theorem absorbOk_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
       (Spec.Cmac.aesAbsorbSig.retBits abi.ptrBits) :=
   absorbOk _ (by omega_using [])
 
-/-- `vg_cmac_aes_absorb` in its frame (`absorb_framed`), scrubbed whole
-(`ScrubAll.withScrubAll`): 64 bytes with a chaining implementation that needs
-no working space, and 2240 with one that does, whose working space holds its
-secrets (the cost of zeroing them is accepted). -/
-def absorbReg (v : Proof.CmacAes.AArch64.UpdateImpl) : Registration Spec.Cmac.aesAbsorbApi AArch64.target :=
-  let r : Unscrubbed Spec.Cmac.aesAbsorbApi AArch64.target :=
-    { suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch (64 + v.scratch) .x5 (absorb v.callee)
-      verified := absorb_framed v
-      consts := []
-      stack := 64 + v.scratch }
-  ScrubAll.withScrubAll r (absorbOk_framed v)
-
 /-- `vg_cmac_aes_init`'s postcondition reads the memory on return only within
 the state (`initPostOut_local`), so it returns with every register it may
 leave secret cleared and its whole frame zeroed (`ScrubAll.withScrubAll`). -/
@@ -1524,26 +1512,141 @@ theorem finishOk (W : Nat) (hW : 0 < W) :
   ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesFinishSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     (Proof.CmacAes.Stream.finishPostOut_local _)
 
-/-- `vg_cmac_aes_init` over `v` in its frame (`init_framed`), scrubbed whole
-(`ScrubAll.withScrubAll`): 544 bytes over an implementation that needs no
-working space, else 2208. -/
-def initReg (v : Ctr32Impl) : Registration Spec.Cmac.aesInitApi AArch64.target :=
-  ScrubAll.withScrubAll
-    { suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch (32 + initW v) .x3 (init v.expand v.callee v.suffix)
+/-! ## The functions, as emitted
+
+`vg_cmac_aes_init`, `vg_cmac_aes_absorb` and `vg_cmac_aes_finish` with their
+cleanup (`Impl.CmacAes.Stream.AArch64.Fn`): each meets its contract in
+constant time and returns without secret residue (`VerifiedScrubbed`), which
+is what its registration binds. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+once, with code that does nothing in the place of the functions it calls,
+and of each implementation where it is defined (`UpdateImpl.scrub`,
+`Ctr32Impl.scrub`, `Ctr32Impl.expandScrub`). -/
+
+open VG.AArch64.ScrubAll
+
+private theorem init_all {p : Instr → Bool} (B : Nat) (e : Impl.Aes.AArch64.ExpandKey)
+    (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x3 (init ⟨"", .block [], ⟨[], [], []⟩⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) = true)
+    (he : sideAll p e.code = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x3 (init e c sfx)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, init, Impl.CmacAes.AArch64.subkeys, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, he, hc, and_self]
+
+private theorem absorb_all {p : Instr → Bool} (B : Nat) (u : Impl.CmacAes.AArch64.Update)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x5 (absorb ⟨"", .block [], ⟨[], [], []⟩, 0⟩)) = true) (hu : sideAll p u.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x5 (absorb u)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, absorb, sideAll, Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hu, and_self]
+
+private theorem finish_all {p : Instr → Bool} (B : Nat) (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x4 (finish ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x4 (finish c sfx)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, finish, Impl.CmacAes.AArch64.finalize, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+private theorem init_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratch B .x3 (init ⟨"", .block [], ⟨[], [], []⟩⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) Impl.CmacAes.Stream.AArch64.Fn.initOwn = true := by
+  kernel_rfl
+
+private theorem absorb_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratch B .x5 (absorb ⟨"", .block [], ⟨[], [], []⟩, 0⟩)) Impl.CmacAes.Stream.AArch64.Fn.absorbOwn = true := by
+  kernel_rfl
+
+private theorem finish_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratch B .x4 (finish ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) Impl.CmacAes.Stream.AArch64.Fn.finishOwn = true := by
+  kernel_rfl
+
+private theorem init_depth (e : Impl.Aes.AArch64.ExpandKey) (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (he : e.code.aarch64Depth = 0) (hc : c.code.aarch64Depth = 0) : (init e c sfx).aarch64Depth = 0 := by
+  simp only [init, Impl.CmacAes.AArch64.subkeys, Code.aarch64Depth, he, hc]
+  decide
+
+private theorem absorb_depth (u : Impl.CmacAes.AArch64.Update) (hu : u.code.aarch64Depth = 0) :
+    (absorb u).aarch64Depth = 0 := by
+  simp only [absorb, Code.aarch64Depth, hu]
+  decide
+
+private theorem finish_depth (c : Impl.Aes.AArch64.Ctr32) (sfx : String) (hc : c.code.aarch64Depth = 0) :
+    (finish c sfx).aarch64Depth = 0 := by
+  simp only [finish, Impl.CmacAes.AArch64.finalize, Code.aarch64Depth, hc]
+  decide
+
+theorem init_side (v : Ctr32Impl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (32 + initW v) .x3 (init v.expand v.callee v.suffix)) (32 + initW v) 0
+      ((Impl.CmacAes.Stream.AArch64.Fn.initOwn.union v.expand.clear).union v.callee.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (init_all _ v.expand v.callee v.suffix (sideAll_union_left (sideAll_union_left (init_own _)))
+      (sideAll_union_left (sideAll_union_right v.expandScrub)) (sideAll_union_right v.scrub))
+    (linkRegs_union (by decide))
+  · rcases v.scratch_ok with h | h <;> simp only [initW, Impl.CmacAes.Stream.AArch64.Fn.initWork, h] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackScratch, Code.aarch64Depth, Instr.frameUnits,
+      init_depth _ _ _ (Proof.Aes.AArch64.depth_of_noFrames v.expandNoFrames)
+        (Proof.Aes.AArch64.depth_of_noFrames v.noFrames)]
+    rcases v.scratch_ok with h | h <;> simp only [initW, Impl.CmacAes.Stream.AArch64.Fn.initWork, h] <;> decide
+
+theorem absorb_side (v : Proof.CmacAes.AArch64.UpdateImpl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (64 + v.scratch) .x5 (absorb v.callee)) (64 + v.scratch) 0
+      (Impl.CmacAes.Stream.AArch64.Fn.absorbOwn.union v.callee.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (absorb_all _ v.callee (sideAll_union_left (absorb_own _)) (sideAll_union_right v.scrub)) (by decide)
+  · rcases v.scratch_ok with h | h <;> rw [h] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackScratch, Code.aarch64Depth, Instr.frameUnits,
+      absorb_depth _ (Proof.Aes.AArch64.depth_of_noFrames v.noFrames)]
+    rcases v.scratch_ok with h | h <;> rw [h] <;> decide
+
+theorem finish_side (v : Ctr32Impl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (16 + finW v) .x4 (finish v.callee v.suffix)) (16 + finW v) 0
+      (Impl.CmacAes.Stream.AArch64.Fn.finishOwn.union v.callee.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (finish_all _ v.callee v.suffix (sideAll_union_left (finish_own _)) (sideAll_union_right v.scrub))
+    (by decide)
+  · rcases v.scratch_ok with h | h <;> simp only [finW, Impl.CmacAes.Stream.AArch64.Fn.finishWork, h] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackScratch, Code.aarch64Depth, Instr.frameUnits,
+      finish_depth _ _ (Proof.Aes.AArch64.depth_of_noFrames v.noFrames)]
+    rcases v.scratch_ok with h | h <;> simp only [finW, Impl.CmacAes.Stream.AArch64.Fn.finishWork, h] <;> decide
+
+/-- `vg_cmac_aes_init` over `v` as emitted, cleanup included: its frame is 544
+bytes over an implementation that needs no working space, else 2208. -/
+theorem init_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed AArch64.target
+      (Impl.CmacAes.Stream.AArch64.Fn.init v.expand v.callee v.suffix)
+      (Spec.Cmac.aesInitContract abi (32 + initW v)) 0 := by
+  unfold Impl.CmacAes.Stream.AArch64.Fn.init
+  rw [v.scratch_eq]
+  exact verifiedScrubbed (api := Spec.Cmac.aesInitApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch (32 + initW v) .x3 (init v.expand v.callee v.suffix)
       verified := init_framed v
       consts := []
-      stack := 32 + initW v } (initOk _ (by omega_using []))
+      stack := 32 + initW v } _ (initOk _ (by omega_using [])) (init_side v)
 
-/-- `vg_cmac_aes_finish` over `v` in its frame (`finish_framed`), scrubbed
-whole (`ScrubAll.withScrubAll`): 144 bytes over an implementation that needs
-no working space, else 2192. -/
-def finishReg (v : Ctr32Impl) : Registration Spec.Cmac.aesFinishApi AArch64.target :=
-  ScrubAll.withScrubAll
-    { suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch (16 + finW v) .x4 (finish v.callee v.suffix)
+/-- `vg_cmac_aes_absorb` over `v` as emitted, cleanup included: its frame is
+64 bytes with a chaining implementation that needs no working space, and 2240
+with one that does, whose working space holds its secrets. -/
+theorem absorb_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
+    VerifiedScrubbed AArch64.target (Impl.CmacAes.Stream.AArch64.Fn.absorb v.callee)
+      (Spec.Cmac.aesAbsorbContract abi (64 + v.scratch)) 0 := by
+  unfold Impl.CmacAes.Stream.AArch64.Fn.absorb
+  rw [v.scratch_eq]
+  exact verifiedScrubbed (api := Spec.Cmac.aesAbsorbApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch (64 + v.scratch) .x5 (absorb v.callee)
+      verified := absorb_framed v
+      consts := []
+      stack := 64 + v.scratch } _ (absorbOk_framed v) (absorb_side v)
+
+/-- `vg_cmac_aes_finish` over `v` as emitted, cleanup included: its frame is
+144 bytes over an implementation that needs no working space, else 2192. -/
+theorem finish_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed AArch64.target (Impl.CmacAes.Stream.AArch64.Fn.finish v.callee v.suffix)
+      (Spec.Cmac.aesFinishContract abi (16 + finW v)) 0 := by
+  unfold Impl.CmacAes.Stream.AArch64.Fn.finish
+  rw [v.scratch_eq]
+  exact verifiedScrubbed (api := Spec.Cmac.aesFinishApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch (16 + finW v) .x4 (finish v.callee v.suffix)
       verified := finish_framed v
       consts := []
-      stack := 16 + finW v } (finishOk _ (by omega_using []))
+      stack := 16 + finW v } _ (finishOk _ (by omega_using [])) (finish_side v)
 
 end VG.Proof.CmacAes.Stream.AArch64

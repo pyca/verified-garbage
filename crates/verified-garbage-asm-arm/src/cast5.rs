@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Cast5.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key bytes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1199,6 +1201,12 @@ ldr r9, [r12, #84]
 ldr r10, [r12, #88]
 ldr r11, [r12, #92]
 ldr lr, [r12, #96]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         VG_CAST5_S5678 = sym super::consts::VG_CAST5_S5678,
     )
@@ -1207,6 +1215,8 @@ bx lr",
 /// CAST-128 (CAST5) ECB encryption (RFC 2144 §2, SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`: 12 for a key of up to 10 bytes, 16 for a longer one (§2.5). Only the least significant 5 bits of each rotate subkey are used. No padding is added. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Cast5.ecbEncryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1663,6 +1673,12 @@ ldr r9, [r12, #84]
 ldr r10, [r12, #88]
 ldr r11, [r12, #92]
 ldr lr, [r12, #96]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
@@ -1671,6 +1687,8 @@ bx lr",
 /// CAST-128 (CAST5) ECB decryption (RFC 2144 §2, SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`: 12 for a key of up to 10 bytes, 16 for a longer one (§2.5). Only the least significant 5 bits of each rotate subkey are used. No padding is removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Cast5.ecbDecryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2131,7 +2149,21 @@ ldr r9, [r12, #84]
 ldr r10, [r12, #88]
 ldr r11, [r12, #92]
 ldr lr, [r12, #96]
+mov r0, #0
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_cast5_ecb_decrypt_entry.rs"]
+pub(crate) mod vg_cast5_ecb_decrypt_entry;
+
+#[rustfmt::skip]
+#[path = "internal/vg_cast5_ecb_encrypt_entry.rs"]
+pub(crate) mod vg_cast5_ecb_encrypt_entry;

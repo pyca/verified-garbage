@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Impl.Rc4.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rc4.Arm.Frame
 import VerifiedGarbage.Proof.Rc4.Scratch
 import VerifiedGarbage.Proof.Rc4.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Impl.Rc4.Arm.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Rc4.Arm.Frame
 meta import VerifiedGarbage.Proof.Rc4.Scratch
@@ -20,10 +22,12 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 space in a frame (`withRegScratchWiped`) and make no call. Their
 postconditions read the memory on return only within their buffers
 (`Arm.Scrub.PostOut`, from the lemmas of `Proof/Rc4/Scratch.lean` that the
-other targets use too). Each is registered followed by a wipe of the stack
+other targets use too). Each is emitted followed by a wipe of the stack
 its contract reserves and by instructions that set the registers a callee
 may change, but the result, and the flags to constants
-(`Arm.Scrub.scrubRegF`).
+(`Impl.Rc4.Arm.Fn`), and `Fn` below states
+that each returns without secret residue (`Arm.Scrub.verifiedScrubbedF`),
+which is what its registration binds.
 -/
 
 @[expose] public section
@@ -43,29 +47,31 @@ theorem applyOut : PostOut (Spec.Rc4.applyContract Arm.abi 64) (Spec.Rc4.applySi
 /-! ## The code: its frames, and no indirect call -/
 
 theorem init_code :
-    armStack (Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.init) ≤ 64 ∧
-      noIcall (Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.init) = true := by
+    CodeOk (Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.init) 64 := by
   lit_decide
 
 theorem apply_code :
-    armStack (Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.apply) ≤ 64 ∧
-      noIcall (Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.apply) = true := by
+    CodeOk (Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.apply) 64 := by
   lit_decide
 
-/-! ## The registrations -/
+end VG.Proof.Rc4.Arm.Scrub
+
+namespace VG.Proof.Rc4.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack
 
 /-- `vg_rc4_init`. -/
-def initReg : Registration Spec.Rc4.initApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.init
+theorem init : VerifiedScrubbed target Impl.Rc4.Arm.Fn.init (Spec.Rc4.initContract Arm.abi 64) 32 :=
+  verifiedScrubbedF (api := Spec.Rc4.initApi)
+    { code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.init
       verified := Proof.Rc4.Arm.init_framed }
-    init_code.1 init_code.2 (by decide) initOut rfl
+    Scrub.initOut (scrubSideF_of Scrub.init_code (by decide) _)
 
 /-- `vg_rc4_apply`. -/
-def applyReg : Registration Spec.Rc4.applyApi Arm.target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.apply
+theorem apply : VerifiedScrubbed target Impl.Rc4.Arm.Fn.apply (Spec.Rc4.applyContract Arm.abi 64) 0 :=
+  verifiedScrubbedF (api := Spec.Rc4.applyApi)
+    { code := Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 16 Impl.Rc4.Arm.apply
       verified := Proof.Rc4.Arm.apply_framed }
-    apply_code.1 apply_code.2 (by decide) applyOut rfl
+    Scrub.applyOut (scrubSideF_of Scrub.apply_code (by decide) _)
 
-end VG.Proof.Rc4.Arm.Scrub
+end VG.Proof.Rc4.Arm.Fn

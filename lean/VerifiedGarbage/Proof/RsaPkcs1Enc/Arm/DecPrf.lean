@@ -101,13 +101,13 @@ theorem initS : FrameStack.armStack decFns.initC ≤ 0 :=
 theorem updS : FrameStack.armStack decFns.updC ≤ 624 := by
   have := armStack_zero Proof.Pbkdf2.Stream.Arm.sha256OK.updNF
   simp only [decFns, Impl.StackScratch.Arm.withStackScratch, FrameStack.armStack] at this ⊢
-  simp only [Proof.Pbkdf2.Stream.Arm.sha256H] at this
+  simp only [Proof.Pbkdf2.Stream.Arm.sha256H, Impl.Sha256.Arm.Stream.streamFns] at this
   omega_using [this]
 
 theorem finS : FrameStack.armStack decFns.finC ≤ 624 := by
   have := armStack_zero Proof.Pbkdf2.Stream.Arm.sha256OK.finNF
   simp only [decFns, Impl.StackScratch.Arm.withStackScratch, FrameStack.armStack] at this ⊢
-  simp only [Proof.Pbkdf2.Stream.Arm.sha256H] at this
+  simp only [Proof.Pbkdf2.Stream.Arm.sha256H, Impl.Sha256.Arm.Stream.streamFns] at this
   omega_using [this]
 
 theorem hiS : FrameStack.armStack decFns.hiC ≤ 1656 := by decide +kernel

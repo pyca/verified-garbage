@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-!
 # Poly1305: 32-bit ARM implementation
@@ -470,3 +471,19 @@ def finalize (umaal : Bool) : Prog isa :=
       restoreScr)))))
 
 end VG.Impl.Poly1305.Arm
+
+namespace VG.Impl.Poly1305.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_poly1305_update`, with either arithmetic: `update umaal`, its working
+space in a frame of 144 bytes, which is then zeroed, and the registers a
+callee may change set to constants. -/
+def update (umaal : Bool) : Prog isa :=
+  scrubF 0 144 (Impl.StackScratch.Arm.withStackScratch 144 2 (Arm.update umaal))
+
+/-- `vg_poly1305_finalize`, as `update`. -/
+def finalize (umaal : Bool) : Prog isa :=
+  scrubF 0 144 (Impl.StackScratch.Arm.withStackScratch 144 1 (Arm.finalize umaal))
+
+end VG.Impl.Poly1305.Arm.Fn

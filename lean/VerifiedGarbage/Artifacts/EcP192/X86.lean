@@ -71,8 +71,14 @@ namespace VG.Artifacts.EcP192.X86
 open VG.Proof.P192.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P192.inst.compressPublicKeyApi.artifact X86.target Proof.EcKey.X86.P192.Scrub.compressReg,
-  Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact X86.target (Proof.EcKey.X86.P192.Scrub.decompressReg hasLaw.law),
-  Spec.EcKey.P192.publicKeyApi.artifact X86.target (Proof.EcKey.X86.P192.Scrub.publicKeyReg hasLaw.law)]
+  Spec.EcKey.P192.inst.compressPublicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.compressP192
+    verified := .scrubbed Proof.EcKey.X86.P192.Scrub.compress_scrubbed },
+  Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.decompressP192
+    verified := .scrubbed (Proof.EcKey.X86.P192.Scrub.decompress_scrubbed hasLaw.law) },
+  Spec.EcKey.P192.publicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.publicKeyP192
+    verified := .scrubbed (Proof.EcKey.X86.P192.Scrub.publicKey_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcP192.X86

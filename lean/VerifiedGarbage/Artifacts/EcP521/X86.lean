@@ -58,8 +58,14 @@ namespace VG.Artifacts.EcP521.X86
 open VG.Proof.P521.X86 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86.target Proof.EcKey.X86.P521.Scrub.compressReg,
-  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86.target (Proof.EcKey.X86.P521.Scrub.decompressReg hasLaw.law),
-  Spec.EcKey.P521.publicKeyApi.artifact X86.target (Proof.EcKey.X86.P521.Scrub.publicKeyReg hasLaw.law)]
+  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.compressP521
+    verified := .scrubbed Proof.EcKey.X86.P521.Scrub.compress_scrubbed },
+  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.decompressP521
+    verified := .scrubbed (Proof.EcKey.X86.P521.Scrub.decompress_scrubbed hasLaw.law) },
+  Spec.EcKey.P521.publicKeyApi.artifact X86.target {
+    code := Impl.EcKey.X86.Fn.publicKeyP521
+    verified := .scrubbed (Proof.EcKey.X86.P521.Scrub.publicKey_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcP521.X86

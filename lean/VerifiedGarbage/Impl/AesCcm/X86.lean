@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.X86
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # AES-CCM: x86 (32-bit) implementation
@@ -288,3 +290,25 @@ def «open» : Prog isa :=
     (.block restore))))))))))
 
 end VG.Impl.AesCcm.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.AesCcm.X86.Fn
+
+open VG.X86
+open Impl.StackScratch.X86 (withStackScratch)
+
+/-- `vg_aes_ccm_seal` over the counter-mode function `c`, of the variant `sfx`, as emitted. -/
+def «seal» (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 2668 (withStackScratch 2608 10 (Impl.AesCcm.X86.«seal» c sfx))
+
+/-- `vg_aes_ccm_open` over the counter-mode function `c`, of the variant `sfx`, as emitted. -/
+def «open» (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubF 32 2668 (withStackScratch 2608 10 (Impl.AesCcm.X86.«open» c sfx))
+
+end VG.Impl.AesCcm.X86.Fn

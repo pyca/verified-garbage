@@ -11,9 +11,17 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.CamelliaCfb.Arm
 
 def artifacts : List Artifact := [
-  Spec.Camellia.cfbEncryptApi.artifact Arm.target Proof.Camellia.Arm.Scrub.cfbEncryptReg,
-  Spec.Camellia.cfbDecryptApi.artifact Arm.target Proof.Camellia.Arm.Scrub.cfbDecryptReg,
-  Spec.Camellia.cfbEncryptFinalApi.artifact Arm.target Proof.Camellia.Arm.Scrub.cfbEncryptFinalReg,
-  Spec.Camellia.cfbDecryptFinalApi.artifact Arm.target Proof.Camellia.Arm.Scrub.cfbDecryptFinalReg]
+  Spec.Camellia.cfbEncryptApi.artifact Arm.target {
+    code := Impl.Camellia.Arm.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Camellia.Arm.Fn.cfbEncrypt },
+  Spec.Camellia.cfbDecryptApi.artifact Arm.target {
+    code := Impl.Camellia.Arm.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Camellia.Arm.Fn.cfbDecrypt },
+  Spec.Camellia.cfbEncryptFinalApi.artifact Arm.target {
+    code := Impl.Camellia.Arm.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Camellia.Arm.Fn.cfbEncryptFinal },
+  Spec.Camellia.cfbDecryptFinalApi.artifact Arm.target {
+    code := Impl.Camellia.Arm.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Camellia.Arm.Fn.cfbDecryptFinal }]
 
 end VG.Artifacts.CamelliaCfb.Arm

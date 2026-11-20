@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.X86
+public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # Streaming AES-CMAC: x86 (32-bit) implementation
@@ -176,3 +178,30 @@ def finish (ctr : Impl.Aes.X86.Ctr32) (suffix : String) : Prog isa :=
   .seq finPre (.seq (call6 ("vg_cmac_aes_finalize" ++ suffix) (Impl.CmacAes.X86.finalize ctr)) (.block (restore 5)))
 
 end VG.Impl.CmacAes.Stream.X86
+
+/-! ## The functions as emitted
+
+Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+bytes of stack below `esp` that it and its callees use zeroed, and the
+registers a callee may change cleared but the `rb` bits of the result, so
+that it returns without secret residue. -/
+
+namespace VG.Impl.CmacAes.Stream.X86.Fn
+
+open VG.X86
+open Impl.StackScratch.X86 (withStackScratch)
+
+/-- `vg_cmac_aes_init` over the key expansion `e` and counter-mode function
+`c`, of the variant `sfx`, as emitted. -/
+def init (e : Impl.Aes.X86.ExpandKey) (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 2376 (withStackScratch 2324 3 (Impl.CmacAes.Stream.X86.init e c sfx))
+
+/-- `vg_cmac_aes_absorb` over `c`, of the variant `sfx`, as emitted. -/
+def absorb (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 2396 (withStackScratch 2336 6 (Impl.CmacAes.Stream.X86.absorb c sfx))
+
+/-- `vg_cmac_aes_finish` over `c`, of the variant `sfx`, as emitted. -/
+def finish (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubF 0 2392 (withStackScratch 2332 5 (Impl.CmacAes.Stream.X86.finish c sfx))
+
+end VG.Impl.CmacAes.Stream.X86.Fn

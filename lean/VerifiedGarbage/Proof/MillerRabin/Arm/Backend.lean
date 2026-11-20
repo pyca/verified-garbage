@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Scrub
 
 import VerifiedGarbage.Proof.MillerRabin.Arm.Verified
 
@@ -8,7 +9,8 @@ import VerifiedGarbage.Proof.MillerRabin.Arm.Verified
 
 A `RoundImpl` is verified against the contract its callers use
 (`roundContract`, `Proof/MillerRabin/Arm/Contract.lean`), within the 56
-bytes of stack its callers leave it.
+bytes of stack its callers leave it, and makes no indirect call
+(`icallFree`), which the cleanup of its callers needs of it (`Arm.Scrub.CodeOk`).
 -/
 
 @[expose] public section
@@ -21,6 +23,7 @@ structure RoundImpl where
   code : Prog isa
   verified : Verified target code roundContract
   stack : FrameStack.armStack code ≤ 56
+  icallFree : noIcall code = true
   suffix : String
   features : List String
 

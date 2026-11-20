@@ -4,12 +4,13 @@ public import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Init
 public import VerifiedGarbage.Proof.AesSiv.AArch64.EncCT
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! ### `AesSiv.AArch64.Verified`, which only this module used -/
 
@@ -53,23 +54,23 @@ theorem decrypt_keepsV (v : Proof.CmacAes.AArch64.UpdateImpl) :
 
 /-- The working space of `vg_aes_siv_init` over `v`: the 512 bytes of the key
 expansion, or what `vg_cmac_aes_subkeys` needs (`128 + v.scratch`), if more. -/
-def sivInitW (v : Ctr32Impl) : Nat := if v.scratch = 0 then 512 else 2176
+def sivInitW (v : Ctr32Impl) : Nat := Impl.AesSiv.AArch64.Fn.initWork v.scratch
 
 theorem sivInitW_ok (v : Ctr32Impl) : 128 + v.scratch ≤ sivInitW v ∧ 512 ≤ sivInitW v := by
-  rcases v.scratch_ok with h | h <;> simp only [sivInitW, h] <;> decide
+  rcases v.scratch_ok with h | h <;> simp only [sivInitW, Impl.AesSiv.AArch64.Fn.initWork, h] <;> decide
 
 /-- The working space of the functions `encrypt` and `decrypt` over `v` call,
 from `csOff`: none of them needs any for an implementation that needs none,
 but `vg_cmac_aes_finalize`'s 128 bytes; else 2176. -/
 def sivNw (v : Proof.CmacAes.AArch64.UpdateImpl) : Nat :=
-  if v.scratch = 0 ∧ v.ctr.scratch = 0 then 128 else 2176
+  Impl.AesSiv.AArch64.Fn.cryptWork v.scratch v.ctr.scratch
 
 theorem sivNw_ok (v : Proof.CmacAes.AArch64.UpdateImpl) : NwOk v (sivNw v) := by
   rcases v.scratch_ok with h | h <;> rcases v.ctr.scratch_ok with h' | h' <;>
-    exact ⟨by simp only [sivNw, h, h']; decide, by simp only [sivNw, h, h']; decide⟩
+    exact ⟨by simp only [sivNw, Impl.AesSiv.AArch64.Fn.cryptWork, h, h']; decide, by simp only [sivNw, Impl.AesSiv.AArch64.Fn.cryptWork, h, h']; decide⟩
 
 theorem sivNw_cases (v : Proof.CmacAes.AArch64.UpdateImpl) : sivNw v = 128 ∨ sivNw v = 2176 := by
-  unfold sivNw; split <;> simp
+  unfold sivNw Impl.AesSiv.AArch64.Fn.cryptWork; split <;> simp
 
 theorem init_correct (v : Ctr32Impl) (s : State) (hs : (initAArch64 (sivInitW v)).pre s) :
     ∃ t s', Exec isa (init v.expand v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧
@@ -103,7 +104,7 @@ theorem init_verified (v : Ctr32Impl) :
       (initScratchContractW AArch64.abi ((48 + sivInitW v) / 8)) := by
   obtain hc := init_correct v
   obtain ht := init_ct v (sivInitW_ok v).1 (sivInitW_ok v).2
-  rcases v.scratch_ok with h | h <;> simp only [sivInitW, h, Nat.reduceAdd, Nat.reduceDiv, ite_true,
+  rcases v.scratch_ok with h | h <;> simp only [sivInitW, Impl.AesSiv.AArch64.Fn.initWork, h, Nat.reduceAdd, Nat.reduceDiv, ite_true,
     show (2048 : Nat) ≠ 0 by decide, ite_false] at hc ht ⊢
   · exact Verified.of_correct hc ht (by
       sig_implies [initScratchContractW, initScratchSigW, Spec.Siv.initPre, Spec.Siv.initPost, initAArch64,
@@ -511,7 +512,7 @@ last argument (in `x7`), in a frame of `272 + sivNw v` bytes that allocates
 it, the same way: the frame leaves the memory as it is, so the list of
 slices they take needs nothing more. Each returns with its whole frame
 zeroed and the registers it may leave secret cleared
-(`ScrubAll.withScrubAll`: `initReg`, `encryptReg`, `decryptReg`).
+(`Impl.AesSiv.AArch64.Fn`: `init_scrubbed`, `encrypt_scrubbed`, `decrypt_scrubbed`).
 -/
 
 @[expose] public section
@@ -538,7 +539,7 @@ theorem init_framed (v : Ctr32Impl) :
       (Impl.StackScratch.AArch64.withStackScratch (48 + sivInitW v) .x3 (init v.expand v.callee v.suffix))
       (Spec.Siv.initContract AArch64.abi (48 + sivInitW v)) := by
   obtain hv := init_verified v
-  rcases v.scratch_ok with h | h <;> simp only [sivInitW, h, Nat.reduceAdd, Nat.reduceDiv, ite_true,
+  rcases v.scratch_ok with h | h <;> simp only [sivInitW, Impl.AesSiv.AArch64.Fn.initWork, h, Nat.reduceAdd, Nat.reduceDiv, ite_true,
     show (2048 : Nat) ≠ 0 by decide, ite_false] at hv ⊢
   · exact AArch64.Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 70)
       (pre := Spec.Siv.initPre AArch64.abi.ptrBits) (post := Spec.Siv.initPost AArch64.abi.ptrBits)
@@ -680,36 +681,156 @@ theorem decryptOk (W : Nat) (hW : 0 < W) :
       rw [e]
       exact h key hk
 
-/-- `vg_aes_siv_init` over `v` in its frame (`init_framed`), scrubbed whole:
-560 bytes over an implementation that needs no working space, else 2224. -/
-def initReg (v : Ctr32Impl) : Registration Spec.Siv.initApi AArch64.target :=
-  ScrubAll.withScrubAll
-    { suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch (48 + sivInitW v) .x3 (init v.expand v.callee v.suffix)
+/-! ## The functions, as emitted
+
+`vg_aes_siv_init`, `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` with their
+cleanup (`Impl.AesSiv.AArch64.Fn`): each meets its contract in constant
+time and returns without secret residue (`VerifiedScrubbed`), which is what
+its registration binds. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+once, with code that does nothing in the place of the functions it calls,
+and of each implementation where it is defined (`UpdateImpl.scrub`,
+`Ctr32Impl.scrub`, `Ctr32Impl.expandScrub`). -/
+
+open VG.AArch64.ScrubAll
+
+private theorem init_all {p : Instr → Bool} (B : Nat) (e : Impl.Aes.AArch64.ExpandKey)
+    (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x3 (init ⟨"", .block [], ⟨[], [], []⟩⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) = true)
+    (he : sideAll p e.code = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x3 (init e c sfx)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, init, Impl.CmacAes.AArch64.subkeys, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, he, hc, and_self]
+
+private theorem init_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratch B .x3 (init ⟨"", .block [], ⟨[], [], []⟩⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) Impl.AesSiv.AArch64.Fn.initOwn = true := by
+  kernel_rfl
+
+private theorem init_depth (e : Impl.Aes.AArch64.ExpandKey) (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (he : e.code.aarch64Depth = 0) (hc : c.code.aarch64Depth = 0) : (init e c sfx).aarch64Depth = 0 := by
+  simp only [init, Impl.CmacAes.AArch64.subkeys, Code.aarch64Depth, he, hc]
+  decide
+
+theorem init_side (v : Ctr32Impl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (48 + sivInitW v) .x3 (init v.expand v.callee v.suffix)) (48 + sivInitW v) 0
+      ((Impl.AesSiv.AArch64.Fn.initOwn.union v.expand.clear).union v.callee.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (init_all _ v.expand v.callee v.suffix (sideAll_union_left (sideAll_union_left (init_own _)))
+      (sideAll_union_left (sideAll_union_right v.expandScrub)) (sideAll_union_right v.scrub))
+    (linkRegs_union (by decide))
+  · rcases v.scratch_ok with h | h <;> simp only [sivInitW, Impl.AesSiv.AArch64.Fn.initWork, h] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackScratch, Code.aarch64Depth, Instr.frameUnits,
+      init_depth _ _ _ (Proof.Aes.AArch64.depth_of_noFrames v.expandNoFrames)
+        (Proof.Aes.AArch64.depth_of_noFrames v.noFrames)]
+    rcases v.scratch_ok with h | h <;> simp only [sivInitW, Impl.AesSiv.AArch64.Fn.initWork, h] <;> decide
+
+/-- `vg_aes_siv_init` over `v` as emitted, cleanup included: its frame is 560
+bytes over an implementation that needs no working space, else 2224. -/
+theorem init_scrubbed (v : Ctr32Impl) :
+    VerifiedScrubbed AArch64.target
+      (Impl.AesSiv.AArch64.Fn.init v.expand v.callee v.suffix)
+      (Spec.Siv.initContract abi (48 + sivInitW v)) 0 := by
+  unfold Impl.AesSiv.AArch64.Fn.init
+  rw [v.scratch_eq]
+  exact verifiedScrubbed (api := Spec.Siv.initApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch (48 + sivInitW v) .x3 (init v.expand v.callee v.suffix)
       verified := init_framed v
       consts := []
-      stack := 48 + sivInitW v } (initOk _ (by omega_using []))
+      stack := 48 + sivInitW v } _ (initOk _ (by omega_using [])) (init_side v)
 
-/-- `vg_aes_siv_encrypt` over `v` in its frame (`encrypt_framed`), scrubbed
-whole: 400 bytes over implementations that need no working space, else
-2448. -/
-def encryptReg (v : Proof.CmacAes.AArch64.UpdateImpl) : Registration Spec.Siv.encryptApi AArch64.target :=
-  ScrubAll.withScrubAll
-    { suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7
-        (encrypt v.callee v.ctr.callee v.ctr.suffix)
+private theorem encrypt_all {p : Instr → Bool} (B : Nat) (u : Impl.CmacAes.AArch64.Update)
+    (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x7 (encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) = true)
+    (hu : sideAll p u.code = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x7 (encrypt u c sfx)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, encrypt, encS2v, s2vAds, cmacOf, Impl.AesSiv.AArch64.finish, shortMac, longMac, ctr, ctrWhole, ctrBody, callUpdate, callFinalize, Impl.CmacAes.AArch64.finalize, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hu, hc, and_self]
+
+private theorem encrypt_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratch B .x7 (encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) Impl.AesSiv.AArch64.Fn.cryptOwn = true := by
+  kernel_rfl
+
+private theorem encrypt_depth (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (hu : u.code.aarch64Depth = 0) (hc : c.code.aarch64Depth = 0) : (encrypt u c sfx).aarch64Depth = 0 := by
+  simp only [encrypt, encS2v, s2vAds, cmacOf, Impl.AesSiv.AArch64.finish, shortMac, longMac, ctr, ctrWhole, ctrBody, callUpdate, callFinalize, Impl.CmacAes.AArch64.finalize, Code.aarch64Depth, hu, hc]
+  decide
+
+theorem encrypt_side (v : Proof.CmacAes.AArch64.UpdateImpl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7 (encrypt v.callee v.ctr.callee v.ctr.suffix)) (272 + sivNw v) 0
+      ((Impl.AesSiv.AArch64.Fn.cryptOwn.union v.callee.clear).union v.ctr.callee.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (encrypt_all _ v.callee v.ctr.callee v.ctr.suffix (sideAll_union_left (sideAll_union_left (encrypt_own _)))
+      (sideAll_union_left (sideAll_union_right v.scrub)) (sideAll_union_right v.ctr.scrub))
+    (linkRegs_union (by decide))
+  · rcases v.scratch_ok with h | h <;> rcases v.ctr.scratch_ok with h' | h' <;>
+      simp only [sivNw, Impl.AesSiv.AArch64.Fn.cryptWork, h, h'] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackScratch, Code.aarch64Depth, Instr.frameUnits,
+      encrypt_depth _ _ _ (Proof.Aes.AArch64.depth_of_noFrames v.noFrames)
+        (Proof.Aes.AArch64.depth_of_noFrames v.ctr.noFrames)]
+    rcases v.scratch_ok with h | h <;> rcases v.ctr.scratch_ok with h' | h' <;>
+      simp only [sivNw, Impl.AesSiv.AArch64.Fn.cryptWork, h, h'] <;> decide
+
+/-- `vg_aes_siv_encrypt` over `v` as emitted, cleanup included: its frame is 400
+bytes over implementations that need no working space, else 2448. -/
+theorem encrypt_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
+    VerifiedScrubbed AArch64.target
+      (Impl.AesSiv.AArch64.Fn.encrypt v.callee v.ctr.callee v.ctr.suffix)
+      (Spec.Siv.encryptContract abi (272 + sivNw v)) 0 := by
+  unfold Impl.AesSiv.AArch64.Fn.encrypt
+  rw [v.scratch_eq, v.ctr.scratch_eq]
+  exact verifiedScrubbed (api := Spec.Siv.encryptApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7 (encrypt v.callee v.ctr.callee v.ctr.suffix)
       verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
       consts := []
-      stack := 272 + sivNw v } (encryptOk _ (by omega_using []))
+      stack := 272 + sivNw v } _ (encryptOk _ (by omega_using [])) (encrypt_side v)
 
-/-- `vg_aes_siv_decrypt` over `v`, as `encryptReg`. -/
-def decryptReg (v : Proof.CmacAes.AArch64.UpdateImpl) : Registration Spec.Siv.decryptApi AArch64.target :=
-  ScrubAll.withScrubAll
-    { suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7
-        (decrypt v.callee v.ctr.callee v.ctr.suffix)
+private theorem decrypt_all {p : Instr → Bool} (B : Nat) (u : Impl.CmacAes.AArch64.Update)
+    (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x7 (decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) = true)
+    (hu : sideAll p u.code = true) (hc : sideAll p c.code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x7 (decrypt u c sfx)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, decrypt, openTail, encS2v, s2vAds, cmacOf, Impl.AesSiv.AArch64.finish, shortMac, longMac, ctr, ctrWhole, ctrBody, callUpdate, callFinalize, Impl.CmacAes.AArch64.finalize, sideAll,
+    Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hu, hc, and_self]
+
+private theorem decrypt_own (B : Nat) :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratch B .x7 (decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) Impl.AesSiv.AArch64.Fn.cryptOwn = true := by
+  kernel_rfl
+
+private theorem decrypt_depth (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
+    (hu : u.code.aarch64Depth = 0) (hc : c.code.aarch64Depth = 0) : (decrypt u c sfx).aarch64Depth = 0 := by
+  simp only [decrypt, openTail, encS2v, s2vAds, cmacOf, Impl.AesSiv.AArch64.finish, shortMac, longMac, ctr, ctrWhole, ctrBody, callUpdate, callFinalize, Impl.CmacAes.AArch64.finalize, Code.aarch64Depth, hu, hc]
+  decide
+
+theorem decrypt_side (v : Proof.CmacAes.AArch64.UpdateImpl) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7 (decrypt v.callee v.ctr.callee v.ctr.suffix)) (272 + sivNw v) 32
+      ((Impl.AesSiv.AArch64.Fn.cryptOwn.union v.callee.clear).union v.ctr.callee.clear) [] = true := by
+  refine scrubSide_union ?_ ?_ (by decide)
+    (decrypt_all _ v.callee v.ctr.callee v.ctr.suffix (sideAll_union_left (sideAll_union_left (decrypt_own _)))
+      (sideAll_union_left (sideAll_union_right v.scrub)) (sideAll_union_right v.ctr.scrub))
+    (linkRegs_union (by decide))
+  · rcases v.scratch_ok with h | h <;> rcases v.ctr.scratch_ok with h' | h' <;>
+      simp only [sivNw, Impl.AesSiv.AArch64.Fn.cryptWork, h, h'] <;> decide
+  · simp only [Impl.StackScratch.AArch64.withStackScratch, Code.aarch64Depth, Instr.frameUnits,
+      decrypt_depth _ _ _ (Proof.Aes.AArch64.depth_of_noFrames v.noFrames)
+        (Proof.Aes.AArch64.depth_of_noFrames v.ctr.noFrames)]
+    rcases v.scratch_ok with h | h <;> rcases v.ctr.scratch_ok with h' | h' <;>
+      simp only [sivNw, Impl.AesSiv.AArch64.Fn.cryptWork, h, h'] <;> decide
+
+/-- `vg_aes_siv_decrypt` over `v` as emitted, cleanup included: its frame is 400
+bytes over implementations that need no working space, else 2448. -/
+theorem decrypt_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
+    VerifiedScrubbed AArch64.target
+      (Impl.AesSiv.AArch64.Fn.decrypt v.callee v.ctr.callee v.ctr.suffix)
+      (Spec.Siv.decryptContract abi (272 + sivNw v)) 32 := by
+  unfold Impl.AesSiv.AArch64.Fn.decrypt
+  rw [v.scratch_eq, v.ctr.scratch_eq]
+  exact verifiedScrubbed (api := Spec.Siv.decryptApi)
+    { code := Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7 (decrypt v.callee v.ctr.callee v.ctr.suffix)
       verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
       consts := []
-      stack := 272 + sivNw v } (decryptOk _ (by omega_using []))
+      stack := 272 + sivNw v } _ (decryptOk _ (by omega_using [])) (decrypt_side v)
 
 end VG.Proof.AesSiv.AArch64

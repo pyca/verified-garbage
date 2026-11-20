@@ -9,10 +9,11 @@ public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import Mathlib.Data.List.Dedup
 public import VerifiedGarbage.Proof.AesGcm.X86.Frame
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Scrub
+public import VerifiedGarbage.Impl.AesGcmSiv.X86
 
 /-! ### `AesGcmSiv.X86.Verified`, which only this module used -/
 
@@ -330,13 +331,15 @@ end VG.Proof.AesGcmSiv.X86
 by the zeroing of the 2888 bytes of stack below `esp` that they and their
 callees use (the 2856-byte frame of `withStackScratch`, which holds the
 derived keys and the callees' working space, and the 32 bytes of a call
-of `vg_aes_ctr32_to`) and by `tail` (`X86.Scrub.scrubFOf`). What the scrub
+of `vg_aes_ctr32_to`) and by `tail`, as emitted
+(`Impl.AesGcmSiv.X86.Fn`), return without secret residue
+(`X86.Scrub.verifiedScrubbedF`: `seal_scrubbed`, `open_scrubbed`). What the scrub
 needs of their code is `seal_scrub` and `open_scrub`
 (`Proof/AesGcmSiv/X86/Scrub.lean`), for every `v`; their postconditions
 read the memory on return only within the data and the tag (`sealOut`,
 `openOut`).
 
-The registrations take the equation of POLYVAL's input with GHASH's
+These theorems take the equation of POLYVAL's input with GHASH's
 (`TagInputEq`) as an argument, which the registration file gives: its
 proof imports the field algebra, which only leaves of the import graph may
 import (`ci/check_lean_speed.py`). They are in this module, which only the
@@ -389,25 +392,42 @@ theorem openOut (stack : Nat) :
     rw [bytesAt_of0 (n := (BitVec.setWidth 32 len).toNat) hb.2.2.2.1 (by simp [Nat.mod_le])]
     exact @h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_aes_gcm_siv_seal` over `v`. -/
-def sealReg (hti : TagInputEq) : Registration Spec.GcmSiv.sealApi X86.target :=
-  scrubFOf {
+/-- `vg_aes_gcm_siv_seal` over `v` as emitted (`Impl.AesGcmSiv.X86.Fn.«seal»`)
+meets its contract in constant time and returns without secret residue. -/
+theorem seal_scrubbed (hti : TagInputEq) :
+    VerifiedScrubbed X86.target (Impl.AesGcmSiv.X86.Fn.«seal» v.callees)
+      (Spec.GcmSiv.sealContract X86.abi 2888) 0 :=
+  verifiedScrubbedF (api := Spec.GcmSiv.sealApi) {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch 2856 8 («seal» v.callees)
       verified := Proof.AesGcmSiv.seal_keyed (seal_framed v hti)
       spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (seal_spSafe v) }
     (sealOut _) (W := 2888) (hs := seal_scrub v)
 
-/-- `vg_aes_gcm_siv_open` over `v`. (`@openOut`, as on x86-64: applied without `@`, the
-elaborator reduces its type to see what it is a function of.) -/
-def openReg (hti : TagInputEq) : Registration Spec.GcmSiv.openApi X86.target :=
-  scrubFOf {
+/-- `vg_aes_gcm_siv_open` over `v` as emitted (`Impl.AesGcmSiv.X86.Fn.«open»`)
+meets its contract in constant time and returns without secret residue.
+(`@openOut`, as on x86-64: applied without `@`, the elaborator reduces its
+type to see what it is a function of.) -/
+theorem open_scrubbed (hti : TagInputEq) :
+    VerifiedScrubbed X86.target (Impl.AesGcmSiv.X86.Fn.«open» v.callees)
+      (Spec.GcmSiv.openContract X86.abi 2888) 32 :=
+  verifiedScrubbedF (api := Spec.GcmSiv.openApi) {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch 2856 8 («open» v.callees)
       verified := Proof.AesGcmSiv.open_keyed (open_framed v hti)
       spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (open_spSafe v) }
     (@openOut _) (W := 2888) (hs := open_scrub v)
+
+/-- `Impl.AesGcmSiv.X86.Fn.«seal»` writes `esp` only in its frames and calls. -/
+theorem seal_fnSpSafe :
+    (Impl.AesGcmSiv.X86.Fn.«seal» v.callees).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.AesGcm.X86.withStackScratch_spSafe (seal_spSafe v))
+
+/-- `Impl.AesGcmSiv.X86.Fn.«open»` writes `esp` only in its frames and calls. -/
+theorem open_fnSpSafe :
+    (Impl.AesGcmSiv.X86.Fn.«open» v.callees).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubF_spSafe (Proof.AesGcm.X86.withStackScratch_spSafe (open_spSafe v))
 
 end VG.Proof.AesGcmSiv.X86.Scrub

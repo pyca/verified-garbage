@@ -46,6 +46,33 @@ vg_sm4_gcm_init:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #768
+	sub sp, sp, #2288
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #71
+20:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 20b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2288
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_gcm_seal:
@@ -619,6 +646,33 @@ vg_sm4_gcm_seal:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #800
+	sub sp, sp, #2320
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #72
+265:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 265b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2320
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_gcm_open:
@@ -1255,6 +1309,32 @@ vg_sm4_gcm_open:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #800
+	sub sp, sp, #2320
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #72
+271:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 271b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2320
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_gcm_stream_init:
@@ -1459,6 +1539,29 @@ vg_sm4_gcm_stream_init:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #784
+	sub sp, sp, #2304
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #72
+219:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 219b
+	add sp, sp, #2304
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_gcm_stream_aad:
@@ -1577,6 +1680,29 @@ vg_sm4_gcm_stream_aad:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #784
+	sub sp, sp, #2304
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #72
+214:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 214b
+	add sp, sp, #2304
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_gcm_stream_encrypt:
@@ -1830,6 +1956,33 @@ vg_sm4_gcm_stream_encrypt:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #800
+	sub sp, sp, #2320
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #72
+233:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 233b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2320
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_gcm_stream_decrypt:
@@ -2083,6 +2236,33 @@ vg_sm4_gcm_stream_decrypt:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #800
+	sub sp, sp, #2320
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #72
+233:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 233b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2320
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_gcm_stream_finish:
@@ -2213,6 +2393,33 @@ vg_sm4_gcm_stream_finish:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #800
+	sub sp, sp, #2320
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #72
+25:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 25b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2320
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_sm4_gcm_stream_verify:
@@ -2399,4 +2606,30 @@ vg_sm4_gcm_stream_verify:
 	ldr lr, [r11, #160]
 	ldr r11, [r11, #156]
 	add sp, sp, #800
+	sub sp, sp, #2320
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #72
+29:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 29b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #2320
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

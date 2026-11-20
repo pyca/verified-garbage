@@ -9,8 +9,9 @@ public import VerifiedGarbage.Impl.StackScratch.Arm
 /-!
 # The frames of the block cipher modes on ARMv7
 
-What `Arm.Scrub.scrubRegF` needs of a mode's code (`armStack c ≤ stack`,
-`noIcall c`), from its core's: the one-block-at-a-time modes
+What the cleanup of a mode's code needs of it (`armStack c ≤ stack`,
+`noIcall c`: `Arm.Scrub.CodeOk`, which `Arm.Scrub.scrubSideF_of` takes), from
+its core's: the one-block-at-a-time modes
 (`Core.seq`, `Core.seqFinal`) use the stack only in the call of their core,
 in a frame of 8 bytes if the core takes a working space, and the stack
 scratch wrappers (`withStackScratchWiped`, `withRegScratchWiped`) add their

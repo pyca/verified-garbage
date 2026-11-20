@@ -73,7 +73,7 @@ Each function is its code, then its cleanup
 convention does not preserve are cleared, and the stack it uses is zeroed,
 so that it returns without secret residue. The registers are those its own
 instructions write, stated here, and those the block function it calls
-writes (`cl`). -/
+states it writes (`b.clear`). -/
 
 namespace Fn
 
@@ -85,13 +85,13 @@ def own : Clear := ⟨[.x1, .x2, .x3, .x4, .x9, .x10, .x11, .x12, .x13, .x16, .x
 
 /-- `vg_aes_cfb8_encrypt`: `encrypt`, its registers cleared; it uses no
 stack. -/
-def encrypt (cl : Clear) (b : Blocks) : Prog isa :=
-  scrubAll 0 0 (own.union cl) (AesCfb8.AArch64.encrypt b)
+def encrypt (b : Blocks) : Prog isa :=
+  scrubAll 0 0 (own.union b.clear) (AesCfb8.AArch64.encrypt b)
 
 /-- `vg_aes_cfb8_decrypt`: `decrypt`, its registers cleared; it uses no
 stack. -/
-def decrypt (cl : Clear) (b : Blocks) : Prog isa :=
-  scrubAll 0 0 (own.union cl) (AesCfb8.AArch64.decrypt b)
+def decrypt (b : Blocks) : Prog isa :=
+  scrubAll 0 0 (own.union b.clear) (AesCfb8.AArch64.decrypt b)
 
 end Fn
 

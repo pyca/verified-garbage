@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
 
 /-!
 # Argon2 H′ on ARM64
@@ -27,6 +28,12 @@ structure Hash where
   update : Prog isa
   finalizeName : String
   finalize : Prog isa
+  /-- The registers the three functions write, of those the calling
+  convention does not preserve: what a function that calls them clears for
+  them before returning, with those its own instructions write. The proofs
+  hold it to their code (`Proof.Argon2.AArch64.HPrime.Backend.initScrub`,
+  `updateScrub`, `finalizeScrub`). -/
+  clear : Impl.Residue.AArch64.Clear
 
 
 def saved : List (Reg × Nat) :=

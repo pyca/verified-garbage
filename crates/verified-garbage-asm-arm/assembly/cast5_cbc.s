@@ -50,7 +50,7 @@ vg_cast5_cbc_encrypt_chained:
 	mov r3, #1
 	add r12, r8, #56
 	push {r12, lr}
-	bl {vg_cast5_ecb_encrypt}
+	bl {vg_cast5_ecb_encrypt_entry}
 	ldr r12, [sp], #8
 	ldr r9, [r8, #40]
 	str r9, [r6, #0]
@@ -156,6 +156,33 @@ vg_cast5_cbc_encrypt_chained:
 	str r2, [r12, #304]
 	str r2, [r12, #308]
 	add sp, sp, #328
+	sub sp, sp, #336
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #10
+23:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #336
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_cast5_cbc_decrypt_chained:
@@ -200,7 +227,7 @@ vg_cast5_cbc_decrypt_chained:
 	mov r3, #1
 	add r12, r8, #56
 	push {r12, lr}
-	bl {vg_cast5_ecb_decrypt}
+	bl {vg_cast5_ecb_decrypt_entry}
 	ldr r12, [sp], #8
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
@@ -314,4 +341,31 @@ vg_cast5_cbc_decrypt_chained:
 	str r2, [r12, #304]
 	str r2, [r12, #308]
 	add sp, sp, #328
+	sub sp, sp, #336
+	add r12, sp, #0
+	mov r2, #0
+	mov r3, #10
+23:
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 23b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #336
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

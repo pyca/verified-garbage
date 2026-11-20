@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # AES-CCM: AArch64 implementation
@@ -314,5 +316,40 @@ def «open» : Prog isa :=
   (.seq (.block [imm .x0 1, .sub .x .x0 .x0 .x10])
   (.seq mask
     (.block restore)))))))))
+
+/-! ## The functions, as emitted
+
+Each function is its code with its working space in a frame of
+`416 + u.scratch` bytes, what the functions it calls need, then its
+cleanup (`Impl.Residue.AArch64.scrubAll`): the registers it writes that the
+calling convention does not preserve are cleared, but the bits of its
+result, and that stack is zeroed, so that it returns without secret residue.
+The registers are those its own instructions write, stated here, and those
+the functions it calls state they write (`u.clear`, `c.clear`). -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (Clear scrubAll)
+
+/-- The registers `vg_aes_ccm_seal`'s own instructions write. -/
+def sealOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [], []⟩
+
+/-- `vg_aes_ccm_seal`, with the working space `u` needs in its frame. -/
+def «seal» (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32) : Prog isa :=
+  scrubAll (416 + u.scratch) 0 ((sealOwn.union u.clear).union c.clear)
+    (Impl.StackScratch.AArch64.withStackArgScratch (416 + u.scratch) 2 (AesCcm.AArch64.seal u c))
+
+/-- The registers `vg_aes_ccm_open`'s own instructions write. -/
+def openOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v16, .v17], []⟩
+
+/-- `vg_aes_ccm_open`, whose result is 32 bits, with the working space `u`
+needs in its frame. -/
+def «open» (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32) : Prog isa :=
+  scrubAll (416 + u.scratch) 32 ((openOwn.union u.clear).union c.clear)
+    (Impl.StackScratch.AArch64.withStackArgScratch (416 + u.scratch) 2 (AesCcm.AArch64.open u c))
+
+end Fn
 
 end VG.Impl.AesCcm.AArch64
