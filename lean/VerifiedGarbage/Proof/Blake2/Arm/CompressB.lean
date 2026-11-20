@@ -119,7 +119,7 @@ structure Pre (s₀ : State) : Prop where
   a_scr : (argR s₀).Disjoint (scrR (scp s₀))
   st_fits : (stp s₀).toNat + 64 ≤ 2 ^ 32
   blk_fits : (bp s₀).toNat + 128 * nb s₀ ≤ 2 ^ 32
-  scr_fits : (scp s₀).toNat + 512 ≤ 2 ^ 32
+  scr_fits : (scp s₀).toNat + 200 ≤ 2 ^ 32
   sp_fits : s₀.sp.toNat + 16 ≤ 2 ^ 32
 
 theorem pre_of (s₀ : State) (h : (compressArm Spec.Blake2.b).pre s₀) : Pre s₀ := by
@@ -161,19 +161,19 @@ theorem blk_rd {i : Nat} (hi : i < nb s₀) : Rd64 (s₀.rd ++ s₀.wr) (blkAddr
   exact fun o ho => ⟨hc o (by omega_arith), hc (o + 4) (by omega_arith)⟩
 
 /-- The address of a word of `scratch`. -/
-theorem scr_addr {d : Nat} (hd : d < 512) :
+theorem scr_addr {d : Nat} (hd : d < 200) :
     A (scp s₀) d = State.addr (scp s₀) + BitVec.ofNat 64 d := A_eq (by have := h.scr_fits; omega_arith)
 
-theorem in_scr {d : Nat} (hd : d + 4 ≤ 512) : InRegions (s₀.rd ++ s₀.wr) (A (scp s₀) d) 4 := by
+theorem in_scr {d : Nat} (hd : d + 4 ≤ 200) : InRegions (s₀.rd ++ s₀.wr) (A (scp s₀) d) 4 := by
   rw [h.scr_addr (by omega_arith)]
   exact ⟨scrR (scp s₀), by simp [h.wr], contains_offset hd (by omega_arith)⟩
 
-theorem out_scr {d : Nat} (hd : d + 4 ≤ 512) : InRegions s₀.wr (A (scp s₀) d) 4 := by
+theorem out_scr {d : Nat} (hd : d + 4 ≤ 200) : InRegions s₀.wr (A (scp s₀) d) 4 := by
   rw [h.scr_addr (by omega_arith)]
   exact ⟨scrR (scp s₀), by simp [h.wr], contains_offset hd (by omega_arith)⟩
 
 /-- A scratch word apart from the work vector, the state and the counter. -/
-theorem scr_frame {d : Nat} (hd : 128 ≤ d) (hd' : d + 4 ≤ 512) (hc : d + 4 ≤ ctrLo ∨ ctrLo + 12 ≤ d)
+theorem scr_frame {d : Nat} (hd : 128 ≤ d) (hd' : d + 4 ≤ 200) (hc : d + 4 ≤ ctrLo ∨ ctrLo + 12 ≤ d)
     {m m' : Mem}
     (hf : Frame [workR (scp s₀)] m m' ∨ Frame [stR (stp s₀)] m m' ∨ Frame [ctrR s₀] m m') :
     m'.readW (A (scp s₀) d) 32 = m.readW (A (scp s₀) d) 32 := by
@@ -246,7 +246,7 @@ theorem carry_top (N : Nat) :
     omega_arith
 
 set_option simprocs false in
-theorem advance_ok {s : State} {scr : BitVec 32} {N : Nat} (h3 : s.gpr .r3 = scr) (hw : Reg64 s.wr scr 512)
+theorem advance_ok {s : State} {scr : BitVec 32} {N : Nat} (h3 : s.gpr .r3 = scr) (hw : Reg64 s.wr scr 200)
     (hlo : rd64 s.mem scr ctrLo = BitVec.ofNat 64 N)
     (hhi : s.mem.readW (A scr ctrHi) 32 = BitVec.ofNat 32 (N / 2 ^ 64)) :
     WP isa (.block advance) s fun s' =>
@@ -297,22 +297,22 @@ def setupWrites (s₀ : State) : List (Nat × BitVec 32) :=
 def setupMem (s₀ : State) : Mem :=
   (setupWrites s₀).foldl (fun m p => m.writeW (SA s₀ p.1) p.2) s₀.mem
 
-theorem SA_eq {s₀ : State} (hp : Pre s₀) {d : Nat} (hd : d < 512) :
+theorem SA_eq {s₀ : State} (hp : Pre s₀) {d : Nat} (hd : d < 200) :
     SA s₀ d = State.addr (scp s₀) + BitVec.ofNat 64 d := hp.scr_addr hd
 
-theorem SA_sep {s₀ : State} (hp : Pre s₀) {d e : Nat} (hd : d + 4 ≤ 512) (he : e + 4 ≤ 512)
+theorem SA_sep {s₀ : State} (hp : Pre s₀) {d e : Nat} (hd : d + 4 ≤ 200) (he : e + 4 ≤ 200)
     (h : d + 4 ≤ e ∨ e + 4 ≤ d) : Mem.Sep (SA s₀ d) 4 (SA s₀ e) 4 := by
   rw [SA_eq hp (by omega_arith), SA_eq hp (by omega_arith)]
   exact Offset.sep _ h (by omega_arith) (by omega_arith)
 
 theorem readW_writeW_SA {s₀ : State} (hp : Pre s₀) (m : Mem) (v : BitVec 32) {d e : Nat}
-    (hd : d + 4 ≤ 512) (he : e + 4 ≤ 512) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
+    (hd : d + 4 ≤ 200) (he : e + 4 ≤ 200) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
     (m.writeW (SA s₀ e) v).readW (SA s₀ d) 32 = m.readW (SA s₀ d) 32 :=
   Mem.readW_writeW_sep (SA_sep hp hd he h) (by decide)
 
 /-- A stack argument is unchanged by a write to `scratch`. -/
 theorem readW_writeW_arg {s₀ : State} (hp : Pre s₀) (m : Mem) (v : BitVec 32) {i e : Nat} (hi : i < 4)
-    (he : e + 4 ≤ 512) :
+    (he : e + 4 ≤ 200) :
     (m.writeW (SA s₀ e) v).readW (State.addr (s₀.sp + BitVec.ofNat 32 (4 * i))) 32 =
       m.readW (State.addr (s₀.sp + BitVec.ofNat 32 (4 * i))) 32 := by
   have := hp.sp_fits
@@ -348,7 +348,7 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
       (State.addr (s₀.sp + BitVec.ofNat 32 8)) 32 = stackArg s₀ 2 := fun v v' => by
     rw [readW_writeW_arg hp _ v' (i := 2) (by decide) (by decide),
       readW_writeW_arg hp _ v (i := 2) (by decide) (by decide)]; rfl
-  obtain w : ∀ d, d + 4 ≤ 512 → InRegions s₀.wr (State.addr (stackArg s₀ 3 + BitVec.ofNat 32 d)) 4 :=
+  obtain w : ∀ d, d + 4 ≤ 200 → InRegions s₀.wr (State.addr (stackArg s₀ 3 + BitVec.ofNat 32 d)) 4 :=
     fun d hd => hp.out_scr hd
   obtain w168 := w 168 (by decide); have w172 := w 172 (by decide); have w128 := w 128 (by decide)
   obtain w132 := w 132 (by decide); have w136 := w 136 (by decide); have w140 := w 140 (by decide)
@@ -504,10 +504,10 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   refine WP.mono (fin_ok c₂ 8 (Nat.le_refl _)) fun s₃ h₃ => ?_
   obtain f₁₂ : Frame [workR (scp s₀)] s.mem s₂.mem := f₁.trans h₂.frame
   obtain hctr : ∀ {m m' : Mem}, Frame [workR (scp s₀)] m m' ∨ Frame [stR (stp s₀)] m m' ∨
-      Frame [ctrR s₀] m m' → ∀ d, 128 ≤ d → d + 4 ≤ 512 → (d + 4 ≤ ctrLo ∨ ctrLo + 12 ≤ d) →
+      Frame [ctrR s₀] m m' → ∀ d, 128 ≤ d → d + 4 ≤ 200 → (d + 4 ≤ ctrLo ∨ ctrLo + 12 ≤ d) →
       m'.readW (A (scp s₀) d) 32 = m.readW (A (scp s₀) d) 32 :=
     fun hf d h1 h2 h3 => hp.scr_frame h1 h2 h3 hf
-  obtain hctr3 : ∀ d, 128 ≤ d → d + 4 ≤ 512 →
+  obtain hctr3 : ∀ d, 128 ≤ d → d + 4 ≤ 200 →
       s₃.mem.readW (A (scp s₀) d) 32 = s.mem.readW (A (scp s₀) d) 32 := fun d h1 h2 => by
     obtain e₁ : s₂.mem.readW (A (scp s₀) d) 32 = s.mem.readW (A (scp s₀) d) 32 := by
       rw [hp.scr_addr (by omega_arith)]
@@ -546,7 +546,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     rw [m₄]
     exact ((fr₁.trans (h₂.frame.sub hsub)).trans (h₃.frame.mono (by simp))).trans
       ((ctrMem_frame hp _ N).sub hsubC)
-  obtain hc4 : ∀ d, 128 ≤ d → d + 4 ≤ 512 → (d + 4 ≤ ctrLo ∨ ctrLo + 12 ≤ d) →
+  obtain hc4 : ∀ d, 128 ≤ d → d + 4 ≤ 200 → (d + 4 ≤ ctrLo ∨ ctrLo + 12 ≤ d) →
       s₄.mem.readW (A (scp s₀) d) 32 = s.mem.readW (A (scp s₀) d) 32 := fun d h1 h2 h3 => by
     rw [m₄, hp.scr_frame h1 h2 h3 (.inr (.inr (ctrMem_frame hp _ N))), hctr3 d h1 h2]
   obtain hstate : Spec.Blake2.stateAt 64 s₄.mem (State.addr (stp s₀)) =
@@ -621,10 +621,10 @@ theorem flag_eq (l : BitVec 32) : (flag32 l ++ flag32 l : BitVec 64) = flagW 64 
     decide
 
 theorem setupMem_frame {s₀ : State} (hp : Pre s₀) : Frame [scrR (scp s₀)] s₀.mem (setupMem s₀) := by
-  obtain c : ∀ d : Nat, d + 4 ≤ 512 → (scrR (scp s₀)).Contains (SA s₀ d) (32 / 8) :=
+  obtain c : ∀ d : Nat, d + 4 ≤ 200 → (scrR (scp s₀)).Contains (SA s₀ d) (32 / 8) :=
     fun d hd => by rw [SA_eq hp (by omega_arith)]; exact contains_offset hd (by have := hp.scr_fits; omega_arith)
   obtain m := List.mem_singleton_self (scrR (scp s₀))
-  obtain key : ∀ (l : List (Nat × BitVec 32)), (∀ p ∈ l, p.1 + 4 ≤ 512) → ∀ m₀ : Mem,
+  obtain key : ∀ (l : List (Nat × BitVec 32)), (∀ p ∈ l, p.1 + 4 ≤ 200) → ∀ m₀ : Mem,
       Frame [scrR (scp s₀)] s₀.mem m₀ →
       Frame [scrR (scp s₀)] s₀.mem (l.foldl (fun m p => m.writeW (SA s₀ p.1) p.2) m₀) := by
     intro l
@@ -634,7 +634,7 @@ theorem setupMem_frame {s₀ : State} (hp : Pre s₀) : Frame [scrR (scp s₀)] 
       intro hl m₀ h
       exact ih (fun q hq => hl q (List.mem_cons_of_mem _ hq)) _
         (h.writeW m _ (c p.1 (hl p (List.mem_cons_self))))
-  obtain hl : ∀ p ∈ setupWrites s₀, p.1 + 4 ≤ 512 := by
+  obtain hl : ∀ p ∈ setupWrites s₀, p.1 + 4 ≤ 200 := by
     intro p hp
     simp only [setupWrites, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
@@ -677,7 +677,7 @@ set_option simprocs false in
 theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ (nb s₀) s) :
     WP isa (.block restore) s fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ (compressArm Spec.Blake2.b).post s₀ s' := by
-  obtain i : ∀ d, d + 4 ≤ 512 → InRegions (s.rd ++ s.wr) (State.addr (stackArg s₀ 3 + BitVec.ofNat 32 d)) 4 :=
+  obtain i : ∀ d, d + 4 ≤ 200 → InRegions (s.rd ++ s.wr) (State.addr (stackArg s₀ 3 + BitVec.ofNat 32 d)) 4 :=
     fun d hd => by rw [hc.rd, hc.wr]; exact hp.in_scr hd
   obtain i0 := i 128 (by decide); have i1 := i 132 (by decide); have i2 := i 136 (by decide)
   obtain i3 := i 140 (by decide); have i4 := i 144 (by decide); have i5 := i 148 (by decide)
@@ -783,7 +783,7 @@ def sat : State where
   v := false
   mem _ := 0
   rd := [⟨0x2000, 0⟩, ⟨0x4000, 16⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0, 512⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0, 200⟩]
 
 /-- The proof, against the ARMv7 contract the streaming functions use. -/
 theorem compress_verified' :

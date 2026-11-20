@@ -78,7 +78,7 @@ abbrev fl : Bool := stackArg s₀ 2 != 0
 abbrev blR : Region := ⟨State.addr (bp s₀), 64 * nb s₀⟩
 abbrev argR : Region := ⟨stackArgAddr s₀ 0, 16⟩
 abbrev stR : Region := ⟨State.addr (stp s₀), 32⟩
-abbrev scrR : Region := ⟨State.addr (scp s₀), 512⟩
+abbrev scrR : Region := ⟨State.addr (scp s₀), 200⟩
 abbrev H₀ : HashValue 32 := Spec.Blake2.stateAt 32 s₀.mem (State.addr (stp s₀))
 
 /-- Where block `i` starts. -/
@@ -96,7 +96,7 @@ structure Pre (s₀ : State) : Prop where
   a_scr : (argR s₀).Disjoint (scrR s₀)
   st_fits : (stp s₀).toNat + 32 ≤ 2 ^ 32
   blk_fits : (bp s₀).toNat + 64 * nb s₀ ≤ 2 ^ 32
-  scr_fits : (scp s₀).toNat + 512 ≤ 2 ^ 32
+  scr_fits : (scp s₀).toNat + 200 ≤ 2 ^ 32
   sp_fits : s₀.sp.toNat + 16 ≤ 2 ^ 32
 
 theorem pre_of (s₀ : State) (h : (compressArm Spec.Blake2.s).pre s₀) : Pre s₀ := by
@@ -132,14 +132,14 @@ theorem blk_rd {i : Nat} (hi : i < nb s₀) :
   exact contains_offset (by omega_arith) (by omega_arith)
 
 /-- The address of a word of `scratch`. -/
-theorem scr_addr {d : Nat} (hd : d < 512) :
+theorem scr_addr {d : Nat} (hd : d < 200) :
     A (scp s₀) d = State.addr (scp s₀) + BitVec.ofNat 64 d := A_eq (by have := h.scr_fits; omega_arith)
 
-theorem out_scr {d : Nat} (hd : d + 4 ≤ 512) : InRegions s₀.wr (A (scp s₀) d) 4 := by
+theorem out_scr {d : Nat} (hd : d + 4 ≤ 200) : InRegions s₀.wr (A (scp s₀) d) 4 := by
   rw [h.scr_addr (by omega_arith)]
   exact ⟨scrR s₀, by simp [h.wr], contains_offset hd (by omega_arith)⟩
 
-theorem in_scr {d : Nat} (hd : d + 4 ≤ 512) : InRegions (s₀.rd ++ s₀.wr) (A (scp s₀) d) 4 :=
+theorem in_scr {d : Nat} (hd : d + 4 ≤ 200) : InRegions (s₀.rd ++ s₀.wr) (A (scp s₀) d) 4 :=
   let ⟨r, hr, hc⟩ := h.out_scr hd; ⟨r, List.mem_append_right _ hr, hc⟩
 
 theorem out_st {d : Nat} (hd : d + 4 ≤ 32) : InRegions s₀.wr (A (stp s₀) d) 4 := by
@@ -150,7 +150,7 @@ theorem in_st {d : Nat} (hd : d + 4 ≤ 32) : InRegions (s₀.rd ++ s₀.wr) (A 
   let ⟨r, hr, hc⟩ := h.out_st hd; ⟨r, List.mem_append_right _ hr, hc⟩
 
 /-- A word of `scratch` outside the regions a frame allows to change. -/
-theorem scr_frame {d : Nat} (hd' : d + 4 ≤ 512) {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
+theorem scr_frame {d : Nat} (hd' : d + 4 ≤ 200) {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨State.addr (scp s₀) + BitVec.ofNat 64 d, 4⟩ r) :
     m'.readW (A (scp s₀) d) 32 = m.readW (A (scp s₀) d) 32 := by
   rw [h.scr_addr (by omega_arith)]
@@ -218,7 +218,7 @@ def setupMem (s₀ : State) : Mem :=
   (setupWrites s₀).foldl (fun m p => m.writeW (A (scp s₀) p.1) p.2) s₀.mem
 
 theorem readW_writeW_scr {s₀ : State} (hp : Pre s₀) (m : Mem) (v : BitVec 32) {d e : Nat}
-    (hd : d + 4 ≤ 512) (he : e + 4 ≤ 512) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
+    (hd : d + 4 ≤ 200) (he : e + 4 ≤ 200) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
     (m.writeW (A (scp s₀) e) v).readW (A (scp s₀) d) 32 = m.readW (A (scp s₀) d) 32 := by
   refine Mem.readW_writeW_sep ?_ (by decide)
   rw [hp.scr_addr (by omega_arith), hp.scr_addr (by omega_arith)]
@@ -226,7 +226,7 @@ theorem readW_writeW_scr {s₀ : State} (hp : Pre s₀) (m : Mem) (v : BitVec 32
 
 /-- A stack argument is unchanged by a write to `scratch`. -/
 theorem readW_writeW_arg {s₀ : State} (hp : Pre s₀) (m : Mem) (v : BitVec 32) {i e : Nat} (hi : i < 4)
-    (he : e + 4 ≤ 512) :
+    (he : e + 4 ≤ 200) :
     (m.writeW (A (scp s₀) e) v).readW (State.addr (s₀.sp + BitVec.ofNat 32 (4 * i))) 32 =
       m.readW (State.addr (s₀.sp + BitVec.ofNat 32 (4 * i))) 32 := by
   have := hp.sp_fits
@@ -261,7 +261,7 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
       (State.addr (s₀.sp + BitVec.ofNat 32 8)) 32 = stackArg s₀ 2 := fun v v' => by
     rw [readW_writeW_arg hp _ v' (i := 2) (by decide) (by decide),
       readW_writeW_arg hp _ v (i := 2) (by decide) (by decide)]; rfl
-  obtain w : ∀ d, d + 4 ≤ 512 → InRegions s₀.wr (State.addr (stackArg s₀ 3 + BitVec.ofNat 32 d)) 4 :=
+  obtain w : ∀ d, d + 4 ≤ 200 → InRegions s₀.wr (State.addr (stackArg s₀ 3 + BitVec.ofNat 32 d)) 4 :=
     fun d hd => hp.out_scr hd
   obtain w92 := w 92 (by decide); have w96 := w 96 (by decide); have w108 := w 108 (by decide)
   obtain w112 := w 112 (by decide); have w116 := w 116 (by decide); have w120 := w 120 (by decide)
@@ -301,13 +301,13 @@ theorem carry_hi (N : Nat) :
 set_option simprocs false in
 theorem advance_ok {s : State} {scr : BitVec 32} {N : Nat} {P8 P9 n : BitVec 32}
     (h12 : s.gpr .r12 = scr) (h8 : s.gpr .r8 = P8) (h9 : s.gpr .r9 = P9) (h10 : s.gpr .r10 = n)
-    (hw : ∀ d, d + 4 ≤ 512 → InRegions s.wr (A scr d) 4)
+    (hw : ∀ d, d + 4 ≤ 200 → InRegions s.wr (A scr d) 4)
     (hlo : s.mem.readW (A scr tOff) 32 = lo (BitVec.ofNat 64 N))
     (hhi : s.mem.readW (A scr (tOff + 4)) 32 = hi (BitVec.ofNat 64 N)) :
     WP isa (.block advance) s fun s' =>
       s'.z = (n - 1 == 0) ∧ s'.gpr .r12 = scr ∧ (∀ r, r ∉ [Reg.r0, .r1, .r10] → s'.gpr r = s.gpr r) ∧
       s'.mem = ctrMem s.mem scr N P8 P9 n ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  obtain ir : ∀ d, d + 4 ≤ 512 → InRegions (s.rd ++ s.wr) (A scr d) 4 := fun d hd =>
+  obtain ir : ∀ d, d + 4 ≤ 200 → InRegions (s.rd ++ s.wr) (A scr d) 4 := fun d hd =>
     let ⟨r, hr, hc⟩ := hw d hd; ⟨r, List.mem_append_right _ hr, hc⟩
   obtain o92 := hw 92 (by decide); have o96 := hw 96 (by decide); have o80 := hw 80 (by decide)
   obtain o84 := hw 84 (by decide); have o88 := hw 88 (by decide)
@@ -430,8 +430,8 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have hM : M = Spec.Blake2.blockAt 32 s₀.mem (State.addr (blkAddr s₀ i)) := rfl
   obtain hHk : ∀ k (hk : k < 8), s.mem.readW (A (stp s₀) (4 * k)) 32 = (H[k]'(by omega_arith)) := fun k hk => by
     rw [← stateAt_get fitS _ hk, hL.state]
-  obtain wV : ∀ o, o + 4 ≤ 512 → InRegions s.wr (A (scp s₀) o) 4 := by rw [hL.wr]; exact fun o ho => hp.out_scr ho
-  obtain dScr : ∀ d, d + 4 ≤ 512 → Region.Disjoint ⟨State.addr (scp s₀) + BitVec.ofNat 64 d, 4⟩ (stR s₀) :=
+  obtain wV : ∀ o, o + 4 ≤ 200 → InRegions s.wr (A (scp s₀) o) 4 := by rw [hL.wr]; exact fun o ho => hp.out_scr ho
+  obtain dScr : ∀ d, d + 4 ≤ 200 → Region.Disjoint ⟨State.addr (scp s₀) + BitVec.ofNat 64 d, 4⟩ (stR s₀) :=
     fun d hd => (hp.st_scr.sub_right (Offset.sub_base _ (by omega_arith))).symm
   -- Initialize the work vector.
   refine WP.seq (WP.mono (init_ok (V := scp s₀) (st := stp s₀) (B := blkAddr s₀ i) hL.r12 fitV fitS fitB wV
@@ -454,14 +454,14 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   let v := (List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s M) (initV H N (fl s₀))
   try rewrite [show (List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s M) (initV H N (fl s₀)) = v from rfl] at *
   have hv' : v = (List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s M) (initV H N (fl s₀)) := rfl
-  obtain hst₁ : ∀ d, (d = 80 ∨ 88 ≤ d) → d + 4 ≤ 512 →
+  obtain hst₁ : ∀ d, (d = 80 ∨ 88 ≤ d) → d + 4 ≤ 200 →
       s₁.mem.readW (A (scp s₀) d) 32 = s.mem.readW (A (scp s₀) d) 32 := fun d h1 h2 =>
     hp.scr_frame h2 h₁.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
       · exact Offset.disjoint _ (by simp only [blkOff]; omega_arith) (by omega_arith) (by simp only [blkOff]; omega_arith)
-  obtain hst₂ : ∀ d, 80 ≤ d → d + 4 ≤ 512 →
+  obtain hst₂ : ∀ d, 80 ≤ d → d + 4 ≤ 200 →
       s₂.mem.readW (A (scp s₀) d) 32 = s₁.mem.readW (A (scp s₀) d) 32 := fun d h1 h2 =>
     hp.scr_frame h2 h₂.frame fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -473,20 +473,20 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   refine WP.seq (WP.mono (fin_ok fc h₂.vars (by rw [h₂.r12, h₁.r12])
     (by rw [hst₂ stOff (by decide) (by decide), hst₁ stOff (.inl rfl) (by decide)]; exact hL.st))
     fun s₃ ⟨r12₃, r8₃, r9₃, r10₃, rd₃, wr₃, sp₃, f₃, w₃⟩ => ?_)
-  obtain hst₃ : ∀ d, d + 4 ≤ 512 → s₃.mem.readW (A (scp s₀) d) 32 = s₂.mem.readW (A (scp s₀) d) 32 :=
+  obtain hst₃ : ∀ d, d + 4 ≤ 200 → s₃.mem.readW (A (scp s₀) d) 32 = s₂.mem.readW (A (scp s₀) d) 32 :=
     fun d h2 => hp.scr_frame h2 f₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dScr d h2
-  obtain hs : ∀ d, (d = 80 ∨ 88 ≤ d) → d + 4 ≤ 512 →
+  obtain hs : ∀ d, (d = 80 ∨ 88 ≤ d) → d + 4 ≤ 200 →
       s₃.mem.readW (A (scp s₀) d) 32 = s.mem.readW (A (scp s₀) d) 32 := fun d h1 h2 => by
     rw [hst₃ d h2, hst₂ d (by omega_arith) h2, hst₁ d h1 h2]
   -- Advance the counter.
-  obtain wV₃ : ∀ d, d + 4 ≤ 512 → InRegions s₃.wr (A (scp s₀) d) 4 := by
+  obtain wV₃ : ∀ d, d + 4 ≤ 200 → InRegions s₃.wr (A (scp s₀) d) 4 := by
     rw [wr₃, h₂.wr, h₁.wr]; exact wV
   refine WP.mono (advance_ok (N := N) r12₃ r8₃ r9₃ r10₃ wV₃
     (by rw [hs tOff (by decide) (by decide)]; exact hL.tlo)
     (by rw [hs (tOff + 4) (by decide) (by decide)]; exact hL.thi))
     fun s₄ ⟨z₄, r12₄, g₄, m₄, rd₄, wr₄, sp₄⟩ => ?_
-  obtain hs₄ : ∀ d, d + 4 ≤ 512 → (d + 4 ≤ 80 ∨ 100 ≤ d) →
+  obtain hs₄ : ∀ d, d + 4 ≤ 200 → (d + 4 ≤ 80 ∨ 100 ≤ d) →
       s₄.mem.readW (A (scp s₀) d) 32 = s₃.mem.readW (A (scp s₀) d) 32 := fun d h2 h3 => by
     rw [m₄, ctrMem, readW_writeW_scr hp _ _ h2 (by decide) (by simp only [nOff]; omega_arith),
       readW_writeW_scr hp _ _ h2 (by decide) (by simp only [blkOff]; omega_arith),
@@ -494,7 +494,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
       readW_writeW_scr hp _ _ h2 (by decide) (by simp only [tOff]; omega_arith),
       readW_writeW_scr hp _ _ h2 (by decide) (by simp only [tOff]; omega_arith)]
   obtain hc : Frame [scrR s₀] s₃.mem s₄.mem := by
-    obtain c : ∀ d, d + 4 ≤ 512 → (scrR s₀).Contains (A (scp s₀) d) (32 / 8) := fun d hd => by
+    obtain c : ∀ d, d + 4 ≤ 200 → (scrR s₀).Contains (A (scp s₀) d) (32 / 8) := fun d hd => by
       rw [hp.scr_addr (by omega_arith)]; exact contains_offset hd (by omega_arith)
     obtain m := List.mem_singleton_self (scrR s₀)
     rw [m₄]
@@ -574,10 +574,10 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
 /-! ## The prologue's memory -/
 
 theorem setupMem_frame {s₀ : State} (hp : Pre s₀) : Frame [scrR s₀] s₀.mem (setupMem s₀) := by
-  obtain c : ∀ d : Nat, d + 4 ≤ 512 → (scrR s₀).Contains (A (scp s₀) d) (32 / 8) :=
+  obtain c : ∀ d : Nat, d + 4 ≤ 200 → (scrR s₀).Contains (A (scp s₀) d) (32 / 8) :=
     fun d hd => by rw [hp.scr_addr (by omega_arith)]; exact contains_offset hd (by have := hp.scr_fits; omega_arith)
   obtain m := List.mem_singleton_self (scrR s₀)
-  obtain key : ∀ (l : List (Nat × BitVec 32)), (∀ p ∈ l, p.1 + 4 ≤ 512) → ∀ m₀ : Mem,
+  obtain key : ∀ (l : List (Nat × BitVec 32)), (∀ p ∈ l, p.1 + 4 ≤ 200) → ∀ m₀ : Mem,
       Frame [scrR s₀] s₀.mem m₀ →
       Frame [scrR s₀] s₀.mem (l.foldl (fun m p => m.writeW (A (scp s₀) p.1) p.2) m₀) := by
     intro l
@@ -587,7 +587,7 @@ theorem setupMem_frame {s₀ : State} (hp : Pre s₀) : Frame [scrR s₀] s₀.m
       intro hl m₀ h
       exact ih (fun q hq => hl q (List.mem_cons_of_mem _ hq)) _
         (h.writeW m _ (c p.1 (hl p List.mem_cons_self)))
-  obtain hl : ∀ p ∈ setupWrites s₀, p.1 + 4 ≤ 512 := by
+  obtain hl : ∀ p ∈ setupWrites s₀, p.1 + 4 ≤ 200 := by
     intro p hp
     simp only [setupWrites, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
@@ -635,7 +635,7 @@ set_option simprocs false in
 theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : LInv s₀ (nb s₀) s) :
     WP isa (.block restore) s fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ (compressArm Spec.Blake2.s).post s₀ s' := by
-  obtain i : ∀ d, d + 4 ≤ 512 → InRegions (s.rd ++ s.wr) (State.addr (stackArg s₀ 3 + BitVec.ofNat 32 d)) 4 :=
+  obtain i : ∀ d, d + 4 ≤ 200 → InRegions (s.rd ++ s.wr) (State.addr (stackArg s₀ 3 + BitVec.ofNat 32 d)) 4 :=
     fun d hd => by rw [hc.rd, hc.wr]; exact hp.in_scr hd
   obtain i0 := i 108 (by decide); have i1 := i 112 (by decide); have i2 := i 116 (by decide)
   obtain i3 := i 120 (by decide); have i4 := i 124 (by decide); have i5 := i 128 (by decide)
@@ -686,7 +686,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 /-- The initial taint: `r0`–`r2` are public, and so are the 16 bytes of stack
 arguments. -/
 def τ₀ : VG.Arm.Taint.T :=
-  { regs := .ofList [.r0, .r1, .r2], flags := false, lens := [32, 512], argLen := 16, argBases := [(12, 1)] }
+  { regs := .ofList [.r0, .r1, .r2], flags := false, lens := [32, 200], argLen := 16, argBases := [(12, 1)] }
 
 theorem argByte_eq {s : State} (hsp : s.sp.toNat + 16 ≤ 2 ^ 32) {k : Nat} (hk : k < 16) :
     VG.Arm.Taint.argByte s k = stackArgAddr s (k / 4) + BitVec.ofNat 64 (k % 4) := by
@@ -746,7 +746,7 @@ def sat : State where
   v := false
   mem _ := 0
   rd := [⟨0x2000, 0⟩, ⟨0x4000, 16⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0, 512⟩]
+  wr := [⟨0x1000, 32⟩, ⟨0, 200⟩]
 
 /-- The proof, against the ARMv7 contract the streaming functions use. -/
 theorem compress_verified' :
