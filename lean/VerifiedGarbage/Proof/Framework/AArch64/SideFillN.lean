@@ -15,6 +15,10 @@ implementations: `side_depth_of_fillN` gives a property of every instruction
 (`sideAll p`, for any `p`: no write of PSTATE.DIT, or the registers a cleanup
 needs kept, `calleeSide`) and the depth of the stack, from those of the code
 with its holes and of the implementations.
+
+`calleeSide_low` gives what such a cleanup needs of an implementation, when
+the cleanup clears every register but the high halves of v8–v15, from the
+registers the implementation states it writes, whatever they are.
 -/
 
 @[expose] public section
@@ -126,6 +130,44 @@ theorem side_depth_of_fillN {p : Instr → Bool} {c e : Prog isa} {bs : List (Pr
     (hde : Code.aarch64DepthN ds e ≤ d) : sideAll p c = true ∧ c.aarch64Depth ≤ d := by
   subst hc
   exact ⟨sideAll_fillN hb he, Nat.le_trans (Code.aarch64Depth_fillN_le hd e) hde⟩
+
+open VG.Impl.Residue.AArch64 in
+/-- Code that writes only the registers `cl` states, and none of v8–v15
+(`keepsV`), keeps what a cleanup that clears every general-purpose and vector
+register the calling convention does not preserve, and no high half of
+v8–v15, needs kept: `calleeSide` with those registers, whatever `cl`. -/
+theorem calleeSide_low {c : Prog isa} {cl : Clear} (h : calleeSide c cl = true)
+    (hv : c.allInstrs keepsV = true) : calleeSide c ⟨allGprs, allVecs, []⟩ = true := by
+  have hi : ∀ i : Instr, sideI (RegSet.ofList (keptG cl)) (RegSet.ofList (keptV cl)) i = true →
+      keepsV i = true →
+      sideI (RegSet.ofList (keptG ⟨allGprs, allVecs, []⟩)) (RegSet.ofList (keptV ⟨allGprs, allVecs, []⟩)) i =
+        true := by
+    intro i h1 h2
+    simp only [sideI, Bool.and_eq_true] at h1 ⊢
+    refine ⟨⟨h1.1.1, ?_⟩, ?_⟩
+    · rw [keeps_ofList]; rfl
+    · unfold vkeeps
+      unfold keepsV at h2
+      cases hw : vdstOf i with
+      | none => rfl
+      | some w => rw [hw] at h2; cases w <;> first | rfl | cases h2
+  unfold calleeSide at h ⊢
+  induction c with
+  | block is =>
+    simp only [sideAll, Code.allInstrs_eq, List.all_eq_true] at h hv ⊢
+    exact fun i hm => hi i (h i hm) (hv i hm)
+  | seq a b iha ihb =>
+    simp only [sideAll, Code.allInstrs, Bool.and_eq_true] at h hv ⊢
+    exact ⟨iha h.1 hv.1, ihb h.2 hv.2⟩
+  | ite _ t e iht ihe =>
+    simp only [sideAll, Code.allInstrs, Bool.and_eq_true] at h hv ⊢
+    exact ⟨iht h.1 hv.1, ihe h.2 hv.2⟩
+  | loop b _ ih => simp only [sideAll, Code.allInstrs] at h hv ⊢; exact ih h hv
+  | call _ b ih => simp only [sideAll, Code.allInstrs] at h hv ⊢; exact ih h hv
+  | frame i b j ih =>
+    simp only [sideAll, Code.allInstrs, Bool.and_eq_true] at h hv ⊢
+    exact ⟨⟨hi i h.1.1 hv.1.1, ih h.1.2 hv.1.2⟩, hi j h.2 hv.2⟩
+  | icall => simp only [sideAll, Bool.false_eq_true] at h
 
 end AArch64.ScrubAll
 
