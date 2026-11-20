@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
@@ -15,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_rsa_pkcs1_verify_precomputed`, `vg_rsa_pkcs1_recover_precomputed` and
 `vg_rsa_pkcs1_sign_precomputed`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
 volatile registers each may write and zeroes the stack their frames used:
 signing keeps the CRT's halves and the encoded message in frames that it
 does not wipe itself. Their postconditions read the memory on return only
@@ -75,11 +76,15 @@ theorem signPrecomputedOut (stack : Nat) :
       generalize Spec.RsaPkcs1Sig.signId _ _ _ _ _ _ _ _ _ = o
       cases o <;> simp only [Spec.Rsa.writtenOutcome, e'] <;> exact id
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.RsaPkcs1Sig.verifyPrecomputedApi`. -/
-def verifyPrecomputedReg : Registration Spec.RsaPkcs1Sig.verifyPrecomputedApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_rsa_pkcs1_verify_precomputed` as emitted
+(`Impl.RsaPkcs1Sig.PPC64LE.Fn.verifyPrecomputed`) meets its contract in
+constant time and returns without secret residue. -/
+theorem verifyPrecomputed_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Sig.PPC64LE.Fn.verifyPrecomputed
+      (Spec.RsaPkcs1Sig.verifyPrecomputedContract PPC64LE.abi Impl.RsaPkcs1Sig.PPC64LE.frameBytes) 32 :=
+  verifiedScrubbed (api := Spec.RsaPkcs1Sig.verifyPrecomputedApi) {
       code := Impl.RsaPkcs1Sig.PPC64LE.Precomputed.code
       verified := Proof.RsaPkcs1Sig.PPC64LE.Ver.code_verified }
     2224 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -87,9 +92,13 @@ def verifyPrecomputedReg : Registration Spec.RsaPkcs1Sig.verifyPrecomputedApi PP
     (verifyPrecomputedOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.RsaPkcs1Sig.recoverPrecomputedApi`. -/
-def recoverPrecomputedReg : Registration Spec.RsaPkcs1Sig.recoverPrecomputedApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_rsa_pkcs1_recover_precomputed` as emitted
+(`Impl.RsaPkcs1Sig.PPC64LE.Fn.recoverPrecomputed`) meets its contract in
+constant time and returns without secret residue. -/
+theorem recoverPrecomputed_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Sig.PPC64LE.Fn.recoverPrecomputed
+      (Spec.RsaPkcs1Sig.recoverPrecomputedContract PPC64LE.abi Impl.RsaPkcs1Sig.PPC64LE.frameBytes) 32 :=
+  verifiedScrubbed (api := Spec.RsaPkcs1Sig.recoverPrecomputedApi) {
       code := Impl.RsaPkcs1Sig.PPC64LE.RecoverPrecomputed.code
       verified := Proof.RsaPkcs1Sig.PPC64LE.Rec.code_verified }
     2224 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -97,9 +106,13 @@ def recoverPrecomputedReg : Registration Spec.RsaPkcs1Sig.recoverPrecomputedApi 
     (recoverPrecomputedOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.RsaPkcs1Sig.signPrecomputedApi`. -/
-def signPrecomputedReg : Registration Spec.RsaPkcs1Sig.signPrecomputedApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_rsa_pkcs1_sign_precomputed` as emitted
+(`Impl.RsaPkcs1Sig.PPC64LE.Fn.signPrecomputed`) meets its contract in constant
+time and returns without secret residue. -/
+theorem signPrecomputed_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Sig.PPC64LE.Fn.signPrecomputed
+      (Spec.RsaPkcs1Sig.signPrecomputedContract PPC64LE.abi Proof.RsaPkcs1Sig.PPC64LE.Sign.stackBytes) 32 :=
+  verifiedScrubbed (api := Spec.RsaPkcs1Sig.signPrecomputedApi) {
       code := Impl.RsaPkcs1Sig.PPC64LE.Sign.codeP
       verified := Proof.RsaPkcs1Sig.PPC64LE.Sign.codeP_verified }
     4608 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,

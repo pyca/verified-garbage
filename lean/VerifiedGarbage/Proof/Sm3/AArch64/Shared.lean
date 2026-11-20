@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Sm3.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sm3.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Sm3.Scratch
@@ -173,5 +174,13 @@ theorem finalize_scrubbed (v : Compress) :
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize
       verified := finalize v } _ finalizeOk (finalize_side v)
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sm3.AArch64.Stream.init_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target Impl.Sm3.AArch64.Stream.init
+      (Spec.Sm3.initContract AArch64.abi) 0 :=
+  ⟨Proof.Sm3.AArch64.Shared.init,
+    Proof.Sm3.AArch64.Stream.init_noResidue _ _⟩
 
 end VG.Proof.Sm3.AArch64.Shared

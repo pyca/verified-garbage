@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Seed.AArch64.Fn
 public import VerifiedGarbage.Proof.Seed.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Seed.AArch64.FbFinalVerified
 public import VerifiedGarbage.Proof.Seed.AArch64.ModesResidue
@@ -16,20 +17,16 @@ namespace VG.Artifacts.SeedCfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.Seed.cfbEncryptApi.artifact AArch64.target {
-    code := Proof.Seed.AArch64.ModesResidue.cfbEncryptCode
-    verified := .scrubbed ⟨Proof.Seed.AArch64.ModesResidue.cfbEncryptCode_verified,
-      Proof.Seed.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
+    code := Impl.Seed.AArch64.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Seed.AArch64.ModesResidue.cfbEncryptCode_scrubbed },
   Spec.Seed.cfbDecryptApi.artifact AArch64.target {
-    code := Proof.Seed.AArch64.ModesResidue.cfbDecryptCode
-    verified := .scrubbed ⟨Proof.Seed.AArch64.ModesResidue.cfbDecryptCode_verified,
-      Proof.Seed.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
+    code := Impl.Seed.AArch64.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Seed.AArch64.ModesResidue.cfbDecryptCode_scrubbed },
   Spec.Seed.cfbEncryptFinalApi.artifact AArch64.target {
-    code := Proof.Seed.AArch64.ModesResidue.cfbEncryptFinalCode
-    verified := .scrubbed ⟨Proof.Seed.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
-      Proof.Seed.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
+    code := Impl.Seed.AArch64.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Seed.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed },
   Spec.Seed.cfbDecryptFinalApi.artifact AArch64.target {
-    code := Proof.Seed.AArch64.ModesResidue.cfbDecryptFinalCode
-    verified := .scrubbed ⟨Proof.Seed.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
-      Proof.Seed.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
+    code := Impl.Seed.AArch64.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Seed.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed }]
 
 end VG.Artifacts.SeedCfb.AArch64

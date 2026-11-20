@@ -20,8 +20,8 @@ the code's own. It is AES-CTR's final function's
 (`Impl/AesCtr/AArch64/Final.lean`) with SM4's arguments, around calls
 of `vg_sm4_ctr`, framed by its own working space on the stack, as an
 internal function of its own (`vg_sm4_ctr_core`, `vg_sm4_ctr_sm4_core`), which
-does not zero that space: the final function's registration zeroes the whole
-of its stack on return (`ScrubAll.withScrubAll`), as `vg_sm4_ctr`'s does:
+does not zero that space: the final function as emitted zeroes the whole of
+its stack on return (`Impl.Residue.AArch64.scrubAll`), as `vg_sm4_ctr` does:
 
 1. the registers saved in `save` (AES-CFB's final functions' slots,
    `finalSaved`), and the arguments kept in `x19` (schedule), `x21` (ctr),
@@ -35,7 +35,7 @@ of its stack on return (`ScrubAll.withScrubAll`), as `vg_sm4_ctr`'s does:
    bytes left, a byte at a time;
 4. the registers restored.
 
-The registration's frame zeroes `save`, the block included, on return.
+The function as emitted zeroes `save`, the block included, on return.
 
 Only the pointers and `len` can affect timing.
 -/
@@ -55,7 +55,7 @@ registration to zero. -/
 def ctrFramed : Prog isa := Impl.StackScratch.AArch64.withStackScratch 3264 .x4 ctr
 
 /-- `vg_sm4_ctr_sm4`, with its working space on the stack, which it leaves to
-its registration to zero. -/
+the function as emitted to zero. -/
 def ctrFramedSm4 : Prog isa := Impl.StackScratch.AArch64.withStackScratch 224 .x4 Sm4e.ctr
 
 /-- The registers saved in `save`, at `x4`. -/

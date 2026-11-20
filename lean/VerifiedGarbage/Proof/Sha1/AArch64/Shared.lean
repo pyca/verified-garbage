@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Sha1.Contract
 public import VerifiedGarbage.Proof.Sha1.AArch64.Compress
 import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Init
@@ -71,5 +72,13 @@ theorem finalize_of {code : Prog AArch64.isa}
     (finalizeScratch_of hv) (by decide) (by decide)
     (fun vs m m₁ m₂ r hl _ => Proof.Sha1.finalizePostOut_local _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sha1.AArch64.Stream.init_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target Impl.Sha1.AArch64.Stream.init
+      (Spec.Sha1.initContract AArch64.abi) 0 :=
+  ⟨Proof.Sha1.AArch64.Shared.init,
+    Proof.Sha1.AArch64.Stream.init_noResidue _ _⟩
 
 end VG.Proof.Sha1.AArch64.Shared

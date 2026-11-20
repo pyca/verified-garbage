@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.RISCV64.Fn
 public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
@@ -2122,11 +2123,14 @@ end VG.Proof.CmacTripleDes.Stream.RISCV64
 /-!
 # Streaming TDEA-CMAC on RISC-V, without secret residue
 
-`vg_cmac_triple_des_stream_init`, `_absorb` and `_finish`, each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which clears the
-caller-saved registers and the whole stack its frames used: their working
-space, and the frame of ECB's serial code below it, which holds a copy of
-the key schedule. Their postconditions read the memory on return only within
+`vg_cmac_triple_des_stream_init`, `_absorb` and `_finish` as emitted
+(`Impl.CmacTripleDes.Stream.RISCV64.Fn`), each followed by
+`Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers and
+the whole stack its frames used: their working space, and the frame of ECB's
+serial code below it, which holds a copy of the key schedule. Each theorem
+below states that one meets its contract in constant time and returns
+without secret residue (`VerifiedScrubbed`, by
+`RISCV64.Scrub.verifiedScrubbed`), which is what its registration binds. Their postconditions read the memory on return only within
 the state or the MAC (`RISCV64.Scrub.PostOut`).
 -/
 
@@ -2148,27 +2152,33 @@ theorem finishOut (stack : Nat) :
     PostOut (Spec.Cmac.tdesFinishContract RISCV64.abi stack) (Spec.Cmac.tdesFinishSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.CmacTripleDes.Stream.finishPostOut_local _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_cmac_triple_des_stream_init`. -/
-def initReg : Registration Spec.Cmac.tdesStreamInitApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 640 .a3 Impl.CmacTripleDes.Stream.RISCV64.streamInit
-      verified := Proof.CmacTripleDes.Stream.RISCV64.init_framed }
-    (initOut _)
+/-- `vg_cmac_triple_des_stream_init` as emitted (`Impl.CmacTripleDes.Stream.RISCV64.Fn.init`) meets its
+contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.CmacTripleDes.Stream.RISCV64.Fn.init
+      (Spec.Cmac.tdesStreamInitContract RISCV64.abi 1584) 0 :=
+  verifiedScrubbed (api := Spec.Cmac.tdesStreamInitApi) (W := 1584)
+    { code := _, verified := Proof.CmacTripleDes.Stream.RISCV64.init_framed } (initOut _)
+    (by dsimp only; lit_decide)
 
-/-- `vg_cmac_triple_des_absorb`. -/
-def absorbReg : Registration Spec.Cmac.tdesAbsorbApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 688 .a4 Impl.CmacTripleDes.Stream.RISCV64.absorb
-      verified := Proof.CmacTripleDes.Stream.RISCV64.absorb_framed }
-    (absorbOut _)
+/-- `vg_cmac_triple_des_absorb` as emitted (`Impl.CmacTripleDes.Stream.RISCV64.Fn.absorb`) meets its
+contract in constant time and returns without secret residue. -/
+theorem absorb_scrubbed :
+    VerifiedScrubbed target Impl.CmacTripleDes.Stream.RISCV64.Fn.absorb
+      (Spec.Cmac.tdesAbsorbContract RISCV64.abi 1632) 0 :=
+  verifiedScrubbed (api := Spec.Cmac.tdesAbsorbApi) (W := 1632)
+    { code := _, verified := Proof.CmacTripleDes.Stream.RISCV64.absorb_framed } (absorbOut _)
+    (by dsimp only; lit_decide)
 
-/-- `vg_cmac_triple_des_finish`. -/
-def finishReg : Registration Spec.Cmac.tdesFinishApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 640 .a3 Impl.CmacTripleDes.Stream.RISCV64.finish
-      verified := Proof.CmacTripleDes.Stream.RISCV64.finish_framed }
-    (finishOut _)
+/-- `vg_cmac_triple_des_finish` as emitted (`Impl.CmacTripleDes.Stream.RISCV64.Fn.finish`) meets its
+contract in constant time and returns without secret residue. -/
+theorem finish_scrubbed :
+    VerifiedScrubbed target Impl.CmacTripleDes.Stream.RISCV64.Fn.finish
+      (Spec.Cmac.tdesFinishContract RISCV64.abi 1584) 0 :=
+  verifiedScrubbed (api := Spec.Cmac.tdesFinishApi) (W := 1584)
+    { code := _, verified := Proof.CmacTripleDes.Stream.RISCV64.finish_framed } (finishOut _)
+    (by dsimp only; lit_decide)
 
 end VG.Proof.CmacTripleDes.Stream.RISCV64.Scrub

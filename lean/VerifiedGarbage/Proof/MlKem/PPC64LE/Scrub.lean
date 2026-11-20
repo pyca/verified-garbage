@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.MlKem.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.CallWipe
@@ -12,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 Key generation, encapsulation (with `H(ek)` given or not), decapsulation and
 the encapsulation key check, followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`PPC64LE.Scrub.scrubOf`), which clears the volatile registers and the
+(`PPC64LE.Scrub.verifiedScrubbed`), which clears the volatile registers and the
 stack their frames used. Their postconditions read the memory on return only
 within their buffers: the outputs, and `scratch`, which each leaves scrubbed
 (`Proof/MlKem/Scrubbed.lean`). The proofs are x86-64's
@@ -168,69 +169,116 @@ theorem checkEk1024Out (stack : Nat) :
     dsimp only [Curry.apply, ArgWord.ofRaw] at h ⊢
     exact h
 
-def keyGenReg : Registration Spec.MlKem.keyGenApi PPC64LE.target :=
-  scrubOf { code := Impl.MlKem.PPC64LE.Wipe.keyGen, verified := Proof.MlKem.PPC64LE.Wipe.keyGen_verified }
+/-- `Spec.MlKem.keyGenApi`'s function as emitted (`Impl.MlKem.PPC64LE.Fn.keyGen`)
+meets its contract in constant time and returns without secret residue. -/
+theorem keyGen_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.keyGen
+      (Spec.MlKem.keyGenContract PPC64LE.abi 96) 32 :=
+  verifiedScrubbed (api := Spec.MlKem.keyGenApi) { code := Impl.MlKem.PPC64LE.Wipe.keyGen, verified := Proof.MlKem.PPC64LE.Wipe.keyGen_verified }
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact keyGenOut _)
     (by dsimp only; lit_decide)
 
-def encapsReg : Registration Spec.MlKem.encapsApi PPC64LE.target :=
-  scrubOf { code := Impl.MlKem.PPC64LE.Wipe.encaps, verified := Proof.MlKem.PPC64LE.Wipe.encaps_verified }
+/-- `Spec.MlKem.encapsApi`'s function as emitted (`Impl.MlKem.PPC64LE.Fn.encaps`)
+meets its contract in constant time and returns without secret residue. -/
+theorem encaps_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.encaps
+      (Spec.MlKem.encapsContract PPC64LE.abi 96) 32 :=
+  verifiedScrubbed (api := Spec.MlKem.encapsApi) { code := Impl.MlKem.PPC64LE.Wipe.encaps, verified := Proof.MlKem.PPC64LE.Wipe.encaps_verified }
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact encapsOut _)
     (by dsimp only; lit_decide)
 
-def encapsHReg : Registration Spec.MlKem.encapsHApi PPC64LE.target :=
-  scrubOf { code := Impl.MlKem.PPC64LE.Wipe.encapsH, verified := Proof.MlKem.PPC64LE.Wipe.encapsH_verified }
+/-- `Spec.MlKem.encapsHApi`'s function as emitted
+(`Impl.MlKem.PPC64LE.Fn.encapsH`) meets its contract in constant time and
+returns without secret residue. -/
+theorem encapsH_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.encapsH
+      (Spec.MlKem.encapsHContract PPC64LE.abi 96) 32 :=
+  verifiedScrubbed (api := Spec.MlKem.encapsHApi) { code := Impl.MlKem.PPC64LE.Wipe.encapsH, verified := Proof.MlKem.PPC64LE.Wipe.encapsH_verified }
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact encapsHOut _)
     (by dsimp only; lit_decide)
 
-def decapsReg : Registration Spec.MlKem.decapsApi PPC64LE.target :=
-  scrubOf { code := Impl.MlKem.PPC64LE.Wipe.decaps, verified := Proof.MlKem.PPC64LE.Wipe.decaps_verified }
+/-- `Spec.MlKem.decapsApi`'s function as emitted (`Impl.MlKem.PPC64LE.Fn.decaps`)
+meets its contract in constant time and returns without secret residue. -/
+theorem decaps_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.decaps
+      (Spec.MlKem.decapsContract PPC64LE.abi 96) 32 :=
+  verifiedScrubbed (api := Spec.MlKem.decapsApi) { code := Impl.MlKem.PPC64LE.Wipe.decaps, verified := Proof.MlKem.PPC64LE.Wipe.decaps_verified }
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact decapsOut _)
     (by dsimp only; lit_decide)
 
-def checkEkReg : Registration Spec.MlKem.checkEkApi PPC64LE.target :=
-  scrubOf { code := Impl.MlKem.PPC64LE.checkEk, verified := Proof.MlKem.PPC64LE.CheckEk.verified }
+/-- `Spec.MlKem.checkEkApi`'s function as emitted
+(`Impl.MlKem.PPC64LE.Fn.checkEk`) meets its contract in constant time and
+returns without secret residue. -/
+theorem checkEk_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.checkEk
+      (Spec.MlKem.checkEkContract PPC64LE.abi) 32 :=
+  verifiedScrubbed (api := Spec.MlKem.checkEkApi) { code := Impl.MlKem.PPC64LE.checkEk, verified := Proof.MlKem.PPC64LE.CheckEk.verified }
     0 ⟨false, true, [.r4, .r5, .r6, .r7], false, []⟩
     (by exact checkEkOut _)
     (by dsimp only; lit_decide)
 
-def checkEk1024Reg : Registration Spec.MlKem1024.checkEkApi PPC64LE.target :=
-  scrubOf { code := Impl.MlKem1024.PPC64LE.checkEk1024, verified := Proof.MlKem1024.PPC64LE.CheckEk.verified }
+/-- `Spec.MlKem1024.checkEkApi`'s function as emitted
+(`Impl.MlKem.PPC64LE.Fn.checkEk1024`) meets its contract in constant time and
+returns without secret residue. -/
+theorem checkEk1024_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.checkEk1024
+      (Spec.MlKem1024.checkEkContract PPC64LE.abi) 32 :=
+  verifiedScrubbed (api := Spec.MlKem1024.checkEkApi) { code := Impl.MlKem1024.PPC64LE.checkEk1024, verified := Proof.MlKem1024.PPC64LE.CheckEk.verified }
     0 ⟨false, true, [.r4, .r5, .r6, .r7], false, []⟩
     (by exact checkEk1024Out _)
     (by dsimp only; lit_decide)
 
-def keyGen1024Reg : Registration Spec.MlKem1024.keyGenApi PPC64LE.target :=
-  scrubOf { code := Impl.MlKem.PPC64LE.Wipe.keyGen1024, verified := Proof.MlKem.PPC64LE.Wipe.keyGen1024_verified }
+/-- `Spec.MlKem1024.keyGenApi`'s function as emitted
+(`Impl.MlKem.PPC64LE.Fn.keyGen1024`) meets its contract in constant time and
+returns without secret residue. -/
+theorem keyGen1024_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.keyGen1024
+      (Spec.MlKem1024.keyGenContract PPC64LE.abi 96) 32 :=
+  verifiedScrubbed (api := Spec.MlKem1024.keyGenApi) { code := Impl.MlKem.PPC64LE.Wipe.keyGen1024, verified := Proof.MlKem.PPC64LE.Wipe.keyGen1024_verified }
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact keyGen1024Out _)
     (by dsimp only; lit_decide)
 
-def encaps1024Reg : Registration Spec.MlKem1024.encapsApi PPC64LE.target :=
-  scrubOf { code := Impl.MlKem.PPC64LE.Wipe.encaps1024, verified := Proof.MlKem.PPC64LE.Wipe.encaps1024_verified }
+/-- `Spec.MlKem1024.encapsApi`'s function as emitted
+(`Impl.MlKem.PPC64LE.Fn.encaps1024`) meets its contract in constant time and
+returns without secret residue. -/
+theorem encaps1024_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.encaps1024
+      (Spec.MlKem1024.encapsContract PPC64LE.abi 96) 32 :=
+  verifiedScrubbed (api := Spec.MlKem1024.encapsApi) { code := Impl.MlKem.PPC64LE.Wipe.encaps1024, verified := Proof.MlKem.PPC64LE.Wipe.encaps1024_verified }
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact encaps1024Out _)
     (by dsimp only; lit_decide)
 
-def encapsH1024Reg : Registration Spec.MlKem1024.encapsHApi PPC64LE.target :=
-  scrubOf { code := Impl.MlKem.PPC64LE.Wipe.encapsH1024, verified := Proof.MlKem.PPC64LE.Wipe.encapsH1024_verified }
+/-- `Spec.MlKem1024.encapsHApi`'s function as emitted
+(`Impl.MlKem.PPC64LE.Fn.encapsH1024`) meets its contract in constant time and
+returns without secret residue. -/
+theorem encapsH1024_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.encapsH1024
+      (Spec.MlKem1024.encapsHContract PPC64LE.abi 96) 32 :=
+  verifiedScrubbed (api := Spec.MlKem1024.encapsHApi) { code := Impl.MlKem.PPC64LE.Wipe.encapsH1024, verified := Proof.MlKem.PPC64LE.Wipe.encapsH1024_verified }
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact encapsH1024Out _)
     (by dsimp only; lit_decide)
 
-def decaps1024Reg : Registration Spec.MlKem1024.decapsApi PPC64LE.target :=
-  scrubOf { code := Impl.MlKem.PPC64LE.Wipe.decaps1024, verified := Proof.MlKem.PPC64LE.Wipe.decaps1024_verified }
+/-- `Spec.MlKem1024.decapsApi`'s function as emitted
+(`Impl.MlKem.PPC64LE.Fn.decaps1024`) meets its contract in constant time and
+returns without secret residue. -/
+theorem decaps1024_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlKem.PPC64LE.Fn.decaps1024
+      (Spec.MlKem1024.decapsContract PPC64LE.abi 96) 32 :=
+  verifiedScrubbed (api := Spec.MlKem1024.decapsApi) { code := Impl.MlKem.PPC64LE.Wipe.decaps1024, verified := Proof.MlKem.PPC64LE.Wipe.decaps1024_verified }
     96 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
     (by exact decaps1024Out _)

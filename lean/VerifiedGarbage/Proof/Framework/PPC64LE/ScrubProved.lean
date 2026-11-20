@@ -298,4 +298,40 @@ def scrubWipedOf {api : Api} (r : Unscrubbed api target) (bytes : Nat) (reg : Re
   vendor := r.vendor
   notWith := r.notWith }
 
+/-! ## The cleanup as part of the code
+
+The theorems a registration binds (`verified := .scrubbed …`): of the code
+as emitted, its body and then its cleanup (`scrub rb d cl c`), which `Impl/`
+defines as the function with the result's bits `rb`, the stack `d` and the
+registers `cl` as literals. Each takes what the cleanup needs of the code as
+one Boolean, which the proof module gives by `lit_decide`. `rb` is an
+argument, so that the hypotheses are stated with it and not with a
+projection of `r`; `hb` ties it to `r`'s result. -/
+
+/-- `r`'s code with its cleanup (`scrub rb d cl`) meets `r`'s contract in
+constant time and returns without secret residue: what `scrubOf` registers,
+as the theorem about the code that a registration binds. -/
+theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) (d : Nat) (cl : Clear) {rb : Nat}
+    (hpost : PostOut r.contract rb) (hs : scrubSide r.code d rb cl r.tables = true)
+    (hd : d ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl) :
+    VerifiedScrubbed target (scrub rb d cl r.code) r.contract rb := by
+  subst hb
+  have h := scrubOf_ok r hs hd hpost
+  exact ⟨h.1, h.2⟩
+
+/-- `verifiedScrubbed`, of code that wipes its own frame
+(`withStackScratchWiped bytes reg words body`, with no frame inside it): its
+cleanup clears the registers `cl` alone, `scrub rb 0 cl`, which wipes no
+stack. What `scrubWipedOf` registers, as the theorem about the code that a
+registration binds. -/
+theorem verifiedScrubbedWiped {api : Api} (r : Unscrubbed api target) (bytes : Nat) (reg : Reg)
+    (words : Nat) (body : Prog isa) (cl : Clear) {rb : Nat}
+    (hc : r.code = withStackScratchWiped bytes reg words body) (hpost : PostOut r.contract rb)
+    (hs : wipedSide r.code body bytes words rb cl = true)
+    (hst : bytes ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl) :
+    VerifiedScrubbed target (scrub rb 0 cl r.code) r.contract rb := by
+  subst hb
+  have h := scrubWipedOf_ok r hc hs hst hpost
+  exact ⟨h.1, h.2⟩
+
 end VG.PPC64LE.Scrub

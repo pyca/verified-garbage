@@ -55,6 +55,40 @@ theorem squareEightCall_noDit (o a b : Nat) :
     | (obtain ⟨rfl, rfl, rfl⟩ := hx; rw [h9]; rfl)
     | rfl
 
+/-- Nor does it write PSTATE.DIT or call anything indirectly, for any arrays
+(`squareEightCall_noDit`). -/
+theorem squareEightCall_side (o a b : Nat) :
+    AArch64.ScrubAll.sideAll (fun i => !i.writesDit) (VG.Impl.Bignum.AArch64.SquareEightCall.mm o a b) = true := by
+  have h1 : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) (VG.Impl.Bignum.AArch64.Square.cross) = true := by
+    lit_decide
+  have h2 : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) (VG.Impl.Bignum.AArch64.Square.diagonal) = true := by
+    lit_decide
+  have h3 : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) (VG.Impl.Bignum.AArch64.Square.redc) = true := by
+    lit_decide
+  have h4 : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) (VG.Impl.Bignum.AArch64.BlockedRedc.redc) = true := by
+    lit_decide
+  have h5 : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) (VG.Impl.Bignum.AArch64.subMod) = true := by
+    lit_decide
+  have h6 : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) (VG.Impl.Bignum.AArch64.selectAcc) = true := by
+    lit_decide
+  have h7 : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) (VG.Impl.Bignum.AArch64.zeroAcc) = true := by
+    lit_decide
+  have h8 : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) (VG.Impl.Bignum.AArch64.rounds) = true := by
+    lit_decide
+  have h9 : AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+      (VG.Impl.Bignum.AArch64.SquareEightDispatch.mm 6 6 6) = true := by
+    lit_decide
+  simp only [VG.Impl.Bignum.AArch64.SquareEightCall.mm, VG.Impl.Bignum.AArch64.SquareCall.mm,
+    VG.Impl.Bignum.AArch64.BlockedRedc.mm, VG.Impl.Bignum.AArch64.Square.montMul]
+  split_ifs with hx hy hz hw <;>
+  simp only [VG.Impl.Bignum.AArch64.SquareCall.call, VG.Impl.Bignum.AArch64.BlockedRedc.square,
+    VG.Impl.Bignum.AArch64.Square.square, VG.Impl.Bignum.AArch64.Square.rawSquare,
+    VG.Impl.Bignum.AArch64.Public.basicMm, VG.Impl.Bignum.AArch64.montMul, AArch64.ScrubAll.sideAll,
+    h1, h2, h3, h4, h5, h6, h7, h8, Bool.and_true] <;>
+  first
+    | (obtain ⟨rfl, rfl, rfl⟩ := hx; rw [h9]; rfl)
+    | rfl
+
 def variant : RoundImpl where
   mont := Mont.base
   roundMont := Mont.calledProductEight
@@ -62,6 +96,8 @@ def variant : RoundImpl where
   mmNoFrames := squareEightCall_noFrames
   noDit := by lit_decide
   mmNoDit := squareEightCall_noDit
+  side := by lit_decide
+  mmSide := squareEightCall_side
   suffix := ""
   features := []
 

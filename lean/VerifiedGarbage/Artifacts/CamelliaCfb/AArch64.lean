@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Camellia.AArch64.Fn
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Residue
@@ -16,20 +17,16 @@ namespace VG.Artifacts.CamelliaCfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.cfbEncryptCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cfbEncryptCode_verified,
-      Proof.Camellia.AArch64.Residue.cfbEncryptCode_noResidue⟩ },
+    code := Impl.Camellia.AArch64.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbEncryptCode_scrubbed },
   Spec.Camellia.cfbDecryptApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.cfbDecryptCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cfbDecryptCode_verified,
-      Proof.Camellia.AArch64.Residue.cfbDecryptCode_noResidue⟩ },
+    code := Impl.Camellia.AArch64.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbDecryptCode_scrubbed },
   Spec.Camellia.cfbEncryptFinalApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_verified,
-      Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_noResidue⟩ },
+    code := Impl.Camellia.AArch64.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_scrubbed },
   Spec.Camellia.cfbDecryptFinalApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_verified,
-      Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_noResidue⟩ }]
+    code := Impl.Camellia.AArch64.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_scrubbed }]
 
 end VG.Artifacts.CamelliaCfb.AArch64

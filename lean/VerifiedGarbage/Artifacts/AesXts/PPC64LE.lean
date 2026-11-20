@@ -11,7 +11,11 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.AesXts.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Xts.aesEncryptUnitApi.artifact PPC64LE.target Proof.AesXts.PPC64LE.Scrub.encryptUnitReg,
-  Spec.Xts.aesDecryptUnitApi.artifact PPC64LE.target Proof.AesXts.PPC64LE.Scrub.decryptUnitReg]
+  Spec.Xts.aesEncryptUnitApi.artifact PPC64LE.target {
+    code := Impl.AesXts.PPC64LE.Fn.encryptUnit
+    verified := .scrubbed Proof.AesXts.PPC64LE.Scrub.encryptUnit_scrubbed },
+  Spec.Xts.aesDecryptUnitApi.artifact PPC64LE.target {
+    code := Impl.AesXts.PPC64LE.Fn.decryptUnit
+    verified := .scrubbed Proof.AesXts.PPC64LE.Scrub.decryptUnit_scrubbed }]
 
 end VG.Artifacts.AesXts.PPC64LE

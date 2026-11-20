@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Dsa.AArch64.ParameterSearch
 public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
@@ -220,5 +221,13 @@ theorem init_verified : Verified target init (Spec.Dsa.parameterInitContract abi
 leaves is a function of its arguments (`Residue.noResidue_of_blind`). -/
 theorem init_noResidue (k : Contract isa) (r : Nat) : NoResidue init k r :=
   Residue.noResidue_of_blind (by decide) k r
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Dsa.AArch64.ParameterSearchInit.init_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Dsa.AArch64.ParameterSearch.init
+      (Spec.Dsa.parameterInitContract AArch64.abi) 32 :=
+  ⟨Proof.Dsa.AArch64.ParameterSearchInit.init_verified,
+    Proof.Dsa.AArch64.ParameterSearchInit.init_noResidue _ _⟩
 
 end VG.Proof.Dsa.AArch64.ParameterSearchInit

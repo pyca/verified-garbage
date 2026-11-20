@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.Blowfish.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Blowfish.AArch64.Fn
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
 public meta import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
 public import VerifiedGarbage.Impl.Residue.AArch64
@@ -34,10 +37,7 @@ namespace VG.Proof.Blowfish.AArch64
 
 open VG VG.AArch64
 
-abbrev expandKeyCleared : Prog isa :=
-  Impl.Residue.AArch64.withClears [.x6, .x8, .x13]
-    [.v0, .v1, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
-     .v26, .v28, .v29, .v30, .v31] none Impl.Blowfish.AArch64.expandKey
+abbrev expandKeyCleared : Prog isa := Impl.Blowfish.AArch64.Fn.expandKey
 
 theorem expandKeyCleared_verified : Verified target expandKeyCleared
     (Spec.Blowfish.expandKeyContract (AArch64.abi.withConsts Impl.Blowfish.AArch64.initConsts)) :=
@@ -57,5 +57,13 @@ theorem expandKeyCleared_verified : Verified target expandKeyCleared
 theorem expandKeyCleared_noResidue :
     NoResidue expandKeyCleared (Spec.Blowfish.expandKeyContract (AArch64.abi.withConsts Impl.Blowfish.AArch64.initConsts)) 0 :=
   RTaintCT.noResidue_of_verified expandKeyCleared_verified ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Blowfish.AArch64.expandKeyCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Blowfish.AArch64.Fn.expandKey
+      (Spec.Blowfish.expandKeyContract (AArch64.abi.withConsts Impl.Blowfish.AArch64.initConsts)) 0 :=
+  ⟨Proof.Blowfish.AArch64.expandKeyCleared_verified,
+    Proof.Blowfish.AArch64.expandKeyCleared_noResidue⟩
 
 end VG.Proof.Blowfish.AArch64

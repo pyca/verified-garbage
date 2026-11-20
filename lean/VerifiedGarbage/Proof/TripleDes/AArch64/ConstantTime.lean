@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Fn
+public meta import VerifiedGarbage.Impl.TripleDes.AArch64.Fn
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Block
@@ -41,9 +43,7 @@ theorem expandKey_constantTime (pre : State → Prop) :
 
 /-- The key expansion, then what it leaves cleared: words of the key in
 `x4`–`x6`, and the key and the subkeys in `v0`–`v7` and `v16`–`v19`. -/
-abbrev expandKeyCleared : Prog isa :=
-  Impl.Residue.AArch64.withClears [.x4, .x5, .x6]
-    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19] none Key.expandKey
+abbrev expandKeyCleared : Prog isa := Impl.TripleDes.AArch64.Fn.expandKey
 
 theorem expandKeyCleared_noResidue (k : Contract isa) : NoResidue expandKeyCleared k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k

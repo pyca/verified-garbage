@@ -22,8 +22,14 @@ public import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.VerifyVerified
 namespace VG.Artifacts.Ed448.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Ed448.publicKeyApi.artifact PPC64LE.target Proof.Ed448.PPC64LE.Scrub.publicKeyReg,
-  Spec.Ed448.signCachedApi.artifact PPC64LE.target Proof.Ed448.PPC64LE.Scrub.signCachedReg,
-  Spec.Ed448.verifyApi.artifact PPC64LE.target Proof.Ed448.PPC64LE.Scrub.verifyReg]
+  Spec.Ed448.publicKeyApi.artifact PPC64LE.target {
+    code := Impl.Ed448.PPC64LE.Fn.publicKey
+    verified := .scrubbed Proof.Ed448.PPC64LE.Scrub.publicKey_scrubbed },
+  Spec.Ed448.signCachedApi.artifact PPC64LE.target {
+    code := Impl.Ed448.PPC64LE.Fn.signCached
+    verified := .scrubbed Proof.Ed448.PPC64LE.Scrub.signCached_scrubbed },
+  Spec.Ed448.verifyApi.artifact PPC64LE.target {
+    code := Impl.Ed448.PPC64LE.Fn.verify
+    verified := .scrubbed Proof.Ed448.PPC64LE.Scrub.verify_scrubbed }]
 
 end VG.Artifacts.Ed448.PPC64LE

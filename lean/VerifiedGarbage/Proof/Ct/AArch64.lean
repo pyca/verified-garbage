@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.Ct.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Ct.AArch64.Fn
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Ct.AArch64
 meta import VerifiedGarbage.Impl.Ct.AArch64
 public import VerifiedGarbage.Proof.Ct.Common
@@ -232,12 +235,20 @@ which the residue analysis then proves leaves nothing secret but the result
 (`RTaint.noResidue_of_check`). -/
 
 /-- `eq`, then `x4`, `x6` and `x7` cleared. -/
-abbrev eqCleared : Prog isa := Impl.Residue.AArch64.withClears [.x4, .x6, .x7] [] none eq
+abbrev eqCleared : Prog isa := Impl.Ct.AArch64.Fn.eq
 
 theorem eqCleared_verified : Verified target eqCleared (Spec.Ct.eqContract abi) :=
   Clears.Verified.withClears verified (by decide)
 
 theorem eqCleared_noResidue (k : Contract isa) : NoResidue eqCleared k 32 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Ct.AArch64.eqCleared_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Ct.AArch64.Fn.eq
+      (Spec.Ct.eqContract AArch64.abi) 32 :=
+  ⟨Proof.Ct.AArch64.eqCleared_verified,
+    Proof.Ct.AArch64.eqCleared_noResidue _⟩
 
 end VG.Proof.Ct.AArch64

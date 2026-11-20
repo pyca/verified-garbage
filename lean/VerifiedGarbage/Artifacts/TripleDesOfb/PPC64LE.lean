@@ -17,7 +17,11 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 namespace VG.Artifacts.TripleDesOfb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.ofbApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.ofbReg,
-  Spec.TripleDes.ofbFinalApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.ofbFinalReg]
+  Spec.TripleDes.ofbApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.ofb
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.ofb_scrubbed },
+  Spec.TripleDes.ofbFinalApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.ofbFinal
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.TripleDesOfb.PPC64LE

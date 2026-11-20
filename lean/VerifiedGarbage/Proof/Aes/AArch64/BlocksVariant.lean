@@ -72,14 +72,12 @@ structure BlocksImpl where
       (Proof.Aes.blocksAArch64With scratch Spec.Aes.invCipher).post s s'
   decCtW : ConstantTime isa (Proof.Aes.blocksAArch64With scratch Spec.Aes.invCipher).pre
     (Proof.Aes.blocksAArch64With scratch Spec.Aes.invCipher).pub dec.code
-  /-- Whether both functions write nothing in `scratch` (`encFree`,
-  `decFree`), so that a caller that leaves nothing written there need not
-  wipe it. -/
-  free : Bool
-  encFree : free = true → ∀ s t s', (Proof.Aes.encryptBlocksRoundsContract AArch64.abi).pre s →
+  /-- An implementation that needs no `scratch` writes nothing in it, so
+  that a caller that leaves nothing written there need not wipe it. -/
+  encFree : scratch = 0 → ∀ s t s', (Proof.Aes.encryptBlocksRoundsContract AArch64.abi).pre s →
     Exec isa enc.code s t s' →
       Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s'
-  decFree : free = true → ∀ s t s', (Proof.Aes.decryptBlocksRoundsContract AArch64.abi).pre s →
+  decFree : scratch = 0 → ∀ s t s', (Proof.Aes.decryptBlocksRoundsContract AArch64.abi).pre s →
     Exec isa dec.code s t s' →
       Sig.writtenWithin (AArch64.abi.withConsts []) Spec.Aes.blocksSig [("scratch", 0)] s s'
   /-- What the names of its callers' instances end with (e.g. `_aes`;
@@ -102,18 +100,15 @@ structure BlocksImpl where
   expandCt : ConstantTime isa Proof.Aes.expandKeyAArch64.pre Proof.Aes.expandKeyAArch64.pub expand.code
   expandKeepsV : expand.code.allInstrs AArch64.keepsV = true
   expandScrub : AArch64.ScrubAll.calleeSide expand.code expand.clear = true
-  /-- The vector registers `vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt`,
-  whose code is `enc`'s and `dec`'s where they write nothing in `scratch`,
-  clear before they return (`Impl.Residue.AArch64.withClears`), and, where the
-  residue analysis checks it, that they then return without secret residue.
-  `enc` and `dec` themselves, which callers call by name for as little as a
-  block, keep what they leave. -/
-  ecbClear : List VReg := []
-  ecbClearOk : (Impl.Residue.AArch64.clears [] ecbClear none).all Clears.clearOk = true := by decide
-  encRes : Option (PLift (∀ k, NoResidue (Impl.Residue.AArch64.withClears [] ecbClear none enc.code) k 0)) :=
-    none
-  decRes : Option (PLift (∀ k, NoResidue (Impl.Residue.AArch64.withClears [] ecbClear none dec.code) k 0)) :=
-    none
+  /-- `vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt` over an implementation
+  that needs no `scratch` are its code, then the vector registers it writes
+  cleared (`Impl.AesEcb.AArch64.Fn.blocks`): they then return without secret
+  residue. `enc` and `dec` themselves, which callers call by name for as
+  little as a block, keep what they leave. -/
+  encVecsOk : (Impl.Residue.AArch64.clears [] enc.clear.vecs none).all Clears.clearOk = true := by decide
+  decVecsOk : (Impl.Residue.AArch64.clears [] dec.clear.vecs none).all Clears.clearOk = true := by decide
+  encRes : scratch = 0 → ∀ k, NoResidue (Impl.Residue.AArch64.withClears [] enc.clear.vecs none enc.code) k 0
+  decRes : scratch = 0 → ∀ k, NoResidue (Impl.Residue.AArch64.withClears [] dec.clear.vecs none dec.code) k 0
 
 namespace BlocksImpl
 
@@ -139,9 +134,10 @@ def scalar : BlocksImpl where
   encCtW := by rw [Proof.Aes.blocksAArch64With_2048]; exact OneBlock.encryptBlocksN_ct
   decOkW := by rw [Proof.Aes.blocksAArch64With_2048]; exact OneBlock.decryptBlocksN_correct
   decCtW := by rw [Proof.Aes.blocksAArch64With_2048]; exact OneBlock.decryptBlocksN_ct
-  free := false
-  encFree := nofun
-  decFree := nofun
+  encFree := fun h => absurd h (by decide)
+  decFree := fun h => absurd h (by decide)
+  encRes := fun h => absurd h (by decide)
+  decRes := fun h => absurd h (by decide)
   suffix := ""
   features := []
   encScrub := by lit_decide
@@ -175,7 +171,6 @@ def aese : BlocksImpl where
   encCtW := Aese.encryptBlocks_ctW 0
   decOkW := Aese.decryptBlocks_correctW 0
   decCtW := Aese.decryptBlocks_ctW 0
-  free := true
   encFree := fun _ => Aese.encryptBlocks_written
   decFree := fun _ => Aese.decryptBlocks_written
   suffix := "_aes"
@@ -188,9 +183,8 @@ def aese : BlocksImpl where
   expandCt := Ctr32Impl.aese.expandCt
   expandKeepsV := Ctr32Impl.aese.expandKeepsV
   expandScrub := Ctr32Impl.aese.expandScrub
-  ecbClear := Aese.blocksLeft
-  encRes := some ⟨Aese.encryptBlocks_noResidue⟩
-  decRes := some ⟨Aese.decryptBlocks_noResidue⟩
+  encRes := fun _ => Aese.encryptBlocks_noResidue
+  decRes := fun _ => Aese.decryptBlocks_noResidue
 
 end BlocksImpl
 

@@ -30,8 +30,9 @@ open VG.Proof.HmacTable.PPC64LE (vars names)
 open VG.Proof.Secp256k1.PPC64LE (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact PPC64LE.target
-    (Proof.Ecdsa.Verify.PPC64LE.Scrub.secp256k1Verify hasLaw.law)] ++
+  Spec.Ecdsa.Secp256k1.verifyHashApi.artifact PPC64LE.target {
+    code := Impl.Ecdsa.Verify.PPC64LE.Fn.secp256k1Verify
+    verified := .scrubbed (Proof.Ecdsa.Verify.PPC64LE.Scrub.secp256k1Verify_scrubbed hasLaw.law) }] ++
   (if hv : OK vars ∧ "VG_SECP256K1_COMB" ∉ names vars then [
     Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact PPC64LE.target
       (Proof.Ecdsa.Rfc6979.PPC64LE.Scrub.secp256k1Sign hasLaw.law hv)]

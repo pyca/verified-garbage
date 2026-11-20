@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Camellia.AArch64.Fn
 public import VerifiedGarbage.Proof.Camellia.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -13,12 +14,10 @@ namespace VG.Artifacts.CamelliaCbc.AArch64
 
 def artifacts : List Artifact := [
   Spec.Camellia.cbcEncryptChainedApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_verified,
-      Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_noResidue⟩ },
+    code := Impl.Camellia.AArch64.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.cbcEncryptChainedCode_scrubbed },
   Spec.Camellia.cbcDecryptChainedApi.artifact AArch64.target {
-    code := Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode
-    verified := .scrubbed ⟨Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_verified,
-      Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_noResidue⟩ }]
+    code := Impl.Camellia.AArch64.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Camellia.AArch64.Residue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.CamelliaCbc.AArch64

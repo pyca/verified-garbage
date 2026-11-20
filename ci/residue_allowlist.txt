@@ -3,14 +3,3 @@
 # The emitter fails if a function without a proof is not listed here, or if a listed one is
 # gone or has a proof: remove its line when you convert it.
 # The list only shrinks: ci/check_residue_allowlist.py refuses a new line.
-arm vg_idea_cbc_decrypt_chained
-arm vg_idea_cbc_encrypt_chained
-arm vg_idea_cfb64_decrypt
-arm vg_idea_cfb64_decrypt_final
-arm vg_idea_cfb64_encrypt
-arm vg_idea_cfb64_encrypt_final
-arm vg_idea_ecb
-arm vg_idea_expand_key
-arm vg_idea_invert_key
-arm vg_idea_ofb
-arm vg_idea_ofb_final

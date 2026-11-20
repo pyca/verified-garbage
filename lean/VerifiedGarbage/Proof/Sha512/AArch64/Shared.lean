@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Sha512.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
@@ -253,5 +254,37 @@ theorem finalizeDigest_of {code : Prog isa} {o : List Instr} {D : Nat} {iv : Spe
     h (by decide) (by decide)
     (fun vs m m₁ m₂ r hl _ => Proof.Sha512.finalizeDigestPostOut_local _ _ _ _ vs m m₁ m₂ r hl)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sha512.AArch64.Stream.init384_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target (Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_384)
+      (Spec.Sha512.initContract AArch64.abi Spec.Sha512.H0_384) 0 :=
+  ⟨Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_384,
+    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sha512.AArch64.Stream.init512_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target (Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_512)
+      (Spec.Sha512.initContract AArch64.abi Spec.Sha512.H0_512) 0 :=
+  ⟨Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_512,
+    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sha512.AArch64.Stream.init512_224_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target (Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_512_224)
+      (Spec.Sha512.initContract AArch64.abi Spec.Sha512.H0_512_224) 0 :=
+  ⟨Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_512_224,
+    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sha512.AArch64.Stream.init512_256_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target (Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_512_256)
+      (Spec.Sha512.initContract AArch64.abi Spec.Sha512.H0_512_256) 0 :=
+  ⟨Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_512_256,
+    Proof.Sha512.AArch64.Stream.init_noResidue _ _ _⟩
 
 end VG.Proof.Sha512.AArch64.Shared

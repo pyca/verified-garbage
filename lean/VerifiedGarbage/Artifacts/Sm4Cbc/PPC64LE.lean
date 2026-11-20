@@ -15,7 +15,11 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 namespace VG.Artifacts.Sm4Cbc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Sm4.cbcEncryptChainedApi.artifact PPC64LE.target Proof.Sm4.PPC64LE.Scrub.cbcEncryptReg,
-  Spec.Sm4.cbcDecryptChainedApi.artifact PPC64LE.target Proof.Sm4.PPC64LE.Scrub.cbcDecryptReg]
+  Spec.Sm4.cbcEncryptChainedApi.artifact PPC64LE.target {
+    code := Impl.Sm4.PPC64LE.Fn.cbcEncrypt
+    verified := .scrubbed Proof.Sm4.PPC64LE.Scrub.cbcEncrypt_scrubbed },
+  Spec.Sm4.cbcDecryptChainedApi.artifact PPC64LE.target {
+    code := Impl.Sm4.PPC64LE.Fn.cbcDecrypt
+    verified := .scrubbed Proof.Sm4.PPC64LE.Scrub.cbcDecrypt_scrubbed }]
 
 end VG.Artifacts.Sm4Cbc.PPC64LE

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Hmac.Stream.RISCV64.Fn
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
@@ -12,7 +13,11 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.HmacMd5.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Hmac.md5I.initAnyKeyApi.artifact RISCV64.target Proof.Hmac.Stream.RISCV64.Scrub.md5InitAnyKeyReg,
-  Spec.Hmac.md5I.finalizeApi.artifact RISCV64.target Proof.Hmac.Stream.RISCV64.Scrub.md5FinalizeReg]
+  Spec.Hmac.md5I.initAnyKeyApi.artifact RISCV64.target {
+    code := Impl.Hmac.Stream.RISCV64.Fn.init Proof.Hmac.Stream.RISCV64.Md5.hash
+    verified := .scrubbed Proof.Hmac.Stream.RISCV64.Scrub.md5_init_scrubbed },
+  Spec.Hmac.md5I.finalizeApi.artifact RISCV64.target {
+    code := Impl.Hmac.Stream.RISCV64.Fn.finalize Proof.Hmac.Stream.RISCV64.Md5.hash
+    verified := .scrubbed Proof.Hmac.Stream.RISCV64.Scrub.md5_finalize_scrubbed }]
 
 end VG.Artifacts.HmacMd5.RISCV64

@@ -10,7 +10,7 @@ The postconditions of `vg_aes_ccm_seal` and `vg_aes_ccm_open` read the memory
 on return only within the data and the tag (`ScrubAll.ScrubAllOk`): each
 implementation, generic over the CMAC implementation it calls and its counter
 mode, returns with every register it may leave secret cleared and its whole
-stack zeroed (`ScrubAll.withScrubAll`). Its frame is sized to what its
+stack zeroed (`Impl.Residue.AArch64.scrubAll`, in the function as emitted). Its frame is sized to what its
 callees need (`Frame.lean`: 416 bytes with the Cryptographic Extension, 2592
 otherwise), so that the zeroing costs little where the callees need no
 working space.

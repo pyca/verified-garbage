@@ -8,21 +8,25 @@ import VerifiedGarbage.Proof.Framework.AArch64.Depth
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.AArch64.Clears
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
+public import VerifiedGarbage.Impl.AesEcb.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.SideFill
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # AES-ECB on AArch64
 
-For each implementation of the blocks functions (`BlocksImpl`): where it
-writes nothing in `scratch` (`BlocksImpl.free`), `vg_aes_ecb_encrypt` and
-`vg_aes_ecb_decrypt` are its code (`encrypt_free`, `decrypt_free`), with the
-vector registers it leaves cleared (`BlocksImpl.ecbClear`);
-otherwise a call of it by `callWipe`, which then zeroes the whole of
-`scratch` with `vg_zeroize` (`encrypt_verified`, `decrypt_verified`), which
-returns with the registers it may write cleared and its 32 bytes of stack
-zeroed (`ScrubAll.withScrubAll`: its postcondition reads the memory on
-return only within the buffers, `encryptOk`, `decryptOk`).
-Which is emitted for each (`encryptRegs`, `decryptRegs`): the first where it
-writes nothing, the second otherwise.
+For each implementation of the blocks functions (`BlocksImpl`),
+`vg_aes_ecb_encrypt` and `vg_aes_ecb_decrypt` as emitted are
+`Impl.AesEcb.AArch64.Fn.blocks` of its functions. Where it needs no `scratch`,
+and so writes nothing in it, they are its code (`encrypt_free`,
+`decrypt_free`) with the vector registers it writes cleared; otherwise a call
+of it by `callWipe`, which then zeroes the whole of `scratch` with
+`vg_zeroize` (`encrypt_verified`, `decrypt_verified`), then the cleanup that
+clears the registers it may write and zeroes its 32 bytes of stack (its
+postcondition reads the memory on return only within the buffers,
+`encryptOk`, `decryptOk`). Either way they meet their contract in constant
+time and return without secret residue (`encrypt_scrubbed`,
+`decrypt_scrubbed`).
 -/
 
 @[expose] public section
@@ -35,9 +39,8 @@ theorem depth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Dept
   induction c <;> simp_all [Code.noFrames, Code.aarch64Depth]
 
 /-- A call of `name`, whose code is `body`, then of `vg_zeroize` on the
-2048 bytes of `scratch`. -/
-def wiped (name : String) (body : Prog isa) : Prog isa :=
-  Impl.CallWipe.AArch64.callWipe .x4 2048 name body "vg_zeroize" Impl.Zeroize.AArch64.zeroizeWide
+2048 bytes of `scratch` (`Impl.AesEcb.AArch64.wiped`). -/
+abbrev wiped (name : String) (body : Prog isa) : Prog isa := Impl.AesEcb.AArch64.wiped name body
 
 /-- `vg_aes_ecb_encrypt` from `v`'s `vg_aes_encrypt_blocks`, wiping `scratch`. -/
 def encrypt (v : BlocksImpl) : Prog isa := wiped v.enc.name v.enc.code
@@ -86,11 +89,11 @@ theorem args_length : ∀ s vals,
   obtain rfl := Option.some.inj (hv.symm.trans (rfl : abi.args _ = some (regArgs Spec.Aes.blocksSig)))
   exact regArgs_length Spec.Aes.blocksSig s (by decide)
 
-theorem encrypt_free (v : BlocksImpl) (h : v.free = true) :
+theorem encrypt_free (v : BlocksImpl) (h : v.scratch = 0) :
     Verified target v.enc.code (Spec.AesEcb.encryptContract abi) :=
   Verified.ecb_of_unwritten (encBlocks v) (v.encFree h) args_length
 
-theorem decrypt_free (v : BlocksImpl) (h : v.free = true) :
+theorem decrypt_free (v : BlocksImpl) (h : v.scratch = 0) :
     Verified target v.dec.code (Spec.AesEcb.decryptContract abi) :=
   Verified.ecb_of_unwritten (decBlocks v) (v.decFree h) args_length
 
@@ -123,34 +126,40 @@ theorem decryptOk : ScrubAll.ScrubAllOk (Spec.AesEcb.decryptContract abi 32) 32
   ScrubAll.scrubAllOk_regs (sig := Spec.Aes.blocksSig) (by decide) (W := 32) (by decide) (Nat.le_refl _)
     (ecbPost_out AesEcb.dec)
 
-/-- The implementation of `vg_aes_ecb_encrypt` over `v` that is emitted: its
-code where it writes nothing in `scratch`, the call wiping `scratch`
-otherwise. -/
-def encryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.encryptApi target) :=
-  if h : v.free = true then [{
-    suffix := v.suffix
-    code := Impl.Residue.AArch64.withClears [] v.ecbClear none v.enc.code
-    verified := .ofOption (Clears.Verified.withClears (encrypt_free v h) v.ecbClearOk)
-      (v.encRes.map fun r => ⟨r.down _⟩) }]
-  else [ScrubAll.withScrubAll {
-    suffix := v.suffix
-    code := encrypt v
-    stack := 32
-    verified := encrypt_verified v } encryptOk]
+private theorem wiped_scrubbed {k : Contract isa} {name : String} {body : Prog isa}
+    (hv : Verified target (wiped name body) k) (hok : ScrubAll.ScrubAllOk k 32 0)
+    (hs : ScrubAll.sideAll (fun i => !i.writesDit) body = true) (hd : body.noFrames = true) :
+    VerifiedScrubbed target (Impl.Residue.AArch64.scrubOf 32 0 (wiped name body)) k 0 :=
+  ScrubAll.verifiedScrubbedOfFill (n := name) (e := Impl.AesEcb.AArch64.wiped "" (.block [])) hv hok
+    (by kernel_rfl) hs (depth_of_noFrames hd) (by kernel_rfl) (by decide)
+    (Nat.le_of_ble_eq_true (by kernel_rfl)) (.inl rfl)
 
-/-- The implementation of `vg_aes_ecb_decrypt` over `v` that is emitted: its
-code where it writes nothing in `scratch`, the call wiping `scratch`
-otherwise. -/
-def decryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.decryptApi target) :=
-  if h : v.free = true then [{
-    suffix := v.suffix
-    code := Impl.Residue.AArch64.withClears [] v.ecbClear none v.dec.code
-    verified := .ofOption (Clears.Verified.withClears (decrypt_free v h) v.ecbClearOk)
-      (v.decRes.map fun r => ⟨r.down _⟩) }]
-  else [ScrubAll.withScrubAll {
-    suffix := v.suffix
-    code := decrypt v
-    stack := 32
-    verified := decrypt_verified v } decryptOk]
+/-- `vg_aes_ecb_encrypt` over `v`, as emitted: its code with the vector
+registers it writes cleared where it needs no `scratch`, the call wiping
+`scratch`, then its cleanup, otherwise. -/
+theorem encrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesEcb.AArch64.Fn.blocks v.enc)
+      (Spec.AesEcb.encryptContract abi (if v.scratch = 0 then 0 else 32)) 0 := by
+  unfold Impl.AesEcb.AArch64.Fn.blocks
+  rw [v.encScratch_eq]
+  by_cases h : v.scratch = 0
+  · simp only [h, ↓reduceIte]
+    exact ⟨Clears.Verified.withClears (encrypt_free v h) v.encVecsOk, v.encRes h _⟩
+  · simp only [h, ↓reduceIte]
+    exact wiped_scrubbed (encrypt_verified v) encryptOk (ScrubAll.sideAll_noDit_of_calleeSide v.encScrub)
+      v.encNoFrames
+
+/-- `vg_aes_ecb_decrypt` over `v`, as emitted. -/
+theorem decrypt_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesEcb.AArch64.Fn.blocks v.dec)
+      (Spec.AesEcb.decryptContract abi (if v.scratch = 0 then 0 else 32)) 0 := by
+  unfold Impl.AesEcb.AArch64.Fn.blocks
+  rw [v.decScratch_eq]
+  by_cases h : v.scratch = 0
+  · simp only [h, ↓reduceIte]
+    exact ⟨Clears.Verified.withClears (decrypt_free v h) v.decVecsOk, v.decRes h _⟩
+  · simp only [h, ↓reduceIte]
+    exact wiped_scrubbed (decrypt_verified v) decryptOk (ScrubAll.sideAll_noDit_of_calleeSide v.decScrub)
+      v.decNoFrames
 
 end VG.Proof.AesEcb.AArch64

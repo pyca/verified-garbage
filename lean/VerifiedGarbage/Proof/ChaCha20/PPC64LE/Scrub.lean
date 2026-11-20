@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.ApplyCT
@@ -13,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # ChaCha20 on PPC64LE, without secret residue
 
 `vg_chacha20_init`, `vg_chacha20_set_nonce` and `vg_chacha20_apply`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which
 clears the volatile registers they write. None of them has a frame, so no
 stack is wiped. Their postconditions read the memory on return only within
 the streaming state and the data, by RISC-V's proofs
@@ -61,30 +62,40 @@ theorem setNonceOut : PostOut (setNonceContract PPC64LE.abi) (setNonceSig.retBit
 theorem applyOut (stack : Nat) : PostOut (applyContract PPC64LE.abi stack) (applySig.retBits 64) :=
   postOut_of_local (post := applyPost 64) ScrubAbi.plain (applyPost_out 64 rfl)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.ChaCha20.initApi`. -/
-def initReg : Registration Spec.ChaCha20.initApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_chacha20_init` as emitted (`Impl.ChaCha20.PPC64LE.Fn.init`) meets its
+contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.ChaCha20.PPC64LE.Fn.init
+      (Spec.ChaCha20.initContract PPC64LE.abi) 0 :=
+  verifiedScrubbed (api := Spec.ChaCha20.initApi) {
       code := Impl.ChaCha20.PPC64LE.Stream.init
       verified := Proof.ChaCha20.PPC64LE.Stream.init_verified }
     0 ⟨false, false, [.r4, .r9, .r10, .r11, .r12], false, []⟩
     initOut
     (by dsimp only; lit_decide)
 
-/-- `Spec.ChaCha20.setNonceApi`. -/
-def setNonceReg : Registration Spec.ChaCha20.setNonceApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_chacha20_set_nonce` as emitted (`Impl.ChaCha20.PPC64LE.Fn.setNonce`) meets
+its contract in constant time and returns without secret residue. -/
+theorem setNonce_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.ChaCha20.PPC64LE.Fn.setNonce
+      (Spec.ChaCha20.setNonceContract PPC64LE.abi) 0 :=
+  verifiedScrubbed (api := Spec.ChaCha20.setNonceApi) {
       code := Impl.ChaCha20.PPC64LE.Stream.setNonce
       verified := Proof.ChaCha20.PPC64LE.Stream.setNonce_verified }
     0 ⟨false, false, [.r9, .r10, .r11, .r12], false, []⟩
     setNonceOut
     (by dsimp only; lit_decide)
 
-/-- `Spec.ChaCha20.applyApi`: it calls the block function and
+/-- `vg_chacha20_apply` as emitted (`Impl.ChaCha20.PPC64LE.Fn.apply`) meets its
+contract in constant time and returns without secret residue.
+`Spec.ChaCha20.applyApi`: it calls the block function and
 `vg_chacha20_xor`, which write every volatile register. -/
-def applyReg : Registration Spec.ChaCha20.applyApi PPC64LE.target :=
-  scrubOf {
+theorem apply_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.ChaCha20.PPC64LE.Fn.apply
+      (Spec.ChaCha20.applyContract PPC64LE.abi) 32 :=
+  verifiedScrubbed (api := Spec.ChaCha20.applyApi) {
       code := Impl.ChaCha20.PPC64LE.Stream.apply
       verified := Proof.ChaCha20.PPC64LE.Stream.apply_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

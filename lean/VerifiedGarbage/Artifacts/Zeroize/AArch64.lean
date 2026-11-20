@@ -16,5 +16,5 @@ open VG.AArch64
 def artifacts : List Artifact := [
   Spec.Zeroize.zeroizeApi.artifact target {
     code := Impl.Zeroize.AArch64.zeroizeWide
-    verified := .scrubbed ⟨Proof.Zeroize.AArch64.wideVerified, Proof.Zeroize.AArch64.wide_noResidue _ _⟩ }]
+    verified := .scrubbed Proof.Zeroize.AArch64.wide_scrubbed }]
 end VG.Artifacts.Zeroize.AArch64

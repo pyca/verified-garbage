@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
@@ -93,21 +94,29 @@ clear, and what `ScrubAll.scrubAllOf` needs of their code
 (`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 
-/-- The registers the tail of `vg_ecdsa_p384_sign` clears: those its code,
-with the HMAC implementations of its table, may write. -/
-def p384SignClear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v0,
-   .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
-   .v27, .v28, .v29, .v30, .v31], []⟩
+/-- No instruction of `vg_ecdsa_p384_sign_k` writes PSTATE.DIT, and it calls
+nothing indirectly. -/
+theorem p384_core_side :
+    AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+      Impl.Ecdsa.AArch64.signP384 = true := by
+  lit_decide
 
-theorem p384SignSide (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds) (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
-    AArch64.ScrubAll.scrubSide
-      (signCodeT (p384 hL hI hT) Spec.Ecdsa.Rfc6979.Curves.p384.tries Proof.Variants.MdHash.AArch64.variants)
-      stackT
-      (Spec.Ecdsa.Rfc6979.Curves.p384.signSig.retBits
-        ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.p384.signSig
-          [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
-      p384SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
+/-- `vg_ecdsa_p384_sign` as emitted, cleanup included
+(`Impl.Ecdsa.Rfc6979.AArch64.Fn.p384`), with the tables of every hash
+function: it meets its contract in constant time and returns without secret
+residue. What the cleanup needs of the code is evaluated here, once, with
+nothing in the place of `vg_ecdsa_p384_sign_k`, whose own is evaluated
+apart. -/
+theorem p384Sign_scrubbed (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds) (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    VerifiedScrubbed AArch64.target
+      (Impl.Ecdsa.Rfc6979.AArch64.Fn.p384 Proof.Variants.MdHash.AArch64.hashes)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p384 Impl.Ecdsa.AArch64.p384.combConsts
+        Proof.Variants.MdHash.AArch64.variants)
+      32 :=
+  Scrub.sign_scrubbed (R := p384 hL hI hT)
+    (p384T_verified hL hI hT _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
+    rfl p384_core_side
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 /-- `vg_ecdsa_p384_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP384`): it meets its contract in

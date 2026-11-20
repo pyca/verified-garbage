@@ -401,6 +401,12 @@ vg_idea_expand_key:
 	and r2, r3, r2, ror #18
 	eor r12, r12, r2
 	str r12, [r1, #100]
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_idea_invert_key:
@@ -1197,6 +1203,22 @@ vg_idea_invert_key:
 	ldr r8, [r2, #16]
 	ldr r9, [r2, #20]
 	add sp, sp, #24
+	sub sp, sp, #24
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #24
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_idea_ecb:
@@ -1856,4 +1878,22 @@ vg_idea_ecb:
 	ldr r10, [r3, #24]
 	ldr r11, [r3, #28]
 	add sp, sp, #32
+	sub sp, sp, #32
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	str r2, [r12, #24]
+	str r2, [r12, #28]
+	add sp, sp, #32
+	mov r0, #0
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr

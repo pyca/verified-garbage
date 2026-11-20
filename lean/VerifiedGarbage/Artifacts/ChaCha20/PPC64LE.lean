@@ -11,8 +11,14 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.ChaCha20.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.ChaCha20.initApi.artifact PPC64LE.target Proof.ChaCha20.PPC64LE.Scrub.initReg,
-  Spec.ChaCha20.setNonceApi.artifact PPC64LE.target Proof.ChaCha20.PPC64LE.Scrub.setNonceReg,
-  Spec.ChaCha20.applyApi.artifact PPC64LE.target Proof.ChaCha20.PPC64LE.Scrub.applyReg]
+  Spec.ChaCha20.initApi.artifact PPC64LE.target {
+    code := Impl.ChaCha20.PPC64LE.Fn.init
+    verified := .scrubbed Proof.ChaCha20.PPC64LE.Scrub.init_scrubbed },
+  Spec.ChaCha20.setNonceApi.artifact PPC64LE.target {
+    code := Impl.ChaCha20.PPC64LE.Fn.setNonce
+    verified := .scrubbed Proof.ChaCha20.PPC64LE.Scrub.setNonce_scrubbed },
+  Spec.ChaCha20.applyApi.artifact PPC64LE.target {
+    code := Impl.ChaCha20.PPC64LE.Fn.apply
+    verified := .scrubbed Proof.ChaCha20.PPC64LE.Scrub.apply_scrubbed }]
 
 end VG.Artifacts.ChaCha20.PPC64LE

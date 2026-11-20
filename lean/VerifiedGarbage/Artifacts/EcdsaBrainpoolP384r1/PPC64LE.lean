@@ -30,8 +30,9 @@ open VG.Proof.HmacTable.PPC64LE (vars names)
 open VG.Proof.BrainpoolP384r1.PPC64LE (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact PPC64LE.target
-    (Proof.Ecdsa.Verify.PPC64LE.Scrub.brainpoolp384r1Verify hasLaw.law)] ++
+  Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact PPC64LE.target {
+    code := Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp384r1Verify
+    verified := .scrubbed (Proof.Ecdsa.Verify.PPC64LE.Scrub.brainpoolp384r1Verify_scrubbed hasLaw.law) }] ++
   (if hv : OK vars ∧ "VG_BRAINPOOLP384R1_COMB" ∉ names vars then [
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact PPC64LE.target
       (Proof.Ecdsa.Rfc6979.PPC64LE.Scrub.brainpoolp384r1Sign hasLaw.law hv)]

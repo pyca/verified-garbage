@@ -13,9 +13,11 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.AesGcmSiv.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.GcmSiv.sealApi.artifact PPC64LE.target
-    (Proof.AesGcmSiv.PPC64LE.Scrub.sealReg Proof.GcmSiv.Polyval.tagInput_eq_tagInputG),
-  Spec.GcmSiv.openApi.artifact PPC64LE.target
-    (Proof.AesGcmSiv.PPC64LE.Scrub.openReg Proof.GcmSiv.Polyval.tagInput_eq_tagInputG)]
+  Spec.GcmSiv.sealApi.artifact PPC64LE.target {
+    code := Impl.AesGcmSiv.PPC64LE.Fn.seal
+    verified := .scrubbed (Proof.AesGcmSiv.PPC64LE.Scrub.seal_scrubbed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG) },
+  Spec.GcmSiv.openApi.artifact PPC64LE.target {
+    code := Impl.AesGcmSiv.PPC64LE.Fn.open
+    verified := .scrubbed (Proof.AesGcmSiv.PPC64LE.Scrub.open_scrubbed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG) }]
 
 end VG.Artifacts.AesGcmSiv.PPC64LE

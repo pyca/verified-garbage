@@ -1,4 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Sm4.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Sm4.AArch64.Fn
 public import VerifiedGarbage.Proof.Sm4.AArch64.Ecb
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
@@ -64,7 +66,7 @@ open VG VG.AArch64 VG.Impl.Sm4.AArch64
 open VG.Proof.Sm4 (specDirA)
 
 /-- `vg_sm4_ecb`'s code: `ecbAny` with its working space on the stack. -/
-abbrev ecbAnyFramed : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x4 396 ecbAny
+abbrev ecbAnyFramed : Prog isa := Impl.Sm4.AArch64.Fn.ecbAnyFramed
 
 /-- The ECB contracts with `stack = 3184`, as `sig_pre` evaluates them. -/
 def ecbCallAArch64 (dir : Dir) : Contract AArch64.isa where
