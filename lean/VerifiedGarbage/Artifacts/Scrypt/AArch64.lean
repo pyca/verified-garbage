@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Scrypt.AArch64.Scrub
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
 
@@ -12,13 +11,11 @@ public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
 
 namespace VG.Artifacts.Scrypt.AArch64
 
-open VG.Proof.Scrypt.AArch64.Whole (pbkName pbkOf scrypt_verified)
-
 def artifacts : List Artifact :=
   VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun (c : Proof.Sha256.AArch64.Compress) => [
-    Spec.Scrypt.scryptApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
-        suffix := c.suffix
-        code := Impl.Scrypt.AArch64.scrypt (pbkName c) (pbkOf c)
-        verified := scrypt_verified c } (Proof.Scrypt.AArch64.Scrub.scryptOk _))]
+    Spec.Scrypt.scryptApi.artifact AArch64.target {
+      suffix := c.suffix
+      code := Impl.Scrypt.AArch64.Fn.scrypt c.name c.suffix c.code
+      verified := .scrubbed (Proof.Scrypt.AArch64.Whole.scrypt_scrubbed c) }]
 
 end VG.Artifacts.Scrypt.AArch64
