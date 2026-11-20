@@ -189,13 +189,13 @@ accumulator after the blocks so far.
 multipliers, so they are in a frame of 512 bytes on the stack, 16 bytes
 each (`slot`): the limbs of `r²` in both lanes and their multiples by 5
 (table 0), the limbs of `r²` and of `r` and their multiples by 5 (table 1),
-the mask `2²⁶ - 1` and the bit `2²⁴` of a block's fifth limb (`2¹²⁸`); three
-of the five sums of products are kept there too while the others are
-computed. `r²` is computed first, in `h`, by the code that absorbs a block
-(the block `r` into `h = 0`, `h` being saved in the frame), and reduced
-fully; the lanes take `h` from the frame, and `h` is written again at the
-end, from the five limbs of the result, which the frame holds too, as it
-does the number of pairs.
+and the bit `2²⁴` of a block's fifth limb (`2¹²⁸`); the lanes themselves are
+kept there too, between two multiplications (see "A turn of the loop").
+`r²` is computed first, in `h`, by the code that absorbs a block (the block
+`r` into `h = 0`, `h` being saved in the frame), and reduced fully; the
+lanes take `h` from the frame, and `h` is written again at the end, from the
+five limbs of the result, which the frame holds too, as it does the number
+of pairs.
 
 `pmuludq` runs inside an MCDT frame (`TCB/X86/Isa.lean`), where the frame
 of 512 bytes is 12 bytes further up (`o = 12`). Before the frame is
@@ -215,10 +215,7 @@ def slot (j : Nat) : Nat := 64 + 16 * j
 /-- Limb `k` of table `t`, and its multiple by 5. -/
 def rSlot (t k : Nat) : Nat := slot (10 * t + k)
 def sSlot (t k : Nat) : Nat := slot (10 * t + 5 + k)
-def maskSlot : Nat := slot 20
 def hibitSlot : Nat := slot 21
-/-- Where the sums of products `d1`, `d2`, `d3` are kept. -/
-def dSlot (k : Nat) : Nat := slot (21 + k)
 /-- Limb `k` of the result, 8 bytes. -/
 def outOff (k : Nat) : Nat := 464 + 8 * k
 
@@ -284,10 +281,10 @@ def initH (o : Nat) : List Instr :=
   ([.mov .eax (.mem (fs o (svOff 4))), .alu .and .eax (.imm 7), .xop (.movd .xmm6 .eax),
     .xop (.shift .psllq .xmm6 24), .xop (.bin .paddq .xmm4 .xmm6)] : List Instr)
 
-/-- The mask (also left in `xmm5`) and the bit `2²⁴`, in both lanes. -/
+/-- The mask in `xmm5`, for `tables`, `initH` and `addMsg`, and the bit
+`2²⁴` in its slot, in both lanes. -/
 def consts (o : Nat) : List Instr :=
   [.mov .eax (.imm 0x3ffffff), .xop (.movd .xmm5 .eax), .xop (.bin .punpcklqdq .xmm5 .xmm5),
-   .movdquStore (fs o maskSlot) .xmm5,
    .mov .eax (.imm 0x1000000), .xop (.movd .xmm6 .eax), .xop (.bin .punpcklqdq .xmm6 .xmm6),
    .movdquStore (fs o hibitSlot) .xmm6]
 
@@ -306,38 +303,6 @@ def tableLimb (o k : Nat) : List Instr :=
   times5 o (sSlot 0 k) .xmm1 ++ times5 o (sSlot 1 k) .xmm0
 
 def tables (o : Nat) : List Instr := (List.range 5).flatMap (tableLimb o)
-
-/-- The slot of the multiplier of limb `i` in the sum `dk`, in table `t`. -/
-def mslot (t k i : Nat) : Nat := if i ≤ k then rSlot t (k - i) else sSlot t (k + 5 - i)
-
-/-- `dk`, the sum of the products of the limbs with their multipliers of
-table `t`, into `xmm5` (through `xmm6`). -/
-def dsumV (o t k : Nat) : List Instr :=
-  ([.movdquLoad .xmm5 (fs o (mslot t k 0)), .pmuludq .xmm5 .xmm0] : List Instr) ++
-  (List.range 4).flatMap fun j => [.movdquLoad .xmm6 (fs o (mslot t k (j + 1))), .pmuludq .xmm6 (lreg (j + 1)),
-    .xop (.bin .paddq .xmm5 .xmm6)]
-
-/-- The lanes multiplied by table `t`: `d1`, `d2`, `d3` (kept in the frame),
-`d0` (in `xmm7`) and `d4`, then all five in the lanes' registers, and the
-mask in `xmm5` again. -/
-def mulV (o t : Nat) : List Instr :=
-  dsumV o t 1 ++ ([.movdquStore (fs o (dSlot 1)) .xmm5] : List Instr) ++
-  dsumV o t 2 ++ ([.movdquStore (fs o (dSlot 2)) .xmm5] : List Instr) ++
-  dsumV o t 3 ++ ([.movdquStore (fs o (dSlot 3)) .xmm5] : List Instr) ++
-  dsumV o t 0 ++ ([.xop (.bin .movdqa .xmm7 .xmm5)] : List Instr) ++ dsumV o t 4 ++
-  ([.xop (.bin .movdqa .xmm4 .xmm5), .xop (.bin .movdqa .xmm0 .xmm7), .movdquLoad .xmm1 (fs o (dSlot 1)),
-    .movdquLoad .xmm2 (fs o (dSlot 2)), .movdquLoad .xmm3 (fs o (dSlot 3)),
-    .movdquLoad .xmm5 (fs o maskSlot)] : List Instr)
-
-/-- The bits of limb `i` from 26 up carried into limb `j` (times 5 from the
-fifth limb into the first). -/
-def cstep (i j : Nat) : List Instr :=
-  ([.xop (.bin .movdqa .xmm6 (lreg i)), .xop (.shift .psrlq .xmm6 26), .xop (.bin .pand (lreg i) .xmm5)] : List Instr) ++
-  (if i = 4 then [.xop (.bin .movdqa .xmm7 .xmm6), .xop (.shift .psllq .xmm7 2), .xop (.bin .paddq .xmm6 .xmm7)]
-    else []) ++
-  ([.xop (.bin .paddq (lreg j) .xmm6)] : List Instr)
-
-def carryV : List Instr := cstep 0 1 ++ cstep 3 4 ++ cstep 1 2 ++ cstep 4 0 ++ cstep 2 3 ++ cstep 0 1 ++ cstep 3 4
 
 /-- The high lanes added to the low ones. -/
 def sumLanes : List Instr :=
@@ -370,14 +335,143 @@ def wipeV : List Instr :=
   ([.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7].map fun x => .xop (.bin .pxor x x)) ++
   (List.range 32).map fun j => .movdquStore (fs 0 (16 * j)) .xmm0
 
+/-! ### A turn of the loop
+
+A legacy SSE instruction that writes a whole register without reading it (a
+load, `movdqa`) keeps the register's bits from 128 up. Where the processor
+does not know them to be zero (on Zen 4, once any 256-bit instruction has
+run in the process, until the kernel next restores the state), such a write
+waits for the register's previous value: the products of a multiplication,
+which are independent, then follow one another through every register they
+share. So a multiplication spreads them over all eight registers
+(`sumsOps`):
+
+* the lanes are also kept in five slots of the frame (`hIdx`), stored at the
+  end of a turn;
+* the sum `d0` multiplies the lanes' registers themselves (`pmuludq h_i, c`:
+  the other register only loads the multiplier), after which they are free;
+* the other sums are computed two at a time (`d3` and `d1`, then `d4` and
+  `d2`), sum `k` in `xmm<k>`: for each limb one register loads it from its
+  slot, and two others load the multipliers;
+* in a turn, the limbs of the next two blocks are added to the sums, not to
+  the carried lanes, while registers are free: the lanes leave a turn
+  carried;
+* no register holds the mask in the carries: the low 26 bits of a lane are
+  kept by two shifts.
+
+The multiplication after the loop is the same, by table 1 and without
+blocks. The sums and the carries are lists of operations on the lanes
+(`LOp`), which `Proof/Poly1305/X86/Sse2.lean` evaluates. -/
+
+/-- An operation of a turn: an SSE2 instruction (or two) on whole registers,
+a slot of the frame or eight bytes of the data loaded. -/
+inductive LOp
+  /-- `movdqu x, [slot j]` -/
+  | slot (x : XReg) (j : Nat)
+  /-- `movq x, [esi + d]` -/
+  | data (x : XReg) (d : Nat)
+  /-- `pmuludq x, y` -/
+  | mul (x y : XReg)
+  /-- `paddq x, y` -/
+  | add (x y : XReg)
+  /-- `punpcklqdq x, y` -/
+  | unpck (x y : XReg)
+  /-- `movdqa x, y` -/
+  | mov (x y : XReg)
+  /-- `psrlq x, n` -/
+  | shr (x : XReg) (n : Nat)
+  /-- `psllq x, n` -/
+  | shl (x : XReg) (n : Nat)
+  /-- The 26 bits of each lane from bit `n` on: `psllq x, 38 - n; psrlq x, 38`. -/
+  | bits (x : XReg) (n : Nat)
+  /-- The low 26 bits of each lane: `psllq x, 38; psrlq x, 38`. -/
+  | low26 (x : XReg)
+  deriving DecidableEq, Repr
+
+/-- The instructions of an operation, with the frame at `esp + o`. -/
+def LOp.instrs (o : Nat) : LOp → List Instr
+  | .slot x j => [.movdquLoad x (fs o (VG.Impl.Poly1305.X86.slot j))]
+  | .data x d => [.movqLoad x (at_ .esi d)]
+  | .mul x y => [.pmuludq x y]
+  | .add x y => [.xop (.bin .paddq x y)]
+  | .unpck x y => [.xop (.bin .punpcklqdq x y)]
+  | .mov x y => [.xop (.bin .movdqa x y)]
+  | .shr x n => [.xop (.shift .psrlq x (BitVec.ofNat 8 n))]
+  | .shl x n => [.xop (.shift .psllq x (BitVec.ofNat 8 n))]
+  | .bits x n => [.xop (.shift .psllq x (BitVec.ofNat 8 (38 - n))), .xop (.shift .psrlq x 38)]
+  | .low26 x => [.xop (.shift .psllq x 38), .xop (.shift .psrlq x 38)]
+
+/-- The index of the slot of the multiplier of limb `i` in the sum `dk`, in
+table `t`: a limb of the multiplier, or five times one. -/
+def mIdx (t k i : Nat) : Nat := if i ≤ k then 10 * t + (k - i) else 10 * t + 5 + (k + 5 - i)
+/-- The index of the slot of limb `k` of the lanes. -/
+def hIdx (k : Nat) : Nat := 22 + k
+
+/-- The product of limb `i` for the sum `dk`, in the limb's own register
+(through `c`). -/
+def ownProd (t k i : Nat) (c : XReg) : List LOp := [.slot c (mIdx t k i), .mul (lreg i) c]
+
+/-- The product of limb `i`, which `h` holds, for the sum `dk`, in `r`: it
+starts the sum (`r` is then `xmm<k>`), or is added to it. -/
+def prodOps (t k i : Nat) (h r : XReg) : List LOp :=
+  ([.slot r (mIdx t k i), .mul r h] : List LOp) ++ (if i = 0 then [] else [.add (lreg k) r])
+
+/-- Limb `k` of the two blocks at `esi` (through `x` and `y`), added to the
+sum `dk`. -/
+def limbOps (k : Nat) (x y : XReg) : List LOp :=
+  [.data x (lbyte k), .data y (lbyte k + 16), .unpck x y, if k = 4 then .shr x 40 else .bits x (lshift k),
+    .add (lreg k) x]
+
+/-- The products of limb `i` for the sums `dk` and `dj`: `h` loads the limb. -/
+def pairOps (t k j i : Nat) (h r r' : XReg) : List LOp :=
+  ([.slot h (hIdx i)] : List LOp) ++ prodOps t k i h r ++ prodOps t j i h r'
+
+/-- The five sums of products of the lanes with table `t`, sum `k` in
+`xmm<k>`, with the limbs of the two blocks at `esi` and their `2¹²⁸` if
+`msg`. The lanes are in their registers and in their slots. -/
+def sumsOps (t : Nat) (msg : Bool) : List LOp :=
+  ownProd t 0 0 .xmm6 ++ ownProd t 0 1 .xmm5 ++ ownProd t 0 2 .xmm7 ++ ownProd t 0 3 .xmm5 ++ ownProd t 0 4 .xmm6 ++
+  ([.add .xmm0 .xmm1, .add .xmm0 .xmm2, .add .xmm0 .xmm3, .add .xmm0 .xmm4] : List LOp) ++
+  (if msg then limbOps 0 .xmm7 .xmm5 else []) ++
+  pairOps t 3 1 0 .xmm6 .xmm3 .xmm1 ++
+  (if msg then limbOps 3 .xmm2 .xmm5 ++ limbOps 1 .xmm4 .xmm6 else []) ++
+  pairOps t 3 1 1 .xmm5 .xmm6 .xmm7 ++ pairOps t 3 1 2 .xmm5 .xmm2 .xmm4 ++
+  pairOps t 3 1 3 .xmm5 .xmm6 .xmm7 ++ pairOps t 3 1 4 .xmm5 .xmm2 .xmm4 ++
+  pairOps t 4 2 0 .xmm5 .xmm4 .xmm2 ++
+  (if msg then limbOps 4 .xmm5 .xmm6 ++ ([.slot .xmm7 21, .add .xmm4 .xmm7] : List LOp) ++ limbOps 2 .xmm6 .xmm7
+    else []) ++
+  pairOps t 4 2 1 .xmm5 .xmm7 .xmm6 ++ pairOps t 4 2 2 .xmm5 .xmm7 .xmm6 ++
+  pairOps t 4 2 3 .xmm5 .xmm7 .xmm6 ++ pairOps t 4 2 4 .xmm5 .xmm7 .xmm6
+
+/-- The bits of limb `i` from 26 up carried into limb `j` (times 5 from the
+fifth limb into the first), through `x` (and `y`). -/
+def cOps (x y : XReg) (i j : Nat) : List LOp :=
+  ([.mov x (lreg i), .shr x 26, .low26 (lreg i)] : List LOp) ++
+  (if i = 4 then [.mov y x, .shl y 2, .add x y] else []) ++ ([.add (lreg j) x] : List LOp)
+
+/-- The carries: `d0 → d1`, `d3 → d4`, `d1 → d2`, `d4 → d0` (times 5),
+`d2 → d3`, `d0 → d1`, `d3 → d4`. -/
+def carryOps : List LOp :=
+  cOps .xmm5 .xmm7 0 1 ++ cOps .xmm5 .xmm7 3 4 ++ cOps .xmm5 .xmm7 1 2 ++ cOps .xmm5 .xmm7 4 0 ++
+  cOps .xmm6 .xmm7 2 3 ++ cOps .xmm7 .xmm5 0 1 ++ cOps .xmm5 .xmm7 3 4
+
+/-- The lanes into their slots. -/
+def storeH (o : Nat) : List Instr := (List.range 5).map fun k => .movdquStore (fs o (slot (hIdx k))) (lreg k)
+
+/-- A turn of the loop: the lanes times `r²` plus the next two blocks,
+carried, and stored. -/
+def turn (o : Nat) : List Instr :=
+  (sumsOps 0 true).flatMap (LOp.instrs o) ++ carryOps.flatMap (LOp.instrs o) ++ storeH o
+
 /-- What the MCDT frame runs: the tables, the lanes from `h` and the first
 two blocks, a pair of blocks at a time, and the result's limbs. -/
 def lanes : Prog isa :=
-  .seq (.block (consts 12 ++ tables 12 ++ initH 12 ++ addMsg 12 ++
+  .seq (.block (consts 12 ++ tables 12 ++ initH 12 ++ addMsg 12 ++ storeH 12 ++
     ([.alu .add .esi (.imm 32), .mov .ecx (.mem (fs 12 cntOff)), .alu .sub .ecx (.imm 1)] : List Instr)))
-  (.seq (.loop (.block (mulV 12 0 ++ carryV ++ addMsg 12 ++
+  (.seq (.loop (.block (turn 12 ++
       ([.alu .add .esi (.imm 32), .alu .sub .ecx (.imm 1)] : List Instr))) .ne)
-    (.block (mulV 12 1 ++ sumLanes ++ carryV ++ storeOut 12)))
+    (.block ((sumsOps 1 false).flatMap (LOp.instrs 12) ++ sumLanes ++ carryOps.flatMap (LOp.instrs 12) ++
+      storeOut 12)))
 
 /-- What the frame of 512 bytes runs: `h` into the frame and `r²` into `h`,
 the lanes, and their result into `h`. -/
