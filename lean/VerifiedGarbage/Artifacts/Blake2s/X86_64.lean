@@ -34,7 +34,17 @@ namespace VG.Artifacts.Blake2s.X86_64
 def artifacts : List Artifact := [
   Spec.Blake2.initSApi.artifact X86_64.target { code := Impl.Blake2.X86_64.Fn.initS, verified := .scrubbed Proof.Blake2.X86_64.initS_scrubbed, spSafe := Proof.Blake2.X86_64.initS_spSafe }] ++
   (VG.Proof.Variants.Blake2s.X86_64.variants.flatMap fun (v : Proof.Blake2.X86_64.BackendS) => [
-    Spec.Blake2.updateSApi.artifact VG.X86_64.target (Proof.Blake2.X86_64.updateSReg v),
-    Spec.Blake2.finalizeSApi.artifact VG.X86_64.target (Proof.Blake2.X86_64.finalizeSReg v)])
+    Spec.Blake2.updateSApi.artifact VG.X86_64.target {
+      suffix := v.suffix
+      notWith := v.notWith
+      code := Impl.Blake2.X86_64.Fn.update Spec.Blake2.s v.updScrub.level v.updScrub.runs v.hashCallee
+      verified := .scrubbed (Proof.Blake2.X86_64.updateS_scrubbed v)
+      spSafe := Proof.Blake2.X86_64.updateS_spSafe v },
+    Spec.Blake2.finalizeSApi.artifact VG.X86_64.target {
+      suffix := v.suffix
+      notWith := v.notWith
+      code := Impl.Blake2.X86_64.Fn.finalize Spec.Blake2.s v.finScrub.level v.finScrub.runs v.hashCallee
+      verified := .scrubbed (Proof.Blake2.X86_64.finalizeS_scrubbed v)
+      spSafe := Proof.Blake2.X86_64.finalizeS_spSafe v }])
 
 end VG.Artifacts.Blake2s.X86_64

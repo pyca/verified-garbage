@@ -31,9 +31,8 @@ meta import VerifiedGarbage.Proof.Blake2.PostOut
 # BLAKE2b's and BLAKE2s's streaming functions on x86-64, without secret residue
 
 `vg_blake2b_init` and `vg_blake2s_init`, and `vg_blake2b_update`, `vg_blake2b_finalize` and BLAKE2s's, over each backend,
-each followed by `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`)
-where the backend gives the residue analysis of its code
-(`Backend.updateRes`, `Backend.finalizeRes`). Their postconditions read the
+each followed by its cleanup (`Impl.Blake2.X86_64.Fn`), from what the
+backend proves of its code (`Backend.updScrub`, `Backend.finScrub`). Their postconditions read the
 memory on return only within the buffers (`X86_64.Scrub.PostOut`): the
 streaming state (`repr_congr'`) and the digest (`bytesAt_congr`).
 Argon2 calls `vg_blake2b_init`'s code as the internal `vg_blake2b_init_core`
@@ -68,56 +67,99 @@ theorem initBOut : PostOut (Spec.Blake2.initBContract X86_64.abi) (Spec.Blake2.i
 theorem initSOut : PostOut (Spec.Blake2.initSContract X86_64.abi) (Spec.Blake2.initSSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Blake2.initSPost_out 64)
 
-/-! ## The registrations -/
+/-! ## The generic functions as emitted -/
 
-open VG.X86_64.RScrub in
-/-- `vg_blake2b_update` over the backend `v`: without secret residue where `v`
-gives its analysis (`Backend.updateRes`). -/
-def updateBReg (v : Backend) : Registration Spec.Blake2.updateBApi X86_64.target :=
-  withScrub {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
-    stack := 8 + 584
-    notWith := v.notWith
-    verified := v.update_framed
-    spSafe := X86_64.withStackScratch_spSafe_of v.updateSpSafe } (updateBOut _) [] (pubOk_nil _)
-    v.updateRes
+/-- `vg_blake2b_update` over the backend `v`, before its cleanup. -/
+def updateBPlain (v : Backend) : Unscrubbed Spec.Blake2.updateBApi X86_64.target where
+  suffix := v.suffix
+  code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
+  stack := 8 + 584
+  notWith := v.notWith
+  verified := v.update_framed
+  spSafe := X86_64.withStackScratch_spSafe_of v.updateSpSafe
 
-open VG.X86_64.RScrub in
-/-- `vg_blake2b_finalize` over the backend `v` (`Backend.finalizeRes`). -/
-def finalizeBReg (v : Backend) : Registration Spec.Blake2.finalizeBApi X86_64.target :=
-  withScrub {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
-    stack := 8 + 584
-    notWith := v.notWith
-    verified := v.finalize_framed
-    spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe } (finalizeBOut _) [] (pubOk_nil _)
-    v.finalizeRes
+/-- `vg_blake2b_update`'s function as emitted over the backend `v`
+(`Impl.Blake2.X86_64.Fn.update`) meets its contract in constant time and
+returns without secret residue, from what `v` proves of its code
+(`Backend.updScrub`). -/
+theorem updateB_scrubbed (v : Backend) :
+    VerifiedScrubbed target (Impl.Blake2.X86_64.Fn.update Spec.Blake2.b v.updScrub.level v.updScrub.runs v.hashCallee)
+      (Spec.Blake2.updateBApi.contract X86_64.abi (8 + 584)) 0 :=
+  Scrub.SelScrub.scrubbed (updateBPlain v) v.updScrub (updateBOut _)
 
-open VG.X86_64.RScrub in
-/-- `vg_blake2s_update` over the backend `v` (`BackendS.updateRes`). -/
-def updateSReg (v : BackendS) : Registration Spec.Blake2.updateSApi X86_64.target :=
-  withScrub {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
-    stack := 8 + 584
-    notWith := v.notWith
-    verified := v.update_framed
-    spSafe := X86_64.withStackScratch_spSafe_of v.updateSpSafe } (updateSOut _) [] (pubOk_nil _)
-    v.updateRes
+theorem updateB_spSafe (v : Backend) :
+    (Impl.Blake2.X86_64.Fn.update Spec.Blake2.b v.updScrub.level v.updScrub.runs v.hashCallee).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackScratch_spSafe_of v.updateSpSafe)
 
-open VG.X86_64.RScrub in
-/-- `vg_blake2s_finalize` over the backend `v` (`BackendS.finalizeRes`). -/
-def finalizeSReg (v : BackendS) : Registration Spec.Blake2.finalizeSApi X86_64.target :=
-  withScrub {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
-    stack := 8 + 584
-    notWith := v.notWith
-    verified := v.finalize_framed
-    spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe } (finalizeSOut _) [] (pubOk_nil _)
-    v.finalizeRes
+/-- `vg_blake2b_finalize` over the backend `v`, before its cleanup. -/
+def finalizeBPlain (v : Backend) : Unscrubbed Spec.Blake2.finalizeBApi X86_64.target where
+  suffix := v.suffix
+  code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
+  stack := 8 + 584
+  notWith := v.notWith
+  verified := v.finalize_framed
+  spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe
+
+/-- `vg_blake2b_finalize`'s function as emitted over the backend `v`
+(`Impl.Blake2.X86_64.Fn.finalize`) meets its contract in constant time and
+returns without secret residue, from what `v` proves of its code
+(`Backend.finScrub`). -/
+theorem finalizeB_scrubbed (v : Backend) :
+    VerifiedScrubbed target (Impl.Blake2.X86_64.Fn.finalize Spec.Blake2.b v.finScrub.level v.finScrub.runs v.hashCallee)
+      (Spec.Blake2.finalizeBApi.contract X86_64.abi (8 + 584)) 0 :=
+  Scrub.SelScrub.scrubbed (finalizeBPlain v) v.finScrub (finalizeBOut _)
+
+theorem finalizeB_spSafe (v : Backend) :
+    (Impl.Blake2.X86_64.Fn.finalize Spec.Blake2.b v.finScrub.level v.finScrub.runs v.hashCallee).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackScratch_spSafe_of v.finalizeSpSafe)
+
+/-- `vg_blake2s_update` over the backend `v`, before its cleanup. -/
+def updateSPlain (v : BackendS) : Unscrubbed Spec.Blake2.updateSApi X86_64.target where
+  suffix := v.suffix
+  code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
+  stack := 8 + 584
+  notWith := v.notWith
+  verified := v.update_framed
+  spSafe := X86_64.withStackScratch_spSafe_of v.updateSpSafe
+
+/-- `vg_blake2s_update`'s function as emitted over the backend `v`
+(`Impl.Blake2.X86_64.Fn.update`) meets its contract in constant time and
+returns without secret residue, from what `v` proves of its code
+(`BackendS.updScrub`). -/
+theorem updateS_scrubbed (v : BackendS) :
+    VerifiedScrubbed target (Impl.Blake2.X86_64.Fn.update Spec.Blake2.s v.updScrub.level v.updScrub.runs v.hashCallee)
+      (Spec.Blake2.updateSApi.contract X86_64.abi (8 + 584)) 0 :=
+  Scrub.SelScrub.scrubbed (updateSPlain v) v.updScrub (updateSOut _)
+
+theorem updateS_spSafe (v : BackendS) :
+    (Impl.Blake2.X86_64.Fn.update Spec.Blake2.s v.updScrub.level v.updScrub.runs v.hashCallee).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackScratch_spSafe_of v.updateSpSafe)
+
+/-- `vg_blake2s_finalize` over the backend `v`, before its cleanup. -/
+def finalizeSPlain (v : BackendS) : Unscrubbed Spec.Blake2.finalizeSApi X86_64.target where
+  suffix := v.suffix
+  code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
+  stack := 8 + 584
+  notWith := v.notWith
+  verified := v.finalize_framed
+  spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe
+
+/-- `vg_blake2s_finalize`'s function as emitted over the backend `v`
+(`Impl.Blake2.X86_64.Fn.finalize`) meets its contract in constant time and
+returns without secret residue, from what `v` proves of its code
+(`BackendS.finScrub`). -/
+theorem finalizeS_scrubbed (v : BackendS) :
+    VerifiedScrubbed target (Impl.Blake2.X86_64.Fn.finalize Spec.Blake2.s v.finScrub.level v.finScrub.runs v.hashCallee)
+      (Spec.Blake2.finalizeSApi.contract X86_64.abi (8 + 584)) 0 :=
+  Scrub.SelScrub.scrubbed (finalizeSPlain v) v.finScrub (finalizeSOut _)
+
+theorem finalizeS_spSafe (v : BackendS) :
+    (Impl.Blake2.X86_64.Fn.finalize Spec.Blake2.s v.finScrub.level v.finScrub.runs v.hashCallee).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackScratch_spSafe_of v.finalizeSpSafe)
 
 /-! ## The functions as emitted -/
 
