@@ -15,15 +15,15 @@
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `key_len` must be 16, 24 or 32.
 /// * `state` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `state` nor `key` may overlap the 2336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `key` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "4fYh+CAAwTimAgh8mAgG+IAIxvmQCAb6iAjm+Xgbbnx4M898gvCweAYAEDp4I4N8eCukfHhzxX0="
+        r#".base64 "Yf8h+CAAwTimAgh8WAAG+EAAxvlQAAb6SADm+Xgbbnx4M898gvCweAYAEDp4I4N8eCukfHhzxX0="
 bl {vg_aes_expand_key_scratch}
 .base64 "eHPDfXiDBH7wAK44eHvmfQ=="
 bl {vg_cmac_aes_subkeys}
-.base64 "AAAgORABLvkYAS75mAgP6IAIz+mQCA/qiAjv6aYDCHwgCSE4AAAAOOH2IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4IAkhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxJxzEiAAgE4=""#,
+.base64 "AAAgORABLvkYAS75WAAP6EAAz+lQAA/qSADv6aYDCHygACE4AAAAOGH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+KAAITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxEwpEcSccxIgAIBO""#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
@@ -41,11 +41,11 @@ bl {vg_cmac_aes_subkeys}
 /// * `data` must be valid for reads of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 2336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "4fYh+CAAATmmAgh8gAgI+IgIyPmQCOj5mAgI+qAIKPqoCEj6sAho+ngbbnx4I498eDPQfHg78Xx4QxN9AAAlKA=="
+        r#".base64 "Yf8h+CAAATmmAgh8QAAI+EgAyPlQAOj5WAAI+mAAKPpoAEj6cABo+ngbbnx4I498eDPQfHg78Xx4QxN9AAAlKA=="
 beq %cr0, 20f
 .base64 "//8lOQ8AQDk4UCl9AQApOQ=="
 b 21f
@@ -97,7 +97,7 @@ bne %cr0, 215b
 b 214f
 213:
 214:
-.base64 "gAgT6IgI0+mQCPPpmAgT6qAIM+qoCFPqsAhz6qYDCHwgCSE4AAAAOOH2IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHwAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4IAkhOAAAYDgAAIA4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHEnHMSIACATg==""#,
+.base64 "QAAT6EgA0+lQAPPpWAAT6mAAM+poAFPqcABz6qYDCHygACE4AAAAOGH/IfggAIE5AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+KAAITgAAGA4AACAOAAAoDgAAMA4AADgOAAAADkAACA5AABAOQAAYDkAAIA5xAQAEMQMIRDEFEIQxBxjEMQkhBDELKUQxDTGEMQ85xDERAgRxJxzEiAAgE4=""#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
@@ -115,18 +115,18 @@ b 214f
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 2336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "4fYh+CAA4TimAgh8EAEj6QAAJvkYASPpCAAm+YgIB/iACMf5eDvufHg76Hx4K6d8eDPFfCABwzgAACco"
+        r#".base64 "Yf8h+CAA4TimAgh8EAEj6QAAJvkYASPpCAAm+UgAB/hAAMf5eDvufHg76Hx4K6d8eDPFfCABwzgAACco"
 beq %cr0, 20f
 .base64 "///nOA8AIDk4SOd8AQDnOA=="
 b 21f
 20:
 21:
 bl {vg_cmac_aes_finalize}
-.base64 "iAgO6IAIzummAwh8IAkhOAAAADjh9iH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+CAJITgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAOcQEABDEDCEQxBRCEMQcYxDEJIQQxCylEMQ0xhDEPOcQxEQIEcSccxIgAIBO""#,
+.base64 "SAAO6EAAzummAwh8oAAhOAAAADhh/yH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPigACE4AACgOAAAwDgAAOA4AAAAOQAAIDkAAEA5AABgOQAAgDnEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHEnHMSIACATg==""#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }

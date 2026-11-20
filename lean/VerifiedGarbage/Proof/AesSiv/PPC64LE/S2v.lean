@@ -41,26 +41,26 @@ open VG.Proof.AesCcm.PPC64LE (wp_mv)
 open VG.Spec.Aes (bytesAt)
 
 /-- What S2V writes: `W` from byte 16 to 128 and from byte 240 on. -/
-abbrev wR (c : Cx) : List Region := [⟨c.W + BitVec.ofNat 64 16, 112⟩, ⟨c.W + BitVec.ofNat 64 240, 2336⟩]
+abbrev wR (c : Cx) : List Region := [⟨c.W + BitVec.ofNat 64 16, 112⟩, ⟨c.W + BitVec.ofNat 64 240, 208⟩]
 
 theorem macR_wR {c : Cx} {st : Nat} (h : 240 ≤ st) (h' : st + 16 ≤ 384) :
     ∀ r ∈ macR c st, ∃ r' ∈ wR c, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ h (by omega_using [h'])⟩
-  · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
+  · exact ⟨⟨c.W + BitVec.ofNat 64 240, 208⟩, by simp, Offset.sub _ h (by omega_using [h'])⟩
+  · exact ⟨⟨c.W + BitVec.ofNat 64 240, 208⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
 
-theorem w16_wR {c : Cx} {d : Nat} (h : 240 ≤ d ∨ (16 ≤ d ∧ d + 16 ≤ 128)) (h' : d + 16 ≤ 2576) :
+theorem w16_wR {c : Cx} {d : Nat} (h : 240 ≤ d ∨ (16 ≤ d ∧ d + 16 ≤ 128)) (h' : d + 16 ≤ 448) :
     ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 d, 16⟩ : Region)], ∃ r' ∈ wR c, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
   rcases h with h | ⟨h₁, h₂⟩
-  · exact ⟨⟨c.W + BitVec.ofNat 64 240, 2336⟩, by simp, Offset.sub _ h (by omega_using [h'])⟩
+  · exact ⟨⟨c.W + BitVec.ofNat 64 240, 208⟩, by simp, Offset.sub _ h (by omega_using [h'])⟩
   · exact ⟨⟨c.W + BitVec.ofNat 64 16, 112⟩, by simp, Offset.sub _ h₁ (by omega_using [h₂])⟩
 
 /-- A region apart from `W` is apart from `wR`. -/
-theorem dis_wR {c : Cx} {r : Region} (hw : r.Disjoint ⟨c.W, 2576⟩) : ∀ r' ∈ wR c, r.Disjoint r' := by
+theorem dis_wR {c : Cx} {r : Region} (hw : r.Disjoint ⟨c.W, 448⟩) : ∀ r' ∈ wR c, r.Disjoint r' := by
   intro r' hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl

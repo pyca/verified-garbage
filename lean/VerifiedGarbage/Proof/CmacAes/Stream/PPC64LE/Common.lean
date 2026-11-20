@@ -56,11 +56,11 @@ def initPPC64LE : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .r3, 304⟩
     let key : Region := ⟨s.gpr .r4, (s.gpr .r5).toNat⟩
-    let scr : Region := ⟨s.gpr .r6, 2304⟩
+    let scr : Region := ⟨s.gpr .r6, 128⟩
     s.rd = [key] ∧ s.wr = [state, scr] ∧
       state.Disjoint key ∧ state.Disjoint scr ∧ key.Disjoint scr ∧
       (s.gpr .r3).toNat + 304 ≤ 2 ^ 64 ∧ (s.gpr .r4).toNat + (s.gpr .r5).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .r6).toNat + 2304 ≤ 2 ^ 64 ∧
+      (s.gpr .r6).toNat + 128 ≤ 2 ^ 64 ∧
       ((s.gpr .r5).toNat = 16 ∨ (s.gpr .r5).toNat = 24 ∨ (s.gpr .r5).toNat = 32)
   post s s' :=
     Spec.Cmac.Repr s'.mem (s.gpr .r3) (Spec.Aes.bytesAt s.mem (s.gpr .r4) (s.gpr .r5).toNat) []
@@ -73,11 +73,11 @@ def absorbPPC64LE : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .r3, 304⟩
     let data : Region := ⟨s.gpr .r6, (s.gpr .r7).toNat⟩
-    let scr : Region := ⟨s.gpr .r8, 2304⟩
+    let scr : Region := ⟨s.gpr .r8, 128⟩
     s.rd = [data] ∧ s.wr = [state, scr] ∧
       state.Disjoint data ∧ state.Disjoint scr ∧ data.Disjoint scr ∧
       (s.gpr .r3).toNat + 304 ≤ 2 ^ 64 ∧ (s.gpr .r6).toNat + (s.gpr .r7).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .r8).toNat + 2304 ≤ 2 ^ 64 ∧
+      (s.gpr .r8).toNat + 128 ≤ 2 ^ 64 ∧
       ((s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14)
   post s s' :=
     ∀ key msg, Spec.Cmac.Repr s.mem (s.gpr .r3) key msg →
@@ -94,11 +94,11 @@ def finishPPC64LE : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .r3, 304⟩
     let out : Region := ⟨s.gpr .r6, 16⟩
-    let scr : Region := ⟨s.gpr .r7, 2304⟩
+    let scr : Region := ⟨s.gpr .r7, 128⟩
     s.rd = [] ∧ s.wr = [state, out, scr] ∧
       state.Disjoint out ∧ state.Disjoint scr ∧ out.Disjoint scr ∧
       (s.gpr .r3).toNat + 304 ≤ 2 ^ 64 ∧ (s.gpr .r6).toNat + 16 ≤ 2 ^ 64 ∧
-      (s.gpr .r7).toNat + 2304 ≤ 2 ^ 64 ∧
+      (s.gpr .r7).toNat + 128 ≤ 2 ^ 64 ∧
       ((s.gpr .r4).toNat = 10 ∨ (s.gpr .r4).toNat = 12 ∨ (s.gpr .r4).toNat = 14)
   post s s' :=
     ∀ key msg, Spec.Cmac.Repr s.mem (s.gpr .r3) key msg →
@@ -180,7 +180,7 @@ theorem subkeys_noFrames : Impl.CmacAes.PPC64LE.subkeys.noFrames = true := by
   exact Proof.AesCbc.PPC64LE.encryptBlocks_noFrames
 
 theorem update_noFrames : Impl.CmacAes.PPC64LE.update.noFrames = true := by
-  simp [Impl.CmacAes.PPC64LE.update, Impl.CmacAes.PPC64LE.body, Impl.AesCbc.PPC64LE.whole,
+  simp [Impl.CmacAes.PPC64LE.update, Impl.CmacAes.PPC64LE.body, Impl.AesCbc.PPC64LE.wholeAt,
     Impl.AesCbc.PPC64LE.encCall, Code.noFrames]
   exact Proof.AesCbc.PPC64LE.encryptBlocks_noFrames
 
@@ -204,15 +204,15 @@ structure UArgs (s : State) (W C D S : Addr) (R n : Nat) : Prop where
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   hn : 16 * n < 2 ^ 64
   wc : (⟨W, 240⟩ : Region).Disjoint ⟨C, 16⟩
-  ws : (⟨W, 240⟩ : Region).Disjoint ⟨S, 2176⟩
+  ws : (⟨W, 240⟩ : Region).Disjoint ⟨S, 64⟩
   dc : (⟨D, 16 * n⟩ : Region).Disjoint ⟨C, 16⟩
-  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 2176⟩
-  cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 2176⟩
+  ds : (⟨D, 16 * n⟩ : Region).Disjoint ⟨S, 64⟩
+  cs : (⟨C, 16⟩ : Region).Disjoint ⟨S, 64⟩
   wrapC : C.toNat + 16 ≤ 2 ^ 64
   wrapD : D.toNat + 16 * n ≤ 2 ^ 64
-  wrapS : S.toNat + 2176 ≤ 2 ^ 64
-  reads : Covers ([⟨W, 240⟩, ⟨D, 16 * n⟩] ++ [⟨C, 16⟩, ⟨S, 2176⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨C, 16⟩, ⟨S, 2176⟩] s.wr
+  wrapS : S.toNat + 64 ≤ 2 ^ 64
+  reads : Covers ([⟨W, 240⟩, ⟨D, 16 * n⟩] ++ [⟨C, 16⟩, ⟨S, 64⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨C, 16⟩, ⟨S, 64⟩] s.wr
 
 /-- What a call of `vg_cmac_aes_update` leaves. -/
 structure UPost (s : State) (W C D S : Addr) (R n : Nat) (s' : State) : Prop where
@@ -220,13 +220,13 @@ structure UPost (s : State) (W C D S : Addr) (R n : Nat) (s' : State) : Prop whe
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, s'.gpr r = s.gpr r
-  frame : Frame [⟨C, 16⟩, ⟨S, 2176⟩] s.mem s'.mem
+  frame : Frame [⟨C, 16⟩, ⟨S, 64⟩] s.mem s'.mem
   out : Spec.Aes.bytesAt s'.mem C 16 =
     Spec.Cmac.chain (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem W (16 * (R + 1))))
       (Spec.Aes.bytesAt s.mem C 16) (Spec.Cmac.blocksAt s.mem D 16 n)
 
 theorem UArgs.pre {s : State} {W C D S : Addr} {R n : Nat} (h : UArgs s W C D S R n) :
-    updatePPC64LE.pre (s.callEntry.withRegions [⟨W, 240⟩, ⟨D, 16 * n⟩] [⟨C, 16⟩, ⟨S, 2176⟩]) := by
+    updatePPC64LE.pre (s.callEntry.withRegions [⟨W, 240⟩, ⟨D, 16 * n⟩] [⟨C, 16⟩, ⟨S, 64⟩]) := by
   have hR := toNat_rounds h.rounds
   have hN := toNat_ofNat (n := n) (by have := h.hn; omega_using [this])
   simp only [updatePPC64LE, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
@@ -254,7 +254,7 @@ theorem upd_rel {W C D S : Addr} {R n : Nat} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → UArgs s₁ W C D S R n ∧ UArgs s₂ W C D S R n ∧ s₁.sp = s₂.sp) :
     RelCT isa P Impl.CmacAes.Stream.PPC64LE.updCall fun _ _ => True := by
   refine RelCT.call Proof.CmacAes.PPC64LE.update_correct Proof.CmacAes.PPC64LE.update_ct
-    [⟨W, 240⟩, ⟨D, 16 * n⟩] [⟨C, 16⟩, ⟨S, 2176⟩] fun s₁ s₂ hp => ?_
+    [⟨W, 240⟩, ⟨D, 16 * n⟩] [⟨C, 16⟩, ⟨S, 64⟩] fun s₁ s₂ hp => ?_
   obtain ⟨h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
   simp only [updatePPC64LE, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
@@ -275,12 +275,12 @@ structure SArgs (s : State) (W K S : Addr) (R : Nat) : Prop where
   r6 : s.gpr .r6 = S
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   wk : (⟨W, 240⟩ : Region).Disjoint ⟨K, 32⟩
-  ws : (⟨W, 240⟩ : Region).Disjoint ⟨S, 2176⟩
-  ks : (⟨K, 32⟩ : Region).Disjoint ⟨S, 2176⟩
+  ws : (⟨W, 240⟩ : Region).Disjoint ⟨S, 64⟩
+  ks : (⟨K, 32⟩ : Region).Disjoint ⟨S, 64⟩
   wrapK : K.toNat + 32 ≤ 2 ^ 64
-  wrapS : S.toNat + 2176 ≤ 2 ^ 64
-  reads : Covers ([⟨W, 240⟩] ++ [⟨K, 32⟩, ⟨S, 2176⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨K, 32⟩, ⟨S, 2176⟩] s.wr
+  wrapS : S.toNat + 64 ≤ 2 ^ 64
+  reads : Covers ([⟨W, 240⟩] ++ [⟨K, 32⟩, ⟨S, 64⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨K, 32⟩, ⟨S, 64⟩] s.wr
 
 /-- What a call of `vg_cmac_aes_subkeys` leaves. -/
 structure SPost (s : State) (W K S : Addr) (R : Nat) (s' : State) : Prop where
@@ -288,13 +288,13 @@ structure SPost (s : State) (W K S : Addr) (R : Nat) (s' : State) : Prop where
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, s'.gpr r = s.gpr r
-  frame : Frame [⟨K, 32⟩, ⟨S, 2176⟩] s.mem s'.mem
+  frame : Frame [⟨K, 32⟩, ⟨S, 64⟩] s.mem s'.mem
   out : Spec.Aes.bytesAt s'.mem K 32 =
     (Spec.Cmac.subkeys (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem W (16 * (R + 1)))) 16).1 ++
       (Spec.Cmac.subkeys (Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem W (16 * (R + 1)))) 16).2
 
 theorem SArgs.pre {s : State} {W K S : Addr} {R : Nat} (h : SArgs s W K S R) :
-    subkeysPPC64LE.pre (s.callEntry.withRegions [⟨W, 240⟩] [⟨K, 32⟩, ⟨S, 2176⟩]) := by
+    subkeysPPC64LE.pre (s.callEntry.withRegions [⟨W, 240⟩] [⟨K, 32⟩, ⟨S, 64⟩]) := by
   have hR := toNat_rounds h.rounds
   simp only [subkeysPPC64LE, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     callEntry_gpr' s (by decide : Reg.r3 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.r4 ∉ linkRegs),
@@ -318,7 +318,7 @@ theorem sub_rel {W K S : Addr} {R : Nat} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → SArgs s₁ W K S R ∧ SArgs s₂ W K S R ∧ s₁.sp = s₂.sp) :
     RelCT isa P Impl.CmacAes.Stream.PPC64LE.skCall fun _ _ => True := by
   refine RelCT.call Proof.CmacAes.PPC64LE.subkeys_correct Proof.CmacAes.PPC64LE.subkeys_ct
-    [⟨W, 240⟩] [⟨K, 32⟩, ⟨S, 2176⟩] fun s₁ s₂ hp => ?_
+    [⟨W, 240⟩] [⟨K, 32⟩, ⟨S, 64⟩] fun s₁ s₂ hp => ?_
   obtain ⟨h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
   simp only [subkeysPPC64LE, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
@@ -342,16 +342,16 @@ structure FArgs (s : State) (K St P S : Addr) (L R : Nat) : Prop where
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   len : L ≤ 16
   kst : (⟨K, 272⟩ : Region).Disjoint ⟨St, 16⟩
-  ks : (⟨K, 272⟩ : Region).Disjoint ⟨S, 2176⟩
+  ks : (⟨K, 272⟩ : Region).Disjoint ⟨S, 64⟩
   pst : (⟨P, L⟩ : Region).Disjoint ⟨St, 16⟩
-  ps : (⟨P, L⟩ : Region).Disjoint ⟨S, 2176⟩
-  sts : (⟨St, 16⟩ : Region).Disjoint ⟨S, 2176⟩
+  ps : (⟨P, L⟩ : Region).Disjoint ⟨S, 64⟩
+  sts : (⟨St, 16⟩ : Region).Disjoint ⟨S, 64⟩
   wrapK : K.toNat + 272 ≤ 2 ^ 64
   wrapSt : St.toNat + 16 ≤ 2 ^ 64
   wrapP : P.toNat + L ≤ 2 ^ 64
-  wrapS : S.toNat + 2176 ≤ 2 ^ 64
-  reads : Covers ([⟨K, 272⟩, ⟨P, L⟩] ++ [⟨St, 16⟩, ⟨S, 2176⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨St, 16⟩, ⟨S, 2176⟩] s.wr
+  wrapS : S.toNat + 64 ≤ 2 ^ 64
+  reads : Covers ([⟨K, 272⟩, ⟨P, L⟩] ++ [⟨St, 16⟩, ⟨S, 64⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨St, 16⟩, ⟨S, 64⟩] s.wr
 
 /-- What a call of `vg_cmac_aes_finalize` leaves. -/
 structure FPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop where
@@ -359,7 +359,7 @@ structure FPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop wh
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, s'.gpr r = s.gpr r
-  frame : Frame [⟨St, 16⟩, ⟨S, 2176⟩] s.mem s'.mem
+  frame : Frame [⟨St, 16⟩, ⟨S, 64⟩] s.mem s'.mem
   out : let ciph := Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem K (16 * (R + 1)))
     let ks := Spec.Cmac.subkeys ciph 16
     Spec.Aes.bytesAt s.mem (K + 240) 32 = ks.1 ++ ks.2 →
@@ -368,7 +368,7 @@ structure FPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop wh
       Spec.Aes.bytesAt s'.mem St 16 = Spec.Cmac.macFull ciph 16 (msg ++ Spec.Aes.bytesAt s.mem P L)
 
 theorem FArgs.pre {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R) :
-    finalizePPC64LE.pre (s.callEntry.withRegions [⟨K, 272⟩, ⟨P, L⟩] [⟨St, 16⟩, ⟨S, 2176⟩]) := by
+    finalizePPC64LE.pre (s.callEntry.withRegions [⟨K, 272⟩, ⟨P, L⟩] [⟨St, 16⟩, ⟨S, 64⟩]) := by
   have hR := toNat_rounds h.rounds
   have hL := toNat_ofNat (n := L) (by have := h.len; omega_using [this])
   simp only [finalizePPC64LE, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
@@ -397,7 +397,7 @@ theorem fin_rel {K St Q S : Addr} {L R : Nat} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → FArgs s₁ K St Q S L R ∧ FArgs s₂ K St Q S L R ∧ s₁.sp = s₂.sp) :
     RelCT isa P Impl.CmacAes.Stream.PPC64LE.finCall fun _ _ => True := by
   refine RelCT.call Proof.CmacAes.PPC64LE.finalize_correct Proof.CmacAes.PPC64LE.finalize_ct
-    [⟨K, 272⟩, ⟨Q, L⟩] [⟨St, 16⟩, ⟨S, 2176⟩] fun s₁ s₂ hp => ?_
+    [⟨K, 272⟩, ⟨Q, L⟩] [⟨St, 16⟩, ⟨S, 64⟩] fun s₁ s₂ hp => ?_
   obtain ⟨h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
   simp only [finalizePPC64LE, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
@@ -410,62 +410,60 @@ theorem fin_rel {K St Q S : Addr} {L R : Nat} {P : State → State → Prop}
 /-! ## `vg_aes_expand_key_scratch` -/
 
 /-- What a call of `vg_aes_expand_key_scratch` needs: the key `Kp` of `KL`
-bytes, the schedule `W` and the working space `S`. -/
-structure EArgs (s : State) (Kp W S : Addr) (KL : Nat) : Prop where
+bytes and the schedule `W` (it needs no working space,
+`Proof.Aes.expandKeyDirectPPC64LE`). -/
+structure EArgs (s : State) (Kp W : Addr) (KL : Nat) : Prop where
   r3 : s.gpr .r3 = Kp
   r4 : s.gpr .r4 = BitVec.ofNat 64 KL
   r5 : s.gpr .r5 = W
-  r6 : s.gpr .r6 = S
   klen : KL = 16 ∨ KL = 24 ∨ KL = 32
   kw : (⟨Kp, KL⟩ : Region).Disjoint ⟨W, 240⟩
-  ks : (⟨Kp, KL⟩ : Region).Disjoint ⟨S, 512⟩
-  ws : (⟨W, 240⟩ : Region).Disjoint ⟨S, 512⟩
-  reads : Covers ([⟨Kp, KL⟩] ++ [⟨W, 240⟩, ⟨S, 512⟩]) (s.rd ++ s.wr)
-  writes : Covers [⟨W, 240⟩, ⟨S, 512⟩] s.wr
+  reads : Covers ([⟨Kp, KL⟩] ++ [⟨W, 240⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨W, 240⟩] s.wr
 
 /-- What a call of `vg_aes_expand_key_scratch` leaves. -/
-structure EPost (s : State) (Kp W S : Addr) (KL : Nat) (s' : State) : Prop where
+structure EPost (s : State) (Kp W : Addr) (KL : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
   saved : ∀ r ∈ preserved, s'.gpr r = s.gpr r
-  frame : Frame [⟨W, 240⟩, ⟨S, 512⟩] s.mem s'.mem
+  frame : Frame [⟨W, 240⟩] s.mem s'.mem
   out : Spec.Aes.bytesAt s'.mem W (16 * (Spec.Aes.rounds (KL / 4) + 1)) =
     Spec.Aes.expandKey (Spec.Aes.bytesAt s.mem Kp KL)
 
-theorem EArgs.pre {s : State} {Kp W S : Addr} {KL : Nat} (h : EArgs s Kp W S KL) :
-    Proof.Aes.expandKeyPPC64LE.pre (s.callEntry.withRegions [⟨Kp, KL⟩] [⟨W, 240⟩, ⟨S, 512⟩]) := by
+theorem EArgs.pre {s : State} {Kp W : Addr} {KL : Nat} (h : EArgs s Kp W KL) :
+    Proof.Aes.expandKeyDirectPPC64LE.pre (s.callEntry.withRegions [⟨Kp, KL⟩] [⟨W, 240⟩]) := by
   have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega_using [h])
-  simp only [Proof.Aes.expandKeyPPC64LE, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+  simp only [Proof.Aes.expandKeyDirectPPC64LE, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr,
     callEntry_gpr' s (by decide : Reg.r3 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.r4 ∉ linkRegs),
-    callEntry_gpr' s (by decide : Reg.r5 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.r6 ∉ linkRegs),
-    h.r3, h.r4, h.r5, h.r6, hK]
-  exact ⟨trivial, trivial, h.kw, h.ks, h.ws, h.klen⟩
+    callEntry_gpr' s (by decide : Reg.r5 ∉ linkRegs), h.r3, h.r4, h.r5, hK]
+  exact ⟨trivial, trivial, h.kw, h.klen⟩
 
-theorem ek_call {s : State} {Kp W S : Addr} {KL : Nat} (h : EArgs s Kp W S KL) :
-    WP isa Impl.CmacAes.Stream.PPC64LE.ekCall s (EPost s Kp W S KL) := by
+theorem ek_call {s : State} {Kp W : Addr} {KL : Nat} (h : EArgs s Kp W KL) :
+    WP isa Impl.CmacAes.Stream.PPC64LE.ekCall s (EPost s Kp W KL) := by
   have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega_using [h])
-  refine WP.call (k := Proof.Aes.expandKeyPPC64LE) Proof.Aes.PPC64LE.expandKey_correct h.pre h.reads
+  refine WP.call (k := Proof.Aes.expandKeyDirectPPC64LE) Proof.Aes.PPC64LE.expandKey_direct_correct h.pre h.reads
     h.writes ?_ expandKey_noFrames
   intro s' hrd hwr hsp hf hsaved _ hpost
   refine ⟨hrd, hwr, hsp, hsaved, hf, ?_⟩
-  simp only [Proof.Aes.expandKeyPPC64LE, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+  simp only [Proof.Aes.expandKeyDirectPPC64LE, Proof.Aes.expandKeyPPC64LE, State.withRegions_gpr,
+    State.withRegions_mem, State.callEntry_mem,
     callEntry_gpr' s (by decide : Reg.r3 ∉ linkRegs), callEntry_gpr' s (by decide : Reg.r4 ∉ linkRegs),
     callEntry_gpr' s (by decide : Reg.r5 ∉ linkRegs), h.r3, h.r4, h.r5, hK] at hpost
   exact hpost
 
-theorem ek_rel {Kp W S : Addr} {KL : Nat} {P : State → State → Prop}
-    (h : ∀ s₁ s₂, P s₁ s₂ → EArgs s₁ Kp W S KL ∧ EArgs s₂ Kp W S KL ∧ s₁.sp = s₂.sp) :
+theorem ek_rel {Kp W : Addr} {KL : Nat} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → EArgs s₁ Kp W KL ∧ EArgs s₂ Kp W KL ∧ s₁.sp = s₂.sp) :
     RelCT isa P Impl.CmacAes.Stream.PPC64LE.ekCall fun _ _ => True := by
-  refine RelCT.call Proof.Aes.PPC64LE.expandKey_correct Proof.Aes.PPC64LE.expandKey_ct
-    [⟨Kp, KL⟩] [⟨W, 240⟩, ⟨S, 512⟩] fun s₁ s₂ hp => ?_
+  refine RelCT.call Proof.Aes.PPC64LE.expandKey_direct_correct Proof.Aes.PPC64LE.expandKey_direct_ct
+    [⟨Kp, KL⟩] [⟨W, 240⟩] fun s₁ s₂ hp => ?_
   obtain ⟨h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
-  simp only [Proof.Aes.expandKeyPPC64LE, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
+  simp only [Proof.Aes.expandKeyDirectPPC64LE, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
     callEntry_gpr' _ (by decide : Reg.r3 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.r4 ∉ linkRegs),
-    callEntry_gpr' _ (by decide : Reg.r5 ∉ linkRegs), callEntry_gpr' _ (by decide : Reg.r6 ∉ linkRegs),
-    h₁.r3, h₁.r4, h₁.r5, h₁.r6, h₂.r3, h₂.r4, h₂.r5, h₂.r6, hsp]
-  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+    callEntry_gpr' _ (by decide : Reg.r5 ∉ linkRegs), h₁.r3, h₁.r4, h₁.r5, h₂.r3, h₂.r4, h₂.r5, hsp]
+  exact ⟨trivial, trivial, trivial, trivial⟩
 
 /-! ## Bytes written -/
 

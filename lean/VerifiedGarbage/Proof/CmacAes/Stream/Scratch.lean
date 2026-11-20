@@ -29,26 +29,26 @@ namespace VG.Proof.CmacAes.Stream
 open VG.Spec.Cmac
 
 /-- `vg_cmac_aes_init` with `scratch: *mut [u64; 288]`. -/
-def initScratchSig : Sig where
+def initScratchSig (n : Nat := 288) : Sig where
   params := [("state", .array true .u64 38), ("key", .slice false .u8 "key_len"),
-    ("scratch", .array true .u64 288)]
+    ("scratch", .array true .u64 n)]
 
 /-- `aesInitContract`, whatever `scratch` is. -/
-def initScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  initScratchSig.contract A
+def initScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 288) : Contract M :=
+  (initScratchSig n).contract A
     (pre := fun state key keyLen _scratch => aesInitPre A.ptrBits state key keyLen)
     (post := fun state key keyLen _scratch => aesInitPost A.ptrBits state key keyLen)
     (stack := stack)
 
 /-- `vg_cmac_aes_absorb` with `scratch: *mut [u64; 288]`. -/
-def absorbScratchSig : Sig where
+def absorbScratchSig (n : Nat := 288) : Sig where
   params := [("state", .array true .u64 38), ("rounds", .int .usize true),
     ("count", .int .u64 true), ("data", .slice false .u8 "len"),
-    ("scratch", .array true .u64 288)]
+    ("scratch", .array true .u64 n)]
 
 /-- `aesAbsorbContract`, whatever `scratch` is. -/
-def absorbScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  absorbScratchSig.contract A
+def absorbScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 288) : Contract M :=
+  (absorbScratchSig n).contract A
     (pre := fun state rounds count data len _scratch =>
       aesAbsorbPre A.ptrBits state rounds count data len)
     (post := fun state rounds count data len _scratch =>
@@ -56,14 +56,14 @@ def absorbScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
     (stack := stack)
 
 /-- `vg_cmac_aes_finish` with `scratch: *mut [u64; 288]`. -/
-def finishScratchSig : Sig where
+def finishScratchSig (n : Nat := 288) : Sig where
   params := [("state", .array true .u64 38), ("rounds", .int .usize true),
     ("count", .int .u64 true), ("out", .array true .u8 16),
-    ("scratch", .array true .u64 288)]
+    ("scratch", .array true .u64 n)]
 
 /-- `aesFinishContract`, whatever `scratch` is. -/
-def finishScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  finishScratchSig.contract A
+def finishScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 288) : Contract M :=
+  (finishScratchSig n).contract A
     (pre := fun state rounds count out _scratch => aesFinishPre A.ptrBits state rounds count out)
     (post := fun state rounds count out _scratch => aesFinishPost A.ptrBits state rounds count out)
     (stack := stack)

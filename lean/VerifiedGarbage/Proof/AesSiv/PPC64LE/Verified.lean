@@ -58,7 +58,7 @@ def cxOf (s : State) : Cx :=
 set_option linter.unusedSimpArgs false in
 /-- The precondition of `encrypt`'s shared contract gives the proofs': the
 arguments, the components, and `siv` writable. -/
-theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0).pre s) :
+theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0 56).pre s) :
     Args (cxOf s) s ∧ Ads (cxOf s) s.mem s ∧ Covers [⟨(cxOf s).V, 16⟩] s.wr := by
   sig_pre [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Spec.Siv.encryptPre, PPC64LE.abi,
     PPC64LE.argRegs, List.getD] at h
@@ -79,7 +79,7 @@ theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract PPC64LE.
     rw [hrd, Nat.mul_comm]; exact List.mem_cons_of_mem _ List.mem_cons_self
   have mD : (⟨s.gpr .r7, (s.gpr .r8).toNat⟩ : Region) ∈ s.wr := by rw [hwr]; exact List.mem_cons_self
   have mV : (⟨s.gpr .r9, 16⟩ : Region) ∈ s.wr := by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self
-  have mW : (⟨s.gpr .r10, 2576⟩ : Region) ∈ s.wr := by
+  have mW : (⟨s.gpr .r10, 448⟩ : Region) ∈ s.wr := by
     rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
   have L : Lay (cxOf s) :=
     ⟨fc, fw, by rw [Nat.mul_comm]; exact fA, fd, fv, cW, cd, by rw [Nat.mul_comm]; exact wA.symm,
@@ -94,7 +94,7 @@ theorem encPre_of {s : State} (h : (Proof.AesSiv.encryptScratchContract PPC64LE.
 set_option linter.unusedSimpArgs false in
 /-- The precondition of `decrypt`'s shared contract gives the proofs': the
 arguments and the components. -/
-theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0).pre s) :
+theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0 56).pre s) :
     Args (cxOf s) s ∧ Ads (cxOf s) s.mem s := by
   sig_pre [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Spec.Siv.decryptPre, PPC64LE.abi,
     PPC64LE.argRegs, List.getD] at h
@@ -114,7 +114,7 @@ theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract PPC64LE.
   have mA : (⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩ : Region) ∈ s.rd := by
     rw [hrd, Nat.mul_comm]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
   have mD : (⟨s.gpr .r7, (s.gpr .r8).toNat⟩ : Region) ∈ s.wr := by rw [hwr]; exact List.mem_cons_self
-  have mW : (⟨s.gpr .r10, 2576⟩ : Region) ∈ s.wr := by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self
+  have mW : (⟨s.gpr .r10, 448⟩ : Region) ∈ s.wr := by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self
   have L : Lay (cxOf s) :=
     ⟨fc, fw, by rw [Nat.mul_comm]; exact fA, fd, fv, cW, cd, by rw [Nat.mul_comm]; exact wA.symm,
       by rw [Nat.mul_comm]; exact dA.symm, dW, vW, dV.symm, h, BitVec.isLt _⟩
@@ -127,9 +127,9 @@ theorem decPre_of {s : State} (h : (Proof.AesSiv.decryptScratchContract PPC64LE.
 
 /-! ## Correctness -/
 
-theorem encrypt_correct (s : State) (hs : (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0).pre s) :
+theorem encrypt_correct (s : State) (hs : (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0 56).pre s) :
     ∃ t s', Exec isa Impl.AesSiv.PPC64LE.encrypt s t s' ∧ abiPreserved s s' ∧
-      (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0).post s s' := by
+      (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0 56).post s s' := by
   obtain ⟨Ar, hA, hV⟩ := encPre_of hs
   obtain ⟨t, s', he, hab, hq⟩ := encrypt_wp Ar hA hV
   refine ⟨t, s', he, hab, ?_⟩
@@ -137,9 +137,9 @@ theorem encrypt_correct (s : State) (hs : (Proof.AesSiv.encryptScratchContract P
     PPC64LE.abi, PPC64LE.argRegs, List.getD]
   exact fun _ => hq
 
-theorem decrypt_correct (s : State) (hs : (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0).pre s) :
+theorem decrypt_correct (s : State) (hs : (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0 56).pre s) :
     ∃ t s', Exec isa Impl.AesSiv.PPC64LE.decrypt s t s' ∧ abiPreserved s s' ∧
-      (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0).post s s' := by
+      (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0 56).post s s' := by
   obtain ⟨Ar, hA⟩ := decPre_of hs
   obtain ⟨t, s', he, hab, hr, hd⟩ := decrypt_wp Ar hA
   refine ⟨t, s', he, hab, ?_⟩
@@ -179,10 +179,10 @@ def initSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 32⟩]
-  wr := [⟨0x2000, 512⟩, ⟨0x3000, 2560⟩]
+  wr := [⟨0x2000, 512⟩, ⟨0x3000, 112⟩]
 
 theorem init_verified : Verified PPC64LE.target Impl.AesSiv.PPC64LE.init
-    (Proof.AesSiv.initScratchContract PPC64LE.abi 0) :=
+    (Proof.AesSiv.initScratchContract PPC64LE.abi 0 14) :=
   Verified.of_correct init_correct init_ct (by
     sig_implies [Proof.AesSiv.initScratchContract, Proof.AesSiv.initScratchSig, Spec.Siv.initPre,
       Spec.Siv.initPost, initPPC64LE, PPC64LE.abi, PPC64LE.argRegs, List.getD] [initSat] using initSat)
@@ -190,16 +190,16 @@ theorem init_verified : Verified PPC64LE.target Impl.AesSiv.PPC64LE.init
 /-- `initSat` without the scratch buffer. -/
 def initFrameSat : State := { initSat with wr := [⟨0x2000, 512⟩] }
 
-theorem initFrameSat_pre : ∃ s, (Spec.Siv.initContract PPC64LE.abi 2592).pre s := by
+theorem initFrameSat_pre : ∃ s, (Spec.Siv.initContract PPC64LE.abi 144).pre s := by
   implies_sat [Spec.Siv.initContract, Spec.Siv.initSig, Spec.Siv.initPre, Spec.Siv.initPost,
     PPC64LE.abi, PPC64LE.argRegs, List.getD] [initFrameSat, initSat] using initFrameSat
 
-/-- `init` with its scratch buffer in a frame of 2592 bytes. -/
-theorem init_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2592 .r6
-    Impl.AesSiv.PPC64LE.init) (Spec.Siv.initContract PPC64LE.abi 2592) :=
-  Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
+/-- `init` with its scratch buffer in a frame of 144 bytes. -/
+theorem init_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 144 .r6
+    Impl.AesSiv.PPC64LE.init) (Spec.Siv.initContract PPC64LE.abi 144) :=
+  Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 14)
     (pre := Spec.Siv.initPre PPC64LE.abi.ptrBits) (post := Spec.Siv.initPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2592) init_verified (by decide) (by decide)
+    (wa := true) (stack := 0) (bytes := 144) init_verified (by decide) (by decide)
     (Proof.AesSiv.initPre_local _) (Proof.AesSiv.initPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
@@ -217,22 +217,22 @@ def encSat (rd wr : List Region) : State where
   rd := rd
   wr := wr
 
-theorem encSat_pre : ∃ s, (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0).pre s := by
+theorem encSat_pre : ∃ s, (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0 56).pre s := by
   sig_implies_sat [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, Spec.Siv.encryptPre,
     PPC64LE.abi, PPC64LE.argRegs, List.getD] [encSat, Mem.readW, Mem.read]
-    using encSat [⟨0x1000, 512⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x5000, 16⟩, ⟨0x4000, 2576⟩]
+    using encSat [⟨0x1000, 512⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x5000, 16⟩, ⟨0x4000, 448⟩]
 
-theorem decSat_pre : ∃ s, (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0).pre s := by
+theorem decSat_pre : ∃ s, (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0 56).pre s := by
   sig_implies_sat [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Spec.Siv.decryptPre,
     Spec.Siv.decryptLeak, PPC64LE.abi, PPC64LE.argRegs, List.getD] [encSat, Mem.readW, Mem.read]
-    using encSat [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x4000, 2576⟩]
+    using encSat [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x4000, 448⟩]
 
-theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract PPC64LE.abi 2608).pre s := by
+theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract PPC64LE.abi 480).pre s := by
   implies_sat [Proof.AesSiv.encryptRoundsContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, Proof.AesSiv.encryptRoundsPost,
     PPC64LE.abi, PPC64LE.argRegs, List.getD] [encSat, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩, ⟨0x5000, 16⟩]
 
-theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract PPC64LE.abi 2608).pre s := by
+theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract PPC64LE.abi 480).pre s := by
   implies_sat [Proof.AesSiv.decryptRoundsContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Proof.AesSiv.decryptRoundsPost,
     Spec.Siv.decryptLeak, PPC64LE.abi, PPC64LE.argRegs, List.getD] [encSat, Mem.readW, Mem.read]
     using encSat [⟨0x1000, 512⟩, ⟨0x5000, 16⟩, ⟨0x2000, 0⟩] [⟨0x3000, 0⟩]
@@ -261,7 +261,7 @@ theorem enc_two {s₁ s₂ : State} (A₂ : Args (cxOf s₂) s₂) (hA₂ : Ads 
   exact ⟨A₂, hA₂, fun i hi => ⟨descW_eq hd hi (by decide), descW_eq hd hi (by decide)⟩⟩
 
 theorem encrypt_verified : Verified PPC64LE.target Impl.AesSiv.PPC64LE.encrypt
-    (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0) := by
+    (Proof.AesSiv.encryptScratchContract PPC64LE.abi 0 56) := by
   refine ⟨encrypt_correct, VG.Proof.Gather.PPC64LE.ct_of fun s₁ s₂ h₁ h₂ hp => ?_, encSat_pre⟩
   sig_pub [Proof.AesSiv.encryptScratchContract, Proof.AesSiv.encryptScratchSig, PPC64LE.abi, PPC64LE.argRegs,
     List.getD] at hp
@@ -271,7 +271,7 @@ theorem encrypt_verified : Verified PPC64LE.target Impl.AesSiv.PPC64LE.encrypt
   exact encrypt_rel A₁ A₂' hA₁ hA₂' hd hp.1
 
 theorem decrypt_verified : Verified PPC64LE.target Impl.AesSiv.PPC64LE.decrypt
-    (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0) := by
+    (Proof.AesSiv.decryptScratchContract PPC64LE.abi 0 56) := by
   refine ⟨decrypt_correct, VG.Proof.Gather.PPC64LE.ct_of fun s₁ s₂ h₁ h₂ hp => ?_, decSat_pre⟩
   sig_pub [Proof.AesSiv.decryptScratchContract, Proof.AesSiv.decryptScratchSig, Spec.Siv.decryptLeak,
     PPC64LE.abi, PPC64LE.argRegs, List.getD] at hp
@@ -283,21 +283,21 @@ theorem decrypt_verified : Verified PPC64LE.target Impl.AesSiv.PPC64LE.decrypt
 
 /-! ## The working space on the stack -/
 
-/-- `encrypt` with its working space in a frame of 2608 bytes. -/
-theorem encrypt_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10
-    Impl.AesSiv.PPC64LE.encrypt) (Proof.AesSiv.encryptRoundsContract PPC64LE.abi 2608) :=
-  Verified.stackScratchLists (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
+/-- `encrypt` with its working space in a frame of 480 bytes. -/
+theorem encrypt_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 480 .r10
+    Impl.AesSiv.PPC64LE.encrypt) (Proof.AesSiv.encryptRoundsContract PPC64LE.abi 480) :=
+  Verified.stackScratchLists (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 56)
     (pre := Spec.Siv.encryptPre PPC64LE.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2608) encrypt_verified (by decide) (by decide)
+    (wa := true) (stack := 0) (bytes := 480) encrypt_verified (by decide) (by decide)
     (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.encryptPostOut_local _ vs m m₁ m₂ r hl) encFrameSat_pre
 
-/-- `decrypt` with its working space in a frame of 2608 bytes. -/
-theorem decrypt_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 2608 .r10
-    Impl.AesSiv.PPC64LE.decrypt) (Proof.AesSiv.decryptRoundsContract PPC64LE.abi 2608) :=
-  Verified.stackScratchLists (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
+/-- `decrypt` with its working space in a frame of 480 bytes. -/
+theorem decrypt_framed : Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 480 .r10
+    Impl.AesSiv.PPC64LE.decrypt) (Proof.AesSiv.decryptRoundsContract PPC64LE.abi 480) :=
+  Verified.stackScratchLists (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 56)
     (pre := Spec.Siv.decryptPre PPC64LE.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost PPC64LE.abi.ptrBits)
-    (wa := true) (stack := 0) (bytes := 2608) (leak := some (Spec.Siv.decryptLeak PPC64LE.abi.ptrBits))
+    (wa := true) (stack := 0) (bytes := 480) (leak := some (Spec.Siv.decryptLeak PPC64LE.abi.ptrBits))
     decrypt_verified (by decide) (by decide)
     (Proof.AesSiv.decryptPre_local _) (Proof.AesSiv.decryptPost_local _)
     (fun vs m m₁ m₂ r hl _ => Proof.AesSiv.decryptPostOut_local _ vs m m₁ m₂ r hl) decFrameSat_pre
