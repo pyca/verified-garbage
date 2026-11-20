@@ -70,6 +70,22 @@ theorem Impl.Cast5.AArch64.Tbl.sboxes.lit_eq :
 
 materialize_value Impl.Cast5.AArch64.Tbl.planeWords
 
+/-! Quote table loads with the existing checked table literal. Reifying its
+1,024 words separately at every load dominates quoting the round code. -/
+
+open Lean in
+@[instance_reducible] private meta def tblInstrToExpr : ToExpr AArch64.Instr :=
+  let ordinary : ToExpr AArch64.Instr := inferInstance
+  { ordinary with toExpr := fun i => match i with
+    | .ldrqTbl t n off name words =>
+      if name == Impl.Cast5.AArch64.Tbl.planesSym && words == Impl.Cast5.AArch64.Tbl.planeWords then
+        mkApp5 (mkConst ``AArch64.Instr.ldrqTbl) (toExpr t) (toExpr n) (toExpr off) (toExpr name)
+          (mkConst ``Impl.Cast5.AArch64.Tbl.planeWords.lit)
+      else ordinary.toExpr i
+    | _ => ordinary.toExpr i }
+
+attribute [local instance] tblInstrToExpr
+
 /-! The functions. -/
 
 materialize_code Impl.Cast5.AArch64.Tbl.ecbEncrypt
