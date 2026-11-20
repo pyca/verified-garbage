@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "AACk6AgAxOgQAOToGAAE6RgAo/ggAMP4KADj+DAAA/kAAKA4AACj+AgAo/gQAKP4AACgOAAAwDgAAOA4AAAAOSAAgE4=""#,
+        r#".base64 "AACk6AgAxOgQAOToGAAE6RgAo/ggAMP4KADj+DAAA/kAAKA4AACj+AgAo/gQAKP4AACgOAAAwDgAAOA4AAAAOSAAgE4AAABgAAAAYAAAAGAAAABg""#,
     )
 }
 
