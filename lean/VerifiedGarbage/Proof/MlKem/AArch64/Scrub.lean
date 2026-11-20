@@ -7,14 +7,11 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Inst
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
-public import VerifiedGarbage.Proof.Variants.KeccakX2.AArch64
-public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.Impl.MlKem.AArch64.Wipe
-public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
-public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
-import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.MlKem.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.SideFill
+import VerifiedGarbage.Proof.MlKem.AArch64.CallWipe
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -26,8 +23,8 @@ with `H(ek)` given) and decapsulation of ML-KEM-768 and ML-KEM-1024 read the
 memory on return only within their outputs and their scratch space
 (`ScrubAll.ScrubAllOk`, as x86-64's `Proof/MlKem/X86_64/CallWipe.lean` proves
 them): each implementation, generic over the Keccak-f[1600] implementations
-it calls, returns with every register it may leave secret cleared and its
-whole stack zeroed (`ScrubAll.scrubAllOf`).
+it calls, returns with every register it may write cleared and its whole
+stack zeroed (`Impl.MlKem.AArch64.Fn`, whose theorems are at the end).
 -/
 
 @[expose] public section
@@ -207,113 +204,208 @@ theorem decaps1024Ok_tables (W : Nat) (hW : 0 < W := by decide) :
 
 end
 
-/-! ## What `scrubAllOf` needs of the code
+/-! ## The functions, as emitted
 
-`ScrubAll.scrubSide` of each function with each pair of Keccak
-implementations: evaluated here, by the kernel, so that the emitter works out
-nothing. -/
+Each function with its cleanup (`Impl.MlKem.AArch64.Fn`) meets its contract
+in constant time and returns without secret residue, whatever the Keccak
+implementations it calls: what its registration binds. Its code is the code
+built with the single-state permutation's body empty, with those holes
+filled (`Code.fillCalls`); what the cleanup needs of the code is evaluated
+of that closed code, by the kernel, once for the baseline two-state functions
+and once for the SHA-3 extension's (`ScrubAll.verifiedScrubbedOfFill`). -/
 
-section Sides
+section Fns
 
-open VG.Proof.MlKem.AArch64.FixedHash (fixedHash prfW)
+open VG.Proof.MlKem.AArch64.FixedHash (hole)
 open VG.Proof.MlKem.AArch64.FixedHash.Inst (parts)
+open VG.Proof.MlKem.AArch64.Optimized (constants)
+open VG.Impl.MlKem.AArch64 (lay768)
+open VG.Impl.MlKem1024.AArch64 (lay1024)
 
-/-- The registers the tails clear: every register the calling convention
-does not preserve, which the code, with each pair of permutations, may write. -/
-def clear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
-    .v26, .v27, .v28, .v29, .v30, .v31],
-   [.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15]⟩
+private theorem keyGen_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen sfx sha3 v.callee)
+      (Spec.MlKem.keyGenContract (abi.withConsts constants) 160) 32 := by
+  cases sha3
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.keyGen sfx
+        (Impl.MlKem.AArch64.Kem16P.keyGen false (Impl.MlKem.AArch64.FixedHash.code hole) hole lay768))
+      (Proof.MlKem.AArch64.Wipe.keyGenP768_verified v sfx) (keyGenOk_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.keyGen sfx
+        (Impl.MlKem.AArch64.Kem16P.keyGen true (Impl.MlKem.AArch64.FixedHash.code hole) hole lay768))
+      (Proof.MlKem.AArch64.Wipe.keyGenP768_verified v sfx) (keyGenOk_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
 
-/-- Of `MlKem`'s `keyGen`. -/
-theorem keyGenSide (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
-    scrubSide (Impl.MlKem.AArch64.Wipe.keyGen (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.keyGen x2.sha3 (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
-      (160) (Spec.MlKem.keyGenSig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
-      scrubSide (Impl.MlKem.AArch64.Wipe.keyGen (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.keyGen x2.sha3 (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
-      (160) (Spec.MlKem.keyGenSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+/-- `vg_mlkem768_keygen` over `x2` and `v`, as emitted. -/
+theorem keyGen_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
+      (Spec.MlKem.keyGenContract (abi.withConsts constants) 160) 32 :=
+  keyGen_of x2.sha3 v _
 
-/-- Of `MlKem`'s `encaps`. -/
-theorem encapsSide (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
-    scrubSide (Impl.MlKem.AArch64.Wipe.encaps (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.encaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
-      (160) (Spec.MlKem.encapsSig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
-      scrubSide (Impl.MlKem.AArch64.Wipe.encaps (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.encaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
-      (160) (Spec.MlKem.encapsSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+private theorem encaps_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps sfx sha3 v.callee)
+      (Spec.MlKem.encapsContract (abi.withConsts constants) 160) 32 := by
+  cases sha3
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encaps sfx
+        (Impl.MlKem.AArch64.Kem16P.encaps false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
+      (Proof.MlKem.AArch64.Wipe.encapsP768_verified v sfx) (encapsOk_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encaps sfx
+        (Impl.MlKem.AArch64.Kem16P.encaps true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
+      (Proof.MlKem.AArch64.Wipe.encapsP768_verified v sfx) (encapsOk_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
 
-/-- Of `MlKem`'s `encapsH`. -/
-theorem encapsHSide (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
-    scrubSide (Impl.MlKem.AArch64.Wipe.encapsH (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.encapsH x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
-      (160) (Spec.MlKem.encapsHSig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
-      scrubSide (Impl.MlKem.AArch64.Wipe.encapsH (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.encapsH x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
-      (160) (Spec.MlKem.encapsHSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+/-- `vg_mlkem768_encaps` over `x2` and `v`, as emitted. -/
+theorem encaps_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
+      (Spec.MlKem.encapsContract (abi.withConsts constants) 160) 32 :=
+  encaps_of x2.sha3 v _
 
-/-- Of `MlKem`'s `decaps`. -/
-theorem decapsSide (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
-    scrubSide (Impl.MlKem.AArch64.Wipe.decaps (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.decaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
-      (160) (Spec.MlKem.decapsSig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
-      scrubSide (Impl.MlKem.AArch64.Wipe.decaps (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.decaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
-      (160) (Spec.MlKem.decapsSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+private theorem encapsH_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH sfx sha3 v.callee)
+      (Spec.MlKem.encapsHContract (abi.withConsts constants) 160) 32 := by
+  cases sha3
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encapsH sfx
+        (Impl.MlKem.AArch64.Kem16P.encapsH false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
+      (Proof.MlKem.AArch64.Wipe.encapsHP768_verified v sfx) (encapsHOk_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encapsH sfx
+        (Impl.MlKem.AArch64.Kem16P.encapsH true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
+      (Proof.MlKem.AArch64.Wipe.encapsHP768_verified v sfx) (encapsHOk_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
 
-/-- Of `MlKem1024`'s `keyGen`. -/
-theorem keyGen1024Side (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
-    scrubSide (Impl.MlKem.AArch64.Wipe.keyGen1024 (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.keyGen x2.sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
-      (160) (Spec.MlKem1024.keyGenSig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
-      scrubSide (Impl.MlKem.AArch64.Wipe.keyGen1024 (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.keyGen x2.sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
-      (160) (Spec.MlKem1024.keyGenSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+/-- `vg_mlkem768_encaps_h` over `x2` and `v`, as emitted. -/
+theorem encapsH_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
+      (Spec.MlKem.encapsHContract (abi.withConsts constants) 160) 32 :=
+  encapsH_of x2.sha3 v _
 
-/-- Of `MlKem1024`'s `encaps`. -/
-theorem encaps1024Side (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
-    scrubSide (Impl.MlKem.AArch64.Wipe.encaps1024 (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.encaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
-      (160) (Spec.MlKem1024.encapsSig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
-      scrubSide (Impl.MlKem.AArch64.Wipe.encaps1024 (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.encaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
-      (160) (Spec.MlKem1024.encapsSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+private theorem decaps_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps sfx sha3 v.callee)
+      (Spec.MlKem.decapsContract (abi.withConsts constants) 160) 32 := by
+  cases sha3
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.decaps sfx
+        (Impl.MlKem.AArch64.Kem16P.decaps false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
+      (Proof.MlKem.AArch64.Wipe.decapsP768_verified v sfx) (decapsOk_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.decaps sfx
+        (Impl.MlKem.AArch64.Kem16P.decaps true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
+      (Proof.MlKem.AArch64.Wipe.decapsP768_verified v sfx) (decapsOk_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
 
-/-- Of `MlKem1024`'s `encapsH`. -/
-theorem encapsH1024Side (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
-    scrubSide (Impl.MlKem.AArch64.Wipe.encapsH1024 (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.encapsH x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
-      (160) (Spec.MlKem1024.encapsHSig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
-      scrubSide (Impl.MlKem.AArch64.Wipe.encapsH1024 (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.encapsH x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
-      (160) (Spec.MlKem1024.encapsHSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+/-- `vg_mlkem768_decaps` over `x2` and `v`, as emitted. -/
+theorem decaps_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
+      (Spec.MlKem.decapsContract (abi.withConsts constants) 160) 32 :=
+  decaps_of x2.sha3 v _
 
-/-- Of `MlKem1024`'s `decaps`. -/
-theorem decaps1024Side (x2 : Proof.Sha3.AArch64.X2Permutation) (hx2 : x2 ∈ Proof.Variants.KeccakX2.AArch64.variants) (v : Proof.Sha3.AArch64.Permutation) (hv : v ∈ Proof.Variants.Keccak.AArch64.variants) :
-    scrubSide (Impl.MlKem.AArch64.Wipe.decaps1024 (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.decaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
-      (160) (Spec.MlKem1024.decapsSig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.KeccakX2.AArch64.variants.all fun x2 => Proof.Variants.Keccak.AArch64.variants.all fun v => 
-      scrubSide (Impl.MlKem.AArch64.Wipe.decaps1024 (qualifiedName "" (parts x2 v))
-        (Impl.MlKem.AArch64.Kem16P.decaps x2.sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
-      (160) (Spec.MlKem1024.decapsSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp (List.all_eq_true.mp e x2 hx2) v hv
+private theorem keyGen1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen1024 sfx sha3 v.callee)
+      (Spec.MlKem1024.keyGenContract (abi.withConsts constants) 160) 32 := by
+  cases sha3
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.keyGen1024 sfx
+        (Impl.MlKem.AArch64.Kem16P.keyGen false (Impl.MlKem.AArch64.FixedHash.code hole) hole lay1024))
+      (Proof.MlKem.AArch64.Wipe.keyGenP1024_verified v sfx) (keyGen1024Ok_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.keyGen1024 sfx
+        (Impl.MlKem.AArch64.Kem16P.keyGen true (Impl.MlKem.AArch64.FixedHash.code hole) hole lay1024))
+      (Proof.MlKem.AArch64.Wipe.keyGenP1024_verified v sfx) (keyGen1024Ok_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
 
-end Sides
+/-- `vg_mlkem1024_keygen` over `x2` and `v`, as emitted. -/
+theorem keyGen1024_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
+      (Spec.MlKem1024.keyGenContract (abi.withConsts constants) 160) 32 :=
+  keyGen1024_of x2.sha3 v _
+
+private theorem encaps1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps1024 sfx sha3 v.callee)
+      (Spec.MlKem1024.encapsContract (abi.withConsts constants) 160) 32 := by
+  cases sha3
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encaps1024 sfx
+        (Impl.MlKem.AArch64.Kem16P.encaps false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
+      (Proof.MlKem.AArch64.Wipe.encapsP1024_verified v sfx) (encaps1024Ok_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encaps1024 sfx
+        (Impl.MlKem.AArch64.Kem16P.encaps true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
+      (Proof.MlKem.AArch64.Wipe.encapsP1024_verified v sfx) (encaps1024Ok_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+
+/-- `vg_mlkem1024_encaps` over `x2` and `v`, as emitted. -/
+theorem encaps1024_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
+      (Spec.MlKem1024.encapsContract (abi.withConsts constants) 160) 32 :=
+  encaps1024_of x2.sha3 v _
+
+private theorem encapsH1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH1024 sfx sha3 v.callee)
+      (Spec.MlKem1024.encapsHContract (abi.withConsts constants) 160) 32 := by
+  cases sha3
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encapsH1024 sfx
+        (Impl.MlKem.AArch64.Kem16P.encapsH false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
+      (Proof.MlKem.AArch64.Wipe.encapsHP1024_verified v sfx) (encapsH1024Ok_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encapsH1024 sfx
+        (Impl.MlKem.AArch64.Kem16P.encapsH true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
+      (Proof.MlKem.AArch64.Wipe.encapsHP1024_verified v sfx) (encapsH1024Ok_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+
+/-- `vg_mlkem1024_encaps_h` over `x2` and `v`, as emitted. -/
+theorem encapsH1024_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
+      (Spec.MlKem1024.encapsHContract (abi.withConsts constants) 160) 32 :=
+  encapsH1024_of x2.sha3 v _
+
+private theorem decaps1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps1024 sfx sha3 v.callee)
+      (Spec.MlKem1024.decapsContract (abi.withConsts constants) 160) 32 := by
+  cases sha3
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.decaps1024 sfx
+        (Impl.MlKem.AArch64.Kem16P.decaps false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
+      (Proof.MlKem.AArch64.Wipe.decapsP1024_verified v sfx) (decaps1024Ok_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+  · exact verifiedScrubbedOfFill (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.decaps1024 sfx
+        (Impl.MlKem.AArch64.Kem16P.decaps true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
+      (Proof.MlKem.AArch64.Wipe.decapsP1024_verified v sfx) (decaps1024Ok_tables 160) (by kernel_rfl)
+      (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
+      (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+
+/-- `vg_mlkem1024_decaps` over `x2` and `v`, as emitted. -/
+theorem decaps1024_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
+      (Spec.MlKem1024.decapsContract (abi.withConsts constants) 160) 32 :=
+  decaps1024_of x2.sha3 v _
+
+end Fns
 
 end VG.Proof.MlKem.AArch64.Scrub

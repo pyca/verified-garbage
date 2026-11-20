@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.X2Variant
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+public import VerifiedGarbage.Proof.Variants.KeccakX2.AArch64
+public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 
 /-!
 # Which instances of ML-KEM's AArch64 functions are emitted
@@ -29,5 +31,12 @@ def paired (x2 : X2Permutation) (v : Permutation) : Bool := x2.sha3 || !v.callee
 /-- The tags and suffixes of the two variants, for `qualifiedName`. -/
 def parts (x2 : X2Permutation) (v : Permutation) : List (String × String) :=
   [("x2", x2.suffix), ("keccak", v.callee.suffix)]
+
+/-- The pairs of implementations the functions are emitted for, best first:
+every two-state implementation with every single-state one, but the baseline
+two-state one with the SHA-3 backend (`paired`). -/
+def variants : List (X2Permutation × Permutation) :=
+  (VG.Proof.Variants.KeccakX2.AArch64.variants.flatMap fun x2 =>
+    VG.Proof.Variants.Keccak.AArch64.variants.map fun v => (x2, v)).filter fun xv => paired xv.1 xv.2
 
 end VG.Proof.MlKem.AArch64.FixedHash.Inst
