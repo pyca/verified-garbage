@@ -34,11 +34,21 @@ def artifacts : List Artifact := [
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_512_256
     verified := .scrubbed ⟨Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512_256,
       Proof.Sha512.PPC64LE.Stream.init_noResidue _ _ _⟩ },
-  Spec.Sha512.updateApi.artifact PPC64LE.target Proof.Sha512.PPC64LE.updateReg,
-  Spec.Sha512.finalizeApi.artifact PPC64LE.target Proof.Sha512.PPC64LE.finalizeReg,
-  Spec.Sha512.finalize384Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.finalize384Reg,
-  Spec.Sha512.finalize512_256Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.finalize512_256Reg,
-  Spec.Sha512.finalize512_224Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.finalize512_224Reg,
+  Spec.Sha512.updateApi.artifact PPC64LE.target {
+    code := Impl.Sha512.PPC64LE.Fn.update
+    verified := .scrubbed Proof.Sha512.PPC64LE.update_scrubbed },
+  Spec.Sha512.finalizeApi.artifact PPC64LE.target {
+    code := Impl.Sha512.PPC64LE.Fn.finalize
+    verified := .scrubbed Proof.Sha512.PPC64LE.finalize_scrubbed },
+  Spec.Sha512.finalize384Api.artifact PPC64LE.target {
+    code := Impl.Sha512.PPC64LE.Fn.finalize384
+    verified := .scrubbed Proof.Sha512.PPC64LE.finalize384_scrubbed },
+  Spec.Sha512.finalize512_256Api.artifact PPC64LE.target {
+    code := Impl.Sha512.PPC64LE.Fn.finalize512_256
+    verified := .scrubbed Proof.Sha512.PPC64LE.finalize512_256_scrubbed },
+  Spec.Sha512.finalize512_224Api.artifact PPC64LE.target {
+    code := Impl.Sha512.PPC64LE.Fn.finalize512_224
+    verified := .scrubbed Proof.Sha512.PPC64LE.finalize512_224_scrubbed },
   Spec.Sha512.digest384Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest384Reg,
   Spec.Sha512.digest512Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest512Reg,
   Spec.Sha512.digest512_224Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest512_224Reg,
