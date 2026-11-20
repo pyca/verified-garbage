@@ -11,8 +11,14 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.TripleDes.Arm
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.expandKeyApi.artifact Arm.target Proof.TripleDes.Arm.Scrub.expandKeyReg,
-  Spec.TripleDes.ecbEncryptApi.artifact Arm.target Proof.TripleDes.Arm.Scrub.ecbEncryptReg,
-  Spec.TripleDes.ecbDecryptApi.artifact Arm.target Proof.TripleDes.Arm.Scrub.ecbDecryptReg]
+  Spec.TripleDes.expandKeyApi.artifact Arm.target {
+    code := Impl.TripleDes.Arm.Fn.expandKey
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.expandKey },
+  Spec.TripleDes.ecbEncryptApi.artifact Arm.target {
+    code := Impl.TripleDes.Arm.Fn.ecbEncrypt
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.ecbEncrypt },
+  Spec.TripleDes.ecbDecryptApi.artifact Arm.target {
+    code := Impl.TripleDes.Arm.Fn.ecbDecrypt
+    verified := .scrubbed Proof.TripleDes.Arm.Fn.ecbDecrypt }]
 
 end VG.Artifacts.TripleDes.Arm

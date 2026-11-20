@@ -11,8 +11,14 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Camellia.Arm
 
 def artifacts : List Artifact := [
-  Spec.Camellia.expandKeyApi.artifact Arm.target Proof.Camellia.Arm.Scrub.expandKeyReg,
-  Spec.Camellia.ecbEncryptApi.artifact Arm.target Proof.Camellia.Arm.Scrub.ecbEncryptReg,
-  Spec.Camellia.ecbDecryptApi.artifact Arm.target Proof.Camellia.Arm.Scrub.ecbDecryptReg]
+  Spec.Camellia.expandKeyApi.artifact Arm.target {
+    code := Impl.Camellia.Arm.Fn.expandKey
+    verified := .scrubbed Proof.Camellia.Arm.Fn.expandKey },
+  Spec.Camellia.ecbEncryptApi.artifact Arm.target {
+    code := Impl.Camellia.Arm.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Camellia.Arm.Fn.ecbEncrypt },
+  Spec.Camellia.ecbDecryptApi.artifact Arm.target {
+    code := Impl.Camellia.Arm.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Camellia.Arm.Fn.ecbDecrypt }]
 
 end VG.Artifacts.Camellia.Arm
