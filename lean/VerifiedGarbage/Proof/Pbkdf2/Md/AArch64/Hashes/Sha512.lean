@@ -103,6 +103,10 @@ structure Compress where
   noFrames : code.noFrames = true
   /-- Current streaming wrappers require untouched callee-saved SIMD registers. -/
   keepsV : code.allInstrs keepsV = true
+  /-- No instruction of it writes PSTATE.DIT, and it calls nothing indirectly:
+  what the cleanup of the functions that call it needs of its code
+  (`ScrubAll.verifiedScrubbedOf`). -/
+  side : ScrubAll.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre
@@ -430,6 +434,12 @@ theorem fitF : (hash).stream.buf + (hash).stream.F ≤ 8 * 24 := by
     Impl.Md5.AArch64.Stream.params]
   decide
 
+theorem coreSide : CoreSide coreH := ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+
+/-- MD5's code that HMAC and PBKDF2 call writes no PSTATE.DIT and calls
+nothing indirectly. -/
+theorem calleeSide : CalleeSide hash := ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+
 /-- MD5 with its compression function. -/
 def variant : MdHash := MdHash.of ok coreOK ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.md5_local
@@ -455,6 +465,7 @@ def variant : MdHash := MdHash.of ok coreOK ⟨Spec.Mgf1.md5, by simp [mdHashes]
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by kernel_rfl) (by kernel_rfl) (by decide) (by decide) calleeSide coreSide
     "" []
 
 end VG.Proof.Pbkdf2.Md.AArch64.Md5
@@ -663,6 +674,14 @@ theorem fitF (v : Compress) : (hash v).stream.buf + (hash v).stream.F ≤ 8 * 30
     Impl.Sha1.AArch64.Stream.params]
   decide
 
+theorem coreSide : CoreSide coreH := ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+
+/-- The hash function's code that HMAC and PBKDF2 call writes no PSTATE.DIT
+and calls nothing indirectly: the compression function's (`Compress.side`),
+and the streaming functions' own instructions. -/
+theorem calleeSide (v : Compress) : CalleeSide (hash v) :=
+  ⟨v.side, by kernel_rfl, mdUpdate_side _ _ (by kernel_rfl) v.side, mdFinalize_side _ _ (by kernel_rfl) v.side⟩
+
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
   MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha1, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
@@ -689,6 +708,7 @@ def variant : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by kernel_rfl) (by kernel_rfl) (by decide) (by decide) (calleeSide v) coreSide
     v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha1
@@ -915,6 +935,14 @@ theorem fitF (v : Compress) : (hash v).stream.buf + (hash v).stream.F ≤ 8 * 32
     Impl.Sha256.AArch64.Stream.params]
   decide
 
+theorem coreSide : CoreSide coreH := ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+
+/-- The hash function's code that HMAC and PBKDF2 call writes no PSTATE.DIT
+and calls nothing indirectly: the compression function's (`Compress.side`),
+and the streaming functions' own instructions. -/
+theorem calleeSide (v : Compress) : CalleeSide (hash v) :=
+  ⟨v.side, by kernel_rfl, mdUpdate_side _ _ (by kernel_rfl) v.side, mdFinalize_side _ _ (by kernel_rfl) v.side⟩
+
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` is SHA-256's, which SHA-256's variant with `v`
 carries, and its `finalize` its own (`stream v`). -/
@@ -943,6 +971,7 @@ def variant : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by kernel_rfl) (by kernel_rfl) (by decide) (by decide) (calleeSide v) coreSide
     v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha224
@@ -974,6 +1003,7 @@ def backend : Compress where
   verified := Proof.Sha1.AArch64.compress_verified
   noFrames := by lit_decide
   keepsV := by lit_decide
+  side := by lit_decide
   suffix := ""
   features := []
   updateCT := by exact (LaneTaint.constantTime (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
@@ -1004,6 +1034,7 @@ def backend : Compress where
   verified := Proof.Sha1.AArch64.Sha2.compress_verified
   noFrames := by lit_decide
   keepsV := by lit_decide
+  side := by lit_decide
   suffix := "_sha2"
   features := ["sha2"]
   updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
@@ -1090,6 +1121,9 @@ theorem anyOK (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : Any.Any
   rcases hD with rfl | rfl | rfl | rfl <;> refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
   taint_decide_all
 
+theorem coreSide (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : CoreSide (coreH D) := by
+  rcases hD with rfl | rfl | rfl | rfl <;> exact ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+
 /-- The initial hash values of the family. -/
 abbrev IVs (iv : Spec.Sha512.HashValue) : Prop := iv = H0_384 ∨ iv = H0_512 ∨ iv = H0_512_224 ∨ iv = H0_512_256
 
@@ -1173,6 +1207,15 @@ def ok (hR : I.S.Repr = Spec.Sha512.Repr iv)
   L816 := by show Impl.Sha512.AArch64.Stream.params.L = 8 ∨ Impl.Sha512.AArch64.Stream.params.L = 16; decide
 
 end
+
+/-- The hash function's code that HMAC and PBKDF2 call writes no PSTATE.DIT
+and calls nothing indirectly: the compression function's (`Compress.side`),
+the streaming functions' own instructions, and `init`'s for the member's
+initial hash value. -/
+theorem calleeSide (v : Compress) (I : Spec.Hmac.Instance) (D : Nat) (initN : String)
+    (iv : Spec.Sha512.HashValue) (hi : ScrubAll.sideAll noDit (Impl.Sha512.AArch64.Stream.init iv) = true) :
+    CalleeSide (hash v I D initN iv) :=
+  ⟨v.side, hi, mdUpdate_side _ _ (by kernel_rfl) v.side, mdFinalize_side _ _ (by kernel_rfl) v.side⟩
 
 /-- Streaming wrappers shared by all four digest sizes. The SHA-512 member
 emits them once per backend through `MdHash`; the other members call them:
@@ -1344,6 +1387,7 @@ def sha384 (v : Compress) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by kernel_rfl) (by kernel_rfl) (by decide) (by decide) (calleeSide v _ _ _ _ (by kernel_rfl)) (coreSide 48 (Or.inr (Or.inr (Or.inl rfl))))
     v.suffix v.features (stream384 v)
 
 /-! ## SHA-512 -/
@@ -1408,6 +1452,7 @@ def sha512 (v : Compress) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by kernel_rfl) (by kernel_rfl) (by decide) (by decide) (calleeSide v _ _ _ _ (by kernel_rfl)) (coreSide 64 (Or.inr (Or.inr (Or.inr rfl))))
     v.suffix v.features (stream v)
 
 /-! ## SHA-512/224 -/
@@ -1472,6 +1517,7 @@ def sha512_224 (v : Compress) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by kernel_rfl) (by kernel_rfl) (by decide) (by decide) (calleeSide v _ _ _ _ (by kernel_rfl)) (coreSide 28 (Or.inl rfl))
     v.suffix v.features (stream512_224 v)
 
 /-! ## SHA-512/256 -/
@@ -1536,6 +1582,7 @@ def sha512_256 (v : Compress) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by kernel_rfl) (by kernel_rfl) (by decide) (by decide) (calleeSide v _ _ _ _ (by kernel_rfl)) (coreSide 32 (Or.inr (Or.inl rfl)))
     v.suffix v.features (stream512_256 v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha512

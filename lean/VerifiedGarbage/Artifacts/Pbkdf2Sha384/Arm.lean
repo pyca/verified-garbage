@@ -11,6 +11,8 @@ public import VerifiedGarbage.TCB.Arm.Print
 namespace VG.Artifacts.Pbkdf2Sha384.Arm
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha384I.pbkdf2Api.artifact Arm.target Proof.Pbkdf2.Whole.Arm.Scrub.sha384RegArm]
+  Spec.Hmac.sha384I.pbkdf2Api.artifact Arm.target {
+    code := Impl.Pbkdf2.Whole.Arm.Fn.sha384
+    verified := .scrubbed Proof.Pbkdf2.Whole.Arm.Fn.sha384 }]
 
 end VG.Artifacts.Pbkdf2Sha384.Arm

@@ -1,49 +1,42 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Proof.Hmac.Stream.Arm.CodeOk
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha224
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Sha1.Arm.Lit
-import VerifiedGarbage.Proof.Sha256.Arm.Lit
 import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.Sha512.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
-meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Proof.Hmac.Stream.Arm.CodeOk
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha224
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
-meta import VerifiedGarbage.Proof.Sha256.Arm.Lit
 meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
 
 /-!
-# PBKDF2-HMAC on ARMv7, without secret residue
+# PBKDF2-HMAC on ARMv7, as emitted
 
 `vg_pbkdf2_hmac_<hash>` runs in a frame that holds its working space
 (`Frame.lean`), and the functions it calls push registers below it: its
 frames use the working space's bytes and 16 more (`armStack`), within the
-`24 + pbkFrame I` its contract reserves. That is no frame size of the model
-(`FrameOk`), so it is registered with the next one
-(`Arm.Scrub.Verified.stack_le`), of 8 bytes more, and followed by a wipe of
-that many bytes below the stack pointer (`Arm.Scrub.scrubRegF`), then by
-instructions that set the registers a callee may change and the flags to
-constants. Its postcondition reads the memory on return only within `out`
+`24 + pbkFrame I` its contract reserves, which follows from what the hash
+function's own code gives (`MdOk`, `Proof/Hmac/Stream/Arm/CodeOk.lean`).
+That is no frame size of the model (`FrameOk`), so its contract reserves the
+next one (`Arm.Scrub.Verified.stack_le`), of 8 bytes more, and its cleanup
+wipes that many bytes below the stack pointer, then sets the registers a
+callee may change and the flags to constants (`Impl.Pbkdf2.Whole.Arm.Fn`).
+Its postcondition reads the memory on return only within `out`
 (`pbkdf2OutArm`), as on RISC-V (`Proof/Pbkdf2/Whole/RISCV64/Scrub.lean`).
+`Fn` below states that each returns without secret residue
+(`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
 -/
 
 @[expose] public section
@@ -51,15 +44,6 @@ constants. Its postcondition reads the memory on return only within `out`
 namespace VG.Proof.Pbkdf2.Whole.Arm.Scrub
 
 open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack
-
-materialize_code md5Pbkdf2Arm := md5F.pbkdf2
-materialize_code sha1Pbkdf2Arm := sha1F.pbkdf2
-materialize_code sha224Pbkdf2Arm := sha224F.pbkdf2
-materialize_code sha256Pbkdf2Arm := sha256F.pbkdf2
-materialize_code sha384Pbkdf2Arm := sha384F.pbkdf2
-materialize_code sha512Pbkdf2Arm := sha512F.pbkdf2
-materialize_code sha512_224Pbkdf2Arm := sha512_224F.pbkdf2
-materialize_code sha512_256Pbkdf2Arm := sha512_256F.pbkdf2
 
 /-- PBKDF2's postcondition reads the memory on return only within `out`, the
 derived key's bytes. -/
@@ -159,72 +143,83 @@ theorem sha512_256_satArm : ∃ s, (Spec.Hmac.sha512_256I.pbkdf2Contract abi 348
 
 /-- `vg_pbkdf2_hmac_<hash>`'s code, verified with `24 + pbkFrame I` bytes of
 stack, then with `n` bytes, a frame size of the model, if its precondition is
-satisfiable with them; its frames within `n` bytes and without indirect
-calls, scrubbed (`scrubRegF`). -/
-def regArm (I : Spec.Hmac.Instance) (F : Impl.Pbkdf2.Whole.Arm.Fns) (n : Nat)
-    (hv : Verified target (Impl.StackScratch.Arm.withStackScratch (pbkFrame I) 3 F.pbkdf2)
-      (I.pbkdf2Contract abi (24 + pbkFrame I)))
-    (hle : 24 + pbkFrame I ≤ n) (hsat : ∃ s, (I.pbkdf2Contract abi n).pre s)
-    (hd : armStack (Impl.StackScratch.Arm.withStackScratch (pbkFrame I) 3 F.pbkdf2) ≤ n)
-    (hni : noIcall (Impl.StackScratch.Arm.withStackScratch (pbkFrame I) 3 F.pbkdf2) = true)
-    (hn : FrameOk n) : Registration I.pbkdf2Api target :=
-  scrubRegF {
-      code := Impl.StackScratch.Arm.withStackScratch (pbkFrame I) 3 F.pbkdf2
-      contract := I.pbkdf2Contract abi n
-      verified := Verified.stack_le (sig := Spec.Pbkdf2.pbkdf2Sig)
-        (pre := Spec.Pbkdf2.pbkdf2Pre I.S abi.ptrBits) (post := Spec.Pbkdf2.pbkdf2Post I.S abi.ptrBits)
-        (wa := true) (leak := none) hle hv hsat
-      spSafe := spSafe_any _ }
-    hd hni hn (pbkdf2OutArm I n) rfl
-
-/-! ## The registrations -/
-
-/-- `Spec.Hmac.md5I.pbkdf2Api`. -/
-def md5RegArm : Registration Spec.Hmac.md5I.pbkdf2Api target :=
-  regArm Spec.Hmac.md5I md5F 1088
-    (pbkFramed md5 md5_pbkFrameSat) (by decide) md5_satArm
-    (by lit_decide) (by lit_decide) (by decide)
-
-/-- `Spec.Hmac.sha1I.pbkdf2Api`. -/
-def sha1RegArm : Registration Spec.Hmac.sha1I.pbkdf2Api target :=
-  regArm Spec.Hmac.sha1I sha1F 1184
-    (pbkFramed sha1 sha1_pbkFrameSat) (by decide) sha1_satArm
-    (by lit_decide) (by lit_decide) (by decide)
-
-/-- `Spec.Hmac.sha224I.pbkdf2Api`. -/
-def sha224RegArm : Registration Spec.Hmac.sha224I.pbkdf2Api target :=
-  regArm Spec.Hmac.sha224I sha224F 1664
-    (pbkFramed sha224 sha224_pbkFrameSat) (by decide) sha224_satArm
-    (by lit_decide) (by lit_decide) (by decide)
-
-/-- `Spec.Hmac.sha256I.pbkdf2Api`. -/
-def sha256RegArm : Registration Spec.Hmac.sha256I.pbkdf2Api target :=
-  regArm Spec.Hmac.sha256I sha256F 1664
-    (pbkFramed sha256 sha256_pbkFrameSat) (by decide) sha256_satArm
-    (by lit_decide) (by lit_decide) (by decide)
-
-/-- `Spec.Hmac.sha384I.pbkdf2Api`. -/
-def sha384RegArm : Registration Spec.Hmac.sha384I.pbkdf2Api target :=
-  regArm Spec.Hmac.sha384I sha384F 3488
-    (pbkFramed sha384 sha384_pbkFrameSat) (by decide) sha384_satArm
-    (by lit_decide) (by lit_decide) (by decide)
-
-/-- `Spec.Hmac.sha512I.pbkdf2Api`. -/
-def sha512RegArm : Registration Spec.Hmac.sha512I.pbkdf2Api target :=
-  regArm Spec.Hmac.sha512I sha512F 3488
-    (pbkFramed sha512 sha512_pbkFrameSat) (by decide) sha512_satArm
-    (by lit_decide) (by lit_decide) (by decide)
-
-/-- `Spec.Hmac.sha512_224I.pbkdf2Api`. -/
-def sha512_224RegArm : Registration Spec.Hmac.sha512_224I.pbkdf2Api target :=
-  regArm Spec.Hmac.sha512_224I sha512_224F 3488
-    (pbkFramed sha512_224 sha512_224_pbkFrameSat) (by decide) sha512_224_satArm
-    (by lit_decide) (by lit_decide) (by decide)
-
-/-- `Spec.Hmac.sha512_256I.pbkdf2Api`. -/
-def sha512_256RegArm : Registration Spec.Hmac.sha512_256I.pbkdf2Api target :=
-  regArm Spec.Hmac.sha512_256I sha512_256F 3488
-    (pbkFramed sha512_256 sha512_256_pbkFrameSat) (by decide) sha512_256_satArm
-    (by lit_decide) (by lit_decide) (by decide)
+satisfiable with them. -/
+theorem verifiedArm {I : Spec.Hmac.Instance} {F : Impl.Pbkdf2.Whole.Arm.Fns} {n : Nat}
+    (hv : Verified target (Impl.Hmac.Stream.Arm.pbkdf2Code I F) (I.pbkdf2Contract abi (24 + pbkFrame I)))
+    (hle : 24 + pbkFrame I ≤ n) (hsat : ∃ s, (I.pbkdf2Contract abi n).pre s) :
+    Verified target (Impl.Hmac.Stream.Arm.pbkdf2Code I F) (I.pbkdf2Contract abi n) :=
+  Verified.stack_le (sig := Spec.Pbkdf2.pbkdf2Sig)
+    (pre := Spec.Pbkdf2.pbkdf2Pre I.S abi.ptrBits) (post := Spec.Pbkdf2.pbkdf2Post I.S abi.ptrBits)
+    (wa := true) (leak := none) hle hv hsat
 
 end VG.Proof.Pbkdf2.Whole.Arm.Scrub
+
+namespace VG.Proof.Pbkdf2.Whole.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub VG.Proof.Hmac.Stream.Arm VG.Proof.Pbkdf2.Whole.Arm.Scrub
+
+/-- `vg_pbkdf2_hmac_md5`. -/
+theorem md5 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.md5 (Spec.Hmac.md5I.pbkdf2Contract abi 1088) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.md5I.pbkdf2Api)
+    { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.md5I md5F
+      verified := verifiedArm (pbkFramed Whole.Arm.md5 md5_pbkFrameSat) (by decide) md5_satArm
+      spSafe := spSafe_any _ }
+    (pbkdf2OutArm _ _) (scrubSideF_of (md5_mdOk.pbkdf2Code_ok _ (by decide)) (by decide) _)
+
+/-- `vg_pbkdf2_hmac_sha1`. -/
+theorem sha1 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha1 (Spec.Hmac.sha1I.pbkdf2Contract abi 1184) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha1I.pbkdf2Api)
+    { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha1I sha1F
+      verified := verifiedArm (pbkFramed Whole.Arm.sha1 sha1_pbkFrameSat) (by decide) sha1_satArm
+      spSafe := spSafe_any _ }
+    (pbkdf2OutArm _ _) (scrubSideF_of (sha1_mdOk.pbkdf2Code_ok _ (by decide)) (by decide) _)
+
+/-- `vg_pbkdf2_hmac_sha224`. -/
+theorem sha224 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha224 (Spec.Hmac.sha224I.pbkdf2Contract abi 1664) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha224I.pbkdf2Api)
+    { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha224I sha224F
+      verified := verifiedArm (pbkFramed Whole.Arm.sha224 sha224_pbkFrameSat) (by decide) sha224_satArm
+      spSafe := spSafe_any _ }
+    (pbkdf2OutArm _ _) (scrubSideF_of (sha224_mdOk.pbkdf2Code_ok _ (by decide)) (by decide) _)
+
+/-- `vg_pbkdf2_hmac_sha256`. -/
+theorem sha256 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha256 (Spec.Hmac.sha256I.pbkdf2Contract abi 1664) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha256I.pbkdf2Api)
+    { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha256I sha256F
+      verified := verifiedArm (pbkFramed Whole.Arm.sha256 sha256_pbkFrameSat) (by decide) sha256_satArm
+      spSafe := spSafe_any _ }
+    (pbkdf2OutArm _ _) (scrubSideF_of (sha256_mdOk.pbkdf2Code_ok _ (by decide)) (by decide) _)
+
+/-- `vg_pbkdf2_hmac_sha384`. -/
+theorem sha384 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha384 (Spec.Hmac.sha384I.pbkdf2Contract abi 3488) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha384I.pbkdf2Api)
+    { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha384I sha384F
+      verified := verifiedArm (pbkFramed Whole.Arm.sha384 sha384_pbkFrameSat) (by decide) sha384_satArm
+      spSafe := spSafe_any _ }
+    (pbkdf2OutArm _ _) (scrubSideF_of ((sha512_mdOk _ _ _).pbkdf2Code_ok _ (by decide)) (by decide) _)
+
+/-- `vg_pbkdf2_hmac_sha512`. -/
+theorem sha512 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha512 (Spec.Hmac.sha512I.pbkdf2Contract abi 3488) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha512I.pbkdf2Api)
+    { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha512I sha512F
+      verified := verifiedArm (pbkFramed Whole.Arm.sha512 sha512_pbkFrameSat) (by decide) sha512_satArm
+      spSafe := spSafe_any _ }
+    (pbkdf2OutArm _ _) (scrubSideF_of ((sha512_mdOk _ _ _).pbkdf2Code_ok _ (by decide)) (by decide) _)
+
+/-- `vg_pbkdf2_hmac_sha512_224`. -/
+theorem sha512_224 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha512_224 (Spec.Hmac.sha512_224I.pbkdf2Contract abi 3488) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha512_224I.pbkdf2Api)
+    { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha512_224I sha512_224F
+      verified := verifiedArm (pbkFramed Whole.Arm.sha512_224 sha512_224_pbkFrameSat) (by decide) sha512_224_satArm
+      spSafe := spSafe_any _ }
+    (pbkdf2OutArm _ _) (scrubSideF_of ((sha512_mdOk _ _ _).pbkdf2Code_ok _ (by decide)) (by decide) _)
+
+/-- `vg_pbkdf2_hmac_sha512_256`. -/
+theorem sha512_256 : VerifiedScrubbed target Impl.Pbkdf2.Whole.Arm.Fn.sha512_256 (Spec.Hmac.sha512_256I.pbkdf2Contract abi 3488) 0 :=
+  verifiedScrubbedF (api := Spec.Hmac.sha512_256I.pbkdf2Api)
+    { code := Impl.Hmac.Stream.Arm.pbkdf2Code Spec.Hmac.sha512_256I sha512_256F
+      verified := verifiedArm (pbkFramed Whole.Arm.sha512_256 sha512_256_pbkFrameSat) (by decide) sha512_256_satArm
+      spSafe := spSafe_any _ }
+    (pbkdf2OutArm _ _) (scrubSideF_of ((sha512_mdOk _ _ _).pbkdf2Code_ok _ (by decide)) (by decide) _)
+
+end VG.Proof.Pbkdf2.Whole.Arm.Fn

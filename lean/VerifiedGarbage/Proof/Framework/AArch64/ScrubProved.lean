@@ -331,4 +331,43 @@ theorem sideAll_withStackScratch {p : Instr → Bool} {bytes : Nat} {r : Reg} {c
   simp only [Impl.StackScratch.AArch64.withStackScratch, sideAll, Code.allInstrs_eq, instrs, List.all_cons,
     List.all_nil, ha, hr, hf, hc, Bool.and_self]
 
+/-- How deeply the frames of code in a frame of its own nest. -/
+theorem depth_withStackScratch (bytes : Nat) (r : Reg) (c : Prog isa) :
+    (Impl.StackScratch.AArch64.withStackScratch bytes r c).aarch64Depth = c.aarch64Depth + bytes / 16 := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, Code.aarch64Depth, Instr.frameUnits, Nat.zero_max]
+
+/-- A function's cleanup (`scrubAll`) writes no PSTATE.DIT and calls nothing:
+`sideAll` of code with its cleanup, from the code's. For a function that
+calls another as emitted, cleanup included. -/
+theorem sideAll_scrubAll {W rb : Nat} {cl : Clear} {c : Prog isa}
+    (hc : sideAll (fun i => !i.writesDit) c = true) :
+    sideAll (fun i => !i.writesDit) (scrubAll W rb cl c) = true := by
+  have hr : ∀ i ∈ retFix rb, (!i.writesDit) = true := by
+    intro i hi
+    unfold retFix at hi
+    split at hi
+    · rcases List.mem_singleton.mp hi with rfl; rfl
+    · rcases List.mem_singleton.mp hi with rfl; rfl
+    · exact absurd hi List.not_mem_nil
+  have hcl : ∀ i ∈ clearsOf cl, (!i.writesDit) = true := by
+    intro i hi
+    simp only [clearsOf, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with ((⟨r, -, rfl⟩ | ⟨v, -, rfl⟩) | rfl) | ⟨v, -, rfl⟩ <;> rfl
+  have hbody : sideAll (fun i => !i.writesDit) (withRet rb (.seq c (.block (clearsOf cl)))) = true := by
+    simp only [withRet, sideAll, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true]
+    exact ⟨⟨hc, hcl⟩, hr⟩
+  unfold scrubAll withScrubG
+  split
+  · exact hbody
+  · simp only [sideAll, scrubTailG, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true, hbody,
+      true_and]
+    refine ⟨⟨rfl, fun i hi => ?_⟩, rfl⟩
+    rcases List.mem_cons.mp hi with rfl | hi
+    · rfl
+    rcases List.mem_cons.mp hi with rfl | hi
+    · rfl
+    simp only [scrubStoresL, List.mem_map] at hi
+    obtain ⟨k, -, rfl⟩ := hi
+    rfl
+
 end VG.AArch64.ScrubAll

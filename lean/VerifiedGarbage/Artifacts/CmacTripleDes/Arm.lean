@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Frame
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
 
 /-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on ARMv7 -/
 
@@ -11,17 +10,15 @@ import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
 
 namespace VG.Artifacts.CmacTripleDes.Arm
 
-open VG.Proof.CmacTripleDes.Arm
-
 def artifacts : List Artifact := [
   Spec.Cmac.tdesStreamInitApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withRegScratch 640 .r3 Impl.CmacTripleDes.Stream.Arm.streamInit
-    verified := .unscrubbed Proof.CmacTripleDes.Stream.Arm.init_framed },
+    code := Impl.CmacTripleDes.Arm.Fn.streamInit
+    verified := .scrubbed Proof.CmacTripleDes.Arm.Fn.streamInit },
   Spec.Cmac.tdesAbsorbApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 704 2 Impl.CmacTripleDes.Stream.Arm.absorb
-    verified := .unscrubbed Proof.CmacTripleDes.Stream.Arm.absorb_framed },
+    code := Impl.CmacTripleDes.Arm.Fn.absorb
+    verified := .scrubbed Proof.CmacTripleDes.Arm.Fn.absorb },
   Spec.Cmac.tdesFinishApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratch 656 1 Impl.CmacTripleDes.Stream.Arm.finish
-    verified := .unscrubbed Proof.CmacTripleDes.Stream.Arm.finish_framed }]
+    code := Impl.CmacTripleDes.Arm.Fn.finish
+    verified := .scrubbed Proof.CmacTripleDes.Arm.Fn.finish }]
 
 end VG.Artifacts.CmacTripleDes.Arm

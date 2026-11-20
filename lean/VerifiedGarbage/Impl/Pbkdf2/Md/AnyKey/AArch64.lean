@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # HMAC's `init` for a key of any length over any Merkle–Damgård hash function: AArch64 implementation
@@ -65,5 +67,58 @@ key of any length, cold) if `key_len` is more than `B` bytes, and `short`
 (`init` for a key of at most a block) otherwise. -/
 def initEntry (B : Nat) (short long : Prog isa) : Prog isa :=
   .seq (.block (entryCmp B)) (Code.iteCold (.nonzero .x .x9) long short)
+
+/-! ## The functions, as emitted
+
+`vg_hmac_<hash>_init`, `vg_hmac_<hash>_finalize` and `vg_pbkdf2_hmac_<hash>`
+over hash function `H`: each is its `_scratch` form with its working space in
+a frame on the stack, sized to what `H`'s functions need, then its cleanup
+(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+write, the functions it calls included, and zeroes that stack, so
+that it returns without secret residue. -/
+
+namespace Hash
+
+variable (H : Hash)
+
+/-- The words of working space HMAC's `init` for a key of at most a block
+uses: those of the streaming functions it calls and our caller's registers
+(`Stream.buf`), an even number. -/
+def initW : Nat := 2 * ((H.stream.buf + 15) / 16)
+
+/-- The words of working space HMAC's `finalize` uses: `init`'s and the inner
+digest, an even number. -/
+def finW : Nat := 2 * ((H.stream.buf + H.stream.F + 15) / 16)
+
+/-- The words of working space `pbkdf2` and HMAC's `init` for a key of any
+length use: `H`'s and a state. -/
+abbrev anyW : Nat := H.W + H.S
+
+end Hash
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.StackScratch.AArch64 (withStackScratch withStackScratchWiped)
+
+/-- `vg_hmac_<hash>_init`: for a key of at most a block (the common case),
+`init_scratch` in a frame of the `initW` words it uses; for a longer key
+(cold), `Hash.hmacInitAny` in a frame of its larger working space, which it
+wipes. Each branch has its own cleanup, so that a short key zeroes only the
+small frame. -/
+def hmacInit (H : Hash) : Prog isa :=
+  initEntry H.P.B
+    (scrubOf (16 + 8 * H.initW) 0 (withStackScratch (8 * H.initW) .x4 H.hmacInit))
+    (scrubOf (16 + 8 * H.anyW) 0 (withStackScratchWiped (8 * H.anyW) .x4 H.anyW H.hmacInitAny))
+
+/-- `vg_hmac_<hash>_finalize`, in a frame of the `finW` words it uses. -/
+def hmacFin (H : Hash) : Prog isa :=
+  scrubOf (16 + 8 * H.finW) 0 (withStackScratch (8 * H.finW) .x4 H.hmacFin)
+
+/-- `vg_pbkdf2_hmac_<hash>`, with its working space in a frame of its own. -/
+def pbkdf2 (H : Hash) : Prog isa :=
+  scrubOf (16 + 8 * H.anyW) 0 (withStackScratch (8 * H.anyW) .x7 H.pbkdf2)
+
+end Fn
 
 end VG.Impl.Pbkdf2.Md.AArch64

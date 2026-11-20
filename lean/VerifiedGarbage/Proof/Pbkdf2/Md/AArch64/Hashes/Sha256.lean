@@ -237,6 +237,14 @@ theorem fitF (v : Compress) : (hash v).stream.buf + (hash v).stream.F ≤ 8 * 32
     Impl.Sha256.AArch64.Stream.params]
   decide
 
+theorem coreSide : CoreSide coreH := ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+
+/-- The hash function's code that HMAC and PBKDF2 call writes no PSTATE.DIT
+and calls nothing indirectly: the compression function's (`Compress.side`),
+and the streaming functions' own instructions. -/
+theorem calleeSide (v : Compress) : CalleeSide (hash v) :=
+  ⟨v.side, by kernel_rfl, mdUpdate_side _ _ (by kernel_rfl) v.side, mdFinalize_side _ _ (by kernel_rfl) v.side⟩
+
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
   MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
@@ -263,6 +271,7 @@ def variant : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by kernel_rfl) (by kernel_rfl) (by decide) (by decide) (calleeSide v) coreSide
     v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha256
