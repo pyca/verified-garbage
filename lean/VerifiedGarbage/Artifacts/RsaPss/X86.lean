@@ -17,11 +17,17 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 namespace VG.Artifacts.RsaPss.X86.AllSha1AllSha256
 
-open VG.Proof.RsaPss.X86.Scrub (allMVars allVars verifyReg)
+open VG.Proof.RsaPss.X86.Scrub (allMVars allVars verify_scrubbed)
 
 def artifacts : List Artifact :=
-  if h : Proof.RsaPss.X86.Sg.OK allMVars allVars then
-    [Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86.target (verifyReg h)]
+  if h : Proof.RsaPss.X86.Sg.OK allMVars allVars then [
+    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86.target {
+      suffix := qualifiedName "" []
+      tables := [("hash", Proof.MdHashTable.X86.tables allMVars), ("mgf1", Proof.HashTable.X86.tables allVars)]
+      code := Impl.RsaPss.X86.Fn.verifyPrecomputed (Proof.MdHashTable.X86.fnsOf allMVars)
+        (Proof.HashTable.X86.fnsOf allVars) Proof.RsaPkcs1Sig.X86.Ver.baseline.name
+        Proof.RsaPkcs1Sig.X86.Ver.baseline.code
+      verified := .scrubbed (verify_scrubbed h) }]
   else []
 
 end VG.Artifacts.RsaPss.X86.AllSha1AllSha256
