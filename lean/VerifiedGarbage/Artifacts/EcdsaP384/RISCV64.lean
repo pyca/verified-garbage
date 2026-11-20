@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.VerifyLit
 public import VerifiedGarbage.Proof.P384.RISCV64.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.P384
 public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64.Fn
 
 /-! # ECDSA over P-384 (FIPS 186-5) on RISC-V -/
 
@@ -25,14 +26,14 @@ public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
 namespace VG.Artifacts.EcdsaP384.RISCV64.Rfc6979
 
 open VG.Proof.P384.RISCV64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.RISCV64 (signCodeT OK)
-open VG.Proof.Ecdsa.Rfc6979.RISCV64.P384 (curveT verifiedT)
-open VG.Proof.HmacTable.RISCV64 (tables names)
+open VG.Proof.HmacTable.RISCV64 (tables)
+open VG.Proof.Variants.MdHash.RISCV64 (variants fns)
 
-def artifacts : List Artifact :=
-  if hv : OK VG.Proof.Variants.MdHash.RISCV64.variants ∧ Impl.Ecdsa.RISCV64.Comb.p384Sym ∉ names VG.Proof.Variants.MdHash.RISCV64.variants then [
-    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact RISCV64.target (Proof.Ecdsa.Rfc6979.RISCV64.P384.signReg hasLaw.law hv)]
-  else []
+def artifacts : List Artifact := [
+  Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact RISCV64.target {
+    tables := [("hmac", tables variants)]
+    code := Impl.Ecdsa.Rfc6979.RISCV64.Fn.p384 fns
+    verified := .scrubbed (Proof.Ecdsa.Rfc6979.RISCV64.P384.sign_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcdsaP384.RISCV64.Rfc6979
 
