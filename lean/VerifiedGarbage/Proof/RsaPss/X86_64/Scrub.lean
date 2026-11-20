@@ -72,7 +72,7 @@ theorem sign_scrubbed (h : OK vs) (c : CrtImpl) :
 theorem sign_spSafe (h : OK vs) (c : CrtImpl) :
     (Impl.RsaPss.X86_64.Fn.signPrecomputed (PrivScrub.level c) F G (privNameP c) (privCodeP c)).all
       (fun i => !isa.writesSp i) = true :=
-  scrubAllOrUp_spSafe _ _ _ (sign_spSafe' h c)
+  scrubKs_spSafe (sign_spSafe' h c)
 
 /-- Verification's code over a stub of the public operation. -/
 def verifyStub : Prog isa := Impl.RsaPss.X86_64.verifyC F G "pub" (.block [])
@@ -103,6 +103,6 @@ theorem verify_scrubbed (h : OK vs) (c : PublicImpl) :
 
 theorem verify_spSafe (h : OK vs) (c : PublicImpl) :
     (Impl.RsaPss.X86_64.Fn.verifyPrecomputed c.level F G c.name c.code).all (fun i => !isa.writesSp i) = true :=
-  scrubAllOrUp_spSafe _ _ _ (verify_spSafe' h c)
+  scrubKs_spSafe (verify_spSafe' h c)
 
 end VG.Proof.RsaPss.X86_64.Scrub

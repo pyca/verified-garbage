@@ -50,7 +50,7 @@ theorem priv_stub : stubCalleeG privStub VecLevel.sse.level privStack 3256 = tru
 theorem priv_stubUp :
     (decide (depthG privStack privStub ≤ 3256) && privStub.allInstrs (fun i => decide (i.vecLevel ≤ 1)) &&
       UpperLock.up privStub true && (UpperLock.inames privStub).isEmpty) = true := by
-  rw [← upK_eq]; lit_decide
+  rw [← upF_eq]; lit_decide
 
 /-- What the cleanup of a padding function at a level `k` at least `c`'s needs of its call. -/
 theorem priv_side (c : CrtImpl) {k : Nat} (hk : (level c).level ≤ k) :

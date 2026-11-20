@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
-public import VerifiedGarbage.Proof.Framework.X86_64.UpCallee
+public import VerifiedGarbage.Proof.Framework.X86_64.TableFill
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A precomputed public operation for verified RSA callers -/

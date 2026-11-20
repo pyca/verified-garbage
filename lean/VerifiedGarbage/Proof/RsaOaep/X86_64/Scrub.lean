@@ -70,7 +70,7 @@ theorem dec_scrubbed (h : OK vs) (c : CrtImpl) :
 theorem dec_spSafe (c : CrtImpl) :
     (Impl.RsaOaep.X86_64.Fn.decryptPrecomputed (PrivScrub.level c) (fnsOf vs) (privNameP c)
       (privCodeP c)).all (fun i => !isa.writesSp i) = true :=
-  scrubAllOrUp_spSafe _ _ _ (decP_spSafe vs c)
+  scrubKs_spSafe (decP_spSafe vs c)
 
 /-- Encryption's code over a stub of the public operation. -/
 def encStub : Prog isa := Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) "pub" (.block [])
@@ -96,6 +96,6 @@ theorem enc_scrubbed (h : OK vs) (c : PublicImpl) :
 
 theorem enc_spSafe (c : PublicImpl) :
     (Impl.RsaOaep.X86_64.Fn.encrypt c.level (fnsOf vs) c.name c.code).all (fun i => !isa.writesSp i) = true :=
-  scrubAllOrUp_spSafe _ _ _ (Pc.code_spSafe vs c)
+  scrubKs_spSafe (Pc.code_spSafe vs c)
 
 end VG.Proof.RsaOaep.X86_64.Scrub
