@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesCcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Verified
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # AES-CCM on PPC64LE, without secret residue
 
 `vg_aes_ccm_seal` and `vg_aes_ccm_open`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
 volatile registers they may write and the whole 576-byte frame
 (`withStackScratchArgs`) that holds their working space, the key schedule
 and their callees' working space among it, which they do not wipe
@@ -61,11 +62,14 @@ theorem openOut (stack : Nat) :
       rw [bytesAt_of0 hb.2.2.2.1 (by simp)]
       exact h key hk
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.Ccm.sealApi`. -/
-def sealReg : Registration Spec.Ccm.sealApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_ccm_seal` as emitted (`Impl.AesCcm.PPC64LE.Fn.seal`) meets its
+contract in constant time and returns without secret residue. -/
+theorem seal_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.AesCcm.PPC64LE.Fn.seal
+      (Spec.Ccm.sealContract PPC64LE.abi 576) 0 :=
+  verifiedScrubbed (api := Spec.Ccm.sealApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 576 2 Impl.AesCcm.PPC64LE.«seal»
       verified := Proof.AesCcm.seal_keyed seal_framed }
     576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -73,9 +77,12 @@ def sealReg : Registration Spec.Ccm.sealApi PPC64LE.target :=
     (sealOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Ccm.openApi`. -/
-def openReg : Registration Spec.Ccm.openApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_ccm_open` as emitted (`Impl.AesCcm.PPC64LE.Fn.open`) meets its
+contract in constant time and returns without secret residue. -/
+theorem open_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.AesCcm.PPC64LE.Fn.open
+      (Spec.Ccm.openContract PPC64LE.abi 576) 32 :=
+  verifiedScrubbed (api := Spec.Ccm.openApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 576 2 Impl.AesCcm.PPC64LE.«open»
       verified := Proof.AesCcm.open_keyed open_framed }
     576 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
