@@ -1,74 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecPrecomputed
-public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecHash
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT2
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncEM
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
-public import VerifiedGarbage.TCB.X86_64.Print
-import VerifiedGarbage.Proof.Bignum.CrtMath
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Fn
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Scrub
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.X86_64
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCT
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndCT
-public import VerifiedGarbage.Proof.Bignum.LazyMath
-public import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
-public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-public import VerifiedGarbage.Proof.Bignum.X86_64.Double
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
-public import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-public import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-public import VerifiedGarbage.Proof.Bignum.X86_64.Row
-public import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-public import VerifiedGarbage.Proof.Bignum.X86_64.Store
-public import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-public import VerifiedGarbage.Proof.Framework.RegSetOrder
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
+public import VerifiedGarbage.TCB.X86_64.Print
 
 /-! # RSAES-PKCS1-v1_5 (RFC 8017) on x86-64 -/
 
@@ -76,19 +14,17 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 
 namespace VG.Artifacts.RsaPkcs1Enc.X86_64.Sha256RsaPrivateCrt
 
-open VG.Proof.RsaPkcs1Enc.X86_64 (decStack)
 open VG.Proof.RsaPkcs1Enc.X86_64.Dec (HH)
 
 def artifacts (h : Proof.Sha256.X86_64.Compress) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
   [
-    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
+    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact X86_64.target {
       suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       extra := c.extra
-      code := Impl.RsaPkcs1Enc.X86_64.Decrypt.codeP (HH h) (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privNameP c)
-        (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privCodeP c)
-      verified := VG.Proof.RsaPkcs1Enc.X86_64.Dec.decryptPrecomputed_verified h c
-      spSafe := VG.Proof.RsaPkcs1Enc.X86_64.Dec.decP_spSafe h c }
-        (VG.Proof.RsaPkcs1Enc.X86_64.Dec.decryptPrecomputed_postOut decStack))]
+      code := Impl.RsaPkcs1Enc.X86_64.Fn.decryptPrecomputed (Proof.RsaPkcs1Enc.X86_64.Scrub.decLevel h c) (HH h)
+        (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privNameP c) (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privCodeP c)
+      verified := .scrubbed (Proof.RsaPkcs1Enc.X86_64.Scrub.dec_scrubbed h c)
+      spSafe := Proof.RsaPkcs1Enc.X86_64.Scrub.dec_spSafe h c }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64.Sha256RsaPrivateCrt
 
@@ -100,10 +36,10 @@ open VG.Proof.RsaPkcs1Enc.X86_64
 def artifacts : List Artifact :=
   (VG.Proof.Variants.Sha256Compress.X86_64.variants.flatMap fun v => VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun v2 => Sha256RsaPrivateCrt.artifacts v v2) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun (v : PublicImpl) => [
-    Spec.RsaPkcs1Enc.encryptRandomApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
+    Spec.RsaPkcs1Enc.encryptRandomApi.artifact X86_64.target {
       suffix := v.suffix
-      code := Impl.RsaPkcs1Enc.X86_64.Random.code (Rnd.encName v) (Rnd.encCode v)
-      verified := Rnd.code_verified v
-      spSafe := Rnd.code_spSafe v } (VG.Proof.Rsa.X86_64.Scrub.pkcs1EncryptRandomOut _))])
+      code := Impl.RsaPkcs1Enc.X86_64.Fn.encryptRandom v.level (Rnd.encName v) (Rnd.encCode v)
+      verified := .scrubbed (Proof.RsaPkcs1Enc.X86_64.Scrub.rnd_scrubbed v)
+      spSafe := Proof.RsaPkcs1Enc.X86_64.Scrub.rnd_spSafe v }])
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64
