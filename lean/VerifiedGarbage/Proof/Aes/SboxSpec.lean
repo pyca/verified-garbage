@@ -269,7 +269,6 @@ theorem row_affT (A : List Nat) {c : Nat} (hc : c < 256) :
 
 theorem row_sboxT {A : List Nat} (hA : A.length = 8) {c : Nat} (hc : c < 256) :
     row (sboxT A) c = sbox (row A c) := by
-  rw [sboxT, row_affT _ hc, row_powT hA _ hc, sbox_eq]
-  rfl
+  rw [sboxT, row_affT _ hc, row_powT hA _ hc, sbox_eq, inv_eq_pow]
 
 end VG.Proof.Aes

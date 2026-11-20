@@ -44,7 +44,6 @@ theorem row_invAffT (A : List Nat) {c : Nat} (hc : c < 256) :
 
 theorem row_invSboxT (A : List Nat) {c : Nat} (hc : c < 256) :
     row (invSboxT A) c = invSbox (row A c) := by
-  rw [invSboxT, row_powT (length_invAffT A) _ hc, row_invAffT _ hc]
-  rfl
+  rw [invSboxT, row_powT (length_invAffT A) _ hc, row_invAffT _ hc, invSbox, inv_eq_pow]
 
 end VG.Proof.Aes
