@@ -8,6 +8,8 @@
 ///
 /// It runs `vg_mldsa87_keygen`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -33,6 +35,8 @@ pub unsafe fn vg_mldsa87_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: 
 ///
 /// It runs `vg_mldsa87_pk_tr`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -55,6 +59,8 @@ pub unsafe fn vg_mldsa87_pk_tr_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *co
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
 ///
 /// It runs `vg_mldsa87_prepare_verifying_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -79,6 +85,8 @@ pub unsafe fn vg_mldsa87_prepare_verifying_key_auto(_dit: verified_garbage_cpu::
 ///
 /// It runs `vg_mldsa87_prepare_signing_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -102,6 +110,8 @@ pub unsafe fn vg_mldsa87_prepare_signing_key_auto(_dit: verified_garbage_cpu::Di
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
 ///
 /// It runs `vg_mldsa87_sign`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -129,6 +139,8 @@ pub unsafe fn vg_mldsa87_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, sk: *con
 /// Contract: `VG.Spec.MlDsa.preparedSignContract`.
 ///
 /// It runs `vg_mldsa87_sign_prepared`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -158,6 +170,8 @@ pub unsafe fn vg_mldsa87_sign_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// It runs `vg_mldsa87_sign_message`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -185,6 +199,8 @@ pub unsafe fn vg_mldsa87_sign_message_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
 ///
 /// It runs `vg_mldsa87_sign_message_prepared`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -215,6 +231,8 @@ pub unsafe fn vg_mldsa87_sign_message_prepared_auto(_dit: verified_garbage_cpu::
 ///
 /// It runs `vg_mldsa87_verify`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -238,6 +256,8 @@ pub unsafe fn vg_mldsa87_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *c
 /// Contract: `VG.Spec.MlDsa.preparedVerifyContract`.
 ///
 /// It runs `vg_mldsa87_verify_prepared`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -263,6 +283,8 @@ pub unsafe fn vg_mldsa87_verify_prepared_auto(_dit: verified_garbage_cpu::Dit<'_
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
 /// It runs `vg_mldsa87_verify_message_cached`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -290,6 +312,8 @@ pub unsafe fn vg_mldsa87_verify_message_cached_auto(_dit: verified_garbage_cpu::
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
 ///
 /// It runs `vg_mldsa87_verify_message_prepared`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

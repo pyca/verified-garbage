@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Pre
+public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Inst
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
@@ -17,6 +18,7 @@ import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.MlKem.X86.AddSub
 import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
+meta import VerifiedGarbage.Impl.MlDsa.X86.Sign.Inst
 meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 meta import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 meta import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
@@ -548,7 +550,7 @@ end
 /-!
 # ML-DSA signing on x86 (32-bit): the primitives it calls
 
-The verified x86 implementations of the primitives (`prims`), and what the
+The verified x86 implementations of the primitives (`Impl.MlDsa.X86.Sign.prims`), and what the
 proofs of signing need of them (`prims_ok`): their contracts, with 16 bytes of
 stack (56 for the samplers); that they never write `esp`; and, of the two
 samplers whose result signing branches on, what they return, from their own
@@ -567,26 +569,6 @@ open VG.Proof.MlKem.X86 (Piece)
 open VG.Proof.MlDsa.Sign
 open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
-
-/-- The x86 implementations of the primitives. -/
-def prims : Prims where
-  ntt := Impl.MlDsa.X86.Arith.ntt
-  invNtt := Impl.MlDsa.X86.Arith.nttInv
-  mul := Impl.MlDsa.X86.Arith.mul
-  mulAdd := Impl.MlDsa.X86.Arith.mulAdd
-  add := Impl.MlDsa.X86.Arith.add
-  sub := Impl.MlDsa.X86.Arith.sub
-  rejNTT := Impl.MlDsa.X86.Sample.rejNTT
-  expandMask := Impl.MlDsa.X86.Sample.expandMask
-  ball := Impl.MlDsa.X86.Sample.sampleInBall
-  highBits := Impl.MlDsa.X86.Round.highBits
-  lowBits := Impl.MlDsa.X86.Round.lowBits
-  normLt := Impl.MlDsa.X86.Round.normLt
-  makeHint := Impl.MlDsa.X86.Round.makeHint
-  simpleBitPack := Impl.MlDsa.X86.Pack.simpleBitPack
-  bitPack := Impl.MlDsa.X86.Pack.bitPack
-  bitUnpack := Impl.MlDsa.X86.Pack.bitUnpack
-  hintBitPack := Impl.MlDsa.X86.Pack.hintBitPack
 
 /-! ## The samplers' results -/
 
