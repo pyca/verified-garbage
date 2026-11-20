@@ -2751,6 +2751,25 @@ mod xcand {
                 let t = time(|| unsafe { f(black_box(p), black_box(DATA.as_ptr()), PAIRS as u32) });
                 line(mode, name, before, t);
             }
+            // The slots' alignment: the new loop with the frame 8 and 4
+            // bytes further (slots at 8 and at 4 modulo 16, as
+            // `vg_poly1305_blocks` has them when ChaCha20-Poly1305's seal
+            // and open, and its gathered seal, call it), next to
+            // `fdm_g22` above (slots at 0 modulo 16, as `update` and
+            // `open_to` have them). One slot in four then straddles a
+            // cache line.
+            for (name, off) in [("fdm_g22+8", 8), ("fdm_g22+4", 4)] {
+                let mut frame = new_frame();
+                // SAFETY: the 524 bytes at `p` are within `frame`.
+                let p = unsafe { frame.0.as_mut_ptr().cast::<u8>().add(4 + off) };
+                if !set() {
+                    continue;
+                }
+                let before = xinuse();
+                // SAFETY: as above.
+                let t = time(|| unsafe { vgx_cand_fdm_g22(black_box(p), black_box(DATA.as_ptr()), PAIRS as u32) });
+                line(mode, name, before, t);
+            }
             if set() {
                 let before = xinuse();
                 let t = time(|| {
