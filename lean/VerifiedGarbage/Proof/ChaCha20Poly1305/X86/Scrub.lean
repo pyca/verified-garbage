@@ -93,44 +93,44 @@ materialize_code gatherStub := Impl.ChaCha20Poly1305.X86.SealGather.sealGather "
   (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» stub))
 
 theorem seal_side :
-    scrubFSide (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» stub)) [] 772 = true := by
+    scrubFSide (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» stub)) [] 1280 = true := by
   lit_decide
 
 theorem open_side :
-    scrubFSide (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» stub)) [] 772 = true := by
+    scrubFSide (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» stub)) [] 1280 = true := by
   lit_decide
 
 theorem openTo_side :
-    scrubFSide (withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo stub)) [] 780 = true := by
+    scrubFSide (withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo stub)) [] 1288 = true := by
   lit_decide
 
 theorem gather_side :
     scrubFSide (Impl.ChaCha20Poly1305.X86.SealGather.sealGather "vg_chacha20_poly1305_seal_core"
-      (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» stub))) [] 824 = true := by
+      (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» stub))) [] 1332 = true := by
   lit_decide
 
 /-- `scrubFSide` of `vg_chacha20_poly1305_seal`, whatever the implementation. -/
 theorem seal_scrub (v : XorImpl) :
-    scrubFSide (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee)) [] 772 = true := by
+    scrubFSide (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee)) [] 1280 = true := by
   have hc : calleeSide v.callee.code 12 = true := calleeSide_of_eq v.stack v.scrub
   exact scrubFSide_of_fillB (by fillB_calls) seal_side
 
 /-- `scrubFSide` of `vg_chacha20_poly1305_open`, whatever the implementation. -/
 theorem open_scrub (v : XorImpl) :
-    scrubFSide (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee)) [] 772 = true := by
+    scrubFSide (withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee)) [] 1280 = true := by
   have hc : calleeSide v.callee.code 12 = true := calleeSide_of_eq v.stack v.scrub
   exact scrubFSide_of_fillB (by fillB_calls) open_side
 
 /-- `scrubFSide` of `vg_chacha20_poly1305_open_to`, whatever the implementation. -/
 theorem openTo_scrub (v : XorImpl) :
-    scrubFSide (withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo v.callee)) [] 780 = true := by
+    scrubFSide (withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo v.callee)) [] 1288 = true := by
   have hc : calleeSide v.callee.code 12 = true := calleeSide_of_eq v.stack v.scrub
   exact scrubFSide_of_fillB (by fillB_calls) openTo_side
 
 /-- `scrubFSide` of `vg_chacha20_poly1305_seal_gather`, whatever the implementation. -/
 theorem gather_scrub (v : XorImpl) :
     scrubFSide (Impl.ChaCha20Poly1305.X86.SealGather.sealGather (Gather.sealFn v).name (Gather.sealFn v).code)
-      [] 824 = true := by
+      [] 1332 = true := by
   have hc : calleeSide v.callee.code 12 = true := calleeSide_of_eq v.stack v.scrub
   exact scrubFSide_of_fillB (by fillB_calls) gather_side
 
@@ -139,11 +139,11 @@ theorem gather_scrub (v : XorImpl) :
 /-- `vg_chacha20_poly1305_seal`, calling the implementation `v` of `vg_chacha20_xor`, as emitted. -/
 theorem seal_scrubbed (v : XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.X86.Fn.«seal» v.callee)
-      (Spec.ChaCha20Poly1305.sealContract X86.abi 772) 0 :=
+      (Spec.ChaCha20Poly1305.sealContract X86.abi 1280) 0 :=
   verifiedScrubbedF (api := Spec.ChaCha20Poly1305.sealApi)
     { suffix := v.suffix
       code := withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee)
-      stack := 772
+      stack := 1280
       verified := Proof.ChaCha20Poly1305.X86.seal_framed v
       spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
         (Proof.ChaCha20Poly1305.X86.seal_spSafe v) }
@@ -152,11 +152,11 @@ theorem seal_scrubbed (v : XorImpl) :
 /-- `vg_chacha20_poly1305_open`, as emitted. -/
 theorem open_scrubbed (v : XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.X86.Fn.«open» v.callee)
-      (Spec.ChaCha20Poly1305.openZeroContract X86.abi 772) 32 :=
+      (Spec.ChaCha20Poly1305.openZeroContract X86.abi 1280) 32 :=
   verifiedScrubbedF (api := Spec.ChaCha20Poly1305.openZeroApi)
     { suffix := v.suffix
       code := withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee)
-      stack := 772
+      stack := 1280
       verified := Proof.ChaCha20Poly1305.X86.open_framed v
       spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
         (Proof.ChaCha20Poly1305.X86.open_spSafe v) }
@@ -165,11 +165,11 @@ theorem open_scrubbed (v : XorImpl) :
 /-- `vg_chacha20_poly1305_open_to`, as emitted. -/
 theorem openTo_scrubbed (v : XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.X86.Fn.openTo v.callee)
-      (Spec.ChaCha20Poly1305.openToContract X86.abi 780) 32 :=
+      (Spec.ChaCha20Poly1305.openToContract X86.abi 1288) 32 :=
   verifiedScrubbedF (api := Spec.ChaCha20Poly1305.openToApi)
     { suffix := v.suffix
       code := withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo v.callee)
-      stack := 780
+      stack := 1288
       verified := Proof.ChaCha20Poly1305.X86.openTo_framed v
       spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
         (Proof.ChaCha20Poly1305.X86.openTo_spSafe v) }
@@ -179,11 +179,11 @@ theorem openTo_scrubbed (v : XorImpl) :
 `vg_chacha20_poly1305_seal_core`, as emitted. -/
 theorem sealGather_scrubbed (v : XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.X86.Fn.sealGather v.callee v.suffix)
-      (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 824) 0 :=
+      (Spec.ChaCha20Poly1305.sealGatherContract X86.abi 1332) 0 :=
   verifiedScrubbedF (api := Spec.ChaCha20Poly1305.sealGatherApi)
     { suffix := v.suffix
       code := Impl.ChaCha20Poly1305.X86.SealGather.sealGather (Gather.sealFn v).name (Gather.sealFn v).code
-      stack := 824
+      stack := 1332
       verified := Gather.sealGather_verified (Gather.sealFn v)
       spSafe := Gather.sealGather_spSafe v }
     (gatherOut _) (hs := gather_scrub v)
