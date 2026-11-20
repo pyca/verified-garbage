@@ -186,6 +186,51 @@ theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target) (v : VecLeve
     exact RScrub.resOk_of_check (ScrubAbi.of r.consts api.sig r.tables) hv hcs hfit hp (RScrub.any_resOkB hc)
   exact verifiedScrubbedKs r v _ hpost hres hs rfl hb
 
+/-- What the cleanup `scrubSel level rb stack runs` of `code` needs of it,
+for code generic over an implementation it calls (a variant), whose analysis
+is evaluated where the implementation is defined, once: the level of its
+vector registers, the runs of granules that may hold secrets, the residue
+analysis ending with secrets only there (`ok`, from `SelScrub.ok_of` by
+`taint_decide`), and the cleanup's other conditions (`side`, by
+`lit_decide`). -/
+structure SelScrub (sig : Sig) (stack rb : Nat) (code : Prog isa) where
+  level : VecLevel
+  runs : List (Nat × Nat)
+  ok : ∃ h : VG.Taint.Hint RTaint.FT,
+    (VG.Taint.check RTaint.rtaint (RScrub.init sig stack []) code h).any
+      (RScrub.resOkB · stack (runKs runs) (chunksA stack)) = true
+  side : scrubSideG code stack rb level true (runKs runs) (chunksA stack) (gsAll (runKs runs)) [] = true
+
+/-- `SelScrub.ok`, from the analysis with a hint `taint_decide` finds,
+ending as `resOkF` checks (which the kernel evaluates faster). -/
+theorem SelScrub.ok_of {sig : Sig} {stack : Nat} {code : Prog isa} (runs : List (Nat × Nat))
+    {h : VG.Taint.Hint RTaint.FT}
+    (hc : (VG.Taint.check RTaint.rtaint (RScrub.init sig stack []) code h).any
+      (RScrub.resOkF · stack (runKs runs) (chunksA stack)) = true) :
+    ∃ h : VG.Taint.Hint RTaint.FT,
+      (VG.Taint.check RTaint.rtaint (RScrub.init sig stack []) code h).any
+        (RScrub.resOkB · stack (runKs runs) (chunksA stack)) = true :=
+  ⟨h, RScrub.any_resOkB hc⟩
+
+/-- `r`'s code followed by `scrubSel a.level rb n a.runs`, from what the
+implementation it calls proves of it (`a`). -/
+theorem SelScrub.scrubbed {api : Api} (r : Unscrubbed api target) {n rb : Nat}
+    (a : SelScrub api.sig n rb r.code) (hpost : PostOut r.contract (retBitsOf r))
+    (hn : r.stack = n := by rfl) (hb : retBitsOf r = rb := by rfl) (ht : r.tables = [] := by rfl) :
+    VerifiedScrubbed target (scrubSel a.level rb n a.runs r.code) r.contract rb := by
+  subst hn hb
+  have hs := a.side
+  rw [← ht] at hs
+  obtain ⟨hcs, -⟩ := scrubSideG_cs hs
+  have hres : ResOk r.code r.contract r.stack (runKs a.runs) (chunksA r.stack) := by
+    obtain ⟨h, hc⟩ := a.ok
+    obtain ⟨pre, post, leak, e⟩ := r.ofSig
+    have hv := r.verified
+    have hp : RScrub.PubOk r.contract [] := RScrub.pubOk_nil _
+    rw [e] at hv hp ⊢
+    exact RScrub.resOk_of_check (ScrubAbi.of r.consts api.sig r.tables) hv hcs rfl hp hc
+  exact verifiedScrubbedKs r a.level _ hpost hres hs rfl rfl
+
 /-- No instruction of `scrubKs v rb n ks c` writes the stack pointer if none
 of `c`'s does: the clearing's own instructions do not (its frames are
 `alloc` and `free`), so the registration's `spSafe` follows from its code's,
