@@ -1,38 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Verified
+public import VerifiedGarbage.Impl.AesGcmSiv.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Stitch.Verified
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Instances
-public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
-public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Init
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.FnCT
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
-public import VerifiedGarbage.Proof.Cmac.Dbl32
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Gcm.Be64
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Gcm.Powers
-public import VerifiedGarbage.Proof.Siv.Spec
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
 
@@ -42,20 +12,21 @@ public import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
 
 namespace VG.Artifacts.AesGcmSiv.AArch64
 
-open VG.Proof.AesGcm.AArch64 (GcmImpl GcmVariant)
+open VG.Proof.AesGcm.AArch64 (GcmVariant)
 open VG.Proof.AesGcmSiv.AArch64
 
-/-- The artifacts calling the implementations `v`. -/
-def artifactsOf (v : GcmImpl) : List Artifact := [
-  Spec.GcmSiv.sealApi.artifact AArch64.target
-    (Stitch.sealReg Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v),
-  Spec.GcmSiv.openApi.artifact AArch64.target
-    (Stitch.openReg Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok v)]
-
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifactsFor (v : GcmVariant) : List Artifact := artifactsOf v.impl
+def artifactsFor (g : GcmVariant) : List Artifact := [
+  Spec.GcmSiv.sealApi.artifact AArch64.target {
+    suffix := g.impl.suffix
+    code := Impl.AesGcmSiv.AArch64.Fn.seal g.calls
+    verified := .scrubbed (Stitch.seal_scrubbed g) },
+  Spec.GcmSiv.openApi.artifact AArch64.target {
+    suffix := g.impl.suffix
+    code := Impl.AesGcmSiv.AArch64.Fn.open g.calls
+    verified := .scrubbed (Stitch.open_scrubbed g) }]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesGcm.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.AesGcm.AArch64.variants.flatMap artifactsFor
 
 end VG.Artifacts.AesGcmSiv.AArch64
