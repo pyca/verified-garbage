@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -235,24 +236,23 @@ theorem pk_verified (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ec_p192_public_key` must wipe on
-return, from the residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKs : List Nat := keep_for% Spec.EcKey.P192.publicKeyApi.sig 8 publicKeyP192 []
 
-theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.EcKey.P192.publicKeyApi.sig 8 []) publicKeyP192 h).any
-      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of _ (by taint_decide)
 
-/-- `vg_ec_p192_public_key`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Registration Spec.EcKey.P192.publicKeyApi X86_64.target :=
-  RScrub.scrubOf {
-    code := publicKeyP192
-    stack := 8
-    verified := pk_verified hL hI } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
-    (EcKey.X86_64.Scrub.publicKeyOut _ _) [] (RScrub.pubOk_nil _) ⟨scrubKs, scrubOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem publicKey_codeSp : (publicKeyP192).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ec_p192_public_key` as emitted (`Impl.EcKey.X86_64.Fn.publicKeyP192`), its cleanup included, meets its contract in
+constant time and returns without secret residue. -/
+theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target Impl.EcKey.X86_64.Fn.publicKeyP192
+      (Spec.EcKey.P192.publicKeyApi.contract X86_64.abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P192.publicKeyApi)
+    { code := publicKeyP192
+      stack := 8
+      verified := pk_verified hL hI
+      spSafe := publicKey_codeSp } .sse (EcKey.X86_64.Scrub.publicKeyOut _ _)
+
+theorem publicKey_spSafe : Impl.EcKey.X86_64.Fn.publicKeyP192.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe publicKey_codeSp
 
 end VG.Proof.EcKey.X86_64.P192
