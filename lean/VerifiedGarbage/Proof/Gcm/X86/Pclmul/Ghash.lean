@@ -49,8 +49,10 @@ section
 Untrusted: everything here is checked by Lean. What the instructions of
 `Impl.Gcm.X86.Pclmul` compute, in the ring `Q` of `Proof/Gcm/Poly.lean`:
 
-* `pclmulqdq` multiplies polynomials (`gp_clmul`), so the four of `acc`
-  compute `x · a · b` as a 256-bit value (`Prod.val_prod`);
+* `pclmulqdq` multiplies polynomials (`gp_clmul`), so the four of `mul4`
+  compute `x · a · b` as a 256-bit value (`Prod.val_mul`), and the three of
+  `kblock` add it to one, whose middle part is then the sum of the three
+  (`Prod.val_kacc`);
 * `reduce` maps a 256-bit value to a block of the same class
   (`φ_reduce`);
 * `hInv` computes `H · x⁻¹` (`x_φ_hInv`).
@@ -145,18 +147,14 @@ namespace Prod
 /-- Its class: `hi` holds the low powers. -/
 noncomputable def val (p : Prod) : Q := φ p.hi + x ^ 64 * φ p.mid + x ^ 128 * φ p.lo
 
-/-- The four products of `acc`, added to `p`. -/
-def acc (p : Prod) (a b : BitVec 128) : Prod :=
-  ⟨p.lo ^^^ pclmul a b 0x00,
-   p.mid ^^^ pclmul a b 0x01 ^^^ pclmul a b 0x10,
-   p.hi ^^^ pclmul a b 0x11⟩
+/-- The four products of `mul4`. -/
+def mul (a b : BitVec 128) : Prod :=
+  ⟨pclmul a b 0x00, pclmul a b 0x01 ^^^ pclmul a b 0x10, pclmul a b 0x11⟩
 
 def zero : Prod := ⟨0, 0, 0⟩
 
-theorem val_zero : zero.val = 0 := by simp only [val, zero, BitVec.ofNat_eq_ofNat, φ_zero', mul_zero, add_zero]
-
-theorem val_acc (p : Prod) (a b : BitVec 128) : (p.acc a b).val = p.val + x * φ a * φ b := by
-  simp only [acc, val, φ_xor]
+theorem val_mul (a b : BitVec 128) : (mul a b).val = x * φ a * φ b := by
+  simp only [mul, val, φ_xor]
   simp only [pclmul, show (0x00 : BitVec 8).getLsbD 0 = false from rfl,
     show (0x00 : BitVec 8).getLsbD 4 = false from rfl, show (0x01 : BitVec 8).getLsbD 0 = true from rfl,
     show (0x01 : BitVec 8).getLsbD 4 = false from rfl, show (0x10 : BitVec 8).getLsbD 0 = false from rfl,
@@ -164,6 +162,40 @@ theorem val_acc (p : Prod) (a b : BitVec 128) : (p.acc a b).val = p.val + x * φ
     show (0x11 : BitVec 8).getLsbD 4 = true from rfl, ite_true, Bool.false_eq_true, ite_false,
     φ_clmul, φ_q a, φ_q b]
   ring
+
+end Prod
+
+/-! ## Three multiplications for a product -/
+
+/-- The sum of the halves of a block. -/
+def halfSum (v : BitVec 128) : BitVec 64 := qword v 1 ^^^ qword v 0
+
+theorem ψ_xor (a b : BitVec 64) : ψ (a ^^^ b) = ψ a + ψ b := by
+  simp only [ψ, gp_xor, map_add]
+
+namespace Prod
+
+/-- The three products of `kblock`, added to `p`: of the low halves, of the
+sums of the halves, and of the high halves. -/
+def kacc (p : Prod) (a b : BitVec 128) : Prod :=
+  ⟨p.lo ^^^ pclmul a b 0x00, p.mid ^^^ clmul (halfSum a) (halfSum b), p.hi ^^^ pclmul a b 0x11⟩
+
+/-- The product whose middle part is the sum of the three of `p`
+(`kmiddle`). -/
+def kfix (p : Prod) : Prod := ⟨p.lo, p.mid ^^^ p.lo ^^^ p.hi, p.hi⟩
+
+theorem kfix_zero : zero.kfix.val = 0 := by
+  simp only [kfix, val, zero, BitVec.ofNat_eq_ofNat, BitVec.xor_self, φ_zero', mul_zero, add_zero]
+
+theorem val_kacc (p : Prod) (a b : BitVec 128) :
+    (p.kacc a b).kfix.val = p.kfix.val + x * φ a * φ b := by
+  simp only [kacc, kfix, val, φ_xor]
+  simp only [pclmul, show (0x00 : BitVec 8).getLsbD 0 = false from rfl,
+    show (0x00 : BitVec 8).getLsbD 4 = false from rfl, show (0x11 : BitVec 8).getLsbD 0 = true from rfl,
+    show (0x11 : BitVec 8).getLsbD 4 = true from rfl, ite_true, Bool.false_eq_true, ite_false,
+    φ_clmul, halfSum, ψ_xor, φ_q a, φ_q b]
+  linear_combination
+    (x ^ 65 * (ψ (qword a 0) * ψ (qword b 0) + ψ (qword a 1) * ψ (qword b 1))) * two_Q
 
 end Prod
 
@@ -217,6 +249,30 @@ theorem shufDwords_4e (a : BitVec 128) : shufDwords a 0x4e = qword a 0 ++ qword 
   rcases (by omega_using [] : i < 32 ∨ (32 ≤ i ∧ i < 64) ∨ (64 ≤ i ∧ i < 96) ∨ 96 ≤ i) with h | h | h | h <;>
   simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and] <;>
   exact congrArg _ (by omega_arith)
+
+theorem qword_append_0 (h l : BitVec 64) : qword (h ++ l) 0 = l := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
+    Nat.mul_zero, Nat.zero_add, ite_true]
+
+theorem qword_append_1 (h l : BitVec 64) : qword (h ++ l) 1 = h := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
+    Nat.mul_one, show ¬ 64 + i < 64 by omega_using [], ite_false, Nat.add_sub_cancel_left]
+
+/-- The low quadword of a block added to itself with its halves swapped is
+the sum of its halves. -/
+theorem qword_swapXor (a : BitVec 128) : qword (shufDwords a 0x4e ^^^ a) 0 = halfSum a := by
+  rw [shufDwords_4e]
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [halfSum, qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_xor, BitVec.getLsbD_append, hi,
+    decide_true, Bool.true_and, Nat.mul_zero, Nat.zero_add, Nat.mul_one, ite_true]
+
+/-- `kblock`'s third multiplication: the low quadword of its first operand
+by the quadword `k % 2` of the second. -/
+theorem pclmul_halfSel (a b : BitVec 128) (k : Nat) :
+    pclmul a b (Impl.Gcm.X86.Pclmul.halfSel k) = clmul (qword a 0) (qword b (k % 2)) := by
+  rcases Nat.mod_two_eq_zero_or_one k with h | h <;> rw [Impl.Gcm.X86.Pclmul.halfSel, h] <;> rfl
 
 /-- One step of the reduction: `swap(v) ⊕ clmul(v₀, c)`. -/
 def fold (v : BitVec 128) : BitVec 128 := shufDwords v 0x4e ^^^ pclmul v poly 0x10
@@ -399,18 +455,18 @@ theorem zero_ok (s : State) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [xmm_setXmm, hr.1, hr.2.1, hr.2.2, ite_false]
 
-theorem acc_ok (s : State) :
-    WP isa (.block Impl.Gcm.X86.Pclmul.acc) s fun s' =>
-      prod s' = (prod s).acc (s.xmm .xmm2) (s.xmm .xmm3) ∧
-      Only [.xmm4, .xmm5, .xmm6, .xmm7] s s' := by
+theorem mul4_ok (s : State) :
+    WP isa (.block Impl.Gcm.X86.Pclmul.mul4) s fun s' =>
+      prod s' = Prod.mul (s.xmm .xmm2) (s.xmm .xmm3) ∧
+      Only [.xmm4, .xmm5, .xmm6, .xmm2] s s' := by
   apply WP.of_runBlock
-  simp only [Impl.Gcm.X86.Pclmul.acc]
+  simp only [Impl.Gcm.X86.Pclmul.mul4]
   simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
     XOp.exec, isa, xmm_setXmm,
     eval_pxor, eval_movdqa, Option.some.injEq, exists_eq_left']
   refine ⟨?_, by simp only [gpr_setXmm], by simp only [mem_setXmm],
     by simp only [rd_setXmm], by simp only [wr_setXmm], fun r hr => ?_⟩
-  · simp only [prod, Prod.acc, xmm_setXmm, ite_true, ite_false, reduceCtorEq]
+  · simp only [prod, Prod.mul, xmm_setXmm, ite_true, ite_false, reduceCtorEq]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [xmm_setXmm, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
 
@@ -431,21 +487,49 @@ theorem reduce_ok (s : State) (h1 : s.xmm .xmm1 = poly) :
 
 /-- Multiply the accumulator by the transformed hash key. -/
 theorem mul_ok (s : State) (h1 : s.xmm .xmm1 = poly) :
-    WP isa (.block (Impl.Gcm.X86.Pclmul.zero ++ Impl.Gcm.X86.Pclmul.acc ++
-      Impl.Gcm.X86.Pclmul.reduce)) s fun s' =>
+    WP isa (.block (Impl.Gcm.X86.Pclmul.mul4 ++ Impl.Gcm.X86.Pclmul.reduce)) s fun s' =>
       φ (s'.xmm .xmm2) = x * φ (s.xmm .xmm2) * φ (s.xmm .xmm3) ∧
       Only [.xmm4, .xmm5, .xmm6, .xmm7, .xmm2] s s' := by
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (zero_ok s) fun s₁ ⟨p₁, o₁⟩ => ?_
-  refine WP.mono (acc_ok s₁) fun s₂ ⟨p₂, o₂⟩ => ?_
-  have e1 : s₂.xmm .xmm1 = poly := by
-    rw [o₂.xmm _ (by decide), o₁.xmm _ (by decide), h1]
+  rw [WP.block_append_iff]
+  refine WP.mono (mul4_ok s) fun s₂ ⟨p₂, o₂⟩ => ?_
+  have e1 : s₂.xmm .xmm1 = poly := by rw [o₂.xmm _ (by decide), h1]
   refine WP.mono (reduce_ok s₂ e1) fun s₃ ⟨p₃, o₃⟩ => ⟨?_, ?_⟩
-  · rw [p₃, φ_reduce, p₂, p₁, Prod.val_acc, Prod.val_zero, zero_add,
-      o₁.xmm .xmm2 (by decide), o₁.xmm .xmm3 (by decide)]
-  · exact (o₁.trans (o₂.trans o₃)).weaken fun r hr => by
+  · rw [p₃, φ_reduce, p₂, Prod.val_mul]
+  · exact (o₂.trans o₃).weaken fun r hr => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-      rcases hr with (h | h | h) | (h | h | h | h) | (h | h | h | h | h) <;> simp [h]
+      rcases hr with (h | h | h | h) | (h | h | h | h | h) <;> simp [h]
+
+theorem Only.seq {rs : List XReg} {s s' s'' : State} (h : Only rs s s') (h' : Only rs s' s'') :
+    Only rs s s'' :=
+  ⟨h'.gpr.trans h.gpr, h'.mem.trans h.mem, h'.rd.trans h.rd, h'.wr.trans h.wr,
+    fun r hr => (h'.xmm r hr).trans (h.xmm r hr)⟩
+
+/-- The registers a block of eight changes. -/
+abbrev work : List XReg := [.xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7]
+
+theorem Only.work {rs : List XReg} {s s' : State} (h : Only rs s s')
+    (hs : ∀ r ∈ rs, r ∈ work := by decide) : Only work s s' :=
+  h.weaken hs
+
+theorem prod_only {rs : List XReg} {s s' : State} (f : Only rs s s') (h4 : XReg.xmm4 ∉ rs := by decide)
+    (h5 : XReg.xmm5 ∉ rs := by decide) (h6 : XReg.xmm6 ∉ rs := by decide) : prod s' = prod s := by
+  simp only [prod, f.xmm _ h4, f.xmm _ h5, f.xmm _ h6]
+
+theorem bin_ok (op : XBinOp) (d r : XReg) (s : State) :
+    WP isa (.block [.xop (.bin op d r)]) s fun s' =>
+      s'.xmm d = op.eval (s.xmm d) (s.xmm r) ∧ Only [d] s s' := by
+  refine WP.of_runBlock ⟨s.setXmm d (op.eval (s.xmm d) (s.xmm r)), ?_, ?_⟩
+  · simp only [runBlock_cons, exec, XOp.exec, runStep_some, runBlock_nil]
+  · refine ⟨xmm_setXmm_self _ _ _, gpr_setXmm _ _ _, mem_setXmm _ _ _,
+      rd_setXmm _ _ _, wr_setXmm _ _ _, ?_⟩
+    intro a ha
+    exact xmm_setXmm_of_ne _ _ (by simpa only [List.mem_singleton] using ha)
+
+/-- A block's first instruction, on its own. -/
+theorem block_one {i : Instr} {is : List Instr} {s : State} {Q : State → Prop} :
+    WP isa (.block (i :: is)) s Q ↔ WP isa (.block [i]) s fun s' => WP isa (.block is) s' Q := by
+  show WP isa (.block ([i] ++ is)) s Q ↔ _
+  exact WP.block_append_iff
 
 end VG.Proof.Gcm.X86.Pclmul
 
@@ -837,7 +921,7 @@ theorem body_ok {s₀ s : State} (hp : GPre s₀) {i : Nat} (hi : Inv s₀ i s)
     fun s₁ ⟨input₁, f₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (xor_ok s₁) fun s₂ ⟨acc₂, f₂⟩ => ?_
-  rw [← List.append_assoc, ← List.append_assoc, WP.block_append_iff]
+  rw [← List.append_assoc, WP.block_append_iff]
   have poly₂ : s₂.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly := by
     rw [f₂.xmm _ (by decide), f₁.xmm _ (by decide)]; exact hi.poly
   refine WP.mono (mul_ok s₂ poly₂) fun s₃ ⟨mul₃, f₃⟩ => ?_
@@ -879,11 +963,13 @@ end
 
 /-! ## Eight blocks at a time
 
-With eight blocks or more, `pows` writes `H'¹`, …, `H'⁸` to the scratch
-buffer. The state after it, `s₁`, differs from the entry state `s₀` in that
-buffer only (`Base`), so that it satisfies the precondition too, with the
-same `H`, `Y` and data: the blocks, eight at a time (`body8`) and then one
-at a time (`body`), are proven from `s₁`, whose memory they keep. -/
+With eight blocks or more, `pows` writes the scratch buffer: `H'¹`, …, `H'⁸`,
+`Y`, the reduction's constant, and the sums of the halves of the powers
+(`Tab`). The blocks eight at a time (`body8`) keep `Y` there, so that the
+memory differs from the entry state's in that buffer only (`KInv`). The
+state after them, `s₁`, is one that satisfies the precondition too, with
+the same `H`, `Y` and data (`Base`): the blocks one at a time (`body`) are
+proven from `s₁`, whose memory they keep. -/
 
 section
 
@@ -940,7 +1026,8 @@ theorem st_ok (r : XReg) (m : MemOp) (s : State) (hin : InRegions s.wr (s.ea m) 
 /-! ### The powers -/
 
 /-- While the powers are computed: memory differs from `s₀`'s in the scratch
-buffer only, whose slots before `k` hold the powers, and its slot 8 `y`. -/
+buffer only, whose slots before `k` hold the powers, its slot 8 `y`, and its
+slot 9 the reduction's constant. -/
 structure PInv (s₀ : State) (g : Reg → BitVec 32) (y : BitVec 128) (k : Nat) (s : State) : Prop where
   frame : Frame [sR s₀] s₀.mem s.mem
   rd : s.rd = s₀.rd
@@ -949,6 +1036,7 @@ structure PInv (s₀ : State) (g : Reg → BitVec 32) (y : BitVec 128) (k : Nat)
   rev : s.xmm .xmm0 = VG.Proof.Gcm.X86.revMask
   poly : s.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly
   saved : s.mem.readW (sA s₀ 8) 128 = y
+  const : s.mem.readW (sA s₀ 9) 128 = Impl.Gcm.X86.Pclmul.poly
   pow : ∀ j < k, x * φ (s.mem.readW (sA s₀ j) 128) = φ (H s₀) ^ (j + 1)
 
 theorem mulSlots_ok {s₀ s : State} (hp : GPre s₀) {g : Reg → BitVec 32} {y : BitVec 128}
@@ -957,19 +1045,16 @@ theorem mulSlots_ok {s₀ s : State} (hp : GPre s₀) {g : Reg → BitVec 32} {y
     WP isa (.block (Impl.Gcm.X86.Pclmul.mulSlots d a b)) s (PInv s₀ g y (d + 1)) := by
   have c₀ : s.gpr .ecx = sP s₀ := by rw [hi.gpr, hc]
   simp only [Impl.Gcm.X86.Pclmul.mulSlots, List.append_assoc]
-  rw [show ([.movdquLoad .xmm2 (slot a), .movdquLoad .xmm3 (slot b)] : List Instr) =
-      ([.movdquLoad .xmm2 (slot a)] : List Instr) ++ [.movdquLoad .xmm3 (slot b)] from rfl,
-    List.append_assoc, WP.block_append_iff]
+  rw [WP.block_append_iff, block_one]
   refine WP.mono (ld_ok .xmm2 (slot a) s (by rw [slot_ea c₀]; exact slot_rd hp hi.wr (by omega_using [ha, hd])))
     fun s₁ ⟨v₁, f₁⟩ => ?_
   have c₁ : s₁.gpr .ecx = sP s₀ := by rw [f₁.gpr, c₀]
-  rw [WP.block_append_iff]
   refine WP.mono (ld_ok .xmm3 (slot b) s₁ (by
     rw [slot_ea c₁]; exact slot_rd hp (f₁.wr.trans hi.wr) (by omega_using [hb, hd])))
     fun s₂ ⟨v₂, f₂⟩ => ?_
   have poly₂ : s₂.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly := by
     rw [f₂.xmm _ (by decide), f₁.xmm _ (by decide)]; exact hi.poly
-  rw [← List.append_assoc, ← List.append_assoc, WP.block_append_iff]
+  rw [← List.append_assoc, WP.block_append_iff]
   refine WP.mono (mul_ok s₂ poly₂) fun s₃ ⟨mul₃, f₃⟩ => ?_
   have c₃ : s₃.gpr .ecx = sP s₀ := by rw [f₃.gpr, f₂.gpr, c₁]
   have m₃ : s₃.mem = s.mem := f₃.mem.trans (f₂.mem.trans f₁.mem)
@@ -983,30 +1068,199 @@ theorem mulSlots_ok {s₀ s : State} (hp : GPre s₀) {g : Reg → BitVec 32} {y
         x * φ (s.mem.readW (sA s₀ a) 128) * (x * φ (s.mem.readW (sA s₀ b) 128)) by ring,
       hi.pow a ha, hi.pow b hb, ← pow_add]
     exact congrArg _ (by omega_using [hab])
-  refine ⟨?_, rd₄.trans (f₃.rd.trans (f₂.rd.trans (f₁.rd.trans hi.rd))), wr₄.trans w₃, ?_, ?_, ?_, ?_, ?_⟩
+  have other : ∀ j, j < 16 → j ≠ d → s₄.mem.readW (sA s₀ j) 128 = s.mem.readW (sA s₀ j) 128 :=
+    fun j hj hne => by
+      rw [m₄, Mem.readW_writeW_sep (slot_sep hp hj (by omega_using [hd]) hne) (by decide)]
+  refine ⟨?_, rd₄.trans (f₃.rd.trans (f₂.rd.trans (f₁.rd.trans hi.rd))), wr₄.trans w₃, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [m₄]
     exact hi.frame.writeW (List.mem_singleton_self _) _ (slot_in hp (by omega_using [hd]))
   · rw [g₄, f₃.gpr, f₂.gpr, f₁.gpr]; exact hi.gpr
   · rw [x₄, f₃.xmm _ (by decide), f₂.xmm _ (by decide), f₁.xmm _ (by decide)]; exact hi.rev
   · rw [x₄, f₃.xmm _ (by decide)]; exact poly₂
-  · rw [m₄, Mem.readW_writeW_sep (slot_sep hp (by decide) (by omega_using [hd]) (by omega_using [hd]))
-      (by decide)]
-    exact hi.saved
+  · rw [other 8 (by decide) (by omega_using [hd])]; exact hi.saved
+  · rw [other 9 (by decide) (by omega_using [hd])]; exact hi.const
   · intro j hj
     by_cases hjd : j = d
     · rw [hjd, m₄, Mem.readW_writeW_self _ _ 16 _ (by decide)]
       exact hpw
-    · rw [m₄, Mem.readW_writeW_sep (slot_sep hp (by omega_using [hj, hd]) (by omega_using [hd]) hjd)
-        (by decide)]
+    · rw [other j (by omega_using [hj, hd]) hjd]
       exact hi.pow j (by omega_using [hj, hjd])
 
-theorem PInv.of_only {s₀ s s' : State} {g : Reg → BitVec 32} {y : BitVec 128} {k : Nat}
-    (h : PInv s₀ g y k s) (f : Only [.xmm2] s s') : PInv s₀ g y k s' :=
-  ⟨by rw [f.mem]; exact h.frame, f.rd.trans h.rd, f.wr.trans h.wr, f.gpr.trans h.gpr,
-    by rw [f.xmm _ (by decide)]; exact h.rev, by rw [f.xmm _ (by decide)]; exact h.poly,
-    by rw [f.mem]; exact h.saved, fun j hj => by rw [f.mem]; exact h.pow j hj⟩
+/-- The slot `10 + k / 2` holds the sum of the halves of the slot `k`, in its
+quadword `k % 2`. -/
+def HalfAt (s₀ : State) (m : Mem) (k : Nat) : Prop :=
+  qword (m.readW (sA s₀ (10 + k / 2)) 128) (k % 2) = halfSum (m.readW (sA s₀ k) 128)
 
-/-! ### The state after the powers -/
+theorem hsum_ok (s : State) :
+    WP isa (.block Impl.Gcm.X86.Pclmul.hsum) s fun s' =>
+      s'.xmm .xmm4 = halfSum (s.xmm .xmm3) ++ halfSum (s.xmm .xmm2) ∧ Only [.xmm4, .xmm5] s s' := by
+  apply WP.of_runBlock
+  simp only [Impl.Gcm.X86.Pclmul.hsum]
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
+    XOp.exec, isa, xmm_setXmm, eval_pxor, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, by simp only [gpr_setXmm], by simp only [mem_setXmm],
+    by simp only [rd_setXmm], by simp only [wr_setXmm], fun r hr => ?_⟩
+  · rw [← qword_swapXor, ← qword_swapXor]; rfl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [xmm_setXmm, hr.1, hr.2, ite_false]
+
+theorem halves_ok {s₀ s : State} (hp : GPre s₀) {g : Reg → BitVec 32} {y : BitVec 128}
+    (hc : g .ecx = sP s₀) {h : Nat} (hh : h < 4) (hi : PInv s₀ g y 8 s)
+    (hv : ∀ k < 2 * h, HalfAt s₀ s.mem k) :
+    WP isa (.block (Impl.Gcm.X86.Pclmul.halves h)) s fun s' =>
+      PInv s₀ g y 8 s' ∧ ∀ k < 2 * (h + 1), HalfAt s₀ s'.mem k := by
+  have c₀ : s.gpr .ecx = sP s₀ := by rw [hi.gpr, hc]
+  simp only [Impl.Gcm.X86.Pclmul.halves, List.append_assoc]
+  rw [WP.block_append_iff, block_one]
+  refine WP.mono (ld_ok .xmm2 (slot (2 * h)) s (by
+    rw [slot_ea c₀]; exact slot_rd hp hi.wr (by omega_using [hh]))) fun s₁ ⟨v₁, f₁⟩ => ?_
+  have c₁ : s₁.gpr .ecx = sP s₀ := by rw [f₁.gpr, c₀]
+  refine WP.mono (ld_ok .xmm3 (slot (2 * h + 1)) s₁ (by
+    rw [slot_ea c₁]; exact slot_rd hp (f₁.wr.trans hi.wr) (by omega_using [hh]))) fun s₂ ⟨v₂, f₂⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (hsum_ok s₂) fun s₃ ⟨sum₃, f₃⟩ => ?_
+  have c₃ : s₃.gpr .ecx = sP s₀ := by rw [f₃.gpr, f₂.gpr, c₁]
+  have m₃ : s₃.mem = s.mem := f₃.mem.trans (f₂.mem.trans f₁.mem)
+  have w₃ : s₃.wr = s₀.wr := f₃.wr.trans (f₂.wr.trans (f₁.wr.trans hi.wr))
+  refine WP.mono (st_ok .xmm4 (slot (10 + h)) s₃ (by
+    rw [slot_ea c₃]; exact slot_wr hp w₃ (by omega_using [hh]))) fun s₄ ⟨m₄, g₄, x₄, rd₄, wr₄⟩ => ?_
+  rw [slot_ea c₃, m₃, sum₃, v₂, f₂.xmm .xmm2 (by decide), v₁, f₁.mem, slot_ea c₀, slot_ea c₁] at m₄
+  have other : ∀ j, j < 10 → s₄.mem.readW (sA s₀ j) 128 = s.mem.readW (sA s₀ j) 128 := fun j hj => by
+    rw [m₄, Mem.readW_writeW_sep (slot_sep hp (by omega_using [hj]) (by omega_using [hh])
+      (by omega_using [hj])) (by decide)]
+  refine ⟨⟨?_, rd₄.trans (f₃.rd.trans (f₂.rd.trans (f₁.rd.trans hi.rd))), wr₄.trans w₃, ?_, ?_, ?_, ?_, ?_,
+    ?_⟩, ?_⟩
+  · rw [m₄]
+    exact hi.frame.writeW (List.mem_singleton_self _) _ (slot_in hp (by omega_using [hh]))
+  · rw [g₄, f₃.gpr, f₂.gpr, f₁.gpr]; exact hi.gpr
+  · rw [x₄, f₃.xmm _ (by decide), f₂.xmm _ (by decide), f₁.xmm _ (by decide)]; exact hi.rev
+  · rw [x₄, f₃.xmm _ (by decide), f₂.xmm _ (by decide), f₁.xmm _ (by decide)]; exact hi.poly
+  · rw [other 8 (by decide)]; exact hi.saved
+  · rw [other 9 (by decide)]; exact hi.const
+  · intro j hj
+    rw [other j (by omega_using [hj])]; exact hi.pow j hj
+  · intro k hk
+    rcases (by omega_using [hk] : k < 2 * h ∨ k = 2 * h ∨ k = 2 * h + 1) with hlt | rfl | rfl
+    · have hk' := hv k hlt
+      unfold HalfAt at hk' ⊢
+      rw [other k (by omega_using [hlt, hh]), m₄, Mem.readW_writeW_sep (slot_sep hp
+        (by omega_using [hlt, hh]) (by omega_using [hh]) (by omega_using [hlt])) (by decide)]
+      exact hk'
+    · unfold HalfAt
+      rw [other (2 * h) (by omega_using [hh]), show 2 * h / 2 = h by omega_using [],
+        show 2 * h % 2 = 0 by omega_using [], m₄, Mem.readW_writeW_self _ _ 16 _ (by decide),
+        qword_append_0]
+    · unfold HalfAt
+      rw [other (2 * h + 1) (by omega_using [hh]), show (2 * h + 1) / 2 = h by omega_using [],
+        show (2 * h + 1) % 2 = 1 by omega_using [], m₄, Mem.readW_writeW_self _ _ 16 _ (by decide),
+        qword_append_1]
+
+/-! ### The scratch buffer after the powers -/
+
+/-- The scratch buffer holds the powers, the reduction's constant and the
+sums of the halves of the powers. -/
+structure Tab (s₀ : State) (m : Mem) : Prop where
+  pow : ∀ j < 8, x * φ (m.readW (sA s₀ j) 128) = φ (H s₀) ^ (j + 1)
+  poly : m.readW (sA s₀ 9) 128 = Impl.Gcm.X86.Pclmul.poly
+  half : ∀ k < 8, HalfAt s₀ m k
+
+/-- A store of `Y`, in the slot 8, keeps the rest. -/
+theorem Tab.store {s₀ : State} (hp : GPre s₀) {m : Mem} (h : Tab s₀ m) (v : BitVec 128) :
+    Tab s₀ (m.writeW (sA s₀ 8) v) := by
+  have other : ∀ j, j < 16 → j ≠ 8 →
+      (m.writeW (sA s₀ 8) v).readW (sA s₀ j) 128 = m.readW (sA s₀ j) 128 :=
+    fun j hj hne => Mem.readW_writeW_sep (slot_sep hp hj (by decide) hne) (by decide)
+  refine ⟨fun j hj => ?_, ?_, fun k hk => ?_⟩
+  · rw [other j (by omega_using [hj]) (by omega_using [hj])]; exact h.pow j hj
+  · rw [other 9 (by decide) (by decide)]; exact h.poly
+  · have hk' := h.half k hk
+    unfold HalfAt at hk' ⊢
+    rw [other k (by omega_using [hk]) (by omega_using [hk]),
+      other (10 + k / 2) (by omega_using [hk]) (by omega_using [hk])]
+    exact hk'
+
+/-- Between the blocks of eight: memory differs from `s₀`'s in the scratch
+buffer only, which holds the powers and what goes with them (`Tab`), and
+`Y` after `i` blocks in its slot 8. -/
+structure KInv (s₀ : State) (i : Nat) (s : State) : Prop where
+  frame : Frame [sR s₀] s₀.mem s.mem
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  saved : ∀ r ∈ calleeSaved, s.gpr r = s₀.gpr r
+  le : i ≤ nBlk s₀
+  count : s.gpr .eax = BitVec.ofNat 32 (nBlk s₀ - i)
+  data : s.gpr .edx = dP s₀ + BitVec.ofNat 32 (16 * i)
+  scr : s.gpr .ecx = sP s₀
+  rev : s.xmm .xmm0 = VG.Proof.Gcm.X86.revMask
+  tab : Tab s₀ s.mem
+  acc : s.mem.readW (sA s₀ 8) 128 = Y s₀ i
+
+theorem pows_ok {s₀ s : State} (hp : GPre s₀) (hi : Inv s₀ 0 s) :
+    WP isa (.block Impl.Gcm.X86.Pclmul.pows) s (KInv s₀ 0) := by
+  simp only [Impl.Gcm.X86.Pclmul.pows, List.append_assoc]
+  rw [WP.block_append_iff, block_one]
+  refine WP.mono (movArg_ok hp hi.env 4 (by decide) .ecx (by decide)) fun t₁ ⟨c₁, e₁, r₁, x₁⟩ => ?_
+  rw [block_one]
+  refine WP.mono (st_ok .xmm2 (slot 8) t₁ (by rw [slot_ea c₁]; exact slot_wr hp e₁.wr (by decide)))
+    fun t₂ ⟨m₂, g₂, x₂, rd₂, wr₂⟩ => ?_
+  have c₂ : t₂.gpr .ecx = sP s₀ := by rw [g₂]; exact c₁
+  rw [block_one]
+  refine WP.mono (st_ok .xmm3 (slot 0) t₂ (by
+    rw [slot_ea c₂]; exact slot_wr hp (wr₂.trans e₁.wr) (by decide)))
+    fun t₃ ⟨m₃, g₃, x₃, rd₃, wr₃⟩ => ?_
+  have c₃ : t₃.gpr .ecx = sP s₀ := by rw [g₃]; exact c₂
+  refine WP.mono (st_ok .xmm1 (slot 9) t₃ (by
+    rw [slot_ea c₃]; exact slot_wr hp (wr₃.trans (wr₂.trans e₁.wr)) (by decide)))
+    fun t₄ ⟨m₄, g₄, x₄, rd₄, wr₄⟩ => ?_
+  rw [slot_ea c₁, e₁.mem] at m₂
+  rw [slot_ea c₂, m₂] at m₃
+  rw [slot_ea c₃, m₃] at m₄
+  have p₄ : PInv s₀ t₁.gpr (s.xmm .xmm2) 1 t₄ := by
+    refine ⟨?_, rd₄.trans (rd₃.trans (rd₂.trans e₁.rd)), wr₄.trans (wr₃.trans (wr₂.trans e₁.wr)),
+      g₄.trans (g₃.trans g₂), ?_, ?_, ?_, ?_, ?_⟩
+    · rw [m₄]
+      exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (slot_in hp (by decide))).writeW
+        (List.mem_singleton_self _) _ (slot_in hp (by decide))).writeW
+        (List.mem_singleton_self _) _ (slot_in hp (by decide))
+    · rw [x₄, x₃, x₂, x₁]; exact hi.rev
+    · rw [x₄, x₃, x₂, x₁]; exact hi.poly
+    · rw [m₄, Mem.readW_writeW_sep (slot_sep hp (by decide) (by decide) (by decide)) (by decide),
+        Mem.readW_writeW_sep (slot_sep hp (by decide) (by decide) (by decide)) (by decide),
+        Mem.readW_writeW_self _ _ 16 _ (by decide), x₁]
+    · rw [m₄, Mem.readW_writeW_self _ _ 16 _ (by decide), x₃, x₂, x₁]; exact hi.poly
+    · intro j hj
+      obtain rfl : j = 0 := by omega_using [hj]
+      rw [m₄, Mem.readW_writeW_sep (slot_sep hp (by decide) (by decide) (by decide)) (by decide),
+        Mem.readW_writeW_self _ _ 16 _ (by decide), x₂, x₁, hi.hash, pow_one]
+  rw [WP.block_append_iff]
+  refine WP.mono (mulSlots_ok hp c₁ p₄ (by decide) (by decide) (by decide) (by decide)) fun t₅ p₅ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mulSlots_ok hp c₁ p₅ (by decide) (by decide) (by decide) (by decide)) fun t₆ p₆ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mulSlots_ok hp c₁ p₆ (by decide) (by decide) (by decide) (by decide)) fun t₇ p₇ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mulSlots_ok hp c₁ p₇ (by decide) (by decide) (by decide) (by decide)) fun t₈ p₈ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mulSlots_ok hp c₁ p₈ (by decide) (by decide) (by decide) (by decide)) fun t₉ p₉ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mulSlots_ok hp c₁ p₉ (by decide) (by decide) (by decide) (by decide)) fun t₁₀ p₁₀ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mulSlots_ok hp c₁ p₁₀ (by decide) (by decide) (by decide) (by decide)) fun t₁₁ p₁₁ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (halves_ok hp c₁ (h := 0) (by decide) p₁₁ (fun k hk => absurd hk (Nat.not_lt_zero k)))
+    fun u₁ ⟨q₁, h₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (halves_ok hp c₁ (h := 1) (by decide) q₁ h₁) fun u₂ ⟨q₂, h₂⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (halves_ok hp c₁ (h := 2) (by decide) q₂ h₂) fun u₃ ⟨q₃, h₃⟩ => ?_
+  refine WP.mono (halves_ok hp c₁ (h := 3) (by decide) q₃ h₃) fun u₄ ⟨q₄, h₄⟩ => ?_
+  exact ⟨q₄.frame, q₄.rd, q₄.wr, fun r hr => by
+      rw [q₄.gpr, r₁ r (by rintro rfl; exact absurd hr (by decide))]; exact hi.env.saved r hr,
+    Nat.zero_le _, by rw [q₄.gpr, r₁ .eax (by decide)]; exact hi.count,
+    by rw [q₄.gpr, r₁ .edx (by decide)]; exact hi.data, by rw [q₄.gpr]; exact c₁, q₄.rev,
+    ⟨q₄.pow, q₄.const, h₄⟩, by rw [q₄.saved]; exact hi.acc⟩
+
+/-! ### The state after the blocks of eight -/
 
 /-- `s₁` is `s₀` but for the scratch buffer (and the registers that are not
 callee-saved). -/
@@ -1085,93 +1339,11 @@ theorem Base.finish {s₀ s₁ s' : State} (h : Base s₀ s₁) (hp : GPre s₀)
     rw [hpost, h.block_eq hp.dHS, h.block_eq hp.dYS,
       h.blocks_eq hp.dDS (by have := hp.fD; omega_using [this]) (Nat.le_refl _)]
 
-/-- The accumulator after `i` blocks, with the scratch buffer in `ecx`. -/
-structure GInv (s₁ : State) (i : Nat) (s : State) : Prop where
-  env : Env s₁ s
-  le : i ≤ nBlk s₁
-  count : s.gpr .eax = BitVec.ofNat 32 (nBlk s₁ - i)
-  data : s.gpr .edx = dP s₁ + BitVec.ofNat 32 (16 * i)
-  scr : s.gpr .ecx = sP s₁
-  rev : s.xmm .xmm0 = VG.Proof.Gcm.X86.revMask
-  poly : s.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly
-  acc : s.xmm .xmm2 = Y s₁ i
-
-/-- The slots of the scratch buffer hold the powers. -/
-def Pows (s₁ : State) : Prop :=
-  ∀ j < 8, x * φ (s₁.mem.readW (sA s₁ j) 128) = φ (H s₁) ^ (j + 1)
-
-theorem pows_base {s₀ s s₁ : State} {g : Reg → BitVec 32} (hp : GPre s₀) (hi : Inv s₀ 0 s)
-    (hc : g .ecx = sP s₀) (hg : ∀ r, r ≠ .ecx → g r = s.gpr r)
-    (h : PInv s₀ g (s.xmm .xmm2) 8 s₁) (h2 : s₁.xmm .xmm2 = s.xmm .xmm2) :
-    Base s₀ s₁ ∧ GPre s₁ ∧ GInv s₁ 0 s₁ ∧ Pows s₁ := by
-  have hb : Base s₀ s₁ := ⟨h.frame, h.rd, h.wr, fun r hr => by
-    rw [h.gpr, hg r (by rintro rfl; exact absurd hr (by decide))]; exact hi.env.saved r hr⟩
-  refine ⟨hb, hb.gpre hp, ⟨Env.refl _, Nat.zero_le _, ?_, ?_, ?_, h.rev, h.poly, ?_⟩, ?_⟩
-  · rw [h.gpr, hg .eax (by decide), hi.count]
-    show _ = BitVec.ofNat 32 ((arg s₁ 3).toNat - 0)
-    rw [hb.arg_eq hp (by decide)]
-  · rw [h.gpr, hg .edx (by decide), hi.data]
-    show _ = arg s₁ 2 + _
-    rw [hb.arg_eq hp (by decide)]
-  · rw [h.gpr, hc]; exact (hb.arg_eq hp (by decide)).symm
-  · rw [h2, hi.acc]; exact (hb.Y_eq hp (Nat.zero_le _)).symm
-  · intro j hj
-    show x * φ (s₁.mem.readW (addr (arg s₁ 4) (16 * j)) 128) = φ (H s₁) ^ (j + 1)
-    rw [hb.arg_eq hp (by decide), hb.H_eq hp]
-    exact h.pow j hj
-
-theorem pows_ok {s₀ s : State} (hp : GPre s₀) (hi : Inv s₀ 0 s) :
-    WP isa (.block Impl.Gcm.X86.Pclmul.pows) s fun s₁ =>
-      Base s₀ s₁ ∧ GPre s₁ ∧ GInv s₁ 0 s₁ ∧ Pows s₁ := by
-  simp only [Impl.Gcm.X86.Pclmul.pows, List.append_assoc]
-  rw [show ([.mov .ecx (.mem (argOp 4)), .movdquStore (slot 8) .xmm2,
-      .movdquStore (slot 0) .xmm3] : List Instr) =
-      ([.mov .ecx (.mem (argOp 4))] : List Instr) ++
-        (([.movdquStore (slot 8) .xmm2] : List Instr) ++ [.movdquStore (slot 0) .xmm3]) from rfl,
-    List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (movArg_ok hp hi.env 4 (by decide) .ecx (by decide)) fun t₁ ⟨c₁, e₁, r₁, x₁⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (st_ok .xmm2 (slot 8) t₁ (by rw [slot_ea c₁]; exact slot_wr hp e₁.wr (by decide)))
-    fun t₂ ⟨m₂, g₂, x₂, rd₂, wr₂⟩ => ?_
-  have c₂ : t₂.gpr .ecx = sP s₀ := by rw [g₂]; exact c₁
-  rw [WP.block_append_iff]
-  refine WP.mono (st_ok .xmm3 (slot 0) t₂ (by
-    rw [slot_ea c₂]; exact slot_wr hp (wr₂.trans e₁.wr) (by decide)))
-    fun t₃ ⟨m₃, g₃, x₃, rd₃, wr₃⟩ => ?_
-  rw [slot_ea c₁, e₁.mem] at m₂
-  rw [slot_ea c₂, m₂] at m₃
-  have p₃ : PInv s₀ t₁.gpr (s.xmm .xmm2) 1 t₃ := by
-    refine ⟨?_, rd₃.trans (rd₂.trans e₁.rd), wr₃.trans (wr₂.trans e₁.wr), g₃.trans g₂, ?_, ?_, ?_, ?_⟩
-    · rw [m₃]
-      exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (slot_in hp (by decide))).writeW
-        (List.mem_singleton_self _) _ (slot_in hp (by decide))
-    · rw [x₃, x₂, x₁]; exact hi.rev
-    · rw [x₃, x₂, x₁]; exact hi.poly
-    · rw [m₃, Mem.readW_writeW_sep (slot_sep hp (by decide) (by decide) (by decide)) (by decide),
-        Mem.readW_writeW_self _ _ 16 _ (by decide), x₁]
-    · intro j hj
-      obtain rfl : j = 0 := by omega_using [hj]
-      rw [m₃, Mem.readW_writeW_self _ _ 16 _ (by decide), x₂, x₁, hi.hash, pow_one]
-  rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hp c₁ p₃ (by decide) (by decide) (by decide) (by decide)) fun t₄ p₄ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hp c₁ p₄ (by decide) (by decide) (by decide) (by decide)) fun t₅ p₅ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hp c₁ p₅ (by decide) (by decide) (by decide) (by decide)) fun t₆ p₆ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hp c₁ p₆ (by decide) (by decide) (by decide) (by decide)) fun t₇ p₇ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hp c₁ p₇ (by decide) (by decide) (by decide) (by decide)) fun t₈ p₈ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hp c₁ p₈ (by decide) (by decide) (by decide) (by decide)) fun t₉ p₉ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (mulSlots_ok hp c₁ p₉ (by decide) (by decide) (by decide) (by decide)) fun t₁₀ p₁₀ => ?_
-  have c₁₀ : t₁₀.gpr .ecx = sP s₀ := by rw [p₁₀.gpr]; exact c₁
-  refine WP.mono (ld_ok .xmm2 (slot 8) t₁₀ (by rw [slot_ea c₁₀]; exact slot_rd hp p₁₀.wr (by decide)))
-    fun t ⟨v, f⟩ => ?_
-  exact pows_base hp hi c₁ r₁ (p₁₀.of_only f) (by rw [v, slot_ea c₁₀]; exact p₁₀.saved)
-
 /-! ### Eight blocks -/
+
+/-- The block `j` of the data. -/
+abbrev blk (s₀ : State) (j : Nat) : Block :=
+  blockAt s₀.mem ((dP s₀).setWidth 64 + BitVec.ofNat 64 (16 * j))
 
 /-- The address of block `i + j`, with block `i` in `edx`, and that it may be
 read. -/
@@ -1189,93 +1361,209 @@ theorem data_read8 {s₁ s : State} (hp : GPre s₁) {i : Nat} (j : Nat) (hrd : 
   refine ⟨dR s₁, ?_, Offset.contains_base _ (by omega_using [hb]) (by omega_using [hb, hf])⟩
   simp only [List.mem_append, List.mem_cons, or_true, true_or]
 
-/-- After `j` blocks of eight, the first of which is block `i`: the product
-registers hold `Y` after them, times `Hᵉ`. -/
-structure MInv (s₁ : State) (i j e : Nat) (g : Reg → BitVec 32) (s : State) : Prop where
-  env : Env s₁ s
-  gpr : s.gpr = g
-  rev : s.xmm .xmm0 = VG.Proof.Gcm.X86.revMask
-  poly : s.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly
-  val : (prod s).val = φ (Y s₁ (i + j)) * φ (H s₁) ^ e
+/-- A block of the data is what it was, in a memory that differs in the
+scratch buffer only. -/
+theorem data_block {s₀ : State} (hp : GPre s₀) {m : Mem} (hf : Frame [sR s₀] s₀.mem m) {j : Nat}
+    (hj : j < nBlk s₀) :
+    blockAt m ((dP s₀).setWidth 64 + BitVec.ofNat 64 (16 * j)) = blk s₀ j := by
+  have hd := hp.fD
+  refine Proof.Gcm.blockAt_congr fun k hk => ?_
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  exact hf.bytes (R := ⟨(dP s₀).setWidth 64, 16 * nBlk s₀⟩)
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact hp.dDS)
+    (by show 16 * nBlk s₀ ≤ 2 ^ 64; omega_using [hd])
+    (by show 16 * j + k < 16 * nBlk s₀; omega_using [hj, hk])
 
-theorem first_ok {s₁ s : State} (hp : GPre s₁) (hw : Pows s₁) {i : Nat} (hi : GInv s₁ i s)
-    (hb : i < nBlk s₁) :
-    WP isa (.block Impl.Gcm.X86.Pclmul.first) s (MInv s₁ i 1 7 s.gpr) := by
-  simp only [Impl.Gcm.X86.Pclmul.first, List.append_assoc]
-  rw [show ([.movdquLoad .xmm7 (at_ .edx 0), .xop (.bin .pshufb .xmm7 .xmm0),
-      .xop (.bin .pxor .xmm2 .xmm7), .movdquLoad .xmm3 (slot 7)] : List Instr) =
-      ([.movdquLoad .xmm7 (at_ .edx 0), .xop (.bin .pshufb .xmm7 .xmm0)] : List Instr) ++
-        (([.xop (.bin .pxor .xmm2 .xmm7)] : List Instr) ++ [.movdquLoad .xmm3 (slot 7)]) from rfl,
-    List.append_assoc, List.append_assoc, WP.block_append_iff]
-  obtain ⟨ea, hin⟩ := data_read8 hp 0 hi.env.rd hi.env.wr hi.data (by omega_using [hb])
+theorem klohi_ok (s : State) :
+    WP isa (.block Impl.Gcm.X86.Pclmul.klohi) s fun s' =>
+      s'.xmm .xmm4 = s.xmm .xmm4 ^^^ pclmul (s.xmm .xmm2) (s.xmm .xmm3) 0x00 ∧
+      s'.xmm .xmm6 = s.xmm .xmm6 ^^^ pclmul (s.xmm .xmm2) (s.xmm .xmm3) 0x11 ∧
+      s'.xmm .xmm1 = shufDwords (s.xmm .xmm2) 0x4e ^^^ s.xmm .xmm2 ∧
+      Only [.xmm7, .xmm4, .xmm1, .xmm2, .xmm6] s s' := by
+  apply WP.of_runBlock
+  simp only [Impl.Gcm.X86.Pclmul.klohi]
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
+    XOp.exec, isa, xmm_setXmm, eval_pxor, eval_movdqa, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, trivial, by simp only [gpr_setXmm], by simp only [mem_setXmm],
+    by simp only [rd_setXmm], by simp only [wr_setXmm], fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [xmm_setXmm, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+
+theorem kmid_ok (s : State) (sel : BitVec 8) :
+    WP isa (.block [.xop (.pclmulqdq .xmm1 .xmm3 sel), .xop (.bin .pxor .xmm5 .xmm1)]) s fun s' =>
+      s'.xmm .xmm5 = s.xmm .xmm5 ^^^ pclmul (s.xmm .xmm1) (s.xmm .xmm3) sel ∧
+      Only [.xmm1, .xmm5] s s' := by
+  apply WP.of_runBlock
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
+    XOp.exec, isa, xmm_setXmm, eval_pxor, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, by simp only [gpr_setXmm], by simp only [mem_setXmm],
+    by simp only [rd_setXmm], by simp only [wr_setXmm], fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [xmm_setXmm, hr.1, hr.2, ite_false]
+
+/-- A block times the power in the slot `k`: its three products, added. -/
+theorem kblock_ok {s₀ s : State} (hp : GPre s₀) {k : Nat} (hk : k < 8) (hc : s.gpr .ecx = sP s₀)
+    (hw : s.wr = s₀.wr) (ht : Tab s₀ s.mem) :
+    WP isa (.block (Impl.Gcm.X86.Pclmul.kblock k)) s fun s' =>
+      prod s' = (prod s).kacc (s.xmm .xmm2) (s.mem.readW (sA s₀ k) 128) ∧ Only work s s' := by
+  simp only [Impl.Gcm.X86.Pclmul.kblock, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (ld_ok .xmm3 (slot k) s (by rw [slot_ea hc]; exact slot_rd hp hw (by omega_using [hk])))
+    fun s₁ ⟨v₁, f₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (klohi_ok s₁) fun s₂ ⟨lo₂, hi₂, sum₂, f₂⟩ => ?_
+  have c₂ : s₂.gpr .ecx = sP s₀ := by rw [f₂.gpr, f₁.gpr]; exact hc
+  rw [block_one]
+  refine WP.mono (ld_ok .xmm3 (slot (10 + k / 2)) s₂ (by
+    rw [slot_ea c₂]; exact slot_rd hp (f₂.wr.trans (f₁.wr.trans hw)) (by omega_using [hk])))
+    fun s₃ ⟨v₃, f₃⟩ => ?_
+  refine WP.mono (kmid_ok s₃ (Impl.Gcm.X86.Pclmul.halfSel k)) fun s₄ ⟨mid₄, f₄⟩ =>
+    ⟨?_, ((f₁.work.seq f₂.work).seq f₃.work).seq f₄.work⟩
+  have e4 : s₄.xmm .xmm4 = s.xmm .xmm4 ^^^ pclmul (s.xmm .xmm2) (s.mem.readW (sA s₀ k) 128) 0x00 := by
+    rw [f₄.xmm _ (by decide), f₃.xmm _ (by decide), lo₂, f₁.xmm .xmm4 (by decide),
+      f₁.xmm .xmm2 (by decide), v₁, slot_ea hc]
+  have e6 : s₄.xmm .xmm6 = s.xmm .xmm6 ^^^ pclmul (s.xmm .xmm2) (s.mem.readW (sA s₀ k) 128) 0x11 := by
+    rw [f₄.xmm _ (by decide), f₃.xmm _ (by decide), hi₂, f₁.xmm .xmm6 (by decide),
+      f₁.xmm .xmm2 (by decide), v₁, slot_ea hc]
+  have e5 : s₄.xmm .xmm5 = s.xmm .xmm5 ^^^
+      clmul (halfSum (s.xmm .xmm2)) (halfSum (s.mem.readW (sA s₀ k) 128)) := by
+    have hk' := ht.half k hk
+    unfold HalfAt at hk'
+    rw [mid₄, f₃.xmm .xmm5 (by decide), f₂.xmm .xmm5 (by decide), f₁.xmm .xmm5 (by decide),
+      f₃.xmm .xmm1 (by decide), sum₂, v₃, pclmul_halfSel, qword_swapXor, slot_ea c₂, f₂.mem, f₁.mem,
+      hk', f₁.xmm .xmm2 (by decide)]
+  simp only [prod, Prod.kacc, e4, e5, e6]
+
+/-- A block of eight but its first: its product with its power, added. -/
+theorem later_ok {s₀ s t : State} (hp : GPre s₀) {i : Nat} (hi : KInv s₀ i s) (o : Only work s t)
+    (j k : Nat) (hjk : j + k = 7) (hb : i + j < nBlk s₀) :
+    WP isa (.block (Impl.Gcm.X86.Pclmul.later j)) t fun t' =>
+      Only work s t' ∧ prod t' = (prod t).kacc (blk s₀ (i + j)) (s.mem.readW (sA s₀ k) 128) := by
+  have he : 7 - j = k := by omega_using [hjk]
+  simp only [Impl.Gcm.X86.Pclmul.later, he]
+  rw [WP.block_append_iff]
+  obtain ⟨ea, hin⟩ := data_read8 hp j (o.rd.trans hi.rd) (o.wr.trans hi.wr)
+    (by rw [o.gpr]; exact hi.data) hb
+  refine WP.mono (ldrev_ok .xmm2 .edx (16 * j) t (by decide)
+    (by rw [o.xmm _ (by decide)]; exact hi.rev) hin) fun t₁ ⟨in₁, f₁⟩ => ?_
+  have o₁ := o.seq f₁.work
+  refine WP.mono (kblock_ok hp (k := k) (by omega_using [hjk]) (by rw [o₁.gpr]; exact hi.scr)
+    (o₁.wr.trans hi.wr) (by rw [o₁.mem]; exact hi.tab)) fun t₂ ⟨p₂, f₂⟩ => ⟨o₁.seq f₂, ?_⟩
+  rw [p₂, prod_only f₁, in₁, ea, f₁.mem, o.mem, data_block hp hi.frame hb]
+
+/-- The first block of eight, with `Y`: its product with `H'⁸`, added. -/
+theorem last_ok {s₀ s t : State} (hp : GPre s₀) {i : Nat} (hi : KInv s₀ i s) (o : Only work s t)
+    (hb : i < nBlk s₀) :
+    WP isa (.block Impl.Gcm.X86.Pclmul.last) t fun t' =>
+      Only work s t' ∧
+      prod t' = (prod t).kacc (blk s₀ i ^^^ Y s₀ i) (s.mem.readW (sA s₀ 7) 128) := by
+  simp only [Impl.Gcm.X86.Pclmul.last, List.append_assoc]
+  rw [WP.block_append_iff]
+  obtain ⟨ea, hin⟩ := data_read8 hp 0 (o.rd.trans hi.rd) (o.wr.trans hi.wr)
+    (by rw [o.gpr]; exact hi.data) (by omega_using [hb])
   rw [Nat.mul_zero] at ea hin
   rw [Nat.add_zero] at ea
-  refine WP.mono (ldrev_ok .xmm7 .edx 0 s (by decide) hi.rev hin) fun s₂ ⟨in₂, f₂⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (xor_ok s₂) fun s₃ ⟨x₃, f₃⟩ => ?_
-  have c₃ : s₃.gpr .ecx = sP s₁ := by rw [f₃.gpr, f₂.gpr]; exact hi.scr
-  have m₃ : s₃.mem = s₁.mem := f₃.mem.trans (f₂.mem.trans hi.env.mem)
-  rw [WP.block_append_iff]
-  refine WP.mono (ld_ok .xmm3 (slot 7) s₃ (by
-    rw [slot_ea c₃]; exact slot_rd hp (f₃.wr.trans (f₂.wr.trans hi.env.wr)) (by decide)))
-    fun s₄ ⟨p₄, f₄⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (zero_ok s₄) fun s₅ ⟨z₅, f₅⟩ => ?_
-  refine WP.mono (acc_ok s₅) fun s₆ ⟨p₆, f₆⟩ => ?_
-  refine ⟨((((hi.env.of_only f₂).of_only f₃).of_only f₄).of_only f₅).of_only f₆, ?_, ?_, ?_, ?_⟩
-  · rw [f₆.gpr, f₅.gpr, f₄.gpr, f₃.gpr, f₂.gpr]
-  · rw [f₆.xmm _ (by decide), f₅.xmm _ (by decide), f₄.xmm _ (by decide), f₃.xmm _ (by decide),
-      f₂.xmm _ (by decide)]
-    exact hi.rev
-  · rw [f₆.xmm _ (by decide), f₅.xmm _ (by decide), f₄.xmm _ (by decide), f₃.xmm _ (by decide),
-      f₂.xmm _ (by decide)]
-    exact hi.poly
-  · have h8 := hw 7 (by decide)
-    rw [p₆, z₅, Prod.val_acc, Prod.val_zero, zero_add, f₅.xmm .xmm2 (by decide), f₅.xmm .xmm3 (by decide),
-      f₄.xmm .xmm2 (by decide), x₃, f₂.xmm .xmm2 (by decide), hi.acc, in₂, hi.env.mem, ea, p₄,
-      slot_ea c₃, m₃,
-      show Y s₁ (i + 1) = Spec.Gcm.mul (Y s₁ i ^^^ blockAt s₁.mem
-        ((dP s₁).setWidth 64 + BitVec.ofNat 64 (16 * i))) (H s₁) from
-        Proof.Gcm.ghashFrom_blocksAt_succ _ _ _ _ _, φ_mul, mul_assoc x, mul_left_comm x, h8]
-    ring
+  refine WP.mono (ldrev_ok .xmm2 .edx 0 t (by decide)
+    (by rw [o.xmm _ (by decide)]; exact hi.rev) hin) fun t₁ ⟨in₁, f₁⟩ => ?_
+  have o₁ := o.seq f₁.work
+  have c₁ : t₁.gpr .ecx = sP s₀ := by rw [o₁.gpr]; exact hi.scr
+  rw [WP.block_append_iff, block_one]
+  refine WP.mono (ld_ok .xmm3 (slot 8) t₁ (by
+    rw [slot_ea c₁]; exact slot_rd hp (o₁.wr.trans hi.wr) (by decide))) fun t₂ ⟨v₂, f₂⟩ => ?_
+  have o₂ := o₁.seq f₂.work
+  refine WP.mono (bin_ok .pxor .xmm2 .xmm3 t₂) fun t₃ ⟨v₃, f₃⟩ => ?_
+  have o₃ := o₂.seq f₃.work
+  refine WP.mono (kblock_ok hp (k := 7) (by decide) (by rw [o₃.gpr]; exact hi.scr)
+    (o₃.wr.trans hi.wr) (by rw [o₃.mem]; exact hi.tab)) fun t₄ ⟨p₄, f₄⟩ => ⟨o₃.seq f₄, ?_⟩
+  rw [p₄, prod_only f₃, prod_only f₂, prod_only f₁, v₃, eval_pxor, v₂, f₂.xmm .xmm2 (by decide), in₁, ea,
+    slot_ea c₁, f₁.mem, o.mem, o₃.mem, data_block hp hi.frame hb, hi.acc]
 
-theorem next_ok {s₁ s : State} (hp : GPre s₁) (hw : Pows s₁) {i : Nat} (j e : Nat)
-    {g : Reg → BitVec 32} (hd : g .edx = dP s₁ + BitVec.ofNat 32 (16 * i)) (hc : g .ecx = sP s₁)
-    (hm : MInv s₁ i j (e + 1) g s) (hje : j + e = 7) (hb : i + j < nBlk s₁) :
-    WP isa (.block (Impl.Gcm.X86.Pclmul.next j)) s fun s' =>
-      MInv s₁ i (j + 1) e g s' ∧ x * φ (s'.xmm .xmm3) = φ (H s₁) ^ (e + 1) := by
-  have he : 7 - j = e := by omega_using [hje]
-  simp only [Impl.Gcm.X86.Pclmul.next, he]
-  rw [show ([.movdquLoad .xmm2 (at_ .edx (16 * j)), .xop (.bin .pshufb .xmm2 .xmm0),
-      .movdquLoad .xmm3 (slot e)] : List Instr) =
-      ([.movdquLoad .xmm2 (at_ .edx (16 * j)), .xop (.bin .pshufb .xmm2 .xmm0)] : List Instr) ++
-        [.movdquLoad .xmm3 (slot e)] from rfl,
-    List.append_assoc, WP.block_append_iff]
-  obtain ⟨ea, hin⟩ := data_read8 hp j hm.env.rd hm.env.wr (by rw [hm.gpr]; exact hd) hb
-  refine WP.mono (ldrev_ok .xmm2 .edx (16 * j) s (by decide) hm.rev hin) fun s₂ ⟨in₂, f₂⟩ => ?_
-  have c₂ : s₂.gpr .ecx = sP s₁ := by rw [f₂.gpr, hm.gpr]; exact hc
+theorem kmiddle_ok (s : State) :
+    WP isa (.block Impl.Gcm.X86.Pclmul.kmiddle) s fun s' =>
+      s'.xmm .xmm4 = s.xmm .xmm4 ^^^ (s.xmm .xmm5 ^^^ s.xmm .xmm4 ^^^ s.xmm .xmm6) <<< 64 ∧
+      s'.xmm .xmm6 = s.xmm .xmm6 ^^^ (s.xmm .xmm5 ^^^ s.xmm .xmm4 ^^^ s.xmm .xmm6) >>> 64 ∧
+      Only [.xmm5, .xmm7, .xmm6, .xmm4] s s' := by
+  apply WP.of_runBlock
+  simp only [Impl.Gcm.X86.Pclmul.kmiddle]
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
+    XOp.exec, isa, xmm_setXmm, eval_pxor, eval_movdqa, psrldq8, pslldq8, Option.some.injEq,
+    exists_eq_left']
+  refine ⟨trivial, trivial, by simp only [gpr_setXmm], by simp only [mem_setXmm],
+    by simp only [rd_setXmm], by simp only [wr_setXmm], fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [xmm_setXmm, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+theorem kfold_ok (s : State) (h1 : s.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly) :
+    WP isa (.block Impl.Gcm.X86.Pclmul.kfold) s fun s' =>
+      s'.xmm .xmm4 = fold (s.xmm .xmm4) ∧ Only [.xmm5, .xmm4] s s' := by
+  apply WP.of_runBlock
+  simp only [Impl.Gcm.X86.Pclmul.kfold]
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
+    XOp.exec, isa, xmm_setXmm, eval_pxor, eval_movdqa, h1, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, by simp only [gpr_setXmm], by simp only [mem_setXmm],
+    by simp only [rd_setXmm], by simp only [wr_setXmm], fun r hr => ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [xmm_setXmm, hr.1, hr.2, ite_false]
+
+/-- The sum of the eight products, reduced, into `xmm6` and the slot 8. -/
+theorem kreduce_ok {s₀ t : State} (hp : GPre s₀) (hc : t.gpr .ecx = sP s₀) (hw : t.wr = s₀.wr)
+    (hk : t.mem.readW (sA s₀ 9) 128 = Impl.Gcm.X86.Pclmul.poly) :
+    WP isa (.block Impl.Gcm.X86.Pclmul.kreduce) t fun t' =>
+      t'.xmm .xmm6 = reduce (prod t).kfix ∧ t'.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly ∧
+      t'.mem = t.mem.writeW (sA s₀ 8) (reduce (prod t).kfix) ∧ t'.gpr = t.gpr ∧ t'.rd = t.rd ∧
+      t'.wr = t.wr ∧ t'.xmm .xmm0 = t.xmm .xmm0 := by
+  simp only [Impl.Gcm.X86.Pclmul.kreduce, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok .xmm3 (slot e) s₂ (by
-    rw [slot_ea c₂]; exact slot_rd hp (f₂.wr.trans hm.env.wr) (by omega_using [hje])))
-    fun s₃ ⟨p₃, f₃⟩ => ?_
-  refine WP.mono (acc_ok s₃) fun s₄ ⟨p₄, f₄⟩ => ?_
-  have hpw : x * φ (s₃.xmm .xmm3) = φ (H s₁) ^ (e + 1) := by
-    rw [p₃, slot_ea c₂, f₂.mem, hm.env.mem]; exact hw e (by omega_using [hje])
-  refine ⟨⟨((hm.env.of_only f₂).of_only f₃).of_only f₄, ?_, ?_, ?_, ?_⟩, ?_⟩
-  · rw [f₄.gpr, f₃.gpr, f₂.gpr]; exact hm.gpr
-  · rw [f₄.xmm _ (by decide), f₃.xmm _ (by decide), f₂.xmm _ (by decide)]; exact hm.rev
-  · rw [f₄.xmm _ (by decide), f₃.xmm _ (by decide), f₂.xmm _ (by decide)]; exact hm.poly
-  · have hprod : prod s₃ = prod s := by
-      simp only [prod, f₃.xmm _ (show XReg.xmm4 ∉ [XReg.xmm3] by decide),
-        f₃.xmm _ (show XReg.xmm5 ∉ [XReg.xmm3] by decide), f₃.xmm _ (show XReg.xmm6 ∉ [XReg.xmm3] by decide),
-        f₂.xmm _ (show XReg.xmm4 ∉ [XReg.xmm2] by decide), f₂.xmm _ (show XReg.xmm5 ∉ [XReg.xmm2] by decide),
-        f₂.xmm _ (show XReg.xmm6 ∉ [XReg.xmm2] by decide)]
-    rw [p₄, Prod.val_acc, hprod, hm.val, f₃.xmm .xmm2 (by decide), in₂, hm.env.mem, ea,
-      show Y s₁ (i + (j + 1)) = Spec.Gcm.mul (Y s₁ (i + j) ^^^ blockAt s₁.mem
-        ((dP s₁).setWidth 64 + BitVec.ofNat 64 (16 * (i + j)))) (H s₁) from
-        Proof.Gcm.ghashFrom_blocksAt_succ _ _ _ _ _, φ_mul, φ_xor, mul_assoc x, mul_left_comm x, hpw]
-    ring
-  · rw [f₄.xmm _ (by decide)]; exact hpw
+  refine WP.mono (kmiddle_ok t) fun t₁ ⟨lo₁, hi₁, f₁⟩ => ?_
+  have c₁ : t₁.gpr .ecx = sP s₀ := by rw [f₁.gpr]; exact hc
+  rw [WP.block_append_iff]
+  refine WP.mono (ld_ok .xmm1 (slot 9) t₁ (by
+    rw [slot_ea c₁]; exact slot_rd hp (f₁.wr.trans hw) (by decide))) fun t₂ ⟨v₂, f₂⟩ => ?_
+  have p₂ : t₂.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly := by rw [v₂, slot_ea c₁, f₁.mem]; exact hk
+  rw [WP.block_append_iff]
+  refine WP.mono (kfold_ok t₂ p₂) fun t₃ ⟨v₃, f₃⟩ => ?_
+  have p₃ : t₃.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly := by rw [f₃.xmm _ (by decide)]; exact p₂
+  rw [WP.block_append_iff]
+  refine WP.mono (kfold_ok t₃ p₃) fun t₄ ⟨v₄, f₄⟩ => ?_
+  rw [block_one]
+  refine WP.mono (bin_ok .pxor .xmm6 .xmm4 t₄) fun t₅ ⟨v₅, f₅⟩ => ?_
+  have e₅ : t₅.xmm .xmm6 = reduce (prod t).kfix := by
+    rw [v₅, eval_pxor, v₄, v₃, f₄.xmm .xmm6 (by decide), f₃.xmm .xmm6 (by decide),
+      f₂.xmm .xmm6 (by decide), f₂.xmm .xmm4 (by decide), hi₁, lo₁]
+    rfl
+  have c₅ : t₅.gpr .ecx = sP s₀ := by rw [f₅.gpr, f₄.gpr, f₃.gpr, f₂.gpr]; exact c₁
+  have m₅ : t₅.mem = t.mem := f₅.mem.trans (f₄.mem.trans (f₃.mem.trans (f₂.mem.trans f₁.mem)))
+  have w₅ : t₅.wr = t.wr := f₅.wr.trans (f₄.wr.trans (f₃.wr.trans (f₂.wr.trans f₁.wr)))
+  refine WP.mono (st_ok .xmm6 (slot 8) t₅ (by
+    rw [slot_ea c₅]; exact slot_wr hp (w₅.trans hw) (by decide))) fun t₆ ⟨m₆, g₆, x₆, rd₆, wr₆⟩ => ?_
+  refine ⟨by rw [x₆]; exact e₅, ?_, ?_, ?_, ?_, wr₆.trans w₅, ?_⟩
+  · rw [x₆, f₅.xmm _ (by decide), f₄.xmm _ (by decide)]; exact p₃
+  · rw [m₆, slot_ea c₅, m₅, e₅]
+  · rw [g₆, f₅.gpr, f₄.gpr, f₃.gpr, f₂.gpr, f₁.gpr]
+  · rw [rd₆, f₅.rd, f₄.rd, f₃.rd, f₂.rd, f₁.rd]
+  · rw [x₆, f₅.xmm _ (by decide), f₄.xmm _ (by decide), f₃.xmm _ (by decide), f₂.xmm _ (by decide),
+      f₁.xmm _ (by decide)]
+
+theorem φ_Y_succ (s₀ : State) (i : Nat) :
+    φ (Y s₀ (i + 1)) = (φ (Y s₀ i) + φ (blk s₀ i)) * φ (H s₀) := by
+  rw [show Y s₀ (i + 1) = Spec.Gcm.mul (Y s₀ i ^^^ blk s₀ i) (H s₀) from
+    Proof.Gcm.ghashFrom_blocksAt_succ _ _ _ _ _, φ_mul, φ_xor]
+
+/-- `Y` after eight more blocks. -/
+theorem φ_Y8 (s₀ : State) (i : Nat) :
+    φ (Y s₀ (i + 8)) =
+      ((((((((φ (Y s₀ i) + φ (blk s₀ i)) * φ (H s₀) + φ (blk s₀ (i + 1))) * φ (H s₀) +
+        φ (blk s₀ (i + 2))) * φ (H s₀) + φ (blk s₀ (i + 3))) * φ (H s₀) +
+        φ (blk s₀ (i + 4))) * φ (H s₀) + φ (blk s₀ (i + 5))) * φ (H s₀) +
+        φ (blk s₀ (i + 6))) * φ (H s₀) + φ (blk s₀ (i + 7))) * φ (H s₀) := by
+  have e7 : φ (Y s₀ (i + 8)) = (φ (Y s₀ (i + 7)) + φ (blk s₀ (i + 7))) * φ (H s₀) := φ_Y_succ s₀ (i + 7)
+  have e6 : φ (Y s₀ (i + 7)) = (φ (Y s₀ (i + 6)) + φ (blk s₀ (i + 6))) * φ (H s₀) := φ_Y_succ s₀ (i + 6)
+  have e5 : φ (Y s₀ (i + 6)) = (φ (Y s₀ (i + 5)) + φ (blk s₀ (i + 5))) * φ (H s₀) := φ_Y_succ s₀ (i + 5)
+  have e4 : φ (Y s₀ (i + 5)) = (φ (Y s₀ (i + 4)) + φ (blk s₀ (i + 4))) * φ (H s₀) := φ_Y_succ s₀ (i + 4)
+  have e3 : φ (Y s₀ (i + 4)) = (φ (Y s₀ (i + 3)) + φ (blk s₀ (i + 3))) * φ (H s₀) := φ_Y_succ s₀ (i + 3)
+  have e2 : φ (Y s₀ (i + 3)) = (φ (Y s₀ (i + 2)) + φ (blk s₀ (i + 2))) * φ (H s₀) := φ_Y_succ s₀ (i + 2)
+  have e1 : φ (Y s₀ (i + 2)) = (φ (Y s₀ (i + 1)) + φ (blk s₀ (i + 1))) * φ (H s₀) := φ_Y_succ s₀ (i + 1)
+  rw [e7, e6, e5, e4, e3, e2, e1, φ_Y_succ s₀ i]
 
 theorem advance8_ok (s : State) :
     WP isa (.block [.alu .add .edx (.imm 128), .alu .sub .eax (.imm 8), .alu .cmp .eax (.imm 8)]) s
@@ -1290,60 +1578,114 @@ theorem advance8_ok (s : State) :
   exact ((((Env.refl s).arithFlags _ _ _).setReg .edx _ (by decide)).arithFlags _ _ _
     |>.setReg .eax _ (by decide)).arithFlags _ _ _
 
-theorem body8_ok {s₁ s : State} (hp : GPre s₁) (hw : Pows s₁) {i : Nat} (hi : GInv s₁ i s)
-    (hb : i + 8 ≤ nBlk s₁) :
+theorem body8_ok {s₀ s : State} (hp : GPre s₀) {i : Nat} (hi : KInv s₀ i s)
+    (hb : i + 8 ≤ nBlk s₀) :
     WP isa (.block Impl.Gcm.X86.Pclmul.body8) s fun s' =>
-      GInv s₁ (i + 8) s' ∧ x * φ (s'.xmm .xmm3) = φ (H s₁) ∧
-      s'.cf = some (decide (nBlk s₁ - (i + 8) < 8)) := by
+      KInv s₀ (i + 8) s' ∧ s'.xmm .xmm6 = Y s₀ (i + 8) ∧
+      s'.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly ∧
+      s'.cf = some (decide (nBlk s₀ - (i + 8) < 8)) := by
   simp only [Impl.Gcm.X86.Pclmul.body8, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (first_ok hp hw hi (by omega_using [hb])) fun t₁ m₁ => ?_
+  refine WP.mono (zero_ok s) fun t₀ ⟨p₀, f₀⟩ => ?_
+  have o₀ := f₀.work
   rw [WP.block_append_iff]
-  refine WP.mono (next_ok hp hw 1 6 hi.data hi.scr m₁ (by decide) (by omega_using [hb])) fun t₂ ⟨m₂, _⟩ => ?_
+  refine WP.mono (later_ok hp hi o₀ 1 6 (by decide) (by omega_using [hb])) fun t₁ ⟨o₁, p₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (next_ok hp hw 2 5 hi.data hi.scr m₂ (by decide) (by omega_using [hb])) fun t₃ ⟨m₃, _⟩ => ?_
+  refine WP.mono (later_ok hp hi o₁ 2 5 (by decide) (by omega_using [hb])) fun t₂ ⟨o₂, p₂⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (next_ok hp hw 3 4 hi.data hi.scr m₃ (by decide) (by omega_using [hb])) fun t₄ ⟨m₄, _⟩ => ?_
+  refine WP.mono (later_ok hp hi o₂ 3 4 (by decide) (by omega_using [hb])) fun t₃ ⟨o₃, p₃⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (next_ok hp hw 4 3 hi.data hi.scr m₄ (by decide) (by omega_using [hb])) fun t₅ ⟨m₅, _⟩ => ?_
+  refine WP.mono (later_ok hp hi o₃ 4 3 (by decide) (by omega_using [hb])) fun t₄ ⟨o₄, p₄⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (next_ok hp hw 5 2 hi.data hi.scr m₅ (by decide) (by omega_using [hb])) fun t₆ ⟨m₆, _⟩ => ?_
+  refine WP.mono (later_ok hp hi o₄ 5 2 (by decide) (by omega_using [hb])) fun t₅ ⟨o₅, p₅⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (next_ok hp hw 6 1 hi.data hi.scr m₆ (by decide) (by omega_using [hb])) fun t₇ ⟨m₇, _⟩ => ?_
+  refine WP.mono (later_ok hp hi o₅ 6 1 (by decide) (by omega_using [hb])) fun t₆ ⟨o₆, p₆⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (next_ok hp hw 7 0 hi.data hi.scr m₇ (by decide) (by omega_using [hb])) fun t₈ ⟨m₈, h₈⟩ => ?_
+  refine WP.mono (later_ok hp hi o₆ 7 0 (by decide) (by omega_using [hb])) fun t₇ ⟨o₇, p₇⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (reduce_ok t₈ m₈.poly) fun t₉ ⟨r₉, f₉⟩ => ?_
+  refine WP.mono (last_ok hp hi o₇ (by omega_using [hb])) fun t₈ ⟨o₈, p₈⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (kreduce_ok hp (by rw [o₈.gpr]; exact hi.scr) (o₈.wr.trans hi.wr)
+    (by rw [o₈.mem]; exact hi.tab.poly)) fun t₉ ⟨r₉, k₉, m₉, g₉, rd₉, wr₉, x₉⟩ => ?_
   refine WP.mono (advance8_ok t₉) fun t ⟨count, data, cf, ef, out, xs⟩ => ?_
-  have regs₉ : t₉.gpr = s.gpr := f₉.gpr.trans m₈.gpr
-  have bound : nBlk s₁ < 2 ^ 32 := (arg s₁ 3).isLt
-  have cnt : t₉.gpr .eax - 8 = BitVec.ofNat 32 (nBlk s₁ - (i + 8)) := by
+  have val : reduce (prod t₈).kfix = Y s₀ (i + 8) := by
+    have e : ∀ (v : Q) (k : Nat), k < 8 →
+        x * v * φ (s.mem.readW (sA s₀ k) 128) = v * φ (H s₀) ^ (k + 1) :=
+      fun v k hk => by rw [← hi.tab.pow k hk]; ring
+    apply φ_inj
+    rw [φ_reduce, p₈, Prod.val_kacc, p₇, Prod.val_kacc, p₆, Prod.val_kacc, p₅, Prod.val_kacc, p₄,
+      Prod.val_kacc, p₃, Prod.val_kacc, p₂, Prod.val_kacc, p₁, Prod.val_kacc, p₀, Prod.kfix_zero, φ_Y8,
+      φ_xor, e _ 7 (by decide), e _ 6 (by decide), e _ 5 (by decide), e _ 4 (by decide),
+      e _ 3 (by decide), e _ 2 (by decide), e _ 1 (by decide), e _ 0 (by decide)]
+    ring
+  have regs₉ : t₉.gpr = s.gpr := g₉.trans o₈.gpr
+  have bound : nBlk s₀ < 2 ^ 32 := (arg s₀ 3).isLt
+  have cnt : t₉.gpr .eax - 8 = BitVec.ofNat 32 (nBlk s₀ - (i + 8)) := by
     rw [regs₉, hi.count]
     exact (Wp.sub_ofNat (b := 8) (by omega_using [hb])).trans (congrArg _ (by omega_using []))
-  refine ⟨⟨(m₈.env.of_only f₉).trans ef, hb, count.trans cnt, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
+  have mem : t.mem = s.mem.writeW (sA s₀ 8) (Y s₀ (i + 8)) := by rw [ef.mem, m₉, o₈.mem, val]
+  refine ⟨⟨?_, ef.rd.trans (rd₉.trans (o₈.rd.trans hi.rd)), ef.wr.trans (wr₉.trans (o₈.wr.trans hi.wr)),
+    ?_, hb, count.trans cnt, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
+  · rw [mem]
+    exact hi.frame.writeW (List.mem_singleton_self _) _ (slot_in hp (by decide))
+  · intro r hr
+    rw [ef.saved r hr, regs₉]; exact hi.saved r hr
   · rw [data, regs₉, hi.data, BitVec.add_assoc]
-    change dP s₁ + (BitVec.ofNat 32 (16 * i) + BitVec.ofNat 32 128) = _
+    change dP s₀ + (BitVec.ofNat 32 (16 * i) + BitVec.ofNat 32 128) = _
     rw [← BitVec.ofNat_add, show 16 * i + 128 = 16 * (i + 8) by omega_using []]
   · rw [out, regs₉]; exact hi.scr
-  · rw [xs, f₉.xmm _ (by decide)]; exact m₈.rev
-  · rw [xs, f₉.xmm _ (by decide)]; exact m₈.poly
-  · rw [xs]
-    apply φ_inj
-    rw [r₉, φ_reduce, m₈.val, pow_zero, mul_one]
-  · rw [xs, f₉.xmm _ (by decide), h₈, pow_one]
+  · rw [xs, x₉, o₈.xmm _ (by decide)]; exact hi.rev
+  · rw [mem]; exact hi.tab.store hp _
+  · rw [mem]; exact Mem.readW_writeW_self _ _ 16 _ (by decide)
+  · rw [xs, r₉, val]
+  · rw [xs]; exact k₉
   · rw [cf, cnt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [bound])]
 
-theorem blocks8_ok {s₁ s : State} (hp : GPre s₁) (hw : Pows s₁) (hi : GInv s₁ 0 s)
-    (hn : 8 ≤ nBlk s₁) :
+theorem blocks8_ok {s₀ s : State} (hp : GPre s₀) (hi : KInv s₀ 0 s) (hn : 8 ≤ nBlk s₀) :
     WP isa (.loop (.block Impl.Gcm.X86.Pclmul.body8) .ae) s fun s' =>
-      ∃ i, GInv s₁ i s' ∧ x * φ (s'.xmm .xmm3) = φ (H s₁) := by
-  refine WP.loop (M := isa) (fun k s => ∃ i, k = nBlk s₁ - i ∧ i + 8 ≤ nBlk s₁ ∧ GInv s₁ i s)
-    (fun k s ⟨i, hk, hb, hs⟩ => WP.mono (body8_ok hp hw hs hb) fun s' ⟨inv, h3, c⟩ => ?_)
-    (nBlk s₁) s ⟨0, rfl, hn, hi⟩
-  by_cases hl : nBlk s₁ - (i + 8) < 8
-  · exact .inl ⟨by simp [X86.eval, c, hl], i + 8, inv, h3⟩
-  · exact .inr ⟨by simp [X86.eval, c, hl], nBlk s₁ - (i + 8), by omega_using [hk, hb], i + 8, rfl,
+      ∃ i, KInv s₀ i s' ∧ s'.xmm .xmm6 = Y s₀ i ∧ s'.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly := by
+  refine WP.loop (M := isa) (fun k s => ∃ i, k = nBlk s₀ - i ∧ i + 8 ≤ nBlk s₀ ∧ KInv s₀ i s)
+    (fun k s ⟨i, hk, hb, hs⟩ => WP.mono (body8_ok hp hs hb) fun s' ⟨inv, h6, h1, c⟩ => ?_)
+    (nBlk s₀) s ⟨0, rfl, hn, hi⟩
+  by_cases hl : nBlk s₀ - (i + 8) < 8
+  · exact .inl ⟨by simp [X86.eval, c, hl], i + 8, inv, h6, h1⟩
+  · exact .inr ⟨by simp [X86.eval, c, hl], nBlk s₀ - (i + 8), by omega_using [hk, hb], i + 8, rfl,
       by omega_using [hb, hl], inv⟩
+
+/-- After the blocks of eight: the state before `y` goes back into `ecx` is
+one the blocks left are proven from. -/
+theorem after8_ok {s₀ s : State} (hp : GPre s₀) {i : Nat} (hi : KInv s₀ i s)
+    (hy : s.xmm .xmm6 = Y s₀ i) (h1 : s.xmm .xmm1 = Impl.Gcm.X86.Pclmul.poly) :
+    WP isa (.block Impl.Gcm.X86.Pclmul.after8) s fun s' =>
+      ∃ s₁ i, Base s₀ s₁ ∧ GPre s₁ ∧ Inv s₁ i s' := by
+  simp only [Impl.Gcm.X86.Pclmul.after8]
+  rw [block_one]
+  refine WP.mono (bin_ok .movdqa .xmm2 .xmm6 s) fun t₁ ⟨v₁, f₁⟩ => ?_
+  have c₁ : t₁.gpr .ecx = sP s₀ := by rw [f₁.gpr]; exact hi.scr
+  rw [block_one]
+  refine WP.mono (ld_ok .xmm3 (slot 0) t₁ (by
+    rw [slot_ea c₁]; exact slot_rd hp (f₁.wr.trans hi.wr) (by decide))) fun t₂ ⟨v₂, f₂⟩ => ?_
+  have o := f₁.trans f₂
+  have hb : Base s₀ t₂ := ⟨by rw [o.mem]; exact hi.frame, o.rd.trans hi.rd, o.wr.trans hi.wr,
+    fun r hr => by rw [o.gpr]; exact hi.saved r hr⟩
+  have hp₂ := hb.gpre hp
+  refine WP.mono (movArg_ok hp₂ (Env.refl t₂) 1 (by decide) .ecx (by decide))
+    fun s₃ ⟨c₃, e₃, r₃, x₃⟩ => ?_
+  refine ⟨t₂, i, hb, hp₂, e₃, ?_, ?_, ?_, c₃, ?_, ?_, ?_, ?_⟩
+  · show i ≤ (arg t₂ 3).toNat
+    rw [hb.arg_eq hp (by decide)]; exact hi.le
+  · rw [r₃ _ (by decide), o.gpr, hi.count]
+    show _ = BitVec.ofNat 32 ((arg t₂ 3).toNat - i)
+    rw [hb.arg_eq hp (by decide)]
+  · rw [r₃ _ (by decide), o.gpr, hi.data]
+    show _ = arg t₂ 2 + _
+    rw [hb.arg_eq hp (by decide)]
+  · rw [x₃, o.xmm _ (by decide)]; exact hi.rev
+  · rw [x₃, o.xmm _ (by decide)]; exact h1
+  · rw [x₃, v₂, slot_ea c₁, f₁.mem, hb.H_eq hp]
+    exact (hi.tab.pow 0 (by decide)).trans (pow_one _)
+  · rw [x₃, f₂.xmm .xmm2 (by decide), v₁, eval_movdqa, hy]
+    exact (hb.Y_eq hp hi.le).symm
 
 end VG.Proof.Gcm.X86.Pclmul
 
@@ -1409,27 +1751,21 @@ theorem epilogue_ok {s₀ s : State} (hp : GPre s₀) (hi : Inv s₀ (nBlk s₀)
       (XBinOp.eval .pshufb (s.xmm .xmm2) VG.Proof.Gcm.X86.revMask)) ((yP s₀).setWidth 64) = _
     rw [Proof.Gcm.X86.blockAt_store, hi.acc]
 
-/-- After `cmp eax, 8`: the blocks eight at a time, if there are eight, from
-a state `s₁` that is `s₀` but for the scratch buffer. -/
+/-- After `cmp eax, 8`: the blocks eight at a time, if there are eight, and a
+state `s₁` that is `s₀` but for the scratch buffer. -/
 theorem groups_ok {s₀ s : State} (hp : GPre s₀) (hi : Inv s₀ 0 s)
     (c : s.cf = some (decide (nBlk s₀ < 8))) :
     WP isa (.ite .b (.block []) (.seq (.block Impl.Gcm.X86.Pclmul.pows)
-      (.seq (.loop (.block Impl.Gcm.X86.Pclmul.body8) .ae) (.block [.mov .ecx (.mem (argOp 1))])))) s
+      (.seq (.loop (.block Impl.Gcm.X86.Pclmul.body8) .ae) (.block Impl.Gcm.X86.Pclmul.after8)))) s
       fun s' => ∃ s₁ i, Base s₀ s₁ ∧ GPre s₁ ∧ Inv s₁ i s' := by
   refine WP.ite (decide (nBlk s₀ < 8)) (by simp only [X86.eval, c]) ?_ ?_
   · intro _
     exact WP.block_nil ⟨s₀, 0, Base.refl s₀, hp, hi⟩
   · intro h
     have hn : 8 ≤ nBlk s₀ := by have := of_decide_eq_false h; omega_using [this]
-    refine WP.seq (WP.mono (pows_ok hp hi) fun s₁ ⟨hb, hp₁, gi, hw⟩ => ?_)
-    have hn₁ : 8 ≤ nBlk s₁ := by
-      show 8 ≤ (arg s₁ 3).toNat
-      rw [hb.arg_eq hp (by decide)]; exact hn
-    refine WP.seq (WP.mono (blocks8_ok hp₁ hw gi hn₁) fun s₂ ⟨i, g₂, h₂⟩ => ?_)
-    refine WP.mono (movArg_ok hp₁ g₂.env 1 (by decide) .ecx (by decide)) fun s₃ ⟨c₃, e₃, r₃, x₃⟩ => ?_
-    exact ⟨s₁, i, hb, hp₁, e₃, g₂.le, by rw [r₃ _ (by decide)]; exact g₂.count,
-      by rw [r₃ _ (by decide)]; exact g₂.data, c₃, by rw [x₃]; exact g₂.rev,
-      by rw [x₃]; exact g₂.poly, by rw [x₃]; exact h₂, by rw [x₃]; exact g₂.acc⟩
+    refine WP.seq (WP.mono (pows_ok hp hi) fun s₁ k₁ => ?_)
+    refine WP.seq (WP.mono (blocks8_ok hp k₁ hn) fun s₂ ⟨i, k₂, y₂, p₂⟩ => ?_)
+    exact after8_ok hp k₂ y₂ p₂
 
 theorem gh_correct (s₀ : State) (hp : GPre s₀) :
     WP isa Impl.Gcm.X86.Pclmul.ghash s₀ fun s' =>
