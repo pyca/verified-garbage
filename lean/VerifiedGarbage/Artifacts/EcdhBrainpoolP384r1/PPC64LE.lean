@@ -14,6 +14,8 @@ namespace VG.Artifacts.EcdhBrainpoolP384r1.PPC64LE
 open VG.Proof.BrainpoolP384r1.PPC64LE (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.BrainpoolP384r1.exchangeApi.artifact PPC64LE.target (Proof.Ecdh.PPC64LE.Scrub.brainpoolp384r1Exchange hasLaw.law)]
+  Spec.Ecdh.BrainpoolP384r1.exchangeApi.artifact PPC64LE.target {
+    code := Impl.Ecdh.PPC64LE.Fn.brainpoolp384r1Exchange
+    verified := .scrubbed (Proof.Ecdh.PPC64LE.Scrub.brainpoolp384r1Exchange_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcdhBrainpoolP384r1.PPC64LE

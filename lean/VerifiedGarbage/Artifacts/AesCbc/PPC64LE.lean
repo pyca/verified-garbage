@@ -12,7 +12,11 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.AesCbc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Cbc.aesEncryptApi.artifact PPC64LE.target Proof.Aes.PPC64LE.Scrub.cbcEncryptReg,
-  Spec.Cbc.aesDecryptApi.artifact PPC64LE.target Proof.Aes.PPC64LE.Scrub.cbcDecryptReg]
+  Spec.Cbc.aesEncryptApi.artifact PPC64LE.target {
+    code := Impl.Aes.PPC64LE.Fn.cbcEncrypt
+    verified := .scrubbed Proof.Aes.PPC64LE.Scrub.cbcEncrypt_scrubbed },
+  Spec.Cbc.aesDecryptApi.artifact PPC64LE.target {
+    code := Impl.Aes.PPC64LE.Fn.cbcDecrypt
+    verified := .scrubbed Proof.Aes.PPC64LE.Scrub.cbcDecrypt_scrubbed }]
 
 end VG.Artifacts.AesCbc.PPC64LE

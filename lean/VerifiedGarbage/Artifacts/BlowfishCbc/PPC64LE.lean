@@ -14,7 +14,11 @@ import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesLit
 namespace VG.Artifacts.BlowfishCbc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.cbcEncryptChainedApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cbcEncryptChainedReg,
-  Spec.Blowfish.cbcDecryptChainedApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cbcDecryptChainedReg]
+  Spec.Blowfish.cbcEncryptChainedApi.artifact PPC64LE.target {
+    code := Impl.Blowfish.PPC64LE.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Blowfish.PPC64LE.Scrub.cbcEncryptChained_scrubbed },
+  Spec.Blowfish.cbcDecryptChainedApi.artifact PPC64LE.target {
+    code := Impl.Blowfish.PPC64LE.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Blowfish.PPC64LE.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.BlowfishCbc.PPC64LE

@@ -14,6 +14,8 @@ namespace VG.Artifacts.EcdhP256.PPC64LE
 open VG.Proof.P256.PPC64LE (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P256.exchangeApi.artifact PPC64LE.target (Proof.Ecdh.PPC64LE.Scrub.p256Exchange hasLaw.law)]
+  Spec.Ecdh.P256.exchangeApi.artifact PPC64LE.target {
+    code := Impl.Ecdh.PPC64LE.Fn.p256Exchange
+    verified := .scrubbed (Proof.Ecdh.PPC64LE.Scrub.p256Exchange_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcdhP256.PPC64LE

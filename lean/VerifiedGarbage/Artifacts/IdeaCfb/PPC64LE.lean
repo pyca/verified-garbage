@@ -16,9 +16,17 @@ import VerifiedGarbage.Proof.Idea.PPC64LE.FbFinalLit
 namespace VG.Artifacts.IdeaCfb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Idea.cfbEncryptApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.cfbEncryptReg,
-  Spec.Idea.cfbDecryptApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.cfbDecryptReg,
-  Spec.Idea.cfbEncryptFinalApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.cfbEncryptFinalReg,
-  Spec.Idea.cfbDecryptFinalApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.cfbDecryptFinalReg]
+  Spec.Idea.cfbEncryptApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cfbEncrypt_scrubbed },
+  Spec.Idea.cfbDecryptApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cfbDecrypt_scrubbed },
+  Spec.Idea.cfbEncryptFinalApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cfbEncryptFinal_scrubbed },
+  Spec.Idea.cfbDecryptFinalApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.IdeaCfb.PPC64LE

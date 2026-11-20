@@ -11,10 +11,14 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.RsaPkcs1Sig.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact PPC64LE.target
-    Proof.RsaPkcs1Sig.PPC64LE.Scrub.verifyPrecomputedReg,
-  Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact PPC64LE.target
-    Proof.RsaPkcs1Sig.PPC64LE.Scrub.recoverPrecomputedReg,
-  Spec.RsaPkcs1Sig.signPrecomputedApi.artifact PPC64LE.target Proof.RsaPkcs1Sig.PPC64LE.Scrub.signPrecomputedReg]
+  Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact PPC64LE.target {
+    code := Impl.RsaPkcs1Sig.PPC64LE.Fn.verifyPrecomputed
+    verified := .scrubbed Proof.RsaPkcs1Sig.PPC64LE.Scrub.verifyPrecomputed_scrubbed },
+  Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact PPC64LE.target {
+    code := Impl.RsaPkcs1Sig.PPC64LE.Fn.recoverPrecomputed
+    verified := .scrubbed Proof.RsaPkcs1Sig.PPC64LE.Scrub.recoverPrecomputed_scrubbed },
+  Spec.RsaPkcs1Sig.signPrecomputedApi.artifact PPC64LE.target {
+    code := Impl.RsaPkcs1Sig.PPC64LE.Fn.signPrecomputed
+    verified := .scrubbed Proof.RsaPkcs1Sig.PPC64LE.Scrub.signPrecomputed_scrubbed }]
 
 end VG.Artifacts.RsaPkcs1Sig.PPC64LE

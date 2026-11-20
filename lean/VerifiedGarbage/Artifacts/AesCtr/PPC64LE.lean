@@ -13,7 +13,11 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.AesCtr.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Ctr.aesApi.artifact PPC64LE.target Proof.Aes.PPC64LE.Scrub.ctrReg,
-  Spec.Ctr.aesFinalApi.artifact PPC64LE.target Proof.Aes.PPC64LE.Scrub.ctrFinalReg]
+  Spec.Ctr.aesApi.artifact PPC64LE.target {
+    code := Impl.Aes.PPC64LE.Fn.ctr
+    verified := .scrubbed Proof.Aes.PPC64LE.Scrub.ctr_scrubbed },
+  Spec.Ctr.aesFinalApi.artifact PPC64LE.target {
+    code := Impl.Aes.PPC64LE.Fn.ctrFinal
+    verified := .scrubbed Proof.Aes.PPC64LE.Scrub.ctrFinal_scrubbed }]
 
 end VG.Artifacts.AesCtr.PPC64LE

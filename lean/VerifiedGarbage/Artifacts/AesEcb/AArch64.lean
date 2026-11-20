@@ -14,8 +14,14 @@ namespace VG.Artifacts.AesEcb.AArch64
 open VG.Proof.AesEcb.AArch64
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) =>
-    (encryptRegs v).map (Spec.AesEcb.encryptApi.artifact AArch64.target) ++
-      (decryptRegs v).map (Spec.AesEcb.decryptApi.artifact AArch64.target)
+  VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) => [
+    Spec.AesEcb.encryptApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.AesEcb.AArch64.Fn.blocks v.enc
+      verified := .scrubbed (encrypt_scrubbed v) },
+    Spec.AesEcb.decryptApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.AesEcb.AArch64.Fn.blocks v.dec
+      verified := .scrubbed (decrypt_scrubbed v) }]
 
 end VG.Artifacts.AesEcb.AArch64

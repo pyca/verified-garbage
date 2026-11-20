@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 
 /-! # Shared round implementations for generic callers -/
 
@@ -26,6 +27,11 @@ structure RoundImpl where
   /-- Neither touches PSTATE.DIT. -/
   noDit : (round roundMont.mm).all (fun i => !i.touchesDit) = true
   mmNoDit : ∀ o a b, (mont.mm o a b).all (fun i => !i.touchesDit) = true
+  /-- Neither writes PSTATE.DIT nor calls anything indirectly: what a caller
+  whose cleanup is part of its code states of the code it runs
+  (`ScrubAll.verifiedScrubbedOf`). -/
+  side : ScrubAll.sideAll (fun i => !i.writesDit) (round roundMont.mm) = true
+  mmSide : ∀ o a b, ScrubAll.sideAll (fun i => !i.writesDit) (mont.mm o a b) = true
   suffix : String
   features : List String
 

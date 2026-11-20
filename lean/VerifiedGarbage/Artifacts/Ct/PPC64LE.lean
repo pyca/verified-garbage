@@ -11,6 +11,8 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.Ct.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Ct.eqApi.artifact PPC64LE.target Proof.Ct.PPC64LE.Scrub.eqReg]
+  Spec.Ct.eqApi.artifact PPC64LE.target {
+    code := Impl.Ct.PPC64LE.Fn.eq
+    verified := .scrubbed Proof.Ct.PPC64LE.Scrub.eq_scrubbed }]
 
 end VG.Artifacts.Ct.PPC64LE

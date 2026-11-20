@@ -202,6 +202,23 @@ instructions in an ISA model) go in their own PR before either.
    evaluating every variant's code for every caller. `RISCV64.Scrub.scrubOf`
    and `scrubSelOf` build the registration of the same in `Proof/`, for the
    families not yet converted: never use them in new code.
+   On PPC64LE the cleanup is `Impl.Scrub.PPC64LE.scrub rb d cl c`, which
+   zeroes the `d` bytes of stack the code's frames use and clears the
+   volatile registers `cl` states (a `Clear`: `r0`, the bits of `r3` above
+   the result's `rb`, the scratch registers, `XER`'s carry and the vector
+   registers the code writes). The theorem comes from
+   `PPC64LE.Scrub.verifiedScrubbed` (side condition `scrubSide c d rb cl ts`,
+   by `lit_decide`), or, for code that wipes its own frame before it
+   releases it (`withStackScratchWiped`), whose cleanup is `scrub rb 0 cl c`
+   and zeroes no stack, from `PPC64LE.Scrub.verifiedScrubbedWiped`
+   (`wipedSide`, by `lit_decide`); both also need that the postcondition
+   reads the memory on return only within the buffers
+   (`PPC64LE.Scrub.PostOut`, by `postOut_of_local`)
+   (`Proof/Framework/PPC64LE/ScrubProved.lean`; `Fn` in
+   `Impl/Sha3/PPC64LE/Instances.lean`, `Proof/Sha3/PPC64LE/Scrub.lean`,
+   `Artifacts/Sha3/PPC64LE.lean`). `PPC64LE.Scrub.scrubOf` and
+   `scrubWipedOf` build the registration of the same in `Proof/`, for the
+   families not yet converted: never use them in new code.
    On a target whose `Proof/Framework/` does not yet state its scrub as a
    theorem about named code, build the registration in `Proof/` with that
    target's form and let the registration file bind it by name, never

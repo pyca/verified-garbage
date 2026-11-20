@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.RsaKeyGen.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.KeyInit
@@ -19,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # RSA key generation on PPC64LE, without secret residue
 
 `vg_rsa_generate_init` and `vg_rsa_generate`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`): `init` has no
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`): `init` has no
 frame, so the tail only clears the volatile registers it may write;
 `vg_rsa_generate` keeps the candidates, the Miller–Rabin state and its
 callers' state in frames it does not wipe themselves, which the tail zeroes.
@@ -99,11 +100,14 @@ theorem keySearchOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
         bytesAt48_of hb.2.2.2.2]
       exact h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.RsaKeyGen.keyInitApi`. -/
-def keyInitReg : Registration Spec.RsaKeyGen.keyInitApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_rsa_generate_init` as emitted (`Impl.RsaKeyGen.PPC64LE.Fn.keyInit`) meets
+its contract in constant time and returns without secret residue. -/
+theorem keyInit_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.RsaKeyGen.PPC64LE.Fn.keyInit
+      (Spec.RsaKeyGen.keyInitContract PPC64LE.abi) 32 :=
+  verifiedScrubbed (api := Spec.RsaKeyGen.keyInitApi) {
       code := Impl.RsaKeyGen.PPC64LE.KeyInit.init
       verified := Proof.RsaKeyGen.PPC64LE.KeyInit.init_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩

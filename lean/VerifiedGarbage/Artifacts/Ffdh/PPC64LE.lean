@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Init
-public import VerifiedGarbage.Proof.Ffdh.PPC64LE.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
@@ -16,18 +14,26 @@ namespace VG.Artifacts.Ffdh.PPC64LE
 def direct : List Artifact := [
   Spec.Ffdh.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.Generation.init
-    verified := .scrubbed ⟨Proof.Ffdh.PPC64LE.Generation.init_verified,
-      Proof.Ffdh.PPC64LE.Generation.init_noResidue _ _⟩ },
+    verified := .scrubbed Proof.Ffdh.PPC64LE.Scrub.parameterInit_scrubbed },
   Spec.Ffdh.keyInitApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.KeyGeneration.init
-    verified := .scrubbed ⟨Proof.Ffdh.PPC64LE.KeyGeneration.init_verified,
-      Proof.Ffdh.PPC64LE.KeyGeneration.init_noResidue _ _⟩ },
-  Spec.Ffdh.checkPublicApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.checkPublicReg,
+    verified := .scrubbed Proof.Ffdh.PPC64LE.Scrub.keyInit_scrubbed },
+  Spec.Ffdh.checkPublicApi.artifact PPC64LE.target {
+    code := Impl.Ffdh.PPC64LE.Fn.checkPublic
+    verified := .scrubbed Proof.Ffdh.PPC64LE.Scrub.checkPublic_scrubbed },
   Spec.Ffdh.checkDomainApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.checkDomainReg,
-  Spec.Ffdh.exchangeApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.exchangeReg,
-  Spec.Ffdh.derivePublicApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.derivePublicReg,
-  Spec.Ffdh.checkPrivateApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.checkPrivateReg,
-  Spec.Ffdh.generationPrecomputeApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.precomputeReg,
+  Spec.Ffdh.exchangeApi.artifact PPC64LE.target {
+    code := Impl.Ffdh.PPC64LE.Fn.exchange
+    verified := .scrubbed Proof.Ffdh.PPC64LE.Scrub.exchange_scrubbed },
+  Spec.Ffdh.derivePublicApi.artifact PPC64LE.target {
+    code := Impl.Ffdh.PPC64LE.Fn.derivePublic
+    verified := .scrubbed Proof.Ffdh.PPC64LE.Scrub.derivePublic_scrubbed },
+  Spec.Ffdh.checkPrivateApi.artifact PPC64LE.target {
+    code := Impl.Ffdh.PPC64LE.Fn.checkPrivate
+    verified := .scrubbed Proof.Ffdh.PPC64LE.Scrub.checkPrivate_scrubbed },
+  Spec.Ffdh.generationPrecomputeApi.artifact PPC64LE.target {
+    code := Impl.Ffdh.PPC64LE.Fn.precompute
+    verified := .scrubbed Proof.Ffdh.PPC64LE.Scrub.precompute_scrubbed },
   Spec.Ffdh.cachedKeySearchApi.artifact PPC64LE.target Proof.Ffdh.PPC64LE.Scrub.cachedKeySearchReg]
 
 def artifacts : List Artifact :=

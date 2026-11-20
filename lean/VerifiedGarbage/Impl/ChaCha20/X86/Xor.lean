@@ -43,8 +43,7 @@ written to the destination, or all that remain if fewer (`body4`):
 `vg_chacha20_xor_ssse3` (`xorSsse3`) is the same code with `vqr3` for `vqr`,
 whose rotations by 16 and 8 bits are `pshufb`: the prologue stores its
 controls in `buf[288, 320)` (`masks`), which nothing else writes. Its
-schedule is `fewLoads`: seven words in `xmm0, …, xmm6`, and `xmm7` the
-temporary of every rotation.
+schedule is `earlySsse3`.
 
 If 64 bytes or fewer remain after that, `vg_chacha20_block(state, buf)` is
 called and the first bytes of its output (the first 64 bytes of `buf`) are
@@ -204,38 +203,15 @@ structure Kernel where
 def QStep.code (k : Kernel) (q : QStep) : List Instr :=
   q.loads.map (fun p => ld p.1 p.2) ++ k.qr q.a q.b q.c q.d q.t ++ q.stores.map fun p => st p.1 p.2
 
-/-- The schedule with the fewest loads: seven words stay in `xmm0, …, xmm6`
-between double rounds, `xmm7` is every rotation's temporary, and the quarter
-rounds are in RFC 8439's order, `QUARTERROUND(0, 4, 8, 12)`, …,
-`QUARTERROUND(3, 4, 9, 14)`. Of the 32 words that the quarter rounds of a
-double round use, 14 are in registers already (the most that seven registers
-allow, for any order of the quarter rounds): words 0 and 3 stay in registers
-throughout, and the others between two quarter rounds close enough together,
-so that a double round loads and stores 18 words. -/
-def fewLoads : Sched where
-  cached := [(0, .xmm0), (3, .xmm1), (4, .xmm2), (8, .xmm4), (9, .xmm3), (12, .xmm6), (14, .xmm5)]
-  plan := [
-    ⟨(0, 4, 8, 12), [], .xmm0, .xmm2, .xmm4, .xmm6, .xmm7, [(4, .xmm2), (8, .xmm4), (12, .xmm6)]⟩,
-    ⟨(1, 5, 9, 13), [(.xmm2, 1), (.xmm4, 5), (.xmm6, 13)], .xmm2, .xmm4, .xmm3, .xmm6, .xmm7,
-      [(1, .xmm2), (9, .xmm3), (13, .xmm6)]⟩,
-    ⟨(2, 6, 10, 14), [(.xmm2, 2), (.xmm3, 6), (.xmm6, 10)], .xmm2, .xmm3, .xmm6, .xmm5, .xmm7,
-      [(2, .xmm2), (6, .xmm3), (14, .xmm5)]⟩,
-    ⟨(3, 7, 11, 15), [(.xmm2, 7), (.xmm3, 11), (.xmm5, 15)], .xmm1, .xmm2, .xmm3, .xmm5, .xmm7, []⟩,
-    ⟨(0, 5, 10, 15), [], .xmm0, .xmm4, .xmm6, .xmm5, .xmm7, [(5, .xmm4), (10, .xmm6), (15, .xmm5)]⟩,
-    ⟨(1, 6, 11, 12), [(.xmm4, 1), (.xmm5, 6), (.xmm6, 12)], .xmm4, .xmm5, .xmm3, .xmm6, .xmm7,
-      [(1, .xmm4), (6, .xmm5), (11, .xmm3)]⟩,
-    ⟨(2, 7, 8, 13), [(.xmm3, 2), (.xmm4, 8), (.xmm5, 13)], .xmm3, .xmm2, .xmm4, .xmm5, .xmm7,
-      [(2, .xmm3), (7, .xmm2), (13, .xmm5)]⟩,
-    ⟨(3, 4, 9, 14), [(.xmm2, 4), (.xmm3, 9), (.xmm5, 14)], .xmm1, .xmm2, .xmm3, .xmm5, .xmm7, []⟩]
-
 /-- A schedule for processors on which an SSE instruction that writes a
 whole register (a load, the copy a rotation starts with) waits for the
 register's value while the upper halves of the vector registers are in use
 (as after 256-bit code, where `vzeroupper` has not run or does not end it).
-With `fewLoads`, a quarter round then waits for the one before it: the
-temporary of its first rotation is the register of the last rotation before,
-and its loads go to registers that held the last results. Here each such
-write goes to a register whose value was ready early: a quarter round's
+With one register for every rotation's temporary and the words in the
+others, a quarter round then waits for the one before it: the temporary of
+its first rotation is the register of the last rotation before, and its
+loads go to registers that held the last results. Here each such write goes
+to a register whose value was ready early: a quarter round's
 loads to registers that the quarter round before did not use or was done
 with first, its temporary to one of the others, with a word staying in its
 register only if one of the next three quarter rounds uses it; the column
@@ -263,8 +239,34 @@ def early : Sched where
     ⟨(2, 7, 8, 13), [(.xmm0, 2), (.xmm6, 7), (.xmm1, 13), (.xmm5, 8)], .xmm0, .xmm6, .xmm5, .xmm1, .xmm2,
       [(2, .xmm0)]⟩]
 
+/-- `early` for `vqr3`, whose rotations by 16 and by 8 load their controls
+into the temporary, which is so written sooner in a quarter round than
+`vqr`'s: the same choices, with the column round in the order 0, 2, 3, 1 of
+its quarter rounds and the diagonal round in the order 1, 3, 0, 2. Six
+words stay in registers between double rounds, and a double round loads and
+stores 20 words. -/
+def earlySsse3 : Sched where
+  cached := [(0, .xmm7), (2, .xmm4), (4, .xmm2), (7, .xmm6), (8, .xmm3), (10, .xmm1)]
+  plan := [
+    ⟨(0, 4, 8, 12), [(.xmm0, 12)], .xmm7, .xmm2, .xmm3, .xmm0, .xmm5,
+      [(0, .xmm7), (12, .xmm0), (8, .xmm3), (4, .xmm2)]⟩,
+    ⟨(2, 6, 10, 14), [(.xmm7, 6), (.xmm0, 14)], .xmm4, .xmm7, .xmm1, .xmm0, .xmm3,
+      [(2, .xmm4), (14, .xmm0), (10, .xmm1)]⟩,
+    ⟨(3, 7, 11, 15), [(.xmm5, 3), (.xmm2, 15), (.xmm4, 11)], .xmm5, .xmm6, .xmm4, .xmm2, .xmm0,
+      [(15, .xmm2), (7, .xmm6)]⟩,
+    ⟨(1, 5, 9, 13), [(.xmm1, 1), (.xmm3, 5), (.xmm2, 13), (.xmm0, 9)], .xmm1, .xmm3, .xmm0, .xmm2, .xmm6,
+      [(13, .xmm2)]⟩,
+    ⟨(1, 6, 11, 12), [(.xmm2, 12)], .xmm1, .xmm7, .xmm4, .xmm2, .xmm6,
+      [(1, .xmm1), (12, .xmm2), (11, .xmm4), (6, .xmm7)]⟩,
+    ⟨(3, 4, 9, 14), [(.xmm2, 4), (.xmm1, 14)], .xmm5, .xmm2, .xmm0, .xmm1, .xmm4,
+      [(3, .xmm5), (14, .xmm1), (9, .xmm0)]⟩,
+    ⟨(0, 5, 10, 15), [(.xmm7, 0), (.xmm6, 15), (.xmm1, 10)], .xmm7, .xmm3, .xmm1, .xmm6, .xmm5,
+      [(15, .xmm6), (5, .xmm3)]⟩,
+    ⟨(2, 7, 8, 13), [(.xmm4, 2), (.xmm6, 7), (.xmm0, 13), (.xmm3, 8)], .xmm4, .xmm6, .xmm3, .xmm0, .xmm5,
+      [(13, .xmm0)]⟩]
+
 def sse2 : Kernel := ⟨vqr, [], early⟩
-def ssse3 : Kernel := ⟨vqr3, masks, fewLoads⟩
+def ssse3 : Kernel := ⟨vqr3, masks, earlySsse3⟩
 
 /-- Quarter round `i` of a double round. -/
 def quarter4 (k : Kernel) (i : Nat) : Prog isa := .block ((k.sched.q i).code k)

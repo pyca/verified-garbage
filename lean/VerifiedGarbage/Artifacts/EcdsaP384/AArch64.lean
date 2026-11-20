@@ -71,23 +71,14 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 namespace VG.Artifacts.EcdsaP384.AArch64.Rfc6979
 
 open VG.Proof.P384.AArch64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT OK p384 p384T_verified)
-open VG.Proof.HmacTable.AArch64 (tables names)
+open VG.Proof.HmacTable.AArch64 (tables)
+open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifactsFor : List Artifact :=
-  if hv : OK VG.Proof.Variants.MdHash.AArch64.variants ∧ "VG_P384_COMB" ∉ names VG.Proof.Variants.MdHash.AArch64.variants then [
-    Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-      suffix := ""
-      tables := [("hmac", tables VG.Proof.Variants.MdHash.AArch64.variants)]
-      code := signCodeT (p384 hasLaw.law hasLaw.inv (Proof.P384.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p384.tries VG.Proof.Variants.MdHash.AArch64.variants
-      verified := p384T_verified hasLaw.law hasLaw.inv (Proof.P384.combOk7 hasLaw.law) VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.p384SignClear
-      (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
-        Spec.Ecdsa.Rfc6979.Curves.p384 Impl.Ecdsa.AArch64.p384.combConsts VG.Proof.Variants.MdHash.AArch64.variants)
-      (Proof.Ecdsa.Rfc6979.AArch64.p384SignSide hasLaw.law hasLaw.inv (Proof.P384.combOk7 hasLaw.law)))]
-  else []
-
-def artifacts : List Artifact :=
-  artifactsFor
+def artifacts : List Artifact := [
+  Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact AArch64.target {
+    tables := [("hmac", tables variants)]
+    code := Impl.Ecdsa.Rfc6979.AArch64.Fn.p384 hashes
+    verified := .scrubbed (Proof.Ecdsa.Rfc6979.AArch64.p384Sign_scrubbed hasLaw.law hasLaw.inv (Proof.P384.combOk7 hasLaw.law)) }]
 
 end VG.Artifacts.EcdsaP384.AArch64.Rfc6979
 

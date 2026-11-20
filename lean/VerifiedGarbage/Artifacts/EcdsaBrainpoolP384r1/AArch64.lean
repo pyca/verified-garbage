@@ -52,23 +52,14 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 namespace VG.Artifacts.EcdsaBrainpoolP384r1.AArch64.Rfc6979
 
 open VG.Proof.BrainpoolP384r1.AArch64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT OK brainpoolp384r1 brainpoolp384r1T_verified)
-open VG.Proof.HmacTable.AArch64 (tables names)
+open VG.Proof.HmacTable.AArch64 (tables)
+open VG.Proof.Variants.MdHash.AArch64 (variants hashes)
 
-def artifactsFor : List Artifact :=
-  if hv : OK VG.Proof.Variants.MdHash.AArch64.variants ∧ "VG_BRAINPOOLP384R1_COMB7" ∉ names VG.Proof.Variants.MdHash.AArch64.variants then [
-    Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-      suffix := ""
-      tables := [("hmac", tables VG.Proof.Variants.MdHash.AArch64.variants)]
-      code := signCodeT (brainpoolp384r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries VG.Proof.Variants.MdHash.AArch64.variants
-      verified := brainpoolp384r1T_verified hasLaw.law hasLaw.inv VG.Proof.Variants.MdHash.AArch64.variants hv } Proof.Ecdsa.Rfc6979.AArch64.brainpoolp384r1SignClear
-      (Proof.Ecdsa.Rfc6979.AArch64.Scrub.signOk
-        Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1 Impl.Ecdsa.AArch64.BrainpoolP384r1.combCfg.combConsts VG.Proof.Variants.MdHash.AArch64.variants)
-      (Proof.Ecdsa.Rfc6979.AArch64.brainpoolp384r1SignSide hasLaw.law hasLaw.inv))]
-  else []
-
-def artifacts : List Artifact :=
-  artifactsFor
+def artifacts : List Artifact := [
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact AArch64.target {
+    tables := [("hmac", tables variants)]
+    code := Impl.Ecdsa.Rfc6979.AArch64.Fn.brainpoolp384r1 hashes
+    verified := .scrubbed (Proof.Ecdsa.Rfc6979.AArch64.brainpoolp384r1Sign_scrubbed hasLaw.law hasLaw.inv) }]
 
 end VG.Artifacts.EcdsaBrainpoolP384r1.AArch64.Rfc6979
 

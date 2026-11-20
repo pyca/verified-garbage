@@ -12,7 +12,9 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 namespace VG.Artifacts.RsaKeyGen.PPC64LE
 
 def direct : List Artifact := [
-  Spec.RsaKeyGen.keyInitApi.artifact PPC64LE.target Proof.RsaKeyGen.PPC64LE.Scrub.keyInitReg]
+  Spec.RsaKeyGen.keyInitApi.artifact PPC64LE.target {
+    code := Impl.RsaKeyGen.PPC64LE.Fn.keyInit
+    verified := .scrubbed Proof.RsaKeyGen.PPC64LE.Scrub.keyInit_scrubbed }]
 
 def artifacts : List Artifact :=
   direct ++

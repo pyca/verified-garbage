@@ -13,7 +13,11 @@ import VerifiedGarbage.Proof.Cast5.PPC64LE.ModesLit
 namespace VG.Artifacts.Cast5Cbc.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Cast5.cbcEncryptChainedApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.cbcEncryptChainedReg,
-  Spec.Cast5.cbcDecryptChainedApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.cbcDecryptChainedReg]
+  Spec.Cast5.cbcEncryptChainedApi.artifact PPC64LE.target {
+    code := Impl.Cast5.PPC64LE.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Cast5.PPC64LE.Scrub.cbcEncryptChained_scrubbed },
+  Spec.Cast5.cbcDecryptChainedApi.artifact PPC64LE.target {
+    code := Impl.Cast5.PPC64LE.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Cast5.PPC64LE.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.Cast5Cbc.PPC64LE
