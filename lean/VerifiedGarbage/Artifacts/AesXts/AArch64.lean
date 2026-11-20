@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.AArch64.Variant
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.AesXts.AArch64.Scrub
 public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Verified
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesXts.AArch64
@@ -17,16 +16,15 @@ open VG.Proof.AesXts.AArch64.Unit
 
 open VG.Proof.AesXts.AArch64
 
-def artifacts : List Artifact := [
-  ] ++
-  (VG.Proof.Variants.AesXts.AArch64.variants.flatMap fun (v : Proof.AesXts.AArch64.XtsImpl) => [
-    Spec.Xts.aesEncryptUnitApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+def artifacts : List Artifact :=
+  VG.Proof.Variants.AesXts.AArch64.variants.flatMap fun (v : Proof.AesXts.AArch64.XtsImpl) => [
+    Spec.Xts.aesEncryptUnitApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesXts.AArch64Unit.encrypt v.enc
-      verified := encrypt_verified v } Proof.AesXts.AArch64.Scrub.encryptOk),
-    Spec.Xts.aesDecryptUnitApi.artifact AArch64.target (AArch64.ScrubAll.withScrubAll {
+      code := Impl.AesXts.AArch64Unit.Fn.encrypt v.encClear v.enc
+      verified := .scrubbed (encrypt_scrubbed v) },
+    Spec.Xts.aesDecryptUnitApi.artifact AArch64.target {
       suffix := v.suffix
-      code := Impl.AesXts.AArch64Unit.decrypt v.enc v.dec
-      verified := decrypt_verified v } Proof.AesXts.AArch64.Scrub.decryptOk)])
+      code := Impl.AesXts.AArch64Unit.Fn.decrypt v.encClear v.decClear v.enc v.dec
+      verified := .scrubbed (decrypt_scrubbed v) }]
 
 end VG.Artifacts.AesXts.AArch64
