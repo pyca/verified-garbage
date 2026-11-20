@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.Arm
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
@@ -8,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Sha1.Arm.Lit
 import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import VerifiedGarbage.Impl.Hmac.Stream.Arm
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -36,18 +38,7 @@ open VG.Impl.Pbkdf2.Whole.Arm (Fns)
 open VG.Proof.Pbkdf2.Stream.Arm (sha1H md5H sha384H sha512H' sha512_224H sha512_256H sha1OK md5OK sha384OK
   sha512OK sha512_224OK sha512_256OK)
 
-/-- The functions `pbkdf2` calls for the hash function `M` of the instance
-`I` (`Impl/Pbkdf2/Md/Arm.lean`), with the working space of `I`'s functions,
-by the names they are registered with. -/
-def fnsOf (I : Spec.Hmac.Instance) (M : Impl.Pbkdf2.Md.Arm.Hash) : Fns where
-  H := M.st
-  W := I.scratch
-  hiN := s!"vg_hmac_{I.rust}_init_scratch"
-  hiC := M.hmacInit
-  hfN := s!"vg_hmac_{I.rust}_finalize_scratch"
-  hfC := M.hmacFin
-  itN := s!"vg_pbkdf2_hmac_{I.rust}_iterate"
-  itC := M.iterate
+export VG.Impl.Hmac.Stream.Arm (fnsOf)
 
 /-- Memory holding the stack arguments `1, 0x1200, 0, 0x2000` of `pbkdf2` at `0x8000`. -/
 def pbkMem : Mem := fun a =>
@@ -70,7 +61,7 @@ def pbkSat (W : Nat) : State where
 
 /-! ## SHA-1 -/
 
-def sha1F : Fns := fnsOf Spec.Hmac.sha1I Md.Arm.sha1Md
+export VG.Impl.Hmac.Stream.Arm (sha1F)
 
 theorem sha1_checks : Checks sha1F := by
   constructor <;> refine ⟨?_, ?_⟩
@@ -112,7 +103,7 @@ theorem sha1 : Verified Arm.target sha1F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2Scr
 
 /-! ## MD5 -/
 
-def md5F : Fns := fnsOf Spec.Hmac.md5I Md.Arm.md5Md
+export VG.Impl.Hmac.Stream.Arm (md5F)
 
 theorem md5_checks : Checks md5F := by
   constructor <;> refine ⟨?_, ?_⟩
@@ -154,7 +145,7 @@ theorem md5 : Verified Arm.target md5F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf2Scrat
 
 /-! ## SHA-384 -/
 
-def sha384F : Fns := fnsOf Spec.Hmac.sha384I Md.Arm.sha384Md
+export VG.Impl.Hmac.Stream.Arm (sha384F)
 
 theorem sha384_checks : Checks sha384F := by
   constructor <;> refine ⟨?_, ?_⟩
@@ -196,7 +187,7 @@ theorem sha384 : Verified Arm.target sha384F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf
 
 /-! ## SHA-512 -/
 
-def sha512F : Fns := fnsOf Spec.Hmac.sha512I Md.Arm.sha512Md'
+export VG.Impl.Hmac.Stream.Arm (sha512F)
 
 theorem sha512_checks : Checks sha512F := by
   constructor <;> refine ⟨?_, ?_⟩
@@ -238,7 +229,7 @@ theorem sha512 : Verified Arm.target sha512F.pbkdf2 (Proof.Pbkdf2.Instance.pbkdf
 
 /-! ## SHA-512/224 -/
 
-def sha512_224F : Fns := fnsOf Spec.Hmac.sha512_224I Md.Arm.sha512_224Md
+export VG.Impl.Hmac.Stream.Arm (sha512_224F)
 
 theorem sha512_224_checks : Checks sha512_224F := by
   constructor <;> refine ⟨?_, ?_⟩
@@ -280,7 +271,7 @@ theorem sha512_224 : Verified Arm.target sha512_224F.pbkdf2 (Proof.Pbkdf2.Instan
 
 /-! ## SHA-512/256 -/
 
-def sha512_256F : Fns := fnsOf Spec.Hmac.sha512_256I Md.Arm.sha512_256Md
+export VG.Impl.Hmac.Stream.Arm (sha512_256F)
 
 theorem sha512_256_checks : Checks sha512_256F := by
   constructor <;> refine ⟨?_, ?_⟩

@@ -43,6 +43,15 @@ theorem init_noFrames : Impl.Md5.Arm.Stream.init.noFrames = true := by lit_decid
 
 theorem frameOk_128 : FrameOk 128 := by decide
 
+/-- MD5's compression function and its streaming `update` and `finalize`
+use no stack and make no indirect call, as HMAC-MD5 and PBKDF2 call them
+(`Proof/Hmac/Stream/Arm/CodeOk.lean`). -/
+theorem compress_ok : CodeOk Impl.Md5.Arm.compress 0 := by lit_decide
+
+theorem stream_update_ok : CodeOk Impl.Md5.Arm.Stream.update 0 := by lit_decide
+
+theorem stream_finalize_ok : CodeOk Impl.Md5.Arm.Stream.finalize 0 := by lit_decide
+
 theorem update_ok :
     CodeOk (Impl.StackScratch.Arm.withStackScratch 128 2 Impl.Md5.Arm.Stream.update) 128 := by
   lit_decide
