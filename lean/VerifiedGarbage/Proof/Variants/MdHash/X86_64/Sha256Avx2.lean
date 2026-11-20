@@ -109,60 +109,74 @@ open Proof.Pbkdf2.Md.X86_64 Proof.Pbkdf2.Md.X86_64.Sha256 VG.X86_64 VG.X86_64.Sc
 
 /-! ## Without secret residue
 
-Each function, followed by `Impl.Scrub.X86_64.scrubTail`, which wipes the
-registers and the granules of its stack that the residue analysis of its
-code (`X86_64.RTaint`) finds may hold secrets. -/
+Each function, followed by its cleanup (`StreamFnS.reg`): what the cleanup
+needs of its code, evaluated here once, the runs of granules of its stack
+that the residue analysis (`X86_64.RTaint`) finds may hold secrets, and its
+other conditions (`X86_64.Scrub.SelScrub`). -/
 
-def updKs : List Nat := keep_for% Spec.Sha256.updateApi.sig (updFn compress).stack (updFn compress).code
-def finKs : List Nat := keep_for% Spec.Sha256.finalizeApi.sig (finFn compress).stack (finFn compress).code
-def digKs : List Nat := keep_for% Spec.Sha256.digest256Api.sig (digFn compress).stack (digFn compress).code
+theorem update_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init (updFn compress).api.sig (updFn compress).stack []) (updFn compress).code h).any
+      (VG.X86_64.RScrub.resOkB · (updFn compress).stack (Impl.Scrub.X86_64.runKs [(8, 33)])
+        (Impl.Scrub.X86_64.chunksA (updFn compress).stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(8, 33)] (by taint_decide_lit)
 
-theorem updRes : ResOk (updFn compress).code (updFn compress).contract (updFn compress).stack updKs
-    (chunks (updFn compress).stack) := RScrub.resOk_reg0 (updFn compress).unscrubbed updKs (by taint_decide_lit)
-theorem finRes : ResOk (finFn compress).code (finFn compress).contract (finFn compress).stack finKs
-    (chunks (finFn compress).stack) := RScrub.resOk_reg0 (finFn compress).unscrubbed finKs (by taint_decide_lit)
-theorem digRes : ResOk (digFn compress).code (digFn compress).contract (digFn compress).stack digKs
-    (chunks (digFn compress).stack) := RScrub.resOk_reg0 (digFn compress).unscrubbed digKs (by taint_decide_lit)
+theorem update_side : VG.X86_64.Scrub.scrubSideG (updFn compress).code (updFn compress).stack (updFn compress).retBits .avx true
+    (Impl.Scrub.X86_64.runKs [(8, 33)]) (Impl.Scrub.X86_64.chunksA (updFn compress).stack)
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 33)])) [] = true := by
+  lit_decide
 
-def update : StreamFn := (updFn compress).scrub .avx updKs (by lit_decide) (by decide) (by decide) (by lit_decide)
-  (by decide) (updOut compress) updRes
-def finalize : StreamFn := (finFn compress).scrub .avx finKs (by lit_decide) (by decide) (by decide) (by lit_decide)
-  (by decide) (finOut compress) finRes
-def digest : StreamFn := (digFn compress).scrub .avx digKs (by lit_decide) (by decide) (by decide) (by lit_decide)
-  (by decide) (digOut compress) digRes
+def update : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨(updFn compress), (updOut compress), ⟨.avx, [(8, 33)], update_ok, update_side⟩⟩
+theorem finalize_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init (finFn compress).api.sig (finFn compress).stack []) (finFn compress).code h).any
+      (VG.X86_64.RScrub.resOkB · (finFn compress).stack (Impl.Scrub.X86_64.runKs [(8, 33)])
+        (Impl.Scrub.X86_64.chunksA (finFn compress).stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(8, 33)] (by taint_decide_lit)
 
-theorem update_noResidue : NoResidue update.code (updFn compress).contract (updFn compress).retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-theorem finalize_noResidue : NoResidue finalize.code (finFn compress).contract (finFn compress).retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-theorem digest_noResidue : NoResidue digest.code (digFn compress).contract (digFn compress).retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+theorem finalize_side : VG.X86_64.Scrub.scrubSideG (finFn compress).code (finFn compress).stack (finFn compress).retBits .avx true
+    (Impl.Scrub.X86_64.runKs [(8, 33)]) (Impl.Scrub.X86_64.chunksA (finFn compress).stack)
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 33)])) [] = true := by
+  lit_decide
+
+def finalize : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨(finFn compress), (finOut compress), ⟨.avx, [(8, 33)], finalize_ok, finalize_side⟩⟩
+theorem digest_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init (digFn compress).api.sig (digFn compress).stack []) (digFn compress).code h).any
+      (VG.X86_64.RScrub.resOkB · (digFn compress).stack (Impl.Scrub.X86_64.runKs [(104, 33)])
+        (Impl.Scrub.X86_64.chunksA (digFn compress).stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(104, 33)] (by taint_decide_lit)
+
+theorem digest_side : VG.X86_64.Scrub.scrubSideG (digFn compress).code (digFn compress).stack (digFn compress).retBits .avx true
+    (Impl.Scrub.X86_64.runKs [(104, 33)]) (Impl.Scrub.X86_64.chunksA (digFn compress).stack)
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(104, 33)])) [] = true := by
+  lit_decide
+
+def digest : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨(digFn compress), (digOut compress), ⟨.avx, [(104, 33)], digest_ok, digest_side⟩⟩
 
 /-! SHA-224's `finalize` and `digest`, with the same compression function. -/
 
-def fin224Ks : List Nat :=
-  keep_for% Spec.Sha256.finalize224Api.sig (Sha224.finFn compress).stack (Sha224.finFn compress).code
-def dig224Ks : List Nat :=
-  keep_for% Spec.Sha256.digest224Api.sig (Sha224.digFn compress).stack (Sha224.digFn compress).code
+theorem finalize224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init (Sha224.finFn compress).api.sig (Sha224.finFn compress).stack []) (Sha224.finFn compress).code h).any
+      (VG.X86_64.RScrub.resOkB · (Sha224.finFn compress).stack (Impl.Scrub.X86_64.runKs [(8, 33)])
+        (Impl.Scrub.X86_64.chunksA (Sha224.finFn compress).stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(8, 33)] (by taint_decide_lit)
 
-theorem fin224Res : ResOk (Sha224.finFn compress).code (Sha224.finFn compress).contract
-    (Sha224.finFn compress).stack fin224Ks (chunks (Sha224.finFn compress).stack) :=
-  RScrub.resOk_reg0 (Sha224.finFn compress).unscrubbed fin224Ks (by taint_decide_lit)
-theorem dig224Res : ResOk (Sha224.digFn compress).code (Sha224.digFn compress).contract
-    (Sha224.digFn compress).stack dig224Ks (chunks (Sha224.digFn compress).stack) :=
-  RScrub.resOk_reg0 (Sha224.digFn compress).unscrubbed dig224Ks (by taint_decide_lit)
+theorem finalize224_side : VG.X86_64.Scrub.scrubSideG (Sha224.finFn compress).code (Sha224.finFn compress).stack (Sha224.finFn compress).retBits .avx true
+    (Impl.Scrub.X86_64.runKs [(8, 33)]) (Impl.Scrub.X86_64.chunksA (Sha224.finFn compress).stack)
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 33)])) [] = true := by
+  lit_decide
 
-def finalize224 : StreamFn := (Sha224.finFn compress).scrub .avx fin224Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (Sha224.finOut compress) fin224Res
-def digest224 : StreamFn := (Sha224.digFn compress).scrub .avx dig224Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (Sha224.digOut compress) dig224Res
+def finalize224 : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨(Sha224.finFn compress), (Sha224.finOut compress), ⟨.avx, [(8, 33)], finalize224_ok, finalize224_side⟩⟩
+theorem digest224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init (Sha224.digFn compress).api.sig (Sha224.digFn compress).stack []) (Sha224.digFn compress).code h).any
+      (VG.X86_64.RScrub.resOkB · (Sha224.digFn compress).stack (Impl.Scrub.X86_64.runKs [(104, 33)])
+        (Impl.Scrub.X86_64.chunksA (Sha224.digFn compress).stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(104, 33)] (by taint_decide_lit)
 
-theorem finalize224_noResidue :
-    NoResidue finalize224.code (Sha224.finFn compress).contract (Sha224.finFn compress).retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-theorem digest224_noResidue :
-    NoResidue digest224.code (Sha224.digFn compress).contract (Sha224.digFn compress).retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+theorem digest224_side : VG.X86_64.Scrub.scrubSideG (Sha224.digFn compress).code (Sha224.digFn compress).stack (Sha224.digFn compress).retBits .avx true
+    (Impl.Scrub.X86_64.runKs [(104, 33)]) (Impl.Scrub.X86_64.chunksA (Sha224.digFn compress).stack)
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(104, 33)])) [] = true := by
+  lit_decide
+
+def digest224 : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨(Sha224.digFn compress), (Sha224.digOut compress), ⟨.avx, [(104, 33)], digest224_ok, digest224_side⟩⟩
 
 end Scrub
 

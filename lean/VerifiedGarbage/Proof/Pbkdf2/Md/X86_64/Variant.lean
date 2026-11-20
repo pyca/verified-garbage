@@ -24,6 +24,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
@@ -1131,20 +1132,6 @@ structure StreamFn where
     exact ⟨_, _, _, rfl⟩
   ofApi : contract = api.contract X86_64.target.abi stack := by exact rfl
   spSafe : code.all (fun i => !X86_64.target.isa.writesSp i) = true
-  /-- The proof that it returns without secret residue, if it has one. -/
-  residue : Option (PLift (X86_64.NoResidue code contract (api.sig.retBits 64))) := none
-
-/-- `f` as a registration of its `Api` (`Api.artifact`). -/
-def StreamFn.reg (f : StreamFn) : Registration f.api X86_64.target where
-  consts := []
-  tables := []
-  code := f.code
-  contract := f.contract
-  stack := f.stack
-  verified := .ofOption f.verified f.residue
-  ofApi := f.ofApi
-  ofSig := f.ofSig
-  spSafe := f.spSafe
 
 /-- `f` as what a form that scrubs it takes. -/
 def StreamFn.unscrubbed (f : StreamFn) : Unscrubbed f.api X86_64.target where
@@ -1157,6 +1144,42 @@ def StreamFn.unscrubbed (f : StreamFn) : Unscrubbed f.api X86_64.target where
   ofApi := f.ofApi
   ofSig := f.ofSig
   spSafe := f.spSafe
+
+/-- The bits of the result of `f`'s function. -/
+abbrev StreamFn.retBits (f : StreamFn) : Nat :=
+  f.api.sig.retBits ((X86_64.abi.withConsts f.unscrubbed.consts).withTables f.api.sig f.unscrubbed.tables).ptrBits
+
+/-- A streaming function `f` with what its cleanup
+(`Impl.Scrub.X86_64.scrubSel`) needs of it: that its postcondition reads the
+memory on return only within the buffers (`post`), and of its code, the
+level of its vector registers, the runs of granules of its stack that may
+hold secrets, the residue analysis and the cleanup's other conditions
+(`sel`), which the variant evaluates once, where it is defined. -/
+structure StreamFnS where
+  f : StreamFn
+  post : X86_64.Scrub.PostOut f.contract f.retBits
+  sel : X86_64.Scrub.SelScrub f.api.sig f.stack f.retBits f.code
+
+/-- `s`'s code as emitted, its code and then its cleanup, meets its contract
+in constant time and returns without secret residue. -/
+theorem StreamFnS.scrubbed (s : StreamFnS) :
+    VerifiedScrubbed X86_64.target
+      (Impl.Scrub.X86_64.scrubSel s.sel.level s.f.retBits s.f.stack s.sel.runs s.f.code)
+      s.f.contract s.f.retBits :=
+  X86_64.Scrub.SelScrub.scrubbed s.f.unscrubbed s.sel s.post
+
+/-- `s` as a registration of its `Api` (`Api.artifact`): its code as emitted,
+with its cleanup, and the theorem about that code (`StreamFnS.scrubbed`). -/
+def StreamFnS.reg (s : StreamFnS) : Registration s.f.api X86_64.target where
+  consts := []
+  tables := []
+  code := Impl.Scrub.X86_64.scrubSel s.sel.level s.f.retBits s.f.stack s.sel.runs s.f.code
+  contract := s.f.contract
+  stack := s.f.stack
+  verified := .scrubbed s.scrubbed
+  ofApi := s.f.ofApi
+  ofSig := s.f.ofSig
+  spSafe := X86_64.Scrub.scrubKs_spSafe s.f.spSafe
 
 /-- The bytes of the frame in which HMAC's `finalize` keeps the working space
 of its `_scratch` form (`H.W` words, the hash function's functions' with the
@@ -1287,7 +1310,7 @@ structure MdHash where
   /-- The streaming `update` and `finalize` made with this implementation of
   the compression function, when no other variant shares them (otherwise
   they are in the hash function's registration file). -/
-  stream : List StreamFn
+  stream : List StreamFnS
   /-- The residue analysis of HMAC's `finalize` (`hmacFinF`), if the analysis
   handles it: that function then returns without secret residue
   (`MdHash.hmacFinReg`). -/
@@ -1472,7 +1495,7 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (hsFF : ∃ s, (I.finalizeContract X86_64.abi (16 + hmacFrame H)).pre s)
     (hp : H.W + H.S < 509)
     (hsPF : ∃ s, (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame H)).pre s)
-    (suffix : String) (features : List String) (stream : List StreamFn) : MdHash where
+    (suffix : String) (features : List String) (stream : List StreamFnS) : MdHash where
   H := H
   I := I
   ok := hH

@@ -909,7 +909,7 @@ def streamS : List StreamFn := [updFnS v h hv, finFnS v h hv, digFnS v h hv]
 end S
 
 /-- SHA-256 with the implementation `v` of its compression function. -/
-def variant (stream : List StreamFn := stream v) : MdHash :=
+def variant (stream : List StreamFnS := []) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha256I) (ok v) (coreOK v) (callees v)
     ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl 560 (okU v) rfl
     (satI (hashW v)) (satF (hashW v)) (satT (hashW v)) (satP (hashW v))

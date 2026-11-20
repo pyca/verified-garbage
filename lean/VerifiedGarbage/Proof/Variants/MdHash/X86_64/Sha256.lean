@@ -107,60 +107,74 @@ abbrev dig224F : StreamFn := Sha224.digFnS compress (.inr rfl) Proof.Sha256.X86_
 
 /-! ## Without secret residue
 
-Each function, followed by `Impl.Scrub.X86_64.scrubTail`, which wipes the
-registers and the granules of its stack that the residue analysis of its
-code (`X86_64.RTaint`) finds may hold secrets. -/
+Each function, followed by its cleanup (`StreamFnS.reg`): what the cleanup
+needs of its code, evaluated here once, the runs of granules of its stack
+that the residue analysis (`X86_64.RTaint`) finds may hold secrets, and its
+other conditions (`X86_64.Scrub.SelScrub`). -/
 
-def updKs : List Nat := keep_for% Spec.Sha256.updateApi.sig updF.stack updF.code
-def finKs : List Nat := keep_for% Spec.Sha256.finalizeApi.sig finF.stack finF.code
-def digKs : List Nat := keep_for% Spec.Sha256.digest256Api.sig digF.stack digF.code
+theorem update_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init updF.api.sig updF.stack []) updF.code h).any
+      (VG.X86_64.RScrub.resOkB · updF.stack (Impl.Scrub.X86_64.runKs [(8, 5)])
+        (Impl.Scrub.X86_64.chunksA updF.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(8, 5)] (by taint_decide_lit)
 
-theorem updRes : ResOk updF.code updF.contract updF.stack updKs
-    (chunks updF.stack) := RScrub.resOk_reg0 updF.unscrubbed updKs (by taint_decide_lit)
-theorem finRes : ResOk finF.code finF.contract finF.stack finKs
-    (chunks finF.stack) := RScrub.resOk_reg0 finF.unscrubbed finKs (by taint_decide_lit)
-theorem digRes : ResOk digF.code digF.contract digF.stack digKs
-    (chunks digF.stack) := RScrub.resOk_reg0 digF.unscrubbed digKs (by taint_decide_lit)
+theorem update_side : VG.X86_64.Scrub.scrubSideG updF.code updF.stack updF.retBits .sse true
+    (Impl.Scrub.X86_64.runKs [(8, 5)]) (Impl.Scrub.X86_64.chunksA updF.stack)
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 5)])) [] = true := by
+  lit_decide
 
-def update : StreamFn := updF.scrub .sse updKs (by lit_decide) (by decide) (by decide) (by lit_decide)
-  (by decide) (updOutS compress (.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112) updRes
-def finalize : StreamFn := finF.scrub .sse finKs (by lit_decide) (by decide) (by decide) (by lit_decide)
-  (by decide) (finOutS compress (.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112) finRes
-def digest : StreamFn := digF.scrub .sse digKs (by lit_decide) (by decide) (by decide) (by lit_decide)
-  (by decide) (digOutS compress (.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112) digRes
+def update : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨updF, (updOutS compress (.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112), ⟨.sse, [(8, 5)], update_ok, update_side⟩⟩
+theorem finalize_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init finF.api.sig finF.stack []) finF.code h).any
+      (VG.X86_64.RScrub.resOkB · finF.stack (Impl.Scrub.X86_64.runKs [(8, 5)])
+        (Impl.Scrub.X86_64.chunksA finF.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(8, 5)] (by taint_decide_lit)
 
-theorem update_noResidue : NoResidue update.code updF.contract updF.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-theorem finalize_noResidue : NoResidue finalize.code finF.contract finF.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-theorem digest_noResidue : NoResidue digest.code digF.contract digF.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+theorem finalize_side : VG.X86_64.Scrub.scrubSideG finF.code finF.stack finF.retBits .sse true
+    (Impl.Scrub.X86_64.runKs [(8, 5)]) (Impl.Scrub.X86_64.chunksA finF.stack)
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 5)])) [] = true := by
+  lit_decide
+
+def finalize : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨finF, (finOutS compress (.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112), ⟨.sse, [(8, 5)], finalize_ok, finalize_side⟩⟩
+theorem digest_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init digF.api.sig digF.stack []) digF.code h).any
+      (VG.X86_64.RScrub.resOkB · digF.stack (Impl.Scrub.X86_64.runKs [(104, 5)])
+        (Impl.Scrub.X86_64.chunksA digF.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(104, 5)] (by taint_decide_lit)
+
+theorem digest_side : VG.X86_64.Scrub.scrubSideG digF.code digF.stack digF.retBits .sse true
+    (Impl.Scrub.X86_64.runKs [(104, 5)]) (Impl.Scrub.X86_64.chunksA digF.stack)
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(104, 5)])) [] = true := by
+  lit_decide
+
+def digest : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨digF, (digOutS compress (.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112), ⟨.sse, [(104, 5)], digest_ok, digest_side⟩⟩
 
 /-! SHA-224's `finalize` and `digest`, with the same compression function. -/
 
-def fin224Ks : List Nat :=
-  keep_for% Spec.Sha256.finalize224Api.sig fin224F.stack fin224F.code
-def dig224Ks : List Nat :=
-  keep_for% Spec.Sha256.digest224Api.sig dig224F.stack dig224F.code
+theorem finalize224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init fin224F.api.sig fin224F.stack []) fin224F.code h).any
+      (VG.X86_64.RScrub.resOkB · fin224F.stack (Impl.Scrub.X86_64.runKs [(8, 5)])
+        (Impl.Scrub.X86_64.chunksA fin224F.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(8, 5)] (by taint_decide_lit)
 
-theorem fin224Res : ResOk fin224F.code fin224F.contract
-    fin224F.stack fin224Ks (chunks fin224F.stack) :=
-  RScrub.resOk_reg0 fin224F.unscrubbed fin224Ks (by taint_decide_lit)
-theorem dig224Res : ResOk dig224F.code dig224F.contract
-    dig224F.stack dig224Ks (chunks dig224F.stack) :=
-  RScrub.resOk_reg0 dig224F.unscrubbed dig224Ks (by taint_decide_lit)
+theorem finalize224_side : VG.X86_64.Scrub.scrubSideG fin224F.code fin224F.stack fin224F.retBits .sse true
+    (Impl.Scrub.X86_64.runKs [(8, 5)]) (Impl.Scrub.X86_64.chunksA fin224F.stack)
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 5)])) [] = true := by
+  lit_decide
 
-def finalize224 : StreamFn := fin224F.scrub .sse fin224Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (Sha224.finOutS compress (.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112) fin224Res
-def digest224 : StreamFn := dig224F.scrub .sse dig224Ks (by lit_decide) (by decide) (by decide)
-  (by lit_decide) (by decide) (Sha224.digOutS compress (.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112) dig224Res
+def finalize224 : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨fin224F, (Sha224.finOutS compress (.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112), ⟨.sse, [(8, 5)], finalize224_ok, finalize224_side⟩⟩
+theorem digest224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init dig224F.api.sig dig224F.stack []) dig224F.code h).any
+      (VG.X86_64.RScrub.resOkB · dig224F.stack (Impl.Scrub.X86_64.runKs [(104, 5)])
+        (Impl.Scrub.X86_64.chunksA dig224F.stack)) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(104, 5)] (by taint_decide_lit)
 
-theorem finalize224_noResidue :
-    NoResidue finalize224.code fin224F.contract fin224F.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
-theorem digest224_noResidue :
-    NoResidue digest224.code dig224F.contract dig224F.retBits :=
-  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+theorem digest224_side : VG.X86_64.Scrub.scrubSideG dig224F.code dig224F.stack dig224F.retBits .sse true
+    (Impl.Scrub.X86_64.runKs [(104, 5)]) (Impl.Scrub.X86_64.chunksA dig224F.stack)
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(104, 5)])) [] = true := by
+  lit_decide
+
+def digest224 : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨dig224F, (Sha224.digOutS compress (.inr rfl) Proof.Sha256.X86_64.Stream.scalar_verified112), ⟨.sse, [(104, 5)], digest224_ok, digest224_side⟩⟩
 
 end Scrub
 
