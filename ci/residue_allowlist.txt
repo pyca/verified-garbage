@@ -84,8 +84,6 @@ arm vg_seed_ecb_encrypt
 arm vg_seed_expand_key
 arm vg_seed_ofb
 arm vg_seed_ofb_final
-arm vg_x25519_exchange
-arm vg_x25519_exchange_umaal
 x86 vg_argon2
 x86 vg_blake2b_finalize
 x86 vg_blake2b_init

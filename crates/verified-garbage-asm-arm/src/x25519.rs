@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -92,6 +94,17 @@ sub r3, r3, #1
 lsr r0, r3, #31
 eor r0, r0, #1
 ldr lr, [sp], #4
+sub sp, sp, #8
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #8
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_x25519 = sym super::x25519::vg_x25519::vg_x25519,
     )
@@ -104,6 +117,8 @@ pub const VG_X25519_EXCHANGE_UMAAL_FEATURES: verified_garbage_cpu::Features = ve
 /// Computes an X25519 shared secret (RFC 7748 §6.1): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies (§5).
 ///
 /// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -192,6 +207,17 @@ sub r3, r3, #1
 lsr r0, r3, #31
 eor r0, r0, #1
 ldr lr, [sp], #4
+sub sp, sp, #8
+add r12, sp, #0
+mov r2, #0
+str r2, [r12, #0]
+str r2, [r12, #4]
+add sp, sp, #8
+mov r1, #0
+mov r2, #0
+mov r3, #0
+mov r12, #0
+cmp r2, r2
 bx lr",
         vg_x25519_umaal = sym super::x25519::vg_x25519_umaal::vg_x25519_umaal,
     )
