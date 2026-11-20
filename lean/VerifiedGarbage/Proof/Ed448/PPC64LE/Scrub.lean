@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ed448.PPC64LE.Fn
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -14,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Ed448 on PPC64LE, without secret residue
 
 `vg_ed448_public_key`, `vg_ed448_sign_cached` and `vg_ed448_verify`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which
 clears the volatile registers and the stack their frames use (240, 624 and
 352 bytes). The postconditions of `public_key` and `sign_cached` read the
 memory on return only within their outputs, and that of `verify` not at
@@ -66,29 +67,38 @@ theorem verifyOut :
     match vs, hlen with
     | [_, _, _, _, _, _, _], _ => exact h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.Ed448.publicKeyApi`. -/
-def publicKeyReg : Registration Spec.Ed448.publicKeyApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_ed448_public_key` as emitted (`Impl.Ed448.PPC64LE.Fn.publicKey`) meets its
+contract in constant time and returns without secret residue. -/
+theorem publicKey_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ed448.PPC64LE.Fn.publicKey
+      (Spec.Ed448.publicKeyContract PPC64LE.abi (48 + 192)) 0 :=
+  verifiedScrubbed (api := Spec.Ed448.publicKeyApi) {
       code := Impl.Ed448.PPC64LE.Whole.publicKeyCode
       verified := Proof.Ed448.PPC64LE.Whole.publicKey_framed Proof.Ed448.baseLadder2_ok }
     240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (publicKeyOut [] _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Ed448.signCachedApi`. -/
-def signCachedReg : Registration Spec.Ed448.signCachedApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_ed448_sign_cached` as emitted (`Impl.Ed448.PPC64LE.Fn.signCached`) meets
+its contract in constant time and returns without secret residue. -/
+theorem signCached_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ed448.PPC64LE.Fn.signCached
+      (Spec.Ed448.signCachedContract PPC64LE.abi (48 + 576)) 0 :=
+  verifiedScrubbed (api := Spec.Ed448.signCachedApi) {
       code := Impl.Ed448.PPC64LE.Whole.signCachedCode
       verified := Proof.Ed448.PPC64LE.Whole.signCached_framed Proof.Ed448.baseLadder2_ok }
     624 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (signCachedOut [] _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Ed448.verifyApi`. -/
-def verifyReg : Registration Spec.Ed448.verifyApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_ed448_verify` as emitted (`Impl.Ed448.PPC64LE.Fn.verify`) meets its
+contract in constant time and returns without secret residue. -/
+theorem verify_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ed448.PPC64LE.Fn.verify
+      (Spec.Ed448.verifyContract PPC64LE.abi (48 + 304)) 32 :=
+  verifiedScrubbed (api := Spec.Ed448.verifyApi) {
       code := Impl.Ed448.PPC64LE.Whole.verifyCode
       verified := Proof.Ed448.PPC64LE.Whole.verify_framed Proof.Ed448.recover_ok }
     352 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
