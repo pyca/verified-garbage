@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 
 /-! # A precomputed public operation for verified RSA callers on AArch64 -/
 
@@ -25,6 +26,9 @@ structure PublicImpl where
   /-- It has no frame and makes no calls: its callers reserve no stack for it. -/
   depth : code.aarch64Depth = 0
   noDit : code.all (fun i => !i.touchesDit) = true
+  /-- It has no indirect call and never writes `DIT`: what the cleanup of
+  the functions that call it needs. -/
+  side : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
 

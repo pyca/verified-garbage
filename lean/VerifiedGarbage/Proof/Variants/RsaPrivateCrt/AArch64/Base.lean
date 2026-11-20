@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
@@ -145,6 +146,7 @@ def variant : Proof.Rsa.AArch64.CrtImpl where
   crtPVerified := WindowFive.given_verified
   crtPNoFrames := checks.1.2.1
   crtPNoDit := checks.1.2.2
+  crtPSide := by kernel_rfl
   pcName := Spec.Rsa.publicPrecomputeApi.name
   pc := Impl.Rsa.AArch64.Precompute.code Mont.base.mm
   pcVerified := precompute_verified Mont.base
@@ -155,6 +157,7 @@ def variant : Proof.Rsa.AArch64.CrtImpl where
   pdVerified := Proof.Rsa.AArch64.FoldedPublic.checked_verified Mont.productEight
   pdNoFrames := checks.2.2.1
   pdNoDit := checks.2.2.2
+  pdSide := by kernel_rfl
   suffix := ""
   features := []
 
