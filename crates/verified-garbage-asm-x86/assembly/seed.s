@@ -1510,64 +1510,6 @@ vg_seed_expand_key:
 	mov DWORD PTR [esp+832], ecx
 	mov DWORD PTR [esp+836], ecx
 	lea esp, [esp+840]
-	pxor xmm0, xmm0
-	mov ecx, 0
-	lea esp, [esp-840]
-	movdqu XMMWORD PTR [esp], xmm0
-	movdqu XMMWORD PTR [esp+16], xmm0
-	movdqu XMMWORD PTR [esp+32], xmm0
-	movdqu XMMWORD PTR [esp+48], xmm0
-	movdqu XMMWORD PTR [esp+64], xmm0
-	movdqu XMMWORD PTR [esp+80], xmm0
-	movdqu XMMWORD PTR [esp+96], xmm0
-	movdqu XMMWORD PTR [esp+112], xmm0
-	movdqu XMMWORD PTR [esp+128], xmm0
-	movdqu XMMWORD PTR [esp+144], xmm0
-	movdqu XMMWORD PTR [esp+160], xmm0
-	movdqu XMMWORD PTR [esp+176], xmm0
-	movdqu XMMWORD PTR [esp+192], xmm0
-	movdqu XMMWORD PTR [esp+208], xmm0
-	movdqu XMMWORD PTR [esp+224], xmm0
-	movdqu XMMWORD PTR [esp+240], xmm0
-	movdqu XMMWORD PTR [esp+256], xmm0
-	movdqu XMMWORD PTR [esp+272], xmm0
-	movdqu XMMWORD PTR [esp+288], xmm0
-	movdqu XMMWORD PTR [esp+304], xmm0
-	movdqu XMMWORD PTR [esp+320], xmm0
-	movdqu XMMWORD PTR [esp+336], xmm0
-	movdqu XMMWORD PTR [esp+352], xmm0
-	movdqu XMMWORD PTR [esp+368], xmm0
-	movdqu XMMWORD PTR [esp+384], xmm0
-	movdqu XMMWORD PTR [esp+400], xmm0
-	movdqu XMMWORD PTR [esp+416], xmm0
-	movdqu XMMWORD PTR [esp+432], xmm0
-	movdqu XMMWORD PTR [esp+448], xmm0
-	movdqu XMMWORD PTR [esp+464], xmm0
-	movdqu XMMWORD PTR [esp+480], xmm0
-	movdqu XMMWORD PTR [esp+496], xmm0
-	movdqu XMMWORD PTR [esp+512], xmm0
-	movdqu XMMWORD PTR [esp+528], xmm0
-	movdqu XMMWORD PTR [esp+544], xmm0
-	movdqu XMMWORD PTR [esp+560], xmm0
-	movdqu XMMWORD PTR [esp+576], xmm0
-	movdqu XMMWORD PTR [esp+592], xmm0
-	movdqu XMMWORD PTR [esp+608], xmm0
-	movdqu XMMWORD PTR [esp+624], xmm0
-	movdqu XMMWORD PTR [esp+640], xmm0
-	movdqu XMMWORD PTR [esp+656], xmm0
-	movdqu XMMWORD PTR [esp+672], xmm0
-	movdqu XMMWORD PTR [esp+688], xmm0
-	movdqu XMMWORD PTR [esp+704], xmm0
-	movdqu XMMWORD PTR [esp+720], xmm0
-	movdqu XMMWORD PTR [esp+736], xmm0
-	movdqu XMMWORD PTR [esp+752], xmm0
-	movdqu XMMWORD PTR [esp+768], xmm0
-	movdqu XMMWORD PTR [esp+784], xmm0
-	movdqu XMMWORD PTR [esp+800], xmm0
-	movdqu XMMWORD PTR [esp+816], xmm0
-	mov DWORD PTR [esp+832], ecx
-	mov DWORD PTR [esp+836], ecx
-	lea esp, [esp+840]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx

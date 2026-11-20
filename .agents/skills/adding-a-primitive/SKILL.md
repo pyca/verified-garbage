@@ -127,7 +127,22 @@ instructions in an ISA model) go in their own PR before either.
    result's bits and the stack as literals in the function's `Fn`
    definition, and the theorem comes from `X86.Scrub.verifiedScrubbed` or
    `verifiedScrubbedF` (`Proof/Framework/X86/ScrubFn.lean`;
-   `Impl.Sha3.X86.Fn`, `Proof/Sha3/X86/Scrub.lean`, `Artifacts/Sha3/X86.lean`).
+   `Impl.Sha3.X86.Fn`, `Proof/Sha3/X86/Scrub.lean`, `Artifacts/Sha3/X86.lean`),
+   or, for code that wipes its own frame before it releases it
+   (`withStackScratchWiped`, its wipe covering all of the buffer), whose
+   cleanup is `scrub rb` and zeroes no stack, from
+   `X86.Scrub.verifiedScrubbedWiped` (`Proof/Framework/X86/ScrubWiped.lean`;
+   `Impl.Seed.X86.Fn.expandKey`, `Proof/Seed/X86/Scrub.lean`). It needs
+   more than PPC64LE's: there the frame's region leaves out its header, but
+   on x86 the header (its first word, the copies of the arguments, the
+   buffer's address) is in the frame and is not wiped. So it takes the
+   code's own theorem with its scratch contract, which must not let it
+   write its arguments (`wa = false`), and needs that the code in the frame
+   calls nothing and has no frame (`wipedSide`, by `lit_decide`) and that
+   every argument is of 32 bits and public (`argsPub`, by `decide`): code
+   that calls or pushes below its frame, or whose contract may write its
+   arguments, stays on `scrubF`. AArch64 has no wiped form: its code that
+   wipes its own frame still zeroes the stack again in `scrubAll`.
    Its tail clears every register a callee may change, so for code generic
    over a variant the variant states only `calleeOk` of each code it gives (no MMX, no
    indirect call: `Ctr32Impl.scrub`, by `lit_decide`) besides its stack;

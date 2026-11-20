@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Seed.Contract
 public import VerifiedGarbage.Spec.Seed.Cbc
@@ -27,6 +28,7 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Scrub
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Seed.Contract
 meta import VerifiedGarbage.Spec.Seed.Cbc
@@ -56,10 +58,14 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 
 Key expansion and the ECB, CBC, CFB128 and OFB functions run with their
 working space in a frame on the stack, wiped before they return
-(`withStackScratchWiped`). The code as emitted (`Impl.Seed.X86.Fn`) then
-zeroes the stack their contracts reserve below `esp` and clears the
-registers a callee may change, and returns without secret residue
-(`X86.Scrub.verifiedScrubbedF`), given that its postcondition reads the
+(`withStackScratchWiped`). Key expansion calls nothing in its frame, so the
+wipe leaves no secret on the stack: the code as emitted
+(`Impl.Seed.X86.Fn.expandKey`) only clears the registers a callee may
+change (`X86.Scrub.verifiedScrubbedWiped`). The others call or push below
+their frame: the code as emitted then zeroes the stack their contracts
+reserve below `esp` and clears the registers a callee may change, and
+returns without secret residue (`X86.Scrub.verifiedScrubbedF`), given that
+its postcondition reads the
 memory on return only within the buffers (`Proof/Seed/Scratch.lean`,
 `CbcScratch.lean`, `FbScratch.lean` and `Proof/Modes/CfbFinalScratch.lean`,
 for any pointer width). What the cleanup needs of the code is one Boolean
@@ -75,9 +81,6 @@ open VG.X86 VG.X86.Scrub
 open Impl.StackScratch.X86 (withStackScratchWiped)
 
 /-! ## Postconditions -/
-
-theorem expandKeyOut : PostOut (Spec.Seed.expandKeyContract X86.abi 840) (Spec.Seed.expandKeySig.retBits 32) :=
-  postOut_of_local ScrubAbi.plain (Proof.Seed.expandKeyPostOut_local _)
 
 theorem ecbOut (d : Spec.Seed.Direction) :
     PostOut (Spec.Seed.ecbContract X86.abi d 1132) (Spec.Seed.ecbSig.retBits 32) :=
@@ -113,10 +116,12 @@ theorem ofbFinalOut : PostOut (Spec.Seed.ofbFinalContract X86.abi 1188) (Spec.Se
 constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.expandKey (Spec.Seed.expandKeyContract X86.abi 840) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.expandKeyApi)
-    { code := withStackScratchWiped 840 2 206 Impl.Seed.X86.expandKey
-      verified := Proof.Seed.X86.expandKey_framed }
-    expandKeyOut
+  verifiedScrubbedWiped (sig := Spec.Seed.expandKeySig) (nm := "scratch") (e := .u64) (n := 103)
+    (post := Proof.Seed.expandKeyPost X86.abi.ptrBits) (bytes := 840) (words := 206)
+    Proof.Seed.X86.expandKey_verified (by decide) (by decide) (by lit_decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Proof.Seed.expandKeyPost_local _) (Proof.Seed.expandKeyPostOut_local _)
+    Proof.Seed.X86.expandKeyFrameSat_pre rfl
 
 /-- `vg_seed_ecb_encrypt` as emitted (`Impl.Seed.X86.Fn.ecb .encrypt`) meets its contract in
 constant time and returns without secret residue. -/

@@ -9,10 +9,13 @@ public import VerifiedGarbage.Impl.Scrub.X86
 # SEED on x86 (32-bit): the functions as emitted
 
 Each function runs with its working space in a frame on the stack, wiped
-before it returns (`withStackScratchWiped`), and is followed by its cleanup
-(`Impl.Scrub.X86.scrubF 0 W`): the `W` bytes of stack below `esp` that its
-contract reserves zeroed, and the registers a callee may change cleared, so
-that it returns without secret residue. None returns a result.
+before it returns (`withStackScratchWiped`), and is followed by its cleanup,
+so that it returns without secret residue. Key expansion calls nothing in
+its frame, which its wipe leaves holding no secret: its cleanup clears the
+registers a callee may change alone (`Impl.Scrub.X86.scrub 0`). The others
+call or push below their frame: their cleanup (`Impl.Scrub.X86.scrubF 0 W`)
+also zeroes the `W` bytes of stack below `esp` that their contracts reserve.
+None returns a result.
 -/
 
 @[expose] public section
@@ -23,7 +26,7 @@ open VG.X86
 open Impl.StackScratch.X86 (withStackScratchWiped)
 
 /-- `vg_seed_expand_key`, as emitted. -/
-def expandKey : Prog isa := Impl.Scrub.X86.scrubF 0 840 (withStackScratchWiped 840 2 206 Seed.X86.expandKey)
+def expandKey : Prog isa := Impl.Scrub.X86.scrub 0 (withStackScratchWiped 840 2 206 Seed.X86.expandKey)
 
 /-- `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`, as emitted. -/
 def ecb (d : Spec.Seed.Direction) : Prog isa :=
