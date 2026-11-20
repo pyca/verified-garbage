@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.Residue.AArch64.Writes
 
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -12,30 +13,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 @[expose] public section
 
 namespace VG.AArch64
-
-/-- Destination of an AdvSIMD instruction. -/
-def VOp.dst : VOp → VReg
-  | .mov d .. | .movi0 d | .dup _ d .. | .ins _ d .. | .dupS d .. => d
-  | .logic _ d .. | .not d .. | .add _ d .. | .sub _ d .. | .shift _ _ d .. => d
-  | .cmp _ _ d .. | .addv _ d _ | .uaddlv _ d _ => d
-  | .ext d .. | .rev _ d .. | .perm _ _ d .. | .tbl d .. => d
-  | .dupE _ d .. | .insE _ d .. | .cmeq _ d .. | .bsel _ d .. | .tblN _ _ d .. => d
-  | .umull _ d .. | .umlal _ d .. | .mul d .. | .mla d .. | .mls d .. => d
-  | .umullH _ d .. | .umlalH _ d .. => d
-  | .sqdmulh d .. | .umin d .. | .mulH _ d .. | .mulHE _ d .. | .pmull _ d .. | .pmull8 _ d .. => d
-  | .aese d .. | .aesd d .. | .aesmc d .. | .aesimc d .. => d
-  | .sha1 _ d .. | .sha1h d .. | .sha1su0 d .. | .sha1su1 d .. => d
-  | .sha256h d .. | .sha256h2 d .. | .sha256su0 d .. | .sha256su1 d .. => d
-  | .sha512h d .. | .sha512h2 d .. | .sha512su0 d .. | .sha512su1 d .. => d
-  | .sm4e d .. | .sm4ekey d .. => d
-  | .sm3ss1 d .. | .sm3tt _ d .. | .sm3partw1 d .. | .sm3partw2 d .. => d
-  | .eor3 d .. | .bcax d .. | .rax1 d .. | .xar d .. | .xarS d .. => d
-
-/-- The vector register an instruction writes, if any. -/
-def vdstOf : Instr → Option VReg
-  | .vop op => some op.dst
-  | .ldrq d .. | .ldrqTbl d .. => some d
-  | _ => none
 
 theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
     (h : op.eval s = some (d, v)) : d = op.dst := by

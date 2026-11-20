@@ -309,4 +309,26 @@ theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) (cl : Clear) {W
   rw [e] at hn
   exact ⟨h.verified, hn⟩
 
+/-- `c` with its cleanup over `W` bytes of stack, the registers it may write
+cleared (`Clear.of`, read off the code), meets `c`'s contract in constant
+time and returns without secret residue, if no instruction of it, or of what
+it calls, writes PSTATE.DIT and it calls nothing indirectly (`sideAll`): of a
+function generic over the implementations of the functions it calls, which
+states no registers. -/
+theorem verifiedScrubbedOf {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv : Verified target c k)
+    (hok : ScrubAllOk k W rb) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hd : 16 * c.aarch64Depth ≤ W)
+    (hs : sideAll (fun i => !i.writesDit) c = true) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
+    VerifiedScrubbed target (scrubAll W rb (Clear.of c) c) k rb :=
+  ⟨Verified.scrubAll (Clear.of_wf _) hv hW hrb hok,
+    noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) hv hW hok.sp hd
+      (Code.all_of_allInstrs (allInstrs_of_sideAll hs))
+      (fun _ _ _ n hn => by rw [inames_of_noIcall (noIcall_of_sideAll hs)] at hn; cases hn) hrb⟩
+
+/-- `sideAll` of code in a frame of its own (`withStackScratch`). -/
+theorem sideAll_withStackScratch {p : Instr → Bool} {bytes : Nat} {r : Reg} {c : Prog isa}
+    (ha : p (.alloc bytes) = true) (hr : p (.addSp r 0) = true) (hf : p (.free bytes) = true)
+    (hc : sideAll p c = true) : sideAll p (Impl.StackScratch.AArch64.withStackScratch bytes r c) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, sideAll, Code.allInstrs_eq, instrs, List.all_cons,
+    List.all_nil, ha, hr, hf, hc, Bool.and_self]
+
 end VG.AArch64.ScrubAll
