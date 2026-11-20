@@ -14,7 +14,11 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.X25519.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.X25519.exchangeApi.artifact PPC64LE.target Proof.X25519.PPC64LE.Scrub.exchangeReg,
-  Spec.X25519.x25519BaseApi.artifact PPC64LE.target Proof.X25519.PPC64LE.Scrub.baseReg]
+  Spec.X25519.exchangeApi.artifact PPC64LE.target {
+    code := Impl.X25519.PPC64LE.Fn.exchange
+    verified := .scrubbed Proof.X25519.PPC64LE.Scrub.exchange_scrubbed },
+  Spec.X25519.x25519BaseApi.artifact PPC64LE.target {
+    code := Impl.X25519.PPC64LE.Fn.base
+    verified := .scrubbed Proof.X25519.PPC64LE.Scrub.base_scrubbed }]
 
 end VG.Artifacts.X25519.PPC64LE
