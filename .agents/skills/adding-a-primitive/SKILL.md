@@ -196,6 +196,24 @@ instructions in an ISA model) go in their own PR before either.
    `lit_decide`), the function proves its own shape once for any variant
    (`CodeOk.call`, `CodeOk.seq`, `CodeOk.alloc`, …), and `scrubSideF_of`
    joins them.
+   ARM code with frames that wipes its own working space
+   (`withRegScratchWiped`, `withStackScratchWiped`) uses
+   `Impl.Residue.Arm.scrubSel rb n ws c` instead (`Impl/Residue/ArmSel.lean`),
+   which zeroes, of those `n` bytes, only the words `ws` that the residue
+   analysis (`Arm.rtaint`, `Proof/Framework/Arm/ResidueTaint.lean`) finds may
+   differ between two runs, a store each, and none for no word. Its theorem
+   comes from `Arm.Scrub.verifiedScrubbedSel` (`selSide n ws W`, by
+   `decide`, and `⟨_, by taint_decide_ct⟩`, the analysis of the code with its
+   cleanup ending in `done`; `Proof/Framework/Arm/ScrubSel.lean`; `Fn` in
+   `Impl/Camellia/Arm/Fn.lean`, `Proof/Camellia/Arm/Scrub.lean`). Find `ws`
+   by running the analysis on the code in compiled code (`TaintCT.hint` in
+   an `#eval`: the bits of the final taint's `sec`, as words) and name them
+   as a literal next to the function. `scrubF` stays the cleanup where the
+   analysis leaves most of the stack secret (code that does not wipe its
+   own frames: `scrubF`'s loop of eight stores is then the shorter code),
+   for code that calls the functions of its tables (`TaintCT.check` has no
+   indirect call), and for code generic over a variant until each variant's
+   analysis is checked.
    On 64-bit RISC-V the cleanup is `Impl.Scrub.RISCV64.scrub rb W c`, which
    zeroes the `W` bytes of stack the code's frames use, or
    `Impl.Scrub.RISCV64.scrubSel rb fs c`, which zeroes only the runs `fs`
