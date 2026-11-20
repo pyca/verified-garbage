@@ -73,6 +73,8 @@ def variant : PublicImpl where
   nosp := noSp_of (by lit_decide)
   depth := by lit_decide
   spSafe := Code.all_of_spTest (by lit_decide)
+  level := .evex
+  side := by lit_decide
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
 

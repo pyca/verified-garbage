@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A precomputed public operation for verified RSA callers -/
@@ -22,6 +23,11 @@ structure PublicImpl where
   nosp : NoSp code
   depth : code.depth = 0
   spSafe : code.all (fun i => !isa.writesSp i) = true
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide code level.level 0 = true
   suffix : String
   features : List String
 

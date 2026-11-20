@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64.Adx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
@@ -132,6 +133,8 @@ def variant : CrtImpl where
       (CrtExpL.w5S_ct Mont.fnAdx MontS.fnLazyAdx))
   nospP := noSp_of (by decide +kernel)
   spSafeP := Code.all_of_spTest (by decide +kernel)
+  level := .avx
+  sideP := by lit_decide
   suffix := "_adx"
   features := ["avx", "avx2", "bmi2", "adx"]
 
