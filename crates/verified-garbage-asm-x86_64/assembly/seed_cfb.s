@@ -309,9 +309,11 @@ vg_seed_cfb128_encrypt:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-1552]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+1552]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-1544]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+1544]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -320,7 +322,6 @@ vg_seed_cfb128_encrypt:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -679,9 +680,11 @@ vg_seed_cfb128_decrypt:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-1552]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+1552]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-1544]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+1544]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -690,7 +693,6 @@ vg_seed_cfb128_decrypt:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1015,9 +1017,11 @@ vg_seed_cfb128_encrypt_final:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-1552]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+1552]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-1544]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+1544]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1026,7 +1030,6 @@ vg_seed_cfb128_encrypt_final:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1353,9 +1356,11 @@ vg_seed_cfb128_decrypt_final:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-1552]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+1552]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-1544]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+1544]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1364,6 +1369,5 @@ vg_seed_cfb128_decrypt_final:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

@@ -241,10 +241,28 @@ instructions in an ISA model) go in their own PR before either.
    `Artifacts/Sha3/PPC64LE.lean`). `PPC64LE.Scrub.scrubOf` and
    `scrubWipedOf` build the registration of the same in `Proof/`, for the
    families not yet converted: never use them in new code.
+   On x86-64 the cleanup is `Impl.Scrub.X86_64.scrubSel v rb n rs`, which
+   clears every vector register at the level `v` (at `evex`, for code that
+   writes `zmm16`–`zmm31`, those too) and every caller-saved register but
+   the result's `rb` bits, and of the `n` bytes of stack, in chunks whose
+   16-byte stores are aligned (`chunksA`), zeroes only the runs of granules
+   `rs` that the residue analysis (`X86_64.RTaint`) finds may differ between
+   two runs; or `scrubAll v rb n`, which zeroes all of them, for code the
+   analysis does not follow. The runs are literals in the function's `Fn`
+   definition (`RScrub.keepRuns` computes them, by `#eval`), and the theorem
+   comes from `X86_64.Scrub.verifiedScrubbedSel` (the analysis by
+   `taint_decide`) or `verifiedScrubbedAll`, given `PostOut`, and its
+   `spSafe` from the code's (`Scrub.scrubKs_spSafe`), which the registration
+   binds too (`Impl/Rc2/X86_64/Fn.lean`, `Proof/Rc2/X86_64/Scrub.lean`,
+   `Artifacts/Rc2/X86_64.lean`; `Proof/Framework/X86_64/ScrubFn.lean`).
+   Neither writes MXCSR: code must leave it as two runs found it
+   (`scrubSideG`'s `mxSameB`). The families not yet converted build their
+   registration in `Proof/` with the older forms below: never use them in
+   new code.
    On a target whose `Proof/Framework/` does not yet state its scrub as a
    theorem about named code, build the registration in `Proof/` with that
    target's form and let the registration file bind it by name, never
-   call the form there. On x86-64, build its
+   call the form there. On x86-64 those families build their
    registration in `Proof/` and scrub it with `X86_64.Scrub.scrubReg`,
    whose code clears what the residue analysis (`X86_64.RTaint`) finds may
    hold secrets and which gives that proof; the registration file binds the

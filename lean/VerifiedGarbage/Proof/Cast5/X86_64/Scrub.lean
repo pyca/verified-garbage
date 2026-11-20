@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.Cast5.X86_64.Fn
 public import VerifiedGarbage.Spec.Cast5.Contract
 public import VerifiedGarbage.Spec.Cast5.Cbc
 public import VerifiedGarbage.Spec.Cast5.Cfb
@@ -190,85 +192,203 @@ theorem ofbFinalOut (stack : Nat) :
 
 open VG.X86_64.RScrub
 
-def expandKeyReg : Registration Spec.Cast5.expandKeyApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.keyConsts
-    code := Impl.Cast5.X86_64.expandKey
-    stack := 0
-    verified := Proof.Cast5.X86_64.expandKey_verified } (expandKeyOut _)
+/-! ## The functions as emitted -/
 
-def ecbEncryptReg : Registration Spec.Cast5.ecbEncryptApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.ecbConsts
-    code := Impl.Cast5.X86_64.ecbEncrypt
-    stack := 0
-    verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.X86_64.ecbEncrypt_verified } (ecbOut .encrypt _)
+theorem expandKey_codeSp : (Impl.Cast5.X86_64.expandKey).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-def ecbDecryptReg : Registration Spec.Cast5.ecbDecryptApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.ecbConsts
-    code := Impl.Cast5.X86_64.ecbDecrypt
-    stack := 0
-    verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.X86_64.ecbDecrypt_verified } (ecbOut .decrypt _)
+/-- `Spec.Cast5.expandKeyApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.expandKey`) meets its contract in
+constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.expandKey (Spec.Cast5.expandKeyApi.contract (X86_64.abi.withConsts Impl.Cast5.keyConsts) 0) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.expandKeyApi)
+    { code := Impl.Cast5.X86_64.expandKey
+      stack := 0
+      verified := Proof.Cast5.X86_64.expandKey_verified
+      consts := Impl.Cast5.keyConsts
+      spSafe := expandKey_codeSp }
+    .sse (expandKeyOut _)
 
-def cbcEncryptChainedReg : Registration Spec.Cast5.cbcEncryptChainedApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cbcEncryptChained
-    stack := 240
-    verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.X86_64.cbcEncryptChained_framed }
-    (cbcEncryptOut _)
+theorem expandKey_spSafe : Impl.Cast5.X86_64.Fn.expandKey.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe expandKey_codeSp
 
-def cbcDecryptChainedReg : Registration Spec.Cast5.cbcDecryptChainedApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cbcDecryptChained
-    stack := 240
-    verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.X86_64.cbcDecryptChained_framed }
-    (cbcDecryptOut _)
+theorem ecbEncrypt_codeSp : (Impl.Cast5.X86_64.ecbEncrypt).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-def cfbEncryptReg : Registration Spec.Cast5.cfbEncryptApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbEncrypt
-    stack := 240
-    verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.X86_64.cfbEncrypt_framed } (cfbEncryptOut _)
+/-- `Spec.Cast5.ecbEncryptApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.ecbEncrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ecbEncrypt_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.ecbEncrypt (Spec.Cast5.ecbEncryptApi.contract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 0) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.ecbEncryptApi)
+    { code := Impl.Cast5.X86_64.ecbEncrypt
+      stack := 0
+      verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.X86_64.ecbEncrypt_verified
+      consts := Impl.Cast5.ecbConsts
+      spSafe := ecbEncrypt_codeSp }
+    .sse (ecbOut .encrypt _)
 
-def cfbDecryptReg : Registration Spec.Cast5.cfbDecryptApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbDecrypt
-    stack := 240
-    verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.X86_64.cfbDecrypt_framed } (cfbDecryptOut _)
+theorem ecbEncrypt_spSafe : Impl.Cast5.X86_64.Fn.ecbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ecbEncrypt_codeSp
 
-def cfbEncryptFinalReg : Registration Spec.Cast5.cfbEncryptFinalApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbEncryptFinal
-    stack := 240
-    verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.X86_64.cfbEncryptFinal_framed }
-    (cfbEncryptFinalOut _)
+theorem ecbDecrypt_codeSp : (Impl.Cast5.X86_64.ecbDecrypt).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-def cfbDecryptFinalReg : Registration Spec.Cast5.cfbDecryptFinalApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbDecryptFinal
-    stack := 240
-    verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.X86_64.cfbDecryptFinal_framed }
-    (cfbDecryptFinalOut _)
+/-- `Spec.Cast5.ecbDecryptApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.ecbDecrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ecbDecrypt_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.ecbDecrypt (Spec.Cast5.ecbDecryptApi.contract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 0) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.ecbDecryptApi)
+    { code := Impl.Cast5.X86_64.ecbDecrypt
+      stack := 0
+      verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.X86_64.ecbDecrypt_verified
+      consts := Impl.Cast5.ecbConsts
+      spSafe := ecbDecrypt_codeSp }
+    .sse (ecbOut .decrypt _)
 
-def ofbReg : Registration Spec.Cast5.ofbApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.ofb
-    stack := 240
-    verified := Proof.Cast5.ofb_keyed Proof.Cast5.X86_64.ofb_framed } (ofbOut _)
+theorem ecbDecrypt_spSafe : Impl.Cast5.X86_64.Fn.ecbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ecbDecrypt_codeSp
 
-def ofbFinalReg : Registration Spec.Cast5.ofbFinalApi X86_64.target :=
-  withScrubAllM {
-    consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.ofbFinal
-    stack := 240
-    verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.X86_64.ofbFinal_framed } (ofbFinalOut _)
+theorem cbcEncryptChained_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cbcEncryptChained).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
+/-- `Spec.Cast5.cbcEncryptChainedApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.cbcEncryptChained`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cbcEncryptChained_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.cbcEncryptChained (Spec.Cast5.cbcEncryptChainedApi.contract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.cbcEncryptChainedApi)
+    { code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cbcEncryptChained
+      stack := 240
+      verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.X86_64.cbcEncryptChained_framed
+      consts := Impl.Cast5.ecbConsts
+      spSafe := cbcEncryptChained_codeSp }
+    .sse (cbcEncryptOut _)
+
+theorem cbcEncryptChained_spSafe : Impl.Cast5.X86_64.Fn.cbcEncryptChained.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cbcEncryptChained_codeSp
+
+theorem cbcDecryptChained_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cbcDecryptChained).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Cast5.cbcDecryptChainedApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.cbcDecryptChained`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cbcDecryptChained_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.cbcDecryptChained (Spec.Cast5.cbcDecryptChainedApi.contract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.cbcDecryptChainedApi)
+    { code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cbcDecryptChained
+      stack := 240
+      verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.X86_64.cbcDecryptChained_framed
+      consts := Impl.Cast5.ecbConsts
+      spSafe := cbcDecryptChained_codeSp }
+    .sse (cbcDecryptOut _)
+
+theorem cbcDecryptChained_spSafe : Impl.Cast5.X86_64.Fn.cbcDecryptChained.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cbcDecryptChained_codeSp
+
+theorem cfbEncrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbEncrypt).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Cast5.cfbEncryptApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.cfbEncrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbEncrypt_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.cfbEncrypt (Spec.Cast5.cfbEncryptApi.contract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.cfbEncryptApi)
+    { code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbEncrypt
+      stack := 240
+      verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.X86_64.cfbEncrypt_framed
+      consts := Impl.Cast5.ecbConsts
+      spSafe := cfbEncrypt_codeSp }
+    .sse (cfbEncryptOut _)
+
+theorem cfbEncrypt_spSafe : Impl.Cast5.X86_64.Fn.cfbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbEncrypt_codeSp
+
+theorem cfbDecrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbDecrypt).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Cast5.cfbDecryptApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.cfbDecrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbDecrypt_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.cfbDecrypt (Spec.Cast5.cfbDecryptApi.contract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.cfbDecryptApi)
+    { code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbDecrypt
+      stack := 240
+      verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.X86_64.cfbDecrypt_framed
+      consts := Impl.Cast5.ecbConsts
+      spSafe := cfbDecrypt_codeSp }
+    .sse (cfbDecryptOut _)
+
+theorem cfbDecrypt_spSafe : Impl.Cast5.X86_64.Fn.cfbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbDecrypt_codeSp
+
+theorem cfbEncryptFinal_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbEncryptFinal).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Cast5.cfbEncryptFinalApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.cfbEncryptFinal`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbEncryptFinal_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.cfbEncryptFinal (Spec.Cast5.cfbEncryptFinalApi.contract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.cfbEncryptFinalApi)
+    { code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbEncryptFinal
+      stack := 240
+      verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.X86_64.cfbEncryptFinal_framed
+      consts := Impl.Cast5.ecbConsts
+      spSafe := cfbEncryptFinal_codeSp }
+    .sse (cfbEncryptFinalOut _)
+
+theorem cfbEncryptFinal_spSafe : Impl.Cast5.X86_64.Fn.cfbEncryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbEncryptFinal_codeSp
+
+theorem cfbDecryptFinal_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbDecryptFinal).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Cast5.cfbDecryptFinalApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.cfbDecryptFinal`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbDecryptFinal_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.cfbDecryptFinal (Spec.Cast5.cfbDecryptFinalApi.contract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.cfbDecryptFinalApi)
+    { code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.cfbDecryptFinal
+      stack := 240
+      verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.X86_64.cfbDecryptFinal_framed
+      consts := Impl.Cast5.ecbConsts
+      spSafe := cfbDecryptFinal_codeSp }
+    .sse (cfbDecryptFinalOut _)
+
+theorem cfbDecryptFinal_spSafe : Impl.Cast5.X86_64.Fn.cfbDecryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbDecryptFinal_codeSp
+
+theorem ofb_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.ofb).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Cast5.ofbApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.ofb`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.ofb (Spec.Cast5.ofbApi.contract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.ofbApi)
+    { code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.ofb
+      stack := 240
+      verified := Proof.Cast5.ofb_keyed Proof.Cast5.X86_64.ofb_framed
+      consts := Impl.Cast5.ecbConsts
+      spSafe := ofb_codeSp }
+    .sse (ofbOut _)
+
+theorem ofb_spSafe : Impl.Cast5.X86_64.Fn.ofb.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ofb_codeSp
+
+theorem ofbFinal_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.ofbFinal).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Cast5.ofbFinalApi`'s function as emitted (`Impl.Cast5.X86_64.Fn.ofbFinal`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed target Impl.Cast5.X86_64.Fn.ofbFinal (Spec.Cast5.ofbFinalApi.contract (X86_64.abi.withConsts Impl.Cast5.ecbConsts) 240) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.ofbFinalApi)
+    { code := Impl.StackScratch.X86_64.withStackScratchWiped 240 .r9 0 Impl.Cast5.X86_64.ofbFinal
+      stack := 240
+      verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.X86_64.ofbFinal_framed
+      consts := Impl.Cast5.ecbConsts
+      spSafe := ofbFinal_codeSp }
+    .sse (ofbFinalOut _)
+
+theorem ofbFinal_spSafe : Impl.Cast5.X86_64.Fn.ofbFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ofbFinal_codeSp
 end VG.Proof.Cast5.X86_64.Scrub

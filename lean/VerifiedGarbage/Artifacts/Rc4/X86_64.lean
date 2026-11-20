@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Rc4.X86_64.Fn
 public import VerifiedGarbage.Proof.Rc4.X86_64.Verified
 public import VerifiedGarbage.Proof.Rc4.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -13,7 +14,7 @@ import VerifiedGarbage.Proof.Rc4.X86_64.Lit
 namespace VG.Artifacts.Rc4.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Rc4.initApi.artifact X86_64.target Proof.Rc4.X86_64.Scrub.initReg,
-  Spec.Rc4.applyApi.artifact X86_64.target Proof.Rc4.X86_64.Scrub.applyReg]
+  Spec.Rc4.initApi.artifact X86_64.target { code := Impl.Rc4.X86_64.Fn.init, verified := .scrubbed Proof.Rc4.X86_64.Scrub.init_scrubbed, spSafe := Proof.Rc4.X86_64.Scrub.init_spSafe },
+  Spec.Rc4.applyApi.artifact X86_64.target { code := Impl.Rc4.X86_64.Fn.apply, verified := .scrubbed Proof.Rc4.X86_64.Scrub.apply_scrubbed, spSafe := Proof.Rc4.X86_64.Scrub.apply_spSafe }]
 
 end VG.Artifacts.Rc4.X86_64

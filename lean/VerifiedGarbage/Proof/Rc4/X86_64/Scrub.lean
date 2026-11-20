@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.Rc4.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Rc4.Contract
@@ -49,27 +51,37 @@ theorem applyOut : PostOut (Spec.Rc4.applyContract X86_64.abi 0) (Spec.Rc4.apply
 abbrev initCode : Prog isa :=
   Impl.Rc4.X86_64.init
 
-def initKs : List Nat := keep_for% Spec.Rc4.initApi.sig 0 initCode []
+/-! ## The functions as emitted -/
 
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Rc4.initApi.sig 0 []) initCode
-      h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
+theorem init_codeSp : (Impl.Rc4.X86_64.init).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_rc4_init`. -/
-def initReg : Registration Spec.Rc4.initApi X86_64.target :=
-  scrubOf {
-    code := initCode
-    verified := Proof.Rc4.X86_64.init_verified } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] initOut [] (pubOk_nil _) ⟨initKs, initOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Rc4.initApi`'s function as emitted (`Impl.Rc4.X86_64.Fn.init`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Rc4.X86_64.Fn.init (Spec.Rc4.initApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedSel (api := Spec.Rc4.initApi)
+    { code := initCode
+      verified := Proof.Rc4.X86_64.init_verified
+      spSafe := init_codeSp }
+    .sse [] initOut (RScrub.pubOk_nil _) (by taint_decide)
 
-/-- `vg_rc4_apply`, whose leak the residue analysis does not follow: with no
-stack, the registers alone cleared (`Scrub.withScrubAll`). -/
-def applyReg : Registration Spec.Rc4.applyApi X86_64.target :=
-  scrubAllOf {
-    code := Impl.Rc4.X86_64.apply
-    verified := Proof.Rc4.X86_64.apply_verified } .sse false [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] applyOut
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem init_spSafe : Impl.Rc4.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
 
+theorem apply_codeSp : (Impl.Rc4.X86_64.apply).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Rc4.applyApi`'s function as emitted (`Impl.Rc4.X86_64.Fn.apply`) meets its contract in
+constant time and returns without secret residue. -/
+theorem apply_scrubbed :
+    VerifiedScrubbed target Impl.Rc4.X86_64.Fn.apply (Spec.Rc4.applyApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedAll (api := Spec.Rc4.applyApi)
+    { code := Impl.Rc4.X86_64.apply
+      verified := Proof.Rc4.X86_64.apply_verified
+      spSafe := apply_codeSp }
+    .sse applyOut
+
+theorem apply_spSafe : Impl.Rc4.X86_64.Fn.apply.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe apply_codeSp
 end VG.Proof.Rc4.X86_64.Scrub

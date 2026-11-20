@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Fn
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbFinalVerified
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Scrub
@@ -17,9 +18,9 @@ public import VerifiedGarbage.Proof.Variants.TripleDesEcb.X86_64
 namespace VG.Artifacts.TripleDesCfb.X86_64
 
 def direct : List Artifact := [
-  Spec.TripleDes.cfbEncryptApi.artifact X86_64.target Proof.TripleDes.X86_64.Scrub.cfbEncryptReg,
-  Spec.TripleDes.cfbEncryptFinalApi.artifact X86_64.target Proof.TripleDes.X86_64.Scrub.cfbEncryptFinalReg,
-  Spec.TripleDes.cfbDecryptFinalApi.artifact X86_64.target Proof.TripleDes.X86_64.Scrub.cfbDecryptFinalReg]
+  Spec.TripleDes.cfbEncryptApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.cfbEncrypt, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.cfbEncrypt_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.cfbEncrypt_spSafe },
+  Spec.TripleDes.cfbEncryptFinalApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.cfbEncryptFinal, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.cfbEncryptFinal_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.cfbEncryptFinal_spSafe },
+  Spec.TripleDes.cfbDecryptFinalApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.cfbDecryptFinal, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.cfbDecryptFinal_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.cfbDecryptFinal_spSafe }]
 
 end VG.Artifacts.TripleDesCfb.X86_64
 

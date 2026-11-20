@@ -529,17 +529,19 @@ vg_blowfish_cfb64_encrypt:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-96]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+96]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-88]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+88]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
+	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1069,17 +1071,19 @@ vg_blowfish_cfb64_decrypt:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-96]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+96]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-88]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+88]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
+	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1624,17 +1628,19 @@ vg_blowfish_cfb64_encrypt_final:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-96]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+96]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-88]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+88]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
+	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -2180,16 +2186,18 @@ vg_blowfish_cfb64_decrypt_final:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-96]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+96]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-88]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+88]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
+	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

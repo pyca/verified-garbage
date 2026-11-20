@@ -936,9 +936,11 @@ vg_sm4_cfb128_encrypt:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-3216]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+3216]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-3208]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+3208]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -947,7 +949,6 @@ vg_sm4_cfb128_encrypt:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1917,10 +1918,27 @@ vg_sm4_cfb128_decrypt:
 	mov QWORD PTR [rsp+3200], r11
 	lea rsp, [rsp+3208]
 	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-3216]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+3216]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-3208]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+3208]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1929,7 +1947,6 @@ vg_sm4_cfb128_decrypt:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -2881,9 +2898,11 @@ vg_sm4_cfb128_encrypt_final:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-3216]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+3216]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-3208]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+3208]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -2892,7 +2911,6 @@ vg_sm4_cfb128_encrypt_final:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -3846,9 +3864,11 @@ vg_sm4_cfb128_decrypt_final:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-3216]
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+3216]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-3208]
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+3208]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -3857,6 +3877,5 @@ vg_sm4_cfb128_decrypt_final:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
