@@ -75,11 +75,12 @@ macro "fill_calls_refl" : tactic => `(tactic| repeat' (first
 code too large for `repeat'`'s recursion, which follows one goal's subgoals
 before the next goal's; without `Fill.if_pos` and `Fill.if_neg`, whose
 `assumption` would compare every hypothesis with the condition, evaluating
-the large ones. -/
+the large ones. `Fill.seq` first: most of a function's code is sequences,
+and each alternative that fails unfolds the goal again. -/
 macro "fill_calls_wide" : tactic => `(tactic| repeat (any_goals (first
+  | refine Fill.seq ?_ ?_
   | exact Fill.block _
   | exact Fill.hole _ _ (by assumption)
-  | refine Fill.seq ?_ ?_
   | refine Fill.ite _ ?_ ?_
   | refine Fill.loop _ ?_
   | refine Fill.call _ _ ?_
