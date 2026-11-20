@@ -78,6 +78,17 @@ vg_x25519_exchange:
 	lsr r0, r3, #31
 	eor r0, r0, #1
 	ldr lr, [sp], #4
+	sub sp, sp, #8
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #8
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_x25519_exchange_umaal:
@@ -154,6 +165,17 @@ vg_x25519_exchange_umaal:
 	lsr r0, r3, #31
 	eor r0, r0, #1
 	ldr lr, [sp], #4
+	sub sp, sp, #8
+	add r12, sp, #0
+	mov r2, #0
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #8
+	mov r1, #0
+	mov r2, #0
+	mov r3, #0
+	mov r12, #0
+	cmp r2, r2
 	bx lr
 
 vg_x25519_base_umaal:
