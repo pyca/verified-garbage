@@ -183,36 +183,4 @@ theorem cachedKeySearchOk (stack : Nat) :
     exact h
 
 
-/-! ## The registrations with tables of constants -/
-
-/-- The registers the tails of the functions that only multiply clear: those
-their code may write. -/
-def clearMul : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-   [.v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v31], []⟩
-
-/-- The registers the tails of the functions that select from a window with
-vector instructions clear: those their code may write. -/
-def clearWindow : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
-    .v26, .v27, .v28, .v29, .v30, .v31], []⟩
-
-/-- `vg_ffdh_generate_key_precompute`, scrubbed. -/
-def precomputeReg : Registration Spec.Ffdh.generationPrecomputeApi AArch64.target :=
-  ScrubAll.scrubAllOf {
-    code := Impl.Ffdh.AArch64.Cached.Precompute.code Proof.Bignum.AArch64.Mont.productEight.mm
-    verified := Proof.Ffdh.AArch64.Cached.precompute_verified _
-    consts := Impl.Ffdh.AArch64.Cached.Policy.tableConsts
-    stack := 0 } clearMul (generationPrecomputeOk _ _ _) (by dsimp only [ScrubAll.retBitsOf]; lit_decide)
-
-/-- `vg_ffdh_check_domain`, scrubbed. -/
-def checkDomainReg : Registration Spec.Ffdh.checkDomainApi AArch64.target :=
-  ScrubAll.scrubAllOf {
-    code := Impl.Ffdh.AArch64.VettedValidation.code Proof.Bignum.AArch64.WindowFive.called.code
-      Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
-    verified := Proof.Ffdh.AArch64.VettedValidation.verified _ _ _
-    consts := Impl.Ffdh.AArch64.Cached.Policy.tableConsts
-    stack := 0 } clearWindow (checkDomainOk _ _ _) (by dsimp only [ScrubAll.retBitsOf]; lit_decide)
-
 end VG.Proof.Ffdh.AArch64.Scrub
