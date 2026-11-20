@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubSel
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Sm4Gcm.RISCV64.Fn
 public import VerifiedGarbage.Proof.Sm4Gcm.RISCV64.Verified
 public import VerifiedGarbage.Proof.AesGcm.RISCV64.Verified
 import VerifiedGarbage.Proof.Sm4Gcm.Scratch
@@ -37,12 +38,12 @@ pointers it cannot place, which makes every frame then allocated secret, `W`
 among them, and the callees' frames hold the keystream, the GHASH table and
 the key schedule's working space. So the tail after the code wipes the whole
 stack its frames use, its contract's `stack`, and clears the caller-saved
-registers (`RISCV64.Scrub.scrubOf`).
+registers (`RISCV64.Scrub.verifiedScrubbed`).
 
 `vg_sm4_gcm_stream_init` and `vg_sm4_gcm_stream_aad`, AES-GCM's functions,
 call only `vg_ghash`, whose table does not reach the bottom 400 bytes of
 their 4608: the tail clears only the 526 doublewords above them
-(`RISCV64.Scrub.scrubSelOf`, `scrubSel_noResidue`).
+(`RISCV64.Scrub.verifiedScrubbedSelT`, `scrubSel_noResidue`).
 
 Their postconditions read the memory on return only within their buffers, by
 the target-independent lemmas the frames' proofs use
@@ -103,81 +104,158 @@ theorem streamVerifyOut (stack : Nat) :
       (Spec.Sm4.Gcm.streamVerifySig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4Gcm.streamVerifyPostOut_local _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-variable [VG.Proof.Gcm.RISCV64.GhashLaw]
+/-- What the cleanup needs of `vg_sm4_gcm_init`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem init_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratch 2560 .a2 Impl.Sm4Gcm.RISCV64.init) 5808 0 []
+      = true := by
+  lit_decide
 
-/-- `Spec.Sm4.Gcm.initApi`. -/
-def initReg : Registration Spec.Sm4.Gcm.initApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a2 Impl.Sm4Gcm.RISCV64.init
+/-- `vg_sm4_gcm_init` as emitted (`Impl.Sm4Gcm.RISCV64.Fn.init`) meets its contract in constant
+time and returns without secret residue: the theorem its registration binds. -/
+theorem init_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.init
+      (Spec.Sm4.Gcm.initContract RISCV64.abi 5808) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.Gcm.initApi) (W := 5808)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a2 Impl.Sm4Gcm.RISCV64.init
       verified := init_framed }
-    (initOut _)
+    (initOut _) init_scrubSide
 
-/-- `Spec.Sm4.Gcm.sealApi`. -/
-def sealReg : Registration Spec.Sm4.Gcm.sealApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.Sm4Gcm.RISCV64.«seal»
+/-- What the cleanup needs of `vg_sm4_gcm_seal`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem seal_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.Sm4Gcm.RISCV64.«seal») 5824 0 []
+      = true := by
+  lit_decide
+
+/-- `vg_sm4_gcm_seal` as emitted (`Impl.Sm4Gcm.RISCV64.Fn.«seal»`) meets its contract in constant
+time and returns without secret residue: the theorem its registration binds. -/
+theorem seal_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.«seal»
+      (Spec.Sm4.Gcm.sealContract RISCV64.abi 5824) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.Gcm.sealApi) (W := 5824)
+    { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.Sm4Gcm.RISCV64.«seal»
       verified := seal_framed }
-    (sealOut _)
+    (sealOut _) seal_scrubSide
 
-/-- `Spec.Sm4.Gcm.openApi`. -/
-def openReg : Registration Spec.Sm4.Gcm.openApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 Impl.Sm4Gcm.RISCV64.«open»
+/-- What the cleanup needs of `vg_sm4_gcm_open`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem open_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 Impl.Sm4Gcm.RISCV64.«open») 5824 32 []
+      = true := by
+  lit_decide
+
+/-- `vg_sm4_gcm_open` as emitted (`Impl.Sm4Gcm.RISCV64.Fn.«open»`) meets its contract in constant
+time and returns without secret residue: the theorem its registration binds. -/
+theorem open_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.«open»
+      (Spec.Sm4.Gcm.openContract RISCV64.abi 5824) 32 :=
+  verifiedScrubbed (api := Spec.Sm4.Gcm.openApi) (W := 5824)
+    { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 Impl.Sm4Gcm.RISCV64.«open»
       verified := open_framed }
-    (openOut _)
+    (openOut _) open_scrubSide
 
-/-- The runs `stream_init` and `stream_aad` clear: the top 4208 bytes of their
-4608, in nested frames of 2048, 2048 and 112 bytes. -/
-def ghashRuns : List (Nat × List (Nat × Nat)) := [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])]
-
-/-- `Spec.Sm4.Gcm.streamInitApi`. -/
-def streamInitReg : Registration Spec.Sm4.Gcm.streamInitApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit
+/-- `vg_sm4_gcm_stream_init` as emitted (`Impl.Sm4Gcm.RISCV64.Fn.streamInit`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem streamInit_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamInit
+      (Spec.Gcm.streamInitContract RISCV64.abi 4608) 0 :=
+  verifiedScrubbedSelT (api := Spec.Sm4.Gcm.streamInitApi) (W := 4608)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit
       verified := Proof.AesGcm.RISCV64.streamInit_framed }
-    ghashRuns (streamInitOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (streamInitOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit) 4608 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])] []
+    (streamInitOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Sm4.Gcm.streamAadApi`. -/
-def streamAadReg : Registration Spec.Sm4.Gcm.streamAadApi RISCV64.target :=
-  scrubSelOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad
+/-- `vg_sm4_gcm_stream_aad` as emitted (`Impl.Sm4Gcm.RISCV64.Fn.streamAad`) meets its contract in
+constant time and returns without secret residue: the theorem its registration binds. -/
+theorem streamAad_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamAad
+      (Spec.Gcm.streamAadContract RISCV64.abi 4608) 0 :=
+  verifiedScrubbedSelT (api := Spec.Sm4.Gcm.streamAadApi) (W := 4608)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad
       verified := Proof.AesGcm.RISCV64.streamAad_framed }
-    ghashRuns (streamAadOut _)
-    (fun hfs hsz hrb => scrubSel_noResidue _ _ [] hfs hsz hrb (streamAadOut _) (hbp_nil _)
-      (Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad) 4608 0
-      rfl rfl rfl (by exact ⟨_, by taint_decide_ct⟩))
+    [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])] []
+    (streamAadOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Sm4.Gcm.streamEncryptApi`. -/
-def streamEncryptReg : Registration Spec.Sm4.Gcm.streamEncryptApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamEncrypt
+/-- What the cleanup needs of `vg_sm4_gcm_stream_encrypt`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem streamEncrypt_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamEncrypt) 5808 0 []
+      = true := by
+  lit_decide
+
+/-- `vg_sm4_gcm_stream_encrypt` as emitted (`Impl.Sm4Gcm.RISCV64.Fn.streamEncrypt`) meets its
+contract in constant time and returns without secret residue: the theorem its registration binds. -/
+theorem streamEncrypt_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamEncrypt
+      (Spec.Sm4.Gcm.streamCryptSig.contract RISCV64.abi
+        (post := Spec.Sm4.Gcm.streamEncryptPost RISCV64.abi.ptrBits) (writeArgs := true) (stack := 5808)) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.Gcm.streamEncryptApi) (W := 5808)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamEncrypt
       verified := streamEncrypt_framed }
-    (streamEncryptOut _)
+    (streamEncryptOut _) streamEncrypt_scrubSide
 
-/-- `Spec.Sm4.Gcm.streamDecryptApi`. -/
-def streamDecryptReg : Registration Spec.Sm4.Gcm.streamDecryptApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamDecrypt
+/-- What the cleanup needs of `vg_sm4_gcm_stream_decrypt`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem streamDecrypt_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamDecrypt) 5808 0 []
+      = true := by
+  lit_decide
+
+/-- `vg_sm4_gcm_stream_decrypt` as emitted (`Impl.Sm4Gcm.RISCV64.Fn.streamDecrypt`) meets its
+contract in constant time and returns without secret residue: the theorem its registration binds. -/
+theorem streamDecrypt_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamDecrypt
+      (Spec.Sm4.Gcm.streamCryptSig.contract RISCV64.abi
+        (post := Spec.Sm4.Gcm.streamDecryptPost RISCV64.abi.ptrBits) (writeArgs := true) (stack := 5808)) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.Gcm.streamDecryptApi) (W := 5808)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamDecrypt
       verified := streamDecrypt_framed }
-    (streamDecryptOut _)
+    (streamDecryptOut _) streamDecrypt_scrubSide
 
-/-- `Spec.Sm4.Gcm.streamFinishApi`. -/
-def streamFinishReg : Registration Spec.Sm4.Gcm.streamFinishApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.Sm4Gcm.RISCV64.streamFinish
+/-- What the cleanup needs of `vg_sm4_gcm_stream_finish`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem streamFinish_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.Sm4Gcm.RISCV64.streamFinish) 5808 0 []
+      = true := by
+  lit_decide
+
+/-- `vg_sm4_gcm_stream_finish` as emitted (`Impl.Sm4Gcm.RISCV64.Fn.streamFinish`) meets its contract
+in constant time and returns without secret residue: the theorem its registration binds. -/
+theorem streamFinish_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamFinish
+      (Spec.Sm4.Gcm.streamFinishSig.contract RISCV64.abi
+        (post := Spec.Sm4.Gcm.streamFinishPost RISCV64.abi.ptrBits) (writeArgs := true) (stack := 5808)) 0 :=
+  verifiedScrubbed (api := Spec.Sm4.Gcm.streamFinishApi) (W := 5808)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.Sm4Gcm.RISCV64.streamFinish
       verified := streamFinish_framed }
-    (streamFinishOut _)
+    (streamFinishOut _) streamFinish_scrubSide
 
-/-- `Spec.Sm4.Gcm.streamVerifyApi`. -/
-def streamVerifyReg : Registration Spec.Sm4.Gcm.streamVerifyApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamVerify
+/-- What the cleanup needs of `vg_sm4_gcm_stream_verify`'s code (`scrubSide`), by the kernel's
+evaluation, stated apart from the registration record so that `lit_decide` sees only the
+code. -/
+theorem streamVerify_scrubSide :
+    scrubSide (Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamVerify) 5808 32 []
+      = true := by
+  lit_decide
+
+/-- `vg_sm4_gcm_stream_verify` as emitted (`Impl.Sm4Gcm.RISCV64.Fn.streamVerify`) meets its contract
+in constant time and returns without secret residue: the theorem its registration binds. -/
+theorem streamVerify_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
+    VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamVerify
+      (Spec.Sm4.Gcm.streamVerifySig.contract RISCV64.abi
+        (post := Spec.Sm4.Gcm.streamVerifyPost RISCV64.abi.ptrBits) (writeArgs := true) (stack := 5808)) 32 :=
+  verifiedScrubbed (api := Spec.Sm4.Gcm.streamVerifyApi) (W := 5808)
+    { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamVerify
       verified := streamVerify_framed }
-    (streamVerifyOut _)
+    (streamVerifyOut _) streamVerify_scrubSide
 
 end VG.Proof.Sm4Gcm.RISCV64.Scrub
