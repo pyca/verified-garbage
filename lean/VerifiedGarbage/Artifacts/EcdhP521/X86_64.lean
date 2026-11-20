@@ -48,8 +48,13 @@ open VG.Proof.P521.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdh.P521.exchangeApi.artifact X86_64.target
-    (Proof.Ecdh.X86_64.P521.scrubReg hasLaw.law hasLaw.inv hasLaw.prime),
+    { code := Impl.Ecdh.X86_64.Fn.exchangeP521
+      verified := .scrubbed (Proof.Ecdh.X86_64.P521.exchange_scrubbed hasLaw.law hasLaw.inv hasLaw.prime)
+      spSafe := Proof.Ecdh.X86_64.P521.exchange_spSafe },
   Spec.Ecdh.P521.exchangeApi.artifact X86_64.target
-    (Proof.Ecdh.X86_64.P521.scrubRegAdx hasLaw.law hasLaw.inv hasLaw.prime)]
+    { suffix := "_adx"
+      code := Impl.Ecdh.X86_64.Fn.exchangeP521Adx
+      verified := .scrubbed (Proof.Ecdh.X86_64.P521.exchangeAdx_scrubbed hasLaw.law hasLaw.inv hasLaw.prime)
+      spSafe := Proof.Ecdh.X86_64.P521.exchangeAdx_spSafe }]
 
 end VG.Artifacts.EcdhP521.X86_64

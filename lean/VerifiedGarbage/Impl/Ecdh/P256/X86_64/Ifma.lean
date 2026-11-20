@@ -22,3 +22,13 @@ def mulQP256Ifma : Prog isa :=
 def exchangeP256Ifma : Prog isa := Cfg.exchangeWith Impl.Ecdsa.X86_64.p256x mulQP256Ifma
 
 end VG.Impl.Ecdh.X86_64
+
+namespace VG.Impl.Ecdh.X86_64.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ecdh_p256_ifma` as emitted: its code, then its cleanup. -/
+def exchangeP256Ifma : Prog isa := scrubAll .evex 32 16 _root_.VG.Impl.Ecdh.X86_64.exchangeP256Ifma
+
+end VG.Impl.Ecdh.X86_64.Fn

@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -229,25 +230,21 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : We
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ecdh_brainpoolp320r1` must wipe on return, from the
-residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKs : List Nat := keep_for% Spec.Ecdh.BrainpoolP320r1.exchangeApi.sig 8 exchangeBrainpoolP320r1 []
+theorem exchange_codeSp : exchangeBrainpoolP320r1.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.BrainpoolP320r1.exchangeApi.sig 8 []) exchangeBrainpoolP320r1 h).any
-      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of _ (by taint_decide)
+/-- `vg_ecdh_brainpoolp320r1` as emitted (`Impl.Ecdh.X86_64.Fn.exchangeBrainpoolP320r1`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target Impl.Ecdh.X86_64.Fn.exchangeBrainpoolP320r1 (Spec.Ecdh.BrainpoolP320r1.exchangeApi.contract X86_64.abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.BrainpoolP320r1.exchangeApi)
+    { code := exchangeBrainpoolP320r1
+      stack := 8
+      verified := ecdh_verified hL hI
+      spSafe := exchange_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _)
 
-/-- `vg_ecdh_brainpoolp320r1`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Registration Spec.Ecdh.BrainpoolP320r1.exchangeApi X86_64.target :=
-  RScrub.scrubOf {
-    code := exchangeBrainpoolP320r1
-    stack := 8
-    verified := ecdh_verified hL hI } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
-    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
-    ⟨scrubKs, scrubOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem exchange_spSafe :
+    Impl.Ecdh.X86_64.Fn.exchangeBrainpoolP320r1.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe exchange_codeSp
 
 end VG.Proof.Ecdh.X86_64.BrainpoolP320r1

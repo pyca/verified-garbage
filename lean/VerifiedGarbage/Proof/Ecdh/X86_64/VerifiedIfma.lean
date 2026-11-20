@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -218,5 +219,26 @@ theorem ecdh_verified_ifma (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstr
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 16) :=
   Verified.of_inline_ct (by lit_decide) (ecdh_x86_ifma hL hI hO hK) ecdh_ct_ifma implies16
     (fun _ h => clear_of_pre16 h) ecdh_patch16
+
+/-! ## Without secret residue -/
+
+theorem exchangeIfma_codeSp : exchangeP256Ifma.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ecdh_p256_ifma` as emitted (`Impl.Ecdh.X86_64.Fn.exchangeP256Ifma`), its cleanup
+included, meets its contract in constant time and returns without secret residue. -/
+theorem exchangeIfma_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (hK : Weierstrass.KilledByN Spec.P256.curve) :
+    VerifiedScrubbed X86_64.target Impl.Ecdh.X86_64.Fn.exchangeP256Ifma
+      (Spec.Ecdh.P256.exchangeApi.contract X86_64.abi 16) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P256.exchangeApi)
+    { code := exchangeP256Ifma
+      stack := 16
+      verified := ecdh_verified_ifma hL hI hO hK
+      spSafe := exchangeIfma_codeSp } .evex (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _)
+
+theorem exchangeIfma_spSafe :
+    Impl.Ecdh.X86_64.Fn.exchangeP256Ifma.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe exchangeIfma_codeSp
 
 end VG.Proof.Ecdh.X86_64

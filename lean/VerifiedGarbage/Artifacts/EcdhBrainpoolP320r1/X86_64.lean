@@ -59,6 +59,8 @@ open VG.Proof.BrainpoolP320r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdh.BrainpoolP320r1.exchangeApi.artifact X86_64.target
-    (Proof.Ecdh.X86_64.BrainpoolP320r1.scrubReg hasLaw.law hasLaw.inv)]
+    { code := Impl.Ecdh.X86_64.Fn.exchangeBrainpoolP320r1
+      verified := .scrubbed (Proof.Ecdh.X86_64.BrainpoolP320r1.exchange_scrubbed hasLaw.law hasLaw.inv)
+      spSafe := Proof.Ecdh.X86_64.BrainpoolP320r1.exchange_spSafe }]
 
 end VG.Artifacts.EcdhBrainpoolP320r1.X86_64
