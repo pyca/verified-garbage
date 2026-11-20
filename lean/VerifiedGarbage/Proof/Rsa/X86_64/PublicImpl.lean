@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
+public import VerifiedGarbage.Proof.Framework.X86_64.UpCallee
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A precomputed public operation for verified RSA callers -/
@@ -28,6 +29,9 @@ structure PublicImpl where
   /-- What the cleanup of a function that calls it needs of its code, at
   that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
   side : X86_64.Scrub.calleeSide code level.level 0 = true
+  /-- At the level `sse`, what the cleanup at that level of a caller that
+  runs AVX functions through tables needs of its code (`X86_64.Scrub.upCallee`). -/
+  up : level = .sse → X86_64.Scrub.upCallee code 0 = true
   suffix : String
   features : List String
 

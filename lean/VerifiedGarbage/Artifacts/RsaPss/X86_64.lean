@@ -1,17 +1,12 @@
 module
 
 public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Sat
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPrecomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 public import VerifiedGarbage.TCB.X86_64.Print
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
-public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
-public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
-public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Scrub
+public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
+public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 
 /-! # RSASSA-PSS (RFC 8017) on x86-64 -/
 
@@ -19,20 +14,19 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
 
 namespace VG.Artifacts.RsaPss.X86_64.RsaPrivateCrtAllMdHash
 
-open VG.Proof.RsaPkcs1Enc.X86_64 (privNameP privCodeP privCodeP_spSafe)
-open VG.Proof.RsaPss.X86_64 (signPrecomputed_ok signCP_spAll enc_safe OK)
+open VG.Proof.RsaPss.X86_64 (OK)
+open VG.Proof.RsaPss.X86_64.Scrub (vs ts F G sign_scrubbed sign_spSafe)
+open VG.Proof.RsaPkcs1Enc.X86_64 (privNameP privCodeP)
 
-def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+def artifacts (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.signPrecomputedMdTableApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+    Spec.RsaPss.signPrecomputedMdTableApi.artifact X86_64.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
       extra := c.extra
-      tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
-      code := Impl.RsaPss.X86_64.signCP (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
-        (privNameP c) (privCodeP c)
-      verified := signPrecomputed_ok h c
-      spSafe := Code.all_of_allInstrs (signCP_spAll (fun i hi => (enc_safe h i hi).1) (fun i hi => (enc_safe h i hi).2)
-        (X86_64.SpSafe.of_all (privCodeP_spSafe c))) } (VG.Proof.RsaPss.X86_64.signPrecomputed_postOut _ _))]
+      tables := ts
+      code := Impl.RsaPss.X86_64.Fn.signPrecomputed (Proof.Rsa.X86_64.PrivScrub.level c) F G (privNameP c) (privCodeP c)
+      verified := .scrubbed (sign_scrubbed h c)
+      spSafe := sign_spSafe h c }]
   else []
 
 end VG.Artifacts.RsaPss.X86_64.RsaPrivateCrtAllMdHash
@@ -40,18 +34,17 @@ end VG.Artifacts.RsaPss.X86_64.RsaPrivateCrtAllMdHash
 -- RSASSA-PSS verification on x86-64, with the hash functions as tables
 namespace VG.Artifacts.RsaPss.X86_64.RsaPublicPrecomputedAllMdHash
 
-open VG.Proof.RsaPss.X86_64 (verify_ok chk_safe OK)
+open VG.Proof.RsaPss.X86_64 (OK)
+open VG.Proof.RsaPss.X86_64.Scrub (vs ts F G verify_scrubbed verify_spSafe)
 
-def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+def artifacts (c : Proof.Rsa.X86_64.PublicImpl) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86_64.target {
       suffix := qualifiedName "" [("rsa", c.suffix)]
-      tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
-      code := Impl.RsaPss.X86_64.verifyC (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
-        c.name c.code
-      verified := verify_ok h c
-      spSafe := Code.all_of_allInstrs (Proof.RsaPss.X86_64.Pc.codeC_spAll (fun i hi => (chk_safe h i hi).1)
-        (fun i hi => (chk_safe h i hi).2) c) } (VG.Proof.Rsa.X86_64.Scrub.pssVerifyOut _ _ _))]
+      tables := ts
+      code := Impl.RsaPss.X86_64.Fn.verifyPrecomputed c.level F G c.name c.code
+      verified := .scrubbed (verify_scrubbed h c)
+      spSafe := verify_spSafe h c }]
   else []
 
 end VG.Artifacts.RsaPss.X86_64.RsaPublicPrecomputedAllMdHash
@@ -59,7 +52,7 @@ end VG.Artifacts.RsaPss.X86_64.RsaPublicPrecomputedAllMdHash
 namespace VG.Artifacts.RsaPss.X86_64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun v => RsaPrivateCrtAllMdHash.artifacts v VG.Proof.Variants.MdHash.X86_64.variants) ++
-  (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun v => RsaPublicPrecomputedAllMdHash.artifacts v VG.Proof.Variants.MdHash.X86_64.variants)
+  (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap RsaPrivateCrtAllMdHash.artifacts) ++
+  (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap RsaPublicPrecomputedAllMdHash.artifacts)
 
 end VG.Artifacts.RsaPss.X86_64

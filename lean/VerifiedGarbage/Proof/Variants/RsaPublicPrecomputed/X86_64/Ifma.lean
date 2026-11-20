@@ -75,6 +75,7 @@ def variant : PublicImpl where
   spSafe := Code.all_of_spTest (by lit_decide)
   level := .evex
   side := by lit_decide
+  up := fun h => by cases h
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
 

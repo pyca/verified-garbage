@@ -169,6 +169,7 @@ def variant : CrtImpl where
   spSafeP := Code.spSafe_of_bits rfl (Code.allInstrs_of_inlineOkB codeP_bits.1)
   level := .evex
   sideP := by lit_decide
+  upP := fun h => by cases h
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
 
@@ -187,6 +188,7 @@ def variant512 : CrtImpl where
   spSafeP := Code.spSafe_of_bits rfl (Code.allInstrs_of_inlineOkB codeP_bits.2)
   level := .evex
   sideP := by lit_decide
+  upP := fun h => by cases h
   suffix := "_ifma512"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
   extra := ["avx512fp16"]

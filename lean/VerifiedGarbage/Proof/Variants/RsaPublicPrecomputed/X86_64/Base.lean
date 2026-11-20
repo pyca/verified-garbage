@@ -29,6 +29,7 @@ def variant : PublicImpl where
   spSafe := Code.all_of_spTest (by decide +kernel)
   level := .sse
   side := by lit_decide
+  up := fun _ => by rw [X86_64.Scrub.upCallee_eq]; lit_decide
   suffix := ""
   features := []
 

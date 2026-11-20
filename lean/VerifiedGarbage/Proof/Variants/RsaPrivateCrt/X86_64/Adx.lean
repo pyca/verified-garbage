@@ -135,6 +135,7 @@ def variant : CrtImpl where
   spSafeP := Code.all_of_spTest (by decide +kernel)
   level := .avx
   sideP := by lit_decide
+  upP := fun h => by cases h
   suffix := "_adx"
   features := ["avx", "avx2", "bmi2", "adx"]
 

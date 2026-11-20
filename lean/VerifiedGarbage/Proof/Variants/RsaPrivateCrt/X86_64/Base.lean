@@ -134,6 +134,7 @@ def variant : CrtImpl where
   spSafeP := Code.all_of_spTest (by decide +kernel)
   level := .sse
   sideP := by lit_decide
+  upP := fun _ => by rw [X86_64.Scrub.upCallee_eq]; lit_decide
   suffix := ""
   features := []
 
