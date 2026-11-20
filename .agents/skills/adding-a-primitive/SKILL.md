@@ -160,6 +160,27 @@ instructions in an ISA model) go in their own PR before either.
    `lit_decide`), the function proves its own shape once for any variant
    (`CodeOk.call`, `CodeOk.seq`, `CodeOk.alloc`, …), and `scrubSideF_of`
    joins them.
+   On 64-bit RISC-V the cleanup is `Impl.Scrub.RISCV64.scrub rb W c`, which
+   zeroes the `W` bytes of stack the code's frames use, or
+   `Impl.Scrub.RISCV64.scrubSel rb fs c`, which zeroes only the runs `fs`
+   of the frames that the residue analysis (`RISCV64.rtaint`) finds may
+   differ between two runs; both clear the caller-saved registers but the
+   result's `rb` bits. The theorem comes from `RISCV64.Scrub.verifiedScrubbed`
+   (side condition `scrubSide c W rb ts`, by `lit_decide`) or
+   `RISCV64.Scrub.verifiedScrubbedSelT` (`selSide fs W rb`, by
+   `lit_decide`, and the analysis of the code with its cleanup,
+   `⟨_, by taint_decide_ct⟩`; `verifiedScrubbedSel` takes its `NoResidue`
+   instead), which also need that the postcondition reads the memory on
+   return only within the buffers (`RISCV64.Scrub.PostOut`, by
+   `postOut_of_local`) (`Proof/Framework/RISCV64/ScrubProved.lean`; `Fn` in
+   `Impl/Sha3/RISCV64/Instances.lean`, `Proof/Sha3/RISCV64/Scrub.lean`,
+   `Artifacts/Sha3/RISCV64.lean`). For code generic over a variant,
+   `RISCV64.Scrub.verifiedScrubbedOf` takes `scrubSide`'s facts one by one,
+   so that the depth of the code's frames and its indirect calls follow from
+   what each variant proves of its own code where it is defined, never from
+   evaluating every variant's code for every caller. `RISCV64.Scrub.scrubOf`
+   and `scrubSelOf` build the registration of the same in `Proof/`, for the
+   families not yet converted: never use them in new code.
    On a target whose `Proof/Framework/` does not yet state its scrub as a
    theorem about named code, build the registration in `Proof/` with that
    target's form and let the registration file bind it by name, never
