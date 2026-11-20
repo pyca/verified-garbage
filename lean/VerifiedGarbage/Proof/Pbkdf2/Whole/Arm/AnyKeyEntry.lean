@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.EntryBranch
+public import VerifiedGarbage.Impl.Hmac.Stream.Arm
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.Arm
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Loop
@@ -1184,9 +1185,7 @@ theorem verified (hF : FnsOK F) (hc : AnyChecks F) {S : Spec.Hmac.StreamingHash}
 
 /-! ## In a frame of its own, wiped -/
 
-/-- The bytes of `init`'s frame: the saved registers and the working space,
-rounded up to a multiple of 32, which an ARM immediate encodes. -/
-def anyFrame (I : Spec.Hmac.Instance) : Nat := (8 + 8 * I.initAnyKeyScratch + 31) / 32 * 32
+export VG.Impl.Hmac.Stream.Arm (anyFrame)
 
 /-- `initAny` in a frame holding its working space, which it wipes before
 returning: verified against `initAnyKeyContract`, from the locality of its
@@ -1237,10 +1236,7 @@ namespace VG.Proof.Pbkdf2.Md.Arm
 
 open VG.Arm
 
-/-- The bytes of `init`'s and `finalize`'s frames: `finalize`'s copy of its
-one stack argument, the saved registers and the working space, rounded up to
-a multiple of 32. -/
-def frame (I : Spec.Hmac.Instance) : Nat := (4 + 8 + 8 * I.scratch + 31) / 32 * 32
+export VG.Impl.Hmac.Stream.Arm (frame)
 
 theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (h : Verified Arm.target c (Proof.Hmac.Instance.initScratchContract I Arm.abi 16))
@@ -1539,14 +1535,7 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
       exact ⟨q0, q1, q2, q3, q4⟩
     exact ⟨rfl, by rw [q4], fun _ => pu, fun _ => pu⟩
 
-/-- HMAC's `init` for a key of any length, `vg_hmac_<hash>_init`, of instance
-`I`: for a key of at most a block, `init_scratch` (`hmacInit`) in a frame
-holding its working space; for a longer key (cold), `F.hmacInitAny`, in a
-frame holding its larger working space, which it wipes. -/
-def initCode (I : Spec.Hmac.Instance) (hmacInit : Prog isa) (F : Impl.Pbkdf2.Whole.Arm.Fns) : Prog isa :=
-  Impl.Pbkdf2.Whole.Arm.initEntry I.S.H.blockSize
-    (Impl.StackScratch.Arm.withStackScratch (Md.Arm.frame I) 0 hmacInit)
-    (Impl.StackScratch.Arm.withStackScratchWiped (Any.anyFrame I) 0 (2 * I.initAnyKeyScratch) F.hmacInitAny)
+export VG.Impl.Hmac.Stream.Arm (initCode)
 
 theorem initCode_verified {I : Spec.Hmac.Instance} {c : Prog isa} {F : Impl.Pbkdf2.Whole.Arm.Fns}
     (hS : Verified Arm.target (Impl.StackScratch.Arm.withStackScratch (Md.Arm.frame I) 0 c)

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Md5.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Residue.Arm
 
@@ -46,6 +47,12 @@ def params : MdStream.Arm.Params where
 def update : Prog isa := MdStream.Arm.update params "vg_md5_compress" compress
 
 def finalize : Prog isa := MdStream.Arm.finalize params "vg_md5_compress" compress
+
+/-- MD5's streaming functions as HMAC and PBKDF2 call them
+(`Impl.Pbkdf2.Stream.Arm.Hash`): an 80-byte streaming state, 14 words of
+working space and a 16-byte digest, under internal names. -/
+def streamFns : Impl.Pbkdf2.Stream.Arm.Hash := ⟨64, 80, 16, 16, 14, "vg_md5_init_core", init,
+  "vg_md5_update_scratch", update, "vg_md5_finalize_scratch", finalize⟩
 
 end VG.Impl.Md5.Arm.Stream
 
