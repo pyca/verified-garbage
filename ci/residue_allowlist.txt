@@ -107,10 +107,6 @@ arm vg_ecdh_p521
 arm vg_ecdh_p521_umaal
 arm vg_ecdh_secp256k1
 arm vg_ecdh_secp256k1_umaal
-arm vg_ffdh_check_domain
-arm vg_ffdh_check_domain_umaal
-arm vg_ffdh_check_private
-arm vg_ffdh_check_private_umaal
 arm vg_ffdh_check_public
 arm vg_ffdh_check_public_umaal
 arm vg_ffdh_derive_public
@@ -123,8 +119,6 @@ arm vg_ffdh_generate_key_search_cached
 arm vg_ffdh_generate_key_search_cached_umaal
 arm vg_ffdh_generate_parameters
 arm vg_ffdh_generate_parameters_umaal
-arm vg_ffdh_key_generation_init
-arm vg_ffdh_parameter_generation_init
 arm vg_idea_cbc_decrypt_chained
 arm vg_idea_cbc_encrypt_chained
 arm vg_idea_cfb64_decrypt

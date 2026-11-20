@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyInitVerified
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInitVerified
+public import VerifiedGarbage.Proof.Ffdh.Arm.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterBackend
@@ -76,12 +75,12 @@ open VG
 def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
   [Spec.Ffdh.checkDomainApi.artifact VG.Arm.target {
     suffix := v.suffix
-    code := v.checkDomain
-    verified := .unscrubbed v.checkDomain_verified },
+    code := Impl.Ffdh.Arm.Fn.checkDomain v.checkDomain
+    verified := .scrubbed (Proof.Ffdh.Arm.Fn.checkDomain v) },
   Spec.Ffdh.checkPrivateApi.artifact VG.Arm.target {
     suffix := v.suffix
-    code := v.checkPrivate
-    verified := .unscrubbed v.checkPrivate_verified }]
+    code := Impl.Ffdh.Arm.Fn.checkPrivate v.checkPrivate
+    verified := .scrubbed (Proof.Ffdh.Arm.Fn.checkPrivate v) }]
 
 end VG.Artifacts.Ffdh.Arm.Domain.Ffdh
 
@@ -126,11 +125,11 @@ open VG
 def direct : List Artifact :=
   [
     Spec.Ffdh.keyInitApi.artifact VG.Arm.target {
-      code := Impl.Ffdh.Arm.KeyGeneration.init
-      verified := .unscrubbed Proof.Ffdh.Arm.keyInit_verified },
+      code := Impl.Ffdh.Arm.Fn.keyInit
+      verified := .scrubbed Proof.Ffdh.Arm.Fn.keyInit },
     Spec.Ffdh.parameterInitApi.artifact VG.Arm.target {
-      code := Impl.Ffdh.Arm.Generation.init
-      verified := .unscrubbed Proof.Ffdh.Arm.parameterInit_verified }]
+      code := Impl.Ffdh.Arm.Fn.parameterInit
+      verified := .scrubbed Proof.Ffdh.Arm.Fn.parameterInit }]
 
 end VG.Artifacts.Ffdh.Arm
 

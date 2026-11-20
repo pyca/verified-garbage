@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
@@ -819,6 +820,8 @@ def variant : VG.Proof.Ffdh.Arm.Backend where
   checkPublic_verified := VG.Proof.Ffdh.Arm.checkPublic_verified
   checkPrivate := VG.Impl.Ffdh.Arm.Domain.CheckPrivate.code
   checkPrivate_verified := VG.Proof.Ffdh.Arm.private_verified
+  checkDomain_ok := by lit_decide
+  checkPrivate_ok := by lit_decide
   exchange := VG.Impl.Ffdh.Arm.Domain.Exchange.code
   exchange_verified := VG.Proof.Ffdh.Arm.exchange_verified
   suffix := ""
