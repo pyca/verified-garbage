@@ -168,7 +168,7 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime_avx512}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkqP7//8X+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAMX+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjaQkWAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQksP7//8X+f4QkMAEAAMX+f4QkEAEAAMX+f4Qk8AAAAMX+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJFABAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch_avx512 = sym super::blake2b::vg_blake2b_update_scratch_avx512::vg_blake2b_update_scratch_avx512,
@@ -343,7 +343,7 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime_avx2}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkqP7//8X+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAMX+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjaQkWAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQksP7//8X+f4QkMAEAAMX+f4QkEAEAAMX+f4Qk8AAAAMX+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJFABAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch_avx2 = sym super::blake2b::vg_blake2b_update_scratch_avx2::vg_blake2b_update_scratch_avx2,
@@ -518,7 +518,7 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime_avx2}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkqP7//8X+f4QkOAEAAMX+f4QkGAEAAMX+f4Qk+AAAAMX+f4Qk2AAAAMX+f4QkuAAAAMX+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjaQkWAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVvF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQksP7//8X+f4QkMAEAAMX+f4QkEAEAAMX+f4Qk8AAAAMX+f4Qk0AAAAMX+f4QksAAAAMX+f4QkkAAAAMX+f0QkcMX+f0QkUMX+f0QkMMX+f0QkEPMPfwQkSI2kJFABAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch_avx2 = sym super::blake2b::vg_blake2b_update_scratch_avx2::vg_blake2b_update_scratch_avx2,
@@ -689,7 +689,7 @@ jb 23b
 jb 229b
 .base64 "SIu96AAAAEjHxgAEAABIi5UAAQAASIuNCAEAAEyLhfgAAAA="
 call {vg_argon2_hprime}
-.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVtmD+/ARTHbSI2kJKj+///zD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJFgBAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "WFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEFfQV5BXUFcXVtmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQksP7///MPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJFABAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_blake2b_init_core = sym super::blake2b::vg_blake2b_init_core::vg_blake2b_init_core,
         vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
