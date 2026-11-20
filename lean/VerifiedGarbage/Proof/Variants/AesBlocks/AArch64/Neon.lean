@@ -23,7 +23,7 @@ def neon : BlocksImpl where
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10],
      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
       .v26, .v27, .v28, .v29, .v30, .v31],
-     []⟩⟩
+     []⟩, 2048⟩
   encNoFrames := by lit_decide
   encOk := Neon.encryptBlocks_correct
   encCt := Neon.encryptBlocks_ct
@@ -32,13 +32,15 @@ def neon : BlocksImpl where
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10],
      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
       .v26, .v27, .v28, .v29, .v30, .v31],
-     []⟩⟩
+     []⟩, 2048⟩
   decNoFrames := by lit_decide
   decOk := Neon.decryptBlocks_correct
   decCt := Neon.decryptBlocks_ct
   decKeepsV := by lit_decide
   scratch := 2048
   scratch_ok := .inr rfl
+  encScratch_eq := rfl
+  decScratch_eq := rfl
   encOkW := by rw [Proof.Aes.blocksAArch64With_2048]; exact Neon.encryptBlocks_correct
   encCtW := by rw [Proof.Aes.blocksAArch64With_2048]; exact Neon.encryptBlocks_ct
   decOkW := by rw [Proof.Aes.blocksAArch64With_2048]; exact Neon.decryptBlocks_correct
@@ -55,5 +57,6 @@ def neon : BlocksImpl where
   expandOk := Ctr32Impl.scalar.expandOk
   expandCt := Ctr32Impl.scalar.expandCt
   expandKeepsV := Ctr32Impl.scalar.expandKeepsV
+  expandScrub := Ctr32Impl.scalar.expandScrub
 
 end VG.Proof.Variants.AesBlocks.AArch64

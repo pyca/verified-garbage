@@ -1627,7 +1627,7 @@ theorem crypt_noFrames {b : Impl.Aes.AArch64.Blocks} (h : b.code.noFrames = true
 (`Impl.AesXts.AArch64.cryptOwn`): evaluated once, with code that does nothing
 in the place of the block function. -/
 private theorem crypt_own :
-    AArch64.ScrubAll.calleeSide (Impl.AesXts.AArch64.crypt ⟨"", .block [], ⟨[], [], []⟩⟩) Impl.AesXts.AArch64.cryptOwn = true := by
+    AArch64.ScrubAll.calleeSide (Impl.AesXts.AArch64.crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesXts.AArch64.cryptOwn = true := by
   kernel_rfl
 
 /-- `crypt` around a block function that writes the registers `cl` writes its
@@ -1645,13 +1645,13 @@ theorem crypt_scrub {b : Impl.Aes.AArch64.Blocks} {cl : Impl.Residue.AArch64.Cle
 and `vg_aes_xts_decrypt` with `v`'s suffix. -/
 def blocks (v : BlocksImpl) : XtsImpl where
   enc := ⟨"vg_aes_xts_encrypt" ++ v.suffix, Impl.AesXts.AArch64.encrypt v.enc,
-    Impl.AesXts.AArch64.cryptOwn.union v.enc.clear⟩
+    Impl.AesXts.AArch64.cryptOwn.union v.enc.clear, v.enc.scratch⟩
   encNoFrames := crypt_noFrames v.encNoFrames
   encOk := encrypt_correct v
   encCt := crypt_ct true v.encOk v.encCt v.encNoFrames fun R w m p => (aesWith_state R w m p).symm
   encKeepsV := encrypt_keepsV v
   dec := ⟨"vg_aes_xts_decrypt" ++ v.suffix, Impl.AesXts.AArch64.decrypt v.dec,
-    Impl.AesXts.AArch64.cryptOwn.union v.dec.clear⟩
+    Impl.AesXts.AArch64.cryptOwn.union v.dec.clear, v.dec.scratch⟩
   decNoFrames := crypt_noFrames v.decNoFrames
   decOk := decrypt_correct v
   decCt := crypt_ct false v.decOk v.decCt v.decNoFrames fun R w m p => (aesInvWith_state R w m p).symm
@@ -1664,12 +1664,12 @@ def blocks (v : BlocksImpl) : XtsImpl where
 /-- The one-pass functions with the AES instructions,
 `vg_aes_xts_encrypt_aes` and `vg_aes_xts_decrypt_aes`. -/
 def aes : XtsImpl where
-  enc := ⟨"vg_aes_xts_encrypt" ++ "_aes", Impl.AesXts.AArch64Aes.encrypt, Impl.AesXts.AArch64Aes.clear⟩
+  enc := ⟨"vg_aes_xts_encrypt" ++ "_aes", Impl.AesXts.AArch64Aes.encrypt, Impl.AesXts.AArch64Aes.clear, 0⟩
   encNoFrames := Aes.encrypt_noFrames
   encOk := Aes.encrypt_correct
   encCt := Aes.encrypt_ct true
   encKeepsV := Aes.encrypt_keepsV
-  dec := ⟨"vg_aes_xts_decrypt" ++ "_aes", Impl.AesXts.AArch64Aes.decrypt, Impl.AesXts.AArch64Aes.clear⟩
+  dec := ⟨"vg_aes_xts_decrypt" ++ "_aes", Impl.AesXts.AArch64Aes.decrypt, Impl.AesXts.AArch64Aes.clear, 0⟩
   decNoFrames := Aes.decrypt_noFrames
   decOk := Aes.decrypt_correct
   decCt := Aes.decrypt_ct false

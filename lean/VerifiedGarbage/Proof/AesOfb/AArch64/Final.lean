@@ -134,14 +134,14 @@ place of the block function, and of each implementation where it is defined
 (`BlocksImpl.encScrub`). -/
 
 private theorem crypt_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch64.Blocks)
-    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesOfb.AArch64.crypt ⟨"", .block [], ⟨[], [], []⟩⟩) = true)
+    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesOfb.AArch64.crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true)
     (hc : AArch64.ScrubAll.sideAll p b.code = true) :
     AArch64.ScrubAll.sideAll p (Impl.AesOfb.AArch64.crypt b) = true := by
   simp only [Impl.AesOfb.AArch64.crypt, Impl.AesOfb.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem crypt_own :
-    AArch64.ScrubAll.calleeSide (Impl.AesOfb.AArch64.crypt ⟨"", .block [], ⟨[], [], []⟩⟩) Impl.AesOfb.AArch64.Fn.cryptOwn = true := by
+    AArch64.ScrubAll.calleeSide (Impl.AesOfb.AArch64.crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesOfb.AArch64.Fn.cryptOwn = true := by
   kernel_rfl
 
 theorem crypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
@@ -161,7 +161,7 @@ theorem crypt_scrubbed (v : Proof.Aes.AArch64.BlocksImpl) :
     Proof.Aes.AArch64.ModesScrub.ofbOk (crypt_side v)
 
 private theorem cryptFinal_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch64.Blocks) (sfx : String)
-    (h0 : AArch64.ScrubAll.sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesOfb.AArch64.cryptFinal ⟨"", .block [], ⟨[], [], []⟩⟩ "")) = true)
+    (h0 : AArch64.ScrubAll.sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesOfb.AArch64.cryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) = true)
     (hc : AArch64.ScrubAll.sideAll p b.code = true) :
     AArch64.ScrubAll.sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesOfb.AArch64.cryptFinal b sfx)) = true := by
   simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch, Impl.AesOfb.AArch64.cryptFinal, Impl.AesCfb.AArch64.final, Impl.AesCfb.AArch64.finalTail, Impl.AesOfb.AArch64.crypt, Impl.AesOfb.AArch64.body, Impl.AesCbc.AArch64.whole,
@@ -169,7 +169,7 @@ private theorem cryptFinal_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch6
   simp only [h0, hc, and_self]
 
 private theorem cryptFinal_own :
-    AArch64.ScrubAll.calleeSide (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesOfb.AArch64.cryptFinal ⟨"", .block [], ⟨[], [], []⟩⟩ ""))
+    AArch64.ScrubAll.calleeSide (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesOfb.AArch64.cryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ""))
       Impl.AesOfb.AArch64.Fn.cryptFinalOwn = true := by
   kernel_rfl
 

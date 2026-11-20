@@ -688,6 +688,9 @@ def backend : Compress where
     (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide))
   updateDepth := by lit_decide
   finalizeDepth := by lit_decide
+  clear := ⟨[.x1, .x2, .x4],
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22], []⟩
+  scrub := by lit_decide
 
 end VG.Proof.Sm3.AArch64.Sm4
 
@@ -720,5 +723,7 @@ def backend : Compress where
     (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide))
   updateDepth := by lit_decide
   finalizeDepth := by lit_decide
+  clear := ⟨[.x1, .x2, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15], [], []⟩
+  scrub := by lit_decide
 
 end VG.Proof.Sm3.AArch64.Scalar

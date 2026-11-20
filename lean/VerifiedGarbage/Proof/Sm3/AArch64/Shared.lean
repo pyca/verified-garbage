@@ -7,8 +7,8 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Sm3.AArch64.Stream
-public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Sm3.PostOut
 import VerifiedGarbage.Proof.Sm3.AArch64.Lit
 
@@ -26,10 +26,10 @@ of their own: they are `updateScratch` and `finalizeScratch` (the shared
 contracts with the working space as an argument, `Proof/Sm3/Scratch.lean`)
 run in a frame that allocates it (`Verified.stackScratch`).
 
-`updateReg` and `finalizeReg` register them scrubbed whole
-(`AArch64.ScrubAll.withScrubAll`): their postconditions read the memory on
-return only within their buffers (`Proof/Sm3/PostOut.lean`), so they return with
-the registers they may write cleared and their stack zeroed.
+`update_scrubbed` and `finalize_scrubbed` are about the functions as emitted,
+with their cleanup (`Impl.Sm3.AArch64.Stream.Fn`): their postconditions read
+the memory on return only within their buffers (`Proof/Sm3/PostOut.lean`), so
+they return with the registers they may write cleared and their stack zeroed.
 -/
 
 @[expose] public section
@@ -86,30 +86,92 @@ theorem updateOk : AArch64.ScrubAll.ScrubAllOk (Spec.Sm3.updateContract AArch64.
   AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sm3.updateSig) (by decide) (by decide) (Nat.le_refl _)
     (Proof.Sm3.updatePost_out _)
 
-/-- `update` with `v`, as it is. -/
-def updateReg₀ (v : Compress) : Unscrubbed Spec.Sm3.updateApi AArch64.target :=
-  { suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update
-    verified := update v }
-
-/-- `update` with `v`, scrubbed whole. -/
-def updateReg (v : Compress) : Registration Spec.Sm3.updateApi AArch64.target :=
-  AArch64.ScrubAll.withScrubAll (updateReg₀ v) updateOk
-
 /-- `finalize`'s postcondition reads the memory on return only within its buffers. -/
 theorem finalizeOk : AArch64.ScrubAll.ScrubAllOk (Spec.Sm3.finalizeContract AArch64.abi (16 + 112)) (16 + 112)
     (Spec.Sm3.finalizeSig.retBits AArch64.abi.ptrBits) :=
   AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sm3.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
     (Proof.Sm3.finalizePost_out _)
 
-/-- `finalize` with `v`, as it is. -/
-def finalizeReg₀ (v : Compress) : Unscrubbed Spec.Sm3.finalizeApi AArch64.target :=
-  { suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize
-    verified := finalize v }
+/-! ## The functions, as emitted
 
-/-- `finalize` with `v`, scrubbed whole. -/
-def finalizeReg (v : Compress) : Registration Spec.Sm3.finalizeApi AArch64.target :=
-  AArch64.ScrubAll.withScrubAll (finalizeReg₀ v) finalizeOk
+`vg_sm3_update` and `vg_sm3_finalize` over `v` with their cleanup
+(`Impl.Sm3.AArch64.Stream.Fn`): each meets its contract in constant time and
+returns without secret residue (`VerifiedScrubbed`), which is what its
+registration binds. What the cleanup needs of the code
+(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+once, with code that does nothing in the place of the compression function,
+and of each compression function where it is defined (`Compress.scrub`). -/
+
+open VG.AArch64.ScrubAll
+
+private theorem update_all {p : Instr → Bool} (name : String) (code : Prog isa)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch 112 .x4
+      (Impl.MdStream.AArch64.update Impl.Sm3.AArch64.Stream.params "" (.block []))) = true)
+    (hc : sideAll p code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratch 112 .x4
+      (Impl.MdStream.AArch64.update Impl.Sm3.AArch64.Stream.params name code)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, Impl.MdStream.AArch64.update,
+    Impl.MdStream.AArch64.updateMain, Impl.MdStream.AArch64.updateBody, Impl.MdStream.AArch64.compressN,
+    Impl.MdStream.AArch64.compressWith, sideAll, Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+private theorem finalize_all {p : Instr → Bool} (name : String) (code : Prog isa)
+    (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch 112 .x3
+      (Impl.MdStream.AArch64.finalize Impl.Sm3.AArch64.Stream.params "" (.block []))) = true)
+    (hc : sideAll p code = true) :
+    sideAll p (Impl.StackScratch.AArch64.withStackScratch 112 .x3
+      (Impl.MdStream.AArch64.finalize Impl.Sm3.AArch64.Stream.params name code)) = true := by
+  simp only [Impl.StackScratch.AArch64.withStackScratch, Impl.MdStream.AArch64.finalize,
+    Impl.MdStream.AArch64.finalizeMain, Impl.MdStream.AArch64.finalizeBody, Impl.MdStream.AArch64.compressAt,
+    Impl.MdStream.AArch64.compressWith, sideAll, Bool.and_eq_true] at h0 ⊢
+  simp only [h0, hc, and_self]
+
+private theorem update_own :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratch 112 .x4
+      (Impl.MdStream.AArch64.update Impl.Sm3.AArch64.Stream.params "" (.block [])))
+      Impl.Sm3.AArch64.Stream.Fn.updateOwn = true := by
+  kernel_rfl
+
+private theorem finalize_own :
+    calleeSide (Impl.StackScratch.AArch64.withStackScratch 112 .x3
+      (Impl.MdStream.AArch64.finalize Impl.Sm3.AArch64.Stream.params "" (.block [])))
+      Impl.Sm3.AArch64.Stream.Fn.finalizeOwn = true := by
+  kernel_rfl
+
+theorem update_side (v : Compress) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update) 128 0
+      (Impl.Sm3.AArch64.Stream.Fn.updateOwn.union v.clear) [] = true := by
+  refine scrubSide_union (by decide) ?_ (by decide)
+    (update_all v.name v.code (sideAll_union_left update_own) (sideAll_union_right v.scrub)) (by decide)
+  simp only [Impl.StackScratch.AArch64.withStackScratch, Compress.update, Impl.MdStream.AArch64.update,
+    Code.aarch64Depth, Instr.frameUnits, v.updateDepth]
+  decide
+
+theorem finalize_side (v : Compress) :
+    scrubSide (Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize) 128 0
+      (Impl.Sm3.AArch64.Stream.Fn.finalizeOwn.union v.clear) [] = true := by
+  refine scrubSide_union (by decide) ?_ (by decide)
+    (finalize_all v.name v.code (sideAll_union_left finalize_own) (sideAll_union_right v.scrub)) (by decide)
+  simp only [Impl.StackScratch.AArch64.withStackScratch, Compress.finalize, Impl.MdStream.AArch64.finalize,
+    Code.aarch64Depth, Instr.frameUnits, v.finalizeDepth]
+  decide
+
+/-- `vg_sm3_update` over `v` as emitted, cleanup included. -/
+theorem update_scrubbed (v : Compress) :
+    VerifiedScrubbed AArch64.target (Impl.Sm3.AArch64.Stream.Fn.update v.impl)
+      (Spec.Sm3.updateContract AArch64.abi (16 + 112)) 0 :=
+  verifiedScrubbed (api := Spec.Sm3.updateApi)
+    { suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update
+      verified := update v } _ updateOk (update_side v)
+
+/-- `vg_sm3_finalize` over `v` as emitted, cleanup included. -/
+theorem finalize_scrubbed (v : Compress) :
+    VerifiedScrubbed AArch64.target (Impl.Sm3.AArch64.Stream.Fn.finalize v.impl)
+      (Spec.Sm3.finalizeContract AArch64.abi (16 + 112)) 0 :=
+  verifiedScrubbed (api := Spec.Sm3.finalizeApi)
+    { suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize
+      verified := finalize v } _ finalizeOk (finalize_side v)
 
 end VG.Proof.Sm3.AArch64.Shared

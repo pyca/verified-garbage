@@ -108,6 +108,10 @@ structure Blocks where
   /-- The registers its code writes, of those the calling convention does not
   preserve (`Proof.Aes.AArch64.BlocksImpl.encScrub`, `decScrub`). -/
   clear : Impl.Residue.AArch64.Clear
+  /-- The bytes of `scratch` it needs, none or 2048: a function that calls it
+  has only these in its frame (`Proof.Aes.AArch64.BlocksImpl.encScratch_eq`,
+  `decScratch_eq`). -/
+  scratch : Nat
 
 def Blocks.encScalar : Blocks where
   name := "vg_aes_encrypt_blocks"
@@ -116,6 +120,7 @@ def Blocks.encScalar : Blocks where
     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
      .v27, .v28, .v29, .v30, .v31],
     []⟩
+  scratch := 2048
 
 def Blocks.decScalar : Blocks where
   name := "vg_aes_decrypt_blocks"
@@ -124,6 +129,7 @@ def Blocks.decScalar : Blocks where
     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
      .v26, .v27, .v28, .v29, .v30],
     []⟩
+  scratch := 2048
 
 def Blocks.encAese : Blocks where
   name := "vg_aes_encrypt_blocks_aes"
@@ -132,6 +138,7 @@ def Blocks.encAese : Blocks where
     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
      .v26, .v27, .v28, .v29, .v30],
     []⟩
+  scratch := 0
 
 def Blocks.decAese : Blocks where
   name := "vg_aes_decrypt_blocks_aes"
@@ -140,5 +147,6 @@ def Blocks.decAese : Blocks where
     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
      .v26, .v27, .v28, .v29, .v30],
     []⟩
+  scratch := 0
 
 end VG.Impl.Aes.AArch64
