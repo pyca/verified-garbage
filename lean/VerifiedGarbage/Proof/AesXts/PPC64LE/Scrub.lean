@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesXts.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesXts.PPC64LE.Unit.Verified
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # XTS-AES on PPC64LE, without secret residue
 
 `vg_aes_xts_encrypt_unit` and `vg_aes_xts_decrypt_unit`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
 volatile registers they may write: they have no frames (their working space
 is the caller's scratch buffer, and their calls keep the return address in
 the link register), so there is no stack to wipe. Their postconditions read
@@ -53,11 +54,14 @@ theorem decryptUnitOut (stack : Nat) :
       rw [bytesAt_of0 hb.2.2.2.1 (len_le1 ln)]
       exact h key hk
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.Xts.aesEncryptUnitApi`. -/
-def encryptUnitReg : Registration Spec.Xts.aesEncryptUnitApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_xts_encrypt_unit` as emitted (`Impl.AesXts.PPC64LE.Fn.encryptUnit`)
+meets its contract in constant time and returns without secret residue. -/
+theorem encryptUnit_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.AesXts.PPC64LE.Fn.encryptUnit
+      (Spec.Xts.aesEncryptUnitContract PPC64LE.abi) 0 :=
+  verifiedScrubbed (api := Spec.Xts.aesEncryptUnitApi) {
       code := Impl.AesXts.PPC64LEUnit.encrypt
       verified := Proof.AesXts.PPC64LE.Unit.encrypt_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -66,9 +70,12 @@ def encryptUnitReg : Registration Spec.Xts.aesEncryptUnitApi PPC64LE.target :=
     (encryptUnitOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Xts.aesDecryptUnitApi`. -/
-def decryptUnitReg : Registration Spec.Xts.aesDecryptUnitApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_xts_decrypt_unit` as emitted (`Impl.AesXts.PPC64LE.Fn.decryptUnit`)
+meets its contract in constant time and returns without secret residue. -/
+theorem decryptUnit_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.AesXts.PPC64LE.Fn.decryptUnit
+      (Spec.Xts.aesDecryptUnitContract PPC64LE.abi) 0 :=
+  verifiedScrubbed (api := Spec.Xts.aesDecryptUnitApi) {
       code := Impl.AesXts.PPC64LEUnit.decrypt
       verified := Proof.AesXts.PPC64LE.Unit.decrypt_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
