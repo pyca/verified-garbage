@@ -68,8 +68,7 @@ def sha1OK : HashOK sha1H where
 
 /-! ## MD5 -/
 
-def md5H : Hash := ⟨64, 80, 16, 16, 14, "vg_md5_init_core", Impl.Md5.Arm.Stream.init,
-  "vg_md5_update_scratch", Impl.Md5.Arm.Stream.update, "vg_md5_finalize_scratch", Impl.Md5.Arm.Stream.finalize⟩
+def md5H : Hash := Impl.Md5.Arm.Stream.streamFns
 
 def md5OK : HashOK md5H where
   SH := Spec.Hmac.md5S

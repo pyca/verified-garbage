@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Proof.Hmac.Stream.Arm.CodeOk
 public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Scrypt.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
-meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Proof.Hmac.Stream.Arm.CodeOk
 meta import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -16,15 +16,19 @@ meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 
 /-!
-# scrypt on ARMv7, without secret residue
+# scrypt on ARMv7, as emitted
 
 `vg_scrypt` calls PBKDF2-HMAC-SHA256 and ROMix from frames, within the 40
 bytes of stack its contract reserves (`scrypt_armStack`). Its postcondition
 reads the memory on return only within `out` (`Arm.Scrub.PostOut`, as
 RISC-V's `Proof/Scrypt/RISCV64/Scrub.lean` proves it, on the arguments' low
-32 bits as DSA's `Proof/Dsa/Arm/Scrub.lean` reads them), so it is registered
-followed by a wipe of those 40 bytes and of the registers a callee may
-change (`Arm.Scrub.scrubRegF`).
+32 bits as DSA's `Proof/Dsa/Arm/Scrub.lean` reads them), so its cleanup
+wipes those 40 bytes and the registers a callee may change
+(`Impl.Scrypt.Arm.Fn.scrypt`), and `Fn.scrypt` below states that it returns
+without secret residue (`Arm.Scrub.verifiedScrubbedF`), which its
+registration binds. It makes no indirect call: ROMix's code, by
+`lit_decide`, and PBKDF2's, from what SHA-256's code gives
+(`Proof/Hmac/Stream/Arm/CodeOk.lean`).
 -/
 
 @[expose] public section
@@ -67,16 +71,25 @@ theorem scrypt_armStack :
     List.length_nil, Nat.max_le]
   omega_arith
 
+theorem roMix_noIcall : noIcall roMix = true := by lit_decide
+
 theorem scrypt_noIcall : noIcall (scrypt "vg_pbkdf2_hmac_sha256_scratch" Whole.pbkC) = true := by
-  lit_decide
+  have h : noIcall Whole.pbkC = true := Proof.Hmac.Stream.Arm.sha256_mdOk.pbkdf2_noIcall Spec.Hmac.sha256I
+  simp only [scrypt, pbkCall, romixLoop, noIcall, roMix_noIcall, h, Bool.and_self]
 
 theorem frameOk_40 : FrameOk 40 := by decide
 
-/-- `Spec.Scrypt.scryptApi`. -/
-def scryptReg : Registration Spec.Scrypt.scryptApi target :=
-  Arm.Scrub.scrubRegF {
-      code := scrypt "vg_pbkdf2_hmac_sha256_scratch" Whole.pbkC
-      verified := Whole.scrypt_verified }
-    scrypt_armStack scrypt_noIcall frameOk_40 (scryptOut _) rfl
-
 end VG.Proof.Scrypt.Arm.Scrub
+
+namespace VG.Proof.Scrypt.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub VG.Proof.Scrypt.Arm.Scrub
+
+/-- `vg_scrypt`. -/
+theorem scrypt : VerifiedScrubbed target Impl.Scrypt.Arm.Fn.scrypt (Spec.Scrypt.scryptContract abi 40) 0 :=
+  verifiedScrubbedF (api := Spec.Scrypt.scryptApi)
+    { code := Impl.Scrypt.Arm.scrypt "vg_pbkdf2_hmac_sha256_scratch" Whole.pbkC
+      verified := Whole.scrypt_verified }
+    (scryptOut _) (scrubSideF_of ⟨scrypt_armStack, scrypt_noIcall⟩ frameOk_40 _)
+
+end VG.Proof.Scrypt.Arm.Fn

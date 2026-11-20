@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
+public import VerifiedGarbage.Impl.Hmac.Stream.Arm
+public import VerifiedGarbage.Impl.Residue.Arm
 
 /-!
 # scrypt: 32-bit ARM implementation
@@ -105,3 +107,18 @@ def scrypt (pbkName : String) (pbk : Prog isa) : Prog isa :=
     (.block restore))))))))
 
 end VG.Impl.Scrypt.Arm
+
+namespace VG.Impl.Scrypt.Arm.Fn
+
+open VG.Arm
+
+/-- `vg_scrypt` as emitted: `scrypt`, calling PBKDF2-HMAC-SHA256's code
+under its internal name, then its cleanup (`Impl/Residue/Arm.lean`): the 40
+bytes of stack its contract reserves zeroed (16 for PBKDF2's stack arguments
+and its 24, and 8 for ROMix's), and the registers a callee may change set to
+constants. It returns no value. -/
+def scrypt : Prog isa :=
+  VG.Impl.Residue.Arm.scrubF 0 40
+    (VG.Impl.Scrypt.Arm.scrypt "vg_pbkdf2_hmac_sha256_scratch" VG.Impl.Hmac.Stream.Arm.sha256F.pbkdf2)
+
+end VG.Impl.Scrypt.Arm.Fn

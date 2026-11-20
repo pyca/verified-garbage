@@ -5,12 +5,16 @@ public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.Scrub.X86
 public import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Sha1.PostOut
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.Scrub.X86
 meta import VerifiedGarbage.Proof.Sha1.PostOut
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -253,12 +257,15 @@ structure StreamFn where
   again. -/
   scrub : X86.Scrub.scrubFSide code [] stack = true
 
-/-- `f` as a registration of its `Api` (`Api.artifact`), followed by the
-zeroing of its stack and the clearing of the registers a callee may change
-(`X86.Scrub.scrubFOf`): it returns without secret residue. -/
-def StreamFn.reg (f : StreamFn) : Registration f.api X86.target :=
-  X86.Scrub.scrubFOf {
-      consts := []
+/-- `f`'s code as emitted, `f.code` and then its cleanup: the zeroing of its
+stack and the clearing of the registers a callee may change but the result's
+bits (`Impl.Scrub.X86.scrubF`), meets `f`'s contract in constant time and
+returns without secret residue (`X86.Scrub.verifiedScrubbedF`). -/
+theorem StreamFn.scrubbed (f : StreamFn) :
+    VerifiedScrubbed X86.target (Impl.Scrub.X86.scrubF (f.api.sig.retBits 32) f.stack f.code) f.contract
+      (f.api.sig.retBits 32) :=
+  X86.Scrub.verifiedScrubbedF (api := f.api)
+    { consts := []
       tables := []
       code := f.code
       contract := f.contract
@@ -267,7 +274,20 @@ def StreamFn.reg (f : StreamFn) : Registration f.api X86.target :=
       ofApi := f.ofApi
       ofSig := f.ofSig
       spSafe := f.spSafe }
-    f.post f.stack f.scrub
+    f.post f.scrub
+
+/-- `f` as a registration of its `Api` (`Api.artifact`): its code as emitted,
+with its cleanup, and the theorem about that code (`StreamFn.scrubbed`). -/
+def StreamFn.reg (f : StreamFn) : Registration f.api X86.target where
+  consts := []
+  tables := []
+  code := Impl.Scrub.X86.scrubF (f.api.sig.retBits 32) f.stack f.code
+  contract := f.contract
+  stack := f.stack
+  verified := .scrubbed f.scrubbed
+  ofApi := f.ofApi
+  ofSig := f.ofSig
+  spSafe := X86.Scrub.scrubF_spSafe f.spSafe
 
 /-! ## What the cleanup of the streaming functions needs
 
