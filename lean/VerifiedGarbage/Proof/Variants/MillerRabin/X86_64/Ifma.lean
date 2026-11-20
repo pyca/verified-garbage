@@ -31,6 +31,8 @@ def variant : RoundImpl :=
     level := .evex
     side := by lit_decide
     mmSide := by intro o a b; rfl
+    montSide := by intro o a b; rfl
+    inlineSide := Adx.inlineSide _
     suffix := "_ifma"
     features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"] }
 

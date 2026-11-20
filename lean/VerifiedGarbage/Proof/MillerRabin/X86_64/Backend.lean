@@ -142,6 +142,10 @@ structure RoundImpl extends RoundArith where
   /-- What the cleanup of a function that runs its multiplication needs of
   it, wherever it runs it. -/
   mmSide : ∀ o a b, X86_64.Scrub.calleeSide (mm o a b) level.level 8 = true
+  /-- The same of its arithmetic inline (`mont.mm`). -/
+  montSide : ∀ o a b, X86_64.Scrub.calleeSide (mont.mm o a b) level.level 0 = true
+  /-- The same of its arithmetic for callers that inline it (`inlineMont.mm`). -/
+  inlineSide : ∀ o a b, X86_64.Scrub.calleeSide (inlineMont.mm o a b) level.level 0 = true
   suffix : String
   features : List String
 
@@ -150,6 +154,8 @@ def RoundImpl.ofArith (a : RoundArith) (spSafe : (round a.mm).all (fun i => !isa
     (depth : (round a.mm).x86_64Depth ≤ 120) (level : Impl.Scrub.X86_64.VecLevel)
     (side : X86_64.Scrub.calleeSide (round a.mm) level.level 120 = true)
     (mmSide : ∀ o a' b, X86_64.Scrub.calleeSide (a.mm o a' b) level.level 8 = true)
+    (montSide : ∀ o a' b, X86_64.Scrub.calleeSide (a.mont.mm o a' b) level.level 0 = true)
+    (inlineSide : ∀ o a' b, X86_64.Scrub.calleeSide (a.inlineMont.mm o a' b) level.level 0 = true)
     (suffix : String) (features : List String) : RoundImpl :=
   { a with
     code := round a.mm
@@ -162,6 +168,8 @@ def RoundImpl.ofArith (a : RoundArith) (spSafe : (round a.mm).all (fun i => !isa
     level := level
     side := side
     mmSide := mmSide
+    montSide := montSide
+    inlineSide := inlineSide
     suffix := suffix
     features := features }
 

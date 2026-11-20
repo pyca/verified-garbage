@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ExpImpl
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFillG
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.CT
 import VerifiedGarbage.Proof.Bignum.X86_64.Template
 import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Lit
@@ -164,6 +166,30 @@ theorem ifma_ctl (mul : Nat → Nat → Nat → Prog isa)
   exact ctlOk_seq_of a.2.2.2.2.2.1 (ctlOk_ite_of a.2.2.2.2.2.2 (ctlOk_seq_of b.2.2.2.2.2.1
     (ctlOk_ite_of b.2.2.2.2.2.2 (ctlOk_seq_of c.2.2.2.2.2.1 (ctlOk_ite_of c.2.2.2.2.2.2 (ctlOk_seqs_of hb))))))
 
+private theorem ifma_fill (mul : Nat → Nat → Nat → Prog isa) (k : Nat)
+    (hm : ∀ o a b, X86_64.Scrub.calleeSide (mul o a b) k 8 = true) (sp sl : Nat) :
+    List.Forall₂ (X86_64.Scrub.FillG k (fun _ => 8)) (VG.Impl.Ffdh.X86_64.Ifma.code stubMM sp sl)
+      (VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl) := by
+  rw [code_eq, code_eq]
+  unfold Crt.expLoop Crt.expLoopS Crt.expWin Crt.tabBuild Crt.tabBuildN
+  fill_gen
+
+private theorem ifma_stubX : (VG.Impl.Ffdh.X86_64.Ifma.code stubMM sX sXl).all
+    (fun a => X86_64.Scrub.stubCalleeG a Impl.Scrub.X86_64.VecLevel.evex.level (fun _ => 8) 8) = true := by
+  lit_decide
+
+private theorem ifma_stubE : (VG.Impl.Ffdh.X86_64.Ifma.code stubMM sEp sEl).all
+    (fun a => X86_64.Scrub.stubCalleeG a Impl.Scrub.X86_64.VecLevel.evex.level (fun _ => 8) 8) = true := by
+  lit_decide
+
+theorem ifma_side (mul : Nat → Nat → Nat → Prog isa) (k : Nat) (hk : Impl.Scrub.X86_64.VecLevel.evex.level ≤ k)
+    (hm : ∀ o a b, X86_64.Scrub.calleeSide (mul o a b) k 8 = true) (sp sl : Nat) (hs : ExpSlots sp sl) :
+    ∀ c ∈ VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl, X86_64.Scrub.calleeSide c k 8 = true := by
+  refine X86_64.Scrub.calleeSide_of_forall₂ (ifma_fill mul k hm sp sl) hk ?_
+  rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · exact ifma_stubX
+  · exact ifma_stubE
+
 def variant : ExpImpl where
   code := VG.Impl.Ffdh.X86_64.Ifma.code
   E := Proof.Ffdh.X86_64.Ifma.expL
@@ -174,6 +200,8 @@ def variant : ExpImpl where
   ctl := ifma_ctl
   ctX := ifma_ctX
   ctE := ifma_ctE
+  level := .evex
+  side := ifma_side
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl"]
 

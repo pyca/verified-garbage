@@ -218,6 +218,15 @@ theorem seqs_append {f : String} {ds bs : List (Prog isa)} {a : Prog isa} (hne :
       | cons _ _ => rfl
   rw [e]; exact holes f ds hd h
 
+/-- A list spliced into a sequence of the implementation's code after its
+element `x`, in the place of a hole of the stub's. -/
+theorem seqs_cons {x : Prog isa} {ds bs : List (Prog isa)} {a c : Prog isa} (hx : FillG k n a x)
+    (h : FillG k n c (Impl.Bignum.X86_64.seqs (ds ++ bs))) (hne : bs ≠ []) :
+    FillG k n (.seq a c) (Impl.Bignum.X86_64.seqs (x :: (ds ++ bs))) := by
+  cases h' : ds ++ bs with
+  | nil => exact absurd (List.append_eq_nil_iff.mp h').2 hne
+  | cons y ys => rw [h'] at h; exact .seq hx h
+
 end FillG
 
 /-- `r`'s code `b`, generic over code it inlines or calls (`FillG k n a b`),
@@ -251,6 +260,20 @@ theorem calleeSide_of_fillG {ks k : Nat} {n : String → Nat} {m : Nat} {a b : P
   simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq]
   exact ⟨⟨Nat.le_trans hf.depth_le hd, hf.side (side_mono hks hs)⟩, by rw [hf.inames_eq]; exact hi⟩
 
+/-- Each of a list of code generic over code it inlines meets `calleeSide`,
+from `stubCalleeG` of each of the list over a stub. -/
+theorem calleeSide_of_forall₂ {ks k : Nat} {n : String → Nat} {m : Nat} {as bs : List (Prog isa)}
+    (hf : List.Forall₂ (FillG k n) as bs) (hks : ks ≤ k)
+    (ha : as.all (fun a => stubCalleeG a ks n m) = true) : ∀ b ∈ bs, calleeSide b k m = true := by
+  induction hf with
+  | nil => intro b hb; cases hb
+  | cons h _ ih =>
+    simp only [List.all_cons, Bool.and_eq_true] at ha
+    intro b hb
+    rcases List.mem_cons.mp hb with rfl | hb
+    · exact calleeSide_of_fillG h hks ha.1
+    · exact ih ha.2 b hb
+
 /-- Proves `FillG k n a b` of a function's code over a stub (`a`) and over
 implementations (`b`), from hypotheses `calleeSide c k m = true` of what
 fills each hole (or `∀ o a b, …` of a family of such code): it walks the
@@ -260,7 +283,7 @@ macro "fill_gen" : tactic => `(tactic| repeat' (first
   | with_reducible exact FillG.refl _
   | exact FillG.block _
   | exact FillG.hole _ (by assumption)
-  | exact FillG.hole _ (by apply_assumption)
+  | exact FillG.hole _ (by solve_by_elim (maxDepth := 3))
   | exact FillG.hole _ (FillG.calleeSide_call _ (by assumption))
   | refine FillG.seq ?_ ?_
   | refine FillG.ite _ ?_ ?_
@@ -268,6 +291,11 @@ macro "fill_gen" : tactic => `(tactic| repeat' (first
   | refine FillG.call _ _ ?_
   | refine FillG.frame _ _ ?_
   | refine FillG.icall _ _ ?_ ?_
-  | refine FillG.ifp ?_ ?_))
+  | refine FillG.ifp ?_ ?_
+  | exact List.Forall₂.nil
+  | refine List.Forall₂.cons ?_ ?_
+  | simp only [List.nil_append, List.append_eq]
+  | (refine FillG.seqs_append (by simp) ?_ ?_; · intro d hd; solve_by_elim (maxDepth := 3))
+  | refine FillG.seqs_cons ?_ ?_ (by simp)))
 
 end VG.X86_64.Scrub

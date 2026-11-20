@@ -157,7 +157,16 @@ def arith : RoundArith where
   arithSafe := by intro o a b; rfl
 
 
+/-- What the cleanup of a caller needs of the specialized multiplication, at
+the level `k`. -/
+theorem inlineSide (k : Nat) (o a b : Nat) :
+    X86_64.Scrub.calleeSide (arith.inlineMont.mm o a b) k 0 = true := by
+  change X86_64.Scrub.calleeSide (Impl.Bignum.X86_64.MontFnSpecialized.mm o a b) k 0 = true
+  unfold Impl.Bignum.X86_64.MontFnSpecialized.mm
+    Impl.Bignum.X86_64.MontFnSpecialized.body Impl.Bignum.X86_64.MontFnSpecialized.tiled
+  split <;> rfl
+
 def variant : RoundImpl := RoundImpl.ofArith arith (by decide +kernel) (by decide +kernel) .sse (by lit_decide)
-  (by intro o a b; rfl) "_adx" ["bmi2", "adx"]
+  (by intro o a b; rfl) (by intro o a b; rfl) (inlineSide _) "_adx" ["bmi2", "adx"]
 
 end VG.Proof.Variants.MillerRabin.X86_64.Adx

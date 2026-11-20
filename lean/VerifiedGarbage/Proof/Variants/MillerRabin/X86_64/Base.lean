@@ -35,6 +35,6 @@ def arith : RoundArith where
 
 
 def variant : RoundImpl := RoundImpl.ofArith arith (by decide +kernel) (by decide +kernel) .sse (by lit_decide)
-  (by intro o a b; rfl) "" []
+  (by intro o a b; rfl) (by intro o a b; rfl) (by intro o a b; rfl) "" []
 
 end VG.Proof.Variants.MillerRabin.X86_64.Base

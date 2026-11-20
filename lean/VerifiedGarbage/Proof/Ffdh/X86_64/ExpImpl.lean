@@ -6,6 +6,9 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Bignum.X86_64.Template
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubFillG
+import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
@@ -49,6 +52,14 @@ structure ExpImpl where
     (code mul sp sl).all ctlOk = true
   ctX : ∀ M, ExpCTL (E M) sX sXl
   ctE : ∀ M, ExpCTL (E M) sEp sEl
+  /-- The level of its own vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that runs it needs of each of its code
+  (`X86_64.Scrub.calleeSide`), at any level `k` at least its own, given it of
+  the multiplication. -/
+  side : ∀ (mul : Nat → Nat → Nat → Prog isa) (k : Nat), level.level ≤ k →
+    (∀ o a b, X86_64.Scrub.calleeSide (mul o a b) k 8 = true) → ∀ sp sl, ExpSlots sp sl →
+      ∀ c ∈ code mul sp sl, X86_64.Scrub.calleeSide c k 8 = true
   suffix : String
   features : List String
 
@@ -199,6 +210,22 @@ theorem base_ctl (mul : Nat → Nat → Nat → Prog isa)
     (Crt.expLoop mul Crt.tabSelect sp sl).all ctlOk = true := by
   rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact all_ctl_of (base_instrs _ mul (by decide +kernel) hm)
 
+/-- `Crt.expLoop` over a stub of the multiplication. -/
+abbrev stubMM : Nat → Nat → Nat → Prog isa := fun _ _ _ => .call "mm" (.block [])
+
+private theorem base_fill (mul : Nat → Nat → Nat → Prog isa) (k : Nat)
+    (hm : ∀ o a b, X86_64.Scrub.calleeSide (mul o a b) k 8 = true) (sp sl : Nat) :
+    List.Forall₂ (X86_64.Scrub.FillG k (fun _ => 8)) (Crt.expLoop stubMM Crt.tabSelect sp sl)
+      (Crt.expLoop mul Crt.tabSelect sp sl) := by
+  unfold Crt.expLoop Crt.expLoopS Crt.expWin Crt.tabBuild Crt.tabBuildN
+  fill_gen
+
+theorem base_side (mul : Nat → Nat → Nat → Prog isa) (k : Nat) (_ : Impl.Scrub.X86_64.VecLevel.sse.level ≤ k)
+    (hm : ∀ o a b, X86_64.Scrub.calleeSide (mul o a b) k 8 = true) (sp sl : Nat) (hs : ExpSlots sp sl) :
+    ∀ c ∈ Crt.expLoop mul Crt.tabSelect sp sl, X86_64.Scrub.calleeSide c k 8 = true := by
+  refine X86_64.Scrub.calleeSide_of_forall₂ (base_fill mul k hm sp sl) (Nat.zero_le k) ?_
+  rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+
 /-- `Crt.expLoop`, by windows of 4 bits. -/
 def ExpImpl.base : ExpImpl where
   code mul := Crt.expLoop mul Crt.tabSelect
@@ -210,6 +237,8 @@ def ExpImpl.base : ExpImpl where
   ctl := base_ctl
   ctX := base_ctX
   ctE := base_ctE
+  level := .sse
+  side := base_side
   suffix := ""
   features := []
 
