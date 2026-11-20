@@ -11,7 +11,7 @@ On the key context, `vg_aes_gcm_open_to_prepared` calls `vg_aes_gcm_open_split`
 (`blkToDecB`), which calls `vg_ghash` and the out-of-place `vg_aes_ctr32_to`
 (`GcmVariant.ctrTo`). Each is evaluated once over stubs of what it calls
 (`calleeSide_of_fill`), and the function over a stub of the first
-(`verifiedScrubbedAllFill`), at the level `GcmVariant.lvT`.
+(`verifiedScrubbedAllFill`), at the level `GcmVariant.lvTW` (`lvT` on prepared powers).
 -/
 
 @[expose] public section
@@ -47,6 +47,17 @@ theorem GcmVariant.ctrTo_le_lvT (v : GcmVariant) : v.ctrTo.level.level ≤ v.lvT
 
 theorem GcmVariant.toLv_le_lvT (v : GcmVariant) : v.toLv.level ≤ v.lvT.level := level_join_right _ _
 
+/-- The level of the cleanup of `v`'s `open_to` on the key context: `lv`'s
+and its out-of-place `vg_aes_ctr32_to`'s. -/
+def GcmVariant.lvTW (v : GcmVariant) : VecLevel := v.lv.join v.ctrTo.level
+
+theorem join_mono_left {a b : VecLevel} (c : VecLevel) (h : a.level ≤ b.level) :
+    (a.join c).level ≤ (b.join c).level := by
+  revert h; cases a <;> cases b <;> cases c <;> decide
+
+theorem GcmVariant.lvTW_le_lvT (v : GcmVariant) : v.lvTW.level ≤ v.lvT.level :=
+  Nat.le_trans (join_mono_left _ v.lv_le_lvA) (level_join_left _ _)
+
 theorem GcmVariant.one_le_lvT (v : GcmVariant) : 1 ≤ v.lvT.level :=
   Nat.le_trans (Nat.le_trans (level_join_right v.own .avx) (v.impl.lv_le _).2.2.2) v.lvA_le_lvT
 
@@ -81,22 +92,26 @@ theorem openToSplit_fill {k : Nat} {n : String → Nat} (S : Fn) (hS : calleeSid
       (withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit S)) := by
   fill_calls_wide
 
+/-- `v`'s callees meet `CalleesSide` at the level `lvTW`. -/
+theorem callees_sideTW (v : GcmVariant) : CalleesSide v.lvTW.level v.impl.callees :=
+  CalleesSide.mono (level_join_left _ _) (callees_side v)
+
 /-- `v`'s callees meet `CalleesSide` at the level `lvT`. -/
 theorem callees_sideT (v : GcmVariant) : CalleesSide v.lvT.level v.impl.callees :=
-  CalleesSide.mono (Nat.le_trans v.lv_le_lvA v.lvA_le_lvT) (callees_side v)
+  CalleesSide.mono v.lvTW_le_lvT (callees_sideTW v)
 
 /-- `v`'s `vg_aes_gcm_decrypt_blocks_to` on the key context. -/
-theorem blkToDecB_side (v : GcmVariant) : calleeSide (blkToDecB v v.ctrTo).fn.code v.lvT.level 24 = true :=
-  have hl := Nat.le_trans (Nat.le_trans (v.impl.lv_le v.own).2.2.1 v.lv_le_lvA) v.lvA_le_lvT
+theorem blkToDecB_side (v : GcmVariant) : calleeSide (blkToDecB v v.ctrTo).fn.code v.lvTW.level 24 = true :=
+  have hl := Nat.le_trans (v.impl.lv_le v.own).2.2.1 (level_join_left _ _)
   calleeSide_of_fill (ks := 0)
     (decryptTo_fill (n := fun _ => 0) _ _ (calleeSide_mono hl (Nat.le_refl 0) v.impl.gh.side)
-      (calleeSide_mono v.ctrTo_le_lvT (Nat.le_refl 0) v.ctrTo.side))
+      (calleeSide_mono (level_join_right _ _) (Nat.le_refl 0) v.ctrTo.side))
     (Nat.zero_le _) (by lit_decide)
 
 /-- `v`'s `vg_aes_gcm_open_split` on the key context. -/
-theorem openSplitFnB_side (v : GcmVariant) : calleeSide (openSplitFnB v v.ctrTo).fn.code v.lvT.level 56 = true :=
-  have h := callees_sideT v
-  have m := fun {c : Prog isa} (hc : calleeSide c v.lvT.level 8 = true) =>
+theorem openSplitFnB_side (v : GcmVariant) : calleeSide (openSplitFnB v v.ctrTo).fn.code v.lvTW.level 56 = true :=
+  have h := callees_sideTW v
+  have m := fun {c : Prog isa} (hc : calleeSide c v.lvTW.level 8 = true) =>
     calleeSide_mono (Nat.le_refl _) (show 8 ≤ 24 by decide) hc
   calleeSide_of_fill (ks := 0)
     (openSplit_fill (n := fun _ => 24) _ _ (m h.ctr) (m h.gh) (blkToDecB_side v))
@@ -106,11 +121,11 @@ theorem openSplitFnB_side (v : GcmVariant) : calleeSide (openSplitFnB v v.ctrTo)
 over `v` (`Impl.AesGcm.X86_64.Fn.openToW`), meets its contract in constant
 time and returns without secret residue. -/
 theorem openToW_scrubbed (v : GcmVariant) :
-    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.openToW v.lvT (openSplitFnB v v.ctrTo).fn)
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.openToW v.lvTW (openSplitFnB v v.ctrTo).fn)
       (Spec.Gcm.openToPreparedApi.contract X86_64.abi 2776) 32 :=
   verifiedScrubbedAllFill (api := Spec.Gcm.openToPreparedApi) (ks := 0) (n := fun _ => 56)
     (a := withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit splitStub))
-    (openToWPlain v) v.lvT (openToPreparedOut _) (openToSplit_fill _ (openSplitFnB_side v))
+    (openToWPlain v) v.lvTW (openToPreparedOut _) (openToSplit_fill _ (openSplitFnB_side v))
     (Nat.zero_le _) (Nat.le_refl _)
 
 /-! ## On prepared powers -/
@@ -337,7 +352,7 @@ theorem openToR_scrubbed (v : GcmVariant) :
       (Spec.Gcm.openToPreparedApi.contract X86_64.abi 2776) 32 := by
   have hO := calleeSide_mono v.lvA_le_lvT (show 2632 ≤ openToN "O" by decide) (openCodeF_side v)
   have hF := calleeSide_mono (Nat.le_refl _) (show 56 ≤ openToN "F" by decide) (openSplitFnF_side v)
-  have hS := calleeSide_mono (Nat.le_refl _) (show 56 ≤ openToN "S" by decide) (openSplitFnB_side v)
+  have hS := calleeSide_mono v.lvTW_le_lvT (show 56 ≤ openToN "S" by decide) (openSplitFnB_side v)
   have ha := openToP_stub 48 (.inr rfl) v.stitchToDecR.isSome v.impl.copyW (copyW_cases v.impl)
   exact verifiedScrubbedAllFill (api := Spec.Gcm.openToPreparedApi) (n := openToN) (rb := 32) (stack := 2776)
     (a := Impl.Gcm.X86_64.Flag.onFlag 48 (Impl.AesGcm.X86_64.Fn.openToCodeP v.stitchToDecR.isSome v.impl.copyW openStubO splitStubF)
@@ -359,7 +374,7 @@ theorem openToR16_scrubbed (v : GcmVariant) (r : R16 v) :
       (Spec.Gcm.openToPreparedApi.contract X86_64.abi 2776) 32 := by
   have hO := calleeSide_mono v.lvA_le_lvT (show 2632 ≤ openToN "O" by decide) (openCodeF16_side v)
   have hF := calleeSide_mono (Nat.le_refl _) (show 56 ≤ openToN "F" by decide) (openSplitFnF16_side v)
-  have hS := calleeSide_mono (Nat.le_refl _) (show 56 ≤ openToN "S" by decide) (openSplitFnB_side v)
+  have hS := calleeSide_mono v.lvTW_le_lvT (show 56 ≤ openToN "S" by decide) (openSplitFnB_side v)
   have ha := openToP_stub 16 (.inl rfl) v.stitchToDecR16.isSome v.impl.copyW (copyW_cases v.impl)
   exact verifiedScrubbedAllFill (api := Spec.Gcm.openToPreparedApi) (n := openToN) (rb := 32) (stack := 2776)
     (a := Impl.Gcm.X86_64.Flag.onFlag 16 (Impl.AesGcm.X86_64.Fn.openToCodeP v.stitchToDecR16.isSome v.impl.copyW openStubO splitStubF)

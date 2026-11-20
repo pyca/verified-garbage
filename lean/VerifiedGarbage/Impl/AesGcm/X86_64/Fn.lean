@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
 public import VerifiedGarbage.Impl.Gcm.X86_64.Flag
 public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenToSplit
 public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenTo
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 
@@ -139,5 +140,34 @@ def openToP (v : VecLevel) (t : Nat) (sel : Bool) (w : Impl.ChaCha20Poly1305.X86
     (fO fS S : Fn) : Prog isa :=
   scrubAll v 32 2776 (Impl.Gcm.X86_64.Flag.onFlag t (openToCodeP sel w fO fS)
     (withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit S)))
+
+/-- `vg_aes_gcm_seal_gather`'s code calling `Se` (`vg_aes_gcm_seal`), `Sp`
+(`vg_aes_gcm_seal_split`), `I`, `A`, `To` and `Fi` (the streaming
+functions), copying texts below `t` bytes, and sealing a first slice of `ts`
+bytes or more in place; with `inl`, the streaming functions inline. -/
+def sealGatherCode (t ts : Nat) (Se Sp I A To Fi : Fn) (inl : Bool := false) : Prog isa :=
+  withStackArgScratch 240 5 (Impl.AesGcm.X86_64.SealGather.sealGather
+    (.block (Impl.AesGcm.X86_64.SealGather.quickTest ts)) (Impl.AesGcm.X86_64.SealGather.copySeal Se)
+    (Impl.AesGcm.X86_64.SealGather.splitTest t) (Impl.AesGcm.X86_64.SealGather.copyShort ts Se Sp) I A To Fi inl)
+
+/-- `Spec.Gcm.sealGatherPreparedApi`'s function on the key context alone, as emitted. -/
+def sealGatherW (v : VecLevel) (t ts : Nat) (Se Sp I A To Fi : Fn) : Prog isa :=
+  scrubAll v 0 5128 (sealGatherCode t ts Se Sp I A To Fi)
+
+/-- `vg_aes_gcm_seal_gather`'s code on prepared powers: a TLS record's first
+slice by `SpF` (from 256 bytes if `long`), then as `sealGatherCode`. -/
+def sealGatherCodeP (long : Bool) (t ts : Nat) (SeF SpF I A ToF Fi : Fn) (inl : Bool) : Prog isa :=
+  withStackArgScratch 240 5 (Impl.AesGcm.X86_64.SealGather.withFront long SpF
+    (Impl.AesGcm.X86_64.SealGather.sealGather
+      (.block (Impl.AesGcm.X86_64.SealGather.quickTest ts)) (Impl.AesGcm.X86_64.SealGather.copySeal SeF)
+      (Impl.AesGcm.X86_64.SealGather.splitTest t) (Impl.AesGcm.X86_64.SealGather.copyShort ts SeF SpF)
+      I A ToF Fi inl))
+
+/-- `Spec.Gcm.sealGatherPreparedApi`'s function, by the count `c` on the
+prepared powers or on the key context, as emitted. -/
+def sealGatherP (v : VecLevel) (c : Nat) (long : Bool) (t ts : Nat) (SeF SpF ToF Se Sp To I A Fi : Fn)
+    (inl : Bool) : Prog isa :=
+  scrubAll v 0 5128 (Impl.Gcm.X86_64.Flag.onFlag c (sealGatherCodeP long t ts SeF SpF I A ToF Fi inl)
+    (sealGatherCode t ts Se Sp I A To Fi))
 
 end VG.Impl.AesGcm.X86_64.Fn
