@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndVerified
@@ -13,8 +13,8 @@ public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndVerified
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecP.Verified
@@ -27,9 +27,10 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 /-!
 # RSAES-PKCS1-v1_5 on x86 (32-bit), without secret residue
 
-`vg_rsa_pkcs1_encrypt_random`, followed by the zeroing of the stack its
+`vg_rsa_pkcs1_encrypt_random`, emitted with the zeroing of the stack its
 contract reserves and the tail that clears the registers
-(`X86.Scrub.scrubFOf`). Its postcondition reads the memory on return only
+(`Impl.RsaPkcs1Enc.X86.Fn.encryptRandom`), returns without secret residue
+(`encryptRandom_scrubbed`). Its postcondition reads the memory on return only
 within `out` and `tape`, given that `out` holds `n_len` bytes
 (`X86.Scrub.PostOut`).
 
@@ -81,13 +82,17 @@ theorem encryptRandomOut (stack : Nat) :
       | .entropy .. => simp only [e']; exact id
       | .exhausted => simp only [e']; exact id
 
-/-! ## The registration -/
+/-! ## The function, with its cleanup -/
 
 open VG.Proof.RsaPkcs1Sig.X86.Ver (baseline)
 
-/-- `Spec.RsaPkcs1Enc.encryptRandomApi`, with the baseline public-key operation. -/
-def encryptRandomReg : Registration Spec.RsaPkcs1Enc.encryptRandomApi X86.target :=
-  scrubFOf {
+/-- `vg_rsa_pkcs1_encrypt_random`, with the baseline public-key operation and
+its cleanup, returns without secret residue. -/
+theorem encryptRandom_scrubbed :
+    VerifiedScrubbed target
+      (Impl.RsaPkcs1Enc.X86.Fn.encryptRandom Proof.RsaPkcs1Enc.X86.Rnd.encName (Proof.RsaPkcs1Enc.X86.Rnd.enc baseline))
+      Proof.RsaPkcs1Enc.X86.Rnd.spec 32 :=
+  verifiedScrubbedF (api := Spec.RsaPkcs1Enc.encryptRandomApi) {
       code := Impl.RsaPkcs1Enc.X86.Random.code Proof.RsaPkcs1Enc.X86.Rnd.encName
         (Proof.RsaPkcs1Enc.X86.Rnd.enc baseline)
       verified := Proof.RsaPkcs1Enc.X86.Rnd.code_verified Proof.RsaPkcs1Enc.X86.Rnd.encName baseline
@@ -169,6 +174,6 @@ theorem decryptPrecomputed_scrubbed (v : Backend) (c : CrtImpl) :
 theorem decryptPrecomputed_spSafe (v : Backend) (c : CrtImpl) :
     (Impl.RsaPkcs1Enc.X86.Fn.decryptPrecomputed v.F (Proof.RsaPkcs1Enc.X86.Dec.privNameP c)
       (privCodeP c crtPBaseline)).all (fun i => !isa.writesSp i) = true :=
-  scrubF_all (Proof.RsaPkcs1Enc.X86.Dec.codeP_sp v c crtPBaseline)
+  scrubF_spSafe (Proof.RsaPkcs1Enc.X86.Dec.codeP_sp v c crtPBaseline)
 
 end VG.Proof.RsaPkcs1Enc.X86.Scrub

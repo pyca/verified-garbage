@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Impl.Rsa.X86.Fn
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
@@ -19,8 +19,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchInstance
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Impl.Rsa.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
@@ -36,10 +36,13 @@ meta import VerifiedGarbage.Proof.Rsa.X86.BatchInstance
 /-!
 # RSA's key functions on x86 (32-bit), without secret residue
 
-`vg_rsa_recover_primes_det` and `vg_rsa_check_key`, which call nothing and
-have no frame, are scrubbed with `X86.Scrub.scrubOf`; `vg_rsa_crt_values`,
-`vg_rsa_public_precompute` and `vg_rsa_private_precompute` with
-`X86.Scrub.scrubFOf`, which zeroes the stack their contracts reserve. Their
+Each is emitted with its cleanup (`Impl.Rsa.X86.Fn`), and returns without
+secret residue (`…_scrubbed`): `vg_rsa_recover_primes_det` and
+`vg_rsa_check_key`, which call nothing and have no frame, followed by the
+tail that clears the registers (`X86.Scrub.verifiedScrubbed`);
+`vg_rsa_crt_values`, `vg_rsa_public_precompute` and
+`vg_rsa_private_precompute` also by the zeroing of the stack their contracts
+reserve (`X86.Scrub.verifiedScrubbedF`). Their
 postconditions read the memory on return only within their outputs
 (`X86.Scrub.PostOut`): the words at `pre`, or the octets at `dp`, `dq` and
 `qinv` (`bytesAt_of`, `wordsAt_of`). `vg_rsa_private_precompute` calls the
@@ -105,41 +108,47 @@ theorem crtValuesOut (stack : Nat) :
       cases v <;> simp only [Spec.Rsa.writtenAll, List.map_cons, List.map_nil, List.mem_cons,
         List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, ep, eq, ei] <;> exact id
 
-/-! ## The registrations -/
+/-! ## The functions, with their cleanup -/
 
-/-- `Spec.Rsa.recoverPrimesDetApi`. -/
-def recoverPrimesDetReg : Registration Spec.Rsa.recoverPrimesDetApi X86.target :=
-  scrubOf {
+/-- `vg_rsa_recover_primes_det`, with its cleanup, returns without secret residue. -/
+theorem recoverPrimesDet_scrubbed :
+    VerifiedScrubbed target Impl.Rsa.X86.Fn.recoverPrimesDet (Spec.Rsa.recoverPrimesDetContract abi 96) 32 :=
+  verifiedScrubbed (api := Spec.Rsa.recoverPrimesDetApi) {
     code := Impl.Rsa.X86.RecoverDetRt.code
     verified := Proof.Rsa.X86.Recover.verifiedD
     spSafe := Proof.Rsa.X86.RtShape.recoverDet_spSafe }
 
-/-- `Spec.Rsa.checkKeyApi`. -/
-def checkKeyReg : Registration Spec.Rsa.checkKeyApi X86.target :=
-  scrubOf {
+/-- `vg_rsa_check_key`, with its cleanup, returns without secret residue. -/
+theorem checkKey_scrubbed :
+    VerifiedScrubbed target Impl.Rsa.X86.Fn.checkKey (Proof.Rsa.X86.KeyCheck.contract true) 32 :=
+  verifiedScrubbed (api := Spec.Rsa.checkKeyApi) {
     code := Impl.Rsa.X86.KeyCheckRt.code true
     verified := Proof.Rsa.X86.KeyCheck.verified true
     spSafe := Proof.Rsa.X86.RtShape.check_spSafe true }
 
-/-- `Spec.Rsa.crtValuesApi`. -/
-def crtValuesReg : Registration Spec.Rsa.crtValuesApi X86.target :=
-  scrubFOf {
-      code := Impl.Rsa.X86.CrtValuesRt.code
+/-- `vg_rsa_crt_values`, with its cleanup, returns without secret residue. -/
+theorem crtValues_scrubbed :
+    VerifiedScrubbed target Impl.Rsa.X86.Fn.crtValues (Spec.Rsa.crtValuesContract abi 52) 32 :=
+  verifiedScrubbedF (api := Spec.Rsa.crtValuesApi)
+    { code := Impl.Rsa.X86.CrtValuesRt.code
       verified := Proof.Rsa.X86.CrtValues.verified
       spSafe := Proof.Rsa.X86.RtShape.crtValues_spSafe }
     (crtValuesOut _)
 
-/-- `Spec.Rsa.publicPrecomputeApi`. -/
-def publicPrecomputeReg : Registration Spec.Rsa.publicPrecomputeApi X86.target :=
-  scrubFOf {
-      code := Impl.Bignum.X86.PrecomputeFn.code
+/-- `vg_rsa_public_precompute`, with its cleanup, returns without secret residue. -/
+theorem publicPrecompute_scrubbed :
+    VerifiedScrubbed target Impl.Rsa.X86.Fn.publicPrecompute (Spec.Rsa.publicPrecomputeContract abi 96) 32 :=
+  verifiedScrubbedF (api := Spec.Rsa.publicPrecomputeApi)
+    { code := Impl.Bignum.X86.PrecomputeFn.code
       verified := Proof.Bignum.X86.precompute_verified }
     (publicPrecomputeOut _)
 
-/-- `Spec.Rsa.privatePrecomputeApi`. -/
-def privatePrecomputeReg : Registration Spec.Rsa.privatePrecomputeApi X86.target :=
-  scrubFOf {
-      code := Proof.Bignum.X86.PrivPre.ppCode
+/-- `vg_rsa_private_precompute`, with its cleanup, returns without secret residue. -/
+theorem privatePrecompute_scrubbed :
+    VerifiedScrubbed target Impl.Rsa.X86.Fn.privatePrecompute
+      (Spec.Rsa.privatePrecomputeContract abi Proof.Bignum.X86.PrivPre.stackBytes) 32 :=
+  verifiedScrubbedF (api := Spec.Rsa.privatePrecomputeApi)
+    { code := Proof.Bignum.X86.PrivPre.ppCode
       verified := Proof.Bignum.X86.PrivPre.pp_verified
       spSafe := Proof.Bignum.X86.PrivPre.pp_spSafe }
     (privatePrecomputeOut _)

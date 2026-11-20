@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
-public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInit
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.GenScrub
@@ -14,9 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
-meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInit
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.GenScrub
@@ -28,8 +24,9 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 /-!
 # RSA key generation on x86 (32-bit), without secret residue
 
-`vg_rsa_generate_init`, which calls nothing and has no frame, followed by
-the tail that clears the registers (`X86.Scrub.scrubOf`).
+`vg_rsa_generate_init`, which calls nothing and has no frame, is emitted
+with the tail that clears the registers (`Impl.RsaKeyGen.X86.Fn.generateInit`),
+and returns without secret residue (`generateInit_scrubbed`).
 
 `vg_rsa_generate`, generic over the implementation of the Miller–Rabin
 round, is emitted with its cleanup (`Impl.RsaKeyGen.X86.Fn.generate`), which
@@ -45,9 +42,10 @@ namespace VG.Proof.RsaKeyGen.X86.Scrub
 
 open VG.X86 VG.X86.Scrub VG.Proof.Rsa.X86.Scrub
 
-/-- `Spec.RsaKeyGen.keyInitApi`. -/
-def keyInitReg : Registration Spec.RsaKeyGen.keyInitApi X86.target :=
-  scrubOf {
+/-- `vg_rsa_generate_init`, with its cleanup, returns without secret residue. -/
+theorem generateInit_scrubbed :
+    VerifiedScrubbed target Impl.RsaKeyGen.X86.Fn.generateInit (Spec.RsaKeyGen.keyInitContract abi) 32 :=
+  verifiedScrubbed (api := Spec.RsaKeyGen.keyInitApi) {
     code := Impl.RsaKeyGen.X86.KeyInit.init
     verified := Proof.RsaKeyGen.X86.KeyInit.init_verified }
 
@@ -98,6 +96,6 @@ theorem generate_scrubbed (v : RoundImpl) :
 /-- `vg_rsa_generate`, with its cleanup, writes `esp` only by its frames. -/
 theorem generate_spSafe (v : RoundImpl) :
     (Impl.RsaKeyGen.X86.Fn.generate (srchOf v).call keyImpl.call).all (fun i => !isa.writesSp i) = true :=
-  scrubF_all (Proof.RsaKeyGen.X86.Generate.genCode_sp v)
+  scrubF_spSafe (Proof.RsaKeyGen.X86.Generate.genCode_sp v)
 
 end VG.Proof.RsaKeyGen.X86.Scrub

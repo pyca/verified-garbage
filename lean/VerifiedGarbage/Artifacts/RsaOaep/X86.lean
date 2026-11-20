@@ -19,10 +19,18 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 namespace VG.Artifacts.RsaOaep.X86.AllSha1AllSha256
 
 open VG.Proof.RsaOaep.X86 (OK)
-open VG.Proof.RsaOaep.X86.Scrub (allVars encryptReg)
+open VG.Proof.RsaOaep.X86.Scrub (allVars encrypt_scrubbed)
+open VG.Proof.HashTable.X86 (tables fnsOf)
 
 def artifacts : List Artifact :=
-  if h : OK allVars then [Spec.RsaOaep.encryptMdTablesApi.artifact X86.target (encryptReg h)] else []
+  if h : OK allVars then [
+    Spec.RsaOaep.encryptMdTablesApi.artifact X86.target {
+      suffix := qualifiedName "" []
+      tables := [("hash", tables allVars), ("mgf1", tables allVars)]
+      code := Impl.RsaOaep.X86.Fn.encryptPrecomputed (fnsOf allVars) Proof.RsaPkcs1Sig.X86.Ver.baseline.name
+        Proof.RsaPkcs1Sig.X86.Ver.baseline.code
+      verified := .scrubbed (encrypt_scrubbed h) }]
+  else []
 
 end VG.Artifacts.RsaOaep.X86.AllSha1AllSha256
 
