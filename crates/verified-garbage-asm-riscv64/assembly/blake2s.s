@@ -181,16 +181,16 @@ vg_blake2s_init:
 vg_blake2s_update:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -576
+	addi sp, sp, -336
 	addi a4, sp, 0
 	addi t0, a4, 7
 	andi t0, t0, -8
-	sd ra, 512(t0)
-	sd s7, 520(t0)
-	sd s9, 528(t0)
-	sd s10, 536(t0)
-	sd s11, 544(t0)
-	sd s8, 552(t0)
+	sd ra, 280(t0)
+	sd s7, 288(t0)
+	sd s9, 296(t0)
+	sd s10, 304(t0)
+	sd s11, 312(t0)
+	sd s8, 320(t0)
 	addi s7, a0, 0
 	addi s8, t0, 0
 	addi s9, a2, 0
@@ -288,15 +288,15 @@ vg_blake2s_update:
 	j 23f
 22:
 23:
-	ld ra, 512(s8)
-	ld s7, 520(s8)
-	ld s9, 528(s8)
-	ld s10, 536(s8)
-	ld s11, 544(s8)
-	ld s8, 552(s8)
-	addi sp, sp, 576
+	ld ra, 280(s8)
+	ld s7, 288(s8)
+	ld s9, 296(s8)
+	ld s10, 304(s8)
+	ld s11, 312(s8)
+	ld s8, 320(s8)
+	addi sp, sp, 336
 	addi t0, zero, 0
-	addi sp, sp, -576
+	addi sp, sp, -336
 	addi t1, sp, 0
 	sd t0, 0(t1)
 	sd t0, 8(t1)
@@ -340,37 +340,7 @@ vg_blake2s_update:
 	sd t0, 312(t1)
 	sd t0, 320(t1)
 	sd t0, 328(t1)
-	sd t0, 336(t1)
-	sd t0, 344(t1)
-	sd t0, 352(t1)
-	sd t0, 360(t1)
-	sd t0, 368(t1)
-	sd t0, 376(t1)
-	sd t0, 384(t1)
-	sd t0, 392(t1)
-	sd t0, 400(t1)
-	sd t0, 408(t1)
-	sd t0, 416(t1)
-	sd t0, 424(t1)
-	sd t0, 432(t1)
-	sd t0, 440(t1)
-	sd t0, 448(t1)
-	sd t0, 456(t1)
-	sd t0, 464(t1)
-	sd t0, 472(t1)
-	sd t0, 480(t1)
-	sd t0, 488(t1)
-	sd t0, 496(t1)
-	sd t0, 504(t1)
-	sd t0, 512(t1)
-	sd t0, 520(t1)
-	sd t0, 528(t1)
-	sd t0, 536(t1)
-	sd t0, 544(t1)
-	sd t0, 552(t1)
-	sd t0, 560(t1)
-	sd t0, 568(t1)
-	addi sp, sp, 576
+	addi sp, sp, 336
 	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0
@@ -392,16 +362,16 @@ vg_blake2s_update:
 vg_blake2s_finalize:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -576
+	addi sp, sp, -336
 	addi a3, sp, 0
 	addi t0, a3, 7
 	andi t0, t0, -8
-	sd ra, 512(t0)
-	sd s7, 520(t0)
-	sd s9, 528(t0)
-	sd s10, 536(t0)
-	sd s11, 544(t0)
-	sd s8, 552(t0)
+	sd ra, 280(t0)
+	sd s7, 288(t0)
+	sd s9, 296(t0)
+	sd s10, 304(t0)
+	sd s11, 312(t0)
+	sd s8, 320(t0)
 	addi s7, a0, 0
 	addi s8, t0, 0
 	addi s9, a2, 0
@@ -498,15 +468,15 @@ vg_blake2s_finalize:
 	sb t1, 30(s9)
 	lbu t1, 31(s7)
 	sb t1, 31(s9)
-	ld ra, 512(s8)
-	ld s7, 520(s8)
-	ld s9, 528(s8)
-	ld s10, 536(s8)
-	ld s11, 544(s8)
-	ld s8, 552(s8)
-	addi sp, sp, 576
+	ld ra, 280(s8)
+	ld s7, 288(s8)
+	ld s9, 296(s8)
+	ld s10, 304(s8)
+	ld s11, 312(s8)
+	ld s8, 320(s8)
+	addi sp, sp, 336
 	addi t0, zero, 0
-	addi sp, sp, -576
+	addi sp, sp, -336
 	addi t1, sp, 0
 	sd t0, 0(t1)
 	sd t0, 8(t1)
@@ -550,37 +520,7 @@ vg_blake2s_finalize:
 	sd t0, 312(t1)
 	sd t0, 320(t1)
 	sd t0, 328(t1)
-	sd t0, 336(t1)
-	sd t0, 344(t1)
-	sd t0, 352(t1)
-	sd t0, 360(t1)
-	sd t0, 368(t1)
-	sd t0, 376(t1)
-	sd t0, 384(t1)
-	sd t0, 392(t1)
-	sd t0, 400(t1)
-	sd t0, 408(t1)
-	sd t0, 416(t1)
-	sd t0, 424(t1)
-	sd t0, 432(t1)
-	sd t0, 440(t1)
-	sd t0, 448(t1)
-	sd t0, 456(t1)
-	sd t0, 464(t1)
-	sd t0, 472(t1)
-	sd t0, 480(t1)
-	sd t0, 488(t1)
-	sd t0, 496(t1)
-	sd t0, 504(t1)
-	sd t0, 512(t1)
-	sd t0, 520(t1)
-	sd t0, 528(t1)
-	sd t0, 536(t1)
-	sd t0, 544(t1)
-	sd t0, 552(t1)
-	sd t0, 560(t1)
-	sd t0, 568(t1)
-	addi sp, sp, 576
+	addi sp, sp, 336
 	addi a0, zero, 0
 	addi a1, zero, 0
 	addi a2, zero, 0

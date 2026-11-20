@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 Each streaming function, then its cleanup (`Impl.Scrub.RISCV64.scrub rb W`):
 the zeroing of the `W` bytes of stack its frames use (none for `init`, the
-576-byte frame of `update` and `finalize`), and the clearing of the
+336-byte frame of `update` and `finalize`), and the clearing of the
 caller-saved registers, `a0` included (none returns a value), so that it
 returns without secret residue.
 -/
@@ -24,18 +24,18 @@ open VG.Impl.Scrub.RISCV64 (scrub)
 def initB : Prog isa := scrub 0 0 (Stream.init Spec.Blake2.b)
 
 /-- `vg_blake2b_update`, as emitted. -/
-def updateB : Prog isa := scrub 0 576 (Stream.update Spec.Blake2.b)
+def updateB : Prog isa := scrub 0 336 (Stream.update Spec.Blake2.b)
 
 /-- `vg_blake2b_finalize`, as emitted. -/
-def finalizeB : Prog isa := scrub 0 576 (Stream.finalize Spec.Blake2.b)
+def finalizeB : Prog isa := scrub 0 336 (Stream.finalize Spec.Blake2.b)
 
 /-- `vg_blake2s_init`, as emitted. -/
 def initS : Prog isa := scrub 0 0 (Stream.init Spec.Blake2.s)
 
 /-- `vg_blake2s_update`, as emitted. -/
-def updateS : Prog isa := scrub 0 576 (Stream.update Spec.Blake2.s)
+def updateS : Prog isa := scrub 0 336 (Stream.update Spec.Blake2.s)
 
 /-- `vg_blake2s_finalize`, as emitted. -/
-def finalizeS : Prog isa := scrub 0 576 (Stream.finalize Spec.Blake2.s)
+def finalizeS : Prog isa := scrub 0 336 (Stream.finalize Spec.Blake2.s)
 
 end VG.Impl.Blake2.RISCV64.Fn
