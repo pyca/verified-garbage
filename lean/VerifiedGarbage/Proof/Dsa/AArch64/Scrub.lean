@@ -9,8 +9,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCorrect
-public import VerifiedGarbage.Proof.Variants.DsaArithmetic.AArch64
-import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyVerified
 import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
 
 /-!
@@ -22,7 +21,7 @@ The postconditions of `vg_dsa_validate_public_key` and
 (`Ffdh.AArch64.Scrub.bytesAt_of`, `wordsAt_of`; `ScrubAll.ScrubAllOk`, as
 x86-64's `Proof/Dsa/X86_64/Scrub.lean` proves them): each implementation
 returns with every register it may leave secret cleared, and its whole stack
-zeroed, if it has one (`ScrubAll.scrubAllOf`, with the registers `clear`;
+zeroed, if it has one (`Impl.Dsa.AArch64.Fn`, with the registers `Fn.clear`;
 the parameter search, whose registers differ with its hash functions, by
 `ScrubAll.withScrubAll` still).
 -/
@@ -115,72 +114,66 @@ theorem randomSignPrevalidatedOk (stack : Nat) :
       · exact toNat_sw outLen
 
 
-/-! ## What `scrubAllOf` needs of the code
+/-! ## The functions, as emitted
 
-`ScrubAll.scrubSide` of each function with each arithmetic backend: evaluated
-here, by the kernel, so that the emitter works out nothing. -/
+Each function with its cleanup (`Impl.Dsa.AArch64.Fn`), over an arithmetic
+backend `v`: it meets its contract in constant time and returns without
+secret residue (`VerifiedScrubbed`), which is what its registration binds.
+What the cleanup needs of the code (`ScrubAll.scrubSide`) is the backend's
+(`Backend.validateScrub` and the others), proved where it is defined. -/
 
-/-- The registers the tails clear: those the code, with each backend, may write. -/
-def clear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-   [.v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v31], []⟩
+open VG.Proof.Dsa.AArch64 (Backend prevalidatedSignerName keygenCheckName keygenDeriveName)
 
-/-- Of signing with a random nonce. -/
-theorem randomSignPrevalidatedSide (v : Proof.Dsa.AArch64.Backend) (hv : v ∈ Proof.Variants.DsaArithmetic.AArch64.variants) :
-    scrubSide (Impl.Dsa.AArch64.RandomSign.code (Proof.Dsa.AArch64.prevalidatedSignerName v)
-        (Impl.Dsa.AArch64.PrevalidatedSign.sign v.mul))
-      (v.stack + 256) (Spec.Dsa.randomSignSig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.DsaArithmetic.AArch64.variants.all fun v => 
-      scrubSide (Impl.Dsa.AArch64.RandomSign.code (Proof.Dsa.AArch64.prevalidatedSignerName v)
-        (Impl.Dsa.AArch64.PrevalidatedSign.sign v.mul))
-      (v.stack + 256) (Spec.Dsa.randomSignSig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp e v hv
+/-- `vg_dsa_random_sign_prevalidated`. -/
+theorem randomSignPrevalidated (v : Backend) :
+    VerifiedScrubbed target (Impl.Dsa.AArch64.Fn.randomSignPrevalidated (prevalidatedSignerName v) v.mul v.stack)
+      (Spec.Dsa.randomSignPrevalidatedContract abi (v.stack + 256)) 32 :=
+  verifiedScrubbed (api := Spec.Dsa.randomSignPrevalidatedApi)
+    { code := Impl.Dsa.AArch64.RandomSign.code (prevalidatedSignerName v) (Impl.Dsa.AArch64.PrevalidatedSign.sign v.mul)
+      verified := Proof.Dsa.AArch64.random_sign_prevalidated_verified v } _
+    (randomSignPrevalidatedOk _) v.randomSignScrub
 
-/-- Of validating a private key. -/
-theorem validatePrivateKeySide (v : Proof.Dsa.AArch64.Backend) (hv : v ∈ Proof.Variants.DsaArithmetic.AArch64.variants) :
-    scrubSide (Impl.Dsa.AArch64.PrevalidatedSign.validate v.mul)
-      (v.stack) (Spec.Dsa.validatePrivateKeySig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.DsaArithmetic.AArch64.variants.all fun v => 
-      scrubSide (Impl.Dsa.AArch64.PrevalidatedSign.validate v.mul)
-      (v.stack) (Spec.Dsa.validatePrivateKeySig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp e v hv
+/-- `vg_dsa_validate_private_key`. -/
+theorem validatePrivateKey (v : Backend) :
+    VerifiedScrubbed target (Impl.Dsa.AArch64.Fn.validatePrivateKey v.mul v.stack)
+      (Spec.Dsa.validatePrivateKeyContract abi v.stack) 32 :=
+  verifiedScrubbed (api := Spec.Dsa.validatePrivateKeyApi)
+    { code := Impl.Dsa.AArch64.PrevalidatedSign.validate v.mul, verified := v.validatePrivateVerified } _
+    (validatePrivateKeyOk _) v.validatePrivateScrub
 
-/-- Of validating a public key. -/
-theorem validatePublicKeySide (v : Proof.Dsa.AArch64.Backend) (hv : v ∈ Proof.Variants.DsaArithmetic.AArch64.variants) :
-    scrubSide (Impl.Dsa.AArch64.Prevalidated.validate v.mul)
-      (v.stack) (Spec.Dsa.validatePublicKeySig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.DsaArithmetic.AArch64.variants.all fun v => 
-      scrubSide (Impl.Dsa.AArch64.Prevalidated.validate v.mul)
-      (v.stack) (Spec.Dsa.validatePublicKeySig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp e v hv
+/-- `vg_dsa_validate_public_key`. -/
+theorem validatePublicKey (v : Backend) :
+    VerifiedScrubbed target (Impl.Dsa.AArch64.Fn.validatePublicKey v.mul v.stack)
+      (Spec.Dsa.validatePublicKeyContract abi v.stack) 32 :=
+  verifiedScrubbed (api := Spec.Dsa.validatePublicKeyApi)
+    { code := Impl.Dsa.AArch64.Prevalidated.validate v.mul, verified := v.validateVerified } _
+    (validatePublicKeyOk _) v.validateScrub
 
-/-- Of verification. -/
-theorem verifyPrevalidatedSide (v : Proof.Dsa.AArch64.Backend) (hv : v ∈ Proof.Variants.DsaArithmetic.AArch64.variants) :
-    scrubSide (Impl.Dsa.AArch64.Prevalidated.verify v.mul)
-      (v.stack) (Spec.Dsa.verifySig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.DsaArithmetic.AArch64.variants.all fun v => 
-      scrubSide (Impl.Dsa.AArch64.Prevalidated.verify v.mul)
-      (v.stack) (Spec.Dsa.verifySig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp e v hv
+/-- `vg_dsa_verify_prevalidated`. -/
+theorem verifyPrevalidated (v : Backend) :
+    VerifiedScrubbed target (Impl.Dsa.AArch64.Fn.verifyPrevalidated v.mul v.stack)
+      (Spec.Dsa.verifyPrevalidatedContract abi v.stack) 32 :=
+  verifiedScrubbed (api := Spec.Dsa.verifyPrevalidatedApi)
+    { code := Impl.Dsa.AArch64.Prevalidated.verify v.mul, verified := v.prevalidatedVerified } _
+    (verifyPrevalidatedOk _) v.prevalidatedScrub
 
-/-- Of key generation. -/
-theorem generateKeySide (v : Proof.Dsa.AArch64.Backend) (hv : v ∈ Proof.Variants.DsaArithmetic.AArch64.variants) :
-    scrubSide (Impl.Dsa.AArch64.GenerateKey.code (Proof.Dsa.AArch64.keygenCheckName v) (Proof.Dsa.AArch64.keygenDeriveName v)
-        (Impl.Dsa.AArch64.Generate.checkParameters v.mul) (Impl.Dsa.AArch64.Generate.deriveChecked v.mul))
-      (v.stack + 256) (Spec.Dsa.generateKeySig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.DsaArithmetic.AArch64.variants.all fun v => 
-      scrubSide (Impl.Dsa.AArch64.GenerateKey.code (Proof.Dsa.AArch64.keygenCheckName v) (Proof.Dsa.AArch64.keygenDeriveName v)
-        (Impl.Dsa.AArch64.Generate.checkParameters v.mul) (Impl.Dsa.AArch64.Generate.deriveChecked v.mul))
-      (v.stack + 256) (Spec.Dsa.generateKeySig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp e v hv
+/-- `vg_dsa_generate_key`. -/
+theorem generateKey (v : Backend) :
+    VerifiedScrubbed target
+      (Impl.Dsa.AArch64.Fn.generateKey (keygenCheckName v) (keygenDeriveName v) v.mul v.stack)
+      (Spec.Dsa.generateKeyContract abi (v.stack + 256)) 32 :=
+  verifiedScrubbed (api := Spec.Dsa.generateKeyApi)
+    { code := Impl.Dsa.AArch64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
+        (Impl.Dsa.AArch64.Generate.checkParameters v.mul) (Impl.Dsa.AArch64.Generate.deriveChecked v.mul)
+      verified := Proof.Dsa.AArch64.keygen_verified v } _
+    (generateKeyOk _) v.generateKeyScrub
 
-/-- Of deriving a key. -/
-theorem deriveKeySide (v : Proof.Dsa.AArch64.Backend) (hv : v ∈ Proof.Variants.DsaArithmetic.AArch64.variants) :
-    scrubSide (Impl.Dsa.AArch64.Generate.deriveKey v.mul)
-      (v.stack) (Spec.Dsa.deriveKeySig.retBits abi.ptrBits) clear [] = true := by
-  have e : (Proof.Variants.DsaArithmetic.AArch64.variants.all fun v => 
-      scrubSide (Impl.Dsa.AArch64.Generate.deriveKey v.mul)
-      (v.stack) (Spec.Dsa.deriveKeySig.retBits abi.ptrBits) clear []) = true := by lit_decide
-  exact List.all_eq_true.mp e v hv
+/-- `vg_dsa_derive_key`. -/
+theorem deriveKey (v : Backend) :
+    VerifiedScrubbed target (Impl.Dsa.AArch64.Fn.deriveKey v.mul v.stack)
+      (Spec.Dsa.deriveKeyContract abi v.stack) 32 :=
+  verifiedScrubbed (api := Spec.Dsa.deriveKeyApi)
+    { code := Impl.Dsa.AArch64.Generate.deriveKey v.mul, verified := v.deriveVerified } _
+    (deriveKeyOk _) v.deriveScrub
 
 end VG.Proof.Dsa.AArch64.Scrub

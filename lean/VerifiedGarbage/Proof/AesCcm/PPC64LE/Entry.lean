@@ -22,7 +22,7 @@ section
 
 Untrusted: everything here is checked by Lean. The artifacts' contracts are
 the shared ones of `Spec/Ccm/Contract.lean`, which imply these
-(`Verified.lean`), with a 2560-byte `work` buffer appended
+(`Verified.lean`), with a 448-byte `work` buffer appended
 (`Proof/AesCcm/Scratch.lean`). A call (`bl`) stores nothing in memory, so no
 stack is used; `seal` and `open` read their last three arguments from the
 stack, which they may only read.
@@ -51,14 +51,14 @@ def oneLay (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
   let data : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
-  let work : Region := ⟨stackArg s 2, 2560⟩
+  let work : Region := ⟨stackArg s 2, 448⟩
   sch.Disjoint data ∧ sch.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧ tag.Disjoint data ∧ tag.Disjoint work ∧
     data.Disjoint work ∧ data.Disjoint (args s) ∧ work.Disjoint (args s) ∧
     (s.gpr .r3).toNat + 240 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r7).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64 ∧ (s.gpr .r9).toNat + (s.gpr .r10).toNat ≤ 2 ^ 64 ∧
     (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧ (stackArgAddr s 0).toNat + 24 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4) ∧
+    (stackArg s 2).toNat + 448 ≤ 2 ^ 64 ∧ (stackArgAddr s 0).toNat + 24 ≤ 2 ^ 64 ∧ rounds (s.gpr .r4) ∧
     valid (stackArg s 1).toNat (s.gpr .r6).toNat (s.gpr .r8).toNat (s.gpr .r10).toNat = true
 
 /-- What `vg_aes_ccm_seal` needs: `oneLay`, with `tag` the `tag_len` bytes to
@@ -69,7 +69,7 @@ def sealPre (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
   let data : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
-  let work : Region := ⟨stackArg s 2, 2560⟩
+  let work : Region := ⟨stackArg s 2, 448⟩
   s.rd = [sch, nonce, aad, args s] ∧ s.wr = [data, tag, work] ∧ oneLay s
 
 /-- What `vg_aes_ccm_open` needs: `oneLay`, with the received tag the
@@ -80,7 +80,7 @@ def openPre (s : State) : Prop :=
   let aad : Region := ⟨s.gpr .r7, (s.gpr .r8).toNat⟩
   let data : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
-  let work : Region := ⟨stackArg s 2, 2560⟩
+  let work : Region := ⟨stackArg s 2, 448⟩
   s.rd = [sch, nonce, aad, tag, args s] ∧ s.wr = [data, work] ∧ oneLay s
 
 def onePub (s₁ s₂ : State) : Prop :=
@@ -180,7 +180,7 @@ structure Args (c : Cx) (N : Addr) (s : State) : Prop where
   nonce : Buf c s N c.nl
   nd : (⟨N, c.nl⟩ : Region).Disjoint ⟨c.D, c.n⟩
   argsC : Covers [args s] (s.rd ++ s.wr)
-  argsW : (args s).Disjoint ⟨c.W, 2560⟩
+  argsW : (args s).Disjoint ⟨c.W, 448⟩
   argsD : (args s).Disjoint ⟨c.D, c.n⟩
   argsFit : (stackArgAddr s 0).toNat + 24 ≤ 2 ^ 64
 
@@ -195,7 +195,7 @@ theorem args_of_lay {s : State} (h : oneLay s)
     (hk : Covers [⟨s.gpr .r3, 240⟩] (s.rd ++ s.wr)) (hN : Covers [⟨s.gpr .r5, (s.gpr .r6).toNat⟩] (s.rd ++ s.wr))
     (hA : Covers [⟨s.gpr .r7, (s.gpr .r8).toNat⟩] (s.rd ++ s.wr)) (ha : Covers [args s] (s.rd ++ s.wr))
     (hT : Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] (s.rd ++ s.wr))
-    (hD : Covers [⟨s.gpr .r9, (s.gpr .r10).toNat⟩] s.wr) (hW : Covers [⟨stackArg s 2, 2560⟩] s.wr) :
+    (hD : Covers [⟨s.gpr .r9, (s.gpr .r10).toNat⟩] s.wr) (hW : Covers [⟨stackArg s 2, 448⟩] s.wr) :
     Args (cxOf s) (s.gpr .r5) s := by
   obtain ⟨d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, b1, b2, b3, b4, b5, b6, b7, hR, hv⟩ := h
   simp only [Spec.Ccm.valid, Spec.Ccm.tagLenOk, Spec.Ccm.nonceLenOk, Bool.and_eq_true, decide_eq_true_eq,
@@ -232,7 +232,7 @@ theorem args_of_seal {s : State} (h : sealPre s) :
       args s], Covers [r] (s.rd ++ s.wr) := fun r hr =>
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
   obtain mwr : ∀ r ∈ [(⟨s.gpr .r9, (s.gpr .r10).toNat⟩ : Region), ⟨stackArg s 0, (stackArg s 1).toNat⟩,
-      ⟨stackArg s 2, 2560⟩], Covers [r] s.wr := fun r hr => covers_of_mem (by rw [hwr]; exact hr)
+      ⟨stackArg s 2, 448⟩], Covers [r] s.wr := fun r hr => covers_of_mem (by rw [hwr]; exact hr)
   exact ⟨args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp))
     (Covers.right (mwr _ (by simp))) (mwr _ (by simp)) (mwr _ (by simp)), mwr _ (by simp)⟩
 
@@ -242,7 +242,7 @@ theorem args_of_open {s : State} (h : openPre s) : Args (cxOf s) (s.gpr .r5) s :
   obtain mrd : ∀ r ∈ [(⟨s.gpr .r3, 240⟩ : Region), ⟨s.gpr .r5, (s.gpr .r6).toNat⟩, ⟨s.gpr .r7, (s.gpr .r8).toNat⟩,
       ⟨stackArg s 0, (stackArg s 1).toNat⟩, args s], Covers [r] (s.rd ++ s.wr) := fun r hr =>
     covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  obtain mwr : ∀ r ∈ [(⟨s.gpr .r9, (s.gpr .r10).toNat⟩ : Region), ⟨stackArg s 2, 2560⟩], Covers [r] s.wr :=
+  obtain mwr : ∀ r ∈ [(⟨s.gpr .r9, (s.gpr .r10).toNat⟩ : Region), ⟨stackArg s 2, 448⟩], Covers [r] s.wr :=
     fun r hr => covers_of_mem (by rw [hwr]; exact hr)
   exact args_of_lay hl (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp))
     (mwr _ (by simp)) (mwr _ (by simp))
@@ -341,7 +341,7 @@ theorem entry_wp {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
     rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr,
       u₅.gpr]; exact W₃
   obtain wr₁₀ : s₁₀.wr = s.wr := by rw [u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, wr₆]
-  obtain inW : ∀ {d : Nat}, d + 8 ≤ 2560 → InRegions s₁₀.wr (c.W + BitVec.ofNat 64 d) 8 := fun hd => by
+  obtain inW : ∀ {d : Nat}, d + 8 ≤ 448 → InRegions s₁₀.wr (c.W + BitVec.ofNat 64 d) 8 := fun hd => by
     rw [wr₁₀]; exact Ar.perm.wW hd
   obtain g₈ : ∀ r, r ≠ .r15 → r ≠ .r11 → r ≠ .r14 → r ≠ .r0 → r ≠ .r12 → s₈.gpr r = s.gpr r := by
     intro r h15 h11 h14 h0 h12
@@ -395,7 +395,7 @@ theorem entry_wp {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
       (List.mem_singleton_self _) _ (cE 224 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (cE 232 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (cE 240 (by decide) (by decide))
-  obtain sep : ∀ {a b : Nat}, a + 8 ≤ b ∨ b + 8 ≤ a → a + 8 ≤ 2560 → b + 8 ≤ 2560 →
+  obtain sep : ∀ {a b : Nat}, a + 8 ≤ b ∨ b + 8 ≤ a → a + 8 ≤ 448 → b + 8 ≤ 448 →
       Mem.Sep (c.W + BitVec.ofNat 64 a) (64 / 8) (c.W + BitVec.ofNat 64 b) (64 / 8) := fun h ha hb =>
     (L.w_w (n := 8) (k := 8) h ha hb).sep (Region.contains_self _ _) (Region.contains_self _ _)
   refine ⟨⟨by rw [gF _ (by decide) (by decide), r14₁₀], by rw [gF _ (by decide) (by decide), r15₁₀],

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.EcKey.Generic
 public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Spec.Ecdh.Generic
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -11,7 +12,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 For every curve (`Spec.EcKey.Instance`), the postconditions of
 `vg_ec_<name>_public_key`, `_compress_public_key` and `_decompress_public_key`,
-and of `vg_ecdh_<name>`, read the memory on return only within `out`
+and of `vg_ecdh_<name>`, read the memory on return only within `out`, and that
+of `vg_ecdsa_<name>_verify` does not read it
 (`X86.Scrub.PostOut`), as x86-64's `Proof/EcKey/X86_64/Scrub/Out.lean` and
 RISC-V's `Proof/EcKey/RISCV64/Scrub.lean` prove them: what
 `X86.Scrub.scrubFOf` needs to register each implementation followed by the
@@ -115,6 +117,21 @@ theorem exchangeOut :
       | some z => r = 1 ∧ bytesAt m₂ out I.curve.len = z
       | none => r = 0 ∧ bytesAt m₂ out I.curve.len = List.replicate I.curve.len 0
     rw [e]
+    exact h
+
+theorem verifyHashOut (J : Spec.Ecdsa.Instance) :
+    PostOut (J.verifyHashContract (X86.abi.withConsts cs) stack) (J.verifyHashSig.retBits 32) :=
+  postOut_of_local (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen _ h => by
+    obtain ⟨pk, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dg, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨dl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨sg, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+    obtain ⟨sc, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     exact h
 
 end VG.Proof.EcKey.X86.Scrub

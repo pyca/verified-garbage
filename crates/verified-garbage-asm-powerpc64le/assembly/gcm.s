@@ -1664,9 +1664,9 @@ vg_aes_gcm_stream_verify:
 	blr
 
 vg_aes_gcm_seal:
-	stdu %r1, -2672(%r1)
+	stdu %r1, -1264(%r1)
 	addi %r12, %r1, 0
-	ld %r0, 2768(%r12)
+	ld %r0, 1360(%r12)
 	std %r0, 96(%r12)
 	addi %r0, %r12, 112
 	std %r0, 104(%r12)
@@ -2394,9 +2394,9 @@ vg_aes_gcm_seal:
 	ld %r29, 216(%r12)
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
-	addi %r1, %r1, 2672
+	addi %r1, %r1, 1264
 	li %r0, 0
-	stdu %r1, -2672(%r1)
+	stdu %r1, -1264(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -2414,28 +2414,6 @@ vg_aes_gcm_seal:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
@@ -2478,7 +2456,7 @@ vg_aes_gcm_seal:
 	std %r0, 184(%r12)
 	std %r0, 192(%r12)
 	std %r0, 200(%r12)
-	addi %r1, %r1, 2672
+	addi %r1, %r1, 1264
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -2512,11 +2490,11 @@ vg_aes_gcm_seal:
 	blr
 
 vg_aes_gcm_open:
-	stdu %r1, -2688(%r1)
+	stdu %r1, -1280(%r1)
 	addi %r12, %r1, 0
-	ld %r0, 2784(%r12)
+	ld %r0, 1376(%r12)
 	std %r0, 96(%r12)
-	ld %r0, 2792(%r12)
+	ld %r0, 1384(%r12)
 	std %r0, 104(%r12)
 	addi %r0, %r12, 120
 	std %r0, 112(%r12)
@@ -3132,9 +3110,9 @@ vg_aes_gcm_open:
 	ld %r29, 216(%r12)
 	ld %r30, 224(%r12)
 	ld %r31, 232(%r12)
-	addi %r1, %r1, 2688
+	addi %r1, %r1, 1280
 	li %r0, 0
-	stdu %r1, -2688(%r1)
+	stdu %r1, -1280(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -3152,28 +3130,6 @@ vg_aes_gcm_open:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
@@ -3218,7 +3174,7 @@ vg_aes_gcm_open:
 	std %r0, 200(%r12)
 	std %r0, 208(%r12)
 	std %r0, 216(%r12)
-	addi %r1, %r1, 2688
+	addi %r1, %r1, 1280
 	rldicr %r3, %r3, 32, 31
 	rldicl %r3, %r3, 32, 32
 	li %r4, 0
@@ -3395,7 +3351,7 @@ vg_aes_gcm_seal_gather:
 21:
 	addi %r1, %r1, 160
 	li %r0, 0
-	stdu %r1, -2960(%r1)
+	stdu %r1, -1552(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -3413,28 +3369,6 @@ vg_aes_gcm_seal_gather:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
@@ -3485,7 +3419,7 @@ vg_aes_gcm_seal_gather:
 	std %r0, 216(%r12)
 	std %r0, 224(%r12)
 	std %r0, 232(%r12)
-	addi %r1, %r1, 2960
+	addi %r1, %r1, 1552
 	li %r3, 0
 	li %r4, 0
 	li %r5, 0
@@ -3519,17 +3453,17 @@ vg_aes_gcm_seal_gather:
 	blr
 
 vg_aes_gcm_open_to:
-	stdu %r1, -2720(%r1)
+	stdu %r1, -1312(%r1)
 	addi %r12, %r1, 0
 	mflr %r0
 	std %r0, 152(%r12)
-	ld %r0, 2832(%r12)
+	ld %r0, 1424(%r12)
 	std %r0, 96(%r12)
-	ld %r0, 2840(%r12)
+	ld %r0, 1432(%r12)
 	std %r0, 104(%r12)
 	addi %r0, %r12, 160
 	std %r0, 112(%r12)
-	ld %r0, 2816(%r12)
+	ld %r0, 1408(%r12)
 	std %r0, 120(%r12)
 	bl {vg_aes_gcm_open_split}
 	cmplwi %cr0, %r3, 0
@@ -3537,8 +3471,8 @@ vg_aes_gcm_open_to:
 	b 21f
 20:
 	addi %r12, %r1, 0
-	ld %r9, 2816(%r12)
-	ld %r10, 2824(%r12)
+	ld %r9, 1408(%r12)
+	ld %r10, 1416(%r12)
 	li %r11, 0
 	cmpldi %cr0, %r10, 0
 	beq %cr0, 22f
@@ -3555,9 +3489,9 @@ vg_aes_gcm_open_to:
 	addi %r12, %r1, 0
 	ld %r0, 152(%r12)
 	mtlr %r0
-	addi %r1, %r1, 2720
+	addi %r1, %r1, 1312
 	li %r0, 0
-	stdu %r1, -2720(%r1)
+	stdu %r1, -1312(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -3593,28 +3527,6 @@ vg_aes_gcm_open_to:
 	dcbz %r12, %r0
 	addi %r12, %r12, 128
 	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
-	addi %r12, %r12, 128
-	dcbz %r12, %r0
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
 	std %r0, 16(%r12)
@@ -3631,7 +3543,7 @@ vg_aes_gcm_open_to:
 	std %r0, 104(%r12)
 	std %r0, 112(%r12)
 	std %r0, 120(%r12)
-	addi %r1, %r1, 2720
+	addi %r1, %r1, 1312
 	rldicr %r3, %r3, 32, 31
 	rldicl %r3, %r3, 32, 32
 	li %r4, 0

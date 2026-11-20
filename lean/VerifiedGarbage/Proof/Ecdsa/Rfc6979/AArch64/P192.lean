@@ -26,6 +26,8 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.AArch64.Joint
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Verified
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
@@ -106,13 +108,17 @@ theorem p192SignSide (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AA
           [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
       p192SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
 
-/-- The registers the tail of `vg_ecdsa_p192_verify` clears: those its code may write. -/
-def p192VerifyClear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17], [.v28, .v29], []⟩
-
-theorem p192VerifySide :
-    AArch64.ScrubAll.scrubSide
-      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false Impl.Ecdsa.Verify.AArch64.P192.Joint.verify)
-      80 (Spec.Ecdsa.P192.inst.verifyHashSig.retBits AArch64.abi.ptrBits) p192VerifyClear [] = true := by lit_decide
+/-- `vg_ecdsa_p192_verify` as emitted, cleanup included
+(`Impl.Ecdsa.Verify.AArch64.P192.Joint.Fn.verifyHash`): it meets its contract in
+constant time and returns without secret residue. What the cleanup needs of
+the code (`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+theorem p192Verify (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.P192.Joint.Fn.verifyHash
+      (Spec.Ecdsa.P192.inst.verifyHashContract AArch64.abi 80) 32 :=
+  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdsa.P192.verifyHashApi)
+    { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
+        Impl.Ecdsa.Verify.AArch64.P192.Joint.verify
+      verified := Proof.Ecdsa.Verify.AArch64.P192.Joint.verifyHash_verified hL hI } _
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

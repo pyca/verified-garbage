@@ -12,10 +12,10 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`, each followed by
 `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
-volatile registers they may write and the whole 3936-byte frame
+volatile registers they may write and the whole 1632-byte frame
 (`withStackScratchArgs`) that holds their working space, the derived keys
-and their callees' working space among it, which they do not wipe
-themselves. Their postconditions read the memory on return only within the
+among it, which they do not wipe themselves (the functions they call need
+no working space). Their postconditions read the memory on return only within the
 data and the tag, as on AArch64 (`Proof/AesGcmSiv/AArch64/Stitch/Verified.lean`).
 
 The registrations take the law of GHASH and the equation of POLYVAL's input
@@ -70,9 +70,9 @@ theorem openOut (stack : Nat) :
 /-- `Spec.GcmSiv.sealApi`. -/
 def sealReg [Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) : Registration Spec.GcmSiv.sealApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 Impl.AesGcmSiv.PPC64LE.«seal»
+      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 1632 0 Impl.AesGcmSiv.PPC64LE.«seal»
       verified := Proof.AesGcmSiv.seal_keyed (seal_framed hti) }
-    3936 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    1632 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17,
         .v18, .v19]⟩
     (sealOut _)
@@ -81,9 +81,9 @@ def sealReg [Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) : Registration Spec.
 /-- `Spec.GcmSiv.openApi`. -/
 def openReg [Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) : Registration Spec.GcmSiv.openApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 Impl.AesGcmSiv.PPC64LE.«open»
+      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 1632 0 Impl.AesGcmSiv.PPC64LE.«open»
       verified := Proof.AesGcmSiv.open_keyed (open_framed hti) }
-    3936 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+    1632 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17,
         .v18, .v19]⟩
     (openOut _)

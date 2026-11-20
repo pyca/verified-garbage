@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 
 Untrusted: everything here is checked by Lean. The public values of a call
 of `encrypt` or `decrypt` (`Cx`): the key context (512 bytes at `C`), the
-working space (2576 bytes at `W`), the `N` descriptors of the components of
+working space (448 bytes at `W`), the `N` descriptors of the components of
 associated data (16 bytes each at `A`), the data (`n` bytes at `D`), the
 synthetic IV (16 bytes at `V`) and the number of rounds; what the
 precondition says of them (`Lay`); what a state may access (`Perm`); and the
@@ -46,16 +46,16 @@ structure Cx where
 /-- What the precondition says of the public values. -/
 structure Lay (c : Cx) : Prop where
   cw : c.C.toNat + 512 ≤ 2 ^ 64
-  ww : c.W.toNat + 2576 ≤ 2 ^ 64
+  ww : c.W.toNat + 448 ≤ 2 ^ 64
   aw : c.A.toNat + 16 * c.N ≤ 2 ^ 64
   dw : c.D.toNat + c.n ≤ 2 ^ 64
   vw : c.V.toNat + 16 ≤ 2 ^ 64
-  c_w : (⟨c.C, 512⟩ : Region).Disjoint ⟨c.W, 2576⟩
+  c_w : (⟨c.C, 512⟩ : Region).Disjoint ⟨c.W, 448⟩
   c_d : (⟨c.C, 512⟩ : Region).Disjoint ⟨c.D, c.n⟩
-  a_w : (⟨c.A, 16 * c.N⟩ : Region).Disjoint ⟨c.W, 2576⟩
+  a_w : (⟨c.A, 16 * c.N⟩ : Region).Disjoint ⟨c.W, 448⟩
   a_d : (⟨c.A, 16 * c.N⟩ : Region).Disjoint ⟨c.D, c.n⟩
-  d_w : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W, 2576⟩
-  v_w : (⟨c.V, 16⟩ : Region).Disjoint ⟨c.W, 2576⟩
+  d_w : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W, 448⟩
+  v_w : (⟨c.V, 16⟩ : Region).Disjoint ⟨c.W, 448⟩
   v_d : (⟨c.V, 16⟩ : Region).Disjoint ⟨c.D, c.n⟩
   rounds : c.R = 10 ∨ c.R = 12 ∨ c.R = 14
   n_lt : c.n < 2 ^ 64
@@ -63,7 +63,7 @@ structure Lay (c : Cx) : Prop where
 /-- What a state may access. -/
 structure Perm (c : Cx) (s : State) : Prop where
   ctx : Covers [⟨c.C, 512⟩] (s.rd ++ s.wr)
-  w : Covers [⟨c.W, 2576⟩] s.wr
+  w : Covers [⟨c.W, 448⟩] s.wr
   a : Covers [⟨c.A, 16 * c.N⟩] (s.rd ++ s.wr)
   d : Covers [⟨c.D, c.n⟩] s.wr
   v : Covers [⟨c.V, 16⟩] (s.rd ++ s.wr)
@@ -126,7 +126,7 @@ theorem Env.of_pk {c : Cx} {s s' : State} (h : Env c s) (k : PK s s') : Env c s'
 
 namespace Lay
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2576) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2576⟩ :=
+theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 448) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 448⟩ :=
   Offset.sub_base _ h
 
 theorem cSub {C : Addr} {d n : Nat} (h : d + n ≤ 512) : Region.Sub ⟨C + BitVec.ofNat 64 d, n⟩ ⟨C, 512⟩ :=
@@ -136,31 +136,31 @@ variable {c : Cx} (L : Lay c)
 include L
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2576) (hd : d + k ≤ 2576) :
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 448) (hd : d + k ≤ 448) :
     (⟨c.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega_using [ha]) (by have := L.ww; omega_using [hd])
 
 omit L in
 /-- `W` and a part of it. -/
-theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 2576) :
+theorem w0_w {n d k : Nat} (h : n ≤ d) (hd : d + k ≤ 448) :
     (⟨c.W, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   Offset.base_disjoint _ h (by omega_using [hd])
 
-theorem c_w' {a n d k : Nat} (ha : a + n ≤ 512) (hd : d + k ≤ 2576) :
+theorem c_w' {a n d k : Nat} (ha : a + n ≤ 512) (hd : d + k ≤ 448) :
     (⟨c.C + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   (L.c_w.sub_left (cSub ha)).sub_right (wSub hd)
 
-theorem c0_w' {n d k : Nat} (hn : n ≤ 512) (hd : d + k ≤ 2576) :
+theorem c0_w' {n d k : Nat} (hn : n ≤ 512) (hd : d + k ≤ 448) :
     (⟨c.C, n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   (L.c_w.sub_left (Region.sub_prefix hn)).sub_right (wSub hd)
 
-theorem d_w' {d k : Nat} (hd : d + k ≤ 2576) : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem d_w' {d k : Nat} (hd : d + k ≤ 448) : (⟨c.D, c.n⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.d_w.sub_right (wSub hd)
 
-theorem v_w' {d k : Nat} (hd : d + k ≤ 2576) : (⟨c.V, 16⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem v_w' {d k : Nat} (hd : d + k ≤ 448) : (⟨c.V, 16⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   L.v_w.sub_right (wSub hd)
 
-theorem wrapW {d : Nat} (hd : d < 2576) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
+theorem wrapW {d : Nat} (hd : d < 448) : (c.W + BitVec.ofNat 64 d).toNat = c.W.toNat + d := by
   have := L.ww
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, this])]
 
@@ -173,16 +173,16 @@ namespace Perm
 variable {c : Cx} {s : State} (P : Perm c s)
 include P
 
-theorem wW {d n : Nat} (h : d + n ≤ 2576) : InRegions s.wr (c.W + BitVec.ofNat 64 d) n :=
+theorem wW {d n : Nat} (h : d + n ≤ 448) : InRegions s.wr (c.W + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 
-theorem wC {d n : Nat} (h : d + n ≤ 2576) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] s.wr :=
+theorem wC {d n : Nat} (h : d + n ≤ 448) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
 
-theorem wCR {d n : Nat} (h : d + n ≤ 2576) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
+theorem wCR {d n : Nat} (h : d + n ≤ 448) : Covers [⟨c.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   Covers.right (P.wC h)
 
-theorem wR {d n : Nat} (h : d + n ≤ 2576) : InRegions (s.rd ++ s.wr) (c.W + BitVec.ofNat 64 d) n :=
+theorem wR {d n : Nat} (h : d + n ≤ 448) : InRegions (s.rd ++ s.wr) (c.W + BitVec.ofNat 64 d) n :=
   P.wCR h _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
 theorem cC {d n : Nat} (h : d + n ≤ 512) : Covers [⟨c.C + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
@@ -203,7 +203,7 @@ structure Buf (c : Cx) (s : State) (P : Addr) (len : Nat) : Prop where
   rd : Covers [⟨P, len⟩] (s.rd ++ s.wr)
   lt : len < 2 ^ 64
   wrap : P.toNat + len ≤ 2 ^ 64
-  w : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 2576⟩
+  w : (⟨P, len⟩ : Region).Disjoint ⟨c.W, 448⟩
 
 namespace Buf
 
@@ -231,7 +231,7 @@ theorem take {k : Nat} (hk : k ≤ len) : Buf c s P k where
   wrap := by have := h.wrap; omega_using [hk, this]
   w := h.w.sub_left (Region.sub_prefix hk)
 
-theorem wd {d k : Nat} (hd : d + k ≤ 2576) : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
+theorem wd {d k : Nat} (hd : d + k ≤ 448) : (⟨P, len⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 d, k⟩ :=
   h.w.sub_right (Lay.wSub hd)
 
 end Buf

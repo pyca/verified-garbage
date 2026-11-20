@@ -24,7 +24,7 @@ agree on the public arguments are related piece by piece (`RelCT`): the
 taint analysis covers the code between the calls, from the registers the
 correctness proofs pin to public values and the stack pointer, which no code
 changes (`wp_sp`), and each call of `vg_aes_encrypt_blocks` is constant time
-by its own proof (`blk_rel`). The branches of `update` are on `n`, and of
+by its own proof (`blk_relF`). The branches of `update` are on `n`, and of
 `finalize` on `last_len`, which are public.
 -/
 
@@ -33,8 +33,8 @@ by its own proof (`blk_rel`). The branches of `update` are on `n`, and of
 namespace VG.Proof.CmacAes.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.CmacAes.PPC64LE
-open VG.Impl.AesCbc.PPC64LE (save setup restore encCall)
-open VG.Proof.AesCbc.PPC64LE (W R Iv Dp N S blk vars CallPre CallPost blk_call blk_rel taintRegs wp_sp)
+open VG.Impl.AesCbc.PPC64LE (setup encCall)
+open VG.Proof.AesCbc.PPC64LE (W R Iv Dp N S blk vars CallPreF CallPostF blk_callF blk_relF taintRegs wp_sp)
 
 /-! ## `vg_cmac_aes_subkeys` -/
 
@@ -60,18 +60,18 @@ theorem subkeys_rel {s₀ s₀' : State} (h0 : subkeysPPC64LE.pre s₀) (h0' : s
       s.sp = s₀'.sp)
     fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨wp_sp (subkeysPre_wp hp), wp_sp (subkeysPre_wp hp')⟩
-  have c := (blk_rel (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocks_correct
-      Proof.Aes.PPC64LE.encryptBlocks_ct (P := fun s₁ s₂ =>
+  have c := (blk_relF (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocksF_correct
+      Proof.Aes.PPC64LE.encryptBlocksF_ct (P := fun s₁ s₂ =>
       (SkMid s₀ (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r6) (s₀.gpr .r4).toNat s₁ ∧ s₁.sp = s₀.sp) ∧
       (SkMid s₀' (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r6) (s₀.gpr .r4).toNat s₂ ∧ s₂.sp = s₀'.sp)) fun s₁ s₂ h =>
       ⟨h.1.1.pre, h.2.1.pre, by rw [h.1.2, h.2.2, q5]⟩).wp
     (F₁ := fun (s : State) => s.gpr .r14 = s₀.gpr .r5 ∧ s.gpr .r15 = s₀.gpr .r6 ∧ s.sp = s₀.sp)
     (F₂ := fun (s : State) => s.gpr .r14 = s₀.gpr .r5 ∧ s.gpr .r15 = s₀.gpr .r6 ∧ s.sp = s₀'.sp)
     fun s₁ s₂ h =>
-      ⟨WP.mono (blk_call Proof.Aes.PPC64LE.encryptBlocks_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.1.1.pre)
+      ⟨WP.mono (blk_callF Proof.Aes.PPC64LE.encryptBlocksF_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.1.1.pre)
         fun _ hc => ⟨by rw [hc.saved .r14 (by decide), h.1.1.r14], by rw [hc.saved .r15 (by decide), h.1.1.r15],
           by rw [hc.sp, h.1.2]⟩,
-       WP.mono (blk_call Proof.Aes.PPC64LE.encryptBlocks_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.2.1.pre)
+       WP.mono (blk_callF Proof.Aes.PPC64LE.encryptBlocksF_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.2.1.pre)
         fun _ hc => ⟨by rw [hc.saved .r14 (by decide), h.2.1.r14], by rw [hc.saved .r15 (by decide), h.2.1.r15],
           by rw [hc.sp, h.2.2]⟩⟩
   have b := taintRegs
@@ -117,17 +117,17 @@ theorem finalize_rel {s₀ s₀' : State} (h0 : finalizePPC64LE.pre s₀) (h0' :
         s.sp = s₀'.sp)
     fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨wp_sp (finPre_wp hp), wp_sp (finPre_wp hp')⟩
-  have c := (blk_rel (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocks_correct
-      Proof.Aes.PPC64LE.encryptBlocks_ct (P := fun s₁ s₂ =>
+  have c := (blk_relF (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocksF_correct
+      Proof.Aes.PPC64LE.encryptBlocksF_ct (P := fun s₁ s₂ =>
       (FMid s₀ (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r6) (s₀.gpr .r8) (s₀.gpr .r7).toNat (s₀.gpr .r4).toNat s₁ ∧
         s₁.sp = s₀.sp) ∧
       (FMid s₀' (s₀.gpr .r3) (s₀.gpr .r5) (s₀.gpr .r6) (s₀.gpr .r8) (s₀.gpr .r7).toNat (s₀.gpr .r4).toNat s₂ ∧
         s₂.sp = s₀'.sp)) fun s₁ s₂ h => ⟨h.1.1.pre, h.2.1.pre, by rw [h.1.2, h.2.2, q7]⟩).wp
     (F₁ := fun (s : State) => s.gpr .r14 = s₀.gpr .r8 ∧ s.sp = s₀.sp)
     (F₂ := fun (s : State) => s.gpr .r14 = s₀.gpr .r8 ∧ s.sp = s₀'.sp) fun s₁ s₂ h =>
-      ⟨WP.mono (blk_call Proof.Aes.PPC64LE.encryptBlocks_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.1.1.pre)
+      ⟨WP.mono (blk_callF Proof.Aes.PPC64LE.encryptBlocksF_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.1.1.pre)
         fun _ hc => ⟨by rw [hc.saved .r14 (by decide), h.1.1.r14], by rw [hc.sp, h.1.2]⟩,
-       WP.mono (blk_call Proof.Aes.PPC64LE.encryptBlocks_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.2.1.pre)
+       WP.mono (blk_callF Proof.Aes.PPC64LE.encryptBlocksF_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.2.1.pre)
         fun _ hc => ⟨by rw [hc.saved .r14 (by decide), h.2.1.r14], by rw [hc.sp, h.2.2]⟩⟩
   have b := taintRegs
     (P := fun s₁ s₂ => (s₁.gpr .r14 = s₀.gpr .r8 ∧ s₁.sp = s₀.sp) ∧ (s₂.gpr .r14 = s₀.gpr .r8 ∧ s₂.sp = s₀'.sp))
@@ -175,7 +175,7 @@ def US (s₀ : State) (k : Nat) (s : State) : Prop := UInv s₀ k s ∧ s.sp = s
 
 /-- What is known between the code before the call and the call. -/
 structure UMid (s₀ : State) (k : Nat) (s : State) : Prop where
-  pre : CallPre s (W s₀) (Iv s₀) (S s₀) (R s₀)
+  pre : CallPreF s (W s₀) (Iv s₀) (R s₀)
   r17 : s.gpr .r17 = blk s₀ k
   r18 : s.gpr .r18 = BitVec.ofNat 64 (N s₀ - k)
   sp : s.sp = s₀.sp
@@ -202,15 +202,15 @@ theorem upd_body_ct {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq
     (fun _ _ h => ⟨by rw [h.2.1.2, h.2.2.2, upub_sp hq], UInv.agree hq h.2.1.1 h.2.2.1⟩) hA).wp
     (F₁ := UMid s₀ k) (F₂ := UMid s₀' k) fun _ _ h =>
       ⟨mid s₀ hp h.1 h.2.1, mid s₀' hp' (by rw [← hN]; exact h.1) h.2.2⟩
-  have c := (blk_rel (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocks_correct
-    Proof.Aes.PPC64LE.encryptBlocks_ct (P := fun s₁ s₂ => UMid s₀ k s₁ ∧ UMid s₀' k s₂) fun s₁ s₂ h =>
-      ⟨h.1.pre, by rw [upub_W hq, upub_Iv hq, upub_S hq, upub_R hq]; exact h.2.pre,
+  have c := (blk_relF (name := "vg_aes_encrypt_blocks") Proof.Aes.PPC64LE.encryptBlocksF_correct
+    Proof.Aes.PPC64LE.encryptBlocksF_ct (P := fun s₁ s₂ => UMid s₀ k s₁ ∧ UMid s₀' k s₂) fun s₁ s₂ h =>
+      ⟨h.1.pre, by rw [upub_W hq, upub_Iv hq, upub_R hq]; exact h.2.pre,
         by rw [h.1.sp, h.2.sp, upub_sp hq]⟩).wp
     (F₁ := UAfter s₀ k) (F₂ := UAfter s₀' k) fun s₁ s₂ h =>
-      ⟨WP.mono (blk_call Proof.Aes.PPC64LE.encryptBlocks_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.1.pre)
+      ⟨WP.mono (blk_callF Proof.Aes.PPC64LE.encryptBlocksF_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.1.pre)
         fun _ hc => ⟨by rw [hc.saved .r17 (by decide), h.1.r17], by rw [hc.saved .r18 (by decide), h.1.r18],
           hc.sp.trans h.1.sp⟩,
-       WP.mono (blk_call Proof.Aes.PPC64LE.encryptBlocks_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.2.pre)
+       WP.mono (blk_callF Proof.Aes.PPC64LE.encryptBlocksF_correct AesCbc.PPC64LE.encryptBlocks_noFrames h.2.pre)
         fun _ hc => ⟨by rw [hc.saved .r17 (by decide), h.2.r17], by rw [hc.saved .r18 (by decide), h.2.r18],
           hc.sp.trans h.2.sp⟩⟩
   have b := taintRegs (P := fun s₁ s₂ => UAfter s₀ k s₁ ∧ UAfter s₀' k s₂) [.r17, .r18]
@@ -264,8 +264,8 @@ theorem update_rel {s₀ s₀' : State} (h0 : updatePPC64LE.pre s₀) (h0' : upd
   have hp' := UPre.of h0'
   have hN := upub_N hq
   obtain ⟨_, hpro⟩ : ∃ h, (taint.check (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8])
-    (.block (save ++ setup)) h).isSome = true := ⟨_, by taint_decide⟩
-  obtain ⟨_, hepi⟩ : ∃ h, (taint.check (Taint.ofRegs [.r19]) (.block restore) h).isSome = true :=
+    (.block (Impl.AesCbc.PPC64LE.saveAt updOff ++ setup)) h).isSome = true := ⟨_, by taint_decide⟩
+  obtain ⟨_, hepi⟩ : ∃ h, (taint.check (Taint.ofRegs [.r19]) (.block (Impl.AesCbc.PPC64LE.restoreAt updOff)) h).isSome = true :=
     ⟨_, by taint_decide⟩
   obtain ⟨_, hnil⟩ : ∃ h, (taint.check (Taint.ofRegs []) (.block []) h).isSome = true := ⟨_, by taint_decide⟩
   have pro := (taintRegs (P := fun a b => a = s₀ ∧ b = s₀') [.r3, .r4, .r5, .r6, .r7, .r8]

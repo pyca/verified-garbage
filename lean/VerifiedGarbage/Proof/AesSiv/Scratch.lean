@@ -125,8 +125,8 @@ working space in a frame of their own (`Verified.stackScratch`,
 `Verified.stackArgScratchL`, `Arm.Verified.stackScratchL`, …), around code
 proved with the working space as a last argument: `initScratchContract`,
 `encryptScratchContract` and `decryptScratchContract` are the shared
-contracts with a `scratch` buffer of 2560 bytes, or a `work` buffer of 2576,
-appended, whatever it holds.
+contracts with a `scratch` buffer of `n` words (320 by default), or a
+`work` buffer of `n` words (322 by default), appended, whatever it holds.
 
 Where the frame holds a copy of the arguments passed on the stack, the pre-
 and postconditions, and `decrypt`'s leak, must read the memory on entry only
@@ -147,43 +147,43 @@ namespace VG.Proof.AesSiv
 
 open VG.Spec.Siv
 
-/-- `vg_aes_siv_init` with `scratch: *mut [u64; 320]`. -/
-def initScratchSig : Sig where
+/-- `vg_aes_siv_init` with `scratch: *mut [u64; n]`. -/
+def initScratchSig (n : Nat := 320) : Sig where
   params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u64 64),
-    ("scratch", .array true .u64 320)]
+    ("scratch", .array true .u64 n)]
 
 /-- `initContract`, whatever `scratch` is. -/
-def initScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  initScratchSig.contract A
+def initScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 320) : Contract M :=
+  (initScratchSig n).contract A
     (pre := fun key keyLen ctx _scratch => initPre A.ptrBits key keyLen ctx)
     (post := fun key keyLen ctx _scratch => initPost A.ptrBits key keyLen ctx)
     (writeArgs := true) (stack := stack)
 
-/-- `vg_aes_siv_encrypt` with `work: *mut [u64; 322]`. -/
-def encryptScratchSig : Sig where
+/-- `vg_aes_siv_encrypt` with `work: *mut [u64; n]`. -/
+def encryptScratchSig (n : Nat := 322) : Sig where
   params := [("ctx", .array false .u64 64), ("rounds", .int .usize true),
     ("ads", .slices .u8 "ads_count"), ("data", .slice true .u8 "len"),
-    ("siv", .array true .u8 16), ("work", .array true .u64 322)]
+    ("siv", .array true .u8 16), ("work", .array true .u64 n)]
 
 /-- `encryptContract`, whatever `work` is. -/
-def encryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  encryptScratchSig.contract A
+def encryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 322) : Contract M :=
+  (encryptScratchSig n).contract A
     (pre := fun ctx rounds ads adsCount data len siv _work =>
       encryptPre A.ptrBits ctx rounds ads adsCount data len siv)
     (post := fun ctx rounds ads adsCount data len siv _work =>
       encryptRoundsPost A.ptrBits ctx rounds ads adsCount data len siv)
     (writeArgs := true) (stack := stack)
 
-/-- `vg_aes_siv_decrypt` with `work: *mut [u64; 322]`. -/
-def decryptScratchSig : Sig where
+/-- `vg_aes_siv_decrypt` with `work: *mut [u64; n]`. -/
+def decryptScratchSig (n : Nat := 322) : Sig where
   params := [("ctx", .array false .u64 64), ("rounds", .int .usize true),
     ("ads", .slices .u8 "ads_count"), ("data", .slice true .u8 "len"),
-    ("siv", .array false .u8 16), ("work", .array true .u64 322)]
+    ("siv", .array false .u8 16), ("work", .array true .u64 n)]
   ret := some .u32
 
 /-- `decryptContract`, whatever `work` is. -/
-def decryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  decryptScratchSig.contract A
+def decryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) (n : Nat := 322) : Contract M :=
+  (decryptScratchSig n).contract A
     (pre := fun ctx rounds ads adsCount data len siv _work =>
       decryptPre A.ptrBits ctx rounds ads adsCount data len siv)
     (post := fun ctx rounds ads adsCount data len siv _work =>

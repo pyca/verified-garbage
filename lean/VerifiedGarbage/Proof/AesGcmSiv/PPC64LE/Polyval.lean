@@ -90,7 +90,7 @@ structure TailPre (c : Cx) (P : Addr) (r : Nat) (t t₃ : State) : Prop where
 /-- `absTailPre`: the last `r` (1 to 15) bytes at `P`, padded with zeros. -/
 theorem absTailPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨P, r⟩] (t.rd ++ t.wr))
-    (hd : (⟨P, r⟩ : Region).Disjoint ⟨c.W, 3824⟩) (h23 : t.gpr .r23 = P) (h24 : t.gpr .r24 = BitVec.ofNat 64 r) :
+    (hd : (⟨P, r⟩ : Region).Disjoint ⟨c.W, 1520⟩) (h23 : t.gpr .r23 = P) (h24 : t.gpr .r24 = BitVec.ofNat 64 r) :
     WP isa absTailPre t (TailPre c P r t) := by
   have hw := L.ww
   unfold absTailPre zero16
@@ -108,7 +108,7 @@ theorem absTailPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} 
   obtain hm₆ : t₆.mem = Proof.Cmac.zero2 t.mem (c.W + BitVec.ofNat 64 240) := by
     rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.gpr, u₂.mem, u₁.gpr, u₁.mem]; rfl
   obtain dB : (⟨P, r⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 240, r⟩ :=
-    (hd.sub_right (Lay.wSub (show 240 + 16 ≤ 3824 by decide))).sub_right (Region.sub_prefix (by omega_arith))
+    (hd.sub_right (Lay.wSub (show 240 + 16 ≤ 1520 by decide))).sub_right (Region.sub_prefix (by omega_arith))
   obtain lp : LoopPre t₆ P (c.W + BitVec.ofNat 64 240) r :=
     { r3 := by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.gpr,
           u₁.other _ (by decide), h23]
@@ -119,7 +119,7 @@ theorem absTailPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} 
       pos := hr1
       lt := by omega_arith
       rd := by rw [pk₆.rd, pk₆.wr]; exact hc
-      wr := VG.Proof.Gather.PPC64LE.covers_prefix (E₆.perm.wC (show 240 + 16 ≤ 3824 by decide)) (by omega_arith)
+      wr := VG.Proof.Gather.PPC64LE.covers_prefix (E₆.perm.wC (show 240 + 16 ≤ 1520 by decide)) (by omega_arith)
       disj := dB }
   refine WP.seq (WP.mono (copyLoop_ok t₆ lp) fun t₇ ⟨hm₇, O⟩ => ?_)
   obtain pk₇ : PK t₆ t₇ := PK.ofLoop O
@@ -148,7 +148,7 @@ theorem absTailPre_wp {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} 
 /-- `absTail`: the last `r` (1 to 15) bytes at `P`, padded with zeros, absorbed. -/
 theorem absTail_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t) {P : Addr} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨P, r⟩] (t.rd ++ t.wr))
-    (hd : (⟨P, r⟩ : Region).Disjoint ⟨c.W, 3824⟩) (h23 : t.gpr .r23 = P) (h24 : t.gpr .r24 = BitVec.ofNat 64 r) :
+    (hd : (⟨P, r⟩ : Region).Disjoint ⟨c.W, 1520⟩) (h23 : t.gpr .r23 = P) (h24 : t.gpr .r24 = BitVec.ofNat 64 r) :
     WP isa absTail t (AbsPost c [Spec.GcmSiv.ofBytes (bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r))] t) := by
   have hw := L.ww
   unfold absTail
@@ -194,7 +194,7 @@ theorem absMid_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} (L : Lay c) {t : Stat
     exact chunks_wp L E hm (by omega_arith) (hQ.take (by omega_arith)) h23 h24
 
 theorem absorb_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} (L : Lay c) {t : State} (E : Env c t) {Q : Addr} {m : Nat} (hm : m < 2 ^ 64)
-    (hQ : Src c t Q m) (hd : (⟨Q, m⟩ : Region).Disjoint ⟨c.W, 3824⟩) (h23 : t.gpr .r23 = Q)
+    (hQ : Src c t Q m) (hd : (⟨Q, m⟩ : Region).Disjoint ⟨c.W, 1520⟩) (h23 : t.gpr .r23 = Q)
     (h24 : t.gpr .r24 = BitVec.ofNat 64 m) :
     WP isa absorb t (AbsPost c (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem Q m))) t) := by
   unfold absorb wholeLeft
@@ -214,7 +214,7 @@ theorem absorb_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} (L : Lay c) {t : Stat
   · have h0 : m % 16 ≠ 0 := by simpa using hf
     simp only [h0, ite_false]
     have hs := hQ.slice (a := 16 * (m / 16)) (k := m % 16) (by omega_arith) (by omega_arith)
-    have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨c.W, 3824⟩ :=
+    have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨c.W, 1520⟩ :=
       hd.sub_left (Offset.sub_base Q (by omega_arith))
     refine WP.mono (absTail_wp L (E.of_pk P₂'.pk) (by omega_arith) (by omega_arith)
       (by rw [P₂'.pk.rd, P₂'.pk.wr]; exact hs.rd) dT r23₂ r24₂) fun t₃ T => ?_

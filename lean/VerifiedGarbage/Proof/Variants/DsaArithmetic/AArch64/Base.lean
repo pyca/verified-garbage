@@ -28,6 +28,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ### `Dsa.AArch64.PrevalidatedVerified`, which only this module used -/
 
@@ -581,5 +582,11 @@ def variant : Backend where
   deriveCheckedNoDit := checks_dit checks 3 (by decide)
   deriveCheckedDepth := checks_depth checks 4 (by decide)
   stackBound := by decide
+  validateScrub := by lit_decide
+  prevalidatedScrub := by lit_decide
+  validatePrivateScrub := by lit_decide
+  deriveScrub := by lit_decide
+  randomSignScrub := by lit_decide
+  generateKeyScrub := by lit_decide
 
 end VG.Proof.Variants.DsaArithmetic.AArch64.Base

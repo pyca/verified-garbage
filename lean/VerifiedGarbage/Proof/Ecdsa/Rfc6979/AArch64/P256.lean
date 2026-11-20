@@ -116,14 +116,4 @@ theorem p256SignSide (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AA
           [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
       p256SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
 
-/-- The registers the tail of `vg_ecdsa_p256_verify` clears: those its code may write. -/
-def p256VerifyClear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v28],
-   []⟩
-
-theorem p256VerifySide :
-    AArch64.ScrubAll.scrubSide
-      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false Impl.Ecdsa.Verify.AArch64.P256Allocated.verify)
-      80 (Spec.Ecdsa.P256.inst.verifyHashSig.retBits AArch64.abi.ptrBits) p256VerifyClear [] = true := by lit_decide
-
 end VG.Proof.Ecdsa.Rfc6979.AArch64

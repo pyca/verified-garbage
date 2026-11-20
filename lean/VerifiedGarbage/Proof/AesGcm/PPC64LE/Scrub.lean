@@ -33,8 +33,9 @@ itself (`withStackScratch`, `withStackScratchArgs`, and the frames of
 `vg_aes_gcm_seal_split` and `vg_aes_gcm_open_split`), which the tail wipes
 whole. The functions they call need no working space, so `init` and the
 streaming functions keep only 288 bytes, in a frame of 320; `seal`, `open`,
-`seal_gather` and `open_to` keep their helpers' working space as well, at
-`W + 448`, in frames of 2.6 KB or more. Every one
+`seal_gather` and `open_to` keep their bulk helper's working space as well,
+704 bytes at `W + 448` (its 640-byte kernel uses 624 of them), in frames of
+1264 to 1552 bytes. Every one
 may write every volatile register but CA (and `vg_aes_gcm_init` none of
 `v12`–`v18`), so the tail clears them all. The functions they call
 (`vg_aes_ctr32`, `vg_ghash`, `vg_aes_expand_key_scratch` and the split
@@ -290,18 +291,18 @@ def streamVerifyReg : Registration Spec.Gcm.streamVerifyApi PPC64LE.target :=
 /-- `Spec.Gcm.sealApi`. -/
 def sealReg : Registration Spec.Gcm.sealApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal
+      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 1264 1 Impl.AesGcm.PPC64LE.SealFused.seal
       verified := Proof.AesGcm.seal_keyed seal_framed }
-    2672 clearAll
+    1264 clearAll
     (sealOut _)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Gcm.openApi`. -/
 def openReg : Registration Spec.Gcm.openApi PPC64LE.target :=
   scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesGcm.PPC64LE.open
+      code := Impl.StackScratch.PPC64LE.withStackScratchArgs 1280 2 Impl.AesGcm.PPC64LE.open
       verified := Proof.AesGcm.open_keyed open_framed }
-    2688 clearAll
+    1280 clearAll
     (openOut _)
     (by dsimp only; lit_decide)
 
@@ -310,7 +311,7 @@ def sealGatherReg : Registration Spec.Gcm.sealGatherApi PPC64LE.target :=
   scrubOf {
       code := Impl.AesGcm.PPC64LE.GatherSplit.sealGather
       verified := Proof.AesGcm.sealGather_keyed GatherSplit.verified }
-    2960 clearAll
+    1552 clearAll
     (sealGatherOut _)
     (by dsimp only; lit_decide)
 
@@ -319,7 +320,7 @@ def openToReg : Registration Spec.Gcm.openToApi PPC64LE.target :=
   scrubOf {
       code := Impl.AesGcm.PPC64LE.OpenTo.openTo
       verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_verified }
-    2720 clearAll
+    1312 clearAll
     (openToOut _)
     (by dsimp only; lit_decide)
 

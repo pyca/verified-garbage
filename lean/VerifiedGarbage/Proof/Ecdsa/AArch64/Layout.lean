@@ -57,8 +57,7 @@ a hash of `len` bytes that are not `e`'s (`c.sh`, 0 unless `n` has fewer
 than `8 len` bits) are fewer than 64, `n ≥ 4` words, the inversion
 modulo `p` sound (`InvSound`, which `p` prime gives) with its batches and
 constants right (`InvOk`), and modulo `n` too or the chain of `n - 2` right
-(`fastN`), `n` even or nine (the comb's
-selection moves an entry's words in pairs, or by thirds),
+(`fastN`),
 and the products modulo `p` are by a function that computes them if they are calls. The group law needs
 more (`Weierstrass.Law`, which a prime field and no point of order 2 give:
 `Weierstrass.Good.law`), which only the proofs of the results take. -/
@@ -77,7 +76,6 @@ structure BaseCfgOk (c : Cfg) : Prop where
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
   red_p : c.MP'.ok c.C.p = true
   red_n : c.MN'.ok c.C.n = true
-  n2 : c.n % 2 = 0 ∨ c.n = 9
   len8 : 8 ≤ c.C.len
   len_lo : 8 * c.n ≤ c.C.len + 8
   len_hi : c.C.len ≤ 8 * c.n

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.AesCtr.AArch64
 public import VerifiedGarbage.Impl.AesCfb.AArch64.Final
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.Residue.AArch64.Union
 
 /-!
 # AES-CTR of a message's last piece: AArch64 implementation
@@ -79,5 +81,37 @@ implementation `c`, whose callers' names end in `sfx`, as an internal
 function of its own, `vg_aes_ctr<sfx>_core`: `vg_aes_ctr` also clears the
 registers it leaves (`Proof.Aes.AArch64.ModesScrub.ctrOk`). -/
 def cryptFinal (c : Ctr32) (sfx : String) : Prog isa := final ("vg_aes_ctr" ++ sfx ++ "_core") (crypt c)
+
+/-! ## The functions, as emitted
+
+Each function is its code, then its cleanup
+(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+convention does not preserve are cleared, and the stack it uses is zeroed,
+so that it returns without secret residue. The registers are those its own
+instructions write, stated here, and those the implementation of
+`vg_aes_ctr32` it calls writes (`cl`). -/
+
+namespace Fn
+
+open VG.Impl.Residue.AArch64 (Clear scrubAll)
+
+/-- The registers `vg_aes_ctr`'s own instructions write. -/
+def cryptOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x12, .x16, .x17], [], []⟩
+
+/-- `vg_aes_ctr`: `crypt`, its registers cleared; it uses no stack. -/
+def crypt (cl : Clear) (c : Ctr32) : Prog isa :=
+  scrubAll 0 0 (cryptOwn.union cl) (AesCtr.AArch64.crypt c)
+
+/-- The registers `vg_aes_ctr_final`'s own instructions write. -/
+def cryptFinalOwn : Clear :=
+  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x10, .x11, .x12, .x16, .x17], [], []⟩
+
+/-- `vg_aes_ctr_final`: `cryptFinal` with `save` in its frame, its registers
+cleared and its 80 bytes of stack zeroed. -/
+def cryptFinal (cl : Clear) (c : Ctr32) (sfx : String) : Prog isa :=
+  scrubAll 80 0 (cryptFinalOwn.union cl)
+    (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (AesCtr.AArch64.cryptFinal c sfx))
+
+end Fn
 
 end VG.Impl.AesCtr.AArch64
