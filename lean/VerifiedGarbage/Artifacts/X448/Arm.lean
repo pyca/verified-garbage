@@ -14,7 +14,13 @@ namespace VG.Artifacts.X448.Arm
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Curve448Field.Arm.variants.flatMap fun (v : Proof.Variants.Curve448Field.Arm.Variant) => [
-    Spec.X448.exchangeApi.artifact Arm.target (Proof.X448.Arm.Scrub.exchangeReg v.um v.suffix),
-    Spec.X448.x448BaseApi.artifact Arm.target (Proof.X448.Arm.Scrub.x448BaseReg v.um v.suffix Proof.Ed448.baseCombU_ok)]
+    Spec.X448.exchangeApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.X448.Arm.Fn.exchange v.um
+      verified := .scrubbed (Proof.X448.Arm.Fn.exchange v.um) },
+    Spec.X448.x448BaseApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.X448.Arm.Fn.x448Base v.um
+      verified := .scrubbed (Proof.X448.Arm.Fn.x448Base v.um) }]
 
 end VG.Artifacts.X448.Arm

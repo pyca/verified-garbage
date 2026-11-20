@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Proof.Ed448.CombFacts
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.X448.Arm.Lit
 import VerifiedGarbage.Proof.X448.Arm.BaseLit
@@ -453,13 +454,15 @@ end
 # X448 on ARMv7, without secret residue
 
 `vg_x448_base`, with either multiplication of the field
-(`Proof/Variants/Curve448Field/Arm.lean`), has no frames: it is registered
-scrubbed (`Arm.Scrub.scrubReg`), followed by instructions that set the
-registers a callee may change, and the flags, to constants.
-`vg_x448_exchange` calls `vg_x448` from frames of 8 bytes, and its
-postcondition reads the memory on return only at `out`
-(`Arm.Scrub.PostOut`): it is registered followed by a wipe of those bytes
-too (`Arm.Scrub.scrubRegF`).
+(`Proof/Variants/Curve448Field/Arm.lean`), has no frames: it is emitted
+followed by instructions that set the registers a callee may change, and the
+flags, to constants (`Impl.X448.Arm.Fn`). `vg_x448_exchange` calls `vg_x448`
+from frames of 8 bytes, and its postcondition reads the memory on return only
+at `out` (`Arm.Scrub.PostOut`): it is emitted followed by a wipe of those
+bytes too. The code's shape is the same with either multiplication but where
+it is chosen (`mulFn_shape`, `ops_shape`), so what the cleanup needs of it is
+proven once for both; `Fn` has the theorem of each, which its registration
+binds.
 -/
 
 @[expose] public section
@@ -484,15 +487,49 @@ theorem bytesAt_of {m₁ m₂ : Mem} {o : Addr} {n N : Nat}
   have := List.mem_range.mp hi
   exact (h _ (contains_of (by omega_using [this, hN]))).symm
 
+/-! ### The shape of the field's code
+
+What the cleanup needs of a function that multiplies in the field
+(`Code.noFrames`, `armStack`, `noIcall`) depends only on its shape, which is
+the same with either multiplication but where it is chosen (`mulFn`): these
+state it once for both, and each caller proves its own shape for any `u`
+from them, rather than evaluating each variant's code again. -/
+
+theorem mulFn_shape (u : Bool) : (Impl.X448.Arm.mulFn u).noFrames = true ∧
+    armStack (Impl.X448.Arm.mulFn u) = 0 ∧ noIcall (Impl.X448.Arm.mulFn u) = true := by
+  cases u <;> simp only [Impl.X448.Arm.mulFn, Impl.X448.Arm.fn, Impl.X448.Arm.mul, Impl.X448.Arm.mulU,
+    Code.noFrames, armStack, noIcall, Bool.false_eq_true, ↓reduceIte, Bool.and_self, Nat.max_self, and_self]
+
+theorem ops_shape (u : Bool) (os : List Impl.X448.Arm.Op) : (Impl.X448.Arm.ops u os).noFrames = true ∧
+    armStack (Impl.X448.Arm.ops u os) = 0 ∧ noIcall (Impl.X448.Arm.ops u os) = true := by
+  induction os with
+  | nil => exact ⟨rfl, rfl, rfl⟩
+  | cons o os ih =>
+    obtain ⟨h1, h2, h3⟩ := ih
+    obtain ⟨m1, m2, m3⟩ := mulFn_shape u
+    cases o <;> simp only [Impl.X448.Arm.ops, Impl.X448.Arm.Op.code, Impl.X448.Arm.callFn,
+      Impl.X448.Arm.mulA24Call, Impl.X448.Arm.mulA24Fn, Impl.X448.Arm.addFn, Impl.X448.Arm.subFn,
+      Impl.X448.Arm.fn, Code.noFrames, armStack, noIcall, h1, h2, h3, m1, m2, m3, Bool.and_self,
+      Nat.max_self, and_self]
+
 theorem x448Base_noFrames (u : Bool) : (Impl.X448.Arm.x448Base u).noFrames = true := by
-  cases u <;> lit_decide
+  simp only [
+    Impl.Ed448.Arm.combStep, Impl.Ed448.Arm.combLoop, Impl.X448.Arm.callFn, Impl.X448.Arm.Op.code,
+    Impl.X448.Arm.ops, Impl.X448.Arm.sqn, Impl.X448.Arm.invert, Impl.X448.Arm.bits,
+    Impl.X448.Arm.finish, Impl.X448.Arm.x448Base, Code.noFrames,
+    (Proof.X448.Arm.Scrub.ops_shape _ _).1, (Proof.X448.Arm.Scrub.mulFn_shape _).1, Bool.and_self]
 
-theorem exchange_noIcall (u : Bool) : noIcall (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56) = true := by
-  cases u <;> lit_decide
-
-theorem exchange_armStack (u : Bool) :
-    armStack (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56) ≤ 8 := by
-  cases u <;> lit_decide
+theorem exchange_codeOk (u : Bool) :
+    CodeOk (Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56) 8 := by
+  simp only [CodeOk,
+    Impl.X448.Arm.callFn, Impl.X448.Arm.Op.code, Impl.X448.Arm.ops, Impl.X448.Arm.stepBody,
+    Impl.X448.Arm.step, Impl.X448.Arm.ladder, Impl.X448.Arm.sqn, Impl.X448.Arm.invert,
+    Impl.X448.Arm.bits, Impl.X448.Arm.finish, Impl.X448.Arm.afterSetup, Impl.X448.Arm.x448,
+    Impl.Xdh.Arm.exchange, armStack, noIcall, (Proof.X448.Arm.Scrub.ops_shape _ _).2.1,
+    (Proof.X448.Arm.Scrub.ops_shape _ _).2.2, (Proof.X448.Arm.Scrub.mulFn_shape _).2.1,
+    (Proof.X448.Arm.Scrub.mulFn_shape _).2.2, Bool.and_self, Nat.max_self, List.length_cons,
+    List.length_nil]
+  decide
 
 theorem frameOk_8 : FrameOk 8 := by decide
 
@@ -508,22 +545,25 @@ theorem exchangeOut (stack : Nat) :
       rw [bytesAt_of hb.1 (Nat.le_refl 56)]
       exact h
 
-/-- `vg_x448_exchange` with the field's multiplication `u`, as `suffix`. -/
-def exchangeReg (u : Bool) (suffix : String) : Registration Spec.X448.exchangeApi target :=
-  Arm.Scrub.scrubRegF {
-      suffix := suffix
-      code := Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56
-      verified := Exchange.exchange_variant u }
-    (exchange_armStack u) (exchange_noIcall u) frameOk_8 (exchangeOut _) rfl
-
-/-- `vg_x448_base` with the field's multiplication `u`, as `suffix`, given the reference comb's
-agreement with the specification. -/
-def x448BaseReg (u : Bool) (suffix : String) (hu : Proof.Ed448.BaseCombUOk) :
-    Registration Spec.X448.x448BaseApi target :=
-  Arm.Scrub.scrubReg {
-      suffix := suffix
-      code := Impl.X448.Arm.x448Base u
-      verified := Proof.X448.Arm.x448Base_verified hu }
-    (x448Base_noFrames u)
-
 end VG.Proof.X448.Arm.Scrub
+
+namespace VG.Proof.X448.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_x448_exchange`, with either multiplication of the field. -/
+theorem exchange (u : Bool) :
+    VerifiedScrubbed target (Impl.X448.Arm.Fn.exchange u) (Spec.X448.exchangeContract abi 8) 32 :=
+  verifiedScrubbedF (api := Spec.X448.exchangeApi)
+    { code := Impl.Xdh.Arm.exchange ("vg_x448" ++ Impl.X448.Arm.suffix u) (Impl.X448.Arm.x448 u) 56
+      verified := Exchange.exchange_variant u }
+    (Scrub.exchangeOut _) (scrubSideF_of (Scrub.exchange_codeOk u) Scrub.frameOk_8 _)
+
+/-- `vg_x448_base`, with either multiplication of the field. -/
+theorem x448Base (u : Bool) :
+    VerifiedScrubbed target (Impl.X448.Arm.Fn.x448Base u) (Spec.X448.x448BaseContract abi) 0 :=
+  verifiedScrubbed (api := Spec.X448.x448BaseApi)
+    { code := Impl.X448.Arm.x448Base u, verified := Proof.X448.Arm.x448Base_verified Proof.Ed448.baseCombU_ok }
+    (Scrub.x448Base_noFrames u)
+
+end VG.Proof.X448.Arm.Fn

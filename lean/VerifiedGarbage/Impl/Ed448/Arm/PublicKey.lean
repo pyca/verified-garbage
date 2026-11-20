@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
+public import VerifiedGarbage.Impl.Residue.Arm
 public import VerifiedGarbage.Impl.Sha3.Arm.Stream
 public import VerifiedGarbage.Spec.Sha3.Contract
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
@@ -96,3 +97,14 @@ def body (u : Bool) : Prog isa :=
 def code (u : Bool) : Prog isa := wrap 3 (body u)
 
 end VG.Impl.Ed448.Arm.PublicKey
+
+namespace VG.Impl.Ed448.Arm.Fn
+
+open VG.Arm VG.Impl.Residue.Arm
+
+/-- `vg_ed448_public_key`, with either multiplication of the field (`u`), then the 280 bytes
+of stack its contract reserves zeroed and the registers a callee may
+change and the flags set to constants. -/
+def publicKey (u : Bool) : Prog isa := scrubF 0 280 (PublicKey.code u)
+
+end VG.Impl.Ed448.Arm.Fn
