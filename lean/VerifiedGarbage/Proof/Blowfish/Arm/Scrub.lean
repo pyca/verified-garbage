@@ -7,6 +7,7 @@ public import VerifiedGarbage.Spec.Blowfish.CfbFinal
 public import VerifiedGarbage.Spec.Blowfish.Ofb
 public import VerifiedGarbage.Spec.Blowfish.OfbFinal
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 public import VerifiedGarbage.Impl.Blowfish.Arm.Fn
 public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
 public import VerifiedGarbage.Proof.Blowfish.Arm.CbcVerified
@@ -23,6 +24,7 @@ meta import VerifiedGarbage.Spec.Blowfish.CfbFinal
 meta import VerifiedGarbage.Spec.Blowfish.Ofb
 meta import VerifiedGarbage.Spec.Blowfish.OfbFinal
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Impl.Blowfish.Arm.Fn
 meta import VerifiedGarbage.Proof.Blowfish.Arm.Frame
 meta import VerifiedGarbage.Proof.Blowfish.Arm.CbcVerified
@@ -40,12 +42,17 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 The eleven Blowfish functions with their cleanup (`Impl.Blowfish.Arm.Fn`):
 each zeroes the stack its contract reserves and returns with the registers a
 callee may change set to constants (`Arm.Scrub.verifiedScrubbedF`). Key
+expansion, which wipes its working space, zeroes only the words of that
+stack that the residue analysis (`Arm.rtaint`) finds may differ between two
+runs (`Arm.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates
+here: `taint_decide_ct`); ECB and the modes leave most of theirs secret, and
+keep the loop of `scrubF`, the shorter code. Key
 expansion and ECB keep their working space in a frame of 96 and 256 bytes
 (`withRegScratchWiped`); the modes keep theirs in a frame of 64 bytes and
 call ECB's code, with its frame, under a name of its own
 (`vg_blowfish_ecb_encrypt_entry`, `Impl.Blowfish.Arm.ecbCore`), which the
 emitter writes as an internal function: 320 bytes in all. What the cleanup
-needs of their code (`CodeOk`) follows from ECB's and key expansion's,
+of ECB and the modes needs of their code (`CodeOk`) follows from ECB's,
 evaluated once by `lit_decide`, through the generic modes'
 (`Proof/Modes/Arm/ScrubCode.lean`), and their postconditions read the memory
 on return only within the buffers (`Arm.Scrub.PostOut`), as on x86
@@ -235,17 +242,10 @@ theorem ofbFinalOut (stack : Nat) : PostOut (ofbFinalContract Arm.abi stack) (of
 
 /-! ## The code: frames and indirect calls -/
 
-theorem expandKey_armStack : armStack Impl.Blowfish.Arm.expandKey ≤ 0 := by lit_decide
-theorem expandKey_noIcall : noIcall Impl.Blowfish.Arm.expandKey = true := by lit_decide
 theorem encrypt_armStack : armStack Impl.Blowfish.Arm.encrypt ≤ 0 := by lit_decide
 theorem encrypt_noIcall : noIcall Impl.Blowfish.Arm.encrypt = true := by lit_decide
 theorem decrypt_armStack : armStack Impl.Blowfish.Arm.decrypt ≤ 0 := by lit_decide
 theorem decrypt_noIcall : noIcall Impl.Blowfish.Arm.decrypt = true := by lit_decide
-
-/-- Key expansion, in its 96-byte scratch frame. -/
-theorem expandKey_ok :
-    CodeOk (Impl.StackScratch.Arm.withRegScratchWiped 96 .r3 20 Impl.Blowfish.Arm.expandKey) 96 :=
-  withRegScratchWiped_scrubArm (n := 0) ⟨expandKey_armStack, expandKey_noIcall⟩
 
 /-- ECB's code, in its 256-byte scratch frame. -/
 theorem ecbCode_ok (up : Bool) : CodeOk (Impl.Blowfish.Arm.ecbCode up) 256 := by
@@ -270,7 +270,6 @@ theorem seqFinal_ok (up : Bool) (m : Impl.Modes.Arm.Mode) :
     CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 ((Impl.Blowfish.Arm.ecbCore up).seqFinal m)) 320 :=
   withStackScratchWiped_scrubArm (seqFinal_scrubArm (ecbCore_ok up) m)
 
-theorem frameOk_96 : FrameOk 96 := by decide
 theorem frameOk_256 : FrameOk 256 := by decide
 theorem frameOk_320 : FrameOk 320 := by decide
 
@@ -284,10 +283,12 @@ open VG VG.Arm VG.Arm.Scrub
 theorem expandKey :
     VerifiedScrubbed target Impl.Blowfish.Arm.Fn.expandKey
       (Spec.Blowfish.expandKeyContract (abi.withConsts Impl.Blowfish.Arm.initConsts) 96) 0 :=
-  verifiedScrubbedF (api := Spec.Blowfish.expandKeyApi)
+  verifiedScrubbedSel (api := Spec.Blowfish.expandKeyApi) (W := 96)
     { code := Impl.StackScratch.Arm.withRegScratchWiped 96 .r3 20 Impl.Blowfish.Arm.expandKey
       verified := Proof.Blowfish.Arm.expandKey_framed }
-    (Scrub.expandKeyOut 96) (scrubSideF_of Scrub.expandKey_ok Scrub.frameOk_96 _)
+    Impl.Blowfish.Arm.Fn.expandKeyWords []
+    (Scrub.expandKeyOut 96)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_blowfish_ecb_encrypt`. -/
 theorem ecbEncrypt :

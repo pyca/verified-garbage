@@ -13,14 +13,17 @@ public import VerifiedGarbage.Impl.AesOfb.Arm.Final
 public import VerifiedGarbage.Impl.AesXts.ArmUnit
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Residue.ArmSel
 
 /-!
 # AES and its modes on ARMv7, as emitted
 
 Each function's code followed by its cleanup (`Impl/Residue/Arm.lean`,
 `scrubF`): the stack its contract reserves, where its frames were, zeroed,
-and the registers a callee may change, set to
-constants. `Proof/Aes/Arm/Scrub.lean` states that each returns without
+and the registers a callee may change, set to constants. Key expansion
+wipes its own working space, and its cleanup zeroes only the words of that
+stack that the residue analysis (`Arm.rtaint`) finds may differ between two
+runs (`Impl/Residue/ArmSel.lean`, `scrubSel`): none. `Proof/Aes/Arm/Scrub.lean` states that each returns without
 secret residue.
 
 The `_final` functions of CTR, CFB128 and OFB call the code of the
@@ -35,8 +38,11 @@ namespace VG.Impl.Aes.Arm.Fn
 
 open VG.Arm VG.Impl.Residue.Arm VG.Impl.StackScratch.Arm
 
+/-- The words key expansion leaves secret: none. -/
+def expandKeyWords : List Nat := []
+
 /-- `vg_aes_expand_key`. -/
-def expandKey : Prog isa := scrubF 0 512 (withRegScratchWiped 512 .r3 128 Impl.Aes.Arm.expandKey)
+def expandKey : Prog isa := scrubSel 0 512 expandKeyWords (withRegScratchWiped 512 .r3 128 Impl.Aes.Arm.expandKey)
 
 /-- `vg_aes_ecb_encrypt`. -/
 def ecbEncrypt : Prog isa := scrubF 0 24 Impl.AesEcb.Arm.encrypt

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Sha256.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm.Digest
 public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Residue.ArmSel
 
 /-!
 # Streaming SHA-256: 32-bit ARM implementation
@@ -80,10 +81,13 @@ end VG.Impl.Sha256.Arm.Stream
 /-! ## The functions as emitted
 
 Each is its code, then its cleanup (`Impl/Residue/Arm.lean`): the registers
-a callee may change set to constants, and for every function but `init` first
-the stack of its contract zeroed: the 176 bytes of the frame of `update` and
-`finalize` (`withStackScratch`), and `digest`'s (`withRegScratchWiped`, and
-the 16 bytes it pushes). None returns a value. -/
+a callee may change set to constants, and first, for `update` and
+`finalize`, the 176 bytes of the stack of their contract, their frame
+(`withStackScratch`), zeroed. `digest` wipes its own working space
+(`withRegScratchWiped`), and its cleanup zeroes only the words of its stack
+that the residue analysis (`Arm.rtaint`) finds may differ between two runs
+(`Impl/Residue/ArmSel.lean`, `scrubSel`, `digestWords`, offsets in words from
+the lowest address of that stack). None returns a value. -/
 
 namespace VG.Impl.Sha256.Arm.Fn
 
@@ -105,10 +109,14 @@ def finalize : Prog isa := scrubF 0 176 (Impl.StackScratch.Arm.withStackScratch 
 def finalize224 : Prog isa :=
   scrubF 0 176 (Impl.StackScratch.Arm.withStackScratch 176 1 Stream.finalize224)
 
+/-- The words `digest` leaves secret, which the residue analysis (`Arm.rtaint`)
+finds may differ between two runs. -/
+def digestWords : List Nat := List.range' 0 4
+
 /-- `vg_sha224_digest`. -/
-def digest224 : Prog isa := scrubF 0 344 (Impl.MdStream.Arm.Digest.digest Stream.streamFns224)
+def digest224 : Prog isa := scrubSel 0 344 digestWords (Impl.MdStream.Arm.Digest.digest Stream.streamFns224)
 
 /-- `vg_sha256_digest`. -/
-def digest : Prog isa := scrubF 0 344 (Impl.MdStream.Arm.Digest.digest Stream.streamFns)
+def digest : Prog isa := scrubSel 0 344 digestWords (Impl.MdStream.Arm.Digest.digest Stream.streamFns)
 
 end VG.Impl.Sha256.Arm.Fn

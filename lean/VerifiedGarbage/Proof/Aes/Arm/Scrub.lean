@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Aes.Arm.Fn
 public import VerifiedGarbage.Proof.Aes.Arm.Frame
@@ -22,6 +23,7 @@ import VerifiedGarbage.Proof.AesCbc.Arm.Body
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Impl.Aes.Arm.Fn
 meta import VerifiedGarbage.Proof.Aes.Arm.Frame
@@ -42,6 +44,7 @@ meta import VerifiedGarbage.Proof.AesCbc.Wipe
 meta import VerifiedGarbage.Proof.AesCbc.Arm.Body
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # AES and its modes on ARMv7, without secret residue
@@ -60,6 +63,11 @@ that stack and by instructions that set the registers a callee may change,
 and the flags to constants (`Impl.Aes.Arm.Fn`), and `Fn`
 below states that it returns without secret residue
 (`Arm.Scrub.verifiedScrubbedF`), which is what its registration binds.
+Key expansion wipes its own working space, and the residue analysis
+(`Arm.rtaint`) finds no word of its stack that may differ between two runs,
+so its cleanup zeroes none (`Impl.Residue.Arm.scrubSel`,
+`Arm.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates here:
+`taint_decide_ct`).
 
 The `_final` functions of CTR, CFB128 and OFB call the code of the
 whole-block ones as it is verified, without the wipe, under names of their
@@ -327,12 +335,6 @@ theorem frameOk_24 : FrameOk 24 := by decide
 theorem frameOk_32 : FrameOk 32 := by decide
 theorem frameOk_72 : FrameOk 72 := by decide
 theorem frameOk_88 : FrameOk 88 := by decide
-theorem frameOk_512 : FrameOk 512 := by decide
-
-theorem expandKey_code :
-    CodeOk (Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.Aes.Arm.expandKey) 512 := by
-  lit_decide
-
 theorem ecbEncrypt_code : CodeOk Impl.AesEcb.Arm.encrypt 24 := by
   lit_decide
 
@@ -393,10 +395,12 @@ open VG VG.Arm VG.Arm.Scrub
 
 /-- `vg_aes_expand_key`. -/
 theorem expandKey : VerifiedScrubbed target Impl.Aes.Arm.Fn.expandKey (Spec.Aes.expandKeyContract abi 512) 0 :=
-  verifiedScrubbedF (api := Spec.Aes.expandKeyApi)
+  verifiedScrubbedSel (api := Spec.Aes.expandKeyApi) (W := 512)
     { code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.Aes.Arm.expandKey
       verified := Proof.Aes.Arm.expandKey_framed }
-    (Scrub.expandKeyOut _) (scrubSideF_of Scrub.expandKey_code Scrub.frameOk_512 _)
+    Impl.Aes.Arm.Fn.expandKeyWords []
+    (Scrub.expandKeyOut _)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_aes_ecb_encrypt`. -/
 theorem ecbEncrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.ecbEncrypt (Spec.AesEcb.encryptContract abi 24) 0 :=

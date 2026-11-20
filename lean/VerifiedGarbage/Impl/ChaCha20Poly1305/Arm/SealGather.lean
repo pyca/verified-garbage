@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Residue.ArmSel
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices: 32-bit ARM implementation
@@ -69,27 +69,42 @@ namespace VG.Impl.ChaCha20Poly1305.Arm.Fn
 
 open VG.Arm VG.Impl.Residue.Arm
 
+/-- The words `seal` and `open` leave secret, with either arithmetic: the
+stack arguments and buffer addresses their frame copies, and their innermost
+frame. -/
+def sealWords : List Nat := List.range' 0 7 ++ [165]
+
+/-- The words `open_to` leaves secret, with either arithmetic. -/
+def openToWords : List Nat := List.range' 0 9 ++ [167]
+
+/-- The words `seal_gather` leaves secret, with either arithmetic: its frame
+of 32 bytes, of the stack arguments it passes and the registers it saves. -/
+def sealGatherWords : List Nat := List.range' 166 8
+
 /-- `vg_chacha20_poly1305_seal`, with either arithmetic of Poly1305: `seal`,
 its working space in a frame of 656 bytes whose first 158 words it zeroes,
-then the 664 bytes of stack its contract reserves zeroed and the registers a
-callee may change set to constants. -/
+then, of the 664 bytes of stack its contract reserves, the words the residue
+analysis (`Arm.rtaint`) finds may differ between two runs zeroed
+(`sealWords`, `Impl/Residue/ArmSel.lean`), and the registers a callee may
+change set to constants. -/
 def «seal» (umaal : Bool) : Prog isa :=
-  scrubF 0 664 (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Arm.seal umaal))
+  scrubSel 0 664 sealWords (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Arm.seal umaal))
 
 /-- `vg_chacha20_poly1305_open`, as `seal`, but its result. -/
 def «open» (umaal : Bool) : Prog isa :=
-  scrubF 32 664 (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Arm.open umaal))
+  scrubSel 32 664 sealWords (Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 (Arm.open umaal))
 
 /-- `vg_chacha20_poly1305_open_to`, as `open`, in a frame of 664 bytes and
-with 672 bytes of stack zeroed. -/
+with 672 bytes of stack. -/
 def openTo (umaal : Bool) : Prog isa :=
-  scrubF 32 672 (Impl.StackScratch.Arm.withStackScratchWiped 664 5 158 (Arm.openTo umaal))
+  scrubSel 32 672 openToWords (Impl.StackScratch.Arm.withStackScratchWiped 664 5 158 (Arm.openTo umaal))
 
 /-- `vg_chacha20_poly1305_seal_gather`, calling `seal` with the same
-arithmetic (as emitted, `«seal» umaal`), then the 696 bytes of stack its
-contract reserves zeroed and the registers a callee may change set to
-constants. -/
+arithmetic (as emitted, `«seal» umaal`, its cleanup included), then, of
+the 696 bytes of stack its contract reserves, the words the residue analysis
+finds may differ between two runs zeroed (`sealGatherWords`), and the
+registers a callee may change set to constants. -/
 def sealGather (umaal : Bool) : Prog isa :=
-  scrubF 0 696 (SealGather.sealGather (SealGather.sealName umaal) («seal» umaal))
+  scrubSel 0 696 sealGatherWords (SealGather.sealGather (SealGather.sealName umaal) («seal» umaal))
 
 end VG.Impl.ChaCha20Poly1305.Arm.Fn
