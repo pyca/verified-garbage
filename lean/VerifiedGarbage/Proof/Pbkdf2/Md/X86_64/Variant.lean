@@ -1311,11 +1311,6 @@ structure MdHash where
   the compression function, when no other variant shares them (otherwise
   they are in the hash function's registration file). -/
   stream : List StreamFnS
-  /-- The residue analysis of HMAC's `finalize` (`hmacFinF`), if the analysis
-  handles it: that function then returns without secret residue
-  (`MdHash.hmacFinReg`). -/
-  hmacFinRes : Option (RScrub.Analysed I.finalizeApi.sig (16 + hmacFrame H) []
-    (Impl.StackScratch.X86_64.withStackScratch (hmacFrame H) .r8 H.hmacFin)) := none
 
 /-- The hash function's code made with the working space of its slowest
 implementation's compression function (`MdHash.soU`). -/

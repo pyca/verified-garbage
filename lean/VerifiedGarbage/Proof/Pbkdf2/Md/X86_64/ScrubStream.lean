@@ -14,9 +14,8 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
 /-!
 # Streaming functions that return without secret residue (x86-64)
 
-`MdHash.hmacFinReg`: HMAC's `finalize` over a variant, followed by
-`scrubTail` where the variant gives the residue analysis of its code
-(`MdHash.hmacFinRes`). Its postcondition reads the memory on return only
+`FinImpl`: HMAC's `finalize` over a variant, followed by its cleanup, with
+what the cleanup needs of its code, which the variant evaluates. Its postcondition reads the memory on return only
 within `out` (`hmacFinOut`).
 
 `scrubAllCode`: code followed by the clearing with every granule of its stack
@@ -64,20 +63,47 @@ theorem hmacFinOut (I : Spec.Hmac.Instance) (hD : I.S.digestBytes < 2 ^ 64) (sta
     rw [Sha256.Stream.bytesAt_congr ho]
     exact h k0 text h1 h2 hri hc hro
 
-open RScrub in
 /-- HMAC's `finalize` over the variant `v`: `finalize_scratch` with its
-working space in a frame of its own, without secret residue where `v` gives
-its analysis (`MdHash.hmacFinRes`). -/
-def MdHash.hmacFinReg (v : MdHash) : Registration v.I.finalizeApi target :=
-  let r : Unscrubbed v.I.finalizeApi target := {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.H) .r8 v.H.hmacFin
-    stack := 16 + hmacFrame v.H
-    verified := v.hmacFinF
-    spSafe := X86_64.withStackScratch_spSafe_of v.hmacFinSp }
-  if hD : v.I.S.digestBytes < 2 ^ 64 then
-    withScrub r (hmacFinOut v.I hD _) [] (pubOk_nil _) v.hmacFinRes
-  else r.registration
+working space in a frame of its own (`MdHash.hmacFinF`), with what its
+cleanup (`Impl.Scrub.X86_64.scrubSel`) needs of its code (`sel`), which the
+variant evaluates once, where it is defined. -/
+structure FinImpl where
+  v : MdHash
+  hD : v.I.S.digestBytes < 2 ^ 64 := by decide
+  sel : SelScrub v.I.finalizeApi.sig (16 + hmacFrame v.H) ((Spec.Hmac.finalizeSig v.I.S).retBits 64)
+    (Impl.StackScratch.X86_64.withStackScratch (hmacFrame v.H) .r8 v.H.hmacFin)
+
+/-- `f`'s function before its cleanup. -/
+def FinImpl.plain (f : FinImpl) : Unscrubbed f.v.I.finalizeApi target where
+  suffix := f.v.suffix
+  code := Impl.StackScratch.X86_64.withStackScratch (hmacFrame f.v.H) .r8 f.v.H.hmacFin
+  stack := 16 + hmacFrame f.v.H
+  verified := f.v.hmacFinF
+  spSafe := X86_64.withStackScratch_spSafe_of f.v.hmacFinSp
+
+/-- `f`'s code as emitted, its code and then its cleanup, meets its contract
+in constant time and returns without secret residue. -/
+theorem FinImpl.scrubbed (f : FinImpl) :
+    VerifiedScrubbed target
+      (scrubSel f.sel.level ((Spec.Hmac.finalizeSig f.v.I.S).retBits 64) (16 + hmacFrame f.v.H) f.sel.runs
+        f.plain.code)
+      f.plain.contract ((Spec.Hmac.finalizeSig f.v.I.S).retBits 64) :=
+  SelScrub.scrubbed f.plain f.sel (hmacFinOut f.v.I f.hD _)
+
+/-- `f` as a registration of its `Api` (`Api.artifact`): its code as emitted,
+with its cleanup, and the theorem about that code (`FinImpl.scrubbed`). -/
+def FinImpl.reg (f : FinImpl) : Registration f.v.I.finalizeApi target where
+  suffix := f.v.suffix
+  consts := []
+  tables := []
+  code := scrubSel f.sel.level ((Spec.Hmac.finalizeSig f.v.I.S).retBits 64) (16 + hmacFrame f.v.H) f.sel.runs
+    f.plain.code
+  contract := f.plain.contract
+  stack := f.plain.stack
+  verified := .scrubbed f.scrubbed
+  ofApi := f.plain.ofApi
+  ofSig := f.plain.ofSig
+  spSafe := scrubKs_spSafe f.plain.spSafe
 
 /-- `c` followed by the clearing (`scrub`) at the level `v`, with every granule
 of its `stack` bytes of stack wiped: for code that is part of a function (a

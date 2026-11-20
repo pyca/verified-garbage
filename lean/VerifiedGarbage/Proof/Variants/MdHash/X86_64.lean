@@ -126,4 +126,27 @@ def sha512_224Inits : List (InitImpl Spec.Hmac.sha512_224I) :=
 def sha512_256Inits : List (InitImpl Spec.Hmac.sha512_256I) :=
   [sha512_256ShaNi.initAuto, Sha512Avx512.init512_256, sha512_256Avx2.initAuto, sha512_256.initAuto]
 
+/-! ## HMAC's `finalize`
+
+Each variant's HMAC `finalize`, with what its cleanup needs (`FinImpl`), in
+the order of the variants. -/
+
+open Proof.Pbkdf2.Md.X86_64 (FinImpl)
+
+def md5Fins : List FinImpl := [Proof.Pbkdf2.Md.X86_64.Md5.fin]
+
+def sha1Fins : List FinImpl := [Sha1ShaNi.fin, Sha1AvxBmi.fin, Sha1.fin]
+
+def sha224Fins : List FinImpl := [Sha256ShaNi.fin224, Sha256Avx2.fin224, Sha256.fin224]
+
+def sha256Fins : List FinImpl := [Sha256ShaNi.fin, Sha256Avx2.fin, Sha256.fin]
+
+def sha384Fins : List FinImpl := [Sha512ShaNi.fin384, Sha512Avx2.fin384, Sha512.fin384]
+
+def sha512Fins : List FinImpl := [Sha512ShaNi.fin512, Sha512Avx2.fin512, Sha512.fin512]
+
+def sha512_224Fins : List FinImpl := [Sha512ShaNi.fin512_224, Sha512Avx2.fin512_224, Sha512.fin512_224]
+
+def sha512_256Fins : List FinImpl := [Sha512ShaNi.fin512_256, Sha512Avx2.fin512_256, Sha512.fin512_256]
+
 end VG.Proof.Variants.MdHash.X86_64
