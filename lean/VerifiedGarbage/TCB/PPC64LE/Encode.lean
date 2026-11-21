@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 **Trusted.** The 32-bit encoding of each straight-line instruction of the
 model (`Instr`), of the comparison of a branch and of the return: what the
-printer (`Print.lean`) emits, as `.long <word>` (a little-endian word, the
+printer (`Print.lean`) emits, as its bytes (`wordBytes`: a little-endian word, the
 order in which a little-endian PowerPC fetches an instruction), in place of
 the instruction's text, so that what runs is these words, not the
 assembler's reading of a mnemonic. The branches (`beq`, `bne`, `b`), the
@@ -32,6 +32,11 @@ counted from the least significant).
 which the printer reports as unencodable (`Printer.unencodable`) and the
 emitter refuses (`Rust.checkEncodable`), rather than truncating it; and for
 `adrSym`, which is text.
+
+A field is placed by a product, `v * 2 ^ k` (the value `v` from bit `k` up),
+not by a shift, `v <<< k`: the two are equal, and the compiled shift of
+natural numbers goes through Lean's big numbers even when they are small
+(a quarter of the time of encoding x86-64's instructions, measured).
 -/
 
 @[expose] public section
@@ -52,8 +57,9 @@ namespace Enc
 def sp : Nat := 1
 
 /-- The value `v` as a field from bit `i` up, bits counted from the least
-significant. -/
-def fld (v i : Nat) : Nat := v <<< i
+significant (a product, not a shift: see the module's note). Inlined, so
+that the power is a constant where `i` is. -/
+@[inline] def fld (v i : Nat) : Nat := v * 2 ^ i
 
 /-- X- and XO-form: primary opcode 31, `RT`/`RS` (bits 6–10), `RA` (11–15),
 `RB` (16–20), extended opcode `xo` (21–30), `Rc = 0`. -/
@@ -77,7 +83,7 @@ def ds (op xo t a : Nat) (off : Int) : Option Nat :=
 (bits 16–20), the 6-bit mask boundary stored as `mb[5] || mb[0:4]` (21–26),
 `xo` (27–29), `sh[5]` (30). -/
 def md (xo s a sh mb : Nat) : Nat :=
-  fld 30 26 ||| fld s 21 ||| fld a 16 ||| fld (sh % 32) 11 ||| fld ((mb % 32) <<< 1 ||| mb >>> 5) 5 |||
+  fld 30 26 ||| fld s 21 ||| fld a 16 ||| fld (sh % 32) 11 ||| fld ((mb % 32) * 2 ^ 1 ||| mb >>> 5) 5 |||
     fld xo 2 ||| fld (sh >>> 5) 1
 
 /-- VX-form: primary opcode 4, `VRT` (6–10), `VRA` (11–15), `VRB` (16–20),
@@ -229,7 +235,7 @@ def Instr.encode : Instr → Option (List Nat)
   -- "mtspr" (XFX, 467) with `SPR = 9` (CTR, its halves swapped: `0b01001
   -- 00000`) and `RS = 12`, then "bcctr" (XL, 528) with `BO = 20`, `BI = 0`,
   -- `LK = 1`.
-  | .bctrl => some [0x7C0003A6 ||| 12 <<< 21 ||| 9 <<< 16, 0x4C000420 ||| 20 <<< 21 ||| 1]
+  | .bctrl => some [0x7C0003A6 ||| 12 * 2 ^ 21 ||| 9 * 2 ^ 16, 0x4C000420 ||| 20 * 2 ^ 21 ||| 1]
   | .adrSym .. => none
 
 /-- The comparison of a branch's condition with zero: "cmpli" (D, 10) into
@@ -241,13 +247,10 @@ def Cond.cmpWord : Cond → Nat
 /-- `blr`: "bclr" (XL, 19, 16) with `BO = 20` (branch always), `BI = 0`. -/
 def retWord : Nat := 0x4E800020
 
-/-- `w` as 8 hexadecimal digits, after `0x`. -/
-def hex32 (w : Nat) : String :=
-  let ds := Nat.toDigits 16 (w % 2 ^ 32)
-  "0x" ++ String.ofList (List.replicate (8 - ds.length) '0' ++ ds)
-
-/-- The assembler directive emitting the instruction `w`: `.long`, a 32-bit
-word in the target's (little-endian) byte order. -/
-def longLine (w : Nat) : String := s!".long {hex32 w}"
+/-- The bytes of the instruction `w` in memory: its 32-bit word in the
+target's byte order, little-endian on PPC64LE (as GNU as's `.long` emits
+it). -/
+def wordBytes (w : Nat) : List Nat :=
+  [w % 256, w / 256 % 256, w / 65536 % 256, w / 16777216 % 256]
 
 end VG.PPC64LE

@@ -45,6 +45,7 @@ mod ecdsa_secp256k1;
 mod ed25519;
 mod ed448;
 mod harness;
+mod hkdf;
 mod hmac;
 mod hmac_sha1;
 mod hmac_sha224;

@@ -89,6 +89,7 @@ mod ecdsa_secp256k1;
 mod ed25519;
 mod ed448;
 mod ffdh;
+mod hkdf;
 mod hmac_md5;
 mod hmac_sha1;
 mod hmac_sha224;
@@ -650,6 +651,7 @@ benches! {
     (cmac_aes::USES, cmac_aes::bench),
     (cmac_triple_des::USES, cmac_triple_des::bench),
     (dit::USES, dit::bench),
+    (hkdf::USES, hkdf::bench),
     (hmac_md5::USES, hmac_md5::bench),
     (hmac_sha1::USES, hmac_sha1::bench),
     (hmac_sha224::USES, hmac_sha224::bench),

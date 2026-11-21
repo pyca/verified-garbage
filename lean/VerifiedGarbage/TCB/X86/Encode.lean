@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 
 **Trusted.** The bytes of each straight-line instruction of the model
 (`Instr`), and of the return: what the printer (`Print.lean`) emits, as
-`.byte <bytes>`, in place of the instruction's text, so that what runs is
+as bytes (`Line.code`), in place of the instruction's text, so that what runs is
 these bytes, not the assembler's reading of a mnemonic. The branches (`jcc`,
 `jmp`), the call and the address of a static (`symPush`), whose bytes
 depend on where their target is, are still printed as text for the
@@ -39,6 +39,11 @@ text, so the bytes are those it produced:
 printer reports as unencodable (`Printer.unencodable`) and the emitter
 refuses (`Rust.checkEncodable`), rather than truncating it; and for
 `symPush`, which is text.
+
+A field is placed by a product, `v * 2 ^ k` (the value `v` from bit `k` up),
+not by a shift, `v <<< k`: the two are equal, and the compiled shift of
+natural numbers goes through Lean's big numbers even when they are small
+(a quarter of the time of encoding x86-64's instructions, measured).
 -/
 
 @[expose] public section
@@ -62,7 +67,7 @@ def le (n v : Nat) : List Nat := (List.range n).map fun i => (v >>> (8 * i)) % 2
 def i8 (v : Int) : Nat := (v % 256).toNat
 
 /-- ModR/M with `mod = 11`: `reg` (bits 5–3), `rm` (2–0). -/
-def rr (regField rm : Nat) : List Nat := [0xC0 ||| regField <<< 3 ||| rm]
+def rr (regField rm : Nat) : List Nat := [0xC0 ||| regField * 2 ^ 3 ||| rm]
 
 /-- ModR/M, SIB and displacement of `[base + disp]` with `reg` field
 `regField`, `disp` a signed displacement: the shortest form (see the module
@@ -72,11 +77,11 @@ def memSigned (regField : Nat) (base : Reg) (disp : Int) : Option (List Nat) :=
     let b := reg base
     let sib := if base == .esp then [0x24] else []
     if disp == 0 ∧ base != .ebp then
-      some ([regField <<< 3 ||| b] ++ sib)
+      some ([regField * 2 ^ 3 ||| b] ++ sib)
     else if -128 ≤ disp ∧ disp < 128 then
-      some ([0x40 ||| regField <<< 3 ||| b] ++ sib ++ [i8 disp])
+      some ([0x40 ||| regField * 2 ^ 3 ||| b] ++ sib ++ [i8 disp])
     else
-      some ([0x80 ||| regField <<< 3 ||| b] ++ sib ++ le 4 (disp % 2 ^ 32).toNat)
+      some ([0x80 ||| regField * 2 ^ 3 ||| b] ++ sib ++ le 4 (disp % 2 ^ 32).toNat)
   else none
 
 /-- `[base + disp]` of a `MemOp`. -/
@@ -233,14 +238,5 @@ def Instr.encode : Instr → Option (List (List Nat))
 
 /-- `ret` ("RET", `C3`). -/
 def retBytes : List Nat := [0xC3]
-
-/-- `b` as two hexadecimal digits, after `0x`. -/
-def hex8 (b : Nat) : String :=
-  ("0x".push (Nat.digitChar (b % 256 / 16))).push (Nat.digitChar (b % 16))
-
-/-- The assembler directive emitting the bytes `bs`: `.byte` of each, as
-two hexadecimal digits, separated by commas alone (the form the emitter
-joins and packs, `Rust.pushLine`). -/
-def byteLine (bs : List Nat) : String := ".byte " ++ ",".intercalate (bs.map hex8)
 
 end VG.X86
