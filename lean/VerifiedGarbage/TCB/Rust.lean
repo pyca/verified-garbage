@@ -325,7 +325,7 @@ directive after it), which is not a line of the assembly: `template` leaves
 it out, and the assembly file has it (`assembly`). -/
 def commentOf : Line → Option String
   | .text l =>
-    if l.startsWith "// " && !l.contains '\n' && !l.contains '\r' then some l else none
+    if l.startsWith "// " && !l.any (fun c => c == '\n' || c == '\r') then some l else none
   | _ => none
 
 /-- The directive of a printer's encoded instructions, one word each, that
@@ -340,31 +340,56 @@ def hexDigit (c : Char) : Option Nat :=
   else if 'a' ≤ c ∧ c ≤ 'f' then some (c.toNat - 'a'.toNat + 10)
   else none
 
-/-- The value of `n` lowercase hexadecimal digits after `0x`. -/
-def hexValue? (n : Nat) (p : String) : Option Nat :=
-  match p.toList with
+/-- The value of the characters `cs`: `n` lowercase hexadecimal digits after
+`0x`. -/
+def hexChars? (n : Nat) : List Char → Option Nat
   | '0' :: 'x' :: ds =>
     if ds.length == n then ds.foldlM (fun v c => return v * 16 + (← hexDigit c)) 0 else none
   | _ => none
 
+/-- The value of `n` lowercase hexadecimal digits after `0x`. -/
+def hexValue? (n : Nat) (p : String) : Option Nat := hexChars? n p.toList
+
+/-- The bytes that the characters `cs` list: each two lowercase hexadecimal
+digits after `0x` (`0xNN`), separated by commas alone; `none` for anything
+else, or none. -/
+def hexBytes? : List Char → Option (List Nat)
+  | ['0', 'x', a, b] => return [(← hexDigit a) * 16 + (← hexDigit b)]
+  | '0' :: 'x' :: a :: b :: ',' :: rest => do
+    let v := (← hexDigit a) * 16 + (← hexDigit b)
+    return v :: (← hexBytes? rest)
+  | _ => none
+
 /-- The bytes of an encoded `.byte` line, as x86's printers emit each
 instruction (`TCB/X86/Encode.lean`'s `byteLine`): `.byte ` then bytes of two
-lowercase hexadecimal digits each (`0xNN`), separated by commas alone;
-`none` for any other line (e.g. `symPush`'s `.byte 0x81, 199`). -/
+lowercase hexadecimal digits each (`0xNN`), separated by commas alone
+(`hexBytes?`); `none` for any other line (e.g. `symPush`'s
+`.byte 0x81, 199`). -/
 def byteLine? (l : String) : Option (List Nat) :=
-  if l.startsWith ".byte " then ((l.drop 6).toString.splitOn ",").mapM (hexValue? 2) else none
+  if l.startsWith ".byte " then hexBytes? (l.toList.drop 6) else none
+
+/-- The words that the characters `cs` list: each eight lowercase hexadecimal
+digits after `0x` (`0xNNNNNNNN`), separated by commas alone; `none` for
+anything else, or none. -/
+def hexWords? : List Char → Option (List Nat)
+  | '0' :: 'x' :: a :: b :: c :: d :: e :: f :: g :: h :: rest => do
+    let v ← [a, b, c, d, e, f, g, h].foldlM (fun v c => return v * 16 + (← hexDigit c)) 0
+    match rest with
+    | [] => return [v]
+    | ',' :: rest => return v :: (← hexWords? rest)
+    | _ => none
+  | _ => none
 
 /-- The bytes of an encoded `.long` line, as PPC64LE's printer emits each
 instruction (`TCB/PPC64LE/Encode.lean`'s `longLine`): `.long ` then words of
 eight lowercase hexadecimal digits each (`0xNNNNNNNN`), separated by commas
-alone, each little-endian (GNU as, "`.long`", in the target's byte order,
-little-endian on PPC64LE); `none` for any other line (e.g. x86's
+alone (`hexWords?`), each little-endian (GNU as, "`.long`", in the target's
+byte order, little-endian on PPC64LE); `none` for any other line (e.g. x86's
 `.long {VG_TABLE} - 2b`). -/
 def wordLine? (l : String) : Option (List Nat) :=
   if l.startsWith ".long " then
-    ((l.drop 6).toString.splitOn ",").flatMapM fun w => do
-      let v ← hexValue? 8 w
-      return [v % 256, v / 256 % 256, v / 65536 % 256, v / 16777216 % 256]
+    (hexWords? (l.toList.drop 6)).map fun ws => ws.flatMap fun v =>
+      [v % 256, v / 256 % 256, v / 65536 % 256, v / 16777216 % 256]
   else none
 
 /-- The bytes of an encoded `.insn` line, as RISC-V's printer emits each
@@ -383,10 +408,10 @@ a disassembler of the object then prints them as words, and the assembly
 file has their text. -/
 def insnLine? (l : String) : Option (List Nat) :=
   if l.startsWith ".insn 4, " then
-    (hexValue? 8 (l.drop 9).toString).map fun v =>
+    (hexChars? 8 (l.toList.drop 9)).map fun v =>
       [v % 256, v / 256 % 256, v / 65536 % 256, v / 16777216 % 256]
   else if l.startsWith ".insn 2, " then
-    (hexValue? 4 (l.drop 9).toString).map fun v => [v % 256, v / 256 % 256]
+    (hexChars? 4 (l.toList.drop 9)).map fun v => [v % 256, v / 256 % 256]
   else none
 
 /-- The bytes of a line that a printer emits as an instruction's machine
@@ -435,7 +460,7 @@ where
 
 /-- The template line `t` added to the run of lines `run` (reversed): joined
 to the line before it if both are lines of the same `joinable` directive, of
-one word (`t`) and of fewer than 8 (the line before), as
+one word (`t`) and of fewer than 8 (the line before: fewer than 7 commas), as
 `<directive> <words>,<word>`, which the assembler reads as the same words in
 turn (GNU as, "`.inst`": "one or more expressions"); else a line of its own.
 So a run of encoded instructions is a few lines for rustc and the assembler
@@ -445,7 +470,8 @@ def pushLine (t : String) : List String → List String
     match joinable.find? (t.startsWith ·) with
     | some d =>
       let w := (t.drop d.length).toString
-      if p.startsWith d && !w.contains ',' && (p.splitOn ",").length < 8 then
+      if p.startsWith d && !w.contains ',' &&
+          p.foldl (fun n c => if c == ',' then n + 1 else n) 0 < 7 then
         (p ++ "," ++ w) :: run
       else t :: p :: run
     | none => t :: p :: run
