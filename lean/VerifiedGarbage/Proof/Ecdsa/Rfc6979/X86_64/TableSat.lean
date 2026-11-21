@@ -37,7 +37,7 @@ variable {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List MdHash
 
 /-- The facts of the contract with the table of `w`, on entry. -/
 theorem preW_of {w : MdHash} (hv : w ∈ vs) (hc : Coh vs) (hw : WOk w) {s : State}
-    (hsp : 632 ≤ (s.gpr .rsp).toNat)
+    (hsp : 640 ≤ (s.gpr .rsp).toNat)
     (hrd : s.rd = [⟨s.gpr .rsi, T.ecdsa.curve.len⟩, ⟨s.gpr .rdx, w.H.D⟩, ⟨s.gpr .r9, 48⟩] ++
       Abi.constRegions (fun n => s.syms n) R.E.combConsts)
     (hwr : s.wr = [⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩, ⟨s.gpr .r8, 8192⟩])
@@ -50,20 +50,20 @@ theorem preW_of {w : MdHash} (hv : w ∈ vs) (hc : Coh vs) (hw : WOk w) {s : Sta
     (rd : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rsi, T.ecdsa.curve.len⟩)
     (rg : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdx, w.H.D⟩)
     (rc : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .r8, 8192⟩)
-    (ko : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩ ⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩)
-    (kd : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩ ⟨s.gpr .rsi, T.ecdsa.curve.len⟩)
-    (kg : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩ ⟨s.gpr .rdx, w.H.D⟩)
-    (kc : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩ ⟨s.gpr .r8, 8192⟩)
+    (ko : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 640, 640⟩ ⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩)
+    (kd : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 640, 640⟩ ⟨s.gpr .rsi, T.ecdsa.curve.len⟩)
+    (kg : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 640, 640⟩ ⟨s.gpr .rdx, w.H.D⟩)
+    (kc : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 640, 640⟩ ⟨s.gpr .r8, 8192⟩)
     (no : (s.gpr .rdi).toNat + 2 * T.ecdsa.curve.len ≤ 2 ^ 64)
     (nd : (s.gpr .rsi).toNat + T.ecdsa.curve.len ≤ 2 ^ 64) (ng : (s.gpr .rdx).toNat + w.H.D ≤ 2 ^ 64)
     (nc : (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64)
     (ht : TblsOk R.E.combConsts s [⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩, ⟨s.gpr .r8, 8192⟩, ⟨s.gpr .rsp, 8⟩,
-      ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩])
+      ⟨s.gpr .rsp - BitVec.ofNat 64 640, 640⟩])
     (n9 : (s.gpr .r9).toNat + 48 ≤ 2 ^ 64)
     (tout : Region.Disjoint ⟨s.gpr .rdi, 2 * T.ecdsa.curve.len⟩ ⟨s.gpr .r9, 48⟩)
     (tsc : Region.Disjoint ⟨s.gpr .r8, 8192⟩ ⟨s.gpr .r9, 48⟩)
     (tret : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .r9, 48⟩)
-    (tstk : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 632, 632⟩ ⟨s.gpr .r9, 48⟩)
+    (tstk : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 640, 640⟩ ⟨s.gpr .r9, 48⟩)
     (hheld : Abi.tableHeld 64 s.mem (s.gpr .r9) (FnTable.words isa s (tableOf w)))
     (hpw : (names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) :
     PreW R T vs w s := by
@@ -331,7 +331,7 @@ def satT (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q : Nat) (Tr : List Regio
   zf := none
   sf := none
   of := none
-  mem := put6 m₀ 0x300000 (symT vs w.H.hmacInitN) (symT vs w.H.updN) (symT vs w.H.hmacFinN)
+  mem := put6 m₀ 0x300000 (symT vs w.H.hmacInitAnyN) (symT vs w.H.updN) (symT vs w.H.hmacFinN)
     (BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G)) (BitVec.ofNat 64 w.mgf.G.len)
     (BitVec.ofNat 64 (Spec.HmacTable.blockSize w.mgf.G))
   rd := [⟨0x2000, Q⟩, ⟨0x3000, w.H.D⟩, ⟨0x300000, 48⟩] ++ Tr
@@ -340,7 +340,7 @@ def satT (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q : Nat) (Tr : List Regio
 
 theorem satT_held (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q : Nat) (Tr : List Region) :
     Abi.tableHeld 64 (satT vs w m₀ Q Tr).mem 0x300000 (FnTable.words isa (satT vs w m₀ Q Tr) (tableOf w)) :=
-  put6_held (ws := [symT vs w.H.hmacInitN, symT vs w.H.updN, symT vs w.H.hmacFinN,
+  put6_held (ws := [symT vs w.H.hmacInitAnyN, symT vs w.H.updN, symT vs w.H.hmacFinN,
     BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G), BitVec.ofNat 64 w.mgf.G.len,
     BitVec.ofNat 64 (Spec.HmacTable.blockSize w.mgf.G)]) rfl
 

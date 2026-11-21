@@ -63,13 +63,13 @@ needs no more of than that its upper halves agree after it
 (`X86_64.Scrub.verifiedScrubbedAllUp`). -/
 
 /-- What the cleanup of a caller through a table needs of the HMAC functions
-of `w` (`X86_64.Scrub.upCallee`), with 16 bytes of stack. -/
+of `w` (`X86_64.Scrub.upCallee`), with 24 bytes of stack. -/
 def HmacUp (w : Proof.Pbkdf2.Md.X86_64.MdHash) : Prop :=
-  upCallee w.H.hmacInit 16 = true ∧ upCallee w.H.updC 16 = true ∧ upCallee w.H.hmacFin 16 = true
+  upCallee w.H.hmacInitAny 24 = true ∧ upCallee w.H.updC 24 = true ∧ upCallee w.H.hmacFin 24 = true
 
 /-- `HmacUp` of every variant, evaluated once for every curve. -/
 theorem variants_hmacUp : (VG.Proof.Variants.MdHash.X86_64.variants.all fun w =>
-    upCallee w.H.hmacInit 16 && upCallee w.H.updC 16 && upCallee w.H.hmacFin 16) = true := by
+    upCallee w.H.hmacInitAny 24 && upCallee w.H.updC 24 && upCallee w.H.hmacFin 24) = true := by
   lit_decide
 
 theorem variants_up : ∀ w ∈ VG.Proof.Variants.MdHash.X86_64.variants, HmacUp w := fun w hw => by
@@ -79,7 +79,7 @@ theorem variants_up : ∀ w ∈ VG.Proof.Variants.MdHash.X86_64.variants, HmacUp
 
 /-- The table's functions, each a stub (`X86_64.Scrub.tableStub`). -/
 def stubFns : Impl.Mgf1.X86_64.Table.Fns :=
-  ⟨[("t", tableStub 16)], [("t", tableStub 16)], [("t", tableStub 16)]⟩
+  ⟨[("t", tableStub 24)], [("t", tableStub 24)], [("t", tableStub 24)]⟩
 
 /-- `cfgT`, with stubs of the table's functions. -/
 abbrev cfgS (R : RfcCurve) (tries : Nat) : Impl.Ecdsa.Rfc6979.X86_64.Cfg :=
@@ -89,22 +89,22 @@ abbrev cfgS (R : RfcCurve) (tries : Nat) : Impl.Ecdsa.Rfc6979.X86_64.Cfg :=
 code with stubs of the table's functions, which the kernel evaluates once for
 each curve. -/
 def SignStub (R : RfcCurve) (tries : Nat) : Prop :=
-  stubUp (Impl.Ecdsa.Rfc6979.X86_64.signCode (cfgS R tries)) 632 = true ∧ UpperLock.inames R.coreC = []
+  stubUp (Impl.Ecdsa.Rfc6979.X86_64.signCode (cfgS R tries)) 640 = true ∧ UpperLock.inames R.coreC = []
 
 theorem sign_tfill (R : RfcCurve) (tries : Nat) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
     (hv : ∀ w ∈ vs, HmacUp w) (hcore : UpperLock.inames R.coreC = []) :
-    TFill 16 (Proof.HmacTable.X86_64.names vs) (Impl.Ecdsa.Rfc6979.X86_64.signCode (cfgS R tries))
+    TFill 24 (Proof.HmacTable.X86_64.names vs) (Impl.Ecdsa.Rfc6979.X86_64.signCode (cfgS R tries))
       (signCodeT R tries vs) := by
   have hI : ∀ q ∈ (Proof.HmacTable.X86_64.fnsOf vs).init,
-      upCallee q.2 16 = true ∧ q.1 ∈ Proof.HmacTable.X86_64.names vs := by
+      upCallee q.2 24 = true ∧ q.1 ∈ Proof.HmacTable.X86_64.names vs := by
     intro q hq; obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hq
     exact ⟨(hv w hw).1, (Proof.HmacTable.X86_64.mem_names hw).1⟩
   have hU : ∀ q ∈ (Proof.HmacTable.X86_64.fnsOf vs).upd,
-      upCallee q.2 16 = true ∧ q.1 ∈ Proof.HmacTable.X86_64.names vs := by
+      upCallee q.2 24 = true ∧ q.1 ∈ Proof.HmacTable.X86_64.names vs := by
     intro q hq; obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hq
     exact ⟨(hv w hw).2.1, (Proof.HmacTable.X86_64.mem_names hw).2.1⟩
   have hF : ∀ q ∈ (Proof.HmacTable.X86_64.fnsOf vs).fin,
-      upCallee q.2 16 = true ∧ q.1 ∈ Proof.HmacTable.X86_64.names vs := by
+      upCallee q.2 24 = true ∧ q.1 ∈ Proof.HmacTable.X86_64.names vs := by
     intro q hq; obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hq
     exact ⟨(hv w hw).2.2, (Proof.HmacTable.X86_64.mem_names hw).2.2⟩
   tfill_calls
@@ -117,7 +117,7 @@ theorem sign_scrubbed {api : Api} {R : RfcCurve} {tries : Nat} {vs : List Proof.
     (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r)) (hc : r.code = signCodeT R tries vs)
     (ht : r.tables = [("hmac", Proof.HmacTable.X86_64.tables vs)])
     (hv : ∀ w ∈ vs, HmacUp w) (hs : SignStub R tries)
-    (hn : r.stack = 632 := by rfl) (hb : retBitsOf r = 32 := by rfl) :
+    (hn : r.stack = 640 := by rfl) (hb : retBitsOf r = 32 := by rfl) :
     VerifiedScrubbed target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT R tries vs)) r.contract 32 := by
   have h := verifiedScrubbedAllUpFill r hpost (hc ▸ sign_tfill R tries vs hv hs.2)
     (fun f hf => by

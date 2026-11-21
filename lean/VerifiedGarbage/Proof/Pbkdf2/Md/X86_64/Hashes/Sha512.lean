@@ -72,6 +72,7 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
   updN := "vg_sha512_update_scratch" ++ v.baseSuffix
   finN := "vg_sha512_finalize_scratch" ++ v.baseSuffix
   hmacInitN := s!"vg_hmac_{I.rust}_init_scratch" ++ v.suffix
+  hmacInitAnyN := s!"vg_hmac_{I.rust}_init_any_scratch" ++ v.suffix
   hmacFinN := s!"vg_hmac_{I.rust}_finalize_scratch" ++ v.baseSuffix
   iterN := s!"vg_pbkdf2_hmac_{I.rust}_iterate" ++ v.baseSuffix
   compBoth := match v.pair with
@@ -82,7 +83,7 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
 implementation that uses `so` bytes of scratch space. -/
 def coreHS (so D : Nat) : Hash :=
   ⟨Proof.Sha512.X86_64.Stream.paramsS so, D, Hash.wOf (Proof.Sha512.X86_64.Stream.paramsS so), "", .block [], "",
-    .block [], "", "", "", "", "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
+    .block [], "", "", "", "", "", Proof.Pbkdf2.Md.X86_64.coreBoth, ""⟩
 
 /-- The scratch space the implementations use. -/
 abbrev SoOk (so : Nat) : Prop := so = 0 ∨ so = 192 ∨ so = 1328
@@ -135,7 +136,7 @@ theorem coreOKS (so : Nat) (hso : SoOk so) (D : Nat) (hD : DOk D) : CoreOK (core
 
 theorem anyOKS (so : Nat) (hso : SoOk so) (D : Nat) (hD : DOk D) : Any.AnyOK (coreHS so D) := by
   rcases hso with rfl | rfl | rfl <;> rcases hD with rfl | rfl | rfl | rfl <;>
-    refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+    refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   taint_decide_all
 
 /-- The initial hash values of the family. -/
