@@ -362,6 +362,20 @@ theorem wp_movX {d : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some 
     WP isa (.block (.mov d src :: is)) s Q :=
   cons (s' := s.setReg d v) (by simp only [exec, h, Option.map_some]) (k _ (Upd.setReg _ _ _) rfl rfl)
 
+/-- A move, which keeps CF too. -/
+theorem wp_movC {d : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some v)
+    (k : ∀ t, Upd s t d v → t.cf = s.cf → t.mcdt = s.mcdt → t.xmm = s.xmm → WP isa (.block is) t Q) :
+    WP isa (.block (.mov d src :: is)) s Q :=
+  cons (s' := s.setReg d v) (by simp only [exec, h, Option.map_some]) (k _ (Upd.setReg _ _ _) rfl rfl rfl)
+
+/-- An SSE operation between registers: only the XMM registers change. -/
+theorem wp_xopX (op : XOp)
+    (k : ∀ t, t.gpr = s.gpr → t.mem = s.mem → t.rd = s.rd → t.wr = s.wr → t.mcdt = s.mcdt →
+      t.xmm = (op.exec s).xmm → WP isa (.block is) t Q) :
+    WP isa (.block (.xop op :: is)) s Q :=
+  cons rfl (k _ (by cases op <;> rfl) (by cases op <;> rfl) (by cases op <;> rfl) (by cases op <;> rfl)
+    (by cases op <;> rfl) rfl)
+
 end
 
 /-! ## The loop's invariant -/
@@ -510,16 +524,16 @@ theorem turn_ok {s0 t v : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0
   · rw [dhigh_add, rsum_four]; omega_arith
 
 /-- The registers of the turns: the first of a body's (and the last four products'), and its second. -/
-theorem regsA : TurnRegs .xmm2 .xmm4 .xmm3 := by constructor <;> decide
-theorem regsB : TurnRegs .xmm5 .xmm7 .xmm3 := by constructor <;> decide
+theorem turnRegsA : TurnRegs .xmm2 .xmm4 .xmm3 := by constructor <;> decide
+theorem turnRegsB : TurnRegs .xmm5 .xmm7 .xmm3 := by constructor <;> decide
 
 /-- Eight products, the loop's body, while eight words remain. -/
 theorem quad_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
     (I : DotI s0 W L x y n S H j t) (hj : j + 8 ≤ n) :
     WP isa (.block quadBody) t fun u =>
       DotI s0 W L x y n S H (j + 8) u ∧ u.cf = some (decide (4 * (n - (j + 8)) < 32)) := by
-  obtain ⟨t1, run1, o1, s1⟩ := turn_ok E I regsA (d := 0) (k := j) rfl (by omega_arith) (SseOnly.refl t) I.sums
-  obtain ⟨t2, run2, o2, s2⟩ := turn_ok E I regsB (d := 16) (k := j + 4) (by omega_arith) (by omega_arith) o1 s1
+  obtain ⟨t1, run1, o1, s1⟩ := turn_ok E I turnRegsA (d := 0) (k := j) rfl (by omega_arith) (SseOnly.refl t) I.sums
+  obtain ⟨t2, run2, o2, s2⟩ := turn_ok E I turnRegsB (d := 16) (k := j + 4) (by omega_arith) (by omega_arith) o1 s1
   rw [quadBody, List.append_assoc, List.append_assoc]
   refine WP.block_append (WP.of_runBlock ⟨t1, run1, ?_⟩)
   refine WP.block_append (WP.of_runBlock ⟨t2, run2, ?_⟩)
@@ -539,7 +553,7 @@ theorem quad_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L
 theorem quadLast_ok {s0 t : State} {W : Addr} {L x y n S H j : Nat} (E : DotEnv s0 L x y n H)
     (I : DotI s0 W L x y n S H j t) (hj : j + 4 ≤ n) :
     WP isa (.block quadLast) t (DotI s0 W L x y n S H (j + 4)) := by
-  obtain ⟨t1, run1, o1, s1⟩ := turn_ok E I regsA (d := 0) (k := j) rfl hj (SseOnly.refl t) I.sums
+  obtain ⟨t1, run1, o1, s1⟩ := turn_ok E I turnRegsA (d := 0) (k := j) rfl hj (SseOnly.refl t) I.sums
   rw [quadLast]
   refine WP.block_append (WP.of_runBlock ⟨t1, run1, ?_⟩)
   refine wp_adv fun u esi edi ebp oth mem rd wr mcdt xmm => ?_

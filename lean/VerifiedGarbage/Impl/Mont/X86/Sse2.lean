@@ -194,11 +194,11 @@ def input (sq hi : Bool) : Prog isa :=
 
 /-- `M_1` and `M_2` in doublewords 0 and 2 of `xmm4` (`M_2` if `N > 2`: a
 modulus of two words, whose second digit no column uses, has no third word,
-and a cold branch reads `M_1` alone), for the two latest digits. Uses `eax`. -/
+and `M_1` alone is read), for the two latest digits. Uses `eax`. -/
 def modWords : Prog isa := .seq
   (.block [.mov .eax (.mem (kp pN4)), .alu .cmp .eax (.imm 12), .mov .eax (.mem (kp pM))])
-  (Code.iteCold .b (.block [.mov .eax (.mem (at_ .eax 4)), .xop (.movd .xmm4 .eax)])
-    (.block [.movqLoad .xmm4 (at_ .eax 4), .xop (.bin .punpckldq .xmm4 .xmm4)]))
+  (.ite .ae (.block [.movqLoad .xmm4 (at_ .eax 4), .xop (.bin .punpckldq .xmm4 .xmm4)])
+    (.block [.mov .eax (.mem (at_ .eax 4)), .xop (.movd .xmm4 .eax)]))
 
 /-- The products of the quotient digits and `M`: while `k < N`, those of
 `Q_j`, `j ≤ k - 3`, then the two in `xmm6`. -/
