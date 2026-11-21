@@ -3095,8 +3095,8 @@ def toFnF16 (v : GcmVariant) : Gather.ToFn (Proof.Gcm.X86_64.Stitch.CtxMode.flag
 
 /-- The instance of `vg_aes_gcm_seal_prepared` of a variant whose loops read
 16 powers, as an internal function of its own,
-`vg_aes_gcm_seal_prepared<suffix>_core`, with the code as it was: the function
-of that name returns without secret residue (`sealF16Reg`). -/
+`vg_aes_gcm_seal_prepared<suffix>_core`, with the code as it was: the
+function of that name returns without secret residue (`sealPrepR16`). -/
 def sealFnF16 (v : GcmVariant) (r : R16 v) : Gather.SealFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
   .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix ++ "_core",
       sealCodeF16 v⟩ (sealCodeF16_verified v r)
