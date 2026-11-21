@@ -113,7 +113,6 @@ theorem stitchR_pieceL {s₃ : State} (hp : Gcm.X86_64.Stitch.SPreM Gcm.X86_64.S
 /-! ## `vg_aes_gcm_seal_prepared_vaes_vpclmul` -/
 
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
-open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
 /-! ## In the frame of `withStackArgScratch`, by the count -/
 
 section
@@ -144,7 +143,6 @@ theorem exec_narrow {c : Prog isa} {k : Contract isa} (hv : Verified X86_64.targ
 def sealArgs (s : State) (i : Nat) : BitVec 64 :=
   if i < 3 then stackArg s i else s.gpr .rsp - BitVec.ofNat 64 2600 + BitVec.ofNat 64 40
 
-open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
 /-! ## `vg_aes_gcm_seal_prepared_vaes_vpclmul` without secret residue -/
@@ -572,7 +570,6 @@ def StreamChk (c : Prog isa) (b : Prog isa) : Prop :=
 
 instance (c b : Prog isa) : Decidable (StreamChk c b) := by unfold StreamChk; infer_instance
 
-open VG.X86_64.Scrub StackLock in
 open VG.X86_64.Scrub StackLock in
 
 /-! ## Whole-blocks functions that zero their loops' working space before they return
@@ -1131,7 +1128,6 @@ def StreamChkF16 : Prop :=
 instance : Decidable StreamChkF16 := by unfold StreamChkF16; infer_instance
 
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
-open VG.X86_64.Scrub StackLock in
 section AvxW
 open VG.Proof.Variants.AesGcm.X86_64.AesNiPclmulAvx (variant)
 open Gcm.X86_64.Stitch (CtxMode)
@@ -1310,7 +1306,6 @@ theorem streamDec48_narrowPub {s₁ s₂ : State}
         Proof.Gcm.streamCryptPrecomputedSig.params.tail from rfl, descs_array .u64 128 129]
       exact hr) i hi⟩
 
-open StackLock in
 end F48
 
 section Avx512R
@@ -1404,9 +1399,6 @@ theorem blkWipeN_le (i : GcmImpl) : 64 + blkWipeN i ≤ 2112 := by unfold blkWip
 theorem blkWipeN_16 (i : GcmImpl) : blkWipeN i % 16 = 0 ∨ 16 ≤ blkWipeN i := by
   unfold blkWipeN; split <;> decide
 
-/-- `i`'s whole blocks, zeroing their callees' working space (`BlkFn.wipeS`). -/
-def blkS (i : GcmImpl) : BlkFn CtxMode.base := i.blkB.wipeS (blkWipeN i) (blkWipeN_le i) (blkWipeN_16 i)
-
 /-! ## `vg_aes_gcm_stream_{en,de}crypt_prepared_pclmul`, without secret residue
 
 Over `vg_aes_ctr32_w`, which zeroes the 1480 bytes of its working space at
@@ -1428,7 +1420,6 @@ def StreamChkV (v : GcmImpl) (c : Prog isa) (b : Prog isa) : Prop :=
 
 instance (v : GcmImpl) (c b : Prog isa) : Decidable (StreamChkV v c b) := by unfold StreamChkV; infer_instance
 
-open VG.X86_64.Scrub StackLock in
 open VG.X86_64.Scrub StackLock in
 /-! ## `vg_aes_gcm_stream_{en,de}crypt_prepared_aesni` and `vg_aes_gcm_stream_{en,de}crypt_prepared`, without secret residue
 
@@ -1476,7 +1467,6 @@ def StreamChkF16D : Prop :=
 instance : Decidable StreamChkF16D := by unfold StreamChkF16D; infer_instance
 
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
-open VG.X86_64.Scrub StackLock in
 /-! ## `vg_aes_gcm_open_prepared_aesni_pclmul` -/
 
 theorem openCode_aesniPclmul :

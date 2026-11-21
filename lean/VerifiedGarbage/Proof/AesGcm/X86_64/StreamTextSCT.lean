@@ -921,14 +921,12 @@ variable {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {Ctx St W SP : Addr} (L :
   {R P₀ : Nat} {D : Addr} {n : Nat}
 include L
 
-open StackLock in
 end
 
 section
 variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
   {R aL P₀ : Nat} {D : Addr} {n : Nat}
 include L in
-open StackLock in
 
 end
 

@@ -150,7 +150,6 @@ structure PrepImpl where
   sec87 : Option (SecRes arith mlDsa87) := none
 
 open VG.X86_64.RScrub in
-open VG.X86_64.RScrub in
 /-! ## The analyses -/
 
 def pub44Sse2Ks : List Nat :=

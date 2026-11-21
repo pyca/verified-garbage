@@ -300,107 +300,12 @@ section Selective
 
 open VG.X86_64 VG.X86_64.Scrub VG.X86_64.RScrub VG.X86_64.RTaint
 
-/-- The small regions the tight functional frame permits to change. -/
-def tightChunks : List Nat := [2624]
-def tightKs : List Nat := [0, 64, 80, 96, 112, 128, 144, 160, 272, 288, 304, 320]
-
 def setupFramed : Prog isa := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 entryRestore
 
 theorem setup_sp : setupFramed.all (fun i => !isa.writesSp i) = true :=
   X86_64.withStackArgScratch_spSafe (by decide +kernel)
 
 local instance tightFootprint : Footprint := ⟨true⟩
-
-/-- Every mutable workspace byte in the tight frame is wiped. -/
-theorem tight_cov {p x : Addr} (hx : (⟨p - 2624, 2624⟩ : Region).Contains x 1)
-    (hn : ¬ WCov tightKs tightChunks p x) {D T : Addr} {n tl : Nat}
-    (hD : (⟨p - 2624, 2624⟩ : Region).Disjoint ⟨D, n⟩)
-    (hT : (⟨p - 2624, 2624⟩ : Region).Disjoint ⟨T, tl⟩) :
-    ∀ r ∈ mutR (p - 2560) (p - 2608) D n ++ [⟨T, tl⟩], ¬ r.Contains x 1 := by
-  -- Each of the four ranges on its own: the kernel then evaluates `cov` at their 176 bytes, not at all 2624.
-  have hchk : ∀ d k, (d = 0 ∧ k = 16 ∨ d = 64 ∧ k = 112 ∨ d = 280 ∧ k = 16 ∨ d = 304 ∧ k = 32) →
-      ∀ i < k, cov tightKs tightChunks (d + i) = true := by
-    rintro d k (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;> decide +kernel
-  have hj : (x - (p - 2624)).toNat < 2624 := by have := hx; simp only [Region.Contains] at this; omega
-  have hc {d k : Nat} (hfit : d + k ≤ 2624)
-      (hc : d = 0 ∧ k = 16 ∨ d = 64 ∧ k = 112 ∨ d = 280 ∧ k = 16 ∨ d = 304 ∧ k = 32)
-      (hr : (⟨p - 2624 + BitVec.ofNat 64 d, k⟩ : Region).Contains x 1) : False := by
-    have hr' : (x - (p - 2624 + BitVec.ofNat 64 d)).toNat < k := by
-      simp only [Region.Contains] at hr; omega
-    obtain ⟨hl, hu⟩ := (Offset.lt_iff x (p - 2624) (by omega_using [hfit])).mp hr'
-    apply hn
-    change (⟨p - 2624, 2624⟩ : Region).Contains x 1 ∧ cov tightKs tightChunks (x - (p - 2624)).toNat = true
-    obtain h := hchk d k hc ((x - (p - 2624)).toNat - d) (by omega)
-    rw [Nat.add_sub_cancel' hl] at h
-    exact ⟨hx, h⟩
-  intro r hr hx'
-  simp only [mutR, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with (rfl | rfl | rfl | rfl | rfl) | rfl
-  · apply hc (d := 64) (k := 112) (by decide) (by simp)
-    change (⟨p - BitVec.ofNat 64 2624 + BitVec.ofNat 64 64, 112⟩ : Region).Contains x 1
-    rw [X86_64.sub_add_ofNat p (show 64 ≤ 2624 by decide)]
-    exact hx'
-  · apply hc (d := 280) (k := 16) (by decide) (by simp)
-    change (⟨p - BitVec.ofNat 64 2624 + BitVec.ofNat 64 280, 16⟩ : Region).Contains x 1
-    change (⟨p - BitVec.ofNat 64 2560 + BitVec.ofNat 64 216, 16⟩ : Region).Contains x 1 at hx'
-    rw [X86_64.sub_add_ofNat p (show 280 ≤ 2624 by decide)]
-    rw [X86_64.sub_add_ofNat p (show 216 ≤ 2560 by decide)] at hx'
-    exact hx'
-  · apply hc (d := 304) (k := 32) (by decide) (by simp)
-    change (⟨p - BitVec.ofNat 64 2624 + BitVec.ofNat 64 304, 32⟩ : Region).Contains x 1
-    change (⟨p - BitVec.ofNat 64 2560 + BitVec.ofNat 64 240, 32⟩ : Region).Contains x 1 at hx'
-    rw [X86_64.sub_add_ofNat p (show 304 ≤ 2624 by decide)]
-    rw [X86_64.sub_add_ofNat p (show 240 ≤ 2560 by decide)] at hx'
-    exact hx'
-  · exact hc (d := 0) (k := 16) (by decide) (by simp)
-      (by simpa [below, BitVec.sub_sub] using hx')
-  · exact hD x hx hx'
-  · exact hT x hx hx'
-
-/-- Lift the body's footprint into its allocated stack frame. -/
-theorem frame_entry {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
-    {post : sig.Post abi.ptrBits} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
-    {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBits).length) (hns : X86_64.nStack sig = 4)
-    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    (hbody : ∀ s, (Sig.scratchContract abi sig "work" .u64 320 pre post true 16 leak).pre s →
-      ∃ t u, Exec isa c s t u ∧ abiPreserved s u ∧
-        EntryFrame s u (stackArg s 4) (s.gpr .rsp) (stackArg s 0) (stackArg s 1).toNat
-          (stackArg s 2) (stackArg s 3).toNat)
-    (hc : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 16)
-    (hb : ∀ s, ∃ wd wt, (⟨stackArg s 0, (stackArg s 1).toNat⟩, wd) ∈ allRegions sig s ∧
-      (⟨stackArg s 2, (stackArg s 3).toNat⟩, wt) ∈ allRegions sig s)
-    {s u : State} {t : List Leak} (hs : (sig.contract abi pre post true 2624 leak).pre s)
-    (he : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c) s t u) :
-    ∃ tb ub tp pb, Exec isa c (narrowS sig .u64 320 2608 s) tb ub ∧
-      Exec isa entryRestore (narrowS sig .u64 320 2608 s) tp pb ∧
-      abiPreserved (narrowS sig .u64 320 2608 s) pb ∧
-      u.mem = lose ub.mem (s.gpr .rsp - BitVec.ofNat 64 2608) 2608 ub.unknowns ∧
-      ∀ x, (⟨s.gpr .rsp - 2624, 2624⟩ : Region).Contains x 1 →
-        ¬ WCov tightKs tightChunks (s.gpr .rsp) x → ub.mem x = pb.mem x := by
-  have hb' : 16 + 8 * X86_64.nStack sig + 320 * Elem.size .u64 ≤ 2608 := by rw [hns]; decide
-  have hp := narrowS_pre (nm := "work") (e := .u64) (n := 320) (bytes := 2608) (stack := 16) hk hb' (by decide)
-    (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs
-  obtain ⟨tb, ub, eb, ab, tp, p, ep, ap, hf⟩ := hbody _ hp
-  obtain ⟨e, _, hm, _⟩ := withStackArgScratch_runMem hk ⟨hb', by decide, by decide⟩ (by decide)
-    (SpSafe.of_all hc) hd hs eb ab
-  rw [hns] at e
-  obtain ⟨_, rfl⟩ := Exec.det he e
-  refine ⟨_, _, _, _, eb, ep, ap, hm, fun x hx hn => ?_⟩
-  have ha := narrowS_args (e := .u64) (n := 320) (bytes := 2608) (stack := 16) hk hb' (by decide) hs
-  have hsp := (narrowS_facts (nm := "work") (e := .u64) (n := 320) (bytes := 2608) (stack := 16) hk hb' (by decide) hs).1
-  have ha' := ha.2.1
-  rw [hns] at ha'
-  have hwork := ha.2.2.1
-  rw [hns] at hwork
-  simp only [show 16 + 8 * 4 = 48 from rfl, X86_64.sub_add_ofNat _ (show 48 ≤ 2608 by decide)] at hwork
-  rw [hwork, hsp, ha' 0 (by decide), ha' 1 (by decide), ha' 2 (by decide), ha' 3 (by decide)] at hf
-  have hr := (pre_args hk).mp hs
-  obtain ⟨wd, wt, hD, hT⟩ := hb s
-  have hd' := hr.2.2.2.2.1 ⟨s.gpr .rsp - 2624, 2624⟩ (by simp [stackBelow]) _ hD
-  have ht' := hr.2.2.2.2.1 ⟨s.gpr .rsp - 2624, 2624⟩ (by simp [stackBelow]) _ hT
-  exact hf x (tight_cov hx hn hd' ht')
 
 private theorem overlay_empty (m : Mem) : overlay ⟨0, 0⟩ (fun _ => 0) m = m :=
   funext fun x => by simp [overlay, Region.Contains]

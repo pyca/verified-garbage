@@ -793,5 +793,4 @@ theorem initFrameSatP_pre : ∃ s, (Proof.Gcm.initPrecomputedContract X86_64.abi
   implies_sat [Proof.Gcm.initPrecomputedContract, Proof.Gcm.initPrecomputedSig, Spec.Gcm.initPre,
     Proof.Gcm.initPrecomputedPost, X86_64.abi, X86_64.argRegs] [initFrameSatP, initSat] using initFrameSatP
 
-omit B in
 end VG.Proof.AesGcm.X86_64

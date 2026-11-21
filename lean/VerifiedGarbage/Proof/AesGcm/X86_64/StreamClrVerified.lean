@@ -1102,7 +1102,6 @@ open StackLock in
 open StackLock in
 open StackLock in
 
-open StackLock in
 end
 
 end VG.Proof.AesGcm.X86_64

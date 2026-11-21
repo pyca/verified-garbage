@@ -2398,7 +2398,6 @@ code of `open` on the powers is in one function. The loops that read the
 powers are proven for a context of 1024 bytes holding them, and so read them
 from the 1032-byte context whose count is at least 48 (`Proof.Gcm.X86_64.Stitch.CtxMode.flagged`). -/
 
-open Gcm.X86_64.Stitch (SPreM SPreTo StitchOkM StitchOkSmall StitchToOkM StitchToDecOkM) in
 section
 
 theorem inRegions_1024 {rs : List Region} {a : Addr} (h : InRegions rs a 1032) : InRegions rs a 1024 := by
@@ -2733,7 +2732,6 @@ The same for the implementations whose loops read 16 powers: their
 `vg_aes_gcm_seal_prepared` and `vg_aes_gcm_stream_encrypt_prepared` by their
 public names, which test the count against 16 again. -/
 
-open Gcm.X86_64.Stitch (SPreM SPreTo) in
 section
 
 theorem sPreM_ofFlagged16 {s₀ : VG.X86_64.State} {lo : Nat}
