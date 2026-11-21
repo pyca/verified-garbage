@@ -5,13 +5,14 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 /-!
 # Clearing the stack a function used before returning (AArch64)
 
-`withScrub W c` runs `c`, then zeroes the `W` bytes below the stack pointer,
-where `c`'s frames were: it opens a frame of `W` bytes (`sub sp, sp, #W`),
-zeroes it 16 bytes at a time (`str q31, [x9, #16k]`, `x9` its base and `q31`
-zero), and releases it. What `c`'s frames held is then gone from the stack
-below the stack pointer, where its caller cannot clear it. `W` is a multiple
-of 16, below 4096, and at most what the contract lets the function use of
-the stack.
+`scrubSel W ks c` runs `c`, then zeroes the 16-byte granules `ks` of the
+`W` bytes below the stack pointer, where `c`'s frames were: it opens a frame
+of `W` bytes (`sub sp, sp, #W`), zeroes those granules (`str q31, [x9, #16k]`,
+`x9` its base and `q31` zero), and releases it. What `c`'s frames held there
+is then gone from the stack below the stack pointer, where its caller cannot
+clear it. `scrubAll` zeroes every granule, after clearing the registers;
+`scrubAllL` does so for `4080 < W < 8176`, in two frames. `W` is a multiple
+of 16 and at most what the contract lets the function use of the stack.
 -/
 
 @[expose] public section
@@ -19,15 +20,6 @@ the stack.
 namespace VG.Impl.Scrub.AArch64
 
 open VG.AArch64
-
-/-- `str q31, [x9, #16k]` for each `k < n`. -/
-def scrubStores (n : Nat) : List Instr := (List.range n).map fun k => .strq .v31 .x9 (16 * k)
-
-/-- `movi v31.2d, #0`, `add x9, sp, #0`, then the stores of the `W` bytes from `x9`. -/
-def scrubBlock (W : Nat) : List Instr := .vop (.movi0 .v31) :: .addSp .x9 0 :: scrubStores (W / 16)
-
-/-- The frame of `W` bytes, zeroed. -/
-def scrubTail (W : Nat) : Prog isa := .frame (.alloc W) (.block (scrubBlock W)) (.free W)
 
 /-- What clears the bits of `x0` above an `rb`-bit result: all of it (`movz x0, #0`)
 for no result, its upper half (`add w0, w0, #0`) for a 32-bit one. -/
@@ -38,9 +30,6 @@ def retFix : Nat → List Instr
 
 /-- `c`, then the bits of `x0` above an `rb`-bit result cleared. -/
 def withRet (rb : Nat) (c : Prog isa) : Prog isa := .seq c (.block (retFix rb))
-
-/-- `c`, then the `W` bytes below the stack pointer zeroed. -/
-def withScrub (W : Nat) (c : Prog isa) : Prog isa := .seq c (scrubTail W)
 
 /-- `str q31, [x9, #16k]` for each `k` of `ks`. -/
 def scrubStoresL (ks : List Nat) : List Instr := ks.map fun k => .strq .v31 .x9 (16 * k)

@@ -15,7 +15,7 @@ the stack pointer on entry (the *window*). It does not follow what the
 frames hold: a frame the code releases may hold a secret, which is then
 below the stack pointer, outside every region. So the two runs agree on
 the memory outside the regions only outside the window (`AgreeF`), which
-the code clears before it returns (`Impl.Scrub.AArch64.withScrub`,
+the code clears before it returns (`Impl.Scrub.AArch64.scrubSel`,
 `Scrub.lean`).
 
 `rtaintB`'s instructions relate the two runs' states through their

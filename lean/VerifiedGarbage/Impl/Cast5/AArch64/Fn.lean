@@ -33,12 +33,12 @@ def ofbCleared (c : Prog isa) : Prog isa :=
 def ofbBase : Prog isa :=
   ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.ofb)
 
-def ofb : Prog isa := withScrub 112 ofbBase
+def ofb : Prog isa := scrubSel 112 [0, 1, 2, 3, 4, 5, 6] ofbBase
 
 def ofbFinalBase : Prog isa :=
   ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.ofbFinal)
 
-def ofbFinal : Prog isa := withScrub 112 ofbFinalBase
+def ofbFinal : Prog isa := scrubSel 112 [0, 1, 2, 3, 4, 5, 6] ofbFinalBase
 
 def tblCleared (c : Prog isa) : Prog isa :=
   withClears [.x6, .x8, .x9] [.v0, .v1, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22,

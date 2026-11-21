@@ -1024,7 +1024,7 @@ theorem noResidue_scrubSel {c : Prog isa} {k : Contract isa} {r W : Nat} {ks : L
         simp only [BitVec.add_zero] at hc
         omega
 
-/-- The zeroing of the granules `ks` keeps code verified (see `RTaintF.Verified.withScrubK`). -/
+/-- The zeroing of the granules `ks` keeps code verified (`RTaintF.ScrubOk`). -/
 theorem Verified.scrubSel {c : Prog isa} {k : Contract isa} {W : Nat} {ks : List Nat}
     (h : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
     (hks : ks.all (fun k => decide (16 * k + 16 ≤ W)) = true) (hk : ScrubOk k W) :
