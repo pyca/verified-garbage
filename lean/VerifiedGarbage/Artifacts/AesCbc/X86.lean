@@ -19,12 +19,12 @@ def artifacts : List Artifact :=
     Spec.Cbc.aesEncryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCbc.X86.Fn.encrypt (Proof.AesCbc.X86.Wiped.encryptCode v) v.suffix (Proof.AesCbc.X86.Wiped.encWritten v)
-      verified := .scrubbed (encrypt_scrubbed v)
+      verified := encrypt_scrubbed v
       spSafe := encrypt_fnSpSafe v },
     Spec.Cbc.aesDecryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCbc.X86.Fn.decrypt (Proof.AesCbc.X86.Wiped.decryptCode v) v.suffix (Proof.AesCbc.X86.Wiped.decWritten v)
-      verified := .scrubbed (decrypt_scrubbed v)
+      verified := decrypt_scrubbed v
       spSafe := decrypt_fnSpSafe v }]
 
 end VG.Artifacts.AesCbc.X86

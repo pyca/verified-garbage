@@ -42,7 +42,7 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       extra := v.extra
       code := v.code
-      verified := .scrubbed v.scrubbed
+      verified := v.scrubbed
       spSafe := v.spSafe }) ++
   (VG.Proof.Variants.MdHash.X86_64.md5Fins.map fun (f : Proof.Pbkdf2.Md.X86_64.FinImpl) =>
     f.v.I.finalizeApi.artifact X86_64.target f.reg)

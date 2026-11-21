@@ -32,7 +32,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact RISCV64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.RISCV64.Fn.brainpoolp384r1 fns
-    verified := .scrubbed (Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP384r1.sign_scrubbed hasLaw.law) }]
+    verified := Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP384r1.sign_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcdsaBrainpoolP384r1.RISCV64.Rfc6979
 
@@ -43,7 +43,7 @@ open VG.Proof.BrainpoolP384r1.RISCV64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.Fn.verifyBrainpoolP384r1
-    verified := .scrubbed (Proof.Ecdsa.RISCV64.BrainpoolP384r1.verifyHash_scrubbed hasLaw.law) }] ++
+    verified := Proof.Ecdsa.RISCV64.BrainpoolP384r1.verifyHash_scrubbed hasLaw.law }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP384r1.RISCV64

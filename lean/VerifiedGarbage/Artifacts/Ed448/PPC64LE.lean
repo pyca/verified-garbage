@@ -24,12 +24,12 @@ namespace VG.Artifacts.Ed448.PPC64LE
 def artifacts : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact PPC64LE.target {
     code := Impl.Ed448.PPC64LE.Fn.publicKey
-    verified := .scrubbed Proof.Ed448.PPC64LE.Scrub.publicKey_scrubbed },
+    verified := Proof.Ed448.PPC64LE.Scrub.publicKey_scrubbed },
   Spec.Ed448.signCachedApi.artifact PPC64LE.target {
     code := Impl.Ed448.PPC64LE.Fn.signCached
-    verified := .scrubbed Proof.Ed448.PPC64LE.Scrub.signCached_scrubbed },
+    verified := Proof.Ed448.PPC64LE.Scrub.signCached_scrubbed },
   Spec.Ed448.verifyApi.artifact PPC64LE.target {
     code := Impl.Ed448.PPC64LE.Fn.verify
-    verified := .scrubbed Proof.Ed448.PPC64LE.Scrub.verify_scrubbed }]
+    verified := Proof.Ed448.PPC64LE.Scrub.verify_scrubbed }]
 
 end VG.Artifacts.Ed448.PPC64LE

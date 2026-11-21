@@ -15,10 +15,10 @@ namespace VG.Artifacts.Poly1305.AArch64
 def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.init
-    verified := .scrubbed Proof.Poly1305.AArch64.Fn.init },
+    verified := Proof.Poly1305.AArch64.Fn.init },
   Spec.Poly1305.updateApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.Fn.update
-    verified := .scrubbed Proof.Poly1305.AArch64.Fn.update },
+    verified := Proof.Poly1305.AArch64.Fn.update },
   Spec.Poly1305.updateApi.artifact AArch64.target {
     suffix := "_neon"
     -- Faster on Apple's cores (about twice as fast), slower on Neoverse N2. It
@@ -28,9 +28,9 @@ def artifacts : List Artifact := [
     extra := ["neon"]
     vendor := some "apple"
     code := Impl.Poly1305.AArch64.Fn.updateNeon
-    verified := .scrubbed Proof.Poly1305.AArch64.Fn.updateNeon },
+    verified := Proof.Poly1305.AArch64.Fn.updateNeon },
   Spec.Poly1305.finalizeApi.artifact AArch64.target {
     code := Impl.Poly1305.AArch64.Fn.finalize
-    verified := .scrubbed Proof.Poly1305.AArch64.Fn.finalize }]
+    verified := Proof.Poly1305.AArch64.Fn.finalize }]
 
 end VG.Artifacts.Poly1305.AArch64

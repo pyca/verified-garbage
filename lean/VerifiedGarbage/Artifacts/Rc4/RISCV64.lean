@@ -15,9 +15,9 @@ namespace VG.Artifacts.Rc4.RISCV64
 def artifacts : List Artifact := [
   Spec.Rc4.initApi.artifact RISCV64.target {
     code := Impl.Rc4.RISCV64.Fn.init
-    verified := .scrubbed Proof.Rc4.RISCV64.Scrub.init_scrubbed },
+    verified := Proof.Rc4.RISCV64.Scrub.init_scrubbed },
   Spec.Rc4.applyApi.artifact RISCV64.target {
     code := Impl.Rc4.RISCV64.Fn.apply
-    verified := .scrubbed Proof.Rc4.RISCV64.Scrub.apply_scrubbed }]
+    verified := Proof.Rc4.RISCV64.Scrub.apply_scrubbed }]
 
 end VG.Artifacts.Rc4.RISCV64

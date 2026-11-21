@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # The cleanup's theorems (AArch64)
 
-The theorems a registration binds (`verified := .scrubbed …`), about a
+The theorems a registration binds (`verified := …`), about a
 function's code as emitted, its body and then its cleanup
 (`Impl.Scrub.AArch64.scrubAll W rb cl`): `verifiedScrubbedAll`, with the
 registers it clears stated, and `verifiedScrubbedOf`, with them read off the
@@ -96,7 +96,7 @@ abbrev clearUnion (a b : Clear) : Clear := a.union b
 /-! ## The cleanup as part of the code
 
 `verifiedScrubbedAll` is the theorem about the code with its cleanup (`scrubAll W rb cl c`, which `Impl/` defines as the
-function): the proof a registration binds (`verified := .scrubbed …`).
+function): the proof a registration binds (`verified := …`).
 `scrubSide_union` gives its side condition for a function that calls an
 implementation chosen among several, from what the function proves of its
 own instructions and the implementation of its own (`calleeSide`). -/
@@ -212,7 +212,7 @@ theorem linkRegs_union {a b : Clear} (h : (linkRegs.all fun q => !(keptG a).cont
 /-- `r`'s code with its cleanup (`scrubAll`, over its whole stack, the
 registers `cl` cleared) meets `r`'s contract in constant time and returns
 without secret residue: the theorem about the code that a registration binds
-(`verified := .scrubbed …`). -/
+(`verified := …`). -/
 theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) (cl : Clear) {W rb : Nat}
     (hok : ScrubAllOk r.contract W rb) (hs : scrubSide r.code W rb cl r.tables = true)
     (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl) :

@@ -16,7 +16,7 @@ bytes of stack it zeroes:
 `verifiedScrubbed` (code that calls nothing, `Impl.Scrub.X86.scrub`) and
 `verifiedScrubbedAll` (code with frames, direct calls and calls through its
 tables, `Impl.Scrub.X86.scrubAll`) state `VerifiedScrubbed` of that code: the
-theorem about the code that a registration binds (`verified := .scrubbed …`).
+theorem about the code that a registration binds (`verified := …`).
 Each takes what the cleanup needs of the code as one Boolean (`scrubSide`,
 `scrubFSide`), so that the kernel evaluates the code once and the proof
 module writes one proof, by default `lit_decide`, rather than one theorem

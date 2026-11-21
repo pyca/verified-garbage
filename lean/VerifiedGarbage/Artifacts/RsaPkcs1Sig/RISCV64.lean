@@ -13,12 +13,12 @@ namespace VG.Artifacts.RsaPkcs1Sig.RISCV64
 def artifacts : List Artifact := [
   Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact RISCV64.target {
     code := Impl.RsaPkcs1Sig.RISCV64.Fn.verifyPrecomputed
-    verified := .scrubbed Proof.RsaPkcs1Sig.RISCV64.Fn.verifyPrecomputed },
+    verified := Proof.RsaPkcs1Sig.RISCV64.Fn.verifyPrecomputed },
   Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact RISCV64.target {
     code := Impl.RsaPkcs1Sig.RISCV64.Fn.recoverPrecomputed
-    verified := .scrubbed Proof.RsaPkcs1Sig.RISCV64.Fn.recoverPrecomputed },
+    verified := Proof.RsaPkcs1Sig.RISCV64.Fn.recoverPrecomputed },
   Spec.RsaPkcs1Sig.signPrecomputedApi.artifact RISCV64.target {
     code := Impl.RsaPkcs1Sig.RISCV64.Fn.signPrecomputed
-    verified := .scrubbed Proof.RsaPkcs1Sig.RISCV64.Fn.signPrecomputed }]
+    verified := Proof.RsaPkcs1Sig.RISCV64.Fn.signPrecomputed }]
 
 end VG.Artifacts.RsaPkcs1Sig.RISCV64

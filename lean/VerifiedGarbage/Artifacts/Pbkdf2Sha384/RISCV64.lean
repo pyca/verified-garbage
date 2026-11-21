@@ -15,6 +15,6 @@ namespace VG.Artifacts.Pbkdf2Sha384.RISCV64
 def artifacts : List Artifact := [
   Spec.Hmac.sha384I.pbkdf2Api.artifact RISCV64.target {
     code := Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2 Proof.Pbkdf2.Whole.RISCV64.Sha384.F
-    verified := .scrubbed Proof.Pbkdf2.Whole.RISCV64.Scrub.sha384_scrubbed }]
+    verified := Proof.Pbkdf2.Whole.RISCV64.Scrub.sha384_scrubbed }]
 
 end VG.Artifacts.Pbkdf2Sha384.RISCV64

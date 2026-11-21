@@ -15,6 +15,6 @@ namespace VG.Artifacts.Pbkdf2Sha256.PPC64LE
 def artifacts : List Artifact := [
   Spec.Hmac.sha256I.pbkdf2Api.artifact PPC64LE.target {
     code := Impl.Pbkdf2.Whole.PPC64LE.Fn.sha256
-    verified := .scrubbed Proof.Pbkdf2.Whole.PPC64LE.Scrub.sha256_scrubbed }]
+    verified := Proof.Pbkdf2.Whole.PPC64LE.Scrub.sha256_scrubbed }]
 
 end VG.Artifacts.Pbkdf2Sha256.PPC64LE

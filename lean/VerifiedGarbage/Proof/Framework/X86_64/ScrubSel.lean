@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 `verifiedScrubbedSel` states `VerifiedScrubbed` of code followed by
 `Impl.Scrub.X86_64.scrubSel v rb n rs`, which wipes only the runs `rs` of
 granules of its `n` bytes of stack: the theorem a registration binds
-(`verified := .scrubbed …`), as `verifiedScrubbedAll` (`ScrubProved.lean`)
+(`verified := …`), as `verifiedScrubbedAll` (`ScrubProved.lean`)
 is of `scrubAll`. Beside `scrubSideG`, it needs the residue analysis of the
 code (`RTaint.rtaint`) to end with every byte of the stack it may leave
 different in two runs inside the runs `rs` (`hc`, by `taint_decide`).

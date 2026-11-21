@@ -13,12 +13,12 @@ namespace VG.Artifacts.AesOcb.PPC64LE
 def artifacts : List Artifact := [
   Spec.Ocb.initApi.artifact PPC64LE.target {
     code := Impl.AesOcb.PPC64LE.Fn.init
-    verified := .scrubbed Proof.AesOcb.PPC64LE.Scrub.init_scrubbed },
+    verified := Proof.AesOcb.PPC64LE.Scrub.init_scrubbed },
   Spec.Ocb.sealApi.artifact PPC64LE.target {
     code := Impl.AesOcb.PPC64LE.Fn.seal
-    verified := .scrubbed Proof.AesOcb.PPC64LE.Scrub.seal_scrubbed },
+    verified := Proof.AesOcb.PPC64LE.Scrub.seal_scrubbed },
   Spec.Ocb.openApi.artifact PPC64LE.target {
     code := Impl.AesOcb.PPC64LE.Fn.open
-    verified := .scrubbed Proof.AesOcb.PPC64LE.Scrub.open_scrubbed }]
+    verified := Proof.AesOcb.PPC64LE.Scrub.open_scrubbed }]
 
 end VG.Artifacts.AesOcb.PPC64LE

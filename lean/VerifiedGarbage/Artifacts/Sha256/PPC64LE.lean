@@ -18,24 +18,24 @@ namespace VG.Artifacts.Sha256.PPC64LE
 def artifacts : List Artifact := [
   Spec.Sha256.init224Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init224
-    verified := .scrubbed Proof.Sha256.PPC64LE.init224_scrubbed },
+    verified := Proof.Sha256.PPC64LE.init224_scrubbed },
   Spec.Sha256.finalize224Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Fn.finalize224
-    verified := .scrubbed Proof.Sha256.PPC64LE.finalize224_scrubbed },
+    verified := Proof.Sha256.PPC64LE.finalize224_scrubbed },
   Spec.Sha256.digest224Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Fn.digest224
-    verified := .scrubbed Proof.Sha256.PPC64LE.digest224_scrubbed },
+    verified := Proof.Sha256.PPC64LE.digest224_scrubbed },
   Spec.Sha256.initApi.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init
-    verified := .scrubbed Proof.Sha256.PPC64LE.init_scrubbed },
+    verified := Proof.Sha256.PPC64LE.init_scrubbed },
   Spec.Sha256.updateApi.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Fn.update
-    verified := .scrubbed Proof.Sha256.PPC64LE.update_scrubbed },
+    verified := Proof.Sha256.PPC64LE.update_scrubbed },
   Spec.Sha256.finalizeApi.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Fn.finalize
-    verified := .scrubbed Proof.Sha256.PPC64LE.finalize_scrubbed },
+    verified := Proof.Sha256.PPC64LE.finalize_scrubbed },
   Spec.Sha256.digest256Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Fn.digest256
-    verified := .scrubbed Proof.Sha256.PPC64LE.digest256_scrubbed }]
+    verified := Proof.Sha256.PPC64LE.digest256_scrubbed }]
 
 end VG.Artifacts.Sha256.PPC64LE

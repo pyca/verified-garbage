@@ -13,12 +13,12 @@ namespace VG.Artifacts.Sm4.Arm
 def artifacts : List Artifact := [
   Spec.Sm4.expandKeyApi.artifact Arm.target {
     code := Impl.Sm4.Arm.Fn.expandKey
-    verified := .scrubbed Proof.Sm4.Arm.Fn.expandKey },
+    verified := Proof.Sm4.Arm.Fn.expandKey },
   Spec.Sm4.ecbEncryptApi.artifact Arm.target {
     code := Impl.Sm4.Arm.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Sm4.Arm.Fn.ecbEncrypt },
+    verified := Proof.Sm4.Arm.Fn.ecbEncrypt },
   Spec.Sm4.ecbDecryptApi.artifact Arm.target {
     code := Impl.Sm4.Arm.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Sm4.Arm.Fn.ecbDecrypt }]
+    verified := Proof.Sm4.Arm.Fn.ecbDecrypt }]
 
 end VG.Artifacts.Sm4.Arm

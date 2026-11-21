@@ -59,12 +59,12 @@ open VG.Proof.Secp256k1.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.compressSecp256k1
-    verified := .scrubbed (Proof.EcKey.X86.Secp256k1.Scrub.compress_scrubbed hasLaw.inv) },
+    verified := Proof.EcKey.X86.Secp256k1.Scrub.compress_scrubbed hasLaw.inv },
   Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.decompressSecp256k1
-    verified := .scrubbed (Proof.EcKey.X86.Secp256k1.Scrub.decompress_scrubbed hasLaw.law hasLaw.inv) },
+    verified := Proof.EcKey.X86.Secp256k1.Scrub.decompress_scrubbed hasLaw.law hasLaw.inv },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.publicKeySecp256k1
-    verified := .scrubbed (Proof.EcKey.X86.Secp256k1.Scrub.publicKey_scrubbed hasLaw.law hasLaw.inv) }]
+    verified := Proof.EcKey.X86.Secp256k1.Scrub.publicKey_scrubbed hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcSecp256k1.X86

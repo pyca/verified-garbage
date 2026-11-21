@@ -18,6 +18,6 @@ open VG.Proof.Secp256k1.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.Secp256k1.exchangeApi.artifact AArch64.target {
     code := Impl.Ecdh.AArch64.Fn.exchangeSecp256k1
-    verified := .scrubbed (Proof.Ecdh.AArch64.Secp256k1.exchange_scrubbed hasLaw.law hasLaw.inv) }]
+    verified := Proof.Ecdh.AArch64.Secp256k1.exchange_scrubbed hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcdhSecp256k1.AArch64

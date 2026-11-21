@@ -20,12 +20,12 @@ open VG.Proof.Secp256k1.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.compressSecp256k1
-    verified := .scrubbed (Proof.EcKey.Compressed.AArch64.Secp256k1.scrubbed hasLaw.inv) },
+    verified := Proof.EcKey.Compressed.AArch64.Secp256k1.scrubbed hasLaw.inv },
   Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.decompressSecp256k1
-    verified := .scrubbed (Proof.EcKey.Compressed.AArch64.Residue.Secp256k1.scrubbed hasLaw.law hasLaw.inv) },
+    verified := Proof.EcKey.Compressed.AArch64.Residue.Secp256k1.scrubbed hasLaw.law hasLaw.inv },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.publicKeySecp256k1
-    verified := .scrubbed (Proof.EcKey.AArch64.Secp256k1.pk_scrubbed hasLaw.law hasLaw.inv) }]
+    verified := Proof.EcKey.AArch64.Secp256k1.pk_scrubbed hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcSecp256k1.AArch64

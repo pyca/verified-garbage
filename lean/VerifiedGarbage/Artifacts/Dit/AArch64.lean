@@ -13,17 +13,17 @@ namespace VG.Artifacts.Dit.AArch64
 def artifacts : List Artifact := [
   Spec.Dit.enterApi.artifact AArch64.target {
     code := Impl.Dit.AArch64.enter
-    verified := .scrubbed Proof.Dit.AArch64.enter_scrubbed },
+    verified := Proof.Dit.AArch64.enter_scrubbed },
   Spec.Dit.enterApi.artifact AArch64.target {
     suffix := "_dsb"
     code := Impl.Dit.AArch64.enterDsb
-    verified := .scrubbed Proof.Dit.AArch64.enterDsb_scrubbed },
+    verified := Proof.Dit.AArch64.enterDsb_scrubbed },
   Spec.Dit.enterApi.artifact AArch64.target {
     suffix := "_sb"
     code := Impl.Dit.AArch64.enterSb
-    verified := .scrubbed Proof.Dit.AArch64.enterSb_scrubbed },
+    verified := Proof.Dit.AArch64.enterSb_scrubbed },
   Spec.Dit.clearApi.artifact AArch64.target {
     code := Impl.Dit.AArch64.clear
-    verified := .scrubbed Proof.Dit.AArch64.clear_scrubbed }]
+    verified := Proof.Dit.AArch64.clear_scrubbed }]
 
 end VG.Artifacts.Dit.AArch64

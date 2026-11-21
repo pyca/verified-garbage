@@ -13,7 +13,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.BlowfishCbc.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.cbcEncryptChainedApi.artifact X86_64.target { code := Impl.Blowfish.X86_64.Fn.cbcEncrypt, verified := .scrubbed Proof.Blowfish.X86_64.Scrub.cbcEncrypt_scrubbed, spSafe := Proof.Blowfish.X86_64.Scrub.cbcEncrypt_spSafe },
-  Spec.Blowfish.cbcDecryptChainedApi.artifact X86_64.target { code := Impl.Blowfish.X86_64.Fn.cbcDecrypt, verified := .scrubbed Proof.Blowfish.X86_64.Scrub.cbcDecrypt_scrubbed, spSafe := Proof.Blowfish.X86_64.Scrub.cbcDecrypt_spSafe }]
+  Spec.Blowfish.cbcEncryptChainedApi.artifact X86_64.target { code := Impl.Blowfish.X86_64.Fn.cbcEncrypt, verified := Proof.Blowfish.X86_64.Scrub.cbcEncrypt_scrubbed, spSafe := Proof.Blowfish.X86_64.Scrub.cbcEncrypt_spSafe },
+  Spec.Blowfish.cbcDecryptChainedApi.artifact X86_64.target { code := Impl.Blowfish.X86_64.Fn.cbcDecrypt, verified := Proof.Blowfish.X86_64.Scrub.cbcDecrypt_scrubbed, spSafe := Proof.Blowfish.X86_64.Scrub.cbcDecrypt_spSafe }]
 
 end VG.Artifacts.BlowfishCbc.X86_64

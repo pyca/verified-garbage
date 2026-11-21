@@ -17,9 +17,9 @@ namespace VG.Artifacts.CamelliaCbc.PPC64LE
 def artifacts : List Artifact := [
   Spec.Camellia.cbcEncryptChainedApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.cbcEnc
-    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.cbcEnc_scrubbed },
+    verified := Proof.Camellia.PPC64LE.Scrub.cbcEnc_scrubbed },
   Spec.Camellia.cbcDecryptChainedApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.cbcDec
-    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.cbcDec_scrubbed }]
+    verified := Proof.Camellia.PPC64LE.Scrub.cbcDec_scrubbed }]
 
 end VG.Artifacts.CamelliaCbc.PPC64LE

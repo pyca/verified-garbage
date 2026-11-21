@@ -16,9 +16,9 @@ namespace VG.Artifacts.Sm4Ofb.RISCV64
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.Fn.ofb
-    verified := .scrubbed Proof.Sm4.RISCV64.Scrub.ofb_scrubbed },
+    verified := Proof.Sm4.RISCV64.Scrub.ofb_scrubbed },
   Spec.Sm4.ofbFinalApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.Fn.ofbFinal
-    verified := .scrubbed Proof.Sm4.RISCV64.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Sm4.RISCV64.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.Sm4Ofb.RISCV64

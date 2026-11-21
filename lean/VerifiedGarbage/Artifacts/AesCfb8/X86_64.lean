@@ -21,12 +21,12 @@ def artifacts : List Artifact :=
     Spec.Cfb8.aesEncryptApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesCfb8.X86_64.Fn.cfb8Encrypt v.level v.enc
-      verified := .scrubbed (Proof.Aes.X86_64.ModesScrub.cfb8Encrypt_scrubbed v)
+      verified := Proof.Aes.X86_64.ModesScrub.cfb8Encrypt_scrubbed v
       spSafe := Proof.Aes.X86_64.ModesScrub.cfb8Encrypt_spSafeFn v },
     Spec.Cfb8.aesDecryptApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesCfb8.X86_64.Fn.cfb8Decrypt v.level v.enc
-      verified := .scrubbed (Proof.Aes.X86_64.ModesScrub.cfb8Decrypt_scrubbed v)
+      verified := Proof.Aes.X86_64.ModesScrub.cfb8Decrypt_scrubbed v
       spSafe := Proof.Aes.X86_64.ModesScrub.cfb8Decrypt_spSafeFn v }]
 
 end VG.Artifacts.AesCfb8.X86_64

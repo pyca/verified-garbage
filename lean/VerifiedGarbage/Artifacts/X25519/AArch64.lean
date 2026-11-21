@@ -26,11 +26,11 @@ namespace VG.Artifacts.X25519.AArch64
 def artifacts : List Artifact := [
   Spec.X25519.exchangeApi.artifact AArch64.target {
     code := Impl.X25519.AArch64.Fn.exchange
-    verified := .scrubbed Proof.X25519.AArch64.ExchangeResidue.exchangeCode_scrubbed },
+    verified := Proof.X25519.AArch64.ExchangeResidue.exchangeCode_scrubbed },
   Spec.X25519.x25519BaseApi.artifact AArch64.target {
     written := [("scratch", 1024)]
     code := Impl.X25519.AArch64.Fn.x25519Base
-    verified := .scrubbed Proof.X25519.AArch64.Base.x25519BaseCleared_scrubbed
+    verified := Proof.X25519.AArch64.Base.x25519BaseCleared_scrubbed
     writtenOk := Proof.X25519.AArch64.Base.x25519BaseCleared_written }]
 
 end VG.Artifacts.X25519.AArch64

@@ -91,7 +91,7 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact X86_64.target
       { tables := [("hmac", tables vs)]
         code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (brainpoolp320r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries vs)
-        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.brainpoolp320r1T_scrubbed hasLaw.law hasLaw.inv vs hv hu)
+        verified := Proof.Ecdsa.Rfc6979.X86_64.brainpoolp320r1T_scrubbed hasLaw.law hasLaw.inv vs hv hu
         spSafe := Proof.Ecdsa.Rfc6979.X86_64.brainpoolp320r1T_spSafe hasLaw.law hasLaw.inv vs }]
   else []
 
@@ -107,7 +107,7 @@ open VG.Proof.BrainpoolP320r1.X86_64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP320r1.verifyHashApi.artifact X86_64.target
     { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP320r1
-      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.BrainpoolP320r1.verifyHash_scrubbed hasLaw.law hasLaw.inv)
+      verified := Proof.Ecdsa.Verify.X86_64.BrainpoolP320r1.verifyHash_scrubbed hasLaw.law hasLaw.inv
       spSafe := Proof.Ecdsa.Verify.X86_64.BrainpoolP320r1.verifyHash_spSafe }] ++
   Rfc6979.artifacts
 

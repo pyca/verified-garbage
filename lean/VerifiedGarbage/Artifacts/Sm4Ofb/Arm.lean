@@ -13,9 +13,9 @@ namespace VG.Artifacts.Sm4Ofb.Arm
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact Arm.target {
     code := Impl.Sm4.Arm.Fn.ofb
-    verified := .scrubbed Proof.Sm4.Arm.Fn.ofb },
+    verified := Proof.Sm4.Arm.Fn.ofb },
   Spec.Sm4.ofbFinalApi.artifact Arm.target {
     code := Impl.Sm4.Arm.Fn.ofbFinal
-    verified := .scrubbed Proof.Sm4.Arm.Fn.ofbFinal }]
+    verified := Proof.Sm4.Arm.Fn.ofbFinal }]
 
 end VG.Artifacts.Sm4Ofb.Arm

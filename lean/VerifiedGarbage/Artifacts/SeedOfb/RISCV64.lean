@@ -16,9 +16,9 @@ namespace VG.Artifacts.SeedOfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Seed.ofbApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.Fn.ofb
-    verified := .scrubbed Proof.Seed.RISCV64.Scrub.ofb_scrubbed },
+    verified := Proof.Seed.RISCV64.Scrub.ofb_scrubbed },
   Spec.Seed.ofbFinalApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.Fn.ofbFinal
-    verified := .scrubbed Proof.Seed.RISCV64.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Seed.RISCV64.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.SeedOfb.RISCV64

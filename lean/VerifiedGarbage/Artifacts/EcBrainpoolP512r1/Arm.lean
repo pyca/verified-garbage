@@ -17,24 +17,24 @@ open VG.Proof.BrainpoolP512r1.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.publicKeyBrainpoolP512r1
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeyBrainpoolP512r1 hasLaw.law) },
+    verified := Proof.EcKey.Arm.Fn.publicKeyBrainpoolP512r1 hasLaw.law },
   Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.Fn.publicKeyBrainpoolP512r1U
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeyBrainpoolP512r1U hasLaw.law) },
+    verified := Proof.EcKey.Arm.Fn.publicKeyBrainpoolP512r1U hasLaw.law },
   Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.compressBrainpoolP512r1
-    verified := .scrubbed Proof.EcKey.Arm.Fn.compressBrainpoolP512r1 },
+    verified := Proof.EcKey.Arm.Fn.compressBrainpoolP512r1 },
   Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.decompressBrainpoolP512r1
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressBrainpoolP512r1 hasLaw.law) },
+    verified := Proof.EcKey.Arm.Fn.decompressBrainpoolP512r1 hasLaw.law },
   Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.Fn.compressBrainpoolP512r1U
-    verified := .scrubbed Proof.EcKey.Arm.Fn.compressBrainpoolP512r1U },
+    verified := Proof.EcKey.Arm.Fn.compressBrainpoolP512r1U },
   Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.Fn.decompressBrainpoolP512r1U
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressBrainpoolP512r1U hasLaw.law) }]
+    verified := Proof.EcKey.Arm.Fn.decompressBrainpoolP512r1U hasLaw.law }]
 
 end VG.Artifacts.EcBrainpoolP512r1.Arm

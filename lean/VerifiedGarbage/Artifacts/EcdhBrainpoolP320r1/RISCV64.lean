@@ -21,6 +21,6 @@ open VG.Proof.BrainpoolP320r1.RISCV64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.BrainpoolP320r1.exchangeApi.artifact RISCV64.target {
     code := Impl.Ecdh.RISCV64.Fn.exchangeBrainpoolP320r1
-    verified := .scrubbed (Proof.Ecdh.RISCV64.BrainpoolP320r1.exchange_scrubbed hasLaw.law) }]
+    verified := Proof.Ecdh.RISCV64.BrainpoolP320r1.exchange_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcdhBrainpoolP320r1.RISCV64

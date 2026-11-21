@@ -14,12 +14,12 @@ namespace VG.Artifacts.CmacAes.RISCV64
 def artifacts : List Artifact := [
   Spec.Cmac.aesInitApi.artifact RISCV64.target {
     code := Impl.CmacAes.Stream.RISCV64.Fn.init
-    verified := .scrubbed Proof.CmacAes.Stream.RISCV64.Scrub.init_scrubbed },
+    verified := Proof.CmacAes.Stream.RISCV64.Scrub.init_scrubbed },
   Spec.Cmac.aesAbsorbApi.artifact RISCV64.target {
     code := Impl.CmacAes.Stream.RISCV64.Fn.absorb
-    verified := .scrubbed Proof.CmacAes.Stream.RISCV64.Scrub.absorb_scrubbed },
+    verified := Proof.CmacAes.Stream.RISCV64.Scrub.absorb_scrubbed },
   Spec.Cmac.aesFinishApi.artifact RISCV64.target {
     code := Impl.CmacAes.Stream.RISCV64.Fn.finish
-    verified := .scrubbed Proof.CmacAes.Stream.RISCV64.Scrub.finish_scrubbed }]
+    verified := Proof.CmacAes.Stream.RISCV64.Scrub.finish_scrubbed }]
 
 end VG.Artifacts.CmacAes.RISCV64

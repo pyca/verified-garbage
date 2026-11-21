@@ -22,6 +22,6 @@ namespace VG.Artifacts.Zeroize.X86_64
 open VG.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Zeroize.zeroizeApi.artifact target { code := Impl.Zeroize.X86_64.Fn.zeroize, verified := .scrubbed Proof.Zeroize.X86_64.zeroize_scrubbed, spSafe := Proof.Zeroize.X86_64.zeroize_spSafe },
-  Spec.Zeroize.zeroizeApi.artifact target { suffix := "_avx", code := Impl.Zeroize.X86_64.Fn.zeroizeAvx, verified := .scrubbed Proof.Zeroize.X86_64.zeroizeAvx_scrubbed, spSafe := Proof.Zeroize.X86_64.zeroizeAvx_spSafe }]
+  Spec.Zeroize.zeroizeApi.artifact target { code := Impl.Zeroize.X86_64.Fn.zeroize, verified := Proof.Zeroize.X86_64.zeroize_scrubbed, spSafe := Proof.Zeroize.X86_64.zeroize_spSafe },
+  Spec.Zeroize.zeroizeApi.artifact target { suffix := "_avx", code := Impl.Zeroize.X86_64.Fn.zeroizeAvx, verified := Proof.Zeroize.X86_64.zeroizeAvx_scrubbed, spSafe := Proof.Zeroize.X86_64.zeroizeAvx_spSafe }]
 end VG.Artifacts.Zeroize.X86_64

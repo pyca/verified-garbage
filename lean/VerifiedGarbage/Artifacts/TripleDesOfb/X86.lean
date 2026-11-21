@@ -16,9 +16,9 @@ namespace VG.Artifacts.TripleDesOfb.X86
 def artifacts : List Artifact := [
   Spec.TripleDes.ofbApi.artifact X86.target {
     code := Impl.TripleDes.X86.Fn.ofb
-    verified := .scrubbed Proof.TripleDes.X86.Scrub.ofb_scrubbed },
+    verified := Proof.TripleDes.X86.Scrub.ofb_scrubbed },
   Spec.TripleDes.ofbFinalApi.artifact X86.target {
     code := Impl.TripleDes.X86.Fn.ofbFinal
-    verified := .scrubbed Proof.TripleDes.X86.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.TripleDes.X86.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.TripleDesOfb.X86

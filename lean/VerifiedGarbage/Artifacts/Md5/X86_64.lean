@@ -33,9 +33,9 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Md5.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Md5.initApi.artifact X86_64.target { code := Impl.Md5.X86_64.Fn.init, verified := .scrubbed Proof.Md5.X86_64.init_scrubbed, spSafe := Proof.Md5.X86_64.init_spSafe },
-  Spec.Md5.updateApi.artifact X86_64.target { code := Impl.Md5.X86_64.Fn.update, verified := .scrubbed Proof.Md5.X86_64.update_scrubbed, spSafe := Proof.Md5.X86_64.update_spSafe },
-  Spec.Md5.finalizeApi.artifact X86_64.target { code := Impl.Md5.X86_64.Fn.finalize, verified := .scrubbed Proof.Md5.X86_64.finalize_scrubbed, spSafe := Proof.Md5.X86_64.finalize_spSafe }] ++
+  Spec.Md5.initApi.artifact X86_64.target { code := Impl.Md5.X86_64.Fn.init, verified := Proof.Md5.X86_64.init_scrubbed, spSafe := Proof.Md5.X86_64.init_spSafe },
+  Spec.Md5.updateApi.artifact X86_64.target { code := Impl.Md5.X86_64.Fn.update, verified := Proof.Md5.X86_64.update_scrubbed, spSafe := Proof.Md5.X86_64.update_spSafe },
+  Spec.Md5.finalizeApi.artifact X86_64.target { code := Impl.Md5.X86_64.Fn.finalize, verified := Proof.Md5.X86_64.finalize_scrubbed, spSafe := Proof.Md5.X86_64.finalize_spSafe }] ++
   (VG.Proof.Variants.MdHash.X86_64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
     v.stream.map fun f =>
       f.f.api.artifact X86_64.target { f.reg with suffix := v.suffix })

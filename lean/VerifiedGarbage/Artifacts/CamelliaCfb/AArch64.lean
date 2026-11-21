@@ -18,15 +18,15 @@ namespace VG.Artifacts.CamelliaCfb.AArch64
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.cfbEncrypt
-    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbEncryptCode_scrubbed },
+    verified := Proof.Camellia.AArch64.Residue.cfbEncryptCode_scrubbed },
   Spec.Camellia.cfbDecryptApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.cfbDecrypt
-    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbDecryptCode_scrubbed },
+    verified := Proof.Camellia.AArch64.Residue.cfbDecryptCode_scrubbed },
   Spec.Camellia.cfbEncryptFinalApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.cfbEncryptFinal
-    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_scrubbed },
+    verified := Proof.Camellia.AArch64.Residue.cfbEncryptFinalCode_scrubbed },
   Spec.Camellia.cfbDecryptFinalApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.cfbDecryptFinal
-    verified := .scrubbed Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_scrubbed }]
+    verified := Proof.Camellia.AArch64.Residue.cfbDecryptFinalCode_scrubbed }]
 
 end VG.Artifacts.CamelliaCfb.AArch64

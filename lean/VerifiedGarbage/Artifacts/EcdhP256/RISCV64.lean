@@ -21,6 +21,6 @@ open VG.Proof.P256.RISCV64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P256.exchangeApi.artifact RISCV64.target {
     code := Impl.Ecdh.RISCV64.Fn.exchangeP256
-    verified := .scrubbed (Proof.Ecdh.RISCV64.P256.exchange_scrubbed hasLaw.law) }]
+    verified := Proof.Ecdh.RISCV64.P256.exchange_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcdhP256.RISCV64

@@ -29,7 +29,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact RISCV64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.RISCV64.Fn.p192 fns
-    verified := .scrubbed (Proof.Ecdsa.Rfc6979.RISCV64.P192.sign_scrubbed hasLaw.law) }]
+    verified := Proof.Ecdsa.Rfc6979.RISCV64.P192.sign_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcdsaP192.RISCV64.Rfc6979
 
@@ -40,7 +40,7 @@ open VG.Proof.P192.RISCV64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.Fn.verifyP192
-    verified := .scrubbed (Proof.Ecdsa.RISCV64.P192.verifyHash_scrubbed hasLaw.law) }] ++
+    verified := Proof.Ecdsa.RISCV64.P192.verifyHash_scrubbed hasLaw.law }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP192.RISCV64

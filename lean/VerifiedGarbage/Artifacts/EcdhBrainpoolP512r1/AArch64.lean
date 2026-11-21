@@ -18,6 +18,6 @@ open VG.Proof.BrainpoolP512r1.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.BrainpoolP512r1.exchangeApi.artifact AArch64.target {
     code := Impl.Ecdh.AArch64.Fn.exchangeBrainpoolP512r1
-    verified := .scrubbed (Proof.Ecdh.AArch64.BrainpoolP512r1.exchange_scrubbed hasLaw.law hasLaw.inv) }]
+    verified := Proof.Ecdh.AArch64.BrainpoolP512r1.exchange_scrubbed hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcdhBrainpoolP512r1.AArch64

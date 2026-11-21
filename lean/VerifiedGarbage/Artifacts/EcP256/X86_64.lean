@@ -79,21 +79,21 @@ open VG.Proof.P256.X86_64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P256.inst.compressPublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Compressed.X86_64.Fn.compress Impl.Ecdsa.X86_64.p256
-      verified := .scrubbed (Proof.EcKey.Compressed.X86_64.P256.scrubbed hasLaw.inv false)
+      verified := Proof.EcKey.Compressed.X86_64.P256.scrubbed hasLaw.inv false
       spSafe := Proof.EcKey.Compressed.X86_64.P256.spSafe false },
   Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Compressed.X86_64.Fn.decompress Impl.Ecdsa.X86_64.p256
-      verified := .scrubbed (Proof.EcKey.Compressed.X86_64.P256Decompress.scrubbed hasLaw.law hasLaw.inv false)
+      verified := Proof.EcKey.Compressed.X86_64.P256Decompress.scrubbed hasLaw.law hasLaw.inv false
       spSafe := Proof.EcKey.Compressed.X86_64.P256Decompress.spSafe false },
   Spec.EcKey.P256.inst.compressPublicKeyApi.artifact X86_64.target
     { suffix := "_adx"
       code := Impl.EcKey.Compressed.X86_64.Fn.compress Impl.Ecdsa.X86_64.p256x
-      verified := .scrubbed (Proof.EcKey.Compressed.X86_64.P256.scrubbed hasLaw.inv true)
+      verified := Proof.EcKey.Compressed.X86_64.P256.scrubbed hasLaw.inv true
       spSafe := Proof.EcKey.Compressed.X86_64.P256.spSafe true },
   Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact X86_64.target
     { suffix := "_adx"
       code := Impl.EcKey.Compressed.X86_64.Fn.decompress Impl.Ecdsa.X86_64.p256x
-      verified := .scrubbed (Proof.EcKey.Compressed.X86_64.P256Decompress.scrubbed hasLaw.law hasLaw.inv true)
+      verified := Proof.EcKey.Compressed.X86_64.P256Decompress.scrubbed hasLaw.law hasLaw.inv true
       spSafe := Proof.EcKey.Compressed.X86_64.P256Decompress.spSafe true }]
 
 end VG.Artifacts.EcP256.X86_64.Compressed
@@ -106,12 +106,12 @@ open VG.Proof.P256.X86_64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P256.inst.validatePublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Validate.X86_64.Fn.validate Impl.Ecdsa.X86_64.p256
-      verified := .scrubbed (Proof.EcKey.Validate.X86_64.P256.scrubbed hasLaw.inv false)
+      verified := Proof.EcKey.Validate.X86_64.P256.scrubbed hasLaw.inv false
       spSafe := Proof.EcKey.Validate.X86_64.P256.spSafe false },
   Spec.EcKey.P256.inst.validatePublicKeyApi.artifact X86_64.target
     { suffix := "_adx"
       code := Impl.EcKey.Validate.X86_64.Fn.validate Impl.Ecdsa.X86_64.p256x
-      verified := .scrubbed (Proof.EcKey.Validate.X86_64.P256.scrubbed hasLaw.inv true)
+      verified := Proof.EcKey.Validate.X86_64.P256.scrubbed hasLaw.inv true
       spSafe := Proof.EcKey.Validate.X86_64.P256.spSafe true }]
 
 end VG.Artifacts.EcP256.X86_64.Validate
@@ -124,12 +124,12 @@ def artifacts : List Artifact :=
   Compressed.artifacts ++ [
   Spec.EcKey.P256.publicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.X86_64.Fn.publicKeyP256
-      verified := .scrubbed (Proof.EcKey.X86_64.publicKey_scrubbed hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv)
+      verified := Proof.EcKey.X86_64.publicKey_scrubbed hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv
       spSafe := Proof.EcKey.X86_64.publicKey_spSafe },
   Spec.EcKey.P256.publicKeyApi.artifact X86_64.target
     { suffix := "_adx"
       code := Impl.EcKey.X86_64.Fn.publicKeyP256Adx
-      verified := .scrubbed (Proof.EcKey.X86_64.publicKeyAdx_scrubbed hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv)
+      verified := Proof.EcKey.X86_64.publicKeyAdx_scrubbed hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv
       spSafe := Proof.EcKey.X86_64.publicKeyAdx_spSafe }] ++
   Validate.artifacts
 

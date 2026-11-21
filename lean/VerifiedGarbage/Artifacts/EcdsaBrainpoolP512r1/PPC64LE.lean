@@ -33,12 +33,12 @@ open VG.Proof.BrainpoolP512r1.PPC64LE (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact PPC64LE.target {
     code := Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp512r1Verify
-    verified := .scrubbed (Proof.Ecdsa.Verify.PPC64LE.Scrub.brainpoolp512r1Verify_scrubbed hasLaw.law) }] ++
+    verified := Proof.Ecdsa.Verify.PPC64LE.Scrub.brainpoolp512r1Verify_scrubbed hasLaw.law }] ++
   (if hv : OK vars ∧ "VG_BRAINPOOLP512R1_COMB" ∉ names vars then [
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact PPC64LE.target {
       tables := [("hmac", tables vars)]
       code := Impl.Ecdsa.Rfc6979.PPC64LE.Fn.brainpoolp512r1 (fnsOf vars)
-      verified := .scrubbed (Proof.Ecdsa.Rfc6979.PPC64LE.Scrub.brainpoolp512r1Sign_scrubbed hasLaw.law hv) }]
+      verified := Proof.Ecdsa.Rfc6979.PPC64LE.Scrub.brainpoolp512r1Sign_scrubbed hasLaw.law hv }]
   else [])
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.PPC64LE

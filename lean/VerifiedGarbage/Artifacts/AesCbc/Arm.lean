@@ -13,9 +13,9 @@ namespace VG.Artifacts.AesCbc.Arm
 def artifacts : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cbcEncrypt
-    verified := .scrubbed Proof.Aes.Arm.Fn.cbcEncrypt },
+    verified := Proof.Aes.Arm.Fn.cbcEncrypt },
   Spec.Cbc.aesDecryptApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cbcDecrypt
-    verified := .scrubbed Proof.Aes.Arm.Fn.cbcDecrypt }]
+    verified := Proof.Aes.Arm.Fn.cbcDecrypt }]
 
 end VG.Artifacts.AesCbc.Arm

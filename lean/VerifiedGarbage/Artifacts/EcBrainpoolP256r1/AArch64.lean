@@ -20,12 +20,12 @@ open VG.Proof.BrainpoolP256r1.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.publicKeyBrainpoolP256r1
-    verified := .scrubbed (Proof.EcKey.AArch64.BrainpoolP256r1.pk_scrubbed hasLaw.law hasLaw.inv) },
+    verified := Proof.EcKey.AArch64.BrainpoolP256r1.pk_scrubbed hasLaw.law hasLaw.inv },
   Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.compressBrainpoolP256r1
-    verified := .scrubbed (Proof.EcKey.Compressed.AArch64.BrainpoolP256r1.scrubbed hasLaw.inv) },
+    verified := Proof.EcKey.Compressed.AArch64.BrainpoolP256r1.scrubbed hasLaw.inv },
   Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.decompressBrainpoolP256r1
-    verified := .scrubbed (Proof.EcKey.Compressed.AArch64.Residue.BrainpoolP256r1.scrubbed hasLaw.law hasLaw.inv) }]
+    verified := Proof.EcKey.Compressed.AArch64.Residue.BrainpoolP256r1.scrubbed hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcBrainpoolP256r1.AArch64

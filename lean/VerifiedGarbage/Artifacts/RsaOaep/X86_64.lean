@@ -27,7 +27,7 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
       tables := ts
       code := Impl.RsaOaep.X86_64.Fn.decryptPrecomputed (Proof.Rsa.X86_64.PrivScrub.level c)
         (Proof.HashTable.X86_64.fnsOf vs) (privNameP c) (privCodeP c)
-      verified := .scrubbed (dec_scrubbed h c)
+      verified := dec_scrubbed h c
       spSafe := dec_spSafe c }]
   else []
 
@@ -45,7 +45,7 @@ def artifacts (c : Proof.Rsa.X86_64.PublicImpl) : List Artifact :=
       suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := ts
       code := Impl.RsaOaep.X86_64.Fn.encrypt c.level (Proof.HashTable.X86_64.fnsOf vs) c.name c.code
-      verified := .scrubbed (enc_scrubbed h c)
+      verified := enc_scrubbed h c
       spSafe := enc_spSafe c }]
   else []
 

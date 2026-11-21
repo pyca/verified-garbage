@@ -15,9 +15,9 @@ namespace VG.Artifacts.CamelliaCtr.X86
 def artifacts : List Artifact := [
   Spec.Camellia.ctrApi.artifact X86.target {
     code := Impl.Camellia.X86.Fn.ctr
-    verified := .scrubbed Proof.Camellia.X86.Scrub.ctr_scrubbed },
+    verified := Proof.Camellia.X86.Scrub.ctr_scrubbed },
   Spec.Camellia.ctrFinalApi.artifact X86.target {
     code := Impl.Camellia.X86.Fn.ctrFinal
-    verified := .scrubbed Proof.Camellia.X86.Scrub.ctrFinal_scrubbed }]
+    verified := Proof.Camellia.X86.Scrub.ctrFinal_scrubbed }]
 
 end VG.Artifacts.CamelliaCtr.X86

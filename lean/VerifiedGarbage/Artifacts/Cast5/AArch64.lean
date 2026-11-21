@@ -16,12 +16,12 @@ namespace VG.Artifacts.Cast5.AArch64
 def artifacts : List Artifact := [
   Spec.Cast5.expandKeyApi.artifact AArch64.target {
     code := Impl.Cast5.AArch64.Tbl.Fn.expandKey
-    verified := .scrubbed Proof.Cast5.AArch64.Scrub.expandKey },
+    verified := Proof.Cast5.AArch64.Scrub.expandKey },
   Spec.Cast5.ecbEncryptApi.artifact AArch64.target {
     code := Impl.Cast5.AArch64.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_scrubbed },
+    verified := Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_scrubbed },
   Spec.Cast5.ecbDecryptApi.artifact AArch64.target {
     code := Impl.Cast5.AArch64.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_scrubbed }]
+    verified := Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_scrubbed }]
 
 end VG.Artifacts.Cast5.AArch64

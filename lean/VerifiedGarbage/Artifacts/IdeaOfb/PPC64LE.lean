@@ -18,9 +18,9 @@ namespace VG.Artifacts.IdeaOfb.PPC64LE
 def artifacts : List Artifact := [
   Spec.Idea.ofbApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.ofb
-    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.ofb_scrubbed },
+    verified := Proof.Idea.PPC64LE.Scrub.ofb_scrubbed },
   Spec.Idea.ofbFinalApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.ofbFinal
-    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Idea.PPC64LE.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.IdeaOfb.PPC64LE

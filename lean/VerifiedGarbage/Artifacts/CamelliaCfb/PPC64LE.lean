@@ -19,15 +19,15 @@ namespace VG.Artifacts.CamelliaCfb.PPC64LE
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.cfbEnc
-    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.cfbEnc_scrubbed },
+    verified := Proof.Camellia.PPC64LE.Scrub.cfbEnc_scrubbed },
   Spec.Camellia.cfbDecryptApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.cfbDec
-    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.cfbDec_scrubbed },
+    verified := Proof.Camellia.PPC64LE.Scrub.cfbDec_scrubbed },
   Spec.Camellia.cfbEncryptFinalApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.cfbEncFinal
-    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.cfbEncFinal_scrubbed },
+    verified := Proof.Camellia.PPC64LE.Scrub.cfbEncFinal_scrubbed },
   Spec.Camellia.cfbDecryptFinalApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.cfbDecFinal
-    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.cfbDecFinal_scrubbed }]
+    verified := Proof.Camellia.PPC64LE.Scrub.cfbDecFinal_scrubbed }]
 
 end VG.Artifacts.CamelliaCfb.PPC64LE

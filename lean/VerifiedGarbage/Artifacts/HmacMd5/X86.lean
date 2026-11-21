@@ -17,11 +17,11 @@ namespace VG.Artifacts.HmacMd5.X86
 def artifacts : List Artifact := [
   Spec.Hmac.md5I.initAnyKeyApi.artifact X86.target {
     code := Impl.Hmac.X86.Fn.md5Init Proof.Pbkdf2.Md.X86.md5M Proof.Pbkdf2.Whole.X86.md5F
-    verified := .scrubbed Proof.Hmac.X86.Scrub.md5_init_scrubbed
+    verified := Proof.Hmac.X86.Scrub.md5_init_scrubbed
     spSafe := Proof.Hmac.X86.Scrub.md5_initSp },
   Spec.Hmac.md5I.finalizeApi.artifact X86.target {
     code := Impl.Hmac.X86.Fn.md5Finalize Proof.Pbkdf2.Md.X86.md5M
-    verified := .scrubbed Proof.Hmac.X86.Scrub.md5_fin_scrubbed
+    verified := Proof.Hmac.X86.Scrub.md5_fin_scrubbed
     spSafe := Proof.Hmac.X86.Scrub.md5_finSp }]
 
 end VG.Artifacts.HmacMd5.X86

@@ -80,14 +80,14 @@ def artifacts : List Artifact :=
     Spec.Ed448.publicKeyApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.Ed448.Arm.Fn.publicKey v.um
-      verified := .scrubbed (Proof.Ed448.Arm.Fn.publicKey v.um) },
+      verified := Proof.Ed448.Arm.Fn.publicKey v.um },
     Spec.Ed448.signCachedApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.Ed448.Arm.Fn.signCached v.um
-      verified := .scrubbed (Proof.Ed448.Arm.Fn.signCached v.um) },
+      verified := Proof.Ed448.Arm.Fn.signCached v.um },
     Spec.Ed448.verifyApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.Ed448.Arm.Fn.verify v.um
-      verified := .scrubbed (Proof.Ed448.Arm.Fn.verify v.um) }]
+      verified := Proof.Ed448.Arm.Fn.verify v.um }]
 
 end VG.Artifacts.Ed448.Arm

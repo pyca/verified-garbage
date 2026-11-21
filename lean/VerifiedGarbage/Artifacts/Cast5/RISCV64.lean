@@ -15,12 +15,12 @@ namespace VG.Artifacts.Cast5.RISCV64
 def artifacts : List Artifact := [
   Spec.Cast5.expandKeyApi.artifact RISCV64.target {
     code := Impl.Cast5.RISCV64.Fn.expandKey
-    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.expandKey_scrubbed },
+    verified := Proof.Cast5.RISCV64.Scrub.expandKey_scrubbed },
   Spec.Cast5.ecbEncryptApi.artifact RISCV64.target {
     code := Impl.Cast5.RISCV64.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.Cast5.RISCV64.Scrub.ecbEncrypt_scrubbed },
   Spec.Cast5.ecbDecryptApi.artifact RISCV64.target {
     code := Impl.Cast5.RISCV64.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.Cast5.RISCV64.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Cast5.RISCV64

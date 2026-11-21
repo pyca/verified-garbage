@@ -16,9 +16,9 @@ namespace VG.Artifacts.IdeaOfb.Arm
 def artifacts : List Artifact := [
   Spec.Idea.ofbApi.artifact Arm.target {
     code := Impl.Idea.Arm.Fn.ofb
-    verified := .scrubbed Proof.Idea.Arm.Fn.ofb },
+    verified := Proof.Idea.Arm.Fn.ofb },
   Spec.Idea.ofbFinalApi.artifact Arm.target {
     code := Impl.Idea.Arm.Fn.ofbFinal
-    verified := .scrubbed Proof.Idea.Arm.Fn.ofbFinal }]
+    verified := Proof.Idea.Arm.Fn.ofbFinal }]
 
 end VG.Artifacts.IdeaOfb.Arm

@@ -368,16 +368,16 @@ def artifacts : List Artifact :=
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.Arm.Fn.signPrecomputed (Proof.Rsa.Arm.privNameP v) (Proof.Rsa.Arm.privCodeP v)
-      verified := .scrubbed (Proof.RsaPkcs1Sig.Arm.Fn.signPrecomputed v) },
+      verified := Proof.RsaPkcs1Sig.Arm.Fn.signPrecomputed v },
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.Arm.Fn.verifyPrecomputed (Proof.Rsa.Arm.pdOfCrt v).name
         (Proof.Rsa.Arm.pdOfCrt v).code
-      verified := .scrubbed (Proof.RsaPkcs1Sig.Arm.Fn.verifyPrecomputed v) },
+      verified := Proof.RsaPkcs1Sig.Arm.Fn.verifyPrecomputed v },
     Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.Arm.Fn.recoverPrecomputed (Proof.Rsa.Arm.pdOfCrt v).name
         (Proof.Rsa.Arm.pdOfCrt v).code
-      verified := .scrubbed (Proof.RsaPkcs1Sig.Arm.Fn.recoverPrecomputed v) }]
+      verified := Proof.RsaPkcs1Sig.Arm.Fn.recoverPrecomputed v }]
 
 end VG.Artifacts.RsaPkcs1Sig.Arm

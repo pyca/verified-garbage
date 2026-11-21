@@ -13,12 +13,12 @@ namespace VG.Artifacts.AesOcb.Arm
 def artifacts : List Artifact := [
   Spec.Ocb.initApi.artifact Arm.target {
     code := Impl.AesOcb.Arm.Fn.init
-    verified := .scrubbed Proof.AesOcb.Arm.Fn.init },
+    verified := Proof.AesOcb.Arm.Fn.init },
   Spec.Ocb.sealApi.artifact Arm.target {
     code := Impl.AesOcb.Arm.Fn.«seal»
-    verified := .scrubbed Proof.AesOcb.Arm.Fn.«seal» },
+    verified := Proof.AesOcb.Arm.Fn.«seal» },
   Spec.Ocb.openApi.artifact Arm.target {
     code := Impl.AesOcb.Arm.Fn.«open»
-    verified := .scrubbed Proof.AesOcb.Arm.Fn.«open» }]
+    verified := Proof.AesOcb.Arm.Fn.«open» }]
 
 end VG.Artifacts.AesOcb.Arm

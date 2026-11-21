@@ -13,12 +13,12 @@ namespace VG.Artifacts.AesSiv.Arm
 def artifacts : List Artifact := [
   Spec.Siv.initApi.artifact Arm.target {
     code := Impl.AesSiv.Arm.Fn.init
-    verified := .scrubbed Proof.AesSiv.Arm.Fn.init },
+    verified := Proof.AesSiv.Arm.Fn.init },
   Spec.Siv.encryptApi.artifact Arm.target {
     code := Impl.AesSiv.Arm.Fn.encrypt
-    verified := .scrubbed Proof.AesSiv.Arm.Fn.encrypt },
+    verified := Proof.AesSiv.Arm.Fn.encrypt },
   Spec.Siv.decryptApi.artifact Arm.target {
     code := Impl.AesSiv.Arm.Fn.decrypt
-    verified := .scrubbed Proof.AesSiv.Arm.Fn.decrypt }]
+    verified := Proof.AesSiv.Arm.Fn.decrypt }]
 
 end VG.Artifacts.AesSiv.Arm

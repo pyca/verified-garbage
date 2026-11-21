@@ -16,9 +16,9 @@ namespace VG.Artifacts.SeedOfb.X86
 def artifacts : List Artifact := [
   Spec.Seed.ofbApi.artifact X86.target {
     code := Impl.Seed.X86.Fn.ofb
-    verified := .scrubbed Proof.Seed.X86.Scrub.ofb_scrubbed },
+    verified := Proof.Seed.X86.Scrub.ofb_scrubbed },
   Spec.Seed.ofbFinalApi.artifact X86.target {
     code := Impl.Seed.X86.Fn.ofbFinal
-    verified := .scrubbed Proof.Seed.X86.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Seed.X86.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.SeedOfb.X86

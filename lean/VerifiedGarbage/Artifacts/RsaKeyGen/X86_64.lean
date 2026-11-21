@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.RsaKeyGen.X86_64
 
 def direct : List Artifact := [
-  Spec.RsaKeyGen.keyInitApi.artifact X86_64.target { code := Impl.RsaKeyGen.X86_64.Fn.keyInit, verified := .scrubbed Proof.RsaKeyGen.X86_64.KeyInit.init_scrubbed, spSafe := Proof.RsaKeyGen.X86_64.KeyInit.init_spSafe }]
+  Spec.RsaKeyGen.keyInitApi.artifact X86_64.target { code := Impl.RsaKeyGen.X86_64.Fn.keyInit, verified := Proof.RsaKeyGen.X86_64.KeyInit.init_scrubbed, spSafe := Proof.RsaKeyGen.X86_64.KeyInit.init_spSafe }]
 
 def artifacts : List Artifact :=
   direct ++
@@ -22,7 +22,7 @@ def artifacts : List Artifact :=
     Spec.RsaKeyGen.keySearchApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.RsaKeyGen.X86_64.Fn.keySearch v.level (Proof.RsaKeyGen.X86_64.Generate.searchCall v)
-      verified := .scrubbed (Proof.RsaKeyGen.X86_64.SearchScrub.keySearch_scrubbed v)
+      verified := Proof.RsaKeyGen.X86_64.SearchScrub.keySearch_scrubbed v
       spSafe := Proof.RsaKeyGen.X86_64.SearchScrub.keySearch_spSafe v }])
 
 end VG.Artifacts.RsaKeyGen.X86_64

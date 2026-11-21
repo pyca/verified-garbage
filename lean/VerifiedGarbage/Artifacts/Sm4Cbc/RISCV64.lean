@@ -15,9 +15,9 @@ namespace VG.Artifacts.Sm4Cbc.RISCV64
 def artifacts : List Artifact := [
   Spec.Sm4.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Sm4.RISCV64.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.Sm4.RISCV64.Scrub.cbcEncryptChained_scrubbed },
   Spec.Sm4.cbcDecryptChainedApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Sm4.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.Sm4.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.Sm4Cbc.RISCV64

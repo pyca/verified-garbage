@@ -19,6 +19,6 @@ namespace VG.Artifacts.Argon2.X86
 def artifacts : List Artifact := [
   Spec.Argon2.deriveApi.artifact X86.target {
     code := Impl.Argon2.X86.Fn.derive
-    verified := .scrubbed Proof.Argon2.X86.Scrub.derive_scrubbed }]
+    verified := Proof.Argon2.X86.Scrub.derive_scrubbed }]
 
 end VG.Artifacts.Argon2.X86

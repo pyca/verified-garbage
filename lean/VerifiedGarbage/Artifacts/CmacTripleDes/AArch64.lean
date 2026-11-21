@@ -15,12 +15,12 @@ namespace VG.Artifacts.CmacTripleDes.AArch64
 def artifacts : List Artifact := [
   Spec.Cmac.tdesStreamInitApi.artifact AArch64.target {
     code := Impl.CmacTripleDes.Stream.AArch64.Fn.init
-    verified := .scrubbed Proof.CmacTripleDes.AArch64.Fn.init },
+    verified := Proof.CmacTripleDes.AArch64.Fn.init },
   Spec.Cmac.tdesAbsorbApi.artifact AArch64.target {
     code := Impl.CmacTripleDes.Stream.AArch64.Fn.absorb
-    verified := .scrubbed Proof.CmacTripleDes.AArch64.Fn.absorb },
+    verified := Proof.CmacTripleDes.AArch64.Fn.absorb },
   Spec.Cmac.tdesFinishApi.artifact AArch64.target {
     code := Impl.CmacTripleDes.Stream.AArch64.Fn.finish
-    verified := .scrubbed Proof.CmacTripleDes.AArch64.Fn.finish }]
+    verified := Proof.CmacTripleDes.AArch64.Fn.finish }]
 
 end VG.Artifacts.CmacTripleDes.AArch64

@@ -13,9 +13,9 @@ namespace VG.Artifacts.AesCcm.PPC64LE
 def artifacts : List Artifact := [
   Spec.Ccm.sealApi.artifact PPC64LE.target {
     code := Impl.AesCcm.PPC64LE.Fn.seal
-    verified := .scrubbed Proof.AesCcm.PPC64LE.Scrub.seal_scrubbed },
+    verified := Proof.AesCcm.PPC64LE.Scrub.seal_scrubbed },
   Spec.Ccm.openApi.artifact PPC64LE.target {
     code := Impl.AesCcm.PPC64LE.Fn.open
-    verified := .scrubbed Proof.AesCcm.PPC64LE.Scrub.open_scrubbed }]
+    verified := Proof.AesCcm.PPC64LE.Scrub.open_scrubbed }]
 
 end VG.Artifacts.AesCcm.PPC64LE

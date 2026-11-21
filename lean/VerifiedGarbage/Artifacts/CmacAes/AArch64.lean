@@ -19,15 +19,15 @@ def artifacts : List Artifact :=
     Spec.Cmac.aesAbsorbApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.CmacAes.Stream.AArch64.Fn.absorb v.callee
-      verified := .scrubbed (absorb_scrubbed v) }) ++
+      verified := absorb_scrubbed v }) ++
   (VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
     Spec.Cmac.aesInitApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.CmacAes.Stream.AArch64.Fn.init v.expand v.callee v.suffix
-      verified := .scrubbed (init_scrubbed v) },
+      verified := init_scrubbed v },
     Spec.Cmac.aesFinishApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.CmacAes.Stream.AArch64.Fn.finish v.callee v.suffix
-      verified := .scrubbed (finish_scrubbed v) }])
+      verified := finish_scrubbed v }])
 
 end VG.Artifacts.CmacAes.AArch64

@@ -16,6 +16,6 @@ def artifacts : List Artifact :=
     Spec.Scrypt.scryptApi.artifact AArch64.target {
       suffix := c.suffix
       code := Impl.Scrypt.AArch64.Fn.scrypt c.name c.suffix c.code
-      verified := .scrubbed (Proof.Scrypt.AArch64.Whole.scrypt_scrubbed c) }]
+      verified := Proof.Scrypt.AArch64.Whole.scrypt_scrubbed c }]
 
 end VG.Artifacts.Scrypt.AArch64

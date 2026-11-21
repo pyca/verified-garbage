@@ -18,14 +18,14 @@ def artifacts : List Artifact :=
     Spec.Ocb.initApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesOcb.AArch64.Fn.init ⟨v.enc, v.dec, v.expand⟩
-      verified := .scrubbed (init_scrubbed v) },
+      verified := init_scrubbed v },
     Spec.Ocb.sealApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesOcb.AArch64.Fn.seal ⟨v.enc, v.dec, v.expand⟩
-      verified := .scrubbed (seal_scrubbed v) },
+      verified := seal_scrubbed v },
     Spec.Ocb.openApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesOcb.AArch64.Fn.open ⟨v.enc, v.dec, v.expand⟩
-      verified := .scrubbed (open_scrubbed v) }]
+      verified := open_scrubbed v }]
 
 end VG.Artifacts.AesOcb.AArch64

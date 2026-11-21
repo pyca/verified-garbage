@@ -18,9 +18,9 @@ public import VerifiedGarbage.Proof.Variants.TripleDesEcb.X86_64
 namespace VG.Artifacts.TripleDesCfb.X86_64
 
 def direct : List Artifact := [
-  Spec.TripleDes.cfbEncryptApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.cfbEncrypt, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.cfbEncrypt_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.cfbEncrypt_spSafe },
-  Spec.TripleDes.cfbEncryptFinalApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.cfbEncryptFinal, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.cfbEncryptFinal_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.cfbEncryptFinal_spSafe },
-  Spec.TripleDes.cfbDecryptFinalApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.cfbDecryptFinal, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.cfbDecryptFinal_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.cfbDecryptFinal_spSafe }]
+  Spec.TripleDes.cfbEncryptApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.cfbEncrypt, verified := Proof.TripleDes.X86_64.Scrub.cfbEncrypt_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.cfbEncrypt_spSafe },
+  Spec.TripleDes.cfbEncryptFinalApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.cfbEncryptFinal, verified := Proof.TripleDes.X86_64.Scrub.cfbEncryptFinal_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.cfbEncryptFinal_spSafe },
+  Spec.TripleDes.cfbDecryptFinalApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.cfbDecryptFinal, verified := Proof.TripleDes.X86_64.Scrub.cfbDecryptFinal_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.cfbDecryptFinal_spSafe }]
 
 end VG.Artifacts.TripleDesCfb.X86_64
 
@@ -34,7 +34,7 @@ def artifacts : List Artifact :=
     Spec.TripleDes.cfbDecryptApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.TripleDes.X86_64.Fn.cfbDecrypt v.level (v.name .encrypt) (v.code .encrypt)
-      verified := .scrubbed (Proof.TripleDes.X86_64.Batch.Scrub.cfbDecrypt_scrubbed v)
+      verified := Proof.TripleDes.X86_64.Batch.Scrub.cfbDecrypt_scrubbed v
       spSafe := Proof.TripleDes.X86_64.Batch.Scrub.cfbDecrypt_spSafe v }])
 
 end VG.Artifacts.TripleDesCfb.X86_64

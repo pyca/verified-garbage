@@ -730,7 +730,7 @@ def StreamFn.reg (f : StreamFn) : Registration f.api X86.target where
   code := Impl.Scrub.X86.scrubAll (f.api.sig.retBits 32) f.stack f.code
   contract := f.contract
   stack := f.stack
-  verified := .scrubbed f.scrubbed
+  verified := f.scrubbed
   ofApi := f.ofApi
   ofSig := f.ofSig
   spSafe := X86.Scrub.scrubAll_spSafe f.spSafe

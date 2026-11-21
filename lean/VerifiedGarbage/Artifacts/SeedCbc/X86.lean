@@ -15,9 +15,9 @@ namespace VG.Artifacts.SeedCbc.X86
 def artifacts : List Artifact := [
   Spec.Seed.cbcEncryptChainedApi.artifact X86.target {
     code := Impl.Seed.X86.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Seed.X86.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.Seed.X86.Scrub.cbcEncryptChained_scrubbed },
   Spec.Seed.cbcDecryptChainedApi.artifact X86.target {
     code := Impl.Seed.X86.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Seed.X86.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.Seed.X86.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.SeedCbc.X86

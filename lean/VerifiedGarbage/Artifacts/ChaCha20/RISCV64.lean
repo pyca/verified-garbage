@@ -14,12 +14,12 @@ namespace VG.Artifacts.ChaCha20.RISCV64
 def artifacts : List Artifact := [
   Spec.ChaCha20.initApi.artifact RISCV64.target {
     code := Impl.ChaCha20.RISCV64.Fn.init
-    verified := .scrubbed Proof.ChaCha20.RISCV64.Scrub.init_scrubbed },
+    verified := Proof.ChaCha20.RISCV64.Scrub.init_scrubbed },
   Spec.ChaCha20.setNonceApi.artifact RISCV64.target {
     code := Impl.ChaCha20.RISCV64.Fn.setNonce
-    verified := .scrubbed Proof.ChaCha20.RISCV64.Scrub.setNonce_scrubbed },
+    verified := Proof.ChaCha20.RISCV64.Scrub.setNonce_scrubbed },
   Spec.ChaCha20.applyApi.artifact RISCV64.target {
     code := Impl.ChaCha20.RISCV64.Fn.apply
-    verified := .scrubbed Proof.ChaCha20.RISCV64.Scrub.apply_scrubbed }]
+    verified := Proof.ChaCha20.RISCV64.Scrub.apply_scrubbed }]
 
 end VG.Artifacts.ChaCha20.RISCV64

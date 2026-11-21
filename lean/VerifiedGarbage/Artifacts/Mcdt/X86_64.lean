@@ -13,7 +13,7 @@ namespace VG.Artifacts.Mcdt.X86_64
 def artifacts : List Artifact := [
   Spec.Mcdt.enterApi.artifact X86_64.target {
     code := Impl.Mcdt.X86_64.enterCall
-    verified := .scrubbed Proof.Mcdt.X86_64.enter_scrubbed
+    verified := Proof.Mcdt.X86_64.enter_scrubbed
     spSafe := Proof.Mcdt.X86_64.enter_spSafe }]
 
 end VG.Artifacts.Mcdt.X86_64

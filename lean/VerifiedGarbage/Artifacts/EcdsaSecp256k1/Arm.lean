@@ -23,19 +23,19 @@ open VG.Proof.Secp256k1.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.Fn.verifySecp256k1
-    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifySecp256k1 hasLaw.law) },
+    verified := Proof.Ecdsa.Arm.Fn.verifySecp256k1 hasLaw.law },
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.Fn.verifySecp256k1U
-    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifySecp256k1U hasLaw.law) },
+    verified := Proof.Ecdsa.Arm.Fn.verifySecp256k1U hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact Arm.target {
     tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
     code := Impl.Ecdsa.Arm.Fn.signSecp256k1 (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
-    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.signSecp256k1 hasLaw.law) },
+    verified := Proof.Ecdsa.Arm.Fn.signSecp256k1 hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact Arm.target {
     suffix := "_umaal"
     tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
     code := Impl.Ecdsa.Arm.Fn.signSecp256k1U (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
-    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.signSecp256k1U hasLaw.law) }]
+    verified := Proof.Ecdsa.Arm.Fn.signSecp256k1U hasLaw.law }]
 
 end VG.Artifacts.EcdsaSecp256k1.Arm

@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.Registration
 /-!
 # Scrubbed code, verified (64-bit RISC-V)
 
-The theorem a registration binds (`verified := .scrubbed …`) for the
+The theorem a registration binds (`verified := …`) for the
 cleanup of the whole frame: `verifiedScrubbedAll` states, of the code with
 its cleanup, `scrubAll rb W c`, which `Impl/` defines as the function, that
 it meets its contract in constant time and returns without secret residue.
@@ -47,7 +47,7 @@ theorem of_scrubSide {c : Prog isa} {stack rb : Nat} {ts : List (String × List 
 
 /-! ## The cleanup as part of the code
 
-The theorems a registration binds (`verified := .scrubbed …`): of the code
+The theorems a registration binds (`verified := …`): of the code
 as emitted, its body and then its cleanup (`scrubAll rb W c`; `scrubSel rb fs c`,
 `ScrubSel.lean`), which `Impl/` defines as the function with the stack
 `W` and the result's bits `rb` as literals. Each takes

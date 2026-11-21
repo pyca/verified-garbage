@@ -17,10 +17,10 @@ namespace VG.Artifacts.Aes.AArch64
 def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact AArch64.target {
     code := Impl.Aes.AArch64.Fn.expandKey
-    verified := .scrubbed Proof.Aes.AArch64.KeyResidue.expandKeyCode_scrubbed },
+    verified := Proof.Aes.AArch64.KeyResidue.expandKeyCode_scrubbed },
   Spec.Aes.expandKeyApi.artifact AArch64.target {
     suffix := "_aes"
     code := Impl.Aes.AArch64.Fn.expandKeyAes
-    verified := .scrubbed Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_scrubbed }]
+    verified := Proof.Aes.AArch64.KeyResidue.expandKeyAesCode_scrubbed }]
 
 end VG.Artifacts.Aes.AArch64

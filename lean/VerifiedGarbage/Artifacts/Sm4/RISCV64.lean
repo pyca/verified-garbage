@@ -15,12 +15,12 @@ namespace VG.Artifacts.Sm4.RISCV64
 def artifacts : List Artifact := [
   Spec.Sm4.expandKeyApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.Fn.expandKey
-    verified := .scrubbed Proof.Sm4.RISCV64.Scrub.expandKey_scrubbed },
+    verified := Proof.Sm4.RISCV64.Scrub.expandKey_scrubbed },
   Spec.Sm4.ecbEncryptApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Sm4.RISCV64.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.Sm4.RISCV64.Scrub.ecbEncrypt_scrubbed },
   Spec.Sm4.ecbDecryptApi.artifact RISCV64.target {
     code := Impl.Sm4.RISCV64.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Sm4.RISCV64.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.Sm4.RISCV64.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Sm4.RISCV64

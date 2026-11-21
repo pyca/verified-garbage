@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Cast5.X86_64.FbFinalLit
 namespace VG.Artifacts.Cast5Ofb.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Cast5.ofbApi.artifact X86_64.target { code := Impl.Cast5.X86_64.Fn.ofb, verified := .scrubbed Proof.Cast5.X86_64.Scrub.ofb_scrubbed, spSafe := Proof.Cast5.X86_64.Scrub.ofb_spSafe },
-  Spec.Cast5.ofbFinalApi.artifact X86_64.target { code := Impl.Cast5.X86_64.Fn.ofbFinal, verified := .scrubbed Proof.Cast5.X86_64.Scrub.ofbFinal_scrubbed, spSafe := Proof.Cast5.X86_64.Scrub.ofbFinal_spSafe }]
+  Spec.Cast5.ofbApi.artifact X86_64.target { code := Impl.Cast5.X86_64.Fn.ofb, verified := Proof.Cast5.X86_64.Scrub.ofb_scrubbed, spSafe := Proof.Cast5.X86_64.Scrub.ofb_spSafe },
+  Spec.Cast5.ofbFinalApi.artifact X86_64.target { code := Impl.Cast5.X86_64.Fn.ofbFinal, verified := Proof.Cast5.X86_64.Scrub.ofbFinal_scrubbed, spSafe := Proof.Cast5.X86_64.Scrub.ofbFinal_spSafe }]
 
 end VG.Artifacts.Cast5Ofb.X86_64

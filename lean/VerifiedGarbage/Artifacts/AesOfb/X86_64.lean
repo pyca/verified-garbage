@@ -22,12 +22,12 @@ def artifacts : List Artifact :=
     Spec.Ofb.aesApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesOfb.X86_64.Fn.ofb v.level v.enc
-      verified := .scrubbed (Proof.Aes.X86_64.ModesScrub.ofb_scrubbed v)
+      verified := Proof.Aes.X86_64.ModesScrub.ofb_scrubbed v
       spSafe := Proof.Aes.X86_64.ModesScrub.ofb_spSafeFn v },
     Spec.Ofb.aesFinalApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesOfb.X86_64.Fn.ofbFinal v.level v.enc v.suffix
-      verified := .scrubbed (Proof.Aes.X86_64.FinalScrub.ofbFinal_scrubbed v)
+      verified := Proof.Aes.X86_64.FinalScrub.ofbFinal_scrubbed v
       spSafe := Proof.Aes.X86_64.FinalScrub.ofbFinal_spSafeFn v }]
 
 end VG.Artifacts.AesOfb.X86_64

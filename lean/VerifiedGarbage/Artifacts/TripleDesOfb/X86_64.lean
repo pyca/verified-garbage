@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.FbFinalLit
 namespace VG.Artifacts.TripleDesOfb.X86_64
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.ofbApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.ofb, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.ofb_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ofb_spSafe },
-  Spec.TripleDes.ofbFinalApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.ofbFinal, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.ofbFinal_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ofbFinal_spSafe }]
+  Spec.TripleDes.ofbApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.ofb, verified := Proof.TripleDes.X86_64.Scrub.ofb_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ofb_spSafe },
+  Spec.TripleDes.ofbFinalApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.ofbFinal, verified := Proof.TripleDes.X86_64.Scrub.ofbFinal_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ofbFinal_spSafe }]
 
 end VG.Artifacts.TripleDesOfb.X86_64

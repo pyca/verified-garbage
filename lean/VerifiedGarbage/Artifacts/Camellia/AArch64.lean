@@ -18,12 +18,12 @@ namespace VG.Artifacts.Camellia.AArch64
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.expandKey
-    verified := .scrubbed Proof.Camellia.AArch64.Residue.expandKeyCode_scrubbed },
+    verified := Proof.Camellia.AArch64.Residue.expandKeyCode_scrubbed },
   Spec.Camellia.ecbEncryptApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Camellia.AArch64.Residue.ecbEncryptCode_scrubbed },
+    verified := Proof.Camellia.AArch64.Residue.ecbEncryptCode_scrubbed },
   Spec.Camellia.ecbDecryptApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Camellia.AArch64.Residue.ecbDecryptCode_scrubbed }]
+    verified := Proof.Camellia.AArch64.Residue.ecbDecryptCode_scrubbed }]
 
 end VG.Artifacts.Camellia.AArch64

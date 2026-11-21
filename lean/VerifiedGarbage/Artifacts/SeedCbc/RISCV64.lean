@@ -15,9 +15,9 @@ namespace VG.Artifacts.SeedCbc.RISCV64
 def artifacts : List Artifact := [
   Spec.Seed.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Seed.RISCV64.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.Seed.RISCV64.Scrub.cbcEncryptChained_scrubbed },
   Spec.Seed.cbcDecryptChainedApi.artifact RISCV64.target {
     code := Impl.Seed.RISCV64.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Seed.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.Seed.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.SeedCbc.RISCV64

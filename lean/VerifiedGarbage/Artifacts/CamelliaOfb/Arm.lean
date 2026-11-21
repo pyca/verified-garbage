@@ -13,9 +13,9 @@ namespace VG.Artifacts.CamelliaOfb.Arm
 def artifacts : List Artifact := [
   Spec.Camellia.ofbApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.ofb
-    verified := .scrubbed Proof.Camellia.Arm.Fn.ofb },
+    verified := Proof.Camellia.Arm.Fn.ofb },
   Spec.Camellia.ofbFinalApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.ofbFinal
-    verified := .scrubbed Proof.Camellia.Arm.Fn.ofbFinal }]
+    verified := Proof.Camellia.Arm.Fn.ofbFinal }]
 
 end VG.Artifacts.CamelliaOfb.Arm

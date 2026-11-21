@@ -47,34 +47,34 @@ def artifacts (c : Ctr32Impl) (n : GhashName) : List Artifact := [
     | some f, some g =>
       { suffix := c.suffix ++ n.impl.suffix
         code := Impl.AesGcm.X86_64.Fn.streamFinish ((pairOf c n).lv .sse) 232 (pairOf c n).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.streamFinishFF_scrubbed c n f g)
+        verified := Proof.AesGcm.X86_64.Scrub.streamFinishFF_scrubbed c n f g
         spSafe := Proof.AesGcm.X86_64.Scrub.streamFinishFF_spSafeFn c n }
     | some f, none =>
       { suffix := c.suffix ++ n.impl.suffix
         code := Impl.AesGcm.X86_64.Fn.streamFinish ((pairOf c n).lv .sse) 792 (pairOf c n).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.streamFinishF_scrubbed c n f)
+        verified := Proof.AesGcm.X86_64.Scrub.streamFinishF_scrubbed c n f
         spSafe := Proof.AesGcm.X86_64.Scrub.streamFinishF_spSafeFn c n }
     | none, _ =>
       { suffix := c.suffix ++ n.impl.suffix
         code := Impl.AesGcm.X86_64.Fn.streamFinish ((pairOf c n).lv .sse) 2584 (pairOf c n).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.streamFinish_scrubbed c n)
+        verified := Proof.AesGcm.X86_64.Scrub.streamFinish_scrubbed c n
         spSafe := Proof.AesGcm.X86_64.Scrub.streamFinish_spSafeFn c n }),
   Spec.Gcm.streamVerifyApi.artifact X86_64.target
     (match c.free, (pairOf c n).gh.free with
     | some f, some g =>
       { suffix := c.suffix ++ n.impl.suffix
         code := Impl.AesGcm.X86_64.Fn.streamVerify ((pairOf c n).lv .sse) 304 (pairOf c n).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.streamVerifyFF_scrubbed c n f g)
+        verified := Proof.AesGcm.X86_64.Scrub.streamVerifyFF_scrubbed c n f g
         spSafe := Proof.AesGcm.X86_64.Scrub.streamVerifyFF_spSafeFn c n }
     | some f, none =>
       { suffix := c.suffix ++ n.impl.suffix
         code := Impl.AesGcm.X86_64.Fn.streamVerify ((pairOf c n).lv .sse) 800 (pairOf c n).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.streamVerifyF_scrubbed c n f)
+        verified := Proof.AesGcm.X86_64.Scrub.streamVerifyF_scrubbed c n f
         spSafe := Proof.AesGcm.X86_64.Scrub.streamVerifyF_spSafeFn c n }
     | none, _ =>
       { suffix := c.suffix ++ n.impl.suffix
         code := Impl.AesGcm.X86_64.Fn.streamVerify ((pairOf c n).lv .sse) 2592 (pairOf c n).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.streamVerify_scrubbed c n)
+        verified := Proof.AesGcm.X86_64.Scrub.streamVerify_scrubbed c n
         spSafe := Proof.AesGcm.X86_64.Scrub.streamVerify_spSafeFn c n })]
 
 end VG.Artifacts.AesGcm.X86_64.AesCtr32Ghash
@@ -94,12 +94,12 @@ def artifacts (c : Ctr32Impl) : List Artifact :=
     | some fc =>
       { suffix := c.suffix
         code := Impl.AesGcm.X86_64.Fn.init ((gcmOfF c).lv .sse) 192 (gcmOfF c).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.initF_scrubbed c fc)
+        verified := Proof.AesGcm.X86_64.Scrub.initF_scrubbed c fc
         spSafe := Proof.AesGcm.X86_64.Scrub.initF_spSafeFn c }
     | none =>
       { suffix := c.suffix
         code := Impl.AesGcm.X86_64.Fn.init ((gcmOf c).lv .sse) 2576 (gcmOf c).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.init_scrubbed c)
+        verified := Proof.AesGcm.X86_64.Scrub.init_scrubbed c
         spSafe := Proof.AesGcm.X86_64.Scrub.init_spSafeFn c })]
 
 end VG.Artifacts.AesGcm.X86_64.AesCtr32
@@ -115,35 +115,35 @@ def artifactsR (v : GcmVariant) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.sealR_scrubbed v)
+    verified := Proof.AesGcm.X86_64.sealR_scrubbed v
     spSafe := Proof.AesGcm.X86_64.sealR_spSafeFn v },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.openP v.lvA 48 v.impl.short (v.impl.withBlk (blkR v)) v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.openR_scrubbed v)
+    verified := Proof.AesGcm.X86_64.openR_scrubbed v
     spSafe := Proof.AesGcm.X86_64.openR_spSafeFn v },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.openToP v.lvT 48 v.stitchToDecR.isSome v.impl.copyW (openFnF v).fn (openSplitFnF v).fn
             (openSplitFnB v v.ctrTo).fn
-    verified := .scrubbed (Proof.AesGcm.X86_64.openToR_scrubbed v)
+    verified := Proof.AesGcm.X86_64.openToR_scrubbed v
     spSafe := Proof.AesGcm.X86_64.openToR_spSafeFn v },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.streamEncryptP v.lv 48 (v.impl.withBlk (blkR v)) v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.streamEncryptR_scrubbed v)
+    verified := Proof.AesGcm.X86_64.streamEncryptR_scrubbed v
     spSafe := Proof.AesGcm.X86_64.streamEncryptR_spSafeFn v },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.streamDecryptP v.lv 48 (v.impl.withBlk (blkR v)) v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.streamDecryptR_scrubbed v)
+    verified := Proof.AesGcm.X86_64.streamDecryptR_scrubbed v
     spSafe := Proof.AesGcm.X86_64.streamDecryptR_spSafeFn v },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.sealGatherP v.lvGA 48 (tlsLong v) (copyBelow v) (splitFrom v) (sealFnF v).fn
             (splitFnF v).fn (toFnF v).fn (sealFn v.impl).fn (splitFn v).fn (toFn v).fn (initFn v.impl).fn
             (aadFn v.impl).fn (finFn v.impl).fn false
-    verified := .scrubbed (Proof.AesGcm.X86_64.sealGatherR_scrubbed v)
+    verified := Proof.AesGcm.X86_64.sealGatherR_scrubbed v
     spSafe := Proof.AesGcm.X86_64.sealGatherR_spSafeFn v }]
 
 /-- The prepared artifacts of the implementations `v`, which read only the
@@ -152,33 +152,33 @@ def artifactsW (v : GcmVariant) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.sealW v.lv v.impl.short v.impl.fin v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.sealW_scrubbed v)
+    verified := Proof.AesGcm.X86_64.sealW_scrubbed v
     spSafe := Proof.AesGcm.X86_64.sealW_spSafeFn v },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.openW v.lv v.impl.short v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.openW_scrubbed v)
+    verified := Proof.AesGcm.X86_64.openW_scrubbed v
     spSafe := Proof.AesGcm.X86_64.openW_spSafeFn v },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.openToW v.lvTW (openSplitFnB v v.ctrTo).fn
-    verified := .scrubbed (Proof.AesGcm.X86_64.openToW_scrubbed v)
+    verified := Proof.AesGcm.X86_64.openToW_scrubbed v
     spSafe := Proof.AesGcm.X86_64.openToW_spSafeFn v },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.streamEncryptW v.lv v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.streamEncryptW_scrubbed v)
+    verified := Proof.AesGcm.X86_64.streamEncryptW_scrubbed v
     spSafe := Proof.AesGcm.X86_64.streamEncryptW_spSafeFn v },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.streamDecryptW v.lv v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.streamDecryptW_scrubbed v)
+    verified := Proof.AesGcm.X86_64.streamDecryptW_scrubbed v
     spSafe := Proof.AesGcm.X86_64.streamDecryptW_spSafeFn v },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.sealGatherW v.lvG (copyBelow v) (splitFrom v) (sealFn v.impl).fn (splitFn v).fn
             (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn
-    verified := .scrubbed (Proof.AesGcm.X86_64.sealGatherW_scrubbed v)
+    verified := Proof.AesGcm.X86_64.sealGatherW_scrubbed v
     spSafe := Proof.AesGcm.X86_64.sealGatherW_spSafeFn v }]
 
 /-- The prepared artifacts of the implementations `v` whose loops read 16
@@ -187,35 +187,35 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.sealR16_scrubbed v r)
+    verified := Proof.AesGcm.X86_64.sealR16_scrubbed v r
     spSafe := Proof.AesGcm.X86_64.sealR16_spSafeFn v r },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.openP v.lvA 16 v.impl.short (v.impl.withBlk (blkR16 v)) v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.openR16_scrubbed v r)
+    verified := Proof.AesGcm.X86_64.openR16_scrubbed v r
     spSafe := Proof.AesGcm.X86_64.openR16_spSafeFn v r },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.openToP v.lvT 16 v.stitchToDecR16.isSome v.impl.copyW (openFnF16 v r).fn
             (openSplitFnF16 v).fn (openSplitFnB v v.ctrTo).fn
-    verified := .scrubbed (Proof.AesGcm.X86_64.openToR16_scrubbed v r)
+    verified := Proof.AesGcm.X86_64.openToR16_scrubbed v r
     spSafe := Proof.AesGcm.X86_64.openToR16_spSafeFn v r },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.streamEncryptP v.lv 16 (v.impl.withBlk (blkR16 v)) v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.streamEncryptR16_scrubbed v)
+    verified := Proof.AesGcm.X86_64.streamEncryptR16_scrubbed v
     spSafe := Proof.AesGcm.X86_64.streamEncryptR16_spSafeFn v },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.streamDecryptP v.lv 16 (v.impl.withBlk (blkR16 v)) v.impl.callees
-    verified := .scrubbed (Proof.AesGcm.X86_64.streamDecryptR16_scrubbed v)
+    verified := Proof.AesGcm.X86_64.streamDecryptR16_scrubbed v
     spSafe := Proof.AesGcm.X86_64.streamDecryptR16_spSafeFn v },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.AesGcm.X86_64.Fn.sealGatherP v.lvGA 16 (tlsLong v) (copyBelow v) (splitFrom v) (sealFnF16 v r).fn
             (splitFnF16 v r).fn (toFnF16 v).fn (sealFn v.impl).fn (splitFn v).fn (toFn v).fn (initFn v.impl).fn
             (aadFn v.impl).fn (finFn v.impl).fn true
-    verified := .scrubbed (Proof.AesGcm.X86_64.sealGatherR16_scrubbed v r)
+    verified := Proof.AesGcm.X86_64.sealGatherR16_scrubbed v r
     spSafe := Proof.AesGcm.X86_64.sealGatherR16_spSafeFn v r }]
 
 /-- The artifacts of a variant: its prepared ones, for what its loops read:
@@ -241,24 +241,24 @@ def artifacts (n : GhashName) : List Artifact := [
     | some f =>
       { suffix := n.impl.suffix
         code := Impl.AesGcm.X86_64.Fn.streamInit ((ghOf n).lv .sse) 240 (ghOf n).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.streamInitF_scrubbed n f)
+        verified := Proof.AesGcm.X86_64.Scrub.streamInitF_scrubbed n f
         spSafe := Proof.AesGcm.X86_64.Scrub.streamInitF_spSafeFn n }
     | none =>
       { suffix := n.impl.suffix
         code := Impl.AesGcm.X86_64.Fn.streamInit ((ghOf n).lv .sse) 784 (ghOf n).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.streamInit_scrubbed n)
+        verified := Proof.AesGcm.X86_64.Scrub.streamInit_scrubbed n
         spSafe := Proof.AesGcm.X86_64.Scrub.streamInit_spSafeFn n }),
   Spec.Gcm.streamAadApi.artifact X86_64.target
     (match (ghOf n).gh.free with
     | some f =>
       { suffix := n.impl.suffix
         code := Impl.AesGcm.X86_64.Fn.streamAad ((ghOf n).lv .sse) 192 (ghOf n).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.streamAadF_scrubbed n f)
+        verified := Proof.AesGcm.X86_64.Scrub.streamAadF_scrubbed n f
         spSafe := Proof.AesGcm.X86_64.Scrub.streamAadF_spSafeFn n }
     | none =>
       { suffix := n.impl.suffix
         code := Impl.AesGcm.X86_64.Fn.streamAad ((ghOf n).lv .sse) 784 (ghOf n).callees
-        verified := .scrubbed (Proof.AesGcm.X86_64.Scrub.streamAad_scrubbed n)
+        verified := Proof.AesGcm.X86_64.Scrub.streamAad_scrubbed n
         spSafe := Proof.AesGcm.X86_64.Scrub.streamAad_spSafeFn n })]
 
 end VG.Artifacts.AesGcm.X86_64.Ghash
@@ -275,32 +275,32 @@ def artifacts : List Artifact :=
     Spec.Gcm.prepareApi.artifact X86_64.target {
       suffix := "_vpclmul_avx512"
       code := Impl.Gcm.X86_64.Fn.prepareZ
-      verified := .scrubbed Proof.Gcm.X86_64.PrepareScrub.z_scrubbed
+      verified := Proof.Gcm.X86_64.PrepareScrub.z_scrubbed
       spSafe := Proof.Gcm.X86_64.PrepareScrub.z_spSafeFn },
     Spec.Gcm.prepareApi.artifact X86_64.target {
       suffix := "_vpclmul"
       code := Impl.Gcm.X86_64.Fn.prepare16
-      verified := .scrubbed Proof.Gcm.X86_64.PrepareScrub.p16_scrubbed
+      verified := Proof.Gcm.X86_64.PrepareScrub.p16_scrubbed
       spSafe := Proof.Gcm.X86_64.PrepareScrub.p16_spSafeFn },
     Spec.Gcm.prepareApi.artifact X86_64.target {
       suffix := "_pclmul_avx"
       code := Impl.Gcm.X86_64.Fn.prepareAvx
-      verified := .scrubbed Proof.Gcm.X86_64.PrepareScrub.avx_scrubbed
+      verified := Proof.Gcm.X86_64.PrepareScrub.avx_scrubbed
       spSafe := Proof.Gcm.X86_64.PrepareScrub.avx_spSafeFn },
     Spec.Gcm.prepareApi.artifact X86_64.target {
       suffix := ""
       code := Impl.Gcm.X86_64.Fn.prepareAbsent
-      verified := .scrubbed Proof.Gcm.X86_64.PrepareScrub.absent_scrubbed
+      verified := Proof.Gcm.X86_64.PrepareScrub.absent_scrubbed
       spSafe := Proof.Gcm.X86_64.PrepareScrub.absent_spSafeFn },
     Spec.Gcm.wipePreparedApi.artifact X86_64.target {
       suffix := "_avx"
       code := Impl.Gcm.X86_64.Fn.wipe true
-      verified := .scrubbed (Proof.Gcm.X86_64.PrepareScrub.wipe_scrubbed true)
+      verified := Proof.Gcm.X86_64.PrepareScrub.wipe_scrubbed true
       spSafe := Proof.Gcm.X86_64.PrepareScrub.wipe_spSafeFn true },
     Spec.Gcm.wipePreparedApi.artifact X86_64.target {
       suffix := ""
       code := Impl.Gcm.X86_64.Fn.wipe false
-      verified := .scrubbed (Proof.Gcm.X86_64.PrepareScrub.wipe_scrubbed false)
+      verified := Proof.Gcm.X86_64.PrepareScrub.wipe_scrubbed false
       spSafe := Proof.Gcm.X86_64.PrepareScrub.wipe_spSafeFn false }]
 
 end VG.Artifacts.AesGcm.X86_64

@@ -16,9 +16,9 @@ namespace VG.Artifacts.BlowfishOfb.X86
 def artifacts : List Artifact := [
   Spec.Blowfish.ofbApi.artifact X86.target {
     code := Impl.Blowfish.X86.Fn.ofb
-    verified := .scrubbed Proof.Blowfish.X86.Scrub.ofb_scrubbed },
+    verified := Proof.Blowfish.X86.Scrub.ofb_scrubbed },
   Spec.Blowfish.ofbFinalApi.artifact X86.target {
     code := Impl.Blowfish.X86.Fn.ofbFinal
-    verified := .scrubbed Proof.Blowfish.X86.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Blowfish.X86.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.BlowfishOfb.X86

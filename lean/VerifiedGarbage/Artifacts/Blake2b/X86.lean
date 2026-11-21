@@ -17,12 +17,12 @@ namespace VG.Artifacts.Blake2b.X86
 def artifacts : List Artifact := [
   Spec.Blake2.initBApi.artifact X86.target {
     code := Impl.Blake2.X86.Fn.init Spec.Blake2.b
-    verified := .scrubbed Proof.Blake2.X86.Scrub.initB_scrubbed },
+    verified := Proof.Blake2.X86.Scrub.initB_scrubbed },
   Spec.Blake2.updateBApi.artifact X86.target {
     code := Impl.Blake2.X86.Fn.updateB
-    verified := .scrubbed Proof.Blake2.X86.Scrub.updateB_scrubbed },
+    verified := Proof.Blake2.X86.Scrub.updateB_scrubbed },
   Spec.Blake2.finalizeBApi.artifact X86.target {
     code := Impl.Blake2.X86.Fn.finalizeB
-    verified := .scrubbed Proof.Blake2.X86.Scrub.finalizeB_scrubbed }]
+    verified := Proof.Blake2.X86.Scrub.finalizeB_scrubbed }]
 
 end VG.Artifacts.Blake2b.X86

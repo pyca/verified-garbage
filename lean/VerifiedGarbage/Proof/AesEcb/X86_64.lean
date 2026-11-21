@@ -207,20 +207,20 @@ def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Aes
     if z.suffix = "" then [{
       suffix := v.suffix
       code := Impl.AesEcb.X86_64.Fn.plain v.level v.enc
-      verified := .scrubbed (encryptPlain_scrubbed v h)
+      verified := encryptPlain_scrubbed v h
       spSafe := scrubKs_spSafe v.encSpSafe }]
     else []
   else if v.features.contains "avx" then
     if z.features = ["avx"] then [{
       suffix := v.suffix
       code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code
-      verified := .scrubbed (encryptWiped_scrubbed v z)
+      verified := encryptWiped_scrubbed v z
       spSafe := scrubKs_spSafe (encrypt_spSafe v z) }]
     else []
   else [{
     suffix := v.suffix ++ z.suffix
     code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code
-    verified := .scrubbed (encryptWiped_scrubbed v z)
+    verified := encryptWiped_scrubbed v z
     spSafe := scrubKs_spSafe (encrypt_spSafe v z) }]
 
 /-- The implementations of `vg_aes_ecb_decrypt` over `v` that are emitted with
@@ -230,20 +230,20 @@ def decryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Aes
     if z.suffix = "" then [{
       suffix := v.suffix
       code := Impl.AesEcb.X86_64.Fn.plain v.level v.dec
-      verified := .scrubbed (decryptPlain_scrubbed v h)
+      verified := decryptPlain_scrubbed v h
       spSafe := scrubKs_spSafe v.decSpSafe }]
     else []
   else if v.features.contains "avx" then
     if z.features = ["avx"] then [{
       suffix := v.suffix
       code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code
-      verified := .scrubbed (decryptWiped_scrubbed v z)
+      verified := decryptWiped_scrubbed v z
       spSafe := scrubKs_spSafe (decrypt_spSafe v z) }]
     else []
   else [{
     suffix := v.suffix ++ z.suffix
     code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code
-    verified := .scrubbed (decryptWiped_scrubbed v z)
+    verified := decryptWiped_scrubbed v z
     spSafe := scrubKs_spSafe (decrypt_spSafe v z) }]
 
 end VG.Proof.AesEcb.X86_64

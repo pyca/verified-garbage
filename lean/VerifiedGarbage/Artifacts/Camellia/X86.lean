@@ -15,12 +15,12 @@ namespace VG.Artifacts.Camellia.X86
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact X86.target {
     code := Impl.Camellia.X86.Fn.expandKey
-    verified := .scrubbed Proof.Camellia.X86.Scrub.expandKey_scrubbed },
+    verified := Proof.Camellia.X86.Scrub.expandKey_scrubbed },
   Spec.Camellia.ecbEncryptApi.artifact X86.target {
     code := Impl.Camellia.X86.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Camellia.X86.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.Camellia.X86.Scrub.ecbEncrypt_scrubbed },
   Spec.Camellia.ecbDecryptApi.artifact X86.target {
     code := Impl.Camellia.X86.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Camellia.X86.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.Camellia.X86.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Camellia.X86

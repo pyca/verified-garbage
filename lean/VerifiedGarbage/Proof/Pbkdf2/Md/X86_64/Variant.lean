@@ -1182,7 +1182,7 @@ def StreamFnS.reg (s : StreamFnS) : Registration s.f.api X86_64.target where
   code := Impl.Scrub.X86_64.scrubSel s.sel.level s.f.retBits s.f.stack s.sel.runs s.f.code
   contract := s.f.contract
   stack := s.f.stack
-  verified := .scrubbed s.scrubbed
+  verified := s.scrubbed
   ofApi := s.f.ofApi
   ofSig := s.f.ofSig
   spSafe := X86_64.Scrub.scrubKs_spSafe s.f.spSafe

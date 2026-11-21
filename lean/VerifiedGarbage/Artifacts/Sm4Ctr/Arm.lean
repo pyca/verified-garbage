@@ -13,9 +13,9 @@ namespace VG.Artifacts.Sm4Ctr.Arm
 def artifacts : List Artifact := [
   Spec.Sm4.ctrApi.artifact Arm.target {
     code := Impl.Sm4.Arm.Fn.ctr
-    verified := .scrubbed Proof.Sm4.Arm.Fn.ctr },
+    verified := Proof.Sm4.Arm.Fn.ctr },
   Spec.Sm4.ctrFinalApi.artifact Arm.target {
     code := Impl.Sm4.Arm.Fn.ctrFinal
-    verified := .scrubbed Proof.Sm4.Arm.Fn.ctrFinal }]
+    verified := Proof.Sm4.Arm.Fn.ctrFinal }]
 
 end VG.Artifacts.Sm4Ctr.Arm

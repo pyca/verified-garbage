@@ -13,12 +13,12 @@ namespace VG.Artifacts.CmacTripleDes.Arm
 def artifacts : List Artifact := [
   Spec.Cmac.tdesStreamInitApi.artifact Arm.target {
     code := Impl.CmacTripleDes.Arm.Fn.streamInit
-    verified := .scrubbed Proof.CmacTripleDes.Arm.Fn.streamInit },
+    verified := Proof.CmacTripleDes.Arm.Fn.streamInit },
   Spec.Cmac.tdesAbsorbApi.artifact Arm.target {
     code := Impl.CmacTripleDes.Arm.Fn.absorb
-    verified := .scrubbed Proof.CmacTripleDes.Arm.Fn.absorb },
+    verified := Proof.CmacTripleDes.Arm.Fn.absorb },
   Spec.Cmac.tdesFinishApi.artifact Arm.target {
     code := Impl.CmacTripleDes.Arm.Fn.finish
-    verified := .scrubbed Proof.CmacTripleDes.Arm.Fn.finish }]
+    verified := Proof.CmacTripleDes.Arm.Fn.finish }]
 
 end VG.Artifacts.CmacTripleDes.Arm

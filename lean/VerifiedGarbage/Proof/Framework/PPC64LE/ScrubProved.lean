@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 /-!
 # The cleanup's theorems (PPC64LE)
 
-The theorems a registration binds (`verified := .scrubbed …`), about a
+The theorems a registration binds (`verified := …`), about a
 function's code as emitted: its body, then its cleanup
 (`Impl.Scrub.PPC64LE.scrubAll rb d cl`).
 

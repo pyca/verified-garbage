@@ -19,18 +19,18 @@ def artifacts : List Artifact :=
     Spec.ChaCha20Poly1305.sealApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.ChaCha20Poly1305.Arm.Fn.seal v.umaal
-      verified := .scrubbed (Proof.ChaCha20Poly1305.Arm.Fn.seal v.umaal) },
+      verified := Proof.ChaCha20Poly1305.Arm.Fn.seal v.umaal },
     Spec.ChaCha20Poly1305.openZeroApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.ChaCha20Poly1305.Arm.Fn.open v.umaal
-      verified := .scrubbed (Proof.ChaCha20Poly1305.Arm.Fn.open v.umaal) },
+      verified := Proof.ChaCha20Poly1305.Arm.Fn.open v.umaal },
     Spec.ChaCha20Poly1305.openToApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.ChaCha20Poly1305.Arm.Fn.openTo v.umaal
-      verified := .scrubbed (Proof.ChaCha20Poly1305.Arm.Fn.openTo v.umaal) },
+      verified := Proof.ChaCha20Poly1305.Arm.Fn.openTo v.umaal },
     Spec.ChaCha20Poly1305.sealGatherApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.ChaCha20Poly1305.Arm.Fn.sealGather v.umaal
-      verified := .scrubbed (Proof.ChaCha20Poly1305.Arm.Fn.sealGather v.umaal) }]
+      verified := Proof.ChaCha20Poly1305.Arm.Fn.sealGather v.umaal }]
 
 end VG.Artifacts.ChaCha20Poly1305.Arm

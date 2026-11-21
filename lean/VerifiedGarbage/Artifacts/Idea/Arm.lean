@@ -16,12 +16,12 @@ namespace VG.Artifacts.Idea.Arm
 def artifacts : List Artifact := [
   Spec.Idea.expandKeyApi.artifact Arm.target {
     code := Impl.Idea.Arm.Fn.expandKey
-    verified := .scrubbed Proof.Idea.Arm.Fn.expandKey },
+    verified := Proof.Idea.Arm.Fn.expandKey },
   Spec.Idea.invertKeyApi.artifact Arm.target {
     code := Impl.Idea.Arm.Fn.invertKey
-    verified := .scrubbed Proof.Idea.Arm.Fn.invertKey },
+    verified := Proof.Idea.Arm.Fn.invertKey },
   Spec.Idea.ecbApi.artifact Arm.target {
     code := Impl.Idea.Arm.Fn.ecb
-    verified := .scrubbed Proof.Idea.Arm.Fn.ecb }]
+    verified := Proof.Idea.Arm.Fn.ecb }]
 
 end VG.Artifacts.Idea.Arm

@@ -59,12 +59,12 @@ open VG.Proof.P224.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P224.inst.compressPublicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.compressP224
-    verified := .scrubbed Proof.EcKey.X86.P224.Scrub.compress_scrubbed },
+    verified := Proof.EcKey.X86.P224.Scrub.compress_scrubbed },
   Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.decompressP224
-    verified := .scrubbed (Proof.EcKey.X86.P224.Scrub.decompress_scrubbed hasLaw.law) },
+    verified := Proof.EcKey.X86.P224.Scrub.decompress_scrubbed hasLaw.law },
   Spec.EcKey.P224.publicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.Fn.publicKeyP224
-    verified := .scrubbed (Proof.EcKey.X86.P224.Scrub.publicKey_scrubbed hasLaw.law) }]
+    verified := Proof.EcKey.X86.P224.Scrub.publicKey_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcP224.X86

@@ -16,9 +16,9 @@ namespace VG.Artifacts.Sm4Ofb.X86
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.ofb
-    verified := .scrubbed Proof.Sm4.X86.Scrub.ofb_scrubbed },
+    verified := Proof.Sm4.X86.Scrub.ofb_scrubbed },
   Spec.Sm4.ofbFinalApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.ofbFinal
-    verified := .scrubbed Proof.Sm4.X86.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Sm4.X86.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.Sm4Ofb.X86

@@ -13,12 +13,12 @@ namespace VG.Artifacts.Poly1305.PPC64LE
 def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact PPC64LE.target {
     code := Impl.Poly1305.PPC64LE.Fn.init
-    verified := .scrubbed Proof.Poly1305.PPC64LE.Scrub.init_scrubbed },
+    verified := Proof.Poly1305.PPC64LE.Scrub.init_scrubbed },
   Spec.Poly1305.updateApi.artifact PPC64LE.target {
     code := Impl.Poly1305.PPC64LE.Fn.update
-    verified := .scrubbed Proof.Poly1305.PPC64LE.Scrub.update_scrubbed },
+    verified := Proof.Poly1305.PPC64LE.Scrub.update_scrubbed },
   Spec.Poly1305.finalizeApi.artifact PPC64LE.target {
     code := Impl.Poly1305.PPC64LE.Fn.finalize
-    verified := .scrubbed Proof.Poly1305.PPC64LE.Scrub.finalize_scrubbed }]
+    verified := Proof.Poly1305.PPC64LE.Scrub.finalize_scrubbed }]
 
 end VG.Artifacts.Poly1305.PPC64LE

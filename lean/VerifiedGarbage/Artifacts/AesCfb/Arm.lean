@@ -13,15 +13,15 @@ namespace VG.Artifacts.AesCfb.Arm
 def artifacts : List Artifact := [
   Spec.Cfb.aesEncryptApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cfbEncrypt
-    verified := .scrubbed Proof.Aes.Arm.Fn.cfbEncrypt },
+    verified := Proof.Aes.Arm.Fn.cfbEncrypt },
   Spec.Cfb.aesDecryptApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cfbDecrypt
-    verified := .scrubbed Proof.Aes.Arm.Fn.cfbDecrypt },
+    verified := Proof.Aes.Arm.Fn.cfbDecrypt },
   Spec.Cfb.aesEncryptFinalApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cfbEncryptFinal
-    verified := .scrubbed Proof.Aes.Arm.Fn.cfbEncryptFinal },
+    verified := Proof.Aes.Arm.Fn.cfbEncryptFinal },
   Spec.Cfb.aesDecryptFinalApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.cfbDecryptFinal
-    verified := .scrubbed Proof.Aes.Arm.Fn.cfbDecryptFinal }]
+    verified := Proof.Aes.Arm.Fn.cfbDecryptFinal }]
 
 end VG.Artifacts.AesCfb.Arm

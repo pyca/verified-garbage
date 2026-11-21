@@ -16,12 +16,12 @@ namespace VG.Artifacts.Cast5.PPC64LE
 def artifacts : List Artifact := [
   Spec.Cast5.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Cast5.PPC64LE.Fn.expandKey
-    verified := .scrubbed Proof.Cast5.PPC64LE.Scrub.expandKey_scrubbed },
+    verified := Proof.Cast5.PPC64LE.Scrub.expandKey_scrubbed },
   Spec.Cast5.ecbEncryptApi.artifact PPC64LE.target {
     code := Impl.Cast5.PPC64LE.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Cast5.PPC64LE.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.Cast5.PPC64LE.Scrub.ecbEncrypt_scrubbed },
   Spec.Cast5.ecbDecryptApi.artifact PPC64LE.target {
     code := Impl.Cast5.PPC64LE.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Cast5.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.Cast5.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Cast5.PPC64LE

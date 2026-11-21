@@ -157,10 +157,10 @@ open VG.Proof.RsaPkcs1Sig.X86.Ver (baseline)
 def direct : List Artifact := [
   Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact VG.X86.target {
     code := Impl.RsaPkcs1Sig.X86.Fn.verifyPrecomputed baseline.name baseline.code
-    verified := .scrubbed Proof.RsaPkcs1Sig.X86.Scrub.verifyPrecomputed_scrubbed },
+    verified := Proof.RsaPkcs1Sig.X86.Scrub.verifyPrecomputed_scrubbed },
   Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact VG.X86.target {
     code := Impl.RsaPkcs1Sig.X86.Fn.recoverPrecomputed baseline.name baseline.code
-    verified := .scrubbed Proof.RsaPkcs1Sig.X86.Scrub.recoverPrecomputed_scrubbed }]
+    verified := Proof.RsaPkcs1Sig.X86.Scrub.recoverPrecomputed_scrubbed }]
 
 end VG.Artifacts.RsaPkcs1Sig.X86
 
@@ -175,7 +175,7 @@ def artifacts : List Artifact :=
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.X86.Fn.signPrecomputed (privNameP v) (privCodeP v crtPBaseline)
-      verified := .scrubbed (Proof.RsaPkcs1Sig.X86.Scrub.signPrecomputed_scrubbed v)
+      verified := Proof.RsaPkcs1Sig.X86.Scrub.signPrecomputed_scrubbed v
       spSafe := Proof.RsaPkcs1Sig.X86.Scrub.signPrecomputed_spSafe v }])
 
 end VG.Artifacts.RsaPkcs1Sig.X86

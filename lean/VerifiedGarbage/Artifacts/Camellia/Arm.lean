@@ -13,12 +13,12 @@ namespace VG.Artifacts.Camellia.Arm
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.expandKey
-    verified := .scrubbed Proof.Camellia.Arm.Fn.expandKey },
+    verified := Proof.Camellia.Arm.Fn.expandKey },
   Spec.Camellia.ecbEncryptApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Camellia.Arm.Fn.ecbEncrypt },
+    verified := Proof.Camellia.Arm.Fn.ecbEncrypt },
   Spec.Camellia.ecbDecryptApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Camellia.Arm.Fn.ecbDecrypt }]
+    verified := Proof.Camellia.Arm.Fn.ecbDecrypt }]
 
 end VG.Artifacts.Camellia.Arm

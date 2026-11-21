@@ -27,7 +27,7 @@ def artifacts : List Artifact :=
       code := Impl.RsaPss.X86.Fn.verifyPrecomputed (Proof.MdHashTable.X86.fnsOf allMVars)
         (Proof.HashTable.X86.fnsOf allVars) Proof.RsaPkcs1Sig.X86.Ver.baseline.name
         Proof.RsaPkcs1Sig.X86.Ver.baseline.code
-      verified := .scrubbed (verify_scrubbed h) }]
+      verified := verify_scrubbed h }]
   else []
 
 end VG.Artifacts.RsaPss.X86.AllSha1AllSha256
@@ -45,7 +45,7 @@ def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) : List Artifact :=
       tables := [("hash", Proof.MdHashTable.X86.tables allMVars), ("mgf1", Proof.HashTable.X86.tables allVars)]
       code := Impl.RsaPss.X86.Fn.signPrecomputed (Proof.MdHashTable.X86.fnsOf allMVars)
         (Proof.HashTable.X86.fnsOf allVars) (Proof.RsaPss.X86.Sg.privNameP c) (privCodeP c crtPBaseline)
-      verified := .scrubbed (sign_scrubbed h c)
+      verified := sign_scrubbed h c
       spSafe := sign_spSafe h c }]
   else []
 

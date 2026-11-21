@@ -13,9 +13,9 @@ namespace VG.Artifacts.AesOfb.Arm
 def artifacts : List Artifact := [
   Spec.Ofb.aesApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.ofb
-    verified := .scrubbed Proof.Aes.Arm.Fn.ofb },
+    verified := Proof.Aes.Arm.Fn.ofb },
   Spec.Ofb.aesFinalApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.ofbFinal
-    verified := .scrubbed Proof.Aes.Arm.Fn.ofbFinal }]
+    verified := Proof.Aes.Arm.Fn.ofbFinal }]
 
 end VG.Artifacts.AesOfb.Arm

@@ -15,7 +15,7 @@ namespace VG.Artifacts.RsaKeyGen.PPC64LE
 def direct : List Artifact := [
   Spec.RsaKeyGen.keyInitApi.artifact PPC64LE.target {
     code := Impl.RsaKeyGen.PPC64LE.Fn.keyInit
-    verified := .scrubbed Proof.RsaKeyGen.PPC64LE.Scrub.keyInit_scrubbed }]
+    verified := Proof.RsaKeyGen.PPC64LE.Scrub.keyInit_scrubbed }]
 
 def artifacts : List Artifact :=
   direct ++
@@ -23,6 +23,6 @@ def artifacts : List Artifact :=
     Spec.RsaKeyGen.keySearchApi.artifact PPC64LE.target {
       suffix := v.suffix
       code := Impl.RsaKeyGen.PPC64LE.Fn.keySearch v.suffix v.code
-      verified := .scrubbed (Proof.RsaKeyGen.PPC64LE.Scrub.keySearch_scrubbed v hv) })
+      verified := Proof.RsaKeyGen.PPC64LE.Scrub.keySearch_scrubbed v hv })
 
 end VG.Artifacts.RsaKeyGen.PPC64LE

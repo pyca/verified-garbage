@@ -14,31 +14,31 @@ open VG.AArch64
 def direct : List Artifact := [
   Spec.Ffdh.generationPrecomputeApi.artifact target {
     code := Impl.Ffdh.AArch64.Fn.precompute
-    verified := .scrubbed Proof.Ffdh.AArch64.Scrub.precompute_scrubbed },
+    verified := Proof.Ffdh.AArch64.Scrub.precompute_scrubbed },
   Spec.Ffdh.cachedKeySearchApi.artifact target {
     code := Impl.Ffdh.AArch64.Fn.cachedKeySearch
-    verified := .scrubbed Proof.Ffdh.AArch64.Scrub.cachedKeySearch_scrubbed },
+    verified := Proof.Ffdh.AArch64.Scrub.cachedKeySearch_scrubbed },
   Spec.Ffdh.checkPublicApi.artifact target {
     code := Impl.Ffdh.AArch64.Fn.checkPublic
-    verified := .scrubbed Proof.Ffdh.AArch64.Scrub.checkPublic_scrubbed },
+    verified := Proof.Ffdh.AArch64.Scrub.checkPublic_scrubbed },
   Spec.Ffdh.checkDomainApi.artifact target {
     code := Impl.Ffdh.AArch64.Fn.checkDomain
-    verified := .scrubbed Proof.Ffdh.AArch64.Scrub.checkDomain_scrubbed },
+    verified := Proof.Ffdh.AArch64.Scrub.checkDomain_scrubbed },
   Spec.Ffdh.exchangeApi.artifact target {
     code := Impl.Ffdh.AArch64.Fn.exchange
-    verified := .scrubbed Proof.Ffdh.AArch64.Scrub.exchange_scrubbed },
+    verified := Proof.Ffdh.AArch64.Scrub.exchange_scrubbed },
   Spec.Ffdh.checkPrivateApi.artifact target {
     code := Impl.Ffdh.AArch64.Fn.checkPrivate
-    verified := .scrubbed Proof.Ffdh.AArch64.Scrub.checkPrivate_scrubbed },
+    verified := Proof.Ffdh.AArch64.Scrub.checkPrivate_scrubbed },
   Spec.Ffdh.derivePublicApi.artifact target {
     code := Impl.Ffdh.AArch64.Fn.derivePublic
-    verified := .scrubbed Proof.Ffdh.AArch64.Scrub.derivePublic_scrubbed },
+    verified := Proof.Ffdh.AArch64.Scrub.derivePublic_scrubbed },
   Spec.Ffdh.parameterInitApi.artifact target {
     code := Impl.Ffdh.AArch64.Generation.init
-    verified := .scrubbed Proof.Ffdh.AArch64.Scrub.parameterInit_scrubbed },
+    verified := Proof.Ffdh.AArch64.Scrub.parameterInit_scrubbed },
   Spec.Ffdh.keyInitApi.artifact target {
     code := Impl.Ffdh.AArch64.KeyGeneration.init
-    verified := .scrubbed Proof.Ffdh.AArch64.Scrub.keyInit_scrubbed }]
+    verified := Proof.Ffdh.AArch64.Scrub.keyInit_scrubbed }]
 
 def artifacts : List Artifact :=
   direct ++
@@ -46,6 +46,6 @@ def artifacts : List Artifact :=
     Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.Ffdh.AArch64.Fn.parameterSearch v.suffix v.mont.mm v.roundMont.mm
-      verified := .scrubbed (Proof.Ffdh.AArch64.Generation.parameterSearch_scrubbed v) }])
+      verified := Proof.Ffdh.AArch64.Generation.parameterSearch_scrubbed v }])
 
 end VG.Artifacts.Ffdh.AArch64

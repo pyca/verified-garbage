@@ -39,7 +39,7 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
   Spec.Ed25519.verifyApi.artifact X86_64.target
     { suffix := c.suffix ++ fs
       code := Impl.Ed25519.X86_64.VerifyMessage.Fn.verify (c.level.join lv) fld win fs c.callee c.suffix
-      verified := .scrubbed (Proof.Ed25519.X86_64.Scrub.verify_scrubbed c hq lv hs)
+      verified := Proof.Ed25519.X86_64.Scrub.verify_scrubbed c hq lv hs
       spSafe := Proof.Ed25519.X86_64.Scrub.verify_spSafe c hq _ }
 
 /-- Signing with the seed's cached SHA-512 digest and public key, with the SHA-512
@@ -51,7 +51,7 @@ def signExpandedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
   Spec.Ed25519.signExpandedApi.artifact X86_64.target
     { suffix := c.suffix ++ fs
       code := Impl.Ed25519.X86_64.SignCached.Fn.signExpanded (c.level.join lv) bs fs c.callee c.suffix
-      verified := .scrubbed (Proof.Ed25519.X86_64.Scrub.signExpanded_scrubbed c lv hs)
+      verified := Proof.Ed25519.X86_64.Scrub.signExpanded_scrubbed c lv hs
       spSafe := Proof.Ed25519.X86_64.Scrub.signExpanded_spSafe c _ }
 
 /-- Key-pair derivation with the SHA-512 implementation `c`'s one-shot digest, whose code
@@ -66,7 +66,7 @@ def keyPairWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
       code := Impl.Ed25519.X86_64.KeyPair.Fn.keyPair (c.level.join lv)
         (Spec.Sha512.digest512Api.name ++ c.suffix ++ "_core") (Proof.Ed25519.X86_64.KeyPair.dgCode c)
         ("vg_ed25519_public_key_expanded" ++ fs) (Impl.Ed25519.X86_64.publicKeyExpanded bs fs)
-      verified := .scrubbed (Proof.Ed25519.X86_64.Scrub.keyPair_scrubbed c lv hs)
+      verified := Proof.Ed25519.X86_64.Scrub.keyPair_scrubbed c lv hs
       spSafe := Proof.Ed25519.X86_64.Scrub.keyPair_spSafe c _ }
 
 /-- Verification and signing with the SHA-512 implementation `c` and the field

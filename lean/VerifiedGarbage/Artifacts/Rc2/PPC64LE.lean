@@ -18,12 +18,12 @@ namespace VG.Artifacts.Rc2.PPC64LE
 def artifacts : List Artifact := [
   Spec.Rc2.cbcInitApi.artifact PPC64LE.target {
     code := Impl.Rc2.PPC64LE.Fn.cbcInit
-    verified := .scrubbed Proof.Rc2.PPC64LE.Scrub.cbcInit_scrubbed },
+    verified := Proof.Rc2.PPC64LE.Scrub.cbcInit_scrubbed },
   Spec.Rc2.cbcEncryptChainedApi.artifact PPC64LE.target {
     code := Impl.Rc2.PPC64LE.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Rc2.PPC64LE.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.Rc2.PPC64LE.Scrub.cbcEncryptChained_scrubbed },
   Spec.Rc2.cbcDecryptChainedApi.artifact PPC64LE.target {
     code := Impl.Rc2.PPC64LE.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Rc2.PPC64LE.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.Rc2.PPC64LE.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.Rc2.PPC64LE

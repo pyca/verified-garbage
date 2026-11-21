@@ -14,9 +14,9 @@ namespace VG.Artifacts.X448.RISCV64
 def artifacts : List Artifact := [
   Spec.X448.exchangeApi.artifact RISCV64.target {
     code := Impl.X448.RISCV64.Fn.exchange
-    verified := .scrubbed Proof.X448.RISCV64.Scrub.exchange_scrubbed },
+    verified := Proof.X448.RISCV64.Scrub.exchange_scrubbed },
   Spec.X448.x448BaseApi.artifact RISCV64.target {
     code := Impl.X448.RISCV64.Fn.base
-    verified := .scrubbed Proof.X448.RISCV64.Scrub.base_scrubbed }]
+    verified := Proof.X448.RISCV64.Scrub.base_scrubbed }]
 
 end VG.Artifacts.X448.RISCV64
