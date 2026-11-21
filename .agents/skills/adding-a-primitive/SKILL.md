@@ -366,12 +366,6 @@ no frame (`wipedSide`, by `lit_decide`) and that every argument is of 32
 bits and public (`argsPub`, by `decide`): code that calls or pushes below
 its frame, or whose contract may write its arguments, stays on `scrubAll`.
 
-**Not yet converted.** None: every x86 registration binds a theorem of
-these forms. `X86.Scrub.scrubOf` and `scrubAllOf`
-(`Proof/Framework/X86/ScrubProved.lean`) remain only because
-`verifiedScrubbed` and `verifiedScrubbedAll` are proved from them: never use
-them in new code.
-
 ### AArch64
 
 **Side conditions.** `verifiedScrubbed` needs `scrubSide … = true` (by

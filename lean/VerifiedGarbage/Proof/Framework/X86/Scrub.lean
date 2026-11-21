@@ -43,8 +43,8 @@ function's buffers: `scrub rb c` (`Verified.scrub`) returns without secret
 residue. Code with calls and frames also writes the stack below `esp`: see
 "Code with frames" below (`scrubAll`, `Verified.scrubAll`).
 
-`scrubReg`, `scrubRegF` and `scrubRegFT` are registrations with their code
-scrubbed, which prove it.
+`X86.Scrub.verifiedScrubbed` and `verifiedScrubbedAll` (`ScrubFn.lean`) are
+the theorems a registration binds, from these.
 -/
 
 @[expose] public section
@@ -867,8 +867,8 @@ constant time makes them, and that call indirectly only functions whose
 addresses they agree on, end with the same unknowns (`Exec.path`), so two
 runs of `scrubAll rb n c` agree on those bytes on return. The functions of the
 registration's tables of functions are such (`tablesCall`, whose addresses
-the contract makes public, `tables_pub_fnAddr`): `scrubRegFT` scrubs code
-that calls through them, `scrubRegF` code with no indirect call
+the contract makes public, `tables_pub_fnAddr`): `Verified.scrubAllT`
+covers code that calls through them, and code with no indirect call
 (`noIcall`). What the functions called indirectly use of the stack is in
 `stackUse c`, as what those called directly use is. -/
 
@@ -1439,118 +1439,5 @@ theorem wipe_all : ∀ cs, (wipe cs).all (fun i => !isa.writesSp i) = true
 
 theorem zeroRegs_all (cs : List Nat) : (zeroRegs cs).all (fun i => !isa.writesSp i) = true := by
   unfold zeroRegs; split <;> rfl
-
-/-- A function that writes at most the first bytes of some of its buffers
-still does when the state on return is replaced by one with its memory. -/
-theorem writtenWithin_mem {sig : Sig} {written : List (String × Nat)} {s u u' : State}
-    (h : Sig.writtenWithin abi sig written s u) (hm : u'.mem = u.mem) :
-    Sig.writtenWithin abi sig written s u' := by
-  cases written with
-  | nil => exact True.intro
-  | cons w ws =>
-    simp only [Sig.writtenWithin] at h ⊢
-    split
-    · exact True.intro
-    · rename_i vals hv
-      rw [hv] at h
-      intro w hw b hb hbw i hi hl
-      have := h w hw b hb hbw i hi hl
-      simp only [abi] at this ⊢
-      rw [hm]; exact this
-
-/-- `r`, a registration of code that calls nothing, has no frame and no MMX
-instruction, scrubbed: its code followed by `tail`, which returns without
-secret residue. -/
-def scrubReg {api : Api} (r : Unscrubbed api target) (hn : r.code.noCalls = true)
-    (hm : r.code.allInstrs (fun i => !i.isMmx) = true) : Registration api target where
-  suffix := r.suffix
-  consts := r.consts
-  tables := r.tables
-  stack := r.stack
-  code := scrub (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) r.code
-  contract := r.contract
-  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    rw [e] at hv ⊢
-    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn hm rfl).1), by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    rw [e] at hv ⊢
-    exact (Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hn hm rfl).2⟩
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := by
-    simp only [scrub, Code.all, r.spSafe, Bool.true_and]
-    exact tail_all _
-  written := r.written
-  writtenOk := by
-    intro s t u' hs he
-    have hrb := retBits_cases api.sig
-    obtain ⟨u, a, b⟩ := exec_scrub
-      (rb := api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-      (by rw [(ScrubAbi.of r.consts api.sig r.tables).ptrBits]; exact hrb) he
-    obtain ⟨w, hw, ok⟩ := tail_run
-      (rb := api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-      (by rw [(ScrubAbi.of r.consts api.sig r.tables).ptrBits]; exact hrb) u
-    rw [hw, Option.some.injEq, Prod.mk.injEq] at b
-    obtain ⟨rfl, -⟩ := b
-    exact writtenWithin_mem (r.writtenOk s t u hs a) ok.mem
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-
-/-- `r`, a registration of code whose frames and calls, and those of the
-functions it calls indirectly, use at most the `stack` bytes its contract
-reserves, which calls indirectly only the functions of its tables of
-functions (`tablesCall`) and has no MMX instruction, scrubbed: its code,
-then those bytes zeroed, then `tail`, which returns without secret residue,
-if its postcondition reads the memory on return only within the buffers. -/
-def scrubRegFT {api : Api} (r : Unscrubbed api target) (hd : stackUse r.code ≤ r.stack)
-    (htc : tablesCall r.code r.tables = true) (hm : r.code.allInstrs (fun i => !i.isMmx) = true)
-    (hn : FrameOk r.stack)
-    (hpost : PostOut r.contract
-      (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (hw : r.written = []) : Registration api target where
-  suffix := r.suffix
-  consts := r.consts
-  tables := r.tables
-  stack := r.stack
-  code := scrubAll (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-    r.stack r.code
-  contract := r.contract
-  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    have hp := hpost
-    rw [e] at hv hp ⊢
-    exact (Verified.scrubAllT (ScrubAbi.of r.consts api.sig r.tables) hv (noSp_of_all r.spSafe) hd
-      (tablesCall_fnAddr htc) hm hn rfl hp).1), by
-    obtain ⟨pre, post, leak, e⟩ := r.ofSig
-    have hv := r.verified
-    have hp := hpost
-    rw [e] at hv hp ⊢
-    exact (Verified.scrubAllT (ScrubAbi.of r.consts api.sig r.tables) hv (noSp_of_all r.spSafe) hd
-      (tablesCall_fnAddr htc) hm hn rfl hp).2⟩
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := by
-    simp only [scrubAll, wipeBelow, Code.all, r.spSafe, zeroRegs_all, tail_all, Bool.true_and, Bool.and_true]
-    exact wipe_all _
-  written := r.written
-  writtenOk := by
-    rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-
-/-- `scrubRegFT` of a registration whose code makes no indirect call. -/
-def scrubRegF {api : Api} (r : Unscrubbed api target) (hd : stackUse r.code ≤ r.stack)
-    (hni : noIcall r.code = true) (hm : r.code.allInstrs (fun i => !i.isMmx) = true)
-    (hn : FrameOk r.stack)
-    (hpost : PostOut r.contract
-      (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (hw : r.written = []) : Registration api target :=
-  scrubRegFT r hd (tablesCall_of_noIcall hni r.tables) hm hn hpost hw
 
 end VG.X86.Scrub
