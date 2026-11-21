@@ -167,12 +167,6 @@ theorem readW_writeW128_q (m : Mem) (a : Addr) (v : BitVec 128) {j : Nat} (hj : 
 def uOf (vh k vw ve vf vg : BitVec 64) : BitVec 64 :=
   vh + k + vw + ((vf ^^^ vg) &&& ve ^^^ vg)
 
-/-- The six terms of `Σ₀` or `Σ₁` in the order `bigSig` accumulates them. -/
-theorem split6_acc (x : BitVec 64) (r₁ r₂ r₃ l₁ l₂ l₃ : Nat) :
-    x >>> r₁ ^^^ x >>> r₁ >>> r₂ ^^^ x >>> r₁ >>> r₂ >>> r₃ ^^^ x <<< l₁ ^^^ x <<< l₁ <<< l₂ ^^^
-      x <<< l₁ <<< l₂ <<< l₃ = split6 x r₁ r₂ r₃ l₁ l₂ l₃ := by
-  simp only [split6, BitVec.xor_assoc]
-
 theorem roundW_ok (a b d e f g h w : Nat) (k : BitVec 64) (A E BC T NE AB : XReg)
     (hn : [A, E, BC, T, NE, AB, X, Y].Nodup) (s : State)
     (ib : InRegions (s.rd ++ s.wr) (addr (s.gpr .esi) b) 8)
@@ -211,10 +205,8 @@ theorem roundW_ok (a b d e f g h w : Nat) (k : BitVec 64) (A E BC T NE AB : XReg
     ↓reduceIte, Option.map_some, Option.some.injEq, exists_eq_left',
     hn, hn', ib, id, if_, ig, ih, iw, oa, oe, eb, ed, q_psrlq, q_psllq, q_pxor, q_pand, q_paddq,
     q_punpckldq_movd, qword_append_0, BitVec.reduceToNat, Nat.reduceLT]
-  refine ⟨?_, ?_, trivial, fun r hr => ?_, trivial, trivial, trivial⟩
-  · rw [← split6_acc, ← split6_acc]; rfl
-  · rw [← split6_acc]; rfl
-  · simp only [hr, ↓reduceIte]
+  refine ⟨rfl, rfl, trivial, fun r hr => ?_, trivial, trivial, trivial⟩
+  simp only [hr, ↓reduceIte]
 
 /-! ## Two steps of the message schedule -/
 

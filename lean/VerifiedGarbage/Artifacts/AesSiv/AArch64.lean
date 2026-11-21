@@ -19,15 +19,15 @@ def artifacts : List Artifact :=
     Spec.Siv.initApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesSiv.AArch64.Fn.init v.expand v.callee v.suffix
-      verified := init_scrubbed v }]) ++
+      verified := Proof.AesSiv.AArch64.init_scrubbed v }]) ++
   (VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun (v : Proof.CmacAes.AArch64.UpdateImpl) => [
     Spec.Siv.encryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesSiv.AArch64.Fn.encrypt v.callee v.ctr.callee v.ctr.suffix
-      verified := encrypt_scrubbed v },
+      verified := Proof.AesSiv.AArch64.encrypt_scrubbed v },
     Spec.Siv.decryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesSiv.AArch64.Fn.decrypt v.callee v.ctr.callee v.ctr.suffix
-      verified := decrypt_scrubbed v }])
+      verified := Proof.AesSiv.AArch64.decrypt_scrubbed v }])
 
 end VG.Artifacts.AesSiv.AArch64

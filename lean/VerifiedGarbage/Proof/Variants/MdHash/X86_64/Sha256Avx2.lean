@@ -111,7 +111,7 @@ open Proof.Pbkdf2.Md.X86_64 Proof.Pbkdf2.Md.X86_64.Sha256 VG.X86_64 VG.X86_64.Sc
 
 /-! ## Without secret residue
 
-Each function, followed by its cleanup (`StreamFnS.reg`): what the cleanup
+Each function, followed by its cleanup (`StreamFnS.scrubbed`): what the cleanup
 needs of its code, evaluated here once, the runs of granules of its stack
 that the residue analysis (`X86_64.RTaint`) finds may hold secrets, and its
 other conditions (`X86_64.Scrub.SelScrub`). -/
@@ -127,7 +127,7 @@ theorem update_side : VG.X86_64.Scrub.scrubSideG (updFn compress).code (updFn co
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 33)])) [] = true := by
   lit_decide
 
-def update : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨(updFn compress), (updOut compress), ⟨.avx, [(8, 33)], update_ok, update_side⟩⟩
+def update : Proof.Pbkdf2.Md.X86_64.StreamFnS (updFn compress).api := ⟨(updFn compress), (updOut compress), ⟨.avx, [(8, 33)], update_ok, update_side⟩, rfl⟩
 theorem finalize_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
     (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init (finFn compress).api.sig (finFn compress).stack []) (finFn compress).code h).any
       (VG.X86_64.RScrub.resOkB · (finFn compress).stack (Impl.Scrub.X86_64.runKs [(8, 33)])
@@ -139,7 +139,7 @@ theorem finalize_side : VG.X86_64.Scrub.scrubSideG (finFn compress).code (finFn 
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 33)])) [] = true := by
   lit_decide
 
-def finalize : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨(finFn compress), (finOut compress), ⟨.avx, [(8, 33)], finalize_ok, finalize_side⟩⟩
+def finalize : Proof.Pbkdf2.Md.X86_64.StreamFnS (finFn compress).api := ⟨(finFn compress), (finOut compress), ⟨.avx, [(8, 33)], finalize_ok, finalize_side⟩, rfl⟩
 theorem digest_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
     (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init (digFn compress).api.sig (digFn compress).stack []) (digFn compress).code h).any
       (VG.X86_64.RScrub.resOkB · (digFn compress).stack (Impl.Scrub.X86_64.runKs [(104, 33)])
@@ -151,7 +151,7 @@ theorem digest_side : VG.X86_64.Scrub.scrubSideG (digFn compress).code (digFn co
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(104, 33)])) [] = true := by
   lit_decide
 
-def digest : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨(digFn compress), (digOut compress), ⟨.avx, [(104, 33)], digest_ok, digest_side⟩⟩
+def digest : Proof.Pbkdf2.Md.X86_64.StreamFnS (digFn compress).api := ⟨(digFn compress), (digOut compress), ⟨.avx, [(104, 33)], digest_ok, digest_side⟩, rfl⟩
 
 /-! SHA-224's `finalize` and `digest`, with the same compression function. -/
 
@@ -166,7 +166,7 @@ theorem finalize224_side : VG.X86_64.Scrub.scrubSideG (Sha224.finFn compress).co
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(8, 33)])) [] = true := by
   lit_decide
 
-def finalize224 : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨(Sha224.finFn compress), (Sha224.finOut compress), ⟨.avx, [(8, 33)], finalize224_ok, finalize224_side⟩⟩
+def finalize224 : Proof.Pbkdf2.Md.X86_64.StreamFnS (Sha224.finFn compress).api := ⟨(Sha224.finFn compress), (Sha224.finOut compress), ⟨.avx, [(8, 33)], finalize224_ok, finalize224_side⟩, rfl⟩
 theorem digest224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
     (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init (Sha224.digFn compress).api.sig (Sha224.digFn compress).stack []) (Sha224.digFn compress).code h).any
       (VG.X86_64.RScrub.resOkB · (Sha224.digFn compress).stack (Impl.Scrub.X86_64.runKs [(104, 33)])
@@ -178,12 +178,17 @@ theorem digest224_side : VG.X86_64.Scrub.scrubSideG (Sha224.digFn compress).code
     (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(104, 33)])) [] = true := by
   lit_decide
 
-def digest224 : Proof.Pbkdf2.Md.X86_64.StreamFnS := ⟨(Sha224.digFn compress), (Sha224.digOut compress), ⟨.avx, [(104, 33)], digest224_ok, digest224_side⟩⟩
+def digest224 : Proof.Pbkdf2.Md.X86_64.StreamFnS (Sha224.digFn compress).api := ⟨(Sha224.digFn compress), (Sha224.digOut compress), ⟨.avx, [(104, 33)], digest224_ok, digest224_side⟩, rfl⟩
 
 end Scrub
 
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha256.variant compress [update, finalize, digest]
+  Proof.Pbkdf2.Md.X86_64.Sha256.variant compress
+
+/-- The streaming functions made with this compression function, with their
+cleanup, for its registration file. -/
+def streams : Proof.Pbkdf2.Md.X86_64.StreamFns Spec.Sha256.updateApi Spec.Sha256.finalizeApi Spec.Sha256.digest256Api :=
+  ⟨variant.suffix, update, finalize, digest⟩
 
 theorem fin_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
     (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init variant.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) [])
@@ -205,7 +210,12 @@ def fin : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant, by decide, ⟨.avx, [(16
 /-- SHA-224 with this compression function, its `finalize` and `digest`
 without secret residue. -/
 def variant224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha224.variant compress [finalize224, digest224]
+  Proof.Pbkdf2.Md.X86_64.Sha224.variant compress
+
+/-- SHA-224's `finalize` and one-shot `digest` with this compression function,
+with their cleanup, for its registration file. -/
+def streams224 : Proof.Pbkdf2.Md.X86_64.StreamFns2 Spec.Sha256.finalize224Api Spec.Sha256.digest224Api :=
+  ⟨variant224.suffix, finalize224, digest224⟩
 
 theorem fin224_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
     (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init variant224.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant224.H) [])
