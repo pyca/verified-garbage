@@ -10,12 +10,15 @@
   which are loaded into it. Everything is in this file, with no network
   access, so that a workflow's copy opens anywhere.
 
-  It charts a few comparisons (`COMPARISONS`: the libraries; head against
-  base; the CPU feature configurations), each as throughput relative to a
-  baseline, over a few groupings of the benchmarks (`TOPICS`): each groups
-  its benchmarks (by curve, key size, algorithm) and has a bar for each of
-  some operations or message sizes within each group. A benchmark that no
-  grouping takes is still in the table of all results at the bottom.
+  What it compares follows from the results: each library, side (base or
+  head) and VG_CPU_FEATURES configuration measured is a series, and every
+  bar is throughput relative to the first series measured in its group
+  (OpenSSL, else AWS-LC, else base, else the configuration `none`), drawn
+  gray. Each benchmark group is a chart of its own, across machines (an
+  architecture and CPU model); charts dropped onto each other combine,
+  one plot per machine, grouped by a parameter their names share (P-256,
+  P-384, …). It knows nothing of the algorithms but how to print their
+  names (`WORDS`) and the units of their sizes (`UNITS`).
 -->
 <style>
 :root {
@@ -32,7 +35,7 @@
   --border: rgba(11, 11, 11, 0.10);
   --hover: rgba(11, 11, 11, 0.04);
   --accent: #2a78d6;
-  --warn-ink: #7a5200;
+  --drop: rgba(42, 120, 214, 0.10);
   --s-base: #a09f99;
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
   --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
@@ -52,7 +55,7 @@
     --border: rgba(255, 255, 255, 0.10);
     --hover: rgba(255, 255, 255, 0.05);
     --accent: #3987e5;
-    --warn-ink: #f3d68f;
+    --drop: rgba(57, 135, 229, 0.16);
     --s-base: #63625e;
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
     --s5: #d55181; --s6: #0ca30c; --s7: #9085e9; --s8: #e66767;
@@ -72,7 +75,7 @@
   --border: rgba(255, 255, 255, 0.10);
   --hover: rgba(255, 255, 255, 0.05);
   --accent: #3987e5;
-  --warn-ink: #f3d68f;
+  --drop: rgba(57, 135, 229, 0.16);
   --s-base: #63625e;
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
   --s5: #d55181; --s6: #0ca30c; --s7: #9085e9; --s8: #e66767;
@@ -95,52 +98,32 @@ button {
 }
 button:hover { background: var(--surface-2); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-select, input[type="search"] {
+input[type="search"] {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 3px 6px;
+  padding: 5px 9px;
 }
 a { color: var(--accent); }
-.wrap { max-width: 1280px; margin: 0 auto; padding: 0 16px; }
+code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 0 16px; }
 
-header { padding: 18px 0 6px; }
+header { padding: 18px 0 4px; }
 header .top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
 header h1 { font-size: 20px; font-weight: 600; margin: 0; }
 header .run { color: var(--ink-2); }
 header .tools { margin-left: auto; display: flex; gap: 6px; }
 header .tools button { font-size: 13px; padding: 3px 9px; color: var(--ink-2); }
 #file { display: none; }
+#errors { color: var(--s8); }
 
-nav.compare { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 4px; }
-nav.compare button { border-radius: 999px; padding: 5px 14px; }
-nav.compare button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
-nav.compare .desc { align-self: center; color: var(--muted); font-size: 13px; margin-left: 6px; }
-
-nav.topics {
-  display: flex;
-  gap: 2px;
-  overflow-x: auto;
-  border-bottom: 1px solid var(--border);
-  margin: 12px 0;
-  scrollbar-width: thin;
-}
-nav.topics button {
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  background: none;
-  padding: 8px 12px 7px;
-  white-space: nowrap;
-  color: var(--ink-2);
-}
-nav.topics button:hover { color: var(--ink); background: none; }
-nav.topics button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
-
-.filters { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 12px; align-items: baseline; }
-.filters .label { color: var(--muted); font-size: 13px; }
+.controls { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 12px; align-items: baseline; margin: 14px 0 6px; }
+.controls .label { color: var(--muted); font-size: 13px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border-radius: 999px;
   padding: 2px 11px;
   font-size: 13px;
@@ -149,34 +132,48 @@ nav.topics button[aria-selected="true"] { color: var(--ink); border-bottom-color
   background: none;
 }
 .chip[aria-pressed="true"] { color: var(--ink); border: 1px solid var(--ink-2); background: var(--surface); }
-.chips .reset { border: 0; background: none; color: var(--accent); font-size: 13px; padding: 2px 4px; }
-.chips select { font-size: 13px; }
-.note { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
-.note:empty { display: none; }
+.chip .swatch { width: 11px; height: 11px; border-radius: 3px; }
+.chip[aria-pressed="false"] .swatch { opacity: 0.35; }
+.search { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.search input { width: min(420px, 100%); }
+.hint { color: var(--muted); font-size: 13px; }
 
-#cards { display: flex; flex-direction: column; gap: 16px; margin: 18px 0 24px; }
+#cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
+  gap: 14px;
+  margin: 16px 0 24px;
+  align-items: start;
+}
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 16px 18px 12px;
+  padding: 12px 14px 10px;
   min-width: 0;
 }
-.card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
-.card-head h2 { font-size: 17px; font-weight: 600; margin: 0; }
-.card-head .cpu { color: var(--muted); font-size: 13px; }
-.card-head .cpu.warn { color: var(--warn-ink); }
-.card-head .numbers { margin-left: auto; font-size: 13px; padding: 2px 9px; color: var(--ink-2); }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 12px 0 2px; color: var(--ink); }
-.legend .item { display: inline-flex; align-items: center; gap: 7px; }
-.legend .swatch { width: 12px; height: 12px; border-radius: 3px; }
-.axis-title { color: var(--ink-2); font-size: 13px; margin-top: 6px; }
-.chart { overflow-x: auto; }
+.card.combined { grid-column: 1 / -1; }
+.card.drop-target { outline: 2px dashed var(--accent); background: var(--drop); }
+.card.dragging { opacity: 0.4; }
+.card-head { display: flex; gap: 8px; align-items: flex-start; cursor: grab; }
+.card-head .titles { flex: 1; min-width: 0; }
+.card-head h2 { font-size: 15px; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+.card-head .names { color: var(--muted); overflow-wrap: anywhere; }
+.card-head .actions { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.card-head .actions button { font-size: 12px; padding: 1px 8px; color: var(--ink-2); }
+.members { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.member { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--border); border-radius: 999px; padding: 0 2px 0 9px; font-size: 12px; color: var(--ink-2); background: var(--surface-2); }
+.member button { border: 0; background: none; padding: 0 5px; color: var(--muted); border-radius: 999px; }
+.sizes { margin-top: 8px; }
+.sizes .chip { font-size: 12px; padding: 1px 9px; }
+.plot-title { font-size: 13px; font-weight: 600; margin: 12px 0 0; color: var(--ink); }
+.plot-title { margin-top: 10px; }
+.axis-title { color: var(--muted); font-size: 12px; margin-top: 6px; }
+.chart { overflow-x: auto; min-height: 40px; }
 .chart svg { display: block; }
 .chart svg text { fill: var(--ink-2); font-size: 12px; }
 .chart svg text.tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-.chart svg text.inner { fill: var(--ink-2); font-size: 12px; }
-.chart svg text.outer { fill: var(--ink); font-size: 14px; font-weight: 600; }
+.chart svg text.outer { fill: var(--ink); font-size: 13px; font-weight: 600; }
 .chart svg text.value { fill: var(--ink-2); font-size: 11px; font-variant-numeric: tabular-nums; }
 .chart svg text.value.subject { fill: var(--ink); font-weight: 650; }
 .chart svg text.missing { fill: var(--muted); font-size: 11px; }
@@ -186,26 +183,25 @@ nav.topics button[aria-selected="true"] { color: var(--ink); border-bottom-color
 .chart svg .bracket { stroke: var(--axis); stroke-width: 1; fill: none; }
 .chart svg .wash { fill: var(--hover); }
 .chart svg .hit { fill: transparent; }
-.empty-card { color: var(--ink-2); padding: 24px 4px; }
 
-table.data { border-collapse: collapse; width: 100%; margin-top: 12px; font-size: 13px; font-variant-numeric: tabular-nums; }
-table.data th, table.data td { padding: 4px 10px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+table.data { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { padding: 3px 8px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
 table.data th:first-child, table.data td:first-child { text-align: left; white-space: normal; }
 table.data th { color: var(--ink-2); font-weight: 600; background: var(--surface); position: sticky; top: 0; }
 table.data td .rel { color: var(--muted); margin-left: 6px; }
 table.data td.left { text-align: left; }
-.table-tools { display: flex; justify-content: flex-end; margin-top: 8px; }
-.table-tools button { font-size: 12px; padding: 2px 8px; }
+.table-tools { display: flex; justify-content: flex-end; margin-top: 6px; }
+.table-tools button { font-size: 12px; padding: 1px 8px; }
 .table-wrap { overflow: auto; max-height: 70vh; }
 
 details.all { margin: 8px 0 40px; color: var(--ink-2); }
 details.all summary { cursor: pointer; padding: 6px 0; }
-details.all .search { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
-details.all input { flex: 1; max-width: 420px; }
+details.all .search { margin: 8px 0; }
 
 .welcome {
+  grid-column: 1 / -1;
   max-width: 620px;
-  margin: 60px auto;
+  margin: 48px auto;
   padding: 28px;
   text-align: center;
   color: var(--ink-2);
@@ -214,7 +210,6 @@ details.all input { flex: 1; max-width: 420px; }
   background: var(--surface);
 }
 .welcome h2 { color: var(--ink); font-size: 18px; margin: 0 0 8px; }
-code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 #tooltip {
   position: fixed;
@@ -243,7 +238,6 @@ code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
   background: rgba(0, 0, 0, 0.4); color: #ffffff; font-size: 18px;
 }
 #drop.show { display: flex; }
-#errors { color: var(--warn-ink); }
 </style>
 </head>
 <body>
@@ -260,10 +254,7 @@ code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
     <input id="file" type="file" multiple accept=".json,.html,application/json,text/html">
     <div id="errors"></div>
   </header>
-  <nav class="compare" id="compare" aria-label="Comparison"></nav>
-  <nav class="topics" id="topics" role="tablist" aria-label="Algorithms"></nav>
-  <div class="filters" id="filters"></div>
-  <p class="note" id="note"></p>
+  <div class="controls" id="controls"></div>
   <div id="cards"></div>
   <details class="all" id="all"></details>
 </div>
@@ -274,17 +265,93 @@ code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
 <script>
 "use strict";
 
-// ------------------------------------------------------------------ the data
+// --------------------------------------------------------------- printing
 
-const FORMAT = "verified-garbage-bench";
 const VG = "verified-garbage";
 const LIBRARIES = { openssl: "OpenSSL", "aws-lc-rs": "AWS-LC", [VG]: "VG" };
 const ARCHES = ["x86_64", "aarch64", "aarch64-apple", "x86", "arm", "thumb", "powerpc64", "riscv64"];
 const collator = new Intl.Collator("en", { numeric: true });
 
-let files = [];     // results files: {id, name, context, results}
-let records = [];   // {arch, cpu, cfg, side, library, group, size, sizeText, t}
+// How to print the words of benchmark names (`ecdsa_p256_sha256_sign`).
+const WORDS = {
+  aes: "AES", argon2d: "Argon2d", argon2i: "Argon2i", argon2id: "Argon2id", blake2b: "BLAKE2b", blake2s: "BLAKE2s",
+  blowfish: "Blowfish", camellia: "Camellia", cast5: "CAST5", cbc: "CBC", ccm: "CCM", cfb: "CFB", cfb8: "CFB8",
+  cfb64: "CFB64", cfb128: "CFB128", chacha20: "ChaCha20", chacha20poly1305: "ChaCha20-Poly1305", cmac: "CMAC",
+  ctr: "CTR", dit: "DIT", dsa: "DSA", ec: "EC", ecb: "ECB", ecdh: "ECDH", ecdsa: "ECDSA", ed25519: "Ed25519",
+  ed448: "Ed448", ffdh: "FFDH", gcm: "GCM", hmac: "HMAC", hp: "HP", idea: "IDEA", md5: "MD5", mgf1: "MGF1",
+  oaep: "OAEP", ocb: "OCB", ofb: "OFB", pbkdf2: "PBKDF2", pkcs1: "PKCS#1", poly1305: "Poly1305", pss: "PSS",
+  quic: "QUIC", rc2: "RC2", rc4: "RC4", rsa: "RSA", seed: "SEED", sha1: "SHA-1", sha3: "SHA3", shake128: "SHAKE128",
+  shake256: "SHAKE256", siv: "SIV", sm3: "SM3", sm4: "SM4", tdes: "3DES", "3des": "3DES", tls: "TLS",
+  x25519: "X25519", x448: "X448", xts: "XTS",
+};
+function word(t) {
+  let m;
+  if (WORDS[t]) return WORDS[t];
+  if ((m = /^p(\d{3})$/.exec(t))) return `P-${m[1]}`;
+  if ((m = /^sha(\d{3})$/.exec(t))) return `SHA-${m[1]}`;
+  if ((m = /^brainpoolp(\d+)r1$/.exec(t))) return `brainpoolP${m[1]}r1`;
+  if ((m = /^mlkem(\d+)$/.exec(t))) return `ML-KEM-${m[1]}`;
+  if ((m = /^mldsa(\d+)$/.exec(t))) return `ML-DSA-${m[1]}`;
+  return t;
+}
+// A name's words, printed: a number after an acronym joins it (AES-128).
+function pretty(tokens) {
+  const out = [];
+  for (const t of tokens) {
+    const w = word(t);
+    const prev = out[out.length - 1];
+    if (prev && /^\d+$/.test(t) && /[A-Z0-9]$/.test(prev) && prev !== prev.toLowerCase()) out[out.length - 1] = `${prev}-${w}`;
+    else out.push(w);
+  }
+  return out.join(" ");
+}
+const tokensOf = group => group.split(/[-_]/).filter(Boolean);
+
+// The units of the benchmarks' sizes: bytes, but for these.
+const UNITS = [
+  [/^pbkdf2-/, n => `${n.toLocaleString()} iterations`],
+  [/^scrypt/, n => `N = ${n.toLocaleString()}`],
+  [/^argon2/, n => `${bytes(n * 1024)} of memory`],
+  [/^(rsa_|ffdh_(?!parameters_g))/, n => `${n * 8}-bit`],
+  [/^dsa_/, n => `${n}-bit`],
+  [/-tls-connection$/, n => `${n} record${n === 1 ? "" : "s"}`],
+];
+function bytes(n) {
+  for (const [scale, unit] of [[1048576, "MiB"], [1024, "KiB"]]) if (n >= scale && n % scale === 0) return `${n / scale} ${unit}`;
+  return `${n} B`;
+}
+function sizeLabel(group, sizeText) {
+  if (!/^\d+$/.test(sizeText)) return sizeText;
+  const n = Number(sizeText);
+  for (const [re, f] of UNITS) if (re.test(group)) return f(n);
+  return bytes(n);
+}
+function shortCpu(cpu) {
+  return cpu.replace(/\((R|TM)\)/gi, "").replace(/\b(Processor|CPU)\b/gi, "").replace(/\b\d+-Core\b/gi, "")
+    .replace(/@.*$/, "").replace(/\s+/g, " ").trim();
+}
+function sig(x) {
+  const s = x.toPrecision(3);
+  return s.includes("e") ? String(Number(s)) : s;
+}
+function fmtTime(ns) {
+  for (const [scale, unit] of [[1e9, "s"], [1e6, "ms"], [1e3, "µs"]]) if (ns >= scale) return `${sig(ns / scale)} ${unit}`;
+  return `${sig(ns)} ns`;
+}
+function fmtRel(x) { return x >= 10 ? `${x.toFixed(1)}×` : `${x.toFixed(2)}×`; }
+
+// ----------------------------------------------------------------- the data
+
+const FORMAT = "verified-garbage-bench";
+let files = [];
+let records = [];
 let loadErrors = [];
+let machines = [];             // [{key, label}], in order
+let series = [];               // [{key, label, color, subject}], baselines first
+let seriesByKey = new Map();
+let groups = [];               // the benchmark groups, in order
+let table = new Map();         // group -> machine -> size -> series -> fastest record
+let sizesOf = new Map();       // group -> its sizes, in order
 
 function addDocument(doc, name) {
   if (Array.isArray(doc)) return doc.forEach(d => addDocument(d, name));
@@ -296,264 +363,81 @@ function addDocument(doc, name) {
 
 function rebuild() {
   records = [];
+  // Runs of the workflow are told apart, when there are several.
+  const runs = [...new Set(files.map(f => f.context.run).filter(Boolean))];
   for (const f of files) {
     const c = f.context;
+    const source = runs.length > 1 && c.run ? `run ${String(c.run).split("/").pop()}` : "";
     for (const r of f.results) {
       const t = Number(r.time_ns);
-      if (!(t > 0)) continue;
+      if (!(t > 0) || r.group === undefined) continue;
       records.push({
-        arch: String(c.arch ?? "unknown"),
-        cpu: c.cpu ? String(c.cpu) : "",
-        cfg: String(c.cpu_features ?? ""),
-        side: r.side === "base" ? "base" : "head",
-        library: String(r.library),
-        group: String(r.group),
-        size: Number(r.size),
-        sizeText: String(r.size),
-        t,
+        arch: String(c.arch ?? "unknown"), cpu: c.cpu ? String(c.cpu) : "", cfg: String(c.cpu_features ?? ""),
+        side: r.side === "base" ? "base" : "head", library: String(r.library), group: String(r.group),
+        sizeText: String(r.size), t, source,
       });
     }
   }
-}
-
-// ------------------------------------------------------------- the groupings
-
-// Sizes of the bulk algorithms' benchmarks: each bar takes the benchmark's
-// size nearest one of these (AES-GCM's TLS records are 63 bytes, not 64).
-const BUCKETS = [[64, "64 B"], [1024, "1 KiB"], [16384, "16 KiB"]];
-const SIZE_INNERS = BUCKETS.map(([b, label]) => [String(b), label, true]);
-function nearestBucket(size) {
-  let best = null;
-  for (const [b] of BUCKETS) {
-    const d = Math.abs(Math.log(size / b));
-    if (d < Math.log(1.1) && (!best || d < best[1])) best = [String(b), d];
+  // Machines: an architecture and CPU model, whose results alone compare.
+  const ms = new Map();
+  for (const r of records) {
+    r.machine = `${r.arch}\u001f${r.cpu}`;
+    if (!ms.has(r.machine)) ms.set(r.machine, { key: r.machine, arch: r.arch, label: r.cpu ? `${r.arch} · ${shortCpu(r.cpu)}` : r.arch });
   }
-  return best;
+  const archRank = a => { const i = ARCHES.indexOf(a); return i < 0 ? 99 : i; };
+  machines = [...ms.values()].sort((a, b) => archRank(a.arch) - archRank(b.arch) || collator.compare(a.label, b.label));
+  // Series, in the order that picks each group's baseline: OpenSSL, AWS-LC,
+  // then verified-garbage's configurations (`none` first, every feature
+  // detected last), base before head.
+  const libRank = l => (l === "openssl" ? 0 : l === "aws-lc-rs" ? 1 : l === VG ? 3 : 2);
+  const cfgRank = c => (c === "none" ? 0 : c === "" ? 2 : 1);
+  const ss = new Map();
+  for (const r of records) {
+    r.series = [r.library, r.cfg, r.side, r.source].join("\u001f");
+    if (!ss.has(r.series)) {
+      const label = (LIBRARIES[r.library] || r.library) + (r.cfg ? ` ${r.cfg}` : "") + (r.side === "base" ? " (base)" : "") + (r.source ? ` · ${r.source}` : "");
+      ss.set(r.series, { key: r.series, label, library: r.library, cfg: r.cfg, side: r.side, source: r.source });
+    }
+  }
+  const sources = [...new Set(records.map(r => r.source))];
+  series = [...ss.values()].sort((a, b) => libRank(a.library) - libRank(b.library) || collator.compare(a.library, b.library)
+    || cfgRank(a.cfg) - cfgRank(b.cfg) || collator.compare(a.cfg, b.cfg)
+    || sources.indexOf(a.source) - sources.indexOf(b.source) || (a.side === "base" ? -1 : 1) - (b.side === "base" ? -1 : 1));
+  // The subject, in blue: verified-garbage's head with every feature
+  // detected; then the others in palette order (OpenSSL gray).
+  const subject = [...series].reverse().find(s => s.library === VG && s.side === "head" && s.cfg === "")
+    || [...series].reverse().find(s => s.library === VG) || series[series.length - 1];
+  let slot = 2;
+  for (const s of series) {
+    s.subject = s === subject;
+    s.color = s.subject ? "var(--s1)" : s.library === "openssl" ? "var(--s-base)" : `var(--s${Math.min(8, slot++)})`;
+  }
+  seriesByKey = new Map(series.map(s => [s.key, s]));
+  // The fastest of each benchmark's results, by group, machine, size and
+  // series (several runs of one can be loaded).
+  table = new Map();
+  sizesOf = new Map();
+  for (const r of records) {
+    if (!table.has(r.group)) { table.set(r.group, new Map()); sizesOf.set(r.group, new Set()); }
+    sizesOf.get(r.group).add(r.sizeText);
+    const byMachine = table.get(r.group);
+    if (!byMachine.has(r.machine)) byMachine.set(r.machine, new Map());
+    const bySize = byMachine.get(r.machine);
+    if (!bySize.has(r.sizeText)) bySize.set(r.sizeText, new Map());
+    const bySeries = bySize.get(r.sizeText);
+    const prev = bySeries.get(r.series);
+    if (!prev || r.t < prev.t) bySeries.set(r.series, r);
+  }
+  for (const [g, s] of sizesOf) sizesOf.set(g, [...s].sort(collator.compare));
+  groups = [...table.keys()].sort(collator.compare);
 }
-// A grouping of benchmarks that are each one of its outers, by name, at the
-// sizes.
-function bulk(outers) {
-  const known = new Set(outers.map(o => o[0]));
-  return (group, size) => {
-    if (!known.has(group)) return null;
-    const b = nearestBucket(size);
-    return b ? [group, b[0], b[1]] : null;
-  };
-}
-// RSA's and finite-field DH's sizes: the modulus' bytes.
-const MODULUS = { 256: "2048", 384: "3072", 512: "4096" };
-
-// Each grouping: its outer groups and inner bars, as [key, label, shown by
-// default], and `match(group, size, sizeText)`: the [outer, inner] that a
-// benchmark is (and how far its size is from the bar's, to take the
-// nearest), or null.
-const TOPICS = [
-  {
-    id: "ec", name: "Elliptic curves", outerName: "Curves", innerName: "Operations",
-    note: "Signatures are of a 64-byte message, with the curve's usual hash (SHA-256 for P-256).",
-    outers: [
-      ["p256", "P-256", true], ["p384", "P-384", true], ["p521", "P-521", true],
-      ["curve25519", "Curve25519", true], ["curve448", "Curve448", false], ["secp256k1", "secp256k1", false],
-      ["p224", "P-224", false], ["p192", "P-192", false],
-      ["brainpoolp256r1", "brainpoolP256r1", false], ["brainpoolp320r1", "brainpoolP320r1", false],
-      ["brainpoolp384r1", "brainpoolP384r1", false], ["brainpoolp512r1", "brainpoolP512r1", false],
-    ],
-    inners: [
-      ["ecdh", "ECDH", true], ["sign", "Sign", true], ["verify", "Verify", true],
-      ["pubkey", "Public key", false], ["validate", "Validate key", false],
-      ["compress", "Compress point", false], ["decompress", "Decompress point", false],
-    ],
-    match(g, size) {
-      let m;
-      if ((m = /^ecdh_([a-z0-9]+)$/.exec(g))) return [m[1], "ecdh"];
-      if ((m = /^x(25519|448)$/.exec(g))) return ["curve" + m[1], "ecdh"];
-      if ((m = /^x(25519|448)_public_key$/.exec(g))) return ["curve" + m[1], "pubkey"];
-      if ((m = /^ed(25519|448)_(sign|verify)$/.exec(g))) return size === 64 ? ["curve" + m[1], m[2]] : null;
-      if ((m = /^ed(25519|448)_keygen$/.exec(g))) return ["curve" + m[1], "pubkey"];
-      if ((m = /^ecdsa_([a-z0-9]+)_(sha\d+)_(sign|verify)$/.exec(g))) {
-        return size === 64 && !(m[1] === "p256" && m[2] !== "sha256") ? [m[1], m[3]] : null;
-      }
-      if ((m = /^ec_([a-z0-9]+)_public_key$/.exec(g))) return [m[1], "pubkey"];
-      if ((m = /^ec_validate_([a-z0-9]+)$/.exec(g))) return [m[1], "validate"];
-      if ((m = /^ec_([a-z0-9]+)_(compress|decompress)$/.exec(g))) return [m[1], m[2]];
-      return null;
-    },
-  },
-  {
-    id: "rsa", name: "RSA", outerName: "Key sizes", innerName: "Operations",
-    note: "PSS and OAEP with SHA-256.",
-    outers: [["2048", "RSA-2048", true], ["3072", "RSA-3072", true], ["4096", "RSA-4096", true]],
-    inners: [
-      ["pkcs1_sign", "PKCS#1 sign", true], ["pkcs1_verify", "PKCS#1 verify", true],
-      ["pss_sign", "PSS sign", false], ["pss_verify", "PSS verify", false],
-      ["oaep_encrypt", "OAEP encrypt", true], ["oaep_decrypt", "OAEP decrypt", true],
-      ["pkcs1_encrypt", "PKCS#1 encrypt", false], ["pkcs1_decrypt", "PKCS#1 decrypt", false],
-      ["keygen", "Key generation", false], ["load", "Load private key", false],
-    ],
-    match(g, size) {
-      const ops = {
-        rsa_pkcs1_sign: "pkcs1_sign", rsa_pkcs1_verify: "pkcs1_verify",
-        rsa_pss_sha256_mgf1_sha256_sign: "pss_sign", rsa_pss_sha256_mgf1_sha256_verify: "pss_verify",
-        rsa_oaep_sha256_mgf1_sha256_encrypt: "oaep_encrypt", rsa_oaep_sha256_mgf1_sha256_decrypt: "oaep_decrypt",
-        rsa_pkcs1_encrypt: "pkcs1_encrypt", rsa_pkcs1_decrypt: "pkcs1_decrypt",
-        rsa_keygen_generate: "keygen", rsa_from_crt: "load",
-      };
-      return ops[g] && MODULUS[size] ? [MODULUS[size], ops[g]] : null;
-    },
-  },
-  {
-    id: "dh", name: "DH & DSA", outerName: "Groups", innerName: "Operations",
-    outers: [
-      ["ffdh2048", "FFDH-2048", true], ["ffdh3072", "FFDH-3072", true], ["ffdh4096", "FFDH-4096", false],
-      ["dsa1024_160", "DSA-1024", false], ["dsa2048_224", "DSA-2048/224", false],
-      ["dsa2048_256", "DSA-2048", true], ["dsa3072_256", "DSA-3072", true],
-    ],
-    inners: [["exchange", "Key exchange", true], ["keygen", "Key generation", true], ["sign", "Sign", true], ["verify", "Verify", true]],
-    match(g, size) {
-      let m;
-      if (g === "ffdh_exchange" || g === "ffdh_generate") {
-        return MODULUS[size] ? ["ffdh" + MODULUS[size], g === "ffdh_exchange" ? "exchange" : "keygen"] : null;
-      }
-      if ((m = /^dsa_(sign|verify|generate_key)_q(\d+)$/.exec(g))) return [`dsa${size}_${m[2]}`, m[1] === "generate_key" ? "keygen" : m[1]];
-      return null;
-    },
-  },
-  {
-    id: "pq", name: "Post-quantum", outerName: "Parameters", innerName: "Operations",
-    outers: [
-      ["mlkem768", "ML-KEM-768", true], ["mlkem1024", "ML-KEM-1024", true],
-      ["mldsa44", "ML-DSA-44", true], ["mldsa65", "ML-DSA-65", true], ["mldsa87", "ML-DSA-87", true],
-    ],
-    inners: [
-      ["keygen", "Key generation", true], ["encaps", "Encapsulate", true], ["decaps", "Decapsulate", true],
-      ["sign", "Sign", true], ["verify", "Verify", true],
-    ],
-    match(g) {
-      const m = /^(mlkem(?:768|1024)|mldsa(?:44|65|87))_(keygen|encaps|decaps|sign|verify)$/.exec(g);
-      return m ? [m[1], m[2]] : null;
-    },
-  },
-  {
-    id: "hash", name: "Hashes", outerName: "Hashes", innerName: "Message sizes",
-    outers: [
-      ["sha256", "SHA-256", true], ["sha384", "SHA-384", true], ["sha512", "SHA-512", true],
-      ["sha3-256", "SHA3-256", true], ["blake2b-512", "BLAKE2b-512", true],
-      ["sha1", "SHA-1", false], ["sha224", "SHA-224", false], ["sha512-224", "SHA-512/224", false],
-      ["sha512-256", "SHA-512/256", false], ["sha3-224", "SHA3-224", false], ["sha3-384", "SHA3-384", false],
-      ["sha3-512", "SHA3-512", false], ["shake128", "SHAKE128", false], ["shake256", "SHAKE256", false],
-      ["blake2s-256", "BLAKE2s-256", false], ["md5", "MD5", false], ["sm3", "SM3", false],
-    ],
-    inners: SIZE_INNERS,
-  },
-  {
-    id: "mac", name: "MACs", outerName: "MACs", innerName: "Message sizes",
-    outers: [
-      ["hmac-sha256", "HMAC-SHA-256", true], ["hmac-sha512", "HMAC-SHA-512", true],
-      ["aes-128-cmac", "CMAC-AES-128", true], ["poly1305", "Poly1305", true],
-      ["hmac-sha1", "HMAC-SHA-1", false], ["hmac-sha224", "HMAC-SHA-224", false], ["hmac-sha384", "HMAC-SHA-384", false],
-      ["hmac-sha512-224", "HMAC-SHA-512/224", false], ["hmac-sha512-256", "HMAC-SHA-512/256", false],
-      ["hmac-md5", "HMAC-MD5", false], ["aes-192-cmac", "CMAC-AES-192", false], ["aes-256-cmac", "CMAC-AES-256", false],
-      ["tdes-cmac", "CMAC-3DES", false],
-    ],
-    inners: SIZE_INNERS,
-  },
-  {
-    id: "aead", name: "AEADs", outerName: "AEADs", innerName: "Message sizes",
-    note: "AES-GCM seals and opens TLS records, of the sizes nearest these.",
-    outers: [
-      ["aes-128-gcm-tls-seal", "AES-128-GCM encrypt", true], ["aes-256-gcm-tls-seal", "AES-256-GCM encrypt", true],
-      ["chacha20poly1305", "ChaCha20-Poly1305 encrypt", true],
-      ["aes-128-gcm-tls-open", "AES-128-GCM decrypt", false], ["aes-256-gcm-tls-open", "AES-256-GCM decrypt", false],
-      ["chacha20poly1305-decrypt", "ChaCha20-Poly1305 decrypt", false],
-      ["aes-128-gcm-siv-encrypt", "AES-128-GCM-SIV encrypt", false], ["aes-256-gcm-siv-encrypt", "AES-256-GCM-SIV encrypt", false],
-      ["aes-128-ccm-encrypt", "AES-128-CCM encrypt", false], ["aes-256-ccm-encrypt", "AES-256-CCM encrypt", false],
-      ["aes-128-ocb-encrypt", "AES-128-OCB encrypt", false], ["aes-128-siv-encrypt", "AES-SIV encrypt", false],
-      ["sm4-gcm-encrypt", "SM4-GCM encrypt", false],
-    ],
-    inners: SIZE_INNERS,
-  },
-  {
-    id: "cipher", name: "Ciphers", outerName: "Ciphers", innerName: "Message sizes",
-    outers: [
-      ["aes-ctr-128", "AES-128-CTR", true], ["aes-ctr-256", "AES-256-CTR", true], ["chacha20", "ChaCha20", true],
-      ["aes-cbc-encrypt-128", "AES-128-CBC encrypt", true], ["aes-cbc-decrypt-128", "AES-128-CBC decrypt", true],
-      ["aes-xts-256", "AES-XTS-256", false], ["aes-ecb-encrypt-128", "AES-128-ECB encrypt", false],
-      ["aes-cfb128-encrypt-128", "AES-128-CFB encrypt", false], ["aes-ofb-128", "AES-128-OFB", false],
-      ["camellia-ctr-16", "Camellia-128-CTR", false], ["sm4-ctr", "SM4-CTR", false],
-      ["triple-des-cbc-encrypt", "3DES-CBC encrypt", false], ["blowfish-cbc-encrypt", "Blowfish-CBC encrypt", false],
-      ["cast5-cbc-encrypt", "CAST5-CBC encrypt", false], ["seed-cbc-encrypt", "SEED-CBC encrypt", false],
-      ["idea-cbc-encrypt", "IDEA-CBC encrypt", false], ["rc4", "RC4", false],
-    ],
-    inners: SIZE_INNERS,
-  },
-  {
-    id: "kdf", name: "KDFs", outerName: "Functions", innerName: "Cost",
-    note: "The cost is PBKDF2's iterations, scrypt's N, and Argon2's memory in KiB.",
-    outers: [
-      ["pbkdf2-hmac-sha256", "PBKDF2-HMAC-SHA-256", true], ["pbkdf2-hmac-sha512", "PBKDF2-HMAC-SHA-512", true],
-      ["scrypt", "scrypt", true], ["argon2id", "Argon2id", true],
-      ["pbkdf2-hmac-sha1", "PBKDF2-HMAC-SHA-1", false], ["pbkdf2-hmac-sha384", "PBKDF2-HMAC-SHA-384", false],
-      ["argon2i", "Argon2i", false], ["argon2d", "Argon2d", false],
-    ],
-    // The costs are whatever the benchmarks measured.
-    inners: null,
-    match(g, size, sizeText) {
-      return this.outers.some(o => o[0] === g) ? [g, sizeText] : null;
-    },
-  },
-];
-for (const t of TOPICS) if (!t.match) t.match = bulk(t.outers);
-
-// ------------------------------------------------------------ the comparisons
-
-const CFG_ALL = "";
-function cfgLabel(cfg) { return cfg === CFG_ALL ? "all detected" : cfg; }
-
-// Each comparison: whether the results have it, which results it compares
-// (`seriesOf`: a result's series, or null to leave it out), and its series
-// on an architecture, from those present there: [{key, label, baseline,
-// subject}], the baseline first.
-const COMPARISONS = [
-  {
-    id: "libraries", name: "Libraries", desc: "verified-garbage against OpenSSL and AWS-LC",
-    available: () => records.some(r => r.library in LIBRARIES && r.library !== VG),
-    seriesOf: r => (r.library in LIBRARIES && r.side === "head" && r.cfg === CFG_ALL ? r.library : null),
-    series(present) {
-      const base = state.base in LIBRARIES && present.has(state.base) ? state.base : present.has("openssl") ? "openssl" : "aws-lc-rs";
-      return ["openssl", "aws-lc-rs", VG].filter(k => present.has(k) || k === base)
-        .sort((a, b) => (b === base) - (a === base))
-        .map(k => ({ key: k, label: LIBRARIES[k], baseline: k === base, subject: k === VG }));
-    },
-    note: "OpenSSL and AWS-LC run only with every CPU feature detected, so this compares verified-garbage's choice on each runner.",
-  },
-  {
-    id: "head", name: "Head vs base", desc: "the branch against the commit it was compared with",
-    available: () => records.some(r => r.side === "base"),
-    seriesOf: r => (r.library === VG && r.cfg === state.cfg ? r.side : null),
-    series: () => [
-      { key: "base", label: "Base", baseline: true },
-      { key: "head", label: "Head", subject: true },
-    ],
-  },
-  {
-    id: "cpu", name: "CPU features", desc: "verified-garbage's implementations, by VG_CPU_FEATURES",
-    available: () => new Set(records.filter(r => r.library === VG && r.side === "head").map(r => r.cfg)).size > 1,
-    seriesOf: r => (r.library === VG && r.side === "head" ? r.cfg : null),
-    series(present) {
-      const rank = k => (k === "none" ? 0 : k === CFG_ALL ? 2 : 1);
-      const cfgs = [...present].sort((a, b) => rank(a) - rank(b) || collator.compare(a, b));
-      return cfgs.map((k, i) => ({ key: k, label: cfgLabel(k), baseline: i === 0, subject: k === CFG_ALL }));
-    },
-  },
-];
 
 // ---------------------------------------------------------------- the state
 
-// What the page shows, kept in the URL: the comparison, the grouping, the
-// libraries' baseline ("auto": OpenSSL, or AWS-LC where it has none), head
-// against base's configuration, the architectures shown (null: all), and
-// each grouping's chosen outers and inners (where changed).
-const state = { cmp: "", topic: "", base: "auto", cfg: CFG_ALL, arches: null, sel: {} };
+// What the page shows, kept in the URL: the combined charts (each a list of
+// groups), each chart's hidden sizes, the hidden series and machines, and
+// the search.
+const state = { charts: [], sizes: {}, hidden: [], machines: [], q: "" };
 
 function readHash() {
   const m = /^#(.+)$/.exec(location.hash);
@@ -562,62 +446,72 @@ function readHash() {
     const s = JSON.parse(decodeURIComponent(m[1]));
     if (s && typeof s === "object") for (const k of Object.keys(state)) if (k in s) state[k] = s[k];
   } catch { /* a link from elsewhere: ignore it */ }
-  if (!state.sel || typeof state.sel !== "object") state.sel = {};
+  if (!Array.isArray(state.charts)) state.charts = [];
+  for (const k of ["hidden", "machines"]) if (!Array.isArray(state[k])) state[k] = [];
+  if (!state.sizes || typeof state.sizes !== "object") state.sizes = {};
+  if (typeof state.q !== "string") state.q = "";
 }
 function saveHash() { history.replaceState(null, "", "#" + encodeURIComponent(JSON.stringify(state))); }
 
-function selected(topic, kind, all) {
-  const s = state.sel[topic.id] && state.sel[topic.id][kind];
-  if (Array.isArray(s)) return new Set(s);
-  const defs = kind === "o" ? topic.outers : topic.inners;
-  return new Set(defs ? defs.filter(d => d[2]).map(d => d[0]) : all);
-}
-
-// --------------------------------------------------------------- computing
-
-// The results of `topic` that comparison `cmp` compares: by architecture,
-// then outer and inner, then series: at the size nearest the bar's, the
-// fastest (of several runs loaded).
-function collect(cmp, topic) {
-  const out = new Map();
-  for (const r of records) {
-    const series = cmp.seriesOf(r);
-    if (series === null) continue;
-    const m = topic.match(r.group, r.size, r.sizeText);
-    if (!m) continue;
-    const [outer, inner, d = 0] = m;
-    if (!out.has(r.arch)) out.set(r.arch, new Map());
-    const a = out.get(r.arch);
-    const key = outer + "\u001f" + inner;
-    if (!a.has(key)) a.set(key, { outer, inner, cells: new Map() });
-    const cells = a.get(key).cells;
-    const prev = cells.get(series);
-    if (!prev || d < prev.d || (d === prev.d && r.t < prev.r.t)) cells.set(series, { r, d });
-  }
+// The charts: those combined first, as they were made, then each other
+// group alone, by name. Each has a key, its groups, and whether it is
+// combined.
+function charts() {
+  const known = new Set(groups);
+  const combined = state.charts.map(list => list.filter(g => known.has(g))).filter(list => list.length);
+  const taken = new Set(combined.flat());
+  const out = combined.map(list => ({ key: "+" + list.join("+"), groups: list, combined: list.length > 1 }));
+  for (const g of groups) if (!taken.has(g)) out.push({ key: g, groups: [g], combined: false });
   return out;
 }
-
-function topicsWithData(cmp) {
-  return TOPICS.filter(t => records.some(r => cmp.seriesOf(r) !== null && t.match(r.group, r.size, r.sizeText)));
+function combine(a, b) {
+  // `a` dropped onto `b`: b's groups, then a's, where b was (or a, if only
+  // a was combined).
+  const merged = [...b.groups, ...a.groups.filter(g => !b.groups.includes(g))];
+  const at = state.charts.findIndex(l => sameList(l, b.groups));
+  const lists = state.charts.map(l => (sameList(l, b.groups) || (at < 0 && sameList(l, a.groups)) ? merged : l))
+    .filter(l => l === merged || !sameList(l, a.groups));
+  if (!lists.includes(merged)) lists.push(merged);
+  state.charts = lists;
+  update();
+}
+function sameList(x, y) { return x.length === y.length && x.every((g, i) => g === y[i]); }
+function matches(group) {
+  const words = state.q.toLowerCase().split(/\s+/).filter(Boolean);
+  const text = `${group} ${pretty(tokensOf(group))}`.toLowerCase();
+  return words.every(w => text.includes(w));
 }
 
-// ------------------------------------------------------------ formatting
+// ------------------------------------------------------------- combining
 
-function sig(x) {
-  const s = x.toPrecision(3);
-  return s.includes("e") ? String(Number(s)) : s;
-}
-function fmtTime(ns) {
-  for (const [scale, unit] of [[1e9, "s"], [1e6, "ms"], [1e3, "µs"]]) if (ns >= scale) return `${sig(ns / scale)} ${unit}`;
-  return `${sig(ns)} ns`;
-}
-function fmtRel(x) { return x >= 10 ? `${x.toFixed(1)}×` : `${x.toFixed(2)}×`; }
-function archOrder(a, b) {
-  const ia = ARCHES.indexOf(a), ib = ARCHES.indexOf(b);
-  return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || collator.compare(a, b);
+// How a combined chart lays out its groups: by the parameter that every
+// name has exactly one of (P-256, ML-KEM-768, …: a word with digits, by
+// its letters), where it tells some of them apart but not all; and the
+// words that every name shares, which make its title.
+function layout(gs) {
+  const toks = gs.map(tokensOf);
+  const shared = toks[0].filter(t => toks.every(ts => ts.includes(t)));
+  let best = null;
+  const classes = new Set(toks.flat().filter(t => /\d/.test(t) && !shared.includes(t)).map(t => t.replace(/\d+/g, "#")));
+  for (const cls of classes) {
+    const picks = toks.map(ts => ts.filter(t => /\d/.test(t) && t.replace(/\d+/g, "#") === cls));
+    if (!picks.every(p => p.length === 1)) continue;
+    const k = new Set(picks.map(p => p[0])).size;
+    if (k < 2 || k >= gs.length) continue;
+    const pos = toks.reduce((n, ts, i) => n + ts.indexOf(picks[i][0]), 0);
+    if (!best || k < best.k || (k === best.k && pos < best.pos)) best = { k, pos, picks: picks.map(p => p[0]) };
+  }
+  const rest = (ts, drop) => ts.filter(t => !shared.includes(t) && t !== drop);
+  const firsts = [...new Set(toks.map(ts => pretty([ts[0]])))];
+  const title = shared.length ? pretty(shared) : firsts.length <= 4 ? firsts.join(" · ") : `${gs.length} benchmarks`;
+  return {
+    title,
+    outer: best ? (g => best.picks[gs.indexOf(g)]) : null,
+    name: g => { const i = gs.indexOf(g); return pretty(rest(toks[i], best ? best.picks[i] : null)); },
+  };
 }
 
-// --------------------------------------------------------------------- DOM
+// ------------------------------------------------------------------- DOM
 
 function el(tag, attrs, ...children) {
   const e = document.createElement(tag);
@@ -652,15 +546,18 @@ function fit(s, max, size = 12, weight = 400) {
   return lo ? s.slice(0, lo) + "…" : "";
 }
 
-// ----------------------------------------------------------------- render
+// --------------------------------------------------------------- rendering
+
+function update() { saveHash(); render(); }
 
 function render() {
   hideTooltip();
   renderRun();
-  const cards = document.getElementById("cards");
   document.getElementById("errors").replaceChildren(...loadErrors.map(e => el("div", {}, e)));
+  const cards = document.getElementById("cards");
   if (!records.length) {
-    for (const id of ["compare", "topics", "filters", "note", "all"]) document.getElementById(id).replaceChildren();
+    document.getElementById("controls").replaceChildren();
+    document.getElementById("all").replaceChildren();
     cards.replaceChildren(el("div", { class: "welcome" },
       el("h2", {}, "No benchmark results loaded"),
       el("p", {}, "Drop results files here, or use “Load results…”. ",
@@ -668,34 +565,14 @@ function render() {
         ", and the Benchmarks workflow's ", el("code", {}, "benchmarks.html"), " has its run's built in.")));
     return;
   }
-  const comparisons = COMPARISONS.filter(c => c.available());
-  if (!comparisons.some(c => c.id === state.cmp)) state.cmp = (comparisons[0] || COMPARISONS[0]).id;
-  const cmp = COMPARISONS.find(c => c.id === state.cmp);
-  if (cmp.id === "head") {
-    const cfgs = new Set(records.filter(r => r.side === "base").map(r => r.cfg));
-    if (!cfgs.has(state.cfg)) state.cfg = cfgs.has(CFG_ALL) ? CFG_ALL : [...cfgs].sort(collator.compare)[0];
-  }
-  const topics = topicsWithData(cmp);
-  if (!topics.some(t => t.id === state.topic)) state.topic = topics.length ? topics[0].id : "";
-  saveHash();
-  renderCompare(comparisons, cmp);
-  renderTopics(topics);
+  const list = charts();
+  renderControls(list);
   renderAll();
-  const topic = TOPICS.find(t => t.id === state.topic);
-  if (!topic) {
-    for (const id of ["filters", "note"]) document.getElementById(id).replaceChildren();
-    cards.replaceChildren(el("div", { class: "empty-card" }, "None of these results is in a grouping that this comparison charts: they are all in the table below."));
-    return;
-  }
-  const data = collect(cmp, topic);
-  renderFilters(cmp, topic, data);
-  document.getElementById("note").textContent = [topic.note, cmp.note].filter(Boolean).join(" ");
-  const presentI = new Set();
-  for (const a of data.values()) for (const g of a.values()) presentI.add(g.inner);
-  const outers = selected(topic, "o"), inners = selected(topic, "i", presentI);
-  const arches = [...data.keys()].sort(archOrder).filter(a => !state.arches || state.arches.includes(a));
-  cards.replaceChildren(...arches.map(arch => renderCard(cmp, topic, arch, data.get(arch), outers, inners)));
-  if (!arches.length) cards.append(el("div", { class: "empty-card" }, "No architecture is selected."));
+  observer.disconnect();
+  // Combined charts stay in view while searching for what to add to them.
+  const shown = list.filter(c => c.combined || c.groups.some(matches));
+  cards.replaceChildren(...shown.map(renderCard));
+  if (!shown.length) cards.append(el("div", { class: "welcome" }, "No benchmark matches the search."));
 }
 
 function renderRun() {
@@ -711,143 +588,189 @@ function renderRun() {
   box.replaceChildren(parts.join(" · "));
   const run = one("run");
   if (run && /^https:\/\//.test(run)) box.append(parts.length ? " · " : "", el("a", { href: run }, "workflow run"));
-  else if (records.length) box.append(`${parts.length ? " · " : ""}${records.length.toLocaleString()} results`);
 }
 
-function renderCompare(comparisons, cmp) {
-  const nav = document.getElementById("compare");
-  nav.replaceChildren(...comparisons.map(c => el("button", {
-    type: "button", "aria-pressed": String(c.id === state.cmp),
-    onclick: () => { state.cmp = c.id; render(); },
-  }, c.name)), el("span", { class: "desc" }, cmp.desc));
+function chip(text, on, onclick, swatch) {
+  return el("button", { type: "button", class: "chip", "aria-pressed": String(on), onclick },
+    swatch ? el("span", { class: "swatch", style: `background:${swatch}` }) : null, text);
 }
 
-function renderTopics(topics) {
-  document.getElementById("topics").replaceChildren(...topics.map(t => el("button", {
-    type: "button", role: "tab", "aria-selected": String(t.id === state.topic),
-    onclick: () => { state.topic = t.id; render(); },
-  }, t.name)));
-}
-
-function chipRow(label, items, isOn, onToggle, extra) {
-  return [
-    el("span", { class: "label" }, label),
-    el("div", { class: "chips" }, items.map(([key, text]) => el("button", {
-      type: "button", class: "chip", "aria-pressed": String(isOn(key)), onclick: () => onToggle(key),
-    }, text)), extra || null),
-  ];
-}
-
-function renderFilters(cmp, topic, data) {
-  const box = document.getElementById("filters");
-  const presentO = new Set(), presentI = new Set(), present = new Set();
-  for (const a of data.values()) for (const g of a.values()) {
-    presentO.add(g.outer);
-    presentI.add(g.inner);
-    for (const k of g.cells.keys()) present.add(k);
-  }
-  const outerItems = topic.outers.filter(o => presentO.has(o[0]));
-  const innerItems = topic.inners ? topic.inners.filter(i => presentI.has(i[0])) : [...presentI].sort(collator.compare).map(i => [i, i]);
-  const toggle = (kind, all) => key => {
-    const cur = selected(topic, kind, all);
-    if (cur.has(key)) cur.delete(key); else cur.add(key);
-    (state.sel[topic.id] = state.sel[topic.id] || {})[kind] = [...cur];
-    render();
+function renderControls(list) {
+  const box = document.getElementById("controls");
+  const toggle = (key, k) => () => {
+    const set = new Set(state[key]);
+    if (set.has(k)) set.delete(k); else set.add(k);
+    state[key] = [...set];
+    update();
   };
-  const reset = state.sel[topic.id]
-    ? el("button", { type: "button", class: "reset", onclick: () => { delete state.sel[topic.id]; render(); } }, "Reset")
-    : null;
-  const oSel = selected(topic, "o"), iSel = selected(topic, "i", presentI);
-  box.replaceChildren(
-    ...chipRow(topic.outerName, outerItems, k => oSel.has(k), toggle("o")),
-    ...chipRow(topic.innerName, innerItems, k => iSel.has(k), toggle("i", presentI), reset));
-  const arches = [...data.keys()].sort(archOrder);
-  if (arches.length > 1) {
-    box.append(...chipRow("Architectures", arches.map(a => [a, a]), a => !state.arches || state.arches.includes(a), a => {
-      const cur = new Set(state.arches || arches);
-      if (cur.has(a)) cur.delete(a); else cur.add(a);
-      state.arches = cur.size === arches.length ? null : [...cur];
+  const rows = [];
+  if (series.length > 1) {
+    rows.push(el("span", { class: "label" }, "Series"), el("div", { class: "chips" },
+      series.map(s => chip(s.label, !state.hidden.includes(s.key), toggle("hidden", s.key), s.color)),
+      el("span", { class: "hint" }, "Gray bars are each group's baseline (1.0×): the first of these it has.")));
+  }
+  if (machines.length > 1) {
+    rows.push(el("span", { class: "label" }, "Machines"), el("div", { class: "chips" },
+      machines.map(m => chip(m.label, !state.machines.includes(m.key), toggle("machines", m.key)))));
+  }
+  const input = el("input", { type: "search", placeholder: "Find benchmarks, e.g. “ecdh p”", value: state.q, "aria-label": "Find benchmarks" });
+  let timer = null;
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      state.q = input.value;
+      saveHash();
+      const pos = input.selectionStart;
       render();
-    }));
-  }
-  if (cmp.id === "libraries" && present.has("openssl") && present.has("aws-lc-rs")) {
-    const s = el("select", { "aria-label": "Relative to" },
-      el("option", { value: "auto" }, "OpenSSL (AWS-LC where it has none)"),
-      el("option", { value: "aws-lc-rs", selected: state.base === "aws-lc-rs" }, "AWS-LC"));
-    s.addEventListener("change", () => { state.base = s.value; render(); });
-    box.append(el("span", { class: "label" }, "Relative to"), el("div", { class: "chips" }, s));
-  } else if (cmp.id === "head") {
-    const cfgs = [...new Set(records.filter(r => r.side === "base" && r.library === VG).map(r => r.cfg))]
-      .sort((a, b) => (a === CFG_ALL ? -1 : b === CFG_ALL ? 1 : collator.compare(a, b)));
-    if (cfgs.length > 1) box.append(...chipRow("VG_CPU_FEATURES", cfgs.map(c => [c, cfgLabel(c)]), k => k === state.cfg, k => { state.cfg = k; render(); }));
-  }
+      const again = document.querySelector("#controls input[type=search]");
+      again.focus();
+      again.setSelectionRange(pos, pos);
+    }, 150);
+  });
+  const matching = list.filter(c => !c.combined).flatMap(c => c.groups.filter(matches));
+  const combineAll = state.q && matching.length > 1 && matching.length <= 60
+    ? el("button", { type: "button", onclick: () => {
+        state.charts.push(matching);
+        state.q = "";
+        update();
+      } }, `Combine these ${matching.length}`)
+    : null;
+  rows.push(el("span", { class: "label" }, "Benchmarks"), el("div", { class: "search" }, input, combineAll,
+    el("span", { class: "hint" }, "Drag a chart onto another to combine them.")));
+  box.replaceChildren(...rows);
 }
 
-const openTables = new Set();
+// ------------------------------------------------------------------ cards
 
-function renderCard(cmp, topic, arch, groups, outers, inners) {
-  // The series that have results here, colored by role: the baseline gray,
-  // the subject (verified-garbage, head, every feature detected) blue.
-  const present = new Set();
-  for (const g of groups.values()) for (const k of g.cells.keys()) present.add(k);
-  const series = cmp.series(present);
-  let slot = 2;
-  for (const s of series) s.color = s.baseline ? "var(--s-base)" : s.subject ? "var(--s1)" : `var(--s${Math.min(8, slot++)})`;
-  const base = series.find(s => s.baseline);
-  // A cluster of bars for each outer and inner, in the grouping's order.
-  const innerOrder = topic.inners ? topic.inners.map(i => i[0]) : [...new Set([...groups.values()].map(g => g.inner))].sort(collator.compare);
-  const innerLabel = k => (topic.inners ? topic.inners.find(i => i[0] === k)[1] : k);
-  const clusters = [];
-  for (const [ok, olabel] of topic.outers) {
-    if (!outers.has(ok)) continue;
-    for (const ik of innerOrder) {
-      const g = groups.get(ok + "\u001f" + ik);
-      if (!inners.has(ik) || !g) continue;
-      const baseCell = base && g.cells.get(base.key);
-      const bars = series.map(s => {
-        const c = g.cells.get(s.key);
-        return { s, r: c ? c.r : null, rel: c && baseCell ? baseCell.r.t / c.r.t : NaN };
-      });
-      clusters.push({ outer: ok, outerLabel: olabel, innerLabel: innerLabel(ik), bars, hasBase: !!baseCell });
+let dragged = null;
+const observer = new IntersectionObserver(entries => {
+  for (const e of entries) if (e.isIntersecting && e.target.draw) { observer.unobserve(e.target); e.target.draw(); }
+}, { rootMargin: "400px" });
+
+function hiddenSizes(card) { return new Set(state.sizes[card.key] || []); }
+
+function renderCard(card) {
+  const node = el("section", { class: "card" + (card.combined ? " combined" : "") });
+  const lay = card.combined ? layout(card.groups) : null;
+  const title = card.combined ? lay.title : pretty(tokensOf(card.groups[0]));
+  const plots = el("div", {});
+  const numbers = el("div", {});
+  const actions = el("div", { class: "actions" });
+  const head = el("div", { class: "card-head", draggable: "true", title: "Drag onto another chart to combine them" },
+    el("div", { class: "titles" }, el("h2", {}, title),
+      card.combined
+        ? el("div", { class: "members" }, card.groups.map(g => el("span", { class: "member", title: g }, pretty(tokensOf(g)),
+            el("button", { type: "button", "aria-label": `Take ${g} out`, onclick: () => {
+              state.charts = state.charts.map(l => (sameList(l, card.groups) ? l.filter(x => x !== g) : l)).filter(l => l.length > 1);
+              update();
+            } }, "×"))))
+        : el("code", { class: "names" }, card.groups[0])),
+    actions);
+  node.append(head);
+  // Sizes, where there is a choice.
+  const sizes = [...new Set(card.groups.flatMap(g => sizesOf.get(g).map(s => sizeLabel(g, s))))];
+  const hidden = hiddenSizes(card);
+  if (sizes.length > 1) {
+    node.append(el("div", { class: "chips sizes" }, sizes.map(s => chip(s, !hidden.has(s), () => {
+      const set = hiddenSizes(card);
+      if (set.has(s)) set.delete(s); else set.add(s);
+      state.sizes[card.key] = [...set];
+      if (!set.size) delete state.sizes[card.key];
+      update();
+    }))));
+  }
+  node.append(plots, numbers);
+  // The plots, drawn when the card comes into view.
+  const model = cardModel(card, lay, hidden);
+  node.draw = () => drawCard(model, plots);
+  observer.observe(node);
+  if (!model.plots.length) {
+    plots.append(el("div", { class: "hint", style: "padding:12px 0" }, "Nothing to show here with these series, sizes and machines."));
+  } else {
+    let open = false;
+    const showNumbers = el("button", { type: "button" }, "Numbers");
+    showNumbers.addEventListener("click", () => {
+      open = !open;
+      showNumbers.textContent = open ? "Hide numbers" : "Numbers";
+      numbers.replaceChildren(...(open ? [numbersTable(model)] : []));
+    });
+    actions.append(showNumbers,
+      el("button", { type: "button", title: "Copy this chart as an image", onclick: e => exportCard(model, title, plots, "copy", e.currentTarget) }, "Copy image"),
+      el("button", { type: "button", title: "Download this chart as a PNG", onclick: e => exportCard(model, title, plots, "png", e.currentTarget) }, "PNG"));
+  }
+  if (card.combined) {
+    actions.append(el("button", { type: "button", onclick: () => { state.charts = state.charts.filter(l => !sameList(l, card.groups)); update(); } }, "Split"));
+  }
+  // Dragging one chart onto another combines them.
+  head.addEventListener("dragstart", e => { dragged = card; node.classList.add("dragging"); e.dataTransfer.setData("text/x-vg-chart", card.key); e.dataTransfer.effectAllowed = "move"; });
+  head.addEventListener("dragend", () => { dragged = null; node.classList.remove("dragging"); document.querySelectorAll(".drop-target").forEach(n => n.classList.remove("drop-target")); });
+  node.addEventListener("dragover", e => { if (dragged && dragged !== card) { e.preventDefault(); node.classList.add("drop-target"); } });
+  node.addEventListener("dragleave", e => { if (!node.contains(e.relatedTarget)) node.classList.remove("drop-target"); });
+  node.addEventListener("drop", e => {
+    node.classList.remove("drop-target");
+    if (!dragged || dragged === card) return;
+    e.preventDefault();
+    combine(dragged, card);
+  });
+  return node;
+}
+
+// A chart's plots, one for each machine, of each of its groups and sizes: a
+// combined chart's grouped by the parameter its names differ in (`layout`).
+function cardModel(card, lay, hiddenSizeLabels) {
+  const shownSeries = series.filter(s => !state.hidden.includes(s.key));
+  const shownMachines = machines.filter(m => !state.machines.includes(m.key));
+  const sizesShown = g => sizesOf.get(g).filter(s => !hiddenSizeLabels.has(sizeLabel(g, s)));
+  const multiSize = card.groups.some(g => sizesShown(g).length > 1);
+  const plots = [];
+  for (const m of shownMachines) {
+    const clusters = [];
+    for (const g of card.groups) for (const size of sizesShown(g)) {
+      const bySeries = table.get(g).get(m.key)?.get(size);
+      const bars = bySeries ? shownSeries.filter(s => bySeries.has(s.key)).map(s => ({ s, r: bySeries.get(s.key) })) : [];
+      if (!bars.length) continue;
+      const sl = sizeLabel(g, size);
+      if (!card.combined) {
+        clusters.push({ outer: "", outerLabel: "", innerLabel: sl, group: g, size, bars });
+      } else if (lay.outer) {
+        const outer = lay.outer(g);
+        clusters.push({ outer, outerLabel: pretty([outer]), innerLabel: [lay.name(g), multiSize ? sl : ""].filter(Boolean).join(" · ") || sl, group: g, size, bars });
+      } else {
+        clusters.push({ outer: g, outerLabel: lay.name(g), innerLabel: multiSize ? sl : "", group: g, size, bars });
+      }
+    }
+    if (lay && lay.outer) {
+      const outers = [...new Set(clusters.map(c => c.outer))].sort(collator.compare);
+      clusters.sort((a, b) => outers.indexOf(a.outer) - outers.indexOf(b.outer));
+    }
+    if (clusters.length) plots.push({ title: machines.length > 1 ? m.label : null, clusters, small: !card.combined });
+  }
+  // Relative to each group's baseline, where any group has two series to
+  // compare; otherwise, times.
+  const relative = plots.some(p => p.clusters.some(c => c.bars.length > 1));
+  for (const p of plots) for (const c of p.clusters) {
+    const base = c.bars[0];
+    for (const b of c.bars) {
+      b.baseline = relative && b === base;
+      b.v = relative ? base.r.t / b.r.t : b.r.t;
     }
   }
-  // The runners' CPUs, and which series ran on which where they differ.
-  const cpus = new Map();
-  for (const c of clusters) for (const b of c.bars) if (b.r && b.r.cpu) {
-    if (!cpus.has(b.s.label)) cpus.set(b.s.label, new Set());
-    cpus.get(b.s.label).add(b.r.cpu);
-  }
-  const allCpus = new Set([...cpus.values()].flatMap(s => [...s]));
-  const cpuText = allCpus.size === 1 ? [...allCpus][0]
-    : allCpus.size > 1 ? "Different CPUs: " + [...cpus].map(([label, set]) => `${label} on ${[...set].join(" and ")}`).join("; ")
-    : null;
-  const numbers = el("button", { type: "button", class: "numbers", "aria-expanded": String(openTables.has(arch)) },
-    openTables.has(arch) ? "Hide numbers" : "Numbers");
-  const card = el("section", { class: "card" },
-    el("div", { class: "card-head" }, el("h2", {}, arch),
-      cpuText ? el("span", { class: "cpu" + (allCpus.size > 1 ? " warn" : "") }, cpuText) : null, numbers),
-    el("div", { class: "legend" }, series.map(s => el("span", { class: "item" },
-      el("span", { class: "swatch", style: `background:${s.color}` }), s.baseline ? `${s.label} (= 1.0×)` : s.label))),
-    el("div", { class: "axis-title" }, `Throughput relative to ${base ? base.label : "the baseline"} · higher is better`));
-  if (!clusters.length) {
-    numbers.remove();
-    card.append(el("div", { class: "empty-card" }, `Nothing selected has results on ${arch}.`));
-    return card;
-  }
-  const chart = el("div", { class: "chart" });
-  const table = el("div", {});
-  card.append(chart, table);
-  // Drawn once the card is in the page, and so has a width.
-  requestAnimationFrame(() => drawChart(chart, clusters, series, base));
-  const fillTable = () => table.replaceChildren(...(openTables.has(arch) ? [numbersTable(clusters, series, topic)] : []));
-  numbers.addEventListener("click", () => {
-    if (openTables.has(arch)) openTables.delete(arch); else openTables.add(arch);
-    numbers.textContent = openTables.has(arch) ? "Hide numbers" : "Numbers";
-    numbers.setAttribute("aria-expanded", String(openTables.has(arch)));
-    fillTable();
+  return { plots, relative, multiSeries: shownSeries.length > 1 };
+}
+
+function drawCard(model, box) {
+  box.replaceChildren();
+  model.plots.forEach((p, i) => {
+    if (i === 0) {
+      box.append(el("div", { class: "axis-title" }, model.relative
+        ? "Throughput relative to the gray bar · higher is better"
+        : "Time per operation · lower is better"));
+    }
+    if (p.title) box.append(el("div", { class: "plot-title" }, p.title));
+    const chart = el("div", { class: "chart" });
+    box.append(chart);
+    drawPlot(chart, p.clusters, model.relative, p.small);
   });
-  fillTable();
-  return card;
 }
 
 function niceStep(range, ticks) {
@@ -857,115 +780,246 @@ function niceStep(range, ticks) {
   return 10 * e;
 }
 
-function drawChart(box, clusters, series, base) {
-  const width = Math.max(300, box.clientWidth);
-  const nS = series.length;
-  const left = 48, right = 8, top = 22, plotH = 260;
-  const IN = 16, OUT = 40, GAP = 2;     // between clusters, between outer groups, between bars
-  const nC = clusters.length;
-  const nO = new Set(clusters.map(c => c.outer)).size;
-  const fixed = (nC - nO) * IN + nO * OUT + nC * (nS - 1) * GAP;
-  const bw = Math.max(8, Math.min(44, Math.floor((width - left - right - fixed) / (nC * nS))));
-  const cw = nS * bw + (nS - 1) * GAP;
-  // Too many bars to fit: the chart scrolls sideways.
-  const svgW = Math.max(width, left + right + fixed + nC * nS * bw);
-  const height = top + plotH + 62;
-  const rels = clusters.flatMap(c => c.bars.map(b => b.rel)).filter(Number.isFinite);
-  const maxRel = Math.max(1, ...rels);
-  const step = niceStep(maxRel * 1.12, 8);
-  const yMax = Math.ceil(maxRel * 1.12 / step) * step;
+function drawPlot(box, clusters, relative, small) {
+  const width = Math.max(260, box.clientWidth || 360);
+  const left = relative ? 44 : 60, right = 6, top = 20, plotH = small ? 130 : 230;
+  let IN = 14, OUT = 34;
+  const GAP = 2;
+  const hasOuter = clusters.some(c => c.outerLabel);
+  const hasInner = clusters.some(c => c.innerLabel);
+  const nBars = clusters.reduce((n, c) => n + c.bars.length, 0);
+  const outers = new Set(clusters.map(c => c.outer)).size;
+  let fixed = (clusters.length - outers) * IN + outers * OUT + clusters.reduce((n, c) => n + (c.bars.length - 1) * GAP, 0);
+  const bw = Math.max(8, Math.min(40, Math.floor((width - left - right - fixed) / nBars)));
+  // Room to spare (the bars at their widest) goes between the clusters, for
+  // their labels.
+  const spare = width - left - right - fixed - nBars * bw;
+  if (spare > 0) {
+    const extra = Math.min(48, spare / (clusters.length + outers));
+    IN += extra;
+    OUT += extra;
+    fixed += extra * (clusters.length + outers);
+  }
+  const svgW = Math.max(width, left + right + fixed + nBars * bw);
+  const height = top + plotH + (hasInner ? 18 : 0) + (hasOuter ? 32 : 6);
+  const vals = clusters.flatMap(c => c.bars.map(b => b.v));
+  const maxV = Math.max(relative ? 1 : 0, ...vals);
+  const step = niceStep(maxV * 1.12, 6);
+  const yMax = Math.ceil(maxV * 1.12 / step) * step;
   const y = v => top + plotH - Math.min(v, yMax) / yMax * plotH;
   const s = svg("svg", {
     width: svgW, height, viewBox: `0 0 ${svgW} ${height}`, role: "img",
-    "aria-label": "Bar chart of throughput relative to the baseline; “Numbers” shows it as a table",
+    "aria-label": relative ? "Bar chart of throughput relative to each group's baseline; “Numbers” shows it as a table" : "Bar chart of times; “Numbers” shows them as a table",
   });
   for (let i = 0; i * step <= yMax + 1e-9; i++) {
     const v = i * step, vy = y(v);
     s.append(svg("line", { class: "grid", x1: left, x2: svgW - right, y1: vy, y2: vy }));
-    s.append(svg("text", { class: "tick", x: left - 8, y: vy + 4, "text-anchor": "end" }, `${+v.toFixed(2)}×`));
+    s.append(svg("text", { class: "tick", x: left - 7, y: vy + 4, "text-anchor": "end" }, relative ? `${+v.toFixed(2)}×` : fmtTime(v)));
   }
-  // The baseline's 1×, a tick or not.
-  s.append(svg("line", { class: "grid one", x1: left, x2: svgW - right, y1: y(1), y2: y(1) }));
+  if (relative) s.append(svg("line", { class: "grid one", x1: left, x2: svgW - right, y1: y(1), y2: y(1) }));
   s.append(svg("line", { class: "axis", x1: left, x2: svgW - right, y1: top + plotH, y2: top + plotH }));
-  const labelsY = top + plotH + 18;
+  const used = fixed + nBars * bw;
+  let x = left + OUT / 2 + Math.max(0, (svgW - left - right - used) / 2);
   const spans = [];
-  // Bars at their widest leave room: center them.
-  let x = left + OUT / 2 + Math.max(0, (svgW - left - right - fixed - nC * nS * bw) / 2);
+  const labelsY = top + plotH + 16;
   for (const c of clusters) {
     const last = spans[spans.length - 1];
     if (!last || last.outer !== c.outer) {
       if (last) x += OUT - IN;
       spans.push({ outer: c.outer, label: c.outerLabel, x0: x, x1: x });
     }
+    const cw = c.bars.length * bw + (c.bars.length - 1) * GAP;
     const x0 = x;
     spans[spans.length - 1].x1 = x0 + cw;
     const g = svg("g", {});
     const wash = svg("rect", { class: "wash", x: x0 - IN / 2 + 2, y: top - 8, width: cw + IN - 4, height: plotH + 8, rx: 6, visibility: "hidden" });
     g.append(wash);
     c.bars.forEach((b, i) => {
-      if (!Number.isFinite(b.rel)) return;
-      const bx = x0 + i * (bw + GAP), by = y(b.rel), h = top + plotH - by;
+      const bx = x0 + i * (bw + GAP), by = y(b.v), h = top + plotH - by;
       const r = Math.min(4, bw / 2, h);
       g.append(svg("path", {
         d: `M${bx},${top + plotH}V${by + r}A${r},${r} 0 0 1 ${bx + r},${by}H${bx + bw - r}A${r},${r} 0 0 1 ${bx + bw},${by + r}V${top + plotH}Z`,
-        style: `fill:${b.s.color}`,
+        style: `fill:${b.baseline ? "var(--s-base)" : b.s.color}`,
       }));
-      if (!b.s.baseline && bw >= 22) {
-        g.append(svg("text", { class: "value" + (b.s.subject ? " subject" : ""), x: bx + bw / 2, y: by - 6, "text-anchor": "middle" },
-          b.rel >= 10 ? b.rel.toFixed(1) : b.rel.toFixed(2)));
+      const label = relative ? (b.v >= 10 ? b.v.toFixed(1) : b.v.toFixed(2)) : fmtTime(b.v);
+      if (!b.baseline && textWidth(label, 11) <= bw + GAP - 1) {
+        g.append(svg("text", { class: "value" + (b.s.subject ? " subject" : ""), x: bx + bw / 2, y: by - 5, "text-anchor": "middle" }, label));
       }
     });
-    if (!c.hasBase && base) {
-      g.append(svg("text", { class: "missing", x: x0 + cw / 2, y: top + plotH - 8, "text-anchor": "middle" }, fit(`no ${base.label}`, cw + IN - 4, 11)));
+    if (relative && c.bars.length === 1) {
+      g.append(svg("text", { class: "missing", x: x0 + cw / 2, y: y(1) - 6, "text-anchor": "middle" }, fit(`only ${c.bars[0].s.label}`, cw + IN + 20, 11)));
     }
-    g.append(svg("text", { class: "inner", x: x0 + cw / 2, y: labelsY, "text-anchor": "middle" }, fit(c.innerLabel, cw + IN - 4)));
-    const hit = svg("rect", { class: "hit", x: x0 - IN / 2, y: top - 8, width: cw + IN, height: plotH + 30 });
-    hit.addEventListener("pointermove", e => { wash.setAttribute("visibility", "visible"); showTooltip(tooltipFor(c), e.clientX, e.clientY); });
+    if (c.innerLabel) g.append(svg("text", { x: x0 + cw / 2, y: labelsY, "text-anchor": "middle" }, fit(c.innerLabel, cw + IN - 4)));
+    const hit = svg("rect", { class: "hit", x: x0 - IN / 2, y: top - 8, width: cw + IN, height: plotH + 26 });
+    hit.addEventListener("pointermove", e => { wash.setAttribute("visibility", "visible"); showTooltip(tooltipFor(c, relative), e.clientX, e.clientY); });
     hit.addEventListener("pointerleave", () => { wash.setAttribute("visibility", "hidden"); hideTooltip(); });
     g.append(hit);
     s.append(g);
     x += cw + IN;
   }
-  // Each outer group: a bracket under its bars, and its name.
-  const by = labelsY + 12;
-  for (const sp of spans) {
-    s.append(svg("path", { class: "bracket", d: `M${sp.x0},${by - 5}V${by}H${sp.x1}V${by - 5}` }));
-    s.append(svg("text", { class: "outer", x: (sp.x0 + sp.x1) / 2, y: by + 20, "text-anchor": "middle" }, fit(sp.label, sp.x1 - sp.x0 + OUT - 6, 14, 600)));
+  if (hasOuter) {
+    const by = labelsY + (hasInner ? 10 : -8);
+    for (const sp of spans) {
+      if (!sp.label) continue;
+      if (hasInner) s.append(svg("path", { class: "bracket", d: `M${sp.x0},${by - 5}V${by}H${sp.x1}V${by - 5}` }));
+      s.append(svg("text", { class: "outer", x: (sp.x0 + sp.x1) / 2, y: by + 18, "text-anchor": "middle" }, fit(sp.label, sp.x1 - sp.x0 + OUT - 6, 13, 600)));
+    }
   }
   box.replaceChildren(s);
 }
 
-function tooltipFor(c) {
-  const ids = new Set();
-  const rows = c.bars.map(b => {
-    if (b.r) ids.add(`${b.r.group} / ${b.r.sizeText}`);
-    return el("div", { class: "row" },
-      el("span", { class: "k", style: `background:${b.s.color}` }),
-      el("b", {}, Number.isFinite(b.rel) ? fmtRel(b.rel) : "–"),
-      el("span", { class: "name" }, b.s.label),
-      el("span", { class: "t" }, b.r ? fmtTime(b.r.t) : "no result"));
-  });
-  return [el("div", { class: "title" }, `${c.outerLabel} · ${c.innerLabel}`), ...rows, el("div", { class: "foot" }, [...ids].join(", "))];
+function clusterName(c) {
+  return [c.outerLabel, c.innerLabel].filter(Boolean).join(" · ") || sizeLabel(c.group, c.size);
 }
 
-function numbersTable(clusters, series, topic) {
-  const cell = b => (b.r ? fmtTime(b.r.t) : "–");
-  const rel = b => (b.r && !b.s.baseline && Number.isFinite(b.rel) ? fmtRel(b.rel) : null);
-  const head = el("tr", {}, el("th", {}, topic.outerName), series.map(s => el("th", {}, s.label)));
-  const rows = clusters.map(c => el("tr", {}, el("td", {}, `${c.outerLabel} · ${c.innerLabel}`),
-    c.bars.map(b => el("td", {}, cell(b), rel(b) ? el("span", { class: "rel" }, rel(b)) : null))));
+function tooltipFor(c, relative) {
+  const rows = c.bars.map(b => el("div", { class: "row" },
+    el("span", { class: "k", style: `background:${b.baseline ? "var(--s-base)" : b.s.color}` }),
+    el("b", {}, relative ? fmtRel(b.v) : fmtTime(b.v)),
+    el("span", { class: "name" }, b.s.label + (b.baseline ? " (baseline)" : "")),
+    el("span", { class: "t" }, relative ? fmtTime(b.r.t) : "")));
+  return [el("div", { class: "title" }, clusterName(c)), ...rows,
+    el("div", { class: "foot" }, `${c.group} / ${c.size}`)];
+}
+
+function numbersTable(model) {
+  const used = series.filter(s => model.plots.some(p => p.clusters.some(c => c.bars.some(b => b.s === s))));
+  const rows = [];
+  for (const p of model.plots) for (const c of p.clusters) {
+    const name = [p.title, clusterName(c)].filter(Boolean).join(" · ");
+    rows.push([name, used.map(s => {
+      const b = c.bars.find(b => b.s === s);
+      return b ? { t: fmtTime(b.r.t), rel: model.relative && !b.baseline ? fmtRel(b.v) : null } : null;
+    })]);
+  }
+  const head = el("tr", {}, el("th", {}, ""), used.map(s => el("th", {}, s.label)));
+  const body = rows.map(([name, cells]) => el("tr", {}, el("td", {}, name),
+    cells.map(c => el("td", {}, c ? c.t : "–", c && c.rel ? el("span", { class: "rel" }, c.rel) : null))));
   const copy = el("button", { type: "button" }, "Copy as Markdown");
   copy.addEventListener("click", async () => {
-    const lines = [`| ${topic.outerName} | ${series.map(s => s.label).join(" | ")} |`, `|---|${series.map(() => "--:").join("|")}|`,
-      ...clusters.map(c => `| ${c.outerLabel} · ${c.innerLabel} | ${c.bars.map(b => cell(b) + (rel(b) ? ` (${rel(b)})` : "")).join(" | ")} |`)];
+    const lines = [`| | ${used.map(s => s.label).join(" | ")} |`, `|---|${used.map(() => "--:").join("|")}|`,
+      ...rows.map(([name, cells]) => `| ${name} | ${cells.map(c => (c ? c.t + (c.rel ? ` (${c.rel})` : "") : "–")).join(" | ")} |`)];
     try { await navigator.clipboard.writeText(lines.join("\n") + "\n"); copy.textContent = "Copied"; } catch { copy.textContent = "Couldn't copy"; }
     setTimeout(() => { copy.textContent = "Copy as Markdown"; }, 1500);
   });
-  return el("div", {}, el("div", { class: "table-wrap" }, el("table", { class: "data" }, el("thead", {}, head), el("tbody", {}, rows))),
+  return el("div", {}, el("div", { class: "table-wrap" }, el("table", { class: "data" }, el("thead", {}, head), el("tbody", {}, body))),
     el("div", { class: "table-tools" }, copy));
 }
 
-// Every result, including those that no grouping charts.
+// ------------------------------------------------------------------ images
+
+// A chart as one SVG, its styles inlined (the page's are in CSS), with its
+// title and legend, for an image to copy or save.
+function chartSvg(model, title, box) {
+  const css = getComputedStyle(document.documentElement);
+  const color = v => {
+    const m = /^var\((--[\w-]+)\)$/.exec(v);
+    return m ? css.getPropertyValue(m[1]).trim() : v;
+  };
+  const font = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+  const pad = 16;
+  const svgs = [...box.querySelectorAll("svg")];
+  const width = Math.max(...svgs.map(s => Number(s.getAttribute("width")))) + 2 * pad;
+  const out = svg("svg", { xmlns: SVG_NS, width, height: 0, "font-family": font });
+  out.append(svg("rect", { width: "100%", height: "100%", fill: color("var(--surface)") }));
+  let y = pad + 16;
+  out.append(svg("text", { x: pad, y, "font-size": 16, "font-weight": 600, fill: color("var(--ink)") }, title));
+  // The legend: the series in the chart.
+  const used = series.filter(s => model.plots.some(p => p.clusters.some(c => c.bars.some(b => b.s === s))));
+  if (used.length > 1) {
+    y += 24;
+    let x = pad;
+    for (const s of used) {
+      const w = textWidth(s.label, 13) + 34;
+      if (x + w > width - pad) { x = pad; y += 20; }
+      out.append(svg("rect", { x, y: y - 10, width: 11, height: 11, rx: 3, fill: color(s.library === "openssl" ? "var(--s-base)" : s.color) }));
+      out.append(svg("text", { x: x + 17, y, "font-size": 13, fill: color("var(--ink)") }, s.label));
+      x += w;
+    }
+  }
+  y += 22;
+  out.append(svg("text", { x: pad, y, "font-size": 12, fill: color("var(--muted)") },
+    model.relative ? "Throughput relative to the gray bar, each group's baseline · higher is better" : "Time per operation · lower is better"));
+  y += 8;
+  for (const node of box.children) {
+    if (node.classList.contains("plot-title")) {
+      y += 22;
+      out.append(svg("text", { x: pad, y, "font-size": 13, "font-weight": 600, fill: color("var(--ink)") }, node.textContent));
+      y += 4;
+    }
+    const live = node.querySelector && node.querySelector("svg");
+    if (!live) continue;
+    const copy = live.cloneNode(true);
+    // Inline what the page's CSS gives each element.
+    const a = [live, ...live.querySelectorAll("*")], b = [copy, ...copy.querySelectorAll("*")];
+    a.forEach((n, i) => {
+      const cs = getComputedStyle(n);
+      const m = b[i];
+      if (n.tagName === "text") {
+        m.setAttribute("fill", cs.fill);
+        m.setAttribute("font-size", cs.fontSize);
+        m.setAttribute("font-weight", cs.fontWeight);
+        m.setAttribute("font-family", font);
+      } else if (n.tagName === "line" || n.classList.contains("bracket")) {
+        m.setAttribute("stroke", cs.stroke);
+        m.setAttribute("fill", "none");
+      } else if (n.tagName === "path") {
+        m.setAttribute("fill", cs.fill);
+      }
+      m.removeAttribute("style");
+      m.removeAttribute("class");
+    });
+    copy.querySelectorAll("rect").forEach(r => r.remove());
+    copy.setAttribute("x", pad);
+    copy.setAttribute("y", y);
+    out.append(copy);
+    y += Number(live.getAttribute("height"));
+  }
+  out.setAttribute("height", y + pad);
+  return { text: new XMLSerializer().serializeToString(out), width, height: y + pad };
+}
+
+// The chart as a PNG, at twice its size.
+async function chartPng(model, title, box) {
+  if (!box.querySelector("svg")) drawCard(model, box);
+  const { text, width, height } = chartSvg(model, title, box);
+  const url = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" }));
+  try {
+    const img = new Image();
+    await new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; img.src = url; });
+    const canvas = document.createElement("canvas");
+    canvas.width = width * 2;
+    canvas.height = height * 2;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0);
+    return await new Promise(ok => canvas.toBlob(ok, "image/png"));
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function exportCard(model, title, box, how, button) {
+  const done = msg => { const old = button.textContent; button.textContent = msg; setTimeout(() => { button.textContent = old; }, 1500); };
+  const png = chartPng(model, title, box);
+  if (how === "copy") {
+    // Called at once, in the click, with the image to come: as browsers
+    // allow it (Safari only so).
+    navigator.clipboard.write([new ClipboardItem({ "image/png": png })])
+      .then(() => done("Copied"), () => done("Couldn't copy"));
+    return;
+  }
+  png.then(blob => {
+    const a = el("a", { href: URL.createObjectURL(blob), download: `${title.replace(/[^\w.-]+/g, "-").replace(/^-|-$/g, "") || "benchmark"}.png` });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }, () => done("Couldn't save"));
+}
+
+// --------------------------------------------------------------- all results
+
 function renderAll() {
   const box = document.getElementById("all");
   if (box.dataset.count === String(records.length)) return;
@@ -976,25 +1030,28 @@ function renderAll() {
     if (filled) return;
     filled = true;
     const input = el("input", { type: "search", placeholder: "Filter, e.g. “aes-128-gcm x86_64”" });
-    const count = el("span", {});
+    const count = el("span", { class: "hint" });
     const body = el("tbody", {});
-    const sorted = [...records].sort((a, b) => archOrder(a.arch, b.arch) || collator.compare(a.group, b.group) || a.size - b.size || collator.compare(a.library, b.library));
+    const label = new Map(machines.map(m => [m.key, m.label]));
+    const sorted = [...records].sort((a, b) => collator.compare(a.group, b.group) || collator.compare(a.sizeText, b.sizeText)
+      || machines.findIndex(m => m.key === a.machine) - machines.findIndex(m => m.key === b.machine)
+      || series.indexOf(seriesByKey.get(a.series)) - series.indexOf(seriesByKey.get(b.series)));
     const draw = () => {
       const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
       const rows = sorted.filter(r => {
-        const s = `${r.arch} ${cfgLabel(r.cfg)} ${r.side} ${r.group} ${r.sizeText} ${r.library} ${LIBRARIES[r.library] || ""}`.toLowerCase();
+        const s = `${r.group} ${r.sizeText} ${label.get(r.machine)} ${seriesByKey.get(r.series).label}`.toLowerCase();
         return words.every(w => s.includes(w));
       });
       count.textContent = rows.length > 1000 ? `the first 1,000 of ${rows.length.toLocaleString()}` : `${rows.length.toLocaleString()} results`;
       body.replaceChildren(...rows.slice(0, 1000).map(r => el("tr", {},
-        el("td", {}, r.group), el("td", {}, r.sizeText), el("td", { class: "left" }, LIBRARIES[r.library] || r.library),
-        el("td", { class: "left" }, r.arch), el("td", { class: "left" }, cfgLabel(r.cfg)), el("td", { class: "left" }, r.side),
+        el("td", {}, r.group), el("td", { class: "left" }, sizeLabel(r.group, r.sizeText)),
+        el("td", { class: "left" }, seriesByKey.get(r.series).label), el("td", { class: "left" }, label.get(r.machine)),
         el("td", {}, fmtTime(r.t)))));
     };
     input.addEventListener("input", draw);
     box.append(el("div", { class: "search" }, input, count),
       el("div", { class: "table-wrap" }, el("table", { class: "data" },
-        el("thead", {}, el("tr", {}, ["Benchmark", "Size", "Library", "Arch", "VG_CPU_FEATURES", "Side", "Time"].map(h => el("th", {}, h)))), body)));
+        el("thead", {}, el("tr", {}, ["Benchmark", "Size", "Series", "Machine", "Time"].map(h => el("th", {}, h)))), body)));
     draw();
   };
   box.ontoggle = () => { if (box.open) fill(); };
@@ -1016,7 +1073,7 @@ function showTooltip(content, x, y) {
 }
 function hideTooltip() { document.getElementById("tooltip").style.display = "none"; }
 
-// ------------------------------------------------------------------ setup
+// ------------------------------------------------------------------- setup
 
 function extractEmbedded(text) {
   const m = /<script type="application\/json" id="bench-data">([\s\S]*?)<\/script>/.exec(text);
@@ -1082,7 +1139,7 @@ function init() {
     if (w === lastWidth) return;
     lastWidth = w;
     clearTimeout(timer);
-    timer = setTimeout(render, 120);
+    timer = setTimeout(render, 150);
   }).observe(document.getElementById("cards"));
   render();
 }

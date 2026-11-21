@@ -313,9 +313,9 @@ jobs:
           if-no-files-found: ignore
 
   # Every job's results in one page, `benchmarks.html`, which charts them (a
-  # chart per architecture of the libraries, head against base, or the CPU
-  # feature configurations, by algorithm): an artifact of the run, uploaded
-  # unzipped, so that it downloads as the page itself.
+  # chart for each benchmark, across machines, of every library, side and
+  # configuration measured): an artifact of the run, uploaded unzipped, so
+  # that it downloads as the page itself.
   report:
     needs: compare
     if: ${{ !cancelled() && !inputs.test_filter && needs.compare.result != 'skipped' }}
