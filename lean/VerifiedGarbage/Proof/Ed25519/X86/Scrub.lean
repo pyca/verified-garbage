@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.KeyPair
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Verified
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ed25519.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ed25519.Contract
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Ed25519.X86.KeyPair
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Verified
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Verified
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.Ed25519.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Ed25519.Contract

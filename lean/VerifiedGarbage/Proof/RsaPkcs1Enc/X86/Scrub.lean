@@ -1,25 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecP.Verified
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndVerified
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecP.Verified
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 meta import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit

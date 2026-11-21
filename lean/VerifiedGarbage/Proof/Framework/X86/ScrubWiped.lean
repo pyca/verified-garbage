@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.Syms

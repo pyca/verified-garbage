@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Aes.X86.Variant
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86
 public import VerifiedGarbage.Impl.StackScratch.X86
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Impl.CmacAes.Stream.X86
 meta import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch

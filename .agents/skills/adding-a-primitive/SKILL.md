@@ -344,7 +344,7 @@ function's `Fn` definition. `verifiedScrubbed` needs that the code calls
 nothing and has no frame (`scrubSide`, by `lit_decide`);
 `verifiedScrubbedAll`, for code with frames, direct calls and calls through
 its tables, needs `scrubFSide` (by `lit_decide`) and `PostOut`
-(`Proof/Framework/X86/ScrubFn.lean`).
+(`Proof/Framework/X86/ScrubProved.lean`).
 
 **Variants.** The tail clears every register a callee may change, so a
 variant states only `calleeOk` of each code it gives (no MMX, no indirect

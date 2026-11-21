@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Blowfish.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Blowfish.Contract

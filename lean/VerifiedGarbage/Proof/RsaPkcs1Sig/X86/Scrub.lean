@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignP.Verified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignScrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignP.Verified
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignScrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit

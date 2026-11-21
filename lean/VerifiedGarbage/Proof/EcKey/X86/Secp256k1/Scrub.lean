@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.X86.Scrub
 public import VerifiedGarbage.Proof.EcKey.X86.Secp256k1.Verified
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Secp256k1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.Secp256k1Decompress
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.EcKey.Secp256k1.X86
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.Secp256k1

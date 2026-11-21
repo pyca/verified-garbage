@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Impl.Aes.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 meta import VerifiedGarbage.Impl.Aes.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration

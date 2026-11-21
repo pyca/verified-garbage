@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.RsaOaep.X86.Inst
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.RsaOaep.X86.Dec.PVerified
 public import VerifiedGarbage.Impl.RsaOaep.X86.Fn
 import VerifiedGarbage.Proof.Framework.Lit
@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.RsaOaep.X86.Inst
 meta import VerifiedGarbage.Proof.Variants.Sha1.X86
 meta import VerifiedGarbage.Proof.Variants.Sha256.X86
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.RsaOaep.X86.Dec.PVerified
 meta import VerifiedGarbage.Impl.RsaOaep.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Spec.Ffdh.SievedContract
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ffdh.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Verified
@@ -28,7 +28,7 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.Ffdh.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Ffdh.X86.VettedValidation.Verified

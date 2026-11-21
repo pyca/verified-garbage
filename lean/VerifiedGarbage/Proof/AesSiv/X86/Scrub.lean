@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesSiv.X86.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.Spec.Siv.Contract
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.AesSiv.X86
 import VerifiedGarbage.Proof.AesSiv.Scratch
 import VerifiedGarbage.Proof.Framework.Lit
@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Spec.Siv.Contract
 meta import VerifiedGarbage.Proof.AesSiv.Scratch
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.AesSiv.X86
 
 /-!

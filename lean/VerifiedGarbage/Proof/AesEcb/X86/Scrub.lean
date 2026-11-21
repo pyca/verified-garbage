@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesEcb.X86
 public import VerifiedGarbage.Spec.AesEcb.Contract
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.AesEcb.X86
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -14,7 +14,7 @@ meta import VerifiedGarbage.Proof.AesEcb.X86
 meta import VerifiedGarbage.Spec.AesEcb.Contract
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.AesEcb.X86
 
 /-!

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86.Init
 public import VerifiedGarbage.Proof.Poly1305.X86.Frame
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Poly1305.X86
 import VerifiedGarbage.Proof.Poly1305.Scratch
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Poly1305.X86.Init
 meta import VerifiedGarbage.Proof.Poly1305.X86.Frame
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Impl.Poly1305.X86
 meta import VerifiedGarbage.Proof.Poly1305.Scratch

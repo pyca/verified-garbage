@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Hmac.X86
@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Md5.X86.Lit
 import VerifiedGarbage.Proof.Sha1.X86.Lit
 import VerifiedGarbage.Proof.Sha256.X86.Lit
 import VerifiedGarbage.Proof.Sha512.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Impl.Hmac.X86

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sm4Gcm.X86.Frame
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Sm4Gcm.X86.Frame

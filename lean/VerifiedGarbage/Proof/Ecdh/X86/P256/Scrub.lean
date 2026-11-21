@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.EcKey.X86.Scrub
 public import VerifiedGarbage.Proof.Ecdh.X86.Verified
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ecdh.P256.X86
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P256

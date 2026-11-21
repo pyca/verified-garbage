@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.EcKey.X86.Scrub
 public import VerifiedGarbage.Proof.Ecdh.X86.Secp256k1.Verified
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ecdh.Secp256k1.X86
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.Secp256k1

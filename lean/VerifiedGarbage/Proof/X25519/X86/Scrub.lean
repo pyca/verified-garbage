@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.X25519.Contract
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.X25519.X86.Base
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.X25519.X86.Exchange
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Spec.X25519.Contract
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.X25519.X86.Base
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.X25519.X86.Exchange

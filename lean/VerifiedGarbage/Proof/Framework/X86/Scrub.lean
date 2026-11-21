@@ -43,7 +43,7 @@ function's buffers: `scrub rb c` (`Verified.scrub`) returns without secret
 residue. Code with calls and frames also writes the stack below `esp`: see
 "Code with frames" below (`scrubAll`, `Verified.scrubAll`).
 
-`X86.Scrub.verifiedScrubbed` and `verifiedScrubbedAll` (`ScrubFn.lean`) are
+`X86.Scrub.verifiedScrubbed` and `verifiedScrubbedAll` (`ScrubProved.lean`) are
 the theorems a registration binds, from these.
 -/
 

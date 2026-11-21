@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ct.X86
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ct.X86
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Lit

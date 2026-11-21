@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.MlKem.X86.Wipe
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlKem.X86.CallWipe
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.MlKem.X86.Wipe
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.MlKem.X86.CallWipe

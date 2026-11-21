@@ -39,8 +39,8 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.X86Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Framework.Registration

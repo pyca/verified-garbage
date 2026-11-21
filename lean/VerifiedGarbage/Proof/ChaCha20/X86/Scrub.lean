@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.ApplyCT
 public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Init
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.ChaCha20.X86.Stream
 import VerifiedGarbage.Proof.ChaCha20.ScrubLocal
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.X86.Stream.ApplyCT
 meta import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Init
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Impl.ChaCha20.X86.Stream
 meta import VerifiedGarbage.Proof.ChaCha20.ScrubLocal

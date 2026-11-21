@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Rsa.X86.Fn
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchInstance
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.Rsa.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit

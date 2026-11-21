@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.X86Fn
 import VerifiedGarbage.Proof.BrainpoolP320r1.X86.Law
 public import VerifiedGarbage.Proof.Variants.Sha1.X86

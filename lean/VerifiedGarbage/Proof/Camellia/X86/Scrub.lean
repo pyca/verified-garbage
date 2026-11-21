@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Impl.Camellia.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration

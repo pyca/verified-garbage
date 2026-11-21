@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Seed.Contract
@@ -27,7 +27,7 @@ import VerifiedGarbage.Proof.Seed.X86.FbFinalLit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Seed.Contract

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Scrub.X86
 public import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Impl.StackScratch.X86
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Sha1.PostOut
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.Scrub.X86
 meta import VerifiedGarbage.Proof.Sha1.PostOut
 meta import VerifiedGarbage.Proof.Framework.Lit

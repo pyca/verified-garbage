@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Blake2.X86.Blake2b
 public import VerifiedGarbage.Proof.Blake2.X86.Blake2s
 public import VerifiedGarbage.Impl.Blake2.X86.Fn
 import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Blake2.X86.LitB
 import VerifiedGarbage.Proof.Blake2.X86.LitS
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Blake2.X86.Blake2b
 meta import VerifiedGarbage.Proof.Blake2.X86.Blake2s
 meta import VerifiedGarbage.Impl.Blake2.X86.Fn

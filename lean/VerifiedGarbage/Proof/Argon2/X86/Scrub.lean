@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.Verified
 public import VerifiedGarbage.Impl.Argon2.X86.Derive
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Argon2.X86.CompressLit
 import VerifiedGarbage.Proof.Blake2.X86.LitB
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Argon2.X86.Derive.Verified
 meta import VerifiedGarbage.Impl.Argon2.X86.Derive
 meta import VerifiedGarbage.Proof.Framework.Offset

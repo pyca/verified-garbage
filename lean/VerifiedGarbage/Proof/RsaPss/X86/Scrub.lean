@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86.Inst
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 public import VerifiedGarbage.Proof.RsaPss.X86.SgPVerified
 public import VerifiedGarbage.Impl.RsaPss.X86.Fn
@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.RsaPss.X86.Inst
 meta import VerifiedGarbage.Proof.Variants.Sha1.X86
 meta import VerifiedGarbage.Proof.Variants.Sha256.X86
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 meta import VerifiedGarbage.Proof.RsaPss.X86.SgPVerified
 meta import VerifiedGarbage.Impl.RsaPss.X86.Fn

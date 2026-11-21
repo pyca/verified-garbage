@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Scrypt.X86.Whole.Verified
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Scrub
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Sha256.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Scrypt.X86.Whole.Verified
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Scrub

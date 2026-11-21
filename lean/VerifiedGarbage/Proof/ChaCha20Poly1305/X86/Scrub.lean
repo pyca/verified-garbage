@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Verified
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
 meta import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace

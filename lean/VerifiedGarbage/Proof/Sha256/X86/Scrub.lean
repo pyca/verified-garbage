@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.X86.Shared
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Sha256.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Sha256.PostOut
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Sha256.X86.Shared
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.Sha256.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall

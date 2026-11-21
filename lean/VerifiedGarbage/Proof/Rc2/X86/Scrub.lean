@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Rc2.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Rc2.X86.Stream.Frame
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Spec.Rc2.Contract
 meta import VerifiedGarbage.Proof.Framework.X86.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.Rc2.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Rc2.X86.Stream.Frame

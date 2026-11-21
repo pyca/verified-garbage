@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.AesCfb.X86.Verified
 public import VerifiedGarbage.Proof.AesCfb.X86.Final
 public import VerifiedGarbage.Spec.Cfb.Contract
 public import VerifiedGarbage.Spec.Cfb.Final
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.AesCfb.X86.Final
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Framework.Lit
@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Spec.Cfb.Final
 meta import VerifiedGarbage.Proof.Aes.ScrubLocal
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.AesCfb.X86.Final
 
 /-!

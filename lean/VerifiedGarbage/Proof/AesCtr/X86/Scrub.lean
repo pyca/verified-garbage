@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.AesCtr.X86.Ctr32
 public import VerifiedGarbage.Proof.AesCtr.X86.Final
 public import VerifiedGarbage.Spec.Ctr.Contract
 public import VerifiedGarbage.Spec.Ctr.Final
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.AesCtr.X86.Final
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Framework.Lit
@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Spec.Ctr.Final
 meta import VerifiedGarbage.Proof.Aes.ScrubLocal
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.AesCtr.X86.Final
 
 /-!

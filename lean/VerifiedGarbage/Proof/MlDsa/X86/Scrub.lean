@@ -5,7 +5,7 @@ meta import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.MlDsa.X86.Fn
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.X86.PkTr
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.MlDsa.X86.Fn
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inst
 meta import VerifiedGarbage.Proof.MlDsa.X86.PkTr

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInit
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.GenScrub
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInit
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.GenScrub

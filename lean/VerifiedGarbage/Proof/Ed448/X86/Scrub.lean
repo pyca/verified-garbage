@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ed448.X86.VerifyEquationOk
 public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Verified
 public import VerifiedGarbage.Proof.Ed448.X86.Verify.Verified
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ed448.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ed448.Contract
@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.Ed448.X86.VerifyEquationOk
 meta import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
 meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Verified
 meta import VerifiedGarbage.Proof.Ed448.X86.Verify.Verified
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.Ed448.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Ed448.Contract

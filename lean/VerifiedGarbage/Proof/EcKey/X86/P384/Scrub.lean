@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.X86.Scrub
 public import VerifiedGarbage.Proof.EcKey.X86.P384.Verified
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P384
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P384Decompress
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.EcKey.P384.X86
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.EcKey.P384

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.X86.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P256
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombVerified
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ecdsa.P256.X86Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.Sha1.X86

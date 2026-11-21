@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 public import VerifiedGarbage.Impl.Dsa.X86.Fn
@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.Init
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Verified
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 meta import VerifiedGarbage.Impl.Dsa.X86.Fn

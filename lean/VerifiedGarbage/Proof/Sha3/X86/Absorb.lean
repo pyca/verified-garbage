@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha3.X86.Instances
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sha3.PostOut
 public import VerifiedGarbage.Spec.Sha3.Instances
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Sha3.X86.Instances
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Sha3.PostOut
 meta import VerifiedGarbage.Spec.Sha3.Instances
