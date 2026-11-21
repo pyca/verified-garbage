@@ -15,12 +15,12 @@ namespace VG.Artifacts.CmacTripleDes.X86
 def artifacts : List Artifact := [
   Spec.Cmac.tdesStreamInitApi.artifact X86.target {
     code := Impl.CmacTripleDes.Stream.X86.Fn.init
-    verified := .scrubbed Proof.CmacTripleDes.Stream.X86.Scrub.init_scrubbed },
+    verified := Proof.CmacTripleDes.Stream.X86.Scrub.init_scrubbed },
   Spec.Cmac.tdesAbsorbApi.artifact X86.target {
     code := Impl.CmacTripleDes.Stream.X86.Fn.absorb
-    verified := .scrubbed Proof.CmacTripleDes.Stream.X86.Scrub.absorb_scrubbed },
+    verified := Proof.CmacTripleDes.Stream.X86.Scrub.absorb_scrubbed },
   Spec.Cmac.tdesFinishApi.artifact X86.target {
     code := Impl.CmacTripleDes.Stream.X86.Fn.finish
-    verified := .scrubbed Proof.CmacTripleDes.Stream.X86.Scrub.finish_scrubbed }]
+    verified := Proof.CmacTripleDes.Stream.X86.Scrub.finish_scrubbed }]
 
 end VG.Artifacts.CmacTripleDes.X86

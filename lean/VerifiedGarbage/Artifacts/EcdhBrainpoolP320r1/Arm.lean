@@ -18,10 +18,10 @@ open VG.Proof.BrainpoolP320r1.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.BrainpoolP320r1.exchangeApi.artifact Arm.target {
     code := Impl.Ecdh.Arm.Fn.exchangeBrainpoolP320r1
-    verified := .scrubbed (Proof.Ecdh.Arm.Fn.exchangeBrainpoolP320r1 hasLaw.law) },
+    verified := Proof.Ecdh.Arm.Fn.exchangeBrainpoolP320r1 hasLaw.law },
   Spec.Ecdh.BrainpoolP320r1.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdh.Arm.Fn.exchangeBrainpoolP320r1U
-    verified := .scrubbed (Proof.Ecdh.Arm.Fn.exchangeBrainpoolP320r1U hasLaw.law) }]
+    verified := Proof.Ecdh.Arm.Fn.exchangeBrainpoolP320r1U hasLaw.law }]
 
 end VG.Artifacts.EcdhBrainpoolP320r1.Arm

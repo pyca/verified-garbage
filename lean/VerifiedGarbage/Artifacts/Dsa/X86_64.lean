@@ -16,7 +16,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.Dsa.X86_64
 
 def direct : List Artifact := [
-  Spec.Dsa.parameterInitApi.artifact X86_64.target { code := Impl.Dsa.X86_64.Fn.parameterInit, verified := .scrubbed Proof.Dsa.X86_64.ParameterSearchInit.init_scrubbed, spSafe := Proof.Dsa.X86_64.ParameterSearchInit.init_spSafe }]
+  Spec.Dsa.parameterInitApi.artifact X86_64.target { code := Impl.Dsa.X86_64.Fn.parameterInit, verified := Proof.Dsa.X86_64.ParameterSearchInit.init_scrubbed, spSafe := Proof.Dsa.X86_64.ParameterSearchInit.init_spSafe }]
 
 end VG.Artifacts.Dsa.X86_64
 
@@ -30,32 +30,32 @@ def artifacts : List Artifact :=
     Spec.Dsa.randomSignPrevalidatedApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.Dsa.X86_64.Fn.randomSignPrevalidated v.level (prevalidatedSignerName v) v.sq v.mul
-      verified := .scrubbed (Proof.Dsa.X86_64.BackendScrub.randomSign_scrubbed v)
+      verified := Proof.Dsa.X86_64.BackendScrub.randomSign_scrubbed v
       spSafe := Proof.Dsa.X86_64.BackendScrub.randomSign_spSafe v },
     Spec.Dsa.validatePrivateKeyApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.Dsa.X86_64.Fn.validatePrivateKey v.level v.sq v.mul
-      verified := .scrubbed (Proof.Dsa.X86_64.BackendScrub.validatePrivate_scrubbed v)
+      verified := Proof.Dsa.X86_64.BackendScrub.validatePrivate_scrubbed v
       spSafe := Proof.Dsa.X86_64.BackendScrub.validatePrivate_spSafe v },
     Spec.Dsa.validatePublicKeyApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.Dsa.X86_64.Fn.validatePublicKey v.level v.sq v.mul
-      verified := .scrubbed (Proof.Dsa.X86_64.BackendScrub.validatePublic_scrubbed v)
+      verified := Proof.Dsa.X86_64.BackendScrub.validatePublic_scrubbed v
       spSafe := Proof.Dsa.X86_64.BackendScrub.validatePublic_spSafe v },
     Spec.Dsa.verifyPrevalidatedApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.Dsa.X86_64.Fn.verifyPrevalidated v.level v.sq v.mul
-      verified := .scrubbed (Proof.Dsa.X86_64.BackendScrub.verify_scrubbed v)
+      verified := Proof.Dsa.X86_64.BackendScrub.verify_scrubbed v
       spSafe := Proof.Dsa.X86_64.BackendScrub.verify_spSafe v },
     Spec.Dsa.generateKeyApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.Dsa.X86_64.Fn.generateKey v.level (keygenCheckName v) (keygenDeriveName v) v.sq v.mul
-      verified := .scrubbed (Proof.Dsa.X86_64.BackendScrub.generateKey_scrubbed v)
+      verified := Proof.Dsa.X86_64.BackendScrub.generateKey_scrubbed v
       spSafe := Proof.Dsa.X86_64.BackendScrub.generateKey_spSafe v },
     Spec.Dsa.deriveKeyApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.Dsa.X86_64.Fn.deriveKey v.level v.sq v.mul
-      verified := .scrubbed (Proof.Dsa.X86_64.BackendScrub.deriveKey_scrubbed v)
+      verified := Proof.Dsa.X86_64.BackendScrub.deriveKey_scrubbed v
       spSafe := Proof.Dsa.X86_64.BackendScrub.deriveKey_spSafe v }]) ++
   (Generation.RefillBackend.hashPairs.flatMap fun (p : Generation.RefillBackend.Hashes) =>
     VG.Proof.Variants.MillerRabin.X86_64.variants.map fun (v : Proof.MillerRabin.X86_64.RoundImpl) =>
@@ -65,7 +65,7 @@ def artifacts : List Artifact :=
         (Generation.RefillBackend.name "sha1" p.sha1 v 128) (Generation.RefillBackend.name "sha256" p.sha256 v 256)
         (Generation.RefillBackend.name "sha256" p.sha256 v 384) (Generation.RefillBackend.body p.sha1 v 128)
         (Generation.RefillBackend.body p.sha256 v 256) (Generation.RefillBackend.body p.sha256 v 384)
-      verified := .scrubbed (Proof.Dsa.X86_64.Generation.SearchScrub.search_scrubbed p v)
+      verified := Proof.Dsa.X86_64.Generation.SearchScrub.search_scrubbed p v
       spSafe := Proof.Dsa.X86_64.Generation.SearchScrub.search_spSafe p v })
 
 end VG.Artifacts.Dsa.X86_64

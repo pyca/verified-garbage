@@ -14,7 +14,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.BlowfishOfb.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.ofbApi.artifact X86_64.target { code := Impl.Blowfish.X86_64.Fn.ofb, verified := .scrubbed Proof.Blowfish.X86_64.Scrub.ofb_scrubbed, spSafe := Proof.Blowfish.X86_64.Scrub.ofb_spSafe },
-  Spec.Blowfish.ofbFinalApi.artifact X86_64.target { code := Impl.Blowfish.X86_64.Fn.ofbFinal, verified := .scrubbed Proof.Blowfish.X86_64.Scrub.ofbFinal_scrubbed, spSafe := Proof.Blowfish.X86_64.Scrub.ofbFinal_spSafe }]
+  Spec.Blowfish.ofbApi.artifact X86_64.target { code := Impl.Blowfish.X86_64.Fn.ofb, verified := Proof.Blowfish.X86_64.Scrub.ofb_scrubbed, spSafe := Proof.Blowfish.X86_64.Scrub.ofb_spSafe },
+  Spec.Blowfish.ofbFinalApi.artifact X86_64.target { code := Impl.Blowfish.X86_64.Fn.ofbFinal, verified := Proof.Blowfish.X86_64.Scrub.ofbFinal_scrubbed, spSafe := Proof.Blowfish.X86_64.Scrub.ofbFinal_spSafe }]
 
 end VG.Artifacts.BlowfishOfb.X86_64

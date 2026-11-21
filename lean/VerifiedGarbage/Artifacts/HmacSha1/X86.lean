@@ -17,12 +17,12 @@ def artifacts : List Artifact :=
     Spec.Hmac.sha1I.initAnyKeyApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.Hmac.X86.Fn.sha1Init v.M v.F
-      verified := .scrubbed (Proof.Hmac.X86.Scrub.sha1_init_scrubbed v)
+      verified := Proof.Hmac.X86.Scrub.sha1_init_scrubbed v
       spSafe := Proof.Hmac.X86.Scrub.sha1_initSp v },
     Spec.Hmac.sha1I.finalizeApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.Hmac.X86.Fn.sha1Finalize v.M
-      verified := .scrubbed (Proof.Hmac.X86.Scrub.sha1_fin_scrubbed v)
+      verified := Proof.Hmac.X86.Scrub.sha1_fin_scrubbed v
       spSafe := Proof.Hmac.X86.Scrub.sha1_finSp v }]
 
 end VG.Artifacts.HmacSha1.X86

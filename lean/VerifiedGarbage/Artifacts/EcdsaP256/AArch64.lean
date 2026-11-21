@@ -152,7 +152,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact AArch64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.AArch64.Fn.p256 hashes
-    verified := .scrubbed (Proof.Ecdsa.Rfc6979.AArch64.p256Sign_scrubbed hasLaw.law hasLaw.inv
+    verified := (Proof.Ecdsa.Rfc6979.AArch64.p256Sign_scrubbed hasLaw.law hasLaw.inv
       (Proof.P256.combOk7 hasLaw.law)) }]
 
 end VG.Artifacts.EcdsaP256.AArch64.Rfc6979
@@ -164,7 +164,7 @@ open VG.Proof.P256.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.P256Allocated.Fn.verifyHash
-    verified := .scrubbed (Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_scrubbed hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law)) }] ++
+    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_scrubbed hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law) }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP256.AArch64

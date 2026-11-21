@@ -22,31 +22,31 @@ open VG.Proof.Dsa.X86.Scrub
 def direct : List Artifact := [
   Spec.Dsa.generateKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.generateKey
-    verified := .scrubbed generateKey_scrubbed
+    verified := generateKey_scrubbed
     spSafe := generateKey_spSafe },
   Spec.Dsa.deriveKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.deriveKey
-    verified := .scrubbed deriveKey_scrubbed
+    verified := deriveKey_scrubbed
     spSafe := deriveKey_spSafe },
   Spec.Dsa.validatePrivateKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.validatePrivateKey
-    verified := .scrubbed validatePrivateKey_scrubbed
+    verified := validatePrivateKey_scrubbed
     spSafe := validatePrivateKey_spSafe },
   Spec.Dsa.randomSignPrevalidatedApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.randomSignPrevalidated
-    verified := .scrubbed randomSignPrevalidated_scrubbed
+    verified := randomSignPrevalidated_scrubbed
     spSafe := randomSignPrevalidated_spSafe },
   Spec.Dsa.validatePublicKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.validatePublicKey
-    verified := .scrubbed validatePublicKey_scrubbed
+    verified := validatePublicKey_scrubbed
     spSafe := validatePublicKey_spSafe },
   Spec.Dsa.verifyPrevalidatedApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.verifyPrevalidated
-    verified := .scrubbed verifyPrevalidated_scrubbed
+    verified := verifyPrevalidated_scrubbed
     spSafe := verifyPrevalidated_spSafe },
   Spec.Dsa.parameterInitApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.parameterInit
-    verified := .scrubbed parameterInit_scrubbed
+    verified := parameterInit_scrubbed
     spSafe := parameterInit_spSafe }]
 
 end VG.Artifacts.Dsa.X86
@@ -62,7 +62,7 @@ def artifacts : List Artifact :=
     Spec.Dsa.parameterSearchApi.artifact X86.target {
       suffix := qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
       code := Impl.Dsa.X86.Fn.parameterSearch (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v)
-      verified := .scrubbed (Proof.Dsa.X86.Scrub.parameterSearch_scrubbed v1 v256 v)
+      verified := Proof.Dsa.X86.Scrub.parameterSearch_scrubbed v1 v256 v
       spSafe := Proof.Dsa.X86.Scrub.parameterSearch_spSafe v1 v256 v })
 
 end VG.Artifacts.Dsa.X86

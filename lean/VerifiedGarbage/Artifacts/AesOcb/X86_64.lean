@@ -76,7 +76,7 @@ def artifacts : List Artifact :=
     Spec.Ocb.initApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesOcb.X86_64.Fn.init v.level v.free.isSome (Proof.AesOcb.X86_64.callees v)
-      verified := .scrubbed (Proof.AesOcb.X86_64.Scrub.ocbInit_scrubbed v)
+      verified := Proof.AesOcb.X86_64.Scrub.ocbInit_scrubbed v
       spSafe := Proof.AesOcb.X86_64.Scrub.ocbInit_spSafeFn v }) ++
   VG.Proof.Variants.AesOcb.X86_64.variants.flatMap fun (o : Proof.AesOcb.X86_64.OcbImpl) => [
     Spec.Ocb.sealApi.artifact X86_64.target
@@ -84,24 +84,24 @@ def artifacts : List Artifact :=
       | .onePass =>
         { suffix := "_aesni"
           code := Impl.AesOcb.X86_64.Fn.sealOnePass .sse
-          verified := .scrubbed Proof.AesOcb.X86_64.AesNi.seal_scrubbed
+          verified := Proof.AesOcb.X86_64.AesNi.seal_scrubbed
           spSafe := Proof.AesOcb.X86_64.AesNi.seal_spSafeFn }
       | .blocks v =>
         { suffix := v.suffix
           code := Impl.AesOcb.X86_64.Fn.«seal» v.level (Proof.AesOcb.X86_64.callees v)
-          verified := .scrubbed (Proof.AesOcb.X86_64.Scrub.seal_scrubbed v)
+          verified := Proof.AesOcb.X86_64.Scrub.seal_scrubbed v
           spSafe := Proof.AesOcb.X86_64.Scrub.seal_spSafeFn v }),
     Spec.Ocb.openApi.artifact X86_64.target
       (match o with
       | .onePass =>
         { suffix := "_aesni"
           code := Impl.AesOcb.X86_64.Fn.openOnePass .sse
-          verified := .scrubbed Proof.AesOcb.X86_64.AesNi.open_scrubbed
+          verified := Proof.AesOcb.X86_64.AesNi.open_scrubbed
           spSafe := Proof.AesOcb.X86_64.AesNi.open_spSafeFn }
       | .blocks v =>
         { suffix := v.suffix
           code := Impl.AesOcb.X86_64.Fn.«open» v.level (Proof.AesOcb.X86_64.callees v)
-          verified := .scrubbed (Proof.AesOcb.X86_64.Scrub.open_scrubbed v)
+          verified := Proof.AesOcb.X86_64.Scrub.open_scrubbed v
           spSafe := Proof.AesOcb.X86_64.Scrub.open_spSafeFn v })]
 
 end VG.Artifacts.AesOcb.X86_64

@@ -16,6 +16,6 @@ namespace VG.Artifacts.Argon2.PPC64LE
 def artifacts : List Artifact := [
   Spec.Argon2.deriveApi.artifact PPC64LE.target {
     code := Impl.Argon2.PPC64LE.Fn.derive
-    verified := .scrubbed Proof.Argon2.PPC64LE.Scrub.derive_scrubbed }]
+    verified := Proof.Argon2.PPC64LE.Scrub.derive_scrubbed }]
 
 end VG.Artifacts.Argon2.PPC64LE

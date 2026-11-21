@@ -19,12 +19,12 @@ def artifacts : List Artifact :=
     Spec.Ctr.aesApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesCtr.X86_64.Fn.ctr v.level v.callee
-      verified := .scrubbed (Proof.Aes.X86_64.FinalScrub.ctr_scrubbed v)
+      verified := Proof.Aes.X86_64.FinalScrub.ctr_scrubbed v
       spSafe := Proof.Aes.X86_64.FinalScrub.ctr_spSafeFn v },
     Spec.Ctr.aesFinalApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesCtr.X86_64.Fn.ctrFinal v.level v.callee v.suffix
-      verified := .scrubbed (Proof.Aes.X86_64.FinalScrub.ctrFinal_scrubbed v)
+      verified := Proof.Aes.X86_64.FinalScrub.ctrFinal_scrubbed v
       spSafe := Proof.Aes.X86_64.FinalScrub.ctrFinal_spSafeFn v }]
 
 end VG.Artifacts.AesCtr.X86_64

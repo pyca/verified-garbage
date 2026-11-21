@@ -52,6 +52,6 @@ open VG.Proof.P384.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P384.exchangeApi.artifact X86.target {
     code := Impl.Ecdh.X86.Fn.exchangeP384
-    verified := .scrubbed (Proof.Ecdh.X86.P384.Scrub.exchange_scrubbed hasLaw.law) }]
+    verified := Proof.Ecdh.X86.P384.Scrub.exchange_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcdhP384.X86

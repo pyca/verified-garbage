@@ -17,12 +17,12 @@ namespace VG.Artifacts.Blake2b.RISCV64
 def artifacts : List Artifact := [
   Spec.Blake2.initBApi.artifact RISCV64.target {
     code := Impl.Blake2.RISCV64.Fn.initB
-    verified := .scrubbed Proof.Blake2.RISCV64.initB_scrubbed },
+    verified := Proof.Blake2.RISCV64.initB_scrubbed },
   Spec.Blake2.updateBApi.artifact RISCV64.target {
     code := Impl.Blake2.RISCV64.Fn.updateB
-    verified := .scrubbed Proof.Blake2.RISCV64.updateB_scrubbed },
+    verified := Proof.Blake2.RISCV64.updateB_scrubbed },
   Spec.Blake2.finalizeBApi.artifact RISCV64.target {
     code := Impl.Blake2.RISCV64.Fn.finalizeB
-    verified := .scrubbed Proof.Blake2.RISCV64.finalizeB_scrubbed }]
+    verified := Proof.Blake2.RISCV64.finalizeB_scrubbed }]
 
 end VG.Artifacts.Blake2b.RISCV64

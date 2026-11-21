@@ -15,5 +15,5 @@ open VG.X86
 def artifacts : List Artifact := [
   Spec.Ct.eqApi.artifact target {
     code := Impl.Ct.X86.Fn.eq
-    verified := .scrubbed Proof.Ct.X86.Scrub.eq_scrubbed }]
+    verified := Proof.Ct.X86.Scrub.eq_scrubbed }]
 end VG.Artifacts.Ct.X86

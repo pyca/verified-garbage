@@ -80,21 +80,21 @@ open VG.Proof.P521.X86_64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Compressed.X86_64.Fn.compress Impl.Ecdsa.X86_64.p521
-      verified := .scrubbed (Proof.EcKey.Compressed.X86_64.P521.scrubbed hasLaw.inv false)
+      verified := Proof.EcKey.Compressed.X86_64.P521.scrubbed hasLaw.inv false
       spSafe := Proof.EcKey.Compressed.X86_64.P521.spSafe false },
   Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Compressed.X86_64.Fn.decompress Impl.Ecdsa.X86_64.p521
-      verified := .scrubbed (Proof.EcKey.Compressed.X86_64.P521Decompress.scrubbed hasLaw.law hasLaw.inv false)
+      verified := Proof.EcKey.Compressed.X86_64.P521Decompress.scrubbed hasLaw.law hasLaw.inv false
       spSafe := Proof.EcKey.Compressed.X86_64.P521Decompress.spSafe false },
   Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86_64.target
     { suffix := "_adx"
       code := Impl.EcKey.Compressed.X86_64.Fn.compress Impl.Ecdsa.X86_64.p521x
-      verified := .scrubbed (Proof.EcKey.Compressed.X86_64.P521.scrubbed hasLaw.inv true)
+      verified := Proof.EcKey.Compressed.X86_64.P521.scrubbed hasLaw.inv true
       spSafe := Proof.EcKey.Compressed.X86_64.P521.spSafe true },
   Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86_64.target
     { suffix := "_adx"
       code := Impl.EcKey.Compressed.X86_64.Fn.decompress Impl.Ecdsa.X86_64.p521x
-      verified := .scrubbed (Proof.EcKey.Compressed.X86_64.P521Decompress.scrubbed hasLaw.law hasLaw.inv true)
+      verified := Proof.EcKey.Compressed.X86_64.P521Decompress.scrubbed hasLaw.law hasLaw.inv true
       spSafe := Proof.EcKey.Compressed.X86_64.P521Decompress.spSafe true }]
 
 end VG.Artifacts.EcP521.X86_64.Compressed
@@ -107,12 +107,12 @@ open VG.Proof.P521.X86_64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P521.inst.validatePublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Validate.X86_64.Fn.validate Impl.Ecdsa.X86_64.p521
-      verified := .scrubbed (Proof.EcKey.Validate.X86_64.P521.scrubbed hasLaw.inv false)
+      verified := Proof.EcKey.Validate.X86_64.P521.scrubbed hasLaw.inv false
       spSafe := Proof.EcKey.Validate.X86_64.P521.spSafe false },
   Spec.EcKey.P521.inst.validatePublicKeyApi.artifact X86_64.target
     { suffix := "_adx"
       code := Impl.EcKey.Validate.X86_64.Fn.validate Impl.Ecdsa.X86_64.p521x
-      verified := .scrubbed (Proof.EcKey.Validate.X86_64.P521.scrubbed hasLaw.inv true)
+      verified := Proof.EcKey.Validate.X86_64.P521.scrubbed hasLaw.inv true
       spSafe := Proof.EcKey.Validate.X86_64.P521.spSafe true }]
 
 end VG.Artifacts.EcP521.X86_64.Validate
@@ -125,12 +125,12 @@ def artifacts : List Artifact :=
   Compressed.artifacts ++ [
   Spec.EcKey.P521.publicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.X86_64.Fn.publicKeyP521
-      verified := .scrubbed (Proof.EcKey.X86_64.P521.publicKey_scrubbed hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)
+      verified := Proof.EcKey.X86_64.P521.publicKey_scrubbed hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv
       spSafe := Proof.EcKey.X86_64.P521.publicKey_spSafe },
   Spec.EcKey.P521.publicKeyApi.artifact X86_64.target
     { suffix := "_adx"
       code := Impl.EcKey.X86_64.Fn.publicKeyP521Adx
-      verified := .scrubbed (Proof.EcKey.X86_64.P521.publicKeyAdx_scrubbed hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)
+      verified := Proof.EcKey.X86_64.P521.publicKeyAdx_scrubbed hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv
       spSafe := Proof.EcKey.X86_64.P521.publicKeyAdx_spSafe }] ++
   Validate.artifacts
 

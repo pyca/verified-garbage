@@ -22,22 +22,22 @@ def artifacts : List Artifact :=
     Spec.Cfb.aesEncryptApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86_64.Fn.cfbEncrypt v.level v.enc
-      verified := .scrubbed (Proof.Aes.X86_64.ModesScrub.cfbEncrypt_scrubbed v)
+      verified := Proof.Aes.X86_64.ModesScrub.cfbEncrypt_scrubbed v
       spSafe := Proof.Aes.X86_64.ModesScrub.cfbEncrypt_spSafeFn v },
     Spec.Cfb.aesDecryptApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86_64.Fn.cfbDecrypt v.level v.enc
-      verified := .scrubbed (Proof.Aes.X86_64.ModesScrub.cfbDecrypt_scrubbed v)
+      verified := Proof.Aes.X86_64.ModesScrub.cfbDecrypt_scrubbed v
       spSafe := Proof.Aes.X86_64.ModesScrub.cfbDecrypt_spSafeFn v },
     Spec.Cfb.aesEncryptFinalApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86_64.Fn.cfbEncryptFinal v.level v.enc v.suffix
-      verified := .scrubbed (Proof.Aes.X86_64.FinalScrub.cfbEncryptFinal_scrubbed v)
+      verified := Proof.Aes.X86_64.FinalScrub.cfbEncryptFinal_scrubbed v
       spSafe := Proof.Aes.X86_64.FinalScrub.cfbEncryptFinal_spSafeFn v },
     Spec.Cfb.aesDecryptFinalApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86_64.Fn.cfbDecryptFinal v.level v.enc v.suffix
-      verified := .scrubbed (Proof.Aes.X86_64.FinalScrub.cfbDecryptFinal_scrubbed v)
+      verified := Proof.Aes.X86_64.FinalScrub.cfbDecryptFinal_scrubbed v
       spSafe := Proof.Aes.X86_64.FinalScrub.cfbDecryptFinal_spSafeFn v }]
 
 end VG.Artifacts.AesCfb.X86_64

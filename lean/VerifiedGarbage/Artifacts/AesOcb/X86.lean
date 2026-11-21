@@ -17,17 +17,17 @@ def artifacts : List Artifact :=
     Spec.Ocb.initApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesOcb.X86.Fn.init (Proof.AesOcb.X86.callees v)
-      verified := .scrubbed (Proof.AesOcb.X86.Scrub.init_scrubbed v)
+      verified := Proof.AesOcb.X86.Scrub.init_scrubbed v
       spSafe := Proof.AesOcb.X86.Scrub.init_fnSpSafe v },
     Spec.Ocb.sealApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesOcb.X86.Fn.«seal» (Proof.AesOcb.X86.callees v)
-      verified := .scrubbed (Proof.AesOcb.X86.Scrub.seal_scrubbed v)
+      verified := Proof.AesOcb.X86.Scrub.seal_scrubbed v
       spSafe := Proof.AesOcb.X86.Scrub.seal_fnSpSafe v },
     Spec.Ocb.openApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesOcb.X86.Fn.«open» (Proof.AesOcb.X86.callees v)
-      verified := .scrubbed (Proof.AesOcb.X86.Scrub.open_scrubbed v)
+      verified := Proof.AesOcb.X86.Scrub.open_scrubbed v
       spSafe := Proof.AesOcb.X86.Scrub.open_fnSpSafe v }]
 
 end VG.Artifacts.AesOcb.X86

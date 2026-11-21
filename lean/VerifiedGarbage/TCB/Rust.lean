@@ -633,9 +633,9 @@ def fnTablesDoc (a : Artifact) : List String :=
       gives, if it has one."
 
 /-- The note that a function returns without secret residue, if it runs one
-of `as` and each proves it (none is `Artifact.unscrubbed`). -/
+of `as`: each proves it (`Artifact.verified`). -/
 def residueDoc (as : List Artifact) : List String :=
-  if !as.isEmpty && as.all (!·.unscrubbed) then
+  if !as.isEmpty then
     ["It returns without secret residue: what it leaves in the registers, the flags and the \
       stack below the caller's stack pointer is determined by what its caller left there and \
       by public data (`Target.noResidue`)."]
@@ -949,39 +949,6 @@ def checkWritten (a : Artifact) : Except String Unit := do
         writable array"
     | none => throw s!"{a.target.name}: {a.name} bounds what it writes of `{p}`, which is not \
         one of its parameters"
-
-/-- The functions `ci/residue_allowlist.txt` lists, as `(target, name)`: its
-lines but blank ones and those starting with `#`, each a target's name and a
-function's, separated by spaces. -/
-def parseResidueAllowlist (text : String) : Except String (List (String × String)) :=
-  (text.splitOn "\n").filterMapM fun l =>
-    let l := l.trimAscii.toString
-    if l.isEmpty || l.startsWith "#" then pure none
-    else match (l.splitOn " ").filter (!·.isEmpty) with
-      | [t, n] => pure (some (t, n))
-      | _ => throw s!"ci/residue_allowlist.txt: `{l}` is not a target and a function's name"
-
-/-- Every artifact of a target that defines what it means to return without
-secret residue (`Target.noResidue`) proves it (is not `Artifact.unscrubbed`), or
-`pending` (`parseResidueAllowlist`) lists it. If `complete` (`as` are all the
-artifacts of their targets, as in a part of `Emit.lean`, not `EmitOne.lean`),
-every function `pending` lists of one of those targets is an artifact of it
-without a proof, so that the list only ever shrinks to what is left to
-prove. Every problem is reported, not only the first. -/
-def checkResidue (pending : List (String × String)) (complete : Bool) (as : List Artifact) :
-    Except String Unit := do
-  let missing := as.filter fun a =>
-    a.target.noResidue.isSome && a.unscrubbed && !pending.contains (a.target.name, a.name)
-  let targets := as.map (·.target.name)
-  let stale := if complete then
-      pending.filter fun (t, n) => targets.contains t &&
-        !as.any (fun a => a.target.name == t && a.name == n && a.unscrubbed)
-    else []
-  let msgs := missing.map (fun a => s!"{a.target.name}: {a.name} does not prove that it returns \
-      without secret residue (`Verification.scrubbed`), and ci/residue_allowlist.txt does not list it") ++
-    stale.map fun (t, n) => s!"ci/residue_allowlist.txt lists `{t} {n}`, which is not a function \
-      of {t} without a proof that it returns without secret residue: remove the line"
-  unless msgs.isEmpty do throw ("\n".intercalate msgs)
 
 /-- No two artifacts of a target have the same name. -/
 def checkUnique (as : List Artifact) : Except String Unit :=
@@ -1819,6 +1786,64 @@ run without its own code calling `vg_mcdt_enter` first (`mcdtOpen`):
 its dispatcher then runs `vg_mcdt_enter` first (see "Dispatchers"). -/
 def needsMcdt (a : Artifact) : Bool := mcdtOpen a.target.printer a.code
 
+/-- `mcdtOpen P c`, with the answer for the code of each function gone
+through kept by the function's name: `seen` has those of the functions gone
+through before, and the result those and the ones `c` calls. The code of
+each call of a function in the artifacts of a target prints as that function
+(`checkCalls`), and whether an instruction is one MCDT affects is a matter of
+its text (`Printer.mcdt`), as is where the printer lays out the code a
+successful `vg_mcdt_enter` guards: so the answer for the code of one call of
+a function holds for the function as emitted, and each function's code is
+gone through once, not once for each call of it and of every function that
+calls it. -/
+def mcdtOpenSeen {M : ISA} (P : Printer M) :
+    Code M.Instr M.Cond → List (String × Bool) → Bool × List (String × Bool)
+  | .block is, seen => (is.any P.mcdt, seen)
+  | .seq (.call n e) (.seq (.block [i]) (.ite c fb rest)), seen =>
+    let (a, seen) := match seen.lookup n with
+      | some a => (a, seen)
+      | none => let (a, seen) := mcdtOpenSeen P e seen; (a, (n, a) :: seen)
+    let (b, seen) := mcdtOpenSeen P fb seen
+    if n == mcdtEnter && P.mcdtGuard i c then (a || b, seen)
+    else
+      let (r, seen) := mcdtOpenSeen P rest seen
+      (a || P.mcdt i || b || r, seen)
+  | .seq a b, seen =>
+    let (x, seen) := mcdtOpenSeen P a seen
+    let (y, seen) := mcdtOpenSeen P b seen
+    (x || y, seen)
+  | .ite _ t e, seen =>
+    let (x, seen) := mcdtOpenSeen P t seen
+    let (y, seen) := mcdtOpenSeen P e seen
+    (x || y, seen)
+  | .loop b _, seen => mcdtOpenSeen P b seen
+  | .call n b, seen =>
+    match seen.lookup n with
+    | some a => (a, seen)
+    | none => let (a, seen) := mcdtOpenSeen P b seen; (a, (n, a) :: seen)
+  | .frame i b j, seen =>
+    let (x, seen) := mcdtOpenSeen P b seen
+    (P.mcdt i || x || P.mcdt j, seen)
+  | .icall i _ b n, seen =>
+    let (x, seen) := mcdtOpenSeen P b seen
+    let (y, seen) := mcdtOpenSeen P n seen
+    (P.mcdt i || x || y, seen)
+
+/-- `needsMcdt` of each artifact of `as`, by its target and name, computed
+once for each, going through the code of each function of a target once
+(`mcdtOpenSeen`): `files` asks it of an artifact several times (`checkMcdt`,
+and its dispatcher), after `checkCalls`. -/
+def needsMcdtAll (as : List Artifact) : List ((String × String) × Bool) :=
+  (targetsOf as).flatMap fun (t, _) =>
+    ((as.filter (·.target.name == t)).foldl (init := ([], [])) fun (acc, seen) a =>
+      let (r, seen) := mcdtOpenSeen a.target.printer a.code seen
+      (((t, a.name), r) :: acc, seen)).1
+
+/-- `needsMcdt a`, as `known` (`needsMcdtAll`) has it, or computed if `known`
+does not list `a`. -/
+def needsMcdtIn (known : List ((String × String) × Bool)) (a : Artifact) : Bool :=
+  (known.lookup (a.target.name, a.name)).getD (needsMcdt a)
+
 /-- The first lines of the dispatcher of a function some of whose
 implementations need Intel's mitigation of MCDT (`needsMcdt`), or
 nothing. -/
@@ -1972,8 +1997,9 @@ def choice (ind : String) (b : Artifact) (arms : List Arm) : String :=
   s!"{ind}crate::{b.module}::{b.name}\n"
 
 /-- The dispatcher of the function `g` of the module `m` (see above), given
-its implementations' `arms`. -/
-def dispatcher (g : Group) (arms : List Arm) : String :=
+its implementations' `arms`, and whether each needs Intel's mitigation of
+MCDT (`needs`: `needsMcdt`, as `files` computed it). -/
+def dispatcher (needs : Artifact → Bool) (g : Group) (arms : List Arm) : String :=
   let b := g.base
   let auto := autoName b.name
   let all := b :: g.members
@@ -1992,7 +2018,7 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{ditSig b.sig} " ++ "{\n" ++
-  mcdtLine (all.any needsMcdt) ++
+  mcdtLine (all.any needs) ++
   "    /// The type of the implementations.\n" ++
   s!"    type Impl = unsafe extern \"{abi}\" fn{b.sig.rust};\n" ++
   "    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only\n" ++
@@ -2021,8 +2047,9 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "}\n"
 
 /-- The dispatcher of the function `g` whose base is its only implementation:
-a function that takes the token (`ditSig`) and calls it. -/
-def soleDispatcher (g : Group) : String :=
+a function that takes the token (`ditSig`) and calls it; `needs` as
+`dispatcher`'s. -/
+def soleDispatcher (needs : Artifact → Bool) (g : Group) : String :=
   let b := g.base
   let auto := autoName b.name
   let note := s!"It runs `{b.name}`, the only implementation of it on this target, which needs \
@@ -2034,7 +2061,7 @@ def soleDispatcher (g : Group) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{ditSig b.sig} " ++ "{\n" ++
-  mcdtLine (needsMcdt b) ++
+  mcdtLine (needs b) ++
   "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
   "    unsafe { " ++ s!"crate::{b.module}::{b.name}({argsOf b.sig})" ++ " }\n" ++
   "}\n"
@@ -2061,10 +2088,12 @@ def checkChoice (a : Artifact) : Except String Unit := do
 /-- That every function of `as` (a module's artifacts) whose code needs
 Intel's mitigation of MCDT (`needsMcdt`) has a dispatcher, which runs
 it: its base needs no CPU feature, and the target has `vg_mcdt_enter`, of
-the module `mcdt` (`names`: the names of the target's artifacts). -/
-def checkMcdt (names : List String) (as : List Artifact) : Except String Unit :=
+the module `mcdt` (`names`: the names of the target's artifacts; `needs`:
+`needsMcdt`, as `files` computed it). -/
+def checkMcdt (needs : Artifact → Bool) (names : List String) (as : List Artifact) :
+    Except String Unit :=
   (groupsOf as).forM fun g => do
-    if let some a := (g.base :: g.members).find? needsMcdt then
+    if let some a := (g.base :: g.members).find? needs then
       unless g.base.features.isEmpty do
         throw s!"{a.target.name}: {a.name} has an instruction that MCDT affects, but no \
           dispatcher to run vg_mcdt_enter first: its base {g.base.name} needs CPU features"
@@ -2075,20 +2104,20 @@ def checkMcdt (names : List String) (as : List Artifact) : Except String Unit :=
 /-- The dispatchers of the artifacts `as` of a module of a target (see
 above), as the text that follows its functions in its file; `names` are the
 names of every artifact of the target, none of which may be a
-dispatcher's. -/
-def dispatchers (names : List String) (as : List Artifact) :
+dispatcher's; `needs` is `needsMcdt`, as `files` computed it. -/
+def dispatchers (needs : Artifact → Bool) (names : List String) (as : List Artifact) :
     Except String String := do
   if let some g := (groupsOf as).find? (!·.base.notWith.isEmpty) then
     throw s!"{g.base.target.name}: {g.base.name} is a base, which its dispatcher falls back on: \
       `notWith` means nothing for it"
-  checkMcdt names as
+  checkMcdt needs names as
   let gs := (groupsOf as).filter (·.base.features.isEmpty)
   let texts ← gs.mapM fun g => do
     let auto := autoName g.base.name
     if names.contains auto then
       throw s!"{g.base.target.name}: {auto} is both an artifact and the dispatcher of {g.base.name}"
     let arms ← armsOf g.base.target.name (g.members.map Impl.ofArtifact)
-    return if g.members.isEmpty then soleDispatcher g else dispatcher g arms
+    return if g.members.isEmpty then soleDispatcher needs g else dispatcher needs g arms
   return String.join (texts.map ("\n" ++ ·))
 
 /-- The tables of functions `ts` of a target, with their implementations: a
@@ -2296,13 +2325,14 @@ def files (as : List Artifact) :
   forMPar as checkLayout
   forMPar as checkWritten
   forMPar as checkChoice
+  let needs := needsMcdtIn (needsMcdtAll as)
   let disp ← (targetsOf as).flatMapM fun (t, _) => do
     let arts := as.filter (·.target.name == t)
     let names := arts.map (·.name)
     let fns ← (distinct arts (·.module)).mapM fun m => do
       let ms := arts.filter (·.module == m)
       checkGroups ms
-      return ((t, m), ← dispatchers names ms)
+      return ((t, m), ← dispatchers needs names ms)
     let tps := ps.filter (·.art.target.name == t)
     let gate (fs : List String) : List String := match arts.head? with
       | some a => fs.filterMap a.target.printer.featureCfg

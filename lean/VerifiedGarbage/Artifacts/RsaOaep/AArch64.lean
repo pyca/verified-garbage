@@ -22,7 +22,7 @@ def artifacts (c : Proof.Rsa.AArch64.CrtImpl) : List Artifact := [
     suffix := qualifiedName "" [("crt", c.suffix)]
     tables := [("hash", tables variants), ("mgf1", tables variants)]
     code := Impl.RsaOaep.AArch64.Fn.decryptP hashes c.toCrt
-    verified := .scrubbed (Proof.RsaOaep.AArch64.Scrub.decryptP_scrubbed c) }]
+    verified := Proof.RsaOaep.AArch64.Scrub.decryptP_scrubbed c }]
 
 end VG.Artifacts.RsaOaep.AArch64.RsaPrivateCrtAllMdHash
 
@@ -37,7 +37,7 @@ def artifacts (c : Proof.Rsa.AArch64.PublicImpl) : List Artifact := [
     suffix := qualifiedName "" [("rsa", c.suffix)]
     tables := [("hash", tables variants), ("mgf1", tables variants)]
     code := Impl.RsaOaep.AArch64.Fn.encrypt hashes c.name c.code
-    verified := .scrubbed (Proof.RsaOaep.AArch64.Scrub.encrypt_scrubbed c) }]
+    verified := Proof.RsaOaep.AArch64.Scrub.encrypt_scrubbed c }]
 
 end VG.Artifacts.RsaOaep.AArch64.RsaPublicPrecomputedAllMdHash
 

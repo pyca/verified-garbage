@@ -16,15 +16,15 @@ namespace VG.Artifacts.SeedCfb.X86
 def artifacts : List Artifact := [
   Spec.Seed.cfbEncryptApi.artifact X86.target {
     code := Impl.Seed.X86.Fn.cfbEncrypt
-    verified := .scrubbed Proof.Seed.X86.Scrub.cfbEncrypt_scrubbed },
+    verified := Proof.Seed.X86.Scrub.cfbEncrypt_scrubbed },
   Spec.Seed.cfbDecryptApi.artifact X86.target {
     code := Impl.Seed.X86.Fn.cfbDecrypt
-    verified := .scrubbed Proof.Seed.X86.Scrub.cfbDecrypt_scrubbed },
+    verified := Proof.Seed.X86.Scrub.cfbDecrypt_scrubbed },
   Spec.Seed.cfbEncryptFinalApi.artifact X86.target {
     code := Impl.Seed.X86.Fn.cfbEncryptFinal
-    verified := .scrubbed Proof.Seed.X86.Scrub.cfbEncryptFinal_scrubbed },
+    verified := Proof.Seed.X86.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Seed.cfbDecryptFinalApi.artifact X86.target {
     code := Impl.Seed.X86.Fn.cfbDecryptFinal
-    verified := .scrubbed Proof.Seed.X86.Scrub.cfbDecryptFinal_scrubbed }]
+    verified := Proof.Seed.X86.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.SeedCfb.X86

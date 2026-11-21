@@ -195,7 +195,7 @@ namespace VG.Artifacts.RsaKeyGen.AArch64
 def direct : List Artifact := [
   Spec.RsaKeyGen.keyInitApi.artifact AArch64.target {
     code := Impl.RsaKeyGen.AArch64.KeyInit.Fn.init
-    verified := .scrubbed Proof.RsaKeyGen.AArch64.KeyInit.init_scrubbed }]
+    verified := Proof.RsaKeyGen.AArch64.KeyInit.init_scrubbed }]
 
 def artifacts : List Artifact :=
   direct ++
@@ -203,6 +203,6 @@ def artifacts : List Artifact :=
     Spec.RsaKeyGen.keySearchApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.RsaKeyGen.AArch64.Fn.keySearch v.suffix v.mont.mm v.roundMont.mm
-      verified := .scrubbed (Proof.RsaKeyGen.AArch64.Generate.keySearch_scrubbed v) }])
+      verified := Proof.RsaKeyGen.AArch64.Generate.keySearch_scrubbed v }])
 
 end VG.Artifacts.RsaKeyGen.AArch64

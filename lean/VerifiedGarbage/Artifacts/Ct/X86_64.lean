@@ -19,5 +19,5 @@ namespace VG.Artifacts.Ct.X86_64
 open VG.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Ct.eqApi.artifact target { code := Impl.Ct.X86_64.Fn.eq, verified := .scrubbed Proof.Ct.X86_64.eq_scrubbed, spSafe := Proof.Ct.X86_64.eq_spSafe }]
+  Spec.Ct.eqApi.artifact target { code := Impl.Ct.X86_64.Fn.eq, verified := Proof.Ct.X86_64.eq_scrubbed, spSafe := Proof.Ct.X86_64.eq_spSafe }]
 end VG.Artifacts.Ct.X86_64

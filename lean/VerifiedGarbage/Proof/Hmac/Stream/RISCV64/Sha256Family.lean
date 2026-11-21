@@ -944,8 +944,7 @@ that code as the internal `vg_sha256_init_core`, `vg_sha256_update_core`,
 … (an `_core` suffix to each name): the functions exported as
 `vg_sha256_init`, … also clear what they leave
 (`Proof/Sha256/RISCV64/Scrub.lean`), which their callers, which return
-without secret residue or are listed in `ci/residue_allowlist.txt`, do not
-need.
+without secret residue, do not need.
 -/
 
 @[expose] public section

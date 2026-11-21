@@ -17,9 +17,9 @@ namespace VG.Artifacts.TripleDesCbc.PPC64LE
 def artifacts : List Artifact := [
   Spec.TripleDes.cbcEncryptChainedApi.artifact PPC64LE.target {
     code := Impl.TripleDes.PPC64LE.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.TripleDes.PPC64LE.Scrub.cbcEncryptChained_scrubbed },
   Spec.TripleDes.cbcDecryptChainedApi.artifact PPC64LE.target {
     code := Impl.TripleDes.PPC64LE.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.TripleDes.PPC64LE.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.TripleDesCbc.PPC64LE

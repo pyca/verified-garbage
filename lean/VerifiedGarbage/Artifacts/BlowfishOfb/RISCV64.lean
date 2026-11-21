@@ -16,9 +16,9 @@ namespace VG.Artifacts.BlowfishOfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Blowfish.ofbApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.Fn.ofb
-    verified := .scrubbed Proof.Blowfish.RISCV64.Scrub.ofb_scrubbed },
+    verified := Proof.Blowfish.RISCV64.Scrub.ofb_scrubbed },
   Spec.Blowfish.ofbFinalApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.Fn.ofbFinal
-    verified := .scrubbed Proof.Blowfish.RISCV64.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Blowfish.RISCV64.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.BlowfishOfb.RISCV64

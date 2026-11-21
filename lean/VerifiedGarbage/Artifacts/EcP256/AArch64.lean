@@ -21,12 +21,12 @@ open VG.Proof.P256.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P256.inst.compressPublicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.compressP256
-    verified := .scrubbed (Proof.EcKey.Compressed.AArch64.P256.scrubbed hasLaw.inv) },
+    verified := Proof.EcKey.Compressed.AArch64.P256.scrubbed hasLaw.inv },
   Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.decompressP256
-    verified := .scrubbed (Proof.EcKey.Compressed.AArch64.Residue.P256.scrubbed hasLaw.law hasLaw.inv) },
+    verified := Proof.EcKey.Compressed.AArch64.Residue.P256.scrubbed hasLaw.law hasLaw.inv },
   Spec.EcKey.P256.publicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.Fn.publicKeyP256
-    verified := .scrubbed (Proof.EcKey.AArch64.booth_pk_scrubbed hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law)) }]
+    verified := Proof.EcKey.AArch64.booth_pk_scrubbed hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) }]
 
 end VG.Artifacts.EcP256.AArch64

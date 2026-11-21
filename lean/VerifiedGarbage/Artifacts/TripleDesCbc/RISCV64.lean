@@ -15,9 +15,9 @@ namespace VG.Artifacts.TripleDesCbc.RISCV64
 def artifacts : List Artifact := [
   Spec.TripleDes.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.TripleDes.RISCV64.Scrub.cbcEncryptChained_scrubbed },
   Spec.TripleDes.cbcDecryptChainedApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.TripleDes.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.TripleDesCbc.RISCV64

@@ -16,9 +16,9 @@ namespace VG.Artifacts.TripleDesOfb.RISCV64
 def artifacts : List Artifact := [
   Spec.TripleDes.ofbApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.Fn.ofb
-    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.ofb_scrubbed },
+    verified := Proof.TripleDes.RISCV64.Scrub.ofb_scrubbed },
   Spec.TripleDes.ofbFinalApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.Fn.ofbFinal
-    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.TripleDes.RISCV64.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.TripleDesOfb.RISCV64

@@ -26,7 +26,7 @@ of it, from where the contract starts it, ends in `RTaint.done`
 that they leave no byte of the window secret.
 
 `verifiedScrubbedSel` is the theorem a registration binds
-(`verified := .scrubbed …`), as `verifiedScrubbedAll` is for `scrubAll`
+(`verified := …`), as `verifiedScrubbedAll` is for `scrubAll`
 (`ScrubProved.lean`): of the code with its cleanup, from the function's
 `Verified`, the side condition on `n` and `ws` (`selSide`, by `decide`), and
 the analysis's result (`taint_decide_ct`).
@@ -236,7 +236,7 @@ code with its cleanup (`Arm.rtaint`, from a state where the `e.2` bytes from
 what each register `e.1` of `bp0` holds are buffers of the contract's: `hbp`)
 ends in `done` (`hres`, which the kernel evaluates where the theorem is used:
 `⟨_, by taint_decide_ct⟩`), stated of `code`, `W` and `rb`: the theorem
-about the code that a registration binds (`verified := .scrubbed …`). -/
+about the code that a registration binds (`verified := …`). -/
 theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target) {n W rb : Nat} (ws : List Nat)
     (bp0 : List (Reg × Nat)) {code : Prog isa} (hpost : PostOut r.contract rb) (hs : selSide n ws W = true)
     (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,

@@ -18,16 +18,16 @@ def artifacts : List Artifact := [
   Spec.Sm4.cbcEncryptChainedApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Fn.cbcEncryptChainedSm4
-    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedSm4Code_scrubbed },
+    verified := Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedSm4Code_scrubbed },
   Spec.Sm4.cbcEncryptChainedApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
+    verified := Proof.Sm4.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
   Spec.Sm4.cbcDecryptChainedApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Fn.cbcDecryptChainedSm4
-    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedSm4Code_scrubbed },
+    verified := Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedSm4Code_scrubbed },
   Spec.Sm4.cbcDecryptChainedApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
+    verified := Proof.Sm4.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.Sm4Cbc.AArch64

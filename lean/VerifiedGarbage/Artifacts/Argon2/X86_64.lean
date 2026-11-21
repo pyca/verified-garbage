@@ -62,7 +62,7 @@ def artifacts : List Artifact :=
       suffix := qualifiedName "" [("blake2b", v.suffix), ("g", c.suffix)]
       code := Impl.Argon2.X86_64.Fn.derive (v.level.join c.level) ("vg_argon2_hprime" ++ v.suffix)
         (Proof.Argon2.X86_64.HPrime.hash v)
-      verified := .scrubbed (Proof.Argon2.X86_64.Derive.derive_scrubbed v _)
+      verified := Proof.Argon2.X86_64.Derive.derive_scrubbed v _
       spSafe := Proof.Argon2.X86_64.Derive.derive_spSafe v _ _ }
 
 end VG.Artifacts.Argon2.X86_64

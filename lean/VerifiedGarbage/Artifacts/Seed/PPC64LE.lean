@@ -16,12 +16,12 @@ namespace VG.Artifacts.Seed.PPC64LE
 def artifacts : List Artifact := [
   Spec.Seed.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Seed.PPC64LE.Fn.expandKey
-    verified := .scrubbed Proof.Seed.PPC64LE.Scrub.expandKey_scrubbed },
+    verified := Proof.Seed.PPC64LE.Scrub.expandKey_scrubbed },
   Spec.Seed.ecbEncryptApi.artifact PPC64LE.target {
     code := Impl.Seed.PPC64LE.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Seed.PPC64LE.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.Seed.PPC64LE.Scrub.ecbEncrypt_scrubbed },
   Spec.Seed.ecbDecryptApi.artifact PPC64LE.target {
     code := Impl.Seed.PPC64LE.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Seed.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.Seed.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Seed.PPC64LE

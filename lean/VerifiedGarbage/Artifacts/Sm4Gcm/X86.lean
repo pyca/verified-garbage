@@ -21,7 +21,7 @@ namespace VG.Artifacts.Sm4Gcm.X86
 def direct : List Artifact := [
   Spec.Sm4.Gcm.initApi.artifact X86.target {
     code := Impl.Sm4Gcm.X86.Fn.init
-    verified := .scrubbed Proof.Sm4Gcm.X86.Scrub.init_scrubbed
+    verified := Proof.Sm4Gcm.X86.Scrub.init_scrubbed
     spSafe := Proof.Sm4Gcm.X86.Scrub.init_spSafeF }]
 
 end VG.Artifacts.Sm4Gcm.X86
@@ -37,42 +37,42 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Sm4.Gcm.streamInitApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.AesGcm.X86.Fn.streamInit v.callees
-    verified := .scrubbed (Proof.AesGcm.X86.Scrub.streamInit_scrubbed v)
+    verified := Proof.AesGcm.X86.Scrub.streamInit_scrubbed v
     spSafe := Proof.AesGcm.X86.Scrub.streamInit_spSafeF v },
   Spec.Sm4.Gcm.streamAadApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.AesGcm.X86.Fn.streamAad v.callees
-    verified := .scrubbed (Proof.AesGcm.X86.Scrub.streamAad_scrubbed v)
+    verified := Proof.AesGcm.X86.Scrub.streamAad_scrubbed v
     spSafe := Proof.AesGcm.X86.Scrub.streamAad_spSafeF v },
   Spec.Sm4.Gcm.streamEncryptApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.streamEncrypt v.callees
-    verified := .scrubbed (streamEncrypt_scrubbed v)
+    verified := streamEncrypt_scrubbed v
     spSafe := streamEncrypt_spSafeF v },
   Spec.Sm4.Gcm.streamDecryptApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.streamDecrypt v.callees
-    verified := .scrubbed (streamDecrypt_scrubbed v)
+    verified := streamDecrypt_scrubbed v
     spSafe := streamDecrypt_spSafeF v },
   Spec.Sm4.Gcm.streamFinishApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.streamFinish v.callees
-    verified := .scrubbed (streamFinish_scrubbed v)
+    verified := streamFinish_scrubbed v
     spSafe := streamFinish_spSafeF v },
   Spec.Sm4.Gcm.streamVerifyApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.streamVerify v.callees
-    verified := .scrubbed (streamVerify_scrubbed v)
+    verified := streamVerify_scrubbed v
     spSafe := streamVerify_spSafeF v },
   Spec.Sm4.Gcm.sealApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.«seal» v.callees
-    verified := .scrubbed (seal_scrubbed v)
+    verified := seal_scrubbed v
     spSafe := seal_spSafeF v },
   Spec.Sm4.Gcm.openApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.«open» v.callees
-    verified := .scrubbed (open_scrubbed v)
+    verified := open_scrubbed v
     spSafe := open_spSafeF v }]
 
 /-- The artifacts of a variant, from the implementation of `vg_ghash` it names. -/

@@ -13,6 +13,6 @@ namespace VG.Artifacts.Scrypt.Arm
 def artifacts : List Artifact := [
   Spec.Scrypt.scryptApi.artifact Arm.target {
     code := Impl.Scrypt.Arm.Fn.scrypt
-    verified := .scrubbed Proof.Scrypt.Arm.Fn.scrypt }]
+    verified := Proof.Scrypt.Arm.Fn.scrypt }]
 
 end VG.Artifacts.Scrypt.Arm

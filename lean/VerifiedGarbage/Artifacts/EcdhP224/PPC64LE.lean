@@ -16,6 +16,6 @@ open VG.Proof.P224.PPC64LE (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P224.exchangeApi.artifact PPC64LE.target {
     code := Impl.Ecdh.PPC64LE.Fn.p224Exchange
-    verified := .scrubbed (Proof.Ecdh.PPC64LE.Scrub.p224Exchange_scrubbed hasLaw.law) }]
+    verified := Proof.Ecdh.PPC64LE.Scrub.p224Exchange_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcdhP224.PPC64LE

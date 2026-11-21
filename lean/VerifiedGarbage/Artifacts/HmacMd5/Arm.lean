@@ -13,9 +13,9 @@ namespace VG.Artifacts.HmacMd5.Arm
 def artifacts : List Artifact := [
   Spec.Hmac.md5I.initAnyKeyApi.artifact Arm.target {
     code := Impl.Hmac.Stream.Arm.Fn.initMd5
-    verified := .scrubbed Proof.Hmac.Stream.Arm.Fn.initMd5 },
+    verified := Proof.Hmac.Stream.Arm.Fn.initMd5 },
   Spec.Hmac.md5I.finalizeApi.artifact Arm.target {
     code := Impl.Hmac.Stream.Arm.Fn.finalizeMd5
-    verified := .scrubbed Proof.Hmac.Stream.Arm.Fn.finalizeMd5 }]
+    verified := Proof.Hmac.Stream.Arm.Fn.finalizeMd5 }]
 
 end VG.Artifacts.HmacMd5.Arm

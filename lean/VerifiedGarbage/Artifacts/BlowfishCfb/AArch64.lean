@@ -18,15 +18,15 @@ namespace VG.Artifacts.BlowfishCfb.AArch64
 def artifacts : List Artifact := [
   Spec.Blowfish.cfbEncryptApi.artifact AArch64.target {
     code := Impl.Blowfish.AArch64.Fn.cfbEncrypt
-    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.cfbEncryptCode_scrubbed },
+    verified := Proof.Blowfish.AArch64.ModesResidue.cfbEncryptCode_scrubbed },
   Spec.Blowfish.cfbDecryptApi.artifact AArch64.target {
     code := Impl.Blowfish.AArch64.Fn.cfbDecrypt
-    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.cfbDecryptCode_scrubbed },
+    verified := Proof.Blowfish.AArch64.ModesResidue.cfbDecryptCode_scrubbed },
   Spec.Blowfish.cfbEncryptFinalApi.artifact AArch64.target {
     code := Impl.Blowfish.AArch64.Fn.cfbEncryptFinal
-    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed },
+    verified := Proof.Blowfish.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed },
   Spec.Blowfish.cfbDecryptFinalApi.artifact AArch64.target {
     code := Impl.Blowfish.AArch64.Fn.cfbDecryptFinal
-    verified := .scrubbed Proof.Blowfish.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed }]
+    verified := Proof.Blowfish.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed }]
 
 end VG.Artifacts.BlowfishCfb.AArch64

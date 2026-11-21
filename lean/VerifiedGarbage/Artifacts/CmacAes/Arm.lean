@@ -13,12 +13,12 @@ namespace VG.Artifacts.CmacAes.Arm
 def artifacts : List Artifact := [
   Spec.Cmac.aesInitApi.artifact Arm.target {
     code := Impl.CmacAes.Arm.Fn.init
-    verified := .scrubbed Proof.CmacAes.Arm.Fn.init },
+    verified := Proof.CmacAes.Arm.Fn.init },
   Spec.Cmac.aesAbsorbApi.artifact Arm.target {
     code := Impl.CmacAes.Arm.Fn.absorb
-    verified := .scrubbed Proof.CmacAes.Arm.Fn.absorb },
+    verified := Proof.CmacAes.Arm.Fn.absorb },
   Spec.Cmac.aesFinishApi.artifact Arm.target {
     code := Impl.CmacAes.Arm.Fn.finish
-    verified := .scrubbed Proof.CmacAes.Arm.Fn.finish }]
+    verified := Proof.CmacAes.Arm.Fn.finish }]
 
 end VG.Artifacts.CmacAes.Arm

@@ -13,9 +13,9 @@ namespace VG.Artifacts.HmacSha384.Arm
 def artifacts : List Artifact := [
   Spec.Hmac.sha384I.initAnyKeyApi.artifact Arm.target {
     code := Impl.Hmac.Stream.Arm.Fn.initSha384
-    verified := .scrubbed Proof.Hmac.Stream.Arm.Fn.initSha384 },
+    verified := Proof.Hmac.Stream.Arm.Fn.initSha384 },
   Spec.Hmac.sha384I.finalizeApi.artifact Arm.target {
     code := Impl.Hmac.Stream.Arm.Fn.finalizeSha384
-    verified := .scrubbed Proof.Hmac.Stream.Arm.Fn.finalizeSha384 }]
+    verified := Proof.Hmac.Stream.Arm.Fn.finalizeSha384 }]
 
 end VG.Artifacts.HmacSha384.Arm

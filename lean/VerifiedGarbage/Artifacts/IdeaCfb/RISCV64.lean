@@ -16,15 +16,15 @@ namespace VG.Artifacts.IdeaCfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Idea.cfbEncryptApi.artifact RISCV64.target {
     code := Impl.Idea.RISCV64.Fn.cfbEncrypt
-    verified := .scrubbed Proof.Idea.RISCV64.Scrub.cfbEncrypt_scrubbed },
+    verified := Proof.Idea.RISCV64.Scrub.cfbEncrypt_scrubbed },
   Spec.Idea.cfbDecryptApi.artifact RISCV64.target {
     code := Impl.Idea.RISCV64.Fn.cfbDecrypt
-    verified := .scrubbed Proof.Idea.RISCV64.Scrub.cfbDecrypt_scrubbed },
+    verified := Proof.Idea.RISCV64.Scrub.cfbDecrypt_scrubbed },
   Spec.Idea.cfbEncryptFinalApi.artifact RISCV64.target {
     code := Impl.Idea.RISCV64.Fn.cfbEncryptFinal
-    verified := .scrubbed Proof.Idea.RISCV64.Scrub.cfbEncryptFinal_scrubbed },
+    verified := Proof.Idea.RISCV64.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Idea.cfbDecryptFinalApi.artifact RISCV64.target {
     code := Impl.Idea.RISCV64.Fn.cfbDecryptFinal
-    verified := .scrubbed Proof.Idea.RISCV64.Scrub.cfbDecryptFinal_scrubbed }]
+    verified := Proof.Idea.RISCV64.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.IdeaCfb.RISCV64

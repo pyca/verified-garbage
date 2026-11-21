@@ -14,15 +14,15 @@ namespace VG.Artifacts.ChaCha20Poly1305.RISCV64
 def artifacts : List Artifact := [
   Spec.ChaCha20Poly1305.sealApi.artifact RISCV64.target {
     code := Impl.ChaCha20Poly1305.RISCV64.Fn.«seal»
-    verified := .scrubbed Proof.ChaCha20Poly1305.RISCV64.Scrub.seal_scrubbed },
+    verified := Proof.ChaCha20Poly1305.RISCV64.Scrub.seal_scrubbed },
   Spec.ChaCha20Poly1305.openZeroApi.artifact RISCV64.target {
     code := Impl.ChaCha20Poly1305.RISCV64.Fn.«open»
-    verified := .scrubbed Proof.ChaCha20Poly1305.RISCV64.Scrub.open_scrubbed },
+    verified := Proof.ChaCha20Poly1305.RISCV64.Scrub.open_scrubbed },
   Spec.ChaCha20Poly1305.openToApi.artifact RISCV64.target {
     code := Impl.ChaCha20Poly1305.RISCV64.Fn.openTo
-    verified := .scrubbed Proof.ChaCha20Poly1305.RISCV64.Scrub.openTo_scrubbed },
+    verified := Proof.ChaCha20Poly1305.RISCV64.Scrub.openTo_scrubbed },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact RISCV64.target {
     code := Impl.ChaCha20Poly1305.RISCV64.Fn.sealGather
-    verified := .scrubbed Proof.ChaCha20Poly1305.RISCV64.Scrub.sealGather_scrubbed }]
+    verified := Proof.ChaCha20Poly1305.RISCV64.Scrub.sealGather_scrubbed }]
 
 end VG.Artifacts.ChaCha20Poly1305.RISCV64

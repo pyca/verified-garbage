@@ -18,10 +18,10 @@ def artifacts : List Artifact := [
   Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact PPC64LE.target {
     tables := [("hash", tables mvars), ("mgf1", tables mvars)]
     code := Impl.RsaOaep.PPC64LE.Fn.decryptP (fns3 mvars)
-    verified := .scrubbed Proof.RsaOaep.PPC64LE.Scrub.decryptP_scrubbed },
+    verified := Proof.RsaOaep.PPC64LE.Scrub.decryptP_scrubbed },
   Spec.RsaOaep.encryptMdTablesApi.artifact PPC64LE.target {
     tables := [("hash", tables mvars), ("mgf1", tables mvars)]
     code := Impl.RsaOaep.PPC64LE.Fn.encrypt (fns3 mvars)
-    verified := .scrubbed Proof.RsaOaep.PPC64LE.Scrub.encrypt_scrubbed }]
+    verified := Proof.RsaOaep.PPC64LE.Scrub.encrypt_scrubbed }]
 
 end VG.Artifacts.RsaOaep.PPC64LE

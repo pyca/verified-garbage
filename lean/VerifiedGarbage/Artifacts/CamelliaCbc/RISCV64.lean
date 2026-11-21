@@ -15,9 +15,9 @@ namespace VG.Artifacts.CamelliaCbc.RISCV64
 def artifacts : List Artifact := [
   Spec.Camellia.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Camellia.RISCV64.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.Camellia.RISCV64.Scrub.cbcEncryptChained_scrubbed },
   Spec.Camellia.cbcDecryptChainedApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Camellia.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.Camellia.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.CamelliaCbc.RISCV64

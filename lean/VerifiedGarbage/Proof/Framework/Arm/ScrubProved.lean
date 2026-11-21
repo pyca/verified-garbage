@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Scrub
 `Verified.scrubAllS` of a function's proof (`Unscrubbed`), as theorems about
 the code with its cleanup (`Impl.Scrub.Arm.scrub rb c` and `scrubAll rb n c`,
 which `Impl/` defines as the function): the proof a registration binds
-(`verified := .scrubbed …`), whose code is that definition. The stack and the result's bits are
+(`verified := …`), whose code is that definition. The stack and the result's bits are
 arguments (literals at the call site), and what the cleanup needs of the
 code is one Boolean, whose proof the call site gives and the kernel checks
 when its module is built: `Code.noFrames` for `scrub` (the code writes memory
@@ -93,7 +93,7 @@ theorem retBits_abi {api : Api} (r : Unscrubbed api target) :
 /-- `r`'s code, which has no frames, with its cleanup (`scrub`, the result's
 `rb` bits kept) meets `r`'s contract in constant time and returns without
 secret residue (`Verified.scrub`): the theorem about the code that a
-registration binds (`verified := .scrubbed …`). -/
+registration binds (`verified := …`). -/
 theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) {rb : Nat}
     (hs : r.code.noFrames = true) (hb : api.sig.retBits target.abi.ptrBits = rb := by rfl) :
     VerifiedScrubbed target (scrub rb r.code) r.contract rb := by
@@ -114,7 +114,7 @@ result's `rb` bits kept) meets `r`'s contract in constant time and returns
 without secret residue, if its postcondition reads the memory on return only
 within the buffers (`PostOut`; `Verified.scrubAllS`, whose functions called
 indirectly are those of the tables, `tablesCall_pub`): the theorem about the
-code that a registration binds (`verified := .scrubbed …`). -/
+code that a registration binds (`verified := …`). -/
 theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) {n rb : Nat}
     (hpost : PostOut r.contract rb) (hs : scrubSideF r.code n r.tables = true)
     (hW : r.stack = n := by rfl) (hb : api.sig.retBits target.abi.ptrBits = rb := by rfl) :

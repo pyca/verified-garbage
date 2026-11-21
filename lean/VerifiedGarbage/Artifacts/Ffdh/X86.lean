@@ -15,33 +15,33 @@ open VG
 def artifacts : List Artifact := [
   Spec.Ffdh.checkDomainApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.checkDomain
-    verified := .scrubbed Proof.Ffdh.X86.Scrub.checkDomain_scrubbed },
+    verified := Proof.Ffdh.X86.Scrub.checkDomain_scrubbed },
   Spec.Ffdh.checkPublicApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.checkPublic
-    verified := .scrubbed Proof.Ffdh.X86.Scrub.checkPublic_scrubbed },
+    verified := Proof.Ffdh.X86.Scrub.checkPublic_scrubbed },
   Spec.Ffdh.checkPrivateApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.checkPrivate
-    verified := .scrubbed Proof.Ffdh.X86.Scrub.checkPrivate_scrubbed },
+    verified := Proof.Ffdh.X86.Scrub.checkPrivate_scrubbed },
   Spec.Ffdh.exchangeApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.exchange
-    verified := .scrubbed Proof.Ffdh.X86.Scrub.exchange_scrubbed },
+    verified := Proof.Ffdh.X86.Scrub.exchange_scrubbed },
   Spec.Ffdh.derivePublicApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.derivePublic
-    verified := .scrubbed Proof.Ffdh.X86.Scrub.derivePublic_scrubbed },
+    verified := Proof.Ffdh.X86.Scrub.derivePublic_scrubbed },
   Spec.Ffdh.keyInitApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.keyInit
-    verified := .scrubbed Proof.Ffdh.X86.Scrub.keyInit_scrubbed },
+    verified := Proof.Ffdh.X86.Scrub.keyInit_scrubbed },
   Spec.Ffdh.generationPrecomputeApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.generationPrecompute
-    verified := .scrubbed Proof.Ffdh.X86.Scrub.generationPrecompute_scrubbed },
+    verified := Proof.Ffdh.X86.Scrub.generationPrecompute_scrubbed },
   Spec.Ffdh.cachedKeySearchApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.cachedKeySearch
-    verified := .scrubbed Proof.Ffdh.X86.Scrub.cachedKeySearch_scrubbed },
+    verified := Proof.Ffdh.X86.Scrub.cachedKeySearch_scrubbed },
   Spec.Ffdh.parameterInitApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.parameterInit
-    verified := .scrubbed Proof.Ffdh.X86.Scrub.parameterInit_scrubbed },
+    verified := Proof.Ffdh.X86.Scrub.parameterInit_scrubbed },
   Spec.Ffdh.sievedParameterSearchApi.artifact X86.target {
     code := Impl.Ffdh.X86.Fn.sievedParameterSearch
-    verified := .scrubbed Proof.Ffdh.X86.Scrub.sievedParameterSearch_scrubbed }]
+    verified := Proof.Ffdh.X86.Scrub.sievedParameterSearch_scrubbed }]
 
 end VG.Artifacts.Ffdh.X86

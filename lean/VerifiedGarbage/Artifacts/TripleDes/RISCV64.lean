@@ -16,12 +16,12 @@ namespace VG.Artifacts.TripleDes.RISCV64
 def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.Fn.expandKey
-    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.expandKey_scrubbed },
+    verified := Proof.TripleDes.RISCV64.Scrub.expandKey_scrubbed },
   Spec.TripleDes.ecbEncryptApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.Fn.ecbEncrypt
-    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.TripleDes.RISCV64.Scrub.ecbEncrypt_scrubbed },
   Spec.TripleDes.ecbDecryptApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.Fn.ecbDecrypt
-    verified := .scrubbed Proof.TripleDes.RISCV64.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.TripleDes.RISCV64.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.TripleDes.RISCV64

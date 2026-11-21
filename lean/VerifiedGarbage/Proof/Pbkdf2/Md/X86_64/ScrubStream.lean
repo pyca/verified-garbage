@@ -93,7 +93,7 @@ def FinImpl.reg (f : FinImpl) : Registration f.v.I.finalizeApi target where
     f.plain.code
   contract := f.plain.contract
   stack := f.plain.stack
-  verified := .scrubbed f.scrubbed
+  verified := f.scrubbed
   ofApi := f.plain.ofApi
   ofSig := f.plain.ofSig
   spSafe := scrubKs_spSafe f.plain.spSafe

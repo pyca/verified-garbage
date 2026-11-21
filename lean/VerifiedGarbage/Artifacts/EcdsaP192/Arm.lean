@@ -22,19 +22,19 @@ open VG.Proof.P192.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.Fn.verifyP192
-    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifyP192 hasLaw.law) },
+    verified := Proof.Ecdsa.Arm.Fn.verifyP192 hasLaw.law },
   Spec.Ecdsa.P192.verifyHashApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.Fn.verifyP192U
-    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.verifyP192U hasLaw.law) },
+    verified := Proof.Ecdsa.Arm.Fn.verifyP192U hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact Arm.target {
     tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
     code := Impl.Ecdsa.Arm.Fn.signP192 (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
-    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.signP192 hasLaw.law) },
+    verified := Proof.Ecdsa.Arm.Fn.signP192 hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact Arm.target {
     suffix := "_umaal"
     tables := [("hmac", Proof.HmacTable.Arm.tables Proof.HmacTable.Arm.vars)]
     code := Impl.Ecdsa.Arm.Fn.signP192U (Proof.HmacTable.Arm.fnsOf Proof.HmacTable.Arm.vars)
-    verified := .scrubbed (Proof.Ecdsa.Arm.Fn.signP192U hasLaw.law) }]
+    verified := Proof.Ecdsa.Arm.Fn.signP192U hasLaw.law }]
 
 end VG.Artifacts.EcdsaP192.Arm

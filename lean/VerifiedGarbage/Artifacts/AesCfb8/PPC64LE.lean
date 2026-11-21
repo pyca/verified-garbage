@@ -14,9 +14,9 @@ namespace VG.Artifacts.AesCfb8.PPC64LE
 def artifacts : List Artifact := [
   Spec.Cfb8.aesEncryptApi.artifact PPC64LE.target {
     code := Impl.Aes.PPC64LE.Fn.cfb8Encrypt
-    verified := .scrubbed Proof.Aes.PPC64LE.Scrub.cfb8Encrypt_scrubbed },
+    verified := Proof.Aes.PPC64LE.Scrub.cfb8Encrypt_scrubbed },
   Spec.Cfb8.aesDecryptApi.artifact PPC64LE.target {
     code := Impl.Aes.PPC64LE.Fn.cfb8Decrypt
-    verified := .scrubbed Proof.Aes.PPC64LE.Scrub.cfb8Decrypt_scrubbed }]
+    verified := Proof.Aes.PPC64LE.Scrub.cfb8Decrypt_scrubbed }]
 
 end VG.Artifacts.AesCfb8.PPC64LE

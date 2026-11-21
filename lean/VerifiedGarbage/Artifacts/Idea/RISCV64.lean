@@ -15,12 +15,12 @@ namespace VG.Artifacts.Idea.RISCV64
 def artifacts : List Artifact := [
   Spec.Idea.expandKeyApi.artifact RISCV64.target {
     code := Impl.Idea.RISCV64.Fn.expandKey
-    verified := .scrubbed Proof.Idea.RISCV64.Scrub.expandKey_scrubbed },
+    verified := Proof.Idea.RISCV64.Scrub.expandKey_scrubbed },
   Spec.Idea.invertKeyApi.artifact RISCV64.target {
     code := Impl.Idea.RISCV64.Fn.invertKey
-    verified := .scrubbed Proof.Idea.RISCV64.Scrub.invertKey_scrubbed },
+    verified := Proof.Idea.RISCV64.Scrub.invertKey_scrubbed },
   Spec.Idea.ecbApi.artifact RISCV64.target {
     code := Impl.Idea.RISCV64.Fn.ecb
-    verified := .scrubbed Proof.Idea.RISCV64.Scrub.ecb_scrubbed }]
+    verified := Proof.Idea.RISCV64.Scrub.ecb_scrubbed }]
 
 end VG.Artifacts.Idea.RISCV64

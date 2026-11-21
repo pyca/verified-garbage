@@ -15,12 +15,12 @@ namespace VG.Artifacts.Camellia.PPC64LE
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.expandKey
-    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.expandKey_scrubbed },
+    verified := Proof.Camellia.PPC64LE.Scrub.expandKey_scrubbed },
   Spec.Camellia.ecbEncryptApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.ecbEnc
-    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.ecbEnc_scrubbed },
+    verified := Proof.Camellia.PPC64LE.Scrub.ecbEnc_scrubbed },
   Spec.Camellia.ecbDecryptApi.artifact PPC64LE.target {
     code := Impl.Camellia.PPC64LE.Fn.ecbDec
-    verified := .scrubbed Proof.Camellia.PPC64LE.Scrub.ecbDec_scrubbed }]
+    verified := Proof.Camellia.PPC64LE.Scrub.ecbDec_scrubbed }]
 
 end VG.Artifacts.Camellia.PPC64LE

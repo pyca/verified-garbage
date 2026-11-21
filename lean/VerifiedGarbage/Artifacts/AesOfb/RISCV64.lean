@@ -14,9 +14,9 @@ namespace VG.Artifacts.AesOfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Ofb.aesApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.ofb
-    verified := .scrubbed Proof.Aes.RISCV64.Scrub.ofb_scrubbed },
+    verified := Proof.Aes.RISCV64.Scrub.ofb_scrubbed },
   Spec.Ofb.aesFinalApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.ofbFinal
-    verified := .scrubbed Proof.Aes.RISCV64.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Aes.RISCV64.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.AesOfb.RISCV64

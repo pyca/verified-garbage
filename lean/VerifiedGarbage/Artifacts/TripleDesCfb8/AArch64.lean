@@ -15,9 +15,9 @@ namespace VG.Artifacts.TripleDesCfb8.AArch64
 def artifacts : List Artifact := [
   Spec.TripleDes.cfb8EncryptApi.artifact AArch64.target {
     code := Impl.TripleDes.AArch64.Fn.cfb8Encrypt
-    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode_scrubbed },
+    verified := Proof.TripleDes.AArch64.ModesResidue.cfb8EncryptCode_scrubbed },
   Spec.TripleDes.cfb8DecryptApi.artifact AArch64.target {
     code := Impl.TripleDes.AArch64.Fn.cfb8Decrypt
-    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode_scrubbed }]
+    verified := Proof.TripleDes.AArch64.ModesResidue.cfb8DecryptCode_scrubbed }]
 
 end VG.Artifacts.TripleDesCfb8.AArch64

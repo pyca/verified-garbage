@@ -14,7 +14,7 @@ A function's code as emitted, its body and then its cleanup, is a named
 definition in `Impl/` (`Impl.<Alg>.X86_64.Fn.<f>`), written with the
 cleanup's literals (`Impl.Scrub.X86_64.scrubAll v rb n`,
 `Impl/Scrub/X86_64/Fn.lean`). `verifiedScrubbedAll` states `VerifiedScrubbed`
-of that code, the theorem a registration binds (`verified := .scrubbed …`);
+of that code, the theorem a registration binds (`verified := …`);
 `verifiedScrubbedSel`, of the selective cleanup `scrubSel v rb n rs`, is in
 `ScrubSel.lean`.
 

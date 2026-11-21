@@ -60,7 +60,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact AArch64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.AArch64.Fn.brainpoolp512r1 hashes
-    verified := .scrubbed (Proof.Ecdsa.Rfc6979.AArch64.brainpoolp512r1Sign_scrubbed hasLaw.law hasLaw.inv) }]
+    verified := Proof.Ecdsa.Rfc6979.AArch64.brainpoolp512r1Sign_scrubbed hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.AArch64.Rfc6979
 
@@ -71,7 +71,7 @@ open VG.Proof.BrainpoolP512r1.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Fn.verifyHash
-    verified := .scrubbed (Proof.Ecdsa.Rfc6979.AArch64.brainpoolp512r1Verify hasLaw.law hasLaw.inv) }] ++
+    verified := Proof.Ecdsa.Rfc6979.AArch64.brainpoolp512r1Verify hasLaw.law hasLaw.inv }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.AArch64

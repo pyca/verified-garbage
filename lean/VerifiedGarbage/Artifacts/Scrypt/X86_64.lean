@@ -22,7 +22,7 @@ def artifacts : List Artifact :=
       suffix := c.suffix ++ R.suffix
       notWith := R.notWith
       code := Impl.Scrypt.X86_64.Fn.scrypt (c.level.join R.level) R.name R.code (pbkName c) (pbkOf c)
-      verified := .scrubbed (scrypt_scrubbed c R)
+      verified := scrypt_scrubbed c R
       spSafe := scrypt_spSafeFn c R }]
 
 end VG.Artifacts.Scrypt.X86_64

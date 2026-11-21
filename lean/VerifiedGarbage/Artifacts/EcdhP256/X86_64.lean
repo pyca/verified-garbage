@@ -97,16 +97,16 @@ def artifacts : List Artifact := [
   Spec.Ecdh.P256.exchangeApi.artifact X86_64.target
     { suffix := "_ifma"
       code := Impl.Ecdh.X86_64.Fn.exchangeP256Ifma
-      verified := .scrubbed (Proof.Ecdh.X86_64.exchangeIfma_scrubbed hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed)
+      verified := Proof.Ecdh.X86_64.exchangeIfma_scrubbed hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed
       spSafe := Proof.Ecdh.X86_64.exchangeIfma_spSafe },
   Spec.Ecdh.P256.exchangeApi.artifact X86_64.target
     { code := Impl.Ecdh.X86_64.Fn.exchangeP256
-      verified := .scrubbed (Proof.Ecdh.X86_64.exchange_scrubbed hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed)
+      verified := Proof.Ecdh.X86_64.exchange_scrubbed hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed
       spSafe := Proof.Ecdh.X86_64.exchange_spSafe },
   Spec.Ecdh.P256.exchangeApi.artifact X86_64.target
     { suffix := "_adx"
       code := Impl.Ecdh.X86_64.Fn.exchangeP256Adx
-      verified := .scrubbed (Proof.Ecdh.X86_64.exchangeAdx_scrubbed hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed)
+      verified := Proof.Ecdh.X86_64.exchangeAdx_scrubbed hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed
       spSafe := Proof.Ecdh.X86_64.exchangeAdx_spSafe }]
 
 end VG.Artifacts.EcdhP256.X86_64

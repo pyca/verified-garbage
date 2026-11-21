@@ -19,7 +19,7 @@ namespace VG.Artifacts.RsaKeyGen.X86
 def direct : List Artifact := [
   Spec.RsaKeyGen.keyInitApi.artifact X86.target {
     code := Impl.RsaKeyGen.X86.Fn.generateInit
-    verified := .scrubbed Proof.RsaKeyGen.X86.Scrub.generateInit_scrubbed }]
+    verified := Proof.RsaKeyGen.X86.Scrub.generateInit_scrubbed }]
 
 end VG.Artifacts.RsaKeyGen.X86
 
@@ -34,7 +34,7 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.RsaKeyGen.X86.Fn.generate (Proof.RsaKeyGen.X86.Generate.srchOf v).call
         Proof.RsaKeyGen.X86.Generate.keyImpl.call
-      verified := .scrubbed (Proof.RsaKeyGen.X86.Scrub.generate_scrubbed v)
+      verified := Proof.RsaKeyGen.X86.Scrub.generate_scrubbed v
       spSafe := Proof.RsaKeyGen.X86.Scrub.generate_spSafe v }])
 
 end VG.Artifacts.RsaKeyGen.X86

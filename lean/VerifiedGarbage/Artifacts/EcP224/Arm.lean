@@ -17,24 +17,24 @@ open VG.Proof.P224.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P224.inst.compressPublicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.compressP224
-    verified := .scrubbed Proof.EcKey.Arm.Fn.compressP224 },
+    verified := Proof.EcKey.Arm.Fn.compressP224 },
   Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.decompressP224
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressP224 hasLaw.law) },
+    verified := Proof.EcKey.Arm.Fn.decompressP224 hasLaw.law },
   Spec.EcKey.P224.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.Fn.compressP224U
-    verified := .scrubbed Proof.EcKey.Arm.Fn.compressP224U },
+    verified := Proof.EcKey.Arm.Fn.compressP224U },
   Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.Fn.decompressP224U
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressP224U hasLaw.law) },
+    verified := Proof.EcKey.Arm.Fn.decompressP224U hasLaw.law },
   Spec.EcKey.P224.publicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.publicKeyP224
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeyP224 hasLaw.law) },
+    verified := Proof.EcKey.Arm.Fn.publicKeyP224 hasLaw.law },
   Spec.EcKey.P224.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.Fn.publicKeyP224U
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeyP224U hasLaw.law) }]
+    verified := Proof.EcKey.Arm.Fn.publicKeyP224U hasLaw.law }]
 
 end VG.Artifacts.EcP224.Arm

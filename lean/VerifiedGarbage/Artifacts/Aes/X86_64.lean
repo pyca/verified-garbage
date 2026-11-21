@@ -19,11 +19,11 @@ def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact X86_64.target {
     suffix := "_aesni"
     code := Impl.Aes.X86_64.Fn.expandKeyAesni
-    verified := .scrubbed Proof.Aes.X86_64.Scrub.expandKeyAesni_scrubbed
+    verified := Proof.Aes.X86_64.Scrub.expandKeyAesni_scrubbed
     spSafe := Proof.Aes.X86_64.Scrub.expandKeyAesni_spSafe },
   Spec.Aes.expandKeyApi.artifact X86_64.target {
     code := Impl.Aes.X86_64.Fn.expandKey
-    verified := .scrubbed Proof.Aes.X86_64.Scrub.expandKey_scrubbed
+    verified := Proof.Aes.X86_64.Scrub.expandKey_scrubbed
     spSafe := Proof.Aes.X86_64.Scrub.expandKey_spSafe }]
 
 end VG.Artifacts.Aes.X86_64

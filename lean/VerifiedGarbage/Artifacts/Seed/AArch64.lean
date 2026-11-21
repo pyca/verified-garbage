@@ -18,12 +18,12 @@ namespace VG.Artifacts.Seed.AArch64
 def artifacts : List Artifact := [
   Spec.Seed.expandKeyApi.artifact AArch64.target {
     code := Impl.Seed.AArch64.Fn.expandKey
-    verified := .scrubbed Proof.Seed.AArch64.ModesResidue.expandKeyCode_scrubbed },
+    verified := Proof.Seed.AArch64.ModesResidue.expandKeyCode_scrubbed },
   Spec.Seed.ecbEncryptApi.artifact AArch64.target {
     code := Impl.Seed.AArch64.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_scrubbed },
+    verified := Proof.Seed.AArch64.EcbResidue.ecbEncryptCode_scrubbed },
   Spec.Seed.ecbDecryptApi.artifact AArch64.target {
     code := Impl.Seed.AArch64.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_scrubbed }]
+    verified := Proof.Seed.AArch64.EcbResidue.ecbDecryptCode_scrubbed }]
 
 end VG.Artifacts.Seed.AArch64

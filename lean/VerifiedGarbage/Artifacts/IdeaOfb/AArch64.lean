@@ -18,9 +18,9 @@ namespace VG.Artifacts.IdeaOfb.AArch64
 def artifacts : List Artifact := [
   Spec.Idea.ofbApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.Fn.ofb
-    verified := .scrubbed Proof.Idea.AArch64.ModesResidue.ofbCode_scrubbed },
+    verified := Proof.Idea.AArch64.ModesResidue.ofbCode_scrubbed },
   Spec.Idea.ofbFinalApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.Fn.ofbFinal
-    verified := .scrubbed Proof.Idea.AArch64.ModesResidue.ofbFinalCode_scrubbed }]
+    verified := Proof.Idea.AArch64.ModesResidue.ofbFinalCode_scrubbed }]
 
 end VG.Artifacts.IdeaOfb.AArch64

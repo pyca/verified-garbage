@@ -16,6 +16,6 @@ def artifacts : List Artifact :=
     v.I.pbkdf2Api.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.Pbkdf2.Md.AArch64.Fn.pbkdf2 v.H
-      verified := .scrubbed v.pbkdf2_scrubbed }]
+      verified := v.pbkdf2_scrubbed }]
 
 end VG.Artifacts.Pbkdf2Sha256.AArch64

@@ -15,12 +15,12 @@ namespace VG.Artifacts.Blake2b.AArch64
 def artifacts : List Artifact := [
   Spec.Blake2.initBApi.artifact AArch64.target {
     code := Impl.Blake2.AArch64.Fn.init Spec.Blake2.b
-    verified := .scrubbed Proof.Blake2.AArch64.Fn.initB },
+    verified := Proof.Blake2.AArch64.Fn.initB },
   Spec.Blake2.updateBApi.artifact AArch64.target {
     code := Impl.Blake2.AArch64.Fn.update Spec.Blake2.b
-    verified := .scrubbed Proof.Blake2.AArch64.Fn.updateB },
+    verified := Proof.Blake2.AArch64.Fn.updateB },
   Spec.Blake2.finalizeBApi.artifact AArch64.target {
     code := Impl.Blake2.AArch64.Fn.finalize Spec.Blake2.b
-    verified := .scrubbed Proof.Blake2.AArch64.Fn.finalizeB }]
+    verified := Proof.Blake2.AArch64.Fn.finalizeB }]
 
 end VG.Artifacts.Blake2b.AArch64

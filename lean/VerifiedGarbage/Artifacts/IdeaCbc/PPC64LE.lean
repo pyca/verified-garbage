@@ -16,9 +16,9 @@ namespace VG.Artifacts.IdeaCbc.PPC64LE
 def artifacts : List Artifact := [
   Spec.Idea.cbcEncryptChainedApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.Idea.PPC64LE.Scrub.cbcEncryptChained_scrubbed },
   Spec.Idea.cbcDecryptChainedApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.Idea.PPC64LE.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.IdeaCbc.PPC64LE

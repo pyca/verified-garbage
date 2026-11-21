@@ -105,10 +105,12 @@ def codeNoCalls : Prog isa → Bool
 `allGprs` that an instruction of `c` (callees included) may write, and the
 link registers if `c` calls; the vector registers of `allVecs` and of
 `hiVecs` that one may write. -/
-def Clear.of (c : Prog isa) : Clear where
-  gprs := allGprs.filter fun q => (codeInstrs c).any (fun i => clobbers i q) || (!codeNoCalls c && linkRegs.contains q)
-  vecs := allVecs.filter fun w => (codeInstrs c).any fun i => vdstOf i == some w
-  his := hiVecs.filter fun w => (codeInstrs c).any fun i => vdstOf i == some w
+def Clear.of (c : Prog isa) : Clear :=
+  let is := codeInstrs c
+  let calls := !codeNoCalls c
+  { gprs := allGprs.filter fun q => is.any (fun i => clobbers i q) || (calls && linkRegs.contains q)
+    vecs := allVecs.filter fun w => is.any fun i => vdstOf i == some w
+    his := hiVecs.filter fun w => is.any fun i => vdstOf i == some w }
 
 /-- `c`, which uses `W` bytes of stack and returns `rb` bits in `x0`, then its
 cleanup, which clears the registers `c` may write (`Clear.of`) and zeroes

@@ -15,9 +15,9 @@ namespace VG.Artifacts.HmacSha224.PPC64LE
 def artifacts : List Artifact := [
   Spec.Hmac.sha224I.initAnyKeyApi.artifact PPC64LE.target {
     code := Impl.Hmac.Stream.PPC64LE.Fn.initSha224
-    verified := .scrubbed Proof.Hmac.Stream.PPC64LE.Scrub.sha224_init_scrubbed },
+    verified := Proof.Hmac.Stream.PPC64LE.Scrub.sha224_init_scrubbed },
   Spec.Hmac.sha224I.finalizeApi.artifact PPC64LE.target {
     code := Impl.Hmac.Stream.PPC64LE.Fn.finalizeSha224
-    verified := .scrubbed Proof.Hmac.Stream.PPC64LE.Scrub.sha224_finalize_scrubbed }]
+    verified := Proof.Hmac.Stream.PPC64LE.Scrub.sha224_finalize_scrubbed }]
 
 end VG.Artifacts.HmacSha224.PPC64LE

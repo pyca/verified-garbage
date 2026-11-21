@@ -15,9 +15,9 @@ namespace VG.Artifacts.HmacSha512_256.RISCV64
 def artifacts : List Artifact := [
   Spec.Hmac.sha512_256I.initAnyKeyApi.artifact RISCV64.target {
     code := Impl.Hmac.Stream.RISCV64.Fn.init Proof.Hmac.Stream.RISCV64.Sha512_256.hash
-    verified := .scrubbed Proof.Hmac.Stream.RISCV64.Scrub.sha512_256_init_scrubbed },
+    verified := Proof.Hmac.Stream.RISCV64.Scrub.sha512_256_init_scrubbed },
   Spec.Hmac.sha512_256I.finalizeApi.artifact RISCV64.target {
     code := Impl.Hmac.Stream.RISCV64.Fn.finalize Proof.Hmac.Stream.RISCV64.Sha512_256.hash
-    verified := .scrubbed Proof.Hmac.Stream.RISCV64.Scrub.sha512_256_finalize_scrubbed }]
+    verified := Proof.Hmac.Stream.RISCV64.Scrub.sha512_256_finalize_scrubbed }]
 
 end VG.Artifacts.HmacSha512_256.RISCV64

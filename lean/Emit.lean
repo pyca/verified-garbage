@@ -19,10 +19,8 @@ registration files (`.lake/emit/Driver<Target>.lean`, `VG.Emit.parts`) and
 runs them at once, as processes with the same arguments, each auditing and
 emitting the artifacts of its targets (`VG.Emit.run`'s `--part`); and then,
 if they all pass, checks that no target is in two of them and writes or
-checks the root module (`VG.Emit.finish`). The run takes as long as the
-part that runs longest, so that one, guessed by the size of its
-registration files, is set up and started first, and the others run at a
-lower priority (`command`). (They are run by the
+checks the root module (`VG.Emit.finish`). It prints when each part was
+set up and when it ended, from the start. (They are run by the
 interpreter rather than as a `lean_exe` so that CI does not have to compile
 Mathlib to native code.) Each program is a module, run with Lake's setup for it
 (`lake setup-file`), so Lean reads only the `.olean`, `.olean.server` and IR of
@@ -54,24 +52,24 @@ def nativeTCB : IO (List System.FilePath) := do
   return (sharedLib "VerifiedGarbage_NativeTCB") ::
     (targets.qsort (· < ·)).toList.map fun t => sharedLib s!"VerifiedGarbage_NativeTCB{t}"
 
-/-- The command `cmd args`, at the lowest priority if `low` (`nice`, where there is one):
-for the parts that finish long before the longest does, so that they take the CPUs
-only when it does not use them. -/
-def command (low : Bool) (cmd : String) (args : Array String) : IO.Process.SpawnArgs :=
-  if low && !System.Platform.isWindows then { cmd := "nice", args := #["-n", "19", cmd] ++ args }
-  else { cmd, args }
-
 /-- Writes Lake's setup for the module `file` (`lake setup-file`, which builds what it
-imports) to `out`. -/
-def setupFile (file out : System.FilePath) (low : Bool := false) : IO UInt32 := do
-  let r ← IO.Process.output (command low "lake" #["setup-file", file.toString])
+imports that is out of date; with `noBuild`, it fails instead, building nothing, and
+writes nothing here) to `out`. -/
+def setupFile (file out : System.FilePath) (noBuild : Bool := false) : IO UInt32 := do
+  let r ← IO.Process.output { cmd := "lake", args :=
+    #["setup-file"] ++ (if noBuild then #["--no-build"] else #[]) ++ #[file.toString] }
   unless r.exitCode == 0 do
-    IO.eprint r.stderr
+    unless noBuild do IO.eprint r.stderr
     return r.exitCode
   IO.FS.writeFile out r.stdout
   return 0
 
+/-- Milliseconds as seconds, to a tenth: `12.3 s`. -/
+def seconds (ms : Nat) : String :=
+  s!"{ms / 1000}.{ms % 1000 / 100} s"
+
 def main (args : List String) : IO UInt32 := do
+  let start ← IO.monoMsNow
   let libs ← nativeTCB
   for lib in libs do
     unless ← lib.pathExists do
@@ -91,50 +89,65 @@ def main (args : List String) : IO UInt32 := do
     let setup := emitDir / s!"Driver{t}.json"
     let targets := emitDir / s!"{t}.targets"
     let text := VG.Emit.driver mods
-    -- The size of its registration files, by which the part that runs longest is guessed.
-    let mut size := 0
-    for m in mods do
-      size := size + (← (System.FilePath.mk (m.replace "." "/" ++ ".lean")).metadata).byteSize.toNat
     -- Only if it changed, so that Lake does not take it for a new file.
     let old ← if ← driver.pathExists then some <$> IO.FS.readFile driver else pure none
     unless old == some text do IO.FS.writeFile driver text
     if ← targets.pathExists then IO.FS.removeFile targets
     let partArgs := (if check then ["--check"] else []) ++ ["--part", targets.toString] ++
       (if check then args.drop 1 else args)
-    return (driver, setup, targets, size, partArgs)
-  -- Lake's setup for one part first, alone: it builds what that driver imports
-  -- that is out of date, which is most of what the others import too. Several `lake
-  -- setup-file`s building the same modules at once fail, each removing or replacing
-  -- the files another is writing. That part is the one whose registration files are
-  -- the largest, a guess at the one that runs longest (x86-64, whose every function
-  -- is scrubbed), which the whole run waits for: it starts first, and the others
-  -- run at a lower priority (`command`). A wrong guess only costs time.
-  let first := (jobs.map (·.2.2.2.1)).foldl max 0
-  let some (fDriver, fSetup, _) := jobs.find? (·.2.2.2.1 == first)
-    | IO.eprintln "no registration files"; return 1
-  let code ← setupFile fDriver fSetup
-  unless code == 0 do return code
-  -- Then each part on a task of its own: Lake's setup for it (which also loads the
-  -- trusted base's shared libraries), but the first's, and then the driver, run as soon
-  -- as its setup is written rather than once every part's is, so that the parts with
-  -- fewer artifacts finish while the larger ones are still setting up.
-  let runs ← jobs.mapM fun (driver, setup, targets, _, partArgs) => do
+    return (driver, setup, targets, partArgs)
+  -- A part's driver, run with its setup: its exit code, and when it ended.
+  let runPart (driver setup : System.FilePath) (partArgs : List String) :
+      IO (UInt32 × Nat) := do
+    let child ← IO.Process.spawn { cmd := lean.toString, args :=
+      #["--setup", setup.toString, "--run", driver.toString] ++ partArgs.toArray }
+    let code ← child.wait
+    return (code, (← IO.monoMsNow) - start)
+  -- Each part on a task of its own: Lake's setup for it (which also loads the trusted
+  -- base's shared libraries), and then the driver, run as soon as its setup is written
+  -- rather than once every part's is, so that the parts with fewer artifacts finish
+  -- while the larger ones are still setting up. The setups run at once, so none may
+  -- build (`--no-build`): several `lake setup-file`s building the same modules at once
+  -- fail, each removing or replacing the files another is writing. After `lake build`
+  -- there is nothing to build; a part with something to build is left for below.
+  let tasks ← jobs.mapM fun (driver, setup, targets, partArgs) => do
     let task ← IO.asTask (prio := .dedicated) do
-      let low := driver != fDriver
-      if low then
-        let code ← setupFile driver setup low
-        unless code == 0 do return code
-      let child ← IO.Process.spawn (command low lean.toString
-        (#["--setup", setup.toString, "--run", driver.toString] ++ partArgs.toArray))
-      child.wait
-    return (targets, task)
-  let mut code := 0
-  for (_, task) in runs do
+      unless (← setupFile driver setup (noBuild := true)) == 0 do return none
+      let setUp := (← IO.monoMsNow) - start
+      let (code, ended) ← runPart driver setup partArgs
+      return some (code, setUp, ended)
+    return (driver, setup, targets, partArgs, task)
+  let mut results := []
+  let mut later := []
+  for (driver, setup, targets, partArgs, task) in tasks do
     match task.get with
-    | .ok c => if code == 0 then code := c
+    | .ok (some r) => results := (driver, targets, r) :: results
+    | .ok none => later := (driver, setup, targets, partArgs) :: later
     | .error e => throw e
+  -- The parts with something to build, once the others have ended: Lake's setup for
+  -- each, one after the other, building what it imports; and then their drivers, at once.
+  let mut built := []
+  for (driver, setup, targets, partArgs) in later.reverse do
+    let code ← setupFile driver setup
+    unless code == 0 do return code
+    let setUp := (← IO.monoMsNow) - start
+    let task ← IO.asTask (prio := .dedicated) do
+      let (code, ended) ← runPart driver setup partArgs
+      return (code, setUp, ended)
+    built := (driver, targets, task) :: built
+  for (driver, targets, task) in built do
+    match task.get with
+    | .ok r => results := (driver, targets, r) :: results
+    | .error e => throw e
+  -- When each part's setup was written and when its run ended, from the start: the run
+  -- takes as long as the part that ends last.
+  let mut code := 0
+  for (driver, _, c, setUp, ended) in results.reverse do
+    IO.println s!"{driver.fileStem.getD ""}: set up at {seconds setUp}, ended at {seconds ended}"
+    if code == 0 then code := c
+  IO.println s!"all parts: {seconds ((← IO.monoMsNow) - start)}"
   unless code == 0 do return code
-  let targets ← runs.mapM fun (f, _) => do
+  let targets ← results.reverse.mapM fun (_, f, _) => do
     let lines := ((← IO.FS.readFile f).splitOn "\n").filter fun (l : String) => !l.isEmpty
     return lines.map fun (l : String) =>
       match l.splitOn "\t" with

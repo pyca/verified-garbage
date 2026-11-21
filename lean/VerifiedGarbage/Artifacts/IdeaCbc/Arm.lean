@@ -16,9 +16,9 @@ namespace VG.Artifacts.IdeaCbc.Arm
 def artifacts : List Artifact := [
   Spec.Idea.cbcEncryptChainedApi.artifact Arm.target {
     code := Impl.Idea.Arm.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Idea.Arm.Fn.cbcEncryptChained },
+    verified := Proof.Idea.Arm.Fn.cbcEncryptChained },
   Spec.Idea.cbcDecryptChainedApi.artifact Arm.target {
     code := Impl.Idea.Arm.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Idea.Arm.Fn.cbcDecryptChained }]
+    verified := Proof.Idea.Arm.Fn.cbcDecryptChained }]
 
 end VG.Artifacts.IdeaCbc.Arm

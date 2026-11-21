@@ -20,29 +20,29 @@ def artifacts : List Artifact := [
   Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
     suffix := "_aes_sha3"
     code := Impl.AesCbc.AArch64.Fn.decrypt
-    verified := .scrubbed Proof.AesCbc.AArch64.Decrypt.codeC_scrubbed
+    verified := Proof.AesCbc.AArch64.Decrypt.codeC_scrubbed
     written := [("scratch",0)]
     writtenOk := Proof.AesCbc.AArch64.Decrypt.writtenC },
   Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
     suffix := "_aes"
     code := Impl.AesCbc.AArch64.Fn.decryptAes
-    verified := .scrubbed Proof.AesCbc.AArch64.Decrypt.codeAesC_scrubbed
+    verified := Proof.AesCbc.AArch64.Decrypt.codeAesC_scrubbed
     written := [("scratch",0)]
     writtenOk := Proof.AesCbc.AArch64.Decrypt.writtenAesC },
   Spec.Cbc.aesEncryptApi.artifact VG.AArch64.target {
     suffix := "_aes"
     code := Impl.AesCbc.AArch64.Fn.encryptAes
-    verified := .scrubbed Wiped.encryptAes_scrubbed
+    verified := Wiped.encryptAes_scrubbed
     written := [("scratch",0)]
     writtenOk := Wiped.encryptAes_written }] ++
   (VG.Proof.Variants.AesCbc.AArch64.variants.flatMap fun (v : Wiped.CbcImpl) => [
     Spec.Cbc.aesEncryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCbc.AArch64.Fn.encrypt v.suffix v.enc
-      verified := .scrubbed (Wiped.encryptWiped_scrubbed v) },
+      verified := Wiped.encryptWiped_scrubbed v },
     Spec.Cbc.aesDecryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCbc.AArch64.Fn.decryptWiped v.suffix v.dec
-      verified := .scrubbed (Wiped.decryptWiped_scrubbed v) }])
+      verified := Wiped.decryptWiped_scrubbed v }])
 
 end VG.Artifacts.AesCbc.AArch64

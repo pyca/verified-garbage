@@ -15,9 +15,9 @@ namespace VG.Artifacts.BlowfishCbc.RISCV64
 def artifacts : List Artifact := [
   Spec.Blowfish.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Blowfish.RISCV64.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.Blowfish.RISCV64.Scrub.cbcEncryptChained_scrubbed },
   Spec.Blowfish.cbcDecryptChainedApi.artifact RISCV64.target {
     code := Impl.Blowfish.RISCV64.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Blowfish.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.Blowfish.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.BlowfishCbc.RISCV64

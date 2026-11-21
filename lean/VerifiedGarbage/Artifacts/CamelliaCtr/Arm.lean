@@ -13,9 +13,9 @@ namespace VG.Artifacts.CamelliaCtr.Arm
 def artifacts : List Artifact := [
   Spec.Camellia.ctrApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.ctr
-    verified := .scrubbed Proof.Camellia.Arm.Fn.ctr },
+    verified := Proof.Camellia.Arm.Fn.ctr },
   Spec.Camellia.ctrFinalApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.ctrFinal
-    verified := .scrubbed Proof.Camellia.Arm.Fn.ctrFinal }]
+    verified := Proof.Camellia.Arm.Fn.ctrFinal }]
 
 end VG.Artifacts.CamelliaCtr.Arm

@@ -14,9 +14,9 @@ namespace VG.Artifacts.AesEcb.PPC64LE
 def artifacts : List Artifact := [
   Spec.AesEcb.encryptApi.artifact PPC64LE.target {
     code := Impl.Aes.PPC64LE.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Aes.PPC64LE.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.Aes.PPC64LE.Scrub.ecbEncrypt_scrubbed },
   Spec.AesEcb.decryptApi.artifact PPC64LE.target {
     code := Impl.Aes.PPC64LE.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Aes.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.Aes.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.AesEcb.PPC64LE

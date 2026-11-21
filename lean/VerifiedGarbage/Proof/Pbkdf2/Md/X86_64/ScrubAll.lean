@@ -98,7 +98,7 @@ def Pbkdf2Impl.reg (p : Pbkdf2Impl) : Registration p.v.I.pbkdf2Api target where
   code := scrubAll p.level (Spec.Pbkdf2.pbkdf2Sig.retBits 64) (24 + pbkdf2Frame p.v.H) p.plain.code
   contract := p.plain.contract
   stack := p.plain.stack
-  verified := .scrubbed p.scrubbed
+  verified := p.scrubbed
   ofApi := p.plain.ofApi
   ofSig := p.plain.ofSig
   spSafe := scrubKs_spSafe p.plain.spSafe

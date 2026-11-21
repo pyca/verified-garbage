@@ -94,7 +94,7 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
     Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact X86_64.target
       { tables := [("hmac", tables vs)]
         code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (p224 hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs)
-        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.p224T_scrubbed hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv vs hv hu)
+        verified := Proof.Ecdsa.Rfc6979.X86_64.p224T_scrubbed hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv vs hv hu
         spSafe := Proof.Ecdsa.Rfc6979.X86_64.p224T_spSafe hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv vs }]
   else []
 
@@ -110,7 +110,7 @@ open VG.Proof.P224.X86_64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.P224.verifyHashApi.artifact X86_64.target
     { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P224.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP224
-      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.P224.verifyHash_scrubbed hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv)
+      verified := Proof.Ecdsa.Verify.X86_64.P224.verifyHash_scrubbed hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv
       spSafe := Proof.Ecdsa.Verify.X86_64.P224.verifyHash_spSafe }] ++
   Rfc6979.artifacts
 

@@ -46,18 +46,18 @@ def artifacts : List Artifact :=
     Spec.Cmac.aesAbsorbApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.CmacAes.Stream.X86_64.Fn.absorb v.level v.space v.callee
-      verified := .scrubbed (Proof.CmacAes.Stream.X86_64.Scrub.absorb_scrubbed v)
+      verified := Proof.CmacAes.Stream.X86_64.Scrub.absorb_scrubbed v
       spSafe := Proof.CmacAes.Stream.X86_64.Scrub.absorb_spSafeFn v }]) ++
   (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.Ctr32Impl) => [
     Spec.Cmac.aesInitApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.CmacAes.Stream.X86_64.Fn.init v.level v.space v.expand v.callee v.suffix
-      verified := .scrubbed (Proof.CmacAes.Stream.X86_64.Scrub.init_scrubbed v)
+      verified := Proof.CmacAes.Stream.X86_64.Scrub.init_scrubbed v
       spSafe := Proof.CmacAes.Stream.X86_64.Scrub.init_spSafeFn v },
     Spec.Cmac.aesFinishApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.CmacAes.Stream.X86_64.Fn.finish v.level v.space v.callee v.suffix
-      verified := .scrubbed (Proof.CmacAes.Stream.X86_64.Scrub.finish_scrubbed v)
+      verified := Proof.CmacAes.Stream.X86_64.Scrub.finish_scrubbed v
       spSafe := Proof.CmacAes.Stream.X86_64.Scrub.finish_spSafeFn v }])
 
 end VG.Artifacts.CmacAes.X86_64

@@ -13,15 +13,15 @@ namespace VG.Artifacts.CamelliaCfb.Arm
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.cfbEncrypt
-    verified := .scrubbed Proof.Camellia.Arm.Fn.cfbEncrypt },
+    verified := Proof.Camellia.Arm.Fn.cfbEncrypt },
   Spec.Camellia.cfbDecryptApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.cfbDecrypt
-    verified := .scrubbed Proof.Camellia.Arm.Fn.cfbDecrypt },
+    verified := Proof.Camellia.Arm.Fn.cfbDecrypt },
   Spec.Camellia.cfbEncryptFinalApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.cfbEncryptFinal
-    verified := .scrubbed Proof.Camellia.Arm.Fn.cfbEncryptFinal },
+    verified := Proof.Camellia.Arm.Fn.cfbEncryptFinal },
   Spec.Camellia.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.Camellia.Arm.Fn.cfbDecryptFinal
-    verified := .scrubbed Proof.Camellia.Arm.Fn.cfbDecryptFinal }]
+    verified := Proof.Camellia.Arm.Fn.cfbDecryptFinal }]
 
 end VG.Artifacts.CamelliaCfb.Arm

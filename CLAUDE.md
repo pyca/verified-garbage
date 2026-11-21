@@ -197,18 +197,13 @@ own changes are rebuilt either way, on top of the restored build.
   anywhere else that is not its code and proofs.
 * **Functions return without secret residue.** Every artifact proves its
   ISA's `NoResidue` (`TCB/<ISA>/Residue.lean`) as part of what its
-  registration proves (`verified := .scrubbed …`). The cleanup is part of
+  registration proves (`verified :=` a `VerifiedScrubbed …`,
+  `TCB/Registration.lean`): there is no way to register a function without
+  it. The cleanup is part of
   the function's code: the function as emitted, cleanup included, is a
   definition in `Impl/`, one theorem in `Proof/` is about that definition,
   and the registration file only binds the two, with no scrub wrapper,
   register list or side condition in it (the `adding-a-primitive` skill).
-  The exception is those
-  `ci/residue_allowlist.txt` lists (`<target> <function>`), which alone may be
-  registered without it (`verified := .unscrubbed …`). The list only
-  shrinks: never add a line (`ci/check_residue_allowlist.py`; only a target
-  that starts requiring `NoResidue` lists its functions, once); the emitter refuses an unlisted function
-  without a proof, and a listed one that has one or no longer exists, so
-  converting a function removes its line (the `adding-a-primitive` skill).
 * The emitter runs compiled code, so it must be what the kernel checked:
   nothing the artifacts or the emitter use may carry `implemented_by`,
   `extern` or `export`, and nothing in `lean/VerifiedGarbage/` may declare a

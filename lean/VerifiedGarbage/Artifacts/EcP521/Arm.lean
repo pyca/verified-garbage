@@ -17,24 +17,24 @@ open VG.Proof.P521.Arm (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P521.inst.compressPublicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.compressP521
-    verified := .scrubbed Proof.EcKey.Arm.Fn.compressP521 },
+    verified := Proof.EcKey.Arm.Fn.compressP521 },
   Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.decompressP521
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressP521 hasLaw.law) },
+    verified := Proof.EcKey.Arm.Fn.decompressP521 hasLaw.law },
   Spec.EcKey.P521.publicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.Fn.publicKeyP521
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeyP521 hasLaw.law) },
+    verified := Proof.EcKey.Arm.Fn.publicKeyP521 hasLaw.law },
   Spec.EcKey.P521.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.Fn.compressP521U
-    verified := .scrubbed Proof.EcKey.Arm.Fn.compressP521U },
+    verified := Proof.EcKey.Arm.Fn.compressP521U },
   Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.Fn.decompressP521U
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.decompressP521U hasLaw.law) },
+    verified := Proof.EcKey.Arm.Fn.decompressP521U hasLaw.law },
   Spec.EcKey.P521.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.Fn.publicKeyP521U
-    verified := .scrubbed (Proof.EcKey.Arm.Fn.publicKeyP521U hasLaw.law) }]
+    verified := Proof.EcKey.Arm.Fn.publicKeyP521U hasLaw.law }]
 
 end VG.Artifacts.EcP521.Arm

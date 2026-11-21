@@ -15,12 +15,12 @@ namespace VG.Artifacts.Camellia.RISCV64
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.Fn.expandKey
-    verified := .scrubbed Proof.Camellia.RISCV64.Scrub.expandKey_scrubbed },
+    verified := Proof.Camellia.RISCV64.Scrub.expandKey_scrubbed },
   Spec.Camellia.ecbEncryptApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Camellia.RISCV64.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.Camellia.RISCV64.Scrub.ecbEncrypt_scrubbed },
   Spec.Camellia.ecbDecryptApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Camellia.RISCV64.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.Camellia.RISCV64.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Camellia.RISCV64

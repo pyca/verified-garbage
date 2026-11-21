@@ -13,9 +13,9 @@ namespace VG.Artifacts.AesCcm.Arm
 def artifacts : List Artifact := [
   Spec.Ccm.sealApi.artifact Arm.target {
     code := Impl.AesCcm.Arm.Fn.«seal»
-    verified := .scrubbed Proof.AesCcm.Arm.Fn.«seal» },
+    verified := Proof.AesCcm.Arm.Fn.«seal» },
   Spec.Ccm.openApi.artifact Arm.target {
     code := Impl.AesCcm.Arm.Fn.«open»
-    verified := .scrubbed Proof.AesCcm.Arm.Fn.«open» }]
+    verified := Proof.AesCcm.Arm.Fn.«open» }]
 
 end VG.Artifacts.AesCcm.Arm

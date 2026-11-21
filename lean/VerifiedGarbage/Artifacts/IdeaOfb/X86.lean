@@ -16,9 +16,9 @@ namespace VG.Artifacts.IdeaOfb.X86
 def artifacts : List Artifact := [
   Spec.Idea.ofbApi.artifact X86.target {
     code := Impl.Idea.X86.Fn.ofb
-    verified := .scrubbed Proof.Idea.X86.Scrub.ofb_scrubbed },
+    verified := Proof.Idea.X86.Scrub.ofb_scrubbed },
   Spec.Idea.ofbFinalApi.artifact X86.target {
     code := Impl.Idea.X86.Fn.ofbFinal
-    verified := .scrubbed Proof.Idea.X86.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Idea.X86.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.IdeaOfb.X86

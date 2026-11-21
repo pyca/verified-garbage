@@ -21,18 +21,18 @@ def artifacts : List Artifact :=
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Ed448.AArch64.Fn.publicKey v.callee
-      verified := .scrubbed (Proof.Ed448.AArch64.Fn.publicKey v) }) ++
+      verified := Proof.Ed448.AArch64.Fn.publicKey v }) ++
   (VG.Proof.Variants.Keccak.AArch64.variants.map fun v =>
     Spec.Ed448.signCachedApi.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Ed448.AArch64.Fn.signCached v.callee
-      verified := .scrubbed (Proof.Ed448.AArch64.Fn.signCached v) }) ++
+      verified := Proof.Ed448.AArch64.Fn.signCached v }) ++
   (VG.Proof.Variants.Keccak.AArch64.variants.map fun v =>
     Spec.Ed448.verifyApi.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Ed448.AArch64.Fn.verify v.callee
-      verified := .scrubbed (Proof.Ed448.AArch64.Fn.verify v) })
+      verified := Proof.Ed448.AArch64.Fn.verify v })
 
 end VG.Artifacts.Ed448.AArch64

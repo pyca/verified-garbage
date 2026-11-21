@@ -18,10 +18,10 @@ def artifacts : List Artifact := [
   Spec.RsaPss.verifyPrecomputedMdTableApi.artifact PPC64LE.target {
     tables := [("hash", tables mvars), ("mgf1", tables mvars)]
     code := Impl.RsaPss.PPC64LE.Fn.verifyPrecomputed (fnsOf mvars) (fns3 mvars)
-    verified := .scrubbed Proof.RsaPss.PPC64LE.Scrub.verifyPrecomputed_scrubbed },
+    verified := Proof.RsaPss.PPC64LE.Scrub.verifyPrecomputed_scrubbed },
   Spec.RsaPss.signPrecomputedMdTableApi.artifact PPC64LE.target {
     tables := [("hash", tables mvars), ("mgf1", tables mvars)]
     code := Impl.RsaPss.PPC64LE.Fn.signP (fnsOf mvars) (fns3 mvars)
-    verified := .scrubbed Proof.RsaPss.PPC64LE.Scrub.signP_scrubbed }]
+    verified := Proof.RsaPss.PPC64LE.Scrub.signP_scrubbed }]
 
 end VG.Artifacts.RsaPss.PPC64LE

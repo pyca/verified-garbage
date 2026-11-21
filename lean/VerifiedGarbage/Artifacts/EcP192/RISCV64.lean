@@ -24,12 +24,12 @@ open VG.Proof.P192.RISCV64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P192.inst.compressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.Fn.compressP192
-    verified := .scrubbed Proof.EcKey.Compressed.RISCV64.P192.compress_scrubbed },
+    verified := Proof.EcKey.Compressed.RISCV64.P192.compress_scrubbed },
   Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.Fn.decompressP192
-    verified := .scrubbed (Proof.EcKey.Compressed.RISCV64.P192.decompress_scrubbed hasLaw.law) },
+    verified := Proof.EcKey.Compressed.RISCV64.P192.decompress_scrubbed hasLaw.law },
   Spec.EcKey.P192.publicKeyApi.artifact RISCV64.target {
     code := Impl.Ecdh.RISCV64.Fn.publicKeyP192
-    verified := .scrubbed (Proof.Ecdh.RISCV64.P192.publicKey_scrubbed hasLaw.law) }]
+    verified := Proof.Ecdh.RISCV64.P192.publicKey_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcP192.RISCV64

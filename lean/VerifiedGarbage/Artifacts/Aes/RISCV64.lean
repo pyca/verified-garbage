@@ -15,6 +15,6 @@ namespace VG.Artifacts.Aes.RISCV64
 def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.expandKey
-    verified := .scrubbed Proof.Aes.RISCV64.Scrub.expandKey_scrubbed }]
+    verified := Proof.Aes.RISCV64.Scrub.expandKey_scrubbed }]
 
 end VG.Artifacts.Aes.RISCV64

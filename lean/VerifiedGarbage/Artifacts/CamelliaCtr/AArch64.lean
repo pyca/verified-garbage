@@ -15,9 +15,9 @@ namespace VG.Artifacts.CamelliaCtr.AArch64
 def artifacts : List Artifact := [
   Spec.Camellia.ctrApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.ctr
-    verified := .scrubbed Proof.Camellia.AArch64.Fn.ctr },
+    verified := Proof.Camellia.AArch64.Fn.ctr },
   Spec.Camellia.ctrFinalApi.artifact AArch64.target {
     code := Impl.Camellia.AArch64.Fn.ctrFinal
-    verified := .scrubbed Proof.Camellia.AArch64.Fn.ctrFinal }]
+    verified := Proof.Camellia.AArch64.Fn.ctrFinal }]
 
 end VG.Artifacts.CamelliaCtr.AArch64

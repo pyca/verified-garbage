@@ -13,6 +13,6 @@ namespace VG.Artifacts.Aes.Arm
 def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.expandKey
-    verified := .scrubbed Proof.Aes.Arm.Fn.expandKey }]
+    verified := Proof.Aes.Arm.Fn.expandKey }]
 
 end VG.Artifacts.Aes.Arm

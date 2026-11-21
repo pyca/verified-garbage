@@ -19,9 +19,9 @@ namespace VG.Artifacts.AesGcmSiv.Arm
 def artifacts : List Artifact := [
   Spec.GcmSiv.sealApi.artifact Arm.target {
     code := Impl.AesGcmSiv.Arm.Fn.«seal»
-    verified := .scrubbed Proof.AesGcmSiv.Arm.Fn.«seal» },
+    verified := Proof.AesGcmSiv.Arm.Fn.«seal» },
   Spec.GcmSiv.openApi.artifact Arm.target {
     code := Impl.AesGcmSiv.Arm.Fn.«open»
-    verified := .scrubbed Proof.AesGcmSiv.Arm.Fn.«open» }]
+    verified := Proof.AesGcmSiv.Arm.Fn.«open» }]
 
 end VG.Artifacts.AesGcmSiv.Arm

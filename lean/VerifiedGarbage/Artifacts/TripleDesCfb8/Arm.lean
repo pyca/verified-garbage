@@ -13,9 +13,9 @@ namespace VG.Artifacts.TripleDesCfb8.Arm
 def artifacts : List Artifact := [
   Spec.TripleDes.cfb8EncryptApi.artifact Arm.target {
     code := Impl.TripleDes.Arm.Fn.cfb8Encrypt
-    verified := .scrubbed Proof.TripleDes.Arm.Fn.cfb8Encrypt },
+    verified := Proof.TripleDes.Arm.Fn.cfb8Encrypt },
   Spec.TripleDes.cfb8DecryptApi.artifact Arm.target {
     code := Impl.TripleDes.Arm.Fn.cfb8Decrypt
-    verified := .scrubbed Proof.TripleDes.Arm.Fn.cfb8Decrypt }]
+    verified := Proof.TripleDes.Arm.Fn.cfb8Decrypt }]
 
 end VG.Artifacts.TripleDesCfb8.Arm

@@ -66,11 +66,11 @@ open VG.Proof.P192.X86_64 (hasLaw)
 def artifacts : List Artifact :=
   [Spec.EcKey.P192.inst.compressPublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Compressed.X86_64.Fn.compress Impl.Ecdsa.X86_64.p192
-      verified := .scrubbed (Proof.EcKey.Compressed.X86_64.P192.scrubbed hasLaw.inv)
+      verified := Proof.EcKey.Compressed.X86_64.P192.scrubbed hasLaw.inv
       spSafe := Proof.EcKey.Compressed.X86_64.P192.spSafe },
     Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact X86_64.target
       { code := Impl.EcKey.Compressed.X86_64.Fn.decompress Impl.Ecdsa.X86_64.p192
-        verified := .scrubbed (Proof.EcKey.Compressed.X86_64.P192Decompress.scrubbed hasLaw.law hasLaw.inv)
+        verified := Proof.EcKey.Compressed.X86_64.P192Decompress.scrubbed hasLaw.law hasLaw.inv
         spSafe := Proof.EcKey.Compressed.X86_64.P192Decompress.spSafe }]
 
 end VG.Artifacts.EcP192.X86_64.Compressed
@@ -83,7 +83,7 @@ open VG.Proof.P192.X86_64 (hasLaw)
 def artifacts : List Artifact :=
   [Spec.EcKey.P192.inst.validatePublicKeyApi.artifact X86_64.target
     { code := Impl.EcKey.Validate.X86_64.Fn.validate Impl.Ecdsa.X86_64.p192
-      verified := .scrubbed (Proof.EcKey.Validate.X86_64.P192.scrubbed hasLaw.inv)
+      verified := Proof.EcKey.Validate.X86_64.P192.scrubbed hasLaw.inv
       spSafe := Proof.EcKey.Validate.X86_64.P192.spSafe }]
 
 end VG.Artifacts.EcP192.X86_64.Validate
@@ -97,7 +97,7 @@ def artifacts : List Artifact :=
   [
     Spec.EcKey.P192.publicKeyApi.artifact X86_64.target
       { code := Impl.EcKey.X86_64.Fn.publicKeyP192
-        verified := .scrubbed (Proof.EcKey.X86_64.P192.publicKey_scrubbed hasLaw.law hasLaw.inv)
+        verified := Proof.EcKey.X86_64.P192.publicKey_scrubbed hasLaw.law hasLaw.inv
         spSafe := Proof.EcKey.X86_64.P192.publicKey_spSafe }] ++
   Validate.artifacts
 
