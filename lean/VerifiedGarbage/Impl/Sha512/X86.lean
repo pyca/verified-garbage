@@ -27,11 +27,10 @@ target's baseline, so this is the only implementation.
 * Where the processor keeps the registers' upper halves, a write of a whole
   register that does not read it (a load, a copy, `movd`) waits for the
   value the register had. So a temporary goes to a register whose last
-  value was ready early for what it is now wanted for: `Kₜ` to `xmm7` and
-  the next `e`'s register, `Wₜ` to the next `e`'s register, `Ch`'s to the
-  register of the next `a ⊕ b` and `xmm6`, the two copies of each `Σ` to
-  `xmm6` and `xmm7`, and the message schedule's sums to `xmm6` and `xmm7`,
-  with its shifts in the next `e`'s and the next `a`'s registers. With
+  value was ready early for what it is now wanted for: `Kₜ` and `Wₜ` to the
+  next `e`'s register, `Ch`'s to `xmm7` and `xmm6`, the copies of `Σ` to
+  `xmm6`, and the message schedule's sums to `xmm6` and the next `a`'s
+  register, with its shifts in the next `e`'s register and `xmm7`. With
   every temporary in `xmm6` and `xmm7`, as it was, a round's and the
   schedule's independent work ran as one chain there.
 * `Kₜ` is made from two immediates with `movd` and `punpckldq` (the model has
@@ -140,36 +139,36 @@ def xr (t k : Nat) : XReg :=
   [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5].getD ((k + 3 * (t % 2)) % 6) .xmm0
 
 /-- `acc := x >>> r₁ ⊕ x <<< l₁ ⊕ x >>> (r₁ + r₂) ⊕ x <<< (l₁ + l₂) ⊕ x >>> (r₁ + r₂ + r₃)`
-in each quadword, for `x` in `P`, which changes, leaving `x <<< (l₁ + l₂)` in `Q`: `σ₀`, `σ₁`. -/
-def sig5 (acc P Q : XReg) (r₁ l₁ r₂ l₂ r₃ : BitVec 8) : List Instr :=
-  [xb .movdqa Q P, xs .psrlq P r₁, xs .psllq Q l₁, xb .movdqa acc P, xb .pxor acc Q,
-   xs .psrlq P r₂, xb .pxor acc P, xs .psllq Q l₂, xb .pxor acc Q, xs .psrlq P r₃, xb .pxor acc P]
+in each quadword, for `x` in `P`, which changes, leaving `x <<< (l₁ + l₂)` in `Y`: `σ₀`, `σ₁`. -/
+def sig5 (acc P : XReg) (r₁ l₁ r₂ l₂ r₃ : BitVec 8) : List Instr :=
+  [xb .movdqa Y P, xs .psrlq P r₁, xs .psllq Y l₁, xb .movdqa acc P, xb .pxor acc Y,
+   xs .psrlq P r₂, xb .pxor acc P, xs .psllq Y l₂, xb .pxor acc Y, xs .psrlq P r₃, xb .pxor acc P]
 
 /-- `acc := Σ(x)` for `x` in `L`: the right shifts `r₁`, `r₁ + r₂`, `r₁ + r₂ + r₃`
-of a copy in `X` into `acc`, the left shifts `l₁`, `l₁ + l₂`, `l₁ + l₂ + l₃` of
-`L` itself into `Y`, and then `acc ⊕ Y`, two chains half as long as one. -/
+of a copy in `X`, then the left shifts `l₁`, `l₁ + l₂`, `l₁ + l₂ + l₃` of `L`
+itself, each into `acc`. -/
 def bigSig (acc L : XReg) (r₁ r₂ r₃ l₁ l₂ l₃ : BitVec 8) : List Instr :=
   [xb .movdqa X L, xs .psrlq X r₁, xb .movdqa acc X, xs .psrlq X r₂, xb .pxor acc X, xs .psrlq X r₃,
-   xb .pxor acc X, xs .psllq L l₁, xb .movdqa Y L, xs .psllq L l₂, xb .pxor Y L, xs .psllq L l₃,
-   xb .pxor Y L, xb .pxor acc Y]
+   xb .pxor acc X, xs .psllq L l₁, xb .pxor acc L, xs .psllq L l₂, xb .pxor acc L, xs .psllq L l₃,
+   xb .pxor acc L]
 
 /-! ## Rounds -/
 
 /-- A round with the working variables `a`, `b`, `d`, `e`, `f`, `g`, `h` at
 `[esi + a]`, …, the message word at `[esi + w]` and the constant `k`; `a`,
 `e` and `b ⊕ c` in `A`, `E` and `BC`. It computes
-`U = h + Kₜ + Wₜ + Ch(e, f, g)` in `T` (`Kₜ` and `Wₜ` through `NE`, `Ch`
-through `AB`) and `d + U` in `NE`, then `Σ₁(e)`, so
+`U = h + Kₜ + Wₜ + Ch(e, f, g)` in `T` (`Kₜ` and `Wₜ` through `NE`) and
+`d + U` in `NE`, then `Σ₁(e)`, so
 that `T₁ = U + Σ₁(e)` in `T` and the next `e = d + T₁` in `NE` are one
 addition each after it; then `a ⊕ b` in `AB` and the next
 `a = T₁ + Maj(a, b, c) + Σ₀(a)` in `T`. It stores `e` and `a` into their
 slots before shifting their registers (no load of the round reads those
 slots), and leaves `A`, `E` and `BC` clobbered. -/
 def roundW (a b d e f g h w : Nat) (k : BitVec 64) (A E BC T NE AB : XReg) : List Instr :=
-  [ldq T .esi h, .mov .eax (.imm (lo k)), .xop (.movd Y .eax), .mov .eax (.imm (hi k)),
-   .xop (.movd NE .eax), xb .punpckldq Y NE, xb .paddq T Y, ldq NE .esi w, xb .paddq T NE,
+  [ldq T .esi h, .mov .eax (.imm (lo k)), .xop (.movd NE .eax), .mov .eax (.imm (hi k)),
+   .xop (.movd Y .eax), xb .punpckldq NE Y, xb .paddq T NE, ldq NE .esi w, xb .paddq T NE,
    -- Ch(e, f, g) = ((f ⊕ g) ∧ e) ⊕ g
-   ldq AB .esi f, ldq X .esi g, xb .pxor AB X, xb .pand AB E, xb .pxor AB X, xb .paddq T AB,
+   ldq Y .esi f, ldq X .esi g, xb .pxor Y X, xb .pand Y E, xb .pxor Y X, xb .paddq T Y,
    stq .esi e E, ldq NE .esi d, xb .paddq NE T] ++
   -- Σ₁(e): right 14, 18, 41 and left 23, 46, 50
   bigSig AB E 14 4 23 23 23 4 ++
@@ -188,19 +187,18 @@ def round (t : Nat) : List Instr :=
 
 /-- `(Wₜ, Wₜ₊₁)`, `Wᵢ = σ₁(Wᵢ₋₂) + Wᵢ₋₇ + σ₀(Wᵢ₋₁₅) + Wᵢ₋₁₆`, for even
 `t ≥ 16`, with the pairs `(Wₜ₋ᵢ, Wₜ₋ᵢ₊₁)` at `[esi + oᵢ]`, in place of
-`(Wₜ₋₁₆, Wₜ₋₁₅)`, with `X` and `Y` as accumulators, the pairs loaded into
-`S` and their copies shifted left in `Q`. The additions are in the order of
-the specification. -/
+`(Wₜ₋₁₆, Wₜ₋₁₅)`, with `X` and `Q` as accumulators and the pairs loaded
+into `S`. The additions are in the order of the specification. -/
 def scheduleW (o2 o7 o15 o16 : Nat) (Q S : XReg) : List Instr :=
   -- σ₁: right 6, 19, 61 and left 3, 45
-  ldo S .esi o2 :: (sig5 X S Q 6 3 13 42 42 ++ [ldo S .esi o7, xb .paddq X S] ++
+  ldo S .esi o2 :: (sig5 X S 6 3 13 42 42 ++ [ldo S .esi o7, xb .paddq X S] ++
   -- σ₀: right 1, 7, 8 and left 56, 63
-  ldo S .esi o15 :: (sig5 Y S Q 1 56 6 7 1 ++
-  [xb .paddq X Y, ldo S .esi o16, xb .paddq X S, sto .esi o16 X]))
+  ldo S .esi o15 :: (sig5 Q S 1 56 6 7 1 ++
+  [xb .paddq X Q, ldo S .esi o16, xb .paddq X S, sto .esi o16 X]))
 
 /-- `(Wₜ, Wₜ₊₁)` for even `t ≥ 16`, before round `t`, with the registers
-round `t` computes the next `a` and `e` into for the copies and for the
-pairs, and the copy of `Wₜ` if `t mod 16 = 0`. -/
+round `t` computes the next `a` and `e` into as the second accumulator and
+for the pairs, and the copy of `Wₜ` if `t mod 16 = 0`. -/
 def schedule (t : Nat) : List Instr :=
   scheduleW (wOff (t + 14)) (wOff (t + 9)) (wOff (t + 1)) (wOff t) (xr t 3) (xr t 4) ++
     if t % 16 = 0 then [stq .esi mirOff X] else []
