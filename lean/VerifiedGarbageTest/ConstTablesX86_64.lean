@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
+import VerifiedGarbageTest.RenderOnly
+meta import VerifiedGarbageTest.RenderOnly
 import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.X86_64.Print
@@ -102,7 +104,7 @@ theorem verified : Verified target code contract := by
     exact ⟨by decide, by decide, Region.disjoint_of_sep (by decide), by decide⟩
 
 def artifact : Artifact where
-  target := .of target
+  target := .of (renderOnly target)
   module := "test"
   name := "vg_test_consts"
   sig := sig
@@ -110,7 +112,7 @@ def artifact : Artifact where
   consts := consts
   code := code
   contract := contract
-  verified := .unscrubbed verified
+  verified := renderOnly_verified verified
 
 /-- The rendering: the static's symbol in a RIP-relative operand. -/
 def expected : String := "/// Returns word 1 of its table.

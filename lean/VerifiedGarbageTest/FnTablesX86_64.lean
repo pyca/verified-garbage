@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
+import VerifiedGarbageTest.RenderOnly
+meta import VerifiedGarbageTest.RenderOnly
 import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.X86_64.Print
@@ -206,7 +208,7 @@ theorem verified : Verified target code contract := by
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), by decide⟩
 
 def artifact : Artifact where
-  target := .of target
+  target := .of (renderOnly target)
   module := "test"
   name := "vg_test_fn_tables"
   sig := sig
@@ -214,7 +216,7 @@ def artifact : Artifact where
   tables := tables
   code := code
   contract := contract
-  verified := .unscrubbed verified
+  verified := renderOnly_verified verified
   stack := 8
 
 def prepared : Rust.Prepared := .of (.of artifact)
@@ -224,6 +226,8 @@ def internals : List Rust.Internal := Rust.internalsOf [prepared]
 `41 FF D3`, after `mov r11, [rdi]`, `4C 8B 1F`), and the documentation says
 what `t` must be. -/
 def expected : String := "/// Returns the word of data of its table, which the table's function returns.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

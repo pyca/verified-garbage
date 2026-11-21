@@ -98,7 +98,7 @@ instructions in an ISA model) go in their own PR before either.
    those of the functions it calls (`Code.requiresDedup`, from the ISA
    model's `requires`).
    A function also proves that it returns without secret residue, as part
-   of what its registration proves (`verified := .scrubbed h`): see
+   of what its registration proves (`verified := h`): see
    "Returning without secret residue" below, which says how on every
    target.
    A function that calls another one with several implementations (e.g.
@@ -177,15 +177,16 @@ instructions in an ISA model) go in their own PR before either.
 ### The method
 
 Every artifact proves its ISA's `NoResidue` (`TCB/<ISA>/Residue.lean`) as
-part of what its registration proves: `verified := .scrubbed h`, of an
-`h : VerifiedScrubbed …` (`TCB/Registration.lean`). The cleanup is part of
+part of what its registration proves: `verified := h`, of an
+`h : VerifiedScrubbed …` (`TCB/Registration.lean`), the only proof a
+registration takes. The cleanup is part of
 the function's code. The function as emitted, its body and then the
 instructions that clear the registers it wrote and zero the stack it used,
 is a named definition in `Impl/` (`Fn`), which states those registers and
 that stack as literals; one theorem in `Proof/` states `VerifiedScrubbed` of
 that definition, from its target's theorem for its kind of cleanup; and the
 registration file binds the two: `code := Impl.…`,
-`verified := .scrubbed (Proof.… )`, with no call of a scrub wrapper or form,
+`verified := Proof.…`, with no call of a scrub wrapper or form,
 no register list, no side condition and no tactic in it (`Fn` in
 `Impl/Sha3/AArch64/Instances.lean`, `Proof/Sha3/AArch64/Scrub.lean`,
 `Artifacts/Sha3/AArch64.lean`). With the registers and the stack stated,
@@ -255,17 +256,18 @@ evaluates every variant's code again for every caller, and never
 
 **Every target the same way.** Each target states its cleanup only as
 theorems about named code, and has no form that builds a registration: a
-registration file binds `code := Impl.…` and `verified := .scrubbed Proof.…`
+registration file binds `code := Impl.…` and `verified := Proof.…`
 (and, where the default does not prove it, `spSafe := Proof.…`), and nothing
 else. On 64-bit RISC-V, `ci/check_registrations.py` checks that shape
 exactly; the other targets keep it by review, as some of their generic
 interfaces' records give code from a variant's fields (`v.code`).
 
-**Without a proof.** Only functions `ci/residue_allowlist.txt` already
-lists may go without (`verified := .unscrubbed h`, of an
-`h : Verified …`): the list only shrinks (`ci/check_residue_allowlist.py`),
-and the emitter refuses a listed function that has a proof, so converting
-one removes its line.
+**Never without a proof.** A registration's proof is `VerifiedScrubbed`:
+nothing registers a function proven `Verified` only. (The emitter's own
+tests, which render small functions to check how code is printed, make
+their artifacts on a target of the test library whose `noResidue` every
+code meets, `VerifiedGarbageTest/RenderOnly.lean`: never use it outside
+them.)
 
 ### The files on each target, and a new target
 

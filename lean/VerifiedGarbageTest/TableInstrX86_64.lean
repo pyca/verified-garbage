@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.TCB.Rust
 meta import VerifiedGarbage.TCB.Rust
+import VerifiedGarbageTest.RenderOnly
+meta import VerifiedGarbageTest.RenderOnly
 import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.TCB.X86_64.Print
@@ -97,14 +99,14 @@ theorem verified (w : BitVec 64) : Verified target (code w) (contract w) := by
   · sig_pre [contract, sig, abi, argRegs, stackBelow, sat]
 
 def artifactOf (fn : String) (w : BitVec 64) : Artifact where
-  target := .of target
+  target := .of (renderOnly target)
   module := "test"
   name := fn
   sig := sig
   doc := "Returns 1 plus word 1 of its table."
   code := code w
   contract := contract w
-  verified := .unscrubbed (verified w)
+  verified := renderOnly_verified (verified w)
   spSafe := rfl
 
 def artifact : Artifact := artifactOf "vg_test_alutbl" 42

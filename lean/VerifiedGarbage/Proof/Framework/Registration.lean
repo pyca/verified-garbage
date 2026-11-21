@@ -59,7 +59,7 @@ proof of `Verified`, and what else a `Registration` states, with the same
 fields and defaults, so that a call site writes it as it would a
 registration (`{ code := c, verified := h }`). It is not a registration: the
 form's result is, with the proof that the code it built returns without
-secret residue (`Verification.scrubbed`). -/
+secret residue (`VerifiedScrubbed`). -/
 structure Unscrubbed (api : Api) (target : Target) where
   /-- `Registration.suffix`. -/
   suffix : String := ""
@@ -97,27 +97,6 @@ structure Unscrubbed (api : Api) (target : Target) where
   /-- `Registration.notWith`. -/
   notWith : List String := []
 
-/-- `r` as it is, registered without a proof that it returns without secret
-residue (`Verification.unscrubbed`): what a wrapper that scrubs only where
-its side conditions hold returns where they do not. -/
-def Unscrubbed.registration {api : Api} {target : Target} (r : Unscrubbed api target) :
-    Registration api target where
-  suffix := r.suffix
-  tables := r.tables
-  code := r.code
-  contract := r.contract
-  consts := r.consts
-  verified := .unscrubbed r.verified
-  stack := r.stack
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := r.spSafe
-  written := r.written
-  writtenOk := r.writtenOk
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-
 /-- `Abi.withConsts` leaves the pointer width as it is. -/
 theorem Abi.ptrBits_withConsts {M : ISA} (A : Abi M) (cs : List (String × List (BitVec 64))) :
     (A.withConsts cs).ptrBits = A.ptrBits := by
@@ -146,51 +125,6 @@ theorem VerifiedScrubbed.abi {T : Target} {c : Prog T.isa} {k : Contract T.isa} 
     (h : VerifiedScrubbed T c k (sig.retBits ((T.abi.withConsts cs).withTables sig' ts).ptrBits)) :
     VerifiedScrubbed T c k (sig.retBits T.abi.ptrBits) :=
   Abi.retBits_withConsts_withTables T.abi sig sig' cs ts ▸ h
-
-/-- `VerifiedScrubbed.abi`, of either proof. -/
-theorem Verification.abi {T : Target} {c : Prog T.isa} {k : Contract T.isa} {sig sig' : Sig}
-    {cs : List (String × List (BitVec 64))} {ts : List (String × List FnTable)} {u : Bool}
-    (h : Verification T c k (sig.retBits ((T.abi.withConsts cs).withTables sig' ts).ptrBits) u) :
-    Verification T c k (sig.retBits T.abi.ptrBits) u :=
-  Abi.retBits_withConsts_withTables T.abi sig sig' cs ts ▸ h
-
-/-- What is proven of code either way is `Verified`. -/
-theorem Verification.verified {T : Target} {c : Prog T.isa} {k : Contract T.isa} {rb : Nat} {u : Bool}
-    (h : Verification T c k rb u) : Verified T c k := by
-  cases h with
-  | scrubbed h => exact h.verified
-  | unscrubbed h => exact h
-
-/-- The proof of code with a proof that it returns without secret residue
-only where `b` holds, a test evaluated when the registration is. -/
-theorem Verification.ofBool {T : Target} {c : Prog T.isa} {k : Contract T.isa} {rb : Nat} (b : Bool)
-    (hv : Verified T c k) (hr : b = true → T.noResidue.elim False fun R => R c k rb) :
-    Verification T c k rb (!b) := by
-  cases b with
-  | true => exact .scrubbed ⟨hv, hr rfl⟩
-  | false => exact .unscrubbed hv
-
-/-- The proof that code returns without secret residue, of what is proven of
-scrubbed code. -/
-theorem Verification.noResidue {T : Target} {c : Prog T.isa} {k : Contract T.isa} {rb : Nat}
-    (h : Verification T c k rb false) : T.noResidue.elim False fun R => R c k rb := by
-  cases h with
-  | scrubbed h => exact h.noResidue
-
-/-- The proof of code with a proof that it returns without secret residue
-only where an implementation gives one (`o`). -/
-theorem Verification.ofOption {T : Target} {c : Prog T.isa} {k : Contract T.isa} {rb : Nat}
-    (hv : Verified T c k) (o : Option (PLift (T.noResidue.elim False fun R => R c k rb))) :
-    Verification T c k rb o.isNone := by
-  cases o with
-  | none => exact .unscrubbed hv
-  | some r => exact .scrubbed ⟨hv, r.down⟩
-
-/-- The proof that `r`'s code returns without secret residue, if `r` has one. -/
-def Registration.residue? {api : Api} {target : Target} (r : Registration api target) :
-    Option (PLift (target.noResidue.elim False fun R => R r.code r.contract
-      (api.sig.retBits target.abi.ptrBits))) :=
-  if h : r.unscrubbed = false then some ⟨(h ▸ r.verified).noResidue⟩ else none
 
 end VG
 

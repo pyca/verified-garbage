@@ -134,17 +134,17 @@ class RiscV(unittest.TestCase):
         self.assertEqual(self.problems(
             "  Spec.A.fApi.artifact RISCV64.target {\n"
             "    code := Impl.A.RISCV64.Fn.f Spec.A.rate\n"
-            "    verified := .scrubbed Proof.A.RISCV64.f_scrubbed },\n"
+            "    verified := Proof.A.RISCV64.f_scrubbed },\n"
             "  Spec.A.gApi.artifact RISCV64.target {\n"
             "    tables := [(\"hmac\", tables variants)]\n"
             "    code := Impl.A.RISCV64.Fn.«seal» fns\n"
-            "    verified := .scrubbed\n"
+            "    verified :=\n"
             "      (Proof.A.RISCV64.g_scrubbed hasLaw.law) }] ++\n"
             "  Proof.Variants.B.RISCV64.variants.map fun v =>\n"
             "    Spec.A.hApi.artifact RISCV64.target {\n"
             "      suffix := v.suffix\n"
             "      code := Impl.A.RISCV64.Fn.h v.suffix v.code\n"
-            "      verified := .scrubbed (Proof.A.RISCV64.h v) } ++\n"
+            "      verified := (Proof.A.RISCV64.h v) } ++\n"
             "  Rfc6979.artifacts"), [])
 
     def test_other_targets(self):
@@ -167,35 +167,26 @@ class RiscV(unittest.TestCase):
         [p] = self.problems(
             "  api.artifact RISCV64.target {\n"
             "    code := scrub 64 0 Proof.A.code\n"
-            "    verified := .scrubbed Proof.A.ok }")
+            "    verified := Proof.A.ok }")
         self.assertIn(":4: a RISC-V registration's `code`", p)
 
     def test_verified_not_named(self):
         ps = self.problems(
             "  api.artifact RISCV64.target {\n"
             "    code := Impl.A.f\n"
-            "    verified := .scrubbed f_scrubbed },\n"
+            "    verified := f_scrubbed },\n"
             "  api.artifact RISCV64.target {\n"
             "    code := Impl.A.g\n"
-            "    verified := Proof.A.g_verified }")
+            "    verified := VerifiedScrubbed.abi (Proof.A.g_scrubbed) }")
         self.assertEqual(len(ps), 2)
         self.assertIn(":5: a RISC-V registration's `verified`", ps[0])
         self.assertIn(":8: a RISC-V registration's `verified`", ps[1])
-
-    def test_unscrubbed(self):
-        ps = self.problems(
-            "  api.artifact RISCV64.target {\n"
-            "    code := Impl.A.f\n"
-            "    verified := .unscrubbed Proof.A.f_verified }")
-        self.assertEqual(len(ps), 2)
-        self.assertIn(":5: `.unscrubbed`", ps[0])
-        self.assertIn(":5: a RISC-V registration's `verified`", ps[1])
 
     def test_anonymous_constructor(self):
         ps = self.problems(
             "  api.artifact RISCV64.target {\n"
             "    code := Impl.A.f\n"
-            "    verified := .scrubbed (Proof.A.f ⟨Proof.A.h, rfl⟩) }")
+            "    verified := (Proof.A.f ⟨Proof.A.h, rfl⟩) }")
         self.assertEqual(len(ps), 1)
         self.assertIn(":5: an anonymous constructor", ps[0])
 
@@ -206,7 +197,7 @@ class RiscV(unittest.TestCase):
             "  api.artifact RISCV64.target {\n"
             "    code := Impl.A.f\n"
             "    spSafe := by sp_safe\n"
-            "    verified := .scrubbed Proof.A.f }")
+            "    verified := Proof.A.f }")
         self.assertEqual(len(ps), 2)
         self.assertIn(":5: a tactic proof in a RISC-V registration", ps[0])
         self.assertIn(":5: `spSafe` in a RISC-V registration", ps[1])
@@ -219,7 +210,7 @@ class RiscV(unittest.TestCase):
             "  api.artifact RISCV64.target {\n"
             "    code := Impl.A.g\n"
             "    code := Impl.A.g\n"
-            "    verified := .scrubbed Proof.A.g }")
+            "    verified := Proof.A.g }")
         self.assertEqual(len(ps), 3)
         self.assertIn(":5: `written` in a RISC-V registration", ps[0])
         self.assertIn(":3: a RISC-V registration without exactly one `verified :=`", ps[1])
