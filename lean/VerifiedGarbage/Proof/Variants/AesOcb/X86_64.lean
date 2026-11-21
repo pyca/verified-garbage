@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.AesNi.Verified
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Scrub
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
 
 /-! # The implementations of `AesOcb` on x86-64 -/
@@ -16,32 +14,6 @@ inductive OcbImpl where
   | onePass
   /-- The functions over the AES block functions `v`. -/
   | blocks (v : Proof.Aes.X86_64.BlocksImpl)
-
-/-- `vg_aes_ocb_seal` over `o`. -/
-def OcbImpl.sealReg : OcbImpl → Registration Spec.Ocb.sealApi X86_64.target
-  | .onePass => {
-      suffix := "_aesni"
-      code := Impl.AesOcb.X86_64.Fn.sealOnePass .sse
-      verified := .scrubbed AesNi.seal_scrubbed
-      spSafe := AesNi.seal_spSafeFn }
-  | .blocks v => {
-      suffix := v.suffix
-      code := Impl.AesOcb.X86_64.Fn.«seal» v.level (callees v)
-      verified := .scrubbed (Scrub.seal_scrubbed v)
-      spSafe := Scrub.seal_spSafeFn v }
-
-/-- `vg_aes_ocb_open` over `o`. -/
-def OcbImpl.openReg : OcbImpl → Registration Spec.Ocb.openApi X86_64.target
-  | .onePass => {
-      suffix := "_aesni"
-      code := Impl.AesOcb.X86_64.Fn.openOnePass .sse
-      verified := .scrubbed AesNi.open_scrubbed
-      spSafe := AesNi.open_spSafeFn }
-  | .blocks v => {
-      suffix := v.suffix
-      code := Impl.AesOcb.X86_64.Fn.«open» v.level (callees v)
-      verified := .scrubbed (Scrub.open_scrubbed v)
-      spSafe := Scrub.open_spSafeFn v }
 
 end VG.Proof.AesOcb.X86_64
 

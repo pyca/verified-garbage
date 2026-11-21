@@ -148,6 +148,14 @@ instructions in an ISA model) go in their own PR before either.
    put what a generic caller's artifacts are built from (instances of the
    functions it calls, lemmas about its code) in a module of the
    algorithm's proofs, as `Proof/AesGcm/X86_64/Instances.lean` does.
+   The record itself (`{ suffix, code, verified, spSafe }`, and any choice
+   between implementations, `match` or `if`) is written in the registration
+   file, never built under `Proof/`: a `spSafe` the default does not prove
+   is a theorem of the code there (`…_spSafeFn`, `Proof/AesGcm/X86_64/Leaves.lean`).
+   The one exception is an interface whose functions carry their own contract
+   and stack (`StreamFn.reg`, `StreamFnS.reg`, `Pbkdf2Impl.reg`,
+   `FinImpl.reg`): their record must state `consts` and `stack`, which a
+   registration file may not.
    A function whose proof takes a Weierstrass curve's group law (`Law`,
    `Proof/Weierstrass/Law.lean`) is registered as any other, passing the
    law: its registration file imports `Proof/<Curve>/<Target>/Law.lean`,

@@ -1949,147 +1949,131 @@ theorem sealGatherR16_scrubbed (v : GcmVariant) (r : R16 v) :
     (gatherP16_fill 16 _ _ _ _ _ _ _ _ _ _ _ _ hSeF hSpF hToF hSe hSp hI hA hTo hFi fI fA fFi)
     v.one_le_lvGA (Nat.le_refl _) (ha := ha)
 
-/-! ## The registrations
+/-! ## What the registrations bind
 
-Each binds a function as emitted over `v` (`Impl.AesGcm.X86_64.Fn`) and its
-theorem: on the key context alone (`…W`), or by the flag on 48 prepared
-powers (`…R`), or by the count on 16 (`…R16`, given `R16 v`). -/
+Of each function as emitted over `v` (`Impl.AesGcm.X86_64.Fn`), on the key
+context alone (`…W`), or by the flag on 48 prepared powers (`…R`), or by the
+count on 16 (`…R16`, given `R16 v`), beside its theorem (`…_scrubbed`), the
+registration (`Artifacts/AesGcm/X86_64.lean`) binds that its code writes the
+stack pointer only in its frames and calls (`…_spSafeFn`). -/
 
-/-- `sealPreparedApi`'s function over `v`. -/
-def sealPrepW (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.sealW v.lv v.impl.short v.impl.fin v.impl.callees
-  verified := .scrubbed (sealW_scrubbed v)
-  spSafe := scrubKs_spSafe ((sealWPlain v).spSafe)
+/-- `sealPreparedApi`'s function over `v`: its code writes the stack pointer only in its frames and
+calls (the registration's `spSafe`). -/
+theorem sealW_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.sealW v.lv v.impl.short v.impl.fin v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ((sealWPlain v).spSafe)
 
-/-- `openPreparedApi`'s function over `v`. -/
-def openPrepW (v : GcmVariant) : Registration Spec.Gcm.openPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.openW v.lv v.impl.short v.impl.callees
-  verified := .scrubbed (openW_scrubbed v)
-  spSafe := scrubKs_spSafe ((openWPlain v).spSafe)
+/-- `openPreparedApi`'s function over `v`: its code writes the stack pointer only in its frames and
+calls (the registration's `spSafe`). -/
+theorem openW_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.openW v.lv v.impl.short v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ((openWPlain v).spSafe)
 
-/-- `openToPreparedApi`'s function over `v`. -/
-def openToPrepW (v : GcmVariant) : Registration Spec.Gcm.openToPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.openToW v.lvTW (openSplitFnB v v.ctrTo).fn
-  verified := .scrubbed (openToW_scrubbed v)
-  spSafe := scrubKs_spSafe ((openToWPlain v).spSafe)
+/-- `openToPreparedApi`'s function over `v`: its code writes the stack pointer only in its frames
+and calls (the registration's `spSafe`). -/
+theorem openToW_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.openToW v.lvTW (openSplitFnB v v.ctrTo).fn).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ((openToWPlain v).spSafe)
 
-/-- `streamEncryptPreparedApi`'s function over `v`. -/
-def streamEncryptPrepW (v : GcmVariant) : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.streamEncryptW v.lv v.impl.callees
-  verified := .scrubbed (streamEncryptW_scrubbed v)
-  spSafe := scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v.impl))
+/-- `streamEncryptPreparedApi`'s function over `v`: its code writes the stack pointer only in its
+frames and calls (the registration's `spSafe`). -/
+theorem streamEncryptW_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.streamEncryptW v.lv v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v.impl))
 
-/-- `streamDecryptPreparedApi`'s function over `v`. -/
-def streamDecryptPrepW (v : GcmVariant) : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.streamDecryptW v.lv v.impl.callees
-  verified := .scrubbed (streamDecryptW_scrubbed v)
-  spSafe := scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl))
+/-- `streamDecryptPreparedApi`'s function over `v`: its code writes the stack pointer only in its
+frames and calls (the registration's `spSafe`). -/
+theorem streamDecryptW_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.streamDecryptW v.lv v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl))
 
-/-- `sealGatherPreparedApi`'s function over `v`. -/
-def sealGatherPrepW (v : GcmVariant) : Registration Spec.Gcm.sealGatherPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.sealGatherW v.lvG (copyBelow v) (splitFrom v) (sealFn v.impl).fn (splitFn v).fn
-        (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn
-  verified := .scrubbed (sealGatherW_scrubbed v)
-  spSafe := scrubKs_spSafe ((sealGatherWPlain v).spSafe)
+/-- `sealGatherPreparedApi`'s function over `v`: its code writes the stack pointer only in its
+frames and calls (the registration's `spSafe`). -/
+theorem sealGatherW_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.sealGatherW v.lvG (copyBelow v) (splitFrom v) (sealFn v.impl).fn (splitFn v).fn
+            (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ((sealGatherWPlain v).spSafe)
 
-/-- `sealPreparedApi`'s function over `v`. -/
-def sealPrepR (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees
-  verified := .scrubbed (sealR_scrubbed v)
-  spSafe := scrubKs_spSafe ((sealRPlain v).spSafe)
+/-- `sealPreparedApi`'s function over `v`: its code writes the stack pointer only in its frames and
+calls (the registration's `spSafe`). -/
+theorem sealR_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.sealP v.lv 48 v.impl.short v.impl.fin (v.impl.withBlk (blkR v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ((sealRPlain v).spSafe)
 
-/-- `openPreparedApi`'s function over `v`. -/
-def openPrepR (v : GcmVariant) : Registration Spec.Gcm.openPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.openP v.lvA 48 v.impl.short (v.impl.withBlk (blkR v)) v.impl.callees
-  verified := .scrubbed (openR_scrubbed v)
-  spSafe := scrubKs_spSafe ((openRPlain v).spSafe)
+/-- `openPreparedApi`'s function over `v`: its code writes the stack pointer only in its frames and
+calls (the registration's `spSafe`). -/
+theorem openR_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.openP v.lvA 48 v.impl.short (v.impl.withBlk (blkR v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ((openRPlain v).spSafe)
 
-/-- `openToPreparedApi`'s function over `v`. -/
-def openToPrepR (v : GcmVariant) : Registration Spec.Gcm.openToPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.openToP v.lvT 48 v.stitchToDecR.isSome v.impl.copyW (openFnF v).fn (openSplitFnF v).fn
-        (openSplitFnB v v.ctrTo).fn
-  verified := .scrubbed (openToR_scrubbed v)
-  spSafe := scrubKs_spSafe (openToCodeR_onFlag_spAll v)
+/-- `openToPreparedApi`'s function over `v`: its code writes the stack pointer only in its frames
+and calls (the registration's `spSafe`). -/
+theorem openToR_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.openToP v.lvT 48 v.stitchToDecR.isSome v.impl.copyW (openFnF v).fn (openSplitFnF v).fn
+            (openSplitFnB v v.ctrTo).fn).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (openToCodeR_onFlag_spAll v)
 
-/-- `streamEncryptPreparedApi`'s function over `v`. -/
-def streamEncryptPrepR (v : GcmVariant) : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.streamEncryptP v.lv 48 (v.impl.withBlk (blkR v)) v.impl.callees
-  verified := .scrubbed (streamEncryptR_scrubbed v)
-  spSafe := scrubKs_spSafe (streamEncryptCodeF_spAll v)
+/-- `streamEncryptPreparedApi`'s function over `v`: its code writes the stack pointer only in its
+frames and calls (the registration's `spSafe`). -/
+theorem streamEncryptR_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.streamEncryptP v.lv 48 (v.impl.withBlk (blkR v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (streamEncryptCodeF_spAll v)
 
-/-- `streamDecryptPreparedApi`'s function over `v`. -/
-def streamDecryptPrepR (v : GcmVariant) : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.streamDecryptP v.lv 48 (v.impl.withBlk (blkR v)) v.impl.callees
-  verified := .scrubbed (streamDecryptR_scrubbed v)
-  spSafe := scrubKs_spSafe (VG.X86_64.onFlag_spSafe
-      (X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR v)))
-      (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)))
+/-- `streamDecryptPreparedApi`'s function over `v`: its code writes the stack pointer only in its
+frames and calls (the registration's `spSafe`). -/
+theorem streamDecryptR_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.streamDecryptP v.lv 48 (v.impl.withBlk (blkR v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.onFlag_spSafe
+        (X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR v)))
+        (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)))
 
-/-- `sealGatherPreparedApi`'s function over `v`. -/
-def sealGatherPrepR (v : GcmVariant) : Registration Spec.Gcm.sealGatherPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.sealGatherP v.lvGA 48 (tlsLong v) (copyBelow v) (splitFrom v) (sealFnF v).fn
-        (splitFnF v).fn (toFnF v).fn (sealFn v.impl).fn (splitFn v).fn (toFn v).fn (initFn v.impl).fn
-        (aadFn v.impl).fn (finFn v.impl).fn false
-  verified := .scrubbed (sealGatherR_scrubbed v)
-  spSafe := scrubKs_spSafe ((sealGatherRPlain v).spSafe)
+/-- `sealGatherPreparedApi`'s function over `v`: its code writes the stack pointer only in its
+frames and calls (the registration's `spSafe`). -/
+theorem sealGatherR_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.sealGatherP v.lvGA 48 (tlsLong v) (copyBelow v) (splitFrom v) (sealFnF v).fn
+            (splitFnF v).fn (toFnF v).fn (sealFn v.impl).fn (splitFn v).fn (toFn v).fn (initFn v.impl).fn
+            (aadFn v.impl).fn (finFn v.impl).fn false).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ((sealGatherRPlain v).spSafe)
 
-/-- `sealPreparedApi`'s function over `v`, on 16 prepared powers. -/
-def sealPrepR16 (v : GcmVariant) (r : R16 v) : Registration Spec.Gcm.sealPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees
-  verified := .scrubbed (sealR16_scrubbed v r)
-  spSafe := scrubKs_spSafe ((sealF16Plain v r).spSafe)
+/-- `sealPreparedApi`'s function over `v`, on 16 prepared powers: its code writes the stack pointer
+only in its frames and calls (the registration's `spSafe`). -/
+theorem sealR16_spSafeFn (v : GcmVariant) (r : R16 v) :
+    (Impl.AesGcm.X86_64.Fn.sealP v.lv 16 v.impl.short v.impl.fin (v.impl.withBlk (blkR16 v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ((sealF16Plain v r).spSafe)
 
-/-- `openPreparedApi`'s function over `v`, on 16 prepared powers. -/
-def openPrepR16 (v : GcmVariant) (r : R16 v) : Registration Spec.Gcm.openPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.openP v.lvA 16 v.impl.short (v.impl.withBlk (blkR16 v)) v.impl.callees
-  verified := .scrubbed (openR16_scrubbed v r)
-  spSafe := scrubKs_spSafe ((openR16Plain v r).spSafe)
+/-- `openPreparedApi`'s function over `v`, on 16 prepared powers: its code writes the stack pointer
+only in its frames and calls (the registration's `spSafe`). -/
+theorem openR16_spSafeFn (v : GcmVariant) (r : R16 v) :
+    (Impl.AesGcm.X86_64.Fn.openP v.lvA 16 v.impl.short (v.impl.withBlk (blkR16 v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ((openR16Plain v r).spSafe)
 
-/-- `openToPreparedApi`'s function over `v`, on 16 prepared powers. -/
-def openToPrepR16 (v : GcmVariant) (r : R16 v) : Registration Spec.Gcm.openToPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.openToP v.lvT 16 v.stitchToDecR16.isSome v.impl.copyW (openFnF16 v r).fn
-        (openSplitFnF16 v).fn (openSplitFnB v v.ctrTo).fn
-  verified := .scrubbed (openToR16_scrubbed v r)
-  spSafe := scrubKs_spSafe (openToCodeR16_onFlag_spAll v r)
+/-- `openToPreparedApi`'s function over `v`, on 16 prepared powers: its code writes the stack
+pointer only in its frames and calls (the registration's `spSafe`). -/
+theorem openToR16_spSafeFn (v : GcmVariant) (r : R16 v) :
+    (Impl.AesGcm.X86_64.Fn.openToP v.lvT 16 v.stitchToDecR16.isSome v.impl.copyW (openFnF16 v r).fn
+            (openSplitFnF16 v).fn (openSplitFnB v v.ctrTo).fn).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (openToCodeR16_onFlag_spAll v r)
 
-/-- `streamEncryptPreparedApi`'s function over `v`, on 16 prepared powers. -/
-def streamEncryptPrepR16 (v : GcmVariant) : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.streamEncryptP v.lv 16 (v.impl.withBlk (blkR16 v)) v.impl.callees
-  verified := .scrubbed (streamEncryptR16_scrubbed v)
-  spSafe := scrubKs_spSafe (streamEncryptCodeF16_spAll v)
+/-- `streamEncryptPreparedApi`'s function over `v`, on 16 prepared powers: its code writes the stack
+pointer only in its frames and calls (the registration's `spSafe`). -/
+theorem streamEncryptR16_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.streamEncryptP v.lv 16 (v.impl.withBlk (blkR16 v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (streamEncryptCodeF16_spAll v)
 
-/-- `streamDecryptPreparedApi`'s function over `v`, on 16 prepared powers. -/
-def streamDecryptPrepR16 (v : GcmVariant) : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.streamDecryptP v.lv 16 (v.impl.withBlk (blkR16 v)) v.impl.callees
-  verified := .scrubbed (streamDecryptR16_scrubbed v)
-  spSafe := scrubKs_spSafe (VG.X86_64.onFlag_spSafe
-      (X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR16 v)))
-      (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)))
+/-- `streamDecryptPreparedApi`'s function over `v`, on 16 prepared powers: its code writes the stack
+pointer only in its frames and calls (the registration's `spSafe`). -/
+theorem streamDecryptR16_spSafeFn (v : GcmVariant) :
+    (Impl.AesGcm.X86_64.Fn.streamDecryptP v.lv 16 (v.impl.withBlk (blkR16 v)) v.impl.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.onFlag_spSafe
+        (X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR16 v)))
+        (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)))
 
-/-- `sealGatherPreparedApi`'s function over `v`, on 16 prepared powers. -/
-def sealGatherPrepR16 (v : GcmVariant) (r : R16 v) : Registration Spec.Gcm.sealGatherPreparedApi X86_64.target where
-  suffix := v.impl.suffix
-  code := Impl.AesGcm.X86_64.Fn.sealGatherP v.lvGA 16 (tlsLong v) (copyBelow v) (splitFrom v) (sealFnF16 v r).fn
-        (splitFnF16 v r).fn (toFnF16 v).fn (sealFn v.impl).fn (splitFn v).fn (toFn v).fn (initFn v.impl).fn
-        (aadFn v.impl).fn (finFn v.impl).fn true
-  verified := .scrubbed (sealGatherR16_scrubbed v r)
-  spSafe := scrubKs_spSafe ((sealGatherR16Plain v r).spSafe)
+/-- `sealGatherPreparedApi`'s function over `v`, on 16 prepared powers: its code writes the stack
+pointer only in its frames and calls (the registration's `spSafe`). -/
+theorem sealGatherR16_spSafeFn (v : GcmVariant) (r : R16 v) :
+    (Impl.AesGcm.X86_64.Fn.sealGatherP v.lvGA 16 (tlsLong v) (copyBelow v) (splitFrom v) (sealFnF16 v r).fn
+            (splitFnF16 v r).fn (toFnF16 v).fn (sealFn v.impl).fn (splitFn v).fn (toFn v).fn (initFn v.impl).fn
+            (aadFn v.impl).fn (finFn v.impl).fn true).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ((sealGatherR16Plain v r).spSafe)
 
 end VG.Proof.AesGcm.X86_64

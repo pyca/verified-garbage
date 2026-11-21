@@ -1406,7 +1406,6 @@ end
 
 end
 
-
 /-!
 # SM4-GCM on x86-64: `Verified`
 
@@ -1832,7 +1831,6 @@ end
 
 end
 
-
 /-!
 # SM4-GCM on x86-64, with its working space on the stack
 
@@ -2123,12 +2121,6 @@ theorem init_scrubbed :
 theorem init_spSafeFn : Impl.Sm4Gcm.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe (X86_64.withStackScratch_spSafe_of init_spSafe)
 
-/-- `vg_sm4_gcm_init`. -/
-def initReg : Registration Spec.Sm4.Gcm.initApi X86_64.target where
-  code := Impl.Sm4Gcm.X86_64.Fn.init
-  verified := .scrubbed init_scrubbed
-  spSafe := init_spSafeFn
-
 /-- `Spec.Sm4.Gcm.sealApi`'s function as emitted over `v`
 (`Impl.Sm4Gcm.X86_64.Fn.«seal»`) meets its contract in constant time and
 returns without secret residue: its code is its code over a stub, with `v`'s
@@ -2149,13 +2141,6 @@ theorem seal_scrubbed :
 theorem seal_spSafeFn :
     (Impl.Sm4Gcm.X86_64.Fn.«seal» (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (seal_spSafe v))
-
-/-- `vg_sm4_gcm_seal` over `v`. -/
-def sealReg : Registration Spec.Sm4.Gcm.sealApi X86_64.target where
-  suffix := v.gh.suffix
-  code := Impl.Sm4Gcm.X86_64.Fn.«seal» (sm4Level v) v.callees
-  verified := .scrubbed (seal_scrubbed v)
-  spSafe := seal_spSafeFn v
 
 /-- `Spec.Sm4.Gcm.openApi`'s function as emitted over `v`
 (`Impl.Sm4Gcm.X86_64.Fn.«open»`) meets its contract in constant time and
@@ -2178,13 +2163,6 @@ theorem open_spSafeFn :
     (Impl.Sm4Gcm.X86_64.Fn.«open» (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (open_spSafe v))
 
-/-- `vg_sm4_gcm_open` over `v`. -/
-def openReg : Registration Spec.Sm4.Gcm.openApi X86_64.target where
-  suffix := v.gh.suffix
-  code := Impl.Sm4Gcm.X86_64.Fn.«open» (sm4Level v) v.callees
-  verified := .scrubbed (open_scrubbed v)
-  spSafe := open_spSafeFn v
-
 /-- `Spec.Sm4.Gcm.streamEncryptApi`'s function as emitted over `v`
 (`Impl.Sm4Gcm.X86_64.Fn.streamEncrypt`) meets its contract in constant time and
 returns without secret residue: its code is its code over a stub, with `v`'s
@@ -2205,13 +2183,6 @@ theorem streamEncrypt_scrubbed :
 theorem streamEncrypt_spSafeFn :
     (Impl.Sm4Gcm.X86_64.Fn.streamEncrypt (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v))
-
-/-- `vg_sm4_gcm_streamEncrypt` over `v`. -/
-def streamEncryptReg : Registration Spec.Sm4.Gcm.streamEncryptApi X86_64.target where
-  suffix := v.gh.suffix
-  code := Impl.Sm4Gcm.X86_64.Fn.streamEncrypt (sm4Level v) v.callees
-  verified := .scrubbed (streamEncrypt_scrubbed v)
-  spSafe := streamEncrypt_spSafeFn v
 
 /-- `Spec.Sm4.Gcm.streamDecryptApi`'s function as emitted over `v`
 (`Impl.Sm4Gcm.X86_64.Fn.streamDecrypt`) meets its contract in constant time and
@@ -2234,13 +2205,6 @@ theorem streamDecrypt_spSafeFn :
     (Impl.Sm4Gcm.X86_64.Fn.streamDecrypt (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v))
 
-/-- `vg_sm4_gcm_streamDecrypt` over `v`. -/
-def streamDecryptReg : Registration Spec.Sm4.Gcm.streamDecryptApi X86_64.target where
-  suffix := v.gh.suffix
-  code := Impl.Sm4Gcm.X86_64.Fn.streamDecrypt (sm4Level v) v.callees
-  verified := .scrubbed (streamDecrypt_scrubbed v)
-  spSafe := streamDecrypt_spSafeFn v
-
 /-- `Spec.Sm4.Gcm.streamFinishApi`'s function as emitted over `v`
 (`Impl.Sm4Gcm.X86_64.Fn.streamFinish`) meets its contract in constant time and
 returns without secret residue: its code is its code over a stub, with `v`'s
@@ -2262,13 +2226,6 @@ theorem streamFinish_spSafeFn :
     (Impl.Sm4Gcm.X86_64.Fn.streamFinish (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe (X86_64.withStackScratch_spSafe_of (streamFinish_spSafe v))
 
-/-- `vg_sm4_gcm_streamFinish` over `v`. -/
-def streamFinishReg : Registration Spec.Sm4.Gcm.streamFinishApi X86_64.target where
-  suffix := v.gh.suffix
-  code := Impl.Sm4Gcm.X86_64.Fn.streamFinish (sm4Level v) v.callees
-  verified := .scrubbed (streamFinish_scrubbed v)
-  spSafe := streamFinish_spSafeFn v
-
 /-- `Spec.Sm4.Gcm.streamVerifyApi`'s function as emitted over `v`
 (`Impl.Sm4Gcm.X86_64.Fn.streamVerify`) meets its contract in constant time and
 returns without secret residue: its code is its code over a stub, with `v`'s
@@ -2289,13 +2246,6 @@ theorem streamVerify_scrubbed :
 theorem streamVerify_spSafeFn :
     (Impl.Sm4Gcm.X86_64.Fn.streamVerify (sm4Level v) v.callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v))
-
-/-- `vg_sm4_gcm_streamVerify` over `v`. -/
-def streamVerifyReg : Registration Spec.Sm4.Gcm.streamVerifyApi X86_64.target where
-  suffix := v.gh.suffix
-  code := Impl.Sm4Gcm.X86_64.Fn.streamVerify (sm4Level v) v.callees
-  verified := .scrubbed (streamVerify_scrubbed v)
-  spSafe := streamVerify_spSafeFn v
 
 end Scrub
 

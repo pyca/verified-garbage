@@ -124,12 +124,9 @@ theorem z_scrubbed :
   verifiedScrubbedAll (api := Spec.Gcm.prepareApi) { code := Impl.Gcm.X86_64.Flag.prepareFlagged 48 Impl.Gcm.X86_64.PrepareZ.prepare, verified := Proof.Gcm.X86_64.PrepareZ.prepareFlagged_verified } .avx
     (prepareOut _)
 
-/-- `vg_aes_gcm_prepare_vpclmul_avx512`. -/
-def zReg : Registration Spec.Gcm.prepareApi X86_64.target where
-  suffix := "_vpclmul_avx512"
-  code := Impl.Gcm.X86_64.Fn.prepareZ
-  verified := .scrubbed z_scrubbed
-  spSafe := scrubKs_spSafe (by lit_decide)
+/-- `vg_aes_gcm_prepare_vpclmul_avx512` as emitted writes `rsp` only in its frames and calls. -/
+theorem z_spSafeFn : Impl.Gcm.X86_64.Fn.prepareZ.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (by lit_decide)
 
 /-- `vg_aes_gcm_prepare_vpclmul` as emitted (`Impl.Gcm.X86_64.Fn.prepare16`) meets its contract in
 constant time and returns without secret residue. -/
@@ -138,12 +135,9 @@ theorem p16_scrubbed :
   verifiedScrubbedAll (api := Spec.Gcm.prepareApi) { code := Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.Prepare16.prepare16, verified := Proof.Gcm.X86_64.Prepare16.prepareFlagged_verified } .avx
     (prepareOut _)
 
-/-- `vg_aes_gcm_prepare_vpclmul`. -/
-def p16Reg : Registration Spec.Gcm.prepareApi X86_64.target where
-  suffix := "_vpclmul"
-  code := Impl.Gcm.X86_64.Fn.prepare16
-  verified := .scrubbed p16_scrubbed
-  spSafe := scrubKs_spSafe (by lit_decide)
+/-- `vg_aes_gcm_prepare_vpclmul` as emitted writes `rsp` only in its frames and calls. -/
+theorem p16_spSafeFn : Impl.Gcm.X86_64.Fn.prepare16.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (by lit_decide)
 
 /-- `vg_aes_gcm_prepare_pclmul_avx` as emitted (`Impl.Gcm.X86_64.Fn.prepareAvx`) meets its contract in
 constant time and returns without secret residue. -/
@@ -152,12 +146,9 @@ theorem avx_scrubbed :
   verifiedScrubbedAll (api := Spec.Gcm.prepareApi) { code := Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.PrepareAvx.prepare16, verified := Proof.Gcm.X86_64.PrepareAvx.prepareFlagged_verified } .avx
     (prepareOut _)
 
-/-- `vg_aes_gcm_prepare_pclmul_avx`. -/
-def avxReg : Registration Spec.Gcm.prepareApi X86_64.target where
-  suffix := "_pclmul_avx"
-  code := Impl.Gcm.X86_64.Fn.prepareAvx
-  verified := .scrubbed avx_scrubbed
-  spSafe := scrubKs_spSafe (by lit_decide)
+/-- `vg_aes_gcm_prepare_pclmul_avx` as emitted writes `rsp` only in its frames and calls. -/
+theorem avx_spSafeFn : Impl.Gcm.X86_64.Fn.prepareAvx.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (by lit_decide)
 
 /-- `vg_aes_gcm_prepare` as emitted (`Impl.Gcm.X86_64.Fn.prepareAbsent`) meets its contract in
 constant time and returns without secret residue. -/
@@ -166,12 +157,9 @@ theorem absent_scrubbed :
   verifiedScrubbedAll (api := Spec.Gcm.prepareApi) { code := Impl.Gcm.X86_64.Flag.prepareAbsent, verified := Proof.Gcm.X86_64.Prepare.absent_verified } .sse
     (prepareOut _)
 
-/-- `vg_aes_gcm_prepare`. -/
-def absentReg : Registration Spec.Gcm.prepareApi X86_64.target where
-  suffix := ""
-  code := Impl.Gcm.X86_64.Fn.prepareAbsent
-  verified := .scrubbed absent_scrubbed
-  spSafe := scrubKs_spSafe (by lit_decide)
+/-- `vg_aes_gcm_prepare` as emitted writes `rsp` only in its frames and calls. -/
+theorem absent_spSafeFn : Impl.Gcm.X86_64.Fn.prepareAbsent.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (by lit_decide)
 
 /-- `vg_aes_gcm_wipe_prepared` as emitted, with AVX if `avx`
 (`Impl.Gcm.X86_64.Fn.wipe`), meets its contract in constant time and returns
@@ -183,11 +171,8 @@ theorem wipe_scrubbed (avx : Bool) :
       spSafe := by cases avx <;> lit_decide } _ (wipePreparedOut _)
     (hs := by cases avx <;> lit_decide)
 
-/-- `vg_aes_gcm_wipe_prepared`, with AVX if `avx`. -/
-def wipeReg (avx : Bool) : Registration Spec.Gcm.wipePreparedApi X86_64.target where
-  suffix := if avx then "_avx" else ""
-  code := Impl.Gcm.X86_64.Fn.wipe avx
-  verified := .scrubbed (wipe_scrubbed avx)
-  spSafe := scrubKs_spSafe (by cases avx <;> lit_decide)
+/-- `vg_aes_gcm_wipe_prepared` as emitted writes `rsp` only in its frames and calls, with AVX if `avx`. -/
+theorem wipe_spSafeFn (avx : Bool) : (Impl.Gcm.X86_64.Fn.wipe avx).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (by cases avx <;> lit_decide)
 
 end VG.Proof.Gcm.X86_64.PrepareScrub

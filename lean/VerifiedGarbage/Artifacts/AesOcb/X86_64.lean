@@ -60,6 +60,7 @@ public import VerifiedGarbage.Spec.Ccm.Contract
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Scrub
+public import VerifiedGarbage.Proof.AesOcb.X86_64.AesNi.Verified
 public import VerifiedGarbage.Proof.Variants.AesOcb.X86_64
 
 /-! # AES-OCB (RFC 7253) on x86-64 -/
@@ -78,7 +79,29 @@ def artifacts : List Artifact :=
       verified := .scrubbed (Proof.AesOcb.X86_64.Scrub.ocbInit_scrubbed v)
       spSafe := Proof.AesOcb.X86_64.Scrub.ocbInit_spSafeFn v }) ++
   VG.Proof.Variants.AesOcb.X86_64.variants.flatMap fun (o : Proof.AesOcb.X86_64.OcbImpl) => [
-    Spec.Ocb.sealApi.artifact X86_64.target o.sealReg,
-    Spec.Ocb.openApi.artifact X86_64.target o.openReg]
+    Spec.Ocb.sealApi.artifact X86_64.target
+      (match o with
+      | .onePass =>
+        { suffix := "_aesni"
+          code := Impl.AesOcb.X86_64.Fn.sealOnePass .sse
+          verified := .scrubbed Proof.AesOcb.X86_64.AesNi.seal_scrubbed
+          spSafe := Proof.AesOcb.X86_64.AesNi.seal_spSafeFn }
+      | .blocks v =>
+        { suffix := v.suffix
+          code := Impl.AesOcb.X86_64.Fn.«seal» v.level (Proof.AesOcb.X86_64.callees v)
+          verified := .scrubbed (Proof.AesOcb.X86_64.Scrub.seal_scrubbed v)
+          spSafe := Proof.AesOcb.X86_64.Scrub.seal_spSafeFn v }),
+    Spec.Ocb.openApi.artifact X86_64.target
+      (match o with
+      | .onePass =>
+        { suffix := "_aesni"
+          code := Impl.AesOcb.X86_64.Fn.openOnePass .sse
+          verified := .scrubbed Proof.AesOcb.X86_64.AesNi.open_scrubbed
+          spSafe := Proof.AesOcb.X86_64.AesNi.open_spSafeFn }
+      | .blocks v =>
+        { suffix := v.suffix
+          code := Impl.AesOcb.X86_64.Fn.«open» v.level (Proof.AesOcb.X86_64.callees v)
+          verified := .scrubbed (Proof.AesOcb.X86_64.Scrub.open_scrubbed v)
+          spSafe := Proof.AesOcb.X86_64.Scrub.open_spSafeFn v })]
 
 end VG.Artifacts.AesOcb.X86_64
