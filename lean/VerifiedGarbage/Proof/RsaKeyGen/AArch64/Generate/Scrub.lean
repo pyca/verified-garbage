@@ -21,7 +21,7 @@ its implementation's (`RoundImpl.side`, `RoundImpl.mmSide`).
 
 namespace VG.Proof.RsaKeyGen.AArch64.Generate
 
-open VG VG.AArch64 VG.AArch64.ScrubAll VG.Proof.MillerRabin.AArch64
+open VG VG.AArch64 VG.AArch64.Scrub VG.Proof.MillerRabin.AArch64
 open VG.Impl.RsaKeyGen.AArch64.Candidate
 
 /-- No instruction of `vg_rsa_keygen_candidate` writes PSTATE.DIT, and it

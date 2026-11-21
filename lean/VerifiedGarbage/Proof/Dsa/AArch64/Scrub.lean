@@ -22,19 +22,19 @@ import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
 The postconditions of `vg_dsa_validate_public_key` and
 `vg_dsa_validate_private_key` do not read the memory on return, and that of
 `vg_dsa_parameter_search` reads it only within its outputs
-(`Ffdh.AArch64.Scrub.bytesAt_of`, `wordsAt_of`; `ScrubAll.ScrubAllOk`, as
+(`Ffdh.AArch64.Scrub.bytesAt_of`, `wordsAt_of`; `Scrub.ScrubAllOk`, as
 x86-64's `Proof/Dsa/X86_64/Scrub.lean` proves them): each implementation
 returns with every register it may leave secret cleared, and its whole stack
 zeroed, if it has one (`Impl.Dsa.AArch64.Fn`, with the registers `Fn.clear`;
 the parameter search, whose registers differ with its hash functions, with
-those its code may write, `Impl.Residue.AArch64.scrubOf`).
+those its code may write, `Impl.Scrub.AArch64.scrubOf`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Dsa.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Proof.Ffdh.AArch64.Scrub
+open VG.AArch64 VG.AArch64.Scrub VG.Proof.Ffdh.AArch64.Scrub
 
 theorem validatePublicKeyOk (stack : Nat) :
     ScrubAllOk (Spec.Dsa.validatePublicKeyContract abi stack) stack
@@ -123,7 +123,7 @@ theorem randomSignPrevalidatedOk (stack : Nat) :
 Each function with its cleanup (`Impl.Dsa.AArch64.Fn`), over an arithmetic
 backend `v`: it meets its contract in constant time and returns without
 secret residue (`VerifiedScrubbed`), which is what its registration binds.
-What the cleanup needs of the code (`ScrubAll.scrubSide`) is the backend's
+What the cleanup needs of the code (`Scrub.scrubSide`) is the backend's
 (`Backend.validateScrub` and the others), proved where it is defined. -/
 
 open VG.Proof.Dsa.AArch64 (Backend prevalidatedSignerName keygenCheckName keygenDeriveName)
@@ -132,7 +132,7 @@ open VG.Proof.Dsa.AArch64 (Backend prevalidatedSignerName keygenCheckName keygen
 theorem randomSignPrevalidated (v : Backend) :
     VerifiedScrubbed target (Impl.Dsa.AArch64.Fn.randomSignPrevalidated (prevalidatedSignerName v) v.mul v.stack)
       (Spec.Dsa.randomSignPrevalidatedContract abi (v.stack + 256)) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.randomSignPrevalidatedApi)
+  verifiedScrubbedAll (api := Spec.Dsa.randomSignPrevalidatedApi)
     { code := Impl.Dsa.AArch64.RandomSign.code (prevalidatedSignerName v) (Impl.Dsa.AArch64.PrevalidatedSign.sign v.mul)
       verified := Proof.Dsa.AArch64.random_sign_prevalidated_verified v } _
     (randomSignPrevalidatedOk _) v.randomSignScrub
@@ -141,7 +141,7 @@ theorem randomSignPrevalidated (v : Backend) :
 theorem validatePrivateKey (v : Backend) :
     VerifiedScrubbed target (Impl.Dsa.AArch64.Fn.validatePrivateKey v.mul v.stack)
       (Spec.Dsa.validatePrivateKeyContract abi v.stack) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.validatePrivateKeyApi)
+  verifiedScrubbedAll (api := Spec.Dsa.validatePrivateKeyApi)
     { code := Impl.Dsa.AArch64.PrevalidatedSign.validate v.mul, verified := v.validatePrivateVerified } _
     (validatePrivateKeyOk _) v.validatePrivateScrub
 
@@ -149,7 +149,7 @@ theorem validatePrivateKey (v : Backend) :
 theorem validatePublicKey (v : Backend) :
     VerifiedScrubbed target (Impl.Dsa.AArch64.Fn.validatePublicKey v.mul v.stack)
       (Spec.Dsa.validatePublicKeyContract abi v.stack) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.validatePublicKeyApi)
+  verifiedScrubbedAll (api := Spec.Dsa.validatePublicKeyApi)
     { code := Impl.Dsa.AArch64.Prevalidated.validate v.mul, verified := v.validateVerified } _
     (validatePublicKeyOk _) v.validateScrub
 
@@ -157,7 +157,7 @@ theorem validatePublicKey (v : Backend) :
 theorem verifyPrevalidated (v : Backend) :
     VerifiedScrubbed target (Impl.Dsa.AArch64.Fn.verifyPrevalidated v.mul v.stack)
       (Spec.Dsa.verifyPrevalidatedContract abi v.stack) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.verifyPrevalidatedApi)
+  verifiedScrubbedAll (api := Spec.Dsa.verifyPrevalidatedApi)
     { code := Impl.Dsa.AArch64.Prevalidated.verify v.mul, verified := v.prevalidatedVerified } _
     (verifyPrevalidatedOk _) v.prevalidatedScrub
 
@@ -166,7 +166,7 @@ theorem generateKey (v : Backend) :
     VerifiedScrubbed target
       (Impl.Dsa.AArch64.Fn.generateKey (keygenCheckName v) (keygenDeriveName v) v.mul v.stack)
       (Spec.Dsa.generateKeyContract abi (v.stack + 256)) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.generateKeyApi)
+  verifiedScrubbedAll (api := Spec.Dsa.generateKeyApi)
     { code := Impl.Dsa.AArch64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
         (Impl.Dsa.AArch64.Generate.checkParameters v.mul) (Impl.Dsa.AArch64.Generate.deriveChecked v.mul)
       verified := Proof.Dsa.AArch64.keygen_verified v } _
@@ -176,7 +176,7 @@ theorem generateKey (v : Backend) :
 theorem deriveKey (v : Backend) :
     VerifiedScrubbed target (Impl.Dsa.AArch64.Fn.deriveKey v.mul v.stack)
       (Spec.Dsa.deriveKeyContract abi v.stack) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.deriveKeyApi)
+  verifiedScrubbedAll (api := Spec.Dsa.deriveKeyApi)
     { code := Impl.Dsa.AArch64.Generate.deriveKey v.mul, verified := v.deriveVerified } _
     (deriveKeyOk _) v.deriveScrub
 

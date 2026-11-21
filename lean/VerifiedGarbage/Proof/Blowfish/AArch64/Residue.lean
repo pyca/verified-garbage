@@ -5,8 +5,8 @@ public meta import VerifiedGarbage.Impl.Blowfish.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
 public meta import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
 import VerifiedGarbage.Proof.Framework.AArch64.Clears

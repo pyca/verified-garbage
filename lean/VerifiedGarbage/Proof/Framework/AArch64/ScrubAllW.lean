@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 /-!
 # Scrubbing code without frames that states what it writes (AArch64)
 
-`ScrubAll.withScrubAll` leaves as it is a registration that states how much
+`Scrub.withScrubAll` leaves as it is a registration that states how much
 of a buffer its code writes (`Registration.written`). For code without
 frames, `scrubAll 0` adds only the clearing of registers, which writes no
 memory: the memory on return is the code's, so what the registration states
@@ -15,9 +15,9 @@ of `written` still holds (`scrubAll0_mem`). `withScrubAllW` is
 
 @[expose] public section
 
-namespace VG.AArch64.ScrubAll
+namespace VG.AArch64.Scrub
 
-open VG.AArch64 VG.Impl.Residue.AArch64
+open VG.AArch64 VG.Impl.Scrub.AArch64
 
 theorem retFix_mem {rb : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) {s s' : State} {t : List Leak}
     (h : execBlock isa (retFix rb) s = some (s', t)) : s'.mem = s.mem := by
@@ -77,4 +77,4 @@ def withScrubAllW {api : Api} (r : Unscrubbed api target) (hok : ScrubAllOk r.co
       notWith := r.notWith }
   else r.registration
 
-end VG.AArch64.ScrubAll
+end VG.AArch64.Scrub

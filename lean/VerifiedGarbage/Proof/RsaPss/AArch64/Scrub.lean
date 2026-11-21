@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Ffdh.AArch64.Scrub
 
 The postcondition of `vg_rsa_pss_sign_precomputed` reads the memory on
 return only within `out`, given that `out` holds `n_len` bytes, and that of
-`vg_rsa_pss_verify_precomputed` not at all (`ScrubAll.ScrubAllOk`, as
+`vg_rsa_pss_verify_precomputed` not at all (`Scrub.ScrubAllOk`, as
 x86-64's `Proof/RsaPss/X86_64/Scrub.lean` proves them). Each function as
 emitted (`Impl.RsaPss.AArch64.Fn`), with the tables of the hash functions,
 which it calls indirectly, and any implementation of the RSA operation,
@@ -29,7 +29,7 @@ returns with every register it may write cleared and its whole stack zeroed
 
 namespace VG.Proof.RsaPss.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Proof.Ffdh.AArch64.Scrub
+open VG.AArch64 VG.AArch64.Scrub VG.Proof.Ffdh.AArch64.Scrub
 
 theorem writtenOutcome_of {m₁ m₂ : Mem} {o : Addr} {n : Nat} {r : BitVec 32} {v : Spec.Rsa.Outcome}
     (e : Spec.Rsa.bytesAt m₂ o n = Spec.Rsa.bytesAt m₁ o n) (h : Spec.Rsa.writtenOutcome m₁ o n r v) :

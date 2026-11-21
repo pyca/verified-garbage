@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
 public import VerifiedGarbage.Spec.MlDsa
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa44_pk_tr`, `vg_mldsa65_pk_tr`, `vg_mldsa87_pk_tr`
@@ -38,7 +38,7 @@ end VG.Impl.MlDsa.AArch64.PkTr
 /-! ## The function, as emitted
 
 `vg_mldsa*_pk_tr` is its code above, then its cleanup
-(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+(`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the calling
 convention does not preserve are cleared and the 16 bytes of stack it uses
 are zeroed, so that it returns without secret residue. The registers are
 those its own instructions write, stated here, and those the permutation it
@@ -49,7 +49,7 @@ namespace VG.Impl.MlDsa.AArch64.Fn
 open VG.Spec.MlDsa (Params)
 
 /-- The registers `pk_tr` writes itself. -/
-def pkTrOwn : Impl.Residue.AArch64.Clear :=
+def pkTrOwn : Impl.Scrub.AArch64.Clear :=
   ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x10, .x11, .x16, .x17],
    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v24, .v25, .v30,
    .v31],
@@ -57,6 +57,6 @@ def pkTrOwn : Impl.Residue.AArch64.Clear :=
 
 /-- `vg_mldsa*_pk_tr` for the parameter set `p`, with the permutation `c`. -/
 def pkTr (c : Impl.Sha3.AArch64.Callee) (p : Params) : Prog AArch64.isa :=
-  Impl.Residue.AArch64.scrubAll 16 0 (pkTrOwn.union c.clear) (PkTr.pkTrWith c p)
+  Impl.Scrub.AArch64.scrubAll 16 0 (pkTrOwn.union c.clear) (PkTr.pkTrWith c p)
 
 end VG.Impl.MlDsa.AArch64.Fn

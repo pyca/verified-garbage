@@ -1091,27 +1091,27 @@ theorem decrypt_verified (v : BlocksImpl) :
 (`Impl.AesCfb8.AArch64.Fn`), around an implementation `v` of the block
 functions: each meets its contract in constant time and returns without
 secret residue (`VerifiedScrubbed`), which is what its registration binds.
-What the cleanup needs of the code (`ScrubAll.scrubSide`) is proved of each
+What the cleanup needs of the code (`Scrub.scrubSide`) is proved of each
 function's own instructions here, once, with code that does nothing in the
 place of the block function, and of each implementation where it is defined
 (`BlocksImpl.encScrub`). -/
 
 private theorem encrypt_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch64.Blocks)
-    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true)
-    (hc : AArch64.ScrubAll.sideAll p b.code = true) :
-    AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.encrypt b) = true := by
-  simp only [Impl.AesCfb8.AArch64.encrypt, Impl.AesCfb8.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
+    (h0 : AArch64.Scrub.sideAll p (Impl.AesCfb8.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true)
+    (hc : AArch64.Scrub.sideAll p b.code = true) :
+    AArch64.Scrub.sideAll p (Impl.AesCfb8.AArch64.encrypt b) = true := by
+  simp only [Impl.AesCfb8.AArch64.encrypt, Impl.AesCfb8.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.Scrub.sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem encrypt_own :
-    AArch64.ScrubAll.calleeSide (Impl.AesCfb8.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
+    AArch64.Scrub.calleeSide (Impl.AesCfb8.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
   kernel_rfl
 
 theorem encrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
-    AArch64.ScrubAll.scrubSide (Impl.AesCfb8.AArch64.encrypt v.enc) 0 0 (Impl.AesCfb8.AArch64.Fn.own.union v.enc.clear) [] = true := by
-  refine AArch64.ScrubAll.scrubSide_union0 ?_ (by decide)
-    (encrypt_all v.enc (AArch64.ScrubAll.sideAll_union_left encrypt_own)
-      (AArch64.ScrubAll.sideAll_union_right v.encScrub)) (by decide)
+    AArch64.Scrub.scrubSide (Impl.AesCfb8.AArch64.encrypt v.enc) 0 0 (Impl.AesCfb8.AArch64.Fn.own.union v.enc.clear) [] = true := by
+  refine AArch64.Scrub.scrubSide_union0 ?_ (by decide)
+    (encrypt_all v.enc (AArch64.Scrub.sideAll_union_left encrypt_own)
+      (AArch64.Scrub.sideAll_union_right v.encScrub)) (by decide)
   simp only [Impl.AesCfb8.AArch64.encrypt, Impl.AesCfb8.AArch64.body, Impl.AesCbc.AArch64.whole, Code.aarch64Depth, Proof.Aes.AArch64.depth_of_noFrames v.encNoFrames]
   decide
 
@@ -1119,26 +1119,26 @@ theorem encrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
 theorem encrypt_scrubbed (v : Proof.Aes.AArch64.BlocksImpl) :
     VerifiedScrubbed AArch64.target (Impl.AesCfb8.AArch64.Fn.encrypt v.enc)
       (Spec.Cfb8.aesEncryptContract AArch64.abi 0) 0 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Cfb8.aesEncryptApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Cfb8.aesEncryptApi)
     { code := Impl.AesCfb8.AArch64.encrypt v.enc, verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v) } _
     Proof.Aes.AArch64.ModesScrub.cfb8EncryptOk (encrypt_side v)
 
 private theorem decrypt_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch64.Blocks)
-    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true)
-    (hc : AArch64.ScrubAll.sideAll p b.code = true) :
-    AArch64.ScrubAll.sideAll p (Impl.AesCfb8.AArch64.decrypt b) = true := by
-  simp only [Impl.AesCfb8.AArch64.decrypt, Impl.AesCfb8.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
+    (h0 : AArch64.Scrub.sideAll p (Impl.AesCfb8.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true)
+    (hc : AArch64.Scrub.sideAll p b.code = true) :
+    AArch64.Scrub.sideAll p (Impl.AesCfb8.AArch64.decrypt b) = true := by
+  simp only [Impl.AesCfb8.AArch64.decrypt, Impl.AesCfb8.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.Scrub.sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem decrypt_own :
-    AArch64.ScrubAll.calleeSide (Impl.AesCfb8.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
+    AArch64.Scrub.calleeSide (Impl.AesCfb8.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesCfb8.AArch64.Fn.own = true := by
   kernel_rfl
 
 theorem decrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
-    AArch64.ScrubAll.scrubSide (Impl.AesCfb8.AArch64.decrypt v.enc) 0 0 (Impl.AesCfb8.AArch64.Fn.own.union v.enc.clear) [] = true := by
-  refine AArch64.ScrubAll.scrubSide_union0 ?_ (by decide)
-    (decrypt_all v.enc (AArch64.ScrubAll.sideAll_union_left decrypt_own)
-      (AArch64.ScrubAll.sideAll_union_right v.encScrub)) (by decide)
+    AArch64.Scrub.scrubSide (Impl.AesCfb8.AArch64.decrypt v.enc) 0 0 (Impl.AesCfb8.AArch64.Fn.own.union v.enc.clear) [] = true := by
+  refine AArch64.Scrub.scrubSide_union0 ?_ (by decide)
+    (decrypt_all v.enc (AArch64.Scrub.sideAll_union_left decrypt_own)
+      (AArch64.Scrub.sideAll_union_right v.encScrub)) (by decide)
   simp only [Impl.AesCfb8.AArch64.decrypt, Impl.AesCfb8.AArch64.body, Impl.AesCbc.AArch64.whole, Code.aarch64Depth, Proof.Aes.AArch64.depth_of_noFrames v.encNoFrames]
   decide
 
@@ -1146,7 +1146,7 @@ theorem decrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
 theorem decrypt_scrubbed (v : Proof.Aes.AArch64.BlocksImpl) :
     VerifiedScrubbed AArch64.target (Impl.AesCfb8.AArch64.Fn.decrypt v.enc)
       (Spec.Cfb8.aesDecryptContract AArch64.abi 0) 0 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Cfb8.aesDecryptApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Cfb8.aesDecryptApi)
     { code := Impl.AesCfb8.AArch64.decrypt v.enc, verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v) } _
     Proof.Aes.AArch64.ModesScrub.cfb8DecryptOk (decrypt_side v)
 

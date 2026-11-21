@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.X448.AArch64.Fn
 public meta import VerifiedGarbage.Impl.X448.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
@@ -36,7 +36,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 the window's bytes (`rtaintG`) finds may differ between the two runs on
 return. It clears the registers the ladder leaves secret, the high halves of `v8`–`v15`, the upper half of
 `x0` (`withRet 32`) and the flags, then zeroes that granule
-(`withScrubG 16 [0]`). Its postcondition reads the memory on return only
+(`scrubSel 16 [0]`). Its postcondition reads the memory on return only
 within `out` (`exchangePost_local`).
 -/
 
@@ -44,7 +44,7 @@ within `out` (`exchangePost_local`).
 
 namespace VG.Proof.X448.AArch64.ExchangeResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-! ## The postcondition reads only `out` -/
 
@@ -84,19 +84,12 @@ theorem exchangeScrubOk : RTaintF.ScrubOk (Spec.X448.exchangeContract AArch64.ab
 /-- `vg_x448_exchange`. -/
 abbrev exchangeCode : Prog isa := Impl.X448.AArch64.Fn.exchange
 
-theorem exchangeCode_verified : Verified AArch64.target exchangeCode (Spec.X448.exchangeContract AArch64.abi 16) :=
-  RTaintG.Verified.withScrubG exchangeBase_verified ⟨by decide, by decide, by decide⟩ (by decide) exchangeScrubOk
-
-theorem exchangeCode_noResidue : NoResidue exchangeCode (Spec.X448.exchangeContract AArch64.abi 16) 32 :=
-  noResidue_withScrubG (P₀ := 0) exchangeBase_verified ⟨by decide, by decide, by decide⟩ exchangeScrubOk.sp
-    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
-
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.X448.AArch64.ExchangeResidue.exchangeCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.X448.AArch64.Fn.exchange
       (Spec.X448.exchangeContract AArch64.abi 16) 32 :=
-  ⟨Proof.X448.AArch64.ExchangeResidue.exchangeCode_verified,
-    Proof.X448.AArch64.ExchangeResidue.exchangeCode_noResidue⟩
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) exchangeBase_verified ⟨by decide, by decide, by decide⟩ (by decide) exchangeScrubOk
+    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.X448.AArch64.ExchangeResidue

@@ -13,17 +13,17 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 For every curve (`Spec.EcKey.Instance`), the postconditions of
 `vg_ec_<name>_public_key`, `_compress_public_key` and `_decompress_public_key`,
 and of `vg_ecdh_<name>`, read the memory on return only within `out`, and that
-of `vg_ecdsa_<name>_verify` does not read it (`ScrubAll.ScrubAllOk`, as
+of `vg_ecdsa_<name>_verify` does not read it (`Scrub.ScrubAllOk`, as
 x86-64's `Proof/EcKey/X86_64/Scrub/Out.lean` proves them): each
 implementation returns with every register it may leave secret cleared, and
-its whole stack zeroed, if it has one (`ScrubAll.withScrubAll`).
+its whole stack zeroed, if it has one (`Scrub.withScrubAll`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.EcKey.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.EcKey
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.EcKey
 
 /-- The bytes at `p`, of `n`, read the memory only within `⟨p, n⟩`. -/
 theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n k : Nat} (hk : n ≤ k)

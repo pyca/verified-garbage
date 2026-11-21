@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Impl.Sm4Gcm.AArch64
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-!
 # SM4-GCM on AArch64: the functions as emitted
 
 Each function is its code in a frame that holds its working space, then its
-cleanup (`Impl.Residue.AArch64.scrubAll`): the registers it writes that the
+cleanup (`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the
 calling convention does not preserve are cleared, and the stack it uses is
 zeroed, so that it returns without secret residue
 (`Proof/AesGcm/AArch64/GhashImpls.lean`).
@@ -29,7 +29,7 @@ AES-GCM's (`Impl.AesGcm.AArch64.Fn.streamInit`, `streamAad`).
 namespace VG.Impl.Sm4Gcm.AArch64
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64 (scrubAll)
+open VG.Impl.Scrub.AArch64 (scrubAll)
 open VG.Impl.StackScratch.AArch64 (withStackScratch withStackArgScratch)
 open VG.Impl.AesGcm.AArch64.Fn (own)
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.SideFill
-public import VerifiedGarbage.Impl.Residue.AArch64.WritesL
+public import VerifiedGarbage.Impl.Scrub.AArch64.WritesL
 
 /-! # The cleanup of code that calls through tables, and of code with large frames, on AArch64
 
@@ -16,9 +16,9 @@ holes filled by code without indirect calls. -/
 
 @[expose] public section
 
-namespace VG.AArch64.ScrubAll
+namespace VG.AArch64.Scrub
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64
+open VG VG.AArch64 VG.Impl.Scrub.AArch64
 
 /-- `verifiedScrubbedOf` for `4080 < W < 8176` bytes of stack. -/
 theorem verifiedScrubbedOfL {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv : Verified target c k)
@@ -147,4 +147,4 @@ theorem table_depth_of_fill2 {c e a b : Prog isa} {ts : List (String × List FnT
   rw [inames_fill2 (inames_of_noIcall (noIcall_of_sideAll ha)) (inames_of_noIcall (noIcall_of_sideAll hb))]
   exact ht
 
-end VG.AArch64.ScrubAll
+end VG.AArch64.Scrub

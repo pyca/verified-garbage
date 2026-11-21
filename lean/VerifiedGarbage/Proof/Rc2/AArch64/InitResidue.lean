@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Rc2.AArch64.Fn
 public meta import VerifiedGarbage.Impl.Rc2.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Chained
@@ -29,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 key expansion, whose frame lies below it. The analysis of the window's bytes
 (`rtaintG`) finds that only the lowest 16-byte granule of its 592-byte window
 may differ between the two runs on return. It clears its registers, then
-zeroes that granule (`withScrubG 592 [0]`); its postcondition reads the
+zeroes that granule (`scrubSel 592 [0]`); its postcondition reads the
 memory on return only within its buffers (`Proof.Rc2.cbcInitPostOut_local`).
 -/
 
@@ -37,7 +37,7 @@ memory on return only within its buffers (`Proof.Rc2.cbcInitPostOut_local`).
 
 namespace VG.Proof.Rc2.AArch64.InitResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-- `vg_rc2_cbc_init`, before its granules [0] are zeroed. -/
 abbrev cbcInitBase : Prog isa := Impl.Rc2.AArch64.Fn.cbcInitBase
@@ -52,19 +52,12 @@ theorem cbcInitScrubOk : RTaintF.ScrubOk (Spec.Rc2.cbcInitContract AArch64.abi 5
 /-- `vg_rc2_cbc_init`. -/
 abbrev cbcInitCode : Prog isa := Impl.Rc2.AArch64.Fn.cbcInit
 
-theorem cbcInitCode_verified : Verified AArch64.target cbcInitCode (Spec.Rc2.cbcInitContract AArch64.abi 592) :=
-  RTaintG.Verified.withScrubG cbcInitBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cbcInitScrubOk
-
-theorem cbcInitCode_noResidue : NoResidue cbcInitCode (Spec.Rc2.cbcInitContract AArch64.abi 592) 32 :=
-  noResidue_withScrubG (P₀ := 0) cbcInitBase_verified ⟨by decide, by decide, by decide⟩ cbcInitScrubOk.sp
-    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
-
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Rc2.AArch64.InitResidue.cbcInitCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Rc2.AArch64.Fn.cbcInit
       (Spec.Rc2.cbcInitContract AArch64.abi 592) 32 :=
-  ⟨Proof.Rc2.AArch64.InitResidue.cbcInitCode_verified,
-    Proof.Rc2.AArch64.InitResidue.cbcInitCode_noResidue⟩
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) cbcInitBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cbcInitScrubOk
+    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.Rc2.AArch64.InitResidue

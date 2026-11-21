@@ -66,7 +66,7 @@ returns without secret residue. -/
 theorem scrubbed (hI : Proof.Weierstrass.AArch64.InvSounds) :
     VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.compressBrainpoolP384r1
       (Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyContract abi 0) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi)
     { code := code, verified := verified hI } _
     (Proof.EcKey.AArch64.Scrub.compressOk _) (by dsimp only; lit_decide)
 

@@ -16,13 +16,13 @@ public import VerifiedGarbage.Impl.Bignum.AArch64.ProductDispatch
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightCall
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Caller
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 
 /-!
 # FFDH on AArch64, as emitted
 
 Each function with the functions it calls and its cleanup
-(`Impl.Residue.AArch64.scrubOf`: the registers its code may write cleared,
+(`Impl.Scrub.AArch64.scrubOf`: the registers its code may write cleared,
 and the stack it uses zeroed), so that it returns without secret residue.
 -/
 
@@ -30,7 +30,7 @@ and the stack it uses zeroed), so that it returns without secret residue.
 
 namespace VG.Impl.Ffdh.AArch64.Fn
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64
+open VG VG.AArch64 VG.Impl.Scrub.AArch64
 
 /-- The selection from a window of 32 powers, with vector instructions when
 the modulus is whole 64-byte blocks (RSA's). -/

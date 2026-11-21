@@ -202,7 +202,7 @@ theorem pk_scrubbed (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AAr
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.publicKeyP521
       (Spec.EcKey.P521.inst.publicKeyContract (AArch64.abi.withConsts p521.combConsts)) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.P521.publicKeyApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P521.publicKeyApi)
     { code := publicKeyP521, verified := pk_verified hL hI hT } _
     (Proof.EcKey.AArch64.Scrub.publicKeyOk_consts _ _ _) (by dsimp only; lit_decide)
 

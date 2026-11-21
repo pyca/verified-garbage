@@ -7,8 +7,8 @@ public import VerifiedGarbage.Proof.Cast5.AArch64.TblEcbVerified
 public meta import VerifiedGarbage.Proof.Cast5.AArch64.TblEcbVerified
 public import VerifiedGarbage.Proof.Cast5.Rounds
 public meta import VerifiedGarbage.Proof.Cast5.Rounds
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
 import VerifiedGarbage.Proof.Framework.AArch64.Clears

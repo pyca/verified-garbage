@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 
 /-!
 # Argon2 H′ on ARM64
@@ -33,7 +33,7 @@ structure Hash where
   them before returning, with those its own instructions write. The proofs
   hold it to their code (`Proof.Argon2.AArch64.HPrime.Backend.initScrub`,
   `updateScrub`, `finalizeScrub`). -/
-  clear : Impl.Residue.AArch64.Clear
+  clear : Impl.Scrub.AArch64.Clear
 
 
 def saved : List (Reg × Nat) :=

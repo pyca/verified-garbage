@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.AArch64.MemEffect
+public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -20,7 +21,7 @@ and keeps every byte that agreed; of a secret one, the analysis forgets the
 whole mask. A frame's release keeps them: the unknowns replace a byte in
 both runs alike. So at the end, the bytes of the window that may differ
 are those whose bit is clear, and only their 16-byte granules need zeroing
-(`withScrubG`).
+(`scrubSel`).
 -/
 
 @[expose] public section
@@ -819,7 +820,7 @@ def rtaintG (W : Nat) : VG.TaintCT isa where
 namespace RTaintG
 
 open VG.AArch64 VG.AArch64.Residue VG.AArch64.MemEffect VG.AArch64.RTaintF VG.AArch64.Scrub
-  VG.Impl.Residue.AArch64
+  VG.Impl.Scrub.AArch64
 
 /-! ## Clearing only the granules that may differ -/
 
@@ -904,12 +905,12 @@ mask `P₀` of the window's bytes the two runs agree on at entry) ends in
 `doneG W r ks`, followed by the zeroing of the granules `ks` of the `W` bytes
 below the stack pointer, returns without secret residue, with an `r`-bit
 result. -/
-theorem noResidue_withScrubG {c : Prog isa} {k : Contract isa} {r W : Nat} {ks : List Nat} {P₀ : Nat}
+theorem noResidue_scrubSel {c : Prog isa} {k : Contract isa} {r W : Nat} {ks : List Nat} {P₀ : Nat}
     (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
     (hsp : ∀ s, k.pre s → W ≤ s.sp.toNat)
     (hP₀ : ∀ s₁ s₂, Outside 0 s₁ s₂ → PAgree W (wbase s₂.sp 0 W) P₀ s₁.mem s₂.mem)
     (h : ∃ hc, ((rtaintG W).check (RTaintB.init, some (0, P₀, [])) c hc).any (doneG W r ks) = true) :
-    NoResidue (withScrubG W ks c) k r := by
+    NoResidue (scrubSel W ks c) k r := by
   intro s₁ s₂ t₁ t₂ s₁'' s₂'' h₁ h₂ hp ho hu e₁ e₂
   obtain ⟨hc, h⟩ := h
   cases hτ : (rtaintG W).check (RTaintB.init, some (0, P₀, [])) c hc with
@@ -1024,10 +1025,10 @@ theorem noResidue_withScrubG {c : Prog isa} {k : Contract isa} {r W : Nat} {ks :
         omega
 
 /-- The zeroing of the granules `ks` keeps code verified (see `RTaintF.Verified.withScrubK`). -/
-theorem Verified.withScrubG {c : Prog isa} {k : Contract isa} {W : Nat} {ks : List Nat}
+theorem Verified.scrubSel {c : Prog isa} {k : Contract isa} {W : Nat} {ks : List Nat}
     (h : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
     (hks : ks.all (fun k => decide (16 * k + 16 ≤ W)) = true) (hk : ScrubOk k W) :
-    Verified target (withScrubG W ks c) k := by
+    Verified target (scrubSel W ks c) k := by
   have hks' : ∀ k ∈ ks, 16 * k + 16 ≤ W := by simpa using hks
   cases ks with
   | nil => exact h
@@ -1062,14 +1063,14 @@ theorem Verified.withScrubG {c : Prog isa} {k : Contract isa} {W : Nat} {ks : Li
     rw [(Exec.det b₁ x₁).1, (Exec.det b₂ x₂).1, p₁.2.1, p₂.2.1,
       hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂, hk.pub s₁ s₂ hp]
 
-/-- `noResidue_withScrubG` with no granule left to zero: the code alone,
+/-- `noResidue_scrubSel` with no granule left to zero: the code alone,
 from no byte of the window known to agree. -/
 theorem noResidue_of_doneG {c : Prog isa} {k : Contract isa} {r W : Nat}
     (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
     (hsp : ∀ s, k.pre s → W ≤ s.sp.toNat)
     (h : ∃ hc, ((rtaintG W).check (RTaintB.init, some (0, 0, [])) c hc).any (doneG W r []) = true) :
     NoResidue c k r :=
-  noResidue_withScrubG (ks := []) (P₀ := 0) hv hW hsp (fun _ _ _ _ _ hb => by simp at hb) h
+  noResidue_scrubSel (ks := []) (P₀ := 0) hv hW hsp (fun _ _ _ _ _ hb => by simp at hb) h
 
 section
 variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
@@ -1083,5 +1084,21 @@ theorem sp_of_pre (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (hW : 0 
   rcases hs.1 with h0 | h0 <;> omega
 
 end
+
+
+/-- `c` with its cleanup of only the granules `ks` of the `W` bytes below the
+stack pointer (`scrubSel`, after the clears, `withClears`) meets `c`'s
+contract in constant time and returns without secret residue, when the
+residue analysis of the window (`rtaintG`) ends in `doneG W r ks`: the
+theorem about the code that a registration binds, pairing
+`Verified.scrubSel` and `noResidue_scrubSel`. -/
+theorem _root_.VG.AArch64.Scrub.verifiedScrubbedSel {c : Prog isa} {k : Contract isa}
+    {r W : Nat} {ks : List Nat} {P₀ : Nat}
+    (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
+    (hks : ks.all (fun k => decide (16 * k + 16 ≤ W)) = true) (hk : ScrubOk k W)
+    (hP₀ : ∀ s₁ s₂, Outside 0 s₁ s₂ → PAgree W (wbase s₂.sp 0 W) P₀ s₁.mem s₂.mem)
+    (h : ∃ hc, ((rtaintG W).check (RTaintB.init, some (0, P₀, [])) c hc).any (doneG W r ks) = true) :
+    VerifiedScrubbed target (scrubSel W ks c) k r :=
+  ⟨Verified.scrubSel hv hW hks hk, noResidue_scrubSel hv hW hk.sp hP₀ h⟩
 
 end VG.AArch64.RTaintG

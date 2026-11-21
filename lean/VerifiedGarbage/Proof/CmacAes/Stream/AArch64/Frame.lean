@@ -1480,10 +1480,10 @@ theorem agree_of {m₁ m₂ : Mem} {p : Addr} {L n : Nat} (h : ∀ a, Region.Con
 within the state's 304 bytes (`repr_congr_304`, as x86-64's
 `Stream/X86_64/Scrub.lean` proves it), so it returns with every register it
 may leave secret cleared and its whole frame zeroed
-(`Impl.Residue.AArch64.scrubAll`, in the function as emitted). -/
+(`Impl.Scrub.AArch64.scrubAll`, in the function as emitted). -/
 theorem absorbOk (W : Nat) (hW : 0 < W := by decide) :
-    ScrubAll.ScrubAllOk (Spec.Cmac.aesAbsorbContract abi W) W (Spec.Cmac.aesAbsorbSig.retBits abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesAbsorbSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    Scrub.ScrubAllOk (Spec.Cmac.aesAbsorbContract abi W) W (Spec.Cmac.aesAbsorbSig.retBits abi.ptrBits) :=
+  Scrub.scrubAllOk_regs (sig := Spec.Cmac.aesAbsorbSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
     | [st, _, _, _, _], _ =>
@@ -1493,23 +1493,23 @@ theorem absorbOk (W : Nat) (hW : 0 < W := by decide) :
 
 /-- `absorbOk` for the frame of `absorb_framed`. -/
 theorem absorbOk_framed (v : Proof.CmacAes.AArch64.UpdateImpl) :
-    ScrubAll.ScrubAllOk (Spec.Cmac.aesAbsorbContract abi (64 + v.scratch)) (64 + v.scratch)
+    Scrub.ScrubAllOk (Spec.Cmac.aesAbsorbContract abi (64 + v.scratch)) (64 + v.scratch)
       (Spec.Cmac.aesAbsorbSig.retBits abi.ptrBits) :=
   absorbOk _ (by omega_using [])
 
 /-- `vg_cmac_aes_init`'s postcondition reads the memory on return only within
 the state (`initPostOut_local`), so it returns with every register it may
-leave secret cleared and its whole frame zeroed (`Impl.Residue.AArch64.scrubAll`, in the function as emitted). -/
+leave secret cleared and its whole frame zeroed (`Impl.Scrub.AArch64.scrubAll`, in the function as emitted). -/
 theorem initOk (W : Nat) (hW : 0 < W) :
-    ScrubAll.ScrubAllOk (Spec.Cmac.aesInitContract abi W) W (Spec.Cmac.aesInitSig.retBits abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesInitSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    Scrub.ScrubAllOk (Spec.Cmac.aesInitContract abi W) W (Spec.Cmac.aesInitSig.retBits abi.ptrBits) :=
+  Scrub.scrubAllOk_regs (sig := Spec.Cmac.aesInitSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     (Proof.CmacAes.Stream.initPostOut_local _)
 
 /-- `vg_cmac_aes_finish`'s postcondition reads the memory on return only within
 `out` (`finishPostOut_local`), as `initOk`. -/
 theorem finishOk (W : Nat) (hW : 0 < W) :
-    ScrubAll.ScrubAllOk (Spec.Cmac.aesFinishContract abi W) W (Spec.Cmac.aesFinishSig.retBits abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs (sig := Spec.Cmac.aesFinishSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    Scrub.ScrubAllOk (Spec.Cmac.aesFinishContract abi W) W (Spec.Cmac.aesFinishSig.retBits abi.ptrBits) :=
+  Scrub.scrubAllOk_regs (sig := Spec.Cmac.aesFinishSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     (Proof.CmacAes.Stream.finishPostOut_local _)
 
 /-! ## The functions, as emitted
@@ -1518,12 +1518,12 @@ theorem finishOk (W : Nat) (hW : 0 < W) :
 cleanup (`Impl.CmacAes.Stream.AArch64.Fn`): each meets its contract in
 constant time and returns without secret residue (`VerifiedScrubbed`), which
 is what its registration binds. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+(`Scrub.scrubSide`) is proved of each function's own instructions here,
 once, with code that does nothing in the place of the functions it calls,
 and of each implementation where it is defined (`UpdateImpl.scrub`,
 `Ctr32Impl.scrub`, `Ctr32Impl.expandScrub`). -/
 
-open VG.AArch64.ScrubAll
+open VG.AArch64.Scrub
 
 private theorem init_all {p : Instr → Bool} (B : Nat) (e : Impl.Aes.AArch64.ExpandKey)
     (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
@@ -1616,7 +1616,7 @@ theorem init_scrubbed (v : Ctr32Impl) :
       (Spec.Cmac.aesInitContract abi (32 + initW v)) 0 := by
   unfold Impl.CmacAes.Stream.AArch64.Fn.init
   rw [v.scratch_eq]
-  exact verifiedScrubbed (api := Spec.Cmac.aesInitApi)
+  exact verifiedScrubbedAll (api := Spec.Cmac.aesInitApi)
     { code := Impl.StackScratch.AArch64.withStackScratch (32 + initW v) .x3 (init v.expand v.callee v.suffix)
       verified := init_framed v
       consts := []
@@ -1630,7 +1630,7 @@ theorem absorb_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
       (Spec.Cmac.aesAbsorbContract abi (64 + v.scratch)) 0 := by
   unfold Impl.CmacAes.Stream.AArch64.Fn.absorb
   rw [v.scratch_eq]
-  exact verifiedScrubbed (api := Spec.Cmac.aesAbsorbApi)
+  exact verifiedScrubbedAll (api := Spec.Cmac.aesAbsorbApi)
     { code := Impl.StackScratch.AArch64.withStackScratch (64 + v.scratch) .x5 (absorb v.callee)
       verified := absorb_framed v
       consts := []
@@ -1643,7 +1643,7 @@ theorem finish_scrubbed (v : Ctr32Impl) :
       (Spec.Cmac.aesFinishContract abi (16 + finW v)) 0 := by
   unfold Impl.CmacAes.Stream.AArch64.Fn.finish
   rw [v.scratch_eq]
-  exact verifiedScrubbed (api := Spec.Cmac.aesFinishApi)
+  exact verifiedScrubbedAll (api := Spec.Cmac.aesFinishApi)
     { code := Impl.StackScratch.AArch64.withStackScratch (16 + finW v) .x4 (finish v.callee v.suffix)
       verified := finish_framed v
       consts := []

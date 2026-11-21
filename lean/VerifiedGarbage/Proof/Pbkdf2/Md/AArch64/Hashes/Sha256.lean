@@ -201,31 +201,31 @@ contract in constant time and returns without secret residue. -/
 theorem update_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha256.AArch64.Stream.Fn.update v.name v.code)
       (Spec.Sha256.updateContract AArch64.abi (16 + 160)) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (Proof.Sha256.AArch64.Shared.update_of v.update_verified)
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha256.updateSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.updatePost_out _))
+    (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha256.updateSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.updatePost_out _))
     (by decide) (depth_frame_le (mdUpdate_depth _ _ _ v.updateDepth))
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl (mdUpdate_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdUpdate_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
 
 /-- `Impl.Sha256.AArch64.Stream.Fn.finalize`, the function as emitted, cleanup included: it meets its
 contract in constant time and returns without secret residue. -/
 theorem finalize_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha256.AArch64.Stream.Fn.finalize v.name v.code)
       (Spec.Sha256.finalizeContract AArch64.abi (16 + 160)) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (Proof.Sha256.AArch64.Shared.finalize_of v.finalize_verified)
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha256.finalizeSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.finalizePost_out _))
+    (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha256.finalizeSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.finalizePost_out _))
     (by decide) (depth_frame_le (mdFinalize_depth _ _ _ v.finalizeDepth))
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
 
 /-- `Impl.Sha256.AArch64.Stream.Fn.digest256`, the function as emitted, cleanup included: it meets its
 contract in constant time and returns without secret residue. -/
 theorem digest256_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha256.AArch64.Stream.Fn.digest256 v.name v.code)
       (Spec.Sha256.digestContract AArch64.abi 32 Spec.Sha256.hash Proof.Sha256.AArch64.OneShot.stack) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     ((v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape.toD v.oneShot256).of_implies (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.hash_take))
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 32)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.digestPost_out _ _ _ (by decide)))
+    (AArch64.Scrub.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 32)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.digestPost_out _ _ _ (by decide)))
     (by decide) (mdDigest_depth _ _ _ _ (by decide) v.noFrames)
     (mdDigest_side _ _ _ (by kernel_rfl) v.side) (Or.inl rfl)
 

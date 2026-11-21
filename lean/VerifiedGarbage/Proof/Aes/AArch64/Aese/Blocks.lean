@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Residue
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Impl.Residue.AArch64
+meta import VerifiedGarbage.Impl.Scrub.AArch64
 meta import VerifiedGarbage.TCB.AArch64.Residue
 meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -1081,11 +1081,11 @@ def blocksLeft : List VReg :=
    .v24, .v25, .v26, .v27, .v28, .v29, .v30]
 
 theorem encryptBlocks_noResidue (k : Contract isa) :
-    NoResidue (Impl.Residue.AArch64.withClears [] blocksLeft none encryptBlocks) k 0 :=
+    NoResidue (Impl.Scrub.AArch64.withClears [] blocksLeft none encryptBlocks) k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
 theorem decryptBlocks_noResidue (k : Contract isa) :
-    NoResidue (Impl.Residue.AArch64.withClears [] blocksLeft none decryptBlocks) k 0 :=
+    NoResidue (Impl.Scrub.AArch64.withClears [] blocksLeft none decryptBlocks) k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
 end VG.Proof.Aes.AArch64.Aese

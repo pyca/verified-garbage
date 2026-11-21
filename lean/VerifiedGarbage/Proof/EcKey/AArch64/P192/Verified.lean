@@ -268,7 +268,7 @@ returns without secret residue. -/
 theorem pk_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.InvSounds) :
     VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.publicKeyP192
       (Spec.EcKey.P192.inst.publicKeyContract AArch64.abi) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.P192.publicKeyApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P192.publicKeyApi)
     { code := publicKeyP192, verified := pk_verified hL hI } _
     (Proof.EcKey.AArch64.Scrub.publicKeyOk _) (by dsimp only; lit_decide)
 

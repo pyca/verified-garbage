@@ -1013,18 +1013,18 @@ variable (v : Proof.Sha512.AArch64.Compress)
 abbrev dgRaw : Prog isa :=
   Proof.Sha512.AArch64.oneShotWith (Impl.MdStream.AArch64.out64 8) Spec.Sha512.H0_512 v.suffix v.code
 
-/-- `vg_sha512_digest` as it is emitted (`AArch64.ScrubAll.withScrubAll`): the
+/-- `vg_sha512_digest` as it is emitted (`AArch64.Scrub.withScrubAll`): the
 digest, then the registers it may write cleared and its frame zeroed. -/
 abbrev dgCode : Prog isa :=
-  VG.Impl.Residue.AArch64.scrubAll Proof.Sha512.AArch64.OneShot.stack 0
-    (VG.Impl.Residue.AArch64.Clear.of (dgRaw v)) (dgRaw v)
+  VG.Impl.Scrub.AArch64.scrubAll Proof.Sha512.AArch64.OneShot.stack 0
+    (VG.Impl.Scrub.AArch64.Clear.of (dgRaw v)) (dgRaw v)
 
 abbrev dgK : Contract isa :=
   Spec.Sha512.digestContract AArch64.abi 64 Spec.Sha512.sha512 Proof.Sha512.AArch64.OneShot.stack
 
 /-- The digest's postcondition reads the memory on return only within its output. -/
-theorem dgOk : AArch64.ScrubAll.ScrubAllOk dgK Proof.Sha512.AArch64.OneShot.stack 0 :=
-  AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha512.digestSig 64) (by decide) (by decide) (Nat.le_refl _)
+theorem dgOk : AArch64.Scrub.ScrubAllOk dgK Proof.Sha512.AArch64.OneShot.stack 0 :=
+  AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha512.digestSig 64) (by decide) (by decide) (Nat.le_refl _)
     (Proof.Sha512.digestPost_out _ _ _ (by decide))
 
 /-- The digest never writes PSTATE.DIT: its own code does not, and `v`'s
@@ -1039,11 +1039,11 @@ theorem dgRaw_noDit : (dgRaw v).all (fun i => !i.writesDit) = true := by
 /-- Nor does the scrubbing after it. -/
 theorem dg_noDit : (dgCode v).all (fun i => !i.writesDit) = true := by
   have hn := dgRaw_noDit v
-  show Code.all (fun i => !i.writesDit) (.seq (VG.Impl.Residue.AArch64.withRet 0
-    (.seq (dgRaw v) (.block (VG.Impl.Residue.AArch64.clearsOf _))))
-    (VG.Impl.Residue.AArch64.scrubTailG 896 (List.range 56))) = true
-  simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.all, hn,
-    Bool.true_and, VG.Impl.Residue.AArch64.clearsOf, List.all_append, List.all_map, Function.comp_def]
+  show Code.all (fun i => !i.writesDit) (.seq (VG.Impl.Scrub.AArch64.withRet 0
+    (.seq (dgRaw v) (.block (VG.Impl.Scrub.AArch64.clearsOf _))))
+    (VG.Impl.Scrub.AArch64.scrubTailG 896 (List.range 56))) = true
+  simp only [VG.Impl.Scrub.AArch64.withRet, VG.Impl.Scrub.AArch64.scrubTailG, Code.all, hn,
+    Bool.true_and, VG.Impl.Scrub.AArch64.clearsOf, List.all_append, List.all_map, Function.comp_def]
   simp [Instr.writesDit]
   decide
 
@@ -1053,7 +1053,7 @@ theorem dgRaw_verified : Verified AArch64.target (dgRaw v) dgK :=
       List.take_of_length_le (Nat.le_of_eq (VG.Proof.Hmac.Generic.Common.finalHash_length _ m)))
 
 theorem dg_verified : Verified AArch64.target (dgCode v) dgK :=
-  AArch64.ScrubAll.Verified.scrubAll (VG.Impl.Residue.AArch64.Clear.of_wf _) (dgRaw_verified v)
+  AArch64.Scrub.Verified.scrubAll (VG.Impl.Scrub.AArch64.Clear.of_wf _) (dgRaw_verified v)
     (by decide) (.inl rfl) dgOk
 
 theorem dgRaw_depth : (dgRaw v).aarch64Depth ≤ 56 := by
@@ -1070,10 +1070,10 @@ theorem dgRaw_depth : (dgRaw v).aarch64Depth ≤ 56 := by
 /-- The scrubbing's frame is the digest's: 56 units. -/
 theorem dg_depth : (dgCode v).aarch64Depth ≤ 56 := by
   have hl := dgRaw_depth v
-  show Code.aarch64Depth (.seq (VG.Impl.Residue.AArch64.withRet 0
-    (.seq (dgRaw v) (.block (VG.Impl.Residue.AArch64.clearsOf _))))
-    (VG.Impl.Residue.AArch64.scrubTailG 896 (List.range 56))) ≤ 56
-  simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.aarch64Depth,
+  show Code.aarch64Depth (.seq (VG.Impl.Scrub.AArch64.withRet 0
+    (.seq (dgRaw v) (.block (VG.Impl.Scrub.AArch64.clearsOf _))))
+    (VG.Impl.Scrub.AArch64.scrubTailG 896 (List.range 56))) ≤ 56
+  simp only [VG.Impl.Scrub.AArch64.withRet, VG.Impl.Scrub.AArch64.scrubTailG, Code.aarch64Depth,
     AArch64.Instr.frameUnits, Nat.max_le, Nat.zero_le, Nat.reduceDiv, Nat.zero_add, Nat.le_refl, and_true]
   exact hl
 
@@ -1415,10 +1415,10 @@ omit [Proof.Ed25519.AArch64.Divstep.Sound] in
 /-- A test of every instruction of `vg_ed25519_key_pair` and of what it
 calls, from its own code's, the digest's and the public key's. -/
 theorem keyPair_side {p : Instr → Bool} (dn pn : String) {dg pk : Prog isa}
-    (h0 : ScrubAll.sideAll p (keyPair "" (.block []) "" (.block [])) = true)
-    (hd : ScrubAll.sideAll p dg = true) (hk : ScrubAll.sideAll p pk = true) :
-    ScrubAll.sideAll p (keyPair dn dg pn pk) = true := by
-  simp only [keyPair, ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
+    (h0 : Scrub.sideAll p (keyPair "" (.block []) "" (.block [])) = true)
+    (hd : Scrub.sideAll p dg = true) (hk : Scrub.sideAll p pk = true) :
+    Scrub.sideAll p (keyPair dn dg pn pk) = true := by
+  simp only [keyPair, Scrub.sideAll, Bool.and_eq_true] at h0 ⊢
   revert h0
   repeat' first
     | exact id
@@ -1431,14 +1431,14 @@ theorem keyPair_side {p : Instr → Bool} (dn pn : String) {dg pk : Prog isa}
 constant time and returns without secret residue. -/
 theorem keyPair_scrubbed :
     VerifiedScrubbed AArch64.target (Impl.Ed25519.AArch64.KeyPair.Fn.keyPair v.suffix v.code) spec 0 :=
-  ScrubAll.verifiedScrubbedOf (verified v) Proof.Ed25519.AArch64.Scrub.keyPairOk (by decide)
+  Scrub.verifiedScrubbedOf (verified v) Proof.Ed25519.AArch64.Scrub.keyPairOk (by decide)
     (by
       have h1 := dg_depth v
       have h2 := pk_depth
       simp only [keyPair, Code.aarch64Depth, Instr.frameUnits]
       omega)
     (keyPair_side _ _ (by kernel_rfl)
-      (ScrubAll.sideAll_scrubAll (Proof.Pbkdf2.Md.AArch64.mdDigest_side _ _ _ (by kernel_rfl) v.side))
+      (Scrub.sideAll_scrubAll (Proof.Pbkdf2.Md.AArch64.mdDigest_side _ _ _ (by kernel_rfl) v.side))
       (by kernel_rfl))
     (Or.inl rfl)
 

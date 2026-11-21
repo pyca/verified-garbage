@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # Scrubbed code registered with its facts proved (AArch64)
 
-`scrubAllOf`: what `ScrubAll.withScrubAll` registers, with nothing left for
+`scrubAllOf`: what `Scrub.withScrubAll` registers, with nothing left for
 the emitter to work out. The registers the tail clears are an argument (a
 literal at the call site), and what the scrub needs of the code is one
 Boolean (`scrubSide`) whose proof the call site gives, checked by the kernel
@@ -17,9 +17,9 @@ when its module is built: the registration is a record whose code is
 
 @[expose] public section
 
-namespace VG.AArch64.ScrubAll
+namespace VG.AArch64.Scrub
 
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 theorem wf_of_wfB {cl : Clear} (h : wfB cl = true) : cl.WF := by
   simp only [wfB, Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem] at h
@@ -82,7 +82,7 @@ with them and not with projections of `r`. -/
 def scrubAllOf {api : Api} (r : Unscrubbed api target) (cl : Clear) {W rb : Nat}
     (hok : ScrubAllOk r.contract W rb)
     (hs : scrubSide r.code W rb cl r.tables = true := by
-      (try dsimp only [VG.AArch64.ScrubAll.retBitsOf]); lit_decide)
+      (try dsimp only [VG.AArch64.Scrub.retBitsOf]); lit_decide)
     (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl)
     (hw : r.written = [] := by rfl) : Registration api target :=
   have hok : ScrubAllOk r.contract r.stack (retBitsOf r) := by rw [hW, hb]; exact hok
@@ -127,7 +127,7 @@ contract `k`: a caller that calls the scrubbed code by name (as
 it. -/
 theorem Verified.scrubAllOfV {c : Prog isa} {k : Contract isa} {cl : Clear} {W rb : Nat}
     {ts : List (String × List FnTable)} (hv : Verified target c k) (hok : ScrubAllOk k W rb)
-    (h : scrubSide c W rb cl ts = true) : Verified target (VG.Impl.Residue.AArch64.scrubAll W rb cl c) k := by
+    (h : scrubSide c W rb cl ts = true) : Verified target (VG.Impl.Scrub.AArch64.scrubAll W rb cl c) k := by
   obtain ⟨hwf, -, -, hrb⟩ := keeps_of_side h
   rcases Nat.eq_zero_or_pos W with h0 | hpos
   · subst h0; exact Verified.scrubAll0 hwf hv hrb hok
@@ -143,7 +143,7 @@ proved (`scrubSide` with no stack). -/
 def scrubAllWOf {api : Api} (r : Unscrubbed api target) (cl : Clear) {rb : Nat}
     (hok : ScrubAllOk r.contract 0 rb)
     (hs : scrubSide r.code 0 rb cl r.tables = true := by
-      (try dsimp only [VG.AArch64.ScrubAll.retBitsOf]); lit_decide)
+      (try dsimp only [VG.AArch64.Scrub.retBitsOf]); lit_decide)
     (hb : retBitsOf r = rb := by rfl) : Registration api target :=
   have hok : ScrubAllOk r.contract 0 (retBitsOf r) := by rw [hb]; exact hok
   have h : scrubSide r.code 0 (retBitsOf r) cl r.tables = true := by rw [hb]; exact hs
@@ -177,7 +177,7 @@ abbrev clearUnion (a b : Clear) : Clear := a.union b
 
 /-! ## The cleanup as part of the code
 
-`verifiedScrubbed` is what `scrubAllOf` registers, as a theorem about the
+`verifiedScrubbedAll` is what `scrubAllOf` registers, as a theorem about the
 code with its cleanup (`scrubAll W rb cl c`, which `Impl/` defines as the
 function): the proof a registration binds (`verified := .scrubbed …`).
 `scrubSide_union` gives its side condition for a function that calls an
@@ -296,7 +296,7 @@ theorem linkRegs_union {a b : Clear} (h : (linkRegs.all fun q => !(keptG a).cont
 registers `cl` cleared) meets `r`'s contract in constant time and returns
 without secret residue: what `scrubAllOf` registers, as the theorem about
 the code that a registration binds (`verified := .scrubbed …`). -/
-theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) (cl : Clear) {W rb : Nat}
+theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) (cl : Clear) {W rb : Nat}
     (hok : ScrubAllOk r.contract W rb) (hs : scrubSide r.code W rb cl r.tables = true)
     (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl)
     (hw : r.written = [] := by rfl) :
@@ -356,7 +356,7 @@ theorem sideAll_scrubAll {W rb : Nat} {cl : Clear} {c : Prog isa}
   have hbody : sideAll (fun i => !i.writesDit) (withRet rb (.seq c (.block (clearsOf cl)))) = true := by
     simp only [withRet, sideAll, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true]
     exact ⟨⟨hc, hcl⟩, hr⟩
-  unfold scrubAll withScrubG
+  unfold scrubAll scrubSel
   split
   · exact hbody
   · simp only [sideAll, scrubTailG, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true, hbody,
@@ -370,4 +370,4 @@ theorem sideAll_scrubAll {W rb : Nat} {cl : Clear} {c : Prog isa}
     obtain ⟨k, -, rfl⟩ := hi
     rfl
 
-end VG.AArch64.ScrubAll
+end VG.AArch64.Scrub

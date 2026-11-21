@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
 public import VerifiedGarbage.Impl.Seed.AArch64.FbFinal
 public import VerifiedGarbage.Impl.Seed.AArch64.Modes
@@ -21,7 +21,7 @@ it returns without secret residue (`Proof/Seed/AArch64/`).
 namespace VG.Impl.Seed.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `vg_seed_ecb_decrypt`, before its granules [0] are zeroed. -/
 def ecbDecryptBase : Prog isa :=
@@ -30,7 +30,7 @@ def ecbDecryptBase : Prog isa :=
     (Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x3 182 Impl.Seed.AArch64.ecbDecrypt))
 
 /-- `vg_seed_ecb_decrypt`. -/
-def ecbDecrypt : Prog isa := withScrubG 1472 [0] ecbDecryptBase
+def ecbDecrypt : Prog isa := scrubSel 1472 [0] ecbDecryptBase
 
 /-- `vg_seed_ecb_encrypt`, before its granules [0] are zeroed. -/
 def ecbEncryptBase : Prog isa :=
@@ -39,7 +39,7 @@ def ecbEncryptBase : Prog isa :=
     (Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x3 182 Impl.Seed.AArch64.ecbEncrypt))
 
 /-- `vg_seed_ecb_encrypt`. -/
-def ecbEncrypt : Prog isa := withScrubG 1472 [0] ecbEncryptBase
+def ecbEncrypt : Prog isa := scrubSel 1472 [0] ecbEncryptBase
 
 /-- `vg_seed_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa :=

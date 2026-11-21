@@ -7,13 +7,13 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Impl.Gcm.AArch64
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-!
 # AES-GCM on AArch64: the functions as emitted
 
 Each function is its code in a frame that holds its working space, then its
-cleanup (`Impl.Residue.AArch64.scrubAll`): the registers it writes that the
+cleanup (`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the
 calling convention does not preserve are cleared, and the stack it uses is
 zeroed, so that it returns without secret residue
 (`Proof/AesGcm/AArch64/GhashImpls.lean`).
@@ -32,7 +32,7 @@ instructions nor the implementations write.
 namespace VG.Impl.AesGcm.AArch64
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64 (Clear scrubAll allGprs allVecs)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll allGprs allVecs)
 open VG.Impl.StackScratch.AArch64 (withStackScratch withStackArgScratch)
 
 /-- What the functions of a variant of AES-GCM call, and what chooses their

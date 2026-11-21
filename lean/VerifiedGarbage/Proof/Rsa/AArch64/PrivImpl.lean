@@ -50,7 +50,7 @@ structure CrtImpl extends Impl.Rsa.AArch64.PrivChecked.Crt where
   crtPNoDit : crtP.all (fun i => !i.touchesDit) = true
   /-- It has no indirect call and never writes `DIT`: what the cleanup of
   the functions that call it needs. -/
-  crtPSide : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) crtP = true
+  crtPSide : AArch64.Scrub.sideAll (fun i => !i.writesDit) crtP = true
   /-- `vg_rsa_public_precompute` (`pc`) and
   `vg_rsa_public_precomputed_checked` (`pd`). -/
   pcVerified : Verified AArch64.target pc (Spec.Rsa.publicPrecomputeContract AArch64.abi 0)
@@ -59,7 +59,7 @@ structure CrtImpl extends Impl.Rsa.AArch64.PrivChecked.Crt where
   pdVerified : Verified AArch64.target pd (Proof.Rsa.publicPrecomputedCheckedContract AArch64.abi 0)
   pdNoFrames : pd.noFrames = true
   pdNoDit : pd.all (fun i => !i.touchesDit) = true
-  pdSide : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) pd = true
+  pdSide : AArch64.Scrub.sideAll (fun i => !i.writesDit) pd = true
   /-- The CPU features its code and that of the public operation require,
   which `vg_rsa_private_checked` requires too. -/
   features : List String

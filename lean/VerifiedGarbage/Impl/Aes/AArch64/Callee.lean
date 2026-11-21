@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Impl.Aes.AArch64.Blocks
 public import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-!
 # The implementations of `vg_aes_ctr32` on AArch64
@@ -19,7 +19,7 @@ pair of `Blocks`.
 Each states the registers its code writes, of those the calling convention
 does not preserve (`clear`): what a function that calls it clears for it
 before returning, with those its own instructions write
-(`Impl.Residue.AArch64.Clear.union`). The proofs hold each to its code
+(`Impl.Scrub.AArch64.Clear.union`). The proofs hold each to its code
 (`Proof.Aes.AArch64.Ctr32Impl`, `BlocksImpl`).
 -/
 
@@ -35,7 +35,7 @@ structure Ctr32 where
   code : Prog isa
   /-- The registers its code writes, of those the calling convention does not
   preserve (`Proof.Aes.AArch64.Ctr32Impl.scrub`, `toScrub`). -/
-  clear : Impl.Residue.AArch64.Clear
+  clear : Impl.Scrub.AArch64.Clear
   /-- The bytes of `scratch` it needs, none or 2048: a function that calls it
   has only these in its frame (`Proof.Aes.AArch64.Ctr32Impl.scratch_eq`). -/
   scratch : Nat
@@ -85,7 +85,7 @@ structure ExpandKey where
   code : Prog isa
   /-- The registers its code writes, of those the calling convention does not
   preserve (`Proof.Aes.AArch64.Ctr32Impl.expandScrub`). -/
-  clear : Impl.Residue.AArch64.Clear
+  clear : Impl.Scrub.AArch64.Clear
 
 def ExpandKey.scalar : ExpandKey where
   name := "vg_aes_expand_key_scratch"
@@ -107,7 +107,7 @@ structure Blocks where
   code : Prog isa
   /-- The registers its code writes, of those the calling convention does not
   preserve (`Proof.Aes.AArch64.BlocksImpl.encScrub`, `decScrub`). -/
-  clear : Impl.Residue.AArch64.Clear
+  clear : Impl.Scrub.AArch64.Clear
   /-- The bytes of `scratch` it needs, none or 2048: a function that calls it
   has only these in its frame (`Proof.Aes.AArch64.BlocksImpl.encScratch_eq`,
   `decScratch_eq`). -/

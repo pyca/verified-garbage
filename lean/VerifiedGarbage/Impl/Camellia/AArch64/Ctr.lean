@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.Prepared
 public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
@@ -61,10 +61,10 @@ open VG.AArch64
 /-- Camellia-CTR as emitted: its code with its scratch space on the stack
 (`Impl.StackScratch.AArch64.withStackScratch`), then the registers it writes
 that the calling convention does not preserve cleared and its 3344 bytes of
-stack zeroed (`Impl.Residue.AArch64.scrubAll`), so that it returns without
+stack zeroed (`Impl.Scrub.AArch64.scrubAll`), so that it returns without
 secret residue. -/
 def ctr : Prog isa :=
-  VG.Impl.Residue.AArch64.scrubAll 3344 0
+  VG.Impl.Scrub.AArch64.scrubAll 3344 0
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
      [.v26, .v27, .v28, .v29, .v30],
      []⟩

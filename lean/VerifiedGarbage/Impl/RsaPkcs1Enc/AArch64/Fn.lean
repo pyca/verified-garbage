@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Precomputed
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Random
 public import VerifiedGarbage.Impl.Rsa.AArch64.PrivChecked
 public import VerifiedGarbage.Impl.Scrypt.AArch64.Scrypt
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 
 /-! # RSAES-PKCS1-v1_5 on AArch64: the functions as emitted
 
@@ -17,7 +17,7 @@ cleared, and its stack zeroed (`scrubOf`). -/
 namespace VG.Impl.RsaPkcs1Enc.AArch64.Fn
 
 open VG VG.AArch64
-open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.Scrub.AArch64 (scrubOf)
 open VG.Impl.Rsa.AArch64.PrivChecked (Crt)
 
 /-- `vg_rsa_pkcs1_decrypt_precomputed` over SHA-256's compression function

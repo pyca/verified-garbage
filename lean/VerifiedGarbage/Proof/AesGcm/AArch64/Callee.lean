@@ -57,7 +57,7 @@ structure GhashWithImpl where
   nothing indirectly: what the cleanup of a function of AES-GCM, which clears
   every other register the calling convention does not preserve
   (`Impl.AesGcm.AArch64.Fn.own`), needs of it. -/
-  side : AArch64.ScrubAll.calleeSide fn.code ⟨Impl.Residue.AArch64.allGprs, Impl.Residue.AArch64.allVecs, []⟩ = true
+  side : AArch64.Scrub.calleeSide fn.code ⟨Impl.Scrub.AArch64.allGprs, Impl.Scrub.AArch64.allVecs, []⟩ = true
 
 /-- An implementation of `vg_ghash` on AArch64. -/
 structure GhashImpl where
@@ -69,7 +69,7 @@ structure GhashImpl where
   keepsV : fn.code.allInstrs keepsV = true
   /-- As `GhashWithImpl.side`: its code writes no high half of v8–v15 and not PSTATE.DIT, and calls
   nothing indirectly. -/
-  side : AArch64.ScrubAll.calleeSide fn.code ⟨Impl.Residue.AArch64.allGprs, Impl.Residue.AArch64.allVecs, []⟩ = true
+  side : AArch64.Scrub.calleeSide fn.code ⟨Impl.Scrub.AArch64.allGprs, Impl.Scrub.AArch64.allVecs, []⟩ = true
   suffix : String
   features : List String
   /-- Whether its CPUs have PMULL, which `seal`'s path for TLS records
@@ -92,8 +92,8 @@ structure KeyImpl where
   keepsV : fn.code.allInstrs keepsV = true
   /-- The registers its code writes, of those the calling convention does not
   preserve, which the cleanup of a function that calls it clears (`side`). -/
-  clear : Impl.Residue.AArch64.Clear
-  side : AArch64.ScrubAll.calleeSide fn.code clear = true
+  clear : Impl.Scrub.AArch64.Clear
+  side : AArch64.Scrub.calleeSide fn.code clear = true
 
 namespace KeyImpl
 

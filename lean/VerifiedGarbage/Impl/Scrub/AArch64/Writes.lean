@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-!
 # The registers code writes (AArch64)
@@ -11,7 +11,7 @@ calls included: `Clear.of` reads them off the code, so that the function as
 emitted (`scrubAll W rb (Clear.of c) c`) is a definition here, whatever the
 implementation. These are definitions on instructions and code only; that
 code keeps every other register is `Clear.of_keeps`
-(`Proof/Framework/AArch64/ScrubAll.lean`).
+(`Proof/Framework/AArch64/Scrub.lean`).
 -/
 
 @[expose] public section
@@ -75,7 +75,7 @@ def vdstOf : Instr → Option VReg
 
 end VG.AArch64
 
-namespace VG.Impl.Residue.AArch64
+namespace VG.Impl.Scrub.AArch64
 
 open VG.AArch64
 
@@ -115,4 +115,4 @@ cleanup, which clears the registers `c` may write (`Clear.of`) and zeroes
 that stack: a function as emitted, of code that states no registers. -/
 def scrubOf (W rb : Nat) (c : Prog isa) : Prog isa := scrubAll W rb (Clear.of c) c
 
-end VG.Impl.Residue.AArch64
+end VG.Impl.Scrub.AArch64

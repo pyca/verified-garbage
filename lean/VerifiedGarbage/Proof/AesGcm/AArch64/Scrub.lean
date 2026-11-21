@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Powers8
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Scratch
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Scratch
 
 The postconditions of `vg_aes_gcm_init`, `vg_aes_gcm_open` and
 `vg_aes_gcm_open_to` read the memory on return only within the key context,
-the data and the output (`ScrubAll.ScrubAllOk`): each implementation, generic
+the data and the output (`Scrub.ScrubAllOk`): each implementation, generic
 over the implementations of counter mode, GHASH and key expansion it calls,
 returns with every register it may leave secret cleared and its whole stack
 zeroed (`Impl/AesGcm/AArch64/Fn.lean`; `GhashImpls.lean` has the proofs). Its
@@ -27,7 +27,7 @@ zeroing costs little where counter mode needs no working space.
 
 namespace VG.Proof.AesGcm.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 /-- The bytes at `d` within a buffer on which two memories agree. -/
 theorem bytesAt_of {m₁ m₂ : Mem} {p : Addr} {L : Nat} (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a)

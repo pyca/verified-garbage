@@ -4,8 +4,8 @@ public import VerifiedGarbage.Impl.Cast5.AArch64.FbFinal
 public import VerifiedGarbage.Impl.Cast5.AArch64.Modes
 public import VerifiedGarbage.Impl.Cast5.AArch64.Tbl
 public import VerifiedGarbage.Impl.Cast5.AArch64.TblModes
-public import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.TCB.Code
@@ -23,7 +23,7 @@ it returns without secret residue (`Proof/Cast5/AArch64/`).
 namespace VG.Impl.Cast5.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `c`, then what CAST5-OFB leaves in its registers cleared. -/
 def ofbCleared (c : Prog isa) : Prog isa :=
@@ -50,7 +50,7 @@ def cbcDecryptChained : Prog isa :=
 def cbcEncryptChainedBase : Prog isa :=
   ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cbcEncryptChained)
 
-def cbcEncryptChained : Prog isa := withScrubG 112 [6] cbcEncryptChainedBase
+def cbcEncryptChained : Prog isa := scrubSel 112 [6] cbcEncryptChainedBase
 
 def cfbDecrypt : Prog isa :=
   tblCleared (Impl.StackScratch.AArch64.withStackScratchWiped 224 .x5 28 Impl.Cast5.AArch64.Tbl.cfbDecrypt)
@@ -58,17 +58,17 @@ def cfbDecrypt : Prog isa :=
 def cfbDecryptFinalBase : Prog isa :=
   ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cfbDecryptFinal)
 
-def cfbDecryptFinal : Prog isa := withScrubG 112 [6] cfbDecryptFinalBase
+def cfbDecryptFinal : Prog isa := scrubSel 112 [6] cfbDecryptFinalBase
 
 def cfbEncryptBase : Prog isa :=
   ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cfbEncrypt)
 
-def cfbEncrypt : Prog isa := withScrubG 112 [6] cfbEncryptBase
+def cfbEncrypt : Prog isa := scrubSel 112 [6] cfbEncryptBase
 
 def cfbEncryptFinalBase : Prog isa :=
   ofbCleared (Impl.StackScratch.AArch64.withStackScratchWiped 112 .x5 13 Impl.Cast5.AArch64.cfbEncryptFinal)
 
-def cfbEncryptFinal : Prog isa := withScrubG 112 [6] cfbEncryptFinalBase
+def cfbEncryptFinal : Prog isa := scrubSel 112 [6] cfbEncryptFinalBase
 
 /-- `c`, then the clears of what both directions leave. -/
 def ecbCleared (c : Prog isa) : Prog isa :=

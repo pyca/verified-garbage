@@ -30,7 +30,7 @@ once, by `seal_gather`'s scrubbing, as on RISC-V.
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.ChaCha20Poly1305 VG.Impl.Residue.AArch64
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.ChaCha20Poly1305 VG.Impl.Scrub.AArch64
 
 theorem sealOk (W : Nat) (hW : 0 < W := by decide) :
     ScrubAllOk (sealContract abi W) W (sealSig.retBits abi.ptrBits) :=
@@ -118,12 +118,12 @@ residue. -/
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Fn
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.ChaCha20Poly1305
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.ChaCha20Poly1305
 
 theorem sealWhole (v : Proof.ChaCha20.AArch64.XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole v.callee v.stitched)
       (sealContract abi 1280) 0 :=
-  verifiedScrubbed (api := sealApi)
+  verifiedScrubbedAll (api := sealApi)
     { code := Impl.ChaCha20Poly1305.AArch64.Fn.sealBody v.callee v.stitched,
       verified := Proof.ChaCha20Poly1305.AArch64.seal_framed v }
     _ (Scrub.sealOk 1280) (Scrub.seal_side v)
@@ -131,7 +131,7 @@ theorem sealWhole (v : Proof.ChaCha20.AArch64.XorImpl) :
 theorem openZero (v : Proof.ChaCha20.AArch64.XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.AArch64.Fn.openZero v.callee v.stitched)
       (openZeroContract abi 1312) 32 :=
-  verifiedScrubbed (api := openZeroApi)
+  verifiedScrubbedAll (api := openZeroApi)
     { code := Impl.ChaCha20Poly1305.AArch64.Fn.openBody v.callee v.stitched,
       verified := Proof.ChaCha20Poly1305.AArch64.open_framed v }
     _ (Scrub.openOk 1312) (Scrub.open_side v)
@@ -139,7 +139,7 @@ theorem openZero (v : Proof.ChaCha20.AArch64.XorImpl) :
 theorem openTo (v : Proof.ChaCha20.AArch64.XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.AArch64.Fn.openTo v.callee v.stitched)
       (openToContract abi 1328) 32 :=
-  verifiedScrubbed (api := openToApi)
+  verifiedScrubbedAll (api := openToApi)
     { code := Impl.ChaCha20Poly1305.AArch64.Fn.openToBody v.callee v.stitched,
       verified := Proof.ChaCha20Poly1305.AArch64.openTo_framed v }
     _ (Scrub.openToOk 1328) (Scrub.openTo_side v)
@@ -147,7 +147,7 @@ theorem openTo (v : Proof.ChaCha20.AArch64.XorImpl) :
 theorem sealGather (v : Proof.ChaCha20.AArch64.XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.AArch64.Fn.sealGather v.callee v.stitched)
       (sealGatherContract abi 1296) 0 :=
-  verifiedScrubbed (api := sealGatherApi)
+  verifiedScrubbedAll (api := sealGatherApi)
     { code := Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody v.callee v.stitched,
       verified := Proof.ChaCha20Poly1305.AArch64.Gather.sealGather_verified (Scrub.sealFnCore v) }
     _ (Scrub.gatherOk 1296) (Scrub.gather_side v)

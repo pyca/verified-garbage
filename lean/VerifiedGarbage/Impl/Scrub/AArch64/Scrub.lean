@@ -16,7 +16,7 @@ the stack.
 
 @[expose] public section
 
-namespace VG.Impl.Residue.AArch64
+namespace VG.Impl.Scrub.AArch64
 
 open VG.AArch64
 
@@ -61,7 +61,7 @@ def scrubTailL (W : Nat) : Prog isa :=
 
 /-- `c`, then the granules `ks` of the `W` bytes below the stack pointer
 zeroed; nothing if there are none. -/
-def withScrubG (W : Nat) (ks : List Nat) (c : Prog isa) : Prog isa :=
+def scrubSel (W : Nat) (ks : List Nat) (c : Prog isa) : Prog isa :=
   match ks with
   | [] => c
   | _ => .seq c (scrubTailG W ks)
@@ -104,12 +104,12 @@ abbrev clearsAll : List Instr := clearsOf Clear.all
 /-- `c`, then the registers of `cl` cleared but the result's `rb` bits of
 `x0`, and the `W` bytes below the stack pointer zeroed: what returns without
 secret residue whatever `c` leaves, for code whose frames stay within those
-`W` bytes and that writes no register `cl` leaves (`ScrubAll.noResidue_scrubAll`). -/
+`W` bytes and that writes no register `cl` leaves (`Scrub.noResidue_scrubAll`). -/
 def scrubAll (W rb : Nat) (cl : Clear) (c : Prog isa) : Prog isa :=
-  withScrubG W (List.range (W / 16)) (withRet rb (.seq c (.block (clearsOf cl))))
+  scrubSel W (List.range (W / 16)) (withRet rb (.seq c (.block (clearsOf cl))))
 
 /-- `scrubAll` for `4080 < W < 8176` bytes of stack, zeroed by `scrubTailL`. -/
 def scrubAllL (W rb : Nat) (cl : Clear) (c : Prog isa) : Prog isa :=
   .seq (withRet rb (.seq c (.block (clearsOf cl)))) (scrubTailL W)
 
-end VG.Impl.Residue.AArch64
+end VG.Impl.Scrub.AArch64

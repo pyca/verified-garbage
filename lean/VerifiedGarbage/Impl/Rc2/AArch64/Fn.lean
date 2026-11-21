@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Rc2.AArch64.Cbc
 public import VerifiedGarbage.Impl.Rc2.AArch64.Stream
-public import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
 
@@ -20,7 +20,7 @@ it returns without secret residue (`Proof/Rc2/AArch64/`).
 namespace VG.Impl.Rc2.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `vg_rc2_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa :=
@@ -41,6 +41,6 @@ def cbcInitBase : Prog isa :=
     (Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.init)
 
 /-- `vg_rc2_cbc_init`. -/
-def cbcInit : Prog isa := withScrubG 592 [0] cbcInitBase
+def cbcInit : Prog isa := scrubSel 592 [0] cbcInitBase
 
 end VG.Impl.Rc2.AArch64.Fn

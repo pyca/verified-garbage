@@ -645,7 +645,7 @@ end
 its stack of 3456 bytes (`nativeContract`), whose postcondition reads the
 memory on return only within `out` (`EcKey.AArch64.Scrub.exchangeOkW`):
 returns with every register it may leave secret cleared and its whole stack
-zeroed (`ScrubAll.withScrubAll`). The registration is built here, with its
+zeroed (`Scrub.withScrubAll`). The registration is built here, with its
 stack stated, for the registration file to bind.
 -/
 
@@ -658,11 +658,11 @@ open VG.Proof.P521.AArch64 (hasLaw)
 /-- `vg_ecdh_p521` as emitted, cleanup included
 (`Impl.Weierstrass.AArch64.P521Native.Fn.exchange`): it meets its contract in
 constant time and returns without secret residue. What the cleanup needs of
-the code (`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+the code (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
 theorem exchange_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Weierstrass.AArch64.P521Native.Fn.exchange
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst AArch64.abi 3456) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdh.P521.exchangeApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P521.exchangeApi)
     { code := Impl.Weierstrass.AArch64.P521Native.exchange
       verified := native_verified hasLaw.law hasLaw.inv hasLaw.prime
       consts := []

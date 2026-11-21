@@ -1660,8 +1660,8 @@ the data and the tag, so their frames are zeroed whole on return
 (`seal_scrubbed`, `open_scrubbed`). -/
 
 theorem sealOk (W : Nat) (hW : 0 < W) :
-    ScrubAll.ScrubAllOk (Spec.GcmSiv.sealContract AArch64.abi W) W (Spec.GcmSiv.sealSig.retBits AArch64.abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs (sig := Spec.GcmSiv.sealSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    Scrub.ScrubAllOk (Spec.GcmSiv.sealContract AArch64.abi W) W (Spec.GcmSiv.sealSig.retBits AArch64.abi.ptrBits) :=
+  Scrub.scrubAllOk_regs (sig := Spec.GcmSiv.sealSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
     | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
@@ -1677,10 +1677,10 @@ theorem sealOk (W : Nat) (hW : 0 < W) :
         Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.2.2.2 i hi]
 
 theorem openOk (W : Nat) (hW : 0 < W) :
-    ScrubAll.ScrubAllOk (Spec.GcmSiv.openContract AArch64.abi W) W (Spec.GcmSiv.openSig.retBits AArch64.abi.ptrBits) := by
+    Scrub.ScrubAllOk (Spec.GcmSiv.openContract AArch64.abi W) W (Spec.GcmSiv.openSig.retBits AArch64.abi.ptrBits) := by
   -- The postcondition is a `match` on a decryption: prove the locality
   -- by intros, so that no expected type of a `fun` is reduced to it.
-  refine ScrubAll.scrubAllOk_regs (sig := Spec.GcmSiv.openSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) ?_
+  refine Scrub.scrubAllOk_regs (sig := Spec.GcmSiv.openSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) ?_
   intro vs m m₁ m₂ r hlen hb h
   match vs, hlen with
   | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
@@ -1703,7 +1703,7 @@ for any variant, as AES-GCM's (`Proof/AesGcm/AArch64/GhashImpls.lean`): what
 the cleanup needs of the code is evaluated once for each shape of the code,
 with holes where the implementations are. -/
 
-open VG.AArch64.ScrubAll
+open VG.AArch64.Scrub
 open VG.Impl.AesGcm.AArch64 (Calls)
 open VG.Impl.AesGcm.AArch64.Fn (own)
 open VG.Impl.StackScratch.AArch64 (withStackArgScratch)
@@ -1760,7 +1760,7 @@ theorem seal_scrubbed (g : GcmVariant) :
       (withStackArgScratch (Impl.AesGcmSiv.AArch64.Fn.wn g.impl.calls + 16) 0 (Impl.AesGcmSiv.AArch64.Fn.sealCode g.impl.calls))
       (Proof.AesGcmSiv.sealRoundsContract AArch64.abi (Impl.AesGcmSiv.AArch64.Fn.wn g.impl.calls + 16)) := by
     rw [wn_eq]; exact sealCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok g.impl
-  exact verifiedScrubbed (api := Spec.GcmSiv.sealApi) { code := _, verified := Proof.AesGcmSiv.seal_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.GcmSiv.sealApi) { code := _, verified := Proof.AesGcmSiv.seal_keyed hv } own
     (sealOk _ (Nat.add_pos_right _ (by decide))) (seal_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_siv_open` as emitted, cleanup included. -/
@@ -1771,7 +1771,7 @@ theorem open_scrubbed (g : GcmVariant) :
       (withStackArgScratch (Impl.AesGcmSiv.AArch64.Fn.wn g.impl.calls + 16) 0 (Impl.AesGcmSiv.AArch64.Fn.openCode g.impl.calls))
       (Proof.AesGcmSiv.openRoundsContract AArch64.abi (Impl.AesGcmSiv.AArch64.Fn.wn g.impl.calls + 16)) := by
     rw [wn_eq]; exact openCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok g.impl
-  exact verifiedScrubbed (api := Spec.GcmSiv.openApi) { code := _, verified := Proof.AesGcmSiv.open_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.GcmSiv.openApi) { code := _, verified := Proof.AesGcmSiv.open_keyed hv } own
     (openOk _ (Nat.add_pos_right _ (by decide))) (open_side g.impl.callsOk)
 
 end VG.Proof.AesGcmSiv.AArch64.Stitch

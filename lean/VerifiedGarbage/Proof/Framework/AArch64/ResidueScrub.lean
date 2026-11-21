@@ -37,7 +37,7 @@ stack pointer's, which the two runs share.
 
 namespace VG.AArch64.RTaintF
 
-open VG.AArch64 VG.AArch64.Residue VG.AArch64.Scrub VG.Impl.Residue.AArch64
+open VG.AArch64 VG.AArch64.Residue VG.AArch64.Scrub VG.Impl.Scrub.AArch64
 
 /-- The registers the calling convention does not preserve, but `x0` and `x9`. -/
 def scratchNo9 : List Reg :=

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Inline
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.TCB.AArch64.Target

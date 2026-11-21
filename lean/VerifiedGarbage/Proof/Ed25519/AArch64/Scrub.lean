@@ -13,17 +13,17 @@ import VerifiedGarbage.Proof.Ed25519.WholeLocal
 
 The postconditions of `vg_ed25519_key_pair` and `vg_ed25519_sign_expanded`
 read the memory on return only within their outputs, and that of
-`vg_ed25519_verify` not at all (`ScrubAll.ScrubAllOk`): each implementation,
+`vg_ed25519_verify` not at all (`Scrub.ScrubAllOk`): each implementation,
 generic over the SHA-512 implementation it calls, returns with every register
 it may leave secret cleared and its whole stack zeroed
-(`ScrubAll.withScrubAll`).
+(`Scrub.withScrubAll`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Ed25519.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 open VG.Proof.Ed25519.WholeLocal (bytesAt_congr)
 
 theorem keyPairOk : ScrubAllOk (Spec.Ed25519.keyPairContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts) 944)

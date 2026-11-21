@@ -91,7 +91,7 @@ theorem Code.aarch64Depth_fillN_le {bs : List (Prog AArch64.isa)} {ds : List Nat
     omega_using [ih]
   | icall i m x y => exact Nat.le_refl _
 
-namespace AArch64.ScrubAll
+namespace AArch64.Scrub
 
 /-- `sideAll` of code with its holes filled, from the code's and the
 fillings'. -/
@@ -131,7 +131,7 @@ theorem side_depth_of_fillN {p : Instr → Bool} {c e : Prog isa} {bs : List (Pr
   subst hc
   exact ⟨sideAll_fillN hb he, Nat.le_trans (Code.aarch64Depth_fillN_le hd e) hde⟩
 
-open VG.Impl.Residue.AArch64 in
+open VG.Impl.Scrub.AArch64 in
 /-- Code that writes only the registers `cl` states, and none of v8–v15
 (`keepsV`), keeps what a cleanup that clears every general-purpose and vector
 register the calling convention does not preserve, and no high half of
@@ -169,6 +169,6 @@ theorem calleeSide_low {c : Prog isa} {cl : Clear} (h : calleeSide c cl = true)
     exact ⟨⟨hi i h.1.1 hv.1.1, ih h.1.2 hv.1.2⟩, hi j h.2 hv.2⟩
   | icall => simp only [sideAll, Bool.false_eq_true] at h
 
-end AArch64.ScrubAll
+end AArch64.Scrub
 
 end VG

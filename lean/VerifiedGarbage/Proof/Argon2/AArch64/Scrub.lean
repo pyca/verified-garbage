@@ -10,17 +10,17 @@ import VerifiedGarbage.Proof.Framework.Offset
 # Argon2 on AArch64, without secret residue
 
 The postcondition of `vg_argon2` reads the memory on return only within
-`out` (`ScrubAll.ScrubAllOk`, as x86-64's `Proof/Argon2/X86_64/Scrub.lean`
+`out` (`Scrub.ScrubAllOk`, as x86-64's `Proof/Argon2/X86_64/Scrub.lean`
 proves it): each implementation, generic over the BLAKE2b implementation it
 calls, returns with every register it may leave secret cleared and its whole
-stack zeroed (`ScrubAll.withScrubAll`).
+stack zeroed (`Scrub.withScrubAll`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 theorem deriveOk (stack : Nat) :
     ScrubAllOk (Spec.Argon2.deriveContract abi stack) stack (Spec.Argon2.deriveSig.retBits abi.ptrBits) :=
@@ -45,7 +45,7 @@ theorem deriveOk (stack : Nat) :
 (`Impl.Argon2.AArch64.Derive.Fn.derive`): it meets its contract in constant
 time and returns without secret residue (`VerifiedScrubbed`), which is what
 its registration binds. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is proved of the function's own instructions here,
+(`Scrub.scrubSide`) is proved of the function's own instructions here,
 once, with code that does nothing in the place of the hash functions, and of
 the hash functions where they are defined (`HPrime.Backend.initScrub`,
 `updateScrub`, `finalizeScrub`). -/
@@ -78,7 +78,7 @@ theorem derive_side (v : Proof.Argon2.AArch64.HPrime.Backend) :
 theorem derive_scrubbed (v : Proof.Argon2.AArch64.HPrime.Backend) :
     VerifiedScrubbed AArch64.target (Impl.Argon2.AArch64.Derive.Fn.derive v.hash v.suffix)
       (Spec.Argon2.deriveContract AArch64.abi 400) 0 :=
-  verifiedScrubbed (api := Spec.Argon2.deriveApi)
+  verifiedScrubbedAll (api := Spec.Argon2.deriveApi)
     { suffix := v.suffix
       code := Impl.Argon2.AArch64.Derive.code ("vg_argon2_hprime" ++ v.suffix) v.hash
       verified := Proof.Argon2.AArch64.Derive.verified v _

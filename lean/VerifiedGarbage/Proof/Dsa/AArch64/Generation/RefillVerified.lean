@@ -178,18 +178,18 @@ theorem publicRound_noDit {mul : Nat → Nat → Nat → Prog isa}
 open VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public VG.Impl.Rsa.AArch64 VG.Impl.Rsa.AArch64.Keys
   VG.Impl.RsaKeyGen.AArch64.Candidate VG.Impl.MillerRabin.AArch64 in
 /-- As `publicRound_noDit`, for writes of PSTATE.DIT and indirect calls
-(`ScrubAll.sideAll`): what a cleanup needs of the code it follows. -/
+(`Scrub.sideAll`): what a cleanup needs of the code it follows. -/
 theorem publicRound_side {mul : Nat → Nat → Nat → Prog isa}
-    (h : ScrubAll.sideAll (fun i => !i.writesDit) (VG.Impl.MillerRabin.AArch64.round mul) = true) :
-    ScrubAll.sideAll (fun i => !i.writesDit) (publicRound mul) = true := by
+    (h : Scrub.sideAll (fun i => !i.writesDit) (VG.Impl.MillerRabin.AArch64.round mul) = true) :
+    Scrub.sideAll (fun i => !i.writesDit) (publicRound mul) = true := by
   simp only [VG.Impl.MillerRabin.AArch64.round, roundW, preparedRoundW, mrExpLoopW, mrWin, mrWinS, mrSq, mrLast,
     tabBuild, toEnt, eqMask, VG.Impl.Rsa.AArch64.Keys.eqA, mrSel, VG.Impl.Rsa.AArch64.Keys.copyA, copyWords,
     countLoop, VG.Impl.Rsa.AArch64.Crt.selLoop,
-    List.cons_append, List.nil_append, List.append_assoc, seqs, ScrubAll.sideAll, Bool.and_eq_true] at h
+    List.cons_append, List.nil_append, List.append_assoc, seqs, Scrub.sideAll, Bool.and_eq_true] at h
   simp only [publicRound, publicWin, roundW, preparedRoundW, mrExpLoopW, mrWinS, mrSq, mrLast,
     tabBuild, toEnt, eqMask, VG.Impl.Rsa.AArch64.Keys.eqA, publicSel, VG.Impl.Rsa.AArch64.Keys.copyA, copyWords,
     countLoop,
-    List.cons_append, List.nil_append, List.append_assoc, seqs, ScrubAll.sideAll, Bool.and_eq_true, h, and_true,
+    List.cons_append, List.nil_append, List.append_assoc, seqs, Scrub.sideAll, Bool.and_eq_true, h, and_true,
     true_and]
   decide
 
@@ -211,10 +211,10 @@ theorem test_noDit (v : RoundImpl) {bits : Nat}
   first | with_reducible exact publicRound_noDit v.noDit | lit_decide
 
 /-- As `test_noDit`, for writes of PSTATE.DIT and indirect calls
-(`ScrubAll.sideAll`). -/
+(`Scrub.sideAll`). -/
 theorem test_side (v : RoundImpl) {bits : Nat}
     (hb : bits = 160 ∨ bits = 256 ∨ bits = 1024 ∨ bits = 2048 ∨ bits = 3072) :
-    ScrubAll.sideAll (fun i => !i.writesDit)
+    Scrub.sideAll (fun i => !i.writesDit)
       (Impl.Dsa.AArch64.ProbablePrime.test bits v.mont.mm (VG.Proof.Dsa.AArch64.Generation.publicKernel v).run) = true := by
   rcases hb with rfl | rfl | rfl | rfl | rfl <;>
   simp only [Impl.Dsa.AArch64.ProbablePrime.test, checkPrime, workspace, primeFromFrame, primeBytes,
@@ -222,7 +222,7 @@ theorem test_side (v : RoundImpl) {bits : Nat}
     witnessRound, roundTail, sampleWitness, forceStoredWitness, testWitness, loadWitness, testRange, witnessRange,
     drawCopy, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Rsa.AArch64.r2Steps,
     Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Bignum.AArch64.R2Div.choice, VG.Proof.Dsa.AArch64.Generation.publicKernel, VG.Proof.Dsa.AArch64.Generation.PublicKernel.called, Impl.MillerRabin.AArch64.Caller.call,
-    List.cons_append, List.nil_append, Impl.Bignum.AArch64.seqs, ScrubAll.sideAll, Bool.and_eq_true, v.mmSide,
+    List.cons_append, List.nil_append, Impl.Bignum.AArch64.seqs, Scrub.sideAll, Bool.and_eq_true, v.mmSide,
     true_and] <;>
   and_intros <;>
   first | with_reducible exact publicRound_side v.side | lit_decide
@@ -1234,11 +1234,11 @@ theorem stage_noDit (v : RoundImpl) {pLen : Nat} (hp : pLen = 128 ∨ pLen = 256
   lit_decide
 
 /-- As `stage_noDit`, for writes of PSTATE.DIT and indirect calls
-(`ScrubAll.sideAll`). -/
+(`Scrub.sideAll`). -/
 theorem stage_side (v : RoundImpl) {pLen : Nat} (hp : pLen = 128 ∨ pLen = 256 ∨ pLen = 384) :
-    ScrubAll.sideAll (fun i => !i.writesDit) (Impl.Dsa.AArch64.Generator.stage v.mont.mm pLen) = true := by
+    Scrub.sideAll (fun i => !i.writesDit) (Impl.Dsa.AArch64.Generator.stage v.mont.mm pLen) = true := by
   rcases hp with rfl | rfl | rfl <;>
-  simp only [Impl.Dsa.AArch64.Generator.stage, generatorSearch, tapeLoop, tapeIteration, generatorStep, generatorRangeFromFrame, generatorEvaluate, onSuccess, finishDomain, pack, packPart, validate, ScrubAll.sideAll, Impl.Bignum.AArch64.seqs, workspace, generatorRange, generatorResult, generatorPowerFresh, generatorModulus, generatorPower, generatorLoadPair, Impl.Dsa.AArch64.Random.copyRest, Impl.Dsa.AArch64.Generate.checkParameters, Impl.Dsa.AArch64.Core.publicPow, Impl.Dsa.AArch64.Checks.signingKey, Impl.Dsa.AArch64.Checks.publicPrefix, Impl.Dsa.AArch64.PublicPower.power, Impl.Dsa.AArch64.Core.reduce, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Dsa.AArch64.PublicPower.powerCore, Impl.Dsa.AArch64.Arithmetic.load, Impl.Dsa.AArch64.Core.finish, Impl.Rsa.AArch64.r2Steps, Impl.Dsa.AArch64.Arithmetic.encodePower, Impl.Dsa.AArch64.PublicPower.encodedPower, Impl.Dsa.AArch64.Arithmetic.reduce, Impl.Bignum.AArch64.R2Div.choice, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Dsa.AArch64.PublicPower.expLoop, Impl.Dsa.AArch64.Arithmetic.reduceSetup, Impl.Dsa.AArch64.Arithmetic.reduceByte, Impl.Rsa.AArch64.Crt.tabBuild, Impl.Rsa.AArch64.Crt.toEnt, Impl.Rsa.AArch64.Crt.copyArr, Impl.Rsa.AArch64.Crt.nextEnt, Impl.Dsa.AArch64.PublicPower.window, Impl.Dsa.AArch64.PublicPower.applyWindow, Impl.Dsa.AArch64.Arithmetic.reduceStep, List.append_assoc, v.mmSide, Bool.and_eq_true, List.cons_append, List.nil_append] <;>
+  simp only [Impl.Dsa.AArch64.Generator.stage, generatorSearch, tapeLoop, tapeIteration, generatorStep, generatorRangeFromFrame, generatorEvaluate, onSuccess, finishDomain, pack, packPart, validate, Scrub.sideAll, Impl.Bignum.AArch64.seqs, workspace, generatorRange, generatorResult, generatorPowerFresh, generatorModulus, generatorPower, generatorLoadPair, Impl.Dsa.AArch64.Random.copyRest, Impl.Dsa.AArch64.Generate.checkParameters, Impl.Dsa.AArch64.Core.publicPow, Impl.Dsa.AArch64.Checks.signingKey, Impl.Dsa.AArch64.Checks.publicPrefix, Impl.Dsa.AArch64.PublicPower.power, Impl.Dsa.AArch64.Core.reduce, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Dsa.AArch64.PublicPower.powerCore, Impl.Dsa.AArch64.Arithmetic.load, Impl.Dsa.AArch64.Core.finish, Impl.Rsa.AArch64.r2Steps, Impl.Dsa.AArch64.Arithmetic.encodePower, Impl.Dsa.AArch64.PublicPower.encodedPower, Impl.Dsa.AArch64.Arithmetic.reduce, Impl.Bignum.AArch64.R2Div.choice, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Dsa.AArch64.PublicPower.expLoop, Impl.Dsa.AArch64.Arithmetic.reduceSetup, Impl.Dsa.AArch64.Arithmetic.reduceByte, Impl.Rsa.AArch64.Crt.tabBuild, Impl.Rsa.AArch64.Crt.toEnt, Impl.Rsa.AArch64.Crt.copyArr, Impl.Rsa.AArch64.Crt.nextEnt, Impl.Dsa.AArch64.PublicPower.window, Impl.Dsa.AArch64.PublicPower.applyWindow, Impl.Dsa.AArch64.Arithmetic.reduceStep, List.append_assoc, v.mmSide, Bool.and_eq_true, List.cons_append, List.nil_append] <;>
   and_intros <;>
   lit_decide
 
@@ -1253,9 +1253,9 @@ theorem code_depth (v : RoundImpl) (pLen : Nat) :
 /-- No instruction of the stage as called writes PSTATE.DIT, and it calls
 nothing indirectly. -/
 theorem code_side (v : RoundImpl) {pLen : Nat} (hp : pLen = 128 ∨ pLen = 256 ∨ pLen = 384) :
-    ScrubAll.sideAll (fun i => !i.writesDit) (Impl.Dsa.AArch64.Generator.code v.mont.mm pLen) = true := by
+    Scrub.sideAll (fun i => !i.writesDit) (Impl.Dsa.AArch64.Generator.code v.mont.mm pLen) = true := by
   have h := stage_side v hp
-  simp only [Impl.Dsa.AArch64.Generator.code, Impl.Bignum.AArch64.seqs, ScrubAll.sideAll, h]
+  simp only [Impl.Dsa.AArch64.Generator.code, Impl.Bignum.AArch64.seqs, Scrub.sideAll, h]
   rfl
 
 end VG.Proof.Dsa.AArch64.Generator
@@ -1497,9 +1497,9 @@ theorem testCode_depth (v : RoundImpl) (bits : Nat) : 16 * (testCode v bits).aar
 /-- No instruction of the test as called writes PSTATE.DIT, and it calls
 nothing indirectly. -/
 theorem testCode_side (v : RoundImpl) {bits : Nat} (hb : Supported bits) :
-    ScrubAll.sideAll (fun i => !i.writesDit) (testCode v bits) = true := by
+    Scrub.sideAll (fun i => !i.writesDit) (testCode v bits) = true := by
   have h := test_side v hb
-  simp only [testCode, Impl.Dsa.AArch64.ProbablePrime.code, Impl.Bignum.AArch64.seqs, ScrubAll.sideAll, h]
+  simp only [testCode, Impl.Dsa.AArch64.ProbablePrime.code, Impl.Bignum.AArch64.seqs, Scrub.sideAll, h]
   rfl
 
 /-- The tests with the round implementation `v`, as parameter generation

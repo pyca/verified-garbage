@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-!
 # The registers a function and what it calls write (AArch64)
@@ -12,7 +12,7 @@ implementation states it writes (`Clear.union`).
 
 @[expose] public section
 
-namespace VG.Impl.Residue.AArch64
+namespace VG.Impl.Scrub.AArch64
 
 /-- The registers of `a` and of `b`, in `Clear.all`'s order: what the tail of
 a function clears (`scrubAll`), from the registers its own instructions write
@@ -22,4 +22,4 @@ def Clear.union (a b : Clear) : Clear where
   vecs := allVecs.filter fun w => a.vecs.contains w || b.vecs.contains w
   his := hiVecs.filter fun w => a.his.contains w || b.his.contains w
 
-end VG.Impl.Residue.AArch64
+end VG.Impl.Scrub.AArch64

@@ -22,17 +22,17 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 The postconditions of `vg_ffdh_check_domain` and `vg_ffdh_check_public` do
 not read the memory on return, and that of
 `vg_ffdh_generate_key_precompute` reads it only within the words at `ctx`
-(`wordsAt_of`; `ScrubAll.ScrubAllOk`, as x86-64's
+(`wordsAt_of`; `Scrub.ScrubAllOk`, as x86-64's
 `Proof/Ffdh/X86_64/Scrub.lean` proves them): each implementation returns with
 every register it may leave secret cleared, and its whole stack zeroed, if it
-has one (`ScrubAll.scrubAllOf`).
+has one (`Scrub.scrubAllOf`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Ffdh.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 /-- The byte `k` of a region of more than `k` bytes at `o`. -/
 theorem contains_of {o : Addr} {k N : Nat} (hk : k < N) : Region.Contains ⟨o, N⟩ (o + BitVec.ofNat 64 k) 1 := by

@@ -17,7 +17,7 @@ in the bodies of the functions the code calls too), an equation the kernel
 checks with the implementation a variable (`kernel_rfl`).
 
 What the cleanup of the function needs of its code, that no instruction
-writes PSTATE.DIT and nothing is called indirectly (`ScrubAll.sideAll`), and
+writes PSTATE.DIT and nothing is called indirectly (`Scrub.sideAll`), and
 how deeply its frames nest, are then evaluated once, of the closed code, and
 hold for every implementation of which they hold (`verifiedScrubbedOfFill`):
 the function as emitted is `scrubOf W rb c`, a definition in `Impl/` that
@@ -130,9 +130,9 @@ theorem Code.aarch64Depth_fill2_le {a b : Prog AArch64.isa} {da db : Nat} (ha : 
     omega_using [ih]
   | icall i m x y => exact Nat.le_refl _
 
-namespace AArch64.ScrubAll
+namespace AArch64.Scrub
 
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `sideAll` of code with its two kinds of holes filled, from the code's and
 the fillings'. -/
@@ -225,7 +225,7 @@ instruction of it, or of what it calls, writes PSTATE.DIT and it calls
 nothing indirectly: `verifiedScrubbedOf` for a function that states it clears
 them all, so that code which calls it as emitted is the same for every
 implementation. -/
-theorem verifiedScrubbedAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv : Verified target c k)
+theorem verifiedScrubbedClearAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv : Verified target c k)
     (hok : ScrubAllOk k W rb) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hd : 16 * c.aarch64Depth ≤ W)
     (hs : sideAll (fun i => !i.writesDit) c = true) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
     VerifiedScrubbed target (scrubAll W rb Clear.all c) k rb :=
@@ -258,6 +258,6 @@ theorem written_scrubOf0 {sig : Sig} {w : List (String × Nat)} {c : Prog isa} {
   obtain ⟨t', u, hc, hm⟩ := scrubAll0_mem (Clear.of_wf _) hrb he
   exact writtenWithin_of_mem hm (h s t' u hs hc)
 
-end AArch64.ScrubAll
+end AArch64.Scrub
 
 end VG

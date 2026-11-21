@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # Deterministic ECDSA on AArch64, without secret residue
 
 The postcondition of `vg_ecdsa_<curve>_sign` reads the memory on return only
-within `out` (`ScrubAll.ScrubAllOk`, as x86-64's
+within `out` (`Scrub.ScrubAllOk`, as x86-64's
 `Proof/Ecdsa/Rfc6979/X86_64/Scrub.lean` proves it): each implementation,
 generic over the HMAC implementations its table holds, which it calls
 indirectly, returns with every register it may leave secret cleared and its
@@ -24,7 +24,7 @@ and `sign_scrubbed` is what a curve's theorem comes from.
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 open VG.Proof.Pbkdf2.Md.AArch64 (MdHash)
 open VG.Proof.HmacTable.AArch64 (tables)
 

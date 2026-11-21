@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Spec.Sm4
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 
 /-!
 # The SM4 key schedule with the Armv8 SM4 instructions
@@ -63,6 +63,6 @@ def keyGroup (i : Nat) : List Instr := [kld (i + 1), .vop (.sm4ekey .v0 .v0 .v1)
 def expandKeyBody : Prog isa := .block (keyStart ++ (List.range 8).flatMap keyGroup)
 
 /-- `vg_sm4_expand_key_sm4`: `expandKeyBody`, then `v0` and `x9` cleared. -/
-def expandKey : Prog isa := Residue.AArch64.withClears [.x9] [.v0] none expandKeyBody
+def expandKey : Prog isa := Scrub.AArch64.withClears [.x9] [.v0] none expandKeyBody
 
 end VG.Impl.Sm4.AArch64.Sm4e

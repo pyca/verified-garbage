@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
 public meta import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
 public meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Impl.MlKem.AArch64.Fn
 public meta import VerifiedGarbage.Impl.MlKem.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 # Checking ML-KEM encapsulation keys on AArch64: returning without secret residue
 
 The functions leave coefficients of the key in registers and vector registers: each is run with them cleared
-before it returns (`Impl.Residue.AArch64.withClears`), which keeps it verified
+before it returns (`Impl.Scrub.AArch64.withClears`), which keeps it verified
 (`Clears.Verified.withClears`), and which the residue analysis then proves leaves
 nothing secret (`RTaint.noResidue_of_check`).
 -/

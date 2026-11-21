@@ -15,7 +15,7 @@ its cleanup: the registers the code may write cleared, and its stack zeroed
 namespace VG.Impl.RsaPss.AArch64.Fn
 
 open VG VG.AArch64
-open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.Scrub.AArch64 (scrubOf)
 open VG.Impl.Rsa.AArch64.PrivChecked (Crt)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 

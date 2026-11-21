@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ct.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
@@ -17,7 +17,7 @@ it returns without secret residue (`Proof/Ct/AArch64/`).
 namespace VG.Impl.Ct.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `eq`, then `x4`, `x6` and `x7` cleared. -/
 def eq : Prog isa := withClears [.x4, .x6, .x7] [] none Impl.Ct.AArch64.eq

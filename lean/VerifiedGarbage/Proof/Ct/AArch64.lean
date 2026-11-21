@@ -33,8 +33,8 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.TCB.AArch64.Isa
-public import VerifiedGarbage.Impl.Residue.AArch64
-meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+meta import VerifiedGarbage.Impl.Scrub.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
@@ -230,7 +230,7 @@ theorem verified : Verified target eq (Spec.Ct.eqContract abi) := by
 /-! ## Returning without secret residue
 
 `eq` leaves bytes of the buffers in `x6` and `x7` and what it has accumulated
-in `x4`: `eqCleared` clears them before returning (`Impl.Residue.AArch64.withClears`),
+in `x4`: `eqCleared` clears them before returning (`Impl.Scrub.AArch64.withClears`),
 which the residue analysis then proves leaves nothing secret but the result
 (`RTaint.noResidue_of_check`). -/
 

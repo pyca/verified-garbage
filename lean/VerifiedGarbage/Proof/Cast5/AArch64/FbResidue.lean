@@ -11,10 +11,10 @@ public import VerifiedGarbage.Proof.Cast5.Rounds
 public meta import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.CfbFinal
 public meta import VerifiedGarbage.Proof.Cast5.CfbFinal
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
-public meta import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
+public meta import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
@@ -49,7 +49,7 @@ and the chaining block (`ofbOut`, `ofbFinalOut`).
 
 namespace VG.Proof.Cast5.AArch64.FbResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintF
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintF
 
 /-! ## Locality -/
 

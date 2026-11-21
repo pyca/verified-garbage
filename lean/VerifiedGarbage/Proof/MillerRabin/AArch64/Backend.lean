@@ -29,9 +29,9 @@ structure RoundImpl where
   mmNoDit : ∀ o a b, (mont.mm o a b).all (fun i => !i.touchesDit) = true
   /-- Neither writes PSTATE.DIT nor calls anything indirectly: what a caller
   whose cleanup is part of its code states of the code it runs
-  (`ScrubAll.verifiedScrubbedOf`). -/
-  side : ScrubAll.sideAll (fun i => !i.writesDit) (round roundMont.mm) = true
-  mmSide : ∀ o a b, ScrubAll.sideAll (fun i => !i.writesDit) (mont.mm o a b) = true
+  (`Scrub.verifiedScrubbedOf`). -/
+  side : Scrub.sideAll (fun i => !i.writesDit) (round roundMont.mm) = true
+  mmSide : ∀ o a b, Scrub.sideAll (fun i => !i.writesDit) (mont.mm o a b) = true
   suffix : String
   features : List String
 

@@ -18,17 +18,17 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 The postconditions of `vg_rsa_public_precompute`, `vg_rsa_generate_init` and
 `vg_rsa_generate` read the memory on return only within their outputs
-(`ScrubAll.ScrubAllOk`, as x86-64's `Proof/Rsa/X86_64/Scrub.lean` and
+(`Scrub.ScrubAllOk`, as x86-64's `Proof/Rsa/X86_64/Scrub.lean` and
 `Proof/RsaKeyGen/X86_64/KeyInitScrub.lean` prove them): each implementation
 returns with every register it may leave secret cleared, and its whole stack
-zeroed, if it has one (`Impl.Residue.AArch64.scrubAll`, in the function as emitted).
+zeroed, if it has one (`Impl.Scrub.AArch64.scrubAll`, in the function as emitted).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Rsa.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Proof.Ffdh.AArch64.Scrub
+open VG.AArch64 VG.AArch64.Scrub VG.Proof.Ffdh.AArch64.Scrub
 
 theorem publicPrecomputeOk (stack : Nat) :
     ScrubAllOk (Spec.Rsa.publicPrecomputeContract abi stack) stack

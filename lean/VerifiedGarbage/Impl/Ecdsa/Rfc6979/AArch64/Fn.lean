@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
 public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 
 /-! # Deterministic ECDSA (RFC 6979) on AArch64: the functions as emitted
 
@@ -25,7 +25,7 @@ may write cleared, and its stack zeroed (`scrubOf`). -/
 namespace VG.Impl.Ecdsa.Rfc6979.AArch64.Fn
 
 open VG VG.AArch64
-open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.Scrub.AArch64 (scrubOf)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)
 

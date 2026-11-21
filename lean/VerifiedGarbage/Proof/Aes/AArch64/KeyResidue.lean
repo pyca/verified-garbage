@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Aes.AArch64.Fn
 public meta import VerifiedGarbage.Impl.Aes.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
@@ -34,7 +34,7 @@ both runs on return, so they need no clearing of the stack
 
 namespace VG.Proof.Aes.AArch64.KeyResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-- `vg_aes_expand_key`. -/
 abbrev expandKeyCode : Prog isa := Impl.Aes.AArch64.Fn.expandKey

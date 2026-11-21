@@ -14,7 +14,7 @@ clear. The clears run once, after `c`, on every path.
 
 @[expose] public section
 
-namespace VG.Impl.Residue.AArch64
+namespace VG.Impl.Scrub.AArch64
 
 open VG.AArch64
 
@@ -36,4 +36,4 @@ def withClearsHi (rs : List Reg) (vs : List VReg) (fl : Option Reg) (z : Reg) (h
     (c : Prog isa) : Prog isa :=
   .seq c (.block (clears rs vs fl ++ hs.map (fun v => .vop (.ins .d2 v 1 z))))
 
-end VG.Impl.Residue.AArch64
+end VG.Impl.Scrub.AArch64

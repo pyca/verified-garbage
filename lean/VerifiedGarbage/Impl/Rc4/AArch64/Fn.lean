@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rc4.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
@@ -17,7 +17,7 @@ it returns without secret residue (`Proof/Rc4/AArch64/`).
 namespace VG.Impl.Rc4.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 def apply : Prog isa :=
   withClearsHi [.x4, .x5, .x6, .x8, .x12, .x13]

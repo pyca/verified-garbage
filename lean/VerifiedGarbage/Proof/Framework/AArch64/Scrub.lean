@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 /-!
 # The run of the stack's clearing (AArch64)
 
-`tail_run`: `scrubTail W` (`Impl/Residue/AArch64/Scrub.lean`) runs from any
+`tail_run`: `scrubTail W` (`Impl/Scrub/AArch64/Scrub.lean`) runs from any
 state whose stack pointer has `W` bytes below it, with a trace of the stack
 pointer alone. It writes `x9` (the frame's base) and `v31` (zero), and leaves
 the `W` bytes below the stack pointer zeroed and then released (`lose`), the
@@ -20,7 +20,7 @@ rest of memory, the regions, the stack pointer and the flags as they were.
 
 namespace VG.AArch64.Scrub
 
-open VG.AArch64 VG.Impl.Residue.AArch64
+open VG.AArch64 VG.Impl.Scrub.AArch64
 
 /-- `m`, with the `n` bytes from `b` zero. -/
 def zeroTo (b : Addr) (n : Nat) (m : Mem) : Mem := fun x => if (x - b).toNat < n then 0 else m x

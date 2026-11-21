@@ -713,7 +713,7 @@ runs of code with the same trace, whose functions called indirectly have the
 same addresses in both, do: each call, and each frame's release, uses a
 number of unknowns its instruction fixes, and the trace says which way each
 branch went and which function each indirect call called
-(`Exec.unknowns_agree`), as on AArch64 (`AArch64.ScrubAll.Exec.unknowns_agreeS`). -/
+(`Exec.unknowns_agree`), as on AArch64 (`AArch64.Scrub.Exec.unknowns_agreeS`). -/
 
 /-- The functions `c` may call indirectly. -/
 def inames : Prog isa → List String

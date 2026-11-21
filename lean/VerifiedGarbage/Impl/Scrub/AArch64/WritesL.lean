@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 
 /-! # The cleanup of code with more than 4080 bytes of stack, on AArch64
 
@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Residue.AArch64.Writes
 
 @[expose] public section
 
-namespace VG.Impl.Residue.AArch64
+namespace VG.Impl.Scrub.AArch64
 
 open VG VG.AArch64
 
@@ -17,4 +17,4 @@ which clears the registers `c` may write (`Clear.of`) and zeroes that
 stack (`scrubAllL`). -/
 def scrubOfL (W rb : Nat) (c : Prog isa) : Prog isa := scrubAllL W rb (Clear.of c) c
 
-end VG.Impl.Residue.AArch64
+end VG.Impl.Scrub.AArch64

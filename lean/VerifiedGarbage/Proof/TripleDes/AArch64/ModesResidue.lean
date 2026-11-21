@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Fn
 public meta import VerifiedGarbage.Impl.TripleDes.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
 public meta import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -91,7 +91,7 @@ the same in both runs on return, so they need no clearing of the stack
 
 namespace VG.Proof.TripleDes.AArch64.ModesResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-- `vg_triple_des_ecb_encrypt`. -/
 abbrev ecbEncryptCode : Prog isa := Impl.TripleDes.AArch64.Fn.ecbEncrypt

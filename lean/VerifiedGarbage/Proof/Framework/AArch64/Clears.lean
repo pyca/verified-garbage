@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce

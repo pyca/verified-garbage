@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64.Fn
 # AES-GCM-SIV on AArch64: the functions as emitted
 
 Each function is its code in a frame that holds its working space, then its
-cleanup (`Impl.Residue.AArch64.scrubAll`): the registers it writes that the
+cleanup (`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the
 calling convention does not preserve are cleared, and the stack it uses is
 zeroed, so that it returns without secret residue
 (`Proof/AesGcmSiv/AArch64/Stitch/Verified.lean`).
@@ -24,7 +24,7 @@ namespace VG.Impl.AesGcmSiv.AArch64.Fn
 open VG.AArch64
 open VG.Impl.AesGcm.AArch64 (Calls)
 open VG.Impl.AesGcm.AArch64.Fn (own)
-open VG.Impl.Residue.AArch64 (scrubAll)
+open VG.Impl.Scrub.AArch64 (scrubAll)
 open VG.Impl.StackScratch.AArch64 (withStackArgScratch)
 
 /-- The bytes of working space of the functions: what they use themselves,

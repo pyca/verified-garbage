@@ -47,11 +47,11 @@ namespace Fn
 `code`: the code, which calls the one-shot digest made with it as that is
 emitted (`Impl.Sha512.AArch64.Stream.Fn.digest512`) and
 `vg_ed25519_public_key_expanded`, then its cleanup
-(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+(`Impl.Scrub.AArch64.scrubOf`), which clears the registers the code may
 write, the functions it calls included, and zeroes the stack it used, so that
 it returns without secret residue. -/
 def keyPair (suffix : String) (code : Prog isa) : Prog isa :=
-  Impl.Residue.AArch64.scrubOf 944 0
+  Impl.Scrub.AArch64.scrubOf 944 0
     (VG.Impl.Ed25519.AArch64.KeyPair.keyPair ("vg_sha512_digest" ++ suffix)
       (Impl.Sha512.AArch64.Stream.Fn.digest512 suffix code) "vg_ed25519_public_key_expanded"
       Impl.Ed25519.AArch64.PublicKey.codeExpanded)

@@ -9,8 +9,8 @@ public import VerifiedGarbage.Proof.Idea.AArch64.Invert
 public meta import VerifiedGarbage.Proof.Idea.AArch64.Invert
 public import VerifiedGarbage.Proof.Idea.AArch64.Ecb
 public meta import VerifiedGarbage.Proof.Idea.AArch64.Ecb
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 # IDEA on AArch64: returning without secret residue
 
 The functions leave words of the key schedule and the data in registers: each is run with them cleared
-before it returns (`Impl.Residue.AArch64.withClears`), which keeps it verified
+before it returns (`Impl.Scrub.AArch64.withClears`), which keeps it verified
 (`Clears.Verified.withClears`), and which the residue analysis then proves leaves
 nothing secret (`RTaint.noResidue_of_check`).
 -/

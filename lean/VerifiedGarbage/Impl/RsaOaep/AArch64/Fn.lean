@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
 public import VerifiedGarbage.Impl.Rsa.AArch64.PrivChecked
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 
 /-! # RSAES-OAEP with a precomputed key on AArch64: the functions as emitted
 
@@ -15,7 +15,7 @@ its cleanup: the registers the code may write cleared, and its stack zeroed
 namespace VG.Impl.RsaOaep.AArch64.Fn
 
 open VG VG.AArch64
-open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.Scrub.AArch64 (scrubOf)
 open VG.Impl.Rsa.AArch64.PrivChecked (Crt)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)

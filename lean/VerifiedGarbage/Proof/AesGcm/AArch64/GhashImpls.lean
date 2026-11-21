@@ -1322,11 +1322,11 @@ carry (`CallsOk`, `GcmImpl.callsOk`).
 
 namespace VG.Proof.AesGcm.AArch64
 
-open VG VG.AArch64 VG.AArch64.ScrubAll
+open VG VG.AArch64 VG.AArch64.Scrub
 open VG.Impl.AesGcm.AArch64 (Calls Callees)
 open VG.Impl.AesGcm.AArch64.Fn (own)
 open VG.Impl.StackScratch.AArch64 (withStackScratch withStackArgScratch)
-open VG.Impl.Residue.AArch64 (scrubAll)
+open VG.Impl.Scrub.AArch64 (scrubAll)
 
 /-- What the functions of `v` call, as `Impl/` takes it. -/
 def GcmImpl.calls (v : GcmImpl) : Calls :=
@@ -1669,7 +1669,7 @@ theorem streamInit_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackScratch g.impl.calls.wn .x4 (Impl.AesGcm.AArch64.streamInit g.impl.calls.callees))
       (Spec.Gcm.streamInitContract AArch64.abi g.impl.calls.wn) := by
     rw [wn_eq]; exact streamInit_framedW g.impl
-  exact verifiedScrubbed (api := Spec.Gcm.streamInitApi) { code := _, verified := hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.streamInitApi) { code := _, verified := hv } own
     (Scrub.streamInitOk _ (wn_pos g.impl.callsOk)) (streamInit_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_stream_aad` as emitted, cleanup included. -/
@@ -1679,7 +1679,7 @@ theorem streamAad_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackScratch g.impl.calls.wn .x5 (Impl.AesGcm.AArch64.streamAad g.impl.calls.callees))
       (Spec.Gcm.streamAadContract AArch64.abi g.impl.calls.wn) := by
     rw [wn_eq]; exact streamAad_framedW g.impl
-  exact verifiedScrubbed (api := Spec.Gcm.streamAadApi) { code := _, verified := hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.streamAadApi) { code := _, verified := hv } own
     (Scrub.streamAadOk _ (wn_pos g.impl.callsOk)) (streamAad_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_stream_encrypt` as emitted, cleanup included. -/
@@ -1689,7 +1689,7 @@ theorem streamEncrypt_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackScratch g.impl.calls.wn .x7 (Impl.AesGcm.AArch64.streamEncrypt g.impl.calls.callees))
       (Proof.AesGcm.streamEncryptRoundsContract AArch64.abi g.impl.calls.wn) := by
     rw [wn_eq]; exact streamEncrypt_framedW g.impl
-  exact verifiedScrubbed (api := Spec.Gcm.streamEncryptApi) { code := _, verified := Proof.AesGcm.streamEncrypt_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.streamEncryptApi) { code := _, verified := Proof.AesGcm.streamEncrypt_keyed hv } own
     (Scrub.streamEncryptOk _ (wn_pos g.impl.callsOk)) (streamEncrypt_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_stream_decrypt` as emitted, cleanup included. -/
@@ -1699,7 +1699,7 @@ theorem streamDecrypt_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackScratch g.impl.calls.wn .x7 (Impl.AesGcm.AArch64.streamDecrypt g.impl.calls.callees))
       (Proof.AesGcm.streamDecryptRoundsContract AArch64.abi g.impl.calls.wn) := by
     rw [wn_eq]; exact streamDecrypt_framedW g.impl
-  exact verifiedScrubbed (api := Spec.Gcm.streamDecryptApi) { code := _, verified := Proof.AesGcm.streamDecrypt_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.streamDecryptApi) { code := _, verified := Proof.AesGcm.streamDecrypt_keyed hv } own
     (Scrub.streamDecryptOk _ (wn_pos g.impl.callsOk)) (streamDecrypt_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_stream_finish` as emitted, cleanup included. -/
@@ -1709,7 +1709,7 @@ theorem streamFinish_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackScratch g.impl.calls.wn .x6 (Impl.AesGcm.AArch64.streamFinish g.impl.calls.callees))
       (Proof.AesGcm.streamFinishRoundsContract AArch64.abi g.impl.calls.wn) := by
     rw [wn_eq]; exact streamFinish_framedW g.impl
-  exact verifiedScrubbed (api := Spec.Gcm.streamFinishApi) { code := _, verified := Proof.AesGcm.streamFinish_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.streamFinishApi) { code := _, verified := Proof.AesGcm.streamFinish_keyed hv } own
     (Scrub.streamFinishOk _ (wn_pos g.impl.callsOk)) (streamFinish_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_stream_verify` as emitted, cleanup included. -/
@@ -1719,7 +1719,7 @@ theorem streamVerify_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackScratch g.impl.calls.wn .x7 (Impl.AesGcm.AArch64.streamVerify g.impl.calls.callees))
       (Proof.AesGcm.streamVerifyRoundsContract AArch64.abi g.impl.calls.wn) := by
     rw [wn_eq]; exact streamVerify_framedW g.impl
-  exact verifiedScrubbed (api := Spec.Gcm.streamVerifyApi) { code := _, verified := Proof.AesGcm.streamVerify_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.streamVerifyApi) { code := _, verified := Proof.AesGcm.streamVerify_keyed hv } own
     (Scrub.streamVerifyOk _ (wn_pos g.impl.callsOk)) (streamVerify_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_init` as emitted, cleanup included. -/
@@ -1729,7 +1729,7 @@ theorem init_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackScratch g.impl.calls.initWn .x3 (Impl.AesGcm.AArch64.init g.impl.calls.callees))
       (Spec.Gcm.initContract AArch64.abi g.impl.calls.initWn) := by
     rw [initWn_eq]; exact init_framedW g.impl
-  exact verifiedScrubbed (api := Spec.Gcm.initApi) { code := _, verified := hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.initApi) { code := _, verified := hv } own
     (Scrub.initOk _ (initWn_pos g.impl.callsOk)) (init_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_seal` as emitted, cleanup included. -/
@@ -1739,7 +1739,7 @@ theorem seal_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackArgScratch (g.impl.calls.wn + 16) 1 (Impl.AesGcm.AArch64.Fn.sealCode g.impl.calls))
       (Proof.AesGcm.sealRoundsContract AArch64.abi (g.impl.calls.wn + 16)) := by
     rw [wn_eq]; exact sealCode_framedW g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV
-  exact verifiedScrubbed (api := Spec.Gcm.sealApi) { code := _, verified := Proof.AesGcm.seal_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.sealApi) { code := _, verified := Proof.AesGcm.seal_keyed hv } own
     (Scrub.sealOk _) (seal_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_open` as emitted, cleanup included. -/
@@ -1749,7 +1749,7 @@ theorem open_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackArgScratch (g.impl.calls.wn + 32) 2 (Impl.AesGcm.AArch64.Fn.openCode g.impl.calls))
       (Proof.AesGcm.openRoundsContract AArch64.abi (g.impl.calls.wn + 32)) := by
     rw [wn_eq]; exact openCode_framedW g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV
-  exact verifiedScrubbed (api := Spec.Gcm.openApi) { code := _, verified := Proof.AesGcm.open_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.openApi) { code := _, verified := Proof.AesGcm.open_keyed hv } own
     (Scrub.openOk _) (open_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_open_to` as emitted, cleanup included. -/
@@ -1759,7 +1759,7 @@ theorem openTo_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackArgScratch (g.impl.calls.wn + 48) 4 (Impl.AesGcm.AArch64.Fn.openToCode g.impl.calls))
       (Proof.AesGcm.openToRoundsContract AArch64.abi (g.impl.calls.wn + 48)) := by
     rw [wn_eq]; exact openToCode_framedW g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV
-  exact verifiedScrubbed (api := Spec.Gcm.openToApi) { code := _, verified := Proof.AesGcm.openTo_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.openToApi) { code := _, verified := Proof.AesGcm.openTo_keyed hv } own
     (Scrub.openToOk _) (openTo_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_seal_gather` as emitted, cleanup included. -/
@@ -1770,7 +1770,7 @@ theorem sealGather_scrubbed (g : GcmVariant) :
       (Spec.Gcm.sealGatherContract AArch64.abi 2592) := by
     have h := Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified (sealFn g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV))
     rw [sealFn_fn] at h; exact h
-  exact verifiedScrubbed (api := Spec.Gcm.sealGatherApi) { code := _, verified := hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.sealGatherApi) { code := _, verified := hv } own
     (Scrub.sealGatherOk _) (sealGather_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_seal_with_powers` calling `w`, as emitted, cleanup included. -/
@@ -1780,7 +1780,7 @@ theorem sealWithPowers_scrubbed (g : GcmVariant) (w : GhashWithImpl) :
   have hv : Verified AArch64.target (withStackArgScratch (g.impl.calls.pwWn + 32) 2 (Impl.AesGcm.AArch64.Fn.sealPwCode g.impl.calls w.fn))
       (Proof.AesGcm.sealWithPowersRoundsContract AArch64.abi (g.impl.calls.pwWn + 32)) := by
     rw [pwWn_eq]; exact sealPwCode_framedW g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok w
-  exact verifiedScrubbed (api := Spec.Gcm.sealWithPowersApi) { code := _, verified := Proof.AesGcm.sealWithPowers_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.sealWithPowersApi) { code := _, verified := Proof.AesGcm.sealWithPowers_keyed hv } own
     (Scrub.sealWithPowersOk _) (sealWithPowers_side g.impl.callsOk w)
 
 /-- `vg_aes_gcm_open_with_powers` calling `w`, as emitted, cleanup included. -/
@@ -1790,7 +1790,7 @@ theorem openWithPowers_scrubbed (g : GcmVariant) (w : GhashWithImpl) :
   have hv : Verified AArch64.target (withStackArgScratch (g.impl.calls.pwWn + 32) 3 (Impl.AesGcm.AArch64.Fn.openPwCode g.impl.calls w.fn))
       (Proof.AesGcm.openWithPowersRoundsContract AArch64.abi (g.impl.calls.pwWn + 32)) := by
     rw [pwWn_eq]; exact openPwCode_framedW g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok w
-  exact verifiedScrubbed (api := Spec.Gcm.openWithPowersApi) { code := _, verified := Proof.AesGcm.openWithPowers_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.openWithPowersApi) { code := _, verified := Proof.AesGcm.openWithPowers_keyed hv } own
     (Scrub.openWithPowersOk _) (openWithPowers_side g.impl.callsOk w)
 
 /-- `vg_aes_gcm_open_to_with_powers` calling `w`, as emitted, cleanup included. -/
@@ -1800,7 +1800,7 @@ theorem openToWithPowers_scrubbed (g : GcmVariant) (w : GhashWithImpl) :
   have hv : Verified AArch64.target (withStackArgScratch (g.impl.calls.pwWn + 48) 5 (Impl.AesGcm.AArch64.Fn.openToPwCode g.impl.calls w.fn))
       (Proof.AesGcm.openToWithPowersRoundsContract AArch64.abi (g.impl.calls.pwWn + 48)) := by
     rw [pwWn_eq]; exact openToPwCode_framedW g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok w
-  exact verifiedScrubbed (api := Spec.Gcm.openToWithPowersApi) { code := _, verified := Proof.AesGcm.openToWithPowers_keyed hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.openToWithPowersApi) { code := _, verified := Proof.AesGcm.openToWithPowers_keyed hv } own
     (Scrub.openToWithPowersOk _) (openToWithPowers_side g.impl.callsOk w)
 
 /-- `vg_aes_gcm_seal_with_powers` of implementations without code that reads the powers, as emitted, cleanup included. -/
@@ -1810,7 +1810,7 @@ theorem sealWithPowersBase_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackArgScratch 2576 1 (Impl.AesGcm.AArch64.Fn.sealCode g.impl.calls))
       (Spec.Gcm.sealWithPowersContract AArch64.abi 2576) := by
     exact sealBasePw_verified g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV
-  exact verifiedScrubbed (api := Spec.Gcm.sealWithPowersApi) { code := _, verified := hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.sealWithPowersApi) { code := _, verified := hv } own
     (Scrub.sealWithPowersOk _) (sealWithPowersBase_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_open_with_powers` of implementations without code that reads the powers, as emitted, cleanup included. -/
@@ -1820,7 +1820,7 @@ theorem openWithPowersBase_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackArgScratch 2592 2 (Impl.AesGcm.AArch64.Fn.openCode g.impl.calls))
       (Spec.Gcm.openWithPowersContract AArch64.abi 2592) := by
     exact openBasePw_verified g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV
-  exact verifiedScrubbed (api := Spec.Gcm.openWithPowersApi) { code := _, verified := hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.openWithPowersApi) { code := _, verified := hv } own
     (Scrub.openWithPowersOk _) (openWithPowersBase_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_open_to_with_powers` of implementations without code that reads the powers, as emitted, cleanup included. -/
@@ -1830,13 +1830,13 @@ theorem openToWithPowersBase_scrubbed (g : GcmVariant) :
   have hv : Verified AArch64.target (withStackArgScratch 2608 4 (Impl.AesGcm.AArch64.Fn.openToCode g.impl.calls))
       (Spec.Gcm.openToWithPowersContract AArch64.abi 2608) := by
     exact openToBasePw_verified g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV
-  exact verifiedScrubbed (api := Spec.Gcm.openToWithPowersApi) { code := _, verified := hv } own
+  exact verifiedScrubbedAll (api := Spec.Gcm.openToWithPowersApi) { code := _, verified := hv } own
     (Scrub.openToWithPowersOk _) (openToWithPowersBase_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_store_powers` in the baseline ISA, as emitted, cleanup included. -/
 theorem storePowers_scrubbed :
     VerifiedScrubbed AArch64.target Impl.AesGcm.AArch64.Fn.storePowers (Spec.Gcm.storePowersContract AArch64.abi 80) 0 :=
-  verifiedScrubbed (api := Spec.Gcm.storePowersApi)
+  verifiedScrubbedAll (api := Spec.Gcm.storePowersApi)
     { code := withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers
       verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_framed } own Scrub.storePowersOk80 storePowers_side
 
@@ -1855,7 +1855,7 @@ The postconditions read the memory on return only within the buffers
 
 namespace VG.Proof.Sm4Gcm.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 theorem initOk (stack : Nat) (hW : 0 < stack) :
     ScrubAllOk (Spec.Sm4.Gcm.initContract abi stack) stack (Spec.Sm4.Gcm.initSig.retBits abi.ptrBits) :=
@@ -1910,7 +1910,7 @@ implementations' own facts are `CallsOk`.
 
 namespace VG.Proof.Sm4Gcm.AArch64
 
-open VG VG.AArch64 VG.AArch64.ScrubAll
+open VG VG.AArch64 VG.AArch64.Scrub
 open VG.Impl.Sm4Gcm.AArch64 (Calls Callees)
 open VG.Impl.AesGcm.AArch64.Fn (own)
 open VG.Impl.StackScratch.AArch64 (withStackScratch withStackArgScratch)
@@ -2059,7 +2059,7 @@ open Scrubbed
 theorem init_scrubbed (v : GcmVariant) :
     VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.init v.calls)
       (Spec.Sm4.Gcm.initContract AArch64.abi (v.calls.stack + 768)) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.initApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.initApi)
     { code := _, verified := init_framed v.impl (CtrName.stack_cases v.ctr) } own
     (Scrub.initOk _ (Scrub.pos768 _)) (init_side v.callsOk)
 
@@ -2067,7 +2067,7 @@ theorem init_scrubbed (v : GcmVariant) :
 theorem seal_scrubbed (v : GcmVariant) :
     VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.«seal» v.calls)
       (Spec.Sm4.Gcm.sealContract AArch64.abi (v.calls.stack + 784)) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.sealApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.sealApi)
     { code := _, verified := seal_framed v.impl (CtrName.stack_cases v.ctr) } own
     (Scrub.sealOk _ (Nat.zero_lt_succ _)) (seal_side v.callsOk)
 
@@ -2075,7 +2075,7 @@ theorem seal_scrubbed (v : GcmVariant) :
 theorem open_scrubbed (v : GcmVariant) :
     VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.«open» v.calls)
       (Spec.Sm4.Gcm.openContract AArch64.abi (v.calls.stack + 784)) 32 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.openApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.openApi)
     { code := _, verified := open_framed v.impl (CtrName.stack_cases v.ctr) } own
     (Scrub.openOk _) (open_side v.callsOk)
 
@@ -2083,7 +2083,7 @@ theorem open_scrubbed (v : GcmVariant) :
 theorem streamEncrypt_scrubbed (v : GcmVariant) :
     VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamEncrypt v.calls)
       (Spec.Sm4.Gcm.streamEncryptContract AArch64.abi (v.calls.stack + 768)) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.streamEncryptApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamEncryptApi)
     { code := _, verified := streamEncrypt_framed v.impl (CtrName.stack_cases v.ctr) } own
     (Scrub.streamEncryptOk _ (Scrub.pos768 _)) (streamEncrypt_side v.callsOk)
 
@@ -2091,7 +2091,7 @@ theorem streamEncrypt_scrubbed (v : GcmVariant) :
 theorem streamDecrypt_scrubbed (v : GcmVariant) :
     VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamDecrypt v.calls)
       (Spec.Sm4.Gcm.streamDecryptContract AArch64.abi (v.calls.stack + 768)) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.streamDecryptApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamDecryptApi)
     { code := _, verified := streamDecrypt_framed v.impl (CtrName.stack_cases v.ctr) } own
     (Scrub.streamDecryptOk _ (Scrub.pos768 _)) (streamDecrypt_side v.callsOk)
 
@@ -2099,7 +2099,7 @@ theorem streamDecrypt_scrubbed (v : GcmVariant) :
 theorem streamFinish_scrubbed (v : GcmVariant) :
     VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamFinish v.calls)
       (Spec.Sm4.Gcm.streamFinishContract AArch64.abi (v.calls.stack + 768)) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.streamFinishApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamFinishApi)
     { code := _, verified := streamFinish_framed v.impl (CtrName.stack_cases v.ctr) } own
     (Scrub.streamFinishOk _ (Scrub.pos768 _)) (streamFinish_side v.callsOk)
 
@@ -2107,7 +2107,7 @@ theorem streamFinish_scrubbed (v : GcmVariant) :
 theorem streamVerify_scrubbed (v : GcmVariant) :
     VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamVerify v.calls)
       (Spec.Sm4.Gcm.streamVerifyContract AArch64.abi (v.calls.stack + 768)) 32 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.streamVerifyApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamVerifyApi)
     { code := _, verified := streamVerify_framed v.impl (CtrName.stack_cases v.ctr) } own
     (Scrub.streamVerifyOk _ (Scrub.pos768 _)) (streamVerify_side v.callsOk)
 

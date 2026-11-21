@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 import VerifiedGarbage.Proof.Blake2.Scratch
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
@@ -1920,13 +1920,13 @@ theorem initB_post {sâ‚€ u u' : State} (h : (Proof.Blake2.initAArch64 b).post sâ
 
 theorem initBCleared_verified :
     Verified AArch64.target
-      (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init b))
+      (Impl.Scrub.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init b))
       (Spec.Blake2.initBContract AArch64.abi) :=
   Clears.Verified.withClears initB_verified (by decide)
 
 theorem initSCleared_verified :
     Verified AArch64.target
-      (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init s))
+      (Impl.Scrub.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init s))
       (Spec.Blake2.initSContract AArch64.abi) :=
   Clears.Verified.withClears initS_verified (by decide)
 

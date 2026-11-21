@@ -38,7 +38,7 @@ in the place of the candidate, whose own follows from its implementation's
 
 namespace VG.Proof.Ffdh.AArch64.Scrub
 
-open VG VG.AArch64 VG.AArch64.ScrubAll
+open VG VG.AArch64 VG.AArch64.Scrub
 
 /-- `vg_ffdh_generate_key_precompute`. -/
 theorem precompute_scrubbed :
@@ -109,7 +109,7 @@ end VG.Proof.Ffdh.AArch64.Scrub
 
 namespace VG.Proof.Ffdh.AArch64.Generation
 
-open VG VG.AArch64 VG.AArch64.ScrubAll
+open VG VG.AArch64 VG.AArch64.Scrub
 open VG.Impl.Ffdh.AArch64.ParameterCandidate
 open VG.Proof.MillerRabin.AArch64 (RoundImpl)
 

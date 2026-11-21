@@ -71,12 +71,12 @@ end
 /-! ## A test of every instruction, from the own code's and the callees'
 
 A test of every instruction of one of our functions and of what it calls
-(`ScrubAll.sideAll`: the cleanup of the functions as emitted needs that none
+(`Scrub.sideAll`: the cleanup of the functions as emitted needs that none
 writes PSTATE.DIT, and that nothing is called indirectly) holds if it holds
 of the own code (`core H`) and of the hash function's code it calls. -/
 
 section
-open VG.AArch64.ScrubAll (sideAll)
+open VG.AArch64.Scrub (sideAll)
 variable {p : Instr → Bool} {H : Hash}
 
 theorem hmacInit_side (h0 : sideAll p (core H).hmacInit = true) (hi : sideAll p H.initC = true)
@@ -167,7 +167,7 @@ theorem mdDigest_side (P : Impl.MdStream.AArch64.Params) (init : Prog isa) (n : 
     | refine And.imp ?_ ?_
 
 /-- What the cleanup of the functions as emitted needs of every instruction
-(`ScrubAll.verifiedScrubbedOf`): that it does not write PSTATE.DIT. -/
+(`Scrub.verifiedScrubbedOf`): that it does not write PSTATE.DIT. -/
 abbrev noDit : Instr → Bool := fun i => !i.writesDit
 
 /-- `noDit` of the own code of a hash function's HMAC and PBKDF2 functions
@@ -191,7 +191,7 @@ structure CalleeSide (H : Hash) : Prop where
 end
 
 section
-open VG.AArch64.ScrubAll (sideAll)
+open VG.AArch64.Scrub (sideAll)
 open VG.Impl.StackScratch.AArch64
 
 private theorem stores_noDit (n : Nat) : ∀ i ∈ wipePairStores n, noDit i = true := by
@@ -232,7 +232,7 @@ theorem wipe_noDit (words : Nat) : ∀ i ∈ wipe words, noDit i = true := by
 /-- `noDit` of code in a frame of its own that it wipes (`withStackScratchWiped`). -/
 theorem sideAll_withStackScratchWiped {bytes words : Nat} {r : Reg} {c : Prog isa}
     (hc : sideAll noDit c = true) : sideAll noDit (withStackScratchWiped bytes r words c) = true := by
-  refine ScrubAll.sideAll_withStackScratch rfl rfl rfl ?_
+  refine Scrub.sideAll_withStackScratch rfl rfl rfl ?_
   simp only [sideAll, Bool.and_eq_true, Code.allInstrs_eq, instrs, List.all_eq_true]
   exact ⟨hc, wipe_noDit words⟩
 
@@ -254,7 +254,7 @@ theorem mdFinalize_depth (P : Impl.MdStream.AArch64.Params) (n : String) (c : Pr
 fit in `16 + F` bytes of stack. -/
 theorem depth_frame_le {F : Nat} {r : Reg} {c : Prog isa} (h : c.aarch64Depth ≤ 1) :
     16 * (Impl.StackScratch.AArch64.withStackScratch F r c).aarch64Depth ≤ 16 + F := by
-  rw [ScrubAll.depth_withStackScratch]; omega
+  rw [Scrub.depth_withStackScratch]; omega
 
 /-- The frame of the shared one-shot digest is its only one, over an `init`
 and a compression function that have none. -/

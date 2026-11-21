@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Idea.AArch64
 public import VerifiedGarbage.Impl.Idea.AArch64.FbFinal
 public import VerifiedGarbage.Impl.Idea.AArch64.Modes
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
 
@@ -20,7 +20,7 @@ it returns without secret residue (`Proof/Idea/AArch64/`).
 namespace VG.Impl.Idea.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 def cbcDecryptChained : Prog isa :=
   withClears [.x3, .x4, .x6, .x7, .x8, .x9, .x10, .x11, .x12] [] none

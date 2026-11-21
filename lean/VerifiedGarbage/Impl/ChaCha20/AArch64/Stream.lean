@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.XorCallee
-public import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 
 /-!
 # Streaming ChaCha20: AArch64 implementation
@@ -153,7 +153,7 @@ end VG.Impl.ChaCha20.AArch64.Stream
 /-! ## The functions, as emitted
 
 `vg_chacha20_apply` is its code above, then its cleanup
-(`Impl.Residue.AArch64.scrubAll`; it uses no stack): the registers it writes
+(`Impl.Scrub.AArch64.scrubAll`; it uses no stack): the registers it writes
 that the calling convention does not preserve are cleared, but the 32 bits of
 its result, so that it returns without secret residue. The registers are
 those its own instructions write, stated here, and those the stream it calls
@@ -163,7 +163,7 @@ namespace VG.Impl.ChaCha20.AArch64.Fn
 
 open VG.AArch64
 open VG.Impl.ChaCha20.AArch64 (XorCallee)
-open VG.Impl.Residue.AArch64 (Clear scrubAll withClears)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll withClears)
 
 /-- `vg_chacha20_init`: `Stream.init`, then `x9`–`x11` and `x13`, which hold
 words of the key and nonce, cleared. -/

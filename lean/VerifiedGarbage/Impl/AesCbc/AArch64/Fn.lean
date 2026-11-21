@@ -4,8 +4,8 @@ public import VerifiedGarbage.Impl.AesCbc.AArch64.Decrypt
 public import VerifiedGarbage.Impl.AesCbc.AArch64.Encrypt
 public import VerifiedGarbage.Impl.CallWipe.AArch64
 public import VerifiedGarbage.Impl.Zeroize.AArch64Wide
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
@@ -21,7 +21,7 @@ it returns without secret residue (`Proof/AesCbc/AArch64/`).
 namespace VG.Impl.AesCbc.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- The vector registers the decryptions leave secrets in. -/
 def left : List VReg :=

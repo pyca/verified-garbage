@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Sm4.AArch64.Fn
 public meta import VerifiedGarbage.Impl.Sm4.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public import VerifiedGarbage.Proof.Sm4.AArch64.CbcVerified
@@ -65,7 +65,7 @@ secret.
 
 namespace VG.Proof.Sm4.AArch64.ModesResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-- `vg_sm4_cbc_encrypt_chained_sm4`. -/
 abbrev cbcEncryptChainedSm4Code : Prog isa := Impl.Sm4.AArch64.Fn.cbcEncryptChainedSm4

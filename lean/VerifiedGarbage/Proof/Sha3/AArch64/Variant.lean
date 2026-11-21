@@ -224,16 +224,16 @@ structure Permutation where
   vendor : Option String := none
   /-- Its code writes, of the registers the calling convention does not
   preserve, only those `callee.clear` lists, writes no PSTATE.DIT and calls
-  nothing indirectly (`ScrubAll.calleeSide`, which the kernel evaluates where
+  nothing indirectly (`Scrub.calleeSide`, which the kernel evaluates where
   the implementation is defined): what the cleanup of every function that
   calls it needs of it, so that each proves the rest of its own instructions
   only, whatever the implementation. -/
-  scrub : AArch64.ScrubAll.calleeSide callee.code callee.clear = true
+  scrub : AArch64.Scrub.calleeSide callee.code callee.clear = true
   /-- An absorb the implementation gives as a whole writes only what
   `vg_sha3_*_update` clears: `Impl.Sha3.AArch64.Fn.updateOwn` and
   `callee.clear`. -/
   absorbOverrideScrub : ∀ code, callee.absorbOverride = some code →
-    AArch64.ScrubAll.calleeSide code (Impl.Sha3.AArch64.Fn.updateOwn.union callee.clear) = true
+    AArch64.Scrub.calleeSide code (Impl.Sha3.AArch64.Fn.updateOwn.union callee.clear) = true
   ok : ∀ s, Proof.Sha3.permuteAArch64.pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteAArch64.post s s'

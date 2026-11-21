@@ -13,8 +13,8 @@ public import VerifiedGarbage.Proof.Blowfish.AArch64.FbVerified
 public meta import VerifiedGarbage.Proof.Blowfish.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Blowfish.AArch64.FbFinalVerified
 public meta import VerifiedGarbage.Proof.Blowfish.AArch64.FbFinalVerified
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
@@ -46,7 +46,7 @@ then leave nothing secret.
 
 namespace VG.Proof.Blowfish.AArch64.ModesResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-- `c`, then the registers a mode leaves secret cleared, the scratch register `xs` among them. -/
 abbrev modeCleared (xs : Reg) (c : Prog isa) : Prog isa := Impl.Blowfish.AArch64.Fn.modeCleared xs c

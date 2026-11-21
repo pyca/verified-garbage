@@ -270,7 +270,7 @@ theorem pk_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve)
     (hI : Weierstrass.AArch64.InvSounds) :
     VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.publicKeyBrainpoolP512r1
       (Spec.EcKey.BrainpoolP512r1.inst.publicKeyContract AArch64.abi) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.BrainpoolP512r1.publicKeyApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP512r1.publicKeyApi)
     { code := publicKeyBrainpoolP512r1, verified := pk_verified hL hI } _
     (Proof.EcKey.AArch64.Scrub.publicKeyOk _) (by dsimp only; lit_decide)
 

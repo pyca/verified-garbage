@@ -1574,18 +1574,18 @@ theorem verifyMessage_verified (backend : Whole.Backend) :
 `vg_ed25519_verify` over `v` with its cleanup (`Impl.Ed25519.AArch64.VerifyMessage.Fn.verify`): it meets its contract in
 constant time and returns without secret residue (`VerifiedScrubbed`), which
 is what its registration binds. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is proved of the function's own instructions here,
+(`Scrub.scrubSide`) is proved of the function's own instructions here,
 once, with code that does nothing in the place of the compression function,
 and of each compression function where it is defined (`Compress.scrub`). -/
 
-open VG.AArch64.ScrubAll in
+open VG.AArch64.Scrub in
 private theorem verify_all {p : Instr → Bool} (c : Prog isa) (sfx : String)
     (h0 : sideAll p (Impl.Ed25519.AArch64.VerifyMessage.code (.block []) "") = true) (hc : sideAll p c = true) :
     sideAll p (Impl.Ed25519.AArch64.VerifyMessage.code c sfx) = true := by
   simp only [Impl.Ed25519.AArch64.VerifyMessage.code, Impl.Ed25519.AArch64.VerifyMessage.body, Impl.Ed25519.AArch64.VerifyMessage.hash, Impl.Ed25519.AArch64.VerifyMessage.update, Impl.Ed25519.AArch64.VerifyMessage.finalize, Impl.Ed25519.AArch64.Whole.wrap, Impl.Ed25519.AArch64.Whole.callWith, Impl.Sha512.AArch64.Stream.updateWith, Impl.Sha512.AArch64.Stream.finalizeWith, Impl.MdStream.AArch64.update, Impl.MdStream.AArch64.updateMain, Impl.MdStream.AArch64.updateBody, Impl.MdStream.AArch64.compressN, Impl.MdStream.AArch64.compressWith, Impl.MdStream.AArch64.finalize, Impl.MdStream.AArch64.finalizeMain, Impl.MdStream.AArch64.finalizeBody, Impl.MdStream.AArch64.compressAt, sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
-open VG.AArch64.ScrubAll in
+open VG.AArch64.Scrub in
 private theorem verify_own : calleeSide (Impl.Ed25519.AArch64.VerifyMessage.code (.block []) "") Impl.Ed25519.AArch64.VerifyMessage.Fn.verifyOwn = true := by
   kernel_rfl
 
@@ -1593,7 +1593,7 @@ private theorem verify_depth (v : Whole.Backend) : 16 * (Impl.Ed25519.AArch64.Ve
   simp only [Impl.Ed25519.AArch64.VerifyMessage.code, Impl.Ed25519.AArch64.VerifyMessage.body, Impl.Ed25519.AArch64.VerifyMessage.hash, Impl.Ed25519.AArch64.VerifyMessage.update, Impl.Ed25519.AArch64.VerifyMessage.finalize, Impl.Ed25519.AArch64.Whole.wrap, Impl.Ed25519.AArch64.Whole.callWith, Impl.Sha512.AArch64.Stream.updateWith, Impl.Sha512.AArch64.Stream.finalizeWith, Impl.MdStream.AArch64.update, Impl.MdStream.AArch64.finalize, Code.aarch64Depth, Instr.frameUnits, v.updateDepth, v.finalizeDepth]
   decide
 
-open VG.AArch64.ScrubAll in
+open VG.AArch64.Scrub in
 theorem verify_side (v : Whole.Backend) :
     scrubSide (Impl.Ed25519.AArch64.VerifyMessage.code v.code v.suffix) 352 32 (Impl.Ed25519.AArch64.VerifyMessage.Fn.verifyOwn.union v.clear) [] = true :=
   scrubSide_union (by decide) (verify_depth v) (by decide)
@@ -1602,7 +1602,7 @@ theorem verify_side (v : Whole.Backend) :
 /-- `vg_ed25519_verify` over `v` as emitted, cleanup included. -/
 theorem verifyMessage_scrubbed (v : Whole.Backend) :
     VerifiedScrubbed AArch64.target (Impl.Ed25519.AArch64.VerifyMessage.Fn.verify v.impl) (Spec.Ed25519.verifyContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.bConsts) 352) 32 :=
-  VG.AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ed25519.verifyApi)
+  VG.AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ed25519.verifyApi)
     { suffix := v.suffix
       code := Impl.Ed25519.AArch64.VerifyMessage.code v.code v.suffix
       verified := verifyMessage_verified v } _ Proof.Ed25519.AArch64.Scrub.verifyOk (verify_side v)

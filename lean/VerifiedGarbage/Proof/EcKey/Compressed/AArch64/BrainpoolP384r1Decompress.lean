@@ -78,7 +78,7 @@ theorem scrubbed (hL : Proof.Weierstrass.Law Spec.BrainpoolP384r1.curve)
     (hI : Proof.Weierstrass.AArch64.InvSounds) :
     VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.decompressBrainpoolP384r1
       (Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyContract abi 0) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi)
     { code := code, verified := verified hL hI } _
     (Proof.EcKey.AArch64.Scrub.decompressOk _) (by dsimp only; lit_decide)
 
