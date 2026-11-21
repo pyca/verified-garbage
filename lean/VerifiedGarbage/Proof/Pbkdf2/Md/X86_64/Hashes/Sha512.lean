@@ -597,7 +597,7 @@ def sha384OK (v : Compress) : HashOK (sha384H v) :=
   ok (sha384C v) (sha384K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl)))
 
 /-- SHA-384 with the implementation `v` of the compression function. -/
-def sha384 (v : Compress) (stream : List StreamFnS := []) : MdHash :=
+def sha384 (v : Compress) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha384I) (sha384OK v) (sha384C v) (sha384K v)
     ⟨Spec.Mgf1.sha384, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha384OK v.uniform) rfl
@@ -613,7 +613,7 @@ def sha384 (v : Compress) (stream : List StreamFnS := []) : MdHash :=
       show (sha384H v).W + 192 < 509
       rcases sha384W v with h | h | h <;> omega_using [h])
     (sha384_satPF (hashW v))
-    v.suffix v.features stream
+    v.suffix v.features
 
 /-! ## SHA-512 -/
 
@@ -765,7 +765,7 @@ def sha512OK (v : Compress) : HashOK (sha512H v) :=
   ok (sha512C v) (sha512K v) rfl (fun _ => (List.take_of_length_le (Nat.le_of_eq (Proof.Sha512.md.digest_length _))).symm) rfl rfl rfl (Or.inr (Or.inr (Or.inr rfl)))
 
 /-- SHA-512 with the implementation `v` of the compression function. -/
-def sha512 (v : Compress) (stream : List StreamFnS := []) : MdHash :=
+def sha512 (v : Compress) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha512I) (sha512OK v) (sha512C v) (sha512K v)
     ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha512OK v.uniform) rfl
@@ -781,7 +781,7 @@ def sha512 (v : Compress) (stream : List StreamFnS := []) : MdHash :=
       show (sha512H v).W + 192 < 509
       rcases sha512W v with h | h | h <;> omega_using [h])
     (sha512_satPF (hashW v))
-    v.suffix v.features stream
+    v.suffix v.features
 
 /-! ## SHA-512/224 -/
 
@@ -933,7 +933,7 @@ def sha512_224OK (v : Compress) : HashOK (sha512_224H v) :=
   ok (sha512_224C v) (sha512_224K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inl rfl)
 
 /-- SHA-512/224 with the implementation `v` of the compression function. -/
-def sha512_224 (v : Compress) (stream : List StreamFnS := []) : MdHash :=
+def sha512_224 (v : Compress) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha512_224I) (sha512_224OK v) (sha512_224C v) (sha512_224K v)
     ⟨Spec.Mgf1.sha512_224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha512_224OK v.uniform) rfl
@@ -949,7 +949,7 @@ def sha512_224 (v : Compress) (stream : List StreamFnS := []) : MdHash :=
       show (sha512_224H v).W + 192 < 509
       rcases sha512_224W v with h | h | h <;> omega_using [h])
     (sha512_224_satPF (hashW v))
-    v.suffix v.features stream
+    v.suffix v.features
 
 /-! ## SHA-512/256 -/
 
@@ -1101,7 +1101,7 @@ def sha512_256OK (v : Compress) : HashOK (sha512_256H v) :=
   ok (sha512_256C v) (sha512_256K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inl rfl))
 
 /-- SHA-512/256 with the implementation `v` of the compression function. -/
-def sha512_256 (v : Compress) (stream : List StreamFnS := []) : MdHash :=
+def sha512_256 (v : Compress) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha512_256I) (sha512_256OK v) (sha512_256C v) (sha512_256K v)
     ⟨Spec.Mgf1.sha512_256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     1328 (sha512_256OK v.uniform) rfl
@@ -1117,6 +1117,6 @@ def sha512_256 (v : Compress) (stream : List StreamFnS := []) : MdHash :=
       show (sha512_256H v).W + 192 < 509
       rcases sha512_256W v with h | h | h <;> omega_using [h])
     (sha512_256_satPF (hashW v))
-    v.suffix v.features stream
+    v.suffix v.features
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha512

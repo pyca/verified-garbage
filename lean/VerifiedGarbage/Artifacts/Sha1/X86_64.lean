@@ -33,8 +33,25 @@ namespace VG.Artifacts.Sha1.X86_64
 
 def artifacts : List Artifact := [
   Spec.Sha1.initApi.artifact X86_64.target { code := Impl.Sha1.X86_64.Fn.init, verified := Proof.Sha1.X86_64.init_scrubbed, spSafe := Proof.Sha1.X86_64.init_spSafe }] ++
-  (VG.Proof.Variants.MdHash.X86_64.sha1Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
-    v.stream.map fun f =>
-      f.f.api.artifact X86_64.target { f.reg with suffix := v.suffix })
+  (VG.Proof.Variants.MdHash.X86_64.sha1Streams.flatMap
+      fun (s : Proof.Pbkdf2.Md.X86_64.StreamFns Spec.Sha1.updateApi Spec.Sha1.finalizeApi Spec.Sha1.digestApi) => [
+      Spec.Sha1.updateApi.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.update.sel.level s.update.f.retBits s.update.f.stack s.update.sel.runs
+          s.update.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.update
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.update },
+      Spec.Sha1.finalizeApi.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.finalize.sel.level s.finalize.f.retBits s.finalize.f.stack s.finalize.sel.runs
+          s.finalize.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.finalize
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.finalize },
+      Spec.Sha1.digestApi.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.digest.sel.level s.digest.f.retBits s.digest.f.stack s.digest.sel.runs
+          s.digest.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.digest
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.digest }])
 
 end VG.Artifacts.Sha1.X86_64

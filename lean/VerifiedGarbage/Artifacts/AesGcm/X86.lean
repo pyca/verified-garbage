@@ -46,8 +46,8 @@ def artifacts (c : Proof.Aes.X86.Ctr32Impl) : List Artifact :=
   Spec.Gcm.initApi.artifact X86.target {
     suffix := c.suffix
     code := Impl.AesGcm.X86.Fn.init v.callees
-    verified := init_scrubbed v
-    spSafe := init_spSafeF v }]
+    verified := Proof.AesGcm.X86.Scrub.init_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.init_spSafeF v }]
 
 end VG.Artifacts.AesGcm.X86.AesCtr32
 
@@ -61,33 +61,33 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Gcm.streamEncryptApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcm.X86.Fn.streamEncrypt v.callees
-    verified := streamEncrypt_scrubbed v
-    spSafe := streamEncrypt_spSafeF v },
+    verified := Proof.AesGcm.X86.Scrub.streamEncrypt_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.streamEncrypt_spSafeF v },
   Spec.Gcm.streamDecryptApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcm.X86.Fn.streamDecrypt v.callees
-    verified := streamDecrypt_scrubbed v
-    spSafe := streamDecrypt_spSafeF v },
+    verified := Proof.AesGcm.X86.Scrub.streamDecrypt_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.streamDecrypt_spSafeF v },
   Spec.Gcm.streamFinishApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcm.X86.Fn.streamFinish v.callees
-    verified := streamFinish_scrubbed v
-    spSafe := streamFinish_spSafeF v },
+    verified := Proof.AesGcm.X86.Scrub.streamFinish_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.streamFinish_spSafeF v },
   Spec.Gcm.streamVerifyApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcm.X86.Fn.streamVerify v.callees
-    verified := streamVerify_scrubbed v
-    spSafe := streamVerify_spSafeF v },
+    verified := Proof.AesGcm.X86.Scrub.streamVerify_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.streamVerify_spSafeF v },
   Spec.Gcm.sealApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcm.X86.Fn.«seal» v.callees
-    verified := seal_scrubbed v
-    spSafe := seal_spSafeF v },
+    verified := Proof.AesGcm.X86.Scrub.seal_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.seal_spSafeF v },
   Spec.Gcm.openApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcm.X86.Fn.«open» v.callees
-    verified := open_scrubbed v
-    spSafe := open_spSafeF v }]
+    verified := Proof.AesGcm.X86.Scrub.open_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.open_spSafeF v }]
 
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the
 implementations `v`, without its cleanup (`vg_aes_gcm_seal<suffix>_core`). -/
@@ -95,16 +95,16 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
   Spec.Gcm.sealGatherApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcm.X86.Fn.sealGather v.callees v.suffix
-    verified := sealGather_scrubbed v
-    spSafe := sealGather_spSafeF v }]
+    verified := Proof.AesGcm.X86.Scrub.sealGather_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.sealGather_spSafeF v }]
 
 /-- `vg_aes_gcm_open_to`, calling `vg_aes_ctr32_to` of the implementations `v`. -/
 def artifactsOpenTo (v : GcmImpl) : List Artifact := [
   Spec.Gcm.openToApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesGcm.X86.Fn.openTo v.callees (OpenTo.toFn v)
-    verified := openTo_scrubbed v
-    spSafe := openTo_spSafeF v }]
+    verified := Proof.AesGcm.X86.Scrub.openTo_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.openTo_spSafeF v }]
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifacts (v : GcmVariant) : List Artifact :=
@@ -124,13 +124,13 @@ def artifacts (n : GhashName) : List Artifact :=
   Spec.Gcm.streamAadApi.artifact X86.target {
     suffix := n.impl.suffix
     code := Impl.AesGcm.X86.Fn.streamAad v.callees
-    verified := streamAad_scrubbed v
-    spSafe := streamAad_spSafeF v },
+    verified := Proof.AesGcm.X86.Scrub.streamAad_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.streamAad_spSafeF v },
   Spec.Gcm.streamInitApi.artifact X86.target {
     suffix := n.impl.suffix
     code := Impl.AesGcm.X86.Fn.streamInit v.callees
-    verified := streamInit_scrubbed v
-    spSafe := streamInit_spSafeF v }]
+    verified := Proof.AesGcm.X86.Scrub.streamInit_scrubbed v
+    spSafe := Proof.AesGcm.X86.Scrub.streamInit_spSafeF v }]
 
 end VG.Artifacts.AesGcm.X86.Ghash
 

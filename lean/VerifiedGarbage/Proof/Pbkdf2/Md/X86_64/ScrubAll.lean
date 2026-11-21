@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
@@ -81,26 +82,17 @@ def Pbkdf2Impl.plain (p : Pbkdf2Impl) : Unscrubbed p.v.I.pbkdf2Api target where
   verified := p.v.pbkdf2F
   spSafe := X86_64.withStackArgScratch_spSafe p.v.pbkdf2Sp
 
-/-- `p`'s code as emitted, its code and then its cleanup, meets its contract
-in constant time and returns without secret residue. -/
+/-- `p`'s code as emitted, its code and then its cleanup
+(`Impl.Pbkdf2.Md.X86_64.Fn.pbkdf2`), meets its contract in constant time and
+returns without secret residue. -/
 theorem Pbkdf2Impl.scrubbed (p : Pbkdf2Impl) :
-    VerifiedScrubbed target
-      (scrubAll p.level (Spec.Pbkdf2.pbkdf2Sig.retBits 64) (24 + pbkdf2Frame p.v.H) p.plain.code)
+    VerifiedScrubbed target (Impl.Pbkdf2.Md.X86_64.Fn.pbkdf2 p.level p.v.H)
       p.plain.contract (Spec.Pbkdf2.pbkdf2Sig.retBits 64) :=
   verifiedScrubbedAll p.plain p.level (pbkdf2Out p.v.I _) p.side
 
-/-- `p` as a registration of its `Api` (`Api.artifact`): its code as emitted,
-with its cleanup, and the theorem about that code (`Pbkdf2Impl.scrubbed`). -/
-def Pbkdf2Impl.reg (p : Pbkdf2Impl) : Registration p.v.I.pbkdf2Api target where
-  suffix := p.v.suffix
-  consts := []
-  tables := []
-  code := scrubAll p.level (Spec.Pbkdf2.pbkdf2Sig.retBits 64) (24 + pbkdf2Frame p.v.H) p.plain.code
-  contract := p.plain.contract
-  stack := p.plain.stack
-  verified := p.scrubbed
-  ofApi := p.plain.ofApi
-  ofSig := p.plain.ofSig
-  spSafe := scrubKs_spSafe p.plain.spSafe
+/-- No instruction of `p`'s code as emitted writes `rsp`. -/
+theorem Pbkdf2Impl.spSafeFn (p : Pbkdf2Impl) :
+    (Impl.Pbkdf2.Md.X86_64.Fn.pbkdf2 p.level p.v.H).all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe p.plain.spSafe
 
 end VG.Proof.Pbkdf2.Md.X86_64

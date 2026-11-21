@@ -54,8 +54,21 @@ def artifacts : List Artifact :=
     Spec.Sha256.initApi.artifact X86.target {
       code := Impl.Sha256.X86.Fn.init
       verified := Proof.Sha256.X86.Scrub.init_scrubbed }] ++
-  (VG.Proof.Variants.Sha256.X86.variants.flatMap fun (v : Proof.Sha256.X86.Variants.Backend) =>
-    v.functions.map fun f =>
-      f.api.artifact X86.target { f.reg with suffix := v.suffix})
+  (VG.Proof.Variants.Sha256.X86.variants.flatMap fun (v : Proof.Sha256.X86.Variants.Backend) => [
+    Spec.Sha256.updateApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.Sha256.X86.Fn.update v.stream.upd
+      verified := Proof.Sha256.X86.Variants.Backend.update_scrubbed v
+      spSafe := Proof.Sha256.X86.Variants.Backend.update_spSafe v },
+    Spec.Sha256.finalizeApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.Sha256.X86.Fn.finalize v.stream.fin
+      verified := Proof.Sha256.X86.Variants.Backend.finalize_scrubbed v
+      spSafe := Proof.Sha256.X86.Variants.Backend.finalize_spSafe v },
+    Spec.Sha256.finalize224Api.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.Sha256.X86.Fn.finalize224 v.cmpN v.cmpC
+      verified := Proof.Sha256.X86.Variants.Backend.finalize224_scrubbed v
+      spSafe := Proof.Sha256.X86.Variants.Backend.finalize224_spSafe v }])
 
 end VG.Artifacts.Sha256.X86

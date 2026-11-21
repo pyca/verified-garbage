@@ -22,11 +22,11 @@ def artifacts : List Artifact :=
       Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target {
         suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
         code := Impl.RsaPkcs1Enc.AArch64.Fn.decryptPrecomputed h.name h.suffix h.code c.toCrt
-        verified := decryptPrecomputed_scrubbed h c }]) ++
+        verified := Proof.RsaPkcs1Enc.AArch64.Scrub.decryptPrecomputed_scrubbed h c }]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun (v : Proof.Rsa.AArch64.PublicImpl) => [
     Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.AArch64.Fn.encryptRandom v.suffix v.name v.code
-      verified := encryptRandom_scrubbed v }])
+      verified := Proof.RsaPkcs1Enc.AArch64.Scrub.encryptRandom_scrubbed v }])
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64

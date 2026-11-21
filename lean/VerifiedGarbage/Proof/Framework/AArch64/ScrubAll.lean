@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Cold
 import VerifiedGarbage.Proof.Framework.EntryBranch
+import VerifiedGarbage.Proof.Framework.CodeOnce
 
 /-!
 # Returning without secret residue, whatever the code leaves (AArch64)
@@ -393,16 +394,6 @@ theorem clearAll_keeps (c : Prog isa) : Clear.all.Keeps c :=
   ⟨fun _ h h' => absurd h h', fun _ h => by
     rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ <;> exact absurd h h'⟩
 
-theorem codeInstrs_eq (c : Prog isa) : codeInstrs c = instrs c := by
-  induction c with
-  | block is => rfl
-  | seq a b iha ihb => simp only [codeInstrs, instrs, iha, ihb]
-  | ite _ t e iht ihe => simp only [codeInstrs, instrs, iht, ihe]
-  | loop b _ ih => simp only [codeInstrs, instrs, ih]
-  | call _ b ih => simp only [codeInstrs, instrs, ih]
-  | frame i b j ih => simp only [codeInstrs, instrs, ih]
-  | icall i _ b n ihb ihn => simp only [codeInstrs, instrs, ihb, ihn]
-
 theorem codeNoCalls_eq (c : Prog isa) : codeNoCalls c = c.noCalls := by
   induction c with
   | block is => rfl
@@ -413,6 +404,15 @@ theorem codeNoCalls_eq (c : Prog isa) : codeNoCalls c = c.noCalls := by
   | frame i b j ih => rfl
   | icall i _ b n ihb ihn => rfl
 
+/-- `codeAny` is `any` of the code's instructions. -/
+theorem codeAny_eq (p : Instr → Bool) (c : Prog isa) : codeAny p c = (instrs c).any p := by
+  have h : c.all (fun i => !p i) = (instrs c).all fun i => !p i := by
+    induction c with
+    | block is => rfl
+    | _ => simp [Code.all, instrs, List.all_append, Bool.and_assoc, *]
+  rw [codeAny, Code.allOnce_eq, h, List.not_all_eq_any_not]
+  simp
+
 theorem _root_.VG.Impl.Scrub.AArch64.Clear.of_wf (c : Prog isa) : (Clear.of c).WF :=
   ⟨fun _ h => (List.mem_filter.mp h).1, fun _ h => (List.mem_filter.mp h).1,
     fun _ h => (List.mem_filter.mp h).1⟩
@@ -420,7 +420,7 @@ theorem _root_.VG.Impl.Scrub.AArch64.Clear.of_wf (c : Prog isa) : (Clear.of c).W
 theorem _root_.VG.Impl.Scrub.AArch64.Clear.of_keeps (c : Prog isa) : (Clear.of c).Keeps c := by
   refine ⟨fun q hq hn s t u e => ?_, fun w hw s t u e => ?_⟩
   · have hf : ¬ ((instrs c).any (fun i => clobbers i q) || (!c.noCalls && linkRegs.contains q)) = true :=
-      fun h => hn (List.mem_filter.mpr ⟨hq, by rw [codeInstrs_eq, codeNoCalls_eq]; exact h⟩)
+      fun h => hn (List.mem_filter.mpr ⟨hq, by rw [codeAny_eq, codeNoCalls_eq]; exact h⟩)
     simp only [Bool.or_eq_true, Bool.and_eq_true, Bool.not_eq_true', List.any_eq_true, not_or,
       not_exists, not_and, Bool.not_eq_true, List.contains_iff_mem] at hf
     refine Exec.gpr (fun i hi => ?_) e ?_
@@ -430,8 +430,8 @@ theorem _root_.VG.Impl.Scrub.AArch64.Clear.of_keeps (c : Prog isa) : (Clear.of c
       · exact .inr (fun hl => hf.2 (by simpa using hc) hl)
   · refine Exec.vec (fun i hi he => ?_) e
     rcases hw with ⟨ha, hn⟩ | ⟨ha, hn⟩
-    · exact hn (List.mem_filter.mpr ⟨ha, List.any_eq_true.mpr ⟨i, by rw [codeInstrs_eq]; exact hi, by simp [he]⟩⟩)
-    · exact hn (List.mem_filter.mpr ⟨ha, List.any_eq_true.mpr ⟨i, by rw [codeInstrs_eq]; exact hi, by simp [he]⟩⟩)
+    · exact hn (List.mem_filter.mpr ⟨ha, by rw [codeAny_eq]; exact List.any_eq_true.mpr ⟨i, hi, by simp [he]⟩⟩)
+    · exact hn (List.mem_filter.mpr ⟨ha, by rw [codeAny_eq]; exact List.any_eq_true.mpr ⟨i, hi, by simp [he]⟩⟩)
 
 /-- `x1` after the clearing agrees in two runs whose registers agree on entry. -/
 theorem clearedX1_agree {cl : Clear} {c : Prog isa} (hk : cl.Keeps c) {s₁ s₂ u₁ u₂ : State}

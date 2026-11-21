@@ -853,7 +853,7 @@ def digFn0 : StreamFn :=
 end Zero
 
 /-- SHA-1 with the implementation `v` of its compression function. -/
-def variant (stream : List StreamFnS := []) : MdHash :=
+def variant : MdHash :=
   MdHash.of (I := Spec.Hmac.sha1I) (ok v) (coreOK v) (callees v)
     ⟨Spec.Mgf1.sha1, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl 112 (okU v) rfl
     (satI (hashW v)) (satF (hashW v)) (satT (hashW v)) (satP (hashW v))
@@ -862,6 +862,6 @@ def variant (stream : List StreamFnS := []) : MdHash :=
     Proof.Hmac.sha1_local (satAF (hashW v)) (satW (hashIW v)) (satIF (hashIW v))
     (by decide) (satFF (hashW v))
     (by show (hash v).W + 84 < 509; rcases hashW v with h | h <;> omega_using [h]) (satPF (hashW v))
-    v.suffix v.features stream
+    v.suffix v.features
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha1
