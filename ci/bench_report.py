@@ -149,7 +149,9 @@ def load(paths):
                 if d.get("id") in seen:
                     continue
                 seen.add(d.get("id"))
-                d.setdefault("name", p.name)
+                # A workflow's results files are all `bench-results.json`, each
+                # in a directory named for its job's artifact: name them by it.
+                d.setdefault("name", p.parent.name if path.is_dir() and p.parent != path else p.name)
                 files.append(d)
     return files
 

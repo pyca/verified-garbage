@@ -504,7 +504,21 @@ def cpu_model():
             return None
         return out or None
     m = re.search(r"^model name\s*:\s*(.+)$", cpuinfo, re.M)
-    return m[1].strip() if m else None
+    if m:
+        return m[1].strip()
+    # Arm's /proc/cpuinfo names only the parts' numbers; lscpu names them.
+    try:
+        out = subprocess.run(["lscpu"], capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return lscpu_model(out)
+
+
+def lscpu_model(out):
+    """The CPU model `lscpu` printed in `out` (the first, on a machine of
+    several kinds of core), or None."""
+    m = re.search(r"^Model name\s*:\s*(.+)$", out, re.M)
+    return m[1].strip() if m and m[1].strip() != "-" else None
 
 
 def not_measured(cpu_features, lacking, model):
