@@ -18,7 +18,7 @@ and of `vg_ecdh_<name>`, read the memory on return only within `out`, and that
 of `vg_ecdsa_<name>_verify` does not read it (`PPC64LE.Scrub.PostOut`), by
 RISC-V's proofs (`Proof/EcKey/RISCV64/Scrub.lean`), so that each
 implementation may be followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`PPC64LE.Scrub.scrubOf`). Each lemma takes the tables of constants `cs`
+(`PPC64LE.Scrub.verifiedScrubbedAll`). Each lemma takes the tables of constants `cs`
 the code reads, which may be none.
 -/
 

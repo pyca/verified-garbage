@@ -20,8 +20,8 @@ clears the volatile registers and the stack their frames use (240, 624 and
 352 bytes). The postconditions of `public_key` and `sign_cached` read the
 memory on return only within their outputs, and that of `verify` not at
 all (`PPC64LE.Scrub.PostOut`), by RISC-V's proofs
-(`Proof/Ed448/RISCV64/Scrub.lean`). `scrubOf`'s side condition
-(`scrubSide`) is proved at each registration, by the kernel's evaluation of
+(`Proof/Ed448/RISCV64/Scrub.lean`). `verifiedScrubbedAll`'s side condition
+(`scrubSide`) is proved at each theorem, by the kernel's evaluation of
 it when this module is built.
 -/
 

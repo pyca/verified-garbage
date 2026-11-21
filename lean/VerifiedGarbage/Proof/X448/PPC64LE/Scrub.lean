@@ -19,8 +19,8 @@ volatile registers they write and the stack their frames use (the 48 bytes
 of the exchange's frame; the base has none). Their postconditions read the
 memory on return only within `out` (`PPC64LE.Scrub.PostOut`), whatever
 tables of constants their code takes, by RISC-V's proofs
-(`Proof/X448/RISCV64/Scrub.lean`). `scrubOf`'s side condition
-(`scrubSide`) is proved at each registration, by the kernel's evaluation of
+(`Proof/X448/RISCV64/Scrub.lean`). `verifiedScrubbedAll`'s side condition
+(`scrubSide`) is proved at each theorem, by the kernel's evaluation of
 it when this module is built.
 -/
 

@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers it writes.
 It has no frames, so there is no stack to wipe. Its postcondition reads no
 memory on return: it writes none (`PPC64LE.Scrub.PostOut`), as RISC-V's
-(`Proof/Ct/RISCV64Scrub.lean`). `scrubOf`'s side condition (`scrubSide`) is
-proved at the registration, by the kernel's evaluation of it when this
+(`Proof/Ct/RISCV64Scrub.lean`). `verifiedScrubbedAll`'s side condition (`scrubSide`) is
+proved at the theorem, by the kernel's evaluation of it when this
 module is built.
 -/
 

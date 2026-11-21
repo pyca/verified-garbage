@@ -22,7 +22,7 @@ their frames use (720, 320 and 224 bytes). The postconditions of
 `key_pair` and `sign_expanded` read the memory on return only within
 their outputs, and that of `verify` not at all (`PPC64LE.Scrub.PostOut`),
 whatever tables of constants their code takes, by RISC-V's proofs
-(`Proof/Ed25519/RISCV64/Scrub.lean`). `scrubOf`'s side condition
+(`Proof/Ed25519/RISCV64/Scrub.lean`). `verifiedScrubbedAll`'s side condition
 (`scrubSide`) is proved at each theorem, by the kernel's evaluation of
 it when this module is built.
 -/

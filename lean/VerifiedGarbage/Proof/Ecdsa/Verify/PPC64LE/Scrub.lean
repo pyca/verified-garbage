@@ -66,7 +66,7 @@ For every curve, `vg_ecdsa_<curve>_verify`, followed by
 volatile registers and the stack its frames used. Its postcondition does not
 read the memory on return (`Proof/EcKey/PPC64LE/Scrub/Out.lean`). Each takes
 the curve's group law (`Weierstrass.Law`), which its registration file gives.
-`scrubOf`'s side condition (`scrubSide`) is proved at each registration, by
+`verifiedScrubbedAll`'s side condition (`scrubSide`) is proved at each theorem, by
 the kernel's evaluation of it when this module is built.
 -/
 

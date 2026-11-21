@@ -16,8 +16,8 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.CompressLit
 (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers and the 384
 bytes of stack its frames use. Its postcondition reads the memory on return
 only within `out` (`PPC64LE.Scrub.PostOut`), by RISC-V's proof
-(`Proof/Argon2/RISCV64/Scrub.lean`). `scrubOf`'s side condition
-(`scrubSide`) is proved at the registration, by the kernel's evaluation of
+(`Proof/Argon2/RISCV64/Scrub.lean`). `verifiedScrubbedAll`'s side condition
+(`scrubSide`) is proved at the theorem, by the kernel's evaluation of
 it when this module is built.
 -/
 

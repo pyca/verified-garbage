@@ -1714,11 +1714,7 @@ theorem Verified.scrubAll {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.pt
   refine ⟨hU, fun x hx hc => hA' x hx fun hz => hc ?_⟩
   simp only [Cover, hsum]; simp only [InZ, hL] at hz; exact hz
 
-/-! ## Registering scrubbed code -/
-
-/-- No modelled instruction writes `r1` but as a frame's push or pop. -/
-theorem spSafe_all (c : Prog isa) : c.all (fun i => !isa.writesSp i) = true := by
-  induction c <;> simp_all [Code.all]
+/-! ## What the cleanup's theorems need of a registration -/
 
 theorem contract_pub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
@@ -1744,66 +1740,6 @@ theorem tables_pub_syms {A : Abi isa} {sig : Sig} {ts : List (String × List FnT
 /-- The result's width, of `r`'s function. -/
 abbrev retBitsOf {api : Api} (r : Unscrubbed api target) : Nat :=
   api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
-
-/-- `r`'s code, scrubbed, is verified against `r`'s contract and returns
-without secret residue. -/
-theorem scrubCode_ok {api : Api} (r : Unscrubbed api target)
-    (hd : r.code.ppc64leDepth ≤ r.stack) (h16 : r.code.ppc64leDepth % 16 = 0)
-    (h48 : r.code.ppc64leDepth = 0 ∨ 48 ≤ r.code.ppc64leDepth) (htc : tablesCall r.code r.tables = true)
-    (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) :
-    Verified target (scrubAll (retBitsOf r) r.code.ppc64leDepth
-        (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code) r.contract ∧
-      NoResidue (scrubAll (retBitsOf r) r.code.ppc64leDepth
-        (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code) r.contract (retBitsOf r) := by
-  obtain ⟨pre, post, leak, e⟩ := r.ofSig
-  have hv := r.verified
-  have hp := hpost
-  unfold retBitsOf at hrb hp ⊢
-  rw [e] at hv hp ⊢
-  have hrb' := hrb
-  refine Verified.scrubAll (ScrubAbi.of r.consts api.sig r.tables) hv hd h16 h48
-    (fun s₁ s₂ hp n hn => tables_pub_syms (contract_pub hp) n ?_) hrb' hp
-  simpa using List.all_eq_true.mp htc n hn
-
-/-- `r`, scrubbed: its code followed by the clearing (`scrubAll`) of the stack
-its frames use and its volatile registers. -/
-def scrubReg {api : Api} (r : Unscrubbed api target)
-    (hd : r.code.ppc64leDepth ≤ r.stack) (h16 : r.code.ppc64leDepth % 16 = 0)
-    (h48 : r.code.ppc64leDepth = 0 ∨ 48 ≤ r.code.ppc64leDepth) (htc : tablesCall r.code r.tables = true)
-    (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) (hw : r.written = []) :
-    Registration api target where
-  suffix := r.suffix
-  tables := r.tables
-  code := scrubAll (retBitsOf r) r.code.ppc64leDepth (Clear.of r.code (chunks r.code.ppc64leDepth)) r.code
-  contract := r.contract
-  verified := .scrubbed <| .abi ⟨(scrubCode_ok r hd h16 h48 htc hrb hpost).1, (scrubCode_ok r hd h16 h48 htc hrb hpost).2⟩
-  consts := r.consts
-  stack := r.stack
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := spSafe_all _
-  written := r.written
-  writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-
-/-- `r`, returning without secret residue (`scrubReg`) if `scrubAll`'s side
-conditions hold: its frames use at most `r.stack` bytes, it calls
-indirectly only functions of its tables (`tablesCall`), and it states no
-`written`; otherwise `r`
-itself, which then has no proof (`Verification.unscrubbed`), as the emitter
-allows only of what `ci/residue_allowlist.txt` lists. -/
-def withScrub {api : Api} (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r)) :
-    Registration api target :=
-  if hd : r.code.ppc64leDepth ≤ r.stack then
-  if h16 : r.code.ppc64leDepth % 16 = 0 then
-  if h48 : r.code.ppc64leDepth = 0 ∨ 48 ≤ r.code.ppc64leDepth then
-  if htc : tablesCall r.code r.tables = true then
-  if hrb : retBitsOf r ≤ 64 then
-  if hw : r.written = [] then scrubReg r hd h16 h48 htc hrb hpost hw
-  else r.registration else r.registration else r.registration else r.registration
-  else r.registration else r.registration
 
 end Scrub
 

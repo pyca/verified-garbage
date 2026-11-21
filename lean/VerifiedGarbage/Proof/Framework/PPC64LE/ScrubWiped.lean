@@ -15,8 +15,8 @@ wipe covers the whole of the frame's region (`8 * words = bytes - 32`) and
 runs of it with the same trace end with memories that agree outside the
 buffers (`Exec.agreeWiped`). So it returns without secret residue followed
 only by the clearing of the volatile registers it may write,
-`scrubTail rb [] (Clear.of c [])`, which wipes no stack (`Verified.scrubOf`
-with no levels; `withScrubWiped`).
+`scrubTail rb [] cl`, which wipes no stack (`Verified.scrubOf` with no
+levels; `PPC64LE.Scrub.verifiedScrubbedWiped`).
 
 Inside the frame, the two runs agree outside the buffers and the frame's
 region (`Exec.agree`); the wipe then zeroes the region in both; and the
@@ -178,7 +178,7 @@ theorem Exec.agreeWiped {R : List Region} {B w : Nat} {r : Reg} {body : Prog isa
   refine ⟨by rw [q₁, q₂, hU], fun x hx => hA' x hx ?_⟩
   simp only [InZ]; omega_using []
 
-/-- What `withScrubWiped` needs of a function's code: that it is
+/-- What `verifiedScrubbedWiped` needs of a function's code: that it is
 `withStackScratchWiped bytes r words body`, with a wipe of the whole of the
 frame's region and a body without indirect calls or frames, within the
 contract's stack. -/
@@ -219,62 +219,5 @@ theorem WipedShape.agree {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptr
   obtain ⟨hU, hM⟩ := Exec.agreeWiped (R := s₁.rd ++ s₁.wr) sh.hB sh.hw sh.hic sh.hd a₁ a₂ hsp hwr hun
     (fun q hq => List.mem_append_right _ hq) hBs hm ht
   exact ⟨hU, fun x hx _ => hM x hx⟩
-
-/-- `r`'s code, followed by the clearing of the volatile registers alone, is
-verified against `r`'s contract and returns without secret residue. -/
-theorem scrubWipedCode_ok {api : Api} (r : Unscrubbed api target) (sh : WipedShape r.code r.stack)
-    (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) :
-    Verified target (.seq r.code (scrubTail (retBitsOf r) [] (Clear.of r.code []))) r.contract ∧
-      NoResidue (.seq r.code (scrubTail (retBitsOf r) [] (Clear.of r.code []))) r.contract (retBitsOf r) := by
-  obtain ⟨pre, post, leak, e⟩ := r.ofSig
-  have hv := r.verified
-  have hp := hpost
-  unfold retBitsOf at hrb hp ⊢
-  rw [e] at hv hp ⊢
-  have hrb' := hrb
-  have hA := ScrubAbi.of r.consts api.sig r.tables
-  exact Verified.scrubOf hA hv ⟨fun _ h => by simp at h, fun _ h => by simp at h⟩ (Nat.zero_le _)
-    (Clear.of_wf _ _) (Clear.of_keep _ _) hrb' hp (WipedShape.agree hA hv sh)
-
-/-- `r`, its code followed by the clearing of the volatile registers alone:
-for code that wipes its own frame (`WipedShape`). -/
-def scrubWipedReg {api : Api} (r : Unscrubbed api target) (sh : WipedShape r.code r.stack)
-    (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) (hw : r.written = []) :
-    Registration api target where
-  suffix := r.suffix
-  tables := r.tables
-  code := .seq r.code (scrubTail (retBitsOf r) [] (Clear.of r.code []))
-  contract := r.contract
-  verified := .scrubbed <| .abi ⟨(scrubWipedCode_ok r sh hrb hpost).1, (scrubWipedCode_ok r sh hrb hpost).2⟩
-  consts := r.consts
-  stack := r.stack
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := spSafe_all _
-  written := r.written
-  writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-
-/-- `r`, returning without secret residue with the clearing of its volatile
-registers alone (`scrubWipedReg`), if its code is
-`withStackScratchWiped bytes reg words body` (`hc`, by `rfl`) with a wipe of
-the whole frame region, `body` makes no indirect call and has no frames, and
-`r` states no `written`; otherwise `r` itself, which then has no proof, as
-the emitter allows only of what `ci/residue_allowlist.txt` lists. -/
-def withScrubWiped {api : Api} (r : Unscrubbed api target) (bytes : Nat) (reg : Reg) (words : Nat)
-    (body : Prog isa) (hc : r.code = withStackScratchWiped bytes reg words body)
-    (hpost : PostOut r.contract (retBitsOf r)) : Registration api target :=
-  if hB : 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 then
-  if hw : 8 * words = bytes - 32 then
-  if hic : icallFree body = true then
-  if hd : body.ppc64leDepth = 0 then
-  if hs : bytes ≤ r.stack then
-  if hrb : retBitsOf r ≤ 64 then
-  if hwr : r.written = [] then
-    scrubWipedReg r ⟨bytes, reg, words, body, hc, hB, hw, hic, hd, hs⟩ hrb hpost hwr
-  else r.registration else r.registration else r.registration else r.registration
-  else r.registration else r.registration else r.registration
 
 end VG.PPC64LE.Scrub
