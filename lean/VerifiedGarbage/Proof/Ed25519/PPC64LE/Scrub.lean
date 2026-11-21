@@ -23,7 +23,7 @@ their frames use (720, 320 and 224 bytes). The postconditions of
 their outputs, and that of `verify` not at all (`PPC64LE.Scrub.PostOut`),
 whatever tables of constants their code takes, by RISC-V's proofs
 (`Proof/Ed25519/RISCV64/Scrub.lean`). `scrubOf`'s side condition
-(`scrubSide`) is proved at each registration, by the kernel's evaluation of
+(`scrubSide`) is proved at each theorem, by the kernel's evaluation of
 it when this module is built.
 -/
 
@@ -71,9 +71,11 @@ theorem verifyOut :
 
 /-! ## The functions as emitted -/
 
-/-- `Spec.Ed25519.keyPairApi`. -/
-def keyPairReg : Registration Spec.Ed25519.keyPairApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_ed25519_key_pair` as emitted (`Impl.Ed25519.PPC64LE.Fn.keyPair`) meets
+its contract in constant time and returns without secret residue. -/
+theorem keyPair_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ed25519.PPC64LE.Fn.keyPair Proof.Ed25519.PPC64LE.KeyPair.spec 0 :=
+  verifiedScrubbedAll (api := Spec.Ed25519.keyPairApi) {
       code := Impl.Ed25519.PPC64LE.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core")
         Proof.Ed25519.PPC64LE.KeyPair.dgCode "vg_ed25519_public_key_expanded"
         Impl.Ed25519.PPC64LE.Whole.publicKeyExpandedCode
