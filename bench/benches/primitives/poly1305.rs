@@ -84901,7 +84901,9 @@ vgx_s5_dc:
 ///   xmm4) and one (xmm5), each once; `efin`, where present, the function
 ///   as committed.
 /// * `vg_aes_decrypt_blocks_aesni` (the same file): `gcur`, `g7t`, `g6t`
-///   and `gfin`, likewise.
+///   and `gfin`, likewise; `g6k`, `g6t` with each round key taken through
+///   `aesimc` in a register of its own turn (eight in turn) where they all
+///   went through xmm6.
 /// * `vg_aes_ctr32_to_aesni` (`Impl/Aes/X86/AesNi.lean`; AES-CTR, GCM, CCM):
 ///   `ccur`; `c7t`, seven lanes, the counter blocks' prefix and the data
 ///   through xmm6 before and after it holds the round keys, and the lanes
@@ -86474,6 +86476,421 @@ vgx_ae_e6t:
     );
     std::arch::global_asm!(
         r#"
+.globl vgx_ae_efin
+.type vgx_ae_efin, @function
+.p2align 6
+vgx_ae_efin:
+    mov eax, DWORD PTR [esp+4]
+    mov edx, DWORD PTR [esp+12]
+    mov eax, DWORD PTR [esp+12]
+    mov ecx, edx
+    sub ecx, eax
+    shr ecx, 4
+    add ecx, 5
+    mov eax, DWORD PTR [esp+16]
+    cmp ecx, eax
+    mov ecx, DWORD PTR [esp+8]
+    mov eax, DWORD PTR [esp+4]
+    jae 20f
+22:
+    movdqu xmm0, XMMWORD PTR [edx]
+    movdqu xmm1, XMMWORD PTR [edx+16]
+    movdqu xmm2, XMMWORD PTR [edx+32]
+    movdqu xmm3, XMMWORD PTR [edx+48]
+    movdqu xmm4, XMMWORD PTR [edx+64]
+    movdqu xmm5, XMMWORD PTR [edx+80]
+    movdqu xmm6, XMMWORD PTR [eax]
+    pxor xmm0, xmm6
+    pxor xmm1, xmm6
+    pxor xmm2, xmm6
+    pxor xmm3, xmm6
+    pxor xmm4, xmm6
+    pxor xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+16]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+32]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+48]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+64]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+80]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+96]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+112]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+128]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+144]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    cmp ecx, 10
+    je 23f
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+176]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    cmp ecx, 12
+    je 25f
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+208]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+224]
+    aesenclast xmm0, xmm6
+    aesenclast xmm1, xmm6
+    aesenclast xmm2, xmm6
+    aesenclast xmm3, xmm6
+    aesenclast xmm4, xmm6
+    aesenclast xmm5, xmm6
+    jmp 26f
+25:
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenclast xmm0, xmm6
+    aesenclast xmm1, xmm6
+    aesenclast xmm2, xmm6
+    aesenclast xmm3, xmm6
+    aesenclast xmm4, xmm6
+    aesenclast xmm5, xmm6
+26:
+    jmp 24f
+23:
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenclast xmm0, xmm6
+    aesenclast xmm1, xmm6
+    aesenclast xmm2, xmm6
+    aesenclast xmm3, xmm6
+    aesenclast xmm4, xmm6
+    aesenclast xmm5, xmm6
+24:
+    movdqu XMMWORD PTR [edx], xmm0
+    movdqu XMMWORD PTR [edx+16], xmm1
+    movdqu XMMWORD PTR [edx+32], xmm2
+    movdqu XMMWORD PTR [edx+48], xmm3
+    movdqu XMMWORD PTR [edx+64], xmm4
+    movdqu XMMWORD PTR [edx+80], xmm5
+    add edx, 96
+    mov eax, DWORD PTR [esp+12]
+    mov ecx, edx
+    sub ecx, eax
+    shr ecx, 4
+    add ecx, 5
+    mov eax, DWORD PTR [esp+16]
+    cmp ecx, eax
+    mov ecx, DWORD PTR [esp+8]
+    mov eax, DWORD PTR [esp+4]
+    jb 22b
+    jmp 21f
+20:
+21:
+    mov eax, DWORD PTR [esp+12]
+    mov ecx, edx
+    sub ecx, eax
+    shr ecx, 4
+    add ecx, 2
+    mov eax, DWORD PTR [esp+16]
+    cmp ecx, eax
+    mov ecx, DWORD PTR [esp+8]
+    mov eax, DWORD PTR [esp+4]
+    jae 27f
+    movdqu xmm0, XMMWORD PTR [edx]
+    movdqu xmm1, XMMWORD PTR [edx+16]
+    movdqu xmm2, XMMWORD PTR [edx+32]
+    movdqu xmm6, XMMWORD PTR [eax]
+    pxor xmm0, xmm6
+    pxor xmm1, xmm6
+    pxor xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+16]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+32]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+48]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+64]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+80]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+96]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+112]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+128]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+144]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    cmp ecx, 10
+    je 29f
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+176]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    cmp ecx, 12
+    je 211f
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+208]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+224]
+    aesenclast xmm0, xmm6
+    aesenclast xmm1, xmm6
+    aesenclast xmm2, xmm6
+    jmp 212f
+211:
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenclast xmm0, xmm6
+    aesenclast xmm1, xmm6
+    aesenclast xmm2, xmm6
+212:
+    jmp 210f
+29:
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenclast xmm0, xmm6
+    aesenclast xmm1, xmm6
+    aesenclast xmm2, xmm6
+210:
+    movdqu XMMWORD PTR [edx], xmm0
+    movdqu XMMWORD PTR [edx+16], xmm1
+    movdqu XMMWORD PTR [edx+32], xmm2
+    add edx, 48
+    jmp 28f
+27:
+28:
+    mov eax, DWORD PTR [esp+12]
+    mov ecx, edx
+    sub ecx, eax
+    shr ecx, 4
+    add ecx, 1
+    mov eax, DWORD PTR [esp+16]
+    cmp ecx, eax
+    mov ecx, DWORD PTR [esp+8]
+    mov eax, DWORD PTR [esp+4]
+    jae 213f
+    movdqu xmm3, XMMWORD PTR [edx]
+    movdqu xmm4, XMMWORD PTR [edx+16]
+    movdqu xmm6, XMMWORD PTR [eax]
+    pxor xmm3, xmm6
+    pxor xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+16]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+32]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+48]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+64]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+80]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+96]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+112]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+128]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+144]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    cmp ecx, 10
+    je 215f
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+176]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    cmp ecx, 12
+    je 217f
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+208]
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+224]
+    aesenclast xmm3, xmm6
+    aesenclast xmm4, xmm6
+    jmp 218f
+217:
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenclast xmm3, xmm6
+    aesenclast xmm4, xmm6
+218:
+    jmp 216f
+215:
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenclast xmm3, xmm6
+    aesenclast xmm4, xmm6
+216:
+    movdqu XMMWORD PTR [edx], xmm3
+    movdqu XMMWORD PTR [edx+16], xmm4
+    add edx, 32
+    jmp 214f
+213:
+214:
+    mov eax, DWORD PTR [esp+12]
+    mov ecx, edx
+    sub ecx, eax
+    shr ecx, 4
+    add ecx, 0
+    mov eax, DWORD PTR [esp+16]
+    cmp ecx, eax
+    mov ecx, DWORD PTR [esp+8]
+    mov eax, DWORD PTR [esp+4]
+    jae 219f
+    movdqu xmm5, XMMWORD PTR [edx]
+    movdqu xmm6, XMMWORD PTR [eax]
+    pxor xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+16]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+32]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+48]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+64]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+80]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+96]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+112]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+128]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+144]
+    aesenc xmm5, xmm6
+    cmp ecx, 10
+    je 221f
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+176]
+    aesenc xmm5, xmm6
+    cmp ecx, 12
+    je 223f
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+208]
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+224]
+    aesenclast xmm5, xmm6
+    jmp 224f
+223:
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenclast xmm5, xmm6
+224:
+    jmp 222f
+221:
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenclast xmm5, xmm6
+222:
+    movdqu XMMWORD PTR [edx], xmm5
+    add edx, 16
+    jmp 220f
+219:
+220:
+    ret
+.size vgx_ae_efin, .-vgx_ae_efin
+"#
+    );
+    std::arch::global_asm!(
+        r#"
 .globl vgx_ae_gcur
 .type vgx_ae_gcur, @function
 .p2align 6
@@ -87578,6 +87995,818 @@ vgx_ae_g6t:
     mov edi, DWORD PTR [edx+4]
     ret
 .size vgx_ae_g6t, .-vgx_ae_g6t
+"#
+    );
+    std::arch::global_asm!(
+        r#"
+.globl vgx_ae_g6k
+.type vgx_ae_g6k, @function
+.p2align 6
+vgx_ae_g6k:
+    mov edx, DWORD PTR [esp+20]
+    mov DWORD PTR [edx], esi
+    mov DWORD PTR [edx+4], edi
+    mov eax, DWORD PTR [esp+4]
+    mov ecx, DWORD PTR [esp+8]
+    mov esi, DWORD PTR [esp+12]
+    mov edi, DWORD PTR [esp+16]
+    movdqu xmm1, XMMWORD PTR [eax+16]
+    aesimc xmm1, xmm1
+    movdqu XMMWORD PTR [edx+16], xmm1
+    movdqu xmm2, XMMWORD PTR [eax+32]
+    aesimc xmm2, xmm2
+    movdqu XMMWORD PTR [edx+32], xmm2
+    movdqu xmm3, XMMWORD PTR [eax+48]
+    aesimc xmm3, xmm3
+    movdqu XMMWORD PTR [edx+48], xmm3
+    movdqu xmm4, XMMWORD PTR [eax+64]
+    aesimc xmm4, xmm4
+    movdqu XMMWORD PTR [edx+64], xmm4
+    movdqu xmm5, XMMWORD PTR [eax+80]
+    aesimc xmm5, xmm5
+    movdqu XMMWORD PTR [edx+80], xmm5
+    movdqu xmm6, XMMWORD PTR [eax+96]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+96], xmm6
+    movdqu xmm7, XMMWORD PTR [eax+112]
+    aesimc xmm7, xmm7
+    movdqu XMMWORD PTR [edx+112], xmm7
+    movdqu xmm0, XMMWORD PTR [eax+128]
+    aesimc xmm0, xmm0
+    movdqu XMMWORD PTR [edx+128], xmm0
+    movdqu xmm1, XMMWORD PTR [eax+144]
+    aesimc xmm1, xmm1
+    movdqu XMMWORD PTR [edx+144], xmm1
+    cmp ecx, 10
+    je 20f
+    movdqu xmm2, XMMWORD PTR [eax+160]
+    aesimc xmm2, xmm2
+    movdqu XMMWORD PTR [edx+160], xmm2
+    movdqu xmm3, XMMWORD PTR [eax+176]
+    aesimc xmm3, xmm3
+    movdqu XMMWORD PTR [edx+176], xmm3
+    cmp ecx, 12
+    je 22f
+    movdqu xmm4, XMMWORD PTR [eax+192]
+    aesimc xmm4, xmm4
+    movdqu XMMWORD PTR [edx+192], xmm4
+    movdqu xmm5, XMMWORD PTR [eax+208]
+    aesimc xmm5, xmm5
+    movdqu XMMWORD PTR [edx+208], xmm5
+    movdqu xmm6, XMMWORD PTR [eax+224]
+    movdqu XMMWORD PTR [edx+224], xmm6
+    jmp 23f
+22:
+    movdqu xmm4, XMMWORD PTR [eax+192]
+    movdqu XMMWORD PTR [edx+224], xmm4
+23:
+    jmp 21f
+20:
+    movdqu xmm2, XMMWORD PTR [eax+160]
+    movdqu XMMWORD PTR [edx+224], xmm2
+21:
+    cmp edi, 6
+    jb 24f
+26:
+    movdqu xmm0, XMMWORD PTR [esi]
+    movdqu xmm1, XMMWORD PTR [esi+16]
+    movdqu xmm2, XMMWORD PTR [esi+32]
+    movdqu xmm3, XMMWORD PTR [esi+48]
+    movdqu xmm4, XMMWORD PTR [esi+64]
+    movdqu xmm5, XMMWORD PTR [esi+80]
+    movdqu xmm6, XMMWORD PTR [edx+224]
+    pxor xmm0, xmm6
+    pxor xmm1, xmm6
+    pxor xmm2, xmm6
+    pxor xmm3, xmm6
+    pxor xmm4, xmm6
+    pxor xmm5, xmm6
+    cmp ecx, 10
+    je 27f
+    cmp ecx, 12
+    je 29f
+    movdqu xmm6, XMMWORD PTR [edx+208]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+192]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    jmp 210f
+29:
+210:
+    movdqu xmm6, XMMWORD PTR [edx+176]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+160]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    jmp 28f
+27:
+28:
+    movdqu xmm6, XMMWORD PTR [edx+144]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+128]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+112]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+96]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+80]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+64]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+48]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+32]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+16]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax]
+    aesdeclast xmm0, xmm6
+    aesdeclast xmm1, xmm6
+    aesdeclast xmm2, xmm6
+    aesdeclast xmm3, xmm6
+    aesdeclast xmm4, xmm6
+    aesdeclast xmm5, xmm6
+    movdqu XMMWORD PTR [esi], xmm0
+    movdqu XMMWORD PTR [esi+16], xmm1
+    movdqu XMMWORD PTR [esi+32], xmm2
+    movdqu XMMWORD PTR [esi+48], xmm3
+    movdqu XMMWORD PTR [esi+64], xmm4
+    movdqu XMMWORD PTR [esi+80], xmm5
+    add esi, 96
+    sub edi, 6
+    cmp edi, 6
+    jae 26b
+    jmp 25f
+24:
+25:
+    cmp edi, 3
+    jb 211f
+    movdqu xmm0, XMMWORD PTR [esi]
+    movdqu xmm1, XMMWORD PTR [esi+16]
+    movdqu xmm2, XMMWORD PTR [esi+32]
+    movdqu xmm6, XMMWORD PTR [edx+224]
+    pxor xmm0, xmm6
+    pxor xmm1, xmm6
+    pxor xmm2, xmm6
+    cmp ecx, 10
+    je 213f
+    cmp ecx, 12
+    je 215f
+    movdqu xmm6, XMMWORD PTR [edx+208]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+192]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    jmp 216f
+215:
+216:
+    movdqu xmm6, XMMWORD PTR [edx+176]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+160]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    jmp 214f
+213:
+214:
+    movdqu xmm6, XMMWORD PTR [edx+144]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+128]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+112]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+96]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+80]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+64]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+48]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+32]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+16]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax]
+    aesdeclast xmm0, xmm6
+    aesdeclast xmm1, xmm6
+    aesdeclast xmm2, xmm6
+    movdqu XMMWORD PTR [esi], xmm0
+    movdqu XMMWORD PTR [esi+16], xmm1
+    movdqu XMMWORD PTR [esi+32], xmm2
+    add esi, 48
+    sub edi, 3
+    jmp 212f
+211:
+212:
+    test edi, 2
+    je 217f
+    movdqu xmm3, XMMWORD PTR [esi]
+    movdqu xmm4, XMMWORD PTR [esi+16]
+    movdqu xmm6, XMMWORD PTR [edx+224]
+    pxor xmm3, xmm6
+    pxor xmm4, xmm6
+    cmp ecx, 10
+    je 219f
+    cmp ecx, 12
+    je 221f
+    movdqu xmm6, XMMWORD PTR [edx+208]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+192]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    jmp 222f
+221:
+222:
+    movdqu xmm6, XMMWORD PTR [edx+176]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+160]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    jmp 220f
+219:
+220:
+    movdqu xmm6, XMMWORD PTR [edx+144]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+128]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+112]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+96]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+80]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+64]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+48]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+32]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+16]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax]
+    aesdeclast xmm3, xmm6
+    aesdeclast xmm4, xmm6
+    movdqu XMMWORD PTR [esi], xmm3
+    movdqu XMMWORD PTR [esi+16], xmm4
+    add esi, 32
+    jmp 218f
+217:
+218:
+    test edi, 1
+    je 223f
+    movdqu xmm5, XMMWORD PTR [esi]
+    movdqu xmm6, XMMWORD PTR [edx+224]
+    pxor xmm5, xmm6
+    cmp ecx, 10
+    je 225f
+    cmp ecx, 12
+    je 227f
+    movdqu xmm6, XMMWORD PTR [edx+208]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+192]
+    aesdec xmm5, xmm6
+    jmp 228f
+227:
+228:
+    movdqu xmm6, XMMWORD PTR [edx+176]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+160]
+    aesdec xmm5, xmm6
+    jmp 226f
+225:
+226:
+    movdqu xmm6, XMMWORD PTR [edx+144]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+128]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+112]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+96]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+80]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+64]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+48]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+32]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+16]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax]
+    aesdeclast xmm5, xmm6
+    movdqu XMMWORD PTR [esi], xmm5
+    jmp 224f
+223:
+224:
+    mov esi, DWORD PTR [edx]
+    mov edi, DWORD PTR [edx+4]
+    ret
+.size vgx_ae_g6k, .-vgx_ae_g6k
+"#
+    );
+    std::arch::global_asm!(
+        r#"
+.globl vgx_ae_gfin
+.type vgx_ae_gfin, @function
+.p2align 6
+vgx_ae_gfin:
+    mov edx, DWORD PTR [esp+20]
+    mov DWORD PTR [edx], esi
+    mov DWORD PTR [edx+4], edi
+    mov eax, DWORD PTR [esp+4]
+    mov ecx, DWORD PTR [esp+8]
+    mov esi, DWORD PTR [esp+12]
+    mov edi, DWORD PTR [esp+16]
+    movdqu xmm6, XMMWORD PTR [eax+16]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+16], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+32]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+32], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+48]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+48], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+64]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+64], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+80]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+80], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+96]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+96], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+112]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+112], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+128]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+128], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+144]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+144], xmm6
+    cmp ecx, 10
+    je 20f
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+160], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+176]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+176], xmm6
+    cmp ecx, 12
+    je 22f
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+192], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+208]
+    aesimc xmm6, xmm6
+    movdqu XMMWORD PTR [edx+208], xmm6
+    movdqu xmm6, XMMWORD PTR [eax+224]
+    movdqu XMMWORD PTR [edx+224], xmm6
+    jmp 23f
+22:
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    movdqu XMMWORD PTR [edx+224], xmm6
+23:
+    jmp 21f
+20:
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    movdqu XMMWORD PTR [edx+224], xmm6
+21:
+    cmp edi, 6
+    jb 24f
+26:
+    movdqu xmm0, XMMWORD PTR [esi]
+    movdqu xmm1, XMMWORD PTR [esi+16]
+    movdqu xmm2, XMMWORD PTR [esi+32]
+    movdqu xmm3, XMMWORD PTR [esi+48]
+    movdqu xmm4, XMMWORD PTR [esi+64]
+    movdqu xmm5, XMMWORD PTR [esi+80]
+    movdqu xmm6, XMMWORD PTR [edx+224]
+    pxor xmm0, xmm6
+    pxor xmm1, xmm6
+    pxor xmm2, xmm6
+    pxor xmm3, xmm6
+    pxor xmm4, xmm6
+    pxor xmm5, xmm6
+    cmp ecx, 10
+    je 27f
+    cmp ecx, 12
+    je 29f
+    movdqu xmm6, XMMWORD PTR [edx+208]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+192]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    jmp 210f
+29:
+210:
+    movdqu xmm6, XMMWORD PTR [edx+176]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+160]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    jmp 28f
+27:
+28:
+    movdqu xmm6, XMMWORD PTR [edx+144]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+128]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+112]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+96]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+80]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+64]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+48]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+32]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+16]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax]
+    aesdeclast xmm0, xmm6
+    aesdeclast xmm1, xmm6
+    aesdeclast xmm2, xmm6
+    aesdeclast xmm3, xmm6
+    aesdeclast xmm4, xmm6
+    aesdeclast xmm5, xmm6
+    movdqu XMMWORD PTR [esi], xmm0
+    movdqu XMMWORD PTR [esi+16], xmm1
+    movdqu XMMWORD PTR [esi+32], xmm2
+    movdqu XMMWORD PTR [esi+48], xmm3
+    movdqu XMMWORD PTR [esi+64], xmm4
+    movdqu XMMWORD PTR [esi+80], xmm5
+    add esi, 96
+    sub edi, 6
+    cmp edi, 6
+    jae 26b
+    jmp 25f
+24:
+25:
+    cmp edi, 3
+    jb 211f
+    movdqu xmm0, XMMWORD PTR [esi]
+    movdqu xmm1, XMMWORD PTR [esi+16]
+    movdqu xmm2, XMMWORD PTR [esi+32]
+    movdqu xmm6, XMMWORD PTR [edx+224]
+    pxor xmm0, xmm6
+    pxor xmm1, xmm6
+    pxor xmm2, xmm6
+    cmp ecx, 10
+    je 213f
+    cmp ecx, 12
+    je 215f
+    movdqu xmm6, XMMWORD PTR [edx+208]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+192]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    jmp 216f
+215:
+216:
+    movdqu xmm6, XMMWORD PTR [edx+176]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+160]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    jmp 214f
+213:
+214:
+    movdqu xmm6, XMMWORD PTR [edx+144]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+128]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+112]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+96]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+80]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+64]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+48]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+32]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+16]
+    aesdec xmm0, xmm6
+    aesdec xmm1, xmm6
+    aesdec xmm2, xmm6
+    movdqu xmm6, XMMWORD PTR [eax]
+    aesdeclast xmm0, xmm6
+    aesdeclast xmm1, xmm6
+    aesdeclast xmm2, xmm6
+    movdqu XMMWORD PTR [esi], xmm0
+    movdqu XMMWORD PTR [esi+16], xmm1
+    movdqu XMMWORD PTR [esi+32], xmm2
+    add esi, 48
+    sub edi, 3
+    jmp 212f
+211:
+212:
+    test edi, 2
+    je 217f
+    movdqu xmm3, XMMWORD PTR [esi]
+    movdqu xmm4, XMMWORD PTR [esi+16]
+    movdqu xmm6, XMMWORD PTR [edx+224]
+    pxor xmm3, xmm6
+    pxor xmm4, xmm6
+    cmp ecx, 10
+    je 219f
+    cmp ecx, 12
+    je 221f
+    movdqu xmm6, XMMWORD PTR [edx+208]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+192]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    jmp 222f
+221:
+222:
+    movdqu xmm6, XMMWORD PTR [edx+176]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+160]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    jmp 220f
+219:
+220:
+    movdqu xmm6, XMMWORD PTR [edx+144]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+128]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+112]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+96]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+80]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+64]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+48]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+32]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+16]
+    aesdec xmm3, xmm6
+    aesdec xmm4, xmm6
+    movdqu xmm6, XMMWORD PTR [eax]
+    aesdeclast xmm3, xmm6
+    aesdeclast xmm4, xmm6
+    movdqu XMMWORD PTR [esi], xmm3
+    movdqu XMMWORD PTR [esi+16], xmm4
+    add esi, 32
+    jmp 218f
+217:
+218:
+    test edi, 1
+    je 223f
+    movdqu xmm5, XMMWORD PTR [esi]
+    movdqu xmm6, XMMWORD PTR [edx+224]
+    pxor xmm5, xmm6
+    cmp ecx, 10
+    je 225f
+    cmp ecx, 12
+    je 227f
+    movdqu xmm6, XMMWORD PTR [edx+208]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+192]
+    aesdec xmm5, xmm6
+    jmp 228f
+227:
+228:
+    movdqu xmm6, XMMWORD PTR [edx+176]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+160]
+    aesdec xmm5, xmm6
+    jmp 226f
+225:
+226:
+    movdqu xmm6, XMMWORD PTR [edx+144]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+128]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+112]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+96]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+80]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+64]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+48]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+32]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [edx+16]
+    aesdec xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax]
+    aesdeclast xmm5, xmm6
+    movdqu XMMWORD PTR [esi], xmm5
+    jmp 224f
+223:
+224:
+    mov esi, DWORD PTR [edx]
+    mov edi, DWORD PTR [edx+4]
+    ret
+.size vgx_ae_gfin, .-vgx_ae_gfin
 "#
     );
     std::arch::global_asm!(
@@ -91282,9 +92511,12 @@ vgx_ae_x2t:
         fn vgx_ae_ecur(schedule: *const u8, rounds: u32, data: *mut u8, n: u32, scratch: *mut u8);
         fn vgx_ae_e7t(schedule: *const u8, rounds: u32, data: *mut u8, n: u32, scratch: *mut u8);
         fn vgx_ae_e6t(schedule: *const u8, rounds: u32, data: *mut u8, n: u32, scratch: *mut u8);
+        fn vgx_ae_efin(schedule: *const u8, rounds: u32, data: *mut u8, n: u32, scratch: *mut u8);
         fn vgx_ae_gcur(schedule: *const u8, rounds: u32, data: *mut u8, n: u32, scratch: *mut u8);
         fn vgx_ae_g7t(schedule: *const u8, rounds: u32, data: *mut u8, n: u32, scratch: *mut u8);
         fn vgx_ae_g6t(schedule: *const u8, rounds: u32, data: *mut u8, n: u32, scratch: *mut u8);
+        fn vgx_ae_g6k(schedule: *const u8, rounds: u32, data: *mut u8, n: u32, scratch: *mut u8);
+        fn vgx_ae_gfin(schedule: *const u8, rounds: u32, data: *mut u8, n: u32, scratch: *mut u8);
         fn vgx_ae_ccur(schedule: *const u8, rounds: u32, counter: *mut u8, src: *const u8, n: u32, scratch: *mut u8, dst: *mut u8);
         fn vgx_ae_c7t(schedule: *const u8, rounds: u32, counter: *mut u8, src: *const u8, n: u32, scratch: *mut u8, dst: *mut u8);
         fn vgx_ae_c6t(schedule: *const u8, rounds: u32, counter: *mut u8, src: *const u8, n: u32, scratch: *mut u8, dst: *mut u8);
@@ -91307,13 +92539,16 @@ vgx_ae_x2t:
         X(Chained),
     }
 
-    const CANDS: [(&str, &str, F); 15] = [
+    const CANDS: [(&str, &str, F); 18] = [
         ("ecur", "ecb", F::E(vgx_ae_ecur)),
         ("e7t", "ecb", F::E(vgx_ae_e7t)),
         ("e6t", "ecb", F::E(vgx_ae_e6t)),
+        ("efin", "ecb", F::E(vgx_ae_efin)),
         ("gcur", "ecbd", F::G(vgx_ae_gcur)),
         ("g7t", "ecbd", F::G(vgx_ae_g7t)),
         ("g6t", "ecbd", F::G(vgx_ae_g6t)),
+        ("g6k", "ecbd", F::G(vgx_ae_g6k)),
+        ("gfin", "ecbd", F::G(vgx_ae_gfin)),
         ("ccur", "ctr", F::C(vgx_ae_ccur)),
         ("c7t", "ctr", F::C(vgx_ae_c7t)),
         ("c6t", "ctr", F::C(vgx_ae_c6t)),
