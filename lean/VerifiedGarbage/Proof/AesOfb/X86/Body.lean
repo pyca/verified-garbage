@@ -53,7 +53,10 @@ in `xmm0` and calls nothing, meets the contract that the code around a block
 function meets (`modeX86 ofbMode`), as AES-CBC's encryption with AES-NI does
 (`Proof/AesCbc/X86/Decrypt.lean`, whose loop this follows): the invariant
 of its loop after `k` blocks (`NInv`), one block (`body_wp`), and its
-prologue and epilogue, which are AES-CBC's (`endsZ_wp`).
+prologue and epilogue, which are AES-CBC's (`endsZ_wp`). The invariant and
+everything but the block are for any mode whose chaining value the loop
+keeps in `xmm0` (`whole_wp`): AES-CFB128's encryption uses them too
+(`Proof/AesCfb/X86/Verified.lean`).
 -/
 
 @[expose] public section
@@ -265,10 +268,11 @@ theorem st_xor (d o : BitVec 128) :
   rw [st_getD _ hi, xor_eq, Proof.Cmac.getD_xor (by simp) (by simpa using hi), st_getD d hi, st_getD o hi]
   exact byte_xor d o i
 
-/-- The invariant of the loop after `k` blocks: since the prologue left the
-memory `m`, only the data has changed, whose first `k` blocks are XORed
-with the output blocks, and the last output block is in `xmm0`. -/
-structure NInv (s₀ : State) (m : Mem) (k : Nat) (s : State) : Prop where
+/-- The invariant of the loop after `k` blocks, for the mode `M`: since the
+prologue left the memory `m`, only the data has changed, whose first `k`
+blocks are the mode's output (for AES-OFB, XORed with the output blocks),
+and the chaining value (the last output block) is in `xmm0`. -/
+structure NInv (M : Mode) (s₀ : State) (m : Mem) (k : Nat) (s : State) : Prop where
   esi : s.gpr .esi = Dp s₀ + BitVec.ofNat 32 (16 * k)
   edi : s.gpr .edi = BitVec.ofNat 32 (N s₀ - k)
   eax : s.gpr .eax = W s₀
@@ -278,11 +282,11 @@ structure NInv (s₀ : State) (m : Mem) (k : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   frame : Frame [dataR s₀] m s.mem
-  data : Spec.Cbc.blocksAt s.mem ((Dp s₀).setWidth 64) (N s₀) = outK ofbMode s₀ k ++ (blks s₀).drop k
-  chain : (st (s.xmm .xmm0)).toList = chainK ofbMode s₀ k
+  data : Spec.Cbc.blocksAt s.mem ((Dp s₀).setWidth 64) (N s₀) = outK M s₀ k ++ (blks s₀).drop k
+  chain : (st (s.xmm .xmm0)).toList = chainK M s₀ k
 
-theorem pre_wp {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv ofbMode s₀ 0 s) :
-    WP isa (.block niPre) s (NInv s₀ s.mem 0) := by
+theorem pre_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv M s₀ 0 s) :
+    WP isa (.block niPre) s (NInv M s₀ s.mem 0) := by
   obtain big := UPre.big_of h.frame
   obtain hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
   refine niPre_run h.esp (fun i hi => by rw [hrw]; exact hp.arg_in hi) (fun i hi => hp.arg_keep big hi)
@@ -296,8 +300,8 @@ theorem pre_wp {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv ofbMode s�
 /-- One block. -/
 theorem body_wp {s₀ : State} (hp : UPre s₀) {m : Mem}
     (hm : Frame [ivR s₀, dataR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) m) {k : Nat}
-    (hk : k < N s₀) {s : State} (h : NInv s₀ m k s) :
-    WP isa niBody s fun s' => NInv s₀ m (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀)) := by
+    (hk : k < N s₀) {s : State} (h : NInv ofbMode s₀ m k s) :
+    WP isa niBody s fun s' => NInv ofbMode s₀ m (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀)) := by
   obtain big : Frame (Big s₀) s₀.mem s.mem := (UPre.big_of hm).trans (h.frame.mono (by simp))
   obtain hdf := hp.data_fit
   obtain cB : (dataR s₀).Contains (blk s₀ k) 16 :=
@@ -394,13 +398,15 @@ theorem body_wp {s₀ : State} (hp : UPre s₀) {m : Mem}
   · rw [edi', MdStream.X86.ofNat_beq_zero (by have : N s₀ < 2 ^ 32 := (arg s₀ 4).isLt; omega_using [this])]
     exact congrArg some (decide_eq_decide.mpr (by omega_using [hk]))
 
-theorem loop_wp {s₀ : State} (hp : UPre s₀) {m : Mem}
-    (hm : Frame [ivR s₀, dataR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) m) {k : Nat}
-    (hk : k < N s₀) {s : State} (h : NInv s₀ m k s) : WP isa (.loop niBody .ne) s (NInv s₀ m (N s₀)) := by
-  refine WP.loop (M := isa) (body := niBody) (c := .ne) (Q := NInv s₀ m (N s₀))
-    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ NInv s₀ m j t) ?_ (N s₀ - k) s ⟨k, rfl, hk, h⟩
+/-- The loop, from what one run of its body does. -/
+theorem loop_wp {M : Mode} {body : Prog isa} {s₀ : State} {m : Mem}
+    (hb : ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, NInv M s₀ m k s →
+      WP isa body s fun s' => NInv M s₀ m (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀))) {k : Nat}
+    (hk : k < N s₀) {s : State} (h : NInv M s₀ m k s) : WP isa (.loop body .ne) s (NInv M s₀ m (N s₀)) := by
+  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := NInv M s₀ m (N s₀))
+    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ NInv M s₀ m j t) ?_ (N s₀ - k) s ⟨k, rfl, hk, h⟩
   rintro n s ⟨k, rfl, hk, h⟩
-  refine WP.mono (body_wp hp hm hk h) fun s' ⟨h', hz⟩ => ?_
+  refine WP.mono (hb hk h) fun s' ⟨h', hz⟩ => ?_
   obtain ev : isa.eval .ne s' = some !decide (k + 1 = N s₀) := by
     show VG.X86.eval .ne s' = _; rw [MdStream.X86.eval_ne, hz]; rfl
   by_cases hz' : k + 1 = N s₀
@@ -410,12 +416,12 @@ theorem loop_wp {s₀ : State} (hp : UPre s₀) {m : Mem}
   · right
     refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hz'], h'⟩
 
-/-- The output block stored: the invariant the epilogue starts from, with
+/-- The chaining value stored: the invariant the epilogue starts from, with
 only the block at `iv` and the data changed since the prologue. -/
-theorem post_wp {s₀ : State} (hp : UPre s₀) {m : Mem}
+theorem post_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {m : Mem}
     (hm : Frame [ivR s₀, dataR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) m) {s : State}
-    (h : NInv s₀ m (N s₀) s) :
-    WP isa (.block niPost) s fun t => LInv ofbMode s₀ (N s₀) t ∧ Frame (FB s₀ 0) m t.mem := by
+    (h : NInv M s₀ m (N s₀) s) :
+    WP isa (.block niPost) s fun t => LInv M s₀ (N s₀) t ∧ Frame (FB s₀ 0) m t.mem := by
   obtain ea : s.ea (at_ .edx 0) = (Iv s₀).setWidth 64 := by
     rw [ea_at', h.edx]
     show (Iv s₀ + BitVec.ofNat 32 0).setWidth 64 = _
@@ -442,14 +448,32 @@ theorem post_wp {s₀ : State} (hp : UPre s₀) {m : Mem}
   · show Frame _ m (s.mem.writeW _ _)
     exact (h.frame.mono (by simp)).writeW (r := ivR s₀) List.mem_cons_self _ (Region.contains_self _ _)
 
+/-- The whole function around a loop of `body`, from what one run of `body`
+does: the mode's contract, and every byte of the scratch buffer unchanged
+or zero. -/
+theorem whole_wp {M : Mode} {body : Prog isa}
+    (hb : ∀ {s₀ : State}, UPre s₀ → ∀ {m : Mem},
+      Frame [ivR s₀, dataR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) m → ∀ {k : Nat}, k < N s₀ →
+        ∀ {s : State}, NInv M s₀ m k s →
+          WP isa body s fun s' => NInv M s₀ m (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀)))
+    {s₀ : State} (h0 : (modeX86 M).pre s₀) :
+    WP isa (.seq (.block Impl.CmacAes.X86.setup)
+      (.seq (.ite .e (.block []) (.seq (.block niPre) (.seq (.loop body .ne) (.block niPost))))
+        (.block (Impl.CmacAes.X86.restore 5 ++ Impl.AesCbc.X86.zeroSaved)))) s₀ fun s' =>
+      abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' ∧
+      ∀ i, 0 ≤ i → i < 2176 →
+        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) ∨
+          s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = 0 :=
+  endsZ_wp h0 fun h hn => WP.seq (WP.mono (pre_wp (UPre.of h0) h) fun _ x₂ =>
+    WP.seq (WP.mono (loop_wp (hb (UPre.of h0) h.frame) hn x₂) fun _ x₃ => post_wp (UPre.of h0) h.frame x₃))
+
 /-- The contract, and every byte of the scratch buffer unchanged or zero. -/
 theorem correct_wp {s₀ : State} (h0 : (modeX86 ofbMode).pre s₀) :
     WP isa cryptNi s₀ fun s' => abiPreserved s₀ s' ∧ (modeX86 ofbMode).post s₀ s' ∧
       ∀ i, 0 ≤ i → i < 2176 →
         s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) ∨
           s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = 0 :=
-  endsZ_wp h0 fun h hn => WP.seq (WP.mono (pre_wp (UPre.of h0) h) fun _ x₂ =>
-    WP.seq (WP.mono (loop_wp (UPre.of h0) h.frame hn x₂) fun _ x₃ => post_wp (UPre.of h0) h.frame x₃))
+  whole_wp (fun hp _ hm _ hk _ h => body_wp hp hm hk h) h0
 
 /-- It runs to the contract's postcondition, as the code around a block
 function does (`whole_wp`). -/

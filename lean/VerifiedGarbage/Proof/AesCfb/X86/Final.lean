@@ -1206,10 +1206,26 @@ theorem decrypt_stack (v : BlocksImpl) : stackUse (decrypt v.enc) = 24 := by
   simp only [decrypt, Impl.AesCbc.X86.whole, body, Impl.AesCbc.X86.blkCall, stackUse, v.encStack]
   decide
 
+/-- The whole-block code of encryption of `v` writes `esp` only in its
+frames and calls. -/
+theorem encryptCode_noSp (v : BlocksImpl) : NoSp (encryptCode v) := by
+  unfold encryptCode
+  split
+  · exact Ni.noSp
+  · exact encrypt_noSp v
+
+/-- It uses at most the 24 bytes of stack of a call of a block function:
+with AES-NI, none. -/
+theorem encryptCode_stack (v : BlocksImpl) : stackUse (encryptCode v) ≤ 24 := by
+  unfold encryptCode
+  split
+  · rw [Ni.stack]; decide
+  · exact Nat.le_of_eq (encrypt_stack v)
+
 theorem encryptFinal_noSp (v : BlocksImpl) :
-    (encryptFinal v.enc v.suffix).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+    (encryptFinal (encryptCode v) v.enc v.suffix).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [encryptFinal, final, wholeCall, finalTail, Impl.AesCbc.X86.blkCall, Code.allInstrs,
-    all_of_noSp (encrypt_noSp v), all_of_noSp v.encNosp]
+    all_of_noSp (encryptCode_noSp v), all_of_noSp v.encNosp]
   decide +kernel
 
 theorem decryptFinal_noSp (v : BlocksImpl) :
@@ -1218,10 +1234,14 @@ theorem decryptFinal_noSp (v : BlocksImpl) :
     all_of_noSp (decrypt_noSp v), all_of_noSp v.encNosp]
   decide +kernel
 
-theorem encryptFinal_stack (v : BlocksImpl) : stackUse (encryptFinal v.enc v.suffix) ≤ 52 := by
-  simp only [encryptFinal, final, wholeCall, finalTail, Impl.AesCbc.X86.blkCall, stackUse, encrypt_stack v,
-    v.encStack]
-  decide
+theorem encryptFinal_stack (v : BlocksImpl) :
+    stackUse (encryptFinal (encryptCode v) v.enc v.suffix) ≤ 52 := by
+  have h := encryptCode_stack v
+  obtain e6 : frameBytes (Instr.push [Reg.edi, Reg.esi, Reg.ebx, Reg.edx, Reg.ecx, Reg.eax]) = 24 := by decide
+  obtain e5 : frameBytes (Instr.push [Reg.ebp, Reg.edi, Reg.ebx, Reg.ecx, Reg.eax]) = 20 := by decide
+  simp only [encryptFinal, final, wholeCall, finalTail, Impl.AesCbc.X86.blkCall, stackUse, v.encStack,
+    Nat.max_le, e6, e5]
+  omega_using [h]
 
 theorem decryptFinal_stack (v : BlocksImpl) : stackUse (decryptFinal v.enc v.suffix) ≤ 52 := by
   simp only [decryptFinal, final, wholeCall, finalTail, Impl.AesCbc.X86.blkCall, stackUse, decrypt_stack v,
@@ -1229,8 +1249,8 @@ theorem decryptFinal_stack (v : BlocksImpl) : stackUse (decryptFinal v.enc v.suf
   decide
 
 theorem encryptFinal_spSafe (v : BlocksImpl) :
-    (encryptFinal v.enc v.suffix).all (fun i => !isa.writesSp i) = true := by
-  simp only [encryptFinal, final, wholeCall, finalTail, Impl.AesCbc.X86.blkCall, Code.all, encrypt_spSafe v,
+    (encryptFinal (encryptCode v) v.enc v.suffix).all (fun i => !isa.writesSp i) = true := by
+  simp only [encryptFinal, final, wholeCall, finalTail, Impl.AesCbc.X86.blkCall, Code.all, encryptCode_spSafe v,
     v.encSpSafe]
   decide +kernel
 
@@ -1243,11 +1263,10 @@ theorem decryptFinal_spSafe (v : BlocksImpl) :
 /-! ## Verified -/
 
 theorem encryptFinal_verified (v : BlocksImpl) :
-    Verified X86.target (encryptFinal v.enc v.suffix) (finalScratchContract true) :=
+    Verified X86.target (encryptFinal (encryptCode v) v.enc v.suffix) (finalScratchContract true) :=
   Verified.of_correct
-    (final_correct (fun _ hs => AesCbc.X86.whole_wp (encBody_ok v) hs) (encrypt_noSp v) (Nat.le_of_eq (encrypt_stack v)) v)
-    (final_ct (fun _ hs => AesCbc.X86.whole_wp (encBody_ok v) hs) (AesCbc.X86.whole_ct (encBody_ok v) (encBody_ct v))
-      (encrypt_noSp v) (Nat.le_of_eq (encrypt_stack v)) v)
+    (final_correct (encryptCode_correct v) (encryptCode_noSp v) (encryptCode_stack v) v)
+    (final_ct (encryptCode_correct v) (encryptCode_ct v) (encryptCode_noSp v) (encryptCode_stack v) v)
     (final_implies true)
 
 theorem decryptFinal_verified (v : BlocksImpl) :
@@ -1282,7 +1301,8 @@ theorem frameSat_pre (post : Spec.Cfb.aesFinalSig.Post X86.abi.ptrBits) :
     [a0, a1, a2, a3, a4, a5, e, esp] using AesCbc.X86.sat
 
 theorem encryptFinal_framed (v : BlocksImpl) :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (encryptFinal v.enc v.suffix))
+    Verified X86.target
+      (Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (encryptFinal (encryptCode v) v.enc v.suffix))
       (encryptFinalRoundsContract X86.abi 100) :=
   X86.Verified.stackScratchWiped (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 2)
     (pre := finalPre X86.abi.ptrBits) (post := encryptFinalPost X86.abi.ptrBits) (wa := false) (stack := 52)
@@ -1306,7 +1326,7 @@ theorem framed_spSafe {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = tru
   simp_all
 
 theorem encryptFinal_framed_spSafe (v : BlocksImpl) :
-    (Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (encryptFinal v.enc v.suffix)).all
+    (Impl.StackScratch.X86.withStackScratchWiped 48 6 4 (encryptFinal (encryptCode v) v.enc v.suffix)).all
       (fun i => !isa.writesSp i) = true :=
   framed_spSafe (encryptFinal_spSafe v)
 

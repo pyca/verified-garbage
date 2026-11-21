@@ -16,7 +16,7 @@ def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
     Spec.Cfb.aesEncryptApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.AesCfb.X86.Fn.encrypt v.enc
+      code := Impl.AesCfb.X86.Fn.encrypt (Proof.AesCfb.X86.encryptCode v)
       verified := Proof.AesCfb.X86.Scrub.encrypt_scrubbed v
       spSafe := Proof.AesCfb.X86.Scrub.encrypt_fnSpSafe v },
     Spec.Cfb.aesDecryptApi.artifact X86.target {
@@ -26,7 +26,7 @@ def artifacts : List Artifact :=
       spSafe := Proof.AesCfb.X86.Scrub.decrypt_fnSpSafe v },
     Spec.Cfb.aesEncryptFinalApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.AesCfb.X86.Fn.encryptFinal v.enc v.suffix
+      code := Impl.AesCfb.X86.Fn.encryptFinal (Proof.AesCfb.X86.encryptCode v) v.enc v.suffix
       verified := Proof.AesCfb.X86.Scrub.encryptFinal_scrubbed v
       spSafe := Proof.AesCfb.X86.Scrub.encryptFinal_fnSpSafe v },
     Spec.Cfb.aesDecryptFinalApi.artifact X86.target {
