@@ -65,10 +65,6 @@ abbrev bodyTo : Prog isa := StitchZ.body true
 `rdx`). -/
 abbrev body48To : Prog isa := StitchZ.body48 true
 
-/-- After the tables of 48 blocks: the next two groups, the loop, and two of
-the three groups left to hash. -/
-abbrev bigRestTo : Prog isa := StitchZ.bigRest true
-
 /-- `StitchZ.big`, out of place. -/
 abbrev bigTo : Prog isa := StitchZ.big true
 

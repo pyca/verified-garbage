@@ -66,7 +66,6 @@ theorem args_stripConsts {K : List (String × List (BitVec 64))} {ws : List Nat}
 theorem withConsts_ptrBits : (abi.withConsts (c₀ :: cs)).ptrBits = abi.ptrBits := rfl
 theorem withConsts_args : (abi.withConsts (c₀ :: cs)).args = abi.args := rfl
 theorem withConsts_argArea : (abi.withConsts (c₀ :: cs)).argArea = abi.argArea := rfl
-theorem withConsts_reserved : (abi.withConsts (c₀ :: cs)).reserved = abi.reserved := rfl
 theorem withConsts_mem : (abi.withConsts (c₀ :: cs)).mem = abi.mem := rfl
 theorem withConsts_wr : (abi.withConsts (c₀ :: cs)).wr = abi.wr := rfl
 theorem withConsts_rd :

@@ -80,9 +80,6 @@ def storesR (b : Reg) : Nat → List Reg → List Instr
   | _, [] => []
   | o, r :: rs => .store (at_ b o) r :: storesR b (o + 8) rs
 
-theorem outStores_eq : (List.range 7).map (fun i => Instr.store (at_ .rsi (8 * i)) (w i)) =
-    storesR .rsi 0 W := rfl
-
 /-- Words stored at `q + o`, … into the writable region `R`. -/
 theorem storesR_ok {q : Addr} {R : Region} :
     ∀ (s : State) (o : Nat) (rs : List Reg), s.gpr .rsi = q → R ∈ s.wr →

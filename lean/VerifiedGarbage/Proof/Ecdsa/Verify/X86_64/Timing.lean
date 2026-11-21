@@ -29,17 +29,11 @@ open VG.Proof.X25519.X86_64 (Keeps)
 def publicLoads (K : TCombCfg) : List Instr :=
   TCombCfg.publicMask ++ K.publicLoad ++ K.selOne
 
-def publicRest (K : TCombCfg) : Prog isa :=
-  .seq (.block K.negY) <|
-  .seq (fprogB K.M (rcb3m K.S K.A K.E K.D)) <|
-  .block (K.digit ++ eqMask 0 ++ selPt K.M.n K.A K.D K.A ++ [.alu .test .rbx (.reg .rbx)])
-
 end VG.Proof.Weierstrass.X86_64
 
 end
 
 end
-
 
 /-! Verification lookups depend only on public digest and signature inputs. -/
 

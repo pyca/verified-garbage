@@ -125,17 +125,6 @@ theorem ifp {p : Prop} [Decidable p] {a a' x y : Prog isa} (h : Fill k n a x) (h
   · rw [ite_eq_left hp, ite_eq_left hp]; exact h
   · rw [ite_eq_right hp, ite_eq_right hp]; exact h'
 
-/-- `Fill` into code that the implementation chooses (`if p then x else y`),
-where it chooses `x`. -/
-theorem if_pos {p : Prop} [Decidable p] {x y : Prog isa} (h : Fill k n a x) (hp : p) :
-    Fill k n a (if p then x else y) := by
-  rw [ite_eq_left hp]; exact h
-
-/-- `Fill` into code that the implementation chooses, where it chooses `y`. -/
-theorem if_neg {p : Prop} [Decidable p] {x y : Prog isa} (h : Fill k n a y) (hp : ¬p) :
-    Fill k n a (if p then x else y) := by
-  rw [ite_eq_right hp]; exact h
-
 end Fill
 
 /-- The level of the vector instructions of `b` is at most `v`'s, `k`, and

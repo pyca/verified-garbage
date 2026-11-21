@@ -1274,11 +1274,6 @@ theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.inv
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem encryptBlocks_verified :
-    Verified X86_64.target Impl.Aes.X86_64.VaesBlocks.encryptBlocks
-      (Proof.Aes.encryptBlocksRoundsContract X86_64.abi) :=
-  Verified.of_correct encryptBlocks_correct encryptBlocks_ct AesNi.encryptBlocks_implies
-
 theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
     (hs : (Proof.Aes.encryptBlocksRoundsContract X86_64.abi).pre s)
     (he : Exec isa Impl.Aes.X86_64.VaesBlocks.encryptBlocks s t s') :
@@ -1287,11 +1282,6 @@ theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
   obtain ⟨t', s'', he', h⟩ := encrypt_correct hp
   obtain ⟨-, rfl⟩ := Exec.det he he'
   exact AesNi.written_of_frame (AesNi.Ecb.preS_of s (AesNi.encryptBlocks_implies.pre s hs)) h.2.2
-
-theorem decryptBlocks_verified :
-    Verified X86_64.target Impl.Aes.X86_64.VaesBlocks.decryptBlocks
-      (Proof.Aes.decryptBlocksRoundsContract X86_64.abi) :=
-  Verified.of_correct decryptBlocks_correct decryptBlocks_ct AesNi.decryptBlocks_implies
 
 theorem decryptBlocks_written (s : State) (t : List Leak) (s' : State)
     (hs : (Proof.Aes.decryptBlocksRoundsContract X86_64.abi).pre s)
@@ -1419,34 +1409,9 @@ structure BlocksImpl where
   /-- The bytes of `scratch` `enc` and `dec` write, among those the stubs of
   their callers' code take. -/
   writtenOk : (encWritten = 0 ∨ encWritten = 2048) ∧ (decWritten = 224 ∨ decWritten = 2048) := by decide
-  /-- The residue analysis of `vg_aes_cfb8_encrypt` over it, if the analysis
-  handles it. -/
-  cfb8EncRes : Option (RScrub.Analysed Spec.Cfb8.aesEncryptApi.sig 8 []
-    (Impl.AesCfb8.X86_64.encrypt enc)) := none
-  /-- The residue analysis of `vg_aes_cfb8_decrypt` over it, if the analysis
-  handles it. -/
-  cfb8DecRes : Option (RScrub.Analysed Spec.Cfb8.aesDecryptApi.sig 8 []
-    (Impl.AesCfb8.X86_64.decrypt enc)) := none
-  /-- The residue analysis of `vg_aes_cfb128_encrypt` over it, if the
-  analysis handles it. -/
-  cfbEncRes : Option (RScrub.Analysed Spec.Cfb.aesEncryptApi.sig 8 []
-    (Impl.AesCfb.X86_64.encrypt enc)) := none
-  /-- The residue analysis of `vg_aes_cfb128_decrypt` over it, if the
-  analysis handles it. -/
-  cfbDecRes : Option (RScrub.Analysed Spec.Cfb.aesDecryptApi.sig 8 []
-    (Impl.AesCfb.X86_64.decrypt enc)) := none
-  /-- The residue analysis of `vg_aes_ofb` over it, if the analysis handles
-  it. -/
-  ofbRes : Option (RScrub.Analysed Spec.Ofb.aesApi.sig 8 [] (Impl.AesOfb.X86_64.crypt enc)) := none
-  /-- The residue analysis of `vg_aes_ecb_encrypt` as its `enc` alone, if
-  the analysis handles it. -/
-  ecbEncRes : Option (RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] enc.code) := none
   /-- The contracts of encryption and the key expansion without a scratch
   buffer, if they never touch one. -/
   free : Option (BlocksFree enc expand) := none
-  /-- The residue analysis of `vg_aes_ocb_init` over it, without working
-  space for it (`free`), if the analysis handles it. -/
-  ocbInitRes : Option (RScrub.Analysed Spec.Ocb.initApi.sig 40 [] (ocbInitCodeF enc dec expand)) := none
 
 namespace BlocksImpl
 

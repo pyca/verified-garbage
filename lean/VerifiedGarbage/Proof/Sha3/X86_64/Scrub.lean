@@ -63,11 +63,6 @@ theorem absorbOut (rate stack : Nat) :
     PostOut (updateContract X86_64.abi rate stack) (updateSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha3.PostOut.updatePost_out rate 64)
 
-theorem stream_sp : Impl.Sha3.X86_64.Stream.absorb.all (fun i => !X86_64.isa.writesSp i) = true := by
-  lit_decide
-
-theorem stream_xd : Impl.Sha3.X86_64.Stream.absorb.x86_64Depth ≤ 8 := by lit_decide
-
 /-- A state satisfying `updateContract`'s precondition (with no data), with
 656 bytes of stack. -/
 def absorbSat : X86_64.State := { Proof.Sha3.X86_64.Instances.updateSat with wr := [⟨0x1000, 200⟩] }

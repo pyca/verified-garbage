@@ -173,147 +173,9 @@ theorem powStart_ok {t : State} (pC : Covers [⟨Ctx, 1024⟩] t.wr) (h13 : t.gp
       ← Cmac.bytesAt_split]
 end
 
-
 section
 variable (v : GcmImpl) {Ctx W SP : Addr} (L : IPLay Ctx W SP)
 include L
-
-/-- The arguments of the call of `vg_ghash` for the next power, after `j`. -/
-theorem powArgs_ok {j : Nat} (hj : j < 47) {t : State} (h13 : t.gpr .r13 = Ctx) (h15 : t.gpr .r15 = W)
-    (hbp : t.gpr .rbp = Ctx + BitVec.ofNat 64 (272 + 16 * j)) (hsp : t.gpr .rsp = SP)
-    (pC' : Covers [⟨Ctx, 1024⟩] t.wr) (pW' : Covers [⟨W, 2560⟩] t.wr) :
-    WP isa (.block (([.mov32 .rax (imm 0), .store (at_ .rbp 0) .rax, .store (at_ .rbp 8) .rax] : List Instr) ++
-        ptr .rdi .r13 240 ++ ([.mov .rsi (.reg .rbp), .mov .rdx (.reg .rbp), .alu .sub .rdx (imm 16),
-        .mov32 .rcx (imm 1)] : List Instr) ++ ptr .r8 .r15 scrO)) t fun t₁ =>
-      GhCall t₁ (Ctx + BitVec.ofNat 64 240) (Ctx + BitVec.ofNat 64 (272 + 16 * j))
-        (Ctx + BitVec.ofNat 64 (256 + 16 * j)) (W + BitVec.ofNat 64 512) 1 ∧
-      t₁.mem = (t.mem.writeW (Ctx + BitVec.ofNat 64 (272 + 16 * j)) (0 : BitVec 64)).writeW
-        (Ctx + BitVec.ofNat 64 (272 + 16 * j) + BitVec.ofNat 64 8) (0 : BitVec 64) ∧
-      (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-  have cw := L.cw
-  generalize hY : Ctx + BitVec.ofNat 64 (272 + 16 * j) = Y at hbp ⊢
-  obtain w₁ : InRegions t.wr (Y + BitVec.ofNat 64 0) 8 := by
-    rw [← hY, add_ofNat_assoc]; exact in_off pC' (by omega_arith) (by decide)
-  obtain w₂ : InRegions t.wr (Y + BitVec.ofNat 64 8) 8 := by
-    rw [← hY, add_ofNat_assoc]; exact in_off pC' (by omega_arith) (by decide)
-  obtain eD : Y - BitVec.ofNat 64 16 = Ctx + BitVec.ofNat 64 (256 + 16 * j) := by
-    rw [← hY, Offset.add_ofNat_sub _ (by omega_arith)]; congr 2; omega_arith
-  obtain ⟨t₁, run₁, hm₁, hdi, hsi, hdx, hcx, hr8, hcs, hrd₁, hwr₁⟩ : ∃ t₁, runBlock isa
-      (([.mov32 .rax (imm 0), .store (at_ .rbp 0) .rax, .store (at_ .rbp 8) .rax] : List Instr) ++
-        ptr .rdi .r13 240 ++ ([.mov .rsi (.reg .rbp), .mov .rdx (.reg .rbp), .alu .sub .rdx (imm 16),
-        .mov32 .rcx (imm 1)] : List Instr) ++ ptr .r8 .r15 scrO) t = some t₁ ∧
-      t₁.mem = (t.mem.writeW Y (0 : BitVec 64)).writeW (Y + BitVec.ofNat 64 8) (0 : BitVec 64) ∧
-      t₁.gpr .rdi = Ctx + BitVec.ofNat 64 240 ∧ t₁.gpr .rsi = Y ∧
-      t₁.gpr .rdx = Ctx + BitVec.ofNat 64 (256 + 16 * j) ∧ t₁.gpr .rcx = BitVec.ofNat 64 1 ∧
-      t₁.gpr .r8 = W + BitVec.ofNat 64 512 ∧ (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧
-      t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-    refine ⟨_, by xrun [hbp, h13, h15, w₁, w₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · simp [mem_setReg, mem_arithFlags]
-    · simp [gpr_setReg, gpr_arithFlags, h13, imm_eq]
-    · simp [gpr_setReg, gpr_arithFlags, hbp]
-    · simp [gpr_setReg, gpr_arithFlags, hbp, imm_eq, eD]
-    · simp [gpr_setReg, gpr_arithFlags]
-    · simp [gpr_setReg, gpr_arithFlags, h15, imm_eq, scrO]
-    · intro r hr
-      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
-    all_goals simp [rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags]
-  refine WP.of_runBlock ⟨t₁, run₁, ?_, hm₁, hcs, hrd₁, hwr₁⟩
-  obtain hsp₁ : t₁.gpr .rsp = SP := by rw [hcs .rsp (by decide), hsp]
-  obtain pC₁ : Covers [⟨Ctx, 1024⟩] t₁.wr := by rw [hwr₁]; exact pC'
-  obtain pW₁ : Covers [⟨W, 2560⟩] t₁.wr := by rw [hwr₁]; exact pW'
-  obtain sY : Region.Sub ⟨Y, 16⟩ ⟨Ctx, 1024⟩ := by rw [← hY]; exact Offset.sub_base _ (by omega_arith)
-  obtain sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ ⟨W, 2560⟩ := Offset.sub_base _ (by decide)
-  obtain dY : ∀ {d : Nat}, d + 16 ≤ 272 + 16 * j → (⟨Ctx + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint ⟨Y, 16⟩ :=
-    fun hd => by rw [← hY]; exact Offset.disjoint _ (.inl hd) (by omega_arith) (by omega_arith)
-  obtain cY : Covers [⟨Y, 16⟩] t₁.wr := by rw [← hY]; exact covers_off pC₁ (by omega_arith) (by decide)
-  · refine ⟨hdi, hsi, hdx, hcx, hr8, by decide, dY (by omega_arith),
-      (L.cs.sub_left (Offset.sub_base _ (by decide))).sub_right sS, (dY (by omega_arith)).symm,
-      (L.cs.sub_left sY).sub_right sS, (L.cs.sub_left (Offset.sub_base _ (by omega_arith))).sub_right sS,
-      by rw [hsp₁]; exact L.kc.sub_right (Offset.sub_base _ (by decide)), by rw [hsp₁]; exact L.kc.sub_right sY,
-      by rw [hsp₁]; exact L.kc.sub_right (Offset.sub_base _ (by omega_arith)), by rw [hsp₁]; exact L.ks.sub_right sS, ?_, ?_⟩
-    · exact covers_cons (covers_left (covers_off pC₁ (by decide) (by decide))) (covers_cons
-        (covers_left (covers_off pC₁ (n := 16 * 1) (by omega_arith) (by decide))) (covers_cons (covers_left cY)
-        (covers_left (covers_off pW₁ (by decide) (by decide)))))
-    · exact covers_cons cY (covers_off pW₁ (by decide) (by decide))
-
-/-- One more power. -/
-theorem powStep_ok {rd wr : List Region} (pC : Covers [⟨Ctx, 1024⟩] wr) (pW : Covers [⟨W, 2560⟩] wr)
-    {m₅ : Mem} {j : Nat} (hj : j < 47) {t : State} (h : PowInv Ctx W SP rd wr m₅ j t) :
-    WP isa (powStep v.callees) t (PowInv Ctx W SP rd wr m₅ (j + 1)) := by
-  have cw := L.cw
-  obtain pC' : Covers [⟨Ctx, 1024⟩] t.wr := by rw [h.wr]; exact pC
-  obtain pW' : Covers [⟨W, 2560⟩] t.wr := by rw [h.wr]; exact pW
-  refine WP.seq (WP.mono (powArgs_ok L hj h.r13 h.r15 h.rbp h.rsp pC' pW') fun t₁ ⟨gc, hm₁, hcs, hrd₁, hwr₁⟩ => ?_)
-  have hbp := h.rbp
-  generalize hY : Ctx + BitVec.ofNat 64 (272 + 16 * j) = Y at gc hm₁ hbp
-  obtain hsp₁ : t₁.gpr .rsp = SP := by rw [hcs .rsp (by decide), h.rsp]
-  obtain sY' : Region.Sub ⟨Y, 16⟩ ⟨Ctx + BitVec.ofNat 64 256, 768⟩ := by rw [← hY]; exact Offset.sub _ (by omega_arith) (by omega_arith)
-  obtain sS : Region.Sub ⟨W + BitVec.ofNat 64 512, 256⟩ ⟨W, 2560⟩ := Offset.sub_base _ (by decide)
-  obtain dY : ∀ {d : Nat}, d + 16 ≤ 272 + 16 * j → (⟨Ctx + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint ⟨Y, 16⟩ :=
-    fun hd => by rw [← hY]; exact Offset.disjoint _ (.inl hd) (by omega_arith) (by omega_arith)
-  refine WP.seq (WP.mono (gh_call v.gh gc) fun t₂ g => ?_)
-  obtain hbp₂ : t₂.gpr .rbp = Y := by rw [g.saved .rbp (by decide), hcs .rbp (by decide), hbp]
-  obtain ⟨t₃, run₃, hbp₃, hg₃, hm₃, hrd₃, hwr₃⟩ : ∃ t₃, runBlock isa [.alu .add .rbp (imm 16)] t₂ = some t₃ ∧
-      t₃.gpr .rbp = Y + BitVec.ofNat 64 16 ∧ (∀ r, r ≠ .rbp → t₃.gpr r = t₂.gpr r) ∧ t₃.mem = t₂.mem ∧
-      t₃.rd = t₂.rd ∧ t₃.wr = t₂.wr := by
-    refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg, gpr_arithFlags, hbp₂, imm_eq]
-    · intro r hr; simp [gpr_setReg, gpr_arithFlags, hr]
-    all_goals simp [mem_arithFlags, mem_setReg, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags]
-  refine WP.of_runBlock ⟨t₃, run₃, ?_⟩
-  obtain keep : ∀ r ∈ [Reg.r13, .r15, .rsp], t₃.gpr r = t.gpr r := fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;>
-      rw [hg₃ _ (by decide), g.saved _ (by decide), hcs _ (by decide)]
-  obtain f₁ : Frame [⟨Y, 16⟩] t.mem t₁.mem := by rw [hm₁]; exact Cmac.frame_store2 _ _ _
-  obtain f₂ : Frame [⟨Y, 16⟩, ⟨W + BitVec.ofNat 64 512, 256⟩, below SP 8] t₁.mem t₂.mem := by
-    have := g.frame; rw [hsp₁] at this; exact this
-  obtain hH₁ : blockAt t₁.mem (Ctx + BitVec.ofNat 64 240) = blockAt m₅ (Ctx + BitVec.ofNat 64 240) := by
-    rw [blockAt_frame f₁ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dY (by omega_arith)]
-    exact blockAt_frame h.frame fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
-      · exact (L.cs.sub_left (Offset.sub_base _ (by decide))).sub_right sS
-      · exact (L.kc.sub_right (Offset.sub_base _ (by decide))).symm
-  obtain hY₁ : blockAt t₁.mem Y = 0 := by rw [blockAt, hm₁, zeroT_bytes]; decide
-  obtain hD₁ : blockAt t₁.mem (Ctx + BitVec.ofNat 64 (256 + 16 * j)) =
-      hpow (blockAt m₅ (Ctx + BitVec.ofNat 64 240)) (j + 1) := by
-    rw [blockAt_frame f₁ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dY (by omega_arith)]
-    exact h.pows j (Nat.le_refl _)
-  have out := g.out
-  rw [hH₁, hY₁, blocksAt_one, hD₁] at out
-  refine ⟨by rw [keep .r13 (by simp), h.r13], by rw [keep .r15 (by simp), h.r15], ?_,
-    by rw [keep .rsp (by simp), h.rsp], by rw [hrd₃, g.rd, hrd₁, h.rd], by rw [hwr₃, g.wr, hwr₁, h.wr], ?_,
-    fun k hk => ?_⟩
-  · rw [hbp₃, ← hY, add_ofNat_assoc]; congr 2
-  · rw [hm₃]
-    refine h.frame.trans ((f₁.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_))
-    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., sY'⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact ⟨_, List.mem_cons_self .., sY'⟩
-      · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨_, by simp, fun _ h => h⟩
-  · rw [hm₃]
-    rcases Nat.lt_or_ge k (j + 1) with hk' | hk'
-    · rw [blockAt_frame f₂ (fun r hr => ?_), blockAt_frame f₁ (fun r hr => ?_)]
-      · exact h.pows k (by omega_arith)
-      · simp only [List.mem_singleton] at hr; subst hr; exact dY (by omega_arith)
-      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · exact dY (by omega_arith)
-        · exact (L.cs.sub_left (Offset.sub_base _ (by omega_arith))).sub_right sS
-        · exact (L.kc.sub_right (Offset.sub_base _ (by omega_arith))).symm
-    · have hk1 : k = j + 1 := by omega_arith
-      subst hk1
-      obtain e : Ctx + BitVec.ofNat 64 (256 + 16 * (j + 1)) = Y := by rw [← hY]; congr 2; omega_arith
-      rw [e, out]
-      exact congrArg (mul · _) BitVec.zero_xor
-
 
 omit L in
 theorem pow_zf (Ctx : Addr) {k : Nat} (hk : k ≤ 47) :
@@ -360,23 +222,6 @@ theorem powEnd_ok {rd wr : List Region} {m₅ : Mem} {k : Nat} (hk : k ≤ 47) {
   · rw [hm]; exact h.frame
   · intro j hj; rw [hm]; exact h.pows j hj
 
-/-- The 47 powers, one per iteration. -/
-theorem powLoop_ok {rd wr : List Region} (pC : Covers [⟨Ctx, 1024⟩] wr) (pW : Covers [⟨W, 2560⟩] wr)
-    {m₅ : Mem} {t : State} (h : PowInv Ctx W SP rd wr m₅ 0 t) :
-    WP isa (powLoop v.callees) t (PowInv Ctx W SP rd wr m₅ 47) := by
-  refine WP.loop (M := isa) (fun m t => ∃ j, j < 47 ∧ m = 47 - j ∧ PowInv Ctx W SP rd wr m₅ j t)
-    (fun m t ⟨j, hj, hm, ht⟩ => ?_) 47 t ⟨0, by decide, rfl, h⟩
-  subst hm
-  refine WP.seq (WP.mono (powStep_ok v L pC pW hj ht) fun t₁ h₁ => ?_)
-  refine WP.mono (powEnd_ok (k := j + 1) (by omega_arith) h₁) fun t₂ ⟨h₂, he⟩ => ?_
-  rw [he]
-  by_cases hl : j + 1 = 47
-  · left
-    rw [hl] at h₂
-    exact ⟨by simp [hl], h₂⟩
-  · right
-    exact ⟨by simp [hl], 47 - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, h₂⟩
-
 end
 
 /-- What the key context holds, outside a frame that leaves its first 256 bytes. -/
@@ -391,57 +236,6 @@ theorem keyRepr_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : 
   · have e : blockAt m' (p + BitVec.ofNat 64 240) = blockAt m (p + BitVec.ofNat 64 240) :=
       blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by decide))
     exact e.trans h.2
-
-/-- `vg_aes_gcm_init_precomputed`. -/
-theorem initP_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.initPrecomputedX86_64.pre s) :
-    WP isa (initPrecomputed v.callees) s fun s' =>
-      gprPreserved s s' ∧ Proof.AesGcm.initPrecomputedX86_64.post s s' := by
-  obtain ⟨L, pC, pW⟩ := IPLay.of hp
-  have hl : (s.gpr .rsi).toNat = 16 ∨ (s.gpr .rsi).toNat = 24 ∨ (s.gpr .rsi).toNat = 32 :=
-    hp.2.2.2.2.2.2.2.2.2.2.2.2
-  refine initWith_wp v (by decide) hp fun s₅ D => ?_
-  obtain pC₅ : Covers [⟨s.gpr .rdx, 1024⟩] s₅.wr := by rw [D.wr]; exact pC
-  obtain pW₅ : Covers [⟨s.gpr .rcx, 2560⟩] s₅.wr := by rw [D.wr]; exact pW
-  refine WP.seq (WP.mono (powStart_ok L pC₅ D.r13 D.r15 D.rsp) fun t I => ?_)
-  refine WP.seq (WP.mono (powLoop_ok v L pC₅ pW₅ I) fun t' I' => ?_)
-  obtain dS : ∀ r ∈ [(⟨s.gpr .rdx + BitVec.ofNat 64 256, 768⟩ : Region), ⟨s.gpr .rcx + BitVec.ofNat 64 512, 256⟩,
-      below (s.gpr .rsp) 8], (savedR (s.gpr .rcx)).Disjoint r := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact ((L.cs.sub_left (Offset.sub_base _ (by decide))).sub_right (Offset.sub_base _ (by decide))).symm
-    · exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
-    · exact (L.ks.sub_right (Offset.sub_base _ (by decide))).symm
-  obtain hret : t'.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64 := by
-    rw [ret_kept I'.frame (fun r hr => ?_), D.ret]
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact L.rc.sub_right (Offset.sub_base _ (by decide))
-    · exact L.rs.sub_right (Offset.sub_base _ (by decide))
-    · exact ret_below _
-  refine WP.mono (exit_ok I'.r15 I'.rsp (covers_left (by rw [I'.wr]; exact pW₅)) (D.saved.frame I'.frame dS) hret)
-    fun s' ⟨hg, hm, _⟩ => ⟨hg, ?_⟩
-  simp only [Proof.AesGcm.initPrecomputedX86_64]
-  rw [hm]
-  obtain dC : ∀ {d : Nat}, d + 16 ≤ 256 → ∀ r ∈ [(⟨s.gpr .rdx + BitVec.ofNat 64 256, 768⟩ : Region),
-      ⟨s.gpr .rcx + BitVec.ofNat 64 512, 256⟩, below (s.gpr .rsp) 8],
-      (⟨s.gpr .rdx + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := by
-    intro d hd r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint _ (.inl hd) (by omega_arith) (by decide)
-    · exact (L.cs.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Offset.sub_base _ (by decide))
-    · exact (L.kc.sub_right (Offset.sub_base _ (by omega_arith))).symm
-  obtain hH : Spec.Gcm.ctxH t'.mem (s.gpr .rdx) = blockAt s₅.mem (s.gpr .rdx + BitVec.ofNat 64 240) :=
-    blockAt_frame I'.frame (dC (by decide))
-  refine ⟨keyRepr_frame I'.frame (by rw [length_bytesAt]; exact hl) (fun r hr => ?_) D.key,
-    fun k hk => ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact Offset.base_disjoint _ (by decide) (by have := L.cw; omega_arith)
-    · exact (L.cs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ (by decide))
-    · exact (L.kc.sub_right (Region.sub_prefix (by decide))).symm
-  · rw [hH]; exact I'.pows k (by omega_arith)
 
 end VG.Proof.AesGcm.X86_64
 
@@ -493,50 +287,6 @@ theorem powNext_ok {Y : Addr} {j : Nat} {t : State} (hY : Y = Ctx + BitVec.ofNat
   · simp [rd_setReg, rd_arithFlags, hrd]
   · simp [wr_setReg, wr_arithFlags, hwr]
 
-/-- One more power, in two runs. -/
-theorem powStep_rel {j : Nat} (hj : j < 47) :
-    RelCT isa (fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ j t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ j t₂) (powStep v.callees)
-      fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ (j + 1) t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ (j + 1) t₂ := by
-  let G : List Region → List Region → State → Prop := fun rd wr t₁ =>
-    GhCall t₁ (Ctx + BitVec.ofNat 64 240) (Ctx + BitVec.ofNat 64 (272 + 16 * j))
-      (Ctx + BitVec.ofNat 64 (256 + 16 * j)) (W + BitVec.ofNat 64 512) 1 ∧ t₁.gpr .r13 = Ctx ∧
-      t₁.gpr .r15 = W ∧ t₁.gpr .rbp = Ctx + BitVec.ofNat 64 (272 + 16 * j) ∧ t₁.gpr .rsp = SP ∧
-      t₁.rd = rd ∧ t₁.wr = wr
-  have hA : ∀ {rd wr : List Region}, Covers [⟨Ctx, 1024⟩] wr → Covers [⟨W, 2560⟩] wr → ∀ t,
-      PowRegs Ctx W SP rd wr j t → WP isa (.block (([.mov32 .rax (imm 0), .store (at_ .rbp 0) .rax,
-        .store (at_ .rbp 8) .rax] : List Instr) ++ ptr .rdi .r13 240 ++ ([.mov .rsi (.reg .rbp),
-        .mov .rdx (.reg .rbp), .alu .sub .rdx (imm 16), .mov32 .rcx (imm 1)] : List Instr) ++
-        ptr .r8 .r15 scrO)) t (G rd wr) := fun pC pW t ⟨h13, h15, hbp, hsp, hrd, hwr⟩ =>
-    WP.mono (powArgs_ok L hj h13 h15 hbp hsp (by rw [hwr]; exact pC) (by rw [hwr]; exact pW))
-      fun t₁ ⟨gc, _, hcs, hrd₁, hwr₁⟩ => ⟨gc, by rw [hcs .r13 (by decide), h13], by rw [hcs .r15 (by decide), h15],
-        by rw [hcs .rbp (by decide), hbp], by rw [hcs .rsp (by decide), hsp], hrd₁.trans hrd, hwr₁.trans hwr⟩
-  have a := rel_wp (rel_taint (P := fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ j t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ j t₂)
-      [.r13, .r15, .rbp, .rsp] (fun _ _ h r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl
-        · rw [h.1.1, h.2.1]
-        · rw [h.1.2.1, h.2.2.1]
-        · rw [h.1.2.2.1, h.2.2.2.1]
-        · rw [h.1.2.2.2.1, h.2.2.2.2.1]) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h) (hA pC₁ pW₁) (hA pC₂ pW₂)
-  let H : List Region → List Region → State → Prop := fun rd wr t₂ =>
-    t₂.gpr .r13 = Ctx ∧ t₂.gpr .r15 = W ∧ t₂.gpr .rbp = Ctx + BitVec.ofNat 64 (272 + 16 * j) ∧
-      t₂.gpr .rsp = SP ∧ t₂.rd = rd ∧ t₂.wr = wr
-  have hB : ∀ {rd wr : List Region} (t₁ : State), G rd wr t₁ → WP isa (.call v.gh.fn.name v.gh.fn.code) t₁ (H rd wr) :=
-    fun t₁ ⟨gc, h13, h15, hbp, hsp, hrd, hwr⟩ => WP.mono (gh_call v.gh gc) fun _ g =>
-      ⟨by rw [g.saved .r13 (by decide), h13], by rw [g.saved .r15 (by decide), h15],
-        by rw [g.saved .rbp (by decide), hbp], by rw [g.saved .rsp (by decide), hsp], g.rd.trans hrd, g.wr.trans hwr⟩
-  have b := rel_wp (gh_rel v.gh (P := fun t₁ t₂ => True ∧ G rd₁ wr₁ t₁ ∧ G rd₂ wr₂ t₂) fun _ _ h =>
-      ⟨_, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2.2.2.2.1, h.2.2.2.2.2.2.1]⟩)
-    (fun _ _ h => h.2) (hB (rd := rd₁)) (hB (rd := rd₂))
-  have c := rel_wp (rel_taint (P := fun t₁ t₂ => True ∧ H rd₁ wr₁ t₁ ∧ H rd₂ wr₂ t₂) (c := .block [.alu .add .rbp (imm 16)])
-      [.rbp] (fun _ _ h r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        subst hr; rw [h.2.1.2.2.1, h.2.2.2.2.1]) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h.2) (fun t h => powNext_ok rfl h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
-    (fun t h => powNext_ok rfl h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
-  exact (RelCT.seq a (RelCT.seq b c)).mono (fun _ _ h => h) fun _ _ h => h.2
-
 omit L pC₁ pW₁ pC₂ pW₂ in
 theorem powEndRegs_ok {rd wr : List Region} {k : Nat} (hk : k ≤ 47) {t : State}
     (h : PowRegs Ctx W SP rd wr k t) :
@@ -548,80 +298,7 @@ theorem powEndRegs_ok {rd wr : List Region} {k : Nat} (hk : k ≤ 47) {t : State
     by rw [hg _ (by decide)]; exact hbp, by rw [hg _ (by decide)]; exact hsp, hrd'.trans hrd,
     hwr'.trans hwr⟩, he⟩
 
-/-- The loop of the 47 powers, in two runs: the loop's test depends only on
-`rbp`, which both runs advance alike. -/
-theorem powLoop_rel :
-    RelCT isa (fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ 0 t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ 0 t₂) (powLoop v.callees)
-      fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ 47 t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ 47 t₂ := by
-  refine (RelCT.loop (M := isa) (fun m t₁ t₂ => ∃ j, j < 47 ∧ m = 47 - j ∧
-      PowRegs Ctx W SP rd₁ wr₁ j t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ j t₂) (fun m => ?_) 47).mono
-    (fun _ _ h => ⟨0, by decide, rfl, h⟩) (fun _ _ h => h)
-  apply RelCT.exists_
-  intro j
-  intro t₁ t₂ tr ur u₁ u₂ ⟨hj, hm, h⟩ e₁ e₂
-  have hend := rel_wp (rel_taint (P := fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ (j + 1) t₁ ∧
-      PowRegs Ctx W SP rd₂ wr₂ (j + 1) t₂)
-      (c := .block (ptr .rax .r13 1024 ++ ([.alu .cmp .rbp (.reg .rax)] : List Instr))) [.r13, .rbp]
-      (fun _ _ h r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · rw [h.1.1, h.2.1]
-        · rw [h.1.2.2.1, h.2.2.2.1]) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h) (fun _ h => powEndRegs_ok (by omega_using [hj]) h) (fun _ h => powEndRegs_ok (by omega_using [hj]) h)
-  obtain ⟨htr, -, ⟨g₁, he₁⟩, ⟨g₂, he₂⟩⟩ :=
-    RelCT.seq (powStep_rel v L pC₁ pW₁ pC₂ pW₂ hj) hend t₁ t₂ tr ur u₁ u₂ h e₁ e₂
-  refine ⟨htr, by rw [he₁, he₂], fun hf => ?_, fun ht => ?_⟩
-  · rw [he₁] at hf
-    have hl : j + 1 = 47 := by simp at hf; omega_using [hf]
-    rw [hl] at g₁ g₂
-    exact ⟨g₁, g₂⟩
-  · rw [he₁] at ht
-    have hl : j + 1 < 47 := by simp at ht; omega_using [hj, ht]
-    exact ⟨47 - (j + 1), by omega_using [hj, hm], j + 1, hl, rfl, g₁, g₂⟩
-
 end
-
-
-theorem initP_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.initPrecomputedX86_64.pre s₀)
-    (hp' : Proof.AesGcm.initPrecomputedX86_64.pre s₀') (hq : Proof.AesGcm.initPrecomputedX86_64.pub s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (initPrecomputed v.callees) fun _ _ => True := by
-  obtain ⟨L, pC, pW⟩ := IPLay.of hp
-  obtain ⟨-, pC', pW'⟩ := IPLay.of hp'
-  have hq' := hq
-  obtain ⟨-, -, q₃, q₄, q₅⟩ := hq'
-  rw [← q₃] at pC'
-  rw [← q₄] at pW'
-  refine initWith_rel v (by decide) hp hp' hq ?_
-  have hS : ∀ {rd wr : List Region}, Covers [⟨s₀.gpr .rdx, 1024⟩] wr → ∀ t,
-      InitTail (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) rd wr t →
-      WP isa (.block (([.mov .rax (.mem (at_ .r13 240)), .store (at_ .r13 256) .rax,
-        .mov .rax (.mem (at_ .r13 248)), .store (at_ .r13 264) .rax] : List Instr) ++ ptr .rbp .r13 272)) t
-        (PowRegs (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) rd wr 0) := fun pC t ⟨h13, h15, hsp, hrd, hwr⟩ =>
-    WP.mono (powStart_ok L (by rw [hwr]; exact pC) h13 h15 hsp) fun _ I =>
-      ⟨I.r13, I.r15, I.rbp, I.rsp, I.rd.trans hrd, I.wr.trans hwr⟩
-  have a := rel_wp (rel_taint (P := fun t₁ t₂ => InitTail (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) s₀.rd s₀.wr t₁ ∧
-      InitTail (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) s₀'.rd s₀'.wr t₂) [.r13, .r15, .rsp]
-      (fun _ _ h r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · rw [h.1.1, h.2.1]
-        · rw [h.1.2.1, h.2.2.1]
-        · rw [h.1.2.2.1, h.2.2.2.1]) ⟨_, by taint_decide⟩)
-    (fun _ _ h => h) (hS pC) (hS pC')
-  have b := powLoop_rel v L (rd₁ := s₀.rd) (rd₂ := s₀'.rd) pC pW pC' pW'
-  have c := rel_taint (P := fun t₁ t₂ => PowRegs (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) s₀.rd s₀.wr 47 t₁ ∧
-      PowRegs (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) s₀'.rd s₀'.wr 47 t₂) (c := .block restore) [.r15, .rsp]
-    (fun _ _ h r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · rw [h.1.2.1, h.2.2.1]
-      · rw [h.1.2.2.2.1, h.2.2.2.2.1]) ⟨_, by taint_decide⟩
-  exact RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => h.2) (RelCT.seq b c)
-
-theorem initP_ct (v : GcmImpl) :
-    ConstantTime isa Proof.AesGcm.initPrecomputedX86_64.pre Proof.AesGcm.initPrecomputedX86_64.pub
-      (initPrecomputed v.callees) :=
-  ct_of_rel fun _ _ hp hp' hq => initP_rel v hp hp' hq
 
 end VG.Proof.AesGcm.X86_64
 
@@ -944,7 +621,6 @@ theorem streamDecryptP_verified :
           | exact Region.disjoint_of_sep (by decide)
           | exact powersRepr_of_zero fun _ _ => rfl⟩ }
 
-
 /-! ### With their working space on the stack -/
 
 /-- A state satisfying `vg_aes_gcm_seal_precomputed`'s precondition, without
@@ -1072,7 +748,6 @@ theorem streamDecryptP_framed :
     (streamDecryptM_spSafe v v.blkP) (streamDecryptM_xdepth v v.blkP) (Proof.AesGcm.streamTextPrecomputedPre_local _)
     (Proof.AesGcm.streamDecryptPrecomputedPost_local _) streamDecryptFrameSatP_pre
 
-
 /-! ### `vg_aes_gcm_init_precomputed` -/
 
 omit B in
@@ -1105,27 +780,11 @@ theorem initP_xdepth : (initPrecomputed v.callees).x86_64Depth ≤ 8 := by
   all_goals first | decide +kernel | (simp only [GcmImpl.callees, v.ctr.noStack, v.key.noStack]; decide +kernel)
 
 omit B in
-theorem initP_correct (s : State) (hs : Proof.AesGcm.initPrecomputedX86_64.pre s) :
-    ∃ t s', Exec isa (initPrecomputed v.callees) s t s' ∧ abiPreserved s s' ∧
-      Proof.AesGcm.initPrecomputedX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := initP_wp v hs
-  exact ⟨t, s', he, abiPreserved_of_exec (initP_mx v) he hg, hp⟩
-
 /-- A state satisfying `vg_aes_gcm_init_precomputed`'s precondition: `initSat`,
 with a key context of 1024 bytes. -/
 def initSatP : State := { initSat with wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2560⟩] }
 
 omit B in
-theorem initP_verified :
-    Verified X86_64.target (initPrecomputed v.callees) (Proof.AesGcm.initPrecomputedScratchContract X86_64.abi 8) :=
-  Verified.of_correct (initP_correct v) (initP_ct v) (by
-    sig_implies [Proof.AesGcm.initPrecomputedScratchContract, Proof.AesGcm.initPrecomputedScratchSig,
-      Spec.Gcm.initPre, Proof.Gcm.initPrecomputedPost, Proof.AesGcm.initPrecomputedX86_64, Proof.AesGcm.initX86_64,
-      Proof.AesGcm.initPreL, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
-      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
-      List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs] [initSatP, initSat] using initSatP)
-
 /-- A state satisfying `vg_aes_gcm_init_precomputed`'s precondition, without
 the working space. -/
 def initFrameSatP : State := { initSat with wr := [⟨0x2000, 1024⟩] }
@@ -1135,13 +794,4 @@ theorem initFrameSatP_pre : ∃ s, (Proof.Gcm.initPrecomputedContract X86_64.abi
     Proof.Gcm.initPrecomputedPost, X86_64.abi, X86_64.argRegs] [initFrameSatP, initSat] using initFrameSatP
 
 omit B in
-theorem initP_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (initPrecomputed v.callees))
-      (Proof.Gcm.initPrecomputedContract X86_64.abi 2576) :=
-  X86_64.Verified.stackScratchPre (hpostOut := Proof.AesGcm.initPrecomputedPostOut_local _)
-    (sig := Proof.Gcm.initPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
-    (pre := Spec.Gcm.initPre X86_64.abi.ptrBits) (post := Proof.Gcm.initPrecomputedPost X86_64.abi.ptrBits)
-    (wa := true) (stack := 8) (bytes := 2568) (initP_verified v) (by decide) (by decide)
-    (by decide) (initP_spSafe v) (initP_xdepth v) initFrameSatP_pre
-
 end VG.Proof.AesGcm.X86_64

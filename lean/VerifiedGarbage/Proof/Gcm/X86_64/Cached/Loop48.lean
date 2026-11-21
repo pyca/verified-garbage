@@ -381,16 +381,4 @@ theorem loopD48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → 
     WP isa (.loop dbody48 .ae) s fun s' => ∃ e, nb s₀ - 16 * e < 48 ∧ DInv3 s₀ T e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' :=
   WP.mono (loopD48M_ok (Stitch.SPre.toM hp) hT hI.toM h48 hCache) fun _ ⟨e, he, h, hk⟩ => ⟨e, he, h.toDInv3, hk⟩
 
-theorem bigDRest_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {T : Nat → Nat → Nat → Block}
-    (hT : FinOk48 (hk s₀) T) (hT2 : ∀ k l, T 2 k l = P k l) (h96 : 96 ≤ nb s₀) {s s₁ : State}
-    (hI : DInv s₀ P 0 s) (hA₁ : AInv s₀ (16 * 0) s₁)
-    (hv₁ : ∀ g < 3, ∀ k < 4, ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
-    (hm₁ : ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) (hg₁ : s₁.gpr = s.gpr)
-    (hl₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l)
-    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s₁) :
-    WP isa (.seq (.loop dbody48 .ae) (.block [.vmovdqu32Load .xmm1 (at_ .r11 832)])) s₁
-      fun s' => ∃ e, DInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' :=
-  WP.mono (bigDRestM_ok (Stitch.SPre.toM hp) hT hT2 h96 hI.toM hA₁.toM hv₁ hm₁ hg₁ hl₁ hCache)
-    fun _ ⟨e, h, hk⟩ => ⟨e, h.toDInv, hk⟩
-
 end VG.Proof.Gcm.X86_64.StitchZH

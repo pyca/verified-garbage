@@ -251,15 +251,4 @@ namespace VG.X86_64.RScrub
 
 open VG.Impl.Scrub.X86_64 VG.X86_64.RTaint
 
-/-- `keepFor`, for the chunks `chunksA stack` of `scrubSel`, as the runs of
-granules it wipes. -/
-def keepRuns (sig : Sig) (stack : Nat) (code : Prog isa) (pubs : List (Nat × Nat × Nat) := []) :
-    List (Nat × Nat) :=
-  let ks := match VG.Taint.hint rtaint 256 (init sig stack pubs) code with
-    | some (τ, _) => keepOf τ.sec (chunksA stack)
-    | none => []
-  (ks.mergeSort (· ≤ ·)).foldr (fun k acc => match acc with
-    | (o, m) :: rest => if k + 16 = o then (k, m + 1) :: rest else (k, 1) :: acc
-    | [] => [(k, 1)]) []
-
 end VG.X86_64.RScrub

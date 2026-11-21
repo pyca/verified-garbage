@@ -430,7 +430,6 @@ theorem iv_ok {s₀ : State} {B : Bnds} (hB : EnvOK s₀ B) :
 
 end
 
-
 open VG VG.X86_64 VG.Impl.P256.X86_64.Ifma
 open VG.Proof.Bignum.X86_64.Ifma (vi vreg_vi vi_vreg qv)
 open VG.Impl.Rsa.X86_64.CrtIfma (vreg)
@@ -558,23 +557,6 @@ theorem stores_unch_hi (s₀ : State) (lo hi : Nat) :
       have hw : par.win = 5920 := rfl
       simp only [VG.Proof.Mont.ofs] at h1
       omega_using [he0, h1, hw]
-
-/-- Stores change nothing outside the part of the working space they are to. -/
-theorem stores_unchP {P : Par} (hw : P.win < 2 ^ 62) (s₀ : State) :
-    ∀ (st : List (Nat × T)), (∀ e ∈ st, P.lo ≤ e.1 ∧ e.1 + 32 ≤ P.win) →
-      Unch (s₀.gpr .rdi) [(P.lo, P.win - P.lo)] s₀.mem (stores s₀ st)
-  | [], _ => Unch.refl _ _ _
-  | (e, t) :: st, he => by
-    have he0 := he (e, t) List.mem_cons_self
-    intro x hx
-    have h1 := hx (P.lo, P.win - P.lo) (List.mem_singleton.2 rfl)
-    simp only [stores]
-    rw [writeW_byte_off _ _ _ _ ?_]
-    · exact stores_unchP hw s₀ st (fun y hy => he y (List.mem_cons_of_mem _ hy)) x hx
-    · simp only [Offset.sub_add_eq, Offset.toNat_sub_ofNat, Nat.reduceDiv]
-      have := (x - s₀.gpr .rdi).isLt
-      simp only [VG.Proof.Mont.ofs] at h1
-      omega_using [hw, he0, h1]
 
 /-- What a piece does: every quadword of every place of its results is its
 term, of the state before; nothing else of the state changes but vector
@@ -786,7 +768,6 @@ theorem sqrCore_val (a : F5 T) (E : Env) (k : Nat) (ha : Carried E k a) :
   exact ⟨M, h0, h1, h2⟩
 
 end
-
 
 open VG VG.X86_64 VG.Impl.P256.X86_64.Ifma
 open VG.Proof.Poly1305.X86_64.Avx2 (sel4)
@@ -1259,7 +1240,6 @@ def stageB (locs : List (List Loc)) (bts : List BT) (B0 : Bnds) (j : Nat) : Bnds
 
 end
 
-
 open VG VG.X86_64 VG.Impl.P256.X86_64.Ifma
 
 def dblIV0 : BT :=
@@ -1683,7 +1663,6 @@ def zadduBTs : List BT := [zadduBT0, zadduBT1, zadduBT2, zadduBT3, zadduBT4, zad
 def zadduIVs : List BT := [zadduIV0, zadduIV1, zadduIV2, zadduIV3, zadduIV4, zadduIV5, zadduIV6]
 
 end
-
 
 open VG VG.X86_64 VG.Impl.P256.X86_64.Ifma
 open VG.Proof.Weierstrass (Unch)

@@ -108,10 +108,6 @@ def gcmOf (c : Ctr32Impl) : GcmImpl :=
 /-- With `vg_aes_expand_key_scratch_aesni`, which needs no working space. -/
 def gcmOfF (c : Ctr32Impl) : GcmImpl := { ctr := c, key := KeyImpl.aesni, gh := GhashName.scalar.impl }
 
-theorem initCodeF_eq (c : Ctr32Impl) :
-    Impl.StackScratch.X86_64.withStackScratch 184 .rcx (Impl.AesGcm.X86_64.init (gcmOfF c).callees) =
-      gcmInitCodeF c.callee := rfl
-
 theorem init_fill (i : GcmImpl) (n : Nat) (hs : i.stitch = none) :
     Fill (i.lv .sse).level (fun _ => 0)
       (Impl.StackScratch.X86_64.withStackScratch n .rcx (Impl.AesGcm.X86_64.init (stubCallees none none false)))

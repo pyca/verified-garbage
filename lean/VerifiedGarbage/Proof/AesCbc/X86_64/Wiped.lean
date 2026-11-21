@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubRegs
 
 /-!
 # AES-CBC on x86-64, zeroing the scratch it writes

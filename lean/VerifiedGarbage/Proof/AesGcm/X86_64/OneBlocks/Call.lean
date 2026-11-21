@@ -239,24 +239,6 @@ structure BlkFn (M : CtxMode) where
   encXd : enc.code.x86_64Depth ≤ 8
   decXd : dec.code.x86_64Depth ≤ 8
 
-/-- What `B.enc` leaves in its scratch `S` (the 2112 bytes at `[rsp + 8]`):
-a function `L` of its arguments and `S` says, byte by byte, the value it
-leaves (`some b`) or that it leaves the byte as it found it (`none`). -/
-def BlkLeaves {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) : Prop :=
-  ∃ L : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8),
-    ∀ s t s', (Proof.AesGcm.encryptBlocksX86_64M M).pre s → Exec isa B.enc.code s t s' →
-      ∀ x, (⟨stackArg s 0, 2112⟩ : Region).Contains x 1 →
-        s'.mem x = (L (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .r8) (s.gpr .r9)
-          (stackArg s 0) x).getD (s.mem x)
-
-/-- What `B.dec` leaves in its scratch `S`, as `BlkLeaves` says of `B.enc`. -/
-def BlkLeavesD {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) : Prop :=
-  ∃ L : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8),
-    ∀ s t s', (Proof.AesGcm.decryptBlocksX86_64M M).pre s → Exec isa B.dec.code s t s' →
-      ∀ x, (⟨stackArg s 0, 2112⟩ : Region).Contains x 1 →
-        s'.mem x = (L (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .r8) (s.gpr .r9)
-          (stackArg s 0) x).getD (s.mem x)
-
 open Gcm.X86_64.Stitch (CtxMode) in
 /-- `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks` calling `v`'s
 implementations and interleaving with the loops `st`, named `e` and `d`. -/

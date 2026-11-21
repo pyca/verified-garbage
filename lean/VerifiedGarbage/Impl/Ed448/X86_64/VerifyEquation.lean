@@ -159,22 +159,6 @@ def swapT : List Instr := cswap (slot 0) (slot 3) ++ cswap (slot 1) (slot 4) ++ 
 /-- `-A` (slots 6–7) into slots 8–9, where the affine addition reads its second point. -/
 def stageA : List Instr := copyOut (slot 8) (slot 6) ++ copyOut (slot 9) (slot 7)
 
-/-- `B` back into slots 8–9. -/
-def restoreB : List Instr :=
-  constSlot 8 Spec.Ed448.basePoint.X ++ constSlot 9 Spec.Ed448.basePoint.Y
-
-/-- One bit `t = rbx - 1`, from the top, with the point operations `P`: `Q` doubled, `B` (in
-slots 8–9) added and swapped in by bit `t` of `S`, `-A` (copied into slots 8–9) added and
-swapped in by bit `t` of `k`, and `B` restored. -/
-def vstep (P : Point64.Ops) : Prog isa :=
-  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq P.dbl <| .seq P.add <|
-  .seq (.block (maskAt BITS ++ (swapT ++ stageA))) <| .seq P.add <|
-    .block (maskAt KBITS ++ (swapT ++ (restoreB ++ [.alu .test .rbx (.reg .rbx)])))
-
-/-- The 456 bits, from 455 down to 0. -/
-def vloop (P : Point64.Ops) : Prog isa :=
-  .seq (.block [.mov32 .rbx (.imm 456)]) (.loop (vstep P) .ne)
-
 /-! ## The function -/
 
 /-- The bits of the 57 bytes at `rsi` at `o`: byte `t` is bit `t`. -/

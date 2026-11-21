@@ -607,7 +607,6 @@ end
 
 end
 
-
 /-!
 # Implementations of `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt` on x86-64
 
@@ -673,19 +672,6 @@ structure XtsImpl where
   decSide : X86_64.Scrub.calleeSide dec.code level.level 8 = true
   toEncSide : X86_64.Scrub.calleeSide to.enc.code level.level 16 = true
   toDecSide : X86_64.Scrub.calleeSide to.dec.code level.level 16 = true
-  /-- The residue analysis of `vg_aes_xts_encrypt_unit` over it, if the
-  analysis handles it. -/
-  encUnitRes : Option (RScrub.Analysed Spec.Xts.aesEncryptUnitApi.sig 16 []
-    (Impl.AesXts.X86_64Unit.encrypt ⟨enc, dec⟩)) := none
-  /-- `vg_aes_xts_decrypt_unit`'s. -/
-  decUnitRes : Option (RScrub.Analysed Spec.Xts.aesDecryptUnitApi.sig 16 []
-    (Impl.AesXts.X86_64Unit.decrypt ⟨enc, dec⟩)) := none
-  /-- `vg_aes_xts_encrypt_unit_to`'s. -/
-  encUnitToRes : Option (RScrub.Analysed Spec.Xts.aesEncryptUnitToApi.sig 24 []
-    (Impl.AesXts.X86_64UnitTo.encrypt ⟨enc, dec⟩ ⟨to.enc, to.dec⟩)) := none
-  /-- `vg_aes_xts_decrypt_unit_to`'s. -/
-  decUnitToRes : Option (RScrub.Analysed Spec.Xts.aesDecryptUnitToApi.sig 24 []
-    (Impl.AesXts.X86_64UnitTo.decrypt ⟨enc, dec⟩ ⟨to.enc, to.dec⟩)) := none
 
 namespace XtsImpl
 
