@@ -152,10 +152,23 @@ instructions in an ISA model) go in their own PR before either.
    between implementations, `match` or `if`) is written in the registration
    file, never built under `Proof/`: a `spSafe` the default does not prove
    is a theorem of the code there (`…_spSafeFn`, `Proof/AesGcm/X86_64/Leaves.lean`).
-   The one exception is an interface whose functions carry their own contract
-   and stack (`StreamFn.reg`, `StreamFnS.reg`, `Pbkdf2Impl.reg`,
-   `FinImpl.reg`): their record must state `consts` and `stack`, which a
-   registration file may not.
+   A variant that carries several functions of different `Api`s names
+   each with its `Api` in its type, never in a field, so that the
+   defaults find its contract and stack, and states its theorem against
+   that `Api`'s contract (`api.contract abi stack`): the x86 SHA-1 and
+   SHA-256 backends' `update` and `finalize`
+   (`StreamFn api code stack`, `Proof/Sha256/X86/Variants/Interface.lean`),
+   x86-64's streaming functions of each hash function (`StreamFnS api`,
+   grouped in `StreamFns`, `Proof/Pbkdf2/Md/X86_64/Variant.lean`, one list
+   of them per hash function in `Proof/Variants/MdHash/X86_64.lean`).
+   x86-64's streaming functions are code the hash function's proofs build
+   from the variant (`StreamFn.code`), not one definition of `Impl/`: their
+   record binds the code as their theorem states it, the cleanup form
+   applied to the function's own fields (`StreamFnS.scrubbed`,
+   `Artifacts/Sha256/X86_64.lean`), the one record that names a form. A
+   list of a variant's functions whose `Api` is a field (`List StreamFn`
+   over any `Api`) cannot be registered: the defaults cannot read its
+   contract.
    A function whose proof takes a Weierstrass curve's group law (`Law`,
    `Proof/Weierstrass/Law.lean`) is registered as any other, passing the
    law: its registration file imports `Proof/<Curve>/<Target>/Law.lean`,

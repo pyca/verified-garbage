@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubStream
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.Cold
@@ -41,10 +42,14 @@ def artifacts : List Artifact :=
     Spec.Hmac.sha512I.initAnyKeyApi.artifact X86_64.target {
       suffix := v.suffix
       extra := v.extra
-      code := v.code
-      verified := v.scrubbed
-      spSafe := v.spSafe }) ++
+      code := Impl.Pbkdf2.Md.X86_64.Fn.hmacInit v.level Spec.Hmac.sha512I.S.H.blockSize v.H
+      verified := Proof.Pbkdf2.Md.X86_64.InitImpl.scrubbed v
+      spSafe := Proof.Pbkdf2.Md.X86_64.InitImpl.spSafe v }) ++
   (VG.Proof.Variants.MdHash.X86_64.sha512Fins.map fun (f : Proof.Pbkdf2.Md.X86_64.FinImpl) =>
-    f.v.I.finalizeApi.artifact X86_64.target f.reg)
+    f.v.I.finalizeApi.artifact X86_64.target {
+      suffix := f.v.suffix
+      code := Impl.Pbkdf2.Md.X86_64.Fn.hmacFinalize f.sel.level f.sel.runs f.v.H
+      verified := Proof.Pbkdf2.Md.X86_64.FinImpl.scrubbed f
+      spSafe := Proof.Pbkdf2.Md.X86_64.FinImpl.spSafeFn f })
 
 end VG.Artifacts.HmacSha512.X86_64

@@ -8,6 +8,7 @@ meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
 public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Verified
 public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Verified
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -158,41 +159,25 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
     cmpStack := Proof.Sha256.X86.ShaNi.compress_stack,
     stream := stream,
     features := ["sha", "ssse3"],
-    functions := [
-      { api := Spec.Sha256.updateApi
-        code := Impl.StackScratch.X86.withStackScratch 636 5 sha256Update
-        contract := Spec.Sha256.updateContract X86.abi (20 + 636)
-        stack := 20 + 636
-        verified := Proof.Sha256.X86.Shared.update_frame updateScratch_shared ?_
+    update := show Proof.Sha256.X86.Variants.StreamFn Spec.Sha256.updateApi (Impl.StackScratch.X86.withStackScratch 636 5 sha256Update) (20 + 636) from
+      { verified := Proof.Sha256.X86.Shared.update_frame updateScratch_shared ?_
           ?_
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
         spSafe := Code.all_of_allInstrs ?_
         post := Proof.Sha256.X86.Variants.updateOut _
         scrub := Proof.Sha256.X86.Variants.update_scrub stream.upd ?_ stream.updSU },
-      { api := Spec.Sha256.finalizeApi
-        code := Impl.StackScratch.X86.withStackScratch 632 4 sha256Finalize
-        contract := Spec.Sha256.finalizeContract X86.abi (20 + 632)
-        stack := 20 + 632
-        verified := Proof.Sha256.X86.Shared.finalize_frame finalizeScratch_shared ?_
+    finalize := show Proof.Sha256.X86.Variants.StreamFn Spec.Sha256.finalizeApi (Impl.StackScratch.X86.withStackScratch 632 4 sha256Finalize) (20 + 632) from
+      { verified := Proof.Sha256.X86.Shared.finalize_frame finalizeScratch_shared ?_
           ?_
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
         spSafe := Code.all_of_allInstrs ?_
         post := Proof.Sha256.X86.Variants.finalizeOut _
         scrub := Proof.Sha256.X86.Variants.finalize_scrub stream.fin ?_ stream.finSU },
-      { api := Spec.Sha256.finalize224Api
-        code := Impl.StackScratch.X86.withStackScratch 632 4 sha224Finalize
-        contract := Spec.Sha256.finalize224Contract X86.abi (20 + 632)
-        stack := 20 + 632
-        verified := Proof.Sha256.X86.Shared.finalize224_frame
+    finalize224 := show Proof.Sha256.X86.Variants.StreamFn Spec.Sha256.finalize224Api (Impl.StackScratch.X86.withStackScratch 632 4 sha224Finalize) (20 + 632) from
+      { verified := Proof.Sha256.X86.Shared.finalize224_frame
           (Proof.Sha256.X86.Shared.finalize224Scratch (Proof.Sha256.X86.Stream.finalize224_of callee finalize224_ct))
           ?_ ?_
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
         spSafe := Code.all_of_allInstrs ?_
         post := Proof.Sha256.X86.Variants.finalize224Out _
-        scrub := Proof.Sha256.X86.Variants.finalize224_scrub cmpN cmpC ?_ Proof.Sha256.X86.ShaNi.compress_stack }],
+        scrub := Proof.Sha256.X86.Variants.finalize224_scrub cmpN cmpC ?_ Proof.Sha256.X86.ShaNi.compress_stack },
     cmpScrub := ?_,
     updScrub := ?_,
     finScrub := ?_,

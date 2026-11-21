@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubAll
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.Cold
 public import VerifiedGarbage.Proof.Framework.EntryBranch
@@ -37,6 +38,10 @@ namespace VG.Artifacts.Pbkdf2Sha512_224.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.MdHash.X86_64.sha512_224Pbkdf2s.map fun (p : Proof.Pbkdf2.Md.X86_64.Pbkdf2Impl) =>
-    p.v.I.pbkdf2Api.artifact X86_64.target p.reg
+    p.v.I.pbkdf2Api.artifact X86_64.target {
+      suffix := p.v.suffix
+      code := Impl.Pbkdf2.Md.X86_64.Fn.pbkdf2 p.level p.v.H
+      verified := Proof.Pbkdf2.Md.X86_64.Pbkdf2Impl.scrubbed p
+      spSafe := Proof.Pbkdf2.Md.X86_64.Pbkdf2Impl.spSafeFn p }
 
 end VG.Artifacts.Pbkdf2Sha512_224.X86_64
