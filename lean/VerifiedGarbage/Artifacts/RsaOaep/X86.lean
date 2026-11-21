@@ -29,7 +29,7 @@ def artifacts : List Artifact :=
       tables := [("hash", tables allVars), ("mgf1", tables allVars)]
       code := Impl.RsaOaep.X86.Fn.encryptPrecomputed (fnsOf allVars) Proof.RsaPkcs1Sig.X86.Ver.baseline.name
         Proof.RsaPkcs1Sig.X86.Ver.baseline.code
-      verified := encrypt_scrubbed h }]
+      verified := Proof.RsaOaep.X86.Scrub.encrypt_scrubbed h }]
   else []
 
 end VG.Artifacts.RsaOaep.X86.AllSha1AllSha256
@@ -49,8 +49,8 @@ def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) : List Artifact :=
       tables := [("hash", tables allVars), ("mgf1", tables allVars)]
       code := Impl.RsaOaep.X86.Fn.decryptPrecomputed (fnsOf allVars) (Proof.RsaOaep.X86.Dec.privNameP c)
         (privCodeP c crtPBaseline)
-      verified := decrypt_scrubbed h c
-      spSafe := decrypt_spSafe c }]
+      verified := Proof.RsaOaep.X86.Scrub.decrypt_scrubbed h c
+      spSafe := Proof.RsaOaep.X86.Scrub.decrypt_spSafe c }]
   else []
 
 end VG.Artifacts.RsaOaep.X86.RsaPrivateCrtAllSha1AllSha256

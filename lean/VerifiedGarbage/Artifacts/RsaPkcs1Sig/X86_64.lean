@@ -23,18 +23,18 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       extra := v.extra
       code := Impl.RsaPkcs1Sig.X86_64.Fn.signPrecomputed (Scrub.signLevel v) (Sgn.privNameP v) (Sgn.privCodeP v)
-      verified := Scrub.sign_scrubbed v
-      spSafe := Scrub.sign_spSafe v }]) ++
+      verified := Proof.RsaPkcs1Sig.X86_64.Scrub.sign_scrubbed v
+      spSafe := Proof.RsaPkcs1Sig.X86_64.Scrub.sign_spSafe v }]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun (v : PublicImpl) => [
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.X86_64.Fn.verifyPrecomputed v.level v.name v.code
-      verified := Scrub.verify_scrubbed v
-      spSafe := Scrub.verify_spSafe v },
+      verified := Proof.RsaPkcs1Sig.X86_64.Scrub.verify_scrubbed v
+      spSafe := Proof.RsaPkcs1Sig.X86_64.Scrub.verify_spSafe v },
     Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.X86_64.Fn.recoverPrecomputed v.level v.name v.code
-      verified := Scrub.recover_scrubbed v
-      spSafe := Scrub.recover_spSafe v }])
+      verified := Proof.RsaPkcs1Sig.X86_64.Scrub.recover_scrubbed v
+      spSafe := Proof.RsaPkcs1Sig.X86_64.Scrub.recover_spSafe v }])
 
 end VG.Artifacts.RsaPkcs1Sig.X86_64

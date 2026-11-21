@@ -24,15 +24,40 @@ implementation chooses and bind proofs made under `Proof/`:
     which `Registration`'s default (`stack_of`) finds in that contract, so
     that code that uses more or less stack touches no file reviewed by hand.
 
-A 64-bit RISC-V registration file (`Artifacts/*/RISCV64.lean`), whose
-target's framework states its cleanup only as a theorem about named code,
-binds that code and that theorem and nothing else: each
-`.artifact RISCV64.target` is given a record, `{ … }`, whose `code :=` is a
-definition of `Impl/` (`Impl.…`, applied to what it takes) and whose
-`verified :=` is a theorem of `Proof/` (`Proof.…`, applied to what it takes),
-with no other fields than the choices `RISCV_FIELDS` names; and the file has
-no tactic block at all, no anonymous constructor (`⟨…⟩`) and nothing of
-`RISCV64.Scrub`, the framework's namespace.
+A registration file of a target (`Artifacts/*/<T>.lean`, for every target
+`TARGETS` names: x86-64, x86, AArch64, ARMv7, RISC-V64 and PPC64LE) binds
+named code and a theorem about it and nothing else (`target_problems`):
+
+  * each `.artifact <T>.target` (or `target`, opened from `VG.<T>`) is given
+    a record, `{ … }`, or a choice between implementations whose every arm
+    is a record or another such choice, `(match … with | … => { … } …)` or
+    `(if … then { … } else …)`, as a variant's free working space or its
+    instructions decide (`Artifacts/AesGcm/X86_64.lean`);
+  * a record's `code :=` is a definition of `Impl/` (`Impl.…`, applied to
+    what it takes) but a cleanup form (`Impl.Scrub.…`): the function as
+    emitted, cleanup included, is a definition of its own; and its
+    `verified :=`, `spSafe :=` and `writtenOk :=` are theorems of `Proof/`
+    (`Proof.…`, applied to what they take), named in full, not through an
+    `open`;
+  * it has no other fields than those and the choices `CHOICES` names, which
+    state what the implementation chooses and prove nothing (`written`, the
+    output regions a function writes, is proven by its `writtenOk`);
+  * the file has no tactic block at all, not even a default's, no anonymous
+    constructor (`⟨…⟩`), no `Artifact` built by hand (`target := …`), and
+    nothing of `<T>.Scrub`, the target's cleanup framework.
+
+Two shapes are accepted explicitly, each for the reason given:
+
+  * x86-64's streaming functions of each hash function (`StreamFnS`), whose
+    code the hash function's proofs build from the variant
+    (`Proof/Pbkdf2/Md/X86_64/Hashes/`), some of it defined under `Proof/`,
+    so that no one definition of `Impl/` is the function as emitted: their
+    record binds exactly the cleanup form `StreamFnS.scrubbed` states, of
+    the function's own fields (`STREAM_CODE`), and that theorem.
+  * The emitter's self-test (`SELFTEST`), which builds its one `Artifact`
+    by hand: it tests the emitter on code and a contract of its own and
+    registers no implementation of an `Api`. The rules above for every
+    file reviewed by hand still apply to it.
 """
 
 import pathlib
@@ -55,17 +80,36 @@ MODULE_DOC = re.compile(r"/-!.*?-/", re.S)
 TITLE = re.compile(r"/-! # [^\n]+ -/")
 OPEN, CLOSE = "([{⟨", ")]}⟩"
 
-# A 64-bit RISC-V registration file, and the fields its records may give
+# The targets whose registration files bind only, and the fields their records may give
 # but `code` and `verified`: what the implementation chooses, no proof.
-RISCV = re.compile(r"Artifacts/[^/]+/RISCV64\.lean")
-RISCV_FIELDS = {"suffix", "tables", "extra", "vendor", "notWith"}
+TARGETS = ["X86_64", "X86", "AArch64", "Arm", "RISCV64", "PPC64LE"]
+TARGET_FILE = re.compile(r"Artifacts/[^/]+/(" + "|".join(TARGETS) + r")\.lean")
+CHOICES = {"suffix", "tables", "extra", "vendor", "notWith", "written"}
 ARTIFACT = re.compile(r"(?<![\w'])artifact(?![\w'])")
-ARTIFACT_RECORD = re.compile(r"\s+RISCV64\.target\s*\{")
 FIELD = re.compile(r"(?<![\w.'])([\w']+)\s*:=")
 ANON = re.compile(r"⟨")
-FRAMEWORK = re.compile(r"(?<![\w.'])(?:VG\.)?RISCV64\.Scrub(?![\w'])")
-CODE_OK = re.compile(r"\(?\s*Impl\.")
-VERIFIED_OK = re.compile(r"\(?\s*Proof\.")
+SKILL = "(.agents/skills/adding-a-primitive/SKILL.md)"
+# The fields a record binds, each to a name under the directory it names.
+BOUND = {
+    "code": (re.compile(r"\(?\s*Impl\."), "a definition of `Impl/` (but a cleanup form, "
+             "`Impl.Scrub.…`: bind the function as emitted, `Impl.<Alg>.<Target>.Fn.…`)"),
+    "verified": (re.compile(r"\(?\s*Proof\."), "a theorem of `Proof/`; bind `Proof.…`"),
+    "spSafe": (re.compile(r"\(?\s*Proof\."), "a theorem of `Proof/`; bind `Proof.…`"),
+    "writtenOk": (re.compile(r"\(?\s*Proof\."), "a theorem of `Proof/`; bind `Proof.…`"),
+}
+SCRUB_FORM = re.compile(r"\(?\s*Impl\.Scrub\.")
+# x86-64's streaming functions (`StreamFnS`), whose code the hash function's
+# proofs build from the variant: the cleanup form of the function's fields,
+# as `StreamFnS.scrubbed` states it.
+STREAM_CODE = re.compile(r"Impl\.Scrub\.X86_64\.scrubSel ([\w.']+)\.sel\.level \1\.f\.retBits "
+                         r"\1\.f\.stack \1\.sel\.runs\s+\1\.f\.code")
+# The emitter's self-test, which builds its one `Artifact` by hand: it tests
+# the emitter on code and a contract of its own, and registers no
+# implementation of an `Api`.
+SELFTEST = "VerifiedGarbage/Artifacts/Selftest/"
+CHOICE = re.compile(r"\(\s*(?:match|if)(?![\w'])")
+ARM = re.compile(r"=>|(?<![\w'])(?:then|else)(?![\w'])")
+RAW = re.compile(r"(?<![\w.'])target\s*:=")
 
 
 def code_only(text: str) -> str:
@@ -161,50 +205,103 @@ def record_fields(code: str, start: int) -> tuple[list[tuple[int, str, str]], in
     return fields, i
 
 
-def riscv_problems(rel: str, code: str, line) -> list[str]:
-    """What is wrong in the 64-bit RISC-V registration file `rel`, whose
-    text without comments is `code`: anything but binding named code and a
+def choice_records(code: str, start: int) -> list[int] | None:
+    """The offsets of the `{` of the records of the choice whose `(` is at
+    `start` (`(match … with | … => { … } …)` or `(if … then { … } else …)`),
+    each the whole of an arm; None if it is not such a choice, or an arm is
+    anything but a record or another such choice."""
+    m = CHOICE.match(code, start)
+    if not m:
+        return None
+    depth, i, n = 0, start, len(code)
+    while i < n:
+        if code[i] in OPEN:
+            depth += 1
+        elif code[i] in CLOSE:
+            depth -= 1
+            if depth == 0:
+                break
+        i += 1
+    inner, base = code[start + 1:i], start + 1
+    out, j = [], 0
+    for a in ARM.finditer(inner):
+        k = a.end()
+        while k < len(inner) and inner[k].isspace():
+            k += 1
+        if k < len(inner) and inner[k] == "{":
+            out.append(base + k)
+        elif inner.startswith("(", k):
+            sub = choice_records(code, base + k)
+            if sub is None:
+                return None
+            out += sub
+        elif not re.match(r"(?:if|match)(?![\w'])", inner[k:]):
+            return None
+    return out or None
+
+
+def record_problems(rel: str, target: str, code: str, line, at: int) -> list[str]:
+    """What is wrong in the record whose `{` is at `at` of a registration file
+    `rel` of `target`."""
+    out = []
+    fields, _ = record_fields(code, at)
+    names = [f[1] for f in fields]
+    values = dict((f[1], f[2]) for f in fields)
+    stream = STREAM_CODE.fullmatch(values.get("code", ""))
+    for pos, name, value in fields:
+        if name == "code" and stream:
+            if values.get("verified") != f"Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed {stream.group(1)}":
+                out.append(f"lean/{rel}:{line(pos)}: a streaming function's code bound with the "
+                           f"cleanup form, but not its theorem; bind `verified := "
+                           f"Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed {stream.group(1)}` {SKILL}")
+        elif name in BOUND:
+            pat, what = BOUND[name]
+            if not pat.match(value) or (name == "code" and SCRUB_FORM.match(value)):
+                out.append(f"lean/{rel}:{line(pos)}: a registration's `{name}` that is not {what} "
+                           f"{SKILL}")
+        elif name not in CHOICES:
+            out.append(f"lean/{rel}:{line(pos)}: `{name}` in a registration; it binds only "
+                       f"{', '.join(f'`{k}`' for k in BOUND)} and what the implementation "
+                       f"chooses ({', '.join(sorted(CHOICES))}) {SKILL}")
+    for name in ("code", "verified"):
+        if names.count(name) != 1:
+            out.append(f"lean/{rel}:{line(at)}: a registration without exactly one `{name} :=` "
+                       f"{SKILL}")
+    return out
+
+
+def target_problems(rel: str, target: str, code: str, line) -> list[str]:
+    """What is wrong in the registration file `rel` of `target`, whose text
+    without comments is `code`: anything but binding named code and a
     theorem about it."""
     out = []
-    skill = "(.agents/skills/adding-a-primitive/SKILL.md)"
+    shape = "it binds only `code := Impl.…` and `verified := Proof.…`"
     for m in BY.finditer(code):
         if m.group(1) in DEFAULTS and not rest_of_block(code, m.start(), m.end()):
-            out.append(f"lean/{rel}:{line(m.start())}: a tactic proof in a RISC-V registration "
-                       f"file; it binds only `code := Impl.…` and `verified := Proof.…` "
-                       f"{skill}")
+            out.append(f"lean/{rel}:{line(m.start())}: a tactic proof in a registration file; "
+                       f"{shape} {SKILL}")
+    framework = re.compile(r"(?<![\w.'])(?:VG\.)?" + target + r"\.Scrub(?![\w'])")
     for pat, what in [(ANON, "an anonymous constructor (`⟨…⟩`)"),
-                      (FRAMEWORK, "the scrub framework (`RISCV64.Scrub`)")]:
+                      (framework, f"the scrub framework (`{target}.Scrub`)"),
+                      (RAW, "an `Artifact` built by hand (`target := …`)")]:
         for m in pat.finditer(code):
-            out.append(f"lean/{rel}:{line(m.start())}: {what} in a RISC-V registration file; "
-                       f"it binds only `code := Impl.…` and `verified := Proof.…`, "
-                       f"whose proof is made under `Proof/` {skill}")
+            out.append(f"lean/{rel}:{line(m.start())}: {what} in a registration file; "
+                       f"{shape}, whose proof is made under `Proof/` {SKILL}")
+    record = re.compile(r"\s+(?:(?:VG\.)?" + target + r"\.)?target\s*([{(])")
     for m in ARTIFACT.finditer(code):
-        r = ARTIFACT_RECORD.match(code, m.end())
-        if not r:
-            out.append(f"lean/{rel}:{line(m.start())}: a RISC-V registration not given as a record; "
-                       f"write `.artifact RISCV64.target {{ code := Impl.… "
-                       f"verified := Proof.… }}` {skill}")
+        r = record.match(code, m.end())
+        recs = None
+        if r and r.group(1) == "{":
+            recs = [r.end() - 1]
+        elif r:
+            recs = choice_records(code, r.end() - 1)
+        if not recs:
+            out.append(f"lean/{rel}:{line(m.start())}: a registration not given as a record, or "
+                       f"as a `match` or `if` each of whose arms is one; write `.artifact "
+                       f"{target}.target {{ code := Impl.… verified := Proof.… }}` {SKILL}")
             continue
-        fields, end = record_fields(code, r.end() - 1)
-        names = [f[1] for f in fields]
-        for at, name, value in fields:
-            if name == "code":
-                if not CODE_OK.match(value):
-                    out.append(f"lean/{rel}:{line(at)}: a RISC-V registration's `code` that is not "
-                               f"a definition of `Impl/`; bind `code := Impl.…` {skill}")
-            elif name == "verified":
-                if not VERIFIED_OK.match(value):
-                    out.append(f"lean/{rel}:{line(at)}: a RISC-V registration's `verified` that is "
-                               f"not a theorem of `Proof/`; bind `verified := Proof.…` "
-                               f"{skill}")
-            elif name not in RISCV_FIELDS:
-                out.append(f"lean/{rel}:{line(at)}: `{name}` in a RISC-V registration; it binds "
-                           f"only `code`, `verified` and what the implementation chooses "
-                           f"({', '.join(sorted(RISCV_FIELDS))}) {skill}")
-        for name in ("code", "verified"):
-            if names.count(name) != 1:
-                out.append(f"lean/{rel}:{line(m.start())}: a RISC-V registration without exactly "
-                           f"one `{name} :=` {skill}")
+        for at in recs:
+            out += record_problems(rel, target, code, line, at)
     return out
 
 
@@ -241,8 +338,9 @@ def problems(lean: pathlib.Path) -> list[str]:
                 out.append(f"lean/{rel}:{line(m.start())}: a tactic proof in a file reviewed by hand; "
                            "make the side condition an `autoParam` of the lemma, or prove the "
                            "instance under `Proof/` (.agents/skills/adding-a-primitive/SKILL.md)")
-            if RISCV.fullmatch(rel.removeprefix("VerifiedGarbage/")):
-                out += riscv_problems(rel, code, line)
+            t = TARGET_FILE.fullmatch(rel.removeprefix("VerifiedGarbage/"))
+            if t and not rel.startswith(SELFTEST):
+                out += target_problems(rel, t.group(1), code, line)
     return out
 
 

@@ -3,8 +3,8 @@ name = "VerifiedGarbage"
 # Lake can first assign one of these modules to VerifiedGarbage, then try to
 # load a native library (which includes that same module) while compiling it.
 defaultTargets = ["NativeAuditRecords", "NativeTCB", "NativeTCBX86_64", "NativeTCBX86", "NativeTCBAArch64", "NativeTCBArm",
-  "NativeTCBPPC64LE", "NativeTCBRISCV64", "NativeSpec", "NativeForward", "NativeHintSearch", "NativeScrubX86_64",
-  "NativeScrubAArch64",
+  "NativeTCBPPC64LE", "NativeTCBRISCV64", "NativeSpec", "NativeForward", "NativeHintSearch", "NativeCodeOnce",
+  "NativeScrubX86_64", "NativeScrubAArch64",
   "VerifiedGarbage", "VerifiedGarbageTest", "AuditBase"]
 # Lake already checks several files concurrently. Limit each compiler to
 # two threads so declaration tasks do not contend across all of those files.
@@ -293,6 +293,17 @@ name = "NativeHintSearch"
 plugins = ["NativeAuditRecords:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.RegSet", "VerifiedGarbage.Proof.Framework.Slots", "VerifiedGarbage.Proof.Framework.NativeHintOps", "VerifiedGarbage.Proof.Framework.X86.NativeHintData", "VerifiedGarbage.Proof.Framework.Arm.NativeHintData"]
+precompileModules = true
+
+# The check that follows the code of each function once (`Code.allOnce`),
+# which the cleanups of both libraries below are written with, as compiled
+# code.
+[[lean_lib]]
+name = "NativeCodeOnce"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
+roots = []
+globs = ["VerifiedGarbage.Impl.Scrub.CodeOnce"]
 precompileModules = true
 
 # The checks of the x86-64 scrub, which the emitter evaluates on the code of

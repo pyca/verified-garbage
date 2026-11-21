@@ -16,10 +16,10 @@ def artifacts : List Artifact :=
     v.I.initAnyKeyApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.Pbkdf2.Md.AArch64.Fn.hmacInit v.H
-      verified := v.hmacInit_scrubbed },
+      verified := Proof.Pbkdf2.Md.AArch64.MdHash.hmacInit_scrubbed v },
     v.I.finalizeApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.Pbkdf2.Md.AArch64.Fn.hmacFin v.H
-      verified := v.hmacFin_scrubbed }]
+      verified := Proof.Pbkdf2.Md.AArch64.MdHash.hmacFin_scrubbed v }]
 
 end VG.Artifacts.HmacSha384.AArch64

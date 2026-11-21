@@ -32,17 +32,17 @@ def artifacts : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact VG.AArch64.target {
     suffix := "_aes"
     code := Impl.AesCbc.AArch64.Fn.encryptAes
-    verified := Wiped.encryptAes_scrubbed
+    verified := Proof.AesCbc.AArch64.Wiped.encryptAes_scrubbed
     written := [("scratch",0)]
-    writtenOk := Wiped.encryptAes_written }] ++
+    writtenOk := Proof.AesCbc.AArch64.Wiped.encryptAes_written }] ++
   (VG.Proof.Variants.AesCbc.AArch64.variants.flatMap fun (v : Wiped.CbcImpl) => [
     Spec.Cbc.aesEncryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCbc.AArch64.Fn.encrypt v.suffix v.enc
-      verified := Wiped.encryptWiped_scrubbed v },
+      verified := Proof.AesCbc.AArch64.Wiped.encryptWiped_scrubbed v },
     Spec.Cbc.aesDecryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCbc.AArch64.Fn.decryptWiped v.suffix v.dec
-      verified := Wiped.decryptWiped_scrubbed v }])
+      verified := Proof.AesCbc.AArch64.Wiped.decryptWiped_scrubbed v }])
 
 end VG.Artifacts.AesCbc.AArch64

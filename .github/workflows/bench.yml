@@ -3,7 +3,9 @@ name: Benchmarks
 # Compares the performance of a branch with an earlier commit, on runners of
 # each architecture, and fails if a benchmark slowed down by more than
 # ci/bench_compare.py's threshold; or, with no commit, measures the branch
-# alone, next to OpenSSL and aws-lc-rs. The results are in the run's summary.
+# alone, next to OpenSSL and aws-lc-rs. The results are in the run's summary,
+# and in `benchmarks.html`, an artifact of the run: a page that charts every
+# job's results (ci/bench_report.py).
 # It runs only by hand (Actions > Benchmarks > Run workflow): runners are
 # shared with CI, and a run of every benchmark takes dozens of jobs. Scope
 # each run to the architectures, `VG_CPU_FEATURES` configurations and library
@@ -34,6 +36,9 @@ on:
         required: false
       groups:
         description: Space-separated regular expressions over benchmark group names, each matching a whole name, e.g. `aes-(128|256)-gcm-tls-seal`; only the groups they match run (needs `modules`; empty for every group of the modules)
+        required: false
+      charts:
+        description: Charts for the report (`benchmarks.html`) to start with, separated by `;`, each space-separated regular expressions over benchmark groups or `group/size`s, as `ci/bench_report.py html --chart` takes them, e.g. `ecdh_p(256|384|521) ecdsa_p(256_sha256|384_sha384|521_sha512)_sign/64` (empty for none)
         required: false
       test_filter:
         description: Exact integration test to compare instead of primitive benchmarks (requires base_commit and arches=riscv64)
@@ -271,13 +276,18 @@ jobs:
           OPENSSL_WITH_FEATURES: ${{ inputs.openssl_with_features && '--openssl-with-features' || '' }}
           IA32CAP: ${{ inputs.openssl_ia32cap }}
           ARMCAP: ${{ inputs.openssl_armcap }}
+          RUNNER_LABEL: ${{ matrix.os }}
         run: |
           # OpenSSL and aws-lc read it; the library does not.
           if [ -n "$IA32CAP" ]; then export OPENSSL_ia32cap="$IA32CAP"; fi
           if [ -n "$ARMCAP" ]; then export OPENSSL_armcap="$ARMCAP"; fi
           # The `openssl` crate needs Homebrew's OpenSSL on macOS.
           if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
-          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --groups "$BENCH_GROUPS" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL $OPENSSL_WITH_FEATURES
+          # The results file (ci/bench_report.py's format) says which run,
+          # branch and runner measured it, for the report job's page.
+          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --groups "$BENCH_GROUPS" --shard "$SHARD" --arch "$ARCH" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL $OPENSSL_WITH_FEATURES \
+            --json bench-results.json --meta "runner=$RUNNER_LABEL" --meta "ref=$GITHUB_REF_NAME" \
+            --meta "run=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
       - name: Record per-run benchmark estimates
         if: ${{ always() && !cancelled() && !inputs.test_filter && (steps.benchmark.outcome == 'success' || steps.benchmark.outcome == 'failure') }}
         run: |
@@ -288,6 +298,14 @@ jobs:
               estimates = json.loads(path.read_text())
               print(json.dumps({"path": str(path), **{key: estimates[key] for key in ("mean", "median", "std_dev")}}))
           PY
+      - name: Save the results file
+        if: ${{ always() && !cancelled() && (steps.benchmark.outcome == 'success' || steps.benchmark.outcome == 'failure') }}
+        uses: ./head/.github/actions/upload-artifact
+        with:
+          name: bench-results-${{ matrix.arch }}-${{ strategy.job-index }}
+          path: bench-results.json
+          retention-days: 14
+          if-no-files-found: ignore
       - name: Save raw benchmark samples
         if: ${{ always() && !cancelled() && (steps.benchmark.outcome == 'success' || steps.benchmark.outcome == 'failure') }}
         uses: ./head/.github/actions/upload-artifact
@@ -296,3 +314,55 @@ jobs:
           path: bench-compare/**/new/*.json
           retention-days: 14
           if-no-files-found: ignore
+
+  # Every job's results in one page, `benchmarks.html`, which charts them (a
+  # chart for each benchmark, across machines, of every library, side and
+  # configuration measured): an artifact of the run, uploaded unzipped, so
+  # that it downloads as the page itself.
+  report:
+    needs: compare
+    if: ${{ !cancelled() && !inputs.test_filter && needs.compare.result != 'skipped' }}
+    name: Report
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /ci/
+            /.github/
+      - uses: ./.github/actions/download-artifact
+        with:
+          pattern: bench-results-*
+          path: results
+      - name: Build the page
+        env:
+          REF: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          CHARTS: ${{ inputs.charts }}
+        run: |
+          mkdir -p results
+          charts=()
+          IFS=';' read -ra specs <<< "$CHARTS"
+          for spec in "${specs[@]}"; do
+            if [ -n "${spec// /}" ]; then charts+=(--chart "$spec"); fi
+          done
+          python3 ci/bench_report.py html results -o benchmarks.html --title "Benchmarks of $REF (${SHA:0:10})" "${charts[@]}"
+      - id: upload
+        uses: ./.github/actions/upload-artifact
+        with:
+          name: benchmarks.html
+          path: benchmarks.html
+          archive: "false"
+          if-no-files-found: error
+      - name: Link the page from the summary
+        env:
+          URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          {
+            echo "## Report"
+            echo
+            echo "Every job's results, charted: download [benchmarks.html]($URL) (the run's artifacts) and open it."
+          } >> "$GITHUB_STEP_SUMMARY"

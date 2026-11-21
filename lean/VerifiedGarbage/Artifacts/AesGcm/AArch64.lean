@@ -21,47 +21,47 @@ def artifactsOf (g : GcmVariant) : List Artifact := [
   Spec.Gcm.sealApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.seal g.calls
-    verified := seal_scrubbed g },
+    verified := Proof.AesGcm.AArch64.seal_scrubbed g },
   Spec.Gcm.initApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.init g.calls
-    verified := init_scrubbed g },
+    verified := Proof.AesGcm.AArch64.init_scrubbed g },
   Spec.Gcm.openApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.open g.calls
-    verified := open_scrubbed g },
+    verified := Proof.AesGcm.AArch64.open_scrubbed g },
   Spec.Gcm.openToApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.openTo g.calls
-    verified := openTo_scrubbed g },
+    verified := Proof.AesGcm.AArch64.openTo_scrubbed g },
   Spec.Gcm.streamInitApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.streamInit g.calls
-    verified := streamInit_scrubbed g },
+    verified := Proof.AesGcm.AArch64.streamInit_scrubbed g },
   Spec.Gcm.streamAadApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.streamAad g.calls
-    verified := streamAad_scrubbed g },
+    verified := Proof.AesGcm.AArch64.streamAad_scrubbed g },
   Spec.Gcm.streamEncryptApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.streamEncrypt g.calls
-    verified := streamEncrypt_scrubbed g },
+    verified := Proof.AesGcm.AArch64.streamEncrypt_scrubbed g },
   Spec.Gcm.streamDecryptApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.streamDecrypt g.calls
-    verified := streamDecrypt_scrubbed g },
+    verified := Proof.AesGcm.AArch64.streamDecrypt_scrubbed g },
   Spec.Gcm.streamFinishApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.streamFinish g.calls
-    verified := streamFinish_scrubbed g },
+    verified := Proof.AesGcm.AArch64.streamFinish_scrubbed g },
   Spec.Gcm.streamVerifyApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.streamVerify g.calls
-    verified := streamVerify_scrubbed g },
+    verified := Proof.AesGcm.AArch64.streamVerify_scrubbed g },
   Spec.Gcm.sealGatherApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.sealGather g.calls
-    verified := sealGather_scrubbed g }]
+    verified := Proof.AesGcm.AArch64.sealGather_scrubbed g }]
 
 /-- `vg_aes_gcm_seal_with_powers`, `vg_aes_gcm_open_with_powers` and
 `vg_aes_gcm_open_to_with_powers` of the variant `g`, calling `w` on the path
@@ -70,15 +70,15 @@ def withPowersArtifacts (g : GcmVariant) (w : GhashWithImpl) : List Artifact := 
   Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.sealWithPowers g.calls w.fn
-    verified := sealWithPowers_scrubbed g w },
+    verified := Proof.AesGcm.AArch64.sealWithPowers_scrubbed g w },
   Spec.Gcm.openWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.openWithPowers g.calls w.fn
-    verified := openWithPowers_scrubbed g w },
+    verified := Proof.AesGcm.AArch64.openWithPowers_scrubbed g w },
   Spec.Gcm.openToWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.openToWithPowers g.calls w.fn
-    verified := openToWithPowers_scrubbed g w }]
+    verified := Proof.AesGcm.AArch64.openToWithPowers_scrubbed g w }]
 
 /-- `vg_aes_gcm_seal_with_powers`, `vg_aes_gcm_open_with_powers` and
 `vg_aes_gcm_open_to_with_powers` of a variant without code that reads the
@@ -87,15 +87,15 @@ def basePwArtifacts (g : GcmVariant) : List Artifact := [
   Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.sealWithPowersBase g.calls
-    verified := sealWithPowersBase_scrubbed g },
+    verified := Proof.AesGcm.AArch64.sealWithPowersBase_scrubbed g },
   Spec.Gcm.openWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.openWithPowersBase g.calls
-    verified := openWithPowersBase_scrubbed g },
+    verified := Proof.AesGcm.AArch64.openWithPowersBase_scrubbed g },
   Spec.Gcm.openToWithPowersApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.openToWithPowersBase g.calls
-    verified := openToWithPowersBase_scrubbed g }]
+    verified := Proof.AesGcm.AArch64.openToWithPowersBase_scrubbed g }]
 
 /-- The artifacts of a variant: the functions it has (`GcmVariant.whole`,
 `withPowers`, `basePowers`). -/
@@ -107,10 +107,10 @@ def artifacts : List Artifact :=
   VG.Proof.Variants.AesGcm.AArch64.variants.flatMap artifactsFor ++ [
     Spec.Gcm.storePowersApi.artifact AArch64.target {
       code := Impl.AesGcm.AArch64.Fn.storePowers
-      verified := storePowers_scrubbed },
+      verified := Proof.AesGcm.AArch64.storePowers_scrubbed },
     Spec.Gcm.storePowersApi.artifact AArch64.target {
       suffix := "_aes"
       code := Impl.Gcm.AArch64.Fn.keyPowers
-      verified := storePowersAes_scrubbed }]
+      verified := Proof.AesGcm.AArch64.storePowersAes_scrubbed }]
 
 end VG.Artifacts.AesGcm.AArch64

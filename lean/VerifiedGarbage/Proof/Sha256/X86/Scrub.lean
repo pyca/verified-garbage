@@ -38,7 +38,7 @@ The one-shot digests, for every backend, with the stack they and their
 callees use zeroed first (`X86.Scrub.verifiedScrubbedAll`), given that their
 postconditions read the memory on return only within the buffers
 (`Proof.Sha256.PostOut`). The streaming `update` and `finalize` are scrubbed
-where each backend defines them (`Variants.StreamFn.reg`).
+where each backend defines them (`Variants.Backend.update_scrubbed`, …).
 -/
 
 @[expose] public section

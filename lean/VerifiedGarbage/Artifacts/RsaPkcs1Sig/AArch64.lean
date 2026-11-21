@@ -20,15 +20,15 @@ def artifacts : List Artifact :=
     Spec.RsaPkcs1Sig.signPrecomputedApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.AArch64.Fn.signPrecomputed v.toCrt
-      verified := signPrecomputed_scrubbed v }]) ++
+      verified := Proof.RsaPkcs1Sig.AArch64.signPrecomputed_scrubbed v }]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun (v : PublicImpl) => [
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.AArch64.Fn.verifyPrecomputed v.name v.code
-      verified := verifyPrecomputed_scrubbed v },
+      verified := Proof.RsaPkcs1Sig.AArch64.verifyPrecomputed_scrubbed v },
     Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.AArch64.Fn.recoverPrecomputed v.name v.code
-      verified := recoverPrecomputed_scrubbed v }])
+      verified := Proof.RsaPkcs1Sig.AArch64.recoverPrecomputed_scrubbed v }])
 
 end VG.Artifacts.RsaPkcs1Sig.AArch64

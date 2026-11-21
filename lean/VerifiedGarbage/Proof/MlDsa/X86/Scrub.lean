@@ -267,6 +267,11 @@ theorem Inst.params {module : String} (h : Inst p module) : p = mlDsa44 ∨ p = 
 theorem Inst.mem {module : String} (h : Inst p module) : p ∈ Message.params := by
   simp only [Message.params, List.mem_cons, List.not_mem_nil, or_false]; exact h.params
 
+/-- The three parameter sets, each of its module, as the registration binds them. -/
+theorem inst44 : Inst mlDsa44 "mldsa44" := .inl ⟨rfl, rfl⟩
+theorem inst65 : Inst mlDsa65 "mldsa65" := .inr (.inl ⟨rfl, rfl⟩)
+theorem inst87 : Inst mlDsa87 "mldsa87" := .inr (.inr ⟨rfl, rfl⟩)
+
 section
 variable {module : String} (h : Inst p module)
 include h

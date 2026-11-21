@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha1.X86.ShaNi.Compress
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
 meta import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Impl.Sha256.X86.Stream
@@ -145,28 +146,17 @@ def variant : Proof.Sha1.X86.Variants.Backend := by
     cmpStack := Proof.Sha1.X86.ShaNi.compress_stack,
     stream := stream,
     features := ["sha", "ssse3"],
-    functions := [
-      { api := Spec.Sha1.updateApi
-        code := Impl.StackScratch.X86.withStackScratch 188 5 sha1Update
-        contract := Spec.Sha1.updateContract X86.abi (20 + 188)
-        stack := 20 + 188
-        verified := Proof.Sha1.X86.Shared.update_frame updateScratch_shared ?_ ?_
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
+    update := show Proof.Sha1.X86.Variants.StreamFn Spec.Sha1.updateApi (Impl.StackScratch.X86.withStackScratch 188 5 sha1Update) (20 + 188) from
+      { verified := Proof.Sha1.X86.Shared.update_frame updateScratch_shared ?_ ?_
         spSafe := Code.all_of_allInstrs ?_
         post := Proof.Sha1.X86.Variants.updateOut _
         scrub := Proof.Sha1.X86.Variants.update_scrub stream.upd ?_ stream.updSU },
-      { api := Spec.Sha1.finalizeApi
-        code := Impl.StackScratch.X86.withStackScratch 184 4 sha1Finalize
-        contract := Spec.Sha1.finalizeContract X86.abi (20 + 184)
-        stack := 20 + 184
-        verified := Proof.Sha1.X86.Shared.finalize_frame finalizeScratch_shared ?_
+    finalize := show Proof.Sha1.X86.Variants.StreamFn Spec.Sha1.finalizeApi (Impl.StackScratch.X86.withStackScratch 184 4 sha1Finalize) (20 + 184) from
+      { verified := Proof.Sha1.X86.Shared.finalize_frame finalizeScratch_shared ?_
           ?_
-        ofSig := ⟨_, _, _, rfl⟩
-        ofApi := rfl
         spSafe := Code.all_of_allInstrs ?_
         post := Proof.Sha1.X86.Variants.finalizeOut _
-        scrub := Proof.Sha1.X86.Variants.finalize_scrub stream.fin ?_ stream.finSU }],
+        scrub := Proof.Sha1.X86.Variants.finalize_scrub stream.fin ?_ stream.finSU },
     cmpScrub := ?_,
     updScrub := ?_,
     finScrub := ?_,
