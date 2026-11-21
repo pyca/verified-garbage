@@ -19,8 +19,8 @@ public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
-public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
-public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
+public meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit

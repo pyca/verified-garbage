@@ -1085,20 +1085,4 @@ theorem sp_of_pre (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (hW : 0 
 
 end
 
-
-/-- `c` with its cleanup of only the granules `ks` of the `W` bytes below the
-stack pointer (`scrubSel`, after the clears, `withClears`) meets `c`'s
-contract in constant time and returns without secret residue, when the
-residue analysis of the window (`rtaintG`) ends in `doneG W r ks`: the
-theorem about the code that a registration binds, pairing
-`Verified.scrubSel` and `noResidue_scrubSel`. -/
-theorem _root_.VG.AArch64.Scrub.verifiedScrubbedSel {c : Prog isa} {k : Contract isa}
-    {r W : Nat} {ks : List Nat} {P₀ : Nat}
-    (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
-    (hks : ks.all (fun k => decide (16 * k + 16 ≤ W)) = true) (hk : ScrubOk k W)
-    (hP₀ : ∀ s₁ s₂, Outside 0 s₁ s₂ → PAgree W (wbase s₂.sp 0 W) P₀ s₁.mem s₂.mem)
-    (h : ∃ hc, ((rtaintG W).check (RTaintB.init, some (0, P₀, [])) c hc).any (doneG W r ks) = true) :
-    VerifiedScrubbed target (scrubSel W ks c) k r :=
-  ⟨Verified.scrubSel hv hW hks hk, noResidue_scrubSel hv hW hk.sp hP₀ h⟩
-
 end VG.AArch64.RTaintG

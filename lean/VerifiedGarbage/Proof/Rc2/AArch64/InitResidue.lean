@@ -5,8 +5,8 @@ public meta import VerifiedGarbage.Impl.Rc2.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Scrub.AArch64
 public meta import VerifiedGarbage.Impl.Scrub.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
-public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
+public meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Chained
 public meta import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Chained
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified

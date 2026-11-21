@@ -13,7 +13,8 @@ import VerifiedGarbage.Proof.Framework.Mem
 
 The pieces of the residue analysis through calls and frames (`rtaintF W`,
 `ResidueFrame.lean`) that the analysis of the cleared window
-(`ResidueWin.lean`, `AArch64.Scrub.verifiedScrubbedSel`) builds on:
+(`ResidueWin.lean`; `AArch64.Scrub.verifiedScrubbedSel`, `ScrubSel.lean`)
+builds on:
 
 * `doneF r`: the analysis ends with the registers the calling convention
   does not preserve public (but `x9` and `v31`, which the clearing writes),

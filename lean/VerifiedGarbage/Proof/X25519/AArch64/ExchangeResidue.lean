@@ -7,8 +7,8 @@ public import VerifiedGarbage.Impl.Scrub.AArch64
 public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 public meta import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
-public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
-public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
+public meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
 public meta import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified

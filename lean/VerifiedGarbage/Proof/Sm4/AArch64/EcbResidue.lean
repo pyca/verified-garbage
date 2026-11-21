@@ -5,8 +5,8 @@ public meta import VerifiedGarbage.Impl.Sm4.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Scrub.AArch64
 public meta import VerifiedGarbage.Impl.Scrub.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
-public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
+public meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrFinal
 public meta import VerifiedGarbage.Proof.Sm4.AArch64.CtrFinal
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrVerified

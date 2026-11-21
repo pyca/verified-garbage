@@ -23,8 +23,8 @@ public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public meta import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
-public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
-public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
+public meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit

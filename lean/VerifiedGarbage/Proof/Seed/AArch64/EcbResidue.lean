@@ -5,8 +5,8 @@ public meta import VerifiedGarbage.Impl.Seed.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Scrub.AArch64
 public meta import VerifiedGarbage.Impl.Scrub.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
-public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
+public meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
 public import VerifiedGarbage.Proof.Seed.AArch64.EcbCall
 public meta import VerifiedGarbage.Proof.Seed.AArch64.EcbCall
 public import VerifiedGarbage.Proof.Seed.AArch64.Frame
