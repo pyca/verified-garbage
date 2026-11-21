@@ -331,8 +331,12 @@ theorem signMessage44_scrubbed :
     (by exact signMessageOut Spec.MlDsa.mlDsa44 _)
     (by dsimp only; lit_decide)
 
-def preparedSignMessage44Reg : Registration (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa44_sign_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedSignMessage44`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedSignMessage44_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedSignMessage44
+      (Message.msgSK mlDsa44 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa44" ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.signPrepared44 Spec.MlDsa.mlDsa44
       verified := Message.signMessage_verified (.inl rfl) (by decide) Message.signPrepared44Fn _
@@ -391,8 +395,12 @@ theorem verifyMessageCached44_scrubbed :
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa44 _)
     (by dsimp only; lit_decide)
 
-def preparedVerifyMessage44Reg : Registration (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa44_verify_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage44`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedVerifyMessage44_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage44
+      (Message.msgVK mlDsa44 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa44" ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verifyPrepared44 Spec.MlDsa.mlDsa44
       verified := Message.verifyMessageCached_verified (.inl rfl) (by decide) Message.verifyPrepared44Fn _
@@ -506,8 +514,12 @@ theorem signMessage65_scrubbed :
     (by exact signMessageOut Spec.MlDsa.mlDsa65 _)
     (by dsimp only; lit_decide)
 
-def preparedSignMessage65Reg : Registration (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa65_sign_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedSignMessage65`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedSignMessage65_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedSignMessage65
+      (Message.msgSK mlDsa65 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa65" ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.signPrepared65 Spec.MlDsa.mlDsa65
       verified := Message.signMessage_verified (.inr (.inl rfl)) (by decide) Message.signPrepared65Fn _
@@ -566,8 +578,12 @@ theorem verifyMessageCached65_scrubbed :
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa65 _)
     (by dsimp only; lit_decide)
 
-def preparedVerifyMessage65Reg : Registration (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa65_verify_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage65`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedVerifyMessage65_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage65
+      (Message.msgVK mlDsa65 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa65" ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verifyPrepared65 Spec.MlDsa.mlDsa65
       verified := Message.verifyMessageCached_verified (.inr (.inl rfl)) (by decide) Message.verifyPrepared65Fn _
@@ -681,8 +697,12 @@ theorem signMessage87_scrubbed :
     (by exact signMessageOut Spec.MlDsa.mlDsa87 _)
     (by dsimp only; lit_decide)
 
-def preparedSignMessage87Reg : Registration (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa87_sign_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedSignMessage87`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedSignMessage87_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedSignMessage87
+      (Message.msgSK mlDsa87 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa87" ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.signPrepared87 Spec.MlDsa.mlDsa87
       verified := Message.signMessage_verified (.inr (.inr rfl)) (by decide) Message.signPrepared87Fn _
@@ -741,8 +761,12 @@ theorem verifyMessageCached87_scrubbed :
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa87 _)
     (by dsimp only; lit_decide)
 
-def preparedVerifyMessage87Reg : Registration (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa87_verify_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage87`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedVerifyMessage87_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage87
+      (Message.msgVK mlDsa87 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa87" ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verifyPrepared87 Spec.MlDsa.mlDsa87
       verified := Message.verifyMessageCached_verified (.inr (.inr rfl)) (by decide) Message.verifyPrepared87Fn _

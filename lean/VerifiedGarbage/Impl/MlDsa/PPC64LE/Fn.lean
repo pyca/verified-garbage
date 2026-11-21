@@ -177,4 +177,52 @@ def verifyMessageCached87 : Prog isa :=
   scrubAll 32 192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Spec.MlDsa.verify87Api.name ++ "_core") Impl.MlDsa.PPC64LE.Verify.verify87 Spec.MlDsa.mlDsa87)
 
+/-- `vg_mldsa44_sign_message_prepared`, as emitted. -/
+def preparedSignMessage44 : Prog isa :=
+  scrubAll 32 192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MlDsa.PPC64LE.Message.signMessage (s!"vg_{"mldsa44"}_sign_prepared" ++ "_core")
+        Impl.MlDsa.PPC64LE.Sign.signPrepared44 Spec.MlDsa.mlDsa44)
+
+/-- `vg_mldsa44_verify_message_prepared`, as emitted. -/
+def preparedVerifyMessage44 : Prog isa :=
+  scrubAll 32 192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MlDsa.PPC64LE.Message.verifyMessageCached (s!"vg_{"mldsa44"}_verify_prepared" ++ "_core")
+        Impl.MlDsa.PPC64LE.Verify.verifyPrepared44 Spec.MlDsa.mlDsa44)
+
+/-- `vg_mldsa65_sign_message_prepared`, as emitted. -/
+def preparedSignMessage65 : Prog isa :=
+  scrubAll 32 192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MlDsa.PPC64LE.Message.signMessage (s!"vg_{"mldsa65"}_sign_prepared" ++ "_core")
+        Impl.MlDsa.PPC64LE.Sign.signPrepared65 Spec.MlDsa.mlDsa65)
+
+/-- `vg_mldsa65_verify_message_prepared`, as emitted. -/
+def preparedVerifyMessage65 : Prog isa :=
+  scrubAll 32 192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MlDsa.PPC64LE.Message.verifyMessageCached (s!"vg_{"mldsa65"}_verify_prepared" ++ "_core")
+        Impl.MlDsa.PPC64LE.Verify.verifyPrepared65 Spec.MlDsa.mlDsa65)
+
+/-- `vg_mldsa87_sign_message_prepared`, as emitted. -/
+def preparedSignMessage87 : Prog isa :=
+  scrubAll 32 192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MlDsa.PPC64LE.Message.signMessage (s!"vg_{"mldsa87"}_sign_prepared" ++ "_core")
+        Impl.MlDsa.PPC64LE.Sign.signPrepared87 Spec.MlDsa.mlDsa87)
+
+/-- `vg_mldsa87_verify_message_prepared`, as emitted. -/
+def preparedVerifyMessage87 : Prog isa :=
+  scrubAll 32 192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MlDsa.PPC64LE.Message.verifyMessageCached (s!"vg_{"mldsa87"}_verify_prepared" ++ "_core")
+        Impl.MlDsa.PPC64LE.Verify.verifyPrepared87 Spec.MlDsa.mlDsa87)
+
 end VG.Impl.MlDsa.PPC64LE.Fn
