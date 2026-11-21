@@ -27,15 +27,14 @@ space (`BlocksImpl.free`), in a frame of only the 24 bytes it writes itself
 analysis (`BlocksImpl.ocbInitRes`). Over the others, as before, in a frame of
 2.5 KB, of which the analysis cannot tell what may hold secrets. Over the others, that frame is mostly the
 working space of the functions called, wiped whole on return
-(`X86_64.Scrub.withScrubAll`). Its postcondition reads the memory on return
+(`Impl.Scrub.X86_64.scrubAll`). Its postcondition reads the memory on return
 only within the key context, for a key of the lengths the precondition
 allows (`X86_64.Scrub.PostOut`).
 
 `vg_aes_ocb_seal` and `vg_aes_ocb_open` over an implementation that needs
 working space: their frame of 3632 bytes is that working space, the offsets,
 the checksum, the table of `L_j` and blocks of the data XORed with offsets,
-so it is wiped whole on return (`RScrub.withScrubAllC`, `sealReg`,
-`openReg`). Their postconditions read the
+so it is wiped whole on return (`Impl.Scrub.X86_64.scrubAll`). Their postconditions read the
 memory on return only within the data and the tag (`sealOut`, `openOut`).
 -/
 

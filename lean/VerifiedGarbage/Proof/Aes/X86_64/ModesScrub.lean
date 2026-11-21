@@ -22,10 +22,8 @@ public import VerifiedGarbage.Proof.Aes.ScrubLocal
 `vg_aes_cfb8_encrypt`, `vg_aes_cfb8_decrypt`, `vg_aes_cfb128_encrypt`,
 `vg_aes_cfb128_decrypt` and `vg_aes_ofb` over an implementation of the AES
 block functions (`Aes.X86_64.BlocksImpl`), each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`) where the
-implementation gives the residue analysis of the instance (`cfb8EncRes`,
-`cfb8DecRes`, `cfbEncRes`, `cfbDecRes`, `ofbRes`), and otherwise with its 8
-bytes of stack wiped (`X86_64.RScrub.withScrubOrAll`). Their postconditions read
+`Impl.Scrub.X86_64.scrubAll`, which wipes its 8 bytes of stack
+(`X86_64.Scrub.verifiedScrubbedAllFill`). Their postconditions read
 the memory on return only within the buffers (`X86_64.Scrub.PostOut`): the
 data and the input block. The `_final` functions call the code of the
 CFB128 and OFB ones as internal functions of their own,

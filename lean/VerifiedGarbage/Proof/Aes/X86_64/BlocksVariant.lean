@@ -1419,34 +1419,9 @@ structure BlocksImpl where
   /-- The bytes of `scratch` `enc` and `dec` write, among those the stubs of
   their callers' code take. -/
   writtenOk : (encWritten = 0 ∨ encWritten = 2048) ∧ (decWritten = 224 ∨ decWritten = 2048) := by decide
-  /-- The residue analysis of `vg_aes_cfb8_encrypt` over it, if the analysis
-  handles it. -/
-  cfb8EncRes : Option (RScrub.Analysed Spec.Cfb8.aesEncryptApi.sig 8 []
-    (Impl.AesCfb8.X86_64.encrypt enc)) := none
-  /-- The residue analysis of `vg_aes_cfb8_decrypt` over it, if the analysis
-  handles it. -/
-  cfb8DecRes : Option (RScrub.Analysed Spec.Cfb8.aesDecryptApi.sig 8 []
-    (Impl.AesCfb8.X86_64.decrypt enc)) := none
-  /-- The residue analysis of `vg_aes_cfb128_encrypt` over it, if the
-  analysis handles it. -/
-  cfbEncRes : Option (RScrub.Analysed Spec.Cfb.aesEncryptApi.sig 8 []
-    (Impl.AesCfb.X86_64.encrypt enc)) := none
-  /-- The residue analysis of `vg_aes_cfb128_decrypt` over it, if the
-  analysis handles it. -/
-  cfbDecRes : Option (RScrub.Analysed Spec.Cfb.aesDecryptApi.sig 8 []
-    (Impl.AesCfb.X86_64.decrypt enc)) := none
-  /-- The residue analysis of `vg_aes_ofb` over it, if the analysis handles
-  it. -/
-  ofbRes : Option (RScrub.Analysed Spec.Ofb.aesApi.sig 8 [] (Impl.AesOfb.X86_64.crypt enc)) := none
-  /-- The residue analysis of `vg_aes_ecb_encrypt` as its `enc` alone, if
-  the analysis handles it. -/
-  ecbEncRes : Option (RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] enc.code) := none
   /-- The contracts of encryption and the key expansion without a scratch
   buffer, if they never touch one. -/
   free : Option (BlocksFree enc expand) := none
-  /-- The residue analysis of `vg_aes_ocb_init` over it, without working
-  space for it (`free`), if the analysis handles it. -/
-  ocbInitRes : Option (RScrub.Analysed Spec.Ocb.initApi.sig 40 [] (ocbInitCodeF enc dec expand)) := none
 
 namespace BlocksImpl
 

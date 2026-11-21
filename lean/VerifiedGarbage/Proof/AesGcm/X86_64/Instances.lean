@@ -822,7 +822,6 @@ end
 
 end
 
-
 /-!
 # AES-GCM's short path on x86-64: GHASH of the buffer, in the field
 
@@ -1349,7 +1348,6 @@ namespace VG.Proof.AesGcm
 
 open VG.Spec.Gcm Proof.Gcm
 
-
 /-- `sealSplitPrepared16Contract`, whatever `work` is. -/
 def sealSplitPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   sealSplitPreparedScratchSig.contract A
@@ -1358,7 +1356,6 @@ def sealSplitPrepared16ScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) 
     (post := fun ctx rounds nonce nonceLen aad aadLen src srcLen dst len tag _work =>
       sealSplitPost A.ptrBits ctx rounds nonce nonceLen aad aadLen src srcLen dst len tag)
     (writeArgs := true) (stack := stack)
-
 
 variable (pb : Nat)
 
@@ -1390,7 +1387,6 @@ end VG.Proof.AesGcm
 end
 
 end
-
 
 /-! # Sixteen prepared powers: `seal_split` for a key context of `vg_aes_gcm_prepare16`
 
@@ -1454,7 +1450,6 @@ theorem splitFrameSatPrepared16_pre : ∃ s, (Proof.Gcm.sealSplitPrepared16Contr
        split
        · next h => exfalso; bv_omega
        · rfl)
-
 
 section
 variable (v : GcmImpl) (B : BlkFn CtxMode.prepared16) (T : BlkToFn CtxMode.prepared16)
@@ -1682,7 +1677,6 @@ end
 
 end
 
-
 /-!
 # AES-GCM on x86-64: the functions a variant's artifacts are built from
 
@@ -1750,11 +1744,6 @@ theorem StitchToName.okP : (n : StitchToName) →
 def GcmVariant.stitchTo (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.base) :=
   (v.stitch.bind (·.toPart)).map fun p => ⟨p.name.enc, p.name.full, p.name.ok _, p.piece⟩
 
-/-- The out-of-place loops a variant names for a key context of
-`vg_aes_gcm_init_precomputed`, with their proof. -/
-def GcmVariant.stitchToP (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
-  (v.stitch.bind (·.toPart)).bind fun p => p.pieceP.map fun q => ⟨p.name.encP, false, p.name.okP, q.enc⟩
-
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
   ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl, v.stitch.bind StitchPart.implP,
@@ -1812,10 +1801,6 @@ def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_6
 /-- The instance of `vg_aes_gcm_encrypt_blocks_to` of a variant. -/
 def blkTo (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofBlocks ("vg_aes_gcm_encrypt_blocks_to" ++ v.impl.suffix) v.impl.blkB v.stitchTo
-
-/-- The instance of `vg_aes_gcm_encrypt_blocks_to_precomputed` of a variant. -/
-def blkToP (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofBlocks ("vg_aes_gcm_encrypt_blocks_to_precomputed" ++ v.impl.suffix) v.impl.blkP v.stitchToP
 
 /-- The instance of `vg_aes_gcm_stream_encrypt` calling the implementations `v`. -/
 def encFn (v : GcmImpl) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
@@ -1981,16 +1966,6 @@ def toFn (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
     (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkTo v) (encFn v.impl)))
     (StreamTo.framed_mx (StreamTo.encrypt_mx (blkTo v) (encFn v.impl)))
 
-/-- The instance of `vg_aes_gcm_stream_encrypt_to_precomputed` of a variant. -/
-def toFnP (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofPowers ⟨"vg_aes_gcm_stream_encrypt_to_precomputed" ++ v.impl.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2232 3
-        (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToP v).fn (encFnP v.impl).fn)⟩
-    (StreamTo.streamEncryptToP_framed (blkToP v) (encFnP v.impl))
-    (X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkToP v) (encFnP v.impl)))
-    (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkToP v) (encFnP v.impl)))
-    (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToP v) (encFnP v.impl)))
-
 /-- The instance of `vg_aes_gcm_seal_split` of a variant. -/
 def splitFn (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofBase ⟨"vg_aes_gcm_seal_split" ++ v.impl.suffix,
@@ -2001,25 +1976,11 @@ def splitFn (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.ba
     (StreamTo.framed_xdepth (Split.sealSplit_xdepth v.impl v.impl.blkB (blkTo v)))
     (StreamTo.framed_mx (Split.sealSplit_mx v.impl v.impl.blkB (blkTo v)))
 
-/-- The instance of `vg_aes_gcm_seal_split_precomputed` of a variant. -/
-def splitFnP (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofPowers ⟨"vg_aes_gcm_seal_split_precomputed" ++ v.impl.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2616 5
-        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkP) (blkToP v).fn))⟩
-    (Split.sealSplitP_framed v.impl Short.shortFacts v.impl.blkP (blkToP v))
-    (X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkP (blkToP v)))
-    (StreamTo.framed_xdepth (Split.sealSplit_xdepth v.impl v.impl.blkP (blkToP v)))
-    (StreamTo.framed_mx (Split.sealSplit_mx v.impl v.impl.blkP (blkToP v)))
-
 /-- The short path of `vg_aes_gcm_seal_gather` of a variant: the text copied
 and sealed by `vg_aes_gcm_seal`, or sealed from its first slice by
 `vg_aes_gcm_seal_split`. -/
 def shortFn (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .ofBoth (sealFn v.impl) (splitFn v) (copyBelow_lt v) (splitFrom_pos v) (splitFrom_le v)
-
-/-- The short path of `vg_aes_gcm_seal_gather_precomputed` of a variant. -/
-def shortFnP (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
-  .ofBoth (sealFnP v.impl) (splitFnP v) (copyBelow_lt v) (splitFrom_pos v) (splitFrom_le v)
 
 /-- Prepared whole-block implementations, propagated through all callers. -/
 def blkR (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
@@ -2532,7 +2493,7 @@ theorem openCodeF_mx (v : GcmVariant) : (openCodeF v).allInstrs (fun i => !VG.X8
 for `open_to` to call on a context whose powers are present, as an internal
 function of its own, `vg_aes_gcm_open_prepared<suffix>_core`, with the code
 as it was: the function of that name returns without secret residue
-(`openRReg`). -/
+(`openR_scrubbed`). -/
 def openFnF (v : GcmVariant) : OpenTo.OpenFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=
   .ofFlagged ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix ++ "_core", openCodeF v⟩ (openCodeF_verified v)
     (openCodeF_spAll v) (openCodeF_xdepth v) (openCodeF_mx v)
@@ -2675,7 +2636,7 @@ theorem streamEncryptCodeF_mx (v : GcmVariant) :
 loops read the 48 prepared powers, as an internal function of its own,
 `vg_aes_gcm_stream_encrypt_prepared<suffix>_core`, with the code as it was:
 the function of that name returns without secret residue
-(`streamEncryptF48Reg`). -/
+(`streamEncryptR_scrubbed`). -/
 def encFnF (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=
   .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix ++ "_core", streamEncryptCodeF v⟩
     (streamEncryptCodeF_verified v) (streamEncryptCodeF_spAll v) (streamEncryptCodeF_xdepth v) (streamEncryptCodeF_mx v)
@@ -2692,7 +2653,7 @@ def toFnF (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged
 /-- `vg_aes_gcm_seal_prepared` of a variant whose loops read the 48 powers,
 as an internal function of its own, `vg_aes_gcm_seal_prepared<suffix>_core`,
 with the code as it was: the function of that name returns without secret
-residue (`sealRReg`). -/
+residue (`sealR_scrubbed`). -/
 def sealFnF (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.flagged :=
   .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix ++ "_core", sealCodeF v⟩ (sealCodeF_verified v)
     (sealCodeF_spAll v) (sealCodeF_xdepth v) (sealCodeF_mx v)
@@ -2875,7 +2836,7 @@ theorem openCodeF16_mx (v : GcmVariant) :
 `open_to` to call on a context whose count is at least 16, as an internal
 function of its own, `vg_aes_gcm_open_prepared<suffix>_core`, with the code
 as it was: the function of that name returns without secret residue
-(`openR16Reg`). -/
+(`openR16_scrubbed`). -/
 def openFnF16 (v : GcmVariant) (r : R16 v) : OpenTo.OpenFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
   .ofFlagged ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix ++ "_core", openCodeF16 v⟩ (openCodeF16_verified v r)
     (openCodeF16_spAll v) (openCodeF16_xdepth v) (openCodeF16_mx v)
@@ -3096,7 +3057,7 @@ def toFnF16 (v : GcmVariant) : Gather.ToFn (Proof.Gcm.X86_64.Stitch.CtxMode.flag
 /-- The instance of `vg_aes_gcm_seal_prepared` of a variant whose loops read
 16 powers, as an internal function of its own,
 `vg_aes_gcm_seal_prepared<suffix>_core`, with the code as it was: the function
-of that name returns without secret residue (`sealF16Reg`). -/
+of that name returns without secret residue (`sealR16_scrubbed`). -/
 def sealFnF16 (v : GcmVariant) (r : R16 v) : Gather.SealFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
   .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix ++ "_core",
       sealCodeF16 v⟩ (sealCodeF16_verified v r)

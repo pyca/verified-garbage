@@ -315,28 +315,27 @@ change the code so it can, as the Merkle–Damgård streaming code clamps its
 indices, and ChaCha20's `apply` keeps the data and its length in `r14` and
 `r15` and takes its state back from the buffer `vg_chacha20_xor` returns.
 
-**Not yet converted.** Those families build their registration in `Proof/`
-and scrub it with `X86_64.Scrub.scrubReg`, whose code clears what the
-residue analysis finds may hold secrets and which gives that proof; the
-registration file binds the result. Code the analysis does not follow at
-all (RSA's private-key functions, most of whose pointers and lengths are
-arguments on the stack) is scrubbed with `X86_64.Scrub.withScrubAll`, which
-wipes all the stack its frames and calls use and needs only `PostOut`; its
-level `evex` also clears `zmm16`–`zmm31` and MXCSR's status flags, for code
-that writes those. To wipe it faster, in chunks whose 16-byte stores are
-aligned (an 8-byte chunk at the top: `[8, 2616]` for a stack of 2624), use
-`X86_64.RScrub.withScrubAllC`, or `withScrubAllRC` for code that leaves
-MXCSR as it was along a path, at any level, `zmm16`–`zmm31` included
-(AES-GCM's one-shot functions, `Proof/AesGcm/X86_64/Leaves.lean`). Code
-with no VEX or EVEX instruction, no frame and no call is scrubbed with
-`X86_64.RScrub.withScrubXs`, which clears only the SSE registers its
-instructions may write and wipes no stack, and keeps what the registration
-states of `written`: keep such code's secrets in few registers (AES-CBC's
-AES-NI encryption loads each round key from the schedule as its round uses
-it). A function is left as it is when the clearing would need a CPU
-feature the function does not: one that needs no AVX and may run an AVX2
-hash function through a table it takes (`vg_rsa_pss_sign`,
-`vg_rsa_oaep_decrypt`).
+**Calls that load MXCSR.** `calleeSide` forbids `ldmxcsr` in a callee.
+Code that calls `vg_mcdt_enter`, the one function that loads it, proves
+that it leaves MXCSR as two runs found it by its structure (`mxCalls`,
+`Proof/Framework/X86_64/MxCall.lean`), which evaluates the MXCSR analysis on
+`vg_mcdt_enter` alone, and a generic caller of it uses
+`verifiedScrubbedAllFillM` (ChaCha20-Poly1305 over Poly1305's vector code).
+
+**Calls through a table.** Code of the baseline ISA that may run AVX
+functions ending in `vzeroupper` through a table it takes cannot be cleared
+at the level `avx`, whose clearing needs a feature the code does not: it is
+cleared at the level `sse` (`verifiedScrubbedAllUp`,
+`Proof/Framework/X86_64/ScrubUpFn.lean`), which needs that the upper halves
+of the vector registers agree after its calls if they did before. Each
+implementation in the table states that of its own code (`upCallee`), and
+`verifiedScrubbedAllUpFill` joins them with the function's code with a stub
+in their place (`TFill`, `tfill_calls`,
+`Proof/Framework/X86_64/TableFill.lean`; ECDSA's `sign`). Code that is also
+generic over an implementation it calls directly, at the level `sse` for
+some implementations and higher for others, uses `verifiedScrubbedOrUp`
+(`Proof/Framework/X86_64/ScrubUpFill.lean`; RSA-PSS and RSA-OAEP over the
+RSA implementations).
 
 ### x86 (32-bit)
 

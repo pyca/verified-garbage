@@ -762,25 +762,7 @@ def keepOf (sec : Nat) (cs : List Nat) : List Nat :=
 
 /-! ## Registrations -/
 
-/-- `resOk_of_check` for a registration. -/
-theorem resOk_reg {api : Api} (r : Unscrubbed api target) (ks : List Nat) {pubs : List (Nat × Nat × Nat)}
-    (hfit : pubsFit api.sig pubs = true) (hpub : PubOk r.contract pubs) {h : VG.Taint.Hint FT}
-    (hc : (VG.Taint.check rtaint (init api.sig r.stack pubs) r.code h).any (resOkB · r.stack ks (chunks r.stack)) = true) :
-    ResOk r.code r.contract r.stack ks (chunks r.stack) := by
-  obtain ⟨pre, post, leak, e⟩ := r.ofSig
-  have hv := r.verified
-  have hp := hpub
-  rw [e] at hv hp ⊢
-  exact resOk_of_check (ScrubAbi.of r.consts api.sig r.tables) hv (chunks_sum r.stack) hfit hp hc
-
 theorem pubOk_nil (k : Contract isa) : PubOk k [] := fun _ _ _ _ _ _ _ h => absurd h List.not_mem_nil
-
-/-- `resOk_reg`, with no bytes of the buffers known public, from the analysis
-ending as `resOkF` checks (which the kernel evaluates faster than `resOkB`). -/
-theorem resOk_reg0 {api : Api} (r : Unscrubbed api target) (ks : List Nat) {h : VG.Taint.Hint FT}
-    (hc : (VG.Taint.check rtaint (init api.sig r.stack) r.code h).any (resOkF · r.stack ks (chunks r.stack)) = true) :
-    ResOk r.code r.contract r.stack ks (chunks r.stack) :=
-  resOk_reg r ks (pubs := []) rfl (pubOk_nil _) (any_resOkB hc)
 
 /-- The granules of `r.stack` bytes of stack that `scrub` must wipe after
 the code `code` of signature `sig`, from the analysis (none if it fails,
@@ -789,69 +771,6 @@ def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) (pubs : List (Nat × Nat
   match VG.Taint.hint rtaint 256 (init sig stack pubs) code with
   | some (τ, _) => keepOf τ.sec (chunks stack)
   | none => []
-
-theorem mxClassFrom_ok : ∀ (c : Prog isa) (k : List (String × Prog isa × Unit × Option MxC)),
-    (∀ e ∈ k, e.2.2.2 = mxClass e.2.1) →
-      (mxClassFrom c k).1 = mxClass c ∧ ∀ e ∈ (mxClassFrom c k).2, e.2.2.2 = mxClass e.2.1
-  | .block _, _, hk => ⟨rfl, hk⟩
-  | .seq a b, k, hk => by
-    obtain ⟨ha, ka⟩ := mxClassFrom_ok a k hk
-    obtain ⟨hb, kb⟩ := mxClassFrom_ok b _ ka
-    simp only [mxClassFrom, mxClass, ← ha, ← hb]
-    split
-    · exact ⟨rfl, hk⟩
-    · cases hx : (mxClassFrom a k).1 with
-      | none => exact ⟨rfl, ka⟩
-      | some x =>
-        cases hy : (mxClassFrom b (mxClassFrom a k).2).1 with
-        | none => exact ⟨rfl, kb⟩
-        | some y => exact ⟨rfl, kb⟩
-  | .ite _ t e, k, hk => by
-    obtain ⟨ha, ka⟩ := mxClassFrom_ok t k hk
-    obtain ⟨hb, kb⟩ := mxClassFrom_ok e _ ka
-    simp only [mxClassFrom, mxClass, ← ha, ← hb]
-    cases hx : (mxClassFrom t k).1 with
-    | none => exact ⟨rfl, ka⟩
-    | some x =>
-      cases hy : (mxClassFrom e (mxClassFrom t k).2).1 with
-      | none => exact ⟨rfl, kb⟩
-      | some y => exact ⟨rfl, kb⟩
-  | .loop b _, k, hk => mxClassFrom_ok b k hk
-  | .call n b, k, hk =>
-    Code.memoCall_ok (n := n) (run := fun _ => mxClassFrom b k) (spec := fun c _ => mxClass c) hk (mxClassFrom_ok b k hk)
-  | .frame i b j, k, hk => by
-    obtain ⟨hb, kb⟩ := mxClassFrom_ok b k hk
-    simp only [mxClassFrom, mxClass]
-    split
-    · exact ⟨hb, kb⟩
-    · exact ⟨rfl, hk⟩
-  | .icall i n b nx, k, hk => by
-    obtain ⟨ha, ka⟩ := Code.memoCall_ok (n := n) (run := fun _ => mxClassFrom b k) (spec := fun c _ => mxClass c) hk
-      (mxClassFrom_ok b k hk)
-    obtain ⟨hb, kb⟩ := mxClassFrom_ok nx _ ka
-    simp only [mxClassFrom, mxClass]
-    split
-    · exact ⟨rfl, hk⟩
-    · simp only [← ha, ← hb]
-      cases hx : (Code.memoCall n b () k fun _ => mxClassFrom b k).1 with
-      | none => exact ⟨rfl, ka⟩
-      | some x =>
-        cases hy : (mxClassFrom nx (Code.memoCall n b () k fun _ => mxClassFrom b k).2).1 with
-        | none => exact ⟨rfl, kb⟩
-        | some y => exact ⟨rfl, kb⟩
-
-theorem mxClassOnce_eq (c : Prog isa) : mxClassOnce c = mxClass c :=
-  (mxClassFrom_ok c [] fun _ h => by cases h).1
-
-/-- The level `scrub` clears the vector registers at for `code`: `pxor` if
-nothing in it writes bits 511:128 of a vector register, else `vpxor`
-(`Instr.vecLevelR`: whatever it does to MXCSR, which `withScrub` asks of
-separately). -/
-def levelFor (code : Prog isa) : VecLevel :=
-  if levelLeROnce VecLevel.sse.level code then .sse else .avx
-
-theorem levelFor_ne (code : Prog isa) : levelFor code ≠ .evex := by
-  unfold levelFor; split <;> exact VecLevel.noConfusion
 
 /-- The residue analysis of the code `code` of signature `sig`, whose frames
 and calls use `stack` bytes, from `init` with the bytes `pubs` of its buffers
@@ -871,60 +790,6 @@ theorem Analysed.ok_of {sig : Sig} {stack : Nat} {pubs : List (Nat × Nat × Nat
       (VG.Taint.check rtaint (init sig stack pubs) code h).any (resOkB · stack ks (chunks stack)) = true :=
   ⟨h, any_resOkB hc⟩
 
-/-- `r`, returning without secret residue (`scrubRegM`), given the residue
-analysis of its code (`Analysed`) and if `scrub`'s side conditions hold (code
-that loads MXCSR leaving in it a function of MXCSR on entry, `mxClass`, as
-Intel's MCDT prologue and epilogue do);
-otherwise `r` itself, which then has no proof (`Verification.unscrubbed`), as
-the emitter allows only of what `ci/residue_allowlist.txt` lists. A caller
-generic over the implementations of a function (`Generic/`) takes the
-analysis of each of its instances from the implementation, `none` for one
-the analysis does not handle. -/
-def withScrub {api : Api} (r : Unscrubbed api target)
-    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (pubs : List (Nat × Nat × Nat)) (hpub : PubOk r.contract pubs)
-    (a : Option (Analysed api.sig r.stack pubs r.code)) : Registration api target :=
-  match a with
-  | none => r.registration
-  | some a =>
-    let v := levelFor r.code
-    if hfit : pubsFit api.sig pubs = true then
-    if hd : r.code.x86_64Depth ≤ r.stack then
-    if hst : r.stack + 8 < 2 ^ 64 then
-    if h8 : r.stack % 8 = 0 then
-    if hlv : levelLeROnce v.level r.code = true then
-    if hmx : (mxClassOnce r.code).isSome = true then
-    if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
-        api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
-    if hw : r.written = [] then
-      scrubRegM r v a.ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
-        (by obtain ⟨_, hc⟩ := a.ok; exact resOk_reg r a.ks hfit hpub hc) hw (levelFor_ne _)
-    else r.registration else r.registration else r.registration else r.registration
-    else r.registration else r.registration else r.registration else r.registration
-
-/-- `withScrub`, for code whose two runs leave the same bytes in its stack
-but the granules `ks` (`hres`), proven of the code rather than by the
-residue analysis (as `X86_64.Scrub.resOk_of_leaves` gives it from what the
-code leaves run by run): `r` followed by the clearing of those granules,
-returning without secret residue (`scrubRegM`), if `scrub`'s side
-conditions hold; otherwise `r` itself, which then has no proof. -/
-def withScrubRes {api : Api} (r : Unscrubbed api target)
-    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (ks : List Nat) (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) : Registration api target :=
-  let v := levelFor r.code
-  if hd : r.code.x86_64Depth ≤ r.stack then
-  if hst : r.stack + 8 < 2 ^ 64 then
-  if h8 : r.stack % 8 = 0 then
-  if hlv : r.code.allOnce (fun i => decide (i.vecLevelR ≤ v.level)) = true then
-  if hmx : (mxClassOnce r.code).isSome = true then
-  if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
-      api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
-  if hw : r.written = [] then
-    scrubRegM r v ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
-      hres hw (levelFor_ne _)
-  else r.registration else r.registration else r.registration else r.registration
-  else r.registration else r.registration else r.registration
-
 end VG.X86_64.RScrub
 
 /-! ## The code of a check, as a literal
@@ -932,8 +797,7 @@ end VG.X86_64.RScrub
 `taint_decide` has the kernel evaluate the literal of any code that has one
 (`rw_lit`), but not of code it reaches through a structure with proofs about
 it (`Lit.reaches`: rewriting inside one would change the types of its
-proofs): a registration's `r.code`, as `resOk_reg0` states its check, or the
-functions of a variant (`MdHash`, `StreamFn`). The kernel then builds the
+proofs): the code of a registration or the functions of a variant (`MdHash`, `StreamFn`). The kernel then builds the
 code from the functions that generate it, and what it walks are their
 terms: two instructions that are the same after evaluation are different
 terms, each met for the first time (`stepFn1K`, a third of a millisecond),
@@ -1034,9 +898,9 @@ meta def taintDecideLit (chunkSize : Expr) : TacticM Unit := do
   evalTactic (← `(tactic| decide +kernel))
 
 /-- `taint_decide_lit`: `taint_decide` for a check of the residue analysis
-of code that `rw_lit` cannot see (`hiddenCode`: a registration's `r.code`, as
-`resOk_reg0` states its check, the functions of a variant), which it states
-of the code's literal (`codeLit`) before the kernel evaluates it. On any
+of code that `rw_lit` cannot see (a registration's code, the functions of a
+variant), which it states of the code's literal before the kernel evaluates
+it. On any
 other code it is `taint_decide`. -/
 elab "taint_decide_lit" : tactic => withMainContext do
   let saved ← saveState
@@ -1051,7 +915,7 @@ end VG.X86_64.RScrub
 
 /-- `keep_for% sig stack code`: `RScrub.keepFor sig stack code`, computed in
 compiled code, as a literal (for the kernel, which then checks it with the
-analysis, `RScrub.resOk_reg`, rather than computing it too). -/
+analysis rather than computing it too). -/
 syntax "keep_for% " term:max term:max term:max (term:max)? : term
 
 open Lean Elab Term Meta in

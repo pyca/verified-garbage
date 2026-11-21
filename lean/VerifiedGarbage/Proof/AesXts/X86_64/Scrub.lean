@@ -1245,16 +1245,14 @@ end
 
 end
 
-
 /-!
 # XTS-AES of data units on x86-64, without secret residue
 
 `vg_aes_xts_encrypt_unit`, `vg_aes_xts_decrypt_unit` and their out-of-place
 counterparts over an implementation of the whole-block functions
-(`AesXts.X86_64.XtsImpl`), each followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`) where the implementation gives the residue
-analysis of the instance (`XtsImpl.encUnitRes`, …), and otherwise with its
-16 or 24 bytes of stack wiped (`X86_64.RScrub.withScrubOrAll`). Their postconditions
+(`AesXts.X86_64.XtsImpl`), each followed by `Impl.Scrub.X86_64.scrubAll`,
+which wipes its 16 or 24 bytes of stack
+(`X86_64.Scrub.verifiedScrubbedAllFill`). Their postconditions
 read the memory on return only within the buffers (`X86_64.Scrub.PostOut`):
 the data, or the output as long as the input, which the out-of-place
 functions' precondition requires.

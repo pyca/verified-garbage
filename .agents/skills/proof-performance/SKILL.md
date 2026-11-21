@@ -600,8 +600,8 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   such code has the kernel build it from the functions that generate it
   and walk their terms, in which two instructions that are the same after
   evaluation are different terms, each met for the first time. For a check
-  of the x86-64 residue analysis of such code (`RScrub.resOk_reg0`,
-  `Analysed.ok_of` over a hash variant's functions), write
+  of the x86-64 residue analysis of such code (`Analysed.ok_of`,
+  `SelScrub` over a hash variant's functions), write
   `taint_decide_lit` (`Proof/Framework/X86_64/ResidueScrub.lean`), which
   states the check of the code's literal first: the module of SHA-256
   with AVX2, seven such checks, went from 30 s to 13 s. It pays for long code (a compression

@@ -50,10 +50,8 @@ bitsliced AES its working space 512 bytes into their scratch buffers
 Over the bitsliced AES (`Ctr32Impl.free` is `none`), the frames of `init`,
 `encrypt` and `decrypt` are mostly the working space of the functions they
 call, which AES writes, and are wiped whole on return
-(`X86_64.Scrub.withScrubAll`: `initReg`, `encryptReg`, `decryptReg`); the
-frames of 312 bytes (`encryptRegF`, `decryptRegF`) are wiped whole too, in
-the chunks `[8, 320]`, whose 16-byte stores are aligned
-(`X86_64.RScrub.withScrubAllC`); their
+(`Impl.Scrub.X86_64.scrubAll`); the frames of 312 bytes over the others
+are wiped whole too, in aligned 16-byte stores; their
 postconditions read the memory on return only within the key context, or
 the data and the synthetic IV (`initOut`, `encryptOut`, `decryptOut`).
 -/

@@ -102,10 +102,6 @@ def retFix (retBits : Nat) : List Instr :=
   else if retBits = 32 then [.mov32 .rax (.reg .rax)]
   else []
 
-/-- Clear the general-purpose registers (the last instruction an `xor`, for
-the flags). -/
-def clearGpr (retBits : Nat) : List Instr := retFix retBits ++ scratchRegs.map zeroR
-
 /-- `movdqu [rsp + off], xmm0`. -/
 def zero16 (off : Nat) : Instr := .movdquStore { base := .rsp, disp := (off : Int) } .xmm0
 
@@ -191,19 +187,7 @@ def writesVec : Instr → Bool
   | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. => true
   | _ => false
 
-/-- The SSE registers to clear: all of them, if `c` may write one; otherwise
-`xmm0` if the wipe stores it (`ks` not empty). -/
-def xsOf (c : Prog isa) (ks : List Nat) : List XReg :=
-  if c.all (fun i => !writesVec i) then (if ks = [] then [] else [.xmm0]) else xregs
-
 /-- `r11`, if the wipe stores it. -/
 def psOf (ks : List Nat) : List Reg := if ks = [] then [] else [.r11]
-
-/-- The scratch registers `c` may write (`Taint.clobbers`, as `dstOf` and
-the frames' and `mul`'s registers), or `r11` alone if none, so that the last
-`xor` leaves known flags. -/
-def gsOf (clobbers : Instr → Reg → Bool) (c : Prog isa) : List Reg :=
-  let w := scratchRegs.filter fun r => !c.all (fun i => !clobbers i r)
-  if w = [] then [.r11] else w
 
 end VG.Impl.Scrub.X86_64

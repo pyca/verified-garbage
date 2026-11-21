@@ -151,15 +151,6 @@ structure Ctr32Impl where
   /-- Only an implementation that gives `small` is given its working space
   anywhere but at the start of a scratch buffer. -/
   scr : small = none → callee.scrOff = 0 := by first | exact fun _ => rfl | exact nofun
-  /-- The residue analysis of `vg_aes_gcm_init` over it, without working
-  space for it (`free`), if the analysis handles it. -/
-  gcmInitRes : Option (RScrub.Analysed Spec.Gcm.initApi.sig 192 [] (gcmInitCodeF callee)) := none
-  /-- The residue analysis of `vg_cmac_aes_finish` over it, without working
-  space for it (`free`, `Impl.CmacAes.Stream.X86_64.finishF`), if the analysis
-  handles it. -/
-  cmacFinishRes : Option (RScrub.Analysed Spec.Cmac.aesFinishApi.sig 40 []
-    (Impl.StackScratch.X86_64.withStackScratch 24 .r8 (Impl.CmacAes.Stream.X86_64.finishF callee suffix))) :=
-    none
 
 /-- How much working space it needs, which picks the code and frame of its
 callers (`Impl.Aes.X86_64.Space`). -/

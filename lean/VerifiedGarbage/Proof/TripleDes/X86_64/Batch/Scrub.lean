@@ -260,8 +260,6 @@ structure Mid (cfb : Bool) (s₀ : State) (K P D B : Addr) (n j c : Nat) (s s' :
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-
-
 /-- The core's numbers. -/
 theorem core_bw : core.bw = 1 := rfl
 theorem core_bw' : 8 * core.bw = 8 := rfl
@@ -1423,8 +1421,8 @@ end
 
 `vg_triple_des_cbc_decrypt_chained` and `vg_triple_des_cfb64_decrypt` over
 each implementation of the ECB functions they call (`Batch.EcbImpl`),
-followed by `Impl.Scrub.X86_64.scrub` with every granule of their stack
-wiped (`X86_64.RScrub.withScrubAllM`): their 2128-byte frame, which they no
+followed by `Impl.Scrub.X86_64.scrubAll`, which wipes every granule of
+their stack (`X86_64.Scrub.verifiedScrubbedAllFill`): their 2128-byte frame, which they no
 longer zero themselves, and the 1048 bytes of the ECB call below it. Their
 postconditions read the memory on return only within the buffers
 (`X86_64.Scrub.PostOut`): the data and the chaining block.

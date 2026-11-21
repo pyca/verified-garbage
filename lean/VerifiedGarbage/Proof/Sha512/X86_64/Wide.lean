@@ -157,8 +157,6 @@ def compressWideX86_64S (n : Nat) : Contract X86_64.isa :=
       state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
       ret.Disjoint state ∧ ret.Disjoint scratch }
 
-theorem compressWideX86_64_eq : compressWideX86_64 = compressWideX86_64S 1328 := rfl
-
 end VG.Proof.Sha512
 
 namespace VG.Proof.Sha512.X86_64

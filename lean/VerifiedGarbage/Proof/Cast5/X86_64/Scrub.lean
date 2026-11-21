@@ -25,8 +25,8 @@ import VerifiedGarbage.Proof.Cast5.ScrubLocal
 /-!
 # CAST5 on x86-64, without secret residue
 
-The eleven CAST5 functions, each followed by `Impl.Scrub.X86_64.scrub` with
-every granule of its stack wiped (`X86_64.RScrub.withScrubAllM`): none for
+The eleven CAST5 functions, each followed by `Impl.Scrub.X86_64.scrubAll`,
+which wipes every granule of its stack (`X86_64.Scrub.verifiedScrubbedAll`): none for
 key expansion and ECB, whose working space is their caller's `scratch`, and
 the 240-byte frame of the modes, which no longer zero its scratch words
 themselves (`withStackScratchWiped 240 .r9 0`). Their postconditions read the

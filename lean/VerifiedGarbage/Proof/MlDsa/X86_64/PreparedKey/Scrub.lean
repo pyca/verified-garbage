@@ -149,28 +149,6 @@ structure PrepImpl where
   pub87 : Option (PubRes arith mlDsa87) := none
   sec87 : Option (SecRes arith mlDsa87) := none
 
-open VG.X86_64.RScrub in
-/-- `vg_<module>_prepare_verifying_key` over `v`, without secret residue given its analysis. -/
-def pubReg (v : ArithImpl) (p : Params) (module name : String) (hp : p ∈ params) (a : Option (PubRes v p)) :
-    Registration (preparePublicKeyApi p module name) X86_64.target :=
-  withScrub {
-    suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.PreparedKey.preparePublic (primsWith v.code) p
-    stack := 32
-    verified := preparePublic_verified (prims_okWith v) hp
-    spSafe := preparePublic_spSafe (prims_okWith v) hp } (pubOut hp) [] (pubOk_nil _) a
-
-open VG.X86_64.RScrub in
-/-- `vg_<module>_prepare_signing_key` over `v`, without secret residue given its analysis. -/
-def secReg (v : ArithImpl) (p : Params) (module name : String) (hp : p ∈ params) (a : Option (SecRes v p)) :
-    Registration (prepareSecretKeyApi p module name) X86_64.target :=
-  withScrub {
-    suffix := v.code.sfx
-    code := Impl.MlDsa.X86_64.PreparedKey.prepareSecret (primsWith v.code) p
-    stack := 32
-    verified := prepareSecret_verified (prims_okWith v) hp
-    spSafe := prepareSecret_spSafe (prims_okWith v) hp } (secOut hp) [] (pubOk_nil _) a
-
 /-! ## The analyses -/
 
 def pub44Sse2Ks : List Nat :=

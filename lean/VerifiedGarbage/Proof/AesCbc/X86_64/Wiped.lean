@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubRegs
 
 /-!
 # AES-CBC on x86-64, zeroing the scratch it writes
@@ -36,7 +35,7 @@ Which are emitted, for each implementation `v` of the blocks functions and
 `z` of `vg_zeroize` (`encryptRegs`, `decryptRegs`). Encryption: none for
 VAES (`Caller.vaes`), whose encryption is AES-NI's loop; that loop, which
 writes no `scratch` and uses no stack, unwrapped, once (with the `z` of no
-suffix), with the SSE registers it writes cleared (`RScrub.withScrubXs`); and
+suffix), followed by `Impl.Scrub.X86_64.scrubAll` of no stack; and
 otherwise the call wiped with each `z`, named by both suffixes.
 Decryption: for VAES, the call wiped with the `z` that has a suffix (the
 one that needs AVX, as VAES's code does), named by `v`'s suffix alone;

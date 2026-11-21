@@ -32,8 +32,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 import VerifiedGarbage.Proof.AesSiv.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Leaves
-import VerifiedGarbage.Proof.Framework.X86_64.ScrubPart
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFill
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -291,7 +289,6 @@ end VG.Proof.AesGcmSiv.X86_64
 end
 
 end
-
 
 /-!
 # AES-GCM-SIV on x86-64: the code a variant's artifacts run
@@ -643,7 +640,6 @@ theorem wideSeal_spSafe (v : GcmImpl) : (wideSealCode v).all (fun i => !X86_64.i
 theorem wideOpen_spSafe (v : GcmImpl) : (wideOpenCode v).all (fun i => !X86_64.isa.writesSp i) = true :=
   openWith_spSafe v true
 
-
 /-! ## Choosing by the lengths
 
 `bySize wide narrow` runs `wide`, the code with the AVX2 copies, when the
@@ -726,7 +722,6 @@ theorem bySize_verified {k : Contract isa} {wide narrow : Prog isa}
     exact ⟨by simp only [stackArgAddr, asp], by rw [a0, a8],
       fun _ => hpub s u₀ s' u₀' hS hS' hq, fun _ => hpub s u₀ s' u₀' hS hS' hq⟩
 
-
 /-- `seal` by the lengths, from its code with and without the AVX2 copies. -/
 theorem seal_bySize {wide narrow : Prog isa}
     (hw : Verified X86_64.target wide (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856))
@@ -761,7 +756,6 @@ theorem seal_bySize {wide narrow : Prog isa}
   · sig_pub [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, X86_64.abi, X86_64.argRegs] at q
     obtain ⟨hsp, -, -, -, -, h8, -, h6, -⟩ := q
     exact ⟨by simpa [List.getD, List.range, List.range.loop] using h6, h8, hsp⟩
-
 
 /-- `open` by the lengths, from its code with and without the AVX2 copies. -/
 theorem open_bySize {wide narrow : Prog isa}
@@ -798,7 +792,6 @@ theorem open_bySize {wide narrow : Prog isa}
   · sig_pub [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] at q
     obtain ⟨hsp, -, -, -, -, -, h8, -, h6, -⟩ := q
     exact ⟨by simpa [List.getD, List.range, List.range.loop] using h6, h8, hsp⟩
-
 
 /-- The working space of `seal` and `open` on the stack: of the code in
 registers (`sivReg`), or of the other code. -/
@@ -930,7 +923,7 @@ end
 Over the bitsliced AES (`v.ctr.features = []`), the frame of `seal` and
 `open` is mostly the working space of the functions they call, which AES
 writes, and is wiped whole on return, in aligned stores
-(`X86_64.RScrub.withScrubAllC`); their postconditions read the memory on
+(`Impl.Scrub.X86_64.scrubAll`); their postconditions read the memory on
 return only within the data and the tag (`sealOut`, `openOut`). -/
 
 section

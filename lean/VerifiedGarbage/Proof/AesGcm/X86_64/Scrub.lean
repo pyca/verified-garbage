@@ -23,12 +23,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 `vg_aes_gcm_init` over an implementation of `vg_aes_ctr32` that needs no
 working space (`Aes.X86_64.Ctr32Impl.free`), with `vg_aes_expand_key_scratch_aesni`,
 which needs none either, in a frame of only the 176 bytes it writes itself
-(`initF_framed`), followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`) where the implementation gives its residue
-analysis (`Aes.X86_64.Ctr32Impl.gcmInitRes`, on `Aes.X86_64.gcmInitCodeF`).
-Over the others, in a frame of 2.5 KB, of which the analysis cannot tell
-what may hold secrets, followed by the clearing of that whole frame, in
-chunks whose 16-byte stores are aligned (`X86_64.RScrub.withScrubAllC`). Its
+(`initF_framed`). Over the others, in a frame of 2.5 KB. Each is followed
+by the clearing of its whole frame, whose 16-byte stores are aligned
+(`Impl.Scrub.X86_64.scrubAll`, `X86_64.Scrub.verifiedScrubbedAllFill`). Its
 postcondition reads the memory on
 return only within the key context, for a key of the lengths the
 precondition allows (`X86_64.Scrub.PostOut`). `vg_aes_gcm_stream_init` and
@@ -107,10 +104,6 @@ def gcmOf (c : Ctr32Impl) : GcmImpl :=
 
 /-- With `vg_aes_expand_key_scratch_aesni`, which needs no working space. -/
 def gcmOfF (c : Ctr32Impl) : GcmImpl := { ctr := c, key := KeyImpl.aesni, gh := GhashName.scalar.impl }
-
-theorem initCodeF_eq (c : Ctr32Impl) :
-    Impl.StackScratch.X86_64.withStackScratch 184 .rcx (Impl.AesGcm.X86_64.init (gcmOfF c).callees) =
-      gcmInitCodeF c.callee := rfl
 
 theorem init_fill (i : GcmImpl) (n : Nat) (hs : i.stitch = none) :
     Fill (i.lv .sse).level (fun _ => 0)
@@ -409,9 +402,8 @@ use rather than 2.5 KB: over `vg_ghash_pclmul` and `vg_ghash_vpclmul`,
 which need none either, the 208 and 272 bytes they use themselves
 (`streamFinish_framed26`, `streamVerify_framed34`), and with `vg_ghash`'s
 256 bytes at 512, 768 (`_framed96`); followed by the clearing of that whole
-frame (`X86_64.Scrub.withScrubAll`). Over the bitsliced `vg_aes_ctr32`, whose
-working space is most of the frame, in the frame of 2.5 KB, wiped whole in
-chunks whose 16-byte stores are aligned (`X86_64.RScrub.withScrubAllC`), as
+frame (`Impl.Scrub.X86_64.scrubAll`). Over the bitsliced `vg_aes_ctr32`, whose
+working space is most of the frame, in the frame of 2.5 KB, wiped whole, as
 `vg_cmac_aes_finish` over it is.
 `vg_aes_gcm_seal_gather_prepared` calls the first by name: it calls
 internal functions of its own instead,

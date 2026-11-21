@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Selftest.Contract
 public import VerifiedGarbage.Impl.Scrub.X86_64
 public import VerifiedGarbage.TCB.X86_64.Residue
-import VerifiedGarbage.Proof.Framework.X86_64.ScrubPart
 import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # Pipeline self-test: x86-64 proof -/
@@ -108,103 +107,5 @@ theorem addScrubbed_noResidue :
     rw [g₁, g₂, hdi, hsi, hax']
   · rw [m₁, m₂]
     exact hm x (by rw [← r₁, ← w₁]; exact hx')
-
-
-/-! ## Clearing only the registers that may hold secrets
-
-`leakAdd` returns `a + b` too, but first puts the secret `a` in `rcx` and
-`xmm1`, and clears both itself. The clearing that `Verified.scrub` derives
-from its instructions clears all sixteen SSE registers and `rcx`
-(`hall`); `Verified.scrubPart` clears only `r11`, for the flags, since two
-runs end agreeing on every other register (`RegsOk`, from what each run
-leaves in them, `regsOk_of_leaves`). -/
-
-/-- `rax := rdi + rsi`, through `rcx` and `xmm1`, which it then clears. -/
-def leakAdd : Prog isa := .block [
-  .mov .rcx (.reg .rdi),
-  .xop (.movq .xmm1 .rcx),
-  .xop (.bin .pxor .xmm1 .xmm1),
-  .alu32 .xor .rcx (.reg .rcx),
-  .mov .rax (.reg .rdi),
-  .alu .add .rax (.reg .rsi)]
-
-/-- `vg_selftest_add`'s signature, with a postcondition of the result alone,
-which `Verified.scrub` needs (`PostOut`): the clearing may write the stack. -/
-def addRetContract : Contract isa :=
-  Spec.Selftest.addSig.contract X86_64.abi (post := fun a b _ _ r => r = Spec.Selftest.add a b)
-
-/-- What the proof of `leakAdd` is written against. -/
-def leakX86_64 : Contract isa where
-  pre _ := True
-  post s s' := s'.gpr .rax = Spec.Selftest.add (s.gpr .rdi) (s.gpr .rsi)
-  pub _ _ := True
-
-theorem leakAdd_run (s : State) : ∃ s', Exec isa leakAdd s [] s' ∧
-    (∀ r, s'.gpr r = if r = .rcx then 0 else if r = .rax then s.gpr .rdi + s.gpr .rsi else s.gpr r) ∧
-    s'.xmm = (fun x => if x = .xmm1 then 0 else s.xmm x) ∧ s'.ymmHi = s.ymmHi ∧ s'.zmmHi = s.zmmHi ∧
-    s'.mxcsr = s.mxcsr ∧ s'.mem = s.mem := by
-  refine ⟨_, .block rfl, fun r => ?_, ?_⟩
-  · cases r <;> simp [State.setReg, State.setReg32, arithFlags, State.setFlags, XOp.exec, State.setXmm]
-  · refine ⟨funext fun x => ?_, ?_⟩
-    · cases x <;> simp [State.setReg, State.setReg32, arithFlags, State.setFlags, XOp.exec, State.setXmm,
-        reduceXBinOpEval]
-    · simp [State.setReg, State.setReg32, arithFlags, State.setFlags, XOp.exec, State.setXmm]
-
-theorem leakAdd_verified : Verified X86_64.target leakAdd addRetContract := by
-  refine Verified.of_correct (k := leakX86_64) (fun s _ => ?_)
-    (ConstantTime.of_silent fun s _ _ _ h => (Exec.det h (leakAdd_run s).choose_spec.1).1) (by
-    sig_implies [addRetContract, Spec.Selftest.addSig, leakX86_64, X86_64.abi, X86_64.argRegs] [sat] using sat)
-  obtain ⟨s', e, hg, -, -, -, hmx, hm⟩ := leakAdd_run s
-  refine ⟨_, s', e, ⟨fun r hr => ?_, by rw [hm], by rw [hmx]⟩, by simp only [leakX86_64]; rw [hg]; rfl⟩
-  rw [hg]
-  have : r ≠ .rcx ∧ r ≠ .rax := by revert hr; revert r; decide
-  simp [this.1, this.2]
-
-/-- `leakAdd` with the clearing `Verified.scrub` derives from its
-instructions: every SSE register, `rcx` and `r11`. -/
-theorem leakAdd_all :
-    Verified X86_64.target (Impl.Scrub.X86_64.scrub .sse 64 Impl.Scrub.X86_64.xregs [] [.rcx, .r11] [] [] leakAdd)
-        addRetContract ∧
-      NoResidue (Impl.Scrub.X86_64.scrub .sse 64 Impl.Scrub.X86_64.xregs [] [.rcx, .r11] [] [] leakAdd)
-        addRetContract 64 :=
-  have h := Scrub.Verified.scrub (A := X86_64.abi) (v := .sse) (xs := Impl.Scrub.X86_64.xregs) (ps := [])
-    (gs := [.rcx, .r11]) (ks := []) (cs := []) Scrub.ScrubAbi.plain leakAdd_verified (SpSafe.of_all (by decide))
-    (by decide) rfl (by decide) (by simp) (by decide) (by decide)
-    (fun s u u' hs hq _ hr => by
-      revert hq; simp only [Sig.contract, X86_64.abi] at hr ⊢; rw [hr]; exact id)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ x hx _ => absurd hx (by simp [Region.Contains]))
-    ⟨fun h => absurd rfl h, fun h => absurd rfl h, by simp, by decide, by simp⟩
-    (.inl Scrub.mem_xregs) (fun _ => Scrub.mem_xregs) (fun _ _ e => nomatch e) (by decide)
-  -- It calls nothing indirectly.
-  ⟨h.1, h.2 fun _ _ _ n hn => by rw [show UpperLock.inames leakAdd = [] from rfl] at hn; cases hn⟩
-
-/-- `leakAdd`, then the clearing of `r11` alone. -/
-def leakAddScrubbed : Prog isa := Impl.Scrub.X86_64.scrub .sse 64 [] [] [.r11] [] [] leakAdd
-
-theorem leakAddScrubbed_ok :
-    Verified X86_64.target leakAddScrubbed addRetContract ∧ NoResidue leakAddScrubbed addRetContract 64 :=
-  have h := Scrub.Verified.scrubPart (Q := True) (v := .sse) (f := .sse) (rb := 64) (xs := []) (ps := [])
-    (gs := [.r11]) (xs' := Impl.Scrub.X86_64.xregs) (gs' := [.rcx, .r11]) (ks := []) (cs := []) (cs' := []) (A := X86_64.abi) Scrub.ScrubAbi.plain leakAdd_verified (Nat.le_refl _) (by simp)
-    (fun _ _ e => nomatch e) (Nat.le_refl _) (by simp) (fun _ _ e => nomatch e) (.inl rfl) ⟨fun h => absurd rfl h, fun h => absurd rfl h, by simp, by decide, by simp⟩
-    ⟨fun h => absurd rfl h, fun h => absurd rfl h, by simp, by decide, by simp⟩
-    (Scrub.regsOk_of_leaves leakAdd_verified.2.1 (G := fun _ _ r => if r = .rcx then some 0 else none)
-      (X := fun _ _ x => if x = .xmm1 then some 0 else none) (Y := fun _ _ _ => none)
-      (fun s t u _ e => by
-        obtain ⟨s', e', hg, hx, hy, hz, -⟩ := leakAdd_run s
-        obtain ⟨-, rfl⟩ := Exec.det e e'
-        refine ⟨fun r hr _ _ => ?_, fun x _ => ⟨?_, ?_⟩⟩
-        · rw [hg]
-          have : r ≠ .rax := Scrub.ne_rax_of_scratch r hr
-          by_cases h : r = .rcx <;> simp [h, this]
-        · rw [hx]; by_cases h : x = .xmm1 <;> simp [h]
-        · rw [hy, hz]; rfl)
-      (fun _ _ _ _ _ _ _ _ => ⟨rfl, rfl, rfl⟩))
-    (fun s u u' hs hq _ hr => by
-      have hr' : u'.gpr .rax = u.gpr .rax := by simpa only [BitVec.setWidth_eq] using hr
-      revert hq; simp only [Sig.contract, X86_64.abi, hr']; exact id)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ x hx _ => absurd hx (by simp [Region.Contains])) (by decide)
-    (fun _ _ _ _ n hn => by rw [show UpperLock.inames leakAdd = [] from rfl] at hn; cases hn)
-    ⟨leakAdd_all.1, fun _ => leakAdd_all.2⟩
-  ⟨h.1, h.2 trivial⟩
 
 end VG.Proof.Selftest.X86_64

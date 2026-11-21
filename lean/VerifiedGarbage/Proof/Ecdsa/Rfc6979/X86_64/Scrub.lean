@@ -16,8 +16,8 @@ import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 
 The postcondition of `vg_ecdsa_<curve>_sign` reads the memory on return
 only within `out` (`X86_64.Scrub.PostOut`), for any tables of constants,
-tables of `hmac` and stack, as `X86_64.Scrub.withScrubAllUp` needs to scrub
-its implementations.
+tables of `hmac` and stack, as `X86_64.Scrub.verifiedScrubbedAllUpFill`
+needs to scrub its implementations.
 -/
 
 @[expose] public section
@@ -53,7 +53,6 @@ theorem signOut (T : Spec.Ecdsa.Rfc6979.TableInstance) (cs : List (String × Lis
     revert h
     split <;> exact fun h => ⟨h.1, e.trans h.2⟩
 
-
 /-! ## The function as emitted
 
 `vg_ecdsa_<curve>_sign` calls HMAC's functions through its table `hmac`, of
@@ -72,7 +71,6 @@ def HmacUp (w : Proof.Pbkdf2.Md.X86_64.MdHash) : Prop :=
 theorem variants_hmacUp : (VG.Proof.Variants.MdHash.X86_64.variants.all fun w =>
     upCallee w.H.hmacInit 16 && upCallee w.H.updC 16 && upCallee w.H.hmacFin 16) = true := by
   lit_decide
-
 
 theorem variants_up : ∀ w ∈ VG.Proof.Variants.MdHash.X86_64.variants, HmacUp w := fun w hw => by
   have h := List.all_eq_true.mp variants_hmacUp w hw

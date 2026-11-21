@@ -393,7 +393,6 @@ end
 
 end
 
-
 /-!
 # P-256 on x86-64 with AVX512_IFMA: the doubling
 
@@ -430,12 +429,6 @@ theorem res_cast (v : Int) : (res m v : Int) = v % (m : Int) := by
   obtain hm : (0 : Int) < m := Int.natCast_pos.2 (Nat.pos_of_ne_zero (NeZero.ne m))
   have := Int.emod_nonneg v (Int.ne_of_gt hm)
   unfold res; omega_using [this]
-
-theorem res_lt (v : Int) : res m v < m := by
-  obtain hm : (0 : Int) < m := Int.natCast_pos.2 (Nat.pos_of_ne_zero (NeZero.ne m))
-  obtain h1 := Int.emod_lt_of_pos v hm
-  have := res_cast (m := m) v
-  omega_using [h1, this]
 
 theorem res_add (a b : Int) : res m (a + b) = (res m a + res m b) % m := by
   apply Int.ofNat.inj
@@ -879,7 +872,6 @@ theorem list5 {α : Type} (l : List α) (d : α) (h : l.length = 5) :
 macro "rng" : tactic => `(tactic| (simp only [Nb, Pb, Wd, pI] at *; omega))
 
 end
-
 
 open VG VG.X86_64 VG.Impl.P256.X86_64.Ifma
 

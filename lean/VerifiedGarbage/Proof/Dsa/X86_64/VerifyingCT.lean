@@ -412,7 +412,6 @@ theorem smallW_ct {a : Nat} (ha : a < 8)
     hg.1.scr.ld (show 8 * sArr a + 8 ≤ L.Z by
       have := hdr_lt_slot L.w 8 (show sArr a < 32 by unfold sArr; omega_using [ha]); have := hg.2; omega_arith)]
 
-
 end VG.Proof.Dsa.X86_64
 
 end
@@ -1403,11 +1402,6 @@ theorem coreSignSchedule_ct (M : Mont) (Sq : MontS) (inputs : SchedulePublic →
     ⟨h.1, h.1.1.availableLocal .q inverse (by decide) (scalar_space (by decide) p),
       h.1.1.availableLocal .q v (by decide) (scalar_space (by decide) p)⟩) h7).mono
     (fun _ _ h => h) (fun _ _ => two_mono (fun _ _ h => h.1))
-
-theorem coreSign_ct (M : Mont) (Sq : MontS) : RelCT isa (Two (ScheduleState signInputs))
-    (Core.sign Sq.mm M.mm) (fun _ _ => True) :=
-  (coreSignSchedule_ct M Sq signInputs signInputs_stable (fun _ _ h => h)).mono
-    (fun _ _ h => h) (fun _ _ _ => True.intro)
 
 end VG.Proof.Dsa.X86_64
 

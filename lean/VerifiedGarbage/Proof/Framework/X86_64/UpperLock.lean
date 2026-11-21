@@ -60,30 +60,6 @@ theorem up_mono : ∀ (c : Prog isa) {a a' : Bool}, (a = true → a' = true) →
   | .icall _ _ b n, _, _, h, hs => by
     simp only [up, Bool.and_eq_true] at hs ⊢; exact ⟨up_mono b h hs.1, up_mono n h hs.2⟩
 
-theorem upFrom_ok : ∀ (c : Prog isa) (a : Bool) (k : List (String × Prog isa × Bool × Bool)),
-    (∀ e ∈ k, e.2.2.2 = up e.2.1 e.2.2.1) →
-      (upFrom c a k).1 = up c a ∧ ∀ e ∈ (upFrom c a k).2, e.2.2.2 = up e.2.1 e.2.2.1
-  | .block _, _, _, hk => ⟨rfl, hk⟩
-  | .seq x y, a, k, hk => by
-    obtain ⟨hx, kx⟩ := upFrom_ok x a k hk
-    obtain ⟨hy, ky⟩ := upFrom_ok y (upFrom x a k).1 _ kx
-    exact ⟨by rw [upFrom, hy, hx, up], ky⟩
-  | .ite _ t e, a, k, hk => by
-    obtain ⟨ht, kt⟩ := upFrom_ok t a k hk
-    obtain ⟨he, ke⟩ := upFrom_ok e a _ kt
-    exact ⟨by rw [upFrom, he, ht, up], ke⟩
-  | .loop b _, a, k, hk => upFrom_ok b a k hk
-  | .call n b, a, k, hk =>
-    Code.memoCall_ok (n := n) (run := fun _ => upFrom b a k) (spec := up) hk (upFrom_ok b a k hk)
-  | .frame _ b _, a, k, hk => upFrom_ok b a k hk
-  | .icall _ n b nx, a, k, hk => by
-    obtain ⟨hb, kb⟩ := Code.memoCall_ok (n := n) (run := fun _ => upFrom b a k) (spec := up) hk (upFrom_ok b a k hk)
-    obtain ⟨hn, kn⟩ := upFrom_ok nx a _ kb
-    exact ⟨by rw [upFrom, hn, hb, up], kn⟩
-
-theorem upOnce_eq (c : Prog isa) (a : Bool) : upOnce c a = up c a :=
-  (upFrom_ok c a [] fun _ h => by cases h).1
-
 theorem exec_ua {i : Instr} {a : Bool} {s₁ s₂ s₁' s₂' : State} (e₁ : exec i s₁ = some s₁')
     (e₂ : exec i s₂ = some s₂') (h : stepI a i = true) (hu : a = true → UA s₁ s₂) : UA s₁' s₂' := by
   by_cases hz : i = .vop .vzeroupper

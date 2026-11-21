@@ -18,13 +18,10 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 `vg_cmac_aes_finish` over an implementation of `vg_aes_ctr32` that needs no
 working space (`Aes.X86_64.Ctr32Impl.free`), in a frame of only the 16
-bytes of `vg_cmac_aes_finalize`'s counter block (`finishF_framed`), followed
-by `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`) where the
-implementation gives the residue analysis of the instance
-(`Aes.X86_64.Ctr32Impl.cmacFinishRes`). Over an implementation that needs
-working space, its frame, the working space it writes, is wiped whole on
-return, in chunks whose 16-byte stores are aligned
-(`X86_64.RScrub.withScrubAllC`): over the bitsliced AES, which uses 1480
+bytes of `vg_cmac_aes_finalize`'s counter block (`finishF_framed`). Over an
+implementation that needs working space, its frame is the working space it
+writes. Each frame is wiped whole on return, in 16-byte stores that are
+aligned (`Impl.Scrub.X86_64.scrubAll`): over the bitsliced AES, which uses 1480
 bytes of working space and is given them 512 bytes into the scratch buffer
 (`Aes.X86_64.Ctr32Impl.small`), a frame of 1800 bytes for the working space
 without its first 512 bytes (`finishS_framed`), wiped in the chunks
