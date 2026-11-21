@@ -991,9 +991,9 @@ def featureSample : Code String Unit :=
 #guard featureSample.requires req == ["sha", "sha", "ssse3", "sse4.1"]
 #guard (Code.block ["mov", "add"] : Code String Unit).requires req == []
 
-/-! `Code.requiresDedup` and `Rust.firstSome?` go through the code of each
-call once (`Code.distinctCalls`): the features of `Code.requires` each once,
-and an instruction through any call. -/
+/-! `Code.requiresDedup` goes through the code of each call once
+(`Code.distinctCalls`): the features of `Code.requires` each once.
+`Rust.ownFirstSome?` goes through the code but for its calls. -/
 
 /-- Calls of `f` and `g` nested in a call of `k`, and a later call of `f`
 whose code requires something else. -/
@@ -1012,11 +1012,10 @@ def nestedSample : Code String Unit :=
 /-- The instruction `bad`, which a printer cannot encode. -/
 def badInstr (i : String) : Option String := if i == "bad" then some i else none
 
-#guard Rust.firstSome? badInstr nestedSample == none
-#guard Rust.firstSome? badInstr (.seq nestedSample (.call "f" (.block ["bad"]))) == some "bad"
-#guard Rust.firstSome? badInstr
-  (.call "k" (.call "g" (.call "f" (.block ["bad"]))) : Code String Unit) == some "bad"
-#guard Rust.firstSome? badInstr (.frame "bad" (.block []) "pop" : Code String Unit) == some "bad"
+#guard Rust.ownFirstSome? badInstr nestedSample == none
+#guard Rust.ownFirstSome? badInstr (.seq nestedSample (.block ["mov", "bad"])) == some "bad"
+#guard Rust.ownFirstSome? badInstr (.seq nestedSample (.call "f" (.block ["bad"]))) == none
+#guard Rust.ownFirstSome? badInstr (.frame "bad" (.block []) "pop" : Code String Unit) == some "bad"
 
 /-- The error of a failed check. -/
 def err : Except String Unit → Option String

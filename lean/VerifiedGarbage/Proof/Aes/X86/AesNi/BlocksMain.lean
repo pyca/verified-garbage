@@ -37,9 +37,9 @@ section
 The loops are proven once for any transformation `f` of a list of block
 registers that computes `F` on each, given what it needs of the state
 (`KP`, which the loops keep): `aes` and `aesDec`. After `c` blocks, the
-first `c` data blocks hold `F` of the original ones (`Inv`); the six-block
-and one-block bodies are the same code for different lists of registers
-(`blocks_ok`). `encrypt_correct` and `decrypt_correct` add the prologue,
+first `c` data blocks hold `F` of the original ones (`Inv`); the turn of
+seven blocks and the groups of four, two and one of the blocks left are the
+same code for different lists of registers (`blocks_ok`). `encrypt_correct` and `decrypt_correct` add the prologue,
 which saves `esi` and `edi` in the scratch buffer and loads the arguments,
 the round keys through `aesimc` for decryption, and the epilogue.
 -/
@@ -49,7 +49,8 @@ the round keys through `aesimc` for decryption, and the epilogue.
 namespace VG.Proof.Aes.X86.AesNi
 
 open VG VG.X86 VG.X86.RegUpd
-open VG.Impl.Aes.X86.AesNi (at_ aes aesDec regs6 loadData storeData blocks6 blocks1 blocksTail
+open VG.Impl.Aes.X86.AesNi (at_ aes aesDec regs7 regs4 regs2 regs1 loadData storeData blocksGroup blocks7
+  blocksOnce blocksTail
   blocksPrologue blocksCmp blocksRestore imcKeys)
 open VG.Proof.Aes.X86 (BPre bSchP bRounds bDatP bN bScrP bSchR bDatR bScrR bArgR bRetR reg32 in_rd
   addr_add part_contains part_sub_reg reg_contains in_reg)
@@ -74,32 +75,49 @@ def Stable (KP : State → Prop) (s₀ : State) : Prop :=
   ∀ s s', KP s → (∀ r, r ≠ .esi → r ≠ .edi → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
     Frame [bDatR s₀] s.mem s'.mem → KP s'
 
-/-- `f` computes `F` on each block register, for both lists of registers. -/
+/-- The lists of block registers of the loops: a turn's seven, and the four,
+the two and the one of the blocks left. -/
+def Lanes (rs : List XReg) : Prop := rs = regs7 ∨ rs = regs4 ∨ rs = regs2 ∨ rs = regs1
+
+/-- `f` computes `F` on each block register, for each list of registers. -/
 def BlkOk (f : List XReg → Prog isa) (F : Spec.Aes.State → Spec.Aes.State) (KP : State → Prop) :
     Prop :=
-  ∀ rs, (rs = regs6 ∨ rs = [.xmm0]) → ∀ s, KP s →
+  ∀ rs, Lanes rs → ∀ s, KP s →
     WP isa (f rs) s fun s' => (∀ b ∈ rs, st (s'.xmm b) = F (st (s.xmm b))) ∧ XFrame (.xmm6 :: rs) s s'
 
-/-- After `c` blocks, with `esi` and `edi` at block `p`; the other registers
-are `g`, and only the data has changed since `m₁`. -/
+/-- After `c` blocks, with `esi` at block `p` and `edi` the number of blocks
+from block `q` on; the other registers are `g`, and only the data has
+changed since `m₁`. -/
 structure Inv (KP : State → Prop) (F : Spec.Aes.State → Spec.Aes.State) (s₀ : State) (g : Reg → BitVec 32)
-    (m₁ : Mem) (c p : Nat) (s : State) : Prop where
+    (m₁ : Mem) (c p q : Nat) (s : State) : Prop where
   le : c ≤ bN s₀
   kp : KP s
   gpr : ∀ r, r ≠ .esi → r ≠ .edi → s.gpr r = g r
   esi : s.gpr .esi = bDatP s₀ + BitVec.ofNat 32 (16 * p)
-  edi : s.gpr .edi = BitVec.ofNat 32 (bN s₀ - p)
+  edi : s.gpr .edi = BitVec.ofNat 32 (bN s₀ - q)
   frame : Frame [bDatR s₀] m₁ s.mem
   blocks : ∀ k < bN s₀,
     Spec.Aes.stateAt s.mem (bAddr s₀ k) = if k < c then F (orig s₀ k) else orig s₀ k
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem regs_nodup (rs : List XReg) (h : rs = regs6 ∨ rs = [.xmm0]) : rs.Nodup ∧ .xmm6 ∉ rs := by
-  rcases h with rfl | rfl <;> decide
+theorem regs_nodup (rs : List XReg) (h : Lanes rs) : rs.Nodup ∧ .xmm6 ∉ rs := by
+  rcases h with rfl | rfl | rfl | rfl <;> decide
 
-theorem regs_len (rs : List XReg) (h : rs = regs6 ∨ rs = [.xmm0]) : 0 < rs.length ∧ rs.length ≤ 6 := by
-  rcases h with rfl | rfl <;> decide
+theorem regs_len (rs : List XReg) (h : Lanes rs) : 0 < rs.length ∧ rs.length ≤ 7 := by
+  rcases h with rfl | rfl | rfl | rfl <;> decide
+
+/-- Whether a count under 8 has the bit 4, 2 or 1: what `test edi, 4`,
+`test edi, 2` and `test edi, 1` give. -/
+theorem bit_lt : ∀ r < 8, (BitVec.ofNat 32 r &&& BitVec.ofNat 32 4 == 0) = decide (r % 8 < 4) ∧
+    (BitVec.ofNat 32 r &&& BitVec.ofNat 32 2 == 0) = decide (r % 4 < 2) ∧
+    (BitVec.ofNat 32 r &&& BitVec.ofNat 32 1 == 0) = decide (r % 2 < 1) := by decide
+
+/-- `test d, v` -/
+private theorem wp_testi {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {v : BitVec 32}
+    (k : ∀ s', Fupd s s' → s'.zf = some (s.gpr d &&& v == 0) → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .test d (.imm v) :: is)) s Q :=
+  VG.X86.Wp.cons rfl (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl)
 
 section Loops
 
@@ -109,9 +127,9 @@ include hp hst hf
 
 /-- The loads, `f` and the stores, for the blocks `c … c + N - 1` (`N` the
 number of registers). -/
-theorem blocks_ok (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0]) (tail : List Instr)
-    {Q : State → Prop} {c : Nat} (hc : c + rs.length ≤ bN s₀) {s : State} (hI : Inv KP F s₀ g m₁ c c s)
-    (hQ : ∀ s', Inv KP F s₀ g m₁ (c + rs.length) c s' → WP isa (.block tail) s' Q) :
+theorem blocks_ok (rs : List XReg) (hrs : Lanes rs) (tail : List Instr)
+    {Q : State → Prop} {c q : Nat} (hc : c + rs.length ≤ bN s₀) {s : State} (hI : Inv KP F s₀ g m₁ c c q s)
+    (hQ : ∀ s', Inv KP F s₀ g m₁ (c + rs.length) c q s' → WP isa (.block tail) s' Q) :
     WP isa (.seq (.block (loadData .esi rs 0)) (.seq (f rs) (.block (storeData .esi rs 0 ++ tail)))) s Q := by
   obtain ⟨hnd, h6⟩ := regs_nodup rs hrs
   have hw := hp.fD
@@ -170,8 +188,8 @@ theorem blocks_ok (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0]) (tail : L
 omit hf in
 /-- `add esi, 16 m; sub edi, m`, after `m` more blocks. -/
 theorem advance_ok {rest : List Instr} {c m : Nat} (hc : c + m ≤ bN s₀) {s : State}
-    (hI : Inv KP F s₀ g m₁ (c + m) c s) {Q : State → Prop}
-    (hQ : ∀ s', Inv KP F s₀ g m₁ (c + m) (c + m) s' →
+    (hI : Inv KP F s₀ g m₁ (c + m) c c s) {Q : State → Prop}
+    (hQ : ∀ s', Inv KP F s₀ g m₁ (c + m) (c + m) (c + m) s' →
       s'.zf = some (decide (bN s₀ - (c + m) = 0)) → WP isa (.block rest) s' Q) :
     WP isa (.block (.alu .add .esi (.imm (BitVec.ofNat 32 (16 * m))) :: .alu .sub .edi
       (.imm (BitVec.ofNat 32 m)) :: rest)) s Q := by
@@ -193,13 +211,30 @@ theorem advance_ok {rest : List Instr} {c m : Nat} (hc : c + m ≤ bN s₀) {s :
       bv_omega
     rw [hz, u₁.other _ (by decide), hI.edi, e, ofNat_beq_zero (by omega_using [hw])]
 
-/-- The six-block body. -/
-theorem body6_ok {c : Nat} (hc : c + 6 ≤ bN s₀) {s : State} (hI : Inv KP F s₀ g m₁ c c s) :
-    WP isa (blocks6 f) s fun s' => Inv KP F s₀ g m₁ (c + 6) (c + 6) s' ∧
-      s'.cf = some (decide (bN s₀ - (c + 6) < 6)) := by
+omit hf in
+/-- `add esi, 16 m`, after `m` more blocks: `edi` is as it was. -/
+theorem skip_ok {c m q : Nat} {s : State} (hI : Inv KP F s₀ g m₁ (c + m) c q s) :
+    WP isa (.block [.alu .add .esi (.imm (BitVec.ofNat 32 (16 * m)))]) s (Inv KP F s₀ g m₁ (c + m) (c + m) q) := by
+  refine wp_addi fun s₁ u₁ => WP.block_nil ?_
+  exact { hI with
+    kp := hst _ _ hI.kp (fun r h1 _ => u₁.other r h1) u₁.rd u₁.wr (by rw [u₁.mem]; exact Frame.refl _ _)
+    gpr := fun r h1 h2 => by rw [u₁.other r h1, hI.gpr r h1 h2]
+    esi := by
+      rw [u₁.gpr, hI.esi, BitVec.add_assoc, ← BitVec.ofNat_add]
+      congr 2; omega_using []
+    edi := by rw [u₁.other _ (by decide), hI.edi]
+    frame := by rw [u₁.mem]; exact hI.frame
+    blocks := by rw [u₁.mem]; exact hI.blocks
+    rd := by rw [u₁.rd, hI.rd]
+    wr := by rw [u₁.wr, hI.wr] }
+
+/-- The turn of seven blocks. -/
+theorem body7_ok {c : Nat} (hc : c + 7 ≤ bN s₀) {s : State} (hI : Inv KP F s₀ g m₁ c c c s) :
+    WP isa (blocks7 f) s fun s' => Inv KP F s₀ g m₁ (c + 7) (c + 7) (c + 7) s' ∧
+      s'.cf = some (decide (bN s₀ - (c + 7) < 7)) := by
   have hw := hp.fD
-  refine blocks_ok hp hst hf regs6 (.inl rfl) _ hc hI fun s₁ hI₁ => ?_
-  refine advance_ok hp hst (m := 6) hc hI₁ fun s₂ hI₂ _ => ?_
+  refine blocks_ok hp hst hf regs7 (.inl rfl) _ hc hI fun s₁ hI₁ => ?_
+  refine advance_ok hp hst (m := 7) hc hI₁ fun s₂ hI₂ _ => ?_
   refine wp_cmpi fun s₃ u₃ hcf _ => WP.block_nil ⟨?_, ?_⟩
   · exact { hI₂ with
       kp := hst _ _ hI₂.kp (fun r _ _ => by rw [u₃.gpr]) u₃.rd u₃.wr (by rw [u₃.mem]; exact Frame.refl _ _)
@@ -212,20 +247,12 @@ theorem body6_ok {c : Nat} (hc : c + 6 ≤ bN s₀) {s : State} (hI : Inv KP F s
       wr := by rw [u₃.wr, hI₂.wr] }
   · rw [hcf, hI₂.edi, toNat_ofNat_lt (by omega_using [hw])]; rfl
 
-/-- The one-block body. -/
-theorem body1_ok {c : Nat} (hc : c < bN s₀) {s : State} (hI : Inv KP F s₀ g m₁ c c s) :
-    WP isa (blocks1 f) s fun s' => Inv KP F s₀ g m₁ (c + 1) (c + 1) s' ∧
-      s'.zf = some (decide (bN s₀ - (c + 1) = 0)) := by
-  refine blocks_ok hp hst hf [.xmm0] (.inr rfl) _ hc hI fun s₁ hI₁ => ?_
-  exact advance_ok hp hst (m := 1) (rest := []) hc hI₁ fun s₂ hI₂ hz =>
-    WP.block_nil ⟨hI₂, hz⟩
-
 omit hf in
-theorem test_ok {c : Nat} {s : State} (hI : Inv KP F s₀ g m₁ c c s) :
-    WP isa (.block [.alu .test .edi (.reg .edi)]) s fun s' =>
-      Inv KP F s₀ g m₁ c c s' ∧ s'.zf = some (decide (bN s₀ - c = 0)) := by
-  have hw := hp.fD
-  refine wp_test fun s' u hz => WP.block_nil ⟨?_, ?_⟩
+/-- `test edi, v`: ZF from the count of blocks from block `q` on. -/
+theorem bit_ok {c q : Nat} (v : BitVec 32) {s : State} (hI : Inv KP F s₀ g m₁ c c q s) :
+    WP isa (.block [.alu .test .edi (.imm v)]) s fun s' =>
+      Inv KP F s₀ g m₁ c c q s' ∧ s'.zf = some (BitVec.ofNat 32 (bN s₀ - q) &&& v == 0) := by
+  refine wp_testi fun s' u hz => WP.block_nil ⟨?_, ?_⟩
   · exact { hI with
       kp := hst _ _ hI.kp (fun r _ _ => by rw [u.gpr]) u.rd u.wr (by rw [u.mem]; exact Frame.refl _ _)
       gpr := fun r h1 h2 => by rw [u.gpr, hI.gpr r h1 h2]
@@ -235,42 +262,62 @@ theorem test_ok {c : Nat} {s : State} (hI : Inv KP F s₀ g m₁ c c s) :
       blocks := by rw [u.mem]; exact hI.blocks
       rd := by rw [u.rd, hI.rd]
       wr := by rw [u.wr, hI.wr] }
-  · rw [hz, hI.edi, BitVec.and_self, ofNat_beq_zero (by omega_using [hw])]
+  · rw [hz, hI.edi]
 
-/-- The blocks left after `c₀`, six and then one at a time. -/
-theorem tail_ok {c₀ : Nat} {s₁ : State} (hI₁ : Inv KP F s₀ g m₁ c₀ c₀ s₁)
-    (hcf : s₁.cf = some (decide (bN s₀ - c₀ < 6))) :
-    WP isa (blocksTail f) s₁ (Inv KP F s₀ g m₁ (bN s₀) (bN s₀)) := by
-  refine WP.seq (WP.mono (Q := fun s => ∃ c, bN s₀ - c < 6 ∧ Inv KP F s₀ g m₁ c c s) ?_
-    fun s₂ ⟨c, hc, hI₂⟩ => ?_)
-  · refine WP.ite (decide (bN s₀ - c₀ < 6)) (by simp [eval, hcf]) (fun h => ?_) (fun h => ?_)
+/-- A group of the blocks left after block `c`, fewer than twice its
+length: taken if the count from block `q` on has the group's bit, which is
+set when the blocks left are at least the group's. -/
+theorem once_ok (rs : List XReg) (hrs : Lanes rs) {c q : Nat} {s : State} (hI : Inv KP F s₀ g m₁ c c q s)
+    (hbit : (BitVec.ofNat 32 (bN s₀ - q) &&& BitVec.ofNat 32 rs.length == 0) = decide (bN s₀ - c < rs.length))
+    (hlt : bN s₀ - c < 2 * rs.length) :
+    WP isa (blocksOnce f rs) s fun s' =>
+      ∃ c', bN s₀ - c' = (bN s₀ - c) % rs.length ∧ Inv KP F s₀ g m₁ c' c' q s' := by
+  have hle := hI.le
+  refine WP.seq (WP.mono (bit_ok hp hst _ hI) fun s₁ ⟨hI₁, hzf⟩ => ?_)
+  rw [hbit] at hzf
+  refine WP.ite (decide (bN s₀ - c < rs.length)) (by simp [eval, hzf]) (fun h => ?_) (fun h => ?_)
+  · exact WP.block_nil ⟨c, (Nat.mod_eq_of_lt (by simpa using h)).symm, hI₁⟩
+  · obtain h' : rs.length ≤ bN s₀ - c := by simp at h; exact h
+    obtain hc : c + rs.length ≤ bN s₀ := by omega_using [h', hle]
+    refine blocks_ok hp hst hf rs hrs _ hc hI₁ fun s₂ hI₂ => ?_
+    refine WP.mono (skip_ok hp hst hI₂) fun s₃ hI₃ => ⟨c + rs.length, ?_, hI₃⟩
+    rw [Nat.mod_eq_sub_mod h', Nat.mod_eq_of_lt (by omega_using [hlt, h']), Nat.sub_add_eq]
+
+/-- The blocks left after `c₀`, seven at a time and then four, two and
+one. -/
+theorem tail_ok {c₀ : Nat} {s₁ : State} (hI₁ : Inv KP F s₀ g m₁ c₀ c₀ c₀ s₁)
+    (hcf : s₁.cf = some (decide (bN s₀ - c₀ < 7))) :
+    WP isa (blocksTail f) s₁ fun s => ∃ q, Inv KP F s₀ g m₁ (bN s₀) (bN s₀) q s := by
+  refine WP.seq (WP.mono (Q := fun s => ∃ c, bN s₀ - c < 7 ∧ Inv KP F s₀ g m₁ c c c s) ?_
+    fun s₂ ⟨q, hq, hI₂⟩ => ?_)
+  · refine WP.ite (decide (bN s₀ - c₀ < 7)) (by simp [eval, hcf]) (fun h => ?_) (fun h => ?_)
     · exact WP.block_nil ⟨c₀, by simpa using h, hI₁⟩
-    · let I6 : Nat → State → Prop := fun m s => ∃ c, m = bN s₀ - c ∧ c + 6 ≤ bN s₀ ∧ Inv KP F s₀ g m₁ c c s
-      have hstep : ∀ m s, I6 m s → WP isa (blocks6 f) s (fun s' =>
-          (eval .ae s' = some false ∧ ∃ c, bN s₀ - c < 6 ∧ Inv KP F s₀ g m₁ c c s') ∨
-          (eval .ae s' = some true ∧ ∃ m' < m, I6 m' s')) := by
+    · let I7 : Nat → State → Prop := fun m s => ∃ c, m = bN s₀ - c ∧ c + 7 ≤ bN s₀ ∧ Inv KP F s₀ g m₁ c c c s
+      have hstep : ∀ m s, I7 m s → WP isa (blocks7 f) s (fun s' =>
+          (eval .ae s' = some false ∧ ∃ c, bN s₀ - c < 7 ∧ Inv KP F s₀ g m₁ c c c s') ∨
+          (eval .ae s' = some true ∧ ∃ m' < m, I7 m' s')) := by
         rintro m s ⟨c, rfl, hc, hI⟩
-        refine WP.mono (body6_ok hp hst hf hc hI) fun s' ⟨hI', hcf'⟩ => ?_
-        by_cases hlt : bN s₀ - (c + 6) < 6
-        · exact .inl ⟨by simp [eval, hcf', hlt], c + 6, hlt, hI'⟩
-        · exact .inr ⟨by simp [eval, hcf', hlt], bN s₀ - (c + 6), by omega_using [hc], c + 6, rfl, by omega_using [hlt], hI'⟩
-      exact WP.loop (M := isa) I6 hstep (bN s₀ - c₀) s₁ ⟨c₀, rfl, by simp at h; omega_using [h], hI₁⟩
-  refine WP.seq (WP.mono (test_ok hp hst hI₂) fun s₃ ⟨hI₃, hzf⟩ => ?_)
-  refine WP.ite (decide (bN s₀ - c = 0)) (by simp [eval, hzf]) (fun h => ?_) (fun h => ?_)
-  · have : c = bN s₀ := by have := hI₃.le; simp at h; omega_using [this, h]
-    exact WP.block_nil (this ▸ hI₃)
-  · let I1 : Nat → State → Prop := fun m s => ∃ c, m = bN s₀ - c ∧ c < bN s₀ ∧ Inv KP F s₀ g m₁ c c s
-    have hstep : ∀ m s, I1 m s → WP isa (blocks1 f) s (fun s' =>
-        (eval .ne s' = some false ∧ Inv KP F s₀ g m₁ (bN s₀) (bN s₀) s') ∨
-        (eval .ne s' = some true ∧ ∃ m' < m, I1 m' s')) := by
-      rintro m s ⟨c, rfl, hc, hI⟩
-      refine WP.mono (body1_ok hp hst hf hc hI) fun s' ⟨hI', hzf'⟩ => ?_
-      by_cases hlast : bN s₀ - (c + 1) = 0
-      · have : c + 1 = bN s₀ := by omega_using [hc, hlast]
-        exact .inl ⟨by simp [eval, hzf', hlast], this ▸ hI'⟩
-      · exact .inr ⟨by simp [eval, hzf', hlast], bN s₀ - (c + 1), by omega_using [hc], c + 1, rfl, by omega_using [hlast], hI'⟩
-    have hlt : c < bN s₀ := by have := hI₃.le; simp at h; omega_using [h]
-    exact WP.loop (M := isa) I1 hstep (bN s₀ - c) s₃ ⟨c, rfl, hlt, hI₃⟩
+        refine WP.mono (body7_ok hp hst hf hc hI) fun s' ⟨hI', hcf'⟩ => ?_
+        by_cases hlt : bN s₀ - (c + 7) < 7
+        · exact .inl ⟨by simp [eval, hcf', hlt], c + 7, hlt, hI'⟩
+        · exact .inr ⟨by simp [eval, hcf', hlt], bN s₀ - (c + 7), by omega_using [hc], c + 7, rfl, by omega_using [hlt], hI'⟩
+      exact WP.loop (M := isa) I7 hstep (bN s₀ - c₀) s₁ ⟨c₀, rfl, by simp at h; omega_using [h], hI₁⟩
+  -- The blocks left, `r`, fewer than seven: its bits 4, 2 and 1.
+  obtain ⟨b4, b2, b1⟩ := bit_lt (bN s₀ - q) (by omega_using [hq])
+  refine WP.seq (WP.mono (once_ok hp hst hf regs4 (.inr (.inl rfl)) hI₂
+    (by rw [show regs4.length = 4 from rfl, b4]; exact congrArg decide (by rw [Nat.mod_eq_of_lt (by omega_using [hq])]))
+    (by rw [show regs4.length = 4 from rfl]; omega_using [hq])) fun s₃ ⟨c₃, e₃, hI₃⟩ => ?_)
+  rw [show regs4.length = 4 from rfl] at e₃
+  refine WP.seq (WP.mono (once_ok hp hst hf regs2 (.inr (.inr (.inl rfl))) hI₃
+    (by rw [show regs2.length = 2 from rfl, b2, e₃])
+    (by rw [show regs2.length = 2 from rfl]; omega_using [e₃])) fun s₄ ⟨c₄, e₄, hI₄⟩ => ?_)
+  rw [show regs2.length = 2 from rfl] at e₄
+  refine WP.mono (once_ok hp hst hf regs1 (.inr (.inr (.inr rfl))) hI₄
+    (by rw [show regs1.length = 1 from rfl, b1]; exact congrArg decide (by rw [e₄, e₃]; omega_arith))
+    (by rw [show regs1.length = 1 from rfl]; omega_using [e₄])) fun s₅ ⟨c₅, e₅, hI₅⟩ => ?_
+  rw [show regs1.length = 1 from rfl, Nat.mod_one] at e₅
+  obtain e : c₅ = bN s₀ := by have := hI₅.le; omega_using [this, e₅]
+  exact ⟨q, e ▸ hI₅⟩
 
 end Loops
 
