@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Idea.Arm.Modes
 public import VerifiedGarbage.Impl.Idea.Arm.FbFinal
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Scrub.Arm
-public import VerifiedGarbage.Impl.Scrub.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
 # IDEA on ARMv7, as emitted
@@ -16,7 +16,7 @@ constants (`scrub`); for key inversion and ECB, first the stack their
 contracts reserve, where their frames were, zeroed (`scrubAll`); for the modes,
 which wipe their own working space, first only the words of that stack that
 the residue analysis (`Arm.rtaint`) finds may differ between two runs
-(`Impl/Scrub/ArmSel.lean`, `scrubSel`, `modeWords`, offsets in words from
+(`Impl/Scrub/Arm/Sel.lean`, `scrubSel`, `modeWords`, offsets in words from
 its lowest address). None returns a value.
 `Proof/Idea/Arm/Scrub.lean` states that each returns without secret residue.
 -/

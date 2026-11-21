@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Cast5.Arm.FbFinal
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Scrub.Arm
-public import VerifiedGarbage.Impl.Scrub.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
 # CAST5's functions on ARMv7, as emitted

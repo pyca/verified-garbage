@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Arm.ResidueTaintSound
-public import VerifiedGarbage.Impl.Scrub.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Call

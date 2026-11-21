@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Blowfish.Arm.FbFinal
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Scrub.Arm
-public import VerifiedGarbage.Impl.Scrub.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
 # Blowfish's functions on ARMv7, as emitted
@@ -12,7 +12,7 @@ Each is its code, then its cleanup (`Impl/Scrub/Arm.lean`): the stack its
 contract reserves zeroed and the registers a callee may change set to
 constants (`scrubAll`), but for key expansion, whose cleanup zeroes only the
 words of that stack that the residue analysis (`Arm.rtaint`) finds may
-differ between two runs (`Impl/Scrub/ArmSel.lean`, `scrubSel`,
+differ between two runs (`Impl/Scrub/Arm/Sel.lean`, `scrubSel`,
 `expandKeyWords`, offsets in words from its lowest address). Key expansion and ECB keep their working space in a
 frame of 96 and 256 bytes (`withRegScratchWiped`); the modes keep theirs in
 a frame of 64 bytes (`withStackScratchWiped`) and call ECB's code, so their

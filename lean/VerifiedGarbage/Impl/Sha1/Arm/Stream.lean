@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Sha1.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm.Digest
 public import VerifiedGarbage.Impl.Scrub.Arm
-public import VerifiedGarbage.Impl.Scrub.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
 # Streaming SHA-1: 32-bit ARM implementation
@@ -64,7 +64,7 @@ a callee may change set to constants, and first, for `update` and
 (`withStackScratch`), zeroed. `digest` wipes its own working space
 (`withRegScratchWiped`), and its cleanup zeroes only the words of its stack
 that the residue analysis (`Arm.rtaint`) finds may differ between two runs
-(`Impl/Scrub/ArmSel.lean`, `scrubSel`, `digestWords`, offsets in words from
+(`Impl/Scrub/Arm/Sel.lean`, `scrubSel`, `digestWords`, offsets in words from
 the lowest address of that stack). None returns a value. -/
 
 namespace VG.Impl.Sha1.Arm.Fn

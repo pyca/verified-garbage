@@ -13,7 +13,7 @@ public import VerifiedGarbage.Impl.AesOfb.Arm.Final
 public import VerifiedGarbage.Impl.AesXts.ArmUnit
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Scrub.Arm
-public import VerifiedGarbage.Impl.Scrub.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
 # AES and its modes on ARMv7, as emitted
@@ -23,7 +23,7 @@ Each function's code followed by its cleanup (`Impl/Scrub/Arm.lean`,
 and the registers a callee may change, set to constants. Key expansion
 wipes its own working space, and its cleanup zeroes only the words of that
 stack that the residue analysis (`Arm.rtaint`) finds may differ between two
-runs (`Impl/Scrub/ArmSel.lean`, `scrubSel`): none. `Proof/Aes/Arm/Scrub.lean` states that each returns without
+runs (`Impl/Scrub/Arm/Sel.lean`, `scrubSel`): none. `Proof/Aes/Arm/Scrub.lean` states that each returns without
 secret residue.
 
 The `_final` functions of CTR, CFB128 and OFB call the code of the

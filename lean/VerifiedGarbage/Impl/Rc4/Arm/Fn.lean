@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Rc4.Arm
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Scrub.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
 # RC4 on ARMv7, as emitted
 
 Each function's code, which wipes its own working space, followed by its
-cleanup (`Impl/Scrub/ArmSel.lean`, `scrubSel`): of the stack its contract
+cleanup (`Impl/Scrub/Arm/Sel.lean`, `scrubSel`): of the stack its contract
 reserves, where its frames were, only the words that the residue analysis
 (`Arm.rtaint`) finds may differ between two runs zeroed (`…Words`, offsets in
 words from the lowest address of that stack), and the registers a callee may

@@ -6,12 +6,12 @@ public import VerifiedGarbage.Impl.Camellia.Arm.Fb
 public import VerifiedGarbage.Impl.Camellia.Arm.FbFinal
 public import VerifiedGarbage.Impl.Camellia.Arm.CtrFinal
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Scrub.ArmSel
+public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
 # Camellia on ARMv7, as emitted
 
-Each function's code followed by its cleanup (`Impl/Scrub/ArmSel.lean`,
+Each function's code followed by its cleanup (`Impl/Scrub/Arm/Sel.lean`,
 `scrubSel`): of the stack its contract reserves, where its frames were, only
 the words that the residue analysis (`Arm.rtaint`) finds may differ between
 two runs zeroed (`…Words`, offsets in words from the lowest address of that
