@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP320r1
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
-import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main

@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 public import VerifiedGarbage.Impl.Rsa.X86_64.Fn
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Bignum.X86_64.PrivPre.Verified
 public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration

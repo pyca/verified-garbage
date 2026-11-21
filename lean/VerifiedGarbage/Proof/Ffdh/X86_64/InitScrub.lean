@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Fn
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Init

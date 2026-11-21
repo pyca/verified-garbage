@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 meta import VerifiedGarbage.Spec.EcKey.Secp256k1

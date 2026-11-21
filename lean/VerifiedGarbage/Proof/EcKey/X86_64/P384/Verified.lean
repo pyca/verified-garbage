@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
-import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 import VerifiedGarbage.Proof.X448.X86_64.Exchange
 public import VerifiedGarbage.TCB.Registration
-import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.X448.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub

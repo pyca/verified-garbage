@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Impl.AesCbc.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 import VerifiedGarbage.Proof.Framework.Lit

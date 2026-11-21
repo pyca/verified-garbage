@@ -93,7 +93,7 @@ import VerifiedGarbage.Proof.Ed448.Facts
 import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Verified
 import VerifiedGarbage.Proof.Ed448.X86_64.VariantForLit
 public import VerifiedGarbage.TCB.Registration
-import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Ed448.WholeLocal

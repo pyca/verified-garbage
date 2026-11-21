@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Impl.MlKem.X86_64.Fn
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEkAvx2

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Impl.Cast5.X86_64.Fn
 public import VerifiedGarbage.Spec.Cast5.Contract
 public import VerifiedGarbage.Spec.Cast5.Cbc

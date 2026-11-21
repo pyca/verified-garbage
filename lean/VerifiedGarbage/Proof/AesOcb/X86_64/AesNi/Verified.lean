@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesOcb.X86_64.Fn
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration

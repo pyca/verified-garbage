@@ -1,7 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
 public import VerifiedGarbage.Impl.Rc2.X86_64.Fn
 public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub

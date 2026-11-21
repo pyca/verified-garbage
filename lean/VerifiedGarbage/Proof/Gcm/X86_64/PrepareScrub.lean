@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
 public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareFn
 public import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub

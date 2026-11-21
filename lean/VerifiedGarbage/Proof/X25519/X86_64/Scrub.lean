@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Exchange
 public import VerifiedGarbage.Impl.Xdh.X86_64
 public import VerifiedGarbage.Impl.X25519.X86_64.Base
 public import VerifiedGarbage.TCB.Registration
-import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 import VerifiedGarbage.Proof.Framework.Offset

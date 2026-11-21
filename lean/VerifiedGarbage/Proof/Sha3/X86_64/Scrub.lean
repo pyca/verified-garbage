@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
 public import VerifiedGarbage.Impl.Sha3.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 meta import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
