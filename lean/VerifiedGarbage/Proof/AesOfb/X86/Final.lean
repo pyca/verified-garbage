@@ -131,10 +131,10 @@ theorem cryptFinal_noSp (v : BlocksImpl) :
 
 theorem cryptFinal_stack (v : BlocksImpl) : stackUse (cryptFinal (cryptCode v) v.enc v.suffix) ≤ 52 := by
   have h := cryptCode_stack v
-  simp only [cryptFinal, final, wholeCall, finalTail, Impl.AesCbc.X86.blkCall, stackUse, v.encStack]
   obtain e6 : frameBytes (Instr.push [Reg.edi, Reg.esi, Reg.ebx, Reg.edx, Reg.ecx, Reg.eax]) = 24 := by decide
   obtain e5 : frameBytes (Instr.push [Reg.ebp, Reg.edi, Reg.ebx, Reg.ecx, Reg.eax]) = 20 := by decide
-  rw [e6, e5]
+  simp only [cryptFinal, final, wholeCall, finalTail, Impl.AesCbc.X86.blkCall, stackUse, v.encStack, Nat.max_le,
+    e6, e5]
   omega_using [h]
 
 theorem cryptFinal_spSafe (v : BlocksImpl) :

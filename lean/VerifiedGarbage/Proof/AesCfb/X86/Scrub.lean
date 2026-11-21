@@ -42,6 +42,10 @@ the implementation's own facts (`BlocksImpl.encScrub`, its stack), and
 `Fill`, which `fill_calls` proves by walking only CFB's code. The `_final`
 forms call the whole-segment code as `vg_aes_cfb128_encrypt_core` and
 `vg_aes_cfb128_decrypt_core` (`Impl.AesCfb.X86.encryptFinal`), unscrubbed.
+The whole-block code of encryption for AES-NI (`encryptCode`, `hardware`)
+is a closed term, which the kernel evaluates as it is (`encryptNi_side`),
+and the final function around it with the stub block function
+(`encryptFinalNi_side`).
 -/
 
 @[expose] public section
@@ -120,7 +124,11 @@ def stubBlocks : Impl.Aes.X86.Blocks := ⟨"", .block []⟩
 -- CFB's own code, with the stub, as literals for the kernel's evaluation.
 materialize_code encryptStub := Impl.AesCfb.X86.encrypt stubBlocks
 materialize_code decryptStub := Impl.AesCfb.X86.decrypt stubBlocks
-materialize_code encryptFinalStub := withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal stubBlocks "")
+materialize_code encryptFinalStub :=
+  withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encrypt stubBlocks) stubBlocks "")
+materialize_code encryptNiLit := Impl.AesCfb.X86.encryptNi
+materialize_code encryptFinalNiStub :=
+  withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal Impl.AesCfb.X86.encryptNi stubBlocks "")
 materialize_code decryptFinalStub := withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal stubBlocks "")
 
 theorem encrypt_side : scrubFSide (Impl.AesCfb.X86.encrypt stubBlocks) [] 24 = true := by
@@ -129,8 +137,16 @@ theorem encrypt_side : scrubFSide (Impl.AesCfb.X86.encrypt stubBlocks) [] 24 = t
 theorem decrypt_side : scrubFSide (Impl.AesCfb.X86.decrypt stubBlocks) [] 24 = true := by
   lit_decide
 
-theorem encryptFinal_side :
-    scrubFSide (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal stubBlocks "")) [] 100 = true := by
+theorem encryptFinal_side : scrubFSide (withStackScratchWiped 48 6 4
+    (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encrypt stubBlocks) stubBlocks "")) [] 100 = true := by
+  lit_decide
+
+/-- Encryption with AES-NI: the loop itself, which calls nothing. -/
+theorem encryptNi_side : scrubFSide Impl.AesCfb.X86.encryptNi [] 24 = true := by
+  lit_decide
+
+theorem encryptFinalNi_side : scrubFSide (withStackScratchWiped 48 6 4
+    (Impl.AesCfb.X86.encryptFinal Impl.AesCfb.X86.encryptNi stubBlocks "")) [] 100 = true := by
   lit_decide
 
 theorem decryptFinal_side :
@@ -146,8 +162,15 @@ theorem decrypt_fill (b : Impl.Aes.X86.Blocks) (hb : calleeSide b.code 0 = true)
   fill_calls
 
 theorem encryptFinal_fill (b : Impl.Aes.X86.Blocks) (sfx : String) (hb : calleeSide b.code 0 = true) :
-    Fill 0 (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal stubBlocks ""))
-      (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal b sfx)) := by
+    Fill 0
+      (withStackScratchWiped 48 6 4
+        (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encrypt stubBlocks) stubBlocks ""))
+      (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal (Impl.AesCfb.X86.encrypt b) b sfx)) := by
+  fill_calls
+
+theorem encryptFinalNi_fill (b : Impl.Aes.X86.Blocks) (sfx : String) (hb : calleeSide b.code 0 = true) :
+    Fill 0 (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal Impl.AesCfb.X86.encryptNi stubBlocks ""))
+      (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal Impl.AesCfb.X86.encryptNi b sfx)) := by
   fill_calls
 
 theorem decryptFinal_fill (b : Impl.Aes.X86.Blocks) (sfx : String) (hb : calleeSide b.code 0 = true) :
@@ -155,9 +178,14 @@ theorem decryptFinal_fill (b : Impl.Aes.X86.Blocks) (sfx : String) (hb : calleeS
       (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal b sfx)) := by
   fill_calls
 
+open Proof.AesCbc.X86.Wiped (hardware)
+
 /-- `scrubFSide` of `vg_aes_cfb128_encrypt`, whatever the implementation. -/
-theorem encrypt_scrub (v : BlocksImpl) : scrubFSide (Impl.AesCfb.X86.encrypt v.enc) [] 24 = true :=
-  scrubFSide_of_fill (encrypt_fill _ (calleeSide_of_eq v.encStack v.encScrub)) encrypt_side
+theorem encrypt_scrub (v : BlocksImpl) : scrubFSide (encryptCode v) [] 24 = true := by
+  by_cases hw : hardware v = true
+  · rw [encryptCode, ite_eq_left hw]; exact encryptNi_side
+  · rw [encryptCode, ite_eq_right hw]
+    exact scrubFSide_of_fill (encrypt_fill _ (calleeSide_of_eq v.encStack v.encScrub)) encrypt_side
 
 /-- `scrubFSide` of `vg_aes_cfb128_decrypt`, whatever the implementation. -/
 theorem decrypt_scrub (v : BlocksImpl) : scrubFSide (Impl.AesCfb.X86.decrypt v.enc) [] 24 = true :=
@@ -165,8 +193,14 @@ theorem decrypt_scrub (v : BlocksImpl) : scrubFSide (Impl.AesCfb.X86.decrypt v.e
 
 /-- `scrubFSide` of `vg_aes_cfb128_encrypt_final`, whatever the implementation. -/
 theorem encryptFinal_scrub (v : BlocksImpl) :
-    scrubFSide (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal v.enc v.suffix)) [] 100 = true :=
-  scrubFSide_of_fill (encryptFinal_fill _ _ (calleeSide_of_eq v.encStack v.encScrub)) encryptFinal_side
+    scrubFSide (withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal (encryptCode v) v.enc v.suffix))
+      [] 100 = true := by
+  by_cases hw : hardware v = true
+  · rw [encryptCode, ite_eq_left hw]
+    exact scrubFSide_of_fill (encryptFinalNi_fill _ _ (calleeSide_of_eq v.encStack v.encScrub))
+      encryptFinalNi_side
+  · rw [encryptCode, ite_eq_right hw]
+    exact scrubFSide_of_fill (encryptFinal_fill _ _ (calleeSide_of_eq v.encStack v.encScrub)) encryptFinal_side
 
 /-- `scrubFSide` of `vg_aes_cfb128_decrypt_final`, whatever the implementation. -/
 theorem decryptFinal_scrub (v : BlocksImpl) :
@@ -178,13 +212,13 @@ theorem decryptFinal_scrub (v : BlocksImpl) :
 /-- `vg_aes_cfb128_encrypt` over `v` as emitted (`Impl.AesCfb.X86.Fn.encrypt`)
 meets its contract in constant time and returns without secret residue. -/
 theorem encrypt_scrubbed (v : BlocksImpl) :
-    VerifiedScrubbed X86.target (Impl.AesCfb.X86.Fn.encrypt v.enc)
+    VerifiedScrubbed X86.target (Impl.AesCfb.X86.Fn.encrypt (encryptCode v))
       (Spec.Cfb.aesEncryptContract X86.abi 24) 0 :=
   verifiedScrubbedAll (api := Spec.Cfb.aesEncryptApi) {
       suffix := v.suffix
-      code := Impl.AesCfb.X86.encrypt v.enc
-      verified := Proof.AesCfb.encrypt_keyed (encrypt_verified v)
-      spSafe := encrypt_spSafe v }
+      code := encryptCode v
+      verified := Proof.AesCfb.encrypt_keyed (encryptCode_verified v)
+      spSafe := encryptCode_spSafe v }
     (encryptOut _) (W := 24) (hs := encrypt_scrub v)
 
 /-- `vg_aes_cfb128_decrypt` over `v` as emitted (`Impl.AesCfb.X86.Fn.decrypt`)
@@ -202,11 +236,11 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
 /-- `vg_aes_cfb128_encrypt_final` over `v` as emitted (`Impl.AesCfb.X86.Fn.encryptFinal`)
 meets its contract in constant time and returns without secret residue. -/
 theorem encryptFinal_scrubbed (v : BlocksImpl) :
-    VerifiedScrubbed X86.target (Impl.AesCfb.X86.Fn.encryptFinal v.enc v.suffix)
+    VerifiedScrubbed X86.target (Impl.AesCfb.X86.Fn.encryptFinal (encryptCode v) v.enc v.suffix)
       (Spec.Cfb.aesEncryptFinalContract X86.abi 100) 0 :=
   verifiedScrubbedAll (api := Spec.Cfb.aesEncryptFinalApi) {
       suffix := v.suffix
-      code := withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal v.enc v.suffix)
+      code := withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal (encryptCode v) v.enc v.suffix)
       verified := Proof.AesCfb.encryptFinal_keyed (encryptFinal_framed v)
       spSafe := encryptFinal_framed_spSafe v }
     (encryptFinalOut _) (W := 100) (hs := encryptFinal_scrub v)
@@ -225,8 +259,8 @@ theorem decryptFinal_scrubbed (v : BlocksImpl) :
 
 /-- `Impl.AesCfb.X86.Fn.encrypt` writes `esp` only in its frames and calls. -/
 theorem encrypt_fnSpSafe (v : BlocksImpl) :
-    (Impl.AesCfb.X86.Fn.encrypt v.enc).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubAll_spSafe (encrypt_spSafe v)
+    (Impl.AesCfb.X86.Fn.encrypt (encryptCode v)).all (fun i => !X86.isa.writesSp i) = true :=
+  scrubAll_spSafe (encryptCode_spSafe v)
 
 /-- `Impl.AesCfb.X86.Fn.decrypt` writes `esp` only in its frames and calls. -/
 theorem decrypt_fnSpSafe (v : BlocksImpl) :
@@ -235,7 +269,8 @@ theorem decrypt_fnSpSafe (v : BlocksImpl) :
 
 /-- `Impl.AesCfb.X86.Fn.encryptFinal` writes `esp` only in its frames and calls. -/
 theorem encryptFinal_fnSpSafe (v : BlocksImpl) :
-    (Impl.AesCfb.X86.Fn.encryptFinal v.enc v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
+    (Impl.AesCfb.X86.Fn.encryptFinal (encryptCode v) v.enc v.suffix).all
+      (fun i => !X86.isa.writesSp i) = true :=
   scrubAll_spSafe (encryptFinal_framed_spSafe v)
 
 /-- `Impl.AesCfb.X86.Fn.decryptFinal` writes `esp` only in its frames and calls. -/
