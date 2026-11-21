@@ -506,9 +506,8 @@ The loops of `vg_aes_encrypt_blocks_aesni` and `vg_aes_decrypt_blocks_aesni`
 are proven once for any transformation `f` of a list of block registers
 that computes `F` on each, given what it needs of the state (`KP`, which
 the loops keep): `aes` and `aesDec`. After `c` blocks, the first `c` data
-blocks hold `F` of the original ones (`Inv`); the turn of six blocks and
-the groups of the blocks left are the same code for different lists of
-registers (`blocks_ok`).
+blocks hold `F` of the original ones (`Inv`); the six-block and one-block
+bodies are the same code for different lists of registers (`blocks_ok`).
 -/
 
 @[expose] public section
@@ -516,7 +515,7 @@ registers (`blocks_ok`).
 namespace VG.Proof.Aes.X86.AesNi
 
 open VG VG.X86 VG.X86.RegUpd
-open VG.Impl.Aes.X86.AesNi (at_ regs6 loadData storeData blocks6 blocksTail)
+open VG.Impl.Aes.X86.AesNi (at_ regs6 loadData storeData blocks6 blocks1 blocksTail)
 open VG.Proof.Aes.X86 (BPre bSchP bRounds bDatP bN bScrP bSchR bDatR bScrR bArgR bRetR reg32 in_rd)
 
 /-! ## Blocks as states -/

@@ -13,16 +13,28 @@ pub(crate) unsafe extern "C" fn vg_aes_ofb_aesni_core() {
     core::arch::naked_asm!(
         r#".base64 "i0QkGImYEAgAAImwFAgAAIm4GAgAAImoHAgAAIt0JBCLRCQUhcA="
 je 20f
+.base64 "i3wkFItEJASLTCQIi1QkDPMPbwI="
 22:
-.base64 "i0QkBItMJAiLXCQMvwEAAACLbCQYVVdTUVA="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "WFhYWFiLXCQMiwaLCzHIiQaLRgSLSwQxyIlGBItGCItLCDHIiUYIi0YMi0sMMciJRgyDxhCLRCQUAcABwAHAAcADRCQQOcY="
+.base64 "8w9vMGYP78bzD29wEGYPONzG8w9vcCBmDzjcxvMPb3AwZg843MbzD29wQGYPONzG8w9vcFBmDzjcxvMPb3BgZg843MbzD29wcGYPONzG8w9vsIAAAABmDzjcxvMPb7CQAAAAZg843MaD+Qo="
+je 23f
+.base64 "8w9vsKAAAABmDzjcxvMPb7CwAAAAZg843MaD+Qw="
+je 25f
+.base64 "8w9vsMAAAABmDzjcxvMPb7DQAAAAZg843MbzD2+w4AAAAGYPON3G"
+jmp 26f
+25:
+.base64 "8w9vsMAAAABmDzjdxg=="
+26:
+jmp 24f
+23:
+.base64 "8w9vsKAAAABmDzjdxg=="
+24:
+.base64 "8w9vPmYP7/jzD38+g8YQg+8B"
 jne 22b
+.base64 "8w9/Ag=="
 jmp 21f
 20:
 21:
-.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAMM="
+.base64 "i0QkGIuYEAgAAIuwFAgAAIu4GAgAAIuoHAgAAItMJBi4AAAAAImBAAgAAImBBAgAAImBCAgAAImBDAgAALgAAAAAiYEQCAAAiYEUCAAAiYEYCAAAiYEcCAAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym crate::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
 }

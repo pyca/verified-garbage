@@ -16,12 +16,12 @@ def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
     Spec.Ofb.aesApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.AesOfb.X86.Fn.crypt v.enc
+      code := Impl.AesOfb.X86.Fn.crypt (Proof.AesOfb.X86.cryptCode v)
       verified := Proof.AesOfb.X86.Scrub.ofb_scrubbed v
       spSafe := Proof.AesOfb.X86.Scrub.ofb_fnSpSafe v },
     Spec.Ofb.aesFinalApi.artifact X86.target {
       suffix := v.suffix
-      code := Impl.AesOfb.X86.Fn.cryptFinal v.enc v.suffix
+      code := Impl.AesOfb.X86.Fn.cryptFinal (Proof.AesOfb.X86.cryptCode v) v.enc v.suffix
       verified := Proof.AesOfb.X86.Scrub.ofbFinal_scrubbed v
       spSafe := Proof.AesOfb.X86.Scrub.ofbFinal_fnSpSafe v }]
 

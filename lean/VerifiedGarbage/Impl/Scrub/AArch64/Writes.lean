@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.CodeOnce
 
 /-!
 # The registers code writes (AArch64)
@@ -79,17 +80,6 @@ namespace VG.Impl.Scrub.AArch64
 
 open VG.AArch64
 
-/-- The instructions of code (the pushes and pops of its frames included)
-and of the functions it calls: `VG.instrs`, for this module. -/
-def codeInstrs : Prog isa → List Instr
-  | .block is => is
-  | .seq a b => codeInstrs a ++ codeInstrs b
-  | .ite _ t e => codeInstrs t ++ codeInstrs e
-  | .loop b _ => codeInstrs b
-  | .call _ b => codeInstrs b
-  | .frame i b j => i :: codeInstrs b ++ [j]
-  | .icall i _ b n => i :: codeInstrs b ++ codeInstrs n
-
 /-- Whether code calls no function and has no frame: `Code.noCalls`, for
 this module. -/
 def codeNoCalls : Prog isa → Bool
@@ -101,16 +91,22 @@ def codeNoCalls : Prog isa → Bool
   | .frame .. => false
   | .icall .. => false
 
+/-- Whether an instruction of `c` meets `p`: of those of `VG.instrs c`, the
+pushes and pops of its frames and the instructions of the functions it calls
+included. It goes through the code of each function `c` calls once
+(`Code.allOnce`): the emitter evaluates it for every register of every
+function that states none, on code that calls a function at many places. -/
+def codeAny (p : Instr → Bool) (c : Prog isa) : Bool := !c.allOnce fun i => !p i
+
 /-- What the tail after `c` clears: the general-purpose registers of
 `allGprs` that an instruction of `c` (callees included) may write, and the
 link registers if `c` calls; the vector registers of `allVecs` and of
 `hiVecs` that one may write. -/
 def Clear.of (c : Prog isa) : Clear :=
-  let is := codeInstrs c
   let calls := !codeNoCalls c
-  { gprs := allGprs.filter fun q => is.any (fun i => clobbers i q) || (calls && linkRegs.contains q)
-    vecs := allVecs.filter fun w => is.any fun i => vdstOf i == some w
-    his := hiVecs.filter fun w => is.any fun i => vdstOf i == some w }
+  { gprs := allGprs.filter fun q => codeAny (fun i => clobbers i q) c || (calls && linkRegs.contains q)
+    vecs := allVecs.filter fun w => codeAny (fun i => vdstOf i == some w) c
+    his := hiVecs.filter fun w => codeAny (fun i => vdstOf i == some w) c }
 
 /-- `c`, which uses `W` bytes of stack and returns `rb` bits in `x0`, then its
 cleanup, which clears the registers `c` may write (`Clear.of`) and zeroes
