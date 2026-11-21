@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+meta import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Spec.Ed25519.KeyPair
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.KeyPair
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.PublicKeyVerified
@@ -323,7 +325,7 @@ theorem Ctx.call {s t t' : State} (h : Pre s) (hc : Ctx s t) {wr : List Region} 
 
 /-! ## The digest -/
 
-abbrev dgCode : Prog isa := Impl.MdStream.PPC64LE.Digest.code Proof.Hmac.Stream.PPC64LE.Sha512.hash
+abbrev dgCode : Prog isa := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha512Hash
 
 abbrev dgK : Contract isa := Spec.Sha512.digestContract PPC64LE.abi 64 Spec.Sha512.sha512 704
 

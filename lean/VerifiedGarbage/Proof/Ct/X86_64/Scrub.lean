@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+public import VerifiedGarbage.Impl.Ct.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Ct.X86_64
@@ -14,10 +16,11 @@ meta import VerifiedGarbage.Proof.Framework.Registration
 /-!
 # Constant-time comparison on x86-64, without secret residue
 
-`vg_ct_eq`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`), which clears the registers that the residue
-analysis (`X86_64.RTaint`) finds may hold secrets. Its postcondition reads
-only the memory on entry (`X86_64.Scrub.PostOut`).
+`vg_ct_eq`, followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack that the residue analysis (`X86_64.RTaint`) finds
+may hold secrets. Its postcondition reads only the memory on entry
+(`X86_64.Scrub.PostOut`).
 -/
 
 @[expose] public section
@@ -38,18 +41,21 @@ theorem eqOut : PostOut (Spec.Ct.eqContract abi) (Spec.Ct.eqSig.retBits 64) :=
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     exact h
 
-def eqKs : List Nat := keep_for% Spec.Ct.eqApi.sig 0 Impl.Ct.X86_64.eq []
+/-! ## The functions as emitted -/
 
-theorem eqOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ct.eqApi.sig 0 []) Impl.Ct.X86_64.eq
-      h).any (RScrub.resOkB · 0 eqKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of eqKs (by taint_decide)
+theorem eq_codeSp : (Impl.Ct.X86_64.eq).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_ct_eq`. -/
-def eqReg : Registration Spec.Ct.eqApi X86_64.target :=
-  scrubOf { code := Impl.Ct.X86_64.eq, verified := verified } .sse false [.r8, .r9, .r10] eqOut [] (pubOk_nil _)
-    ⟨eqKs, eqOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Ct.eqApi`'s function as emitted (`Impl.Ct.X86_64.Fn.eq`) meets its contract in
+constant time and returns without secret residue. -/
+theorem eq_scrubbed :
+    VerifiedScrubbed target Impl.Ct.X86_64.Fn.eq (Spec.Ct.eqApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedSel (api := Spec.Ct.eqApi)
+    { code := Impl.Ct.X86_64.eq
+      verified := verified
+      spSafe := eq_codeSp }
+    .sse [] eqOut (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem eq_spSafe : Impl.Ct.X86_64.Fn.eq.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe eq_codeSp
 end VG.Proof.Ct.X86_64

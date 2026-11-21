@@ -2391,7 +2391,7 @@ end VG.Proof.AesGcmSiv.RISCV64
 /-! ## AES-GCM-SIV on RISC-V, without secret residue
 
 `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`, each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.verifiedScrubbedAll`), which clears the
 caller-saved registers and all 5904 bytes of stack their frames and callees
 use, the derived keys among them: the residue analysis (`RISCV64.rtaint`)
 finds that all but the deepest 400 may hold secrets. Their postconditions
@@ -2450,7 +2450,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem seal_scrubbed [Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
     VerifiedScrubbed target Impl.AesGcmSiv.RISCV64.Fn.«seal»
       (Spec.GcmSiv.sealContract RISCV64.abi 5904) 0 :=
-  verifiedScrubbed (api := Spec.GcmSiv.sealApi) (W := 5904)
+  verifiedScrubbedAll (api := Spec.GcmSiv.sealApi) (W := 5904)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«seal»
       verified := Proof.AesGcmSiv.seal_keyed (seal_framed hti) }
     (sealOut _) seal_scrubSide
@@ -2468,7 +2468,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem open_scrubbed [Gcm.RISCV64.GhashLaw] (hti : TagInputEq) :
     VerifiedScrubbed target Impl.AesGcmSiv.RISCV64.Fn.«open»
       (Spec.GcmSiv.openContract RISCV64.abi 5904) 32 :=
-  verifiedScrubbed (api := Spec.GcmSiv.openApi) (W := 5904)
+  verifiedScrubbedAll (api := Spec.GcmSiv.openApi) (W := 5904)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 3856 0 Impl.AesGcmSiv.RISCV64.«open»
       verified := Proof.AesGcmSiv.open_keyed (open_framed hti) }
     (openOut _) open_scrubSide

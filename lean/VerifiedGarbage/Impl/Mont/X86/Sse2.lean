@@ -11,7 +11,7 @@ product `A B R⁻¹ mod M` of numbers of `N` 32-bit words, `R = 2^(32 N)`, by
 product scanning. Column `k` adds the products `A_i B_(k-i)` (for a square,
 the products with `i < k - i` doubled and the diagonal) and `Q_j M_(k-j)`
 for the quotient digits `Q_j` of the earlier columns, two at a time with
-`pmuludq` on pairs of words read straight from the numbers (`pair`), then
+`pmuludq` on words read straight from the numbers (`turn`, `pair`), then
 the column's own digit `Q_k = Z (-M⁻¹) mod 2³²` while `k < N`, which
 clears the column's low word, or else the column's word of the result.
 
@@ -74,43 +74,51 @@ def offW : Nat := 24
 def acc (x : XReg) : List Instr :=
   [.xop (.bin .paddq .xmm0 x), .xop (.shift .psrlq x 32), .xop (.bin .paddq .xmm1 x)]
 
-/-- The products of four words, reading only them: `pshufd` moves words
-`j + 1` and `j + 3` to doublewords 0 and 2. -/
-def quadLastMul : List Instr :=
-  [.movdquLoad .xmm2 (at_ .esi 0), .movdquLoad .xmm3 (at_ .edi 0), .xop (.pshufd .xmm4 .xmm2 0x31),
-    .xop (.pshufd .xmm5 .xmm3 0x31), .pmuludq .xmm2 .xmm3, .pmuludq .xmm4 .xmm5] ++ acc .xmm2 ++ acc .xmm4
+/-- The products of the four words `d` bytes from the pointers, by two
+`pmuludq`: those of the even words, then those of the odd ones, which `pshufd`
+moves to doublewords 0 and 2 of `o` and a shift to those of `y`. The
+products are left in `e` and `o` (their high words, after `acc`), and `y`
+changes: three registers are written without being read, each of which,
+where the processor keeps the registers' upper halves, waits for the value
+it had. -/
+def turn (e o y : XReg) (d : Nat) : List Instr :=
+  [.movdquLoad e (at_ .esi d), .movdquLoad y (at_ .edi d), .xop (.pshufd o e 0x31), .pmuludq e y,
+    .xop (.shift .psrlq y 32), .pmuludq o y] ++ acc e ++ acc o
 
-/-- Four products while a fifth word follows: the pointers up 16 bytes and
-the count of bytes left, `ebp`, down 16; CF clear if at least five words
-remain. -/
+/-- The pointers up `d` bytes and the count of bytes left, `ebp`, down `d`. -/
+def adv (d : BitVec 32) : List Instr :=
+  [.alu .add .esi (.imm d), .alu .add .edi (.imm d), .alu .sub .ebp (.imm d)]
+
+/-- Eight products while eight words remain, in two turns whose products
+are left in different registers (`xmm2`, `xmm4`, then `xmm5`, `xmm7`), so
+that a turn's loads do not wait for the products of the turn before; CF
+clear if at least eight more words remain. -/
 def quadBody : List Instr :=
-  quadLastMul ++ [.alu .add .esi (.imm 16), .alu .add .edi (.imm 16), .alu .sub .ebp (.imm 16), .alu .cmp .ebp (.imm 20)]
+  turn .xmm2 .xmm4 .xmm3 0 ++ turn .xmm5 .xmm7 .xmm3 16 ++ adv 32 ++ [.alu .cmp .ebp (.imm 32)]
 
-/-- The last four products. -/
-def quadLast : List Instr :=
-  quadLastMul ++ [.alu .add .esi (.imm 16), .alu .add .edi (.imm 16), .alu .sub .ebp (.imm 16)]
+/-- Four products more. -/
+def quadLast : List Instr := turn .xmm2 .xmm4 .xmm3 0 ++ adv 16
 
 /-- The products of two words: `movq` reads them, `punpckldq` puts them in
 doublewords 0 and 2. -/
 def pairMul : List Instr :=
-  [.movqLoad .xmm2 (at_ .esi 0), .movqLoad .xmm3 (at_ .edi 0), .xop (.bin .punpckldq .xmm2 .xmm2),
-    .xop (.bin .punpckldq .xmm3 .xmm3), .pmuludq .xmm2 .xmm3] ++ acc .xmm2
+  [.movqLoad .xmm5 (at_ .esi 0), .movqLoad .xmm3 (at_ .edi 0), .xop (.bin .punpckldq .xmm5 .xmm5),
+    .xop (.bin .punpckldq .xmm3 .xmm3), .pmuludq .xmm5 .xmm3] ++ acc .xmm5
 
 /-- Two products. -/
-def pair : List Instr :=
-  pairMul ++ [.alu .add .esi (.imm 8), .alu .add .edi (.imm 8), .alu .sub .ebp (.imm 8)]
+def pair : List Instr := pairMul ++ adv 8
 
 /-- One product. -/
 def single : List Instr :=
-  [.mov .eax (.mem (at_ .esi 0)), .xop (.movd .xmm2 .eax), .mov .eax (.mem (at_ .edi 0)), .xop (.movd .xmm3 .eax),
-    .pmuludq .xmm2 .xmm3] ++ acc .xmm2
+  [.mov .eax (.mem (at_ .esi 0)), .xop (.movd .xmm7 .eax), .mov .eax (.mem (at_ .edi 0)), .xop (.movd .xmm3 .eax),
+    .pmuludq .xmm7 .xmm3] ++ acc .xmm7
 
 /-- `Σ X_j Y_j` for `j` below `ebp / 4`, into the sums, for `esi` at `X` and
-`edi` at `Y`: four products at a time while a fifth word follows, then four,
+`edi` at `Y`: eight products at a time while eight words remain, then four,
 two and one. Only the count, not a pointer, controls the loops. Uses `eax`,
-`esi`, `edi` and `ebp`. -/
+`esi`, `edi` and `ebp`, and `xmm2` to `xmm5` and `xmm7`. -/
 def dot : Prog isa := seqs [
-  .block [.alu .cmp .ebp (.imm 20)],
+  .block [.alu .cmp .ebp (.imm 32)],
   .ite .ae (.loop (.block quadBody) .ae) (.block []),
   .block [.alu .cmp .ebp (.imm 16)],
   .ite .b (.block []) (.block quadLast),
@@ -139,8 +147,8 @@ without shuffles. While `k < N`, column `k` (`ecx = 4 k`) has the products
 `k = N` on, for `t ≤ 2 N - 2 - k`, and its word of the result replaces `Q_(k-N)`,
 dead. The two latest digits, `Q_(k-1)` and `Q_(k-2)`, are kept in `xmm6`
 (quadwords 0 and 1) and multiplied by `M_1` and `M_2` (doublewords 0 and 2 of
-`xmm7`) rather than read by `movdqu`, whose 16 bytes would wait for their
-stores to complete. -/
+`xmm4`, which `modWords` loads for them) rather than read by `movdqu`, whose
+16 bytes would wait for their stores to complete. -/
 
 /-- `ebx = 4 ⌊(k + 1) / 2⌋`, the products with `i < k - i`. -/
 def endHalf : List Instr :=
@@ -184,6 +192,14 @@ def input (sq hi : Bool) : Prog isa :=
     .block [.xop (.bin .paddq .xmm0 .xmm0), .xop (.bin .paddq .xmm1 .xmm1)],
     diag]
 
+/-- `M_1` and `M_2` in doublewords 0 and 2 of `xmm4` (`M_2` if `N > 2`: a
+modulus of two words, whose second digit no column uses, has no third word,
+and a cold branch reads `M_1` alone), for the two latest digits. Uses `eax`. -/
+def modWords : Prog isa := .seq
+  (.block [.mov .eax (.mem (kp pN4)), .alu .cmp .eax (.imm 12), .mov .eax (.mem (kp pM))])
+  (Code.iteCold .b (.block [.mov .eax (.mem (at_ .eax 4)), .xop (.movd .xmm4 .eax)])
+    (.block [.movqLoad .xmm4 (at_ .eax 4), .xop (.bin .punpckldq .xmm4 .xmm4)]))
+
 /-- The products of the quotient digits and `M`: while `k < N`, those of
 `Q_j`, `j ≤ k - 3`, then the two in `xmm6`. -/
 def reduce (hi : Bool) : Prog isa :=
@@ -196,7 +212,8 @@ def reduce (hi : Bool) : Prog isa :=
     .ite .ae (.block []) (.block [.mov .ebp (.imm 0)]),
     .block (ldW .esi 8 1 ++ [.alu .sub .esi (.reg .ecx)] ++ ld pM .edi ++ [.alu .add .edi (.imm 12)]),
     dot,
-    .block ([.xop (.bin .movdqa .xmm2 .xmm6), .pmuludq .xmm2 .xmm7] ++ acc .xmm2)]
+    modWords,
+    .block ([.xop (.bin .movdqa .xmm2 .xmm6), .pmuludq .xmm2 .xmm4] ++ acc .xmm2)]
 
 /-- The lanes added into lane 0, the sums stored, and `Z = S + c`: `eax`
 its low word, `edx` its high word; `ebx` the scratch pointer. -/
@@ -208,14 +225,16 @@ def fold : List Instr :=
     .mov .edx (.mem (at_ .ebx (offS + 4))), .alu .adc .edx (.mem (at_ .ebx (offC + 4)))]
 
 /-- `k < N`: the digit `q = Z_lo (-M⁻¹) mod 2³²` stored at word `N - 1 - k`
-and into `xmm6`, and `q M_0` added to `Z` (whose low word becomes zero; `edx`
-its high word) and its high word to `H`. -/
+and into `xmm6` (through `xmm1`, whose sum is stored: the next column's
+products are in other registers, and do not wait for the digit), and `q M_0`
+added to `Z` (whose low word becomes zero; `edx` its high word) and its high
+word to `H`. -/
 def digit : List Instr :=
   [.mov .esi (.reg .edx), .mov .edi (.reg .eax),
     .mov .edx (.mem (kp pInv)), .mov .edx (.mem (at_ .edx 0)), .mul .edx,
     .mov .edx (.mem (kp pN4)), .alu .add .edx (.reg .ebx), .alu .sub .edx (.reg .ecx),
     .store (at_ .edx (offW - 4)) .eax,
-    .xop (.movd .xmm2 .eax), .xop (.bin .punpcklqdq .xmm2 .xmm6), .xop (.bin .movdqa .xmm6 .xmm2),
+    .xop (.movd .xmm1 .eax), .xop (.bin .punpcklqdq .xmm1 .xmm6), .xop (.bin .movdqa .xmm6 .xmm1),
     .mov .edx (.mem (kp pM)), .mov .edx (.mem (at_ .edx 0)), .mul .edx,
     .alu .add .eax (.reg .edi), .alu .adc .esi (.reg .edx),
     .mov .eax (.mem (at_ .ebx offH)), .alu .add .eax (.reg .edx), .store (at_ .ebx offH) .eax,
@@ -233,10 +252,13 @@ def carry : List Instr :=
   [.store (at_ .ebx offC) .edx, .alu .cmp .edx (.mem (at_ .ebx offH)),
     .mov .eax (.mem (at_ .ebx (offH + 4))), .alu .adc .eax (.imm 0), .store (at_ .ebx (offC + 4)) .eax]
 
+/-- The sums cleared, for a column. -/
+def clear : List Instr := [.xop (.bin .pxor .xmm0 .xmm0), .xop (.bin .pxor .xmm1 .xmm1)]
+
 /-- Column `k` (`ecx = 4 k`), then `ecx` up a word; ZF after the last of the
 phase, `k = N - 1` or `k = 2 N - 1`. -/
 def column (sq hi : Bool) : Prog isa := seqs [
-  .block [.xop (.bin .pxor .xmm0 .xmm0), .xop (.bin .pxor .xmm1 .xmm1)],
+  .block clear,
   input sq hi, reduce hi, .block fold,
   .block ((if hi then word else digit) ++ carry ++ [.alu .add .ecx (.imm 4), .mov .eax (.mem (kp pN4))] ++
     (if hi then [.alu .add .eax (.reg .eax)] else []) ++ [.alu .cmp .ecx (.reg .eax)])]
@@ -248,13 +270,8 @@ def copyA : Prog isa := .seq
   (.loop (.block [.mov .eax (.mem (at_ .esi 0)), .alu .sub .ebx (.imm 4), .store (at_ .ebx 0) .eax,
     .alu .add .esi (.imm 4), .alu .sub .edi (.imm 4)]) .ne)
 
-/-- `xmm6 = 0` and `M_1`, `M_2` in doublewords 0 and 2 of `xmm7` (`M_2` if
-`N > 2`). -/
-def window : Prog isa := .seq
-  (.block [.xop (.bin .pxor .xmm6 .xmm6), .mov .eax (.mem (kp pM)), .mov .ebx (.mem (at_ .eax 4)),
-    .xop (.movd .xmm7 .ebx), .mov .ebx (.mem (kp pN4)), .alu .cmp .ebx (.imm 12)])
-  (.ite .b (.block [])
-    (.block [.mov .ebx (.mem (at_ .eax 8)), .xop (.movd .xmm2 .ebx), .xop (.bin .punpcklqdq .xmm7 .xmm2)]))
+/-- `xmm6 = 0`: no digits yet. -/
+def window : List Instr := [.xop (.bin .pxor .xmm6 .xmm6)]
 
 /-- The columns of one kind: those with `k < N`, then the others. -/
 def phases (sq : Bool) : Prog isa := .seq (.loop (column sq false) .ne) (.loop (column sq true) .ne)
@@ -264,7 +281,7 @@ def columns : Prog isa := seqs [
   copyA,
   .block [.mov .ebx (.mem (kp pS)), .mov .eax (.imm 0), .store (at_ .ebx offC) .eax,
     .store (at_ .ebx (offC + 4)) .eax, .mov .ecx (.imm 0)],
-  window,
+  .block window,
   .block [.mov .eax (.mem (kp pA)), .mov .ebx (.mem (kp pB)), .alu .cmp .eax (.reg .ebx)],
   .ite .e (phases true) (phases false)]
 

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesCfb8.X86.Verified
 public import VerifiedGarbage.Spec.Cfb8.Contract
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.AesCfb8.X86
 import VerifiedGarbage.Proof.Aes.ScrubLocal
 import VerifiedGarbage.Proof.Framework.Lit
@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Spec.Cfb8.Contract
 meta import VerifiedGarbage.Proof.Aes.ScrubLocal
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.AesCfb8.X86
 
 /-!
@@ -29,7 +29,7 @@ needs (`X86.Scrub.PostOut`).
 
 Each as emitted (`Impl.AesCfb8.X86.Fn`) zeroes its 24 bytes of stack below
 `esp` and clears the registers, and returns without secret residue
-(`X86.Scrub.verifiedScrubbedF`: `encrypt_scrubbed`, `decrypt_scrubbed`).
+(`X86.Scrub.verifiedScrubbedAll`: `encrypt_scrubbed`, `decrypt_scrubbed`).
 What that needs of the code (`scrubFSide`) holds whatever the implementation
 of the block function (`encrypt_scrub`, `decrypt_scrub`): from CFB8's code
 with a stub block function, whose code is `.block []`, which the kernel
@@ -115,7 +115,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem encrypt_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesCfb8.X86.Fn.encrypt v.enc)
       (Spec.Cfb8.aesEncryptContract X86.abi 24) 0 :=
-  verifiedScrubbedF (api := Spec.Cfb8.aesEncryptApi) {
+  verifiedScrubbedAll (api := Spec.Cfb8.aesEncryptApi) {
       suffix := v.suffix
       code := Impl.AesCfb8.X86.encrypt v.enc
       verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v)
@@ -127,7 +127,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem decrypt_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesCfb8.X86.Fn.decrypt v.enc)
       (Spec.Cfb8.aesDecryptContract X86.abi 24) 0 :=
-  verifiedScrubbedF (api := Spec.Cfb8.aesDecryptApi) {
+  verifiedScrubbedAll (api := Spec.Cfb8.aesDecryptApi) {
       suffix := v.suffix
       code := Impl.AesCfb8.X86.decrypt v.enc
       verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v)
@@ -137,11 +137,11 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
 /-- `Impl.AesCfb8.X86.Fn.encrypt` writes `esp` only in its frames and calls. -/
 theorem encrypt_fnSpSafe (v : BlocksImpl) :
     (Impl.AesCfb8.X86.Fn.encrypt v.enc).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (encrypt_spSafe v)
+  scrubAll_spSafe (encrypt_spSafe v)
 
 /-- `Impl.AesCfb8.X86.Fn.decrypt` writes `esp` only in its frames and calls. -/
 theorem decrypt_fnSpSafe (v : BlocksImpl) :
     (Impl.AesCfb8.X86.Fn.decrypt v.enc).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (decrypt_spSafe v)
+  scrubAll_spSafe (decrypt_spSafe v)
 
 end VG.Proof.AesCfb8.X86.Scrub

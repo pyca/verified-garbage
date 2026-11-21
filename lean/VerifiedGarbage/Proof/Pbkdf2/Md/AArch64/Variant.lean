@@ -1341,10 +1341,10 @@ namespace MdHash
 /-- `vg_pbkdf2_hmac_<hash>`'s postcondition reads the memory on return only
 within `out` (`Proof.Pbkdf2.pbkdf2PostOut_local`). -/
 theorem pbkdf2Ok (I : Spec.Hmac.Instance) :
-    AArch64.ScrubAll.ScrubAllOk (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I)) (16 + pbkdf2Frame I)
+    AArch64.Scrub.ScrubAllOk (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I)) (16 + pbkdf2Frame I)
       (Spec.Pbkdf2.pbkdf2Sig.retBits AArch64.abi.ptrBits) := by
   unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract
-  exact AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Pbkdf2.pbkdf2Sig) (W := 16 + pbkdf2Frame I) (by decide)
+  exact AArch64.Scrub.scrubAllOk_regs (sig := Spec.Pbkdf2.pbkdf2Sig) (W := 16 + pbkdf2Frame I) (by decide)
     (by omega) (Nat.le_refl _) (Proof.Pbkdf2.pbkdf2PostOut_local I.S _)
 
 /-! ## The functions as emitted
@@ -1374,15 +1374,15 @@ theorem pbkdf2_scrubbed (v : MdHash) :
     VerifiedScrubbed AArch64.target (Impl.Pbkdf2.Md.AArch64.Fn.pbkdf2 v.H)
       (v.I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame v.I)) 0 := by
   have e : 8 * v.H.anyW = pbkdf2Frame v.I := by rw [v.anyW_pbkdf2]; rfl
-  unfold Impl.Pbkdf2.Md.AArch64.Fn.pbkdf2 Impl.Residue.AArch64.scrubOf
+  unfold Impl.Pbkdf2.Md.AArch64.Fn.pbkdf2 Impl.Scrub.AArch64.scrubOf
   rw [e]
   have hp := v.hp
   have hlt := v.hlt.1
   have hd := pbkdf2_fdepth v.ok.stream.initDepth v.ok.stream.updDepth v.ok.stream.finDepth v.ok.comp.noFrames
-  refine AArch64.ScrubAll.verifiedScrubbedOf v.pbkdf2F (pbkdf2Ok v.I) ?_ ?_ ?_ (Or.inl rfl)
+  refine AArch64.Scrub.verifiedScrubbedOf v.pbkdf2F (pbkdf2Ok v.I) ?_ ?_ ?_ (Or.inl rfl)
   · unfold pbkdf2Frame; omega
-  · rw [AArch64.ScrubAll.depth_withStackScratch]; omega
-  · exact AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl
+  · rw [AArch64.Scrub.depth_withStackScratch]; omega
+  · exact AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl
       (pbkdf2_side v.coreSide.pbk v.side.init v.side.upd v.side.fin v.side.comp)
 
 /-! ## HMAC's functions, scrubbed -/
@@ -1390,25 +1390,25 @@ theorem pbkdf2_scrubbed (v : MdHash) :
 /-- `vg_hmac_<hash>_finalize`'s postcondition reads the memory on return only
 within `out` (`Proof.Hmac.finalizePostOut_local`). -/
 theorem finOk (I : Spec.Hmac.Instance) (w : Nat) :
-    AArch64.ScrubAll.ScrubAllOk (I.finalizeContract AArch64.abi (16 + 8 * w)) (16 + 8 * w)
+    AArch64.Scrub.ScrubAllOk (I.finalizeContract AArch64.abi (16 + 8 * w)) (16 + 8 * w)
       ((Spec.Hmac.finalizeSig I.S).retBits AArch64.abi.ptrBits) := by
   unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
-  exact AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Hmac.finalizeSig I.S) (W := 16 + 8 * w) (Nat.le_of_ble_eq_true rfl)
+  exact AArch64.Scrub.scrubAllOk_regs (sig := Spec.Hmac.finalizeSig I.S) (W := 16 + 8 * w) (Nat.le_of_ble_eq_true rfl)
     (by omega) (Nat.le_refl _) (Proof.Hmac.finalizePostOut_local I.S _)
 
 /-- `vg_hmac_<hash>_finalize` with `v`, as emitted. -/
 theorem hmacFin_scrubbed (v : MdHash) :
     VerifiedScrubbed AArch64.target (Impl.Pbkdf2.Md.AArch64.Fn.hmacFin v.H)
       (v.I.finalizeContract AArch64.abi (16 + 8 * v.finW)) 0 := by
-  unfold Impl.Pbkdf2.Md.AArch64.Fn.hmacFin Impl.Residue.AArch64.scrubOf
+  unfold Impl.Pbkdf2.Md.AArch64.Fn.hmacFin Impl.Scrub.AArch64.scrubOf
   rw [← v.finW_eq]
   have hw := v.hfw
   have hlt := v.hlt.2.2
   have hd := hmacFin_fdepth v.ok.stream.finDepth v.ok.comp.noFrames
-  refine AArch64.ScrubAll.verifiedScrubbedOf v.hmacFinR (finOk v.I v.finW) ?_ ?_ ?_ (Or.inl rfl)
+  refine AArch64.Scrub.verifiedScrubbedOf v.hmacFinR (finOk v.I v.finW) ?_ ?_ ?_ (Or.inl rfl)
   · omega
-  · rw [AArch64.ScrubAll.depth_withStackScratch]; omega
-  · exact AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl
+  · rw [AArch64.Scrub.depth_withStackScratch]; omega
+  · exact AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl
       (hmacFin_side v.coreSide.fin v.side.fin v.side.comp)
 
 /-- `vg_hmac_<hash>_init`'s postcondition, under the contract of either
@@ -1416,17 +1416,17 @@ branch, reads the memory on return only within the two states
 (`Proof.Hmac.initPostOut_local`). -/
 theorem initShortOk (I : Spec.Hmac.Instance) (w : Nat) (hR : Proof.Hmac.ReprLocal I.S)
     (hS : I.S.stateBytes < 2 ^ 64) :
-    AArch64.ScrubAll.ScrubAllOk (I.initContract AArch64.abi (16 + 8 * w)) (16 + 8 * w)
+    AArch64.Scrub.ScrubAllOk (I.initContract AArch64.abi (16 + 8 * w)) (16 + 8 * w)
       ((Spec.Hmac.initSig I.S).retBits AArch64.abi.ptrBits) := by
   unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
-  exact AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Hmac.initSig I.S) (W := 16 + 8 * w) (Nat.le_of_ble_eq_true rfl)
+  exact AArch64.Scrub.scrubAllOk_regs (sig := Spec.Hmac.initSig I.S) (W := 16 + 8 * w) (Nat.le_of_ble_eq_true rfl)
     (by omega) (Nat.le_refl _) (Proof.Hmac.initPostOut_local I.S _ hR hS)
 
 theorem initLongOk (I : Spec.Hmac.Instance) (hR : Proof.Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64) :
-    AArch64.ScrubAll.ScrubAllOk (I.initAnyKeyContract AArch64.abi (16 + anyFrame I)) (16 + anyFrame I)
+    AArch64.Scrub.ScrubAllOk (I.initAnyKeyContract AArch64.abi (16 + anyFrame I)) (16 + anyFrame I)
       ((Spec.Hmac.initSig I.S).retBits AArch64.abi.ptrBits) := by
   unfold Spec.Hmac.Instance.initAnyKeyContract Spec.Hmac.initAnyKeyContract
-  exact AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Hmac.initSig I.S) (W := 16 + anyFrame I) (Nat.le_of_ble_eq_true rfl)
+  exact AArch64.Scrub.scrubAllOk_regs (sig := Spec.Hmac.initSig I.S) (W := 16 + anyFrame I) (Nat.le_of_ble_eq_true rfl)
     (by omega) (Nat.le_refl _) (Proof.Hmac.initPostOut_local I.S _ hR hS)
 
 theorem stateBytes_lt (v : MdHash) : v.I.S.stateBytes < 2 ^ 64 := by
@@ -1440,7 +1440,7 @@ theorem hmacInit_scrubbed (v : MdHash) :
     VerifiedScrubbed AArch64.target (Impl.Pbkdf2.Md.AArch64.Fn.hmacInit v.H)
       (v.I.initAnyKeyContract AArch64.abi (16 + anyFrame v.I)) 0 := by
   have e : 8 * v.H.anyW = anyFrame v.I := by rw [v.anyW_any]; rfl
-  unfold Impl.Pbkdf2.Md.AArch64.Fn.hmacInit Impl.Residue.AArch64.scrubOf
+  unfold Impl.Pbkdf2.Md.AArch64.Fn.hmacInit Impl.Scrub.AArch64.scrubOf
   rw [e, v.anyW_any, ← v.initW_eq, v.blockSize_eq]
   have hw := v.hiw
   have ha := v.ha
@@ -1450,12 +1450,12 @@ theorem hmacInit_scrubbed (v : MdHash) :
   have hdI := hmacInit_fdepth v.ok.stream.initDepth v.ok.comp.noFrames
   have hdA := hmacInitAny_fdepth v.ok.stream.initDepth v.ok.stream.updDepth v.ok.stream.finDepth
     v.ok.comp.noFrames
-  have short := AArch64.ScrubAll.verifiedScrubbedOf v.hmacShortR
+  have short := AArch64.Scrub.verifiedScrubbedOf v.hmacShortR
     (initShortOk v.I v.initW v.reprLocal v.stateBytes_lt) (by omega)
-    (by rw [AArch64.ScrubAll.depth_withStackScratch]; omega)
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl
+    (by rw [AArch64.Scrub.depth_withStackScratch]; omega)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl
       (hmacInit_side v.coreSide.init v.side.init v.side.comp)) (Or.inl rfl)
-  have long := AArch64.ScrubAll.verifiedScrubbedOf v.hmacAnyF
+  have long := AArch64.Scrub.verifiedScrubbedOf v.hmacAnyF
     (initLongOk v.I v.reprLocal v.stateBytes_lt) (by unfold anyFrame; omega)
     (depth_frame_le (by
       simp only [Code.aarch64Depth, Nat.max_le, Nat.zero_le, and_true]

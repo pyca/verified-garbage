@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+meta import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Sha256
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
@@ -1769,7 +1771,7 @@ end
 /-! ## With PBKDF2 made with SHA-256 -/
 
 /-- PBKDF2-HMAC-SHA256's implementation. -/
-abbrev pbkCode : Prog isa := Proof.Pbkdf2.Whole.PPC64LE.Sha256.F.pbkdf2
+abbrev pbkCode : Prog isa := Impl.Pbkdf2.Whole.PPC64LE.sha256F.pbkdf2
 
 /-- Its name. -/
 abbrev pbkName : String := "vg_pbkdf2_hmac_sha256_scratch"

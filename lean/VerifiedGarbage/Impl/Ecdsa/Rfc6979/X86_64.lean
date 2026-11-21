@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Mgf1.X86_64.Table
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
 
@@ -460,3 +461,13 @@ def entry : List Instr := [.mov .rcx (.reg .r8), .mov .r10 (.mem (at_ .r9 32)), 
 def signCode (c : Cfg) : Prog isa := .seq (.block entry) c.sign
 
 end VG.Impl.Ecdsa.Rfc6979.X86_64
+
+namespace VG.Impl.Ecdsa.Rfc6979.X86_64.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ecdsa_<curve>_sign`, with the configuration `c`, as emitted: its code, then its cleanup. -/
+def sign (c : Cfg) : Prog isa := scrubAll .sse 32 632 (_root_.VG.Impl.Ecdsa.Rfc6979.X86_64.signCode c)
+
+end VG.Impl.Ecdsa.Rfc6979.X86_64.Fn

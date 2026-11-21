@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
 public import VerifiedGarbage.TCB.RISCV64.Print
 
 /-! # DSA (FIPS 186-4) on RISC-V -/
@@ -32,6 +33,10 @@ def artifacts : List Artifact := [
   Spec.Dsa.parameterInitApi.artifact RISCV64.target {
     code := Impl.Dsa.RISCV64.Fn.parameterInit
     verified := .scrubbed Proof.Dsa.RISCV64.Fn.parameterInit }] ++
-  Proof.Dsa.RISCV64.Fn.parameterSearchRegs.map (Spec.Dsa.parameterSearchApi.artifact RISCV64.target)
+  Proof.Variants.MillerRabin.RISCV64.variants.map fun (v : Proof.MillerRabin.RISCV64.RoundImpl) =>
+    Spec.Dsa.parameterSearchApi.artifact RISCV64.target {
+      suffix := v.suffix
+      code := Impl.Dsa.RISCV64.Fn.parameterSearch v.suffix v.code
+      verified := .scrubbed (Proof.Dsa.RISCV64.Fn.parameterSearch v) }
 
 end VG.Artifacts.Dsa.RISCV64

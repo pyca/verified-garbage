@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Idea.X86_64.Fn
 public import VerifiedGarbage.Proof.Idea.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
@@ -13,7 +14,7 @@ import VerifiedGarbage.Proof.Idea.X86_64.FbFinalLit
 namespace VG.Artifacts.IdeaOfb.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Idea.ofbApi.artifact X86_64.target Proof.Idea.X86_64.Scrub.ofbReg,
-  Spec.Idea.ofbFinalApi.artifact X86_64.target Proof.Idea.X86_64.Scrub.ofbFinalReg]
+  Spec.Idea.ofbApi.artifact X86_64.target { code := Impl.Idea.X86_64.Fn.ofb, verified := .scrubbed Proof.Idea.X86_64.Scrub.ofb_scrubbed, spSafe := Proof.Idea.X86_64.Scrub.ofb_spSafe },
+  Spec.Idea.ofbFinalApi.artifact X86_64.target { code := Impl.Idea.X86_64.Fn.ofbFinal, verified := .scrubbed Proof.Idea.X86_64.Scrub.ofbFinal_scrubbed, spSafe := Proof.Idea.X86_64.Scrub.ofbFinal_spSafe }]
 
 end VG.Artifacts.IdeaOfb.X86_64

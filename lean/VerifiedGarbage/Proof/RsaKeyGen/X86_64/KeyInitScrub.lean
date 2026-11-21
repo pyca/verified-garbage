@@ -2,26 +2,19 @@ module
 
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Fn
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KeyInit
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
-public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KeyInit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
-meta import VerifiedGarbage.Proof.Framework.Registration
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # RSA key generation's `init` on x86-64, without secret residue
 
-`vg_rsa_generate_init`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`). Its postcondition reads the memory on return
+`vg_rsa_generate_init`, followed by its cleanup, which clears every
+register it may write (`X86_64.Scrub.verifiedScrubbedAll`; it uses no stack). Its postcondition reads the memory on return
 only within the state (`wordsAt_congr`).
 -/
 
@@ -66,18 +59,16 @@ theorem initOut : PostOut (Spec.RsaKeyGen.keyInitContract abi) (Spec.RsaKeyGen.k
     dsimp only [Curry.apply] at h ⊢
     rw [show ArgWord.addr.ofRaw a0 = a0 from rfl, h7, h6, hB]; exact h
 
-def initKs : List Nat := keep_for% Spec.RsaKeyGen.keyInitApi.sig 0 Impl.RsaKeyGen.X86_64.KeyInit.init []
+theorem init_codeSp : Impl.RsaKeyGen.X86_64.KeyInit.init.all (fun i => !isa.writesSp i) = true := by sp_safe
 
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.RsaKeyGen.keyInitApi.sig 0 []) Impl.RsaKeyGen.X86_64.KeyInit.init
-      h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
+/-- `Spec.RsaKeyGen.keyInitApi`'s function as emitted (`Impl.RsaKeyGen.X86_64.Fn.keyInit`) meets its
+contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.RsaKeyGen.X86_64.Fn.keyInit (Spec.RsaKeyGen.keyInitApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaKeyGen.keyInitApi)
+    { code := Impl.RsaKeyGen.X86_64.KeyInit.init, verified := init_verified, spSafe := init_codeSp } .sse initOut
 
-open VG.X86_64.RScrub in
-/-- `vg_rsa_generate_init` without secret residue. -/
-def initReg : Registration Spec.RsaKeyGen.keyInitApi X86_64.target :=
-  scrubOf { code := Impl.RsaKeyGen.X86_64.KeyInit.init, verified := init_verified } .sse false [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] initOut [] (pubOk_nil _)
-    ⟨initKs, initOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem init_spSafe : Impl.RsaKeyGen.X86_64.Fn.keyInit.all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
 
 end VG.Proof.RsaKeyGen.X86_64.KeyInit

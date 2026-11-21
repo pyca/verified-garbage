@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Seed.Contract
 public import VerifiedGarbage.Spec.Seed.Cbc
@@ -26,7 +27,8 @@ import VerifiedGarbage.Proof.Seed.X86.FbFinalLit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Seed.Contract
 meta import VerifiedGarbage.Spec.Seed.Cbc
@@ -56,10 +58,14 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 
 Key expansion and the ECB, CBC, CFB128 and OFB functions run with their
 working space in a frame on the stack, wiped before they return
-(`withStackScratchWiped`). The code as emitted (`Impl.Seed.X86.Fn`) then
-zeroes the stack their contracts reserve below `esp` and clears the
-registers a callee may change, and returns without secret residue
-(`X86.Scrub.verifiedScrubbedF`), given that its postcondition reads the
+(`withStackScratchWiped`). Key expansion calls nothing in its frame, so the
+wipe leaves no secret on the stack: the code as emitted
+(`Impl.Seed.X86.Fn.expandKey`) only clears the registers a callee may
+change (`X86.Scrub.verifiedScrubbedWiped`). The others call or push below
+their frame: the code as emitted then zeroes the stack their contracts
+reserve below `esp` and clears the registers a callee may change, and
+returns without secret residue (`X86.Scrub.verifiedScrubbedAll`), given that
+its postcondition reads the
 memory on return only within the buffers (`Proof/Seed/Scratch.lean`,
 `CbcScratch.lean`, `FbScratch.lean` and `Proof/Modes/CfbFinalScratch.lean`,
 for any pointer width). What the cleanup needs of the code is one Boolean
@@ -75,9 +81,6 @@ open VG.X86 VG.X86.Scrub
 open Impl.StackScratch.X86 (withStackScratchWiped)
 
 /-! ## Postconditions -/
-
-theorem expandKeyOut : PostOut (Spec.Seed.expandKeyContract X86.abi 840) (Spec.Seed.expandKeySig.retBits 32) :=
-  postOut_of_local ScrubAbi.plain (Proof.Seed.expandKeyPostOut_local _)
 
 theorem ecbOut (d : Spec.Seed.Direction) :
     PostOut (Spec.Seed.ecbContract X86.abi d 1132) (Spec.Seed.ecbSig.retBits 32) :=
@@ -113,16 +116,18 @@ theorem ofbFinalOut : PostOut (Spec.Seed.ofbFinalContract X86.abi 1188) (Spec.Se
 constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.expandKey (Spec.Seed.expandKeyContract X86.abi 840) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.expandKeyApi)
-    { code := withStackScratchWiped 840 2 206 Impl.Seed.X86.expandKey
-      verified := Proof.Seed.X86.expandKey_framed }
-    expandKeyOut
+  verifiedScrubbedWiped (sig := Spec.Seed.expandKeySig) (nm := "scratch") (e := .u64) (n := 103)
+    (post := Proof.Seed.expandKeyPost X86.abi.ptrBits) (bytes := 840) (words := 206)
+    Proof.Seed.X86.expandKey_verified (by decide) (by decide) (by lit_decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Proof.Seed.expandKeyPost_local _) (Proof.Seed.expandKeyPostOut_local _)
+    Proof.Seed.X86.expandKeyFrameSat_pre rfl
 
 /-- `vg_seed_ecb_encrypt` as emitted (`Impl.Seed.X86.Fn.ecb .encrypt`) meets its contract in
 constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed target (Impl.Seed.X86.Fn.ecb .encrypt) (Spec.Seed.ecbContract X86.abi .encrypt 1132) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.ecbEncryptApi)
+  verifiedScrubbedAll (api := Spec.Seed.ecbEncryptApi)
     { code := withStackScratchWiped 1108 3 272 (Impl.Seed.X86.ecbCall .encrypt)
       verified := Proof.Seed.X86.ecbCall_framed .encrypt }
     (ecbOut _)
@@ -131,7 +136,7 @@ theorem ecbEncrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed target (Impl.Seed.X86.Fn.ecb .decrypt) (Spec.Seed.ecbContract X86.abi .decrypt 1132) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.ecbDecryptApi)
+  verifiedScrubbedAll (api := Spec.Seed.ecbDecryptApi)
     { code := withStackScratchWiped 1108 3 272 (Impl.Seed.X86.ecbCall .decrypt)
       verified := Proof.Seed.X86.ecbCall_framed .decrypt }
     (ecbOut _)
@@ -141,7 +146,7 @@ time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cbcEncryptChained
       (Spec.Seed.cbcEncryptChainedContract X86.abi 1188) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.cbcEncryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Seed.cbcEncryptChainedApi)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cbcEncryptChained
       verified := Proof.Seed.X86.Cbc.cbcEncryptChained_framed }
     cbcEncryptOut
@@ -151,7 +156,7 @@ time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cbcDecryptChained
       (Spec.Seed.cbcDecryptChainedContract X86.abi 1188) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.cbcDecryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Seed.cbcDecryptChainedApi)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cbcDecryptChained
       verified := Proof.Seed.X86.Cbc.cbcDecryptChained_framed }
     cbcDecryptOut
@@ -160,7 +165,7 @@ theorem cbcDecryptChained_scrubbed :
 and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cfbEncrypt (Spec.Seed.cfbEncryptContract X86.abi 1188) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.cfbEncryptApi)
+  verifiedScrubbedAll (api := Spec.Seed.cfbEncryptApi)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbEncrypt
       verified := Proof.Seed.X86.Fb.cfbEncrypt_framed }
     cfbEncryptOut
@@ -169,7 +174,7 @@ theorem cfbEncrypt_scrubbed :
 and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cfbDecrypt (Spec.Seed.cfbDecryptContract X86.abi 1188) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.cfbDecryptApi)
+  verifiedScrubbedAll (api := Spec.Seed.cfbDecryptApi)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbDecrypt
       verified := Proof.Seed.X86.Fb.cfbDecrypt_framed }
     cfbDecryptOut
@@ -179,7 +184,7 @@ time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cfbEncryptFinal
       (Spec.Seed.cfbEncryptFinalContract X86.abi 1188) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.cfbEncryptFinalApi)
+  verifiedScrubbedAll (api := Spec.Seed.cfbEncryptFinalApi)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbEncryptFinal
       verified := Proof.Seed.X86.FbFinal.cfbEncryptFinal_framed }
     cfbEncryptFinalOut
@@ -189,7 +194,7 @@ time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cfbDecryptFinal
       (Spec.Seed.cfbDecryptFinalContract X86.abi 1188) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.cfbDecryptFinalApi)
+  verifiedScrubbedAll (api := Spec.Seed.cfbDecryptFinalApi)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbDecryptFinal
       verified := Proof.Seed.X86.FbFinal.cfbDecryptFinal_framed }
     cfbDecryptFinalOut
@@ -198,7 +203,7 @@ theorem cfbDecryptFinal_scrubbed :
 without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.ofb (Spec.Seed.ofbContract X86.abi 1188) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.ofbApi)
+  verifiedScrubbedAll (api := Spec.Seed.ofbApi)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.ofb
       verified := Proof.Seed.X86.Fb.ofb_framed }
     ofbOut
@@ -207,7 +212,7 @@ theorem ofb_scrubbed :
 returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.ofbFinal (Spec.Seed.ofbFinalContract X86.abi 1188) 0 :=
-  verifiedScrubbedF (api := Spec.Seed.ofbFinalApi)
+  verifiedScrubbedAll (api := Spec.Seed.ofbFinalApi)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.ofbFinal
       verified := Proof.Seed.X86.FbFinal.ofbFinal_framed }
     ofbFinalOut

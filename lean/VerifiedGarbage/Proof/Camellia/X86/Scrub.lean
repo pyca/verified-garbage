@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Impl.Camellia.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Camellia.Contract
@@ -34,11 +35,14 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 Key expansion and Camellia's ECB, CBC, CFB128, OFB and CTR functions, and the
 final pieces of CFB128, OFB and CTR, run with their working space in a frame
-on the stack (`withStackScratchWiped`). As emitted (`Impl.Camellia.X86.Fn`),
-each then zeroes the stack its contract reserves below `esp` (its frame and
+on the stack (`withStackScratchWiped`). Key expansion calls nothing in its
+frame, which it wipes itself: as emitted (`Impl.Camellia.X86.Fn.expandKey`)
+it then clears the registers alone (`X86.Scrub.verifiedScrubbedWiped`). As
+emitted, each of the others then zeroes the stack its contract reserves
+below `esp` (its frame and
 the calls of `vg_camellia_crypt_prepared` in it) and clears the registers a
 callee may change, and returns without secret residue
-(`X86.Scrub.verifiedScrubbedF`). What the cleanup needs of the
+(`X86.Scrub.verifiedScrubbedAll`). What the cleanup needs of the
 code is one Boolean (`X86.Scrub.scrubFSide`), proved by evaluating the code
 once (`lit_decide`). `vg_camellia_ctr_final` calls `vg_camellia_ctr`'s code
 as an internal function of its own, `vg_camellia_ctr_core`. Their
@@ -61,9 +65,6 @@ theorem len_le (x : BitVec 64) (k : Nat) : ((ArgWord.int abi.ptrBits).ofRaw x).t
 theorem len_le1 (x : BitVec 64) : ((ArgWord.int abi.ptrBits).ofRaw x).toNat ≤ x.toNat * Elem.u8.size := by
   have := len_le x 1
   simpa only [Nat.mul_one, Elem.size] using this
-
-theorem expandKeyOut (stack : Nat) : PostOut (expandKeyContract X86.abi stack) (expandKeySig.retBits 32) :=
-  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Camellia.expandKeyPostOut_local _)
 
 theorem ecbOut (d : Direction) (stack : Nat) : PostOut (ecbContract X86.abi d stack) (ecbSig.retBits 32) :=
   postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
@@ -192,16 +193,19 @@ theorem ctrFinalOut (stack : Nat) : PostOut (ctrFinalContract X86.abi stack) (ct
 in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.expandKey (Spec.Camellia.expandKeyContract X86.abi 2708) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.expandKeyApi)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 2708 3 672 Impl.Camellia.X86.expandKey
-      verified := Proof.Camellia.X86.expandKey_framed }
-    (expandKeyOut _)
+  verifiedScrubbedWiped (sig := Spec.Camellia.expandKeySig) (nm := "scratch") (e := .u64) (n := 336)
+    (pre := Spec.Camellia.expandKeyPre X86.abi.ptrBits) (post := Spec.Camellia.expandKeyPost X86.abi.ptrBits)
+    (bytes := 2708) (words := 672)
+    (by rw [← Proof.Camellia.expandKeyScratchContract_eq]; exact Proof.Camellia.X86.expandKey_verified)
+    (by decide) (by decide) (by lit_decide)
+    (Proof.Camellia.expandKeyPre_local _) (Proof.Camellia.expandKeyPost_local _)
+    (Proof.Camellia.expandKeyPostOut_local _) Proof.Camellia.X86.expandKeyFrameSat_pre rfl
 
 /-- `Spec.Camellia.ecbEncryptApi` as emitted (`Impl.Camellia.X86.Fn.ecbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.ecbEncrypt (Spec.Camellia.ecbContract X86.abi (Proof.Camellia.X86.specDir Impl.Camellia.X86.Dir.encrypt) 2728) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.ecbEncryptApi)
+  verifiedScrubbedAll (api := Spec.Camellia.ecbEncryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (Impl.Camellia.X86.ecb .encrypt)
       verified := Proof.Camellia.X86.ecb_framed .encrypt }
     (ecbOut .encrypt _)
@@ -210,7 +214,7 @@ theorem ecbEncrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.ecbDecrypt (Spec.Camellia.ecbContract X86.abi (Proof.Camellia.X86.specDir Impl.Camellia.X86.Dir.decrypt) 2728) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.ecbDecryptApi)
+  verifiedScrubbedAll (api := Spec.Camellia.ecbDecryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (Impl.Camellia.X86.ecb .decrypt)
       verified := Proof.Camellia.X86.ecb_framed .decrypt }
     (ecbOut .decrypt _)
@@ -219,7 +223,7 @@ theorem ecbDecrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.cbcEncryptChained (Spec.Camellia.cbcEncryptChainedContract X86.abi 2772) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.cbcEncryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cbcEncryptChainedApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cbcEncryptChained
       verified := Proof.Camellia.X86.Cbc.cbcEncryptChained_framed }
     (cbcEncryptOut _)
@@ -228,7 +232,7 @@ theorem cbcEncryptChained_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.cbcDecryptChained (Spec.Camellia.cbcDecryptChainedContract X86.abi 2772) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.cbcDecryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cbcDecryptChainedApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cbcDecryptChained
       verified := Proof.Camellia.X86.Cbc.cbcDecryptChained_framed }
     (cbcDecryptOut _)
@@ -237,7 +241,7 @@ theorem cbcDecryptChained_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.cfbEncrypt (Spec.Camellia.cfbEncryptContract X86.abi 2772) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.cfbEncryptApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cfbEncryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbEncrypt
       verified := Proof.Camellia.X86.Fb.cfbEncrypt_framed }
     (cfbEncryptOut _)
@@ -246,7 +250,7 @@ theorem cfbEncrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.cfbDecrypt (Spec.Camellia.cfbDecryptContract X86.abi 2772) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.cfbDecryptApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cfbDecryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbDecrypt
       verified := Proof.Camellia.X86.Fb.cfbDecrypt_framed }
     (cfbDecryptOut _)
@@ -255,7 +259,7 @@ theorem cfbDecrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.cfbEncryptFinal (Spec.Camellia.cfbEncryptFinalContract X86.abi 2772) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.cfbEncryptFinalApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cfbEncryptFinalApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbEncryptFinal
       verified := Proof.Camellia.X86.FbFinal.cfbEncryptFinal_framed }
     (cfbEncryptFinalOut _)
@@ -264,7 +268,7 @@ theorem cfbEncryptFinal_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.cfbDecryptFinal (Spec.Camellia.cfbDecryptFinalContract X86.abi 2772) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.cfbDecryptFinalApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cfbDecryptFinalApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbDecryptFinal
       verified := Proof.Camellia.X86.FbFinal.cfbDecryptFinal_framed }
     (cfbDecryptFinalOut _)
@@ -273,7 +277,7 @@ theorem cfbDecryptFinal_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.ofb (Spec.Camellia.ofbContract X86.abi 2772) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.ofbApi)
+  verifiedScrubbedAll (api := Spec.Camellia.ofbApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ofb
       verified := Proof.Camellia.X86.Fb.ofb_framed }
     (ofbOut _)
@@ -282,7 +286,7 @@ theorem ofb_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.ofbFinal (Spec.Camellia.ofbFinalContract X86.abi 2772) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.ofbFinalApi)
+  verifiedScrubbedAll (api := Spec.Camellia.ofbFinalApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ofbFinal
       verified := Proof.Camellia.X86.FbFinal.ofbFinal_framed }
     (ofbFinalOut _)
@@ -291,7 +295,7 @@ theorem ofbFinal_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ctr_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.ctr (Spec.Camellia.ctrContract X86.abi 2772) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.ctrApi)
+  verifiedScrubbedAll (api := Spec.Camellia.ctrApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ctr
       verified := Proof.Camellia.X86.Ctr.ctr_framed }
     (ctrOut _)
@@ -300,7 +304,7 @@ theorem ctr_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ctrFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.ctrFinal (Spec.Camellia.ctrFinalContract X86.abi 2856) 0 :=
-  verifiedScrubbedF (api := Spec.Camellia.ctrFinalApi)
+  verifiedScrubbedAll (api := Spec.Camellia.ctrFinalApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 60 5 8 Impl.Camellia.X86.ctrFinal
       verified := Proof.Camellia.X86.CtrFinal.ctrFinal_framed
       spSafe := Proof.Camellia.X86.CtrFinal.ctrFinal_framed_spSafe }

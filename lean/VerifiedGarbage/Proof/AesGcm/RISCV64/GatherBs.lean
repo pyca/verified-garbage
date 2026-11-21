@@ -102,7 +102,7 @@ return address and `bk`'s bytes and the key context come back from it, and
   against the shared contract with 4672 bytes of stack
   (`sealGatherBs_verified`).
 * **No secret residue:** `sealGatherBs_scrubbed`, by
-  `verifiedScrubbedSelT`, as ChaCha20-Poly1305's `seal_gather`
+  `verifiedScrubbedSel`, as ChaCha20-Poly1305's `seal_gather`
   (`Proof/ChaCha20Poly1305/RISCV64/Scrub.lean`).
 -/
 
@@ -1071,7 +1071,7 @@ contract in constant time and returns without secret residue: the theorem its re
 theorem sealGatherBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.sealGatherBs
       (Spec.Gcm.sealGatherBitslicedContract abi 4672) 0 :=
-  verifiedScrubbedSelT (api := Spec.Gcm.sealGatherBitslicedApi) (W := 4672)
+  verifiedScrubbedSel (api := Spec.Gcm.sealGatherBitslicedApi) (W := 4672)
     { code := sealGatherBs
       verified := Proof.AesGcm.sealGatherBitsliced_keyed sealGatherBs_verified }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (176, [(0, 22)])] []

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha1.AArch64
 public import VerifiedGarbage.Impl.MdStream.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.MdStream.AArch64.OneShot
 
@@ -51,13 +51,13 @@ def finalize : Prog isa := MdStream.AArch64.finalize params "vg_sha1_compress" c
 
 Each streaming function over a compression function is its code with its
 working space in a frame on the stack, then its cleanup
-(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+(`Impl.Scrub.AArch64.scrubOf`), which clears the registers the code may
 write, the compression function's included, and zeroes that stack, so that it
 returns without secret residue. -/
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.Scrub.AArch64 (scrubOf)
 open VG.Impl.StackScratch.AArch64 (withStackScratch)
 
 /-- `vg_sha1_update` over the compression function `code`, its working space in a frame of its own. -/

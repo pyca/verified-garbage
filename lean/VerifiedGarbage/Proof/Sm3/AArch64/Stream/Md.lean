@@ -94,9 +94,9 @@ structure Compress where
   finalizeDepth : (finalizeMain Stream.params name code).aarch64Depth = 0
   /-- The registers `code` writes, of those the calling convention does not
   preserve: what the cleanup of `update` and `finalize` clears for it
-  (`ScrubAll.scrubSide_union`). -/
-  clear : Impl.Residue.AArch64.Clear
-  scrub : AArch64.ScrubAll.calleeSide code clear = true
+  (`Scrub.scrubSide_union`). -/
+  clear : Impl.Scrub.AArch64.Clear
+  scrub : AArch64.Scrub.calleeSide code clear = true
 
 namespace Compress
 

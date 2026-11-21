@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.PPC64LE.Verified
@@ -14,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_chacha20_poly1305_seal`, `vg_chacha20_poly1305_open`,
 `vg_chacha20_poly1305_open_to` and `vg_chacha20_poly1305_seal_gather`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which
 clears every volatile register and the stack their frames used: they zero
 their working space themselves (`withStackScratchWiped`,
 `withStackScratchArgsWiped`), but not the 160-byte frame below it in which
@@ -93,11 +94,15 @@ theorem gatherOut (stack : Nat) :
       (Spec.ChaCha20Poly1305.sealGatherSig.retBits 64) :=
   postOut_of_local ScrubAbi.plain (Proof.ChaCha20Poly1305.sealGatherPost_out _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.ChaCha20Poly1305.sealApi`. -/
-def sealReg : Registration Spec.ChaCha20Poly1305.sealApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_chacha20_poly1305_seal` as emitted
+(`Impl.ChaCha20Poly1305.PPC64LE.Fn.seal`) meets its contract in constant time
+and returns without secret residue. -/
+theorem seal_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.ChaCha20Poly1305.PPC64LE.Fn.seal
+      (Spec.ChaCha20Poly1305.sealContract PPC64LE.abi 848) 0 :=
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.sealApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 688 .r10 82
         (Impl.ChaCha20Poly1305.PPC64LE.inPlace Impl.ChaCha20Poly1305.PPC64LE.«seal»)
       verified := Proof.ChaCha20Poly1305.PPC64LE.seal_framed }
@@ -107,9 +112,13 @@ def sealReg : Registration Spec.ChaCha20Poly1305.sealApi PPC64LE.target :=
     (sealOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.ChaCha20Poly1305.openZeroApi`. -/
-def openReg : Registration Spec.ChaCha20Poly1305.openZeroApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_chacha20_poly1305_open` as emitted
+(`Impl.ChaCha20Poly1305.PPC64LE.Fn.open`) meets its contract in constant time
+and returns without secret residue. -/
+theorem open_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.ChaCha20Poly1305.PPC64LE.Fn.open
+      (Spec.ChaCha20Poly1305.openZeroContract PPC64LE.abi 848) 32 :=
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.openZeroApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 688 .r10 82
         (Impl.ChaCha20Poly1305.PPC64LE.inPlace Impl.ChaCha20Poly1305.PPC64LE.«open»)
       verified := Proof.ChaCha20Poly1305.PPC64LE.open_framed }
@@ -119,9 +128,13 @@ def openReg : Registration Spec.ChaCha20Poly1305.openZeroApi PPC64LE.target :=
     (openOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.ChaCha20Poly1305.openToApi`. -/
-def openToReg : Registration Spec.ChaCha20Poly1305.openToApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_chacha20_poly1305_open_to` as emitted
+(`Impl.ChaCha20Poly1305.PPC64LE.Fn.openTo`) meets its contract in constant
+time and returns without secret residue. -/
+theorem openTo_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.ChaCha20Poly1305.PPC64LE.Fn.openTo
+      (Spec.ChaCha20Poly1305.openToContract PPC64LE.abi 928) 32 :=
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.openToApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgsWiped 768 1 82 Impl.ChaCha20Poly1305.PPC64LE.openTo
       verified := Proof.ChaCha20Poly1305.PPC64LE.openTo_framed }
     928 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -130,9 +143,13 @@ def openToReg : Registration Spec.ChaCha20Poly1305.openToApi PPC64LE.target :=
     (openToOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.ChaCha20Poly1305.sealGatherApi`. -/
-def sealGatherReg : Registration Spec.ChaCha20Poly1305.sealGatherApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_chacha20_poly1305_seal_gather` as emitted
+(`Impl.ChaCha20Poly1305.PPC64LE.Fn.sealGather`) meets its contract in constant
+time and returns without secret residue. -/
+theorem sealGather_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.ChaCha20Poly1305.PPC64LE.Fn.sealGather
+      (Spec.ChaCha20Poly1305.sealGatherContract PPC64LE.abi 928) 0 :=
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.sealGatherApi) {
       code := Impl.ChaCha20Poly1305.PPC64LE.SealGather.sealGather
       verified := Proof.ChaCha20Poly1305.PPC64LE.Gather.sealGather_verified }
     928 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

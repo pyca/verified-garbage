@@ -41,9 +41,12 @@ x86's AES-GCM's (`Impl/AesGcm/X86.lean`):
   (`cryptTail`). Over the AES-NI implementation of `vg_aes_ctr32_to` the
   whole blocks make no call (`niBlocks`): the counter block's first word is
   kept in `edx` and zeroed in the block at `W + 96`, each counter block is
-  that word ORed into those 16 bytes in `xmm0`, enciphered there with the
-  round keys loaded from the schedule (`Impl.Aes.X86.AesNi.aes`) and XORed
-  into the block of the data; the word is stored back after the last.
+  that word ORed into those 16 bytes in a register, enciphered there with
+  the round keys loaded from the schedule (`Impl.Aes.X86.AesNi.aes`) and
+  XORed into the block of the data; the word is stored back after the last.
+  Six blocks a turn while six are left (`niSix`: six counter blocks in
+  `xmm0`–`xmm5`, each round key applied to the six, as
+  `vg_aes_ctr32_to_aesni` does), then one a turn (`niBlock`).
 * `open` decrypts first, computes the tag of the plaintext at `W + 240` and
   compares it with the received one without a branch (`cmp`), then ANDs
   every byte of the data with `0 − ok` (`mask`).
@@ -362,14 +365,39 @@ def niBlock : Prog isa :=
       (.block [.movdquLoad .xmm7 (at_ .esi 0), .xop (.bin .pxor .xmm0 .xmm7), .movdquStore (at_ .esi 0) .xmm0,
         .alu .add .edx (imm 1), .alu .add .esi (imm 16), .alu .sub .edi (imm 16), .alu .cmp .edi (imm 16)]))
 
+/-- The registers of the six counter blocks of a turn. -/
+def niRegs : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5]
+
+/-- A counter block in each register of `regs`: `edx`, which is then
+incremented, ORed into the 16 bytes at `W + 96`, which `xmm7` holds. -/
+def niCtrs : List XReg → List Instr
+  | [] => []
+  | b :: bs => ([.xop (.movd b .edx), .xop (.bin .por b .xmm7), .alu .add .edx (imm 1)] : List Instr) ++ niCtrs bs
+
+/-- Six blocks with AES-NI: their counter blocks in `xmm0`–`xmm5`, enciphered
+together (each round key, through `xmm6`, applied to the six) and XORed into
+the six blocks at `esi` (through `xmm7`), in place; the counter, `esi` and
+the bytes left past them, and CF set if fewer than six whole blocks are
+left. -/
+def niSix : Prog isa :=
+  .seq (.block (.movdquLoad .xmm7 (at_ .ebp cbO) :: niCtrs niRegs))
+    (.seq (Impl.Aes.X86.AesNi.aes niRegs)
+      (.block (Impl.Aes.X86.AesNi.xorData .esi niRegs 0 ++
+        ([.alu .add .esi (imm 96), .alu .sub .edi (imm 96), .alu .cmp .edi (imm 96)] : List Instr))))
+
 /-- The counter block's first word stored back, and the bytes left at
 `W + nO`. -/
 def niPost : List Instr := [.store (at_ .ebp cbO) .edx, .store (at_ .ebp nO) .edi]
 
 /-- The whole blocks (at least one) of the `nO` bytes at `esi` encrypted in
-place with AES-NI, the counter block incremented for each; `esi` and `nO`
-past them. -/
-def niBlocks : Prog isa := .seq (.block niPre) (.seq (.loop niBlock .ae) (.block niPost))
+place with AES-NI, six at a time while six are left and then one at a time,
+the counter block incremented for each; `esi` and `nO` past them. -/
+def niBlocks : Prog isa :=
+  .seq (.block niPre)
+  (.seq (.block [.alu .cmp .edi (imm 96)])
+  (.seq (.ite .b (.block []) (.loop niSix .ae))
+  (.seq (.block [.alu .cmp .edi (imm 16)])
+  (.seq (.ite .b (.block []) (.loop niBlock .ae)) (.block niPost)))))
 
 /-- `c`'s `vg_aes_ctr32_to` is the AES-NI implementation, with which the
 whole blocks of counter mode are enciphered in line. -/
@@ -459,7 +487,7 @@ end VG.Impl.AesGcmSiv.X86
 
 /-! ## The functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
 bytes of stack below `esp` that it and its callees use zeroed, and the
 registers a callee may change cleared but the `rb` bits of the result, so
 that it returns without secret residue. -/
@@ -471,10 +499,10 @@ open Impl.StackScratch.X86 (withStackScratch)
 
 /-- `vg_aes_gcm_siv_seal` over the functions `c`, as emitted. -/
 def «seal» (c : Impl.AesGcm.X86.Callees) : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» c))
+  Impl.Scrub.X86.scrubAll 0 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» c))
 
 /-- `vg_aes_gcm_siv_open` over the functions `c`, as emitted. -/
 def «open» (c : Impl.AesGcm.X86.Callees) : Prog isa :=
-  Impl.Scrub.X86.scrubF 32 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» c))
+  Impl.Scrub.X86.scrubAll 32 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» c))
 
 end VG.Impl.AesGcmSiv.X86.Fn

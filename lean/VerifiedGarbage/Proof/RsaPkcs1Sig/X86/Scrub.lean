@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignP.Verified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignScrub
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignP.Verified
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignScrub
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -98,7 +98,7 @@ and its cleanup, returns without secret residue. -/
 theorem verifyPrecomputed_scrubbed :
     VerifiedScrubbed target (Impl.RsaPkcs1Sig.X86.Fn.verifyPrecomputed baseline.name baseline.code)
       (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi Proof.RsaPkcs1Sig.X86.Ver.verifyStack) 32 :=
-  verifiedScrubbedF (api := Spec.RsaPkcs1Sig.verifyPrecomputedApi) {
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Sig.verifyPrecomputedApi) {
       code := Impl.RsaPkcs1Sig.X86.Verify.code baseline.name baseline.code
       verified := Proof.RsaPkcs1Sig.X86.Ver.verify_verified baseline
       spSafe := Proof.RsaPkcs1Sig.X86.Ver.code_sp baseline }
@@ -109,7 +109,7 @@ and its cleanup, returns without secret residue. -/
 theorem recoverPrecomputed_scrubbed :
     VerifiedScrubbed target (Impl.RsaPkcs1Sig.X86.Fn.recoverPrecomputed baseline.name baseline.code)
       (Spec.RsaPkcs1Sig.recoverPrecomputedContract abi Proof.RsaPkcs1Sig.X86.Rcv.recoverStack) 32 :=
-  verifiedScrubbedF (api := Spec.RsaPkcs1Sig.recoverPrecomputedApi) {
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Sig.recoverPrecomputedApi) {
       code := Impl.RsaPkcs1Sig.X86.Recover.code baseline.name baseline.code
       verified := Proof.RsaPkcs1Sig.X86.Rcv.recover_verified baseline
       spSafe := Proof.RsaPkcs1Sig.X86.Rcv.code_sp baseline }
@@ -122,7 +122,7 @@ theorem signPrecomputed_scrubbed (v : CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Sig.X86.Fn.signPrecomputed (Proof.RsaPkcs1Sig.X86.Sgn.privNameP v) (privCodeP v crtPBaseline))
       (Spec.RsaPkcs1Sig.signPrecomputedContract abi Proof.RsaPkcs1Sig.X86.Sgn.sigStack) 32 :=
-  verifiedScrubbedF (api := Spec.RsaPkcs1Sig.signPrecomputedApi)
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Sig.signPrecomputedApi)
     { code := Impl.RsaPkcs1Sig.X86.Sign.code (Proof.RsaPkcs1Sig.X86.Sgn.privNameP v) (privCodeP v crtPBaseline)
         Impl.RsaPkcs1Sig.X86.Sign.callArgsP
       verified := Proof.RsaPkcs1Sig.X86.Sgn.signPrecomputed_verified v
@@ -134,6 +134,6 @@ open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCodeP crtPBaseline) in
 theorem signPrecomputed_spSafe (v : CrtImpl) :
     (Impl.RsaPkcs1Sig.X86.Fn.signPrecomputed (Proof.RsaPkcs1Sig.X86.Sgn.privNameP v)
       (privCodeP v crtPBaseline)).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.RsaPkcs1Sig.X86.Sgn.codeP_sp v crtPBaseline)
+  scrubAll_spSafe (Proof.RsaPkcs1Sig.X86.Sgn.codeP_sp v crtPBaseline)
 
 end VG.Proof.RsaPkcs1Sig.X86.Scrub

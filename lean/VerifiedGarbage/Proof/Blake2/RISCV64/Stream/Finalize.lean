@@ -46,13 +46,13 @@ open VG.RISCV64 VG.Spec.Blake2
 last = a4, scratch = a5)`: updates the state at `state` with the `n` blocks at
 `blocks`, block `i` with the counter `t + bb · i` and the final block flag if
 the low word of `last` is not zero. It reads the blocks and reads and writes
-the state and 512 bytes of scratch space, which do not overlap each other.
+the state and 280 bytes of scratch space, which do not overlap each other.
 The pointers, `n`, `t` and `last` are public. -/
 def compressRISCV64 {w : Nat} (P : Params w) : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, 8 * (w / 8)⟩
     let blocks : Region := ⟨s.gpr .a1, blockBytes w * (s.gpr .a2).toNat⟩
-    let scratch : Region := ⟨s.gpr .a5, 512⟩
+    let scratch : Region := ⟨s.gpr .a5, 280⟩
     s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch
   post s s' := stateAt w s'.mem (s.gpr .a0) =
@@ -107,12 +107,14 @@ def updatePost (s s' : State) : Prop :=
     Spec.Blake2.Repr P h0 s'.mem (s.gpr .a0) (d ++ bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
 
 /-- RISC-V contract for `update_scratch(state = a0, count = a1, data = a2,
-len = a3, scratch = a4)`. -/
-def updateRISCV64 : Contract isa where
+len = a3, scratch = a4)`, with `sc` bytes of scratch: the code uses 336 (the
+compression function's 280 and our 48, from a pointer it rounds up by at
+most 7); Argon2 passes 576 (`Proof/Argon2/RISCV64/HPrime/Absorb.lean`). -/
+def updateRISCV64 (sc : Nat := 576) : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, bufOff w + blockBytes w⟩
     let data : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
-    let scratch : Region := ⟨s.gpr .a4, 576⟩
+    let scratch : Region := ⟨s.gpr .a4, sc⟩
     s.rd = [data] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ data.Disjoint state ∧ data.Disjoint scratch
   post := updatePost P
@@ -121,15 +123,15 @@ def updateRISCV64 : Contract isa where
     s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.sp = s₂.sp
 
 /-- RISC-V contract for `update(state = a0, count = a1, data = a2, len =
-a3)`, with its scratch space in a frame of 576 bytes below the stack
+a3)`, with its scratch space in a frame of 336 bytes below the stack
 pointer. -/
 def updateFramedRISCV64 : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, bufOff w + blockBytes w⟩
     let data : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
-    let stack : Region := ⟨s.sp - 576, 576⟩
+    let stack : Region := ⟨s.sp - 336, 336⟩
     s.rd = [data] ∧ s.wr = [state] ∧ data.Disjoint state ∧
-    s.sp.toNat % 16 = 0 ∧ 576 ≤ s.sp.toNat ∧ stack.Disjoint state ∧ stack.Disjoint data
+    s.sp.toNat % 16 = 0 ∧ 336 ≤ s.sp.toNat ∧ stack.Disjoint state ∧ stack.Disjoint data
   post := updatePost P
   pub s₁ s₂ :=
     s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
@@ -141,12 +143,12 @@ def finalizePost (s s' : State) : Prop :=
     s.gpr .a1 = BitVec.ofNat 64 d.length → bytesAt s'.mem (s.gpr .a2) (bufOff w) = finalHash P h0 d
 
 /-- RISC-V contract for `finalize_scratch(state = a0, count = a1, out = a2,
-scratch = a3)`. -/
-def finalizeRISCV64 : Contract isa where
+scratch = a3)`, with `sc` bytes of scratch (as for `updateRISCV64`). -/
+def finalizeRISCV64 (sc : Nat := 576) : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, bufOff w + blockBytes w⟩
     let out : Region := ⟨s.gpr .a2, bufOff w⟩
-    let scratch : Region := ⟨s.gpr .a3, 576⟩
+    let scratch : Region := ⟨s.gpr .a3, sc⟩
     s.rd = [] ∧ s.wr = [state, out, scratch] ∧
     state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch
   post := finalizePost P
@@ -155,14 +157,14 @@ def finalizeRISCV64 : Contract isa where
     s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.sp = s₂.sp
 
 /-- RISC-V contract for `finalize(state = a0, count = a1, out = a2)`, with
-its scratch space in a frame of 576 bytes below the stack pointer. -/
+its scratch space in a frame of 336 bytes below the stack pointer. -/
 def finalizeFramedRISCV64 : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .a0, bufOff w + blockBytes w⟩
     let out : Region := ⟨s.gpr .a2, bufOff w⟩
-    let stack : Region := ⟨s.sp - 576, 576⟩
+    let stack : Region := ⟨s.sp - 336, 336⟩
     s.rd = [] ∧ s.wr = [state, out] ∧ state.Disjoint out ∧
-    s.sp.toNat % 16 = 0 ∧ 576 ≤ s.sp.toNat ∧ stack.Disjoint state ∧ stack.Disjoint out
+    s.sp.toNat % 16 = 0 ∧ 336 ≤ s.sp.toNat ∧ stack.Disjoint state ∧ stack.Disjoint out
   post := finalizePost P
   pub s₁ s₂ :=
     s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧ s₁.sp = s₂.sp
@@ -314,11 +316,11 @@ may be accessed. -/
 structure CallOk (s : State) (st scr src : Addr) (len : Nat) : Prop where
   s7 : s.gpr .s7 = st
   s8 : s.gpr .s8 = scr
-  d₁ : Region.Disjoint ⟨st, bufOff w⟩ ⟨scr, 512⟩
+  d₁ : Region.Disjoint ⟨st, bufOff w⟩ ⟨scr, 280⟩
   d₂ : Region.Disjoint ⟨src, len⟩ ⟨st, bufOff w⟩
-  d₃ : Region.Disjoint ⟨src, len⟩ ⟨scr, 512⟩
-  hc : Covers [⟨src, len⟩, ⟨st, bufOff w⟩, ⟨scr, 512⟩] (s.rd ++ s.wr)
-  hw : Covers [⟨st, bufOff w⟩, ⟨scr, 512⟩] s.wr
+  d₃ : Region.Disjoint ⟨src, len⟩ ⟨scr, 280⟩
+  hc : Covers [⟨src, len⟩, ⟨st, bufOff w⟩, ⟨scr, 280⟩] (s.rd ++ s.wr)
+  hw : Covers [⟨st, bufOff w⟩, ⟨scr, 280⟩] s.wr
 
 /-- The arguments of the call, set up from `σ`. -/
 structure Setup (σ s : State) (src n t : BitVec 64) (last : Bool) : Prop where
@@ -345,7 +347,7 @@ theorem compressWith_ok {args : List Instr} (hf : CalleeOk P (compress P)) {s : 
     {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
-      Frame [⟨st, bufOff w⟩, ⟨scr, 512⟩] s.mem s'.mem →
+      Frame [⟨st, bufOff w⟩, ⟨scr, 280⟩] s.mem s'.mem →
       stateAt w s'.mem st = compressBlocks P (stateAt w s.mem st) s.mem src n.toNat t.toNat last →
       Q s') :
     WP isa (compressWith P args) s Q := by
@@ -358,7 +360,7 @@ theorem compressWith_ok {args : List Instr} (hf : CalleeOk P (compress P)) {s : 
   have e4 : s₁.callEntry.gpr .a4 = s₁.gpr .a4 := State.callEntry_gpr _ (by decide)
   have e5 : s₁.callEntry.gpr .a5 = scr := (State.callEntry_gpr _ (by decide)).trans (hs.a5.trans h.s8)
   refine WP.call (k := compressRISCV64 P) hf.verified
-    (rd := [⟨src, blockBytes w * n.toNat⟩]) (wr := [⟨st, bufOff w⟩, ⟨scr, 512⟩]) ?_ ?_ ?_ ?_ hf.noFrames
+    (rd := [⟨src, blockBytes w * n.toNat⟩]) (wr := [⟨st, bufOff w⟩, ⟨scr, 280⟩]) ?_ ?_ ?_ ?_ hf.noFrames
   · simp only [compressRISCV64, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, e0, e1, e2, e5]
     exact ⟨trivial, trivial, h.d₁, h.d₂, h.d₃⟩
@@ -540,13 +542,13 @@ theorem repr_congr (hP : Ok P) {h0 : HashValue w} {mem mem' : Mem} {p : Addr} {d
 /-- The caller's registers `g` are saved in the scratch space at `b`. -/
 abbrev Saved (b : Addr) (g : Reg → BitVec 64) (m : Mem) : Prop := Spill.Saved b g saved m
 
-/-- The memory after saving them (values `g`) at `b + 512 …`. -/
+/-- The memory after saving them (values `g`) at `b + 280 …`. -/
 abbrev saveMem (m : Mem) (b : Addr) (g : Reg → BitVec 64) : Mem := Spill.saveMem m b g saved
 
 /-- The scratch space, rounded up to a multiple of 8. -/
 abbrev rnd (x : Addr) : Addr := x + BitVec.ofNat 64 (pad x)
 
-theorem saved_off : ∀ p ∈ saved, 512 ≤ p.2 ∧ p.2 + 8 ≤ 560 := by decide
+theorem saved_off : ∀ p ∈ saved, 280 ≤ p.2 ∧ p.2 + 8 ≤ 328 := by decide
 
 theorem saveMem_congr {l : List (Reg × Nat)} (m : Mem) (b : Addr) {g g' : Reg → BitVec 64}
     (h : ∀ p ∈ l, g p.1 = g' p.1) : Spill.saveMem m b g l = Spill.saveMem m b g' l := by
@@ -561,7 +563,7 @@ theorem saveMem_saved (m : Mem) (b : Addr) (g : Reg → BitVec 64) : Saved b g (
   Spill.saveMem_saved (by decide) m b g
 
 theorem saveMem_frame (m : Mem) (b : Addr) (g : Reg → BitVec 64) :
-    Frame [⟨b + BitVec.ofNat 64 512, 48⟩] m (saveMem m b g) :=
+    Frame [⟨b + BitVec.ofNat 64 280, 48⟩] m (saveMem m b g) :=
   Spill.saveMem_frame (by decide) (by decide) m b g
 
 theorem saved_ne_t0 : ∀ p ∈ saved, p.1 ≠ .t0 := by decide
@@ -569,7 +571,7 @@ theorem saved_ne_t0 : ∀ p ∈ saved, p.1 ≠ .t0 := by decide
 /-- Rounding the scratch pointer in `sc` up into `t0`, and saving the
 registers there. -/
 theorem save_ok {sc : Reg} {rest : List Instr} {s : State} {Q : State → Prop}
-    (hin : ∀ d, 512 ≤ d → d + 8 ≤ 560 → InRegions s.wr (rnd (s.gpr sc) + BitVec.ofNat 64 d) 8)
+    (hin : ∀ d, 280 ≤ d → d + 8 ≤ 328 → InRegions s.wr (rnd (s.gpr sc) + BitVec.ofNat 64 d) 8)
     (k : ∀ s', s'.gpr .t0 = rnd (s.gpr sc) → (∀ r, r ≠ .t0 → s'.gpr r = s.gpr r) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       s'.mem = saveMem s.mem (rnd (s.gpr sc)) s.gpr → WP isa (.block rest) s' Q) :
@@ -588,7 +590,7 @@ theorem save_ok {sc : Reg} {rest : List Instr} {s : State} {Q : State → Prop}
 
 /-- Restoring the registers from the save area at `scr` (in `s8`). -/
 theorem restore_ok {s : State} {scr : Addr} (hs8 : s.gpr .s8 = scr) (hal : scr.toNat % 8 = 0)
-    (hin : ∀ d, 512 ≤ d → d + 8 ≤ 560 → InRegions (s.rd ++ s.wr) (scr + BitVec.ofNat 64 d) 8)
+    (hin : ∀ d, 280 ≤ d → d + 8 ≤ 328 → InRegions (s.rd ++ s.wr) (scr + BitVec.ofNat 64 d) 8)
     (g : Reg → BitVec 64) (hsv : Saved scr g s.mem) {Q : State → Prop}
     (k : ∀ s', (∀ p ∈ saved, s'.gpr p.1 = g p.1) →
       (∀ r, r ∉ saved.map Prod.fst → s'.gpr r = s.gpr r) →
@@ -729,7 +731,7 @@ abbrev scr : Addr := s₀.gpr .a4
 abbrev sb : Addr := rnd (scr s₀)
 abbrev stR (w : Nat) : Region := ⟨st s₀, bufOff w + blockBytes w⟩
 abbrev dR : Region := ⟨dp s₀, len s₀⟩
-abbrev scR : Region := ⟨scr s₀, 576⟩
+abbrev scR : Region := ⟨scr s₀, 336⟩
 /-- The first `c` bytes of data. -/
 abbrev D (c : Nat) : List Byte := bytesAt s₀.mem (dp s₀) c
 
@@ -742,7 +744,7 @@ structure Pre (w : Nat) (s₀ : State) : Prop where
   d_st : (dR s₀).Disjoint (stR s₀ w)
   d_scr : (dR s₀).Disjoint (scR s₀)
 
-theorem pre_of {s₀ : State} (h : (updateRISCV64 P).pre s₀) : Pre w s₀ := by
+theorem pre_of {s₀ : State} (h : (updateRISCV64 P 336).pre s₀) : Pre w s₀ := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
   exact ⟨h1, h2, h3, h4, h5⟩
 
@@ -750,18 +752,18 @@ theorem len_lt (s₀ : State) : len s₀ < 2 ^ 64 := (s₀.gpr .a3).isLt
 theorem cnt_lt (s₀ : State) : cnt s₀ < 2 ^ 64 := (s₀.gpr .a1).isLt
 
 /-- A range of the rounded scratch space within the scratch space. -/
-theorem sb_sub (s₀ : State) {d n : Nat} (h : d + n ≤ 568) :
+theorem sb_sub (s₀ : State) {d n : Nat} (h : d + n ≤ 328) :
     Region.Sub ⟨sb s₀ + BitVec.ofNat 64 d, n⟩ (scR s₀) := by
   rw [show sb s₀ + BitVec.ofNat 64 d = scr s₀ + BitVec.ofNat 64 (pad (scr s₀) + d) by
     rw [BitVec.ofNat_add, BitVec.add_assoc]]
   have := pad_lt (scr s₀)
   exact Offset.sub_base _ (by omega_using [h, this])
 
-theorem sb_sub0 (s₀ : State) {n : Nat} (h : n ≤ 568) : Region.Sub ⟨sb s₀, n⟩ (scR s₀) := by
+theorem sb_sub0 (s₀ : State) {n : Nat} (h : n ≤ 328) : Region.Sub ⟨sb s₀, n⟩ (scR s₀) := by
   have := sb_sub s₀ (d := 0) (n := n) (by omega_using [h])
   simpa using this
 
-theorem sb_contains (s₀ : State) {d n : Nat} (h : d + n ≤ 568) :
+theorem sb_contains (s₀ : State) {d n : Nat} (h : d + n ≤ 328) :
     (scR s₀).Contains (sb s₀ + BitVec.ofNat 64 d) n := by
   rw [show sb s₀ + BitVec.ofNat 64 d = scr s₀ + BitVec.ofNat 64 (pad (scr s₀) + d) by
     rw [BitVec.ofNat_add, BitVec.add_assoc]]
@@ -834,7 +836,7 @@ theorem Common.data {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State} (h : 
 /-- Writes to the state and the compression function's scratch space keep the
 saved registers. -/
 theorem saved_frame {s₀ : State} (hp : Pre w s₀) {m m' : Mem} (h : Saved (sb s₀) s₀.gpr m)
-    (hf : Frame [stR s₀ w, ⟨sb s₀, 512⟩] m m') : Saved (sb s₀) s₀.gpr m' :=
+    (hf : Frame [stR s₀ w, ⟨sb s₀, 280⟩] m m') : Saved (sb s₀) s₀.gpr m' :=
   Spill.Saved.frame h hf fun p hp' r' hr' => by
     obtain hoff := saved_off p hp'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -978,7 +980,7 @@ theorem callOk (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State
     {src : Addr} {n : Nat} (hsrc : Src w s₀ src n) : CallOk (w := w) s (st s₀) (sb s₀) src n := by
   obtain hl := hP.len; have := len_lt s₀
   obtain eN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_using [])
-  obtain eso : Region.Sub ⟨sb s₀, 512⟩ (scR s₀) := sb_sub0 s₀ (by decide)
+  obtain eso : Region.Sub ⟨sb s₀, 280⟩ (scR s₀) := sb_sub0 s₀ (by decide)
   obtain eSrc : Region.Sub ⟨src, n⟩ (stR s₀ w) ∨ Region.Sub ⟨src, n⟩ (dR s₀) := by
     rcases hsrc with ⟨h', rfl⟩ | ⟨c₀, h', hc₀⟩
     · exact .inl (h' ▸ Offset.sub_base _ (by omega_using []))
@@ -1014,14 +1016,14 @@ theorem commonRegs_preserved : ∀ r ∈ commonRegs, r ∈ preserved := by decid
 theorem Common.after_call (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} {s s' : State}
     (h : Common w s₀ c s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp)
     (hcs : ∀ r ∈ preserved, s'.gpr r = s.gpr r)
-    (hf : Frame [⟨st s₀, bufOff w⟩, ⟨sb s₀, 512⟩] s.mem s'.mem) :
+    (hf : Frame [⟨st s₀, bufOff w⟩, ⟨sb s₀, 280⟩] s.mem s'.mem) :
     Common w s₀ c s' := by
   have hl := hP.len
-  obtain hf' : Frame [stR s₀ w, ⟨sb s₀, 512⟩] s.mem s'.mem := hf.sub fun r hr => by
+  obtain hf' : Frame [stR s₀ w, ⟨sb s₀, 280⟩] s.mem s'.mem := hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨stR s₀ w, by simp, Region.sub_prefix (by omega_using [])⟩
-    · exact ⟨⟨sb s₀, 512⟩, by simp, fun _ h => h⟩
+    · exact ⟨⟨sb s₀, 280⟩, by simp, fun _ h => h⟩
   obtain hg : ∀ r ∈ commonRegs, s'.gpr r = s.gpr r := fun r hr =>
     hcs r (commonRegs_preserved r hr)
   refine ⟨h.c_le, hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp, by rw [hg _ (by simp)]; exact h.s7,
@@ -1397,7 +1399,7 @@ theorem epilogue_ok {s₀ : State} (hp : Pre w s₀) {s : State} (hI : Done P s�
   refine restore_ok (scr := sb s₀) hI.1.s8 (align_al _)
     (fun d hd₁ hd₂ => ⟨scR s₀, by simp [hI.1.rd, hI.1.wr, hp.wr], sb_contains s₀ (by omega_using [hd₂])⟩)
     s₀.gpr hI.1.saved fun s' hs ho hmem _ _ hsp => ⟨⟨preserved_of hs fun r hr => ?_,
-      by rw [hsp, hI.1.sp], hs (.ra, 512) (by decide)⟩, fun h0 d hr hc hl => ?_⟩
+      by rw [hsp, hI.1.sp], hs (.ra, 280) (by decide)⟩, fun h0 d hr hc hl => ?_⟩
   · rw [ho r (by revert r; decide), hI.1.keep r hr]
   · rw [hmem]; exact hI.2 h0 d ⟨hr, hc, hl⟩
 
@@ -1427,11 +1429,37 @@ theorem noFrames_updateMain (hf : CalleeOk P (compress P)) (sc : Reg) :
   simp only [updateMain, head, rest, fill, compressBuf, direct, tail, Impl.Blake2.RISCV64.Stream.compressWith,
     copyLoop, Impl.Blake2.RISCV64.Stream.bufLen, Code.noFrames, hf.noFrames, Bool.and_self]
 
-/-- `update_scratch`. -/
+/-- `update_scratch`, with the 336 bytes of scratch it uses. -/
+theorem correctN (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
+    (hpre : (updateRISCV64 P 336).pre s₀) :
+    WP isa (updateScratch P) s₀ fun s' => abiPreserved s₀ s' ∧ (updateRISCV64 P 336).post s₀ s' :=
+  correctMain hP hf (pre_of hpre)
+
+/-- `update_scratch`, with 576 bytes of scratch, for Argon2's calls: the code
+runs as it does with the first 336 of them (`WP.narrow`). -/
 theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
     (hpre : (updateRISCV64 P).pre s₀) :
-    WP isa (updateScratch P) s₀ fun s' => abiPreserved s₀ s' ∧ (updateRISCV64 P).post s₀ s' :=
-  correctMain hP hf (pre_of hpre)
+    WP isa (updateScratch P) s₀ fun s' => abiPreserved s₀ s' ∧ (updateRISCV64 P).post s₀ s' := by
+  obtain ⟨hrd, hwr, hss, hds, hdc⟩ := hpre
+  obtain hsub : Region.Sub (scR s₀) ⟨scr s₀, 576⟩ := Region.sub_prefix (by decide)
+  obtain hpσ : Pre w (s₀.withRegions [dR s₀] [stR s₀ w, scR s₀]) :=
+    ⟨rfl, rfl, hss.sub_right hsub, hds, hdc.sub_right hsub⟩
+  refine WP.narrow (correctMain hP hf hpσ) ?_ ?_ (fun _ _ _ _ _ h => h) (noFrames_updateMain hf .a4)
+  · rw [hrd, hwr]
+    apply Covers.of_sub
+    intro r hr
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨dR s₀, by simp, 0, by simp, by simp⟩
+    · exact ⟨stR s₀ w, by simp, 0, by simp, by simp⟩
+    · exact ⟨⟨scr s₀, 576⟩, by simp, 0, by simp, by simp⟩
+  · rw [hwr]
+    apply Covers.of_sub
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨stR s₀ w, by simp, 0, by simp, by simp⟩
+    · exact ⟨⟨scr s₀, 576⟩, by simp, 0, by simp, by simp⟩
 
 /-- `update`: `update_scratch`, with its scratch space in a frame. -/
 theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
@@ -1440,8 +1468,8 @@ theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   obtain ⟨hrd, hwr, hds, -, hsp, hks, hkd⟩ := hpre
   refine WP.alloc (by decide) hsp ?_
   refine WP.seq (Wp.wp_addSp (imm := 0) (by decide) fun s₁ u₁ => WP.block_nil ?_)
-  let F : Region := ⟨s₀.sp - BitVec.ofNat 64 576, 576⟩
-  obtain ha4 : s₁.gpr .a4 = s₀.sp - BitVec.ofNat 64 576 := by
+  let F : Region := ⟨s₀.sp - BitVec.ofNat 64 336, 336⟩
+  obtain ha4 : s₁.gpr .a4 = s₀.sp - BitVec.ofNat 64 336 := by
     rw [u₁.gpr]; simp [allocd, frameBytes]
   obtain g₁ : ∀ r, r ≠ .a4 → s₁.gpr r = s₀.gpr r := fun r hr => u₁.other r hr
   have hrd₁ : s₁.rd = s₀.rd := u₁.rd
@@ -1538,7 +1566,7 @@ abbrev scr : Addr := s₀.gpr .a3
 abbrev sb : Addr := rnd (scr s₀)
 abbrev stR (w : Nat) : Region := ⟨st s₀, bufOff w + blockBytes w⟩
 abbrev outR (w : Nat) : Region := ⟨op s₀, bufOff w⟩
-abbrev scR : Region := ⟨scr s₀, 576⟩
+abbrev scR : Region := ⟨scr s₀, 336⟩
 
 end
 
@@ -1549,23 +1577,23 @@ structure Pre (w : Nat) (s₀ : State) : Prop where
   st_scr : (stR s₀ w).Disjoint (scR s₀)
   out_scr : (outR s₀ w).Disjoint (scR s₀)
 
-theorem pre_of {w : Nat} {P : Params w} {s₀ : State} (h : (finalizeRISCV64 P).pre s₀) : Pre w s₀ := by
+theorem pre_of {w : Nat} {P : Params w} {s₀ : State} (h : (finalizeRISCV64 P 336).pre s₀) : Pre w s₀ := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
   exact ⟨h1, h2, h3, h4, h5⟩
 
 /-- A range of the rounded scratch space within the scratch space. -/
-theorem sb_sub (s₀ : State) {d n : Nat} (h : d + n ≤ 568) :
+theorem sb_sub (s₀ : State) {d n : Nat} (h : d + n ≤ 328) :
     Region.Sub ⟨sb s₀ + BitVec.ofNat 64 d, n⟩ (scR s₀) := by
   rw [show sb s₀ + BitVec.ofNat 64 d = scr s₀ + BitVec.ofNat 64 (VG.RISCV64.Align.pad (scr s₀) + d) by
     rw [BitVec.ofNat_add, BitVec.add_assoc]]
   have := pad_lt (scr s₀)
   exact Offset.sub_base _ (by omega_using [h, this])
 
-theorem sb_sub0 (s₀ : State) {n : Nat} (h : n ≤ 568) : Region.Sub ⟨sb s₀, n⟩ (scR s₀) := by
+theorem sb_sub0 (s₀ : State) {n : Nat} (h : n ≤ 328) : Region.Sub ⟨sb s₀, n⟩ (scR s₀) := by
   have := sb_sub s₀ (d := 0) (n := n) (by omega_using [h])
   simpa using this
 
-theorem sb_contains (s₀ : State) {d n : Nat} (h : d + n ≤ 568) :
+theorem sb_contains (s₀ : State) {d n : Nat} (h : d + n ≤ 328) :
     (scR s₀).Contains (sb s₀ + BitVec.ofNat 64 d) n := by
   rw [show sb s₀ + BitVec.ofNat 64 d = scr s₀ + BitVec.ofNat 64 (VG.RISCV64.Align.pad (scr s₀) + d) by
     rw [BitVec.ofNat_add, BitVec.add_assoc]]
@@ -1574,7 +1602,7 @@ theorem sb_contains (s₀ : State) {d n : Nat} (h : d + n ≤ 568) :
 
 /-- The saved registers are outside everything written after the saves. -/
 theorem Saved.frame {w : Nat} {s₀ : State} (hp : Pre w s₀) {g : Reg → BitVec 64} {m m' : Mem}
-    (h : Saved (sb s₀) g m) (hf : Frame [stR s₀ w, outR s₀ w, ⟨sb s₀, 512⟩] m m') :
+    (h : Saved (sb s₀) g m) (hf : Frame [stR s₀ w, outR s₀ w, ⟨sb s₀, 280⟩] m m') :
     Saved (sb s₀) g m' :=
   Spill.Saved.frame h hf fun p hp' r hr => by
     obtain hoff := saved_off p hp'
@@ -1763,7 +1791,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
   have hN := hP.N64
   have hbb := hP.bb
   obtain hstN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_using [])
-  obtain hsave_st : ∀ r ∈ [(⟨sb s₀ + BitVec.ofNat 64 512, 48⟩ : Region)], (stR s₀ w).Disjoint r := by
+  obtain hsave_st : ∀ r ∈ [(⟨sb s₀ + BitVec.ofNat 64 280, 48⟩ : Region)], (stR s₀ w).Disjoint r := by
     simpa using hp.st_scr.sub_right (sb_sub s₀ (by decide))
   unfold finalizeMain
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
@@ -1791,7 +1819,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
   -- The call.
   obtain hbuf : Region.Sub ⟨st s₀ + BitVec.ofNat 64 (bufOff w), blockBytes w⟩ (stR s₀ w) :=
     Offset.sub_base _ (by omega_using [])
-  obtain hscr : Region.Sub ⟨sb s₀, 512⟩ (scR s₀) := sb_sub0 s₀ (by decide)
+  obtain hscr : Region.Sub ⟨sb s₀, 280⟩ (scR s₀) := sb_sub0 s₀ (by decide)
   obtain hcall : CallOk (w := w) s₃ (st s₀) (sb s₀) (s₃.gpr .s7 + BitVec.ofNat 64 (bufOff w))
       (blockBytes w * (BitVec.ofNat 64 1).toNat) := by
     rw [show (BitVec.ofNat 64 1).toNat = 1 from rfl, Nat.mul_one, hx19₃]
@@ -1833,7 +1861,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
     exact ⟨outR s₀ w, by simp, h⟩
   · rw [hx19₄, hx21₄]; exact hp.st_out.sub_left hstN
   -- What the call and the stores wrote.
-  obtain F₁ : Frame [stR s₀ w, outR s₀ w, ⟨sb s₀, 512⟩] s₁.mem s₅.mem := by
+  obtain F₁ : Frame [stR s₀ w, outR s₀ w, ⟨sb s₀, 280⟩] s₁.mem s₅.mem := by
     obtain f₃ : Frame [stR s₀ w] s₁.mem s₃.mem := by
       rw [hm₃]; exact writeBytes_frame _ _ _ (Offset.contains_base _ (by simp; omega_using [hr]) (by omega_using [hl, hr]))
     obtain f₅ : Frame [outR s₀ w] s₄.mem s₅.mem := by
@@ -1849,7 +1877,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
     (fun d hd₁ hd₂ => ⟨scR s₀, by simp [rd₅, wr₅, rd₄, wr₄, hrd₃, hwr₃, hp.wr],
       sb_contains s₀ (by omega_using [hd₂])⟩) s₀.gpr hsv
     fun s₆ hs ho m₆ _ _ sp₆ => ⟨⟨preserved_of hs fun r hr => ?_, by rw [sp₆, sp₅, sp₄, hsp₃],
-      hs (.ra, 512) (by decide)⟩, ?_⟩
+      hs (.ra, 280) (by decide)⟩, ?_⟩
   · rw [ho r (by revert r; decide), g₅ r (notU hr .t1), cs r (by revert r; decide), h₁.keep r hr]
   · intro h0 d hR hlt hcnt
     obtain hnd : n = d.length := by rw [← hn, hcnt, toNat_ofNat_lt hlt]
@@ -1868,11 +1896,38 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
       congr 1
       exact bytesAt_congr fun i hi => by rw [Offset.add_ofNat_add_ofNat, hkeep _ (by omega_using [hr, hi])]
 
-/-- `finalize_scratch`. -/
+/-- `finalize_scratch`, with the 336 bytes of scratch it uses. -/
+theorem correctN (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
+    (hpre : (finalizeRISCV64 P 336).pre s₀) :
+    WP isa (finalizeScratch P) s₀ fun s' => abiPreserved s₀ s' ∧ (finalizeRISCV64 P 336).post s₀ s' :=
+  correctMain hP hf (pre_of hpre)
+
+/-- `finalize_scratch`, with 576 bytes of scratch, for Argon2's calls: the
+code runs as it does with the first 336 of them (`WP.narrow`). -/
 theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
     (hpre : (finalizeRISCV64 P).pre s₀) :
-    WP isa (finalizeScratch P) s₀ fun s' => abiPreserved s₀ s' ∧ (finalizeRISCV64 P).post s₀ s' :=
-  correctMain hP hf (pre_of hpre)
+    WP isa (finalizeScratch P) s₀ fun s' => abiPreserved s₀ s' ∧ (finalizeRISCV64 P).post s₀ s' := by
+  obtain ⟨hrd, hwr, hso, hss, hos⟩ := hpre
+  obtain hsub : Region.Sub (scR s₀) ⟨scr s₀, 576⟩ := Region.sub_prefix (by decide)
+  obtain hpσ : Pre w (s₀.withRegions [] [stR s₀ w, outR s₀ w, scR s₀]) :=
+    ⟨rfl, rfl, hso, hss.sub_right hsub, hos.sub_right hsub⟩
+  refine WP.narrow (correctMain hP hf hpσ) ?_ ?_ (fun _ _ _ _ _ h => h) (noFrames_finalizeMain hf .a3)
+  · rw [hrd, hwr]
+    apply Covers.of_sub
+    intro r hr
+    simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨stR s₀ w, by simp, 0, by simp, by simp⟩
+    · exact ⟨outR s₀ w, by simp, 0, by simp, by simp⟩
+    · exact ⟨⟨scr s₀, 576⟩, by simp, 0, by simp, by simp⟩
+  · rw [hwr]
+    apply Covers.of_sub
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨stR s₀ w, by simp, 0, by simp, by simp⟩
+    · exact ⟨outR s₀ w, by simp, 0, by simp, by simp⟩
+    · exact ⟨⟨scr s₀, 576⟩, by simp, 0, by simp, by simp⟩
 
 /-- `finalize`: `finalize_scratch`, with its scratch space in a frame. -/
 theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
@@ -1881,8 +1936,8 @@ theorem correctFramed (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
   obtain ⟨hrd, hwr, hso, -, hsp, hks, hko⟩ := hpre
   refine WP.alloc (by decide) hsp ?_
   refine WP.seq (Wp.wp_addSp (imm := 0) (by decide) fun s₁ u₁ => WP.block_nil ?_)
-  let F : Region := ⟨s₀.sp - BitVec.ofNat 64 576, 576⟩
-  obtain ha3 : s₁.gpr .a3 = s₀.sp - BitVec.ofNat 64 576 := by
+  let F : Region := ⟨s₀.sp - BitVec.ofNat 64 336, 336⟩
+  obtain ha3 : s₁.gpr .a3 = s₀.sp - BitVec.ofNat 64 336 := by
     rw [u₁.gpr]; simp [allocd, frameBytes]
   obtain g₁ : ∀ r, r ≠ .a3 → s₁.gpr r = s₀.gpr r := fun r hr => u₁.other r hr
   have hrd₁ : s₁.rd = s₀.rd := u₁.rd

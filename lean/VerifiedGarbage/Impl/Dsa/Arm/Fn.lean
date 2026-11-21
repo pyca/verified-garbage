@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Dsa.Arm.Generation
 public import VerifiedGarbage.Impl.Dsa.Arm.PrevalidatedSign
 public import VerifiedGarbage.Impl.Dsa.Arm.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.Dsa.Arm.Pow
 public import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
 
@@ -14,12 +14,12 @@ public import VerifiedGarbage.Impl.Dsa.Arm.ProbablePrime
 # DSA's functions on ARMv7, as emitted
 
 Each function is its code, with either multiplication (`umaal`), then its
-cleanup (`Impl/Residue/Arm.lean`): the registers a callee may change set to
+cleanup (`Impl/Scrub/Arm.lean`): the registers a callee may change set to
 constants, but the 32 bits of its result. The validations, the verification,
 the key derivation and the initialization of the parameter search have no
 frames (`scrub`); signing and key generation, which call the entropy function
 from a frame, first zero the 144 bytes of stack their contracts reserve
-(`scrubF`), and the parameter search the 304 of its own.
+(`scrubAll`), and the parameter search the 304 of its own.
 
 The parameter search calls the Miller–Rabin round of a variant (its
 `suffix` and `round` code) through the probable-prime test: `geo` is its
@@ -30,7 +30,7 @@ geometry for each modulus width.
 
 namespace VG.Impl.Dsa.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_dsa_validate_private_key`. -/
 def validatePrivateKey (umaal : Bool) : Prog isa := scrub 32 (PrevalidatedSign.validate umaal)
@@ -50,13 +50,13 @@ def parameterInit : Prog isa := scrub 32 Generation.init
 /-- `vg_dsa_random_sign_prevalidated`, calling its signer as the internal
 function `PrevalidatedSign.signerName umaal`. -/
 def randomSignPrevalidated (umaal : Bool) : Prog isa :=
-  scrubF 32 144 (RandomSign.code (PrevalidatedSign.signerName umaal) (PrevalidatedSign.sign umaal))
+  scrubAll 32 144 (RandomSign.code (PrevalidatedSign.signerName umaal) (PrevalidatedSign.sign umaal))
 
 /-- `vg_dsa_generate_key`, calling the check of the parameters and the
 derivation as the internal functions `Generate.checkName umaal` and
 `Generate.deriveName umaal`. -/
 def generateKey (umaal : Bool) : Prog isa :=
-  scrubF 32 144 (GenerateKey.code (Generate.checkName umaal) (Generate.deriveName umaal)
+  scrubAll 32 144 (GenerateKey.code (Generate.checkName umaal) (Generate.deriveName umaal)
     (Generate.checkParameters umaal) (Generate.deriveChecked umaal))
 
 /-- The geometry of the parameter search for `(pLen, qLen)`, hashing with
@@ -91,6 +91,6 @@ def search (umaal : Bool) (suffix : String) (round : Prog isa) : Prog isa :=
 /-- `vg_dsa_parameter_search`, its working space in a frame that is then
 zeroed. -/
 def parameterSearch (umaal : Bool) (suffix : String) (round : Prog isa) : Prog isa :=
-  scrubF 32 304 (search umaal suffix round)
+  scrubAll 32 304 (search umaal suffix round)
 
 end VG.Impl.Dsa.Arm.Fn

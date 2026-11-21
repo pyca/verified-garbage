@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.X448.Contract
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.X448.X86.Base
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.X448.X86.Exchange
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Spec.X448.Contract
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.X448.X86.Base
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.X448.X86.Exchange
@@ -33,7 +33,7 @@ functions. Each as emitted (`Impl.X448.X86.Fn`) is followed by the zeroing of
 the stack its contract reserves below `esp`, which its frames and calls use,
 then by `Impl.Scrub.X86.tail`, which clears the registers a callee may change
 but the result's bits, the flags and `xmm0`–`xmm7`, and returns without
-secret residue (`X86.Scrub.verifiedScrubbedF`).
+secret residue (`X86.Scrub.verifiedScrubbedAll`).
 Their postconditions read the memory on return only within `out`
 (`X86.Scrub.PostOut`, by `postOut_of_local`). What the scrub needs of the
 code (its stack use within those bytes, no indirect call, no MMX
@@ -94,7 +94,7 @@ theorem exchangeOut (stack : Nat) :
 /-- `vg_x448_exchange`. -/
 theorem exchange_scrubbed :
     VerifiedScrubbed target Impl.X448.X86.Fn.exchange (Spec.X448.exchangeContract X86.abi 40) 32 :=
-  verifiedScrubbedF (api := Spec.X448.exchangeApi)
+  verifiedScrubbedAll (api := Spec.X448.exchangeApi)
     { code := Impl.Xdh.X86.exchange "vg_x448" Impl.X448.X86.x448 56
       verified := Proof.X448.X86.Exchange.exchange_verified }
     (exchangeOut _)
@@ -102,7 +102,7 @@ theorem exchange_scrubbed :
 /-- `vg_x448_base`. -/
 theorem base_scrubbed :
     VerifiedScrubbed target Impl.X448.X86.Fn.base (Spec.X448.x448BaseContract X86.abi 20) 0 :=
-  verifiedScrubbedF (api := Spec.X448.x448BaseApi)
+  verifiedScrubbedAll (api := Spec.X448.x448BaseApi)
     { code := Impl.X448.X86.x448Base
       verified := Proof.X448.X86.x448Base_verified Proof.Ed448.baseCombU_ok }
     (baseOut [] _)

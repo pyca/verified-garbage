@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # X25519 of the base point on ARMv7
@@ -53,7 +53,7 @@ end VG.Impl.X25519.Arm.Base
 
 namespace VG.Impl.X25519.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_x25519_base`, with either product of the field (`umaal`):
 `x25519Base umaal`, then the registers a callee may change

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Md5
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Sha1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Sha224
@@ -18,16 +18,16 @@ import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # PBKDF2 on PPC64LE, without secret residue
 
-Each hash's PBKDF2, followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`PPC64LE.Scrub.scrubOf`), which clears the volatile registers and the
-stack its frames used: `pbkdf2` keeps its working space in a frame it does
+Each hash's PBKDF2 as emitted (`Impl/Hmac/Stream/PPC64LE/Fn.lean`), followed
+by its cleanup (`Impl.Scrub.PPC64LE.scrubAll`, `PPC64LE.Scrub.verifiedScrubbedAll`),
+which clears the volatile registers and the stack its frames used: `pbkdf2` keeps its working space in a frame it does
 not wipe itself (`withStackScratch`), and calls HMAC's `init` and
 `finalize`, PBKDF2's `iterate` and the hash's functions, which push frames
 of their own. Its postcondition reads the memory on return only within
 `out`, as on RISC-V (`Proof/Pbkdf2/Whole/RISCV64/Scrub.lean`).
 
-`scrubOf`'s side condition (`scrubSide`) is proved at each registration, by
-the kernel's evaluation of it (`lit_decide`) when this module is built.
+What the cleanup needs of the code (`scrubSide`) is proved for each, by the
+kernel's evaluation of it (`lit_decide`) when this module is built.
 -/
 
 @[expose] public section
@@ -35,6 +35,9 @@ the kernel's evaluation of it (`lit_decide`) when this module is built.
 namespace VG.Proof.Pbkdf2.Whole.PPC64LE.Scrub
 
 open VG.PPC64LE VG.PPC64LE.Scrub
+open VG.Impl.Hmac.Stream.PPC64LE (hmacFrame)
+open VG.Impl.Pbkdf2.Whole.PPC64LE (md5F sha1F sha224F sha256F sha384F sha512F sha512_224F sha512_256F
+  pbkFrame)
 
 /-- PBKDF2's postcondition reads the memory on return only within `out`, the
 derived key's bytes. -/
@@ -69,31 +72,40 @@ theorem pbkdf2Out (I : Spec.Hmac.Instance) (stack : Nat) :
       rw [BitVec.toNat_setWidth] at hi; have := Nat.mod_le outLen.toNat (2 ^ 64); omega_using [hi])]
     exact h
 
-/-- `Spec.Hmac.md5I.pbkdf2Api`. -/
-def md5Pbkdf2Reg : Registration Spec.Hmac.md5I.pbkdf2Api PPC64LE.target :=
-  scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.md5I) .r10
-        Proof.Pbkdf2.Whole.PPC64LE.Md5.F.pbkdf2
+/-- `vg_pbkdf2_hmac_md5` as emitted (`Impl.Pbkdf2.Whole.PPC64LE.Fn.md5`) meets its
+contract in constant time and returns without secret residue. -/
+theorem md5_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Pbkdf2.Whole.PPC64LE.Fn.md5
+      (Spec.Hmac.md5I.pbkdf2Contract PPC64LE.abi
+        (hmacFrame Spec.Hmac.md5I + 144 + pbkFrame Spec.Hmac.md5I)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.md5I.pbkdf2Api) {
+      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.md5I) .r10 md5F.pbkdf2
       verified := Proof.Pbkdf2.Whole.PPC64LE.Md5.pbkdf2 }
     1616 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (pbkdf2Out Spec.Hmac.md5I _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha1I.pbkdf2Api`. -/
-def sha1Pbkdf2Reg : Registration Spec.Hmac.sha1I.pbkdf2Api PPC64LE.target :=
-  scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha1I) .r10
-        Proof.Pbkdf2.Whole.PPC64LE.Sha1.F.pbkdf2
+/-- `vg_pbkdf2_hmac_sha1` as emitted (`Impl.Pbkdf2.Whole.PPC64LE.Fn.sha1`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha1_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Pbkdf2.Whole.PPC64LE.Fn.sha1
+      (Spec.Hmac.sha1I.pbkdf2Contract PPC64LE.abi
+        (hmacFrame Spec.Hmac.sha1I + 144 + pbkFrame Spec.Hmac.sha1I)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha1I.pbkdf2Api) {
+      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha1I) .r10 sha1F.pbkdf2
       verified := Proof.Pbkdf2.Whole.PPC64LE.Sha1.pbkdf2 }
     1776 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (pbkdf2Out Spec.Hmac.sha1I _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha224I.pbkdf2Api`. -/
-def sha224Pbkdf2Reg : Registration Spec.Hmac.sha224I.pbkdf2Api PPC64LE.target :=
-  scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha224I) .r10
-        Proof.Pbkdf2.Whole.PPC64LE.Sha224.F.pbkdf2
+/-- `vg_pbkdf2_hmac_sha224` as emitted (`Impl.Pbkdf2.Whole.PPC64LE.Fn.sha224`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha224_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Pbkdf2.Whole.PPC64LE.Fn.sha224
+      (Spec.Hmac.sha224I.pbkdf2Contract PPC64LE.abi
+        (hmacFrame Spec.Hmac.sha224I + 144 + pbkFrame Spec.Hmac.sha224I)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha224I.pbkdf2Api) {
+      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha224I) .r10 sha224F.pbkdf2
       verified := Proof.Pbkdf2.Whole.PPC64LE.Sha224.pbkdf2 }
     2640 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
@@ -101,11 +113,14 @@ def sha224Pbkdf2Reg : Registration Spec.Hmac.sha224I.pbkdf2Api PPC64LE.target :=
     (pbkdf2Out Spec.Hmac.sha224I _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha256I.pbkdf2Api`. -/
-def sha256Pbkdf2Reg : Registration Spec.Hmac.sha256I.pbkdf2Api PPC64LE.target :=
-  scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha256I) .r10
-        Proof.Pbkdf2.Whole.PPC64LE.Sha256.F.pbkdf2
+/-- `vg_pbkdf2_hmac_sha256` as emitted (`Impl.Pbkdf2.Whole.PPC64LE.Fn.sha256`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha256_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Pbkdf2.Whole.PPC64LE.Fn.sha256
+      (Spec.Hmac.sha256I.pbkdf2Contract PPC64LE.abi
+        (hmacFrame Spec.Hmac.sha256I + 144 + pbkFrame Spec.Hmac.sha256I)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha256I.pbkdf2Api) {
+      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha256I) .r10 sha256F.pbkdf2
       verified := Proof.Pbkdf2.Whole.PPC64LE.Sha256.pbkdf2 }
     2640 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
@@ -113,11 +128,14 @@ def sha256Pbkdf2Reg : Registration Spec.Hmac.sha256I.pbkdf2Api PPC64LE.target :=
     (pbkdf2Out Spec.Hmac.sha256I _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha384I.pbkdf2Api`. -/
-def sha384Pbkdf2Reg : Registration Spec.Hmac.sha384I.pbkdf2Api PPC64LE.target :=
-  scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha384I) .r10
-        Proof.Pbkdf2.Whole.PPC64LE.Sha384.F.pbkdf2
+/-- `vg_pbkdf2_hmac_sha384` as emitted (`Impl.Pbkdf2.Whole.PPC64LE.Fn.sha384`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha384_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Pbkdf2.Whole.PPC64LE.Fn.sha384
+      (Spec.Hmac.sha384I.pbkdf2Contract PPC64LE.abi
+        (hmacFrame Spec.Hmac.sha384I + 144 + pbkFrame Spec.Hmac.sha384I)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha384I.pbkdf2Api) {
+      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha384I) .r10 sha384F.pbkdf2
       verified := Proof.Pbkdf2.Whole.PPC64LE.Sha384.pbkdf2 }
     5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
@@ -125,11 +143,14 @@ def sha384Pbkdf2Reg : Registration Spec.Hmac.sha384I.pbkdf2Api PPC64LE.target :=
     (pbkdf2Out Spec.Hmac.sha384I _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha512I.pbkdf2Api`. -/
-def sha512Pbkdf2Reg : Registration Spec.Hmac.sha512I.pbkdf2Api PPC64LE.target :=
-  scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha512I) .r10
-        Proof.Pbkdf2.Whole.PPC64LE.Sha512.F.pbkdf2
+/-- `vg_pbkdf2_hmac_sha512` as emitted (`Impl.Pbkdf2.Whole.PPC64LE.Fn.sha512`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha512_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Pbkdf2.Whole.PPC64LE.Fn.sha512
+      (Spec.Hmac.sha512I.pbkdf2Contract PPC64LE.abi
+        (hmacFrame Spec.Hmac.sha512I + 144 + pbkFrame Spec.Hmac.sha512I)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha512I.pbkdf2Api) {
+      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha512I) .r10 sha512F.pbkdf2
       verified := Proof.Pbkdf2.Whole.PPC64LE.Sha512.pbkdf2 }
     5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
@@ -137,11 +158,14 @@ def sha512Pbkdf2Reg : Registration Spec.Hmac.sha512I.pbkdf2Api PPC64LE.target :=
     (pbkdf2Out Spec.Hmac.sha512I _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha512_224I.pbkdf2Api`. -/
-def sha512_224Pbkdf2Reg : Registration Spec.Hmac.sha512_224I.pbkdf2Api PPC64LE.target :=
-  scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha512_224I) .r10
-        Proof.Pbkdf2.Whole.PPC64LE.Sha512_224.F.pbkdf2
+/-- `vg_pbkdf2_hmac_sha512_224` as emitted (`Impl.Pbkdf2.Whole.PPC64LE.Fn.sha512_224`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha512_224_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Pbkdf2.Whole.PPC64LE.Fn.sha512_224
+      (Spec.Hmac.sha512_224I.pbkdf2Contract PPC64LE.abi
+        (hmacFrame Spec.Hmac.sha512_224I + 144 + pbkFrame Spec.Hmac.sha512_224I)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_224I.pbkdf2Api) {
+      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha512_224I) .r10 sha512_224F.pbkdf2
       verified := Proof.Pbkdf2.Whole.PPC64LE.Sha512_224.pbkdf2 }
     5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
@@ -149,11 +173,14 @@ def sha512_224Pbkdf2Reg : Registration Spec.Hmac.sha512_224I.pbkdf2Api PPC64LE.t
     (pbkdf2Out Spec.Hmac.sha512_224I _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha512_256I.pbkdf2Api`. -/
-def sha512_256Pbkdf2Reg : Registration Spec.Hmac.sha512_256I.pbkdf2Api PPC64LE.target :=
-  scrubOf {
-      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha512_256I) .r10
-        Proof.Pbkdf2.Whole.PPC64LE.Sha512_256.F.pbkdf2
+/-- `vg_pbkdf2_hmac_sha512_256` as emitted (`Impl.Pbkdf2.Whole.PPC64LE.Fn.sha512_256`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha512_256_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Pbkdf2.Whole.PPC64LE.Fn.sha512_256
+      (Spec.Hmac.sha512_256I.pbkdf2Contract PPC64LE.abi
+        (hmacFrame Spec.Hmac.sha512_256I + 144 + pbkFrame Spec.Hmac.sha512_256I)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_256I.pbkdf2Api) {
+      code := Impl.StackScratch.PPC64LE.withStackScratch (pbkFrame Spec.Hmac.sha512_256I) .r10 sha512_256F.pbkdf2
       verified := Proof.Pbkdf2.Whole.PPC64LE.Sha512_256.pbkdf2 }
     5440 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,

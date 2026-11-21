@@ -23,7 +23,7 @@ on return only within their buffers (`Arm.Scrub.PostOut`, as on PPC64LE,
 `Proof/AesCcm/PPC64LE/Scrub.lean`). Each is emitted followed by a wipe of
 that stack and by instructions that set the registers a callee may change,
 but the result, and the flags to constants (`Impl.AesCcm.Arm.Fn`), and `Fn` below states
-that it returns without secret residue (`Arm.Scrub.verifiedScrubbedF`), which
+that it returns without secret residue (`Arm.Scrub.verifiedScrubbedAll`), which
 is what its registration binds.
 -/
 
@@ -93,14 +93,14 @@ open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Aes.ScrubLocal VG.Impl.Ae
 
 /-- `vg_aes_ccm_seal`. -/
 theorem «seal» : VerifiedScrubbed target Impl.AesCcm.Arm.Fn.«seal» (Spec.Ccm.sealContract abi 2608) 0 :=
-  verifiedScrubbedF (api := Spec.Ccm.sealApi)
+  verifiedScrubbedAll (api := Spec.Ccm.sealApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«seal»
       verified := Proof.AesCcm.seal_keyed Proof.AesCcm.Arm.seal_framed }
     (Scrub.sealOut _) (scrubSideF_of Scrub.seal_code Scrub.frameOk_2608 _)
 
 /-- `vg_aes_ccm_open`. -/
 theorem «open» : VerifiedScrubbed target Impl.AesCcm.Arm.Fn.«open» (Spec.Ccm.openContract abi 2608) 32 :=
-  verifiedScrubbedF (api := Spec.Ccm.openApi)
+  verifiedScrubbedAll (api := Spec.Ccm.openApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«open»
       verified := Proof.AesCcm.open_keyed Proof.AesCcm.Arm.open_framed }
     (Scrub.openOut _) (scrubSideF_of Scrub.open_code Scrub.frameOk_2608 _)

@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.X25519.AArch64.Fn
+public meta import VerifiedGarbage.Impl.X25519.AArch64.Fn
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 public meta import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
-public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
-public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
+public meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
 public meta import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
@@ -35,7 +38,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 the window's bytes (`rtaintG`) finds may differ between the two runs on
 return. It clears the registers the ladder leaves secret, the upper half of
 `x0` (`withRet 32`) and the flags, then zeroes that granule
-(`withScrubG 16 [0]`). Its postcondition reads the memory on return only
+(`scrubSel 16 [0]`). Its postcondition reads the memory on return only
 within `out` (`exchangePost_local`).
 -/
 
@@ -43,7 +46,7 @@ within `out` (`exchangePost_local`).
 
 namespace VG.Proof.X25519.AArch64.ExchangeResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-! ## The postcondition reads only `out` -/
 
@@ -72,10 +75,7 @@ theorem exchangeOk : RTaintF.ScrubOk (Spec.X25519.exchangeContract AArch64.abi 1
     rw [bytesAt_of (by simp only [Elem.size]; omega_using []) hb.1]; exact h
 
 /-- `vg_x25519_exchange`, before its granules [0] are zeroed. -/
-abbrev exchangeBase : Prog isa :=
-  withRet 32 (withClears [.x3, .x4, .x5, .x6, .x7, .x8, .x10, .x12, .x13, .x14, .x15, .x16, .x17]
-    [] (some .x3)
-    (Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.AltLadder.x25519 32))
+abbrev exchangeBase : Prog isa := Impl.X25519.AArch64.Fn.exchangeBase
 
 theorem exchangeBase_verified : Verified AArch64.target exchangeBase (Spec.X25519.exchangeContract AArch64.abi 16) :=
   RTaintF.Verified.withRet (Clears.Verified.withClears (Proof.X25519.AArch64.Exchange.exchange_verified) (by decide))
@@ -84,13 +84,14 @@ theorem exchangeScrubOk : RTaintF.ScrubOk (Spec.X25519.exchangeContract AArch64.
   exchangeOk
 
 /-- `vg_x25519_exchange`. -/
-abbrev exchangeCode : Prog isa := withScrubG 16 [0] exchangeBase
+abbrev exchangeCode : Prog isa := Impl.X25519.AArch64.Fn.exchange
 
-theorem exchangeCode_verified : Verified AArch64.target exchangeCode (Spec.X25519.exchangeContract AArch64.abi 16) :=
-  RTaintG.Verified.withScrubG exchangeBase_verified ⟨by decide, by decide, by decide⟩ (by decide) exchangeScrubOk
-
-theorem exchangeCode_noResidue : NoResidue exchangeCode (Spec.X25519.exchangeContract AArch64.abi 16) 32 :=
-  noResidue_withScrubG (P₀ := 0) exchangeBase_verified ⟨by decide, by decide, by decide⟩ exchangeScrubOk.sp
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.X25519.AArch64.ExchangeResidue.exchangeCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.X25519.AArch64.Fn.exchange
+      (Spec.X25519.exchangeContract AArch64.abi 16) 32 :=
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) exchangeBase_verified ⟨by decide, by decide, by decide⟩ (by decide) exchangeScrubOk
     (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.X25519.AArch64.ExchangeResidue

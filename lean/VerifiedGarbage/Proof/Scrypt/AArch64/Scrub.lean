@@ -9,18 +9,18 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # scrypt on AArch64, without secret residue
 
 The postcondition of `vg_scrypt` reads the memory on return only within
-`out` (`ScrubAll.ScrubAllOk`, as x86-64's `scrypt_postOut` in
+`out` (`Scrub.ScrubAllOk`, as x86-64's `scrypt_postOut` in
 `Proof/Scrypt/X86_64/Whole/Verified.lean` proves it): each implementation,
 generic over the SHA-256 implementation it calls, returns with every register
 it may leave secret cleared and its whole stack zeroed
-(`ScrubAll.withScrubAll`).
+(`Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Scrypt.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 theorem scryptOk (stack : Nat) :
     ScrubAllOk (Spec.Scrypt.scryptContract abi stack) stack (Spec.Scrypt.scryptSig.retBits abi.ptrBits) :=

@@ -7,10 +7,10 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 # AES-CCM on AArch64, without secret residue
 
 The postconditions of `vg_aes_ccm_seal` and `vg_aes_ccm_open` read the memory
-on return only within the data and the tag (`ScrubAll.ScrubAllOk`): each
+on return only within the data and the tag (`Scrub.ScrubAllOk`): each
 implementation, generic over the CMAC implementation it calls and its counter
 mode, returns with every register it may leave secret cleared and its whole
-stack zeroed (`ScrubAll.withScrubAll`). Its frame is sized to what its
+stack zeroed (`Impl.Scrub.AArch64.scrubAll`, in the function as emitted). Its frame is sized to what its
 callees need (`Frame.lean`: 416 bytes with the Cryptographic Extension, 2592
 otherwise), so that the zeroing costs little where the callees need no
 working space.
@@ -20,7 +20,7 @@ working space.
 
 namespace VG.Proof.AesCcm.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 /-- The bytes of a buffer on which two memories agree. -/
 theorem bytesAt_of {m₁ m₂ : Mem} {p : Addr} {L : Nat} (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a)

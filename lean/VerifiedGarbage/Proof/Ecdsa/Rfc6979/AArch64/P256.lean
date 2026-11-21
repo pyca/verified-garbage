@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Tables
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothTiming
@@ -93,27 +94,31 @@ theorem p256T_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
     (by rw [Proof.Ecdsa.AArch64.p256_combWords_length]; decide) Proof.Ecdsa.AArch64.satMem_held (by decide) rfl
   exact signT_verified ⟨rfl, by decide, by decide⟩ rfl rfl h.1 hsat
 
-/-! ## What the scrubbed functions clear
+/-! ## The function, as emitted -/
 
-The registers the tails of `vg_ecdsa_p256_sign` and `vg_ecdsa_p256_verify`
-clear, and what `ScrubAll.scrubAllOf` needs of their code
-(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
-works out nothing. -/
+/-- No instruction of `vg_ecdsa_p256_sign_k` writes PSTATE.DIT, and it calls
+nothing indirectly. -/
+theorem p256_core_side :
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
+      Impl.P256.Booth.sign = true := by
+  lit_decide
 
-/-- The registers the tail of `vg_ecdsa_p256_sign` clears: those its code,
-with the HMAC implementations of its table, may write. -/
-def p256SignClear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v0,
-   .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
-   .v27, .v28, .v29, .v30, .v31], []⟩
-
-theorem p256SignSide (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds) (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
-    AArch64.ScrubAll.scrubSide
-      (signCodeT (p256 hL hI hT) Spec.Ecdsa.Rfc6979.Curves.p256.tries Proof.Variants.MdHash.AArch64.variants)
-      stackT
-      (Spec.Ecdsa.Rfc6979.Curves.p256.signSig.retBits
-        ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.p256.signSig
-          [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
-      p256SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
+/-- `vg_ecdsa_p256_sign` as emitted, cleanup included
+(`Impl.Ecdsa.Rfc6979.AArch64.Fn.p256`), with the tables of every hash
+function: it meets its contract in constant time and returns without secret
+residue. What the cleanup needs of the code is evaluated here, once, with
+nothing in the place of `vg_ecdsa_p256_sign_k`, whose own is evaluated
+apart. -/
+theorem p256Sign_scrubbed (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
+    VerifiedScrubbed AArch64.target
+      (Impl.Ecdsa.Rfc6979.AArch64.Fn.p256 Proof.Variants.MdHash.AArch64.hashes)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.AArch64.p256.combConsts
+        Proof.Variants.MdHash.AArch64.variants)
+      32 :=
+  Scrub.sign_scrubbed (R := p256 hL hI hT)
+    (p256T_verified hL hI hT _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
+    rfl p256_core_side
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

@@ -71,8 +71,7 @@ and `vg_aes_cfb128_decrypt_final` (`Impl/AesCfb/AArch64/Final.lean`), for any
 implementation `v` of the block functions (`BlocksImpl`), meet
 `Proof.AesCfb.encryptFinalRoundsContract` (and `decrypt…`), from which the
 shared contracts follow (`Proof.AesCfb.encryptFinal_keyed`). Decryption calls
-the whole-block code its registration emits for `v` (`Caller.decrypt`,
-`decryptCode`).
+the whole-block code of its implementation (`CfbImpl.dec`, `decryptCode`).
 
 The code is proven against `finalAArch64`, with a seventh argument `save`
 (`x6`) for its caller's registers and its return address (`final_implies`:
@@ -118,10 +117,9 @@ open VG.Impl.AesCfb.AArch64 (final finalSaved finalMoves finalSetup finalRestore
 def encryptCode (v : BlocksImpl) : Prog isa := Impl.AesCfb.AArch64.encryptFinal v.enc v.suffix
 
 /-- `vg_aes_cfb128_decrypt_final` for the implementation `v`, calling the
-code of `vg_aes_cfb128_decrypt` of the same suffix (`Caller.decrypt`) as an
+code of `vg_aes_cfb128_decrypt` of the same suffix (`v.dec`) as an
 internal function of its own, `vg_aes_cfb128_decrypt<sfx>_core`. -/
-def decryptCode (v : BlocksImpl) : Prog isa :=
-  final ("vg_aes_cfb128_decrypt" ++ v.suffix ++ "_core") (Caller.decrypt v) v.enc
+abbrev decryptCode (v : CfbImpl) : Prog isa := Impl.AesCfb.AArch64.decryptFinal v.enc v.suffix v.dec
 
 /-! ## The contract -/
 
@@ -769,48 +767,10 @@ theorem encrypt_noFrames (v : BlocksImpl) : (Impl.AesCfb.AArch64.encrypt v.enc).
   simp only [Impl.AesCfb.AArch64.encrypt, Impl.AesCbc.AArch64.whole, Impl.AesCfb.AArch64.body, Code.noFrames,
     v.encNoFrames, Bool.and_self]
 
-theorem decrypt_noFrames (v : BlocksImpl) : (Caller.decrypt v).noFrames = true := by
-  unfold Caller.decrypt
-  split
-  · lit_decide
-  · split
-    · exact Neon.decrypt_noFrames
-    · simp only [Impl.AesCfb.AArch64.decrypt, Impl.AesCbc.AArch64.batched, Impl.AesCbc.AArch64.groups,
-        Impl.AesCfb.AArch64.decGroup, Impl.AesCfb.AArch64.body, Code.noFrames, v.encNoFrames,
-        Bool.and_self]
-
-theorem decrypt_keepsV' (v : BlocksImpl) : (Caller.decrypt v).allInstrs keepsV = true := by
-  unfold Caller.decrypt
-  split
-  · lit_decide
-  · split
-    · exact Neon.decrypt_keepsV
-    · exact decrypt_keepsV v
-
 theorem final_keepsV {name : String} {whole : Prog isa} (v : BlocksImpl) (hw : whole.allInstrs keepsV = true) :
     (final name whole v.enc).allInstrs keepsV = true := by
   simp only [final, finalTail, Code.allInstrs, hw, v.encKeepsV, Bool.and_true, Bool.true_and]
   decide
-
-/-- Decryption's whole-block code, as its registration emits it, is correct
-and constant time under `modeAArch64`. -/
-theorem decrypt_correct' (v : BlocksImpl) (s : State) (hs : (modeAArch64 (cfbMode false)).pre s) :
-    ∃ t s', Exec isa (Caller.decrypt v) s t s' ∧ abiPreserved s s' ∧ (modeAArch64 (cfbMode false)).post s s' := by
-  unfold Caller.decrypt
-  split
-  · exact Decrypt.correct s hs
-  · split
-    · exact Neon.correct s hs
-    · exact decrypt_correct v s hs
-
-theorem decrypt_ct' (v : BlocksImpl) :
-    ConstantTime isa (modeAArch64 (cfbMode false)).pre (modeAArch64 (cfbMode false)).pub (Caller.decrypt v) := by
-  unfold Caller.decrypt
-  split
-  · exact Decrypt.ct
-  · split
-    · exact Neon.ct
-    · exact decrypt_ct v
 
 /-! ## Constant time -/
 
@@ -948,11 +908,11 @@ theorem encryptFinal_verified (v : BlocksImpl) :
     (final_ct (encrypt_correct v) (AesCbc.AArch64.whole_ct (encBody_ok v) (encBody_ct v)) (encrypt_noFrames v) v)
     (final_implies true)
 
-theorem decryptFinal_verified (v : BlocksImpl) :
+theorem decryptFinal_verified (v : CfbImpl) :
     Verified AArch64.target (decryptCode v) (finalScratchContract false) :=
   Verified.of_correct
-    (final_correct (decrypt_correct' v) (decrypt_noFrames v) v (final_keepsV v (decrypt_keepsV' v)))
-    (final_ct (decrypt_correct' v) (decrypt_ct' v) (decrypt_noFrames v) v)
+    (final_correct v.decCorrect v.decNoFrames v.blocks (final_keepsV v.blocks v.decKeepsV))
+    (final_ct v.decCorrect v.decCt v.decNoFrames v.blocks)
     (final_implies false)
 
 /-! ## With `save` on the stack
@@ -981,7 +941,7 @@ theorem encryptFinal_framed (v : BlocksImpl) :
     (stack := 0) (bytes := 64) (words := 8) (encryptFinal_verified v) (by decide) (by decide) (by decide)
     (encryptFinalPost_localOut _) encFrameSat_pre
 
-theorem decryptFinal_framed (v : BlocksImpl) :
+theorem decryptFinal_framed (v : CfbImpl) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (decryptCode v))
       (decryptFinalRoundsContract AArch64.abi 64) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 8)
@@ -993,29 +953,30 @@ theorem decryptFinal_framed (v : BlocksImpl) :
 
 `vg_aes_cfb128_encrypt` and `vg_aes_cfb128_encrypt_final` with their cleanup
 (`Impl.AesCfb.AArch64.Fn`), around an implementation `v` of the block
-functions: each meets its contract in constant time and returns without
+functions, and `vg_aes_cfb128_decrypt` and `vg_aes_cfb128_decrypt_final`
+around a `CfbImpl`: each meets its contract in constant time and returns without
 secret residue (`VerifiedScrubbed`), which is what its registration binds.
-What the cleanup needs of the code (`ScrubAll.scrubSide`) is proved of each
+What the cleanup needs of the code (`Scrub.scrubSide`) is proved of each
 function's own instructions here, once, with code that does nothing in the
 place of the block function, and of each implementation where it is defined
 (`BlocksImpl.encScrub`). -/
 
 private theorem encrypt_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch64.Blocks)
-    (h0 : AArch64.ScrubAll.sideAll p (Impl.AesCfb.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true)
-    (hc : AArch64.ScrubAll.sideAll p b.code = true) :
-    AArch64.ScrubAll.sideAll p (Impl.AesCfb.AArch64.encrypt b) = true := by
-  simp only [Impl.AesCfb.AArch64.encrypt, Impl.AesCfb.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
+    (h0 : AArch64.Scrub.sideAll p (Impl.AesCfb.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true)
+    (hc : AArch64.Scrub.sideAll p b.code = true) :
+    AArch64.Scrub.sideAll p (Impl.AesCfb.AArch64.encrypt b) = true := by
+  simp only [Impl.AesCfb.AArch64.encrypt, Impl.AesCfb.AArch64.body, Impl.AesCbc.AArch64.whole, AArch64.Scrub.sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem encrypt_own :
-    AArch64.ScrubAll.calleeSide (Impl.AesCfb.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesCfb.AArch64.Fn.encryptOwn = true := by
+    AArch64.Scrub.calleeSide (Impl.AesCfb.AArch64.encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesCfb.AArch64.Fn.encryptOwn = true := by
   kernel_rfl
 
 theorem encrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
-    AArch64.ScrubAll.scrubSide (Impl.AesCfb.AArch64.encrypt v.enc) 0 0 (Impl.AesCfb.AArch64.Fn.encryptOwn.union v.enc.clear) [] = true := by
-  refine AArch64.ScrubAll.scrubSide_union0 ?_ (by decide)
-    (encrypt_all v.enc (AArch64.ScrubAll.sideAll_union_left encrypt_own)
-      (AArch64.ScrubAll.sideAll_union_right v.encScrub)) (by decide)
+    AArch64.Scrub.scrubSide (Impl.AesCfb.AArch64.encrypt v.enc) 0 0 (Impl.AesCfb.AArch64.Fn.encryptOwn.union v.enc.clear) [] = true := by
+  refine AArch64.Scrub.scrubSide_union0 ?_ (by decide)
+    (encrypt_all v.enc (AArch64.Scrub.sideAll_union_left encrypt_own)
+      (AArch64.Scrub.sideAll_union_right v.encScrub)) (by decide)
   simp only [Impl.AesCfb.AArch64.encrypt, Impl.AesCfb.AArch64.body, Impl.AesCbc.AArch64.whole, Code.aarch64Depth, Proof.Aes.AArch64.depth_of_noFrames v.encNoFrames]
   decide
 
@@ -1023,29 +984,29 @@ theorem encrypt_side (v : Proof.Aes.AArch64.BlocksImpl) :
 theorem encrypt_scrubbed (v : Proof.Aes.AArch64.BlocksImpl) :
     VerifiedScrubbed AArch64.target (Impl.AesCfb.AArch64.Fn.encrypt v.enc)
       (Spec.Cfb.aesEncryptContract AArch64.abi) 0 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Cfb.aesEncryptApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Cfb.aesEncryptApi)
     { code := Impl.AesCfb.AArch64.encrypt v.enc, verified := Proof.AesCfb.encrypt_keyed (Proof.AesCfb.AArch64.encrypt_verified v) } _
     Proof.Aes.AArch64.ModesScrub.cfbEncryptOk (encrypt_side v)
 
 private theorem encryptFinal_all {p : AArch64.Instr → Bool} (b : Impl.Aes.AArch64.Blocks) (sfx : String)
-    (h0 : AArch64.ScrubAll.sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesCfb.AArch64.encryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) = true)
-    (hc : AArch64.ScrubAll.sideAll p b.code = true) :
-    AArch64.ScrubAll.sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesCfb.AArch64.encryptFinal b sfx)) = true := by
+    (h0 : AArch64.Scrub.sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesCfb.AArch64.encryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "")) = true)
+    (hc : AArch64.Scrub.sideAll p b.code = true) :
+    AArch64.Scrub.sideAll p (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesCfb.AArch64.encryptFinal b sfx)) = true := by
   simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch, Impl.AesCfb.AArch64.encryptFinal, Impl.AesCfb.AArch64.final, Impl.AesCfb.AArch64.finalTail, Impl.AesCfb.AArch64.encrypt, Impl.AesCfb.AArch64.body, Impl.AesCbc.AArch64.whole,
-    AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
+    AArch64.Scrub.sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 private theorem encryptFinal_own :
-    AArch64.ScrubAll.calleeSide (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesCfb.AArch64.encryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ""))
+    AArch64.Scrub.calleeSide (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesCfb.AArch64.encryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ""))
       Impl.AesCfb.AArch64.Fn.encryptFinalOwn = true := by
   kernel_rfl
 
 theorem encryptFinal_side (v : Proof.Aes.AArch64.BlocksImpl) :
-    AArch64.ScrubAll.scrubSide (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesCfb.AArch64.encryptFinal v.enc v.suffix)) 64 0
+    AArch64.Scrub.scrubSide (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesCfb.AArch64.encryptFinal v.enc v.suffix)) 64 0
       (Impl.AesCfb.AArch64.Fn.encryptFinalOwn.union v.enc.clear) [] = true := by
-  refine AArch64.ScrubAll.scrubSide_union (by decide) ?_ (by decide)
-    (encryptFinal_all v.enc v.suffix (AArch64.ScrubAll.sideAll_union_left encryptFinal_own)
-      (AArch64.ScrubAll.sideAll_union_right v.encScrub)) (by decide)
+  refine AArch64.Scrub.scrubSide_union (by decide) ?_ (by decide)
+    (encryptFinal_all v.enc v.suffix (AArch64.Scrub.sideAll_union_left encryptFinal_own)
+      (AArch64.Scrub.sideAll_union_right v.encScrub)) (by decide)
   simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch, Impl.AesCfb.AArch64.encryptFinal, Impl.AesCfb.AArch64.final, Impl.AesCfb.AArch64.finalTail, Impl.AesCfb.AArch64.encrypt, Impl.AesCfb.AArch64.body, Impl.AesCbc.AArch64.whole,
     Code.aarch64Depth, AArch64.Instr.frameUnits, Proof.Aes.AArch64.depth_of_noFrames v.encNoFrames]
   decide
@@ -1054,9 +1015,49 @@ theorem encryptFinal_side (v : Proof.Aes.AArch64.BlocksImpl) :
 theorem encryptFinal_scrubbed (v : Proof.Aes.AArch64.BlocksImpl) :
     VerifiedScrubbed AArch64.target (Impl.AesCfb.AArch64.Fn.encryptFinal v.enc v.suffix)
       (Spec.Cfb.aesEncryptFinalContract AArch64.abi 64) 0 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Cfb.aesEncryptFinalApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Cfb.aesEncryptFinalApi)
     { code := Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesCfb.AArch64.encryptFinal v.enc v.suffix)
       verified := Proof.AesCfb.encryptFinal_keyed (encryptFinal_framed v) } _
     Proof.Aes.AArch64.ModesScrub.cfbEncryptFinalOk (encryptFinal_side v)
+
+/-- `vg_aes_cfb128_decrypt` as emitted, cleanup included: its code uses no
+stack. -/
+theorem decrypt_scrubbed (v : CfbImpl) :
+    VerifiedScrubbed AArch64.target (Impl.AesCfb.AArch64.Fn.decrypt v.dec)
+      (Spec.Cfb.aesDecryptContract AArch64.abi) 0 :=
+  AArch64.Scrub.verifiedScrubbedOf0 (Proof.AesCfb.decrypt_keyed v.decVerified)
+    Proof.Aes.AArch64.ModesScrub.cfbDecryptOk (Proof.Aes.AArch64.depth_of_noFrames v.decNoFrames) v.decSide
+    (.inl rfl)
+
+/-- What `vg_aes_cfb128_decrypt` writes in `scratch` is what its code does. -/
+theorem decrypt_written (v : CfbImpl) : ∀ s t s', (Spec.Cfb.aesDecryptContract AArch64.abi).pre s →
+    Exec isa (Impl.AesCfb.AArch64.Fn.decrypt v.dec) s t s' →
+      Sig.writtenWithin AArch64.abi Spec.Cfb.aesSig v.written s s' :=
+  AArch64.Scrub.written_scrubOf0 (.inl rfl) v.decWritten
+
+private theorem decryptFinal_own :
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
+      (Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8
+        (Impl.AesCfb.AArch64.decryptFinal ⟨"", .block [], ⟨[], [], []⟩, 0⟩ "" (.block []))) = true := by
+  kernel_rfl
+
+/-- `vg_aes_cfb128_decrypt_final` as emitted, cleanup included. -/
+theorem decryptFinal_scrubbed (v : CfbImpl) :
+    VerifiedScrubbed AArch64.target (Impl.AesCfb.AArch64.Fn.decryptFinal v.enc v.suffix v.dec)
+      (Spec.Cfb.aesDecryptFinalContract AArch64.abi 64) 0 := by
+  refine AArch64.Scrub.verifiedScrubbedOf (Proof.AesCfb.decryptFinal_keyed (decryptFinal_framed v))
+    Proof.Aes.AArch64.ModesScrub.cfbDecryptFinalOk (by decide) ?_ ?_ (.inl rfl)
+  · simp only [decryptCode, Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
+      Impl.AesCfb.AArch64.decryptFinal, Impl.AesCfb.AArch64.final, Impl.AesCfb.AArch64.finalTail,
+      Code.aarch64Depth, AArch64.Instr.frameUnits, Proof.Aes.AArch64.depth_of_noFrames v.blocks.encNoFrames,
+      Proof.Aes.AArch64.depth_of_noFrames v.decNoFrames]
+    decide
+  · have h0 := decryptFinal_own
+    have hc := AArch64.Scrub.sideAll_noDit_of_calleeSide v.blocks.encScrub
+    have hw := v.decSide
+    simp only [decryptCode, Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
+      Impl.AesCfb.AArch64.decryptFinal, Impl.AesCfb.AArch64.final, Impl.AesCfb.AArch64.finalTail,
+      AArch64.Scrub.sideAll, Bool.and_eq_true] at h0 ⊢
+    simp only [h0, hc, hw, and_self]
 
 end VG.Proof.AesCfb.AArch64.Final

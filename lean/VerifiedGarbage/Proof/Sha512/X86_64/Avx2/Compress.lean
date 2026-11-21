@@ -428,40 +428,6 @@ structure LdInv (M₀ M₁ : Block) (scr : Addr) (sL : State) (n : Nat) (s : Sta
   wmem : ∀ k < n, WMem s.mem scr M₀ M₁ k
   msgs : ∀ k < n, s.xmm (msg k) = pair M₀ k ∧ s.ymmHi (msg k) = pair M₁ k
 
-theorem load_step {M₀ M₁ : Block} {p₀ p₁ scr : Addr} {sL : State}
-    (hrsi : sL.gpr .rsi = p₀) (hr15 : sL.gpr .r15 = p₁) (hrcx : sL.gpr .rcx = scr)
-    (hR : (⟨scr, 1328⟩ : Region) ∈ sL.wr)
-    (hin : ∀ n : Nat, n < 8 → InRegions (sL.rd ++ sL.wr) (p₀ + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16 ∧
-      InRegions (sL.rd ++ sL.wr) (p₁ + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16)
-    (hblk : ∀ m, Frame [wRegion scr] sL.mem m →
-      (∀ t : Nat, t < 16 → bswap64 (m.readW (p₀ + BitVec.ofInt 64 ((8 * t : Nat) : Int)) 64) = W M₀ t) ∧
-      (∀ t : Nat, t < 16 → bswap64 (m.readW (p₁ + BitVec.ofInt 64 ((8 * t : Nat) : Int)) 64) = W M₁ t))
-    {n : Nat} (hn : n < 8) {s : State} (h : LdInv M₀ M₁ scr sL n s) :
-    WP isa (.block (load n)) s (LdInv M₀ M₁ scr sL (n + 1)) := by
-  obtain ⟨k1, k2⟩ := h.masks
-  have hb := hblk _ h.frame
-  refine WP.mono (load_ok (p₀ := p₀) (p₁ := p₁) (scr := scr) (M₀ := M₀) (M₁ := M₁) hn s
-    (by rw [h.gpr]; exact hrsi) (by rw [h.gpr]; exact hr15)
-    (by rw [h.gpr]; exact hrcx) (by rw [h.rd, h.wr]; exact (hin n hn).1) (by rw [h.rd, h.wr]; exact (hin n hn).2)
-    (by rw [h.wr]; exact in_scr hR (by omega_arith)) k1 k2 hb.1 hb.2)
-    fun s' ⟨ex, ey, hx, hg, hm, hrd, hwr⟩ => ⟨hg.trans h.gpr, hrd.trans h.rd, hwr.trans h.wr, ?_, ?_, ?_, ?_⟩
-  · have o := hx mBswap (sched_other n mBswap (.inl rfl)).1 (by decide)
-    rw [Masks, o.1, o.2]
-    exact ⟨k1, k2⟩
-  · rw [hm]; exact h.frame.writeW (List.mem_singleton_self _) _ (wAddr_contains scr (by omega_arith))
-  · intro k hk
-    rw [hm]
-    by_cases hkn : k = n
-    · subst hkn; exact wmem_self _ _ _ _ _
-    · exact wmem_write (by omega_arith) (by omega_arith) hkn _ (h.wmem k (by omega_arith))
-  · intro k hk
-    by_cases hkn : k = n
-    · subst hkn; exact ⟨ex, ey⟩
-    · have o₁ := (msg_ne k n (by omega_arith) (by omega_arith)).1
-      have o₂ := (sched_other k tmp (.inr rfl)).1
-      rw [(hx _ (Ne.symm o₁) (Ne.symm o₂)).1, (hx _ (Ne.symm o₁) (Ne.symm o₂)).2]
-      exact h.msgs k (by omega_arith)
-
 /-! ## Counting the blocks -/
 
 theorem e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide

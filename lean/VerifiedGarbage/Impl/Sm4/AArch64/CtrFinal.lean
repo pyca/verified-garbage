@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 public import VerifiedGarbage.Impl.Sm4.AArch64.Sm4e.Modes
 public import VerifiedGarbage.Impl.AesCtr.AArch64.Final
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 
 /-!
 # SM4-CTR of a message's last piece: AArch64 implementation
@@ -20,8 +20,8 @@ the code's own. It is AES-CTR's final function's
 (`Impl/AesCtr/AArch64/Final.lean`) with SM4's arguments, around calls
 of `vg_sm4_ctr`, framed by its own working space on the stack, as an
 internal function of its own (`vg_sm4_ctr_core`, `vg_sm4_ctr_sm4_core`), which
-does not zero that space: the final function's registration zeroes the whole
-of its stack on return (`ScrubAll.withScrubAll`), as `vg_sm4_ctr`'s does:
+does not zero that space: the final function as emitted zeroes the whole of
+its stack on return (`Impl.Scrub.AArch64.scrubAll`), as `vg_sm4_ctr` does:
 
 1. the registers saved in `save` (AES-CFB's final functions' slots,
    `finalSaved`), and the arguments kept in `x19` (schedule), `x21` (ctr),
@@ -35,7 +35,7 @@ of its stack on return (`ScrubAll.withScrubAll`), as `vg_sm4_ctr`'s does:
    bytes left, a byte at a time;
 4. the registers restored.
 
-The registration's frame zeroes `save`, the block included, on return.
+The function as emitted zeroes `save`, the block included, on return.
 
 Only the pointers and `len` can affect timing.
 -/
@@ -55,7 +55,7 @@ registration to zero. -/
 def ctrFramed : Prog isa := Impl.StackScratch.AArch64.withStackScratch 3264 .x4 ctr
 
 /-- `vg_sm4_ctr_sm4`, with its working space on the stack, which it leaves to
-its registration to zero. -/
+the function as emitted to zero. -/
 def ctrFramedSm4 : Prog isa := Impl.StackScratch.AArch64.withStackScratch 224 .x4 Sm4e.ctr
 
 /-- The registers saved in `save`, at `x4`. -/
@@ -97,7 +97,7 @@ def ctrFinal (name : String) (whole : Prog isa) : Prog isa :=
 /-! ## The functions, as emitted
 
 Each function is its code above, then its cleanup
-(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+(`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the calling
 convention does not preserve are cleared, and the stack it uses is zeroed,
 so that it returns without secret residue. `vg_sm4_ctr_final` clears the
 registers its own instructions write, stated here, and those the
@@ -105,7 +105,7 @@ implementation of `vg_sm4_ctr` it calls writes. -/
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 
 /-- The registers `ctrFramedSm4` writes. -/
 def ctrSm4Clear : Clear :=

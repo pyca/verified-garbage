@@ -47,11 +47,13 @@ vg_mlkem1024_keygen_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -60,7 +62,6 @@ vg_mlkem1024_keygen_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -107,11 +108,13 @@ vg_mlkem1024_encaps_h_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -120,7 +123,6 @@ vg_mlkem1024_encaps_h_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -167,11 +169,13 @@ vg_mlkem1024_encaps_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -180,7 +184,6 @@ vg_mlkem1024_encaps_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -227,11 +230,13 @@ vg_mlkem1024_decaps_avx512:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -240,7 +245,6 @@ vg_mlkem1024_decaps_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -271,11 +275,13 @@ vg_mlkem1024_keygen_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -284,7 +290,6 @@ vg_mlkem1024_keygen_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -315,11 +320,13 @@ vg_mlkem1024_encaps_h_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -328,7 +335,6 @@ vg_mlkem1024_encaps_h_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -359,11 +365,13 @@ vg_mlkem1024_encaps_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -372,7 +380,6 @@ vg_mlkem1024_encaps_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -403,11 +410,13 @@ vg_mlkem1024_decaps_avx2:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -416,7 +425,6 @@ vg_mlkem1024_decaps_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -447,11 +455,13 @@ vg_mlkem1024_keygen_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -460,7 +470,6 @@ vg_mlkem1024_keygen_avx:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -491,11 +500,13 @@ vg_mlkem1024_encaps_h_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -504,7 +515,6 @@ vg_mlkem1024_encaps_h_avx:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -535,11 +545,13 @@ vg_mlkem1024_encaps_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -548,7 +560,6 @@ vg_mlkem1024_encaps_avx:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -579,11 +590,13 @@ vg_mlkem1024_decaps_avx:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -592,7 +605,6 @@ vg_mlkem1024_decaps_avx:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -623,12 +635,14 @@ vg_mlkem1024_keygen:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -637,7 +651,6 @@ vg_mlkem1024_keygen:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -668,12 +681,14 @@ vg_mlkem1024_encaps_h:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -682,7 +697,6 @@ vg_mlkem1024_encaps_h:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -713,12 +727,14 @@ vg_mlkem1024_encaps:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -727,7 +743,6 @@ vg_mlkem1024_encaps:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -758,12 +773,14 @@ vg_mlkem1024_decaps:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-56]
-	movdqu XMMWORD PTR [rsp+40], xmm0
-	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+56]
+	lea rsp, [rsp-48]
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+48]
+	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -772,7 +789,6 @@ vg_mlkem1024_decaps:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -800,11 +816,31 @@ vg_mlkem1024_check_ek:
 	cmp r8, 1024
 	sbb rax, rax
 	add rax, 1
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx
+	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -859,6 +895,12 @@ vg_mlkem1024_check_ek_avx2:
 	vpxor xmm15, xmm15, xmm15
 	mov eax, eax
 	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
 	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

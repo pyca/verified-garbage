@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Cast5.AArch64.Fn
 public import VerifiedGarbage.Proof.Cast5.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Cast5.AArch64.FbFinalVerified
 public import VerifiedGarbage.Proof.Cast5.AArch64.TblModesVerified
@@ -18,20 +19,16 @@ namespace VG.Artifacts.Cast5Cfb.AArch64
 
 def artifacts : List Artifact := [
   Spec.Cast5.cfbEncryptApi.artifact AArch64.target {
-    code := Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode
-    verified := .scrubbed ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_verified,
-      Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩ },
+    code := Impl.Cast5.AArch64.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_scrubbed },
   Spec.Cast5.cfbDecryptApi.artifact AArch64.target {
-    code := Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode
-    verified := .scrubbed ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_verified,
-      Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩ },
+    code := Impl.Cast5.AArch64.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Cast5.AArch64.ModesResidue.cfbDecryptCode_scrubbed },
   Spec.Cast5.cfbEncryptFinalApi.artifact AArch64.target {
-    code := Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode
-    verified := .scrubbed ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
-      Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩ },
+    code := Impl.Cast5.AArch64.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed },
   Spec.Cast5.cfbDecryptFinalApi.artifact AArch64.target {
-    code := Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode
-    verified := .scrubbed ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
-      Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩ }]
+    code := Impl.Cast5.AArch64.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed }]
 
 end VG.Artifacts.Cast5Cfb.AArch64

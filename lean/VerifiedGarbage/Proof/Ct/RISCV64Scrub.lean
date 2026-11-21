@@ -267,7 +267,7 @@ constant time and returns without secret residue: the theorem its
 registration binds. -/
 theorem eq_scrubbed :
     VerifiedScrubbed target Impl.Ct.RISCV64.Fn.eq (Spec.Ct.eqContract abi) 32 :=
-  verifiedScrubbed (api := Spec.Ct.eqApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.Ct.eqApi) (W := 0)
     { code := Impl.Ct.RISCV64.eq, verified := Proof.Ct.RISCV64.verified } eqOut (by lit_decide)
 
 end VG.Proof.Ct.RISCV64Scrub

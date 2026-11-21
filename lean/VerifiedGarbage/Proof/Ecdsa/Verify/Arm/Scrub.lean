@@ -13,8 +13,8 @@ return (`Arm.Scrub.PostOut`), as on RISC-V (`Proof/EcKey/RISCV64/Scrub.lean`):
 each implementation, whose frame keeps the hash's working values, is
 registered followed by a wipe of the stack its contract reserves and
 instructions that set the registers a callee may change, but the result, and
-the flags to constants (`Impl.Residue.Arm.scrubF`,
-`Arm.Scrub.verifiedScrubbedF`). The lemma takes the tables of constants `cs`
+the flags to constants (`Impl.Scrub.Arm.scrubAll`,
+`Arm.Scrub.verifiedScrubbedAll`). The lemma takes the tables of constants `cs`
 the code reads, which may be none.
 -/
 

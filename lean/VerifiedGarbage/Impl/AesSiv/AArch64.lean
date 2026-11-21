@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
@@ -471,7 +471,7 @@ def decrypt (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog 
 
 Each function is its code with its working space in a frame on the stack,
 sized to what the functions it calls need, then its cleanup
-(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+(`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the calling
 convention does not preserve are cleared, but the bits of its result, and
 that stack is zeroed, so that it returns without secret residue. The
 registers are those its own instructions write, stated here, and those the
@@ -479,7 +479,7 @@ functions it calls write (`ecl`, `ccl`, `ucl`). -/
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 
 /-- The registers `vg_aes_siv_init`'s own instructions write. -/
 def initOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x12, .x16, .x17], [], []⟩

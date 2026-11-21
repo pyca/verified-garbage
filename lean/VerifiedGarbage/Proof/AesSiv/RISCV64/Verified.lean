@@ -281,7 +281,7 @@ end VG.Proof.AesSiv.RISCV64
 /-! ## AES-SIV on RISC-V, without secret residue
 
 `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.verifiedScrubbedAll`), which clears the
 caller-saved registers and the whole 2576-byte frame (`withStackScratch`)
 that holds their working space and their callees': the residue analysis
 (`RISCV64.rtaint`) finds that all of it may hold secrets. Their
@@ -339,7 +339,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem encrypt_scrubbed :
     VerifiedScrubbed target Impl.AesSiv.RISCV64.Fn.encrypt
       (Spec.Siv.encryptContract RISCV64.abi 2576) 0 :=
-  verifiedScrubbed (api := Spec.Siv.encryptApi) (W := 2576)
+  verifiedScrubbedAll (api := Spec.Siv.encryptApi) (W := 2576)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2576 .a7 Impl.AesSiv.RISCV64.encrypt
       verified := Proof.AesSiv.encrypt_keyed encrypt_framed }
     (encryptOut _) encrypt_scrubSide
@@ -357,7 +357,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem decrypt_scrubbed :
     VerifiedScrubbed target Impl.AesSiv.RISCV64.Fn.decrypt
       (Spec.Siv.decryptContract RISCV64.abi 2576) 32 :=
-  verifiedScrubbed (api := Spec.Siv.decryptApi) (W := 2576)
+  verifiedScrubbedAll (api := Spec.Siv.decryptApi) (W := 2576)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2576 .a7 Impl.AesSiv.RISCV64.decrypt
       verified := Proof.AesSiv.decrypt_keyed decrypt_framed }
     (decryptOut _) decrypt_scrubSide

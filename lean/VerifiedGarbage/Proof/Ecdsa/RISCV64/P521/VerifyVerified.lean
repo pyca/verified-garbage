@@ -1007,7 +1007,7 @@ returns without secret residue. -/
 theorem verifyHash_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
     VerifiedScrubbed RISCV64.target Impl.Ecdsa.RISCV64.Fn.verifyP521
       (Spec.Ecdsa.Instance.verifyHashContract Spec.Ecdsa.P521.inst (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.CombU.p521CombConsts) 80) 32 :=
-  RISCV64.Scrub.verifiedScrubbed (api := Spec.Ecdsa.P521.verifyHashApi) (W := 80)
+  RISCV64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P521.verifyHashApi) (W := 80)
     { code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
         Impl.Ecdsa.RISCV64.P521.verifyP521
       verified := verifyHash_verified hL }

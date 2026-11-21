@@ -115,16 +115,16 @@ structure CallArgs (s : State) (st scr blk : BitVec 32) (n : Nat) (t : BitVec 64
   hn : n < 2 ^ 32
   sp16 : 16 ≤ s.sp.toNat
   cb : Covers [⟨State.addr blk, blockBytes w * n⟩] (s.rd ++ s.wr)
-  cw : Covers [⟨State.addr st, bufOff w⟩, ⟨State.addr scr, 512⟩] s.wr
-  st_sc : Region.Disjoint ⟨State.addr st, bufOff w⟩ ⟨State.addr scr, 512⟩
+  cw : Covers [⟨State.addr st, bufOff w⟩, ⟨State.addr scr, 200⟩] s.wr
+  st_sc : Region.Disjoint ⟨State.addr st, bufOff w⟩ ⟨State.addr scr, 200⟩
   b_st : Region.Disjoint ⟨State.addr blk, blockBytes w * n⟩ ⟨State.addr st, bufOff w⟩
-  b_sc : Region.Disjoint ⟨State.addr blk, blockBytes w * n⟩ ⟨State.addr scr, 512⟩
+  b_sc : Region.Disjoint ⟨State.addr blk, blockBytes w * n⟩ ⟨State.addr scr, 200⟩
   w_st : (below s).Disjoint ⟨State.addr st, bufOff w⟩
   w_b : (below s).Disjoint ⟨State.addr blk, blockBytes w * n⟩
-  w_sc : (below s).Disjoint ⟨State.addr scr, 512⟩
+  w_sc : (below s).Disjoint ⟨State.addr scr, 200⟩
   nst : st.toNat + bufOff w ≤ 2 ^ 32
   nb : blk.toNat + blockBytes w * n ≤ 2 ^ 32
-  nsc : scr.toNat + 512 ≤ 2 ^ 32
+  nsc : scr.toNat + 200 ≤ 2 ^ 32
 
 /-- The four words the frame pushes. -/
 abbrev args4 : List Reg := [.r3, .r11, .r12, .lr]
@@ -136,7 +136,7 @@ state and the scratch space. -/
 abbrev CallArgs.rd (w : Nat) (sp blk : BitVec 32) (n : Nat) : List Region :=
   [⟨State.addr blk, blockBytes w * n⟩, ⟨State.addr sp - 16, 16⟩]
 abbrev CallArgs.wr (w : Nat) (st scr : BitVec 32) : List Region :=
-  [⟨State.addr st, bufOff w⟩, ⟨State.addr scr, 512⟩]
+  [⟨State.addr st, bufOff w⟩, ⟨State.addr scr, 200⟩]
 
 variable {P : Params w}
 
@@ -291,7 +291,7 @@ the last ones if `last ≠ 0`. -/
 theorem call_ok {name : String} {code : Prog isa} (hf : CalleeOk P code) {s : State}
     {st scr blk : BitVec 32} {n : Nat} {t : BitVec 64} {last : BitVec 32}
     (h : CallArgs (w := w) s st scr blk n t last) {Q : State → Prop}
-    (hQ : ∀ s', After s [⟨State.addr st, bufOff w⟩, ⟨State.addr scr, 512⟩] s' →
+    (hQ : ∀ s', After s [⟨State.addr st, bufOff w⟩, ⟨State.addr scr, 200⟩] s' →
       stateAt w s'.mem (State.addr st) =
         compressBlocks P (stateAt w s.mem (State.addr st)) s.mem (State.addr blk) n t.toNat
           (last != 0) → Q s') :
@@ -366,12 +366,14 @@ def initArm : Contract isa where
     s₁.gpr .r3 = s₂.gpr .r3
 
 /-- ARMv7 contract for `update(state = r0, count = r2:r3, data = [sp],
-len = [sp, #4], scratch = [sp, #8])`, which pushes 16 bytes of stack. -/
-def updateArm : Contract isa where
+len = [sp, #4], scratch = [sp, #8])`, which pushes 16 bytes of stack, with
+`sc` bytes of `scratch`: the code uses 240, and the default is the room the
+shared contracts give (`Proof.Blake2.updateBScratchContract`). -/
+def updateArm (sc : Nat := 576) : Contract isa where
   pre s :=
     let state : Region := ⟨State.addr (s.gpr .r0), bufOff w + blockBytes w⟩
     let data : Region := ⟨State.addr (stackArg s 0), (stackArg s 1).toNat⟩
-    let scratch : Region := ⟨State.addr (stackArg s 2), 576⟩
+    let scratch : Region := ⟨State.addr (stackArg s 2), sc⟩
     let args : Region := ⟨stackArgAddr s 0, 12⟩
     s.rd = [data, args] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ data.Disjoint state ∧ data.Disjoint scratch ∧
@@ -379,7 +381,7 @@ def updateArm : Contract isa where
     (Arm.Stream.below s).Disjoint state ∧ (Arm.Stream.below s).Disjoint data ∧
     (Arm.Stream.below s).Disjoint scratch ∧
     (s.gpr .r0).toNat + (bufOff w + blockBytes w) ≤ 2 ^ 32 ∧
-    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 32 ∧ (stackArg s 2).toNat + 576 ≤ 2 ^ 32 ∧
+    (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 32 ∧ (stackArg s 2).toNat + sc ≤ 2 ^ 32 ∧
     16 ≤ s.sp.toNat ∧ s.sp.toNat + 12 ≤ 2 ^ 32
   post s s' := ∀ h0 d, Spec.Blake2.Repr P h0 s.mem (State.addr (s.gpr .r0)) d →
     countArm s = BitVec.ofNat 64 d.length → d.length + (stackArg s 1).toNat < 2 ^ 64 →
@@ -390,12 +392,13 @@ def updateArm : Contract isa where
     stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2
 
 /-- ARMv7 contract for `finalize(state = r0, count = r2:r3, out = [sp],
-scratch = [sp, #4])`, which pushes 16 bytes of stack. -/
-def finalizeArm : Contract isa where
+scratch = [sp, #4])`, which pushes 16 bytes of stack, with `sc` bytes of
+`scratch` (as `updateArm`). -/
+def finalizeArm (sc : Nat := 576) : Contract isa where
   pre s :=
     let state : Region := ⟨State.addr (s.gpr .r0), bufOff w + blockBytes w⟩
     let out : Region := ⟨State.addr (stackArg s 0), bufOff w⟩
-    let scratch : Region := ⟨State.addr (stackArg s 1), 576⟩
+    let scratch : Region := ⟨State.addr (stackArg s 1), sc⟩
     let args : Region := ⟨stackArgAddr s 0, 8⟩
     s.rd = [args] ∧ s.wr = [state, out, scratch] ∧
     state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
@@ -403,7 +406,7 @@ def finalizeArm : Contract isa where
     (Arm.Stream.below s).Disjoint state ∧ (Arm.Stream.below s).Disjoint out ∧
     (Arm.Stream.below s).Disjoint scratch ∧
     (s.gpr .r0).toNat + (bufOff w + blockBytes w) ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + bufOff w ≤ 2 ^ 32 ∧
-    (stackArg s 1).toNat + 576 ≤ 2 ^ 32 ∧ 16 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32
+    (stackArg s 1).toNat + sc ≤ 2 ^ 32 ∧ 16 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32
   post s s' := ∀ h0 d, Spec.Blake2.Repr P h0 s.mem (State.addr (s.gpr .r0)) d → d.length < 2 ^ 64 →
     countArm s = BitVec.ofNat 64 d.length →
     bytesAt s'.mem (State.addr (stackArg s 0)) (bufOff w) = finalHash P h0 d
@@ -746,30 +749,30 @@ theorem zeroLoop_ok {s₀ : State} {st : BitVec 32} {r k : Nat} (hN : bufOff w �
 /-- The caller's registers `g` are saved in the scratch space at `b`. -/
 abbrev Saved (b : Addr) (g : Reg → BitVec 32) (m : Mem) : Prop := Spill.Saved m b g saved
 
-theorem saved_slots : Spill.Slots 512 548 saved := by decide
+theorem saved_slots : Spill.Slots 200 236 saved := by decide
 
-theorem saved_bound : ∀ p ∈ saved, 512 ≤ p.2 ∧ p.2 + 4 ≤ 548 := by decide
+theorem saved_bound : ∀ p ∈ saved, 200 ≤ p.2 ∧ p.2 + 4 ≤ 236 := by decide
 
 theorem saveMem_saved (m : Mem) (b : Addr) (g : Reg → BitVec 32) :
     Saved b g (MdStream.Arm.saveMem m b g saved) :=
   Spill.saveMem_saved b g m saved saved_slots
 
 theorem saveMem_frame (m : Mem) (b : Addr) (g : Reg → BitVec 32) :
-    Frame [⟨b, 576⟩] m (MdStream.Arm.saveMem m b g saved) :=
+    Frame [⟨b, 240⟩] m (MdStream.Arm.saveMem m b g saved) :=
   Spill.saveMem_frame m b g (by decide) saved (by decide)
 
 /-- Saving `r4`–`r11` and `lr` with the scratch pointer in `b`. -/
 theorem save_ok {b : Reg} {rest : List Instr} {s : State} {Q : State → Prop}
-    (hfit : (s.gpr b).toNat + 576 ≤ 2 ^ 32)
-    (hin : ∀ d, 512 ≤ d → d + 4 ≤ 548 → InRegions s.wr (State.addr (s.gpr b) + BitVec.ofNat 64 d) 4)
+    (hfit : (s.gpr b).toNat + 240 ≤ 2 ^ 32)
+    (hin : ∀ d, 200 ≤ d → d + 4 ≤ 236 → InRegions s.wr (State.addr (s.gpr b) + BitVec.ofNat 64 d) 4)
     (k : ∀ s', s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       s'.mem = MdStream.Arm.saveMem s.mem (State.addr (s.gpr b)) s.gpr saved → WP isa (.block rest) s' Q) :
     WP isa (.block (save b ++ rest)) s Q :=
   Spill.save_slots_ok saved_slots (by omega_arith) hin (k _ rfl rfl rfl rfl rfl)
 
 /-- Restoring `r4`–`r11` and `lr` from the save area at `scratch` (in `r5`). -/
-theorem restore_ok {s : State} {scr : BitVec 32} (h5 : s.gpr .r5 = scr) (hfit : scr.toNat + 576 ≤ 2 ^ 32)
-    (hin : ∀ d, 512 ≤ d → d + 4 ≤ 548 → InRegions (s.rd ++ s.wr) (State.addr scr + BitVec.ofNat 64 d) 4)
+theorem restore_ok {s : State} {scr : BitVec 32} (h5 : s.gpr .r5 = scr) (hfit : scr.toNat + 240 ≤ 2 ^ 32)
+    (hin : ∀ d, 200 ≤ d → d + 4 ≤ 236 → InRegions (s.rd ++ s.wr) (State.addr scr + BitVec.ofNat 64 d) 4)
     (g : Reg → BitVec 32) (hsv : Saved (State.addr scr) g s.mem) {Q : State → Prop}
     (k : ∀ s', (∀ p ∈ saved, s'.gpr p.1 = g p.1) → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
       s'.sp = s.sp → Q s') :
@@ -877,7 +880,7 @@ abbrev scA : Addr := State.addr (scr s₀)
 abbrev cnt : Nat := (countArm s₀).toNat
 abbrev stR (w : Nat) : Region := ⟨stA s₀, bufOff w + blockBytes w⟩
 abbrev dR : Region := ⟨dA s₀, len s₀⟩
-abbrev scR : Region := ⟨scA s₀, 576⟩
+abbrev scR : Region := ⟨scA s₀, 240⟩
 abbrev argR : Region := ⟨stackArgAddr s₀ 0, 12⟩
 /-- The first `c` bytes of data. -/
 abbrev D (c : Nat) : List Byte := bytesAt s₀.mem (dA s₀) c
@@ -897,11 +900,11 @@ structure Pre (w : Nat) (s₀ : State) : Prop where
   w_scr : (below s₀).Disjoint (scR s₀)
   st_fit : (st s₀).toNat + (bufOff w + blockBytes w) ≤ 2 ^ 32
   d_fit : (dp s₀).toNat + len s₀ ≤ 2 ^ 32
-  scr_fit : (scr s₀).toNat + 576 ≤ 2 ^ 32
+  scr_fit : (scr s₀).toNat + 240 ≤ 2 ^ 32
   sp16 : 16 ≤ s₀.sp.toNat
   sp_fit : s₀.sp.toNat + 12 ≤ 2 ^ 32
 
-theorem pre_of {s₀ : State} (h : (updateArm P).pre s₀) : Pre w s₀ := by
+theorem pre_of {s₀ : State} (h : (updateArm P 240).pre s₀) : Pre w s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15⟩
 
@@ -991,10 +994,10 @@ theorem Common.data {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State} (h : 
 /-- Writes to the state, the compression function's scratch space and the
 16 bytes below the stack pointer keep the saved registers. -/
 theorem saved_frame {s₀ : State} (hp : Pre w s₀) {m m' : Mem} (h : Saved (scA s₀) s₀.gpr m)
-    (hf : Frame [stR s₀ w, ⟨scA s₀, 512⟩, below s₀] m m') : Saved (scA s₀) s₀.gpr m' := by
+    (hf : Frame [stR s₀ w, ⟨scA s₀, 200⟩, below s₀] m m') : Saved (scA s₀) s₀.gpr m' := by
   have := hp.scr_fit
   refine h.frame saved_slots hf fun r' hr' => ?_
-  obtain e : Region.Sub ⟨scA s₀ + BitVec.ofNat 64 512, 548 - 512⟩ (scR s₀) := Offset.sub_base _ (by omega_using [])
+  obtain e : Region.Sub ⟨scA s₀ + BitVec.ofNat 64 200, 236 - 200⟩ (scR s₀) := Offset.sub_base _ (by omega_using [])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
   rcases hr' with rfl | rfl | rfl
   · exact hp.st_scr.symm.sub_left e
@@ -1393,7 +1396,7 @@ theorem callArgs_of (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : 
   obtain hst := hp.st_fit; have hsc := hp.scr_fit; have hdf := hp.d_fit
   obtain hL := len_lt s₀
   obtain eN : Region.Sub ⟨stA s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_using [])
-  obtain eS : Region.Sub ⟨scA s₀, 512⟩ (scR s₀) := Region.sub_prefix (by omega_using [])
+  obtain eS : Region.Sub ⟨scA s₀, 200⟩ (scR s₀) := Region.sub_prefix (by omega_using [])
   -- Where the blocks are.
   obtain hB : (State.addr blk = stA s₀ + BitVec.ofNat 64 (bufOff w) ∧ blockBytes w * n ≤ blockBytes w) ∨
       (∃ c₀, State.addr blk = dA s₀ + BitVec.ofNat 64 c₀ ∧ c₀ + blockBytes w * n ≤ len s₀) ∨
@@ -1452,16 +1455,16 @@ theorem callArgs_of (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : 
 
 /-- What a call leaves of `Common`. -/
 theorem Common.after_call {s₀ : State} (hp : Pre w s₀) {c : Nat} {s s' : State} (h : Common w s₀ c s)
-    (ha : After s [⟨stA s₀, bufOff w⟩, ⟨scA s₀, 512⟩] s') (hl : bufOff w ≤ bufOff w + blockBytes w) :
+    (ha : After s [⟨stA s₀, bufOff w⟩, ⟨scA s₀, 200⟩] s') (hl : bufOff w ≤ bufOff w + blockBytes w) :
     Common w s₀ c s' := by
-  obtain hf : Frame [stR s₀ w, ⟨scA s₀, 512⟩, below s₀] s.mem s'.mem := by
+  obtain hf : Frame [stR s₀ w, ⟨scA s₀, 200⟩, below s₀] s.mem s'.mem := by
     have := ha.frame
     rw [common_sp h] at this
     exact this.sub fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨stR s₀ w, by simp, Region.sub_prefix hl⟩
-      · exact ⟨⟨scA s₀, 512⟩, by simp, fun _ h => h⟩
+      · exact ⟨⟨scA s₀, 200⟩, by simp, fun _ h => h⟩
       · exact ⟨below s₀, by simp, fun _ h => h⟩
   obtain hcp : ∀ r ∈ commonRegs, r ∈ preserved ∧ r ≠ .lr := by decide
   obtain hg : ∀ r ∈ commonRegs, s'.gpr r = s.gpr r := fun r hr => ha.cs r (hcp r hr).1 (hcp r hr).2
@@ -1554,7 +1557,7 @@ theorem compressBlocks_one (h : HashValue w) (m : Mem) (p : Addr) (t : Nat) (f :
 
 /-- The buffer's bytes are not among those a call may write. -/
 theorem buf_after {s₀ : State} (hp : Pre w s₀) {c : Nat} {s s' : State} (h : Common w s₀ c s)
-    (ha : After s [⟨stA s₀, bufOff w⟩, ⟨scA s₀, 512⟩] s') {i : Nat} (hi : i < blockBytes w) :
+    (ha : After s [⟨stA s₀, bufOff w⟩, ⟨scA s₀, 200⟩] s') {i : Nat} (hi : i < blockBytes w) :
     s'.mem (stA s₀ + BitVec.ofNat 64 (bufOff w) + BitVec.ofNat 64 i) =
       s.mem (stA s₀ + BitVec.ofNat 64 (bufOff w) + BitVec.ofNat 64 i) := by
   have hst := hp.st_fit
@@ -1761,7 +1764,7 @@ theorem final_repr (hP : Ok P) {s₀ : State} {h0 : HashValue w} {d : List Byte}
   · exact repr_of_reprR P hP.pos h h0'
 
 theorem end_ok (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {s : State} (h : End P s₀ s) :
-    WP isa (updateEnd (w := w)) s fun s' => abiPreserved s₀ s' ∧ (updateArm P).post s₀ s' := by
+    WP isa (updateEnd (w := w)) s fun s' => abiPreserved s₀ s' ∧ (updateArm P 240).post s₀ s' := by
   obtain ⟨hC, h8, hrep⟩ := h
   obtain hL := len_lt s₀
   obtain ha₁ := a₁_le (w := w) s₀
@@ -1871,7 +1874,7 @@ theorem end_ok (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {s : State} (h : End
 
 theorem correct (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk P code) {s₀ : State}
     (hp : Pre w s₀) :
-    WP isa (update (w := w) name code) s₀ fun s' => abiPreserved s₀ s' ∧ (updateArm P).post s₀ s' :=
+    WP isa (update (w := w) name code) s₀ fun s' => abiPreserved s₀ s' ∧ (updateArm P 240).post s₀ s' :=
   WP.seq (WP.mono (pro_ok hP hp) fun _ h₁ => WP.seq (WP.mono (call₁_ok hP hf hp h₁) fun _ h₂ =>
     WP.seq (WP.mono (mid_ok hP hp h₂) fun _ h₃ => WP.seq (WP.mono (call₂_ok hP hf hp h₃) fun _ h₄ =>
       end_ok hP hp h₄))))

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+public import VerifiedGarbage.Impl.Blowfish.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Blowfish.Contract
 public import VerifiedGarbage.Spec.Blowfish.Cbc
@@ -255,7 +257,6 @@ end VG.Proof.Blowfish.X86_64
 end
 
 end
-
 
 /-!
 # Key expansion: the keyed P-array
@@ -787,7 +788,6 @@ end
 
 end
 
-
 /-!
 # Key expansion: the 521 encryptions
 
@@ -1204,7 +1204,6 @@ end
 
 end
 
-
 /-!
 # The key expansion function
 
@@ -1396,7 +1395,6 @@ end
 
 end
 
-
 /-! # Key expansion meets its contract, with the working space as an argument -/
 
 @[expose] public section
@@ -1456,7 +1454,6 @@ end VG.Proof.Blowfish.X86_64
 end
 
 end
-
 
 /-!
 # Blowfish on x86-64, with its working space on the stack
@@ -1528,8 +1525,8 @@ end
 # Blowfish on x86-64, without secret residue
 
 Key expansion and the ECB, CBC, CFB64 and OFB functions, each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers and the granules of its stack that the residue analysis
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which clears every
+caller-saved register and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
 memory on return only within the buffers (`X86_64.Scrub.PostOut`): the
 schedule (`scheduleAt_congr`), the blocks or bytes of the data and the
@@ -1549,7 +1546,6 @@ theorem len_le (ln : BitVec 64) (k : Nat) :
 
 theorem len_le1 (ln : BitVec 64) : ((ArgWord.int abi.ptrBits).ofRaw ln).toNat ≤ ln.toNat * Elem.u8.size :=
   Nat.le_of_eq (Nat.mul_one _).symm
-
 
 theorem expandKeyOut (stack : Nat) :
     PostOut (expandKeyContract X86_64.abi stack) (expandKeySig.retBits 64) :=
@@ -1714,220 +1710,232 @@ theorem ofbFinalOut (stack : Nat) : PostOut (ofbFinalContract X86_64.abi stack) 
 abbrev expandKeyCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 40 .rcx 4 Impl.Blowfish.X86_64.expandKey
 
-def expandKeyKs : List Nat := keep_for% Spec.Blowfish.expandKeyApi.sig 40 expandKeyCode []
-
-theorem expandKeyOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.expandKeyApi.sig 40 []) expandKeyCode
-      h).any (RScrub.resOkB · 40 expandKeyKs (Impl.Scrub.X86_64.chunks 40)) = true :=
-  RScrub.Analysed.ok_of expandKeyKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_expand_key`. -/
-def expandKeyReg : Registration Spec.Blowfish.expandKeyApi X86_64.target :=
-  scrubOf {
-    code := expandKeyCode
-    stack := 40
-    verified := Proof.Blowfish.X86_64.expandKey_framed } .sse true [.rcx, .rsi, .rdi, .r8, .r9, .r10, .r11] (expandKeyOut _) [] (pubOk_nil _) ⟨expandKeyKs, expandKeyOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_blowfish_ecb_encrypt`'s code. -/
 abbrev ecbEncryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 Impl.Blowfish.X86_64.encrypt
-
-def ecbEncryptKs : List Nat := keep_for% Spec.Blowfish.ecbEncryptApi.sig 264 ecbEncryptCode []
-
-theorem ecbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.ecbEncryptApi.sig 264 []) ecbEncryptCode
-      h).any (RScrub.resOkB · 264 ecbEncryptKs (Impl.Scrub.X86_64.chunks 264)) = true :=
-  RScrub.Analysed.ok_of ecbEncryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_ecb_encrypt`. -/
-def ecbEncryptReg : Registration Spec.Blowfish.ecbEncryptApi X86_64.target :=
-  scrubOf {
-    code := ecbEncryptCode
-    stack := 264
-    verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.encrypt_verified } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (ecbOut .encrypt _) [] (pubOk_nil _) ⟨ecbEncryptKs, ecbEncryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_ecb_decrypt`'s code. -/
 abbrev ecbDecryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 Impl.Blowfish.X86_64.decrypt
 
-def ecbDecryptKs : List Nat := keep_for% Spec.Blowfish.ecbDecryptApi.sig 264 ecbDecryptCode []
-
-theorem ecbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.ecbDecryptApi.sig 264 []) ecbDecryptCode
-      h).any (RScrub.resOkB · 264 ecbDecryptKs (Impl.Scrub.X86_64.chunks 264)) = true :=
-  RScrub.Analysed.ok_of ecbDecryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_ecb_decrypt`. -/
-def ecbDecryptReg : Registration Spec.Blowfish.ecbDecryptApi X86_64.target :=
-  scrubOf {
-    code := ecbDecryptCode
-    stack := 264
-    verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.decrypt_verified } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (ecbOut .decrypt _) [] (pubOk_nil _) ⟨ecbDecryptKs, ecbDecryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_blowfish_cbc_encrypt_chained`'s code. -/
 abbrev cbcEncryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cbcEncryptChained
-
-def cbcEncryptKs : List Nat := keep_for% Spec.Blowfish.cbcEncryptChainedApi.sig 96 cbcEncryptCode []
-
-theorem cbcEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.cbcEncryptChainedApi.sig 96 []) cbcEncryptCode
-      h).any (RScrub.resOkB · 96 cbcEncryptKs (Impl.Scrub.X86_64.chunks 96)) = true :=
-  RScrub.Analysed.ok_of cbcEncryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_cbc_encrypt_chained`. -/
-def cbcEncryptReg : Registration Spec.Blowfish.cbcEncryptChainedApi X86_64.target :=
-  scrubOf {
-    code := cbcEncryptCode
-    stack := 96
-    verified := Proof.Blowfish.X86_64.cbcEncryptChained_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cbcEncryptOut _) [] (pubOk_nil _) ⟨cbcEncryptKs, cbcEncryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_cbc_decrypt_chained`'s code. -/
 abbrev cbcDecryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cbcDecryptChained
 
-def cbcDecryptKs : List Nat := keep_for% Spec.Blowfish.cbcDecryptChainedApi.sig 96 cbcDecryptCode []
-
-theorem cbcDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.cbcDecryptChainedApi.sig 96 []) cbcDecryptCode
-      h).any (RScrub.resOkB · 96 cbcDecryptKs (Impl.Scrub.X86_64.chunks 96)) = true :=
-  RScrub.Analysed.ok_of cbcDecryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_cbc_decrypt_chained`. -/
-def cbcDecryptReg : Registration Spec.Blowfish.cbcDecryptChainedApi X86_64.target :=
-  scrubOf {
-    code := cbcDecryptCode
-    stack := 96
-    verified := Proof.Blowfish.X86_64.cbcDecryptChained_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cbcDecryptOut _) [] (pubOk_nil _) ⟨cbcDecryptKs, cbcDecryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_blowfish_cfb64_encrypt`'s code. -/
 abbrev cfbEncryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cfbEncrypt
-
-def cfbEncryptKs : List Nat := keep_for% Spec.Blowfish.cfbEncryptApi.sig 96 cfbEncryptCode []
-
-theorem cfbEncryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.cfbEncryptApi.sig 96 []) cfbEncryptCode
-      h).any (RScrub.resOkB · 96 cfbEncryptKs (Impl.Scrub.X86_64.chunks 96)) = true :=
-  RScrub.Analysed.ok_of cfbEncryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_cfb64_encrypt`. -/
-def cfbEncryptReg : Registration Spec.Blowfish.cfbEncryptApi X86_64.target :=
-  scrubOf {
-    code := cfbEncryptCode
-    stack := 96
-    verified := Proof.Blowfish.X86_64.cfbEncrypt_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cfbEncryptOut _) [] (pubOk_nil _) ⟨cfbEncryptKs, cfbEncryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_cfb64_decrypt`'s code. -/
 abbrev cfbDecryptCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cfbDecrypt
 
-def cfbDecryptKs : List Nat := keep_for% Spec.Blowfish.cfbDecryptApi.sig 96 cfbDecryptCode []
-
-theorem cfbDecryptOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.cfbDecryptApi.sig 96 []) cfbDecryptCode
-      h).any (RScrub.resOkB · 96 cfbDecryptKs (Impl.Scrub.X86_64.chunks 96)) = true :=
-  RScrub.Analysed.ok_of cfbDecryptKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_cfb64_decrypt`. -/
-def cfbDecryptReg : Registration Spec.Blowfish.cfbDecryptApi X86_64.target :=
-  scrubOf {
-    code := cfbDecryptCode
-    stack := 96
-    verified := Proof.Blowfish.X86_64.cfbDecrypt_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cfbDecryptOut _) [] (pubOk_nil _) ⟨cfbDecryptKs, cfbDecryptOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_blowfish_cfb64_encrypt_final`'s code. -/
 abbrev cfbEncryptFinalCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cfbEncryptFinal
-
-def cfbEncryptFinalKs : List Nat := keep_for% Spec.Blowfish.cfbEncryptFinalApi.sig 96 cfbEncryptFinalCode []
-
-theorem cfbEncryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.cfbEncryptFinalApi.sig 96 []) cfbEncryptFinalCode
-      h).any (RScrub.resOkB · 96 cfbEncryptFinalKs (Impl.Scrub.X86_64.chunks 96)) = true :=
-  RScrub.Analysed.ok_of cfbEncryptFinalKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_cfb64_encrypt_final`. -/
-def cfbEncryptFinalReg : Registration Spec.Blowfish.cfbEncryptFinalApi X86_64.target :=
-  scrubOf {
-    code := cfbEncryptFinalCode
-    stack := 96
-    verified := Proof.Blowfish.X86_64.cfbEncryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cfbEncryptFinalOut _) [] (pubOk_nil _) ⟨cfbEncryptFinalKs, cfbEncryptFinalOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_cfb64_decrypt_final`'s code. -/
 abbrev cfbDecryptFinalCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cfbDecryptFinal
 
-def cfbDecryptFinalKs : List Nat := keep_for% Spec.Blowfish.cfbDecryptFinalApi.sig 96 cfbDecryptFinalCode []
-
-theorem cfbDecryptFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.cfbDecryptFinalApi.sig 96 []) cfbDecryptFinalCode
-      h).any (RScrub.resOkB · 96 cfbDecryptFinalKs (Impl.Scrub.X86_64.chunks 96)) = true :=
-  RScrub.Analysed.ok_of cfbDecryptFinalKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_cfb64_decrypt_final`. -/
-def cfbDecryptFinalReg : Registration Spec.Blowfish.cfbDecryptFinalApi X86_64.target :=
-  scrubOf {
-    code := cfbDecryptFinalCode
-    stack := 96
-    verified := Proof.Blowfish.X86_64.cfbDecryptFinal_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (cfbDecryptFinalOut _) [] (pubOk_nil _) ⟨cfbDecryptFinalKs, cfbDecryptFinalOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
 /-- `vg_blowfish_ofb`'s code. -/
 abbrev ofbCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.ofb
-
-def ofbKs : List Nat := keep_for% Spec.Blowfish.ofbApi.sig 96 ofbCode []
-
-theorem ofbOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.ofbApi.sig 96 []) ofbCode
-      h).any (RScrub.resOkB · 96 ofbKs (Impl.Scrub.X86_64.chunks 96)) = true :=
-  RScrub.Analysed.ok_of ofbKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_ofb`. -/
-def ofbReg : Registration Spec.Blowfish.ofbApi X86_64.target :=
-  scrubOf {
-    code := ofbCode
-    stack := 96
-    verified := Proof.Blowfish.X86_64.ofb_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (ofbOut _) [] (pubOk_nil _) ⟨ofbKs, ofbOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
 
 /-- `vg_blowfish_ofb_final`'s code. -/
 abbrev ofbFinalCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.ofbFinal
 
-def ofbFinalKs : List Nat := keep_for% Spec.Blowfish.ofbFinalApi.sig 96 ofbFinalCode []
+/-! ## The functions as emitted -/
 
-theorem ofbFinalOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Blowfish.ofbFinalApi.sig 96 []) ofbFinalCode
-      h).any (RScrub.resOkB · 96 ofbFinalKs (Impl.Scrub.X86_64.chunks 96)) = true :=
-  RScrub.Analysed.ok_of ofbFinalKs (by taint_decide)
+theorem expandKey_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 40 .rcx 4 Impl.Blowfish.X86_64.expandKey).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_blowfish_ofb_final`. -/
-def ofbFinalReg : Registration Spec.Blowfish.ofbFinalApi X86_64.target :=
-  scrubOf {
-    code := ofbFinalCode
-    stack := 96
-    verified := Proof.Blowfish.X86_64.ofbFinal_framed } .sse true [.rcx, .rdx, .rsi, .r8, .r9, .r10, .r11] (ofbFinalOut _) [] (pubOk_nil _) ⟨ofbFinalKs, ofbFinalOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Blowfish.expandKeyApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.expandKey`) meets its contract in
+constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.expandKey (Spec.Blowfish.expandKeyApi.contract X86_64.abi 40) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.expandKeyApi)
+    { code := expandKeyCode
+      stack := 40
+      verified := Proof.Blowfish.X86_64.expandKey_framed
+      spSafe := expandKey_codeSp }
+    .sse [(0, 1)] (expandKeyOut _) (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem expandKey_spSafe : Impl.Blowfish.X86_64.Fn.expandKey.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe expandKey_codeSp
+
+theorem ecbEncrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 Impl.Blowfish.X86_64.encrypt).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blowfish.ecbEncryptApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.ecbEncrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ecbEncrypt_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.ecbEncrypt (Spec.Blowfish.ecbEncryptApi.contract X86_64.abi 264) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.ecbEncryptApi)
+    { code := ecbEncryptCode
+      stack := 264
+      verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.encrypt_verified
+      spSafe := ecbEncrypt_codeSp }
+    .sse [(0, 17)] (ecbOut .encrypt _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem ecbEncrypt_spSafe : Impl.Blowfish.X86_64.Fn.ecbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ecbEncrypt_codeSp
+
+theorem ecbDecrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 Impl.Blowfish.X86_64.decrypt).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blowfish.ecbDecryptApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.ecbDecrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ecbDecrypt_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.ecbDecrypt (Spec.Blowfish.ecbDecryptApi.contract X86_64.abi 264) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.ecbDecryptApi)
+    { code := ecbDecryptCode
+      stack := 264
+      verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.decrypt_verified
+      spSafe := ecbDecrypt_codeSp }
+    .sse [(0, 17)] (ecbOut .decrypt _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem ecbDecrypt_spSafe : Impl.Blowfish.X86_64.Fn.ecbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ecbDecrypt_codeSp
+
+theorem cbcEncrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cbcEncryptChained).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blowfish.cbcEncryptChainedApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.cbcEncrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cbcEncrypt_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.cbcEncrypt (Spec.Blowfish.cbcEncryptChainedApi.contract X86_64.abi 96) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cbcEncryptChainedApi)
+    { code := cbcEncryptCode
+      stack := 96
+      verified := Proof.Blowfish.X86_64.cbcEncryptChained_framed
+      spSafe := cbcEncrypt_codeSp }
+    .sse [(0, 1)] (cbcEncryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cbcEncrypt_spSafe : Impl.Blowfish.X86_64.Fn.cbcEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cbcEncrypt_codeSp
+
+theorem cbcDecrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cbcDecryptChained).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blowfish.cbcDecryptChainedApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.cbcDecrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cbcDecrypt_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.cbcDecrypt (Spec.Blowfish.cbcDecryptChainedApi.contract X86_64.abi 96) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cbcDecryptChainedApi)
+    { code := cbcDecryptCode
+      stack := 96
+      verified := Proof.Blowfish.X86_64.cbcDecryptChained_framed
+      spSafe := cbcDecrypt_codeSp }
+    .sse [(0, 1)] (cbcDecryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cbcDecrypt_spSafe : Impl.Blowfish.X86_64.Fn.cbcDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cbcDecrypt_codeSp
+
+theorem cfbEncrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cfbEncrypt).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blowfish.cfbEncryptApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.cfbEncrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbEncrypt_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.cfbEncrypt (Spec.Blowfish.cfbEncryptApi.contract X86_64.abi 96) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cfbEncryptApi)
+    { code := cfbEncryptCode
+      stack := 96
+      verified := Proof.Blowfish.X86_64.cfbEncrypt_framed
+      spSafe := cfbEncrypt_codeSp }
+    .sse [(0, 1)] (cfbEncryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cfbEncrypt_spSafe : Impl.Blowfish.X86_64.Fn.cfbEncrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbEncrypt_codeSp
+
+theorem cfbDecrypt_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cfbDecrypt).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blowfish.cfbDecryptApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.cfbDecrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbDecrypt_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.cfbDecrypt (Spec.Blowfish.cfbDecryptApi.contract X86_64.abi 96) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cfbDecryptApi)
+    { code := cfbDecryptCode
+      stack := 96
+      verified := Proof.Blowfish.X86_64.cfbDecrypt_framed
+      spSafe := cfbDecrypt_codeSp }
+    .sse [(0, 1)] (cfbDecryptOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cfbDecrypt_spSafe : Impl.Blowfish.X86_64.Fn.cfbDecrypt.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbDecrypt_codeSp
+
+theorem cfbEncryptFinal_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cfbEncryptFinal).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blowfish.cfbEncryptFinalApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.cfbEncryptFinal`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbEncryptFinal_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.cfbEncryptFinal (Spec.Blowfish.cfbEncryptFinalApi.contract X86_64.abi 96) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cfbEncryptFinalApi)
+    { code := cfbEncryptFinalCode
+      stack := 96
+      verified := Proof.Blowfish.X86_64.cfbEncryptFinal_framed
+      spSafe := cfbEncryptFinal_codeSp }
+    .sse [(0, 1)] (cfbEncryptFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cfbEncryptFinal_spSafe : Impl.Blowfish.X86_64.Fn.cfbEncryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbEncryptFinal_codeSp
+
+theorem cfbDecryptFinal_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cfbDecryptFinal).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blowfish.cfbDecryptFinalApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.cfbDecryptFinal`) meets its contract in
+constant time and returns without secret residue. -/
+theorem cfbDecryptFinal_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.cfbDecryptFinal (Spec.Blowfish.cfbDecryptFinalApi.contract X86_64.abi 96) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.cfbDecryptFinalApi)
+    { code := cfbDecryptFinalCode
+      stack := 96
+      verified := Proof.Blowfish.X86_64.cfbDecryptFinal_framed
+      spSafe := cfbDecryptFinal_codeSp }
+    .sse [(0, 1)] (cfbDecryptFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem cfbDecryptFinal_spSafe : Impl.Blowfish.X86_64.Fn.cfbDecryptFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe cfbDecryptFinal_codeSp
+
+theorem ofb_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.ofb).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blowfish.ofbApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.ofb`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.ofb (Spec.Blowfish.ofbApi.contract X86_64.abi 96) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.ofbApi)
+    { code := ofbCode
+      stack := 96
+      verified := Proof.Blowfish.X86_64.ofb_framed
+      spSafe := ofb_codeSp }
+    .sse [(0, 1)] (ofbOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem ofb_spSafe : Impl.Blowfish.X86_64.Fn.ofb.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ofb_codeSp
+
+theorem ofbFinal_codeSp : (Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.ofbFinal).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `Spec.Blowfish.ofbFinalApi`'s function as emitted (`Impl.Blowfish.X86_64.Fn.ofbFinal`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed target Impl.Blowfish.X86_64.Fn.ofbFinal (Spec.Blowfish.ofbFinalApi.contract X86_64.abi 96) 0 :=
+  verifiedScrubbedSel (api := Spec.Blowfish.ofbFinalApi)
+    { code := ofbFinalCode
+      stack := 96
+      verified := Proof.Blowfish.X86_64.ofbFinal_framed
+      spSafe := ofbFinal_codeSp }
+    .sse [(0, 1)] (ofbFinalOut _) (RScrub.pubOk_nil _) (by taint_decide)
+
+theorem ofbFinal_spSafe : Impl.Blowfish.X86_64.Fn.ofbFinal.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe ofbFinal_codeSp
 end VG.Proof.Blowfish.X86_64.Scrub

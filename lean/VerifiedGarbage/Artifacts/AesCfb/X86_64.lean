@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.AesOfb.X86_64.Fn
+public import VerifiedGarbage.Impl.AesCfb8.X86_64.Fn
+public import VerifiedGarbage.Impl.AesCfb.X86_64.Fn
 public import VerifiedGarbage.Proof.AesCfb.X86_64.Verified
 public import VerifiedGarbage.Proof.AesCfb.X86_64.Final
 public import VerifiedGarbage.Proof.Aes.X86_64.ModesScrub
@@ -16,9 +19,25 @@ namespace VG.Artifacts.AesCfb.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.BlocksImpl) => [
-    Spec.Cfb.aesEncryptApi.artifact X86_64.target (Proof.Aes.X86_64.ModesScrub.cfbEncryptReg v),
-    Spec.Cfb.aesDecryptApi.artifact X86_64.target (Proof.Aes.X86_64.ModesScrub.cfbDecryptReg v),
-    Spec.Cfb.aesEncryptFinalApi.artifact X86_64.target (Proof.Aes.X86_64.FinalScrub.cfbEncryptFinalReg v),
-    Spec.Cfb.aesDecryptFinalApi.artifact X86_64.target (Proof.Aes.X86_64.FinalScrub.cfbDecryptFinalReg v)]
+    Spec.Cfb.aesEncryptApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesCfb.X86_64.Fn.cfbEncrypt v.level v.enc
+      verified := .scrubbed (Proof.Aes.X86_64.ModesScrub.cfbEncrypt_scrubbed v)
+      spSafe := Proof.Aes.X86_64.ModesScrub.cfbEncrypt_spSafeFn v },
+    Spec.Cfb.aesDecryptApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesCfb.X86_64.Fn.cfbDecrypt v.level v.enc
+      verified := .scrubbed (Proof.Aes.X86_64.ModesScrub.cfbDecrypt_scrubbed v)
+      spSafe := Proof.Aes.X86_64.ModesScrub.cfbDecrypt_spSafeFn v },
+    Spec.Cfb.aesEncryptFinalApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesCfb.X86_64.Fn.cfbEncryptFinal v.level v.enc v.suffix
+      verified := .scrubbed (Proof.Aes.X86_64.FinalScrub.cfbEncryptFinal_scrubbed v)
+      spSafe := Proof.Aes.X86_64.FinalScrub.cfbEncryptFinal_spSafeFn v },
+    Spec.Cfb.aesDecryptFinalApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesCfb.X86_64.Fn.cfbDecryptFinal v.level v.enc v.suffix
+      verified := .scrubbed (Proof.Aes.X86_64.FinalScrub.cfbDecryptFinal_scrubbed v)
+      spSafe := Proof.Aes.X86_64.FinalScrub.cfbDecryptFinal_spSafeFn v }]
 
 end VG.Artifacts.AesCfb.X86_64

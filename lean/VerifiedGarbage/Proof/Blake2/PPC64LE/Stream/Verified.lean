@@ -82,12 +82,14 @@ def initPPC64LE : Contract isa where
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
 
 /-- PPC64LE contract for `update(state = r3, count = r4, data = r5, len = r6,
-scratch = r7)`. -/
-def updatePPC64LE : Contract isa where
+scratch = r7)`, with `sc` bytes of scratch: the code uses 152, the
+compression function's 104 and the caller's registers; Argon2 passes 576
+(`Proof/Argon2/PPC64LE/HPrime/Absorb.lean`). -/
+def updatePPC64LE (sc : Nat := 576) : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .r3, bufOff w + blockBytes w⟩
     let data : Region := ⟨s.gpr .r5, (s.gpr .r6).toNat⟩
-    let scratch : Region := ⟨s.gpr .r7, 576⟩
+    let scratch : Region := ⟨s.gpr .r7, sc⟩
     let stack : Region := ⟨s.sp - 48, 48⟩
     s.rd = [data] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ data.Disjoint state ∧ data.Disjoint scratch ∧
@@ -100,12 +102,12 @@ def updatePPC64LE : Contract isa where
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.sp = s₂.sp
 
 /-- PPC64LE contract for `finalize(state = r3, count = r4, out = r5, scratch =
-r6)`. -/
-def finalizePPC64LE : Contract isa where
+r6)`, with `sc` bytes of scratch (as for `updatePPC64LE`). -/
+def finalizePPC64LE (sc : Nat := 576) : Contract isa where
   pre s :=
     let state : Region := ⟨s.gpr .r3, bufOff w + blockBytes w⟩
     let out : Region := ⟨s.gpr .r5, bufOff w⟩
-    let scratch : Region := ⟨s.gpr .r6, 576⟩
+    let scratch : Region := ⟨s.gpr .r6, sc⟩
     let stack : Region := ⟨s.sp - 48, 48⟩
     s.rd = [] ∧ s.wr = [state, out, scratch] ∧
     state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
@@ -201,11 +203,11 @@ may be accessed. -/
 structure CallOk (s : State) (st scr src : Addr) (len : Nat) : Prop where
   r26 : s.gpr .r26 = st
   r27 : s.gpr .r27 = scr
-  d₁ : Region.Disjoint ⟨st, bufOff w⟩ ⟨scr, 512⟩
+  d₁ : Region.Disjoint ⟨st, bufOff w⟩ ⟨scr, 104⟩
   d₂ : Region.Disjoint ⟨src, len⟩ ⟨st, bufOff w⟩
-  d₃ : Region.Disjoint ⟨src, len⟩ ⟨scr, 512⟩
-  hc : PPC64LE.Covers [⟨src, len⟩, ⟨st, bufOff w⟩, ⟨scr, 512⟩] (s.rd ++ s.wr)
-  hw : PPC64LE.Covers [⟨st, bufOff w⟩, ⟨scr, 512⟩] s.wr
+  d₃ : Region.Disjoint ⟨src, len⟩ ⟨scr, 104⟩
+  hc : PPC64LE.Covers [⟨src, len⟩, ⟨st, bufOff w⟩, ⟨scr, 104⟩] (s.rd ++ s.wr)
+  hw : PPC64LE.Covers [⟨st, bufOff w⟩, ⟨scr, 104⟩] s.wr
 
 /-- The arguments of the call, set up from `σ`. -/
 structure Setup (σ s : State) (src n t : BitVec 64) (last : Bool) : Prop where
@@ -232,7 +234,7 @@ theorem compressWith_ok {args : List Instr} (hf : CalleeOk P (compress P)) {s : 
     {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
-      Frame [⟨st, bufOff w⟩, ⟨scr, 512⟩] s.mem s'.mem →
+      Frame [⟨st, bufOff w⟩, ⟨scr, 104⟩] s.mem s'.mem →
       stateAt w s'.mem st = compressBlocks P (stateAt w s.mem st) s.mem src n.toNat t.toNat last →
       Q s') :
     WP isa (compressWith P args) s Q := by
@@ -245,7 +247,7 @@ theorem compressWith_ok {args : List Instr} (hf : CalleeOk P (compress P)) {s : 
   have e4 : s₁.callEntry.gpr .r7 = s₁.gpr .r7 := State.callEntry_gpr _ (by decide)
   have e5 : s₁.callEntry.gpr .r8 = scr := (State.callEntry_gpr _ (by decide)).trans (hs.r8.trans h.r27)
   refine WP.call (k := compressPPC64LE P) hf.verified
-    (rd := [⟨src, blockBytes w * n.toNat⟩]) (wr := [⟨st, bufOff w⟩, ⟨scr, 512⟩]) ?_ ?_ ?_ ?_ hf.noFrames
+    (rd := [⟨src, blockBytes w * n.toNat⟩]) (wr := [⟨st, bufOff w⟩, ⟨scr, 104⟩]) ?_ ?_ ?_ ?_ hf.noFrames
   · simp only [compressPPC64LE, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, e0, e1, e2, e5]
     exact ⟨trivial, trivial, h.d₁, h.d₂, h.d₃⟩
@@ -407,21 +409,21 @@ theorem zeroLoop_ok {s₀ : State} {st : Addr} {r k : Nat} (hN : bufOff w ≤ 64
 /-- The caller's callee-saved registers `g` are saved in the scratch space at `b`. -/
 abbrev Saved (b : Addr) (g : Reg → BitVec 64) (m : Mem) : Prop := Spill.Saved b g saved m
 
-/-- The memory after saving `r26`–`r31` (values `g`) at `b + 512 …`. -/
+/-- The memory after saving `r26`–`r31` (values `g`) at `b + 104 …`. -/
 abbrev saveMem (m : Mem) (b : Addr) (g : Reg → BitVec 64) : Mem := Spill.saveMem m b g saved
 
-theorem saved_off : ∀ p ∈ saved, 512 ≤ p.2 ∧ p.2 + 8 ≤ 560 := by decide
+theorem saved_off : ∀ p ∈ saved, 104 ≤ p.2 ∧ p.2 + 8 ≤ 152 := by decide
 
 theorem saveMem_saved (m : Mem) (b : Addr) (g : Reg → BitVec 64) : Saved b g (saveMem m b g) :=
   Spill.saveMem_saved (by decide) m b g
 
 theorem saveMem_frame (m : Mem) (b : Addr) (g : Reg → BitVec 64) :
-    Frame [⟨b + BitVec.ofNat 64 512, 48⟩] m (saveMem m b g) :=
+    Frame [⟨b + BitVec.ofNat 64 104, 48⟩] m (saveMem m b g) :=
   Spill.saveMem_frame (by decide) (by decide) m b g
 
 /-- Saving `r26`–`r31` with the scratch pointer in `b`. -/
 theorem save_ok {b : Reg} {rest : List Instr} {s : State} {Q : State → Prop} (hb : b ≠ .r0)
-    (hin : ∀ d, 512 ≤ d → d + 8 ≤ 560 → InRegions s.wr (s.gpr b + BitVec.ofNat 64 d) 8)
+    (hin : ∀ d, 104 ≤ d → d + 8 ≤ 152 → InRegions s.wr (s.gpr b + BitVec.ofNat 64 d) 8)
     (k : ∀ s', s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       s'.mem = saveMem s.mem (s.gpr b) s.gpr → WP isa (.block rest) s' Q) :
     WP isa (.block (save b ++ rest)) s Q :=
@@ -430,11 +432,11 @@ theorem save_ok {b : Reg} {rest : List Instr} {s : State} {Q : State → Prop} (
 
 /-- `restore`, `r27` (the base) last. -/
 abbrev restored : List (Reg × Nat) :=
-  [(.r26, 512), (.r28, 528), (.r29, 536), (.r30, 544), (.r31, 552), (.r27, 520)]
+  [(.r26, 104), (.r28, 120), (.r29, 128), (.r30, 136), (.r31, 144), (.r27, 112)]
 
 /-- Restoring `r26`–`r31` from the save area at `scr`. -/
 theorem restore_ok {s : State} {scr : Addr} (h20 : s.gpr .r27 = scr)
-    (hin : ∀ d, 512 ≤ d → d + 8 ≤ 560 → InRegions (s.rd ++ s.wr) (scr + BitVec.ofNat 64 d) 8)
+    (hin : ∀ d, 104 ≤ d → d + 8 ≤ 152 → InRegions (s.rd ++ s.wr) (scr + BitVec.ofNat 64 d) 8)
     (g : Reg → BitVec 64) (hsv : Saved scr g s.mem) {Q : State → Prop}
     (k : ∀ s', (∀ p ∈ saved, s'.gpr p.1 = g p.1) →
       (∀ r, r ∉ saved.map Prod.fst → s'.gpr r = s.gpr r) →
@@ -578,15 +580,16 @@ theorem init_agree {w : Nat} {P : Params w} {s₁ s₂ : State} (hpub : (initPPC
   simp only [PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem update_agree {w : Nat} {P : Params w} {s₁ s₂ : State} (hpub : (updatePPC64LE P).pub s₁ s₂) :
+theorem update_agree {w : Nat} {P : Params w} {sc : Nat} {s₁ s₂ : State}
+    (hpub : (updatePPC64LE P sc).pub s₁ s₂) :
     PPC64LE.Taint.Agree (PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) s₁ s₂ := by
   obtain ⟨p1, p2, p3, p4, p5, hsp⟩ := hpub
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem finalize_agree {w : Nat} {P : Params w} {s₁ s₂ : State}
-    (hpub : (finalizePPC64LE P).pub s₁ s₂) :
+theorem finalize_agree {w : Nat} {P : Params w} {sc : Nat} {s₁ s₂ : State}
+    (hpub : (finalizePPC64LE P sc).pub s₁ s₂) :
     PPC64LE.Taint.Agree (PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6]) s₁ s₂ := by
   obtain ⟨p1, p2, p3, p4, hsp⟩ := hpub
   refine ⟨hsp, fun r hr => ?_⟩
@@ -606,22 +609,26 @@ theorem initS_ct : ConstantTime isa (initPPC64LE s).pre (initPPC64LE s).pub
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
     (fun _ _ _ _ hp => init_agree hp) (by taint_decide)
 
-theorem updateB_ct : ConstantTime isa (updatePPC64LE b).pre (updatePPC64LE b).pub
+/-- For any size of `scratch`, which the timing does not depend on. -/
+theorem updateB_ct {sc : Nat} : ConstantTime isa (updatePPC64LE b sc).pre (updatePPC64LE b sc).pub
     (Impl.Blake2.PPC64LE.Stream.update b) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => update_agree hp) (by taint_decide)
 
-theorem updateS_ct : ConstantTime isa (updatePPC64LE s).pre (updatePPC64LE s).pub
+/-- For any size of `scratch`, which the timing does not depend on. -/
+theorem updateS_ct {sc : Nat} : ConstantTime isa (updatePPC64LE s sc).pre (updatePPC64LE s sc).pub
     (Impl.Blake2.PPC64LE.Stream.update s) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => update_agree hp) (by taint_decide)
 
-theorem finalizeB_ct : ConstantTime isa (finalizePPC64LE b).pre (finalizePPC64LE b).pub
+/-- For any size of `scratch`, which the timing does not depend on. -/
+theorem finalizeB_ct {sc : Nat} : ConstantTime isa (finalizePPC64LE b sc).pre (finalizePPC64LE b sc).pub
     (Impl.Blake2.PPC64LE.Stream.finalize b) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
     (fun _ _ _ _ hp => finalize_agree hp) (by taint_decide)
 
-theorem finalizeS_ct : ConstantTime isa (finalizePPC64LE s).pre (finalizePPC64LE s).pub
+/-- For any size of `scratch`, which the timing does not depend on. -/
+theorem finalizeS_ct {sc : Nat} : ConstantTime isa (finalizePPC64LE s sc).pre (finalizePPC64LE s sc).pub
     (Impl.Blake2.PPC64LE.Stream.finalize s) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
     (fun _ _ _ _ hp => finalize_agree hp) (by taint_decide)
@@ -1141,7 +1148,7 @@ abbrev len : Nat := (s₀.gpr .r6).toNat
 abbrev scr : Addr := s₀.gpr .r7
 abbrev stR (w : Nat) : Region := ⟨st s₀, bufOff w + blockBytes w⟩
 abbrev dR : Region := ⟨dp s₀, len s₀⟩
-abbrev scR : Region := ⟨scr s₀, 576⟩
+abbrev scR : Region := ⟨scr s₀, 152⟩
 /-- The first `c` bytes of data. -/
 abbrev D (c : Nat) : List Byte := bytesAt s₀.mem (dp s₀) c
 /-- The frame saving the link register, below the stack pointer. -/
@@ -1163,7 +1170,7 @@ structure Stack (w : Nat) (s₀ : State) : Prop where
   d : (stkR s₀).Disjoint (dR s₀)
   scr : (stkR s₀).Disjoint (scR s₀)
 
-theorem pre_of {s₀ : State} (h : (updatePPC64LE P).pre s₀) : Pre w s₀ ∧ Stack w s₀ := by
+theorem pre_of {s₀ : State} (h : (updatePPC64LE P 152).pre s₀) : Pre w s₀ ∧ Stack w s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨⟨h1, h2, h3, h4, h5⟩, ⟨h6, h7, h8, h9⟩⟩
 
@@ -1236,7 +1243,7 @@ theorem Common.data {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State} (h : 
 /-- Writes to the state and the compression function's scratch space keep the
 saved registers. -/
 theorem saved_frame {s₀ : State} (hp : Pre w s₀) {m m' : Mem} (h : Saved (scr s₀) s₀.gpr m)
-    (hf : Frame [stR s₀ w, ⟨scr s₀, 512⟩] m m') : Saved (scr s₀) s₀.gpr m' :=
+    (hf : Frame [stR s₀ w, ⟨scr s₀, 104⟩] m m') : Saved (scr s₀) s₀.gpr m' :=
   Spill.Saved.frame h hf fun p hp' r' hr' => by
     obtain hoff := saved_off p hp'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -1379,7 +1386,7 @@ theorem callOk (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} {s : State
     {src : Addr} {n : Nat} (hsrc : Src w s₀ src n) : CallOk (w := w) s (st s₀) (scr s₀) src n := by
   obtain hl := hP.len; have := len_lt s₀
   obtain eN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_using [])
-  obtain eso : Region.Sub ⟨scr s₀, 512⟩ (scR s₀) := Region.sub_prefix (by omega_using [])
+  obtain eso : Region.Sub ⟨scr s₀, 104⟩ (scR s₀) := Region.sub_prefix (by omega_using [])
   obtain eSrc : Region.Sub ⟨src, n⟩ (stR s₀ w) ∨ Region.Sub ⟨src, n⟩ (dR s₀) := by
     rcases hsrc with ⟨h', rfl⟩ | ⟨c₀, h', hc₀⟩
     · exact .inl (h' ▸ Offset.sub_base _ (by omega_using []))
@@ -1415,14 +1422,14 @@ theorem commonRegs_preserved : ∀ r ∈ commonRegs, r ∈ preserved := by decid
 theorem Common.after_call (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {c : Nat} {s s' : State}
     (h : Common w s₀ c s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hsp : s'.sp = s.sp)
     (hcs : ∀ r ∈ preserved, s'.gpr r = s.gpr r)
-    (hf : Frame [⟨st s₀, bufOff w⟩, ⟨scr s₀, 512⟩] s.mem s'.mem) :
+    (hf : Frame [⟨st s₀, bufOff w⟩, ⟨scr s₀, 104⟩] s.mem s'.mem) :
     Common w s₀ c s' := by
   have hl := hP.len
-  obtain hf' : Frame [stR s₀ w, ⟨scr s₀, 512⟩] s.mem s'.mem := hf.sub fun r hr => by
+  obtain hf' : Frame [stR s₀ w, ⟨scr s₀, 104⟩] s.mem s'.mem := hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨stR s₀ w, by simp, Region.sub_prefix (by omega_using [])⟩
-    · exact ⟨⟨scr s₀, 512⟩, by simp, fun _ h => h⟩
+    · exact ⟨⟨scr s₀, 104⟩, by simp, fun _ h => h⟩
   obtain hg : ∀ r ∈ commonRegs, s'.gpr r = s.gpr r := fun r hr =>
     hcs r (commonRegs_preserved r hr)
   refine ⟨h.c_le, hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.sp, by rw [hg _ (by simp)]; exact h.r26,
@@ -1789,7 +1796,7 @@ theorem Full.done (hP : Ok P) {s₀ : State} {s : State} (h : Full P s₀ s) : D
 
 /-- The epilogue's postcondition. -/
 def Post (P : Params w) (s₀ s' : State) : Prop :=
-  (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧ (updatePPC64LE P).post s₀ s'
+  (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧ (updatePPC64LE P 152).post s₀ s'
 
 theorem epilogue_ok {s₀ : State} (hp : Pre w s₀) {s : State} (hI : Done P s₀ s) :
     WP isa (.block restore) s (Post P s₀) := by
@@ -1831,8 +1838,8 @@ pushed in a frame. -/
 abbrev inner (s₀ : State) : State := framed .r0 (s₀.write .r0 s₀.lr)
 
 theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
-    (hpre : (updatePPC64LE P).pre s₀) :
-    WP isa (update P) s₀ fun s' => abiPreserved s₀ s' ∧ (updatePPC64LE P).post s₀ s' := by
+    (hpre : (updatePPC64LE P 152).pre s₀) :
+    WP isa (update P) s₀ fun s' => abiPreserved s₀ s' ∧ (updatePPC64LE P 152).post s₀ s' := by
   obtain ⟨hp, hs⟩ := pre_of hpre
   have hl := hP.len
   obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr⟩
@@ -1905,7 +1912,7 @@ abbrev op : Addr := s₀.gpr .r5
 abbrev scr : Addr := s₀.gpr .r6
 abbrev stR (w : Nat) : Region := ⟨st s₀, bufOff w + blockBytes w⟩
 abbrev outR (w : Nat) : Region := ⟨op s₀, bufOff w⟩
-abbrev scR : Region := ⟨scr s₀, 576⟩
+abbrev scR : Region := ⟨scr s₀, 152⟩
 /-- The frame saving the link register, below the stack pointer. -/
 abbrev stkR : Region := ⟨s₀.sp - 48, 48⟩
 
@@ -1925,14 +1932,14 @@ structure Stack (w : Nat) (s₀ : State) : Prop where
   out : (stkR s₀).Disjoint (outR s₀ w)
   scr : (stkR s₀).Disjoint (scR s₀)
 
-theorem pre_of {w : Nat} {P : Params w} {s₀ : State} (h : (finalizePPC64LE P).pre s₀) :
+theorem pre_of {w : Nat} {P : Params w} {s₀ : State} (h : (finalizePPC64LE P 152).pre s₀) :
     Pre w s₀ ∧ Stack w s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨⟨h1, h2, h3, h4, h5⟩, ⟨h6, h7, h8, h9⟩⟩
 
 /-- The saved registers are outside everything written after the saves. -/
 theorem Saved.frame {w : Nat} {s₀ : State} (hp : Pre w s₀) {g : Reg → BitVec 64} {m m' : Mem}
-    (h : Saved (scr s₀) g m) (hf : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 512⟩] m m') :
+    (h : Saved (scr s₀) g m) (hf : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 104⟩] m m') :
     Saved (scr s₀) g m' :=
   Spill.Saved.frame h hf fun p hp' r hr => by
     obtain hoff := saved_off p hp'
@@ -2116,7 +2123,7 @@ theorem commonKeep_ok : ∀ r ∈ commonKeep,
 
 /-- The epilogue's postcondition. -/
 def Post (P : Params w) (s₀ s' : State) : Prop :=
-  (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧ (finalizePPC64LE P).post s₀ s'
+  (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧ (finalizePPC64LE P 152).post s₀ s'
 
 /-- `finalize` without its frame: the callee-saved registers are kept. -/
 theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (hp : Pre w s₀) :
@@ -2126,7 +2133,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
   have hbb := hP.bb
   obtain hN8 : bufOff w % 8 = 0 := by simp only [bufOff]; omega_arith
   obtain hstN : Region.Sub ⟨st s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_arith)
-  obtain hsave_st : ∀ r ∈ [(⟨scr s₀ + BitVec.ofNat 64 512, 48⟩ : Region)], (stR s₀ w).Disjoint r := by
+  obtain hsave_st : ∀ r ∈ [(⟨scr s₀ + BitVec.ofNat 64 104, 48⟩ : Region)], (stR s₀ w).Disjoint r := by
     simpa using hp.st_scr.sub_right (Offset.sub_base _ (by omega_arith))
   unfold finalizeMain
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
@@ -2154,7 +2161,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
   -- The call.
   obtain hbuf : Region.Sub ⟨st s₀ + BitVec.ofNat 64 (bufOff w), blockBytes w⟩ (stR s₀ w) :=
     Offset.sub_base _ (by omega_arith)
-  obtain hscr : Region.Sub ⟨scr s₀, 512⟩ (scR s₀) := Region.sub_prefix (by omega_arith)
+  obtain hscr : Region.Sub ⟨scr s₀, 104⟩ (scR s₀) := Region.sub_prefix (by omega_arith)
   obtain hcall : CallOk (w := w) s₃ (st s₀) (scr s₀) (s₃.gpr .r26 + BitVec.ofNat 64 (bufOff w))
       (blockBytes w * (BitVec.ofNat 64 1).toNat) := by
     rw [show (BitVec.ofNat 64 1).toNat = 1 from rfl, Nat.mul_one, hx19₃]
@@ -2194,7 +2201,7 @@ theorem correctMain (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State} (h
     exact ⟨outR s₀ w, by simp, h⟩
   · rw [hx19₄, hx21₄]; exact hp.st_out.sub_left hstN
   -- What the call and the stores wrote.
-  obtain F₁ : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 512⟩] s₁.mem s₅.mem := by
+  obtain F₁ : Frame [stR s₀ w, outR s₀ w, ⟨scr s₀, 104⟩] s₁.mem s₅.mem := by
     obtain f₃ : Frame [stR s₀ w] s₁.mem s₃.mem := by
       rw [hm₃]; exact writeBytes_frame _ _ _ (Offset.contains_base _ (by simp; omega_arith) (by omega_arith))
     obtain f₅ : Frame [outR s₀ w] s₄.mem s₅.mem := by
@@ -2234,8 +2241,8 @@ pushed in a frame. -/
 abbrev inner (s₀ : State) : State := framed .r0 (s₀.write .r0 s₀.lr)
 
 theorem correct (hP : Ok P) (hf : CalleeOk P (compress P)) {s₀ : State}
-    (hpre : (finalizePPC64LE P).pre s₀) :
-    WP isa (finalize P) s₀ fun s' => abiPreserved s₀ s' ∧ (finalizePPC64LE P).post s₀ s' := by
+    (hpre : (finalizePPC64LE P 152).pre s₀) :
+    WP isa (finalize P) s₀ fun s' => abiPreserved s₀ s' ∧ (finalizePPC64LE P 152).post s₀ s' := by
   obtain ⟨hp, hs⟩ := pre_of hpre
   have hl := hP.len
   obtain hpi : Pre w (inner s₀) := ⟨hp.rd, hp.wr, hp.st_out, hp.st_scr, hp.out_scr⟩
@@ -2305,25 +2312,57 @@ def initSat (w : Nat) : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, bufOff w + blockBytes w⟩]
 
-/-- `update`, with no data, for `w`-bit words. -/
-def updateSat (w : Nat) : State where
+/-- `update`, with no data, for `w`-bit words, with `sc` bytes of scratch. -/
+def updateSat (w : Nat) (sc : Nat := 576) : State where
   gpr r := match r with
     | .r3 => 0x1000 | .r5 => 0x2000 | .r7 => 0x3000 | _ => 0
   lr := 0
   sp := 0x5000
   mem _ := 0
   rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x3000, 576⟩]
+  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x3000, sc⟩]
 
-/-- `finalize`, for `w`-bit words. -/
-def finalizeSat (w : Nat) : State where
+/-- `finalize`, for `w`-bit words, with `sc` bytes of scratch. -/
+def finalizeSat (w : Nat) (sc : Nat := 576) : State where
   gpr r := match r with
     | .r3 => 0x1000 | .r5 => 0x2000 | .r6 => 0x3000 | _ => 0
   lr := 0
   sp := 0x5000
   mem _ := 0
   rd := []
-  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x2000, bufOff w⟩, ⟨0x3000, 576⟩]
+  wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x2000, bufOff w⟩, ⟨0x3000, sc⟩]
+
+/-! ## With more scratch
+
+The code uses 152 bytes of `scratch`. `updatePPC64LE P` and
+`finalizePPC64LE P` give it 576, for Argon2's calls, which pass theirs
+(`Proof/Argon2/PPC64LE/HPrime/Absorb.lean`, `CT.lean`): the code runs as it
+does with the first 152 of them (`Verified.widen`). -/
+
+theorem sub152 (a : Addr) : Region.Sub ⟨a, 152⟩ ⟨a, 576⟩ := Region.sub_prefix (by decide)
+theorem pfx {a : Addr} {m n : Nat} (h : m ≤ n) : Region.Prefix ⟨a, m⟩ ⟨a, n⟩ := ⟨rfl, h⟩
+
+theorem update_wide {w : Nat} {P : Params w} {c : Prog isa}
+    (h : Verified PPC64LE.target c (updatePPC64LE P 152)) (hsat : ∃ s, (updatePPC64LE P).pre s) :
+    Verified PPC64LE.target c (updatePPC64LE P) :=
+  Verified.widen h (fun s => [⟨s.gpr .r3, bufOff w + blockBytes w⟩, ⟨s.gpr .r7, 152⟩])
+    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉⟩ =>
+      ⟨h₁, rfl, h₃.sub_right (sub152 _), h₄, h₅.sub_right (sub152 _), h₆, h₇, h₈,
+        h₉.sub_right (sub152 _)⟩)
+    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons (pfx (Nat.le_refl _)) (.cons (pfx (by decide)) .nil))
+    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
+
+theorem finalize_wide {w : Nat} {P : Params w} {c : Prog isa}
+    (h : Verified PPC64LE.target c (finalizePPC64LE P 152)) (hsat : ∃ s, (finalizePPC64LE P).pre s) :
+    Verified PPC64LE.target c (finalizePPC64LE P) :=
+  Verified.widen h
+    (fun s => [⟨s.gpr .r3, bufOff w + blockBytes w⟩, ⟨s.gpr .r5, bufOff w⟩, ⟨s.gpr .r6, 152⟩])
+    (fun _ ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉⟩ =>
+      ⟨h₁, rfl, h₃, h₄.sub_right (sub152 _), h₅.sub_right (sub152 _), h₆, h₇, h₈,
+        h₉.sub_right (sub152 _)⟩)
+    (fun _ ⟨_, h₂, _⟩ => h₂ ▸
+      .cons (pfx (Nat.le_refl _)) (.cons (pfx (Nat.le_refl _)) (.cons (pfx (by decide)) .nil)))
+    (fun _ _ _ h => h) (fun _ _ _ _ h => h) hsat
 
 /-! ## BLAKE2b -/
 
@@ -2332,15 +2371,15 @@ theorem initB_correct (st : State) (hs : (initPPC64LE b).pre st) :
       (initPPC64LE b).post st s' :=
   withLr (Init.correct okB hs) (by lit_decide) (by rw [← Code.allInstrs_eq]; lit_decide)
 
-theorem updateB_correct (st : State) (hs : (updatePPC64LE b).pre st) :
+theorem updateB_correctN (st : State) (hs : (updatePPC64LE b 152).pre st) :
     ∃ t s', Exec isa (Impl.Blake2.PPC64LE.Stream.update b) st t s' ∧ abiPreserved st s' ∧
-      (updatePPC64LE b).post st s' := by
+      (updatePPC64LE b 152).post st s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := Update.correct okB calleeB hs
   exact ⟨t, s', he, h₁, h₂⟩
 
-theorem finalizeB_correct (st : State) (hs : (finalizePPC64LE b).pre st) :
+theorem finalizeB_correctN (st : State) (hs : (finalizePPC64LE b 152).pre st) :
     ∃ t s', Exec isa (Impl.Blake2.PPC64LE.Stream.finalize b) st t s' ∧ abiPreserved st s' ∧
-      (finalizePPC64LE b).post st s' := by
+      (finalizePPC64LE b 152).post st s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := Finalize.correct okB calleeB hs
   exact ⟨t, s', he, h₁, h₂⟩
 
@@ -2354,21 +2393,54 @@ theorem initB_verified :
 
 theorem updateB_verified :
     Verified PPC64LE.target (Impl.Blake2.PPC64LE.Stream.update b)
-      (Proof.Blake2.updateBScratchContract PPC64LE.abi 48) :=
-  Verified.of_correct updateB_correct updateB_ct (by
-    sig_implies [Proof.Blake2.updateBScratchContract, Proof.Blake2.updateBScratchSig,
+      (Proof.Blake2.updateBScratchContractW 19 PPC64LE.abi 48) :=
+  Verified.of_correct updateB_correctN updateB_ct (by
+    sig_implies [Proof.Blake2.updateBScratchContractW, Proof.Blake2.updateBScratchSigW,
       Proof.Blake2.updatePPC64LE, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, PPC64LE.abi,
       PPC64LE.argRegs]
-      [updateSat] using updateSat 64)
+      [updateSat] using updateSat 64 152)
 
 theorem finalizeB_verified :
     Verified PPC64LE.target (Impl.Blake2.PPC64LE.Stream.finalize b)
-      (Proof.Blake2.finalizeBScratchContract PPC64LE.abi 48) :=
-  Verified.of_correct finalizeB_correct finalizeB_ct (by
-    sig_implies [Proof.Blake2.finalizeBScratchContract, Proof.Blake2.finalizeBScratchSig,
+      (Proof.Blake2.finalizeBScratchContractW 19 PPC64LE.abi 48) :=
+  Verified.of_correct finalizeB_correctN finalizeB_ct (by
+    sig_implies [Proof.Blake2.finalizeBScratchContractW, Proof.Blake2.finalizeBScratchSigW,
       Proof.Blake2.finalizePPC64LE, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, PPC64LE.abi,
       PPC64LE.argRegs]
-      [finalizeSat] using finalizeSat 64)
+      [finalizeSat] using finalizeSat 64 152)
+
+/-- `update` with 576 bytes of `scratch`, for Argon2's calls. -/
+theorem updateB_wide : Verified PPC64LE.target (Impl.Blake2.PPC64LE.Stream.update b) (updatePPC64LE b) :=
+  update_wide (Verified.of_correct updateB_correctN updateB_ct (.refl ⟨updateSat 64 152,
+      rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), by decide, Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩))
+    ⟨updateSat 64, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), by decide, Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
+
+/-- `finalize` with 576 bytes of `scratch`, for Argon2's calls. -/
+theorem finalizeB_wide :
+    Verified PPC64LE.target (Impl.Blake2.PPC64LE.Stream.finalize b) (finalizePPC64LE b) :=
+  finalize_wide (Verified.of_correct finalizeB_correctN finalizeB_ct (.refl ⟨finalizeSat 64 152,
+      rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), by decide, Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩))
+    ⟨finalizeSat 64, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), by decide, Region.disjoint_of_sep (by decide),
+      Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
+
+/-- What Argon2's calls of `update` use (`Proof/Argon2/PPC64LE/HPrime/Absorb.lean`). -/
+theorem updateB_correct (st : State) (hs : (updatePPC64LE b).pre st) :
+    ∃ t s', Exec isa (Impl.Blake2.PPC64LE.Stream.update b) st t s' ∧ abiPreserved st s' ∧
+      (updatePPC64LE b).post st s' :=
+  updateB_wide.1 st hs
+
+/-- What Argon2's calls of `finalize` use. -/
+theorem finalizeB_correct (st : State) (hs : (finalizePPC64LE b).pre st) :
+    ∃ t s', Exec isa (Impl.Blake2.PPC64LE.Stream.finalize b) st t s' ∧ abiPreserved st s' ∧
+      (finalizePPC64LE b).post st s' :=
+  finalizeB_wide.1 st hs
 
 /-! ## BLAKE2s -/
 
@@ -2377,15 +2449,15 @@ theorem initS_correct (st : State) (hs : (initPPC64LE s).pre st) :
       (initPPC64LE s).post st s' :=
   withLr (Init.correct okS hs) (by lit_decide) (by rw [← Code.allInstrs_eq]; lit_decide)
 
-theorem updateS_correct (st : State) (hs : (updatePPC64LE s).pre st) :
+theorem updateS_correctN (st : State) (hs : (updatePPC64LE s 152).pre st) :
     ∃ t s', Exec isa (Impl.Blake2.PPC64LE.Stream.update s) st t s' ∧ abiPreserved st s' ∧
-      (updatePPC64LE s).post st s' := by
+      (updatePPC64LE s 152).post st s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := Update.correct okS calleeS hs
   exact ⟨t, s', he, h₁, h₂⟩
 
-theorem finalizeS_correct (st : State) (hs : (finalizePPC64LE s).pre st) :
+theorem finalizeS_correctN (st : State) (hs : (finalizePPC64LE s 152).pre st) :
     ∃ t s', Exec isa (Impl.Blake2.PPC64LE.Stream.finalize s) st t s' ∧ abiPreserved st s' ∧
-      (finalizePPC64LE s).post st s' := by
+      (finalizePPC64LE s 152).post st s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := Finalize.correct okS calleeS hs
   exact ⟨t, s', he, h₁, h₂⟩
 
@@ -2399,61 +2471,62 @@ theorem initS_verified :
 
 theorem updateS_verified :
     Verified PPC64LE.target (Impl.Blake2.PPC64LE.Stream.update s)
-      (Proof.Blake2.updateSScratchContract PPC64LE.abi 48) :=
-  Verified.of_correct updateS_correct updateS_ct (by
-    sig_implies [Proof.Blake2.updateSScratchContract, Proof.Blake2.updateSScratchSig,
+      (Proof.Blake2.updateSScratchContractW 19 PPC64LE.abi 48) :=
+  Verified.of_correct updateS_correctN updateS_ct (by
+    sig_implies [Proof.Blake2.updateSScratchContractW, Proof.Blake2.updateSScratchSigW,
       Proof.Blake2.updatePPC64LE, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, PPC64LE.abi,
       PPC64LE.argRegs]
-      [updateSat] using updateSat 32)
+      [updateSat] using updateSat 32 152)
 
 theorem finalizeS_verified :
     Verified PPC64LE.target (Impl.Blake2.PPC64LE.Stream.finalize s)
-      (Proof.Blake2.finalizeSScratchContract PPC64LE.abi 48) :=
-  Verified.of_correct finalizeS_correct finalizeS_ct (by
-    sig_implies [Proof.Blake2.finalizeSScratchContract, Proof.Blake2.finalizeSScratchSig,
+      (Proof.Blake2.finalizeSScratchContractW 19 PPC64LE.abi 48) :=
+  Verified.of_correct finalizeS_correctN finalizeS_ct (by
+    sig_implies [Proof.Blake2.finalizeSScratchContractW, Proof.Blake2.finalizeSScratchSigW,
       Proof.Blake2.finalizePPC64LE, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, PPC64LE.abi,
       PPC64LE.argRegs]
-      [finalizeSat] using finalizeSat 32)
+      [finalizeSat] using finalizeSat 32 152)
 
 /-! ## `update` and `finalize` with their working space in a frame of their own
 
 The theorems above are of the streaming functions with their working space
 as an argument (`update_scratch`, `finalize_scratch`); `update` and
 `finalize` run them in a frame that allocates it (`Verified.stackScratch`):
-576 bytes, after the frame's 32-byte header.
+the 152 bytes they use, after the frame's 32-byte header, in a frame of 192
+bytes (a multiple of 16).
 -/
 
 theorem updateB_framed : Verified PPC64LE.target
-    (Impl.StackScratch.PPC64LE.withStackScratch 608 .r7 (Impl.Blake2.PPC64LE.Stream.update b))
-    (Spec.Blake2.updateBContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+    (Impl.StackScratch.PPC64LE.withStackScratch 192 .r7 (Impl.Blake2.PPC64LE.Stream.update b))
+    (Spec.Blake2.updateBContract PPC64LE.abi (48 + 192)) :=
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 19) (stack := 48) (bytes := 192)
     updateB_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateBPost_local _)
     (fun vs m m₁ m₂ r hl _ hb h => Proof.Blake2.updateBPost_out _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeB_framed : Verified PPC64LE.target
-    (Impl.StackScratch.PPC64LE.withStackScratch 608 .r6 (Impl.Blake2.PPC64LE.Stream.finalize b))
-    (Spec.Blake2.finalizeBContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+    (Impl.StackScratch.PPC64LE.withStackScratch 192 .r6 (Impl.Blake2.PPC64LE.Stream.finalize b))
+    (Spec.Blake2.finalizeBContract PPC64LE.abi (48 + 192)) :=
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 19) (stack := 48) (bytes := 192)
     finalizeB_verified (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeBPost_local _)
     (fun vs m m₁ m₂ r hl _ hb h => Proof.Blake2.finalizeBPost_out _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem updateS_framed : Verified PPC64LE.target
-    (Impl.StackScratch.PPC64LE.withStackScratch 608 .r7 (Impl.Blake2.PPC64LE.Stream.update s))
-    (Spec.Blake2.updateSContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+    (Impl.StackScratch.PPC64LE.withStackScratch 192 .r7 (Impl.Blake2.PPC64LE.Stream.update s))
+    (Spec.Blake2.updateSContract PPC64LE.abi (48 + 192)) :=
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 19) (stack := 48) (bytes := 192)
     updateS_verified (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateSPost_local _)
     (fun vs m m₁ m₂ r hl _ hb h => Proof.Blake2.updateSPost_out _ vs m m₁ m₂ r hl hb h)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalizeS_framed : Verified PPC64LE.target
-    (Impl.StackScratch.PPC64LE.withStackScratch 608 .r6 (Impl.Blake2.PPC64LE.Stream.finalize s))
-    (Spec.Blake2.finalizeSContract PPC64LE.abi (48 + 608)) :=
-  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 48) (bytes := 608)
+    (Impl.StackScratch.PPC64LE.withStackScratch 192 .r6 (Impl.Blake2.PPC64LE.Stream.finalize s))
+    (Spec.Blake2.finalizeSContract PPC64LE.abi (48 + 192)) :=
+  PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 19) (stack := 48) (bytes := 192)
     finalizeS_verified (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeSPost_local _)
     (fun vs m m₁ m₂ r hl _ hb h => Proof.Blake2.finalizeSPost_out _ vs m m₁ m₂ r hl hb h)

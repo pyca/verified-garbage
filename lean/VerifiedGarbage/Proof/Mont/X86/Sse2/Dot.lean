@@ -20,9 +20,10 @@ section
 
 /-! # The products of the `pmuludq` kernel
 
-`quadLastMul` (four products), `pairMul` (two) and `single`
-(one), stated on the state they leave (`SseOnly`: only `xmm0` to `xmm5`
-change, and `eax` for `single`) and on the sums' lanes (`Sums`): the
+`turn` (four products, in any registers apart from the sums' and the
+digits'), `pairMul` (two) and `single` (one), stated on the state they leave
+(`SseOnly`: of the registers, only `xmm0` to `xmm5` and `xmm7` change, and
+`eax` for `single`) and on the sums' lanes (`Sums`): the
 products added to `xmm0` modulo `2⁶⁴`, their high words to `xmm1`. Each
 product is of the words at the same offset from `esi` and from `edi`
 (`pw`).
@@ -38,7 +39,7 @@ open VG VG.X86 VG.X86.RegUpd VG.Impl.Mont.X86 VG.Impl.Mont.X86.Sse2
 theorem ea_setXmm (s : State) (r : XReg) (v : BitVec 128) (m : MemOp) : (s.setXmm r v).ea m = s.ea m := rfl
 theorem mcdt_setXmm (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).mcdt = s.mcdt := rfl
 theorem mcdt_setReg (s : State) (r : Reg) (v : BitVec 32) : (s.setReg r v).mcdt = s.mcdt := rfl
-/-- Only `xmm0` to `xmm5` changed. -/
+/-- Only `xmm0` to `xmm5` and `xmm7` changed. -/
 structure SseOnly (s t : State) : Prop where
   gpr : t.gpr = s.gpr
   mem : t.mem = s.mem
@@ -48,7 +49,6 @@ structure SseOnly (s t : State) : Prop where
   zf : t.zf = s.zf
   mcdt : t.mcdt = s.mcdt
   x6 : t.xmm .xmm6 = s.xmm .xmm6
-  x7 : t.xmm .xmm7 = s.xmm .xmm7
 
 /-! ## The sums -/
 
@@ -97,25 +97,45 @@ theorem dword_read128 (m : Mem) (a : Addr) {j : Nat} (hj : j < 4) :
     (dword (m.readW a 128) j).toNat = (m.readW (a + BitVec.ofNat 64 (4 * j)) 32).toNat := by
   rw [dword_readW m a hj]
 
-/-! ## `quadLastMul` -/
+/-! ## `turn` -/
 
-theorem quadLastMul_run (s : State) (hm : 0 < s.mcdt)
-    (h1 : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi 0)) 16) (h2 : InRegions (s.rd ++ s.wr) (s.ea (at_ .edi 0)) 16) :
-    ∃ t, runBlock isa quadLastMul s = some t ∧ SseOnly s t ∧
+/-- A turn's three registers: apart from each other, from the sums' and from the digits'. -/
+structure TurnRegs (e o y : XReg) : Prop where
+  eo : e ≠ o
+  ey : e ≠ y
+  oy : o ≠ y
+  e0 : e ≠ .xmm0
+  e1 : e ≠ .xmm1
+  e6 : e ≠ .xmm6
+  o0 : o ≠ .xmm0
+  o1 : o ≠ .xmm1
+  o6 : o ≠ .xmm6
+  y0 : y ≠ .xmm0
+  y1 : y ≠ .xmm1
+  y6 : y ≠ .xmm6
+
+/-- A turn, in any registers and at any offset from the pointers: the products of the two
+16-byte reads' even doublewords, and of their odd ones, into the sums. -/
+theorem turn_run (s : State) (hm : 0 < s.mcdt) {e o y : XReg} (R : TurnRegs e o y) (d : Nat)
+    (h1 : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi d)) 16) (h2 : InRegions (s.rd ++ s.wr) (s.ea (at_ .edi d)) 16) :
+    ∃ t, runBlock isa (turn e o y d) s = some t ∧ SseOnly s t ∧
       t.xmm .xmm0 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm0)
-        (pmuludq (s.mem.readW (s.ea (at_ .esi 0)) 128) (s.mem.readW (s.ea (at_ .edi 0)) 128)))
-        (pmuludq (shufDwords (s.mem.readW (s.ea (at_ .esi 0)) 128) 0x31)
-          (shufDwords (s.mem.readW (s.ea (at_ .edi 0)) 128) 0x31)) ∧
+        (pmuludq (s.mem.readW (s.ea (at_ .esi d)) 128) (s.mem.readW (s.ea (at_ .edi d)) 128)))
+        (pmuludq (shufDwords (s.mem.readW (s.ea (at_ .esi d)) 128) 0x31)
+          (XShiftOp.eval .psrlq (s.mem.readW (s.ea (at_ .edi d)) 128) 32)) ∧
       t.xmm .xmm1 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm1) (XShiftOp.eval .psrlq
-        (pmuludq (s.mem.readW (s.ea (at_ .esi 0)) 128) (s.mem.readW (s.ea (at_ .edi 0)) 128)) 32))
-        (XShiftOp.eval .psrlq (pmuludq (shufDwords (s.mem.readW (s.ea (at_ .esi 0)) 128) 0x31)
-          (shufDwords (s.mem.readW (s.ea (at_ .edi 0)) 128) 0x31)) 32) := by
-  simp only [quadLastMul, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, State.load128, h1, h2,
+        (pmuludq (s.mem.readW (s.ea (at_ .esi d)) 128) (s.mem.readW (s.ea (at_ .edi d)) 128)) 32))
+        (XShiftOp.eval .psrlq (pmuludq (shufDwords (s.mem.readW (s.ea (at_ .esi d)) 128) 0x31)
+          (XShiftOp.eval .psrlq (s.mem.readW (s.ea (at_ .edi d)) 128) 32)) 32) := by
+  obtain ⟨eo, ey, oy, e0, e1, e6, o0, o1, o6, y0, y1, y6⟩ := R
+  simp only [turn, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, State.load128, h1, h2,
     Option.map_some, runStep_some, XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left',
-    rd_setXmm, wr_setXmm, mem_setXmm, ea_setXmm, mcdt_setXmm, hm, xmm_setXmm, reduceCtorEq, runBlock_nil]
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
+    rd_setXmm, wr_setXmm, mem_setXmm, ea_setXmm, mcdt_setXmm, hm, xmm_setXmm, runBlock_nil,
+    eo, eo.symm, ey, ey.symm, oy, oy.symm, e0, e0.symm, e1, e1.symm, o0, o0.symm, o1, o1.symm, y0, y0.symm,
+    y1, y1.symm, reduceCtorEq]
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
     simp only [xmm_setXmm, reduceCtorEq, ↓reduceIte, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm,
-      cf_setXmm, zf_setXmm, mcdt_setXmm]
+      cf_setXmm, zf_setXmm, mcdt_setXmm, e6.symm, o6.symm, y6.symm]
 
 theorem dword_shuf31_0 (a : BitVec 128) : dword (shufDwords a 0x31) 0 = dword a 1 := by
   rw [dword_shufDwords _ _ (by decide)]; rfl
@@ -123,15 +143,16 @@ theorem dword_shuf31_0 (a : BitVec 128) : dword (shufDwords a 0x31) 0 = dword a 
 theorem dword_shuf31_2 (a : BitVec 128) : dword (shufDwords a 0x31) 2 = dword a 3 := by
   rw [dword_shufDwords _ _ (by decide)]; rfl
 
-/-- The four products of `quadLastMul`, for `esi` at `x` and `edi` at `y`. -/
-theorem quadLast_sums {s t : State} {S H : Nat} (hs : Sums (s.xmm .xmm0) (s.xmm .xmm1) S H)
+/-- The four products of a turn, of the 16 bytes at `x` and at `y`. -/
+theorem turn_sums {s t : State} {S H : Nat} (hs : Sums (s.xmm .xmm0) (s.xmm .xmm1) S H)
     (hH : H + 4 * 2 ^ 32 < 2 ^ 64) {x y : Addr}
     (h0 : t.xmm .xmm0 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm0)
       (pmuludq (s.mem.readW x 128) (s.mem.readW y 128)))
-      (pmuludq (shufDwords (s.mem.readW x 128) 0x31) (shufDwords (s.mem.readW y 128) 0x31)))
+      (pmuludq (shufDwords (s.mem.readW x 128) 0x31) (XShiftOp.eval .psrlq (s.mem.readW y 128) 32)))
     (h1 : t.xmm .xmm1 = XBinOp.eval .paddq (XBinOp.eval .paddq (s.xmm .xmm1) (XShiftOp.eval .psrlq
       (pmuludq (s.mem.readW x 128) (s.mem.readW y 128)) 32))
-      (XShiftOp.eval .psrlq (pmuludq (shufDwords (s.mem.readW x 128) 0x31) (shufDwords (s.mem.readW y 128) 0x31)) 32)) :
+      (XShiftOp.eval .psrlq (pmuludq (shufDwords (s.mem.readW x 128) 0x31)
+        (XShiftOp.eval .psrlq (s.mem.readW y 128) 32)) 32)) :
     Sums (t.xmm .xmm0) (t.xmm .xmm1)
       (S + pw s.mem x y + pw s.mem (x + 8) (y + 8) + pw s.mem (x + 4) (y + 4) + pw s.mem (x + 12) (y + 12))
       (H + pw s.mem x y / 2 ^ 32 + pw s.mem (x + 8) (y + 8) / 2 ^ 32 + pw s.mem (x + 4) (y + 4) / 2 ^ 32 +
@@ -141,9 +162,9 @@ theorem quadLast_sums {s t : State} {S H : Nat} (hs : Sums (s.xmm .xmm0) (s.xmm 
     (dword (s.mem.readW y 128) 0).toNat) (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.mem.readW x 128) 0) (dword (s.mem.readW y 128) 0); omega_using [this])
   have q2 := Nat.div_lt_iff_lt_mul (k := 2 ^ 32) (x := (dword (s.mem.readW x 128) 2).toNat *
     (dword (s.mem.readW y 128) 2).toNat) (y := 2 ^ 32) (by decide) |>.2 (by have := word_mul_lt (dword (s.mem.readW x 128) 2) (dword (s.mem.readW y 128) 2); omega_using [this])
-  have a2 := a1.addMul (u := shufDwords (s.mem.readW x 128) 0x31) (v := shufDwords (s.mem.readW y 128) 0x31) (by omega_using [hH, q0, q2])
+  have a2 := a1.addMul (u := shufDwords (s.mem.readW x 128) 0x31) (v := XShiftOp.eval .psrlq (s.mem.readW y 128) 32) (by omega_using [hH, q0, q2])
   rw [h0, h1]
-  rw [dword_shuf31_0, dword_shuf31_0, dword_shuf31_2, dword_shuf31_2] at a2
+  rw [dword_shuf31_0, dword_psrlq_0, dword_shuf31_2, dword_psrlq_2] at a2
   simp only [dword_read128 _ _ (show 0 < 4 by decide),
     dword_read128 _ _ (show 1 < 4 by decide), dword_read128 _ _ (show 2 < 4 by decide),
     dword_read128 _ _ (show 3 < 4 by decide), Nat.mul_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero,
@@ -168,7 +189,7 @@ theorem pairMul_run (s : State) (hm : 0 < s.mcdt)
   simp only [pairMul, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, State.load64, h1, h2,
     Option.map_some, runStep_some, XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left',
     rd_setXmm, wr_setXmm, mem_setXmm, ea_setXmm, mcdt_setXmm, hm, xmm_setXmm, reduceCtorEq, runBlock_nil]
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
     simp only [xmm_setXmm, reduceCtorEq, ↓reduceIte, gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm,
       cf_setXmm, zf_setXmm, mcdt_setXmm]
 
@@ -213,19 +234,19 @@ theorem single_run (s : State) (hm : 0 < s.mcdt)
     (h1 : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi 0)) 4) (h2 : InRegions (s.rd ++ s.wr) (s.ea (at_ .edi 0)) 4) :
     ∃ t, runBlock isa single s = some t ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mcdt = s.mcdt ∧
       (∀ r, r ≠ .eax → t.gpr r = s.gpr r) ∧
-      t.xmm .xmm6 = s.xmm .xmm6 ∧ t.xmm .xmm7 = s.xmm .xmm7 ∧
+      t.xmm .xmm6 = s.xmm .xmm6 ∧
       t.xmm .xmm0 = XBinOp.eval .paddq (s.xmm .xmm0)
         (singleP (s.mem.readW (s.ea (at_ .esi 0)) 32) (s.mem.readW (s.ea (at_ .edi 0)) 32)) ∧
       t.xmm .xmm1 = XBinOp.eval .paddq (s.xmm .xmm1) (XShiftOp.eval .psrlq
         (singleP (s.mem.readW (s.ea (at_ .esi 0)) 32) (s.mem.readW (s.ea (at_ .edi 0)) 32)) 32) := by
   have ea2 : ∀ v : BitVec 32, (s.setReg .eax v).ea (at_ .edi 0) = s.ea (at_ .edi 0) := fun _ => rfl
   have ea2' : ∀ (v : BitVec 32) (x : BitVec 128),
-      ((s.setReg .eax v).setXmm .xmm2 x).ea (at_ .edi 0) = s.ea (at_ .edi 0) := fun _ _ => rfl
+      ((s.setReg .eax v).setXmm .xmm7 x).ea (at_ .edi 0) = s.ea (at_ .edi 0) := fun _ _ => rfl
   simp only [single, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, readSrc, State.load32, h1,
     Option.map_some, runStep_some, XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left',
     rd_setXmm, wr_setXmm, mem_setXmm, rd_setReg, wr_setReg, mem_setReg, ea2', h2, mcdt_setXmm, mcdt_setReg, hm,
     xmm_setXmm, xmm_setReg, reduceCtorEq, runBlock_nil, gpr_setXmm, gpr_setReg_self]
-  refine ⟨trivial, trivial, trivial, trivial, fun r hr => ?_, trivial, trivial, rfl, rfl⟩
+  refine ⟨trivial, trivial, trivial, trivial, fun r hr => ?_, trivial, rfl, rfl⟩
   simp only [gpr_setXmm, gpr_setReg_of_ne _ _ hr]
 
 theorem single_sums {s t : State} {S H : Nat} (hs : Sums (s.xmm .xmm0) (s.xmm .xmm1) S H)

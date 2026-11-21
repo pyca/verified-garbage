@@ -15,7 +15,7 @@ For every curve (`Spec.EcKey.Instance`), the postconditions of
 `vg_ec_<name>_public_key`, `_compress_public_key`, `_decompress_public_key`
 and `_validate_public_key`, and of `vg_ecdh_<name>`, read the memory on return
 only within `out`, and that of `vg_ecdsa_<name>_verify` does not read it (`X86_64.Scrub.PostOut`),
-as `X86_64.RScrub.withScrub` needs to scrub their implementations.
+as `X86_64.Scrub.verifiedScrubbedAll` needs to scrub their implementations.
 -/
 
 @[expose] public section
@@ -36,7 +36,7 @@ theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n k : Nat} (hk : n ≤ k)
 
 variable (I : Instance) (stack : Nat)
 
-/-- `publicKeyOut` for code that takes tables of constants `cs` (`Scrub.withScrubAll`). -/
+/-- `publicKeyOut` for code that takes tables of constants `cs` (`Impl.Scrub.X86_64.scrubAll`). -/
 theorem publicKeyOut_consts (cs : List (String × List (BitVec 64))) :
     PostOut (I.publicKeyContract (X86_64.abi.withConsts cs) stack) (I.publicKeySig.retBits 64) :=
   postOut_of_local (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen hb h => by
@@ -157,7 +157,7 @@ theorem verifyHashOut (J : Spec.Ecdsa.Instance) :
     obtain rfl := List.eq_nil_of_length_eq_zero (Nat.succ.inj hlen)
     exact h
 
-/-- `verifyHashOut` for code that takes tables of constants `cs` (`Scrub.withScrubAll`). -/
+/-- `verifyHashOut` for code that takes tables of constants `cs` (`Impl.Scrub.X86_64.scrubAll`). -/
 theorem verifyHashOut_consts (J : Spec.Ecdsa.Instance) (cs : List (String × List (BitVec 64))) :
     PostOut (J.verifyHashContract (X86_64.abi.withConsts cs) stack) (J.verifyHashSig.retBits 64) :=
   postOut_of_local (ScrubAbi.consts cs) fun vs m m₁ m₂ r hlen _ h => by

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Sm4Gcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Frame
@@ -19,7 +20,7 @@ Each function keeps its working space in two frames, one inside the other
 `vg_sm4_gcm_stream_aad`, AES-GCM's functions, only `W`), which it does not
 zero: the tail after it wipes the whole stack its frames use, its contract's
 `stack`, and clears the volatile registers it may write
-(`PPC64LE.Scrub.scrubOf`). Their postconditions read the memory on return
+(`PPC64LE.Scrub.verifiedScrubbedAll`). Their postconditions read the memory on return
 only within their buffers, by the target-independent lemmas the frames'
 proofs use (`Proof/Sm4Gcm/Scratch.lean`, `Proof/AesGcm/Scratch.lean`).
 
@@ -80,7 +81,7 @@ theorem streamVerifyOut (stack : Nat) :
       (Spec.Sm4.Gcm.streamVerifySig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4Gcm.streamVerifyPostOut_local _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
 variable [VG.Proof.Gcm.PPC64LE.GhashLaw]
 
@@ -91,9 +92,13 @@ def allBut : Impl.Scrub.PPC64LE.Clear :=
     [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
      .v17, .v18, .v19]⟩
 
-/-- `Spec.Sm4.Gcm.initApi`. -/
-def initReg : Registration Spec.Sm4.Gcm.initApi PPC64LE.target :=
-  scrubOf {
+omit [VG.Proof.Gcm.PPC64LE.GhashLaw] in
+/-- `vg_sm4_gcm_init` as emitted (`Impl.Sm4Gcm.PPC64LE.Fn.init`) meets its
+contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sm4Gcm.PPC64LE.Fn.init
+      (Spec.Sm4.Gcm.initContract PPC64LE.abi 3616) 0 :=
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.initApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r5
         (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r6 Impl.Sm4Gcm.PPC64LE.init)
       verified := init_framed }
@@ -101,63 +106,97 @@ def initReg : Registration Spec.Sm4.Gcm.initApi PPC64LE.target :=
       [.v0, .v1, .v12, .v13, .v14, .v15]⟩
     (initOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.Gcm.sealApi`. -/
-def sealReg : Registration Spec.Sm4.Gcm.sealApi PPC64LE.target :=
-  scrubOf {
+omit [VG.Proof.Gcm.PPC64LE.GhashLaw] in
+/-- `vg_sm4_gcm_seal` as emitted (`Impl.Sm4Gcm.PPC64LE.Fn.seal`) meets its
+contract in constant time and returns without secret residue. -/
+theorem seal_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
+    VerifiedScrubbed PPC64LE.target Impl.Sm4Gcm.PPC64LE.Fn.seal
+      (Spec.Sm4.Gcm.sealContract PPC64LE.abi 3776) 0 :=
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.sealApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 400 0
         (Impl.StackScratch.PPC64LE.withStackScratchArgs 3376 1 Impl.Sm4Gcm.PPC64LE.«seal»)
       verified := seal_framed }
     3776 allBut (sealOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.Gcm.openApi`. -/
-def openReg : Registration Spec.Sm4.Gcm.openApi PPC64LE.target :=
-  scrubOf {
+omit [VG.Proof.Gcm.PPC64LE.GhashLaw] in
+/-- `vg_sm4_gcm_open` as emitted (`Impl.Sm4Gcm.PPC64LE.Fn.open`) meets its
+contract in constant time and returns without secret residue. -/
+theorem open_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
+    VerifiedScrubbed PPC64LE.target Impl.Sm4Gcm.PPC64LE.Fn.open
+      (Spec.Sm4.Gcm.openContract PPC64LE.abi 3792) 32 :=
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.openApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 400 1
         (Impl.StackScratch.PPC64LE.withStackScratchArgs 3392 2 Impl.Sm4Gcm.PPC64LE.«open»)
       verified := open_framed }
     3792 allBut (openOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.Gcm.streamInitApi`. -/
-def streamInitReg : Registration Spec.Sm4.Gcm.streamInitApi PPC64LE.target :=
-  scrubOf {
+omit [VG.Proof.Gcm.PPC64LE.GhashLaw] in
+/-- `vg_sm4_gcm_stream_init` as emitted (`Impl.Sm4Gcm.PPC64LE.Fn.streamInit`)
+meets its contract in constant time and returns without secret residue. -/
+theorem streamInit_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
+    VerifiedScrubbed PPC64LE.target Impl.Sm4Gcm.PPC64LE.Fn.streamInit
+      (Spec.Gcm.streamInitContract PPC64LE.abi 320) 0 :=
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamInitApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r7 Impl.AesGcm.PPC64LE.streamInit
       verified := Proof.AesGcm.PPC64LE.streamInit_framed }
     320 allBut (streamInitOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.Gcm.streamAadApi`. -/
-def streamAadReg : Registration Spec.Sm4.Gcm.streamAadApi PPC64LE.target :=
-  scrubOf {
+omit [VG.Proof.Gcm.PPC64LE.GhashLaw] in
+/-- `vg_sm4_gcm_stream_aad` as emitted (`Impl.Sm4Gcm.PPC64LE.Fn.streamAad`) meets
+its contract in constant time and returns without secret residue. -/
+theorem streamAad_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
+    VerifiedScrubbed PPC64LE.target Impl.Sm4Gcm.PPC64LE.Fn.streamAad
+      (Spec.Gcm.streamAadContract PPC64LE.abi 320) 0 :=
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamAadApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r8 Impl.AesGcm.PPC64LE.streamAad
       verified := Proof.AesGcm.PPC64LE.streamAad_framed }
     320 allBut (streamAadOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.Gcm.streamEncryptApi`. -/
-def streamEncryptReg : Registration Spec.Sm4.Gcm.streamEncryptApi PPC64LE.target :=
-  scrubOf {
+omit [VG.Proof.Gcm.PPC64LE.GhashLaw] in
+/-- `vg_sm4_gcm_stream_encrypt` as emitted
+(`Impl.Sm4Gcm.PPC64LE.Fn.streamEncrypt`) meets its contract in constant time
+and returns without secret residue. -/
+theorem streamEncrypt_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
+    VerifiedScrubbed PPC64LE.target Impl.Sm4Gcm.PPC64LE.Fn.streamEncrypt
+      (Sig.contract PPC64LE.abi Spec.Sm4.Gcm.streamCryptSig (Curry.const (fun _ => True) (Spec.Sm4.Gcm.streamCryptSig.words PPC64LE.abi.ptrBits)) (Spec.Sm4.Gcm.streamEncryptPost PPC64LE.abi.ptrBits) true 3616) 0 :=
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamEncryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r9
         (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r10 Impl.Sm4Gcm.PPC64LE.streamEncrypt)
       verified := streamEncrypt_framed }
     3616 allBut (streamEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.Gcm.streamDecryptApi`. -/
-def streamDecryptReg : Registration Spec.Sm4.Gcm.streamDecryptApi PPC64LE.target :=
-  scrubOf {
+omit [VG.Proof.Gcm.PPC64LE.GhashLaw] in
+/-- `vg_sm4_gcm_stream_decrypt` as emitted
+(`Impl.Sm4Gcm.PPC64LE.Fn.streamDecrypt`) meets its contract in constant time
+and returns without secret residue. -/
+theorem streamDecrypt_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
+    VerifiedScrubbed PPC64LE.target Impl.Sm4Gcm.PPC64LE.Fn.streamDecrypt
+      (Sig.contract PPC64LE.abi Spec.Sm4.Gcm.streamCryptSig (Curry.const (fun _ => True) (Spec.Sm4.Gcm.streamCryptSig.words PPC64LE.abi.ptrBits)) (Spec.Sm4.Gcm.streamDecryptPost PPC64LE.abi.ptrBits) true 3616) 0 :=
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamDecryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r9
         (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r10 Impl.Sm4Gcm.PPC64LE.streamDecrypt)
       verified := streamDecrypt_framed }
     3616 allBut (streamDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.Gcm.streamFinishApi`. -/
-def streamFinishReg : Registration Spec.Sm4.Gcm.streamFinishApi PPC64LE.target :=
-  scrubOf {
+omit [VG.Proof.Gcm.PPC64LE.GhashLaw] in
+/-- `vg_sm4_gcm_stream_finish` as emitted (`Impl.Sm4Gcm.PPC64LE.Fn.streamFinish`)
+meets its contract in constant time and returns without secret residue. -/
+theorem streamFinish_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
+    VerifiedScrubbed PPC64LE.target Impl.Sm4Gcm.PPC64LE.Fn.streamFinish
+      (Sig.contract PPC64LE.abi Spec.Sm4.Gcm.streamFinishSig (Curry.const (fun _ => True) (Spec.Sm4.Gcm.streamFinishSig.words PPC64LE.abi.ptrBits)) (Spec.Sm4.Gcm.streamFinishPost PPC64LE.abi.ptrBits) true 3616) 0 :=
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamFinishApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r8
         (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r9 Impl.Sm4Gcm.PPC64LE.streamFinish)
       verified := streamFinish_framed }
     3616 allBut (streamFinishOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Sm4.Gcm.streamVerifyApi`. -/
-def streamVerifyReg : Registration Spec.Sm4.Gcm.streamVerifyApi PPC64LE.target :=
-  scrubOf {
+omit [VG.Proof.Gcm.PPC64LE.GhashLaw] in
+/-- `vg_sm4_gcm_stream_verify` as emitted (`Impl.Sm4Gcm.PPC64LE.Fn.streamVerify`)
+meets its contract in constant time and returns without secret residue. -/
+theorem streamVerify_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] :
+    VerifiedScrubbed PPC64LE.target Impl.Sm4Gcm.PPC64LE.Fn.streamVerify
+      (Sig.contract PPC64LE.abi Spec.Sm4.Gcm.streamVerifySig (Curry.const (fun _ => True) (Spec.Sm4.Gcm.streamVerifySig.words PPC64LE.abi.ptrBits)) (Spec.Sm4.Gcm.streamVerifyPost PPC64LE.abi.ptrBits) true 3616) 32 :=
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamVerifyApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r9
         (Impl.StackScratch.PPC64LE.withStackScratch 3296 .r10 Impl.Sm4Gcm.PPC64LE.streamVerify)
       verified := streamVerify_framed }

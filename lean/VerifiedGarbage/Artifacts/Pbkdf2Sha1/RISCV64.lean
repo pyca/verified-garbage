@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Scrub
+public import VerifiedGarbage.Impl.Pbkdf2.Whole.RISCV64.Fn
 public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
@@ -12,6 +13,8 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 namespace VG.Artifacts.Pbkdf2Sha1.RISCV64
 
 def artifacts : List Artifact := [
-  Spec.Hmac.sha1I.pbkdf2Api.artifact RISCV64.target Proof.Pbkdf2.Whole.RISCV64.Scrub.sha1Pbkdf2Reg]
+  Spec.Hmac.sha1I.pbkdf2Api.artifact RISCV64.target {
+    code := Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2 Proof.Pbkdf2.Whole.RISCV64.Sha1.F
+    verified := .scrubbed Proof.Pbkdf2.Whole.RISCV64.Scrub.sha1_scrubbed }]
 
 end VG.Artifacts.Pbkdf2Sha1.RISCV64

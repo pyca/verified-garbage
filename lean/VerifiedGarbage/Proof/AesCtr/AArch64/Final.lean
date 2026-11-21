@@ -889,12 +889,12 @@ theorem cryptFinal_framed (v : Ctr32Impl) :
 (`Impl.AesCtr.AArch64.Fn`), around an implementation `v` of `vg_aes_ctr32`:
 each meets its contract in constant time and returns without secret residue
 (`VerifiedScrubbed`), which is what its registration binds. What the cleanup
-needs of the code (`ScrubAll.scrubSide`) is proved of each function's own
+needs of the code (`Scrub.scrubSide`) is proved of each function's own
 instructions here, once, with code that does nothing in the place of
 `vg_aes_ctr32`, and of each implementation where it is defined
 (`Ctr32Impl.scrub`). -/
 
-open VG.AArch64.ScrubAll
+open VG.AArch64.Scrub
 
 private theorem crypt_all {p : Instr → Bool} (c : Impl.Aes.AArch64.Ctr32)
     (h0 : sideAll p (crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true) (hc : sideAll p c.code = true) :
@@ -943,7 +943,7 @@ theorem cryptFinal_side (v : Ctr32Impl) :
 theorem crypt_scrubbed (v : Ctr32Impl) :
     VerifiedScrubbed AArch64.target (Impl.AesCtr.AArch64.Fn.crypt v.callee)
       (Spec.Ctr.aesContract AArch64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Ctr.aesApi)
+  verifiedScrubbedAll (api := Spec.Ctr.aesApi)
     { code := crypt v.callee, verified := Proof.AesCtr.keyed (crypt_verified v) } _
     Proof.Aes.AArch64.ModesScrub.ctrOk (crypt_side v)
 
@@ -951,7 +951,7 @@ theorem crypt_scrubbed (v : Ctr32Impl) :
 theorem cryptFinal_scrubbed (v : Ctr32Impl) :
     VerifiedScrubbed AArch64.target (Impl.AesCtr.AArch64.Fn.cryptFinal v.callee v.suffix)
       (Spec.Ctr.aesFinalContract AArch64.abi 80) 0 :=
-  verifiedScrubbed (api := Spec.Ctr.aesFinalApi)
+  verifiedScrubbedAll (api := Spec.Ctr.aesFinalApi)
     { code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (cryptFinal v.callee v.suffix)
       verified := Proof.AesCtr.final_keyed (cryptFinal_framed v) } _
     Proof.Aes.AArch64.ModesScrub.ctrFinalOk (cryptFinal_side v)

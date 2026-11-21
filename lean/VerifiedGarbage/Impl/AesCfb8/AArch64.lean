@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesCbc.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 
 /-!
 # AES-CFB8: AArch64 implementation
@@ -69,7 +69,7 @@ def decrypt (b : Blocks) : Prog isa := whole (body b decPost)
 /-! ## The functions, as emitted
 
 Each function is its code, then its cleanup
-(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+(`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the calling
 convention does not preserve are cleared, and the stack it uses is zeroed,
 so that it returns without secret residue. The registers are those its own
 instructions write, stated here, and those the block function it calls
@@ -77,7 +77,7 @@ states it writes (`b.clear`). -/
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 
 /-- The registers the own instructions of `vg_aes_cfb8_encrypt` and of
 `vg_aes_cfb8_decrypt` write. -/

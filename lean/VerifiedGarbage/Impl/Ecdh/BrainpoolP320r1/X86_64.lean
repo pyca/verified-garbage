@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ecdh.X86_64
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.X86_64
 
@@ -14,3 +15,13 @@ open VG.X86_64
 def exchangeBrainpoolP320r1 : Prog isa := Cfg.exchange Ecdsa.X86_64.brainpoolp320r1
 
 end VG.Impl.Ecdh.X86_64
+
+namespace VG.Impl.Ecdh.X86_64.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ecdh_brainpoolp320r1` as emitted: its code, then its cleanup. -/
+def exchangeBrainpoolP320r1 : Prog isa := scrubAll .sse 32 8 _root_.VG.Impl.Ecdh.X86_64.exchangeBrainpoolP320r1
+
+end VG.Impl.Ecdh.X86_64.Fn

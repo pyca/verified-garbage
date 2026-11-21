@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesOcb.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Init
@@ -12,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # AES-OCB on PPC64LE, without secret residue
 
 `vg_aes_ocb_init`, `vg_aes_ocb_seal` and `vg_aes_ocb_open`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers they may write and the whole frame that holds their
 working space, which they do not wipe themselves: 320 bytes for `init`
 (`withStackScratch`, AES-GCM's frame: its callees need no working space), and
@@ -112,11 +113,14 @@ theorem openOut (stack : Nat) :
       rw [bytesAt_of0 hb.2.2.2.1 (by simp)]
       exact h key hk
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.Ocb.initApi`. -/
-def initReg : Registration Spec.Ocb.initApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_ocb_init` as emitted (`Impl.AesOcb.PPC64LE.Fn.init`) meets its
+contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.AesOcb.PPC64LE.Fn.init
+      (Spec.Ocb.initContract PPC64LE.abi 320) 0 :=
+  verifiedScrubbedAll (api := Spec.Ocb.initApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 320 .r6 Impl.AesGcm.PPC64LE.init
       verified := Proof.AesOcb.PPC64LE.init_framed }
     320 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -124,9 +128,12 @@ def initReg : Registration Spec.Ocb.initApi PPC64LE.target :=
     (initOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Ocb.sealApi`. -/
-def sealReg : Registration Spec.Ocb.sealApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_ocb_seal` as emitted (`Impl.AesOcb.PPC64LE.Fn.seal`) meets its
+contract in constant time and returns without secret residue. -/
+theorem seal_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.AesOcb.PPC64LE.Fn.seal
+      (Spec.Ocb.sealContract PPC64LE.abi 640) 0 :=
+  verifiedScrubbedAll (api := Spec.Ocb.sealApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 640 2 Impl.AesOcb.PPC64LE.«seal»
       verified := Proof.AesOcb.seal_keyed Proof.AesOcb.PPC64LE.seal_framed }
     640 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -134,9 +141,12 @@ def sealReg : Registration Spec.Ocb.sealApi PPC64LE.target :=
     (sealOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Ocb.openApi`. -/
-def openReg : Registration Spec.Ocb.openApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_ocb_open` as emitted (`Impl.AesOcb.PPC64LE.Fn.open`) meets its
+contract in constant time and returns without secret residue. -/
+theorem open_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.AesOcb.PPC64LE.Fn.open
+      (Spec.Ocb.openContract PPC64LE.abi 640) 32 :=
+  verifiedScrubbedAll (api := Spec.Ocb.openApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 640 2 Impl.AesOcb.PPC64LE.«open»
       verified := Proof.AesOcb.open_keyed Proof.AesOcb.PPC64LE.open_framed }
     640 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

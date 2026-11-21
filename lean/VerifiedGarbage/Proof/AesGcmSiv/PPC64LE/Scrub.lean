@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Verified
@@ -11,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # AES-GCM-SIV on PPC64LE, without secret residue
 
 `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers they may write and the whole 1632-byte frame
 (`withStackScratchArgs`) that holds their working space, the derived keys
 among it, which they do not wipe themselves (the functions they call need
@@ -65,11 +66,14 @@ theorem openOut (stack : Nat) :
     rw [bytesAt_of0 (n := (BitVec.setWidth 64 len).toNat) hb.2.2.2.1 (by simp)]
     exact @h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.GcmSiv.sealApi`. -/
-def sealReg [Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) : Registration Spec.GcmSiv.sealApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_gcm_siv_seal` as emitted (`Impl.AesGcmSiv.PPC64LE.Fn.seal`) meets its
+contract in constant time and returns without secret residue. -/
+theorem seal_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
+    VerifiedScrubbed PPC64LE.target Impl.AesGcmSiv.PPC64LE.Fn.seal
+      (Spec.GcmSiv.sealContract PPC64LE.abi 1632) 0 :=
+  verifiedScrubbedAll (api := Spec.GcmSiv.sealApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 1632 0 Impl.AesGcmSiv.PPC64LE.«seal»
       verified := Proof.AesGcmSiv.seal_keyed (seal_framed hti) }
     1632 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -78,9 +82,12 @@ def sealReg [Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) : Registration Spec.
     (sealOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.GcmSiv.openApi`. -/
-def openReg [Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) : Registration Spec.GcmSiv.openApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_aes_gcm_siv_open` as emitted (`Impl.AesGcmSiv.PPC64LE.Fn.open`) meets its
+contract in constant time and returns without secret residue. -/
+theorem open_scrubbed [Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) :
+    VerifiedScrubbed PPC64LE.target Impl.AesGcmSiv.PPC64LE.Fn.open
+      (Spec.GcmSiv.openContract PPC64LE.abi 1632) 32 :=
+  verifiedScrubbedAll (api := Spec.GcmSiv.openApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgs 1632 0 Impl.AesGcmSiv.PPC64LE.«open»
       verified := Proof.AesGcmSiv.open_keyed (open_framed hti) }
     1632 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

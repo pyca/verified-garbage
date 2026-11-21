@@ -34,14 +34,14 @@ theorem initS_verified :
 theorem updateS_verified :
     Verified Arm.target
       (Impl.Blake2.Arm.Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress)
-      (Proof.Blake2.updateSScratchContract Arm.abi 16) :=
-  update_verified okS calleeS updateS_implies
+      (Proof.Blake2.updateSScratchContractW 30 Arm.abi 16) :=
+  update_verifiedN okS calleeS updateS_impliesW
 
 theorem finalizeS_verified :
     Verified Arm.target
       (Impl.Blake2.Arm.Stream.finalize (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress)
-      (Proof.Blake2.finalizeSScratchContract Arm.abi 16) :=
-  finalize_verified okS calleeS finalizeS_implies
+      (Proof.Blake2.finalizeSScratchContractW 30 Arm.abi 16) :=
+  finalize_verifiedN okS calleeS finalizeS_impliesW
 
 /-! ## `update` and `finalize` with their working space in a frame of their own
 
@@ -55,9 +55,9 @@ def updateFrameSat : Arm.State :=
   { Proof.Blake2.Arm.Stream.updateSat 32 with rd := [⟨0x2000, 0⟩, ⟨0x5000, 8⟩], wr := [⟨0x1000, 96⟩] }
 
 theorem updateS_framed : Verified Arm.target
-    (Impl.StackScratch.Arm.withStackScratch 592 2 (Impl.Blake2.Arm.Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress))
-    (Spec.Blake2.updateSContract Arm.abi (16 + 592)) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 592) (m := 2)
+    (Impl.StackScratch.Arm.withStackScratch 256 2 (Impl.Blake2.Arm.Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress))
+    (Spec.Blake2.updateSContract Arm.abi (16 + 256)) :=
+  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 30) (stack := 16) (bytes := 256) (m := 2)
     updateS_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateSPost_local _)
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Blake2.updateSPost_out _ vs mm m₁ m₂ r hl hb h)
@@ -71,9 +71,9 @@ def finalizeFrameSat : Arm.State :=
   { Proof.Blake2.Arm.Stream.finalizeSat 32 with rd := [⟨0x5000, 4⟩], wr := [⟨0x1000, 96⟩, ⟨0x2000, 32⟩] }
 
 theorem finalizeS_framed : Verified Arm.target
-    (Impl.StackScratch.Arm.withStackScratch 592 1 (Impl.Blake2.Arm.Stream.finalize (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress))
-    (Spec.Blake2.finalizeSContract Arm.abi (16 + 592)) :=
-  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 592) (m := 1)
+    (Impl.StackScratch.Arm.withStackScratch 256 1 (Impl.Blake2.Arm.Stream.finalize (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress))
+    (Spec.Blake2.finalizeSContract Arm.abi (16 + 256)) :=
+  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 30) (stack := 16) (bytes := 256) (m := 1)
     finalizeS_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeSPost_local _)
     (fun vs mm m₁ m₂ r hl _ hb h => Proof.Blake2.finalizeSPost_out _ vs mm m₁ m₂ r hl hb h)

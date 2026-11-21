@@ -1,28 +1,10 @@
 module
 
-public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.SetLike
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Rsa.AArch64.Scrub
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Scrub
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcVerified
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
-public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Precomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.RndCT
-public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Random
-public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
@@ -30,37 +12,21 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 @[expose] public section
 
-namespace VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
-
-open VG.Proof.RsaPkcs1Enc.AArch64 (privPOf decP_sat')
-open VG.Proof.RsaPkcs1Enc.AArch64.Dec (HH decP_verified)
-
-def artifacts (h : Proof.Sha256.AArch64.Compress) (hh : h ∈ VG.Proof.Variants.Sha256Compress.AArch64.variants)
-    (c : Proof.Rsa.AArch64.CrtImpl) (hc : c ∈ VG.Proof.Variants.RsaPrivateCrt.AArch64.variants) : List Artifact :=
-  [
-    Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target (AArch64.ScrubAll.scrubAllOf {
-      suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
-      code := Impl.RsaPkcs1Enc.AArch64.Decrypt.codeP (HH h) (privPOf c).name (privPOf c).code
-      verified := decP_verified h (privPOf c) (decP_sat' c) } Proof.RsaPkcs1Enc.AArch64.Scrub.decryptClear
-      (Proof.Rsa.AArch64.Scrub.pkcs1DecryptOk _) (Proof.RsaPkcs1Enc.AArch64.Scrub.decryptSide h hh c hc))]
-
-end VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
-
 namespace VG.Artifacts.RsaPkcs1Enc.AArch64
 
-open VG.Proof.Rsa.AArch64 (PublicImpl)
-open VG.Proof.RsaPkcs1Sig.AArch64 (pdOf)
-open VG.Proof.RsaPkcs1Enc.AArch64.Enc
-open VG.Proof.RsaPkcs1Enc.AArch64 (Rnd.encName Rnd.encCode Rnd.code_verified Rnd.sat)
+open VG.Proof.RsaPkcs1Enc.AArch64.Scrub
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.Sha256Compress.AArch64.variants.attach.flatMap fun v =>
-    VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.attach.flatMap fun v2 => Sha256RsaPrivateCrt.artifacts v.1 v.2 v2.1 v2.2) ++
-  (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.attach.flatMap fun (v : { v : PublicImpl // v ∈ _ }) => [
-    Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target (VG.AArch64.ScrubAll.scrubAllOf {
-      suffix := v.1.suffix
-      code := Impl.RsaPkcs1Enc.AArch64.Random.code (Rnd.encName (pdOf v.1)) (Rnd.encCode (pdOf v.1))
-      verified := Rnd.code_verified (pdOf v.1) Pc.sat Rnd.sat } Proof.RsaPkcs1Enc.AArch64.Scrub.encryptRandomClear
-      (Proof.Rsa.AArch64.Scrub.pkcs1EncryptRandomOk _) (Proof.RsaPkcs1Enc.AArch64.Scrub.encryptRandomSide v.1 v.2))])
+  (VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun (h : Proof.Sha256.AArch64.Compress) =>
+    VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap fun (c : Proof.Rsa.AArch64.CrtImpl) => [
+      Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target {
+        suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
+        code := Impl.RsaPkcs1Enc.AArch64.Fn.decryptPrecomputed h.name h.suffix h.code c.toCrt
+        verified := .scrubbed (decryptPrecomputed_scrubbed h c) }]) ++
+  (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun (v : Proof.Rsa.AArch64.PublicImpl) => [
+    Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.RsaPkcs1Enc.AArch64.Fn.encryptRandom v.suffix v.name v.code
+      verified := .scrubbed (encryptRandom_scrubbed v) }])
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64

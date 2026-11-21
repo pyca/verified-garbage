@@ -23,13 +23,13 @@ evaluation of the code, with the literal of the verification core), and
 their postcondition does not read the memory on return
 (`Proof/Ecdsa/Verify/Arm/Scrub.lean`): each is emitted followed by a
 wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its theorem
-(`Arm.Scrub.verifiedScrubbedF`).
+(`Arm.Scrub.verifiedScrubbedAll`).
 `vg_ecdsa_secp256k1_sign` and its `_umaal` variant call indirectly only the HMAC
 functions of their table, from frames within the stack their contract
 reserves, and their postcondition reads the memory on return only at
 `out` (`Proof/Ecdsa/Rfc6979/Arm/Scrub.lean`): each is emitted followed
 by a wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its theorem
-(`Arm.Scrub.verifiedScrubbedF`). What the cleanup needs of
+(`Arm.Scrub.verifiedScrubbedAll`). What the cleanup needs of
 signing's code follows, for any curve, from `Rfc6979.Arm.Scrub.sign_okT` and
 from what the core states of its own code (`signCore_ok`, by `lit_decide`);
 `signCode_eq` is that the code `cfgT` builds is that of
@@ -92,7 +92,7 @@ theorem verifySecp256k1 (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifySecp256k1
       (Spec.Ecdsa.Secp256k1.inst.verifyHashContract
         (abi.withConsts Impl.Weierstrass.Arm.secp256k1CombConsts) 96) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Secp256k1.verifyHashApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Secp256k1.verifyHashApi)
     { code := Secp256k1.Scrub.verifyCode false
       verified := Proof.Ecdsa.Verify.Arm.Secp256k1.verifyHash_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.Secp256k1.inst
@@ -104,7 +104,7 @@ theorem verifySecp256k1U (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifySecp256k1U
       (Spec.Ecdsa.Secp256k1.inst.verifyHashContract
         (abi.withConsts Impl.Weierstrass.Arm.secp256k1CombConsts) 96) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Secp256k1.verifyHashApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Secp256k1.verifyHashApi)
     { code := Secp256k1.Scrub.verifyCode true
       verified := Proof.Ecdsa.Verify.Arm.Secp256k1.verifyHashU_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.Secp256k1.inst
@@ -117,7 +117,7 @@ theorem signSecp256k1 (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signSecp256k1 (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
       (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.secp256k1
         (Ecdsa.Rfc6979.Arm.secp256k1CombCurve hC).coreConsts HmacTable.Arm.vars) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi)
     { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
       code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.secp256k1CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries HmacTable.Arm.vars
       verified := Ecdsa.Rfc6979.Arm.secp256k1T_verified hC }
@@ -130,7 +130,7 @@ theorem signSecp256k1U (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signSecp256k1U (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
       (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.secp256k1
         (Ecdsa.Rfc6979.Arm.secp256k1CombCurveU hC).coreConsts HmacTable.Arm.vars) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi)
     { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
       code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.secp256k1CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries HmacTable.Arm.vars
       verified := Ecdsa.Rfc6979.Arm.secp256k1UT_verified hC }

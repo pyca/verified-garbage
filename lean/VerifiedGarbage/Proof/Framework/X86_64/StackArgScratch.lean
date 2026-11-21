@@ -760,9 +760,9 @@ theorem narrowS_pub (hk : 6 ≤ (sig.words abi.ptrBits).length)
 /-- A run of the code from `narrowS s` is a run of `withStackArgScratch`
 from `s`, after `setArgs`'s accesses, which keeps what the calling convention
 requires, and whose memory and `rax` are those of the code's run. The
-`free` leaves memory alone in the model as it is; only the residue lemmas
-(`Leaves.lean`, `ScrubPart.lean`), which say what each run leaves in the
-frame, rely on that (correctness proofs use `withStackArgScratch_run`). -/
+`free` leaves memory alone in the model as it is; only residue lemmas,
+which say what each run leaves in the frame, rely on that (correctness
+proofs use `withStackArgScratch_run`). -/
 theorem withStackArgScratch_runMem {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBits).length)
     (hb : 16 + 8 * nStack sig + n * e.size ≤ bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
     (hst : stack + bytes + 8 ≤ 2 ^ 64) (hsafe : SpSafe c) (hd : c.x86_64Depth ≤ stack) {s : State}

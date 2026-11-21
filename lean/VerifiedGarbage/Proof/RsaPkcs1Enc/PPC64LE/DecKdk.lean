@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecD
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -37,7 +38,7 @@ open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
 variable {pc : Bool}
 
 /-- SHA-256's streaming functions, and the facts about them. -/
-abbrev H : VG.Impl.Hmac.Stream.PPC64LE.Hash := VG.Proof.Hmac.Stream.PPC64LE.Sha256.hash
+abbrev H : VG.Impl.Hmac.Stream.PPC64LE.Hash := Impl.Hmac.Stream.PPC64LE.sha256Hash
 abbrev hH : HashOK H := VG.Proof.Hmac.Stream.PPC64LE.Sha256.ok
 
 theorem fb_ge {s : State} (h : DPre pc s) : 3328 ≤ (fb s).toNat := by

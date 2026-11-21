@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -9,10 +9,10 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 /-!
 # What a function's cleanup needs of its code, as Booleans (AArch64)
 
-The cleanup of a function (`Impl.Residue.AArch64.scrubAll`) clears the
+The cleanup of a function (`Impl.Scrub.AArch64.scrubAll`) clears the
 registers a `Clear` lists, and the function returns without secret residue if
 its code writes no other register the calling convention does not preserve
-(`ScrubAll.scrubSide`, `Proof/Framework/AArch64/ScrubProved.lean`). That is a
+(`Scrub.scrubSide`, `Proof/Framework/AArch64/ScrubProved.lean`). That is a
 test of every instruction (`sideI`), which holds of code and of the code it
 calls separately: an implementation that several functions call proves it
 once, of its own code and the registers it states it writes (`calleeSide`),
@@ -26,9 +26,9 @@ implementation's facts without the proofs about the cleanup.
 
 @[expose] public section
 
-namespace VG.AArch64.ScrubAll
+namespace VG.AArch64.Scrub
 
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `Clear.WF`, as a Boolean. -/
 def wfB (cl : Clear) : Bool :=
@@ -169,4 +169,4 @@ theorem sideAll_union_right {a b : Clear} {c : Prog isa} (h : calleeSide c b = t
     calleeSide c (a.union b) = true :=
   sideAll_mono (fun _ => sideI_mono (fun _ => keptG_union_right) (fun _ => keptV_union_right)) h
 
-end VG.AArch64.ScrubAll
+end VG.AArch64.Scrub

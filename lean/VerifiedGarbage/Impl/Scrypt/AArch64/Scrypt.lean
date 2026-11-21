@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 
 /-!
 # scrypt: AArch64 implementation
@@ -113,11 +113,11 @@ namespace Fn
 
 /-- `vg_scrypt` as emitted, over SHA-256's compression function `code`: the
 code, which calls PBKDF2-HMAC-SHA256 made with it, then its cleanup
-(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+(`Impl.Scrub.AArch64.scrubOf`), which clears the registers the code may
 write, the functions it calls included, and zeroes the stack it used, so that
 it returns without secret residue. -/
 def scrypt (name suffix : String) (code : Prog isa) : Prog isa :=
-  Impl.Residue.AArch64.scrubOf 96 0
+  Impl.Scrub.AArch64.scrubOf 96 0
     (VG.Impl.Scrypt.AArch64.scrypt ("vg_pbkdf2_hmac_sha256_scratch" ++ suffix) (sha256 name suffix code).pbkdf2)
 
 end Fn

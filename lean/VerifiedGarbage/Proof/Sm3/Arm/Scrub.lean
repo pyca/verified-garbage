@@ -65,7 +65,7 @@ theorem init : VerifiedScrubbed target Impl.Sm3.Arm.Fn.init (Spec.Sm3.initContra
 
 /-- `vg_sm3_update`. -/
 theorem update : VerifiedScrubbed target Impl.Sm3.Arm.Fn.update (Spec.Sm3.updateContract abi 168) 0 :=
-  verifiedScrubbedF (api := Spec.Sm3.updateApi)
+  verifiedScrubbedAll (api := Spec.Sm3.updateApi)
     { code := Impl.StackScratch.Arm.withStackScratch 168 2 Impl.Sm3.Arm.Stream.update
       verified := Proof.Sm3.Arm.Shared.update }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm3.updatePost_out _))
@@ -73,7 +73,7 @@ theorem update : VerifiedScrubbed target Impl.Sm3.Arm.Fn.update (Spec.Sm3.update
 
 /-- `vg_sm3_finalize`. -/
 theorem finalize : VerifiedScrubbed target Impl.Sm3.Arm.Fn.finalize (Spec.Sm3.finalizeContract abi 168) 0 :=
-  verifiedScrubbedF (api := Spec.Sm3.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Sm3.finalizeApi)
     { code := Impl.StackScratch.Arm.withStackScratch 168 1 Impl.Sm3.Arm.Stream.finalize
       verified := Proof.Sm3.Arm.Shared.finalize }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm3.finalizePost_out _))

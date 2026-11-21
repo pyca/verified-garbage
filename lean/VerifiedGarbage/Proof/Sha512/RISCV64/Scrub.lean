@@ -188,7 +188,7 @@ Each of the streaming functions as emitted (`Impl.Sha512.RISCV64.Fn`): the
 function followed by `Impl.Scrub.RISCV64.scrubTail`, which clears the
 caller-saved registers and the stack its frames used. Each theorem below
 states that one meets its contract in constant time and returns without
-secret residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`),
+secret residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`),
 which is what its registration binds. Their postconditions read the memory
 on return only within their buffers (`Proof/Sha512/PostOut.lean`). HMAC,
 PBKDF2, Ed25519 and the digests call their code as the internal
@@ -197,7 +197,7 @@ functions.
 
 The `digest` functions instead clear only the runs of doublewords that the
 residue analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.verifiedScrubbedSelT`, whose analysis the kernel evaluates
+(`RISCV64.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates
 here). Their code wipes most of its own scratch space, which leaves few such
 doublewords. Their correctness is HMAC's proof of the one-shot digest
 (`Proof.Hmac.Stream.RISCV64.Sha512.digest`, …), of the same code.
@@ -214,7 +214,7 @@ time and returns without secret residue. -/
 theorem init384_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.init384
       (Spec.Sha512.initContract RISCV64.abi Spec.Sha512.H0_384) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.init384Api) (W := 0)
+  verifiedScrubbedAll (api := Spec.Sha512.init384Api) (W := 0)
     { code := Impl.Sha512.RISCV64.Stream.initWith Spec.Sha512.H0_384, verified := Shared.init384 }
     (postOut_of_local (leak := none) ScrubAbi.plain
       (Proof.Sha512.initPost_out Spec.Sha512.H0_384 64))
@@ -225,7 +225,7 @@ time and returns without secret residue. -/
 theorem init512_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.init512
       (Spec.Sha512.initContract RISCV64.abi Spec.Sha512.H0_512) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.init512Api) (W := 0)
+  verifiedScrubbedAll (api := Spec.Sha512.init512Api) (W := 0)
     { code := Impl.Sha512.RISCV64.Stream.initWith Spec.Sha512.H0_512, verified := Shared.init512 }
     (postOut_of_local (leak := none) ScrubAbi.plain
       (Proof.Sha512.initPost_out Spec.Sha512.H0_512 64))
@@ -236,7 +236,7 @@ time and returns without secret residue. -/
 theorem init512_224_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.init512_224
       (Spec.Sha512.initContract RISCV64.abi Spec.Sha512.H0_512_224) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.init512_224Api) (W := 0)
+  verifiedScrubbedAll (api := Spec.Sha512.init512_224Api) (W := 0)
     { code := Impl.Sha512.RISCV64.Stream.initWith Spec.Sha512.H0_512_224, verified := Shared.init512_224 }
     (postOut_of_local (leak := none) ScrubAbi.plain
       (Proof.Sha512.initPost_out Spec.Sha512.H0_512_224 64))
@@ -247,7 +247,7 @@ time and returns without secret residue. -/
 theorem init512_256_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.init512_256
       (Spec.Sha512.initContract RISCV64.abi Spec.Sha512.H0_512_256) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.init512_256Api) (W := 0)
+  verifiedScrubbedAll (api := Spec.Sha512.init512_256Api) (W := 0)
     { code := Impl.Sha512.RISCV64.Stream.initWith Spec.Sha512.H0_512_256, verified := Shared.init512_256 }
     (postOut_of_local (leak := none) ScrubAbi.plain
       (Proof.Sha512.initPost_out Spec.Sha512.H0_512_256 64))
@@ -258,7 +258,7 @@ time and returns without secret residue. -/
 theorem update_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.update
       (Spec.Sha512.updateContract RISCV64.abi 208) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.updateApi) (W := 208)
+  verifiedScrubbedAll (api := Spec.Sha512.updateApi) (W := 208)
     { code := Impl.Sha512.RISCV64.Stream.update, verified := Shared.update }
     (postOut_of_local (leak := none) ScrubAbi.plain
       (Proof.Sha512.updatePost_out 64))
@@ -269,7 +269,7 @@ time and returns without secret residue. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.finalize
       (Spec.Sha512.finalizeContract RISCV64.abi 208) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.finalizeApi) (W := 208)
+  verifiedScrubbedAll (api := Spec.Sha512.finalizeApi) (W := 208)
     { code := Impl.Sha512.RISCV64.Stream.finalize, verified := Shared.finalize }
     (postOut_of_local (leak := none) ScrubAbi.plain
       (Proof.Sha512.finalizePost_out 64))
@@ -280,7 +280,7 @@ time and returns without secret residue. -/
 theorem finalize384_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.finalize384
       (Spec.Sha512.finalizeDigestContract RISCV64.abi Spec.Sha512.H0_384 48 Spec.Sha512.sha384 208) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.finalize384Api) (W := 208)
+  verifiedScrubbedAll (api := Spec.Sha512.finalize384Api) (W := 208)
     { code := Impl.Sha512.RISCV64.Stream.finalize384, verified := Shared.finalize384 }
     (postOut_of_local (leak := none) ScrubAbi.plain
       (Proof.Sha512.finalizeDigestPost_out Spec.Sha512.H0_384 48 Spec.Sha512.sha384 64 (by decide)))
@@ -291,7 +291,7 @@ time and returns without secret residue. -/
 theorem finalize512_256_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.finalize512_256
       (Spec.Sha512.finalizeDigestContract RISCV64.abi Spec.Sha512.H0_512_256 32 Spec.Sha512.sha512_256 208) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.finalize512_256Api) (W := 208)
+  verifiedScrubbedAll (api := Spec.Sha512.finalize512_256Api) (W := 208)
     { code := Impl.Sha512.RISCV64.Stream.finalize512_256, verified := Shared.finalize512_256 }
     (postOut_of_local (leak := none) ScrubAbi.plain
       (Proof.Sha512.finalizeDigestPost_out Spec.Sha512.H0_512_256 32 Spec.Sha512.sha512_256 64 (by decide)))
@@ -302,7 +302,7 @@ time and returns without secret residue. -/
 theorem finalize512_224_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.finalize512_224
       (Spec.Sha512.finalizeDigestContract RISCV64.abi Spec.Sha512.H0_512_224 28 Spec.Sha512.sha512_224 208) 0 :=
-  verifiedScrubbed (api := Spec.Sha512.finalize512_224Api) (W := 208)
+  verifiedScrubbedAll (api := Spec.Sha512.finalize512_224Api) (W := 208)
     { code := Impl.Sha512.RISCV64.Stream.finalize512_224, verified := Shared.finalize512_224 }
     (postOut_of_local (leak := none) ScrubAbi.plain
       (Proof.Sha512.finalizeDigestPost_out Spec.Sha512.H0_512_224 28 Spec.Sha512.sha512_224 64 (by decide)))
@@ -313,8 +313,8 @@ time and returns without secret residue. -/
 theorem digest384_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.digest384
       (Spec.Sha512.digestContract RISCV64.abi 48 Spec.Sha512.sha384 448) 0 :=
-  verifiedScrubbedSelT (api := Spec.Sha512.digest384Api) (W := 448)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha384.hash,
+  verifiedScrubbedSel (api := Spec.Sha512.digest384Api) (W := 448)
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash384,
       verified := Proof.Hmac.Stream.RISCV64.Sha384.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 48 Spec.Sha512.sha384 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -324,8 +324,8 @@ time and returns without secret residue. -/
 theorem digest512_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.digest512
       (Spec.Sha512.digestContract RISCV64.abi 64 Spec.Sha512.sha512 448) 0 :=
-  verifiedScrubbedSelT (api := Spec.Sha512.digest512Api) (W := 448)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha512.hash,
+  verifiedScrubbedSel (api := Spec.Sha512.digest512Api) (W := 448)
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512,
       verified := Proof.Hmac.Stream.RISCV64.Sha512.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 64 Spec.Sha512.sha512 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -335,8 +335,8 @@ time and returns without secret residue. -/
 theorem digest512_224_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.digest512_224
       (Spec.Sha512.digestContract RISCV64.abi 28 Spec.Sha512.sha512_224 448) 0 :=
-  verifiedScrubbedSelT (api := Spec.Sha512.digest512_224Api) (W := 448)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha512_224.hash,
+  verifiedScrubbedSel (api := Spec.Sha512.digest512_224Api) (W := 448)
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512_224,
       verified := Proof.Hmac.Stream.RISCV64.Sha512_224.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 28 Spec.Sha512.sha512_224 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -346,8 +346,8 @@ time and returns without secret residue. -/
 theorem digest512_256_scrubbed :
     VerifiedScrubbed target Impl.Sha512.RISCV64.Fn.digest512_256
       (Spec.Sha512.digestContract RISCV64.abi 32 Spec.Sha512.sha512_256 448) 0 :=
-  verifiedScrubbedSelT (api := Spec.Sha512.digest512_256Api) (W := 448)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha512_256.hash,
+  verifiedScrubbedSel (api := Spec.Sha512.digest512_256Api) (W := 448)
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha512.RISCV64.Fn.hash512_256,
       verified := Proof.Hmac.Stream.RISCV64.Sha512_256.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.digestPost_out 32 Spec.Sha512.sha512_256 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩

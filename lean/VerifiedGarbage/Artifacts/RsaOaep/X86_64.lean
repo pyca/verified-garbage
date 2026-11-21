@@ -1,100 +1,13 @@
 module
 
 public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Spec.RsaOaep.MdTables
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCtx
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
-import Mathlib.Tactic.Finiteness.Attr
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCT
-public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.Cold
-public import VerifiedGarbage.Proof.Framework.EntryBranch
-public import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Framework.OffsetBelow
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Hmac.AnyKey
-public import VerifiedGarbage.Proof.Hmac.Generic.Implies
-public import VerifiedGarbage.Proof.MdStream.X86_64.Words
-public import VerifiedGarbage.Proof.Mgf1.Bytes
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-public import VerifiedGarbage.Proof.Pbkdf2.Scratch
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCorrect
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSpec
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
-public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Verified
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPrecomputed
-public import VerifiedGarbage.Proof.HashTable.X86_64
 public import VerifiedGarbage.TCB.X86_64.Print
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
-public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcSp
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-public import VerifiedGarbage.Impl.RsaOaep.X86_64.Precomputed
-public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCtx
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
-public import VerifiedGarbage.Proof.Bignum.LazyMath
-public import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-public import VerifiedGarbage.Proof.Bignum.X86_64.Double
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
-public import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-public import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
-public import VerifiedGarbage.Proof.Bignum.X86_64.Row
-public import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-public import VerifiedGarbage.Proof.Bignum.X86_64.Store
-public import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-public import VerifiedGarbage.Proof.Framework.RegSetOrder
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Rsa.Octets
-public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
-import VerifiedGarbage.Proof.Bignum.CrtMath
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Poly1305.Limbs64
-public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
+public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.QualifiedName
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
-public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Scrub
+public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
+public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 
 /-! # RSAES-OAEP (RFC 8017) on x86-64 -/
 
@@ -102,20 +15,20 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
 
 namespace VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
 
-open VG.Proof.RsaOaep.X86_64 (decPrecomputed_ok decP_spSafe OK)
+open VG.Proof.RsaOaep.X86_64 (OK)
+open VG.Proof.RsaOaep.X86_64.Scrub (vs ts dec_scrubbed dec_spSafe)
 open VG.Proof.RsaPkcs1Enc.X86_64 (privNameP privCodeP)
-open VG.Proof.MdHashTable.X86_64 (tables)
-open VG.Proof.HashTable.X86_64 (fnsOf)
 
-def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+def artifacts (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+    Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact X86_64.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
       extra := c.extra
-      tables := [("hash", tables vs), ("mgf1", tables vs)]
-      code := Impl.RsaOaep.X86_64.decryptP (fnsOf vs) (privNameP c) (privCodeP c)
-      verified := decPrecomputed_ok vs h c
-      spSafe := decP_spSafe vs c } (VG.Proof.RsaOaep.X86_64.decPrecomputed_postOut _))]
+      tables := ts
+      code := Impl.RsaOaep.X86_64.Fn.decryptPrecomputed (Proof.Rsa.X86_64.PrivScrub.level c)
+        (Proof.HashTable.X86_64.fnsOf vs) (privNameP c) (privCodeP c)
+      verified := .scrubbed (dec_scrubbed h c)
+      spSafe := dec_spSafe c }]
   else []
 
 end VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
@@ -123,18 +36,17 @@ end VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
 -- RSAES-OAEP encryption with a precomputed public key on x86-64, with both hash functions as tables
 namespace VG.Artifacts.RsaOaep.X86_64.RsaPublicPrecomputedAllMdHash
 
-open VG.Proof.RsaOaep.X86_64 (enc_ok OK)
-open VG.Proof.MdHashTable.X86_64 (tables)
-open VG.Proof.HashTable.X86_64 (fnsOf)
+open VG.Proof.RsaOaep.X86_64 (OK)
+open VG.Proof.RsaOaep.X86_64.Scrub (vs ts enc_scrubbed enc_spSafe)
 
-def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+def artifacts (c : Proof.Rsa.X86_64.PublicImpl) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaOaep.encryptMdTablesApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
+    Spec.RsaOaep.encryptMdTablesApi.artifact X86_64.target {
       suffix := qualifiedName "" [("rsa", c.suffix)]
-      tables := [("hash", tables vs), ("mgf1", tables vs)]
-      code := Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) c.name c.code
-      verified := enc_ok vs h c
-      spSafe := Proof.RsaOaep.X86_64.Pc.code_spSafe vs c } (VG.Proof.Rsa.X86_64.Scrub.oaepEncryptOut _ _))]
+      tables := ts
+      code := Impl.RsaOaep.X86_64.Fn.encrypt c.level (Proof.HashTable.X86_64.fnsOf vs) c.name c.code
+      verified := .scrubbed (enc_scrubbed h c)
+      spSafe := enc_spSafe c }]
   else []
 
 end VG.Artifacts.RsaOaep.X86_64.RsaPublicPrecomputedAllMdHash
@@ -142,7 +54,7 @@ end VG.Artifacts.RsaOaep.X86_64.RsaPublicPrecomputedAllMdHash
 namespace VG.Artifacts.RsaOaep.X86_64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun v => RsaPrivateCrtAllMdHash.artifacts v VG.Proof.Variants.MdHash.X86_64.variants) ++
-  (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun v => RsaPublicPrecomputedAllMdHash.artifacts v VG.Proof.Variants.MdHash.X86_64.variants)
+  (VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap RsaPrivateCrtAllMdHash.artifacts) ++
+  (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap RsaPublicPrecomputedAllMdHash.artifacts)
 
 end VG.Artifacts.RsaOaep.X86_64

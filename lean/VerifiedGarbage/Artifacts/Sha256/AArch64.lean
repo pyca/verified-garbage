@@ -18,12 +18,10 @@ namespace VG.Artifacts.Sha256.AArch64
 def artifacts : List Artifact := [
   Spec.Sha256.init224Api.artifact AArch64.target {
     code := Impl.Sha256.AArch64.Stream.init224
-    verified := .scrubbed ⟨Proof.Sha256.AArch64.Shared.init224,
-      Proof.Sha256.AArch64.Residue.init224_noResidue _⟩ },
+    verified := .scrubbed Proof.Sha256.AArch64.Residue.init224_scrubbed },
   Spec.Sha256.initApi.artifact AArch64.target {
     code := Impl.Sha256.AArch64.Stream.init
-    verified := .scrubbed ⟨Proof.Sha256.AArch64.Shared.init,
-      Proof.Sha256.AArch64.Residue.init_noResidue _⟩ }] ++
+    verified := .scrubbed Proof.Sha256.AArch64.Residue.init_scrubbed }] ++
   (VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun (v : Proof.Sha256.AArch64.Compress) => [
     Spec.Sha256.finalize224Api.artifact AArch64.target {
       suffix := v.suffix

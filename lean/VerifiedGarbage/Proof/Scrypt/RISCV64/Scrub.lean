@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Impl.Scrypt.RISCV64.Fn
+public import VerifiedGarbage.Proof.Scrypt.RISCV64.Whole.Verified
+import VerifiedGarbage.Proof.Scrypt.RISCV64.BlockMix
+import VerifiedGarbage.Proof.Scrypt.RISCV64.RoMix
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 
@@ -10,9 +15,12 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 The postcondition of `vg_scrypt` reads the memory on return only within
 `out` (`RISCV64.Scrub.PostOut`, as AArch64's `Proof/Scrypt/AArch64/Scrub.lean`
-proves it): the implementation, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`), returns with the caller-saved registers cleared
-and the stack its frames used zeroed. Its arguments on the stack are in the
+proves it): the function as emitted (`Impl.Scrypt.RISCV64.Fn.scrypt`, with
+`vg_pbkdf2_hmac_sha256`'s code), the implementation followed by
+`Impl.Scrub.RISCV64.scrubTail`, returns with the caller-saved registers
+cleared and the stack its frames used zeroed, and meets its contract in
+constant time (`scrypt_scrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`), which
+is what its registration binds. Its arguments on the stack are in the
 caller's frame, among the buffers (`writeArgs`), which the caller owns.
 -/
 
@@ -66,5 +74,15 @@ theorem scryptOut (stack : Nat) :
         some (Spec.Scrypt.bytesAt m₁ out outLen.toNat) := h
     show _ = some (Spec.Scrypt.bytesAt m₂ out outLen.toNat)
     rw [hby]; exact h
+
+/-- `vg_scrypt` as emitted (`Impl.Scrypt.RISCV64.Fn.scrypt`) meets its contract in
+constant time and returns without secret residue. -/
+theorem scrypt_scrubbed :
+    VerifiedScrubbed target
+      (Impl.Scrypt.RISCV64.Fn.scrypt Proof.Scrypt.RISCV64.Whole.pbkName Proof.Scrypt.RISCV64.Whole.pbkCode)
+      (Spec.Scrypt.scryptContract RISCV64.abi 1248) 0 :=
+  verifiedScrubbedAll (api := Spec.Scrypt.scryptApi) (W := 1248)
+    { code := _, verified := Proof.Scrypt.RISCV64.Whole.scrypt_verified } (scryptOut _)
+    (by dsimp only; lit_decide)
 
 end VG.Proof.Scrypt.RISCV64.Scrub

@@ -1067,7 +1067,7 @@ With Montgomery multiplication by calls (`CallMont`), whose code inlined is
 (`code_correct`), constant time (`code_constantTime`), the contract on the
 registers implying the shared one with 8 bytes of stack (`pp_implies`), and
 a postcondition that reads memory only in `pre` (`pp_patch`, `pp_postOut`,
-for `X86_64.Scrub.withScrubAll`); and the `Verified` the registration uses
+for `Impl.Scrub.X86_64.scrubAll`); and the `Verified` the registration uses
 (`pp_verified`, `ppAdx_verified`), from the checks the kernel evaluates on
 the code (that it inlines, and that it never loads MXCSR).
 -/

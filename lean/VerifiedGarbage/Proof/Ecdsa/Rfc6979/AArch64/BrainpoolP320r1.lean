@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP320r1Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP320r1Literals
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.TableSat
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Scrub
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP320r1.Comb.Verified
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP320r1.Config
@@ -27,6 +28,8 @@ public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP320r1
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP320r1.AArch64.Joint
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP320r1.Joint.Verified
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -82,34 +85,45 @@ theorem brainpoolp320r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.cur
 /-! ## What the scrubbed functions clear
 
 The registers the tails of `vg_ecdsa_brainpoolp320r1_sign` and `vg_ecdsa_brainpoolp320r1_verify`
-clear, and what `ScrubAll.scrubAllOf` needs of their code
-(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
+(`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 
-/-- The registers the tail of `vg_ecdsa_brainpoolp320r1_sign` clears: those its code,
-with the HMAC implementations of its table, may write. -/
-def brainpoolp320r1SignClear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v0,
-   .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26,
-   .v27, .v28, .v29, .v30, .v31], []⟩
+/-- No instruction of `vg_ecdsa_brainpoolp320r1_sign_k` writes PSTATE.DIT, and it calls
+nothing indirectly. -/
+theorem brainpoolp320r1_core_side :
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
+      Impl.Ecdsa.AArch64.BrainpoolP320r1.signComb = true := by
+  lit_decide
 
-theorem brainpoolp320r1SignSide (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
-    AArch64.ScrubAll.scrubSide
-      (signCodeT (brainpoolp320r1 hL hI) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries Proof.Variants.MdHash.AArch64.variants)
-      stackT
-      (Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.signSig.retBits
-        ((AArch64.abi.withConsts Impl.Ecdsa.AArch64.BrainpoolP320r1.combCfg.combConsts).withTables Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.signSig
-          [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)]).ptrBits)
-      brainpoolp320r1SignClear [("hmac", HmacTable.AArch64.tables Proof.Variants.MdHash.AArch64.variants)] = true := by rw_lit; kernel_rfl
+/-- `vg_ecdsa_brainpoolp320r1_sign` as emitted, cleanup included
+(`Impl.Ecdsa.Rfc6979.AArch64.Fn.brainpoolp320r1`), with the tables of every hash
+function: it meets its contract in constant time and returns without secret
+residue. What the cleanup needs of the code is evaluated here, once, with
+nothing in the place of `vg_ecdsa_brainpoolp320r1_sign_k`, whose own is evaluated
+apart. -/
+theorem brainpoolp320r1Sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target
+      (Impl.Ecdsa.Rfc6979.AArch64.Fn.brainpoolp320r1 Proof.Variants.MdHash.AArch64.hashes)
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1 Impl.Ecdsa.AArch64.BrainpoolP320r1.combCfg.combConsts
+        Proof.Variants.MdHash.AArch64.variants)
+      32 :=
+  Scrub.sign_scrubbed (R := brainpoolp320r1 hL hI) (n := 128)
+    (brainpoolp320r1T_verified hL hI _ ⟨Scrub.variants_ok, of_decide_eq_true (by kernel_rfl)⟩)
+    rfl brainpoolp320r1_core_side
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (Nat.le_of_ble_eq_true (by kernel_rfl))
 
-/-- The registers the tail of `vg_ecdsa_brainpoolp320r1_verify` clears: those its code may write. -/
-def brainpoolp320r1VerifyClear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [.v16,
-   .v17, .v28, .v29], []⟩
-
-theorem brainpoolp320r1VerifySide :
-    AArch64.ScrubAll.scrubSide
-      (Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false Impl.Ecdsa.Verify.AArch64.BrainpoolP320r1.Joint.verify)
-      80 (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashSig.retBits AArch64.abi.ptrBits) brainpoolp320r1VerifyClear [] = true := by lit_decide
+/-- `vg_ecdsa_brainpoolp320r1_verify` as emitted, cleanup included
+(`Impl.Ecdsa.Verify.AArch64.BrainpoolP320r1.Joint.Fn.verifyHash`): it meets its contract in
+constant time and returns without secret residue. What the cleanup needs of
+the code (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
+theorem brainpoolp320r1Verify (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.BrainpoolP320r1.Joint.Fn.verifyHash
+      (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract AArch64.abi 80) 32 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
+    { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false
+        Impl.Ecdsa.Verify.AArch64.BrainpoolP320r1.Joint.verify
+      verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP320r1.Joint.verifyHash_verified hL hI } _
+    (Proof.EcKey.AArch64.Scrub.verifyHashOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

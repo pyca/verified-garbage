@@ -73,7 +73,7 @@ theorem init : VerifiedScrubbed target Impl.Md5.Arm.Fn.init (Spec.Md5.initContra
 
 /-- `vg_md5_update`. -/
 theorem update : VerifiedScrubbed target Impl.Md5.Arm.Fn.update (Spec.Md5.updateContract abi 128) 0 :=
-  verifiedScrubbedF (api := Spec.Md5.updateApi)
+  verifiedScrubbedAll (api := Spec.Md5.updateApi)
     { code := Impl.StackScratch.Arm.withStackScratch 128 2 Impl.Md5.Arm.Stream.update
       verified := Shared.update }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.updatePost_out _))
@@ -82,7 +82,7 @@ theorem update : VerifiedScrubbed target Impl.Md5.Arm.Fn.update (Spec.Md5.update
 /-- `vg_md5_finalize`. -/
 theorem finalize :
     VerifiedScrubbed target Impl.Md5.Arm.Fn.finalize (Spec.Md5.finalizeContract abi 128) 0 :=
-  verifiedScrubbedF (api := Spec.Md5.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Md5.finalizeApi)
     { code := Impl.StackScratch.Arm.withStackScratch 128 1 Impl.Md5.Arm.Stream.finalize
       verified := Shared.finalize }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Md5.finalizePost_out _))

@@ -19,7 +19,7 @@ theorem of each, for any implementation of the private CRT's interface and
 the hash functions of any tables (`mvs`, the hash function's, and `vs`,
 MGF1's) of which `OK` holds: it meets its contract in constant time and
 returns without secret residue (`VerifiedScrubbed`), which is what its
-registration binds (`Arm.Scrub.verifiedScrubbedF`).
+registration binds (`Arm.Scrub.verifiedScrubbedAll`).
 
 As RSA-OAEP's (`Proof/RsaOaep/Arm/Fn.lean`): what the cleanup needs of the
 code (`CodeOkT`) is proven once, for code whose hash functions and RSA
@@ -256,7 +256,7 @@ theorem signPrecomputed {mvs : List MVar} {vs : List TVar} (hok : OK mvs vs) (v 
           [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 3632) 32 :=
   have hm := MdHashTable.Arm.fnsOf_scrub (names_tableFns mvs vs).1
   have hg := HashTable.Arm.fnsOf_scrub (names_tableFns mvs vs).2
-  verifiedScrubbedF (api := Spec.RsaPss.signPrecomputedMdTableApi)
+  verifiedScrubbedAll (api := Spec.RsaPss.signPrecomputedMdTableApi)
     { tables := [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]
       code := Proof.RsaPss.Arm.Sg.signCodeP mvs vs v
       verified := signVerified hok v }
@@ -274,7 +274,7 @@ theorem verifyPrecomputed {mvs : List MVar} {vs : List TVar} (hok : OK mvs vs) (
           [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 240) 32 :=
   have hm := MdHashTable.Arm.fnsOf_scrub (names_tableFns mvs vs).1
   have hg := HashTable.Arm.fnsOf_scrub (names_tableFns mvs vs).2
-  verifiedScrubbedF (api := Spec.RsaPss.verifyPrecomputedMdTableApi)
+  verifiedScrubbedAll (api := Spec.RsaPss.verifyPrecomputedMdTableApi)
     { tables := [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]
       code := Proof.RsaPss.Arm.Vf.verifyCode mvs vs (pdOfCrt v)
       verified := verify_ok hok (pdOfCrt v) }

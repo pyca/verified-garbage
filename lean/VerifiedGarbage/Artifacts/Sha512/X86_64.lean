@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Sha512.X86_64.Fn
 public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha512.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -34,15 +35,15 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Sha512.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Sha512.init384Api.artifact X86_64.target Proof.Sha512.X86_64.init384Reg,
-  Spec.Sha512.init512Api.artifact X86_64.target Proof.Sha512.X86_64.init512Reg,
-  Spec.Sha512.init512_224Api.artifact X86_64.target Proof.Sha512.X86_64.init512_224Reg,
-  Spec.Sha512.init512_256Api.artifact X86_64.target Proof.Sha512.X86_64.init512_256Reg] ++
+  Spec.Sha512.init384Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init384, verified := .scrubbed Proof.Sha512.X86_64.init384_scrubbed, spSafe := Proof.Sha512.X86_64.init384_spSafe },
+  Spec.Sha512.init512Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512, verified := .scrubbed Proof.Sha512.X86_64.init512_scrubbed, spSafe := Proof.Sha512.X86_64.init512_spSafe },
+  Spec.Sha512.init512_224Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512_224, verified := .scrubbed Proof.Sha512.X86_64.init512_224_scrubbed, spSafe := Proof.Sha512.X86_64.init512_224_spSafe },
+  Spec.Sha512.init512_256Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512_256, verified := .scrubbed Proof.Sha512.X86_64.init512_256_scrubbed, spSafe := Proof.Sha512.X86_64.init512_256_spSafe }] ++
   ((VG.Proof.Variants.MdHash.X86_64.sha384Variants ++
       VG.Proof.Variants.MdHash.X86_64.sha512Variants ++
       VG.Proof.Variants.MdHash.X86_64.sha512_224Variants ++
       VG.Proof.Variants.MdHash.X86_64.sha512_256Variants).flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
     v.stream.map fun f =>
-      f.api.artifact X86_64.target { f.reg with suffix := v.suffix})
+      f.f.api.artifact X86_64.target { f.reg with suffix := v.suffix })
 
 end VG.Artifacts.Sha512.X86_64

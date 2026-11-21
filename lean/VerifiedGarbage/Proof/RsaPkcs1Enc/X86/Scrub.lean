@@ -1,25 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecP.Verified
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.RndVerified
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecP.Verified
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
 meta import VerifiedGarbage.Impl.RsaPkcs1Enc.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -92,7 +90,7 @@ theorem encryptRandom_scrubbed :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Enc.X86.Fn.encryptRandom Proof.RsaPkcs1Enc.X86.Rnd.encName (Proof.RsaPkcs1Enc.X86.Rnd.enc baseline))
       Proof.RsaPkcs1Enc.X86.Rnd.spec 32 :=
-  verifiedScrubbedF (api := Spec.RsaPkcs1Enc.encryptRandomApi) {
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.encryptRandomApi) {
       code := Impl.RsaPkcs1Enc.X86.Random.code Proof.RsaPkcs1Enc.X86.Rnd.encName
         (Proof.RsaPkcs1Enc.X86.Rnd.enc baseline)
       verified := Proof.RsaPkcs1Enc.X86.Rnd.code_verified Proof.RsaPkcs1Enc.X86.Rnd.encName baseline
@@ -164,7 +162,7 @@ theorem decryptPrecomputed_scrubbed (v : Backend) (c : CrtImpl) :
       (Impl.RsaPkcs1Enc.X86.Fn.decryptPrecomputed v.F (Proof.RsaPkcs1Enc.X86.Dec.privNameP c)
         (privCodeP c crtPBaseline))
       Proof.RsaPkcs1Enc.X86.Dec.specP 32 :=
-  verifiedScrubbedF (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi)
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi)
     { code := Proof.RsaPkcs1Enc.X86.Dec.decryptCodeP v c crtPBaseline
       verified := Proof.RsaPkcs1Enc.X86.Dec.decryptPrecomputed_verified v c
       spSafe := Proof.RsaPkcs1Enc.X86.Dec.codeP_sp v c crtPBaseline }
@@ -174,6 +172,6 @@ theorem decryptPrecomputed_scrubbed (v : Backend) (c : CrtImpl) :
 theorem decryptPrecomputed_spSafe (v : Backend) (c : CrtImpl) :
     (Impl.RsaPkcs1Enc.X86.Fn.decryptPrecomputed v.F (Proof.RsaPkcs1Enc.X86.Dec.privNameP c)
       (privCodeP c crtPBaseline)).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.RsaPkcs1Enc.X86.Dec.codeP_sp v c crtPBaseline)
+  scrubAll_spSafe (Proof.RsaPkcs1Enc.X86.Dec.codeP_sp v c crtPBaseline)
 
 end VG.Proof.RsaPkcs1Enc.X86.Scrub

@@ -19,11 +19,15 @@ namespace VG.Artifacts.X448.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Curve448Field.X86_64.variants.flatMap fun (v : Impl.Ed448.X86_64.FieldVariant) => [
-    Spec.X448.exchangeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
-      suffix := v.suffix
-      code := Impl.Xdh.X86_64.exchange ("vg_x448" ++ v.suffix) (Proof.X448.X86_64.code v) 56
-      verified := Proof.X448.X86_64.Exchange.exchange_variant v }
-      (Proof.X448.X86_64.exchangeOut _)),
-    Spec.X448.x448BaseApi.artifact X86_64.target (Proof.X448.X86_64.baseReg v)]
+    Spec.X448.exchangeApi.artifact X86_64.target
+      { suffix := v.suffix
+        code := Impl.X448.X86_64.Fn.x448 v
+        verified := .scrubbed (Proof.X448.X86_64.exchange_scrubbed v)
+        spSafe := Proof.X448.X86_64.exchange_spSafe v },
+    Spec.X448.x448BaseApi.artifact X86_64.target
+      { suffix := v.suffix
+        code := Impl.X448.X86_64.Fn.x448Base v
+        verified := .scrubbed (Proof.X448.X86_64.base_scrubbed v)
+        spSafe := Proof.X448.X86_64.base_spSafe v }]
 
 end VG.Artifacts.X448.X86_64

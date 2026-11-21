@@ -349,14 +349,14 @@ end VG.Proof.AesCcm.AArch64
 `vg_cmac_aes_update` and its counter mode: each meets its contract in
 constant time and returns without secret residue (`VerifiedScrubbed`), which
 is what its registration binds. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+(`Scrub.scrubSide`) is proved of each function's own instructions here,
 once, with code that does nothing in the place of the functions it calls,
 and of each implementation where it is defined (`UpdateImpl.scrub`,
 `Ctr32Impl.scrub`). -/
 
 namespace VG.Proof.AesCcm.AArch64
 
-open VG VG.AArch64 VG.AArch64.ScrubAll VG.Impl.AesCcm.AArch64
+open VG VG.AArch64 VG.AArch64.Scrub VG.Impl.AesCcm.AArch64
 
 private theorem seal_all {p : Instr → Bool} (B : Nat) (u : Impl.CmacAes.AArch64.Update) (c : Impl.Aes.AArch64.Ctr32)
     (h0 : sideAll p (Impl.StackScratch.AArch64.withStackArgScratch B 2 («seal» ⟨"", .block [], ⟨[], [], []⟩, 0⟩ ⟨"", .block [], ⟨[], [], []⟩, 0⟩)) = true)
@@ -396,7 +396,7 @@ theorem seal_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
       (Spec.Ccm.sealContract AArch64.abi (416 + v.scratch)) 0 := by
   unfold Impl.AesCcm.AArch64.Fn.seal
   rw [v.scratch_eq]
-  exact verifiedScrubbed (api := Spec.Ccm.sealApi)
+  exact verifiedScrubbedAll (api := Spec.Ccm.sealApi)
     { code := Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («seal» v.callee v.ctr.callee)
       verified := Proof.AesCcm.seal_keyed (seal_framed v) } _
     (Scrub.sealOk _) (seal_side v)
@@ -439,7 +439,7 @@ theorem open_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
       (Spec.Ccm.openContract AArch64.abi (416 + v.scratch)) 32 := by
   unfold Impl.AesCcm.AArch64.Fn.open
   rw [v.scratch_eq]
-  exact verifiedScrubbed (api := Spec.Ccm.openApi)
+  exact verifiedScrubbedAll (api := Spec.Ccm.openApi)
     { code := Impl.StackScratch.AArch64.withStackArgScratch (416 + v.scratch) 2 («open» v.callee v.ctr.callee)
       verified := Proof.AesCcm.open_keyed (open_framed v) } _
     (Scrub.openOk _) (open_side v)

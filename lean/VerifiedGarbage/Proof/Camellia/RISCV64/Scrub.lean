@@ -1293,7 +1293,7 @@ Each function as emitted (`Impl.Camellia.RISCV64.Fn`): the function followed
 by `Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers
 and the stack its frames used. Each theorem below states that one meets its
 contract in constant time and returns without secret residue
-(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`), which is what its
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`), which is what its
 registration binds. Their postconditions read the memory on return only
 within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 (`Proof/Camellia/X86_64/Scrub.lean`).
@@ -1301,7 +1301,7 @@ within their buffers (`RISCV64.Scrub.PostOut`), as on x86-64
 The key expansion and ECB's functions instead clear only the runs of
 doublewords that the residue analysis (`RISCV64.rtaint`) finds may differ
 between two runs (`Impl.Scrub.RISCV64.scrubSel`,
-`RISCV64.Scrub.verifiedScrubbedSelT`, whose analysis the kernel evaluates
+`RISCV64.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates
 here). Their code wipes its own scratch space, which leaves no such
 doubleword.
 -/
@@ -1454,7 +1454,7 @@ theorem ctrFinalOut (stack : Nat) :
 constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.expandKey (expandKeyContract RISCV64.abi 3200) 0 :=
-  verifiedScrubbedSelT (api := Spec.Camellia.expandKeyApi) (W := 3200)
+  verifiedScrubbedSel (api := Spec.Camellia.expandKeyApi) (W := 3200)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a3 400 Impl.Camellia.RISCV64.expandKey
       verified := Proof.Camellia.RISCV64.expandKey_framed }
     [] [] (expandKeyOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -1463,7 +1463,7 @@ theorem expandKey_scrubbed :
 constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.ecbEncrypt (ecbContract RISCV64.abi .encrypt 3200) 0 :=
-  verifiedScrubbedSelT (api := Spec.Camellia.ecbEncryptApi) (W := 3200)
+  verifiedScrubbedSel (api := Spec.Camellia.ecbEncryptApi) (W := 3200)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400 (Impl.Camellia.RISCV64.ecb .encrypt)
       verified := Proof.Camellia.RISCV64.ecb_framed .encrypt }
     [] [] (ecbOut .encrypt _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -1472,7 +1472,7 @@ theorem ecbEncrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.ecbDecrypt (ecbContract RISCV64.abi .decrypt 3200) 0 :=
-  verifiedScrubbedSelT (api := Spec.Camellia.ecbDecryptApi) (W := 3200)
+  verifiedScrubbedSel (api := Spec.Camellia.ecbDecryptApi) (W := 3200)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 3200 .a4 400 (Impl.Camellia.RISCV64.ecb .decrypt)
       verified := Proof.Camellia.RISCV64.ecb_framed .decrypt }
     [] [] (ecbOut .decrypt _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -1481,7 +1481,7 @@ theorem ecbDecrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.cbcEncryptChained (cbcEncryptChainedContract RISCV64.abi Proof.Camellia.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.cbcEncryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cbcEncryptChainedApi)
     { code := Impl.Camellia.RISCV64.cbcEncryptChained
       verified := Proof.Camellia.RISCV64.Modes.cbcEncryptChained_verified }
     (cbcEncryptOut _) (by dsimp only; lit_decide)
@@ -1490,7 +1490,7 @@ theorem cbcEncryptChained_scrubbed :
 constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.cbcDecryptChained (cbcDecryptChainedContract RISCV64.abi Proof.Camellia.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.cbcDecryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cbcDecryptChainedApi)
     { code := Impl.Camellia.RISCV64.cbcDecryptChained
       verified := Proof.Camellia.RISCV64.Modes.cbcDecryptChained_verified }
     (cbcDecryptOut _) (by dsimp only; lit_decide)
@@ -1499,7 +1499,7 @@ theorem cbcDecryptChained_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.cfbEncrypt (cfbEncryptContract RISCV64.abi Proof.Camellia.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.cfbEncryptApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cfbEncryptApi)
     { code := Impl.Camellia.RISCV64.cfbEncrypt
       verified := Proof.Camellia.RISCV64.Modes.cfbEncrypt_verified }
     (cfbEncryptOut _) (by dsimp only; lit_decide)
@@ -1508,7 +1508,7 @@ theorem cfbEncrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.cfbDecrypt (cfbDecryptContract RISCV64.abi Proof.Camellia.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.cfbDecryptApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cfbDecryptApi)
     { code := Impl.Camellia.RISCV64.cfbDecrypt
       verified := Proof.Camellia.RISCV64.Modes.cfbDecrypt_verified }
     (cfbDecryptOut _) (by dsimp only; lit_decide)
@@ -1517,7 +1517,7 @@ theorem cfbDecrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.cfbEncryptFinal (cfbEncryptFinalContract RISCV64.abi Proof.Camellia.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.cfbEncryptFinalApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cfbEncryptFinalApi)
     { code := Impl.Camellia.RISCV64.cfbEncryptFinal
       verified := Proof.Camellia.RISCV64.Modes.cfbEncryptFinal_verified }
     (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
@@ -1526,7 +1526,7 @@ theorem cfbEncryptFinal_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.cfbDecryptFinal (cfbDecryptFinalContract RISCV64.abi Proof.Camellia.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.cfbDecryptFinalApi)
+  verifiedScrubbedAll (api := Spec.Camellia.cfbDecryptFinalApi)
     { code := Impl.Camellia.RISCV64.cfbDecryptFinal
       verified := Proof.Camellia.RISCV64.Modes.cfbDecryptFinal_verified }
     (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
@@ -1535,7 +1535,7 @@ theorem cfbDecryptFinal_scrubbed :
 constant time and returns without secret residue. -/
 theorem ctr_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.ctr (ctrContract RISCV64.abi Proof.Camellia.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.ctrApi)
+  verifiedScrubbedAll (api := Spec.Camellia.ctrApi)
     { code := Impl.Camellia.RISCV64.ctr
       verified := Proof.Camellia.RISCV64.Modes.ctr_verified }
     (ctrOut _) (by dsimp only; lit_decide)
@@ -1544,7 +1544,7 @@ theorem ctr_scrubbed :
 constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.ofb (ofbContract RISCV64.abi Proof.Camellia.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.ofbApi)
+  verifiedScrubbedAll (api := Spec.Camellia.ofbApi)
     { code := Impl.Camellia.RISCV64.ofb
       verified := Proof.Camellia.RISCV64.Modes.ofb_verified }
     (ofbOut _) (by dsimp only; lit_decide)
@@ -1553,7 +1553,7 @@ theorem ofb_scrubbed :
 constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.ofbFinal (ofbFinalContract RISCV64.abi Proof.Camellia.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.ofbFinalApi)
+  verifiedScrubbedAll (api := Spec.Camellia.ofbFinalApi)
     { code := Impl.Camellia.RISCV64.ofbFinal
       verified := Proof.Camellia.RISCV64.Modes.ofbFinal_verified }
     (ofbFinalOut _) (by dsimp only; lit_decide)
@@ -1562,7 +1562,7 @@ theorem ofbFinal_scrubbed :
 constant time and returns without secret residue. -/
 theorem ctrFinal_scrubbed :
     VerifiedScrubbed target Impl.Camellia.RISCV64.Fn.ctrFinal (ctrFinalContract RISCV64.abi 3344) 0 :=
-  verifiedScrubbed (api := Spec.Camellia.ctrFinalApi)
+  verifiedScrubbedAll (api := Spec.Camellia.ctrFinalApi)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a5 10 Impl.Camellia.RISCV64.ctrFinal
       verified := Proof.Camellia.RISCV64.CtrFinal.ctrFinal_framed }
     (ctrFinalOut _) (by dsimp only; lit_decide)

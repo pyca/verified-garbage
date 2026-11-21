@@ -14,8 +14,14 @@ namespace VG.Artifacts.EcP384.PPC64LE
 open VG.Proof.P384.PPC64LE (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.EcKey.P384.inst.compressPublicKeyApi.artifact PPC64LE.target Proof.EcKey.PPC64LE.Scrub.p384Compress,
-  Spec.EcKey.P384.inst.decompressPublicKeyApi.artifact PPC64LE.target (Proof.EcKey.PPC64LE.Scrub.p384Decompress hasLaw.law),
-  Spec.EcKey.P384.publicKeyApi.artifact PPC64LE.target (Proof.EcKey.PPC64LE.Scrub.p384PublicKey hasLaw.law)]
+  Spec.EcKey.P384.inst.compressPublicKeyApi.artifact PPC64LE.target {
+    code := Impl.EcKey.PPC64LE.Fn.p384Compress
+    verified := .scrubbed Proof.EcKey.PPC64LE.Scrub.p384Compress_scrubbed },
+  Spec.EcKey.P384.inst.decompressPublicKeyApi.artifact PPC64LE.target {
+    code := Impl.EcKey.PPC64LE.Fn.p384Decompress
+    verified := .scrubbed (Proof.EcKey.PPC64LE.Scrub.p384Decompress_scrubbed hasLaw.law) },
+  Spec.EcKey.P384.publicKeyApi.artifact PPC64LE.target {
+    code := Impl.EcKey.PPC64LE.Fn.p384PublicKey
+    verified := .scrubbed (Proof.EcKey.PPC64LE.Scrub.p384PublicKey_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcP384.PPC64LE

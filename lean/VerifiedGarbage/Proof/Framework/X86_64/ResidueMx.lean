@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.TaintOps
 public meta import Lean.Meta.Eval
@@ -143,27 +144,32 @@ theorem resOk_of_opsCheck {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat ×
 
 end
 
-/-- The residue analysis of code with some operations sound for `rtaintMx`:
-the granules it wipes and the analysis (`OpsCheck`, from `init`), as
-`Analysed`. The operations are in the proof, so that the emitter's compiled
-code does not reach their transfer functions. -/
-structure AnalysedOps (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat)) (code : Prog isa) where
-  ks : List Nat
-  ok : ∃ ops : List (VG.Taint.Op isa FT), VG.Taint.AllSound rtaintMx ops ∧
-    VG.Taint.OpsCheck rtaintMx ops (init sig stack pubs) code (resOkB · stack ks (chunks stack))
-
-/-- `resOk_reg`, from `AnalysedOps`. -/
-theorem resOk_regOps {api : Api} (r : Unscrubbed api target) {pubs : List (Nat × Nat × Nat)}
-    (hfit : pubsFit api.sig pubs = true) (hpub : PubOk r.contract pubs)
-    (a : AnalysedOps api.sig r.stack pubs r.code) :
-    ResOk r.code r.contract r.stack a.ks (chunks r.stack) := by
-  obtain ⟨S, hS, hc⟩ := a.ok
+/-- The residue analysis with the operations `S`, for the chunks `chunksA r.stack` of
+`Impl.Scrub.X86_64.scrubSel`, from the analysis with the operations `S`
+ending with every byte it may leave different in the granules `ks`. -/
+theorem resOk_regOpsA {api : Api} (r : Unscrubbed api target) {pubs : List (Nat × Nat × Nat)}
+    (hfit : pubsFit api.sig pubs = true) (hpub : PubOk r.contract pubs) {ks : List Nat}
+    {S : List (VG.Taint.Op isa FT)} (hS : VG.Taint.AllSound rtaintMx S)
+    (hc : VG.Taint.OpsCheck rtaintMx S (init api.sig r.stack pubs) r.code
+      (resOkB · r.stack ks (Impl.Scrub.X86_64.chunksA r.stack)))
+    (hcs : (Impl.Scrub.X86_64.chunksA r.stack).sum = r.stack) :
+    ResOk r.code r.contract r.stack ks (Impl.Scrub.X86_64.chunksA r.stack) := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
   have hp := hpub
   rw [e] at hv hp ⊢
-  exact resOk_of_opsCheck (ScrubAbi.of r.consts api.sig r.tables) hv (chunks_sum r.stack) hS hfit
-    hp hc
+  exact resOk_of_opsCheck (ScrubAbi.of r.consts api.sig r.tables) hv hcs hS hfit hp hc
+
+/-- `keepForOps`, for the chunks `chunksA stack` of `scrubSel`, as the runs of
+granules it wipes (as `keepRuns`). -/
+def keepRunsOps (sig : Sig) (stack : Nat) (code : Prog isa) (ops : List (VG.Taint.Op isa FT))
+    (pubs : List (Nat × Nat × Nat) := []) : List (Nat × Nat) :=
+  let ks := match VG.Taint.hintOpsA rtaintMx ops (fun _ _ => false) (fun _ _ => none) [] (init sig stack pubs) code with
+    | some (τ, _) => keepOf τ.sec (Impl.Scrub.X86_64.chunksA stack)
+    | none => []
+  (ks.mergeSort (· ≤ ·)).foldr (fun k acc => match acc with
+    | (o, m) :: rest => if k + 16 = o then (k, m + 1) :: rest else (k, 1) :: acc
+    | [] => [(k, 1)]) []
 
 /-- The granules to wipe, from the analysis with the operations `ops` (none
 if it fails, which the check then rejects), as `keepFor`. -/

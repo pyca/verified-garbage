@@ -761,7 +761,7 @@ end
 
 `vg_x448_base` and `vg_x448_exchange` as emitted (`Impl.X448.RISCV64.Fn`), each followed by
 `Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers and the stack its
-frames used: the theorems their registrations bind (`RISCV64.Scrub.verifiedScrubbed`). Their
+frames used: the theorems their registrations bind (`RISCV64.Scrub.verifiedScrubbedAll`). Their
 postconditions read the memory on return only within `out` (`RISCV64.Scrub.PostOut`), as on
 x86-64 (`Proof/X448/X86_64/Scrub.lean`).
 -/
@@ -831,7 +831,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem exchange_scrubbed :
     VerifiedScrubbed target Impl.X448.RISCV64.Fn.exchange
       (Spec.X448.exchangeContract RISCV64.abi 16) 32 :=
-  verifiedScrubbed (api := Spec.X448.exchangeApi) (W := 16)
+  verifiedScrubbedAll (api := Spec.X448.exchangeApi) (W := 16)
     { code := Impl.Xdh.RISCV64.exchange "vg_x448" Impl.X448.RISCV64.R64.x448 56
       verified := Proof.X448.RISCV64.Exchange.exchange_verified }
     (exchangeOut _) exchange_scrubSide
@@ -840,7 +840,7 @@ theorem exchange_scrubbed :
 time and returns without secret residue: the theorem its registration binds. -/
 theorem base_scrubbed :
     VerifiedScrubbed target Impl.X448.RISCV64.Fn.base (Spec.X448.x448BaseContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.X448.x448BaseApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.X448.x448BaseApi) (W := 0)
     { code := Impl.X448.RISCV64.R64.x448Base
       verified := Proof.X448.RISCV64.R64.x448Base_verified }
     (baseOut _) base_scrubSide

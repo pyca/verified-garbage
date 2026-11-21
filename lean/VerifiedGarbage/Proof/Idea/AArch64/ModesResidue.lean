@@ -1,13 +1,16 @@
 module
 
+public import VerifiedGarbage.Impl.Idea.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Idea.AArch64.Fn
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
 public meta import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
 public meta import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Idea.AArch64.FbFinalVerified
 public meta import VerifiedGarbage.Proof.Idea.AArch64.FbFinalVerified
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
@@ -35,11 +38,9 @@ of the general-purpose registers they leave secret, `x9` among them.
 
 namespace VG.Proof.Idea.AArch64.ModesResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
-abbrev cbcEncryptChainedCode : Prog isa :=
-  withClears [.x3, .x4, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14] [] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cbcEncryptChained)
+abbrev cbcEncryptChainedCode : Prog isa := Impl.Idea.AArch64.Fn.cbcEncryptChained
 
 theorem cbcEncryptChainedCode_verified : Verified AArch64.target cbcEncryptChainedCode (Spec.Idea.cbcEncryptChainedContract AArch64.abi 208) :=
   Clears.Verified.withClears cbcEncryptChained_framed (by decide)
@@ -48,9 +49,7 @@ theorem cbcEncryptChainedCode_noResidue : NoResidue cbcEncryptChainedCode (Spec.
   noResidue_of_doneG cbcEncryptChainedCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Idea.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
 
-abbrev cbcDecryptChainedCode : Prog isa :=
-  withClears [.x3, .x4, .x6, .x7, .x8, .x9, .x10, .x11, .x12] [] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cbcDecryptChained)
+abbrev cbcDecryptChainedCode : Prog isa := Impl.Idea.AArch64.Fn.cbcDecryptChained
 
 theorem cbcDecryptChainedCode_verified : Verified AArch64.target cbcDecryptChainedCode (Spec.Idea.cbcDecryptChainedContract AArch64.abi 208) :=
   Clears.Verified.withClears cbcDecryptChained_framed (by decide)
@@ -59,9 +58,7 @@ theorem cbcDecryptChainedCode_noResidue : NoResidue cbcDecryptChainedCode (Spec.
   noResidue_of_doneG cbcDecryptChainedCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Idea.cbcChainedSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
 
-abbrev cfbEncryptCode : Prog isa :=
-  withClears [.x3, .x4, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14] [] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbEncrypt)
+abbrev cfbEncryptCode : Prog isa := Impl.Idea.AArch64.Fn.cfbEncrypt
 
 theorem cfbEncryptCode_verified : Verified AArch64.target cfbEncryptCode (Spec.Idea.cfbEncryptContract AArch64.abi 208) :=
   Clears.Verified.withClears cfbEncrypt_framed (by decide)
@@ -70,9 +67,7 @@ theorem cfbEncryptCode_noResidue : NoResidue cfbEncryptCode (Spec.Idea.cfbEncryp
   noResidue_of_doneG cfbEncryptCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Idea.cfbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
 
-abbrev cfbDecryptCode : Prog isa :=
-  withClears [.x3, .x4, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14] [] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbDecrypt)
+abbrev cfbDecryptCode : Prog isa := Impl.Idea.AArch64.Fn.cfbDecrypt
 
 theorem cfbDecryptCode_verified : Verified AArch64.target cfbDecryptCode (Spec.Idea.cfbDecryptContract AArch64.abi 208) :=
   Clears.Verified.withClears cfbDecrypt_framed (by decide)
@@ -81,9 +76,7 @@ theorem cfbDecryptCode_noResidue : NoResidue cfbDecryptCode (Spec.Idea.cfbDecryp
   noResidue_of_doneG cfbDecryptCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Idea.cfbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
 
-abbrev cfbEncryptFinalCode : Prog isa :=
-  withClears [.x3, .x4, .x6, .x7, .x9, .x10, .x11, .x12, .x13, .x14] [] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbEncryptFinal)
+abbrev cfbEncryptFinalCode : Prog isa := Impl.Idea.AArch64.Fn.cfbEncryptFinal
 
 theorem cfbEncryptFinalCode_verified : Verified AArch64.target cfbEncryptFinalCode (Spec.Idea.cfbEncryptFinalContract AArch64.abi 208) :=
   Clears.Verified.withClears cfbEncryptFinal_framed (by decide)
@@ -92,9 +85,7 @@ theorem cfbEncryptFinalCode_noResidue : NoResidue cfbEncryptFinalCode (Spec.Idea
   noResidue_of_doneG cfbEncryptFinalCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Idea.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
 
-abbrev cfbDecryptFinalCode : Prog isa :=
-  withClears [.x3, .x4, .x6, .x7, .x9, .x10, .x11, .x12, .x13, .x14] [] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbDecryptFinal)
+abbrev cfbDecryptFinalCode : Prog isa := Impl.Idea.AArch64.Fn.cfbDecryptFinal
 
 theorem cfbDecryptFinalCode_verified : Verified AArch64.target cfbDecryptFinalCode (Spec.Idea.cfbDecryptFinalContract AArch64.abi 208) :=
   Clears.Verified.withClears cfbDecryptFinal_framed (by decide)
@@ -103,9 +94,7 @@ theorem cfbDecryptFinalCode_noResidue : NoResidue cfbDecryptFinalCode (Spec.Idea
   noResidue_of_doneG cfbDecryptFinalCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Idea.cfbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
 
-abbrev ofbCode : Prog isa :=
-  withClears [.x3, .x4, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14] [] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.ofb)
+abbrev ofbCode : Prog isa := Impl.Idea.AArch64.Fn.ofb
 
 theorem ofbCode_verified : Verified AArch64.target ofbCode (Spec.Idea.ofbContract AArch64.abi 208) :=
   Clears.Verified.withClears ofb_framed (by decide)
@@ -114,9 +103,7 @@ theorem ofbCode_noResidue : NoResidue ofbCode (Spec.Idea.ofbContract AArch64.abi
   noResidue_of_doneG ofbCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Idea.ofbSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
 
-abbrev ofbFinalCode : Prog isa :=
-  withClears [.x3, .x4, .x6, .x7, .x9, .x10, .x11, .x12, .x13, .x14] [] none
-    (Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.ofbFinal)
+abbrev ofbFinalCode : Prog isa := Impl.Idea.AArch64.Fn.ofbFinal
 
 theorem ofbFinalCode_verified : Verified AArch64.target ofbFinalCode (Spec.Idea.ofbFinalContract AArch64.abi 208) :=
   Clears.Verified.withClears ofbFinal_framed (by decide)
@@ -124,5 +111,69 @@ theorem ofbFinalCode_verified : Verified AArch64.target ofbFinalCode (Spec.Idea.
 theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode (Spec.Idea.ofbFinalContract AArch64.abi 208) 0 :=
   noResidue_of_doneG ofbFinalCode_verified ⟨by decide, by decide, by decide⟩
     (sp_of_pre (sig := Spec.Idea.ofbFinalSig) (by decide) (by decide) (Nat.le_refl _)) ⟨_, by taint_decide_ct⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.cbcEncryptChained
+      (Spec.Idea.cbcEncryptChainedContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.cbcDecryptChained
+      (Spec.Idea.cbcDecryptChainedContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cfbEncryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.cfbEncrypt
+      (Spec.Idea.cfbEncryptContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cfbEncryptCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cfbDecryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.cfbDecrypt
+      (Spec.Idea.cfbDecryptContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cfbDecryptCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cfbDecryptCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.cfbEncryptFinal
+      (Spec.Idea.cfbEncryptFinalContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.cfbDecryptFinal
+      (Spec.Idea.cfbDecryptFinalContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
+    Proof.Idea.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.ofbCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.ofb
+      (Spec.Idea.ofbContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.ofbCode_verified,
+    Proof.Idea.AArch64.ModesResidue.ofbCode_noResidue⟩
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Idea.AArch64.ModesResidue.ofbFinalCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Idea.AArch64.Fn.ofbFinal
+      (Spec.Idea.ofbFinalContract AArch64.abi 208) 0 :=
+  ⟨Proof.Idea.AArch64.ModesResidue.ofbFinalCode_verified,
+    Proof.Idea.AArch64.ModesResidue.ofbFinalCode_noResidue⟩
 
 end VG.Proof.Idea.AArch64.ModesResidue

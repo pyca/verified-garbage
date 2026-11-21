@@ -12,8 +12,8 @@ meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Impl.Residue.AArch64
-meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+meta import VerifiedGarbage.Impl.Scrub.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueTaint
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -90,12 +90,12 @@ theorem finalizeS_ct {W : Nat} : ConstantTime isa (finalizeAArch64 s W).pre (fin
 
 /-- BLAKE2s's `init`, with `x9` cleared, returns without secret residue. -/
 theorem initSCleared_noResidue (k : Contract isa) :
-    NoResidue (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init s)) k 0 :=
+    NoResidue (Impl.Scrub.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init s)) k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
 /-- BLAKE2b's `init`, with `x9` cleared, returns without secret residue. -/
 theorem initBCleared_noResidue (k : Contract isa) :
-    NoResidue (Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init b)) k 0 :=
+    NoResidue (Impl.Scrub.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init b)) k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
 
 end VG.Proof.Blake2.AArch64.Stream

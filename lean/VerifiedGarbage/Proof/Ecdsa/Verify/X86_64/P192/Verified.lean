@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -221,33 +223,27 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierst
       simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
 
-
 /-! ## Without secret residue -/
 
 /-- `vg_ecdsa_p192_verify`'s code. -/
 abbrev verifyHashCode : Prog X86_64.isa :=
   Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false verifyP192
 
-/-- The granules of its stack that `vg_ecdsa_p192_verify` wipes on return,
-from the residue analysis (`X86_64.RScrub.keepFor`): its inputs are public,
-but the analysis starts with none known public, so these are the granules its
-frames used. -/
-def scrubKs : List Nat := keep_for% Spec.Ecdsa.P192.verifyHashApi.sig 96 verifyHashCode []
+theorem verifyHash_codeSp : (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyP192).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOk : ∃ h : VG.Taint.Hint X86_64.RTaint.FT,
-    (VG.Taint.check X86_64.RTaint.rtaint (X86_64.RScrub.init Spec.Ecdsa.P192.verifyHashApi.sig 96 [])
-      verifyHashCode h).any (X86_64.RScrub.resOkB · 96 scrubKs (Impl.Scrub.X86_64.chunks 96)) = true :=
-  X86_64.RScrub.Analysed.ok_of _ (by taint_decide)
+/-- `vg_ecdsa_p192_verify` as emitted (`Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem verifyHash_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P192.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyP192)
+      (Spec.Ecdsa.P192.verifyHashApi.contract X86_64.abi 96) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P192.verifyHashApi)
+    { code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyP192
+      stack := 96
+      verified := verifyHash_verified hL hI
+      spSafe := verifyHash_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.verifyHashOut _ _)
 
-/-- `vg_ecdsa_p192_verify`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Registration Spec.Ecdsa.P192.verifyHashApi X86_64.target :=
-  X86_64.RScrub.scrubOf {
-    code := verifyHashCode
-    stack := 96
-    verified := verifyHash_verified hL hI } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
-    (EcKey.X86_64.Scrub.verifyHashOut _ _) [] (X86_64.RScrub.pubOk_nil _) ⟨scrubKs, scrubOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem verifyHash_spSafe : (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P192.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifyP192).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe verifyHash_codeSp
 
 end VG.Proof.Ecdsa.Verify.X86_64.P192

@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha256
 import VerifiedGarbage.Proof.Sha256.PPC64LE.Lit
-public import VerifiedGarbage.Proof.Sha256.PPC64LE.Shared
 public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Sha256.PPC64LE.Sha224
@@ -20,16 +18,24 @@ namespace VG.Artifacts.Sha256.PPC64LE
 def artifacts : List Artifact := [
   Spec.Sha256.init224Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init224
-    verified := .scrubbed ⟨Proof.Sha256.PPC64LE.Shared.init224,
-      Proof.Sha256.PPC64LE.Stream.init224_noResidue _ _⟩ },
-  Spec.Sha256.finalize224Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.finalize224Reg,
-  Spec.Sha256.digest224Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.digest224Reg,
+    verified := .scrubbed Proof.Sha256.PPC64LE.init224_scrubbed },
+  Spec.Sha256.finalize224Api.artifact PPC64LE.target {
+    code := Impl.Sha256.PPC64LE.Fn.finalize224
+    verified := .scrubbed Proof.Sha256.PPC64LE.finalize224_scrubbed },
+  Spec.Sha256.digest224Api.artifact PPC64LE.target {
+    code := Impl.Sha256.PPC64LE.Fn.digest224
+    verified := .scrubbed Proof.Sha256.PPC64LE.digest224_scrubbed },
   Spec.Sha256.initApi.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init
-    verified := .scrubbed ⟨Proof.Sha256.PPC64LE.Shared.init,
-      Proof.Sha256.PPC64LE.Stream.init_noResidue _ _⟩ },
-  Spec.Sha256.updateApi.artifact PPC64LE.target Proof.Sha256.PPC64LE.updateReg,
-  Spec.Sha256.finalizeApi.artifact PPC64LE.target Proof.Sha256.PPC64LE.finalizeReg,
-  Spec.Sha256.digest256Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.digest256Reg]
+    verified := .scrubbed Proof.Sha256.PPC64LE.init_scrubbed },
+  Spec.Sha256.updateApi.artifact PPC64LE.target {
+    code := Impl.Sha256.PPC64LE.Fn.update
+    verified := .scrubbed Proof.Sha256.PPC64LE.update_scrubbed },
+  Spec.Sha256.finalizeApi.artifact PPC64LE.target {
+    code := Impl.Sha256.PPC64LE.Fn.finalize
+    verified := .scrubbed Proof.Sha256.PPC64LE.finalize_scrubbed },
+  Spec.Sha256.digest256Api.artifact PPC64LE.target {
+    code := Impl.Sha256.PPC64LE.Fn.digest256
+    verified := .scrubbed Proof.Sha256.PPC64LE.digest256_scrubbed }]
 
 end VG.Artifacts.Sha256.PPC64LE

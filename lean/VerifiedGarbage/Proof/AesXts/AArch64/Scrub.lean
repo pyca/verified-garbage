@@ -9,16 +9,16 @@ import VerifiedGarbage.Proof.AesEcb.Wipe
 
 The postconditions of `vg_aes_xts_encrypt_unit` and
 `vg_aes_xts_decrypt_unit` read the memory on return only within the data
-(`ScrubAll.ScrubAllOk`): each implementation, generic over the XTS
+(`Scrub.ScrubAllOk`): each implementation, generic over the XTS
 implementation it calls and without frames, returns with every register it
-may leave secret cleared (`ScrubAll.withScrubAll`).
+may leave secret cleared (`Impl.Scrub.AArch64.scrubAll`, in the function as emitted).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.AesXts.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 open VG.Proof.AesEcb (agree_of bytesAt_congr)
 
 theorem encryptOk : ScrubAllOk (Spec.Xts.aesEncryptUnitContract abi 0) 0

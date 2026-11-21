@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Md5.Arm.Scrub
 # What the cleanup needs of HMAC's and PBKDF2's code on ARMv7
 
 The cleanup of HMAC's `init` and `finalize`, of PBKDF2 and of scrypt
-(`Impl.Residue.Arm.scrubF`, `Arm.Scrub.scrubSideF`) needs of their code
+(`Impl.Scrub.Arm.scrubAll`, `Arm.Scrub.scrubSideF`) needs of their code
 that its frames are within the stack it zeroes and that it makes no indirect
 call (`CodeOk`). That follows from the same of the hash function's code
 alone (`MdOk`: its streaming functions and compression function, which use

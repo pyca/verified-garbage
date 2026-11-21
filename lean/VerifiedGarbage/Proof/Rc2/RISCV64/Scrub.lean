@@ -1278,8 +1278,8 @@ theorem cbcDecryptChainedOut (stack : Nat) : PostOut (Spec.Rc2.cbcDecryptChained
 
 Each theorem states that a function as emitted (`Impl.Rc2.RISCV64.Fn`) meets its
 contract in constant time and returns without secret residue
-(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`, or
-`verifiedScrubbedSelT` for the selective cleanup, whose residue analysis the
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`, or
+`verifiedScrubbedSel` for the selective cleanup, whose residue analysis the
 kernel evaluates here): what its registration binds. -/
 
 /-- `Spec.Rc2.cbcInitApi` as emitted (`Impl.Rc2.RISCV64.Fn.cbcInit`) meets its contract
@@ -1287,7 +1287,7 @@ in constant time and returns without secret residue. -/
 theorem cbcInit_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Rc2.RISCV64.Fn.cbcInit
       (Spec.Rc2.cbcInitContract RISCV64.abi 608) 32 :=
-  verifiedScrubbedSelT (api := Spec.Rc2.cbcInitApi) (W := 608) (rb := 32)
+  verifiedScrubbedSel (api := Spec.Rc2.cbcInitApi) (W := 608) (rb := 32)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 608 .a6 72 Impl.Rc2.RISCV64.Stream.init
       verified := Proof.Rc2.RISCV64.Stream.init_framed }
     _ [] (cbcInitOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -1297,7 +1297,7 @@ in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Rc2.RISCV64.Fn.cbcEncryptChained
       (Spec.Rc2.cbcEncryptChainedContract RISCV64.abi 512) 0 :=
-  verifiedScrubbedSelT (api := Spec.Rc2.cbcEncryptChainedApi) (W := 512) (rb := 0)
+  verifiedScrubbedSel (api := Spec.Rc2.cbcEncryptChainedApi) (W := 512) (rb := 0)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.encrypt
       verified := Proof.Rc2.RISCV64.Cbc.encryptChained_framed }
     _ [] (cbcEncryptChainedOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -1307,7 +1307,7 @@ in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Rc2.RISCV64.Fn.cbcDecryptChained
       (Spec.Rc2.cbcDecryptChainedContract RISCV64.abi 512) 0 :=
-  verifiedScrubbedSelT (api := Spec.Rc2.cbcDecryptChainedApi) (W := 512) (rb := 0)
+  verifiedScrubbedSel (api := Spec.Rc2.cbcDecryptChainedApi) (W := 512) (rb := 0)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.decrypt
       verified := Proof.Rc2.RISCV64.Cbc.decryptChained_framed }
     _ [] (cbcDecryptChainedOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩

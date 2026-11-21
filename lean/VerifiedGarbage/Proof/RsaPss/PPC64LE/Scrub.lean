@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
+public import VerifiedGarbage.Impl.RsaPss.PPC64LE.Fn
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
@@ -11,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.Lit
 # RSASSA-PSS on PPC64LE, without secret residue
 
 `vg_rsa_pss_verify_precomputed` and `vg_rsa_pss_sign_precomputed`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`),
-which clears the volatile registers each may write and zeroes the stack
+as emitted (`Impl/RsaPss/PPC64LE/Fn.lean`), followed by its cleanup
+(`Impl.Scrub.PPC64LE.scrubAll`, `PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers each may write and zeroes the stack
 their frames used. Each is generic over the hash functions its tables hold,
 which it calls indirectly: those are the tables' functions, whose addresses
 two runs agree on (`PPC64LE.Scrub.tablesCall`). Their postconditions read
@@ -68,28 +70,42 @@ theorem verifyOut (tsH tsG : List FnTable) (stack : Nat) :
   postOut_of_local (leak := some _) (ScrubAbi.plain.tables _ _) fun
     | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.RsaPss.verifyPrecomputedMdTableApi`, with the tables of every hash
-function. -/
-def verifyReg (h : OK mvars mvars) :
-    Registration Spec.RsaPss.verifyPrecomputedMdTableApi PPC64LE.target :=
-  scrubOf {
+/-- The hash functions whose tables the functions take are coherent: their
+functions of the same name have the same code, there are some, and not too
+many names. -/
+theorem mvars_ok : OK mvars mvars := of_decide_eq_true (by kernel_rfl)
+
+/-- `vg_rsa_pss_verify_precomputed` as emitted
+(`Impl.RsaPss.PPC64LE.Fn.verifyPrecomputed`), with the tables of every hash
+function, meets its contract in constant time and returns without secret
+residue. -/
+theorem verifyPrecomputed_scrubbed :
+    VerifiedScrubbed PPC64LE.target (Impl.RsaPss.PPC64LE.Fn.verifyPrecomputed (fnsOf mvars) (fns3 mvars))
+      (Spec.RsaPss.verifyPrecomputedMdTableContract
+        (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", tables mvars), ("mgf1", tables mvars)])
+        304) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaPss.verifyPrecomputedMdTableApi) {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaPss.PPC64LE.verifyPrecomputed (fnsOf mvars) (fns3 mvars)
-      verified := verify_ok' h }
+      verified := verify_ok' mvars_ok }
     304 .all
     (verifyOut _ _ _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.RsaPss.signPrecomputedMdTableApi`, with the tables of every hash
-function. -/
-def signReg (h : OK mvars mvars) :
-    Registration Spec.RsaPss.signPrecomputedMdTableApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_rsa_pss_sign_precomputed` as emitted (`Impl.RsaPss.PPC64LE.Fn.signP`),
+with the tables of every hash function, meets its contract in constant time
+and returns without secret residue. -/
+theorem signP_scrubbed :
+    VerifiedScrubbed PPC64LE.target (Impl.RsaPss.PPC64LE.Fn.signP (fnsOf mvars) (fns3 mvars))
+      (Spec.RsaPss.signPrecomputedMdTableContract
+        (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig [("hash", tables mvars), ("mgf1", tables mvars)])
+        3792) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaPss.signPrecomputedMdTableApi) {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaPss.PPC64LE.Sign.signP (fnsOf mvars) (fns3 mvars)
-      verified := signP_ok' h }
+      verified := signP_ok' mvars_ok }
     3792 .all
     (signOut _ _ _)
     (by dsimp only; lit_decide)

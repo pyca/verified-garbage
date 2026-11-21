@@ -21,7 +21,7 @@ at all, the others the octets at `out` (or the key's buffer, or `p` and
 `q`, or `dp`, `dq` and `qinv`), the words at `pre`, and the words of `tape`,
 `used` and `state` (`Ffdh.X86_64.Scrub.bytesAt_of`, `wordsAt_of`). Each
 implementation returns with its whole stack wiped
-(`X86_64.Scrub.withScrubAll` and the routes built on it).
+(`Impl.Scrub.X86_64.scrubAll` and the routes built on it).
 -/
 
 @[expose] public section

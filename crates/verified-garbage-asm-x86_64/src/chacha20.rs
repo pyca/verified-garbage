@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SIsGSItOCEyLRhBMi04YSIlHEEiJTxhMiUcgTIlPKEiJ1kiLBkiLTgiLFkiJRzBIiU84SLhleHBhbmQgM0iJB0i4Mi1ieXRlIGtIiUcISLkAAAAAAQAAAEgp0UgByUgByUgByUgByUgByUgByUiJj4AAAAAxwDHJMdIx9kUxwEUxycM="
+        r#".base64 "SIsGSItOCEyLRhBMi04YSIlHEEiJTxhMiUcgTIlPKEiJ1kiLBkiLTgiLFkiJRzBIiU84SLhleHBhbmQgM0iJB0i4Mi1ieXRlIGtIiUcISLkAAAAAAQAAAEgp0UgByUgByUgByUgByUgByUgByUiJj4AAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/8xwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
     )
 }
@@ -39,7 +39,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SIsGSItOCIsWSIlHMEiJTzhIuGV4cGFuZCAzSIkHSLgyLWJ5dGUga0iJRwhIuQAAAAABAAAASCnRSAHJSAHJSAHJSAHJSAHJSAHJSImPgAAAADHAMckx0sM="
+        r#".base64 "SIsGSItOCIsWSIlHMEiJTzhIuGV4cGFuZCAzSIkHSLgyLWJ5dGUga0iJRwhIuQAAAAABAAAASCnRSAHJSAHJSAHJSAHJSAHJSAHJSImPgAAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/zHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
     )
 }
@@ -124,7 +124,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI1kJPDzD38EJEiNZCQQSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_xor_avx512vl = sym super::chacha20::vg_chacha20_xor_avx512vl::vg_chacha20_xor_avx512vl,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -211,7 +211,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI1kJPDzD38EJEiNZCQQSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512::vg_chacha20_xor_avx512,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -298,7 +298,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI1kJPDzD38EJEiNZCQQSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_xor_avx2 = sym super::chacha20::vg_chacha20_xor_avx2::vg_chacha20_xor_avx2,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -385,7 +385,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJPDzD38EJEiNZCQQSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_xor_ssse3 = sym super::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -468,7 +468,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI1kJPDzD38EJEiNZCQQSI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,

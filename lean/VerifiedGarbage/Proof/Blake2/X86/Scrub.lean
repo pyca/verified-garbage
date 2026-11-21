@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Blake2.X86.Blake2b
 public import VerifiedGarbage.Proof.Blake2.X86.Blake2s
 public import VerifiedGarbage.Impl.Blake2.X86.Fn
 import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Blake2.X86.LitB
 import VerifiedGarbage.Proof.Blake2.X86.LitS
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Blake2.X86.Blake2b
 meta import VerifiedGarbage.Proof.Blake2.X86.Blake2s
 meta import VerifiedGarbage.Impl.Blake2.X86.Fn
@@ -24,7 +24,7 @@ has no frame (`X86.Scrub.verifiedScrubbed`). `update` and `finalize` zero
 the stack their contracts reserve below `esp`, which their scratch frame and
 the compression function's calls use, given that their postconditions read
 the memory on return only within their buffers (`Proof/Blake2/Scratch.lean`,
-which the other targets use too) (`X86.Scrub.verifiedScrubbedF`).
+which the other targets use too) (`X86.Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section
@@ -41,7 +41,7 @@ theorem initB_scrubbed :
 
 theorem updateB_scrubbed :
     VerifiedScrubbed target Impl.Blake2.X86.Fn.updateB (updateBContract X86.abi (32 + 604)) 0 :=
-  verifiedScrubbedF (api := updateBApi)
+  verifiedScrubbedAll (api := updateBApi)
     { code := Impl.StackScratch.X86.withStackScratch 604 5
         (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
       verified := Proof.Blake2.X86.B.updateB_framed }
@@ -49,7 +49,7 @@ theorem updateB_scrubbed :
 
 theorem finalizeB_scrubbed :
     VerifiedScrubbed target Impl.Blake2.X86.Fn.finalizeB (finalizeBContract X86.abi (32 + 600)) 0 :=
-  verifiedScrubbedF (api := finalizeBApi)
+  verifiedScrubbedAll (api := finalizeBApi)
     { code := Impl.StackScratch.X86.withStackScratch 600 4
         (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
       verified := Proof.Blake2.X86.B.finalizeB_framed }
@@ -63,7 +63,7 @@ theorem initS_scrubbed :
 
 theorem updateS_scrubbed :
     VerifiedScrubbed target Impl.Blake2.X86.Fn.updateS (updateSContract X86.abi (32 + 604)) 0 :=
-  verifiedScrubbedF (api := updateSApi)
+  verifiedScrubbedAll (api := updateSApi)
     { code := Impl.StackScratch.X86.withStackScratch 604 5
         (Impl.Blake2.X86.Stream.update 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
       verified := Proof.Blake2.X86.S.update_framed }
@@ -71,7 +71,7 @@ theorem updateS_scrubbed :
 
 theorem finalizeS_scrubbed :
     VerifiedScrubbed target Impl.Blake2.X86.Fn.finalizeS (finalizeSContract X86.abi (32 + 600)) 0 :=
-  verifiedScrubbedF (api := finalizeSApi)
+  verifiedScrubbedAll (api := finalizeSApi)
     { code := Impl.StackScratch.X86.withStackScratch 600 4
         (Impl.Blake2.X86.Stream.finalize 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
       verified := Proof.Blake2.X86.S.finalize_framed }

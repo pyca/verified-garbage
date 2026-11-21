@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Argon2.PPC64LE.Fn
 public import VerifiedGarbage.Spec.Argon2.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -12,11 +13,11 @@ import VerifiedGarbage.Proof.Argon2.PPC64LE.CompressLit
 # Argon2 on PPC64LE, without secret residue
 
 `vg_argon2`, followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`PPC64LE.Scrub.scrubOf`), which clears the volatile registers and the 384
+(`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers and the 384
 bytes of stack its frames use. Its postcondition reads the memory on return
 only within `out` (`PPC64LE.Scrub.PostOut`), by RISC-V's proof
-(`Proof/Argon2/RISCV64/Scrub.lean`). `scrubOf`'s side condition
-(`scrubSide`) is proved at the registration, by the kernel's evaluation of
+(`Proof/Argon2/RISCV64/Scrub.lean`). `verifiedScrubbedAll`'s side condition
+(`scrubSide`) is proved at the theorem, by the kernel's evaluation of
 it when this module is built.
 -/
 
@@ -47,9 +48,12 @@ theorem deriveOut (stack : Nat) :
 
 /-! ## The registration -/
 
-/-- `Spec.Argon2.deriveApi`. -/
-def deriveReg : Registration Spec.Argon2.deriveApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_argon2` as emitted (`Impl.Argon2.PPC64LE.Fn.derive`) meets its contract in
+constant time and returns without secret residue. -/
+theorem derive_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Argon2.PPC64LE.Fn.derive
+      (Spec.Argon2.deriveContract PPC64LE.abi 384) 0 :=
+  verifiedScrubbedAll (api := Spec.Argon2.deriveApi) {
       code := Impl.Argon2.PPC64LE.Derive.derive
       verified := Proof.Argon2.PPC64LE.Derive.deriveShared_verified }
     384 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩

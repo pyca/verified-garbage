@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.Arm.Fill
 public import VerifiedGarbage.Impl.Argon2.Arm.MemoryInit
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # Argon2 on ARMv7: the derivation
@@ -22,7 +22,7 @@ writes H′ of it to `out`. The lanes are evaluated serially, which every
 positive `threads` permits.
 
 `Fn.derive` is the function as emitted: the derivation, then its cleanup
-(`Impl.Residue.Arm.scrubF`), which zeroes the 240 bytes of stack its contract
+(`Impl.Scrub.Arm.scrubAll`), which zeroes the 240 bytes of stack its contract
 reserves and sets the registers a callee may change to constants.
 -/
 
@@ -80,9 +80,9 @@ end VG.Impl.Argon2.Arm.Derive
 
 namespace VG.Impl.Argon2.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_argon2`, with its cleanup. -/
-def derive : Prog isa := scrubF 0 240 Derive.derive
+def derive : Prog isa := scrubAll 0 240 Derive.derive
 
 end VG.Impl.Argon2.Arm.Fn

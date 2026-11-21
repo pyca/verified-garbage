@@ -57,7 +57,7 @@ def code (name : String) (hash : HPrime.Hash) : Prog isa := frame (body name has
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 
 /-- The registers `vg_argon2_derive`'s own instructions write. -/
 def deriveOwn : Clear :=
@@ -66,7 +66,7 @@ def deriveOwn : Clear :=
 
 /-- `vg_argon2_derive` over the hash functions `hash`, whose H′ is the
 internal function `vg_argon2_hprime` with the suffix `sfx`: `code`, then its
-cleanup (`Impl.Residue.AArch64.scrubAll`), which clears the registers its own
+cleanup (`Impl.Scrub.AArch64.scrubAll`), which clears the registers its own
 instructions and the hash functions write that the calling convention does
 not preserve, and zeroes its 400 bytes of stack, so that it returns without
 secret residue. -/

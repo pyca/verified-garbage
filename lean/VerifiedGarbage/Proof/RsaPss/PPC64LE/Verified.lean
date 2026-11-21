@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+meta import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Sg.CTBase
 public import VerifiedGarbage.Proof.MdHashTable.PPC64LE.Tables
 import VerifiedGarbage.Proof.Framework.Contract
@@ -914,7 +916,7 @@ def sha512F : Fam where
   hdc := by exact digest_ct ⟨_, by taint_decide⟩
 
 def md5M : MVar where
-  H := Md5.hash
+  H := Impl.Hmac.Stream.PPC64LE.md5Hash
   l := Proof.RsaOaep.PPC64LE.md5L
   idx := rfl
   F := md5F
@@ -929,7 +931,7 @@ def md5M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha1M : MVar where
-  H := Sha1.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha1Hash
   l := Proof.RsaOaep.PPC64LE.sha1L
   idx := rfl
   F := sha1F
@@ -944,7 +946,7 @@ def sha1M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha224M : MVar where
-  H := Sha224.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha224Hash
   l := Proof.RsaOaep.PPC64LE.sha224L
   idx := rfl
   F := sha256F
@@ -955,7 +957,7 @@ def sha224M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha256M : MVar where
-  H := Sha256.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha256Hash
   l := Proof.RsaOaep.PPC64LE.sha256L
   idx := rfl
   F := sha256F
@@ -970,7 +972,7 @@ def sha256M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha384M : MVar where
-  H := Sha384.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha384Hash
   l := Proof.RsaOaep.PPC64LE.sha384L
   idx := rfl
   F := sha512F
@@ -981,7 +983,7 @@ def sha384M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha512M : MVar where
-  H := Sha512.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha512Hash
   l := Proof.RsaOaep.PPC64LE.sha512L
   idx := rfl
   F := sha512F
@@ -993,7 +995,7 @@ def sha512M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha512_224M : MVar where
-  H := Sha512_224.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha512_224Hash
   l := Proof.RsaOaep.PPC64LE.sha512_224L
   idx := rfl
   F := sha512F
@@ -1004,7 +1006,7 @@ def sha512_224M : MVar where
   sh := ⟨by decide, rfl, rfl⟩
 
 def sha512_256M : MVar where
-  H := Sha512_256.hash
+  H := Impl.Hmac.Stream.PPC64LE.sha512_256Hash
   l := Proof.RsaOaep.PPC64LE.sha512_256L
   idx := rfl
   F := sha512F

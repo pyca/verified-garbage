@@ -740,7 +740,7 @@ in constant time and returns without secret residue: the theorem its registratio
 theorem openToBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.openToBs
       (Spec.Gcm.openToBitslicedContract RISCV64.abi 4656) 32 :=
-  verifiedScrubbedSelT (api := Spec.Gcm.openToBitslicedApi) (W := 4656)
+  verifiedScrubbedSel (api := Spec.Gcm.openToBitslicedApi) (W := 4656)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2608 5 Impl.AesGcm.RISCV64.OpenTo.openToBs
       verified := Proof.AesGcm.openToBitsliced_keyed openToBs_framed }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (160, [(0, 20)])] []

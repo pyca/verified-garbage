@@ -59,7 +59,7 @@ end VG.Impl.MlKem.X86.Wipe
 
 /-! ## The functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
 bytes of stack below `esp` that its frames and calls use zeroed, and the
 registers a callee may change cleared but the `rb` bits of the result, so
 that it returns without secret residue. -/
@@ -69,33 +69,33 @@ namespace VG.Impl.MlKem.X86.Fn
 open VG.X86
 
 /-- `vg_mlkem768_keygen`, as emitted. -/
-def keyGen : Prog isa := Impl.Scrub.X86.scrubF 32 120 Impl.MlKem.X86.Wipe.keyGen
+def keyGen : Prog isa := Impl.Scrub.X86.scrubAll 32 120 Impl.MlKem.X86.Wipe.keyGen
 
 /-- `vg_mlkem768_encaps_h`, as emitted. -/
-def encapsH : Prog isa := Impl.Scrub.X86.scrubF 32 136 Impl.MlKem.X86.Wipe.encapsH
+def encapsH : Prog isa := Impl.Scrub.X86.scrubAll 32 136 Impl.MlKem.X86.Wipe.encapsH
 
 /-- `vg_mlkem768_encaps`, as emitted. -/
-def encaps : Prog isa := Impl.Scrub.X86.scrubF 32 120 Impl.MlKem.X86.Wipe.encaps
+def encaps : Prog isa := Impl.Scrub.X86.scrubAll 32 120 Impl.MlKem.X86.Wipe.encaps
 
 /-- `vg_mlkem768_decaps`, as emitted. -/
-def decaps : Prog isa := Impl.Scrub.X86.scrubF 32 120 Impl.MlKem.X86.Wipe.decaps
+def decaps : Prog isa := Impl.Scrub.X86.scrubAll 32 120 Impl.MlKem.X86.Wipe.decaps
 
 /-- `vg_mlkem768_check_ek`, as emitted. -/
-def checkEk : Prog isa := Impl.Scrub.X86.scrubF 32 16 Impl.MlKem.X86.checkEk
+def checkEk : Prog isa := Impl.Scrub.X86.scrubAll 32 16 Impl.MlKem.X86.checkEk
 
 /-- `vg_mlkem1024_keygen`, as emitted. -/
-def keyGen1024 : Prog isa := Impl.Scrub.X86.scrubF 32 120 Impl.MlKem.X86.Wipe.keyGen1024
+def keyGen1024 : Prog isa := Impl.Scrub.X86.scrubAll 32 120 Impl.MlKem.X86.Wipe.keyGen1024
 
 /-- `vg_mlkem1024_encaps_h`, as emitted. -/
-def encapsH1024 : Prog isa := Impl.Scrub.X86.scrubF 32 136 Impl.MlKem.X86.Wipe.encapsH1024
+def encapsH1024 : Prog isa := Impl.Scrub.X86.scrubAll 32 136 Impl.MlKem.X86.Wipe.encapsH1024
 
 /-- `vg_mlkem1024_encaps`, as emitted. -/
-def encaps1024 : Prog isa := Impl.Scrub.X86.scrubF 32 120 Impl.MlKem.X86.Wipe.encaps1024
+def encaps1024 : Prog isa := Impl.Scrub.X86.scrubAll 32 120 Impl.MlKem.X86.Wipe.encaps1024
 
 /-- `vg_mlkem1024_decaps`, as emitted. -/
-def decaps1024 : Prog isa := Impl.Scrub.X86.scrubF 32 120 Impl.MlKem.X86.Wipe.decaps1024
+def decaps1024 : Prog isa := Impl.Scrub.X86.scrubAll 32 120 Impl.MlKem.X86.Wipe.decaps1024
 
 /-- `vg_mlkem1024_check_ek`, as emitted. -/
-def checkEk1024 : Prog isa := Impl.Scrub.X86.scrubF 32 16 Impl.MlKem1024.X86.checkEk
+def checkEk1024 : Prog isa := Impl.Scrub.X86.scrubAll 32 16 Impl.MlKem1024.X86.checkEk
 
 end VG.Impl.MlKem.X86.Fn

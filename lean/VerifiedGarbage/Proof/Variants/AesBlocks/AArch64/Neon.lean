@@ -45,9 +45,10 @@ def neon : BlocksImpl where
   encCtW := by rw [Proof.Aes.blocksAArch64With_2048]; exact Neon.encryptBlocks_ct
   decOkW := by rw [Proof.Aes.blocksAArch64With_2048]; exact Neon.decryptBlocks_correct
   decCtW := by rw [Proof.Aes.blocksAArch64With_2048]; exact Neon.decryptBlocks_ct
-  free := false
-  encFree := nofun
-  decFree := nofun
+  encFree := fun h => absurd h (by decide)
+  decFree := fun h => absurd h (by decide)
+  encRes := fun h => absurd h (by decide)
+  decRes := fun h => absurd h (by decide)
   suffix := "_neon"
   features := []
   encScrub := by lit_decide

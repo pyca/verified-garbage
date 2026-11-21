@@ -98,8 +98,8 @@ structure Compress where
   noDit : code.all (fun i => !i.touchesDit) = true
   /-- No instruction of it writes PSTATE.DIT, and it calls nothing indirectly:
   what the cleanup of the functions that call it needs of its code
-  (`ScrubAll.verifiedScrubbedOf`). -/
-  side : ScrubAll.sideAll (fun i => !i.writesDit) code = true
+  (`Scrub.verifiedScrubbedOf`). -/
+  side : Scrub.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre

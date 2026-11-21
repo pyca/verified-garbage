@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import Aesop.BuiltinRules
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64
+public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Fn
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Env
@@ -31,8 +32,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 import VerifiedGarbage.Proof.AesSiv.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Leaves
-import VerifiedGarbage.Proof.Framework.X86_64.ScrubPart
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubFill
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ### `AesGcmSiv.X86_64.Verified`, which only this module used -/
 
@@ -288,7 +289,6 @@ end VG.Proof.AesGcmSiv.X86_64
 end
 
 end
-
 
 /-!
 # AES-GCM-SIV on x86-64: the code a variant's artifacts run
@@ -548,13 +548,11 @@ theorem loopsOf_ct (v : GcmImpl) {lp : Impl.AesGcmSiv.X86_64Stitch.Loops} (h : l
 def sivFeatures (v : GcmImpl) : List String := if sivAvx v then (features v ++ ["avx"]).dedup else features v
 
 /-- `seal` and `open` with the loops `lp`, if any, for `v`'s callees. -/
-def sealWith (v : GcmImpl) (wide : Bool) : Option Impl.AesGcmSiv.X86_64Stitch.Loops → Prog X86_64.isa
-  | some lp => Impl.AesGcmSiv.X86_64Stitch.«seal» lp v.callees (ecbFn v) wide
-  | none => Impl.AesGcmSiv.X86_64.«seal» v.callees (ecbFn v) wide
+abbrev sealWith (v : GcmImpl) (wide : Bool) (lp : Option Impl.AesGcmSiv.X86_64Stitch.Loops) : Prog X86_64.isa :=
+  Impl.AesGcmSiv.X86_64.Fn.sealCode v.callees (ecbFn v) wide lp
 
-def openWith (v : GcmImpl) (wide : Bool) : Option Impl.AesGcmSiv.X86_64Stitch.Loops → Prog X86_64.isa
-  | some lp => Impl.AesGcmSiv.X86_64Stitch.«open» lp v.callees (ecbFn v) wide
-  | none => Impl.AesGcmSiv.X86_64.«open» v.callees (ecbFn v) wide
+abbrev openWith (v : GcmImpl) (wide : Bool) (lp : Option Impl.AesGcmSiv.X86_64Stitch.Loops) : Prog X86_64.isa :=
+  Impl.AesGcmSiv.X86_64.Fn.openCode v.callees (ecbFn v) wide lp
 
 theorem sealWith_framed (v : GcmImpl) (wide : Bool) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealWith v wide (loopsOf v)))
@@ -642,7 +640,6 @@ theorem wideSeal_spSafe (v : GcmImpl) : (wideSealCode v).all (fun i => !X86_64.i
 theorem wideOpen_spSafe (v : GcmImpl) : (wideOpenCode v).all (fun i => !X86_64.isa.writesSp i) = true :=
   openWith_spSafe v true
 
-
 /-! ## Choosing by the lengths
 
 `bySize wide narrow` runs `wide`, the code with the AVX2 copies, when the
@@ -657,15 +654,7 @@ section
 
 open VG VG.X86_64 VG.X86_64.RegUpd
 open VG.Impl.AesGcm.X86_64 (at_)
-
-/-- Clears the carry flag exactly when `len ||| aad_len` is 128 or more. -/
-def cmpLens : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 8)), .alu .or .rax (.reg .r8), .alu .cmp .rax (.imm 128)]
-
-/-- `wide` when the text or the additional data is 128 bytes or more, and
-`narrow` otherwise. -/
-def bySize (wide narrow : Prog isa) : Prog isa :=
-  .seq (.block cmpLens) (Code.iteCold .ae wide narrow)
+open VG.Impl.AesGcmSiv.X86_64.Fn (cmpLens bySize)
 
 /-- `u` is `s` but for `rax` and the flags. -/
 structure Same (s u : State) : Prop where
@@ -733,7 +722,6 @@ theorem bySize_verified {k : Contract isa} {wide narrow : Prog isa}
     exact ⟨by simp only [stackArgAddr, asp], by rw [a0, a8],
       fun _ => hpub s u₀ s' u₀' hS hS' hq, fun _ => hpub s u₀ s' u₀' hS hS' hq⟩
 
-
 /-- `seal` by the lengths, from its code with and without the AVX2 copies. -/
 theorem seal_bySize {wide narrow : Prog isa}
     (hw : Verified X86_64.target wide (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856))
@@ -768,7 +756,6 @@ theorem seal_bySize {wide narrow : Prog isa}
   · sig_pub [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, X86_64.abi, X86_64.argRegs] at q
     obtain ⟨hsp, -, -, -, -, h8, -, h6, -⟩ := q
     exact ⟨by simpa [List.getD, List.range, List.range.loop] using h6, h8, hsp⟩
-
 
 /-- `open` by the lengths, from its code with and without the AVX2 copies. -/
 theorem open_bySize {wide narrow : Prog isa}
@@ -806,20 +793,17 @@ theorem open_bySize {wide narrow : Prog isa}
     obtain ⟨hsp, -, -, -, -, -, h8, -, h6, -⟩ := q
     exact ⟨by simpa [List.getD, List.range, List.range.loop] using h6, h8, hsp⟩
 
-
 /-- The working space of `seal` and `open` on the stack: of the code in
 registers (`sivReg`), or of the other code. -/
 def sivStack (v : GcmImpl) : Nat := if sivReg v then 784 else 3856
 
 /-- `seal` in registers, with `v`'s loops (`loopsOf`) if it has them. -/
-def regSeal : Option Impl.AesGcmSiv.X86_64Stitch.Loops → Prog isa
-  | some lp => Impl.AesGcmSiv.X86_64Reg.sealL lp
-  | none => Impl.AesGcmSiv.X86_64Reg.seal
+abbrev regSeal (lp : Option Impl.AesGcmSiv.X86_64Stitch.Loops) : Prog isa :=
+  Impl.AesGcmSiv.X86_64.Fn.regSealCode lp
 
 /-- `open` in registers, as `regSeal`. -/
-def regOpen : Option Impl.AesGcmSiv.X86_64Stitch.Loops → Prog isa
-  | some lp => Impl.AesGcmSiv.X86_64Reg.openL lp
-  | none => Impl.AesGcmSiv.X86_64Reg.open
+abbrev regOpen (lp : Option Impl.AesGcmSiv.X86_64Stitch.Loops) : Prog isa :=
+  Impl.AesGcmSiv.X86_64.Fn.regOpenCode lp
 
 open VG.Proof.Gcm.Poly (φ x) in
 /-- GHASH's field for the code in registers (`Proof.AesGcmSivReg.X86_64.MulFacts`),
@@ -896,44 +880,40 @@ theorem framedOpen_spSafe (v : GcmImpl) : (framedOpen v).all (fun i => !X86_64.i
 when `v`'s code does not take them already (`sivWide`), by the lengths,
 with the code without them below 128 bytes, where the copies are not used. -/
 def avx2SealCode (v : GcmImpl) : Prog isa :=
-  if sivWide v then Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v)
-  else bySize (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v))
-    (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v))
+  Impl.AesGcmSiv.X86_64.Fn.sealAvx2Code v.callees (ecbFn v) (sivWide v) (loopsOf v)
 
 /-- `open`'s, as `avx2SealCode`. -/
 def avx2OpenCode (v : GcmImpl) : Prog isa :=
-  if sivWide v then Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v)
-  else bySize (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v))
-    (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v))
+  Impl.AesGcmSiv.X86_64.Fn.openAvx2Code v.callees (ecbFn v) (sivWide v) (loopsOf v)
 
 theorem avx2Seal_verified (v : GcmImpl) :
     Verified X86_64.target (avx2SealCode v) (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) := by
-  unfold avx2SealCode
+  unfold avx2SealCode Impl.AesGcmSiv.X86_64.Fn.sealAvx2Code
   split
   · exact wideSeal_framed v
-  · exact seal_bySize (wideSeal_framed v) (sealCode_framed v)
+  · exact seal_bySize (wideSeal_framed v) (sealWith_framed v false)
 
 theorem avx2Open_verified (v : GcmImpl) :
     Verified X86_64.target (avx2OpenCode v) (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) := by
-  unfold avx2OpenCode
+  unfold avx2OpenCode Impl.AesGcmSiv.X86_64.Fn.openAvx2Code
   split
   · exact wideOpen_framed v
-  · exact open_bySize (wideOpen_framed v) (openCode_framed v)
+  · exact open_bySize (wideOpen_framed v) (openWith_framed v false)
 
 theorem avx2Seal_spSafe (v : GcmImpl) : (avx2SealCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
-  unfold avx2SealCode
+  unfold avx2SealCode Impl.AesGcmSiv.X86_64.Fn.sealAvx2Code
   split
   · exact X86_64.withStackArgScratch_spSafe (wideSeal_spSafe v)
-  · simp only [bySize, Code.iteCold, Code.all, X86_64.withStackArgScratch_spSafe (wideSeal_spSafe v),
-      X86_64.withStackArgScratch_spSafe (sealCode_spSafe v), Bool.and_true]
+  · simp only [bySize, Code.iteCold, Code.all, X86_64.withStackArgScratch_spSafe (sealWith_spSafe v true),
+      X86_64.withStackArgScratch_spSafe (sealWith_spSafe v false), Bool.and_true]
     rfl
 
 theorem avx2Open_spSafe (v : GcmImpl) : (avx2OpenCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
-  unfold avx2OpenCode
+  unfold avx2OpenCode Impl.AesGcmSiv.X86_64.Fn.openAvx2Code
   split
   · exact X86_64.withStackArgScratch_spSafe (wideOpen_spSafe v)
-  · simp only [bySize, Code.iteCold, Code.all, X86_64.withStackArgScratch_spSafe (wideOpen_spSafe v),
-      X86_64.withStackArgScratch_spSafe (openCode_spSafe v), Bool.and_true]
+  · simp only [bySize, Code.iteCold, Code.all, X86_64.withStackArgScratch_spSafe (openWith_spSafe v true),
+      X86_64.withStackArgScratch_spSafe (openWith_spSafe v false), Bool.and_true]
     rfl
 
 end
@@ -943,7 +923,7 @@ end
 Over the bitsliced AES (`v.ctr.features = []`), the frame of `seal` and
 `open` is mostly the working space of the functions they call, which AES
 writes, and is wiped whole on return, in aligned stores
-(`X86_64.RScrub.withScrubAllC`); their postconditions read the memory on
+(`Impl.Scrub.X86_64.scrubAll`); their postconditions read the memory on
 return only within the data and the tag (`sealOut`, `openOut`). -/
 
 section
@@ -986,463 +966,12 @@ theorem openOut (stack : Nat) :
     rw [e]
     exact @h
 
-/-! ### The code in registers: what its frame holds on return
-
-The code in registers writes, of its 784 bytes of stack, the working space
-`W` (at 40 bytes from their start). What only the loops write of `W`, 64
-bytes at `W + 64` and 248 from `W + 496`, it either leaves as it found it
-(below the length from which the loops run) or zeroes (`zeroL`): which, the
-data's length decides, so two runs leave the same bytes there, and `scrub`
-need not wipe them (`sivKs`). -/
-
 section
 open VG VG.X86_64
 open VG.Proof.AesGcmSivReg (sealX86_64 openX86_64 arg)
 open VG.Proof.AesGcmSivReg.X86_64 (fineR ZeroR fineR_kept zeroOffs_sep args_of_seal args_of_open)
 open VG.Impl.AesGcmSiv.X86_64Reg (zeroOffs)
 open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
-
-/-- Where `seal` and `open` leave public words in `W`: our caller's
-registers, and the slots of the nonce, the additional data, its length and
-the data. -/
-def pubW : List Nat := [144, 152, 160, 168, 176, 184, 208, 216, 224, 232]
-
-/-- The granules `scrub` wipes of the 784 bytes: all but those of
-`zeroOffs`, of `pubW`, and of the return address and the copies of the
-arguments on the stack below `W`. -/
-def sivKs : List Nat :=
-  (allKs [8, 776]).filter fun k =>
-    !(776 :: 8 :: 24 :: 184 :: 200 :: 216 :: 248 :: 264 :: (zeroOffs.dropLast.map (· + 40))).contains k
-
-theorem sivKs_cov : ∀ i < 784, cov sivKs [8, 776] i = false →
-    zeroOffs.any (fun o => decide (40 + o ≤ i ∧ i < 40 + o + 16)) = true ∨
-    pubW.any (fun d => decide (40 + d ≤ i ∧ i < 40 + d + 8)) = true ∨ (8 ≤ i ∧ i < 16) ∨
-    (List.range 3).any (fun k => decide (16 + 8 * k ≤ i ∧ i < 24 + 8 * k)) = true := by decide +kernel
-
-/-- A byte of the 784 that `scrub` does not wipe is one that `zeroL` zeroes,
-one of a public word of `W`, one of the return address, or one of the copy
-of an argument. -/
-theorem unwiped {p x : Addr} (hx : (⟨p - BitVec.ofNat 64 784, 784⟩ : Region).Contains x 1)
-    (hn : ¬ WCov sivKs [8, 776] p x) :
-    (∃ o ∈ zeroOffs, (⟨p - BitVec.ofNat 64 776 + BitVec.ofNat 64 32 + BitVec.ofNat 64 o, 16⟩ : Region).Contains x 1) ∨
-    (∃ d ∈ pubW, (⟨p - BitVec.ofNat 64 776 + BitVec.ofNat 64 32 + BitVec.ofNat 64 d, 8⟩ : Region).Contains x 1) ∨
-    (⟨p - BitVec.ofNat 64 776, 8⟩ : Region).Contains x 1 ∨
-    ((⟨p - BitVec.ofNat 64 776 + BitVec.ofNat 64 8, 24⟩ : Region).Contains x 1 ∧
-      ∃ k < 3, (⟨p - BitVec.ofNat 64 776 + BitVec.ofNat 64 (8 * (k + 1)), 8⟩ : Region).Contains x 1) := by
-  have hi : (x - (p - BitVec.ofNat 64 784)).toNat < 784 := by
-    simp only [Region.Contains] at hx; omega_using [hx]
-  have hc : cov sivKs [8, 776] (x - (p - BitVec.ofNat 64 784)).toNat = false := by
-    cases h : cov sivKs [8, 776] (x - (p - BitVec.ofNat 64 784)).toNat with
-    | false => rfl
-    | true => exact absurd ⟨hx, h⟩ hn
-  have eW : ∀ o : Nat, p - BitVec.ofNat 64 776 + BitVec.ofNat 64 32 + BitVec.ofNat 64 o =
-      p - BitVec.ofNat 64 784 + BitVec.ofNat 64 (40 + o) := fun o => by
-    rw [sub_add_ofNat p (b := 776) (d := 32) (by decide), ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc,
-      sub_add_ofNat p (b := 784) (d := 40) (by decide)]
-  have eA : ∀ o : Nat, p - BitVec.ofNat 64 776 + BitVec.ofNat 64 o =
-      p - BitVec.ofNat 64 784 + BitVec.ofNat 64 (8 + o) := fun o => by
-    rw [← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc, sub_add_ofNat p (b := 784) (d := 8) (by decide)]
-  have ex : p - BitVec.ofNat 64 784 + BitVec.ofNat 64 (x - (p - BitVec.ofNat 64 784)).toNat = x := by
-    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  have inB : ∀ {lo len : Nat}, lo ≤ (x - (p - BitVec.ofNat 64 784)).toNat →
-      (x - (p - BitVec.ofNat 64 784)).toNat < lo + len → len ≤ 24 →
-      (⟨p - BitVec.ofNat 64 784 + BitVec.ofNat 64 lo, len⟩ : Region).Contains x 1 := fun {lo len} h₁ h₂ h₃ => by
-    have := VG.Offset.contains (p - BitVec.ofNat 64 784) (n := 1) h₁ (by omega_using [h₂] : _ ≤ lo + len)
-      (by omega_using [h₁, h₃, hi])
-    rw [ex] at this
-    exact this
-  rcases sivKs_cov _ hi hc with h | h | h | h
-  · obtain ⟨o, ho, hb⟩ := List.any_eq_true.mp h
-    obtain ⟨hb₁, hb₂⟩ := of_decide_eq_true hb
-    exact .inl ⟨o, ho, by rw [eW]; exact inB hb₁ hb₂ (by decide)⟩
-  · obtain ⟨d, hd, hb⟩ := List.any_eq_true.mp h
-    obtain ⟨hb₁, hb₂⟩ := of_decide_eq_true hb
-    exact .inr (.inl ⟨d, hd, by rw [eW]; exact inB hb₁ hb₂ (by decide)⟩)
-  · refine .inr (.inr (.inl ?_))
-    have := inB (lo := 8 + 0) (len := 8) h.1 h.2 (by decide)
-    rw [← eA 0] at this
-    simpa using this
-  · obtain ⟨k, hk, hb⟩ := List.any_eq_true.mp h
-    obtain ⟨hb₁, hb₂⟩ := of_decide_eq_true hb
-    have hk := List.mem_range.mp hk
-    refine .inr (.inr (.inr ⟨?_, k, hk, ?_⟩))
-    · rw [eA]; exact inB (by omega_using [hb₁]) (by omega_using [hb₂, hk]) (by decide)
-    · rw [eA]; exact inB (by omega_using [hb₁]) (by omega_using [hb₂]) (by decide)
-
-/-- Memories with the same 64-bit word at `a` have the same bytes there. -/
-theorem byte_of_readW {m₁ m₂ : Mem} {a x : Addr} (h : m₁.readW a 64 = m₂.readW a 64)
-    (hx : (⟨a, 8⟩ : Region).Contains x 1) : m₁ x = m₂ x := by
-  have hj : (x - a).toNat < 8 := by simp only [Region.Contains] at hx; omega_using [hx]
-  have b : ∀ m : Mem, m x = (m.readW a 64).extractLsb' (8 * (x - a).toNat) 8 := fun m => by
-    have := Mem.extractLsb'_read m a hj
-    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel] at this
-    rw [← this]; rfl
-  rw [b m₁, b m₂, h]
-
-/-- Two runs leave the same public words in `W`. -/
-theorem keptW_readW {W : Addr} {R al n : Nat} {N A D : Addr} {g₁ g₂ : Reg → BitVec 64} {m₁ m₂ : Mem}
-    (k₁ : Proof.AesGcmSivReg.X86_64.KeptW W R N A D al n g₁ m₁)
-    (k₂ : Proof.AesGcmSivReg.X86_64.KeptW W R N A D al n g₂ m₂)
-    (hg : ∀ q, q ≠ .rax → q ≠ .rsp → g₂ q = g₁ q) :
-    ∀ d ∈ pubW, m₁.readW (W + BitVec.ofNat 64 d) 64 = m₂.readW (W + BitVec.ofNat 64 d) 64 := by
-  intro d hd
-  simp only [pubW, List.mem_cons, List.not_mem_nil, or_false] at hd
-  rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact (k₁.saved (.rbx, 144) (by decide)).trans ((hg .rbx (by decide) (by decide)).symm.trans (k₂.saved (.rbx, 144) (by decide)).symm)
-  · exact (k₁.saved (.rbp, 152) (by decide)).trans ((hg .rbp (by decide) (by decide)).symm.trans (k₂.saved (.rbp, 152) (by decide)).symm)
-  · exact (k₁.saved (.r12, 160) (by decide)).trans ((hg .r12 (by decide) (by decide)).symm.trans (k₂.saved (.r12, 160) (by decide)).symm)
-  · exact (k₁.saved (.r13, 168) (by decide)).trans ((hg .r13 (by decide) (by decide)).symm.trans (k₂.saved (.r13, 168) (by decide)).symm)
-  · exact (k₁.saved (.r14, 176) (by decide)).trans ((hg .r14 (by decide) (by decide)).symm.trans (k₂.saved (.r14, 176) (by decide)).symm)
-  · exact (k₁.saved (.r15, 184) (by decide)).trans ((hg .r15 (by decide) (by decide)).symm.trans (k₂.saved (.r15, 184) (by decide)).symm)
-  · exact k₁.slots.nonce.trans k₂.slots.nonce.symm
-  · exact k₁.slots.aad.trans k₂.slots.aad.symm
-  · exact k₁.slots.alen.trans k₂.slots.alen.symm
-  · exact k₁.slots.data.trans k₂.slots.data.symm
-
-/-- The tag `seal` writes is apart from the copies of the arguments. -/
-theorem tag_args {n : State} (q : (Proof.AesGcmSiv.sealScratchContract X86_64.abi 93 8).pre n)
-    (P : Proof.AesGcmSivReg.sealPre n) :
-    (⟨Proof.AesGcmSivReg.arg n 1, 16⟩ : Region).Disjoint ⟨n.gpr .rsp + BitVec.ofNat 64 8, 24⟩ := by
-  have hk : 6 ≤ ((Proof.AesGcmSiv.sealScratchSig 93).words abi.ptrBits).length := by decide
-  obtain ⟨-, -, hwr, hpw, -⟩ := (pre_args hk).mp q
-  have ht : (⟨Proof.AesGcmSivReg.arg n 1, 16⟩ : Region) ∈ n.wr := by rw [P.2.1]; simp
-  rw [hwr] at ht
-  obtain ⟨a, ha, e⟩ := List.mem_map.mp ht
-  obtain ⟨ha, hf⟩ := List.mem_filter.mp ha
-  have hl : ((Proof.AesGcmSiv.sealScratchSig 93).words abi.ptrBits).length = 9 := by decide
-  have hA : argArea (Proof.AesGcmSiv.sealScratchSig 93) n =
-      [((⟨n.gpr .rsp + BitVec.ofNat 64 8, 24⟩ : Region), false)] := by
-    simp only [argArea, hl, stackArgAddr, Nat.reduceSub, Nat.reduceMul, Nat.reduceAdd, Nat.succ_ne_zero, ↓reduceIte]
-  unfold allRegions at hpw ha
-  have hab : a ∈ bufRegions (Proof.AesGcmSiv.sealScratchSig 93) n := by
-    rcases List.mem_append.mp ha with h | h
-    · exact h
-    · rw [hA, List.mem_singleton] at h
-      rw [h] at hf
-      exact Bool.noConfusion hf
-  have hd := (List.pairwise_append.mp hpw).2.2 a hab ((⟨n.gpr .rsp + BitVec.ofNat 64 8, 24⟩ : Region), false)
-    (by rw [hA]; exact List.mem_singleton_self _) (by rw [hf]; rfl)
-  rw [e] at hd
-  exact hd
-
-/-- A run of code in a frame of `withStackArgScratch` is its run from
-`narrowS`, which leaves the memory the frame's run does, with the frame's
-bytes lost. -/
-theorem inner_run {sig : Sig} {nm : String} {e : Elem} {n : Nat}
-    {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
-    {stack bytes : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {c : Prog isa}
-    (h : Verified X86_64.target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
-    (hk : 6 ≤ (sig.words abi.ptrBits).length)
-    (hb : 16 + 8 * X86_64.nStack sig + n * e.size ≤ bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
-    (hst : stack + bytes + 8 ≤ 2 ^ 64)
-    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ stack)
-    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    {s s' : State} {t : List Leak} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s)
-    (ex : Exec isa (withStackArgScratch bytes (X86_64.nStack sig) c) s t s') :
-    ∃ t₃ s₃, (Sig.scratchContract abi sig nm e n pre post wa stack leak).pre (narrowS sig e n bytes s) ∧
-      Exec isa c (narrowS sig e n bytes s) t₃ s₃ ∧
-        s'.mem = lose s₃.mem (s.gpr .rsp - BitVec.ofNat 64 bytes) bytes s₃.unknowns := by
-  have hp := narrowS_pre (nm := nm) hk hb.1 hb.2.1 hpre hs
-  obtain ⟨t₃, s₃, he, ha, -⟩ := h.1 _ hp
-  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_runMem hk hb hst (SpSafe.of_all hsp) hd hs he ha
-  obtain ⟨-, rfl⟩ := ex.det hex
-  exact ⟨t₃, s₃, hp, he, hm⟩
-
-/-- Two runs agree, on entry, on the stack below the stack pointer. -/
-theorem stack_init_eq {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
-    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
-    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} (hk : 6 ≤ (sig.words abi.ptrBits).length)
-    {s₁ s₂ : State} (h₁ : (sig.contract abi pre post wa (stack + 1) leak).pre s₁) (ho : Outside 0 s₁ s₂)
-    {x : Addr} (hx : (⟨s₁.gpr .rsp - BitVec.ofNat 64 (stack + 1), stack + 1⟩ : Region).Contains x 1) :
-    s₁.mem x = s₂.mem x := by
-  rw [pre_args hk] at h₁
-  obtain ⟨-, hrd, hwr, -, hres, -⟩ := h₁
-  refine ho.2.2.2.2.2.2.2.2.2.2.2.2.2.2 x fun r hr hc => ?_
-  have hm : ∃ a ∈ allRegions sig s₁, a.1 = r := by
-    rw [hrd, hwr] at hr
-    rcases List.mem_append.mp hr with h | h
-    · obtain ⟨a, ha, rfl⟩ := List.mem_map.mp h; exact ⟨a, (List.mem_filter.mp ha).1, rfl⟩
-    · obtain ⟨a, ha, rfl⟩ := List.mem_map.mp h; exact ⟨a, (List.mem_filter.mp ha).1, rfl⟩
-  obtain ⟨a, ha, rfl⟩ := hm
-  exact hres _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)) a ha x hx hc
-
-/-- `seal` in registers, in its frame: two runs leave the same bytes in
-what `scrub` does not wipe of the stack, for code `c` that says what it
-wrote (`fineR`) and zeroes what only the loops write, from `θ` bytes. -/
-theorem seal_resOk {θ : Nat} {c : Prog isa}
-    (hv : Verified X86_64.target c (Proof.AesGcmSiv.sealScratchContract X86_64.abi 93 8))
-    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 8)
-    (hw : ∀ {s : State}, Proof.AesGcmSivReg.sealPre s → WP isa c s fun s' =>
-      gprPreserved s s' ∧ Proof.AesGcmSivReg.sealX86_64.post s s' ∧
-      Frame (⟨Proof.AesGcmSivReg.arg s 1, 16⟩ :: fineR θ (Proof.AesGcmSivReg.arg s 2) (s.gpr .r9) (Proof.AesGcmSivReg.arg s 0).toNat) s.mem s'.mem ∧
-      (θ ≤ (Proof.AesGcmSivReg.arg s 0).toNat → ∀ o ∈ zeroOffs, ZeroR ⟨Proof.AesGcmSivReg.arg s 2 + BitVec.ofNat 64 o, 16⟩ s'.mem) ∧
-      Proof.AesGcmSivReg.X86_64.KeptW (Proof.AesGcmSivReg.arg s 2) (s.gpr .rsi).toNat (s.gpr .rdx) (s.gpr .rcx)
-        (s.gpr .r9) (s.gpr .r8).toNat (Proof.AesGcmSivReg.arg s 0).toNat s.gpr s'.mem) :
-    ResOk (withStackArgScratch 776 2 c) (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 784) 784 sivKs
-      [8, 776] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ hp₁ hp₂ hpub hout hu hsy e₁ e₂ x hx hnc
-  have hk : 6 ≤ (Spec.GcmSiv.sealSig.words abi.ptrBits).length := by decide
-  have run : ∀ {s u : State} {t : List Leak}, (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 784).pre s →
-      Exec isa (withStackArgScratch 776 2 c) s t u →
-      (Proof.AesGcmSiv.sealScratchContract X86_64.abi 93 8).pre (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) ∧
-      ∃ b : State, u.mem = lose b.mem (s.gpr .rsp - BitVec.ofNat 64 776) 776 b.unknowns ∧
-        b.unknowns = innerU c (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) ∧
-        Frame (⟨Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) 1, 16⟩ ::
-          fineR θ (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) 2)
-            ((narrowS Spec.GcmSiv.sealSig .u64 93 776 s).gpr .r9)
-            (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) 0).toNat)
-          (narrowS Spec.GcmSiv.sealSig .u64 93 776 s).mem b.mem ∧
-        (θ ≤ (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) 0).toNat → ∀ o ∈ zeroOffs,
-          ZeroR ⟨Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) 2 + BitVec.ofNat 64 o, 16⟩ b.mem) ∧
-        Proof.AesGcmSivReg.X86_64.KeptW (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) 2) ((narrowS Spec.GcmSiv.sealSig .u64 93 776 s).gpr .rsi).toNat
-          ((narrowS Spec.GcmSiv.sealSig .u64 93 776 s).gpr .rdx) ((narrowS Spec.GcmSiv.sealSig .u64 93 776 s).gpr .rcx) ((narrowS Spec.GcmSiv.sealSig .u64 93 776 s).gpr .r9) ((narrowS Spec.GcmSiv.sealSig .u64 93 776 s).gpr .r8).toNat
-          (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.sealSig .u64 93 776 s) 0).toNat (narrowS Spec.GcmSiv.sealSig .u64 93 776 s).gpr b.mem := by
-    intro s u t hs ex
-    obtain ⟨_, b, q, i, m⟩ := inner_run (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776) hv hk
-      (by decide) (by decide) hsp hd
-      (fun vs m₁ m₂ hl hb _ => Proof.AesGcmSiv.sealPre_local _ vs m₁ m₂ hl hb) hs ex
-    obtain ⟨_, b', j, -, -, fr, z, kp⟩ := hw (Proof.AesGcmSivReg.X86_64.seal_impl.pre _ q)
-    obtain ⟨-, rfl⟩ := i.det j
-    exact ⟨q, b, m, (innerU_eq i).symm, fr, z, kp⟩
-  obtain ⟨q₁, b₁, m₁, iu₁, fr₁, z₁, kp₁⟩ := run hp₁ e₁
-  obtain ⟨q₂, b₂, m₂, iu₂, fr₂, z₂, kp₂⟩ := run hp₂ e₂
-  have hU : b₁.unknowns = b₂.unknowns := by
-    rw [iu₁, iu₂]
-    exact innerU_agree hv q₁ q₂ (narrowS_pub (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776) hk
-      (by decide) (by decide) hp₁ hp₂ hpub)
-      (by rw [StackLock.narrowS_unknowns (e := .u64) (n := 93) (bytes := 776) hk (by decide) (by decide) hp₁,
-        StackLock.narrowS_unknowns (e := .u64) (n := 93) (bytes := 776) hk (by decide) (by decide) hp₂]; exact hu)
-      (fun n hn => by rw [narrowS_syms, narrowS_syms]; exact hsy n (List.mem_append_right _ hn))
-  generalize hn₁ : narrowS Spec.GcmSiv.sealSig .u64 93 776 s₁ = n₁ at q₁ fr₁ z₁ kp₁
-  generalize hn₂ : narrowS Spec.GcmSiv.sealSig .u64 93 776 s₂ = n₂ at q₂ fr₂ z₂ kp₂
-  have P₁ : Proof.AesGcmSivReg.sealPre n₁ := Proof.AesGcmSivReg.X86_64.seal_impl.pre _ q₁
-  have P₂ : Proof.AesGcmSivReg.sealPre n₂ := Proof.AesGcmSivReg.X86_64.seal_impl.pre _ q₂
-  obtain ⟨⟨Ar₁, Tb₁⟩, -, hrT₁⟩ := Proof.AesGcmSivReg.X86_64.args_of_seal P₁
-  obtain ⟨⟨Ar₂, Tb₂⟩, -, hrT₂⟩ := Proof.AesGcmSivReg.X86_64.args_of_seal P₂
-  have pub : Proof.AesGcmSivReg.onePub n₁ n₂ := Proof.AesGcmSivReg.X86_64.seal_impl.pub _ _ q₁ q₂ (by
-    rw [← hn₁, ← hn₂]
-    exact narrowS_pub (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776) hk (by decide) (by decide)
-      hp₁ hp₂ hpub)
-  have eW : Proof.AesGcmSivReg.arg n₂ 2 = Proof.AesGcmSivReg.arg n₁ 2 := (pub.2.2.2.2.2.2.2 2 (by decide)).symm
-  have eL : Proof.AesGcmSivReg.arg n₂ 0 = Proof.AesGcmSivReg.arg n₁ 0 := (pub.2.2.2.2.2.2.2 0 (by decide)).symm
-  obtain ⟨hsp₁, hg₁, -, ha₁, f₁⟩ := narrowS_facts (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776)
-    hk (by decide) (by decide) hp₁
-  obtain ⟨hsp₂, hg₂, -, -, f₂⟩ := narrowS_facts (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776)
-    hk (by decide) (by decide) hp₂
-  rw [hn₁] at hsp₁ hg₁ ha₁ f₁
-  rw [hn₂] at hsp₂ hg₂ f₂
-  have hG : ∀ q, q ≠ .rax → q ≠ .rsp → n₂.gpr q = n₁.gpr q := fun q h₁ h₂ =>
-    (hg₂ q h₁ h₂).trans ((hout.2.2.1 q h₁).symm.trans (hg₁ q h₁ h₂).symm)
-  have eS : n₂.gpr .rsp = n₁.gpr .rsp := by rw [hsp₂, hsp₁, hout.2.2.1 .rsp (by decide)]
-  rw [eW, eL, hG .rsi (by decide) (by decide), hG .rdx (by decide) (by decide), hG .rcx (by decide) (by decide),
-    hG .r9 (by decide) (by decide), hG .r8 (by decide) (by decide)] at kp₂
-  have hW : Proof.AesGcmSivReg.arg n₁ 2 = s₁.gpr .rsp - BitVec.ofNat 64 776 + BitVec.ofNat 64 32 := by
-    have l₁ : ((Spec.GcmSiv.sealSig.withScratch "work" Elem.u64 93).words abi.ptrBits).length = 9 := by decide
-    have l₂ : (Spec.GcmSiv.sealSig.words abi.ptrBits).length = 8 := by decide
-    have l₃ : X86_64.nStack Spec.GcmSiv.sealSig = 2 := by decide
-    have h := congrArg (fun l => l.getD 8 0) ha₁
-    simpa [allArgs, argRegs, l₁, l₂, l₃, List.range, List.range.loop] using h
-  rw [m₁, m₂, ← hout.2.2.1 .rsp (by decide), ← hU]
-  refine lose_congr _ _ _ ?_
-  rcases unwiped hx hnc with ⟨o, ho, hc⟩ | ⟨d, hd, hc⟩ | hc | ⟨hca, k, hk3, hc⟩
-  rotate_left
-  · rw [← hW] at hc
-    exact byte_of_readW (keptW_readW kp₁ kp₂ hG d hd) hc
-  · rw [← hsp₁] at hc
-    have k₁ : b₁.mem x = n₁.mem x := fr₁ x fun q hq hq' => by
-      rcases List.mem_cons.mp hq with rfl | hq
-      · exact hrT₁ x hc hq'
-      · exact Proof.AesGcmSivReg.X86_64.fineR_apart Ar₁.retW Ar₁.retD q hq x hc hq'
-    have k₂ : b₂.mem x = n₂.mem x := fr₂ x fun q hq hq' => by
-      rw [← eS] at hc
-      rcases List.mem_cons.mp hq with rfl | hq
-      · exact hrT₂ x hc hq'
-      · exact Proof.AesGcmSivReg.X86_64.fineR_apart Ar₂.retW Ar₂.retD q hq x hc hq'
-    have g₁ : n₁.mem x = s₁.mem x := f₁ x fun q hq hq' => by
-      simp only [List.mem_singleton] at hq; subst hq
-      exact VG.Offset.disjoint_base (n₁.gpr .rsp) (d := 8) (n := 24) (k := 8) (by decide) (by decide) x
-        (by rw [hsp₁]; exact hq') hc
-    have g₂ : n₂.mem x = s₂.mem x := f₂ x fun q hq hq' => by
-      simp only [List.mem_singleton] at hq; subst hq
-      exact VG.Offset.disjoint_base (n₁.gpr .rsp) (d := 8) (n := 24) (k := 8) (by decide) (by decide) x
-        (by rw [← eS, hsp₂]; exact hq') hc
-    rw [k₁, k₂, g₁, g₂]
-    exact stack_init_eq (stack := 783) hk hp₁ hout hx
-  · rw [← hsp₁] at hc hca
-    have k₁ : b₁.mem x = n₁.mem x := fr₁ x fun q hq hq' => by
-      rcases List.mem_cons.mp hq with rfl | hq
-      · exact tag_args q₁ P₁ x hq' hca
-      · exact Proof.AesGcmSivReg.X86_64.fineR_apart Ar₁.argsW Ar₁.argsD q hq x hca hq'
-    have k₂ : b₂.mem x = n₂.mem x := fr₂ x fun q hq hq' => by
-      rw [← eS] at hca
-      rcases List.mem_cons.mp hq with rfl | hq
-      · exact tag_args q₂ P₂ x hq' hca
-      · exact Proof.AesGcmSivReg.X86_64.fineR_apart Ar₂.argsW Ar₂.argsD q hq x hca hq'
-    have ea := pub.2.2.2.2.2.2.2 k hk3
-    rw [show Proof.AesGcmSivReg.arg n₂ k = n₂.mem.readW (n₂.gpr .rsp + BitVec.ofNat 64 (8 * (k + 1))) 64 from rfl,
-      eS] at ea
-    rw [k₁, k₂]
-    exact byte_of_readW ea hc
-  rw [← hW] at hc
-  obtain ⟨-, -, h₃⟩ := zeroOffs_sep o ho
-  by_cases hθ : θ ≤ (Proof.AesGcmSivReg.arg n₁ 0).toNat
-  · rw [z₁ hθ o ho x hc, z₂ (by rw [eL]; exact hθ) o ho x (by rw [eW]; exact hc)]
-  · have hlt : (Proof.AesGcmSivReg.arg n₁ 0).toNat < θ := Nat.lt_of_not_le hθ
-    have k₁ : b₁.mem x = n₁.mem x := fr₁ x fun q hq hq' => by
-      rcases List.mem_cons.mp hq with rfl | hq
-      · exact (Tb₁.w.sub_right (Proof.AesGcmSivReg.X86_64.Lay.wSub h₃)).symm x hc hq'
-      · exact fineR_kept Ar₁.lay Ar₁.data.w hlt ho q hq x hc hq'
-    have k₂ : b₂.mem x = n₂.mem x := fr₂ x fun q hq hq' => by
-      rw [← eW] at hc
-      rcases List.mem_cons.mp hq with rfl | hq
-      · exact (Tb₂.w.sub_right (Proof.AesGcmSivReg.X86_64.Lay.wSub h₃)).symm x hc hq'
-      · exact fineR_kept Ar₂.lay Ar₂.data.w (by rw [eL]; exact hlt) ho q hq x hc hq'
-    have g₁ : n₁.mem x = s₁.mem x := f₁ x fun q hq hq' => by
-      simp only [List.mem_singleton] at hq; subst hq
-      exact (Ar₁.argsW.sub_right (Proof.AesGcmSivReg.X86_64.Lay.wSub h₃)) x (by rw [hsp₁]; exact hq') hc
-    have g₂ : n₂.mem x = s₂.mem x := f₂ x fun q hq hq' => by
-      simp only [List.mem_singleton] at hq; subst hq
-      exact (Ar₂.argsW.sub_right (Proof.AesGcmSivReg.X86_64.Lay.wSub h₃)) x (by rw [hsp₂]; exact hq')
-        (by rw [eW]; exact hc)
-    rw [k₁, k₂, g₁, g₂]
-    exact stack_init_eq (stack := 783) hk hp₁ hout hx
-
-/-- `open`'s, as `seal_resOk`. -/
-theorem open_resOk {θ : Nat} {c : Prog isa}
-    (hv : Verified X86_64.target c (Proof.AesGcmSiv.openScratchContract X86_64.abi 93 8))
-    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 8)
-    (hw : ∀ {s : State}, Proof.AesGcmSivReg.openPre s → WP isa c s fun s' =>
-      gprPreserved s s' ∧ Proof.AesGcmSivReg.openX86_64.post s s' ∧
-      Frame (fineR θ (Proof.AesGcmSivReg.arg s 2) (s.gpr .r9) (Proof.AesGcmSivReg.arg s 0).toNat) s.mem s'.mem ∧
-      (θ ≤ (Proof.AesGcmSivReg.arg s 0).toNat → ∀ o ∈ zeroOffs, ZeroR ⟨Proof.AesGcmSivReg.arg s 2 + BitVec.ofNat 64 o, 16⟩ s'.mem) ∧
-      Proof.AesGcmSivReg.X86_64.KeptW (Proof.AesGcmSivReg.arg s 2) (s.gpr .rsi).toNat (s.gpr .rdx) (s.gpr .rcx)
-        (s.gpr .r9) (s.gpr .r8).toNat (Proof.AesGcmSivReg.arg s 0).toNat s.gpr s'.mem) :
-    ResOk (withStackArgScratch 776 2 c) (Proof.AesGcmSiv.openRoundsContract X86_64.abi 784) 784 sivKs
-      [8, 776] := by
-  intro s₁ s₂ t₁ t₂ u₁ u₂ hp₁ hp₂ hpub hout hu hsy e₁ e₂ x hx hnc
-  have hk : 6 ≤ (Spec.GcmSiv.openSig.words abi.ptrBits).length := by decide
-  have run : ∀ {s u : State} {t : List Leak}, (Proof.AesGcmSiv.openRoundsContract X86_64.abi 784).pre s →
-      Exec isa (withStackArgScratch 776 2 c) s t u →
-      (Proof.AesGcmSiv.openScratchContract X86_64.abi 93 8).pre (narrowS Spec.GcmSiv.openSig .u64 93 776 s) ∧
-      ∃ b : State, u.mem = lose b.mem (s.gpr .rsp - BitVec.ofNat 64 776) 776 b.unknowns ∧
-        b.unknowns = innerU c (narrowS Spec.GcmSiv.openSig .u64 93 776 s) ∧
-        Frame (
-          fineR θ (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.openSig .u64 93 776 s) 2)
-            ((narrowS Spec.GcmSiv.openSig .u64 93 776 s).gpr .r9)
-            (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.openSig .u64 93 776 s) 0).toNat)
-          (narrowS Spec.GcmSiv.openSig .u64 93 776 s).mem b.mem ∧
-        (θ ≤ (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.openSig .u64 93 776 s) 0).toNat → ∀ o ∈ zeroOffs,
-          ZeroR ⟨Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.openSig .u64 93 776 s) 2 + BitVec.ofNat 64 o, 16⟩ b.mem) ∧
-        Proof.AesGcmSivReg.X86_64.KeptW (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.openSig .u64 93 776 s) 2) ((narrowS Spec.GcmSiv.openSig .u64 93 776 s).gpr .rsi).toNat
-          ((narrowS Spec.GcmSiv.openSig .u64 93 776 s).gpr .rdx) ((narrowS Spec.GcmSiv.openSig .u64 93 776 s).gpr .rcx) ((narrowS Spec.GcmSiv.openSig .u64 93 776 s).gpr .r9) ((narrowS Spec.GcmSiv.openSig .u64 93 776 s).gpr .r8).toNat
-          (Proof.AesGcmSivReg.arg (narrowS Spec.GcmSiv.openSig .u64 93 776 s) 0).toNat (narrowS Spec.GcmSiv.openSig .u64 93 776 s).gpr b.mem := by
-    intro s u t hs ex
-    obtain ⟨_, b, q, i, m⟩ := inner_run (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776)
-      (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (Proof.AesGcmSiv.Verified.of_openScratch hv) hk
-      (by decide) (by decide) hsp hd
-      (fun vs m₁ m₂ hl hb _ => Proof.AesGcmSiv.openPre_local _ vs m₁ m₂ hl hb) hs ex
-    obtain q : (Proof.AesGcmSiv.openScratchContract X86_64.abi 93 8).pre
-        (narrowS Spec.GcmSiv.openSig .u64 93 776 s) := by
-      rw [Proof.AesGcmSiv.openScratchContract_eq]; exact q
-    obtain ⟨_, b', j, -, -, fr, z, kp⟩ := hw (Proof.AesGcmSivReg.X86_64.open_impl.pre _ q)
-    obtain ⟨-, rfl⟩ := i.det j
-    exact ⟨q, b, m, (innerU_eq i).symm, fr, z, kp⟩
-  obtain ⟨q₁, b₁, m₁, iu₁, fr₁, z₁, kp₁⟩ := run hp₁ e₁
-  obtain ⟨q₂, b₂, m₂, iu₂, fr₂, z₂, kp₂⟩ := run hp₂ e₂
-  have hU : b₁.unknowns = b₂.unknowns := by
-    rw [iu₁, iu₂]
-    exact innerU_agree (Proof.AesGcmSiv.Verified.of_openScratch hv) q₁ q₂
-      (narrowS_pub (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776) hk (by decide) (by decide)
-        hp₁ hp₂ hpub (Sig.LeakLocal.toL (sig := Spec.GcmSiv.openSig)
-          (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (Proof.AesGcmSiv.openLeak_local _)))
-      (by rw [StackLock.narrowS_unknowns (e := .u64) (n := 93) (bytes := 776) hk (by decide) (by decide) hp₁,
-        StackLock.narrowS_unknowns (e := .u64) (n := 93) (bytes := 776) hk (by decide) (by decide) hp₂]; exact hu)
-      (fun n hn => by rw [narrowS_syms, narrowS_syms]; exact hsy n (List.mem_append_right _ hn))
-  generalize hn₁ : narrowS Spec.GcmSiv.openSig .u64 93 776 s₁ = n₁ at q₁ fr₁ z₁ kp₁
-  generalize hn₂ : narrowS Spec.GcmSiv.openSig .u64 93 776 s₂ = n₂ at q₂ fr₂ z₂ kp₂
-  have P₁ : Proof.AesGcmSivReg.openPre n₁ := Proof.AesGcmSivReg.X86_64.open_impl.pre _ q₁
-  have P₂ : Proof.AesGcmSivReg.openPre n₂ := Proof.AesGcmSivReg.X86_64.open_impl.pre _ q₂
-  obtain ⟨⟨Ar₁, Tb₁⟩, -⟩ := Proof.AesGcmSivReg.X86_64.args_of_open P₁
-  obtain ⟨⟨Ar₂, Tb₂⟩, -⟩ := Proof.AesGcmSivReg.X86_64.args_of_open P₂
-  have pub : Proof.AesGcmSivReg.onePub n₁ n₂ := (Proof.AesGcmSivReg.X86_64.open_impl.pub _ _ q₁ q₂ (by
-    rw [← hn₁, ← hn₂]
-    exact narrowS_pub (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776) hk (by decide) (by decide)
-      hp₁ hp₂ hpub (Sig.LeakLocal.toL (sig := Spec.GcmSiv.openSig)
-        (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (Proof.AesGcmSiv.openLeak_local _)))).1
-  have eW : Proof.AesGcmSivReg.arg n₂ 2 = Proof.AesGcmSivReg.arg n₁ 2 := (pub.2.2.2.2.2.2.2 2 (by decide)).symm
-  have eL : Proof.AesGcmSivReg.arg n₂ 0 = Proof.AesGcmSivReg.arg n₁ 0 := (pub.2.2.2.2.2.2.2 0 (by decide)).symm
-  obtain ⟨hsp₁, hg₁, -, ha₁, f₁⟩ := narrowS_facts (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776)
-    hk (by decide) (by decide) hp₁
-  obtain ⟨hsp₂, hg₂, -, -, f₂⟩ := narrowS_facts (nm := "work") (e := .u64) (n := 93) (stack := 8) (bytes := 776)
-    hk (by decide) (by decide) hp₂
-  rw [hn₁] at hsp₁ hg₁ ha₁ f₁
-  rw [hn₂] at hsp₂ hg₂ f₂
-  have hG : ∀ q, q ≠ .rax → q ≠ .rsp → n₂.gpr q = n₁.gpr q := fun q h₁ h₂ =>
-    (hg₂ q h₁ h₂).trans ((hout.2.2.1 q h₁).symm.trans (hg₁ q h₁ h₂).symm)
-  have eS : n₂.gpr .rsp = n₁.gpr .rsp := by rw [hsp₂, hsp₁, hout.2.2.1 .rsp (by decide)]
-  rw [eW, eL, hG .rsi (by decide) (by decide), hG .rdx (by decide) (by decide), hG .rcx (by decide) (by decide),
-    hG .r9 (by decide) (by decide), hG .r8 (by decide) (by decide)] at kp₂
-  have hW : Proof.AesGcmSivReg.arg n₁ 2 = s₁.gpr .rsp - BitVec.ofNat 64 776 + BitVec.ofNat 64 32 := by
-    have l₁ : ((Spec.GcmSiv.openSig.withScratch "work" Elem.u64 93).words abi.ptrBits).length = 9 := by decide
-    have l₂ : (Spec.GcmSiv.openSig.words abi.ptrBits).length = 8 := by decide
-    have l₃ : X86_64.nStack Spec.GcmSiv.openSig = 2 := by decide
-    have h := congrArg (fun l => l.getD 8 0) ha₁
-    simpa [allArgs, argRegs, l₁, l₂, l₃, List.range, List.range.loop] using h
-  rw [m₁, m₂, ← hout.2.2.1 .rsp (by decide), ← hU]
-  refine lose_congr _ _ _ ?_
-  rcases unwiped hx hnc with ⟨o, ho, hc⟩ | ⟨d, hd, hc⟩ | hc | ⟨hca, k, hk3, hc⟩
-  rotate_left
-  · rw [← hW] at hc
-    exact byte_of_readW (keptW_readW kp₁ kp₂ hG d hd) hc
-  · rw [← hsp₁] at hc
-    have k₁ : b₁.mem x = n₁.mem x := fr₁ x fun q hq hq' => by
-      exact Proof.AesGcmSivReg.X86_64.fineR_apart Ar₁.retW Ar₁.retD q hq x hc hq'
-    have k₂ : b₂.mem x = n₂.mem x := fr₂ x fun q hq hq' => by
-      rw [← eS] at hc
-      exact Proof.AesGcmSivReg.X86_64.fineR_apart Ar₂.retW Ar₂.retD q hq x hc hq'
-    have g₁ : n₁.mem x = s₁.mem x := f₁ x fun q hq hq' => by
-      simp only [List.mem_singleton] at hq; subst hq
-      exact VG.Offset.disjoint_base (n₁.gpr .rsp) (d := 8) (n := 24) (k := 8) (by decide) (by decide) x
-        (by rw [hsp₁]; exact hq') hc
-    have g₂ : n₂.mem x = s₂.mem x := f₂ x fun q hq hq' => by
-      simp only [List.mem_singleton] at hq; subst hq
-      exact VG.Offset.disjoint_base (n₁.gpr .rsp) (d := 8) (n := 24) (k := 8) (by decide) (by decide) x
-        (by rw [← eS, hsp₂]; exact hq') hc
-    rw [k₁, k₂, g₁, g₂]
-    exact stack_init_eq (stack := 783) hk hp₁ hout hx
-  · rw [← hsp₁] at hc hca
-    have k₁ : b₁.mem x = n₁.mem x := fr₁ x fun q hq hq' => by
-      exact Proof.AesGcmSivReg.X86_64.fineR_apart Ar₁.argsW Ar₁.argsD q hq x hca hq'
-    have k₂ : b₂.mem x = n₂.mem x := fr₂ x fun q hq hq' => by
-      rw [← eS] at hca
-      exact Proof.AesGcmSivReg.X86_64.fineR_apart Ar₂.argsW Ar₂.argsD q hq x hca hq'
-    have ea := pub.2.2.2.2.2.2.2 k hk3
-    rw [show Proof.AesGcmSivReg.arg n₂ k = n₂.mem.readW (n₂.gpr .rsp + BitVec.ofNat 64 (8 * (k + 1))) 64 from rfl,
-      eS] at ea
-    rw [k₁, k₂]
-    exact byte_of_readW ea hc
-  rw [← hW] at hc
-  obtain ⟨-, -, h₃⟩ := zeroOffs_sep o ho
-  by_cases hθ : θ ≤ (Proof.AesGcmSivReg.arg n₁ 0).toNat
-  · rw [z₁ hθ o ho x hc, z₂ (by rw [eL]; exact hθ) o ho x (by rw [eW]; exact hc)]
-  · have hlt : (Proof.AesGcmSivReg.arg n₁ 0).toNat < θ := Nat.lt_of_not_le hθ
-    have k₁ : b₁.mem x = n₁.mem x := fr₁ x fun q hq hq' =>
-      fineR_kept Ar₁.lay Ar₁.data.w hlt ho q hq x hc hq'
-    have k₂ : b₂.mem x = n₂.mem x := fr₂ x fun q hq hq' => by
-      rw [← eW] at hc
-      exact fineR_kept Ar₂.lay Ar₂.data.w (by rw [eL]; exact hlt) ho q hq x hc hq'
-    have g₁ : n₁.mem x = s₁.mem x := f₁ x fun q hq hq' => by
-      simp only [List.mem_singleton] at hq; subst hq
-      exact (Ar₁.argsW.sub_right (Proof.AesGcmSivReg.X86_64.Lay.wSub h₃)) x (by rw [hsp₁]; exact hq') hc
-    have g₂ : n₂.mem x = s₂.mem x := f₂ x fun q hq hq' => by
-      simp only [List.mem_singleton] at hq; subst hq
-      exact (Ar₂.argsW.sub_right (Proof.AesGcmSivReg.X86_64.Lay.wSub h₃)) x (by rw [hsp₂]; exact hq')
-        (by rw [eW]; exact hc)
-    rw [k₁, k₂, g₁, g₂]
-    exact stack_init_eq (stack := 783) hk hp₁ hout hx
 
 /-- `seal` in registers for `v`, with its loops if it has them, in its frame. -/
 theorem regSeal_framed (v : GcmImpl) :
@@ -1471,93 +1000,265 @@ theorem regOpen_sp (v : GcmImpl) :
   | some lp => exact X86_64.withStackArgScratch_spSafe (Proof.AesGcmSivReg.X86_64.openL_spSafe (loopsOf_ok v hl).2)
   | none => exact X86_64.withStackArgScratch_spSafe Proof.AesGcmSivReg.X86_64.open_spSafe
 
-theorem regSeal_resOk (v : GcmImpl) :
-    ResOk (withStackArgScratch 776 2 (regSeal (loopsOf v))) (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 784) 784
-      sivKs [8, 776] := by
-  cases hl : loopsOf v with
-  | some lp =>
-    exact seal_resOk (θ := 256) (Proof.AesGcmSivReg.X86_64.sealL_verified mulFacts (loopsOf_ok v hl).1 (loopsOf_ok v hl).2 (loopsOf_ct v hl))
-      (Proof.AesGcmSivReg.X86_64.sealL_spSafe (loopsOf_ok v hl).2) (Proof.AesGcmSivReg.X86_64.sealL_xdepth (loopsOf_ok v hl).2)
-      fun h => Proof.AesGcmSivReg.X86_64.sealL_wp mulFacts (loopsOf_ok v hl).1 h
-  | none =>
-    exact seal_resOk (θ := 2 ^ 64) (Proof.AesGcmSivReg.X86_64.seal_verified mulFacts) Proof.AesGcmSivReg.X86_64.seal_spSafe Proof.AesGcmSivReg.X86_64.seal_xdepth fun h => Proof.AesGcmSivReg.X86_64.seal_wp mulFacts h
-
-theorem regOpen_resOk (v : GcmImpl) :
-    ResOk (withStackArgScratch 776 2 (regOpen (loopsOf v))) (Proof.AesGcmSiv.openRoundsContract X86_64.abi 784) 784
-      sivKs [8, 776] := by
-  cases hl : loopsOf v with
-  | some lp =>
-    exact open_resOk (θ := 256) (Proof.AesGcmSivReg.X86_64.openL_verified mulFacts (loopsOf_ok v hl).1 (loopsOf_ok v hl).2 (loopsOf_ct v hl))
-      (Proof.AesGcmSivReg.X86_64.openL_spSafe (loopsOf_ok v hl).2) (Proof.AesGcmSivReg.X86_64.openL_xdepth (loopsOf_ok v hl).2)
-      fun h => Proof.AesGcmSivReg.X86_64.openL_wp mulFacts (loopsOf_ok v hl).1 h
-  | none =>
-    exact open_resOk (θ := 2 ^ 64) (Proof.AesGcmSivReg.X86_64.open_verified mulFacts) Proof.AesGcmSivReg.X86_64.open_spSafe Proof.AesGcmSivReg.X86_64.open_xdepth fun h => Proof.AesGcmSivReg.X86_64.open_wp mulFacts h
-
-/-- `vg_aes_gcm_siv_seal` in registers over `v`, before `scrub`. -/
-def regSealReg (v : GcmImpl) : Unscrubbed Spec.GcmSiv.sealApi X86_64.target where
-  suffix := v.suffix
-  code := withStackArgScratch 776 2 (regSeal (loopsOf v))
-  stack := 784
-  verified := Proof.AesGcmSiv.seal_keyed (regSeal_framed v)
-  spSafe := regSeal_sp v
-
-/-- `vg_aes_gcm_siv_open` in registers over `v`, before `scrub`. -/
-def regOpenReg (v : GcmImpl) : Unscrubbed Spec.GcmSiv.openApi X86_64.target where
-  suffix := v.suffix
-  code := withStackArgScratch 776 2 (regOpen (loopsOf v))
-  stack := 784
-  verified := Proof.AesGcmSiv.open_keyed (regOpen_framed v)
-  spSafe := regOpen_sp v
+end
 
 end
 
-/-- A registration of the code not in registers, its 3856 bytes of stack
-wiped whole on return, in the chunks `[8, 3848]`. -/
-def scrubSoft {api : Api} (r : Unscrubbed api X86_64.target)
-    (hpost : PostOut r.contract (api.sig.retBits
-      ((X86_64.abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) : Registration api X86_64.target :=
-  withScrubAllC r hpost [8, 3848]
+end VG.Proof.AesGcmSiv.X86_64
 
-/-- `vg_aes_gcm_siv_seal` over `v`: in registers (`sivReg`), with what holds nothing of the keys or the
-data left unwiped (`sivKs`). -/
-def sealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
-  if sivReg v then withScrubResC (regSealReg v) (sealOut _) sivKs [8, 776] (regSeal_resOk v)
-  else scrubSoft {
-    suffix := v.suffix
-    code := framedSeal v
-    stack := sivStack v
-    verified := Proof.AesGcmSiv.seal_keyed (framedSeal_verified v)
-    spSafe := framedSeal_spSafe v } (sealOut _)
+/-!
+## AES-GCM-SIV on x86-64: returning without secret residue
 
-/-- `vg_aes_gcm_siv_open` over `v`. (`@openOut`: applied without `@`, the elaborator reduces its type,
-`PostOut` of a postcondition that is a `match` on a decryption, to see what it is a function of.) -/
-def openReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
-  if sivReg v then withScrubResC (regOpenReg v) (@openOut _) sivKs [8, 776] (regOpen_resOk v)
-  else scrubSoft {
-    suffix := v.suffix
-    code := framedOpen v
-    stack := sivStack v
-    verified := Proof.AesGcmSiv.open_keyed (framedOpen_verified v)
-    spSafe := framedOpen_spSafe v } (@openOut _)
+`vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` over the implementations
+`v`, each followed by the clearing of every register it may write and of its
+whole stack (`Impl.AesGcmSiv.X86_64.Fn`): in registers (`sivReg`), code that
+calls nothing, whose stub is the code itself; else over `v`'s callees,
+which each state what the cleanup needs of their code (`calleeSide`), with
+the code over a stub of each evaluated once (`verifiedScrubbedAllFill`).
+-/
 
-/-- `vg_aes_gcm_siv_seal` over `v`, with the AVX2 copies. -/
-def wideSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
-  scrubSoft {
-    suffix := v.suffix ++ "_avx2"
-    code := avx2SealCode v
-    stack := 3856
-    verified := Proof.AesGcmSiv.seal_keyed (avx2Seal_verified v)
-    spSafe := avx2Seal_spSafe v } (sealOut _)
+namespace VG.Proof.AesGcmSiv.X86_64
 
-/-- `vg_aes_gcm_siv_open` over `v`, with the AVX2 copies. -/
-def wideOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
-  scrubSoft {
-    suffix := v.suffix ++ "_avx2"
-    code := avx2OpenCode v
-    stack := 3856
-    verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
-    spSafe := avx2Open_spSafe v } (@openOut _)
+open VG.X86_64 VG.X86_64.Scrub
+open VG.Impl.Scrub.X86_64 (VecLevel)
+open VG.Proof.AesGcm.X86_64 (GcmImpl)
+open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
+open VG.Impl.AesGcmSiv.X86_64Stitch (Loops)
 
-end
+/-- The callees of a stub: every function's code empty, called by its own
+name. -/
+def stubCallees : Impl.AesGcm.X86_64.Callees :=
+  ⟨⟨"c", .block []⟩, ⟨"k", .block []⟩, ⟨"g", .block []⟩, ⟨"e", .block []⟩, ⟨"d", .block []⟩⟩
+
+/-- The block function of a stub. -/
+def stubEcb : Impl.AesGcm.X86_64.Fn := ⟨"b", .block []⟩
+
+theorem loopsOf_cases (v : GcmImpl) :
+    loopsOf v = none ∨ loopsOf v = some Impl.AesGcmSiv.X86_64Stitch.vaesLoops ∨
+      loopsOf v = some Impl.AesGcmSiv.X86_64StitchAvx.loops := by
+  unfold loopsOf
+  split
+  · exact .inr (.inl rfl)
+  · split
+    · exact .inr (.inr rfl)
+    · exact .inl rfl
+
+/-- The level of the vector instructions of `seal` and `open`'s own code:
+VEX with the AVX2 copies or interleaved loops. -/
+def ownLevel (wide : Bool) (lp : Option Loops) : VecLevel := if wide || lp.isSome then .avx else .sse
+
+/-- The level of the cleanup of `seal` and `open` over `v`'s callees. -/
+def softLevel (v : GcmImpl) (wide : Bool) (lp : Option Loops) : VecLevel :=
+  (((v.ctr.level.join v.key.level).join v.gh.level).join (ecbOf v).level).join (ownLevel wide lp)
+
+theorem softLevel_le (v : GcmImpl) (wide : Bool) (lp : Option Loops) :
+    v.ctr.level.level ≤ (softLevel v wide lp).level ∧ v.key.level.level ≤ (softLevel v wide lp).level ∧
+      v.gh.level.level ≤ (softLevel v wide lp).level ∧ (ecbOf v).level.level ≤ (softLevel v wide lp).level ∧
+      (ownLevel wide lp).level ≤ (softLevel v wide lp).level := by
+  unfold softLevel
+  have e1 := level_join_left (((v.ctr.level.join v.key.level).join v.gh.level).join (ecbOf v).level) (ownLevel wide lp)
+  have e2 := level_join_right (((v.ctr.level.join v.key.level).join v.gh.level).join (ecbOf v).level) (ownLevel wide lp)
+  have e3 := level_join_left ((v.ctr.level.join v.key.level).join v.gh.level) (ecbOf v).level
+  have e4 := level_join_right ((v.ctr.level.join v.key.level).join v.gh.level) (ecbOf v).level
+  have e5 := level_join_left (v.ctr.level.join v.key.level) v.gh.level
+  have e6 := level_join_right (v.ctr.level.join v.key.level) v.gh.level
+  have e7 := level_join_left v.ctr.level v.key.level
+  have e8 := level_join_right v.ctr.level v.key.level
+  omega
+
+theorem join_mono_right (a : VecLevel) {b c : VecLevel} (h : b.level ≤ c.level) :
+    (a.join b).level ≤ (a.join c).level := by
+  revert h; cases a <;> cases b <;> cases c <;> decide
+
+/-- The cleanup with the AVX2 copies is at a level at least that without. -/
+theorem softLevel_wide (v : GcmImpl) (lp : Option Loops) :
+    (softLevel v false lp).level ≤ (softLevel v true lp).level :=
+  join_mono_right _ (by unfold ownLevel; cases lp.isSome <;> decide)
+
+/-- The level of the cleanup of `seal` and `open` in registers. -/
+def regLevel (lp : Option Loops) : VecLevel := if lp.isSome then .avx else .sse
+
+/-! ## In registers -/
+
+/-- `Spec.GcmSiv.sealApi`'s function in registers, as emitted, over `v`'s
+loops (`Impl.AesGcmSiv.X86_64.Fn.sealReg`), meets its contract in constant
+time and returns without secret residue. -/
+theorem sealReg_scrubbed (v : GcmImpl) :
+    VerifiedScrubbed target (Impl.AesGcmSiv.X86_64.Fn.sealReg (regLevel (loopsOf v)) (loopsOf v))
+      (Spec.GcmSiv.sealApi.contract X86_64.abi 784) 0 :=
+  verifiedScrubbedAllFill (api := Spec.GcmSiv.sealApi) (ks := (regLevel (loopsOf v)).level)
+    (k := (regLevel (loopsOf v)).level) (n := fun _ => 0)
+    (a := withStackArgScratch 776 2 (Impl.AesGcmSiv.X86_64.Fn.regSealCode (loopsOf v)))
+    { suffix := v.suffix
+      code := withStackArgScratch 776 2 (regSeal (loopsOf v))
+      stack := 784
+      verified := Proof.AesGcmSiv.seal_keyed (regSeal_framed v)
+      spSafe := regSeal_sp v }
+    _ (sealOut _) (Fill.refl _) (Nat.le_refl _) (Nat.le_refl _)
+    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> lit_decide)
+
+theorem sealReg_spSafeFn (v : GcmImpl) :
+    (Impl.AesGcmSiv.X86_64.Fn.sealReg (regLevel (loopsOf v)) (loopsOf v)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (regSeal_sp v)
+
+/-- `Spec.GcmSiv.openApi`'s function in registers, as `sealReg_scrubbed`. -/
+theorem openReg_scrubbed (v : GcmImpl) :
+    VerifiedScrubbed target (Impl.AesGcmSiv.X86_64.Fn.openReg (regLevel (loopsOf v)) (loopsOf v))
+      (Spec.GcmSiv.openApi.contract X86_64.abi 784) 32 :=
+  verifiedScrubbedAllFill (api := Spec.GcmSiv.openApi) (ks := (regLevel (loopsOf v)).level)
+    (k := (regLevel (loopsOf v)).level) (n := fun _ => 0)
+    (a := withStackArgScratch 776 2 (Impl.AesGcmSiv.X86_64.Fn.regOpenCode (loopsOf v)))
+    { suffix := v.suffix
+      code := withStackArgScratch 776 2 (regOpen (loopsOf v))
+      stack := 784
+      verified := Proof.AesGcmSiv.open_keyed (regOpen_framed v)
+      spSafe := regOpen_sp v }
+    _ (@openOut _) (Fill.refl _) (Nat.le_refl _) (Nat.le_refl _)
+    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> lit_decide)
+
+theorem openReg_spSafeFn (v : GcmImpl) :
+    (Impl.AesGcmSiv.X86_64.Fn.openReg (regLevel (loopsOf v)) (loopsOf v)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (regOpen_sp v)
+
+/-! ## Over the callees -/
+
+/-- `seal`'s code over the callees, in its frame, is its code over a stub of
+each, with the callees' code where it calls them. -/
+theorem seal_fill (v : GcmImpl) (wide : Bool) :
+    Fill (softLevel v wide (loopsOf v)).level (fun _ => 0)
+      (withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.Fn.sealCode stubCallees stubEcb wide (loopsOf v)))
+      (withStackArgScratch 3848 2 (sealWith v wide (loopsOf v))) := by
+  obtain ⟨l1, l2, l3, l4, -⟩ := softLevel_le v wide (loopsOf v)
+  have h1 := calleeSide_mono l1 (Nat.le_refl 0) v.ctr.side
+  have h2 := calleeSide_mono l2 (Nat.le_refl 0) v.key.side
+  have h3 := calleeSide_mono l3 (Nat.le_refl 0) v.gh.side
+  have h4 := calleeSide_mono l4 (Nat.le_refl 0) (ecbOf v).encSide
+  generalize softLevel v wide (loopsOf v) = L at h1 h2 h3 h4 ⊢
+  unfold sealWith
+  cases loopsOf v <;> fill_calls_refl
+
+/-- `open`'s, as `seal_fill`. -/
+theorem open_fill (v : GcmImpl) (wide : Bool) :
+    Fill (softLevel v wide (loopsOf v)).level (fun _ => 0)
+      (withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.Fn.openCode stubCallees stubEcb wide (loopsOf v)))
+      (withStackArgScratch 3848 2 (openWith v wide (loopsOf v))) := by
+  obtain ⟨l1, l2, l3, l4, -⟩ := softLevel_le v wide (loopsOf v)
+  have h1 := calleeSide_mono l1 (Nat.le_refl 0) v.ctr.side
+  have h2 := calleeSide_mono l2 (Nat.le_refl 0) v.key.side
+  have h3 := calleeSide_mono l3 (Nat.le_refl 0) v.gh.side
+  have h4 := calleeSide_mono l4 (Nat.le_refl 0) (ecbOf v).encSide
+  generalize softLevel v wide (loopsOf v) = L at h1 h2 h3 h4 ⊢
+  unfold openWith
+  cases loopsOf v <;> fill_calls_refl
+
+/-- `Spec.GcmSiv.sealApi`'s function over `v`'s callees, as emitted
+(`Impl.AesGcmSiv.X86_64.Fn.sealSoft`), meets its contract in constant time
+and returns without secret residue. -/
+theorem sealSoft_scrubbed (v : GcmImpl) (wide : Bool) :
+    VerifiedScrubbed target
+      (Impl.AesGcmSiv.X86_64.Fn.sealSoft (softLevel v wide (loopsOf v)) v.callees (ecbFn v) wide (loopsOf v))
+      (Spec.GcmSiv.sealApi.contract X86_64.abi 3856) 0 :=
+  verifiedScrubbedAllFill (api := Spec.GcmSiv.sealApi) (ks := (ownLevel wide (loopsOf v)).level)
+    (n := fun _ => 0)
+    (a := withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.Fn.sealCode stubCallees stubEcb wide (loopsOf v)))
+    { suffix := v.suffix
+      code := withStackArgScratch 3848 2 (sealWith v wide (loopsOf v))
+      stack := 3856
+      verified := Proof.AesGcmSiv.seal_keyed (sealWith_framed v wide)
+      spSafe := X86_64.withStackArgScratch_spSafe (sealWith_spSafe v wide) }
+    _ (sealOut _) (seal_fill v wide) (softLevel_le v wide (loopsOf v)).2.2.2.2 (Nat.le_refl _)
+    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> cases wide <;> lit_decide)
+
+theorem sealSoft_spSafeFn (v : GcmImpl) (wide : Bool) :
+    (Impl.AesGcmSiv.X86_64.Fn.sealSoft (softLevel v wide (loopsOf v)) v.callees (ecbFn v) wide (loopsOf v)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (sealWith_spSafe v wide))
+
+/-- `Spec.GcmSiv.openApi`'s function over `v`'s callees, as `sealSoft_scrubbed`. -/
+theorem openSoft_scrubbed (v : GcmImpl) (wide : Bool) :
+    VerifiedScrubbed target
+      (Impl.AesGcmSiv.X86_64.Fn.openSoft (softLevel v wide (loopsOf v)) v.callees (ecbFn v) wide (loopsOf v))
+      (Spec.GcmSiv.openApi.contract X86_64.abi 3856) 32 :=
+  verifiedScrubbedAllFill (api := Spec.GcmSiv.openApi) (ks := (ownLevel wide (loopsOf v)).level)
+    (n := fun _ => 0)
+    (a := withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.Fn.openCode stubCallees stubEcb wide (loopsOf v)))
+    { suffix := v.suffix
+      code := withStackArgScratch 3848 2 (openWith v wide (loopsOf v))
+      stack := 3856
+      verified := Proof.AesGcmSiv.open_keyed (openWith_framed v wide)
+      spSafe := X86_64.withStackArgScratch_spSafe (openWith_spSafe v wide) }
+    _ (@openOut _) (open_fill v wide) (softLevel_le v wide (loopsOf v)).2.2.2.2 (Nat.le_refl _)
+    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> cases wide <;> lit_decide)
+
+theorem openSoft_spSafeFn (v : GcmImpl) (wide : Bool) :
+    (Impl.AesGcmSiv.X86_64.Fn.openSoft (softLevel v wide (loopsOf v)) v.callees (ecbFn v) wide (loopsOf v)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (X86_64.withStackArgScratch_spSafe (openWith_spSafe v wide))
+
+/-! ## With the AVX2 copies -/
+
+/-- `seal`'s code with the AVX2 copies, as `seal_fill`. -/
+theorem sealAvx2_fill (v : GcmImpl) :
+    Fill (softLevel v true (loopsOf v)).level (fun _ => 0)
+      (Impl.AesGcmSiv.X86_64.Fn.sealAvx2Code stubCallees stubEcb (sivWide v) (loopsOf v)) (avx2SealCode v) := by
+  have hw := seal_fill v true
+  have hn := Fill.mono (softLevel_wide v (loopsOf v)) (seal_fill v false)
+  unfold avx2SealCode Impl.AesGcmSiv.X86_64.Fn.sealAvx2Code Impl.AesGcmSiv.X86_64.Fn.bySize Code.iteCold
+  exact Fill.ifp hw (.seq (.block _) (.ite _ (.seq (.seq (.block _) (.block _)) hw) hn))
+
+/-- `open`'s, as `sealAvx2_fill`. -/
+theorem openAvx2_fill (v : GcmImpl) :
+    Fill (softLevel v true (loopsOf v)).level (fun _ => 0)
+      (Impl.AesGcmSiv.X86_64.Fn.openAvx2Code stubCallees stubEcb (sivWide v) (loopsOf v)) (avx2OpenCode v) := by
+  have hw := open_fill v true
+  have hn := Fill.mono (softLevel_wide v (loopsOf v)) (open_fill v false)
+  unfold avx2OpenCode Impl.AesGcmSiv.X86_64.Fn.openAvx2Code Impl.AesGcmSiv.X86_64.Fn.bySize Code.iteCold
+  exact Fill.ifp hw (.seq (.block _) (.ite _ (.seq (.seq (.block _) (.block _)) hw) hn))
+
+/-- `Spec.GcmSiv.sealApi`'s function with the AVX2 copies, as emitted
+(`Impl.AesGcmSiv.X86_64.Fn.sealAvx2`), meets its contract in constant time
+and returns without secret residue. -/
+theorem sealAvx2_scrubbed (v : GcmImpl) :
+    VerifiedScrubbed target
+      (Impl.AesGcmSiv.X86_64.Fn.sealAvx2 (softLevel v true (loopsOf v)) v.callees (ecbFn v) (sivWide v) (loopsOf v))
+      (Spec.GcmSiv.sealApi.contract X86_64.abi 3856) 0 :=
+  verifiedScrubbedAllFill (api := Spec.GcmSiv.sealApi) (ks := (ownLevel true (loopsOf v)).level)
+    (n := fun _ => 0)
+    (a := Impl.AesGcmSiv.X86_64.Fn.sealAvx2Code stubCallees stubEcb (sivWide v) (loopsOf v))
+    { suffix := v.suffix ++ "_avx2"
+      code := avx2SealCode v
+      stack := 3856
+      verified := Proof.AesGcmSiv.seal_keyed (avx2Seal_verified v)
+      spSafe := avx2Seal_spSafe v }
+    _ (sealOut _) (sealAvx2_fill v) (softLevel_le v true (loopsOf v)).2.2.2.2 (Nat.le_refl _)
+    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> cases sivWide v <;> lit_decide)
+
+theorem sealAvx2_spSafeFn (v : GcmImpl) :
+    (Impl.AesGcmSiv.X86_64.Fn.sealAvx2 (softLevel v true (loopsOf v)) v.callees (ecbFn v) (sivWide v) (loopsOf v)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (avx2Seal_spSafe v)
+
+/-- `Spec.GcmSiv.openApi`'s function with the AVX2 copies, as `sealAvx2_scrubbed`. -/
+theorem openAvx2_scrubbed (v : GcmImpl) :
+    VerifiedScrubbed target
+      (Impl.AesGcmSiv.X86_64.Fn.openAvx2 (softLevel v true (loopsOf v)) v.callees (ecbFn v) (sivWide v) (loopsOf v))
+      (Spec.GcmSiv.openApi.contract X86_64.abi 3856) 32 :=
+  verifiedScrubbedAllFill (api := Spec.GcmSiv.openApi) (ks := (ownLevel true (loopsOf v)).level)
+    (n := fun _ => 0)
+    (a := Impl.AesGcmSiv.X86_64.Fn.openAvx2Code stubCallees stubEcb (sivWide v) (loopsOf v))
+    { suffix := v.suffix ++ "_avx2"
+      code := avx2OpenCode v
+      stack := 3856
+      verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
+      spSafe := avx2Open_spSafe v }
+    _ (@openOut _) (openAvx2_fill v) (softLevel_le v true (loopsOf v)).2.2.2.2 (Nat.le_refl _)
+    (ha := by rcases loopsOf_cases v with h | h | h <;> rw [h] <;> cases sivWide v <;> lit_decide)
+
+theorem openAvx2_spSafeFn (v : GcmImpl) :
+    (Impl.AesGcmSiv.X86_64.Fn.openAvx2 (softLevel v true (loopsOf v)) v.callees (ecbFn v) (sivWide v) (loopsOf v)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (avx2Open_spSafe v)
 
 end VG.Proof.AesGcmSiv.X86_64

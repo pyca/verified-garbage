@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86.Init
 public import VerifiedGarbage.Proof.Poly1305.X86.Frame
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Poly1305.X86
 import VerifiedGarbage.Proof.Poly1305.Scratch
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Poly1305.X86.Init
 meta import VerifiedGarbage.Proof.Poly1305.X86.Frame
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Impl.Poly1305.X86
 meta import VerifiedGarbage.Proof.Poly1305.Scratch
@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 (`X86.Scrub.verifiedScrubbed`). `vg_poly1305_update` and
 `vg_poly1305_finalize` keep their working space in a frame of their own: as
 emitted they also zero the stack that frame uses
-(`X86.Scrub.verifiedScrubbedF`), given that their postconditions read the
+(`X86.Scrub.verifiedScrubbedAll`), given that their postconditions read the
 memory on return only within the buffers (`updateOut`, `finalizeOut`).
 -/
 
@@ -55,7 +55,7 @@ theorem init_scrubbed :
 /-- `vg_poly1305_update`, as emitted. -/
 theorem update_scrubbed :
     VerifiedScrubbed target Impl.Poly1305.X86.Fn.update (Spec.Poly1305.updateContract X86.abi 680) 0 :=
-  verifiedScrubbedF (api := Spec.Poly1305.updateApi)
+  verifiedScrubbedAll (api := Spec.Poly1305.updateApi)
     { code := Impl.StackScratch.X86.withStackScratch 156 5 Impl.Poly1305.X86.update
       stack := 680
       verified := Proof.Poly1305.X86.update_framed }
@@ -64,7 +64,7 @@ theorem update_scrubbed :
 /-- `vg_poly1305_finalize`, as emitted. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed target Impl.Poly1305.X86.Fn.finalize (Spec.Poly1305.finalizeContract X86.abi 152) 0 :=
-  verifiedScrubbedF (api := Spec.Poly1305.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Poly1305.finalizeApi)
     { code := Impl.StackScratch.X86.withStackScratch 152 4 Impl.Poly1305.X86.finalize
       stack := 152
       verified := Proof.Poly1305.X86.finalize_framed }

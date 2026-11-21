@@ -65,17 +65,17 @@ structure Backend where
       (Proof.Blake2.finalizeAArch64 Spec.Blake2.b).post s t
   /-- The three functions write, of the registers the calling convention
   does not preserve, only those `hash.clear` states: what the cleanup of a
-  function that calls them needs of them (`ScrubAll.scrubSide_union`). -/
-  initScrub : AArch64.ScrubAll.calleeSide hash.init hash.clear = true
-  updateScrub : AArch64.ScrubAll.calleeSide hash.update hash.clear = true
-  finalizeScrub : AArch64.ScrubAll.calleeSide hash.finalize hash.clear = true
+  function that calls them needs of them (`Scrub.scrubSide_union`). -/
+  initScrub : AArch64.Scrub.calleeSide hash.init hash.clear = true
+  updateScrub : AArch64.Scrub.calleeSide hash.update hash.clear = true
+  finalizeScrub : AArch64.Scrub.calleeSide hash.finalize hash.clear = true
 
 def scalar : Backend where
   suffix := ""
   features := []
   hash := {
     initName := Spec.Blake2.initBApi.name
-    init := Impl.Residue.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init Spec.Blake2.b)
+    init := Impl.Scrub.AArch64.withClears [.x9] [] none (Impl.Blake2.AArch64.Stream.init Spec.Blake2.b)
     updateName := "vg_blake2b_update_scratch"
     update := Impl.Blake2.AArch64.Stream.update Spec.Blake2.b
     finalizeName := "vg_blake2b_finalize_scratch"

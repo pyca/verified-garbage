@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesGcm.X86.Frame
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.AesGcm.X86.Frame
@@ -35,9 +35,9 @@ code in its frame of working space (`withStackScratch`) followed by the
 zeroing of the stack its contract reserves below `esp` (that frame, and the
 frames of its calls of `vg_aes_ctr32_to`, `vg_aes_expand_key_scratch` and
 `vg_ghash`, which use no stack of their own) and by the clearing of the
-registers (`Impl.Scrub.X86.scrubF`). One theorem each states
+registers (`Impl.Scrub.X86.scrubAll`). One theorem each states
 `VerifiedScrubbed` of it, for every implementation `v` it calls
-(`init_scrubbed`, …), from `X86.Scrub.verifiedScrubbedF` with:
+(`init_scrubbed`, …), from `X86.Scrub.verifiedScrubbedAll` with:
 
 * the postcondition reading the memory on return only within the key
   context, the state and the buffers (`initOut`, …, as on ARMv7,
@@ -294,7 +294,7 @@ theorem sealGather_scrub :
 
 theorem init_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.init v.callees) (Spec.Gcm.initContract X86.abi 2612) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.initApi)
+  verifiedScrubbedAll (api := Spec.Gcm.initApi)
     { code := withStackScratch 2580 3 (init v.callees)
       verified := init_framed v
       spSafe := withStackScratch_spSafe (init_spSafe v) }
@@ -303,7 +303,7 @@ theorem init_scrubbed :
 theorem streamInit_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.streamInit v.callees)
       (Spec.Gcm.streamInitContract X86.abi 2608) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamInitApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamInitApi)
     { code := withStackScratch 2584 4 (streamInit v.callees)
       verified := streamInit_framed v
       spSafe := withStackScratch_spSafe (streamInit_spSafe v) }
@@ -312,7 +312,7 @@ theorem streamInit_scrubbed :
 theorem streamAad_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.streamAad v.callees)
       (Spec.Gcm.streamAadContract X86.abi 2616) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamAadApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamAadApi)
     { code := withStackScratch 2592 6 (streamAad v.callees)
       verified := streamAad_framed v
       spSafe := withStackScratch_spSafe (streamAad_spSafe v) }
@@ -321,7 +321,7 @@ theorem streamAad_scrubbed :
 theorem streamEncrypt_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.streamEncrypt v.callees)
       (Spec.Gcm.streamEncryptContract X86.abi 2636) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamEncryptApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamEncryptApi)
     { code := withStackScratch 2604 9 (streamEncrypt v.callees)
       verified := Proof.AesGcm.streamEncrypt_keyed (streamEncrypt_framed v)
       spSafe := withStackScratch_spSafe (streamEncrypt_spSafe v) }
@@ -330,7 +330,7 @@ theorem streamEncrypt_scrubbed :
 theorem streamDecrypt_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.streamDecrypt v.callees)
       (Spec.Gcm.streamDecryptContract X86.abi 2636) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamDecryptApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamDecryptApi)
     { code := withStackScratch 2604 9 (streamDecrypt v.callees)
       verified := Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framed v)
       spSafe := withStackScratch_spSafe (streamDecrypt_spSafe v) }
@@ -339,7 +339,7 @@ theorem streamDecrypt_scrubbed :
 theorem streamFinish_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.streamFinish v.callees)
       (Spec.Gcm.streamFinishContract X86.abi 2632) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamFinishApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamFinishApi)
     { code := withStackScratch 2600 8 (streamFinish v.callees)
       verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed v)
       spSafe := withStackScratch_spSafe (streamFinish_spSafe v) }
@@ -348,7 +348,7 @@ theorem streamFinish_scrubbed :
 theorem streamVerify_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.streamVerify v.callees)
       (Spec.Gcm.streamVerifyContract X86.abi 2636) 32 :=
-  verifiedScrubbedF (api := Spec.Gcm.streamVerifyApi)
+  verifiedScrubbedAll (api := Spec.Gcm.streamVerifyApi)
     { code := withStackScratch 2604 9 (streamVerify v.callees)
       verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed v)
       spSafe := withStackScratch_spSafe (streamVerify_spSafe v) }
@@ -356,7 +356,7 @@ theorem streamVerify_scrubbed :
 
 theorem seal_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.«seal» v.callees) (Spec.Gcm.sealContract X86.abi 2636) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.sealApi)
+  verifiedScrubbedAll (api := Spec.Gcm.sealApi)
     { code := withStackScratch 2604 9 («seal» v.callees)
       verified := Proof.AesGcm.seal_keyed (seal_framed v)
       spSafe := withStackScratch_spSafe (seal_spSafe v) }
@@ -366,7 +366,7 @@ theorem seal_scrubbed :
 reduces its type to see what it is a function of.) -/
 theorem open_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.«open» v.callees) (Spec.Gcm.openContract X86.abi 2640) 32 :=
-  verifiedScrubbedF (api := Spec.Gcm.openApi)
+  verifiedScrubbedAll (api := Spec.Gcm.openApi)
     { code := withStackScratch 2608 10 («open» v.callees)
       verified := Proof.AesGcm.open_keyed (open_framed v)
       spSafe := withStackScratch_spSafe (open_spSafe v) }
@@ -375,7 +375,7 @@ theorem open_scrubbed :
 theorem openTo_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.openTo v.callees (OpenTo.toFn v))
       (Spec.Gcm.openToContract X86.abi 2696) 32 :=
-  verifiedScrubbedF (api := Spec.Gcm.openToApi)
+  verifiedScrubbedAll (api := Spec.Gcm.openToApi)
     { code := withStackScratch 2616 12 (Open.openTo v.callees (OpenTo.toFn v))
       verified := Proof.AesGcm.openTo_keyed (OpenTo.openTo_framed v)
       spSafe := OpenTo.openTo_spSafe v }
@@ -384,7 +384,7 @@ theorem openTo_scrubbed :
 theorem sealGather_scrubbed :
     VerifiedScrubbed target (Impl.AesGcm.X86.Fn.sealGather v.callees v.suffix)
       (Spec.Gcm.sealGatherContract X86.abi 2688) 0 :=
-  verifiedScrubbedF (api := Spec.Gcm.sealGatherApi)
+  verifiedScrubbedAll (api := Spec.Gcm.sealGatherApi)
     { code := SealGather.sealGather (Gather.sealFn v).name (Gather.sealFn v).code
       verified := Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified (Gather.sealFn v))
       spSafe := Gather.sealGather_spSafe v }
@@ -393,33 +393,33 @@ theorem sealGather_scrubbed :
 /-! ## `spSafe` of the functions as emitted, which their registrations state -/
 
 theorem init_spSafeF : (Impl.AesGcm.X86.Fn.init v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (init_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (init_spSafe v))
 theorem streamInit_spSafeF :
     (Impl.AesGcm.X86.Fn.streamInit v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (streamInit_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (streamInit_spSafe v))
 theorem streamAad_spSafeF : (Impl.AesGcm.X86.Fn.streamAad v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (streamAad_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (streamAad_spSafe v))
 theorem streamEncrypt_spSafeF :
     (Impl.AesGcm.X86.Fn.streamEncrypt v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (streamEncrypt_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (streamEncrypt_spSafe v))
 theorem streamDecrypt_spSafeF :
     (Impl.AesGcm.X86.Fn.streamDecrypt v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (streamDecrypt_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (streamDecrypt_spSafe v))
 theorem streamFinish_spSafeF :
     (Impl.AesGcm.X86.Fn.streamFinish v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (streamFinish_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (streamFinish_spSafe v))
 theorem streamVerify_spSafeF :
     (Impl.AesGcm.X86.Fn.streamVerify v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (streamVerify_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (streamVerify_spSafe v))
 theorem seal_spSafeF : (Impl.AesGcm.X86.Fn.«seal» v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (seal_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (seal_spSafe v))
 theorem open_spSafeF : (Impl.AesGcm.X86.Fn.«open» v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (open_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (open_spSafe v))
 theorem openTo_spSafeF :
     (Impl.AesGcm.X86.Fn.openTo v.callees (OpenTo.toFn v)).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (OpenTo.openTo_spSafe v)
+  scrubAll_spSafe (OpenTo.openTo_spSafe v)
 theorem sealGather_spSafeF :
     (Impl.AesGcm.X86.Fn.sealGather v.callees v.suffix).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Gather.sealGather_spSafe v)
+  scrubAll_spSafe (Gather.sealGather_spSafe v)
 
 end VG.Proof.AesGcm.X86.Scrub

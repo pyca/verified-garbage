@@ -203,7 +203,7 @@ theorem pk_scrubbed (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AAr
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.publicKeyP384
       (Spec.EcKey.P384.inst.publicKeyContract (AArch64.abi.withConsts p384.combConsts)) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.EcKey.P384.publicKeyApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P384.publicKeyApi)
     { code := publicKeyP384, verified := pk_verified hL hI hT } _
     (Proof.EcKey.AArch64.Scrub.publicKeyOk_consts _ _ _) (by dsimp only; lit_decide)
 

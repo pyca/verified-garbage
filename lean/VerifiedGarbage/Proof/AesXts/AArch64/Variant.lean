@@ -1613,9 +1613,9 @@ structure XtsImpl where
   /-- `enc.code` and `dec.code` write, of the registers the calling
   convention does not preserve, only those they state (`enc.clear`,
   `dec.clear`): a caller clears them with its own before returning
-  (`ScrubAll.scrubSide_union0`). -/
-  encScrub : AArch64.ScrubAll.calleeSide enc.code enc.clear = true
-  decScrub : AArch64.ScrubAll.calleeSide dec.code dec.clear = true
+  (`Scrub.scrubSide_union0`). -/
+  encScrub : AArch64.Scrub.calleeSide enc.code enc.clear = true
+  decScrub : AArch64.Scrub.calleeSide dec.code dec.clear = true
 
 namespace XtsImpl
 
@@ -1627,18 +1627,18 @@ theorem crypt_noFrames {b : Impl.Aes.AArch64.Blocks} (h : b.code.noFrames = true
 (`Impl.AesXts.AArch64.cryptOwn`): evaluated once, with code that does nothing
 in the place of the block function. -/
 private theorem crypt_own :
-    AArch64.ScrubAll.calleeSide (Impl.AesXts.AArch64.crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesXts.AArch64.cryptOwn = true := by
+    AArch64.Scrub.calleeSide (Impl.AesXts.AArch64.crypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) Impl.AesXts.AArch64.cryptOwn = true := by
   kernel_rfl
 
 /-- `crypt` around a block function that writes the registers `cl` writes its
 own and those. -/
-theorem crypt_scrub {b : Impl.Aes.AArch64.Blocks} {cl : Impl.Residue.AArch64.Clear}
-    (hc : AArch64.ScrubAll.calleeSide b.code cl = true) :
-    AArch64.ScrubAll.calleeSide (Impl.AesXts.AArch64.crypt b) (Impl.AesXts.AArch64.cryptOwn.union cl) = true := by
-  have h0 := AArch64.ScrubAll.sideAll_union_left (b := cl) crypt_own
-  have h1 := AArch64.ScrubAll.sideAll_union_right (a := Impl.AesXts.AArch64.cryptOwn) hc
-  simp only [AArch64.ScrubAll.calleeSide, Impl.AesXts.AArch64.crypt, Impl.AesXts.AArch64.batch,
-    AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 h1 ⊢
+theorem crypt_scrub {b : Impl.Aes.AArch64.Blocks} {cl : Impl.Scrub.AArch64.Clear}
+    (hc : AArch64.Scrub.calleeSide b.code cl = true) :
+    AArch64.Scrub.calleeSide (Impl.AesXts.AArch64.crypt b) (Impl.AesXts.AArch64.cryptOwn.union cl) = true := by
+  have h0 := AArch64.Scrub.sideAll_union_left (b := cl) crypt_own
+  have h1 := AArch64.Scrub.sideAll_union_right (a := Impl.AesXts.AArch64.cryptOwn) hc
+  simp only [AArch64.Scrub.calleeSide, Impl.AesXts.AArch64.crypt, Impl.AesXts.AArch64.batch,
+    AArch64.Scrub.sideAll, Bool.and_eq_true] at h0 h1 ⊢
   simp only [h0, h1, and_self]
 
 /-- The functions calling the block functions of `v`, `vg_aes_xts_encrypt`

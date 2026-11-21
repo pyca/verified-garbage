@@ -14,17 +14,17 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 The postconditions of `vg_cmac_triple_des_stream_init`,
 `vg_cmac_triple_des_absorb` and `vg_cmac_triple_des_finish` read the memory
-on return only within the 416-byte state and `out` (`ScrubAll.ScrubAllOk`,
+on return only within the 416-byte state and `out` (`Scrub.ScrubAllOk`,
 as x86-64's `Proof/CmacTripleDes/X86_64/Scrub.lean` proves them): each
 returns with every register it may leave secret cleared and its whole stack
-zeroed (`ScrubAll.withScrubAll`).
+zeroed (`Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.CmacTripleDes.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on a
 region of at least `n` bytes there. -/
@@ -80,25 +80,25 @@ function's contract in constant time and returns without secret residue. -/
 
 namespace VG.Proof.CmacTripleDes.AArch64.Fn
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 theorem init :
     VerifiedScrubbed target Impl.CmacTripleDes.Stream.AArch64.Fn.init (Spec.Cmac.tdesStreamInitContract abi 640) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.tdesStreamInitApi)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesStreamInitApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 640 .x3 Impl.CmacTripleDes.Stream.AArch64.streamInit,
       verified := Proof.CmacTripleDes.Stream.AArch64.init_framed }
     _ (Scrub.initOk 640) (by dsimp only; lit_decide)
 
 theorem absorb :
     VerifiedScrubbed target Impl.CmacTripleDes.Stream.AArch64.Fn.absorb (Spec.Cmac.tdesAbsorbContract abi 688) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.tdesAbsorbApi)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesAbsorbApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 688 .x4 Impl.CmacTripleDes.Stream.AArch64.absorb,
       verified := Proof.CmacTripleDes.Stream.AArch64.absorb_framed }
     _ (Scrub.absorbOk 688) (by dsimp only; lit_decide)
 
 theorem finish :
     VerifiedScrubbed target Impl.CmacTripleDes.Stream.AArch64.Fn.finish (Spec.Cmac.tdesFinishContract abi 640) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.tdesFinishApi)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesFinishApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 640 .x3 Impl.CmacTripleDes.Stream.AArch64.finish,
       verified := Proof.CmacTripleDes.Stream.AArch64.finish_framed }
     _ (Scrub.finishOk 640) (by dsimp only; lit_decide)

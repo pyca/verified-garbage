@@ -15,7 +15,11 @@ import VerifiedGarbage.Proof.Cast5.PPC64LE.FbFinalLit
 namespace VG.Artifacts.Cast5Ofb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Cast5.ofbApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.ofbReg,
-  Spec.Cast5.ofbFinalApi.artifact PPC64LE.target Proof.Cast5.PPC64LE.Scrub.ofbFinalReg]
+  Spec.Cast5.ofbApi.artifact PPC64LE.target {
+    code := Impl.Cast5.PPC64LE.Fn.ofb
+    verified := .scrubbed Proof.Cast5.PPC64LE.Scrub.ofb_scrubbed },
+  Spec.Cast5.ofbFinalApi.artifact PPC64LE.target {
+    code := Impl.Cast5.PPC64LE.Fn.ofbFinal
+    verified := .scrubbed Proof.Cast5.PPC64LE.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.Cast5Ofb.PPC64LE

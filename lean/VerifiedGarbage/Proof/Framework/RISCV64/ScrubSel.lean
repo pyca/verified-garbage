@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.ResidueTaintSound
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
@@ -10,15 +11,17 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # Clearing only the stack the residue analysis finds secret (64-bit RISC-V)
 
-`Impl.Scrub.RISCV64.scrubSel rb fs c` is `c`, then the clearing of `scrub` with frames that
+`Impl.Scrub.RISCV64.scrubSel rb fs c` is `c`, then the clearing of `scrubAll` with frames that
 zero only the doublewords of their runs (`fs`). Its run after `c` leaves the registers as
-`scrub`'s does and the memory as it was but within the frames (`tailSel_run`), so it is
-verified against `c`'s contract (`Verified.scrubSel`), with `scrub`'s proof. It returns
+`scrubAll`'s does and the memory as it was but within the frames (`tailSel_run`), so it is
+verified against `c`'s contract (`Verified.scrubSel`), with `scrubAll`'s proof. It returns
 without secret residue when the residue analysis (`rtaint`) of the whole of it, from where
 the contract starts it, ends in `RTaint.done` (`RTaint.noResidue_of_verified`): that analysis
 sees the clearing's stores, and that they leave no byte of the window secret.
 
-`withScrubSel` registers it, as `withScrub` does `scrub`.
+`verifiedScrubbedSel` states it of a registration's code, as `verifiedScrubbedAll`
+(`ScrubProved.lean`) does of `scrubAll`, with what the cleanup needs of its frames
+as one Boolean (`selSide`), by default `lit_decide`.
 -/
 
 @[expose] public section
@@ -171,7 +174,7 @@ theorem wipeSel_run : ∀ (fs : List (Nat × List (Nat × Nat))) (u : State), Fr
 /-- The trace of `scrubTailSel rb fs` from `sp = p`: a function of `p`. -/
 def tailSelTr (fs : List (Nat × List (Nat × Nat))) (p : Addr) : List Leak := [] ++ (wipeSelTr fs p ++ [])
 
-/-- The clearing's run: it leaves the registers as `scrub`'s does (`finG`), and the memory
+/-- The clearing's run: it leaves the registers as `scrubAll`'s does (`finG`), and the memory
 as it was outside its frames. -/
 theorem tailSel_run {rb : Nat} (hrb : rb ≤ 64) {fs : List (Nat × List (Nat × Nat))} (hv : FramesOk fs)
     (u : State) (hs : sizeOf fs ≤ u.sp.toNat) (h16 : u.sp.toNat % 16 = 0) :
@@ -286,7 +289,7 @@ theorem Verified.scrubSel {c : Prog isa} {fs : List (Nat × List (Nat × Nat))}
 
 end
 
-/-! ## Registering it -/
+/-! ## A registration's code, scrubbed -/
 
 /-- `FramesOk`, decided. -/
 def framesOkB (fs : List (Nat × List (Nat × Nat))) : Bool :=
@@ -349,43 +352,6 @@ theorem scrubSel_noResidue {api : Api} (r : Unscrubbed api target) (fs : List (N
   RTaint.noResidue_of_verified (scrubSelCode_verified r fs hfs hsz hrb hpost) (scrubSel_pre r bp0 hbp)
     (by subst hc hW hr; exact hres)
 
-/-- `r`, its code followed by the clearing of only the runs of `fs` (`scrubSel`), with
-`hnr` (from `scrubSel_noResidue`). -/
-def scrubSelReg {api : Api} (r : Unscrubbed api target) (fs : List (Nat × List (Nat × Nat)))
-    (hfs : FramesOk fs) (hsz : sizeOf fs ≤ r.stack) (hrb : retBitsOf r ≤ 64)
-    (hpost : PostOut r.contract (retBitsOf r))
-    (hnr : NoResidue (scrubSel (retBitsOf r) fs r.code) r.contract (retBitsOf r))
-    (hw : r.written = []) : Registration api target where
-  suffix := r.suffix
-  tables := r.tables
-  code := scrubSel (retBitsOf r) fs r.code
-  contract := r.contract
-  verified := .scrubbed <| .abi ⟨scrubSelCode_verified r fs hfs hsz hrb hpost, hnr⟩
-  consts := r.consts
-  stack := r.stack
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := spSafe_all _
-  written := r.written
-  writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-
-/-- `scrubSelReg`, if its decidable side conditions hold; otherwise `r` itself, which then
-has no proof (`Verification.unscrubbed`). `hnr` is `scrubSel_noResidue`'s, given them. -/
-def withScrubSel {api : Api} (r : Unscrubbed api target) (fs : List (Nat × List (Nat × Nat)))
-    (hpost : PostOut r.contract (retBitsOf r))
-    (hnr : FramesOk fs → sizeOf fs ≤ r.stack → retBitsOf r ≤ 64 →
-      NoResidue (scrubSel (retBitsOf r) fs r.code) r.contract (retBitsOf r)) :
-    Registration api target :=
-  if hfs : framesOkB fs = true then
-  if hsz : sizeOf fs ≤ r.stack then
-  if hrb : retBitsOf r ≤ 64 then
-  if hw : r.written = [] then
-    scrubSelReg r fs (framesOk_of hfs) hsz hrb hpost (hnr (framesOk_of hfs) hsz hrb) hw
-  else r.registration else r.registration else r.registration else r.registration
-
 /-! ## A buffer the first argument points to -/
 
 theorem args_of (cs : List (String × List (BitVec 64))) (sig : Sig) (ts : List (String × List FnTable))
@@ -436,13 +402,13 @@ theorem firstArray_mem {A : Abi isa} (hA : ScrubAbi A) (hargs : A.args = abi.arg
     exact List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨List.mem_append_left _ (List.mem_append_left _ hb),
       rfl⟩, rfl⟩
 
-/-- `scrubSelReg`'s `hbp` for no buffer (`bp0 = []`). -/
+/-- `scrubSel_noResidue`'s `hbp` for no buffer (`bp0 = []`). -/
 theorem hbp_nil {api : Api} (r : Unscrubbed api target) :
     ∀ s, r.contract.pre s → ∀ q ∈ ([] : List (Reg × Nat)), ∀ i < q.2, ∃ g ∈ s.rd ++ s.wr,
       g.Contains (s.gpr q.1 + BitVec.ofNat 64 i) 1 :=
   fun _ _ _ hq => nomatch hq
 
-/-- `scrubSelReg`'s `hbp` for `bp0 = [(a0, n * e.size)]`, of a function whose first
+/-- `scrubSel_noResidue`'s `hbp` for `bp0 = [(a0, n * e.size)]`, of a function whose first
 parameter is an array of `n` elements of `e`. -/
 theorem hbp_firstArray {api : Api} (r : Unscrubbed api target) {nm : String} {m : Bool} {e : Elem}
     {n : Nat} {rest : List (String × Param)} (hp : api.sig.params = (nm, .array m e n) :: rest) :
@@ -459,5 +425,42 @@ theorem hbp_firstArray {api : Api} (r : Unscrubbed api target) {nm : String} {m 
   simp only [Region.Contains, e', BitVec.toNat_ofNat]
   have := Nat.mod_le i (2 ^ 64)
   omega_using [this, hi]
+
+/-! ## The theorem a registration binds -/
+
+/-- What `verifiedScrubbedSel` needs of the frames `fs` it clears runs of,
+within a stack of `stack` bytes, with a result of `rb` bits: each frame a
+nonzero multiple of 16 bytes, at most 2048, that holds its runs
+(`FramesOk`); all of them within the stack; a result of at most 64 bits. -/
+def selSide (fs : List (Nat × List (Nat × Nat))) (stack rb : Nat) : Bool :=
+  framesOkB fs && decide (sizeOf fs ≤ stack) && decide (rb ≤ 64)
+
+theorem of_selSide {fs : List (Nat × List (Nat × Nat))} {stack rb : Nat} (h : selSide fs stack rb = true) :
+    FramesOk fs ∧ sizeOf fs ≤ stack ∧ rb ≤ 64 := by
+  simp only [selSide, Bool.and_eq_true, decide_eq_true_eq] at h
+  exact ⟨framesOk_of h.1.1, h.1.2, h.2⟩
+
+/-- `r`'s code `code` with its cleanup of only the runs of `fs`
+(`scrubSel`, with a result of `rb` bits) meets `r`'s contract in constant
+time and returns without secret residue: the theorem about the code that a
+registration binds. The residue analysis of the code with its cleanup
+(`RISCV64.rtaint`, from a state where the `e.2` bytes from what each
+register `e.1` of `bp0` holds are buffers of the contract's: `hbp`) ends
+in `done`: `hres`, which the kernel evaluates where the theorem is used
+(`taint_decide_ct`), stated of `code`, `W` and `rb`. -/
+theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target)
+    (fs : List (Nat × List (Nat × Nat))) (bp0 : List (Reg × Nat)) {code : Prog isa} {W rb : Nat}
+    (hpost : PostOut r.contract rb) (hs : selSide fs W rb = true)
+    (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,
+      g.Contains (s.gpr e.1 + BitVec.ofNat 64 i) 1)
+    (hres : ∃ hc, (rtaint.check (RTaint.init W bp0) (scrubSel rb fs code) hc).any
+      (RTaint.done rb) = true)
+    (hc : r.code = code := by rfl) (hW : r.stack = W := by rfl)
+    (hb : retBitsOf r = rb := by rfl) :
+    VerifiedScrubbed target (scrubSel rb fs code) r.contract rb := by
+  subst hc hW hb
+  have h := of_selSide hs
+  exact ⟨scrubSelCode_verified r fs h.1 h.2.1 h.2.2 hpost,
+    scrubSel_noResidue r fs bp0 h.1 h.2.1 h.2.2 hpost hbp _ _ _ rfl rfl rfl hres⟩
 
 end VG.RISCV64.Scrub

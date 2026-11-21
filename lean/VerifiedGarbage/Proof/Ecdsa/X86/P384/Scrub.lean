@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.X86.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P384
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Verified
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ecdsa.P384.X86Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
@@ -31,7 +31,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 implementations of SHA-1's and SHA-256's variants
 (`Proof/Variants/Sha1/X86.lean`, `Proof/Variants/Sha256/X86.lean`) in its
 table, each followed by the zeroing of the stack its frames and calls use
-and `Impl.Scrub.X86.tail`, as emitted (`X86.Scrub.verifiedScrubbedF`), with their postconditions'
+and `Impl.Scrub.X86.tail`, as emitted (`X86.Scrub.verifiedScrubbedAll`), with their postconditions'
 locality from `Proof/Ecdsa/X86/Scrub.lean`. The signing code's side
 condition is evaluated once, of the code without the curve's proofs
 (`Ecdsa.X86.Scrub.cfgOf`), with the HMAC implementations' and the curve's
@@ -55,7 +55,7 @@ theorem verify_scrubbed (hL : Weierstrass.Law Spec.P384.curve) :
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifyP384
       (Spec.Ecdsa.P384.inst.verifyHashContract (X86.abi.withConsts Impl.Ecdsa.X86.p384Comb.combConsts)
         (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.P384.verifyHashApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.P384.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
         Impl.Ecdsa.Verify.X86.verifyP384
       verified := Proof.Ecdsa.Verify.X86.P384.verifyHash_verified hL }
@@ -72,7 +72,7 @@ theorem signSide :
 theorem sign_scrubbed (hL : Weierstrass.Law Spec.P384.curve) (hv : OK vs ∧ "VG_P384_COMB" ∉ names vs) :
     VerifiedScrubbed target (Impl.Ecdsa.X86.Fn.signP384 (HmacTable.X86.fnsOf vs))
       (Rfc6979.X86.specK Spec.Ecdsa.Rfc6979.Curves.p384 Impl.Ecdsa.X86.p384Comb.combConsts vs) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.p384SignApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.p384SignApi)
     { tables := [("hmac", tables vs)]
       code := signCodeT (p384 hL) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs
       verified := p384T_verified hL vs hv

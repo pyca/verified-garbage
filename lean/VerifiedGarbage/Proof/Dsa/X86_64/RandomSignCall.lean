@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningInput
@@ -70,6 +71,15 @@ structure Backend where
   deriveCheckedMx : (Generate.deriveChecked sq mul).allInstrs (fun i => !touchesMxcsr i) = true
   deriveCheckedDepth : (Generate.deriveChecked sq mul).x86_64Depth ≤ stack
   stackBound : stack < 2 ^ 32
+  /-- The level of the vector instructions of its arithmetic. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that runs its squaring needs of it
+  (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  sqSide : X86_64.Scrub.calleeSide sq level.level 8 = true
+  /-- The same of its multiplication, wherever it runs it. -/
+  mulSide : ∀ o a b, X86_64.Scrub.calleeSide (mul o a b) level.level 8 = true
+  /-- Its callers' stack, a literal of their cleanup. -/
+  stack_eq : stack = 8
 
 end VG.Proof.Dsa.X86_64
 

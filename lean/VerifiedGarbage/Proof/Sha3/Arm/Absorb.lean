@@ -45,7 +45,7 @@ make no indirect call (by `lit_decide` on their literals). Their cleanup
 zeroes that stack too, their postconditions reading the memory on return
 only within their buffers (`Proof/Sha3/PostOut.lean`,
 `Proof.Sha3.Instances.xofSqueezePostOut_local`). `Fn` below has the theorem
-of each (`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
+of each (`Arm.Scrub.verifiedScrubbedAll`), which its registration binds.
 -/
 
 @[expose] public section
@@ -242,35 +242,35 @@ open VG VG.Arm VG.Arm.Scrub VG.Proof.Sha3.Arm.Absorb
 /-- `vg_sha3_224_update`. -/
 theorem update_sha3_224 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.Sha3.hashSha3_224.rate)
     (Spec.Sha3.updateContract abi Spec.Sha3.hashSha3_224.rate 664) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.updateSha3_224Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_224Api)
     { code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_224.rate, verified := absorb_sha3_224 }
     (absorbOut _ _) (scrubSideF_of ⟨absorb_sha3_224_armStack, absorb_sha3_224_noIcall⟩ frameOk664 _)
 
 /-- `vg_sha3_256_update`. -/
 theorem update_sha3_256 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.Sha3.hashSha3_256.rate)
     (Spec.Sha3.updateContract abi Spec.Sha3.hashSha3_256.rate 664) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.updateSha3_256Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_256Api)
     { code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_256.rate, verified := absorb_sha3_256 }
     (absorbOut _ _) (scrubSideF_of ⟨absorb_sha3_256_armStack, absorb_sha3_256_noIcall⟩ frameOk664 _)
 
 /-- `vg_sha3_384_update`. -/
 theorem update_sha3_384 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.Sha3.hashSha3_384.rate)
     (Spec.Sha3.updateContract abi Spec.Sha3.hashSha3_384.rate 664) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.updateSha3_384Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_384Api)
     { code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_384.rate, verified := absorb_sha3_384 }
     (absorbOut _ _) (scrubSideF_of ⟨absorb_sha3_384_armStack, absorb_sha3_384_noIcall⟩ frameOk664 _)
 
 /-- `vg_sha3_512_update`. -/
 theorem update_sha3_512 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.Sha3.hashSha3_512.rate)
     (Spec.Sha3.updateContract abi Spec.Sha3.hashSha3_512.rate 664) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.updateSha3_512Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_512Api)
     { code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.hashSha3_512.rate, verified := absorb_sha3_512 }
     (absorbOut _ _) (scrubSideF_of ⟨absorb_sha3_512_armStack, absorb_sha3_512_noIcall⟩ frameOk664 _)
 
 /-- `vg_shake128_update`. -/
 theorem update_shake128 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.Sha3.xofShake128.rate)
     (Spec.Sha3.updateContract abi Spec.Sha3.xofShake128.rate 664) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.updateShake128Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateShake128Api)
     { code := Impl.Sha3.Arm.Instances.absorb Spec.Sha3.xofShake128.rate, verified := absorb_shake128 }
     (absorbOut _ _) (scrubSideF_of ⟨absorb_shake128_armStack, absorb_shake128_noIcall⟩ frameOk664 _)
 
@@ -278,7 +278,7 @@ theorem update_shake128 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.update Spec.
 theorem finalize_sha3_224 : VerifiedScrubbed target
     (Impl.Sha3.Arm.Fn.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len)
     (Spec.Sha3.finalizeContract abi Spec.Sha3.hashSha3_224 664) 0 :=
-  verifiedScrubbedF (api := Spec.Sha3.finalizeSha3_224Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_224Api)
     { code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len
       verified := Proof.Sha3.Arm.Instances.finalize_sha3_224 }
     (finalizeOut _ (by decide)) (scrubSideF_of (finalize_scrubArm _ _) frameOk664 _)
@@ -287,7 +287,7 @@ theorem finalize_sha3_224 : VerifiedScrubbed target
 theorem finalize_sha3_256 : VerifiedScrubbed target
     (Impl.Sha3.Arm.Fn.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len)
     (Spec.Sha3.finalizeContract abi Spec.Sha3.hashSha3_256 664) 0 :=
-  verifiedScrubbedF (api := Spec.Sha3.finalizeSha3_256Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_256Api)
     { code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len
       verified := Proof.Sha3.Arm.Instances.finalize_sha3_256 }
     (finalizeOut _ (by decide)) (scrubSideF_of (finalize_scrubArm _ _) frameOk664 _)
@@ -296,7 +296,7 @@ theorem finalize_sha3_256 : VerifiedScrubbed target
 theorem finalize_sha3_384 : VerifiedScrubbed target
     (Impl.Sha3.Arm.Fn.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len)
     (Spec.Sha3.finalizeContract abi Spec.Sha3.hashSha3_384 664) 0 :=
-  verifiedScrubbedF (api := Spec.Sha3.finalizeSha3_384Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_384Api)
     { code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len
       verified := Proof.Sha3.Arm.Instances.finalize_sha3_384 }
     (finalizeOut _ (by decide)) (scrubSideF_of (finalize_scrubArm _ _) frameOk664 _)
@@ -305,7 +305,7 @@ theorem finalize_sha3_384 : VerifiedScrubbed target
 theorem finalize_sha3_512 : VerifiedScrubbed target
     (Impl.Sha3.Arm.Fn.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len)
     (Spec.Sha3.finalizeContract abi Spec.Sha3.hashSha3_512 664) 0 :=
-  verifiedScrubbedF (api := Spec.Sha3.finalizeSha3_512Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeSha3_512Api)
     { code := Impl.Sha3.Arm.Instances.finalize Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len
       verified := Proof.Sha3.Arm.Instances.finalize_sha3_512 }
     (finalizeOut _ (by decide)) (scrubSideF_of (finalize_scrubArm _ _) frameOk664 _)
@@ -313,7 +313,7 @@ theorem finalize_sha3_512 : VerifiedScrubbed target
 /-- `vg_shake128_finalize`. -/
 theorem finalize_shake128 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofFinalize Spec.Sha3.xofShake128.rate)
     (Spec.Sha3.xofFinalizeContract abi Spec.Sha3.xofShake128 648) 0 :=
-  verifiedScrubbedF (api := Spec.Sha3.finalizeShake128Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeShake128Api)
     { code := Impl.Sha3.Arm.Instances.xofFinalize Spec.Sha3.xofShake128.rate
       verified := Proof.Sha3.Arm.Instances.finalize_shake128 }
     (xofFinalizeOut _) (scrubSideF_of (xofFinalize_scrubArm _) frameOk648 _)
@@ -321,7 +321,7 @@ theorem finalize_shake128 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofFinaliz
 /-- `vg_shake128_squeeze`. -/
 theorem squeeze_shake128 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofSqueeze Spec.Sha3.xofShake128.rate)
     (Spec.Sha3.xofSqueezeContract abi Spec.Sha3.xofShake128 656) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.squeezeShake128Api)
+  verifiedScrubbedAll (api := Spec.Sha3.squeezeShake128Api)
     { code := Impl.Sha3.Arm.Instances.xofSqueeze Spec.Sha3.xofShake128.rate
       verified := Proof.Sha3.Arm.Instances.squeeze_shake128 }
     (xofSqueezeOut _) (scrubSideF_of (xofSqueeze_scrubArm _) frameOk656 _)
@@ -329,7 +329,7 @@ theorem squeeze_shake128 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofSqueeze 
 /-- `vg_shake256_finalize`. -/
 theorem finalize_shake256 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofFinalize Spec.Sha3.xofShake256.rate)
     (Spec.Sha3.xofFinalizeContract abi Spec.Sha3.xofShake256 648) 0 :=
-  verifiedScrubbedF (api := Spec.Sha3.finalizeShake256Api)
+  verifiedScrubbedAll (api := Spec.Sha3.finalizeShake256Api)
     { code := Impl.Sha3.Arm.Instances.xofFinalize Spec.Sha3.xofShake256.rate
       verified := Proof.Sha3.Arm.Instances.finalize_shake256 }
     (xofFinalizeOut _) (scrubSideF_of (xofFinalize_scrubArm _) frameOk648 _)
@@ -337,7 +337,7 @@ theorem finalize_shake256 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofFinaliz
 /-- `vg_shake256_squeeze`. -/
 theorem squeeze_shake256 : VerifiedScrubbed target (Impl.Sha3.Arm.Fn.xofSqueeze Spec.Sha3.xofShake256.rate)
     (Spec.Sha3.xofSqueezeContract abi Spec.Sha3.xofShake256 656) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.squeezeShake256Api)
+  verifiedScrubbedAll (api := Spec.Sha3.squeezeShake256Api)
     { code := Impl.Sha3.Arm.Instances.xofSqueeze Spec.Sha3.xofShake256.rate
       verified := Proof.Sha3.Arm.Instances.squeeze_shake256 }
     (xofSqueezeOut _) (scrubSideF_of (xofSqueeze_scrubArm _) frameOk656 _)

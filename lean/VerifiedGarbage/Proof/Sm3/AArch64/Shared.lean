@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Sm3.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sm3.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Sm3.Scratch
@@ -81,15 +82,15 @@ theorem finalize (v : Compress) : Verified AArch64.target
 
 
 /-- `update`'s postcondition reads the memory on return only within its buffers. -/
-theorem updateOk : AArch64.ScrubAll.ScrubAllOk (Spec.Sm3.updateContract AArch64.abi (16 + 112)) (16 + 112)
+theorem updateOk : AArch64.Scrub.ScrubAllOk (Spec.Sm3.updateContract AArch64.abi (16 + 112)) (16 + 112)
     (Spec.Sm3.updateSig.retBits AArch64.abi.ptrBits) :=
-  AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sm3.updateSig) (by decide) (by decide) (Nat.le_refl _)
+  AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sm3.updateSig) (by decide) (by decide) (Nat.le_refl _)
     (Proof.Sm3.updatePost_out _)
 
 /-- `finalize`'s postcondition reads the memory on return only within its buffers. -/
-theorem finalizeOk : AArch64.ScrubAll.ScrubAllOk (Spec.Sm3.finalizeContract AArch64.abi (16 + 112)) (16 + 112)
+theorem finalizeOk : AArch64.Scrub.ScrubAllOk (Spec.Sm3.finalizeContract AArch64.abi (16 + 112)) (16 + 112)
     (Spec.Sm3.finalizeSig.retBits AArch64.abi.ptrBits) :=
-  AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sm3.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
+  AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sm3.finalizeSig) (by decide) (by decide) (Nat.le_refl _)
     (Proof.Sm3.finalizePost_out _)
 
 /-! ## The functions, as emitted
@@ -98,11 +99,11 @@ theorem finalizeOk : AArch64.ScrubAll.ScrubAllOk (Spec.Sm3.finalizeContract AArc
 (`Impl.Sm3.AArch64.Stream.Fn`): each meets its contract in constant time and
 returns without secret residue (`VerifiedScrubbed`), which is what its
 registration binds. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+(`Scrub.scrubSide`) is proved of each function's own instructions here,
 once, with code that does nothing in the place of the compression function,
 and of each compression function where it is defined (`Compress.scrub`). -/
 
-open VG.AArch64.ScrubAll
+open VG.AArch64.Scrub
 
 private theorem update_all {p : Instr → Bool} (name : String) (code : Prog isa)
     (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch 112 .x4
@@ -160,7 +161,7 @@ theorem finalize_side (v : Compress) :
 theorem update_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sm3.AArch64.Stream.Fn.update v.impl)
       (Spec.Sm3.updateContract AArch64.abi (16 + 112)) 0 :=
-  verifiedScrubbed (api := Spec.Sm3.updateApi)
+  verifiedScrubbedAll (api := Spec.Sm3.updateApi)
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 v.update
       verified := update v } _ updateOk (update_side v)
@@ -169,9 +170,17 @@ theorem update_scrubbed (v : Compress) :
 theorem finalize_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sm3.AArch64.Stream.Fn.finalize v.impl)
       (Spec.Sm3.finalizeContract AArch64.abi (16 + 112)) 0 :=
-  verifiedScrubbed (api := Spec.Sm3.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Sm3.finalizeApi)
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 v.finalize
       verified := finalize v } _ finalizeOk (finalize_side v)
+
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sm3.AArch64.Stream.init_scrubbed :
+    VerifiedScrubbed _root_.VG.AArch64.target Impl.Sm3.AArch64.Stream.init
+      (Spec.Sm3.initContract AArch64.abi) 0 :=
+  ⟨Proof.Sm3.AArch64.Shared.init,
+    Proof.Sm3.AArch64.Stream.init_noResidue _ _⟩
 
 end VG.Proof.Sm3.AArch64.Shared

@@ -505,7 +505,7 @@ theorem parameterInit :
 theorem checkDomain (v : Backend) :
     VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.checkDomain v.checkDomain)
       (Spec.Ffdh.checkDomainContract (abi.withConsts Impl.Ffdh.Arm.VettedGroups.tableConsts) 128) 32 :=
-  verifiedScrubbedF (api := Spec.Ffdh.checkDomainApi)
+  verifiedScrubbedAll (api := Spec.Ffdh.checkDomainApi)
     { code := v.checkDomain, verified := v.checkDomain_verified }
     Scrub.checkDomainOut (scrubSideF_of v.checkDomain_ok Scrub.frameOk_128 _)
 
@@ -513,7 +513,7 @@ theorem checkDomain (v : Backend) :
 theorem checkPrivate (v : Backend) :
     VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.checkPrivate v.checkPrivate)
       (Spec.Ffdh.checkPrivateContract abi 128) 32 :=
-  verifiedScrubbedF (api := Spec.Ffdh.checkPrivateApi)
+  verifiedScrubbedAll (api := Spec.Ffdh.checkPrivateApi)
     { code := v.checkPrivate, verified := v.checkPrivate_verified }
     Scrub.checkPrivateOut (scrubSideF_of v.checkPrivate_ok Scrub.frameOk_128 _)
 
@@ -522,7 +522,7 @@ open VG.Proof.Bignum.Arm in
 theorem checkPublic (b : MontBackend) :
     VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.checkPublic (SharedCheckPublic.calledCode b))
       (Spec.Ffdh.checkPublicContract abi 176) 32 :=
-  verifiedScrubbedF (api := Spec.Ffdh.checkPublicApi)
+  verifiedScrubbedAll (api := Spec.Ffdh.checkPublicApi)
     { code := SharedCheckPublic.calledCode b, verified := SharedCheckPublic.called_verified b }
     Scrub.checkPublicOut (scrubSideF_of (Scrub.checkPublicOk b) Scrub.frameOk_176 _)
 
@@ -531,7 +531,7 @@ open VG.Proof.Bignum.Arm in
 theorem derivePublic (b : MontBackend) :
     VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.derivePublic (SharedDerive.calledCode b))
       (Spec.Ffdh.derivePublicContract abi 176) 32 :=
-  verifiedScrubbedF (api := Spec.Ffdh.derivePublicApi)
+  verifiedScrubbedAll (api := Spec.Ffdh.derivePublicApi)
     { code := SharedDerive.calledCode b, verified := SharedDerive.called_verified b }
     Scrub.derivePublicOut (scrubSideF_of (Scrub.deriveOk b) Scrub.frameOk_176 _)
 
@@ -540,7 +540,7 @@ open VG.Proof.Bignum.Arm in
 theorem exchange (b : MontBackend) :
     VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.exchange (SharedExchange.calledCode b))
       (Spec.Ffdh.exchangeContract abi 176) 32 :=
-  verifiedScrubbedF (api := Spec.Ffdh.exchangeApi)
+  verifiedScrubbedAll (api := Spec.Ffdh.exchangeApi)
     { code := SharedExchange.calledCode b, verified := SharedExchange.called_verified b }
     Scrub.exchangeOut (scrubSideF_of (Scrub.exchangeOk b) Scrub.frameOk_176 _)
 
@@ -549,7 +549,7 @@ open VG.Proof.Bignum.Arm in
 theorem generationPrecompute (b : MontBackend) :
     VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.generationPrecompute (combPrecomputeCalledCode b))
       (Spec.Ffdh.generationPrecomputeContract (abi.withConsts Impl.Ffdh.Arm.VettedGroups.tableConsts) 176) 32 :=
-  verifiedScrubbedF (api := Spec.Ffdh.generationPrecomputeApi)
+  verifiedScrubbedAll (api := Spec.Ffdh.generationPrecomputeApi)
     { code := combPrecomputeCalledCode b, verified := combPrecomputeCalled_verified b }
     Scrub.generationPrecomputeOut (scrubSideF_of (Scrub.precomputeOk b) Scrub.frameOk_176 _)
 
@@ -558,7 +558,7 @@ open VG.Proof.Bignum.Arm in
 theorem cachedKeySearch (b : MontBackend) :
     VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.cachedKeySearch (KeySearch.calledCode (CachedKeyGenerate.backend b)))
       (Spec.Ffdh.cachedKeySearchContract abi 240) 32 :=
-  verifiedScrubbedF (api := Spec.Ffdh.cachedKeySearchApi)
+  verifiedScrubbedAll (api := Spec.Ffdh.cachedKeySearchApi)
     { code := KeySearch.calledCode (CachedKeyGenerate.backend b)
       verified := KeySearch.verified (CachedKeyGenerate.backend b) }
     Scrub.cachedKeySearchOut (scrubSideF_of (Scrub.cachedSearchOk b) Scrub.frameOk_240 _)
@@ -570,7 +570,7 @@ theorem sievedParameterSearch (v : RoundImpl) :
       (Impl.Ffdh.Arm.Fn.sievedParameterSearch (Impl.Ffdh.Arm.ParameterSearch.code
         (.call (parameterBackend v).candidateName (parameterBackend v).candidate)))
       (Spec.Ffdh.sievedParameterSearchContract abi 232) 32 :=
-  verifiedScrubbedF (api := Spec.Ffdh.sievedParameterSearchApi)
+  verifiedScrubbedAll (api := Spec.Ffdh.sievedParameterSearchApi)
     { code := Impl.Ffdh.Arm.ParameterSearch.code
         (.call (parameterBackend v).candidateName (parameterBackend v).candidate)
       verified := ParameterSearch.verified (parameterBackend v) }

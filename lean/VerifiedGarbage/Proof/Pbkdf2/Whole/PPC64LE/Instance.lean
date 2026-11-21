@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
 import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Correct
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.InitLong
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
 
@@ -23,7 +24,7 @@ the `F.bytes` bytes of scratch space the code uses. It is widened to the
 working space of the shared contract (`Verified.widen`) and moved to it
 (`generic_implies`), for any instance `I` of the hash function whose
 `pbkdf2Scratch` holds `F.bytes` (`scratch`). The function without the
-working space as an argument runs it in a frame of `pbkFrame I` bytes
+working space as an argument runs it in a frame of `bytes` bytes
 (`Verified.stackScratch`, `framed`).
 -/
 
@@ -66,10 +67,6 @@ theorem scratch (hF : FnsOK F) (hc : Checks F) {I : Spec.Hmac.Instance} (hSH : h
   rw [h2]
   exact .cons ⟨rfl, Nat.le_refl _⟩ (.cons ⟨rfl, hfit⟩ .nil)
 
-/-- The bytes of `pbkdf2`'s frame: the working space, above the frame's
-32-byte header, rounded up to a multiple of 16. -/
-def pbkFrame (I : Spec.Hmac.Instance) : Nat := (8 * I.pbkdf2Scratch + 32 + 15) / 16 * 16
-
 /-- `pbkdf2` with its working space in a frame of `bytes` bytes. -/
 theorem framed {I : Spec.Hmac.Instance} {c : Prog isa} {stack bytes : Nat}
     (h : Verified PPC64LE.target c (Proof.Pbkdf2.Instance.pbkdf2ScratchContract I PPC64LE.abi stack))
@@ -94,11 +91,12 @@ end
 # PBKDF2 over any streaming hash function on PPC64LE, the whole derivation: an instance
 
 The functions `pbkdf2` calls for each hash function `H` of instance `I`
-(`fnsOf`): HMAC's `init` for a key of any length (`initCode`, its working
-space in a frame of `hmacFrame I` bytes, which uses `hmacFrame I + 96` bytes
-of stack, `sdepth_initCode`) and `finalize`, and `iterate`; the facts the
-proofs need of them (`okOf`); and a state satisfying `pbkdf2`'s shared
-precondition, at each instance's sizes (`pbkSat`).
+(`fnsOf`, in `Impl/Hmac/Stream/PPC64LE/Fn.lean`): HMAC's `init` for a key
+of any length (`initCode`, its working space in a frame of `hmacFrame I`
+bytes, which uses `hmacFrame I + 96` bytes of stack, `sdepth_initCode`) and
+`finalize`, and `iterate`; the facts the proofs need of them (`okOf`); and a
+state satisfying `pbkdf2`'s shared precondition, at each instance's sizes
+(`pbkSat`).
 -/
 
 @[expose] public section
@@ -106,23 +104,10 @@ precondition, at each instance's sizes (`pbkSat`).
 namespace VG.Proof.Pbkdf2.Whole.PPC64LE
 
 open VG.PPC64LE
-open VG.Impl.Pbkdf2.Whole.PPC64LE (Fns)
-open VG.Impl.Hmac.Stream.PPC64LE (Hash)
-open VG.Proof.Hmac.Stream.PPC64LE (HashOK finG hmacFrame longFrame initCode)
+open VG.Impl.Pbkdf2.Whole.PPC64LE (Fns fnsOf)
+open VG.Impl.Hmac.Stream.PPC64LE (Hash hmacFrame longFrame initCode)
+open VG.Proof.Hmac.Stream.PPC64LE (HashOK finG)
 open VG.Proof.Pbkdf2.Stream.PPC64LE (iterG)
-
-/-- The functions `pbkdf2` calls, for hash function `H` of instance `I`, with
-blocks of `2 ^ b` bytes, and `iterate`'s code `itC`, with `itW` bytes of
-working space. -/
-def fnsOf (H : Hash) (I : Spec.Hmac.Instance) (b : Nat) (itC : Prog isa) (itW : Nat) : Fns where
-  H := H
-  Wc := 8 * I.scratch
-  hiN := I.initAnyKeyApi.name ++ "_core"
-  hiC := initCode H I b
-  hfN := s!"vg_hmac_{I.rust}_finalize_scratch"
-  itN := s!"vg_pbkdf2_hmac_{I.rust}_iterate"
-  itC := itC
-  itW := itW
 
 /-- HMAC's `init` uses its frame and the 96 bytes its callees use below it. -/
 theorem sdepth_initCode {H : Hash} (hH : HashOK H) (I : Spec.Hmac.Instance) (b : Nat) (h48 : 48 ≤ hmacFrame I) :

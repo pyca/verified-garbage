@@ -68,7 +68,7 @@ variable {C}
 
 /-- The inverse `x⁻¹ = x^(p-2)` of a nonzero field element (Fermat's little
 theorem). -/
-def inv (x : Fe C) : Fe C := pow x (C.p - 2)
+def inv (x : Fe C) : Fe C := x ^ (C.p - 2)
 
 variable (C)
 

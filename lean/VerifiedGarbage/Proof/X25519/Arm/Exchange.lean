@@ -849,7 +849,7 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_x25519_exchange`. -/
 theorem exchange :
     VerifiedScrubbed target Impl.X25519.Arm.Fn.exchange (Spec.X25519.exchangeContract abi 8) 32 :=
-  verifiedScrubbedF (api := Spec.X25519.exchangeApi)
+  verifiedScrubbedAll (api := Spec.X25519.exchangeApi)
     { code := Impl.Xdh.Arm.exchange "vg_x25519" Impl.X25519.Arm.x25519 32
       verified := Exchange.exchange_baseline }
     (Exchange.exchangeOut _)
@@ -858,7 +858,7 @@ theorem exchange :
 /-- `vg_x25519_exchange_umaal`. -/
 theorem exchangeUmaal :
     VerifiedScrubbed target Impl.X25519.Arm.Fn.exchangeUmaal (Spec.X25519.exchangeContract abi 8) 32 :=
-  verifiedScrubbedF (api := Spec.X25519.exchangeApi)
+  verifiedScrubbedAll (api := Spec.X25519.exchangeApi)
     { code := Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.Words.x25519Umaal 32
       verified := Exchange.exchange_umaal }
     (Exchange.exchangeOut _)

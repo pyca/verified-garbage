@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ct.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Ct.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -9,11 +10,11 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Constant-time comparison on PPC64LE, without secret residue
 
 `vg_ct_eq`, followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`PPC64LE.Scrub.scrubOf`), which clears the volatile registers it writes.
+(`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers it writes.
 It has no frames, so there is no stack to wipe. Its postcondition reads no
 memory on return: it writes none (`PPC64LE.Scrub.PostOut`), as RISC-V's
-(`Proof/Ct/RISCV64Scrub.lean`). `scrubOf`'s side condition (`scrubSide`) is
-proved at the registration, by the kernel's evaluation of it when this
+(`Proof/Ct/RISCV64Scrub.lean`). `verifiedScrubbedAll`'s side condition (`scrubSide`) is
+proved at the theorem, by the kernel's evaluation of it when this
 module is built.
 -/
 
@@ -39,9 +40,12 @@ theorem eqOut : PostOut (Spec.Ct.eqContract abi) (Spec.Ct.eqSig.retBits 64) :=
 
 /-! ## The registration -/
 
-/-- `Spec.Ct.eqApi`. -/
-def eqReg : Registration Spec.Ct.eqApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_ct_eq` as emitted (`Impl.Ct.PPC64LE.Fn.eq`) meets its contract in constant
+time and returns without secret residue. -/
+theorem eq_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ct.PPC64LE.Fn.eq
+      (Spec.Ct.eqContract PPC64LE.abi) 32 :=
+  verifiedScrubbedAll (api := Spec.Ct.eqApi) {
       code := Impl.Ct.PPC64LE.eq
       verified := Proof.Ct.PPC64LE.verified }
     0 ⟨false, true, [.r7, .r8, .r9, .r10, .r11, .r12], false, []⟩

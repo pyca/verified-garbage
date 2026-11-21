@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 /-!
 # ML-KEM-768 and ML-KEM-1024 on RISC-V, as emitted
 
-Each function is its code, then its cleanup (`Impl.Scrub.RISCV64.scrub`):
+Each function is its code, then its cleanup (`Impl.Scrub.RISCV64.scrubAll`):
 the caller-saved registers cleared but the 32 bits of its result, and the
 stack its frames use (1200 bytes; none for the encapsulation key check), so
 that it returns without secret residue.
@@ -19,36 +19,36 @@ that it returns without secret residue.
 namespace VG.Impl.MlKem.RISCV64.Fn
 
 open VG.RISCV64
-open VG.Impl.Scrub.RISCV64 (scrub)
+open VG.Impl.Scrub.RISCV64 (scrubAll)
 
 /-- `vg_mlkem768_keygen`. -/
-def keyGen : Prog isa := scrub 32 1200 Wipe.keyGen
+def keyGen : Prog isa := scrubAll 32 1200 Wipe.keyGen
 
 /-- `vg_mlkem768_encaps`. -/
-def encaps : Prog isa := scrub 32 1200 Wipe.encaps
+def encaps : Prog isa := scrubAll 32 1200 Wipe.encaps
 
 /-- `vg_mlkem768_encaps_h`. -/
-def encapsH : Prog isa := scrub 32 1200 Wipe.encapsH
+def encapsH : Prog isa := scrubAll 32 1200 Wipe.encapsH
 
 /-- `vg_mlkem768_decaps`. -/
-def decaps : Prog isa := scrub 32 1200 Wipe.decaps
+def decaps : Prog isa := scrubAll 32 1200 Wipe.decaps
 
 /-- `vg_mlkem768_check_ek`. -/
-def checkEk : Prog isa := scrub 32 0 VG.Impl.MlKem.RISCV64.checkEk
+def checkEk : Prog isa := scrubAll 32 0 VG.Impl.MlKem.RISCV64.checkEk
 
 /-- `vg_mlkem1024_check_ek`. -/
-def checkEk1024 : Prog isa := scrub 32 0 Impl.MlKem1024.RISCV64.checkEk1024
+def checkEk1024 : Prog isa := scrubAll 32 0 Impl.MlKem1024.RISCV64.checkEk1024
 
 /-- `vg_mlkem1024_keygen`. -/
-def keyGen1024 : Prog isa := scrub 32 1200 Wipe.keyGen1024
+def keyGen1024 : Prog isa := scrubAll 32 1200 Wipe.keyGen1024
 
 /-- `vg_mlkem1024_encaps`. -/
-def encaps1024 : Prog isa := scrub 32 1200 Wipe.encaps1024
+def encaps1024 : Prog isa := scrubAll 32 1200 Wipe.encaps1024
 
 /-- `vg_mlkem1024_encaps_h`. -/
-def encapsH1024 : Prog isa := scrub 32 1200 Wipe.encapsH1024
+def encapsH1024 : Prog isa := scrubAll 32 1200 Wipe.encapsH1024
 
 /-- `vg_mlkem1024_decaps`. -/
-def decaps1024 : Prog isa := scrub 32 1200 Wipe.decaps1024
+def decaps1024 : Prog isa := scrubAll 32 1200 Wipe.decaps1024
 
 end VG.Impl.MlKem.RISCV64.Fn

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.CmacAes.Stream.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -1999,10 +2000,13 @@ end
 /-!
 # Streaming AES-CMAC on RISC-V, without secret residue
 
-`vg_cmac_aes_init`, `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, each
-followed by `Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.scrubOf`), which
-clears the caller-saved registers and the stack its frames used, their
-2304 bytes of working space with it. Their postconditions read the memory
+`vg_cmac_aes_init`, `vg_cmac_aes_absorb` and `vg_cmac_aes_finish` as emitted
+(`Impl.CmacAes.Stream.RISCV64.Fn`), each followed by
+`Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers and
+the stack its frames used, their 2304 bytes of working space with it. Each
+theorem below states that one meets its contract in constant time and
+returns without secret residue (`VerifiedScrubbed`, by
+`RISCV64.Scrub.verifiedScrubbedAll`), which is what its registration binds. Their postconditions read the memory
 on return only within the state or the MAC (`RISCV64.Scrub.PostOut`), as on
 x86-64 (`Proof/CmacAes/Stream/X86_64/Scrub.lean`).
 -/
@@ -2046,27 +2050,33 @@ theorem absorbOut (stack : Nat) :
       intro key msg hr hro hc hlt
       exact Proof.CmacAes.Stream.repr_congr_304 (agree_le hb.1 (by decide)) (h key msg hr hro hc hlt)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `vg_cmac_aes_init`. -/
-def initReg : Registration Spec.Cmac.aesInitApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2304 .a3 Impl.CmacAes.Stream.RISCV64.init
-      verified := Proof.CmacAes.Stream.RISCV64.init_framed }
-    (initOut _)
+/-- `vg_cmac_aes_init` as emitted (`Impl.CmacAes.Stream.RISCV64.Fn.init`) meets its
+contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.CmacAes.Stream.RISCV64.Fn.init
+      (Spec.Cmac.aesInitContract RISCV64.abi 2304) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.aesInitApi) (W := 2304)
+    { code := _, verified := Proof.CmacAes.Stream.RISCV64.init_framed } (initOut _)
+    (by dsimp only; lit_decide)
 
-/-- `vg_cmac_aes_absorb`. -/
-def absorbReg : Registration Spec.Cmac.aesAbsorbApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2304 .a5 Impl.CmacAes.Stream.RISCV64.absorb
-      verified := Proof.CmacAes.Stream.RISCV64.absorb_framed }
-    (absorbOut _)
+/-- `vg_cmac_aes_absorb` as emitted (`Impl.CmacAes.Stream.RISCV64.Fn.absorb`) meets its
+contract in constant time and returns without secret residue. -/
+theorem absorb_scrubbed :
+    VerifiedScrubbed target Impl.CmacAes.Stream.RISCV64.Fn.absorb
+      (Spec.Cmac.aesAbsorbContract RISCV64.abi 2304) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.aesAbsorbApi) (W := 2304)
+    { code := _, verified := Proof.CmacAes.Stream.RISCV64.absorb_framed } (absorbOut _)
+    (by dsimp only; lit_decide)
 
-/-- `vg_cmac_aes_finish`. -/
-def finishReg : Registration Spec.Cmac.aesFinishApi RISCV64.target :=
-  scrubOf {
-      code := Impl.StackScratch.RISCV64.withStackScratch 2304 .a4 Impl.CmacAes.Stream.RISCV64.finish
-      verified := Proof.CmacAes.Stream.RISCV64.finish_framed }
-    (finishOut _)
+/-- `vg_cmac_aes_finish` as emitted (`Impl.CmacAes.Stream.RISCV64.Fn.finish`) meets its
+contract in constant time and returns without secret residue. -/
+theorem finish_scrubbed :
+    VerifiedScrubbed target Impl.CmacAes.Stream.RISCV64.Fn.finish
+      (Spec.Cmac.aesFinishContract RISCV64.abi 2304) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.aesFinishApi) (W := 2304)
+    { code := _, verified := Proof.CmacAes.Stream.RISCV64.finish_framed } (finishOut _)
+    (by dsimp only; lit_decide)
 
 end VG.Proof.CmacAes.Stream.RISCV64.Scrub

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 /-!
 # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 on x86-64, without secret residue
 
-What `StreamFn.scrub` needs of their streaming and one-shot functions
+What the cleanup (`StreamFnS`) needs of their streaming and one-shot functions
 beyond their code: their postconditions read the memory on return only
 within the buffers (`X86_64.Scrub.PostOut`). Each variant scrubs them with
 the granules the residue analysis of its own code selects

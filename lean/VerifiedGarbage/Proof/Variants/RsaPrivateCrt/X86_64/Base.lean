@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64.Base
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
@@ -131,6 +132,9 @@ def variant : CrtImpl where
     (crtCodeP_constantTime Mont.fnBase (CrtExpL.w4S Mont.fnBase MontS.fnLazy) (CrtExpL.w4S_ct Mont.fnBase MontS.fnLazy))
   nospP := noSp_of (by decide +kernel)
   spSafeP := Code.all_of_spTest (by decide +kernel)
+  level := .sse
+  sideP := by lit_decide
+  upP := fun _ => by rw [X86_64.Scrub.upCallee, ← X86_64.Scrub.upF_eq]; lit_decide
   suffix := ""
   features := []
 

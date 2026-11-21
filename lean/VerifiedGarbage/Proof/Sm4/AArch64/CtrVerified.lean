@@ -199,8 +199,8 @@ def ctrFrameSat : State where
 theorem ctrFrameSat_pre : ∃ s, (Spec.Sm4.ctrContract AArch64.abi 3264).pre s := by
   implies_sat [Spec.Sm4.ctrContract, Spec.Sm4.ctrSig, AArch64.abi, AArch64.argRegs] [ctrFrameSat] using ctrFrameSat
 
-/-- CTR with its working space on the stack, which its registration zeroes
-(`ScrubAll.withScrubAll`). -/
+/-- CTR with its working space on the stack, which the function as emitted
+zeroes (`Impl.Scrub.AArch64.scrubAll`). -/
 theorem ctr_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 3264 .x4 ctr)
       (Spec.Sm4.ctrContract AArch64.abi 3264) :=

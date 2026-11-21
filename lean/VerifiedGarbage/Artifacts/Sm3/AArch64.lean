@@ -15,7 +15,7 @@ namespace VG.Artifacts.Sm3.AArch64
 def artifacts : List Artifact := [
   Spec.Sm3.initApi.artifact AArch64.target {
     code := Impl.Sm3.AArch64.Stream.init
-    verified := .scrubbed ⟨Proof.Sm3.AArch64.Shared.init, Proof.Sm3.AArch64.Stream.init_noResidue _ _⟩ }] ++
+    verified := .scrubbed Proof.Sm3.AArch64.Stream.init_scrubbed }] ++
   (Proof.Variants.Sm3Compress.AArch64.variants.flatMap fun (v : Proof.Sm3.AArch64.Compress) => [
     Spec.Sm3.updateApi.artifact AArch64.target {
       suffix := v.suffix

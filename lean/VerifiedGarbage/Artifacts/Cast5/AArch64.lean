@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Cast5.AArch64.Fn
 public import VerifiedGarbage.Proof.Cast5.AArch64.Scrub
 public import VerifiedGarbage.Proof.Cast5.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -17,12 +18,10 @@ def artifacts : List Artifact := [
     code := Impl.Cast5.AArch64.Tbl.Fn.expandKey
     verified := .scrubbed Proof.Cast5.AArch64.Scrub.expandKey },
   Spec.Cast5.ecbEncryptApi.artifact AArch64.target {
-    code := Proof.Cast5.AArch64.Tbl.ecbEncryptCleared
-    verified := .scrubbed ⟨Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_verified,
-      Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_noResidue⟩ },
+    code := Impl.Cast5.AArch64.Fn.ecbEncrypt
+    verified := .scrubbed Proof.Cast5.AArch64.Tbl.ecbEncryptCleared_scrubbed },
   Spec.Cast5.ecbDecryptApi.artifact AArch64.target {
-    code := Proof.Cast5.AArch64.Tbl.ecbDecryptCleared
-    verified := .scrubbed ⟨Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_verified,
-      Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_noResidue⟩ }]
+    code := Impl.Cast5.AArch64.Fn.ecbDecrypt
+    verified := .scrubbed Proof.Cast5.AArch64.Tbl.ecbDecryptCleared_scrubbed }]
 
 end VG.Artifacts.Cast5.AArch64

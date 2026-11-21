@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
+public import VerifiedGarbage.Impl.RsaOaep.PPC64LE.Fn
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Scrub
 public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Inst
@@ -12,9 +14,9 @@ import VerifiedGarbage.Proof.Framework.Lit
 # RSAES-OAEP on PPC64LE, without secret residue
 
 `vg_rsa_oaep_encrypt_precomputed` and `vg_rsa_oaep_decrypt_precomputed`,
-each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`),
-which clears the volatile registers each may write and zeroes the stack
-their frames used. Each is generic over the hash functions its tables hold,
+each as emitted (`Impl/RsaOaep/PPC64LE/Fn.lean`), followed by its cleanup
+(`Impl.Scrub.PPC64LE.scrubAll`, `PPC64LE.Scrub.verifiedScrubbedAll`), which clears
+the volatile registers each may write and zeroes the stack their frames used. Each is generic over the hash functions its tables hold,
 which it calls indirectly: those are the tables' functions, whose addresses
 two runs agree on (`PPC64LE.Scrub.tablesCall`). Their postconditions read
 the memory on return only within `out` (and decryption's `msg_len`), given
@@ -87,27 +89,40 @@ theorem decryptOut (ts : List FnTable) (stack : Nat) :
         exact this.symm
       exact fun H G h1 h2 => writtenDecrypt_of e' el (h H G h1 h2)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.RsaOaep.decryptPrecomputedMdTablesApi`, with the tables of every
-hash function. -/
-def decryptReg (h : OK mvars) :
-    Registration Spec.RsaOaep.decryptPrecomputedMdTablesApi PPC64LE.target :=
-  scrubOf {
+/-- The hash functions whose tables the functions take are coherent: their
+functions of the same name have the same code, there is one, and not too many
+names. -/
+theorem mvars_ok : OK mvars := of_decide_eq_true (by kernel_rfl)
+
+/-- `vg_rsa_oaep_decrypt_precomputed` as emitted (`Impl.RsaOaep.PPC64LE.Fn.decryptP`),
+with the tables of every hash function, meets its contract in constant time
+and returns without secret residue. -/
+theorem decryptP_scrubbed :
+    VerifiedScrubbed PPC64LE.target (Impl.RsaOaep.PPC64LE.Fn.decryptP (fns3 mvars))
+      (Spec.RsaOaep.decryptPrecomputedMdTablesContract
+        (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", tables mvars), ("mgf1", tables mvars)])
+        Proof.RsaOaep.PPC64LE.Dec.stackBytes) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaOaep.decryptPrecomputedMdTablesApi) {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaOaep.PPC64LE.Dec.decryptP (fns3 mvars)
-      verified := decP_ok mvars h }
+      verified := decP_ok mvars mvars_ok }
     3792 .all
     (decryptOut _ _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.RsaOaep.encryptMdTablesApi`, with the tables of every hash
-function. -/
-def encryptReg (h : OK mvars) : Registration Spec.RsaOaep.encryptMdTablesApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_rsa_oaep_encrypt_precomputed` as emitted (`Impl.RsaOaep.PPC64LE.Fn.encrypt`),
+with the tables of every hash function, meets its contract in constant time
+and returns without secret residue. -/
+theorem encrypt_scrubbed :
+    VerifiedScrubbed PPC64LE.target (Impl.RsaOaep.PPC64LE.Fn.encrypt (fns3 mvars))
+      (Spec.RsaOaep.encryptMdTablesContract
+        (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", tables mvars), ("mgf1", tables mvars)]) 304) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaOaep.encryptMdTablesApi) {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaOaep.PPC64LE.encrypt (fns3 mvars)
-      verified := enc_ok mvars h }
+      verified := enc_ok mvars mvars_ok }
     304 .all
     (encryptOut _ _)
     (by dsimp only; lit_decide)

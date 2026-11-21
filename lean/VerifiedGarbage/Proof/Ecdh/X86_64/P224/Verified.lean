@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -236,25 +237,21 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.X
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ecdh_p224` must wipe on return, from the
-residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKs : List Nat := keep_for% Spec.Ecdh.P224.exchangeApi.sig 8 exchangeP224 []
+theorem exchange_codeSp : exchangeP224.all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Ecdh.P224.exchangeApi.sig 8 []) exchangeP224 h).any
-      (RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  RScrub.Analysed.ok_of _ (by taint_decide)
+/-- `vg_ecdh_p224` as emitted (`Impl.Ecdh.X86_64.Fn.exchangeP224`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target Impl.Ecdh.X86_64.Fn.exchangeP224 (Spec.Ecdh.P224.exchangeApi.contract X86_64.abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P224.exchangeApi)
+    { code := exchangeP224
+      stack := 8
+      verified := ecdh_verified hL hI
+      spSafe := exchange_codeSp } .sse (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _)
 
-/-- `vg_ecdh_p224`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Registration Spec.Ecdh.P224.exchangeApi X86_64.target :=
-  RScrub.scrubOf {
-    code := exchangeP224
-    stack := 8
-    verified := ecdh_verified hL hI } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
-    (VG.Proof.EcKey.X86_64.Scrub.exchangeOut _ _) [] (RScrub.pubOk_nil _)
-    ⟨scrubKs, scrubOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem exchange_spSafe :
+    Impl.Ecdh.X86_64.Fn.exchangeP224.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe exchange_codeSp
 
 end VG.Proof.Ecdh.X86_64.P224

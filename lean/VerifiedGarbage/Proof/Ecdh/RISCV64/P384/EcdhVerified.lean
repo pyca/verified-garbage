@@ -99,7 +99,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem exchange_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
     VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.exchangeP384
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst RISCV64.abi) 32 :=
-  RISCV64.Scrub.verifiedScrubbed (api := Spec.Ecdh.P384.exchangeApi) (W := 0)
+  RISCV64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P384.exchangeApi) (W := 0)
     { code := ecdhP384, verified := ecdh_verified hL }
     (EcKey.RISCV64.Scrub.exchangeOut _ _ []) (by dsimp only; lit_decide)
 

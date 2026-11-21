@@ -173,14 +173,14 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
 /-- `initEntry` returns without residue when both of its branches do, under
 their contracts: the comparison writes registers only from `key_len`, so two
 runs that agree outside the buffers still agree after it, and take the same
-branch (`ScrubAll.noResidue_entryBranch`). -/
+branch (`Scrub.noResidue_entryBranch`). -/
 theorem initEntry_noResidue {I : Spec.Hmac.Instance} {short long : Prog isa} {n₁ n₂ rb : Nat}
     (hS : NoResidue short (I.initContract AArch64.abi n₁) rb)
     (hL : NoResidue long (I.initAnyKeyContract AArch64.abi n₂) rb)
     (h₁ : 0 < n₁) (hn : n₁ ≤ n₂) (hB : I.S.H.blockSize < 2 ^ 16) :
     NoResidue (Impl.Pbkdf2.Md.AArch64.initEntry I.S.H.blockSize short long)
       (I.initAnyKeyContract AArch64.abi n₂) rb := by
-  refine ScrubAll.noResidue_entryBranch (p := fun s => decide (I.S.H.blockSize + 1 ≤ (s.gpr .x3).toNat))
+  refine Scrub.noResidue_entryBranch (p := fun s => decide (I.S.H.blockSize + 1 ≤ (s.gpr .x3).toNat))
     hL hS (fun s u t hs e => ?_) (fun s s' u u' t t' hs hs' hq ho e e' => ?_)
   · obtain ⟨u₀, e₀, ev, k1, k2⟩ := initEntry_hb h₁ hn hB s hs
     rw [e₀] at e

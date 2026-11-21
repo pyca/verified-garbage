@@ -42,12 +42,6 @@ sub r3, r3, #1
 lsr r0, r3, #31
 21:
 ldr r4, [sp], #4
-sub sp, sp, #8
-add r12, sp, #0
-mov r2, #0
-str r2, [r12, #0]
-str r2, [r12, #4]
-add sp, sp, #8
 mov r1, #0
 mov r2, #0
 mov r3, #0

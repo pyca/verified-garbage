@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.AesCtr.AArch64
 public import VerifiedGarbage.Impl.AesCfb.AArch64.Final
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 
 /-!
 # AES-CTR of a message's last piece: AArch64 implementation
@@ -30,7 +30,7 @@ whose callers' names end in `sfx`, e.g. `_aes`):
    bytes left, a byte at a time (the modes' `xorByte`);
 4. the registers restored.
 
-The registration's frame zeroes `save`, the block included, on return.
+The function as emitted zeroes `save`, the block included, on return.
 
 Only the pointers, `rounds`, `len` and the last 32 bits of the counter block
 can affect timing.
@@ -85,7 +85,7 @@ def cryptFinal (c : Ctr32) (sfx : String) : Prog isa := final ("vg_aes_ctr" ++ s
 /-! ## The functions, as emitted
 
 Each function is its code, then its cleanup
-(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+(`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the calling
 convention does not preserve are cleared, and the stack it uses is zeroed,
 so that it returns without secret residue. The registers are those its own
 instructions write, stated here, and those the implementation of
@@ -93,7 +93,7 @@ instructions write, stated here, and those the implementation of
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 
 /-- The registers `vg_aes_ctr`'s own instructions write. -/
 def cryptOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x11, .x12, .x16, .x17], [], []⟩

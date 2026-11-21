@@ -16,9 +16,17 @@ import VerifiedGarbage.Proof.Blowfish.PPC64LE.FbFinalLit
 namespace VG.Artifacts.BlowfishCfb.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.cfbEncryptApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cfbEncryptReg,
-  Spec.Blowfish.cfbDecryptApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cfbDecryptReg,
-  Spec.Blowfish.cfbEncryptFinalApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cfbEncryptFinalReg,
-  Spec.Blowfish.cfbDecryptFinalApi.artifact PPC64LE.target Proof.Blowfish.PPC64LE.Scrub.cfbDecryptFinalReg]
+  Spec.Blowfish.cfbEncryptApi.artifact PPC64LE.target {
+    code := Impl.Blowfish.PPC64LE.Fn.cfbEncrypt
+    verified := .scrubbed Proof.Blowfish.PPC64LE.Scrub.cfbEncrypt_scrubbed },
+  Spec.Blowfish.cfbDecryptApi.artifact PPC64LE.target {
+    code := Impl.Blowfish.PPC64LE.Fn.cfbDecrypt
+    verified := .scrubbed Proof.Blowfish.PPC64LE.Scrub.cfbDecrypt_scrubbed },
+  Spec.Blowfish.cfbEncryptFinalApi.artifact PPC64LE.target {
+    code := Impl.Blowfish.PPC64LE.Fn.cfbEncryptFinal
+    verified := .scrubbed Proof.Blowfish.PPC64LE.Scrub.cfbEncryptFinal_scrubbed },
+  Spec.Blowfish.cfbDecryptFinalApi.artifact PPC64LE.target {
+    code := Impl.Blowfish.PPC64LE.Fn.cfbDecryptFinal
+    verified := .scrubbed Proof.Blowfish.PPC64LE.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.BlowfishCfb.PPC64LE

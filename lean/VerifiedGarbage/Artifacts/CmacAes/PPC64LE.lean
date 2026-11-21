@@ -11,8 +11,14 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.CmacAes.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Cmac.aesInitApi.artifact PPC64LE.target Proof.CmacAes.Stream.PPC64LE.Scrub.initReg,
-  Spec.Cmac.aesAbsorbApi.artifact PPC64LE.target Proof.CmacAes.Stream.PPC64LE.Scrub.absorbReg,
-  Spec.Cmac.aesFinishApi.artifact PPC64LE.target Proof.CmacAes.Stream.PPC64LE.Scrub.finishReg]
+  Spec.Cmac.aesInitApi.artifact PPC64LE.target {
+    code := Impl.CmacAes.Stream.PPC64LE.Fn.init
+    verified := .scrubbed Proof.CmacAes.Stream.PPC64LE.Scrub.init_scrubbed },
+  Spec.Cmac.aesAbsorbApi.artifact PPC64LE.target {
+    code := Impl.CmacAes.Stream.PPC64LE.Fn.absorb
+    verified := .scrubbed Proof.CmacAes.Stream.PPC64LE.Scrub.absorb_scrubbed },
+  Spec.Cmac.aesFinishApi.artifact PPC64LE.target {
+    code := Impl.CmacAes.Stream.PPC64LE.Fn.finish
+    verified := .scrubbed Proof.CmacAes.Stream.PPC64LE.Scrub.finish_scrubbed }]
 
 end VG.Artifacts.CmacAes.PPC64LE

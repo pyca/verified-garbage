@@ -72,6 +72,11 @@ structure GhashImpl where
   nosp : NoSp fn.code
   mxcsr : fn.code.allInstrs (fun i => !loadsMxcsr i) = true
   spSafe : fn.code.all (fun i => !isa.writesSp i) = true
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide fn.code level.level 0 = true := by lit_decide
   suffix : String
   features : List String
   /-- Its contract without a scratch buffer, if it never touches one. -/
@@ -98,6 +103,11 @@ structure KeyImpl where
   nosp : NoSp fn.code
   mxcsr : fn.code.allInstrs (fun i => !loadsMxcsr i) = true
   spSafe : fn.code.all (fun i => !isa.writesSp i) = true
+  /-- The level of its vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel := .sse
+  /-- What the cleanup of a function that calls it needs of its code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide fn.code level.level 0 = true := by lit_decide
   features : List String
 
 theorem nosp_of {c : Prog isa} (h : ((instrs c).all fun i => !Taint.clobbers i .rsp) = true) : NoSp c :=

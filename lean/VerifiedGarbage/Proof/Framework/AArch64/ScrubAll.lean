@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.EntryBranch
 /-!
 # Returning without secret residue, whatever the code leaves (AArch64)
 
-`ScrubAll.noResidue_scrubAll`: code verified against its contract, whose
+`Scrub.noResidue_scrubAll`: code verified against its contract, whose
 frames stay within the `W` bytes below the stack pointer, that writes no
 PSTATE.DIT and calls nothing indirectly, followed by `scrubAll W rb`, which
 clears every register the calling convention does not preserve but the
@@ -32,7 +32,7 @@ the code may change outside the buffers is within those `W` bytes
 (`Exec.frameSp`), which the clearing zeroes, and the two runs end with the
 same unknowns, since their traces are the same (`Exec.unknowns_agree`). So it
 serves code generic over the implementations of the functions it calls,
-whose code is not known, as x86-64's `X86_64.Scrub.withScrubAll` does.
+whose code is not known.
 
 An `alloc` takes less than 4096 bytes, so `scrubAll` zeroes less than 4096;
 `scrubAllL` zeroes up to 8160 in two frames, which end as one would
@@ -42,9 +42,9 @@ bytes (`TailOk`, `noResidue_scrubAllT` and `Verified.scrubAllT`).
 
 @[expose] public section
 
-namespace VG.AArch64.ScrubAll
+namespace VG.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.Residue VG.Impl.Residue.AArch64
+open VG.AArch64 VG.AArch64.Residue VG.Impl.Scrub.AArch64
 
 /-! ## The unknowns of two runs along the same trace -/
 
@@ -366,7 +366,7 @@ def cleared (cl : Clear) (u : State) : State :=
 
 /-- What a `Clear` must be: within the registers the calling convention does
 not preserve, the high halves of `his` apart from `vecs`. -/
-structure _root_.VG.Impl.Residue.AArch64.Clear.WF (cl : Clear) : Prop where
+structure _root_.VG.Impl.Scrub.AArch64.Clear.WF (cl : Clear) : Prop where
   gprs : ∀ q ∈ cl.gprs, q ∈ allGprs
   vecs : ∀ w ∈ cl.vecs, w ∈ allVecs
   his : ∀ w ∈ cl.his, w ∈ hiVecs
@@ -377,14 +377,14 @@ theorem preserved_not_all : ∀ q, q ∈ preserved → q ∉ allGprs := by decid
 
 theorem hi_of_preservedV : ∀ w, w ∈ preservedV → w ∈ hiVecs := by decide
 
-theorem _root_.VG.Impl.Residue.AArch64.Clear.WF.disj {cl : Clear} (h : cl.WF) {w : VReg} (hw : w ∈ cl.his) : w ∉ cl.vecs :=
+theorem _root_.VG.Impl.Scrub.AArch64.Clear.WF.disj {cl : Clear} (h : cl.WF) {w : VReg} (hw : w ∈ cl.his) : w ∉ cl.vecs :=
   fun hv => hi_not_all w (h.his w hw) (h.vecs w hv)
 
 theorem clearAll_wf : Clear.all.WF := ⟨fun _ h => h, fun _ h => h, fun _ h => h⟩
 
 /-- `c` writes none of the registers the calling convention does not
 preserve but those of `cl`: they hold on return what they held on entry. -/
-structure _root_.VG.Impl.Residue.AArch64.Clear.Keeps (cl : Clear) (c : Prog isa) : Prop where
+structure _root_.VG.Impl.Scrub.AArch64.Clear.Keeps (cl : Clear) (c : Prog isa) : Prop where
   gpr : ∀ q ∈ allGprs, q ∉ cl.gprs → ∀ {s t u}, Exec isa c s t u → u.gpr q = s.gpr q
   vec : ∀ w, (w ∈ allVecs ∧ w ∉ cl.vecs) ∨ (w ∈ hiVecs ∧ w ∉ cl.his) →
     ∀ {s t u}, Exec isa c s t u → u.v w = s.v w
@@ -413,11 +413,11 @@ theorem codeNoCalls_eq (c : Prog isa) : codeNoCalls c = c.noCalls := by
   | frame i b j ih => rfl
   | icall i _ b n ihb ihn => rfl
 
-theorem _root_.VG.Impl.Residue.AArch64.Clear.of_wf (c : Prog isa) : (Clear.of c).WF :=
+theorem _root_.VG.Impl.Scrub.AArch64.Clear.of_wf (c : Prog isa) : (Clear.of c).WF :=
   ⟨fun _ h => (List.mem_filter.mp h).1, fun _ h => (List.mem_filter.mp h).1,
     fun _ h => (List.mem_filter.mp h).1⟩
 
-theorem _root_.VG.Impl.Residue.AArch64.Clear.of_keeps (c : Prog isa) : (Clear.of c).Keeps c := by
+theorem _root_.VG.Impl.Scrub.AArch64.Clear.of_keeps (c : Prog isa) : (Clear.of c).Keeps c := by
   refine ⟨fun q hq hn s t u e => ?_, fun w hw s t u e => ?_⟩
   · have hf : ¬ ((instrs c).any (fun i => clobbers i q) || (!c.noCalls && linkRegs.contains q)) = true :=
       fun h => hn (List.mem_filter.mpr ⟨hq, by rw [codeInstrs_eq, codeNoCalls_eq]; exact h⟩)
@@ -522,8 +522,8 @@ theorem retFix_hi {rb : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (s : State) 
 /-! ## The theorem -/
 
 open VG.AArch64.Scrub VG.AArch64.RTaintG in
-theorem withScrubG_range {W : Nat} (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (c : Prog isa) :
-    withScrubG W (List.range (W / 16)) c = .seq c (scrubTailG W (List.range (W / 16))) := by
+theorem scrubSel_range {W : Nat} (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (c : Prog isa) :
+    scrubSel W (List.range (W / 16)) c = .seq c (scrubTailG W (List.range (W / 16))) := by
   have : List.range (W / 16) ≠ [] := by simp; omega
   cases h : List.range (W / 16) with
   | nil => exact absurd h this
@@ -702,7 +702,7 @@ theorem noResidue_scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : 
     (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
     NoResidue (scrubAll W rb cl c) k rb := by
   unfold scrubAll
-  rw [withScrubG_range hW]
+  rw [scrubSel_range hW]
   exact noResidue_scrubAllT hwf hkp hv hW.2.2 (tailOk_g hW) hsp hd hdit hsy hrb
 
 /-- `noResidue_scrubAll` for `4080 < W < 8176` bytes, zeroed by `scrubAllL`. -/
@@ -914,8 +914,8 @@ theorem Verified.scrubAll {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : C
     (h : Verified target c k)
     (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hk : ScrubAllOk k W rb) :
     Verified target (scrubAll W rb cl c) k := by
-  unfold VG.Impl.Residue.AArch64.scrubAll
-  rw [withScrubG_range hW]
+  unfold VG.Impl.Scrub.AArch64.scrubAll
+  rw [scrubSel_range hW]
   exact Verified.scrubAllT hwf h (tailOk_g hW) hrb hk
 
 /-- `Verified.scrubAll` for `4080 < W < 8176` bytes, zeroed by `scrubAllL`. -/
@@ -930,7 +930,7 @@ open VG.AArch64.Scrub VG.AArch64.RTaintG VG.AArch64.RTaintF in
 theorem Verified.scrubAll0 {c : Prog isa} {k : Contract isa} {rb : Nat} {cl : Clear} (hwf : cl.WF)
     (h : Verified target c k)
     (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hk : ScrubAllOk k 0 rb) :
-    Verified target (VG.Impl.Residue.AArch64.scrubAll 0 rb cl c) k := by
+    Verified target (VG.Impl.Scrub.AArch64.scrubAll 0 rb cl c) k := by
   obtain ⟨hcor, hct, hsat⟩ := h
   have hrun : ∀ s, k.pre s → ∃ t u g,
       Exec isa c s t u ∧ abiPreserved s u ∧ k.post s u ∧
@@ -1291,91 +1291,9 @@ theorem tablesCall_syms {api : Api} {r : Unscrubbed api target} (h : tablesCall 
   simp only [decide_eq_true_eq] at this
   exact tables_pub_syms (contract_pub hp) n this
 
-theorem all_true : ∀ c : Prog isa, c.all (fun _ => true) = true
-  | .block is => by simp [Code.all]
-  | .seq a b => by simp [Code.all, all_true a, all_true b]
-  | .ite _ t e => by simp [Code.all, all_true t, all_true e]
-  | .loop b _ => by simp [Code.all, all_true b]
-  | .call _ b => by simp [Code.all, all_true b]
-  | .frame _ b _ => by simp [Code.all, all_true b]
-  | .icall _ _ b n => by simp [Code.all, all_true b, all_true n]
-
-theorem all_spSafe (c : Prog isa) : c.all (fun i => !isa.writesSp i) = true := by
-  simpa [isa] using all_true c
-
 /-- The result's bits of `r`'s function. -/
 abbrev retBitsOf {api : Api} (r : Unscrubbed api target) : Nat :=
   api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
-
-/-- `r`, its code run by `scrubAll` over its whole stack (`r.stack` bytes;
-by `scrubAllL` for 4096 bytes or more),
-returning without secret residue, if its side conditions hold (checked when
-the registration is evaluated); otherwise `r` itself, which then has no
-proof (`Verification.unscrubbed`), as the emitter allows only of what
-`ci/residue_allowlist.txt` lists. For a caller generic over the
-implementations of the functions it calls, whose code the residue analysis
-does not follow, as x86-64's `X86_64.Scrub.withScrubAll`. -/
-def withScrubAll {api : Api} (r : Unscrubbed api target) (hok : ScrubAllOk r.contract r.stack (retBitsOf r)) :
-    Registration api target :=
-  if h : (0 < r.stack ∧ r.stack < 4096 ∧ r.stack % 16 = 0) ∧ 16 * r.code.aarch64Depth ≤ r.stack ∧
-      r.code.all (fun i => !i.writesDit) = true ∧ tablesCall r.code r.tables = true ∧
-      (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
-    { suffix := r.suffix
-      tables := r.tables
-      code := scrubAll r.stack (retBitsOf r) (Clear.of r.code) r.code
-      contract := r.contract
-      verified := .scrubbed <| .abi ⟨Verified.scrubAll (Clear.of_wf _) r.verified h.1 h.2.2.2.2.1 hok,
-        noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1 (tablesCall_syms h.2.2.2.1)
-        h.2.2.2.2.1⟩
-      consts := r.consts
-      stack := r.stack
-      ofApi := r.ofApi
-      ofSig := r.ofSig
-      spSafe := all_spSafe _
-      written := r.written
-      writtenOk := by rw [h.2.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
-      extra := r.extra
-      vendor := r.vendor
-      notWith := r.notWith }
-  else if h : (4080 < r.stack ∧ r.stack < 8176 ∧ r.stack % 16 = 0) ∧ 16 * r.code.aarch64Depth ≤ r.stack ∧
-      r.code.all (fun i => !i.writesDit) = true ∧ tablesCall r.code r.tables = true ∧
-      (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
-    { suffix := r.suffix
-      tables := r.tables
-      code := scrubAllL r.stack (retBitsOf r) (Clear.of r.code) r.code
-      contract := r.contract
-      verified := .scrubbed <| .abi ⟨Verified.scrubAllL (Clear.of_wf _) r.verified h.1 h.2.2.2.2.1 hok,
-        noResidue_scrubAllL (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1
-        (tablesCall_syms h.2.2.2.1) h.2.2.2.2.1⟩
-      consts := r.consts
-      stack := r.stack
-      ofApi := r.ofApi
-      ofSig := r.ofSig
-      spSafe := all_spSafe _
-      written := r.written
-      writtenOk := by rw [h.2.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
-      extra := r.extra
-      vendor := r.vendor
-      notWith := r.notWith }
-  else if h : r.stack = 0 ∧ r.code.aarch64Depth = 0 ∧ r.code.all (fun i => !i.writesDit) = true ∧
-      (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
-    { suffix := r.suffix
-      tables := r.tables
-      code := scrubAll 0 (retBitsOf r) (Clear.of r.code) r.code
-      contract := r.contract
-      verified := .scrubbed <| .abi ⟨Verified.scrubAll0 (Clear.of_wf _) r.verified h.2.2.2.1 (h.1 ▸ hok),
-        noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) r.verified h.2.1 h.2.2.1 h.2.2.2.1⟩
-      consts := r.consts
-      stack := r.stack
-      ofApi := r.ofApi
-      ofSig := r.ofSig
-      spSafe := all_spSafe _
-      written := r.written
-      writtenOk := by rw [h.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
-      extra := r.extra
-      vendor := r.vendor
-      notWith := r.notWith }
-  else r.registration
 
 /-! ## A choice on entry between two functions without residue -/
 
@@ -1427,4 +1345,4 @@ theorem noResidue_entryBranch {b : List Instr} {c : isa.Cond} {c₁ c₂ : Prog 
       | iteF hc _ => rw [ec₂, hp'] at hc; cases hc
       | iteT _ r₂ => exact h₁ _ _ _ _ _ _ (k11 hp) (k21 hp') (pb1 hp) ho' hu' r₁ r₂
 
-end VG.AArch64.ScrubAll
+end VG.AArch64.Scrub

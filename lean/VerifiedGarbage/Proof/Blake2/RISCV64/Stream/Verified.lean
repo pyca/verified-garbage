@@ -858,7 +858,7 @@ abbrev t₀ : Nat := (s₀.gpr .a3).toNat
 abbrev fl : Bool := (s₀.gpr .a4).setWidth 32 != 0
 abbrev stR : Region := ⟨st s₀, 8 * zB z⟩
 abbrev blR : Region := ⟨bp s₀, Spec.Blake2.blockBytes z.bits * nb s₀⟩
-abbrev scrR : Region := ⟨scr₀ s₀, 512⟩
+abbrev scrR : Region := ⟨scr₀ s₀, 280⟩
 abbrev H₀ : HashValue z.bits := Spec.Blake2.stateAt z.bits s₀.mem (st s₀)
 /-- Where block `i` starts. -/
 abbrev blkAddr (i : Nat) : Addr := bp s₀ + BitVec.ofNat 64 (Spec.Blake2.blockBytes z.bits * i)
@@ -887,13 +887,13 @@ theorem sb_add (s₀ : State) (d : Nat) :
 
 theorem sb_al (s₀ : State) : (sb s₀).toNat % 8 = 0 := align_al _
 
-theorem cell_contains (s₀ : State) {d n : Nat} (h : d + n ≤ 504) :
+theorem cell_contains (s₀ : State) {d n : Nat} (h : d + n ≤ 272) :
     (scrR s₀).Contains (sb s₀ + BitVec.ofNat 64 d) n := by
   rw [sb_add]
   have := pad_lt (scr₀ s₀)
   exact Offset.contains_base _ (by omega_using [h, this]) (by omega_using [h, this])
 
-theorem cell_sub (s₀ : State) {d n : Nat} (h : d + n ≤ 504) :
+theorem cell_sub (s₀ : State) {d n : Nat} (h : d + n ≤ 272) :
     Region.Sub ⟨sb s₀ + BitVec.ofNat 64 d, n⟩ (scrR s₀) := by
   rw [sb_add]
   have := pad_lt (scr₀ s₀)
@@ -951,11 +951,11 @@ theorem out_state {k : Nat} (hk : k < 8) :
     InRegions s₀.wr (st s₀ + BitVec.ofNat 64 (zB z * k)) (zB z) :=
   ⟨stR z s₀, by simp [h.wr], word_contains z _ hk⟩
 
-theorem in_cell {d n : Nat} (hd : d + n ≤ 504) :
+theorem in_cell {d n : Nat} (hd : d + n ≤ 272) :
     InRegions (s₀.rd ++ s₀.wr) (sb s₀ + BitVec.ofNat 64 d) n :=
   ⟨scrR s₀, by simp [h.wr], cell_contains s₀ hd⟩
 
-theorem out_cell {d n : Nat} (hd : d + n ≤ 504) : InRegions s₀.wr (sb s₀ + BitVec.ofNat 64 d) n :=
+theorem out_cell {d n : Nat} (hd : d + n ≤ 272) : InRegions s₀.wr (sb s₀ + BitVec.ofNat 64 d) n :=
   ⟨scrR s₀, by simp [h.wr], cell_contains s₀ hd⟩
 
 theorem blk_contains {i j : Nat} (hi : i < nb s₀) (hj : j < 16) :
@@ -975,12 +975,12 @@ theorem in_blk {i j : Nat} (hi : i < nb s₀) (hj : j < 16) :
   ⟨blR z s₀, by simp [h.rd], h.blk_contains hi hj⟩
 
 /-- A word of the state and a range of the scratch space are disjoint. -/
-theorem state_cell {k d n : Nat} (hk : k < 8) (hd : d + n ≤ 504) :
+theorem state_cell {k d n : Nat} (hk : k < 8) (hd : d + n ≤ 272) :
     Region.Disjoint ⟨st s₀ + BitVec.ofNat 64 (zB z * k), zB z⟩ ⟨sb s₀ + BitVec.ofNat 64 d, n⟩ :=
   (h.st_scr.sub_left (word_sub z _ hk)).sub_right (cell_sub s₀ hd)
 
 /-- A word of a block and a range of the scratch space are disjoint. -/
-theorem blk_cell {i j d n : Nat} (hi : i < nb s₀) (hj : j < 16) (hd : d + n ≤ 504) :
+theorem blk_cell {i j d n : Nat} (hi : i < nb s₀) (hj : j < 16) (hd : d + n ≤ 272) :
     Region.Disjoint ⟨blkAddr z s₀ i + BitVec.ofNat 64 (zB z * j), zB z⟩ ⟨sb s₀ + BitVec.ofNat 64 d, n⟩ :=
   (h.blk_scr.sub_left (h.blk_sub hi hj)).sub_right (cell_sub s₀ hd)
 
@@ -1303,7 +1303,7 @@ theorem correct (hR : ROk P) {s₀ : State} (hp : Pre z s₀) :
       exact WP.loop (M := isa) Inv hstep (nb s₀) s₁ ⟨0, rfl, hpos, hL₀⟩
   · have h8 := zB_le z
     obtain ha0 : s₂.gpr .a0 = st s₀ := hc.kept _ (by decide)
-    obtain hcs : ∀ {d n : Nat}, d + n ≤ 504 →
+    obtain hcs : ∀ {d n : Nat}, d + n ≤ 272 →
         Region.Disjoint ⟨sb s₀ + BitVec.ofNat 64 d, n⟩ ⟨s₂.gpr .a0, 8 * zB z⟩ := fun hd => by
       rw [ha0]; exact hp.st_scr.symm.sub_left (cell_sub s₀ hd)
     unfold Impl.Blake2.RISCV64.epilogue
@@ -1791,7 +1791,7 @@ end
 Correctness (from `Init`, `Update` and `Finalize`, with the compression
 function of `Proof/Blake2/RISCV64/Compress.lean`), constant time (from `CT`),
 and a state satisfying each precondition, for BLAKE2b and BLAKE2s. `update`
-and `finalize` keep their working space in a frame of 576 bytes on the stack;
+and `finalize` keep their working space in a frame of 336 bytes on the stack;
 BLAKE2b's `update_scratch` and `finalize_scratch` take it as an argument and
 use no stack.
 -/
@@ -1857,7 +1857,7 @@ theorem initB_verified :
 
 theorem updateB_verified :
     Verified RISCV64.target (Impl.Blake2.RISCV64.Stream.update b)
-      (Spec.Blake2.updateBContract RISCV64.abi 576) :=
+      (Spec.Blake2.updateBContract RISCV64.abi 336) :=
   Verified.of_correct (fun st hs => Update.correctFramed okB calleeB hs) updateB_ct (by
     sig_implies [Spec.Blake2.updateBContract, Spec.Blake2.updateBSig,
       Proof.Blake2.updateFramedRISCV64, Proof.Blake2.updatePost, Spec.Blake2.updateBPost,
@@ -1866,7 +1866,7 @@ theorem updateB_verified :
 
 theorem finalizeB_verified :
     Verified RISCV64.target (Impl.Blake2.RISCV64.Stream.finalize b)
-      (Spec.Blake2.finalizeBContract RISCV64.abi 576) :=
+      (Spec.Blake2.finalizeBContract RISCV64.abi 336) :=
   Verified.of_correct (fun st hs => Finalize.correctFramed okB calleeB hs) finalizeB_ct (by
     sig_implies [Spec.Blake2.finalizeBContract, Spec.Blake2.finalizeBSig,
       Proof.Blake2.finalizeFramedRISCV64, Proof.Blake2.finalizePost, Spec.Blake2.finalizeBPost,
@@ -1885,7 +1885,7 @@ theorem initS_verified :
 
 theorem updateS_verified :
     Verified RISCV64.target (Impl.Blake2.RISCV64.Stream.update s)
-      (Spec.Blake2.updateSContract RISCV64.abi 576) :=
+      (Spec.Blake2.updateSContract RISCV64.abi 336) :=
   Verified.of_correct (fun st hs => Update.correctFramed okS calleeS hs) updateS_ct (by
     sig_implies [Spec.Blake2.updateSContract, Spec.Blake2.updateSSig,
       Proof.Blake2.updateFramedRISCV64, Proof.Blake2.updatePost, Spec.Blake2.updateSPost,
@@ -1894,7 +1894,7 @@ theorem updateS_verified :
 
 theorem finalizeS_verified :
     Verified RISCV64.target (Impl.Blake2.RISCV64.Stream.finalize s)
-      (Spec.Blake2.finalizeSContract RISCV64.abi 576) :=
+      (Spec.Blake2.finalizeSContract RISCV64.abi 336) :=
   Verified.of_correct (fun st hs => Finalize.correctFramed okS calleeS hs) finalizeS_ct (by
     sig_implies [Spec.Blake2.finalizeSContract, Spec.Blake2.finalizeSSig,
       Proof.Blake2.finalizeFramedRISCV64, Proof.Blake2.finalizePost, Spec.Blake2.finalizeSPost,

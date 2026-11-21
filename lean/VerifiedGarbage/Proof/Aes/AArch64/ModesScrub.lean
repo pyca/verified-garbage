@@ -18,9 +18,9 @@ The postconditions of `vg_aes_ctr_final`, `vg_aes_ofb_final`,
 `vg_aes_cfb128_encrypt_final`, `vg_aes_cfb128_decrypt_final`,
 `vg_aes_cfb8_encrypt` and `vg_aes_cfb8_decrypt` read the memory on return
 only within the block at `iv` (or `ctr`) and the data
-(`ScrubAll.ScrubAllOk`): each implementation, generic over the AES
+(`Scrub.ScrubAllOk`): each implementation, generic over the AES
 implementation it calls, returns with every register it may leave secret
-cleared, and its whole stack zeroed, if it has one (`ScrubAll.withScrubAll`).
+cleared, and its whole stack zeroed, if it has one (`Impl.Scrub.AArch64.scrubAll`, in the function as emitted).
 
 So do the whole-block functions of CTR, OFB and CFB128, `vg_aes_ctr`,
 `vg_aes_ofb`, `vg_aes_cfb128_encrypt` and `vg_aes_cfb128_decrypt`, which
@@ -33,7 +33,7 @@ final functions call the code as it was, an internal function of its own
 
 namespace VG.Proof.Aes.AArch64.ModesScrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 open VG.Proof.AesEcb (agree_of bytesAt_congr)
 
 theorem ctrFinalOk : ScrubAllOk (Spec.Ctr.aesFinalContract abi 80) 80 (Spec.Ctr.aesFinalSig.retBits abi.ptrBits) :=

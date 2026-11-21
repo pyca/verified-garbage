@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.CmacAes.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.CmacAes.Stream.PPC64LE.Frame
@@ -10,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Streaming AES-CMAC on PPC64LE, without secret residue
 
 `vg_cmac_aes_init`, `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which
 clears the volatile registers they may write and the stack their frames used:
 they keep their working space, the key schedule among it, in a 160-byte
 frame they do not wipe themselves (`withStackScratch`). Their postconditions
@@ -36,11 +37,14 @@ theorem absorbOut (stack : Nat) : PostOut (Spec.Cmac.aesAbsorbContract PPC64LE.a
 theorem finishOut (stack : Nat) : PostOut (Spec.Cmac.aesFinishContract PPC64LE.abi stack) (Spec.Cmac.aesFinishSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.CmacAes.Stream.finishPostOut_local _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.Cmac.aesInitApi`. -/
-def initReg : Registration Spec.Cmac.aesInitApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_cmac_aes_init` as emitted (`Impl.CmacAes.Stream.PPC64LE.Fn.init`) meets
+its contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.CmacAes.Stream.PPC64LE.Fn.init
+      (Spec.Cmac.aesInitContract PPC64LE.abi 160) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.aesInitApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r6 Impl.CmacAes.Stream.PPC64LE.init
       verified := Proof.CmacAes.Stream.PPC64LE.init_framed }
     160 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -48,9 +52,12 @@ def initReg : Registration Spec.Cmac.aesInitApi PPC64LE.target :=
     (initOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Cmac.aesAbsorbApi`. -/
-def absorbReg : Registration Spec.Cmac.aesAbsorbApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_cmac_aes_absorb` as emitted (`Impl.CmacAes.Stream.PPC64LE.Fn.absorb`)
+meets its contract in constant time and returns without secret residue. -/
+theorem absorb_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.CmacAes.Stream.PPC64LE.Fn.absorb
+      (Spec.Cmac.aesAbsorbContract PPC64LE.abi 160) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.aesAbsorbApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r8 Impl.CmacAes.Stream.PPC64LE.absorb
       verified := Proof.CmacAes.Stream.PPC64LE.absorb_framed }
     160 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -58,9 +65,12 @@ def absorbReg : Registration Spec.Cmac.aesAbsorbApi PPC64LE.target :=
     (absorbOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Cmac.aesFinishApi`. -/
-def finishReg : Registration Spec.Cmac.aesFinishApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_cmac_aes_finish` as emitted (`Impl.CmacAes.Stream.PPC64LE.Fn.finish`)
+meets its contract in constant time and returns without secret residue. -/
+theorem finish_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.CmacAes.Stream.PPC64LE.Fn.finish
+      (Spec.Cmac.aesFinishContract PPC64LE.abi 160) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.aesFinishApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r7 Impl.CmacAes.Stream.PPC64LE.finish
       verified := Proof.CmacAes.Stream.PPC64LE.finish_framed }
     160 ⟨true, false, [.r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

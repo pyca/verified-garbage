@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Sm4.X86_64.Fn
 public import VerifiedGarbage.Proof.Sm4.X86_64.Scrub
 public import VerifiedGarbage.Proof.Sm4.X86_64.KeyVerified
 public import VerifiedGarbage.Proof.Sm4.X86_64.PreparedVerified
@@ -14,8 +15,8 @@ import VerifiedGarbage.Proof.Sm4.X86_64.Lit
 namespace VG.Artifacts.Sm4.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Sm4.expandKeyApi.artifact X86_64.target Proof.Sm4.X86_64.Scrub.expandKeyReg,
-  Spec.Sm4.ecbEncryptApi.artifact X86_64.target Proof.Sm4.X86_64.Scrub.ecbEncryptReg,
-  Spec.Sm4.ecbDecryptApi.artifact X86_64.target Proof.Sm4.X86_64.Scrub.ecbDecryptReg]
+  Spec.Sm4.expandKeyApi.artifact X86_64.target { code := Impl.Sm4.X86_64.Fn.expandKey, verified := .scrubbed Proof.Sm4.X86_64.Scrub.expandKey_scrubbed, spSafe := Proof.Sm4.X86_64.Scrub.expandKey_spSafe },
+  Spec.Sm4.ecbEncryptApi.artifact X86_64.target { code := Impl.Sm4.X86_64.Fn.ecbEncrypt, verified := .scrubbed Proof.Sm4.X86_64.Scrub.ecbEncrypt_scrubbed, spSafe := Proof.Sm4.X86_64.Scrub.ecbEncrypt_spSafe },
+  Spec.Sm4.ecbDecryptApi.artifact X86_64.target { code := Impl.Sm4.X86_64.Fn.ecbDecrypt, verified := .scrubbed Proof.Sm4.X86_64.Scrub.ecbDecrypt_scrubbed, spSafe := Proof.Sm4.X86_64.Scrub.ecbDecrypt_spSafe }]
 
 end VG.Artifacts.Sm4.X86_64

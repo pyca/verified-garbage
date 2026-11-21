@@ -19,9 +19,9 @@ import VerifiedGarbage.Proof.Sm4.CtrFinal
 
 The postconditions of `vg_sm4_expand_key`, `vg_sm4_ctr` and
 `vg_sm4_ctr_final` read the memory on return only within their buffers
-(`ScrubAll.ScrubAllOk`, from `Proof.Sm4`'s `*PostOut_local`): each
+(`Scrub.ScrubAllOk`, from `Proof.Sm4`'s `*PostOut_local`): each
 implementation returns with every register it may leave secret cleared, and
-its whole stack zeroed, if it has one (`ScrubAll.withScrubAll`). The CTR
+its whole stack zeroed, if it has one (`Impl.Scrub.AArch64.scrubAll`, in the function as emitted). The CTR
 functions' frames, which no longer zero themselves, are among that stack.
 -/
 
@@ -29,7 +29,7 @@ functions' frames, which no longer zero themselves, are among that stack.
 
 namespace VG.Proof.Sm4.AArch64.CtrScrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 theorem expandKeyOk : ScrubAllOk (Spec.Sm4.expandKeyContract abi) 0 (Spec.Sm4.expandKeySig.retBits abi.ptrBits) :=
   scrubAllOk_regs0 (sig := Spec.Sm4.expandKeySig) (post := Proof.Sm4.expandKeyPost abi.ptrBits) (by decide)
@@ -51,26 +51,26 @@ theorem ctrFinalOk : ScrubAllOk (Spec.Sm4.ctrFinalContract abi 3344) 3344
 with their cleanup (`Impl.Sm4.AArch64.Serial.Fn`, `Impl.Sm4.AArch64.Fn`):
 each meets its contract in constant time and returns without secret residue
 (`VerifiedScrubbed`), which is what its registration binds. What the cleanup
-needs of the code (`ScrubAll.scrubSide`) is evaluated here, by the kernel:
+needs of the code (`Scrub.scrubSide`) is evaluated here, by the kernel:
 of `vg_sm4_ctr_final`, of its own instructions, once, with code that does
 nothing in the place of `vg_sm4_ctr`, each implementation of which proves
 its own where it is defined (`CtrImpl.scrub`). -/
 
 theorem expandKey :
     VerifiedScrubbed target Impl.Sm4.AArch64.Serial.Fn.expandKey (Spec.Sm4.expandKeyContract abi) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.expandKeyApi)
+  verifiedScrubbedAll (api := Spec.Sm4.expandKeyApi)
     { code := Impl.Sm4.AArch64.Serial.expandKey, verified := Proof.Sm4.AArch64.Serial.expandKey_verified } _
     expandKeyOk (by dsimp only; lit_decide)
 
 theorem ctrSm4 :
     VerifiedScrubbed target Impl.Sm4.AArch64.Fn.ctrSm4 (Spec.Sm4.ctrContract abi 224) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.ctrApi)
+  verifiedScrubbedAll (api := Spec.Sm4.ctrApi)
     { code := Impl.Sm4.AArch64.ctrFramedSm4, verified := Proof.Sm4.AArch64.Sm4e.ctr_framed } _
     (ctrOk 224) (by dsimp only; lit_decide)
 
 theorem ctr :
     VerifiedScrubbed target Impl.Sm4.AArch64.Fn.ctr (Spec.Sm4.ctrContract abi 3264) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.ctrApi)
+  verifiedScrubbedAll (api := Spec.Sm4.ctrApi)
     { code := Impl.Sm4.AArch64.ctrFramed, verified := Proof.Sm4.AArch64.ctr_framed } _
     (ctrOk 3264) (by dsimp only; lit_decide)
 
@@ -103,7 +103,7 @@ theorem ctrFinal_side (v : Proof.Sm4.AArch64.CtrFinal.CtrImpl) :
 theorem ctrFinal (v : Proof.Sm4.AArch64.CtrFinal.CtrImpl) :
     VerifiedScrubbed target (Impl.Sm4.AArch64.Fn.ctrFinal v.clear v.name v.code)
       (Spec.Sm4.ctrFinalContract abi 3344) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.ctrFinalApi)
+  verifiedScrubbedAll (api := Spec.Sm4.ctrFinalApi)
     { code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x4 10 (Impl.Sm4.AArch64.ctrFinal v.name v.code)
       verified := Proof.Sm4.AArch64.CtrFinal.ctrFinal_framed v } _ ctrFinalOk (ctrFinal_side v)
 

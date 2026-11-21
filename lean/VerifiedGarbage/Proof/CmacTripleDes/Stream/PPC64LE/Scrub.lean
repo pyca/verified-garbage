@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Frame
@@ -11,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_cmac_triple_des_stream_init`, `vg_cmac_triple_des_absorb` and
 `vg_cmac_triple_des_finish`, each followed by `Impl.Scrub.PPC64LE.scrubTail`
-(`PPC64LE.Scrub.scrubOf`), which clears the volatile registers they may
+(`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the volatile registers they may
 write and the stack their frames used: they keep their working space, the key
 schedule among it, in a frame they do not wipe themselves
 (`withStackScratch`). Their postconditions read the memory on return only
@@ -39,29 +40,41 @@ theorem finishOut (stack : Nat) :
     PostOut (Spec.Cmac.tdesFinishContract PPC64LE.abi stack) (Spec.Cmac.tdesFinishSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.CmacTripleDes.Stream.finishPostOut_local _)
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.Cmac.tdesStreamInitApi`. -/
-def initReg : Registration Spec.Cmac.tdesStreamInitApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_cmac_triple_des_stream_init` as emitted
+(`Impl.CmacTripleDes.Stream.PPC64LE.Fn.init`) meets its contract in constant
+time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.CmacTripleDes.Stream.PPC64LE.Fn.init
+      (Spec.Cmac.tdesStreamInitContract PPC64LE.abi 672) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.tdesStreamInitApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r6 Impl.CmacTripleDes.Stream.PPC64LE.streamInit
       verified := Proof.CmacTripleDes.Stream.PPC64LE.init_framed }
     672 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (initOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Cmac.tdesAbsorbApi`. -/
-def absorbReg : Registration Spec.Cmac.tdesAbsorbApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_cmac_triple_des_absorb` as emitted
+(`Impl.CmacTripleDes.Stream.PPC64LE.Fn.absorb`) meets its contract in constant
+time and returns without secret residue. -/
+theorem absorb_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.CmacTripleDes.Stream.PPC64LE.Fn.absorb
+      (Spec.Cmac.tdesAbsorbContract PPC64LE.abi 720) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.tdesAbsorbApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 720 .r7 Impl.CmacTripleDes.Stream.PPC64LE.absorb
       verified := Proof.CmacTripleDes.Stream.PPC64LE.absorb_framed }
     720 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (absorbOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Cmac.tdesFinishApi`. -/
-def finishReg : Registration Spec.Cmac.tdesFinishApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_cmac_triple_des_finish` as emitted
+(`Impl.CmacTripleDes.Stream.PPC64LE.Fn.finish`) meets its contract in constant
+time and returns without secret residue. -/
+theorem finish_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.CmacTripleDes.Stream.PPC64LE.Fn.finish
+      (Spec.Cmac.tdesFinishContract PPC64LE.abi 672) 0 :=
+  verifiedScrubbedAll (api := Spec.Cmac.tdesFinishApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r6 Impl.CmacTripleDes.Stream.PPC64LE.finish
       verified := Proof.CmacTripleDes.Stream.PPC64LE.finish_framed }
     672 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩

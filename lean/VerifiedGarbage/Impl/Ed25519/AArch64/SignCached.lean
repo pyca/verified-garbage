@@ -77,14 +77,14 @@ def codeExpanded (compress : Prog isa) (suffix : String) : Prog isa :=
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 
 /-- The registers `vg_ed25519_sign_expanded`'s own instructions write. -/
 def signExpandedOwn : Clear :=
   ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17], [], []⟩
 
 /-- `vg_ed25519_sign_expanded` over an implementation of SHA-512's compression
-function: `codeExpanded`, then its cleanup (`Impl.Residue.AArch64.scrubAll`),
+function: `codeExpanded`, then its cleanup (`Impl.Scrub.AArch64.scrubAll`),
 which clears the registers its own instructions and the compression function
 write that the calling convention does not preserve, and zeroes its 352
 bytes of stack, so that it returns without secret residue. -/

@@ -2465,19 +2465,32 @@ vg_aes_gcm_siv_seal_vaes_vpclmul_avx512:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-776]
-	vmovdqu YMMWORD PTR [rsp+504], ymm0
-	vmovdqu YMMWORD PTR [rsp+472], ymm0
-	vmovdqu YMMWORD PTR [rsp+440], ymm0
-	vmovdqu YMMWORD PTR [rsp+408], ymm0
-	vmovdqu YMMWORD PTR [rsp+376], ymm0
-	vmovdqu YMMWORD PTR [rsp+344], ymm0
-	vmovdqu YMMWORD PTR [rsp+312], ymm0
-	vmovdqu YMMWORD PTR [rsp+280], ymm0
-	movdqu XMMWORD PTR [rsp+232], xmm0
-	movdqu XMMWORD PTR [rsp+168], xmm0
+	vmovdqu YMMWORD PTR [rsp+744], ymm0
+	vmovdqu YMMWORD PTR [rsp+712], ymm0
+	vmovdqu YMMWORD PTR [rsp+680], ymm0
+	vmovdqu YMMWORD PTR [rsp+648], ymm0
+	vmovdqu YMMWORD PTR [rsp+616], ymm0
+	vmovdqu YMMWORD PTR [rsp+584], ymm0
+	vmovdqu YMMWORD PTR [rsp+552], ymm0
+	vmovdqu YMMWORD PTR [rsp+520], ymm0
+	vmovdqu YMMWORD PTR [rsp+488], ymm0
+	vmovdqu YMMWORD PTR [rsp+456], ymm0
+	vmovdqu YMMWORD PTR [rsp+424], ymm0
+	vmovdqu YMMWORD PTR [rsp+392], ymm0
+	vmovdqu YMMWORD PTR [rsp+360], ymm0
+	vmovdqu YMMWORD PTR [rsp+328], ymm0
+	vmovdqu YMMWORD PTR [rsp+296], ymm0
+	vmovdqu YMMWORD PTR [rsp+264], ymm0
+	vmovdqu YMMWORD PTR [rsp+232], ymm0
+	vmovdqu YMMWORD PTR [rsp+200], ymm0
+	vmovdqu YMMWORD PTR [rsp+168], ymm0
+	vmovdqu YMMWORD PTR [rsp+136], ymm0
+	vmovdqu YMMWORD PTR [rsp+104], ymm0
 	vmovdqu YMMWORD PTR [rsp+72], ymm0
 	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+776]
 	lea rsp, [rsp+8]
@@ -2489,7 +2502,6 @@ vg_aes_gcm_siv_seal_vaes_vpclmul_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -5708,19 +5720,32 @@ vg_aes_gcm_siv_open_vaes_vpclmul_avx512:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-776]
-	vmovdqu YMMWORD PTR [rsp+504], ymm0
-	vmovdqu YMMWORD PTR [rsp+472], ymm0
-	vmovdqu YMMWORD PTR [rsp+440], ymm0
-	vmovdqu YMMWORD PTR [rsp+408], ymm0
-	vmovdqu YMMWORD PTR [rsp+376], ymm0
-	vmovdqu YMMWORD PTR [rsp+344], ymm0
-	vmovdqu YMMWORD PTR [rsp+312], ymm0
-	vmovdqu YMMWORD PTR [rsp+280], ymm0
-	movdqu XMMWORD PTR [rsp+232], xmm0
-	movdqu XMMWORD PTR [rsp+168], xmm0
+	vmovdqu YMMWORD PTR [rsp+744], ymm0
+	vmovdqu YMMWORD PTR [rsp+712], ymm0
+	vmovdqu YMMWORD PTR [rsp+680], ymm0
+	vmovdqu YMMWORD PTR [rsp+648], ymm0
+	vmovdqu YMMWORD PTR [rsp+616], ymm0
+	vmovdqu YMMWORD PTR [rsp+584], ymm0
+	vmovdqu YMMWORD PTR [rsp+552], ymm0
+	vmovdqu YMMWORD PTR [rsp+520], ymm0
+	vmovdqu YMMWORD PTR [rsp+488], ymm0
+	vmovdqu YMMWORD PTR [rsp+456], ymm0
+	vmovdqu YMMWORD PTR [rsp+424], ymm0
+	vmovdqu YMMWORD PTR [rsp+392], ymm0
+	vmovdqu YMMWORD PTR [rsp+360], ymm0
+	vmovdqu YMMWORD PTR [rsp+328], ymm0
+	vmovdqu YMMWORD PTR [rsp+296], ymm0
+	vmovdqu YMMWORD PTR [rsp+264], ymm0
+	vmovdqu YMMWORD PTR [rsp+232], ymm0
+	vmovdqu YMMWORD PTR [rsp+200], ymm0
+	vmovdqu YMMWORD PTR [rsp+168], ymm0
+	vmovdqu YMMWORD PTR [rsp+136], ymm0
+	vmovdqu YMMWORD PTR [rsp+104], ymm0
 	vmovdqu YMMWORD PTR [rsp+72], ymm0
 	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+776]
 	lea rsp, [rsp+8]
@@ -5732,7 +5757,6 @@ vg_aes_gcm_siv_open_vaes_vpclmul_avx512:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 2114:
 	mov r12, QWORD PTR [r15+232]
@@ -8364,19 +8388,32 @@ vg_aes_gcm_siv_seal_aesni_pclmul_avx:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-776]
-	vmovdqu YMMWORD PTR [rsp+504], ymm0
-	vmovdqu YMMWORD PTR [rsp+472], ymm0
-	vmovdqu YMMWORD PTR [rsp+440], ymm0
-	vmovdqu YMMWORD PTR [rsp+408], ymm0
-	vmovdqu YMMWORD PTR [rsp+376], ymm0
-	vmovdqu YMMWORD PTR [rsp+344], ymm0
-	vmovdqu YMMWORD PTR [rsp+312], ymm0
-	vmovdqu YMMWORD PTR [rsp+280], ymm0
-	movdqu XMMWORD PTR [rsp+232], xmm0
-	movdqu XMMWORD PTR [rsp+168], xmm0
+	vmovdqu YMMWORD PTR [rsp+744], ymm0
+	vmovdqu YMMWORD PTR [rsp+712], ymm0
+	vmovdqu YMMWORD PTR [rsp+680], ymm0
+	vmovdqu YMMWORD PTR [rsp+648], ymm0
+	vmovdqu YMMWORD PTR [rsp+616], ymm0
+	vmovdqu YMMWORD PTR [rsp+584], ymm0
+	vmovdqu YMMWORD PTR [rsp+552], ymm0
+	vmovdqu YMMWORD PTR [rsp+520], ymm0
+	vmovdqu YMMWORD PTR [rsp+488], ymm0
+	vmovdqu YMMWORD PTR [rsp+456], ymm0
+	vmovdqu YMMWORD PTR [rsp+424], ymm0
+	vmovdqu YMMWORD PTR [rsp+392], ymm0
+	vmovdqu YMMWORD PTR [rsp+360], ymm0
+	vmovdqu YMMWORD PTR [rsp+328], ymm0
+	vmovdqu YMMWORD PTR [rsp+296], ymm0
+	vmovdqu YMMWORD PTR [rsp+264], ymm0
+	vmovdqu YMMWORD PTR [rsp+232], ymm0
+	vmovdqu YMMWORD PTR [rsp+200], ymm0
+	vmovdqu YMMWORD PTR [rsp+168], ymm0
+	vmovdqu YMMWORD PTR [rsp+136], ymm0
+	vmovdqu YMMWORD PTR [rsp+104], ymm0
 	vmovdqu YMMWORD PTR [rsp+72], ymm0
 	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+776]
 	lea rsp, [rsp+8]
@@ -8388,7 +8425,6 @@ vg_aes_gcm_siv_seal_aesni_pclmul_avx:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -11970,19 +12006,32 @@ vg_aes_gcm_siv_open_aesni_pclmul_avx:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-776]
-	vmovdqu YMMWORD PTR [rsp+504], ymm0
-	vmovdqu YMMWORD PTR [rsp+472], ymm0
-	vmovdqu YMMWORD PTR [rsp+440], ymm0
-	vmovdqu YMMWORD PTR [rsp+408], ymm0
-	vmovdqu YMMWORD PTR [rsp+376], ymm0
-	vmovdqu YMMWORD PTR [rsp+344], ymm0
-	vmovdqu YMMWORD PTR [rsp+312], ymm0
-	vmovdqu YMMWORD PTR [rsp+280], ymm0
-	movdqu XMMWORD PTR [rsp+232], xmm0
-	movdqu XMMWORD PTR [rsp+168], xmm0
+	vmovdqu YMMWORD PTR [rsp+744], ymm0
+	vmovdqu YMMWORD PTR [rsp+712], ymm0
+	vmovdqu YMMWORD PTR [rsp+680], ymm0
+	vmovdqu YMMWORD PTR [rsp+648], ymm0
+	vmovdqu YMMWORD PTR [rsp+616], ymm0
+	vmovdqu YMMWORD PTR [rsp+584], ymm0
+	vmovdqu YMMWORD PTR [rsp+552], ymm0
+	vmovdqu YMMWORD PTR [rsp+520], ymm0
+	vmovdqu YMMWORD PTR [rsp+488], ymm0
+	vmovdqu YMMWORD PTR [rsp+456], ymm0
+	vmovdqu YMMWORD PTR [rsp+424], ymm0
+	vmovdqu YMMWORD PTR [rsp+392], ymm0
+	vmovdqu YMMWORD PTR [rsp+360], ymm0
+	vmovdqu YMMWORD PTR [rsp+328], ymm0
+	vmovdqu YMMWORD PTR [rsp+296], ymm0
+	vmovdqu YMMWORD PTR [rsp+264], ymm0
+	vmovdqu YMMWORD PTR [rsp+232], ymm0
+	vmovdqu YMMWORD PTR [rsp+200], ymm0
+	vmovdqu YMMWORD PTR [rsp+168], ymm0
+	vmovdqu YMMWORD PTR [rsp+136], ymm0
+	vmovdqu YMMWORD PTR [rsp+104], ymm0
 	vmovdqu YMMWORD PTR [rsp+72], ymm0
 	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+776]
 	lea rsp, [rsp+8]
@@ -11994,7 +12043,6 @@ vg_aes_gcm_siv_open_aesni_pclmul_avx:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 2114:
 	mov r12, QWORD PTR [r15+232]
@@ -13375,7 +13423,23 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-776]
+	movdqu XMMWORD PTR [rsp+760], xmm0
+	movdqu XMMWORD PTR [rsp+744], xmm0
+	movdqu XMMWORD PTR [rsp+728], xmm0
+	movdqu XMMWORD PTR [rsp+712], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
 	movdqu XMMWORD PTR [rsp+520], xmm0
 	movdqu XMMWORD PTR [rsp+504], xmm0
 	movdqu XMMWORD PTR [rsp+488], xmm0
@@ -13392,12 +13456,23 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	movdqu XMMWORD PTR [rsp+312], xmm0
 	movdqu XMMWORD PTR [rsp+296], xmm0
 	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
 	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
 	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
 	movdqu XMMWORD PTR [rsp+88], xmm0
 	movdqu XMMWORD PTR [rsp+72], xmm0
 	movdqu XMMWORD PTR [rsp+56], xmm0
 	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+776]
 	lea rsp, [rsp+8]
@@ -13407,8 +13482,8 @@ vg_aes_gcm_siv_seal_aesni_pclmul:
 	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -14768,7 +14843,23 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-776]
+	movdqu XMMWORD PTR [rsp+760], xmm0
+	movdqu XMMWORD PTR [rsp+744], xmm0
+	movdqu XMMWORD PTR [rsp+728], xmm0
+	movdqu XMMWORD PTR [rsp+712], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
 	movdqu XMMWORD PTR [rsp+520], xmm0
 	movdqu XMMWORD PTR [rsp+504], xmm0
 	movdqu XMMWORD PTR [rsp+488], xmm0
@@ -14785,12 +14876,23 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	movdqu XMMWORD PTR [rsp+312], xmm0
 	movdqu XMMWORD PTR [rsp+296], xmm0
 	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
 	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
 	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
 	movdqu XMMWORD PTR [rsp+88], xmm0
 	movdqu XMMWORD PTR [rsp+72], xmm0
 	movdqu XMMWORD PTR [rsp+56], xmm0
 	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+776]
 	lea rsp, [rsp+8]
@@ -14800,8 +14902,8 @@ vg_aes_gcm_siv_open_aesni_pclmul:
 	xor esi, esi
 	xor edi, edi
 	xor r8d, r8d
+	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 253:
 	mov r12, QWORD PTR [r15+232]
@@ -15596,7 +15698,6 @@ vg_aes_gcm_siv_seal_aesni_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 20:
 	lea rsp, [rsp-3848]
@@ -17190,7 +17291,6 @@ vg_aes_gcm_siv_open_aesni_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 20:
 	lea rsp, [rsp-3848]
@@ -18899,7 +18999,6 @@ vg_aes_gcm_siv_seal_aesni:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -19817,7 +19916,6 @@ vg_aes_gcm_siv_open_aesni:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -20577,7 +20675,6 @@ vg_aes_gcm_siv_seal_pclmul_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 20:
 	lea rsp, [rsp-3848]
@@ -22171,7 +22268,6 @@ vg_aes_gcm_siv_open_pclmul_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 20:
 	lea rsp, [rsp-3848]
@@ -23880,7 +23976,6 @@ vg_aes_gcm_siv_seal_pclmul:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -24798,7 +24893,6 @@ vg_aes_gcm_siv_open_pclmul:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -25558,7 +25652,6 @@ vg_aes_gcm_siv_seal_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 20:
 	lea rsp, [rsp-3848]
@@ -27152,7 +27245,6 @@ vg_aes_gcm_siv_open_avx2:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 20:
 	lea rsp, [rsp-3848]
@@ -28861,7 +28953,6 @@ vg_aes_gcm_siv_seal:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -29779,6 +29870,5 @@ vg_aes_gcm_siv_open:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

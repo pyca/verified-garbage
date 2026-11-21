@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 # AES-GCM on RISC-V, as emitted
 
 Each function, on its stack scratch (`Impl.StackScratch.RISCV64`), followed
-by its cleanup: `vg_aes_gcm_init` by `Impl.Scrub.RISCV64.scrub`, which zeroes
+by its cleanup: `vg_aes_gcm_init` by `Impl.Scrub.RISCV64.scrubAll`, which zeroes
 the 2560 bytes of stack its frames use, and the others by
 `Impl.Scrub.RISCV64.scrubSel`, which zeroes, of the stack their frames use,
 only the runs of doublewords stated here, those the residue analysis
@@ -26,7 +26,7 @@ namespace VG.Impl.AesGcm.RISCV64.Fn
 open VG.RISCV64 VG.Impl.Scrub.RISCV64 VG.Impl.StackScratch.RISCV64
 
 /-- `vg_aes_gcm_init`, then its cleanup. -/
-def init : Prog isa := scrub 0 2560 (withStackScratch 2560 .a3 Impl.AesGcm.RISCV64.init)
+def init : Prog isa := scrubAll 0 2560 (withStackScratch 2560 .a3 Impl.AesGcm.RISCV64.init)
 
 /-- `vg_aes_gcm_stream_init`, then its cleanup. -/
 def streamInit : Prog isa :=

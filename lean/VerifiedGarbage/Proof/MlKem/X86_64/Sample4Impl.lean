@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified16
+public import VerifiedGarbage.Impl.MlKem.X86_64.Wipe
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
@@ -976,6 +979,20 @@ structure S16Ok (c : Prog isa) : Prop where
   mxcsr : ctlOk c = true
   spSafe : c.all (fun i => !isa.writesSp i) = true
 
+/-- What the cleanup of the functions of ML-KEM over the implementation `c`
+needs of the code of each (the body that `callWipe` calls, `Impl/MlKem/X86_64/Wipe.lean`),
+at the level `k`: at most 32 bytes of stack, vector instructions of at most
+that level, no load of MXCSR and no indirect call (`X86_64.Scrub.calleeSide`). -/
+structure KemSides (c : Impl.MlKem.X86_64.Callee4) (k : Nat) : Prop where
+  keyGen : X86_64.Scrub.calleeSide (Impl.MlKem.X86_64.keyGen c) k 32 = true
+  encapsH : X86_64.Scrub.calleeSide (Impl.MlKem.X86_64.encapsH c) k 32 = true
+  encaps : X86_64.Scrub.calleeSide (Impl.MlKem.X86_64.encaps c) k 32 = true
+  decaps : X86_64.Scrub.calleeSide (Impl.MlKem.X86_64.decaps c) k 32 = true
+  keyGen1024 : X86_64.Scrub.calleeSide (Impl.MlKem1024.X86_64.keyGen1024 c) k 32 = true
+  encapsH1024 : X86_64.Scrub.calleeSide (Impl.MlKem1024.X86_64.encapsH1024 c) k 32 = true
+  encaps1024 : X86_64.Scrub.calleeSide (Impl.MlKem1024.X86_64.encaps1024 c) k 32 = true
+  decaps1024 : X86_64.Scrub.calleeSide (Impl.MlKem1024.X86_64.decaps1024 c) k 32 = true
+
 /-- An implementation of `vg_mlkem_sample_ntt4` on x86-64. -/
 structure Sample4Impl where
   /-- Its symbol and code. -/
@@ -1020,6 +1037,10 @@ structure Sample4Impl where
   suffix : String
   /-- How its callers compute the outputs of `PRF₂`, for their documentation. -/
   prfsDoc : String
+  /-- The level of the vector instructions of the functions that call it. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What their cleanup needs of their code over it, evaluated here, once. -/
+  sides : KemSides callee level.level
   /-- The CPU features its code requires, which its callers require too. -/
   features : List String
 
@@ -1049,6 +1070,11 @@ theorem codeChecks_of_B {c : Prog isa} (h : codeChecksB c = true) : codeChecks c
 theorem scalar_checks : codeChecks (Impl.MlKem.X86_64.Callee4.scalar).code = true :=
   codeChecks_of_B (by decide +kernel)
 
+/-- What the cleanup of ML-KEM's functions over `scalar` needs of their code. -/
+theorem scalar_sides : KemSides .scalar Impl.Scrub.X86_64.VecLevel.sse.level :=
+  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide,
+    by lit_decide⟩
+
 /-- The baseline implementation, `vg_mlkem_sample_ntt4`, which calls `vg_mlkem_sample_ntt`. -/
 def scalar : Sample4Impl where
   callee := .scalar
@@ -1071,6 +1097,8 @@ def scalar : Sample4Impl where
   suffix := ""
   prfsDoc := "one at a time"
   features := []
+  level := .sse
+  sides := scalar_sides
 
 /-- The checks of the AVX2 and the AVX-512 code, which share most of it, at once. -/
 theorem avx_checks16 (fast : Bool) : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast true) = true := by
@@ -1083,6 +1111,11 @@ theorem avx2_checks16 : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fal
 theorem avx2_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 false true) :=
   ⟨S4.correct (w16 := true) (fast := false), S4.ct (w16 := true) (fast := false), (codeChecks_spec avx2_checks16).1,
     (codeChecks_spec avx2_checks16).2.1, (codeChecks_spec avx2_checks16).2.2.1, (codeChecks_spec avx2_checks16).2.2.2⟩
+
+/-- What the cleanup of ML-KEM's functions over `avx2` needs of their code. -/
+theorem avx2_sides : KemSides .avx2 Impl.Scrub.X86_64.VecLevel.avx.level :=
+  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide,
+    by lit_decide⟩
 
 /-- The AVX2 implementation, `vg_mlkem16_sample_ntt4_avx2`: its callers run with 16-bit
 polynomials, and its functions of `u32`s, which they never run, are the baseline's. -/
@@ -1107,12 +1140,19 @@ def avx2 : Sample4Impl where
   suffix := "_avx2"
   prfsDoc := "four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2"]
+  level := .avx
+  sides := avx2_sides
 
 theorem avx512_checks16 : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) = true := avx_checks16 true
 
 theorem avx512_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) :=
   ⟨S4.correct (w16 := true) (fast := true), S4.ct (w16 := true) (fast := true), (codeChecks_spec avx512_checks16).1,
     (codeChecks_spec avx512_checks16).2.1, (codeChecks_spec avx512_checks16).2.2.1, (codeChecks_spec avx512_checks16).2.2.2⟩
+
+/-- What the cleanup of ML-KEM's functions over `avx512` needs of their code. -/
+theorem avx512_sides : KemSides .avx512 Impl.Scrub.X86_64.VecLevel.evex.level :=
+  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide,
+    by lit_decide⟩
 
 /-- The AVX-512 implementation, `vg_mlkem16_sample_ntt4_avx512`: as `avx2`, with
 AVX-512VL quadword rotates, and sixteen iterations of `SampleNTT`'s loop at a
@@ -1138,6 +1178,8 @@ def avx512 : Sample4Impl where
   suffix := "_avx512"
   prfsDoc := "four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2", "avx512f", "avx512vl", "avx512bw"]
+  level := .evex
+  sides := avx512_sides
 
 end Sample4Impl
 

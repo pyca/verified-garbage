@@ -74,8 +74,6 @@ theorem exec_frame {i : Instr} {s s' : State} (h : exec i s = some s') :
   obtain ⟨-, hw, hf⟩ := execBlock_regions e
   exact ⟨hw, hf⟩
 
-
-
 theorem exec_mem_pres (i : Instr) (s : State) (h : writesMem i = false) :
     Pres (fun x => x.mem = s.mem) (exec i s) := by
   cases i <;> simp only [writesMem, storeW, Option.isSome_some, Option.isSome_none, Bool.true_or,
@@ -2427,12 +2425,6 @@ theorem storeStepKD_noSlots (t : Taint.T) (m : MemOp) (w : Nat) (p : Bool) :
   obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
   simp only [Taint.storeStepKD]
   cases memPub ⟨rg, f, l, b, sl, lo, x⟩ m <;> rfl
-
-theorem storeStep_noSlots (t : Taint.T) (m : MemOp) (w : Nat) (p : Bool) :
-    (storeStep t m w p).map (fun t' => ({ t' with slots := [] } : Taint.T)) =
-      if memPub t m = true then some { t with slots := [] } else none := by
-  simp only [storeStep]
-  split <;> rfl
 
 /-- The base step of a store that `special` leaves to the base analysis. -/
 theorem baseStep_store {τ : FT} {i : Instr} {m : MemOp} {w : Nat} {p : Bool} (hs : special τ i = none)

@@ -23,8 +23,7 @@ namespace VG.Artifacts.Dsa.AArch64
 def direct : List Artifact := [
   Spec.Dsa.parameterInitApi.artifact AArch64.target {
     code := Impl.Dsa.AArch64.ParameterSearch.init
-    verified := .scrubbed ⟨Proof.Dsa.AArch64.ParameterSearchInit.init_verified,
-      Proof.Dsa.AArch64.ParameterSearchInit.init_noResidue _ _⟩ }]
+    verified := .scrubbed Proof.Dsa.AArch64.ParameterSearchInit.init_scrubbed }]
 
 end VG.Artifacts.Dsa.AArch64
 
@@ -61,10 +60,9 @@ def artifacts : List Artifact :=
       verified := .scrubbed (Proof.Dsa.AArch64.Scrub.deriveKey v) }]) ++
   (Generation.Refill.hashPairs.flatMap fun (p : Generation.Refill.Hashes) =>
     VG.Proof.Variants.MillerRabin.AArch64.variants.map fun (v : Proof.MillerRabin.AArch64.RoundImpl) =>
-    Spec.Dsa.parameterSearchApi.artifact AArch64.target (VG.AArch64.ScrubAll.withScrubAll {
+    Spec.Dsa.parameterSearchApi.artifact AArch64.target {
       suffix := qualifiedName "" [("sha1", p.sha1.suffix), ("sha256", p.sha256.suffix), ("mr", v.suffix)]
-      code := Impl.Dsa.AArch64.Generation.code p.sha1.H p.sha256.H (Generator.generatorStage v).run
-        (ProbablePrime.primeTest v).run
-      verified := Generation.Refill.backend_verified p.sha1 p.sha256 v p.h1 p.h256 } (Proof.Dsa.AArch64.Scrub.parameterSearchOk _)))
+      code := Impl.Dsa.AArch64.Fn.parameterSearch p.sha1.H p.sha256.H v.suffix v.mont.mm v.roundMont.mm
+      verified := .scrubbed (Proof.Dsa.AArch64.Scrub.parameterSearch p v) })
 
 end VG.Artifacts.Dsa.AArch64

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ecdh.X86_64
 public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
@@ -28,3 +29,16 @@ def exchangeP384Adx : Prog isa :=
     (Impl.Weierstrass.X86_64.doubleCms Impl.Ecdsa.X86_64.p384x.MP' Impl.Ecdsa.X86_64.p384x.rcbSlots)
 
 end VG.Impl.Ecdh.X86_64
+
+namespace VG.Impl.Ecdh.X86_64.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ecdh_p384` as emitted: its code, then its cleanup. -/
+def exchangeP384 : Prog isa := scrubAll .sse 32 8 _root_.VG.Impl.Ecdh.X86_64.exchangeP384
+
+/-- `vg_ecdh_p384_adx` as emitted: its code, then its cleanup. -/
+def exchangeP384Adx : Prog isa := scrubAll .avx 32 8 _root_.VG.Impl.Ecdh.X86_64.exchangeP384Adx
+
+end VG.Impl.Ecdh.X86_64.Fn

@@ -162,7 +162,7 @@ theorem ctrFrameSat_pre : ∃ s, (Proof.Camellia.ctrContractSk AArch64.abi 3344)
     Proof.Camellia.ctrPostSk, AArch64.abi, AArch64.argRegs] [ctrFrameSat] using ctrFrameSat
 
 /-- CTR with its working space on the stack, which its registration zeroes
-(`ScrubAll.withScrubAll`). -/
+(`Scrub.verifiedScrubbedAll`). -/
 theorem ctr_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 3344 .x5 ctr)
       (Spec.Camellia.ctrContract AArch64.abi 3344) :=

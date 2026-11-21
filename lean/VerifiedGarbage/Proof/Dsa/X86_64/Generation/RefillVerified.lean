@@ -32,6 +32,10 @@ structure Hashes where
   sha256 : Proof.Pbkdf2.Md.X86_64.MdHash
   h1 : sha1.mgf.G.rust = "sha1"
   h256 : sha256.mgf.G.rust = "sha256"
+  /-- They are among the variants the search is emitted for, whose code the
+  cleanup's proofs evaluate (`Proof/Dsa/X86_64/Generation/SearchScrub.lean`). -/
+  mem1 : sha1 ∈ VG.Proof.Variants.MdHash.X86_64.sha1Variants
+  mem256 : sha256 ∈ VG.Proof.Variants.MdHash.X86_64.sha256Variants
 
 open VG.Proof.Variants.MdHash.X86_64 (sha1Variants sha256Variants)
 
@@ -53,7 +57,7 @@ which runs both hashes with them. -/
 def hashPairs : List Hashes :=
   sha1Variants.attach.flatMap fun ⟨v1, h1⟩ => sha256Variants.attach.filterMap fun ⟨v256, h256⟩ =>
     if v1.suffix == v256.suffix || (v1.suffix == "_avx_bmi" && v256.suffix == "_avx2") then
-      some ⟨v1, v256, sha1Variants_rust v1 h1, sha256Variants_rust v256 h256⟩
+      some ⟨v1, v256, sha1Variants_rust v1 h1, sha256Variants_rust v256 h256, h1, h256⟩
     else none
 
 end VG.Proof.Dsa.X86_64.Generation.RefillBackend

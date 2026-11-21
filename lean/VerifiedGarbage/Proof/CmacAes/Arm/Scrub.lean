@@ -28,7 +28,7 @@ lemmas of `Proof/CmacAes/Stream/Scratch.lean`, as on x86
 of that stack and by instructions that set the registers a callee may
 change, and the flags, to constants (`Impl.CmacAes.Arm.Fn`), and `Fn` below
 states that it returns without secret residue
-(`Arm.Scrub.verifiedScrubbedF`), which is what its registration binds.
+(`Arm.Scrub.verifiedScrubbedAll`), which is what its registration binds.
 `init`'s contract reserves 2312 bytes, which is no frame size of the model
 (`FrameOk`), so it is proven with the next one, 2320
 (`Arm.Scrub.Verified.stack_le`).
@@ -88,21 +88,21 @@ open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack
 
 /-- `vg_cmac_aes_init`. -/
 theorem init : VerifiedScrubbed target Impl.CmacAes.Arm.Fn.init (Spec.Cmac.aesInitContract abi 2320) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.aesInitApi)
+  verifiedScrubbedAll (api := Spec.Cmac.aesInitApi)
     { code := Impl.StackScratch.Arm.withRegScratch 2304 .r3 Impl.CmacAes.Stream.Arm.init
       verified := Scrub.init_framed2320 }
     (Scrub.initOut _) (scrubSideF_of Scrub.init_code Scrub.frameOk_2320 _)
 
 /-- `vg_cmac_aes_absorb`. -/
 theorem absorb : VerifiedScrubbed target Impl.CmacAes.Arm.Fn.absorb (Spec.Cmac.aesAbsorbContract abi 2336) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.aesAbsorbApi)
+  verifiedScrubbedAll (api := Spec.Cmac.aesAbsorbApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2320 2 Impl.CmacAes.Stream.Arm.absorb
       verified := Proof.CmacAes.Stream.Arm.absorb_framed }
     (Scrub.absorbOut _) (scrubSideF_of Scrub.absorb_code Scrub.frameOk_2336 _)
 
 /-- `vg_cmac_aes_finish`. -/
 theorem finish : VerifiedScrubbed target Impl.CmacAes.Arm.Fn.finish (Spec.Cmac.aesFinishContract abi 2336) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.aesFinishApi)
+  verifiedScrubbedAll (api := Spec.Cmac.aesFinishApi)
     { code := Impl.StackScratch.Arm.withStackScratch 2320 1 Impl.CmacAes.Stream.Arm.finish
       verified := Proof.CmacAes.Stream.Arm.finish_framed }
     (Scrub.finishOut _) (scrubSideF_of Scrub.finish_code Scrub.frameOk_2336 _)

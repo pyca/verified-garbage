@@ -68,7 +68,7 @@ def body : Prog isa :=
 def enter : Prog isa := .frame (.push [.rax]) body (.pop .rcx 1)
 
 /-- What follows `enter` in the function its artifact emits: the clearing
-that its registration appends (`RScrub.withScrubAllR` in
+that its registration binds (`enterCall`, `enter_scrubbed` in
 `Proof/Mcdt/X86_64.lean`): `xmm0`, `r11`, `rcx` and `rdx` zeroed, the
 upper half of `rax` cleared, and its 8 bytes of stack wiped. -/
 def scrubTail : Prog isa :=

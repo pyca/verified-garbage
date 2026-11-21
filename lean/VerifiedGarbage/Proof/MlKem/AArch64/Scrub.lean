@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 The postconditions of key generation, encapsulation (hashing the key, or
 with `H(ek)` given) and decapsulation of ML-KEM-768 and ML-KEM-1024 read the
 memory on return only within their outputs and their scratch space
-(`ScrubAll.ScrubAllOk`, as x86-64's `Proof/MlKem/X86_64/CallWipe.lean` proves
+(`Scrub.ScrubAllOk`, as x86-64's `Proof/MlKem/X86_64/CallWipe.lean` proves
 them): each implementation, generic over the Keccak-f[1600] implementations
 it calls, returns with every register it may write cleared and its whole
 stack zeroed (`Impl.MlKem.AArch64.Fn`, whose theorems are at the end).
@@ -31,7 +31,7 @@ stack zeroed (`Impl.MlKem.AArch64.Fn`, whose theorems are at the end).
 
 namespace VG.Proof.MlKem.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 /-- The `n` bytes at `q` read the memory only within a region at `q` of at
 least `n` bytes. -/
@@ -212,7 +212,7 @@ implementations it calls: what its registration binds. Its code is the code
 built with the single-state permutation's body empty, with those holes
 filled (`Code.fillCalls`); what the cleanup needs of the code is evaluated
 of that closed code, by the kernel, once for the baseline two-state functions
-and once for the SHA-3 extension's (`ScrubAll.verifiedScrubbedOfFill`). -/
+and once for the SHA-3 extension's (`Scrub.verifiedScrubbedOfFill`). -/
 
 section Fns
 

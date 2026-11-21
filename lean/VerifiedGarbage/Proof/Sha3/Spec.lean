@@ -40,9 +40,8 @@ theorem rotateLeft_zero (x : Lane) : x.rotateLeft 0 = x := by
 theorem rho_get (A : State) {j : Nat} (hj : j < 25) :
     (rho A)[j] = A[j].rotateLeft (rhoOff j) := by
   rw [← rhoSpec_eq j hj]
-  simp only [rho, Vector.getElem_ofFn, rhoSpec]
-  cases (List.range 24).find? (fun t => rhoPos t == (j % 5, j / 5)) <;>
-    simp [BitVec.rotateLeft_mod_eq_rotateLeft, rotateLeft_zero]
+  simp only [rho, rhoOffsets, Vector.getElem_ofFn, rhoSpec]
+  cases (List.range 24).find? (fun t => rhoPos t == (j % 5, j / 5)) <;> rfl
 
 /-! ## A round, lane by lane -/
 

@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
-public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
+public import VerifiedGarbage.Impl.Sm4.AArch64.Fn
+public meta import VerifiedGarbage.Impl.Sm4.AArch64.Fn
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
+public meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrFinal
 public meta import VerifiedGarbage.Proof.Sm4.AArch64.CtrFinal
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrVerified
@@ -40,7 +43,7 @@ meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 whose scratch words they zero (`withStackScratchWiped`). The analysis of the
 window's bytes (`rtaintG`) finds that only six of its 204 granules may differ
 between the two runs on return: the five lowest and the highest. They clear
-their registers, then zero those six granules (`withScrubG 3264 [0, 1, 2, 3,
+their registers, then zero those six granules (`scrubSel 3264 [0, 1, 2, 3,
 4, 203]`); their postcondition reads the memory on return only within the
 data (`Proof.Sm4.ecbPostOut_local`).
 -/
@@ -49,13 +52,10 @@ data (`Proof.Sm4.ecbPostOut_local`).
 
 namespace VG.Proof.Sm4.AArch64.EcbResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-- `vg_sm4_ecb_encrypt`, before its granules [0, 1, 2, 3, 4, 203] are zeroed. -/
-abbrev ecbEncryptBase : Prog isa :=
-  withClears [.x6, .x7, .x8, .x10, .x11, .x12, .x13]
-    [.v0, .v1, .v2, .v3, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27, .v28, .v29, .v30] none
-    (Impl.Sm4.AArch64.ecbFew .encrypt Proof.Sm4.AArch64.ecbAnyFramed)
+abbrev ecbEncryptBase : Prog isa := Impl.Sm4.AArch64.Fn.ecbEncryptBase
 
 theorem ecbEncryptBase_verified : Verified AArch64.target ecbEncryptBase (Spec.Sm4.ecbContract AArch64.abi Spec.Sm4.Direction.encrypt 3264) :=
   Clears.Verified.withClears (Proof.Sm4.AArch64.ecbFew_verified .encrypt) (by decide)
@@ -65,20 +65,10 @@ theorem ecbEncryptScrubOk : RTaintF.ScrubOk (Spec.Sm4.ecbContract AArch64.abi Sp
     (Proof.Sm4.ecbPostOut_local _ .encrypt)
 
 /-- `vg_sm4_ecb_encrypt`. -/
-abbrev ecbEncryptCode : Prog isa := withScrubG 3264 [0, 1, 2, 3, 4, 203] ecbEncryptBase
-
-theorem ecbEncryptCode_verified : Verified AArch64.target ecbEncryptCode (Spec.Sm4.ecbContract AArch64.abi Spec.Sm4.Direction.encrypt 3264) :=
-  RTaintG.Verified.withScrubG ecbEncryptBase_verified ⟨by decide, by decide, by decide⟩ (by decide) ecbEncryptScrubOk
-
-theorem ecbEncryptCode_noResidue : NoResidue ecbEncryptCode (Spec.Sm4.ecbContract AArch64.abi Spec.Sm4.Direction.encrypt 3264) 0 :=
-  noResidue_withScrubG (P₀ := 0) ecbEncryptBase_verified ⟨by decide, by decide, by decide⟩ ecbEncryptScrubOk.sp
-    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
+abbrev ecbEncryptCode : Prog isa := Impl.Sm4.AArch64.Fn.ecbEncrypt
 
 /-- `vg_sm4_ecb_decrypt`, before its granules [0, 1, 2, 3, 4, 203] are zeroed. -/
-abbrev ecbDecryptBase : Prog isa :=
-  withClears [.x6, .x7, .x8, .x10, .x11, .x12, .x13]
-    [.v0, .v1, .v2, .v3, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27, .v28, .v29, .v30] none
-    (Impl.Sm4.AArch64.ecbFew .decrypt Proof.Sm4.AArch64.ecbAnyFramed)
+abbrev ecbDecryptBase : Prog isa := Impl.Sm4.AArch64.Fn.ecbDecryptBase
 
 theorem ecbDecryptBase_verified : Verified AArch64.target ecbDecryptBase (Spec.Sm4.ecbContract AArch64.abi Spec.Sm4.Direction.decrypt 3264) :=
   Clears.Verified.withClears (Proof.Sm4.AArch64.ecbFew_verified .decrypt) (by decide)
@@ -88,13 +78,22 @@ theorem ecbDecryptScrubOk : RTaintF.ScrubOk (Spec.Sm4.ecbContract AArch64.abi Sp
     (Proof.Sm4.ecbPostOut_local _ .decrypt)
 
 /-- `vg_sm4_ecb_decrypt`. -/
-abbrev ecbDecryptCode : Prog isa := withScrubG 3264 [0, 1, 2, 3, 4, 203] ecbDecryptBase
+abbrev ecbDecryptCode : Prog isa := Impl.Sm4.AArch64.Fn.ecbDecrypt
 
-theorem ecbDecryptCode_verified : Verified AArch64.target ecbDecryptCode (Spec.Sm4.ecbContract AArch64.abi Spec.Sm4.Direction.decrypt 3264) :=
-  RTaintG.Verified.withScrubG ecbDecryptBase_verified ⟨by decide, by decide, by decide⟩ (by decide) ecbDecryptScrubOk
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.ecbEncrypt
+      (Spec.Sm4.ecbContract AArch64.abi Spec.Sm4.Direction.encrypt 3264) 0 :=
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) ecbEncryptBase_verified ⟨by decide, by decide, by decide⟩ (by decide) ecbEncryptScrubOk
+    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
-theorem ecbDecryptCode_noResidue : NoResidue ecbDecryptCode (Spec.Sm4.ecbContract AArch64.abi Spec.Sm4.Direction.decrypt 3264) 0 :=
-  noResidue_withScrubG (P₀ := 0) ecbDecryptBase_verified ⟨by decide, by decide, by decide⟩ ecbDecryptScrubOk.sp
+/-- The function as its registration binds it: it meets its contract in constant time and returns
+without secret residue. -/
+theorem _root_.VG.Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode_scrubbed :
+    VerifiedScrubbed AArch64.target Impl.Sm4.AArch64.Fn.ecbDecrypt
+      (Spec.Sm4.ecbContract AArch64.abi Spec.Sm4.Direction.decrypt 3264) 0 :=
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) ecbDecryptBase_verified ⟨by decide, by decide, by decide⟩ (by decide) ecbDecryptScrubOk
     (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.Sm4.AArch64.EcbResidue

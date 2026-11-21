@@ -7,16 +7,19 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 
 /-!
-# Scrubbed code registered with its facts proved (PPC64LE)
+# The cleanup's theorems (PPC64LE)
 
-`scrubOf` and `scrubWipedOf`: what `Scrub.withScrub` and
-`Scrub.withScrubWiped` register, with nothing left for the emitter to work
-out. The bytes of stack the tail wipes and the registers it clears are
-arguments (literals at the call site), and what the scrub needs of the code
-is one Boolean (`scrubSide`, `wipedSide`) whose proof the call site gives,
-checked by the kernel when its module is built: the registration is a record
-whose code is `scrub` of literals and the code, and evaluating it inspects no
-code.
+The theorems a registration binds (`verified := .scrubbed …`), about a
+function's code as emitted: its body, then its cleanup
+(`Impl.Scrub.PPC64LE.scrubAll rb d cl`).
+
+* `verifiedScrubbedAll` covers code whose frames use `d` bytes of stack.
+* `verifiedScrubbedWiped` covers code that wipes its own frame (`d = 0`).
+
+The bytes of stack the cleanup wipes and the registers it clears are
+literals in `Impl/`. What the cleanup needs of the code is one Boolean
+(`scrubSide`, `wipedSide`), which the proof module gives by `lit_decide`, so
+the kernel checks it when that module is built.
 -/
 
 @[expose] public section
@@ -141,7 +144,7 @@ theorem keeps_of_keepsB {c : Prog isa} {cl : Clear} (h : keepsB c cl = true) : c
   · cases v <;> simp [vregs]
   · simpa using hv
 
-/-- `Verified.scrub`, with the registers the tail clears given: any `cl`
+/-- `Verified.scrubAll`, with the registers the tail clears given: any `cl`
 that is well-formed for the levels and that the code keeps. The functions
 the code calls indirectly have the same addresses in two runs that agree on
 what is public (`hsy`). -/
@@ -155,9 +158,9 @@ theorem Verified.scrubWith {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.p
       ∀ n ∈ inames c, s₁.syms n = s₂.syms n) (hrb : sig.retBits A.ptrBits ≤ 64)
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits))
     (hwf : cl.WF (chunks c.ppc64leDepth)) (hk : cl.Keeps c) :
-    Verified target (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth cl c)
+    Verified target (Impl.Scrub.PPC64LE.scrubAll (sig.retBits A.ptrBits) c.ppc64leDepth cl c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.PPC64LE.scrub (sig.retBits A.ptrBits) c.ppc64leDepth cl c)
+      NoResidue (Impl.Scrub.PPC64LE.scrubAll (sig.retBits A.ptrBits) c.ppc64leDepth cl c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   have hsum := chunks_sum h16
   refine Verified.scrubOf hA h (chunks_ok h16 h48) (by rw [hsum]; exact hd) hwf hk hrb hpost ?_
@@ -176,8 +179,8 @@ theorem Verified.scrubWith {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.p
   refine ⟨hU, fun x hx hc => hA' x hx fun hz => hc ?_⟩
   simp only [Cover, hsum]; simp only [InZ, hL] at hz; exact hz
 
-/-- What `scrubOf` needs of code `c` run by `scrub rb d cl`, with the tables
-`ts` (none by default): `withScrub`'s conditions on its frames (which use
+/-- What `verifiedScrubbedAll` needs of code `c` run by `scrubAll rb d cl`,
+with the tables `ts` (none by default): conditions on its frames (which use
 `d` bytes) and its calls (indirectly, only of functions of `ts`:
 `tablesCall`, which with no table is that it makes no indirect call), that
 the result has at most 64 bits, and that `cl` is a `Clear` the tail can run
@@ -189,11 +192,11 @@ noncomputable def scrubSide (c : Prog isa) (d rb : Nat) (cl : Clear)
 
 /-- `r`'s code, scrubbed with the stack and the registers stated, is
 verified against `r`'s contract and returns without secret residue. -/
-theorem scrubOf_ok {api : Api} (r : Unscrubbed api target) {d : Nat} {cl : Clear}
+private theorem scrubAll_ok {api : Api} (r : Unscrubbed api target) {d : Nat} {cl : Clear}
     (hs : scrubSide r.code d (retBitsOf r) cl r.tables = true) (hd : d ≤ r.stack)
     (hpost : PostOut r.contract (retBitsOf r)) :
-    Verified target (scrub (retBitsOf r) d cl r.code) r.contract ∧
-      NoResidue (scrub (retBitsOf r) d cl r.code) r.contract (retBitsOf r) := by
+    Verified target (scrubAll (retBitsOf r) d cl r.code) r.contract ∧
+      NoResidue (scrubAll (retBitsOf r) d cl r.code) r.contract (retBitsOf r) := by
   simp only [scrubSide, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, decide_eq_true_eq] at hs
   obtain ⟨⟨⟨⟨⟨⟨hde, h16⟩, h48⟩, htc⟩, hrb⟩, hwf⟩, hk⟩ := hs
   subst hde
@@ -208,39 +211,10 @@ theorem scrubOf_ok {api : Api} (r : Unscrubbed api target) {d : Nat} {cl : Clear
     (wf_of_wfB hwf) (keeps_of_keepsB hk)
   simpa using List.all_eq_true.mp htc n hn
 
-/-- `r`, its code followed by the clearing of `d` bytes of stack and of the
-registers `cl`, returning without secret residue: `withScrub`, with the
-stack its frames use and the registers the tail clears stated, and what it
-needs of the code proved (`scrubSide`, which the kernel evaluates where the
-registration is defined) rather than found when the registration is
-evaluated. `rb` is the result's bits as `hpost` states them, so that `hs` is
-stated with it and not with a projection of `r`. -/
-def scrubOf {api : Api} (r : Unscrubbed api target) (d : Nat) (cl : Clear) {rb : Nat}
-    (hpost : PostOut r.contract rb) (hs : scrubSide r.code d rb cl r.tables = true)
-    (hd : d ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl)
-    (hw : r.written = [] := by rfl) : Registration api target :=
-  have hpost : PostOut r.contract (retBitsOf r) := by rw [hb]; exact hpost
-  have hs : scrubSide r.code d (retBitsOf r) cl r.tables = true := by rw [hb]; exact hs
-  {
-  suffix := r.suffix
-  tables := r.tables
-  code := scrub (retBitsOf r) d cl r.code
-  contract := r.contract
-  verified := .scrubbed <| .abi ⟨(scrubOf_ok r hs hd hpost).1, (scrubOf_ok r hs hd hpost).2⟩
-  consts := r.consts
-  stack := r.stack
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := spSafe_all _
-  written := r.written
-  writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith }
-
-/-- What `scrubWipedOf` needs of code `c` that is
-`withStackScratchWiped bytes reg words body`: `withScrubWiped`'s conditions
-on the frame, its wipe and the body, that the result has at most 64 bits,
+/-- What `verifiedScrubbedWiped` needs of code `c` that is
+`withStackScratchWiped bytes reg words body`: that the frame is one
+`withStackScratchWiped` can push, that its wipe covers the frame's region
+and the body has no frames and makes no indirect call, that the result has at most 64 bits,
 and that `cl` is a `Clear` the tail can run, with no stack to wipe, that has
 every volatile register `c` may write. -/
 noncomputable def wipedSide (c body : Prog isa) (bytes words rb : Nat) (cl : Clear) : Bool :=
@@ -249,7 +223,7 @@ noncomputable def wipedSide (c body : Prog isa) (bytes words rb : Nat) (cl : Cle
 
 /-- `r`'s code, followed by the clearing of the registers stated alone, is
 verified against `r`'s contract and returns without secret residue. -/
-theorem scrubWipedOf_ok {api : Api} (r : Unscrubbed api target) {bytes : Nat} {reg : Reg} {words : Nat}
+private theorem scrubWiped_ok {api : Api} (r : Unscrubbed api target) {bytes : Nat} {reg : Reg} {words : Nat}
     {body : Prog isa} {cl : Clear} (hc : r.code = withStackScratchWiped bytes reg words body)
     (hs : wipedSide r.code body bytes words (retBitsOf r) cl = true) (hst : bytes ≤ r.stack)
     (hpost : PostOut r.contract (retBitsOf r)) :
@@ -268,34 +242,33 @@ theorem scrubWipedOf_ok {api : Api} (r : Unscrubbed api target) {bytes : Nat} {r
   exact Verified.scrubOf hA hv ⟨fun _ h => by simp at h, fun _ h => by simp at h⟩ (Nat.zero_le _)
     (wf_of_wfB hwf) (keeps_of_keepsB hk) hrb' hp (WipedShape.agree hA hv sh)
 
-/-- `r`, its code followed by the clearing of the registers `cl` alone,
-returning without secret residue: `withScrubWiped`, for code that wipes its
-own frame, with the registers the tail clears stated and what it needs of
-the code proved (`wipedSide`) rather than found when the registration is
-evaluated. -/
-def scrubWipedOf {api : Api} (r : Unscrubbed api target) (bytes : Nat) (reg : Reg) (words : Nat)
-    (body : Prog isa) (cl : Clear) {rb : Nat}
+/-! ## The theorems a registration binds
+
+`rb` is an argument, so that the hypotheses are stated with it and not with
+a projection of `r`; `hb` ties it to `r`'s result. -/
+
+/-- `r`'s code with its cleanup (`scrubAll rb d cl`) meets `r`'s contract in
+constant time and returns without secret residue. -/
+theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) (d : Nat) (cl : Clear) {rb : Nat}
+    (hpost : PostOut r.contract rb) (hs : scrubSide r.code d rb cl r.tables = true)
+    (hd : d ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl) :
+    VerifiedScrubbed target (scrubAll rb d cl r.code) r.contract rb := by
+  subst hb
+  have h := scrubAll_ok r hs hd hpost
+  exact ⟨h.1, h.2⟩
+
+/-- `verifiedScrubbedAll`, of code that wipes its own frame
+(`withStackScratchWiped bytes reg words body`, with no frame inside it): its
+cleanup clears the registers `cl` alone, `scrubAll rb 0 cl`, which wipes no
+stack. -/
+theorem verifiedScrubbedWiped {api : Api} (r : Unscrubbed api target) (bytes : Nat) (reg : Reg)
+    (words : Nat) (body : Prog isa) (cl : Clear) {rb : Nat}
     (hc : r.code = withStackScratchWiped bytes reg words body) (hpost : PostOut r.contract rb)
     (hs : wipedSide r.code body bytes words rb cl = true)
-    (hst : bytes ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl)
-    (hw : r.written = [] := by rfl) : Registration api target :=
-  have hpost : PostOut r.contract (retBitsOf r) := by rw [hb]; exact hpost
-  have hs : wipedSide r.code body bytes words (retBitsOf r) cl = true := by rw [hb]; exact hs
-  {
-  suffix := r.suffix
-  tables := r.tables
-  code := .seq r.code (scrubTail (retBitsOf r) [] cl)
-  contract := r.contract
-  verified := .scrubbed <| .abi ⟨(scrubWipedOf_ok r hc hs hst hpost).1, (scrubWipedOf_ok r hc hs hst hpost).2⟩
-  consts := r.consts
-  stack := r.stack
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := spSafe_all _
-  written := r.written
-  writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith }
+    (hst : bytes ≤ r.stack := by first | decide | (dsimp only; decide)) (hb : retBitsOf r = rb := by rfl) :
+    VerifiedScrubbed target (scrubAll rb 0 cl r.code) r.contract rb := by
+  subst hb
+  have h := scrubWiped_ok r hc hs hst hpost
+  exact ⟨h.1, h.2⟩
 
 end VG.PPC64LE.Scrub

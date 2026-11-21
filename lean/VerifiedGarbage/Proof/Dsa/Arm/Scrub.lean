@@ -34,11 +34,11 @@ DSA's validations, its verification, its key derivation and the
 initialization of its parameter search, with either multiplication
 (`Dynamic.mul umaal`), have no frames: they keep the registers they save in
 their scratch space, a buffer. Each is emitted with its cleanup
-(`Impl.Dsa.Arm.Fn`, `Impl.Residue.Arm.scrub`): followed by instructions that
+(`Impl.Dsa.Arm.Fn`, `Impl.Scrub.Arm.scrub`): followed by instructions that
 set the registers a callee may change, but the result, and the flags to
 constants (`Arm.Scrub.verifiedScrubbed`). Signing and key generation, which
 call the entropy function from a frame, also zero the 144 bytes of stack
-their contracts reserve (`scrubF`, `Arm.Scrub.verifiedScrubbedF`): their
+their contracts reserve (`scrubAll`, `Arm.Scrub.verifiedScrubbedAll`): their
 postconditions read the memory on return only at `out` and `used`
 (`Arm.Scrub.PostOut`), and their code, with either multiplication, uses at
 most those 144 bytes and makes no indirect call (`CodeOk`). `Fn` below has
@@ -292,7 +292,7 @@ theorem parameterInit :
 theorem randomSignPrevalidated (umaal : Bool) :
     VerifiedScrubbed target (Impl.Dsa.Arm.Fn.randomSignPrevalidated umaal)
       (Spec.Dsa.randomSignPrevalidatedContract abi 144) 32 :=
-  verifiedScrubbedF (api := Spec.Dsa.randomSignPrevalidatedApi)
+  verifiedScrubbedAll (api := Spec.Dsa.randomSignPrevalidatedApi)
     { code := RandomSign.code (PrevalidatedSign.signerName umaal) (PrevalidatedSign.sign umaal)
       verified := randomSigningPrevalidated_verified }
     (Scrub.randomSignPrevalidatedOut _) (scrubSideF_of (Scrub.randomSign_codeOk umaal) Scrub.frameOk_144 _)
@@ -300,7 +300,7 @@ theorem randomSignPrevalidated (umaal : Bool) :
 /-- `vg_dsa_generate_key`. -/
 theorem generateKey (umaal : Bool) :
     VerifiedScrubbed target (Impl.Dsa.Arm.Fn.generateKey umaal) (Spec.Dsa.generateKeyContract abi 144) 32 :=
-  verifiedScrubbedF (api := Spec.Dsa.generateKeyApi)
+  verifiedScrubbedAll (api := Spec.Dsa.generateKeyApi)
     { code := GenerateKey.code (Generate.checkName umaal) (Generate.deriveName umaal)
         (Generate.checkParameters umaal) (Generate.deriveChecked umaal)
       verified := Key.generating_verified }
@@ -310,7 +310,7 @@ theorem generateKey (umaal : Bool) :
 theorem parameterSearch (umaal : Bool) (v : Proof.MillerRabin.Arm.RoundImpl) :
     VerifiedScrubbed target (Impl.Dsa.Arm.Fn.parameterSearch umaal v.suffix v.code)
       (Spec.Dsa.parameterSearchContract abi 304) 32 :=
-  verifiedScrubbedF (api := Spec.Dsa.parameterSearchApi)
+  verifiedScrubbedAll (api := Spec.Dsa.parameterSearchApi)
     { code := Impl.Dsa.Arm.Fn.search umaal v.suffix v.code, verified := Gen.search_params v }
     (Scrub.parameterSearchOut _)
     (scrubSideF_of ((Scrub.search_fill umaal v.suffix ⟨v.stack, v.icallFree⟩).codeOk (Scrub.search_stubOk umaal))

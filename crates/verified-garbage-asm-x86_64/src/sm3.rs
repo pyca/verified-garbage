@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm3_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r#".base64 "uG8WgHOJB7i5shRJiUcEuNdCJBeJRwi4AAaK2olHDLi8MG+piUcQuKo4MRaJRxS4Te6N44lHGLhODvuwiUccMcBFMdvD"
+        r#".base64 "uG8WgHOJB7i5shRJiUcEuNdCJBeJRwi4AAaK2olHDLi8MG+piUcQuKo4MRaJRxS4Te6N44lHGLhODvuwiUccZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }
@@ -115,7 +115,7 @@ call {vg_sm3_compress}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAABmD+/ARTHbSI2kJFD////zD39EJEDzD39EJDDzD39EJCDzD39EJBBIjaQksAAAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
+.base64 "SYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EiNpCRY////8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQISI2kJKgAAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )
@@ -196,7 +196,7 @@ jmp 219f
 call {vg_sm3_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkUP////MPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEEiNpCSwAAAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYtfcEmLb3hNi6eAAAAATYuviAAAAE2Lt5AAAABNi7+YAAAASI2kJKgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EiNpCRY////8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQISI2kJKgAAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_sm3_compress = sym super::sm3::vg_sm3_compress::vg_sm3_compress,
     )

@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
+public import VerifiedGarbage.Impl.Rsa.AArch64.PrivChecked
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 
 /-!
 # The interface `RsaPrivateCrt` on AArch64
@@ -37,35 +39,27 @@ structure CrtCallee where
 
 /-- An implementation of `vg_rsa_private_crt`, with the public operation
 that checks it. -/
-structure CrtImpl where
-  /-- Its symbol and code. -/
-  name : String
-  code : Prog isa
+structure CrtImpl extends Impl.Rsa.AArch64.PrivChecked.Crt where
   verified : Verified AArch64.target code (Proof.Rsa.privateCrtContract AArch64.abi 0)
   noFrames : code.noFrames = true
   noDit : code.all (fun i => !i.touchesDit) = true
   /-- `vg_rsa_private_crt_precomputed`, of the same arithmetic, for keys whose
   factors' product is the modulus. -/
-  crtPName : String
-  crtP : Prog isa
   crtPVerified : Verified AArch64.target crtP privateCrtProductContract
   crtPNoFrames : crtP.noFrames = true
   crtPNoDit : crtP.all (fun i => !i.touchesDit) = true
+  /-- It has no indirect call and never writes `DIT`: what the cleanup of
+  the functions that call it needs. -/
+  crtPSide : AArch64.Scrub.sideAll (fun i => !i.writesDit) crtP = true
   /-- `vg_rsa_public_precompute` (`pc`) and
-  `vg_rsa_public_precomputed_checked` (`pd`), by their symbols. -/
-  pcName : String
-  pc : Prog isa
+  `vg_rsa_public_precomputed_checked` (`pd`). -/
   pcVerified : Verified AArch64.target pc (Spec.Rsa.publicPrecomputeContract AArch64.abi 0)
   pcNoFrames : pc.noFrames = true
   pcNoDit : pc.all (fun i => !i.touchesDit) = true
-  pdName : String
-  pd : Prog isa
   pdVerified : Verified AArch64.target pd (Proof.Rsa.publicPrecomputedCheckedContract AArch64.abi 0)
   pdNoFrames : pd.noFrames = true
   pdNoDit : pd.all (fun i => !i.touchesDit) = true
-  /-- What the names of `vg_rsa_private_checked`'s instances end with (e.g.
-  `_neon`; nothing for the baseline implementation). -/
-  suffix : String
+  pdSide : AArch64.Scrub.sideAll (fun i => !i.writesDit) pd = true
   /-- The CPU features its code and that of the public operation require,
   which `vg_rsa_private_checked` requires too. -/
   features : List String

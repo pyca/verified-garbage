@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Seed.AArch64.Fn
 public import VerifiedGarbage.Proof.Seed.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Seed.AArch64.ModesResidue
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -13,12 +14,10 @@ namespace VG.Artifacts.SeedCbc.AArch64
 
 def artifacts : List Artifact := [
   Spec.Seed.cbcEncryptChainedApi.artifact AArch64.target {
-    code := Proof.Seed.AArch64.ModesResidue.cbcEncryptChainedCode
-    verified := .scrubbed ⟨Proof.Seed.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
-      Proof.Seed.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩ },
+    code := Impl.Seed.AArch64.Fn.cbcEncryptChained
+    verified := .scrubbed Proof.Seed.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
   Spec.Seed.cbcDecryptChainedApi.artifact AArch64.target {
-    code := Proof.Seed.AArch64.ModesResidue.cbcDecryptChainedCode
-    verified := .scrubbed ⟨Proof.Seed.AArch64.ModesResidue.cbcDecryptChainedCode_verified,
-      Proof.Seed.AArch64.ModesResidue.cbcDecryptChainedCode_noResidue⟩ }]
+    code := Impl.Seed.AArch64.Fn.cbcDecryptChained
+    verified := .scrubbed Proof.Seed.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.SeedCbc.AArch64

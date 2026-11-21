@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Hash
@@ -901,6 +905,25 @@ theorem verifyHash_verified_ifma : Verified X86_64.target
     (Hash.hashSat_cons (by decide) satG_spec8 (by decide) fun r hr => by
       simp only [satStateG, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
+
+omit hL hT hI hO in
+theorem verifyHashIfma_codeSp : (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP256Ifma).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ecdsa_p256_verify_ifma` as emitted (`Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHashEvex`), its cleanup included,
+meets its contract in constant time and returns without secret residue. -/
+theorem verifyHashIfma_scrubbed :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHashEvex Spec.Ecdsa.P256.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP256Ifma)
+      (Spec.Ecdsa.P256.verifyHashApi.contract (X86_64.abi.withConsts Impl.P256.X86_64.p256v.combConsts) 96) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P256.verifyHashApi)
+    { code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP256Ifma
+      stack := 96
+      verified := verifyHash_verified_ifma hL hT hI hO
+      spSafe := verifyHashIfma_codeSp } .evex (VG.Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P256.inst Impl.P256.X86_64.p256v.combConsts)
+
+omit hL hT hI hO in
+theorem verifyHashIfma_spSafe : (Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHashEvex Spec.Ecdsa.P256.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP256Ifma).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe verifyHashIfma_codeSp
 
 end
 

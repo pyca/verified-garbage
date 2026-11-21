@@ -29,7 +29,7 @@ the target-independent lemmas of `Proof/CmacTripleDes/StreamScratch.lean`.
 Each is emitted followed by a wipe of that stack and by instructions that set
 the registers a callee may change, and the flags, to constants
 (`Impl.CmacTripleDes.Arm.Fn`), and `Fn` below states that it returns without
-secret residue (`Arm.Scrub.verifiedScrubbedF`), which is what its
+secret residue (`Arm.Scrub.verifiedScrubbedAll`), which is what its
 registration binds. The contracts of `absorb` and `finish` reserve 708 and
 660 bytes, which are no frame sizes of the model (`FrameOk`), so they are
 proven with the next ones, 712 and 664 (`Arm.Scrub.Verified.stack_le`).
@@ -104,7 +104,7 @@ open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack
 /-- `vg_cmac_triple_des_stream_init`. -/
 theorem streamInit :
     VerifiedScrubbed target Impl.CmacTripleDes.Arm.Fn.streamInit (Spec.Cmac.tdesStreamInitContract abi 640) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.tdesStreamInitApi)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesStreamInitApi)
     { code := Impl.StackScratch.Arm.withRegScratch 640 .r3 Impl.CmacTripleDes.Stream.Arm.streamInit
       verified := Proof.CmacTripleDes.Stream.Arm.init_framed }
     (Scrub.streamInitOut _) (scrubSideF_of Scrub.streamInit_code Scrub.frameOk_640 _)
@@ -112,7 +112,7 @@ theorem streamInit :
 /-- `vg_cmac_triple_des_absorb`. -/
 theorem absorb :
     VerifiedScrubbed target Impl.CmacTripleDes.Arm.Fn.absorb (Spec.Cmac.tdesAbsorbContract abi 712) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.tdesAbsorbApi)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesAbsorbApi)
     { code := Impl.StackScratch.Arm.withStackScratch 704 2 Impl.CmacTripleDes.Stream.Arm.absorb
       verified := Scrub.absorb_framed712 }
     (Scrub.absorbOut _) (scrubSideF_of Scrub.absorb_code Scrub.frameOk_712 _)
@@ -120,7 +120,7 @@ theorem absorb :
 /-- `vg_cmac_triple_des_finish`. -/
 theorem finish :
     VerifiedScrubbed target Impl.CmacTripleDes.Arm.Fn.finish (Spec.Cmac.tdesFinishContract abi 664) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.tdesFinishApi)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesFinishApi)
     { code := Impl.StackScratch.Arm.withStackScratch 656 1 Impl.CmacTripleDes.Stream.Arm.finish
       verified := Scrub.finish_framed664 }
     (Scrub.finishOut _) (scrubSideF_of Scrub.finish_code Scrub.frameOk_664 _)

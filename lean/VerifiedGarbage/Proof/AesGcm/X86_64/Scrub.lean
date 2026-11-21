@@ -9,6 +9,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.AesGcm.X86_64.ScrubStub
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Fn
 public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Aes.X86_64.Scrub
@@ -21,12 +23,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 `vg_aes_gcm_init` over an implementation of `vg_aes_ctr32` that needs no
 working space (`Aes.X86_64.Ctr32Impl.free`), with `vg_aes_expand_key_scratch_aesni`,
 which needs none either, in a frame of only the 176 bytes it writes itself
-(`initF_framed`), followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`) where the implementation gives its residue
-analysis (`Aes.X86_64.Ctr32Impl.gcmInitRes`, on `Aes.X86_64.gcmInitCodeF`).
-Over the others, in a frame of 2.5 KB, of which the analysis cannot tell
-what may hold secrets, followed by the clearing of that whole frame, in
-chunks whose 16-byte stores are aligned (`X86_64.RScrub.withScrubAllC`). Its
+(`initF_framed`). Over the others, in a frame of 2.5 KB. Each is followed
+by the clearing of its whole frame, whose 16-byte stores are aligned
+(`Impl.Scrub.X86_64.scrubAll`, `X86_64.Scrub.verifiedScrubbedAllFill`). Its
 postcondition reads the memory on
 return only within the key context, for a key of the lengths the
 precondition allows (`X86_64.Scrub.PostOut`). `vg_aes_gcm_stream_init` and
@@ -106,32 +105,56 @@ def gcmOf (c : Ctr32Impl) : GcmImpl :=
 /-- With `vg_aes_expand_key_scratch_aesni`, which needs no working space. -/
 def gcmOfF (c : Ctr32Impl) : GcmImpl := { ctr := c, key := KeyImpl.aesni, gh := GhashName.scalar.impl }
 
-theorem initCodeF_eq (c : Ctr32Impl) :
-    Impl.StackScratch.X86_64.withStackScratch 184 .rcx (Impl.AesGcm.X86_64.init (gcmOfF c).callees) =
-      gcmInitCodeF c.callee := rfl
+theorem init_fill (i : GcmImpl) (n : Nat) (hs : i.stitch = none) :
+    Fill (i.lv .sse).level (fun _ => 0)
+      (Impl.StackScratch.X86_64.withStackScratch n .rcx (Impl.AesGcm.X86_64.init (stubCallees none none false)))
+      (Impl.StackScratch.X86_64.withStackScratch n .rcx (Impl.AesGcm.X86_64.init i.callees)) := by
+  obtain ⟨h1, h2, h3⟩ := i.sides .sse
+  simp only [GcmImpl.callees, hs, Option.map_none, Option.any_none]
+  fill_calls
 
-open VG.X86_64.RScrub in
-/-- `vg_aes_gcm_init` over `c`: with no working space for an implementation
-that needs none, and without secret residue where the analysis handles it;
-over the others, in 2576 bytes, all cleared. -/
-def initReg (c : Ctr32Impl) : Registration Spec.Gcm.initApi X86_64.target :=
-  match c.free with
-  | some fc =>
-    withScrub {
-      suffix := c.suffix
-      code := gcmInitCodeF c.callee
+/-- `Spec.Gcm.initApi`'s function as emitted over `c`, for an implementation
+that needs no working space (`Impl.AesGcm.X86_64.Fn.init`, in 192 bytes),
+meets its contract in constant time and returns without secret residue. -/
+theorem initF_scrubbed (c : Ctr32Impl) (fc : Proof.Aes.X86_64.Ctr32Free c.callee) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.init ((gcmOfF c).lv .sse) 192 (gcmOfF c).callees)
+      (Spec.Gcm.initApi.contract X86_64.abi 192) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.initApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 184 .rcx (Impl.AesGcm.X86_64.init (stubCallees none none false)))
+    { suffix := c.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 184 .rcx (Impl.AesGcm.X86_64.init (gcmOfF c).callees)
       contract := Spec.Gcm.initContract abi 192
-      verified := initCodeF_eq c ▸ initF_framed (gcmOfF c) KeyImpl.aesniFree fc
-      spSafe := initCodeF_eq c ▸ VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOfF c)) }
-      (initOut _) [] (pubOk_nil _) c.gcmInitRes
-  | none =>
-    withScrubAllC {
-      suffix := c.suffix
+      verified := initF_framed (gcmOfF c) KeyImpl.aesniFree fc
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOfF c)) }
+    _ (initOut _) (init_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Gcm.initApi`'s function as emitted over `c`, in 2576 bytes, as
+`initF_scrubbed`. -/
+theorem init_scrubbed (c : Ctr32Impl) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.init ((gcmOf c).lv .sse) 2576 (gcmOf c).callees)
+      (Spec.Gcm.initApi.contract X86_64.abi 2576) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.initApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init (stubCallees none none false)))
+    { suffix := c.suffix
       code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init (gcmOf c).callees)
       stack := 2576
       verified := init_framed (gcmOf c)
       spSafe := VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOf c)) }
-      (initOut _) [8, 2568]
+    _ (initOut _) (init_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `vg_aes_gcm_init` over `c`: with no working space for an implementation that needs none; over
+the others, in 2576 bytes, the case `initF`: its code writes the stack pointer only in its
+frames and calls (the registration's `spSafe`). -/
+theorem initF_spSafeFn (c : Ctr32Impl) :
+    (Impl.AesGcm.X86_64.Fn.init ((gcmOfF c).lv .sse) 192 (gcmOfF c).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOfF c)))
+
+/-- `vg_aes_gcm_init` over `c`: with no working space for an implementation that needs none; over
+the others, in 2576 bytes, the case `init`: its code writes the stack pointer only in its frames
+and calls (the registration's `spSafe`). -/
+theorem init_spSafeFn (c : Ctr32Impl) :
+    (Impl.AesGcm.X86_64.Fn.init ((gcmOf c).lv .sse) 2576 (gcmOf c).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOf c)))
 
 /-! ## `vg_aes_gcm_stream_init` and `vg_aes_gcm_stream_aad`
 
@@ -140,7 +163,7 @@ working space they use: the 272 bytes they use themselves over
 `vg_ghash_pclmul` and `vg_ghash_vpclmul`, which need none
 (`streamInit_framed28`, `streamAad_framed22`), and with `vg_ghash`'s 256
 bytes at 512, 768 (`_framed96`), rather than 2.5 KB; followed by the
-clearing of that whole frame (`X86_64.Scrub.withScrubAll`): the residue
+clearing of that whole frame (`Impl.Scrub.X86_64.scrubAll`): the residue
 analysis would keep all of it, as it cannot place the byte copies into the
 state. SM4-GCM's are the same functions (`Spec.Sm4.Gcm.streamInitApi`,
 `streamAadApi`). The instances `vg_aes_gcm_seal_gather_prepared` calls are
@@ -174,71 +197,197 @@ registration files'). -/
 def ghOf (n : GhashName) : GcmImpl :=
   { ctr := Ctr32Impl.scalar, key := KeyImpl.scalar, gh := n.impl }
 
-/-- `vg_aes_gcm_stream_init` over `n`, in 240 bytes of stack (784 over
-`vg_ghash`), all cleared. -/
-def streamInitReg (n : GhashName) : Registration Spec.Gcm.streamInitApi X86_64.target :=
-  match (ghOf n).gh.free with
-  | some f => withScrubAll {
-    suffix := n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 232 .r8 (Impl.AesGcm.X86_64.streamInit (ghOf n).callees)
-    stack := 240
-    verified := streamInit_framed28 (ghOf n) f
-    spSafe := VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)) } (streamInitOut _)
-  | none => withScrubAll {
-    suffix := n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 776 .r8 (Impl.AesGcm.X86_64.streamInit (ghOf n).callees)
-    stack := 784
-    verified := streamInit_framed96 (ghOf n)
-    spSafe := VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)) } (streamInitOut _)
+theorem streamInit_fill (i : GcmImpl) (m : Nat) (hs : i.stitch = none) :
+    Fill (i.lv .sse).level (fun _ => 0)
+      (Impl.StackScratch.X86_64.withStackScratch m .r8 (Impl.AesGcm.X86_64.streamInit (stubCallees none none false)))
+      (Impl.StackScratch.X86_64.withStackScratch m .r8 (Impl.AesGcm.X86_64.streamInit i.callees)) := by
+  obtain ⟨h1, h2, h3⟩ := i.sides .sse
+  simp only [GcmImpl.callees, hs, Option.map_none, Option.any_none]
+  fill_calls
 
-/-- `vg_aes_gcm_stream_aad` over `n`, in 192 bytes of stack (784 over
-`vg_ghash`), all cleared. -/
-def streamAadReg (n : GhashName) : Registration Spec.Gcm.streamAadApi X86_64.target :=
-  match (ghOf n).gh.free with
-  | some f => withScrubAll {
-    suffix := n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 184 .r9 (Impl.AesGcm.X86_64.streamAad (ghOf n).callees)
-    stack := 192
-    verified := streamAad_framed22 (ghOf n) f
-    spSafe := VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)) } (streamAadOut _)
-  | none => withScrubAll {
-    suffix := n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 776 .r9 (Impl.AesGcm.X86_64.streamAad (ghOf n).callees)
-    stack := 784
-    verified := streamAad_framed96 (ghOf n)
-    spSafe := VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)) } (streamAadOut _)
+/-- `Spec.Gcm.streamInitApi`'s function as emitted over `n`, in 240 bytes
+(`Impl.AesGcm.X86_64.Fn.streamInit`), meets its contract in constant time and
+returns without secret residue. -/
+theorem streamInitF_scrubbed (n : GhashName) (f : GhashFree (ghOf n).gh.fn.code) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamInit ((ghOf n).lv .sse) 240 (ghOf n).callees)
+      (Spec.Gcm.streamInitApi.contract X86_64.abi 240) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.streamInitApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 232 .r8 (Impl.AesGcm.X86_64.streamInit (stubCallees none none false)))
+    { suffix := n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 232 .r8 (Impl.AesGcm.X86_64.streamInit (ghOf n).callees)
+      stack := 240
+      verified := streamInit_framed28 (ghOf n) f
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)) }
+    _ (streamInitOut _) (streamInit_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
 
-/-- `vg_sm4_gcm_stream_init` over `n`: `streamInitReg`'s function. -/
-def sm4StreamInitReg (n : GhashName) : Registration Spec.Sm4.Gcm.streamInitApi X86_64.target :=
-  match (ghOf n).gh.free with
-  | some f => withScrubAll {
-    suffix := n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 232 .r8 (Impl.AesGcm.X86_64.streamInit (ghOf n).callees)
-    stack := 240
-    verified := streamInit_framed28 (ghOf n) f
-    spSafe := VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)) } (streamInitOut _)
-  | none => withScrubAll {
-    suffix := n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 776 .r8 (Impl.AesGcm.X86_64.streamInit (ghOf n).callees)
-    stack := 784
-    verified := streamInit_framed96 (ghOf n)
-    spSafe := VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)) } (streamInitOut _)
+/-- `Spec.Sm4.Gcm.streamInitApi`'s function as emitted over `n`, in 240 bytes
+(`Impl.AesGcm.X86_64.Fn.streamInit`), meets its contract in constant time and
+returns without secret residue. -/
+theorem sm4StreamInitF_scrubbed (n : GhashName) (f : GhashFree (ghOf n).gh.fn.code) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamInit ((ghOf n).lv .sse) 240 (ghOf n).callees)
+      (Spec.Sm4.Gcm.streamInitApi.contract X86_64.abi 240) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Sm4.Gcm.streamInitApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 232 .r8 (Impl.AesGcm.X86_64.streamInit (stubCallees none none false)))
+    { suffix := n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 232 .r8 (Impl.AesGcm.X86_64.streamInit (ghOf n).callees)
+      stack := 240
+      verified := streamInit_framed28 (ghOf n) f
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)) }
+    _ (streamInitOut _) (streamInit_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
 
-/-- `vg_sm4_gcm_stream_aad` over `n`: `streamAadReg`'s function. -/
-def sm4StreamAadReg (n : GhashName) : Registration Spec.Sm4.Gcm.streamAadApi X86_64.target :=
-  match (ghOf n).gh.free with
-  | some f => withScrubAll {
-    suffix := n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 184 .r9 (Impl.AesGcm.X86_64.streamAad (ghOf n).callees)
-    stack := 192
-    verified := streamAad_framed22 (ghOf n) f
-    spSafe := VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)) } (streamAadOut _)
-  | none => withScrubAll {
-    suffix := n.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 776 .r9 (Impl.AesGcm.X86_64.streamAad (ghOf n).callees)
-    stack := 784
-    verified := streamAad_framed96 (ghOf n)
-    spSafe := VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)) } (streamAadOut _)
+/-- `Spec.Gcm.streamInitApi`'s function as emitted over `n`, in 784 bytes
+(`Impl.AesGcm.X86_64.Fn.streamInit`), meets its contract in constant time and
+returns without secret residue. -/
+theorem streamInit_scrubbed (n : GhashName) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamInit ((ghOf n).lv .sse) 784 (ghOf n).callees)
+      (Spec.Gcm.streamInitApi.contract X86_64.abi 784) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.streamInitApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 776 .r8 (Impl.AesGcm.X86_64.streamInit (stubCallees none none false)))
+    { suffix := n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 776 .r8 (Impl.AesGcm.X86_64.streamInit (ghOf n).callees)
+      stack := 784
+      verified := streamInit_framed96 (ghOf n)
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)) }
+    _ (streamInitOut _) (streamInit_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Sm4.Gcm.streamInitApi`'s function as emitted over `n`, in 784 bytes
+(`Impl.AesGcm.X86_64.Fn.streamInit`), meets its contract in constant time and
+returns without secret residue. -/
+theorem sm4StreamInit_scrubbed (n : GhashName) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamInit ((ghOf n).lv .sse) 784 (ghOf n).callees)
+      (Spec.Sm4.Gcm.streamInitApi.contract X86_64.abi 784) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Sm4.Gcm.streamInitApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 776 .r8 (Impl.AesGcm.X86_64.streamInit (stubCallees none none false)))
+    { suffix := n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 776 .r8 (Impl.AesGcm.X86_64.streamInit (ghOf n).callees)
+      stack := 784
+      verified := streamInit_framed96 (ghOf n)
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)) }
+    _ (streamInitOut _) (streamInit_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Gcm.streamInitApi`'s function over `n`: in 240 bytes of stack (784 over `vg_ghash`), the
+case `streamInitF`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem streamInitF_spSafeFn (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamInit ((ghOf n).lv .sse) 240 (ghOf n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)))
+
+/-- `Spec.Gcm.streamInitApi`'s function over `n`: in 240 bytes of stack (784 over `vg_ghash`), the
+case `streamInit`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem streamInit_spSafeFn (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamInit ((ghOf n).lv .sse) 784 (ghOf n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)))
+
+/-- `Spec.Sm4.Gcm.streamInitApi`'s function over `n`: in 240 bytes of stack (784 over `vg_ghash`),
+the case `sm4StreamInitF`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem sm4StreamInitF_spSafeFn (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamInit ((ghOf n).lv .sse) 240 (ghOf n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)))
+
+/-- `Spec.Sm4.Gcm.streamInitApi`'s function over `n`: in 240 bytes of stack (784 over `vg_ghash`),
+the case `sm4StreamInit`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem sm4StreamInit_spSafeFn (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamInit ((ghOf n).lv .sse) 784 (ghOf n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (streamInit_spSafe (ghOf n)))
+
+theorem streamAad_fill (i : GcmImpl) (m : Nat) (hs : i.stitch = none) :
+    Fill (i.lv .sse).level (fun _ => 0)
+      (Impl.StackScratch.X86_64.withStackScratch m .r9 (Impl.AesGcm.X86_64.streamAad (stubCallees none none false)))
+      (Impl.StackScratch.X86_64.withStackScratch m .r9 (Impl.AesGcm.X86_64.streamAad i.callees)) := by
+  obtain ⟨h1, h2, h3⟩ := i.sides .sse
+  simp only [GcmImpl.callees, hs, Option.map_none, Option.any_none]
+  fill_calls
+
+/-- `Spec.Gcm.streamAadApi`'s function as emitted over `n`, in 192 bytes
+(`Impl.AesGcm.X86_64.Fn.streamAad`), meets its contract in constant time and
+returns without secret residue. -/
+theorem streamAadF_scrubbed (n : GhashName) (f : GhashFree (ghOf n).gh.fn.code) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamAad ((ghOf n).lv .sse) 192 (ghOf n).callees)
+      (Spec.Gcm.streamAadApi.contract X86_64.abi 192) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.streamAadApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 184 .r9 (Impl.AesGcm.X86_64.streamAad (stubCallees none none false)))
+    { suffix := n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 184 .r9 (Impl.AesGcm.X86_64.streamAad (ghOf n).callees)
+      stack := 192
+      verified := streamAad_framed22 (ghOf n) f
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)) }
+    _ (streamAadOut _) (streamAad_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Sm4.Gcm.streamAadApi`'s function as emitted over `n`, in 192 bytes
+(`Impl.AesGcm.X86_64.Fn.streamAad`), meets its contract in constant time and
+returns without secret residue. -/
+theorem sm4StreamAadF_scrubbed (n : GhashName) (f : GhashFree (ghOf n).gh.fn.code) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamAad ((ghOf n).lv .sse) 192 (ghOf n).callees)
+      (Spec.Sm4.Gcm.streamAadApi.contract X86_64.abi 192) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Sm4.Gcm.streamAadApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 184 .r9 (Impl.AesGcm.X86_64.streamAad (stubCallees none none false)))
+    { suffix := n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 184 .r9 (Impl.AesGcm.X86_64.streamAad (ghOf n).callees)
+      stack := 192
+      verified := streamAad_framed22 (ghOf n) f
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)) }
+    _ (streamAadOut _) (streamAad_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Gcm.streamAadApi`'s function as emitted over `n`, in 784 bytes
+(`Impl.AesGcm.X86_64.Fn.streamAad`), meets its contract in constant time and
+returns without secret residue. -/
+theorem streamAad_scrubbed (n : GhashName) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamAad ((ghOf n).lv .sse) 784 (ghOf n).callees)
+      (Spec.Gcm.streamAadApi.contract X86_64.abi 784) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.streamAadApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 776 .r9 (Impl.AesGcm.X86_64.streamAad (stubCallees none none false)))
+    { suffix := n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 776 .r9 (Impl.AesGcm.X86_64.streamAad (ghOf n).callees)
+      stack := 784
+      verified := streamAad_framed96 (ghOf n)
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)) }
+    _ (streamAadOut _) (streamAad_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Sm4.Gcm.streamAadApi`'s function as emitted over `n`, in 784 bytes
+(`Impl.AesGcm.X86_64.Fn.streamAad`), meets its contract in constant time and
+returns without secret residue. -/
+theorem sm4StreamAad_scrubbed (n : GhashName) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamAad ((ghOf n).lv .sse) 784 (ghOf n).callees)
+      (Spec.Sm4.Gcm.streamAadApi.contract X86_64.abi 784) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Sm4.Gcm.streamAadApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackScratch 776 .r9 (Impl.AesGcm.X86_64.streamAad (stubCallees none none false)))
+    { suffix := n.impl.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 776 .r9 (Impl.AesGcm.X86_64.streamAad (ghOf n).callees)
+      stack := 784
+      verified := streamAad_framed96 (ghOf n)
+      spSafe := VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)) }
+    _ (streamAadOut _) (streamAad_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Gcm.streamAadApi`'s function over `n`: in 192 bytes of stack (784 over `vg_ghash`), the
+case `streamAadF`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem streamAadF_spSafeFn (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamAad ((ghOf n).lv .sse) 192 (ghOf n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)))
+
+/-- `Spec.Gcm.streamAadApi`'s function over `n`: in 192 bytes of stack (784 over `vg_ghash`), the
+case `streamAad`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem streamAad_spSafeFn (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamAad ((ghOf n).lv .sse) 784 (ghOf n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)))
+
+/-- `Spec.Sm4.Gcm.streamAadApi`'s function over `n`: in 192 bytes of stack (784 over `vg_ghash`),
+the case `sm4StreamAadF`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem sm4StreamAadF_spSafeFn (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamAad ((ghOf n).lv .sse) 192 (ghOf n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)))
+
+/-- `Spec.Sm4.Gcm.streamAadApi`'s function over `n`: in 192 bytes of stack (784 over `vg_ghash`),
+the case `sm4StreamAad`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem sm4StreamAad_spSafeFn (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamAad ((ghOf n).lv .sse) 784 (ghOf n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (streamAad_spSafe (ghOf n)))
 
 /-! ## `vg_aes_gcm_stream_finish` and `vg_aes_gcm_stream_verify`
 
@@ -248,9 +397,8 @@ use rather than 2.5 KB: over `vg_ghash_pclmul` and `vg_ghash_vpclmul`,
 which need none either, the 208 and 272 bytes they use themselves
 (`streamFinish_framed26`, `streamVerify_framed34`), and with `vg_ghash`'s
 256 bytes at 512, 768 (`_framed96`); followed by the clearing of that whole
-frame (`X86_64.Scrub.withScrubAll`). Over the bitsliced `vg_aes_ctr32`, whose
-working space is most of the frame, in the frame of 2.5 KB, wiped whole in
-chunks whose 16-byte stores are aligned (`X86_64.RScrub.withScrubAllC`), as
+frame (`Impl.Scrub.X86_64.scrubAll`). Over the bitsliced `vg_aes_ctr32`, whose
+working space is most of the frame, in the frame of 2.5 KB, wiped whole, as
 `vg_cmac_aes_finish` over it is.
 `vg_aes_gcm_seal_gather_prepared` calls the first by name: it calls
 internal functions of its own instead,
@@ -279,60 +427,158 @@ theorem streamVerifyOut (stack : Nat) :
 def pairOf (c : Ctr32Impl) (n : GhashName) : GcmImpl :=
   { ctr := c, key := if c.features.isEmpty then KeyImpl.scalar else KeyImpl.aesni, gh := n.impl }
 
-/-- `vg_aes_gcm_stream_finish` over `c` and `n`: in 232 bytes of stack (792
-over `vg_ghash`), all cleared, for an implementation of `vg_aes_ctr32` that
-needs no working space; for the others, in 2584 bytes, all cleared. -/
-def streamFinishReg (c : Ctr32Impl) (n : GhashName) : Registration Spec.Gcm.streamFinishApi X86_64.target :=
-  match c.free, (pairOf c n).gh.free with
-  | some f, some g =>
-    withScrubAll {
-      suffix := c.suffix ++ n.impl.suffix
+theorem streamFinish_fill (i : GcmImpl) (m : Nat) (hs : i.stitch = none) :
+    Fill (i.lv .sse).level (fun _ => 0)
+      (Impl.StackScratch.X86_64.withStackArgScratch m 0 (Impl.AesGcm.X86_64.streamFinish (stubCallees none none false)))
+      (Impl.StackScratch.X86_64.withStackArgScratch m 0 (Impl.AesGcm.X86_64.streamFinish i.callees)) := by
+  obtain ⟨h1, h2, h3⟩ := i.sides .sse
+  simp only [GcmImpl.callees, hs, Option.map_none, Option.any_none]
+  fill_calls
+
+/-- `Spec.Gcm.streamFinishApi`'s function as emitted over `c` and `n`, in 232
+bytes (`Impl.AesGcm.X86_64.Fn.streamFinish`), meets its contract in constant time
+and returns without secret residue. -/
+theorem streamFinishFF_scrubbed (c : Ctr32Impl) (n : GhashName) (f : Proof.Aes.X86_64.Ctr32Free c.callee) (g : GhashFree (pairOf c n).gh.fn.code) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamFinish ((pairOf c n).lv .sse) 232 (pairOf c n).callees)
+      (Spec.Gcm.streamFinishApi.contract X86_64.abi 232) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.streamFinishApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 224 0 (Impl.AesGcm.X86_64.streamFinish (stubCallees none none false)))
+    { suffix := c.suffix ++ n.impl.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch 224 0 (Impl.AesGcm.X86_64.streamFinish (pairOf c n).callees)
       stack := 232
       verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed26 (pairOf c n) f g)
-      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) } (streamFinishOut _)
-  | some f, none =>
-    withScrubAll {
-      suffix := c.suffix ++ n.impl.suffix
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) }
+    _ (streamFinishOut _) (streamFinish_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Gcm.streamFinishApi`'s function as emitted over `c` and `n`, in 792
+bytes (`Impl.AesGcm.X86_64.Fn.streamFinish`), meets its contract in constant time
+and returns without secret residue. -/
+theorem streamFinishF_scrubbed (c : Ctr32Impl) (n : GhashName) (f : Proof.Aes.X86_64.Ctr32Free c.callee) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamFinish ((pairOf c n).lv .sse) 792 (pairOf c n).callees)
+      (Spec.Gcm.streamFinishApi.contract X86_64.abi 792) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.streamFinishApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (Impl.AesGcm.X86_64.streamFinish (stubCallees none none false)))
+    { suffix := c.suffix ++ n.impl.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (Impl.AesGcm.X86_64.streamFinish (pairOf c n).callees)
       stack := 792
       verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed96 (pairOf c n) f)
-      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) } (streamFinishOut _)
-  | none, _ =>
-    RScrub.withScrubAllC {
-      suffix := c.suffix ++ n.impl.suffix
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) }
+    _ (streamFinishOut _) (streamFinish_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Gcm.streamFinishApi`'s function as emitted over `c` and `n`, in 2584
+bytes (`Impl.AesGcm.X86_64.Fn.streamFinish`), meets its contract in constant time
+and returns without secret residue. -/
+theorem streamFinish_scrubbed (c : Ctr32Impl) (n : GhashName)  :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamFinish ((pairOf c n).lv .sse) 2584 (pairOf c n).callees)
+      (Spec.Gcm.streamFinishApi.contract X86_64.abi 2584) 0 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.streamFinishApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish (stubCallees none none false)))
+    { suffix := c.suffix ++ n.impl.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish (pairOf c n).callees)
       stack := 2584
       verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed (pairOf c n))
-      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) } (streamFinishOut _)
-      [8, 2576]
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) }
+    _ (streamFinishOut _) (streamFinish_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
 
-/-- `vg_aes_gcm_stream_verify` over `c` and `n`: in 304 bytes of stack (800
-over `vg_ghash`), all cleared, for an implementation of `vg_aes_ctr32` that
-needs no working space; for the others, in 2592 bytes, all cleared. -/
-def streamVerifyReg (c : Ctr32Impl) (n : GhashName) : Registration Spec.Gcm.streamVerifyApi X86_64.target :=
-  match c.free, (pairOf c n).gh.free with
-  | some f, some g =>
-    withScrubAll {
-      suffix := c.suffix ++ n.impl.suffix
+/-- `vg_aes_gcm_stream_finish` over `c` and `n`: in 232 bytes of stack (792 over `vg_ghash`) for an
+implementation of `vg_aes_ctr32` that needs no working space; for the others, in 2584 bytes, the
+case `streamFinishFF`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem streamFinishFF_spSafeFn (c : Ctr32Impl) (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamFinish ((pairOf c n).lv .sse) 232 (pairOf c n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)))
+
+/-- `vg_aes_gcm_stream_finish` over `c` and `n`: in 232 bytes of stack (792 over `vg_ghash`) for an
+implementation of `vg_aes_ctr32` that needs no working space; for the others, in 2584 bytes, the
+case `streamFinishF`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem streamFinishF_spSafeFn (c : Ctr32Impl) (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamFinish ((pairOf c n).lv .sse) 792 (pairOf c n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)))
+
+/-- `vg_aes_gcm_stream_finish` over `c` and `n`: in 232 bytes of stack (792 over `vg_ghash`) for an
+implementation of `vg_aes_ctr32` that needs no working space; for the others, in 2584 bytes, the
+case `streamFinish`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem streamFinish_spSafeFn (c : Ctr32Impl) (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamFinish ((pairOf c n).lv .sse) 2584 (pairOf c n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)))
+
+theorem streamVerify_fill (i : GcmImpl) (m : Nat) (hs : i.stitch = none) :
+    Fill (i.lv .sse).level (fun _ => 0)
+      (Impl.StackScratch.X86_64.withStackArgScratch m 1 (Impl.AesGcm.X86_64.streamVerify (stubCallees none none false)))
+      (Impl.StackScratch.X86_64.withStackArgScratch m 1 (Impl.AesGcm.X86_64.streamVerify i.callees)) := by
+  obtain ⟨h1, h2, h3⟩ := i.sides .sse
+  simp only [GcmImpl.callees, hs, Option.map_none, Option.any_none]
+  fill_calls
+
+/-- `Spec.Gcm.streamVerifyApi`'s function as emitted over `c` and `n`, in 304
+bytes (`Impl.AesGcm.X86_64.Fn.streamVerify`), meets its contract in constant time
+and returns without secret residue. -/
+theorem streamVerifyFF_scrubbed (c : Ctr32Impl) (n : GhashName) (f : Proof.Aes.X86_64.Ctr32Free c.callee) (g : GhashFree (pairOf c n).gh.fn.code) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamVerify ((pairOf c n).lv .sse) 304 (pairOf c n).callees)
+      (Spec.Gcm.streamVerifyApi.contract X86_64.abi 304) 32 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.streamVerifyApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 296 1 (Impl.AesGcm.X86_64.streamVerify (stubCallees none none false)))
+    { suffix := c.suffix ++ n.impl.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch 296 1 (Impl.AesGcm.X86_64.streamVerify (pairOf c n).callees)
       stack := 304
       verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed34 (pairOf c n) f g)
-      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) } (streamVerifyOut _)
-  | some f, none =>
-    withScrubAll {
-      suffix := c.suffix ++ n.impl.suffix
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) }
+    _ (streamVerifyOut _) (streamVerify_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Gcm.streamVerifyApi`'s function as emitted over `c` and `n`, in 800
+bytes (`Impl.AesGcm.X86_64.Fn.streamVerify`), meets its contract in constant time
+and returns without secret residue. -/
+theorem streamVerifyF_scrubbed (c : Ctr32Impl) (n : GhashName) (f : Proof.Aes.X86_64.Ctr32Free c.callee) :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamVerify ((pairOf c n).lv .sse) 800 (pairOf c n).callees)
+      (Spec.Gcm.streamVerifyApi.contract X86_64.abi 800) 32 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.streamVerifyApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 792 1 (Impl.AesGcm.X86_64.streamVerify (stubCallees none none false)))
+    { suffix := c.suffix ++ n.impl.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch 792 1 (Impl.AesGcm.X86_64.streamVerify (pairOf c n).callees)
       stack := 800
       verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed96 (pairOf c n) f)
-      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) } (streamVerifyOut _)
-  | none, _ =>
-    RScrub.withScrubAllC {
-      suffix := c.suffix ++ n.impl.suffix
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) }
+    _ (streamVerifyOut _) (streamVerify_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `Spec.Gcm.streamVerifyApi`'s function as emitted over `c` and `n`, in 2592
+bytes (`Impl.AesGcm.X86_64.Fn.streamVerify`), meets its contract in constant time
+and returns without secret residue. -/
+theorem streamVerify_scrubbed (c : Ctr32Impl) (n : GhashName)  :
+    VerifiedScrubbed target (Impl.AesGcm.X86_64.Fn.streamVerify ((pairOf c n).lv .sse) 2592 (pairOf c n).callees)
+      (Spec.Gcm.streamVerifyApi.contract X86_64.abi 2592) 32 :=
+  verifiedScrubbedAllFill (api := Spec.Gcm.streamVerifyApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify (stubCallees none none false)))
+    { suffix := c.suffix ++ n.impl.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify (pairOf c n).callees)
       stack := 2592
       verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed (pairOf c n))
-      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) } (streamVerifyOut _)
-      [8, 2584]
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) }
+    _ (streamVerifyOut _) (streamVerify_fill _ _ rfl) (Nat.zero_le _) (Nat.le_refl _)
+
+/-- `vg_aes_gcm_stream_verify` over `c` and `n`: in 304 bytes of stack (800 over `vg_ghash`) for an
+implementation of `vg_aes_ctr32` that needs no working space; for the others, in 2592 bytes, the
+case `streamVerifyFF`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem streamVerifyFF_spSafeFn (c : Ctr32Impl) (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamVerify ((pairOf c n).lv .sse) 304 (pairOf c n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)))
+
+/-- `vg_aes_gcm_stream_verify` over `c` and `n`: in 304 bytes of stack (800 over `vg_ghash`) for an
+implementation of `vg_aes_ctr32` that needs no working space; for the others, in 2592 bytes, the
+case `streamVerifyF`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem streamVerifyF_spSafeFn (c : Ctr32Impl) (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamVerify ((pairOf c n).lv .sse) 800 (pairOf c n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)))
+
+/-- `vg_aes_gcm_stream_verify` over `c` and `n`: in 304 bytes of stack (800 over `vg_ghash`) for an
+implementation of `vg_aes_ctr32` that needs no working space; for the others, in 2592 bytes, the
+case `streamVerify`: its code writes the stack pointer only in its frames and calls (the
+registration's `spSafe`). -/
+theorem streamVerify_spSafeFn (c : Ctr32Impl) (n : GhashName) :
+    (Impl.AesGcm.X86_64.Fn.streamVerify ((pairOf c n).lv .sse) 2592 (pairOf c n).callees).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)))
 
 end VG.Proof.AesGcm.X86_64.Scrub

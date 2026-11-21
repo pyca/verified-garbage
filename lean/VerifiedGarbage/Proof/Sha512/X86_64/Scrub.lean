@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+public import VerifiedGarbage.Impl.Sha512.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Sha512.Contract
@@ -23,12 +25,13 @@ meta import VerifiedGarbage.Proof.Sha512.PostOut
 # The SHA-512 family's `init` on x86-64, without secret residue
 
 `vg_sha384_init`, `vg_sha512_init`, `vg_sha512_224_init` and
-`vg_sha512_256_init`, each followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`), which clears the registers it writes. Their
+`vg_sha512_256_init`, each followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack the residue analysis finds may hold secrets. Their
 postconditions read the memory on return only within the streaming state
-(`Stream.repr_congr`). HMAC, PBKDF2 and Ed25519 call their code as the
-internal `vg_<alg>_init_core` (`Proof.Pbkdf2.Md.X86_64.Sha512.hash`), which
-clears what it leaves itself.
+(`Stream.repr_congr`). HMAC, PBKDF2 and Ed25519 call their code as the internal
+`vg_<alg>_init_core` (`Proof.Pbkdf2.Md.X86_64.Sha512.hash`), which clears what
+it leaves itself.
 -/
 
 @[expose] public section
@@ -41,60 +44,69 @@ theorem initOut (iv : Spec.Sha512.HashValue) :
     PostOut (Spec.Sha512.initContract X86_64.abi iv) (Spec.Sha512.initSig.retBits 64) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.initPost_out iv 64)
 
-def init384Ks : List Nat := keep_for% Spec.Sha512.init384Api.sig 0 (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_384) []
+/-! ## The functions as emitted -/
 
-theorem init384Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha512.init384Api.sig 0 []) (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_384)
-      h).any (RScrub.resOkB · 0 init384Ks (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of init384Ks (by taint_decide)
+theorem init384_codeSp : (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_384).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_sha384_init`. -/
-def init384Reg : Registration Spec.Sha512.init384Api X86_64.target :=
-  scrubOf { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_384, verified := Shared.init Spec.Sha512.H0_384 } .sse false [.r11] (initOut Spec.Sha512.H0_384) []
-    (pubOk_nil _) ⟨init384Ks, init384Ok⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Sha512.init384Api`'s function as emitted (`Impl.Sha512.X86_64.Fn.init384`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init384_scrubbed :
+    VerifiedScrubbed target Impl.Sha512.X86_64.Fn.init384 (Spec.Sha512.init384Api.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Sha512.init384Api)
+    { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_384
+      verified := Shared.init Spec.Sha512.H0_384
+      spSafe := init384_codeSp }
+    .sse [] (initOut Spec.Sha512.H0_384) (RScrub.pubOk_nil _) (by taint_decide)
 
-def init512Ks : List Nat := keep_for% Spec.Sha512.init512Api.sig 0 (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512) []
+theorem init384_spSafe : Impl.Sha512.X86_64.Fn.init384.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init384_codeSp
 
-theorem init512Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha512.init512Api.sig 0 []) (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512)
-      h).any (RScrub.resOkB · 0 init512Ks (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of init512Ks (by taint_decide)
+theorem init512_codeSp : (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_sha512_init`. -/
-def init512Reg : Registration Spec.Sha512.init512Api X86_64.target :=
-  scrubOf { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512, verified := Shared.init Spec.Sha512.H0_512 } .sse false [.r11] (initOut Spec.Sha512.H0_512) []
-    (pubOk_nil _) ⟨init512Ks, init512Ok⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Sha512.init512Api`'s function as emitted (`Impl.Sha512.X86_64.Fn.init512`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init512_scrubbed :
+    VerifiedScrubbed target Impl.Sha512.X86_64.Fn.init512 (Spec.Sha512.init512Api.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Sha512.init512Api)
+    { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512
+      verified := Shared.init Spec.Sha512.H0_512
+      spSafe := init512_codeSp }
+    .sse [] (initOut Spec.Sha512.H0_512) (RScrub.pubOk_nil _) (by taint_decide)
 
-def init512_224Ks : List Nat := keep_for% Spec.Sha512.init512_224Api.sig 0 (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_224) []
+theorem init512_spSafe : Impl.Sha512.X86_64.Fn.init512.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init512_codeSp
 
-theorem init512_224Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha512.init512_224Api.sig 0 []) (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_224)
-      h).any (RScrub.resOkB · 0 init512_224Ks (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of init512_224Ks (by taint_decide)
+theorem init512_224_codeSp : (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_224).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_sha512_224_init`. -/
-def init512_224Reg : Registration Spec.Sha512.init512_224Api X86_64.target :=
-  scrubOf { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_224, verified := Shared.init Spec.Sha512.H0_512_224 } .sse false [.r11] (initOut Spec.Sha512.H0_512_224) []
-    (pubOk_nil _) ⟨init512_224Ks, init512_224Ok⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Sha512.init512_224Api`'s function as emitted (`Impl.Sha512.X86_64.Fn.init512_224`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init512_224_scrubbed :
+    VerifiedScrubbed target Impl.Sha512.X86_64.Fn.init512_224 (Spec.Sha512.init512_224Api.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Sha512.init512_224Api)
+    { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_224
+      verified := Shared.init Spec.Sha512.H0_512_224
+      spSafe := init512_224_codeSp }
+    .sse [] (initOut Spec.Sha512.H0_512_224) (RScrub.pubOk_nil _) (by taint_decide)
 
-def init512_256Ks : List Nat := keep_for% Spec.Sha512.init512_256Api.sig 0 (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_256) []
+theorem init512_224_spSafe : Impl.Sha512.X86_64.Fn.init512_224.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init512_224_codeSp
 
-theorem init512_256Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha512.init512_256Api.sig 0 []) (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_256)
-      h).any (RScrub.resOkB · 0 init512_256Ks (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of init512_256Ks (by taint_decide)
+theorem init512_256_codeSp : (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_256).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_sha512_256_init`. -/
-def init512_256Reg : Registration Spec.Sha512.init512_256Api X86_64.target :=
-  scrubOf { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_256, verified := Shared.init Spec.Sha512.H0_512_256 } .sse false [.r11] (initOut Spec.Sha512.H0_512_256) []
-    (pubOk_nil _) ⟨init512_256Ks, init512_256Ok⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Sha512.init512_256Api`'s function as emitted (`Impl.Sha512.X86_64.Fn.init512_256`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init512_256_scrubbed :
+    VerifiedScrubbed target Impl.Sha512.X86_64.Fn.init512_256 (Spec.Sha512.init512_256Api.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Sha512.init512_256Api)
+    { code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_256
+      verified := Shared.init Spec.Sha512.H0_512_256
+      spSafe := init512_256_codeSp }
+    .sse [] (initOut Spec.Sha512.H0_512_256) (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem init512_256_spSafe : Impl.Sha512.X86_64.Fn.init512_256.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init512_256_codeSp
 end VG.Proof.Sha512.X86_64

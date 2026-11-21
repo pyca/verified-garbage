@@ -8,22 +8,14 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Scrub
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
-meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
-meta import VerifiedGarbage.Proof.Framework.Registration
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20.ScrubLocal
-meta import VerifiedGarbage.Proof.ChaCha20.ScrubLocal
 
 /-!
 # ChaCha20's `init` and `set_nonce` without secret residue (x86-64)
 
-`vg_chacha20_init` and `vg_chacha20_set_nonce`, each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers that the residue analysis (`X86_64.RTaint`) finds may hold
-secrets. Their postconditions read the memory on return only within the
+`vg_chacha20_init` and `vg_chacha20_set_nonce`, each followed by the
+clearing of every SSE and caller-saved register
+(`Impl.ChaCha20.X86_64.Fn.init`, `setNonce`). Their postconditions read the memory on return only within the
 streaming state (`Scrub.stream_congr`).
 -/
 
@@ -63,32 +55,24 @@ theorem setNonceOut : PostOut (setNonceContract X86_64.abi) (setNonceSig.retBits
     show keyAt m₂ st = _ ∧ restAt m₂ st = _
     rw [hk, hr]; exact h
 
-def initKs : List Nat := keep_for% initApi.sig 0 Impl.ChaCha20.X86_64.Stream.init []
+/-- `Spec.ChaCha20.initApi`'s function as emitted (`Impl.ChaCha20.X86_64.Fn.init`)
+meets its contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.ChaCha20.X86_64.Fn.init (initApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedAll (api := initApi) { code := Impl.ChaCha20.X86_64.Stream.init, verified := Stream.init_verified } .sse initOut
 
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init initApi.sig 0 []) Impl.ChaCha20.X86_64.Stream.init
-      h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
+theorem init_spSafeFn : Impl.ChaCha20.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (by decide)
 
-def setNonceKs : List Nat := keep_for% setNonceApi.sig 0 Impl.ChaCha20.X86_64.Stream.setNonce []
+/-- `Spec.ChaCha20.setNonceApi`'s function as emitted
+(`Impl.ChaCha20.X86_64.Fn.setNonce`) meets its contract in constant time and
+returns without secret residue. -/
+theorem setNonce_scrubbed :
+    VerifiedScrubbed target Impl.ChaCha20.X86_64.Fn.setNonce (setNonceApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedAll (api := setNonceApi) { code := Impl.ChaCha20.X86_64.Stream.setNonce, verified := Stream.setNonce_verified } .sse
+    setNonceOut
 
-theorem setNonceOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init setNonceApi.sig 0 []) Impl.ChaCha20.X86_64.Stream.setNonce
-      h).any (RScrub.resOkB · 0 setNonceKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of setNonceKs (by taint_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_chacha20_init`. -/
-def initReg : Registration initApi X86_64.target :=
-  scrubOf { code := Impl.ChaCha20.X86_64.Stream.init, verified := Stream.init_verified } .sse false [.rcx, .rdx, .rsi, .r8, .r9] initOut []
-    (pubOk_nil _) ⟨initKs, initOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
-
-open VG.X86_64.RScrub in
-/-- `vg_chacha20_set_nonce`. -/
-def setNonceReg : Registration setNonceApi X86_64.target :=
-  scrubOf { code := Impl.ChaCha20.X86_64.Stream.setNonce, verified := Stream.setNonce_verified } .sse false [.rcx, .rdx]
-    setNonceOut [] (pubOk_nil _) ⟨setNonceKs, setNonceOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem setNonce_spSafeFn : Impl.ChaCha20.X86_64.Fn.setNonce.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (by decide)
 
 end VG.Proof.ChaCha20.X86_64.Scrub

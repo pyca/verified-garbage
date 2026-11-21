@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.KeyPair
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Verified
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ed25519.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ed25519.Contract
@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Ed25519.X86.KeyPair
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Verified
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Verified
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.Ed25519.X86.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Ed25519.Contract
@@ -32,7 +32,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 keep their working space in frames of their own and call the SHA-512 and
 point functions: each, as emitted (`Impl.Ed25519.X86.Fn`), zeroes the
 stack it and its callees use and then clears the registers a callee may
-change (`X86.Scrub.verifiedScrubbedF`), given that the postconditions of the key pair and the signature
+change (`X86.Scrub.verifiedScrubbedAll`), given that the postconditions of the key pair and the signature
 read the memory on return only within their outputs, and that of the
 verification not at all (as RISC-V's `Proof/Ed25519/RISCV64/Scrub.lean`
 proves them).
@@ -82,7 +82,7 @@ theorem verifyOut :
 theorem keyPair_scrubbed :
     VerifiedScrubbed target Impl.Ed25519.X86.Fn.keyPair
       Proof.Ed25519.X86.KeyPair.spec 0 :=
-  verifiedScrubbedF (api := Spec.Ed25519.keyPairApi)
+  verifiedScrubbedAll (api := Spec.Ed25519.keyPairApi)
     { code := Impl.Ed25519.X86.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core")
         KeyPair.dgCode "vg_ed25519_public_key_expanded" Impl.Ed25519.X86.PublicKey.publicKeyExpanded
       verified := KeyPair.verified }
@@ -92,7 +92,7 @@ theorem keyPair_scrubbed :
 theorem signExpanded_scrubbed :
     VerifiedScrubbed target Impl.Ed25519.X86.Fn.signExpanded
       (Spec.Ed25519.signExpandedContract (X86.abi.withConsts Impl.Ed25519.X86.combConsts) 280) 0 :=
-  verifiedScrubbedF (api := Spec.Ed25519.signExpandedApi)
+  verifiedScrubbedAll (api := Spec.Ed25519.signExpandedApi)
     { code := Impl.Ed25519.X86.SignCached.codeExpanded
       verified := SignCached.signExpanded_verified }
     (signExpandedOut Impl.Ed25519.X86.combConsts 280)
@@ -101,7 +101,7 @@ theorem signExpanded_scrubbed :
 theorem verify_scrubbed :
     VerifiedScrubbed target Impl.Ed25519.X86.Fn.verify
       (Spec.Ed25519.verifyContract (X86.abi.withConsts Impl.Ed25519.X86.bConsts) 280) 32 :=
-  verifiedScrubbedF (api := Spec.Ed25519.verifyApi)
+  verifiedScrubbedAll (api := Spec.Ed25519.verifyApi)
     { code := Impl.Ed25519.X86.VerifyMessage.code
       verified := VerifyMessage.verifyMessage_verified }
     (verifyOut Impl.Ed25519.X86.bConsts 280)

@@ -274,8 +274,8 @@ abbrev cR (V : BitVec 32) : Region := ⟨State.addr V + BitVec.ofNat 64 64, 16�
 at `V` (in `r12`), holding the message block `M` in its first 64 bytes. -/
 structure RCtx (V : BitVec 32) (M : Block 32) (s₀ : State) : Prop where
   r12 : s₀.gpr .r12 = V
-  fitV : V.toNat + 512 ≤ 2 ^ 32
-  wV : ∀ o, o + 4 ≤ 512 → InRegions s₀.wr (A V o) 4
+  fitV : V.toNat + 200 ≤ 2 ^ 32
+  wV : ∀ o, o + 4 ≤ 200 → InRegions s₀.wr (A V o) 4
   msg : ∀ j (hj : j < 16), s₀.mem.readW (A V (4 * j)) 32 = M ⟨j, hj⟩
 
 /-- The rounds invariant, relative to the state `s₀` at their start: the work
@@ -301,7 +301,7 @@ theorem wreg_inj (k : Nat) (hk : k < 16) (j : Nat) (hj : j < 16) (h₁ : ¬ (8 �
   · exact absurd h h₁
   · exact absurd h h₂
 
-theorem cOff_A {V : BitVec 32} (fit : V.toNat + 512 ≤ 2 ^ 32) {o : Nat} (ho : o < 512) :
+theorem cOff_A {V : BitVec 32} (fit : V.toNat + 200 ≤ 2 ^ 32) {o : Nat} (ho : o < 200) :
     A V o = State.addr V + BitVec.ofNat 64 o := A_eq (by omega_arith)
 
 theorem gAt_ok {x y z u : Nat} (hx : x < 4) (hy₁ : 4 ≤ y) (hy : y < 8) (hz₁ : 8 ≤ z) (hz : z < 12)
@@ -329,7 +329,7 @@ theorem gAt_ok {x y z u : Nat} (hx : x < 4) (hy₁ : 4 ≤ y) (hy : y < 8) (hz�
     refine h.frame.readW (r := ⟨State.addr V, 64⟩) (Offset.contains_base _ (by omega_arith) (by omega_arith)) ?_ (by decide)
     simp only [List.mem_singleton, forall_eq]
     exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).symm
-  obtain iV : ∀ o, o + 4 ≤ 512 → InRegions (s.rd ++ s.wr) (A V o) 4 := fun o ho =>
+  obtain iV : ∀ o, o + 4 ≤ 200 → InRegions (s.rd ++ s.wr) (A V o) 4 := fun o ho =>
     let ⟨r, hr, hc⟩ := c.wV o ho; ⟨r, List.mem_append_right _ (by rw [h.wr]; exact hr), hc⟩
   unfold gAt
   rw [← List.append_nil (g _ _ _ _ _ _)]
@@ -494,8 +494,8 @@ structure CInv (V B : BitVec 32) (s : State) (n : Nat) (s' : State) : Prop where
   msg : ∀ j < n, s'.mem.readW (A V (4 * j)) 32 = s.mem.readW (A B (4 * j)) 32
 
 theorem copyMsg_ok {V B : BitVec 32} {s : State} (hV : s.gpr .r12 = V) (hB : s.gpr .r0 = B)
-    (fitV : V.toNat + 512 ≤ 2 ^ 32) (fitB : B.toNat + 64 ≤ 2 ^ 32)
-    (wV : ∀ o, o + 4 ≤ 512 → InRegions s.wr (A V o) 4)
+    (fitV : V.toNat + 200 ≤ 2 ^ 32) (fitB : B.toNat + 64 ≤ 2 ^ 32)
+    (wV : ∀ o, o + 4 ≤ 200 → InRegions s.wr (A V o) 4)
     (rB : ∀ o, o + 4 ≤ 64 → InRegions (s.rd ++ s.wr) (A B o) 4)
     (hd : Region.Disjoint ⟨State.addr B, 64⟩ ⟨State.addr V, 64⟩) :
     ∀ n ≤ 16, WP isa (copyMsg n) s (CInv V B s n) := by
@@ -589,11 +589,11 @@ structure CvInv (V : BitVec 32) (s : State) (n : Nat) (s' : State) : Prop where
   frame : Frame [cR V] s.mem s'.mem
   c : ∀ j < n, s'.mem.readW (A V (cOff (j + 8))) 32 = Spec.Blake2.s.IV.toList.getD j 0
 
-theorem ivCs_ok {V : BitVec 32} {s : State} (hV : s.gpr .r12 = V) (fitV : V.toNat + 512 ≤ 2 ^ 32)
-    (wV : ∀ o, o + 4 ≤ 512 → InRegions s.wr (A V o) 4) :
+theorem ivCs_ok {V : BitVec 32} {s : State} (hV : s.gpr .r12 = V) (fitV : V.toNat + 200 ≤ 2 ^ 32)
+    (wV : ∀ o, o + 4 ≤ 200 → InRegions s.wr (A V o) 4) :
     ∀ n ≤ 4, WP isa (ivCs n) s (CvInv V s n) := by
   intro n hn
-  obtain eV : ∀ i, i < 512 → State.addr (V + BitVec.ofNat 32 i) = State.addr V + BitVec.ofNat 64 i :=
+  obtain eV : ∀ i, i < 200 → State.addr (V + BitVec.ofNat 32 i) = State.addr V + BitVec.ofNat 64 i :=
     fun i hi => addr_add (by omega_arith)
   induction n with
   | zero => exact WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (by omega_arith)⟩
@@ -633,7 +633,7 @@ structure DvInv (V : BitVec 32) (s : State) (n : Nat) (s' : State) : Prop where
     (Spec.Blake2.s.IV.toList.getD (j + 4) 0 ^^^ s.mem.readW (A V (xOff (j + 12))) 32).rotateLeft 8
 
 theorem ivDs_ok {V : BitVec 32} {s : State} (hV : s.gpr .r12 = V)
-    (rV : ∀ o, o + 4 ≤ 512 → InRegions (s.rd ++ s.wr) (A V o) 4) :
+    (rV : ∀ o, o + 4 ≤ 200 → InRegions (s.rd ++ s.wr) (A V o) 4) :
     ∀ n ≤ 4, WP isa (ivDs n) s (DvInv V s n) := by
   intro n hn
   induction n with
@@ -661,8 +661,8 @@ theorem ivDs_ok {V : BitVec 32} {s : State} (hV : s.gpr .r12 = V)
 /-! ## Setting up the work vector -/
 
 /-- A word of `scratch` outside the regions a frame allows to change. -/
-theorem scr_word {V : BitVec 32} (fitV : V.toNat + 512 ≤ 2 ^ 32) {rs : List Region} {m m' : Mem}
-    (hf : Frame rs m m') {d : Nat} (hd : d + 4 ≤ 512)
+theorem scr_word {V : BitVec 32} (fitV : V.toNat + 200 ≤ 2 ^ 32) {rs : List Region} {m m' : Mem}
+    (hf : Frame rs m m') {d : Nat} (hd : d + 4 ≤ 200)
     (hdis : ∀ r ∈ rs, Region.Disjoint ⟨State.addr V + BitVec.ofNat 64 d, 4⟩ r) :
     m'.readW (A V d) 32 = m.readW (A V d) 32 := by
   rw [cOff_A fitV (by omega_arith)]; exact hf.readW (Region.contains_self _ _) hdis (by decide)
@@ -688,18 +688,18 @@ structure IOut (V st B : BitVec 32) (s s' : State) : Prop where
   vars : ∀ k < 16, Holds V s' k (initW (fun k => s.mem.readW (A st (4 * k)) 32)
     (fun k => s.mem.readW (A V (xOff k)) 32) k)
 
-theorem init_ok {V st B : BitVec 32} {s : State} (hV : s.gpr .r12 = V) (fitV : V.toNat + 512 ≤ 2 ^ 32)
+theorem init_ok {V st B : BitVec 32} {s : State} (hV : s.gpr .r12 = V) (fitV : V.toNat + 200 ≤ 2 ^ 32)
     (fitS : st.toNat + 32 ≤ 2 ^ 32) (fitB : B.toNat + 64 ≤ 2 ^ 32)
-    (wV : ∀ o, o + 4 ≤ 512 → InRegions s.wr (A V o) 4)
+    (wV : ∀ o, o + 4 ≤ 200 → InRegions s.wr (A V o) 4)
     (rS : ∀ o, o + 4 ≤ 32 → InRegions (s.rd ++ s.wr) (A st o) 4)
     (rB : ∀ o, o + 4 ≤ 64 → InRegions (s.rd ++ s.wr) (A B o) 4)
     (hst : s.mem.readW (A V stOff) 32 = st) (hblk : s.mem.readW (A V blkOff) 32 = B)
     (hdB : Region.Disjoint ⟨State.addr B, 64⟩ ⟨State.addr V, 64⟩)
-    (hdS : Region.Disjoint ⟨State.addr st, 32⟩ ⟨State.addr V, 512⟩) :
+    (hdS : Region.Disjoint ⟨State.addr st, 32⟩ ⟨State.addr V, 200⟩) :
     WP isa Impl.Blake2.Arm.S.init s (IOut V st B s) := by
-  obtain eV : ∀ i, i < 512 → State.addr (V + BitVec.ofNat 32 i) = State.addr V + BitVec.ofNat 64 i :=
+  obtain eV : ∀ i, i < 200 → State.addr (V + BitVec.ofNat 32 i) = State.addr V + BitVec.ofNat 64 i :=
     fun i hi => addr_add (by omega_arith)
-  obtain rV : ∀ o, o + 4 ≤ 512 → InRegions (s.rd ++ s.wr) (A V o) 4 := fun o ho =>
+  obtain rV : ∀ o, o + 4 ≤ 200 → InRegions (s.rd ++ s.wr) (A V o) 4 := fun o ho =>
     let ⟨r, hr, hc⟩ := wV o ho; ⟨r, List.mem_append_right _ hr, hc⟩
   -- The regions `init` writes, and what lies outside them.
   obtain sub64 : ∀ r ∈ [(⟨State.addr V, 64⟩ : Region)], ∃ r' ∈ initR V, Region.Sub r r' := fun r hr => by
@@ -711,13 +711,13 @@ theorem init_ok {V st B : BitVec 32} {s : State} (hV : s.gpr .r12 = V) (fitV : V
   obtain hBlk : (⟨State.addr V + BitVec.ofNat 64 blkOff, 4⟩ : Region).Contains
       (State.addr (V + BitVec.ofNat 32 blkOff)) (32 / 8) := by
     rw [eV _ (by decide)]; exact Region.contains_self _ _
-  obtain outR : ∀ d, 88 ≤ d → d + 4 ≤ 512 → ∀ r ∈ initR V,
+  obtain outR : ∀ d, 88 ≤ d → d + 4 ≤ 200 → ∀ r ∈ initR V,
       Region.Disjoint ⟨State.addr V + BitVec.ofNat 64 d, 4⟩ r := fun d h1 h2 r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (by simp only [blkOff]; omega_arith) (by omega_arith) (by simp only [blkOff]; omega_arith)
-  obtain stR : ∀ {rs : List Region}, (∀ r ∈ rs, Region.Sub r ⟨State.addr V, 512⟩) → ∀ {m m' : Mem},
+  obtain stR : ∀ {rs : List Region}, (∀ r ∈ rs, Region.Sub r ⟨State.addr V, 200⟩) → ∀ {m m' : Mem},
       Frame rs m m' → ∀ k < 8, m'.readW (A st (4 * k)) 32 = m.readW (A st (4 * k)) 32 :=
     fun hs m m' hf k hk => by
       rw [A_eq (by omega_arith)]
@@ -786,7 +786,7 @@ theorem init_ok {V st B : BitVec 32} {s : State} (hV : s.gpr .r12 = V) (fitV : V
         rcases hr with rfl | rfl
         · exact Region.sub_prefix (by omega_arith)
         · exact Offset.sub_base _ (by simp only [blkOff]; omega_arith)) (by rw [m₅]; exact f₄) i hi
-    obtain hX : ∀ i, 88 ≤ xOff i → xOff i + 4 ≤ 512 →
+    obtain hX : ∀ i, 88 ≤ xOff i → xOff i + 4 ≤ 200 →
         s₇.mem.readW (A V (xOff i)) 32 = s.mem.readW (A V (xOff i)) 32 := fun i h1 h2 => by
       obtain f₇ : Frame (initR V) s.mem s₇.mem :=
         (f₄.trans (by rw [h₆.mem, m₅]; exact Frame.refl _ _)).trans (h₇.frame.sub subC)
@@ -820,11 +820,11 @@ theorem init_ok {V st B : BitVec 32} {s : State} (hV : s.gpr .r12 = V) (fitV : V
 the scratch space at `V`, holding words 8–11 of the work vector `v`. -/
 structure FCtx (V st : BitVec 32) (v : Work 32) (s₀ : State) : Prop where
   fitS : st.toNat + 32 ≤ 2 ^ 32
-  fitV : V.toNat + 512 ≤ 2 ^ 32
+  fitV : V.toNat + 200 ≤ 2 ^ 32
   wS : ∀ o, o + 4 ≤ 32 → InRegions s₀.wr (A st o) 4
-  rV : ∀ o, o + 4 ≤ 512 → InRegions (s₀.rd ++ s₀.wr) (A V o) 4
+  rV : ∀ o, o + 4 ≤ 200 → InRegions (s₀.rd ++ s₀.wr) (A V o) 4
   c : ∀ k (hk : k < 4), s₀.mem.readW (A V (cOff (k + 8))) 32 = v[k + 8]'(by omega_arith)
-  disj : Region.Disjoint ⟨State.addr st, 32⟩ ⟨State.addr V, 512⟩
+  disj : Region.Disjoint ⟨State.addr st, 32⟩ ⟨State.addr V, 200⟩
 
 /-- The invariant of `fin`, from `s₀`, with the words `D` of the state done. -/
 structure FI (V st : BitVec 32) (H : Nat → BitVec 32) (v : Work 32) (s₀ : State) (D : List Nat)

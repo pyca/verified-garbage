@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 /-!
 # RSA's key functions on RISC-V, as emitted
 
-Each function is its code, then its cleanup (`Impl.Scrub.RISCV64.scrub`):
+Each function is its code, then its cleanup (`Impl.Scrub.RISCV64.scrubAll`):
 the caller-saved registers cleared but the 32 bits of its result, and none
 of the stack (these functions use none below the stack pointer that they do
 not wipe themselves), so that it returns without secret residue.
@@ -21,21 +21,21 @@ not wipe themselves), so that it returns without secret residue.
 namespace VG.Impl.Rsa.RISCV64.Fn
 
 open VG.RISCV64
-open VG.Impl.Scrub.RISCV64 (scrub)
+open VG.Impl.Scrub.RISCV64 (scrubAll)
 
 /-- `vg_rsa_public_precompute`. -/
-def publicPrecompute : Prog isa := scrub 32 0 Impl.Bignum.RISCV64.Precompute.precompute
+def publicPrecompute : Prog isa := scrubAll 32 0 Impl.Bignum.RISCV64.Precompute.precompute
 
 /-- `vg_rsa_private_precompute`. -/
-def privatePrecompute : Prog isa := scrub 32 0 Impl.Bignum.RISCV64.PrivPre.code
+def privatePrecompute : Prog isa := scrubAll 32 0 Impl.Bignum.RISCV64.PrivPre.code
 
 /-- `vg_rsa_crt_values`. -/
-def crtValues : Prog isa := scrub 32 0 CrtValues.code
+def crtValues : Prog isa := scrubAll 32 0 CrtValues.code
 
 /-- `vg_rsa_check_key`. -/
-def checkKey : Prog isa := scrub 32 0 CheckKey.code
+def checkKey : Prog isa := scrubAll 32 0 CheckKey.code
 
 /-- `vg_rsa_recover_primes_det`. -/
-def recoverPrimesDet : Prog isa := scrub 32 0 RecoverDet.code
+def recoverPrimesDet : Prog isa := scrubAll 32 0 RecoverDet.code
 
 end VG.Impl.Rsa.RISCV64.Fn

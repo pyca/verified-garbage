@@ -1107,5 +1107,7 @@ def UpdateImpl.keyed : UpdateImpl where
   features := []
   ctr := .scalar
   small := some ⟨updateKS_correct, updateKS_ct⟩
+  level := .sse
+  side := by lit_decide
 
 end VG.Proof.CmacAes.X86_64

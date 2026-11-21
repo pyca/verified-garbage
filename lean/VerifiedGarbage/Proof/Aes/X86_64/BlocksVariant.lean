@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 public import VerifiedGarbage.Proof.Aes.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Spec.Cfb8.Contract
@@ -162,7 +163,7 @@ theorem storeData_ok (regs : List XReg) (j : Nat) (s : State)
         rw [wr₁, hrdx, show j + 1 + k = j + (k + 1) by omega_arith]; exact hin (k + 1) (by omega_arith))
       (by rw [hrdx]; omega_arith)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
     rw [hrdx] at hb hf
-    rw [ofInt_natCast] at m₁
+    rw [AesNi.ofInt_natCast] at m₁
     refine ⟨fun k hk => ?_, ?_, g.trans g₁, rd.trans rd₁, wr.trans wr₁, fun r => (hx r).trans (x₁ r)⟩
     · cases k with
       | zero =>
@@ -630,7 +631,7 @@ theorem BlkOk.frameW {f : List XReg → Prog isa} {F : Spec.Aes.State → Spec.A
 /-- The keys and the regions at the start, for `KPe`. -/
 theorem keys₀ {s₀ : State} (hp : Pre s₀) : Keys (nr s₀) (sch s₀) s₀ :=
   ⟨rfl, by rcases hp.rounds with h | h | h <;> omega_arith, fun j hj => ⟨sR s₀, by simp [hp.rd], by
-    rw [ofInt_natCast]; exact contains_offset (by rcases hp.rounds with h | h | h <;> omega_arith)
+    rw [AesNi.ofInt_natCast]; exact contains_offset (by rcases hp.rounds with h | h | h <;> omega_arith)
       (by rcases hp.rounds with h | h | h <;> omega_arith)⟩⟩
 
 theorem encrypt_correct {s₀ : State} (hp : Pre s₀) :
@@ -880,7 +881,7 @@ theorem addr_lane (p : Addr) (j l : Nat) (hl : l < 2) :
     p + BitVec.ofNat 64 (16 * (2 * j + l)) =
       if l = 0 then p + BitVec.ofInt 64 ((32 * j : Nat) : Int)
       else p + BitVec.ofInt 64 ((32 * j : Nat) : Int) + BitVec.ofNat 64 16 := by
-  rw [ofInt_natCast]
+  rw [AesNi.ofInt_natCast]
   rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
   · simp only [ite_true]; congr 2; omega_arith
   · simp only [Nat.one_ne_zero, ite_false]
@@ -947,7 +948,7 @@ theorem storeData_ok (regs : List XReg) (j : Nat) (s : State)
         rw [wr₁, hrdx, show j + 1 + k = j + (k + 1) by omega_arith]; exact hin (k + 1) (by omega_arith))
       (by rw [hrdx]; omega_arith)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
     rw [hrdx] at hb hf
-    rw [ofInt_natCast] at m₁
+    rw [AesNi.ofInt_natCast] at m₁
     -- Blocks `2j` and `2j + 1` are not in the rest's frame.
     have hdj : ∀ l < 2, ∀ r ∈ [(⟨s.gpr .rdx + BitVec.ofNat 64 (32 * (j + 1)), 32 * bs.length⟩ : Region)],
         Region.Disjoint ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (2 * j + l)), 16⟩ r := by
@@ -963,7 +964,7 @@ theorem storeData_ok (regs : List XReg) (j : Nat) (s : State)
       | zero =>
         simp only [List.getElem_cons_zero, Nat.add_zero]
         rw [stateAt_eq, hf.readW (Region.contains_self _ _) (hdj l hl) (by decide), ← stateAt_eq, m₁]
-        rw [addr_lane _ _ _ hl, ofInt_natCast]
+        rw [addr_lane _ _ _ hl, AesNi.ofInt_natCast]
         rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
         · simp only [ite_true]; rw [stateAt_write_lo]
         · simp only [Nat.one_ne_zero, ite_false]; rw [stateAt_write_hi]
@@ -1018,7 +1019,7 @@ theorem body16_ok {c : Nat} (hc : c + 16 ≤ nb s₀) {s : State} (hI : Inv KP F
   have addr : ∀ (t : State), t.gpr .rdx = s.gpr .rdx → ∀ k,
       t.gpr .rdx + BitVec.ofInt 64 ((32 * (0 + k) : Nat) : Int) = bAddr s₀ (c + 2 * k) :=
     fun t ht k => by
-      rw [ht, hI.rdx, ofInt_natCast, bAddr, bAddr, BitVec.add_assoc, ← BitVec.ofNat_add,
+      rw [ht, hI.rdx, AesNi.ofInt_natCast, bAddr, bAddr, BitVec.add_assoc, ← BitVec.ofNat_add,
         show 16 * c + 32 * (0 + k) = 16 * (c + 2 * k) by omega_arith]
   have addr' : ∀ k l, s.gpr .rdx + BitVec.ofNat 64 (16 * (2 * (0 + k) + l)) = bAddr s₀ (c + (2 * k + l)) :=
     fun k l => by
@@ -1323,7 +1324,7 @@ that goes with them (with the same suffix and CPU features), for the callers
 that also expand the key, proven against `Proof.Aes.expandKeyX86_64`.
 An implementation also gives the residue analyses of the functions over it
 that the analysis handles (`cfb8EncRes`, `cfb8DecRes`, `ecbEncRes`): those
-instances then return without secret residue (`X86_64.RScrub.withScrub`).
+instances then return without secret residue (`X86_64.Scrub.verifiedScrubbedSel`).
 One whose encryption and key expansion never touch their scratch buffers
 gives their contracts without them (`free`), and the analysis of
 `vg_aes_ocb_init` over it with no working space for them (`ocbInitRes`).
@@ -1408,34 +1409,19 @@ structure BlocksImpl where
   expandMxcsr : expand.code.allInstrs (fun i => !loadsMxcsr i) = true
   expandSpSafe : expand.code.all (fun i => !isa.writesSp i) = true
   expandNoStack : expand.code.x86_64Depth = 0
-  /-- The residue analysis of `vg_aes_cfb8_encrypt` over it, if the analysis
-  handles it. -/
-  cfb8EncRes : Option (RScrub.Analysed Spec.Cfb8.aesEncryptApi.sig 8 []
-    (Impl.AesCfb8.X86_64.encrypt enc)) := none
-  /-- The residue analysis of `vg_aes_cfb8_decrypt` over it, if the analysis
-  handles it. -/
-  cfb8DecRes : Option (RScrub.Analysed Spec.Cfb8.aesDecryptApi.sig 8 []
-    (Impl.AesCfb8.X86_64.decrypt enc)) := none
-  /-- The residue analysis of `vg_aes_cfb128_encrypt` over it, if the
-  analysis handles it. -/
-  cfbEncRes : Option (RScrub.Analysed Spec.Cfb.aesEncryptApi.sig 8 []
-    (Impl.AesCfb.X86_64.encrypt enc)) := none
-  /-- The residue analysis of `vg_aes_cfb128_decrypt` over it, if the
-  analysis handles it. -/
-  cfbDecRes : Option (RScrub.Analysed Spec.Cfb.aesDecryptApi.sig 8 []
-    (Impl.AesCfb.X86_64.decrypt enc)) := none
-  /-- The residue analysis of `vg_aes_ofb` over it, if the analysis handles
-  it. -/
-  ofbRes : Option (RScrub.Analysed Spec.Ofb.aesApi.sig 8 [] (Impl.AesOfb.X86_64.crypt enc)) := none
-  /-- The residue analysis of `vg_aes_ecb_encrypt` as its `enc` alone, if
-  the analysis handles it. -/
-  ecbEncRes : Option (RScrub.Analysed Spec.AesEcb.encryptApi.sig 0 [] enc.code) := none
+  /-- The level of the vector instructions of `enc`, `dec` and `expand`. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls them needs of their code, at
+  that level (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  encSide : X86_64.Scrub.calleeSide enc.code level.level 0 = true
+  decSide : X86_64.Scrub.calleeSide dec.code level.level 0 = true
+  expandSide : X86_64.Scrub.calleeSide expand.code level.level 0 = true
+  /-- The bytes of `scratch` `enc` and `dec` write, among those the stubs of
+  their callers' code take. -/
+  writtenOk : (encWritten = 0 ∨ encWritten = 2048) ∧ (decWritten = 224 ∨ decWritten = 2048) := by decide
   /-- The contracts of encryption and the key expansion without a scratch
   buffer, if they never touch one. -/
   free : Option (BlocksFree enc expand) := none
-  /-- The residue analysis of `vg_aes_ocb_init` over it, without working
-  space for it (`free`), if the analysis handles it. -/
-  ocbInitRes : Option (RScrub.Analysed Spec.Ocb.initApi.sig 40 [] (ocbInitCodeF enc dec expand)) := none
 
 namespace BlocksImpl
 
@@ -1486,6 +1472,10 @@ def scalar : BlocksImpl where
   expandMxcsr := by lit_decide
   expandSpSafe := Code.all_of_spTest (by lit_decide)
   expandNoStack := by lit_decide
+  level := .sse
+  encSide := by lit_decide
+  decSide := by lit_decide
+  expandSide := by lit_decide
 
 /-- The AES-NI implementation, `vg_aes_encrypt_blocks_aesni` and
 `vg_aes_decrypt_blocks_aesni`, with `vg_aes_expand_key_aesni`. -/
@@ -1524,6 +1514,10 @@ def aesni : BlocksImpl where
   expandMxcsr := by lit_decide
   expandSpSafe := Code.all_of_spTest (by lit_decide)
   expandNoStack := by lit_decide
+  level := .sse
+  encSide := by lit_decide
+  decSide := by lit_decide
+  expandSide := by lit_decide
 
 /-- The VAES implementation, `vg_aes_encrypt_blocks_vaes` and
 `vg_aes_decrypt_blocks_vaes` (sixteen blocks at a time, then AES-NI's
@@ -1563,6 +1557,10 @@ def vaes : BlocksImpl where
   expandMxcsr := by lit_decide
   expandSpSafe := Code.all_of_spTest (by lit_decide)
   expandNoStack := by lit_decide
+  level := .avx
+  encSide := by lit_decide
+  decSide := by lit_decide
+  expandSide := by lit_decide
 
 end BlocksImpl
 

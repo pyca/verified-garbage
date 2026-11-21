@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Pbkdf2.Whole.RISCV64.Fn
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Sha256
 import VerifiedGarbage.Proof.Sha256.Stream
@@ -1056,9 +1057,13 @@ end
 /-!
 # PBKDF2 on RISC-V, without secret residue
 
-Each hash's PBKDF2, followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.scrubOf`). Its postcondition reads the memory on return
-only within `out`, as on x86-64 (`Proof/Pbkdf2/Md/X86_64/ScrubAll.lean`).
+Each hash's PBKDF2 as emitted (`Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2`),
+followed by `Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved
+registers and the stack its frames used. Each theorem below states that one
+meets its contract in constant time and returns without secret residue
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`), which is what its
+registration binds. Its postcondition reads the memory on return only within
+`out`, as on x86-64 (`Proof/Pbkdf2/Md/X86_64/ScrubAll.lean`).
 -/
 
 @[expose] public section
@@ -1100,44 +1105,84 @@ theorem pbkdf2Out (I : Spec.Hmac.Instance) (stack : Nat) :
       rw [BitVec.toNat_setWidth] at hi; have := Nat.mod_le outLen.toNat (2 ^ 64); omega_using [hi])]
     exact h
 
-/-- `Spec.Hmac.md5I.pbkdf2Api`. -/
-def md5Pbkdf2Reg : Registration Spec.Hmac.md5I.pbkdf2Api RISCV64.target :=
-  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Md5.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Md5.pbkdf2 }
-    (pbkdf2Out Spec.Hmac.md5I _)
+/-- `vg_pbkdf2_hmac_md5` as emitted (`Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2`) meets its
+contract in constant time and returns without secret residue. -/
+theorem md5_scrubbed :
+    VerifiedScrubbed target (Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2 Md5.F)
+      (Spec.Hmac.md5I.pbkdf2Contract RISCV64.abi (Md5.F.itB + Md5.F.frB + Md5.F.X)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.md5I.pbkdf2Api)
+    (W := Md5.F.itB + Md5.F.frB + Md5.F.X)
+    { code := Md5.F.pbkdf2, verified := Md5.pbkdf2 } (pbkdf2Out Spec.Hmac.md5I _)
+    (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha1I.pbkdf2Api`. -/
-def sha1Pbkdf2Reg : Registration Spec.Hmac.sha1I.pbkdf2Api RISCV64.target :=
-  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha1.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha1.pbkdf2 }
-    (pbkdf2Out Spec.Hmac.sha1I _)
+/-- `vg_pbkdf2_hmac_sha1` as emitted (`Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha1_scrubbed :
+    VerifiedScrubbed target (Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2 Sha1.F)
+      (Spec.Hmac.sha1I.pbkdf2Contract RISCV64.abi (Sha1.F.itB + Sha1.F.frB + Sha1.F.X)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha1I.pbkdf2Api)
+    (W := Sha1.F.itB + Sha1.F.frB + Sha1.F.X)
+    { code := Sha1.F.pbkdf2, verified := Sha1.pbkdf2 } (pbkdf2Out Spec.Hmac.sha1I _)
+    (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha224I.pbkdf2Api`. -/
-def sha224Pbkdf2Reg : Registration Spec.Hmac.sha224I.pbkdf2Api RISCV64.target :=
-  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha224.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha224.pbkdf2 }
-    (pbkdf2Out Spec.Hmac.sha224I _)
+/-- `vg_pbkdf2_hmac_sha224` as emitted (`Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha224_scrubbed :
+    VerifiedScrubbed target (Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2 Sha224.F)
+      (Spec.Hmac.sha224I.pbkdf2Contract RISCV64.abi (Sha224.F.itB + Sha224.F.frB + Sha224.F.X)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha224I.pbkdf2Api)
+    (W := Sha224.F.itB + Sha224.F.frB + Sha224.F.X)
+    { code := Sha224.F.pbkdf2, verified := Sha224.pbkdf2 } (pbkdf2Out Spec.Hmac.sha224I _)
+    (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha256I.pbkdf2Api`. -/
-def sha256Pbkdf2Reg : Registration Spec.Hmac.sha256I.pbkdf2Api RISCV64.target :=
-  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha256.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha256.pbkdf2 }
-    (pbkdf2Out Spec.Hmac.sha256I _)
+/-- `vg_pbkdf2_hmac_sha256` as emitted (`Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha256_scrubbed :
+    VerifiedScrubbed target (Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2 Sha256.F)
+      (Spec.Hmac.sha256I.pbkdf2Contract RISCV64.abi (Sha256.F.itB + Sha256.F.frB + Sha256.F.X)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha256I.pbkdf2Api)
+    (W := Sha256.F.itB + Sha256.F.frB + Sha256.F.X)
+    { code := Sha256.F.pbkdf2, verified := Sha256.pbkdf2 } (pbkdf2Out Spec.Hmac.sha256I _)
+    (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha384I.pbkdf2Api`. -/
-def sha384Pbkdf2Reg : Registration Spec.Hmac.sha384I.pbkdf2Api RISCV64.target :=
-  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha384.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha384.pbkdf2 }
-    (pbkdf2Out Spec.Hmac.sha384I _)
+/-- `vg_pbkdf2_hmac_sha384` as emitted (`Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha384_scrubbed :
+    VerifiedScrubbed target (Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2 Sha384.F)
+      (Spec.Hmac.sha384I.pbkdf2Contract RISCV64.abi (Sha384.F.itB + Sha384.F.frB + Sha384.F.X)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha384I.pbkdf2Api)
+    (W := Sha384.F.itB + Sha384.F.frB + Sha384.F.X)
+    { code := Sha384.F.pbkdf2, verified := Sha384.pbkdf2 } (pbkdf2Out Spec.Hmac.sha384I _)
+    (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha512I.pbkdf2Api`. -/
-def sha512Pbkdf2Reg : Registration Spec.Hmac.sha512I.pbkdf2Api RISCV64.target :=
-  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha512.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha512.pbkdf2 }
-    (pbkdf2Out Spec.Hmac.sha512I _)
+/-- `vg_pbkdf2_hmac_sha512` as emitted (`Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha512_scrubbed :
+    VerifiedScrubbed target (Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2 Sha512.F)
+      (Spec.Hmac.sha512I.pbkdf2Contract RISCV64.abi (Sha512.F.itB + Sha512.F.frB + Sha512.F.X)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha512I.pbkdf2Api)
+    (W := Sha512.F.itB + Sha512.F.frB + Sha512.F.X)
+    { code := Sha512.F.pbkdf2, verified := Sha512.pbkdf2 } (pbkdf2Out Spec.Hmac.sha512I _)
+    (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha512_224I.pbkdf2Api`. -/
-def sha512_224Pbkdf2Reg : Registration Spec.Hmac.sha512_224I.pbkdf2Api RISCV64.target :=
-  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha512_224.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha512_224.pbkdf2 }
-    (pbkdf2Out Spec.Hmac.sha512_224I _)
+/-- `vg_pbkdf2_hmac_sha512_224` as emitted (`Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha512_224_scrubbed :
+    VerifiedScrubbed target (Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2 Sha512_224.F)
+      (Spec.Hmac.sha512_224I.pbkdf2Contract RISCV64.abi (Sha512_224.F.itB + Sha512_224.F.frB + Sha512_224.F.X)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_224I.pbkdf2Api)
+    (W := Sha512_224.F.itB + Sha512_224.F.frB + Sha512_224.F.X)
+    { code := Sha512_224.F.pbkdf2, verified := Sha512_224.pbkdf2 } (pbkdf2Out Spec.Hmac.sha512_224I _)
+    (by dsimp only; lit_decide)
 
-/-- `Spec.Hmac.sha512_256I.pbkdf2Api`. -/
-def sha512_256Pbkdf2Reg : Registration Spec.Hmac.sha512_256I.pbkdf2Api RISCV64.target :=
-  scrubOf { code := Proof.Pbkdf2.Whole.RISCV64.Sha512_256.F.pbkdf2, verified := Proof.Pbkdf2.Whole.RISCV64.Sha512_256.pbkdf2 }
-    (pbkdf2Out Spec.Hmac.sha512_256I _)
+/-- `vg_pbkdf2_hmac_sha512_256` as emitted (`Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2`) meets its
+contract in constant time and returns without secret residue. -/
+theorem sha512_256_scrubbed :
+    VerifiedScrubbed target (Impl.Pbkdf2.Whole.RISCV64.Fn.pbkdf2 Sha512_256.F)
+      (Spec.Hmac.sha512_256I.pbkdf2Contract RISCV64.abi (Sha512_256.F.itB + Sha512_256.F.frB + Sha512_256.F.X)) 0 :=
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_256I.pbkdf2Api)
+    (W := Sha512_256.F.itB + Sha512_256.F.frB + Sha512_256.F.X)
+    { code := Sha512_256.F.pbkdf2, verified := Sha512_256.pbkdf2 } (pbkdf2Out Spec.Hmac.sha512_256I _)
+    (by dsimp only; lit_decide)
 
 end VG.Proof.Pbkdf2.Whole.RISCV64.Scrub

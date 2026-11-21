@@ -554,7 +554,7 @@ abbrev scA : Addr := State.addr (scr s₀)
 abbrev cnt : Nat := (countArm s₀).toNat
 abbrev stR (w : Nat) : Region := ⟨stA s₀, bufOff w + blockBytes w⟩
 abbrev outR (w : Nat) : Region := ⟨outA s₀, bufOff w⟩
-abbrev scR : Region := ⟨scA s₀, 576⟩
+abbrev scR : Region := ⟨scA s₀, 240⟩
 abbrev argR : Region := ⟨stackArgAddr s₀ 0, 8⟩
 /-- The buffer. -/
 abbrev buf (w : Nat) : Addr := stA s₀ + BitVec.ofNat 64 (bufOff w)
@@ -575,11 +575,11 @@ structure Pre (w : Nat) (s₀ : State) : Prop where
   w_scr : (below s₀).Disjoint (scR s₀)
   st_fit : (st s₀).toNat + (bufOff w + blockBytes w) ≤ 2 ^ 32
   out_fit : (out s₀).toNat + bufOff w ≤ 2 ^ 32
-  scr_fit : (scr s₀).toNat + 576 ≤ 2 ^ 32
+  scr_fit : (scr s₀).toNat + 240 ≤ 2 ^ 32
   sp16 : 16 ≤ s₀.sp.toNat
   sp_fit : s₀.sp.toNat + 8 ≤ 2 ^ 32
 
-theorem pre_of {s₀ : State} (h : (finalizeArm P).pre s₀) : Pre w s₀ := by
+theorem pre_of {s₀ : State} (h : (finalizeArm P 240).pre s₀) : Pre w s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩
 
@@ -619,10 +619,10 @@ theorem Common.of_upd {s₀ : State} {s s' : State} (h : Common w s₀ s) {d : R
   h.of_gpr (fun r hr => u.other r fun e => hd (e ▸ hr)) u.mem u.rd u.wr u.sp
 
 theorem saved_frame {s₀ : State} (hp : Pre w s₀) {m m' : Mem} (h : Saved (scA s₀) s₀.gpr m)
-    (hf : Frame [stR s₀ w, ⟨scA s₀, 512⟩, below s₀] m m') : Saved (scA s₀) s₀.gpr m' := by
+    (hf : Frame [stR s₀ w, ⟨scA s₀, 200⟩, below s₀] m m') : Saved (scA s₀) s₀.gpr m' := by
   have := hp.scr_fit
   refine h.frame saved_slots hf fun r' hr' => ?_
-  obtain e : Region.Sub ⟨scA s₀ + BitVec.ofNat 64 512, 548 - 512⟩ (scR s₀) := Offset.sub_base _ (by omega_using [])
+  obtain e : Region.Sub ⟨scA s₀ + BitVec.ofNat 64 200, 236 - 200⟩ (scR s₀) := Offset.sub_base _ (by omega_using [])
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
   rcases hr' with rfl | rfl | rfl
   · exact hp.st_scr.symm.sub_left e
@@ -790,7 +790,7 @@ theorem pro_ok (hP : Ok P) {s₀ : State} (hp : Pre w s₀) :
   obtain hm : s₁₀.mem = s₃.mem := by rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem]
   refine ⟨⟨hC', by rw [hm]; exact hP₃.st, by rw [hm]; exact hP₃.buf⟩, ?_⟩
   obtain eN : Region.Sub ⟨stA s₀, bufOff w⟩ (stR s₀ w) := Region.sub_prefix (by omega_using [])
-  obtain eS : Region.Sub ⟨scA s₀, 512⟩ (scR s₀) := Region.sub_prefix (by omega_using [])
+  obtain eS : Region.Sub ⟨scA s₀, 200⟩ (scR s₀) := Region.sub_prefix (by omega_using [])
   obtain eB : Region.Sub ⟨State.addr (st s₀ + BitVec.ofNat 32 (bufOff w)), blockBytes w * 1⟩ (stR s₀ w) := by
     rw [addr_add (by omega_using [hl, hst]), Nat.mul_one]; exact Offset.sub_base _ (by omega_using [])
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, by decide, by rw [hC'.sp]; exact hp.sp16, ?_, ?_,
@@ -831,14 +831,14 @@ theorem call_ok' (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk P 
   obtain hst := hp.st_fit; have hsc := hp.scr_fit
   obtain ⟨hpd, hca⟩ := h
   refine call_ok hf hca fun s' ha hstate => ⟨?_, fun h0 d hr hl' hc => ?_⟩
-  · have hf' : Frame [stR s₀ w, ⟨scA s₀, 512⟩, below s₀] s.mem s'.mem := by
+  · have hf' : Frame [stR s₀ w, ⟨scA s₀, 200⟩, below s₀] s.mem s'.mem := by
       have := ha.frame
       rw [below, hpd.sp] at this
       exact this.sub fun r hr => by
         simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact ⟨stR s₀ w, by simp, Region.sub_prefix (by omega_using [])⟩
-        · exact ⟨⟨scA s₀, 512⟩, by simp, fun _ h => h⟩
+        · exact ⟨⟨scA s₀, 200⟩, by simp, fun _ h => h⟩
         · exact ⟨below s₀, by simp, fun _ h => h⟩
     obtain hcp : ∀ r ∈ commonRegs, r ∈ preserved ∧ r ≠ .lr := by decide
     obtain hg : ∀ r ∈ commonRegs, s'.gpr r = s.gpr r := fun r hr => ha.cs r (hcp r hr).1 (hcp r hr).2
@@ -910,7 +910,7 @@ theorem copyW_all (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {s : State} (hC :
       exact h.words j (by omega_using [hj, e])
 
 theorem end_ok (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {s : State} (h : Mid P s₀ s) :
-    WP isa (.block (finalizeEnd (w := w))) s fun s' => abiPreserved s₀ s' ∧ (finalizeArm P).post s₀ s' := by
+    WP isa (.block (finalizeEnd (w := w))) s fun s' => abiPreserved s₀ s' ∧ (finalizeArm P 240).post s₀ s' := by
   have hl := hP.len
   obtain hst := hp.st_fit; have hof := hp.out_fit; have hsc := hp.scr_fit
   obtain ⟨hC, hfin⟩ := h
@@ -942,7 +942,7 @@ theorem end_ok (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {s : State} (h : Mid
 
 theorem correct (hP : Ok P) {name : String} {code : Prog isa} (hf : CalleeOk P code) {s₀ : State}
     (hp : Pre w s₀) :
-    WP isa (finalize (w := w) name code) s₀ fun s' => abiPreserved s₀ s' ∧ (finalizeArm P).post s₀ s' :=
+    WP isa (finalize (w := w) name code) s₀ fun s' => abiPreserved s₀ s' ∧ (finalizeArm P 240).post s₀ s' :=
   WP.seq (WP.mono (pro_ok hP hp) fun _ h₁ => WP.seq (WP.mono (call_ok' hP hf hp h₁) fun _ h₂ =>
     end_ok hP hp h₂))
 

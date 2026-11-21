@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Blake2.X86_64.Fn
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -31,9 +32,19 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Blake2b.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Blake2.initBApi.artifact X86_64.target Proof.Blake2.X86_64.initBReg] ++
+  Spec.Blake2.initBApi.artifact X86_64.target { code := Impl.Blake2.X86_64.Fn.initB, verified := .scrubbed Proof.Blake2.X86_64.initB_scrubbed, spSafe := Proof.Blake2.X86_64.initB_spSafe }] ++
   (VG.Proof.Variants.Blake2b.X86_64.variants.flatMap fun (v : Proof.Blake2.X86_64.Backend) => [
-    Spec.Blake2.updateBApi.artifact VG.X86_64.target (Proof.Blake2.X86_64.updateBReg v),
-    Spec.Blake2.finalizeBApi.artifact VG.X86_64.target (Proof.Blake2.X86_64.finalizeBReg v)])
+    Spec.Blake2.updateBApi.artifact VG.X86_64.target {
+      suffix := v.suffix
+      notWith := v.notWith
+      code := Impl.Blake2.X86_64.Fn.update Spec.Blake2.b v.updScrub.level v.updScrub.runs v.hashCallee
+      verified := .scrubbed (Proof.Blake2.X86_64.updateB_scrubbed v)
+      spSafe := Proof.Blake2.X86_64.updateB_spSafe v },
+    Spec.Blake2.finalizeBApi.artifact VG.X86_64.target {
+      suffix := v.suffix
+      notWith := v.notWith
+      code := Impl.Blake2.X86_64.Fn.finalize Spec.Blake2.b v.finScrub.level v.finScrub.runs v.hashCallee
+      verified := .scrubbed (Proof.Blake2.X86_64.finalizeB_scrubbed v)
+      spSafe := Proof.Blake2.X86_64.finalizeB_spSafe v }])
 
 end VG.Artifacts.Blake2b.X86_64

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesCbc.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 
 /-!
 # XTS-AES: AArch64 implementation
@@ -75,7 +75,7 @@ def decrypt (b : Blocks) : Prog isa := crypt b
 /-- The registers `crypt`'s own instructions write, of those the calling
 convention does not preserve: with those the block function it calls writes,
 what a function that calls `encrypt` or `decrypt` clears for it. -/
-def cryptOwn : Impl.Residue.AArch64.Clear :=
+def cryptOwn : Impl.Scrub.AArch64.Clear :=
   ⟨[.x1, .x2, .x3, .x4, .x9, .x10, .x11, .x12, .x14, .x15, .x16, .x17], [], []⟩
 
 end VG.Impl.AesXts.AArch64

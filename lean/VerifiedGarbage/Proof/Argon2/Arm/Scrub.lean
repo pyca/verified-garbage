@@ -16,9 +16,9 @@ meta import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 
 `vg_argon2` keeps its saved registers and locals in frames within the 240
 bytes of stack its contract reserves, so its cleanup zeroes those bytes on
-return (`Impl.Argon2.Arm.Fn.derive`, `Arm.Scrub.scrubF`), and `Fn.derive`
+return (`Impl.Argon2.Arm.Fn.derive`, `Arm.Scrub.scrubAll`), and `Fn.derive`
 below states that it returns without secret residue
-(`Arm.Scrub.verifiedScrubbedF`). Its postcondition reads the memory on return
+(`Arm.Scrub.verifiedScrubbedAll`). Its postcondition reads the memory on return
 only within `out` (`Arm.Scrub.PostOut`), as on RISC-V
 (`Proof/Argon2/RISCV64/Scrub.lean`); what the cleanup needs of the code
 (`scrubSideF`: its frames within the 240 bytes, no indirect call) the kernel
@@ -59,7 +59,7 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_argon2`. -/
 theorem derive :
     VerifiedScrubbed target Impl.Argon2.Arm.Fn.derive (Spec.Argon2.deriveContract abi 240) 0 :=
-  verifiedScrubbedF (api := Spec.Argon2.deriveApi)
+  verifiedScrubbedAll (api := Spec.Argon2.deriveApi)
     { code := Impl.Argon2.Arm.Derive.derive
       verified := Proof.Argon2.Arm.Derive.deriveShared_verified }
     Scrub.deriveOut Scrub.deriveSide

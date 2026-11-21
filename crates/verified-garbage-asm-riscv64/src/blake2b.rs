@@ -47,13 +47,13 @@ j 21f
 /// * `data` must be valid for reads of `len` bytes.
 /// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the 576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEB3AqHkwJ3AJPygv8jsBIgI7RyISO4kiEjvKIhI7CyIyO0giOqixaMsow2ja6Nk4j9/5P4+AeFCA=="
+.base64 "TXEKh5MCdwCT8oL/I7wSECOwchMjtJITI7iiEyO8shMjsIIVqosWjLKMNo2ujZOI/f+T+PgHhQg="
 beqz s11, 20f
 j 21f
 20:
@@ -109,7 +109,7 @@ j 216f
 j 23f
 22:
 23:
-.base64 "gzAMIIM7jCCDPAwhAz2MIYM9DCIDPIwiEwEBJIFCEwEB3AqDIzBTACM0UwAjOFMAIzxTACMwUwIjNFMCIzhTAiM8UwIjMFMEIzRTBCM4UwQjPFMEIzBTBiM0UwYjOFMGIzxTBiMwUwgjNFMIIzhTCCM8UwgjMFMKIzRTCiM4UwojPFMKIzBTDCM0UwwjOFMMIzxTDCMwUw4jNFMOIzhTDiM8Uw4jMFMQIzRTECM4UxAjPFMQIzBTEiM0UxIjOFMSIzxTEiMwUxQjNFMUIzhTFCM8UxQjMFMWIzRTFiM4UxYjPFMWIzBTGCM0UxgjOFMYIzxTGCMwUxojNFMaIzhTGiM8UxojMFMcIzRTHCM4UxwjPFMcIzBTHiM0Ux4jOFMeIzxTHiMwUyAjNFMgIzhTICM8UyAjMFMiIzRTIiM4UyIjPFMiEwEBJAFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
+.base64 "gzCMEYM7DBKDPIwSAz0ME4M9jBMDPAwUcWGBQk1xCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxRxYQFFgUUBRoFGAUeBRwFIgUiBQgFDgUMBToFOAU+BT4KA"
 .option pop"#,
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )
@@ -128,13 +128,13 @@ j 23f
 /// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "EwEB3IqGk4J2AJPygv8jsBIgI7RyISO4kiEjvKIhI7CyIyO0giOqixaMsoyujZOI/f+T+PgHhQg="
+.base64 "TXGKhpOCdgCT8oL/I7wSECOwchMjtJITI7iiEyO8shMjsIIVqosWjLKMro2TiP3/k/j4B4UI"
 beqz s11, 20f
 j 21f
 20:
@@ -150,7 +150,7 @@ j 23f
 23:
 .base64 "XoWThQsEBUbuhgVH4oc="
 call {vg_blake2b_compress}
-.base64 "A8MLACOAbAADwxsAo4BsAAPDKwAjgWwAA8M7AKOBbAADw0sAI4JsAAPDWwCjgmwAA8NrACODbAADw3sAo4NsAAPDiwAjhGwAA8ObAKOEbAADw6sAI4VsAAPDuwCjhWwAA8PLACOGbAADw9sAo4ZsAAPD6wAjh2wAA8P7AKOHbAADwwsBI4hsAAPDGwGjiGwAA8MrASOJbAADwzsBo4lsAAPDSwEjimwAA8NbAaOKbAADw2sBI4tsAAPDewGji2wAA8OLASOMbAADw5sBo4xsAAPDqwEjjWwAA8O7AaONbAADw8sBI45sAAPD2wGjjmwAA8PrASOPbAADw/sBo49sAAPDCwIjgGwCA8MbAqOAbAIDwysCI4FsAgPDOwKjgWwCA8NLAiOCbAIDw1sCo4JsAgPDawIjg2wCA8N7AqODbAIDw4sCI4RsAgPDmwKjhGwCA8OrAiOFbAIDw7sCo4VsAgPDywIjhmwCA8PbAqOGbAIDw+sCI4dsAgPD+wKjh2wCA8MLAyOIbAIDwxsDo4hsAgPDKwMjiWwCA8M7A6OJbAIDw0sDI4psAgPDWwOjimwCA8NrAyOLbAIDw3sDo4tsAgPDiwMjjGwCA8ObA6OMbAIDw6sDI41sAgPDuwOjjWwCA8PLAyOObAIDw9sDo45sAgPD6wMjj2wCA8P7A6OPbAKDMAwggzuMIIM8DCEDPYwhgz0MIgM8jCITAQEkgUITAQHcCoMjMFMAIzRTACM4UwAjPFMAIzBTAiM0UwIjOFMCIzxTAiMwUwQjNFMEIzhTBCM8UwQjMFMGIzRTBiM4UwYjPFMGIzBTCCM0UwgjOFMIIzxTCCMwUwojNFMKIzhTCiM8UwojMFMMIzRTDCM4UwwjPFMMIzBTDiM0Uw4jOFMOIzxTDiMwUxAjNFMQIzhTECM8UxAjMFMSIzRTEiM4UxIjPFMSIzBTFCM0UxQjOFMUIzxTFCMwUxYjNFMWIzhTFiM8UxYjMFMYIzRTGCM4UxgjPFMYIzBTGiM0UxojOFMaIzxTGiMwUxwjNFMcIzhTHCM8UxwjMFMeIzRTHiM4Ux4jPFMeIzBTICM0UyAjOFMgIzxTICMwUyIjNFMiIzhTIiM8UyITAQEkAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
+.base64 "A8MLACOAbAADwxsAo4BsAAPDKwAjgWwAA8M7AKOBbAADw0sAI4JsAAPDWwCjgmwAA8NrACODbAADw3sAo4NsAAPDiwAjhGwAA8ObAKOEbAADw6sAI4VsAAPDuwCjhWwAA8PLACOGbAADw9sAo4ZsAAPD6wAjh2wAA8P7AKOHbAADwwsBI4hsAAPDGwGjiGwAA8MrASOJbAADwzsBo4lsAAPDSwEjimwAA8NbAaOKbAADw2sBI4tsAAPDewGji2wAA8OLASOMbAADw5sBo4xsAAPDqwEjjWwAA8O7AaONbAADw8sBI45sAAPD2wGjjmwAA8PrASOPbAADw/sBo49sAAPDCwIjgGwCA8MbAqOAbAIDwysCI4FsAgPDOwKjgWwCA8NLAiOCbAIDw1sCo4JsAgPDawIjg2wCA8N7AqODbAIDw4sCI4RsAgPDmwKjhGwCA8OrAiOFbAIDw7sCo4VsAgPDywIjhmwCA8PbAqOGbAIDw+sCI4dsAgPD+wKjh2wCA8MLAyOIbAIDwxsDo4hsAgPDKwMjiWwCA8M7A6OJbAIDw0sDI4psAgPDWwOjimwCA8NrAyOLbAIDw3sDo4tsAgPDiwMjjGwCA8ObA6OMbAIDw6sDI41sAgPDuwOjjWwCA8PLAyOObAIDw9sDo45sAgPD6wMjj2wCA8P7A6OPbAKDMIwRgzsMEoM8jBIDPQwTgz2MEwM8DBRxYYFCTXEKgyMwUwAjNFMAIzhTACM8UwAjMFMCIzRTAiM4UwIjPFMCIzBTBCM0UwQjOFMEIzxTBCMwUwYjNFMGIzhTBiM8UwYjMFMIIzRTCCM4UwgjPFMIIzBTCiM0UwojOFMKIzxTCiMwUwwjNFMMIzhTDCM8UwwjMFMOIzRTDiM4Uw4jPFMOIzBTECM0UxAjOFMQIzxTECMwUxIjNFMSIzhTEiM8UxIjMFMUIzRTFHFhAUWBRQFGgUYBR4FHAUiBSIFCAUOBQwFOgU4BT4FPgoA="
 .option pop"#,
         vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress::vg_blake2b_compress,
     )

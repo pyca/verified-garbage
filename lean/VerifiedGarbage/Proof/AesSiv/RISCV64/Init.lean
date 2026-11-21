@@ -52,7 +52,7 @@ registers saved as streaming AES-CMAC's `init` saves them
 (`Proof/CmacAes/Stream/RISCV64/Scrub.lean`).
 
 It returns without secret residue followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.verifiedScrubbed`), which clears the caller-saved registers and all
+(`RISCV64.Scrub.verifiedScrubbedAll`), which clears the caller-saved registers and all
 of its 2560 bytes of stack, which the residue analysis (`RISCV64.rtaint`)
 finds may all hold the key schedules. Its postcondition reads the memory on
 return only within the key context, as on PPC64LE
@@ -667,7 +667,7 @@ time and returns without secret residue: the theorem its registration binds. -/
 theorem init_scrubbed :
     VerifiedScrubbed VG.RISCV64.target Impl.AesSiv.RISCV64.Fn.init
       (Spec.Siv.initContract RISCV64.abi 2560) 0 :=
-  VG.RISCV64.Scrub.verifiedScrubbed (api := Spec.Siv.initApi) (W := 2560)
+  VG.RISCV64.Scrub.verifiedScrubbedAll (api := Spec.Siv.initApi) (W := 2560)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesSiv.RISCV64.init
       verified := init_framed }
     initOut init_scrubSide

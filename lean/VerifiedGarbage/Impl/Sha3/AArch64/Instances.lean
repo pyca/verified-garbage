@@ -96,7 +96,7 @@ end VG.Impl.Sha3.AArch64.Instances
 /-! ## The functions, as emitted
 
 Each function is its code above, then its cleanup
-(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+(`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the calling
 convention does not preserve are cleared, but the result's bits of `x0`, and
 the stack it uses is zeroed, so that it returns without secret residue. The
 registers are those its own instructions write, stated here, and those the
@@ -106,7 +106,7 @@ namespace VG.Impl.Sha3.AArch64.Fn
 
 open VG.AArch64
 open VG.Impl.Sha3.AArch64 (Callee)
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 
 /-- The registers `update` writes itself: those of `Instances.absorb`'s own
 instructions and of an absorb an implementation gives as a whole

@@ -14,8 +14,14 @@ import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
 namespace VG.Artifacts.Idea.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Idea.expandKeyApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.expandKeyReg,
-  Spec.Idea.invertKeyApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.invertKeyReg,
-  Spec.Idea.ecbApi.artifact PPC64LE.target Proof.Idea.PPC64LE.Scrub.ecbReg]
+  Spec.Idea.expandKeyApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.expandKey
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.expandKey_scrubbed },
+  Spec.Idea.invertKeyApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.invertKey
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.invertKey_scrubbed },
+  Spec.Idea.ecbApi.artifact PPC64LE.target {
+    code := Impl.Idea.PPC64LE.Fn.ecb
+    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.ecb_scrubbed }]
 
 end VG.Artifacts.Idea.PPC64LE

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
+public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveScrub
+public import VerifiedGarbage.Impl.Argon2.X86_64.Fn
 public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveVerified
 public import VerifiedGarbage.TCB.Emit
 import VerifiedGarbage.Proof.Framework.Omega
@@ -57,13 +57,12 @@ namespace VG.Artifacts.Argon2.X86_64
 def artifacts : List Artifact :=
   VG.Proof.Variants.Argon2Compress.X86_64.withBlake2b.map
     fun ((v, c) : Proof.Blake2.X86_64.Backend × Proof.Argon2.X86_64.CompressImpl) =>
-    have : Proof.Argon2.X86_64.CompressImpl := c
-    Spec.Argon2.deriveApi.artifact VG.X86_64.target (VG.X86_64.RScrub.withScrubAllM {
+    letI : Proof.Argon2.X86_64.CompressImpl := c
+    Spec.Argon2.deriveApi.artifact VG.X86_64.target {
       suffix := qualifiedName "" [("blake2b", v.suffix), ("g", c.suffix)]
-      code := Impl.Argon2.X86_64.Derive.code ("vg_argon2_hprime" ++ v.suffix)
+      code := Impl.Argon2.X86_64.Fn.derive (v.level.join c.level) ("vg_argon2_hprime" ++ v.suffix)
         (Proof.Argon2.X86_64.HPrime.hash v)
-      verified := Proof.Argon2.X86_64.Derive.verified v _
-      spSafe := Proof.Argon2.X86_64.Derive.code_spSafe v _ }
-      (Proof.Argon2.X86_64.Scrub.deriveOut 344))
+      verified := .scrubbed (Proof.Argon2.X86_64.Derive.derive_scrubbed v _)
+      spSafe := Proof.Argon2.X86_64.Derive.derive_spSafe v _ _ }
 
 end VG.Artifacts.Argon2.X86_64

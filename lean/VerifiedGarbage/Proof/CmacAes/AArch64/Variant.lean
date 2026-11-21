@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Aese
 public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCT
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
@@ -39,8 +39,8 @@ structure UpdateImpl where
   features : List String
   /-- `callee.code` writes, of the registers the calling convention does not
   preserve, only those `Impl/` states (`callee.clear`): what the cleanup of a
-  function that calls it needs of it (`ScrubAll.scrubSide_union`). -/
-  scrub : AArch64.ScrubAll.calleeSide callee.code callee.clear = true
+  function that calls it needs of it (`Scrub.scrubSide_union`). -/
+  scrub : AArch64.Scrub.calleeSide callee.code callee.clear = true
   /-- The implementation of `vg_aes_ctr32` that goes with it, for callers
   that also run counter mode (AES-CCM, AES-SIV): the one it is built on, or
   for the chaining kept in registers, `vg_aes_ctr32_aes`. It needs the same
@@ -54,19 +54,19 @@ structure UpdateImpl where
 `Impl/` states (`Impl.CmacAes.AArch64.updateOwn`): evaluated once, with code
 that does nothing in the place of `vg_aes_ctr32`. -/
 private theorem update_own :
-    AArch64.ScrubAll.calleeSide (Impl.CmacAes.AArch64.update ⟨"", .block [], ⟨[], [], []⟩, 0⟩)
+    AArch64.Scrub.calleeSide (Impl.CmacAes.AArch64.update ⟨"", .block [], ⟨[], [], []⟩, 0⟩)
       Impl.CmacAes.AArch64.updateOwn = true := by
   kernel_rfl
 
 /-- `Impl.CmacAes.AArch64.update` around an implementation of `vg_aes_ctr32`
 that writes the registers `cl` writes its own and those. -/
-theorem update_scrub {c : Impl.Aes.AArch64.Ctr32} {cl : Impl.Residue.AArch64.Clear}
-    (hc : AArch64.ScrubAll.calleeSide c.code cl = true) :
-    AArch64.ScrubAll.calleeSide (Impl.CmacAes.AArch64.update c) (Impl.CmacAes.AArch64.updateOwn.union cl) = true := by
-  have h0 := AArch64.ScrubAll.sideAll_union_left (b := cl) update_own
-  have h1 := AArch64.ScrubAll.sideAll_union_right (a := Impl.CmacAes.AArch64.updateOwn) hc
-  simp only [AArch64.ScrubAll.calleeSide, Impl.CmacAes.AArch64.update, Impl.CmacAes.AArch64.body,
-    AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 h1 ⊢
+theorem update_scrub {c : Impl.Aes.AArch64.Ctr32} {cl : Impl.Scrub.AArch64.Clear}
+    (hc : AArch64.Scrub.calleeSide c.code cl = true) :
+    AArch64.Scrub.calleeSide (Impl.CmacAes.AArch64.update c) (Impl.CmacAes.AArch64.updateOwn.union cl) = true := by
+  have h0 := AArch64.Scrub.sideAll_union_left (b := cl) update_own
+  have h1 := AArch64.Scrub.sideAll_union_right (a := Impl.CmacAes.AArch64.updateOwn) hc
+  simp only [AArch64.Scrub.calleeSide, Impl.CmacAes.AArch64.update, Impl.CmacAes.AArch64.body,
+    AArch64.Scrub.sideAll, Bool.and_eq_true] at h0 h1 ⊢
   simp only [h0, h1, and_self]
 
 /-- The existing generic CMAC chaining loop, for any CTR implementation: it

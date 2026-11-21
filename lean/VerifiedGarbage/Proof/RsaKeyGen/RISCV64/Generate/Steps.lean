@@ -69,7 +69,7 @@ theorem candidate_stack (v : RoundImpl) :
     sdepth (code (Impl.RsaKeyGen.RISCV64.Trial.trial hTrial) v.name v.code) ≤ 288 := by
   simp only [code, body, main, test, seqs, Impl.RsaKeyGen.RISCV64.Witness.millerRabin,
     Impl.RsaKeyGen.RISCV64.Witness.draw, Impl.RsaKeyGen.RISCV64.Witness.round,
-    Impl.MillerRabin.RISCV64.Search.roundCall, sdepth, Instr.frameBytes, frameBytes]
+    Impl.MillerRabin.RISCV64.Search.roundCall, sdepth, Instr.frameBytes, Impl.RsaKeyGen.RISCV64.Candidate.frameBytes]
   simp (disch := decide) only [sdepth_of_noFrames, Nat.max_zero, Nat.zero_max, Nat.max_self]
   have := v.stack
   omega_using [this]

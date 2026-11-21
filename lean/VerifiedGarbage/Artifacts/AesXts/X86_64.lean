@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesXts.X86_64Fn
 public import VerifiedGarbage.Proof.AesXts.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
@@ -13,9 +14,25 @@ namespace VG.Artifacts.AesXts.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesXts.X86_64.variants.flatMap fun (v : Proof.AesXts.X86_64.XtsImpl) => [
-    Spec.Xts.aesEncryptUnitApi.artifact X86_64.target (Proof.AesXts.X86_64.Scrub.encryptUnitReg v),
-    Spec.Xts.aesDecryptUnitApi.artifact X86_64.target (Proof.AesXts.X86_64.Scrub.decryptUnitReg v),
-    Spec.Xts.aesEncryptUnitToApi.artifact X86_64.target (Proof.AesXts.X86_64.Scrub.encryptUnitToReg v),
-    Spec.Xts.aesDecryptUnitToApi.artifact X86_64.target (Proof.AesXts.X86_64.Scrub.decryptUnitToReg v)]
+    Spec.Xts.aesEncryptUnitApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesXts.X86_64Unit.Fn.encrypt v.level v.xts
+      verified := .scrubbed (Proof.AesXts.X86_64.Scrub.encryptUnit_scrubbed v)
+      spSafe := Proof.AesXts.X86_64.Scrub.encryptUnit_spSafeFn v },
+    Spec.Xts.aesDecryptUnitApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesXts.X86_64Unit.Fn.decrypt v.level v.xts
+      verified := .scrubbed (Proof.AesXts.X86_64.Scrub.decryptUnit_scrubbed v)
+      spSafe := Proof.AesXts.X86_64.Scrub.decryptUnit_spSafeFn v },
+    Spec.Xts.aesEncryptUnitToApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesXts.X86_64UnitTo.Fn.encrypt v.level v.xts ⟨v.to.enc, v.to.dec⟩
+      verified := .scrubbed (Proof.AesXts.X86_64.Scrub.encryptUnitTo_scrubbed v)
+      spSafe := Proof.AesXts.X86_64.Scrub.encryptUnitTo_spSafeFn v },
+    Spec.Xts.aesDecryptUnitToApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesXts.X86_64UnitTo.Fn.decrypt v.level v.xts ⟨v.to.enc, v.to.dec⟩
+      verified := .scrubbed (Proof.AesXts.X86_64.Scrub.decryptUnitTo_scrubbed v)
+      spSafe := Proof.AesXts.X86_64.Scrub.decryptUnitTo_spSafeFn v }]
 
 end VG.Artifacts.AesXts.X86_64

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
 public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
 
 /-!
@@ -119,7 +119,7 @@ end VG.Impl.Ed448.AArch64.Whole
 
 `vg_ed448_public_key`, `vg_ed448_sign_cached` and `vg_ed448_verify`
 (`Impl.Ed448.AArch64.Fn`) are their code, then their cleanup
-(`Impl.Residue.AArch64.scrubAll`): the registers they write that the calling
+(`Impl.Scrub.AArch64.scrubAll`): the registers they write that the calling
 convention does not preserve are cleared, but the 32 bits of `verify`'s
 result, and the 352 bytes of stack they use are zeroed, so that they return
 without secret residue. The registers are those their own instructions write,
@@ -129,7 +129,7 @@ stated here, and those the permutation they call states it writes
 namespace VG.Impl.Ed448.AArch64.Fn
 
 /-- The registers the three functions write themselves. -/
-def own : Impl.Residue.AArch64.Clear :=
+def own : Impl.Scrub.AArch64.Clear :=
   ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24,
     .v25, .v26, .v27, .v28, .v29, .v30, .v31],

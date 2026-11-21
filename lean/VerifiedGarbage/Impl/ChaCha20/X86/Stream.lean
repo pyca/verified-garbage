@@ -160,7 +160,7 @@ end VG.Impl.ChaCha20.X86.Stream
 Each function, then its cleanup: the registers a callee may change cleared
 but the bits of the result (`Impl.Scrub.X86.scrub rb`), and, for `apply`,
 which calls `vg_chacha20_block` and `vg_chacha20_xor`, the 32 bytes of stack
-below `esp` that it and they use zeroed first (`Impl.Scrub.X86.scrubF rb W`),
+below `esp` that it and they use zeroed first (`Impl.Scrub.X86.scrubAll rb W`),
 so that each returns without secret residue. -/
 
 namespace VG.Impl.ChaCha20.X86.Fn
@@ -174,6 +174,6 @@ def init : Prog isa := Impl.Scrub.X86.scrub 0 Stream.init
 def setNonce : Prog isa := Impl.Scrub.X86.scrub 0 Stream.setNonce
 
 /-- `vg_chacha20_apply`, calling the implementation `c` of `vg_chacha20_xor`, as emitted. -/
-def apply (c : Callee) : Prog isa := Impl.Scrub.X86.scrubF 32 32 (Stream.apply c)
+def apply (c : Callee) : Prog isa := Impl.Scrub.X86.scrubAll 32 32 (Stream.apply c)
 
 end VG.Impl.ChaCha20.X86.Fn

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Sm3.AArch64
 public import VerifiedGarbage.Impl.MdStream.AArch64
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 
 /-!
 # Streaming SM3: AArch64 implementation
@@ -51,7 +51,7 @@ def finalize : Prog isa := MdStream.AArch64.finalize params "vg_sm3_compress" co
 
 `vg_sm3_update` and `vg_sm3_finalize` over an implementation of the
 compression function, with their 112 bytes of working space in a frame on
-the stack, then their cleanup (`Impl.Residue.AArch64.scrubAll`): the
+the stack, then their cleanup (`Impl.Scrub.AArch64.scrubAll`): the
 registers they write that the calling convention does not preserve are
 cleared and their 128 bytes of stack zeroed, so that they return without
 secret residue. The registers are those their own instructions write,
@@ -64,11 +64,11 @@ does not preserve (the proofs hold it to the code,
 structure Compress where
   name : String
   code : Prog isa
-  clear : Impl.Residue.AArch64.Clear
+  clear : Impl.Scrub.AArch64.Clear
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 
 /-- The registers `vg_sm3_update`'s own instructions write. -/
 def updateOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x9, .x10, .x11, .x12, .x13, .x16, .x17], [], []⟩

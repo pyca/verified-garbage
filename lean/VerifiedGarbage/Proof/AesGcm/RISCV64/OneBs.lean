@@ -637,7 +637,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem sealBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.sealBs
       (Spec.Gcm.sealBitslicedContract RISCV64.abi 4640) 0 :=
-  verifiedScrubbedSelT (api := Spec.Gcm.sealBitslicedApi) (W := 4640)
+  verifiedScrubbedSel (api := Spec.Gcm.sealBitslicedApi) (W := 4640)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesGcm.RISCV64.sealBs
       verified := Proof.AesGcm.sealBitsliced_keyed sealBs_framed }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (144, [(0, 18)])] []

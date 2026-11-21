@@ -532,7 +532,7 @@ function, named with its suffix, giving it the scratch space it uses
 (`Callee.so`) and taking the working space they use (`Hash.wOf`). They call
 `vg_sha256_init`'s code as the internal `vg_sha256_init_core`: the function
 exported as `vg_sha256_init` also clears what it leaves
-(`Proof.Sha256.X86_64.initReg`), which its callers, which clear their own,
+(`Proof.Sha256.X86_64.init_scrubbed`), which its callers, which clear their own,
 do not need. -/
 def hash (v : Compress) : Hash where
   P := Proof.Sha256.X86_64.Stream.paramsS v.callee.so
@@ -909,7 +909,7 @@ def streamS : List StreamFn := [updFnS v h hv, finFnS v h hv, digFnS v h hv]
 end S
 
 /-- SHA-256 with the implementation `v` of its compression function. -/
-def variant (stream : List StreamFn := stream v) : MdHash :=
+def variant (stream : List StreamFnS := []) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha256I) (ok v) (coreOK v) (callees v)
     ⟨Spec.Mgf1.sha256, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl 560 (okU v) rfl
     (satI (hashW v)) (satF (hashW v)) (satT (hashW v)) (satP (hashW v))

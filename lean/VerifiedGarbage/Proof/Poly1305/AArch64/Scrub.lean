@@ -24,7 +24,7 @@ the end).
 
 namespace VG.Proof.Poly1305.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.Poly1305
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.Poly1305
 
 theorem updateOk (W : Nat) (hW : 0 < W := by decide) :
     ScrubAllOk (updateContract abi W) W (updateSig.retBits abi.ptrBits) :=
@@ -46,25 +46,25 @@ and returns without secret residue. -/
 
 namespace VG.Proof.Poly1305.AArch64.Fn
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.Poly1305
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.Poly1305
 
 theorem init : VerifiedScrubbed target Impl.Poly1305.AArch64.init (initContract abi) 0 :=
   ⟨init_verified, init_noResidue _⟩
 
 theorem update : VerifiedScrubbed target Impl.Poly1305.AArch64.Fn.update (updateContract abi 128) 0 :=
-  verifiedScrubbed (api := updateApi)
+  verifiedScrubbedAll (api := updateApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Radix64.update,
       verified := Radix64.update_framed }
     _ (Scrub.updateOk 128) (by dsimp only; lit_decide)
 
 theorem updateNeon : VerifiedScrubbed target Impl.Poly1305.AArch64.Fn.updateNeon (updateContract abi 128) 0 :=
-  verifiedScrubbed (api := updateApi)
+  verifiedScrubbedAll (api := updateApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Vector.update,
       verified := Vector.update_framed }
     _ (Scrub.updateOk 128) (by dsimp only; lit_decide)
 
 theorem finalize : VerifiedScrubbed target Impl.Poly1305.AArch64.Fn.finalize (finalizeContract abi 128) 0 :=
-  verifiedScrubbed (api := finalizeApi)
+  verifiedScrubbedAll (api := finalizeApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 128 .x3 Impl.Poly1305.AArch64.Radix64.finalize,
       verified := Radix64.finalize_framed }
     _ (Scrub.finalizeOk 128) (by dsimp only; lit_decide)

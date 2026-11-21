@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Hmac.X86
@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Md5.X86.Lit
 import VerifiedGarbage.Proof.Sha1.X86.Lit
 import VerifiedGarbage.Proof.Sha256.X86.Lit
 import VerifiedGarbage.Proof.Sha512.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Impl.Hmac.X86
@@ -55,7 +55,7 @@ meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 working space (`Proof.Pbkdf2.Whole.X86.initCode`,
 `Proof.Pbkdf2.Md.X86.finFramed`), followed by the zeroing of the stack their
 contracts reserve and the clearing of the registers a callee may change
-(`X86.Scrub.verifiedScrubbedF`). Their postconditions read the memory on
+(`X86.Scrub.verifiedScrubbedAll`). Their postconditions read the memory on
 return only within their buffers (`initOut`, `finOut`, from
 `Proof.Hmac.initPostOut_local` and `finalizePostOut_local`).
 
@@ -100,79 +100,79 @@ theorem finOut (I : Spec.Hmac.Instance) (stack : Nat) :
 theorem md5_init_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.md5Init md5M md5F)
       (Spec.Hmac.md5I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.md5I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.md5I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.md5I.initAnyKeyApi)
     { code := initCode Spec.Hmac.md5I md5M.hmacInit md5F
       verified := Proof.Pbkdf2.Whole.X86.Any.md5_initF
       spSafe := Proof.Pbkdf2.Whole.X86.Any.md5_initSp }
     (initOut Spec.Hmac.md5I Proof.Hmac.md5_local _)
 
 theorem md5_initSp : (Impl.Hmac.X86.Fn.md5Init md5M md5F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.md5_initSp
+  scrubAll_spSafe Proof.Pbkdf2.Whole.X86.Any.md5_initSp
 
 theorem md5_fin_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.md5Finalize md5M)
       (Spec.Hmac.md5I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.md5I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.md5I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.md5I.finalizeApi)
     { code := withStackScratch (finFrame Spec.Hmac.md5I) 5 md5M.hmacFin
       verified := finFramed Proof.Pbkdf2.Md.X86.Instances.md5_finalize Proof.Hmac.md5_local
         Proof.Pbkdf2.Md.X86.md5_finFrameSat }
     (finOut Spec.Hmac.md5I _)
 
 theorem md5_finSp : (Impl.Hmac.X86.Fn.md5Finalize md5M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Code.all_of_spTest (by lit_decide))
+  scrubAll_spSafe (Code.all_of_spTest (by lit_decide))
 
 theorem sha384_init_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Init sha384M sha384F)
       (Spec.Hmac.sha384I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha384I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha384I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha384I.initAnyKeyApi)
     { code := initCode Spec.Hmac.sha384I sha384M.hmacInit sha384F
       verified := Proof.Pbkdf2.Whole.X86.Any.sha384_initF
       spSafe := Proof.Pbkdf2.Whole.X86.Any.sha384_initSp }
     (initOut Spec.Hmac.sha384I Proof.Hmac.sha384_local _)
 
 theorem sha384_initSp : (Impl.Hmac.X86.Fn.sha512Init sha384M sha384F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha384_initSp
+  scrubAll_spSafe Proof.Pbkdf2.Whole.X86.Any.sha384_initSp
 
 theorem sha384_fin_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Finalize sha384M)
       (Spec.Hmac.sha384I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha384I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha384I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha384I.finalizeApi)
     { code := withStackScratch (finFrame Spec.Hmac.sha384I) 5 sha384M.hmacFin
       verified := finFramed Proof.Pbkdf2.Md.X86.Instances.sha384_finalize Proof.Hmac.sha384_local
         Proof.Pbkdf2.Md.X86.sha384_finFrameSat }
     (finOut Spec.Hmac.sha384I _)
 
 theorem sha384_finSp : (Impl.Hmac.X86.Fn.sha512Finalize sha384M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Code.all_of_spTest (by lit_decide))
+  scrubAll_spSafe (Code.all_of_spTest (by lit_decide))
 
 theorem sha512_init_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Init sha512M' sha512F)
       (Spec.Hmac.sha512I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha512I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512I.initAnyKeyApi)
     { code := initCode Spec.Hmac.sha512I sha512M'.hmacInit sha512F
       verified := Proof.Pbkdf2.Whole.X86.Any.sha512_initF
       spSafe := Proof.Pbkdf2.Whole.X86.Any.sha512_initSp }
     (initOut Spec.Hmac.sha512I Proof.Hmac.sha512_local _)
 
 theorem sha512_initSp : (Impl.Hmac.X86.Fn.sha512Init sha512M' sha512F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_initSp
+  scrubAll_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_initSp
 
 theorem sha512_fin_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Finalize sha512M')
       (Spec.Hmac.sha512I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha512I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512I.finalizeApi)
     { code := withStackScratch (finFrame Spec.Hmac.sha512I) 5 sha512M'.hmacFin
       verified := finFramed Proof.Pbkdf2.Md.X86.Instances.sha512_finalize Proof.Hmac.sha512_local
         Proof.Pbkdf2.Md.X86.sha512_finFrameSat }
     (finOut Spec.Hmac.sha512I _)
 
 theorem sha512_finSp : (Impl.Hmac.X86.Fn.sha512Finalize sha512M').all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Code.all_of_spTest (by lit_decide))
+  scrubAll_spSafe (Code.all_of_spTest (by lit_decide))
 
 theorem sha512_224_init_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Init sha512_224M sha512_224F)
       (Spec.Hmac.sha512_224I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha512_224I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512_224I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_224I.initAnyKeyApi)
     { code := initCode Spec.Hmac.sha512_224I sha512_224M.hmacInit sha512_224F
       verified := Proof.Pbkdf2.Whole.X86.Any.sha512_224_initF
       spSafe := Proof.Pbkdf2.Whole.X86.Any.sha512_224_initSp }
@@ -180,24 +180,24 @@ theorem sha512_224_init_scrubbed :
 
 theorem sha512_224_initSp :
     (Impl.Hmac.X86.Fn.sha512Init sha512_224M sha512_224F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_224_initSp
+  scrubAll_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_224_initSp
 
 theorem sha512_224_fin_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Finalize sha512_224M)
       (Spec.Hmac.sha512_224I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha512_224I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512_224I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_224I.finalizeApi)
     { code := withStackScratch (finFrame Spec.Hmac.sha512_224I) 5 sha512_224M.hmacFin
       verified := finFramed Proof.Pbkdf2.Md.X86.Instances.sha512_224_finalize Proof.Hmac.sha512_224_local
         Proof.Pbkdf2.Md.X86.sha512_224_finFrameSat }
     (finOut Spec.Hmac.sha512_224I _)
 
 theorem sha512_224_finSp : (Impl.Hmac.X86.Fn.sha512Finalize sha512_224M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Code.all_of_spTest (by lit_decide))
+  scrubAll_spSafe (Code.all_of_spTest (by lit_decide))
 
 theorem sha512_256_init_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Init sha512_256M sha512_256F)
       (Spec.Hmac.sha512_256I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha512_256I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512_256I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_256I.initAnyKeyApi)
     { code := initCode Spec.Hmac.sha512_256I sha512_256M.hmacInit sha512_256F
       verified := Proof.Pbkdf2.Whole.X86.Any.sha512_256_initF
       spSafe := Proof.Pbkdf2.Whole.X86.Any.sha512_256_initSp }
@@ -205,19 +205,19 @@ theorem sha512_256_init_scrubbed :
 
 theorem sha512_256_initSp :
     (Impl.Hmac.X86.Fn.sha512Init sha512_256M sha512_256F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_256_initSp
+  scrubAll_spSafe Proof.Pbkdf2.Whole.X86.Any.sha512_256_initSp
 
 theorem sha512_256_fin_scrubbed :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha512Finalize sha512_256M)
       (Spec.Hmac.sha512_256I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha512_256I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512_256I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_256I.finalizeApi)
     { code := withStackScratch (finFrame Spec.Hmac.sha512_256I) 5 sha512_256M.hmacFin
       verified := finFramed Proof.Pbkdf2.Md.X86.Instances.sha512_256_finalize Proof.Hmac.sha512_256_local
         Proof.Pbkdf2.Md.X86.sha512_256_finFrameSat }
     (finOut Spec.Hmac.sha512_256I _)
 
 theorem sha512_256_finSp : (Impl.Hmac.X86.Fn.sha512Finalize sha512_256M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Code.all_of_spTest (by lit_decide))
+  scrubAll_spSafe (Code.all_of_spTest (by lit_decide))
 
 /-! ## SHA-1, SHA-224 and SHA-256, generic over their backends
 
@@ -354,7 +354,7 @@ theorem sha256FinFill (sfx cN : String) (c u f : Prog isa) (hc : calleeSide c 20
 theorem sha1_init_scrubbed (v : Proof.Sha1.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha1Init v.M v.F)
       (Spec.Hmac.sha1I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha1I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha1I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha1I.initAnyKeyApi)
     { suffix := v.suffix
       code := initCode Spec.Hmac.sha1I v.M.hmacInit v.F
       verified := Proof.Pbkdf2.Whole.X86.Any.sha1_initF v
@@ -365,12 +365,12 @@ theorem sha1_init_scrubbed (v : Proof.Sha1.X86.Variants.Backend) :
 
 theorem sha1_initSp (v : Proof.Sha1.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha1Init v.M v.F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha1_initSp v)
+  scrubAll_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha1_initSp v)
 
 theorem sha1_fin_scrubbed (v : Proof.Sha1.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha1Finalize v.M)
       (Spec.Hmac.sha1I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha1I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha1I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha1I.finalizeApi)
     { suffix := v.suffix
       code := withStackScratch (finFrame Spec.Hmac.sha1I) 5 v.M.hmacFin
       verified := finFramed v.hmacFin Proof.Hmac.sha1_local Proof.Pbkdf2.Md.X86.sha1_finFrameSat
@@ -382,14 +382,14 @@ theorem sha1_fin_scrubbed (v : Proof.Sha1.X86.Variants.Backend) :
 
 theorem sha1_finSp (v : Proof.Sha1.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha1Finalize v.M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp)
+  scrubAll_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp)
 
 /-! ### SHA-224 -/
 
 theorem sha224_init_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha256Init v.M224 v.F224)
       (Spec.Hmac.sha224I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha224I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha224I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha224I.initAnyKeyApi)
     { suffix := v.suffix
       code := initCode Spec.Hmac.sha224I v.M224.hmacInit v.F224
       verified := Proof.Pbkdf2.Whole.X86.Any.sha224_initF v
@@ -400,12 +400,12 @@ theorem sha224_init_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
 
 theorem sha224_initSp (v : Proof.Sha256.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha256Init v.M224 v.F224).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha224_initSp v)
+  scrubAll_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha224_initSp v)
 
 theorem sha224_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha256Finalize v.M224)
       (Spec.Hmac.sha224I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha224I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha224I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha224I.finalizeApi)
     { suffix := v.suffix
       code := withStackScratch (finFrame Spec.Hmac.sha224I) 5 v.M224.hmacFin
       verified := finFramed v.hmacFin224 Proof.Hmac.sha224_local Proof.Pbkdf2.Md.X86.sha224_finFrameSat
@@ -417,14 +417,14 @@ theorem sha224_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
 
 theorem sha224_finSp (v : Proof.Sha256.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha256Finalize v.M224).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.fin224Sp)
+  scrubAll_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.fin224Sp)
 
 /-! ### SHA-256 -/
 
 theorem sha256_init_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha256Init v.M v.F)
       (Spec.Hmac.sha256I.initAnyKeyContract X86.abi (76 + anyFrame Spec.Hmac.sha256I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha256I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha256I.initAnyKeyApi)
     { suffix := v.suffix
       code := initCode Spec.Hmac.sha256I v.M.hmacInit v.F
       verified := Proof.Pbkdf2.Whole.X86.Any.sha256_initF v
@@ -435,12 +435,12 @@ theorem sha256_init_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
 
 theorem sha256_initSp (v : Proof.Sha256.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha256Init v.M v.F).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha256_initSp v)
+  scrubAll_spSafe (Proof.Pbkdf2.Whole.X86.Any.sha256_initSp v)
 
 theorem sha256_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed X86.target (Impl.Hmac.X86.Fn.sha256Finalize v.M)
       (Spec.Hmac.sha256I.finalizeContract X86.abi (48 + finFrame Spec.Hmac.sha256I)) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha256I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha256I.finalizeApi)
     { suffix := v.suffix
       code := withStackScratch (finFrame Spec.Hmac.sha256I) 5 v.M.hmacFin
       verified := finFramed v.hmacFin Proof.Hmac.sha256_local Proof.Pbkdf2.Md.X86.sha256_finFrameSat
@@ -452,6 +452,6 @@ theorem sha256_fin_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
 
 theorem sha256_finSp (v : Proof.Sha256.X86.Variants.Backend) :
     (Impl.Hmac.X86.Fn.sha256Finalize v.M).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp)
+  scrubAll_spSafe (Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp)
 
 end VG.Proof.Hmac.X86.Scrub

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
@@ -55,7 +55,7 @@ end VG.Impl.ChaCha20Poly1305.AArch64.SealGather
 /-! ## The functions, as emitted
 
 Each function is its code in its frame, then its cleanup
-(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+(`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the calling
 convention does not preserve are cleared, but the 32 bits of `open`'s and
 `open_to`'s result, and the stack it uses is zeroed, so that it returns without secret residue. The
 registers are those its own instructions write, stated here, and those the
@@ -65,7 +65,7 @@ namespace VG.Impl.ChaCha20Poly1305.AArch64.Fn
 
 open VG.AArch64
 open VG.Impl.ChaCha20.AArch64 (XorCallee)
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 open VG.Impl.StackScratch.AArch64 (withStackScratchWiped withStackArgScratchWiped)
 
 /-- The registers `seal` and `seal_gather` write themselves. -/

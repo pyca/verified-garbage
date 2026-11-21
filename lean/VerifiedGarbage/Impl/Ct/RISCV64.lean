@@ -41,8 +41,8 @@ namespace VG.Impl.Ct.RISCV64.Fn
 open VG.RISCV64
 
 /-- `vg_ct_eq` as emitted: `eq`, then its cleanup
-(`Impl.Scrub.RISCV64.scrub`): the caller-saved registers cleared but its
+(`Impl.Scrub.RISCV64.scrubAll`): the caller-saved registers cleared but its
 32-bit result; it uses no stack. -/
-def eq : Prog isa := VG.Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.Ct.RISCV64.eq
+def eq : Prog isa := VG.Impl.Scrub.RISCV64.scrubAll 32 0 VG.Impl.Ct.RISCV64.eq
 
 end VG.Impl.Ct.RISCV64.Fn

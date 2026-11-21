@@ -28,13 +28,13 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 
 ML-DSA's public functions keep secrets in the frames of the functions they
 call, and none makes an indirect call. Each is emitted with its cleanup
-(`Impl.MlDsa.Arm.Fn`, `Impl.Residue.Arm.scrubF`): a wipe of the stack its
+(`Impl.MlDsa.Arm.Fn`, `Impl.Scrub.Arm.scrubAll`): a wipe of the stack its
 contract reserves, and instructions that set the registers a callee may
 change, but the result, and the flags to constants. Their postconditions
 read the memory on return only within their outputs, and those of
 verification not at all (`Arm.Scrub.PostOut`), and their code uses at most
 the stack their contracts reserve and makes no indirect call (`CodeOk`):
-`Fn` below has the theorem of each (`Arm.Scrub.verifiedScrubbedF`), which its
+`Fn` below has the theorem of each (`Arm.Scrub.verifiedScrubbedAll`), which its
 registration binds.
 
 The wipe is a frame of the model, of a multiple of 8 bytes, so each contract
@@ -384,84 +384,84 @@ include module name h3
 
 /-- `vg_<module>_keygen`. -/
 theorem keyGen : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.keyGen p) (keyGenContract p Arm.abi 40) 32 :=
-  verifiedScrubbedF (api := keyGenApi p module name)
+  verifiedScrubbedAll (api := keyGenApi p module name)
     { code := Impl.MlDsa.Arm.KeyGen.keyGen Impl.MlDsa.Arm.KeyGen.prims p
       verified := KeyGen.keyGen_verified KeyGen.prims_ok p h3 }
     (keyGenOut p _) (scrubSideF_of (keyGen_code h3) frameOk_40 _)
 
 /-- `vg_<module>_pk_tr`. -/
 theorem pkTr : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.pkTr p) (pkTrContract p Arm.abi 8) 0 :=
-  verifiedScrubbedF (api := pkTrApi p module name)
+  verifiedScrubbedAll (api := pkTrApi p module name)
     { code := Impl.MlDsa.Arm.PkTr.pkTr p
       verified := PkTr.pkTr_verified p h3 }
     (pkTrOut p _) (scrubSideF_of (pkTr_code h3) frameOk_8 _)
 
 /-- `vg_<module>_prepare_verifying_key`. -/
 theorem preparePublic : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.preparePublic p) (preparePublicKeyContract p Arm.abi 48) 0 :=
-  verifiedScrubbedF (api := preparePublicKeyApi p module name)
+  verifiedScrubbedAll (api := preparePublicKeyApi p module name)
     { code := Impl.MlDsa.Arm.PreparedKey.preparePublic Sign.prims p
       verified := PreparedKey.preparePublic_verified h3 }
     (preparePublicOut h3 _) (scrubSideF_of (preparePublic_code h3) frameOk_48 _)
 
 /-- `vg_<module>_prepare_signing_key`. -/
 theorem prepareSecret : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.prepareSecret p) (prepareSecretKeyContract p Arm.abi 48) 0 :=
-  verifiedScrubbedF (api := prepareSecretKeyApi p module name)
+  verifiedScrubbedAll (api := prepareSecretKeyApi p module name)
     { code := Impl.MlDsa.Arm.PreparedKey.prepareSecret Sign.prims p
       verified := PreparedKey.prepareSecret_verified h3 }
     (prepareSecretOut h3 _) (scrubSideF_of (prepareSecret_code h3) frameOk_48 _)
 
 /-- `vg_<module>_sign`. -/
 theorem sign : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.sign p) (signContract p Arm.abi 48) 32 :=
-  verifiedScrubbedF (api := signApi p module name)
+  verifiedScrubbedAll (api := signApi p module name)
     { code := Impl.MlDsa.Arm.Sign.sign Sign.prims p
       verified := sign_verified h3 }
     (signOut p _) (scrubSideF_of ((signEntry_code h3 false).mono (by decide)) frameOk_48 _)
 
 /-- `vg_<module>_sign_prepared`. -/
 theorem signPrepared : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.signPrepared p) (Spec.MlDsa.preparedSignContract p Arm.abi 48) 32 :=
-  verifiedScrubbedF (api := preparedSignApi p module name)
+  verifiedScrubbedAll (api := preparedSignApi p module name)
     { code := Impl.MlDsa.Arm.Sign.signPrepared Sign.prims p
       verified := signPrepared_verified h3 }
     (preparedSignOut p _) (scrubSideF_of ((signEntry_code h3 true).mono (by decide)) frameOk_48 _)
 
 /-- `vg_<module>_verify`. -/
 theorem verify : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.verify p) (verifyContract p Arm.abi 56) 32 :=
-  verifiedScrubbedF (api := verifyApi p module name)
+  verifiedScrubbedAll (api := verifyApi p module name)
     { code := Impl.MlDsa.Arm.Verify.verify Impl.MlDsa.Arm.Verify.prims p
       verified := verify_verified h3 }
     (verifyOut p _) (scrubSideF_of ((verifyEntry_code h3 false).mono (by decide)) frameOk_56 _)
 
 /-- `vg_<module>_verify_prepared`. -/
 theorem verifyPrepared : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.verifyPrepared p) (Spec.MlDsa.preparedVerifyContract p Arm.abi 56) 32 :=
-  verifiedScrubbedF (api := preparedVerifyApi p module name)
+  verifiedScrubbedAll (api := preparedVerifyApi p module name)
     { code := Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p
       verified := verifyPrepared_verified h3 }
     (preparedVerifyOut p _) (scrubSideF_of ((verifyEntry_code h3 true).mono (by decide)) frameOk_56 _)
 
 /-- `vg_<module>_sign_message`. -/
 theorem signMessage : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.signMessage p module) (signMessageContract p Arm.abi 56) 32 :=
-  verifiedScrubbedF (api := signMessageApi p module name)
+  verifiedScrubbedAll (api := signMessageApi p module name)
     { code := Impl.MlDsa.Arm.Message.signMessage (Impl.MlDsa.Arm.Fn.signEntryName module) (Impl.MlDsa.Arm.Sign.sign Sign.prims p) p
       verified := signMessage_verified h3 _ }
     (signMessageOut p _) (scrubSideF_of (signMessage_code p (signEntry_code h3 false)) frameOk_56 _)
 
 /-- `vg_<module>_sign_message_prepared`. -/
 theorem preparedSignMessage : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.preparedSignMessage p module) (preparedSignMessageContract p Arm.abi 56) 32 :=
-  verifiedScrubbedF (api := preparedSignMessageApi p module name)
+  verifiedScrubbedAll (api := preparedSignMessageApi p module name)
     { code := Impl.MlDsa.Arm.Message.signMessage (Impl.MlDsa.Arm.Fn.signPreparedEntryName module) (Impl.MlDsa.Arm.Sign.signPrepared Sign.prims p) p
       verified := preparedSignMessage_verified h3 _ }
     (preparedSignMessageOut p _) (scrubSideF_of (signMessage_code p (signEntry_code h3 true)) frameOk_56 _)
 
 /-- `vg_<module>_verify_message_cached`. -/
 theorem verifyMessageCached : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.verifyMessageCached p module) (verifyMessageCachedContract p Arm.abi 56) 32 :=
-  verifiedScrubbedF (api := verifyMessageCachedApi p module name)
+  verifiedScrubbedAll (api := verifyMessageCachedApi p module name)
     { code := Impl.MlDsa.Arm.Message.verifyMessageCached (Impl.MlDsa.Arm.Fn.verifyEntryName module) (Impl.MlDsa.Arm.Verify.verify Impl.MlDsa.Arm.Verify.prims p) p
       verified := verifyMessageCached_verified h3 _ }
     (verifyMessageCachedOut p _) (scrubSideF_of (verifyMessageCached_code p (verifyEntry_code h3 false)) frameOk_56 _)
 
 /-- `vg_<module>_verify_message_prepared`. -/
 theorem preparedVerifyMessage : VerifiedScrubbed Arm.target (Impl.MlDsa.Arm.Fn.preparedVerifyMessage p module) (preparedVerifyMessageContract p Arm.abi 56) 32 :=
-  verifiedScrubbedF (api := preparedVerifyMessageApi p module name)
+  verifiedScrubbedAll (api := preparedVerifyMessageApi p module name)
     { code := Impl.MlDsa.Arm.Message.verifyMessageCached (Impl.MlDsa.Arm.Fn.verifyPreparedEntryName module) (Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p) p
       verified := preparedVerifyMessage_verified h3 _ }
     (preparedVerifyMessageOut p _) (scrubSideF_of (verifyMessageCached_code p (verifyEntry_code h3 true)) frameOk_56 _)

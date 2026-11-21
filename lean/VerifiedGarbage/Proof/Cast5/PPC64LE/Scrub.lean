@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Cast5.PPC64LE.Fn
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Spec.Cast5.Contract
 public import VerifiedGarbage.Spec.Cast5.Cbc
@@ -23,11 +24,11 @@ import VerifiedGarbage.Proof.Framework.Lit
 # CAST5 on PPC64LE, without secret residue
 
 Key expansion and ECB, which have no frames, are followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which wipes no
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which wipes no
 stack for them. The CBC, CFB64 and OFB functions zero their whole frame
 themselves before they release it (`withStackScratchWiped`), and have no
 frames of their own inside it, so they need only the clearing of the volatile
-registers they write after them (`PPC64LE.Scrub.scrubWipedOf`). Their
+registers they write after them (`PPC64LE.Scrub.verifiedScrubbedWiped`). Their
 postconditions read the memory on return only within their buffers, as
 x86-64's proofs show (`Proof/Cast5/X86_64/Scrub.lean`).
 -/
@@ -213,95 +214,132 @@ theorem ofbFinalOut (stack : Nat) :
       rw [bytesAt_of0 hb.2.2 (len1C ln), bytesAt_of0 (n := 8) hb.2.1 (Nat.le_refl _)]
       exact h key hk
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.Cast5.expandKeyApi`. -/
-def expandKeyReg : Registration Spec.Cast5.expandKeyApi PPC64LE.target :=
-  scrubOf { code := Impl.Cast5.PPC64LE.expandKey, verified := Proof.Cast5.PPC64LE.expandKey_verified }
+/-- `vg_cast5_expand_key` as emitted (`Impl.Cast5.PPC64LE.Fn.expandKey`) meets its
+contract in constant time and returns without secret residue. -/
+theorem expandKey_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.expandKey
+      (Spec.Cast5.expandKeyContract (PPC64LE.abi.withConsts Impl.Cast5.keyConsts)) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.expandKeyApi) { code := Impl.Cast5.PPC64LE.expandKey, verified := Proof.Cast5.PPC64LE.expandKey_verified }
     0 ⟨true, true, [.r4, .r5, .r7, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ (expandKeyOut _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Cast5.ecbEncryptApi`. -/
-def ecbEncryptReg : Registration Spec.Cast5.ecbEncryptApi PPC64LE.target :=
-  scrubOf { code := Impl.Cast5.PPC64LE.ecbEncrypt, verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.PPC64LE.ecbEncrypt_verified }
+/-- `vg_cast5_ecb_encrypt` as emitted (`Impl.Cast5.PPC64LE.Fn.ecbEncrypt`) meets
+its contract in constant time and returns without secret residue. -/
+theorem ecbEncrypt_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.ecbEncrypt
+      (Spec.Cast5.ecbEncryptContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts)) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.ecbEncryptApi) { code := Impl.Cast5.PPC64LE.ecbEncrypt, verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.PPC64LE.ecbEncrypt_verified }
     0 ⟨true, false, [.r5, .r6, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ (ecbOut .encrypt _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Cast5.ecbDecryptApi`. -/
-def ecbDecryptReg : Registration Spec.Cast5.ecbDecryptApi PPC64LE.target :=
-  scrubOf { code := Impl.Cast5.PPC64LE.ecbDecrypt, verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.PPC64LE.ecbDecrypt_verified }
+/-- `vg_cast5_ecb_decrypt` as emitted (`Impl.Cast5.PPC64LE.Fn.ecbDecrypt`) meets
+its contract in constant time and returns without secret residue. -/
+theorem ecbDecrypt_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.ecbDecrypt
+      (Spec.Cast5.ecbDecryptContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts)) 0 :=
+  verifiedScrubbedAll (api := Spec.Cast5.ecbDecryptApi) { code := Impl.Cast5.PPC64LE.ecbDecrypt, verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.PPC64LE.ecbDecrypt_verified }
     0 ⟨true, false, [.r5, .r6, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ (ecbOut .decrypt _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.Cast5.cbcEncryptChainedApi`. -/
-def cbcEncryptChainedReg : Registration Spec.Cast5.cbcEncryptChainedApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_cast5_cbc_encrypt_chained` as emitted
+(`Impl.Cast5.PPC64LE.Fn.cbcEncryptChained`) meets its contract in constant
+time and returns without secret residue. -/
+theorem cbcEncryptChained_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.cbcEncryptChained
+      (Spec.Cast5.cbcEncryptChainedContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts) 208) 0 :=
+  verifiedScrubbedWiped (api := Spec.Cast5.cbcEncryptChainedApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cbcEncryptChained
       verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.PPC64LE.Modes.cbcEncryptChained_framed }
     208 .r8 22 Impl.Cast5.PPC64LE.cbcEncryptChained
     ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ rfl (cbcEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Cast5.cbcDecryptChainedApi`. -/
-def cbcDecryptChainedReg : Registration Spec.Cast5.cbcDecryptChainedApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_cast5_cbc_decrypt_chained` as emitted
+(`Impl.Cast5.PPC64LE.Fn.cbcDecryptChained`) meets its contract in constant
+time and returns without secret residue. -/
+theorem cbcDecryptChained_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.cbcDecryptChained
+      (Spec.Cast5.cbcDecryptChainedContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts) 208) 0 :=
+  verifiedScrubbedWiped (api := Spec.Cast5.cbcDecryptChainedApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cbcDecryptChained
       verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.PPC64LE.Modes.cbcDecryptChained_framed }
     208 .r8 22 Impl.Cast5.PPC64LE.cbcDecryptChained
     ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ rfl (cbcDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Cast5.cfbEncryptApi`. -/
-def cfbEncryptReg : Registration Spec.Cast5.cfbEncryptApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_cast5_cfb64_encrypt` as emitted (`Impl.Cast5.PPC64LE.Fn.cfbEncrypt`) meets
+its contract in constant time and returns without secret residue. -/
+theorem cfbEncrypt_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.cfbEncrypt
+      (Spec.Cast5.cfbEncryptContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts) 208) 0 :=
+  verifiedScrubbedWiped (api := Spec.Cast5.cfbEncryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cfbEncrypt
       verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.PPC64LE.Modes.cfbEncrypt_framed }
     208 .r8 22 Impl.Cast5.PPC64LE.cfbEncrypt
     ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ rfl (cfbEncryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Cast5.cfbDecryptApi`. -/
-def cfbDecryptReg : Registration Spec.Cast5.cfbDecryptApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_cast5_cfb64_decrypt` as emitted (`Impl.Cast5.PPC64LE.Fn.cfbDecrypt`) meets
+its contract in constant time and returns without secret residue. -/
+theorem cfbDecrypt_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.cfbDecrypt
+      (Spec.Cast5.cfbDecryptContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts) 208) 0 :=
+  verifiedScrubbedWiped (api := Spec.Cast5.cfbDecryptApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cfbDecrypt
       verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.PPC64LE.Modes.cfbDecrypt_framed }
     208 .r8 22 Impl.Cast5.PPC64LE.cfbDecrypt
     ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ rfl (cfbDecryptOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Cast5.cfbEncryptFinalApi`. -/
-def cfbEncryptFinalReg : Registration Spec.Cast5.cfbEncryptFinalApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_cast5_cfb64_encrypt_final` as emitted
+(`Impl.Cast5.PPC64LE.Fn.cfbEncryptFinal`) meets its contract in constant time
+and returns without secret residue. -/
+theorem cfbEncryptFinal_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.cfbEncryptFinal
+      (Spec.Cast5.cfbEncryptFinalContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts) 208) 0 :=
+  verifiedScrubbedWiped (api := Spec.Cast5.cfbEncryptFinalApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cfbEncryptFinal
       verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.PPC64LE.FbFinal.cfbEncryptFinal_framed }
     208 .r8 22 Impl.Cast5.PPC64LE.cfbEncryptFinal
     ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ rfl (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Cast5.cfbDecryptFinalApi`. -/
-def cfbDecryptFinalReg : Registration Spec.Cast5.cfbDecryptFinalApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_cast5_cfb64_decrypt_final` as emitted
+(`Impl.Cast5.PPC64LE.Fn.cfbDecryptFinal`) meets its contract in constant time
+and returns without secret residue. -/
+theorem cfbDecryptFinal_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.cfbDecryptFinal
+      (Spec.Cast5.cfbDecryptFinalContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts) 208) 0 :=
+  verifiedScrubbedWiped (api := Spec.Cast5.cfbDecryptFinalApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.cfbDecryptFinal
       verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.PPC64LE.FbFinal.cfbDecryptFinal_framed }
     208 .r8 22 Impl.Cast5.PPC64LE.cfbDecryptFinal
     ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ rfl (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Cast5.ofbApi`. -/
-def ofbReg : Registration Spec.Cast5.ofbApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_cast5_ofb` as emitted (`Impl.Cast5.PPC64LE.Fn.ofb`) meets its contract in
+constant time and returns without secret residue. -/
+theorem ofb_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.ofb
+      (Spec.Cast5.ofbContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts) 208) 0 :=
+  verifiedScrubbedWiped (api := Spec.Cast5.ofbApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.ofb
       verified := Proof.Cast5.ofb_keyed Proof.Cast5.PPC64LE.Modes.ofb_framed }
     208 .r8 22 Impl.Cast5.PPC64LE.ofb
     ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ rfl (ofbOut _) (by dsimp only; lit_decide)
 
-/-- `Spec.Cast5.ofbFinalApi`. -/
-def ofbFinalReg : Registration Spec.Cast5.ofbFinalApi PPC64LE.target :=
-  scrubWipedOf {
+/-- `vg_cast5_ofb_final` as emitted (`Impl.Cast5.PPC64LE.Fn.ofbFinal`) meets its
+contract in constant time and returns without secret residue. -/
+theorem ofbFinal_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.ofbFinal
+      (Spec.Cast5.ofbFinalContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts) 208) 0 :=
+  verifiedScrubbedWiped (api := Spec.Cast5.ofbFinalApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 208 .r8 22 Impl.Cast5.PPC64LE.ofbFinal
       verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.PPC64LE.FbFinal.ofbFinal_framed }
     208 .r8 22 Impl.Cast5.PPC64LE.ofbFinal

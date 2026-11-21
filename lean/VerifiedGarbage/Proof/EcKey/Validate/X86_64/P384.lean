@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -81,29 +82,23 @@ theorem verified (hI : InvSounds) (adx : Bool) :
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ec_p384_validate_public_key` (or its
-`_adx` variant) must wipe on return, from the residue analysis
-(`X86_64.RScrub.keepFor`). -/
-def scrubKs : Bool → List Nat
-  | false => keep_for% Spec.EcKey.P384.inst.validatePublicKeyApi.sig 8 (code false) []
-  | true => keep_for% Spec.EcKey.P384.inst.validatePublicKeyApi.sig 8 (code true) []
+theorem codeSp (adx : Bool) : (code adx).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  cases adx <;> sp_safe
 
-theorem scrubOk (adx : Bool) : ∃ h : VG.Taint.Hint X86_64.RTaint.FT,
-    (VG.Taint.check X86_64.RTaint.rtaint (X86_64.RScrub.init Spec.EcKey.P384.inst.validatePublicKeyApi.sig 8 [])
-      (code adx) h).any (X86_64.RScrub.resOkB · 8 (scrubKs adx) (Impl.Scrub.X86_64.chunks 8)) = true := by
-  cases adx <;> exact X86_64.RScrub.Analysed.ok_of _ (by taint_decide)
+/-- `vg_ec_p384_validate_public_key`, or its `_adx` variant, as emitted (`Impl.EcKey.Validate.X86_64.Fn.validate`), its cleanup
+included, meets its contract in constant time and returns without secret residue. -/
+theorem scrubbed (hI : InvSounds) (adx : Bool) :
+    VerifiedScrubbed target (Impl.EcKey.Validate.X86_64.Fn.validate (Inverse.cfg adx))
+      (Spec.EcKey.P384.inst.validatePublicKeyApi.contract abi 8) 32 := by
+  cases adx <;>
+  exact X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P384.inst.validatePublicKeyApi)
+    { code := code _
+      verified := verified hI _
+      stack := 8
+      spSafe := codeSp _ } .sse (EcKey.X86_64.Scrub.validateOut _ _)
 
-/-- `vg_ec_p384_validate_public_key`, or its `_adx` variant, followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.RScrub.withScrub`): it returns without
-secret residue. -/
-def scrubReg (hI : InvSounds) (adx : Bool) :
-    Registration Spec.EcKey.P384.inst.validatePublicKeyApi target :=
-  X86_64.RScrub.withScrub {
-    suffix := if adx then "_adx" else ""
-    code := code adx
-    verified := verified hI adx
-    stack := 8 }
-    (EcKey.X86_64.Scrub.validateOut _ _) [] (X86_64.RScrub.pubOk_nil _)
-    (some ⟨scrubKs adx, scrubOk adx⟩)
+theorem spSafe (adx : Bool) :
+    (Impl.EcKey.Validate.X86_64.Fn.validate (Inverse.cfg adx)).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (codeSp adx)
 
 end VG.Proof.EcKey.Validate.X86_64.P384

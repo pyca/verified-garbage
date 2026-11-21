@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.StackScratch.RISCV64
 
 /-! # SEED on RISC-V: the functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.RISCV64.scrub rb W`: the `W`
+Each function, then its cleanup (`Impl.Scrub.RISCV64.scrubAll rb W`: the `W`
 bytes of stack its frames use zeroed; or `Impl.Scrub.RISCV64.scrubSel rb
 fs`: of the stack its frames use, only the runs of doublewords `fs` that the
 residue analysis (`RISCV64.rtaint`) finds may differ between two runs
@@ -21,7 +21,7 @@ result, so that it returns without secret residue. -/
 namespace VG.Impl.Seed.RISCV64.Fn
 
 open VG.RISCV64
-open VG.Impl.Scrub.RISCV64 (scrub scrubSel)
+open VG.Impl.Scrub.RISCV64 (scrubAll scrubSel)
 
 /-- `Spec.Seed.expandKeyApi`'s function as emitted. -/
 def expandKey : Prog isa :=
@@ -40,34 +40,34 @@ def ecbDecrypt : Prog isa :=
 
 /-- `Spec.Seed.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncryptChained : Prog isa :=
-  scrub 0 1120 Impl.Seed.RISCV64.cbcEncryptChained
+  scrubAll 0 1120 Impl.Seed.RISCV64.cbcEncryptChained
 
 /-- `Spec.Seed.cbcDecryptChainedApi`'s function as emitted. -/
 def cbcDecryptChained : Prog isa :=
-  scrub 0 1360 Impl.Seed.RISCV64.cbcDecryptChained
+  scrubAll 0 1360 Impl.Seed.RISCV64.cbcDecryptChained
 
 /-- `Spec.Seed.cfbEncryptApi`'s function as emitted. -/
 def cfbEncrypt : Prog isa :=
-  scrub 0 1120 Impl.Seed.RISCV64.cfbEncrypt
+  scrubAll 0 1120 Impl.Seed.RISCV64.cfbEncrypt
 
 /-- `Spec.Seed.cfbDecryptApi`'s function as emitted. -/
 def cfbDecrypt : Prog isa :=
-  scrub 0 1360 Impl.Seed.RISCV64.cfbDecrypt
+  scrubAll 0 1360 Impl.Seed.RISCV64.cfbDecrypt
 
 /-- `Spec.Seed.cfbEncryptFinalApi`'s function as emitted. -/
 def cfbEncryptFinal : Prog isa :=
-  scrub 0 1120 Impl.Seed.RISCV64.cfbEncryptFinal
+  scrubAll 0 1120 Impl.Seed.RISCV64.cfbEncryptFinal
 
 /-- `Spec.Seed.cfbDecryptFinalApi`'s function as emitted. -/
 def cfbDecryptFinal : Prog isa :=
-  scrub 0 1120 Impl.Seed.RISCV64.cfbDecryptFinal
+  scrubAll 0 1120 Impl.Seed.RISCV64.cfbDecryptFinal
 
 /-- `Spec.Seed.ofbApi`'s function as emitted. -/
 def ofb : Prog isa :=
-  scrub 0 1120 Impl.Seed.RISCV64.ofb
+  scrubAll 0 1120 Impl.Seed.RISCV64.ofb
 
 /-- `Spec.Seed.ofbFinalApi`'s function as emitted. -/
 def ofbFinal : Prog isa :=
-  scrub 0 1120 Impl.Seed.RISCV64.ofbFinal
+  scrubAll 0 1120 Impl.Seed.RISCV64.ofbFinal
 
 end VG.Impl.Seed.RISCV64.Fn

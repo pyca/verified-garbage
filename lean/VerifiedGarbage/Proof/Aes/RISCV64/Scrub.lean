@@ -52,7 +52,7 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 each function followed by `Impl.Scrub.RISCV64.scrubTail`, which clears the
 caller-saved registers and the stack its frames used. Each theorem below
 states that one meets its contract in constant time and returns without
-secret residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`),
+secret residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`),
 which is what its registration binds. Their postconditions
 read the memory on return only within their buffers
 (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/Aes/X86_64/Scrub.lean`,
@@ -63,7 +63,7 @@ functions of their own, `vg_aes_ctr_core`, ….
 
 The key expansion and the final partial-block functions of CTR, CFB and OFB instead clear only the runs of doublewords that the residue
 analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`Impl.Scrub.RISCV64.scrubSel`, `RISCV64.Scrub.verifiedScrubbedSelT`, whose
+(`Impl.Scrub.RISCV64.scrubSel`, `RISCV64.Scrub.verifiedScrubbedSel`, whose
 analysis the kernel evaluates here). Their code wipes its own scratch space,
 which leaves no such doubleword.
 -/
@@ -300,7 +300,7 @@ theorem ofbFinalOut (stack : Nat) :
 constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.expandKey (Spec.Aes.expandKeyContract RISCV64.abi 512) 0 :=
-  verifiedScrubbedSelT (api := Spec.Aes.expandKeyApi) (W := 512)
+  verifiedScrubbedSel (api := Spec.Aes.expandKeyApi) (W := 512)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a3 64 Impl.Aes.RISCV64.expandKey
       verified := Proof.Aes.RISCV64.expandKey_framed }
     [] [] (expandKeyOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -309,7 +309,7 @@ theorem expandKey_scrubbed :
 constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.ecbEncrypt (Spec.AesEcb.encryptContract RISCV64.abi 32) 0 :=
-  verifiedScrubbed (api := Spec.AesEcb.encryptApi)
+  verifiedScrubbedAll (api := Spec.AesEcb.encryptApi)
     { code := Proof.AesEcb.RISCV64.encrypt
       verified := Proof.AesEcb.RISCV64.encrypt_verified }
     (Ecb.encryptOut _) (by lit_decide)
@@ -318,7 +318,7 @@ theorem ecbEncrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.ecbDecrypt (Spec.AesEcb.decryptContract RISCV64.abi 32) 0 :=
-  verifiedScrubbed (api := Spec.AesEcb.decryptApi)
+  verifiedScrubbedAll (api := Spec.AesEcb.decryptApi)
     { code := Proof.AesEcb.RISCV64.decrypt
       verified := Proof.AesEcb.RISCV64.decrypt_verified }
     (Ecb.decryptOut _) (by lit_decide)
@@ -327,7 +327,7 @@ theorem ecbDecrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem cbcEncrypt_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.cbcEncrypt (Spec.Cbc.aesEncryptContract RISCV64.abi 32) 0 :=
-  verifiedScrubbed (api := Spec.Cbc.aesEncryptApi)
+  verifiedScrubbedAll (api := Spec.Cbc.aesEncryptApi)
     { code := Proof.AesCbc.RISCV64.Wiped.encrypt
       verified := Proof.AesCbc.RISCV64.Wiped.encrypt_verified }
     (Cbc.encryptOut _) (by lit_decide)
@@ -336,7 +336,7 @@ theorem cbcEncrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem cbcDecrypt_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.cbcDecrypt (Spec.Cbc.aesDecryptContract RISCV64.abi 32) 0 :=
-  verifiedScrubbed (api := Spec.Cbc.aesDecryptApi)
+  verifiedScrubbedAll (api := Spec.Cbc.aesDecryptApi)
     { code := Proof.AesCbc.RISCV64.Wiped.decrypt
       verified := Proof.AesCbc.RISCV64.Wiped.decrypt_verified }
     (Cbc.decryptOut _) (by lit_decide)
@@ -345,7 +345,7 @@ theorem cbcDecrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem ctr_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.ctr (Spec.Ctr.aesContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Ctr.aesApi)
+  verifiedScrubbedAll (api := Spec.Ctr.aesApi)
     { code := Impl.AesCtr.RISCV64.crypt
       verified := Proof.AesCtr.keyed Proof.AesCtr.RISCV64.crypt_verified }
     (ctrOut _) (by lit_decide)
@@ -354,7 +354,7 @@ theorem ctr_scrubbed :
 constant time and returns without secret residue. -/
 theorem ctrFinal_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.ctrFinal (Spec.Ctr.aesFinalContract RISCV64.abi 80) 0 :=
-  verifiedScrubbedSelT (api := Spec.Ctr.aesFinalApi) (W := 80)
+  verifiedScrubbedSel (api := Spec.Ctr.aesFinalApi) (W := 80)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 80 .a6 10 Impl.AesCtr.RISCV64.cryptFinal
       verified := Proof.AesCtr.final_keyed Proof.AesCtr.RISCV64.Final.cryptFinal_framed }
     [] [] (ctrFinalOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -363,7 +363,7 @@ theorem ctrFinal_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.cfbEncrypt (Spec.Cfb.aesEncryptContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Cfb.aesEncryptApi)
+  verifiedScrubbedAll (api := Spec.Cfb.aesEncryptApi)
     { code := Impl.AesCfb.RISCV64.encrypt
       verified := Proof.AesCfb.encrypt_keyed Proof.AesCfb.RISCV64.encrypt_verified }
     (cfbEncryptOut _) (by lit_decide)
@@ -372,7 +372,7 @@ theorem cfbEncrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.cfbDecrypt (Spec.Cfb.aesDecryptContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Cfb.aesDecryptApi)
+  verifiedScrubbedAll (api := Spec.Cfb.aesDecryptApi)
     { code := Impl.AesCfb.RISCV64.decrypt
       verified := Proof.AesCfb.decrypt_keyed Proof.AesCfb.RISCV64.decrypt_verified }
     (cfbDecryptOut _) (by lit_decide)
@@ -381,7 +381,7 @@ theorem cfbDecrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.cfbEncryptFinal (Spec.Cfb.aesEncryptFinalContract RISCV64.abi 64) 0 :=
-  verifiedScrubbedSelT (api := Spec.Cfb.aesEncryptFinalApi) (W := 64)
+  verifiedScrubbedSel (api := Spec.Cfb.aesEncryptFinalApi) (W := 64)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.encryptFinal
       verified := Proof.AesCfb.encryptFinal_keyed Proof.AesCfb.RISCV64.Final.encryptFinal_framed }
     [] [] (cfbEncryptFinalOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -390,7 +390,7 @@ theorem cfbEncryptFinal_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.cfbDecryptFinal (Spec.Cfb.aesDecryptFinalContract RISCV64.abi 64) 0 :=
-  verifiedScrubbedSelT (api := Spec.Cfb.aesDecryptFinalApi) (W := 64)
+  verifiedScrubbedSel (api := Spec.Cfb.aesDecryptFinalApi) (W := 64)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesCfb.RISCV64.decryptFinal
       verified := Proof.AesCfb.decryptFinal_keyed Proof.AesCfb.RISCV64.Final.decryptFinal_framed }
     [] [] (cfbDecryptFinalOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -399,7 +399,7 @@ theorem cfbDecryptFinal_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfb8Encrypt_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.cfb8Encrypt (Spec.Cfb8.aesEncryptContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Cfb8.aesEncryptApi)
+  verifiedScrubbedAll (api := Spec.Cfb8.aesEncryptApi)
     { code := Impl.AesCfb8.RISCV64.encrypt
       verified := Proof.AesCfb8.encrypt_keyed Proof.AesCfb8.RISCV64.encrypt_verified }
     (cfb8EncryptOut _) (by lit_decide)
@@ -408,7 +408,7 @@ theorem cfb8Encrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem cfb8Decrypt_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.cfb8Decrypt (Spec.Cfb8.aesDecryptContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Cfb8.aesDecryptApi)
+  verifiedScrubbedAll (api := Spec.Cfb8.aesDecryptApi)
     { code := Impl.AesCfb8.RISCV64.decrypt
       verified := Proof.AesCfb8.decrypt_keyed Proof.AesCfb8.RISCV64.decrypt_verified }
     (cfb8DecryptOut _) (by lit_decide)
@@ -417,7 +417,7 @@ theorem cfb8Decrypt_scrubbed :
 constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.ofb (Spec.Ofb.aesContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Ofb.aesApi)
+  verifiedScrubbedAll (api := Spec.Ofb.aesApi)
     { code := Impl.AesOfb.RISCV64.crypt
       verified := Proof.AesOfb.keyed Proof.AesOfb.RISCV64.crypt_verified }
     (ofbOut _) (by lit_decide)
@@ -426,7 +426,7 @@ theorem ofb_scrubbed :
 constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.ofbFinal (Spec.Ofb.aesFinalContract RISCV64.abi 64) 0 :=
-  verifiedScrubbedSelT (api := Spec.Ofb.aesFinalApi) (W := 64)
+  verifiedScrubbedSel (api := Spec.Ofb.aesFinalApi) (W := 64)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesOfb.RISCV64.cryptFinal
       verified := Proof.AesOfb.final_keyed Proof.AesOfb.RISCV64.cryptFinal_framed }
     [] [] (ofbFinalOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩

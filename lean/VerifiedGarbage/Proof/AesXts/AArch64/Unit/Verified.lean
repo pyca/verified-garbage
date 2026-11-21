@@ -76,12 +76,12 @@ theorem decrypt_verified (v : XtsImpl) :
 `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt`: each meets its contract in
 constant time and returns without secret residue (`VerifiedScrubbed`), which
 is what its registration binds. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+(`Scrub.scrubSide`) is proved of each function's own instructions here,
 once, with code that does nothing in the place of the functions it calls,
 and of each implementation where it is defined (`XtsImpl.encScrub`,
 `XtsImpl.decScrub`). -/
 
-open VG.AArch64.ScrubAll
+open VG.AArch64.Scrub
 
 private theorem encrypt_all {p : Instr → Bool} (f : Impl.Aes.AArch64.Blocks)
     (h0 : sideAll p (encrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true) (hc : sideAll p f.code = true) :
@@ -125,7 +125,7 @@ theorem decrypt_side (v : XtsImpl) :
 theorem encrypt_scrubbed (v : XtsImpl) :
     VerifiedScrubbed AArch64.target (Impl.AesXts.AArch64Unit.Fn.encrypt v.enc)
       (Spec.Xts.aesEncryptUnitContract AArch64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Xts.aesEncryptUnitApi)
+  verifiedScrubbedAll (api := Spec.Xts.aesEncryptUnitApi)
     { code := encrypt v.enc, verified := encrypt_verified v } _
     Proof.AesXts.AArch64.Scrub.encryptOk (encrypt_side v)
 
@@ -133,7 +133,7 @@ theorem encrypt_scrubbed (v : XtsImpl) :
 theorem decrypt_scrubbed (v : XtsImpl) :
     VerifiedScrubbed AArch64.target (Impl.AesXts.AArch64Unit.Fn.decrypt v.enc v.dec)
       (Spec.Xts.aesDecryptUnitContract AArch64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Xts.aesDecryptUnitApi)
+  verifiedScrubbedAll (api := Spec.Xts.aesDecryptUnitApi)
     { code := decrypt v.enc v.dec, verified := decrypt_verified v } _
     Proof.AesXts.AArch64.Scrub.decryptOk (decrypt_side v)
 

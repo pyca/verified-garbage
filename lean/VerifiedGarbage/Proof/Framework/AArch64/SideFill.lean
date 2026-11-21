@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAllW
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -16,7 +17,7 @@ in the bodies of the functions the code calls too), an equation the kernel
 checks with the implementation a variable (`kernel_rfl`).
 
 What the cleanup of the function needs of its code, that no instruction
-writes PSTATE.DIT and nothing is called indirectly (`ScrubAll.sideAll`), and
+writes PSTATE.DIT and nothing is called indirectly (`Scrub.sideAll`), and
 how deeply its frames nest, are then evaluated once, of the closed code, and
 hold for every implementation of which they hold (`verifiedScrubbedOfFill`):
 the function as emitted is `scrubOf W rb c`, a definition in `Impl/` that
@@ -31,6 +32,10 @@ has two kinds of holes, each replaced by code (`Code.fill2`): the depth of
 the closed code is then evaluated with the depth of what fills each
 (`Code.aarch64Depth2`), and `side_depth_of_fill2` gives `sideAll` and the
 depth of the code for every implementation.
+
+Code without frames has no stack to zero: its cleanup only clears registers
+(`scrubOf 0`, `verifiedScrubbedOf0`), and what it states it writes of a buffer
+still holds (`written_scrubOf0`).
 -/
 
 @[expose] public section
@@ -125,9 +130,9 @@ theorem Code.aarch64Depth_fill2_le {a b : Prog AArch64.isa} {da db : Nat} (ha : 
     omega_using [ih]
   | icall i m x y => exact Nat.le_refl _
 
-namespace AArch64.ScrubAll
+namespace AArch64.Scrub
 
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `sideAll` of code with its two kinds of holes filled, from the code's and
 the fillings'. -/
@@ -220,7 +225,7 @@ instruction of it, or of what it calls, writes PSTATE.DIT and it calls
 nothing indirectly: `verifiedScrubbedOf` for a function that states it clears
 them all, so that code which calls it as emitted is the same for every
 implementation. -/
-theorem verifiedScrubbedAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv : Verified target c k)
+theorem verifiedScrubbedClearAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv : Verified target c k)
     (hok : ScrubAllOk k W rb) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hd : 16 * c.aarch64Depth ≤ W)
     (hs : sideAll (fun i => !i.writesDit) c = true) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
     VerifiedScrubbed target (scrubAll W rb Clear.all c) k rb :=
@@ -229,6 +234,30 @@ theorem verifiedScrubbedAll {c : Prog isa} {k : Contract isa} {W rb : Nat} (hv :
       (Code.all_of_allInstrs (allInstrs_of_sideAll hs))
       (fun _ _ _ n hn => by rw [inames_of_noIcall (noIcall_of_sideAll hs)] at hn; cases hn) hrb⟩
 
-end AArch64.ScrubAll
+/-- `c`, which has no frames, with the registers it may write cleared
+(`scrubOf 0`: no stack to zero) meets `c`'s contract in constant time and
+returns without secret residue, if no instruction of it, or of what it
+calls, writes PSTATE.DIT and it calls nothing indirectly: `verifiedScrubbedOf`
+for code without frames. -/
+theorem verifiedScrubbedOf0 {c : Prog isa} {k : Contract isa} {rb : Nat} (hv : Verified target c k)
+    (hok : ScrubAllOk k 0 rb) (hd : c.aarch64Depth = 0)
+    (hs : sideAll (fun i => !i.writesDit) c = true) (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) :
+    VerifiedScrubbed target (scrubOf 0 rb c) k rb :=
+  ⟨Verified.scrubAll0 (Clear.of_wf _) hv hrb hok,
+    noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) hv hd
+      (Code.all_of_allInstrs (allInstrs_of_sideAll hs)) hrb⟩
+
+/-- What code without frames states it writes of a buffer
+(`Registration.written`) holds of it with its registers cleared
+(`scrubOf 0`), which writes no memory after it. -/
+theorem written_scrubOf0 {sig : Sig} {w : List (String × Nat)} {c : Prog isa} {rb : Nat}
+    (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) {P : State → Prop}
+    (h : ∀ s t s', P s → Exec isa c s t s' → Sig.writtenWithin abi sig w s s') :
+    ∀ s t s', P s → Exec isa (scrubOf 0 rb c) s t s' → Sig.writtenWithin abi sig w s s' := by
+  intro s t s' hs he
+  obtain ⟨t', u, hc, hm⟩ := scrubAll0_mem (Clear.of_wf _) hrb he
+  exact writtenWithin_of_mem hm (h s t' u hs hc)
+
+end AArch64.Scrub
 
 end VG

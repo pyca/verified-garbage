@@ -15,7 +15,30 @@ vg_sha1_init:
 	mov DWORD PTR [rdi+12], eax
 	mov eax, -1009589776
 	mov DWORD PTR [rdi+16], eax
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
 	xor r11d, r11d
 	ret
 	.p2align 6
@@ -191,8 +214,10 @@ vg_sha1_update_shani:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	lea rsp, [rsp-64]
-	lea rsp, [rsp+64]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-56]
+	lea rsp, [rsp+56]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -201,6 +226,7 @@ vg_sha1_update_shani:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -366,15 +392,19 @@ vg_sha1_finalize_shani:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	lea rsp, [rsp-64]
-	lea rsp, [rsp+64]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-56]
+	lea rsp, [rsp+56]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
 	xor esi, esi
 	xor edi, edi
+	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -605,8 +635,10 @@ vg_sha1_digest_shani:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	lea rsp, [rsp-176]
-	lea rsp, [rsp+176]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-168]
+	lea rsp, [rsp+168]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -791,10 +823,13 @@ vg_sha1_update_avx_bmi:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-176]
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	lea rsp, [rsp+176]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-168]
+	vmovdqu YMMWORD PTR [rsp+56], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+168]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -969,10 +1004,13 @@ vg_sha1_finalize_avx_bmi:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-176]
-	vmovdqu YMMWORD PTR [rsp+48], ymm0
-	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	lea rsp, [rsp+176]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-168]
+	vmovdqu YMMWORD PTR [rsp+56], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+168]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1212,10 +1250,13 @@ vg_sha1_digest_avx_bmi:
 	vpxor xmm14, xmm14, xmm14
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-288]
-	vmovdqu YMMWORD PTR [rsp+144], ymm0
-	vmovdqu YMMWORD PTR [rsp+112], ymm0
-	lea rsp, [rsp+288]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-280]
+	vmovdqu YMMWORD PTR [rsp+152], ymm0
+	vmovdqu YMMWORD PTR [rsp+120], ymm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	lea rsp, [rsp+280]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1224,7 +1265,6 @@ vg_sha1_digest_avx_bmi:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1384,13 +1424,31 @@ vg_sha1_update:
 	mov r15, QWORD PTR [r15+152]
 	lea rsp, [rsp+168]
 	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-176]
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	lea rsp, [rsp+176]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-168]
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+168]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1565,12 +1623,15 @@ vg_sha1_finalize:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-176]
-	movdqu XMMWORD PTR [rsp+64], xmm0
-	movdqu XMMWORD PTR [rsp+48], xmm0
-	movdqu XMMWORD PTR [rsp+32], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	lea rsp, [rsp+176]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-168]
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	lea rsp, [rsp+168]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1810,12 +1871,15 @@ vg_sha1_digest:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-288]
-	movdqu XMMWORD PTR [rsp+160], xmm0
-	movdqu XMMWORD PTR [rsp+144], xmm0
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	lea rsp, [rsp+288]
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-280]
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	lea rsp, [rsp+280]
+	lea rsp, [rsp+8]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1824,6 +1888,5 @@ vg_sha1_digest:
 	xor r8d, r8d
 	xor r9d, r9d
 	xor r10d, r10d
-	xor r11d, r11d
 	ret
 	.p2align 6

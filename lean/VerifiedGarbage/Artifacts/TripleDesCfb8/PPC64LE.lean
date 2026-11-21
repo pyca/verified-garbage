@@ -15,7 +15,11 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 namespace VG.Artifacts.TripleDesCfb8.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.cfb8EncryptApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.cfb8EncryptReg,
-  Spec.TripleDes.cfb8DecryptApi.artifact PPC64LE.target Proof.TripleDes.PPC64LE.Scrub.cfb8DecryptReg]
+  Spec.TripleDes.cfb8EncryptApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.cfb8Encrypt
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.cfb8Encrypt_scrubbed },
+  Spec.TripleDes.cfb8DecryptApi.artifact PPC64LE.target {
+    code := Impl.TripleDes.PPC64LE.Fn.cfb8Decrypt
+    verified := .scrubbed Proof.TripleDes.PPC64LE.Scrub.cfb8Decrypt_scrubbed }]
 
 end VG.Artifacts.TripleDesCfb8.PPC64LE

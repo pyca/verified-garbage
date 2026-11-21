@@ -14,8 +14,14 @@ public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.VerifyMsgVerified
 namespace VG.Artifacts.Ed25519.PPC64LE
 
 def artifacts : List Artifact := [
-  Spec.Ed25519.keyPairApi.artifact PPC64LE.target Proof.Ed25519.PPC64LE.Scrub.keyPairReg,
-  Spec.Ed25519.signExpandedApi.artifact PPC64LE.target Proof.Ed25519.PPC64LE.Scrub.signExpandedReg,
-  Spec.Ed25519.verifyApi.artifact PPC64LE.target Proof.Ed25519.PPC64LE.Scrub.verifyReg]
+  Spec.Ed25519.keyPairApi.artifact PPC64LE.target {
+    code := Impl.Ed25519.PPC64LE.Fn.keyPair
+    verified := .scrubbed Proof.Ed25519.PPC64LE.Scrub.keyPair_scrubbed },
+  Spec.Ed25519.signExpandedApi.artifact PPC64LE.target {
+    code := Impl.Ed25519.PPC64LE.Fn.signExpanded
+    verified := .scrubbed Proof.Ed25519.PPC64LE.Scrub.signExpanded_scrubbed },
+  Spec.Ed25519.verifyApi.artifact PPC64LE.target {
+    code := Impl.Ed25519.PPC64LE.Fn.verify
+    verified := .scrubbed Proof.Ed25519.PPC64LE.Scrub.verify_scrubbed }]
 
 end VG.Artifacts.Ed25519.PPC64LE

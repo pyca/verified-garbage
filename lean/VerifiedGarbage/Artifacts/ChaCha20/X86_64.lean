@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.ApplyCT
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86_64
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Scrub
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.ScrubInit
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Fn
 
 /-! # ChaCha20 (RFC 8439) on x86-64 -/
 
@@ -23,12 +24,22 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.ScrubInit
 namespace VG.Artifacts.ChaCha20.X86_64
 
 def direct : List Artifact := [
-  Spec.ChaCha20.initApi.artifact X86_64.target Proof.ChaCha20.X86_64.Scrub.initReg,
-  Spec.ChaCha20.setNonceApi.artifact X86_64.target Proof.ChaCha20.X86_64.Scrub.setNonceReg]
+  Spec.ChaCha20.initApi.artifact X86_64.target {
+    code := Impl.ChaCha20.X86_64.Fn.init
+    verified := .scrubbed Proof.ChaCha20.X86_64.Scrub.init_scrubbed
+    spSafe := Proof.ChaCha20.X86_64.Scrub.init_spSafeFn },
+  Spec.ChaCha20.setNonceApi.artifact X86_64.target {
+    code := Impl.ChaCha20.X86_64.Fn.setNonce
+    verified := .scrubbed Proof.ChaCha20.X86_64.Scrub.setNonce_scrubbed
+    spSafe := Proof.ChaCha20.X86_64.Scrub.setNonce_spSafeFn }]
 
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.ChaCha20Xor.X86_64.xorVariants.map fun (v : Proof.ChaCha20.X86_64.XorImpl) =>
-    Spec.ChaCha20.applyApi.artifact X86_64.target (Proof.ChaCha20.X86_64.Scrub.applyReg v))
+    Spec.ChaCha20.applyApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.ChaCha20.X86_64.Fn.apply v.level v.callee
+      verified := .scrubbed (Proof.ChaCha20.X86_64.Scrub.apply_scrubbed v)
+      spSafe := Proof.ChaCha20.X86_64.Scrub.apply_spSafeFn v })
 
 end VG.Artifacts.ChaCha20.X86_64

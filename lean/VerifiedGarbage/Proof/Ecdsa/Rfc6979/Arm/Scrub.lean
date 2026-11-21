@@ -20,7 +20,7 @@ the HMAC implementations its table holds, which it calls indirectly, is
 emitted followed by a wipe of the stack its contract reserves and
 instructions that set the registers a callee may change, but the result, and
 the flags to constants (`Impl.Ecdsa.Arm.Fn`), and proven so by
-`Arm.Scrub.verifiedScrubbedF` (`Proof.Ecdsa.Arm.Fn`).
+`Arm.Scrub.verifiedScrubbedAll` (`Proof.Ecdsa.Arm.Fn`).
 
 What that cleanup needs of the code (`Arm.Scrub.scrubSideF`: its frames
 within the 536 bytes the contract reserves, and indirect calls only of

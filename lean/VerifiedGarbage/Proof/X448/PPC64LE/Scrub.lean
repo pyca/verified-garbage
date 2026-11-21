@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.X448.PPC64LE.Fn
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.Proof.Framework.PPC64LE.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -13,13 +14,13 @@ import VerifiedGarbage.Proof.Framework.Lit
 # X448 on PPC64LE, without secret residue
 
 `vg_x448_exchange` and `vg_x448_base`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.scrubOf`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers they write and the stack their frames use (the 48 bytes
 of the exchange's frame; the base has none). Their postconditions read the
 memory on return only within `out` (`PPC64LE.Scrub.PostOut`), whatever
 tables of constants their code takes, by RISC-V's proofs
-(`Proof/X448/RISCV64/Scrub.lean`). `scrubOf`'s side condition
-(`scrubSide`) is proved at each registration, by the kernel's evaluation of
+(`Proof/X448/RISCV64/Scrub.lean`). `verifiedScrubbedAll`'s side condition
+(`scrubSide`) is proved at each theorem, by the kernel's evaluation of
 it when this module is built.
 -/
 
@@ -70,20 +71,26 @@ theorem exchangeOut (cs : List (String × List (BitVec 64))) (stack : Nat) :
     show Spec.X448.bytesAt m₂ o 56 = _ ∧ _
     rw [bytesAt_of (by simp only [Elem.size]; omega_using []) hb.1]; exact h
 
-/-! ## The registrations -/
+/-! ## The functions as emitted -/
 
-/-- `Spec.X448.exchangeApi`. -/
-def exchangeReg : Registration Spec.X448.exchangeApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_x448_exchange` as emitted (`Impl.X448.PPC64LE.Fn.exchange`) meets its
+contract in constant time and returns without secret residue. -/
+theorem exchange_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.X448.PPC64LE.Fn.exchange
+      (Spec.X448.exchangeContract PPC64LE.abi 48) 32 :=
+  verifiedScrubbedAll (api := Spec.X448.exchangeApi) {
       code := Impl.Xdh.PPC64LE.exchange "vg_x448" Impl.X448.PPC64LE.x448 56
       verified := Proof.X448.PPC64LE.Exchange.exchange_verified }
     48 ⟨true, true, [.r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (exchangeOut [] _)
     (by dsimp only; lit_decide)
 
-/-- `Spec.X448.x448BaseApi`. -/
-def baseReg : Registration Spec.X448.x448BaseApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_x448_base` as emitted (`Impl.X448.PPC64LE.Fn.base`) meets its contract in
+constant time and returns without secret residue. -/
+theorem base_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.X448.PPC64LE.Fn.base
+      (Spec.X448.x448BaseContract PPC64LE.abi) 0 :=
+  verifiedScrubbedAll (api := Spec.X448.x448BaseApi) {
       code := Impl.X448.PPC64LE.x448Base
       verified := Proof.X448.PPC64LE.x448Base_verified }
     0 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
