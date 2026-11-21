@@ -22,7 +22,9 @@ def artifacts : List Artifact := [
   Spec.Sha256.finalize224Api.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Fn.finalize224
     verified := .scrubbed Proof.Sha256.PPC64LE.finalize224_scrubbed },
-  Spec.Sha256.digest224Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.digest224Reg,
+  Spec.Sha256.digest224Api.artifact PPC64LE.target {
+    code := Impl.Sha256.PPC64LE.Fn.digest224
+    verified := .scrubbed Proof.Sha256.PPC64LE.digest224_scrubbed },
   Spec.Sha256.initApi.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Stream.init
     verified := .scrubbed Proof.Sha256.PPC64LE.init_scrubbed },
@@ -32,6 +34,8 @@ def artifacts : List Artifact := [
   Spec.Sha256.finalizeApi.artifact PPC64LE.target {
     code := Impl.Sha256.PPC64LE.Fn.finalize
     verified := .scrubbed Proof.Sha256.PPC64LE.finalize_scrubbed },
-  Spec.Sha256.digest256Api.artifact PPC64LE.target Proof.Sha256.PPC64LE.digest256Reg]
+  Spec.Sha256.digest256Api.artifact PPC64LE.target {
+    code := Impl.Sha256.PPC64LE.Fn.digest256
+    verified := .scrubbed Proof.Sha256.PPC64LE.digest256_scrubbed }]
 
 end VG.Artifacts.Sha256.PPC64LE

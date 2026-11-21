@@ -74,9 +74,12 @@ theorem finalize224_scrubbed :
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.finalize224Post_out 64))
     (by dsimp only; lit_decide)
 
-/-- `vg_sha256_digest`. -/
-def digest256Reg : Registration Spec.Sha256.digest256Api PPC64LE.target :=
-  scrubOf {
+/-- `vg_sha256_digest` as emitted (`Impl.Sha256.PPC64LE.Fn.digest256`) meets its
+contract in constant time and returns without secret residue. -/
+theorem digest256_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sha256.PPC64LE.Fn.digest256
+      (Spec.Sha256.digestContract PPC64LE.abi 32 Spec.Sha256.hash (96 + Impl.MdStream.PPC64LE.Digest.frameBytes Impl.Hmac.Stream.PPC64LE.sha256Hash)) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha256.digest256Api) {
       code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha256Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha256.digest }
     512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -86,9 +89,12 @@ def digest256Reg : Registration Spec.Sha256.digest256Api PPC64LE.target :=
       (Proof.Sha256.digestPost_out 32 Spec.Sha256.hash 64 (by decide)))
     (by dsimp only; lit_decide)
 
-/-- `vg_sha224_digest`. -/
-def digest224Reg : Registration Spec.Sha256.digest224Api PPC64LE.target :=
-  scrubOf {
+/-- `vg_sha224_digest` as emitted (`Impl.Sha256.PPC64LE.Fn.digest224`) meets its
+contract in constant time and returns without secret residue. -/
+theorem digest224_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sha256.PPC64LE.Fn.digest224
+      (Spec.Sha256.digestContract PPC64LE.abi 28 Spec.Sha256.sha224 (96 + Impl.MdStream.PPC64LE.Digest.frameBytes Impl.Hmac.Stream.PPC64LE.sha224Hash)) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha256.digest224Api) {
       code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha224Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha224.digest }
     512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

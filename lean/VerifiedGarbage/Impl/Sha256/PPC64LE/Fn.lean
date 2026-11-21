@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+public import VerifiedGarbage.Impl.MdStream.PPC64LE.Digest
 public import VerifiedGarbage.Impl.Scrub.PPC64LE
 public import VerifiedGarbage.Impl.Sha256.PPC64LE.Stream
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
@@ -35,5 +37,19 @@ def finalize : Prog isa :=
 def finalize224 : Prog isa :=
   scrubAll 0 688 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (Impl.StackScratch.PPC64LE.withStackScratch 640 .r6 Impl.Sha256.PPC64LE.Stream.finalize224)
+
+/-- `vg_sha256_digest`, as emitted. -/
+def digest256 : Prog isa :=
+  scrubAll 0 512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha256Hash)
+
+/-- `vg_sha224_digest`, as emitted. -/
+def digest224 : Prog isa :=
+  scrubAll 0 512 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha224Hash)
 
 end VG.Impl.Sha256.PPC64LE.Fn
