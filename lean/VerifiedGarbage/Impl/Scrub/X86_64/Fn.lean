@@ -61,7 +61,7 @@ def gsAll (ks : List Nat) : List Reg := if ks = [] then scratchRegs else scratch
 the granules `ks` of the `n` bytes below the stack pointer (`chunksA n`),
 and of every caller-saved register but the `rb` bits of the result. -/
 def scrubKs (v : VecLevel) (rb n : Nat) (ks : List Nat) (c : Prog isa) : Prog isa :=
-  scrub v rb xregs (psOf ks) (gsAll ks) ks (chunksA n) c .avx
+  scrubWith v rb xregs (psOf ks) (gsAll ks) ks (chunksA n) c .avx
 
 /-- `scrubKs`, wiping only the runs of granules `rs`. -/
 def scrubSel (v : VecLevel) (rb n : Nat) (rs : List (Nat × Nat)) (c : Prog isa) : Prog isa :=

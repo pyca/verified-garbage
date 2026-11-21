@@ -32,7 +32,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 implementations of SHA-1's and SHA-256's variants
 (`Proof/Variants/Sha1/X86.lean`, `Proof/Variants/Sha256/X86.lean`) in its
 table, each followed by the zeroing of the stack its frames and calls use
-and `Impl.Scrub.X86.tail`, as emitted (`X86.Scrub.verifiedScrubbedF`), with their postconditions'
+and `Impl.Scrub.X86.tail`, as emitted (`X86.Scrub.verifiedScrubbedAll`), with their postconditions'
 locality from `Proof/Ecdsa/X86/Scrub.lean`. The signing code's side
 condition is evaluated once, of the code without the curve's proofs
 (`Ecdsa.X86.Scrub.cfgOf`), with the HMAC implementations' and the curve's
@@ -56,7 +56,7 @@ theorem verify_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : 
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifyBrainpoolP256r1
       (Spec.Ecdsa.BrainpoolP256r1.inst.verifyHashContract (X86.abi.withConsts Impl.Ecdsa.X86.brainpoolp256r1Comb.combConsts)
         (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.BrainpoolP256r1.verifyHashApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP256r1.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false
         Impl.Ecdsa.Verify.X86.verifyBrainpoolP256r1
       verified := Proof.Ecdsa.Verify.X86.BrainpoolP256r1.verifyHash_verified hL hI }
@@ -73,7 +73,7 @@ theorem signSide :
 theorem sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86.Inv.InvSounds) (hv : OK vs ∧ "VG_BRAINPOOLP256R1_COMB" ∉ names vs) :
     VerifiedScrubbed target (Impl.Ecdsa.X86.Fn.signBrainpoolP256r1 (HmacTable.X86.fnsOf vs))
       (Rfc6979.X86.specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 Impl.Ecdsa.X86.brainpoolp256r1Comb.combConsts vs) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi)
     { tables := [("hmac", tables vs)]
       code := signCodeT (brainpoolp256r1 hL hI) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs
       verified := brainpoolp256r1T_verified hL hI vs hv

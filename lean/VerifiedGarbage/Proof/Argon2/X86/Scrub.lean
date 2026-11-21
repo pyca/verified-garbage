@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Blake2.X86.LitB
 functions and its compression function, within the 244 bytes of stack its
 contract reserves. The code as emitted (`Impl.Argon2.X86.Fn.derive`) then
 zeroes those bytes below `esp` and clears the registers a callee may change,
-and returns without secret residue (`X86.Scrub.verifiedScrubbedF`), given that
+and returns without secret residue (`X86.Scrub.verifiedScrubbedAll`), given that
 its postcondition reads the memory on return only within `out` (`deriveOut`,
 as on AArch64, `Proof/Argon2/AArch64/Scrub.lean`).
 -/
@@ -53,7 +53,7 @@ theorem deriveOut (stack : Nat) :
 /-- `vg_argon2` as emitted, cleanup included. -/
 theorem derive_scrubbed :
     VerifiedScrubbed target Impl.Argon2.X86.Fn.derive (Spec.Argon2.deriveContract X86.abi 244) 0 :=
-  verifiedScrubbedF (api := Spec.Argon2.deriveApi)
+  verifiedScrubbedAll (api := Spec.Argon2.deriveApi)
     { code := Impl.Argon2.X86.Derive.derive
       verified := Proof.Argon2.X86.Derive.deriveShared_verified }
     (deriveOut _)

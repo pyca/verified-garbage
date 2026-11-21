@@ -58,7 +58,7 @@ end VG.Impl.X25519.X86.Base
 
 /-! ## The functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
 bytes of stack below `esp` that its frames and calls use zeroed, and the
 registers a callee may change cleared but the `rb` bits of the result, so
 that it returns without secret residue. -/
@@ -69,9 +69,9 @@ open VG.X86
 
 /-- `vg_x25519_exchange`, as emitted. -/
 def exchange : Prog isa :=
-  Impl.Scrub.X86.scrubF 32 28 (Impl.Xdh.X86.exchange "vg_x25519" Impl.X25519.X86.x25519 32)
+  Impl.Scrub.X86.scrubAll 32 28 (Impl.Xdh.X86.exchange "vg_x25519" Impl.X25519.X86.x25519 32)
 
 /-- `vg_x25519_base`, as emitted. -/
-def base : Prog isa := Impl.Scrub.X86.scrubF 0 8 Impl.X25519.X86.Base.x25519Base
+def base : Prog isa := Impl.Scrub.X86.scrubAll 0 8 Impl.X25519.X86.Base.x25519Base
 
 end VG.Impl.X25519.X86.Fn

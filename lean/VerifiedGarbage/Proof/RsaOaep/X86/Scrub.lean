@@ -124,7 +124,7 @@ theorem encrypt_scrubbed (h : OK allVars) :
       (Impl.RsaOaep.X86.Fn.encryptPrecomputed (Proof.HashTable.X86.fnsOf allVars)
         Proof.RsaPkcs1Sig.X86.Ver.baseline.name Proof.RsaPkcs1Sig.X86.Ver.baseline.code)
       (Proof.RsaOaep.X86.Enc.espec allVars) 32 :=
-  verifiedScrubbedF (api := Spec.RsaOaep.encryptMdTablesApi) {
+  verifiedScrubbedAll (api := Spec.RsaOaep.encryptMdTablesApi) {
       tables := [("hash", tables allVars), ("mgf1", tables allVars)]
       code := Proof.RsaOaep.X86.Enc.encryptCode allVars Proof.RsaPkcs1Sig.X86.Ver.baseline
       verified := enc_ok _ h
@@ -171,7 +171,7 @@ theorem decrypt_scrubbed (h : OK allVars) (c : CrtImpl) :
       (Impl.RsaOaep.X86.Fn.decryptPrecomputed (Proof.HashTable.X86.fnsOf allVars)
         (Proof.RsaOaep.X86.Dec.privNameP c) (privCodeP c crtPBaseline))
       (Proof.RsaOaep.X86.Dec.dspecP allVars) 32 :=
-  verifiedScrubbedF (api := Spec.RsaOaep.decryptPrecomputedMdTablesApi)
+  verifiedScrubbedAll (api := Spec.RsaOaep.decryptPrecomputedMdTablesApi)
     { tables := [("hash", tables allVars), ("mgf1", tables allVars)]
       code := Proof.RsaOaep.X86.Dec.decCodeP allVars c crtPBaseline
       verified := Proof.RsaOaep.X86.decP_ok _ h c crtPBaseline
@@ -182,6 +182,6 @@ theorem decrypt_scrubbed (h : OK allVars) (c : CrtImpl) :
 theorem decrypt_spSafe (c : CrtImpl) :
     (Impl.RsaOaep.X86.Fn.decryptPrecomputed (Proof.HashTable.X86.fnsOf allVars)
       (Proof.RsaOaep.X86.Dec.privNameP c) (privCodeP c crtPBaseline)).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.RsaOaep.X86.Dec.code_spP c crtPBaseline)
+  scrubAll_spSafe (Proof.RsaOaep.X86.Dec.code_spP c crtPBaseline)
 
 end VG.Proof.RsaOaep.X86.Scrub

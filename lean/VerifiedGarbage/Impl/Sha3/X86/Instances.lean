@@ -104,7 +104,7 @@ end VG.Impl.Sha3.X86.Instances
 
 /-! ## The functions as emitted
 
-Each instance's function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`):
+Each instance's function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`):
 the `W` bytes of stack below `esp` that it and the sponge use zeroed, and
 the registers a callee may change cleared but the `rb` bits of the result,
 so that it returns without secret residue. -/
@@ -114,15 +114,15 @@ namespace VG.Impl.Sha3.X86.Fn
 open VG.X86
 
 /-- `vg_<f>_update` at rate `rate`, as emitted. -/
-def update (rate : Nat) : Prog isa := Impl.Scrub.X86.scrubF 32 704 (Instances.absorb rate)
+def update (rate : Nat) : Prog isa := Impl.Scrub.X86.scrubAll 32 704 (Instances.absorb rate)
 
 /-- SHA-3's `vg_<f>_finalize` at rate `rate`, of `len` bytes, as emitted. -/
-def finalize (rate len : Nat) : Prog isa := Impl.Scrub.X86.scrubF 0 680 (Instances.finalize rate len)
+def finalize (rate len : Nat) : Prog isa := Impl.Scrub.X86.scrubAll 0 680 (Instances.finalize rate len)
 
 /-- SHAKE's `vg_<f>_finalize` at rate `rate`, as emitted. -/
-def xofFinalize (rate : Nat) : Prog isa := Impl.Scrub.X86.scrubF 0 676 (Instances.xofFinalize rate)
+def xofFinalize (rate : Nat) : Prog isa := Impl.Scrub.X86.scrubAll 0 676 (Instances.xofFinalize rate)
 
 /-- SHAKE's `vg_<f>_squeeze` at rate `rate`, as emitted. -/
-def xofSqueeze (rate : Nat) : Prog isa := Impl.Scrub.X86.scrubF 32 680 (Instances.xofSqueeze rate)
+def xofSqueeze (rate : Nat) : Prog isa := Impl.Scrub.X86.scrubAll 32 680 (Instances.xofSqueeze rate)
 
 end VG.Impl.Sha3.X86.Fn

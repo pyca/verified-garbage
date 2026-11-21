@@ -33,7 +33,7 @@ expansion calls nothing in its frame, which it wipes itself: as emitted
 zeroes the stack its contract reserves below `esp` (1060 for ECB, 984 for the
 modes one block at a time and 1248 for the batched CBC and CFB64
 decryption) and clears the registers a callee may change, and returns
-without secret residue (`X86.Scrub.verifiedScrubbedF`). What the cleanup
+without secret residue (`X86.Scrub.verifiedScrubbedAll`). What the cleanup
 needs of the code is one Boolean (`X86.Scrub.scrubFSide`), proved by
 evaluating the code once (`lit_decide`). Their postconditions read the
 memory on return only within their buffers, by the lemmas of
@@ -103,7 +103,7 @@ theorem expandKey_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.ecbEncrypt (Spec.TripleDes.ecbContract X86.abi Spec.TripleDes.Direction.encrypt 1060) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.ecbEncryptApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.ecbEncryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.encrypt
       verified := Proof.TripleDes.X86.ecb_framed .encrypt }
     (ecbOut .encrypt)
@@ -112,7 +112,7 @@ theorem ecbEncrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.ecbDecrypt (Spec.TripleDes.ecbContract X86.abi Spec.TripleDes.Direction.decrypt 1060) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.ecbDecryptApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.ecbDecryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.decrypt
       verified := Proof.TripleDes.X86.ecb_framed .decrypt }
     (ecbOut .decrypt)
@@ -121,7 +121,7 @@ theorem ecbDecrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cbcEncryptChained (Spec.TripleDes.cbcEncryptChainedContract X86.abi 984) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.cbcEncryptChainedApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.cbcEncryptChainedApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncryptChained
       verified := Proof.TripleDes.X86.Cbc.cbcEncryptChained_framed }
     cbcEncryptOut
@@ -130,7 +130,7 @@ theorem cbcEncryptChained_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cbcDecryptChained (Spec.TripleDes.cbcDecryptChainedContract X86.abi 1248) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.cbcDecryptChainedApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.cbcDecryptChainedApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cbcDecryptChained
       verified := Proof.TripleDes.X86.Cbc.cbcDecryptChained_framed }
     cbcDecryptOut
@@ -139,7 +139,7 @@ theorem cbcDecryptChained_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfbEncrypt (Spec.TripleDes.cfbEncryptContract X86.abi 984) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.cfbEncryptApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbEncryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncrypt
       verified := Proof.TripleDes.X86.Fb.cfbEncrypt_framed }
     cfbEncryptOut
@@ -148,7 +148,7 @@ theorem cfbEncrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfbDecrypt (Spec.TripleDes.cfbDecryptContract X86.abi 1248) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.cfbDecryptApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbDecryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cfbDecrypt
       verified := Proof.TripleDes.X86.Fb.cfbDecrypt_framed }
     cfbDecryptOut
@@ -157,7 +157,7 @@ theorem cfbDecrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfbEncryptFinal (Spec.TripleDes.cfbEncryptFinalContract X86.abi 984) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.cfbEncryptFinalApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbEncryptFinalApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncryptFinal
       verified := Proof.TripleDes.X86.FbFinal.cfbEncryptFinal_framed }
     cfbEncryptFinalOut
@@ -166,7 +166,7 @@ theorem cfbEncryptFinal_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfbDecryptFinal (Spec.TripleDes.cfbDecryptFinalContract X86.abi 984) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.cfbDecryptFinalApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbDecryptFinalApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbDecryptFinal
       verified := Proof.TripleDes.X86.FbFinal.cfbDecryptFinal_framed }
     cfbDecryptFinalOut
@@ -175,7 +175,7 @@ theorem cfbDecryptFinal_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfb8Encrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfb8Encrypt (Spec.TripleDes.cfb8EncryptContract X86.abi 984) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.cfb8EncryptApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfb8EncryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Encrypt
       verified := Proof.TripleDes.X86.Fb.cfb8Encrypt_framed }
     cfb8EncryptOut
@@ -184,7 +184,7 @@ theorem cfb8Encrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfb8Decrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.cfb8Decrypt (Spec.TripleDes.cfb8DecryptContract X86.abi 984) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.cfb8DecryptApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfb8DecryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Decrypt
       verified := Proof.TripleDes.X86.Fb.cfb8Decrypt_framed }
     cfb8DecryptOut
@@ -193,7 +193,7 @@ theorem cfb8Decrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.ofb (Spec.TripleDes.ofbContract X86.abi 984) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.ofbApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.ofbApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.ofb
       verified := Proof.TripleDes.X86.Fb.ofb_framed }
     ofbOut
@@ -202,7 +202,7 @@ theorem ofb_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.TripleDes.X86.Fn.ofbFinal (Spec.TripleDes.ofbFinalContract X86.abi 984) 0 :=
-  verifiedScrubbedF (api := Spec.TripleDes.ofbFinalApi)
+  verifiedScrubbedAll (api := Spec.TripleDes.ofbFinalApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.ofbFinal
       verified := Proof.TripleDes.X86.FbFinal.ofbFinal_framed }
     ofbFinalOut

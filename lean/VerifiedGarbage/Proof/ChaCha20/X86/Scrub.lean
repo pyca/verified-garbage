@@ -33,7 +33,7 @@ frame: as emitted (`Impl.ChaCha20.X86.Fn`) they clear the registers a callee
 may change (`X86.Scrub.verifiedScrubbed`). `vg_chacha20_apply` calls
 `vg_chacha20_block` and an implementation of `vg_chacha20_xor` (`XorImpl`):
 as emitted it also zeroes the 32 bytes of stack that it and they use
-(`X86.Scrub.verifiedScrubbedF`), given that its postcondition reads the
+(`X86.Scrub.verifiedScrubbedAll`), given that its postcondition reads the
 memory on return only within the streaming state and the data (`applyOut`).
 
 What the cleanup needs of `apply`'s code holds of every implementation
@@ -121,7 +121,7 @@ theorem setNonce_scrubbed :
 /-- `vg_chacha20_apply`, calling the implementation `v` of `vg_chacha20_xor`, as emitted. -/
 theorem apply_scrubbed (v : XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20.X86.Fn.apply v.callee) (applyContract X86.abi 32) 32 :=
-  verifiedScrubbedF (api := applyApi)
+  verifiedScrubbedAll (api := applyApi)
     { suffix := v.suffix
       code := Impl.ChaCha20.X86.Stream.apply v.callee
       stack := 32
@@ -132,6 +132,6 @@ theorem apply_scrubbed (v : XorImpl) :
 /-- `vg_chacha20_apply` as emitted never writes `esp` but by its frames. -/
 theorem apply_spSafe (v : XorImpl) :
     (Impl.ChaCha20.X86.Fn.apply v.callee).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.ChaCha20.X86.Stream.apply_spSafe v)
+  scrubAll_spSafe (Proof.ChaCha20.X86.Stream.apply_spSafe v)
 
 end VG.Proof.ChaCha20.X86.Scrub

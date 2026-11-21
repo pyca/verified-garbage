@@ -47,14 +47,14 @@ def sat : State where
 /-! ## Without secret residue
 
 `add` writes only `rax`, the result, and the flags, which depend on the
-arguments; the clearing that follows it (`Impl.Scrub.X86_64.scrub`) is one
+arguments; the clearing that follows it (`Impl.Scrub.X86_64.scrubWith`) is one
 `xor r11d, r11d`, whose flags are known. It writes no memory: the
 postcondition says the memory is unchanged, so `X86_64.Scrub.scrubReg`,
 which needs it to read only the buffers (`PostOut`), does not apply, and
 the proof is direct. -/
 
 /-- `add`, then the clearing. -/
-def addScrubbed : Prog isa := Impl.Scrub.X86_64.scrub .sse 64 [] [] [.r11] [] [] Impl.Selftest.X86_64.add
+def addScrubbed : Prog isa := Impl.Scrub.X86_64.scrubWith .sse 64 [] [] [.r11] [] [] Impl.Selftest.X86_64.add
 
 theorem addScrubbed_run (s : State) : ∃ s', Exec isa addScrubbed s [] s' ∧
     (∀ r, s'.gpr r = if r = .r11 then 0 else if r = .rax then s.gpr .rdi + s.gpr .rsi else s.gpr r) ∧

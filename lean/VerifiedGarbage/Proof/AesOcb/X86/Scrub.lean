@@ -36,7 +36,7 @@ what the scrub of their frames and calls needs (`X86.Scrub.PostOut`).
 Each as emitted (`Impl.AesOcb.X86.Fn`) zeroes the stack of its contract
 below `esp` (its frame of working space, `withStackScratch`, and its
 callees') and clears the registers, and returns without secret residue
-(`X86.Scrub.verifiedScrubbedF`: `init_scrubbed`, `seal_scrubbed`,
+(`X86.Scrub.verifiedScrubbedAll`: `init_scrubbed`, `seal_scrubbed`,
 `open_scrubbed`). What that needs of the code (`scrubFSide`) holds whatever the
 implementation of the block functions (`init_scrub`, …): from OCB's code
 with stub block functions, whose code is `.block []`, which the kernel
@@ -159,7 +159,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem init_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesOcb.X86.Fn.init (Proof.AesOcb.X86.callees v))
       (Spec.Ocb.initContract X86.abi 2604) 0 :=
-  verifiedScrubbedF (api := Spec.Ocb.initApi) {
+  verifiedScrubbedAll (api := Spec.Ocb.initApi) {
       suffix := v.suffix
       code := withStackScratch 2580 3 (Impl.AesOcb.X86.init (callees v))
       verified := init_framed v
@@ -171,7 +171,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem seal_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesOcb.X86.Fn.«seal» (Proof.AesOcb.X86.callees v))
       (Spec.Ocb.sealContract X86.abi 2632) 0 :=
-  verifiedScrubbedF (api := Spec.Ocb.sealApi) {
+  verifiedScrubbedAll (api := Spec.Ocb.sealApi) {
       suffix := v.suffix
       code := withStackScratch 2608 10 (Impl.AesOcb.X86.seal (callees v))
       verified := Proof.AesOcb.seal_keyed (seal_framed v)
@@ -183,7 +183,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem open_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesOcb.X86.Fn.«open» (Proof.AesOcb.X86.callees v))
       (Spec.Ocb.openContract X86.abi 2632) 32 :=
-  verifiedScrubbedF (api := Spec.Ocb.openApi) {
+  verifiedScrubbedAll (api := Spec.Ocb.openApi) {
       suffix := v.suffix
       code := withStackScratch 2608 10 (Impl.AesOcb.X86.open (callees v))
       verified := Proof.AesOcb.open_keyed (open_framed v)
@@ -193,16 +193,16 @@ theorem open_scrubbed (v : BlocksImpl) :
 /-- `Impl.AesOcb.X86.Fn.init` writes `esp` only in its frames and calls. -/
 theorem init_fnSpSafe (v : BlocksImpl) :
     (Impl.AesOcb.X86.Fn.init (Proof.AesOcb.X86.callees v)).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v))
+  scrubAll_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v))
 
 /-- `Impl.AesOcb.X86.Fn.«seal»` writes `esp` only in its frames and calls. -/
 theorem seal_fnSpSafe (v : BlocksImpl) :
     (Impl.AesOcb.X86.Fn.«seal» (Proof.AesOcb.X86.callees v)).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v))
+  scrubAll_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v))
 
 /-- `Impl.AesOcb.X86.Fn.«open»` writes `esp` only in its frames and calls. -/
 theorem open_fnSpSafe (v : BlocksImpl) :
     (Impl.AesOcb.X86.Fn.«open» (Proof.AesOcb.X86.callees v)).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v))
+  scrubAll_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v))
 
 end VG.Proof.AesOcb.X86.Scrub

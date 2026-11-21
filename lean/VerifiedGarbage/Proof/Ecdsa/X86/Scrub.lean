@@ -13,7 +13,7 @@ For every curve, the postconditions of `vg_ecdsa_<curve>_verify` and of
 holds) read the memory on return only within `out` (`X86.Scrub.PostOut`),
 as on RISC-V (`Proof/EcKey/RISCV64/Scrub.lean`,
 `Proof/Ecdsa/Rfc6979/RISCV64/Scrub.lean`): what
-`X86.Scrub.verifiedScrubbedF` needs of each implementation followed by its
+`X86.Scrub.verifiedScrubbedAll` needs of each implementation followed by its
 cleanup, the zeroing of the stack its frames and calls use and
 `Impl.Scrub.X86.tail`. The registrations are each curve's `Scrub` module
 (`Proof/Ecdsa/X86/<Curve>/Scrub.lean`).

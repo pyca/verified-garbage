@@ -42,7 +42,7 @@ secret residue (`…_scrubbed`): `vg_rsa_recover_primes_det` and
 tail that clears the registers (`X86.Scrub.verifiedScrubbed`);
 `vg_rsa_crt_values`, `vg_rsa_public_precompute` and
 `vg_rsa_private_precompute` also by the zeroing of the stack their contracts
-reserve (`X86.Scrub.verifiedScrubbedF`). Their
+reserve (`X86.Scrub.verifiedScrubbedAll`). Their
 postconditions read the memory on return only within their outputs
 (`X86.Scrub.PostOut`): the words at `pre`, or the octets at `dp`, `dq` and
 `qinv` (`bytesAt_of`, `wordsAt_of`). `vg_rsa_private_precompute` calls the
@@ -129,7 +129,7 @@ theorem checkKey_scrubbed :
 /-- `vg_rsa_crt_values`, with its cleanup, returns without secret residue. -/
 theorem crtValues_scrubbed :
     VerifiedScrubbed target Impl.Rsa.X86.Fn.crtValues (Spec.Rsa.crtValuesContract abi 52) 32 :=
-  verifiedScrubbedF (api := Spec.Rsa.crtValuesApi)
+  verifiedScrubbedAll (api := Spec.Rsa.crtValuesApi)
     { code := Impl.Rsa.X86.CrtValuesRt.code
       verified := Proof.Rsa.X86.CrtValues.verified
       spSafe := Proof.Rsa.X86.RtShape.crtValues_spSafe }
@@ -138,7 +138,7 @@ theorem crtValues_scrubbed :
 /-- `vg_rsa_public_precompute`, with its cleanup, returns without secret residue. -/
 theorem publicPrecompute_scrubbed :
     VerifiedScrubbed target Impl.Rsa.X86.Fn.publicPrecompute (Spec.Rsa.publicPrecomputeContract abi 96) 32 :=
-  verifiedScrubbedF (api := Spec.Rsa.publicPrecomputeApi)
+  verifiedScrubbedAll (api := Spec.Rsa.publicPrecomputeApi)
     { code := Impl.Bignum.X86.PrecomputeFn.code
       verified := Proof.Bignum.X86.precompute_verified }
     (publicPrecomputeOut _)
@@ -147,7 +147,7 @@ theorem publicPrecompute_scrubbed :
 theorem privatePrecompute_scrubbed :
     VerifiedScrubbed target Impl.Rsa.X86.Fn.privatePrecompute
       (Spec.Rsa.privatePrecomputeContract abi Proof.Bignum.X86.PrivPre.stackBytes) 32 :=
-  verifiedScrubbedF (api := Spec.Rsa.privatePrecomputeApi)
+  verifiedScrubbedAll (api := Spec.Rsa.privatePrecomputeApi)
     { code := Proof.Bignum.X86.PrivPre.ppCode
       verified := Proof.Bignum.X86.PrivPre.pp_verified
       spSafe := Proof.Bignum.X86.PrivPre.pp_spSafe }

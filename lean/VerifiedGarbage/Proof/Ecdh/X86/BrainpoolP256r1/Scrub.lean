@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # ECDH over BrainpoolP256r1 on x86 (32-bit), without secret residue
 
 `vg_ecdh_brainpoolp256r1`, as emitted, followed by the zeroing of the stack its frames and calls use
-and `Impl.Scrub.X86.tail` (`X86.Scrub.verifiedScrubbedF`), with its postcondition's
+and `Impl.Scrub.X86.tail` (`X86.Scrub.verifiedScrubbedAll`), with its postcondition's
 locality from `Proof/EcKey/X86/Scrub.lean`.
 -/
 
@@ -28,7 +28,7 @@ open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 /-- `vg_ecdh_brainpoolp256r1`. -/
 theorem exchange_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     VerifiedScrubbed target Impl.Ecdh.X86.Fn.exchangeBrainpoolP256r1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP256r1.inst X86.abi 28) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdh.BrainpoolP256r1.exchangeApi)
+  verifiedScrubbedAll (api := Spec.Ecdh.BrainpoolP256r1.exchangeApi)
     { code := Impl.Ecdh.X86.exchangeBrainpoolP256r1
       verified := Proof.Ecdh.X86.BrainpoolP256r1.ecdh_verified hL hI }
     (exchangeOut _ _ [])

@@ -34,7 +34,7 @@ PBKDF2 and the one-shot digest call its code as the internal
 `vg_sha1_init_core` (`Variants.hmacHash`), whose code is not scrubbed.
 
 The one-shot digest, for every backend, with the stack it and its callees
-use zeroed first (`X86.Scrub.verifiedScrubbedF`), given that its postcondition reads
+use zeroed first (`X86.Scrub.verifiedScrubbedAll`), given that its postcondition reads
 the memory on return only within the buffers (`Proof.Sha1.PostOut`). The
 streaming `update` and `finalize` are scrubbed where each backend defines
 them (`Variants.StreamFn.reg`).
@@ -89,7 +89,7 @@ contract in constant time and returns without secret residue. -/
 theorem digest_scrubbed (v : Backend) :
     VerifiedScrubbed target (Impl.Sha1.X86.Fn.digest (Proof.Pbkdf2.Stream.X86.sha1H v.stream))
       (Spec.Sha1.digestContract X86.abi (48 + dframe (Proof.Pbkdf2.Stream.X86.sha1H v.stream))) 0 :=
-  verifiedScrubbedF (api := Spec.Sha1.digestApi)
+  verifiedScrubbedAll (api := Spec.Sha1.digestApi)
     { suffix := v.suffix
       code := digest (Proof.Pbkdf2.Stream.X86.sha1H v.stream)
       stack := 48 + dframe (Proof.Pbkdf2.Stream.X86.sha1H v.stream)
@@ -102,6 +102,6 @@ in its frames and calls. -/
 theorem digest_spSafe (v : Backend) :
     (Impl.Sha1.X86.Fn.digest (Proof.Pbkdf2.Stream.X86.sha1H v.stream)).all
       (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.MdStream.X86.Digest.sha1_digestSp v.stream)
+  scrubAll_spSafe (Proof.MdStream.X86.Digest.sha1_digestSp v.stream)
 
 end VG.Proof.Sha1.X86.Scrub

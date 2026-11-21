@@ -33,7 +33,7 @@ needs (`X86.Scrub.PostOut`).
 
 Each as emitted (`Impl.AesOfb.X86.Fn`) zeroes the stack of its contract
 below `esp` and clears the registers, and returns without secret residue
-(`X86.Scrub.verifiedScrubbedF`: `ofb_scrubbed`, `ofbFinal_scrubbed`). What that needs of the code (`scrubFSide`) holds whatever the
+(`X86.Scrub.verifiedScrubbedAll`: `ofb_scrubbed`, `ofbFinal_scrubbed`). What that needs of the code (`scrubFSide`) holds whatever the
 implementation of the block function (`crypt_scrub`, `final_scrub`): from
 OFB's code with a stub block function, whose code is `.block []`, which the
 kernel evaluates once (`crypt_side`, `final_side`), the implementation's own
@@ -126,7 +126,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem ofb_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesOfb.X86.Fn.crypt v.enc)
       (Spec.Ofb.aesContract X86.abi 24) 0 :=
-  verifiedScrubbedF (api := Spec.Ofb.aesApi) {
+  verifiedScrubbedAll (api := Spec.Ofb.aesApi) {
       suffix := v.suffix
       code := Impl.AesOfb.X86.crypt v.enc
       verified := Proof.AesOfb.keyed (crypt_verified v)
@@ -138,7 +138,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesOfb.X86.Fn.cryptFinal v.enc v.suffix)
       (Spec.Ofb.aesFinalContract X86.abi 100) 0 :=
-  verifiedScrubbedF (api := Spec.Ofb.aesFinalApi) {
+  verifiedScrubbedAll (api := Spec.Ofb.aesFinalApi) {
       suffix := v.suffix
       code := withStackScratchWiped 48 6 4 (Impl.AesOfb.X86.cryptFinal v.enc v.suffix)
       verified := Proof.AesOfb.final_keyed (cryptFinal_framed v)
@@ -148,11 +148,11 @@ theorem ofbFinal_scrubbed (v : BlocksImpl) :
 /-- `Impl.AesOfb.X86.Fn.crypt` writes `esp` only in its frames and calls. -/
 theorem ofb_fnSpSafe (v : BlocksImpl) :
     (Impl.AesOfb.X86.Fn.crypt v.enc).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (crypt_spSafe v)
+  scrubAll_spSafe (crypt_spSafe v)
 
 /-- `Impl.AesOfb.X86.Fn.cryptFinal` writes `esp` only in its frames and calls. -/
 theorem ofbFinal_fnSpSafe (v : BlocksImpl) :
     (Impl.AesOfb.X86.Fn.cryptFinal v.enc v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (cryptFinal_framed_spSafe v)
+  scrubAll_spSafe (cryptFinal_framed_spSafe v)
 
 end VG.Proof.AesOfb.X86.Scrub

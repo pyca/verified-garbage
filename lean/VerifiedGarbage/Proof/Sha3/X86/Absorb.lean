@@ -36,7 +36,7 @@ being `updateScratchContract` by `rfl`), and returning without secret residue
 (`update_sha3_224_scrubbed` and the others, of the code with its cleanup,
 `Impl.Sha3.X86.Fn.update`, which zeroes the 704 bytes of stack below `esp`
 that it and `update` use, and clears the registers a callee may change), so
-that nothing is left in the caller's memory: `X86.Scrub.verifiedScrubbedF`.
+that nothing is left in the caller's memory: `X86.Scrub.verifiedScrubbedAll`.
 What the cleanup needs of the code (its stack use within the 704 bytes, no
 indirect call, no MMX instruction) is one Boolean, `X86.Scrub.scrubFSide`,
 which the kernel evaluates once (`lit_decide`).
@@ -93,7 +93,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_224_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_224.rate)
       (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_224.rate 704) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.updateSha3_224Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_224Api)
     { code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_224.rate
       verified := absorb_sha3_224 }
     (absorbOut _ _)
@@ -118,7 +118,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_256_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_256.rate)
       (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_256.rate 704) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.updateSha3_256Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_256Api)
     { code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_256.rate
       verified := absorb_sha3_256 }
     (absorbOut _ _)
@@ -143,7 +143,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_384_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_384.rate)
       (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_384.rate 704) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.updateSha3_384Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_384Api)
     { code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_384.rate
       verified := absorb_sha3_384 }
     (absorbOut _ _)
@@ -168,7 +168,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_512_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.update Spec.Sha3.hashSha3_512.rate)
       (Spec.Sha3.updateContract X86.abi Spec.Sha3.hashSha3_512.rate 704) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.updateSha3_512Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateSha3_512Api)
     { code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.hashSha3_512.rate
       verified := absorb_sha3_512 }
     (absorbOut _ _)
@@ -193,7 +193,7 @@ constant time and returns without secret residue. -/
 theorem update_shake128_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.update Spec.Sha3.xofShake128.rate)
       (Spec.Sha3.updateContract X86.abi Spec.Sha3.xofShake128.rate 704) 32 :=
-  verifiedScrubbedF (api := Spec.Sha3.updateShake128Api)
+  verifiedScrubbedAll (api := Spec.Sha3.updateShake128Api)
     { code := Impl.Sha3.X86.Instances.absorb Spec.Sha3.xofShake128.rate
       verified := absorb_shake128 }
     (absorbOut _ _)

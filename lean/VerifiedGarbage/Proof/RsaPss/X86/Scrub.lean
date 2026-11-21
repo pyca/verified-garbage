@@ -93,7 +93,7 @@ theorem verify_scrubbed (h : Proof.RsaPss.X86.Sg.OK allMVars allVars) :
       (Impl.RsaPss.X86.Fn.verifyPrecomputed (Proof.MdHashTable.X86.fnsOf allMVars) (Proof.HashTable.X86.fnsOf allVars)
         Proof.RsaPkcs1Sig.X86.Ver.baseline.name Proof.RsaPkcs1Sig.X86.Ver.baseline.code)
       (Proof.RsaPss.X86.Vf.vspec allMVars allVars) 32 :=
-  verifiedScrubbedF (api := Spec.RsaPss.verifyPrecomputedMdTableApi) {
+  verifiedScrubbedAll (api := Spec.RsaPss.verifyPrecomputedMdTableApi) {
       tables := [("hash", Proof.MdHashTable.X86.tables allMVars), ("mgf1", Proof.HashTable.X86.tables allVars)]
       code := Proof.RsaPss.X86.Vf.verifyCode allMVars allVars Proof.RsaPkcs1Sig.X86.Ver.baseline
       verified := verify_ok _ _ h Proof.RsaPkcs1Sig.X86.Ver.baseline
@@ -160,7 +160,7 @@ theorem sign_scrubbed (h : Proof.RsaPss.X86.Sg.OK allMVars allVars) (c : CrtImpl
       (Impl.RsaPss.X86.Fn.signPrecomputed (Proof.MdHashTable.X86.fnsOf allMVars) (Proof.HashTable.X86.fnsOf allVars)
         (Proof.RsaPss.X86.Sg.privNameP c) (privCodeP c crtPBaseline))
       (Proof.RsaPss.X86.Sg.sspecP allMVars allVars) 32 :=
-  verifiedScrubbedF (api := Spec.RsaPss.signPrecomputedMdTableApi)
+  verifiedScrubbedAll (api := Spec.RsaPss.signPrecomputedMdTableApi)
     { tables := [("hash", Proof.MdHashTable.X86.tables allMVars), ("mgf1", Proof.HashTable.X86.tables allVars)]
       code := Proof.RsaPss.X86.Sg.signCodeP allMVars allVars c crtPBaseline
       verified := Proof.RsaPss.X86.signP_ok _ _ h c crtPBaseline
@@ -171,6 +171,6 @@ theorem sign_scrubbed (h : Proof.RsaPss.X86.Sg.OK allMVars allVars) (c : CrtImpl
 theorem sign_spSafe (h : Proof.RsaPss.X86.Sg.OK allMVars allVars) (c : CrtImpl) :
     (Impl.RsaPss.X86.Fn.signPrecomputed (Proof.MdHashTable.X86.fnsOf allMVars) (Proof.HashTable.X86.fnsOf allVars)
       (Proof.RsaPss.X86.Sg.privNameP c) (privCodeP c crtPBaseline)).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.RsaPss.X86.Sg.code_spP h c crtPBaseline)
+  scrubAll_spSafe (Proof.RsaPss.X86.Sg.code_spP h c crtPBaseline)
 
 end VG.Proof.RsaPss.X86.Scrub

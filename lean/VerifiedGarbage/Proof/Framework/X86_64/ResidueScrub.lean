@@ -25,7 +25,7 @@ writable buffers hold their addresses (`spAux`) (`init_agree`). If the
 analysis of its code ends with the window as it started, the window's bytes the analysis cannot show
 equal in both runs are those `sec` lists; `scrub` then need wipe only the
 16-byte granules that hold them (`keepOf`), and `resOk_of_check` gives
-`Verified.scrub` the rest (`Scrub.ResOk`).
+`Verified.scrubWith` the rest (`Scrub.ResOk`).
 -/
 
 @[expose] public section

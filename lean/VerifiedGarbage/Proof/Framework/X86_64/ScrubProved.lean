@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Semantics
 `v`, with the granules `ks` of the chunks `cs` wiped: one pass over the
 instructions (`sideI`) and that two runs along a path leave the same MXCSR
 (`mxSameB`). The kernel evaluates it where the function is proven
-(`lit_decide`), and `scrubSideG_ok` turns it into what `Verified.scrub`
+(`lit_decide`), and `scrubSideG_ok` turns it into what `Verified.scrubWith`
 takes (`ScrubFn.lean` states the cleanups `scrubAll` and `scrubSel` with
 it).
 -/
@@ -138,8 +138,8 @@ theorem scrubSideG_ok {api : Api} (r : Unscrubbed api target) (v f : VecLevel) (
     (gs : List Reg) (hs : scrubSideG r.code r.stack (retBitsOf r) v vec ks cs gs r.tables = true)
     (hpost : PostOut r.contract (retBitsOf r))
     (hres : ResOk r.code r.contract r.stack ks cs) (hne : f ≠ .evex) :
-    Verified target (scrub v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f) r.contract ∧
-      NoResidue (scrub v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f) r.contract
+    Verified target (scrubWith v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f) r.contract ∧
+      NoResidue (scrubWith v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f) r.contract
         (retBitsOf r) := by
   obtain ⟨hcs, hcv⟩ := scrubSideG_cs hs
   simp only [scrubSideG, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq] at hs

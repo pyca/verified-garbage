@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 /-!
 # Returning without secret residue: the baseline ISA's callers of AVX code (x86-64)
 
-`Verified.scrubU` is `Verified.scrub` with what it needs of the code's
+`Verified.scrubU` is `Verified.scrubWith` with what it needs of the code's
 vector instructions stated as two facts, rather than derived from their
 level: below the level `evex`, the code's instructions are at most of level
 1 (`hl1`), and the upper halves of the vector registers that the clearing
@@ -46,7 +46,7 @@ variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → P
   {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
 
 /-- Code verified against a contract that `Sig.contract` derives, whose
-frames and calls use at most `stack` bytes, run by `scrub`, which clears
+frames and calls use at most `stack` bytes, run by `scrubWith`, which clears
 the granules `ks` of the `cs.sum = stack` bytes of stack below `rsp`:
 verified against the same contract, and without secret residue, if the
 postcondition reads the memory on return only within the buffers (`hpost`)
@@ -72,9 +72,9 @@ theorem Verified.scrubU {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : 
     (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false)
     (hsy : ∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ →
       ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) :
-    Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+    Verified target (Impl.Scrub.X86_64.scrubWith v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+      NoResidue (Impl.Scrub.X86_64.scrubWith v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   have hnps : ∀ r, r ∉ scratchRegs → r ∉ ps := fun r h h' => h (ht.psOk r h')
   have hngs : ∀ r, r ∉ scratchRegs → r ∉ gs := fun r h h' => h (ht.gsOk r h')

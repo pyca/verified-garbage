@@ -82,7 +82,7 @@ frame, then the clearing of the registers a callee may change
 (`Impl.Scrub.X86.scrub 0`); `update` and the `finalize`s, in a frame of their
 own (`withStackScratch`), then the zeroing of the `W` bytes of stack below
 `esp` that they and the compression function use and that clearing
-(`Impl.Scrub.X86.scrubF 0 W`), so that each returns without secret residue.
+(`Impl.Scrub.X86.scrubAll 0 W`), so that each returns without secret residue.
 The one-shot digests are `Impl/Sha512/X86/Digest.lean`'s. -/
 
 namespace VG.Impl.Sha512.X86.Fn
@@ -94,15 +94,15 @@ def init (iv : Spec.Sha512.HashValue) : Prog isa := Impl.Scrub.X86.scrub 0 (Stre
 
 /-- `vg_sha512_update`, as emitted. -/
 def update : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 1424 (Impl.StackScratch.X86.withStackScratch 1404 5 Stream.update)
+  Impl.Scrub.X86.scrubAll 0 1424 (Impl.StackScratch.X86.withStackScratch 1404 5 Stream.update)
 
 /-- `vg_sha512_finalize`, as emitted. -/
 def finalize : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 1420 (Impl.StackScratch.X86.withStackScratch 1400 4 Stream.finalize)
+  Impl.Scrub.X86.scrubAll 0 1420 (Impl.StackScratch.X86.withStackScratch 1400 4 Stream.finalize)
 
 /-- `vg_<f>_finalize` writing the digest `P.out` writes (`Stream.params384`, …), as
 emitted. -/
 def finalizeDigest (P : Impl.MdStream.X86.Params) : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 1420 (Impl.StackScratch.X86.withStackScratch 1400 4 (Stream.finalizeDigest P))
+  Impl.Scrub.X86.scrubAll 0 1420 (Impl.StackScratch.X86.withStackScratch 1400 4 (Stream.finalizeDigest P))
 
 end VG.Impl.Sha512.X86.Fn

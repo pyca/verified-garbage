@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_ct_eq` as emitted (`Impl.Ct.X86.Fn.eq`), followed by the zeroing of the 4 bytes below `esp` its frame
 (the caller's `ebx`) used and by `Impl.Scrub.X86.tail`
-(`X86.Scrub.verifiedScrubbedF`), which clears `eax`, `ecx` and `edx` but the result's
+(`X86.Scrub.verifiedScrubbedAll`), which clears `eax`, `ecx` and `edx` but the result's
 bits, the flags and `xmm0`–`xmm7`. Its postcondition reads no memory on
 return: it writes none (`X86.Scrub.PostOut`), as on the other targets
 (`Proof/Ct/PPC64LE/Scrub.lean`). The cleanup's side condition (`scrubFSide`)
@@ -44,7 +44,7 @@ theorem eqOut (stack : Nat) : PostOut (Spec.Ct.eqContract abi stack) (Spec.Ct.eq
 in constant time and returns without secret residue. -/
 theorem eq_scrubbed :
     VerifiedScrubbed X86.target Impl.Ct.X86.Fn.eq (Spec.Ct.eqContract X86.abi 4) 32 :=
-  verifiedScrubbedF (api := Spec.Ct.eqApi)
+  verifiedScrubbedAll (api := Spec.Ct.eqApi)
     { code := Impl.Ct.X86.eq
       verified := Proof.Ct.X86.verified }
     (eqOut _)

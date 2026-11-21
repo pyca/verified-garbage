@@ -10,12 +10,12 @@ definition in `Impl/` (`Impl.<Alg>.X86.Fn.<f>`), written with the cleanup's
 literals: the result's bits it keeps and, for code with frames or calls, the
 bytes of stack it zeroes:
 
-    def Fn.update : Prog isa := Impl.Scrub.X86.scrubF 0 704 (Instances.absorb rate)
+    def Fn.update : Prog isa := Impl.Scrub.X86.scrubAll 0 704 (Instances.absorb rate)
 
 `verifiedScrubbed` (code that calls nothing, `Impl.Scrub.X86.scrub`) and
-`verifiedScrubbedF` (code with frames, direct calls and calls through its
-tables, `Impl.Scrub.X86.scrubF`) state `VerifiedScrubbed` of that code: what
-`X86.Scrub.scrubOf` and `scrubFOf` register, as the theorem about the code
+`verifiedScrubbedAll` (code with frames, direct calls and calls through its
+tables, `Impl.Scrub.X86.scrubAll`) state `VerifiedScrubbed` of that code: what
+`X86.Scrub.scrubOf` and `scrubAllOf` register, as the theorem about the code
 that a registration binds (`verified := .scrubbed …`). They take what those
 forms take, the side condition included (`scrubSide`, `scrubFSide`, by default
 `lit_decide`), with the stack and the result's bits as the literals of the
@@ -49,23 +49,23 @@ theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) {rb : Nat}
 
 /-- `r`'s code, with frames and direct calls or calls through its tables,
 followed by the zeroing of its `W` bytes of stack below `esp` and `tail rb`
-(`scrubF`), meets `r`'s contract in constant time and returns without secret
+(`scrubAll`), meets `r`'s contract in constant time and returns without secret
 residue, given that its postcondition reads the memory on return only within
-the buffers (`hpost`): what `scrubFOf` registers, as the theorem about the
+the buffers (`hpost`): what `scrubAllOf` registers, as the theorem about the
 code that a registration binds. -/
-theorem verifiedScrubbedF {api : Api} (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r))
+theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r))
     {W rb : Nat} (hs : scrubFSide r.code r.tables W = true := by (try dsimp only); lit_decide)
     (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl) (hw : r.written = [] := by rfl) :
-    VerifiedScrubbed target (scrubF rb W r.code) r.contract rb := by
+    VerifiedScrubbed target (scrubAll rb W r.code) r.contract rb := by
   have e : api.sig.retBits target.abi.ptrBits = retBitsOf r :=
     (Abi.retBits_withConsts_withTables target.abi api.sig api.sig r.consts r.tables).symm
   subst hb
-  have h := (scrubFOf r hpost W hs hW hw).verified
+  have h := (scrubAllOf r hpost W hs hW hw).verified
   have hn := h.noResidue
   rw [e] at hn
   have hv := h.verified
-  rw [show (scrubFOf r hpost W hs hW hw).code = scrubF (retBitsOf r) W r.code by
-    simp only [scrubFOf, scrubRegFT, hW]] at hv hn
+  rw [show (scrubAllOf r hpost W hs hW hw).code = scrubAll (retBitsOf r) W r.code by
+    simp only [scrubAllOf, scrubRegFT, hW]] at hv hn
   exact ⟨hv, hn⟩
 
 /-- The code as emitted, `c` and then its cleanup (`scrub`), writes `esp`
@@ -76,11 +76,11 @@ theorem scrub_spSafe {rb : Nat} {c : Prog isa} (h : c.all (fun i => !isa.writesS
     (scrub rb c).all (fun i => !isa.writesSp i) = true := by
   simp only [scrub, Code.all, h, tail_all, Bool.true_and]
 
-/-- The code as emitted, `c` and then its cleanup (`scrubF`), writes `esp`
+/-- The code as emitted, `c` and then its cleanup (`scrubAll`), writes `esp`
 only in its frames and calls, as `c` does. -/
-theorem scrubF_spSafe {rb W : Nat} {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true) :
-    (scrubF rb W c).all (fun i => !isa.writesSp i) = true := by
-  simp only [scrubF, wipeBelow, Code.all, h, zeroRegs_all, tail_all, Bool.true_and, Bool.and_true]
+theorem scrubAll_spSafe {rb W : Nat} {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true) :
+    (scrubAll rb W c).all (fun i => !isa.writesSp i) = true := by
+  simp only [scrubAll, wipeBelow, Code.all, h, zeroRegs_all, tail_all, Bool.true_and, Bool.and_true]
   exact wipe_all _
 
 /-- `postOut_of_local`, for a postcondition that reads the memory on return

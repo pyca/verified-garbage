@@ -30,7 +30,7 @@ meta import VerifiedGarbage.Proof.Sha256.X86.Lit
 ROMix below it, within the 116 bytes of stack its contract reserves. The
 code as emitted (`Impl.Scrypt.X86.Fn.scrypt`) then zeroes those bytes below
 `esp` and clears the registers a callee may change, and returns without
-secret residue (`X86.Scrub.verifiedScrubbedF`), given that its postcondition
+secret residue (`X86.Scrub.verifiedScrubbedAll`), given that its postcondition
 reads the memory on return only within `out` (`scryptOut`, as on ARMv7,
 `Proof/Scrypt/Arm/Scrub.lean`).
 
@@ -102,7 +102,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem scrypt_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
     VerifiedScrubbed target (Impl.Scrypt.X86.Fn.scrypt (pbkName v) (pbkOf v))
       (Spec.Scrypt.scryptContract X86.abi 116) 0 :=
-  verifiedScrubbedF (api := Spec.Scrypt.scryptApi)
+  verifiedScrubbedAll (api := Spec.Scrypt.scryptApi)
     { suffix := v.suffix
       code := Impl.Scrypt.X86.scrypt (pbkName v) (pbkOf v)
       verified := scrypt_verified v

@@ -35,7 +35,7 @@ functions. Each as emitted (`Impl.X25519.X86.Fn`) is followed by the zeroing of
 the stack its contract reserves below `esp`, which its frames and calls use,
 then by `Impl.Scrub.X86.tail`, which clears the registers a callee may change
 but the result's bits, the flags and `xmm0`–`xmm7`, and returns without
-secret residue (`X86.Scrub.verifiedScrubbedF`).
+secret residue (`X86.Scrub.verifiedScrubbedAll`).
 Their postconditions read the memory on return only within `out`
 (`X86.Scrub.PostOut`, by `postOut_of_local`). What the scrub needs of the
 code (its stack use within those bytes, no indirect call, no MMX
@@ -96,7 +96,7 @@ theorem exchangeOut (stack : Nat) :
 /-- `vg_x25519_exchange`. -/
 theorem exchange_scrubbed :
     VerifiedScrubbed target Impl.X25519.X86.Fn.exchange (Spec.X25519.exchangeContract X86.abi 28) 32 :=
-  verifiedScrubbedF (api := Spec.X25519.exchangeApi)
+  verifiedScrubbedAll (api := Spec.X25519.exchangeApi)
     { code := Impl.Xdh.X86.exchange "vg_x25519" Impl.X25519.X86.x25519 32
       verified := Proof.X25519.X86.Exchange.exchange_verified }
     (exchangeOut _)
@@ -105,7 +105,7 @@ theorem exchange_scrubbed :
 theorem base_scrubbed :
     VerifiedScrubbed target Impl.X25519.X86.Fn.base
       (Spec.X25519.x25519BaseContract (X86.abi.withConsts Impl.Ed25519.X86.combConsts) 8) 0 :=
-  verifiedScrubbedF (api := Spec.X25519.x25519BaseApi)
+  verifiedScrubbedAll (api := Spec.X25519.x25519BaseApi)
     { code := Impl.X25519.X86.Base.x25519Base
       verified := Proof.X25519.X86.Base.x25519Base_verified }
     (baseOut Impl.Ed25519.X86.combConsts _)

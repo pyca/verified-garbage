@@ -12,7 +12,7 @@ Each function's body and then its cleanup (`Impl.Scrub.X86`): `init`, which
 calls nothing and has no frame, clears the registers it may leave secret
 (`scrub`); `update` and `finalize`, which run in a frame that allocates their
 scratch space and call the compression function, also zero the stack they use
-below `esp` (`scrubF`), the 32 bytes of the compression function's calls and
+below `esp` (`scrubAll`), the 32 bytes of the compression function's calls and
 the bytes of their scratch frame.
 -/
 
@@ -27,22 +27,22 @@ def init {w : Nat} (P : Spec.Blake2.Params w) : Prog isa := Impl.Scrub.X86.scrub
 
 /-- `vg_blake2b_update`. -/
 def updateB : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 636
+  Impl.Scrub.X86.scrubAll 0 636
     (Impl.StackScratch.X86.withStackScratch 604 5 (Stream.update 64 "vg_blake2b_compress" CompressB.compress))
 
 /-- `vg_blake2b_finalize`. -/
 def finalizeB : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 632
+  Impl.Scrub.X86.scrubAll 0 632
     (Impl.StackScratch.X86.withStackScratch 600 4 (Stream.finalize 64 "vg_blake2b_compress" CompressB.compress))
 
 /-- `vg_blake2s_update`. -/
 def updateS : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 636
+  Impl.Scrub.X86.scrubAll 0 636
     (Impl.StackScratch.X86.withStackScratch 604 5 (Stream.update 32 "vg_blake2s_compress" CompressS.compress))
 
 /-- `vg_blake2s_finalize`. -/
 def finalizeS : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 632
+  Impl.Scrub.X86.scrubAll 0 632
     (Impl.StackScratch.X86.withStackScratch 600 4 (Stream.finalize 32 "vg_blake2s_compress" CompressS.compress))
 
 end VG.Impl.Blake2.X86.Fn

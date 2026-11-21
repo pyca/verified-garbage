@@ -392,7 +392,7 @@ its contract in constant time and returns without secret residue: every
 `ldmxcsr` in it loads what two runs agree on. -/
 theorem enter_scrubbed :
     VerifiedScrubbed X86_64.target Impl.Mcdt.X86_64.enterCall (Spec.Mcdt.enterContract abi 8) 32 := by
-  have e : Impl.Mcdt.X86_64.enterCall = Impl.Scrub.X86_64.scrub .sse 32 (Scrub.xsFor false [0])
+  have e : Impl.Mcdt.X86_64.enterCall = Impl.Scrub.X86_64.scrubWith .sse 32 (Scrub.xsFor false [0])
       (Impl.Scrub.X86_64.psOf [0]) [.rcx, .rdx] [0] [8] enter .avx := by kernel_rfl
   rw [e]
   have h := Scrub.scrubSideG_ok (api := Spec.Mcdt.enterApi) { code := enter, stack := 8, verified := verified }

@@ -28,7 +28,7 @@ Each keeps the sponge's working space in a frame of its own and calls the
 sponge's padding or squeezing (`Impl.Sha3.X86.Instances`). The code as
 emitted (`Impl.Sha3.X86.Fn`) then zeroes the stack it and its callee use and
 clears the registers a callee may change, and returns without secret residue
-(`X86.Scrub.verifiedScrubbedF`), given that its postcondition reads
+(`X86.Scrub.verifiedScrubbedAll`), given that its postcondition reads
 the memory on return only within the buffers (`Proof.Sha3.PostOut`, and
 `xofSqueezeOut` for SHAKE's `squeeze`, whose `outlen` is a 32-bit word here).
 -/
@@ -88,7 +88,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_224_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.finalize hashSha3_224.rate hashSha3_224.len)
       (finalizeContract X86.abi hashSha3_224 680) 0 :=
-  verifiedScrubbedF (api := finalizeSha3_224Api)
+  verifiedScrubbedAll (api := finalizeSha3_224Api)
     { code := Impl.Sha3.X86.Instances.finalize hashSha3_224.rate hashSha3_224.len
       stack := 680
       verified := Proof.Sha3.X86.Instances.finalize_sha3_224 }
@@ -99,7 +99,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_256_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.finalize hashSha3_256.rate hashSha3_256.len)
       (finalizeContract X86.abi hashSha3_256 680) 0 :=
-  verifiedScrubbedF (api := finalizeSha3_256Api)
+  verifiedScrubbedAll (api := finalizeSha3_256Api)
     { code := Impl.Sha3.X86.Instances.finalize hashSha3_256.rate hashSha3_256.len
       stack := 680
       verified := Proof.Sha3.X86.Instances.finalize_sha3_256 }
@@ -110,7 +110,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_384_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.finalize hashSha3_384.rate hashSha3_384.len)
       (finalizeContract X86.abi hashSha3_384 680) 0 :=
-  verifiedScrubbedF (api := finalizeSha3_384Api)
+  verifiedScrubbedAll (api := finalizeSha3_384Api)
     { code := Impl.Sha3.X86.Instances.finalize hashSha3_384.rate hashSha3_384.len
       stack := 680
       verified := Proof.Sha3.X86.Instances.finalize_sha3_384 }
@@ -121,7 +121,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_512_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.finalize hashSha3_512.rate hashSha3_512.len)
       (finalizeContract X86.abi hashSha3_512 680) 0 :=
-  verifiedScrubbedF (api := finalizeSha3_512Api)
+  verifiedScrubbedAll (api := finalizeSha3_512Api)
     { code := Impl.Sha3.X86.Instances.finalize hashSha3_512.rate hashSha3_512.len
       stack := 680
       verified := Proof.Sha3.X86.Instances.finalize_sha3_512 }
@@ -132,7 +132,7 @@ constant time and returns without secret residue. -/
 theorem finalize_shake128_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.xofFinalize xofShake128.rate)
       (xofFinalizeContract X86.abi xofShake128 676) 0 :=
-  verifiedScrubbedF (api := finalizeShake128Api)
+  verifiedScrubbedAll (api := finalizeShake128Api)
     { code := Impl.Sha3.X86.Instances.xofFinalize xofShake128.rate
       stack := 676
       verified := Proof.Sha3.X86.Instances.finalize_shake128 }
@@ -143,7 +143,7 @@ constant time and returns without secret residue. -/
 theorem finalize_shake256_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.xofFinalize xofShake256.rate)
       (xofFinalizeContract X86.abi xofShake256 676) 0 :=
-  verifiedScrubbedF (api := finalizeShake256Api)
+  verifiedScrubbedAll (api := finalizeShake256Api)
     { code := Impl.Sha3.X86.Instances.xofFinalize xofShake256.rate
       stack := 676
       verified := Proof.Sha3.X86.Instances.finalize_shake256 }
@@ -154,7 +154,7 @@ constant time and returns without secret residue. -/
 theorem squeeze_shake128_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.xofSqueeze xofShake128.rate)
       (xofSqueezeContract X86.abi xofShake128 680) 32 :=
-  verifiedScrubbedF (api := squeezeShake128Api)
+  verifiedScrubbedAll (api := squeezeShake128Api)
     { code := Impl.Sha3.X86.Instances.xofSqueeze xofShake128.rate
       stack := 680
       verified := Proof.Sha3.X86.Instances.squeeze_shake128 }
@@ -165,7 +165,7 @@ constant time and returns without secret residue. -/
 theorem squeeze_shake256_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.X86.Fn.xofSqueeze xofShake256.rate)
       (xofSqueezeContract X86.abi xofShake256 680) 32 :=
-  verifiedScrubbedF (api := squeezeShake256Api)
+  verifiedScrubbedAll (api := squeezeShake256Api)
     { code := Impl.Sha3.X86.Instances.xofSqueeze xofShake256.rate
       stack := 680
       verified := Proof.Sha3.X86.Instances.squeeze_shake256 }
