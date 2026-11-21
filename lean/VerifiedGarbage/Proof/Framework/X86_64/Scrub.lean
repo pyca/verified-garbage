@@ -1867,7 +1867,7 @@ theorem scrubWith_spSafe {c : Prog isa} (v : VecLevel) (rb : Nat) (xs : List XRe
       · split
         · intro i hi; simp at hi; subst hi; rfl
         · intro i hi; simp at hi
-  rw [scrub, scrubTail]
+  rw [scrubWith, scrubTail]
   simp only [Code.all]
   rw [h, hv, hm, wipe_spSafe v.wide ks cs, hg]
   rfl
