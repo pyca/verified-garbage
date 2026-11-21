@@ -66,6 +66,11 @@ where only a register or memory can be), which the printer reports as
 unencodable (`Printer.unencodable`) and the emitter refuses
 (`Rust.checkEncodable`), rather than truncating it; and for `leaSym`, which
 is text.
+
+A field is placed by a product, `v * 2 ^ k` (the value `v` from bit `k` up),
+not by a shift, `v <<< k`: the two are equal, and the compiled shift of
+natural numbers goes through Lean's big numbers even when they are small
+(a quarter of the time of encoding x86-64's instructions, measured).
 -/
 
 @[expose] public section
@@ -125,21 +130,21 @@ low 3 bits), in the shortest form (see the module docs), an 8-bit
 displacement scaled by `n` (EVEX's disp8*N; 1 otherwise). -/
 def modrm (r : Nat) (rm : RM) (n : Nat := 1) : Option ModRM :=
   match rm with
-  | .reg k => some { x := k / 16 % 2, b := k / 8 % 2, bytes := [0xC0 ||| (r % 8) <<< 3 ||| k % 8] }
+  | .reg k => some { x := k / 16 % 2, b := k / 8 % 2, bytes := [0xC0 ||| (r % 8) * 2 ^ 3 ||| k % 8] }
   | .mem m => do
     let b := reg m.base
     let (x, sib) ← match m.index with
       | none => some (0, if b % 8 == 4 then [0x24] else [])
       | some i =>
         if i == .rsp then none
-        else (ss m.scale).map fun s => (reg i / 8, [s <<< 6 ||| (reg i % 8) <<< 3 ||| b % 8])
+        else (ss m.scale).map fun s => (reg i / 8, [s * 2 ^ 6 ||| (reg i % 8) * 2 ^ 3 ||| b % 8])
     let rmBits := if sib.isEmpty then b % 8 else 4
     let (md, disp) ←
       if m.disp == 0 && b % 8 != 5 then some (0, [])
       else if m.disp % n == 0 && fitsI8 (m.disp / n) then some (1, [i8 (m.disp / n)])
       else if fitsI32 m.disp then some (2, le 4 (m.disp % 2 ^ 32).toNat)
       else none
-    return { x, b := b / 8, bytes := [md <<< 6 ||| (r % 8) <<< 3 ||| rmBits] ++ sib ++ disp }
+    return { x, b := b / 8, bytes := [md * 2 ^ 6 ||| (r % 8) * 2 ^ 3 ||| rmBits] ++ sib ++ disp }
 
 /-- A legacy-encoded instruction (§2.1, §2.2.1): the prefixes `pfx`, REX
 (`0100WRXB`) if any of its bits is set or `rex` (to name `SPL`, `BPL`, `SIL`
@@ -147,7 +152,7 @@ or `DIL`), the opcode `op`, the ModR/M of `r` and `rm`, and `imm`. -/
 def legacy (pfx : List Nat) (w : Bool) (op : List Nat) (r : Nat) (rm : RM) (imm : List Nat := [])
     (rex : Bool := false) : Option (List Nat) := do
   let e ← modrm r rm
-  let bits := (if w then 8 else 0) ||| (r / 8 % 2) <<< 2 ||| e.x <<< 1 ||| e.b
+  let bits := (if w then 8 else 0) ||| (r / 8 % 2) * 2 ^ 2 ||| e.x * 2 ^ 1 ||| e.b
   return pfx ++ (if bits != 0 || rex then [0x40 ||| bits] else []) ++ op ++ e.bytes ++ imm
 
 /-- An instruction whose opcode's last byte holds the register `k`'s low 3
@@ -182,10 +187,10 @@ def vex (pp map : Nat) (w : Bool) (l v op r : Nat) (rm : RM) (imm : List Nat := 
   let vv := 15 - v % 16
   let tail := [op] ++ e.bytes ++ imm
   if e.x == 0 && e.b == 0 && !w && map == 1 then
-    return [0xC5, rb <<< 7 ||| vv <<< 3 ||| l <<< 2 ||| pp] ++ tail
+    return [0xC5, rb * 2 ^ 7 ||| vv * 2 ^ 3 ||| l * 2 ^ 2 ||| pp] ++ tail
   else
-    return [0xC4, rb <<< 7 ||| (1 - e.x) <<< 6 ||| (1 - e.b) <<< 5 ||| map,
-      (if w then 0x80 else 0) ||| vv <<< 3 ||| l <<< 2 ||| pp] ++ tail
+    return [0xC4, rb * 2 ^ 7 ||| (1 - e.x) * 2 ^ 6 ||| (1 - e.b) * 2 ^ 5 ||| map,
+      (if w then 0x80 else 0) ||| vv * 2 ^ 3 ||| l * 2 ^ 2 ||| pp] ++ tail
 
 /-- An EVEX-encoded instruction (§2.7.1): as `vex`, with `ll` the vector
 length (`L'L`: 0 128, 1 256, 2 512 bits), registers 0–31, `n` the size of
@@ -195,11 +200,11 @@ def evex (pp map : Nat) (w : Bool) (ll v op r : Nat) (rm : RM) (n : Nat := 1)
     (imm : List Nat := []) (b : Bool := false) (aaa : Nat := 0) (z : Bool := false) :
     Option (List Nat) := do
   let e ← modrm r rm n
-  let p0 := (1 - r / 8 % 2) <<< 7 ||| (1 - e.x) <<< 6 ||| (1 - e.b) <<< 5 |||
-    (1 - r / 16 % 2) <<< 4 ||| map
-  let p1 := (if w then 0x80 else 0) ||| (15 - v % 16) <<< 3 ||| 4 ||| pp
-  let p2 := (if z then 0x80 else 0) ||| ll <<< 5 ||| (if b then 0x10 else 0) |||
-    (1 - v / 16 % 2) <<< 3 ||| aaa
+  let p0 := (1 - r / 8 % 2) * 2 ^ 7 ||| (1 - e.x) * 2 ^ 6 ||| (1 - e.b) * 2 ^ 5 |||
+    (1 - r / 16 % 2) * 2 ^ 4 ||| map
+  let p1 := (if w then 0x80 else 0) ||| (15 - v % 16) * 2 ^ 3 ||| 4 ||| pp
+  let p2 := (if z then 0x80 else 0) ||| ll * 2 ^ 5 ||| (if b then 0x10 else 0) |||
+    (1 - v / 16 % 2) * 2 ^ 3 ||| aaa
   return [0x62, p0, p1, p2, op] ++ e.bytes ++ imm
 
 /-- `L` of a VEX vector length. -/

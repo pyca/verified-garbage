@@ -34,6 +34,11 @@ the C extension (`Print.lean`'s `rustCfg`).
 reports as unencodable (`Printer.unencodable`) and the emitter refuses
 (`Rust.checkEncodable`), rather than truncating it; and for `lla`, which is
 printed as text (`Printer.symLines`).
+
+A field is placed by a product, `v * 2 ^ k` (the value `v` from bit `k` up),
+not by a shift, `v <<< k`: the two are equal, and the compiled shift of
+natural numbers goes through Lean's big numbers even when they are small
+(a quarter of the time of encoding x86-64's instructions, measured).
 -/
 
 @[expose] public section
@@ -70,7 +75,7 @@ def opJalr : Nat := 0x67
 /-- R-type: `funct7` (31–25), `rs2` (24–20), `rs1` (19–15), `funct3`
 (14–12), `rd` (11–7), opcode (6–0). -/
 def r (funct7 funct3 opcode rd rs1 rs2 : Nat) : Nat :=
-  funct7 <<< 25 ||| rs2 <<< 20 ||| rs1 <<< 15 ||| funct3 <<< 12 ||| rd <<< 7 ||| opcode
+  funct7 * 2 ^ 25 ||| rs2 * 2 ^ 20 ||| rs1 * 2 ^ 15 ||| funct3 * 2 ^ 12 ||| rd * 2 ^ 7 ||| opcode
 
 /-- Whether `imm` fits a 12-bit signed immediate (the model's `imm12`). -/
 def fits12 (imm : Int) : Bool := -2048 ≤ imm && imm < 2048
@@ -82,7 +87,7 @@ def bits12 (imm : Int) : Nat := (imm % 4096).toNat
 `imm` does not fit. -/
 def i (imm : Int) (funct3 opcode rd rs1 : Nat) : Option Nat :=
   if fits12 imm then
-    some (bits12 imm <<< 20 ||| rs1 <<< 15 ||| funct3 <<< 12 ||| rd <<< 7 ||| opcode)
+    some (bits12 imm * 2 ^ 20 ||| rs1 * 2 ^ 15 ||| funct3 * 2 ^ 12 ||| rd * 2 ^ 7 ||| opcode)
   else none
 
 /-- S-type: `imm[11:5]` (31–25), `rs2`, `rs1`, `funct3`, `imm[4:0]` (11–7),
@@ -90,12 +95,12 @@ opcode; `none` if `imm` does not fit. -/
 def s (imm : Int) (funct3 opcode rs1 rs2 : Nat) : Option Nat :=
   if fits12 imm then
     let u := bits12 imm
-    some ((u >>> 5) <<< 25 ||| rs2 <<< 20 ||| rs1 <<< 15 ||| funct3 <<< 12 |||
-      (u % 32) <<< 7 ||| opcode)
+    some ((u >>> 5) * 2 ^ 25 ||| rs2 * 2 ^ 20 ||| rs1 * 2 ^ 15 ||| funct3 * 2 ^ 12 |||
+      (u % 32) * 2 ^ 7 ||| opcode)
   else none
 
 /-- U-type: `imm[31:12]` (31–12), `rd`, opcode. -/
-def u (imm20 : Nat) (opcode rd : Nat) : Nat := imm20 <<< 12 ||| rd <<< 7 ||| opcode
+def u (imm20 : Nat) (opcode rd : Nat) : Nat := imm20 * 2 ^ 12 ||| rd * 2 ^ 7 ||| opcode
 
 /-- `addi rd, rs1, imm` ("Integer Register-Immediate Instructions":
 `OP-IMM`, `funct3` 0). -/
@@ -122,7 +127,7 @@ def shiftFunct3 : ShiftOp → Nat
 whose `funct7` is `0100000`), 0 for the logical ones: "the right shift type
 is encoded in bit 30". -/
 def shiftBit30 : ShiftOp → Nat
-  | .sra => 1 <<< 30 | _ => 0
+  | .sra => 1 * 2 ^ 30 | _ => 0
 
 /-- `ld rd, off(rs1)` and `sd rs2, off(rs1)`, for a frame's push and pop. -/
 def ld (rd rs1 : Nat) (off : Int) : Option Nat := i off (loadFunct3 .d) opLoad rd rs1
@@ -153,13 +158,13 @@ def Instr.encode : Instr → Option (List Nat)
     some [Enc.r (Enc.shiftBit30 op >>> 25) (Enc.shiftFunct3 op) Enc.opReg32 d.num n.num m.num]
   | .shift op .d d n sh =>
     if sh < 64 then
-      some [Enc.shiftBit30 op ||| sh <<< 20 ||| n.num <<< 15 ||| Enc.shiftFunct3 op <<< 12 |||
-        d.num <<< 7 ||| Enc.opImm]
+      some [Enc.shiftBit30 op ||| sh * 2 ^ 20 ||| n.num * 2 ^ 15 ||| Enc.shiftFunct3 op * 2 ^ 12 |||
+        d.num * 2 ^ 7 ||| Enc.opImm]
     else none
   | .shift op .w d n sh =>
     if sh < 32 then
-      some [Enc.shiftBit30 op ||| sh <<< 20 ||| n.num <<< 15 ||| Enc.shiftFunct3 op <<< 12 |||
-        d.num <<< 7 ||| Enc.opImm32]
+      some [Enc.shiftBit30 op ||| sh * 2 ^ 20 ||| n.num * 2 ^ 15 ||| Enc.shiftFunct3 op * 2 ^ 12 |||
+        d.num * 2 ^ 7 ||| Enc.opImm32]
     else none
   | .load wd t n off =>
     if off < 2048 then (Enc.i off (Enc.loadFunct3 wd) Enc.opLoad t.num n.num).map ([·]) else none
@@ -208,36 +213,37 @@ def sext12 (u : Nat) : Int := if u < 2048 then u else (u : Int) - 4096
 def fits6 (imm : Int) : Bool := -32 ≤ imm && imm < 32
 def bits6 (imm : Int) : Nat := (imm % 64).toNat
 
-/-- Bit `i` of `n`, at bit `j`. -/
-def bit (n i j : Nat) : Nat := ((n >>> i) % 2) <<< j
+/-- Bit `i` of `n`, at bit `j`. Inlined, so that the power is a constant where
+`j` is. -/
+@[inline] def bit (n i j : Nat) : Nat := ((n >>> i) % 2) * 2 ^ j
 
 /-- CI format: `funct3` (15–13), `imm[5]` (12), `rd`/`rs1` (11–7),
 `imm[4:0]` (6–2), opcode (1–0). -/
 def ci (funct3 op rd imm6 : Nat) : Nat :=
-  funct3 <<< 13 ||| bit imm6 5 12 ||| rd <<< 7 ||| (imm6 % 32) <<< 2 ||| op
+  funct3 * 2 ^ 13 ||| bit imm6 5 12 ||| rd * 2 ^ 7 ||| (imm6 % 32) * 2 ^ 2 ||| op
 
 /-- CR format: `funct4` (15–12), `rd`/`rs1` (11–7), `rs2` (6–2), opcode. -/
-def cr (funct4 op rd rs2 : Nat) : Nat := funct4 <<< 12 ||| rd <<< 7 ||| rs2 <<< 2 ||| op
+def cr (funct4 op rd rs2 : Nat) : Nat := funct4 * 2 ^ 12 ||| rd * 2 ^ 7 ||| rs2 * 2 ^ 2 ||| op
 
 /-- CA format: `funct6` (15–10), `rd'`/`rs1'` (9–7), `funct2` (6–5), `rs2'`
 (4–2), opcode 01. -/
 def ca (funct6 funct2 rd' rs2' : Nat) : Nat :=
-  funct6 <<< 10 ||| rd' <<< 7 ||| funct2 <<< 5 ||| rs2' <<< 2 ||| 1
+  funct6 * 2 ^ 10 ||| rd' * 2 ^ 7 ||| funct2 * 2 ^ 5 ||| rs2' * 2 ^ 2 ||| 1
 
 /-- `c.srli`, `c.srai` and `c.andi` (CB format, opcode 01, `funct3` 100):
 `imm[5]` (12), `funct2` (11–10), `rd'` (9–7), `imm[4:0]` (6–2). -/
 def cb (funct2 rd' imm6 : Nat) : Nat :=
-  4 <<< 13 ||| bit imm6 5 12 ||| funct2 <<< 10 ||| rd' <<< 7 ||| (imm6 % 32) <<< 2 ||| 1
+  4 * 2 ^ 13 ||| bit imm6 5 12 ||| funct2 * 2 ^ 10 ||| rd' * 2 ^ 7 ||| (imm6 % 32) * 2 ^ 2 ||| 1
 
 /-- `c.ld`/`c.sd` (CL/CS, opcode 00, `funct3` 011/111): `uimm[5:3]`
 (12–10), `rs1'` (9–7), `uimm[7:6]` (6–5), `rd'`/`rs2'` (4–2). -/
 def clsD (funct3 rs1' r' off : Nat) : Nat :=
-  funct3 <<< 13 ||| ((off >>> 3) % 8) <<< 10 ||| rs1' <<< 7 ||| ((off >>> 6) % 4) <<< 5 ||| r' <<< 2
+  funct3 * 2 ^ 13 ||| ((off >>> 3) % 8) * 2 ^ 10 ||| rs1' * 2 ^ 7 ||| ((off >>> 6) % 4) * 2 ^ 5 ||| r' * 2 ^ 2
 
 /-- `c.sw` (CS, opcode 00, `funct3` 110): `uimm[5:3]` (12–10), `rs1'`,
 `uimm[2]` (6), `uimm[6]` (5), `rs2'`. -/
 def csW (rs1' r' off : Nat) : Nat :=
-  6 <<< 13 ||| ((off >>> 3) % 8) <<< 10 ||| rs1' <<< 7 ||| bit off 2 6 ||| bit off 6 5 ||| r' <<< 2
+  6 * 2 ^ 13 ||| ((off >>> 3) % 8) * 2 ^ 10 ||| rs1' * 2 ^ 7 ||| bit off 2 6 ||| bit off 6 5 ||| r' * 2 ^ 2
 
 end C
 
@@ -280,7 +286,7 @@ def compress (w : Nat) : Option Nat :=
   let rs2 := (w >>> 20) % 32
   let f7 := w >>> 25
   let immI := sext12 (w >>> 20)
-  let immS := sext12 ((w >>> 25) <<< 5 ||| (w >>> 7) % 32)
+  let immS := sext12 ((w >>> 25) * 2 ^ 5 ||| (w >>> 7) % 32)
   match op, f3 with
   | 0x13, 0 =>
     -- addi
@@ -288,8 +294,8 @@ def compress (w : Nat) : Option Nat :=
       | some rd' =>
         if rs1 == 2 && 0 < immI && immI % 4 == 0 && immI < 1024 then
           let u := immI.toNat
-          some (bit u 5 12 ||| bit u 4 11 ||| ((u >>> 6) % 16) <<< 7 ||| bit u 2 6 |||
-            bit u 3 5 ||| rd' <<< 2)
+          some (bit u 5 12 ||| bit u 4 11 ||| ((u >>> 6) % 16) * 2 ^ 7 ||| bit u 2 6 |||
+            bit u 3 5 ||| rd' * 2 ^ 2)
         else none
       | none => none)
     <|> (if rd == rs1 && rd != 0 && immI != 0 && fits6 immI then some (ci 0 1 rd (bits6 immI))
@@ -297,8 +303,8 @@ def compress (w : Nat) : Option Nat :=
     <|> (if rs1 == 0 && rd != 0 && fits6 immI then some (ci 2 1 rd (bits6 immI)) else none)
     <|> (if rd == 2 && rs1 == 2 && immI != 0 && immI % 16 == 0 && -512 ≤ immI && immI < 512 then
         let u := (immI % 1024).toNat
-        some (3 <<< 13 ||| bit u 9 12 ||| 2 <<< 7 ||| bit u 4 6 ||| bit u 6 5 |||
-          ((u >>> 7) % 4) <<< 3 ||| bit u 5 2 ||| 1)
+        some (3 * 2 ^ 13 ||| bit u 9 12 ||| 2 * 2 ^ 7 ||| bit u 4 6 ||| bit u 6 5 |||
+          ((u >>> 7) % 4) * 2 ^ 3 ||| bit u 5 2 ||| 1)
       else none)
     <|> (if immI == 0 && rd != 0 && rs1 != 0 then some (cr 8 2 rd rs1) else none)
   | 0x1b, 0 =>
@@ -371,8 +377,8 @@ def compress (w : Nat) : Option Nat :=
       | _, _ => none)
     <|> (if rs1 == 2 && rd != 0 && 0 ≤ off && off % 8 == 0 && off < 512 then
         let u := off.toNat
-        some (3 <<< 13 ||| bit u 5 12 ||| rd <<< 7 ||| ((u >>> 3) % 4) <<< 5 |||
-          ((u >>> 6) % 8) <<< 2 ||| 2)
+        some (3 * 2 ^ 13 ||| bit u 5 12 ||| rd * 2 ^ 7 ||| ((u >>> 3) % 4) * 2 ^ 5 |||
+          ((u >>> 6) % 8) * 2 ^ 2 ||| 2)
       else none)
   | 0x23, 3 =>
     -- sd
@@ -383,7 +389,7 @@ def compress (w : Nat) : Option Nat :=
       | _, _ => none)
     <|> (if rs1 == 2 && 0 ≤ off && off % 8 == 0 && off < 512 then
         let u := off.toNat
-        some (7 <<< 13 ||| ((u >>> 3) % 8) <<< 10 ||| ((u >>> 6) % 8) <<< 7 ||| rs2 <<< 2 ||| 2)
+        some (7 * 2 ^ 13 ||| ((u >>> 3) % 8) * 2 ^ 10 ||| ((u >>> 6) % 8) * 2 ^ 7 ||| rs2 * 2 ^ 2 ||| 2)
       else none)
   | 0x23, 2 =>
     -- sw
@@ -394,7 +400,7 @@ def compress (w : Nat) : Option Nat :=
       | _, _ => none)
     <|> (if rs1 == 2 && 0 ≤ off && off % 4 == 0 && off < 256 then
         let u := off.toNat
-        some (6 <<< 13 ||| ((u >>> 2) % 16) <<< 9 ||| ((u >>> 6) % 4) <<< 7 ||| rs2 <<< 2 ||| 2)
+        some (6 * 2 ^ 13 ||| ((u >>> 2) % 16) * 2 ^ 9 ||| ((u >>> 6) % 4) * 2 ^ 7 ||| rs2 * 2 ^ 2 ||| 2)
       else none)
   | 0x67, 0 =>
     -- jalr x0, 0(rs1)

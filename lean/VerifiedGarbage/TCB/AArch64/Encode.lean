@@ -31,6 +31,11 @@ model's semantics require, never `LDUR`; an `add`/`sub` immediate below
 which the printer reports as unencodable (`Printer.unencodable`) and the
 emitter refuses (`Rust.checkEncodable`), rather than truncating it; and for
 the instructions printed as text (`adrSym`, `align`).
+
+A field is placed by a product, `v * 2 ^ k` (the value `v` from bit `k` up),
+not by a shift, `v <<< k`: the two are equal, and the compiled shift of
+natural numbers goes through Lean's big numbers even when they are small
+(a quarter of the time of encoding x86-64's instructions, measured).
 -/
 
 @[expose] public section
@@ -53,15 +58,15 @@ def r31 : Nat := 31
 /-- `sf`: bit 31, 1 for the 64-bit form. -/
 def sf : Size → Nat
   | .w => 0
-  | .x => 1 <<< 31
+  | .x => 1 * 2 ^ 31
 
 /-- `N` (bit 22) of the bitfield and extract instructions: `sf`. -/
 def nBit : Size → Nat
   | .w => 0
-  | .x => 1 <<< 22
+  | .x => 1 * 2 ^ 22
 
 /-- `Rd`/`Rt` (4–0), `Rn` (9–5), `Rm` (20–16). -/
-def rdnm (d n m : Nat) : Nat := m <<< 16 ||| n <<< 5 ||| d
+def rdnm (d n m : Nat) : Nat := m * 2 ^ 16 ||| n * 2 ^ 5 ||| d
 
 /-- The condition codes (C1.2.4, "Condition code"). -/
 def cond : CondCode → Nat
@@ -71,7 +76,7 @@ def cond : CondCode → Nat
 /-- `ADD`/`SUB` (immediate), `imm < 4096` (`sh = 0`): `sf op S 100010 sh
 imm12 Rn Rd`. -/
 def addSubImm (base : Nat) (sz : Size) (d n imm : Nat) : Option Nat :=
-  if imm < 4096 then some (base ||| sf sz ||| imm <<< 10 ||| n <<< 5 ||| d) else none
+  if imm < 4096 then some (base ||| sf sz ||| imm * 2 ^ 10 ||| n * 2 ^ 5 ||| d) else none
 
 /-- The `size` field (23–22) of a vector instruction on the lanes of an
 arrangement. -/
@@ -92,7 +97,7 @@ def imm5 (a : VArr) (i : Nat) : Option Nat :=
 def v3 (base : Nat) (d n m : VReg) : Nat := base ||| rdnm d.index n.index m.index
 
 /-- A vector instruction `base` on `d`, `n`. -/
-def v2 (base : Nat) (d n : VReg) : Nat := base ||| n.index <<< 5 ||| d.index
+def v2 (base : Nat) (d n : VReg) : Nat := base ||| n.index * 2 ^ 5 ||| d.index
 
 end Enc
 
@@ -106,25 +111,25 @@ def VOp.encode : VOp → Option Nat
   -- "MOVI", 64-bit variant `op = 1, cmode = 1110`, `Q = 1`, all bits 0.
   | .movi0 d => some (0x6F00E400 ||| d.index)
   -- "DUP (general)": `0 Q 0 01110000 imm5 0 0001 1 Rn Rd`.
-  | .dup a d n => (imm5 a 0).map fun i => 0x4E000C00 ||| i <<< 16 ||| n.index <<< 5 ||| d.index
+  | .dup a d n => (imm5 a 0).map fun i => 0x4E000C00 ||| i * 2 ^ 16 ||| n.index * 2 ^ 5 ||| d.index
   -- "INS (general)" (alias MOV (from general)): `0 1 0 01110000 imm5 0 0011 1 Rn Rd`.
-  | .ins a d i n => (imm5 a i).map fun i => 0x4E001C00 ||| i <<< 16 ||| n.index <<< 5 ||| d.index
+  | .ins a d i n => (imm5 a i).map fun i => 0x4E001C00 ||| i * 2 ^ 16 ||| n.index * 2 ^ 5 ||| d.index
   -- "DUP (element)", scalar (alias MOV (scalar)): `01 0 11110000 imm5 0 0000 1 Rn Rd`.
-  | .dupS d n i => (imm5 .s4 i).map fun i => 0x5E000400 ||| i <<< 16 ||| n.index <<< 5 ||| d.index
+  | .dupS d n i => (imm5 .s4 i).map fun i => 0x5E000400 ||| i * 2 ^ 16 ||| n.index * 2 ^ 5 ||| d.index
   -- "DUP (element)", vector: `0 Q 0 01110000 imm5 0 0000 1 Rn Rd`.
-  | .dupE a d n i => (imm5 a i).map fun i => 0x4E000400 ||| i <<< 16 ||| n.index <<< 5 ||| d.index
+  | .dupE a d n i => (imm5 a i).map fun i => 0x4E000400 ||| i * 2 ^ 16 ||| n.index * 2 ^ 5 ||| d.index
   -- "INS (element)" (alias MOV (element)): `0 1 1 01110000 imm5 0 imm4 1 Rn Rd`,
   -- `imm4 = j << log2 esize`.
   | .insE a d i n j => do
     let i5 ← imm5 a i
     if j < 16 >>> vlog a then
-      some (0x6E000400 ||| i5 <<< 16 ||| (j <<< vlog a) <<< 11 ||| n.index <<< 5 ||| d.index)
+      some (0x6E000400 ||| i5 * 2 ^ 16 ||| (j <<< vlog a) * 2 ^ 11 ||| n.index * 2 ^ 5 ||| d.index)
     else none
   -- "CMEQ (register)".
-  | .cmeq a d n m => some (v3 (0x6E208C00 ||| vsize a <<< 22) d n m)
+  | .cmeq a d n m => some (v3 (0x6E208C00 ||| vsize a * 2 ^ 22) d n m)
   -- "CMHI (register)", "CMHS (register)".
-  | .cmp .hi a d n m => some (v3 (0x6E203400 ||| vsize a <<< 22) d n m)
-  | .cmp .hs a d n m => some (v3 (0x6E203C00 ||| vsize a <<< 22) d n m)
+  | .cmp .hi a d n m => some (v3 (0x6E203400 ||| vsize a * 2 ^ 22) d n m)
+  | .cmp .hs a d n m => some (v3 (0x6E203C00 ||| vsize a * 2 ^ 22) d n m)
   -- "BSL", "BIT", "BIF".
   | .bsel .bsl d n m => some (v3 0x6E601C00 d n m)
   | .bsel .bit d n m => some (v3 0x6EA01C00 d n m)
@@ -139,18 +144,18 @@ def VOp.encode : VOp → Option Nat
   -- "NOT" (alias MVN).
   | .not d n => some (v2 0x6E205800 d n)
   -- "ADD (vector)", "SUB (vector)".
-  | .add a d n m => some (v3 (0x4E208400 ||| vsize a <<< 22) d n m)
-  | .sub a d n m => some (v3 (0x6E208400 ||| vsize a <<< 22) d n m)
+  | .add a d n m => some (v3 (0x4E208400 ||| vsize a * 2 ^ 22) d n m)
+  | .sub a d n m => some (v3 (0x6E208400 ||| vsize a * 2 ^ 22) d n m)
   -- "ADDV", "UADDLV": no `.2d` form.
-  | .addv a d n => if a == .d2 then none else some (v2 (0x4E31B800 ||| vsize a <<< 22) d n)
-  | .uaddlv a d n => if a == .d2 then none else some (v2 (0x6E303800 ||| vsize a <<< 22) d n)
+  | .addv a d n => if a == .d2 then none else some (v2 (0x4E31B800 ||| vsize a * 2 ^ 22) d n)
+  | .uaddlv a d n => if a == .d2 then none else some (v2 (0x6E303800 ||| vsize a * 2 ^ 22) d n)
   -- "SHL", "SLI": `immh:immb = esize + shift`, `shift < esize`; "USHR",
   -- "SRI", "SSHR": `immh:immb = 2 * esize - shift`, `1 ≤ shift ≤ esize`.
   | .shift op a d n sh =>
     let e := a.esize
-    let left := fun (base : Nat) => if sh < e then some (v2 (base ||| (e + sh) <<< 16) d n) else none
+    let left := fun (base : Nat) => if sh < e then some (v2 (base ||| (e + sh) * 2 ^ 16) d n) else none
     let right := fun (base : Nat) =>
-      if 1 ≤ sh ∧ sh ≤ e then some (v2 (base ||| (2 * e - sh) <<< 16) d n) else none
+      if 1 ≤ sh ∧ sh ≤ e then some (v2 (base ||| (2 * e - sh) * 2 ^ 16) d n) else none
     match op with
     | .shl => left 0x4F005400
     | .sli => left 0x6F005400
@@ -158,7 +163,7 @@ def VOp.encode : VOp → Option Nat
     | .sri => right 0x6F004400
     | .sshr => right 0x4F000400
   -- "EXT": `0 Q 101110 00 0 Rm 0 imm4 0 Rn Rd`, `imm < 16`.
-  | .ext d n m imm => if imm < 16 then some (v3 (0x6E000000 ||| imm <<< 11) d n m) else none
+  | .ext d n m imm => if imm < 16 then some (v3 (0x6E000000 ||| imm * 2 ^ 11) d n m) else none
   -- "REV32", "REV64".
   | .rev .rev32b d n => some (v2 0x6E200800 d n)
   | .rev .rev32h d n => some (v2 0x6E600800 d n)
@@ -169,12 +174,12 @@ def VOp.encode : VOp → Option Nat
     let base := match op with
       | .zip1 => 0x4E003800 | .zip2 => 0x4E007800 | .trn1 => 0x4E002800
       | .trn2 => 0x4E006800 | .uzp1 => 0x4E001800 | .uzp2 => 0x4E005800
-    some (v3 (base ||| vsize a <<< 22) d n m)
+    some (v3 (base ||| vsize a * 2 ^ 22) d n m)
   -- "TBL", "TBX": `0 Q 001110 000 Rm 0 len op 00 Rn Rd`, `1 ≤ len ≤ 4`.
   | .tbl d n m => some (v3 0x4E000000 d n m)
   | .tblN x len d n m =>
     if 1 ≤ len ∧ len ≤ 4 then
-      some (v3 (0x4E000000 ||| (len - 1) <<< 13 ||| (if x then 1 <<< 12 else 0)) d n m)
+      some (v3 (0x4E000000 ||| (len - 1) * 2 ^ 13 ||| (if x then 1 * 2 ^ 12 else 0)) d n m)
     else none
   -- "UMULL, UMULL2", "UMLAL, UMLAL2" (`size = 10`, or `01` for the `H` forms).
   | .umull hi d n m => some (v3 (if hi then 0x6EA0C000 else 0x2EA0C000) d n m)
@@ -202,8 +207,8 @@ def VOp.encode : VOp → Option Nat
       let base := match op with
         | .mul => 0x4F408000 | .mla => 0x6F400000 | .mls => 0x6F404000
         | .sqdmulh => 0x4F40C000 | .sqrdmulh => 0x4F40D000
-      some (base ||| (i >>> 2) <<< 11 ||| ((i >>> 1) % 2) <<< 21 ||| (i % 2) <<< 20 |||
-        m.index <<< 16 ||| n.index <<< 5 ||| d.index)
+      some (base ||| (i >>> 2) * 2 ^ 11 ||| ((i >>> 1) % 2) * 2 ^ 21 ||| (i % 2) * 2 ^ 20 |||
+        m.index * 2 ^ 16 ||| n.index * 2 ^ 5 ||| d.index)
     else none
   -- "PMULL, PMULL2", `size = 11` (`.1q` from `.1d`/`.2d`).
   | .pmull hi d n m => some (v3 (if hi then 0x4EE0E000 else 0x0EE0E000) d n m)
@@ -240,26 +245,26 @@ def VOp.encode : VOp → Option Nat
   -- "SM3TT2B": `11001110 010 Rm 10 imm2 opcode Rn Rd`, `opcode` 00, 01, 10,
   -- 11; "SM3PARTW1", "SM3PARTW2": `11001110 011 Rm 1100 opcode Rn Rd`,
   -- `opcode` 00, 01.
-  | .sm3ss1 d n m a => some (v3 (0xCE400000 ||| a.index <<< 10) d n m)
+  | .sm3ss1 d n m a => some (v3 (0xCE400000 ||| a.index * 2 ^ 10) d n m)
   | .sm3tt op d n m i =>
     if i < 4 then
       let opcode := match op with | .tt1a => 0 | .tt1b => 1 | .tt2a => 2 | .tt2b => 3
-      some (v3 (0xCE408000 ||| i <<< 12 ||| opcode <<< 10) d n m)
+      some (v3 (0xCE408000 ||| i * 2 ^ 12 ||| opcode * 2 ^ 10) d n m)
     else none
   | .sm3partw1 d n m => some (v3 0xCE60C000 d n m)
   | .sm3partw2 d n m => some (v3 0xCE60C400 d n m)
   -- "EOR3", "BCAX": `Ra` at bits 14–10; "RAX1"; "XAR": `imm6` at 15–10.
-  | .eor3 d n m a => some (v3 (0xCE000000 ||| a.index <<< 10) d n m)
-  | .bcax d n m a => some (v3 (0xCE200000 ||| a.index <<< 10) d n m)
+  | .eor3 d n m a => some (v3 (0xCE000000 ||| a.index * 2 ^ 10) d n m)
+  | .bcax d n m a => some (v3 (0xCE200000 ||| a.index * 2 ^ 10) d n m)
   | .rax1 d n m => some (v3 0xCE608C00 d n m)
-  | .xar d n m imm => if imm < 64 then some (v3 (0xCE800000 ||| imm <<< 10) d n m) else none
+  | .xar d n m imm => if imm < 64 then some (v3 (0xCE800000 ||| imm * 2 ^ 10) d n m) else none
   -- SVE2 "XAR", `.s` (C8.2): `00000100 tszh 1 tszl imm3 001101 Zm Zdn`, with
   -- `tszh:tszl:imm3 = 2 * esize - rot`, `1 ≤ rot ≤ 32`.
   | .xarS d m rot =>
     if 1 ≤ rot ∧ rot ≤ 32 then
       let v := 64 - rot
-      some (0x04203400 ||| (v >>> 5) <<< 22 ||| ((v >>> 3) % 4) <<< 19 ||| (v % 8) <<< 16 |||
-        m.index <<< 5 ||| d.index)
+      some (0x04203400 ||| (v >>> 5) * 2 ^ 22 ||| ((v >>> 3) % 4) * 2 ^ 19 ||| (v % 8) * 2 ^ 16 |||
+        m.index * 2 ^ 5 ||| d.index)
     else none
 
 open Enc in
@@ -281,15 +286,15 @@ def Instr.encode : Instr → Option (List Nat)
   | .sbcs sz d n m => some [0x7A000000 ||| sf sz ||| rdnm d.index n.index m.index]
   -- "CSEL": `sf 0 0 11010100 Rm cond 00 Rn Rd`; "CSNEG": `sf 1 0 11010100 Rm
   -- cond 01 Rn Rd`.
-  | .csel sz d n m => some [0x1A800000 ||| sf sz ||| cond .hs <<< 12 ||| rdnm d.index n.index m.index]
-  | .cselc sz d n m c => some [0x1A800000 ||| sf sz ||| cond c <<< 12 ||| rdnm d.index n.index m.index]
-  | .csneg sz d n m c => some [0x5A800400 ||| sf sz ||| cond c <<< 12 ||| rdnm d.index n.index m.index]
+  | .csel sz d n m => some [0x1A800000 ||| sf sz ||| cond .hs * 2 ^ 12 ||| rdnm d.index n.index m.index]
+  | .cselc sz d n m c => some [0x1A800000 ||| sf sz ||| cond c * 2 ^ 12 ||| rdnm d.index n.index m.index]
+  | .csneg sz d n m c => some [0x5A800400 ||| sf sz ||| cond c * 2 ^ 12 ||| rdnm d.index n.index m.index]
   -- "TST (shifted register)": alias of ANDS (shifted register) with `Rd = 31`.
   | .tst sz n m => some [0x6A000000 ||| sf sz ||| rdnm r31 n.index m.index]
   -- "CCMP (immediate)": `sf 1 1 11010010 imm5 cond 1 0 Rn 0 nzcv`.
   | .ccmp sz n imm nzcv c =>
     if imm < 32 ∧ nzcv < 16 then
-      some [0x7A400800 ||| sf sz ||| imm <<< 16 ||| cond c <<< 12 ||| n.index <<< 5 ||| nzcv]
+      some [0x7A400800 ||| sf sz ||| imm * 2 ^ 16 ||| cond c * 2 ^ 12 ||| n.index * 2 ^ 5 ||| nzcv]
     else none
   -- "ADD (immediate)", "SUB (immediate)".
   | .addImm sz d n imm => (addSubImm 0x11000000 sz d.index n.index imm).map ([·])
@@ -305,54 +310,54 @@ def Instr.encode : Instr → Option (List Nat)
     some [base ||| sf sz ||| rdnm d.index n.index m.index]
   | .logicRor op sz d n m sh =>
     let base := match op with | .and => 0x0A000000 | .orr => 0x2A000000 | .eor => 0x4A000000
-    if sh < sz.bits then some [base ||| sf sz ||| 3 <<< 22 ||| sh <<< 10 ||| rdnm d.index n.index m.index]
+    if sh < sz.bits then some [base ||| sf sz ||| 3 * 2 ^ 22 ||| sh * 2 ^ 10 ||| rdnm d.index n.index m.index]
     else none
   | .bicRor sz d n m sh =>
     if sh < sz.bits then
-      some [0x0A200000 ||| sf sz ||| 3 <<< 22 ||| sh <<< 10 ||| rdnm d.index n.index m.index]
+      some [0x0A200000 ||| sf sz ||| 3 * 2 ^ 22 ||| sh * 2 ^ 10 ||| rdnm d.index n.index m.index]
     else none
   -- "EXTR": `sf 00 100111 N 0 Rm imms Rn Rd`; "ROR (immediate)" is EXTR with
   -- `Rm = Rn`.
   | .extr sz d n m lsb =>
     if lsb < sz.bits then
-      some [0x13800000 ||| sf sz ||| nBit sz ||| lsb <<< 10 ||| rdnm d.index n.index m.index]
+      some [0x13800000 ||| sf sz ||| nBit sz ||| lsb * 2 ^ 10 ||| rdnm d.index n.index m.index]
     else none
   | .ror sz d n sh =>
     if sh < sz.bits then
-      some [0x13800000 ||| sf sz ||| nBit sz ||| sh <<< 10 ||| rdnm d.index n.index n.index]
+      some [0x13800000 ||| sf sz ||| nBit sz ||| sh * 2 ^ 10 ||| rdnm d.index n.index n.index]
     else none
   -- "UBFM": `sf 10 100110 N immr imms Rn Rd`; "LSR (immediate)": `immr = sh`,
   -- `imms = size - 1`; "LSL (immediate)": `immr = -sh MOD size`, `imms =
   -- size - 1 - sh`.
   | .lsr sz d n sh =>
     if sh < sz.bits then
-      some [0x53000000 ||| sf sz ||| nBit sz ||| sh <<< 16 ||| (sz.bits - 1) <<< 10 |||
-        n.index <<< 5 ||| d.index]
+      some [0x53000000 ||| sf sz ||| nBit sz ||| sh * 2 ^ 16 ||| (sz.bits - 1) * 2 ^ 10 |||
+        n.index * 2 ^ 5 ||| d.index]
     else none
   | .lsl sz d n sh =>
     if sh < sz.bits then
-      some [0x53000000 ||| sf sz ||| nBit sz ||| ((sz.bits - sh) % sz.bits) <<< 16 |||
-        (sz.bits - 1 - sh) <<< 10 ||| n.index <<< 5 ||| d.index]
+      some [0x53000000 ||| sf sz ||| nBit sz ||| ((sz.bits - sh) % sz.bits) * 2 ^ 16 |||
+        (sz.bits - 1 - sh) * 2 ^ 10 ||| n.index * 2 ^ 5 ||| d.index]
     else none
   -- "MADD": `sf 00 11011 000 Rm 0 Ra Rn Rd`; "MUL" is MADD with `Ra = 31`.
-  | .madd sz d n m a => some [0x1B000000 ||| sf sz ||| a.index <<< 10 ||| rdnm d.index n.index m.index]
-  | .mul sz d n m => some [0x1B000000 ||| sf sz ||| r31 <<< 10 ||| rdnm d.index n.index m.index]
+  | .madd sz d n m a => some [0x1B000000 ||| sf sz ||| a.index * 2 ^ 10 ||| rdnm d.index n.index m.index]
+  | .mul sz d n m => some [0x1B000000 ||| sf sz ||| r31 * 2 ^ 10 ||| rdnm d.index n.index m.index]
   -- "UMULH": `1 00 11011 110 Rm 0 11111 Rn Rd`.
   | .umulh d n m => some [0x9BC07C00 ||| rdnm d.index n.index m.index]
   -- "UMADDL": `1 00 11011 101 Rm 0 Ra Rn Rd`; "UMULL" is UMADDL with `Ra = 31`.
-  | .umaddl d n m a => some [0x9BA00000 ||| a.index <<< 10 ||| rdnm d.index n.index m.index]
-  | .umull d n m => some [0x9BA00000 ||| r31 <<< 10 ||| rdnm d.index n.index m.index]
+  | .umaddl d n m a => some [0x9BA00000 ||| a.index * 2 ^ 10 ||| rdnm d.index n.index m.index]
+  | .umull d n m => some [0x9BA00000 ||| r31 * 2 ^ 10 ||| rdnm d.index n.index m.index]
   -- "CLZ", "RBIT", "REV" (32-bit: `opc = 10`; 64-bit: `opc = 11`).
-  | .clz sz d n => some [0x5AC01000 ||| sf sz ||| n.index <<< 5 ||| d.index]
-  | .rbit sz d n => some [0x5AC00000 ||| sf sz ||| n.index <<< 5 ||| d.index]
-  | .rev32 d n => some [0x5AC00800 ||| n.index <<< 5 ||| d.index]
-  | .rev d n => some [0xDAC00C00 ||| n.index <<< 5 ||| d.index]
+  | .clz sz d n => some [0x5AC01000 ||| sf sz ||| n.index * 2 ^ 5 ||| d.index]
+  | .rbit sz d n => some [0x5AC00000 ||| sf sz ||| n.index * 2 ^ 5 ||| d.index]
+  | .rev32 d n => some [0x5AC00800 ||| n.index * 2 ^ 5 ||| d.index]
+  | .rev d n => some [0xDAC00C00 ||| n.index * 2 ^ 5 ||| d.index]
   -- "MOVZ", "MOVK": `sf opc 100101 hw imm16 Rd`, `16 * hw < size`.
   | .movz sz d imm hw =>
-    if 16 * hw < sz.bits then some [0x52800000 ||| sf sz ||| hw <<< 21 ||| imm.toNat <<< 5 ||| d.index]
+    if 16 * hw < sz.bits then some [0x52800000 ||| sf sz ||| hw * 2 ^ 21 ||| imm.toNat * 2 ^ 5 ||| d.index]
     else none
   | .movk sz d imm hw =>
-    if 16 * hw < sz.bits then some [0x72800000 ||| sf sz ||| hw <<< 21 ||| imm.toNat <<< 5 ||| d.index]
+    if 16 * hw < sz.bits then some [0x72800000 ||| sf sz ||| hw * 2 ^ 21 ||| imm.toNat * 2 ^ 5 ||| d.index]
     else none
   -- "LDR (immediate)", "STR (immediate)", unsigned offset: `1x 111 0 01 opc
   -- imm12 Rn Rt`, `imm12 = off / size`, `off` a multiple of the size below
@@ -368,19 +373,19 @@ def Instr.encode : Instr → Option (List Nat)
   -- `imm7 = off / 8`, `off` a multiple of 8 at most 504.
   | .ldp t1 t2 n off =>
     if off % 8 = 0 ∧ off ≤ 504 then
-      some [0xA9400000 ||| (off / 8) <<< 15 ||| t2.index <<< 10 ||| n.index <<< 5 ||| t1.index]
+      some [0xA9400000 ||| (off / 8) * 2 ^ 15 ||| t2.index * 2 ^ 10 ||| n.index * 2 ^ 5 ||| t1.index]
     else none
   | .stp t1 t2 n off =>
     if off % 8 = 0 ∧ off ≤ 504 then
-      some [0xA9000000 ||| (off / 8) <<< 15 ||| t2.index <<< 10 ||| n.index <<< 5 ||| t1.index]
+      some [0xA9000000 ||| (off / 8) * 2 ^ 15 ||| t2.index * 2 ^ 10 ||| n.index * 2 ^ 5 ||| t1.index]
     else none
   -- "STR (immediate)", 64-bit, pre-index, `#-16`: `11 111 0 00 00 0 imm9 11
   -- Rn Rt`; "LDR (immediate)", 64-bit, post-index, `#16`: `… 01 0 imm9 01 Rn
   -- Rt`.
   -- C6.2 "BLR": `1101011 0 0 01 11111 0000 0 0 Rn 00000`.
-  | .blr n => some [0xD63F0000 ||| n.index <<< 5]
-  | .push r => some [0xF8000C00 ||| (512 - 16) <<< 12 ||| r31 <<< 5 ||| r.index]
-  | .pop r => some [0xF8400400 ||| 16 <<< 12 ||| r31 <<< 5 ||| r.index]
+  | .blr n => some [0xD63F0000 ||| n.index * 2 ^ 5]
+  | .push r => some [0xF8000C00 ||| (512 - 16) * 2 ^ 12 ||| r31 * 2 ^ 5 ||| r.index]
+  | .pop r => some [0xF8400400 ||| 16 * 2 ^ 12 ||| r31 * 2 ^ 5 ||| r.index]
   | .vop op => op.encode.map ([·])
   -- "LDR (immediate, SIMD&FP)", "STR (immediate, SIMD&FP)", 128-bit,
   -- unsigned offset: `00 111 1 01 opc imm12 Rn Rt`, `imm12 = off / 16`.
@@ -391,8 +396,8 @@ def Instr.encode : Instr → Option (List Nat)
   | .strq t n off => ldst 0x3D800000 16 t.index n.index off
   -- "UMOV": `0 Q 0 01110000 imm5 0 0111 1 Rn Rd`, `.s` (`Q = 0`) or `.d`
   -- (`Q = 1`).
-  | .umov .w d n i => (imm5 .s4 i).map fun i => [0x0E003C00 ||| i <<< 16 ||| n.index <<< 5 ||| d.index]
-  | .umov .x d n i => (imm5 .d2 i).map fun i => [0x4E003C00 ||| i <<< 16 ||| n.index <<< 5 ||| d.index]
+  | .umov .w d n i => (imm5 .s4 i).map fun i => [0x0E003C00 ||| i * 2 ^ 16 ||| n.index * 2 ^ 5 ||| d.index]
+  | .umov .x d n i => (imm5 .d2 i).map fun i => [0x4E003C00 ||| i * 2 ^ 16 ||| n.index * 2 ^ 5 ||| d.index]
   -- "MRS": `1101010100 1 1 o0 op1 CRn CRm op2 Rt`, where `op0 = 0b1:o0`,
   -- with the encoding of the system register DIT (DDI 0601 2026-03, "DIT,
   -- Data Independent Timing", "Accessing DIT"): `op0 = 0b11`, `op1 =
@@ -400,7 +405,7 @@ def Instr.encode : Instr → Option (List Nat)
   | .mrsDit t => some [0xD5300000 ||| sysDit ||| t.index]
   -- "MSR (immediate)": `1101010100 0 00 op1 0100 CRm op2 11111`, with the
   -- PSTATE field DIT, `op1 = 0b011`, `op2 = 0b010`, and `CRm` the immediate.
-  | .msrDitImm on => some [0xD500401F ||| 3 <<< 16 ||| on.toNat <<< 8 ||| 2 <<< 5]
+  | .msrDitImm on => some [0xD500401F ||| 3 * 2 ^ 16 ||| on.toNat * 2 ^ 8 ||| 2 * 2 ^ 5]
   -- The barriers, `11010101000000110011 CRm 1 opc 11111` (DDI 0602 2026-03):
   -- "DSB" with `CRm = '1111'` (SY) and `opc = '00'`, "ISB" with `CRm =
   -- '1111'` (SY) and `opc = '10'`, "SB" with `CRm = '0000'` and `opc = '11'`.
@@ -410,12 +415,12 @@ def Instr.encode : Instr → Option (List Nat)
   | .adrSym .. | .align _ => none
 where
   /-- The fields `o0 op1 CRn CRm op2` (19–5) of the system register DIT. -/
-  sysDit : Nat := 1 <<< 19 ||| 3 <<< 16 ||| 4 <<< 12 ||| 2 <<< 8 ||| 5 <<< 5
+  sysDit : Nat := 1 * 2 ^ 19 ||| 3 * 2 ^ 16 ||| 4 * 2 ^ 12 ||| 2 * 2 ^ 8 ||| 5 * 2 ^ 5
   /-- A load or store, unsigned offset, of `bytes` bytes: `base ||| imm12 <<
   10 ||| Rn ||| Rt`. -/
   ldst (base bytes t n off : Nat) : Option (List Nat) :=
     if off % bytes = 0 ∧ off / bytes < 4096 then
-      some [base ||| (off / bytes) <<< 10 ||| n <<< 5 ||| t]
+      some [base ||| (off / bytes) * 2 ^ 10 ||| n * 2 ^ 5 ||| t]
     else none
 
 /-- `ret` ("RET", `Rn = x30`). -/
