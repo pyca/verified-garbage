@@ -14,9 +14,10 @@ The test cases of Appendix A of RFC 5869 (three with SHA-256, four with
 SHA-1), read from the vendored `vectors/rfc5869/rfc5869.txt` (see
 `vectors/sources/`) when this file is built and checked against
 `VG.Spec.Hkdf.extract` (the `PRK`) and `VG.Spec.Hkdf.expand` (the `OKM`),
-with the HMAC and the digest length that the tables of `Spec/Hkdf/Table.lean`
-give each hash function (`HmacTable.hmacOf`), so that a transcription error
-fails the build. The cases cover empty and long salts and context
+with the HMAC and the digest length that the contracts of
+`Spec/Hkdf/Table.lean` give each hash function (`HmacTable.hmacOf` for
+extracting, the HMAC of its streaming form, `Hkdf.streamingOf`, for
+expanding), so that a transcription error fails the build. The cases cover empty and long salts and context
 information, and outputs of two and three blocks, the last one partial.
 Test case 7 has no salt, which RFC 5869 takes to be `HashLen` zero octets:
 both those octets and the empty salt are checked to give its `PRK`, as
@@ -113,6 +114,7 @@ run_cmd do
   for c in cs do
     let some H := hashOf c.hash | throwError "unknown hash function {c.hash}"
     let some F := Spec.HmacTable.hmacOf H | throwError "no HMAC over {c.hash}"
+    let some S := Spec.Hkdf.streamingOf H | throwError "no streaming {c.hash}"
     unless c.prk.length == H.len && c.okm.length == c.len do
       throwError "{c.hash} case with L = {c.len}: wrong lengths"
     let salts := match c.salt with
@@ -121,9 +123,9 @@ run_cmd do
     for s in salts do
       unless Spec.Hkdf.extract F s c.ikm == c.prk do
         throwError "HKDF-Extract of the {c.hash} case with L = {c.len} is wrong"
-    unless Spec.Hkdf.expand F H.len c.prk c.info c.len == some c.okm do
+    unless Spec.Hkdf.expand S.H H.len c.prk c.info c.len == some c.okm do
       throwError "HKDF-Expand of the {c.hash} case with L = {c.len} is wrong"
-    unless Spec.Hkdf.expand F H.len c.prk c.info (255 * H.len + 1) == none do
+    unless Spec.Hkdf.expand S.H H.len c.prk c.info (255 * H.len + 1) == none do
       throwError "HKDF-Expand of the {c.hash} case accepts more than 255 blocks"
 
 end VG.Test.Hkdf
