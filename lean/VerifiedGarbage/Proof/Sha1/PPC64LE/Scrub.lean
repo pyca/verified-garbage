@@ -53,15 +53,18 @@ theorem finalize_scrubbed :
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.finalizePostOut_local 64))
     (by dsimp only; lit_decide)
 
-/-- `vg_sha1_digest`. -/
-def digestReg : Registration Spec.Sha1.digestApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_sha1_digest` as emitted (`Impl.Sha1.PPC64LE.Fn.digest`) meets its
+contract in constant time and returns without secret residue. -/
+theorem digest_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sha1.PPC64LE.Fn.digest
+      (Spec.Sha1.digestContract PPC64LE.abi
+        (96 + Impl.MdStream.PPC64LE.Digest.frameBytes Impl.Hmac.Stream.PPC64LE.sha1Hash)) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha1.digestApi) {
       code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha1Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha1.digest }
     496 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.MdStream.Digest.digestPostOut_local 20 Spec.Sha1.hash 64))
     (by dsimp only; lit_decide)
-
 
 /-- `vg_sha1_init` needs no cleanup: it reads no memory, so what it leaves is a function of its
 arguments. It meets its contract in constant time and returns without secret residue. -/
