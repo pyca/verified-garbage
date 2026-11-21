@@ -51,7 +51,10 @@ each other combine), write them as a results file and open
 `ci/bench_report.html` on it: `bench_compare.py --json results.json` writes
 one, and after a plain `cargo bench`, `python3 ci/bench_report.py collect`
 reads Criterion's directory into one. `python3 ci/bench_report.py html
-results*.json -o report.html` builds them into one page to share.
+results*.json -o report.html` builds them into one page to share; each
+`--chart` (the workflow's `charts` input, separated by `;`) is a chart it
+starts with, of the groups (or `group/size`s) that its regular expressions
+match, e.g. `--chart 'ecdh_p(256|384|521) ecdsa_p(256_sha256|384_sha384|521_sha512)_sign/64'`.
 
 For another architecture, or features this CPU lacks, run the Benchmarks
 workflow by hand: it never runs on its own (not on pull requests, not on

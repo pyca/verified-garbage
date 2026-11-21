@@ -274,6 +274,7 @@ details.all .search { margin: 8px 0; }
 <div id="toast" role="status" aria-live="polite"></div>
 <noscript><p style="padding:16px">This page needs JavaScript to chart the results.</p></noscript>
 <script type="application/json" id="bench-data">null</script>
+<script type="application/json" id="bench-view">null</script>
 <script>
 "use strict";
 
@@ -463,6 +464,29 @@ function readHash() {
   if (!state.sizes || typeof state.sizes !== "object") state.sizes = {};
   if (typeof state.q !== "string") state.q = "";
   if (typeof state.current !== "string") state.current = "";
+}
+// The charts that `bench_report.py html --chart` built in, each its groups
+// and the `group/size`s it starts with hidden: a size is hidden where every
+// group of the chart that has it hides it.
+function startWith() {
+  let view = null;
+  try { view = JSON.parse(document.getElementById("bench-view").textContent || "null"); } catch { return; }
+  if (!view || !Array.isArray(view.charts)) return;
+  const known = new Set(groups);
+  for (const c of view.charts) {
+    const gs = (c.groups || []).filter(g => known.has(g));
+    if (!gs.length) continue;
+    state.charts.push(gs);
+    const hide = new Set(c.hide || []);
+    const labels = new Map();
+    for (const g of gs) for (const size of sizesOf.get(g)) {
+      const label = sizeLabel(g, size);
+      labels.set(label, (labels.get(label) ?? true) && hide.has(`${g}/${size}`));
+    }
+    const hidden = [...labels].filter(([, h]) => h).map(([l]) => l);
+    if (hidden.length) state.sizes["+" + gs.join("+")] = hidden;
+    state.current = gs[0];
+  }
 }
 function saveHash() { history.replaceState(null, "", "#" + encodeURIComponent(JSON.stringify(state))); }
 
@@ -1185,7 +1209,8 @@ function init() {
     loadErrors.push(`The results built into this page can't be read: ${e.message}`);
   }
   rebuild();
-  readHash();
+  if (location.hash.length > 1) readHash();
+  else startWith();
   let theme = "auto";
   try { theme = localStorage.getItem("vg-bench-theme") || "auto"; } catch { /* the default */ }
   setTheme(theme);

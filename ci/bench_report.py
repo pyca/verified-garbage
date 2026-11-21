@@ -1,7 +1,7 @@
 """Benchmark results as JSON, and the interactive page that charts them.
 
     python3 ci/bench_report.py collect [CRITERION_DIR] [-o FILE] [--meta KEY=VALUE ...]
-    python3 ci/bench_report.py html FILE_OR_DIR ... [-o FILE] [--title TITLE]
+    python3 ci/bench_report.py html FILE_OR_DIR ... [-o FILE] [--title TITLE] [--chart PATTERNS ...]
 
 `collect` reads the results of a local `cargo bench` (Criterion's
 directory, by default `bench/target/criterion`) into a results file:
@@ -16,6 +16,17 @@ like any other.
 `html` writes `bench_report.html` (the page; open it alone to load results
 files by hand) with the results files given, or every `*.json` in the
 directories given, built in, so that the one file is the whole report.
+Each `--chart` is a chart the page starts with, combining the benchmarks
+that its space-separated regular expressions match, each a whole group's
+name (`ecdh_p(256|384|521)`: every size of each) or a whole `group/size`
+(`ecdsa_p256_sha256_sign/64`: the chart starts with the group's other sizes
+hidden). E.g. ECDH and ECDSA signatures of 64 bytes, by curve:
+
+    python3 ci/bench_report.py html results/ \
+      --chart 'ecdh_p(256|384|521) ecdsa_p(256_sha256|384_sha384|521_sha512)_sign/64'
+
+A pattern that matches nothing is skipped, with a warning (a run need not
+have measured every benchmark).
 
 A results file is
 
@@ -47,6 +58,8 @@ FORMAT = "verified-garbage-bench"
 VERSION = 1
 # Where the page reads its built-in results from: the template's is empty.
 DATA = re.compile(r'(<script type="application/json" id="bench-data">)(.*?)(</script>)', re.S)
+# And the charts it starts with (`--chart`).
+VIEW = re.compile(r'(<script type="application/json" id="bench-view">)(.*?)(</script>)', re.S)
 
 
 def bench_size(size):
@@ -156,13 +169,65 @@ def load(paths):
     return files
 
 
-def embed(template, files, title=None):
-    """The page `template` with `files` built in (and, if given, `title`)."""
-    # `</` would end the script element early; in JSON, `<\/` is the same string.
-    data = json.dumps({"files": files}, separators=(",", ":")).replace("</", "<\\/")
+def natural(s):
+    """A sort key for names with numbers in them (p256 before p1024)."""
+    return [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", s)]
+
+
+def charts(specs, files):
+    """The charts that `--chart`s ask for, of the benchmarks in `files`:
+    for each, its groups, and the `group/size`s it starts with hidden."""
+    sizes = {}
+    for f in files:
+        for r in f["results"]:
+            sizes.setdefault(str(r["group"]), set()).add(str(r["size"]))
+    out, taken = [], set()
+    for spec in specs:
+        try:
+            regexes = [re.compile(p) for p in spec.split()]
+        except re.error as e:
+            raise SystemExit(f"--chart {spec!r}: {e}")
+        groups, shown = [], {}
+        for rx in regexes:
+            found = False
+            for g in sorted(sizes, key=natural):
+                picked = sizes[g] if rx.fullmatch(g) else {s for s in sizes[g] if rx.fullmatch(f"{g}/{s}")}
+                if not picked:
+                    continue
+                found = True
+                if g in taken:
+                    raise SystemExit(f"--chart {spec!r}: {g} is in an earlier chart already")
+                if g not in shown:
+                    groups.append(g)
+                    shown[g] = set()
+                shown[g] |= picked
+            if not found:
+                print(f"warning: --chart {rx.pattern!r} matches no benchmark (a group's name, or a group/size)",
+                      file=sys.stderr)
+        if groups:
+            taken.update(groups)
+            out.append({"groups": groups,
+                        "hide": [f"{g}/{s}" for g in groups for s in sorted(sizes[g] - shown[g], key=natural)]})
+    return out
+
+
+def script_json(value):
+    """`value` as JSON to put in a script element: `</` would end it early,
+    and in JSON `<\\/` is the same string."""
+    return json.dumps(value, separators=(",", ":")).replace("</", "<\\/")
+
+
+def embed(template, files, title=None, view=None):
+    """The page `template` with `files` built in (and, if given, `title`,
+    and the charts it starts with, `view`)."""
+    data = script_json({"files": files})
     page, n = DATA.subn(lambda m: m[1] + data + m[3], template, count=1)
     if n != 1:
         raise SystemExit(f"{TEMPLATE}: no bench-data script element to fill")
+    if view:
+        page, n = VIEW.subn(lambda m: m[1] + script_json({"charts": view}) + m[3], page, count=1)
+        if n != 1:
+            raise SystemExit(f"{TEMPLATE}: no bench-view script element to fill")
     if title:
         escaped = title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         page = re.sub(r"<title>.*?</title>", lambda _: f"<title>{escaped}</title>", page, count=1)
@@ -180,6 +245,9 @@ def main(argv=None):
     h.add_argument("inputs", nargs="+", type=pathlib.Path)
     h.add_argument("-o", "--output", type=pathlib.Path, default=pathlib.Path("benchmarks.html"))
     h.add_argument("--title")
+    h.add_argument("--chart", action="append", default=[], metavar="PATTERNS",
+                   help="a chart to start with: space-separated regular expressions, each matching a whole "
+                        "group name or group/size (repeatable)")
     args = p.parse_args(argv)
 
     if args.command == "collect":
@@ -193,7 +261,7 @@ def main(argv=None):
         print(f"{args.output}: {len(doc['results'])} results", file=sys.stderr)
     else:
         files = load(args.inputs)
-        args.output.write_text(embed(TEMPLATE.read_text(), files, args.title))
+        args.output.write_text(embed(TEMPLATE.read_text(), files, args.title, charts(args.chart, files)))
         n = sum(len(f["results"]) for f in files)
         print(f"{args.output}: {n} results from {len(files)} file(s)", file=sys.stderr)
     return 0

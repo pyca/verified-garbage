@@ -1,5 +1,7 @@
 """ci/bench_report.py's results files and the page it fills; no builds."""
 
+import contextlib
+import io
 import json
 import pathlib
 import re
@@ -104,6 +106,43 @@ class Page(unittest.TestCase):
         # What the page reads back (its `extractEmbedded` matches the same way).
         data = re.search(r'<script type="application/json" id="bench-data">([\s\S]*?)</script>', page)[1]
         self.assertEqual(json.loads(data), {"files": [doc]})
+
+    def test_charts(self):
+        files = [bench_report.document({"arch": "x86_64"}, [
+            bench_report.record(g, "openssl", size, 1.0)
+            for g, sizes in [("ecdh_p256", [32]), ("ecdh_p384", [48]), ("ecdh_p1024", [128]),
+                             ("ecdsa_p256_sha256_sign", [64, 1024]), ("ecdsa_p384_sha384_sign", [64, 1024]),
+                             ("sha256", [64, 1024, 16384])]
+            for size in sizes])]
+        view = bench_report.charts(["ecdh_p(256|384) ecdsa_p\\d+_sha\\d+_sign/64", "sha256/(64|1024)"], files)
+        self.assertEqual(view, [
+            {"groups": ["ecdh_p256", "ecdh_p384", "ecdsa_p256_sha256_sign", "ecdsa_p384_sha384_sign"],
+             "hide": ["ecdsa_p256_sha256_sign/1024", "ecdsa_p384_sha384_sign/1024"]},
+            {"groups": ["sha256"], "hide": ["sha256/16384"]},
+        ])
+        # Groups in their names' order, numbers by value; a whole group takes
+        # every size.
+        self.assertEqual(bench_report.charts(["ecdh_.*"], files), [
+            {"groups": ["ecdh_p256", "ecdh_p384", "ecdh_p1024"], "hide": []}])
+        # What matches nothing is skipped, with a warning.
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(bench_report.charts(["nothing", "md5 sha256"], files),
+                             [{"groups": ["sha256"], "hide": []}])
+        self.assertIn("'nothing' matches no benchmark", err.getvalue())
+        with self.assertRaises(SystemExit):
+            bench_report.charts(["ecdh_p256", "ecdh_.*"], files)
+        with self.assertRaises(SystemExit):
+            bench_report.charts(["ecdh_p(256"], files)
+
+    def test_embed_view(self):
+        template = bench_report.TEMPLATE.read_text()
+        self.assertEqual(len(bench_report.VIEW.findall(template)), 1)
+        view = [{"groups": ["x</script>"], "hide": []}]
+        page = bench_report.embed(template, [], view=view)
+        data = re.search(r'<script type="application/json" id="bench-view">([\s\S]*?)</script>', page)[1]
+        self.assertEqual(json.loads(data), {"charts": view})
+        # Without charts, the page starts with none.
+        self.assertEqual(bench_report.VIEW.search(bench_report.embed(template, []))[2], "null")
 
     def test_html_command(self):
         with tempfile.TemporaryDirectory() as tmp:

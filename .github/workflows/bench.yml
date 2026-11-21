@@ -37,6 +37,9 @@ on:
       groups:
         description: Space-separated regular expressions over benchmark group names, each matching a whole name, e.g. `aes-(128|256)-gcm-tls-seal`; only the groups they match run (needs `modules`; empty for every group of the modules)
         required: false
+      charts:
+        description: Charts for the report (`benchmarks.html`) to start with, separated by `;`, each space-separated regular expressions over benchmark groups or `group/size`s, as `ci/bench_report.py html --chart` takes them, e.g. `ecdh_p(256|384|521) ecdsa_p(256_sha256|384_sha384|521_sha512)_sign/64` (empty for none)
+        required: false
       test_filter:
         description: Exact integration test to compare instead of primitive benchmarks (requires base_commit and arches=riscv64)
         required: false
@@ -338,9 +341,15 @@ jobs:
         env:
           REF: ${{ github.ref_name }}
           SHA: ${{ github.sha }}
+          CHARTS: ${{ inputs.charts }}
         run: |
           mkdir -p results
-          python3 ci/bench_report.py html results -o benchmarks.html --title "Benchmarks of $REF (${SHA:0:10})"
+          charts=()
+          IFS=';' read -ra specs <<< "$CHARTS"
+          for spec in "${specs[@]}"; do
+            if [ -n "${spec// /}" ]; then charts+=(--chart "$spec"); fi
+          done
+          python3 ci/bench_report.py html results -o benchmarks.html --title "Benchmarks of $REF (${SHA:0:10})" "${charts[@]}"
       - id: upload
         uses: ./.github/actions/upload-artifact
         with:
