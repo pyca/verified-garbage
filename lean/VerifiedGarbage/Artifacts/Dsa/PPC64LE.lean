@@ -16,29 +16,30 @@ open VG Proof.Dsa.PPC64LE.Scrub
 def artifacts : List Artifact := [
   Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Fn.deriveKey
-    verified := deriveKey_scrubbed },
+    verified := Proof.Dsa.PPC64LE.Scrub.deriveKey_scrubbed },
   Spec.Dsa.randomSignPrevalidatedApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Fn.randomSignPrevalidated
-    verified := randomSignPrevalidated_scrubbed },
+    verified := Proof.Dsa.PPC64LE.Scrub.randomSignPrevalidated_scrubbed },
   Spec.Dsa.generateKeyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Fn.generateKey
-    verified := generateKey_scrubbed },
+    verified := Proof.Dsa.PPC64LE.Scrub.generateKey_scrubbed },
   Spec.Dsa.validatePublicKeyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Fn.validatePublicKey
-    verified := validatePublicKey_scrubbed },
+    verified := Proof.Dsa.PPC64LE.Scrub.validatePublicKey_scrubbed },
   Spec.Dsa.validatePrivateKeyApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Fn.validatePrivateKey
-    verified := validatePrivateKey_scrubbed },
+    verified := Proof.Dsa.PPC64LE.Scrub.validatePrivateKey_scrubbed },
   Spec.Dsa.verifyPrevalidatedApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Fn.verifyPrevalidated
-    verified := verifyPrevalidated_scrubbed },
+    verified := Proof.Dsa.PPC64LE.Scrub.verifyPrevalidated_scrubbed },
   Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Generation.init
-    verified := parameterInit_scrubbed }] ++
-  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.map fun ⟨v, hv⟩ =>
+    verified := Proof.Dsa.PPC64LE.Scrub.parameterInit_scrubbed }] ++
+  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.map
+    fun (vh : {v // v ∈ VG.Proof.Variants.MillerRabin.PPC64LE.variants}) =>
     Spec.Dsa.parameterSearchApi.artifact PPC64LE.target {
-      suffix := v.suffix
-      code := Impl.Dsa.PPC64LE.Fn.parameterSearch v.suffix v.code
-      verified := Proof.Dsa.PPC64LE.Scrub.parameterSearch_scrubbed v hv })
+      suffix := vh.1.suffix
+      code := Impl.Dsa.PPC64LE.Fn.parameterSearch vh.1.suffix vh.1.code
+      verified := Proof.Dsa.PPC64LE.Scrub.parameterSearch_scrubbed vh.1 vh.2 })
 
 end VG.Artifacts.Dsa.PPC64LE

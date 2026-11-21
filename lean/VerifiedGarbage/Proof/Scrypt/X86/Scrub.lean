@@ -109,4 +109,9 @@ theorem scrypt_scrubbed (v : Proof.Sha256.X86.Variants.Backend) :
       spSafe := scrypt_spSafe v }
     (scryptOut _) (hs := scrypt_scrub v)
 
+/-- No instruction of `vg_scrypt` as emitted writes `esp`. -/
+theorem scrypt_spSafeFn (v : Proof.Sha256.X86.Variants.Backend) :
+    (Impl.Scrypt.X86.Fn.scrypt (pbkName v) (pbkOf v)).all (fun i => !isa.writesSp i) = true :=
+  scrubAll_spSafe (scrypt_spSafe v)
+
 end VG.Proof.Scrypt.X86.Scrub

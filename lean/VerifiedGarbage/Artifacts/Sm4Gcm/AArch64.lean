@@ -21,34 +21,34 @@ def artifactsOf (v : GcmVariant) : List Artifact := [
   Spec.Sm4.Gcm.sealApi.artifact AArch64.target {
     suffix := v.impl.suffix
     code := Impl.Sm4Gcm.AArch64.Fn.«seal» v.calls
-    verified := seal_scrubbed v },
+    verified := Proof.Sm4Gcm.AArch64.seal_scrubbed v },
   Spec.Sm4.Gcm.openApi.artifact AArch64.target {
     suffix := v.impl.suffix
     code := Impl.Sm4Gcm.AArch64.Fn.«open» v.calls
-    verified := open_scrubbed v },
+    verified := Proof.Sm4Gcm.AArch64.open_scrubbed v },
   Spec.Sm4.Gcm.streamEncryptApi.artifact AArch64.target {
     suffix := v.impl.suffix
     code := Impl.Sm4Gcm.AArch64.Fn.streamEncrypt v.calls
-    verified := streamEncrypt_scrubbed v },
+    verified := Proof.Sm4Gcm.AArch64.streamEncrypt_scrubbed v },
   Spec.Sm4.Gcm.streamDecryptApi.artifact AArch64.target {
     suffix := v.impl.suffix
     code := Impl.Sm4Gcm.AArch64.Fn.streamDecrypt v.calls
-    verified := streamDecrypt_scrubbed v },
+    verified := Proof.Sm4Gcm.AArch64.streamDecrypt_scrubbed v },
   Spec.Sm4.Gcm.streamFinishApi.artifact AArch64.target {
     suffix := v.impl.suffix
     code := Impl.Sm4Gcm.AArch64.Fn.streamFinish v.calls
-    verified := streamFinish_scrubbed v },
+    verified := Proof.Sm4Gcm.AArch64.streamFinish_scrubbed v },
   Spec.Sm4.Gcm.streamVerifyApi.artifact AArch64.target {
     suffix := v.impl.suffix
     code := Impl.Sm4Gcm.AArch64.Fn.streamVerify v.calls
-    verified := streamVerify_scrubbed v }]
+    verified := Proof.Sm4Gcm.AArch64.streamVerify_scrubbed v }]
 
 /-- `vg_sm4_gcm_init`, which calls only the implementation of `vg_sm4_ctr32`. -/
 def artifactsInit (v : GcmVariant) : List Artifact := [
   Spec.Sm4.Gcm.initApi.artifact AArch64.target {
     suffix := v.impl.ctrSuffix
     code := Impl.Sm4Gcm.AArch64.Fn.init v.calls
-    verified := init_scrubbed v }]
+    verified := Proof.Sm4Gcm.AArch64.init_scrubbed v }]
 
 /-- `vg_sm4_gcm_stream_init` and `vg_sm4_gcm_stream_aad`: AES-GCM's code and
 proofs, calling the implementation of `vg_ghash` the variant `v` names (and no

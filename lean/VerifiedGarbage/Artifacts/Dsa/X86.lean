@@ -22,32 +22,32 @@ open VG.Proof.Dsa.X86.Scrub
 def direct : List Artifact := [
   Spec.Dsa.generateKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.generateKey
-    verified := generateKey_scrubbed
-    spSafe := generateKey_spSafe },
+    verified := Proof.Dsa.X86.Scrub.generateKey_scrubbed
+    spSafe := Proof.Dsa.X86.Scrub.generateKey_spSafe },
   Spec.Dsa.deriveKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.deriveKey
-    verified := deriveKey_scrubbed
-    spSafe := deriveKey_spSafe },
+    verified := Proof.Dsa.X86.Scrub.deriveKey_scrubbed
+    spSafe := Proof.Dsa.X86.Scrub.deriveKey_spSafe },
   Spec.Dsa.validatePrivateKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.validatePrivateKey
-    verified := validatePrivateKey_scrubbed
-    spSafe := validatePrivateKey_spSafe },
+    verified := Proof.Dsa.X86.Scrub.validatePrivateKey_scrubbed
+    spSafe := Proof.Dsa.X86.Scrub.validatePrivateKey_spSafe },
   Spec.Dsa.randomSignPrevalidatedApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.randomSignPrevalidated
-    verified := randomSignPrevalidated_scrubbed
-    spSafe := randomSignPrevalidated_spSafe },
+    verified := Proof.Dsa.X86.Scrub.randomSignPrevalidated_scrubbed
+    spSafe := Proof.Dsa.X86.Scrub.randomSignPrevalidated_spSafe },
   Spec.Dsa.validatePublicKeyApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.validatePublicKey
-    verified := validatePublicKey_scrubbed
-    spSafe := validatePublicKey_spSafe },
+    verified := Proof.Dsa.X86.Scrub.validatePublicKey_scrubbed
+    spSafe := Proof.Dsa.X86.Scrub.validatePublicKey_spSafe },
   Spec.Dsa.verifyPrevalidatedApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.verifyPrevalidated
-    verified := verifyPrevalidated_scrubbed
-    spSafe := verifyPrevalidated_spSafe },
+    verified := Proof.Dsa.X86.Scrub.verifyPrevalidated_scrubbed
+    spSafe := Proof.Dsa.X86.Scrub.verifyPrevalidated_spSafe },
   Spec.Dsa.parameterInitApi.artifact X86.target {
     code := Impl.Dsa.X86.Fn.parameterInit
-    verified := parameterInit_scrubbed
-    spSafe := parameterInit_spSafe }]
+    verified := Proof.Dsa.X86.Scrub.parameterInit_scrubbed
+    spSafe := Proof.Dsa.X86.Scrub.parameterInit_spSafe }]
 
 end VG.Artifacts.Dsa.X86
 

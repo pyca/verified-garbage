@@ -98,6 +98,35 @@ def variants :=
   md5Variants ++ sha1Variants ++ sha224Variants ++ sha256Variants ++ sha384Variants ++
     sha512Variants ++ sha512_224Variants ++ sha512_256Variants
 
+/-! ## The streaming functions
+
+Each variant's streaming `update` and `finalize` and one-shot `digest`, each
+with what its cleanup needs (`StreamFns`; `StreamFns2` for a hash function
+that shares another's `update`), in the order of the variants. -/
+
+open Proof.Pbkdf2.Md.X86_64 (StreamFns StreamFns2)
+
+def sha1Streams : List (StreamFns Spec.Sha1.updateApi Spec.Sha1.finalizeApi Spec.Sha1.digestApi) :=
+  [Sha1ShaNi.streams, Sha1AvxBmi.streams, Sha1.streams]
+
+def sha224Streams : List (StreamFns2 Spec.Sha256.finalize224Api Spec.Sha256.digest224Api) :=
+  [Sha256ShaNi.streams224, Sha256Avx2.streams224, Sha256.streams224]
+
+def sha256Streams : List (StreamFns Spec.Sha256.updateApi Spec.Sha256.finalizeApi Spec.Sha256.digest256Api) :=
+  [Sha256ShaNi.streams, Sha256Avx2.streams, Sha256.streams]
+
+def sha384Streams : List (StreamFns2 Spec.Sha512.finalize384Api Spec.Sha512.digest384Api) :=
+  [Sha512ShaNi.streams384, Sha512Avx2.streams384, Sha512.streams384]
+
+def sha512Streams : List (StreamFns Spec.Sha512.updateApi Spec.Sha512.finalizeApi Spec.Sha512.digest512Api) :=
+  [Sha512ShaNi.streams512, Sha512Avx2.streams512, Sha512.streams512]
+
+def sha512_224Streams : List (StreamFns2 Spec.Sha512.finalize512_224Api Spec.Sha512.digest512_224Api) :=
+  [Sha512ShaNi.streams512_224, Sha512Avx2.streams512_224, Sha512.streams512_224]
+
+def sha512_256Streams : List (StreamFns2 Spec.Sha512.finalize512_256Api Spec.Sha512.digest512_256Api) :=
+  [Sha512ShaNi.streams512_256, Sha512Avx2.streams512_256, Sha512.streams512_256]
+
 /-! ## HMAC's `init`
 
 The implementations of `vg_hmac_<hash>_init`, best first: each variant's,

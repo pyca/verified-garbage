@@ -27,8 +27,8 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
       tables := ts
       code := Impl.RsaOaep.X86_64.Fn.decryptPrecomputed (Proof.Rsa.X86_64.PrivScrub.level c)
         (Proof.HashTable.X86_64.fnsOf vs) (privNameP c) (privCodeP c)
-      verified := dec_scrubbed h c
-      spSafe := dec_spSafe c }]
+      verified := Proof.RsaOaep.X86_64.Scrub.dec_scrubbed h c
+      spSafe := Proof.RsaOaep.X86_64.Scrub.dec_spSafe c }]
   else []
 
 end VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
@@ -45,8 +45,8 @@ def artifacts (c : Proof.Rsa.X86_64.PublicImpl) : List Artifact :=
       suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := ts
       code := Impl.RsaOaep.X86_64.Fn.encrypt c.level (Proof.HashTable.X86_64.fnsOf vs) c.name c.code
-      verified := enc_scrubbed h c
-      spSafe := enc_spSafe c }]
+      verified := Proof.RsaOaep.X86_64.Scrub.enc_scrubbed h c
+      spSafe := Proof.RsaOaep.X86_64.Scrub.enc_spSafe c }]
   else []
 
 end VG.Artifacts.RsaOaep.X86_64.RsaPublicPrecomputedAllMdHash

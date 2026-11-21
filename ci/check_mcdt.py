@@ -63,6 +63,7 @@ conservative: it rejects every affected instruction outside a region,
 whether or not its operands are secret.
 """
 
+import bisect
 import pathlib
 import re
 import sys
@@ -98,16 +99,23 @@ def functions(text):
     label is (the index of the instruction it precedes); and the lines that
     are none of these."""
     fns, unread = [], []
+    instrs = numbers = None
     for number, line in enumerate(text.split("\n"), 1):
-        if m := FN.match(line):
+        # Instructions first, nearly every line: neither `FN` nor a comment
+        # starts with a tab.
+        if line.startswith("\t"):
+            if fns:
+                instrs.append(line[1:])
+                numbers.append(number)
+            else:
+                unread.append(number)
+        elif m := FN.match(line):
             fns.append((m.group(1), [], [], {}))
+            instrs, numbers = fns[-1][1], fns[-1][2]
         elif not line or line.startswith("//"):
             continue
         elif not fns:
             unread.append(number)
-        elif line.startswith("\t"):
-            fns[-1][1].append(line[1:])
-            fns[-1][2].append(number)
         elif m := LABEL.match(line):
             fns[-1][3].setdefault(m.group(1), []).append(len(fns[-1][1]))
         else:
@@ -235,37 +243,51 @@ def guarded(instrs, labels):
     jump; an instruction no path reaches is `True`."""
     n = len(instrs)
     labelled = {d for defs in labels.values() for d in defs}
-    preds = [[] for _ in range(n)]  # (predecessor, whether the edge passes a guard)
+    enter = f"call {{{ENTER[2]}}}"
+    # An instruction is `False` exactly when a path from the entry reaches it
+    # without passing a guard: the greatest solution of "`True` but at the
+    # entry, and where every predecessor is `True` or reaches it through a
+    # guard". Find those paths forward from the entry, each instruction once.
+    # Only branches end a run of fall-throughs: the others are skipped by
+    # their first character, which is their mnemonic's.
+    jumps = {}  # index of each branch: (its target or None, whether it falls through)
     for k, x in enumerate(instrs):
+        if not x.startswith(("j", "r")) and not x[:1].isspace():
+            continue
         op = mnemonic(x)
         if op == "ret":
-            continue
-        if op.startswith("j"):
+            jumps[k] = (None, False)
+        elif op.startswith("j"):
             t = target(x, k, labels)
             if t is None:
                 return [False] * n
-            if t < n:
-                preds[t].append((k, False))
-            if op == "jmp":
-                continue
-        if k + 1 < n:
-            guard = (op in GUARD_JUMPS and k >= 2 and instrs[k - 1] == GUARD_TEST and
-                     instrs[k - 2] == f"call {{{ENTER[2]}}}" and k - 1 not in labelled and
-                     k not in labelled)
-            preds[k + 1].append((k, guard))
-    state = [k != 0 for k in range(n)]
-    work = list(range(n))
-    succs = [[] for _ in range(n)]
-    for k, ps in enumerate(preds):
-        for p, _ in ps:
-            succs[p].append(k)
+            jumps[k] = (t if t < n else None, op != "jmp")
+            if (op in GUARD_JUMPS and k >= 2 and instrs[k - 1] == GUARD_TEST and
+                    instrs[k - 2] == enter and k - 1 not in labelled and k not in labelled):
+                jumps[k] = (jumps[k][0], False)
+    stops = sorted(jumps)
+    reached = bytearray(n)
+    work = [0] if n else []
     while work:
         k = work.pop()
-        new = k != 0 and all(state[p] or g for p, g in preds[k])
-        if new != state[k]:
-            state[k] = new
-            work.extend(succs[k])
-    return state
+        if reached[k]:
+            continue
+        # The run from `k` to the next branch, inclusive, is reached.
+        i = bisect.bisect_left(stops, k)
+        end = stops[i] if i < len(stops) else n - 1
+        j = k
+        while j <= end and not reached[j]:
+            reached[j] = 1
+            j += 1
+        if j <= end:
+            continue  # the rest of the run was already reached, from its start
+        if end in jumps:
+            t, falls = jumps[end]
+            if t is not None:
+                work.append(t)
+            if falls and end + 1 < n:
+                work.append(end + 1)
+    return [not r for r in reached]
 
 
 def check_function(name, instrs, lines, labels, entered=False, guard=None):
@@ -397,7 +419,7 @@ def entered(fns, crate):
     for name, instrs, labels in fns:
         guard = None
         for k, x in enumerate(instrs):
-            if m := CALL.fullmatch(x):
+            if x.startswith("call") and (m := CALL.fullmatch(x)):
                 if guard is None:
                     guard = guarded(instrs, labels)
                 callers.setdefault(m.group(1), set()).add((name, guard[k]))

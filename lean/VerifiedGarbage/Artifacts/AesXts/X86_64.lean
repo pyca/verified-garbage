@@ -26,12 +26,12 @@ def artifacts : List Artifact :=
       spSafe := Proof.AesXts.X86_64.Scrub.decryptUnit_spSafeFn v },
     Spec.Xts.aesEncryptUnitToApi.artifact X86_64.target {
       suffix := v.suffix
-      code := Impl.AesXts.X86_64UnitTo.Fn.encrypt v.level v.xts ⟨v.to.enc, v.to.dec⟩
+      code := Impl.AesXts.X86_64UnitTo.Fn.encrypt v.level v.xts (Impl.AesXts.X86_64UnitTo.XtsTo.mk v.to.enc v.to.dec)
       verified := Proof.AesXts.X86_64.Scrub.encryptUnitTo_scrubbed v
       spSafe := Proof.AesXts.X86_64.Scrub.encryptUnitTo_spSafeFn v },
     Spec.Xts.aesDecryptUnitToApi.artifact X86_64.target {
       suffix := v.suffix
-      code := Impl.AesXts.X86_64UnitTo.Fn.decrypt v.level v.xts ⟨v.to.enc, v.to.dec⟩
+      code := Impl.AesXts.X86_64UnitTo.Fn.decrypt v.level v.xts (Impl.AesXts.X86_64UnitTo.XtsTo.mk v.to.enc v.to.dec)
       verified := Proof.AesXts.X86_64.Scrub.decryptUnitTo_scrubbed v
       spSafe := Proof.AesXts.X86_64.Scrub.decryptUnitTo_spSafeFn v }]
 

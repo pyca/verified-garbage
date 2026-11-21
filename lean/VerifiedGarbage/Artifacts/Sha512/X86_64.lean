@@ -39,11 +39,67 @@ def artifacts : List Artifact := [
   Spec.Sha512.init512Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512, verified := Proof.Sha512.X86_64.init512_scrubbed, spSafe := Proof.Sha512.X86_64.init512_spSafe },
   Spec.Sha512.init512_224Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512_224, verified := Proof.Sha512.X86_64.init512_224_scrubbed, spSafe := Proof.Sha512.X86_64.init512_224_spSafe },
   Spec.Sha512.init512_256Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512_256, verified := Proof.Sha512.X86_64.init512_256_scrubbed, spSafe := Proof.Sha512.X86_64.init512_256_spSafe }] ++
-  ((VG.Proof.Variants.MdHash.X86_64.sha384Variants ++
-      VG.Proof.Variants.MdHash.X86_64.sha512Variants ++
-      VG.Proof.Variants.MdHash.X86_64.sha512_224Variants ++
-      VG.Proof.Variants.MdHash.X86_64.sha512_256Variants).flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
-    v.stream.map fun f =>
-      f.f.api.artifact X86_64.target { f.reg with suffix := v.suffix })
+  (VG.Proof.Variants.MdHash.X86_64.sha384Streams.flatMap
+      fun (s : Proof.Pbkdf2.Md.X86_64.StreamFns2 Spec.Sha512.finalize384Api Spec.Sha512.digest384Api) => [
+      Spec.Sha512.finalize384Api.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.finalize.sel.level s.finalize.f.retBits s.finalize.f.stack s.finalize.sel.runs
+          s.finalize.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.finalize
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.finalize },
+      Spec.Sha512.digest384Api.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.digest.sel.level s.digest.f.retBits s.digest.f.stack s.digest.sel.runs
+          s.digest.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.digest
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.digest }]) ++
+  (VG.Proof.Variants.MdHash.X86_64.sha512Streams.flatMap
+      fun (s : Proof.Pbkdf2.Md.X86_64.StreamFns Spec.Sha512.updateApi Spec.Sha512.finalizeApi Spec.Sha512.digest512Api) => [
+      Spec.Sha512.updateApi.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.update.sel.level s.update.f.retBits s.update.f.stack s.update.sel.runs
+          s.update.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.update
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.update },
+      Spec.Sha512.finalizeApi.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.finalize.sel.level s.finalize.f.retBits s.finalize.f.stack s.finalize.sel.runs
+          s.finalize.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.finalize
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.finalize },
+      Spec.Sha512.digest512Api.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.digest.sel.level s.digest.f.retBits s.digest.f.stack s.digest.sel.runs
+          s.digest.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.digest
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.digest }]) ++
+  (VG.Proof.Variants.MdHash.X86_64.sha512_224Streams.flatMap
+      fun (s : Proof.Pbkdf2.Md.X86_64.StreamFns2 Spec.Sha512.finalize512_224Api Spec.Sha512.digest512_224Api) => [
+      Spec.Sha512.finalize512_224Api.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.finalize.sel.level s.finalize.f.retBits s.finalize.f.stack s.finalize.sel.runs
+          s.finalize.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.finalize
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.finalize },
+      Spec.Sha512.digest512_224Api.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.digest.sel.level s.digest.f.retBits s.digest.f.stack s.digest.sel.runs
+          s.digest.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.digest
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.digest }]) ++
+  (VG.Proof.Variants.MdHash.X86_64.sha512_256Streams.flatMap
+      fun (s : Proof.Pbkdf2.Md.X86_64.StreamFns2 Spec.Sha512.finalize512_256Api Spec.Sha512.digest512_256Api) => [
+      Spec.Sha512.finalize512_256Api.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.finalize.sel.level s.finalize.f.retBits s.finalize.f.stack s.finalize.sel.runs
+          s.finalize.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.finalize
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.finalize },
+      Spec.Sha512.digest512_256Api.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.digest.sel.level s.digest.f.retBits s.digest.f.stack s.digest.sel.runs
+          s.digest.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.digest
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.digest }])
 
 end VG.Artifacts.Sha512.X86_64

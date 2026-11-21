@@ -43,6 +43,7 @@ needs the edited modules built: run it before pushing, as CLAUDE.md says.
 | `export_rust_coverage.py` | Exports an instrumented test run's coverage as lcov |
 | `rust_test_timing.sh`, `rustdoc_timing.sh`, `rustdoc_timing.cmd` | Turn on libtest's `--report-time` for the timing metrics |
 | `bench_arches.py`, `bench_compare.py`, `bench_cache_key.sh` | The Benchmarks workflow (the `benchmarking` skill) |
+| `bench_report.py`, `bench_report.html` | Benchmark results files, and the page that charts them (the workflow's `benchmarks.html`) |
 | `ci_metrics.py`, `ci_metrics_bundle.py` | Record each run's metrics, and fetch and share them (the `ci-metrics` skill) |
 | `runner.Dockerfile`, `arm32-run` | The runner images of the 32-bit, PPC64LE, RISC-V and lint jobs |
 | `requirements-coverage.txt` | Python dependencies of the coverage merge |

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Seed.Contract
@@ -52,6 +53,7 @@ meta import VerifiedGarbage.Proof.Seed.X86.FbLit
 meta import VerifiedGarbage.Proof.Seed.X86.FbFinalLit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 
 /-!
 # SEED on x86 (32-bit), without secret residue
@@ -62,15 +64,15 @@ working space in a frame on the stack, wiped before they return
 wipe leaves no secret on the stack: the code as emitted
 (`Impl.Seed.X86.Fn.expandKey`) only clears the registers a callee may
 change (`X86.Scrub.verifiedScrubbedWiped`). The others call or push below
-their frame: the code as emitted then zeroes the stack their contracts
-reserve below `esp` and clears the registers a callee may change, and
-returns without secret residue (`X86.Scrub.verifiedScrubbedAll`), given that
-its postcondition reads the
-memory on return only within the buffers (`Proof/Seed/Scratch.lean`,
-`CbcScratch.lean`, `FbScratch.lean` and `Proof/Modes/CfbFinalScratch.lean`,
-for any pointer width). What the cleanup needs of the code is one Boolean
-(`X86.Scrub.scrubFSide`), proved by evaluating the code once
-(`lit_decide`).
+their frame: the code as emitted then zeroes, of the stack their contracts
+reserve below `esp`, only the 11 doublewords that the residue analysis
+(`X86.rtaint`) finds it may leave different in two runs (the header of its
+frame and the frames below it), clears the registers a callee may change,
+and returns without secret residue (`X86.Scrub.verifiedScrubbedSel`, the
+kernel evaluating the analysis: `taint_decide_ct`), given that its
+postcondition reads the memory on return only within the buffers
+(`Proof/Seed/Scratch.lean`, `CbcScratch.lean`, `FbScratch.lean` and
+`Proof/Modes/CfbFinalScratch.lean`, for any pointer width).
 -/
 
 @[expose] public section
@@ -127,94 +129,94 @@ theorem expandKey_scrubbed :
 constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed target (Impl.Seed.X86.Fn.ecb .encrypt) (Spec.Seed.ecbContract X86.abi .encrypt 1132) 0 :=
-  verifiedScrubbedAll (api := Spec.Seed.ecbEncryptApi)
+  verifiedScrubbedSel (api := Spec.Seed.ecbEncryptApi) (W := 1132)
     { code := withStackScratchWiped 1108 3 272 (Impl.Seed.X86.ecbCall .encrypt)
       verified := Proof.Seed.X86.ecbCall_framed .encrypt }
-    (ecbOut _)
+    Impl.Seed.X86.Fn.ecbWords (ecbOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_ecb_decrypt` as emitted (`Impl.Seed.X86.Fn.ecb .decrypt`) meets its contract in
 constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed target (Impl.Seed.X86.Fn.ecb .decrypt) (Spec.Seed.ecbContract X86.abi .decrypt 1132) 0 :=
-  verifiedScrubbedAll (api := Spec.Seed.ecbDecryptApi)
+  verifiedScrubbedSel (api := Spec.Seed.ecbDecryptApi) (W := 1132)
     { code := withStackScratchWiped 1108 3 272 (Impl.Seed.X86.ecbCall .decrypt)
       verified := Proof.Seed.X86.ecbCall_framed .decrypt }
-    (ecbOut _)
+    Impl.Seed.X86.Fn.ecbWords (ecbOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_cbc_encrypt_chained` as emitted meets its contract in constant
 time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cbcEncryptChained
       (Spec.Seed.cbcEncryptChainedContract X86.abi 1188) 0 :=
-  verifiedScrubbedAll (api := Spec.Seed.cbcEncryptChainedApi)
+  verifiedScrubbedSel (api := Spec.Seed.cbcEncryptChainedApi) (W := 1188)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cbcEncryptChained
       verified := Proof.Seed.X86.Cbc.cbcEncryptChained_framed }
-    cbcEncryptOut
+    Impl.Seed.X86.Fn.modeWords cbcEncryptOut (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_cbc_decrypt_chained` as emitted meets its contract in constant
 time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cbcDecryptChained
       (Spec.Seed.cbcDecryptChainedContract X86.abi 1188) 0 :=
-  verifiedScrubbedAll (api := Spec.Seed.cbcDecryptChainedApi)
+  verifiedScrubbedSel (api := Spec.Seed.cbcDecryptChainedApi) (W := 1188)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cbcDecryptChained
       verified := Proof.Seed.X86.Cbc.cbcDecryptChained_framed }
-    cbcDecryptOut
+    Impl.Seed.X86.Fn.modeWords cbcDecryptOut (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_cfb128_encrypt` as emitted meets its contract in constant time
 and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cfbEncrypt (Spec.Seed.cfbEncryptContract X86.abi 1188) 0 :=
-  verifiedScrubbedAll (api := Spec.Seed.cfbEncryptApi)
+  verifiedScrubbedSel (api := Spec.Seed.cfbEncryptApi) (W := 1188)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbEncrypt
       verified := Proof.Seed.X86.Fb.cfbEncrypt_framed }
-    cfbEncryptOut
+    Impl.Seed.X86.Fn.modeWords cfbEncryptOut (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_cfb128_decrypt` as emitted meets its contract in constant time
 and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cfbDecrypt (Spec.Seed.cfbDecryptContract X86.abi 1188) 0 :=
-  verifiedScrubbedAll (api := Spec.Seed.cfbDecryptApi)
+  verifiedScrubbedSel (api := Spec.Seed.cfbDecryptApi) (W := 1188)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbDecrypt
       verified := Proof.Seed.X86.Fb.cfbDecrypt_framed }
-    cfbDecryptOut
+    Impl.Seed.X86.Fn.modeWords cfbDecryptOut (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_cfb128_encrypt_final` as emitted meets its contract in constant
 time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cfbEncryptFinal
       (Spec.Seed.cfbEncryptFinalContract X86.abi 1188) 0 :=
-  verifiedScrubbedAll (api := Spec.Seed.cfbEncryptFinalApi)
+  verifiedScrubbedSel (api := Spec.Seed.cfbEncryptFinalApi) (W := 1188)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbEncryptFinal
       verified := Proof.Seed.X86.FbFinal.cfbEncryptFinal_framed }
-    cfbEncryptFinalOut
+    Impl.Seed.X86.Fn.modeWords cfbEncryptFinalOut (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_cfb128_decrypt_final` as emitted meets its contract in constant
 time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.cfbDecryptFinal
       (Spec.Seed.cfbDecryptFinalContract X86.abi 1188) 0 :=
-  verifiedScrubbedAll (api := Spec.Seed.cfbDecryptFinalApi)
+  verifiedScrubbedSel (api := Spec.Seed.cfbDecryptFinalApi) (W := 1188)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.cfbDecryptFinal
       verified := Proof.Seed.X86.FbFinal.cfbDecryptFinal_framed }
-    cfbDecryptFinalOut
+    Impl.Seed.X86.Fn.modeWords cfbDecryptFinalOut (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_ofb` as emitted meets its contract in constant time and returns
 without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.ofb (Spec.Seed.ofbContract X86.abi 1188) 0 :=
-  verifiedScrubbedAll (api := Spec.Seed.ofbApi)
+  verifiedScrubbedSel (api := Spec.Seed.ofbApi) (W := 1188)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.ofb
       verified := Proof.Seed.X86.Fb.ofb_framed }
-    ofbOut
+    Impl.Seed.X86.Fn.modeWords ofbOut (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_ofb_final` as emitted meets its contract in constant time and
 returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed target Impl.Seed.X86.Fn.ofbFinal (Spec.Seed.ofbFinalContract X86.abi 1188) 0 :=
-  verifiedScrubbedAll (api := Spec.Seed.ofbFinalApi)
+  verifiedScrubbedSel (api := Spec.Seed.ofbFinalApi) (W := 1188)
     { code := withStackScratchWiped 1168 4 286 Impl.Seed.X86.ofbFinal
       verified := Proof.Seed.X86.FbFinal.ofbFinal_framed }
-    ofbFinalOut
+    Impl.Seed.X86.Fn.modeWords ofbFinalOut (by decide) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.Seed.X86.Scrub

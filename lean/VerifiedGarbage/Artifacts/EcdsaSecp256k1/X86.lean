@@ -29,7 +29,7 @@ def artifacts : List Artifact :=
     Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact X86.target {
       tables := [("hmac", tables vs)]
       code := Impl.Ecdsa.X86.Fn.signSecp256k1 (fnsOf vs)
-      verified := sign_scrubbed hasLaw.law hasLaw.inv hv }]
+      verified := Proof.Ecdsa.X86.Secp256k1.Scrub.sign_scrubbed hasLaw.law hasLaw.inv hv }]
   else []
 
 end VG.Artifacts.EcdsaSecp256k1.X86.Rfc6979

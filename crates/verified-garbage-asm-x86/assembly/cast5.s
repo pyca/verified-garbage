@@ -3333,11 +3333,6 @@ vg_cast5_expand_key:
 	mov edi, DWORD PTR [esi+72]
 	mov ebp, DWORD PTR [esi+76]
 	mov esi, DWORD PTR [esi+68]
-	pxor xmm0, xmm0
-	mov ecx, 0
-	lea esp, [esp-4]
-	mov DWORD PTR [esp], ecx
-	lea esp, [esp+4]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -3976,11 +3971,6 @@ vg_cast5_ecb_encrypt:
 	mov edi, DWORD PTR [esi+40]
 	mov ebp, DWORD PTR [esi+44]
 	mov esi, DWORD PTR [esi+36]
-	pxor xmm0, xmm0
-	mov ecx, 0
-	lea esp, [esp-4]
-	mov DWORD PTR [esp], ecx
-	lea esp, [esp+4]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx
@@ -4622,11 +4612,6 @@ vg_cast5_ecb_decrypt:
 	mov edi, DWORD PTR [esi+40]
 	mov ebp, DWORD PTR [esi+44]
 	mov esi, DWORD PTR [esi+36]
-	pxor xmm0, xmm0
-	mov ecx, 0
-	lea esp, [esp-4]
-	mov DWORD PTR [esp], ecx
-	lea esp, [esp+4]
 	mov eax, 0
 	mov edx, 0
 	xor ecx, ecx

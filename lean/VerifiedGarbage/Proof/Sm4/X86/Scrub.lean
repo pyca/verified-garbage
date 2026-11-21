@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Scrub
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 public import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Sm4.X86.Fn
@@ -32,6 +33,39 @@ import VerifiedGarbage.Proof.Sm4.X86.FbFinalLit
 import VerifiedGarbage.Proof.Sm4.X86.CtrLit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Scrub
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubWiped
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Impl.Sm4.X86.Fn
+meta import VerifiedGarbage.Spec.Sm4.Contract
+meta import VerifiedGarbage.Spec.Sm4.Cbc
+meta import VerifiedGarbage.Spec.Sm4.Cfb
+meta import VerifiedGarbage.Spec.Sm4.CfbFinal
+meta import VerifiedGarbage.Spec.Sm4.Ofb
+meta import VerifiedGarbage.Spec.Sm4.OfbFinal
+meta import VerifiedGarbage.Spec.Sm4.Ctr
+meta import VerifiedGarbage.Spec.Sm4.CtrFinal
+meta import VerifiedGarbage.Proof.Sm4.X86.KeyVerified
+meta import VerifiedGarbage.Proof.Sm4.X86.Verified
+meta import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
+meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
+meta import VerifiedGarbage.Proof.Sm4.X86.FbFinalVerified
+meta import VerifiedGarbage.Proof.Sm4.X86.CtrVerified
+meta import VerifiedGarbage.Proof.Sm4.X86.CtrFinal
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Sm4.CbcScratch
+meta import VerifiedGarbage.Proof.Sm4.FbScratch
+meta import VerifiedGarbage.Proof.Sm4.CtrFinal
+meta import VerifiedGarbage.Proof.Modes.CfbFinalScratch
+meta import VerifiedGarbage.Proof.Sm4.X86.Lit
+meta import VerifiedGarbage.Proof.Sm4.X86.CbcLit
+meta import VerifiedGarbage.Proof.Sm4.X86.FbLit
+meta import VerifiedGarbage.Proof.Sm4.X86.FbFinalLit
+meta import VerifiedGarbage.Proof.Sm4.X86.CtrLit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # SM4 on x86 (32-bit), without secret residue
@@ -42,15 +76,15 @@ on the stack, wiped before they return (`withStackScratchWiped`). Key
 expansion calls nothing in its frame: as emitted
 (`Impl.Sm4.X86.Fn.expandKey`) it then clears the registers alone
 (`X86.Scrub.verifiedScrubbedWiped`). As emitted (`Impl.Sm4.X86.Fn`), each of
-the others then zeroes the stack its contract reserves below
-`esp` (its frame and the calls in it) and clears the registers a callee may
-change, and returns without secret residue (`X86.Scrub.verifiedScrubbedAll`),
-given that its postcondition reads the memory on return only within the
-buffers (`Proof/Sm4/Scratch.lean`, `CbcScratch.lean`, `FbScratch.lean`,
-`CtrFinal.lean` and `Proof/Modes/CfbFinalScratch.lean`, for any pointer
-width). What the cleanup needs of the code is one Boolean
-(`X86.Scrub.scrubFSide`), proved by evaluating the code once
-(`lit_decide`). `vg_sm4_ctr_final` calls `vg_sm4_ctr`'s code as an internal
+the others then zeroes, of the stack its contract reserves below `esp`,
+only the 5 to 22 doublewords that the residue analysis (`X86.rtaint`) finds
+it may leave different in two runs (the header of its frame and the frames
+of the calls below it), clears the registers a callee may change, and
+returns without secret residue (`X86.Scrub.verifiedScrubbedSel`, the kernel
+evaluating the analysis: `taint_decide_ct`), given that its postcondition
+reads the memory on return only within the buffers (`Proof/Sm4/Scratch.lean`,
+`CbcScratch.lean`, `FbScratch.lean`, `CtrFinal.lean` and
+`Proof/Modes/CfbFinalScratch.lean`, for any pointer width). `vg_sm4_ctr_final` calls `vg_sm4_ctr`'s code as an internal
 function of its own, `vg_sm4_ctr_core` (`Impl.Sm4.X86.ctrFramed`), and
 SM4-GCM `vg_sm4_expand_key`'s as `vg_sm4_expand_key_core`
 (`Impl.Sm4Gcm.X86.keyFn`).
@@ -120,109 +154,109 @@ theorem expandKey_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbEncrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .encrypt) 1452) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.ecbEncryptApi)
+  verifiedScrubbedSel (api := Spec.Sm4.ecbEncryptApi) (W := 1452)
     { code := withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .encrypt)
       verified := Proof.Sm4.X86.ecb_framed .encrypt }
-    (ecbOut _ _)
+    Impl.Sm4.X86.Fn.ecbWords (ecbOut _ _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.ecbDecryptApi`'s function as emitted (`Impl.Sm4.X86.Fn.ecbDecrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbDecrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .decrypt) 1452) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.ecbDecryptApi)
+  verifiedScrubbedSel (api := Spec.Sm4.ecbDecryptApi) (W := 1452)
     { code := withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .decrypt)
       verified := Proof.Sm4.X86.ecb_framed .decrypt }
-    (ecbOut _ _)
+    Impl.Sm4.X86.Fn.ecbWords (ecbOut _ _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.cbcEncryptChainedApi`'s function as emitted (`Impl.Sm4.X86.Fn.cbcEncryptChained`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cbcEncryptChained (Spec.Sm4.cbcEncryptChainedContract X86.abi 1516) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.cbcEncryptChainedApi)
+  verifiedScrubbedSel (api := Spec.Sm4.cbcEncryptChainedApi) (W := 1516)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cbcEncryptChained
       verified := Proof.Sm4.X86.Cbc.cbcEncryptChained_framed }
-    (cbcEncryptOut _)
+    Impl.Sm4.X86.Fn.modeWords (cbcEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.cbcDecryptChainedApi`'s function as emitted (`Impl.Sm4.X86.Fn.cbcDecryptChained`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cbcDecryptChained (Spec.Sm4.cbcDecryptChainedContract X86.abi 1516) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.cbcDecryptChainedApi)
+  verifiedScrubbedSel (api := Spec.Sm4.cbcDecryptChainedApi) (W := 1516)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cbcDecryptChained
       verified := Proof.Sm4.X86.Cbc.cbcDecryptChained_framed }
-    (cbcDecryptOut _)
+    Impl.Sm4.X86.Fn.modeWords (cbcDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.cfbEncryptApi`'s function as emitted (`Impl.Sm4.X86.Fn.cfbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cfbEncrypt (Spec.Sm4.cfbEncryptContract X86.abi 1516) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.cfbEncryptApi)
+  verifiedScrubbedSel (api := Spec.Sm4.cfbEncryptApi) (W := 1516)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbEncrypt
       verified := Proof.Sm4.X86.Fb.cfbEncrypt_framed }
-    (cfbEncryptOut _)
+    Impl.Sm4.X86.Fn.modeWords (cfbEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.cfbDecryptApi`'s function as emitted (`Impl.Sm4.X86.Fn.cfbDecrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cfbDecrypt (Spec.Sm4.cfbDecryptContract X86.abi 1516) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.cfbDecryptApi)
+  verifiedScrubbedSel (api := Spec.Sm4.cfbDecryptApi) (W := 1516)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbDecrypt
       verified := Proof.Sm4.X86.Fb.cfbDecrypt_framed }
-    (cfbDecryptOut _)
+    Impl.Sm4.X86.Fn.modeWords (cfbDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.cfbEncryptFinalApi`'s function as emitted (`Impl.Sm4.X86.Fn.cfbEncryptFinal`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cfbEncryptFinal (Spec.Sm4.cfbEncryptFinalContract X86.abi 1516) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.cfbEncryptFinalApi)
+  verifiedScrubbedSel (api := Spec.Sm4.cfbEncryptFinalApi) (W := 1516)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbEncryptFinal
       verified := Proof.Sm4.X86.FbFinal.cfbEncryptFinal_framed }
-    (cfbEncryptFinalOut _)
+    Impl.Sm4.X86.Fn.modeWords (cfbEncryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.cfbDecryptFinalApi`'s function as emitted (`Impl.Sm4.X86.Fn.cfbDecryptFinal`) meets its contract
 in constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cfbDecryptFinal (Spec.Sm4.cfbDecryptFinalContract X86.abi 1516) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.cfbDecryptFinalApi)
+  verifiedScrubbedSel (api := Spec.Sm4.cfbDecryptFinalApi) (W := 1516)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbDecryptFinal
       verified := Proof.Sm4.X86.FbFinal.cfbDecryptFinal_framed }
-    (cfbDecryptFinalOut _)
+    Impl.Sm4.X86.Fn.modeWords (cfbDecryptFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.ofbApi`'s function as emitted (`Impl.Sm4.X86.Fn.ofb`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ofb (Spec.Sm4.ofbContract X86.abi 1516) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.ofbApi)
+  verifiedScrubbedSel (api := Spec.Sm4.ofbApi) (W := 1516)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ofb
       verified := Proof.Sm4.X86.Fb.ofb_framed }
-    (ofbOut _)
+    Impl.Sm4.X86.Fn.modeWords (ofbOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.ofbFinalApi`'s function as emitted (`Impl.Sm4.X86.Fn.ofbFinal`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ofbFinal (Spec.Sm4.ofbFinalContract X86.abi 1516) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.ofbFinalApi)
+  verifiedScrubbedSel (api := Spec.Sm4.ofbFinalApi) (W := 1516)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ofbFinal
       verified := Proof.Sm4.X86.FbFinal.ofbFinal_framed }
-    (ofbFinalOut _)
+    Impl.Sm4.X86.Fn.modeWords (ofbFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.ctrApi`'s function as emitted (`Impl.Sm4.X86.Fn.ctr`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ctr_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ctr (Spec.Sm4.ctrContract X86.abi 1516) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.ctrApi)
+  verifiedScrubbedSel (api := Spec.Sm4.ctrApi) (W := 1516)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ctr
       verified := Proof.Sm4.X86.Ctr.ctr_framed }
-    (ctrOut _)
+    Impl.Sm4.X86.Fn.modeWords (ctrOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.ctrFinalApi`'s function as emitted (`Impl.Sm4.X86.Fn.ctrFinal`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ctrFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ctrFinal (Spec.Sm4.ctrFinalContract X86.abi 1592) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.ctrFinalApi)
+  verifiedScrubbedSel (api := Spec.Sm4.ctrFinalApi) (W := 1592)
     { code := withStackScratchWiped 56 4 8 Impl.Sm4.X86.ctrFinal
       verified := Proof.Sm4.X86.CtrFinal.ctrFinal_framed
       spSafe := Proof.Sm4.X86.CtrFinal.ctrFinal_framed_spSafe }
-    (ctrFinalOut _)
+    Impl.Sm4.X86.Fn.ctrFinalWords (ctrFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.Sm4.X86.Scrub
