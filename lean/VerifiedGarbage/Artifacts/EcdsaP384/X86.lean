@@ -29,7 +29,7 @@ def artifacts : List Artifact :=
     Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86.target {
       tables := [("hmac", tables vs)]
       code := Impl.Ecdsa.X86.Fn.signP384 (fnsOf vs)
-      verified := sign_scrubbed hasLaw.law hv }]
+      verified := Proof.Ecdsa.X86.P384.Scrub.sign_scrubbed hasLaw.law hv }]
   else []
 
 end VG.Artifacts.EcdsaP384.X86.Rfc6979

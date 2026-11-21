@@ -271,9 +271,18 @@ evaluates every variant's code again for every caller, and never
 theorems about named code, and has no form that builds a registration: a
 registration file binds `code := Impl.…` and `verified := Proof.…`
 (and, where the default does not prove it, `spSafe := Proof.…`), and nothing
-else. On 64-bit RISC-V, `ci/check_registrations.py` checks that shape
-exactly; the other targets keep it by review, as some of their generic
-interfaces' records give code from a variant's fields (`v.code`).
+else. `ci/check_registrations.py` checks that shape on every target
+(x86-64, x86, AArch64, ARMv7, RISC-V64, PPC64LE): each `.artifact` is given
+a record, or a `match` or `if` between implementations whose every arm is
+one; `code` is a definition of `Impl/` but a cleanup form; `verified`,
+`spSafe` and `writtenOk` are theorems of `Proof/` named in full, not
+through an `open`; no other field but the implementation's choices
+(`suffix`, `tables`, `extra`, `vendor`, `notWith`, `written`); and no tactic,
+anonymous constructor (`⟨…⟩`, a side condition's proof is a named theorem:
+`Proof.MlDsa.X86.Scrub.inst44`), `Artifact` built by hand or name of the
+target's `<T>.Scrub` framework in the file. It accepts two other shapes, and
+says why: x86-64's streaming functions (`StreamFnS`, above) and the
+emitter's self-test (`Artifacts/Selftest/`).
 
 **Never without a proof.** A registration's proof is `VerifiedScrubbed`:
 nothing registers a function proven `Verified` only. (The emitter's own

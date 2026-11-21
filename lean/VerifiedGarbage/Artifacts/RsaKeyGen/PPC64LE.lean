@@ -19,10 +19,11 @@ def direct : List Artifact := [
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.map fun ⟨v, hv⟩ =>
+  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.map
+    fun (vh : {v // v ∈ VG.Proof.Variants.MillerRabin.PPC64LE.variants}) =>
     Spec.RsaKeyGen.keySearchApi.artifact PPC64LE.target {
-      suffix := v.suffix
-      code := Impl.RsaKeyGen.PPC64LE.Fn.keySearch v.suffix v.code
-      verified := Proof.RsaKeyGen.PPC64LE.Scrub.keySearch_scrubbed v hv })
+      suffix := vh.1.suffix
+      code := Impl.RsaKeyGen.PPC64LE.Fn.keySearch vh.1.suffix vh.1.code
+      verified := Proof.RsaKeyGen.PPC64LE.Scrub.keySearch_scrubbed vh.1 vh.2 })
 
 end VG.Artifacts.RsaKeyGen.PPC64LE

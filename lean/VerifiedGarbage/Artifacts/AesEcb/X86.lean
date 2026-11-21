@@ -19,12 +19,12 @@ def artifacts : List Artifact :=
     Spec.AesEcb.encryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesEcb.X86.Fn.crypt (ecbFree v.enc v.encWritten) v.enc v.encWritten
-      verified := encrypt_scrubbed v
-      spSafe := encrypt_fnSpSafe v },
+      verified := Proof.AesEcb.X86.Scrub.encrypt_scrubbed v
+      spSafe := Proof.AesEcb.X86.Scrub.encrypt_fnSpSafe v },
     Spec.AesEcb.decryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesEcb.X86.Fn.crypt (ecbFree v.dec v.decWritten) v.dec v.decWritten
-      verified := decrypt_scrubbed v
-      spSafe := decrypt_fnSpSafe v }]
+      verified := Proof.AesEcb.X86.Scrub.decrypt_scrubbed v
+      spSafe := Proof.AesEcb.X86.Scrub.decrypt_fnSpSafe v }]
 
 end VG.Artifacts.AesEcb.X86

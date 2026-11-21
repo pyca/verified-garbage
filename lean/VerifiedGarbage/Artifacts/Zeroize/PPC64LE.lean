@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Zeroize.PPC64LE
 public import VerifiedGarbage.TCB.PPC64LE.Print
-public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Zeroization on PPC64LE -/
 
@@ -12,11 +12,7 @@ namespace VG.Artifacts.Zeroize.PPC64LE
 open VG.PPC64LE
 
 def artifacts : List Artifact := [
-  { Spec.Zeroize.zeroizeApi with
-    target := .of target
-    doc := Spec.Zeroize.zeroizeApi.doc
+  Spec.Zeroize.zeroizeApi.artifact target {
     code := Impl.Zeroize.PPC64LE.zeroize
-    contract := Spec.Zeroize.zeroizeContract abi
-    verified := ⟨Proof.Zeroize.PPC64LE.verified, Proof.Zeroize.PPC64LE.noResidue _ _⟩
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Zeroize.PPC64LE.zeroize_scrubbed }]
 end VG.Artifacts.Zeroize.PPC64LE
