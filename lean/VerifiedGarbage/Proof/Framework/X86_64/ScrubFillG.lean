@@ -178,6 +178,14 @@ theorem inames_eq (h : FillG k n a b) : UpperLock.inames b = UpperLock.inames a 
   | loop _ _ ih | call _ _ _ ih | frame _ _ _ ih => simp only [UpperLock.inames, ih]
   | icall _ _ _ _ ihb ihx => simp only [UpperLock.inames, ihb, ihx]
 
+/-- `FillG` into code that both the stub and the implementation choose by
+the same condition. -/
+theorem ifp {p : Prop} [Decidable p] {a a' x y : Prog isa} (h : FillG k n a x) (h' : FillG k n a' y) :
+    FillG k n (if p then a else a') (if p then x else y) := by
+  by_cases hp : p
+  · rw [ite_eq_left hp, ite_eq_left hp]; exact h
+  · rw [ite_eq_right hp, ite_eq_right hp]; exact h'
+
 /-- Code is itself with no hole filled. -/
 theorem refl : ∀ c : Prog isa, FillG k n c c
   | .block is => .block is

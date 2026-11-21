@@ -75,4 +75,6 @@ def bmEpilogue : List Instr := bmSaved.map fun (r, d) => .mov r (.mem (at_ .r13 
 def blockMixWith (salsa : Prog isa) : Prog isa :=
   .seq (.block bmPrologue) (.seq (.loop (bmBody salsa) .ne) (.block bmEpilogue))
 
+def blockMix : Prog isa := blockMixWith salsa
+
 end VG.Impl.Scrypt.X86_64

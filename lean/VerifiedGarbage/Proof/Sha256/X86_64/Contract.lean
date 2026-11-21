@@ -64,6 +64,8 @@ def compressX86_64S (n : Nat) : Contract X86_64.isa where
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
 
+theorem compressX86_64_eq : compressX86_64 = compressX86_64S 560 := rfl
+
 open X86_64 in
 /-- x86-64 contract for `vg_sha256_init(state: *mut [u8; 96])` and
 `vg_sha224_init`, which store the initial hash value `iv`: makes the

@@ -1274,6 +1274,11 @@ theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.inv
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
+theorem encryptBlocks_verified :
+    Verified X86_64.target Impl.Aes.X86_64.VaesBlocks.encryptBlocks
+      (Proof.Aes.encryptBlocksRoundsContract X86_64.abi) :=
+  Verified.of_correct encryptBlocks_correct encryptBlocks_ct AesNi.encryptBlocks_implies
+
 theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
     (hs : (Proof.Aes.encryptBlocksRoundsContract X86_64.abi).pre s)
     (he : Exec isa Impl.Aes.X86_64.VaesBlocks.encryptBlocks s t s') :
@@ -1282,6 +1287,11 @@ theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
   obtain ⟨t', s'', he', h⟩ := encrypt_correct hp
   obtain ⟨-, rfl⟩ := Exec.det he he'
   exact AesNi.written_of_frame (AesNi.Ecb.preS_of s (AesNi.encryptBlocks_implies.pre s hs)) h.2.2
+
+theorem decryptBlocks_verified :
+    Verified X86_64.target Impl.Aes.X86_64.VaesBlocks.decryptBlocks
+      (Proof.Aes.decryptBlocksRoundsContract X86_64.abi) :=
+  Verified.of_correct decryptBlocks_correct decryptBlocks_ct AesNi.decryptBlocks_implies
 
 theorem decryptBlocks_written (s : State) (t : List Leak) (s' : State)
     (hs : (Proof.Aes.decryptBlocksRoundsContract X86_64.abi).pre s)

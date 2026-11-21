@@ -407,6 +407,7 @@ def finalizeX86_64S (n : Nat) : Contract X86_64.isa where
 
 end VG.Proof.Sha512
 
+
 namespace VG.Proof.Sha512.X86_64
 
 open VG VG.X86_64 VG.Impl.Sha512.X86_64
@@ -814,7 +815,46 @@ theorem common_zero {s₀ : State} (hp : Pre s₀) {s₁ : State} (hg : s₁.gpr
       (by decide), ← stateAt_get _ _ hk]
     rfl
 
+theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ (nb s₀) s) :
+    WP isa (.block restore) s fun s' =>
+      gprPreserved s₀ s' ∧ Proof.Sha512.compressX86_64.post s₀ s' := by
+  have hret : s.mem.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64 :=
+    hc.frame.readW (Region.contains_self _ _) (by simpa using ⟨hp.ret_st, hp.ret_scr⟩) (by decide)
+  refine WP.mono (Spill.restore_ok .rcx saved s₀.gpr s (by decide) (fun p hp' => ?_)
+    (by rw [hc.rcx]; exact hc.saved)) fun s' ⟨h₁, h₂, hm, _⟩ => ?_
+  · have := saved_bound p hp'
+    rw [hc.rcx, hc.rd, hc.wr]
+    exact ⟨scrR s₀, by simp [hp.wr], Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
+  · exact ⟨⟨Spill.calleeSaved_ok h₁ h₂ (by decide) hc.rsp, by rw [hm]; exact hret⟩,
+      by show stateAt _ _ = _; rw [hm]; exact hc.state⟩
+
 /-! ## The whole function -/
+
+theorem correct {s₀ : State} (hp : Pre s₀) :
+    WP isa compress s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha512.compressX86_64.post s₀ s' := by
+  refine WP.seq (WP.mono (save_ok hp) fun s₁ ⟨hg, hrd, hwr, hm, hzf⟩ => ?_)
+  refine WP.seq (WP.mono (Q := Common s₀ (nb s₀)) ?_ fun s₂ hc => restore_ok hp hc)
+  have hc₀ := common_zero hp hg hrd hwr hm
+  refine WP.ite (s₀.gpr .rdx &&& s₀.gpr .rdx == 0) (by simp [eval, hzf]) (fun h => ?_) (fun h => ?_)
+  · have h0 : nb s₀ = 0 := by simp at h; simp [nb, h]
+    exact WP.block_nil (M := isa) (h0 ▸ hc₀)
+  · have hpos : 0 < nb s₀ := by
+      simp only [BitVec.and_self, beq_eq_false_iff_ne, ne_eq] at h
+      exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
+    let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv s₀ i s
+    have hstep : ∀ m s, Inv m s → WP isa body s (fun s' =>
+        (eval .ne s' = some false ∧ Common s₀ (nb s₀) s') ∨
+        (eval .ne s' = some true ∧ ∃ m' < m, Inv m' s')) := by
+      rintro m s ⟨i, rfl, hi, hL⟩
+      refine WP.mono (body_ok hp hi hL) fun s' h => ?_
+      rcases h with ⟨he, hc⟩ | ⟨he, hi', hL'⟩
+      · exact .inl ⟨he, hc⟩
+      · exact .inr ⟨he, nb s₀ - (i + 1), by bdd_omega, i + 1, rfl, hi', hL'⟩
+    have hL₀ : LInv s₀ 0 s₁ :=
+      { hc₀ with
+        rsi := by rw [hg]; simp [blkAddr]
+        rdx := by rw [hg]; simp [nb] }
+    exact WP.loop (M := isa) Inv hstep (nb s₀) s₁ ⟨0, rfl, hpos, hL₀⟩
 
 /-- A state satisfying the precondition (with no blocks). -/
 def satState : State where
@@ -827,5 +867,18 @@ def satState : State where
   mem _ := 0
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x3000, 176⟩]
+
+theorem compress_verified :
+    Verified X86_64.target Impl.Sha512.X86_64.compress Proof.Sha512.compressX86_64 := by
+  refine ⟨fun s hs => ?_, ?_, ?_⟩
+  · obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
+    exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
+  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
+    intro s₁ s₂ _ _ ⟨h1, h2, h3, h4⟩
+    refine Taint.agree_ofRegs fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  · refine ⟨satState, rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    exact Region.disjoint_of_sep (by decide)
 
 end VG.Proof.Sha512.X86_64

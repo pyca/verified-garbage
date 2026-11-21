@@ -95,6 +95,8 @@ theorem pubL_regs {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop
 
 /-! ## The blocks -/
 
+theorem ea_rsp8 (s : State) : s.ea { base := .rsp, disp := 8 } = s.gpr .rsp + BitVec.ofNat 64 8 := rfl
+
 theorem ea_rsp0 (s : State) : s.ea { base := .rsp } = s.gpr .rsp := BitVec.add_zero _
 
 theorem sub16_add8 (sp : Addr) : sp - BitVec.ofNat 64 16 + BitVec.ofNat 64 8 = sp - BitVec.ofNat 64 8 :=
@@ -870,6 +872,38 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     (fun vs m m₁ m₂ x hlen hpw hag => hpostOut vs m m₁ m₂ x hlen hpw fun b hb hbA a ha =>
       hag b hb a ha fun hp => hbA a ha (Region.sub_prefix hn a hp))
     hwiped hsat hleak
+
+/-- `Verified.callWipe'`, with the function's postcondition. -/
+theorem Verified.callWipe {name zname : String} {body zcode : Prog isa} {zst : Nat}
+    {ps₁ ps₂ : List (String × Param)} {nm : String} {e : Elem} {k n i : Nat}
+    (h : Verified target body (sig.contract abi pre post wa stack leak))
+    (hz : Verified target zcode (Spec.Zeroize.zeroizeContract abi zst))
+    (hk : (sig.words abi.ptrBits).length ≤ 6) (hl : Sig.noLists sig.params = true)
+    (hps : sig.params = ps₁ ++ (nm, .array true e k) :: ps₂)
+    (hi : i = (ps₁.flatMap fun p => p.2.words 64).length)
+    (hn : n ≤ k * e.size) (hn32 : n < 2 ^ 32) (hst : stack + 32 ≤ 2 ^ 64)
+    (hsp : body.all (fun i => !isa.writesSp i) = true) (hd : body.x86_64Depth ≤ stack)
+    (hzsp : zcode.all (fun i => !isa.writesSp i) = true) (hzmx : zcode.allInstrs (fun i => !touchesMxcsr i) = true) (hzd : zcode.x86_64Depth ≤ zst)
+    (hzs : zst ≤ stack)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' x, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
+    (hpostOut : ∀ vs m m₁ m₂ x, vs.length = (sig.words abi.ptrBits).length →
+      (Sig.bufs sig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs sig.params vs, b.1.Disjoint ⟨vs.getD i 0, k * e.size⟩ →
+        ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ x)
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + 24) leak).pre s)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    Verified target (Impl.CallWipe.X86_64.callWipe (argRegs.getD i .rax) n name body zname zcode)
+      (sig.contract abi pre post wa (stack + 24) leak) :=
+  Verified.callWipe' h hz hk hl hps hi hn hn32 hst hsp hd hzsp hzmx hzd hzs hpre hpost hpostOut
+    (fun _ _ _ _ _ hq _ => hq) hsat hleak
 
 end
 

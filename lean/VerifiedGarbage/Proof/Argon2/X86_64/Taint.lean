@@ -66,6 +66,10 @@ def satState : State where
   rd := [⟨0x1000, 1024⟩, ⟨0x2000, 1024⟩]
   wr := [⟨0x3000, 1024⟩, ⟨0x4000, 4096⟩]
 
+theorem compress_implies : compressLocal.Implies (compressContract X86_64.abi) := by
+  sig_implies [compressContract, compressSig, compressLocal, X86_64.abi, X86_64.argRegs]
+    [satState] using satState
+
 end VG.Proof.Argon2.X86_64
 end
 

@@ -35,6 +35,10 @@ def suffix : FieldVariant → String
   | .scalar => ""
   | .adx => "_adx"
 
+def features : FieldVariant → List String
+  | .scalar => []
+  | .adx => ["bmi2", "adx"]
+
 def doubleFn : FieldVariant → Prog isa
   | .scalar => Point64.doubleFn
   | .adx => Point64.doubleAdxFn

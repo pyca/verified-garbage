@@ -47,6 +47,11 @@ def beforeErased : Prog VG.X86_64.isa := VG.X86_64.Code.erase (verifyPrefix p256
 /-- The code after the comb, without its displacements. -/
 def afterErased : Prog VG.X86_64.isa := VG.X86_64.Code.erase (verifySuffix p256).inline
 
+/-- The comb's tail, without its displacements. -/
+def tailErased : Prog VG.X86_64.isa :=
+  VG.X86_64.Code.erase (Code.seq (.block (publicLoads (p256.combCfg p256Table)))
+    (publicRest (p256.combCfg p256Table))).inline
+
 materialize_shared beforeErased
 materialize_shared afterErased
 materialize_shared tailErased

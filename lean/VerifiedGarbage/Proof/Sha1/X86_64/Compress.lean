@@ -350,6 +350,8 @@ def compressX86_64S (n : Nat) : Contract X86_64.isa where
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
 
+theorem compressX86_64_eq : compressX86_64 = compressX86_64S 112 := rfl
+
 open VG.X86_64 in
 /-- x86-64 contract for `vg_sha1_init(state: *mut [u8; 84])`: makes the
 streaming state at `state` represent the empty message.

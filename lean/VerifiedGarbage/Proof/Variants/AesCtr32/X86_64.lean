@@ -10,11 +10,17 @@ namespace VG.Proof.Variants.AesCtr32.X86_64
 
 open VG.Proof.Aes.X86_64
 
-def aesNi : Ctr32Impl := .aesni
+def aesNi : Ctr32Impl :=
+  { Ctr32Impl.aesni with
+    gcmInitRes := some Ctr32Residue.gcmAesni
+    cmacFinishRes := some Ctr32Residue.finishAesni }
 
 def scalar : Ctr32Impl := .scalar
 
-def vaes : Ctr32Impl := .vaes
+def vaes : Ctr32Impl :=
+  { Ctr32Impl.vaes with
+    gcmInitRes := some Ctr32Residue.gcmVaes
+    cmacFinishRes := some Ctr32Residue.finishVaes }
 
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its

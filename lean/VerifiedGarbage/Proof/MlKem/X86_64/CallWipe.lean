@@ -1113,6 +1113,7 @@ theorem decaps1024W_verified (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
     Verified X86_64.target (decaps1024W v.callee v.suffix z.name z.code) (Spec.MlKem1024.decapsContract X86_64.abi 56) :=
   decaps1024W_scrubbed v z
 
+
 /-! ## The stack pointer -/
 
 theorem keyGenW_spSafe (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
@@ -1160,6 +1161,10 @@ def Wipe.skip (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) : Bool :=
 baseline of `vg_mlkem_sample_ntt4`, `z`'s. -/
 def Wipe.suffix (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) : String :=
   if v.features.isEmpty then z.suffix else v.suffix
+
+/-- The CPU features the functions need: those of `v` and `z`. -/
+def Wipe.features (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) : List String :=
+  v.features ++ z.features.filter (!v.features.contains ·)
 
 /-! ## Without secret residue
 

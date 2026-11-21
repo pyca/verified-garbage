@@ -109,7 +109,6 @@ theorem addScrubbed_noResidue :
   · rw [m₁, m₂]
     exact hm x (by rw [← r₁, ← w₁]; exact hx')
 
-
 /-! ## Clearing only the registers that may hold secrets
 
 `leakAdd` returns `a + b` too, but first puts the secret `a` in `rcx` and

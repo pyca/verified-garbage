@@ -69,6 +69,18 @@ theorem EInvTo.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' 
     fun k hk l hl' => by rw [hm]; exact h.pw k hk l hl', fun l hl' => by rw [hl]; exact h.m1 l hl',
     by rw [hl]; exact h.y, fun l h1 h4 => by rw [hl]; exact h.y1 l h1 h4⟩
 
+/-- What `bigTo` does after the tables: the next two groups, the loop, and
+two of the three groups left to hash, for any tables `T` whose last is `P`. -/
+theorem bigRestTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) (hT2 : ∀ k l, T 2 k l = P k l)
+    (h96 : 96 ≤ nb s₀) {s s₁ : State} (hI : EInvTo s₀ P 1 s) (hA₁ : AInvTo s₀ (16 * 1) s₁)
+    (hv₁ : ∀ g < 3, ∀ k < 4, ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
+    (hm₁ : ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) (hg₁ : s₁.gpr = s.gpr)
+    (hl₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l) :
+    WP isa bigRestTo s₁ fun s' => ∃ e, EInvTo s₀ P e s' :=
+  WP.mono (StitchZ.bigRestM_ok hp.toM hf hT hT2 h96 (hI.toM hp) (hA₁.toM hp) hv₁ hm₁ hg₁ hl₁)
+    fun _ ⟨e, h⟩ => ⟨e, h.toTo⟩
+
 /-- `bigTo`: from the first group encrypted to all but up to two groups, all
 but the last encrypted group hashed. -/
 theorem bigTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)

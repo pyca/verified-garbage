@@ -160,6 +160,14 @@ theorem resOk_regOpsA {api : Api} (r : Unscrubbed api target) {pubs : List (Nat 
   rw [e] at hv hp ⊢
   exact resOk_of_opsCheck (ScrubAbi.of r.consts api.sig r.tables) hv hcs hS hfit hp hc
 
+/-- The granules to wipe, from the analysis with the operations `ops` (none
+if it fails, which the check then rejects), as `keepFor`. -/
+def keepForOps (sig : Sig) (stack : Nat) (code : Prog isa) (ops : List (VG.Taint.Op isa FT))
+    (pubs : List (Nat × Nat × Nat) := []) : List Nat :=
+  match VG.Taint.hintOpsA rtaintMx ops (fun _ _ => false) (fun _ _ => none) [] (init sig stack pubs) code with
+  | some (τ, _) => keepOf τ.sec (chunks stack)
+  | none => []
+
 end RScrub
 
 end VG.X86_64

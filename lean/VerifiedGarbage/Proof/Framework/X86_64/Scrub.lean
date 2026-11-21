@@ -1705,6 +1705,39 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
             · simp only [List.mem_singleton] at hr; subst hr; exact nd _ hsp'.symm)]
         exact hm x hx'
 
+/-- `Verified.scrubM`, for code of `vecLevel` at most `v.level`, which below
+the level `evex` never loads MXCSR. -/
+theorem Verified.scrub {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : List Reg} {ks cs : List Nat}
+    (hA : ScrubAbi A)
+    (h : Verified target c (sig.contract A pre post wa stack leak))
+    (hsp : SpSafe c) (hd : c.x86_64Depth ≤ stack) (hcs : cs.sum = stack) (hst : stack + 8 < 2 ^ 64)
+    (hv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
+    (hlv : ∀ i ∈ instrs c, i.vecLevel ≤ v.level)
+    (hrb : sig.retBits A.ptrBits ≤ 32 ∨ sig.retBits A.ptrBits = 64)
+    (hpost : ∀ s u u', (sig.contract A pre post wa stack leak).pre s →
+      (sig.contract A pre post wa stack leak).post s u →
+      (∀ x, (∃ r ∈ s.rd ++ s.wr, r.Contains x 1) → u'.mem x = u.mem x) →
+      (u'.gpr .rax).setWidth (sig.retBits A.ptrBits) = (u.gpr .rax).setWidth (sig.retBits A.ptrBits) →
+      (sig.contract A pre post wa stack leak).post s u')
+    (hres : ResOk c (sig.contract A pre post wa stack leak) stack ks cs)
+    (ht : TailOk (sig.retBits A.ptrBits) xs ps gs ks)
+    (hxs : (∀ x, x ∈ xs) ∨ ∀ i ∈ instrs c, writesVec i = false)
+    (hxe : v = .evex → ∀ x, x ∈ xs) (hev : ∀ p : Addr, cs.sum ≤ p.toNat → EvexOk v ks cs p)
+    (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false) :
+    Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+        (sig.contract A pre post wa stack leak) ∧
+      ((∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ → ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) →
+        NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+        (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :=
+  Verified.scrubM hA h hsp hd hcs hst hv (fun i hi => Nat.le_trans (vecLevelR_le i) (hlv i hi))
+    (fun hne => MxSame.of_fun ⟨id, fun _ _ _ he => Exec.mxcsr (fun i hi => noLoad_of_vecLevel (by
+      have := hlv i hi
+      cases v
+      · simp only [VecLevel.level] at this; omega_using [this]
+      · exact this
+      · exact absurd rfl hne)) he⟩)
+    hrb hpost hres ht hxs hxe hev hgk
+
 end
 
 /-! ## Registering scrubbed code -/

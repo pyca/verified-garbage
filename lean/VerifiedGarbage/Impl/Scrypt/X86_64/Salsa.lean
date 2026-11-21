@@ -76,6 +76,8 @@ def saved : List (Reg × Nat) :=
   [(.rbx, 16), (.rbp, 24), (.r12, 32), (.r13, 40), (.r14, 48), (.r15, 56)]
 
 def save : List Instr := saved.map fun (r, d) => .store (at_ .rsi d) r
+def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .rsi d))
+
 /-- Load word `k` of `b` into its register, or copy it to its slot. -/
 def loadWord (k : Nat) : List Instr :=
   if k < 12 then [.mov32 (wreg k) (.mem (at_ .rdi (4 * k)))]
@@ -93,5 +95,8 @@ def finishWord (k : Nat) : List Instr :=
      .store32 (at_ .rdi (4 * k)) .rax]
 
 def finish : List Instr := (List.range 16).flatMap finishWord
+
+def salsa : Prog isa :=
+  .seq (.block (save ++ load)) (.seq (rounds 4) (.block (finish ++ restore)))
 
 end VG.Impl.Scrypt.X86_64

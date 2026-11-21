@@ -177,6 +177,8 @@ def saved : List (Reg × Nat) :=
   [(.rbx, 1280), (.rbp, 1288), (.r12, 1296), (.r13, 1304), (.r14, 1312), (.r15, 1320)]
 
 def save : List Instr := saved.map fun (r, d) => .store (at_ .rcx d) r
+def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .rcx d))
+
 /-- Load the hash value into the variables of round 0. -/
 def loadState : List Instr := (List.range 8).map fun k => .mov (var 0 k) (.mem (at_ .rdi (8 * k)))
 
@@ -202,5 +204,9 @@ def body : Prog isa :=
     (.seq (.block initCarry)
     (.seq (rounds2 80)
       (.block (addState ++ ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 2)] : List Instr)))))))))))
+
+def compress : Prog isa :=
+  .seq (.block (save ++ const mBswap bswapMask ++ ([.alu .test .rdx (.reg .rdx)] : List Instr)))
+    (.seq (.ite .e (.block []) (.loop body .ne)) (.block (restore ++ ([.vop .vzeroupper] : List Instr))))
 
 end VG.Impl.Sha512.X86_64.Avx2

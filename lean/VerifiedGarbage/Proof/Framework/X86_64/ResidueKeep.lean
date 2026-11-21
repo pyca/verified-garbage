@@ -111,9 +111,26 @@ theorem pop_vk0 {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = so
   case pop r k => split at h <;> cases h; exact popReg_vk0 s₂ r k
   case free => split at h <;> cases h; rfl
 
+theorem callret_vk0 {s s₁ s₂ s' : State} (hc : isa.call s = some s₁) (hr : isa.ret s₁ s₂ = some s')
+    (hb : vk0 s₂ = vk0 s₁) : vk0 s' = vk0 s := by
+  simp only [isa, call, Option.some.injEq] at hc; subst hc
+  simp only [isa, ret] at hr; split at hr <;> cases hr
+  exact hb
+
 theorem vk1_of_vk0 {a b : State} (h : vk0 a = vk0 b) : vk1 a = vk1 b := by
   simp only [vk0, vk1, Prod.mk.injEq] at h ⊢
   exact ⟨h.1, h.2.1, h.2.2.1⟩
+
+/-- Code of level 0 keeps bits 511:128 of every vector register and MXCSR. -/
+theorem Exec.vecKeep0 {c : Prog isa} (hc : ∀ i ∈ instrs c, i.vecLevel = 0) {s s' : State} {t : List Leak}
+    (h : Exec isa c s t s') : vk0 s' = vk0 s :=
+  Exec.keep (fun s : State => vk0 s) (ok := fun i : Instr => i.vecLevel = 0)
+    (fun {i s s'} hi he => by
+      have k := exec_vkeep (by omega_using [hi]) he
+      rw [hi] at k
+      simp only [vk0, k.1, k.2.1, k.2.2.1, (k.2.2.2 rfl).1, (k.2.2.2 rfl).2])
+    (fun _ hp hq hb => by rw [pop_vk0 hq, hb, push_vk0 hp]) hc
+    (.inr fun _ _ _ _ hc hr hb => callret_vk0 hc hr hb) h
 
 /-- Code of level at most 1 keeps `zmm16`–`zmm31` and MXCSR. -/
 theorem Exec.vecKeep1 {c : Prog isa} (hc : ∀ i ∈ instrs c, i.vecLevel ≤ 1) {s s' : State} {t : List Leak}
@@ -172,6 +189,18 @@ theorem vecLevel_of_writesVec {i : Instr} (hw : Impl.Scrub.X86_64.writesVec i = 
 
 theorem loadsMxcsr_eq {i : Instr} (h : loadsMxcsr i = true) : ∃ m, i = .ldmxcsr m := by
   cases i <;> simp_all [loadsMxcsr]
+
+theorem vecLevel_of_loads {i : Instr} (h : loadsMxcsr i = true) : i.vecLevel = 2 := by
+  obtain ⟨m, rfl⟩ := loadsMxcsr_eq h; rfl
+
+theorem vecLevelR_le (i : Instr) : i.vecLevelR ≤ i.vecLevel := by
+  unfold Instr.vecLevelR; split <;> omega_using []
+
+/-- An instruction of level at most 1 does not load MXCSR. -/
+theorem noLoad_of_vecLevel {i : Instr} (h : i.vecLevel ≤ 1) : loadsMxcsr i = false := by
+  cases hl : loadsMxcsr i
+  · rfl
+  · rw [vecLevel_of_loads hl] at h; omega
 
 /-- What an instruction of `vecLevelR` at most 1 keeps. -/
 theorem exec_vkeepR {i : Instr} {s s' : State} (hi : i.vecLevelR ≤ 1) (h : exec i s = some s') :

@@ -20,9 +20,13 @@ def constPoint (fld : Arith) (p : Spec.Ed25519.Point) : List Instr := fieldCode 
 /-- Save the accumulator while a batch of powers is prepared. -/
 def savePointOps : List FieldOp := [.copy 17 0, .copy 18 1, .copy 19 2, .copy 20 3]
 
+def restorePointOps : List FieldOp := [.copy 0 17, .copy 1 18, .copy 2 19, .copy 3 20]
+
 def copyPointToQOps : List FieldOp := [.copy 4 0, .copy 5 1, .copy 6 2, .copy 7 3]
 
 def savePoint (fld : Arith) : List Instr := fieldCode fld savePointOps
+
+def restorePoint (fld : Arith) : List Instr := fieldCode fld restorePointOps
 
 def copyPointToQ (fld : Arith) : List Instr := fieldCode fld copyPointToQOps
 

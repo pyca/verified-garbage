@@ -561,6 +561,15 @@ def streamDecryptWPlainA : Unscrubbed Spec.Gcm.streamDecryptPreparedApi X86_64.t
     (Flag.streamDecrypt_of_base (streamDecryptClrB_framed .sse aesNiPclmulV.impl aesNiPclmulV.impl.blkB))
   spSafe := streamDecryptClr_spSafe .sse aesNiPclmulV.impl aesNiPclmulV.impl.blkB
 
+/-- What the clearing of only the general-purpose registers needs of the code
+of `vg_aes_gcm_stream_{en,de}crypt_prepared_aesni_pclmul`, checked by the
+emitter: no function called indirectly, in it and in its callees, and the
+vector registers agreeing in two runs along the same path
+(`VecLock.step`). -/
+def StreamChk (c : Prog isa) (b : Prog isa) : Prop :=
+  UpperLock.inames aesNiPclmulV.impl.callees.ctr.code = [] ∧ UpperLock.inames aesNiPclmulV.impl.callees.gh.code = [] ∧
+    UpperLock.inames b = [] ∧ UpperLock.inames c = [] ∧ VecLock.step .sse c (true, true) = (true, true)
+
 instance (c b : Prog isa) : Decidable (StreamChk c b) := by unfold StreamChk; infer_instance
 
 open VG.X86_64.Scrub StackLock in
@@ -1058,6 +1067,12 @@ def BlkFn.wipeS (n : Nat) (hn : 64 + n ≤ 2112) (h16 : n % 16 = 0 ∨ 16 ≤ n)
   encXd := by simp only [Fn.wipeS, Code.x86_64Depth, Nat.max_le]; exact ⟨B.encXd, Nat.zero_le _⟩
   decXd := by simp only [Fn.wipeS, Code.x86_64Depth, Nat.max_le]; exact ⟨B.decXd, Nat.zero_le _⟩
 
+/-- `vg_aes_ctr32` through its contract with 1480 bytes, as a whole-blocks
+function calls it. -/
+theorem CtrW.small (ctr : VG.Proof.Aes.X86_64.Ctr32Impl) (f : VG.Proof.Aes.X86_64.Ctr32Small ctr.callee) :
+    Blocks.CtrW ⟨ctr.callee.name, ctr.callee.code⟩ 1480 :=
+  fun h => WP.mono (ctr_callS ctr f h) fun _ ⟨g, fr⟩ => ⟨g.saved, g.rd, g.wr, fr⟩
+
 end Wipe
 
 /-! ## `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul`, without secret residue -/
@@ -1104,6 +1119,15 @@ def streamEncryptF16Plain (v : GcmVariant) : Unscrubbed Spec.Gcm.streamEncryptPr
   spSafe := streamEncryptCodeF16S_spAll v
 
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
+/-- What the clearing of only the general-purpose registers needs of
+`vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul`, checked by the emitter
+(as `StreamChk`). -/
+def StreamChkF16 : Prop :=
+  variant.streamF16Clr = true ∧ UpperLock.inames variant.impl.callees.ctr.code = [] ∧
+    UpperLock.inames variant.impl.callees.gh.code = [] ∧ UpperLock.inames variant.impl.blkB.enc.code = [] ∧
+    UpperLock.inames (blkR16 variant).enc.code = [] ∧ UpperLock.inames (streamEncryptCodeF16C variant) = [] ∧
+    VecLock.step .avx (streamEncryptCodeF16C variant) (true, true) = (true, true)
+
 instance : Decidable StreamChkF16 := by unfold StreamChkF16; infer_instance
 
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
@@ -1153,6 +1177,15 @@ def streamEncryptF16AvxPlain : Unscrubbed Spec.Gcm.streamEncryptPreparedApi X86_
   spSafe := VG.X86_64.onFlag_spSafe (streamEncryptClr_spSafe .avx variant.impl blkRA)
     (streamEncryptClr_spSafe .avx variant.impl blkBA)
 
+/-- What the clearing of only the general-purpose registers needs of
+`vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx`, checked by the
+emitter (as `StreamChk`). -/
+def StreamChkF16A : Prop :=
+  UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
+    UpperLock.inames blkBA.enc.code = [] ∧ UpperLock.inames blkRA.enc.code = [] ∧
+    UpperLock.inames streamEncryptF16AvxPlain.code = [] ∧
+    VecLock.step .avx streamEncryptF16AvxPlain.code (true, true) = (true, true)
+
 instance : Decidable StreamChkF16A := by unfold StreamChkF16A; infer_instance
 
 /-- `streamEncryptF16AvxPlain` for `vg_aes_gcm_stream_decrypt_prepared`. -/
@@ -1165,6 +1198,13 @@ def streamDecryptF16AvxPlain : Unscrubbed Spec.Gcm.streamDecryptPreparedApi X86_
     (streamDecryptClrB_framed .avx variant.impl blkBA))
   spSafe := VG.X86_64.onFlag_spSafe (streamDecryptClr_spSafe .avx variant.impl blkRA)
     (streamDecryptClr_spSafe .avx variant.impl blkBA)
+
+/-- `StreamChkF16A` for `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx`. -/
+def StreamChkF16AD : Prop :=
+  UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
+    UpperLock.inames blkBA.dec.code = [] ∧ UpperLock.inames blkRA.dec.code = [] ∧
+    UpperLock.inames streamDecryptF16AvxPlain.code = [] ∧
+    VecLock.step .avx streamDecryptF16AvxPlain.code (true, true) = (true, true)
 
 instance : Decidable StreamChkF16AD := by unfold StreamChkF16AD; infer_instance
 
@@ -1292,6 +1332,16 @@ def streamEncryptF48ZPlain : Unscrubbed Spec.Gcm.streamEncryptPreparedApi X86_64
   spSafe := VG.X86_64.onFlag_spSafe (streamEncryptClr_spSafe .avx variant.impl blkRZ)
     (streamEncryptClr_spSafe .avx variant.impl blkBZ)
 
+/-- What the clearing of only the general-purpose registers needs of
+`vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512`, checked by the
+emitter (as `StreamChkF16A`). -/
+def StreamChkF48Z : Prop :=
+  UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
+    UpperLock.inames blkBZ.enc.code = [] ∧ UpperLock.inames blkRZ.enc.code = [] ∧
+    UpperLock.inames streamEncryptF48ZPlain.code = [] ∧
+    VecLock.step .avx streamEncryptF48ZPlain.code (true, true) = (true, true) ∧
+    HLock.step streamEncryptF48ZPlain.code true = true
+
 instance : Decidable StreamChkF48Z := by unfold StreamChkF48Z; infer_instance
 
 /-- `streamEncryptF48ZPlain` for `vg_aes_gcm_stream_decrypt_prepared`. -/
@@ -1304,6 +1354,14 @@ def streamDecryptF48ZPlain : Unscrubbed Spec.Gcm.streamDecryptPreparedApi X86_64
     (streamDecryptClrB_framed .avx variant.impl blkBZ))
   spSafe := VG.X86_64.onFlag_spSafe (streamDecryptClr_spSafe .avx variant.impl blkRZ)
     (streamDecryptClr_spSafe .avx variant.impl blkBZ)
+
+/-- `StreamChkF48Z` for `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512`. -/
+def StreamChkF48ZD : Prop :=
+  UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
+    UpperLock.inames blkBZ.dec.code = [] ∧ UpperLock.inames blkRZ.dec.code = [] ∧
+    UpperLock.inames streamDecryptF48ZPlain.code = [] ∧
+    VecLock.step .avx streamDecryptF48ZPlain.code (true, true) = (true, true) ∧
+    HLock.step streamDecryptF48ZPlain.code true = true
 
 instance : Decidable StreamChkF48ZD := by unfold StreamChkF48ZD; infer_instance
 
@@ -1320,6 +1378,23 @@ return (`BlkFn.wipeS`). -/
 
 open Gcm.X86_64.Stitch (CtxMode)
 
+/-- `c`, as `vg_aes_ctr32_w` (`Ctr32Impl.wipe`), if it needs working space and
+never writes `r9`, which the emitter checks. -/
+def ctrS (c : VG.Proof.Aes.X86_64.Ctr32Impl) : VG.Proof.Aes.X86_64.Ctr32Impl :=
+  match c.free, c.small with
+  | none, some f => if h : ∀ i ∈ instrs c.callee.code, Taint.clobbers i .r9 = false then c.wipe h f else c
+  | _, _ => c
+
+/-- `g`, as `vg_ghash_w` (`GhashImpl.wipe`), if it needs working space and
+never writes `r8`, which the emitter checks. -/
+def ghS (g : GhashImpl) : GhashImpl :=
+  match g.free with
+  | none => if h : ∀ i ∈ instrs g.fn.code, Taint.clobbers i .r8 = false then g.wipe h else g
+  | some _ => g
+
+/-- `i`, its callees that need working space zeroing it (`ctrS`, `ghS`). -/
+def GcmImpl.wipeS (i : GcmImpl) : GcmImpl := { i with ctr := ctrS i.ctr, gh := ghS i.gh }
+
 /-- The bytes of the callees' working space the whole blocks of `i` zero:
 1480 with `vg_aes_ctr32`'s, the more, else 256. -/
 def blkWipeN (i : GcmImpl) : Nat := if i.ctr.free.isNone then 1480 else 256
@@ -1328,6 +1403,9 @@ theorem blkWipeN_le (i : GcmImpl) : 64 + blkWipeN i ≤ 2112 := by unfold blkWip
 
 theorem blkWipeN_16 (i : GcmImpl) : blkWipeN i % 16 = 0 ∨ 16 ≤ blkWipeN i := by
   unfold blkWipeN; split <;> decide
+
+/-- `i`'s whole blocks, zeroing their callees' working space (`BlkFn.wipeS`). -/
+def blkS (i : GcmImpl) : BlkFn CtxMode.base := i.blkB.wipeS (blkWipeN i) (blkWipeN_le i) (blkWipeN_16 i)
 
 /-! ## `vg_aes_gcm_stream_{en,de}crypt_prepared_pclmul`, without secret residue
 
@@ -1343,6 +1421,11 @@ theorem blkWipeN_pclmul : blkWipeN pclmulV.impl = 1480 := rfl
 
 open StackLock in
 open StackLock in
+/-- `StreamChk` over the callees of `v`. -/
+def StreamChkV (v : GcmImpl) (c : Prog isa) (b : Prog isa) : Prop :=
+  UpperLock.inames v.callees.ctr.code = [] ∧ UpperLock.inames v.callees.gh.code = [] ∧
+    UpperLock.inames b = [] ∧ UpperLock.inames c = [] ∧ VecLock.step .sse c (true, true) = (true, true)
+
 instance (v : GcmImpl) (c b : Prog isa) : Decidable (StreamChkV v c b) := by unfold StreamChkV; infer_instance
 
 open VG.X86_64.Scrub StackLock in
@@ -1381,6 +1464,15 @@ def streamDecryptF16Plain (v : GcmVariant) : Unscrubbed Spec.Gcm.streamDecryptPr
     (streamDecryptClr_spSafe .avx v.impl v.impl.blkB)
 
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
+/-- What the clearing of only the general-purpose registers needs of
+`vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul`, checked by the emitter
+(as `StreamChkF16`). -/
+def StreamChkF16D : Prop :=
+  UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
+    UpperLock.inames variant.impl.blkB.dec.code = [] ∧ UpperLock.inames (blkR16 variant).dec.code = [] ∧
+    UpperLock.inames (streamDecryptCodeF16C variant) = [] ∧
+    VecLock.step .avx (streamDecryptCodeF16C variant) (true, true) = (true, true)
+
 instance : Decidable StreamChkF16D := by unfold StreamChkF16D; infer_instance
 
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in

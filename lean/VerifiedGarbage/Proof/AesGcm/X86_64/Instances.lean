@@ -1732,6 +1732,14 @@ theorem StitchToName.ok : (n : StitchToName) → (M : Proof.Gcm.X86_64.Stitch.Ct
   | .vaesAvx512, M => Proof.Gcm.X86_64.StitchZTo.stitchTo_ok M
   | .aesniAvx, M => Proof.Gcm.X86_64.StitchAvx8.stitchTo_ok M
 
+/-- The out-of-place loops named `n` for a key context of
+`vg_aes_gcm_init_precomputed` interleave counter mode and GHASH correctly. -/
+theorem StitchToName.okP : (n : StitchToName) →
+    Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.powers n.encP
+  | .vaes => Proof.Gcm.X86_64.StitchTo.stitchTo_ok _
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZTo.stitchToP_ok
+  | .aesniAvx => fun s₀ hp _ => Proof.Gcm.X86_64.StitchAvx8.stitchTo_ok _ s₀ hp (Nat.mod_one _)
+
 /-- The out-of-place loops a variant names, with their proof. -/
 def GcmVariant.stitchTo (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.base) :=
   (v.stitch.bind (·.toPart)).map fun p => ⟨p.name.enc, p.name.full, p.name.ok _, p.piece⟩
