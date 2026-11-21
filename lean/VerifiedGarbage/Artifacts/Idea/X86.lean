@@ -15,12 +15,12 @@ namespace VG.Artifacts.Idea.X86
 def artifacts : List Artifact := [
   Spec.Idea.expandKeyApi.artifact X86.target {
     code := Impl.Idea.X86.Fn.expandKey
-    verified := .scrubbed Proof.Idea.X86.Scrub.expandKey_scrubbed },
+    verified := Proof.Idea.X86.Scrub.expandKey_scrubbed },
   Spec.Idea.invertKeyApi.artifact X86.target {
     code := Impl.Idea.X86.Fn.invertKey
-    verified := .scrubbed Proof.Idea.X86.Scrub.invertKey_scrubbed },
+    verified := Proof.Idea.X86.Scrub.invertKey_scrubbed },
   Spec.Idea.ecbApi.artifact X86.target {
     code := Impl.Idea.X86.Fn.ecb
-    verified := .scrubbed Proof.Idea.X86.Scrub.ecb_scrubbed }]
+    verified := Proof.Idea.X86.Scrub.ecb_scrubbed }]
 
 end VG.Artifacts.Idea.X86

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 `verifiedScrubbedSel` states `VerifiedScrubbed` of code followed by
 `Impl.Scrub.AArch64.scrubSel W ks c`, after the clears (`withClears`), which
 zeroes only the 16-byte granules `ks` of the `W` bytes below the stack
-pointer: the theorem a registration binds (`verified := .scrubbed …`), as
+pointer: the theorem a registration binds (`verified := …`), as
 `verifiedScrubbedAll` (`ScrubProved.lean`) is of `scrubAll`. It pairs
 `RTaintG.Verified.scrubSel` and `RTaintG.noResidue_scrubSel`
 (`ResidueWin.lean`), and needs the residue analysis of the window

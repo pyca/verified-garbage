@@ -24,12 +24,12 @@ open VG.Proof.Secp256k1.RISCV64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.Fn.compressSecp256k1
-    verified := .scrubbed Proof.EcKey.Compressed.RISCV64.Secp256k1.compress_scrubbed },
+    verified := Proof.EcKey.Compressed.RISCV64.Secp256k1.compress_scrubbed },
   Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.Fn.decompressSecp256k1
-    verified := .scrubbed (Proof.EcKey.Compressed.RISCV64.Secp256k1.decompress_scrubbed hasLaw.law) },
+    verified := Proof.EcKey.Compressed.RISCV64.Secp256k1.decompress_scrubbed hasLaw.law },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact RISCV64.target {
     code := Impl.Ecdh.RISCV64.Fn.publicKeySecp256k1
-    verified := .scrubbed (Proof.Ecdh.RISCV64.Secp256k1.publicKey_scrubbed hasLaw.law) }]
+    verified := Proof.Ecdh.RISCV64.Secp256k1.publicKey_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcSecp256k1.RISCV64

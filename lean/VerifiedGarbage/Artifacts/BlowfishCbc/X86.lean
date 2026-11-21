@@ -15,9 +15,9 @@ namespace VG.Artifacts.BlowfishCbc.X86
 def artifacts : List Artifact := [
   Spec.Blowfish.cbcEncryptChainedApi.artifact X86.target {
     code := Impl.Blowfish.X86.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Blowfish.X86.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.Blowfish.X86.Scrub.cbcEncryptChained_scrubbed },
   Spec.Blowfish.cbcDecryptChainedApi.artifact X86.target {
     code := Impl.Blowfish.X86.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Blowfish.X86.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.Blowfish.X86.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.BlowfishCbc.X86

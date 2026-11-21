@@ -17,22 +17,22 @@ def artifacts : List Artifact :=
     Spec.Xts.aesEncryptUnitApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesXts.X86_64Unit.Fn.encrypt v.level v.xts
-      verified := .scrubbed (Proof.AesXts.X86_64.Scrub.encryptUnit_scrubbed v)
+      verified := Proof.AesXts.X86_64.Scrub.encryptUnit_scrubbed v
       spSafe := Proof.AesXts.X86_64.Scrub.encryptUnit_spSafeFn v },
     Spec.Xts.aesDecryptUnitApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesXts.X86_64Unit.Fn.decrypt v.level v.xts
-      verified := .scrubbed (Proof.AesXts.X86_64.Scrub.decryptUnit_scrubbed v)
+      verified := Proof.AesXts.X86_64.Scrub.decryptUnit_scrubbed v
       spSafe := Proof.AesXts.X86_64.Scrub.decryptUnit_spSafeFn v },
     Spec.Xts.aesEncryptUnitToApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesXts.X86_64UnitTo.Fn.encrypt v.level v.xts ⟨v.to.enc, v.to.dec⟩
-      verified := .scrubbed (Proof.AesXts.X86_64.Scrub.encryptUnitTo_scrubbed v)
+      verified := Proof.AesXts.X86_64.Scrub.encryptUnitTo_scrubbed v
       spSafe := Proof.AesXts.X86_64.Scrub.encryptUnitTo_spSafeFn v },
     Spec.Xts.aesDecryptUnitToApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.AesXts.X86_64UnitTo.Fn.decrypt v.level v.xts ⟨v.to.enc, v.to.dec⟩
-      verified := .scrubbed (Proof.AesXts.X86_64.Scrub.decryptUnitTo_scrubbed v)
+      verified := Proof.AesXts.X86_64.Scrub.decryptUnitTo_scrubbed v
       spSafe := Proof.AesXts.X86_64.Scrub.decryptUnitTo_spSafeFn v }]
 
 end VG.Artifacts.AesXts.X86_64

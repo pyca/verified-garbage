@@ -17,10 +17,10 @@ def artifacts : List Artifact :=
     Spec.X448.exchangeApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.X448.Arm.Fn.exchange v.um
-      verified := .scrubbed (Proof.X448.Arm.Fn.exchange v.um) },
+      verified := Proof.X448.Arm.Fn.exchange v.um },
     Spec.X448.x448BaseApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.X448.Arm.Fn.x448Base v.um
-      verified := .scrubbed (Proof.X448.Arm.Fn.x448Base v.um) }]
+      verified := Proof.X448.Arm.Fn.x448Base v.um }]
 
 end VG.Artifacts.X448.Arm

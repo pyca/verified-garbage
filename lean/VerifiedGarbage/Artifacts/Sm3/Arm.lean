@@ -13,12 +13,12 @@ namespace VG.Artifacts.Sm3.Arm
 def artifacts : List Artifact := [
   Spec.Sm3.initApi.artifact Arm.target {
     code := Impl.Sm3.Arm.Fn.init
-    verified := .scrubbed Proof.Sm3.Arm.Fn.init },
+    verified := Proof.Sm3.Arm.Fn.init },
   Spec.Sm3.updateApi.artifact Arm.target {
     code := Impl.Sm3.Arm.Fn.update
-    verified := .scrubbed Proof.Sm3.Arm.Fn.update },
+    verified := Proof.Sm3.Arm.Fn.update },
   Spec.Sm3.finalizeApi.artifact Arm.target {
     code := Impl.Sm3.Arm.Fn.finalize
-    verified := .scrubbed Proof.Sm3.Arm.Fn.finalize }]
+    verified := Proof.Sm3.Arm.Fn.finalize }]
 
 end VG.Artifacts.Sm3.Arm

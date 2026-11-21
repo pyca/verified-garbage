@@ -18,6 +18,6 @@ def artifacts : List Artifact := [
   Spec.Scrypt.scryptApi.artifact PPC64LE.target {
     code := Impl.Scrypt.PPC64LE.Fn.scrypt Proof.Scrypt.PPC64LE.Whole.pbkName
       Proof.Scrypt.PPC64LE.Whole.pbkCode
-    verified := .scrubbed Proof.Scrypt.PPC64LE.Scrub.scrypt_scrubbed }]
+    verified := Proof.Scrypt.PPC64LE.Scrub.scrypt_scrubbed }]
 
 end VG.Artifacts.Scrypt.PPC64LE

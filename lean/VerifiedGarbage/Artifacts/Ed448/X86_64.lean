@@ -107,7 +107,7 @@ def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact X86_64.target
     { suffix := v.suffix
       code := Impl.Ed448.X86_64.Fn.publicKey v
-      verified := .scrubbed (Proof.Ed448.X86_64.Scrub.publicKey_scrubbed v)
+      verified := Proof.Ed448.X86_64.Scrub.publicKey_scrubbed v
       spSafe := Proof.Ed448.X86_64.Scrub.publicKey_spSafe v }]
 
 def artifacts : List Artifact :=
@@ -122,7 +122,7 @@ def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.signCachedApi.artifact X86_64.target
     { suffix := v.suffix
       code := Impl.Ed448.X86_64.SignCached.Fn.signCached v
-      verified := .scrubbed (Proof.Ed448.X86_64.Scrub.signCached_scrubbed v)
+      verified := Proof.Ed448.X86_64.Scrub.signCached_scrubbed v
       spSafe := Proof.Ed448.X86_64.Scrub.signCached_spSafe v }]
 
 def artifacts : List Artifact :=
@@ -137,7 +137,7 @@ def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.verifyApi.artifact X86_64.target
     { suffix := v.suffix
       code := Impl.Ed448.X86_64.Verify.Fn.verify v
-      verified := .scrubbed (Proof.Ed448.X86_64.Scrub.verify_scrubbed v)
+      verified := Proof.Ed448.X86_64.Scrub.verify_scrubbed v
       spSafe := Proof.Ed448.X86_64.Scrub.verify_spSafe v }]
 
 def artifacts : List Artifact :=

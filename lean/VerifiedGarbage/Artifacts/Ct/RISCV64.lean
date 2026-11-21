@@ -13,6 +13,6 @@ namespace VG.Artifacts.Ct.RISCV64
 def artifacts : List Artifact := [
   Spec.Ct.eqApi.artifact RISCV64.target {
     code := Impl.Ct.RISCV64.Fn.eq
-    verified := .scrubbed Proof.Ct.RISCV64Scrub.eq_scrubbed }]
+    verified := Proof.Ct.RISCV64Scrub.eq_scrubbed }]
 
 end VG.Artifacts.Ct.RISCV64

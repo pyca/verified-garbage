@@ -26,13 +26,13 @@ def artifacts : List Artifact :=
         tables := [("hash", tables vars), ("mgf1", tables vars)]
         code := Impl.RsaOaep.Arm.Fn.decryptPrecomputed (Proof.HashTable.Arm.fnsOf vars) (Proof.Rsa.Arm.privNameP v)
           (Proof.Rsa.Arm.privCodeP v)
-        verified := .scrubbed (Proof.RsaOaep.Arm.Fn.decryptPrecomputed vars h v) },
+        verified := Proof.RsaOaep.Arm.Fn.decryptPrecomputed vars h v },
       Spec.RsaOaep.encryptMdTablesApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", tables vars), ("mgf1", tables vars)]
         code := Impl.RsaOaep.Arm.Fn.encryptPrecomputed (Proof.HashTable.Arm.fnsOf vars) (Proof.Rsa.Arm.pdOfCrt v).name
           (Proof.Rsa.Arm.pdOfCrt v).code
-        verified := .scrubbed (Proof.RsaOaep.Arm.Fn.encryptPrecomputed vars h v) }]
+        verified := Proof.RsaOaep.Arm.Fn.encryptPrecomputed vars h v }]
     else []
 
 end VG.Artifacts.RsaOaep.Arm

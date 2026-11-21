@@ -13,9 +13,9 @@ namespace VG.Artifacts.HmacSha512_256.Arm
 def artifacts : List Artifact := [
   Spec.Hmac.sha512_256I.initAnyKeyApi.artifact Arm.target {
     code := Impl.Hmac.Stream.Arm.Fn.initSha512_256
-    verified := .scrubbed Proof.Hmac.Stream.Arm.Fn.initSha512_256 },
+    verified := Proof.Hmac.Stream.Arm.Fn.initSha512_256 },
   Spec.Hmac.sha512_256I.finalizeApi.artifact Arm.target {
     code := Impl.Hmac.Stream.Arm.Fn.finalizeSha512_256
-    verified := .scrubbed Proof.Hmac.Stream.Arm.Fn.finalizeSha512_256 }]
+    verified := Proof.Hmac.Stream.Arm.Fn.finalizeSha512_256 }]
 
 end VG.Artifacts.HmacSha512_256.Arm

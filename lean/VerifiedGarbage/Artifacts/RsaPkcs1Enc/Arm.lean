@@ -35,11 +35,11 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed Proof.RsaPkcs1Enc.Arm.decFns (Proof.Rsa.Arm.privNameP v)
         (Proof.Rsa.Arm.privCodeP v)
-      verified := .scrubbed (Proof.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed v) },
+      verified := Proof.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed v },
     Spec.RsaPkcs1Enc.encryptRandomApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.Arm.Fn.encryptRandom ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix)
         (Impl.RsaPkcs1Enc.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code)
-      verified := .scrubbed (Proof.RsaPkcs1Enc.Arm.Fn.encryptRandom ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix) v) }]
+      verified := Proof.RsaPkcs1Enc.Arm.Fn.encryptRandom ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix) v }]
 
 end VG.Artifacts.RsaPkcs1Enc.Arm

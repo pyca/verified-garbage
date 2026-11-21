@@ -29,10 +29,10 @@ target's framework states its cleanup only as a theorem about named code,
 binds that code and that theorem and nothing else: each
 `.artifact RISCV64.target` is given a record, `{ … }`, whose `code :=` is a
 definition of `Impl/` (`Impl.…`, applied to what it takes) and whose
-`verified :=` is `.scrubbed` of a theorem of `Proof/` (`.scrubbed Proof.…`),
+`verified :=` is a theorem of `Proof/` (`Proof.…`, applied to what it takes),
 with no other fields than the choices `RISCV_FIELDS` names; and the file has
-no tactic block at all, no anonymous constructor (`⟨…⟩`), no `.unscrubbed`
-and nothing of `RISCV64.Scrub`, the framework's namespace.
+no tactic block at all, no anonymous constructor (`⟨…⟩`) and nothing of
+`RISCV64.Scrub`, the framework's namespace.
 """
 
 import pathlib
@@ -63,10 +63,9 @@ ARTIFACT = re.compile(r"(?<![\w'])artifact(?![\w'])")
 ARTIFACT_RECORD = re.compile(r"\s+RISCV64\.target\s*\{")
 FIELD = re.compile(r"(?<![\w.'])([\w']+)\s*:=")
 ANON = re.compile(r"⟨")
-UNSCRUBBED = re.compile(r"(?<![\w'])unscrubbed(?![\w'])")
 FRAMEWORK = re.compile(r"(?<![\w.'])(?:VG\.)?RISCV64\.Scrub(?![\w'])")
 CODE_OK = re.compile(r"\(?\s*Impl\.")
-VERIFIED_OK = re.compile(r"\.scrubbed\s+\(?\s*Proof\.")
+VERIFIED_OK = re.compile(r"\(?\s*Proof\.")
 
 
 def code_only(text: str) -> str:
@@ -171,21 +170,20 @@ def riscv_problems(rel: str, code: str, line) -> list[str]:
     for m in BY.finditer(code):
         if m.group(1) in DEFAULTS and not rest_of_block(code, m.start(), m.end()):
             out.append(f"lean/{rel}:{line(m.start())}: a tactic proof in a RISC-V registration "
-                       f"file; it binds only `code := Impl.…` and `verified := .scrubbed Proof.…` "
+                       f"file; it binds only `code := Impl.…` and `verified := Proof.…` "
                        f"{skill}")
     for pat, what in [(ANON, "an anonymous constructor (`⟨…⟩`)"),
-                      (UNSCRUBBED, "`.unscrubbed`"),
                       (FRAMEWORK, "the scrub framework (`RISCV64.Scrub`)")]:
         for m in pat.finditer(code):
             out.append(f"lean/{rel}:{line(m.start())}: {what} in a RISC-V registration file; "
-                       f"it binds only `code := Impl.…` and `verified := .scrubbed Proof.…`, "
+                       f"it binds only `code := Impl.…` and `verified := Proof.…`, "
                        f"whose proof is made under `Proof/` {skill}")
     for m in ARTIFACT.finditer(code):
         r = ARTIFACT_RECORD.match(code, m.end())
         if not r:
             out.append(f"lean/{rel}:{line(m.start())}: a RISC-V registration not given as a record; "
                        f"write `.artifact RISCV64.target {{ code := Impl.… "
-                       f"verified := .scrubbed Proof.… }}` {skill}")
+                       f"verified := Proof.… }}` {skill}")
             continue
         fields, end = record_fields(code, r.end() - 1)
         names = [f[1] for f in fields]
@@ -197,7 +195,7 @@ def riscv_problems(rel: str, code: str, line) -> list[str]:
             elif name == "verified":
                 if not VERIFIED_OK.match(value):
                     out.append(f"lean/{rel}:{line(at)}: a RISC-V registration's `verified` that is "
-                               f"not a theorem of `Proof/`; bind `verified := .scrubbed Proof.…` "
+                               f"not a theorem of `Proof/`; bind `verified := Proof.…` "
                                f"{skill}")
             elif name not in RISCV_FIELDS:
                 out.append(f"lean/{rel}:{line(at)}: `{name}` in a RISC-V registration; it binds "

@@ -15,9 +15,9 @@ namespace VG.Artifacts.Cast5Cbc.RISCV64
 def artifacts : List Artifact := [
   Spec.Cast5.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.Cast5.RISCV64.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.Cast5.RISCV64.Scrub.cbcEncryptChained_scrubbed },
   Spec.Cast5.cbcDecryptChainedApi.artifact RISCV64.target {
     code := Impl.Cast5.RISCV64.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.Cast5.RISCV64.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.Cast5Cbc.RISCV64

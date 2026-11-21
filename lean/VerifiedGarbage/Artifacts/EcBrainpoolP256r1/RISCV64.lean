@@ -24,12 +24,12 @@ open VG.Proof.BrainpoolP256r1.RISCV64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact RISCV64.target {
     code := Impl.Ecdh.RISCV64.Fn.publicKeyBrainpoolP256r1
-    verified := .scrubbed (Proof.Ecdh.RISCV64.BrainpoolP256r1.publicKey_scrubbed hasLaw.law) },
+    verified := Proof.Ecdh.RISCV64.BrainpoolP256r1.publicKey_scrubbed hasLaw.law },
   Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.Fn.compressBrainpoolP256r1
-    verified := .scrubbed Proof.EcKey.Compressed.RISCV64.BrainpoolP256r1.compress_scrubbed },
+    verified := Proof.EcKey.Compressed.RISCV64.BrainpoolP256r1.compress_scrubbed },
   Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact RISCV64.target {
     code := Impl.EcKey.Compressed.RISCV64.Fn.decompressBrainpoolP256r1
-    verified := .scrubbed (Proof.EcKey.Compressed.RISCV64.BrainpoolP256r1.decompress_scrubbed hasLaw.law) }]
+    verified := Proof.EcKey.Compressed.RISCV64.BrainpoolP256r1.decompress_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcBrainpoolP256r1.RISCV64

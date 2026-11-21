@@ -251,7 +251,7 @@ namespace VG.Artifacts.RsaKeyGen.Arm
 def direct : List Artifact := [
   Spec.RsaKeyGen.keyInitApi.artifact Arm.target {
     code := Impl.RsaKeyGen.Arm.Fn.generateInit
-    verified := .scrubbed Proof.RsaKeyGen.Arm.Fn.generateInit }]
+    verified := Proof.RsaKeyGen.Arm.Fn.generateInit }]
 
 def artifacts : List Artifact :=
   direct ++
@@ -261,6 +261,6 @@ def artifacts : List Artifact :=
       code := Impl.RsaKeyGen.Arm.Fn.generate
         (.call ("vg_rsa_prime_search" ++ v.suffix) (Proof.RsaKeyGen.Arm.Search.searchCode v))
         (.call "vg_rsa_keygen_key" Impl.RsaKeyGen.Arm.Key.code)
-      verified := .scrubbed (Proof.RsaKeyGen.Arm.Fn.generate v) }])
+      verified := Proof.RsaKeyGen.Arm.Fn.generate v }])
 
 end VG.Artifacts.RsaKeyGen.Arm

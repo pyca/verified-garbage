@@ -16,6 +16,6 @@ def artifacts : List Artifact :=
     Spec.Argon2.deriveApi.artifact VG.AArch64.target {
       suffix := v.suffix
       code := Impl.Argon2.AArch64.Derive.Fn.derive v.hash v.suffix
-      verified := .scrubbed (Proof.Argon2.AArch64.Scrub.derive_scrubbed v) }]
+      verified := Proof.Argon2.AArch64.Scrub.derive_scrubbed v }]
 
 end VG.Artifacts.Argon2.AArch64

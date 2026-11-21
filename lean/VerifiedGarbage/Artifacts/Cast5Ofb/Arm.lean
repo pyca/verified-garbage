@@ -13,9 +13,9 @@ namespace VG.Artifacts.Cast5Ofb.Arm
 def artifacts : List Artifact := [
   Spec.Cast5.ofbApi.artifact Arm.target {
     code := Impl.Cast5.Arm.Fn.ofb
-    verified := .scrubbed Proof.Cast5.Arm.Fn.ofb },
+    verified := Proof.Cast5.Arm.Fn.ofb },
   Spec.Cast5.ofbFinalApi.artifact Arm.target {
     code := Impl.Cast5.Arm.Fn.ofbFinal
-    verified := .scrubbed Proof.Cast5.Arm.Fn.ofbFinal }]
+    verified := Proof.Cast5.Arm.Fn.ofbFinal }]
 
 end VG.Artifacts.Cast5Ofb.Arm

@@ -18,13 +18,13 @@ def artifacts : List Artifact :=
     Spec.Ctr.aesApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCtr.X86.Fn.crypt32 v.callee
-      verified := .scrubbed (Proof.AesCtr.X86.Scrub.ctr_scrubbed v)
+      verified := Proof.AesCtr.X86.Scrub.ctr_scrubbed v
       spSafe := Proof.AesCtr.X86.Scrub.ctr_fnSpSafe v }]) ++
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) => [
     Spec.Ctr.aesFinalApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCtr.X86.Fn.cryptFinal v.enc v.suffix
-      verified := .scrubbed (Proof.AesCtr.X86.Scrub.ctrFinal_scrubbed v)
+      verified := Proof.AesCtr.X86.Scrub.ctrFinal_scrubbed v
       spSafe := Proof.AesCtr.X86.Scrub.ctrFinal_fnSpSafe v }]
 
 end VG.Artifacts.AesCtr.X86

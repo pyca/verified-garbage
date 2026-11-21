@@ -74,6 +74,6 @@ open VG.Proof.P256.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P256.exchangeApi.artifact X86.target {
     code := Impl.Ecdh.X86.Fn.exchangeP256
-    verified := .scrubbed (Proof.Ecdh.X86.P256.Scrub.exchange_scrubbed hasLaw.law hasLaw.inv hasLaw.prime) }]
+    verified := Proof.Ecdh.X86.P256.Scrub.exchange_scrubbed hasLaw.law hasLaw.inv hasLaw.prime }]
 
 end VG.Artifacts.EcdhP256.X86

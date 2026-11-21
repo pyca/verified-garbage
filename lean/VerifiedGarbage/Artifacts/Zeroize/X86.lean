@@ -17,5 +17,5 @@ open VG.X86
 def artifacts : List Artifact := [
   Spec.Zeroize.zeroizeApi.artifact target {
     code := Impl.Zeroize.X86.Fn.zeroize
-    verified := .scrubbed Proof.Zeroize.X86.zeroize_scrubbed }]
+    verified := Proof.Zeroize.X86.zeroize_scrubbed }]
 end VG.Artifacts.Zeroize.X86

@@ -16,9 +16,9 @@ namespace VG.Artifacts.CamelliaOfb.X86
 def artifacts : List Artifact := [
   Spec.Camellia.ofbApi.artifact X86.target {
     code := Impl.Camellia.X86.Fn.ofb
-    verified := .scrubbed Proof.Camellia.X86.Scrub.ofb_scrubbed },
+    verified := Proof.Camellia.X86.Scrub.ofb_scrubbed },
   Spec.Camellia.ofbFinalApi.artifact X86.target {
     code := Impl.Camellia.X86.Fn.ofbFinal
-    verified := .scrubbed Proof.Camellia.X86.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Camellia.X86.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.CamelliaOfb.X86

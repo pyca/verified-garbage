@@ -14,9 +14,9 @@ namespace VG.Artifacts.X25519.RISCV64
 def artifacts : List Artifact := [
   Spec.X25519.exchangeApi.artifact RISCV64.target {
     code := Impl.X25519.RISCV64.Fn.exchange
-    verified := .scrubbed Proof.X25519.RISCV64.Scrub.exchange_scrubbed },
+    verified := Proof.X25519.RISCV64.Scrub.exchange_scrubbed },
   Spec.X25519.x25519BaseApi.artifact RISCV64.target {
     code := Impl.X25519.RISCV64.Fn.base
-    verified := .scrubbed Proof.X25519.RISCV64.Scrub.base_scrubbed }]
+    verified := Proof.X25519.RISCV64.Scrub.base_scrubbed }]
 
 end VG.Artifacts.X25519.RISCV64

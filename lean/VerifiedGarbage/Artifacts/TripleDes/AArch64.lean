@@ -38,12 +38,12 @@ namespace VG.Artifacts.TripleDes.AArch64
 def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact AArch64.target {
     code := Impl.TripleDes.AArch64.Fn.expandKey
-    verified := .scrubbed Proof.TripleDes.AArch64.expandKeyCleared_scrubbed },
+    verified := Proof.TripleDes.AArch64.expandKeyCleared_scrubbed },
   Spec.TripleDes.ecbEncryptApi.artifact AArch64.target {
     code := Impl.TripleDes.AArch64.Fn.ecbEncrypt
-    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_scrubbed },
+    verified := Proof.TripleDes.AArch64.ModesResidue.ecbEncryptCode_scrubbed },
   Spec.TripleDes.ecbDecryptApi.artifact AArch64.target {
     code := Impl.TripleDes.AArch64.Fn.ecbDecrypt
-    verified := .scrubbed Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_scrubbed }]
+    verified := Proof.TripleDes.AArch64.ModesResidue.ecbDecryptCode_scrubbed }]
 
 end VG.Artifacts.TripleDes.AArch64

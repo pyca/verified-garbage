@@ -13,12 +13,12 @@ namespace VG.Artifacts.Blowfish.Arm
 def artifacts : List Artifact := [
   Spec.Blowfish.expandKeyApi.artifact Arm.target {
     code := Impl.Blowfish.Arm.Fn.expandKey
-    verified := .scrubbed Proof.Blowfish.Arm.Fn.expandKey },
+    verified := Proof.Blowfish.Arm.Fn.expandKey },
   Spec.Blowfish.ecbEncryptApi.artifact Arm.target {
     code := Impl.Blowfish.Arm.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Blowfish.Arm.Fn.ecbEncrypt },
+    verified := Proof.Blowfish.Arm.Fn.ecbEncrypt },
   Spec.Blowfish.ecbDecryptApi.artifact Arm.target {
     code := Impl.Blowfish.Arm.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Blowfish.Arm.Fn.ecbDecrypt }]
+    verified := Proof.Blowfish.Arm.Fn.ecbDecrypt }]
 
 end VG.Artifacts.Blowfish.Arm

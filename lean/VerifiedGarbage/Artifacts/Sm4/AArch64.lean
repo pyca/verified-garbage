@@ -21,23 +21,23 @@ def artifacts : List Artifact := [
   Spec.Sm4.expandKeyApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Sm4e.expandKey
-    verified := .scrubbed Proof.Sm4.AArch64.Sm4e.expandKey_scrubbed },
+    verified := Proof.Sm4.AArch64.Sm4e.expandKey_scrubbed },
   Spec.Sm4.expandKeyApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.Serial.Fn.expandKey
-    verified := .scrubbed Proof.Sm4.AArch64.CtrScrub.expandKey },
+    verified := Proof.Sm4.AArch64.CtrScrub.expandKey },
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Fn.ecb .encrypt
-    verified := .scrubbed Proof.Sm4.AArch64.Sm4e.ecbEncrypt_scrubbed },
+    verified := Proof.Sm4.AArch64.Sm4e.ecbEncrypt_scrubbed },
   Spec.Sm4.ecbDecryptApi.artifact AArch64.target {
     suffix := "_sm4"
     code := Impl.Sm4.AArch64.Fn.ecb .decrypt
-    verified := .scrubbed Proof.Sm4.AArch64.Sm4e.ecbDecrypt_scrubbed },
+    verified := Proof.Sm4.AArch64.Sm4e.ecbDecrypt_scrubbed },
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode_scrubbed },
+    verified := Proof.Sm4.AArch64.EcbResidue.ecbEncryptCode_scrubbed },
   Spec.Sm4.ecbDecryptApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode_scrubbed }]
+    verified := Proof.Sm4.AArch64.EcbResidue.ecbDecryptCode_scrubbed }]
 
 end VG.Artifacts.Sm4.AArch64

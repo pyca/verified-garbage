@@ -18,15 +18,15 @@ namespace VG.Artifacts.IdeaCfb.PPC64LE
 def artifacts : List Artifact := [
   Spec.Idea.cfbEncryptApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.cfbEncrypt
-    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cfbEncrypt_scrubbed },
+    verified := Proof.Idea.PPC64LE.Scrub.cfbEncrypt_scrubbed },
   Spec.Idea.cfbDecryptApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.cfbDecrypt
-    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cfbDecrypt_scrubbed },
+    verified := Proof.Idea.PPC64LE.Scrub.cfbDecrypt_scrubbed },
   Spec.Idea.cfbEncryptFinalApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.cfbEncryptFinal
-    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cfbEncryptFinal_scrubbed },
+    verified := Proof.Idea.PPC64LE.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Idea.cfbDecryptFinalApi.artifact PPC64LE.target {
     code := Impl.Idea.PPC64LE.Fn.cfbDecryptFinal
-    verified := .scrubbed Proof.Idea.PPC64LE.Scrub.cfbDecryptFinal_scrubbed }]
+    verified := Proof.Idea.PPC64LE.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.IdeaCfb.PPC64LE

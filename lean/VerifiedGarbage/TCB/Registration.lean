@@ -13,7 +13,7 @@ reads (which `stack_of` and `consts_of` find in the contract the proof is
 of), the tables of functions it takes, how much
 of its writable arrays it writes (`written`, with its proof), and the suffix
 of its name. The proof is also that the code returns without secret residue
-(`Verification.scrubbed`): the cleanup is part of the code it is of, like
+(`VerifiedScrubbed`): the cleanup is part of the code it is of, like
 everything else the function does. Everything else
 comes from the `Api` (`Spec/`): the Rust module, name, signature and
 documentation, `writeArgs`, and the contract on the target, which the proof
@@ -166,21 +166,13 @@ def Api.doc (api : Api) : String :=
 /-- The proof obligation for emitting `c` on target `T` with contract `k` and
 a result of `retBits` bits: `Verified`, and `c` returns without secret
 residue (`Target.noResidue`). It is one statement about the code that is
-emitted, whose cleanup is part of it. -/
+emitted, whose cleanup is part of it. Every artifact proves it
+(`Artifact.verified`): on a target that does not define what it means to
+return without secret residue, it is false, and there is no artifact. -/
 structure VerifiedScrubbed (T : Target) (c : Prog T.isa) (k : Contract T.isa) (retBits : Nat) :
     Prop where
   verified : Verified T c k
   noResidue : T.noResidue.elim False fun R => R c k retBits
-
-/-- What is proven of an artifact's code: `VerifiedScrubbed`, or, of an
-`unscrubbed` artifact, only `Verified`. The emitter accepts an unscrubbed
-artifact only of a function `ci/residue_allowlist.txt` lists, a list that
-only shrinks (`Rust.checkResidue`); on a target that does not define what it
-means to return without secret residue, every artifact is one. -/
-inductive Verification (T : Target) (c : Prog T.isa) (k : Contract T.isa) (retBits : Nat) :
-    Bool → Prop where
-  | scrubbed : VerifiedScrubbed T c k retBits → Verification T c k retBits false
-  | unscrubbed : Verified T c k → Verification T c k retBits true
 
 /-- A verified function, ready to be emitted into the Rust crate. -/
 structure Artifact where
@@ -228,15 +220,10 @@ structure Artifact where
   tables : List (String × List FnTable) := []
   code : Prog target.isa
   contract : Contract target.isa
-  /-- Whether `verified` is only `Verified`, with no proof that the function
-  returns without secret residue (`Verification.unscrubbed`). `verified`
-  determines it (unification finds it in `verified`'s type): it is never
-  stated. -/
-  unscrubbed : Bool := false
   /-- The proof, for a result of `sig.retBits` bits at the target's pointer
   width (which `Abi.withConsts` and `Abi.withTables` leave as it is: they
   change only what the calling convention reads and requires). -/
-  verified : Verification target.toTarget code contract (sig.retBits target.abi.ptrBits) unscrubbed
+  verified : VerifiedScrubbed target.toTarget code contract (sig.retBits target.abi.ptrBits)
   /-- `Sig.contract`'s `writeArgs` and `stack` for `contract` (see `ofSig`). -/
   writeArgs : Bool := false
   stack : Nat := 0
@@ -434,15 +421,10 @@ structure Registration (api : Api) (target : Target) where
   /-- `Artifact.consts`: by default, those `contract` names (`consts_of`),
   so that a registration states them only where it does not. -/
   consts : ConstsOf contract := by consts_of
-  /-- `Artifact.unscrubbed`, which `verified` determines (unification finds
-  it in `verified`'s type, as it does `contract`): a registration never
-  states it. -/
-  unscrubbed : Bool := false
-  /-- The proof, `.scrubbed h` of an `h : VerifiedScrubbed …`; or, only of a
-  function `ci/residue_allowlist.txt` lists, `.unscrubbed h` of an
-  `h : Verified …`. Its result's bits are `api.sig.retBits` at the target's
-  pointer width, as `Artifact.verified`'s. -/
-  verified : Verification target code contract (api.sig.retBits target.abi.ptrBits) unscrubbed
+  /-- The proof: that the code meets `contract` in constant time and returns
+  without secret residue. Its result's bits are `api.sig.retBits` at the
+  target's pointer width, as `Artifact.verified`'s. -/
+  verified : VerifiedScrubbed target code contract (api.sig.retBits target.abi.ptrBits)
   /-- `Artifact.stack`: by default, that of `contract` (`stack_of`), so that
   a registration never states it. -/
   stack : StackOf contract := by stack_of
@@ -488,7 +470,6 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
   tables := r.tables
   code := r.code
   contract := r.contract
-  unscrubbed := r.unscrubbed
   verified := r.verified
   writeArgs := api.writeArgs
   stack := r.stack

@@ -13,9 +13,9 @@ namespace VG.Artifacts.TripleDesOfb.Arm
 def artifacts : List Artifact := [
   Spec.TripleDes.ofbApi.artifact Arm.target {
     code := Impl.TripleDes.Arm.Fn.ofb
-    verified := .scrubbed Proof.TripleDes.Arm.Fn.ofb },
+    verified := Proof.TripleDes.Arm.Fn.ofb },
   Spec.TripleDes.ofbFinalApi.artifact Arm.target {
     code := Impl.TripleDes.Arm.Fn.ofbFinal
-    verified := .scrubbed Proof.TripleDes.Arm.Fn.ofbFinal }]
+    verified := Proof.TripleDes.Arm.Fn.ofbFinal }]
 
 end VG.Artifacts.TripleDesOfb.Arm

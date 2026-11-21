@@ -31,7 +31,7 @@ def artifacts : List Artifact :=
     Spec.Hmac.sha1I.pbkdf2Api.artifact X86.target {
       suffix := v.suffix
       code := Impl.Pbkdf2.Whole.X86.Fn.sha1 v.F
-      verified := .scrubbed (Proof.Pbkdf2.Whole.X86.Scrub.sha1_scrubbed v)
+      verified := Proof.Pbkdf2.Whole.X86.Scrub.sha1_scrubbed v
       spSafe := Proof.Pbkdf2.Whole.X86.Scrub.sha1_spSafe v }]
 
 end VG.Artifacts.Pbkdf2Sha1.X86

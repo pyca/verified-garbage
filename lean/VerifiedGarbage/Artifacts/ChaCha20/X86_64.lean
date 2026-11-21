@@ -26,11 +26,11 @@ namespace VG.Artifacts.ChaCha20.X86_64
 def direct : List Artifact := [
   Spec.ChaCha20.initApi.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.Fn.init
-    verified := .scrubbed Proof.ChaCha20.X86_64.Scrub.init_scrubbed
+    verified := Proof.ChaCha20.X86_64.Scrub.init_scrubbed
     spSafe := Proof.ChaCha20.X86_64.Scrub.init_spSafeFn },
   Spec.ChaCha20.setNonceApi.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.Fn.setNonce
-    verified := .scrubbed Proof.ChaCha20.X86_64.Scrub.setNonce_scrubbed
+    verified := Proof.ChaCha20.X86_64.Scrub.setNonce_scrubbed
     spSafe := Proof.ChaCha20.X86_64.Scrub.setNonce_spSafeFn }]
 
 def artifacts : List Artifact :=
@@ -39,7 +39,7 @@ def artifacts : List Artifact :=
     Spec.ChaCha20.applyApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.ChaCha20.X86_64.Fn.apply v.level v.callee
-      verified := .scrubbed (Proof.ChaCha20.X86_64.Scrub.apply_scrubbed v)
+      verified := Proof.ChaCha20.X86_64.Scrub.apply_scrubbed v
       spSafe := Proof.ChaCha20.X86_64.Scrub.apply_spSafeFn v })
 
 end VG.Artifacts.ChaCha20.X86_64

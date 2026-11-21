@@ -19,12 +19,12 @@ namespace VG.Artifacts.Rc2.AArch64
 def artifacts : List Artifact := [
   Spec.Rc2.cbcInitApi.artifact AArch64.target {
     code := Impl.Rc2.AArch64.Fn.cbcInit
-    verified := .scrubbed Proof.Rc2.AArch64.InitResidue.cbcInitCode_scrubbed },
+    verified := Proof.Rc2.AArch64.InitResidue.cbcInitCode_scrubbed },
   Spec.Rc2.cbcEncryptChainedApi.artifact AArch64.target {
     code := Impl.Rc2.AArch64.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_scrubbed },
+    verified := Proof.Rc2.AArch64.CbcResidue.cbcEncryptChainedCode_scrubbed },
   Spec.Rc2.cbcDecryptChainedApi.artifact AArch64.target {
     code := Impl.Rc2.AArch64.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_scrubbed }]
+    verified := Proof.Rc2.AArch64.CbcResidue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.Rc2.AArch64

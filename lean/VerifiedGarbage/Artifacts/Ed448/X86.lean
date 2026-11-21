@@ -69,12 +69,12 @@ open VG.X86
 def artifacts : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact X86.target {
     code := Impl.Ed448.X86.Fn.publicKey
-    verified := .scrubbed Proof.Ed448.X86.Scrub.publicKey_scrubbed },
+    verified := Proof.Ed448.X86.Scrub.publicKey_scrubbed },
   Spec.Ed448.signCachedApi.artifact X86.target {
     code := Impl.Ed448.X86.Fn.signCached
-    verified := .scrubbed Proof.Ed448.X86.Scrub.signCached_scrubbed },
+    verified := Proof.Ed448.X86.Scrub.signCached_scrubbed },
   Spec.Ed448.verifyApi.artifact X86.target {
     code := Impl.Ed448.X86.Fn.verify
-    verified := .scrubbed Proof.Ed448.X86.Scrub.verify_scrubbed }]
+    verified := Proof.Ed448.X86.Scrub.verify_scrubbed }]
 
 end VG.Artifacts.Ed448.X86

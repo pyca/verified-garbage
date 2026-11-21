@@ -17,17 +17,17 @@ def artifacts : List Artifact :=
     Spec.Siv.initApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesSiv.X86.Fn.init v.expand v.callee v.suffix
-      verified := .scrubbed (Proof.AesSiv.X86.Scrub.init_scrubbed v)
+      verified := Proof.AesSiv.X86.Scrub.init_scrubbed v
       spSafe := Proof.AesSiv.X86.Scrub.init_fnSpSafe v },
     Spec.Siv.encryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesSiv.X86.Fn.encrypt v.callee v.suffix
-      verified := .scrubbed (Proof.AesSiv.X86.Scrub.encrypt_scrubbed v)
+      verified := Proof.AesSiv.X86.Scrub.encrypt_scrubbed v
       spSafe := Proof.AesSiv.X86.Scrub.encrypt_fnSpSafe v },
     Spec.Siv.decryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesSiv.X86.Fn.decrypt v.callee v.suffix
-      verified := .scrubbed (Proof.AesSiv.X86.Scrub.decrypt_scrubbed v)
+      verified := Proof.AesSiv.X86.Scrub.decrypt_scrubbed v
       spSafe := Proof.AesSiv.X86.Scrub.decrypt_fnSpSafe v }]
 
 end VG.Artifacts.AesSiv.X86

@@ -15,12 +15,12 @@ namespace VG.Artifacts.Md5.RISCV64
 def artifacts : List Artifact := [
   Spec.Md5.initApi.artifact RISCV64.target {
     code := Impl.Md5.RISCV64.Fn.init
-    verified := .scrubbed Proof.Md5.RISCV64.init_scrubbed },
+    verified := Proof.Md5.RISCV64.init_scrubbed },
   Spec.Md5.updateApi.artifact RISCV64.target {
     code := Impl.Md5.RISCV64.Fn.update
-    verified := .scrubbed Proof.Md5.RISCV64.update_scrubbed },
+    verified := Proof.Md5.RISCV64.update_scrubbed },
   Spec.Md5.finalizeApi.artifact RISCV64.target {
     code := Impl.Md5.RISCV64.Fn.finalize
-    verified := .scrubbed Proof.Md5.RISCV64.finalize_scrubbed }]
+    verified := Proof.Md5.RISCV64.finalize_scrubbed }]
 
 end VG.Artifacts.Md5.RISCV64

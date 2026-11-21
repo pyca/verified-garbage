@@ -20,12 +20,12 @@ namespace VG.Artifacts.Idea.AArch64
 def artifacts : List Artifact := [
   Spec.Idea.expandKeyApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.Fn.expandKey
-    verified := .scrubbed Proof.Idea.AArch64.Residue.expandKeyCleared_scrubbed },
+    verified := Proof.Idea.AArch64.Residue.expandKeyCleared_scrubbed },
   Spec.Idea.invertKeyApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.Fn.invertKey
-    verified := .scrubbed Proof.Idea.AArch64.Residue.invertKeyCleared_scrubbed },
+    verified := Proof.Idea.AArch64.Residue.invertKeyCleared_scrubbed },
   Spec.Idea.ecbApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.Fn.ecb
-    verified := .scrubbed Proof.Idea.AArch64.Residue.ecbCleared_scrubbed }]
+    verified := Proof.Idea.AArch64.Residue.ecbCleared_scrubbed }]
 
 end VG.Artifacts.Idea.AArch64

@@ -16,12 +16,12 @@ open VG.Proof.BrainpoolP512r1.PPC64LE (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact PPC64LE.target {
     code := Impl.EcKey.PPC64LE.Fn.brainpoolp512r1PublicKey
-    verified := .scrubbed (Proof.EcKey.PPC64LE.Scrub.brainpoolp512r1PublicKey_scrubbed hasLaw.law) },
+    verified := Proof.EcKey.PPC64LE.Scrub.brainpoolp512r1PublicKey_scrubbed hasLaw.law },
   Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact PPC64LE.target {
     code := Impl.EcKey.PPC64LE.Fn.brainpoolp512r1Compress
-    verified := .scrubbed Proof.EcKey.PPC64LE.Scrub.brainpoolp512r1Compress_scrubbed },
+    verified := Proof.EcKey.PPC64LE.Scrub.brainpoolp512r1Compress_scrubbed },
   Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact PPC64LE.target {
     code := Impl.EcKey.PPC64LE.Fn.brainpoolp512r1Decompress
-    verified := .scrubbed (Proof.EcKey.PPC64LE.Scrub.brainpoolp512r1Decompress_scrubbed hasLaw.law) }]
+    verified := Proof.EcKey.PPC64LE.Scrub.brainpoolp512r1Decompress_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcBrainpoolP512r1.PPC64LE

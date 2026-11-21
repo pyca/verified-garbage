@@ -67,9 +67,9 @@ structure Target where
   abi : Abi isa
   /-- What it means on this target for a function with code `c`, contract
   `k` and a result of `retBits` bits to return without secret residue
-  (`X86_64.NoResidue`), if the target defines it: then every artifact of the
-  target proves it (`Artifact.residue`), but those `ci/residue_allowlist.txt`
-  lists, as the emitter checks (`Rust.checkResidue`). -/
+  (`X86_64.NoResidue`), if the target defines it: every artifact proves it
+  of its code (`VerifiedScrubbed`, `Artifact.verified`), so a target has
+  artifacts only if it defines it. -/
   noResidue : Option (Prog isa → Contract isa → Nat → Prop) := none
 
 /-- The contract of a function with signature `sig` under the calling

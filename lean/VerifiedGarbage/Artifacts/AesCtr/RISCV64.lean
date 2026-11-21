@@ -15,9 +15,9 @@ namespace VG.Artifacts.AesCtr.RISCV64
 def artifacts : List Artifact := [
   Spec.Ctr.aesApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.ctr
-    verified := .scrubbed Proof.Aes.RISCV64.Scrub.ctr_scrubbed },
+    verified := Proof.Aes.RISCV64.Scrub.ctr_scrubbed },
   Spec.Ctr.aesFinalApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.ctrFinal
-    verified := .scrubbed Proof.Aes.RISCV64.Scrub.ctrFinal_scrubbed }]
+    verified := Proof.Aes.RISCV64.Scrub.ctrFinal_scrubbed }]
 
 end VG.Artifacts.AesCtr.RISCV64

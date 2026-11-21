@@ -19,7 +19,7 @@ def artifacts : List Artifact :=
     Spec.Scrypt.scryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.Scrypt.X86.Fn.scrypt (pbkName v) (pbkOf v)
-      verified := .scrubbed (Proof.Scrypt.X86.Scrub.scrypt_scrubbed v)
+      verified := Proof.Scrypt.X86.Scrub.scrypt_scrubbed v
       spSafe := VG.X86.Scrub.scrubAll_spSafe (Proof.Scrypt.X86.Whole.scrypt_spSafe v) }]
 
 end VG.Artifacts.Scrypt.X86

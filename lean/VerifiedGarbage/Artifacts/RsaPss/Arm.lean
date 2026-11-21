@@ -26,14 +26,14 @@ def artifacts : List Artifact :=
           ("mgf1", Proof.HashTable.Arm.tables Proof.HashTable.Arm.vars)]
         code := Impl.RsaPss.Arm.Fn.signPrecomputed (Proof.MdHashTable.Arm.fnsOf Proof.MdHashTable.Arm.vars)
           (Proof.HashTable.Arm.fnsOf Proof.HashTable.Arm.vars) (Proof.Rsa.Arm.privNameP v) (Proof.Rsa.Arm.privCodeP v)
-        verified := .scrubbed (Proof.RsaPss.Arm.Fn.signPrecomputed h v) },
+        verified := Proof.RsaPss.Arm.Fn.signPrecomputed h v },
       Spec.RsaPss.verifyPrecomputedMdTableApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),
           ("mgf1", Proof.HashTable.Arm.tables Proof.HashTable.Arm.vars)]
         code := Impl.RsaPss.Arm.Fn.verifyPrecomputed (Proof.MdHashTable.Arm.fnsOf Proof.MdHashTable.Arm.vars)
           (Proof.HashTable.Arm.fnsOf Proof.HashTable.Arm.vars) (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code
-        verified := .scrubbed (Proof.RsaPss.Arm.Fn.verifyPrecomputed h v) }]
+        verified := Proof.RsaPss.Arm.Fn.verifyPrecomputed h v }]
     else []
 
 end VG.Artifacts.RsaPss.Arm

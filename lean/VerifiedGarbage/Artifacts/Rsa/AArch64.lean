@@ -14,18 +14,18 @@ namespace VG.Artifacts.Rsa.AArch64
 def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Fn.publicPrecompute
-    verified := .scrubbed Proof.Rsa.AArch64.Fn.publicPrecompute },
+    verified := Proof.Rsa.AArch64.Fn.publicPrecompute },
   Spec.Rsa.privatePrecomputeApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Fn.privatePrecompute
-    verified := .scrubbed Proof.Rsa.AArch64.Fn.privatePrecompute },
+    verified := Proof.Rsa.AArch64.Fn.privatePrecompute },
   Spec.Rsa.crtValuesApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Fn.crtValues
-    verified := .scrubbed Proof.Rsa.AArch64.Fn.crtValues },
+    verified := Proof.Rsa.AArch64.Fn.crtValues },
   Spec.Rsa.recoverPrimesDetApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Fn.recoverPrimesDet
-    verified := .scrubbed Proof.Rsa.AArch64.Fn.recoverPrimesDet },
+    verified := Proof.Rsa.AArch64.Fn.recoverPrimesDet },
   Spec.Rsa.checkKeyApi.artifact AArch64.target {
     code := Impl.Rsa.AArch64.Fn.checkKey
-    verified := .scrubbed Proof.Rsa.AArch64.Fn.checkKey }]
+    verified := Proof.Rsa.AArch64.Fn.checkKey }]
 
 end VG.Artifacts.Rsa.AArch64

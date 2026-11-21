@@ -17,9 +17,9 @@ namespace VG.Artifacts.Cast5Cbc.AArch64
 def artifacts : List Artifact := [
   Spec.Cast5.cbcEncryptChainedApi.artifact AArch64.target {
     code := Impl.Cast5.AArch64.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
+    verified := Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
   Spec.Cast5.cbcDecryptChainedApi.artifact AArch64.target {
     code := Impl.Cast5.AArch64.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
+    verified := Proof.Cast5.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.Cast5Cbc.AArch64

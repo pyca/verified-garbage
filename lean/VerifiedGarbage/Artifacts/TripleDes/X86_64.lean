@@ -53,12 +53,12 @@ public import VerifiedGarbage.TCB.X86_64.Print
 namespace VG.Artifacts.TripleDes.X86_64
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.expandKeyApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.expandKey, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.expandKey_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.expandKey_spSafe },
-  Spec.TripleDes.ecbEncryptApi.artifact X86_64.target { suffix := "_avx512", code := Impl.TripleDes.X86_64.Fn.ecbEncryptAvx512, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx512_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx512_spSafe },
-  Spec.TripleDes.ecbEncryptApi.artifact X86_64.target { suffix := "_avx2", code := Impl.TripleDes.X86_64.Fn.ecbEncryptAvx2, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx2_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx2_spSafe },
-  Spec.TripleDes.ecbEncryptApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.ecbEncryptSse, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.ecbEncryptSse_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbEncryptSse_spSafe },
-  Spec.TripleDes.ecbDecryptApi.artifact X86_64.target { suffix := "_avx512", code := Impl.TripleDes.X86_64.Fn.ecbDecryptAvx512, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.ecbDecryptAvx512_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbDecryptAvx512_spSafe },
-  Spec.TripleDes.ecbDecryptApi.artifact X86_64.target { suffix := "_avx2", code := Impl.TripleDes.X86_64.Fn.ecbDecryptAvx2, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.ecbDecryptAvx2_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbDecryptAvx2_spSafe },
-  Spec.TripleDes.ecbDecryptApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.ecbDecryptSse, verified := .scrubbed Proof.TripleDes.X86_64.Scrub.ecbDecryptSse_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbDecryptSse_spSafe }]
+  Spec.TripleDes.expandKeyApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.expandKey, verified := Proof.TripleDes.X86_64.Scrub.expandKey_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.expandKey_spSafe },
+  Spec.TripleDes.ecbEncryptApi.artifact X86_64.target { suffix := "_avx512", code := Impl.TripleDes.X86_64.Fn.ecbEncryptAvx512, verified := Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx512_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx512_spSafe },
+  Spec.TripleDes.ecbEncryptApi.artifact X86_64.target { suffix := "_avx2", code := Impl.TripleDes.X86_64.Fn.ecbEncryptAvx2, verified := Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx2_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbEncryptAvx2_spSafe },
+  Spec.TripleDes.ecbEncryptApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.ecbEncryptSse, verified := Proof.TripleDes.X86_64.Scrub.ecbEncryptSse_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbEncryptSse_spSafe },
+  Spec.TripleDes.ecbDecryptApi.artifact X86_64.target { suffix := "_avx512", code := Impl.TripleDes.X86_64.Fn.ecbDecryptAvx512, verified := Proof.TripleDes.X86_64.Scrub.ecbDecryptAvx512_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbDecryptAvx512_spSafe },
+  Spec.TripleDes.ecbDecryptApi.artifact X86_64.target { suffix := "_avx2", code := Impl.TripleDes.X86_64.Fn.ecbDecryptAvx2, verified := Proof.TripleDes.X86_64.Scrub.ecbDecryptAvx2_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbDecryptAvx2_spSafe },
+  Spec.TripleDes.ecbDecryptApi.artifact X86_64.target { code := Impl.TripleDes.X86_64.Fn.ecbDecryptSse, verified := Proof.TripleDes.X86_64.Scrub.ecbDecryptSse_scrubbed, spSafe := Proof.TripleDes.X86_64.Scrub.ecbDecryptSse_spSafe }]
 
 end VG.Artifacts.TripleDes.X86_64

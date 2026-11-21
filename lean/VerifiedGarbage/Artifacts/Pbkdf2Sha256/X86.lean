@@ -31,7 +31,7 @@ def artifacts : List Artifact :=
     Spec.Hmac.sha256I.pbkdf2Api.artifact X86.target {
       suffix := v.suffix
       code := Impl.Pbkdf2.Whole.X86.Fn.sha256 v.F
-      verified := .scrubbed (Proof.Pbkdf2.Whole.X86.Scrub.sha256_scrubbed v)
+      verified := Proof.Pbkdf2.Whole.X86.Scrub.sha256_scrubbed v
       spSafe := Proof.Pbkdf2.Whole.X86.Scrub.sha256_spSafe v }]
 
 end VG.Artifacts.Pbkdf2Sha256.X86

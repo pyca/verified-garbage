@@ -35,10 +35,10 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Sha512.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Sha512.init384Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init384, verified := .scrubbed Proof.Sha512.X86_64.init384_scrubbed, spSafe := Proof.Sha512.X86_64.init384_spSafe },
-  Spec.Sha512.init512Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512, verified := .scrubbed Proof.Sha512.X86_64.init512_scrubbed, spSafe := Proof.Sha512.X86_64.init512_spSafe },
-  Spec.Sha512.init512_224Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512_224, verified := .scrubbed Proof.Sha512.X86_64.init512_224_scrubbed, spSafe := Proof.Sha512.X86_64.init512_224_spSafe },
-  Spec.Sha512.init512_256Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512_256, verified := .scrubbed Proof.Sha512.X86_64.init512_256_scrubbed, spSafe := Proof.Sha512.X86_64.init512_256_spSafe }] ++
+  Spec.Sha512.init384Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init384, verified := Proof.Sha512.X86_64.init384_scrubbed, spSafe := Proof.Sha512.X86_64.init384_spSafe },
+  Spec.Sha512.init512Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512, verified := Proof.Sha512.X86_64.init512_scrubbed, spSafe := Proof.Sha512.X86_64.init512_spSafe },
+  Spec.Sha512.init512_224Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512_224, verified := Proof.Sha512.X86_64.init512_224_scrubbed, spSafe := Proof.Sha512.X86_64.init512_224_spSafe },
+  Spec.Sha512.init512_256Api.artifact X86_64.target { code := Impl.Sha512.X86_64.Fn.init512_256, verified := Proof.Sha512.X86_64.init512_256_scrubbed, spSafe := Proof.Sha512.X86_64.init512_256_spSafe }] ++
   ((VG.Proof.Variants.MdHash.X86_64.sha384Variants ++
       VG.Proof.Variants.MdHash.X86_64.sha512Variants ++
       VG.Proof.Variants.MdHash.X86_64.sha512_224Variants ++

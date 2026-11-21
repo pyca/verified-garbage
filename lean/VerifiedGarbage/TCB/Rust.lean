@@ -633,9 +633,9 @@ def fnTablesDoc (a : Artifact) : List String :=
       gives, if it has one."
 
 /-- The note that a function returns without secret residue, if it runs one
-of `as` and each proves it (none is `Artifact.unscrubbed`). -/
+of `as`: each proves it (`Artifact.verified`). -/
 def residueDoc (as : List Artifact) : List String :=
-  if !as.isEmpty && as.all (!·.unscrubbed) then
+  if !as.isEmpty then
     ["It returns without secret residue: what it leaves in the registers, the flags and the \
       stack below the caller's stack pointer is determined by what its caller left there and \
       by public data (`Target.noResidue`)."]
@@ -949,39 +949,6 @@ def checkWritten (a : Artifact) : Except String Unit := do
         writable array"
     | none => throw s!"{a.target.name}: {a.name} bounds what it writes of `{p}`, which is not \
         one of its parameters"
-
-/-- The functions `ci/residue_allowlist.txt` lists, as `(target, name)`: its
-lines but blank ones and those starting with `#`, each a target's name and a
-function's, separated by spaces. -/
-def parseResidueAllowlist (text : String) : Except String (List (String × String)) :=
-  (text.splitOn "\n").filterMapM fun l =>
-    let l := l.trimAscii.toString
-    if l.isEmpty || l.startsWith "#" then pure none
-    else match (l.splitOn " ").filter (!·.isEmpty) with
-      | [t, n] => pure (some (t, n))
-      | _ => throw s!"ci/residue_allowlist.txt: `{l}` is not a target and a function's name"
-
-/-- Every artifact of a target that defines what it means to return without
-secret residue (`Target.noResidue`) proves it (is not `Artifact.unscrubbed`), or
-`pending` (`parseResidueAllowlist`) lists it. If `complete` (`as` are all the
-artifacts of their targets, as in a part of `Emit.lean`, not `EmitOne.lean`),
-every function `pending` lists of one of those targets is an artifact of it
-without a proof, so that the list only ever shrinks to what is left to
-prove. Every problem is reported, not only the first. -/
-def checkResidue (pending : List (String × String)) (complete : Bool) (as : List Artifact) :
-    Except String Unit := do
-  let missing := as.filter fun a =>
-    a.target.noResidue.isSome && a.unscrubbed && !pending.contains (a.target.name, a.name)
-  let targets := as.map (·.target.name)
-  let stale := if complete then
-      pending.filter fun (t, n) => targets.contains t &&
-        !as.any (fun a => a.target.name == t && a.name == n && a.unscrubbed)
-    else []
-  let msgs := missing.map (fun a => s!"{a.target.name}: {a.name} does not prove that it returns \
-      without secret residue (`Verification.scrubbed`), and ci/residue_allowlist.txt does not list it") ++
-    stale.map fun (t, n) => s!"ci/residue_allowlist.txt lists `{t} {n}`, which is not a function \
-      of {t} without a proof that it returns without secret residue: remove the line"
-  unless msgs.isEmpty do throw ("\n".intercalate msgs)
 
 /-- No two artifacts of a target have the same name. -/
 def checkUnique (as : List Artifact) : Except String Unit :=

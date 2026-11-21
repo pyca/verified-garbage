@@ -20,13 +20,13 @@ namespace VG.Artifacts.RsaKeyGen.RISCV64
 def direct : List Artifact := [
   Spec.RsaKeyGen.keyInitApi.artifact RISCV64.target {
     code := Impl.RsaKeyGen.RISCV64.KeyInit.Fn.init
-    verified := .scrubbed Proof.RsaKeyGen.RISCV64.Fn.init_scrubbed }]
+    verified := Proof.RsaKeyGen.RISCV64.Fn.init_scrubbed }]
 
 def artifacts : List Artifact :=
   direct ++ Proof.Variants.MillerRabin.RISCV64.variants.map fun (v : Proof.MillerRabin.RISCV64.RoundImpl) =>
     Spec.RsaKeyGen.keySearchApi.artifact RISCV64.target {
       suffix := v.suffix
       code := Impl.RsaKeyGen.RISCV64.Fn.keySearch v.suffix v.code
-      verified := .scrubbed (Proof.RsaKeyGen.RISCV64.Fn.keySearch_scrubbed v) }
+      verified := Proof.RsaKeyGen.RISCV64.Fn.keySearch_scrubbed v }
 
 end VG.Artifacts.RsaKeyGen.RISCV64

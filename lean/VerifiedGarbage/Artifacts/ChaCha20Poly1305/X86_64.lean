@@ -24,23 +24,23 @@ def artifacts : List Artifact :=
     Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.ChaCha20Poly1305.X86_64.Fn.seal (ScrubFn.cpLevel v) v.callee v.poly
-      verified := .scrubbed (ScrubFn.seal_scrubbed v)
+      verified := ScrubFn.seal_scrubbed v
       spSafe := ScrubFn.seal_spSafeFn v },
     Spec.ChaCha20Poly1305.openZeroApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.ChaCha20Poly1305.X86_64.Fn.open (ScrubFn.cpLevel v) v.callee v.poly
-      verified := .scrubbed (ScrubFn.open_scrubbed v)
+      verified := ScrubFn.open_scrubbed v
       spSafe := ScrubFn.open_spSafeFn v },
     Spec.ChaCha20Poly1305.openToApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.ChaCha20Poly1305.X86_64.Fn.openTo (ScrubFn.cpLevel v) v.callee v.poly
-      verified := .scrubbed (ScrubFn.openTo_scrubbed v)
+      verified := ScrubFn.openTo_scrubbed v
       spSafe := ScrubFn.openTo_spSafeFn v },
     Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.ChaCha20Poly1305.X86_64.Fn.sealGather (ScrubFn.cpLevel v) (ScrubFn.sealName v)
         (ScrubFn.splitName v) v.callee v.poly
-      verified := .scrubbed (ScrubFn.gather_scrubbed v)
+      verified := ScrubFn.gather_scrubbed v
       spSafe := ScrubFn.gather_spSafeFn v }]
 
 end VG.Artifacts.ChaCha20Poly1305.X86_64

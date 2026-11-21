@@ -13,12 +13,12 @@ namespace VG.Artifacts.Blake2s.Arm
 def artifacts : List Artifact := [
   Spec.Blake2.initSApi.artifact Arm.target {
     code := Impl.Blake2.Arm.Fn.initS
-    verified := .scrubbed Proof.Blake2.Arm.Fn.initS },
+    verified := Proof.Blake2.Arm.Fn.initS },
   Spec.Blake2.updateSApi.artifact Arm.target {
     code := Impl.Blake2.Arm.Fn.updateS
-    verified := .scrubbed Proof.Blake2.Arm.Fn.updateS },
+    verified := Proof.Blake2.Arm.Fn.updateS },
   Spec.Blake2.finalizeSApi.artifact Arm.target {
     code := Impl.Blake2.Arm.Fn.finalizeS
-    verified := .scrubbed Proof.Blake2.Arm.Fn.finalizeS }]
+    verified := Proof.Blake2.Arm.Fn.finalizeS }]
 
 end VG.Artifacts.Blake2s.Arm

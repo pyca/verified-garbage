@@ -13,6 +13,6 @@ namespace VG.Artifacts.EcdhP521.AArch64
 def artifacts : List Artifact := [
   Spec.Ecdh.P521.exchangeApi.artifact AArch64.target {
     code := Impl.Weierstrass.AArch64.P521Native.Fn.exchange
-    verified := .scrubbed Proof.Weierstrass.AArch64.P521Native.Scrub.exchange_scrubbed }]
+    verified := Proof.Weierstrass.AArch64.P521Native.Scrub.exchange_scrubbed }]
 
 end VG.Artifacts.EcdhP521.AArch64

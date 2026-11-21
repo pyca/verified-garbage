@@ -93,7 +93,7 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
     Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact X86_64.target
       { tables := [("hmac", tables vs)]
         code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (secp256k1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs)
-        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.secp256k1T_scrubbed hasLaw.law hasLaw.inv vs hv hu)
+        verified := Proof.Ecdsa.Rfc6979.X86_64.secp256k1T_scrubbed hasLaw.law hasLaw.inv vs hv hu
         spSafe := Proof.Ecdsa.Rfc6979.X86_64.secp256k1T_spSafe hasLaw.law hasLaw.inv vs }]
   else []
 
@@ -109,7 +109,7 @@ open VG.Proof.Secp256k1.X86_64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact X86_64.target
     { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false Impl.Ecdsa.Verify.X86_64.verifySecp256k1
-      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.Secp256k1.verifyHash_scrubbed hasLaw.law (Proof.Secp256k1.gtabOk9 hasLaw.law) hasLaw.inv)
+      verified := Proof.Ecdsa.Verify.X86_64.Secp256k1.verifyHash_scrubbed hasLaw.law (Proof.Secp256k1.gtabOk9 hasLaw.law) hasLaw.inv
       spSafe := Proof.Ecdsa.Verify.X86_64.Secp256k1.verifyHash_spSafe }] ++
   Rfc6979.artifacts
 

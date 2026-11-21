@@ -15,9 +15,9 @@ namespace VG.Artifacts.AesCfb8.RISCV64
 def artifacts : List Artifact := [
   Spec.Cfb8.aesEncryptApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.cfb8Encrypt
-    verified := .scrubbed Proof.Aes.RISCV64.Scrub.cfb8Encrypt_scrubbed },
+    verified := Proof.Aes.RISCV64.Scrub.cfb8Encrypt_scrubbed },
   Spec.Cfb8.aesDecryptApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.cfb8Decrypt
-    verified := .scrubbed Proof.Aes.RISCV64.Scrub.cfb8Decrypt_scrubbed }]
+    verified := Proof.Aes.RISCV64.Scrub.cfb8Decrypt_scrubbed }]
 
 end VG.Artifacts.AesCfb8.RISCV64

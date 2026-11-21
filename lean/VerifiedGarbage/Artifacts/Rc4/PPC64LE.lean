@@ -14,9 +14,9 @@ namespace VG.Artifacts.Rc4.PPC64LE
 def artifacts : List Artifact := [
   Spec.Rc4.initApi.artifact PPC64LE.target {
     code := Impl.Rc4.PPC64LE.Fn.init
-    verified := .scrubbed Proof.Rc4.PPC64LE.Scrub.init_scrubbed },
+    verified := Proof.Rc4.PPC64LE.Scrub.init_scrubbed },
   Spec.Rc4.applyApi.artifact PPC64LE.target {
     code := Impl.Rc4.PPC64LE.Fn.apply
-    verified := .scrubbed Proof.Rc4.PPC64LE.Scrub.apply_scrubbed }]
+    verified := Proof.Rc4.PPC64LE.Scrub.apply_scrubbed }]
 
 end VG.Artifacts.Rc4.PPC64LE

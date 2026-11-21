@@ -14,12 +14,12 @@ namespace VG.Artifacts.Ed25519.RISCV64
 def artifacts : List Artifact := [
   Spec.Ed25519.keyPairApi.artifact RISCV64.target {
     code := Impl.Ed25519.RISCV64.Fn.keyPair Proof.Ed25519.RISCV64.KeyPair.dgCode
-    verified := .scrubbed Proof.Ed25519.RISCV64.Fn.keyPair },
+    verified := Proof.Ed25519.RISCV64.Fn.keyPair },
   Spec.Ed25519.signExpandedApi.artifact RISCV64.target {
     code := Impl.Ed25519.RISCV64.Fn.signExpanded
-    verified := .scrubbed Proof.Ed25519.RISCV64.Fn.signExpanded },
+    verified := Proof.Ed25519.RISCV64.Fn.signExpanded },
   Spec.Ed25519.verifyApi.artifact RISCV64.target {
     code := Impl.Ed25519.RISCV64.Fn.verify
-    verified := .scrubbed Proof.Ed25519.RISCV64.Fn.verify }]
+    verified := Proof.Ed25519.RISCV64.Fn.verify }]
 
 end VG.Artifacts.Ed25519.RISCV64

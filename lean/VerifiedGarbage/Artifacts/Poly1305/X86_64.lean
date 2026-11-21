@@ -36,8 +36,8 @@ public import VerifiedGarbage.Proof.Variants.Poly1305Blocks.X86_64
 namespace VG.Artifacts.Poly1305.X86_64
 
 def direct : List Artifact := [
-  Spec.Poly1305.initApi.artifact X86_64.target { code := Impl.Poly1305.X86_64.Fn.init, verified := .scrubbed Proof.Poly1305.X86_64.init_scrubbed, spSafe := Proof.Poly1305.X86_64.init_spSafe },
-  Spec.Poly1305.finalizeApi.artifact X86_64.target { code := Impl.Poly1305.X86_64.Fn.finalize, verified := .scrubbed Proof.Poly1305.X86_64.finalize_scrubbed, spSafe := Proof.Poly1305.X86_64.finalize_spSafe }]
+  Spec.Poly1305.initApi.artifact X86_64.target { code := Impl.Poly1305.X86_64.Fn.init, verified := Proof.Poly1305.X86_64.init_scrubbed, spSafe := Proof.Poly1305.X86_64.init_spSafe },
+  Spec.Poly1305.finalizeApi.artifact X86_64.target { code := Impl.Poly1305.X86_64.Fn.finalize, verified := Proof.Poly1305.X86_64.finalize_scrubbed, spSafe := Proof.Poly1305.X86_64.finalize_spSafe }]
 
 open VG.Proof.Poly1305.X86_64 (BlocksImpl)
 
@@ -47,7 +47,7 @@ def artifacts : List Artifact :=
     Spec.Poly1305.updateApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.Poly1305.X86_64.Fn.update v.upd.level v.upd.runs v.name v.code
-      verified := .scrubbed (Proof.Poly1305.X86_64.update_scrubbed v)
+      verified := Proof.Poly1305.X86_64.update_scrubbed v
       spSafe := Proof.Poly1305.X86_64.updateFn_spSafe v }
 
 end VG.Artifacts.Poly1305.X86_64

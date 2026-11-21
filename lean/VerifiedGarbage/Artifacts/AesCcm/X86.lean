@@ -17,12 +17,12 @@ def artifacts : List Artifact :=
     Spec.Ccm.sealApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCcm.X86.Fn.«seal» v.callee v.suffix
-      verified := .scrubbed (Proof.AesCcm.X86.Scrub.seal_scrubbed v)
+      verified := Proof.AesCcm.X86.Scrub.seal_scrubbed v
       spSafe := Proof.AesCcm.X86.Scrub.seal_fnSpSafe v },
     Spec.Ccm.openApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCcm.X86.Fn.«open» v.callee v.suffix
-      verified := .scrubbed (Proof.AesCcm.X86.Scrub.open_scrubbed v)
+      verified := Proof.AesCcm.X86.Scrub.open_scrubbed v
       spSafe := Proof.AesCcm.X86.Scrub.open_fnSpSafe v }]
 
 end VG.Artifacts.AesCcm.X86

@@ -17,22 +17,22 @@ def artifacts : List Artifact :=
     Spec.Cfb.aesEncryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86.Fn.encrypt v.enc
-      verified := .scrubbed (Proof.AesCfb.X86.Scrub.encrypt_scrubbed v)
+      verified := Proof.AesCfb.X86.Scrub.encrypt_scrubbed v
       spSafe := Proof.AesCfb.X86.Scrub.encrypt_fnSpSafe v },
     Spec.Cfb.aesDecryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86.Fn.decrypt v.enc
-      verified := .scrubbed (Proof.AesCfb.X86.Scrub.decrypt_scrubbed v)
+      verified := Proof.AesCfb.X86.Scrub.decrypt_scrubbed v
       spSafe := Proof.AesCfb.X86.Scrub.decrypt_fnSpSafe v },
     Spec.Cfb.aesEncryptFinalApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86.Fn.encryptFinal v.enc v.suffix
-      verified := .scrubbed (Proof.AesCfb.X86.Scrub.encryptFinal_scrubbed v)
+      verified := Proof.AesCfb.X86.Scrub.encryptFinal_scrubbed v
       spSafe := Proof.AesCfb.X86.Scrub.encryptFinal_fnSpSafe v },
     Spec.Cfb.aesDecryptFinalApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCfb.X86.Fn.decryptFinal v.enc v.suffix
-      verified := .scrubbed (Proof.AesCfb.X86.Scrub.decryptFinal_scrubbed v)
+      verified := Proof.AesCfb.X86.Scrub.decryptFinal_scrubbed v
       spSafe := Proof.AesCfb.X86.Scrub.decryptFinal_fnSpSafe v }]
 
 end VG.Artifacts.AesCfb.X86

@@ -13,6 +13,6 @@ namespace VG.Artifacts.Pbkdf2Sha512_224.Arm
 def artifacts : List Artifact := [
   Spec.Hmac.sha512_224I.pbkdf2Api.artifact Arm.target {
     code := Impl.Pbkdf2.Whole.Arm.Fn.sha512_224
-    verified := .scrubbed Proof.Pbkdf2.Whole.Arm.Fn.sha512_224 }]
+    verified := Proof.Pbkdf2.Whole.Arm.Fn.sha512_224 }]
 
 end VG.Artifacts.Pbkdf2Sha512_224.Arm

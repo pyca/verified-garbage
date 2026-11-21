@@ -59,7 +59,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact AArch64.target {
     tables := [("hmac", tables variants)]
     code := Impl.Ecdsa.Rfc6979.AArch64.Fn.p192 hashes
-    verified := .scrubbed (Proof.Ecdsa.Rfc6979.AArch64.p192Sign_scrubbed hasLaw.law hasLaw.inv) }]
+    verified := Proof.Ecdsa.Rfc6979.AArch64.p192Sign_scrubbed hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcdsaP192.AArch64.Rfc6979
 
@@ -70,7 +70,7 @@ open VG.Proof.P192.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.Verify.AArch64.P192.Joint.Fn.verifyHash
-    verified := .scrubbed (Proof.Ecdsa.Rfc6979.AArch64.p192Verify hasLaw.law hasLaw.inv) }] ++
+    verified := Proof.Ecdsa.Rfc6979.AArch64.p192Verify hasLaw.law hasLaw.inv }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP192.AArch64

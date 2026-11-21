@@ -16,12 +16,12 @@ open VG.Proof.P256.PPC64LE (hasLaw)
 def artifacts : List Artifact := [
   Spec.EcKey.P256.inst.compressPublicKeyApi.artifact PPC64LE.target {
     code := Impl.EcKey.PPC64LE.Fn.p256Compress
-    verified := .scrubbed Proof.EcKey.PPC64LE.Scrub.p256Compress_scrubbed },
+    verified := Proof.EcKey.PPC64LE.Scrub.p256Compress_scrubbed },
   Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact PPC64LE.target {
     code := Impl.EcKey.PPC64LE.Fn.p256Decompress
-    verified := .scrubbed (Proof.EcKey.PPC64LE.Scrub.p256Decompress_scrubbed hasLaw.law) },
+    verified := Proof.EcKey.PPC64LE.Scrub.p256Decompress_scrubbed hasLaw.law },
   Spec.EcKey.P256.publicKeyApi.artifact PPC64LE.target {
     code := Impl.EcKey.PPC64LE.Fn.p256PublicKey
-    verified := .scrubbed (Proof.EcKey.PPC64LE.Scrub.p256PublicKey_scrubbed hasLaw.law) }]
+    verified := Proof.EcKey.PPC64LE.Scrub.p256PublicKey_scrubbed hasLaw.law }]
 
 end VG.Artifacts.EcP256.PPC64LE

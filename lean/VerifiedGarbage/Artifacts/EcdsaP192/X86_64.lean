@@ -89,7 +89,7 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
     Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact X86_64.target
       { tables := [("hmac", tables vs)]
         code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (p192 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs)
-        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.p192T_scrubbed hasLaw.law hasLaw.inv vs hv hu)
+        verified := Proof.Ecdsa.Rfc6979.X86_64.p192T_scrubbed hasLaw.law hasLaw.inv vs hv hu
         spSafe := Proof.Ecdsa.Rfc6979.X86_64.p192T_spSafe hasLaw.law hasLaw.inv vs }]
   else []
 
@@ -106,7 +106,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact X86_64.target
     { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P192.inst.curve.len false
         Impl.Ecdsa.Verify.X86_64.verifyP192
-      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.P192.verifyHash_scrubbed hasLaw.law hasLaw.inv)
+      verified := Proof.Ecdsa.Verify.X86_64.P192.verifyHash_scrubbed hasLaw.law hasLaw.inv
       spSafe := Proof.Ecdsa.Verify.X86_64.P192.verifyHash_spSafe }] ++
   Rfc6979.artifacts
 

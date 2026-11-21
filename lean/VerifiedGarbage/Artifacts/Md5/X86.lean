@@ -15,12 +15,12 @@ namespace VG.Artifacts.Md5.X86
 def artifacts : List Artifact := [
   Spec.Md5.initApi.artifact X86.target {
     code := Impl.Md5.X86.Fn.init
-    verified := .scrubbed Proof.Md5.X86.Scrub.init_scrubbed },
+    verified := Proof.Md5.X86.Scrub.init_scrubbed },
   Spec.Md5.updateApi.artifact X86.target {
     code := Impl.Md5.X86.Fn.update
-    verified := .scrubbed Proof.Md5.X86.Scrub.update_scrubbed },
+    verified := Proof.Md5.X86.Scrub.update_scrubbed },
   Spec.Md5.finalizeApi.artifact X86.target {
     code := Impl.Md5.X86.Fn.finalize
-    verified := .scrubbed Proof.Md5.X86.Scrub.finalize_scrubbed }]
+    verified := Proof.Md5.X86.Scrub.finalize_scrubbed }]
 
 end VG.Artifacts.Md5.X86

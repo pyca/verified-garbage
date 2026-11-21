@@ -18,18 +18,18 @@ def artifacts : List Artifact :=
     Spec.ChaCha20Poly1305.sealApi.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole v.callee v.stitched
-      verified := .scrubbed (Proof.ChaCha20Poly1305.AArch64.Fn.sealWhole v) },
+      verified := Proof.ChaCha20Poly1305.AArch64.Fn.sealWhole v },
     Spec.ChaCha20Poly1305.openZeroApi.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.ChaCha20Poly1305.AArch64.Fn.openZero v.callee v.stitched
-      verified := .scrubbed (Proof.ChaCha20Poly1305.AArch64.Fn.openZero v) },
+      verified := Proof.ChaCha20Poly1305.AArch64.Fn.openZero v },
     Spec.ChaCha20Poly1305.openToApi.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.ChaCha20Poly1305.AArch64.Fn.openTo v.callee v.stitched
-      verified := .scrubbed (Proof.ChaCha20Poly1305.AArch64.Fn.openTo v) },
+      verified := Proof.ChaCha20Poly1305.AArch64.Fn.openTo v },
     Spec.ChaCha20Poly1305.sealGatherApi.artifact AArch64.target {
       suffix := v.callee.suffix
       code := Impl.ChaCha20Poly1305.AArch64.Fn.sealGather v.callee v.stitched
-      verified := .scrubbed (Proof.ChaCha20Poly1305.AArch64.Fn.sealGather v) }]
+      verified := Proof.ChaCha20Poly1305.AArch64.Fn.sealGather v }]
 
 end VG.Artifacts.ChaCha20Poly1305.AArch64

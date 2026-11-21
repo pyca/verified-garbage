@@ -17,66 +17,66 @@ def artifacts : List Artifact :=
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.update v.callee Spec.Sha3.hashSha3_224.rate
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.update_sha3_224 v) },
+      verified := Proof.Sha3.AArch64.Fn.update_sha3_224 v },
     Spec.Sha3.finalizeSha3_224Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.finalize v.callee Spec.Sha3.hashSha3_224.rate Spec.Sha3.hashSha3_224.len
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.finalize_sha3_224 v) },
+      verified := Proof.Sha3.AArch64.Fn.finalize_sha3_224 v },
     Spec.Sha3.updateSha3_256Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.update v.callee Spec.Sha3.hashSha3_256.rate
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.update_sha3_256 v) },
+      verified := Proof.Sha3.AArch64.Fn.update_sha3_256 v },
     Spec.Sha3.finalizeSha3_256Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.finalize v.callee Spec.Sha3.hashSha3_256.rate Spec.Sha3.hashSha3_256.len
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.finalize_sha3_256 v) },
+      verified := Proof.Sha3.AArch64.Fn.finalize_sha3_256 v },
     Spec.Sha3.updateSha3_384Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.update v.callee Spec.Sha3.hashSha3_384.rate
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.update_sha3_384 v) },
+      verified := Proof.Sha3.AArch64.Fn.update_sha3_384 v },
     Spec.Sha3.finalizeSha3_384Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.finalize v.callee Spec.Sha3.hashSha3_384.rate Spec.Sha3.hashSha3_384.len
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.finalize_sha3_384 v) },
+      verified := Proof.Sha3.AArch64.Fn.finalize_sha3_384 v },
     Spec.Sha3.updateSha3_512Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.update v.callee Spec.Sha3.hashSha3_512.rate
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.update_sha3_512 v) },
+      verified := Proof.Sha3.AArch64.Fn.update_sha3_512 v },
     Spec.Sha3.finalizeSha3_512Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.finalize v.callee Spec.Sha3.hashSha3_512.rate Spec.Sha3.hashSha3_512.len
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.finalize_sha3_512 v) },
+      verified := Proof.Sha3.AArch64.Fn.finalize_sha3_512 v },
     Spec.Sha3.updateShake128Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.update v.callee Spec.Sha3.xofShake128.rate
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.update_shake128 v) },
+      verified := Proof.Sha3.AArch64.Fn.update_shake128 v },
     Spec.Sha3.finalizeShake128Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.xofFinalize v.callee Spec.Sha3.xofShake128.rate
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.finalize_shake128 v) },
+      verified := Proof.Sha3.AArch64.Fn.finalize_shake128 v },
     Spec.Sha3.squeezeShake128Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.xofSqueeze v.callee Spec.Sha3.xofShake128.rate
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.squeeze_shake128 v) },
+      verified := Proof.Sha3.AArch64.Fn.squeeze_shake128 v },
     Spec.Sha3.finalizeShake256Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.xofFinalize v.callee Spec.Sha3.xofShake256.rate
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.finalize_shake256 v) },
+      verified := Proof.Sha3.AArch64.Fn.finalize_shake256 v },
     Spec.Sha3.squeezeShake256Api.artifact AArch64.target {
       suffix := v.callee.suffix
       vendor := v.vendor
       code := Impl.Sha3.AArch64.Fn.xofSqueeze v.callee Spec.Sha3.xofShake256.rate
-      verified := .scrubbed (Proof.Sha3.AArch64.Fn.squeeze_shake256 v) }]
+      verified := Proof.Sha3.AArch64.Fn.squeeze_shake256 v }]
 
 end VG.Artifacts.Sha3.AArch64

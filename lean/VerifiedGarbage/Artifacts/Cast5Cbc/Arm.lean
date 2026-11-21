@@ -13,9 +13,9 @@ namespace VG.Artifacts.Cast5Cbc.Arm
 def artifacts : List Artifact := [
   Spec.Cast5.cbcEncryptChainedApi.artifact Arm.target {
     code := Impl.Cast5.Arm.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Cast5.Arm.Fn.cbcEncryptChained },
+    verified := Proof.Cast5.Arm.Fn.cbcEncryptChained },
   Spec.Cast5.cbcDecryptChainedApi.artifact Arm.target {
     code := Impl.Cast5.Arm.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Cast5.Arm.Fn.cbcDecryptChained }]
+    verified := Proof.Cast5.Arm.Fn.cbcDecryptChained }]
 
 end VG.Artifacts.Cast5Cbc.Arm

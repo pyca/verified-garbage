@@ -29,7 +29,7 @@ def artifacts : List Artifact :=
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact X86.target {
       tables := [("hmac", tables vs)]
       code := Impl.Ecdsa.X86.Fn.signBrainpoolP256r1 (fnsOf vs)
-      verified := .scrubbed (sign_scrubbed hasLaw.law hasLaw.inv hv) }]
+      verified := sign_scrubbed hasLaw.law hasLaw.inv hv }]
   else []
 
 end VG.Artifacts.EcdsaBrainpoolP256r1.X86.Rfc6979
@@ -41,7 +41,7 @@ open VG.Proof.BrainpoolP256r1.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact X86.target {
     code := Impl.Ecdsa.X86.Fn.verifyBrainpoolP256r1
-    verified := .scrubbed (Proof.Ecdsa.X86.BrainpoolP256r1.Scrub.verify_scrubbed hasLaw.law hasLaw.inv) }] ++
+    verified := Proof.Ecdsa.X86.BrainpoolP256r1.Scrub.verify_scrubbed hasLaw.law hasLaw.inv }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP256r1.X86

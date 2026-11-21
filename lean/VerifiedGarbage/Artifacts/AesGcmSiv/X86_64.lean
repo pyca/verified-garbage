@@ -31,25 +31,25 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     (if sivReg v then
       { suffix := v.suffix
         code := Impl.AesGcmSiv.X86_64.Fn.sealReg (regLevel (loopsOf v)) (loopsOf v)
-        verified := .scrubbed (Proof.AesGcmSiv.X86_64.sealReg_scrubbed v)
+        verified := Proof.AesGcmSiv.X86_64.sealReg_scrubbed v
         spSafe := Proof.AesGcmSiv.X86_64.sealReg_spSafeFn v }
     else
       { suffix := v.suffix
         code := Impl.AesGcmSiv.X86_64.Fn.sealSoft (softLevel v (sivWide v) (loopsOf v)) v.callees (ecbFn v)
             (sivWide v) (loopsOf v)
-        verified := .scrubbed (Proof.AesGcmSiv.X86_64.sealSoft_scrubbed v (sivWide v))
+        verified := Proof.AesGcmSiv.X86_64.sealSoft_scrubbed v (sivWide v)
         spSafe := Proof.AesGcmSiv.X86_64.sealSoft_spSafeFn v (sivWide v) }),
   Spec.GcmSiv.openApi.artifact X86_64.target
     (if sivReg v then
       { suffix := v.suffix
         code := Impl.AesGcmSiv.X86_64.Fn.openReg (regLevel (loopsOf v)) (loopsOf v)
-        verified := .scrubbed (Proof.AesGcmSiv.X86_64.openReg_scrubbed v)
+        verified := Proof.AesGcmSiv.X86_64.openReg_scrubbed v
         spSafe := Proof.AesGcmSiv.X86_64.openReg_spSafeFn v }
     else
       { suffix := v.suffix
         code := Impl.AesGcmSiv.X86_64.Fn.openSoft (softLevel v (sivWide v) (loopsOf v)) v.callees (ecbFn v)
             (sivWide v) (loopsOf v)
-        verified := .scrubbed (Proof.AesGcmSiv.X86_64.openSoft_scrubbed v (sivWide v))
+        verified := Proof.AesGcmSiv.X86_64.openSoft_scrubbed v (sivWide v)
         spSafe := Proof.AesGcmSiv.X86_64.openSoft_spSafeFn v (sivWide v) })]
 
 /-- The instances with the AVX2 copies (`_avx2`), for a variant that has
@@ -59,12 +59,12 @@ def wideArtifactsOf (v : GcmImpl) : List Artifact := [
   Spec.GcmSiv.sealApi.artifact X86_64.target {
     suffix := v.suffix ++ "_avx2"
     code := Impl.AesGcmSiv.X86_64.Fn.sealAvx2 (softLevel v true (loopsOf v)) v.callees (ecbFn v) (sivWide v) (loopsOf v)
-    verified := .scrubbed (Proof.AesGcmSiv.X86_64.sealAvx2_scrubbed v)
+    verified := Proof.AesGcmSiv.X86_64.sealAvx2_scrubbed v
     spSafe := Proof.AesGcmSiv.X86_64.sealAvx2_spSafeFn v },
   Spec.GcmSiv.openApi.artifact X86_64.target {
     suffix := v.suffix ++ "_avx2"
     code := Impl.AesGcmSiv.X86_64.Fn.openAvx2 (softLevel v true (loopsOf v)) v.callees (ecbFn v) (sivWide v) (loopsOf v)
-    verified := .scrubbed (Proof.AesGcmSiv.X86_64.openAvx2_scrubbed v)
+    verified := Proof.AesGcmSiv.X86_64.openAvx2_scrubbed v
     spSafe := Proof.AesGcmSiv.X86_64.openAvx2_spSafeFn v }]
 
 /-- The artifacts of the implementations `v`: those with the AVX2 copies,

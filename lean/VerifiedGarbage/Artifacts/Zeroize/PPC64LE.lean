@@ -17,6 +17,6 @@ def artifacts : List Artifact := [
     doc := Spec.Zeroize.zeroizeApi.doc
     code := Impl.Zeroize.PPC64LE.zeroize
     contract := Spec.Zeroize.zeroizeContract abi
-    verified := .scrubbed ⟨Proof.Zeroize.PPC64LE.verified, Proof.Zeroize.PPC64LE.noResidue _ _⟩
+    verified := ⟨Proof.Zeroize.PPC64LE.verified, Proof.Zeroize.PPC64LE.noResidue _ _⟩
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 end VG.Artifacts.Zeroize.PPC64LE

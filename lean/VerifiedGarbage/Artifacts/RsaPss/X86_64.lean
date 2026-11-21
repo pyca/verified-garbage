@@ -25,7 +25,7 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
       extra := c.extra
       tables := ts
       code := Impl.RsaPss.X86_64.Fn.signPrecomputed (Proof.Rsa.X86_64.PrivScrub.level c) F G (privNameP c) (privCodeP c)
-      verified := .scrubbed (sign_scrubbed h c)
+      verified := sign_scrubbed h c
       spSafe := sign_spSafe h c }]
   else []
 
@@ -43,7 +43,7 @@ def artifacts (c : Proof.Rsa.X86_64.PublicImpl) : List Artifact :=
       suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := ts
       code := Impl.RsaPss.X86_64.Fn.verifyPrecomputed c.level F G c.name c.code
-      verified := .scrubbed (verify_scrubbed h c)
+      verified := verify_scrubbed h c
       spSafe := verify_spSafe h c }]
   else []
 

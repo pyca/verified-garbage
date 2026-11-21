@@ -19,7 +19,7 @@ def direct : List Artifact := [
     suffix := "_vaes_avx512"
     code := Impl.AesCbc.X86_64.Fn.decryptVaes512 .avx Proof.Zeroize.X86_64.ZeroizeImpl.avx.name
       Proof.Zeroize.X86_64.ZeroizeImpl.avx.code
-    verified := .scrubbed Proof.AesCbc.X86_64.Wiped.decryptVaes512_scrubbedFn }]
+    verified := Proof.AesCbc.X86_64.Wiped.decryptVaes512_scrubbedFn }]
 
 end VG.Artifacts.AesCbc.X86_64
 

@@ -34,12 +34,12 @@ open VG.Proof.P192.PPC64LE (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact PPC64LE.target {
     code := Impl.Ecdsa.Verify.PPC64LE.Fn.p192Verify
-    verified := .scrubbed (Proof.Ecdsa.Verify.PPC64LE.Scrub.p192Verify_scrubbed hasLaw.law) }] ++
+    verified := Proof.Ecdsa.Verify.PPC64LE.Scrub.p192Verify_scrubbed hasLaw.law }] ++
   (if hv : OK vars then [
     Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact PPC64LE.target {
       tables := [("hmac", tables vars)]
       code := Impl.Ecdsa.Rfc6979.PPC64LE.Fn.p192 (fnsOf vars)
-      verified := .scrubbed (Proof.Ecdsa.Rfc6979.PPC64LE.Scrub.p192Sign_scrubbed hasLaw.law hv) }]
+      verified := Proof.Ecdsa.Rfc6979.PPC64LE.Scrub.p192Sign_scrubbed hasLaw.law hv }]
   else [])
 
 end VG.Artifacts.EcdsaP192.PPC64LE

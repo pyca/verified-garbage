@@ -13,9 +13,9 @@ namespace VG.Artifacts.AesXts.Arm
 def artifacts : List Artifact := [
   Spec.Xts.aesEncryptUnitApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.xtsEncrypt
-    verified := .scrubbed Proof.Aes.Arm.Fn.xtsEncrypt },
+    verified := Proof.Aes.Arm.Fn.xtsEncrypt },
   Spec.Xts.aesDecryptUnitApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.xtsDecrypt
-    verified := .scrubbed Proof.Aes.Arm.Fn.xtsDecrypt }]
+    verified := Proof.Aes.Arm.Fn.xtsDecrypt }]
 
 end VG.Artifacts.AesXts.Arm

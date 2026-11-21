@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 namespace VG.Artifacts.CamelliaCbc.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Camellia.cbcEncryptChainedApi.artifact X86_64.target { code := Impl.Camellia.X86_64.Fn.cbcEncrypt, verified := .scrubbed Proof.Camellia.X86_64.Scrub.cbcEncrypt_scrubbed, spSafe := Proof.Camellia.X86_64.Scrub.cbcEncrypt_spSafe },
-  Spec.Camellia.cbcDecryptChainedApi.artifact X86_64.target { code := Impl.Camellia.X86_64.Fn.cbcDecrypt, verified := .scrubbed Proof.Camellia.X86_64.Scrub.cbcDecrypt_scrubbed, spSafe := Proof.Camellia.X86_64.Scrub.cbcDecrypt_spSafe }]
+  Spec.Camellia.cbcEncryptChainedApi.artifact X86_64.target { code := Impl.Camellia.X86_64.Fn.cbcEncrypt, verified := Proof.Camellia.X86_64.Scrub.cbcEncrypt_scrubbed, spSafe := Proof.Camellia.X86_64.Scrub.cbcEncrypt_spSafe },
+  Spec.Camellia.cbcDecryptChainedApi.artifact X86_64.target { code := Impl.Camellia.X86_64.Fn.cbcDecrypt, verified := Proof.Camellia.X86_64.Scrub.cbcDecrypt_scrubbed, spSafe := Proof.Camellia.X86_64.Scrub.cbcDecrypt_spSafe }]
 
 end VG.Artifacts.CamelliaCbc.X86_64

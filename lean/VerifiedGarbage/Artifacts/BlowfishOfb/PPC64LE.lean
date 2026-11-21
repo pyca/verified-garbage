@@ -18,9 +18,9 @@ namespace VG.Artifacts.BlowfishOfb.PPC64LE
 def artifacts : List Artifact := [
   Spec.Blowfish.ofbApi.artifact PPC64LE.target {
     code := Impl.Blowfish.PPC64LE.Fn.ofb
-    verified := .scrubbed Proof.Blowfish.PPC64LE.Scrub.ofb_scrubbed },
+    verified := Proof.Blowfish.PPC64LE.Scrub.ofb_scrubbed },
   Spec.Blowfish.ofbFinalApi.artifact PPC64LE.target {
     code := Impl.Blowfish.PPC64LE.Fn.ofbFinal
-    verified := .scrubbed Proof.Blowfish.PPC64LE.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Blowfish.PPC64LE.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.BlowfishOfb.PPC64LE

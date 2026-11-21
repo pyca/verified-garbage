@@ -16,9 +16,9 @@ namespace VG.Artifacts.Cast5Ofb.RISCV64
 def artifacts : List Artifact := [
   Spec.Cast5.ofbApi.artifact RISCV64.target {
     code := Impl.Cast5.RISCV64.Fn.ofb
-    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.ofb_scrubbed },
+    verified := Proof.Cast5.RISCV64.Scrub.ofb_scrubbed },
   Spec.Cast5.ofbFinalApi.artifact RISCV64.target {
     code := Impl.Cast5.RISCV64.Fn.ofbFinal
-    verified := .scrubbed Proof.Cast5.RISCV64.Scrub.ofbFinal_scrubbed }]
+    verified := Proof.Cast5.RISCV64.Scrub.ofbFinal_scrubbed }]
 
 end VG.Artifacts.Cast5Ofb.RISCV64

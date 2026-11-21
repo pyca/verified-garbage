@@ -16,14 +16,14 @@ def artifacts : List Artifact :=
     Spec.Ed25519.keyPairApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.Ed25519.Arm.Fn.keyPair v.umaal
-      verified := .scrubbed (Proof.Ed25519.Arm.Fn.keyPair v.umaal) },
+      verified := Proof.Ed25519.Arm.Fn.keyPair v.umaal },
     Spec.Ed25519.signExpandedApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.Ed25519.Arm.Fn.signExpanded v.umaal
-      verified := .scrubbed (Proof.Ed25519.Arm.Fn.signExpanded v.umaal) },
+      verified := Proof.Ed25519.Arm.Fn.signExpanded v.umaal },
     Spec.Ed25519.verifyApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.Ed25519.Arm.Fn.verify v.umaal
-      verified := .scrubbed (Proof.Ed25519.Arm.Fn.verify v.umaal) }]
+      verified := Proof.Ed25519.Arm.Fn.verify v.umaal }]
 
 end VG.Artifacts.Ed25519.Arm

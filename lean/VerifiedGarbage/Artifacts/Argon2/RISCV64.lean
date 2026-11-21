@@ -17,6 +17,6 @@ namespace VG.Artifacts.Argon2.RISCV64
 def artifacts : List Artifact := [
   Spec.Argon2.deriveApi.artifact RISCV64.target {
     code := Impl.Argon2.RISCV64.Fn.derive
-    verified := .scrubbed Proof.Argon2.RISCV64.Scrub.derive_scrubbed }]
+    verified := Proof.Argon2.RISCV64.Scrub.derive_scrubbed }]
 
 end VG.Artifacts.Argon2.RISCV64

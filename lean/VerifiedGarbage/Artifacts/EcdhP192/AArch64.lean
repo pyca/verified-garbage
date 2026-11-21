@@ -18,6 +18,6 @@ open VG.Proof.P192.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P192.exchangeApi.artifact AArch64.target {
     code := Impl.Ecdh.AArch64.Fn.exchangeP192
-    verified := .scrubbed (Proof.Ecdh.AArch64.P192.exchange_scrubbed hasLaw.law hasLaw.inv) }]
+    verified := Proof.Ecdh.AArch64.P192.exchange_scrubbed hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcdhP192.AArch64

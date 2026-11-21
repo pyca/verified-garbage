@@ -16,15 +16,15 @@ namespace VG.Artifacts.CamelliaCfb.RISCV64
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.Fn.cfbEncrypt
-    verified := .scrubbed Proof.Camellia.RISCV64.Scrub.cfbEncrypt_scrubbed },
+    verified := Proof.Camellia.RISCV64.Scrub.cfbEncrypt_scrubbed },
   Spec.Camellia.cfbDecryptApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.Fn.cfbDecrypt
-    verified := .scrubbed Proof.Camellia.RISCV64.Scrub.cfbDecrypt_scrubbed },
+    verified := Proof.Camellia.RISCV64.Scrub.cfbDecrypt_scrubbed },
   Spec.Camellia.cfbEncryptFinalApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.Fn.cfbEncryptFinal
-    verified := .scrubbed Proof.Camellia.RISCV64.Scrub.cfbEncryptFinal_scrubbed },
+    verified := Proof.Camellia.RISCV64.Scrub.cfbEncryptFinal_scrubbed },
   Spec.Camellia.cfbDecryptFinalApi.artifact RISCV64.target {
     code := Impl.Camellia.RISCV64.Fn.cfbDecryptFinal
-    verified := .scrubbed Proof.Camellia.RISCV64.Scrub.cfbDecryptFinal_scrubbed }]
+    verified := Proof.Camellia.RISCV64.Scrub.cfbDecryptFinal_scrubbed }]
 
 end VG.Artifacts.CamelliaCfb.RISCV64

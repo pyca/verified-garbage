@@ -15,9 +15,9 @@ namespace VG.Artifacts.Rc4.X86
 def artifacts : List Artifact := [
   Spec.Rc4.initApi.artifact X86.target {
     code := Impl.Rc4.X86.Fn.init
-    verified := .scrubbed Proof.Rc4.X86.Scrub.init_scrubbed },
+    verified := Proof.Rc4.X86.Scrub.init_scrubbed },
   Spec.Rc4.applyApi.artifact X86.target {
     code := Impl.Rc4.X86.Fn.apply
-    verified := .scrubbed Proof.Rc4.X86.Scrub.apply_scrubbed }]
+    verified := Proof.Rc4.X86.Scrub.apply_scrubbed }]
 
 end VG.Artifacts.Rc4.X86

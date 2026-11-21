@@ -15,9 +15,9 @@ namespace VG.Artifacts.AesXts.RISCV64
 def artifacts : List Artifact := [
   Spec.Xts.aesEncryptUnitApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.xtsEncryptUnit
-    verified := .scrubbed Proof.AesXts.RISCV64.Scrub.xtsEncryptUnit_scrubbed },
+    verified := Proof.AesXts.RISCV64.Scrub.xtsEncryptUnit_scrubbed },
   Spec.Xts.aesDecryptUnitApi.artifact RISCV64.target {
     code := Impl.Aes.RISCV64.Fn.xtsDecryptUnit
-    verified := .scrubbed Proof.AesXts.RISCV64.Scrub.xtsDecryptUnit_scrubbed }]
+    verified := Proof.AesXts.RISCV64.Scrub.xtsDecryptUnit_scrubbed }]
 
 end VG.Artifacts.AesXts.RISCV64

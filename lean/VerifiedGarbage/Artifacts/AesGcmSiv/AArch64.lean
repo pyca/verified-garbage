@@ -20,11 +20,11 @@ def artifactsFor (g : GcmVariant) : List Artifact := [
   Spec.GcmSiv.sealApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcmSiv.AArch64.Fn.seal g.calls
-    verified := .scrubbed (Stitch.seal_scrubbed g) },
+    verified := Stitch.seal_scrubbed g },
   Spec.GcmSiv.openApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcmSiv.AArch64.Fn.open g.calls
-    verified := .scrubbed (Stitch.open_scrubbed g) }]
+    verified := Stitch.open_scrubbed g }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesGcm.AArch64.variants.flatMap artifactsFor

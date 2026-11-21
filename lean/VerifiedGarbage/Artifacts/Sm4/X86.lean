@@ -15,12 +15,12 @@ namespace VG.Artifacts.Sm4.X86
 def artifacts : List Artifact := [
   Spec.Sm4.expandKeyApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.expandKey
-    verified := .scrubbed Proof.Sm4.X86.Scrub.expandKey_scrubbed },
+    verified := Proof.Sm4.X86.Scrub.expandKey_scrubbed },
   Spec.Sm4.ecbEncryptApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Sm4.X86.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.Sm4.X86.Scrub.ecbEncrypt_scrubbed },
   Spec.Sm4.ecbDecryptApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Sm4.X86.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.Sm4.X86.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Sm4.X86

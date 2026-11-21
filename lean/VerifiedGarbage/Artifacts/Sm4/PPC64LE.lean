@@ -17,12 +17,12 @@ namespace VG.Artifacts.Sm4.PPC64LE
 def artifacts : List Artifact := [
   Spec.Sm4.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Sm4.PPC64LE.Fn.expandKey
-    verified := .scrubbed Proof.Sm4.PPC64LE.Scrub.expandKey_scrubbed },
+    verified := Proof.Sm4.PPC64LE.Scrub.expandKey_scrubbed },
   Spec.Sm4.ecbEncryptApi.artifact PPC64LE.target {
     code := Impl.Sm4.PPC64LE.Fn.ecbEncrypt
-    verified := .scrubbed Proof.Sm4.PPC64LE.Scrub.ecbEncrypt_scrubbed },
+    verified := Proof.Sm4.PPC64LE.Scrub.ecbEncrypt_scrubbed },
   Spec.Sm4.ecbDecryptApi.artifact PPC64LE.target {
     code := Impl.Sm4.PPC64LE.Fn.ecbDecrypt
-    verified := .scrubbed Proof.Sm4.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
+    verified := Proof.Sm4.PPC64LE.Scrub.ecbDecrypt_scrubbed }]
 
 end VG.Artifacts.Sm4.PPC64LE

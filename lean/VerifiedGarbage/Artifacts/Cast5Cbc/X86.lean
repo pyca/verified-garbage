@@ -15,9 +15,9 @@ namespace VG.Artifacts.Cast5Cbc.X86
 def artifacts : List Artifact := [
   Spec.Cast5.cbcEncryptChainedApi.artifact X86.target {
     code := Impl.Cast5.X86.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Cast5.X86.Scrub.cbcEncryptChained_scrubbed },
+    verified := Proof.Cast5.X86.Scrub.cbcEncryptChained_scrubbed },
   Spec.Cast5.cbcDecryptChainedApi.artifact X86.target {
     code := Impl.Cast5.X86.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Cast5.X86.Scrub.cbcDecryptChained_scrubbed }]
+    verified := Proof.Cast5.X86.Scrub.cbcDecryptChained_scrubbed }]
 
 end VG.Artifacts.Cast5Cbc.X86

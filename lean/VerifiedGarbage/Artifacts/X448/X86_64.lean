@@ -22,12 +22,12 @@ def artifacts : List Artifact :=
     Spec.X448.exchangeApi.artifact X86_64.target
       { suffix := v.suffix
         code := Impl.X448.X86_64.Fn.x448 v
-        verified := .scrubbed (Proof.X448.X86_64.exchange_scrubbed v)
+        verified := Proof.X448.X86_64.exchange_scrubbed v
         spSafe := Proof.X448.X86_64.exchange_spSafe v },
     Spec.X448.x448BaseApi.artifact X86_64.target
       { suffix := v.suffix
         code := Impl.X448.X86_64.Fn.x448Base v
-        verified := .scrubbed (Proof.X448.X86_64.base_scrubbed v)
+        verified := Proof.X448.X86_64.base_scrubbed v
         spSafe := Proof.X448.X86_64.base_spSafe v }]
 
 end VG.Artifacts.X448.X86_64

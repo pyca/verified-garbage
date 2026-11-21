@@ -19,11 +19,11 @@ def artifacts : List Artifact :=
     Spec.RsaPss.verifyPrecomputedMdTableApi.artifact RISCV64.target {
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaPss.RISCV64.Fn.verifyPrecomputed (fnsOf vars) (fns3 vars)
-      verified := .scrubbed (Proof.RsaPss.RISCV64.Fn.verifyPrecomputed h) },
+      verified := Proof.RsaPss.RISCV64.Fn.verifyPrecomputed h },
     Spec.RsaPss.signPrecomputedMdTableApi.artifact RISCV64.target {
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaPss.RISCV64.Fn.signPrecomputed (fnsOf vars) (fns3 vars)
-      verified := .scrubbed (Proof.RsaPss.RISCV64.Fn.signPrecomputed h) }]
+      verified := Proof.RsaPss.RISCV64.Fn.signPrecomputed h }]
   else []
 
 end VG.Artifacts.RsaPss.RISCV64

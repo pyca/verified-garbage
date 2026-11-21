@@ -18,9 +18,9 @@ namespace VG.Artifacts.Cast5Ofb.AArch64
 def artifacts : List Artifact := [
   Spec.Cast5.ofbApi.artifact AArch64.target {
     code := Impl.Cast5.AArch64.Fn.ofb
-    verified := .scrubbed Proof.Cast5.AArch64.FbResidue.ofbCode_scrubbed },
+    verified := Proof.Cast5.AArch64.FbResidue.ofbCode_scrubbed },
   Spec.Cast5.ofbFinalApi.artifact AArch64.target {
     code := Impl.Cast5.AArch64.Fn.ofbFinal
-    verified := .scrubbed Proof.Cast5.AArch64.FbResidue.ofbFinalCode_scrubbed }]
+    verified := Proof.Cast5.AArch64.FbResidue.ofbFinalCode_scrubbed }]
 
 end VG.Artifacts.Cast5Ofb.AArch64

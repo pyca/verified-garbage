@@ -13,9 +13,9 @@ namespace VG.Artifacts.AesCtr.Arm
 def artifacts : List Artifact := [
   Spec.Ctr.aesApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.ctr
-    verified := .scrubbed Proof.Aes.Arm.Fn.ctr },
+    verified := Proof.Aes.Arm.Fn.ctr },
   Spec.Ctr.aesFinalApi.artifact Arm.target {
     code := Impl.Aes.Arm.Fn.ctrFinal
-    verified := .scrubbed Proof.Aes.Arm.Fn.ctrFinal }]
+    verified := Proof.Aes.Arm.Fn.ctrFinal }]
 
 end VG.Artifacts.AesCtr.Arm

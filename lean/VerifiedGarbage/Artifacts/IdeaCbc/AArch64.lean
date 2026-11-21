@@ -15,9 +15,9 @@ namespace VG.Artifacts.IdeaCbc.AArch64
 def artifacts : List Artifact := [
   Spec.Idea.cbcEncryptChainedApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.Fn.cbcEncryptChained
-    verified := .scrubbed Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
+    verified := Proof.Idea.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed },
   Spec.Idea.cbcDecryptChainedApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.Fn.cbcDecryptChained
-    verified := .scrubbed Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
+    verified := Proof.Idea.AArch64.ModesResidue.cbcDecryptChainedCode_scrubbed }]
 
 end VG.Artifacts.IdeaCbc.AArch64

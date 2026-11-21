@@ -19,11 +19,11 @@ def artifacts : List Artifact :=
     Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact RISCV64.target {
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaOaep.RISCV64.Fn.decryptPrecomputed (fns3 vars)
-      verified := .scrubbed (Proof.RsaOaep.RISCV64.Fn.decryptPrecomputed h) },
+      verified := Proof.RsaOaep.RISCV64.Fn.decryptPrecomputed h },
     Spec.RsaOaep.encryptMdTablesApi.artifact RISCV64.target {
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaOaep.RISCV64.Fn.encryptPrecomputed (fns3 vars)
-      verified := .scrubbed (Proof.RsaOaep.RISCV64.Fn.encryptPrecomputed h) }]
+      verified := Proof.RsaOaep.RISCV64.Fn.encryptPrecomputed h }]
   else []
 
 end VG.Artifacts.RsaOaep.RISCV64

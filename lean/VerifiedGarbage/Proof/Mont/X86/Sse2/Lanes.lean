@@ -48,6 +48,22 @@ theorem qword_psrlq (a : BitVec 128) {i : Nat} (hi : i < 2) :
   · exact qword_append_0 _ _
   · exact qword_append_1 _ _
 
+/-- Doublewords 0 and 2 of both quadwords shifted down a word: doublewords 1 and 3. -/
+theorem dword_psrlq_0 (a : BitVec 128) : dword (XShiftOp.eval .psrlq a 32) 0 = dword a 1 := by
+  rw [psrlq_eq]
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [getLsbD_dword, hi, decide_true, Bool.true_and, BitVec.getLsbD_append, BitVec.getLsbD_ushiftRight,
+    getLsbD_qword, Nat.mul_zero, Nat.zero_add, Nat.mul_one]
+  rw [ite_eq_left (by omega_using [hi]), decide_eq_true (by omega_using [hi]), Bool.true_and, Nat.add_comm]
+
+theorem dword_psrlq_2 (a : BitVec 128) : dword (XShiftOp.eval .psrlq a 32) 2 = dword a 3 := by
+  rw [psrlq_eq]
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [getLsbD_dword, hi, decide_true, Bool.true_and, BitVec.getLsbD_append, BitVec.getLsbD_ushiftRight,
+    getLsbD_qword, Nat.mul_one]
+  rw [ite_eq_right (by omega_using [hi]), decide_eq_true (by omega_using [hi]), Bool.true_and]
+  exact congrArg _ (by omega_using [hi])
+
 theorem psrldq_eq (a : BitVec 128) : XShiftOp.eval .psrldq a 8 = a >>> 64 := rfl
 
 theorem qword_psrldq_0 (a : BitVec 128) : qword (XShiftOp.eval .psrldq a 8) 0 = qword a 1 := by
