@@ -5,7 +5,7 @@ name: Benchmarks
 # ci/bench_compare.py's threshold; or, with no commit, measures the branch
 # alone, next to OpenSSL and aws-lc-rs. The results are in the run's summary,
 # and in `benchmarks.html`, an artifact of the run: a page that charts every
-# job's results, grouped and filtered as you choose (ci/bench_report.py).
+# job's results (ci/bench_report.py).
 # It runs only by hand (Actions > Benchmarks > Run workflow): runners are
 # shared with CI, and a run of every benchmark takes dozens of jobs. Scope
 # each run to the architectures, `VG_CPU_FEATURES` configurations and library
@@ -312,10 +312,10 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
-  # Every job's results in one page, `benchmarks.html`, which charts them as
-  # it is asked (a chart per architecture, the libraries side by side, head
-  # against base, …): an artifact of the run, uploaded unzipped, so that it
-  # downloads as the page itself.
+  # Every job's results in one page, `benchmarks.html`, which charts them (a
+  # chart per architecture of the libraries, head against base, or the CPU
+  # feature configurations, by algorithm): an artifact of the run, uploaded
+  # unzipped, so that it downloads as the page itself.
   report:
     needs: compare
     if: ${{ !cancelled() && !inputs.test_filter && needs.compare.result != 'skipped' }}
@@ -355,5 +355,5 @@ jobs:
           {
             echo "## Report"
             echo
-            echo "Every job's results, to chart, filter and group in the browser: download [benchmarks.html]($URL) (the run's artifacts) and open it."
+            echo "Every job's results, charted: download [benchmarks.html]($URL) (the run's artifacts) and open it."
           } >> "$GITHUB_STEP_SUMMARY"
