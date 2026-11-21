@@ -194,13 +194,17 @@ lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```
 
-Each emitter's driver is a module, which `Emit.lean` and `EmitOne.lean` run
-with the setup Lake gives it (`lake setup-file`), as `lake build` would build
-it: it loads what it imports without their private parts (`.olean.private`),
-and its audits read the records every module of this project writes when it
-is built (`TCB/AuditRecords.lean`; the `lean-modules` skill), so they run on
-a build restored without those parts ([Without the private
-parts](#without-the-private-parts)).
+Each emitter's driver is a module, run with a setup file (`lean --setup`), as
+`lake build` would build it: it loads what it imports without their private
+parts (`.olean.private`), and its audits read the records every module of
+this project writes when it is built (`TCB/AuditRecords.lean`; the
+`lean-modules` skill), so they run on a build restored without those parts
+([Without the private parts](#without-the-private-parts)). `EmitOne.lean`
+asks Lake for its driver's setup (`lake setup-file`), which builds what the
+registration file imports. `Emit.lean` writes one setup for its six drivers
+itself, from the files of the build: it reads the build as it is and does
+not check that it is current, so run it after `lake build`, as above and as
+CI does.
 
 On Linux, each of `Emit.lean`'s drivers maps every `.olean` it imports, and
 a process may map at most `vm.max_map_count` regions of memory (65,530 by
