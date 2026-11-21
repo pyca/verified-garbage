@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.ResidueTaintSound
+public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
@@ -18,8 +19,9 @@ without secret residue when the residue analysis (`rtaint`) of the whole of it, 
 the contract starts it, ends in `RTaint.done` (`RTaint.noResidue_of_verified`): that analysis
 sees the clearing's stores, and that they leave no byte of the window secret.
 
-`verifiedScrubbedSel` (`ScrubProved.lean`) states it of a registration's code, as
-`verifiedScrubbedAll` does of `scrubAll`.
+`verifiedScrubbedSel` states it of a registration's code, as `verifiedScrubbedAll`
+(`ScrubProved.lean`) does of `scrubAll`, with what the cleanup needs of its frames
+as one Boolean (`selSide`), by default `lit_decide`.
 -/
 
 @[expose] public section
@@ -423,5 +425,42 @@ theorem hbp_firstArray {api : Api} (r : Unscrubbed api target) {nm : String} {m 
   simp only [Region.Contains, e', BitVec.toNat_ofNat]
   have := Nat.mod_le i (2 ^ 64)
   omega_using [this, hi]
+
+/-! ## The theorem a registration binds -/
+
+/-- What `verifiedScrubbedSel` needs of the frames `fs` it clears runs of,
+within a stack of `stack` bytes, with a result of `rb` bits: each frame a
+nonzero multiple of 16 bytes, at most 2048, that holds its runs
+(`FramesOk`); all of them within the stack; a result of at most 64 bits. -/
+def selSide (fs : List (Nat × List (Nat × Nat))) (stack rb : Nat) : Bool :=
+  framesOkB fs && decide (sizeOf fs ≤ stack) && decide (rb ≤ 64)
+
+theorem of_selSide {fs : List (Nat × List (Nat × Nat))} {stack rb : Nat} (h : selSide fs stack rb = true) :
+    FramesOk fs ∧ sizeOf fs ≤ stack ∧ rb ≤ 64 := by
+  simp only [selSide, Bool.and_eq_true, decide_eq_true_eq] at h
+  exact ⟨framesOk_of h.1.1, h.1.2, h.2⟩
+
+/-- `r`'s code `code` with its cleanup of only the runs of `fs`
+(`scrubSel`, with a result of `rb` bits) meets `r`'s contract in constant
+time and returns without secret residue: the theorem about the code that a
+registration binds. The residue analysis of the code with its cleanup
+(`RISCV64.rtaint`, from a state where the `e.2` bytes from what each
+register `e.1` of `bp0` holds are buffers of the contract's: `hbp`) ends
+in `done`: `hres`, which the kernel evaluates where the theorem is used
+(`taint_decide_ct`), stated of `code`, `W` and `rb`. -/
+theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target)
+    (fs : List (Nat × List (Nat × Nat))) (bp0 : List (Reg × Nat)) {code : Prog isa} {W rb : Nat}
+    (hpost : PostOut r.contract rb) (hs : selSide fs W rb = true)
+    (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,
+      g.Contains (s.gpr e.1 + BitVec.ofNat 64 i) 1)
+    (hres : ∃ hc, (rtaint.check (RTaint.init W bp0) (scrubSel rb fs code) hc).any
+      (RTaint.done rb) = true)
+    (hc : r.code = code := by rfl) (hW : r.stack = W := by rfl)
+    (hb : retBitsOf r = rb := by rfl) :
+    VerifiedScrubbed target (scrubSel rb fs code) r.contract rb := by
+  subst hc hW hb
+  have h := of_selSide hs
+  exact ⟨scrubSelCode_verified r fs h.1 h.2.1 h.2.2 hpost,
+    scrubSel_noResidue r fs bp0 h.1 h.2.1 h.2.2 hpost hbp _ _ _ rfl rfl rfl hres⟩
 
 end VG.RISCV64.Scrub
