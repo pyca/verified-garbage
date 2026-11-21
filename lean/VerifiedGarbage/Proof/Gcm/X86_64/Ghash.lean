@@ -362,7 +362,7 @@ theorem coeff_sum (s : Finset Nat) (f : Nat → P) (p : Nat) :
 
 theorem eq_sum_of_coeff {a : P} {s : Finset Nat} {f : Nat → P}
     (h : ∀ p, a.coeff p = ∑ i ∈ s, (f i).coeff p) : a = ∑ i ∈ s, f i :=
-  Polynomial.ext fun p => (h p).trans (coeff_sum s f p).symm
+  AddMonoidAlgebra.ext <| Finsupp.ext fun p => (h p).trans (coeff_sum s f p).symm
 
 theorem coeff_mul_sums {a b : P} {f g : Nat → P} (ha : a = ∑ i ∈ Finset.range 8, f i)
     (hb : b = ∑ j ∈ Finset.range 4, g j) (p : Nat) :
@@ -401,7 +401,7 @@ theorem lp_eq_sum_cls (yv : BitVec 64) : lp yv = ∑ j ∈ Finset.range 4, lp (y
 
 /-- `product` computes the carry-less product. -/
 theorem lp_prodVal (hv yv : BitVec 64) : lp (prodVal hv yv) = lp hv * lp yv := by
-  refine Polynomial.ext fun p => ?_
+  refine AddMonoidAlgebra.ext <| Finsupp.ext fun p => ?_
   by_cases hp : p < 128
   · rw [coeff_lp, getLsbD_prodVal hv yv hp,
       bit_classSum hv yv (p % 4) (Nat.mod_lt _ (by decide)) hp rfl 8 (Nat.le_refl _),

@@ -1034,7 +1034,7 @@ abbrev strIsa : ISA where
   pop _ _ _ := none
   requires := req
   ptrEq := withPtrEq
-  ptrEqDec := withPtrEqDecEq
+  ptrEqDec := withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl)
 
 /-- Calls of `f` and `g` nested in a call of `k`, and a later call of `f`
 whose code requires something else. -/

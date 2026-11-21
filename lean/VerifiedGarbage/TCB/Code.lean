@@ -183,7 +183,8 @@ structure ISA where
   ptrEq : (a b : Code Instr Cond) → (k : Unit → Bool) → (a = b → k () = true) → Bool
   /-- `withPtrEqDecEq` at this ISA's code, for the same reason: whether
   `a = b`, at once if they are the same value in memory, else by `k`
-  (`Code.dec`). Each ISA sets it to `withPtrEqDecEq`. -/
+  (`Code.dec`). Each ISA sets it to `withPtrEqDecEq` with its `withPtrEq`,
+  which Lean's `withPtrEqDecEq` takes since it is polymorphic. -/
   ptrEqDec : (a b : Code Instr Cond) → (Unit → Decidable (a = b)) → Decidable (a = b)
 
 /-- `if c then t else e`, with `t` laid out after the function's return

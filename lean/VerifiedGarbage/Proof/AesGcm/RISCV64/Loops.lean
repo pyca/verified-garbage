@@ -69,15 +69,12 @@ theorem nz_dec {n i : Nat} (hi : i < n) (hn : n < 2 ^ 64) :
   · have h' : BitVec.ofNat 64 (n - (i + 1)) ≠ 0 := fun e => h (by have := this.mp e; omega_arith)
     simp [h]; exact h'
 
-theorem app0 (x : BitVec 8) : (0#0 ++ x).toNat = x.toNat := by
-  rw [BitVec.toNat_append]; simp
-
 theorem rd8 (x : BitVec 8) : BitVec.setWidth 8 (BitVec.setWidth 64 (0#0 ++ x)) = x := by
-  apply BitVec.eq_of_toNat_eq; simp [app0]
+  apply BitVec.eq_of_toNat_eq; simp
 
 theorem rd8x (x y : BitVec 8) :
     BitVec.setWidth 8 (BitVec.setWidth 64 (0#0 ++ x) ^^^ BitVec.setWidth 64 (0#0 ++ y)) = x ^^^ y := by
-  apply BitVec.eq_of_toNat_eq; simp [app0]
+  apply BitVec.eq_of_toNat_eq; simp
 
 theorem write1 (m : Mem) (a : Addr) (b : Byte) : m.write a 1 b = m.writeW a b := by
   simp only [Mem.writeW]; rfl

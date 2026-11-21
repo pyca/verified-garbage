@@ -601,6 +601,6 @@ abbrev isa : ISA where
   -- A function's symbol, as a static's (`adrSym`).
   fnAddr s name := (s.syms name).setWidth 64
   ptrEq := withPtrEq
-  ptrEqDec := withPtrEqDecEq
+  ptrEqDec := withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl)
 
 end VG.Arm
