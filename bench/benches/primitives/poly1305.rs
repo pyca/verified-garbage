@@ -52197,6 +52197,11 @@ vgx_mp_x8pxor:
         }
         if m == 0 {
             std::thread::sleep(Duration::from_millis(3));
+            // The core runs slower for about a millisecond after a sleep.
+            let warm = Instant::now();
+            while warm.elapsed() < Duration::from_millis(2) {
+                f();
+            }
         }
         f();
         let before = xinuse();
@@ -52411,12 +52416,16 @@ vgx_mp_x8pxor:
             mul(f, black_box(p), n);
         };
         let mut fastest = 0u32;
-        for (name, m, sleep) in [("fast", 0, false), ("slow", 1, false), ("nonzero", 2, false), ("slow+sleep", 1, true), ("nonzero+sleep", 2, true)] {
+        for (name, m, sleep) in [("fast", 0, false), ("slow", 1, false), ("nonzero", 2, false), ("fast+sleep", 0, true), ("slow+sleep", 1, true), ("nonzero+sleep", 2, true)] {
             if !set(m) {
                 continue;
             }
             std::thread::sleep(Duration::from_millis(3));
-            window();
+            // The core runs slower for about a millisecond after a sleep.
+            let warm = Instant::now();
+            while warm.elapsed() < Duration::from_millis(2) {
+                window();
+            }
             set(m);
             if sleep {
                 std::thread::sleep(Duration::from_micros(200));
