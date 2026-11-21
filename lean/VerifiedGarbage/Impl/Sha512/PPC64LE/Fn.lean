@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
+public import VerifiedGarbage.Impl.MdStream.PPC64LE.Digest
 public import VerifiedGarbage.Impl.Scrub.PPC64LE
 public import VerifiedGarbage.Impl.Sha512.PPC64LE.Stream
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
@@ -45,5 +47,33 @@ def finalize512_224 : Prog isa :=
 def finalize512_256 : Prog isa :=
   scrubAll 0 1408 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19]⟩
     (Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_256)
+
+/-- `vg_sha384_digest`, as emitted. -/
+def digest384 : Prog isa :=
+  scrubAll 0 656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha384Hash)
+
+/-- `vg_sha512_digest`, as emitted. -/
+def digest512 : Prog isa :=
+  scrubAll 0 656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha512Hash)
+
+/-- `vg_sha512_224_digest`, as emitted. -/
+def digest512_224 : Prog isa :=
+  scrubAll 0 656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha512_224Hash)
+
+/-- `vg_sha512_256_digest`, as emitted. -/
+def digest512_256 : Prog isa :=
+  scrubAll 0 656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
+      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16,
+       .v17, .v18, .v19]⟩
+    (Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha512_256Hash)
 
 end VG.Impl.Sha512.PPC64LE.Fn

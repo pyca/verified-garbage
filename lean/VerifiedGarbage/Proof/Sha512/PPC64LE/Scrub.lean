@@ -103,9 +103,12 @@ theorem finalize512_256_scrubbed :
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha512.finalizeDigestPostOut_local Spec.Sha512.H0_512_256 32 Spec.Sha512.sha512_256 64))
     (by dsimp only; lit_decide)
 
-/-- `vg_sha384_digest`. -/
-def digest384Reg : Registration Spec.Sha512.digest384Api PPC64LE.target :=
-  scrubOf {
+/-- `vg_sha384_digest` as emitted (`Impl.Sha512.PPC64LE.Fn.digest384`) meets its
+contract in constant time and returns without secret residue. -/
+theorem digest384_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sha512.PPC64LE.Fn.digest384
+      (Spec.Sha512.digestContract PPC64LE.abi 48 Spec.Sha512.sha384 (96 + Impl.MdStream.PPC64LE.Digest.frameBytes Impl.Hmac.Stream.PPC64LE.sha384Hash)) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha512.digest384Api) {
       code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha384Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha384.digest }
     656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -114,9 +117,12 @@ def digest384Reg : Registration Spec.Sha512.digest384Api PPC64LE.target :=
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.MdStream.Digest.digestPostOut_local 48 Spec.Sha512.sha384 64))
     (by dsimp only; lit_decide)
 
-/-- `vg_sha512_digest`. -/
-def digest512Reg : Registration Spec.Sha512.digest512Api PPC64LE.target :=
-  scrubOf {
+/-- `vg_sha512_digest` as emitted (`Impl.Sha512.PPC64LE.Fn.digest512`) meets its
+contract in constant time and returns without secret residue. -/
+theorem digest512_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sha512.PPC64LE.Fn.digest512
+      (Spec.Sha512.digestContract PPC64LE.abi 64 Spec.Sha512.sha512 (96 + Impl.MdStream.PPC64LE.Digest.frameBytes Impl.Hmac.Stream.PPC64LE.sha512Hash)) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha512.digest512Api) {
       code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha512Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha512.digest }
     656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -125,9 +131,12 @@ def digest512Reg : Registration Spec.Sha512.digest512Api PPC64LE.target :=
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.MdStream.Digest.digestPostOut_local 64 Spec.Sha512.sha512 64))
     (by dsimp only; lit_decide)
 
-/-- `vg_sha512_224_digest`. -/
-def digest512_224Reg : Registration Spec.Sha512.digest512_224Api PPC64LE.target :=
-  scrubOf {
+/-- `vg_sha512_224_digest` as emitted (`Impl.Sha512.PPC64LE.Fn.digest512_224`) meets its
+contract in constant time and returns without secret residue. -/
+theorem digest512_224_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sha512.PPC64LE.Fn.digest512_224
+      (Spec.Sha512.digestContract PPC64LE.abi 28 Spec.Sha512.sha512_224 (96 + Impl.MdStream.PPC64LE.Digest.frameBytes Impl.Hmac.Stream.PPC64LE.sha512_224Hash)) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha512.digest512_224Api) {
       code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha512_224Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha512_224.digest }
     656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -136,9 +145,12 @@ def digest512_224Reg : Registration Spec.Sha512.digest512_224Api PPC64LE.target 
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.MdStream.Digest.digestPostOut_local 28 Spec.Sha512.sha512_224 64))
     (by dsimp only; lit_decide)
 
-/-- `vg_sha512_256_digest`. -/
-def digest512_256Reg : Registration Spec.Sha512.digest512_256Api PPC64LE.target :=
-  scrubOf {
+/-- `vg_sha512_256_digest` as emitted (`Impl.Sha512.PPC64LE.Fn.digest512_256`) meets its
+contract in constant time and returns without secret residue. -/
+theorem digest512_256_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Sha512.PPC64LE.Fn.digest512_256
+      (Spec.Sha512.digestContract PPC64LE.abi 32 Spec.Sha512.sha512_256 (96 + Impl.MdStream.PPC64LE.Digest.frameBytes Impl.Hmac.Stream.PPC64LE.sha512_256Hash)) 0 :=
+  verifiedScrubbedAll (api := Spec.Sha512.digest512_256Api) {
       code := Impl.MdStream.PPC64LE.Digest.code Impl.Hmac.Stream.PPC64LE.sha512_256Hash
       verified := Proof.Hmac.Stream.PPC64LE.Sha512_256.digest }
     656 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
