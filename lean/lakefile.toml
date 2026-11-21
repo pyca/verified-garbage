@@ -4,6 +4,7 @@ name = "VerifiedGarbage"
 # load a native library (which includes that same module) while compiling it.
 defaultTargets = ["NativeAuditRecords", "NativeTCB", "NativeTCBX86_64", "NativeTCBX86", "NativeTCBAArch64", "NativeTCBArm",
   "NativeTCBPPC64LE", "NativeTCBRISCV64", "NativeSpec", "NativeForward", "NativeHintSearch", "NativeScrubX86_64",
+  "NativeScrubAArch64",
   "VerifiedGarbage", "VerifiedGarbageTest", "AuditBase"]
 # Lake already checks several files concurrently. Limit each compiler to
 # two threads so declaration tasks do not contend across all of those files.
@@ -305,6 +306,18 @@ plugins = ["NativeAuditRecords:shared"]
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.CodeOnce", "VerifiedGarbage.Impl.Scrub.X86_64",
   "VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks", "VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths"]
+precompileModules = true
+
+# What the AArch64 cleanup reads off the code of a function that states no
+# registers (`Clear.of`), which the emitter evaluates for every such function
+# with the code of every function it calls, runs as compiled code too.
+[[lean_lib]]
+name = "NativeScrubAArch64"
+# Writes the audit records of each module (`NativeAuditRecords`).
+plugins = ["NativeAuditRecords:shared"]
+roots = []
+globs = ["VerifiedGarbage.Impl.Scrub.AArch64.Scrub", "VerifiedGarbage.Impl.Scrub.AArch64.Writes",
+  "VerifiedGarbage.Impl.Scrub.AArch64.WritesL"]
 precompileModules = true
 
 # The check of `VerifiedGarbage/TCB/AuditBase.lean`, which `ci/audit_base.py`
