@@ -44,6 +44,14 @@ draws, not the code. So `ci/bench_compare.py` runs those groups
 compares the fastest of each; add a group there when its code reads such a
 table.
 
+To chart results, grouped and filtered as you choose (a chart per
+architecture, the libraries side by side, head against base, how many times
+as fast as OpenSSL, …), write them as a results file and open
+`ci/bench_report.html` on it: `bench_compare.py --json results.json` writes
+one, and after a plain `cargo bench`, `python3 ci/bench_report.py collect`
+reads Criterion's directory into one. `python3 ci/bench_report.py html
+results*.json -o report.html` builds them into one page to share.
+
 For another architecture, or features this CPU lacks, run the Benchmarks
 workflow by hand: it never runs on its own (not on pull requests, not on
 `main`). Its runners are the ones CI waits for, so scope every run as
@@ -90,7 +98,8 @@ their values); `openssl=true` adds OpenSSL's and aws-lc-rs's times to a
 comparison, which only costs time: leave it off. To measure a commit that
 is no branch's tip, push a branch at it
 (`git push origin <sha>:refs/heads/bench/<name>`) and delete it after. The
-results are in each job's summary.
+results are in each job's summary, and all of them in the run's
+`benchmarks.html` artifact, the page with every job's results built in.
 
 Never run every benchmark (`modules` empty: leaving `arches`,
 `cpu_features` and `modules` all empty runs every benchmark of every

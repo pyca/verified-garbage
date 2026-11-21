@@ -31,7 +31,9 @@ and head alternately, `--confirm` more times each: a slowdown fails only if
 it is still there in the fastest time of every run.
 
 Writes a Markdown table of the results to stdout (and appends it to
-`--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and exits with status 1 if any
+`--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and, with `--json`, a results
+file of every time measured (`ci/bench_report.py`'s format, which its page
+charts; `--meta KEY=VALUE` adds fields of the run), and exits with status 1 if any
 verified-garbage benchmark got slower by more than `--threshold`. If BASE
 does not exist, HEAD runs alone, next to OpenSSL and aws-lc-rs.
 
@@ -118,11 +120,14 @@ import argparse
 import json
 import os
 import pathlib
+import platform
 import re
 import shutil
 import subprocess
 import sys
+import time
 
+import bench_report
 from bench_arches import NAMES, QUOTED, bench_catalog
 
 # Criterion filters (regexes over benchmark ids, which are
@@ -551,7 +556,11 @@ def main():
                    help="fail before measuring if the estimate is longer (0: no limit)")
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
     p.add_argument("--arch", choices=EXECUTABLES, help="fail unless the binaries are this architecture's")
+    p.add_argument("--json", type=pathlib.Path, help="write a results file (ci/bench_report.py's format) here")
+    p.add_argument("--meta", action="append", metavar="KEY=VALUE",
+                   help="a field of the run in the results file (repeatable)")
     args = p.parse_args()
+    meta = bench_report.parse_meta(args.meta)
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
         p.error("--shard must be i/n with 1 <= i <= n")
@@ -615,6 +624,7 @@ def main():
                         modules_of(side, bench), unit, bench)
             for bench_id, t in times.items():
                 into[side].setdefault(bench_id, []).append(t)
+                samples[side].setdefault(bench_id, []).append(t)
 
     def keep_fastest(runs):
         for side, times in runs.items():
@@ -622,6 +632,8 @@ def main():
                 best[side][bench_id] = min(*ts, best[side].get(bench_id, ts[0]))
 
     best = {"base": {}, "head": {}}
+    # Every time measured of each benchmark, for the results file.
+    samples = {"base": {}, "head": {}}
     rounds = units(selected, owner)
     try:
         for r in range(args.rounds):
@@ -774,6 +786,26 @@ def main():
     if args.summary:
         with args.summary.open("a") as f:
             f.write(report)
+    if args.json:
+        commits = {side: bench_report.commit_of(base if side == "base" else head) for side in best}
+        results = [bench_report.record(primitive, VG, size, t, samples[side].get((primitive, size)), side,
+                                       commits[side])
+                   for side in ("base", "head") for (primitive, size), t in sorted(best[side].items(), key=lambda kv: bench_key(kv[0]))]
+        # The references ran with head's binary.
+        results += [bench_report.record(primitive, library, size, t, side="head", commit=commits["head"])
+                    for library, times in references.items()
+                    for (primitive, size), t in sorted(times.items(), key=lambda kv: bench_key(kv[0]))]
+        context = {
+            "arch": args.arch or bench_report.arch_name(),
+            "cpu": cpu_model(),
+            "cpu_features": cpu_features,
+            "os": platform.system(),
+            "shard": args.shard or None,
+            "rounds": args.rounds,
+            "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            **meta,
+        }
+        args.json.write_text(json.dumps(bench_report.document(context, results), indent=1) + "\n")
     return 1 if regressions else 0
 
 
