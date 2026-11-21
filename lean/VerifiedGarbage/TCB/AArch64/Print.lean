@@ -262,12 +262,12 @@ def Instr.code (i : Instr) : List String :=
   | none => i.asm
 
 def printer : Printer isa where
-  instr := Instr.code
+  instr i := i.code.map .text
   branch c l := match c with
-    | .zero sz r => [s!"cbz {r.name sz}, {l}"]
-    | .nonzero sz r => [s!"cbnz {r.name sz}, {l}"]
+    | .zero sz r => [.text s!"cbz {r.name sz}, {l}"]
+    | .nonzero sz r => [.text s!"cbnz {r.name sz}, {l}"]
   jump l := s!"b {l}"
-  ret := ["// ret", instLine retWord]
+  ret := [.text "// ret", .text (instLine retWord)]
   call := "bl"
   -- The static's page and offset, in the syntax of the object format
   -- (`TCB/Rust.lean`); `asm` gives ELF's, for reading.
