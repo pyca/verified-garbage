@@ -340,7 +340,7 @@ theorem group_ok (rs : List XReg) (hrs : rs = regs6 ∨ rs = [.xmm0]) {c : Nat} 
     (hc : c + rs.length ≤ N s₀) (hI : Inv s₀ c c s) (after : List Instr) {Q : State → Prop}
     (hQ : ∀ t, Inv s₀ (c + rs.length) c t → WP isa (.block after) t Q) :
     WP isa (group rs after) s Q := by
-  obtain ⟨hnd, h6⟩ := Ecb.regs_nodup rs hrs
+  obtain ⟨hnd, h6⟩ : rs.Nodup ∧ .xmm6 ∉ rs := by rcases hrs with rfl | rfl <;> decide
   obtain h7 : .xmm7 ∉ rs := by rcases hrs with rfl | rfl <;> decide
   have hw := hp.data_fit
   obtain haddr : ∀ k, c + k < N s₀ → addr (s.gpr .esi) (16 * k) = blk s₀ (c + k) := fun k hk => by
