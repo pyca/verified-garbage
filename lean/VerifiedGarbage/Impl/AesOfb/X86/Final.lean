@@ -8,13 +8,14 @@ public import VerifiedGarbage.Impl.StackScratch.X86
 /-!
 # AES-OFB of a message's last piece: x86 (32-bit) implementation
 
-`cryptFinal b sfx` (cdecl: schedule, rounds, iv, data, len, scratch, save,
+`cryptFinal whole b sfx` (cdecl: schedule, rounds, iv, data, len, scratch, save,
 every argument on the stack): the code of `vg_aes_ofb_final`, whose
 registration frames it with a buffer of its own on the stack, `save`, the
 seventh argument, where the code keeps its caller's callee-saved registers.
 It is AES-CFB's final function (`Impl.AesCfb.X86.final`) around a call of
-the whole-block AES-OFB function of the same implementation of the block
-functions (`b`, whose callers' names end in `sfx`, e.g. `_aesni`):
+the whole-block AES-OFB function (`whole`: `crypt b`, or `cryptNi` with
+AES-NI) of the same implementation of the block functions (`b`, whose
+callers' names end in `sfx`, e.g. `_aesni`):
 
 1. our caller's `ebx`, `esi`, `edi` and `ebp` saved in `save`;
 2. a call of `vg_aes_ofb`'s code (`vg_aes_ofb_core`, and its variants,
@@ -36,11 +37,12 @@ namespace VG.Impl.AesOfb.X86
 open VG.X86
 open VG.Impl.Aes.X86 (Blocks)
 
-/-- `vg_aes_ofb_final`, calling `vg_aes_ofb`'s code with the block function
-`b`, whose callers' names end in `sfx`, as an internal function of its own,
-`vg_aes_ofb<sfx>_core`: `vg_aes_ofb` may also clear what it leaves. -/
-def cryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  Impl.AesCfb.X86.final ("vg_aes_ofb" ++ sfx ++ "_core") (crypt b) b
+/-- `vg_aes_ofb_final`, calling `vg_aes_ofb`'s code `whole` for the block
+function `b`, whose callers' names end in `sfx`, as an internal function of
+its own, `vg_aes_ofb<sfx>_core`: `vg_aes_ofb` may also clear what it
+leaves. -/
+def cryptFinal (whole : Prog isa) (b : Blocks) (sfx : String) : Prog isa :=
+  Impl.AesCfb.X86.final ("vg_aes_ofb" ++ sfx ++ "_core") whole b
 
 end VG.Impl.AesOfb.X86
 
@@ -57,11 +59,13 @@ open VG.X86
 open VG.Impl.Aes.X86 (Blocks)
 open Impl.StackScratch.X86 (withStackScratchWiped)
 
-/-- `vg_aes_ofb` over the block function `b`, as emitted. -/
-def crypt (b : Blocks) : Prog isa := Impl.Scrub.X86.scrubAll 0 24 (Impl.AesOfb.X86.crypt b)
+/-- `vg_aes_ofb` with the whole-block code `whole` (`crypt` around a block
+function, or `cryptNi`), as emitted. -/
+def crypt (whole : Prog isa) : Prog isa := Impl.Scrub.X86.scrubAll 0 24 whole
 
-/-- `vg_aes_ofb_final` over `b`, of the variant `sfx`, as emitted. -/
-def cryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 0 100 (withStackScratchWiped 48 6 4 (Impl.AesOfb.X86.cryptFinal b sfx))
+/-- `vg_aes_ofb_final` with the whole-block code `whole` and the block
+function `b`, of the variant `sfx`, as emitted. -/
+def cryptFinal (whole : Prog isa) (b : Blocks) (sfx : String) : Prog isa :=
+  Impl.Scrub.X86.scrubAll 0 100 (withStackScratchWiped 48 6 4 (Impl.AesOfb.X86.cryptFinal whole b sfx))
 
 end VG.Impl.AesOfb.X86.Fn

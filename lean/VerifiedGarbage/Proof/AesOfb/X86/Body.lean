@@ -3,13 +3,41 @@ module
 public import VerifiedGarbage.Proof.AesOfb.Spec
 public import VerifiedGarbage.Proof.AesCbc.X86.CT
 public import VerifiedGarbage.Impl.AesOfb.X86
+public import VerifiedGarbage.Proof.AesOfb.Rounds
 import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.AesCbc.X86.Decrypt
+import VerifiedGarbage.Proof.AesCbc.X86.Verified
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Rounds
+import VerifiedGarbage.Proof.Framework.X86.Reduce
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.SpTest
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.AesOfb.Spec
 meta import VerifiedGarbage.Proof.AesCbc.X86.CT
 meta import VerifiedGarbage.Impl.AesOfb.X86
 meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.AesOfb.Rounds
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.AesCbc.X86.Decrypt
+meta import VerifiedGarbage.Proof.AesCbc.X86.Verified
+meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Rounds
+meta import VerifiedGarbage.Proof.Framework.X86.Reduce
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Proof.Framework.SpTest
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-OFB on x86: one block, and constant time
@@ -19,6 +47,13 @@ share (`Proof/AesCbc/X86/Body.lean`) from `k` blocks to `k + 1`, for
 `ofbMode`, for any implementation of the block functions (`BlocksImpl`).
 `body_ct`: it is constant time, by the shared framework, with the call on
 the block at `iv`.
+
+With AES-NI (`Ni`): `Impl.AesOfb.X86.cryptNi`, which keeps the output block
+in `xmm0` and calls nothing, meets the contract that the code around a block
+function meets (`modeX86 ofbMode`), as AES-CBC's encryption with AES-NI does
+(`Proof/AesCbc/X86/Decrypt.lean`, whose loop this follows): the invariant
+of its loop after `k` blocks (`NInv`), one block (`body_wp`), and its
+prologue and epilogue, which are AES-CBC's (`endsZ_wp`).
 -/
 
 @[expose] public section
@@ -210,3 +245,227 @@ theorem body_ct (v : BlocksImpl) : BodyCt ofbMode (body v.enc) :=
     (@fun _ hp _ hk _ h => WP.mono (ivA_wp hp h) fun _ a => mid_of hp hk h a) hp hp' hq k
 
 end VG.Proof.AesOfb.X86
+
+namespace VG.Proof.AesOfb.X86.Ni
+
+open VG VG.X86 VG.X86.RegUpd
+open VG.Impl.AesOfb.X86 (niBody cryptNi)
+open VG.Impl.CmacAes.X86 (at_ niPre niPost)
+open VG.Proof.Aes.X86.AesNi (aes_ok st st_ext getD_ofFn getD_st byte_xor)
+open VG.Proof.CmacAes.X86 (niPre_run niKeys st_readW st_getD sub_one_ofNat add0' arg_ofNat ea_at')
+open VG.Proof.AesCbc
+open VG.Proof.AesCbc.X86
+open VG.Spec.Aes (bytesAt)
+
+/-- `pxor` of a data block with an output block is §6.4's `Pⱼ ⊕ Oⱼ`. -/
+theorem st_xor (d o : BitVec 128) :
+    (st (XBinOp.eval .pxor d o)).toList = Spec.Cbc.xor (st d).toList (st o).toList := by
+  apply Proof.Cmac.ext16 (by simp) (by simp [Spec.Cbc.xor])
+  intro i hi
+  rw [st_getD _ hi, xor_eq, Proof.Cmac.getD_xor (by simp) (by simpa using hi), st_getD d hi, st_getD o hi]
+  exact byte_xor d o i
+
+/-- The invariant of the loop after `k` blocks: since the prologue left the
+memory `m`, only the data has changed, whose first `k` blocks are XORed
+with the output blocks, and the last output block is in `xmm0`. -/
+structure NInv (s₀ : State) (m : Mem) (k : Nat) (s : State) : Prop where
+  esi : s.gpr .esi = Dp s₀ + BitVec.ofNat 32 (16 * k)
+  edi : s.gpr .edi = BitVec.ofNat 32 (N s₀ - k)
+  eax : s.gpr .eax = W s₀
+  ecx : s.gpr .ecx = BitVec.ofNat 32 (R s₀)
+  edx : s.gpr .edx = Iv s₀
+  esp : s.gpr .esp = E s₀
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  frame : Frame [dataR s₀] m s.mem
+  data : Spec.Cbc.blocksAt s.mem ((Dp s₀).setWidth 64) (N s₀) = outK ofbMode s₀ k ++ (blks s₀).drop k
+  chain : (st (s.xmm .xmm0)).toList = chainK ofbMode s₀ k
+
+theorem pre_wp {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv ofbMode s₀ 0 s) :
+    WP isa (.block niPre) s (NInv s₀ s.mem 0) := by
+  obtain big := UPre.big_of h.frame
+  obtain hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
+  refine niPre_run h.esp (fun i hi => by rw [hrw]; exact hp.arg_in hi) (fun i hi => hp.arg_keep big hi)
+    (by rw [hrw]; exact ⟨ivR s₀, by simp [hp.wr], Region.contains_self _ _⟩)
+    fun s' edi eax ecx edx esi esp mem rd wr x => ⟨by rw [esi, h.esi], ?_, eax, ?_, edx, by rw [esp, h.esp],
+      by rw [rd, h.rd], by rw [wr, h.wr], by rw [mem]; exact Frame.refl _ _, by rw [mem]; exact h.data, ?_⟩
+  · rw [edi, Nat.sub_zero]; exact arg_ofNat s₀ 4
+  · rw [ecx]; exact arg_ofNat s₀ 1
+  · rw [x, st_readW]; exact h.iv
+
+/-- One block. -/
+theorem body_wp {s₀ : State} (hp : UPre s₀) {m : Mem}
+    (hm : Frame [ivR s₀, dataR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) m) {k : Nat}
+    (hk : k < N s₀) {s : State} (h : NInv s₀ m k s) :
+    WP isa niBody s fun s' => NInv s₀ m (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀)) := by
+  obtain big : Frame (Big s₀) s₀.mem s.mem := (UPre.big_of hm).trans (h.frame.mono (by simp))
+  obtain hdf := hp.data_fit
+  obtain cB : (dataR s₀).Contains (blk s₀ k) 16 :=
+    Offset.contains_base _ (by omega_using [hk]) (by omega_using [hdf, hk])
+  obtain hK := niKeys (s := s) (nr := R s₀) (by rcases hp.rounds with h | h | h <;> omega_using [h]) hp.sch_fit h.eax
+    (by rw [h.rd]; simp [hp.rd])
+  rw [UPre.sched_bytes hp big] at hK
+  -- The output block enciphered in `xmm0`.
+  refine WP.seq (WP.mono (aes_ok [.xmm0] (by decide) (by decide) hp.rounds s hK h.ecx) fun s₂ ⟨c₂, f₂⟩ => ?_)
+  obtain ⟨o, ho⟩ : ∃ o, s₂.xmm .xmm0 = o := ⟨_, rfl⟩
+  obtain newOut : (st o).toList = Spec.Cbc.aesWith (R s₀) (wK s₀) (chainK ofbMode s₀ k) := by
+    rw [← ho, c₂ _ List.mem_cons_self, ← h.chain]
+    exact congrArg (fun y => (Spec.Aes.cipher (R s₀) _ y).toList) (st_ext fun i hi => by
+      rw [getD_ofFn hi]
+      exact (st_getD _ hi).trans (getD_st _ hi).symm).symm
+  obtain ea₂ : s₂.ea (at_ .esi 0) = blk s₀ k := by
+    rw [ea_at', f₂.gpr, h.esi]
+    show (Dp s₀ + BitVec.ofNat 32 (16 * k) + BitVec.ofNat 32 0).setWidth 64 = _
+    rw [add0']
+    exact hp.dataA hk
+  obtain hin : InRegions (s₂.rd ++ s₂.wr) (blk s₀ k) 16 := by
+    rw [f₂.wr, h.wr]
+    exact ⟨dataR s₀, by simp [hp.wr], cB⟩
+  -- The data block XORed with it through `xmm7`, and stored.
+  obtain ⟨d, hd⟩ : ∃ d, s₂.mem.readW (blk s₀ k) 128 = d := ⟨_, rfl⟩
+  obtain ⟨x, hx⟩ : ∃ x, XBinOp.eval .pxor d o = x := ⟨_, rfl⟩
+  obtain ⟨s₃, hs₃⟩ : ∃ s₃, (s₂.setXmm .xmm7 d).setXmm .xmm7
+    (XBinOp.eval .pxor ((s₂.setXmm .xmm7 d).xmm .xmm7) ((s₂.setXmm .xmm7 d).xmm .xmm0)) = s₃ := ⟨_, rfl⟩
+  rw [WP.block_cons_iff]
+  refine ⟨s₂.setXmm .xmm7 d, by
+    simp only [isa, reduceExec, State.load128, ea₂, hin, ite_true, Option.map_some, hd], ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨s₃, hs₃ ▸ rfl, ?_⟩
+  obtain x₃ : s₃.xmm .xmm7 = x := by
+    rw [← hs₃, xmm_setXmm_self, xmm_setXmm_self, xmm_setXmm_of_ne _ _ (by decide), ho, hx]
+  obtain o₃ : s₃.xmm .xmm0 = o := by
+    rw [← hs₃, xmm_setXmm_of_ne _ _ (by decide), xmm_setXmm_of_ne _ _ (by decide), ho]
+  obtain g₃ : s₃.gpr = s.gpr := by rw [← hs₃, gpr_setXmm, gpr_setXmm, f₂.gpr]
+  obtain m₃ : s₃.mem = s.mem := by rw [← hs₃, mem_setXmm, mem_setXmm, f₂.mem]
+  obtain rd₃ : s₃.rd = s₀.rd := by rw [← hs₃, rd_setXmm, rd_setXmm, f₂.rd, h.rd]
+  obtain wr₃ : s₃.wr = s₀.wr := by rw [← hs₃, wr_setXmm, wr_setXmm, f₂.wr, h.wr]
+  obtain ea₃ : s₃.ea (at_ .esi 0) = blk s₀ k := by rw [← ea₂]; simp only [State.ea, g₃, f₂.gpr]
+  obtain hout : InRegions s₃.wr (blk s₀ k) 16 := by
+    rw [wr₃]
+    exact ⟨dataR s₀, by simp [hp.wr], cB⟩
+  obtain ⟨s₄, hs₄⟩ : ∃ s₄ : State, { s₃ with mem := s₃.mem.writeW (blk s₀ k) x } = s₄ := ⟨_, rfl⟩
+  rw [WP.block_cons_iff]
+  refine ⟨s₄, by simp only [isa, reduceExec, State.store128, ea₃, hout, ite_true, x₃, hs₄], ?_⟩
+  obtain g₄ : s₄.gpr = s.gpr := by rw [← hs₄]; exact g₃
+  obtain m₄ : s₄.mem = s.mem.writeW (blk s₀ k) x := by rw [← hs₄, ← m₃]
+  obtain rd₄ : s₄.rd = s₀.rd := by rw [← hs₄]; exact rd₃
+  obtain wr₄ : s₄.wr = s₀.wr := by rw [← hs₄]; exact wr₃
+  obtain o₄ : s₄.xmm .xmm0 = o := by rw [← hs₄]; exact o₃
+  -- The new block, and the blocks after it.
+  obtain fw : Frame [⟨blk s₀ k, 16⟩] s.mem s₄.mem := by
+    rw [m₄]
+    exact (Frame.refl _ _).writeW (r := ⟨blk s₀ k, 16⟩) List.mem_cons_self _ (Region.contains_self _ _)
+  obtain nb : bytesAt s₄.mem (blk s₀ k) 16 = (st x).toList := by
+    rw [m₄, ← st_readW, Mem.readW_writeW_self _ _ 16 _ (by decide)]
+  obtain hl : ((blks s₀).take k).length = k := by simp [Spec.Cbc.blocksAt]; omega_using [hk]
+  obtain hl' : (outK ofbMode s₀ k).length = k := by rw [outK, Mode.length_out, hl]
+  obtain newBlk : (st x).toList =
+      Spec.Cbc.xor ((blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk)) (st o).toList := by
+    rw [← hx, ← block_of_data h.data hk, ← st_readW, ← f₂.mem, hd]
+    exact st_xor d o
+  obtain outSucc : outK ofbMode s₀ (k + 1) = outK ofbMode s₀ k ++ [(st x).toList] := by
+    rw [newBlk, newOut]
+    simp only [outK, chainK, ofbMode_out, ofbMode_chain, take_succ_blks s₀ hk, crypt_snoc, hl]
+  obtain hpos : 0 < N s₀ - k := by omega_using [hk]
+  obtain edi' : s.gpr .edi - 1 = BitVec.ofNat 32 (N s₀ - (k + 1)) := by
+    rw [h.edi, sub_one_ofNat hpos]; rfl
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc, isa, Option.bind_some,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩ <;>
+    simp only [gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg,
+      wr_arithFlags, xmm_setReg, xmm_arithFlags, zf_setReg, zf_arithFlags, reduceCtorEq, ↓reduceIte, g₄]
+  · rw [h.esi, BitVec.add_assoc]
+    exact congrArg (Dp s₀ + ·) (BitVec.ofNat_add ..).symm
+  · exact edi'
+  · exact h.eax
+  · exact h.ecx
+  · exact h.edx
+  · exact h.esp
+  · exact rd₄
+  · exact wr₄
+  · rw [m₄]
+    exact h.frame.writeW (r := dataR s₀) List.mem_cons_self _ cB
+  · rw [hp.blocksAt_step hk (fw.mono (by simp)), nb, h.data, outSucc,
+      set_prefix _ _ _ hl' (by simp [Spec.Cbc.blocksAt]; exact hk)]
+  · rw [o₄, newOut]
+    simp only [chainK, ofbMode_chain, take_succ_blks s₀ hk, List.length_append, List.length_singleton, hl,
+      next_succ]
+  · rw [edi', MdStream.X86.ofNat_beq_zero (by have : N s₀ < 2 ^ 32 := (arg s₀ 4).isLt; omega_using [this])]
+    exact congrArg some (decide_eq_decide.mpr (by omega_using [hk]))
+
+theorem loop_wp {s₀ : State} (hp : UPre s₀) {m : Mem}
+    (hm : Frame [ivR s₀, dataR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) m) {k : Nat}
+    (hk : k < N s₀) {s : State} (h : NInv s₀ m k s) : WP isa (.loop niBody .ne) s (NInv s₀ m (N s₀)) := by
+  refine WP.loop (M := isa) (body := niBody) (c := .ne) (Q := NInv s₀ m (N s₀))
+    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ NInv s₀ m j t) ?_ (N s₀ - k) s ⟨k, rfl, hk, h⟩
+  rintro n s ⟨k, rfl, hk, h⟩
+  refine WP.mono (body_wp hp hm hk h) fun s' ⟨h', hz⟩ => ?_
+  obtain ev : isa.eval .ne s' = some !decide (k + 1 = N s₀) := by
+    show VG.X86.eval .ne s' = _; rw [MdStream.X86.eval_ne, hz]; rfl
+  by_cases hz' : k + 1 = N s₀
+  · left
+    refine ⟨by rw [ev]; simp [hz'], ?_⟩
+    rwa [← hz']
+  · right
+    refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega_using [hk], k + 1, rfl, by omega_using [hk, hz'], h'⟩
+
+/-- The output block stored: the invariant the epilogue starts from, with
+only the block at `iv` and the data changed since the prologue. -/
+theorem post_wp {s₀ : State} (hp : UPre s₀) {m : Mem}
+    (hm : Frame [ivR s₀, dataR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) m) {s : State}
+    (h : NInv s₀ m (N s₀) s) :
+    WP isa (.block niPost) s fun t => LInv ofbMode s₀ (N s₀) t ∧ Frame (FB s₀ 0) m t.mem := by
+  obtain ea : s.ea (at_ .edx 0) = (Iv s₀).setWidth 64 := by
+    rw [ea_at', h.edx]
+    show (Iv s₀ + BitVec.ofNat 32 0).setWidth 64 = _
+    rw [add0']
+  obtain hout : InRegions s.wr ((Iv s₀).setWidth 64) 16 := by
+    rw [h.wr]
+    exact ⟨ivR s₀, by simp [hp.wr], Region.contains_self _ _⟩
+  obtain fw : Frame [ivR s₀] s.mem (s.mem.writeW ((Iv s₀).setWidth 64) (s.xmm .xmm0)) :=
+    (Frame.refl _ _).writeW (r := ivR s₀) List.mem_cons_self _ (Region.contains_self _ _)
+  rw [niPost, WP.block_cons_iff]
+  refine ⟨{ s with mem := s.mem.writeW ((Iv s₀).setWidth 64) (s.xmm .xmm0) }, by
+    simp only [isa, reduceExec, State.store128, ea, hout, ite_true],
+    WP.block_nil ⟨⟨h.esi, h.esp, h.rd, h.wr, ?_, ?_, ?_⟩, ?_⟩⟩
+  · show Frame _ (savedMem s₀) (s.mem.writeW _ _)
+    exact (hm.trans (h.frame.mono (by simp))).writeW (r := ivR s₀) List.mem_cons_self _ (Region.contains_self _ _)
+  · show Spec.Cbc.blocksAt (s.mem.writeW _ _) _ _ = _
+    rw [← h.data]
+    simp only [Spec.Cbc.blocksAt]
+    refine List.map_congr_left fun j hj => Proof.Cmac.bytesAt_frame fw (fun r hr => ?_) (by decide)
+    simp only [List.mem_singleton] at hr; subst hr
+    exact hp.iv_data.symm.sub_left (UPre.data_sub (List.mem_range.mp hj))
+  · show bytesAt (s.mem.writeW _ _) _ 16 = _
+    rw [← st_readW, Mem.readW_writeW_self _ _ 16 _ (by decide), h.chain]
+  · show Frame _ m (s.mem.writeW _ _)
+    exact (h.frame.mono (by simp)).writeW (r := ivR s₀) List.mem_cons_self _ (Region.contains_self _ _)
+
+/-- The contract, and every byte of the scratch buffer unchanged or zero. -/
+theorem correct_wp {s₀ : State} (h0 : (modeX86 ofbMode).pre s₀) :
+    WP isa cryptNi s₀ fun s' => abiPreserved s₀ s' ∧ (modeX86 ofbMode).post s₀ s' ∧
+      ∀ i, 0 ≤ i → i < 2176 →
+        s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = s₀.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) ∨
+          s'.mem ((S s₀).setWidth 64 + BitVec.ofNat 64 i) = 0 :=
+  endsZ_wp h0 fun h hn => WP.seq (WP.mono (pre_wp (UPre.of h0) h) fun _ x₂ =>
+    WP.seq (WP.mono (loop_wp (UPre.of h0) h.frame hn x₂) fun _ x₃ => post_wp (UPre.of h0) h.frame x₃))
+
+/-- It runs to the contract's postcondition, as the code around a block
+function does (`whole_wp`). -/
+theorem correct (s : State) (hs : (modeX86 ofbMode).pre s) :
+    ∃ t s', Exec isa cryptNi s t s' ∧ abiPreserved s s' ∧ (modeX86 ofbMode).post s s' :=
+  (correct_wp hs).mono fun _ h => ⟨h.1, h.2.1⟩
+
+theorem ct : ConstantTime isa (modeX86 ofbMode).pre (modeX86 ofbMode).pub cryptNi :=
+  VG.Taint.constantTime (A := sseTaint) Decrypt.τ₀
+    (fun _ _ h₁ h₂ hp => Decrypt.agree₀ (UPre.of h₁) (UPre.of h₂) hp) (by taint_decide)
+
+/-- It writes `esp` nowhere: it has no frame and no call. -/
+theorem noSp : NoSp cryptNi := NoSp.of_all (by lit_decide)
+
+theorem stack : stackUse cryptNi = 0 := by lit_decide
+
+theorem spSafe : cryptNi.all (fun i => !isa.writesSp i) = true := Code.all_of_spTest (by lit_decide)
+
+end VG.Proof.AesOfb.X86.Ni

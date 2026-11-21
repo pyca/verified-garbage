@@ -609,7 +609,7 @@ theorem Whole.frame' {M : Mode} {s₀ s : State} (h : Whole M s₀ s) :
 theorem whole_wp {M : Mode} {name : String} {whole : Prog isa}
     (hv : ∀ s, (modeX86 M).pre s →
       ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeX86 M).post s s')
-    (hsp : NoSp whole) (hst : stackUse whole = 24) {s₀ : State} (hp : FPre s₀) {s : State} (h : Setup s₀ s) :
+    (hsp : NoSp whole) (hst : stackUse whole ≤ 24) {s₀ : State} (hp : FPre s₀) {s : State} (h : Setup s₀ s) :
     WP isa (wholeCall name whole) s (Whole M s₀) := by
   obtain f := h.fit hp
   -- What the callee reads, on entry.
@@ -640,9 +640,17 @@ theorem whole_wp {M : Mode} {name : String} {whole : Prog isa}
       · exact hp.stk_data.symm.sub_left (blk_sub s₀))
   obtain ⟨a0, a1, a2, a3, a4, a5⟩ := h.args hp
   refine WP.callWith (rs := wholeRegs) hv hsp (by decide) wholeRegs_esp
-    (by rw [hst, h.esp]; have := hp.esp52; simp only [List.length_cons, List.length_nil]; omega_using [this])
+    (by rw [h.esp]; have := hp.esp52; simp only [List.length_cons, List.length_nil]; omega_using [this, hst])
     (h.callPre hp) fun s' rd' wr' cs' f' ⟨s₂, m₂, post₂⟩ => ?_
-  rw [hst, h.esp, h.mem] at f'
+  -- The whole-block function's own stack is within the 24 bytes its contract reserves.
+  obtain f' := f'.sub (rs' := _ ++ [below (s.gpr .esp) (4 * wholeRegs.length + 24 + 4)]) fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+        below_sub (by omega_using [hst]) (by
+          rw [h.esp]; have := hp.esp52; simp only [List.length_cons, List.length_nil]; omega_using [this])⟩
+  rw [h.esp, h.mem] at f'
   simp only [modeX86, State.withRegions_mem, arg_withRegions, a0, a1, a2, a3, a4, toNat_n, eW, eIv,
     eB] at post₂
   obtain m₂ : Frame [fSv s₀, fStk s₀] s₂.mem s'.mem := m₂.sub fun r hr => by
@@ -979,7 +987,7 @@ theorem final_end_wp {M : Mode} {s₀ : State} (hp : FPre s₀) {s : State} (h :
 theorem final_wp {M : Mode} {name : String} {whole : Prog isa}
     (hv : ∀ s, (modeX86 M).pre s →
       ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeX86 M).post s s')
-    (hsp : NoSp whole) (hst : stackUse whole = 24) (v : BlocksImpl) {s₀ : State} (hp : FPre s₀) :
+    (hsp : NoSp whole) (hst : stackUse whole ≤ 24) (v : BlocksImpl) {s₀ : State} (hp : FPre s₀) :
     WP isa (final name whole v.enc) s₀ fun s' => abiPreserved s₀ s' ∧ ∃ s₁, Done M s₀ s₁ ∧ s'.mem = s₁.mem := by
   refine WP.seq (WP.mono (final_setup_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (whole_wp hv hsp hst hp h₁) fun s₂ h₂ => ?_)
@@ -1003,7 +1011,7 @@ theorem final_post {enc : Bool} {s₀ s₁ s' : State} (h : Done (cfbMode enc) s
 theorem final_correct {enc : Bool} {name : String} {whole : Prog isa}
     (hv : ∀ s, (modeX86 (cfbMode enc)).pre s →
       ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeX86 (cfbMode enc)).post s s')
-    (hsp : NoSp whole) (hst : stackUse whole = 24) (v : BlocksImpl) (s : State) (hs : (finalX86 enc).pre s) :
+    (hsp : NoSp whole) (hst : stackUse whole ≤ 24) (v : BlocksImpl) (s : State) (hs : (finalX86 enc).pre s) :
     ∃ t s', Exec isa (final name whole v.enc) s t s' ∧ abiPreserved s s' ∧ (finalX86 enc).post s s' := by
   obtain ⟨t, s', he, hg, s₁, h₁, hm⟩ := final_wp hv hsp hst v (FPre.of hs)
   exact ⟨t, s', he, hg, final_post h₁ hm⟩
@@ -1052,7 +1060,7 @@ theorem final_rel {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
     (hv : ∀ s, (modeX86 M).pre s →
       ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeX86 M).post s s')
     (hct : ConstantTime isa (modeX86 M).pre (modeX86 M).pub whole)
-    (hsp : NoSp whole) (hst : stackUse whole = 24) (v : BlocksImpl) {s₀ s₀' : State}
+    (hsp : NoSp whole) (hst : stackUse whole ≤ 24) (v : BlocksImpl) {s₀ s₀' : State}
     (h0 : (finalX86 enc).pre s₀) (h0' : (finalX86 enc).pre s₀') (hq : (finalX86 enc).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (final name whole v.enc) fun _ _ => True := by
   obtain hp := FPre.of h0
@@ -1167,7 +1175,7 @@ theorem final_ct {enc : Bool} {M : Mode} {name : String} {whole : Prog isa}
     (hv : ∀ s, (modeX86 M).pre s →
       ∃ t s', Exec isa whole s t s' ∧ abiPreserved s s' ∧ (modeX86 M).post s s')
     (hct : ConstantTime isa (modeX86 M).pre (modeX86 M).pub whole)
-    (hsp : NoSp whole) (hst : stackUse whole = 24) (v : BlocksImpl) :
+    (hsp : NoSp whole) (hst : stackUse whole ≤ 24) (v : BlocksImpl) :
     ConstantTime isa (finalX86 enc).pre (finalX86 enc).pub (final name whole v.enc) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (final_rel hv hct hsp hst v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
@@ -1237,17 +1245,17 @@ theorem decryptFinal_spSafe (v : BlocksImpl) :
 theorem encryptFinal_verified (v : BlocksImpl) :
     Verified X86.target (encryptFinal v.enc v.suffix) (finalScratchContract true) :=
   Verified.of_correct
-    (final_correct (fun _ hs => AesCbc.X86.whole_wp (encBody_ok v) hs) (encrypt_noSp v) (encrypt_stack v) v)
+    (final_correct (fun _ hs => AesCbc.X86.whole_wp (encBody_ok v) hs) (encrypt_noSp v) (Nat.le_of_eq (encrypt_stack v)) v)
     (final_ct (fun _ hs => AesCbc.X86.whole_wp (encBody_ok v) hs) (AesCbc.X86.whole_ct (encBody_ok v) (encBody_ct v))
-      (encrypt_noSp v) (encrypt_stack v) v)
+      (encrypt_noSp v) (Nat.le_of_eq (encrypt_stack v)) v)
     (final_implies true)
 
 theorem decryptFinal_verified (v : BlocksImpl) :
     Verified X86.target (decryptFinal v.enc v.suffix) (finalScratchContract false) :=
   Verified.of_correct
-    (final_correct (fun _ hs => AesCbc.X86.whole_wp (decBody_ok v) hs) (decrypt_noSp v) (decrypt_stack v) v)
+    (final_correct (fun _ hs => AesCbc.X86.whole_wp (decBody_ok v) hs) (decrypt_noSp v) (Nat.le_of_eq (decrypt_stack v)) v)
     (final_ct (fun _ hs => AesCbc.X86.whole_wp (decBody_ok v) hs) (AesCbc.X86.whole_ct (decBody_ok v) (decBody_ct v))
-      (decrypt_noSp v) (decrypt_stack v) v)
+      (decrypt_noSp v) (Nat.le_of_eq (decrypt_stack v)) v)
     (final_implies false)
 
 /-! ## With `save` on the stack
