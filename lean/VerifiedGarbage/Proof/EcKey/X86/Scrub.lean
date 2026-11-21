@@ -16,7 +16,7 @@ and of `vg_ecdh_<name>`, read the memory on return only within `out`, and that
 of `vg_ecdsa_<name>_verify` does not read it
 (`X86.Scrub.PostOut`), as x86-64's `Proof/EcKey/X86_64/Scrub/Out.lean` and
 RISC-V's `Proof/EcKey/RISCV64/Scrub.lean` prove them: what
-`X86.Scrub.verifiedScrubbedF` needs of each implementation followed by its
+`X86.Scrub.verifiedScrubbedAll` needs of each implementation followed by its
 cleanup, the zeroing of the stack its frames and calls used and
 `Impl.Scrub.X86.tail`.
 Each lemma takes the tables of constants `cs` the code reads, which may be

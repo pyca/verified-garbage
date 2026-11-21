@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Scrub.X86
 
 /-! # Triple DES on x86 (32-bit): the functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`, or
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`, or
 `Impl.Scrub.X86.scrub rb` for code without a frame or calls, or whose frame
 it wipes itself with nothing called in it: key expansion): the `W` bytes
 of stack below `esp` that its contract reserves zeroed, and the registers
@@ -29,50 +29,50 @@ def expandKey : Prog isa :=
 
 /-- `Spec.TripleDes.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 1060 (Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.encrypt)
+  Impl.Scrub.X86.scrubAll 0 1060 (Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.encrypt)
 
 /-- `Spec.TripleDes.ecbDecryptApi`'s function as emitted. -/
 def ecbDecrypt : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 1060 (Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.decrypt)
+  Impl.Scrub.X86.scrubAll 0 1060 (Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.decrypt)
 
 /-- `Spec.TripleDes.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncryptChained : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncryptChained)
+  Impl.Scrub.X86.scrubAll 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncryptChained)
 
 /-- `Spec.TripleDes.cbcDecryptChainedApi`'s function as emitted. -/
 def cbcDecryptChained : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 1248 (Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cbcDecryptChained)
+  Impl.Scrub.X86.scrubAll 0 1248 (Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cbcDecryptChained)
 
 /-- `Spec.TripleDes.cfbEncryptApi`'s function as emitted. -/
 def cfbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncrypt)
+  Impl.Scrub.X86.scrubAll 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncrypt)
 
 /-- `Spec.TripleDes.cfbDecryptApi`'s function as emitted. -/
 def cfbDecrypt : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 1248 (Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cfbDecrypt)
+  Impl.Scrub.X86.scrubAll 0 1248 (Impl.StackScratch.X86.withStackScratchWiped 1232 4 302 Impl.TripleDes.X86.cfbDecrypt)
 
 /-- `Spec.TripleDes.cfbEncryptFinalApi`'s function as emitted. -/
 def cfbEncryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncryptFinal)
+  Impl.Scrub.X86.scrubAll 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncryptFinal)
 
 /-- `Spec.TripleDes.cfbDecryptFinalApi`'s function as emitted. -/
 def cfbDecryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbDecryptFinal)
+  Impl.Scrub.X86.scrubAll 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbDecryptFinal)
 
 /-- `Spec.TripleDes.cfb8EncryptApi`'s function as emitted. -/
 def cfb8Encrypt : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Encrypt)
+  Impl.Scrub.X86.scrubAll 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Encrypt)
 
 /-- `Spec.TripleDes.cfb8DecryptApi`'s function as emitted. -/
 def cfb8Decrypt : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Decrypt)
+  Impl.Scrub.X86.scrubAll 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfb8Decrypt)
 
 /-- `Spec.TripleDes.ofbApi`'s function as emitted. -/
 def ofb : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.ofb)
+  Impl.Scrub.X86.scrubAll 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.ofb)
 
 /-- `Spec.TripleDes.ofbFinalApi`'s function as emitted. -/
 def ofbFinal : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.ofbFinal)
+  Impl.Scrub.X86.scrubAll 0 984 (Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.ofbFinal)
 
 end VG.Impl.TripleDes.X86.Fn

@@ -35,7 +35,7 @@ code as the internal `vg_sha224_init_core` and `vg_sha256_init_core`
 (`Variants.hmacHash`), whose code is not scrubbed.
 
 The one-shot digests, for every backend, with the stack they and their
-callees use zeroed first (`X86.Scrub.verifiedScrubbedF`), given that their
+callees use zeroed first (`X86.Scrub.verifiedScrubbedAll`), given that their
 postconditions read the memory on return only within the buffers
 (`Proof.Sha256.PostOut`). The streaming `update` and `finalize` are scrubbed
 where each backend defines them (`Variants.StreamFn.reg`).
@@ -97,7 +97,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem digest_scrubbed (v : Backend) :
     VerifiedScrubbed target (Impl.Sha256.X86.Fn.digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream))
       (Spec.Sha256.digestContract X86.abi 32 Spec.Sha256.hash (48 + dframe (Proof.Pbkdf2.Stream.X86.sha256H v.stream))) 0 :=
-  verifiedScrubbedF (api := Spec.Sha256.digest256Api)
+  verifiedScrubbedAll (api := Spec.Sha256.digest256Api)
     { suffix := v.suffix
       code := digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream)
       stack := 48 + dframe (Proof.Pbkdf2.Stream.X86.sha256H v.stream)
@@ -110,7 +110,7 @@ but in its frames and calls. -/
 theorem digest_spSafe (v : Backend) :
     (Impl.Sha256.X86.Fn.digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream)).all
       (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.MdStream.X86.Digest.sha256_digestSp v.stream)
+  scrubAll_spSafe (Proof.MdStream.X86.Digest.sha256_digestSp v.stream)
 
 theorem digest224RegOut (stack : Nat) : PostOut (Spec.Sha256.digestContract X86.abi 28 Spec.Sha256.sha224 stack) ((Spec.Sha256.digestSig 28).retBits 32) :=
   postOut_of_local ScrubAbi.plain (Proof.Sha256.digestPost_out 28 Spec.Sha256.sha224 32 (by decide))
@@ -136,7 +136,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem digest224_scrubbed (v : Backend) :
     VerifiedScrubbed target (Impl.Sha256.X86.Fn.digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream))
       (Spec.Sha256.digestContract X86.abi 28 Spec.Sha256.sha224 (48 + dframe (Proof.Pbkdf2.Stream.X86.sha224H v.stream))) 0 :=
-  verifiedScrubbedF (api := Spec.Sha256.digest224Api)
+  verifiedScrubbedAll (api := Spec.Sha256.digest224Api)
     { suffix := v.suffix
       code := digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream)
       stack := 48 + dframe (Proof.Pbkdf2.Stream.X86.sha224H v.stream)
@@ -149,6 +149,6 @@ but in its frames and calls. -/
 theorem digest224_spSafe (v : Backend) :
     (Impl.Sha256.X86.Fn.digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream)).all
       (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.MdStream.X86.Digest.sha224_digestSp v.stream)
+  scrubAll_spSafe (Proof.MdStream.X86.Digest.sha224_digestSp v.stream)
 
 end VG.Proof.Sha256.X86.Scrub

@@ -31,7 +31,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 implementations of SHA-1's and SHA-256's variants
 (`Proof/Variants/Sha1/X86.lean`, `Proof/Variants/Sha256/X86.lean`) in its
 table, each followed by the zeroing of the stack its frames and calls use
-and `Impl.Scrub.X86.tail`, as emitted (`X86.Scrub.verifiedScrubbedF`), with their postconditions'
+and `Impl.Scrub.X86.tail`, as emitted (`X86.Scrub.verifiedScrubbedAll`), with their postconditions'
 locality from `Proof/Ecdsa/X86/Scrub.lean`. The signing code's side
 condition is evaluated once, of the code without the curve's proofs
 (`Ecdsa.X86.Scrub.cfgOf`), with the HMAC implementations' and the curve's
@@ -55,7 +55,7 @@ theorem verify_scrubbed (hL : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifyP192
       (Spec.Ecdsa.P192.inst.verifyHashContract (X86.abi.withConsts Impl.Ecdsa.X86.p192Comb.combConsts)
         (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.P192.verifyHashApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.P192.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
         Impl.Ecdsa.Verify.X86.verifyP192
       verified := Proof.Ecdsa.Verify.X86.P192.verifyHash_verified hL }
@@ -72,7 +72,7 @@ theorem signSide :
 theorem sign_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hv : OK vs ∧ "VG_P192_COMB" ∉ names vs) :
     VerifiedScrubbed target (Impl.Ecdsa.X86.Fn.signP192 (HmacTable.X86.fnsOf vs))
       (Rfc6979.X86.specK Spec.Ecdsa.Rfc6979.Curves.p192 Impl.Ecdsa.X86.p192Comb.combConsts vs) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.p192SignApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.p192SignApi)
     { tables := [("hmac", tables vs)]
       code := signCodeT (p192 hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs
       verified := p192T_verified hL vs hv

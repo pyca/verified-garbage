@@ -24,13 +24,13 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 `vg_cmac_triple_des_finish` as emitted (`Impl.CmacTripleDes.Stream.X86.Fn`),
 each followed by the zeroing of the stack below
 `esp` that its contract reserves and by `Impl.Scrub.X86.tail`
-(`X86.Scrub.verifiedScrubbedF`), which clears the registers a callee may change: they
+(`X86.Scrub.verifiedScrubbedAll`), which clears the registers a callee may change: they
 keep their working space, the key schedule among it, in a frame they do not
 wipe themselves (`withStackScratch`). Their postconditions read the memory on
 return only within the 416-byte state and the tag, by the target-independent
 lemmas of `Proof/CmacTripleDes/StreamScratch.lean`. What the scrub needs of
 the code (its stack use within the contract's, no indirect call, no MMX
-instruction) is one Boolean, `X86.Scrub.scrubFSide`, which `verifiedScrubbedF` proves
+instruction) is one Boolean, `X86.Scrub.scrubFSide`, which `verifiedScrubbedAll` proves
 by evaluating the code once (`lit_decide`).
 -/
 
@@ -65,7 +65,7 @@ theorem finishOut (stack : Nat) :
 in constant time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed X86.target Impl.CmacTripleDes.Stream.X86.Fn.init (Spec.Cmac.tdesStreamInitContract X86.abi 680) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.tdesStreamInitApi)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesStreamInitApi)
     { code := Impl.StackScratch.X86.withStackScratch 660 3 Impl.CmacTripleDes.Stream.X86.streamInit
       verified := Proof.CmacTripleDes.Stream.X86.init_framed }
     (initOut _)
@@ -74,7 +74,7 @@ theorem init_scrubbed :
 in constant time and returns without secret residue. -/
 theorem absorb_scrubbed :
     VerifiedScrubbed X86.target Impl.CmacTripleDes.Stream.X86.Fn.absorb (Spec.Cmac.tdesAbsorbContract X86.abi 740) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.tdesAbsorbApi)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesAbsorbApi)
     { code := Impl.StackScratch.X86.withStackScratch 716 5 Impl.CmacTripleDes.Stream.X86.absorb
       verified := Proof.CmacTripleDes.Stream.X86.absorb_framed }
     (absorbOut _)
@@ -83,7 +83,7 @@ theorem absorb_scrubbed :
 in constant time and returns without secret residue. -/
 theorem finish_scrubbed :
     VerifiedScrubbed X86.target Impl.CmacTripleDes.Stream.X86.Fn.finish (Spec.Cmac.tdesFinishContract X86.abi 736) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.tdesFinishApi)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesFinishApi)
     { code := Impl.StackScratch.X86.withStackScratch 712 4 Impl.CmacTripleDes.Stream.X86.finish
       verified := Proof.CmacTripleDes.Stream.X86.finish_framed }
     (finishOut _)

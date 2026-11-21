@@ -34,7 +34,7 @@ needs (`X86.Scrub.PostOut`).
 
 Each as emitted (`Impl.AesCfb.X86.Fn`) zeroes the stack of its contract
 below `esp` and clears the registers, and returns without secret residue
-(`X86.Scrub.verifiedScrubbedF`: `encrypt_scrubbed`, …). What that needs of the code
+(`X86.Scrub.verifiedScrubbedAll`: `encrypt_scrubbed`, …). What that needs of the code
 (`scrubFSide`) holds whatever the implementation of the block function
 (`encrypt_scrub`, …): from CFB's code with a stub block function, whose
 code is `.block []`, which the kernel evaluates once (`encrypt_side`, …),
@@ -180,7 +180,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem encrypt_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesCfb.X86.Fn.encrypt v.enc)
       (Spec.Cfb.aesEncryptContract X86.abi 24) 0 :=
-  verifiedScrubbedF (api := Spec.Cfb.aesEncryptApi) {
+  verifiedScrubbedAll (api := Spec.Cfb.aesEncryptApi) {
       suffix := v.suffix
       code := Impl.AesCfb.X86.encrypt v.enc
       verified := Proof.AesCfb.encrypt_keyed (encrypt_verified v)
@@ -192,7 +192,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem decrypt_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesCfb.X86.Fn.decrypt v.enc)
       (Spec.Cfb.aesDecryptContract X86.abi 24) 0 :=
-  verifiedScrubbedF (api := Spec.Cfb.aesDecryptApi) {
+  verifiedScrubbedAll (api := Spec.Cfb.aesDecryptApi) {
       suffix := v.suffix
       code := Impl.AesCfb.X86.decrypt v.enc
       verified := Proof.AesCfb.decrypt_keyed (decrypt_verified v)
@@ -204,7 +204,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem encryptFinal_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesCfb.X86.Fn.encryptFinal v.enc v.suffix)
       (Spec.Cfb.aesEncryptFinalContract X86.abi 100) 0 :=
-  verifiedScrubbedF (api := Spec.Cfb.aesEncryptFinalApi) {
+  verifiedScrubbedAll (api := Spec.Cfb.aesEncryptFinalApi) {
       suffix := v.suffix
       code := withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.encryptFinal v.enc v.suffix)
       verified := Proof.AesCfb.encryptFinal_keyed (encryptFinal_framed v)
@@ -216,7 +216,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem decryptFinal_scrubbed (v : BlocksImpl) :
     VerifiedScrubbed X86.target (Impl.AesCfb.X86.Fn.decryptFinal v.enc v.suffix)
       (Spec.Cfb.aesDecryptFinalContract X86.abi 100) 0 :=
-  verifiedScrubbedF (api := Spec.Cfb.aesDecryptFinalApi) {
+  verifiedScrubbedAll (api := Spec.Cfb.aesDecryptFinalApi) {
       suffix := v.suffix
       code := withStackScratchWiped 48 6 4 (Impl.AesCfb.X86.decryptFinal v.enc v.suffix)
       verified := Proof.AesCfb.decryptFinal_keyed (decryptFinal_framed v)
@@ -226,21 +226,21 @@ theorem decryptFinal_scrubbed (v : BlocksImpl) :
 /-- `Impl.AesCfb.X86.Fn.encrypt` writes `esp` only in its frames and calls. -/
 theorem encrypt_fnSpSafe (v : BlocksImpl) :
     (Impl.AesCfb.X86.Fn.encrypt v.enc).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (encrypt_spSafe v)
+  scrubAll_spSafe (encrypt_spSafe v)
 
 /-- `Impl.AesCfb.X86.Fn.decrypt` writes `esp` only in its frames and calls. -/
 theorem decrypt_fnSpSafe (v : BlocksImpl) :
     (Impl.AesCfb.X86.Fn.decrypt v.enc).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (decrypt_spSafe v)
+  scrubAll_spSafe (decrypt_spSafe v)
 
 /-- `Impl.AesCfb.X86.Fn.encryptFinal` writes `esp` only in its frames and calls. -/
 theorem encryptFinal_fnSpSafe (v : BlocksImpl) :
     (Impl.AesCfb.X86.Fn.encryptFinal v.enc v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (encryptFinal_framed_spSafe v)
+  scrubAll_spSafe (encryptFinal_framed_spSafe v)
 
 /-- `Impl.AesCfb.X86.Fn.decryptFinal` writes `esp` only in its frames and calls. -/
 theorem decryptFinal_fnSpSafe (v : BlocksImpl) :
     (Impl.AesCfb.X86.Fn.decryptFinal v.enc v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (decryptFinal_framed_spSafe v)
+  scrubAll_spSafe (decryptFinal_framed_spSafe v)
 
 end VG.Proof.AesCfb.X86.Scrub

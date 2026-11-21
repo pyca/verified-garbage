@@ -5,7 +5,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 /-!
 # Returning without secret residue (x86, 32-bit)
 
-`scrubF retBits n c` runs `c`, then clears everything `c` may have left
+`scrubAll retBits n c` runs `c`, then clears everything `c` may have left
 where its Rust caller cannot clear it (`X86.NoResidue`):
 
 * the `n` bytes of stack below `esp` (the stack `c`'s frames and calls use),
@@ -87,6 +87,6 @@ def zeroRegs (cs : List Nat) : List Instr :=
 def wipeBelow (n : Nat) : Prog isa := .seq (.block (zeroRegs (chunks n))) (wipe (chunks n))
 
 /-- `c`, then the `n` bytes below `esp` zeroed, then `tail rb`. -/
-def scrubF (rb n : Nat) (c : Prog isa) : Prog isa := .seq c (.seq (wipeBelow n) (.block (tail rb)))
+def scrubAll (rb n : Nat) (c : Prog isa) : Prog isa := .seq c (.seq (wipeBelow n) (.block (tail rb)))
 
 end VG.Impl.Scrub.X86

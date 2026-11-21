@@ -79,7 +79,7 @@ end VG.Impl.AesCfb8.X86
 
 /-! ## The functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
 bytes of stack below `esp` that it and its callees use zeroed, and the
 registers a callee may change cleared but the `rb` bits of the result, so
 that it returns without secret residue. -/
@@ -90,9 +90,9 @@ open VG.X86
 open VG.Impl.Aes.X86 (Blocks)
 
 /-- `vg_aes_cfb8_encrypt` over the block function `b`, as emitted. -/
-def encrypt (b : Blocks) : Prog isa := Impl.Scrub.X86.scrubF 0 24 (Impl.AesCfb8.X86.encrypt b)
+def encrypt (b : Blocks) : Prog isa := Impl.Scrub.X86.scrubAll 0 24 (Impl.AesCfb8.X86.encrypt b)
 
 /-- `vg_aes_cfb8_decrypt` over the block function `b`, as emitted. -/
-def decrypt (b : Blocks) : Prog isa := Impl.Scrub.X86.scrubF 0 24 (Impl.AesCfb8.X86.decrypt b)
+def decrypt (b : Blocks) : Prog isa := Impl.Scrub.X86.scrubAll 0 24 (Impl.AesCfb8.X86.decrypt b)
 
 end VG.Impl.AesCfb8.X86.Fn

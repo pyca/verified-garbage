@@ -253,19 +253,19 @@ structure StreamFn where
   /-- Its postcondition reads the memory on return only within the buffers. -/
   post : X86.Scrub.PostOut contract (api.sig.retBits 32)
   /-- What the cleanup needs of its code over its stack
-  (`X86.Scrub.scrubFSide`, for `verifiedScrubbedF`): from the
+  (`X86.Scrub.scrubFSide`, for `verifiedScrubbedAll`): from the
   variant's facts of the code it wraps (`update_scrub`, …), not evaluated
   again. -/
   scrub : X86.Scrub.scrubFSide code [] stack = true
 
 /-- `f`'s code as emitted, `f.code` and then its cleanup: the zeroing of its
 stack and the clearing of the registers a callee may change but the result's
-bits (`Impl.Scrub.X86.scrubF`), meets `f`'s contract in constant time and
-returns without secret residue (`X86.Scrub.verifiedScrubbedF`). -/
+bits (`Impl.Scrub.X86.scrubAll`), meets `f`'s contract in constant time and
+returns without secret residue (`X86.Scrub.verifiedScrubbedAll`). -/
 theorem StreamFn.scrubbed (f : StreamFn) :
-    VerifiedScrubbed X86.target (Impl.Scrub.X86.scrubF (f.api.sig.retBits 32) f.stack f.code) f.contract
+    VerifiedScrubbed X86.target (Impl.Scrub.X86.scrubAll (f.api.sig.retBits 32) f.stack f.code) f.contract
       (f.api.sig.retBits 32) :=
-  X86.Scrub.verifiedScrubbedF (api := f.api)
+  X86.Scrub.verifiedScrubbedAll (api := f.api)
     { consts := []
       tables := []
       code := f.code
@@ -282,13 +282,13 @@ with its cleanup, and the theorem about that code (`StreamFn.scrubbed`). -/
 def StreamFn.reg (f : StreamFn) : Registration f.api X86.target where
   consts := []
   tables := []
-  code := Impl.Scrub.X86.scrubF (f.api.sig.retBits 32) f.stack f.code
+  code := Impl.Scrub.X86.scrubAll (f.api.sig.retBits 32) f.stack f.code
   contract := f.contract
   stack := f.stack
   verified := .scrubbed f.scrubbed
   ofApi := f.ofApi
   ofSig := f.ofSig
-  spSafe := X86.Scrub.scrubF_spSafe f.spSafe
+  spSafe := X86.Scrub.scrubAll_spSafe f.spSafe
 
 /-! ## What the cleanup of the streaming functions needs
 

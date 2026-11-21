@@ -31,7 +31,7 @@ it may change (`X86.Scrub.verifiedScrubbed`). Key inversion, ECB and the CBC,
 CFB64 and OFB functions run with their working space in a frame on the stack
 (`withStackScratch`, `withStackScratchWiped`), and then zero the stack their
 contracts reserve below `esp` and clear the registers a callee may change
-(`X86.Scrub.verifiedScrubbedF`). What the cleanup needs of the code is one
+(`X86.Scrub.verifiedScrubbedAll`). What the cleanup needs of the code is one
 Boolean (`X86.Scrub.scrubSide`, `X86.Scrub.scrubFSide`), proved by
 evaluating the code once (`lit_decide`). Their postconditions read the
 memory on return only within their buffers, as on the other targets
@@ -223,7 +223,7 @@ theorem expandKey_scrubbed :
 in constant time and returns without secret residue. -/
 theorem invertKey_scrubbed :
     VerifiedScrubbed X86.target Impl.Idea.X86.Fn.invertKey (Spec.Idea.invertKeyContract X86.abi 32) 0 :=
-  verifiedScrubbedF (api := Spec.Idea.invertKeyApi)
+  verifiedScrubbedAll (api := Spec.Idea.invertKeyApi)
     { code := Impl.StackScratch.X86.withStackScratch 32 2 Impl.Idea.X86.invertKey
       verified := Proof.Idea.X86.invertKey_framed }
     (invertKeyOut _)
@@ -232,7 +232,7 @@ theorem invertKey_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ecb_scrubbed :
     VerifiedScrubbed X86.target Impl.Idea.X86.Fn.ecb (Spec.Idea.ecbContract X86.abi 152) 0 :=
-  verifiedScrubbedF (api := Spec.Idea.ecbApi)
+  verifiedScrubbedAll (api := Spec.Idea.ecbApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 152 3 Proof.Idea.X86.wipedWords Impl.Idea.X86.ecb
       verified := Proof.Idea.X86.ecb_framed }
     (ecbOut _)
@@ -241,7 +241,7 @@ theorem ecb_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Idea.X86.Fn.cbcEncryptChained (Spec.Idea.cbcEncryptChainedContract X86.abi 208) 0 :=
-  verifiedScrubbedF (api := Spec.Idea.cbcEncryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Idea.cbcEncryptChainedApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cbcEncryptChained
       verified := Proof.Idea.X86.Cbc.cbcEncryptChained_framed }
     (cbcEncryptOut _)
@@ -250,7 +250,7 @@ theorem cbcEncryptChained_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Idea.X86.Fn.cbcDecryptChained (Spec.Idea.cbcDecryptChainedContract X86.abi 208) 0 :=
-  verifiedScrubbedF (api := Spec.Idea.cbcDecryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Idea.cbcDecryptChainedApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cbcDecryptChained
       verified := Proof.Idea.X86.Cbc.cbcDecryptChained_framed }
     (cbcDecryptOut _)
@@ -259,7 +259,7 @@ theorem cbcDecryptChained_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Idea.X86.Fn.cfbEncrypt (Spec.Idea.cfbEncryptContract X86.abi 208) 0 :=
-  verifiedScrubbedF (api := Spec.Idea.cfbEncryptApi)
+  verifiedScrubbedAll (api := Spec.Idea.cfbEncryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cfbEncrypt
       verified := Proof.Idea.X86.Fb.cfbEncrypt_framed }
     (cfbEncryptOut _)
@@ -268,7 +268,7 @@ theorem cfbEncrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Idea.X86.Fn.cfbDecrypt (Spec.Idea.cfbDecryptContract X86.abi 208) 0 :=
-  verifiedScrubbedF (api := Spec.Idea.cfbDecryptApi)
+  verifiedScrubbedAll (api := Spec.Idea.cfbDecryptApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cfbDecrypt
       verified := Proof.Idea.X86.Fb.cfbDecrypt_framed }
     (cfbDecryptOut _)
@@ -277,7 +277,7 @@ theorem cfbDecrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Idea.X86.Fn.cfbEncryptFinal (Spec.Idea.cfbEncryptFinalContract X86.abi 208) 0 :=
-  verifiedScrubbedF (api := Spec.Idea.cfbEncryptFinalApi)
+  verifiedScrubbedAll (api := Spec.Idea.cfbEncryptFinalApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cfbEncryptFinal
       verified := Proof.Idea.X86.FbFinal.cfbEncryptFinal_framed }
     (cfbEncryptFinalOut _)
@@ -286,7 +286,7 @@ theorem cfbEncryptFinal_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Idea.X86.Fn.cfbDecryptFinal (Spec.Idea.cfbDecryptFinalContract X86.abi 208) 0 :=
-  verifiedScrubbedF (api := Spec.Idea.cfbDecryptFinalApi)
+  verifiedScrubbedAll (api := Spec.Idea.cfbDecryptFinalApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.cfbDecryptFinal
       verified := Proof.Idea.X86.FbFinal.cfbDecryptFinal_framed }
     (cfbDecryptFinalOut _)
@@ -295,7 +295,7 @@ theorem cfbDecryptFinal_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed X86.target Impl.Idea.X86.Fn.ofb (Spec.Idea.ofbContract X86.abi 208) 0 :=
-  verifiedScrubbedF (api := Spec.Idea.ofbApi)
+  verifiedScrubbedAll (api := Spec.Idea.ofbApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.ofb
       verified := Proof.Idea.X86.Fb.ofb_framed }
     (ofbOut _)
@@ -304,7 +304,7 @@ theorem ofb_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Idea.X86.Fn.ofbFinal (Spec.Idea.ofbFinalContract X86.abi 208) 0 :=
-  verifiedScrubbedF (api := Spec.Idea.ofbFinalApi)
+  verifiedScrubbedAll (api := Spec.Idea.ofbFinalApi)
     { code := Impl.StackScratch.X86.withStackScratchWiped 208 4 46 Impl.Idea.X86.ofbFinal
       verified := Proof.Idea.X86.FbFinal.ofbFinal_framed }
     (ofbFinalOut _)

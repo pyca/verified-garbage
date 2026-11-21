@@ -33,9 +33,9 @@ code in its frame of working space (`withStackScratch`) followed by the
 zeroing of the stack its contract reserves below `esp` (that frame, and the
 frames of its calls of `vg_sm4_ctr32`, `vg_sm4_expand_key_core` and
 `vg_ghash`) and by the clearing of the registers
-(`Impl.Scrub.X86.scrubF`). One theorem each states `VerifiedScrubbed` of
+(`Impl.Scrub.X86.scrubAll`). One theorem each states `VerifiedScrubbed` of
 it, for every implementation `v` of `vg_ghash` it calls (`init_scrubbed`,
-…), from `X86.Scrub.verifiedScrubbedF` with:
+…), from `X86.Scrub.verifiedScrubbedAll` with:
 
 * the postcondition reading the memory on return only within the key
   context, the state and the buffers (`Proof/Sm4Gcm/Scratch.lean`, for any
@@ -148,7 +148,7 @@ theorem open_scrub : scrubFSide (withStackScratch 2604 9 («open» v.callees)) [
 /-- `vg_sm4_gcm_init`. -/
 theorem init_scrubbed :
     VerifiedScrubbed target Impl.Sm4Gcm.X86.Fn.init (Spec.Sm4.Gcm.initContract X86.abi 4112) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.Gcm.initApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.initApi)
     { code := withStackScratch 2576 2 init
       verified := init_framed
       spSafe := withStackScratch_spSafe init_spSafe }
@@ -157,7 +157,7 @@ theorem init_scrubbed :
 /-- `vg_sm4_gcm_stream_encrypt`. -/
 theorem streamEncrypt_scrubbed :
     VerifiedScrubbed target (Impl.Sm4Gcm.X86.Fn.streamEncrypt v.callees) (Spec.Sm4.Gcm.streamEncryptContract X86.abi 4136) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.Gcm.streamEncryptApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamEncryptApi)
     { code := withStackScratch 2600 8 (streamEncrypt v.callees)
       verified := streamEncrypt_framed v
       spSafe := withStackScratch_spSafe (streamEncrypt_spSafe v) }
@@ -166,7 +166,7 @@ theorem streamEncrypt_scrubbed :
 /-- `vg_sm4_gcm_stream_decrypt`. -/
 theorem streamDecrypt_scrubbed :
     VerifiedScrubbed target (Impl.Sm4Gcm.X86.Fn.streamDecrypt v.callees) (Spec.Sm4.Gcm.streamDecryptContract X86.abi 4136) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.Gcm.streamDecryptApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamDecryptApi)
     { code := withStackScratch 2600 8 (streamDecrypt v.callees)
       verified := streamDecrypt_framed v
       spSafe := withStackScratch_spSafe (streamDecrypt_spSafe v) }
@@ -175,7 +175,7 @@ theorem streamDecrypt_scrubbed :
 /-- `vg_sm4_gcm_stream_finish`. -/
 theorem streamFinish_scrubbed :
     VerifiedScrubbed target (Impl.Sm4Gcm.X86.Fn.streamFinish v.callees) (Spec.Sm4.Gcm.streamFinishContract X86.abi 4132) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.Gcm.streamFinishApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamFinishApi)
     { code := withStackScratch 2596 7 (streamFinish v.callees)
       verified := streamFinish_framed v
       spSafe := withStackScratch_spSafe (streamFinish_spSafe v) }
@@ -184,7 +184,7 @@ theorem streamFinish_scrubbed :
 /-- `vg_sm4_gcm_stream_verify`. -/
 theorem streamVerify_scrubbed :
     VerifiedScrubbed target (Impl.Sm4Gcm.X86.Fn.streamVerify v.callees) (Spec.Sm4.Gcm.streamVerifyContract X86.abi 4136) 32 :=
-  verifiedScrubbedF (api := Spec.Sm4.Gcm.streamVerifyApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamVerifyApi)
     { code := withStackScratch 2600 8 (streamVerify v.callees)
       verified := streamVerify_framed v
       spSafe := withStackScratch_spSafe (streamVerify_spSafe v) }
@@ -193,7 +193,7 @@ theorem streamVerify_scrubbed :
 /-- `vg_sm4_gcm_seal`. -/
 theorem seal_scrubbed :
     VerifiedScrubbed target (Impl.Sm4Gcm.X86.Fn.«seal» v.callees) (Spec.Sm4.Gcm.sealContract X86.abi 4136) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.Gcm.sealApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.sealApi)
     { code := withStackScratch 2600 8 («seal» v.callees)
       verified := seal_framed v
       spSafe := withStackScratch_spSafe (seal_spSafe v) }
@@ -202,7 +202,7 @@ theorem seal_scrubbed :
 /-- `vg_sm4_gcm_open`. -/
 theorem open_scrubbed :
     VerifiedScrubbed target (Impl.Sm4Gcm.X86.Fn.«open» v.callees) (Spec.Sm4.Gcm.openContract X86.abi 4140) 32 :=
-  verifiedScrubbedF (api := Spec.Sm4.Gcm.openApi)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.openApi)
     { code := withStackScratch 2604 9 («open» v.callees)
       verified := open_framed v
       spSafe := withStackScratch_spSafe (open_spSafe v) }
@@ -211,18 +211,18 @@ theorem open_scrubbed :
 /-! ## `spSafe` of the functions as emitted, which their registrations state -/
 
 theorem init_spSafeF : Impl.Sm4Gcm.X86.Fn.init.all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe init_spSafe)
+  scrubAll_spSafe (withStackScratch_spSafe init_spSafe)
 theorem streamEncrypt_spSafeF : (Impl.Sm4Gcm.X86.Fn.streamEncrypt v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (streamEncrypt_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (streamEncrypt_spSafe v))
 theorem streamDecrypt_spSafeF : (Impl.Sm4Gcm.X86.Fn.streamDecrypt v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (streamDecrypt_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (streamDecrypt_spSafe v))
 theorem streamFinish_spSafeF : (Impl.Sm4Gcm.X86.Fn.streamFinish v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (streamFinish_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (streamFinish_spSafe v))
 theorem streamVerify_spSafeF : (Impl.Sm4Gcm.X86.Fn.streamVerify v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (streamVerify_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (streamVerify_spSafe v))
 theorem seal_spSafeF : (Impl.Sm4Gcm.X86.Fn.«seal» v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (seal_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (seal_spSafe v))
 theorem open_spSafeF : (Impl.Sm4Gcm.X86.Fn.«open» v.callees).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (withStackScratch_spSafe (open_spSafe v))
+  scrubAll_spSafe (withStackScratch_spSafe (open_spSafe v))
 
 end VG.Proof.Sm4Gcm.X86.Scrub

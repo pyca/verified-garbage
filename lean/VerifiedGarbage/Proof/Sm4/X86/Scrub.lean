@@ -44,7 +44,7 @@ expansion calls nothing in its frame: as emitted
 (`X86.Scrub.verifiedScrubbedWiped`). As emitted (`Impl.Sm4.X86.Fn`), each of
 the others then zeroes the stack its contract reserves below
 `esp` (its frame and the calls in it) and clears the registers a callee may
-change, and returns without secret residue (`X86.Scrub.verifiedScrubbedF`),
+change, and returns without secret residue (`X86.Scrub.verifiedScrubbedAll`),
 given that its postcondition reads the memory on return only within the
 buffers (`Proof/Sm4/Scratch.lean`, `CbcScratch.lean`, `FbScratch.lean`,
 `CtrFinal.lean` and `Proof/Modes/CfbFinalScratch.lean`, for any pointer
@@ -120,7 +120,7 @@ theorem expandKey_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbEncrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .encrypt) 1452) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.ecbEncryptApi)
+  verifiedScrubbedAll (api := Spec.Sm4.ecbEncryptApi)
     { code := withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .encrypt)
       verified := Proof.Sm4.X86.ecb_framed .encrypt }
     (ecbOut _ _)
@@ -129,7 +129,7 @@ theorem ecbEncrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbDecrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .decrypt) 1452) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.ecbDecryptApi)
+  verifiedScrubbedAll (api := Spec.Sm4.ecbDecryptApi)
     { code := withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .decrypt)
       verified := Proof.Sm4.X86.ecb_framed .decrypt }
     (ecbOut _ _)
@@ -138,7 +138,7 @@ theorem ecbDecrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cbcEncryptChained (Spec.Sm4.cbcEncryptChainedContract X86.abi 1516) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.cbcEncryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Sm4.cbcEncryptChainedApi)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cbcEncryptChained
       verified := Proof.Sm4.X86.Cbc.cbcEncryptChained_framed }
     (cbcEncryptOut _)
@@ -147,7 +147,7 @@ theorem cbcEncryptChained_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cbcDecryptChained (Spec.Sm4.cbcDecryptChainedContract X86.abi 1516) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.cbcDecryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Sm4.cbcDecryptChainedApi)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cbcDecryptChained
       verified := Proof.Sm4.X86.Cbc.cbcDecryptChained_framed }
     (cbcDecryptOut _)
@@ -156,7 +156,7 @@ theorem cbcDecryptChained_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cfbEncrypt (Spec.Sm4.cfbEncryptContract X86.abi 1516) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.cfbEncryptApi)
+  verifiedScrubbedAll (api := Spec.Sm4.cfbEncryptApi)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbEncrypt
       verified := Proof.Sm4.X86.Fb.cfbEncrypt_framed }
     (cfbEncryptOut _)
@@ -165,7 +165,7 @@ theorem cfbEncrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cfbDecrypt (Spec.Sm4.cfbDecryptContract X86.abi 1516) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.cfbDecryptApi)
+  verifiedScrubbedAll (api := Spec.Sm4.cfbDecryptApi)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbDecrypt
       verified := Proof.Sm4.X86.Fb.cfbDecrypt_framed }
     (cfbDecryptOut _)
@@ -174,7 +174,7 @@ theorem cfbDecrypt_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cfbEncryptFinal (Spec.Sm4.cfbEncryptFinalContract X86.abi 1516) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.cfbEncryptFinalApi)
+  verifiedScrubbedAll (api := Spec.Sm4.cfbEncryptFinalApi)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbEncryptFinal
       verified := Proof.Sm4.X86.FbFinal.cfbEncryptFinal_framed }
     (cfbEncryptFinalOut _)
@@ -183,7 +183,7 @@ theorem cfbEncryptFinal_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.cfbDecryptFinal (Spec.Sm4.cfbDecryptFinalContract X86.abi 1516) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.cfbDecryptFinalApi)
+  verifiedScrubbedAll (api := Spec.Sm4.cfbDecryptFinalApi)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.cfbDecryptFinal
       verified := Proof.Sm4.X86.FbFinal.cfbDecryptFinal_framed }
     (cfbDecryptFinalOut _)
@@ -192,7 +192,7 @@ theorem cfbDecryptFinal_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ofb (Spec.Sm4.ofbContract X86.abi 1516) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.ofbApi)
+  verifiedScrubbedAll (api := Spec.Sm4.ofbApi)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ofb
       verified := Proof.Sm4.X86.Fb.ofb_framed }
     (ofbOut _)
@@ -201,7 +201,7 @@ theorem ofb_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ofbFinal (Spec.Sm4.ofbFinalContract X86.abi 1516) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.ofbFinalApi)
+  verifiedScrubbedAll (api := Spec.Sm4.ofbFinalApi)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ofbFinal
       verified := Proof.Sm4.X86.FbFinal.ofbFinal_framed }
     (ofbFinalOut _)
@@ -210,7 +210,7 @@ theorem ofbFinal_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ctr_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ctr (Spec.Sm4.ctrContract X86.abi 1516) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.ctrApi)
+  verifiedScrubbedAll (api := Spec.Sm4.ctrApi)
     { code := withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ctr
       verified := Proof.Sm4.X86.Ctr.ctr_framed }
     (ctrOut _)
@@ -219,7 +219,7 @@ theorem ctr_scrubbed :
 in constant time and returns without secret residue. -/
 theorem ctrFinal_scrubbed :
     VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ctrFinal (Spec.Sm4.ctrFinalContract X86.abi 1592) 0 :=
-  verifiedScrubbedF (api := Spec.Sm4.ctrFinalApi)
+  verifiedScrubbedAll (api := Spec.Sm4.ctrFinalApi)
     { code := withStackScratchWiped 56 4 8 Impl.Sm4.X86.ctrFinal
       verified := Proof.Sm4.X86.CtrFinal.ctrFinal_framed
       spSafe := Proof.Sm4.X86.CtrFinal.ctrFinal_framed_spSafe }

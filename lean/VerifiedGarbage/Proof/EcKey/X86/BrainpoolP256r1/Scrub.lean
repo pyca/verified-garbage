@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_ec_brainpoolp256r1_public_key`, `_compress_public_key` and `_decompress_public_key`,
 each, as emitted, followed by the zeroing of the stack its frames and calls use and
-`Impl.Scrub.X86.tail` (`X86.Scrub.verifiedScrubbedF`), with their postconditions'
+`Impl.Scrub.X86.tail` (`X86.Scrub.verifiedScrubbedAll`), with their postconditions'
 locality from `Proof/EcKey/X86/Scrub.lean`.
 -/
 
@@ -31,7 +31,7 @@ open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 /-- `vg_ec_brainpoolp256r1_public_key`. -/
 theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.publicKeyBrainpoolP256r1 Proof.EcKey.X86.BrainpoolP256r1.pkSpec 32 :=
-  verifiedScrubbedF (api := Spec.EcKey.BrainpoolP256r1.publicKeyApi)
+  verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP256r1.publicKeyApi)
     { code := Impl.EcKey.X86.publicKeyBrainpoolP256r1
       verified := Proof.EcKey.X86.BrainpoolP256r1.pk_verified hL hI }
     (publicKeyOut Spec.EcKey.BrainpoolP256r1.inst 20 Impl.Ecdsa.X86.brainpoolp256r1Comb.combConsts)
@@ -39,7 +39,7 @@ theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI
 /-- `vg_ec_brainpoolp256r1_compress_public_key`. -/
 theorem compress_scrubbed (hI : Weierstrass.X86.Inv.InvSounds) :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.compressBrainpoolP256r1 (Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyContract X86.abi 28) 32 :=
-  verifiedScrubbedF (api := Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi)
+  verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.BrainpoolP256r1.code
       verified := Proof.EcKey.Compressed.X86.BrainpoolP256r1.verified hI }
     (compressOut _ _ [])
@@ -47,7 +47,7 @@ theorem compress_scrubbed (hI : Weierstrass.X86.Inv.InvSounds) :
 /-- `vg_ec_brainpoolp256r1_decompress_public_key`. -/
 theorem decompress_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     VerifiedScrubbed target Impl.EcKey.X86.Fn.decompressBrainpoolP256r1 (Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyContract X86.abi 28) 32 :=
-  verifiedScrubbedF (api := Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi)
+  verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.X86.BrainpoolP256r1Decompress.code
       verified := Proof.EcKey.Compressed.X86.BrainpoolP256r1Decompress.verified hL hI }
     (decompressOut _ _ [])

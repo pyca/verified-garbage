@@ -604,7 +604,7 @@ end VG.Impl.Poly1305.X86
 /-! ## The functions as emitted
 
 Each function, in its frame for `update` and `finalize`, then its cleanup:
-the stack below `esp` that the frame uses zeroed (`Impl.Scrub.X86.scrubF 0 W`),
+the stack below `esp` that the frame uses zeroed (`Impl.Scrub.X86.scrubAll 0 W`),
 and the registers a callee may change cleared (`Impl.Scrub.X86.scrub 0` for
 `init`, which has no frame), so that each returns without secret residue.
 ChaCha20-Poly1305 calls `init`'s code as the internal `vg_poly1305_init_core`. -/
@@ -619,10 +619,10 @@ def init : Prog isa := Impl.Scrub.X86.scrub 0 Impl.Poly1305.X86.init
 /-- `vg_poly1305_update`, in a frame of 156 bytes, with the 680 bytes of
 stack that it and its SSE2 path use zeroed, as emitted. -/
 def update : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 680 (Impl.StackScratch.X86.withStackScratch 156 5 Impl.Poly1305.X86.update)
+  Impl.Scrub.X86.scrubAll 0 680 (Impl.StackScratch.X86.withStackScratch 156 5 Impl.Poly1305.X86.update)
 
 /-- `vg_poly1305_finalize`, in a frame of 152 bytes, as emitted. -/
 def finalize : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 152 (Impl.StackScratch.X86.withStackScratch 152 4 Impl.Poly1305.X86.finalize)
+  Impl.Scrub.X86.scrubAll 0 152 (Impl.StackScratch.X86.withStackScratch 152 4 Impl.Poly1305.X86.finalize)
 
 end VG.Impl.Poly1305.X86.Fn

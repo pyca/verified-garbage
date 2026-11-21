@@ -36,7 +36,7 @@ alike. A call leaves the unknowns in `lr`, `r12` and the flags, the same in
 both runs: they are public.
 
 The analysis has no case for an indirect call (`TaintCT.check` has none): code
-that calls the functions of its tables is not analysed, and keeps `scrubF`.
+that calls the functions of its tables is not analysed, and keeps `scrubAll`.
 The model has no `ldrd` or `strd`.
 
 `ResidueTaintSound.lean` proves it sound.

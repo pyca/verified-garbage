@@ -37,7 +37,7 @@ This is `PPC64LE.Scrub.verifiedScrubbedWiped` on x86. There a frame's
 region leaves out its header, which code in it cannot write; on x86 the
 frame's region is all of it, and the contract of the code in it says what
 it writes. Code that has a frame or a call inside the wiped one, or whose
-contract may write its argument slots, stays on `scrubF`.
+contract may write its argument slots, stays on `scrubAll`.
 -/
 
 @[expose] public section

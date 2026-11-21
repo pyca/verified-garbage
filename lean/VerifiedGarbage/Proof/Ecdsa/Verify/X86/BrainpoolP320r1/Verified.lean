@@ -374,12 +374,12 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     verify_sp.1 verify_sp.2 (by taint_decide) ⟨_, vHashSat_pre⟩
 
 /-- `vg_ecdsa_brainpoolp320r1_verify` as emitted (`Impl.Ecdsa.X86.Fn.verifyBrainpoolP320r1`) meets
-its contract in constant time and returns without secret residue (`X86.Scrub.verifiedScrubbedF`). -/
+its contract in constant time and returns without secret residue (`X86.Scrub.verifiedScrubbedAll`). -/
 theorem verify_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed X86.target Impl.Ecdsa.X86.Fn.verifyBrainpoolP320r1
       (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract (X86.abi.withConsts brainpoolp320r1Comb.combConsts)
         (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
-  X86.Scrub.verifiedScrubbedF (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
+  X86.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false
         verifyBrainpoolP320r1
       verified := verifyHash_verified hL }

@@ -20,6 +20,6 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.Scrypt.X86.Fn.scrypt (pbkName v) (pbkOf v)
       verified := .scrubbed (Proof.Scrypt.X86.Scrub.scrypt_scrubbed v)
-      spSafe := VG.X86.Scrub.scrubF_spSafe (Proof.Scrypt.X86.Whole.scrypt_spSafe v) }]
+      spSafe := VG.X86.Scrub.scrubAll_spSafe (Proof.Scrypt.X86.Whole.scrypt_spSafe v) }]
 
 end VG.Artifacts.Scrypt.X86

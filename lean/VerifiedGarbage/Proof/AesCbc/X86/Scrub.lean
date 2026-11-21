@@ -33,7 +33,7 @@ Which code is emitted for an implementation `v` of the block functions
 where it writes nothing in `scratch`, with 24 bytes of stack; otherwise the
 call of it, then of `vg_zeroize` on the bytes of `scratch` it writes, with
 72. Each zeroes that stack below `esp` and clears the registers, and returns
-without secret residue (`X86.Scrub.verifiedScrubbedF`), which
+without secret residue (`X86.Scrub.verifiedScrubbedAll`), which
 `encrypt_scrubbed` and `decrypt_scrubbed` prove by cases. What that
 needs of the code (`scrubFSide`) holds whatever the implementation: the CBC
 code for AES-NI (`hardware`) is a closed term, which the kernel evaluates
@@ -220,7 +220,7 @@ theorem encrypt_scrubbed (v : BlocksImpl) :
   unfold Impl.AesCbc.X86.Fn.encrypt cbcStack
   by_cases h : encWritten v = 0
   · rw [ite_eq_left h, ite_eq_left h]
-    exact verifiedScrubbedF (api := Spec.Cbc.aesEncryptApi) {
+    exact verifiedScrubbedAll (api := Spec.Cbc.aesEncryptApi) {
         suffix := v.suffix
         code := encryptCode v
         stack := 24
@@ -228,7 +228,7 @@ theorem encrypt_scrubbed (v : BlocksImpl) :
         spSafe := encryptCode_spSafe v }
       (encryptOut _) (W := 24) (hs := encFree_scrub v)
   · rw [ite_eq_right h, ite_eq_right h]
-    exact verifiedScrubbedF (api := Spec.Cbc.aesEncryptApi) {
+    exact verifiedScrubbedAll (api := Spec.Cbc.aesEncryptApi) {
         suffix := v.suffix
         code := Impl.AesCbc.X86.Wiped.encrypt (encryptCode v) v.suffix (encWritten v)
         stack := 72
@@ -242,8 +242,8 @@ theorem encrypt_fnSpSafe (v : BlocksImpl) :
       (fun i => !X86.isa.writesSp i) = true := by
   unfold Impl.AesCbc.X86.Fn.encrypt
   split
-  · exact scrubF_spSafe (encryptCode_spSafe v)
-  · exact scrubF_spSafe (encrypt_spSafe v)
+  · exact scrubAll_spSafe (encryptCode_spSafe v)
+  · exact scrubAll_spSafe (encrypt_spSafe v)
 
 /-- `vg_aes_cbc_decrypt` over `v` as emitted (`Impl.AesCbc.X86.Fn.decrypt`)
 meets its contract in constant time and returns without secret residue. -/
@@ -253,7 +253,7 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
   unfold Impl.AesCbc.X86.Fn.decrypt cbcStack
   by_cases h : decWritten v = 0
   · rw [ite_eq_left h, ite_eq_left h]
-    exact verifiedScrubbedF (api := Spec.Cbc.aesDecryptApi) {
+    exact verifiedScrubbedAll (api := Spec.Cbc.aesDecryptApi) {
         suffix := v.suffix
         code := decryptCode v
         stack := 24
@@ -261,7 +261,7 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
         spSafe := decryptCode_spSafe v }
       (decryptOut _) (W := 24) (hs := decFree_scrub v h)
   · rw [ite_eq_right h, ite_eq_right h]
-    exact verifiedScrubbedF (api := Spec.Cbc.aesDecryptApi) {
+    exact verifiedScrubbedAll (api := Spec.Cbc.aesDecryptApi) {
         suffix := v.suffix
         code := Impl.AesCbc.X86.Wiped.decrypt (decryptCode v) v.suffix (decWritten v)
         stack := 72
@@ -275,7 +275,7 @@ theorem decrypt_fnSpSafe (v : BlocksImpl) :
       (fun i => !X86.isa.writesSp i) = true := by
   unfold Impl.AesCbc.X86.Fn.decrypt
   split
-  · exact scrubF_spSafe (decryptCode_spSafe v)
-  · exact scrubF_spSafe (decrypt_spSafe v)
+  · exact scrubAll_spSafe (decryptCode_spSafe v)
+  · exact scrubAll_spSafe (decrypt_spSafe v)
 
 end VG.Proof.AesCbc.X86.Scrub

@@ -32,7 +32,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 implementations of SHA-1's and SHA-256's variants
 (`Proof/Variants/Sha1/X86.lean`, `Proof/Variants/Sha256/X86.lean`) in its
 table, each followed by the zeroing of the stack its frames and calls use
-and `Impl.Scrub.X86.tail`, as emitted (`X86.Scrub.verifiedScrubbedF`), with their postconditions'
+and `Impl.Scrub.X86.tail`, as emitted (`X86.Scrub.verifiedScrubbedAll`), with their postconditions'
 locality from `Proof/Ecdsa/X86/Scrub.lean`. The signing code's side
 condition is evaluated once, of the code without the curve's proofs
 (`Ecdsa.X86.Scrub.cfgOf`), with the HMAC implementations' and the curve's
@@ -56,7 +56,7 @@ theorem verify_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weiers
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifySecp256k1
       (Spec.Ecdsa.Secp256k1.inst.verifyHashContract (X86.abi.withConsts Impl.Ecdsa.X86.secp256k1Comb.combConsts)
         (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Secp256k1.verifyHashApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Secp256k1.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
         Impl.Ecdsa.Verify.X86.verifySecp256k1
       verified := Proof.Ecdsa.Verify.X86.Secp256k1.verifyHash_verified hL hI }
@@ -73,7 +73,7 @@ theorem signSide :
 theorem sign_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86.Inv.InvSounds) (hv : OK vs ∧ "VG_SECP256K1_COMB" ∉ names vs) :
     VerifiedScrubbed target (Impl.Ecdsa.X86.Fn.signSecp256k1 (HmacTable.X86.fnsOf vs))
       (Rfc6979.X86.specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 Impl.Ecdsa.X86.secp256k1Comb.combConsts vs) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi)
     { tables := [("hmac", tables vs)]
       code := signCodeT (secp256k1 hL hI) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs
       verified := secp256k1T_verified hL hI vs hv

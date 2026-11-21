@@ -37,7 +37,7 @@ writes nothing in `scratch` and calls nothing (`free`), `b`'s code and then the
 clearing of the registers but the result (`Impl.Scrub.X86.scrub 0`);
 otherwise the call wiping `scratch` (`wiped`), the zeroing of the 32 bytes
 of stack below `esp` that it and its callees use, and that clearing
-(`Impl.Scrub.X86.scrubF 0 32`), so that it returns without secret
+(`Impl.Scrub.X86.scrubAll 0 32`), so that it returns without secret
 residue. -/
 
 namespace VG.Impl.AesEcb.X86.Fn
@@ -51,6 +51,6 @@ code where `free` (it writes nothing in `scratch` and calls nothing), the
 call wiping `scratch` otherwise. -/
 def crypt (free : Bool) (b : Blocks) (n : Nat) : Prog isa :=
   if free then Impl.Scrub.X86.scrub 0 b.code
-  else Impl.Scrub.X86.scrubF 0 32 (Impl.AesEcb.X86.wiped b n)
+  else Impl.Scrub.X86.scrubAll 0 32 (Impl.AesEcb.X86.wiped b n)
 
 end VG.Impl.AesEcb.X86.Fn

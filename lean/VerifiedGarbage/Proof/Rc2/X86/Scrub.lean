@@ -33,7 +33,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 `vg_rc2_cbc_init`, `vg_rc2_cbc_encrypt_chained` and
 `vg_rc2_cbc_decrypt_chained` as emitted (`Impl.Rc2.X86.Fn`), each followed by
 the zeroing of the stack below `esp` that it uses and the clearing of the
-registers a callee may change (`X86.Scrub.verifiedScrubbedF`). Their postconditions read the memory on
+registers a callee may change (`X86.Scrub.verifiedScrubbedAll`). Their postconditions read the memory on
 return only within their buffers (`Proof.Rc2.cbcInitPostOut_local`,
 `Proof.Rc2.cbcEncChainedPostOut_local`,
 `Proof.Rc2.cbcDecChainedPostOut_local`).
@@ -64,7 +64,7 @@ theorem cbcDecryptChainedOut :
 in constant time and returns without secret residue. -/
 theorem cbcInit_scrubbed :
     VerifiedScrubbed X86.target Impl.Rc2.X86.Fn.cbcInit (Spec.Rc2.cbcInitContract X86.abi 632) 32 :=
-  verifiedScrubbedF (api := Spec.Rc2.cbcInitApi)
+  verifiedScrubbedAll (api := Spec.Rc2.cbcInitApi)
     { code := Impl.StackScratch.X86.withStackScratch 608 6 Impl.Rc2.X86.Stream.init
       verified := Proof.Rc2.X86.Stream.init_framed }
     cbcInitOut
@@ -73,7 +73,7 @@ theorem cbcInit_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Rc2.X86.Fn.cbcEncryptChained (Spec.Rc2.cbcEncryptChainedContract X86.abi 560) 0 :=
-  verifiedScrubbedF (api := Spec.Rc2.cbcEncryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Rc2.cbcEncryptChainedApi)
     { code := Impl.StackScratch.X86.withStackScratch 544 4 Impl.Rc2.X86.Cbc.encrypt
       verified := Proof.Rc2.X86.Cbc.encryptChained_framed }
     cbcEncryptChainedOut
@@ -82,7 +82,7 @@ theorem cbcEncryptChained_scrubbed :
 in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed X86.target Impl.Rc2.X86.Fn.cbcDecryptChained (Spec.Rc2.cbcDecryptChainedContract X86.abi 560) 0 :=
-  verifiedScrubbedF (api := Spec.Rc2.cbcDecryptChainedApi)
+  verifiedScrubbedAll (api := Spec.Rc2.cbcDecryptChainedApi)
     { code := Impl.StackScratch.X86.withStackScratch 544 4 Impl.Rc2.X86.Cbc.decrypt
       verified := Proof.Rc2.X86.Cbc.decryptChained_framed }
     cbcDecryptChainedOut

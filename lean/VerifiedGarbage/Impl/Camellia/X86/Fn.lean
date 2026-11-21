@@ -11,7 +11,7 @@ public import VerifiedGarbage.Impl.Scrub.X86
 
 /-! # Camellia on x86 (32-bit): the functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`, or
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`, or
 `Impl.Scrub.X86.scrub rb` for code without a frame or calls, or whose frame
 it wipes itself with nothing called in it: key expansion): the `W` bytes
 of stack below `esp` that its contract reserves zeroed, and the registers
@@ -30,50 +30,50 @@ def expandKey : Prog isa :=
 
 /-- `Spec.Camellia.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2728 (Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (Impl.Camellia.X86.ecb .encrypt))
+  Impl.Scrub.X86.scrubAll 0 2728 (Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (Impl.Camellia.X86.ecb .encrypt))
 
 /-- `Spec.Camellia.ecbDecryptApi`'s function as emitted. -/
 def ecbDecrypt : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2728 (Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (Impl.Camellia.X86.ecb .decrypt))
+  Impl.Scrub.X86.scrubAll 0 2728 (Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (Impl.Camellia.X86.ecb .decrypt))
 
 /-- `Spec.Camellia.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncryptChained : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cbcEncryptChained)
+  Impl.Scrub.X86.scrubAll 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cbcEncryptChained)
 
 /-- `Spec.Camellia.cbcDecryptChainedApi`'s function as emitted. -/
 def cbcDecryptChained : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cbcDecryptChained)
+  Impl.Scrub.X86.scrubAll 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cbcDecryptChained)
 
 /-- `Spec.Camellia.cfbEncryptApi`'s function as emitted. -/
 def cfbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbEncrypt)
+  Impl.Scrub.X86.scrubAll 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbEncrypt)
 
 /-- `Spec.Camellia.cfbDecryptApi`'s function as emitted. -/
 def cfbDecrypt : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbDecrypt)
+  Impl.Scrub.X86.scrubAll 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbDecrypt)
 
 /-- `Spec.Camellia.cfbEncryptFinalApi`'s function as emitted. -/
 def cfbEncryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbEncryptFinal)
+  Impl.Scrub.X86.scrubAll 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbEncryptFinal)
 
 /-- `Spec.Camellia.cfbDecryptFinalApi`'s function as emitted. -/
 def cfbDecryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbDecryptFinal)
+  Impl.Scrub.X86.scrubAll 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.cfbDecryptFinal)
 
 /-- `Spec.Camellia.ofbApi`'s function as emitted. -/
 def ofb : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ofb)
+  Impl.Scrub.X86.scrubAll 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ofb)
 
 /-- `Spec.Camellia.ofbFinalApi`'s function as emitted. -/
 def ofbFinal : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ofbFinal)
+  Impl.Scrub.X86.scrubAll 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ofbFinal)
 
 /-- `Spec.Camellia.ctrApi`'s function as emitted. -/
 def ctr : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ctr)
+  Impl.Scrub.X86.scrubAll 0 2772 (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ctr)
 
 /-- `Spec.Camellia.ctrFinalApi`'s function as emitted. -/
 def ctrFinal : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2856 (Impl.StackScratch.X86.withStackScratchWiped 60 5 8 Impl.Camellia.X86.ctrFinal)
+  Impl.Scrub.X86.scrubAll 0 2856 (Impl.StackScratch.X86.withStackScratchWiped 60 5 8 Impl.Camellia.X86.ctrFinal)
 
 end VG.Impl.Camellia.X86.Fn

@@ -27,7 +27,7 @@ nothing and has no frame, followed by the clearing of the registers a callee
 may change (`X86.Scrub.verifiedScrubbed`); `vg_sm3_update` and
 `vg_sm3_finalize`, whose working space is in a frame of their own, with the
 stack they and the compression function use zeroed first
-(`X86.Scrub.verifiedScrubbedF`), given that their postconditions read the
+(`X86.Scrub.verifiedScrubbedAll`), given that their postconditions read the
 memory on return only within the buffers (`Proof.Sm3.PostOut`).
 -/
 
@@ -52,7 +52,7 @@ theorem init_scrubbed : VerifiedScrubbed target Impl.Sm3.X86.Fn.init (initContra
 time and returns without secret residue. -/
 theorem update_scrubbed :
     VerifiedScrubbed target Impl.Sm3.X86.Fn.update (updateContract X86.abi (20 + 188)) 0 :=
-  verifiedScrubbedF (api := Spec.Sm3.updateApi)
+  verifiedScrubbedAll (api := Spec.Sm3.updateApi)
     { code := Impl.StackScratch.X86.withStackScratch 188 5 Impl.Sm3.X86.Stream.update
       stack := 20 + 188
       verified := Shared.update }
@@ -62,7 +62,7 @@ theorem update_scrubbed :
 constant time and returns without secret residue. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed target Impl.Sm3.X86.Fn.finalize (finalizeContract X86.abi (20 + 184)) 0 :=
-  verifiedScrubbedF (api := Spec.Sm3.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Sm3.finalizeApi)
     { code := Impl.StackScratch.X86.withStackScratch 184 4 Impl.Sm3.X86.Stream.finalize
       stack := 20 + 184
       verified := Shared.finalize }

@@ -6,18 +6,18 @@ public import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # Scrubbed code registered with its facts proved (x86, 32-bit)
 
-`scrubOf` and `scrubFOf`: what `Scrub.scrubReg` and `Scrub.scrubRegF`
+`scrubOf` and `scrubAllOf`: what `Scrub.scrubReg` and `Scrub.scrubRegF`
 register, with what they need of the code stated as one Boolean each
 (`scrubSide`, `scrubFSide`), so that the kernel evaluates the code once, and
 the call site writes one proof, by default `lit_decide`, rather than one
 theorem per fact. A fact that does not hold is an error where the
 registration is defined.
 
-`verifiedScrubbed` and `verifiedScrubbedF` (`ScrubFn.lean`) state the same as
-theorems about the code with its cleanup, `scrub rb c` and `scrubF rb W c`,
+`verifiedScrubbed` and `verifiedScrubbedAll` (`ScrubFn.lean`) state the same as
+theorems about the code with its cleanup, `scrub rb c` and `scrubAll rb W c`,
 which `Impl/` defines as the function: the proof a registration binds
 (`verified := .scrubbed …`), the form every registration takes once its
-family is converted, as every x86 family is. `scrubOf` and `scrubFOf`
+family is converted, as every x86 family is. `scrubOf` and `scrubAllOf`
 remain only because those theorems are proved from them: never use them in
 new code.
 
@@ -29,7 +29,7 @@ Which form to use:
 
       scrubOf { code := Impl.Foo.X86.Stream.init, verified := Proof.Foo.X86.init }
 
-* `scrubFOf r hpost`: code with frames or calls, direct or indirect
+* `scrubAllOf r hpost`: code with frames or calls, direct or indirect
   through the registration's tables of functions (`tablesCall`), whose
   stack use (`stackUse`, callees included) fits in the registration's
   `stack` bytes,
@@ -38,10 +38,10 @@ Which form to use:
   postcondition reads the memory on return only within the buffers; build it
   from the contract's locality lemma with `postOut_of_local`:
 
-      scrubFOf { code := …, verified := … }
+      scrubAllOf { code := …, verified := … }
         (postOut_of_local ScrubAbi.plain (Proof.Foo.updatePost_out …))
 
-Neither form covers code with an MMX instruction or frame, nor `scrubFOf`
+Neither form covers code with an MMX instruction or frame, nor `scrubAllOf`
 code that calls indirectly a function of none of its tables, nor a
 registration whose `written` is not empty: the side condition is then
 false, and the default proof fails.
@@ -51,7 +51,7 @@ registration's projections reduced: import the code's `Lit` module (and its
 callees'), so that the kernel evaluates the literal. A registration generic
 over a list of variants (`Proof/Variants/<Iface>/X86.lean`), whose code is
 not a closed term, gives the proof itself, as `hs`, proved of every
-implementation of the list by one evaluation, and, for `scrubFOf`, its stack
+implementation of the list by one evaluation, and, for `scrubAllOf`, its stack
 as `W` (by default `r.stack`): `hs` is then stated with `W` rather than a
 projection of `r`, and `hW : r.stack = W` is `rfl`.
 -/
@@ -76,7 +76,7 @@ theorem of_scrubSide {c : Prog isa} (h : scrubSide c = true) :
   simp only [scrubSide, Bool.and_eq_true] at h
   exact h
 
-/-- What `scrubFOf` needs of code `c` with tables of functions `ts`,
+/-- What `scrubAllOf` needs of code `c` with tables of functions `ts`,
 scrubbed over `stack` bytes: its calls and frames use at most `stack` bytes
 below `esp` (`stackUse`, which counts what the functions it calls
 indirectly use), it calls indirectly only the functions of `ts`
@@ -106,7 +106,7 @@ def scrubOf {api : Api} (r : Unscrubbed api target)
 
 /-- `r`, code with frames and calls, direct or through its tables of
 functions, followed by the zeroing of its
-`r.stack` bytes below `esp` and `tail` (`scrubF`), returning without secret
+`r.stack` bytes below `esp` and `tail` (`scrubAll`), returning without secret
 residue, given that its postcondition reads the memory on return only
 within the buffers (`hpost`, from `postOut_of_local`): `scrubRegFT`, with
 what it needs of the code and the stack proved as one Boolean
@@ -116,7 +116,7 @@ registration is defined.
 A registration generic over the implementations of what its code calls
 gives `W`, its stack, and `hs`, proved of every implementation of the list
 by one evaluation: `hs` is then stated with `W`, not with `r.stack`. -/
-def scrubFOf {api : Api} (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r))
+def scrubAllOf {api : Api} (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r))
     (W : Nat := r.stack)
     (hs : scrubFSide r.code r.tables W = true := by (try dsimp only); lit_decide)
     (hW : r.stack = W := by rfl) (hw : r.written = [] := by rfl) : Registration api target :=
