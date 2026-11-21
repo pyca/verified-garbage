@@ -27,7 +27,7 @@ Over the bitsliced AES given its working space 512 bytes into
 in a frame of 1928 (`initS_framed`).
 Over implementations of AES that need no working space (`initF`), it needs
 only 72 bytes of it, in a frame of 88 (`initF_framed`), which
-`X86_64.Scrub.withScrubAll` wipes whole on return (`initReg`).
+`Impl.Scrub.X86_64.scrubAll` wipes whole on return (`initF_scrubbed`).
 
 `encrypt` and `decrypt` run their code, proved with the working space as
 their last argument, in a frame that allocates it

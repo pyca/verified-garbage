@@ -51,8 +51,8 @@ meta import VerifiedGarbage.Proof.Seed.X86_64.FbFinalLit
 # SEED on x86-64, without secret residue
 
 Key expansion and the ECB, CBC, CFB128 and OFB functions, each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers and the granules of its stack that the residue analysis
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which clears every
+caller-saved register and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
 memory on return only within the buffers (`X86_64.Scrub.PostOut`), as the
 frames that keep their working space on the stack already show

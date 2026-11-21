@@ -65,16 +65,16 @@ meta import VerifiedGarbage.Proof.Camellia.ScrubLocal
 # Camellia on x86-64, without secret residue
 
 Key expansion and the ECB, CBC, CFB128, OFB and CTR functions, each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers and the granules of its stack that the residue analysis
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which clears every
+caller-saved register and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
 memory on return only within the buffers (`X86_64.Scrub.PostOut`), as the
 frames that keep their working space on the stack already show
 (`X86_64.Verified.stackScratchWiped`'s `hpost`).
 
 `vg_camellia_ctr_final`, whose analysis does not succeed, is followed by
-`Impl.Scrub.X86_64.scrubWith` with every granule of its stack wiped
-(`X86_64.Scrub.withScrubAll`): it calls `vg_camellia_ctr`'s code as the
+`Impl.Scrub.X86_64.scrubAll` (`X86_64.Scrub.verifiedScrubbedAll`), which
+wipes every granule of its stack: it calls `vg_camellia_ctr`'s code as the
 internal `vg_camellia_ctr_core` (`Impl.Camellia.X86_64.ctrFramed`), which
 restores the callee-saved registers from slots of its frame the analysis
 loses track of.

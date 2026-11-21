@@ -163,7 +163,7 @@ working space they use: the 272 bytes they use themselves over
 `vg_ghash_pclmul` and `vg_ghash_vpclmul`, which need none
 (`streamInit_framed28`, `streamAad_framed22`), and with `vg_ghash`'s 256
 bytes at 512, 768 (`_framed96`), rather than 2.5 KB; followed by the
-clearing of that whole frame (`X86_64.Scrub.withScrubAll`): the residue
+clearing of that whole frame (`Impl.Scrub.X86_64.scrubAll`): the residue
 analysis would keep all of it, as it cannot place the byte copies into the
 state. SM4-GCM's are the same functions (`Spec.Sm4.Gcm.streamInitApi`,
 `streamAadApi`). The instances `vg_aes_gcm_seal_gather_prepared` calls are

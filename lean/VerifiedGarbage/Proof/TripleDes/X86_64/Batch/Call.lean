@@ -70,7 +70,8 @@ structure EcbImpl where
 
 /-- The name the modes call the function of the direction `d` by: its code
 as registered before the clearing of what it leaves
-(`Proof.TripleDes.X86_64.Scrub.ecbReg`), as an internal function of its own,
+(`Proof.TripleDes.X86_64.Scrub.ecbEncryptSse_scrubbed` and the
+others), as an internal function of its own,
 `vg_triple_des_ecb_<direction><suffix>_core`. -/
 def EcbImpl.name (v : EcbImpl) : Direction → String
   | .encrypt => "vg_triple_des_ecb_encrypt" ++ v.suffix ++ "_core"

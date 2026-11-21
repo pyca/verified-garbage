@@ -21,12 +21,12 @@ import VerifiedGarbage.Proof.Aes.ScrubLocal
 
 `vg_aes_ocb_init` over an implementation of the AES block functions
 (`Aes.X86_64.BlocksImpl`) whose encryption and key expansion need no working
-space (`BlocksImpl.free`), in a frame of only the 24 bytes it writes itself
-(`initF_framed`), followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`) where the implementation gives its residue
-analysis (`BlocksImpl.ocbInitRes`). Over the others, as before, in a frame of
-2.5 KB, of which the analysis cannot tell what may hold secrets. Over the others, that frame is mostly the
-working space of the functions called, wiped whole on return
+space (`BlocksImpl.free`) runs in a frame of only the 24 bytes it writes
+itself (`initF_framed`), and is followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`) where the implementation gives its
+residue analysis (`BlocksImpl.ocbInitRes`). Over the others it runs in a frame
+of 2.5 KB, mostly the working space of the functions called, of which the
+analysis cannot tell what may hold secrets, wiped whole on return
 (`Impl.Scrub.X86_64.scrubAll`). Its postcondition reads the memory on return
 only within the key context, for a key of the lengths the precondition
 allows (`X86_64.Scrub.PostOut`).

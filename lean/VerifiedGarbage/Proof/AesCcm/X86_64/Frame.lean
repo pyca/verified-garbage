@@ -178,7 +178,7 @@ whether it succeeds, reads only its buffers (`openLeak_local`).
 
 Over an implementation of AES that needs working space (`Ctr32Impl.free` is
 `none`), that frame is the working space of the functions called, wiped
-whole on return (`X86_64.Scrub.withScrubAll`, `sealReg`, `openReg`): their
+whole on return (`Impl.Scrub.X86_64.scrubAll`, `seal_scrubbed`, `open_scrubbed`): their
 postconditions read the memory on return only within the data and the tag
 (`sealOut`, `openOut`).
 -/

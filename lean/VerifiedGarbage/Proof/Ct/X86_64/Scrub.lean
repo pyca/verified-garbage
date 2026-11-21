@@ -16,10 +16,11 @@ meta import VerifiedGarbage.Proof.Framework.Registration
 /-!
 # Constant-time comparison on x86-64, without secret residue
 
-`vg_ct_eq`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`), which clears the registers that the residue
-analysis (`X86_64.RTaint`) finds may hold secrets. Its postcondition reads
-only the memory on entry (`X86_64.Scrub.PostOut`).
+`vg_ct_eq`, followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack that the residue analysis (`X86_64.RTaint`) finds
+may hold secrets. Its postcondition reads only the memory on entry
+(`X86_64.Scrub.PostOut`).
 -/
 
 @[expose] public section

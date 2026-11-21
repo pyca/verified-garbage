@@ -253,12 +253,13 @@ section names it): never a proof over the list of variants, which
 evaluates every variant's code again for every caller, and never
 `variants.attach` in a registration file.
 
-**Not yet converted.** On a target whose `Proof/Framework/` does not yet
-state its scrub as a theorem about named code, build the registration in
-`Proof/` with that target's form and let the registration file bind it by
-name, never call the form there. The families still built that way, and
-the forms they use, are in each target's section: never use those forms in
-new code.
+**Every target the same way.** Each target states its cleanup only as
+theorems about named code, and has no form that builds a registration: a
+registration file binds `code := Impl.…` and `verified := .scrubbed Proof.…`
+(and, where the default does not prove it, `spSafe := Proof.…`), and nothing
+else. On 64-bit RISC-V, `ci/check_registrations.py` checks that shape
+exactly; the other targets keep it by review, as some of their generic
+interfaces' records give code from a variant's fields (`v.code`).
 
 **Without a proof.** Only functions `ci/residue_allowlist.txt` already
 lists may go without (`verified := .unscrubbed h`, of an
@@ -266,11 +267,30 @@ lists may go without (`verified := .unscrubbed h`, of an
 and the emitter refuses a listed function that has a proof, so converting
 one removes its line.
 
+### The files on each target, and a new target
+
+Every target keeps its cleanup in the same files, and a new target (or one
+that starts requiring `NoResidue`) adds them in this shape:
+
+| File | Holds |
+|---|---|
+| `TCB/<ISA>/Residue.lean` | `NoResidue`, the property (a trust change, in a TCB PR of its own) |
+| `Impl/Scrub/<Target>.lean` | The forms: `scrubAll` (whole-frame), and `scrub` (code without frames) or `scrubSel` (selective) where the target has them; a further form module is `Impl/Scrub/<Target>/<name>.lean` |
+| `Proof/Framework/<Target>/ScrubProved.lean` | `verifiedScrubbedAll` (and `verifiedScrubbed`, `verifiedScrubbedWiped`): `VerifiedScrubbed` of the form applied to a function's code, from its code's own theorem (an `Unscrubbed` record, or on AArch64 its `Verified`), with what the cleanup needs of the code as one Boolean (`scrubSide`, by default `lit_decide`) and the stack and result's bits as the literals of the code (`hW`, `hb := by rfl`) |
+| `Proof/Framework/<Target>/ScrubSel.lean` | Where there is a residue analysis: `verifiedScrubbedSel` and its side condition, importing `ScrubProved.lean` and never imported by it |
+| `Impl/<Alg>/<Target>/Fn.lean`, `Proof/<Alg>/<Target>/Scrub.lean`, `Artifacts/<Alg>/<Target>.lean` | Per algorithm: the function as emitted (`def f := scrubAll …`), the one theorem about it (`f_scrubbed`), and the binding |
+
+Start from the whole-frame form alone, which serves any code: a selective
+form needs a residue analysis of the ISA first. Never add a form that builds
+a `Registration`, a scrub wrapper a registration file calls, or a second
+name for a form: the theorems prove themselves from the code's own
+`Verified` and the side condition, as every target's do.
+
 ### The forms on each target
 
 | Target | Whole-frame: form; theorem | Selective: form; theorem; analysis | Code wipes its own frame: form; theorem | Registers cleared | Template | Notable limits |
 |---|---|---|---|---|---|---|
-| x86-64 | `Impl.Scrub.X86_64.scrubAll v rb n`; `X86_64.Scrub.verifiedScrubbedAll` (`Proof/Framework/X86_64/ScrubProved.lean`). Both it and `scrubSel` are built from `scrubWith`, the clearing of given registers and granules, which no registration names | `Impl.Scrub.X86_64.scrubSel v rb n rs` (runs of 16-byte granules); `X86_64.Scrub.verifiedScrubbedSel` (`Proof/Framework/X86_64/ScrubSel.lean`); `X86_64.RTaint` (`Proof/Framework/X86_64/ResidueTaint.lean`) | none | Fixed: every vector register at the level `v` (at `evex`, `zmm16`–`zmm31` too) and every caller-saved register, but the result's `rb` bits | `Impl/Rc2/X86_64/Fn.lean`, `Proof/Rc2/X86_64/Scrub.lean`, `Artifacts/Rc2/X86_64.lean` | Neither form writes MXCSR: the code must leave it as two runs found it (`mxSameB`). The analysis does not follow code whose pointers and lengths are arguments on the stack. Families not yet converted use the older forms (`X86_64.Scrub.scrubReg`, `withScrubAll`, …) |
+| x86-64 | `Impl.Scrub.X86_64.scrubAll v rb n`; `X86_64.Scrub.verifiedScrubbedAll` (`Proof/Framework/X86_64/ScrubProved.lean`). Both it and `scrubSel` are built from `scrubWith`, the clearing of given registers and granules, which no registration names | `Impl.Scrub.X86_64.scrubSel v rb n rs` (runs of 16-byte granules); `X86_64.Scrub.verifiedScrubbedSel` (`Proof/Framework/X86_64/ScrubSel.lean`); `X86_64.RTaint` (`Proof/Framework/X86_64/ResidueTaint.lean`) | none | Fixed: every vector register at the level `v` (at `evex`, `zmm16`–`zmm31` too) and every caller-saved register, but the result's `rb` bits | `Impl/Rc2/X86_64/Fn.lean`, `Proof/Rc2/X86_64/Scrub.lean`, `Artifacts/Rc2/X86_64.lean` | Neither form writes MXCSR: the code must leave it as two runs found it (`mxSameB`). The analysis does not follow code whose pointers and lengths are arguments on the stack. |
 | x86 (32-bit) | `Impl.Scrub.X86.scrubAll rb W c`; `X86.Scrub.verifiedScrubbedAll`. Code that calls nothing and has no frame: `scrub rb c`, which zeroes no stack; `X86.Scrub.verifiedScrubbed` | none | `Impl.Scrub.X86.scrub rb c` of code ending in `withStackScratchWiped`; `X86.Scrub.verifiedScrubbedWiped` (`Proof/Framework/X86/ScrubWiped.lean`) | Fixed: the caller-saved registers (`ecx`, `xmm0`–`xmm7`, `edx`:`eax` above the result's `rb` bits) and the flags, to constants | `Impl.Sha3.X86.Fn` (`Impl/Sha3/X86/Instances.lean`), `Proof/Sha3/X86/Scrub.lean`, `Artifacts/Sha3/X86.lean`; wiped: `Impl.Seed.X86.Fn.expandKey` (`Impl/Seed/X86/Fn.lean`), `Proof/Seed/X86/Scrub.lean` | No residue analysis: a selective form would need one, as x86-64's. The wiped form only for code whose frame calls nothing and has no frame below it, whose arguments are of 32 bits and public, and whose contract does not write its arguments |
 | AArch64 | `Impl.Scrub.AArch64.scrubAll W rb cl c` (`scrubAllL` for 4080 < `W` < 8176); `AArch64.Scrub.verifiedScrubbedAll` (`Proof/Framework/AArch64/ScrubProved.lean`). With every register cleared (`Clear.all`), stated of the code and its contract: `AArch64.Scrub.verifiedScrubbedClearAll` (`SideFill.lean`). With the registers read off the code: `scrubOf W rb body`; `AArch64.Scrub.verifiedScrubbedOf` | `Impl.Scrub.AArch64.scrubSel W ks c` (16-byte granules `ks`), after the clears (`withClears`); `AArch64.Scrub.verifiedScrubbedSel` (`Proof/Framework/AArch64/ScrubSel.lean`); `AArch64.RTaintG.rtaintG` (`Proof/Framework/AArch64/ResidueWin.lean`) | none: code that wipes its own frame still has its stack zeroed again by `scrubAll` (a port would be a theorem like x86's or PPC64LE's `verifiedScrubbedWiped`) | Stated: a `Clear` (`Clear.all`, every register the calling convention does not preserve) and the flags; or worked out of the code (`Clear.of`, `Impl/Scrub/AArch64/Writes.lean`); for `scrubSel`, the lists of `withClears` | `Impl/Sha3/AArch64/Instances.lean`, `Proof/Sha3/AArch64/Scrub.lean`, `Artifacts/Sha3/AArch64.lean`; selective: `Impl/Rc2/AArch64/Fn.lean`, `Proof/Rc2/AArch64/InitResidue.lean`, `Artifacts/Rc2/AArch64.lean` | `W` a multiple of 16 below 4096 (`scrubAllL` above). No instruction may write PSTATE.DIT, and nothing is called indirectly (`sideAll`). `rtaintG` has no indirect call, and forgets every granule it knew of at a secret store it cannot place |
 | ARMv7 | `Impl.Scrub.Arm.scrubAll rb n c`; `Arm.Scrub.verifiedScrubbedAll`. Code without frames: `scrub rb c`, which zeroes no stack; `Arm.Scrub.verifiedScrubbed` (`Proof/Framework/Arm/ScrubProved.lean`) | `Impl.Scrub.Arm.scrubSel rb n ws c` (words `ws`, `Impl/Scrub/Arm/Sel.lean`); `Arm.Scrub.verifiedScrubbedSel` (`Proof/Framework/Arm/ScrubSel.lean`); `Arm.rtaint` (`Proof/Framework/Arm/ResidueTaint.lean`, `ResidueTaintSound.lean`) | none: such code uses `scrubSel`, which stores nothing where the analysis finds no word (`ws = []`) | Fixed: the registers a callee may change, but the result's `rb` bits, and the flags, to constants | `Impl/Sm3/Arm/Stream.lean`, `Proof/Sm3/Arm/Scrub.lean`, `Artifacts/Sm3/Arm.lean`; selective: `Impl/Camellia/Arm/Fn.lean`, `Proof/Camellia/Arm/Scrub.lean` | `n` a multiple of 8 (`FrameOk`). The analysis has no indirect call, and a secret it stores where it cannot place makes the open frames' bytes secret |
@@ -413,8 +433,11 @@ checked by `⟨_, by taint_decide_ct⟩`; `verifiedScrubbedSel` pairs
 `RTaintG.Verified.scrubSel` and `RTaintG.noResidue_scrubSel` into
 `VerifiedScrubbed`, and needs the granules within the window (by
 `decide`), `ScrubOk` of the contract, and the analysis (RC2's
-initialization, SEED's and SM4's ECB, CAST5's modes, X25519's and X448's
-exchange).
+initialization, SEED's and SM4's ECB, CAST5's modes and OFB, X25519's and
+X448's exchange; `Proof/Framework/AArch64/ScrubSel.lean`). Code that zeroes
+every granule of its frame but clears only the registers it states
+(`withClears`) is `scrubSel W (List.range (W / 16))`, as CAST5's OFB is: the
+same instructions as a whole-frame wipe, with the selective theorem.
 
 ### ARMv7
 
@@ -458,12 +481,6 @@ the code with any variant, and `RISCV64.Scrub.scrubSide_of_fill` joins them
 (`Proof/Framework/RISCV64/ScrubCall.lean`; `Proof/RsaKeyGen/RISCV64/Fn.lean`,
 and `sign_fill` in `Proof/Ecdsa/Rfc6979/RISCV64/Scrub.lean` for calls
 through tables).
-
-**Not yet converted.** None: RISC-V's framework states its scrub only as
-these theorems about named code, and has no form that builds a
-registration. Each entry of a 64-bit RISC-V registration file binds
-`code := Impl.…` and `verified := .scrubbed Proof.…`, and nothing else
-(`ci/check_registrations.py` checks it).
 
 ### PPC64LE
 

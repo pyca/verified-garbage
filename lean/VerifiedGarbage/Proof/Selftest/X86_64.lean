@@ -49,7 +49,7 @@ def sat : State where
 `add` writes only `rax`, the result, and the flags, which depend on the
 arguments; the clearing that follows it (`Impl.Scrub.X86_64.scrubWith`) is one
 `xor r11d, r11d`, whose flags are known. It writes no memory: the
-postcondition says the memory is unchanged, so `X86_64.Scrub.scrubReg`,
+postcondition says the memory is unchanged, so `X86_64.Scrub.verifiedScrubbedAll`,
 which needs it to read only the buffers (`PostOut`), does not apply, and
 the proof is direct. -/
 

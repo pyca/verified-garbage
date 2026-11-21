@@ -66,13 +66,13 @@ meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
 /-!
 # Triple DES on x86-64, without secret residue
 
-Key expansion and the ECB, CBC encryption, CFB64 encryption, CFB8, OFB and
-final functions, each followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`), which clears the registers and the granules of
-its stack that the residue analysis (`X86_64.RTaint`) finds may hold secrets.
-Their postconditions read the memory on return only within the buffers
-(`X86_64.Scrub.PostOut`), as the frames that keep their working space on the
-stack already show (`X86_64.Verified.stackScratchWiped`'s `hpost`).
+Key expansion and the ECB, CBC encryption, CFB64 encryption, CFB8, OFB and final
+functions, each followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack that the residue analysis (`X86_64.RTaint`) finds
+may hold secrets. Their postconditions read the memory on return only within the
+buffers (`X86_64.Scrub.PostOut`), as the frames that keep their working space on
+the stack already show (`X86_64.Verified.stackScratchWiped`'s `hpost`).
 
 The batched CBC and CFB64 decryption call the ECB functions' code as
 internal functions of their own (`Batch.EcbImpl.name`,

@@ -30,11 +30,11 @@ meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
 # RC2 on x86-64, without secret residue
 
 `vg_rc2_cbc_init`, `vg_rc2_cbc_encrypt_chained` and
-`vg_rc2_cbc_decrypt_chained`, each followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`), which clears the registers and the granules of
-its stack that the residue analysis (`X86_64.RTaint`) finds may hold secrets.
-Their postconditions read the memory on return only within their buffers
-(`X86_64.Scrub.PostOut`), as their frames already show
+`vg_rc2_cbc_decrypt_chained`, each followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack that the residue analysis (`X86_64.RTaint`) finds
+may hold secrets. Their postconditions read the memory on return only within
+their buffers (`X86_64.Scrub.PostOut`), as their frames already show
 (`X86_64.Verified.stackArgScratchWiped`'s and
 `X86_64.Verified.stackScratchWiped`'s `hpost`).
 -/

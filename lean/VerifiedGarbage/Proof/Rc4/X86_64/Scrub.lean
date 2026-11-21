@@ -22,13 +22,14 @@ meta import VerifiedGarbage.Proof.Rc4.X86_64.Lit
 /-!
 # RC4 on x86-64, without secret residue
 
-`vg_rc4_init`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`), which clears the registers that the residue
-analysis (`X86_64.RTaint`) finds may hold secrets. Its postcondition reads
-the memory on return only within the context (`X86_64.Scrub.PostOut`,
-`Proof.Rc4.initPostOut_local`). `vg_rc4_apply`, which uses no stack, is
-followed by the clearing of every register it may write
-(`X86_64.Scrub.withScrubAll`).
+`vg_rc4_init`, followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack that the residue analysis (`X86_64.RTaint`) finds
+may hold secrets. Its postcondition reads the memory on return only within the
+context (`X86_64.Scrub.PostOut`, `Proof.Rc4.initPostOut_local`). `vg_rc4_apply`,
+which uses no stack, is followed by `Impl.Scrub.X86_64.scrubAll`
+(`X86_64.Scrub.verifiedScrubbedAll`), which clears every caller-saved register
+and its stack.
 -/
 
 @[expose] public section

@@ -31,14 +31,14 @@ the memory on return only within the MAC (`X86_64.Scrub.PostOut`).
 
 `vg_cmac_aes_init` over an implementation that needs no working space, in a
 frame of only the 152 bytes it and its calls write (`initF_framed`), which
-`X86_64.Scrub.withScrubAll` wipes whole on return; over the others, its
+`Impl.Scrub.X86_64.scrubAll` wipes whole on return; over the others, its
 frame of 1800 bytes (`initS_framed`) or 2312 (`init_framed`), wiped whole as
 `finish`'s. Its postcondition reads the memory on return only within the
 state (`initOut`).
 
 `vg_cmac_aes_absorb` over an implementation of `vg_cmac_aes_update` that
 needs no working space (`UpdateFree`), in a frame of only the 48 bytes of
-the registers it saves (`absorbF_framed`), which `X86_64.Scrub.withScrubAll`
+the registers it saves (`absorbF_framed`), which `Impl.Scrub.X86_64.scrubAll`
 wipes whole on return; over one that never touches the first 512 bytes of
 its scratch buffer (`UpdateSmall`: the chaining by calls of the bitsliced
 AES), its frame of 1800 bytes (`absorbS_framed`), and over any other, of

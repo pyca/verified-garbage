@@ -31,7 +31,8 @@ constant time with MXCSR public, as the contract makes it: it branches on
 whether MXCSR held `0x1FBF` (`head_rel`), and otherwise its addresses are
 `rsp`'s.
 
-`enterReg` registers it, returning without secret residue.
+`enter_scrubbed` is the theorem its registration binds: it returns without
+secret residue.
 
 `enter_mxcsr` proves what the contract cannot name, of every run of its
 code in the model: MXCSR then holds the value it held on entry, but for its

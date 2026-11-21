@@ -58,7 +58,7 @@ implementation `v` of the compression function, named with its suffix
 function compressing two blocks at once: the rest are that one's). Its
 instances call `init`'s code as the internal `vg_<alg>_init_core`: the
 function exported as `vg_<alg>_init` also clears what it leaves
-(`Proof.Sha512.X86_64.init512Reg`), which its callers, which clear their own,
+(`Proof.Sha512.X86_64.init512_scrubbed`), which its callers, which clear their own,
 do not need. -/
 def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) (v : Compress) :
     Hash where

@@ -14,7 +14,7 @@ The postconditions of key generation, of `pk_tr` and of signing (of a
 message representative or of a message, with a key or a prepared key) read
 the memory on return only within their outputs, and those of verification
 not at all (`X86_64.Scrub.PostOut`): each function returns with its whole
-stack, 32 to 112 bytes, wiped (`X86_64.Scrub.withScrubAll`).
+stack, 32 to 112 bytes, wiped (`Impl.Scrub.X86_64.scrubAll`).
 -/
 
 @[expose] public section

@@ -37,7 +37,7 @@ of it alone sets aside no more, and is given them 512 bytes into the scratch
 buffer of the functions that keep one for it (`Ctr32.scrOff`, `scr`), which
 then never touch its first 512 bytes; and the residue analyses of the
 functions over it that the analysis handles (`gcmInitRes`, `cmacFinishRes`): those instances
-then return without secret residue (`X86_64.RScrub.withScrub`).
+then return without secret residue (`X86_64.Scrub.verifiedScrubbedSel`).
 -/
 
 @[expose] public section

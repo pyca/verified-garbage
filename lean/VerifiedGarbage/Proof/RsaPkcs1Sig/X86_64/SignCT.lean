@@ -326,8 +326,8 @@ def J0 (s t : State) : Prop := t = s
 
 /-! ## Without secret residue
 
-`vg_rsa_pkcs1_sign`'s registration scrubs it with `X86_64.Scrub.withScrubAll`,
-which clears the registers its code writes and wipes all the stack its
+`vg_rsa_pkcs1_sign`'s registration scrubs it with `Impl.Scrub.X86_64.scrubAll`,
+which clears every caller-saved register and wipes all the stack its
 frames and calls use: the residue analysis (`X86_64.RTaint`) does not follow
 its code, so nothing of that stack is kept. This is what that needs of the
 contract. -/

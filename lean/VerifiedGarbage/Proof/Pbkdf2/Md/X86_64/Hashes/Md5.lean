@@ -40,7 +40,7 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
 /-- MD5's functions. They call `vg_md5_init`'s code as the internal
 `vg_md5_init_core`: the function exported as `vg_md5_init` also clears what
-it leaves (`Proof.Md5.X86_64.initReg`), which its callers, which clear their
+it leaves (`Proof.Md5.X86_64.init_scrubbed`), which its callers, which clear their
 own, do not need. -/
 def hash : Hash where
   P := Impl.Md5.X86_64.Stream.params

@@ -88,7 +88,7 @@ structure XorImpl where
   poly : Impl.Poly1305.X86_64.Blocks
   /-- The residue analysis of `vg_chacha20_apply` over it, if the analysis
   handles it: that instance then returns without secret residue
-  (`Scrub.applyReg`). -/
+  (`Scrub.apply_scrubbed`). -/
   apply : Option (RScrub.Analysed Spec.ChaCha20.applyApi.sig 24 applyPubs
     (Impl.ChaCha20.X86_64.Stream.apply callee)) := none
   /-- Its `fold`, `pass` and `wide` with the implementation of

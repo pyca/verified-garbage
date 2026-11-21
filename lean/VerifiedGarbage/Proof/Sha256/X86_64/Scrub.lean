@@ -22,11 +22,12 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # `vg_sha256_init` and `vg_sha224_init` on x86-64, without secret residue
 
-Each followed by `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`),
-which clears the registers it writes. Their postconditions read the memory
-on return only within the streaming state (`Stream.reprFrom_congr`).
-HMAC, PBKDF2, DSA and RSA call their code as the internal
-`vg_sha256_init_core` and `vg_sha224_init_core`
+Each followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack the residue analysis finds may hold secrets. Their
+postconditions read the memory on return only within the streaming state
+(`Stream.reprFrom_congr`). HMAC, PBKDF2, DSA and RSA call their code as the
+internal `vg_sha256_init_core` and `vg_sha224_init_core`
 (`Proof.Pbkdf2.Md.X86_64.Sha256.hash`, `Proof.Pbkdf2.Md.X86_64.Sha224.hash`),
 which clear what they leave themselves.
 -/

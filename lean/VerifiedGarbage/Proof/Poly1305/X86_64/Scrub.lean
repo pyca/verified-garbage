@@ -36,8 +36,9 @@ meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 # Poly1305 without secret residue (x86-64)
 
 `init`, `update` (for each implementation of `vg_poly1305_blocks`) and
-`finalize`, each scrubbed where the residue analysis allows it
-(`X86_64.RScrub.autoScrub`). What that needs of their postconditions is that
+`finalize`, each followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which wipes the granules of its stack
+the residue analysis finds may hold secrets. What that needs of their postconditions is that
 they read the memory on return only within the buffers
 (`X86_64.Scrub.PostOut`): the streaming state is bytes of the state buffer
 (`repr_congr`, `buffered_congr`), the tag bytes of `out`.

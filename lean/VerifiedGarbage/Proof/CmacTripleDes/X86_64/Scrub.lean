@@ -29,8 +29,8 @@ meta import VerifiedGarbage.Proof.CmacTripleDes.X86_64.KeysLit
 # Streaming TDEA-CMAC on x86-64, without secret residue
 
 `vg_cmac_triple_des_stream_init`, `_absorb` and `_finish`, each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers and the granules of its stack that the residue analysis
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which clears every
+caller-saved register and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
 memory on return only within the buffers (`X86_64.Scrub.PostOut`): the state
 (`repr_congr`) and the MAC.

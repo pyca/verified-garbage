@@ -24,12 +24,13 @@ meta import VerifiedGarbage.Proof.Sha1.PostOut
 /-!
 # `vg_sha1_init` on x86-64, without secret residue
 
-`vg_sha1_init`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`), which clears the registers it writes. Its
+`vg_sha1_init`, followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack the residue analysis finds may hold secrets. Its
 postcondition reads the memory on return only within the streaming state
-(`Stream.repr_congr`). HMAC-SHA1, PBKDF2-HMAC-SHA1 and DSA call its code as
-the internal `vg_sha1_init_core` (`Proof.Pbkdf2.Md.X86_64.Sha1.hash`), which
-clears what it leaves itself.
+(`Stream.repr_congr`). HMAC-SHA1, PBKDF2-HMAC-SHA1 and DSA call its code as the
+internal `vg_sha1_init_core` (`Proof.Pbkdf2.Md.X86_64.Sha1.hash`), which clears
+what it leaves itself.
 -/
 
 @[expose] public section

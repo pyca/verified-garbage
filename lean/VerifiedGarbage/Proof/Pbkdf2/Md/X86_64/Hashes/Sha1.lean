@@ -486,7 +486,7 @@ function, named with its suffix, giving it the scratch space it uses
 (`Callee.so`) and taking the working space they use (`Hash.wOf`). They call
 `vg_sha1_init`'s code as the internal `vg_sha1_init_core`: the function
 exported as `vg_sha1_init` also clears what it leaves
-(`Proof.Sha1.X86_64.initReg`), which its callers, which clear their own, do
+(`Proof.Sha1.X86_64.init_scrubbed`), which its callers, which clear their own, do
 not need. -/
 def hash (v : Compress) : Hash where
   P := { Impl.Sha1.X86_64.Stream.params with so := v.callee.so }

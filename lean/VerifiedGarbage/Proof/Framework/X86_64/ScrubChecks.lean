@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.CodeOnce
 # The checks of the scrub, compiled (x86-64)
 
 The emitter evaluates the side conditions of the scrub of every x86-64
-function (`Scrub.withScrubAll`, `RScrub.withScrub` and the others) on all of
+function (`scrubAll`, `scrubSel` and the others) on all of
 its code: the level of its instructions (`Instr.vecLevel`), the stack it
 uses (`Code.x86_64Depth`), the registers it writes (`Taint.clobbers`) and
 what it leaves in MXCSR (`mxClass`). This module, which imports only the

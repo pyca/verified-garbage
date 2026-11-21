@@ -31,8 +31,9 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 `vg_mldsa*_prepare_verifying_key` and `vg_mldsa*_prepare_signing_key`, over
 each implementation of the polynomial arithmetic but the samplers
 (`Proof/Variants/MlDsaArith/X86_64.lean`), each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers that the residue analysis (`X86_64.RTaint`) finds may hold secrets.
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which
+clears every caller-saved register and the granules of its stack that the
+residue analysis (`X86_64.RTaint`) finds may hold secrets.
 Their NTTs run between Intel's MCDT prologue and epilogue, so they load
 MXCSR; every path through them ends with its epilogue, which loads back the
 caller's (`X86_64.mxClass`). Their postconditions read the memory on return

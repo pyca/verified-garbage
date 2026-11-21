@@ -28,8 +28,8 @@ meta import VerifiedGarbage.Proof.Sha3.PostOut
 # SHA-3 and SHAKE's functions on x86-64, without secret residue
 
 Each instance's `absorb`, and SHAKE's `finalize` and `squeeze`, followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers and the granules of its stack that the residue analysis
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which clears every
+caller-saved register and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
 memory on return only within the buffers (`X86_64.Scrub.PostOut`,
 `Proof/Sha3/PostOut.lean`).

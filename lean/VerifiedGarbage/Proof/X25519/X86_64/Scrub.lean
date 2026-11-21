@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 The postconditions of `vg_x25519_base` and `vg_x25519_exchange` read the
 memory on return only within `out` (`X86_64.Scrub.PostOut`), whatever tables
 of constants the code takes: each implementation returns with its whole
-stack wiped (`X86_64.Scrub.withScrubAll`).
+stack wiped (`Impl.Scrub.X86_64.scrubAll`).
 -/
 
 @[expose] public section

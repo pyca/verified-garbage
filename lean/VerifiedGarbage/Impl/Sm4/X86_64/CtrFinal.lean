@@ -44,7 +44,7 @@ open VG.Impl.Modes.X86_64 (xorByte)
 /-- `vg_sm4_ctr`'s code, with its working space on the stack: called as an
 internal function of its own, `vg_sm4_ctr_core`, rather than as
 `vg_sm4_ctr`, which also clears what it leaves
-(`Proof.Sm4.X86_64.Scrub.ctrReg`). -/
+(`Proof.Sm4.X86_64.Scrub.ctr_scrubbed`). -/
 def ctrFramed : Prog isa := Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 ctr
 
 /-- The arguments to their registers, `r13` and `r14` the data after the

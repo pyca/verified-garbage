@@ -32,9 +32,9 @@ once (with the `z` of no suffix); the call wiped with `z` where `v` needs
 AVX, only with the `z` that needs it (so the instance has `v`'s suffix and
 needs no more than `v`'s features); and otherwise the call wiped with each
 `z`, named by both suffixes. `v`'s code alone is followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`) where `v` gives its
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`) where `v` gives its
 residue analysis (`BlocksImpl.ecbEncRes`); every other instance returns
-with its whole stack wiped (`X86_64.Scrub.withScrubAll`, at most 24 bytes).
+with its whole stack wiped (`Impl.Scrub.X86_64.scrubAll`, at most 24 bytes).
 Their postconditions read the memory on return only within the data and
 `scratch` (`encryptOut`, `decryptOut`).
 -/

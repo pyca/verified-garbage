@@ -1277,7 +1277,7 @@ structure MdHash where
   hmacInitF : Verified X86_64.target (initCode H I) (I.initAnyKeyContract X86_64.abi (24 + anyFrame H))
   hmacInitFSp : (initCode H I).all (fun i => !isa.writesSp i) = true
   /-- The two branches of `initCode`, each verified against its contract:
-  what `hmacInitF` is made of, for `MdHash.initScrubbed`, which clears after
+  what `hmacInitF` is made of, for `MdHash.initSel`, which clears after
   each. -/
   hmacShortF : Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch (initFrame H) .r8 H.hmacInit)
     (I.initContract X86_64.abi (16 + initFrame H))

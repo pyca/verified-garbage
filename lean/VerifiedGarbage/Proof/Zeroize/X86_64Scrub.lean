@@ -20,12 +20,13 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # `vg_zeroize` and `vg_zeroize_avx` on x86-64, without secret residue
 
-Each followed by `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`),
-which clears the registers it writes. Their postcondition reads the memory
-on return only within the buffer. The functions that call them (through
-`Proof.Zeroize.X86_64.ZeroizeImpl`) call their code as the internal
-`vg_zeroize_core` and `vg_zeroize_avx_core`, which clear what they leave
-themselves.
+Each followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack the residue analysis finds may hold secrets. Their
+postcondition reads the memory on return only within the buffer. The functions
+that call them (through `Proof.Zeroize.X86_64.ZeroizeImpl`) call their code as
+the internal `vg_zeroize_core` and `vg_zeroize_avx_core`, which clear what they
+leave themselves.
 -/
 
 @[expose] public section

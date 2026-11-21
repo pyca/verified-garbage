@@ -46,7 +46,7 @@ open VG.Impl.Modes.PPC64LE (tailByte)
 /-- `vg_sm4_ctr`'s code, with its working space on the stack: called as an
 internal function of its own, `vg_sm4_ctr_core`, rather than as `vg_sm4_ctr`,
 which also clears the registers it leaves
-(`Proof.Sm4.PPC64LE.Scrub.ctrReg`). -/
+(`Proof.Sm4.PPC64LE.Scrub.ctr_scrubbed`). -/
 def ctrFramed : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchWiped 3296 .r7 408 ctr
 
 /-- A call of `vg_sm4_ctr`'s code, as `vg_sm4_ctr_core`. -/

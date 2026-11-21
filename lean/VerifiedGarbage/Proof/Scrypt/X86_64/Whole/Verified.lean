@@ -848,8 +848,8 @@ theorem scrypt_spSafe : (scrypt R.name R.code (pbkName c) (pbkOf c)).all (fun i 
 
 /-! ## Without secret residue
 
-`vg_scrypt`'s instances are scrubbed with `X86_64.Scrub.withScrubAll`,
-which clears the registers their code writes and wipes all the stack their
+`vg_scrypt`'s instances are scrubbed with `Impl.Scrub.X86_64.scrubAll`,
+which clears every caller-saved register and wipes all the stack their
 frames and calls use (the residue analysis does not follow their code). This
 is what that needs of the contract. -/
 

@@ -151,7 +151,7 @@ theorem ecdh_ct_ifma : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP2
 /-! ## The contract with 16 bytes of stack
 
 The code uses 8, for its calls' return address; clearing the vector registers at the level `evex`
-(`X86_64.Scrub.withScrubAll`) needs 16. -/
+(`Impl.Scrub.X86_64.scrubAll`) needs 16. -/
 
 /-- A contract with stack asks more than the same with none. -/
 theorem pre_stack0_of {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}

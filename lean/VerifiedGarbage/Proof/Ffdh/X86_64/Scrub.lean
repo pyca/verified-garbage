@@ -17,7 +17,7 @@ on return only within their outputs (`X86_64.Scrub.PostOut`): the checks not
 at all, `vg_ffdh_exchange` and `vg_ffdh_derive_public` the octets at `out`
 and `y` (`bytesAt_of`, `written_of`), the precomputation the words at `ctx`
 (`wordsAt_of`). Each implementation returns with its whole stack wiped
-(`X86_64.Scrub.withScrubAll`).
+(`Impl.Scrub.X86_64.scrubAll`).
 -/
 
 @[expose] public section

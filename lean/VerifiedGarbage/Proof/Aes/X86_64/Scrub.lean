@@ -25,8 +25,8 @@ meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
 # The AES key expansion on x86-64, without secret residue
 
 `vg_aes_expand_key` and `vg_aes_expand_key_aesni`, each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers and the granules of its stack that the residue analysis
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which clears every
+caller-saved register and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postcondition reads the
 memory on return only within the schedule (`Proof.Aes.expandKeyPostOut_local`).
 -/

@@ -104,7 +104,7 @@ import VerifiedGarbage.Proof.Ed448.WholeLocal
 The postconditions of `vg_ed448_public_key` and `vg_ed448_sign_cached` read
 the memory on return only within their outputs, and that of
 `vg_ed448_verify` not at all (`X86_64.Scrub.PostOut`): each implementation
-returns with its whole stack wiped (`X86_64.Scrub.withScrubAll`).
+returns with its whole stack wiped (`Impl.Scrub.X86_64.scrubAll`).
 -/
 
 @[expose] public section

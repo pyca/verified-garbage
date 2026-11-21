@@ -39,7 +39,7 @@ open VG.Impl.Aes.X86_64 (Blocks)
 /-- `vg_aes_ofb_final`, calling `vg_aes_ofb`'s code with the block function
 `b`, whose callers' names end in `sfx`, as an internal function of its own,
 `vg_aes_ofb<sfx>_core`: `vg_aes_ofb` may also clear what it leaves
-(`Proof.Aes.X86_64.ModesScrub.ofbReg`). -/
+(`Proof.Aes.X86_64.ModesScrub.ofb_scrubbed`). -/
 def cryptFinal (b : Blocks) (sfx : String) : Prog isa :=
   Impl.AesCfb.X86_64.final ("vg_aes_ofb" ++ sfx ++ "_core") (crypt b) b
 

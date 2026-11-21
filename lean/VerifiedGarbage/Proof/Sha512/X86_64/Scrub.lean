@@ -25,12 +25,13 @@ meta import VerifiedGarbage.Proof.Sha512.PostOut
 # The SHA-512 family's `init` on x86-64, without secret residue
 
 `vg_sha384_init`, `vg_sha512_init`, `vg_sha512_224_init` and
-`vg_sha512_256_init`, each followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`), which clears the registers it writes. Their
+`vg_sha512_256_init`, each followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack the residue analysis finds may hold secrets. Their
 postconditions read the memory on return only within the streaming state
-(`Stream.repr_congr`). HMAC, PBKDF2 and Ed25519 call their code as the
-internal `vg_<alg>_init_core` (`Proof.Pbkdf2.Md.X86_64.Sha512.hash`), which
-clears what it leaves itself.
+(`Stream.repr_congr`). HMAC, PBKDF2 and Ed25519 call their code as the internal
+`vg_<alg>_init_core` (`Proof.Pbkdf2.Md.X86_64.Sha512.hash`), which clears what
+it leaves itself.
 -/
 
 @[expose] public section

@@ -29,8 +29,8 @@ meta import VerifiedGarbage.Proof.Sm3.PostOut
 # SM3's streaming functions on x86-64, without secret residue
 
 `vg_sm3_init`, `vg_sm3_update` and `vg_sm3_finalize`, each
-followed by `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which
-clears the registers and the granules of its stack that the residue analysis
+followed by `Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which
+clears every caller-saved register and the granules of its stack that the residue analysis
 (`X86_64.RTaint`) finds may hold secrets. Their postconditions read the
 memory on return only within the buffers (`X86_64.Scrub.PostOut`): the
 streaming state (`Stream.repr_congr`) and the digest.

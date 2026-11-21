@@ -28,7 +28,7 @@ The postconditions of `vg_ed25519_key_pair` and `vg_ed25519_sign_expanded`
 read the memory on return only within their outputs, and that of
 `vg_ed25519_verify` not at all (`X86_64.Scrub.PostOut`), whatever tables of
 constants their code takes: each implementation returns with its whole stack
-wiped (`X86_64.Scrub.withScrubAll`).
+wiped (`Impl.Scrub.X86_64.scrubAll`).
 -/
 
 @[expose] public section

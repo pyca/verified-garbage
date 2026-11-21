@@ -1324,7 +1324,7 @@ that goes with them (with the same suffix and CPU features), for the callers
 that also expand the key, proven against `Proof.Aes.expandKeyX86_64`.
 An implementation also gives the residue analyses of the functions over it
 that the analysis handles (`cfb8EncRes`, `cfb8DecRes`, `ecbEncRes`): those
-instances then return without secret residue (`X86_64.RScrub.withScrub`).
+instances then return without secret residue (`X86_64.Scrub.verifiedScrubbedSel`).
 One whose encryption and key expansion never touch their scratch buffers
 gives their contracts without them (`free`), and the analysis of
 `vg_aes_ocb_init` over it with no working space for them (`ocbInitRes`).

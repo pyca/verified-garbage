@@ -27,7 +27,7 @@ structure ZeroizeImpl where
   /-- Its symbol and its code: the code of the artifact
   (`Artifacts/Zeroize/X86_64.lean`), called as an internal function of its
   own, `<artifact>_core`, since the artifact also clears what it leaves
-  (`Proof.Zeroize.X86_64.zeroizeReg`), which its callers, which clear their
+  (`Proof.Zeroize.X86_64.zeroize_scrubbed`), which its callers, which clear their
   own, do not need. -/
   name : String
   code : Prog isa

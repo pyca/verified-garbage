@@ -1084,7 +1084,7 @@ argument: it runs its code in a frame of 80 bytes (`withStackArgScratch`):
 the quadword standing for the return address, `save`'s address, and `save`'s
 64 bytes (the registers, then the block that held the last output block),
 which the scrub after it zeroes with the rest of the stack
-(`Proof.Aes.X86_64.FinalScrub.ctrFinalReg`). The code's calls use 16 bytes
+(`Proof.Aes.X86_64.FinalScrub.ctrFinal_scrubbed`). The code's calls use 16 bytes
 below it, so 96 in all. -/
 
 theorem frameSat_pre : ∃ s, (finalRoundsContract X86_64.abi 96).pre s := by
