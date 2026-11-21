@@ -11,9 +11,9 @@ public import VerifiedGarbage.TCB.X86.Target
 default dialect of Rust's `asm!`/`naked_asm!` on x86.
 
 Each straight-line instruction, and the return, is printed as its machine
-code (`Encode.lean`), `.byte <bytes>`, after a line `// <the instruction's
-text>`, which the emitter writes in the module's assembly file, not in its code
-(`Rust.assembly`): the
+code (`Encode.lean`), a line of its bytes with the instruction's text
+(`Line.code`): the emitter writes the bytes in the module's code and the
+text in its assembly file (`Rust.template`, `Rust.assembly`), so the
 assembler only copies the bytes. The branches (`jcc`, `jmp`), the call and
 the address of a static (`symPush`) are printed as text, for the assembler
 and linker to lay out.
@@ -145,14 +145,14 @@ def Instr.asm : Instr → List String
 def Cond.name : Cond → String
   | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"
 
-/-- The lines of an instruction: each of its instructions' text (`asm`) as a
-comment, then that instruction's bytes (`encode`); its text if it has no
+/-- The lines of an instruction: each of its instructions' text (`asm`) with
+that instruction's bytes (`encode`), a `Line.code`; its text if it has no
 encoding (`symPush`, printed by `symLines`, or an instruction that
 `unencodable` reports, which the emitter refuses). -/
-def Instr.code (i : Instr) : List String :=
+def Instr.code (i : Instr) : List Line :=
   match i.encode with
-  | some bs => (i.asm.zip bs).flatMap fun (t, b) => [s!"// {t}", byteLine b]
-  | none => i.asm
+  | some bs => (i.asm.zip bs).map fun (t, b) => .code t b
+  | none => i.asm.map .text
 
 def printer : Printer isa where
   instr := Instr.code
@@ -167,9 +167,9 @@ def printer : Printer isa where
         .text s!"mov {d.name}, DWORD PTR [esp]",
         .text s!".byte 0x81, {192 + d.ctorIdx}", .sym ".long " .x86PcRel name]
     | _ => none
-  branch c l := [s!"j{c.name} {l}"]
+  branch c l := [.text s!"j{c.name} {l}"]
   jump l := s!"jmp {l}"
-  ret := ["// ret", byteLine retBytes]
+  ret := [.code "ret" retBytes]
   call := "call"
   /- Every function starts on a 64-byte boundary, a cache line: the unit
   AMD's op cache builds its entries from (Zen 4 Software Optimization Guide,

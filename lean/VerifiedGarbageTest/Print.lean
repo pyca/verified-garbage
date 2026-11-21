@@ -27,19 +27,45 @@ up in review.
 
 namespace VG.Test
 
-/-- The lines of a printed function, a call shown as `<call name>`. -/
+/-- `n` as `k` lowercase hexadecimal digits, after `0x`. -/
+def hex (k n : Nat) : String :=
+  let ds := Nat.toDigits 16 (n % 16 ^ k)
+  "0x" ++ String.ofList (List.replicate (k - ds.length) '0' ++ ds)
+
+/-- The number whose bytes, the lowest first, are `bs`. -/
+def littleEndian (bs : List Nat) : Nat := bs.foldr (fun b v => b + 256 * v) 0
+
+/-- The lines of a printed function, a call shown as `<call name>`, and an
+instruction a printer emits as its machine code (`Line.code`) as two lines:
+its text in a comment, and the directive `dir` gives its bytes. -/
+def textWith (dir : List Nat → String) (ls : List Line) : List String :=
+  ls.flatMap fun
+    | .text s => [s]
+    | .call n => [s!"<call {n}>"]
+    | .sym s .page n => [s!"{s}<page {n}>"]
+    | .sym s .pageOff n => [s!"{s}<pageoff {n}>"]
+    | .sym s .ripRel n => [s!"{s}<riprel {n}>"]
+    | .sym s .x86PcRel n => [s!"{s}<pcrel {n}>"]
+    | .sym s .armPcRel n => [s!"{s}<armpcrel {n}>"]
+    | .sym s .ppcHa n => [s!"{s}<ppcha {n}>"]
+    | .sym s .ppcLo n => [s!"{s}<ppclo {n}>"]
+    | .sym s .bare n => [s!"{s}<sym {n}>"]
+    | .code asm bs => [s!"// {asm}", dir bs]
+
+/-- `textWith`, an encoded instruction's bytes as `.byte` of each (x86's). -/
 def text (ls : List Line) : List String :=
-  ls.map fun
-    | .text s => s
-    | .call n => s!"<call {n}>"
-    | .sym s .page n => s!"{s}<page {n}>"
-    | .sym s .pageOff n => s!"{s}<pageoff {n}>"
-    | .sym s .ripRel n => s!"{s}<riprel {n}>"
-    | .sym s .x86PcRel n => s!"{s}<pcrel {n}>"
-    | .sym s .armPcRel n => s!"{s}<armpcrel {n}>"
-    | .sym s .ppcHa n => s!"{s}<ppcha {n}>"
-    | .sym s .ppcLo n => s!"{s}<ppclo {n}>"
-    | .sym s .bare n => s!"{s}<sym {n}>"
+  textWith (fun bs => ".byte " ++ ",".intercalate (bs.map (hex 2))) ls
+
+/-- `textWith`, an encoded instruction's bytes as the `.long` of its
+little-endian word (PPC64LE's). -/
+def textLong (ls : List Line) : List String :=
+  textWith (fun bs => s!".long {hex 8 (littleEndian bs)}") ls
+
+/-- `textWith`, an encoded instruction's bytes as the `.insn` of its
+little-endian word, or of a compressed instruction's parcel (RISC-V's). -/
+def textInsn (ls : List Line) : List String :=
+  textWith (fun bs => if bs.length == 2 then s!".insn 2, {hex 4 (littleEndian bs)}"
+    else s!".insn 4, {hex 8 (littleEndian bs)}") ls
 
 open X86_64
 
@@ -487,7 +513,7 @@ def samplePPC : Prog PPC64LE.isa :=
       .storeRev .d .r7 .r3 .r0,
       .mflr .r0, .mtlr .r0]) (.nonzero .w .r5)))
 
-#guard text (PPC64LE.printer.function samplePPC) == [
+#guard textLong (PPC64LE.printer.function samplePPC) == [
   "// cmpldi %cr0, %r5, 0", ".long 0x28250000",
   "beq %cr0, 20f",
   "b 21f",
@@ -573,7 +599,7 @@ def sampleRV : Prog RISCV64.isa :=
       .store .b .t0 .a0 2047, .store .h .t0 .a0 0, .store .w .t1 .a1 4, .store .d .t2 .a2 8,
       .addSp .a0 2047, .lla .s1 "VG_TABLE"]) (.nonzero .t6))))))
 
-#guard text (RISCV64.printer.function sampleRV) == [
+#guard textInsn (RISCV64.printer.function sampleRV) == [
   "beqz a5, 20f",
   "j 21f",
   "20:",
@@ -663,34 +689,28 @@ def sampleRV : Prog RISCV64.isa :=
 #guard Rust.template "bl" [.text ".inst 0x1", .text "20:", .text ".inst 0x2", .text ".inst 0x3",
     .call "vg_f", .text ".inst 0x4"] ==
   "        r\".inst 0x1\n20:\n.inst 0x2,0x3\nbl {vg_f}\n.inst 0x4\",\n"
--- Each run of consecutive encoded `.byte` lines (x86's), `.long` lines
--- (PPC64LE's, whose words are little-endian) and `.insn` lines (RISC-V's, a
--- word or a compressed instruction's parcel, little-endian) is one `.base64`
--- line of their bytes; another `.byte`, `.long` or `.insn` line (`symPush`'s)
--- is none of them, and ends a run.
-#guard Rust.template "call" ((List.range 18).map fun i => .text (X86.byteLine [i])) ==
+-- Each run of consecutive encoded instructions (`Line.code`) is one `.base64`
+-- line of their bytes; a line of text, a `.byte` or `.long` line among them
+-- (`symPush`'s), is none of them, and ends a run.
+#guard Rust.template "call" ((List.range 18).map fun i => .code "" [i]) ==
   "        " ++ Rust.literal ".base64 \"AAECAwQFBgcICQoLDA0ODxAR\"" ++ ",\n"
-#guard Rust.template "call" [.text ".byte 0x81, 199", .text (X86.byteLine [1, 2]),
-    .text (X86.byteLine [3]), .text ".long 1b - 2b", .text (X86.byteLine [3])] ==
+#guard Rust.template "call" [.text ".byte 0x81, 199", .code "" [1, 2],
+    .code "" [3], .text ".long 1b - 2b", .code "" [3]] ==
   "        " ++ Rust.literal ".byte 0x81, 199\n.base64 \"AQID\"\n.long 1b - 2b\n.base64 \"Aw==\"" ++
     ",\n"
-#guard Rust.template "bl" [.text (PPC64LE.longLine 0x28250000), .text (PPC64LE.longLine 0x7c642a14),
+-- PPC64LE's words are little-endian.
+#guard Rust.template "bl" [.code "" (PPC64LE.wordBytes 0x28250000), .code "" (PPC64LE.wordBytes 0x7c642a14),
     .text "beq %cr0, 20f"] ==
   "        " ++ Rust.literal ".base64 \"AAAlKBQqZHw=\"\nbeq %cr0, 20f" ++ ",\n"
-#guard Rust.byteLine? ".byte 0x81, 199" == none
-#guard Rust.byteLine? ".byte 0x81,0xc7" == some [0x81, 0xc7]
-#guard Rust.wordLine? ".long 0x28250000,0x00000001" == some [0, 0, 0x25, 0x28, 1, 0, 0, 0]
-#guard Rust.wordLine? ".long 0x1" == none
-#guard Rust.wordLine? ".long {VG_TABLE} - 2b" == none
-#guard Rust.template "call" [.text (RISCV64.insnLine 0x0125b823), .text (RISCV64.insnLine 0x0085b023),
+#guard PPC64LE.wordBytes 0x28250000 == [0, 0, 0x25, 0x28]
+-- RISC-V's are a word or a compressed instruction's parcel, little-endian.
+#guard Rust.template "call" [.code "" (RISCV64.insnBytes 0x0125b823), .code "" (RISCV64.insnBytes 0x0085b023),
     .text "bnez t3, 20b"] ==
   "        " ++ Rust.literal ".base64 \"I7glAYDh\"\nbnez t3, 20b" ++ ",\n"
-#guard Rust.insnLine? ".insn 4, 0x0125b823" == some [0x23, 0xb8, 0x25, 0x01]
-#guard Rust.insnLine? ".insn 2, 0xe180" == some [0x80, 0xe1]
-#guard Rust.insnLine? ".insn 4, 0xe180" == none
-#guard Rust.insnLine? ".insn 2, 0x0125b823" == none
-#guard Rust.insnLine? ".insn 4, 0x1" == none
-#guard Rust.insnLine? ".insn 4, 0x0125B823" == none
+#guard RISCV64.insnBytes 0x0125b823 == [0x23, 0xb8, 0x25, 0x01]
+#guard RISCV64.insnBytes 0x0085b023 == [0x80, 0xe1]
+-- Each byte is taken modulo 256.
+#guard Rust.base64 [256 + 0xfb, 0xff] == "+/8="
 -- RFC 4648's padding: none for whole groups of 3 bytes, `==` after 1, `=` after 2.
 #guard Rust.base64 [255, 255, 255] == "////"
 #guard Rust.base64 [0xfb] == "+w=="
@@ -715,7 +735,7 @@ def sampleRV : Prog RISCV64.isa :=
    "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"]
 
 -- Frames: the push and pop of one register, and of a buffer, around a call.
-#guard text (RISCV64.printer.function
+#guard textInsn (RISCV64.printer.function
     (.frame (.push .ra) (.frame (.alloc 2032) (.call "vg_f" (.block [])) (.free 2032))
       (.pop .ra) : Prog RISCV64.isa)) == [
   "// addi sp, sp, -16", ".insn 2, 0x1141", "// sd ra, 8(sp)", ".insn 2, 0xe406", "// addi sp, sp, -2032", ".insn 4, 0x81010113", "<call vg_f>",
@@ -723,10 +743,10 @@ def sampleRV : Prog RISCV64.isa :=
 #guard Rust.line RISCV64.printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
 -- A buffer of 2048 bytes or more: two `addi`s each way, of at most 2032
 -- bytes, the largest frame being 4064 bytes; 2047 bytes and less is one.
-#guard text (RISCV64.printer.function
+#guard textInsn (RISCV64.printer.function
     (.frame (.alloc 2048) (.call "vg_f" (.block [])) (.free 2048) : Prog RISCV64.isa)) == [
   "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi sp, sp, -16", ".insn 2, 0x1141", "<call vg_f>", "// addi sp, sp, 16", ".insn 2, 0x0141", "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// ret", ".insn 2, 0x8082"]
-#guard text (RISCV64.printer.function
+#guard textInsn (RISCV64.printer.function
     (.frame (.alloc 4064) (.block [.addSp .a0 0]) (.free 4064) : Prog RISCV64.isa)) == [
   "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi a0, sp, 0", ".insn 2, 0x850a", "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// addi sp, sp, 2032", ".insn 4, 0x7f010113",
   "// ret", ".insn 2, 0x8082"]
@@ -737,7 +757,7 @@ def sampleRV : Prog RISCV64.isa :=
 -- The address of a static (RISC-V): `lla` of its symbol, a `sym` operand,
 -- which the assembler expands to `auipc` and `addi`. `asm` gives the text
 -- `Rust.line` writes, for reading.
-#guard text (RISCV64.printer.function (.block [.lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) == [
+#guard textInsn (RISCV64.printer.function (.block [.lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) == [
   "lla a5, <sym VG_TABLE>", "// ret", ".insn 2, 0x8082"]
 #guard Rust.line RISCV64.printer.call (.sym "lla a5, " .bare "VG_TABLE") ==
   "        r\"lla a5, {VG_TABLE}\",\n"
@@ -804,15 +824,15 @@ def callSample : Prog X86_64.isa :=
     (.block [.mov .rax (.reg .rdx)]))
 
 #guard printer.function callSample == [
-  .text "// mov rdi, rbx", .text ".byte 0x48,0x89,0xdf", .call "vg_f",
-  .text "// mov rax, rdx", .text ".byte 0x48,0x89,0xd0", .text "// ret", .text ".byte 0xc3"]
+  .code "mov rdi, rbx" [0x48, 0x89, 0xdf], .call "vg_f",
+  .code "mov rax, rdx" [0x48, 0x89, 0xd0], .code "ret" [0xc3]]
 #guard AArch64.printer.function (.call "vg_f" (.block []) : Prog AArch64.isa) ==
   [.call "vg_f", .text "// ret", .text ".inst 0xd65f03c0"]
 #guard X86.printer.function (.call "vg_f" (.block []) : Prog X86.isa) ==
-  [.call "vg_f", .text "// ret", .text ".byte 0xc3"]
+  [.call "vg_f", .code "ret" [0xc3]]
 #guard Arm.printer.function (.call "vg_f" (.block []) : Prog Arm.isa) == [.call "vg_f", .text "bx lr"]
 #guard PPC64LE.printer.function (.call "vg_f" (.block []) : Prog PPC64LE.isa) ==
-  [.call "vg_f", .text "// blr", .text ".long 0x4e800020"]
+  [.call "vg_f", .code "blr" [0x20, 0x00, 0x80, 0x4e]]
 #guard Rust.line PPC64LE.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
 
 #guard Rust.line printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
@@ -911,7 +931,7 @@ instructions. -/
 -- whose address it leaves in the link register, `mflr` of it, then `addis`
 -- and `addi` of the high and low halves of the static's distance from label
 -- 2. `asm` gives the text `Rust.line` writes, for reading.
-#guard text (PPC64LE.printer.function (.block [.adrSym .r4 "VG_TABLE"] : Prog PPC64LE.isa)) == [
+#guard textLong (PPC64LE.printer.function (.block [.adrSym .r4 "VG_TABLE"] : Prog PPC64LE.isa)) == [
   "bcl 20, 31, 2f", "2:", "mflr %r4", "addis %r4, %r4, (<ppcha VG_TABLE>",
   "addi %r4, %r4, (<ppclo VG_TABLE>", "// blr", ".long 0x4e800020"]
 #guard Rust.line PPC64LE.printer.call (.sym "addis %r4, %r4, (" .ppcHa "VG_TABLE") ==
@@ -956,7 +976,7 @@ instructions. -/
 
 -- Save the link register around a call (PPC64LE): through `r0`, in a frame
 -- with a back chain.
-#guard text (PPC64LE.printer.function
+#guard textLong (PPC64LE.printer.function
     (.seq (.block [.mflr .r0])
       (.seq (.frame (.push .r0) (.call "vg_f" (.block [])) (.pop .r0)) (.block [.mtlr .r0])) :
       Prog PPC64LE.isa)) == [
@@ -964,7 +984,7 @@ instructions. -/
   "// addi %r1, %r1, 48", ".long 0x38210030", "// mtlr %r0", ".long 0x7c0803a6", "// blr", ".long 0x4e800020"]
 
 -- A buffer on the stack (PPC64LE): a frame of 112 bytes, the buffer above its 32-byte header.
-#guard text (PPC64LE.printer.function
+#guard textLong (PPC64LE.printer.function
     (.frame (.alloc 112) (.block [.addSp .r6 32]) (.free 112) : Prog PPC64LE.isa)) == [
   "// stdu %r1, -112(%r1)", ".long 0xf821ff91", "// addi %r6, %r1, 32", ".long 0x38c10020", "// addi %r1, %r1, 112", ".long 0x38210070", "// blr", ".long 0x4e800020"]
 

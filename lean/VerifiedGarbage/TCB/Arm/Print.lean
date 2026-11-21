@@ -65,10 +65,10 @@ def Cond.name : Cond → String
   | .eq => "eq" | .ne => "ne"
 
 def printer : Printer isa where
-  instr := Instr.asm
-  branch c l := [s!"b{c.name} {l}"]
+  instr i := i.asm.map .text
+  branch c l := [.text s!"b{c.name} {l}"]
   jump l := s!"b {l}"
-  ret := ["bx lr"]
+  ret := [.text "bx lr"]
   call := "bl"
   -- `umaal` assembles only for ARMv7-A, -R and ARMv7E-M (not for
   -- `thumbv7m-none-eabi`, the Cortex-M3), and its timing is known not to

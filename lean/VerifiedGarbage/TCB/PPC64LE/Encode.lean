@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 **Trusted.** The 32-bit encoding of each straight-line instruction of the
 model (`Instr`), of the comparison of a branch and of the return: what the
-printer (`Print.lean`) emits, as `.long <word>` (a little-endian word, the
+printer (`Print.lean`) emits, as its bytes (`wordBytes`: a little-endian word, the
 order in which a little-endian PowerPC fetches an instruction), in place of
 the instruction's text, so that what runs is these words, not the
 assembler's reading of a mnemonic. The branches (`beq`, `bne`, `b`), the
@@ -241,13 +241,10 @@ def Cond.cmpWord : Cond → Nat
 /-- `blr`: "bclr" (XL, 19, 16) with `BO = 20` (branch always), `BI = 0`. -/
 def retWord : Nat := 0x4E800020
 
-/-- `w` as 8 hexadecimal digits, after `0x`. -/
-def hex32 (w : Nat) : String :=
-  let ds := Nat.toDigits 16 (w % 2 ^ 32)
-  "0x" ++ String.ofList (List.replicate (8 - ds.length) '0' ++ ds)
-
-/-- The assembler directive emitting the instruction `w`: `.long`, a 32-bit
-word in the target's (little-endian) byte order. -/
-def longLine (w : Nat) : String := s!".long {hex32 w}"
+/-- The bytes of the instruction `w` in memory: its 32-bit word in the
+target's byte order, little-endian on PPC64LE (as GNU as's `.long` emits
+it). -/
+def wordBytes (w : Nat) : List Nat :=
+  [w % 256, w / 256 % 256, w / 65536 % 256, w / 16777216 % 256]
 
 end VG.PPC64LE

@@ -97,23 +97,28 @@ inductive Line
   | text (s : String)
   | call (name : String)
   | sym (s : String) (part : SymPart) (name : String)
+  /-- An instruction that a printer emits as its machine code: its text
+  (`asm`), which the assembly file has, and the bytes of its code, in the
+  order they are in memory, which `VG.Rust.files` writes (`Rust.template`). -/
+  | code (asm : String) (bytes : List Nat)
   deriving DecidableEq, Repr
 
 structure Printer (M : ISA) where
-  /-- Assembly text for one instruction (may be several lines). -/
-  instr : M.Instr → List String
+  /-- The lines of one instruction (may be several): its text, or its
+  machine code with its text (`Line.code`). -/
+  instr : M.Instr → List Line
   /-- Conditional branch to a label, taken when the condition is true (one or
   more lines, e.g. a comparison and a branch). -/
-  branch : M.Cond → String → List String
+  branch : M.Cond → String → List Line
   /-- Unconditional branch to a label. -/
   jump : String → String
   /-- Return to the caller. -/
-  ret : List String
+  ret : List Line
   /-- The mnemonic of the call instruction whose operand is a function's
   symbol (`ISA.call`), e.g. `call` or `bl`. -/
   call : String
   /-- The lines of an instruction that names a `static` (`Line.sym`); `none`
-  for the others, whose lines are `instr`'s text. -/
+  for the others, whose lines are `instr`'s. -/
   symLines : M.Instr → Option (List Line) := fun _ => none
   /-- The tables of constants an instruction reads by carrying them (x86-64's
   `aluTbl`): each a `static`'s name and its words, which the emitter writes
@@ -159,7 +164,7 @@ def labelNum (n : Nat) : String := s!"2{n}"
 place, the lines of its cold branches (`Code.iteCold`), placed after the
 function's return, and the next unused label number. -/
 def Printer.lower : Code M.Instr M.Cond → Nat → List Line × List Line × Nat
-  | .block is, n => (is.flatMap fun i => (P.symLines i).getD ((P.instr i).map .text), [], n)
+  | .block is, n => (is.flatMap fun i => (P.symLines i).getD (P.instr i), [], n)
   | .seq c₁ c₂, n =>
     let (l₁, k₁, n) := lower c₁ n
     let (l₂, k₂, n) := lower c₂ n
@@ -169,25 +174,24 @@ def Printer.lower : Code M.Instr M.Cond → Nat → List Line × List Line × Na
     let lBack := labelNum (n + 1)
     let (le, ke, n) := lower e (n + 2)
     let (lt, kt, n) := lower t n
-    ((P.branch c (lCold ++ "f")).map .text ++ le ++ [.text (lBack ++ ":")],
+    (P.branch c (lCold ++ "f") ++ le ++ [.text (lBack ++ ":")],
       ke ++ [.text (lCold ++ ":")] ++ lt ++ [.text (P.jump (lBack ++ "b"))] ++ kt, n)
   | .ite c t e, n =>
     let lThen := labelNum n
     let lEnd := labelNum (n + 1)
     let (le, ke, n) := lower e (n + 2)
     let (lt, kt, n) := lower t n
-    ((P.branch c (lThen ++ "f")).map .text ++ le ++ [.text (P.jump (lEnd ++ "f")), .text (lThen ++ ":")] ++
+    (P.branch c (lThen ++ "f") ++ le ++ [.text (P.jump (lEnd ++ "f")), .text (lThen ++ ":")] ++
       lt ++ [.text (lEnd ++ ":")], ke ++ kt, n)
   | .loop body c, n =>
     let lTop := labelNum n
     let (lb, kb, n) := lower body (n + 1)
-    ([.text (lTop ++ ":")] ++ lb ++ (P.branch c (lTop ++ "b")).map .text, kb, n)
+    ([.text (lTop ++ ":")] ++ lb ++ P.branch c (lTop ++ "b"), kb, n)
   | .call name _, n => ([.call name], [], n)
   | .frame i body j, n =>
     let (lb, kb, n) := lower body n
-    ((P.symLines i).getD ((P.instr i).map .text) ++ lb ++
-      (P.symLines j).getD ((P.instr j).map .text), kb, n)
-  | .icall i .., n => ((P.symLines i).getD ((P.instr i).map .text), [], n)
+    ((P.symLines i).getD (P.instr i) ++ lb ++ (P.symLines j).getD (P.instr j), kb, n)
+  | .icall i .., n => ((P.symLines i).getD (P.instr i), [], n)
 
 /-- The tables of constants the instructions of `c` carry (`tables`), but
 not those of the functions it calls, which are emitted with them. -/
@@ -204,7 +208,7 @@ def Printer.codeTables : Code M.Instr M.Cond → List (String × List (BitVec 64
 cold branches' code after it. -/
 def Printer.function (body : Code M.Instr M.Cond) : List Line :=
   let (l, k, _) := P.lower body 0
-  l ++ P.ret.map .text ++ k
+  l ++ P.ret ++ k
 
 /-- What the emitter needs of the target whose ISA is `M`, besides its model
 and calling convention (`Target`): the printer of its code, its Rust `cfg`

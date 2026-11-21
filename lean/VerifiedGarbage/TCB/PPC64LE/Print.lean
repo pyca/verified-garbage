@@ -14,9 +14,10 @@ as the base instructions (`rlwinm`, `rldicl`, `rldicr`) whose operands the
 model's semantics describes, not as extended mnemonics.
 
 Each straight-line instruction, the comparison of each branch and the
-return are printed as their machine code (`Encode.lean`), `.long <word>`,
-each after a line `// <the instruction's text>`, which the emitter writes in the module's assembly file, not in its code
-(`Rust.assembly`): the assembler only copies the words. The
+return are printed as their machine code (`Encode.lean`), a line of the
+bytes of each instruction's word with its text (`Line.code`): the emitter
+writes the bytes in the module's code and the text in its assembly file
+(`Rust.template`, `Rust.assembly`), so the assembler only copies the bytes. The
 branches (`beq`, `bne`, `b`), the call (`bl`) and the address of a static
 (`symLines`) are printed as text, for the assembler and linker to lay out.
 -/
@@ -124,20 +125,21 @@ def Cond.branch : Cond → String
   | .zero .. => "beq"
   | .nonzero .. => "bne"
 
-/-- The lines of an instruction: each of its instructions' text (`asm`) as a
-comment, then that instruction's word (`encode`); its text if it has no
+/-- The lines of an instruction: each of its instructions' text (`asm`) with
+the bytes of that instruction's word (`encode`, `wordBytes`), a `Line.code`;
+its text if it has no
 encoding (`adrSym`, printed by `symLines`, or an instruction that
 `unencodable` reports, which the emitter refuses). -/
-def Instr.code (i : Instr) : List String :=
+def Instr.code (i : Instr) : List Line :=
   match i.encode with
-  | some ws => (i.asm.zip ws).flatMap fun (t, w) => [s!"// {t}", longLine w]
-  | none => i.asm
+  | some ws => (i.asm.zip ws).map fun (t, w) => .code t (wordBytes w)
+  | none => i.asm.map .text
 
 def printer : Printer isa where
   instr := Instr.code
-  branch c l := [s!"// {c.cmp}", longLine c.cmpWord, s!"{c.branch} %cr0, {l}"]
+  branch c l := [.code c.cmp (wordBytes c.cmpWord), .text s!"{c.branch} %cr0, {l}"]
   jump l := s!"b {l}"
-  ret := ["// blr", longLine retWord]
+  ret := [.code "blr" (wordBytes retWord)]
   call := "bl"
   -- Label 2 is private to `adrSym`, the `mflr` after its `bcl`: structured
   -- control flow uses 20, 21, …; repeated sequences use the nearest 2b.

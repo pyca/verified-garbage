@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.RISCV64.Isa
 
 **Trusted.** The 32-bit encoding of each straight-line instruction of the
 model (`Instr`), and of the return: what the printer (`Print.lean`) emits,
-as `.insn 4, <word>`, in place of the instruction's text, so that what runs
+as its bytes (`insnBytes`), in place of the instruction's text, so that what runs
 is these words, not the assembler's reading of a mnemonic. Branches, jumps,
 calls and `lla`, whose bytes depend on where their target is, are still
 printed as text for the assembler and linker to lay out.
@@ -401,21 +401,17 @@ def compress (w : Nat) : Option Nat :=
     if rd == 0 && immI == 0 && rs1 != 0 then some (cr 8 2 rs1 0) else none
   | _, _ => none
 
-/-- `w` as `n` hexadecimal digits, after `0x`. -/
-def hexN (n w : Nat) : String :=
-  let ds := Nat.toDigits 16 (w % 16 ^ n)
-  "0x" ++ String.ofList (List.replicate (n - ds.length) '0' ++ ds)
-
-/-- `w` as 8 hexadecimal digits, after `0x`. -/
-def hex32 (w : Nat) : String := hexN 8 w
-
-/-- The assembler directive emitting the instruction `w` (RISC-V Assembly
-Programmer's Manual, ".insn": `.insn <length>, <value>` emits `value` as an
-instruction of `length` bytes): its compressed encoding (`compress`) if it
-has one, else its 32-bit encoding. -/
-def insnLine (w : Nat) : String :=
+/-- The bytes of the instruction `w` in memory: its compressed encoding's
+16-bit parcel (`compress`) if it has one, else its 32-bit encoding's two,
+each little-endian (The RISC-V Instruction Set Manual, Volume I, "Base
+Instruction-Length Encoding": "Instructions are stored in memory as a
+sequence of 16-bit little-endian parcels, regardless of memory system
+endianness. Parcels forming one instruction are stored at increasing
+halfword addresses, with the lowest-addressed parcel holding the
+lowest-numbered bits in the instruction specification"). -/
+def insnBytes (w : Nat) : List Nat :=
   match compress w with
-  | some h => s!".insn 2, {hexN 4 h}"
-  | none => s!".insn 4, {hex32 w}"
+  | some h => [h % 256, h / 256 % 256]
+  | none => [w % 256, w / 256 % 256, w / 65536 % 256, w / 16777216 % 256]
 
 end VG.RISCV64

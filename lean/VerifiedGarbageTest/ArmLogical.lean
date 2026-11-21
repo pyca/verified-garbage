@@ -56,10 +56,10 @@ def result (i : Instr) (d : Reg := .r0) : Option (BitVec 32) := (exec i s).map (
   (exec i s).map (fun t => (t.n, t.z, t.c, t.v, t.gpr .r1, t.gpr .r2, t.sp)) ==
     some (true, false, true, true, 0x12345678, 0x0f0f0f0f, 0x1000)
 
-#guard printer.instr (.mvn .r0 (.reg .r1)) == ["mvn r0, r1"]
-#guard printer.instr (.mvn .r10 (.shifted .lr .ror 1)) == ["mvn r10, lr, ror #1"]
-#guard printer.instr (.dp .bic .r0 .r1 (.reg .r2)) == ["bic r0, r1, r2"]
-#guard printer.instr (.dp .bic .r0 .r1 (.imm 255)) == ["bic r0, r1, #255"]
+#guard printer.instr (.mvn .r0 (.reg .r1)) == [.text "mvn r0, r1"]
+#guard printer.instr (.mvn .r10 (.shifted .lr .ror 1)) == [.text "mvn r10, lr, ror #1"]
+#guard printer.instr (.dp .bic .r0 .r1 (.reg .r2)) == [.text "bic r0, r1, r2"]
+#guard printer.instr (.dp .bic .r0 .r1 (.imm 255)) == [.text "bic r0, r1, #255"]
 #guard isa.requires (.mvn .r0 (.reg .r1)) == []
 #guard isa.requires (.dp .bic .r0 .r1 (.reg .r2)) == []
 

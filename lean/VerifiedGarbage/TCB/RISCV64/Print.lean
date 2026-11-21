@@ -11,9 +11,10 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 `asm!`/`naked_asm!` on RISC-V.
 
 Each straight-line instruction, and the return, is printed as its machine
-code (`Encode.lean`), one `.insn 4, <word>` per base instruction, each after
-a line `// <the instruction's text>`, which the emitter writes in the module's assembly file, not in its code
-(`Rust.assembly`): the assembler only copies the words. The text
+code (`Encode.lean`), a line of the bytes of each base instruction with its
+text (`Line.code`): the emitter writes the bytes in the module's code and
+the text in its assembly file (`Rust.template`, `Rust.assembly`), so the
+assembler only copies the bytes. The text
 (`Instr.asm`) is the base instruction the model's semantics describes, with
 registers written by their ABI names (`a0`, `sp`, `zero`); a frame of 2048
 bytes or more (`alloc`, `free`) is its two `addi`s (see `push` in
@@ -85,13 +86,13 @@ def Instr.asm : Instr → List String
   | .jalr n => [s!"jalr ra, 0({n.name})"]
 
 /-- The lines of an instruction: each of its base instructions' text
-(`asm`) as a comment, then that instruction's word (`encode`); its text if
-it has no encoding (`lla`, printed by `symLines`, or an instruction that
+(`asm`) with the bytes of that instruction's word (`encode`, `insnBytes`),
+a `Line.code`; its text if it has no encoding (`lla`, printed by `symLines`, or an instruction that
 `unencodable` reports, which the emitter refuses). -/
-def Instr.code (i : Instr) : List String :=
+def Instr.code (i : Instr) : List Line :=
   match i.encode with
-  | some ws => (i.asm.zip ws).flatMap fun (t, w) => [s!"// {t}", insnLine w]
-  | none => i.asm
+  | some ws => (i.asm.zip ws).map fun (t, w) => .code t (insnBytes w)
+  | none => i.asm.map .text
 
 /-- Why `i` has no encoding (`encode`): an operand that does not fit its
 field; `none` for `lla`, which is text. -/
@@ -110,9 +111,9 @@ def Cond.asm (c : Cond) (l : String) : String :=
 
 def printer : Printer isa where
   instr := Instr.code
-  branch c l := [c.asm l]
+  branch c l := [.text (c.asm l)]
   jump l := s!"j {l}"
-  ret := ["// ret", insnLine retWord]
+  ret := [.code "ret" (insnBytes retWord)]
   call := "call"
   symLines
     | .lla d name => some [.sym s!"lla {d.name}, " .bare name]

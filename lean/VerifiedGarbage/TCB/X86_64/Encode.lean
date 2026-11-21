@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 
 **Trusted.** The bytes of each straight-line instruction of the model
 (`Instr`), and of the return: what the printer (`Print.lean`) emits, as
-`.byte <bytes>`, in place of the instruction's text, so that what runs is
+as bytes (`Line.code`), in place of the instruction's text, so that what runs is
 these bytes, not the assembler's reading of a mnemonic. The branches (`jcc`,
 `jmp`), the call and the address of a static (`leaSym`), whose bytes depend
 on where their target is, are still printed as text for the assembler and
@@ -683,14 +683,5 @@ def Instr.encode : Instr → Option (List (List Nat))
 
 /-- `ret` ("RET", `C3`). -/
 def retBytes : List Nat := [0xC3]
-
-/-- `b` as two hexadecimal digits, after `0x`. -/
-def hex8 (b : Nat) : String :=
-  ("0x".push (Nat.digitChar (b % 256 / 16))).push (Nat.digitChar (b % 16))
-
-/-- The assembler directive emitting the bytes `bs`: `.byte` of each, as
-two hexadecimal digits, separated by commas alone (the form the emitter
-joins and packs, `Rust.pushLine`). -/
-def byteLine (bs : List Nat) : String := ".byte " ++ ",".intercalate (bs.map hex8)
 
 end VG.X86_64
