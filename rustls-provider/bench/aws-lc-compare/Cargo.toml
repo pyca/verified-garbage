@@ -1,0 +1,19 @@
+[package]
+name = "aws-lc-compare"
+version = "0.0.0"
+edition = "2024"
+description = "Times verified-garbage's primitives against aws-lc-rs's, through each library's own API"
+license = "Apache-2.0 OR BSD-3-Clause"
+publish = false
+
+# A package of its own, so that nothing else builds aws-lc.
+[workspace]
+
+[dependencies]
+asn1 = "0.24"
+aws-lc-rs = { version = "1.18", features = ["prebuilt-nasm"] }
+verified-garbage = { path = "../../..", features = ["cpu-features-env"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
