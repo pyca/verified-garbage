@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Derive
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Generate
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Generation
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.Params
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.ProbablePrime
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.PrevalidatedSign
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.RandomSign
@@ -53,5 +56,32 @@ def validatePrivateKey : Prog isa :=
 def verifyPrevalidated : Prog isa :=
   scrubAll 32 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩
     (Impl.Dsa.PPC64LE.Prevalidated.verify)
+
+/-- The search's geometry for `(pLen, qLen)`, hashing with `G`, testing with
+the Miller-Rabin round `round` (`vg_miller_rabin_round<suffix>`), checking
+with `vg_dsa_check_parameters`. -/
+def searchGeo (pLen qLen : Nat) (G : Impl.Dsa.PPC64LE.Generation.Hash) (suffix : String) (round : Prog isa) :
+    Impl.Dsa.PPC64LE.Generation.Geo where
+  pLen := pLen
+  qLen := qLen
+  G := G
+  qCand := 0
+  qName := s!"vg_dsa_probable_prime_{(Impl.Dsa.PPC64LE.ProbablePrime.layout (8 * qLen)).bits}" ++ suffix
+  qCode := Impl.Dsa.PPC64LE.ProbablePrime.code (8 * qLen) ("vg_miller_rabin_round" ++ suffix) round
+  pCand := 0
+  pName := s!"vg_dsa_probable_prime_{(Impl.Dsa.PPC64LE.ProbablePrime.layout (8 * pLen)).bits}" ++ suffix
+  pCode := Impl.Dsa.PPC64LE.ProbablePrime.code (8 * pLen) ("vg_miller_rabin_round" ++ suffix) round
+  checkName := "vg_dsa_check_parameters"
+  checkCode := Impl.Dsa.PPC64LE.Params.checkParameters
+
+/-- `vg_dsa_parameter_search<suffix>`, as emitted, with the Miller-Rabin
+round `round`: the search for (1024, 160), (2048, 224) and (2048, 256)
+parameters, then the clearing of the 176 bytes of stack its frames use. -/
+def parameterSearch (suffix : String) (round : Prog isa) : Prog isa :=
+  scrubAll 32 176 .all
+    (Impl.Dsa.PPC64LE.Generation.code
+      (searchGeo 128 20 Impl.Dsa.PPC64LE.Generation.sha1 suffix round)
+      (searchGeo 256 32 Impl.Dsa.PPC64LE.Generation.sha256 suffix round)
+      (searchGeo 384 32 Impl.Dsa.PPC64LE.Generation.sha256 suffix round))
 
 end VG.Impl.Dsa.PPC64LE.Fn

@@ -231,7 +231,7 @@ theorem verifyPrevalidated_scrubbed :
     (verifyPrevalidatedOut _)
     (by dsimp only; lit_decide)
 
-/-- What `scrubOf` needs of the parameter search with each Miller-Rabin
+/-- What `verifiedScrubbedAll` needs of the parameter search with each Miller-Rabin
 round: evaluated here. -/
 theorem parameterSearchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
@@ -242,12 +242,14 @@ theorem parameterSearchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
         (Spec.Dsa.parameterSearchSig.retBits 64) Impl.Scrub.PPC64LE.Clear.all) = true := by lit_decide
   exact List.all_eq_true.mp h v hv
 
-/-- `Spec.Dsa.parameterSearchApi`, over the Miller-Rabin round `v`. -/
-def parameterSearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+/-- `vg_dsa_parameter_search` as emitted (`Impl.Dsa.PPC64LE.Fn.parameterSearch`),
+with the Miller-Rabin round `v`, meets its contract in constant time and
+returns without secret residue. -/
+theorem parameterSearch_scrubbed (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
-    Registration Spec.Dsa.parameterSearchApi PPC64LE.target :=
-  scrubOf {
-      suffix := v.suffix
+    VerifiedScrubbed PPC64LE.target (Impl.Dsa.PPC64LE.Fn.parameterSearch v.suffix v.code)
+      (Spec.Dsa.parameterSearchContract (PPC64LE.abi.withConsts Impl.RsaKeyGen.TrialTable32.consts) 176) 32 :=
+  verifiedScrubbedAll (api := Spec.Dsa.parameterSearchApi) {
       code := Impl.Dsa.PPC64LE.Generation.code (Gen.gen1 v) (Gen.gen2 v) (Gen.gen3 v)
       verified := Gen.search_params v }
     176 Impl.Scrub.PPC64LE.Clear.all
