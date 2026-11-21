@@ -11,6 +11,14 @@ from unittest import mock
 
 import lean_shards as shards
 
+# A library of its own for a module that only `VerifiedGarbage` had.
+NEW_LIBRARY = """
+[[lean_lib]]
+name = "NativeOther"
+globs = ["VerifiedGarbage.Other"]
+precompileModules = true
+"""
+
 LAKEFILE = """name = "VerifiedGarbage"
 moreLeanArgs = ["-j2"]
 
@@ -35,22 +43,42 @@ class LakefileInputs(unittest.TestCase):
         self.assertEqual(shards.lakefile_inputs(other), shards.lakefile_inputs(LAKEFILE))
 
     def test_module_lists_are_not_settings(self):
-        settings, libraries = shards.lakefile_inputs(LAKEFILE)
+        package, libraries, settings, _ = shards.lakefile_inputs(LAKEFILE)
         added = LAKEFILE.replace('"VerifiedGarbage.Spec.A"]', '"VerifiedGarbage.Spec.A", "VerifiedGarbage.Spec.B"]')
-        settings2, libraries2 = shards.lakefile_inputs(added)
-        self.assertEqual(settings2, settings)
+        package2, libraries2, settings2, _ = shards.lakefile_inputs(added)
+        self.assertEqual((package2, settings2), (package, settings))
         self.assertEqual(libraries["NativeSpec"], ["globs:VerifiedGarbage.Spec.A"])
         self.assertEqual(libraries2["NativeSpec"], ["globs:VerifiedGarbage.Spec.A", "globs:VerifiedGarbage.Spec.B"])
 
-    def test_settings(self):
-        settings = shards.lakefile_inputs(LAKEFILE)[0]
+    def test_package_settings(self):
+        package, _, settings, _ = shards.lakefile_inputs(LAKEFILE)
+        changed = shards.lakefile_inputs(LAKEFILE.replace('moreLeanArgs = ["-j2"]', 'moreLeanArgs = ["-j4"]'))
+        self.assertNotEqual(changed[0], package)
+        self.assertEqual(changed[2], settings)
+
+    def test_library_settings_are_each_library_s(self):
+        package, _, settings, _ = shards.lakefile_inputs(LAKEFILE)
+        self.assertEqual([n for n, _ in settings], ["VerifiedGarbage", "NativeSpec"])
         for old, new in [
-            ('moreLeanArgs = ["-j2"]', 'moreLeanArgs = ["-j4"]'),
             ("precompileModules = true", "precompileModules = false"),
             ('name = "NativeSpec"', 'name = "NativeSpecs"'),
         ]:
             with self.subTest(new=new):
-                self.assertNotEqual(shards.lakefile_inputs(LAKEFILE.replace(old, new))[0], settings)
+                changed = shards.lakefile_inputs(LAKEFILE.replace(old, new))
+                self.assertEqual(changed[0], package)
+                self.assertEqual(changed[2][0], settings[0])
+                self.assertNotEqual(changed[2][1], settings[1])
+
+    def test_a_new_library_changes_no_other_setting(self):
+        package, _, settings, _ = shards.lakefile_inputs(LAKEFILE)
+        changed = shards.lakefile_inputs(LAKEFILE + NEW_LIBRARY)
+        self.assertEqual(changed[0], package)
+        self.assertEqual(changed[2][:2], settings)
+
+    def test_default_targets_are_not_package_settings(self):
+        targets = LAKEFILE.replace('moreLeanArgs = ["-j2"]\n', 'moreLeanArgs = ["-j2"]\ndefaultTargets = ["NativeSpec"]\n')
+        self.assertEqual(shards.lakefile_inputs(targets)[:3], shards.lakefile_inputs(LAKEFILE)[:3])
+        self.assertEqual(shards.lakefile_inputs(targets)[3], ["NativeSpec"])
 
 
 class Matches(unittest.TestCase):
@@ -391,6 +419,30 @@ class TimingHistory(unittest.TestCase):
         self.assertNotIn("NativeTactics", parsed["components"])
 
 
+class LibraryTimings(Project):
+    """The manifest keeps the times of modules that a lakefile change does
+    not rebuild."""
+
+    def test_a_library_s_settings_reset_only_its_modules_timings(self):
+        sources = self.manifest["sources"]
+        old = dict(self.manifest, times=dict.fromkeys(sources, 10.0))
+        f = self.lean / "lakefile.toml"
+        f.write_text(f.read_text().replace("precompileModules = true\n", "precompileModules = true\n" + NEW_LIBRARY))
+        closure = shards.closures(shards.imports(shards.modules()))
+        times, _ = shards.update_timings(old, [], sources, shards.inputs(), closure)
+        self.assertEqual(sorted(sources.keys() - times.keys()), ["VerifiedGarbage.Other"])
+        f.write_text(f.read_text().replace("precompileModules = true\n" + NEW_LIBRARY, 'precompileModules = false\n' + NEW_LIBRARY))
+        times, _ = shards.update_timings(old, [], sources, shards.inputs(), closure)
+        self.assertEqual(sorted(sources.keys() - times.keys()), ["VerifiedGarbage.Other", "VerifiedGarbage.Spec.A"])
+
+    def test_the_package_s_settings_reset_every_timing(self):
+        old = dict(self.manifest, times=dict.fromkeys(self.manifest["sources"], 10.0))
+        f = self.lean / "lakefile.toml"
+        f.write_text(f.read_text().replace('moreLeanArgs = ["-j2"]', 'moreLeanArgs = ["-j4"]'))
+        times, _ = shards.update_timings(old, [], self.manifest["sources"], shards.inputs())
+        self.assertEqual(times, {})
+
+
 class TimingEstimates(unittest.TestCase):
     def test_unknown_uses_size_matched_peers_in_nearest_namespace(self):
         peers = {f"VG.Proof.Family.M{i}": float(i + 1) for i in range(8)}
@@ -543,6 +595,60 @@ class Plan(Project):
 
     def test_a_setting_rebuilds_everything(self):
         self.edit('moreLeanArgs = ["-j2"]', 'moreLeanArgs = ["-j4"]')
+        self.assertEqual(self.stale(), 5)
+
+    def test_a_library_setting_rebuilds_its_modules(self):
+        # NativeSpec's Spec.A, and what imports it (Proof and the root).
+        self.edit("precompileModules = true", "precompileModules = false")
+        self.assertEqual(sorted(shards.plan(self.manifest)["edited"]), [])
+        self.assertEqual(self.stale(), 3)
+
+    def test_a_new_library_rebuilds_its_modules(self):
+        # Other, which nothing imports, moves to a library of its own.
+        self.edit("precompileModules = true\n", "precompileModules = true\n" + NEW_LIBRARY)
+        self.assertEqual(self.stale(), 1)
+
+    def default_targets(self, targets):
+        f = self.lean / "lakefile.toml"
+        text = "\n".join(l for l in f.read_text().splitlines() if not l.startswith("defaultTargets"))
+        f.write_text(text.replace('moreLeanArgs = ["-j2"]\n', f"moreLeanArgs = [\"-j2\"]\ndefaultTargets = {json.dumps(targets)}\n"))
+
+    def test_a_new_default_target_rebuilds_its_modules(self):
+        # Which library builds a module two list follows `defaultTargets`.
+        self.default_targets(["NativeSpec"])
+        self.assertEqual(self.stale(), 3)
+
+    def test_default_targets_in_another_order_rebuild_everything(self):
+        self.default_targets(["NativeSpec", "VerifiedGarbage"])
+        self.manifest["inputs"] = shards.inputs()
+        self.assertEqual(self.stale(), 0)
+        self.default_targets(["VerifiedGarbage", "NativeSpec"])
+        self.assertEqual(self.stale(), 5)
+
+    def test_reordered_libraries_rebuild_everything(self):
+        # Which library builds a module two list depends on their order.
+        f = self.lean / "lakefile.toml"
+        head, first, second = f.read_text().split("[[lean_lib]]")
+        f.write_text(head + "[[lean_lib]]" + second + "\n[[lean_lib]]" + first)
+        self.assertEqual(self.stale(), 5)
+
+    def legacy_manifest(self):
+        """The manifest's inputs as recorded before libraries' settings had
+        their own hash."""
+        inputs = {k: v for k, v in self.manifest["inputs"].items()
+                  if k not in ("lakefile.toml package", "library settings")}
+        inputs["lakefile.toml settings"] = shards.legacy_settings((self.lean / "lakefile.toml").read_text())
+        self.manifest["inputs"] = inputs
+
+    def test_a_legacy_manifest_of_the_same_lakefile(self):
+        self.legacy_manifest()
+        self.assertEqual(self.stale(), 0)
+        self.edit('"VerifiedGarbage.Spec.A"]', '"VerifiedGarbage.Spec.A", "VerifiedGarbage.Spec.B"]')
+        self.assertEqual(self.stale(), 3)
+
+    def test_a_legacy_manifest_of_other_settings_rebuilds_everything(self):
+        self.legacy_manifest()
+        self.edit("precompileModules = true", "precompileModules = false")
         self.assertEqual(self.stale(), 5)
 
     def test_toolchain_rebuilds_everything(self):

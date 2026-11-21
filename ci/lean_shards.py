@@ -31,12 +31,13 @@ a shard with a long chain takes other work only until it would finish after
 the chain, and a sink goes where much of what it imports is built already,
 rather than building it again elsewhere, unless that shard is the slower by
 more than the work it saves. A change to the inputs (the toolchain, the
-dependencies or the lakefile's settings) rebuilds every module, but not one
-that only adds a module to a library or removes one (the lakefile's `globs`
-and `roots`): that rebuilds just the modules it moves (and, through their
-imports, what imports them). Each module's outputs belong to one shard (the
-first that builds it), so the shards' outputs together are the whole build. A plan
-is only an estimate: whatever the shards leave unbuilt, the job that
+dependencies or the package's settings in the lakefile) rebuilds every
+module. A change to one library's settings rebuilds only its modules, and
+adding a library or a module to one, or removing one (the lakefile's `globs`
+and `roots`), just the modules it moves (`input_changes`); through their
+imports, what imports them rebuilds too. Each module's outputs belong to one
+shard (the first that builds it), so the shards' outputs together are the
+whole build. A plan is only an estimate: whatever the shards leave unbuilt, the job that
 assembles their outputs (the last shard to finish, normally) builds.
 
 For each useful count up to MAX_SHARDS (one whose shards could finish
@@ -169,24 +170,97 @@ def digest(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def lakefile_inputs(text: str) -> tuple[str, dict[str, list[str]]]:
-    """The hash of the lakefile but for its libraries' module lists, and
-    each library's entries of those lists (`globs:X`, `roots:X`)."""
+def _hash(value) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+
+def lakefile_inputs(text: str) -> tuple[str, dict[str, list[str]], list[list[str]], list[str]]:
+    """The hash of the package's settings (the lakefile but for its
+    libraries and `defaultTargets`), each library's entries of its module
+    lists (`globs:X`, `roots:X`), each library's name and the hash of its
+    other settings, in the lakefile's order, and `defaultTargets`. Both
+    orders say which library builds a module that several list (see the
+    lakefile)."""
     config = tomllib.loads(text)
-    libraries = {}
-    for lib in config.get("lean_lib", []):
+    libraries, settings = {}, []
+    for lib in config.pop("lean_lib", []):
         libraries[lib["name"]] = sorted(f"{k}:{e}" for k in MODULE_LISTS for e in lib.get(k, []))
+        settings.append([lib["name"], _hash({k: v for k, v in lib.items() if k not in MODULE_LISTS})])
+    targets = config.pop("defaultTargets", [])
+    return _hash(config), libraries, settings, targets
+
+
+def legacy_settings(text: str) -> str:
+    """The hash manifests recorded before libraries' settings had their own
+    (`lakefile.toml settings`): the lakefile's but for the module lists."""
+    config = tomllib.loads(text)
+    for lib in config.get("lean_lib", []):
         for k in MODULE_LISTS:
             lib.pop(k, None)
-    settings = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()
-    return settings, libraries
+    return _hash(config)
 
 
 def inputs() -> dict:
     """What the manifest records of the build's inputs."""
-    settings, libraries = lakefile_inputs((LEAN / "lakefile.toml").read_text())
+    package, libraries, settings, targets = lakefile_inputs((LEAN / "lakefile.toml").read_text())
     files = {f: digest(LEAN / f) for f in INPUTS if f != "lakefile.toml"}
-    return {**files, "lakefile.toml settings": settings, "libraries": libraries}
+    return {**files, "lakefile.toml package": package, "libraries": libraries,
+            "library settings": settings, "default targets": targets}
+
+
+# The inputs that `input_changes` compares library by library.
+PER_LIBRARY = ("libraries", "library settings", "default targets")
+
+
+def _reordered(old: list[str], new: list[str]) -> bool:
+    """Whether the names that both lists have are in another order."""
+    return [n for n in old if n in new] != [n for n in new if n in old]
+
+
+def input_changes(then: dict, now: dict, mods, closure=None, config=None) -> set[str]:
+    """The modules (of `mods`) that the change of the build's inputs from
+    `then` to `now` (`inputs()`) rebuilds whatever their sources: every
+    module when the toolchain, the dependencies or the package's settings
+    changed, or when libraries (or default targets) that both list changed
+    order; else those a library gained or lost (`libraries`), and every
+    module of a library whose settings changed, that is new, or that became
+    or stopped being a default target. `closure` (`closures`) is needed
+    when libraries changed: for roots, and for the members of libraries
+    whose settings changed, which `config` (the lakefile, read if not
+    given) lists."""
+    if "library settings" in now and "library settings" not in then:
+        # A manifest from before libraries' settings had their own hash,
+        # which covered them all: if it matches, none changed.
+        legacy = then.get("lakefile.toml settings")
+        if legacy is None or legacy != legacy_settings((LEAN / "lakefile.toml").read_text()):
+            return set(mods)
+        then = {**{k: v for k, v in then.items() if k != "lakefile.toml settings"},
+                **{k: now.get(k) for k in ("lakefile.toml package", "library settings", "default targets")}}
+    if ({k: v for k, v in then.items() if k not in PER_LIBRARY}
+            != {k: v for k, v in now.items() if k not in PER_LIBRARY}):
+        return set(mods)
+    old_settings = dict(then.get("library settings", []))
+    new_settings = dict(now.get("library settings", []))
+    old_targets, new_targets = then.get("default targets", []), now.get("default targets", [])
+    if (_reordered([n for n, _ in then.get("library settings", [])], [n for n, _ in now.get("library settings", [])])
+            or _reordered(old_targets, new_targets)):
+        return set(mods)
+    before, after = then.get("libraries", {}), now.get("libraries", {})
+    moved = {entry for lib in before.keys() | after.keys()
+             for entry in set(before.get(lib, [])) ^ set(after.get(lib, []))}
+    altered = ({n for n, h in new_settings.items() if old_settings.get(n) != h}
+               | (set(old_targets) ^ set(new_targets)))
+    if not moved and not altered:
+        return set()
+    closure = closure or {}
+    changed = {m for m in mods for entry in moved if matches(entry, m, closure)}
+    if altered:
+        if config is None:
+            config = tomllib.loads((LEAN / "lakefile.toml").read_text())
+        for lib in config.get("lean_lib", []):
+            if lib["name"] in altered:
+                changed |= library_members(lib, closure) & set(mods)
+    return changed
 
 
 def precompiled_libraries(closure):
@@ -990,18 +1064,12 @@ def update_timings(old, observations, sources, build_inputs, closure=None):
     and toolchain/options never inherit measurements of the previous build.
     Old flat timing files and manifests remain readable during migration.
     """
-    same_inputs = ({k: v for k, v in old.get("inputs", {}).items() if k != "libraries"}
-                   == {k: v for k, v in build_inputs.items() if k != "libraries"})
-    before = old.get("inputs", {}).get("libraries", {})
-    after = build_inputs.get("libraries", {})
-    moved = {entry for lib in before.keys() | after.keys()
-             for entry in set(before.get(lib, [])) ^ set(after.get(lib, []))}
+    rebuilt = input_changes(old.get("inputs", {}), build_inputs, sources, closure)
     old_times = old.get("times", {})
     histories = {}
     times = {}
     for m, source in sources.items():
-        if (same_inputs and old.get("sources", {}).get(m) == source
-                and not any(matches(entry, m, closure or {}) for entry in moved)):
+        if old.get("sources", {}).get(m) == source and m not in rebuilt:
             if m in old_times:
                 times[m] = old_times[m]
             if m in old.get("timing_history", {}):
@@ -1227,14 +1295,7 @@ def plan(manifest: dict, diagnostics: dict | None = None) -> dict:
                                 "module_work_s": 0.0, "duplicate_work_s": 0.0}})
         return {"stale": 0, "work": 0, "loads": [], "targets": [], "owner": {}, "edited": []}
     closure = closures(imps)
-    if {k: v for k, v in then.items() if k != "libraries"} == {k: v for k, v in now.items() if k != "libraries"}:
-        changed = {m for m in mods if sources.get(m) != hashes[m]}
-        # Modules a library gained or lost.
-        old, new = then.get("libraries", {}), now["libraries"]
-        moved = {(lib, e) for lib in old.keys() | new.keys() for e in set(old.get(lib, [])) ^ set(new.get(lib, []))}
-        changed |= {m for m in mods for _, e in moved if matches(e, m, closure)}
-    else:
-        changed = set(mods)
+    changed = {m for m in mods if sources.get(m) != hashes[m]} | input_changes(then, now, mods, closure)
     libraries = precompiled_libraries(closure)
     trace_modules = native_trace_modules(closure)
     if changed == set(imps):
@@ -1376,8 +1437,8 @@ def main(args: list[str]) -> int:
         sources = {m: digest(f) for m, f in mods.items()}
         build_inputs = inputs()
         old = read_json(args[1])
-        closure = (closures(imports(mods)) if old.get("inputs", {}).get("libraries", {})
-                   != build_inputs.get("libraries", {}) else None)
+        closure = (closures(imports(mods)) if any(old.get("inputs", {}).get(k) != build_inputs.get(k)
+                                                  for k in PER_LIBRARY) else None)
         times, history = update_timings(old, [read_json(t) for t in args[2:]],
                                         sources, build_inputs, closure)
         print(json.dumps({"inputs": build_inputs, "sources": sources,
