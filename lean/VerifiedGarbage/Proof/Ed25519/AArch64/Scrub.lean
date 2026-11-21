@@ -16,7 +16,7 @@ read the memory on return only within their outputs, and that of
 `vg_ed25519_verify` not at all (`Scrub.ScrubAllOk`): each implementation,
 generic over the SHA-512 implementation it calls, returns with every register
 it may leave secret cleared and its whole stack zeroed
-(`Scrub.withScrubAll`).
+(`Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section

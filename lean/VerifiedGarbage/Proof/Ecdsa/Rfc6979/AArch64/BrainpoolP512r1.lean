@@ -89,7 +89,7 @@ theorem brainpoolp512r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.cur
 /-! ## What the scrubbed functions clear
 
 The registers the tails of `vg_ecdsa_brainpoolp512r1_sign` and `vg_ecdsa_brainpoolp512r1_verify`
-clear, and what `Scrub.scrubAllOf` needs of their code
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
 (`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 

@@ -84,7 +84,7 @@ theorem p521T_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.
 /-! ## What the scrubbed functions clear
 
 The registers the tails of `vg_ecdsa_p521_sign` and `vg_ecdsa_p521_verify`
-clear, and what `Scrub.scrubAllOf` needs of their code
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
 (`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 

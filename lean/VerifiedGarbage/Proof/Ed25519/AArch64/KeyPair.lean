@@ -1013,7 +1013,7 @@ variable (v : Proof.Sha512.AArch64.Compress)
 abbrev dgRaw : Prog isa :=
   Proof.Sha512.AArch64.oneShotWith (Impl.MdStream.AArch64.out64 8) Spec.Sha512.H0_512 v.suffix v.code
 
-/-- `vg_sha512_digest` as it is emitted (`AArch64.Scrub.withScrubAll`): the
+/-- `vg_sha512_digest` as it is emitted (`Impl.Scrub.AArch64.scrubAll`): the
 digest, then the registers it may write cleared and its frame zeroed. -/
 abbrev dgCode : Prog isa :=
   VG.Impl.Scrub.AArch64.scrubAll Proof.Sha512.AArch64.OneShot.stack 0

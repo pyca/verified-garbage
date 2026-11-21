@@ -14,7 +14,7 @@ The postcondition of `vg_x448_base` reads the memory on return only within
 `out` (`Scrub.ScrubAllOk`, as x86-64's `baseOut` in
 `Proof/X448/X86_64/Scrub.lean` proves it): its implementation, which has no
 frames, returns with every register it may leave secret cleared
-(`Scrub.withScrubAll`).
+(`Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section

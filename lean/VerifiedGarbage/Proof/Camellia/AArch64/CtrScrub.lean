@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.AesCbc.Wipe
 The postconditions of `vg_camellia_ctr` and `vg_camellia_ctr_final` read the
 memory on return only within the counter block and the data
 (`Scrub.ScrubAllOk`): each returns with every register it may leave
-secret cleared, and its whole stack zeroed (`Scrub.withScrubAll`), among
+secret cleared, and its whole stack zeroed (`Scrub.verifiedScrubbedAll`), among
 which the frame of `vg_camellia_ctr`'s working space, which no longer zeroes
 itself.
 -/

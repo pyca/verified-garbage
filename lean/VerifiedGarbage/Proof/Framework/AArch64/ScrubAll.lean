@@ -32,7 +32,7 @@ the code may change outside the buffers is within those `W` bytes
 (`Exec.frameSp`), which the clearing zeroes, and the two runs end with the
 same unknowns, since their traces are the same (`Exec.unknowns_agree`). So it
 serves code generic over the implementations of the functions it calls,
-whose code is not known, as x86-64's `X86_64.Scrub.withScrubAll` does.
+whose code is not known.
 
 An `alloc` takes less than 4096 bytes, so `scrubAll` zeroes less than 4096;
 `scrubAllL` zeroes up to 8160 in two frames, which end as one would
@@ -1291,91 +1291,9 @@ theorem tablesCall_syms {api : Api} {r : Unscrubbed api target} (h : tablesCall 
   simp only [decide_eq_true_eq] at this
   exact tables_pub_syms (contract_pub hp) n this
 
-theorem all_true : ∀ c : Prog isa, c.all (fun _ => true) = true
-  | .block is => by simp [Code.all]
-  | .seq a b => by simp [Code.all, all_true a, all_true b]
-  | .ite _ t e => by simp [Code.all, all_true t, all_true e]
-  | .loop b _ => by simp [Code.all, all_true b]
-  | .call _ b => by simp [Code.all, all_true b]
-  | .frame _ b _ => by simp [Code.all, all_true b]
-  | .icall _ _ b n => by simp [Code.all, all_true b, all_true n]
-
-theorem all_spSafe (c : Prog isa) : c.all (fun i => !isa.writesSp i) = true := by
-  simpa [isa] using all_true c
-
 /-- The result's bits of `r`'s function. -/
 abbrev retBitsOf {api : Api} (r : Unscrubbed api target) : Nat :=
   api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
-
-/-- `r`, its code run by `scrubAll` over its whole stack (`r.stack` bytes;
-by `scrubAllL` for 4096 bytes or more),
-returning without secret residue, if its side conditions hold (checked when
-the registration is evaluated); otherwise `r` itself, which then has no
-proof (`Verification.unscrubbed`), as the emitter allows only of what
-`ci/residue_allowlist.txt` lists. For a caller generic over the
-implementations of the functions it calls, whose code the residue analysis
-does not follow, as x86-64's `X86_64.Scrub.withScrubAll`. -/
-def withScrubAll {api : Api} (r : Unscrubbed api target) (hok : ScrubAllOk r.contract r.stack (retBitsOf r)) :
-    Registration api target :=
-  if h : (0 < r.stack ∧ r.stack < 4096 ∧ r.stack % 16 = 0) ∧ 16 * r.code.aarch64Depth ≤ r.stack ∧
-      r.code.all (fun i => !i.writesDit) = true ∧ tablesCall r.code r.tables = true ∧
-      (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
-    { suffix := r.suffix
-      tables := r.tables
-      code := scrubAll r.stack (retBitsOf r) (Clear.of r.code) r.code
-      contract := r.contract
-      verified := .scrubbed <| .abi ⟨Verified.scrubAll (Clear.of_wf _) r.verified h.1 h.2.2.2.2.1 hok,
-        noResidue_scrubAll (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1 (tablesCall_syms h.2.2.2.1)
-        h.2.2.2.2.1⟩
-      consts := r.consts
-      stack := r.stack
-      ofApi := r.ofApi
-      ofSig := r.ofSig
-      spSafe := all_spSafe _
-      written := r.written
-      writtenOk := by rw [h.2.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
-      extra := r.extra
-      vendor := r.vendor
-      notWith := r.notWith }
-  else if h : (4080 < r.stack ∧ r.stack < 8176 ∧ r.stack % 16 = 0) ∧ 16 * r.code.aarch64Depth ≤ r.stack ∧
-      r.code.all (fun i => !i.writesDit) = true ∧ tablesCall r.code r.tables = true ∧
-      (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
-    { suffix := r.suffix
-      tables := r.tables
-      code := scrubAllL r.stack (retBitsOf r) (Clear.of r.code) r.code
-      contract := r.contract
-      verified := .scrubbed <| .abi ⟨Verified.scrubAllL (Clear.of_wf _) r.verified h.1 h.2.2.2.2.1 hok,
-        noResidue_scrubAllL (Clear.of_wf _) (Clear.of_keeps _) r.verified h.1 hok.sp h.2.1 h.2.2.1
-        (tablesCall_syms h.2.2.2.1) h.2.2.2.2.1⟩
-      consts := r.consts
-      stack := r.stack
-      ofApi := r.ofApi
-      ofSig := r.ofSig
-      spSafe := all_spSafe _
-      written := r.written
-      writtenOk := by rw [h.2.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
-      extra := r.extra
-      vendor := r.vendor
-      notWith := r.notWith }
-  else if h : r.stack = 0 ∧ r.code.aarch64Depth = 0 ∧ r.code.all (fun i => !i.writesDit) = true ∧
-      (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) ∧ r.written = [] then
-    { suffix := r.suffix
-      tables := r.tables
-      code := scrubAll 0 (retBitsOf r) (Clear.of r.code) r.code
-      contract := r.contract
-      verified := .scrubbed <| .abi ⟨Verified.scrubAll0 (Clear.of_wf _) r.verified h.2.2.2.1 (h.1 ▸ hok),
-        noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) r.verified h.2.1 h.2.2.1 h.2.2.2.1⟩
-      consts := r.consts
-      stack := r.stack
-      ofApi := r.ofApi
-      ofSig := r.ofSig
-      spSafe := all_spSafe _
-      written := r.written
-      writtenOk := by rw [h.2.2.2.2]; exact fun _ _ _ _ _ => True.intro
-      extra := r.extra
-      vendor := r.vendor
-      notWith := r.notWith }
-  else r.registration
 
 /-! ## A choice on entry between two functions without residue -/
 

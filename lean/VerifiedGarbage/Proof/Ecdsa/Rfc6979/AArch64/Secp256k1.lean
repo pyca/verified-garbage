@@ -89,7 +89,7 @@ theorem secp256k1T_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : We
 /-! ## What the scrubbed functions clear
 
 The registers the tails of `vg_ecdsa_secp256k1_sign` and `vg_ecdsa_secp256k1_verify`
-clear, and what `Scrub.scrubAllOf` needs of their code
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
 (`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 

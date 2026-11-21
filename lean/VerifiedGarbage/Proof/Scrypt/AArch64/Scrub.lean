@@ -13,7 +13,7 @@ The postcondition of `vg_scrypt` reads the memory on return only within
 `Proof/Scrypt/X86_64/Whole/Verified.lean` proves it): each implementation,
 generic over the SHA-256 implementation it calls, returns with every register
 it may leave secret cleared and its whole stack zeroed
-(`Scrub.withScrubAll`).
+(`Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section

@@ -17,7 +17,7 @@ The postconditions of `vg_cmac_triple_des_stream_init`,
 on return only within the 416-byte state and `out` (`Scrub.ScrubAllOk`,
 as x86-64's `Proof/CmacTripleDes/X86_64/Scrub.lean` proves them): each
 returns with every register it may leave secret cleared and its whole stack
-zeroed (`Scrub.withScrubAll`).
+zeroed (`Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section

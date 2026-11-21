@@ -645,8 +645,8 @@ end
 its stack of 3456 bytes (`nativeContract`), whose postcondition reads the
 memory on return only within `out` (`EcKey.AArch64.Scrub.exchangeOkW`):
 returns with every register it may leave secret cleared and its whole stack
-zeroed (`Scrub.withScrubAll`). The registration is built here, with its
-stack stated, for the registration file to bind.
+zeroed (`Scrub.verifiedScrubbedAll`): `exchange_scrubbed`, the theorem the
+registration file binds.
 -/
 
 @[expose] public section

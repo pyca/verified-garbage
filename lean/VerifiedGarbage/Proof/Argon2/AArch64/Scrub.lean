@@ -13,7 +13,7 @@ The postcondition of `vg_argon2` reads the memory on return only within
 `out` (`Scrub.ScrubAllOk`, as x86-64's `Proof/Argon2/X86_64/Scrub.lean`
 proves it): each implementation, generic over the BLAKE2b implementation it
 calls, returns with every register it may leave secret cleared and its whole
-stack zeroed (`Scrub.withScrubAll`).
+stack zeroed (`Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section

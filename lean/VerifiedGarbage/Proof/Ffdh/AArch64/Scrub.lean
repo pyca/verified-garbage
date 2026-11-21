@@ -25,7 +25,7 @@ not read the memory on return, and that of
 (`wordsAt_of`; `Scrub.ScrubAllOk`, as x86-64's
 `Proof/Ffdh/X86_64/Scrub.lean` proves them): each implementation returns with
 every register it may leave secret cleared, and its whole stack zeroed, if it
-has one (`Scrub.scrubAllOf`).
+has one (`Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section

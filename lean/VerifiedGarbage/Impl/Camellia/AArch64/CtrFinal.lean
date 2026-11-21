@@ -17,7 +17,7 @@ the code's own. It is AES-CTR's final function's
 of `vg_camellia_ctr`, framed by its own working space on the stack
 (`ctrFramed`), as an internal function of its own, `vg_camellia_ctr_core`,
 which does not zero that space: the final function's registration zeroes the
-whole of its stack on return (`Scrub.withScrubAll`), as
+whole of its stack on return (`Impl.Scrub.AArch64.scrubAll`), as
 `vg_camellia_ctr`'s does:
 
 1. the registers saved in `save` (AES-CFB's final functions' slots,

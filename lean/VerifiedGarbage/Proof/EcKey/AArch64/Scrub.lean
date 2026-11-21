@@ -16,7 +16,7 @@ and of `vg_ecdh_<name>`, read the memory on return only within `out`, and that
 of `vg_ecdsa_<name>_verify` does not read it (`Scrub.ScrubAllOk`, as
 x86-64's `Proof/EcKey/X86_64/Scrub/Out.lean` proves them): each
 implementation returns with every register it may leave secret cleared, and
-its whole stack zeroed, if it has one (`Scrub.withScrubAll`).
+its whole stack zeroed, if it has one (`Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section

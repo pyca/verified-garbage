@@ -90,7 +90,7 @@ theorem p384T_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.
 /-! ## What the scrubbed functions clear
 
 The registers the tails of `vg_ecdsa_p384_sign` and `vg_ecdsa_p384_verify`
-clear, and what `Scrub.scrubAllOf` needs of their code
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
 (`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 
