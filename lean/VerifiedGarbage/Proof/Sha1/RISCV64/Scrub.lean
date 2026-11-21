@@ -84,7 +84,7 @@ Each of the streaming functions as emitted (`Impl.Sha1.RISCV64.Fn`): the
 function followed by `Impl.Scrub.RISCV64.scrubTail`, which clears the
 caller-saved registers and the stack its frames used. Each theorem below
 states that one meets its contract in constant time and returns without
-secret residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`),
+secret residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`),
 which is what its registration binds. Their postconditions read the memory
 on return only within their buffers (`Proof/Sha1/PostOut.lean`). HMAC-SHA-1,
 PBKDF2 and the digest call their code as the internal `vg_sha1_init_core`,
@@ -92,7 +92,7 @@ PBKDF2 and the digest call their code as the internal `vg_sha1_init_core`,
 
 `digest` instead clears only the runs of doublewords that the residue
 analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.verifiedScrubbedSelT`, whose analysis the kernel evaluates
+(`RISCV64.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates
 here). Its code wipes most of its own scratch space, which leaves few such
 doublewords. Its correctness is HMAC's proof of the one-shot digest
 (`Proof.Hmac.Stream.RISCV64.Sha1.digest`), of the same code.
@@ -108,7 +108,7 @@ open VG.RISCV64 VG.RISCV64.Scrub
 time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed target Impl.Sha1.RISCV64.Fn.init (Spec.Sha1.initContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Sha1.initApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.Sha1.initApi) (W := 0)
     { code := Impl.Sha1.RISCV64.Stream.init, verified := Shared.init }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.initPost_out 64))
     (show scrubSide Impl.Sha1.RISCV64.Stream.init 0 0 [] = true by lit_decide)
@@ -117,7 +117,7 @@ theorem init_scrubbed :
 time and returns without secret residue. -/
 theorem update_scrubbed :
     VerifiedScrubbed target Impl.Sha1.RISCV64.Fn.update (Spec.Sha1.updateContract RISCV64.abi 144) 0 :=
-  verifiedScrubbed (api := Spec.Sha1.updateApi) (W := 144)
+  verifiedScrubbedAll (api := Spec.Sha1.updateApi) (W := 144)
     { code := Impl.Sha1.RISCV64.Stream.update, verified := Shared.update }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.updatePost_out 64))
     (show scrubSide Impl.Sha1.RISCV64.Stream.update 144 0 [] = true by lit_decide)
@@ -126,7 +126,7 @@ theorem update_scrubbed :
 constant time and returns without secret residue. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed target Impl.Sha1.RISCV64.Fn.finalize (Spec.Sha1.finalizeContract RISCV64.abi 144) 0 :=
-  verifiedScrubbed (api := Spec.Sha1.finalizeApi) (W := 144)
+  verifiedScrubbedAll (api := Spec.Sha1.finalizeApi) (W := 144)
     { code := Impl.Sha1.RISCV64.Stream.finalize, verified := Shared.finalize }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.finalizePost_out 64))
     (show scrubSide Impl.Sha1.RISCV64.Stream.finalize 144 0 [] = true by lit_decide)
@@ -135,7 +135,7 @@ theorem finalize_scrubbed :
 time and returns without secret residue. -/
 theorem digest_scrubbed :
     VerifiedScrubbed target Impl.Sha1.RISCV64.Fn.digest (Spec.Sha1.digestContract RISCV64.abi 288) 0 :=
-  verifiedScrubbedSelT (api := Spec.Sha1.digestApi) (W := 288)
+  verifiedScrubbedSel (api := Spec.Sha1.digestApi) (W := 288)
     { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha1.RISCV64.Fn.hash,
       verified := Proof.Hmac.Stream.RISCV64.Sha1.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha1.digestPost_out 64))

@@ -10,16 +10,16 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # Clearing only the stack the residue analysis finds secret (64-bit RISC-V)
 
-`Impl.Scrub.RISCV64.scrubSel rb fs c` is `c`, then the clearing of `scrub` with frames that
+`Impl.Scrub.RISCV64.scrubSel rb fs c` is `c`, then the clearing of `scrubAll` with frames that
 zero only the doublewords of their runs (`fs`). Its run after `c` leaves the registers as
-`scrub`'s does and the memory as it was but within the frames (`tailSel_run`), so it is
-verified against `c`'s contract (`Verified.scrubSel`), with `scrub`'s proof. It returns
+`scrubAll`'s does and the memory as it was but within the frames (`tailSel_run`), so it is
+verified against `c`'s contract (`Verified.scrubSel`), with `scrubAll`'s proof. It returns
 without secret residue when the residue analysis (`rtaint`) of the whole of it, from where
 the contract starts it, ends in `RTaint.done` (`RTaint.noResidue_of_verified`): that analysis
 sees the clearing's stores, and that they leave no byte of the window secret.
 
 `verifiedScrubbedSel` (`ScrubProved.lean`) states it of a registration's code, as
-`verifiedScrubbed` does of `scrub`.
+`verifiedScrubbedAll` does of `scrubAll`.
 -/
 
 @[expose] public section
@@ -172,7 +172,7 @@ theorem wipeSel_run : ∀ (fs : List (Nat × List (Nat × Nat))) (u : State), Fr
 /-- The trace of `scrubTailSel rb fs` from `sp = p`: a function of `p`. -/
 def tailSelTr (fs : List (Nat × List (Nat × Nat))) (p : Addr) : List Leak := [] ++ (wipeSelTr fs p ++ [])
 
-/-- The clearing's run: it leaves the registers as `scrub`'s does (`finG`), and the memory
+/-- The clearing's run: it leaves the registers as `scrubAll`'s does (`finG`), and the memory
 as it was outside its frames. -/
 theorem tailSel_run {rb : Nat} (hrb : rb ≤ 64) {fs : List (Nat × List (Nat × Nat))} (hv : FramesOk fs)
     (u : State) (hs : sizeOf fs ≤ u.sp.toNat) (h16 : u.sp.toNat % 16 = 0) :

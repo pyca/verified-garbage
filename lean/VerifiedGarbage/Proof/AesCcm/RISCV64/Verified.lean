@@ -2280,7 +2280,7 @@ end VG.Proof.AesCcm.RISCV64
 /-! ## AES-CCM on RISC-V, without secret residue
 
 `vg_aes_ccm_seal` and `vg_aes_ccm_open`, each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.verifiedScrubbedAll`), which clears the
 caller-saved registers and the whole 2592-byte frame (`withStackScratchArgs`)
 that holds their working space, the key schedule and their callees' working
 space among it: the residue analysis (`RISCV64.rtaint`) finds that all of it
@@ -2339,7 +2339,7 @@ time and returns without secret residue: the theorem its registration binds. -/
 theorem seal_scrubbed :
     VerifiedScrubbed target Impl.AesCcm.RISCV64.Fn.«seal»
       (Spec.Ccm.sealContract RISCV64.abi 2592) 0 :=
-  verifiedScrubbed (api := Spec.Ccm.sealApi) (W := 2592)
+  verifiedScrubbedAll (api := Spec.Ccm.sealApi) (W := 2592)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesCcm.RISCV64.«seal»
       verified := Proof.AesCcm.seal_keyed seal_framed }
     (sealOut _) seal_scrubSide
@@ -2357,7 +2357,7 @@ time and returns without secret residue: the theorem its registration binds. -/
 theorem open_scrubbed :
     VerifiedScrubbed target Impl.AesCcm.RISCV64.Fn.«open»
       (Spec.Ccm.openContract RISCV64.abi 2592) 32 :=
-  verifiedScrubbed (api := Spec.Ccm.openApi) (W := 2592)
+  verifiedScrubbedAll (api := Spec.Ccm.openApi) (W := 2592)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesCcm.RISCV64.«open»
       verified := Proof.AesCcm.open_keyed open_framed }
     (openOut _) open_scrubSide

@@ -1927,8 +1927,8 @@ theorem applyOut (stack : Nat) : PostOut (Spec.Rc4.applyContract RISCV64.abi sta
 
 Each theorem states that a function as emitted (`Impl.Rc4.RISCV64.Fn`) meets its
 contract in constant time and returns without secret residue
-(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`, or
-`verifiedScrubbedSelT` for the selective cleanup, whose residue analysis the
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`, or
+`verifiedScrubbedSel` for the selective cleanup, whose residue analysis the
 kernel evaluates here): what its registration binds. -/
 
 /-- `Spec.Rc4.initApi` as emitted (`Impl.Rc4.RISCV64.Fn.init`) meets its contract
@@ -1936,7 +1936,7 @@ in constant time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Rc4.RISCV64.Fn.init
       (Spec.Rc4.initContract RISCV64.abi 256) 32 :=
-  verifiedScrubbedSelT (api := Spec.Rc4.initApi) (W := 256) (rb := 32)
+  verifiedScrubbedSel (api := Spec.Rc4.initApi) (W := 256) (rb := 32)
     { code := Impl.Rc4.RISCV64.init
       verified := Proof.Rc4.RISCV64.init_verified }
     _ [] (initOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -1946,7 +1946,7 @@ in constant time and returns without secret residue. -/
 theorem apply_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Rc4.RISCV64.Fn.apply
       (Spec.Rc4.applyContract RISCV64.abi 256) 0 :=
-  verifiedScrubbedSelT (api := Spec.Rc4.applyApi) (W := 256) (rb := 0)
+  verifiedScrubbedSel (api := Spec.Rc4.applyApi) (W := 256) (rb := 0)
     { code := Impl.Rc4.RISCV64.apply
       verified := Proof.Rc4.RISCV64.apply_verified }
     _ [] (applyOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩

@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 `vg_aes_ccm_seal` and `vg_aes_ccm_open`, each on its stack scratch
 (`Impl.StackScratch.RISCV64`), followed by its cleanup
-(`Impl.Scrub.RISCV64.scrub`), which zeroes the stack its frames use and
+(`Impl.Scrub.RISCV64.scrubAll`), which zeroes the stack its frames use and
 clears the caller-saved registers but the result's bits.
 -/
 
@@ -21,10 +21,10 @@ open VG.RISCV64 VG.Impl.Scrub.RISCV64 VG.Impl.StackScratch.RISCV64
 
 /-- `vg_aes_ccm_seal`, then its cleanup. -/
 def «seal» : Prog isa :=
-  scrub 0 2592 (withStackScratchArgs 2592 2 VG.Impl.AesCcm.RISCV64.«seal»)
+  scrubAll 0 2592 (withStackScratchArgs 2592 2 VG.Impl.AesCcm.RISCV64.«seal»)
 
 /-- `vg_aes_ccm_open`, then its cleanup. -/
 def «open» : Prog isa :=
-  scrub 32 2592 (withStackScratchArgs 2592 2 VG.Impl.AesCcm.RISCV64.«open»)
+  scrubAll 32 2592 (withStackScratchArgs 2592 2 VG.Impl.AesCcm.RISCV64.«open»)
 
 end VG.Impl.AesCcm.RISCV64.Fn

@@ -1820,7 +1820,7 @@ end
 `vg_chacha20_init`, `vg_chacha20_set_nonce` and `vg_chacha20_apply` as emitted
 (`Impl.ChaCha20.RISCV64.Fn`), each followed by `Impl.Scrub.RISCV64.scrubTail`, which clears
 the caller-saved registers and the stack its frames used: the theorems their registrations
-bind (`RISCV64.Scrub.verifiedScrubbed`). Their postconditions read the memory on return only
+bind (`RISCV64.Scrub.verifiedScrubbedAll`). Their postconditions read the memory on return only
 within the streaming state and the data (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/ChaCha20/X86_64/Scrub.lean`).
 -/
 
@@ -1872,7 +1872,7 @@ theorem applyOut (stack : Nat) : PostOut (applyContract RISCV64.abi stack) (appl
 time and returns without secret residue: the theorem its registration binds. -/
 theorem init_scrubbed :
     VerifiedScrubbed target Impl.ChaCha20.RISCV64.Fn.init (initContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.ChaCha20.initApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.ChaCha20.initApi) (W := 0)
     { code := Impl.ChaCha20.RISCV64.Stream.init
       verified := Proof.ChaCha20.RISCV64.Stream.init_verified }
     initOut (by lit_decide)
@@ -1881,7 +1881,7 @@ theorem init_scrubbed :
 constant time and returns without secret residue: the theorem its registration binds. -/
 theorem setNonce_scrubbed :
     VerifiedScrubbed target Impl.ChaCha20.RISCV64.Fn.setNonce (setNonceContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.ChaCha20.setNonceApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.ChaCha20.setNonceApi) (W := 0)
     { code := Impl.ChaCha20.RISCV64.Stream.setNonce
       verified := Proof.ChaCha20.RISCV64.Stream.setNonce_verified }
     setNonceOut (by lit_decide)
@@ -1890,7 +1890,7 @@ theorem setNonce_scrubbed :
 time and returns without secret residue: the theorem its registration binds. -/
 theorem apply_scrubbed :
     VerifiedScrubbed target Impl.ChaCha20.RISCV64.Fn.apply (applyContract RISCV64.abi 0) 32 :=
-  verifiedScrubbed (api := Spec.ChaCha20.applyApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.ChaCha20.applyApi) (W := 0)
     { code := Impl.ChaCha20.RISCV64.Stream.apply
       verified := Proof.ChaCha20.RISCV64.Stream.apply_verified }
     (applyOut _) (by lit_decide)

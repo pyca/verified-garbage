@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 /-!
 # DSA on RISC-V, as emitted
 
-Each function is its code, then its cleanup (`Impl.Scrub.RISCV64.scrub`):
+Each function is its code, then its cleanup (`Impl.Scrub.RISCV64.scrubAll`):
 the caller-saved registers cleared but the 32 bits of its result, and the
 stack its frames use (192 bytes for signing and key generation, none for
 the others), so that it returns without secret residue.
@@ -27,28 +27,28 @@ probable-prime tests call; its cleanup zeroes the 512 bytes of stack it uses.
 namespace VG.Impl.Dsa.RISCV64.Fn
 
 open VG.RISCV64
-open VG.Impl.Scrub.RISCV64 (scrub)
+open VG.Impl.Scrub.RISCV64 (scrubAll)
 
 /-- `vg_dsa_derive_key`. -/
-def deriveKey : Prog isa := scrub 32 0 Derive.derive
+def deriveKey : Prog isa := scrubAll 32 0 Derive.derive
 
 /-- `vg_dsa_validate_private_key`. -/
-def validatePrivateKey : Prog isa := scrub 32 0 PrevalidatedSign.validate
+def validatePrivateKey : Prog isa := scrubAll 32 0 PrevalidatedSign.validate
 
 /-- `vg_dsa_sign_random_prevalidated`. -/
-def randomSignPrevalidated : Prog isa := scrub 32 192 PrevalidatedSign.randomSign
+def randomSignPrevalidated : Prog isa := scrubAll 32 192 PrevalidatedSign.randomSign
 
 /-- `vg_dsa_generate_key`. -/
-def generateKey : Prog isa := scrub 32 192 Generate.code
+def generateKey : Prog isa := scrubAll 32 192 Generate.code
 
 /-- `vg_dsa_validate_public_key`. -/
-def validatePublicKey : Prog isa := scrub 32 0 Prevalidated.validate
+def validatePublicKey : Prog isa := scrubAll 32 0 Prevalidated.validate
 
 /-- `vg_dsa_verify_prevalidated`. -/
-def verifyPrevalidated : Prog isa := scrub 32 0 Prevalidated.verify
+def verifyPrevalidated : Prog isa := scrubAll 32 0 Prevalidated.verify
 
 /-- `vg_dsa_parameter_search_init`. -/
-def parameterInit : Prog isa := scrub 32 0 ParameterSearch.init
+def parameterInit : Prog isa := scrubAll 32 0 ParameterSearch.init
 
 /-- The parameter search's width `(pLen, qLen)`, hashing with `G`, testing
 with the probable-prime functions over the round `round` (named with
@@ -72,6 +72,6 @@ def parameterSearchBody (suffix : String) (round : Prog isa) : Prog isa :=
 
 /-- `vg_dsa_parameter_search` as emitted: the search, then its cleanup. -/
 def parameterSearch (suffix : String) (round : Prog isa) : Prog isa :=
-  scrub 32 512 (parameterSearchBody suffix round)
+  scrubAll 32 512 (parameterSearchBody suffix round)
 
 end VG.Impl.Dsa.RISCV64.Fn

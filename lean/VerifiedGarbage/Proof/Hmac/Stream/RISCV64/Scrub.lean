@@ -39,10 +39,10 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 Each hash's HMAC `init` and `finalize` as emitted
 (`Impl.Hmac.Stream.RISCV64.Fn`): `finalize` followed by
 `Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers and
-the stack its frames used (`RISCV64.Scrub.verifiedScrubbed`); `init`
+the stack its frames used (`RISCV64.Scrub.verifiedScrubbedAll`); `init`
 followed by `Impl.Scrub.RISCV64.scrubTailSel`, which clears only the runs of
 doublewords that the residue analysis (`RISCV64.rtaint`) finds may differ
-between two runs (`RISCV64.Scrub.verifiedScrubbedSelT`, whose analysis the
+between two runs (`RISCV64.Scrub.verifiedScrubbedSel`, whose analysis the
 kernel evaluates here): its code wipes most of its own scratch space, which
 leaves few such doublewords. Each theorem below states that one meets its
 contract in constant time and returns without secret residue
@@ -90,7 +90,7 @@ contract in constant time and returns without secret residue. -/
 theorem md5_init_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.init Md5.hash)
       (Spec.Hmac.md5I.initAnyKeyContract RISCV64.abi (Md5.hash.ibytes + Md5.hash.F)) 0 :=
-  verifiedScrubbedSelT (api := Spec.Hmac.md5I.initAnyKeyApi)
+  verifiedScrubbedSel (api := Spec.Hmac.md5I.initAnyKeyApi)
     (W := Md5.hash.ibytes + Md5.hash.F)
     { code := Md5.hash.init, verified := Md5.init }
     _ [] (hmacInitAnyOut Spec.Hmac.md5I Proof.Hmac.md5_local (by decide) _) (by lit_decide)
@@ -101,7 +101,7 @@ contract in constant time and returns without secret residue. -/
 theorem md5_finalize_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.finalize Md5.hash)
       (Spec.Hmac.md5I.finalizeContract RISCV64.abi (Md5.hash.fbytes + Md5.hash.F)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.md5I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.md5I.finalizeApi)
     (W := Md5.hash.fbytes + Md5.hash.F)
     { code := Md5.hash.finalize, verified := Md5.finalize }
     (hmacFinOut Spec.Hmac.md5I (by decide) _) (by lit_decide)
@@ -111,7 +111,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha1_init_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.init Sha1.hash)
       (Spec.Hmac.sha1I.initAnyKeyContract RISCV64.abi (Sha1.hash.ibytes + Sha1.hash.F)) 0 :=
-  verifiedScrubbedSelT (api := Spec.Hmac.sha1I.initAnyKeyApi)
+  verifiedScrubbedSel (api := Spec.Hmac.sha1I.initAnyKeyApi)
     (W := Sha1.hash.ibytes + Sha1.hash.F)
     { code := Sha1.hash.init, verified := Sha1.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha1I Proof.Hmac.sha1_local (by decide) _) (by lit_decide)
@@ -122,7 +122,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha1_finalize_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.finalize Sha1.hash)
       (Spec.Hmac.sha1I.finalizeContract RISCV64.abi (Sha1.hash.fbytes + Sha1.hash.F)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha1I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha1I.finalizeApi)
     (W := Sha1.hash.fbytes + Sha1.hash.F)
     { code := Sha1.hash.finalize, verified := Sha1.finalize }
     (hmacFinOut Spec.Hmac.sha1I (by decide) _) (by lit_decide)
@@ -132,7 +132,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha224_init_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.init Sha256Family.hash224)
       (Spec.Hmac.sha224I.initAnyKeyContract RISCV64.abi (Sha256Family.hash224.ibytes + Sha256Family.hash224.F)) 0 :=
-  verifiedScrubbedSelT (api := Spec.Hmac.sha224I.initAnyKeyApi)
+  verifiedScrubbedSel (api := Spec.Hmac.sha224I.initAnyKeyApi)
     (W := Sha256Family.hash224.ibytes + Sha256Family.hash224.F)
     { code := Sha256Family.hash224.init, verified := Sha224.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha224I Proof.Hmac.sha224_local (by decide) _) (by lit_decide)
@@ -143,7 +143,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha224_finalize_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.finalize Sha256Family.hash224)
       (Spec.Hmac.sha224I.finalizeContract RISCV64.abi (Sha256Family.hash224.fbytes + Sha256Family.hash224.F)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha224I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha224I.finalizeApi)
     (W := Sha256Family.hash224.fbytes + Sha256Family.hash224.F)
     { code := Sha256Family.hash224.finalize, verified := Sha224.finalize }
     (hmacFinOut Spec.Hmac.sha224I (by decide) _) (by lit_decide)
@@ -153,7 +153,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha256_init_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.init Sha256Family.hash256)
       (Spec.Hmac.sha256I.initAnyKeyContract RISCV64.abi (Sha256Family.hash256.ibytes + Sha256Family.hash256.F)) 0 :=
-  verifiedScrubbedSelT (api := Spec.Hmac.sha256I.initAnyKeyApi)
+  verifiedScrubbedSel (api := Spec.Hmac.sha256I.initAnyKeyApi)
     (W := Sha256Family.hash256.ibytes + Sha256Family.hash256.F)
     { code := Sha256Family.hash256.init, verified := Sha256.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha256I Proof.Hmac.sha256_local (by decide) _) (by lit_decide)
@@ -164,7 +164,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha256_finalize_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.finalize Sha256Family.hash256)
       (Spec.Hmac.sha256I.finalizeContract RISCV64.abi (Sha256Family.hash256.fbytes + Sha256Family.hash256.F)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha256I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha256I.finalizeApi)
     (W := Sha256Family.hash256.fbytes + Sha256Family.hash256.F)
     { code := Sha256Family.hash256.finalize, verified := Sha256.finalize }
     (hmacFinOut Spec.Hmac.sha256I (by decide) _) (by lit_decide)
@@ -174,7 +174,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha384_init_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.init Sha384.hash)
       (Spec.Hmac.sha384I.initAnyKeyContract RISCV64.abi (Sha384.hash.ibytes + Sha384.hash.F)) 0 :=
-  verifiedScrubbedSelT (api := Spec.Hmac.sha384I.initAnyKeyApi)
+  verifiedScrubbedSel (api := Spec.Hmac.sha384I.initAnyKeyApi)
     (W := Sha384.hash.ibytes + Sha384.hash.F)
     { code := Sha384.hash.init, verified := Sha384.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha384I Proof.Hmac.sha384_local (by decide) _) (by lit_decide)
@@ -185,7 +185,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha384_finalize_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.finalize Sha384.hash)
       (Spec.Hmac.sha384I.finalizeContract RISCV64.abi (Sha384.hash.fbytes + Sha384.hash.F)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha384I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha384I.finalizeApi)
     (W := Sha384.hash.fbytes + Sha384.hash.F)
     { code := Sha384.hash.finalize, verified := Sha384.finalize }
     (hmacFinOut Spec.Hmac.sha384I (by decide) _) (by lit_decide)
@@ -195,7 +195,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha512_init_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.init Sha512.hash)
       (Spec.Hmac.sha512I.initAnyKeyContract RISCV64.abi (Sha512.hash.ibytes + Sha512.hash.F)) 0 :=
-  verifiedScrubbedSelT (api := Spec.Hmac.sha512I.initAnyKeyApi)
+  verifiedScrubbedSel (api := Spec.Hmac.sha512I.initAnyKeyApi)
     (W := Sha512.hash.ibytes + Sha512.hash.F)
     { code := Sha512.hash.init, verified := Sha512.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha512I Proof.Hmac.sha512_local (by decide) _) (by lit_decide)
@@ -206,7 +206,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha512_finalize_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.finalize Sha512.hash)
       (Spec.Hmac.sha512I.finalizeContract RISCV64.abi (Sha512.hash.fbytes + Sha512.hash.F)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha512I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512I.finalizeApi)
     (W := Sha512.hash.fbytes + Sha512.hash.F)
     { code := Sha512.hash.finalize, verified := Sha512.finalize }
     (hmacFinOut Spec.Hmac.sha512I (by decide) _) (by lit_decide)
@@ -216,7 +216,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha512_224_init_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.init Sha512_224.hash)
       (Spec.Hmac.sha512_224I.initAnyKeyContract RISCV64.abi (Sha512_224.hash.ibytes + Sha512_224.hash.F)) 0 :=
-  verifiedScrubbedSelT (api := Spec.Hmac.sha512_224I.initAnyKeyApi)
+  verifiedScrubbedSel (api := Spec.Hmac.sha512_224I.initAnyKeyApi)
     (W := Sha512_224.hash.ibytes + Sha512_224.hash.F)
     { code := Sha512_224.hash.init, verified := Sha512_224.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha512_224I Proof.Hmac.sha512_224_local (by decide) _) (by lit_decide)
@@ -227,7 +227,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha512_224_finalize_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.finalize Sha512_224.hash)
       (Spec.Hmac.sha512_224I.finalizeContract RISCV64.abi (Sha512_224.hash.fbytes + Sha512_224.hash.F)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha512_224I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_224I.finalizeApi)
     (W := Sha512_224.hash.fbytes + Sha512_224.hash.F)
     { code := Sha512_224.hash.finalize, verified := Sha512_224.finalize }
     (hmacFinOut Spec.Hmac.sha512_224I (by decide) _) (by lit_decide)
@@ -237,7 +237,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha512_256_init_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.init Sha512_256.hash)
       (Spec.Hmac.sha512_256I.initAnyKeyContract RISCV64.abi (Sha512_256.hash.ibytes + Sha512_256.hash.F)) 0 :=
-  verifiedScrubbedSelT (api := Spec.Hmac.sha512_256I.initAnyKeyApi)
+  verifiedScrubbedSel (api := Spec.Hmac.sha512_256I.initAnyKeyApi)
     (W := Sha512_256.hash.ibytes + Sha512_256.hash.F)
     { code := Sha512_256.hash.init, verified := Sha512_256.init }
     _ [] (hmacInitAnyOut Spec.Hmac.sha512_256I Proof.Hmac.sha512_256_local (by decide) _) (by lit_decide)
@@ -248,7 +248,7 @@ contract in constant time and returns without secret residue. -/
 theorem sha512_256_finalize_scrubbed :
     VerifiedScrubbed target (Impl.Hmac.Stream.RISCV64.Fn.finalize Sha512_256.hash)
       (Spec.Hmac.sha512_256I.finalizeContract RISCV64.abi (Sha512_256.hash.fbytes + Sha512_256.hash.F)) 0 :=
-  verifiedScrubbed (api := Spec.Hmac.sha512_256I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_256I.finalizeApi)
     (W := Sha512_256.hash.fbytes + Sha512_256.hash.F)
     { code := Sha512_256.hash.finalize, verified := Sha512_256.finalize }
     (hmacFinOut Spec.Hmac.sha512_256I (by decide) _) (by lit_decide)

@@ -32,7 +32,7 @@ residue analysis (`RISCV64.rtaint`) finds may differ between two runs. Their
 code wipes its working space, which leaves none, or two (`open_to`'s and
 `seal_gather`'s). Each theorem below states that one meets its contract in
 constant time and returns without secret residue (`VerifiedScrubbed`, by
-`RISCV64.Scrub.verifiedScrubbedSelT`, whose analysis the kernel evaluates
+`RISCV64.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates
 here), which is what its registration binds. Their postconditions read the
 memory on return only within the data and the tag (`RISCV64.Scrub.PostOut`),
 as on x86-64 (`Proof/ChaCha20Poly1305/X86_64/ScrubFn.lean`). They call
@@ -73,7 +73,7 @@ contract in constant time and returns without secret residue: the theorem its re
 theorem seal_scrubbed :
     VerifiedScrubbed target Impl.ChaCha20Poly1305.RISCV64.Fn.«seal»
       (Spec.ChaCha20Poly1305.sealContract RISCV64.abi 624) 0 :=
-  verifiedScrubbedSelT (api := Spec.ChaCha20Poly1305.sealApi) (W := 624)
+  verifiedScrubbedSel (api := Spec.ChaCha20Poly1305.sealApi) (W := 624)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 78
         (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«seal»)
       verified := Proof.ChaCha20Poly1305.RISCV64.seal_framed }
@@ -84,7 +84,7 @@ contract in constant time and returns without secret residue: the theorem its re
 theorem open_scrubbed :
     VerifiedScrubbed target Impl.ChaCha20Poly1305.RISCV64.Fn.«open»
       (Spec.ChaCha20Poly1305.openZeroContract RISCV64.abi 624) 32 :=
-  verifiedScrubbedSelT (api := Spec.ChaCha20Poly1305.openZeroApi) (W := 624)
+  verifiedScrubbedSel (api := Spec.ChaCha20Poly1305.openZeroApi) (W := 624)
     { code := Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 78
         (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«open»)
       verified := Proof.ChaCha20Poly1305.RISCV64.open_framed }
@@ -95,7 +95,7 @@ contract in constant time and returns without secret residue: the theorem its re
 theorem openTo_scrubbed :
     VerifiedScrubbed target Impl.ChaCha20Poly1305.RISCV64.Fn.openTo
       (Spec.ChaCha20Poly1305.openToContract RISCV64.abi 640) 32 :=
-  verifiedScrubbedSelT (api := Spec.ChaCha20Poly1305.openToApi) (W := 640)
+  verifiedScrubbedSel (api := Spec.ChaCha20Poly1305.openToApi) (W := 640)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgsWiped 640 1 78 Impl.ChaCha20Poly1305.RISCV64.openTo
       verified := Proof.ChaCha20Poly1305.RISCV64.openTo_framed }
     [(640, [(0, 2)])] [] (openToOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -106,7 +106,7 @@ binds. -/
 theorem sealGather_scrubbed :
     VerifiedScrubbed target Impl.ChaCha20Poly1305.RISCV64.Fn.sealGather
       (Spec.ChaCha20Poly1305.sealGatherContract RISCV64.abi 640) 0 :=
-  verifiedScrubbedSelT (api := Spec.ChaCha20Poly1305.sealGatherApi) (W := 640)
+  verifiedScrubbedSel (api := Spec.ChaCha20Poly1305.sealGatherApi) (W := 640)
     { code := Impl.ChaCha20Poly1305.RISCV64.SealGather.sealGather
       verified := Proof.ChaCha20Poly1305.RISCV64.Gather.sealGather_verified }
     [(640, [(78, 2)])] [] (gatherOut _) (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩

@@ -34,7 +34,7 @@ through a pointer the analysis cannot place (the position in the state, the
 output) — every function's state at `a0` is a buffer it knows. Each theorem
 below states that one meets its contract in constant time and returns
 without secret residue (`VerifiedScrubbed`, by
-`RISCV64.Scrub.verifiedScrubbedSelT`, whose analysis the kernel evaluates
+`RISCV64.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates
 here), which is what its registration binds. Their postconditions read the
 memory on return only within their buffers (`Proof/Sha3/PostOut.lean`).
 -/
@@ -66,7 +66,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_224_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.update hashSha3_224.rate)
       (updateContract RISCV64.abi hashSha3_224.rate 1168) 64 :=
-  verifiedScrubbedSelT (api := updateSha3_224Api) (W := 1168)
+  verifiedScrubbedSel (api := updateSha3_224Api) (W := 1168)
     { code := Impl.Sha3.RISCV64.Instances.absorb hashSha3_224.rate,
       verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_224 }
     _ [(.a0, 25 * Elem.u64.size)] (absorbOut _ _) (by lit_decide) (hbp_firstArray _ rfl)
@@ -77,7 +77,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_256_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.update hashSha3_256.rate)
       (updateContract RISCV64.abi hashSha3_256.rate 1168) 64 :=
-  verifiedScrubbedSelT (api := updateSha3_256Api) (W := 1168)
+  verifiedScrubbedSel (api := updateSha3_256Api) (W := 1168)
     { code := Impl.Sha3.RISCV64.Instances.absorb hashSha3_256.rate,
       verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_256 }
     _ [(.a0, 25 * Elem.u64.size)] (absorbOut _ _) (by lit_decide) (hbp_firstArray _ rfl)
@@ -88,7 +88,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_384_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.update hashSha3_384.rate)
       (updateContract RISCV64.abi hashSha3_384.rate 1168) 64 :=
-  verifiedScrubbedSelT (api := updateSha3_384Api) (W := 1168)
+  verifiedScrubbedSel (api := updateSha3_384Api) (W := 1168)
     { code := Impl.Sha3.RISCV64.Instances.absorb hashSha3_384.rate,
       verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_384 }
     _ [(.a0, 25 * Elem.u64.size)] (absorbOut _ _) (by lit_decide) (hbp_firstArray _ rfl)
@@ -99,7 +99,7 @@ constant time and returns without secret residue. -/
 theorem update_sha3_512_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.update hashSha3_512.rate)
       (updateContract RISCV64.abi hashSha3_512.rate 1168) 64 :=
-  verifiedScrubbedSelT (api := updateSha3_512Api) (W := 1168)
+  verifiedScrubbedSel (api := updateSha3_512Api) (W := 1168)
     { code := Impl.Sha3.RISCV64.Instances.absorb hashSha3_512.rate,
       verified := Proof.Sha3.RISCV64.Instances.absorb_sha3_512 }
     _ [(.a0, 25 * Elem.u64.size)] (absorbOut _ _) (by lit_decide) (hbp_firstArray _ rfl)
@@ -110,7 +110,7 @@ constant time and returns without secret residue. -/
 theorem update_shake128_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.update xofShake128.rate)
       (updateContract RISCV64.abi xofShake128.rate 1168) 64 :=
-  verifiedScrubbedSelT (api := updateShake128Api) (W := 1168)
+  verifiedScrubbedSel (api := updateShake128Api) (W := 1168)
     { code := Impl.Sha3.RISCV64.Instances.absorb xofShake128.rate,
       verified := Proof.Sha3.RISCV64.Instances.absorb_shake128 }
     _ [(.a0, 25 * Elem.u64.size)] (absorbOut _ _) (by lit_decide) (hbp_firstArray _ rfl)
@@ -121,7 +121,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_224_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.finalize hashSha3_224.rate hashSha3_224.len)
       (finalizeContract RISCV64.abi hashSha3_224 (1168 + 32)) 0 :=
-  verifiedScrubbedSelT (api := finalizeSha3_224Api) (W := 1200)
+  verifiedScrubbedSel (api := finalizeSha3_224Api) (W := 1200)
     { code := Impl.Sha3.RISCV64.Instances.finalize hashSha3_224.rate hashSha3_224.len,
       verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_224 }
     _ [(.a0, 25 * Elem.u64.size)] (finalizeOut hashSha3_224 _ (by decide)) (by lit_decide)
@@ -132,7 +132,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_256_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.finalize hashSha3_256.rate hashSha3_256.len)
       (finalizeContract RISCV64.abi hashSha3_256 (1168 + 32)) 0 :=
-  verifiedScrubbedSelT (api := finalizeSha3_256Api) (W := 1200)
+  verifiedScrubbedSel (api := finalizeSha3_256Api) (W := 1200)
     { code := Impl.Sha3.RISCV64.Instances.finalize hashSha3_256.rate hashSha3_256.len,
       verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_256 }
     _ [(.a0, 25 * Elem.u64.size)] (finalizeOut hashSha3_256 _ (by decide)) (by lit_decide)
@@ -143,7 +143,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_384_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.finalize hashSha3_384.rate hashSha3_384.len)
       (finalizeContract RISCV64.abi hashSha3_384 (1168 + 32)) 0 :=
-  verifiedScrubbedSelT (api := finalizeSha3_384Api) (W := 1200)
+  verifiedScrubbedSel (api := finalizeSha3_384Api) (W := 1200)
     { code := Impl.Sha3.RISCV64.Instances.finalize hashSha3_384.rate hashSha3_384.len,
       verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_384 }
     _ [(.a0, 25 * Elem.u64.size)] (finalizeOut hashSha3_384 _ (by decide)) (by lit_decide)
@@ -154,7 +154,7 @@ constant time and returns without secret residue. -/
 theorem finalize_sha3_512_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.finalize hashSha3_512.rate hashSha3_512.len)
       (finalizeContract RISCV64.abi hashSha3_512 (1168 + 32)) 0 :=
-  verifiedScrubbedSelT (api := finalizeSha3_512Api) (W := 1200)
+  verifiedScrubbedSel (api := finalizeSha3_512Api) (W := 1200)
     { code := Impl.Sha3.RISCV64.Instances.finalize hashSha3_512.rate hashSha3_512.len,
       verified := Proof.Sha3.RISCV64.Instances.finalize_sha3_512 }
     _ [(.a0, 25 * Elem.u64.size)] (finalizeOut hashSha3_512 _ (by decide)) (by lit_decide)
@@ -165,7 +165,7 @@ constant time and returns without secret residue. -/
 theorem finalize_shake128_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.xofFinalize xofShake128.rate)
       (xofFinalizeContract RISCV64.abi xofShake128 1136) 0 :=
-  verifiedScrubbedSelT (api := finalizeShake128Api) (W := 1136)
+  verifiedScrubbedSel (api := finalizeShake128Api) (W := 1136)
     { code := Impl.Sha3.RISCV64.Instances.xofFinalize xofShake128.rate,
       verified := Proof.Sha3.RISCV64.Instances.finalize_shake128 }
     _ [(.a0, 25 * Elem.u64.size)] (xofFinalizeOut xofShake128 _) (by lit_decide) (hbp_firstArray _ rfl)
@@ -176,7 +176,7 @@ constant time and returns without secret residue. -/
 theorem squeeze_shake128_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.xofSqueeze xofShake128.rate)
       (xofSqueezeContract RISCV64.abi xofShake128 1168) 64 :=
-  verifiedScrubbedSelT (api := squeezeShake128Api) (W := 1168)
+  verifiedScrubbedSel (api := squeezeShake128Api) (W := 1168)
     { code := Impl.Sha3.RISCV64.Instances.xofSqueeze xofShake128.rate,
       verified := Proof.Sha3.RISCV64.Instances.squeeze_shake128 }
     _ [(.a0, 25 * Elem.u64.size)] (xofSqueezeOut xofShake128 _) (by lit_decide) (hbp_firstArray _ rfl)
@@ -187,7 +187,7 @@ constant time and returns without secret residue. -/
 theorem finalize_shake256_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.xofFinalize xofShake256.rate)
       (xofFinalizeContract RISCV64.abi xofShake256 1136) 0 :=
-  verifiedScrubbedSelT (api := finalizeShake256Api) (W := 1136)
+  verifiedScrubbedSel (api := finalizeShake256Api) (W := 1136)
     { code := Impl.Sha3.RISCV64.Instances.xofFinalize xofShake256.rate,
       verified := Proof.Sha3.RISCV64.Instances.finalize_shake256 }
     _ [(.a0, 25 * Elem.u64.size)] (xofFinalizeOut xofShake256 _) (by lit_decide) (hbp_firstArray _ rfl)
@@ -198,7 +198,7 @@ constant time and returns without secret residue. -/
 theorem squeeze_shake256_scrubbed :
     VerifiedScrubbed target (Impl.Sha3.RISCV64.Fn.xofSqueeze xofShake256.rate)
       (xofSqueezeContract RISCV64.abi xofShake256 1168) 64 :=
-  verifiedScrubbedSelT (api := squeezeShake256Api) (W := 1168)
+  verifiedScrubbedSel (api := squeezeShake256Api) (W := 1168)
     { code := Impl.Sha3.RISCV64.Instances.xofSqueeze xofShake256.rate,
       verified := Proof.Sha3.RISCV64.Instances.squeeze_shake256 }
     _ [(.a0, 25 * Elem.u64.size)] (xofSqueezeOut xofShake256 _) (by lit_decide) (hbp_firstArray _ rfl)

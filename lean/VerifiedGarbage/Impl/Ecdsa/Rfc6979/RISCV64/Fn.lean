@@ -26,7 +26,7 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 `vg_ecdsa_<curve>_sign`: its code, which calls HMAC through its table (the
 functions `f` an indirect call of the table's may reach) and the curve's
-`vg_ecdsa_<curve>_sign_k`, then its cleanup (`Impl.Scrub.RISCV64.scrub`): the
+`vg_ecdsa_<curve>_sign_k`, then its cleanup (`Impl.Scrub.RISCV64.scrubAll`): the
 caller-saved registers cleared but the 32 bits of its result, and the 1024
 bytes of stack it uses zeroed (its frame of 512 bytes, and at most 512 below
 it for the functions it calls). Each curve's configuration (`<curve>Cfg`)
@@ -37,10 +37,10 @@ gives the code's parameters. -/
 namespace VG.Impl.Ecdsa.Rfc6979.RISCV64.Fn
 
 open VG VG.RISCV64
-open VG.Impl.Scrub.RISCV64 (scrub)
+open VG.Impl.Scrub.RISCV64 (scrubAll)
 
 /-- `vg_ecdsa_<curve>_sign` as emitted, with the configuration `c`. -/
-def sign (c : Cfg) : Prog isa := scrub 32 1024 c.sign
+def sign (c : Cfg) : Prog isa := scrubAll 32 1024 c.sign
 
 /-- P-192's configuration, with the functions `f` its table's may be. -/
 def p192Cfg (f : Fns) : Cfg where

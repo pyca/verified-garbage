@@ -9,8 +9,8 @@ public import VerifiedGarbage.TCB.Registration
 # Scrubbed code, verified (64-bit RISC-V)
 
 The theorems a registration binds (`verified := .scrubbed …`):
-`verifiedScrubbed` and `verifiedScrubbedSel` (and `verifiedScrubbedOf`,
-`verifiedScrubbedSelT`) state, of the code with its cleanup, `scrub rb W c`
+`verifiedScrubbedAll` and `verifiedScrubbedSel` (and `verifiedScrubbedAllOf`,
+`verifiedScrubbedSel`) state, of the code with its cleanup, `scrubAll rb W c`
 or `scrubSel rb fs c`, which `Impl/` defines as the function, that it meets
 its contract in constant time and returns without secret residue. The
 registration binds that definition and that theorem, and nothing else: no
@@ -32,7 +32,7 @@ namespace VG.RISCV64.Scrub
 
 open VG.Impl.Scrub.RISCV64
 
-/-- What `verifiedScrubbed` needs of code `c` scrubbed over `stack` bytes,
+/-- What `verifiedScrubbedAll` needs of code `c` scrubbed over `stack` bytes,
 with the tables `ts` and a result of `rb` bits: its frames use at most
 `stack` bytes, a multiple of 16 below `2 ^ 64`; it calls indirectly only
 the functions of its tables; the result has at most 64 bits. -/
@@ -61,61 +61,48 @@ theorem of_selSide {fs : List (Nat × List (Nat × Nat))} {stack rb : Nat} (h : 
 /-! ## The cleanup as part of the code
 
 The theorems a registration binds (`verified := .scrubbed …`): of the code
-as emitted, its body and then its cleanup (`scrub rb W c`, or
+as emitted, its body and then its cleanup (`scrubAll rb W c`, or
 `scrubSel rb fs c`), which `Impl/` defines as the function with the stack
 `W` (or the runs `fs`) and the result's bits `rb` as literals. Each takes
 what the cleanup needs of the code as a hypothesis, which the proof module
 gives: by `lit_decide` of `scrubSide` or `selSide`, or, for code generic
 over the implementations of a function it calls, from what the function
 proves of its own instructions and each implementation of its own
-(`verifiedScrubbedOf` takes the facts one by one). `W` and `rb` are
+(`verifiedScrubbedAllOf` takes the facts one by one). `W` and `rb` are
 arguments, so that the hypotheses are stated with them and not with
 projections of `r`; `hW` and `hb` tie them to `r`'s stack and result. -/
 
-/-- `r`'s code with its cleanup (`scrub`, over `W` bytes of stack, the
+/-- `r`'s code with its cleanup (`scrubAll`, over `W` bytes of stack, the
 stack its frames use, with a result of `rb` bits) meets `r`'s contract in
 constant time and returns without secret residue, from `scrubSide`'s
 conditions given one by one. -/
-theorem verifiedScrubbedOf {api : Api} (r : Unscrubbed api target) {W rb : Nat}
+theorem verifiedScrubbedAllOf {api : Api} (r : Unscrubbed api target) {W rb : Nat}
     (hpost : PostOut r.contract rb) (hd : r.code.riscv64Depth ≤ W) (hst : W < 2 ^ 64)
     (h16 : W % 16 = 0) (htc : tablesCall r.code r.tables = true) (hrb : rb ≤ 64)
     (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl) :
-    VerifiedScrubbed target (scrub rb W r.code) r.contract rb := by
+    VerifiedScrubbed target (scrubAll rb W r.code) r.contract rb := by
   subst hW hb
   have h := scrubCode_ok r hd hst h16 htc hrb hpost
   exact ⟨h.1, h.2⟩
 
-/-- `verifiedScrubbedOf`, with its conditions one Boolean (`scrubSide`):
+/-- `verifiedScrubbedAllOf`, with its conditions one Boolean (`scrubSide`):
 the theorem about the code that a registration binds. -/
-theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) {W rb : Nat}
+theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) {W rb : Nat}
     (hpost : PostOut r.contract rb) (hs : scrubSide r.code W rb r.tables = true)
     (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl) :
-    VerifiedScrubbed target (scrub rb W r.code) r.contract rb :=
+    VerifiedScrubbed target (scrubAll rb W r.code) r.contract rb :=
   have h := of_scrubSide hs
-  verifiedScrubbedOf r hpost h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2 hW hb
+  verifiedScrubbedAllOf r hpost h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2 hW hb
 
 /-- `r`'s code `code` with its cleanup of only the runs of `fs`
 (`scrubSel`, with a result of `rb` bits) meets `r`'s contract in constant
 time and returns without secret residue: the theorem about the code that a
-registration binds. `hnr` is the residue
-analysis's (`scrubSel_noResidue`, or `verifiedScrubbedSelT`). -/
-theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target)
-    (fs : List (Nat × List (Nat × Nat))) {code : Prog isa} {W rb : Nat}
-    (hpost : PostOut r.contract rb) (hs : selSide fs W rb = true)
-    (hnr : NoResidue (scrubSel rb fs code) r.contract rb)
-    (hc : r.code = code := by rfl) (hW : r.stack = W := by rfl)
-    (hb : retBitsOf r = rb := by rfl) :
-    VerifiedScrubbed target (scrubSel rb fs code) r.contract rb := by
-  subst hc hW hb
-  have h := of_selSide hs
-  exact ⟨scrubSelCode_verified r fs h.1 h.2.1 h.2.2 hpost, hnr⟩
-
-/-- `verifiedScrubbedSel`, with the residue analysis of the code with its
-cleanup (`RISCV64.rtaint`, from a state where the `e.2` bytes from what each
-register `e.1` of `bp0` holds are buffers of the contract's: `hbp`) ending
+registration binds. The residue analysis of the code with its cleanup
+(`RISCV64.rtaint`, from a state where the `e.2` bytes from what each
+register `e.1` of `bp0` holds are buffers of the contract's: `hbp`) ends
 in `done`: `hres`, which the kernel evaluates where the theorem is used
 (`taint_decide_ct`), stated of `code`, `W` and `rb`. -/
-theorem verifiedScrubbedSelT {api : Api} (r : Unscrubbed api target)
+theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target)
     (fs : List (Nat × List (Nat × Nat))) (bp0 : List (Reg × Nat)) {code : Prog isa} {W rb : Nat}
     (hpost : PostOut r.contract rb) (hs : selSide fs W rb = true)
     (hbp : ∀ s, r.contract.pre s → ∀ e ∈ bp0, ∀ i < e.2, ∃ g ∈ s.rd ++ s.wr,
@@ -127,7 +114,7 @@ theorem verifiedScrubbedSelT {api : Api} (r : Unscrubbed api target)
     VerifiedScrubbed target (scrubSel rb fs code) r.contract rb := by
   subst hc hW hb
   have h := of_selSide hs
-  exact verifiedScrubbedSel r fs (hpost := hpost) hs
-    (scrubSel_noResidue r fs bp0 h.1 h.2.1 h.2.2 hpost hbp _ _ _ rfl rfl rfl hres)
+  exact ⟨scrubSelCode_verified r fs h.1 h.2.1 h.2.2 hpost,
+    scrubSel_noResidue r fs bp0 h.1 h.2.1 h.2.2 hpost hbp _ _ _ rfl rfl rfl hres⟩
 
 end VG.RISCV64.Scrub

@@ -68,7 +68,7 @@ end VG.Impl.Ecdsa.RISCV64.P192
 /-! ## Verification as emitted
 
 `vg_ecdsa_p192_verify`: `VerifyHash.verifyHash` of the curve's verification,
-then its cleanup (`Impl.Scrub.RISCV64.scrub`): the caller-saved registers
+then its cleanup (`Impl.Scrub.RISCV64.scrubAll`): the caller-saved registers
 cleared but the 32 bits of its result, and the 80 bytes of stack its frames
 use zeroed, so that it returns without secret residue. -/
 
@@ -78,7 +78,7 @@ open VG.RISCV64
 
 /-- `vg_ecdsa_p192_verify` as emitted. -/
 def verifyP192 : Prog isa :=
-  Impl.Scrub.RISCV64.scrub 32 80
+  Impl.Scrub.RISCV64.scrubAll 32 80
     (Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
       Impl.Ecdsa.RISCV64.P192.verifyP192)
 

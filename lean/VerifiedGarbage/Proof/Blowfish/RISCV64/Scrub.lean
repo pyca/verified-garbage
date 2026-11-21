@@ -1240,8 +1240,8 @@ theorem ofbFinalOut (stack : Nat) : PostOut (ofbFinalContract RISCV64.abi stack)
 
 Each theorem states that a function as emitted (`Impl.Blowfish.RISCV64.Fn`) meets its
 contract in constant time and returns without secret residue
-(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`, or
-`verifiedScrubbedSelT` for the selective cleanup, whose residue analysis the
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`, or
+`verifiedScrubbedSel` for the selective cleanup, whose residue analysis the
 kernel evaluates here): what its registration binds. -/
 
 /-- `Spec.Blowfish.expandKeyApi` as emitted (`Impl.Blowfish.RISCV64.Fn.expandKey`) meets its contract
@@ -1249,7 +1249,7 @@ in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.expandKey
       (Spec.Blowfish.expandKeyContract RISCV64.abi 4176) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.expandKeyApi) (W := 4176) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.expandKeyApi) (W := 4176) (rb := 0)
     { code := Impl.Blowfish.RISCV64.expandKey
       verified := Proof.Blowfish.RISCV64.expandKey_verified }
     (expandKeyOut _) (by dsimp only; lit_decide)
@@ -1259,7 +1259,7 @@ in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.ecbEncrypt
       (Spec.Blowfish.ecbEncryptContract RISCV64.abi 4256) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.ecbEncryptApi) (W := 4256) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.ecbEncryptApi) (W := 4256) (rb := 0)
     { code := Impl.Blowfish.RISCV64.encrypt
       verified := Proof.Blowfish.RISCV64.encrypt_verified }
     (ecbOut .encrypt _) (by dsimp only; lit_decide)
@@ -1269,7 +1269,7 @@ in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.ecbDecrypt
       (Spec.Blowfish.ecbDecryptContract RISCV64.abi 4256) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.ecbDecryptApi) (W := 4256) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.ecbDecryptApi) (W := 4256) (rb := 0)
     { code := Impl.Blowfish.RISCV64.decrypt
       verified := Proof.Blowfish.RISCV64.decrypt_verified }
     (ecbOut .decrypt _) (by dsimp only; lit_decide)
@@ -1279,7 +1279,7 @@ in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.cbcEncryptChained
       (Spec.Blowfish.cbcEncryptChainedContract RISCV64.abi Proof.Blowfish.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.cbcEncryptChainedApi) (W := 4240) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.cbcEncryptChainedApi) (W := 4240) (rb := 0)
     { code := Impl.Blowfish.RISCV64.cbcEncryptChained
       verified := Proof.Blowfish.RISCV64.Modes.cbcEncryptChained_verified }
     (cbcEncryptOut _) (by dsimp only; lit_decide)
@@ -1289,7 +1289,7 @@ in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.cbcDecryptChained
       (Spec.Blowfish.cbcDecryptChainedContract RISCV64.abi Proof.Blowfish.RISCV64.Modes.frameBytes2) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.cbcDecryptChainedApi) (W := 4336) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.cbcDecryptChainedApi) (W := 4336) (rb := 0)
     { code := Impl.Blowfish.RISCV64.cbcDecryptChained
       verified := Proof.Blowfish.RISCV64.Modes.cbcDecryptChained_verified }
     (cbcDecryptOut _) (by dsimp only; lit_decide)
@@ -1299,7 +1299,7 @@ in constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.cfbEncrypt
       (Spec.Blowfish.cfbEncryptContract RISCV64.abi Proof.Blowfish.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.cfbEncryptApi) (W := 4240) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.cfbEncryptApi) (W := 4240) (rb := 0)
     { code := Impl.Blowfish.RISCV64.cfbEncrypt
       verified := Proof.Blowfish.RISCV64.Modes.cfbEncrypt_verified }
     (cfbEncryptOut _) (by dsimp only; lit_decide)
@@ -1309,7 +1309,7 @@ in constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.cfbDecrypt
       (Spec.Blowfish.cfbDecryptContract RISCV64.abi Proof.Blowfish.RISCV64.Modes.frameBytes2) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.cfbDecryptApi) (W := 4336) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.cfbDecryptApi) (W := 4336) (rb := 0)
     { code := Impl.Blowfish.RISCV64.cfbDecrypt
       verified := Proof.Blowfish.RISCV64.Modes.cfbDecrypt_verified }
     (cfbDecryptOut _) (by dsimp only; lit_decide)
@@ -1319,7 +1319,7 @@ in constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.cfbEncryptFinal
       (Spec.Blowfish.cfbEncryptFinalContract RISCV64.abi Proof.Blowfish.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.cfbEncryptFinalApi) (W := 4240) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.cfbEncryptFinalApi) (W := 4240) (rb := 0)
     { code := Impl.Blowfish.RISCV64.cfbEncryptFinal
       verified := Proof.Blowfish.RISCV64.Modes.cfbEncryptFinal_verified }
     (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
@@ -1329,7 +1329,7 @@ in constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.cfbDecryptFinal
       (Spec.Blowfish.cfbDecryptFinalContract RISCV64.abi Proof.Blowfish.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.cfbDecryptFinalApi) (W := 4240) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.cfbDecryptFinalApi) (W := 4240) (rb := 0)
     { code := Impl.Blowfish.RISCV64.cfbDecryptFinal
       verified := Proof.Blowfish.RISCV64.Modes.cfbDecryptFinal_verified }
     (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
@@ -1339,7 +1339,7 @@ in constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.ofb
       (Spec.Blowfish.ofbContract RISCV64.abi Proof.Blowfish.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.ofbApi) (W := 4240) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.ofbApi) (W := 4240) (rb := 0)
     { code := Impl.Blowfish.RISCV64.ofb
       verified := Proof.Blowfish.RISCV64.Modes.ofb_verified }
     (ofbOut _) (by dsimp only; lit_decide)
@@ -1349,7 +1349,7 @@ in constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Blowfish.RISCV64.Fn.ofbFinal
       (Spec.Blowfish.ofbFinalContract RISCV64.abi Proof.Blowfish.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Blowfish.ofbFinalApi) (W := 4240) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Blowfish.ofbFinalApi) (W := 4240) (rb := 0)
     { code := Impl.Blowfish.RISCV64.ofbFinal
       verified := Proof.Blowfish.RISCV64.Modes.ofbFinal_verified }
     (ofbFinalOut _) (by dsimp only; lit_decide)

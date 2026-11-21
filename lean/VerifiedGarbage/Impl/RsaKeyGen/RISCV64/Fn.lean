@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 `vg_rsa_generate` with the functions it calls, given the code of a
 Miller–Rabin round's implementation (`round`, named with `suffix`), and its
-cleanup (`Impl.Scrub.RISCV64.scrub`): the caller-saved registers cleared but
+cleanup (`Impl.Scrub.RISCV64.scrubAll`): the caller-saved registers cleared but
 the 32 bits of its result, and the 656 bytes of stack it uses zeroed, so that
 it returns without secret residue.
 -/
@@ -22,7 +22,7 @@ it returns without secret residue.
 namespace VG.Impl.RsaKeyGen.RISCV64.Fn
 
 open VG VG.RISCV64
-open VG.Impl.Scrub.RISCV64 (scrub)
+open VG.Impl.Scrub.RISCV64 (scrubAll)
 
 /-- `vg_rsa_keygen_candidate`, calling the shared round
 `vg_miller_rabin_round<suffix>`. -/
@@ -39,6 +39,6 @@ def body (suffix : String) (round : Prog isa) : Prog isa :=
     (.call "vg_rsa_keygen_key" Key.code)
 
 /-- `vg_rsa_generate` as emitted: the controller, then its cleanup. -/
-def keySearch (suffix : String) (round : Prog isa) : Prog isa := scrub 32 656 (body suffix round)
+def keySearch (suffix : String) (round : Prog isa) : Prog isa := scrubAll 32 656 (body suffix round)
 
 end VG.Impl.RsaKeyGen.RISCV64.Fn

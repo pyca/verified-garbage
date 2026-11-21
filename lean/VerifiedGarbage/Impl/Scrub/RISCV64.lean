@@ -5,7 +5,7 @@ public import VerifiedGarbage.TCB.RISCV64.Isa
 /-!
 # Returning without secret residue (64-bit RISC-V)
 
-`scrub retBits cs c` runs `c`, then clears everything `c` may have left
+`scrubAll retBits cs c` runs `c`, then clears everything `c` may have left
 where its Rust caller cannot clear it (`RISCV64.NoResidue`), as
 `Impl/Scrub/X86_64.lean` does on x86-64:
 
@@ -70,12 +70,12 @@ def scrubTail (retBits : Nat) (cs : List Nat) : Prog isa :=
   .seq (.block [zeroR .t0]) (.seq (wipe cs) (.block (retFix retBits ++ scratchRegs.map zeroR)))
 
 /-- `c`, then the clearing of `stack` bytes of stack. -/
-def scrub (retBits stack : Nat) (c : Prog isa) : Prog isa :=
+def scrubAll (retBits stack : Nat) (c : Prog isa) : Prog isa :=
   .seq c (scrubTail retBits (chunks stack))
 
 /-! ## Clearing only some of the stack
 
-`scrubSel retBits fs c` is `scrub`, but its frames, of the sizes `fs.map (·.1)`, zero only
+`scrubSel retBits fs c` is `scrubAll`, but its frames, of the sizes `fs.map (·.1)`, zero only
 the doublewords of their runs `(k, n)` (`8k` to `8(k + n) - 1` from the frame's base): the
 bytes the residue analysis (`RISCV64.RTaint`) finds may differ between two runs. -/
 

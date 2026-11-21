@@ -17,7 +17,7 @@ followed by `Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved
 registers and the stack their frames used (1200 bytes, `Wipe.*_verified`).
 Each theorem below states that one meets its contract in constant time and
 returns without secret residue (`VerifiedScrubbed`, by
-`RISCV64.Scrub.verifiedScrubbed`), which is what its registration binds.
+`RISCV64.Scrub.verifiedScrubbedAll`), which is what its registration binds.
 Their postconditions read the memory on return only
 within their buffers: the outputs, and `scratch`, which each leaves scrubbed
 (`Proof/MlKem/Scrubbed.lean`). The proofs are PPC64LE's
@@ -177,7 +177,7 @@ theorem checkEk1024Out (stack : Nat) :
 constant time and returns without secret residue. -/
 theorem keyGen_scrubbed :
     VerifiedScrubbed target Impl.MlKem.RISCV64.Fn.keyGen (Spec.MlKem.keyGenContract abi 1200) 32 :=
-  verifiedScrubbed (api := Spec.MlKem.keyGenApi) (W := 1200)
+  verifiedScrubbedAll (api := Spec.MlKem.keyGenApi) (W := 1200)
     { code := Impl.MlKem.RISCV64.Wipe.keyGen, verified := Proof.MlKem.RISCV64.Wipe.keyGen_verified }
     (keyGenOut _) (by lit_decide)
 
@@ -185,7 +185,7 @@ theorem keyGen_scrubbed :
 constant time and returns without secret residue. -/
 theorem encaps_scrubbed :
     VerifiedScrubbed target Impl.MlKem.RISCV64.Fn.encaps (Spec.MlKem.encapsContract abi 1200) 32 :=
-  verifiedScrubbed (api := Spec.MlKem.encapsApi) (W := 1200)
+  verifiedScrubbedAll (api := Spec.MlKem.encapsApi) (W := 1200)
     { code := Impl.MlKem.RISCV64.Wipe.encaps, verified := Proof.MlKem.RISCV64.Wipe.encaps_verified }
     (encapsOut _) (by lit_decide)
 
@@ -193,7 +193,7 @@ theorem encaps_scrubbed :
 constant time and returns without secret residue. -/
 theorem encapsH_scrubbed :
     VerifiedScrubbed target Impl.MlKem.RISCV64.Fn.encapsH (Spec.MlKem.encapsHContract abi 1200) 32 :=
-  verifiedScrubbed (api := Spec.MlKem.encapsHApi) (W := 1200)
+  verifiedScrubbedAll (api := Spec.MlKem.encapsHApi) (W := 1200)
     { code := Impl.MlKem.RISCV64.Wipe.encapsH, verified := Proof.MlKem.RISCV64.Wipe.encapsH_verified }
     (encapsHOut _) (by lit_decide)
 
@@ -201,7 +201,7 @@ theorem encapsH_scrubbed :
 constant time and returns without secret residue. -/
 theorem decaps_scrubbed :
     VerifiedScrubbed target Impl.MlKem.RISCV64.Fn.decaps (Spec.MlKem.decapsContract abi 1200) 32 :=
-  verifiedScrubbed (api := Spec.MlKem.decapsApi) (W := 1200)
+  verifiedScrubbedAll (api := Spec.MlKem.decapsApi) (W := 1200)
     { code := Impl.MlKem.RISCV64.Wipe.decaps, verified := Proof.MlKem.RISCV64.Wipe.decaps_verified }
     (decapsOut _) (by lit_decide)
 
@@ -209,7 +209,7 @@ theorem decaps_scrubbed :
 constant time and returns without secret residue. -/
 theorem checkEk_scrubbed :
     VerifiedScrubbed target Impl.MlKem.RISCV64.Fn.checkEk (Spec.MlKem.checkEkContract abi 0) 32 :=
-  verifiedScrubbed (api := Spec.MlKem.checkEkApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.MlKem.checkEkApi) (W := 0)
     { code := Impl.MlKem.RISCV64.checkEk, verified := Proof.MlKem.RISCV64.CheckEk.verified }
     (checkEkOut _) (by lit_decide)
 
@@ -217,7 +217,7 @@ theorem checkEk_scrubbed :
 constant time and returns without secret residue. -/
 theorem checkEk1024_scrubbed :
     VerifiedScrubbed target Impl.MlKem.RISCV64.Fn.checkEk1024 (Spec.MlKem1024.checkEkContract abi 0) 32 :=
-  verifiedScrubbed (api := Spec.MlKem1024.checkEkApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.MlKem1024.checkEkApi) (W := 0)
     { code := Impl.MlKem1024.RISCV64.checkEk1024, verified := Proof.MlKem1024.RISCV64.CheckEk.verified }
     (checkEk1024Out _) (by lit_decide)
 
@@ -225,7 +225,7 @@ theorem checkEk1024_scrubbed :
 constant time and returns without secret residue. -/
 theorem keyGen1024_scrubbed :
     VerifiedScrubbed target Impl.MlKem.RISCV64.Fn.keyGen1024 (Spec.MlKem1024.keyGenContract abi 1200) 32 :=
-  verifiedScrubbed (api := Spec.MlKem1024.keyGenApi) (W := 1200)
+  verifiedScrubbedAll (api := Spec.MlKem1024.keyGenApi) (W := 1200)
     { code := Impl.MlKem.RISCV64.Wipe.keyGen1024, verified := Proof.MlKem.RISCV64.Wipe.keyGen1024_verified }
     (keyGen1024Out _) (by lit_decide)
 
@@ -233,7 +233,7 @@ theorem keyGen1024_scrubbed :
 constant time and returns without secret residue. -/
 theorem encaps1024_scrubbed :
     VerifiedScrubbed target Impl.MlKem.RISCV64.Fn.encaps1024 (Spec.MlKem1024.encapsContract abi 1200) 32 :=
-  verifiedScrubbed (api := Spec.MlKem1024.encapsApi) (W := 1200)
+  verifiedScrubbedAll (api := Spec.MlKem1024.encapsApi) (W := 1200)
     { code := Impl.MlKem.RISCV64.Wipe.encaps1024, verified := Proof.MlKem.RISCV64.Wipe.encaps1024_verified }
     (encaps1024Out _) (by lit_decide)
 
@@ -241,7 +241,7 @@ theorem encaps1024_scrubbed :
 constant time and returns without secret residue. -/
 theorem encapsH1024_scrubbed :
     VerifiedScrubbed target Impl.MlKem.RISCV64.Fn.encapsH1024 (Spec.MlKem1024.encapsHContract abi 1200) 32 :=
-  verifiedScrubbed (api := Spec.MlKem1024.encapsHApi) (W := 1200)
+  verifiedScrubbedAll (api := Spec.MlKem1024.encapsHApi) (W := 1200)
     { code := Impl.MlKem.RISCV64.Wipe.encapsH1024, verified := Proof.MlKem.RISCV64.Wipe.encapsH1024_verified }
     (encapsH1024Out _) (by lit_decide)
 
@@ -249,7 +249,7 @@ theorem encapsH1024_scrubbed :
 constant time and returns without secret residue. -/
 theorem decaps1024_scrubbed :
     VerifiedScrubbed target Impl.MlKem.RISCV64.Fn.decaps1024 (Spec.MlKem1024.decapsContract abi 1200) 32 :=
-  verifiedScrubbed (api := Spec.MlKem1024.decapsApi) (W := 1200)
+  verifiedScrubbedAll (api := Spec.MlKem1024.decapsApi) (W := 1200)
     { code := Impl.MlKem.RISCV64.Wipe.decaps1024, verified := Proof.MlKem.RISCV64.Wipe.decaps1024_verified }
     (decaps1024Out _) (by lit_decide)
 

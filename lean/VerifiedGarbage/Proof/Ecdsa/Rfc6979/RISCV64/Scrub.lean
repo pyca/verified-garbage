@@ -161,7 +161,7 @@ theorem sign_scrubbed {R : CurveT} {T : Spec.Ecdsa.Rfc6979.TableInstance}
   have h := scrubSide_of_fill (W := 1024) hfill hs (fun _ h => absurd h List.not_mem_nil)
     (fun _ h => mem_tableFns h)
   rw [hc] at hv
-  exact verifiedScrubbed (api := T.signApi)
+  exact verifiedScrubbedAll (api := T.signApi)
     { tables := [("hmac", Proof.HmacTable.RISCV64.tables variants)]
       code := (c fns).sign
       contract := specK T cs variants

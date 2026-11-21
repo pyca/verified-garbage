@@ -21,7 +21,7 @@ Key derivation and generation, the validation of keys, signing and
 verification, and the parameter search's start, with their cleanup
 (`Impl.Dsa.RISCV64.Fn`): each meets its contract in constant time and
 returns without secret residue (`VerifiedScrubbed`, by
-`RISCV64.Scrub.verifiedScrubbed`), which is what its registration binds. What
+`RISCV64.Scrub.verifiedScrubbedAll`), which is what its registration binds. What
 the cleanup needs of each function's code (`Scrub.scrubSide`) is evaluated
 here, by the kernel.
 
@@ -45,47 +45,47 @@ open VG.Proof.MillerRabin.RISCV64 (RoundImpl)
 
 theorem deriveKey :
     VerifiedScrubbed target Impl.Dsa.RISCV64.Fn.deriveKey (Spec.Dsa.deriveKeyContract abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.deriveKeyApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.Dsa.deriveKeyApi) (W := 0)
     { code := Impl.Dsa.RISCV64.Derive.derive, verified := deriveKey_verified }
     (deriveKeyOut _ []) (by lit_decide)
 
 theorem validatePrivateKey :
     VerifiedScrubbed target Impl.Dsa.RISCV64.Fn.validatePrivateKey
       (Spec.Dsa.validatePrivateKeyContract abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.validatePrivateKeyApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.Dsa.validatePrivateKeyApi) (W := 0)
     { code := Impl.Dsa.RISCV64.PrevalidatedSign.validate, verified := validatePrivate_verified }
     (validatePrivateKeyOut _ []) (by lit_decide)
 
 theorem randomSignPrevalidated :
     VerifiedScrubbed target Impl.Dsa.RISCV64.Fn.randomSignPrevalidated
       (Spec.Dsa.randomSignPrevalidatedContract abi 192) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.randomSignPrevalidatedApi) (W := 192)
+  verifiedScrubbedAll (api := Spec.Dsa.randomSignPrevalidatedApi) (W := 192)
     { code := Impl.Dsa.RISCV64.PrevalidatedSign.randomSign, verified := randomSignPre_verified }
     (randomSignPrevalidatedOut _ []) (by lit_decide)
 
 theorem generateKey :
     VerifiedScrubbed target Impl.Dsa.RISCV64.Fn.generateKey (Spec.Dsa.generateKeyContract abi 192) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.generateKeyApi) (W := 192)
+  verifiedScrubbedAll (api := Spec.Dsa.generateKeyApi) (W := 192)
     { code := Impl.Dsa.RISCV64.Generate.code, verified := generateKey_verified }
     (generateKeyOut _ []) (by lit_decide)
 
 theorem validatePublicKey :
     VerifiedScrubbed target Impl.Dsa.RISCV64.Fn.validatePublicKey
       (Spec.Dsa.validatePublicKeyContract abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.validatePublicKeyApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.Dsa.validatePublicKeyApi) (W := 0)
     { code := Impl.Dsa.RISCV64.Prevalidated.validate, verified := validate_verified }
     (validatePublicKeyOut _ []) (by lit_decide)
 
 theorem verifyPrevalidated :
     VerifiedScrubbed target Impl.Dsa.RISCV64.Fn.verifyPrevalidated
       (Spec.Dsa.verifyPrevalidatedContract abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.verifyPrevalidatedApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.Dsa.verifyPrevalidatedApi) (W := 0)
     { code := Impl.Dsa.RISCV64.Prevalidated.verify, verified := prevalidated_verified }
     (verifyPrevalidatedOut _ []) (by lit_decide)
 
 theorem parameterInit :
     VerifiedScrubbed target Impl.Dsa.RISCV64.Fn.parameterInit (Spec.Dsa.parameterInitContract abi) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.parameterInitApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.Dsa.parameterInitApi) (W := 0)
     { code := Impl.Dsa.RISCV64.ParameterSearch.init, verified := init_verified }
     (parameterInitOut []) (by lit_decide)
 
@@ -140,7 +140,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem parameterSearch (v : RoundImpl) :
     VerifiedScrubbed target (Impl.Dsa.RISCV64.Fn.parameterSearch v.suffix v.code)
       (Spec.Dsa.parameterSearchContract (abi.withConsts PSearch.kT) 512) 32 :=
-  verifiedScrubbed (api := Spec.Dsa.parameterSearchApi)
+  verifiedScrubbedAll (api := Spec.Dsa.parameterSearchApi)
     { suffix := v.suffix
       code := Impl.Dsa.RISCV64.Fn.parameterSearchBody v.suffix v.code
       verified := PSearch.params_verified v }

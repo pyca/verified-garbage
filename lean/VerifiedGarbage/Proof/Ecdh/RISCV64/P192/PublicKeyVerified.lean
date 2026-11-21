@@ -183,7 +183,7 @@ returns without secret residue. -/
 theorem publicKey_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
     VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.publicKeyP192
       (Spec.EcKey.P192.inst.publicKeyContract RISCV64.abi) 32 :=
-  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.P192.publicKeyApi) (W := 0)
+  RISCV64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P192.publicKeyApi) (W := 0)
     { code := publicKeyP192, verified := pk_verified hL }
     (EcKey.RISCV64.Scrub.publicKeyOut _ _ []) (by dsimp only; lit_decide)
 

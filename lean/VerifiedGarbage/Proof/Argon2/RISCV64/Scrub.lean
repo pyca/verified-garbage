@@ -18,7 +18,7 @@ proves it): the function as emitted (`Impl.Argon2.RISCV64.Fn.derive`), the
 implementation followed by `Impl.Scrub.RISCV64.scrubTail`, returns with the
 caller-saved registers cleared and the stack its frames used zeroed, and
 meets its contract in constant time (`derive_scrubbed`, by
-`RISCV64.Scrub.verifiedScrubbed`), which is what its registration binds. Its arguments on the stack are in the
+`RISCV64.Scrub.verifiedScrubbedAll`), which is what its registration binds. Its arguments on the stack are in the
 caller's frame, among the buffers (`writeArgs`), which the caller owns.
 -/
 
@@ -49,7 +49,7 @@ theorem deriveOut (stack : Nat) :
 constant time and returns without secret residue. -/
 theorem derive_scrubbed :
     VerifiedScrubbed target Impl.Argon2.RISCV64.Fn.derive (Spec.Argon2.deriveContract RISCV64.abi 320) 0 :=
-  verifiedScrubbed (api := Spec.Argon2.deriveApi) (W := 320)
+  verifiedScrubbedAll (api := Spec.Argon2.deriveApi) (W := 320)
     { code := _, verified := Proof.Argon2.RISCV64.Derive.deriveShared_verified } (deriveOut _)
     (by dsimp only; lit_decide)
 

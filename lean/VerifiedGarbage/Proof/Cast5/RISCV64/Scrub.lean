@@ -189,8 +189,8 @@ theorem ofbFinalOut (stack : Nat) :
 
 Each theorem states that a function as emitted (`Impl.Cast5.RISCV64.Fn`) meets its
 contract in constant time and returns without secret residue
-(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`, or
-`verifiedScrubbedSelT` for the selective cleanup, whose residue analysis the
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`, or
+`verifiedScrubbedSel` for the selective cleanup, whose residue analysis the
 kernel evaluates here): what its registration binds. -/
 
 /-- `Spec.Cast5.expandKeyApi` as emitted (`Impl.Cast5.RISCV64.Fn.expandKey`) meets its contract
@@ -198,7 +198,7 @@ in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.expandKey
       (Spec.Cast5.expandKeyContract (RISCV64.abi.withConsts Impl.Cast5.keyConsts)) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.expandKeyApi) (W := 0) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.expandKeyApi) (W := 0) (rb := 0)
     { code := Impl.Cast5.RISCV64.expandKey
       verified := Proof.Cast5.RISCV64.expandKey_verified }
     (expandKeyOut _) (by dsimp only; lit_decide)
@@ -208,7 +208,7 @@ in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.ecbEncrypt
       (Spec.Cast5.ecbEncryptContract (RISCV64.abi.withConsts Impl.Cast5.ecbConsts)) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.ecbEncryptApi) (W := 0) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.ecbEncryptApi) (W := 0) (rb := 0)
     { code := Impl.Cast5.RISCV64.ecbEncrypt
       verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.RISCV64.ecbEncrypt_verified }
     (ecbOut .encrypt _) (by dsimp only; lit_decide)
@@ -218,7 +218,7 @@ in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.ecbDecrypt
       (Spec.Cast5.ecbDecryptContract (RISCV64.abi.withConsts Impl.Cast5.ecbConsts)) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.ecbDecryptApi) (W := 0) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.ecbDecryptApi) (W := 0) (rb := 0)
     { code := Impl.Cast5.RISCV64.ecbDecrypt
       verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.RISCV64.ecbDecrypt_verified }
     (ecbOut .decrypt _) (by dsimp only; lit_decide)
@@ -228,7 +228,7 @@ in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.cbcEncryptChained
       (Spec.Cast5.cbcEncryptChainedContract (RISCV64.abi.withConsts Impl.Cast5.ecbConsts) Proof.Cast5.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.cbcEncryptChainedApi) (W := 128) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.cbcEncryptChainedApi) (W := 128) (rb := 0)
     { code := Impl.Cast5.RISCV64.cbcEncryptChained
       verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.RISCV64.Modes.cbcEncryptChained_verified }
     (cbcEncryptOut _) (by dsimp only; lit_decide)
@@ -238,7 +238,7 @@ in constant time and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.cbcDecryptChained
       (Spec.Cast5.cbcDecryptChainedContract (RISCV64.abi.withConsts Impl.Cast5.ecbConsts) Proof.Cast5.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.cbcDecryptChainedApi) (W := 128) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.cbcDecryptChainedApi) (W := 128) (rb := 0)
     { code := Impl.Cast5.RISCV64.cbcDecryptChained
       verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.RISCV64.Modes.cbcDecryptChained_verified }
     (cbcDecryptOut _) (by dsimp only; lit_decide)
@@ -248,7 +248,7 @@ in constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.cfbEncrypt
       (Spec.Cast5.cfbEncryptContract (RISCV64.abi.withConsts Impl.Cast5.ecbConsts) Proof.Cast5.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.cfbEncryptApi) (W := 128) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.cfbEncryptApi) (W := 128) (rb := 0)
     { code := Impl.Cast5.RISCV64.cfbEncrypt
       verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.RISCV64.Modes.cfbEncrypt_verified }
     (cfbEncryptOut _) (by dsimp only; lit_decide)
@@ -258,7 +258,7 @@ in constant time and returns without secret residue. -/
 theorem cfbDecrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.cfbDecrypt
       (Spec.Cast5.cfbDecryptContract (RISCV64.abi.withConsts Impl.Cast5.ecbConsts) Proof.Cast5.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.cfbDecryptApi) (W := 128) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.cfbDecryptApi) (W := 128) (rb := 0)
     { code := Impl.Cast5.RISCV64.cfbDecrypt
       verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.RISCV64.Modes.cfbDecrypt_verified }
     (cfbDecryptOut _) (by dsimp only; lit_decide)
@@ -268,7 +268,7 @@ in constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.cfbEncryptFinal
       (Spec.Cast5.cfbEncryptFinalContract (RISCV64.abi.withConsts Impl.Cast5.ecbConsts) Proof.Cast5.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.cfbEncryptFinalApi) (W := 128) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.cfbEncryptFinalApi) (W := 128) (rb := 0)
     { code := Impl.Cast5.RISCV64.cfbEncryptFinal
       verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.RISCV64.Modes.cfbEncryptFinal_verified }
     (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
@@ -278,7 +278,7 @@ in constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.cfbDecryptFinal
       (Spec.Cast5.cfbDecryptFinalContract (RISCV64.abi.withConsts Impl.Cast5.ecbConsts) Proof.Cast5.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.cfbDecryptFinalApi) (W := 128) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.cfbDecryptFinalApi) (W := 128) (rb := 0)
     { code := Impl.Cast5.RISCV64.cfbDecryptFinal
       verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.RISCV64.Modes.cfbDecryptFinal_verified }
     (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
@@ -288,7 +288,7 @@ in constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.ofb
       (Spec.Cast5.ofbContract (RISCV64.abi.withConsts Impl.Cast5.ecbConsts) Proof.Cast5.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.ofbApi) (W := 128) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.ofbApi) (W := 128) (rb := 0)
     { code := Impl.Cast5.RISCV64.ofb
       verified := Proof.Cast5.ofb_keyed Proof.Cast5.RISCV64.Modes.ofb_verified }
     (ofbOut _) (by dsimp only; lit_decide)
@@ -298,7 +298,7 @@ in constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.Cast5.RISCV64.Fn.ofbFinal
       (Spec.Cast5.ofbFinalContract (RISCV64.abi.withConsts Impl.Cast5.ecbConsts) Proof.Cast5.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.ofbFinalApi) (W := 128) (rb := 0)
+  verifiedScrubbedAll (api := Spec.Cast5.ofbFinalApi) (W := 128) (rb := 0)
     { code := Impl.Cast5.RISCV64.ofbFinal
       verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.RISCV64.Modes.ofbFinal_verified }
     (ofbFinalOut _) (by dsimp only; lit_decide)

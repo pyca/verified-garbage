@@ -247,7 +247,7 @@ returns without secret residue. -/
 theorem publicKey_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
     VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.publicKeySecp256k1
       (Spec.EcKey.Secp256k1.inst.publicKeyContract (RISCV64.abi.withConsts Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts)) 32 :=
-  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.Secp256k1.publicKeyApi) (W := 0)
+  RISCV64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.publicKeyApi) (W := 0)
     { code := publicKeySecp256k1, verified := pk_verified hL }
     (EcKey.RISCV64.Scrub.publicKeyOut _ _ Impl.Ecdsa.RISCV64.Comb.secp256k1CombConsts) (by dsimp only; lit_decide)
 

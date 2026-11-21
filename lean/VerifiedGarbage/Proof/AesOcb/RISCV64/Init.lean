@@ -23,7 +23,7 @@ AES-GCM one: the key schedule, then `ENCIPHER(K, zeros(128))` at byte 240
 (`Proof/AesOcb/PPC64LE/Init.lean`).
 
 It returns without secret residue followed by `Impl.Scrub.RISCV64.scrubTail`
-(`RISCV64.Scrub.verifiedScrubbed`), which clears the caller-saved registers and all
+(`RISCV64.Scrub.verifiedScrubbedAll`), which clears the caller-saved registers and all
 of its 2560 bytes of stack, which the residue analysis finds may all hold
 the key schedule, as `vg_aes_gcm_init`'s registration does
 (`Proof/AesGcm/RISCV64/StreamBs.lean`). Its postcondition reads the memory
@@ -62,7 +62,7 @@ time and returns without secret residue: the theorem its registration binds. -/
 theorem init_scrubbed :
     VerifiedScrubbed VG.RISCV64.target Impl.AesOcb.RISCV64.Fn.init
       (Spec.Ocb.initContract RISCV64.abi 2560) 0 :=
-  VG.RISCV64.Scrub.verifiedScrubbed (api := Spec.Ocb.initApi) (W := 2560)
+  VG.RISCV64.Scrub.verifiedScrubbedAll (api := Spec.Ocb.initApi) (W := 2560)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a3 Impl.AesGcm.RISCV64.init
       verified := init_framed }
     initOut init_scrubSide

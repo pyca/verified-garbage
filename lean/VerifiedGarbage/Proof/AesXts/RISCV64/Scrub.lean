@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Aes.ScrubLocal
 (`Impl.Aes.RISCV64.Fn`), each followed by `Impl.Scrub.RISCV64.scrubTail`,
 which clears the caller-saved registers and the stack its frames used, meet
 their contracts in constant time and return without secret residue
-(`RISCV64.Scrub.verifiedScrubbed`): the theorems their registrations bind.
+(`RISCV64.Scrub.verifiedScrubbedAll`): the theorems their registrations bind.
 Their postconditions
 read the memory on return only within the data (`RISCV64.Scrub.PostOut`),
 as on x86-64 (`Proof/AesXts/X86_64/Scrub.lean`).
@@ -61,7 +61,7 @@ theorem decryptUnitOut (stack : Nat) :
 constant time and returns without secret residue. -/
 theorem xtsEncryptUnit_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.xtsEncryptUnit (Spec.Xts.aesEncryptUnitContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Xts.aesEncryptUnitApi)
+  verifiedScrubbedAll (api := Spec.Xts.aesEncryptUnitApi)
     { code := Impl.AesXts.RISCV64Unit.encrypt
       verified := Proof.AesXts.RISCV64.Unit.encrypt_verified }
     (encryptUnitOut _) (by lit_decide)
@@ -70,7 +70,7 @@ theorem xtsEncryptUnit_scrubbed :
 constant time and returns without secret residue. -/
 theorem xtsDecryptUnit_scrubbed :
     VerifiedScrubbed target Impl.Aes.RISCV64.Fn.xtsDecryptUnit (Spec.Xts.aesDecryptUnitContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Xts.aesDecryptUnitApi)
+  verifiedScrubbedAll (api := Spec.Xts.aesDecryptUnitApi)
     { code := Impl.AesXts.RISCV64Unit.decrypt
       verified := Proof.AesXts.RISCV64.Unit.decrypt_verified }
     (decryptUnitOut _) (by lit_decide)

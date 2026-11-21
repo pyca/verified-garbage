@@ -1378,7 +1378,7 @@ end VG.Proof.AesOcb.RISCV64
 /-! ## AES-OCB on RISC-V, without secret residue
 
 `vg_aes_ocb_seal` and `vg_aes_ocb_open`, each followed by
-`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.RISCV64.scrubTail` (`RISCV64.Scrub.verifiedScrubbedAll`), which clears the
 caller-saved registers and the whole 2592-byte frame (`withStackScratchArgs`)
 that holds their working space, the offsets and the key schedule among it:
 the residue analysis (`RISCV64.rtaint`) finds that all of it may hold
@@ -1437,7 +1437,7 @@ time and returns without secret residue: the theorem its registration binds. -/
 theorem seal_scrubbed :
     VerifiedScrubbed target Impl.AesOcb.RISCV64.Fn.«seal»
       (Spec.Ocb.sealContract RISCV64.abi 2592) 0 :=
-  verifiedScrubbed (api := Spec.Ocb.sealApi) (W := 2592)
+  verifiedScrubbedAll (api := Spec.Ocb.sealApi) (W := 2592)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesOcb.RISCV64.«seal»
       verified := Proof.AesOcb.seal_keyed seal_framed }
     (sealOut _) seal_scrubSide
@@ -1455,7 +1455,7 @@ time and returns without secret residue: the theorem its registration binds. -/
 theorem open_scrubbed :
     VerifiedScrubbed target Impl.AesOcb.RISCV64.Fn.«open»
       (Spec.Ocb.openContract RISCV64.abi 2592) 32 :=
-  verifiedScrubbed (api := Spec.Ocb.openApi) (W := 2592)
+  verifiedScrubbedAll (api := Spec.Ocb.openApi) (W := 2592)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesOcb.RISCV64.«open»
       verified := Proof.AesOcb.open_keyed open_framed }
     (openOut _) open_scrubSide

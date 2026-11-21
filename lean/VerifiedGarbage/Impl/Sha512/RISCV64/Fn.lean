@@ -8,7 +8,7 @@ public import VerifiedGarbage.Spec.Sha512.Contract
 /-!
 # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 on RISC-V, as emitted
 
-Each streaming function, then its cleanup (`Impl.Scrub.RISCV64.scrub rb W`):
+Each streaming function, then its cleanup (`Impl.Scrub.RISCV64.scrubAll rb W`):
 the zeroing of the `W` bytes of stack its frames use (none for `init`, the
 208-byte frame of `update` and `finalize`), and the clearing of the
 caller-saved registers, `a0` included (none returns a value), so that it
@@ -28,36 +28,36 @@ may differ between two runs: the code wipes most of its own scratch space.
 namespace VG.Impl.Sha512.RISCV64.Fn
 
 open VG.RISCV64
-open VG.Impl.Scrub.RISCV64 (scrub scrubSel)
+open VG.Impl.Scrub.RISCV64 (scrubAll scrubSel)
 open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 open Spec.Sha512 (HashValue)
 
 /-- `vg_sha384_init`, as emitted. -/
-def init384 : Prog isa := scrub 0 0 (Stream.initWith Spec.Sha512.H0_384)
+def init384 : Prog isa := scrubAll 0 0 (Stream.initWith Spec.Sha512.H0_384)
 
 /-- `vg_sha512_init`, as emitted. -/
-def init512 : Prog isa := scrub 0 0 (Stream.initWith Spec.Sha512.H0_512)
+def init512 : Prog isa := scrubAll 0 0 (Stream.initWith Spec.Sha512.H0_512)
 
 /-- `vg_sha512_224_init`, as emitted. -/
-def init512_224 : Prog isa := scrub 0 0 (Stream.initWith Spec.Sha512.H0_512_224)
+def init512_224 : Prog isa := scrubAll 0 0 (Stream.initWith Spec.Sha512.H0_512_224)
 
 /-- `vg_sha512_256_init`, as emitted. -/
-def init512_256 : Prog isa := scrub 0 0 (Stream.initWith Spec.Sha512.H0_512_256)
+def init512_256 : Prog isa := scrubAll 0 0 (Stream.initWith Spec.Sha512.H0_512_256)
 
 /-- `vg_sha512_update`, which the family shares, as emitted. -/
-def update : Prog isa := scrub 0 208 Stream.update
+def update : Prog isa := scrubAll 0 208 Stream.update
 
 /-- `vg_sha512_finalize`, as emitted. -/
-def finalize : Prog isa := scrub 0 208 Stream.finalize
+def finalize : Prog isa := scrubAll 0 208 Stream.finalize
 
 /-- `vg_sha384_finalize`, as emitted. -/
-def finalize384 : Prog isa := scrub 0 208 Stream.finalize384
+def finalize384 : Prog isa := scrubAll 0 208 Stream.finalize384
 
 /-- `vg_sha512_256_finalize`, as emitted. -/
-def finalize512_256 : Prog isa := scrub 0 208 Stream.finalize512_256
+def finalize512_256 : Prog isa := scrubAll 0 208 Stream.finalize512_256
 
 /-- `vg_sha512_224_finalize`, as emitted. -/
-def finalize512_224 : Prog isa := scrub 0 208 Stream.finalize512_224
+def finalize512_224 : Prog isa := scrubAll 0 208 Stream.finalize512_224
 
 /-- The streaming functions of the hash function with initial hash value
 `iv` (whose `init` is `initN`) and a digest of `D` bytes, written by

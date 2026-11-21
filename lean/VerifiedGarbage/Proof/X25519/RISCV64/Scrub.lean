@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 `vg_x25519_base` and `vg_x25519_exchange` as emitted (`Impl.X25519.RISCV64.Fn`), each
 followed by `Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers and the
 stack its frames used: the theorems their registrations bind
-(`RISCV64.Scrub.verifiedScrubbed`). Their postconditions read the memory on return only
+(`RISCV64.Scrub.verifiedScrubbedAll`). Their postconditions read the memory on return only
 within `out` (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/X25519/X86_64/Scrub.lean`).
 -/
 
@@ -74,7 +74,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem exchange_scrubbed :
     VerifiedScrubbed target Impl.X25519.RISCV64.Fn.exchange
       (Spec.X25519.exchangeContract RISCV64.abi 16) 32 :=
-  verifiedScrubbed (api := Spec.X25519.exchangeApi) (W := 16)
+  verifiedScrubbedAll (api := Spec.X25519.exchangeApi) (W := 16)
     { code := Impl.Xdh.RISCV64.exchange "vg_x25519" Impl.X25519.RISCV64.R64.x25519 32
       verified := Proof.X25519.RISCV64.Exchange.exchange_verified }
     (exchangeOut [] _) (by lit_decide)
@@ -84,7 +84,7 @@ time and returns without secret residue: the theorem its registration binds. -/
 theorem base_scrubbed :
     VerifiedScrubbed target Impl.X25519.RISCV64.Fn.base
       (Spec.X25519.x25519BaseContract (RISCV64.abi.withConsts Impl.Ed25519.RISCV64.combConsts)) 0 :=
-  verifiedScrubbed (api := Spec.X25519.x25519BaseApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.X25519.x25519BaseApi) (W := 0)
     { code := Impl.X25519.RISCV64.Base.x25519Base
       verified := Proof.X25519.RISCV64.Base.x25519Base_verified }
     (baseOut Impl.Ed25519.RISCV64.combConsts 0) (by lit_decide)

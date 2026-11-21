@@ -93,7 +93,7 @@ emitted (`Impl.Poly1305.RISCV64.Fn`), each followed by
 `Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers
 (none uses the stack). Each theorem below states that one meets its
 contract in constant time and returns without secret residue
-(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`), which is what its
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`), which is what its
 registration binds. Their postconditions read the memory on return only
 within the state and the tag (`RISCV64.Scrub.PostOut`), as on x86-64 (`Proof/Poly1305/X86_64/Scrub.lean`).
 -/
@@ -159,7 +159,7 @@ theorem finalizeOut (stack : Nat) : PostOut (finalizeContract RISCV64.abi stack)
 in constant time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed target Impl.Poly1305.RISCV64.Fn.init (initContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := initApi) (W := 0)
+  verifiedScrubbedAll (api := initApi) (W := 0)
     { code := _, verified := Proof.Poly1305.RISCV64.Shared.init } (initOut _)
     (by dsimp only; lit_decide)
 
@@ -167,7 +167,7 @@ theorem init_scrubbed :
 in constant time and returns without secret residue. -/
 theorem update_scrubbed :
     VerifiedScrubbed target Impl.Poly1305.RISCV64.Fn.update (updateContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := updateApi) (W := 0)
+  verifiedScrubbedAll (api := updateApi) (W := 0)
     { code := _, verified := Proof.Poly1305.RISCV64.Shared.update } (updateOut _)
     (by dsimp only; lit_decide)
 
@@ -175,7 +175,7 @@ theorem update_scrubbed :
 in constant time and returns without secret residue. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed target Impl.Poly1305.RISCV64.Fn.finalize (finalizeContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := finalizeApi) (W := 0)
+  verifiedScrubbedAll (api := finalizeApi) (W := 0)
     { code := _, verified := Proof.Poly1305.RISCV64.Shared.finalize } (finalizeOut _)
     (by dsimp only; lit_decide)
 

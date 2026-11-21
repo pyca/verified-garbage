@@ -224,7 +224,7 @@ time and returns without secret residue. -/
 theorem compress_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.EcKey.Compressed.RISCV64.Fn.compressSecp256k1
       (Spec.EcKey.Secp256k1.inst.compressPublicKeyContract RISCV64.abi) 32 :=
-  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.Secp256k1.inst.compressPublicKeyApi) (W := 0)
+  RISCV64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.inst.compressPublicKeyApi) (W := 0)
     { code := compressSecp256k1, verified := compress_verified }
     (EcKey.RISCV64.Scrub.compressOut _ _ []) (by dsimp only; lit_decide)
 
@@ -234,7 +234,7 @@ constant time and returns without secret residue. -/
 theorem decompress_scrubbed (hL : VG.Proof.Weierstrass.Law Spec.Secp256k1.curve) :
     VerifiedScrubbed RISCV64.target Impl.EcKey.Compressed.RISCV64.Fn.decompressSecp256k1
       (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract RISCV64.abi) 32 :=
-  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi) (W := 0)
+  RISCV64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi) (W := 0)
     { code := decompressSecp256k1, verified := decompress_verified hL }
     (EcKey.RISCV64.Scrub.decompressOut _ _ []) (by dsimp only; lit_decide)
 
