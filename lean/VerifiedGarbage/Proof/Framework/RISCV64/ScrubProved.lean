@@ -9,8 +9,8 @@ public import VerifiedGarbage.TCB.Registration
 # Scrubbed code, verified (64-bit RISC-V)
 
 The theorems a registration binds (`verified := .scrubbed …`):
-`verifiedScrubbedAll` and `verifiedScrubbedSel` (and `verifiedScrubbedAllOf`,
-`verifiedScrubbedSel`) state, of the code with its cleanup, `scrubAll rb W c`
+`verifiedScrubbedAll` and `verifiedScrubbedSel` state, of the code with its
+cleanup, `scrubAll rb W c`
 or `scrubSel rb fs c`, which `Impl/` defines as the function, that it meets
 its contract in constant time and returns without secret residue. The
 registration binds that definition and that theorem, and nothing else: no
@@ -68,31 +68,22 @@ what the cleanup needs of the code as a hypothesis, which the proof module
 gives: by `lit_decide` of `scrubSide` or `selSide`, or, for code generic
 over the implementations of a function it calls, from what the function
 proves of its own instructions and each implementation of its own
-(`verifiedScrubbedAllOf` takes the facts one by one). `W` and `rb` are
+(`scrubSide_of_fill`). `W` and `rb` are
 arguments, so that the hypotheses are stated with them and not with
 projections of `r`; `hW` and `hb` tie them to `r`'s stack and result. -/
 
 /-- `r`'s code with its cleanup (`scrubAll`, over `W` bytes of stack, the
 stack its frames use, with a result of `rb` bits) meets `r`'s contract in
-constant time and returns without secret residue, from `scrubSide`'s
-conditions given one by one. -/
-theorem verifiedScrubbedAllOf {api : Api} (r : Unscrubbed api target) {W rb : Nat}
-    (hpost : PostOut r.contract rb) (hd : r.code.riscv64Depth ≤ W) (hst : W < 2 ^ 64)
-    (h16 : W % 16 = 0) (htc : tablesCall r.code r.tables = true) (hrb : rb ≤ 64)
-    (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl) :
-    VerifiedScrubbed target (scrubAll rb W r.code) r.contract rb := by
-  subst hW hb
-  have h := scrubCode_ok r hd hst h16 htc hrb hpost
-  exact ⟨h.1, h.2⟩
-
-/-- `verifiedScrubbedAllOf`, with its conditions one Boolean (`scrubSide`):
-the theorem about the code that a registration binds. -/
+constant time and returns without secret residue, given `scrubSide`: the
+theorem about the code that a registration binds. -/
 theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) {W rb : Nat}
     (hpost : PostOut r.contract rb) (hs : scrubSide r.code W rb r.tables = true)
     (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl) :
-    VerifiedScrubbed target (scrubAll rb W r.code) r.contract rb :=
-  have h := of_scrubSide hs
-  verifiedScrubbedAllOf r hpost h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2 hW hb
+    VerifiedScrubbed target (scrubAll rb W r.code) r.contract rb := by
+  subst hW hb
+  obtain ⟨hd, hst, h16, htc, hrb⟩ := of_scrubSide hs
+  have h := scrubCode_ok r hd hst h16 htc hrb hpost
+  exact ⟨h.1, h.2⟩
 
 /-- `r`'s code `code` with its cleanup of only the runs of `fs`
 (`scrubSel`, with a result of `rb` bits) meets `r`'s contract in constant
