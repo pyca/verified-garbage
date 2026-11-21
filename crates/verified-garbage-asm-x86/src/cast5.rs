@@ -429,7 +429,7 @@ mov eax, DWORD PTR [esp]
 jne 241b
 .base64 "8w9/DosGM0YEM0YIM0YMM0YwiUc8g8dAg+sB"
 jne 21b
-.base64 "i15Ai35Ii25Mi3ZEZg/vwLkAAAAAjWQk/IkMJI1kJAS4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "i15Ai35Ii25Mi3ZEuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         VG_CAST5_S5678 = sym super::consts::VG_CAST5_S5678,
     )
@@ -511,7 +511,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i14gi34oi24si3YkZg/vwLkAAAAAjWQk/IkMJI1kJAS4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "i14gi34oi24si3YkuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
@@ -592,7 +592,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i14gi34oi24si3YkZg/vwLkAAAAAjWQk/IkMJI1kJAS4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "i14gi34oi24si3YkuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
