@@ -18,10 +18,10 @@ def artifacts : List Artifact :=
     Spec.Ctr.aesApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCtr.AArch64.Fn.crypt v.callee
-      verified := Final.crypt_scrubbed v },
+      verified := Proof.AesCtr.AArch64.Final.crypt_scrubbed v },
     Spec.Ctr.aesFinalApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCtr.AArch64.Fn.cryptFinal v.callee v.suffix
-      verified := Final.cryptFinal_scrubbed v }]
+      verified := Proof.AesCtr.AArch64.Final.cryptFinal_scrubbed v }]
 
 end VG.Artifacts.AesCtr.AArch64

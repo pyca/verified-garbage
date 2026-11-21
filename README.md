@@ -1651,6 +1651,26 @@ yours to keep:
 
 <tr>
 
+<td>HKDF</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>PBKDF2-HMAC-MD5</td>
 
 <td>✅</td>

@@ -18,20 +18,20 @@ def artifacts : List Artifact :=
     Spec.Cfb.aesEncryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCfb.AArch64.Fn.encrypt v.enc
-      verified := Final.encrypt_scrubbed v.blocks },
+      verified := Proof.AesCfb.AArch64.Final.encrypt_scrubbed v.blocks },
     Spec.Cfb.aesDecryptApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCfb.AArch64.Fn.decrypt v.dec
-      verified := Final.decrypt_scrubbed v
+      verified := Proof.AesCfb.AArch64.Final.decrypt_scrubbed v
       written := v.written
-      writtenOk := Final.decrypt_written v },
+      writtenOk := Proof.AesCfb.AArch64.Final.decrypt_written v },
     Spec.Cfb.aesEncryptFinalApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCfb.AArch64.Fn.encryptFinal v.enc v.suffix
-      verified := Final.encryptFinal_scrubbed v.blocks },
+      verified := Proof.AesCfb.AArch64.Final.encryptFinal_scrubbed v.blocks },
     Spec.Cfb.aesDecryptFinalApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCfb.AArch64.Fn.decryptFinal v.enc v.suffix v.dec
-      verified := Final.decryptFinal_scrubbed v }]
+      verified := Proof.AesCfb.AArch64.Final.decryptFinal_scrubbed v }]
 
 end VG.Artifacts.AesCfb.AArch64

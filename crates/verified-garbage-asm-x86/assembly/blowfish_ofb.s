@@ -417,15 +417,14 @@ vg_blowfish_ofb:
 	mov DWORD PTR [esp+104], ecx
 	mov DWORD PTR [esp+108], ecx
 	lea esp, [esp+112]
-	pxor xmm0, xmm0
 	lea esp, [esp-112]
-	movdqu XMMWORD PTR [esp], xmm0
-	movdqu XMMWORD PTR [esp+16], xmm0
-	movdqu XMMWORD PTR [esp+32], xmm0
-	movdqu XMMWORD PTR [esp+48], xmm0
-	movdqu XMMWORD PTR [esp+64], xmm0
-	movdqu XMMWORD PTR [esp+80], xmm0
-	movdqu XMMWORD PTR [esp+96], xmm0
+	mov ecx, 0
+	mov DWORD PTR [esp], ecx
+	mov DWORD PTR [esp+4], ecx
+	mov DWORD PTR [esp+8], ecx
+	mov DWORD PTR [esp+12], ecx
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
 	lea esp, [esp+112]
 	mov eax, 0
 	mov edx, 0
@@ -876,15 +875,14 @@ vg_blowfish_ofb_final:
 	mov DWORD PTR [esp+104], ecx
 	mov DWORD PTR [esp+108], ecx
 	lea esp, [esp+112]
-	pxor xmm0, xmm0
 	lea esp, [esp-112]
-	movdqu XMMWORD PTR [esp], xmm0
-	movdqu XMMWORD PTR [esp+16], xmm0
-	movdqu XMMWORD PTR [esp+32], xmm0
-	movdqu XMMWORD PTR [esp+48], xmm0
-	movdqu XMMWORD PTR [esp+64], xmm0
-	movdqu XMMWORD PTR [esp+80], xmm0
-	movdqu XMMWORD PTR [esp+96], xmm0
+	mov ecx, 0
+	mov DWORD PTR [esp], ecx
+	mov DWORD PTR [esp+4], ecx
+	mov DWORD PTR [esp+8], ecx
+	mov DWORD PTR [esp+12], ecx
+	mov DWORD PTR [esp+16], ecx
+	mov DWORD PTR [esp+20], ecx
 	lea esp, [esp+112]
 	mov eax, 0
 	mov edx, 0

@@ -36,9 +36,39 @@ namespace VG.Artifacts.Sha256.X86_64
 def artifacts : List Artifact := [
   Spec.Sha256.init224Api.artifact X86_64.target { code := Impl.Sha256.X86_64.Fn.init224, verified := Proof.Sha256.X86_64.init224_scrubbed, spSafe := Proof.Sha256.X86_64.init224_spSafe },
   Spec.Sha256.initApi.artifact X86_64.target { code := Impl.Sha256.X86_64.Fn.init, verified := Proof.Sha256.X86_64.init_scrubbed, spSafe := Proof.Sha256.X86_64.init_spSafe }] ++
-  ((VG.Proof.Variants.MdHash.X86_64.sha224Variants ++
-      VG.Proof.Variants.MdHash.X86_64.sha256Variants).flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
-    v.stream.map fun f =>
-      f.f.api.artifact X86_64.target { f.reg with suffix := v.suffix })
+  (VG.Proof.Variants.MdHash.X86_64.sha224Streams.flatMap
+      fun (s : Proof.Pbkdf2.Md.X86_64.StreamFns2 Spec.Sha256.finalize224Api Spec.Sha256.digest224Api) => [
+      Spec.Sha256.finalize224Api.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.finalize.sel.level s.finalize.f.retBits s.finalize.f.stack s.finalize.sel.runs
+          s.finalize.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.finalize
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.finalize },
+      Spec.Sha256.digest224Api.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.digest.sel.level s.digest.f.retBits s.digest.f.stack s.digest.sel.runs
+          s.digest.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.digest
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.digest }]) ++
+  (VG.Proof.Variants.MdHash.X86_64.sha256Streams.flatMap
+      fun (s : Proof.Pbkdf2.Md.X86_64.StreamFns Spec.Sha256.updateApi Spec.Sha256.finalizeApi Spec.Sha256.digest256Api) => [
+      Spec.Sha256.updateApi.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.update.sel.level s.update.f.retBits s.update.f.stack s.update.sel.runs
+          s.update.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.update
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.update },
+      Spec.Sha256.finalizeApi.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.finalize.sel.level s.finalize.f.retBits s.finalize.f.stack s.finalize.sel.runs
+          s.finalize.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.finalize
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.finalize },
+      Spec.Sha256.digest256Api.artifact X86_64.target {
+        suffix := s.suffix
+        code := Impl.Scrub.X86_64.scrubSel s.digest.sel.level s.digest.f.retBits s.digest.f.stack s.digest.sel.runs
+          s.digest.f.code
+        verified := Proof.Pbkdf2.Md.X86_64.StreamFnS.scrubbed s.digest
+        spSafe := Proof.Pbkdf2.Md.X86_64.StreamFnS.spSafeFn s.digest }])
 
 end VG.Artifacts.Sha256.X86_64

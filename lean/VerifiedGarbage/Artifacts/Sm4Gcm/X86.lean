@@ -47,37 +47,37 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Sm4.Gcm.streamEncryptApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.streamEncrypt v.callees
-    verified := streamEncrypt_scrubbed v
-    spSafe := streamEncrypt_spSafeF v },
+    verified := Proof.Sm4Gcm.X86.Scrub.streamEncrypt_scrubbed v
+    spSafe := Proof.Sm4Gcm.X86.Scrub.streamEncrypt_spSafeF v },
   Spec.Sm4.Gcm.streamDecryptApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.streamDecrypt v.callees
-    verified := streamDecrypt_scrubbed v
-    spSafe := streamDecrypt_spSafeF v },
+    verified := Proof.Sm4Gcm.X86.Scrub.streamDecrypt_scrubbed v
+    spSafe := Proof.Sm4Gcm.X86.Scrub.streamDecrypt_spSafeF v },
   Spec.Sm4.Gcm.streamFinishApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.streamFinish v.callees
-    verified := streamFinish_scrubbed v
-    spSafe := streamFinish_spSafeF v },
+    verified := Proof.Sm4Gcm.X86.Scrub.streamFinish_scrubbed v
+    spSafe := Proof.Sm4Gcm.X86.Scrub.streamFinish_spSafeF v },
   Spec.Sm4.Gcm.streamVerifyApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.streamVerify v.callees
-    verified := streamVerify_scrubbed v
-    spSafe := streamVerify_spSafeF v },
+    verified := Proof.Sm4Gcm.X86.Scrub.streamVerify_scrubbed v
+    spSafe := Proof.Sm4Gcm.X86.Scrub.streamVerify_spSafeF v },
   Spec.Sm4.Gcm.sealApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.«seal» v.callees
-    verified := seal_scrubbed v
-    spSafe := seal_spSafeF v },
+    verified := Proof.Sm4Gcm.X86.Scrub.seal_scrubbed v
+    spSafe := Proof.Sm4Gcm.X86.Scrub.seal_spSafeF v },
   Spec.Sm4.Gcm.openApi.artifact X86.target {
     suffix := v.gh.suffix
     code := Impl.Sm4Gcm.X86.Fn.«open» v.callees
-    verified := open_scrubbed v
-    spSafe := open_spSafeF v }]
+    verified := Proof.Sm4Gcm.X86.Scrub.open_scrubbed v
+    spSafe := Proof.Sm4Gcm.X86.Scrub.open_spSafeF v }]
 
 /-- The artifacts of a variant, from the implementation of `vg_ghash` it names. -/
 def artifacts (v : Proof.AesGcm.X86.GhashName) : List Artifact :=
-  artifactsOf ⟨Proof.Aes.X86.Ctr32Impl.scalar, v.impl⟩
+  artifactsOf (Proof.AesGcm.X86.GcmImpl.mk Proof.Aes.X86.Ctr32Impl.scalar v.impl)
 
 end VG.Artifacts.Sm4Gcm.X86.Ghash
 

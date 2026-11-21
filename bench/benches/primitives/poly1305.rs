@@ -98392,10 +98392,15 @@ vgx_ae_x2t:
 /// the same instructions). CFB128 encryption (kinds c128, c192, c256):
 /// `cfb.ecur`, the loop `vg_aes_cfb128_encrypt_aesni_core` as emitted
 /// (`Impl/AesCfb/X86.lean`) calling `ecur.0`; `cfbinline`, the same shape as
-/// `inline`: the last ciphertext block kept in xmm0.
+/// `inline`: the last ciphertext block kept in xmm0; `cfin`, where present,
+/// that loop as committed. CFB128 decryption (kinds d128, d192, d256):
+/// `cfbd.ecur`, the loop `vg_aes_cfb128_decrypt_aesni_core` as emitted
+/// calling `ecur.0` for each block; `cfbdinline`, not proven, with no call:
+/// six ciphertext blocks' predecessors enciphered together (the blocks do
+/// not depend on each other), then the blocks left one at a time.
 ///
-/// Each is checked against the library's AES-OFB or AES-CFB128 encryption
-/// and timed on 1 KiB and 16 KiB with keys of 128, 192 and 256 bits, with
+/// Each is checked against the library's AES-OFB, AES-CFB128 encryption or
+/// AES-CFB128 decryption and timed on 1 KiB and 16 KiB with keys of 128, 192 and 256 bits, with
 /// the vector state not in use, next to the library's from the key (`lib`).
 ///
 /// One line each: `xofb <round> fast <name> <bytes> <kind> xinuse
@@ -98404,7 +98409,7 @@ vgx_ae_x2t:
 mod xofb {
     use std::hint::black_box;
 
-    use verified_garbage::cipher::aes::{AesCfb128Encryptor, AesOfb};
+    use verified_garbage::cipher::aes::{AesCfb128Decryptor, AesCfb128Encryptor, AesOfb};
 
     use super::xsha::{done, time};
 
@@ -100129,6 +100134,452 @@ vgx_cf_inline:
 .size vgx_cf_inline, .-vgx_cf_inline
 "#
     );
+    std::arch::global_asm!(
+        r#"
+.globl vgx_cf_fin
+.type vgx_cf_fin, @function
+.p2align 6
+vgx_cf_fin:
+    mov eax, DWORD PTR [esp+24]
+    mov DWORD PTR [eax+2064], ebx
+    mov DWORD PTR [eax+2068], esi
+    mov DWORD PTR [eax+2072], edi
+    mov DWORD PTR [eax+2076], ebp
+    mov esi, DWORD PTR [esp+16]
+    mov eax, DWORD PTR [esp+20]
+    test eax, eax
+    je 20f
+    mov edi, DWORD PTR [esp+20]
+    mov eax, DWORD PTR [esp+4]
+    mov ecx, DWORD PTR [esp+8]
+    mov edx, DWORD PTR [esp+12]
+    movdqu xmm0, XMMWORD PTR [edx]
+22:
+    movdqu xmm6, XMMWORD PTR [eax]
+    pxor xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+16]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+32]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+48]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+64]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+80]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+96]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+112]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+128]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+144]
+    aesenc xmm0, xmm6
+    cmp ecx, 10
+    je 23f
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+176]
+    aesenc xmm0, xmm6
+    cmp ecx, 12
+    je 25f
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+208]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+224]
+    aesenclast xmm0, xmm6
+    jmp 26f
+25:
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenclast xmm0, xmm6
+26:
+    jmp 24f
+23:
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenclast xmm0, xmm6
+24:
+    movdqu xmm7, XMMWORD PTR [esi]
+    pxor xmm0, xmm7
+    movdqu XMMWORD PTR [esi], xmm0
+    add esi, 16
+    sub edi, 1
+    jne 22b
+    movdqu XMMWORD PTR [edx], xmm0
+    jmp 21f
+20:
+21:
+    mov eax, DWORD PTR [esp+24]
+    mov ebx, DWORD PTR [eax+2064]
+    mov esi, DWORD PTR [eax+2068]
+    mov edi, DWORD PTR [eax+2072]
+    mov ebp, DWORD PTR [eax+2076]
+    mov ecx, DWORD PTR [esp+24]
+    mov eax, 0
+    mov DWORD PTR [ecx+2048], eax
+    mov DWORD PTR [ecx+2052], eax
+    mov DWORD PTR [ecx+2056], eax
+    mov DWORD PTR [ecx+2060], eax
+    mov eax, 0
+    mov DWORD PTR [ecx+2064], eax
+    mov DWORD PTR [ecx+2068], eax
+    mov DWORD PTR [ecx+2072], eax
+    mov DWORD PTR [ecx+2076], eax
+    ret
+.size vgx_cf_fin, .-vgx_cf_fin
+"#
+    );
+    std::arch::global_asm!(
+        r#"
+.globl vgx_cd_ecur
+.type vgx_cd_ecur, @function
+.p2align 6
+vgx_cd_ecur:
+    mov eax, DWORD PTR [esp+24]
+    mov DWORD PTR [eax+2064], ebx
+    mov DWORD PTR [eax+2068], esi
+    mov DWORD PTR [eax+2072], edi
+    mov DWORD PTR [eax+2076], ebp
+    mov esi, DWORD PTR [esp+16]
+    mov eax, DWORD PTR [esp+20]
+    test eax, eax
+    je 20f
+22:
+    mov eax, DWORD PTR [esp+4]
+    mov ecx, DWORD PTR [esp+8]
+    mov ebx, DWORD PTR [esp+12]
+    mov edi, 1
+    mov ebp, DWORD PTR [esp+24]
+    push ebp
+    push edi
+    push ebx
+    push ecx
+    push eax
+    call vgx_ob_ecur_0
+    pop eax
+    pop eax
+    pop eax
+    pop eax
+    pop eax
+    mov ebx, DWORD PTR [esp+12]
+    mov eax, DWORD PTR [esi]
+    mov ecx, DWORD PTR [ebx]
+    xor eax, ecx
+    mov DWORD PTR [esi], eax
+    mov eax, DWORD PTR [esi+4]
+    mov ecx, DWORD PTR [ebx+4]
+    xor eax, ecx
+    mov DWORD PTR [esi+4], eax
+    mov eax, DWORD PTR [esi+8]
+    mov ecx, DWORD PTR [ebx+8]
+    xor eax, ecx
+    mov DWORD PTR [esi+8], eax
+    mov eax, DWORD PTR [esi+12]
+    mov ecx, DWORD PTR [ebx+12]
+    xor eax, ecx
+    mov DWORD PTR [esi+12], eax
+    mov eax, DWORD PTR [ebx]
+    mov ecx, DWORD PTR [esi]
+    xor eax, ecx
+    mov DWORD PTR [ebx], eax
+    mov eax, DWORD PTR [ebx+4]
+    mov ecx, DWORD PTR [esi+4]
+    xor eax, ecx
+    mov DWORD PTR [ebx+4], eax
+    mov eax, DWORD PTR [ebx+8]
+    mov ecx, DWORD PTR [esi+8]
+    xor eax, ecx
+    mov DWORD PTR [ebx+8], eax
+    mov eax, DWORD PTR [ebx+12]
+    mov ecx, DWORD PTR [esi+12]
+    xor eax, ecx
+    mov DWORD PTR [ebx+12], eax
+    add esi, 16
+    mov eax, DWORD PTR [esp+20]
+    add eax, eax
+    add eax, eax
+    add eax, eax
+    add eax, eax
+    add eax, DWORD PTR [esp+16]
+    cmp esi, eax
+    jne 22b
+    jmp 21f
+20:
+21:
+    mov eax, DWORD PTR [esp+24]
+    mov ebx, DWORD PTR [eax+2064]
+    mov esi, DWORD PTR [eax+2068]
+    mov edi, DWORD PTR [eax+2072]
+    mov ebp, DWORD PTR [eax+2076]
+    ret
+.size vgx_cd_ecur, .-vgx_cd_ecur
+"#
+    );
+    std::arch::global_asm!(
+        r#"
+.globl vgx_cd_inline
+.type vgx_cd_inline, @function
+.p2align 6
+vgx_cd_inline:
+    mov eax, DWORD PTR [esp+24]
+    mov DWORD PTR [eax+2064], ebx
+    mov DWORD PTR [eax+2068], esi
+    mov DWORD PTR [eax+2072], edi
+    mov DWORD PTR [eax+2076], ebp
+    mov esi, DWORD PTR [esp+16]
+    mov eax, DWORD PTR [esp+20]
+    test eax, eax
+    je 20f
+    mov edi, DWORD PTR [esp+20]
+    mov eax, DWORD PTR [esp+4]
+    mov ecx, DWORD PTR [esp+8]
+    mov edx, DWORD PTR [esp+12]
+    cmp edi, 6
+    jb 22f
+24:
+    movdqu xmm0, XMMWORD PTR [edx]
+    movdqu xmm1, XMMWORD PTR [esi]
+    movdqu xmm2, XMMWORD PTR [esi+16]
+    movdqu xmm3, XMMWORD PTR [esi+32]
+    movdqu xmm4, XMMWORD PTR [esi+48]
+    movdqu xmm5, XMMWORD PTR [esi+64]
+    movdqu xmm7, XMMWORD PTR [esi+80]
+    movdqu XMMWORD PTR [edx], xmm7
+    movdqu xmm6, XMMWORD PTR [eax]
+    pxor xmm0, xmm6
+    pxor xmm1, xmm6
+    pxor xmm2, xmm6
+    pxor xmm3, xmm6
+    pxor xmm4, xmm6
+    pxor xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+16]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+32]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+48]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+64]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+80]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+96]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+112]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+128]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+144]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    cmp ecx, 10
+    je 25f
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+176]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    cmp ecx, 12
+    je 27f
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+208]
+    aesenc xmm0, xmm6
+    aesenc xmm1, xmm6
+    aesenc xmm2, xmm6
+    aesenc xmm3, xmm6
+    aesenc xmm4, xmm6
+    aesenc xmm5, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+224]
+    aesenclast xmm0, xmm6
+    aesenclast xmm1, xmm6
+    aesenclast xmm2, xmm6
+    aesenclast xmm3, xmm6
+    aesenclast xmm4, xmm6
+    aesenclast xmm5, xmm6
+    jmp 28f
+27:
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenclast xmm0, xmm6
+    aesenclast xmm1, xmm6
+    aesenclast xmm2, xmm6
+    aesenclast xmm3, xmm6
+    aesenclast xmm4, xmm6
+    aesenclast xmm5, xmm6
+28:
+    jmp 26f
+25:
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenclast xmm0, xmm6
+    aesenclast xmm1, xmm6
+    aesenclast xmm2, xmm6
+    aesenclast xmm3, xmm6
+    aesenclast xmm4, xmm6
+    aesenclast xmm5, xmm6
+26:
+    movdqu xmm7, XMMWORD PTR [esi]
+    pxor xmm0, xmm7
+    movdqu XMMWORD PTR [esi], xmm0
+    movdqu xmm7, XMMWORD PTR [esi+16]
+    pxor xmm1, xmm7
+    movdqu XMMWORD PTR [esi+16], xmm1
+    movdqu xmm7, XMMWORD PTR [esi+32]
+    pxor xmm2, xmm7
+    movdqu XMMWORD PTR [esi+32], xmm2
+    movdqu xmm7, XMMWORD PTR [esi+48]
+    pxor xmm3, xmm7
+    movdqu XMMWORD PTR [esi+48], xmm3
+    movdqu xmm7, XMMWORD PTR [esi+64]
+    pxor xmm4, xmm7
+    movdqu XMMWORD PTR [esi+64], xmm4
+    movdqu xmm7, XMMWORD PTR [esi+80]
+    pxor xmm5, xmm7
+    movdqu XMMWORD PTR [esi+80], xmm5
+    add esi, 96
+    sub edi, 6
+    cmp edi, 6
+    jae 24b
+    jmp 23f
+22:
+23:
+    test edi, edi
+    je 29f
+211:
+    movdqu xmm0, XMMWORD PTR [edx]
+    movdqu xmm7, XMMWORD PTR [esi]
+    movdqu XMMWORD PTR [edx], xmm7
+    movdqu xmm6, XMMWORD PTR [eax]
+    pxor xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+16]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+32]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+48]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+64]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+80]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+96]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+112]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+128]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+144]
+    aesenc xmm0, xmm6
+    cmp ecx, 10
+    je 212f
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+176]
+    aesenc xmm0, xmm6
+    cmp ecx, 12
+    je 214f
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+208]
+    aesenc xmm0, xmm6
+    movdqu xmm6, XMMWORD PTR [eax+224]
+    aesenclast xmm0, xmm6
+    jmp 215f
+214:
+    movdqu xmm6, XMMWORD PTR [eax+192]
+    aesenclast xmm0, xmm6
+215:
+    jmp 213f
+212:
+    movdqu xmm6, XMMWORD PTR [eax+160]
+    aesenclast xmm0, xmm6
+213:
+    pxor xmm0, xmm7
+    movdqu XMMWORD PTR [esi], xmm0
+    add esi, 16
+    sub edi, 1
+    jne 211b
+    jmp 210f
+29:
+210:
+    jmp 21f
+20:
+21:
+    mov eax, DWORD PTR [esp+24]
+    mov ebx, DWORD PTR [eax+2064]
+    mov esi, DWORD PTR [eax+2068]
+    mov edi, DWORD PTR [eax+2072]
+    mov ebp, DWORD PTR [eax+2076]
+    mov ecx, DWORD PTR [esp+24]
+    mov eax, 0
+    mov DWORD PTR [ecx+2048], eax
+    mov DWORD PTR [ecx+2052], eax
+    mov DWORD PTR [ecx+2056], eax
+    mov DWORD PTR [ecx+2060], eax
+    mov eax, 0
+    mov DWORD PTR [ecx+2064], eax
+    mov DWORD PTR [ecx+2068], eax
+    mov DWORD PTR [ecx+2072], eax
+    mov DWORD PTR [ecx+2076], eax
+    ret
+.size vgx_cd_inline, .-vgx_cd_inline
+"#
+    );
 
     /// cdecl (schedule, rounds, iv, data, n, scratch): `vg_aes_ofb`'s arguments.
     type Ofb = unsafe extern "C" fn(*const u8, u32, *mut u8, *mut u8, u32, *mut u8);
@@ -100141,6 +100592,9 @@ vgx_cf_inline:
         fn vgx_of_ofin(schedule: *const u8, rounds: u32, iv: *mut u8, data: *mut u8, n: u32, scratch: *mut u8);
         fn vgx_cf_ecur(schedule: *const u8, rounds: u32, iv: *mut u8, data: *mut u8, n: u32, scratch: *mut u8);
         fn vgx_cf_inline(schedule: *const u8, rounds: u32, iv: *mut u8, data: *mut u8, n: u32, scratch: *mut u8);
+        fn vgx_cf_fin(schedule: *const u8, rounds: u32, iv: *mut u8, data: *mut u8, n: u32, scratch: *mut u8);
+        fn vgx_cd_ecur(schedule: *const u8, rounds: u32, iv: *mut u8, data: *mut u8, n: u32, scratch: *mut u8);
+        fn vgx_cd_inline(schedule: *const u8, rounds: u32, iv: *mut u8, data: *mut u8, n: u32, scratch: *mut u8);
     }
     const LOOPS: [(&str, Ofb); 5] = [
         ("ecur.0", vgx_of_ecur_0),
@@ -100149,9 +100603,14 @@ vgx_cf_inline:
         ("inline", vgx_of_inline),
         ("ofin", vgx_of_ofin),
     ];
-    const CFB: [(&str, Ofb); 2] = [
+    const CFB: [(&str, Ofb); 3] = [
         ("cfb.ecur", vgx_cf_ecur),
         ("cfbinline", vgx_cf_inline),
+        ("cfin", vgx_cf_fin),
+    ];
+    const CFBD: [(&str, Ofb); 2] = [
+        ("cfbd.ecur", vgx_cd_ecur),
+        ("cfbdinline", vgx_cd_inline),
     ];
 
     const BYTES: usize = 16384;
@@ -100191,9 +100650,11 @@ vgx_cf_inline:
                 // SAFETY: the schedule, a block, `n` blocks (n <= 1024) and the working space; cdecl; AES-NI.
                 unsafe { f(s.0.as_ptr(), rounds, v.as_mut_ptr(), b.0.as_mut_ptr(), n as u32, sc.0.as_mut_ptr()) }
             };
-            for (loops, cfb) in [(&LOOPS[..], false), (&CFB[..], true)] {
+            for (loops, mode) in [(&LOOPS[..], 0u8), (&CFB[..], 1), (&CFBD[..], 2)] {
                 let mut want = d.clone();
-                if cfb {
+                if mode == 2 {
+                    AesCfb128Decryptor::new(&key[..len], &iv).unwrap().decrypt(&mut want.0[..16 * 70]).unwrap();
+                } else if mode == 1 {
                     AesCfb128Encryptor::new(&key[..len], &iv).unwrap().encrypt(&mut want.0[..16 * 70]).unwrap();
                 } else {
                     AesOfb::new(&key[..len], &iv).unwrap().apply_keystream_final(&mut want.0[..16 * 70]);
@@ -100208,7 +100669,7 @@ vgx_cf_inline:
                         wrong.push(name);
                     }
                 }
-                let kind = format!("{}{}", if cfb { "c" } else { "k" }, 8 * len);
+                let kind = format!("{}{}", ["k", "c", "d"][mode as usize], 8 * len);
                 let line = |name: &str, bytes: usize, (before, after, min, med): (u32, u32, u64, u64)| {
                     eprintln!(
                         "xofb {round} fast    {name:<9} {bytes:>5} {kind:<5} xinuse {before:#x}->{after:#x} n 41 min {:>10.1} median {:>10.1} ns",
@@ -100228,7 +100689,9 @@ vgx_cf_inline:
                     }
                     let buf = &mut b.0[..bytes];
                     let t = time(0, || {
-                        if cfb {
+                        if mode == 2 {
+                            AesCfb128Decryptor::new(black_box(&key[..len]), &iv).unwrap().decrypt(black_box(&mut *buf)).unwrap();
+                        } else if mode == 1 {
                             AesCfb128Encryptor::new(black_box(&key[..len]), &iv).unwrap().encrypt(black_box(&mut *buf)).unwrap();
                         } else {
                             AesOfb::new(black_box(&key[..len]), &iv).unwrap().apply_keystream_final(black_box(&mut *buf));

@@ -262,6 +262,13 @@ class Guarded(unittest.TestCase):
         labels["25"] = [0]
         self.assertEqual(self.errors(instrs, labels), [])
 
+    def test_entered_mid_run(self):
+        # The run after the guard is reached first from its start, then by a
+        # jump into its middle that passes no guard, from the fallback.
+        instrs, labels = self.code(["jb 25f"], ["mov eax, 1", "mov ecx, 2"] + self.MUL)
+        labels["25"] = [5]
+        self.assertEqual(self.errors(instrs, labels), [self.ERROR.format(5)])
+
     def test_unknown_target(self):
         instrs, labels = self.code(["mov eax, 1"], self.MUL + ["jmp rax"])
         self.assertEqual(check_mcdt.guarded(instrs, labels), [False] * len(instrs))

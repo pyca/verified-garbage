@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Scrub.X86
+public import VerifiedGarbage.Impl.Sha256.X86.Fn
 import VerifiedGarbage.Proof.Sha256.PostOut
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -655,7 +656,7 @@ A backend is one implementation of SHA-256's compression function on x86: a
 variant of the interface `Sha256` on x86 (`Variants/Sha256/X86/`). Each
 function built on it (in `Generic/Sha256/X86/`) is emitted once for each
 backend, named with its suffix (see `TCB/Emit.lean`): its own functions, the
-streaming ones made with it (`functions`; its compression function and the
+streaming ones made with it (`update`, `finalize`, `finalize224`; its compression function and the
 streaming functions with their working space passed in `scratch` are
 internal functions, emitted from their callers' code), and
 HMAC's `init` and `finalize`, PBKDF2's `iterate` and the whole of PBKDF2,
@@ -685,55 +686,41 @@ open VG.X86
 open VG.Proof.Pbkdf2.Stream.X86 (Sha256Stream)
 open VG.Proof.Pbkdf2.Md.X86 (sha256M sha224M)
 
-structure StreamFn where
-  api : Api
-  code : Prog isa
-  contract : Contract isa
-  stack : Nat := 0
-  verified : Verified X86.target code contract
+/-- What a backend proves of one of its streaming functions, the code `code` of
+`api` with `stack` bytes of stack: that it meets `api`'s contract, and what
+its cleanup needs. -/
+structure StreamFn (api : Api) (code : Prog isa) (stack : Nat) : Prop where
+  verified : Verified X86.target code (api.contract X86.abi stack)
   ofSig : ∃ pre post leak,
-    contract = api.sig.contract (X86.abi) pre post api.writeArgs stack leak
-  ofApi : contract = api.contract X86.abi stack
+    api.contract X86.abi stack = api.sig.contract (X86.abi) pre post api.writeArgs stack leak := by
+    of_sig
   spSafe : code.all (fun i => !isa.writesSp i) = true
   /-- Its postcondition reads the memory on return only within the buffers. -/
-  post : X86.Scrub.PostOut contract (api.sig.retBits 32)
+  post : X86.Scrub.PostOut (api.contract X86.abi stack) (api.sig.retBits 32)
   /-- What the cleanup needs of its code over its stack
   (`X86.Scrub.scrubFSide`, for `verifiedScrubbedAll`): from the
   variant's facts of the code it wraps (`update_scrub`, …), not evaluated
   again. -/
   scrub : X86.Scrub.scrubFSide code [] stack = true
 
-/-- `f`'s code as emitted, `f.code` and then its cleanup: the zeroing of its
+/-- `f`'s code as emitted, `code` and then its cleanup: the zeroing of its
 stack and the clearing of the registers a callee may change but the result's
-bits (`Impl.Scrub.X86.scrubAll`), meets `f`'s contract in constant time and
+bits (`Impl.Scrub.X86.scrubAll`), meets `api`'s contract in constant time and
 returns without secret residue (`X86.Scrub.verifiedScrubbedAll`). -/
-theorem StreamFn.scrubbed (f : StreamFn) :
-    VerifiedScrubbed X86.target (Impl.Scrub.X86.scrubAll (f.api.sig.retBits 32) f.stack f.code) f.contract
-      (f.api.sig.retBits 32) :=
-  X86.Scrub.verifiedScrubbedAll (api := f.api)
+theorem StreamFn.scrubbed {api : Api} {code : Prog isa} {stack : Nat} (f : StreamFn api code stack) :
+    VerifiedScrubbed X86.target (Impl.Scrub.X86.scrubAll (api.sig.retBits 32) stack code)
+      (api.contract X86.abi stack) (api.sig.retBits 32) :=
+  X86.Scrub.verifiedScrubbedAll (api := api)
     { consts := []
       tables := []
-      code := f.code
-      contract := f.contract
-      stack := f.stack
+      code := code
+      contract := api.contract X86.abi stack
+      stack := stack
       verified := f.verified
-      ofApi := f.ofApi
+      ofApi := rfl
       ofSig := f.ofSig
       spSafe := f.spSafe }
     f.post f.scrub
-
-/-- `f` as a registration of its `Api` (`Api.artifact`): its code as emitted,
-with its cleanup, and the theorem about that code (`StreamFn.scrubbed`). -/
-def StreamFn.reg (f : StreamFn) : Registration f.api X86.target where
-  consts := []
-  tables := []
-  code := Impl.Scrub.X86.scrubAll (f.api.sig.retBits 32) f.stack f.code
-  contract := f.contract
-  stack := f.stack
-  verified := f.scrubbed
-  ofApi := f.ofApi
-  ofSig := f.ofSig
-  spSafe := X86.Scrub.scrubAll_spSafe f.spSafe
 
 /-! ## What the cleanup of the streaming functions needs
 
@@ -816,9 +803,15 @@ structure Backend where
   /-- The CPU features its compression function requires, which the
   functions built on it require too. -/
   features : List String
-  /-- Its own functions: the streaming functions made with it (SHA-224's
-  `finalize` among them). -/
-  functions : List StreamFn
+  /-- Its own functions: the streaming `update` and `finalize` made with it,
+  `stream`'s in a frame of working space, and SHA-224's `finalize`
+  (`Impl.Sha256.X86.Fn.update`, …). -/
+  update : StreamFn Spec.Sha256.updateApi (Impl.StackScratch.X86.withStackScratch 636 5 stream.upd)
+    (20 + 636)
+  finalize : StreamFn Spec.Sha256.finalizeApi (Impl.StackScratch.X86.withStackScratch 632 4 stream.fin)
+    (20 + 632)
+  finalize224 : StreamFn Spec.Sha256.finalize224Api
+    (Impl.StackScratch.X86.withStackScratch 632 4 (Impl.Sha256.X86.Stream.finalize224 cmpN cmpC)) (20 + 632)
   /-- The compression function and the streaming functions it makes, the
   code the functions built on it call, have no MMX instruction and make no
   indirect call (`calleeOk`): what the cleanup of every function that calls
@@ -896,6 +889,36 @@ theorem hmacFin224 : Verified X86.target v.M224.hmacFin (Proof.Hmac.Instance.fin
 
 theorem iterate224 : Verified X86.target v.M224.iterate (Proof.Pbkdf2.Instance.iterateContract Spec.Hmac.sha224I X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha224_iterate v.stream v.cmpN v.comp
+
+/-- `vg_sha256_update` as emitted with `v`'s streaming `update`
+(`Impl.Sha256.X86.Fn.update`) meets its contract in constant time and returns
+without secret residue (`StreamFn.scrubbed`). -/
+theorem update_scrubbed :
+    VerifiedScrubbed X86.target (Impl.Sha256.X86.Fn.update v.stream.upd)
+      (Spec.Sha256.updateApi.contract X86.abi (20 + 636)) (Spec.Sha256.updateApi.sig.retBits 32) :=
+  v.update.scrubbed
+
+theorem update_spSafe : (Impl.Sha256.X86.Fn.update v.stream.upd).all (fun i => !isa.writesSp i) = true :=
+  X86.Scrub.scrubAll_spSafe v.update.spSafe
+
+/-- `vg_sha256_finalize` as emitted with `v`'s streaming `finalize`, likewise. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed X86.target (Impl.Sha256.X86.Fn.finalize v.stream.fin)
+      (Spec.Sha256.finalizeApi.contract X86.abi (20 + 632)) (Spec.Sha256.finalizeApi.sig.retBits 32) :=
+  v.finalize.scrubbed
+
+theorem finalize_spSafe : (Impl.Sha256.X86.Fn.finalize v.stream.fin).all (fun i => !isa.writesSp i) = true :=
+  X86.Scrub.scrubAll_spSafe v.finalize.spSafe
+
+/-- `vg_sha224_finalize` as emitted with `v`'s compression function, likewise. -/
+theorem finalize224_scrubbed :
+    VerifiedScrubbed X86.target (Impl.Sha256.X86.Fn.finalize224 v.cmpN v.cmpC)
+      (Spec.Sha256.finalize224Api.contract X86.abi (20 + 632)) (Spec.Sha256.finalize224Api.sig.retBits 32) :=
+  v.finalize224.scrubbed
+
+theorem finalize224_spSafe :
+    (Impl.Sha256.X86.Fn.finalize224 v.cmpN v.cmpC).all (fun i => !isa.writesSp i) = true :=
+  X86.Scrub.scrubAll_spSafe v.finalize224.spSafe
 
 end Backend
 

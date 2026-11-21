@@ -253,6 +253,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           SHARDS: ${{ needs.lean.outputs.shards }}
+          SHARD: ${{ matrix.shard }}
           PLANNED: ${{ needs.lean.outputs.build-key }}
           EXACT: ${{ needs.lean.outputs.build-cache }}
           RESTORED: ${{ steps.prepare.outputs.cache-matched-key }}
@@ -264,8 +265,10 @@ jobs:
           # An error here only leaves the assembly to another job.
           names=$(gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
             --jq '.artifacts[].name' || true)
+          # Not this shard's own: its upload, the step before, succeeded, and
+          # the list often leaves out an upload done a few seconds before it.
           for s in $(jq -r '.[]' <<< "$SHARDS"); do
-            if ! grep -qxF "lean-build-$s" <<< "$names"; then
+            if [ "$s" != "$SHARD" ] && ! grep -qxF "lean-build-$s" <<< "$names"; then
               echo "Shard $s's outputs are not uploaded yet: another job assembles the build."
               exit 0
             fi

@@ -21,10 +21,10 @@ def artifacts : List Artifact :=
     Spec.Xts.aesEncryptUnitApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesXts.AArch64Unit.Fn.encrypt v.enc
-      verified := encrypt_scrubbed v },
+      verified := Proof.AesXts.AArch64.Unit.encrypt_scrubbed v },
     Spec.Xts.aesDecryptUnitApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesXts.AArch64Unit.Fn.decrypt v.enc v.dec
-      verified := decrypt_scrubbed v }]
+      verified := Proof.AesXts.AArch64.Unit.decrypt_scrubbed v }]
 
 end VG.Artifacts.AesXts.AArch64

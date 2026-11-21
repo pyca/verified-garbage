@@ -26,8 +26,8 @@ otherwise a call of it, then of `z` on the first `v.encWritten` bytes of
 `Proof/AesEcb/Wipe.lean`, with 24 bytes of stack, the frame and the return
 address). Likewise for decryption.
 
-Which of these are emitted, for each `v` and `z` (`encryptRegs`,
-`decryptRegs`): `v`'s code alone, where it writes nothing in `scratch`,
+Which of these are emitted, for each `v` and `z` (`Artifacts/AesEcb/X86_64.lean`):
+`v`'s code alone, where it writes nothing in `scratch`,
 once (with the `z` of no suffix); the call wiped with `z` where `v` needs
 AVX, only with the `z` that needs it (so the instance has `v`'s suffix and
 needs no more than `v`'s features); and otherwise the call wiped with each
@@ -200,50 +200,24 @@ theorem decryptWiped_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
     _ (decryptOut _) (by unfold wiped; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
     (ha := by rcases v.writtenOk.2 with h | h <;> rw [h] <;> lit_decide)
 
-/-- The implementations of `vg_aes_ecb_encrypt` over `v` that are emitted
-with `z` (see the module's documentation). -/
-def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.AesEcb.encryptApi target) :=
-  if h : v.encWritten = 0 then
-    if z.suffix = "" then [{
-      suffix := v.suffix
-      code := Impl.AesEcb.X86_64.Fn.plain v.level v.enc
-      verified := encryptPlain_scrubbed v h
-      spSafe := scrubKs_spSafe v.encSpSafe }]
-    else []
-  else if v.features.contains "avx" then
-    if z.features = ["avx"] then [{
-      suffix := v.suffix
-      code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code
-      verified := encryptWiped_scrubbed v z
-      spSafe := scrubKs_spSafe (encrypt_spSafe v z) }]
-    else []
-  else [{
-    suffix := v.suffix ++ z.suffix
-    code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code
-    verified := encryptWiped_scrubbed v z
-    spSafe := scrubKs_spSafe (encrypt_spSafe v z) }]
+/-! The code as emitted keeps `rsp`: the artifacts' `spSafe`. -/
 
-/-- The implementations of `vg_aes_ecb_decrypt` over `v` that are emitted with
-`z` (see the module's documentation). -/
-def decryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.AesEcb.decryptApi target) :=
-  if h : v.decWritten = 0 then
-    if z.suffix = "" then [{
-      suffix := v.suffix
-      code := Impl.AesEcb.X86_64.Fn.plain v.level v.dec
-      verified := decryptPlain_scrubbed v h
-      spSafe := scrubKs_spSafe v.decSpSafe }]
-    else []
-  else if v.features.contains "avx" then
-    if z.features = ["avx"] then [{
-      suffix := v.suffix
-      code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code
-      verified := decryptWiped_scrubbed v z
-      spSafe := scrubKs_spSafe (decrypt_spSafe v z) }]
-    else []
-  else [{
-    suffix := v.suffix ++ z.suffix
-    code := Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code
-    verified := decryptWiped_scrubbed v z
-    spSafe := scrubKs_spSafe (decrypt_spSafe v z) }]
+theorem encryptPlain_spSafeFn (v : BlocksImpl) :
+    (Impl.AesEcb.X86_64.Fn.plain v.level v.enc).all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe v.encSpSafe
+
+theorem encryptWiped_spSafeFn (v : BlocksImpl) (z : ZeroizeImpl) :
+    (Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.encWritten v.enc z.name z.code).all
+      (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe (encrypt_spSafe v z)
+
+theorem decryptPlain_spSafeFn (v : BlocksImpl) :
+    (Impl.AesEcb.X86_64.Fn.plain v.level v.dec).all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe v.decSpSafe
+
+theorem decryptWiped_spSafeFn (v : BlocksImpl) (z : ZeroizeImpl) :
+    (Impl.AesEcb.X86_64.Fn.wiped (v.level.join z.level) v.decWritten v.dec z.name z.code).all
+      (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe (decrypt_spSafe v z)
 
 end VG.Proof.AesEcb.X86_64

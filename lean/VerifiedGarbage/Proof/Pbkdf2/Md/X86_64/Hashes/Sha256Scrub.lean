@@ -410,7 +410,7 @@ end S
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` is SHA-256's, which SHA-256's variant with `v`
 carries, and its `finalize` its own (`stream v`). -/
-def variant (stream : List StreamFnS := []) : MdHash :=
+def variant : MdHash :=
   MdHash.of (I := Spec.Hmac.sha224I) (ok v) (coreOK v) (callees v)
     ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl 560 (okU v) rfl
     (satI (hashW v)) (satF (hashW v)) (satT (hashW v)) (satP (hashW v))
@@ -419,7 +419,7 @@ def variant (stream : List StreamFnS := []) : MdHash :=
     Proof.Hmac.sha224_local (satAF (hashW v)) (satW (hashIW v)) (satIF (hashIW v))
     (by decide) (satFF (hashW v))
     (by show (hash v).W + 96 < 509; rcases hashW v with h | h | h <;> omega_using [h]) (satPF (hashW v))
-    v.suffix v.features stream
+    v.suffix v.features
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha224
 

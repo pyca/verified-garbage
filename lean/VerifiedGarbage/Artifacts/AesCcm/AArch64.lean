@@ -18,10 +18,10 @@ def artifacts : List Artifact :=
     Spec.Ccm.sealApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCcm.AArch64.Fn.seal v.callee v.ctr.callee
-      verified := seal_scrubbed v },
+      verified := Proof.AesCcm.AArch64.seal_scrubbed v },
     Spec.Ccm.openApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.AesCcm.AArch64.Fn.open v.callee v.ctr.callee
-      verified := open_scrubbed v }]
+      verified := Proof.AesCcm.AArch64.open_scrubbed v }]
 
 end VG.Artifacts.AesCcm.AArch64
