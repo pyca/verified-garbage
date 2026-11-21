@@ -97,7 +97,9 @@ open Spec.Weierstrass
   have hz : r 10≠0 := fun h => Window5.mul_ne_infinity hO hP p0 (by decide) (by decide)
     ((j2.z_zero_iff hC).mp h)
   have jd : InvJ C (r 5) (r 4) (r 10) P :=
-    jp.rescale hC hz hC.one_ne_zero h5 h4 (by grind only)
+    -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+    -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+    jp.rescale hC hz hC.one_ne_zero h5 h4 (by grind -lia only)
   have v4 := vals (i:=4) (by decide)
   have v5 := vals (i:=5) (by decide)
   have v8 := vals (i:=8) (by decide)

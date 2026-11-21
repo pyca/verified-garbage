@@ -1063,7 +1063,7 @@ theorem gen_correct_ok [Key.KeyProof] (v : RoundImpl) {s : State} (h : genPre s)
   have hp : GenInput (genOfState s) s := ⟨h, rfl⟩
   have hroom := hp.room
   have hf := hp.cfacts
-  unfold genCode code
+  unfold genCode Impl.RsaKeyGen.X86_64.Generate.code
   apply frame_alloc (by decide) (by decide) (by decide) (by
     rw [← hp.sp_eq]; have : 552 ≤ (genOfState s).sp.toNat := hroom; show 160 ≤ _; omega_using [this])
   simp only [VG.Impl.Bignum.X86_64.seqs]
@@ -1111,20 +1111,20 @@ theorem gen_correct_ok [Key.KeyProof] (v : RoundImpl) {s : State} (h : genPre s)
 private theorem code_all (q : Instr → Bool) (a b : Prog isa)
     (hp : (code (.block []) (.block [])).all q = true) (ha : a.all q = true) (hb : b.all q = true) :
     (code a b).all q = true := by
-  unfold code iteration searchRun classify accepted keyRun at hp ⊢
+  unfold Impl.RsaKeyGen.X86_64.Generate.code iteration searchRun classify accepted keyRun at hp ⊢
   simp only [VG.Impl.Bignum.X86_64.seqs, Code.all, List.all_nil, ha, hb, Bool.and_true] at hp ⊢
   exact hp
 
 private theorem code_instrs (q : Instr → Bool) (a b : Prog isa)
     (hp : (code (.block []) (.block [])).allInstrs q = true) (ha : a.allInstrs q = true)
     (hb : b.allInstrs q = true) : (code a b).allInstrs q = true := by
-  unfold code iteration searchRun classify accepted keyRun at hp ⊢
+  unfold Impl.RsaKeyGen.X86_64.Generate.code iteration searchRun classify accepted keyRun at hp ⊢
   simp only [VG.Impl.Bignum.X86_64.seqs, Code.allInstrs, ha, hb, Bool.and_true] at hp ⊢
   exact hp
 
 private theorem code_ctlC (a b : Prog isa) (hp : ctlC (code (.block []) (.block [])) = true)
     (ha : ctlC a = true) (hb : ctlC b = true) : ctlC (code a b) = true := by
-  unfold code iteration searchRun classify accepted keyRun at hp ⊢
+  unfold Impl.RsaKeyGen.X86_64.Generate.code iteration searchRun classify accepted keyRun at hp ⊢
   simp only [VG.Impl.Bignum.X86_64.seqs, ctlC, ha, hb, Bool.and_true] at hp ⊢
   exact hp
 
@@ -1148,7 +1148,7 @@ theorem genCode_depth (v : RoundImpl) : (genCode v).x86_64Depth ≤ stackUse := 
   have he : exhaustedGen.x86_64Depth = 0 := rfl
   have hf : (fail 3).x86_64Depth = 0 := rfl
   have ha : afterKey.x86_64Depth = 0 := rfl
-  unfold genCode code iteration searchRun classify accepted keyRun searchCall keyCall
+  unfold genCode Impl.RsaKeyGen.X86_64.Generate.code iteration searchRun classify accepted keyRun searchCall keyCall
   simp only [VG.Impl.Bignum.X86_64.seqs, Code.x86_64Depth, Instr.frameBytes, frameBytes, hk, hc, he, hf, ha,
     Nat.zero_max, Nat.max_zero, Nat.zero_add]
   have hs' : (Search.searchCode v).x86_64Depth ≤ 336 := hs
@@ -1367,7 +1367,7 @@ theorem finish_ct : RelCT isa (Two DoneCT) (.block finish) (fun _ _ => True) :=
 /-! ## The whole controller -/
 
 theorem gen_code_ct [Key.KeyProof] (v : RoundImpl) : RelCT isa (Two GenStart) (genCode v) (fun _ _ => True) := by
-  unfold genCode code
+  unfold genCode Impl.RsaKeyGen.X86_64.Generate.code
   apply frame_alloc_ct
   simp only [VG.Impl.Bignum.X86_64.seqs]
   refine (RelCT.seq (two_post entry_ct entry_post)

@@ -663,7 +663,7 @@ private theorem abi_trans {s t u : State} (a : abiPreserved s t) (b : abiPreserv
 
 theorem correct (s : State) (h : contract.pre s) :
     WP isa code s fun t => abiPreserved s t ∧ contract.post s t := by
-  rw [code, WP.seq_iff]
+  rw [Impl.Ffdh.X86.VettedValidation.code, WP.seq_iff]
   refine WP.mono (recognize_ok h) ?_
   intro t result
   rw [WP.seq_iff]

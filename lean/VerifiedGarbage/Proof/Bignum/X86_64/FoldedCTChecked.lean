@@ -198,7 +198,7 @@ theorem code_ok {s : State} {B : Addr} {Z w eX eN : Nat} (hs : Scr s B Z)
     (hw : 1≤w) (hw' : w<2^31) (hX : eX+8*w≤Z) (hN : eN+8*w≤Z) :
     WP isa code s fun t => t.gpr .rbp=mask (decide (wv s.mem B eX w < wv s.mem B eN w)) ∧
       t.mem=s.mem ∧ Keep [.rax,.rbp,.r14] s t := by
-  unfold code
+  unfold Impl.Rsa.X86_64.Compare8.code
   refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun a => a.zf=some (decide (w%8=0)) ∧ a.mem=s.mem)
     (by
       xrun [h12,sx0,show BitVec.signExtend 64 (7:BitVec 32)=7 from rfl]

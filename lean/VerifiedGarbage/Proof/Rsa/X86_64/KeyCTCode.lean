@@ -846,7 +846,7 @@ def KC4 (p : KCPub) (t : State) : Prop :=
     t.zf = some (Spec.Rsa.modulusValid (Spec.Rsa.os2ip p.nb) p.m.k) ∧ AfterInv s t₁ t₂ t₃ t
 
 theorem keyCode_ct : RelCT isa (Two KRel) code fun _ _ => True := by
-  unfold code
+  unfold Impl.Rsa.X86_64.CheckKey.code
   refine RelCT.seq (R := Two KC2) ?_ (RelCT.seq (R := Two KC3) ?_ ?_)
   · rw [keyEntry_split]
     refine RelCT.block_append (RelCT.seq (two_piece (Ψ := KC1) [.rsp] (fun p s₁ s₂ h₁ h₂ r hr => by

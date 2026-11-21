@@ -245,7 +245,9 @@ theorem mixedResult_eq (p q : Spec.Ed25519.Point) (hz : q.Z = 1) :
     mixedResult p.X p.Y p.Z p.T (q.Y - q.X) (q.Y + q.X) (q.T * 2 * Spec.Ed25519.d) =
       Spec.Ed25519.pointAdd p q := by
   simp only [mixedResult, Spec.Ed25519.pointAdd, hz]
-  congr 1 <;> grind
+  -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+  -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+  congr 1 <;> grind -lia
 
 theorem addAffine_formula (e : Env) :
     point (evalOps pointAddAffineOps e) 0 1 2 3 = mixedResult (e 0) (e 1) (e 2) (e 3) (e 4) (e 5) (e 6) := rfl

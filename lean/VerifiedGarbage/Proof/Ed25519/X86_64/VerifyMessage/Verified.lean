@@ -145,7 +145,7 @@ theorem spSafe (hq : EqCode fld win) (v : Compress) :
   have he := hq.spSafe
   have hi : (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512).all (fun i => !isa.writesSp i) = true := by
     decide +kernel
-  simp only [code, body, Impl.Ed25519.X86_64.VerifyMessage.hash, callWith, Code.all, hu, hf, hr, he, hi, Bool.and_true]
+  simp only [Impl.Ed25519.X86_64.VerifyMessage.code, body, Impl.Ed25519.X86_64.VerifyMessage.hash, callWith, Code.all, hu, hf, hr, he, hi, Bool.and_true]
   decide
 
 end VG.Proof.Ed25519.X86_64.VerifyMessage

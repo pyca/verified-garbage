@@ -223,7 +223,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   have rl := f.randLen
   unfold primeEntropy at rl
   have rem := hp.remaining_le
-  unfold code body
+  unfold Impl.RsaKeyGen.Arm.Search.code body
   refine WP.frame (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
   refine WP.seq (WP.mono (entry_ok hp) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (search_loop c (final := searchResult s) (tr := []) h1 (consume_zero _).symm) fun s2 hd => ?_)
@@ -1095,7 +1095,7 @@ theorem pub_same {s t : State} (h : searchPub s t) : searchOfState s = searchOfS
 
 theorem code_ct (c : Cand) :
     RelCT isa (fun s t => searchPre s ∧ searchPre t ∧ searchPub s t) (code c.call) (fun _ _ => True) := by
-  unfold code
+  unfold Impl.RsaKeyGen.Arm.Search.code
   refine RelCT.frame (fun _ _ h => h.2.2.1) ?_
   rintro a b ta tb u v ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ e1 e2
   have rs : 184 ≤ s.sp.toNat := hs.1

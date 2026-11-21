@@ -795,7 +795,7 @@ theorem verifyFn_ok (v : PublicImpl) (s : State) {g : Geometry} {bs : Fin 5 → 
     have := h.stackFit
     simp only [verifyStack, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes] at *
     omega
-  unfold code
+  unfold Impl.RsaPkcs1Sig.X86.Verify.code
   refine WP.frameLocal (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
     (inner_noSp v)
     (fun _ _ _ ⟨abi, out⟩ fl => ⟨VG.Proof.Dsa.X86.abiPreserved_frame stackFit abi fl, out⟩) ?_
@@ -1066,7 +1066,7 @@ theorem verifyFn_relCT (v : PublicImpl) {g : Geometry} {bs : Fin 5 → List Byte
     :
     RelCT isa (fun s t => FnInput g bs s ∧ FnInput g bs t)
       (code v.name v.code) (fun _ _ => True) := by
-  unfold code
+  unfold Impl.RsaPkcs1Sig.X86.Verify.code
   refine RelCT.frame (R := fun _ _ => True) ?_ ?_
   · intro s t h
     have eq := h.1.savedSp.trans h.2.savedSp.symm

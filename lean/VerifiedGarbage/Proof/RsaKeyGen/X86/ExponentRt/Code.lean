@@ -270,7 +270,7 @@ open VG.Impl.RsaKeyGen.X86.Gcd64
 theorem code_iter {s : State} {base : Addr} {size count : Nat}
     (W : Ws s base size 2 count) (space : 15 ≤ count) :
     WP isa code s (LoopState s base size count 64) := by
-  unfold code
+  unfold Impl.RsaKeyGen.X86.Gcd64.code
   refine WP.seq (wp_movS rfl fun a A _ => WP.block_nil ?_)
   let Inv := fun q t => ∃ i, i + q = 64 ∧ 0 < q ∧ LoopState s base size count i t
   refine WP.loop (M := isa) Inv ?_ 64 a ?_
@@ -941,7 +941,7 @@ theorem code_ok (s : State) (p : BitVec 32) (w endOffset : Nat)
     WP isa (code endOffset) s fun t =>
       t.gpr .eax = BitVec.ofNat 32 (decide (Nat.gcd (val32 s.mem (p.setWidth 64) 0 (2 * w)) 65537 = 1)).toNat ∧
       t.mem = s.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi] s t := by
-  unfold code init
+  unfold Impl.RsaKeyGen.X86.FermatExponent.code init
   refine WP.seq (wp_movS rfl fun a A _ => wp_movS rfl fun b B _ => wp_movS rfl fun c C _ => WP.block_nil ?_)
   obtain K : Keeps [.ebx, .esi, .ebp] s c := ((A.keeps.mono (by decide)).widen B.keeps).widen C.keeps
   obtain M : c.mem = s.mem := C.mem.trans (B.mem.trans A.mem)

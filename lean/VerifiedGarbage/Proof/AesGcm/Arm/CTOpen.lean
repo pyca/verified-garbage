@@ -326,14 +326,14 @@ theorem finTag_rel [VG.Proof.Gcm.Arm.GhashLaw] {na : Nat} (hna : 4 ≤ na) {o R 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]) rfl rfl rfl, hk.of_eq rfl rfl rfl rfl⟩, ?_⟩
       have : (arg t₀ 3 ++ arg t₀ 2).toNat = 0 := by simpa using ht
-      simp [gpr_setReg, v0, v, this]
+      simp only [v]; rw [ite_eq_left this]; simp [gpr_setReg, v0]
     · obtain ⟨i2, v2⟩ := hk.at f i 2 (by omega_arith) (show 4 * 2 = 8 from rfl)
       refine WP.of_runBlock ⟨_, by arun [i2, v2], ?_⟩
       refine ⟨⟨k7, he.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]) rfl rfl rfl, hk.of_eq rfl rfl rfl rfl⟩, ?_⟩
       have : (arg t₀ 3 ++ arg t₀ 2).toNat ≠ 0 := by simpa using hf₀
-      simp [gpr_setReg, v2, v, this]
+      simp only [v]; rw [ite_eq_right this]; simp [gpr_setReg, v2]
   have b : RelCT isa (fun a b => GA s₀ a ∧ GA s₀' b) (.ite .eq (.block [.ldrSp .r6 0]) (.block [.ldrSp .r6 8]))
       fun _ _ => True := by
     refine rel_ite (decide ((arg s₀ 3 ++ arg s₀ 2).toNat = 0)) (fun s h => h.2)

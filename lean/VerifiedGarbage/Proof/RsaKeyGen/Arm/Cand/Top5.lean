@@ -39,7 +39,7 @@ theorem body_parts [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
 /-- Two calls with the same public parameters. -/
 theorem cand_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
     RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t) (code v.name v.code) (fun _ _ => True) := by
-  unfold code
+  unfold Impl.RsaKeyGen.Arm.Candidate.code
   apply RelCT.frame (fun _ _ h => h.2.2.1)
   intro s t tr1 tr2 u w hp e1 e2
   obtain ⟨s0, t0, ⟨hs, ht, sp, hP⟩, ps, pt⟩ := hp

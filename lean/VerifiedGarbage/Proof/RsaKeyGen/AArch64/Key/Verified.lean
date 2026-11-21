@@ -934,11 +934,11 @@ open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKe
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Impl.RsaKeyGen.AArch64.Candidate (loadE kE kElen)
 
-theorem code_eq : code = seqs (([.block (entry ++ VG.Impl.Rsa.AArch64.Keys.head)] : List (Prog isa)) ++
+theorem code_eq : Impl.RsaKeyGen.AArch64.Key.code = seqs (([.block (entry ++ VG.Impl.Rsa.AArch64.Keys.head)] : List (Prog isa)) ++
     ((loadA aPa kPp kPl ++ (loadA aQa kQp kPl ++ (loadE ++ (([.block [sth .x3 kEv]] : List (Prog isa)) ++
       (order ++ (decTo aPm aPa ++ decTo aQm aQa)))))) ++
     ((lcmPart ++ ([dPart] ++ smallMask)) ++ ([.ite (.nonzero .x .x15) (zeros 2) keyPart] : List (Prog isa))))) := by
-  simp only [code, List.append_assoc]
+  simp only [Impl.RsaKeyGen.AArch64.Key.code, List.append_assoc]
 
 /-- The postcondition, from the results against `keyOp`. -/
 theorem keyPost_of {s t : State} (c : KCtx s) (R : OutsRes (keyIn s) t.mem (t.gpr .x0)) : keyPost s t := by
@@ -1011,10 +1011,10 @@ open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKe
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Impl.RsaKeyGen.AArch64.Candidate (loadE kE kElen)
 
-theorem code_ct_eq : code = seqs (([.block (entry ++ VG.Impl.Rsa.AArch64.Keys.head)] : List (Prog isa)) ++
+theorem code_ct_eq : Impl.RsaKeyGen.AArch64.Key.code = seqs (([.block (entry ++ VG.Impl.Rsa.AArch64.Keys.head)] : List (Prog isa)) ++
     (frontL ++ (lcmPart ++ (([dPart] : List (Prog isa)) ++ (smallMask ++
       ([.ite (.nonzero .x .x15) (zeros 2) keyPart] : List (Prog isa))))))) := by
-  simp only [code, frontL, List.append_assoc]
+  simp only [Impl.RsaKeyGen.AArch64.Key.code, frontL, List.append_assoc]
 
 /-- The branch on a small `d`, status 2 (the leak's). -/
 theorem branch_ct [VG.Proof.Rsa.AArch64.InvLaw] : RelCT isa (Two (KG FF)) (.ite (.nonzero .x .x15) (zeros 2) keyPart) fun _ _ => True :=

@@ -167,7 +167,7 @@ theorem search_correct_ok (v : RoundImpl) {s : State} (h : searchPre s) :
     WP isa (searchCode v) s fun t => searchPost s t ∧ ∀ r ∈ calleeSaved, t.gpr r = s.gpr r := by
   have hi : SearchInput (searchOfState s) s := ⟨h, rfl⟩
   have hroom : 160 ≤ (s.gpr .rsp).toNat := Nat.le_trans (by decide) h.2.1
-  unfold searchCode code
+  unfold searchCode Impl.RsaKeyGen.X86_64.Search.code
   apply frame_alloc (by decide) (by decide) (by decide) hroom
   change WP isa (.seq _ (.seq _ _)) _ _
   refine WP.seq (WP.mono (search_start hi) fun u hu => ?_)
@@ -219,20 +219,20 @@ theorem search_correct_ok (v : RoundImpl) {s : State} (h : searchPre s) :
 
 private theorem controller_all (p : Instr → Bool) (c : Prog isa)
     (hp : (code (.block [])).all p = true) (hc : c.all p = true) : (code c).all p = true := by
-  unfold code iteration candidateRun at hp ⊢
+  unfold Impl.RsaKeyGen.X86_64.Search.code iteration candidateRun at hp ⊢
   simp only [VG.Impl.Bignum.X86_64.seqs, Code.all, List.all_nil, hc, Bool.and_true] at hp ⊢
   exact hp
 
 private theorem controller_instrs (p : Instr → Bool) (c : Prog isa)
     (hp : (code (.block [])).allInstrs p = true) (hc : c.allInstrs p = true) :
     (code c).allInstrs p = true := by
-  unfold code iteration candidateRun at hp ⊢
+  unfold Impl.RsaKeyGen.X86_64.Search.code iteration candidateRun at hp ⊢
   simp only [VG.Impl.Bignum.X86_64.seqs, Code.allInstrs, hc, Bool.and_true] at hp ⊢
   exact hp
 
 private theorem controller_ctlC (c : Prog isa) (hp : ctlC (code (.block [])) = true) (hc : ctlC c = true) :
     ctlC (code c) = true := by
-  unfold code iteration candidateRun at hp ⊢
+  unfold Impl.RsaKeyGen.X86_64.Search.code iteration candidateRun at hp ⊢
   simp only [VG.Impl.Bignum.X86_64.seqs, ctlC, hc, Bool.and_true] at hp ⊢
   exact hp
 
@@ -250,7 +250,7 @@ theorem searchCode_depth (v : RoundImpl) : (searchCode v).x86_64Depth ≤ stackU
   have hc := sharedCandidate_depth v
   have he : exhausted.x86_64Depth = 0 := rfl
   have hk : classify.x86_64Depth = 0 := rfl
-  unfold searchCode code iteration candidateRun candidateCall
+  unfold searchCode Impl.RsaKeyGen.X86_64.Search.code iteration candidateRun candidateCall
   simp only [VG.Impl.Bignum.X86_64.seqs, Code.x86_64Depth, Instr.frameBytes, he, hk, Nat.zero_max,
     Nat.max_zero, stackUse, frameBytes]
   exact Nat.add_le_add_right (Nat.add_le_add_right (Nat.add_le_add_right hc 8) 40) 160

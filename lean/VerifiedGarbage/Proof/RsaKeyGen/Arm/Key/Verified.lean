@@ -247,7 +247,7 @@ theorem body_wide [VG.Proof.Rsa.Arm.Keys.InvLaw] (h : CIn s) :
 theorem key_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (h : CIn s) : WP isa code s fun t => abiPreserved s t ∧ KPost s t := by
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' spLo
-  unfold code
+  unfold Impl.RsaKeyGen.Arm.Key.code
   refine WP.frame (by decide) spLo (by decide) ?_
   rw [WP.seq_iff]
   have pre := in_k h
@@ -331,7 +331,7 @@ open VG.Impl.RsaKeyGen.Arm.Key (code body)
 
 /-- Two calls with the same public parameters. -/
 theorem key_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] : RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t) code (fun _ _ => True) := by
-  unfold code
+  unfold Impl.RsaKeyGen.Arm.Key.code
   apply RelCT.frame (fun _ _ h => h.2.2.1)
   intro s t tr1 tr2 u v hp e1 e2
   obtain ⟨s0, t0, ⟨hs, ht, sp, hP⟩, ps, pt⟩ := hp
