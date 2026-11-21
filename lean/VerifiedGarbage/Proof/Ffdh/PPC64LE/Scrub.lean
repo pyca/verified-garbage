@@ -212,9 +212,12 @@ theorem checkPublic_scrubbed :
     (checkPublicOut _)
     (by dsimp only; lit_decide)
 
-/-- `vg_ffdh_check_domain`. -/
-def checkDomainReg : Registration Spec.Ffdh.checkDomainApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_ffdh_check_domain` as emitted (`Impl.Ffdh.PPC64LE.Fn.checkDomain`) meets
+its contract in constant time and returns without secret residue. -/
+theorem checkDomain_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Fn.checkDomain
+      (Spec.Ffdh.checkDomainContract (PPC64LE.abi.withConsts Impl.Ffdh.PPC64LE.VettedValidation.tableConsts)) 32 :=
+  verifiedScrubbedAll (api := Spec.Ffdh.checkDomainApi) {
       code := Impl.Ffdh.PPC64LE.VettedValidation.code
       verified := Proof.Ffdh.PPC64LE.VettedValidation.verified
       consts := Impl.Ffdh.PPC64LE.VettedValidation.tableConsts }
@@ -276,9 +279,13 @@ theorem precompute_scrubbed :
     (generationPrecomputeOut 0 Impl.Ffdh.PPC64LE.VettedValidation.tableConsts)
     (by dsimp only; lit_decide)
 
-/-- `vg_ffdh_generate_key_search_cached`. -/
-def cachedKeySearchReg : Registration Spec.Ffdh.cachedKeySearchApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_ffdh_generate_key_search_cached` as emitted
+(`Impl.Ffdh.PPC64LE.Fn.cachedKeySearch`) meets its contract in constant time
+and returns without secret residue. -/
+theorem cachedKeySearch_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ffdh.PPC64LE.Fn.cachedKeySearch
+      (Spec.Ffdh.cachedKeySearchContract PPC64LE.abi Proof.Ffdh.PPC64LE.Cached.SearchProof.stackUse) 32 :=
+  verifiedScrubbedAll (api := Spec.Ffdh.cachedKeySearchApi) {
       code := Proof.Ffdh.PPC64LE.Cached.SearchProof.keyCode
       verified := Proof.Ffdh.PPC64LE.Cached.SearchProof.search_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -286,7 +293,7 @@ def cachedKeySearchReg : Registration Spec.Ffdh.cachedKeySearchApi PPC64LE.targe
     (cachedKeySearchOut _)
     (by dsimp only; lit_decide)
 
-/-- What `scrubOf` needs of the parameter search with each Miller–Rabin
+/-- What `verifiedScrubbedAll` needs of the parameter search with each Miller–Rabin
 round: evaluated here. -/
 theorem searchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
@@ -301,12 +308,15 @@ theorem searchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
           [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩) = true := by lit_decide
   exact List.all_eq_true.mp h v hv
 
-/-- `vg_ffdh_generate_parameters`, with the Miller–Rabin round `v`. -/
-def searchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+/-- `vg_ffdh_generate_parameters` as emitted
+(`Impl.Ffdh.PPC64LE.Fn.sievedParameterSearch`), with the Miller–Rabin round
+`v`, meets its contract in constant time and returns without secret residue. -/
+theorem search_scrubbed (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
-    Registration Spec.Ffdh.sievedParameterSearchApi PPC64LE.target :=
-  scrubOf {
-      suffix := v.suffix
+    VerifiedScrubbed PPC64LE.target (Impl.Ffdh.PPC64LE.Fn.sievedParameterSearch v.suffix v.code)
+      (Spec.Ffdh.sievedParameterSearchContract (PPC64LE.abi.withConsts Proof.Ffdh.PPC64LE.Generation.tables)
+        Proof.Ffdh.PPC64LE.Generation.stackUse) 32 :=
+  verifiedScrubbedAll (api := Spec.Ffdh.sievedParameterSearchApi) {
       code := Proof.Ffdh.PPC64LE.Generation.searchCode v
       verified := Proof.Ffdh.PPC64LE.Generation.search_verified v }
     336 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
