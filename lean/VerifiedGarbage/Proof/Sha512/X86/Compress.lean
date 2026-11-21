@@ -167,6 +167,12 @@ theorem readW_writeW128_q (m : Mem) (a : Addr) (v : BitVec 128) {j : Nat} (hj : 
 def uOf (vh k vw ve vf vg : BitVec 64) : BitVec 64 :=
   vh + k + vw + ((vf ^^^ vg) &&& ve ^^^ vg)
 
+/-- The six terms of `Σ₀` or `Σ₁` in the order `bigSig` accumulates them. -/
+theorem split6_acc (x : BitVec 64) (r₁ r₂ r₃ l₁ l₂ l₃ : Nat) :
+    x >>> r₁ ^^^ x >>> r₁ >>> r₂ ^^^ x >>> r₁ >>> r₂ >>> r₃ ^^^ x <<< l₁ ^^^ x <<< l₁ <<< l₂ ^^^
+      x <<< l₁ <<< l₂ <<< l₃ = split6 x r₁ r₂ r₃ l₁ l₂ l₃ := by
+  simp only [split6, BitVec.xor_assoc]
+
 theorem roundW_ok (a b d e f g h w : Nat) (k : BitVec 64) (A E BC T NE AB : XReg)
     (hn : [A, E, BC, T, NE, AB, X, Y].Nodup) (s : State)
     (ib : InRegions (s.rd ++ s.wr) (addr (s.gpr .esi) b) 8)
@@ -205,8 +211,10 @@ theorem roundW_ok (a b d e f g h w : Nat) (k : BitVec 64) (A E BC T NE AB : XReg
     ↓reduceIte, Option.map_some, Option.some.injEq, exists_eq_left',
     hn, hn', ib, id, if_, ig, ih, iw, oa, oe, eb, ed, q_psrlq, q_psllq, q_pxor, q_pand, q_paddq,
     q_punpckldq_movd, qword_append_0, BitVec.reduceToNat, Nat.reduceLT]
-  refine ⟨rfl, rfl, trivial, fun r hr => ?_, trivial, trivial, trivial⟩
-  simp only [hr, ↓reduceIte]
+  refine ⟨?_, ?_, trivial, fun r hr => ?_, trivial, trivial, trivial⟩
+  · rw [← split6_acc, ← split6_acc]; rfl
+  · rw [← split6_acc]; rfl
+  · simp only [hr, ↓reduceIte]
 
 /-! ## Two steps of the message schedule -/
 
@@ -214,16 +222,16 @@ theorem roundW_ok (a b d e f g h w : Nat) (k : BitVec 64) (A E BC T NE AB : XReg
 def schedOf (x2 x7 x15 x16 : BitVec 64) : BitVec 64 :=
   chain5 x2 6 3 13 42 42 + x7 + chain5 x15 1 56 6 7 1 + x16
 
-theorem scheduleW_ok (o2 o7 o15 o16 : Nat) (P Q : XReg) (hn : [P, Q, X, Y].Nodup) (s : State)
+theorem scheduleW_ok (o2 o7 o15 o16 : Nat) (Q S : XReg) (hn : [Q, S, X, Y].Nodup) (s : State)
     (i2 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esi) o2) 16)
     (i7 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esi) o7) 16)
     (i15 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esi) o15) 16)
     (i16 : InRegions (s.rd ++ s.wr) (addr (s.gpr .esi) o16) 16)
     (w16 : InRegions s.wr (addr (s.gpr .esi) o16) 16) :
-    WP isa (.block (scheduleW o2 o7 o15 o16 P Q)) s fun s' =>
+    WP isa (.block (scheduleW o2 o7 o15 o16 Q S)) s fun s' =>
       let m o j := qword (s.mem.readW (addr (s.gpr .esi) o) 128) j
       let v := schedOf (m o2 1) (m o7 1) (m o15 1) (m o16 1) ++ schedOf (m o2 0) (m o7 0) (m o15 0) (m o16 0)
-      (∀ r, r ≠ P → r ≠ Q → r ≠ X → r ≠ Y → s'.xmm r = s.xmm r) ∧ s'.xmm P = v ∧ s'.gpr = s.gpr ∧
+      (∀ r, r ≠ Q → r ≠ S → r ≠ X → r ≠ Y → s'.xmm r = s.xmm r) ∧ s'.xmm X = v ∧ s'.gpr = s.gpr ∧
       s'.mem = s.mem.writeW (addr (s.gpr .esi) o16) v ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain hn' := VG.nodup_reverse hn
   apply WP.of_runBlock
