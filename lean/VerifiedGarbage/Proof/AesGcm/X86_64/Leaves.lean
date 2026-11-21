@@ -59,6 +59,47 @@ open VG VG.X86_64
 section
 open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
 
+/-! ## `vg_aes_gcm_seal_prepared_vaes_vpclmul` without secret residue -/
+
+open VG.X86_64.Scrub VG.Impl.Scrub.X86_64
+
+open VG.X86_64.Scrub in
+/-- `vg_aes_gcm_seal_prepared`'s postcondition reads the memory on return
+only within the buffers: the data and the tag. -/
+theorem sealPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.sealPreparedContract X86_64.abi stack) (Spec.Gcm.sealPreparedSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, nonce, nl, aad, al, data, len, tag], _ =>
+      simp only [Spec.Gcm.sealPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      intro key hk
+      show _ = (Spec.Aes.bytesAt m₂ data len.toNat, Spec.Aes.bytesAt m₂ tag 16)
+      rw [Scrub.bytesAt_of0 hb.2.2.2.1 (by omega_arith), Scrub.bytesAt_of0 hb.2.2.2.2 (by decide)]
+      exact h key hk
+
+/-- `vg_aes_gcm_seal_prepared` of a variant whose loops read 16 powers: by
+the count, its code on them or its code on the key context
+(`sealCodeF16`). -/
+def sealF16Plain (v : GcmVariant) (r : R16 v) : Unscrubbed Spec.Gcm.sealPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := sealCodeF16 v
+  stack := 2624
+  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inl rfl) (sealCodeF16_verified v r))
+  spSafe := sealCodeF16_spAll v
+
+/-! ## `vg_aes_gcm_seal_prepared_aesni_pclmul` -/
+
+open VG.X86_64.Scrub in
+/-- `vg_aes_gcm_seal_prepared` of a variant whose loops read only the key
+context. -/
+def sealWPlain (v : GcmVariant) : Unscrubbed Spec.Gcm.sealPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees)
+  stack := 2624
+  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_of_base (sealSel_framed v.impl Short.shortFacts))
+  spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB)
+
 section
 open VG.X86_64.Scrub
 open VG.Impl.StackScratch.X86_64 (withStackArgScratch)
@@ -100,6 +141,17 @@ theorem streamDecryptPreparedOut (stack : Nat) :
       exact h2
 
 end
+
+/-! ## The streaming functions over callees that need working space
+
+`vg_ghash` and `vg_aes_ctr32` of the baseline implementations write secrets
+in their working space, at `W + 512`. The streaming functions of the variants
+that call them call `vg_ghash_w` and `vg_aes_ctr32_w` instead, which zero it
+before they return (`GhashImpl.wipe`, `Ctr32Impl.wipe`), and whole-blocks
+functions that zero the working space they give those callees before they
+return (`BlkFn.wipeS`). -/
+
+open Gcm.X86_64.Stitch (CtxMode)
 
 open VG.X86_64.Scrub in
 /-- `vg_aes_gcm_open_prepared`'s postcondition reads the memory on return
