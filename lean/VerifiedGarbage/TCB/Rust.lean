@@ -1342,11 +1342,15 @@ def tables (arts : List Artifact) (hs : List Internal := []) : List (String × L
 /-- The byte `b < 256` as an escape of a Rust byte string literal, `\xHH`. -/
 def byteEscape (b : Nat) : String :=
   let hex (d : Nat) : Char := Nat.digitChar d
-  "\\x" ++ (String.singleton (hex (b / 16))) ++ (String.singleton (hex (b % 16)))
+  ("\\x".push (hex (b / 16))).push (hex (b % 16))
 
-/-- The word `w` as the escapes of its 8 bytes, least significant first. -/
+/-- The word `w` as the escapes of its 8 bytes, least significant first. (As
+a `UInt64`, which it fits: its bytes are then shifts of a machine word, not
+quotients of a number that may be a big one by powers computed each time.) -/
 def wordBytes (w : BitVec 64) : String :=
-  String.join ((List.range 8).map fun i => byteEscape (w.toNat / 2 ^ (8 * i) % 256))
+  let x := w.toNat.toUInt64
+  (List.range 8).foldl (init := "") fun s i =>
+    s ++ byteEscape ((x >>> (8 * i).toUInt64) % 256).toNat
 
 /-- The module of a table of constants, its name in lowercase. -/
 def tableModule (n : String) : String := n.toLower
