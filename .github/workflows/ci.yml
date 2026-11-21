@@ -267,9 +267,6 @@ jobs:
             --jq '.artifacts[].name' || true)
           # Not this shard's own: its upload, the step before, succeeded, and
           # the list often leaves out an upload done a few seconds before it.
-          # Which left out the last shard's own in each run where no shard
-          # assembled (4 of 27 with shards), so that `all-green` did, some
-          # 400 s later.
           for s in $(jq -r '.[]' <<< "$SHARDS"); do
             if [ "$s" != "$SHARD" ] && ! grep -qxF "lean-build-$s" <<< "$names"; then
               echo "Shard $s's outputs are not uploaded yet: another job assembles the build."
