@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.X86.Shared
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 public import VerifiedGarbage.Impl.Sha256.X86.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
@@ -34,8 +35,9 @@ each followed by the clearing of the registers a callee may change
 code as the internal `vg_sha224_init_core` and `vg_sha256_init_core`
 (`Variants.hmacHash`), whose code is not scrubbed.
 
-The one-shot digests, for every backend, with the stack they and their
-callees use zeroed first (`X86.Scrub.verifiedScrubbedAll`), given that their
+The one-shot digests, for every backend, with the doublewords of the stack
+they and their callees may leave secret zeroed first
+(`X86.Scrub.SelScrub.scrubbed`), given that their
 postconditions read the memory on return only within the buffers
 (`Proof.Sha256.PostOut`). The streaming `update` and `finalize` are scrubbed
 where each backend defines them (`Variants.Backend.update_scrubbed`, …).
@@ -64,11 +66,12 @@ theorem init_scrubbed :
 /-! ## The one-shot digests, for every backend
 
 A digest calls the backend's streaming `update` and `finalize`
-(`Impl.MdStream.X86.Digest`). What the cleanup needs of its code
-(`scrubFSide`) follows from its code with a stub for both, `.block []`,
-evaluated once here (`digest…_side`), and the backend's `updScrub`, `finScrub` and stacks
-(`Fill`, `Proof/Framework/X86/ScrubCall.lean`): no backend's code is
-evaluated again. -/
+(`Impl.MdStream.X86.Digest`), and is followed by the zeroing of only the
+doublewords the residue analysis finds it may leave different in two runs
+(`Impl.MdStream.X86.Digest.selWords`, `X86.Scrub.SelScrub.scrubbed`). The
+analysis of its code with a backend is evaluated where the backend is
+defined, once (`Backend.digestSel`, …): no backend's code is evaluated
+again here. -/
 
 open VG.Impl.MdStream.X86.Digest (digest dframe)
 open VG.Proof.Sha256.X86.Variants (Backend)
@@ -76,79 +79,47 @@ open VG.Proof.Sha256.X86.Variants (Backend)
 theorem digestRegOut (stack : Nat) : PostOut (Spec.Sha256.digestContract X86.abi 32 Spec.Sha256.hash stack) ((Spec.Sha256.digestSig 32).retBits 32) :=
   postOut_of_local ScrubAbi.plain (Proof.Sha256.digestPost_out 32 Spec.Sha256.hash 32 (by decide))
 
-theorem digestReg_side : scrubFSide (digest (Proof.Sha256.X86.Variants.hmacHash "" (.block []) (.block []))) [] (28 + dframe (Proof.Sha256.X86.Variants.hmacHash "" (.block []) (.block []))) = true := by
-  lit_decide
-
-theorem digestReg_fill (v : Backend) (hu : calleeSide v.stream.upd 20 = true)
-    (hf : calleeSide v.stream.fin 20 = true) :
-    Fill 20 (digest (Proof.Sha256.X86.Variants.hmacHash "" (.block []) (.block []))) (digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream)) := by
-  fill_calls
-
-/-- What the cleanup needs of `vg_sha256_digest`'s code with the backend `v`. -/
-theorem digestReg_scrub (v : Backend) :
-    scrubFSide (digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream)) []
-      (48 + dframe (Proof.Pbkdf2.Stream.X86.sha256H v.stream)) = true :=
-  scrubFSide_of_fill (digestReg_fill v (calleeSide_of_le v.stream.updSU v.updScrub)
-    (calleeSide_of_le v.stream.finSU v.finScrub)) digestReg_side
-    (by show 28 + dframe (Proof.Sha256.X86.Variants.hmacHash "" (.block []) (.block [])) + 20 ≤ 48 + dframe (Proof.Sha256.X86.Variants.hmacHash "" (.block []) (.block [])) ∧ (48 + dframe (Proof.Sha256.X86.Variants.hmacHash "" (.block []) (.block []))) % 4 = 0; decide)
-
 /-- `vg_sha256_digest` with the backend `v`, as emitted (`Impl.Sha256.X86.Fn.digest`),
 meets its contract in constant time and returns without secret residue. -/
 theorem digest_scrubbed (v : Backend) :
     VerifiedScrubbed target (Impl.Sha256.X86.Fn.digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream))
       (Spec.Sha256.digestContract X86.abi 32 Spec.Sha256.hash (48 + dframe (Proof.Pbkdf2.Stream.X86.sha256H v.stream))) 0 :=
-  verifiedScrubbedAll (api := Spec.Sha256.digest256Api)
+  SelScrub.scrubbed (api := Spec.Sha256.digest256Api)
     { suffix := v.suffix
       code := digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream)
       stack := 48 + dframe (Proof.Pbkdf2.Stream.X86.sha256H v.stream)
       verified := Proof.MdStream.X86.Digest.sha256_digest v.stream
       spSafe := Proof.MdStream.X86.Digest.sha256_digestSp v.stream }
-    (digestRegOut _) (hs := digestReg_scrub v)
+    v.digestSel (digestRegOut _)
 
 /-- No instruction of `vg_sha256_digest` with the backend `v`, as emitted, writes `esp`
 but in its frames and calls. -/
 theorem digest_spSafe (v : Backend) :
     (Impl.Sha256.X86.Fn.digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream)).all
       (fun i => !isa.writesSp i) = true :=
-  scrubAll_spSafe (Proof.MdStream.X86.Digest.sha256_digestSp v.stream)
+  scrubSel_spSafe (Proof.MdStream.X86.Digest.sha256_digestSp v.stream)
 
 theorem digest224RegOut (stack : Nat) : PostOut (Spec.Sha256.digestContract X86.abi 28 Spec.Sha256.sha224 stack) ((Spec.Sha256.digestSig 28).retBits 32) :=
   postOut_of_local ScrubAbi.plain (Proof.Sha256.digestPost_out 28 Spec.Sha256.sha224 32 (by decide))
-
-theorem digest224Reg_side : scrubFSide (digest (Proof.Sha256.X86.Variants.hmacHash224 "" (.block []) (.block []))) [] (28 + dframe (Proof.Sha256.X86.Variants.hmacHash224 "" (.block []) (.block []))) = true := by
-  lit_decide
-
-theorem digest224Reg_fill (v : Backend) (hu : calleeSide v.stream.upd 20 = true)
-    (hf : calleeSide v.stream.fin 20 = true) :
-    Fill 20 (digest (Proof.Sha256.X86.Variants.hmacHash224 "" (.block []) (.block []))) (digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream)) := by
-  fill_calls
-
-/-- What the cleanup needs of `vg_sha224_digest`'s code with the backend `v`. -/
-theorem digest224Reg_scrub (v : Backend) :
-    scrubFSide (digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream)) []
-      (48 + dframe (Proof.Pbkdf2.Stream.X86.sha224H v.stream)) = true :=
-  scrubFSide_of_fill (digest224Reg_fill v (calleeSide_of_le v.stream.updSU v.updScrub)
-    (calleeSide_of_le v.stream.finSU v.finScrub)) digest224Reg_side
-    (by show 28 + dframe (Proof.Sha256.X86.Variants.hmacHash224 "" (.block []) (.block [])) + 20 ≤ 48 + dframe (Proof.Sha256.X86.Variants.hmacHash224 "" (.block []) (.block [])) ∧ (48 + dframe (Proof.Sha256.X86.Variants.hmacHash224 "" (.block []) (.block []))) % 4 = 0; decide)
 
 /-- `vg_sha224_digest` with the backend `v`, as emitted (`Impl.Sha256.X86.Fn.digest`),
 meets its contract in constant time and returns without secret residue. -/
 theorem digest224_scrubbed (v : Backend) :
     VerifiedScrubbed target (Impl.Sha256.X86.Fn.digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream))
       (Spec.Sha256.digestContract X86.abi 28 Spec.Sha256.sha224 (48 + dframe (Proof.Pbkdf2.Stream.X86.sha224H v.stream))) 0 :=
-  verifiedScrubbedAll (api := Spec.Sha256.digest224Api)
+  SelScrub.scrubbed (api := Spec.Sha256.digest224Api)
     { suffix := v.suffix
       code := digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream)
       stack := 48 + dframe (Proof.Pbkdf2.Stream.X86.sha224H v.stream)
       verified := Proof.MdStream.X86.Digest.sha224_digest v.stream
       spSafe := Proof.MdStream.X86.Digest.sha224_digestSp v.stream }
-    (digest224RegOut _) (hs := digest224Reg_scrub v)
+    v.digest224Sel (digest224RegOut _)
 
 /-- No instruction of `vg_sha224_digest` with the backend `v`, as emitted, writes `esp`
 but in its frames and calls. -/
 theorem digest224_spSafe (v : Backend) :
     (Impl.Sha256.X86.Fn.digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream)).all
       (fun i => !isa.writesSp i) = true :=
-  scrubAll_spSafe (Proof.MdStream.X86.Digest.sha224_digestSp v.stream)
+  scrubSel_spSafe (Proof.MdStream.X86.Digest.sha224_digestSp v.stream)
 
 end VG.Proof.Sha256.X86.Scrub

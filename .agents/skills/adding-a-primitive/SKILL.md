@@ -413,9 +413,10 @@ followed by `tail rb` from `RTaint.init W 0` (the bits of the final taint's
 wipes its own working space (`withStackScratchWiped`) uses `scrubSel`, which
 leaves the doublewords that working space's frame header and the frames
 below it hold. `scrubAll` stays the cleanup where the analysis leaves most
-of the stack secret, for code that calls the functions of its tables or has
-MMX instructions, for code generic over a variant, and where `W` is 4096
-bytes or more.
+of the stack secret (where zeroing the doublewords it finds, one store each,
+would take more stores than zeroing all of `W` in 16-byte ones), for code
+that calls the functions of its tables or has MMX instructions, and where
+`W` is 4096 bytes or more.
 
 **Variants.** The tail clears every register a callee may change, so a
 variant states only `calleeOk` of each code it gives (no MMX, no indirect
@@ -424,7 +425,15 @@ code with a stub of the variant (code `.block []`) is evaluated once
 (`scrubFSide … = true`, `lit_decide`), `fill_calls` proves `Fill` from it
 to the code with any variant, and `X86.Scrub.scrubFSide_of_fill` joins
 them (`Proof/Framework/X86/ScrubCall.lean`,
-`Proof/CmacAes/Stream/X86/Scrub.lean`).
+`Proof/CmacAes/Stream/X86/Scrub.lean`). For `scrubSel` of such code, whose
+doublewords `ws` are the same with every variant, the variant instead
+carries what `scrubSel` needs of the code with it, `X86.Scrub.SelScrub`
+(`selSide` by `decide` and the analysis, `⟨by decide, _, by
+taint_decide_ct⟩`, of the code's literal, `materialize_code`, in the
+variant's own file), and `SelScrub.scrubbed` states the theorem, with
+nothing of the code evaluated where it is used (`Backend.digestSel`,
+`Proof/Sha256/X86/Variants/Interface.lean`, `Proof/Variants/Sha256/X86/`,
+`Proof/Sha256/X86/Scrub.lean`; `spSafe` by `scrubSel_spSafe`).
 
 **Code that wipes its own frame.** `verifiedScrubbedWiped` needs more than
 PPC64LE's: there the frame's region leaves out its header, but on x86 the
@@ -435,6 +444,15 @@ its scratch contract, which must not let it write its arguments
 no frame (`wipedSide`, by `lit_decide`) and that every argument is of 32
 bits and public (`argsPub`, by `decide`): code that calls or pushes below
 its frame, or whose contract may write its arguments, stays on `scrubAll`.
+The key expansions keep this form rather than `scrubSel`, whose `ws`
+would be their header (`[0, …, 4]`), stores the wiped form does not make:
+the header is public, but the analysis cannot show it. Each stores the
+schedule through a pointer it keeps in its frame, which the analysis does
+not follow, and a store it cannot place makes the open frames' bytes
+secret. Following pointers in the frame and from the arguments would
+place only AES-NI's and Camellia's: TripleDES's, AES's, SEED's and SM4's
+pointer advances in a counted loop, and bounding it would need a relational
+domain (the pointer against the loop's count).
 
 ### AArch64
 

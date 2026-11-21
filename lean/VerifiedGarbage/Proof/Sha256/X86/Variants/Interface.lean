@@ -6,6 +6,7 @@ public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Framework.X86.ScrubSide
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 public import VerifiedGarbage.Impl.Scrub.X86
 public import VerifiedGarbage.Impl.Sha256.X86.Fn
 import VerifiedGarbage.Proof.Sha256.PostOut
@@ -846,6 +847,16 @@ structure Backend where
   finalize224Stack : stackUse (sha224M stream cmpN cmpC).hmacFin ≤ 48
   iter224NoSp : NoSp (sha224M stream cmpN cmpC).iterate
   iter224Stack : stackUse (sha224M stream cmpN cmpC).iterate ≤ 48
+  /-- What the cleanup of the one-shot digest over it needs of its code
+  (`X86.Scrub.SelScrub`): the residue analysis of the digest with this
+  implementation, evaluated where the implementation is defined, once. -/
+  digestSel : VG.X86.Scrub.SelScrub (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha256H stream)) 0
+    (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha256H stream)) Impl.MdStream.X86.Digest.selWords
+    (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H stream))
+  /-- The same of SHA-224's. -/
+  digest224Sel : VG.X86.Scrub.SelScrub (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha224H stream)) 0
+    (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha224H stream)) Impl.MdStream.X86.Digest.selWords
+    (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H stream))
 
 namespace Backend
 
