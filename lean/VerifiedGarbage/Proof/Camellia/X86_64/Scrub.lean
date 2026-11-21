@@ -73,7 +73,7 @@ frames that keep their working space on the stack already show
 (`X86_64.Verified.stackScratchWiped`'s `hpost`).
 
 `vg_camellia_ctr_final`, whose analysis does not succeed, is followed by
-`Impl.Scrub.X86_64.scrub` with every granule of its stack wiped
+`Impl.Scrub.X86_64.scrubWith` with every granule of its stack wiped
 (`X86_64.Scrub.withScrubAll`): it calls `vg_camellia_ctr`'s code as the
 internal `vg_camellia_ctr_core` (`Impl.Camellia.X86_64.ctrFramed`), which
 restores the callee-saved registers from slots of its frame the analysis

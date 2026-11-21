@@ -1423,7 +1423,7 @@ end
 
 `vg_triple_des_cbc_decrypt_chained` and `vg_triple_des_cfb64_decrypt` over
 each implementation of the ECB functions they call (`Batch.EcbImpl`),
-followed by `Impl.Scrub.X86_64.scrub` with every granule of their stack
+followed by `Impl.Scrub.X86_64.scrubWith` with every granule of their stack
 wiped (`X86_64.RScrub.withScrubAllM`): their 2128-byte frame, which they no
 longer zero themselves, and the 1048 bytes of the ECB call below it. Their
 postconditions read the memory on return only within the buffers

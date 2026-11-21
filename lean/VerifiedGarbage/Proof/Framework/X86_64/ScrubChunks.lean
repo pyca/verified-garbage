@@ -37,7 +37,7 @@ theorem scrubCodeMC_noResidue {api : Api} (r : Unscrubbed api target) (v : VecLe
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (hres : ResOk r.code r.contract r.stack ks cs) (hne : v ≠ .evex) (hic : tablesCall r.code r.tables = true) :
-    NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+    NoResidue (scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
       (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code) r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
@@ -65,7 +65,7 @@ def scrubRegMC {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks cs : L
   consts := r.consts
   tables := r.tables
   stack := r.stack
-  code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+  code := scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code
   contract := r.contract
   unscrubbed := !(tablesCall r.code r.tables)
@@ -82,7 +82,7 @@ def scrubRegMC {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks cs : L
       (tailOk_of _ _ _) (xs_of _ _) (fun e => absurd e hne) (fun _ _ e => absurd e hne) (gs_of _ _)).1) (fun hic => scrubCodeMC_noResidue r v ks cs hcs hcv hd hst hlv hmx hrb hpost hres hne hic)
   ofApi := r.ofApi
   ofSig := r.ofSig
-  spSafe := scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
+  spSafe := scrubWith_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
   written := r.written
   writtenOk := by
     rw [hw]; exact fun _ _ _ _ _ => True.intro
@@ -149,10 +149,10 @@ def scrubRegFC {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks cs : L
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (hres : ResOk r.code r.contract r.stack ks cs)
     (hw : r.written = []) (hxe : v = .evex → ∀ x, x ∈ xsOf r.code ks) : Registration api target :=
-  have main : Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+  have main : Verified target (scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx) r.contract ∧
       (tablesCall r.code r.tables = true →
-        NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        NoResidue (scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
           (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx) r.contract
           (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) := by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
@@ -170,7 +170,7 @@ def scrubRegFC {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks cs : L
     consts := r.consts
     tables := r.tables
     stack := r.stack
-    code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+    code := scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
       (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx
     contract := r.contract
     -- As `scrubRegE`'s: for code that calls indirectly only its tables' functions.
@@ -178,7 +178,7 @@ def scrubRegFC {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks cs : L
     verified := .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) <| Verification.ofBool (tablesCall r.code r.tables) main.1 main.2
     ofApi := r.ofApi
     ofSig := r.ofSig
-    spSafe := scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
+    spSafe := scrubWith_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
     written := r.written
     writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
     extra := r.extra

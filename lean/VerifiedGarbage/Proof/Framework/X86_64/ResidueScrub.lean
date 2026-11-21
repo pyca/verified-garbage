@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# The residue analysis decides what `scrub` wipes (x86-64)
+# The residue analysis decides what `scrubWith` wipes (x86-64)
 
 `init sig stack` is where the residue analysis (`RTaint.rtaint`) starts on
 a function of signature `sig`: everything in the registers is the same in
@@ -23,9 +23,9 @@ same bytes in both runs, and of its stack arguments, those the contract
 says are public are the same in both runs (`saOf`), and those that are
 writable buffers hold their addresses (`spAux`) (`init_agree`). If the
 analysis of its code ends with the window as it started, the window's bytes the analysis cannot show
-equal in both runs are those `sec` lists; `scrub` then need wipe only the
+equal in both runs are those `sec` lists; `scrubWith` then need wipe only the
 16-byte granules that hold them (`keepOf`), and `resOk_of_check` gives
-`Verified.scrub` the rest (`Scrub.ResOk`).
+`Verified.scrubWith` the rest (`Scrub.ResOk`).
 -/
 
 @[expose] public section
@@ -782,7 +782,7 @@ theorem resOk_reg0 {api : Api} (r : Unscrubbed api target) (ks : List Nat) {h : 
     ResOk r.code r.contract r.stack ks (chunks r.stack) :=
   resOk_reg r ks (pubs := []) rfl (pubOk_nil _) (any_resOkB hc)
 
-/-- The granules of `r.stack` bytes of stack that `scrub` must wipe after
+/-- The granules of `r.stack` bytes of stack that `scrubWith` must wipe after
 the code `code` of signature `sig`, from the analysis (none if it fails,
 which the check then rejects). -/
 def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) (pubs : List (Nat × Nat × Nat) := []) : List Nat :=
@@ -843,7 +843,7 @@ theorem mxClassFrom_ok : ∀ (c : Prog isa) (k : List (String × Prog isa × Uni
 theorem mxClassOnce_eq (c : Prog isa) : mxClassOnce c = mxClass c :=
   (mxClassFrom_ok c [] fun _ h => by cases h).1
 
-/-- The level `scrub` clears the vector registers at for `code`: `pxor` if
+/-- The level `scrubWith` clears the vector registers at for `code`: `pxor` if
 nothing in it writes bits 511:128 of a vector register, else `vpxor`
 (`Instr.vecLevelR`: whatever it does to MXCSR, which `withScrub` asks of
 separately). -/
@@ -855,7 +855,7 @@ theorem levelFor_ne (code : Prog isa) : levelFor code ≠ .evex := by
 
 /-- The residue analysis of the code `code` of signature `sig`, whose frames
 and calls use `stack` bytes, from `init` with the bytes `pubs` of its buffers
-public: the granules `ks` that `scrub` wipes, and the analysis's success
+public: the granules `ks` that `scrubWith` wipes, and the analysis's success
 (`resOk_of_check`), which the kernel checks (`taint_decide`). -/
 structure Analysed (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat)) (code : Prog isa) where
   ks : List Nat
@@ -872,7 +872,7 @@ theorem Analysed.ok_of {sig : Sig} {stack : Nat} {pubs : List (Nat × Nat × Nat
   ⟨h, any_resOkB hc⟩
 
 /-- `r`, returning without secret residue (`scrubRegM`), given the residue
-analysis of its code (`Analysed`) and if `scrub`'s side conditions hold (code
+analysis of its code (`Analysed`) and if `scrubWith`'s side conditions hold (code
 that loads MXCSR leaving in it a function of MXCSR on entry, `mxClass`, as
 Intel's MCDT prologue and epilogue do);
 otherwise `r` itself, which then has no proof (`Verification.unscrubbed`), as
@@ -906,7 +906,7 @@ def withScrub {api : Api} (r : Unscrubbed api target)
 but the granules `ks` (`hres`), proven of the code rather than by the
 residue analysis (as `X86_64.Scrub.resOk_of_leaves` gives it from what the
 code leaves run by run): `r` followed by the clearing of those granules,
-returning without secret residue (`scrubRegM`), if `scrub`'s side
+returning without secret residue (`scrubRegM`), if `scrubWith`'s side
 conditions hold; otherwise `r` itself, which then has no proof. -/
 def withScrubRes {api : Api} (r : Unscrubbed api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))

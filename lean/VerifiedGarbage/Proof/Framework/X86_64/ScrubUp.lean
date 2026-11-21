@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 /-!
 # Returning without secret residue: the baseline ISA's callers of AVX code (x86-64)
 
-`Verified.scrubU` is `Verified.scrub` with what it needs of the code's
+`Verified.scrubU` is `Verified.scrubWith` with what it needs of the code's
 vector instructions stated as two facts, rather than derived from their
 level: below the level `evex`, the code's instructions are at most of level
 1 (`hl1`), and the upper halves of the vector registers that the clearing
@@ -48,7 +48,7 @@ variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → P
   {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
 
 /-- Code verified against a contract that `Sig.contract` derives, whose
-frames and calls use at most `stack` bytes, run by `scrub`, which clears
+frames and calls use at most `stack` bytes, run by `scrubWith`, which clears
 the granules `ks` of the `cs.sum = stack` bytes of stack below `rsp`:
 verified against the same contract, and without secret residue, if the
 postcondition reads the memory on return only within the buffers (`hpost`)
@@ -74,9 +74,9 @@ theorem Verified.scrubU {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : 
     (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false)
     (hsy : ∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ →
       ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) :
-    Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+    Verified target (Impl.Scrub.X86_64.scrubWith v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+      NoResidue (Impl.Scrub.X86_64.scrubWith v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   have hnps : ∀ r, r ∉ scratchRegs → r ∉ ps := fun r h h' => h (ht.psOk r h')
   have hngs : ∀ r, r ∉ scratchRegs → r ∉ gs := fun r h h' => h (ht.gsOk r h')
@@ -306,10 +306,10 @@ theorem scrubCodeU_verified {api : Api} (r : Unscrubbed api target)
     (hok : UpOk r.code r.tables = true)
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
-    Verified target (scrub .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+    Verified target (scrubWith .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         (xsOf r.code (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) (gsOf Taint.clobbers r.code)
         (allKs (chunks r.stack)) (chunks r.stack) r.code) r.contract ∧
-      NoResidue (scrub .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+      NoResidue (scrubWith .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         (xsOf r.code (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) (gsOf Taint.clobbers r.code)
         (allKs (chunks r.stack)) (chunks r.stack) r.code) r.contract
         (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
@@ -340,7 +340,7 @@ def scrubRegUp {api : Api} (r : Unscrubbed api target)
   consts := r.consts
   tables := r.tables
   stack := r.stack
-  code := scrub .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+  code := scrubWith .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     (xsOf r.code (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) (gsOf Taint.clobbers r.code)
     (allKs (chunks r.stack)) (chunks r.stack) r.code
   contract := r.contract
@@ -348,7 +348,7 @@ def scrubRegUp {api : Api} (r : Unscrubbed api target)
     (scrubCodeU_verified r hd hst h8 hok hrb hpost).2⟩
   ofApi := r.ofApi
   ofSig := r.ofSig
-  spSafe := scrub_spSafe .sse _ _ _ _ _ _ (tailOk_of 0 r.code (allKs (chunks r.stack))).psOk
+  spSafe := scrubWith_spSafe .sse _ _ _ _ _ _ (tailOk_of 0 r.code (allKs (chunks r.stack))).psOk
     (tailOk_of 0 r.code (allKs (chunks r.stack))).gsOk r.spSafe
   written := r.written
   writtenOk := by

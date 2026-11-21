@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # x86-64 residue: clearing only the registers that may hold secrets
 
-`scrub v rb xs ps gs ks cs c` clears the SSE registers `xs` and the
+`scrubWith v rb xs ps gs ks cs c` clears the SSE registers `xs` and the
 general-purpose registers `ps` and `gs` (and the upper bits of `rax`).
 `Verified.scrubM` takes those from the code's instructions: every SSE
 register if any instruction may write one, every caller-saved register any
@@ -248,10 +248,10 @@ theorem Verified.scrubPart {c : Prog isa} {v f : VecLevel} {rb : Nat} {xs xs' : 
     (hres : ResOk c (sig.contract A pre post wa stack leak) stack ks cs') (hst : stack + 8 < 2 ^ 64)
     {Q : Prop} (hQ : Q → ∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ →
       ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n)
-    (hall : Verified target (Impl.Scrub.X86_64.scrub v rb xs' ps gs' ks cs' c f) (sig.contract A pre post wa stack leak) ∧
-      (Q → NoResidue (Impl.Scrub.X86_64.scrub v rb xs' ps gs' ks cs' c f) (sig.contract A pre post wa stack leak) rb)) :
-    Verified target (Impl.Scrub.X86_64.scrub v rb xs ps gs ks cs c f) (sig.contract A pre post wa stack leak) ∧
-      (Q → NoResidue (Impl.Scrub.X86_64.scrub v rb xs ps gs ks cs c f) (sig.contract A pre post wa stack leak) rb) := by
+    (hall : Verified target (Impl.Scrub.X86_64.scrubWith v rb xs' ps gs' ks cs' c f) (sig.contract A pre post wa stack leak) ∧
+      (Q → NoResidue (Impl.Scrub.X86_64.scrubWith v rb xs' ps gs' ks cs' c f) (sig.contract A pre post wa stack leak) rb)) :
+    Verified target (Impl.Scrub.X86_64.scrubWith v rb xs ps gs ks cs c f) (sig.contract A pre post wa stack leak) ∧
+      (Q → NoResidue (Impl.Scrub.X86_64.scrubWith v rb xs ps gs ks cs c f) (sig.contract A pre post wa stack leak) rb) := by
   obtain ⟨⟨acor, -, asat⟩, ares⟩ := hall
   -- Both clearings, after a run of `c`.
   have tails : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
@@ -400,7 +400,7 @@ end
 
 /-! ## Registrations -/
 
-/-- What `scrub` needs of the registers it is given to clear, as a check:
+/-- What `scrubWith` needs of the registers it is given to clear, as a check:
 `xmm0` if the stack is wiped (from it), and some of the caller-saved
 registers but `rax`. -/
 def tailOkB (xs : List XReg) (gs : List Reg) (ks : List Nat) : Bool :=
@@ -451,16 +451,16 @@ theorem scrubCodeMCR_ok {api : Api} (r : Unscrubbed api target) (v : VecLevel) (
     (hres : ResOk r.code r.contract r.stack ks cs) (hw : r.written = []) (hne : v ≠ .evex)
     (ht : TailOk (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) xs (psOf ks) gs ks)
     (hregs : RegsOk r.code r.contract xs (psOf ks) gs) :
-    Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+    Verified target (scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         xs (psOf ks) gs ks (wipeCs ks cs) r.code) r.contract ∧
       (tablesCall r.code r.tables = true →
-        NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        NoResidue (scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
           xs (psOf ks) gs ks (wipeCs ks cs) r.code) r.contract
           (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) := by
-  have hall : Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+  have hall : Verified target (scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code) r.contract ∧
       (tablesCall r.code r.tables = true →
-        NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        NoResidue (scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
           (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code) r.contract
           (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :=
     ⟨(scrubRegMC r v ks cs hcs hcv hd hst hlv hmx hrb hpost hres hw hne).verified.verified,
@@ -491,7 +491,7 @@ def scrubRegMCR {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks cs : 
   consts := r.consts
   tables := r.tables
   stack := r.stack
-  code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+  code := scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     xs (psOf ks) gs ks (wipeCs ks cs) r.code
   contract := r.contract
   unscrubbed := !(tablesCall r.code r.tables)
@@ -500,7 +500,7 @@ def scrubRegMCR {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks cs : 
     (fun hic => (scrubCodeMCR_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hw hne ht hregs).2 hic)
   ofApi := r.ofApi
   ofSig := r.ofSig
-  spSafe := scrub_spSafe v _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
+  spSafe := scrubWith_spSafe v _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
   written := r.written
   writtenOk := by
     rw [hw]; exact fun _ _ _ _ _ => True.intro
@@ -1442,11 +1442,11 @@ theorem Verified.scrubPartH {c : Prog isa} {rb : Nat} {xs xs' : List XReg}
     (hres : ResOk c (sig.contract A pre post wa stack leak) stack ks cs') (hst : stack + 8 < 2 ^ 64)
     {Q : Prop} (hQ : Q → ∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ →
       ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n)
-    (hall : Verified target (Impl.Scrub.X86_64.scrub .evex rb xs' ps gs' ks cs' c .avx)
+    (hall : Verified target (Impl.Scrub.X86_64.scrubWith .evex rb xs' ps gs' ks cs' c .avx)
         (sig.contract A pre post wa stack leak) ∧
-      (Q → NoResidue (Impl.Scrub.X86_64.scrub .evex rb xs' ps gs' ks cs' c .avx) (sig.contract A pre post wa stack leak) rb)) :
-    Verified target (Impl.Scrub.X86_64.scrub .avx rb xs ps gs ks cs c .avx) (sig.contract A pre post wa stack leak) ∧
-      (Q → NoResidue (Impl.Scrub.X86_64.scrub .avx rb xs ps gs ks cs c .avx) (sig.contract A pre post wa stack leak) rb) := by
+      (Q → NoResidue (Impl.Scrub.X86_64.scrubWith .evex rb xs' ps gs' ks cs' c .avx) (sig.contract A pre post wa stack leak) rb)) :
+    Verified target (Impl.Scrub.X86_64.scrubWith .avx rb xs ps gs ks cs c .avx) (sig.contract A pre post wa stack leak) ∧
+      (Q → NoResidue (Impl.Scrub.X86_64.scrubWith .avx rb xs ps gs ks cs c .avx) (sig.contract A pre post wa stack leak) rb) := by
   obtain ⟨⟨acor, -, asat⟩, ares⟩ := hall
   have tails : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
       ∃ m m' T', Exec isa (scrubTail .avx rb xs ps gs ks cs .avx) u (tailTr .avx ks cs (s.gpr .rsp) .avx)
@@ -1589,16 +1589,16 @@ theorem scrubCodeMCRH_ok {api : Api} (r : Unscrubbed api target) (ks cs : List N
     (hres : ResOk r.code r.contract r.stack ks cs) (hxe : ∀ x, x ∈ xsOf r.code ks)
     (ht : TailOk (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) xs (psOf ks) gs ks)
     (hregs : RegsOk r.code r.contract xs (psOf ks) gs) (hH : HRegsOk r.code r.contract) :
-    Verified target (scrub .avx (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+    Verified target (scrubWith .avx (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx) r.contract ∧
       (tablesCall r.code r.tables = true →
-        NoResidue (scrub .avx (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        NoResidue (scrubWith .avx (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
           xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx) r.contract
           (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) := by
-  have hall : Verified target (scrub .evex (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+  have hall : Verified target (scrubWith .evex (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx) r.contract ∧
       (tablesCall r.code r.tables = true →
-        NoResidue (scrub .evex (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        NoResidue (scrubWith .evex (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
           (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code .avx) r.contract
           (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) := by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
@@ -1637,7 +1637,7 @@ def scrubRegMCRH {api : Api} (r : Unscrubbed api target) (ks cs : List Nat)
   consts := r.consts
   tables := r.tables
   stack := r.stack
-  code := scrub .avx (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+  code := scrubWith .avx (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx
   contract := r.contract
   unscrubbed := !(tablesCall r.code r.tables)
@@ -1646,7 +1646,7 @@ def scrubRegMCRH {api : Api} (r : Unscrubbed api target) (ks cs : List Nat)
     (fun hic => (scrubCodeMCRH_ok r ks cs xs gs hcs hcv hd hst hmx hrb hpost hres hxe ht hregs hH).2 hic)
   ofApi := r.ofApi
   ofSig := r.ofSig
-  spSafe := scrub_spSafe .avx _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
+  spSafe := scrubWith_spSafe .avx _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
   written := r.written
   writtenOk := by
     rw [hw]; exact fun _ _ _ _ _ => True.intro

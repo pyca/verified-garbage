@@ -22,11 +22,11 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # Returning without secret residue (x86-64)
 
-`Verified.scrub`: code verified against a contract that `Sig.contract`
+`Verified.scrubWith`: code verified against a contract that `Sig.contract`
 derives, whose frames and calls use at most the contract's `stack` bytes,
-followed by `Impl.Scrub.X86_64.scrubTail` (`scrub`), is verified against the
+followed by `Impl.Scrub.X86_64.scrubTail` (`scrubWith`), is verified against the
 same contract and returns without secret residue (`NoResidue`). The proof of
-the code is used as it is: what `scrub` adds is checked once, here, for all
+the code is used as it is: what `scrubWith` adds is checked once, here, for all
 code (`tail_run`): it zeroes the stack below `rsp` (`wipe_run`), the SSE
 registers and the caller-saved general-purpose registers, and its trace
 depends only on `rsp`. What the code itself must satisfy is decidable
@@ -946,7 +946,7 @@ theorem tail_run (v : VecLevel) (rb : Nat) {xs : List XReg} {ps gs : List Reg} {
 
 /-! ## What `Sig.contract` gives -/
 
-/-- What `Verified.scrub` needs of the calling convention a contract is for:
+/-- What `Verified.scrubWith` needs of the calling convention a contract is for:
 `abi`'s, possibly with tables of constants (`Abi.withConsts`), which add
 readable regions apart from the stack the function uses, and with tables of
 functions (`Abi.withTables`). -/
@@ -1119,7 +1119,7 @@ theorem retVal_hi {rb : Nat} (hrb : rb ≤ 32 ∨ rb = 64) (x : BitVec 64) : ret
   · have : rb = 64 := by omega_using [hrb, h1, h2]
     subst this; simp only [h0, h1, h2, ↓reduceIte]; exact x.isLt
 
-/-- How `scrub` clears the vector registers, as an instruction level. -/
+/-- How `scrubWith` clears the vector registers, as an instruction level. -/
 def _root_.VG.Impl.Scrub.X86_64.VecLevel.level : VecLevel → Nat
   | .sse => 0
   | .avx => 1
@@ -1448,7 +1448,7 @@ theorem Exec.unknowns_agree {c : Prog isa} {s₁ s₁' : State} {t₁ : List Lea
 /-- Two runs of `c` leave the same bytes in the `stack` bytes below the stack
 pointer on entry but those `wipe ks cs` zeroes, from states whose functions
 `c` calls indirectly have the same addresses (as `NoResidue` is asked of
-such code: `Verified.scrub`). -/
+such code: `Verified.scrubWith`). -/
 def ResOk (c : Prog isa) (k : Contract isa) (stack : Nat) (ks cs : List Nat) : Prop :=
   ∀ s₁ s₂ t₁ t₂ u₁ u₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → Outside 0 s₁ s₂ → s₁.unknowns = s₂.unknowns →
     (∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) → Exec isa c s₁ t₁ u₁ → Exec isa c s₂ t₂ u₂ →
@@ -1461,7 +1461,7 @@ variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → P
   {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
 
 /-- Code verified against a contract that `Sig.contract` derives, whose
-frames and calls use at most `stack` bytes, run by `scrub`, which clears
+frames and calls use at most `stack` bytes, run by `scrubWith`, which clears
 the granules `ks` of the `cs.sum = stack` bytes of stack below `rsp`:
 verified against the same contract, and without secret residue, if the
 postcondition reads the memory on return only within the buffers (`hpost`)
@@ -1490,10 +1490,10 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
     (hxs : (∀ x, x ∈ xs) ∨ ∀ i ∈ instrs c, writesVec i = false)
     (hxe : v = .evex → ∀ x, x ∈ xs) (hev : ∀ p : Addr, cs.sum ≤ p.toNat → EvexOk f ks cs p)
     (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false) :
-    Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
+    Verified target (Impl.Scrub.X86_64.scrubWith v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
         (sig.contract A pre post wa stack leak) ∧
       ((∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ → ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) →
-        NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
+        NoResidue (Impl.Scrub.X86_64.scrubWith v (sig.retBits A.ptrBits) xs ps gs ks cs c f)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) := by
   have hnps : ∀ r, r ∉ scratchRegs → r ∉ ps := fun r h h' => h (ht.psOk r h')
   have hngs : ∀ r, r ∉ scratchRegs → r ∉ gs := fun r h h' => h (ht.gsOk r h')
@@ -1707,7 +1707,7 @@ theorem Verified.scrubM {c : Prog isa} {v f : VecLevel} {xs : List XReg} {ps gs 
 
 /-- `Verified.scrubM`, for code of `vecLevel` at most `v.level`, which below
 the level `evex` never loads MXCSR. -/
-theorem Verified.scrub {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : List Reg} {ks cs : List Nat}
+theorem Verified.scrubWith {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : List Reg} {ks cs : List Nat}
     (hA : ScrubAbi A)
     (h : Verified target c (sig.contract A pre post wa stack leak))
     (hsp : SpSafe c) (hd : c.x86_64Depth ≤ stack) (hcs : cs.sum = stack) (hst : stack + 8 < 2 ^ 64)
@@ -1724,10 +1724,10 @@ theorem Verified.scrub {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : L
     (hxs : (∀ x, x ∈ xs) ∨ ∀ i ∈ instrs c, writesVec i = false)
     (hxe : v = .evex → ∀ x, x ∈ xs) (hev : ∀ p : Addr, cs.sum ≤ p.toNat → EvexOk v ks cs p)
     (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false) :
-    Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+    Verified target (Impl.Scrub.X86_64.scrubWith v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) ∧
       ((∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ → ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) →
-        NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+        NoResidue (Impl.Scrub.X86_64.scrubWith v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :=
   Verified.scrubM hA h hsp hd hcs hst hv (fun i hi => Nat.le_trans (vecLevelR_le i) (hlv i hi))
     (fun hne => MxSame.of_fun ⟨id, fun _ _ _ he => Exec.mxcsr (fun i hi => noLoad_of_vecLevel (by
@@ -1743,7 +1743,7 @@ end
 /-! ## Registering scrubbed code -/
 
 /-- A postcondition that reads the memory on return only within the
-buffers, and of the result only its `rb` bits (`Verified.scrub`'s `hpost`). -/
+buffers, and of the result only its `rb` bits (`Verified.scrubWith`'s `hpost`). -/
 def PostOut (k : Contract isa) (rb : Nat) : Prop :=
   ∀ s u u', k.pre s → k.post s u →
     (∀ x, (∃ r ∈ s.rd ++ s.wr, r.Contains x 1) → u'.mem x = u.mem x) →
@@ -1842,10 +1842,10 @@ theorem wipe_spSafe (w : Bool) (ks : List Nat) :
 
 theorem zeroR_spSafe : ∀ r ∈ scratchRegs, (!isa.writesSp (zeroR r)) = true := by decide
 
-theorem scrub_spSafe {c : Prog isa} (v : VecLevel) (rb : Nat) (xs : List XReg) (ps gs : List Reg)
+theorem scrubWith_spSafe {c : Prog isa} (v : VecLevel) (rb : Nat) (xs : List XReg) (ps gs : List Reg)
     (ks cs : List Nat) {f : VecLevel} (hps : ∀ r ∈ ps, r ∈ scratchRegs) (hgs : ∀ r ∈ gs, r ∈ scratchRegs)
     (h : c.all (fun i => !isa.writesSp i) = true) :
-    (scrub v rb xs ps gs ks cs c f).all (fun i => !isa.writesSp i) = true := by
+    (scrubWith v rb xs ps gs ks cs c f).all (fun i => !isa.writesSp i) = true := by
   have hx : (xs.map (zeroX v)).all (fun i => !isa.writesSp i) = true := by
     simp only [List.all_map, List.all_eq_true]
     exact fun x _ => by cases v <;> rfl
@@ -1867,12 +1867,12 @@ theorem scrub_spSafe {c : Prog isa} (v : VecLevel) (rb : Nat) (xs : List XReg) (
       · split
         · intro i hi; simp at hi; subst hi; rfl
         · intro i hi; simp at hi
-  rw [scrub, scrubTail]
+  rw [scrubWith, scrubTail]
   simp only [Code.all]
   rw [h, hv, hm, wipe_spSafe v.wide ks cs, hg]
   rfl
 
-/-! ## What `scrub` clears, from the code -/
+/-! ## What `scrubWith` clears, from the code -/
 
 theorem tailOk_of (rb : Nat) (c : Prog isa) (ks : List Nat) :
     TailOk rb (xsOf c ks) (psOf ks) (gsOf Taint.clobbers c) ks where
@@ -2127,7 +2127,7 @@ theorem scrubCodeE_noResidue {api : Api} (r : Unscrubbed api target) (v : VecLev
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) (he : EvexReg r.code v ks r.stack)
     (hic : tablesCall r.code r.tables = true) :
-    NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+    NoResidue (scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
       (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code) r.contract
       (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
@@ -2141,7 +2141,7 @@ theorem scrubCodeE_noResidue {api : Api} (r : Unscrubbed api target) (v : VecLev
     (fun i hi => by simpa using Code.all_instrs hlv i hi) (fun hne => MxSame.of_fun (mxFun_of (hmx hne))) hrb' hp hr (tailOk_of _ _ _) (xs_of _ _) he.1 he.2
     (gs_of _ _)).2 (tablesCall_syms hic rfl)
 
-/-- `r`, scrubbed: its code followed by the clearing (`scrub`), at level `v`,
+/-- `r`, scrubbed: its code followed by the clearing (`scrubWith`), at level `v`,
 with the granules `ks` of `r.stack` bytes of stack wiped. -/
 def scrubRegE {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List Nat)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
@@ -2155,7 +2155,7 @@ def scrubRegE {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List 
   consts := r.consts
   tables := r.tables
   stack := r.stack
-  code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+  code := scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code
   contract := r.contract
   -- Without residue for code that calls indirectly only its tables' functions,
@@ -2175,7 +2175,7 @@ def scrubRegE {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List 
       (gs_of _ _)).1) (fun hic => scrubCodeE_noResidue r v ks hd hst h8 hlv hmx hrb hpost hres he hic)
   ofApi := r.ofApi
   ofSig := r.ofSig
-  spSafe := scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
+  spSafe := scrubWith_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
   written := r.written
   writtenOk := by
     rw [hw]; exact fun _ _ _ _ _ => True.intro
@@ -2252,14 +2252,14 @@ def scrubRegAll {api : Api} (r : Unscrubbed api target) (v : VecLevel)
   scrubRegE r v (allKs (chunks r.stack)) hd hst h8 (allR_of_all hlv) (mxOk_of_all hlv) hrb hpost (resOk_all _ _ h8)
     (evexReg_all h8 hst hev) hw
 
-/-- The level `scrub` clears the vector registers at for `code`, the lowest
+/-- The level `scrubWith` clears the vector registers at for `code`, the lowest
 that covers its instructions. -/
 def levelAll (code : Prog isa) : VecLevel :=
   if levelLeOnce VecLevel.sse.level code then .sse
   else if levelLeOnce VecLevel.avx.level code then .avx else .evex
 
 /-- `r`, returning without secret residue with every granule of its stack
-wiped (`scrubRegAll`), at the level of its code, if `scrub`'s side conditions
+wiped (`scrubRegAll`), at the level of its code, if `scrubWith`'s side conditions
 hold and the clearing needs no CPU feature that `r`'s code does not
 (`Code.requiresDedup`); otherwise `r` itself, which then has no proof
 (`Verification.unscrubbed`), as the emitter allows only of what

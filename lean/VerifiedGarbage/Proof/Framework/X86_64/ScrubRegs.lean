@@ -85,7 +85,7 @@ theorem bufs_stack {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
   | zero => exact absurd rfl hst
   | succ n => simp [abi, stackBelow]
 
-/-- `scrub` of code that changes no byte of its arrays past the bounds `W`
+/-- `scrubWith` of code that changes no byte of its arrays past the bounds `W`
 changes none either: its clearing writes only the stack below the stack
 pointer, apart from every buffer. -/
 theorem writtenWithin_scrub {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
@@ -100,7 +100,7 @@ theorem writtenWithin_scrub {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     (hW : ∀ s t s', (sig.contract A pre post wa stack leak).pre s → Exec isa c s t s' →
       Sig.writtenWithin abi sig W s s') :
     ∀ s t s', (sig.contract A pre post wa stack leak).pre s →
-      Exec isa (scrub v rb xs ps gs ks cs c f) s t s' → Sig.writtenWithin abi sig W s s' := by
+      Exec isa (scrubWith v rb xs ps gs ks cs c f) s t s' → Sig.writtenWithin abi sig W s s' := by
   intro s t s' hs he
   cases he with
   | seq a b =>
@@ -285,13 +285,13 @@ theorem Verified.scrubXs {c : Prog isa} {xs : List XReg} {gs : List Reg} {cs : L
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits))
     (hgs : ∀ r ∈ gs, r ∈ scratchRegs) (hne : gs ≠ [])
     (hk : ∀ x, x ∉ xs → ∀ i ∈ instrs c, writesX x i = false)
-    (hall : Verified target (Impl.Scrub.X86_64.scrub .sse (sig.retBits A.ptrBits) xregs [] gs [] cs c)
+    (hall : Verified target (Impl.Scrub.X86_64.scrubWith .sse (sig.retBits A.ptrBits) xregs [] gs [] cs c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.X86_64.scrub .sse (sig.retBits A.ptrBits) xregs [] gs [] cs c)
+      NoResidue (Impl.Scrub.X86_64.scrubWith .sse (sig.retBits A.ptrBits) xregs [] gs [] cs c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
-    Verified target (Impl.Scrub.X86_64.scrub .sse (sig.retBits A.ptrBits) xs [] gs [] cs c)
+    Verified target (Impl.Scrub.X86_64.scrubWith .sse (sig.retBits A.ptrBits) xs [] gs [] cs c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.X86_64.scrub .sse (sig.retBits A.ptrBits) xs [] gs [] cs c)
+      NoResidue (Impl.Scrub.X86_64.scrubWith .sse (sig.retBits A.ptrBits) xs [] gs [] cs c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   obtain ⟨⟨acor, act, asat⟩, ares⟩ := hall
   -- Both clearings, after a run of `c`.
@@ -378,9 +378,9 @@ theorem scrubXs_ok {api : Api} (r : Unscrubbed api target)
     (hmx : (mxClass r.code).isSome = true)
     (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
-    Verified target (scrub .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+    Verified target (scrubWith .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         (xsW r.code) [] (gsOf Taint.clobbers r.code) [] (chunks r.stack) r.code) r.contract ∧
-      NoResidue (scrub .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+      NoResidue (scrubWith .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         (xsW r.code) [] (gsOf Taint.clobbers r.code) [] (chunks r.stack) r.code) r.contract
         (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
   have hr := resOk_noStack_reg r hd
@@ -414,13 +414,13 @@ def scrubRegXs {api : Api} (r : Unscrubbed api target)
   consts := r.consts
   tables := r.tables
   stack := r.stack
-  code := scrub .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+  code := scrubWith .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
     (xsW r.code) [] (gsOf Taint.clobbers r.code) [] (chunks r.stack) r.code
   contract := r.contract
   verified := .scrubbed <| .abi ⟨(scrubXs_ok r hd hst h8 hlv hmx hrb hpost).1, (scrubXs_ok r hd hst h8 hlv hmx hrb hpost).2⟩
   ofApi := r.ofApi
   ofSig := r.ofSig
-  spSafe := scrub_spSafe .sse _ _ _ _ _ _ (fun _ h => nomatch h) (tailOk_of 0 r.code []).gsOk r.spSafe
+  spSafe := scrubWith_spSafe .sse _ _ _ _ _ _ (fun _ h => nomatch h) (tailOk_of 0 r.code []).gsOk r.spSafe
   written := r.written
   writtenOk := by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
@@ -444,7 +444,7 @@ open VG.X86_64.Scrub
 
 /-- `r`, returning without secret residue with only the SSE registers its
 code may write cleared (`Scrub.scrubRegXs`), if its code has no VEX or EVEX
-instruction, no frame and no call, and `scrub`'s side conditions hold;
+instruction, no frame and no call, and `scrubWith`'s side conditions hold;
 otherwise `r` itself, which then has no proof (`Verification.unscrubbed`), as
 the emitter allows only of what `ci/residue_allowlist.txt` lists. -/
 def withScrubXs {api : Api} (r : Unscrubbed api target)

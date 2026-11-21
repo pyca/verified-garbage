@@ -48,14 +48,14 @@ def sat : State where
 /-! ## Without secret residue
 
 `add` writes only `rax`, the result, and the flags, which depend on the
-arguments; the clearing that follows it (`Impl.Scrub.X86_64.scrub`) is one
+arguments; the clearing that follows it (`Impl.Scrub.X86_64.scrubWith`) is one
 `xor r11d, r11d`, whose flags are known. It writes no memory: the
 postcondition says the memory is unchanged, so `X86_64.Scrub.scrubReg`,
 which needs it to read only the buffers (`PostOut`), does not apply, and
 the proof is direct. -/
 
 /-- `add`, then the clearing. -/
-def addScrubbed : Prog isa := Impl.Scrub.X86_64.scrub .sse 64 [] [] [.r11] [] [] Impl.Selftest.X86_64.add
+def addScrubbed : Prog isa := Impl.Scrub.X86_64.scrubWith .sse 64 [] [] [.r11] [] [] Impl.Selftest.X86_64.add
 
 theorem addScrubbed_run (s : State) : ∃ s', Exec isa addScrubbed s [] s' ∧
     (∀ r, s'.gpr r = if r = .r11 then 0 else if r = .rax then s.gpr .rdi + s.gpr .rsi else s.gpr r) ∧
@@ -163,11 +163,11 @@ theorem leakAdd_verified : Verified X86_64.target leakAdd addRetContract := by
 /-- `leakAdd` with the clearing `Verified.scrub` derives from its
 instructions: every SSE register, `rcx` and `r11`. -/
 theorem leakAdd_all :
-    Verified X86_64.target (Impl.Scrub.X86_64.scrub .sse 64 Impl.Scrub.X86_64.xregs [] [.rcx, .r11] [] [] leakAdd)
+    Verified X86_64.target (Impl.Scrub.X86_64.scrubWith .sse 64 Impl.Scrub.X86_64.xregs [] [.rcx, .r11] [] [] leakAdd)
         addRetContract ∧
-      NoResidue (Impl.Scrub.X86_64.scrub .sse 64 Impl.Scrub.X86_64.xregs [] [.rcx, .r11] [] [] leakAdd)
+      NoResidue (Impl.Scrub.X86_64.scrubWith .sse 64 Impl.Scrub.X86_64.xregs [] [.rcx, .r11] [] [] leakAdd)
         addRetContract 64 :=
-  have h := Scrub.Verified.scrub (A := X86_64.abi) (v := .sse) (xs := Impl.Scrub.X86_64.xregs) (ps := [])
+  have h := Scrub.Verified.scrubWith (A := X86_64.abi) (v := .sse) (xs := Impl.Scrub.X86_64.xregs) (ps := [])
     (gs := [.rcx, .r11]) (ks := []) (cs := []) Scrub.ScrubAbi.plain leakAdd_verified (SpSafe.of_all (by decide))
     (by decide) rfl (by decide) (by simp) (by decide) (by decide)
     (fun s u u' hs hq _ hr => by
@@ -179,7 +179,7 @@ theorem leakAdd_all :
   ⟨h.1, h.2 fun _ _ _ n hn => by rw [show UpperLock.inames leakAdd = [] from rfl] at hn; cases hn⟩
 
 /-- `leakAdd`, then the clearing of `r11` alone. -/
-def leakAddScrubbed : Prog isa := Impl.Scrub.X86_64.scrub .sse 64 [] [] [.r11] [] [] leakAdd
+def leakAddScrubbed : Prog isa := Impl.Scrub.X86_64.scrubWith .sse 64 [] [] [.r11] [] [] leakAdd
 
 theorem leakAddScrubbed_ok :
     Verified X86_64.target leakAddScrubbed addRetContract ∧ NoResidue leakAddScrubbed addRetContract 64 :=

@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Aes.ScrubLocal
 
 `vg_aes_ctr`, `vg_aes_ctr_final`, `vg_aes_cfb128_encrypt_final`,
 `vg_aes_cfb128_decrypt_final` and `vg_aes_ofb_final` over each
-implementation, each followed by `Impl.Scrub.X86_64.scrub` with every
+implementation, each followed by `Impl.Scrub.X86_64.scrubWith` with every
 granule of its stack wiped (`X86_64.RScrub.withScrubAllM`): 8 bytes for
 `vg_aes_ctr`, whose working space is its caller's `scratch`, and the final
 functions' frames (`save`, which they no longer zero themselves) with the

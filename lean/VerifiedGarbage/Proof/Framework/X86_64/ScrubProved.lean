@@ -22,7 +22,7 @@ whether it clears them all (`vec`) and the general-purpose registers it
 clears are arguments (literals at the call site), and what the scrub needs
 of the code is one Boolean (`scrubSide`) whose proof the call site gives,
 checked by the kernel when its module is built: the registration is a record
-whose code is `scrub` of literals and the code, and evaluating it inspects
+whose code is `scrubWith` of literals and the code, and evaluating it inspects
 no code.
 -/
 
@@ -77,8 +77,8 @@ theorem scrubSide_ok {api : Api} (r : Unscrubbed api target) (v : VecLevel) (vec
     (hres : ResOk r.code r.contract r.stack ks (chunks r.stack))
     (hxe : v = .evex → vec = true)
     (hev : ∀ p : Addr, (chunks r.stack).sum ≤ p.toNat → EvexOk v ks (chunks r.stack) p) :
-    Verified target (scrub v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks (chunks r.stack) r.code) r.contract ∧
-      NoResidue (scrub v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks (chunks r.stack) r.code) r.contract
+    Verified target (scrubWith v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks (chunks r.stack) r.code) r.contract ∧
+      NoResidue (scrubWith v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks (chunks r.stack) r.code) r.contract
         (retBitsOf r) := by
   simp only [scrubSide, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq] at hs
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨hd, hst⟩, h8⟩, hrb⟩, hgs⟩, hgne⟩, hmx⟩, hall⟩, hic⟩ := hs
@@ -152,12 +152,12 @@ def scrubResOf {api : Api} (r : Unscrubbed api target) (v : VecLevel) (vec : Boo
     consts := r.consts
     tables := r.tables
     stack := r.stack
-    code := scrub v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks (chunks r.stack) r.code
+    code := scrubWith v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks (chunks r.stack) r.code
     contract := r.contract
     verified := .scrubbed <| .abi ⟨hok.1, hok.2⟩
     ofApi := r.ofApi
     ofSig := r.ofSig
-    spSafe := scrub_spSafe v _ _ _ _ _ _ hps hgs r.spSafe
+    spSafe := scrubWith_spSafe v _ _ _ _ _ _ hps hgs r.spSafe
     written := r.written
     writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
     extra := r.extra
@@ -231,13 +231,13 @@ def scrubAllOf {api : Api} (r : Unscrubbed api target) (v : VecLevel) (vec : Boo
     consts := r.consts
     tables := r.tables
     stack := r.stack
-    code := scrub v (retBitsOf r) (xsFor vec (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) gs
+    code := scrubWith v (retBitsOf r) (xsFor vec (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) gs
       (allKs (chunks r.stack)) (chunks r.stack) r.code
     contract := r.contract
     verified := .scrubbed <| .abi ⟨hok.1, hok.2⟩
     ofApi := r.ofApi
     ofSig := r.ofSig
-    spSafe := scrub_spSafe v _ _ _ _ _ _ hps hgs r.spSafe
+    spSafe := scrubWith_spSafe v _ _ _ _ _ _ hps hgs r.spSafe
     written := r.written
     writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
     extra := r.extra
@@ -332,8 +332,8 @@ theorem scrubSideG_ok {api : Api} (r : Unscrubbed api target) (v f : VecLevel) (
     (gs : List Reg) (hs : scrubSideG r.code r.stack (retBitsOf r) v vec ks cs gs r.tables = true)
     (hpost : PostOut r.contract (retBitsOf r))
     (hres : ResOk r.code r.contract r.stack ks cs) (hne : f ≠ .evex) :
-    Verified target (scrub v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f) r.contract ∧
-      NoResidue (scrub v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f) r.contract
+    Verified target (scrubWith v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f) r.contract ∧
+      NoResidue (scrubWith v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f) r.contract
         (retBitsOf r) := by
   obtain ⟨hcs, hcv⟩ := scrubSideG_cs hs
   simp only [scrubSideG, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq] at hs
@@ -373,12 +373,12 @@ def scrubGOf {api : Api} (r : Unscrubbed api target) (v f : VecLevel) (vec : Boo
     consts := r.consts
     tables := r.tables
     stack := r.stack
-    code := scrub v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f
+    code := scrubWith v (retBitsOf r) (xsFor vec ks) (psOf ks) gs ks cs r.code f
     contract := r.contract
     verified := .scrubbed <| .abi ⟨hok.1, hok.2⟩
     ofApi := r.ofApi
     ofSig := r.ofSig
-    spSafe := scrub_spSafe v _ _ _ _ _ _ hps hgs r.spSafe
+    spSafe := scrubWith_spSafe v _ _ _ _ _ _ hps hgs r.spSafe
     written := r.written
     writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
     extra := r.extra
@@ -480,12 +480,12 @@ def scrubResCROf {api : Api} (r : Unscrubbed api target) (v : VecLevel)
     consts := r.consts
     tables := r.tables
     stack := r.stack
-    code := scrub v (retBitsOf r) xs (psOf ks) gs ks (wipeCs ks cs) r.code
+    code := scrubWith v (retBitsOf r) xs (psOf ks) gs ks (wipeCs ks cs) r.code
     contract := r.contract
     verified := .scrubbed <| .abi ⟨hok.1, hok.2 h.2.2.2.2.2⟩
     ofApi := r.ofApi
     ofSig := r.ofSig
-    spSafe := scrub_spSafe v _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
+    spSafe := scrubWith_spSafe v _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
     written := r.written
     writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
     extra := r.extra
@@ -538,12 +538,12 @@ def scrubResCRHOf {api : Api} (r : Unscrubbed api target)
     consts := r.consts
     tables := r.tables
     stack := r.stack
-    code := scrub .avx (retBitsOf r) xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx
+    code := scrubWith .avx (retBitsOf r) xs (psOf ks) gs ks (wipeCs ks cs) r.code .avx
     contract := r.contract
     verified := .scrubbed <| .abi ⟨hok.1, hok.2 h.2.2.2.2.2⟩
     ofApi := r.ofApi
     ofSig := r.ofSig
-    spSafe := scrub_spSafe .avx _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
+    spSafe := scrubWith_spSafe .avx _ _ _ _ _ _ ht.psOk ht.gsOk r.spSafe
     written := r.written
     writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
     extra := r.extra
@@ -583,9 +583,9 @@ def scrubUpOf {api : Api} (r : Unscrubbed api target) (vec : Bool) (gs : List Re
     simpa using List.all_eq_true.mp hgs q hq
   have hps : ∀ q ∈ psOf (allKs (chunks r.stack)), q ∈ scratchRegs := fun q hq => by
     unfold psOf at hq; split at hq <;> simp_all [scratchRegs]
-  have hok : Verified target (scrub .sse (retBitsOf r) (xsFor vec (allKs (chunks r.stack)))
+  have hok : Verified target (scrubWith .sse (retBitsOf r) (xsFor vec (allKs (chunks r.stack)))
         (psOf (allKs (chunks r.stack))) gs (allKs (chunks r.stack)) (chunks r.stack) r.code) r.contract ∧
-      NoResidue (scrub .sse (retBitsOf r) (xsFor vec (allKs (chunks r.stack)))
+      NoResidue (scrubWith .sse (retBitsOf r) (xsFor vec (allKs (chunks r.stack)))
         (psOf (allKs (chunks r.stack))) gs (allKs (chunks r.stack)) (chunks r.stack) r.code) r.contract
         (retBitsOf r) := by
     simp only [scrubUpSide, Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, beq_iff_eq] at hs
@@ -624,13 +624,13 @@ def scrubUpOf {api : Api} (r : Unscrubbed api target) (vec : Bool) (gs : List Re
     consts := r.consts
     tables := r.tables
     stack := r.stack
-    code := scrub .sse (retBitsOf r) (xsFor vec (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) gs
+    code := scrubWith .sse (retBitsOf r) (xsFor vec (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) gs
       (allKs (chunks r.stack)) (chunks r.stack) r.code
     contract := r.contract
     verified := .scrubbed <| .abi ⟨hok.1, hok.2⟩
     ofApi := r.ofApi
     ofSig := r.ofSig
-    spSafe := scrub_spSafe .sse _ _ _ _ _ _ hps hgs' r.spSafe
+    spSafe := scrubWith_spSafe .sse _ _ _ _ _ _ hps hgs' r.spSafe
     written := r.written
     writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
     extra := r.extra

@@ -5,7 +5,7 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 /-!
 # Returning without secret residue (x86-64)
 
-`scrub v retBits cs c` runs `c`, then clears everything `c` may have left
+`scrubWith v retBits cs c` runs `c`, then clears everything `c` may have left
 where its Rust caller cannot clear it (`X86_64.NoResidue`):
 
 * the SSE registers, with `pxor x, x` (`v = .sse`, for code without VEX or
@@ -173,7 +173,7 @@ def scrubTail (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg)
     (.seq (mxFix f) (.seq (wipe v.wide ks cs) (.block (retFix retBits ++ gs.map zeroR))))
 
 /-- `c`, then the clearing. -/
-def scrub (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) (c : Prog isa)
+def scrubWith (v : VecLevel) (retBits : Nat) (xs : List XReg) (ps gs : List Reg) (ks cs : List Nat) (c : Prog isa)
     (f : VecLevel := v) : Prog isa :=
   .seq c (scrubTail v retBits xs ps gs ks cs f)
 

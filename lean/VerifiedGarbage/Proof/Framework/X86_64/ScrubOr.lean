@@ -484,7 +484,7 @@ theorem mxSame_of {c : Prog isa} (h : (mx c []).isSome = true) : MxSame c := by
 
 end Mx
 
-/-- `r`, scrubbed as `scrubRegE` does, but without `mxFix` (`scrub`'s `f`
+/-- `r`, scrubbed as `scrubRegE` does, but without `mxFix` (`scrubWith`'s `f`
 below `evex`), for code that leaves the same MXCSR in two runs along the
 same trace (`hmx`): at the level `evex` too, which then clears every SSE
 register (`hxe`), and needs no stack of its own. -/
@@ -496,10 +496,10 @@ def scrubRegF {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List 
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
     (hres : ResOk r.code r.contract r.stack ks (chunks r.stack))
     (hw : r.written = []) (hxe : v = .evex → ∀ x, x ∈ xsOf r.code ks) : Registration api target :=
-  have main : Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+  have main : Verified target (scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code .avx) r.contract ∧
       (tablesCall r.code r.tables = true →
-        NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+        NoResidue (scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
           (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code .avx) r.contract
           (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) := by
     obtain ⟨pre, post, leak, e⟩ := r.ofSig
@@ -517,7 +517,7 @@ def scrubRegF {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List 
     consts := r.consts
     tables := r.tables
     stack := r.stack
-    code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
+    code := scrubWith v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
       (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks (chunks r.stack) r.code .avx
     contract := r.contract
     -- As `scrubRegE`'s: for code that calls indirectly only its tables' functions.
@@ -525,7 +525,7 @@ def scrubRegF {api : Api} (r : Unscrubbed api target) (v : VecLevel) (ks : List 
     verified := .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) <| Verification.ofBool (tablesCall r.code r.tables) main.1 main.2
     ofApi := r.ofApi
     ofSig := r.ofSig
-    spSafe := scrub_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
+    spSafe := scrubWith_spSafe v _ _ _ _ _ _ (tailOk_of 0 r.code ks).psOk (tailOk_of 0 r.code ks).gsOk r.spSafe
     written := r.written
     writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
     extra := r.extra

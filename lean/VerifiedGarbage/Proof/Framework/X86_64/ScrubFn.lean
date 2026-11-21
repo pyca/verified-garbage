@@ -238,7 +238,7 @@ without evaluating the clearing with the code. -/
 theorem scrubKs_spSafe {v : VecLevel} {rb n : Nat} {ks : List Nat} {c : Prog isa}
     (h : c.all (fun i => !isa.writesSp i) = true) :
     (scrubKs v rb n ks c).all (fun i => !isa.writesSp i) = true :=
-  scrub_spSafe v rb _ _ _ _ _
+  scrubWith_spSafe v rb _ _ _ _ _
     (fun q hq => by unfold psOf at hq; split at hq <;> simp_all [scratchRegs])
     (fun q hq => by
       unfold gsAll at hq; split at hq
