@@ -116,21 +116,21 @@ theorem ecbPost_out (g : List Byte → Spec.Aes.State → Spec.Aes.State) : ∀ 
   · rw [← hb.2.2 z hz]
     exact h2 z hz
 
-theorem encryptOk : ScrubAll.ScrubAllOk (Spec.AesEcb.encryptContract abi 32) 32
+theorem encryptOk : Scrub.ScrubAllOk (Spec.AesEcb.encryptContract abi 32) 32
     (Spec.Aes.blocksSig.retBits abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs (sig := Spec.Aes.blocksSig) (by decide) (W := 32) (by decide) (Nat.le_refl _)
+  Scrub.scrubAllOk_regs (sig := Spec.Aes.blocksSig) (by decide) (W := 32) (by decide) (Nat.le_refl _)
     (ecbPost_out AesEcb.enc)
 
-theorem decryptOk : ScrubAll.ScrubAllOk (Spec.AesEcb.decryptContract abi 32) 32
+theorem decryptOk : Scrub.ScrubAllOk (Spec.AesEcb.decryptContract abi 32) 32
     (Spec.Aes.blocksSig.retBits abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs (sig := Spec.Aes.blocksSig) (by decide) (W := 32) (by decide) (Nat.le_refl _)
+  Scrub.scrubAllOk_regs (sig := Spec.Aes.blocksSig) (by decide) (W := 32) (by decide) (Nat.le_refl _)
     (ecbPost_out AesEcb.dec)
 
 private theorem wiped_scrubbed {k : Contract isa} {name : String} {body : Prog isa}
-    (hv : Verified target (wiped name body) k) (hok : ScrubAll.ScrubAllOk k 32 0)
-    (hs : ScrubAll.sideAll (fun i => !i.writesDit) body = true) (hd : body.noFrames = true) :
-    VerifiedScrubbed target (Impl.Residue.AArch64.scrubOf 32 0 (wiped name body)) k 0 :=
-  ScrubAll.verifiedScrubbedOfFill (n := name) (e := Impl.AesEcb.AArch64.wiped "" (.block [])) hv hok
+    (hv : Verified target (wiped name body) k) (hok : Scrub.ScrubAllOk k 32 0)
+    (hs : Scrub.sideAll (fun i => !i.writesDit) body = true) (hd : body.noFrames = true) :
+    VerifiedScrubbed target (Impl.Scrub.AArch64.scrubOf 32 0 (wiped name body)) k 0 :=
+  Scrub.verifiedScrubbedOfFill (n := name) (e := Impl.AesEcb.AArch64.wiped "" (.block [])) hv hok
     (by kernel_rfl) hs (depth_of_noFrames hd) (by kernel_rfl) (by decide)
     (Nat.le_of_ble_eq_true (by kernel_rfl)) (.inl rfl)
 
@@ -146,7 +146,7 @@ theorem encrypt_scrubbed (v : BlocksImpl) :
   · simp only [h, ↓reduceIte]
     exact ⟨Clears.Verified.withClears (encrypt_free v h) v.encVecsOk, v.encRes h _⟩
   · simp only [h, ↓reduceIte]
-    exact wiped_scrubbed (encrypt_verified v) encryptOk (ScrubAll.sideAll_noDit_of_calleeSide v.encScrub)
+    exact wiped_scrubbed (encrypt_verified v) encryptOk (Scrub.sideAll_noDit_of_calleeSide v.encScrub)
       v.encNoFrames
 
 /-- `vg_aes_ecb_decrypt` over `v`, as emitted. -/
@@ -159,7 +159,7 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
   · simp only [h, ↓reduceIte]
     exact ⟨Clears.Verified.withClears (decrypt_free v h) v.decVecsOk, v.decRes h _⟩
   · simp only [h, ↓reduceIte]
-    exact wiped_scrubbed (decrypt_verified v) decryptOk (ScrubAll.sideAll_noDit_of_calleeSide v.decScrub)
+    exact wiped_scrubbed (decrypt_verified v) decryptOk (Scrub.sideAll_noDit_of_calleeSide v.decScrub)
       v.decNoFrames
 
 end VG.Proof.AesEcb.AArch64

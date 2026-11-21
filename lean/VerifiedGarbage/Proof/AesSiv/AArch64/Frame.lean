@@ -630,10 +630,10 @@ theorem keyRepr_local {m₁ m₂ : Mem} {p : Addr} {key : List Byte}
 
 /-- `vg_aes_siv_init`'s postcondition reads the memory on return only within
 the context, so it returns with its whole frame zeroed
-(`Impl.Residue.AArch64.scrubAll`, in the function as emitted). -/
+(`Impl.Scrub.AArch64.scrubAll`, in the function as emitted). -/
 theorem initOk (W : Nat) (hW : 0 < W) :
-    ScrubAll.ScrubAllOk (Spec.Siv.initContract abi W) W (Spec.Siv.initSig.retBits abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs (sig := Spec.Siv.initSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    Scrub.ScrubAllOk (Spec.Siv.initContract abi W) W (Spec.Siv.initSig.retBits abi.ptrBits) :=
+  Scrub.scrubAllOk_regs (sig := Spec.Siv.initSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
     | [key, kl, ctx], _ =>
@@ -644,8 +644,8 @@ theorem initOk (W : Nat) (hW : 0 < W) :
 /-- `vg_aes_siv_encrypt`'s postcondition reads the memory on return only
 within the data and `siv`. -/
 theorem encryptOk (W : Nat) (hW : 0 < W) :
-    ScrubAll.ScrubAllOk (Spec.Siv.encryptContract abi W) W (Spec.Siv.encryptSig.retBits abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs (sig := Spec.Siv.encryptSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    Scrub.ScrubAllOk (Spec.Siv.encryptContract abi W) W (Spec.Siv.encryptSig.retBits abi.ptrBits) :=
+  Scrub.scrubAllOk_regs (sig := Spec.Siv.encryptSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
     | [ctx, rd, ads, cnt, data, len, siv], _ =>
@@ -663,8 +663,8 @@ theorem encryptOk (W : Nat) (hW : 0 < W) :
 /-- `vg_aes_siv_decrypt`'s postcondition reads the memory on return only
 within the data. -/
 theorem decryptOk (W : Nat) (hW : 0 < W) :
-    ScrubAll.ScrubAllOk (Spec.Siv.decryptContract abi W) W (Spec.Siv.decryptSig.retBits abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs (sig := Spec.Siv.decryptSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    Scrub.ScrubAllOk (Spec.Siv.decryptContract abi W) W (Spec.Siv.decryptSig.retBits abi.ptrBits) :=
+  Scrub.scrubAllOk_regs (sig := Spec.Siv.decryptSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
     | [ctx, rd, ads, cnt, data, len, siv], _ =>
@@ -687,12 +687,12 @@ theorem decryptOk (W : Nat) (hW : 0 < W) :
 cleanup (`Impl.AesSiv.AArch64.Fn`): each meets its contract in constant
 time and returns without secret residue (`VerifiedScrubbed`), which is what
 its registration binds. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+(`Scrub.scrubSide`) is proved of each function's own instructions here,
 once, with code that does nothing in the place of the functions it calls,
 and of each implementation where it is defined (`UpdateImpl.scrub`,
 `Ctr32Impl.scrub`, `Ctr32Impl.expandScrub`). -/
 
-open VG.AArch64.ScrubAll
+open VG.AArch64.Scrub
 
 private theorem init_all {p : Instr → Bool} (B : Nat) (e : Impl.Aes.AArch64.ExpandKey)
     (c : Impl.Aes.AArch64.Ctr32) (sfx : String)
@@ -733,7 +733,7 @@ theorem init_scrubbed (v : Ctr32Impl) :
       (Spec.Siv.initContract abi (48 + sivInitW v)) 0 := by
   unfold Impl.AesSiv.AArch64.Fn.init
   rw [v.scratch_eq]
-  exact verifiedScrubbed (api := Spec.Siv.initApi)
+  exact verifiedScrubbedAll (api := Spec.Siv.initApi)
     { code := Impl.StackScratch.AArch64.withStackScratch (48 + sivInitW v) .x3 (init v.expand v.callee v.suffix)
       verified := init_framed v
       consts := []
@@ -780,7 +780,7 @@ theorem encrypt_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
       (Spec.Siv.encryptContract abi (272 + sivNw v)) 0 := by
   unfold Impl.AesSiv.AArch64.Fn.encrypt
   rw [v.scratch_eq, v.ctr.scratch_eq]
-  exact verifiedScrubbed (api := Spec.Siv.encryptApi)
+  exact verifiedScrubbedAll (api := Spec.Siv.encryptApi)
     { code := Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7 (encrypt v.callee v.ctr.callee v.ctr.suffix)
       verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
       consts := []
@@ -827,7 +827,7 @@ theorem decrypt_scrubbed (v : Proof.CmacAes.AArch64.UpdateImpl) :
       (Spec.Siv.decryptContract abi (272 + sivNw v)) 32 := by
   unfold Impl.AesSiv.AArch64.Fn.decrypt
   rw [v.scratch_eq, v.ctr.scratch_eq]
-  exact verifiedScrubbed (api := Spec.Siv.decryptApi)
+  exact verifiedScrubbedAll (api := Spec.Siv.decryptApi)
     { code := Impl.StackScratch.AArch64.withStackScratch (272 + sivNw v) .x7 (decrypt v.callee v.ctr.callee v.ctr.suffix)
       verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
       consts := []

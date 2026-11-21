@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed8
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 @[expose] public section
 
@@ -19,8 +19,8 @@ structure XorCallee where
   sve : Bool := false
   /-- The registers its code writes, of those the calling convention does not
   preserve: the cleanup of a function that calls it clears them with the
-  function's own (`Impl.Residue.AArch64.Clear.union`). -/
-  clear : Impl.Residue.AArch64.Clear
+  function's own (`Impl.Scrub.AArch64.Clear.union`). -/
+  clear : Impl.Scrub.AArch64.Clear
 
 /-- A call of the stream, its destination (`x4`) set first: to its source
 (`x1`) plus `x28` if `to` (ChaCha20-Poly1305's `open`, which keeps there the
@@ -33,7 +33,7 @@ def XorCallee.callWith (c : XorCallee) (to : Bool) : Prog isa :=
 def XorCallee.inPlace (c : XorCallee) : Prog isa := c.callWith false
 
 /-- The registers the eight-block kernel writes, with or without SVE2. -/
-def XorCallee.mixed8Clear : Impl.Residue.AArch64.Clear :=
+def XorCallee.mixed8Clear : Impl.Scrub.AArch64.Clear :=
   ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24,
     .v25, .v26, .v27, .v28, .v29, .v30, .v31],

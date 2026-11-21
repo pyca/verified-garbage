@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Modes.FbMode
-public import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Impl.Sm4.AArch64.Cbc
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 public import VerifiedGarbage.Impl.Sm4.AArch64.EcbFew
@@ -27,7 +27,7 @@ it returns without secret residue (`Proof/Sm4/AArch64/`).
 namespace VG.Impl.Sm4.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `vg_sm4_ecb`'s code: `ecbAny` with its working space on the stack. -/
 def ecbAnyFramed : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x4 396 Impl.Sm4.AArch64.ecbAny
@@ -39,7 +39,7 @@ def ecbDecryptBase : Prog isa :=
     (Impl.Sm4.AArch64.ecbFew .decrypt ecbAnyFramed)
 
 /-- `vg_sm4_ecb_decrypt`. -/
-def ecbDecrypt : Prog isa := withScrubG 3264 [0, 1, 2, 3, 4, 203] ecbDecryptBase
+def ecbDecrypt : Prog isa := scrubSel 3264 [0, 1, 2, 3, 4, 203] ecbDecryptBase
 
 /-- `vg_sm4_ecb_encrypt`, before its granules [0, 1, 2, 3, 4, 203] are zeroed. -/
 def ecbEncryptBase : Prog isa :=
@@ -48,7 +48,7 @@ def ecbEncryptBase : Prog isa :=
     (Impl.Sm4.AArch64.ecbFew .encrypt ecbAnyFramed)
 
 /-- `vg_sm4_ecb_encrypt`. -/
-def ecbEncrypt : Prog isa := withScrubG 3264 [0, 1, 2, 3, 4, 203] ecbEncryptBase
+def ecbEncrypt : Prog isa := scrubSel 3264 [0, 1, 2, 3, 4, 203] ecbEncryptBase
 
 /-- `vg_sm4_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa :=

@@ -19,7 +19,7 @@ proves it): the function as emitted (`Impl.Scrypt.RISCV64.Fn.scrypt`, with
 `vg_pbkdf2_hmac_sha256`'s code), the implementation followed by
 `Impl.Scrub.RISCV64.scrubTail`, returns with the caller-saved registers
 cleared and the stack its frames used zeroed, and meets its contract in
-constant time (`scrypt_scrubbed`, by `RISCV64.Scrub.verifiedScrubbed`), which
+constant time (`scrypt_scrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`), which
 is what its registration binds. Its arguments on the stack are in the
 caller's frame, among the buffers (`writeArgs`), which the caller owns.
 -/
@@ -81,7 +81,7 @@ theorem scrypt_scrubbed :
     VerifiedScrubbed target
       (Impl.Scrypt.RISCV64.Fn.scrypt Proof.Scrypt.RISCV64.Whole.pbkName Proof.Scrypt.RISCV64.Whole.pbkCode)
       (Spec.Scrypt.scryptContract RISCV64.abi 1248) 0 :=
-  verifiedScrubbed (api := Spec.Scrypt.scryptApi) (W := 1248)
+  verifiedScrubbedAll (api := Spec.Scrypt.scryptApi) (W := 1248)
     { code := _, verified := Proof.Scrypt.RISCV64.Whole.scrypt_verified } (scryptOut _)
     (by dsimp only; lit_decide)
 

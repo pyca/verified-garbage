@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_rsa_public_precompute`, `vg_rsa_private_precompute`,
 `vg_rsa_crt_values`, `vg_rsa_check_key` and `vg_rsa_recover_primes_det`,
-each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`).
+each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`).
 None has a frame, so the tail only clears the volatile registers each may
 write. Their postconditions read the memory on return only within their
 outputs (`PPC64LE.Scrub.PostOut`), as on x86-64
@@ -218,7 +218,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem publicPrecompute_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Rsa.PPC64LE.Fn.publicPrecompute
       (Spec.Rsa.publicPrecomputeContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Rsa.publicPrecomputeApi) {
+  verifiedScrubbedAll (api := Spec.Rsa.publicPrecomputeApi) {
       code := Impl.Bignum.PPC64LE.Precompute.precompute
       verified := Proof.Bignum.PPC64LE.Pre.precompute_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
@@ -231,7 +231,7 @@ and returns without secret residue. -/
 theorem privatePrecompute_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Rsa.PPC64LE.Fn.privatePrecompute
       (Spec.Rsa.privatePrecomputeContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Rsa.privatePrecomputeApi) {
+  verifiedScrubbedAll (api := Spec.Rsa.privatePrecomputeApi) {
       code := Impl.Bignum.PPC64LE.PrivPre.code
       verified := Proof.Bignum.PPC64LE.PrivPre.pp_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -244,7 +244,7 @@ contract in constant time and returns without secret residue. -/
 theorem crtValues_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Rsa.PPC64LE.Fn.crtValues
       (Spec.Rsa.crtValuesContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Rsa.crtValuesApi) {
+  verifiedScrubbedAll (api := Spec.Rsa.crtValuesApi) {
       code := Impl.Rsa.PPC64LE.CrtValues.code
       verified := Proof.Rsa.PPC64LE.CrtValues.cv_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
@@ -256,7 +256,7 @@ contract in constant time and returns without secret residue. -/
 theorem checkKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Rsa.PPC64LE.Fn.checkKey
       (Spec.Rsa.checkKeyContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Rsa.checkKeyApi) {
+  verifiedScrubbedAll (api := Spec.Rsa.checkKeyApi) {
       code := Impl.Rsa.PPC64LE.CheckKey.code
       verified := Proof.Rsa.PPC64LE.KeyCheck.ck_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
@@ -269,7 +269,7 @@ and returns without secret residue. -/
 theorem recoverPrimesDet_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Rsa.PPC64LE.Fn.recoverPrimesDet
       (Spec.Rsa.recoverPrimesDetContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.Rsa.recoverPrimesDetApi) {
+  verifiedScrubbedAll (api := Spec.Rsa.recoverPrimesDetApi) {
       code := Impl.Rsa.PPC64LE.RecoverDet.code
       verified := Proof.Rsa.PPC64LE.RecDet.rd_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩

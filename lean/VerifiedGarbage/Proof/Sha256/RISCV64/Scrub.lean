@@ -149,14 +149,14 @@ Each of the streaming and one-shot functions as emitted
 `Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers and
 the stack its frames used. Each theorem below states that one meets its
 contract in constant time and returns without secret residue
-(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`), which is what its
+(`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`), which is what its
 registration binds. Their postconditions read the memory on return only
 within their buffers (`Proof/Sha256/PostOut.lean`). HMAC, PBKDF2, DSA and
 RSA call their code itself, not these functions.
 
 The `digest` functions instead clear only the runs of doublewords that the
 residue analysis (`RISCV64.rtaint`) finds may differ between two runs
-(`RISCV64.Scrub.verifiedScrubbedSelT`, whose analysis the kernel evaluates
+(`RISCV64.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates
 here). Their code wipes most of its own scratch space, which leaves few such
 doublewords. Their correctness is HMAC's proof of the one-shot digest
 (`Proof.Hmac.Stream.RISCV64.Sha256.digest`, `Sha224.digest`), of the same
@@ -173,7 +173,7 @@ open VG.RISCV64 VG.RISCV64.Scrub
 time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed target Impl.Sha256.RISCV64.Fn.init (Spec.Sha256.initContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Sha256.initApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.Sha256.initApi) (W := 0)
     { code := Impl.Sha256.RISCV64.Stream.init, verified := Shared.init }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.initPost_out Spec.Sha256.H0 64))
     (show scrubSide Impl.Sha256.RISCV64.Stream.init 0 0 [] = true by lit_decide)
@@ -182,7 +182,7 @@ theorem init_scrubbed :
 time and returns without secret residue. -/
 theorem init224_scrubbed :
     VerifiedScrubbed target Impl.Sha256.RISCV64.Fn.init224 (Spec.Sha256.init224Contract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Sha256.init224Api) (W := 0)
+  verifiedScrubbedAll (api := Spec.Sha256.init224Api) (W := 0)
     { code := Impl.Sha256.RISCV64.Stream.init224, verified := Shared.init224 }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.initPost_out Spec.Sha256.H0_224 64))
     (show scrubSide Impl.Sha256.RISCV64.Stream.init224 0 0 [] = true by lit_decide)
@@ -191,7 +191,7 @@ theorem init224_scrubbed :
 time and returns without secret residue. -/
 theorem update_scrubbed :
     VerifiedScrubbed target Impl.Sha256.RISCV64.Fn.update (Spec.Sha256.updateContract RISCV64.abi 144) 0 :=
-  verifiedScrubbed (api := Spec.Sha256.updateApi) (W := 144)
+  verifiedScrubbedAll (api := Spec.Sha256.updateApi) (W := 144)
     { code := Impl.Sha256.RISCV64.Stream.update, verified := Shared.update }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.updatePost_out 64))
     (show scrubSide Impl.Sha256.RISCV64.Stream.update 144 0 [] = true by lit_decide)
@@ -200,7 +200,7 @@ theorem update_scrubbed :
 time and returns without secret residue. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed target Impl.Sha256.RISCV64.Fn.finalize (Spec.Sha256.finalizeContract RISCV64.abi 144) 0 :=
-  verifiedScrubbed (api := Spec.Sha256.finalizeApi) (W := 144)
+  verifiedScrubbedAll (api := Spec.Sha256.finalizeApi) (W := 144)
     { code := Impl.Sha256.RISCV64.Stream.finalize, verified := Shared.finalize }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.finalizePost_out 64))
     (show scrubSide Impl.Sha256.RISCV64.Stream.finalize 144 0 [] = true by lit_decide)
@@ -209,7 +209,7 @@ theorem finalize_scrubbed :
 time and returns without secret residue. -/
 theorem finalize224_scrubbed :
     VerifiedScrubbed target Impl.Sha256.RISCV64.Fn.finalize224 (Spec.Sha256.finalize224Contract RISCV64.abi 144) 0 :=
-  verifiedScrubbed (api := Spec.Sha256.finalize224Api) (W := 144)
+  verifiedScrubbedAll (api := Spec.Sha256.finalize224Api) (W := 144)
     { code := Impl.Sha256.RISCV64.Stream.finalize224, verified := Shared.finalize224 }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.finalize224Post_out 64))
     (show scrubSide Impl.Sha256.RISCV64.Stream.finalize224 144 0 [] = true by lit_decide)
@@ -218,8 +218,8 @@ theorem finalize224_scrubbed :
 time and returns without secret residue. -/
 theorem digest_scrubbed :
     VerifiedScrubbed target Impl.Sha256.RISCV64.Fn.digest (Spec.Sha256.digestContract RISCV64.abi 32 Spec.Sha256.hash 288) 0 :=
-  verifiedScrubbedSelT (api := Spec.Sha256.digest256Api) (W := 288)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha256Family.hash256,
+  verifiedScrubbedSel (api := Spec.Sha256.digest256Api) (W := 288)
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha256.RISCV64.Fn.hash256,
       verified := Proof.Hmac.Stream.RISCV64.Sha256.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 32 Spec.Sha256.hash 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩
@@ -228,8 +228,8 @@ theorem digest_scrubbed :
 time and returns without secret residue. -/
 theorem digest224_scrubbed :
     VerifiedScrubbed target Impl.Sha256.RISCV64.Fn.digest224 (Spec.Sha256.digestContract RISCV64.abi 28 Spec.Sha256.sha224 288) 0 :=
-  verifiedScrubbedSelT (api := Spec.Sha256.digest224Api) (W := 288)
-    { code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha256Family.hash224,
+  verifiedScrubbedSel (api := Spec.Sha256.digest224Api) (W := 288)
+    { code := Impl.MdStream.RISCV64.Digest.digest Impl.Sha256.RISCV64.Fn.hash224,
       verified := Proof.Hmac.Stream.RISCV64.Sha224.digest }
     _ [] (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 28 Spec.Sha256.sha224 64 (by decide)))
     (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩

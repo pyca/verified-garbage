@@ -5,7 +5,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 /-!
 # Returning without secret residue (64-bit little-endian PowerPC)
 
-`scrub retBits depth cl c` runs `c`, then clears everything `c` may have left
+`scrubAll retBits depth cl c` runs `c`, then clears everything `c` may have left
 where its Rust caller cannot clear it (`PPC64LE.NoResidue`), as
 `Impl/Scrub/X86_64.lean` and `Impl/Scrub/RISCV64.lean` do:
 
@@ -141,7 +141,7 @@ def scrubTail (retBits : Nat) (cs : List Nat) (cl : Clear) : Prog isa :=
 
 /-- `c`, then the clearing of the `depth` bytes of stack its frames use and
 of the registers `cl` names. -/
-def scrub (retBits depth : Nat) (cl : Clear) (c : Prog isa) : Prog isa :=
+def scrubAll (retBits depth : Nat) (cl : Clear) (c : Prog isa) : Prog isa :=
   .seq c (scrubTail retBits (chunks depth) cl)
 
 end VG.Impl.Scrub.PPC64LE

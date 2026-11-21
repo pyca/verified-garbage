@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64.Checks
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignVerified
@@ -93,5 +94,9 @@ def variant : Backend where
   deriveCheckedMx := checks.deriveChecked.mxFree
   deriveCheckedDepth := checks.deriveChecked.depth
   stackBound := by decide
+  level := .sse
+  sqSide := by lit_decide
+  mulSide := by intro o a b; rfl
+  stack_eq := rfl
 
 end VG.Proof.Variants.DsaArithmetic.X86_64.Base

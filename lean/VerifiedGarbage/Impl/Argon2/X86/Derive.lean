@@ -74,12 +74,12 @@ end VG.Impl.Argon2.X86.Derive
 
 `vg_argon2`'s body and then its cleanup: the 244 bytes of stack its contract
 reserves below `esp`, its frames and those of the functions it calls, are
-zeroed, and the registers a callee may change are cleared (`scrubF`). -/
+zeroed, and the registers a callee may change are cleared (`scrubAll`). -/
 
 namespace VG.Impl.Argon2.X86.Fn
 
 open VG.X86
 
-def derive : Prog isa := Impl.Scrub.X86.scrubF 0 244 Derive.derive
+def derive : Prog isa := Impl.Scrub.X86.scrubAll 0 244 Derive.derive
 
 end VG.Impl.Argon2.X86.Fn

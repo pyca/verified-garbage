@@ -2006,7 +2006,7 @@ end
 the stack its frames used, their 2304 bytes of working space with it. Each
 theorem below states that one meets its contract in constant time and
 returns without secret residue (`VerifiedScrubbed`, by
-`RISCV64.Scrub.verifiedScrubbed`), which is what its registration binds. Their postconditions read the memory
+`RISCV64.Scrub.verifiedScrubbedAll`), which is what its registration binds. Their postconditions read the memory
 on return only within the state or the MAC (`RISCV64.Scrub.PostOut`), as on
 x86-64 (`Proof/CmacAes/Stream/X86_64/Scrub.lean`).
 -/
@@ -2057,7 +2057,7 @@ contract in constant time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed target Impl.CmacAes.Stream.RISCV64.Fn.init
       (Spec.Cmac.aesInitContract RISCV64.abi 2304) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.aesInitApi) (W := 2304)
+  verifiedScrubbedAll (api := Spec.Cmac.aesInitApi) (W := 2304)
     { code := _, verified := Proof.CmacAes.Stream.RISCV64.init_framed } (initOut _)
     (by dsimp only; lit_decide)
 
@@ -2066,7 +2066,7 @@ contract in constant time and returns without secret residue. -/
 theorem absorb_scrubbed :
     VerifiedScrubbed target Impl.CmacAes.Stream.RISCV64.Fn.absorb
       (Spec.Cmac.aesAbsorbContract RISCV64.abi 2304) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.aesAbsorbApi) (W := 2304)
+  verifiedScrubbedAll (api := Spec.Cmac.aesAbsorbApi) (W := 2304)
     { code := _, verified := Proof.CmacAes.Stream.RISCV64.absorb_framed } (absorbOut _)
     (by dsimp only; lit_decide)
 
@@ -2075,7 +2075,7 @@ contract in constant time and returns without secret residue. -/
 theorem finish_scrubbed :
     VerifiedScrubbed target Impl.CmacAes.Stream.RISCV64.Fn.finish
       (Spec.Cmac.aesFinishContract RISCV64.abi 2304) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.aesFinishApi) (W := 2304)
+  verifiedScrubbedAll (api := Spec.Cmac.aesFinishApi) (W := 2304)
     { code := _, verified := Proof.CmacAes.Stream.RISCV64.finish_framed } (finishOut _)
     (by dsimp only; lit_decide)
 

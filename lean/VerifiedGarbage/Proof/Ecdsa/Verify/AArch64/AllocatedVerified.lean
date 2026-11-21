@@ -2505,13 +2505,13 @@ theorem allocatedVerifyHash_verified (hL : Law Spec.P256.curve) (hO : PrimeOrder
 /-- `vg_ecdsa_p256_verify` as emitted, cleanup included
 (`P256Allocated.Fn.verifyHash`): it meets its contract in constant time and
 returns without secret residue. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+(`Scrub.scrubSide`) is evaluated here, by the kernel. -/
 theorem allocatedVerifyHash_scrubbed (hL : Law Spec.P256.curve) (hO : PrimeOrder Spec.P256.curve) (hI : InvSounds)
     (hN : InvToM p256.C.n)
     (hT : CombOkW Spec.P256.curve 9 1 Impl.P256.p256G9 Impl.P256.p256G9Start) :
     VerifiedScrubbed AArch64.target P256Allocated.Fn.verifyHash
       (Spec.Ecdsa.P256.inst.verifyHashContract (AArch64.abi.withConsts P256Joint.p256v.combConsts) 80) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdsa.P256.verifyHashApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P256.verifyHashApi)
     { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false P256Allocated.verify
       verified := allocatedVerifyHash_verified hL hO hI hN hT } _
     (Proof.EcKey.AArch64.Scrub.verifyHashOk_consts _ _ _) (by dsimp only; lit_decide)

@@ -269,7 +269,7 @@ lea r10, [rip + {VG_CAST5_S5678}]
 jne 241b
 .base64 "8w9/CYsBM0EEM0EIM0EMM0EwiUI8SIPCQEiD7gE="
 jne 21b
-.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAx0jH2Mf9FMclFMdJFMdvD"
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         VG_CAST5_S5678 = sym super::consts::VG_CAST5_S5678,
     )
@@ -335,7 +335,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SYtYEEmLaBhNi2AgTYtoKE2LcDBNi3g4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfZFMclFMdJFMdvD"
+.base64 "SYtYEEmLaBhNi2AgTYtoKE2LcDBNi3g4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )
@@ -400,7 +400,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "SYtYEEmLaBhNi2AgTYtoKE2LcDBNi3g4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfZFMclFMdJFMdvD"
+.base64 "SYtYEEmLaBhNi2AgTYtoKE2LcDBNi3g4Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//McAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         VG_CAST5_S1234 = sym super::consts::VG_CAST5_S1234,
     )

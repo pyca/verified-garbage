@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Seed.AArch64.Fn
 public meta import VerifiedGarbage.Impl.Seed.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public import VerifiedGarbage.Proof.Seed.AArch64.CbcVerified
@@ -45,7 +45,7 @@ stack (`noResidue_of_doneG`), only of what they leave in their registers,
 
 namespace VG.Proof.Seed.AArch64.ModesResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-- `vg_seed_expand_key`. -/
 abbrev expandKeyCode : Prog isa := Impl.Seed.AArch64.Fn.expandKey

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
+public import VerifiedGarbage.Proof.Framework.RISCV64.Scrub
 public import VerifiedGarbage.Proof.MillerRabin.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
 
@@ -11,7 +12,9 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 
 A caller reaches the shared round by a call, from its `Verified` proof
 (`WP.callAny`); the round's frames use at most 96 bytes of stack below the
-stack pointer (`stack`), which the caller's own stack must cover. -/
+stack pointer (`stack`), which the caller's own stack must cover, and it
+calls nothing indirectly (`icalls`), which a caller's cleanup needs of the
+code it runs (`RISCV64.Scrub.Fill`). -/
 
 @[expose] public section
 namespace VG.Proof.MillerRabin.RISCV64
@@ -21,6 +24,7 @@ structure RoundImpl where
   code : Prog isa
   verified : Verified target code (Proof.MillerRabin.Round.roundContract abi Proof.MillerRabin.Round.compact 96)
   stack : sdepth code ≤ 96
+  icalls : RISCV64.Scrub.inames code = []
   suffix : String
   features : List String
 

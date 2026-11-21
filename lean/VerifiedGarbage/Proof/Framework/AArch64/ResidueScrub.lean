@@ -9,35 +9,32 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
-# Returning without secret residue, through calls and frames (AArch64)
+# What the clearing of the stack needs, after the analysis through calls and frames (AArch64)
 
-`RTaintF.noResidue_withScrub`: code verified against its contract, whose
-frames stay within `W` bytes below the stack pointer and whose analysis
-through calls and frames (`rtaintF W`) from everything public ends with the
-registers the calling convention does not preserve public (but `x9` and
-`v31`, which the clearing writes), the flags public and the result public
-above bit `r` (`doneF r`), followed by the clearing of those `W` bytes
-(`withScrub W`), returns without secret residue with an `r`-bit result.
+The pieces of the residue analysis through calls and frames (`rtaintF W`,
+`ResidueFrame.lean`) that the analysis of the cleared window
+(`ResidueWin.lean`; `AArch64.Scrub.verifiedScrubbedSel`, `ScrubSel.lean`)
+builds on:
 
-After the code, the two runs agree on their memory outside the regions but
-in the window (`RTaintF.AgreeD`); the clearing then zeroes the window and
-releases it, which the shared unknowns turn into the same bytes in both
-(`Scrub.tail_run`). The registers the calling convention preserves are what
-they were on entry (`abiPreserved`), and the clearing writes `x9` from the
-stack pointer and `v31` with zero.
-
-`Verified.withScrub`: the clearing keeps code verified against a contract
-whose arguments are all in registers, if the `W` bytes are within the stack
-the contract reserves, which no buffer overlaps, and its postcondition reads
-the memory on return only within the buffers (`hpost`). Its trace is the
-stack pointer's, which the two runs share.
+* `doneF r`: the analysis ends with the registers the calling convention
+  does not preserve public (but `x9` and `v31`, which the clearing writes),
+  the flags public and the result public above bit `r`; `agree_init`, where
+  it starts.
+* `ScrubOk k W`: what the clearing of `W` bytes below the stack pointer
+  needs of a contract `k`: room for them, a postcondition that reads neither
+  them nor any register but `x0`, and a public stack pointer. `scrubOk_regs`
+  and `scrubOk_consts` prove it of a contract whose arguments are all in
+  registers, given that its postcondition reads the memory on return only
+  within the buffers.
+* `Verified.withRet`: clearing the bits of `x0` above the result keeps code
+  verified.
 -/
 
 @[expose] public section
 
 namespace VG.AArch64.RTaintF
 
-open VG.AArch64 VG.AArch64.Residue VG.AArch64.Scrub VG.Impl.Residue.AArch64
+open VG.AArch64 VG.AArch64.Residue VG.AArch64.Scrub VG.Impl.Scrub.AArch64
 
 /-- The registers the calling convention does not preserve, but `x0` and `x9`. -/
 def scratchNo9 : List Reg :=
@@ -70,96 +67,6 @@ theorem agree_init {W : Nat} (hW : W < 2 ^ 64) {s₁ s₂ : State} (h : Outside 
     (fun _ h => nomatch h)⟩, Nat.zero_le _, hW,
     fun x hx _ => h.2.2.2.2.2.2.2.2.2.2.2 x (by rw [h.1, h.2.1]; exact hx)⟩
 
-/-- Code verified against its contract, whose analysis (`rtaintF W`) ends in
-`doneF r`, followed by the clearing of the `W` bytes below the stack
-pointer, returns without secret residue, with an `r`-bit result. -/
-theorem noResidue_withScrub {c : Prog isa} {k : Contract isa} {r W : Nat}
-    (hv : Verified target c k) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
-    (hsp : ∀ s, k.pre s → W ≤ s.sp.toNat)
-    (h : ∃ hc, ((rtaintF W).check (RTaintB.init, some 0) c hc).any (doneF r) = true) :
-    NoResidue (withScrub W c) k r := by
-  intro s₁ s₂ t₁ t₂ s₁'' s₂'' h₁ h₂ hp ho hu e₁ e₂
-  obtain ⟨hc, h⟩ := h
-  cases hτ : (rtaintF W).check (RTaintB.init, some 0) c hc with
-  | none => rw [hτ] at h; cases h
-  | some τ' =>
-  rw [hτ] at h
-  have hd : doneF r τ' = true := h
-  simp only [doneF, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, Bool.or_eq_true] at hd
-  obtain ⟨⟨⟨⟨hd0, hg⟩, hvv⟩, hfl⟩, hx⟩ := hd
-  cases e₁ with
-  | seq ea₁ eb₁ =>
-  cases e₂ with
-  | seq ea₂ eb₂ =>
-  rename_i s₁' _ _ s₂' _ _
-  obtain ⟨_, u₁, f₁, hp₁, -⟩ := hv.1 s₁ h₁
-  obtain ⟨_, u₂, f₂, hp₂, -⟩ := hv.1 s₂ h₂
-  obtain ⟨-, rfl⟩ := Exec.det ea₁ f₁
-  obtain ⟨-, rfl⟩ := Exec.det ea₂ f₂
-  obtain ⟨d, hdd, hb, -, hW64, hout⟩ := TaintCT.agree_of_check hv.2.1 hτ h₁ h₂ hp
-    (agree_init (by omega) ho hu) ea₁ ea₂
-  have hd00 : d = 0 := by
-    rw [hd0] at hdd
-    rcases hdd with h | h
-    · exact (Option.some.inj h).symm
-    · cases h
-  subst hd00
-  obtain ⟨hsp', hrd', hwr', hdi', hu'⟩ := AgreeD.rest ⟨hb, Nat.zero_le _, hW64, hout⟩
-  obtain ⟨v₁, x₁, tr₁⟩ := tail_run hW s₁' (by rw [hp₁.2.1]; exact hsp s₁ h₁)
-  obtain ⟨v₂, x₂, tr₂⟩ := tail_run hW s₂' (by rw [hp₂.2.1]; exact hsp s₂ h₂)
-  obtain ⟨-, rfl⟩ := Exec.det eb₁ x₁
-  obtain ⟨-, rfl⟩ := Exec.det eb₂ x₂
-  obtain ⟨⟨⟨⟨⟨-, hgr⟩, hvr⟩, hflags, hx0, -⟩, hq⟩, hb₁, hb₂⟩ := hb
-  refine ⟨by rw [tr₁.rd, tr₂.rd, hrd'], by rw [tr₁.wr, tr₂.wr, hwr'], fun q hq0 => ?_, ?_,
-    by rw [tr₁.sp, tr₂.sp, hsp'], ?_, ?_, ?_, ?_, by rw [tr₁.dit, tr₂.dit, hdi'], ?_, ?_⟩
-  · rw [tr₁.gpr, tr₂.gpr]
-    by_cases h9 : q = .x9
-    · simp only [h9, ↓reduceIte, hsp']
-    · simp only [h9, ↓reduceIte]
-      by_cases hpq : q ∈ preserved
-      · rw [hp₁.1 q hpq, hp₂.1 q hpq]; exact ho.2.2.1 q hq0
-      · exact hgr q (Taint.pub_iff.mp (hg q (mem_scratchNo9 hq0 h9 hpq)))
-  · rw [tr₁.gpr, tr₂.gpr]
-    simp only [reduceCtorEq, ↓reduceIte]
-    rcases hx with hx | hx
-    · exact RTaint.shr_mono hx0 (Nat.le_of_ble_eq_true hx)
-    · rw [RTaintB.shr_eq_zero (RTaintB.wget_bound hb₁ .x0) (Nat.le_of_ble_eq_true hx),
-        RTaintB.shr_eq_zero (x := s₂'.gpr .x0) (RTaintB.wget_bound hb₂ .x0)
-          (Nat.le_of_ble_eq_true hx)]
-  · rw [tr₁.c, tr₂.c]; exact (hflags hfl).1
-  · rw [tr₁.nf, tr₂.nf]; exact (hflags hfl).2.1
-  · rw [tr₁.zf, tr₂.zf]; exact (hflags hfl).2.2.1
-  · rw [tr₁.vf, tr₂.vf]; exact (hflags hfl).2.2.2
-  · rw [tr₁.v, tr₂.v]
-    funext w
-    by_cases h31 : w = .v31
-    · simp only [h31, ↓reduceIte]
-    · simp only [h31, ↓reduceIte]
-      have hw := (hvv w (RTaintL.mem_vregs w)).resolve_left h31
-      by_cases hpv : w ∈ preservedV
-      · simp only [List.contains_iff_mem.mpr hpv, ↓reduceIte, Bool.or_eq_true] at hw
-        rcases hw with hw | hw
-        · exact hvr w hw
-        · refine RTaintL.eq_of_halves ?_ (hq true w hw)
-          rw [hp₁.2.2 w hpv, hp₂.2.2 w hpv, ho.2.2.2.2.2.2.2.2.2.2.1]
-      · have : preservedV.contains w = false := by simpa using hpv
-        simp only [this, Bool.false_eq_true, ↓reduceIte, RTaintL.vpub, Bool.or_eq_true,
-          Bool.and_eq_true] at hw
-        rcases hw with hw | ⟨h₀, h₁'⟩
-        · exact hvr w hw
-        · exact RTaintL.eq_of_halves (hq false w h₀) (hq true w h₁')
-  · intro x hx
-    rw [tr₁.rd, tr₁.wr] at hx
-    rw [tr₁.mem, tr₂.mem, hsp']
-    by_cases hin : (x - (s₂'.sp - BitVec.ofNat 64 W)).toNat < W
-    · simp only [lose, hin, ↓reduceIte, hu', zeroTo]
-    · rw [lose_out hin, lose_out hin]
-      simp only [zeroTo, hin, ↓reduceIte]
-      refine hout x (by rw [← hrd', ← hwr']; exact hx) fun hc => hin ?_
-      unfold window Region.Contains at hc
-      simp only [BitVec.add_zero] at hc
-      omega
-
 section
 variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
   {wa : Bool} {stack : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
@@ -179,7 +86,7 @@ theorem scrub_disjoint (hk : (sig.words abi.ptrBits).length ≤ 8) {W : Nat} (hW
     b (List.mem_append_left _ hb)
   exact hr.symm.sub_right (Offset.sub_below _ hWs (by omega))
 
-/-- What `Verified.withScrubK` needs of a contract: room for the `W` bytes
+/-- What the clearing of the `W` bytes (`Verified.scrubSel`) needs of a contract: room for the `W` bytes
 below the stack pointer, a postcondition that reads neither them nor any
 register but `x0`, and a public stack pointer. -/
 structure ScrubOk (k : Contract isa) (W : Nat) : Prop where
@@ -188,38 +95,6 @@ structure ScrubOk (k : Contract isa) (W : Nat) : Prop where
     (∀ a, ¬ (a - (s.sp - BitVec.ofNat 64 W)).toNat < W → u'.mem a = u.mem a) →
     u'.gpr .x0 = u.gpr .x0 → k.post s u'
   pub : ∀ s₁ s₂, k.pub s₁ s₂ → s₁.sp = s₂.sp
-
-theorem Verified.withScrubK {c : Prog isa} {k : Contract isa} {W : Nat} (h : Verified target c k)
-    (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0) (hk : ScrubOk k W) :
-    Verified target (withScrub W c) k := by
-  obtain ⟨hcor, hct, hsat⟩ := h
-  have hrun : ∀ s, k.pre s → ∃ t s₃ u,
-      Exec isa c s t s₃ ∧ abiPreserved s s₃ ∧ k.post s s₃ ∧
-      Exec isa (scrubTail W) s₃ (tailTrace s₃.sp W) u ∧ TailRun W s₃ u := by
-    intro s hs
-    obtain ⟨t, s₃, he, ha, hq⟩ := hcor s hs
-    obtain ⟨u, ex, tr⟩ := tail_run hW s₃ (by rw [ha.2.1]; exact hk.sp s hs)
-    exact ⟨t, s₃, u, he, ha, hq, ex, tr⟩
-  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s₃, u, he, ha, hq, ex, tr⟩ := hrun s hs
-    refine ⟨_, u, Exec.seq he ex, ⟨fun q hq' => ?_, by rw [tr.sp]; exact ha.2.1, fun w hw => ?_⟩, ?_⟩
-    · have h9 : q ≠ .x9 := by rintro rfl; simp [preserved] at hq'
-      rw [tr.gpr]; simp only [h9, ↓reduceIte]; exact ha.1 q hq'
-    · have h31 : w ≠ .v31 := by rintro rfl; simp [preservedV] at hw
-      rw [tr.v]; simp only [h31, ↓reduceIte]; exact ha.2.2 w hw
-    · refine hk.post s s₃ u hs hq (fun a ha' => ?_) (by rw [tr.gpr]; simp)
-      rw [tr.mem, ha.2.1, lose_out ha']
-      simp only [zeroTo, ha', ↓reduceIte]
-  · cases e₁ with
-    | seq a₁ b₁ =>
-    cases e₂ with
-    | seq a₂ b₂ =>
-    obtain ⟨_, _, _, f₁, p₁, -, x₁, -⟩ := hrun s₁ h₁
-    obtain ⟨_, _, _, f₂, p₂, -, x₂, -⟩ := hrun s₂ h₂
-    obtain ⟨rfl, rfl⟩ := Exec.det a₁ f₁
-    obtain ⟨rfl, rfl⟩ := Exec.det a₂ f₂
-    rw [(Exec.det b₁ x₁).1, (Exec.det b₂ x₂).1, p₁.2.1, p₂.2.1,
-      hct _ _ _ _ _ _ h₁ h₂ hp a₁ a₂, hk.pub s₁ s₂ hp]
 
 /-- `ScrubOk` of a contract whose arguments are all in registers, whose
 stack holds the `W` bytes and whose postcondition reads the memory on return
@@ -262,17 +137,6 @@ theorem scrubOk_consts {c₀ : String × List (BitVec 64)} {cs : List (String ×
         _ u u' (pre_consts.mp hs).1 ((e u).mp (post_consts.mp hq)) hm hx))
   pub s₁ s₂ hp := (scrubOk_regs (pre := pre) (post := post) (wa := wa) (leak := leak) hk hW hWs
     hpost).pub s₁ s₂ (pub_consts.mp hp).1
-
-theorem Verified.withScrub {c : Prog isa} {W : Nat}
-    (h : Verified target c (sig.contract abi pre post wa stack leak))
-    (hk : (sig.words abi.ptrBits).length ≤ 8) (hW : 0 < W ∧ W < 4096 ∧ W % 16 = 0)
-    (hWs : W ≤ stack)
-    (hpost : ∀ vs m m₁ m₂ r, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
-        Curry.apply (sig.words abi.ptrBits) post vs m m₂ r) :
-    Verified target (withScrub W c) (sig.contract abi pre post wa stack leak) :=
-  Verified.withScrubK h hW (scrubOk_regs hk hW.1 hWs hpost)
 
 end
 

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Blowfish.AArch64
 public import VerifiedGarbage.Impl.Blowfish.AArch64.FbFinal
 public import VerifiedGarbage.Impl.Blowfish.AArch64.Modes
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.TCB.Code
@@ -21,7 +21,7 @@ it returns without secret residue (`Proof/Blowfish/AArch64/`).
 namespace VG.Impl.Blowfish.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 def cbcDecryptChained : Prog isa :=
   withClears [.x6, .x8, .x9] [.v0, .v1, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,

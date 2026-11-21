@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.AesOcb.X86_64.Fn
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
 public import VerifiedGarbage.Spec.Ocb.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
@@ -19,21 +21,20 @@ import VerifiedGarbage.Proof.Aes.ScrubLocal
 
 `vg_aes_ocb_init` over an implementation of the AES block functions
 (`Aes.X86_64.BlocksImpl`) whose encryption and key expansion need no working
-space (`BlocksImpl.free`), in a frame of only the 24 bytes it writes itself
-(`initF_framed`), followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`) where the implementation gives its residue
-analysis (`BlocksImpl.ocbInitRes`). Over the others, as before, in a frame of
-2.5 KB, of which the analysis cannot tell what may hold secrets. Over the others, that frame is mostly the
-working space of the functions called, wiped whole on return
-(`X86_64.Scrub.withScrubAll`). Its postcondition reads the memory on return
+space (`BlocksImpl.free`) runs in a frame of only the 24 bytes it writes
+itself (`initF_framed`), and is followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`) where the implementation gives its
+residue analysis (`BlocksImpl.ocbInitRes`). Over the others it runs in a frame
+of 2.5 KB, mostly the working space of the functions called, of which the
+analysis cannot tell what may hold secrets, wiped whole on return
+(`Impl.Scrub.X86_64.scrubAll`). Its postcondition reads the memory on return
 only within the key context, for a key of the lengths the precondition
 allows (`X86_64.Scrub.PostOut`).
 
 `vg_aes_ocb_seal` and `vg_aes_ocb_open` over an implementation that needs
 working space: their frame of 3632 bytes is that working space, the offsets,
 the checksum, the table of `L_j` and blocks of the data XORed with offsets,
-so it is wiped whole on return (`RScrub.withScrubAllC`, `sealReg`,
-`openReg`). Their postconditions read the
+so it is wiped whole on return (`Impl.Scrub.X86_64.scrubAll`). Their postconditions read the
 memory on return only within the data and the tag (`sealOut`, `openOut`).
 -/
 
@@ -64,28 +65,45 @@ theorem ocbInitOut (stack : Nat) :
         rw [Proof.Aes.ScrubLocal.bytesAt_of hb.2 (by decide)]
         exact h2
 
-open VG.X86_64.RScrub in
-/-- `vg_aes_ocb_init` over `v`: with no working space for an implementation
-whose encryption and key expansion need none (`BlocksImpl.free`), and then
-without secret residue where the analysis handles it. -/
-def ocbInitReg (v : BlocksImpl) : Registration Spec.Ocb.initApi X86_64.target :=
-  match v.free with
-  | some f =>
-    withScrub {
-      suffix := v.suffix
-      code := Proof.Aes.X86_64.ocbInitCodeF v.enc v.dec v.expand
-      stack := 40
-      verified := Proof.AesOcb.X86_64.initF_framed v f
-      spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.AesOcb.X86_64.init_spSafe v) }
-      (ocbInitOut _) [] (pubOk_nil _) v.ocbInitRes
-  | none =>
-    withScrubAll {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init ⟨v.enc, v.dec, v.expand⟩)
-      stack := 2576
-      verified := Proof.AesOcb.X86_64.init_framed v
-      spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.AesOcb.X86_64.init_spSafe v) }
-      (ocbInitOut _)
+/-- `vg_aes_ocb_init` over `v`, as emitted (`Impl.AesOcb.X86_64.Fn.init`), in a frame of only
+the bytes it writes itself over an implementation whose encryption and key
+expansion need no working space (`BlocksImpl.free`), meets its contract in
+constant time and returns without secret residue: its code is its code over
+a stub, with `v`'s where it calls it (`Fill`). -/
+theorem ocbInit_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesOcb.X86_64.Fn.init v.level v.free.isSome (Proof.AesOcb.X86_64.callees v))
+      (Spec.Ocb.initApi.contract X86_64.abi (if v.free.isSome then 40 else 2576)) 0 := by
+  have := v.encSide
+  have := v.decSide
+  have := v.expandSide
+  unfold Impl.AesOcb.X86_64.Fn.init
+  rcases hf : v.free with _ | f
+  · simp only [Option.isSome, Bool.false_eq_true, ↓reduceIte]
+    exact verifiedScrubbedAllFill (api := Spec.Ocb.initApi) (ks := 0) (n := fun _ => 0)
+      (a := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init ⟨⟨"", .block []⟩, ⟨"", .block []⟩, ⟨"", .block []⟩⟩))
+      { suffix := v.suffix
+        code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init ⟨v.enc, v.dec, v.expand⟩)
+        stack := 2576
+        verified := Proof.AesOcb.X86_64.init_framed v
+        spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.AesOcb.X86_64.init_spSafe v) }
+      v.level (ocbInitOut _) (by fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+  · simp only [Option.isSome, ↓reduceIte]
+    exact verifiedScrubbedAllFill (api := Spec.Ocb.initApi) (ks := 0) (n := fun _ => 0)
+      (a := Impl.StackScratch.X86_64.withStackScratch 32 .rcx (Impl.AesOcb.X86_64.init ⟨⟨"", .block []⟩, ⟨"", .block []⟩, ⟨"", .block []⟩⟩))
+      { suffix := v.suffix
+        code := Proof.Aes.X86_64.ocbInitCodeF v.enc v.dec v.expand
+        stack := 40
+        verified := Proof.AesOcb.X86_64.initF_framed v f
+        spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.AesOcb.X86_64.init_spSafe v) }
+      v.level (ocbInitOut _) (by unfold Proof.Aes.X86_64.ocbInitCodeF; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+
+theorem ocbInit_spSafeFn (v : BlocksImpl) :
+    (Impl.AesOcb.X86_64.Fn.init v.level v.free.isSome (Proof.AesOcb.X86_64.callees v)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  unfold Impl.AesOcb.X86_64.Fn.init
+  split
+  · exact scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (Proof.AesOcb.X86_64.init_spSafe v))
+  · exact scrubKs_spSafe (VG.X86_64.withStackScratch_spSafe_of (Proof.AesOcb.X86_64.init_spSafe v))
 
 theorem sealOut (stack : Nat) :
     PostOut (Spec.Ocb.sealContract X86_64.abi stack) (Spec.Ocb.sealSig.retBits 64) :=
@@ -123,34 +141,44 @@ theorem openOut (stack : Nat) :
       rw [Proof.Aes.ScrubLocal.bytesAt_of0 hb.2.2.2.1 (by simp)]
       exact h key hk
 
-/-- `vg_aes_ocb_seal` over `v`: over an implementation of AES that needs
-working space (`BlocksImpl.free` is `none`), its frame wiped whole on return,
-in 16-byte stores that are all aligned (the chunks `[8, 3632]`); over the
-others, as before. -/
-def sealReg (v : BlocksImpl) : Registration Spec.Ocb.sealApi X86_64.target :=
-  let r : Unscrubbed Spec.Ocb.sealApi X86_64.target := {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4
-      (Impl.AesOcb.X86_64.seal (Proof.AesOcb.X86_64.callees v))
-    verified := Proof.AesOcb.seal_keyed (Proof.AesOcb.X86_64.seal_framed v)
-    spSafe := VG.X86_64.withStackArgScratch_spSafe (Proof.AesOcb.X86_64.seal_spSafe v) }
-  match v.free with
-  | some _ => r.registration
-  | none => RScrub.withScrubAllC r (sealOut _) [8, 3632]
+/-- `Spec.Ocb.sealApi`'s function over `v`, as emitted (`Impl.AesOcb.X86_64.Fn.«seal»`), its frame wiped
+whole on return. -/
+theorem seal_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesOcb.X86_64.Fn.«seal» v.level (Proof.AesOcb.X86_64.callees v))
+      (Spec.Ocb.sealApi.contract X86_64.abi 3640) 0 := by
+  have := v.encSide
+  have := v.decSide
+  have := v.expandSide
+  exact verifiedScrubbedAllFill (api := Spec.Ocb.sealApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.«seal» ⟨⟨"", .block []⟩, ⟨"", .block []⟩, ⟨"", .block []⟩⟩))
+    { suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.«seal» (Proof.AesOcb.X86_64.callees v))
+      verified := Proof.AesOcb.seal_keyed (Proof.AesOcb.X86_64.seal_framed v)
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (Proof.AesOcb.X86_64.seal_spSafe v) }
+    v.level (sealOut _) (by unfold Proof.AesOcb.X86_64.callees; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
 
-/-- `vg_aes_ocb_open` over `v`: over an implementation of AES that needs
-working space (`BlocksImpl.free` is `none`), its frame wiped whole on return,
-in 16-byte stores that are all aligned (the chunks `[8, 3632]`); over the
-others, as before. -/
-def openReg (v : BlocksImpl) : Registration Spec.Ocb.openApi X86_64.target :=
-  let r : Unscrubbed Spec.Ocb.openApi X86_64.target := {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4
-      (Impl.AesOcb.X86_64.open (Proof.AesOcb.X86_64.callees v))
-    verified := Proof.AesOcb.open_keyed (Proof.AesOcb.X86_64.open_framed v)
-    spSafe := VG.X86_64.withStackArgScratch_spSafe (Proof.AesOcb.X86_64.open_spSafe v) }
-  match v.free with
-  | some _ => r.registration
-  | none => RScrub.withScrubAllC r (openOut _) [8, 3632]
+theorem seal_spSafeFn (v : BlocksImpl) :
+    (Impl.AesOcb.X86_64.Fn.«seal» v.level (Proof.AesOcb.X86_64.callees v)).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackArgScratch_spSafe (Proof.AesOcb.X86_64.seal_spSafe v))
+
+/-- `Spec.Ocb.openApi`'s function over `v`, as emitted (`Impl.AesOcb.X86_64.Fn.«open»`), its frame wiped
+whole on return. -/
+theorem open_scrubbed (v : BlocksImpl) :
+    VerifiedScrubbed target (Impl.AesOcb.X86_64.Fn.«open» v.level (Proof.AesOcb.X86_64.callees v))
+      (Spec.Ocb.openApi.contract X86_64.abi 3640) 32 := by
+  have := v.encSide
+  have := v.decSide
+  have := v.expandSide
+  exact verifiedScrubbedAllFill (api := Spec.Ocb.openApi) (ks := 0) (n := fun _ => 0)
+    (a := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.«open» ⟨⟨"", .block []⟩, ⟨"", .block []⟩, ⟨"", .block []⟩⟩))
+    { suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.«open» (Proof.AesOcb.X86_64.callees v))
+      verified := Proof.AesOcb.open_keyed (Proof.AesOcb.X86_64.open_framed v)
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (Proof.AesOcb.X86_64.open_spSafe v) }
+    v.level (openOut _) (by unfold Proof.AesOcb.X86_64.callees; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
+
+theorem open_spSafeFn (v : BlocksImpl) :
+    (Impl.AesOcb.X86_64.Fn.«open» v.level (Proof.AesOcb.X86_64.callees v)).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (VG.X86_64.withStackArgScratch_spSafe (Proof.AesOcb.X86_64.open_spSafe v))
 
 end VG.Proof.AesOcb.X86_64.Scrub

@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 Key generation, `pk_tr`, the preparation of keys, signing and verification
 (of a message representative or of a message, with a key or a prepared key),
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which
 clears the volatile registers and the stack their frames used. The
 postconditions of key generation, `pk_tr`, the preparations and signing read
 the memory on return only within their outputs, and those of verification
@@ -234,7 +234,7 @@ returns without secret residue. -/
 theorem keyGen44_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.keyGen44
       (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa44 PPC64LE.abi 96) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.keyGen44Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.keyGen44Api) {
       code := Impl.MlDsa.PPC64LE.KeyGen.keyGen44
       verified := Proof.MlDsa.PPC64LE.KeyGen.keyGen44_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -248,7 +248,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem pkTr44_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.pkTr44
       (Spec.MlDsa.pkTrContract Spec.MlDsa.mlDsa44 PPC64LE.abi 48) 0 :=
-  verifiedScrubbed (api := Spec.MlDsa.pkTr44Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.pkTr44Api) {
       code := Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.PPC64LE.PkTr.pkTr44_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -261,7 +261,7 @@ contract in constant time and returns without secret residue. -/
 theorem preparePublic44_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparePublic44
       (Spec.MlDsa.preparePublicKeyContract Spec.MlDsa.mlDsa44 PPC64LE.abi 240) 0 :=
-  verifiedScrubbed (api := (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
       code := Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.PPC64LE.PreparedKey.preparePublic_verified (.inl rfl) }
     144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -276,7 +276,7 @@ contract in constant time and returns without secret residue. -/
 theorem prepareSecret44_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.prepareSecret44
       (Spec.MlDsa.prepareSecretKeyContract Spec.MlDsa.mlDsa44 PPC64LE.abi 240) 0 :=
-  verifiedScrubbed (api := (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
       code := Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa44
       verified := Proof.MlDsa.PPC64LE.PreparedKey.prepareSecret_verified (.inl rfl) }
     144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -290,7 +290,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem sign44_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.sign44
       (Spec.MlDsa.signContract Spec.MlDsa.mlDsa44 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.sign44Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.sign44Api) {
       code := Impl.MlDsa.PPC64LE.Sign.sign44
       verified := Proof.MlDsa.PPC64LE.Sign.sign44_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -305,7 +305,7 @@ contract in constant time and returns without secret residue. -/
 theorem signPrepared44_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.signPrepared44
       (Proof.MlDsa.preparedSignContract Spec.MlDsa.mlDsa44 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
       code := Impl.MlDsa.PPC64LE.Sign.signPrepared44
       verified := Proof.MlDsa.PPC64LE.Sign.signPrepared44_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -320,7 +320,7 @@ and returns without secret residue. -/
 theorem signMessage44_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.signMessage44
       (Proof.MlDsa.PPC64LE.Message.msgSK Spec.MlDsa.mlDsa44 false PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.signMessage44Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.signMessage44Api) {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Spec.MlDsa.sign44Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.sign44 Spec.MlDsa.mlDsa44
       verified := Message.signMessage_verified (.inl rfl) (by decide) Message.sign44Fn _
@@ -331,8 +331,12 @@ theorem signMessage44_scrubbed :
     (by exact signMessageOut Spec.MlDsa.mlDsa44 _)
     (by dsimp only; lit_decide)
 
-def preparedSignMessage44Reg : Registration (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa44_sign_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedSignMessage44`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedSignMessage44_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedSignMessage44
+      (Message.msgSK mlDsa44 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa44" ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.signPrepared44 Spec.MlDsa.mlDsa44
       verified := Message.signMessage_verified (.inl rfl) (by decide) Message.signPrepared44Fn _
@@ -349,7 +353,7 @@ returns without secret residue. -/
 theorem verify44_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.verify44
       (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.verify44Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.verify44Api) {
       code := Impl.MlDsa.PPC64LE.Verify.verify44
       verified := Proof.MlDsa.PPC64LE.Verify.verify44_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -364,7 +368,7 @@ contract in constant time and returns without secret residue. -/
 theorem verifyPrepared44_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.verifyPrepared44
       (Proof.MlDsa.preparedVerifyContract Spec.MlDsa.mlDsa44 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
       code := Impl.MlDsa.PPC64LE.Verify.verifyPrepared44
       verified := Proof.MlDsa.PPC64LE.Verify.verifyPrepared44_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -380,7 +384,7 @@ time and returns without secret residue. -/
 theorem verifyMessageCached44_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.verifyMessageCached44
       (Proof.MlDsa.PPC64LE.Message.msgVK Spec.MlDsa.mlDsa44 false PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Spec.MlDsa.verify44Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verify44 Spec.MlDsa.mlDsa44
       verified := Message.verifyMessageCached_verified (.inl rfl) (by decide) Message.verify44Fn _
@@ -391,8 +395,12 @@ theorem verifyMessageCached44_scrubbed :
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa44 _)
     (by dsimp only; lit_decide)
 
-def preparedVerifyMessage44Reg : Registration (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa44_verify_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage44`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedVerifyMessage44_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage44
+      (Message.msgVK mlDsa44 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")) {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa44" ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verifyPrepared44 Spec.MlDsa.mlDsa44
       verified := Message.verifyMessageCached_verified (.inl rfl) (by decide) Message.verifyPrepared44Fn _
@@ -409,7 +417,7 @@ returns without secret residue. -/
 theorem keyGen65_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.keyGen65
       (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa65 PPC64LE.abi 96) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.keyGen65Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.keyGen65Api) {
       code := Impl.MlDsa.PPC64LE.KeyGen.keyGen65
       verified := Proof.MlDsa.PPC64LE.KeyGen.keyGen65_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -423,7 +431,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem pkTr65_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.pkTr65
       (Spec.MlDsa.pkTrContract Spec.MlDsa.mlDsa65 PPC64LE.abi 48) 0 :=
-  verifiedScrubbed (api := Spec.MlDsa.pkTr65Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.pkTr65Api) {
       code := Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.PPC64LE.PkTr.pkTr65_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -436,7 +444,7 @@ contract in constant time and returns without secret residue. -/
 theorem preparePublic65_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparePublic65
       (Spec.MlDsa.preparePublicKeyContract Spec.MlDsa.mlDsa65 PPC64LE.abi 240) 0 :=
-  verifiedScrubbed (api := (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
       code := Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.PPC64LE.PreparedKey.preparePublic_verified (.inr (.inl rfl)) }
     144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -451,7 +459,7 @@ contract in constant time and returns without secret residue. -/
 theorem prepareSecret65_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.prepareSecret65
       (Spec.MlDsa.prepareSecretKeyContract Spec.MlDsa.mlDsa65 PPC64LE.abi 240) 0 :=
-  verifiedScrubbed (api := (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
       code := Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa65
       verified := Proof.MlDsa.PPC64LE.PreparedKey.prepareSecret_verified (.inr (.inl rfl)) }
     144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -465,7 +473,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem sign65_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.sign65
       (Spec.MlDsa.signContract Spec.MlDsa.mlDsa65 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.sign65Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.sign65Api) {
       code := Impl.MlDsa.PPC64LE.Sign.sign65
       verified := Proof.MlDsa.PPC64LE.Sign.sign65_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -480,7 +488,7 @@ contract in constant time and returns without secret residue. -/
 theorem signPrepared65_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.signPrepared65
       (Proof.MlDsa.preparedSignContract Spec.MlDsa.mlDsa65 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
       code := Impl.MlDsa.PPC64LE.Sign.signPrepared65
       verified := Proof.MlDsa.PPC64LE.Sign.signPrepared65_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -495,7 +503,7 @@ and returns without secret residue. -/
 theorem signMessage65_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.signMessage65
       (Proof.MlDsa.PPC64LE.Message.msgSK Spec.MlDsa.mlDsa65 false PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.signMessage65Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.signMessage65Api) {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Spec.MlDsa.sign65Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.sign65 Spec.MlDsa.mlDsa65
       verified := Message.signMessage_verified (.inr (.inl rfl)) (by decide) Message.sign65Fn _
@@ -506,8 +514,12 @@ theorem signMessage65_scrubbed :
     (by exact signMessageOut Spec.MlDsa.mlDsa65 _)
     (by dsimp only; lit_decide)
 
-def preparedSignMessage65Reg : Registration (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa65_sign_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedSignMessage65`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedSignMessage65_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedSignMessage65
+      (Message.msgSK mlDsa65 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa65" ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.signPrepared65 Spec.MlDsa.mlDsa65
       verified := Message.signMessage_verified (.inr (.inl rfl)) (by decide) Message.signPrepared65Fn _
@@ -524,7 +536,7 @@ returns without secret residue. -/
 theorem verify65_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.verify65
       (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.verify65Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.verify65Api) {
       code := Impl.MlDsa.PPC64LE.Verify.verify65
       verified := Proof.MlDsa.PPC64LE.Verify.verify65_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -539,7 +551,7 @@ contract in constant time and returns without secret residue. -/
 theorem verifyPrepared65_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.verifyPrepared65
       (Proof.MlDsa.preparedVerifyContract Spec.MlDsa.mlDsa65 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
       code := Impl.MlDsa.PPC64LE.Verify.verifyPrepared65
       verified := Proof.MlDsa.PPC64LE.Verify.verifyPrepared65_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -555,7 +567,7 @@ time and returns without secret residue. -/
 theorem verifyMessageCached65_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.verifyMessageCached65
       (Proof.MlDsa.PPC64LE.Message.msgVK Spec.MlDsa.mlDsa65 false PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Spec.MlDsa.verify65Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verify65 Spec.MlDsa.mlDsa65
       verified := Message.verifyMessageCached_verified (.inr (.inl rfl)) (by decide) Message.verify65Fn _
@@ -566,8 +578,12 @@ theorem verifyMessageCached65_scrubbed :
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa65 _)
     (by dsimp only; lit_decide)
 
-def preparedVerifyMessage65Reg : Registration (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa65_verify_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage65`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedVerifyMessage65_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage65
+      (Message.msgVK mlDsa65 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")) {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa65" ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verifyPrepared65 Spec.MlDsa.mlDsa65
       verified := Message.verifyMessageCached_verified (.inr (.inl rfl)) (by decide) Message.verifyPrepared65Fn _
@@ -584,7 +600,7 @@ returns without secret residue. -/
 theorem keyGen87_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.keyGen87
       (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa87 PPC64LE.abi 96) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.keyGen87Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.keyGen87Api) {
       code := Impl.MlDsa.PPC64LE.KeyGen.keyGen87
       verified := Proof.MlDsa.PPC64LE.KeyGen.keyGen87_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -598,7 +614,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem pkTr87_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.pkTr87
       (Spec.MlDsa.pkTrContract Spec.MlDsa.mlDsa87 PPC64LE.abi 48) 0 :=
-  verifiedScrubbed (api := Spec.MlDsa.pkTr87Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.pkTr87Api) {
       code := Impl.MlDsa.PPC64LE.PkTr.pkTr Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.PPC64LE.PkTr.pkTr87_verified }
     48 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
@@ -611,7 +627,7 @@ contract in constant time and returns without secret residue. -/
 theorem preparePublic87_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparePublic87
       (Spec.MlDsa.preparePublicKeyContract Spec.MlDsa.mlDsa87 PPC64LE.abi 240) 0 :=
-  verifiedScrubbed (api := (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
       code := Impl.MlDsa.PPC64LE.PreparedKey.preparePublic Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.PPC64LE.PreparedKey.preparePublic_verified (.inr (.inr rfl)) }
     144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -626,7 +642,7 @@ contract in constant time and returns without secret residue. -/
 theorem prepareSecret87_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.prepareSecret87
       (Spec.MlDsa.prepareSecretKeyContract Spec.MlDsa.mlDsa87 PPC64LE.abi 240) 0 :=
-  verifiedScrubbed (api := (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
       code := Impl.MlDsa.PPC64LE.PreparedKey.prepareSecret Spec.MlDsa.mlDsa87
       verified := Proof.MlDsa.PPC64LE.PreparedKey.prepareSecret_verified (.inr (.inr rfl)) }
     144 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -640,7 +656,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem sign87_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.sign87
       (Spec.MlDsa.signContract Spec.MlDsa.mlDsa87 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.sign87Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.sign87Api) {
       code := Impl.MlDsa.PPC64LE.Sign.sign87
       verified := Proof.MlDsa.PPC64LE.Sign.sign87_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -655,7 +671,7 @@ contract in constant time and returns without secret residue. -/
 theorem signPrepared87_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.signPrepared87
       (Proof.MlDsa.preparedSignContract Spec.MlDsa.mlDsa87 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
       code := Impl.MlDsa.PPC64LE.Sign.signPrepared87
       verified := Proof.MlDsa.PPC64LE.Sign.signPrepared87_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -670,7 +686,7 @@ and returns without secret residue. -/
 theorem signMessage87_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.signMessage87
       (Proof.MlDsa.PPC64LE.Message.msgSK Spec.MlDsa.mlDsa87 false PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.signMessage87Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.signMessage87Api) {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Spec.MlDsa.sign87Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.sign87 Spec.MlDsa.mlDsa87
       verified := Message.signMessage_verified (.inr (.inr rfl)) (by decide) Message.sign87Fn _
@@ -681,8 +697,12 @@ theorem signMessage87_scrubbed :
     (by exact signMessageOut Spec.MlDsa.mlDsa87 _)
     (by dsimp only; lit_decide)
 
-def preparedSignMessage87Reg : Registration (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa87_sign_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedSignMessage87`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedSignMessage87_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedSignMessage87
+      (Message.msgSK mlDsa87 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
       code := Impl.MlDsa.PPC64LE.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa87" ++ "_core")
         Impl.MlDsa.PPC64LE.Sign.signPrepared87 Spec.MlDsa.mlDsa87
       verified := Message.signMessage_verified (.inr (.inr rfl)) (by decide) Message.signPrepared87Fn _
@@ -699,7 +719,7 @@ returns without secret residue. -/
 theorem verify87_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.verify87
       (Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.verify87Api) {
+  verifiedScrubbedAll (api := Spec.MlDsa.verify87Api) {
       code := Impl.MlDsa.PPC64LE.Verify.verify87
       verified := Proof.MlDsa.PPC64LE.Verify.verify87_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -714,7 +734,7 @@ contract in constant time and returns without secret residue. -/
 theorem verifyPrepared87_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.verifyPrepared87
       (Proof.MlDsa.preparedVerifyContract Spec.MlDsa.mlDsa87 PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
       code := Impl.MlDsa.PPC64LE.Verify.verifyPrepared87
       verified := Proof.MlDsa.PPC64LE.Verify.verifyPrepared87_verified }
     192 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -730,7 +750,7 @@ time and returns without secret residue. -/
 theorem verifyMessageCached87_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.verifyMessageCached87
       (Proof.MlDsa.PPC64LE.Message.msgVK Spec.MlDsa.mlDsa87 false PPC64LE.abi 240) 32 :=
-  verifiedScrubbed (api := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
+  verifiedScrubbedAll (api := (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Spec.MlDsa.verify87Api.name ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verify87 Spec.MlDsa.mlDsa87
       verified := Message.verifyMessageCached_verified (.inr (.inr rfl)) (by decide) Message.verify87Fn _
@@ -741,8 +761,12 @@ theorem verifyMessageCached87_scrubbed :
     (by exact verifyMessageCachedOut Spec.MlDsa.mlDsa87 _)
     (by dsimp only; lit_decide)
 
-def preparedVerifyMessage87Reg : Registration (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87") PPC64LE.target :=
-  scrubOf {
+/-- `vg_mldsa87_verify_message_prepared` as emitted (`Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage87`) meets its
+contract in constant time and returns without secret residue. -/
+theorem preparedVerifyMessage87_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.MlDsa.PPC64LE.Fn.preparedVerifyMessage87
+      (Message.msgVK mlDsa87 true abi 240) 32 :=
+  verifiedScrubbedAll (api := (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")) {
       code := Impl.MlDsa.PPC64LE.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa87" ++ "_core")
         Impl.MlDsa.PPC64LE.Verify.verifyPrepared87 Spec.MlDsa.mlDsa87
       verified := Message.verifyMessageCached_verified (.inr (.inr rfl)) (by decide) Message.verifyPrepared87Fn _

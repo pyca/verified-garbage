@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+public import VerifiedGarbage.Impl.Sha256.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Sha256.Contract
@@ -20,11 +22,12 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # `vg_sha256_init` and `vg_sha224_init` on x86-64, without secret residue
 
-Each followed by `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`),
-which clears the registers it writes. Their postconditions read the memory
-on return only within the streaming state (`Stream.reprFrom_congr`).
-HMAC, PBKDF2, DSA and RSA call their code as the internal
-`vg_sha256_init_core` and `vg_sha224_init_core`
+Each followed by `Impl.Scrub.X86_64.scrubSel`
+(`X86_64.Scrub.verifiedScrubbedSel`), which clears every caller-saved register
+and the granules of its stack the residue analysis finds may hold secrets. Their
+postconditions read the memory on return only within the streaming state
+(`Stream.reprFrom_congr`). HMAC, PBKDF2, DSA and RSA call their code as the
+internal `vg_sha256_init_core` and `vg_sha224_init_core`
 (`Proof.Pbkdf2.Md.X86_64.Sha256.hash`, `Proof.Pbkdf2.Md.X86_64.Sha224.hash`),
 which clear what they leave themselves.
 -/
@@ -48,32 +51,37 @@ theorem initOut (iv : Spec.Sha256.HashValue)
     exact Stream.reprFrom_congr (fun i hi => (hb _ (Offset.contains_base _
       (by simp only [Elem.size]; omega_using [hi]) (by omega_using [hi]))).symm) h
 
-def initKs : List Nat := keep_for% Spec.Sha256.initApi.sig 0 Impl.Sha256.X86_64.Stream.init []
+/-! ## The functions as emitted -/
 
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha256.initApi.sig 0 []) (Impl.Sha256.X86_64.Stream.init)
-      h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
+theorem init_codeSp : (Impl.Sha256.X86_64.Stream.init).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_sha256_init`. -/
-def initReg : Registration Spec.Sha256.initApi X86_64.target :=
-  scrubOf { code := Impl.Sha256.X86_64.Stream.init, verified := Shared.init } .sse true [.r11] (initOut Spec.Sha256.H0 _ rfl) []
-    (pubOk_nil _) ⟨initKs, initOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Sha256.initApi`'s function as emitted (`Impl.Sha256.X86_64.Fn.init`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Sha256.X86_64.Fn.init (Spec.Sha256.initApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Sha256.initApi)
+    { code := Impl.Sha256.X86_64.Stream.init
+      verified := Shared.init
+      spSafe := init_codeSp }
+    .sse [] (initOut Spec.Sha256.H0 _ rfl) (RScrub.pubOk_nil _) (by taint_decide)
 
-def init224Ks : List Nat := keep_for% Spec.Sha256.init224Api.sig 0 Impl.Sha256.X86_64.Stream.init224 []
+theorem init_spSafe : Impl.Sha256.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
 
-theorem init224Ok : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Sha256.init224Api.sig 0 []) (Impl.Sha256.X86_64.Stream.init224)
-      h).any (RScrub.resOkB · 0 init224Ks (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of init224Ks (by taint_decide)
+theorem init224_codeSp : (Impl.Sha256.X86_64.Stream.init224).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_sha224_init`. -/
-def init224Reg : Registration Spec.Sha256.init224Api X86_64.target :=
-  scrubOf { code := Impl.Sha256.X86_64.Stream.init224, verified := Shared.init224 } .sse true [.r11] (initOut Spec.Sha256.H0_224 _ rfl) []
-    (pubOk_nil _) ⟨init224Ks, init224Ok⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Sha256.init224Api`'s function as emitted (`Impl.Sha256.X86_64.Fn.init224`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init224_scrubbed :
+    VerifiedScrubbed target Impl.Sha256.X86_64.Fn.init224 (Spec.Sha256.init224Api.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Sha256.init224Api)
+    { code := Impl.Sha256.X86_64.Stream.init224
+      verified := Shared.init224
+      spSafe := init224_codeSp }
+    .sse [] (initOut Spec.Sha256.H0_224 _ rfl) (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem init224_spSafe : Impl.Sha256.X86_64.Fn.init224.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init224_codeSp
 end VG.Proof.Sha256.X86_64

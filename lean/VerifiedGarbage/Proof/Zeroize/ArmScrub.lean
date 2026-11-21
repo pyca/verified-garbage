@@ -11,7 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 # `vg_zeroize` on ARMv7, as emitted
 
 `vg_zeroize` saves no register and has no frames, so its cleanup
-(`Impl.Zeroize.Arm.Fn.zeroize`, `Impl.Residue.Arm.scrub`) sets the registers
+(`Impl.Zeroize.Arm.Fn.zeroize`, `Impl.Scrub.Arm.scrub`) sets the registers
 a callee may change, and the flags, to constants, and `Fn.zeroize` below
 states that it returns without secret residue
 (`Arm.Scrub.verifiedScrubbed`), which is what its registration binds. Its

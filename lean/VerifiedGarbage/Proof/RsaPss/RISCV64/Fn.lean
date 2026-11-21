@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.Scrub
 Merkle–Damgård hash functions of their tables, with their cleanup
 (`Impl.RsaPss.RISCV64.Fn`): each meets its contract in constant time and
 returns without secret residue (`VerifiedScrubbed`, by
-`RISCV64.Scrub.verifiedScrubbed`), which is what its registration binds. What
+`RISCV64.Scrub.verifiedScrubbedAll`), which is what its registration binds. What
 the cleanup needs of each function's code (`Scrub.scrubSide`) is evaluated
 here, by the kernel, apart from the theorems, which take the tables'
 coherence (`OK`).
@@ -40,7 +40,7 @@ theorem verifyPrecomputed (h : OK vars vars) :
       (Spec.RsaPss.verifyPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig
           [("hash", tables vars), ("mgf1", tables vars)]) 336) 32 :=
-  verifiedScrubbed (api := Spec.RsaPss.verifyPrecomputedMdTableApi) (W := 336)
+  verifiedScrubbedAll (api := Spec.RsaPss.verifyPrecomputedMdTableApi) (W := 336)
     { tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaPss.RISCV64.verifyPrecomputed (fnsOf vars) (fns3 vars)
       verified := verify_ok h }
@@ -51,7 +51,7 @@ theorem signPrecomputed (h : OK vars vars) :
       (Spec.RsaPss.signPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig
           [("hash", tables vars), ("mgf1", tables vars)]) 3488) 32 :=
-  verifiedScrubbed (api := Spec.RsaPss.signPrecomputedMdTableApi) (W := 3488)
+  verifiedScrubbedAll (api := Spec.RsaPss.signPrecomputedMdTableApi) (W := 3488)
     { tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaPss.RISCV64.Sign.signP (fnsOf vars) (fns3 vars)
       verified := signP_ok h }

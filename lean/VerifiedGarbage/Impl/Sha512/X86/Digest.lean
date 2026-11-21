@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Scrub.X86
 `vg_<f>_digest` is the generic one-shot digest (`Impl.MdStream.X86.Digest`)
 over SHA-512's streaming functions (`hash`), then its cleanup: the zeroing of
 the 612 bytes of stack below `esp` that it and its callees use, and the
-clearing of the registers a callee may change (`Impl.Scrub.X86.scrubF 0 612`),
+clearing of the registers a callee may change (`Impl.Scrub.X86.scrubAll 0 612`),
 so that it returns without secret residue.
 -/
 
@@ -30,6 +30,6 @@ def hash (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : Impl.Pbkdf2.S
 
 /-- `vg_<f>_digest` of the first `D` bytes of the final hash value from `iv`, as emitted. -/
 def digest (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 612 (Impl.MdStream.X86.Digest.digest (hash D initN iv))
+  Impl.Scrub.X86.scrubAll 0 612 (Impl.MdStream.X86.Digest.digest (hash D initN iv))
 
 end VG.Impl.Sha512.X86.Fn

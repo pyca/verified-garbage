@@ -1950,8 +1950,8 @@ theorem open_framed (v : BlocksImpl) :
 /-- `vg_aes_ocb_init`'s postcondition reads the memory on return only within
 the key context, for a key of 16, 24 or 32 bytes. -/
 theorem initOk (W : Nat) (hW : 0 < W) :
-    ScrubAll.ScrubAllOk (Spec.Ocb.initContract AArch64.abi W) W (Spec.Ocb.initSig.retBits AArch64.abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs_pre (sig := Spec.Ocb.initSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    Scrub.ScrubAllOk (Spec.Ocb.initContract AArch64.abi W) W (Spec.Ocb.initSig.retBits AArch64.abi.ptrBits) :=
+  Scrub.scrubAllOk_regs_pre (sig := Spec.Ocb.initSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     fun vs m m₁ m₂ r hlen hpre hb h => by
     match vs, hlen with
     | [k, ln, ctx], _ =>
@@ -1974,8 +1974,8 @@ theorem initOk (W : Nat) (hW : 0 < W) :
 /-- `vg_aes_ocb_seal`'s postcondition reads the memory on return only within
 the data and the tag. -/
 theorem sealOk (W : Nat) :
-    ScrubAll.ScrubAllOk (Spec.Ocb.sealContract AArch64.abi W) W (Spec.Ocb.sealSig.retBits AArch64.abi.ptrBits) :=
-  ScrubAll.scrubAllOk_args_any (sig := Spec.Ocb.sealSig) fun vs m m₁ m₂ r hlen hb h => by
+    Scrub.ScrubAllOk (Spec.Ocb.sealContract AArch64.abi W) W (Spec.Ocb.sealSig.retBits AArch64.abi.ptrBits) :=
+  Scrub.scrubAllOk_args_any (sig := Spec.Ocb.sealSig) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
     | [cp, rd, np, nl, ap, al, dp, dl, tp, tl], _ =>
       simp only [Spec.Ocb.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
@@ -1994,8 +1994,8 @@ theorem sealOk (W : Nat) :
 /-- `vg_aes_ocb_open`'s postcondition reads the memory on return only within
 the data. -/
 theorem openOk (W : Nat) :
-    ScrubAll.ScrubAllOk (Spec.Ocb.openContract AArch64.abi W) W (Spec.Ocb.openSig.retBits AArch64.abi.ptrBits) :=
-  ScrubAll.scrubAllOk_args_any (sig := Spec.Ocb.openSig) fun vs m m₁ m₂ r hlen hb h => by
+    Scrub.ScrubAllOk (Spec.Ocb.openContract AArch64.abi W) W (Spec.Ocb.openSig.retBits AArch64.abi.ptrBits) :=
+  Scrub.scrubAllOk_args_any (sig := Spec.Ocb.openSig) fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
     | [cp, rd, np, nl, ap, al, dp, dl, tp, tl], _ =>
       simp only [Spec.Ocb.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
@@ -2017,12 +2017,12 @@ theorem openOk (W : Nat) :
 (`Impl.AesOcb.AArch64.Fn`): each meets its contract in constant time and
 returns without secret residue (`VerifiedScrubbed`), which is what its
 registration binds. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is proved of each function's own instructions here,
+(`Scrub.scrubSide`) is proved of each function's own instructions here,
 once, with code that does nothing in the place of the functions it calls,
 and of each implementation where it is defined (`BlocksImpl.encScrub`,
 `decScrub`, `expandScrub`). -/
 
-open VG.AArch64.ScrubAll
+open VG.AArch64.Scrub
 
 private theorem init_all {p : Instr → Bool} (B : Nat) (c : Callees)
     (h0 : sideAll p (Impl.StackScratch.AArch64.withStackScratch B .x3 (init ⟨⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩, 0⟩, ⟨"", .block [], ⟨[], [], []⟩⟩⟩)) = true)
@@ -2121,7 +2121,7 @@ theorem init_scrubbed (v : BlocksImpl) :
       (Spec.Ocb.initContract AArch64.abi (initT v)) 0 := by
   unfold Impl.AesOcb.AArch64.Fn.init
   rw [show (callees v).enc.scratch = v.scratch from v.encScratch_eq]
-  exact verifiedScrubbed (api := Spec.Ocb.initApi)
+  exact verifiedScrubbedAll (api := Spec.Ocb.initApi)
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (initT v) .x3 (init (callees v))
       verified := init_framed v
@@ -2135,7 +2135,7 @@ theorem seal_scrubbed (v : BlocksImpl) :
       (Spec.Ocb.sealContract AArch64.abi (sealT v + 32)) 0 := by
   unfold Impl.AesOcb.AArch64.Fn.seal
   rw [show (callees v).enc.scratch = v.scratch from v.encScratch_eq]
-  exact verifiedScrubbed (api := Spec.Ocb.sealApi)
+  exact verifiedScrubbedAll (api := Spec.Ocb.sealApi)
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («seal» (callees v))
       verified := Proof.AesOcb.seal_keyed (seal_framed v)
@@ -2148,7 +2148,7 @@ theorem open_scrubbed (v : BlocksImpl) :
       (Spec.Ocb.openContract AArch64.abi (sealT v + 32)) 32 := by
   unfold Impl.AesOcb.AArch64.Fn.open
   rw [show (callees v).enc.scratch = v.scratch from v.encScratch_eq]
-  exact verifiedScrubbed (api := Spec.Ocb.openApi)
+  exact verifiedScrubbedAll (api := Spec.Ocb.openApi)
     { suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackArgScratch (sealT v + 32) 2 («open» (callees v))
       verified := Proof.AesOcb.open_keyed (open_framed v)

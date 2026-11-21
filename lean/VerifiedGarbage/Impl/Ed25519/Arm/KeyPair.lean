@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
 public import VerifiedGarbage.Impl.MdStream.Arm.Digest
 public import VerifiedGarbage.Impl.Sha512.Arm.Stream
 public import VerifiedGarbage.Spec.Sha512.Contract
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # Ed25519 key-pair derivation on ARMv7
@@ -57,7 +57,7 @@ end VG.Impl.Ed25519.Arm.KeyPair
 
 namespace VG.Impl.Ed25519.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_ed25519_key_pair`, with either product of the field (`umaal`): the
 digest by `vg_sha512_digest`'s code, called as the internal
@@ -67,7 +67,7 @@ digest by `vg_sha512_digest`'s code, called as the internal
 contract reserves zeroed and the registers a callee may change set to
 constants. -/
 def keyPair (umaal : Bool) : Prog isa :=
-  scrubF 0 600 (KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core")
+  scrubAll 0 600 (KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core")
     (Impl.MdStream.Arm.Digest.digest KeyPair.sha512) ("vg_ed25519_public_key_expanded" ++ suffix umaal)
     (PublicKey.codeExpanded umaal))
 

@@ -1157,21 +1157,10 @@ vg_sha384_digest:
 	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #18
-21:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	add r12, r12, #32
-	subs r3, r3, #1
-	bne 21b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
 	add sp, sp, #584
 	mov r0, #0
 	mov r1, #0
@@ -1387,21 +1376,10 @@ vg_sha512_digest:
 	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #18
-21:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	add r12, r12, #32
-	subs r3, r3, #1
-	bne 21b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
 	add sp, sp, #584
 	mov r0, #0
 	mov r1, #0
@@ -1617,21 +1595,10 @@ vg_sha512_224_digest:
 	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #18
-21:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	add r12, r12, #32
-	subs r3, r3, #1
-	bne 21b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
 	add sp, sp, #584
 	mov r0, #0
 	mov r1, #0
@@ -1847,21 +1814,10 @@ vg_sha512_256_digest:
 	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #18
-21:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	add r12, r12, #32
-	subs r3, r3, #1
-	bne 21b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
 	add sp, sp, #584
 	mov r0, #0
 	mov r1, #0

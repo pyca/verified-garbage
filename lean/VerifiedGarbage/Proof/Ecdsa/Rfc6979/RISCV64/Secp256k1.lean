@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Scrub
 public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
@@ -26,6 +27,7 @@ meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.Secp256k1Order.Lit
 meta import VerifiedGarbage.Proof.Framework.RISCV64.ScrubProved
+meta import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.Scrub
 meta import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
@@ -196,31 +198,36 @@ theorem verifiedT (hL : VG.Proof.Weierstrass.Law Spec.Secp256k1.curve) (vs : Lis
     (by rw [VG.Proof.Ecdsa.RISCV64.Secp256k1.Comb.combWords_length]; decide) VG.Proof.Ecdsa.RISCV64.Secp256k1.Comb.combSatMem_held (by decide) rfl
   exact signT_spec ⟨rfl, by decide, by decide⟩ (checksT hL) rfl h.1 hsat
 
-/-! ## The registration
+/-! ## The function, as emitted
 
-`vg_ecdsa_secp256k1_sign`, with HMAC as a table of the hash functions of
-`Proof.Variants.MdHash.RISCV64.variants`, followed by the clearing of its
-stack and caller-saved registers (`RISCV64.Scrub.scrubOf`), which its
-registration file binds. What the scrub needs of the code
-(`RISCV64.Scrub.scrubSide`) is evaluated here, by the kernel. -/
+`vg_ecdsa_secp256k1_sign` as emitted, cleanup included
+(`Impl.Ecdsa.Rfc6979.RISCV64.Fn.secp256k1`), with the tables of the hash functions
+of `Proof.Variants.MdHash.RISCV64.variants`: the theorem its registration file
+binds. What the cleanup needs of the code with nothing in the place of HMAC's
+functions (`RISCV64.Scrub.scrubSide`) is evaluated here, by the kernel; that
+of the hash functions, where each is defined (`HVar.scrub`). -/
 
 section
 
-open VG.Proof.HmacTable.RISCV64 (tables names)
+open VG.Proof.Variants.MdHash.RISCV64 (variants fns)
 
-/-- `vg_ecdsa_secp256k1_sign`, scrubbed, for the hash functions of
-`Proof.Variants.MdHash.RISCV64.variants` (`hv`, which its registration
-decides), and the curve's group law `hL`. -/
-def signReg (hL : VG.Proof.Weierstrass.Law Spec.Secp256k1.curve) (hv : OK VG.Proof.Variants.MdHash.RISCV64.variants ∧
-    Impl.Ecdsa.RISCV64.Comb.secp256k1Sym ∉ names VG.Proof.Variants.MdHash.RISCV64.variants) :
-    Registration Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi RISCV64.target :=
-  RISCV64.Scrub.scrubOf {
-    tables := [("hmac", tables VG.Proof.Variants.MdHash.RISCV64.variants)]
-    code := signCodeT (curveT hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries VG.Proof.Variants.MdHash.RISCV64.variants
-    verified := verifiedT hL VG.Proof.Variants.MdHash.RISCV64.variants hv }
-    (Proof.Ecdsa.Rfc6979.RISCV64.Scrub.signOut Spec.Ecdsa.Rfc6979.Curves.secp256k1
-      (Proof.Ecdsa.Rfc6979.RISCV64.Secp256k1.kit hL).K VG.Proof.Variants.MdHash.RISCV64.variants)
-    (hs := by dsimp only [VG.RISCV64.Scrub.retBitsOf]; rw_lit; kernel_rfl)
+/-- What the cleanup needs of the code, with nothing in the place of HMAC's
+functions. -/
+theorem stub_side : RISCV64.Scrub.scrubSide
+    (Impl.Ecdsa.Rfc6979.RISCV64.Fn.secp256k1Cfg Proof.Ecdsa.Rfc6979.RISCV64.Scrub.stubFns).sign 512 32 [] = true := by
+  lit_decide
+
+/-- The comb's table is named apart from the hash functions' tables. -/
+theorem sym_ok : Impl.Ecdsa.RISCV64.Comb.secp256k1Sym ∉ Proof.HmacTable.RISCV64.names variants :=
+  of_decide_eq_true (by kernel_rfl)
+
+/-- `vg_ecdsa_secp256k1_sign` as emitted, for the curve's group law `hL`: it meets
+its contract in constant time and returns without secret residue. -/
+theorem sign_scrubbed (hL : VG.Proof.Weierstrass.Law Spec.Secp256k1.curve) :
+    VerifiedScrubbed RISCV64.target (Impl.Ecdsa.Rfc6979.RISCV64.Fn.secp256k1 fns)
+      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 (kit hL).K variants) 32 :=
+  Proof.Ecdsa.Rfc6979.RISCV64.Scrub.sign_scrubbed Impl.Ecdsa.Rfc6979.RISCV64.Fn.secp256k1Cfg
+    (verifiedT hL variants ⟨Proof.Ecdsa.Rfc6979.RISCV64.Scrub.variants_ok, sym_ok⟩) rfl stub_side
 
 end
 

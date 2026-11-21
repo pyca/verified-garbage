@@ -16,7 +16,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 -- separate module: the functions as emitted name code of the modules above, which do not import one another
 
@@ -41,7 +41,7 @@ emitted, cleanup included.
 namespace VG.Impl.MlDsa.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64 (scrubAll Clear)
+open VG.Impl.Scrub.AArch64 (scrubAll Clear)
 open VG.Spec.MlDsa (Params)
 
 /-- The primitives signing calls, over `c`. -/

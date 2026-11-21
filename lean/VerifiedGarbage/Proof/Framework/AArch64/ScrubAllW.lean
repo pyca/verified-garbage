@@ -5,19 +5,18 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 /-!
 # Scrubbing code without frames that states what it writes (AArch64)
 
-`ScrubAll.withScrubAll` leaves as it is a registration that states how much
-of a buffer its code writes (`Registration.written`). For code without
-frames, `scrubAll 0` adds only the clearing of registers, which writes no
-memory: the memory on return is the code's, so what the registration states
-of `written` still holds (`scrubAll0_mem`). `withScrubAllW` is
-`withScrubAll` for such code, keeping `written`.
+For code without frames, `scrubAll 0` adds only the clearing of registers,
+which writes no memory: the memory on return is the code's, so what a
+registration states of how much of a buffer its code writes
+(`Registration.written`) still holds (`scrubAll0_mem`,
+`writtenWithin_of_mem`).
 -/
 
 @[expose] public section
 
-namespace VG.AArch64.ScrubAll
+namespace VG.AArch64.Scrub
 
-open VG.AArch64 VG.Impl.Residue.AArch64
+open VG.AArch64 VG.Impl.Scrub.AArch64
 
 theorem retFix_mem {rb : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) {s s' : State} {t : List Leak}
     (h : execBlock isa (retFix rb) s = some (s', t)) : s'.mem = s.mem := by
@@ -51,30 +50,4 @@ theorem writtenWithin_of_mem {A : Abi isa} {sig : Sig} {w : List (String × Nat)
     simp only [Sig.writtenWithin, hm] at h ⊢
     exact h
 
-/-- `withScrubAll`'s clearing of the registers for code without frames
-(`r.stack = 0`), keeping what `r` states of `written`; otherwise `r` itself. -/
-def withScrubAllW {api : Api} (r : Unscrubbed api target) (hok : ScrubAllOk r.contract r.stack (retBitsOf r)) :
-    Registration api target :=
-  if h : r.stack = 0 ∧ r.code.aarch64Depth = 0 ∧ r.code.all (fun i => !i.writesDit) = true ∧
-      (retBitsOf r = 0 ∨ retBitsOf r = 32 ∨ retBitsOf r = 64) then
-    { suffix := r.suffix
-      tables := r.tables
-      code := scrubAll 0 (retBitsOf r) (Clear.of r.code) r.code
-      contract := r.contract
-      verified := .scrubbed <| .abi ⟨Verified.scrubAll0 (Clear.of_wf _) r.verified h.2.2.2 (h.1 ▸ hok),
-        noResidue_scrubAll0 (Clear.of_wf _) (Clear.of_keeps _) r.verified h.2.1 h.2.2.1 h.2.2.2⟩
-      consts := r.consts
-      stack := r.stack
-      ofApi := r.ofApi
-      ofSig := r.ofSig
-      spSafe := all_spSafe _
-      written := r.written
-      writtenOk := fun s t s' hs he => by
-        obtain ⟨t', u, hc, hm⟩ := scrubAll0_mem (Clear.of_wf _) h.2.2.2 he
-        exact writtenWithin_of_mem hm (r.writtenOk s t' u hs hc)
-      extra := r.extra
-      vendor := r.vendor
-      notWith := r.notWith }
-  else r.registration
-
-end VG.AArch64.ScrubAll
+end VG.AArch64.Scrub

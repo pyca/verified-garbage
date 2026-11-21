@@ -110,26 +110,26 @@ vg_blake2b_init:
 	bx lr
 
 vg_blake2b_update:
-	sub sp, sp, #592
+	sub sp, sp, #256
 	add r12, sp, #0
 	str lr, [r12, #12]
-	ldr lr, [sp, #592]
+	ldr lr, [sp, #256]
 	str lr, [r12, #0]
-	ldr lr, [sp, #596]
+	ldr lr, [sp, #260]
 	str lr, [r12, #4]
 	add lr, sp, #16
 	str lr, [r12, #8]
 	ldr lr, [sp, #12]
 	ldr r12, [sp, #8]
-	str r4, [r12, #512]
-	str r5, [r12, #516]
-	str r6, [r12, #520]
-	str r7, [r12, #524]
-	str r8, [r12, #528]
-	str r9, [r12, #532]
-	str r10, [r12, #536]
-	str r11, [r12, #540]
-	str lr, [r12, #544]
+	str r4, [r12, #200]
+	str r5, [r12, #204]
+	str r6, [r12, #208]
+	str r7, [r12, #212]
+	str r8, [r12, #216]
+	str r9, [r12, #220]
+	str r10, [r12, #224]
+	str r11, [r12, #228]
+	str lr, [r12, #232]
 	mov r4, r0
 	mov r5, r12
 	ldr r6, [sp, #0]
@@ -253,20 +253,20 @@ vg_blake2b_update:
 217:
 218:
 	mov r3, r5
-	ldr r4, [r3, #512]
-	ldr r5, [r3, #516]
-	ldr r6, [r3, #520]
-	ldr r7, [r3, #524]
-	ldr r8, [r3, #528]
-	ldr r9, [r3, #532]
-	ldr r10, [r3, #536]
-	ldr r11, [r3, #540]
-	ldr lr, [r3, #544]
-	add sp, sp, #592
-	sub sp, sp, #608
+	ldr r4, [r3, #200]
+	ldr r5, [r3, #204]
+	ldr r6, [r3, #208]
+	ldr r7, [r3, #212]
+	ldr r8, [r3, #216]
+	ldr r9, [r3, #220]
+	ldr r10, [r3, #224]
+	ldr r11, [r3, #228]
+	ldr lr, [r3, #232]
+	add sp, sp, #256
+	sub sp, sp, #272
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #19
+	mov r3, #8
 222:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -279,7 +279,11 @@ vg_blake2b_update:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 222b
-	add sp, sp, #608
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #272
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
@@ -289,24 +293,24 @@ vg_blake2b_update:
 	bx lr
 
 vg_blake2b_finalize:
-	sub sp, sp, #592
+	sub sp, sp, #256
 	add r12, sp, #0
 	str lr, [r12, #8]
-	ldr lr, [sp, #592]
+	ldr lr, [sp, #256]
 	str lr, [r12, #0]
 	add lr, sp, #12
 	str lr, [r12, #4]
 	ldr lr, [sp, #8]
 	ldr r12, [sp, #4]
-	str r4, [r12, #512]
-	str r5, [r12, #516]
-	str r6, [r12, #520]
-	str r7, [r12, #524]
-	str r8, [r12, #528]
-	str r9, [r12, #532]
-	str r10, [r12, #536]
-	str r11, [r12, #540]
-	str lr, [r12, #544]
+	str r4, [r12, #200]
+	str r5, [r12, #204]
+	str r6, [r12, #208]
+	str r7, [r12, #212]
+	str r8, [r12, #216]
+	str r9, [r12, #220]
+	str r10, [r12, #224]
+	str r11, [r12, #228]
+	str lr, [r12, #232]
 	mov r4, r0
 	mov r5, r12
 	ldr r6, [sp, #0]
@@ -378,20 +382,20 @@ vg_blake2b_finalize:
 	ldr r12, [r4, #60]
 	str r12, [r6, #60]
 	mov r3, r5
-	ldr r4, [r3, #512]
-	ldr r5, [r3, #516]
-	ldr r6, [r3, #520]
-	ldr r7, [r3, #524]
-	ldr r8, [r3, #528]
-	ldr r9, [r3, #532]
-	ldr r10, [r3, #536]
-	ldr r11, [r3, #540]
-	ldr lr, [r3, #544]
-	add sp, sp, #592
-	sub sp, sp, #608
+	ldr r4, [r3, #200]
+	ldr r5, [r3, #204]
+	ldr r6, [r3, #208]
+	ldr r7, [r3, #212]
+	ldr r8, [r3, #216]
+	ldr r9, [r3, #220]
+	ldr r10, [r3, #224]
+	ldr r11, [r3, #228]
+	ldr lr, [r3, #232]
+	add sp, sp, #256
+	sub sp, sp, #272
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #19
+	mov r3, #8
 25:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -404,7 +408,11 @@ vg_blake2b_finalize:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 25b
-	add sp, sp, #608
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #272
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0

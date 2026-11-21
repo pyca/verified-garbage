@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Framework.CodeOnce
 # The checks of the scrub, compiled (x86-64)
 
 The emitter evaluates the side conditions of the scrub of every x86-64
-function (`Scrub.withScrubAll`, `RScrub.withScrub` and the others) on all of
+function (`scrubAll`, `scrubSel` and the others) on all of
 its code: the level of its instructions (`Instr.vecLevel`), the stack it
 uses (`Code.x86_64Depth`), the registers it writes (`Taint.clobbers`) and
 what it leaves in MXCSR (`mxClass`). This module, which imports only the
@@ -93,23 +93,6 @@ def Instr.vecLevel : Instr → Nat
 /-- The level of the vector registers alone: `vecLevel`, but `ldmxcsr`,
 which writes only MXCSR, at level 0. -/
 def Instr.vecLevelR (i : Instr) : Nat := if loadsMxcsr i then 0 else i.vecLevel
-
-/-- Whether `i` is at a level of at most `k`. -/
-def Instr.levelLe (k : Nat) (i : Instr) : Bool := decide (i.vecLevel ≤ k)
-
-/-- Whether `i` is at a level of the vector registers of at most `k`. -/
-def Instr.levelLeR (k : Nat) (i : Instr) : Bool := decide (i.vecLevelR ≤ k)
-
-/-- Whether every instruction of `c` is at a level of at most `k`
-(`Code.allOnce`). -/
-def levelLeOnce (k : Nat) (c : Prog isa) : Bool := c.allOnce (Instr.levelLe k)
-
-/-- Whether every instruction of `c` is at a level of the vector registers of
-at most `k` (`Code.allOnce`). -/
-def levelLeROnce (k : Nat) (c : Prog isa) : Bool := c.allOnce (Instr.levelLeR k)
-
-/-- Whether no instruction of `c` may write a vector register. -/
-def noVec (c : Prog isa) : Bool := c.all fun i => !Impl.Scrub.X86_64.writesVec i
 
 namespace RTaint
 
@@ -202,52 +185,5 @@ def mxClass : Prog isa → Option MxC
     match mxClass b, mxClass n with
     | some x, some y => if x = y then some x else none
     | _, _ => none
-
-namespace RScrub
-
-/-- `mxClass c`, given calls with their class (`k`: a call's function, code
-and class), with those calls and the calls of `c`: `mxClass` follows the
-code of a function once per call of it, through every function that calls
-it, and this once (`Code.memoCall`). -/
-def mxClassFrom : Prog isa → List (String × Prog isa × Unit × Option MxC) →
-    Option MxC × List (String × Prog isa × Unit × Option MxC)
-  | .block is, k => (if is.all (fun i => !loadsMxcsr i) then some .keep else none, k)
-  | .seq a b, k =>
-    if restoresC a b then (some .mask, k) else
-    let r := mxClassFrom a k
-    match r.1 with
-    | some x =>
-      let q := mxClassFrom b r.2
-      (match q.1 with
-      | some y => (some (x.comp y), q.2)
-      | none => (none, q.2))
-    | none => (none, r.2)
-  | .ite _ t e, k =>
-    let r := mxClassFrom t k
-    match r.1 with
-    | some x =>
-      let q := mxClassFrom e r.2
-      (match q.1 with
-      | some y => (if x = y then some x else none, q.2)
-      | none => (none, q.2))
-    | none => (none, r.2)
-  | .loop b _, k => mxClassFrom b k
-  | .call n b, k => Code.memoCall n b () k fun _ => mxClassFrom b k
-  | .frame i b j, k => if !loadsMxcsr i && !loadsMxcsr j then mxClassFrom b k else (none, k)
-  | .icall i n b nx, k =>
-    if loadsMxcsr i then (none, k) else
-    let r := Code.memoCall n b () k fun _ => mxClassFrom b k
-    match r.1 with
-    | some x =>
-      let q := mxClassFrom nx r.2
-      (match q.1 with
-      | some y => (if x = y then some x else none, q.2)
-      | none => (none, q.2))
-    | none => (none, r.2)
-
-/-- `mxClass c`, following the code of each function `c` calls once. -/
-def mxClassOnce (c : Prog isa) : Option MxC := (mxClassFrom c []).1
-
-end RScrub
 
 end VG.X86_64

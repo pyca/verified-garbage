@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 
@@ -83,3 +84,16 @@ def verifyHash (len : Nat) (wide : Bool) (core : Prog isa) : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch bufBytes .r9 (hashed len wide core)
 
 end VG.Impl.Ecdsa.X86_64.VerifyHash
+
+namespace VG.Impl.Ecdsa.X86_64.VerifyHash.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ecdsa_<curve>_verify`, with the verification `core` of a hash of `len` bytes, as emitted: its code, then its cleanup. -/
+def verifyHash (len : Nat) (wide : Bool) (core : Prog isa) : Prog isa := scrubAll .sse 32 96 (_root_.VG.Impl.Ecdsa.X86_64.VerifyHash.verifyHash len wide core)
+
+/-- `Fn.verifyHash` for a `core` with EVEX instructions, clearing `zmm16`–`zmm31` too, as emitted: its code, then its cleanup. -/
+def verifyHashEvex (len : Nat) (wide : Bool) (core : Prog isa) : Prog isa := scrubAll .evex 32 96 (_root_.VG.Impl.Ecdsa.X86_64.VerifyHash.verifyHash len wide core)
+
+end VG.Impl.Ecdsa.X86_64.VerifyHash.Fn

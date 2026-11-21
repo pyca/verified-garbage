@@ -39,7 +39,7 @@ end VG.Impl.Ecdh.RISCV64
 
 /-! ## ECDH as emitted
 
-`vg_ecdh_p384`, then its cleanup (`Impl.Scrub.RISCV64.scrub`): the
+`vg_ecdh_p384`, then its cleanup (`Impl.Scrub.RISCV64.scrubAll`): the
 caller-saved registers cleared but the 32 bits of its result (it uses no
 stack), so that it returns without secret residue. -/
 
@@ -48,6 +48,6 @@ namespace VG.Impl.Ecdh.RISCV64.Fn
 open VG.RISCV64
 
 /-- `vg_ecdh_p384` as emitted. -/
-def exchangeP384 : Prog isa := Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.Ecdh.RISCV64.ecdhP384
+def exchangeP384 : Prog isa := Impl.Scrub.RISCV64.scrubAll 32 0 VG.Impl.Ecdh.RISCV64.ecdhP384
 
 end VG.Impl.Ecdh.RISCV64.Fn

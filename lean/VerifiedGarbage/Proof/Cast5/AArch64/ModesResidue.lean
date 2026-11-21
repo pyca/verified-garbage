@@ -17,14 +17,14 @@ public import VerifiedGarbage.Proof.Cast5.Rounds
 public meta import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.CfbFinal
 public meta import VerifiedGarbage.Proof.Cast5.CfbFinal
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
-public meta import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
+public meta import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
-public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
-public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
+public meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
@@ -48,14 +48,14 @@ The analysis of the window's bytes (`rtaintG`) finds, on return:
   `_final` functions, in a frame of 112 bytes whose scratch words they zero,
   with only its last granule (bytes 96–111 of the window) possibly differing:
   they clear their registers as CAST5-OFB does (`FbResidue.ofbCleared`), then
-  zero that granule (`withScrubG 112 [6]`).
+  zero that granule (`scrubSel 112 [6]`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Cast5.AArch64.ModesResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintF VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintF VG.AArch64.RTaintG
   VG.Proof.Cast5.AArch64.FbResidue
 
 /-! ## From tables, in 224 bytes -/
@@ -108,13 +108,6 @@ theorem cbcEncryptChainedBase_verified : Verified AArch64.target cbcEncryptChain
   Clears.Verified.withClears_of (Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.AArch64.cbcEncryptChained_framed)
     (fun hq hm hx => post_consts.mpr (Clears.post_congr (post_consts.mp hq) hm hx)) (by decide)
 
-theorem cbcEncryptChainedCode_verified : Verified AArch64.target cbcEncryptChainedCode (Spec.Cast5.cbcEncryptChainedContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
-  RTaintG.Verified.withScrubG cbcEncryptChainedBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cbcEncryptChainedScrubOk
-
-theorem cbcEncryptChainedCode_noResidue : NoResidue cbcEncryptChainedCode (Spec.Cast5.cbcEncryptChainedContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  noResidue_withScrubG (P₀ := 0) cbcEncryptChainedBase_verified ⟨by decide, by decide, by decide⟩ cbcEncryptChainedScrubOk.sp
-    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
-
 theorem cfbEncryptScrubOk : ScrubOk (Spec.Cast5.cfbEncryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 112 :=
   scrubOk_consts (sig := Spec.Cast5.cfbSig) (c₀ := (Impl.Cast5.s1234Sym, Impl.Cast5.s1234)) (cs := [])
     (W := 112) (by decide) (by decide) (Nat.le_refl _) fun vs m m₁ m₂ r hlen hb h => by
@@ -135,13 +128,6 @@ abbrev cfbEncryptCode : Prog isa := Impl.Cast5.AArch64.Fn.cfbEncrypt
 theorem cfbEncryptBase_verified : Verified AArch64.target cfbEncryptBase (Spec.Cast5.cfbEncryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
   Clears.Verified.withClears_of (Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.AArch64.cfbEncrypt_framed)
     (fun hq hm hx => post_consts.mpr (Clears.post_congr (post_consts.mp hq) hm hx)) (by decide)
-
-theorem cfbEncryptCode_verified : Verified AArch64.target cfbEncryptCode (Spec.Cast5.cfbEncryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
-  RTaintG.Verified.withScrubG cfbEncryptBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cfbEncryptScrubOk
-
-theorem cfbEncryptCode_noResidue : NoResidue cfbEncryptCode (Spec.Cast5.cfbEncryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  noResidue_withScrubG (P₀ := 0) cfbEncryptBase_verified ⟨by decide, by decide, by decide⟩ cfbEncryptScrubOk.sp
-    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 theorem cfbEncryptFinalScrubOk : ScrubOk (Spec.Cast5.cfbEncryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 112 :=
   scrubOk_consts (sig := Spec.Cast5.cfbFinalSig) (c₀ := (Impl.Cast5.s1234Sym, Impl.Cast5.s1234)) (cs := [])
@@ -164,13 +150,6 @@ theorem cfbEncryptFinalBase_verified : Verified AArch64.target cfbEncryptFinalBa
   Clears.Verified.withClears_of (Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.AArch64.cfbEncryptFinal_framed)
     (fun hq hm hx => post_consts.mpr (Clears.post_congr (post_consts.mp hq) hm hx)) (by decide)
 
-theorem cfbEncryptFinalCode_verified : Verified AArch64.target cfbEncryptFinalCode (Spec.Cast5.cfbEncryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
-  RTaintG.Verified.withScrubG cfbEncryptFinalBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cfbEncryptFinalScrubOk
-
-theorem cfbEncryptFinalCode_noResidue : NoResidue cfbEncryptFinalCode (Spec.Cast5.cfbEncryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  noResidue_withScrubG (P₀ := 0) cfbEncryptFinalBase_verified ⟨by decide, by decide, by decide⟩ cfbEncryptFinalScrubOk.sp
-    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
-
 theorem cfbDecryptFinalScrubOk : ScrubOk (Spec.Cast5.cfbDecryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 112 :=
   scrubOk_consts (sig := Spec.Cast5.cfbFinalSig) (c₀ := (Impl.Cast5.s1234Sym, Impl.Cast5.s1234)) (cs := [])
     (W := 112) (by decide) (by decide) (Nat.le_refl _) fun vs m m₁ m₂ r hlen hb h => by
@@ -192,20 +171,13 @@ theorem cfbDecryptFinalBase_verified : Verified AArch64.target cfbDecryptFinalBa
   Clears.Verified.withClears_of (Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.AArch64.cfbDecryptFinal_framed)
     (fun hq hm hx => post_consts.mpr (Clears.post_congr (post_consts.mp hq) hm hx)) (by decide)
 
-theorem cfbDecryptFinalCode_verified : Verified AArch64.target cfbDecryptFinalCode (Spec.Cast5.cfbDecryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
-  RTaintG.Verified.withScrubG cfbDecryptFinalBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cfbDecryptFinalScrubOk
-
-theorem cfbDecryptFinalCode_noResidue : NoResidue cfbDecryptFinalCode (Spec.Cast5.cfbDecryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  noResidue_withScrubG (P₀ := 0) cfbDecryptFinalBase_verified ⟨by decide, by decide, by decide⟩ cfbDecryptFinalScrubOk.sp
-    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
-
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cbcEncryptChained
       (Spec.Cast5.cbcEncryptChainedContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  ⟨Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_verified,
-    Proof.Cast5.AArch64.ModesResidue.cbcEncryptChainedCode_noResidue⟩
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) cbcEncryptChainedBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cbcEncryptChainedScrubOk
+    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -220,8 +192,8 @@ without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cfbEncrypt
       (Spec.Cast5.cfbEncryptContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_verified,
-    Proof.Cast5.AArch64.ModesResidue.cfbEncryptCode_noResidue⟩
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) cfbEncryptBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cfbEncryptScrubOk
+    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
@@ -236,15 +208,15 @@ without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cfbEncryptFinal
       (Spec.Cast5.cfbEncryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  ⟨Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_verified,
-    Proof.Cast5.AArch64.ModesResidue.cfbEncryptFinalCode_noResidue⟩
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) cfbEncryptFinalBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cfbEncryptFinalScrubOk
+    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.cfbDecryptFinal
       (Spec.Cast5.cfbDecryptFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  ⟨Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_verified,
-    Proof.Cast5.AArch64.ModesResidue.cfbDecryptFinalCode_noResidue⟩
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) cfbDecryptFinalBase_verified ⟨by decide, by decide, by decide⟩ (by decide) cfbDecryptFinalScrubOk
+    (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.Cast5.AArch64.ModesResidue

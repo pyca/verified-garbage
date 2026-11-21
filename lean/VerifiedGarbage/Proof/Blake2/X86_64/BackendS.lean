@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Blake2.Contract
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
@@ -60,17 +62,22 @@ structure BackendS where
     ⟨"vg_blake2s_compress" ++ suffix, code⟩).x86_64Depth ≤ 8
   finalizeDepth : (Impl.Blake2.X86_64.Stream.finalize s
     ⟨"vg_blake2s_compress" ++ suffix, code⟩).x86_64Depth ≤ 8
-  /-- The residue analysis of `vg_blake2s_update` (`update_framed`), if the
-  analysis handles it: that function then returns without secret residue
-  (`Blake2.X86_64.updateSReg`). -/
-  updateRes : Option (RScrub.Analysed Spec.Blake2.updateSApi.sig (8 + 584) []
+  /-- The level of its compression function's vector instructions. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls its compression function
+  needs of that code, at that level (`X86_64.Scrub.calleeSide`), evaluated
+  here, once. -/
+  side : X86_64.Scrub.calleeSide code level.level 0 = true
+  /-- What the cleanup of `vg_blake2s_update` over it needs
+  (`Impl.Blake2.X86_64.Fn.update`). -/
+  updScrub : Scrub.SelScrub Spec.Blake2.updateSApi.sig (8 + 584) 0
     (Impl.StackScratch.X86_64.withStackScratch 584 .r8
-      (Impl.Blake2.X86_64.Stream.update s ⟨"vg_blake2s_compress" ++ suffix, code⟩))) := none
-  /-- The residue analysis of `vg_blake2s_finalize` (`finalize_framed`), if
-  the analysis handles it (`Blake2.X86_64.finalizeSReg`). -/
-  finalizeRes : Option (RScrub.Analysed Spec.Blake2.finalizeSApi.sig (8 + 584) []
+      (Impl.Blake2.X86_64.Stream.update s ⟨"vg_blake2s_compress" ++ suffix, code⟩))
+  /-- What the cleanup of `vg_blake2s_finalize` over it needs
+  (`Impl.Blake2.X86_64.Fn.finalize`). -/
+  finScrub : Scrub.SelScrub Spec.Blake2.finalizeSApi.sig (8 + 584) 0
     (Impl.StackScratch.X86_64.withStackScratch 584 .rcx
-      (Impl.Blake2.X86_64.Stream.finalize s ⟨"vg_blake2s_compress" ++ suffix, code⟩))) := none
+      (Impl.Blake2.X86_64.Stream.finalize s ⟨"vg_blake2s_compress" ++ suffix, code⟩))
 
 namespace BackendS
 

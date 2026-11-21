@@ -1931,7 +1931,7 @@ outputs, and that of the third not at all (`Arm.Scrub.PostOut`). Each is
 emitted with its cleanup (`Impl.Ed25519.Arm.Fn`): a wipe of the stack its
 contract reserves, then instructions that set the registers a callee may
 change, but the result, and the flags to constants. `Fn` has the theorem of
-each (`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
+each (`Arm.Scrub.verifiedScrubbedAll`), which its registration binds.
 -/
 
 @[expose] public section
@@ -2091,7 +2091,7 @@ open VG VG.Arm VG.Arm.Scrub
 theorem keyPair (umaal : Bool) :
     VerifiedScrubbed target (Impl.Ed25519.Arm.Fn.keyPair umaal)
       (Spec.Ed25519.keyPairContract (abi.withConsts Impl.Ed25519.Arm.combConsts) 600) 0 :=
-  verifiedScrubbedF (api := Spec.Ed25519.keyPairApi)
+  verifiedScrubbedAll (api := Spec.Ed25519.keyPairApi)
     { code := Scrub.keyPairCode umaal, verified := Proof.Ed25519.Arm.KeyPair.verified }
     (Scrub.keyPairOut Impl.Ed25519.Arm.combConsts 600) (scrubSideF_of (Scrub.keyPair_codeOk umaal) Scrub.frameOk_600 _)
 
@@ -2099,7 +2099,7 @@ theorem keyPair (umaal : Bool) :
 theorem signExpanded (umaal : Bool) :
     VerifiedScrubbed target (Impl.Ed25519.Arm.Fn.signExpanded umaal)
       (Spec.Ed25519.signExpandedContract (abi.withConsts Impl.Ed25519.Arm.combConsts) 280) 0 :=
-  verifiedScrubbedF (api := Spec.Ed25519.signExpandedApi)
+  verifiedScrubbedAll (api := Spec.Ed25519.signExpandedApi)
     { code := Impl.Ed25519.Arm.SignCached.codeExpanded umaal
       verified := Proof.Ed25519.Arm.SignCached.signExpanded_verified }
     (Scrub.signExpandedOut Impl.Ed25519.Arm.combConsts 280) (scrubSideF_of (Scrub.signExpanded_codeOk umaal) Scrub.frameOk_280 _)
@@ -2108,7 +2108,7 @@ theorem signExpanded (umaal : Bool) :
 theorem verify (umaal : Bool) :
     VerifiedScrubbed target (Impl.Ed25519.Arm.Fn.verify umaal)
       (Spec.Ed25519.verifyContract (abi.withConsts Impl.Ed25519.Arm.combConsts) 280) 32 :=
-  verifiedScrubbedF (api := Spec.Ed25519.verifyApi)
+  verifiedScrubbedAll (api := Spec.Ed25519.verifyApi)
     { code := Impl.Ed25519.Arm.VerifyMessage.code umaal
       verified := Proof.Ed25519.Arm.VerifyMessage.verifyMessage_verified }
     (Scrub.verifyOut Impl.Ed25519.Arm.combConsts 280) (scrubSideF_of (Scrub.verify_codeOk umaal) Scrub.frameOk_280 _)

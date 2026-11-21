@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.AesCcm.X86_64.Fn
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
@@ -60,7 +61,15 @@ open VG.Proof.AesCcm.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.CmacAesUpdate.X86_64.variants.flatMap fun (v : Proof.CmacAes.X86_64.UpdateImpl) => [
-    Spec.Ccm.sealApi.artifact X86_64.target (sealReg v),
-    Spec.Ccm.openApi.artifact X86_64.target (openReg v)]
+    Spec.Ccm.sealApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesCcm.X86_64.Fn.«seal» (v.level.join v.ctr.level) v.callee v.ctr.callee
+      verified := .scrubbed (Proof.AesCcm.X86_64.seal_scrubbed v)
+      spSafe := Proof.AesCcm.X86_64.seal_spSafeFn v },
+    Spec.Ccm.openApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesCcm.X86_64.Fn.«open» (v.level.join v.ctr.level) v.callee v.ctr.callee
+      verified := .scrubbed (Proof.AesCcm.X86_64.open_scrubbed v)
+      spSafe := Proof.AesCcm.X86_64.open_spSafeFn v }]
 
 end VG.Artifacts.AesCcm.X86_64

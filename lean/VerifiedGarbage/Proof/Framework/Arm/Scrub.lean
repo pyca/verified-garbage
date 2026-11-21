@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -37,7 +37,7 @@ leak nothing, so `scrub rb c` meets `c`'s contract (`Verified.scrub`), and
 every run of it ends with the same values there: it returns without secret
 residue.
 
-`Verified.scrub` proves it; `Verified.scrubFS` is the same for code with
+`Verified.scrub` proves it; `Verified.scrubAllS` is the same for code with
 frames (see "Code with frames" below) whose functions called indirectly have
 the same addresses in two runs that agree on what is public, as those of its
 tables do (`tablesCall_pub`). `Proof/Framework/Arm/ScrubProved.lean` states
@@ -402,8 +402,8 @@ end VG.Arm
 
 namespace VG.Arm.Scrub
 
-/-! The cleanup is code (`Impl/Residue/Arm.lean`). -/
-open VG.Impl.Residue.Arm
+/-! The cleanup is code (`Impl/Scrub/Arm.lean`). -/
+open VG.Impl.Scrub.Arm
 
 /-- A result on ARM is of 0, 32 or 64 bits. -/
 theorem retBits_cases (sig : Sig) : sig.retBits 32 = 0 ∨ sig.retBits 32 = 32 ∨ sig.retBits 32 = 64 := by
@@ -455,7 +455,7 @@ theorem tail_run {rb : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (u : State) :
     simp
     exact shr64 _
 
-/-- What `Verified.scrub` and `Verified.scrubF` need of the calling convention
+/-- What `Verified.scrub` and `Verified.scrubAll` need of the calling convention
 a contract is for: `abi`'s, possibly with tables of constants
 (`Abi.withConsts`), which add readable regions apart from the stack the
 function uses, and with tables of functions (`Abi.withTables`). -/
@@ -613,7 +613,7 @@ theorem Verified.scrub {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
 
 Code with frames also writes the stack below the stack pointer: at most
 `armStack c` bytes of it (`Exec.frameSp`), which hold what its frames held.
-`scrubF rb n c` is `c`, then a frame of the `n` bytes below the stack pointer
+`scrubAll rb n c` is `c`, then a frame of the `n` bytes below the stack pointer
 whose every word is zeroed (`wipeBelow`: from 64 bytes by a loop of eight
 stores a pass, `wipeLoop`, the shorter code there, and below by a store for
 each word), then `tail rb`: so those bytes are zero when that frame is
@@ -633,7 +633,7 @@ the same bytes, at the same stack pointer and with the same unknowns
 makes them, and whose functions called indirectly have the same addresses in
 both (`inames`: none without indirect calls, `noIcall`; those of its tables,
 which are public, `tablesCall`), end with the same unknowns (`Exec.pathS`),
-so two runs of `scrubF rb n c` agree on those bytes on return. -/
+so two runs of `scrubAll rb n c` agree on those bytes on return. -/
 
 open VG.Impl.StackScratch.Arm VG.Arm.FrameStack
 
@@ -726,7 +726,7 @@ theorem sat_stack_le {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → P
 /-- Code that meets a contract `Sig.contract` with `n` bytes of stack meets
 it with more, `n'`, if its precondition is then still satisfiable: so a
 function whose frames use a number of bytes that is no frame size of the
-model (`FrameOk`) is registered with the next one, and `scrubF` wipes
+model (`FrameOk`) is registered with the next one, and `scrubAll` wipes
 that. -/
 theorem Verified.stack_le {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
     {post : sig.Post abi.ptrBits} {wa : Bool} {n n' : Nat}
@@ -739,7 +739,7 @@ theorem Verified.stack_le {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem 
       hv.2.1 s₁ s₂ t₁ t₂ u₁ u₂ (contract_pre_stack_le hn p₁) (contract_pre_stack_le hn p₂) hp e₁ e₂, hsat⟩
 
 /-- A postcondition that reads the memory on return only within the
-buffers, and of the result only its `rb` bits (`Verified.scrubF`'s `hpost`). -/
+buffers, and of the result only its `rb` bits (`Verified.scrubAll`'s `hpost`). -/
 def PostOut (k : Contract isa) (rb : Nat) : Prop :=
   ∀ s u u', k.pre s → k.post s u →
     (∀ x, (∃ r ∈ s.rd ++ s.wr, r.Contains x 1) → u'.mem x = u.mem x) →
@@ -1042,14 +1042,14 @@ theorem wipeBelow_run {n : Nat} (hn : FrameOk n) (w : State) (hsp : n ≤ w.sp.t
     simp only [Region.Contains] at hx
     omega
 
-/-- A run of `scrubF rb n c` from `s`, after `c`'s run to `w`: what it leaks
+/-- A run of `scrubAll rb n c` from `s`, after `c`'s run to `w`: what it leaks
 after `c`'s trace are the addresses of the wiped words, and it leaves what
 `tail rb` leaves, the `n` bytes below the stack pointer what the release of
 a frame of them, all zero, leaves (`v`, the state before the release, with
 `w`'s unknowns), and every other byte as `c` left it. -/
-theorem scrubF_run {rb n : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hn : FrameOk n) {c : Prog isa}
+theorem scrubAll_run {rb n : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hn : FrameOk n) {c : Prog isa}
     (hd : armStack c ≤ n) {s w : State} {t : List Leak} (hsp : n ≤ s.sp.toNat) (he : Exec isa c s t w) :
-    ∃ u, Exec isa (scrubF rb n c) s (t ++ (wipeBodyTr (s.sp - BitVec.ofNat 32 n) n ++ [])) u ∧
+    ∃ u, Exec isa (scrubAll rb n c) s (t ++ (wipeBodyTr (s.sp - BitVec.ofNat 32 n) n ++ [])) u ∧
       u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp ∧ (∀ r ∈ preserved, u.gpr r = w.gpr r) ∧
       u.gpr .r2 = 0 ∧ u.gpr .r3 = 0 ∧ u.gpr .r12 = 0 ∧
       u.n = false ∧ u.z = true ∧ u.c = true ∧ u.v = false ∧
@@ -1075,12 +1075,12 @@ theorem scrubF_run {rb n : Nat} (hrb : rb = 0 ∨ rb = 32 ∨ rb = 64) (hn : Fra
   · exact ⟨v₀, _, v, v₀sp, v₀u, vz, vpop, hm⟩
   · rw [hm]; exact vf x fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx
 
-/-- `scrubF rb stack c` meets the contract of `c`, whose frames use at most
+/-- `scrubAll rb stack c` meets the contract of `c`, whose frames use at most
 the `stack` bytes the contract reserves, whose functions called indirectly
 have the same addresses in two runs that agree on what is public, and whose
 postcondition reads the memory on return only within the buffers, and
 returns without secret residue. -/
-theorem Verified.scrubFS {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+theorem Verified.scrubAllS {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
@@ -1089,13 +1089,13 @@ theorem Verified.scrubFS {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
       ∀ n ∈ inames c, isa.fnAddr s₁ n = isa.fnAddr s₂ n)
     (hn : FrameOk stack) {rb : Nat} (e : rb = sig.retBits A.ptrBits)
     (hpost : PostOut (sig.contract A pre post wa stack leak) rb) :
-    Verified target (scrubF rb stack c) (sig.contract A pre post wa stack leak) ∧
-      NoResidue (scrubF rb stack c) (sig.contract A pre post wa stack leak) rb := by
+    Verified target (scrubAll rb stack c) (sig.contract A pre post wa stack leak) ∧
+      NoResidue (scrubAll rb stack c) (sig.contract A pre post wa stack leak) rb := by
   have hrb : rb = 0 ∨ rb = 32 ∨ rb = 64 := by rw [e, hA.ptrBits]; exact retBits_cases sig
   have h0 : stack ≠ 0 := by have := hn.1; omega
   -- Every run is `c`'s run, then the wipe and the tail.
   have run : ∀ {s u : State} {T : List Leak}, (sig.contract A pre post wa stack leak).pre s →
-      Exec isa (scrubF rb stack c) s T u → ∃ t w, Exec isa c s t w ∧
+      Exec isa (scrubAll rb stack c) s T u → ∃ t w, Exec isa c s t w ∧
         T = t ++ (wipeBodyTr (s.sp - BitVec.ofNat 32 stack) stack ++ []) ∧
         u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp ∧ (∀ r ∈ preserved, u.gpr r = w.gpr r) ∧
         u.gpr .r2 = 0 ∧ u.gpr .r3 = 0 ∧ u.gpr .r12 = 0 ∧
@@ -1111,13 +1111,13 @@ theorem Verified.scrubFS {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     cases h with
     | seq a b =>
       rename_i w t₁ t₂
-      obtain ⟨u', hu', facts⟩ := scrubF_run hrb hn hd (contract_pre_scrub hA hs h0).1 a
+      obtain ⟨u', hu', facts⟩ := scrubAll_run hrb hn hd (contract_pre_scrub hA hs h0).1 a
       obtain ⟨hT, rfl⟩ := Exec.det (Exec.seq a b) hu'
       exact ⟨t₁, w, a, hT, facts⟩
   refine ⟨⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ u₁ u₂ p₁ p₂ hp e₁ e₂ => ?_, hv.2.2⟩, ?_⟩
   · obtain ⟨t, w, he, habi, hq⟩ := hv.1 s hs
     obtain ⟨hsp, hdis⟩ := contract_pre_scrub hA hs h0
-    obtain ⟨u, hu, -, -, usp, upres, -, -, -, -, -, -, -, -, hret, -, hkeep, -⟩ := scrubF_run hrb hn hd hsp he
+    obtain ⟨u, hu, -, -, usp, upres, -, -, -, -, -, -, -, -, hret, -, hkeep, -⟩ := scrubAll_run hrb hn hd hsp he
     refine ⟨_, u, hu, ⟨fun r hr => (upres r hr).trans (habi.1 r hr), usp⟩,
       hpost s w u hs hq (fun x ⟨r, hr, hx⟩ => hkeep x fun hb => hdis r hr x hb hx) hret⟩
   · obtain ⟨a₁, w₁, x₁, rfl, -⟩ := run p₁ e₁
@@ -1167,17 +1167,17 @@ theorem Verified.scrubFS {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
             · simp only [List.mem_singleton] at hr; subst hr; exact osp ▸ hb]
         exact omem x hx
 
-/-- `Verified.scrubFS`, for code that makes no indirect call. -/
-theorem Verified.scrubF {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+/-- `Verified.scrubAllS`, for code that makes no indirect call. -/
+theorem Verified.scrubAll {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
     {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
     (hv : Verified target c (sig.contract A pre post wa stack leak)) (hd : armStack c ≤ stack)
     (hni : noIcall c = true) (hn : FrameOk stack) {rb : Nat} (e : rb = sig.retBits A.ptrBits)
     (hpost : PostOut (sig.contract A pre post wa stack leak) rb) :
-    Verified target (scrubF rb stack c) (sig.contract A pre post wa stack leak) ∧
-      NoResidue (scrubF rb stack c) (sig.contract A pre post wa stack leak) rb :=
-  Verified.scrubFS hA hv hd (fun _ _ _ n hn => absurd hn (by rw [inames_of_noIcall hni]; exact List.not_mem_nil))
+    Verified target (scrubAll rb stack c) (sig.contract A pre post wa stack leak) ∧
+      NoResidue (scrubAll rb stack c) (sig.contract A pre post wa stack leak) rb :=
+  Verified.scrubAllS hA hv hd (fun _ _ _ n hn => absurd hn (by rw [inames_of_noIcall hni]; exact List.not_mem_nil))
     hn e hpost
 
 /-! ### Tables of functions

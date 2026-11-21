@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Spec.TripleDes.Cbc
 public import VerifiedGarbage.Spec.TripleDes.Cfb
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Batch
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Batch.Call
@@ -258,8 +259,6 @@ structure Mid (cfb : Bool) (s₀ : State) (K P D B : Addr) (n j c : Nat) (s s' :
   frame : Frame [⟨B, 8 * (c + 1)⟩, ⟨D + BitVec.ofNat 64 (8 * j), 8 * c⟩] s.mem s'.mem
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-
-
 
 /-- The core's numbers. -/
 theorem core_bw : core.bw = 1 := rfl
@@ -1422,8 +1421,8 @@ end
 
 `vg_triple_des_cbc_decrypt_chained` and `vg_triple_des_cfb64_decrypt` over
 each implementation of the ECB functions they call (`Batch.EcbImpl`),
-followed by `Impl.Scrub.X86_64.scrub` with every granule of their stack
-wiped (`X86_64.RScrub.withScrubAllM`): their 2128-byte frame, which they no
+followed by `Impl.Scrub.X86_64.scrubAll`, which wipes every granule of
+their stack (`X86_64.Scrub.verifiedScrubbedAllFill`): their 2128-byte frame, which they no
 longer zero themselves, and the 1048 bytes of the ECB call below it. Their
 postconditions read the memory on return only within the buffers
 (`X86_64.Scrub.PostOut`): the data and the chaining block.
@@ -1446,24 +1445,62 @@ theorem cfbDecryptOut (stack : Nat) :
 
 open VG.X86_64.RScrub
 
-/-- `vg_triple_des_cbc_decrypt_chained` over `v`. -/
-def cbcDecryptReg (v : EcbImpl) : Registration Spec.TripleDes.cbcDecryptChainedApi X86_64.target :=
-  withScrubAllM {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2128 .r8
-      (Impl.TripleDes.X86_64.Batch.decrypt false (v.name .decrypt) (v.code .decrypt))
-    stack := 3176
-    verified := cbc_framed v
-    spSafe := cbc_spSafe v } (cbcDecryptOut _)
+open VG.X86_64.Scrub in
+/-- `vg_triple_des_cbc_decrypt_chained`'s code over any ECB implementation
+is its code over a stub, with the implementation's code where it calls it. -/
+theorem cbcDecrypt_fill (v : EcbImpl) :
+    Fill v.level.level (fun _ => 1040)
+      (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt false "" (.block [])))
+      (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt false (v.name .decrypt) (v.code .decrypt))) := by
+  have := v.side .decrypt
+  fill_calls
 
-/-- `vg_triple_des_cfb64_decrypt` over `v`. -/
-def cfbDecryptReg (v : EcbImpl) : Registration Spec.TripleDes.cfbDecryptApi X86_64.target :=
-  withScrubAllM {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2128 .r8
-      (Impl.TripleDes.X86_64.Batch.decrypt true (v.name .encrypt) (v.code .encrypt))
-    stack := 3176
-    verified := cfb_framed v
-    spSafe := cfb_spSafe v } (cfbDecryptOut _)
+open VG.X86_64.Scrub in
+/-- `vg_triple_des_cfb64_decrypt`'s code over any ECB implementation. -/
+theorem cfbDecrypt_fill (v : EcbImpl) :
+    Fill v.level.level (fun _ => 1040)
+      (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt true "" (.block [])))
+      (Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt true (v.name .encrypt) (v.code .encrypt))) := by
+  have := v.side .encrypt
+  fill_calls
+
+open VG.X86_64.Scrub in
+/-- `vg_triple_des_cbc_decrypt_chained` over `v`, as emitted
+(`Impl.TripleDes.X86_64.Fn.cbcDecrypt`), meets its contract in constant time
+and returns without secret residue. -/
+theorem cbcDecrypt_scrubbed (v : EcbImpl) :
+    VerifiedScrubbed target (Impl.TripleDes.X86_64.Fn.cbcDecrypt v.level (v.name .decrypt) (v.code .decrypt))
+      (Spec.TripleDes.cbcDecryptChainedApi.contract X86_64.abi 3176) 0 :=
+  verifiedScrubbedAllFill (api := Spec.TripleDes.cbcDecryptChainedApi)
+    { suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt false (v.name .decrypt) (v.code .decrypt))
+      stack := 3176
+      verified := cbc_framed v
+      spSafe := cbc_spSafe v } v.level (cbcDecryptOut _) (cbcDecrypt_fill v) (Nat.zero_le _) (Nat.le_refl _)
+
+open VG.X86_64.Scrub in
+theorem cbcDecrypt_spSafe (v : EcbImpl) :
+    (Impl.TripleDes.X86_64.Fn.cbcDecrypt v.level (v.name .decrypt) (v.code .decrypt)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (cbc_spSafe v)
+
+open VG.X86_64.Scrub in
+/-- `vg_triple_des_cfb64_decrypt` over `v`, as emitted
+(`Impl.TripleDes.X86_64.Fn.cfbDecrypt`). -/
+theorem cfbDecrypt_scrubbed (v : EcbImpl) :
+    VerifiedScrubbed target (Impl.TripleDes.X86_64.Fn.cfbDecrypt v.level (v.name .encrypt) (v.code .encrypt))
+      (Spec.TripleDes.cfbDecryptApi.contract X86_64.abi 3176) 0 :=
+  verifiedScrubbedAllFill (api := Spec.TripleDes.cfbDecryptApi)
+    { suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 2128 .r8 (Impl.TripleDes.X86_64.Batch.decrypt true (v.name .encrypt) (v.code .encrypt))
+      stack := 3176
+      verified := cfb_framed v
+      spSafe := cfb_spSafe v } v.level (cfbDecryptOut _) (cfbDecrypt_fill v) (Nat.zero_le _) (Nat.le_refl _)
+
+open VG.X86_64.Scrub in
+theorem cfbDecrypt_spSafe (v : EcbImpl) :
+    (Impl.TripleDes.X86_64.Fn.cfbDecrypt v.level (v.name .encrypt) (v.code .encrypt)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (cfb_spSafe v)
 
 end VG.Proof.TripleDes.X86_64.Batch.Scrub

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ecdh.X86_64
 public import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.P521Win
@@ -29,3 +30,16 @@ def Cfg.mulQJ4F (c : Impl.Ecdsa.X86_64.Cfg) : Prog isa :=
 def exchangeP521Adx : Prog isa := Cfg.exchangeWith Impl.Ecdsa.X86_64.p521x (Cfg.mulQJ4F Impl.Ecdsa.X86_64.p521x)
 
 end VG.Impl.Ecdh.X86_64
+
+namespace VG.Impl.Ecdh.X86_64.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ecdh_p521` as emitted: its code, then its cleanup. -/
+def exchangeP521 : Prog isa := scrubAll .sse 32 8 _root_.VG.Impl.Ecdh.X86_64.exchangeP521
+
+/-- `vg_ecdh_p521_adx` as emitted: its code, then its cleanup. -/
+def exchangeP521Adx : Prog isa := scrubAll .sse 32 8 _root_.VG.Impl.Ecdh.X86_64.exchangeP521Adx
+
+end VG.Impl.Ecdh.X86_64.Fn

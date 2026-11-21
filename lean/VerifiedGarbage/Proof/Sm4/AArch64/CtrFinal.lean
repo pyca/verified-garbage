@@ -214,8 +214,8 @@ structure CtrImpl where
   suffix : String
   /-- The registers the code writes that the calling convention does not
   preserve: what a function that calls it clears before returning. -/
-  clear : Impl.Residue.AArch64.Clear
-  scrub : AArch64.ScrubAll.calleeSide code clear = true
+  clear : Impl.Scrub.AArch64.Clear
+  scrub : AArch64.Scrub.calleeSide code clear = true
 
 namespace CtrImpl
 

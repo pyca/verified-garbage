@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.MlKem.Arm.Wipe
 public import VerifiedGarbage.Impl.MlKem.Arm.Poly
 public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
@@ -21,34 +21,34 @@ contracts reserve, 24 bytes (key generation and decapsulation: the wrapper's
 
 namespace VG.Impl.MlKem.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_mlkem768_keygen`. -/
-def keyGen : Prog isa := scrubF 32 24 Wipe.keyGen
+def keyGen : Prog isa := scrubAll 32 24 Wipe.keyGen
 
 /-- `vg_mlkem768_encaps_h`. -/
-def encapsH : Prog isa := scrubF 32 32 Wipe.encapsH
+def encapsH : Prog isa := scrubAll 32 32 Wipe.encapsH
 
 /-- `vg_mlkem768_encaps`. -/
-def encaps : Prog isa := scrubF 32 32 Wipe.encaps
+def encaps : Prog isa := scrubAll 32 32 Wipe.encaps
 
 /-- `vg_mlkem768_decaps`. -/
-def decaps : Prog isa := scrubF 32 24 Wipe.decaps
+def decaps : Prog isa := scrubAll 32 24 Wipe.decaps
 
 /-- `vg_mlkem768_check_ek`. -/
 def checkEk : Prog isa := scrub 32 Impl.MlKem.Arm.checkEk
 
 /-- `vg_mlkem1024_keygen`. -/
-def keyGen1024 : Prog isa := scrubF 32 24 Wipe.keyGen1024
+def keyGen1024 : Prog isa := scrubAll 32 24 Wipe.keyGen1024
 
 /-- `vg_mlkem1024_encaps_h`. -/
-def encapsH1024 : Prog isa := scrubF 32 32 Wipe.encapsH1024
+def encapsH1024 : Prog isa := scrubAll 32 32 Wipe.encapsH1024
 
 /-- `vg_mlkem1024_encaps`. -/
-def encaps1024 : Prog isa := scrubF 32 32 Wipe.encaps1024
+def encaps1024 : Prog isa := scrubAll 32 32 Wipe.encaps1024
 
 /-- `vg_mlkem1024_decaps`. -/
-def decaps1024 : Prog isa := scrubF 32 24 Wipe.decaps1024
+def decaps1024 : Prog isa := scrubAll 32 24 Wipe.decaps1024
 
 /-- `vg_mlkem1024_check_ek`. -/
 def checkEk1024 : Prog isa := scrub 32 Impl.MlKem1024.Arm.checkEk1024

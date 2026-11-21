@@ -27,7 +27,7 @@ end VG.Impl.Ecdh.RISCV64
 
 /-! ## The public key as emitted
 
-`vg_ec_p384_public_key`, then its cleanup (`Impl.Scrub.RISCV64.scrub`): the
+`vg_ec_p384_public_key`, then its cleanup (`Impl.Scrub.RISCV64.scrubAll`): the
 caller-saved registers cleared but the 32 bits of its result (it uses no
 stack), so that it returns without secret residue. ECDH's is with ECDH, in
 `Impl/Ecdsa/P384/RISCV64Window.lean`. -/
@@ -37,6 +37,6 @@ namespace VG.Impl.Ecdh.RISCV64.Fn
 open VG.RISCV64
 
 /-- `vg_ec_p384_public_key` as emitted. -/
-def publicKeyP384 : Prog isa := Impl.Scrub.RISCV64.scrub 32 0 VG.Impl.Ecdh.RISCV64.publicKeyP384
+def publicKeyP384 : Prog isa := Impl.Scrub.RISCV64.scrubAll 32 0 VG.Impl.Ecdh.RISCV64.publicKeyP384
 
 end VG.Impl.Ecdh.RISCV64.Fn

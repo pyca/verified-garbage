@@ -25,7 +25,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 /-!
 # Correctness of the round with Montgomery calls
 
-`round_math_ok` and `round_correct` for a body `code` that calls the
+`round_call_math_ok` and `round_call_correct`: the round's correctness for a body `code` that calls the
 Montgomery multiplication where `body M.mm` runs it inline
 (`code.inline = body M.mm`): the calls' return address is 120 bytes below
 `rsp`, under the frames' 112, which the precondition keeps from the

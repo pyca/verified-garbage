@@ -151,15 +151,18 @@ end
 /-- The bit `b` as a number. -/
 abbrev bv (b : Bool) : Nat := if b then 1 else 0
 
+theorem bv_shift (k off i : Nat) : bv (k.testBit (off + i)) = (k >>> off) / 2 ^ i % 2 := by
+  rw [← Nat.testBit_shiftRight, ← Nat.toNat_testBit]
+  cases (k >>> off).testBit i <;> rfl
+
 theorem nib_eq (k j : Nat) : (k >>> (4 * j)) % 16 = bv (k.testBit (4 * j)) + 2 * bv (k.testBit (4 * j + 1)) +
     4 * bv (k.testBit (4 * j + 2)) + 8 * bv (k.testBit (4 * j + 3)) := by
-  obtain t : ∀ i, k.testBit (4 * j + i) = decide ((k >>> (4 * j)) / 2 ^ i % 2 = 1) := fun i => by
-    rw [← Nat.testBit_shiftRight, Nat.testBit_eq_decide_div_mod_eq]
-  rw [show 4 * j = 4 * j + 0 from rfl, t 0, t 1, t 2, t 3]
+  have h0 := bv_shift k (4 * j) 0
+  simp only [Nat.add_zero] at h0
+  rw [h0, bv_shift k (4 * j) 1, bv_shift k (4 * j) 2, bv_shift k (4 * j) 3]
+  simp only [Nat.reducePow, Nat.div_one]
   generalize k >>> (4 * j) = m
-  simp only [Nat.pow_zero, Nat.pow_one, Nat.div_one, show (2 : Nat) ^ 2 = 4 from rfl,
-    show (2 : Nat) ^ 3 = 8 from rfl, bv]
-  split <;> split <;> split <;> split <;> simp_all <;> omega_arith
+  omega_arith
 
 theorem byte_bit (b : Bool) : ((if b then 1 else 0 : BitVec 8)).setWidth 64 = BitVec.ofNat 64 (bv b) := by
   cases b <;> rfl
@@ -855,12 +858,12 @@ theorem wstep3 {C : Spec.Weierstrass.Curve} (hL : Law C) {Q : Point C} (hQ : onC
 
 theorem nib3_eq (k j : Nat) : (k >>> (3 * j)) % 8 = Window.bv (k.testBit (3 * j)) +
     2 * Window.bv (k.testBit (3 * j + 1)) + 4 * Window.bv (k.testBit (3 * j + 2)) := by
-  obtain t : ∀ i, k.testBit (3 * j + i) = decide ((k >>> (3 * j)) / 2 ^ i % 2 = 1) := fun i => by
-    rw [← Nat.testBit_shiftRight, Nat.testBit_eq_decide_div_mod_eq]
-  rw [show 3 * j = 3 * j + 0 from rfl, t 0, t 1, t 2]
+  have h0 := Window.bv_shift k (3 * j) 0
+  simp only [Nat.add_zero] at h0
+  rw [h0, Window.bv_shift k (3 * j) 1, Window.bv_shift k (3 * j) 2]
+  simp only [Nat.reducePow, Nat.div_one]
   generalize k >>> (3 * j) = m
-  simp only [Nat.pow_zero, Nat.pow_one, Nat.div_one, show (2 : Nat) ^ 2 = 4 from rfl, Window.bv]
-  split <;> split <;> split <;> simp_all <;> omega_arith
+  omega_arith
 
 theorem horner3_eq (b0 b1 b2 : Bool) :
     let x1 := BitVec.ofNat 64 (Window.bv b2) + BitVec.ofNat 64 (Window.bv b2) + BitVec.ofNat 64 (Window.bv b1)

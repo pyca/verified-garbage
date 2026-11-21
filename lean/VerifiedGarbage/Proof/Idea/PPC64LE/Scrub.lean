@@ -25,7 +25,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # IDEA on PPC64LE, without secret residue
 
 Key expansion, key inversion and ECB, which have no frames, are followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which wipes no
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which wipes no
 stack for them. The CBC, CFB64 and OFB functions zero their whole frame
 themselves before they release it (`withStackScratchWiped`), and have no
 frames of their own inside it, so they need only the clearing of the
@@ -221,7 +221,7 @@ contract in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Idea.PPC64LE.Fn.expandKey
       (Spec.Idea.expandKeyContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Idea.expandKeyApi) { code := Impl.Idea.PPC64LE.expandKey, verified := Proof.Idea.PPC64LE.expandKey_verified }
+  verifiedScrubbedAll (api := Spec.Idea.expandKeyApi) { code := Impl.Idea.PPC64LE.expandKey, verified := Proof.Idea.PPC64LE.expandKey_verified }
     0 ⟨false, false, [.r10, .r11, .r12], false, []⟩ (expandKeyOut _)
     (by dsimp only; lit_decide)
 
@@ -230,7 +230,7 @@ contract in constant time and returns without secret residue. -/
 theorem invertKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Idea.PPC64LE.Fn.invertKey
       (Spec.Idea.invertKeyContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Idea.invertKeyApi) { code := Impl.Idea.PPC64LE.invertKey, verified := Proof.Idea.PPC64LE.invertKey_verified }
+  verifiedScrubbedAll (api := Spec.Idea.invertKeyApi) { code := Impl.Idea.PPC64LE.invertKey, verified := Proof.Idea.PPC64LE.invertKey_verified }
     0 ⟨true, false, [.r5, .r6, .r7, .r8, .r9, .r11, .r12], false, []⟩ (invertKeyOut _)
     (by dsimp only; lit_decide)
 
@@ -239,7 +239,7 @@ constant time and returns without secret residue. -/
 theorem ecb_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Idea.PPC64LE.Fn.ecb
       (Spec.Idea.ecbContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.Idea.ecbApi) { code := Impl.Idea.PPC64LE.ecb, verified := Proof.Idea.PPC64LE.ecb_verified }
+  verifiedScrubbedAll (api := Spec.Idea.ecbApi) { code := Impl.Idea.PPC64LE.ecb, verified := Proof.Idea.PPC64LE.ecb_verified }
     0 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ (ecbOut _)
     (by dsimp only; lit_decide)
 

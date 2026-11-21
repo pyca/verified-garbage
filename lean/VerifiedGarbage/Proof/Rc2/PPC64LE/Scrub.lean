@@ -18,7 +18,7 @@ themselves before they release it (`withStackScratchWiped`), but call
 another function inside it (`vg_rc2_expand_key`, `vg_rc2_encrypt_block`,
 `vg_rc2_decrypt_block`), whose frame is below theirs. So they are followed
 by `Impl.Scrub.PPC64LE.scrubTail` with their stack wiped
-(`PPC64LE.Scrub.verifiedScrubbed`). Their postconditions read the memory on return
+(`PPC64LE.Scrub.verifiedScrubbedAll`). Their postconditions read the memory on return
 only within their buffers, by the target-independent lemmas RISC-V's proofs
 use (`Proof/Rc2/RISCV64/Scrub.lean`).
 -/
@@ -47,7 +47,7 @@ contract in constant time and returns without secret residue. -/
 theorem cbcInit_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Rc2.PPC64LE.Fn.cbcInit
       (Spec.Rc2.cbcInitContract PPC64LE.abi 608) 32 :=
-  verifiedScrubbed (api := Spec.Rc2.cbcInitApi) {
+  verifiedScrubbedAll (api := Spec.Rc2.cbcInitApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r9 72 Impl.Rc2.PPC64LE.Stream.init
       verified := Proof.Rc2.PPC64LE.Stream.init_framed }
     608 ⟨true, true, [.r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -61,7 +61,7 @@ and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Rc2.PPC64LE.Fn.cbcEncryptChained
       (Spec.Rc2.cbcEncryptChainedContract PPC64LE.abi 544) 0 :=
-  verifiedScrubbed (api := Spec.Rc2.cbcEncryptChainedApi) {
+  verifiedScrubbedAll (api := Spec.Rc2.cbcEncryptChainedApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 544 .r7 64 Impl.Rc2.PPC64LE.Cbc.encrypt
       verified := Proof.Rc2.PPC64LE.Cbc.encryptChained_framed }
     544 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -75,7 +75,7 @@ and returns without secret residue. -/
 theorem cbcDecryptChained_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Rc2.PPC64LE.Fn.cbcDecryptChained
       (Spec.Rc2.cbcDecryptChainedContract PPC64LE.abi 544) 0 :=
-  verifiedScrubbed (api := Spec.Rc2.cbcDecryptChainedApi) {
+  verifiedScrubbedAll (api := Spec.Rc2.cbcDecryptChainedApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 544 .r7 64 Impl.Rc2.PPC64LE.Cbc.decrypt
       verified := Proof.Rc2.PPC64LE.Cbc.decryptChained_framed }
     544 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

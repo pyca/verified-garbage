@@ -1,6 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.X86.ScrubCall
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
+
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.MlDsa.X86.Fn
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.X86.PkTr
@@ -12,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.MlDsa.X86.Fn
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inst
 meta import VerifiedGarbage.Proof.MlDsa.X86.PkTr
@@ -30,7 +35,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 
 ML-DSA's public functions keep secrets in the frames of the functions they
 call, and none makes an indirect call. Each is emitted with its cleanup
-(`Impl.MlDsa.X86.Fn`, `Impl.Scrub.X86.scrubF`): a wipe of the stack its
+(`Impl.MlDsa.X86.Fn`, `Impl.Scrub.X86.scrubAll`): a wipe of the stack its
 contract reserves below `esp`, then the registers a callee may change
 cleared, but the result's bits. Their postconditions read the memory on
 return only within their outputs, and those of verification not at all
@@ -39,7 +44,7 @@ parameter sets. What the cleanup needs of the code (`X86.Scrub.scrubFSide`:
 its frames and calls within the wipe, no indirect call, no MMX) is evaluated
 once for each parameter set (`lit_decide`) when this module is built. The
 theorems about the functions as emitted (`…_scrubbed`, by
-`X86.Scrub.verifiedScrubbedF`) are stated once, for the parameter set `p` of
+`X86.Scrub.verifiedScrubbedAll`) are stated once, for the parameter set `p` of
 the module `module` (`Inst`), which the registration binds.
 
 The message functions call the functions on `μ` as they are verified,
@@ -340,37 +345,72 @@ theorem preparedVerifyMessage_verified :
 
 /-! ### What the cleanup needs of the code -/
 
-theorem sign_side : scrubFSide (Impl.MlDsa.X86.Sign.signOf p module) [] 136 = true := by
+omit h in
+private theorem core_side {f : Prog isa} (hf : calleeSide f 136 = true) :
+    scrubFSide f [] 136 = true := by
+  simp only [calleeSide, Bool.and_eq_true, decide_eq_true_eq, calleeOk_iff] at hf
+  simp only [scrubFSide, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
+  exact ⟨⟨⟨⟨hf.1, tablesCall_of_noIcall hf.2.1 _⟩, hf.2.2⟩, by decide⟩, by decide⟩
+
+private theorem sign_callee : calleeSide (Impl.MlDsa.X86.Sign.signOf p module) 136 = true := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
 
-theorem signPrepared_side : scrubFSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) [] 136 = true := by
+theorem sign_side : scrubFSide (Impl.MlDsa.X86.Sign.signOf p module) [] 136 = true :=
+  core_side (sign_callee h)
+
+private theorem signPrepared_callee : calleeSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) 136 = true := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
 
-theorem verify_side : scrubFSide (Impl.MlDsa.X86.Verify.verifyOf p module) [] 136 = true := by
+theorem signPrepared_side : scrubFSide (Impl.MlDsa.X86.Sign.signPreparedOf p module) [] 136 = true :=
+  core_side (signPrepared_callee h)
+
+private theorem verify_callee : calleeSide (Impl.MlDsa.X86.Verify.verifyOf p module) 136 = true := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
 
-theorem verifyPrepared_side : scrubFSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) [] 136 = true := by
+theorem verify_side : scrubFSide (Impl.MlDsa.X86.Verify.verifyOf p module) [] 136 = true :=
+  core_side (verify_callee h)
+
+private theorem verifyPrepared_callee : calleeSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) 136 = true := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+
+theorem verifyPrepared_side : scrubFSide (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) [] 136 = true :=
+  core_side (verifyPrepared_callee h)
+
+omit h in
+private theorem signMessage_of_callee (params : Params) (n : String) (f : Prog isa)
+    (hf : calleeSide f 136 = true) :
+    scrubFSide (Impl.MlDsa.X86.Message.signMessage n f params) [] 176 = true := by
+  apply scrubFSide_of_fillB (a := Impl.MlDsa.X86.Message.signMessage "" (holeStub 136) params)
+  · fillB_calls
+  · kernel_rfl
+
+omit h in
+private theorem verifyMessageCached_of_callee (params : Params) (n : String) (f : Prog isa)
+    (hf : calleeSide f 136 = true) :
+    scrubFSide (Impl.MlDsa.X86.Message.verifyMessageCached n f params) [] 172 = true := by
+  apply scrubFSide_of_fillB (a := Impl.MlDsa.X86.Message.verifyMessageCached "" (holeStub 136) params)
+  · fillB_calls
+  · kernel_rfl
 
 theorem signMessage_side :
     scrubFSide (Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.entryName module)
-      (Impl.MlDsa.X86.Sign.signOf p module) p) [] 176 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+      (Impl.MlDsa.X86.Sign.signOf p module) p) [] 176 = true :=
+  signMessage_of_callee p _ _ (sign_callee h)
 
 theorem preparedSignMessage_side :
     scrubFSide (Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.preparedEntryName module)
-      (Impl.MlDsa.X86.Sign.signPreparedOf p module) p) [] 176 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+      (Impl.MlDsa.X86.Sign.signPreparedOf p module) p) [] 176 = true :=
+  signMessage_of_callee p _ _ (signPrepared_callee h)
 
 theorem verifyMessageCached_side :
     scrubFSide (Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.entryName module)
-      (Impl.MlDsa.X86.Verify.verifyOf p module) p) [] 172 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+      (Impl.MlDsa.X86.Verify.verifyOf p module) p) [] 172 = true :=
+  verifyMessageCached_of_callee p _ _ (verify_callee h)
 
 theorem preparedVerifyMessage_side :
     scrubFSide (Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.preparedEntryName module)
-      (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) p) [] 172 = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> lit_decide
+      (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) p) [] 172 = true :=
+  verifyMessageCached_of_callee p _ _ (verifyPrepared_callee h)
 
 end
 
@@ -407,7 +447,7 @@ section
 /-- `vg_<module>_keygen`. -/
 theorem keyGen_scrubbed (module name : String) (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.keyGen p) (keyGenContract p X86.abi 96) 32 :=
-  verifiedScrubbedF (api := keyGenApi p module name)
+  verifiedScrubbedAll (api := keyGenApi p module name)
     { code := Impl.MlDsa.X86.KeyGen.keyGen Impl.MlDsa.X86.KeyGen.prims p
       verified := KeyGen.keyGen_verified KeyGen.prims_ok p h3
       spSafe := NoSp.spSafe (KeyGen.keyGen_nosp p) }
@@ -416,7 +456,7 @@ theorem keyGen_scrubbed (module name : String) (h3 : p = mlDsa44 ∨ p = mlDsa65
 /-- `vg_<module>_pk_tr`. -/
 theorem pkTr_scrubbed (module name : String) (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.pkTr p) (pkTrContract p X86.abi 56) 0 :=
-  verifiedScrubbedF (api := pkTrApi p module name)
+  verifiedScrubbedAll (api := pkTrApi p module name)
     { code := Impl.MlDsa.X86.PkTr.pkTr p
       verified := PkTr.pkTr_verified p h3
       spSafe := NoSp.spSafe (PkTr.pkTr_nosp p) }
@@ -425,7 +465,7 @@ theorem pkTr_scrubbed (module name : String) (h3 : p = mlDsa44 ∨ p = mlDsa65 �
 /-- `vg_<module>_prepare_verifying_key`. -/
 theorem preparePublic_scrubbed (module name : String) (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.preparePublic p) (preparePublicKeyContract p X86.abi 96) 0 :=
-  verifiedScrubbedF (api := preparePublicKeyApi p module name)
+  verifiedScrubbedAll (api := preparePublicKeyApi p module name)
     { code := Impl.MlDsa.X86.PreparedKey.preparePublic Impl.MlDsa.X86.Verify.prims p
       verified := PreparedKey.public_verified Verify.prims_ok h3
       spSafe := NoSp.spSafe (PreparedKey.public_nosp Verify.prims_ok p) }
@@ -434,25 +474,25 @@ theorem preparePublic_scrubbed (module name : String) (h3 : p = mlDsa44 ∨ p = 
 /-- `vg_<module>_prepare_signing_key`. -/
 theorem prepareSecret_scrubbed (module name : String) (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.prepareSecret p) (prepareSecretKeyContract p X86.abi 96) 0 :=
-  verifiedScrubbedF (api := prepareSecretKeyApi p module name)
+  verifiedScrubbedAll (api := prepareSecretKeyApi p module name)
     { code := Impl.MlDsa.X86.PreparedKey.prepareSecret Impl.MlDsa.X86.Verify.prims p
       verified := PreparedKey.secret_verified Verify.prims_ok h3
       spSafe := NoSp.spSafe (PreparedKey.secret_nosp Verify.prims_ok p) }
     (by exact prepareSecretOut h3 _) (prepareSecret_side h3)
 
 theorem keyGen_spSafe (p : Params) : (Impl.MlDsa.X86.Fn.keyGen p).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (KeyGen.keyGen_nosp p))
+  scrubAll_spSafe (NoSp.spSafe (KeyGen.keyGen_nosp p))
 
 theorem pkTr_spSafe (p : Params) : (Impl.MlDsa.X86.Fn.pkTr p).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (PkTr.pkTr_nosp p))
+  scrubAll_spSafe (NoSp.spSafe (PkTr.pkTr_nosp p))
 
 theorem preparePublic_spSafe (p : Params) :
     (Impl.MlDsa.X86.Fn.preparePublic p).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (PreparedKey.public_nosp Verify.prims_ok p))
+  scrubAll_spSafe (NoSp.spSafe (PreparedKey.public_nosp Verify.prims_ok p))
 
 theorem prepareSecret_spSafe (p : Params) :
     (Impl.MlDsa.X86.Fn.prepareSecret p).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (PreparedKey.secret_nosp Verify.prims_ok p))
+  scrubAll_spSafe (NoSp.spSafe (PreparedKey.secret_nosp Verify.prims_ok p))
 
 variable {module : String} (h : Inst p module)
 include h
@@ -460,7 +500,7 @@ include h
 /-- `vg_<module>_sign`. -/
 theorem sign_scrubbed (name : String) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.sign p module) (signContract p X86.abi 136) 32 :=
-  verifiedScrubbedF (api := signApi p module name)
+  verifiedScrubbedAll (api := signApi p module name)
     { code := Impl.MlDsa.X86.Sign.signOf p module
       verified := sign_verified h
       spSafe := NoSp.spSafe (signFn h).nosp }
@@ -469,7 +509,7 @@ theorem sign_scrubbed (name : String) :
 /-- `vg_<module>_sign_prepared`. -/
 theorem signPrepared_scrubbed (name : String) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.signPrepared p module) (preparedSignContract p X86.abi 136) 32 :=
-  verifiedScrubbedF (api := preparedSignApi p module name)
+  verifiedScrubbedAll (api := preparedSignApi p module name)
     { code := Impl.MlDsa.X86.Sign.signPreparedOf p module
       verified := signPrepared_verified h
       spSafe := NoSp.spSafe (signPreparedFn h).nosp }
@@ -478,7 +518,7 @@ theorem signPrepared_scrubbed (name : String) :
 /-- `vg_<module>_verify`. -/
 theorem verify_scrubbed (name : String) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.verify p module) (verifyContract p X86.abi 136) 32 :=
-  verifiedScrubbedF (api := verifyApi p module name)
+  verifiedScrubbedAll (api := verifyApi p module name)
     { code := Impl.MlDsa.X86.Verify.verifyOf p module
       verified := verify_verified h
       spSafe := NoSp.spSafe (verifyFn h).nosp }
@@ -487,7 +527,7 @@ theorem verify_scrubbed (name : String) :
 /-- `vg_<module>_verify_prepared`. -/
 theorem verifyPrepared_scrubbed (name : String) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.verifyPrepared p module) (preparedVerifyContract p X86.abi 136) 32 :=
-  verifiedScrubbedF (api := preparedVerifyApi p module name)
+  verifiedScrubbedAll (api := preparedVerifyApi p module name)
     { code := Impl.MlDsa.X86.Verify.verifyPreparedOf p module
       verified := verifyPrepared_verified h
       spSafe := NoSp.spSafe (verifyPreparedFn h).nosp }
@@ -496,7 +536,7 @@ theorem verifyPrepared_scrubbed (name : String) :
 /-- `vg_<module>_sign_message`. -/
 theorem signMessage_scrubbed (name : String) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.signMessage p module) (signMessageContract p X86.abi 176) 32 :=
-  verifiedScrubbedF (api := signMessageApi p module name)
+  verifiedScrubbedAll (api := signMessageApi p module name)
     { code := Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.entryName module)
         (Impl.MlDsa.X86.Sign.signOf p module) p
       verified := signMessage_verified h
@@ -507,7 +547,7 @@ theorem signMessage_scrubbed (name : String) :
 theorem preparedSignMessage_scrubbed (name : String) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.preparedSignMessage p module)
       (preparedSignMessageContract p X86.abi 176) 32 :=
-  verifiedScrubbedF (api := preparedSignMessageApi p module name)
+  verifiedScrubbedAll (api := preparedSignMessageApi p module name)
     { code := Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.preparedEntryName module)
         (Impl.MlDsa.X86.Sign.signPreparedOf p module) p
       verified := preparedSignMessage_verified h
@@ -518,7 +558,7 @@ theorem preparedSignMessage_scrubbed (name : String) :
 theorem verifyMessageCached_scrubbed (name : String) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.verifyMessageCached p module)
       (verifyMessageCachedContract p X86.abi 172) 32 :=
-  verifiedScrubbedF (api := verifyMessageCachedApi p module name)
+  verifiedScrubbedAll (api := verifyMessageCachedApi p module name)
     { code := Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.entryName module)
         (Impl.MlDsa.X86.Verify.verifyOf p module) p
       verified := verifyMessageCached_verified h
@@ -529,7 +569,7 @@ theorem verifyMessageCached_scrubbed (name : String) :
 theorem preparedVerifyMessage_scrubbed (name : String) :
     VerifiedScrubbed X86.target (Impl.MlDsa.X86.Fn.preparedVerifyMessage p module)
       (preparedVerifyMessageContract p X86.abi 172) 32 :=
-  verifiedScrubbedF (api := preparedVerifyMessageApi p module name)
+  verifiedScrubbedAll (api := preparedVerifyMessageApi p module name)
     { code := Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.preparedEntryName module)
         (Impl.MlDsa.X86.Verify.verifyPreparedOf p module) p
       verified := preparedVerifyMessage_verified h
@@ -539,31 +579,31 @@ theorem preparedVerifyMessage_scrubbed (name : String) :
 /-! ### That the code writes `esp` only in its frames and calls -/
 
 theorem sign_spSafe : (Impl.MlDsa.X86.Fn.sign p module).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (signFn h).nosp)
+  scrubAll_spSafe (NoSp.spSafe (signFn h).nosp)
 
 theorem signPrepared_spSafe : (Impl.MlDsa.X86.Fn.signPrepared p module).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (signPreparedFn h).nosp)
+  scrubAll_spSafe (NoSp.spSafe (signPreparedFn h).nosp)
 
 theorem verify_spSafe : (Impl.MlDsa.X86.Fn.verify p module).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (verifyFn h).nosp)
+  scrubAll_spSafe (NoSp.spSafe (verifyFn h).nosp)
 
 theorem verifyPrepared_spSafe : (Impl.MlDsa.X86.Fn.verifyPrepared p module).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (verifyPreparedFn h).nosp)
+  scrubAll_spSafe (NoSp.spSafe (verifyPreparedFn h).nosp)
 
 theorem signMessage_spSafe : (Impl.MlDsa.X86.Fn.signMessage p module).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (Message.signMessage_nosp p (signFn h).nosp))
+  scrubAll_spSafe (NoSp.spSafe (Message.signMessage_nosp p (signFn h).nosp))
 
 theorem preparedSignMessage_spSafe :
     (Impl.MlDsa.X86.Fn.preparedSignMessage p module).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (Message.signMessage_nosp p (signPreparedFn h).nosp))
+  scrubAll_spSafe (NoSp.spSafe (Message.signMessage_nosp p (signPreparedFn h).nosp))
 
 theorem verifyMessageCached_spSafe :
     (Impl.MlDsa.X86.Fn.verifyMessageCached p module).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (Message.verifyMessageCached_nosp p (verifyFn h).nosp))
+  scrubAll_spSafe (NoSp.spSafe (Message.verifyMessageCached_nosp p (verifyFn h).nosp))
 
 theorem preparedVerifyMessage_spSafe :
     (Impl.MlDsa.X86.Fn.preparedVerifyMessage p module).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (NoSp.spSafe (Message.verifyMessageCached_nosp p (verifyPreparedFn h).nosp))
+  scrubAll_spSafe (NoSp.spSafe (Message.verifyMessageCached_nosp p (verifyPreparedFn h).nosp))
 
 end
 

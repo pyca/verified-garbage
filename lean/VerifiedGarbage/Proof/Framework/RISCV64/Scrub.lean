@@ -12,12 +12,12 @@ import VerifiedGarbage.Proof.Framework.Mem
 /-!
 # Returning without secret residue (64-bit RISC-V)
 
-`Verified.scrub`: code verified against a contract that `Sig.contract`
+`Verified.scrubAll`: code verified against a contract that `Sig.contract`
 derives, whose frames use at most the contract's `stack` bytes
 (`Code.riscv64Depth`), followed by `Impl.Scrub.RISCV64.scrubTail`
-(`scrub`), is verified against the same contract and returns without secret
+(`scrubAll`), is verified against the same contract and returns without secret
 residue (`NoResidue`), as on x86-64 (`Proof/Framework/X86_64/Scrub.lean`).
-The proof of the code is used as it is: what `scrub` adds is checked once,
+The proof of the code is used as it is: what `scrubAll` adds is checked once,
 here, for all code (`tail_run`): it zeroes the `stack` bytes below `sp` and
 the caller-saved registers, and its trace depends only on `sp`. The code
 itself must use no more stack than its contract reserves, call indirectly
@@ -506,7 +506,7 @@ theorem chunks_valid {n : Nat} (h16 : n % 16 = 0) : ∀ b ∈ chunks n, 0 < b �
 
 /-! ## What `Sig.contract` gives -/
 
-/-- What `Verified.scrub` needs of the calling convention a contract is for:
+/-- What `Verified.scrubAll` needs of the calling convention a contract is for:
 `abi`'s, possibly with tables of constants (`Abi.withConsts`), which add
 readable regions apart from the stack the function uses, and with tables of
 functions (`Abi.withTables`). -/
@@ -713,7 +713,7 @@ runs of code with the same trace, whose functions called indirectly have the
 same addresses in both, do: each call, and each frame's release, uses a
 number of unknowns its instruction fixes, and the trace says which way each
 branch went and which function each indirect call called
-(`Exec.unknowns_agree`), as on AArch64 (`AArch64.ScrubAll.Exec.unknowns_agreeS`). -/
+(`Exec.unknowns_agree`), as on AArch64 (`AArch64.Scrub.Exec.unknowns_agreeS`). -/
 
 /-- The functions `c` may call indirectly. -/
 def inames : Prog isa → List String
@@ -956,11 +956,11 @@ theorem wipeMem_below (cs : List Nat) (sp x : Addr) (U : Nat → BitVec 64) (m :
   simp only [wipeMem, below_contains_iff]
 
 /-- Code verified against a contract that `Sig.contract` derives, whose
-frames use at most `stack` bytes, run by `scrub`, which clears the `stack`
+frames use at most `stack` bytes, run by `scrubAll`, which clears the `stack`
 bytes below `sp` and the caller-saved registers: verified against the same
 contract, and without secret residue, if the postcondition reads the memory
 on return only within the buffers (`hpost`). -/
-theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+theorem Verified.scrubAll {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
     {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
     {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa}
     (hA : ScrubAbi A) (h : Verified target c (sig.contract A pre post wa stack leak))
@@ -968,9 +968,9 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
     (hsy : ∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ →
       ∀ n ∈ inames c, s₁.syms n = s₂.syms n) (hrb : sig.retBits A.ptrBits ≤ 64)
     (hpost : PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits)) :
-    Verified target (Impl.Scrub.RISCV64.scrub (sig.retBits A.ptrBits) stack c)
+    Verified target (Impl.Scrub.RISCV64.scrubAll (sig.retBits A.ptrBits) stack c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.RISCV64.scrub (sig.retBits A.ptrBits) stack c)
+      NoResidue (Impl.Scrub.RISCV64.scrubAll (sig.retBits A.ptrBits) stack c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   obtain ⟨hcor, hct, hsat⟩ := h
   have hv := chunks_valid h16
@@ -1078,11 +1078,7 @@ theorem Verified.scrub {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBi
         rw [f₁, f₂]
         exact hm x hx'
 
-/-! ## Registering scrubbed code -/
-
-/-- No modelled instruction writes `sp` but as a frame's push or pop. -/
-theorem spSafe_all (c : Prog isa) : c.all (fun i => !isa.writesSp i) = true := by
-  induction c <;> simp_all [Code.all]
+/-! ## A registration's code, scrubbed -/
 
 /-- The result's width, of `r`'s function. -/
 abbrev retBitsOf {api : Api} (r : Unscrubbed api target) : Nat :=
@@ -1115,57 +1111,17 @@ theorem scrubCode_ok {api : Api} (r : Unscrubbed api target)
     (hd : r.code.riscv64Depth ≤ r.stack) (hst : r.stack < 2 ^ 64) (h16 : r.stack % 16 = 0)
     (htc : tablesCall r.code r.tables = true)
     (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) :
-    Verified target (scrub (retBitsOf r) r.stack r.code) r.contract ∧
-      NoResidue (scrub (retBitsOf r) r.stack r.code) r.contract (retBitsOf r) := by
+    Verified target (scrubAll (retBitsOf r) r.stack r.code) r.contract ∧
+      NoResidue (scrubAll (retBitsOf r) r.stack r.code) r.contract (retBitsOf r) := by
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
   have hp := hpost
   unfold retBitsOf at hrb hp ⊢
   rw [e] at hv hp ⊢
   have hrb' := hrb
-  refine Verified.scrub (ScrubAbi.of r.consts api.sig r.tables) hv hd hst h16
+  refine Verified.scrubAll (ScrubAbi.of r.consts api.sig r.tables) hv hd hst h16
     (fun s₁ s₂ hp n hn => tables_pub_syms (contract_pub hp) n ?_) hrb' hp
   simpa using List.all_eq_true.mp htc n hn
-
-/-- `r`, scrubbed: its code followed by the clearing (`scrub`) of its
-`r.stack` bytes of stack and its caller-saved registers. -/
-def scrubReg {api : Api} (r : Unscrubbed api target)
-    (hd : r.code.riscv64Depth ≤ r.stack) (hst : r.stack < 2 ^ 64) (h16 : r.stack % 16 = 0)
-    (htc : tablesCall r.code r.tables = true)
-    (hrb : retBitsOf r ≤ 64) (hpost : PostOut r.contract (retBitsOf r)) (hw : r.written = []) :
-    Registration api target where
-  suffix := r.suffix
-  tables := r.tables
-  code := scrub (retBitsOf r) r.stack r.code
-  contract := r.contract
-  verified := .scrubbed <| .abi ⟨(scrubCode_ok r hd hst h16 htc hrb hpost).1, (scrubCode_ok r hd hst h16 htc hrb hpost).2⟩
-  consts := r.consts
-  stack := r.stack
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := spSafe_all _
-  written := r.written
-  writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-
-/-- `r`, returning without secret residue (`scrubReg`) if `scrub`'s side
-conditions hold: its frames use at most `r.stack` bytes, a multiple of 16
-(as every frame is), it calls indirectly only the functions of its tables
-(`tablesCall`), and it states no `written`; otherwise `r` itself,
-which then has no proof (`Verification.unscrubbed`), as the emitter allows
-only of what `ci/residue_allowlist.txt` lists. -/
-def withScrub {api : Api} (r : Unscrubbed api target) (hpost : PostOut r.contract (retBitsOf r)) :
-    Registration api target :=
-  if hd : r.code.riscv64Depth ≤ r.stack then
-  if hst : r.stack < 2 ^ 64 then
-  if h16 : r.stack % 16 = 0 then
-  if htc : tablesCall r.code r.tables = true then
-  if hrb : retBitsOf r ≤ 64 then
-  if hw : r.written = [] then scrubReg r hd hst h16 htc hrb hpost hw
-  else r.registration else r.registration else r.registration else r.registration
-  else r.registration else r.registration
 
 end Scrub
 

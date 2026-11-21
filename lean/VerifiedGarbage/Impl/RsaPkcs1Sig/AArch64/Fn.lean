@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Sign
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Precomputed
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed
 public import VerifiedGarbage.Impl.Rsa.AArch64.PrivChecked
-public import VerifiedGarbage.Impl.Residue.AArch64.WritesL
+public import VerifiedGarbage.Impl.Scrub.AArch64.WritesL
 
 /-! # RSASSA-PKCS1-v1_5 with a precomputed key on AArch64: the functions as emitted
 
@@ -16,7 +16,7 @@ cleared, and its stack zeroed (`scrubOf`, `scrubOfL`). -/
 namespace VG.Impl.RsaPkcs1Sig.AArch64.Fn
 
 open VG VG.AArch64
-open VG.Impl.Residue.AArch64 (scrubOf scrubOfL)
+open VG.Impl.Scrub.AArch64 (scrubOf scrubOfL)
 open VG.Impl.Rsa.AArch64.PrivChecked (Crt)
 
 /-- `vg_rsa_pkcs1_sign_precomputed` with the implementation `c` of the

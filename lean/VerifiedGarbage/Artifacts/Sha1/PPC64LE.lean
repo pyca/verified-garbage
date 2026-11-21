@@ -21,6 +21,8 @@ def artifacts : List Artifact := [
   Spec.Sha1.finalizeApi.artifact PPC64LE.target {
     code := Impl.Sha1.PPC64LE.Fn.finalize
     verified := .scrubbed Proof.Sha1.PPC64LE.finalize_scrubbed },
-  Spec.Sha1.digestApi.artifact PPC64LE.target Proof.Sha1.PPC64LE.digestReg]
+  Spec.Sha1.digestApi.artifact PPC64LE.target {
+    code := Impl.Sha1.PPC64LE.Fn.digest
+    verified := .scrubbed Proof.Sha1.PPC64LE.digest_scrubbed }]
 
 end VG.Artifacts.Sha1.PPC64LE

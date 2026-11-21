@@ -78,14 +78,14 @@ theorem p224T_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.
 /-! ## What the scrubbed functions clear
 
 The registers the tails of `vg_ecdsa_p224_sign` and `vg_ecdsa_p224_verify`
-clear, and what `ScrubAll.scrubAllOf` needs of their code
-(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
+(`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 
 /-- No instruction of `vg_ecdsa_p224_sign_k` writes PSTATE.DIT, and it calls
 nothing indirectly. -/
 theorem p224_core_side :
-    AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
       Impl.Ecdsa.AArch64.signP224 = true := by
   lit_decide
 
@@ -109,12 +109,12 @@ theorem p224Sign_scrubbed (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstra
 /-- `vg_ecdsa_p224_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP224`): it meets its contract in
 constant time and returns without secret residue. What the cleanup needs of
-the code (`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+the code (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
 theorem p224Verify (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
     VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP224
       (Spec.Ecdsa.P224.inst.verifyHashContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p224.combConsts) 80) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdsa.P224.verifyHashApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P224.verifyHashApi)
     { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
         Impl.Ecdsa.Verify.AArch64.verifyP224
       verified := Proof.Ecdsa.Verify.AArch64.P224.verifyHash_verified hL hI hT } _

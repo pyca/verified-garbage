@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_rsa_pkcs1_verify_precomputed`, `vg_rsa_pkcs1_recover_precomputed` and
 `vg_rsa_pkcs1_sign_precomputed`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which clears the
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers each may write and zeroes the stack their frames used:
 signing keeps the CRT's halves and the encoded message in frames that it
 does not wipe itself. Their postconditions read the memory on return only
@@ -84,7 +84,7 @@ constant time and returns without secret residue. -/
 theorem verifyPrecomputed_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Sig.PPC64LE.Fn.verifyPrecomputed
       (Spec.RsaPkcs1Sig.verifyPrecomputedContract PPC64LE.abi Impl.RsaPkcs1Sig.PPC64LE.frameBytes) 32 :=
-  verifiedScrubbed (api := Spec.RsaPkcs1Sig.verifyPrecomputedApi) {
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Sig.verifyPrecomputedApi) {
       code := Impl.RsaPkcs1Sig.PPC64LE.Precomputed.code
       verified := Proof.RsaPkcs1Sig.PPC64LE.Ver.code_verified }
     2224 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -98,7 +98,7 @@ constant time and returns without secret residue. -/
 theorem recoverPrecomputed_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Sig.PPC64LE.Fn.recoverPrecomputed
       (Spec.RsaPkcs1Sig.recoverPrecomputedContract PPC64LE.abi Impl.RsaPkcs1Sig.PPC64LE.frameBytes) 32 :=
-  verifiedScrubbed (api := Spec.RsaPkcs1Sig.recoverPrecomputedApi) {
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Sig.recoverPrecomputedApi) {
       code := Impl.RsaPkcs1Sig.PPC64LE.RecoverPrecomputed.code
       verified := Proof.RsaPkcs1Sig.PPC64LE.Rec.code_verified }
     2224 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -112,7 +112,7 @@ time and returns without secret residue. -/
 theorem signPrecomputed_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.RsaPkcs1Sig.PPC64LE.Fn.signPrecomputed
       (Spec.RsaPkcs1Sig.signPrecomputedContract PPC64LE.abi Proof.RsaPkcs1Sig.PPC64LE.Sign.stackBytes) 32 :=
-  verifiedScrubbed (api := Spec.RsaPkcs1Sig.signPrecomputedApi) {
+  verifiedScrubbedAll (api := Spec.RsaPkcs1Sig.signPrecomputedApi) {
       code := Impl.RsaPkcs1Sig.PPC64LE.Sign.codeP
       verified := Proof.RsaPkcs1Sig.PPC64LE.Sign.codeP_verified }
     4608 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,

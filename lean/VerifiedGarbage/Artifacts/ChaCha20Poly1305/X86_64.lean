@@ -7,7 +7,8 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTo
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Scrub
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.ScrubFn
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Fn
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86_64
 
 /-! # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64 -/
@@ -20,9 +21,26 @@ open VG.Proof.ChaCha20Poly1305.X86_64
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.ChaCha20Xor.X86_64.variants.flatMap fun (v : Proof.ChaCha20.X86_64.XorImpl) => [
-    Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target (Scrub.sealReg v),
-    Spec.ChaCha20Poly1305.openZeroApi.artifact X86_64.target (Scrub.openReg v),
-    Spec.ChaCha20Poly1305.openToApi.artifact X86_64.target (Scrub.openToReg v),
-    Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target (Scrub.gatherReg v)]
+    Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.ChaCha20Poly1305.X86_64.Fn.seal (ScrubFn.cpLevel v) v.callee v.poly
+      verified := .scrubbed (ScrubFn.seal_scrubbed v)
+      spSafe := ScrubFn.seal_spSafeFn v },
+    Spec.ChaCha20Poly1305.openZeroApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.ChaCha20Poly1305.X86_64.Fn.open (ScrubFn.cpLevel v) v.callee v.poly
+      verified := .scrubbed (ScrubFn.open_scrubbed v)
+      spSafe := ScrubFn.open_spSafeFn v },
+    Spec.ChaCha20Poly1305.openToApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.ChaCha20Poly1305.X86_64.Fn.openTo (ScrubFn.cpLevel v) v.callee v.poly
+      verified := .scrubbed (ScrubFn.openTo_scrubbed v)
+      spSafe := ScrubFn.openTo_spSafeFn v },
+    Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.ChaCha20Poly1305.X86_64.Fn.sealGather (ScrubFn.cpLevel v) (ScrubFn.sealName v)
+        (ScrubFn.splitName v) v.callee v.poly
+      verified := .scrubbed (ScrubFn.gather_scrubbed v)
+      spSafe := ScrubFn.gather_spSafeFn v }]
 
 end VG.Artifacts.ChaCha20Poly1305.X86_64

@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP256r1.VerifyLit
 public import VerifiedGarbage.Proof.BrainpoolP256r1.RISCV64.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP256r1
 public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.RISCV64.Fn
 
 /-! # ECDSA over brainpoolP256r1 (FIPS 186-5) on RISC-V -/
 
@@ -24,14 +25,14 @@ public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
 namespace VG.Artifacts.EcdsaBrainpoolP256r1.RISCV64.Rfc6979
 
 open VG.Proof.BrainpoolP256r1.RISCV64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.RISCV64 (signCodeT OK)
-open VG.Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP256r1 (curveT verifiedT)
-open VG.Proof.HmacTable.RISCV64 (tables names)
+open VG.Proof.HmacTable.RISCV64 (tables)
+open VG.Proof.Variants.MdHash.RISCV64 (variants fns)
 
-def artifacts : List Artifact :=
-  if hv : OK VG.Proof.Variants.MdHash.RISCV64.variants ∧ Impl.Ecdsa.RISCV64.Comb.brainpoolP256r1Sym ∉ names VG.Proof.Variants.MdHash.RISCV64.variants then [
-    Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact RISCV64.target (Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP256r1.signReg hasLaw.law hv)]
-  else []
+def artifacts : List Artifact := [
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact RISCV64.target {
+    tables := [("hmac", tables variants)]
+    code := Impl.Ecdsa.Rfc6979.RISCV64.Fn.brainpoolp256r1 fns
+    verified := .scrubbed (Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP256r1.sign_scrubbed hasLaw.law) }]
 
 end VG.Artifacts.EcdsaBrainpoolP256r1.RISCV64.Rfc6979
 

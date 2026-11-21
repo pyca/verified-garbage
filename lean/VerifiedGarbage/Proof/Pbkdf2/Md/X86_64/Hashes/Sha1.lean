@@ -486,7 +486,7 @@ function, named with its suffix, giving it the scratch space it uses
 (`Callee.so`) and taking the working space they use (`Hash.wOf`). They call
 `vg_sha1_init`'s code as the internal `vg_sha1_init_core`: the function
 exported as `vg_sha1_init` also clears what it leaves
-(`Proof.Sha1.X86_64.initReg`), which its callers, which clear their own, do
+(`Proof.Sha1.X86_64.init_scrubbed`), which its callers, which clear their own, do
 not need. -/
 def hash (v : Compress) : Hash where
   P := { Impl.Sha1.X86_64.Stream.params with so := v.callee.so }
@@ -853,7 +853,7 @@ def digFn0 : StreamFn :=
 end Zero
 
 /-- SHA-1 with the implementation `v` of its compression function. -/
-def variant (stream : List StreamFn := stream v) : MdHash :=
+def variant (stream : List StreamFnS := []) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha1I) (ok v) (coreOK v) (callees v)
     ⟨Spec.Mgf1.sha1, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl 112 (okU v) rfl
     (satI (hashW v)) (satF (hashW v)) (satT (hashW v)) (satP (hashW v))

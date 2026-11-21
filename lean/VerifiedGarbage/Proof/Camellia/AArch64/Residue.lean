@@ -13,8 +13,8 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 public meta import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
 public meta import VerifiedGarbage.Proof.Camellia.AArch64.FbFinalVerified
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
@@ -45,7 +45,7 @@ only of what they leave in their registers.
 
 namespace VG.Proof.Camellia.AArch64.Residue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-- `vg_camellia_expand_key`. -/
 abbrev expandKeyCode : Prog isa := Impl.Camellia.AArch64.Fn.expandKey

@@ -21,7 +21,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 The postconditions of `vg_rsa_oaep_encrypt_precomputed` and
 `vg_rsa_oaep_decrypt_precomputed` read the memory on return only within
 `out` (and decryption's `msg_len`), given that `out` holds `n_len` bytes
-(`ScrubAll.ScrubAllOk`, as x86-64's `Proof/RsaOaep/X86_64/Scrub.lean` proves
+(`Scrub.ScrubAllOk`, as x86-64's `Proof/RsaOaep/X86_64/Scrub.lean` proves
 them). Each function as emitted (`Impl.RsaOaep.AArch64.Fn`), with the tables
 of the hash functions, which it calls indirectly, and any implementation of
 the RSA operation, returns with every register it may write cleared and its
@@ -32,7 +32,7 @@ whole stack zeroed (`decryptP_scrubbed`, `encrypt_scrubbed`).
 
 namespace VG.Proof.RsaOaep.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Proof.Ffdh.AArch64.Scrub
+open VG.AArch64 VG.AArch64.Scrub VG.Proof.Ffdh.AArch64.Scrub
 open VG.Proof.Pbkdf2.Md.AArch64 (MdHash)
 open VG.Proof.MdHashTable.AArch64 (tables)
 

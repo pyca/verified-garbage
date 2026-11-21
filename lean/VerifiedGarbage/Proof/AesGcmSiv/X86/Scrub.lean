@@ -21,10 +21,10 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` are generic over the
 implementations of `vg_aes_ctr32_to`, `vg_aes_expand_key` and `vg_ghash`
-they call (`GcmImpl`, `Proof/Variants/AesGcm/X86.lean`). What
-`X86.Scrub.scrubFOf` needs of their code over the 2888 bytes of stack of
-their contracts (`scrubFSide`) holds of every implementation (`seal_scrub`,
-`open_scrub`): from their code with stub implementations, whose code is
+they call (`GcmImpl`, `Proof/Variants/AesGcm/X86.lean`). What the
+cleanup needs of their code over the 2888 bytes of stack of their contracts
+(`X86.Scrub.scrubFSide`, for `verifiedScrubbedAll`) holds of every
+implementation (`seal_scrub`, `open_scrub`): from their code with stub implementations, whose code is
 `.block []`, which the kernel evaluates here (`seal_side`, …), the
 implementations' own facts (`Ctr32Impl.scrub`, `expandScrub`,
 `GhashImpl.scrub`, their stacks), and `Fill`, which `fill_calls` proves of

@@ -6,14 +6,14 @@ public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 public import VerifiedGarbage.Impl.Rsa.AArch64.RecoverDet
 public import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightCall
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-!
 # RSA's key functions on AArch64, as emitted
 
 Each function is its code, then its cleanup: the registers it writes that the
 calling convention does not preserve, stated here, are cleared, but the 32
-bits of its result (`Impl.Residue.AArch64.scrubAll`; these functions use no
+bits of its result (`Impl.Scrub.AArch64.scrubAll`; these functions use no
 stack beyond what they wipe themselves), so that it returns without secret
 residue. The two precomputations multiply with the Montgomery product the
 other RSA functions use (`Impl.Bignum.AArch64.SquareEightCall.mm`).
@@ -24,7 +24,7 @@ other RSA functions use (`Impl.Bignum.AArch64.SquareEightCall.mm`).
 namespace VG.Impl.Rsa.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64 (scrubAll)
+open VG.Impl.Scrub.AArch64 (scrubAll)
 
 /-- `vg_rsa_public_precompute`. -/
 def publicPrecompute : Prog isa :=

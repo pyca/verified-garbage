@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 /-!
 # Returning without secret residue: the baseline ISA's callers of AVX code (x86-64)
 
-`Verified.scrubU` is `Verified.scrub` with what it needs of the code's
+`Verified.scrubU` is `Verified.scrubWith` with what it needs of the code's
 vector instructions stated as two facts, rather than derived from their
 level: below the level `evex`, the code's instructions are at most of level
 1 (`hl1`), and the upper halves of the vector registers that the clearing
@@ -18,9 +18,7 @@ leaves agree at the end of two runs (`UpperOk`). For code of the baseline
 ISA whose tables of functions may run functions with AVX instructions that
 end with `vzeroupper`, `UpperLock.lock` gives `UpperOk` at the level `sse`
 (`upperOk_lock`), so the clearing at that level, which needs no CPU
-feature, leaves no residue (`scrubRegUp`, `withUp`). `withScrubAllUp` is
-`withScrubAll`, with `withUp` where it would leave a registration
-unscrubbed.
+feature, leaves no residue (`verifiedScrubbedAllUp`, `ScrubUpFn.lean`).
 
 It is a module of its own, not part of `Scrub.lean`, so that the many
 modules that import `Scrub.lean` are not rebuilt for it.
@@ -48,7 +46,7 @@ variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → P
   {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
 
 /-- Code verified against a contract that `Sig.contract` derives, whose
-frames and calls use at most `stack` bytes, run by `scrub`, which clears
+frames and calls use at most `stack` bytes, run by `scrubWith`, which clears
 the granules `ks` of the `cs.sum = stack` bytes of stack below `rsp`:
 verified against the same contract, and without secret residue, if the
 postcondition reads the memory on return only within the buffers (`hpost`)
@@ -74,9 +72,9 @@ theorem Verified.scrubU {c : Prog isa} {v : VecLevel} {xs : List XReg} {ps gs : 
     (hgk : ∀ r ∈ scratchRegs, r ∉ gs → r ∉ ps → ∀ i ∈ instrs c, Taint.clobbers i r = false)
     (hsy : ∀ s₁ s₂, (sig.contract A pre post wa stack leak).pub s₁ s₂ →
       ∀ n ∈ UpperLock.inames c, s₁.syms n = s₂.syms n) :
-    Verified target (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+    Verified target (Impl.Scrub.X86_64.scrubWith v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.X86_64.scrub v (sig.retBits A.ptrBits) xs ps gs ks cs c)
+      NoResidue (Impl.Scrub.X86_64.scrubWith v (sig.retBits A.ptrBits) xs ps gs ks cs c)
         (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) := by
   have hnps : ∀ r, r ∉ scratchRegs → r ∉ ps := fun r h h' => h (ht.psOk r h')
   have hngs : ∀ r, r ∉ scratchRegs → r ∉ gs := fun r h h' => h (ht.gsOk r h')
@@ -286,100 +284,5 @@ theorem upperOk_lock {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits
   have hu := (UpperLock.lock a₁ a₂ (r₁ := []) (r₂ := []) (by rw [ht]) (hsy _ _ (contract_pub hp))).2 true hup
     fun _ => ⟨hy, hz⟩
   exact ⟨congrFun hu.1 x, congrFun hu.2 x⟩
-
-/-- The side conditions of `scrubRegUp` that the emitter evaluates: the
-code's instructions are below the level `evex`, its upper halves agree at
-the end if they did at the start, and it calls indirectly only the
-functions of its tables. -/
-def UpOk (code : Prog isa) (tables : List (String × List FnTable)) : Bool :=
-  levelLeOnce 1 code && UpperLock.upOnce code true &&
-    (UpperLock.inames code).all (fun f => decide (f ∈ tableFns tables))
-
-theorem upOk_spec {code : Prog isa} {tables : List (String × List FnTable)} (h : UpOk code tables = true) :
-    (∀ i ∈ instrs code, i.vecLevel ≤ 1) ∧ UpperLock.up code true = true ∧
-      ∀ f ∈ UpperLock.inames code, f ∈ tableFns tables := by
-  simp only [UpOk, levelLeOnce, Code.allOnce_eq, UpperLock.upOnce_eq, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
-  exact ⟨fun i hi => by simpa [Instr.levelLe] using Code.all_instrs h.1.1 i hi, h.1.2, h.2⟩
-
-theorem scrubCodeU_verified {api : Api} (r : Unscrubbed api target)
-    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
-    (hok : UpOk r.code r.tables = true)
-    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
-    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
-    Verified target (scrub .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-        (xsOf r.code (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) (gsOf Taint.clobbers r.code)
-        (allKs (chunks r.stack)) (chunks r.stack) r.code) r.contract ∧
-      NoResidue (scrub .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-        (xsOf r.code (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) (gsOf Taint.clobbers r.code)
-        (allKs (chunks r.stack)) (chunks r.stack) r.code) r.contract
-        (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
-  obtain ⟨hl1, hup, hnames⟩ := upOk_spec hok
-  obtain ⟨pre, post, leak, e⟩ := r.ofSig
-  have hv := r.verified
-  have hp := hpost
-  rw [e] at hv hp ⊢
-  have hrb' := hrb
-  have hr := resOk_all r.code (api.sig.contract ((abi.withConsts r.consts).withTables api.sig r.tables)
-    pre post api.writeArgs r.stack leak) h8
-  exact Verified.scrubU (ScrubAbi.of r.consts api.sig r.tables) hv (SpSafe.of_all r.spSafe) hd
-    (chunks_sum r.stack) hst (chunks_valid h8) (fun _ => hl1)
-    (upperOk_lock hv.2.1 (fun s₁ s₂ h f hf => tables_pub_syms h f (hnames f hf)) hup)
-    hrb' hp hr (tailOk_of _ _ _) (xs_of _ _) (fun e => absurd e (by decide)) (evexReg_of_ne (c := r.code) (by decide)).2
-    (gs_of _ _) (fun s₁ s₂ h f hf => tables_pub_syms (contract_pub h) f (hnames f hf))
-
-/-- `r`, scrubbed at the level `sse` with every granule of its stack wiped,
-for code below the level `evex` whose functions with AVX instructions, run
-through its tables, end with `vzeroupper` (`UpOk`). -/
-def scrubRegUp {api : Api} (r : Unscrubbed api target)
-    (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
-    (hok : UpOk r.code r.tables = true)
-    (hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨ api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64)
-    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
-    (hw : r.written = []) : Registration api target where
-  suffix := r.suffix
-  consts := r.consts
-  tables := r.tables
-  stack := r.stack
-  code := scrub .sse (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-    (xsOf r.code (allKs (chunks r.stack))) (psOf (allKs (chunks r.stack))) (gsOf Taint.clobbers r.code)
-    (allKs (chunks r.stack)) (chunks r.stack) r.code
-  contract := r.contract
-  verified := .scrubbed <| .abi ⟨(scrubCodeU_verified r hd hst h8 hok hrb hpost).1,
-    (scrubCodeU_verified r hd hst h8 hok hrb hpost).2⟩
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := scrub_spSafe .sse _ _ _ _ _ _ (tailOk_of 0 r.code (allKs (chunks r.stack))).psOk
-    (tailOk_of 0 r.code (allKs (chunks r.stack))).gsOk r.spSafe
-  written := r.written
-  writtenOk := by
-    rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith
-
-/-- `r`, scrubbed by `scrubRegUp` if its side conditions hold and the
-clearing needs no CPU feature that `r`'s code does not; otherwise `r`. -/
-def withUp {api : Api} (r : Unscrubbed api target)
-    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
-    Registration api target :=
-  if hd : r.code.x86_64Depth ≤ r.stack then
-  if hst : r.stack + 8 < 2 ^ 64 then
-  if h8 : r.stack % 8 = 0 then
-  if hok : UpOk r.code r.tables = true then
-  if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
-      api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
-  if hw : r.written = [] then
-    let r' := scrubRegUp r hd hst h8 hok hrb hpost hw
-    if (Code.requiresDedup isa.requires r'.code).all
-        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r' else r.registration
-  else r.registration else r.registration else r.registration else r.registration
-  else r.registration else r.registration
-
-/-- `withScrubAll`, but where it leaves `r` unscrubbed, `withUp`. -/
-def withScrubAllUp {api : Api} (r : Unscrubbed api target)
-    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
-    Registration api target :=
-  let r' := withScrubAll r hpost
-  if !r'.unscrubbed then r' else withUp r hpost
 
 end VG.X86_64.Scrub

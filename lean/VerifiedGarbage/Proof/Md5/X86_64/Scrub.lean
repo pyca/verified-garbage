@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubSel
+public import VerifiedGarbage.Impl.Md5.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Spec.Md5.Contract
@@ -27,12 +29,14 @@ meta import VerifiedGarbage.Proof.Md5.PostOut
 # MD5's streaming functions on x86-64, without secret residue
 
 `vg_md5_init`, `vg_md5_update` and `vg_md5_finalize`, each followed by
-`Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`), which clears the
-registers and the granules of its stack that the residue analysis
-(`X86_64.RTaint`) finds may hold secrets. HMAC-MD5 and PBKDF2-HMAC-MD5 call
-`vg_md5_init`'s code as the internal `vg_md5_init_core`
-(`Proof.Pbkdf2.Md.X86_64.Md5.hash`), which clears what it leaves itself. Their postconditions read the memory on
-return only within the buffers (`X86_64.Scrub.PostOut`): the streaming state (`Stream.repr_congr`) and the digest.
+`Impl.Scrub.X86_64.scrubSel` (`X86_64.Scrub.verifiedScrubbedSel`), which clears
+every caller-saved register and the granules of its stack that the residue
+analysis (`X86_64.RTaint`) finds may hold secrets. HMAC-MD5 and PBKDF2-HMAC-MD5
+call `vg_md5_init`'s code as the internal `vg_md5_init_core`
+(`Proof.Pbkdf2.Md.X86_64.Md5.hash`), which clears what it leaves itself. Their
+postconditions read the memory on return only within the buffers
+(`X86_64.Scrub.PostOut`): the streaming state (`Stream.repr_congr`) and the
+digest.
 -/
 
 @[expose] public section
@@ -60,50 +64,55 @@ abbrev updateCode : Prog isa :=
 abbrev finalizeCode : Prog isa :=
   Impl.StackScratch.X86_64.withStackScratch 56 .rcx Impl.Md5.X86_64.Stream.finalize
 
-def initKs : List Nat := keep_for% Spec.Md5.initApi.sig 0 Impl.Md5.X86_64.Stream.init []
+/-! ## The functions as emitted -/
 
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Md5.initApi.sig 0 []) Impl.Md5.X86_64.Stream.init
-      h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
+theorem init_codeSp : (Impl.Md5.X86_64.Stream.init).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-def updateKs : List Nat := keep_for% Spec.Md5.updateApi.sig (8 + 56) updateCode []
+/-- `Spec.Md5.initApi`'s function as emitted (`Impl.Md5.X86_64.Fn.init`) meets its contract in
+constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Md5.X86_64.Fn.init (Spec.Md5.initApi.contract X86_64.abi 0) 0 :=
+  verifiedScrubbedSel (api := Spec.Md5.initApi)
+    { code := Impl.Md5.X86_64.Stream.init
+      verified := Shared.init
+      spSafe := init_codeSp }
+    .sse [] initOut (RScrub.pubOk_nil _) (by taint_decide)
 
-theorem updateOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Md5.updateApi.sig (8 + 56) []) updateCode
-      h).any (RScrub.resOkB · (8 + 56) updateKs (Impl.Scrub.X86_64.chunks (8 + 56))) = true :=
-  RScrub.Analysed.ok_of updateKs (by taint_decide)
+theorem init_spSafe : Impl.Md5.X86_64.Fn.init.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
 
-def finalizeKs : List Nat := keep_for% Spec.Md5.finalizeApi.sig (8 + 56) finalizeCode []
+theorem update_codeSp : (Impl.StackScratch.X86_64.withStackScratch 56 .r8 Impl.Md5.X86_64.Stream.update).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Md5.finalizeApi.sig (8 + 56) []) finalizeCode
-      h).any (RScrub.resOkB · (8 + 56) finalizeKs (Impl.Scrub.X86_64.chunks (8 + 56))) = true :=
-  RScrub.Analysed.ok_of finalizeKs (by taint_decide)
+/-- `Spec.Md5.updateApi`'s function as emitted (`Impl.Md5.X86_64.Fn.update`) meets its contract in
+constant time and returns without secret residue. -/
+theorem update_scrubbed :
+    VerifiedScrubbed target Impl.Md5.X86_64.Fn.update (Spec.Md5.updateApi.contract X86_64.abi 64) 0 :=
+  verifiedScrubbedSel (api := Spec.Md5.updateApi)
+    { code := updateCode
+      stack := 8 + 56
+      verified := Shared.update
+      spSafe := update_codeSp }
+    .sse [] (updateOut _) (RScrub.pubOk_nil _) (by taint_decide)
 
-open VG.X86_64.RScrub in
-/-- `vg_md5_init`. -/
-def initReg : Registration Spec.Md5.initApi X86_64.target :=
-  scrubOf { code := Impl.Md5.X86_64.Stream.init, verified := Shared.init } .sse false [.r11] initOut []
-    (pubOk_nil _) ⟨initKs, initOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem update_spSafe : Impl.Md5.X86_64.Fn.update.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe update_codeSp
 
-open VG.X86_64.RScrub in
-/-- `vg_md5_update`. -/
-def updateReg : Registration Spec.Md5.updateApi X86_64.target :=
-  scrubOf {
-    code := updateCode
-    stack := 8 + 56
-    verified := Shared.update } .sse false [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (updateOut _) [] (pubOk_nil _) ⟨updateKs, updateOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem finalize_codeSp : (Impl.StackScratch.X86_64.withStackScratch 56 .rcx Impl.Md5.X86_64.Stream.finalize).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-open VG.X86_64.RScrub in
-/-- `vg_md5_finalize`. -/
-def finalizeReg : Registration Spec.Md5.finalizeApi X86_64.target :=
-  scrubOf {
-    code := finalizeCode
-    stack := 8 + 56
-    verified := Shared.finalize } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] (finalizeOut _) [] (pubOk_nil _) ⟨finalizeKs, finalizeOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+/-- `Spec.Md5.finalizeApi`'s function as emitted (`Impl.Md5.X86_64.Fn.finalize`) meets its contract in
+constant time and returns without secret residue. -/
+theorem finalize_scrubbed :
+    VerifiedScrubbed target Impl.Md5.X86_64.Fn.finalize (Spec.Md5.finalizeApi.contract X86_64.abi 64) 0 :=
+  verifiedScrubbedSel (api := Spec.Md5.finalizeApi)
+    { code := finalizeCode
+      stack := 8 + 56
+      verified := Shared.finalize
+      spSafe := finalize_codeSp }
+    .sse [] (finalizeOut _) (RScrub.pubOk_nil _) (by taint_decide)
 
+theorem finalize_spSafe : Impl.Md5.X86_64.Fn.finalize.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe finalize_codeSp
 end VG.Proof.Md5.X86_64

@@ -1886,9 +1886,9 @@ theorem scrypt_verified :
 /-- A test of every instruction of `vg_scrypt` and of what it calls, from its
 own code's (ROMix included) and PBKDF2's. -/
 theorem scrypt_side {p : Instr → Bool} (n : String) {pbk : Prog isa}
-    (h0 : ScrubAll.sideAll p (scrypt "" (.block [])) = true) (hp : ScrubAll.sideAll p pbk = true) :
-    ScrubAll.sideAll p (scrypt n pbk) = true := by
-  simp only [scrypt, scryptBody, pbkCall, romixLoop, ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
+    (h0 : Scrub.sideAll p (scrypt "" (.block [])) = true) (hp : Scrub.sideAll p pbk = true) :
+    Scrub.sideAll p (scrypt n pbk) = true := by
+  simp only [scrypt, scryptBody, pbkCall, romixLoop, Scrub.sideAll, Bool.and_eq_true] at h0 ⊢
   revert h0
   repeat' first
     | exact id
@@ -1901,7 +1901,7 @@ returns without secret residue. -/
 theorem scrypt_scrubbed :
     VerifiedScrubbed AArch64.target (Impl.Scrypt.AArch64.Fn.scrypt c.name c.suffix c.code)
       (Spec.Scrypt.scryptContract AArch64.abi 96) 0 :=
-  ScrubAll.verifiedScrubbedOf (scrypt_verified c) (Proof.Scrypt.AArch64.Scrub.scryptOk 96) (by decide)
+  Scrub.verifiedScrubbedOf (scrypt_verified c) (Proof.Scrypt.AArch64.Scrub.scryptOk 96) (by decide)
     (by
       have hp := pbk_depth c
       have hr := roMix_depth

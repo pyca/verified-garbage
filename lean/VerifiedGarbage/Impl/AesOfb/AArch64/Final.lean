@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesOfb.AArch64
 public import VerifiedGarbage.Impl.AesCfb.AArch64.Final
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
@@ -47,7 +47,7 @@ def cryptFinal (b : Blocks) (sfx : String) : Prog isa :=
 /-! ## The functions, as emitted
 
 Each function is its code, then its cleanup
-(`Impl.Residue.AArch64.scrubAll`): the registers it writes that the calling
+(`Impl.Scrub.AArch64.scrubAll`): the registers it writes that the calling
 convention does not preserve are cleared, and the stack it uses is zeroed,
 so that it returns without secret residue. The registers are those its own
 instructions write, stated here, and those the block function it calls
@@ -55,7 +55,7 @@ states it writes (`b.clear`). -/
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 
 /-- The registers `vg_aes_ofb`'s own instructions write. -/
 def cryptOwn : Clear := ⟨[.x1, .x2, .x3, .x4, .x9, .x10, .x16, .x17], [], []⟩

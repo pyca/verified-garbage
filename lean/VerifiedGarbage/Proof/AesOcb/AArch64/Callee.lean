@@ -45,6 +45,8 @@ def keyImpl (v : BlocksImpl) : Proof.AesGcm.AArch64.KeyImpl where
   ok := v.expandOk
   ct := v.expandCt
   keepsV := v.expandKeepsV
+  clear := v.expand.clear
+  side := v.expandScrub
 
 /-- What a call of `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` needs:
 the key schedule at `K` for `R` rounds, `n` blocks at `D` and `N` bytes of

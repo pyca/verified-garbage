@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
 public import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
 public import VerifiedGarbage.Impl.Camellia.AArch64.Fb
 public import VerifiedGarbage.Impl.Camellia.AArch64.FbFinal
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
 
@@ -22,7 +22,7 @@ it returns without secret residue (`Proof/Camellia/AArch64/`).
 namespace VG.Impl.Camellia.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `vg_camellia_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa :=

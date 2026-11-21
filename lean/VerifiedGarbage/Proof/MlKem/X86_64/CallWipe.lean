@@ -1170,7 +1170,7 @@ def Wipe.features (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) : Lis
 
 The postconditions of the functions read the memory on return only within
 their buffers (`X86_64.Scrub.PostOut`), so that each returns with its whole
-stack, 56 bytes, wiped (`X86_64.Scrub.withScrubAll`). -/
+stack, 56 bytes, wiped (`Impl.Scrub.X86_64.scrubAll`). -/
 
 /-- A buffer scrubbed in one memory on return is in another that agrees on it. -/
 theorem scrubbed_congr {m m₁ m₂ : Mem} {p : Addr} {len : Nat}

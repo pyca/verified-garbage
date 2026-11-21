@@ -59,7 +59,7 @@ function, named with its suffix, giving it the scratch space it uses
 (`Callee.so`) and taking the working space they use (`Hash.wOf`). They call
 `vg_sha224_init`'s code as the internal `vg_sha224_init_core`: the function
 exported as `vg_sha224_init` also clears what it leaves
-(`Proof.Sha256.X86_64.init224Reg`), which its callers, which clear their own,
+(`Proof.Sha256.X86_64.init224_scrubbed`), which its callers, which clear their own,
 do not need. -/
 def hash (v : Compress) : Hash where
   P := Proof.Sha256.X86_64.Stream.paramsS v.callee.so
@@ -410,7 +410,7 @@ end S
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` is SHA-256's, which SHA-256's variant with `v`
 carries, and its `finalize` its own (`stream v`). -/
-def variant (stream : List StreamFn := stream v) : MdHash :=
+def variant (stream : List StreamFnS := []) : MdHash :=
   MdHash.of (I := Spec.Hmac.sha224I) (ok v) (coreOK v) (callees v)
     ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl 560 (okU v) rfl
     (satI (hashW v)) (satF (hashW v)) (satT (hashW v)) (satP (hashW v))
@@ -430,7 +430,7 @@ end
 /-!
 # SHA-224's and SHA-256's streaming and one-shot functions on x86-64, without secret residue
 
-What `StreamFn.scrub` needs of SHA-256's `updFn`, `finFn` and `digFn`, and
+What the cleanup (`StreamFnS`) needs of SHA-256's `updFn`, `finFn` and `digFn`, and
 SHA-224's `finFn` and `digFn`, beyond their code: their postconditions read
 the memory on return only within the buffers (`X86_64.Scrub.PostOut`). Each variant
 (`Proof/Variants/MdHash/X86_64/Sha256*.lean`) scrubs them with the granules

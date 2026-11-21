@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
 public import VerifiedGarbage.Impl.AesCtr.AArch64.Final
 public import VerifiedGarbage.Impl.StackScratch.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-!
 # Camellia-CTR of a message's last piece: AArch64 implementation
@@ -17,7 +17,7 @@ the code's own. It is AES-CTR's final function's
 of `vg_camellia_ctr`, framed by its own working space on the stack
 (`ctrFramed`), as an internal function of its own, `vg_camellia_ctr_core`,
 which does not zero that space: the final function's registration zeroes the
-whole of its stack on return (`ScrubAll.withScrubAll`), as
+whole of its stack on return (`Impl.Scrub.AArch64.scrubAll`), as
 `vg_camellia_ctr`'s does:
 
 1. the registers saved in `save` (AES-CFB's final functions' slots,
@@ -94,10 +94,10 @@ open VG.AArch64
 for the saved registers on the stack
 (`Impl.StackScratch.AArch64.withStackScratchWiped`), then the registers it
 writes that the calling convention does not preserve cleared and its 3424
-bytes of stack zeroed (`Impl.Residue.AArch64.scrubAll`), so that it returns
+bytes of stack zeroed (`Impl.Scrub.AArch64.scrubAll`), so that it returns
 without secret residue. -/
 def ctrFinal : Prog isa :=
-  VG.Impl.Residue.AArch64.scrubAll 3424 0
+  VG.Impl.Scrub.AArch64.scrubAll 3424 0
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
      [.v26, .v27, .v28, .v29, .v30],
      []⟩

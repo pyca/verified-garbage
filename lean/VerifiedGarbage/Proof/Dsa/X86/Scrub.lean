@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 public import VerifiedGarbage.Impl.Dsa.X86.Fn
@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.Init
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.Verified
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 meta import VerifiedGarbage.Impl.Dsa.X86.Fn
@@ -46,7 +46,7 @@ Each of DSA's functions is emitted with its cleanup (`Impl.Dsa.X86.Fn`):
 `vg_dsa_parameter_search_init`, which calls nothing and has no frame, with
 the tail that clears the registers (`Impl.Scrub.X86.scrub`), and the others,
 which have frames and calls, also with the zeroing of the stack their
-contracts reserve (`Impl.Scrub.X86.scrubF`). Each returns without secret
+contracts reserve (`Impl.Scrub.X86.scrubAll`). Each returns without secret
 residue (`<f>_scrubbed`, the theorem its registration binds).
 
 The postconditions of the validations and of the verification do not read
@@ -159,44 +159,44 @@ theorem parameterInit_sp : Impl.Dsa.X86.Generation.init.all (fun i => !isa.write
 /-- `vg_dsa_generate_key`, with its cleanup, returns without secret residue. -/
 theorem generateKey_scrubbed :
     VerifiedScrubbed target Impl.Dsa.X86.Fn.generateKey (Spec.Dsa.generateKeyContract abi 232) 32 :=
-  verifiedScrubbedF (api := Spec.Dsa.generateKeyApi)
+  verifiedScrubbedAll (api := Spec.Dsa.generateKeyApi)
     { code := Impl.Dsa.X86.Comb.generateKey
       verified := Proof.Dsa.X86.Comb.key_verified
       spSafe := generateKey_sp }
     (generateKeyOut _)
 
 theorem generateKey_spSafe : Impl.Dsa.X86.Fn.generateKey.all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe generateKey_sp
+  scrubAll_spSafe generateKey_sp
 
 /-- `vg_dsa_derive_key`, with its cleanup, returns without secret residue. -/
 theorem deriveKey_scrubbed :
     VerifiedScrubbed target Impl.Dsa.X86.Fn.deriveKey (Spec.Dsa.deriveKeyContract abi 108) 32 :=
-  verifiedScrubbedF (api := Spec.Dsa.deriveKeyApi)
+  verifiedScrubbedAll (api := Spec.Dsa.deriveKeyApi)
     { code := Impl.Dsa.X86.Generate.deriveKey
       verified := Proof.Dsa.X86.deriving_verified
       spSafe := deriveKey_sp }
     (deriveKeyOut _)
 
 theorem deriveKey_spSafe : Impl.Dsa.X86.Fn.deriveKey.all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe deriveKey_sp
+  scrubAll_spSafe deriveKey_sp
 
 /-- `vg_dsa_validate_private_key`, with its cleanup, returns without secret residue. -/
 theorem validatePrivateKey_scrubbed :
     VerifiedScrubbed target Impl.Dsa.X86.Fn.validatePrivateKey (Spec.Dsa.validatePrivateKeyContract abi 108) 32 :=
-  verifiedScrubbedF (api := Spec.Dsa.validatePrivateKeyApi)
+  verifiedScrubbedAll (api := Spec.Dsa.validatePrivateKeyApi)
     { code := Impl.Dsa.X86.PrevalidatedSign.validate
       verified := Proof.Dsa.X86.privateValidating_verified
       spSafe := validatePrivateKey_sp }
     (validatePrivateKeyOut _)
 
 theorem validatePrivateKey_spSafe : Impl.Dsa.X86.Fn.validatePrivateKey.all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe validatePrivateKey_sp
+  scrubAll_spSafe validatePrivateKey_sp
 
 /-- `vg_dsa_sign_random_prevalidated`, with its cleanup, returns without secret residue. -/
 theorem randomSignPrevalidated_scrubbed :
     VerifiedScrubbed target Impl.Dsa.X86.Fn.randomSignPrevalidated
       (Spec.Dsa.randomSignPrevalidatedContract abi 232) 32 :=
-  verifiedScrubbedF (api := Spec.Dsa.randomSignPrevalidatedApi)
+  verifiedScrubbedAll (api := Spec.Dsa.randomSignPrevalidatedApi)
     { code := Impl.Dsa.X86.RandomSign.code prevalidatedSignFn.name prevalidatedSignFn.code
       verified := Proof.Dsa.X86.randomSigningPrevalidated_verified
       spSafe := randomSignPrevalidated_sp }
@@ -204,31 +204,31 @@ theorem randomSignPrevalidated_scrubbed :
 
 theorem randomSignPrevalidated_spSafe :
     Impl.Dsa.X86.Fn.randomSignPrevalidated.all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe randomSignPrevalidated_sp
+  scrubAll_spSafe randomSignPrevalidated_sp
 
 /-- `vg_dsa_validate_public_key`, with its cleanup, returns without secret residue. -/
 theorem validatePublicKey_scrubbed :
     VerifiedScrubbed target Impl.Dsa.X86.Fn.validatePublicKey (Spec.Dsa.validatePublicKeyContract abi 108) 32 :=
-  verifiedScrubbedF (api := Spec.Dsa.validatePublicKeyApi)
+  verifiedScrubbedAll (api := Spec.Dsa.validatePublicKeyApi)
     { code := Impl.Dsa.X86.Prevalidated.validate
       verified := Proof.Dsa.X86.validating_verified
       spSafe := validatePublicKey_sp }
     (validatePublicKeyOut _)
 
 theorem validatePublicKey_spSafe : Impl.Dsa.X86.Fn.validatePublicKey.all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe validatePublicKey_sp
+  scrubAll_spSafe validatePublicKey_sp
 
 /-- `vg_dsa_verify_prevalidated`, with its cleanup, returns without secret residue. -/
 theorem verifyPrevalidated_scrubbed :
     VerifiedScrubbed target Impl.Dsa.X86.Fn.verifyPrevalidated (Spec.Dsa.verifyPrevalidatedContract abi 108) 32 :=
-  verifiedScrubbedF (api := Spec.Dsa.verifyPrevalidatedApi)
+  verifiedScrubbedAll (api := Spec.Dsa.verifyPrevalidatedApi)
     { code := Impl.Dsa.X86.Prevalidated.verify
       verified := Proof.Dsa.X86.prevalidated_verified
       spSafe := verifyPrevalidated_sp }
     (verifyPrevalidatedOut _)
 
 theorem verifyPrevalidated_spSafe : Impl.Dsa.X86.Fn.verifyPrevalidated.all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe verifyPrevalidated_sp
+  scrubAll_spSafe verifyPrevalidated_sp
 
 /-- `vg_dsa_parameter_search_init`, with its cleanup, returns without secret residue. -/
 theorem parameterInit_scrubbed :
@@ -384,7 +384,7 @@ theorem parameterSearch_scrubbed (v1 : Proof.Sha1.X86.Variants.Backend)
     VerifiedScrubbed target
       (Impl.Dsa.X86.Fn.parameterSearch (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v))
       Proof.Dsa.X86.Generation.genContract 32 :=
-  verifiedScrubbedF (api := Spec.Dsa.parameterSearchApi)
+  verifiedScrubbedAll (api := Spec.Dsa.parameterSearchApi)
     { code := Impl.Dsa.X86.Generation.code (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v)
       verified := Proof.Dsa.X86.Generation.verified v1 v256 v
       spSafe := Proof.Dsa.X86.Generation.code_all v1 v256 v }
@@ -395,6 +395,6 @@ theorem parameterSearch_spSafe (v1 : Proof.Sha1.X86.Variants.Backend)
     (v256 : Proof.Sha256.X86.Variants.Backend) (v : RoundImpl) :
     (Impl.Dsa.X86.Fn.parameterSearch (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v)).all
       (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.Dsa.X86.Generation.code_all v1 v256 v)
+  scrubAll_spSafe (Proof.Dsa.X86.Generation.code_all v1 v256 v)
 
 end VG.Proof.Dsa.X86.Scrub

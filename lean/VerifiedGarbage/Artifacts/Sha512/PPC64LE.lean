@@ -43,9 +43,17 @@ def artifacts : List Artifact := [
   Spec.Sha512.finalize512_224Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Fn.finalize512_224
     verified := .scrubbed Proof.Sha512.PPC64LE.finalize512_224_scrubbed },
-  Spec.Sha512.digest384Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest384Reg,
-  Spec.Sha512.digest512Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest512Reg,
-  Spec.Sha512.digest512_224Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest512_224Reg,
-  Spec.Sha512.digest512_256Api.artifact PPC64LE.target Proof.Sha512.PPC64LE.digest512_256Reg]
+  Spec.Sha512.digest384Api.artifact PPC64LE.target {
+    code := Impl.Sha512.PPC64LE.Fn.digest384
+    verified := .scrubbed Proof.Sha512.PPC64LE.digest384_scrubbed },
+  Spec.Sha512.digest512Api.artifact PPC64LE.target {
+    code := Impl.Sha512.PPC64LE.Fn.digest512
+    verified := .scrubbed Proof.Sha512.PPC64LE.digest512_scrubbed },
+  Spec.Sha512.digest512_224Api.artifact PPC64LE.target {
+    code := Impl.Sha512.PPC64LE.Fn.digest512_224
+    verified := .scrubbed Proof.Sha512.PPC64LE.digest512_224_scrubbed },
+  Spec.Sha512.digest512_256Api.artifact PPC64LE.target {
+    code := Impl.Sha512.PPC64LE.Fn.digest512_256
+    verified := .scrubbed Proof.Sha512.PPC64LE.digest512_256_scrubbed }]
 
 end VG.Artifacts.Sha512.PPC64LE

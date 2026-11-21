@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 meta import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
@@ -87,25 +88,21 @@ theorem verified (hI : InvSounds) (adx : Bool) :
 
 /-! ## Without secret residue -/
 
-/-- The granules of its stack that `vg_ec_brainpoolp512r1_compress_public_key` must wipe on
-return, from the residue analysis (`X86_64.RScrub.keepFor`). -/
-def scrubKs : List Nat :=
-  keep_for% Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.sig 8 (code false) []
+theorem codeSp : (code false).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
 
-theorem scrubOk : ∃ h : VG.Taint.Hint X86_64.RTaint.FT,
-    (VG.Taint.check X86_64.RTaint.rtaint (X86_64.RScrub.init Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.sig 8 [])
-      (code false) h).any (X86_64.RScrub.resOkB · 8 scrubKs (Impl.Scrub.X86_64.chunks 8)) = true :=
-  X86_64.RScrub.Analysed.ok_of _ (by taint_decide)
+/-- `vg_ec_brainpoolp512r1_compress_public_key` as emitted (`Impl.EcKey.Compressed.X86_64.Fn.compress`), its cleanup included, meets its
+contract in constant time and returns without secret residue. -/
+theorem scrubbed (hI : InvSounds) :
+    VerifiedScrubbed target (Impl.EcKey.Compressed.X86_64.Fn.compress Inverse.cfg)
+      (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.contract abi 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi)
+    { code := code false
+      verified := verified hI false
+      stack := 8
+      spSafe := codeSp } .sse (EcKey.X86_64.Scrub.compressOut _ _)
 
-/-- `vg_ec_brainpoolp512r1_compress_public_key`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.RScrub.withScrub`): it returns without secret residue. -/
-def scrubReg (hI : InvSounds) :
-    Registration Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi target :=
-  X86_64.RScrub.scrubOf {
-    code := code false
-    verified := verified hI false
-    stack := 8 } .sse true [.rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
-    (EcKey.X86_64.Scrub.compressOut _ _) [] (X86_64.RScrub.pubOk_nil _) ⟨scrubKs, scrubOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem spSafe : (Impl.EcKey.Compressed.X86_64.Fn.compress Inverse.cfg).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe codeSp
 
 end VG.Proof.EcKey.Compressed.X86_64.BrainpoolP512r1

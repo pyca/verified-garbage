@@ -16,8 +16,8 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1Decompress
 public meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1Decompress
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP256r1Decompress
 public meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP256r1Decompress
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
@@ -46,7 +46,7 @@ open VG VG.AArch64
 /-- The decompression `c`, then the clears of `rs` and `vs`, what it
 leaves, and of the flags. -/
 abbrev cleared (rs : List Reg) (vs : List VReg) (c : Prog isa) : Prog isa :=
-  Impl.Residue.AArch64.withClears (.x2 :: .x3 :: .x4 :: .x8 :: .x9 :: .x10 :: .x11 :: .x12 :: .x13 :: rs) vs
+  Impl.Scrub.AArch64.withClears (.x2 :: .x3 :: .x4 :: .x8 :: .x9 :: .x10 :: .x11 :: .x12 :: .x13 :: rs) vs
     (some .x2) c
 
 namespace P192

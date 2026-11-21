@@ -58,8 +58,13 @@ open VG.Proof.P384.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.Ecdh.P384.exchangeApi.artifact X86_64.target
-    (Proof.Ecdh.X86_64.P384.scrubReg hasLaw.law hasLaw.inv hasLaw.prime),
+    { code := Impl.Ecdh.X86_64.Fn.exchangeP384
+      verified := .scrubbed (Proof.Ecdh.X86_64.P384.exchange_scrubbed hasLaw.law hasLaw.inv hasLaw.prime)
+      spSafe := Proof.Ecdh.X86_64.P384.exchange_spSafe },
   Spec.Ecdh.P384.exchangeApi.artifact X86_64.target
-    (Proof.Ecdh.X86_64.P384.scrubRegAdx hasLaw.law hasLaw.inv hasLaw.prime)]
+    { suffix := "_adx"
+      code := Impl.Ecdh.X86_64.Fn.exchangeP384Adx
+      verified := .scrubbed (Proof.Ecdh.X86_64.P384.exchangeAdx_scrubbed hasLaw.law hasLaw.inv hasLaw.prime)
+      spSafe := Proof.Ecdh.X86_64.P384.exchangeAdx_spSafe }]
 
 end VG.Artifacts.EcdhP384.X86_64

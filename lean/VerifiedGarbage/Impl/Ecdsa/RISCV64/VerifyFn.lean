@@ -11,7 +11,7 @@ public import VerifiedGarbage.Spec.Ecdsa.P384
 
 `vg_ecdsa_p256_verify` and `vg_ecdsa_p384_verify`: `VerifyHash.verifyHash` of
 the curve's verification (`VerifyComb.lean`), then its cleanup
-(`Impl.Scrub.RISCV64.scrub`): the caller-saved registers cleared but the 32
+(`Impl.Scrub.RISCV64.scrubAll`): the caller-saved registers cleared but the 32
 bits of its result, and the 80 bytes of stack its frames use zeroed, so that
 it returns without secret residue.
 -/
@@ -26,13 +26,13 @@ open VG.RISCV64
 
 /-- `vg_ecdsa_p256_verify` as emitted. -/
 def verifyP256 : Prog isa :=
-  Impl.Scrub.RISCV64.scrub 32 80
+  Impl.Scrub.RISCV64.scrubAll 32 80
     (Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.RISCV64.VerifyComb.verifyP256)
 
 /-- `vg_ecdsa_p384_verify` as emitted. -/
 def verifyP384 : Prog isa :=
-  Impl.Scrub.RISCV64.scrub 32 80
+  Impl.Scrub.RISCV64.scrubAll 32 80
     (Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
       Impl.Ecdsa.RISCV64.VerifyComb.verifyP384)
 

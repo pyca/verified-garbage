@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Impl.X25519.AArch64.AltLadder
 public import VerifiedGarbage.Impl.X25519.AArch64.Base
 public import VerifiedGarbage.Impl.Xdh.AArch64
@@ -20,7 +20,7 @@ it returns without secret residue (`Proof/X25519/AArch64/`).
 namespace VG.Impl.X25519.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 def x25519Base : Prog isa :=
   withClears
@@ -34,6 +34,6 @@ def exchangeBase : Prog isa :=
     (Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.AltLadder.x25519 32))
 
 /-- `vg_x25519_exchange`. -/
-def exchange : Prog isa := withScrubG 16 [0] exchangeBase
+def exchange : Prog isa := scrubSel 16 [0] exchangeBase
 
 end VG.Impl.X25519.AArch64.Fn

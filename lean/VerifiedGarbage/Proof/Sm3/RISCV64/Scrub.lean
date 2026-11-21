@@ -168,7 +168,7 @@ Each of the streaming functions as emitted (`Impl.Sm3.RISCV64.Fn`): the
 function followed by `Impl.Scrub.RISCV64.scrubTail`, which clears the
 caller-saved registers and the stack its frames used. Each theorem below
 states that one meets its contract in constant time and returns without
-secret residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`),
+secret residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`),
 which is what its registration binds. Their postconditions read the memory
 on return only within their buffers (`Proof/Sm3/PostOut.lean`).
 -/
@@ -183,7 +183,7 @@ open VG.RISCV64 VG.RISCV64.Scrub
 and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed target Impl.Sm3.RISCV64.Fn.init (Spec.Sm3.initContract RISCV64.abi) 0 :=
-  verifiedScrubbed (api := Spec.Sm3.initApi) (W := 0)
+  verifiedScrubbedAll (api := Spec.Sm3.initApi) (W := 0)
     { code := Impl.Sm3.RISCV64.Stream.init, verified := Shared.init }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm3.initPost_out 64))
     (show scrubSide Impl.Sm3.RISCV64.Stream.init 0 0 [] = true by lit_decide)
@@ -192,7 +192,7 @@ theorem init_scrubbed :
 time and returns without secret residue. -/
 theorem update_scrubbed :
     VerifiedScrubbed target Impl.Sm3.RISCV64.Fn.update (Spec.Sm3.updateContract RISCV64.abi 144) 0 :=
-  verifiedScrubbed (api := Spec.Sm3.updateApi) (W := 144)
+  verifiedScrubbedAll (api := Spec.Sm3.updateApi) (W := 144)
     { code := Impl.Sm3.RISCV64.Stream.update, verified := Shared.update }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm3.updatePost_out 64))
     (show scrubSide Impl.Sm3.RISCV64.Stream.update 144 0 [] = true by lit_decide)
@@ -201,7 +201,7 @@ theorem update_scrubbed :
 constant time and returns without secret residue. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed target Impl.Sm3.RISCV64.Fn.finalize (Spec.Sm3.finalizeContract RISCV64.abi 144) 0 :=
-  verifiedScrubbed (api := Spec.Sm3.finalizeApi) (W := 144)
+  verifiedScrubbedAll (api := Spec.Sm3.finalizeApi) (W := 144)
     { code := Impl.Sm3.RISCV64.Stream.finalize, verified := Shared.finalize }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm3.finalizePost_out 64))
     (show scrubSide Impl.Sm3.RISCV64.Stream.finalize 144 0 [] = true by lit_decide)

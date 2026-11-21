@@ -200,7 +200,7 @@ returns without secret residue. -/
 theorem publicKey_scrubbed (hL : VG.Proof.Weierstrass.Law W) :
     VerifiedScrubbed RISCV64.target Impl.Ecdh.RISCV64.Fn.publicKeyBrainpoolP512r1
       (Spec.EcKey.BrainpoolP512r1.inst.publicKeyContract RISCV64.abi) 32 :=
-  RISCV64.Scrub.verifiedScrubbed (api := Spec.EcKey.BrainpoolP512r1.publicKeyApi) (W := 0)
+  RISCV64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP512r1.publicKeyApi) (W := 0)
     { code := publicKeyBrainpoolP512r1, verified := pk_verified hL }
     (EcKey.RISCV64.Scrub.publicKeyOut _ _ []) (by dsimp only; lit_decide)
 

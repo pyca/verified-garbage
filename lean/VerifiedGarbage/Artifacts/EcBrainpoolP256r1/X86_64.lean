@@ -65,9 +65,13 @@ open VG.Proof.BrainpoolP256r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact :=
   [Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi.artifact X86_64.target
-    (Proof.EcKey.Compressed.X86_64.BrainpoolP256r1.scrubReg hasLaw.inv),
+    { code := Impl.EcKey.Compressed.X86_64.Fn.compress Impl.Ecdsa.X86_64.brainpoolp256r1
+      verified := .scrubbed (Proof.EcKey.Compressed.X86_64.BrainpoolP256r1.scrubbed hasLaw.inv)
+      spSafe := Proof.EcKey.Compressed.X86_64.BrainpoolP256r1.spSafe },
     Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact X86_64.target
-      (Proof.EcKey.Compressed.X86_64.BrainpoolP256r1Decompress.scrubReg hasLaw.law hasLaw.inv)]
+      { code := Impl.EcKey.Compressed.X86_64.Fn.decompress Impl.Ecdsa.X86_64.brainpoolp256r1
+        verified := .scrubbed (Proof.EcKey.Compressed.X86_64.BrainpoolP256r1Decompress.scrubbed hasLaw.law hasLaw.inv)
+        spSafe := Proof.EcKey.Compressed.X86_64.BrainpoolP256r1Decompress.spSafe }]
 
 end VG.Artifacts.EcBrainpoolP256r1.X86_64.Compressed
 
@@ -78,7 +82,9 @@ open VG.Proof.BrainpoolP256r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact :=
   [Spec.EcKey.BrainpoolP256r1.inst.validatePublicKeyApi.artifact X86_64.target
-    (Proof.EcKey.Validate.X86_64.BrainpoolP256r1.scrubReg hasLaw.inv)]
+    { code := Impl.EcKey.Validate.X86_64.Fn.validate Impl.Ecdsa.X86_64.brainpoolp256r1
+      verified := .scrubbed (Proof.EcKey.Validate.X86_64.BrainpoolP256r1.scrubbed hasLaw.inv)
+      spSafe := Proof.EcKey.Validate.X86_64.BrainpoolP256r1.spSafe }]
 
 end VG.Artifacts.EcBrainpoolP256r1.X86_64.Validate
 
@@ -88,7 +94,9 @@ open VG.Proof.BrainpoolP256r1.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP256r1.publicKeyApi.artifact X86_64.target
-    (Proof.EcKey.X86_64.BrainpoolP256r1.scrubReg hasLaw.law hasLaw.inv)] ++
+    { code := Impl.EcKey.X86_64.Fn.publicKeyBrainpoolP256r1
+      verified := .scrubbed (Proof.EcKey.X86_64.BrainpoolP256r1.publicKey_scrubbed hasLaw.law hasLaw.inv)
+      spSafe := Proof.EcKey.X86_64.BrainpoolP256r1.publicKey_spSafe }] ++
   Compressed.artifacts ++
   Validate.artifacts
 

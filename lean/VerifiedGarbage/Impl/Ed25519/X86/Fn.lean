@@ -12,7 +12,7 @@ public import VerifiedGarbage.Spec.Sha512
 /-!
 # Ed25519 on x86 (32-bit): the functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
 bytes of stack below `esp` that its frames and calls use zeroed, and the
 registers a callee may change cleared but the `rb` bits of the result, so
 that it returns without secret residue.
@@ -34,14 +34,14 @@ def sha512Digest : Prog isa :=
 
 /-- `vg_ed25519_key_pair`, as emitted. -/
 def keyPair : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 628
+  Impl.Scrub.X86.scrubAll 0 628
     (Impl.Ed25519.X86.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core") sha512Digest
       "vg_ed25519_public_key_expanded" Impl.Ed25519.X86.PublicKey.publicKeyExpanded)
 
 /-- `vg_ed25519_sign_expanded`, as emitted. -/
-def signExpanded : Prog isa := Impl.Scrub.X86.scrubF 0 280 Impl.Ed25519.X86.SignCached.codeExpanded
+def signExpanded : Prog isa := Impl.Scrub.X86.scrubAll 0 280 Impl.Ed25519.X86.SignCached.codeExpanded
 
 /-- `vg_ed25519_verify`, as emitted. -/
-def verify : Prog isa := Impl.Scrub.X86.scrubF 32 280 Impl.Ed25519.X86.VerifyMessage.code
+def verify : Prog isa := Impl.Scrub.X86.scrubAll 32 280 Impl.Ed25519.X86.VerifyMessage.code
 
 end VG.Impl.Ed25519.X86.Fn

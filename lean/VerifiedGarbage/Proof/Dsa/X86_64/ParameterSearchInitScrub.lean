@@ -2,26 +2,19 @@ module
 
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
+public import VerifiedGarbage.Impl.Dsa.X86_64.Fn
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInit
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
-public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ParameterSearchInit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Scrub
-meta import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
-meta import VerifiedGarbage.Proof.Framework.Registration
-meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # DSA's parameter search's `init` on x86-64, without secret residue
 
-`vg_dsa_parameter_search_init`, followed by `Impl.Scrub.X86_64.scrubTail`
-(`X86_64.Scrub.withScrub`). Its postcondition reads the memory on return
+`vg_dsa_parameter_search_init`, followed by its cleanup, which clears every
+register it may write (`X86_64.Scrub.verifiedScrubbedAll`; it uses no stack). Its postcondition reads the memory on return
 only within the state (`wordsAt_congr`).
 -/
 
@@ -55,18 +48,16 @@ theorem initOut : PostOut (Spec.Dsa.parameterInitContract abi) (Spec.Dsa.paramet
     dsimp only [Curry.apply] at h ⊢
     rw [show ArgWord.addr.ofRaw a0 = a0 from rfl, hw]; exact h
 
-def initKs : List Nat := keep_for% Spec.Dsa.parameterInitApi.sig 0 Impl.Dsa.X86_64.ParameterSearch.init []
+theorem init_codeSp : Impl.Dsa.X86_64.ParameterSearch.init.all (fun i => !isa.writesSp i) = true := by sp_safe
 
-theorem initOk : ∃ h : VG.Taint.Hint RTaint.FT,
-    (VG.Taint.check RTaint.rtaint (RScrub.init Spec.Dsa.parameterInitApi.sig 0 []) Impl.Dsa.X86_64.ParameterSearch.init
-      h).any (RScrub.resOkB · 0 initKs (Impl.Scrub.X86_64.chunks 0)) = true :=
-  RScrub.Analysed.ok_of initKs (by taint_decide)
+/-- `Spec.Dsa.parameterInitApi`'s function as emitted (`Impl.Dsa.X86_64.Fn.parameterInit`) meets its
+contract in constant time and returns without secret residue. -/
+theorem init_scrubbed :
+    VerifiedScrubbed target Impl.Dsa.X86_64.Fn.parameterInit (Spec.Dsa.parameterInitApi.contract X86_64.abi 0) 32 :=
+  verifiedScrubbedAll (api := Spec.Dsa.parameterInitApi)
+    { code := Impl.Dsa.X86_64.ParameterSearch.init, verified := init_verified, spSafe := init_codeSp } .sse initOut
 
-open VG.X86_64.RScrub in
-/-- `Spec.Dsa.parameterInitApi` without secret residue. -/
-def initReg : Registration Spec.Dsa.parameterInitApi X86_64.target :=
-  scrubOf { code := Impl.Dsa.X86_64.ParameterSearch.init, verified := init_verified } .sse false [.rsi] initOut [] (pubOk_nil _)
-    ⟨initKs, initOk⟩
-    (by dsimp only [VG.X86_64.Scrub.retBitsOf]; lit_decide)
+theorem init_spSafe : Impl.Dsa.X86_64.Fn.parameterInit.all (fun i => !isa.writesSp i) = true :=
+  scrubKs_spSafe init_codeSp
 
 end VG.Proof.Dsa.X86_64.ParameterSearchInit

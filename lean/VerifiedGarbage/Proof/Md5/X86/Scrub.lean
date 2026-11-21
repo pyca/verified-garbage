@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Md5.X86.Shared
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Impl.Md5.X86.Stream
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Md5.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Md5.X86.Shared
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Md5.Contract
 meta import VerifiedGarbage.Impl.Md5.X86.Stream
@@ -27,7 +27,7 @@ nothing and has no frame, followed by the clearing of the registers a callee
 may change (`X86.Scrub.verifiedScrubbed`); `vg_md5_update` and
 `vg_md5_finalize`, whose working space is in a frame of their own, with the
 stack they and the compression function use zeroed first
-(`X86.Scrub.verifiedScrubbedF`), given that their postconditions read the
+(`X86.Scrub.verifiedScrubbedAll`), given that their postconditions read the
 memory on return only within the buffers (`Proof.Md5.PostOut`). HMAC-MD5 and
 PBKDF2-HMAC-MD5 call `vg_md5_init`'s code as the internal `vg_md5_init_core`
 (`Proof.Pbkdf2.Stream.X86.md5H`).
@@ -54,7 +54,7 @@ theorem init_scrubbed : VerifiedScrubbed target Impl.Md5.X86.Fn.init (initContra
 time and returns without secret residue. -/
 theorem update_scrubbed :
     VerifiedScrubbed target Impl.Md5.X86.Fn.update (updateContract X86.abi (20 + 140)) 0 :=
-  verifiedScrubbedF (api := Spec.Md5.updateApi)
+  verifiedScrubbedAll (api := Spec.Md5.updateApi)
     { code := Impl.StackScratch.X86.withStackScratch 140 5 Impl.Md5.X86.Stream.update
       stack := 20 + 140
       verified := Shared.update }
@@ -64,7 +64,7 @@ theorem update_scrubbed :
 constant time and returns without secret residue. -/
 theorem finalize_scrubbed :
     VerifiedScrubbed target Impl.Md5.X86.Fn.finalize (finalizeContract X86.abi (20 + 136)) 0 :=
-  verifiedScrubbedF (api := Spec.Md5.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Md5.finalizeApi)
     { code := Impl.StackScratch.X86.withStackScratch 136 4 Impl.Md5.X86.Stream.finalize
       stack := 20 + 136
       verified := Shared.finalize }

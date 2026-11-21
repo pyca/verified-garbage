@@ -74,9 +74,9 @@ end VG.Impl.RsaKeyGen.RISCV64.KeyInit
 namespace VG.Impl.RsaKeyGen.RISCV64.KeyInit.Fn
 
 /-- `vg_rsa_generate_init` as emitted: `init`, then its cleanup
-(`Impl.Scrub.RISCV64.scrub`), the caller-saved registers cleared but the 32
+(`Impl.Scrub.RISCV64.scrubAll`), the caller-saved registers cleared but the 32
 bits of its result (it uses no stack), so that it returns without secret
 residue. -/
-def init : Prog RISCV64.isa := Impl.Scrub.RISCV64.scrub 32 0 KeyInit.init
+def init : Prog RISCV64.isa := Impl.Scrub.RISCV64.scrubAll 32 0 KeyInit.init
 
 end VG.Impl.RsaKeyGen.RISCV64.KeyInit.Fn

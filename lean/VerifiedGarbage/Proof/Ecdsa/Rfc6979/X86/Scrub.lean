@@ -12,8 +12,8 @@ within `out` (`X86.Scrub.PostOut`), as on RISC-V
 (`Proof/Ecdsa/Rfc6979/RISCV64/Scrub.lean`): each implementation, generic
 over the HMAC implementations its table holds, which it calls indirectly
 (`X86.Scrub.tablesCall`), followed by the zeroing of its stack and
-`Impl.Scrub.X86.tail` (`X86.Scrub.scrubFOf`), returns with the caller-saved
-registers cleared and its whole stack zeroed.
+`Impl.Scrub.X86.tail` (`Impl.Scrub.X86.scrubAll`, `X86.Scrub.verifiedScrubbedAll`),
+returns with the caller-saved registers cleared and its whole stack zeroed.
 -/
 
 @[expose] public section

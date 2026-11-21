@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Scrub.RISCV64
 
 `vg_aes_siv_init`, `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, each on its stack scratch
 (`Impl.StackScratch.RISCV64`), followed by its cleanup
-(`Impl.Scrub.RISCV64.scrub`), which zeroes the stack its frames use and
+(`Impl.Scrub.RISCV64.scrubAll`), which zeroes the stack its frames use and
 clears the caller-saved registers but the result's bits.
 -/
 
@@ -21,14 +21,14 @@ open VG.RISCV64 VG.Impl.Scrub.RISCV64 VG.Impl.StackScratch.RISCV64
 
 /-- `vg_aes_siv_init`, then its cleanup. -/
 def init : Prog isa :=
-  scrub 0 2560 (withStackScratch 2560 .a3 VG.Impl.AesSiv.RISCV64.init)
+  scrubAll 0 2560 (withStackScratch 2560 .a3 VG.Impl.AesSiv.RISCV64.init)
 
 /-- `vg_aes_siv_encrypt`, then its cleanup. -/
 def encrypt : Prog isa :=
-  scrub 0 2576 (withStackScratch 2576 .a7 VG.Impl.AesSiv.RISCV64.encrypt)
+  scrubAll 0 2576 (withStackScratch 2576 .a7 VG.Impl.AesSiv.RISCV64.encrypt)
 
 /-- `vg_aes_siv_decrypt`, then its cleanup. -/
 def decrypt : Prog isa :=
-  scrub 32 2576 (withStackScratch 2576 .a7 VG.Impl.AesSiv.RISCV64.decrypt)
+  scrubAll 32 2576 (withStackScratch 2576 .a7 VG.Impl.AesSiv.RISCV64.decrypt)
 
 end VG.Impl.AesSiv.RISCV64.Fn

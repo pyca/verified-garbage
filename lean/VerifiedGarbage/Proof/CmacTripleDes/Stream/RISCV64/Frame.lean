@@ -2130,7 +2130,7 @@ the whole stack its frames used: their working space, and the frame of ECB's
 serial code below it, which holds a copy of the key schedule. Each theorem
 below states that one meets its contract in constant time and returns
 without secret residue (`VerifiedScrubbed`, by
-`RISCV64.Scrub.verifiedScrubbed`), which is what its registration binds. Their postconditions read the memory on return only within
+`RISCV64.Scrub.verifiedScrubbedAll`), which is what its registration binds. Their postconditions read the memory on return only within
 the state or the MAC (`RISCV64.Scrub.PostOut`).
 -/
 
@@ -2159,7 +2159,7 @@ contract in constant time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed target Impl.CmacTripleDes.Stream.RISCV64.Fn.init
       (Spec.Cmac.tdesStreamInitContract RISCV64.abi 1584) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.tdesStreamInitApi) (W := 1584)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesStreamInitApi) (W := 1584)
     { code := _, verified := Proof.CmacTripleDes.Stream.RISCV64.init_framed } (initOut _)
     (by dsimp only; lit_decide)
 
@@ -2168,7 +2168,7 @@ contract in constant time and returns without secret residue. -/
 theorem absorb_scrubbed :
     VerifiedScrubbed target Impl.CmacTripleDes.Stream.RISCV64.Fn.absorb
       (Spec.Cmac.tdesAbsorbContract RISCV64.abi 1632) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.tdesAbsorbApi) (W := 1632)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesAbsorbApi) (W := 1632)
     { code := _, verified := Proof.CmacTripleDes.Stream.RISCV64.absorb_framed } (absorbOut _)
     (by dsimp only; lit_decide)
 
@@ -2177,7 +2177,7 @@ contract in constant time and returns without secret residue. -/
 theorem finish_scrubbed :
     VerifiedScrubbed target Impl.CmacTripleDes.Stream.RISCV64.Fn.finish
       (Spec.Cmac.tdesFinishContract RISCV64.abi 1584) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.tdesFinishApi) (W := 1584)
+  verifiedScrubbedAll (api := Spec.Cmac.tdesFinishApi) (W := 1584)
     { code := _, verified := Proof.CmacTripleDes.Stream.RISCV64.finish_framed } (finishOut _)
     (by dsimp only; lit_decide)
 

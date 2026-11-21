@@ -700,7 +700,7 @@ theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstra
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) :
     VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeP384
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst AArch64.abi) 32 :=
-  VG.AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdh.P384.exchangeApi)
+  VG.AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P384.exchangeApi)
     { code := exchangeP384, verified := ecdh_verified hL hI hO } _
     (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 

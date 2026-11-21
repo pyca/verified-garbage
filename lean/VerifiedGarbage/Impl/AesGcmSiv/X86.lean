@@ -487,7 +487,7 @@ end VG.Impl.AesGcmSiv.X86
 
 /-! ## The functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
 bytes of stack below `esp` that it and its callees use zeroed, and the
 registers a callee may change cleared but the `rb` bits of the result, so
 that it returns without secret residue. -/
@@ -499,10 +499,10 @@ open Impl.StackScratch.X86 (withStackScratch)
 
 /-- `vg_aes_gcm_siv_seal` over the functions `c`, as emitted. -/
 def «seal» (c : Impl.AesGcm.X86.Callees) : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» c))
+  Impl.Scrub.X86.scrubAll 0 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» c))
 
 /-- `vg_aes_gcm_siv_open` over the functions `c`, as emitted. -/
 def «open» (c : Impl.AesGcm.X86.Callees) : Prog isa :=
-  Impl.Scrub.X86.scrubF 32 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» c))
+  Impl.Scrub.X86.scrubAll 32 2888 (withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» c))
 
 end VG.Impl.AesGcmSiv.X86.Fn

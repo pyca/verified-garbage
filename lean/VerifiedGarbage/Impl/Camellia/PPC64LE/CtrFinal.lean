@@ -47,7 +47,7 @@ open VG.Impl.Modes.PPC64LE (tailByte)
 /-- `vg_camellia_ctr`'s code, with its working space on the stack: called as an
 internal function of its own, `vg_camellia_ctr_core`, rather than as
 `vg_camellia_ctr`, which also clears the registers it leaves
-(`Proof.Camellia.PPC64LE.Scrub.ctrReg`). -/
+(`Proof.Camellia.PPC64LE.Scrub.ctr_scrubbed`). -/
 def ctrFramed : Prog isa := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 ctr
 
 /-- A call of `vg_camellia_ctr`'s code, as `vg_camellia_ctr_core`. -/

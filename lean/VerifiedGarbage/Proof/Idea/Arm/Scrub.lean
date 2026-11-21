@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 public import VerifiedGarbage.Impl.Idea.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Idea.Contract
@@ -19,6 +20,7 @@ import VerifiedGarbage.Proof.Idea.ScrubLocal
 import VerifiedGarbage.Proof.Idea.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Impl.Idea.Arm.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Spec.Idea.Contract
@@ -36,6 +38,7 @@ meta import VerifiedGarbage.Proof.Modes.Arm.ScrubCode
 meta import VerifiedGarbage.Proof.Idea.ScrubLocal
 meta import VerifiedGarbage.Proof.Idea.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # IDEA on ARMv7, without secret residue
@@ -45,16 +48,21 @@ Key expansion has no frame, and then sets the registers a callee may change
 to constants (`Arm.Scrub.verifiedScrubbed`). Key inversion and ECB keep their
 working space in a frame of 24 and 32 bytes (`withRegScratch`), and the CBC,
 CFB64 and OFB functions 64 bytes of their own around ECB's 32
-(`withStackScratchWiped`). None makes an indirect call. Each is emitted
-followed by a wipe of the stack its contract reserves, then the registers
-(`Arm.Scrub.verifiedScrubbedF`). Their postconditions read the memory on
+(`withStackScratchWiped`). None makes an indirect call. Key inversion and
+ECB are emitted followed by a wipe of the stack their contracts reserve,
+then the registers (`Arm.Scrub.verifiedScrubbedAll`). The modes wipe their own
+frame, and are emitted followed by a wipe of only the words of that stack
+that the residue analysis (`Arm.rtaint`) finds may differ between two runs,
+then the registers (`Arm.Scrub.verifiedScrubbedSel`, whose analysis the
+kernel evaluates here: `taint_decide_ct`): of their 96 bytes, the 40 that
+ECB's frame and theirs leave. Their postconditions read the memory on
 return only within their buffers, as on the other targets
 (`Proof/Idea/ScrubLocal.lean`).
 
 The modes call ECB's code as it is verified, without the wipe, under a name
 of its own (`vg_idea_ecb_entry`, `Impl.Idea.Arm.ecbCore`), which the
-emitter writes as an internal function: their own wipe covers the frame of
-that call.
+emitter writes as an internal function: the analysis of each mode covers
+the frame of that call.
 -/
 
 @[expose] public section
@@ -238,30 +246,12 @@ theorem ecb_code : armStack Impl.Idea.Arm.ecb = 0 ∧ noIcall Impl.Idea.Arm.ecb 
 
 theorem frameOk_24 : FrameOk 24 := by decide
 theorem frameOk_32 : FrameOk 32 := by decide
-theorem frameOk_96 : FrameOk 96 := by decide
-
 theorem invertKey_scrub :
     CodeOk (Impl.StackScratch.Arm.withRegScratch 24 .r2 Impl.Idea.Arm.invertKey) 24 :=
   CodeOk.alloc (n := 0) (CodeOk.seq (CodeOk.block _) ⟨Nat.le_of_eq invertKey_code.1, invertKey_code.2⟩)
 
 theorem ecbCode_scrub : CodeOk Impl.Idea.Arm.ecbCode 32 :=
   CodeOk.alloc (n := 0) (CodeOk.seq (CodeOk.block _) ⟨Nat.le_of_eq ecb_code.1, ecb_code.2⟩)
-
-/-- ECB's code, as the modes call it. -/
-theorem ecbCore_scrub :
-    armStack Impl.Idea.Arm.ecbCore.code + callExtraArm Impl.Idea.Arm.ecbCore ≤ 32 ∧
-      noIcall Impl.Idea.Arm.ecbCore.code = true := by
-  simpa only [callExtraArm, Impl.Idea.Arm.ecbCore, ite_true, Nat.add_zero] using ecbCode_scrub
-
-/-- A mode one block at a time, in its 64-byte scratch frame. -/
-theorem seq_framed_scrub (m : Impl.Modes.Arm.Mode) :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 (Impl.Idea.Arm.ecbCore.seq m)) 96 :=
-  withStackScratchWiped_scrubArm (seq_scrubArm ecbCore_scrub m)
-
-/-- A mode over a message's last piece, in its 64-byte scratch frame. -/
-theorem seqFinal_framed_scrub (m : Impl.Modes.Arm.Mode) :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 (Impl.Idea.Arm.ecbCore.seqFinal m)) 96 :=
-  withStackScratchWiped_scrubArm (seqFinal_scrubArm ecbCore_scrub m)
 
 end VG.Proof.Idea.Arm.Scrub
 
@@ -279,71 +269,87 @@ theorem expandKey :
 /-- `vg_idea_invert_key`. -/
 theorem invertKey :
     VerifiedScrubbed target Impl.Idea.Arm.Fn.invertKey (invertKeyContract Arm.abi 24) 0 :=
-  verifiedScrubbedF (api := invertKeyApi)
+  verifiedScrubbedAll (api := invertKeyApi)
     { code := Impl.StackScratch.Arm.withRegScratch 24 .r2 Impl.Idea.Arm.invertKey
       verified := Proof.Idea.Arm.invertKey_framed }
     (Scrub.invertKeyOut _) (scrubSideF_of Scrub.invertKey_scrub Scrub.frameOk_24 _)
 
 /-- `vg_idea_ecb`. -/
 theorem ecb : VerifiedScrubbed target Impl.Idea.Arm.Fn.ecb (ecbContract Arm.abi 32) 0 :=
-  verifiedScrubbedF (api := ecbApi)
+  verifiedScrubbedAll (api := ecbApi)
     { code := Impl.Idea.Arm.ecbCode, verified := Proof.Idea.Arm.ecb_framed }
     (Scrub.ecbOut _) (scrubSideF_of Scrub.ecbCode_scrub Scrub.frameOk_32 _)
 
 /-- `vg_idea_cbc_encrypt_chained`. -/
 theorem cbcEncryptChained : VerifiedScrubbed target Impl.Idea.Arm.Fn.cbcEncryptChained (cbcEncryptChainedContract Arm.abi 96) 0 :=
-  verifiedScrubbedF (api := cbcEncryptChainedApi)
+  verifiedScrubbedSel (api := cbcEncryptChainedApi) (W := 96)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cbcEncryptChained
       verified := Proof.Idea.Arm.cbcEncryptChained_framed }
-    (Scrub.cbcEncryptOut _) (scrubSideF_of (Scrub.seq_framed_scrub Impl.Modes.Arm.cbcEncChained) Scrub.frameOk_96 _)
+    Impl.Idea.Arm.Fn.modeWords []
+    (Scrub.cbcEncryptOut _)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_idea_cbc_decrypt_chained`. -/
 theorem cbcDecryptChained : VerifiedScrubbed target Impl.Idea.Arm.Fn.cbcDecryptChained (cbcDecryptChainedContract Arm.abi 96) 0 :=
-  verifiedScrubbedF (api := cbcDecryptChainedApi)
+  verifiedScrubbedSel (api := cbcDecryptChainedApi) (W := 96)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cbcDecryptChained
       verified := Proof.Idea.Arm.cbcDecryptChained_framed }
-    (Scrub.cbcDecryptOut _) (scrubSideF_of (Scrub.seq_framed_scrub Impl.Modes.Arm.cbcDecChained) Scrub.frameOk_96 _)
+    Impl.Idea.Arm.Fn.modeWords []
+    (Scrub.cbcDecryptOut _)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_idea_cfb64_encrypt`. -/
 theorem cfbEncrypt : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbEncrypt (cfbEncryptContract Arm.abi 96) 0 :=
-  verifiedScrubbedF (api := cfbEncryptApi)
+  verifiedScrubbedSel (api := cfbEncryptApi) (W := 96)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbEncrypt
       verified := Proof.Idea.Arm.cfbEncrypt_framed }
-    (Scrub.cfbEncryptOut _) (scrubSideF_of (Scrub.seq_framed_scrub Impl.Modes.Arm.cfbEnc) Scrub.frameOk_96 _)
+    Impl.Idea.Arm.Fn.modeWords []
+    (Scrub.cfbEncryptOut _)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_idea_cfb64_decrypt`. -/
 theorem cfbDecrypt : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbDecrypt (cfbDecryptContract Arm.abi 96) 0 :=
-  verifiedScrubbedF (api := cfbDecryptApi)
+  verifiedScrubbedSel (api := cfbDecryptApi) (W := 96)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbDecrypt
       verified := Proof.Idea.Arm.cfbDecrypt_framed }
-    (Scrub.cfbDecryptOut _) (scrubSideF_of (Scrub.seq_framed_scrub Impl.Modes.Arm.cfbDec) Scrub.frameOk_96 _)
+    Impl.Idea.Arm.Fn.modeWords []
+    (Scrub.cfbDecryptOut _)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_idea_cfb64_encrypt_final`. -/
 theorem cfbEncryptFinal : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbEncryptFinal (cfbEncryptFinalContract Arm.abi 96) 0 :=
-  verifiedScrubbedF (api := cfbEncryptFinalApi)
+  verifiedScrubbedSel (api := cfbEncryptFinalApi) (W := 96)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbEncryptFinal
       verified := Proof.Idea.Arm.cfbEncryptFinal_framed }
-    (Scrub.cfbEncryptFinalOut _) (scrubSideF_of (Scrub.seqFinal_framed_scrub Impl.Modes.Arm.cfbEnc) Scrub.frameOk_96 _)
+    Impl.Idea.Arm.Fn.modeWords []
+    (Scrub.cfbEncryptFinalOut _)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_idea_cfb64_decrypt_final`. -/
 theorem cfbDecryptFinal : VerifiedScrubbed target Impl.Idea.Arm.Fn.cfbDecryptFinal (cfbDecryptFinalContract Arm.abi 96) 0 :=
-  verifiedScrubbedF (api := cfbDecryptFinalApi)
+  verifiedScrubbedSel (api := cfbDecryptFinalApi) (W := 96)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbDecryptFinal
       verified := Proof.Idea.Arm.cfbDecryptFinal_framed }
-    (Scrub.cfbDecryptFinalOut _) (scrubSideF_of (Scrub.seqFinal_framed_scrub Impl.Modes.Arm.cfbDecF) Scrub.frameOk_96 _)
+    Impl.Idea.Arm.Fn.modeWords []
+    (Scrub.cfbDecryptFinalOut _)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_idea_ofb`. -/
 theorem ofb : VerifiedScrubbed target Impl.Idea.Arm.Fn.ofb (ofbContract Arm.abi 96) 0 :=
-  verifiedScrubbedF (api := ofbApi)
+  verifiedScrubbedSel (api := ofbApi) (W := 96)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.ofb
       verified := Proof.Idea.Arm.ofb_framed }
-    (Scrub.ofbOut _) (scrubSideF_of (Scrub.seq_framed_scrub Impl.Modes.Arm.ofb) Scrub.frameOk_96 _)
+    Impl.Idea.Arm.Fn.modeWords []
+    (Scrub.ofbOut _)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_idea_ofb_final`. -/
 theorem ofbFinal : VerifiedScrubbed target Impl.Idea.Arm.Fn.ofbFinal (ofbFinalContract Arm.abi 96) 0 :=
-  verifiedScrubbedF (api := ofbFinalApi)
+  verifiedScrubbedSel (api := ofbFinalApi) (W := 96)
     { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.ofbFinal
       verified := Proof.Idea.Arm.ofbFinal_framed }
-    (Scrub.ofbFinalOut _) (scrubSideF_of (Scrub.seqFinal_framed_scrub Impl.Modes.Arm.ofb) Scrub.frameOk_96 _)
+    Impl.Idea.Arm.Fn.modeWords []
+    (Scrub.ofbFinalOut _)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.Idea.Arm.Fn

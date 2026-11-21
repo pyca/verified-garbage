@@ -25,7 +25,7 @@ each as emitted (`Impl.MlDsa.RISCV64.Fn`): followed by
 `Impl.Scrub.RISCV64.scrubTail`, which clears the caller-saved registers and
 the stack their frames used (1072 to 1184 bytes). Each theorem below states
 that one meets its contract in constant time and returns without secret
-residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbed`), which is
+residue (`VerifiedScrubbed`, by `RISCV64.Scrub.verifiedScrubbedAll`), which is
 what its registration binds. The postconditions of all but verification read the memory on return
 only within their outputs, and those of verification not at all
 (`RISCV64.Scrub.PostOut`); the proofs are PPC64LE's (`Proof/MlDsa/PPC64LE/Scrub.lean`), for this target's
@@ -230,7 +230,7 @@ end
 theorem keyGen44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.keyGen44
       (Spec.MlDsa.keyGenContract mlDsa44 abi 1168) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.keyGen44Api) (W := 1168)
+  verifiedScrubbedAll (api := Spec.MlDsa.keyGen44Api) (W := 1168)
     { code := Impl.MlDsa.RISCV64.KeyGen.keyGen44
       verified := Proof.MlDsa.RISCV64.KeyGen.keyGen44_verified }
     (by exact keyGenOut mlDsa44 _) (by lit_decide)
@@ -238,7 +238,7 @@ theorem keyGen44_scrubbed :
 theorem keyGen65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.keyGen65
       (Spec.MlDsa.keyGenContract mlDsa65 abi 1168) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.keyGen65Api) (W := 1168)
+  verifiedScrubbedAll (api := Spec.MlDsa.keyGen65Api) (W := 1168)
     { code := Impl.MlDsa.RISCV64.KeyGen.keyGen65
       verified := Proof.MlDsa.RISCV64.KeyGen.keyGen65_verified }
     (by exact keyGenOut mlDsa65 _) (by lit_decide)
@@ -246,7 +246,7 @@ theorem keyGen65_scrubbed :
 theorem keyGen87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.keyGen87
       (Spec.MlDsa.keyGenContract mlDsa87 abi 1168) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.keyGen87Api) (W := 1168)
+  verifiedScrubbedAll (api := Spec.MlDsa.keyGen87Api) (W := 1168)
     { code := Impl.MlDsa.RISCV64.KeyGen.keyGen87
       verified := Proof.MlDsa.RISCV64.KeyGen.keyGen87_verified }
     (by exact keyGenOut mlDsa87 _) (by lit_decide)
@@ -254,7 +254,7 @@ theorem keyGen87_scrubbed :
 theorem pkTr44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.pkTr44
       (Spec.MlDsa.pkTrContract mlDsa44 abi 1168) 0 :=
-  verifiedScrubbed (api := Spec.MlDsa.pkTr44Api) (W := 1168)
+  verifiedScrubbedAll (api := Spec.MlDsa.pkTr44Api) (W := 1168)
     { code := Impl.MlDsa.RISCV64.PkTr.pkTr mlDsa44
       verified := Proof.MlDsa.RISCV64.PkTr.pkTr44_verified }
     (by exact pkTrOut mlDsa44 _) (by lit_decide)
@@ -262,7 +262,7 @@ theorem pkTr44_scrubbed :
 theorem pkTr65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.pkTr65
       (Spec.MlDsa.pkTrContract mlDsa65 abi 1168) 0 :=
-  verifiedScrubbed (api := Spec.MlDsa.pkTr65Api) (W := 1168)
+  verifiedScrubbedAll (api := Spec.MlDsa.pkTr65Api) (W := 1168)
     { code := Impl.MlDsa.RISCV64.PkTr.pkTr mlDsa65
       verified := Proof.MlDsa.RISCV64.PkTr.pkTr65_verified }
     (by exact pkTrOut mlDsa65 _) (by lit_decide)
@@ -270,7 +270,7 @@ theorem pkTr65_scrubbed :
 theorem pkTr87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.pkTr87
       (Spec.MlDsa.pkTrContract mlDsa87 abi 1168) 0 :=
-  verifiedScrubbed (api := Spec.MlDsa.pkTr87Api) (W := 1168)
+  verifiedScrubbedAll (api := Spec.MlDsa.pkTr87Api) (W := 1168)
     { code := Impl.MlDsa.RISCV64.PkTr.pkTr mlDsa87
       verified := Proof.MlDsa.RISCV64.PkTr.pkTr87_verified }
     (by exact pkTrOut mlDsa87 _) (by lit_decide)
@@ -278,7 +278,7 @@ theorem pkTr87_scrubbed :
 theorem preparePublic44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.preparePublic44
       (Spec.MlDsa.preparePublicKeyContract mlDsa44 abi 1072) 0 :=
-  verifiedScrubbed (api := (preparePublicKeyApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1072)
+  verifiedScrubbedAll (api := (preparePublicKeyApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1072)
     { code := Impl.MlDsa.RISCV64.PreparedKey.preparePublic mlDsa44
       verified := Proof.MlDsa.RISCV64.PreparedKey.preparePublic44_verified }
     (by exact pubOut _ (.inl rfl)) (by lit_decide)
@@ -286,7 +286,7 @@ theorem preparePublic44_scrubbed :
 theorem prepareSecret44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.prepareSecret44
       (Spec.MlDsa.prepareSecretKeyContract mlDsa44 abi 1072) 0 :=
-  verifiedScrubbed (api := (prepareSecretKeyApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1072)
+  verifiedScrubbedAll (api := (prepareSecretKeyApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1072)
     { code := Impl.MlDsa.RISCV64.PreparedKey.prepareSecret mlDsa44
       verified := Proof.MlDsa.RISCV64.PreparedKey.prepareSecret44_verified }
     (by exact secOut _ (.inl rfl)) (by lit_decide)
@@ -294,7 +294,7 @@ theorem prepareSecret44_scrubbed :
 theorem preparePublic65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.preparePublic65
       (Spec.MlDsa.preparePublicKeyContract mlDsa65 abi 1072) 0 :=
-  verifiedScrubbed (api := (preparePublicKeyApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1072)
+  verifiedScrubbedAll (api := (preparePublicKeyApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1072)
     { code := Impl.MlDsa.RISCV64.PreparedKey.preparePublic mlDsa65
       verified := Proof.MlDsa.RISCV64.PreparedKey.preparePublic65_verified }
     (by exact pubOut _ (.inr (.inl rfl))) (by lit_decide)
@@ -302,7 +302,7 @@ theorem preparePublic65_scrubbed :
 theorem prepareSecret65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.prepareSecret65
       (Spec.MlDsa.prepareSecretKeyContract mlDsa65 abi 1072) 0 :=
-  verifiedScrubbed (api := (prepareSecretKeyApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1072)
+  verifiedScrubbedAll (api := (prepareSecretKeyApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1072)
     { code := Impl.MlDsa.RISCV64.PreparedKey.prepareSecret mlDsa65
       verified := Proof.MlDsa.RISCV64.PreparedKey.prepareSecret65_verified }
     (by exact secOut _ (.inr (.inl rfl))) (by lit_decide)
@@ -310,7 +310,7 @@ theorem prepareSecret65_scrubbed :
 theorem preparePublic87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.preparePublic87
       (Spec.MlDsa.preparePublicKeyContract mlDsa87 abi 1072) 0 :=
-  verifiedScrubbed (api := (preparePublicKeyApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1072)
+  verifiedScrubbedAll (api := (preparePublicKeyApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1072)
     { code := Impl.MlDsa.RISCV64.PreparedKey.preparePublic mlDsa87
       verified := Proof.MlDsa.RISCV64.PreparedKey.preparePublic87_verified }
     (by exact pubOut _ (.inr (.inr rfl))) (by lit_decide)
@@ -318,7 +318,7 @@ theorem preparePublic87_scrubbed :
 theorem prepareSecret87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.prepareSecret87
       (Spec.MlDsa.prepareSecretKeyContract mlDsa87 abi 1072) 0 :=
-  verifiedScrubbed (api := (prepareSecretKeyApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1072)
+  verifiedScrubbedAll (api := (prepareSecretKeyApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1072)
     { code := Impl.MlDsa.RISCV64.PreparedKey.prepareSecret mlDsa87
       verified := Proof.MlDsa.RISCV64.PreparedKey.prepareSecret87_verified }
     (by exact secOut _ (.inr (.inr rfl))) (by lit_decide)
@@ -326,7 +326,7 @@ theorem prepareSecret87_scrubbed :
 theorem sign44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.sign44
       (Spec.MlDsa.signContract mlDsa44 abi 1184) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.sign44Api) (W := 1184)
+  verifiedScrubbedAll (api := Spec.MlDsa.sign44Api) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Sign.sign44
       verified := Proof.MlDsa.RISCV64.PreparedKey.sign44_verified }
     (by exact signOut mlDsa44 _) (by lit_decide)
@@ -334,7 +334,7 @@ theorem sign44_scrubbed :
 theorem signPrepared44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.signPrepared44
       (Spec.MlDsa.preparedSignContract mlDsa44 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedSignApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedSignApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Sign.sign44E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.signPrepared44_verified }
     (by exact preparedSignOut mlDsa44 _) (by lit_decide)
@@ -342,7 +342,7 @@ theorem signPrepared44_scrubbed :
 theorem verify44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.verify44
       (Spec.MlDsa.verifyContract mlDsa44 abi 1184) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.verify44Api) (W := 1184)
+  verifiedScrubbedAll (api := Spec.MlDsa.verify44Api) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Verify.verify44
       verified := Proof.MlDsa.RISCV64.PreparedKey.verify44_verified }
     (by exact verifyOut mlDsa44 _) (by lit_decide)
@@ -350,7 +350,7 @@ theorem verify44_scrubbed :
 theorem verifyPrepared44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.verifyPrepared44
       (Spec.MlDsa.preparedVerifyContract mlDsa44 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedVerifyApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedVerifyApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Verify.verify44E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.verifyPrepared44_verified }
     (by exact preparedVerifyOut mlDsa44 _) (by lit_decide)
@@ -358,7 +358,7 @@ theorem verifyPrepared44_scrubbed :
 theorem signMessage44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.signMessage44
       (Spec.MlDsa.signMessageContract mlDsa44 abi 1184) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.signMessage44Api) (W := 1184)
+  verifiedScrubbedAll (api := Spec.MlDsa.signMessage44Api) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.signMessage (Spec.MlDsa.sign44Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Sign.sign44 mlDsa44
       verified := Proof.MlDsa.RISCV64.Message.signMessage44_verified }
@@ -367,7 +367,7 @@ theorem signMessage44_scrubbed :
 theorem preparedSignMessage44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.preparedSignMessage44
       (Spec.MlDsa.preparedSignMessageContract mlDsa44 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedSignMessageApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedSignMessageApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa44" ++ "_core")
         (Impl.MlDsa.RISCV64.Sign.sign44E true) mlDsa44
       verified := Proof.MlDsa.RISCV64.Message.signMessagePrepared44_verified }
@@ -376,7 +376,7 @@ theorem preparedSignMessage44_scrubbed :
 theorem verifyMessageCached44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.verifyMessageCached44
       (Spec.MlDsa.verifyMessageCachedContract mlDsa44 abi 1184) 32 :=
-  verifiedScrubbed (api := (verifyMessageCachedApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1184)
+  verifiedScrubbedAll (api := (verifyMessageCachedApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Spec.MlDsa.verify44Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Verify.verify44 mlDsa44
       verified := Proof.MlDsa.RISCV64.Message.verifyMessageCached44_verified }
@@ -385,7 +385,7 @@ theorem verifyMessageCached44_scrubbed :
 theorem preparedVerifyMessage44_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.preparedVerifyMessage44
       (Spec.MlDsa.preparedVerifyMessageContract mlDsa44 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedVerifyMessageApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedVerifyMessageApi mlDsa44 "mldsa44" "ML-DSA-44")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa44" ++ "_core")
         (Impl.MlDsa.RISCV64.Verify.verify44E true) mlDsa44
       verified := Proof.MlDsa.RISCV64.Message.verifyMessagePrepared44_verified }
@@ -394,7 +394,7 @@ theorem preparedVerifyMessage44_scrubbed :
 theorem sign65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.sign65
       (Spec.MlDsa.signContract mlDsa65 abi 1184) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.sign65Api) (W := 1184)
+  verifiedScrubbedAll (api := Spec.MlDsa.sign65Api) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Sign.sign65
       verified := Proof.MlDsa.RISCV64.PreparedKey.sign65_verified }
     (by exact signOut mlDsa65 _) (by lit_decide)
@@ -402,7 +402,7 @@ theorem sign65_scrubbed :
 theorem signPrepared65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.signPrepared65
       (Spec.MlDsa.preparedSignContract mlDsa65 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedSignApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedSignApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Sign.sign65E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.signPrepared65_verified }
     (by exact preparedSignOut mlDsa65 _) (by lit_decide)
@@ -410,7 +410,7 @@ theorem signPrepared65_scrubbed :
 theorem verify65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.verify65
       (Spec.MlDsa.verifyContract mlDsa65 abi 1184) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.verify65Api) (W := 1184)
+  verifiedScrubbedAll (api := Spec.MlDsa.verify65Api) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Verify.verify65
       verified := Proof.MlDsa.RISCV64.PreparedKey.verify65_verified }
     (by exact verifyOut mlDsa65 _) (by lit_decide)
@@ -418,7 +418,7 @@ theorem verify65_scrubbed :
 theorem verifyPrepared65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.verifyPrepared65
       (Spec.MlDsa.preparedVerifyContract mlDsa65 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedVerifyApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedVerifyApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Verify.verify65E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.verifyPrepared65_verified }
     (by exact preparedVerifyOut mlDsa65 _) (by lit_decide)
@@ -426,7 +426,7 @@ theorem verifyPrepared65_scrubbed :
 theorem signMessage65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.signMessage65
       (Spec.MlDsa.signMessageContract mlDsa65 abi 1184) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.signMessage65Api) (W := 1184)
+  verifiedScrubbedAll (api := Spec.MlDsa.signMessage65Api) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.signMessage (Spec.MlDsa.sign65Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Sign.sign65 mlDsa65
       verified := Proof.MlDsa.RISCV64.Message.signMessage65_verified }
@@ -435,7 +435,7 @@ theorem signMessage65_scrubbed :
 theorem preparedSignMessage65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.preparedSignMessage65
       (Spec.MlDsa.preparedSignMessageContract mlDsa65 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedSignMessageApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedSignMessageApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa65" ++ "_core")
         (Impl.MlDsa.RISCV64.Sign.sign65E true) mlDsa65
       verified := Proof.MlDsa.RISCV64.Message.signMessagePrepared65_verified }
@@ -444,7 +444,7 @@ theorem preparedSignMessage65_scrubbed :
 theorem verifyMessageCached65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.verifyMessageCached65
       (Spec.MlDsa.verifyMessageCachedContract mlDsa65 abi 1184) 32 :=
-  verifiedScrubbed (api := (verifyMessageCachedApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1184)
+  verifiedScrubbedAll (api := (verifyMessageCachedApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Spec.MlDsa.verify65Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Verify.verify65 mlDsa65
       verified := Proof.MlDsa.RISCV64.Message.verifyMessageCached65_verified }
@@ -453,7 +453,7 @@ theorem verifyMessageCached65_scrubbed :
 theorem preparedVerifyMessage65_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.preparedVerifyMessage65
       (Spec.MlDsa.preparedVerifyMessageContract mlDsa65 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedVerifyMessageApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedVerifyMessageApi mlDsa65 "mldsa65" "ML-DSA-65")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa65" ++ "_core")
         (Impl.MlDsa.RISCV64.Verify.verify65E true) mlDsa65
       verified := Proof.MlDsa.RISCV64.Message.verifyMessagePrepared65_verified }
@@ -462,7 +462,7 @@ theorem preparedVerifyMessage65_scrubbed :
 theorem sign87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.sign87
       (Spec.MlDsa.signContract mlDsa87 abi 1184) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.sign87Api) (W := 1184)
+  verifiedScrubbedAll (api := Spec.MlDsa.sign87Api) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Sign.sign87
       verified := Proof.MlDsa.RISCV64.PreparedKey.sign87_verified }
     (by exact signOut mlDsa87 _) (by lit_decide)
@@ -470,7 +470,7 @@ theorem sign87_scrubbed :
 theorem signPrepared87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.signPrepared87
       (Spec.MlDsa.preparedSignContract mlDsa87 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedSignApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedSignApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Sign.sign87E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.signPrepared87_verified }
     (by exact preparedSignOut mlDsa87 _) (by lit_decide)
@@ -478,7 +478,7 @@ theorem signPrepared87_scrubbed :
 theorem verify87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.verify87
       (Spec.MlDsa.verifyContract mlDsa87 abi 1184) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.verify87Api) (W := 1184)
+  verifiedScrubbedAll (api := Spec.MlDsa.verify87Api) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Verify.verify87
       verified := Proof.MlDsa.RISCV64.PreparedKey.verify87_verified }
     (by exact verifyOut mlDsa87 _) (by lit_decide)
@@ -486,7 +486,7 @@ theorem verify87_scrubbed :
 theorem verifyPrepared87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.verifyPrepared87
       (Spec.MlDsa.preparedVerifyContract mlDsa87 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedVerifyApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedVerifyApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Verify.verify87E true
       verified := Proof.MlDsa.RISCV64.PreparedKey.verifyPrepared87_verified }
     (by exact preparedVerifyOut mlDsa87 _) (by lit_decide)
@@ -494,7 +494,7 @@ theorem verifyPrepared87_scrubbed :
 theorem signMessage87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.signMessage87
       (Spec.MlDsa.signMessageContract mlDsa87 abi 1184) 32 :=
-  verifiedScrubbed (api := Spec.MlDsa.signMessage87Api) (W := 1184)
+  verifiedScrubbedAll (api := Spec.MlDsa.signMessage87Api) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.signMessage (Spec.MlDsa.sign87Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Sign.sign87 mlDsa87
       verified := Proof.MlDsa.RISCV64.Message.signMessage87_verified }
@@ -503,7 +503,7 @@ theorem signMessage87_scrubbed :
 theorem preparedSignMessage87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.preparedSignMessage87
       (Spec.MlDsa.preparedSignMessageContract mlDsa87 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedSignMessageApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedSignMessageApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.signMessage (Proof.MlDsa.preparedSignName "mldsa87" ++ "_core")
         (Impl.MlDsa.RISCV64.Sign.sign87E true) mlDsa87
       verified := Proof.MlDsa.RISCV64.Message.signMessagePrepared87_verified }
@@ -512,7 +512,7 @@ theorem preparedSignMessage87_scrubbed :
 theorem verifyMessageCached87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.verifyMessageCached87
       (Spec.MlDsa.verifyMessageCachedContract mlDsa87 abi 1184) 32 :=
-  verifiedScrubbed (api := (verifyMessageCachedApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1184)
+  verifiedScrubbedAll (api := (verifyMessageCachedApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Spec.MlDsa.verify87Api.name ++ "_core")
         Impl.MlDsa.RISCV64.Verify.verify87 mlDsa87
       verified := Proof.MlDsa.RISCV64.Message.verifyMessageCached87_verified }
@@ -521,7 +521,7 @@ theorem verifyMessageCached87_scrubbed :
 theorem preparedVerifyMessage87_scrubbed :
     VerifiedScrubbed target Impl.MlDsa.RISCV64.Fn.preparedVerifyMessage87
       (Spec.MlDsa.preparedVerifyMessageContract mlDsa87 abi 1184) 32 :=
-  verifiedScrubbed (api := (preparedVerifyMessageApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1184)
+  verifiedScrubbedAll (api := (preparedVerifyMessageApi mlDsa87 "mldsa87" "ML-DSA-87")) (W := 1184)
     { code := Impl.MlDsa.RISCV64.Message.verifyMessageCached (Proof.MlDsa.preparedVerifyName "mldsa87" ++ "_core")
         (Impl.MlDsa.RISCV64.Verify.verify87E true) mlDsa87
       verified := Proof.MlDsa.RISCV64.Message.verifyMessagePrepared87_verified }

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
 public import VerifiedGarbage.Impl.Xdh.Arm
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # X448 of the base point on ARMv7: a fixed-base multiplication on edwards448
@@ -49,7 +49,7 @@ end VG.Impl.X448.Arm
 
 namespace VG.Impl.X448.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_x448_base`, with either multiplication of the field (`u`): `x448Base u`,
 then the registers a callee may change and the flags set to constants. -/
@@ -59,6 +59,6 @@ def x448Base (u : Bool) : Prog isa := scrub 0 (Arm.x448Base u)
 called from frames of 8 bytes, then those bytes zeroed and the registers a
 callee may change, but the result, and the flags set to constants. -/
 def exchange (u : Bool) : Prog isa :=
-  scrubF 32 8 (Impl.Xdh.Arm.exchange ("vg_x448" ++ suffix u) (Arm.x448 u) 56)
+  scrubAll 32 8 (Impl.Xdh.Arm.exchange ("vg_x448" ++ suffix u) (Arm.x448 u) 56)
 
 end VG.Impl.X448.Arm.Fn

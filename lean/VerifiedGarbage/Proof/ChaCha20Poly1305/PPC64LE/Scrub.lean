@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 `vg_chacha20_poly1305_seal`, `vg_chacha20_poly1305_open`,
 `vg_chacha20_poly1305_open_to` and `vg_chacha20_poly1305_seal_gather`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which
 clears every volatile register and the stack their frames used: they zero
 their working space themselves (`withStackScratchWiped`,
 `withStackScratchArgsWiped`), but not the 160-byte frame below it in which
@@ -102,7 +102,7 @@ and returns without secret residue. -/
 theorem seal_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.ChaCha20Poly1305.PPC64LE.Fn.seal
       (Spec.ChaCha20Poly1305.sealContract PPC64LE.abi 848) 0 :=
-  verifiedScrubbed (api := Spec.ChaCha20Poly1305.sealApi) {
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.sealApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 688 .r10 82
         (Impl.ChaCha20Poly1305.PPC64LE.inPlace Impl.ChaCha20Poly1305.PPC64LE.«seal»)
       verified := Proof.ChaCha20Poly1305.PPC64LE.seal_framed }
@@ -118,7 +118,7 @@ and returns without secret residue. -/
 theorem open_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.ChaCha20Poly1305.PPC64LE.Fn.open
       (Spec.ChaCha20Poly1305.openZeroContract PPC64LE.abi 848) 32 :=
-  verifiedScrubbed (api := Spec.ChaCha20Poly1305.openZeroApi) {
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.openZeroApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 688 .r10 82
         (Impl.ChaCha20Poly1305.PPC64LE.inPlace Impl.ChaCha20Poly1305.PPC64LE.«open»)
       verified := Proof.ChaCha20Poly1305.PPC64LE.open_framed }
@@ -134,7 +134,7 @@ time and returns without secret residue. -/
 theorem openTo_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.ChaCha20Poly1305.PPC64LE.Fn.openTo
       (Spec.ChaCha20Poly1305.openToContract PPC64LE.abi 928) 32 :=
-  verifiedScrubbed (api := Spec.ChaCha20Poly1305.openToApi) {
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.openToApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchArgsWiped 768 1 82 Impl.ChaCha20Poly1305.PPC64LE.openTo
       verified := Proof.ChaCha20Poly1305.PPC64LE.openTo_framed }
     928 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -149,7 +149,7 @@ time and returns without secret residue. -/
 theorem sealGather_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.ChaCha20Poly1305.PPC64LE.Fn.sealGather
       (Spec.ChaCha20Poly1305.sealGatherContract PPC64LE.abi 928) 0 :=
-  verifiedScrubbed (api := Spec.ChaCha20Poly1305.sealGatherApi) {
+  verifiedScrubbedAll (api := Spec.ChaCha20Poly1305.sealGatherApi) {
       code := Impl.ChaCha20Poly1305.PPC64LE.SealGather.sealGather
       verified := Proof.ChaCha20Poly1305.PPC64LE.Gather.sealGather_verified }
     928 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

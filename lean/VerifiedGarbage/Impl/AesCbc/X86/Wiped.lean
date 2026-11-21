@@ -54,7 +54,7 @@ end VG.Impl.AesCbc.X86.Wiped
 
 `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` with the CBC code `body`,
 which writes the first `w` bytes of `scratch`, then their cleanup
-(`Impl.Scrub.X86.scrubF 0 W`): where `w = 0`, `body` itself with `W = 24`;
+(`Impl.Scrub.X86.scrubAll 0 W`): where `w = 0`, `body` itself with `W = 24`;
 otherwise the call of it, then of `vg_zeroize` on those bytes, with
 `W = 72`. The cleanup zeroes those `W` bytes of stack below `esp` and clears
 the registers a callee may change, so that it returns without secret
@@ -67,13 +67,13 @@ open VG.X86
 /-- `vg_aes_cbc_encrypt` with the CBC code `body` of the variant `suffix`,
 which writes the first `w` bytes of `scratch`, as emitted. -/
 def encrypt (body : Prog isa) (suffix : String) (w : Nat) : Prog isa :=
-  if w = 0 then Impl.Scrub.X86.scrubF 0 24 body
-  else Impl.Scrub.X86.scrubF 0 72 (Impl.AesCbc.X86.Wiped.encrypt body suffix w)
+  if w = 0 then Impl.Scrub.X86.scrubAll 0 24 body
+  else Impl.Scrub.X86.scrubAll 0 72 (Impl.AesCbc.X86.Wiped.encrypt body suffix w)
 
 /-- `vg_aes_cbc_decrypt` with the CBC code `body` of the variant `suffix`,
 which writes the first `w` bytes of `scratch`, as emitted. -/
 def decrypt (body : Prog isa) (suffix : String) (w : Nat) : Prog isa :=
-  if w = 0 then Impl.Scrub.X86.scrubF 0 24 body
-  else Impl.Scrub.X86.scrubF 0 72 (Impl.AesCbc.X86.Wiped.decrypt body suffix w)
+  if w = 0 then Impl.Scrub.X86.scrubAll 0 24 body
+  else Impl.Scrub.X86.scrubAll 0 72 (Impl.AesCbc.X86.Wiped.decrypt body suffix w)
 
 end VG.Impl.AesCbc.X86.Fn

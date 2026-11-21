@@ -518,7 +518,7 @@ theorem cfbDecFrameSat_pre : ∃ s, (Spec.Sm4.cfbDecryptContract AArch64.abi 224
     [frameSat] using frameSat
 
 /-- `vg_sm4_ctr_sm4`: CTR with its working space on the stack, which the
-function as emitted zeroes (`Impl.Residue.AArch64.scrubAll`). -/
+function as emitted zeroes (`Impl.Scrub.AArch64.scrubAll`). -/
 theorem ctr_framed :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 224 .x4 ctr)
       (Spec.Sm4.ctrContract AArch64.abi 224) :=

@@ -166,7 +166,7 @@ returns without secret residue. -/
 theorem exchange_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.AArch64.InvSounds) :
     VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeSecp256k1
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst AArch64.abi) 32 :=
-  VG.AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdh.Secp256k1.exchangeApi)
+  VG.AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.Secp256k1.exchangeApi)
     { code := VG.Impl.Ecdh.AArch64.Secp256k1.exchange, verified := ecdh_verified hL hI } _
     (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 

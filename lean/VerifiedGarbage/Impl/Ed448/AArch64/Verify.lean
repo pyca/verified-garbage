@@ -82,6 +82,6 @@ namespace VG.Impl.Ed448.AArch64.Fn
 /-- `vg_ed448_verify`: `Verify.verifyWith`, its registers cleared but its
 result, and its 352 bytes of stack zeroed. -/
 def verify (c : Impl.Sha3.AArch64.Callee) : Prog AArch64.isa :=
-  Impl.Residue.AArch64.scrubAll 352 32 (own.union c.clear) (Verify.verifyWith c)
+  Impl.Scrub.AArch64.scrubAll 352 32 (own.union c.clear) (Verify.verifyWith c)
 
 end VG.Impl.Ed448.AArch64.Fn

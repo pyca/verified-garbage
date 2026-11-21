@@ -84,14 +84,14 @@ theorem p521T_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.
 /-! ## What the scrubbed functions clear
 
 The registers the tails of `vg_ecdsa_p521_sign` and `vg_ecdsa_p521_verify`
-clear, and what `ScrubAll.scrubAllOf` needs of their code
-(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
+(`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 
 /-- No instruction of `vg_ecdsa_p521_sign_k` writes PSTATE.DIT, and it calls
 nothing indirectly. -/
 theorem p521_core_side :
-    AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
       Impl.Ecdsa.AArch64.signP521 = true := by
   lit_decide
 
@@ -115,13 +115,13 @@ theorem p521Sign_scrubbed (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstra
 /-- `vg_ecdsa_p521_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP521`): it meets its contract in
 constant time and returns without secret residue. What the cleanup needs of
-the code (`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+the code (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
 theorem p521Verify (hL : Weierstrass.Law Spec.P521.curve) (hO : Weierstrass.PrimeOrder Spec.P521.curve)
     (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP521
       (Spec.Ecdsa.P521.inst.verifyHashContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts) 80) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdsa.P521.verifyHashApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P521.verifyHashApi)
     { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
         Impl.Ecdsa.Verify.AArch64.verifyP521
       verified := Proof.Ecdsa.Verify.AArch64.P521.verifyHash_verified hL hO hI hT } _

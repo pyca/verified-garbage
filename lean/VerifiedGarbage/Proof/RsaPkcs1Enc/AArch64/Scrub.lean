@@ -36,7 +36,7 @@ records').
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 open VG.Proof.RsaPkcs1Sig.AArch64 (privP_side privP_depth pdOf)
 
 /-- `vg_rsa_pkcs1_decrypt_precomputed` as emitted, cleanup included. -/

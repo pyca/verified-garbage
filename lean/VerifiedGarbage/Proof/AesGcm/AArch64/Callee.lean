@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
@@ -52,6 +53,11 @@ structure GhashWithImpl where
     ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashWithAArch64.post s s'
   ct : ConstantTime isa Proof.Gcm.ghashWithAArch64.pre Proof.Gcm.ghashWithAArch64.pub fn.code
   keepsV : fn.code.allInstrs keepsV = true
+  /-- Its code writes no high half of v8–v15 and not PSTATE.DIT, and calls
+  nothing indirectly: what the cleanup of a function of AES-GCM, which clears
+  every other register the calling convention does not preserve
+  (`Impl.AesGcm.AArch64.Fn.own`), needs of it. -/
+  side : AArch64.Scrub.calleeSide fn.code ⟨Impl.Scrub.AArch64.allGprs, Impl.Scrub.AArch64.allVecs, []⟩ = true
 
 /-- An implementation of `vg_ghash` on AArch64. -/
 structure GhashImpl where
@@ -61,6 +67,9 @@ structure GhashImpl where
     ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashAArch64.post s s'
   ct : ConstantTime isa Proof.Gcm.ghashAArch64.pre Proof.Gcm.ghashAArch64.pub fn.code
   keepsV : fn.code.allInstrs keepsV = true
+  /-- As `GhashWithImpl.side`: its code writes no high half of v8–v15 and not PSTATE.DIT, and calls
+  nothing indirectly. -/
+  side : AArch64.Scrub.calleeSide fn.code ⟨Impl.Scrub.AArch64.allGprs, Impl.Scrub.AArch64.allVecs, []⟩ = true
   suffix : String
   features : List String
   /-- Whether its CPUs have PMULL, which `seal`'s path for TLS records
@@ -81,6 +90,10 @@ structure KeyImpl where
     ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.expandKeyAArch64.post s s'
   ct : ConstantTime isa Proof.Aes.expandKeyAArch64.pre Proof.Aes.expandKeyAArch64.pub fn.code
   keepsV : fn.code.allInstrs keepsV = true
+  /-- The registers its code writes, of those the calling convention does not
+  preserve, which the cleanup of a function that calls it clears (`side`). -/
+  clear : Impl.Scrub.AArch64.Clear
+  side : AArch64.Scrub.calleeSide fn.code clear = true
 
 namespace KeyImpl
 
@@ -91,6 +104,8 @@ def scalar : KeyImpl where
   ok := Proof.Aes.AArch64.expandKey_correct
   ct := Proof.Aes.AArch64.expandKey_ct
   keepsV := by lit_decide
+  clear := Impl.Aes.AArch64.ExpandKey.scalar.clear
+  side := by lit_decide
 
 /-- `vg_aes_expand_key_scratch_aes`. -/
 def aese : KeyImpl where
@@ -99,6 +114,8 @@ def aese : KeyImpl where
   ok := Proof.Aes.AArch64.Aese.Key.expandKey_correct
   ct := Proof.Aes.AArch64.Aese.Key.expandKey_ct
   keepsV := by lit_decide
+  clear := Impl.Aes.AArch64.ExpandKey.aese.clear
+  side := by lit_decide
 
 end KeyImpl
 

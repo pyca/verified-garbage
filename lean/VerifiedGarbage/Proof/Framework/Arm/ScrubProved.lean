@@ -5,15 +5,15 @@ public import VerifiedGarbage.Proof.Framework.Arm.Scrub
 /-!
 # Scrubbed code with its facts proved (ARMv7)
 
-`verifiedScrubbed` and `verifiedScrubbedF` are `Verified.scrub` and
-`Verified.scrubFS` of a function's proof (`Unscrubbed`), as theorems about
-the code with its cleanup (`Impl.Residue.Arm.scrub rb c` and `scrubF rb n c`,
+`verifiedScrubbed` and `verifiedScrubbedAll` are `Verified.scrub` and
+`Verified.scrubAllS` of a function's proof (`Unscrubbed`), as theorems about
+the code with its cleanup (`Impl.Scrub.Arm.scrub rb c` and `scrubAll rb n c`,
 which `Impl/` defines as the function): the proof a registration binds
 (`verified := .scrubbed …`), whose code is that definition. The stack and the result's bits are
 arguments (literals at the call site), and what the cleanup needs of the
 code is one Boolean, whose proof the call site gives and the kernel checks
 when its module is built: `Code.noFrames` for `scrub` (the code writes memory
-only in its buffers), `scrubSideF` for `scrubF` (its frames are within the
+only in its buffers), `scrubSideF` for `scrubAll` (its frames are within the
 `n` bytes it zeroes, `n` is a frame size of the model, and it calls
 indirectly only the functions of its tables). The tail clears every
 register a callee may change whatever the code writes, so nothing is asked
@@ -30,9 +30,9 @@ and `scrubSideF_of` joins them.
 
 namespace VG.Arm.Scrub
 
-open VG.Arm.FrameStack VG.Impl.Residue.Arm
+open VG.Arm.FrameStack VG.Impl.Scrub.Arm
 
-/-- What `scrubF rb n c` needs of code `c` with the tables `ts`: its frames
+/-- What `scrubAll rb n c` needs of code `c` with the tables `ts`: its frames
 use at most the `n` bytes it zeroes, `n` is a frame size of the model
 (`FrameOk`), and `c` calls indirectly only the functions of `ts`. -/
 def scrubSideF (c : Prog isa) (n : Nat) (ts : List (String × List FnTable)) : Bool :=
@@ -44,7 +44,7 @@ theorem of_scrubSideF {c : Prog isa} {n : Nat} {ts : List (String × List FnTabl
   exact ⟨h.1.1, h.1.2, h.2⟩
 
 /-- Code whose frames use at most `n` bytes and that makes no indirect call:
-what `scrubF` needs of a piece of a function's code, which an implementation
+what `scrubAll` needs of a piece of a function's code, which an implementation
 a function calls proves of its own code. -/
 abbrev CodeOk (c : Prog isa) (n : Nat) : Prop := armStack c ≤ n ∧ noIcall c = true
 
@@ -109,16 +109,16 @@ theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) {rb : Nat}
   exact h
 
 /-- `r`'s code, whose frames use at most the `n` bytes of stack its contract
-reserves (`scrubSideF`), with its cleanup (`scrubF`: those bytes zeroed, the
+reserves (`scrubSideF`), with its cleanup (`scrubAll`: those bytes zeroed, the
 result's `rb` bits kept) meets `r`'s contract in constant time and returns
 without secret residue, if its postcondition reads the memory on return only
-within the buffers (`PostOut`; `Verified.scrubFS`, whose functions called
+within the buffers (`PostOut`; `Verified.scrubAllS`, whose functions called
 indirectly are those of the tables, `tablesCall_pub`): the theorem about the
 code that a registration binds (`verified := .scrubbed …`). -/
-theorem verifiedScrubbedF {api : Api} (r : Unscrubbed api target) {n rb : Nat}
+theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) {n rb : Nat}
     (hpost : PostOut r.contract rb) (hs : scrubSideF r.code n r.tables = true)
     (hW : r.stack = n := by rfl) (hb : api.sig.retBits target.abi.ptrBits = rb := by rfl) :
-    VerifiedScrubbed target (scrubF rb n r.code) r.contract rb := by
+    VerifiedScrubbed target (scrubAll rb n r.code) r.contract rb := by
   obtain ⟨hd, hn, htc⟩ := of_scrubSideF hs
   have e := (retBits_abi r).trans hb
   rw [← hW] at hd hn ⊢
@@ -126,7 +126,7 @@ theorem verifiedScrubbedF {api : Api} (r : Unscrubbed api target) {n rb : Nat}
   obtain ⟨pre, post, leak, ec⟩ := r.ofSig
   have hv := r.verified
   rw [ec] at hv hpost ⊢
-  obtain ⟨h₁, h₂⟩ := Verified.scrubFS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
+  obtain ⟨h₁, h₂⟩ := Verified.scrubAllS (ScrubAbi.of r.consts api.sig r.tables) hv hd (tablesCall_pub htc) hn
     rfl hpost
   exact ⟨h₁, h₂⟩
 

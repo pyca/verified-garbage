@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInit
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.GenScrub
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Rsa.X86.ScrubOut
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInit
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.GenScrub
@@ -86,7 +86,7 @@ whatever the implementation `v` of the Miller–Rabin round. -/
 theorem generate_scrubbed (v : RoundImpl) :
     VerifiedScrubbed target (Impl.RsaKeyGen.X86.Fn.generate (srchOf v).call keyImpl.call)
       Proof.RsaKeyGen.X86.Generate.contract 32 :=
-  verifiedScrubbedF (api := Spec.RsaKeyGen.keySearchApi)
+  verifiedScrubbedAll (api := Spec.RsaKeyGen.keySearchApi)
     { code := genCode v
       verified := Proof.RsaKeyGen.X86.Generate.gen_verified v
       spSafe := Proof.RsaKeyGen.X86.Generate.genCode_sp v }
@@ -96,6 +96,6 @@ theorem generate_scrubbed (v : RoundImpl) :
 /-- `vg_rsa_generate`, with its cleanup, writes `esp` only by its frames. -/
 theorem generate_spSafe (v : RoundImpl) :
     (Impl.RsaKeyGen.X86.Fn.generate (srchOf v).call keyImpl.call).all (fun i => !isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.RsaKeyGen.X86.Generate.genCode_sp v)
+  scrubAll_spSafe (Proof.RsaKeyGen.X86.Generate.genCode_sp v)
 
 end VG.Proof.RsaKeyGen.X86.Scrub

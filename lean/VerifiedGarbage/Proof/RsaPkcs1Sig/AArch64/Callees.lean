@@ -93,7 +93,7 @@ def privPOf (v : CrtImpl) : PrivPChecked where
 
 /-! ## What the cleanup of their callers needs -/
 
-open VG.AArch64.ScrubAll in
+open VG.AArch64.Scrub in
 /-- `vg_rsa_private_checked_precomputed` calling `v` has no indirect call and
 never writes `DIT`: its own instructions, evaluated once with nothing in the
 place of the functions it calls, and those of `v`. -/

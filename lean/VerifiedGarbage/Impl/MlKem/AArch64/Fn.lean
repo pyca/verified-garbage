@@ -7,8 +7,8 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.OptimizedUsing
 public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64
 
 
 /-!
@@ -32,7 +32,7 @@ secrets but in the registers they clear.
 namespace VG.Impl.MlKem.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64 (scrubOf withClears)
+open VG.Impl.Scrub.AArch64 (scrubOf withClears)
 
 /-- `PRF₂` and `SamplePolyCBD₂`, with the polynomial stored with 16 bits,
 hashing with the fixed hash over `c`. -/

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.X86_64.Fn
 public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
 
@@ -123,3 +124,13 @@ def publicKeyFor (v : FieldVariant) : Prog isa :=
   .frame (.push [.rdi, .rsi, .rdx, .rax, .rax, .rax, .rax, .rax, .rax, .rax, .rax]) (pkBodyFor v) (.pop .rax 11)
 
 end VG.Impl.Ed448.X86_64
+
+namespace VG.Impl.Ed448.X86_64.Fn
+
+open VG.X86_64
+open VG.Impl.Scrub.X86_64 (scrubAll)
+
+/-- `vg_ed448_public_key`, with the field arithmetic `v`, as emitted: its code, then its cleanup. -/
+def publicKey (v : FieldVariant) : Prog isa := scrubAll .sse 0 104 (_root_.VG.Impl.Ed448.X86_64.publicKeyFor v)
+
+end VG.Impl.Ed448.X86_64.Fn

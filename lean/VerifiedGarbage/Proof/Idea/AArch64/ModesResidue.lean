@@ -9,8 +9,8 @@ public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
 public meta import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Idea.AArch64.FbFinalVerified
 public meta import VerifiedGarbage.Proof.Idea.AArch64.FbFinalVerified
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
@@ -38,7 +38,7 @@ of the general-purpose registers they leave secret, `x9` among them.
 
 namespace VG.Proof.Idea.AArch64.ModesResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 abbrev cbcEncryptChainedCode : Prog isa := Impl.Idea.AArch64.Fn.cbcEncryptChained
 

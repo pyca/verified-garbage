@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Impl.X448.AArch64.Field56
 public import VerifiedGarbage.Impl.Xdh.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
@@ -19,7 +19,7 @@ it returns without secret residue (`Proof/X448/AArch64/`).
 namespace VG.Impl.X448.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `vg_x448_exchange`, before its granules [0] are zeroed. -/
 def exchangeBase : Prog isa :=
@@ -28,6 +28,6 @@ def exchangeBase : Prog isa :=
     (Impl.Xdh.AArch64.exchange "vg_x448" Impl.X448.AArch64.Fast.x448 56))
 
 /-- `vg_x448_exchange`. -/
-def exchange : Prog isa := withScrubG 16 [0] exchangeBase
+def exchange : Prog isa := scrubSel 16 [0] exchangeBase
 
 end VG.Impl.X448.AArch64.Fn

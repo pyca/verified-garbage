@@ -40,7 +40,7 @@ buffers, by the target-independent lemmas RISC-V's and x86-64's proofs use
 (`Impl.Sm4.PPC64LE.ctrCall`), inside its own frame, so its body has a frame
 inside the one it wipes: the tail after it wipes the whole stack both frames
 use, the 3408 bytes of its contract's `stack`, and clears the volatile
-registers (`PPC64LE.Scrub.verifiedScrubbed`).
+registers (`PPC64LE.Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section
@@ -240,7 +240,7 @@ contract in constant time and returns without secret residue. -/
 theorem ctrFinal_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sm4.PPC64LE.Fn.ctrFinal
       (Spec.Sm4.ctrFinalContract PPC64LE.abi 3408) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.ctrFinalApi) {
+  verifiedScrubbedAll (api := Spec.Sm4.ctrFinalApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratchWiped 112 .r7 10 Impl.Sm4.PPC64LE.ctrFinal
       verified := Proof.Sm4.PPC64LE.CtrFinal.ctrFinal_framed }
     3408 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

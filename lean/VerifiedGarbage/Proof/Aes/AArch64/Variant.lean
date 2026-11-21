@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
@@ -77,10 +77,10 @@ structure Ctr32Impl where
   features : List String
   /-- `callee.code` writes, of the registers the calling convention does not
   preserve, only those `Impl/` states (`callee.clear`): what the cleanup of a
-  function that calls it needs of it (`ScrubAll.scrubSide_union`). -/
-  scrub : AArch64.ScrubAll.calleeSide callee.code callee.clear = true
+  function that calls it needs of it (`Scrub.scrubSide_union`). -/
+  scrub : AArch64.Scrub.calleeSide callee.code callee.clear = true
   /-- The same of `to`, which needs the same `scratch`. -/
-  toScrub : AArch64.ScrubAll.calleeSide to.code to.clear = true
+  toScrub : AArch64.Scrub.calleeSide to.code to.clear = true
   toScratch_eq : to.scratch = scratch
   /-- The implementation of `vg_aes_expand_key` that goes with it, which
   needs no more CPU features. -/
@@ -92,7 +92,7 @@ structure Ctr32Impl where
   expandKeepsV : expand.code.allInstrs AArch64.keepsV = true
   /-- `expand.code` writes only the registers `Impl/` states
   (`expand.clear`), as `scrub` is of `callee.code`. -/
-  expandScrub : AArch64.ScrubAll.calleeSide expand.code expand.clear = true
+  expandScrub : AArch64.Scrub.calleeSide expand.code expand.clear = true
 
 /-- Code without frames uses no stack. -/
 theorem depth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth = 0 := by

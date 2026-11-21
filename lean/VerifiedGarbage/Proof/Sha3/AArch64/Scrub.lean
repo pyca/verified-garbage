@@ -21,7 +21,7 @@ binds.
 
 Their postconditions read the memory on return only within their buffers
 (`Proof.Sha3.PostOut`; the `…Ok` theorems). What the cleanup needs of the
-code (`ScrubAll.scrubSide`) is proved of each function's own instructions
+code (`Scrub.scrubSide`) is proved of each function's own instructions
 here, once, with a permutation that does nothing in its place (`stub`), and
 of each implementation where it is defined (`Permutation.scrub`): no proof
 here evaluates an implementation's code.
@@ -37,7 +37,7 @@ no byte of the window the same in both runs on return.
 
 namespace VG.Proof.Sha3.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.Sha3
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.Sha3
 open VG.Proof.Sha3.AArch64 (Permutation)
 
 theorem absorbOk (rate W : Nat) (hW : 0 < W := by decide) :
@@ -230,7 +230,7 @@ private theorem squeezeWith_own :
     calleeSide (Impl.Sha3.AArch64.Stream.squeezeWith stub) Impl.Sha3.AArch64.Fn.finalizeOwn = true := by
   kernel_rfl
 
-theorem absorbWith_side (v : Permutation) {own : Impl.Residue.AArch64.Clear}
+theorem absorbWith_side (v : Permutation) {own : Impl.Scrub.AArch64.Clear}
     (hs : (Impl.Sha3.AArch64.Fn.updateOwn.gprs.all own.gprs.contains &&
       Impl.Sha3.AArch64.Fn.updateOwn.vecs.all own.vecs.contains &&
       Impl.Sha3.AArch64.Fn.updateOwn.his.all own.his.contains) = true) :
@@ -238,7 +238,7 @@ theorem absorbWith_side (v : Permutation) {own : Impl.Residue.AArch64.Clear}
   absorbWith_all v.callee (calleeSide_union_mono hs (sideAll_union_left absorbWith_own))
     (sideAll_union_right v.scrub) fun code h => calleeSide_union_mono hs (v.absorbOverrideScrub code h)
 
-theorem padWith_side (v : Permutation) {own : Impl.Residue.AArch64.Clear}
+theorem padWith_side (v : Permutation) {own : Impl.Scrub.AArch64.Clear}
     (hs : (Impl.Sha3.AArch64.Fn.xofFinalizeOwn.gprs.all own.gprs.contains &&
       Impl.Sha3.AArch64.Fn.xofFinalizeOwn.vecs.all own.vecs.contains &&
       Impl.Sha3.AArch64.Fn.xofFinalizeOwn.his.all own.his.contains) = true) :
@@ -246,7 +246,7 @@ theorem padWith_side (v : Permutation) {own : Impl.Residue.AArch64.Clear}
   padWith_all v.callee (calleeSide_union_mono hs (sideAll_union_left padWith_own))
     (sideAll_union_right v.scrub)
 
-theorem squeezeWith_side (v : Permutation) {own : Impl.Residue.AArch64.Clear}
+theorem squeezeWith_side (v : Permutation) {own : Impl.Scrub.AArch64.Clear}
     (hs : (Impl.Sha3.AArch64.Fn.finalizeOwn.gprs.all own.gprs.contains &&
       Impl.Sha3.AArch64.Fn.finalizeOwn.vecs.all own.vecs.contains &&
       Impl.Sha3.AArch64.Fn.finalizeOwn.his.all own.his.contains) = true) :
@@ -265,13 +265,13 @@ returns without secret residue. -/
 
 namespace VG.Proof.Sha3.AArch64.Fn
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.Sha3
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.Sha3
 open VG.Proof.Sha3.AArch64 (Permutation)
 
 theorem update_sha3_224 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.update v.callee hashSha3_224.rate)
       (updateContract abi hashSha3_224.rate 656) 64 :=
-  verifiedScrubbed (api := updateSha3_224Api)
+  verifiedScrubbedAll (api := updateSha3_224Api)
     { code := Impl.Sha3.AArch64.Instances.absorb v.callee hashSha3_224.rate,
       verified := Proof.Sha3.AArch64.Instances.absorb_sha3_224 v }
     _ (Scrub.absorbOk _ 656) (Scrub.update_side v _)
@@ -279,7 +279,7 @@ theorem update_sha3_224 (v : Permutation) :
 theorem finalize_sha3_224 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.finalize v.callee hashSha3_224.rate hashSha3_224.len)
       (finalizeContract abi hashSha3_224 (16 + 672)) 0 :=
-  verifiedScrubbed (api := finalizeSha3_224Api)
+  verifiedScrubbedAll (api := finalizeSha3_224Api)
     { code := Impl.Sha3.AArch64.Instances.finalize v.callee hashSha3_224.rate hashSha3_224.len,
       verified := Proof.Sha3.AArch64.Instances.finalize_sha3_224 v }
     _ (Scrub.finalizeOk hashSha3_224 (16 + 672)) (Scrub.finalize_side v _ _)
@@ -287,7 +287,7 @@ theorem finalize_sha3_224 (v : Permutation) :
 theorem update_sha3_256 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.update v.callee hashSha3_256.rate)
       (updateContract abi hashSha3_256.rate 656) 64 :=
-  verifiedScrubbed (api := updateSha3_256Api)
+  verifiedScrubbedAll (api := updateSha3_256Api)
     { code := Impl.Sha3.AArch64.Instances.absorb v.callee hashSha3_256.rate,
       verified := Proof.Sha3.AArch64.Instances.absorb_sha3_256 v }
     _ (Scrub.absorbOk _ 656) (Scrub.update_side v _)
@@ -295,7 +295,7 @@ theorem update_sha3_256 (v : Permutation) :
 theorem finalize_sha3_256 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.finalize v.callee hashSha3_256.rate hashSha3_256.len)
       (finalizeContract abi hashSha3_256 (16 + 672)) 0 :=
-  verifiedScrubbed (api := finalizeSha3_256Api)
+  verifiedScrubbedAll (api := finalizeSha3_256Api)
     { code := Impl.Sha3.AArch64.Instances.finalize v.callee hashSha3_256.rate hashSha3_256.len,
       verified := Proof.Sha3.AArch64.Instances.finalize_sha3_256 v }
     _ (Scrub.finalizeOk hashSha3_256 (16 + 672)) (Scrub.finalize_side v _ _)
@@ -303,7 +303,7 @@ theorem finalize_sha3_256 (v : Permutation) :
 theorem update_sha3_384 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.update v.callee hashSha3_384.rate)
       (updateContract abi hashSha3_384.rate 656) 64 :=
-  verifiedScrubbed (api := updateSha3_384Api)
+  verifiedScrubbedAll (api := updateSha3_384Api)
     { code := Impl.Sha3.AArch64.Instances.absorb v.callee hashSha3_384.rate,
       verified := Proof.Sha3.AArch64.Instances.absorb_sha3_384 v }
     _ (Scrub.absorbOk _ 656) (Scrub.update_side v _)
@@ -311,7 +311,7 @@ theorem update_sha3_384 (v : Permutation) :
 theorem finalize_sha3_384 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.finalize v.callee hashSha3_384.rate hashSha3_384.len)
       (finalizeContract abi hashSha3_384 (16 + 672)) 0 :=
-  verifiedScrubbed (api := finalizeSha3_384Api)
+  verifiedScrubbedAll (api := finalizeSha3_384Api)
     { code := Impl.Sha3.AArch64.Instances.finalize v.callee hashSha3_384.rate hashSha3_384.len,
       verified := Proof.Sha3.AArch64.Instances.finalize_sha3_384 v }
     _ (Scrub.finalizeOk hashSha3_384 (16 + 672)) (Scrub.finalize_side v _ _)
@@ -319,7 +319,7 @@ theorem finalize_sha3_384 (v : Permutation) :
 theorem update_sha3_512 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.update v.callee hashSha3_512.rate)
       (updateContract abi hashSha3_512.rate 656) 64 :=
-  verifiedScrubbed (api := updateSha3_512Api)
+  verifiedScrubbedAll (api := updateSha3_512Api)
     { code := Impl.Sha3.AArch64.Instances.absorb v.callee hashSha3_512.rate,
       verified := Proof.Sha3.AArch64.Instances.absorb_sha3_512 v }
     _ (Scrub.absorbOk _ 656) (Scrub.update_side v _)
@@ -327,7 +327,7 @@ theorem update_sha3_512 (v : Permutation) :
 theorem finalize_sha3_512 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.finalize v.callee hashSha3_512.rate hashSha3_512.len)
       (finalizeContract abi hashSha3_512 (16 + 672)) 0 :=
-  verifiedScrubbed (api := finalizeSha3_512Api)
+  verifiedScrubbedAll (api := finalizeSha3_512Api)
     { code := Impl.Sha3.AArch64.Instances.finalize v.callee hashSha3_512.rate hashSha3_512.len,
       verified := Proof.Sha3.AArch64.Instances.finalize_sha3_512 v }
     _ (Scrub.finalizeOk hashSha3_512 (16 + 672)) (Scrub.finalize_side v _ _)
@@ -335,7 +335,7 @@ theorem finalize_sha3_512 (v : Permutation) :
 theorem update_shake128 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.update v.callee xofShake128.rate)
       (updateContract abi xofShake128.rate 656) 64 :=
-  verifiedScrubbed (api := updateShake128Api)
+  verifiedScrubbedAll (api := updateShake128Api)
     { code := Impl.Sha3.AArch64.Instances.absorb v.callee xofShake128.rate,
       verified := Proof.Sha3.AArch64.Instances.absorb_shake128 v }
     _ (Scrub.absorbOk _ 656) (Scrub.update_side v _)
@@ -343,7 +343,7 @@ theorem update_shake128 (v : Permutation) :
 theorem finalize_shake128 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.xofFinalize v.callee xofShake128.rate)
       (xofFinalizeContract abi xofShake128 (16 + 640)) 0 :=
-  verifiedScrubbed (api := finalizeShake128Api)
+  verifiedScrubbedAll (api := finalizeShake128Api)
     { code := Impl.Sha3.AArch64.Instances.xofFinalize v.callee xofShake128.rate,
       verified := Proof.Sha3.AArch64.Instances.finalize_shake128 v }
     _ (Scrub.xofFinalizeOk xofShake128 (16 + 640)) (Scrub.xofFinalize_side v _)
@@ -351,7 +351,7 @@ theorem finalize_shake128 (v : Permutation) :
 theorem squeeze_shake128 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.xofSqueeze v.callee xofShake128.rate)
       (xofSqueezeContract abi xofShake128 (16 + 640)) 64 :=
-  verifiedScrubbed (api := squeezeShake128Api)
+  verifiedScrubbedAll (api := squeezeShake128Api)
     { code := Impl.Sha3.AArch64.Instances.xofSqueeze v.callee xofShake128.rate,
       verified := Proof.Sha3.AArch64.Instances.squeeze_shake128 v }
     _ (Scrub.xofSqueezeOk xofShake128 (16 + 640)) (Scrub.xofSqueeze_side v _)
@@ -359,7 +359,7 @@ theorem squeeze_shake128 (v : Permutation) :
 theorem finalize_shake256 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.xofFinalize v.callee xofShake256.rate)
       (xofFinalizeContract abi xofShake256 (16 + 640)) 0 :=
-  verifiedScrubbed (api := finalizeShake256Api)
+  verifiedScrubbedAll (api := finalizeShake256Api)
     { code := Impl.Sha3.AArch64.Instances.xofFinalize v.callee xofShake256.rate,
       verified := Proof.Sha3.AArch64.Instances.finalize_shake256 v }
     _ (Scrub.xofFinalizeOk xofShake256 (16 + 640)) (Scrub.xofFinalize_side v _)
@@ -367,7 +367,7 @@ theorem finalize_shake256 (v : Permutation) :
 theorem squeeze_shake256 (v : Permutation) :
     VerifiedScrubbed target (Impl.Sha3.AArch64.Fn.xofSqueeze v.callee xofShake256.rate)
       (xofSqueezeContract abi xofShake256 (16 + 640)) 64 :=
-  verifiedScrubbed (api := squeezeShake256Api)
+  verifiedScrubbedAll (api := squeezeShake256Api)
     { code := Impl.Sha3.AArch64.Instances.xofSqueeze v.callee xofShake256.rate,
       verified := Proof.Sha3.AArch64.Instances.squeeze_shake256 v }
     _ (Scrub.xofSqueezeOk xofShake256 (16 + 640)) (Scrub.xofSqueeze_side v _)

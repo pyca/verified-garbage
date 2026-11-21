@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
@@ -26,6 +27,9 @@ def variant : PublicImpl where
   nosp := noSp_of (by decide +kernel)
   depth := by decide +kernel
   spSafe := Code.all_of_spTest (by decide +kernel)
+  level := .sse
+  side := by lit_decide
+  up := fun _ => by rw [X86_64.Scrub.upCallee, ← X86_64.Scrub.upF_eq]; lit_decide
   suffix := "_adx"
   features := ["bmi2", "adx"]
 

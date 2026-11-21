@@ -11,16 +11,16 @@ public import VerifiedGarbage.Proof.Cast5.Rounds
 public meta import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.CfbFinal
 public meta import VerifiedGarbage.Proof.Cast5.CfbFinal
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
-public meta import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
+public meta import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.TCB.AArch64.Residue
 public meta import VerifiedGarbage.TCB.AArch64.Residue
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 meta import VerifiedGarbage.Proof.Framework.AArch64.Clears
-public import VerifiedGarbage.Proof.Framework.AArch64.ResidueScrub
-public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
+public meta import VerifiedGarbage.Proof.Framework.AArch64.ScrubSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
@@ -39,8 +39,9 @@ whose scratch words they zero (`withStackScratchWiped 112 .x5 13`). After it,
 they clear what the analysis through calls and frames (`rtaintF`) finds
 secret in their registers (`ofbCleared`: the halves of the block, the
 S-box lookups, the vector registers that held the keystream and the flags,
-from `x4`), and then the 112 bytes of stack their frame used (`withScrub`).
-`RTaintF.noResidue_withScrub` proves they then leave nothing secret. Their
+from `x4`), and then all seven granules of the 112 bytes of stack their frame
+used (`scrubSel 112 [0, …, 6]`). `AArch64.Scrub.verifiedScrubbedSel` proves
+they then leave nothing secret. Their
 postconditions read the memory on return only within the buffers: the data
 and the chaining block (`ofbOut`, `ofbFinalOut`).
 -/
@@ -49,7 +50,7 @@ and the chaining block (`ofbOut`, `ofbFinalOut`).
 
 namespace VG.Proof.Cast5.AArch64.FbResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintF
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintF
 
 /-! ## Locality -/
 
@@ -111,21 +112,10 @@ abbrev ofbCleared (c : Prog isa) : Prog isa := Impl.Cast5.AArch64.Fn.ofbCleared 
 
 abbrev ofbBase : Prog isa := Impl.Cast5.AArch64.Fn.ofbBase
 
-abbrev ofbCode : Prog isa := Impl.Cast5.AArch64.Fn.ofb
-
 theorem ofbBase_verified : Verified AArch64.target ofbBase
     (Spec.Cast5.ofbContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
   Clears.Verified.withClears_of (Proof.Cast5.ofb_keyed Proof.Cast5.AArch64.ofb_framed)
     (fun hq hm hx => post_consts.mpr (Clears.post_congr (post_consts.mp hq) hm hx)) (by decide)
-
-theorem ofbCode_verified : Verified AArch64.target ofbCode
-    (Spec.Cast5.ofbContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
-  RTaintF.Verified.withScrubK ofbBase_verified ⟨by decide, by decide, by decide⟩ ofbScrubOk
-
-theorem ofbCode_noResidue : NoResidue ofbCode
-    (Spec.Cast5.ofbContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  RTaintF.noResidue_withScrub ofbBase_verified ⟨by decide, by decide, by decide⟩ ofbScrubOk.sp
-    ⟨_, by taint_decide_ct⟩
 
 theorem ofbFinalScrubOk :
     ScrubOk (Spec.Cast5.ofbFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 112 :=
@@ -144,36 +134,25 @@ theorem ofbFinalScrubOk :
 
 abbrev ofbFinalBase : Prog isa := Impl.Cast5.AArch64.Fn.ofbFinalBase
 
-abbrev ofbFinalCode : Prog isa := Impl.Cast5.AArch64.Fn.ofbFinal
-
 theorem ofbFinalBase_verified : Verified AArch64.target ofbFinalBase
     (Spec.Cast5.ofbFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
   Clears.Verified.withClears_of (Proof.Cast5.ofbFinal_keyed Proof.Cast5.AArch64.ofbFinal_framed)
     (fun hq hm hx => post_consts.mpr (Clears.post_congr (post_consts.mp hq) hm hx)) (by decide)
-
-theorem ofbFinalCode_verified : Verified AArch64.target ofbFinalCode
-    (Spec.Cast5.ofbFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) :=
-  RTaintF.Verified.withScrubK ofbFinalBase_verified ⟨by decide, by decide, by decide⟩ ofbFinalScrubOk
-
-theorem ofbFinalCode_noResidue : NoResidue ofbFinalCode
-    (Spec.Cast5.ofbFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  RTaintF.noResidue_withScrub ofbFinalBase_verified ⟨by decide, by decide, by decide⟩
-    ofbFinalScrubOk.sp ⟨_, by taint_decide_ct⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.FbResidue.ofbCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.ofb
       (Spec.Cast5.ofbContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  ⟨Proof.Cast5.AArch64.FbResidue.ofbCode_verified,
-    Proof.Cast5.AArch64.FbResidue.ofbCode_noResidue⟩
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) ofbBase_verified ⟨by decide, by decide, by decide⟩
+    (by decide) ofbScrubOk (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 /-- The function as its registration binds it: it meets its contract in constant time and returns
 without secret residue. -/
 theorem _root_.VG.Proof.Cast5.AArch64.FbResidue.ofbFinalCode_scrubbed :
     VerifiedScrubbed AArch64.target Impl.Cast5.AArch64.Fn.ofbFinal
       (Spec.Cast5.ofbFinalContract (AArch64.abi.withConsts Impl.Cast5.ecbConsts) 112) 0 :=
-  ⟨Proof.Cast5.AArch64.FbResidue.ofbFinalCode_verified,
-    Proof.Cast5.AArch64.FbResidue.ofbFinalCode_noResidue⟩
+  AArch64.Scrub.verifiedScrubbedSel (P₀ := 0) ofbFinalBase_verified ⟨by decide, by decide, by decide⟩
+    (by decide) ofbFinalScrubOk (fun _ _ _ _ _ hb => by simp at hb) ⟨_, by taint_decide_ct⟩
 
 end VG.Proof.Cast5.AArch64.FbResidue

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.ApplyCT
 public import VerifiedGarbage.Proof.ChaCha20.Stream
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubCall
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.Framework.Offset
@@ -13,11 +15,10 @@ import VerifiedGarbage.Proof.ChaCha20.ScrubLocal
 /-!
 # ChaCha20's `apply` without secret residue (x86-64)
 
-`vg_chacha20_apply`, for each implementation of `vg_chacha20_xor`, scrubbed
-where the residue analysis allows it (`X86_64.RScrub.autoScrub`). The
-analysis starts with the 8 bytes of the state that hold the number of bytes of keystream left (`leftAt`) public:
-the contract declares that number as leaked, so two runs that agree on what
-is public agree on those bytes (`pubOk`).
+`vg_chacha20_apply`, for each implementation of `vg_chacha20_xor`, followed
+by the clearing of every register it may write and of its whole stack
+(`Impl.ChaCha20.X86_64.Fn.apply`), whose postcondition reads the memory on
+return only within the state and the data (`applyOut`).
 -/
 
 @[expose] public section
@@ -60,45 +61,24 @@ theorem applyOut (stack : Nat) : PostOut (applyContract X86_64.abi stack) (apply
   · exact absurd h₂ h₁
   · obtain ⟨a, b, c⟩ := h2; exact ⟨a, hd.trans b, rs.trans c⟩
 
-theorem rdi_base : (Reg.rdi, 0, 0) ∈ basesAux (wrInfo applySig.params 0) 0 := by decide
+/-- `Spec.ChaCha20.applyApi`'s function as emitted over `v`
+(`Impl.ChaCha20.X86_64.Fn.apply`) meets its contract in constant time and
+returns without secret residue: its code is its code over a stub, with
+`v`'s where it calls it (`Fill`). -/
+theorem apply_scrubbed (v : XorImpl) :
+    VerifiedScrubbed target (Impl.ChaCha20.X86_64.Fn.apply v.level v.callee)
+      (Spec.ChaCha20.applyApi.contract X86_64.abi 24) 32 :=
+  verifiedScrubbedAllFill (api := Spec.ChaCha20.applyApi) (ks := 0) (n := fun _ => 16)
+    (a := Impl.ChaCha20.X86_64.Stream.apply ⟨"", .block [], 0, 0, 0, false⟩)
+    { suffix := v.suffix
+      code := Impl.ChaCha20.X86_64.Stream.apply v.callee
+      stack := 24
+      verified := Proof.ChaCha20.X86_64.Stream.apply_verified v
+      spSafe := Proof.ChaCha20.X86_64.Stream.apply_spSafe v }
+    v.level (applyOut _) (by have := v.side; fill_calls) (Nat.zero_le _) (Nat.le_refl _)
 
-theorem pubOk (stack : Nat) : PubOk (applyContract X86_64.abi stack) applyPubs := by
-  intro s₁ s₂ h₁ h₂ hp ho sl hsl j hj₁ hj₂
-  simp only [applyPubs, List.mem_singleton] at hsl
-  subst hsl
-  simp only at hj₁ hj₂
-  have hb : ∀ s, (applyContract X86_64.abi stack).pre s → byteAddr s 0 j = s.gpr .rdi + BitVec.ofNat 64 j :=
-    fun s h => by
-      have := (init_wf (sig := applySig) (pubs := []) ScrubAbi.plain h).1.2 (.rdi, 0, 0) rdi_base
-      simp only [BitVec.add_zero] at this
-      simp only [byteAddr, ← this]
-  rw [hb s₁ h₁, hb s₂ h₂]
-  obtain ⟨-, -, hg, -⟩ := ho
-  have hdi : s₁.gpr .rdi = s₂.gpr .rdi := hg .rdi (by decide)
-  have hl : leftAt s₁.mem (s₁.gpr .rdi) = leftAt s₂.mem (s₂.gpr .rdi) := by
-    simp only [applyContract, Sig.contract, abi, argRegs] at hp
-    have := hp.1.2
-    change [leftAt s₁.mem (s₁.gpr .rdi)] = [leftAt s₂.mem (s₂.gpr .rdi)] at this
-    exact (List.cons.inj this).1
-  have hw : s₁.mem.readW (s₁.gpr .rdi + 128) 64 = s₂.mem.readW (s₂.gpr .rdi + 128) 64 :=
-    BitVec.eq_of_toNat_eq hl
-  have e : ∀ (m : Mem) (p : Addr), m (p + BitVec.ofNat 64 j) =
-      (m.readW (p + 128) 64).extractLsb' (8 * (j - 128)) 8 := fun m p => by
-    show _ = ((m.read (p + 128) 8).setWidth 64).extractLsb' (8 * (j - 128)) 8
-    rw [BitVec.setWidth_eq, Mem.extractLsb'_read m _ (by omega_using [hj₂]),
-      show (p + 128 : Addr) = p + BitVec.ofNat 64 128 from rfl, Offset.add_add, Nat.add_sub_cancel' hj₁]
-  rw [e s₁.mem, e s₂.mem, hw]
-
-/-- `vg_chacha20_apply` over the implementation `v` of `vg_chacha20_xor`,
-without secret residue where `v` gives its analysis (`XorImpl.apply`), with
-the bytes left public (`pubOk`). -/
-def applyReg (v : XorImpl) : Registration Spec.ChaCha20.applyApi X86_64.target :=
-  withScrub {
-    suffix := v.suffix
-    code := Impl.ChaCha20.X86_64.Stream.apply v.callee
-    stack := 24
-    verified := Proof.ChaCha20.X86_64.Stream.apply_verified v
-    spSafe := Proof.ChaCha20.X86_64.Stream.apply_spSafe v
-    } (applyOut _) applyPubs (pubOk _) v.apply
+theorem apply_spSafeFn (v : XorImpl) :
+    (Impl.ChaCha20.X86_64.Fn.apply v.level v.callee).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  scrubKs_spSafe (Proof.ChaCha20.X86_64.Stream.apply_spSafe v)
 
 end VG.Proof.ChaCha20.X86_64.Scrub

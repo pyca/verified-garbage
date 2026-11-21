@@ -5,7 +5,7 @@ public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Proof.AesGcm.Rounds
 public import VerifiedGarbage.Spec.Gcm.Powers8
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 import VerifiedGarbage.Proof.AesGcm.ScratchPowers8
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import VerifiedGarbage.Proof.Framework.Scratch
@@ -15,19 +15,19 @@ import VerifiedGarbage.Proof.Framework.Scratch
 
 The postconditions of `vg_aes_gcm_init`, `vg_aes_gcm_open` and
 `vg_aes_gcm_open_to` read the memory on return only within the key context,
-the data and the output (`ScrubAll.ScrubAllOk`): each implementation, generic
+the data and the output (`Scrub.ScrubAllOk`): each implementation, generic
 over the implementations of counter mode, GHASH and key expansion it calls,
 returns with every register it may leave secret cleared and its whole stack
-zeroed (`ScrubAll.scrubAllOf`, `Instances.lean`). Its frame is sized to what its
-callees need (`gcmWn`, `gcmInitWn`), so that the zeroing costs little where
-counter mode needs no working space.
+zeroed (`Impl/AesGcm/AArch64/Fn.lean`; `GhashImpls.lean` has the proofs). Its
+frame is sized to what its callees need (`gcmWn`, `gcmInitWn`), so that the
+zeroing costs little where counter mode needs no working space.
 -/
 
 @[expose] public section
 
 namespace VG.Proof.AesGcm.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 /-- The bytes at `d` within a buffer on which two memories agree. -/
 theorem bytesAt_of {m₁ m₂ : Mem} {p : Addr} {L : Nat} (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a)
@@ -237,16 +237,6 @@ theorem openToOk (stack : Nat) :
     intro key hk
     rw [bytesAt_of0 hb.2.2.2.2.1 (by omega)]
     exact h key hk
-
-/-- The registers the tails of `init`, `open` and `open_to` clear: those
-they may write, with every implementation of counter mode, GHASH and key
-expansion (`Instances.lean`). -/
-def clear : Impl.Residue.AArch64.Clear :=
-  ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
-   [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
-    .v26, .v27, .v28, .v29, .v30, .v31], []⟩
-
-
 
 /-- `vg_aes_gcm_store_powers`: its postcondition reads the memory on return
 only within the powers. -/

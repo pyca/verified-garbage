@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
-public import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 public import VerifiedGarbage.Impl.EcKey.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 
@@ -24,12 +24,12 @@ def publicKeyP384 : Prog isa :=
 
 Each function is its code, then its cleanup: the registers it writes that the
 calling convention does not preserve, stated here, are cleared, but the 32
-bits of its result (`Impl.Residue.AArch64.scrubAll`; it uses no stack), so
+bits of its result (`Impl.Scrub.AArch64.scrubAll`; it uses no stack), so
 that it returns without secret residue. -/
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (scrubAll withClears)
+open VG.Impl.Scrub.AArch64 (scrubAll withClears)
 
 /-- `vg_ec_p384_public_key`: its code, then the registers it writes cleared, but its
 result. -/

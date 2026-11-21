@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # ChaCha20 on PPC64LE, without secret residue
 
 `vg_chacha20_init`, `vg_chacha20_set_nonce` and `vg_chacha20_apply`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which
 clears the volatile registers they write. None of them has a frame, so no
 stack is wiped. Their postconditions read the memory on return only within
 the streaming state and the data, by RISC-V's proofs
@@ -69,7 +69,7 @@ contract in constant time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.ChaCha20.PPC64LE.Fn.init
       (Spec.ChaCha20.initContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.ChaCha20.initApi) {
+  verifiedScrubbedAll (api := Spec.ChaCha20.initApi) {
       code := Impl.ChaCha20.PPC64LE.Stream.init
       verified := Proof.ChaCha20.PPC64LE.Stream.init_verified }
     0 ⟨false, false, [.r4, .r9, .r10, .r11, .r12], false, []⟩
@@ -81,7 +81,7 @@ its contract in constant time and returns without secret residue. -/
 theorem setNonce_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.ChaCha20.PPC64LE.Fn.setNonce
       (Spec.ChaCha20.setNonceContract PPC64LE.abi) 0 :=
-  verifiedScrubbed (api := Spec.ChaCha20.setNonceApi) {
+  verifiedScrubbedAll (api := Spec.ChaCha20.setNonceApi) {
       code := Impl.ChaCha20.PPC64LE.Stream.setNonce
       verified := Proof.ChaCha20.PPC64LE.Stream.setNonce_verified }
     0 ⟨false, false, [.r9, .r10, .r11, .r12], false, []⟩
@@ -95,7 +95,7 @@ contract in constant time and returns without secret residue.
 theorem apply_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.ChaCha20.PPC64LE.Fn.apply
       (Spec.ChaCha20.applyContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.ChaCha20.applyApi) {
+  verifiedScrubbedAll (api := Spec.ChaCha20.applyApi) {
       code := Impl.ChaCha20.PPC64LE.Stream.apply
       verified := Proof.ChaCha20.PPC64LE.Stream.apply_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

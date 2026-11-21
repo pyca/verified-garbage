@@ -24,7 +24,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # CAST5 on PPC64LE, without secret residue
 
 Key expansion and ECB, which have no frames, are followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which wipes no
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which wipes no
 stack for them. The CBC, CFB64 and OFB functions zero their whole frame
 themselves before they release it (`withStackScratchWiped`), and have no
 frames of their own inside it, so they need only the clearing of the volatile
@@ -221,7 +221,7 @@ contract in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.expandKey
       (Spec.Cast5.expandKeyContract (PPC64LE.abi.withConsts Impl.Cast5.keyConsts)) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.expandKeyApi) { code := Impl.Cast5.PPC64LE.expandKey, verified := Proof.Cast5.PPC64LE.expandKey_verified }
+  verifiedScrubbedAll (api := Spec.Cast5.expandKeyApi) { code := Impl.Cast5.PPC64LE.expandKey, verified := Proof.Cast5.PPC64LE.expandKey_verified }
     0 ⟨true, true, [.r4, .r5, .r7, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ (expandKeyOut _)
     (by dsimp only; lit_decide)
@@ -231,7 +231,7 @@ its contract in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.ecbEncrypt
       (Spec.Cast5.ecbEncryptContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts)) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.ecbEncryptApi) { code := Impl.Cast5.PPC64LE.ecbEncrypt, verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.PPC64LE.ecbEncrypt_verified }
+  verifiedScrubbedAll (api := Spec.Cast5.ecbEncryptApi) { code := Impl.Cast5.PPC64LE.ecbEncrypt, verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.PPC64LE.ecbEncrypt_verified }
     0 ⟨true, false, [.r5, .r6, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ (ecbOut .encrypt _)
     (by dsimp only; lit_decide)
@@ -241,7 +241,7 @@ its contract in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Cast5.PPC64LE.Fn.ecbDecrypt
       (Spec.Cast5.ecbDecryptContract (PPC64LE.abi.withConsts Impl.Cast5.ecbConsts)) 0 :=
-  verifiedScrubbed (api := Spec.Cast5.ecbDecryptApi) { code := Impl.Cast5.PPC64LE.ecbDecrypt, verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.PPC64LE.ecbDecrypt_verified }
+  verifiedScrubbedAll (api := Spec.Cast5.ecbDecryptApi) { code := Impl.Cast5.PPC64LE.ecbDecrypt, verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.PPC64LE.ecbDecrypt_verified }
     0 ⟨true, false, [.r5, .r6, .r8, .r9, .r10, .r11, .r12], false,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16]⟩ (ecbOut .decrypt _)
     (by dsimp only; lit_decide)

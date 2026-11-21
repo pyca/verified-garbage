@@ -54,7 +54,7 @@ end VG.Impl.X448.X86
 
 /-! ## The functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
 bytes of stack below `esp` that its frames and calls use zeroed, and the
 registers a callee may change cleared but the `rb` bits of the result, so
 that it returns without secret residue. -/
@@ -65,9 +65,9 @@ open VG.X86
 
 /-- `vg_x448_exchange`, as emitted. -/
 def exchange : Prog isa :=
-  Impl.Scrub.X86.scrubF 32 40 (Impl.Xdh.X86.exchange "vg_x448" Impl.X448.X86.x448 56)
+  Impl.Scrub.X86.scrubAll 32 40 (Impl.Xdh.X86.exchange "vg_x448" Impl.X448.X86.x448 56)
 
 /-- `vg_x448_base`, as emitted. -/
-def base : Prog isa := Impl.Scrub.X86.scrubF 0 20 Impl.X448.X86.x448Base
+def base : Prog isa := Impl.Scrub.X86.scrubAll 0 20 Impl.X448.X86.x448Base
 
 end VG.Impl.X448.X86.Fn

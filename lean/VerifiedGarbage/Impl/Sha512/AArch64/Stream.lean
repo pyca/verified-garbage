@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Sha512.AArch64
 public import VerifiedGarbage.Impl.MdStream.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.MdStream.AArch64.OneShot
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 
 /-!
 # Streaming SHA-512: AArch64 implementation
@@ -93,19 +93,19 @@ it clears for it before returning, with those its own instructions write
 structure Compress where
   code : Prog isa
   suffix : String
-  clear : Impl.Residue.AArch64.Clear
+  clear : Impl.Scrub.AArch64.Clear
 
 /-! ## The functions, as emitted
 
 Each streaming function over a compression function is its code with its
 working space in a frame on the stack, then its cleanup
-(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+(`Impl.Scrub.AArch64.scrubOf`), which clears the registers the code may
 write, the compression function's included, and zeroes that stack, so that it
 returns without secret residue. -/
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.Scrub.AArch64 (scrubOf)
 open VG.Impl.StackScratch.AArch64 (withStackScratch)
 
 /-- `vg_sha512_update` over the compression function `code`, its working space in a frame of its own. -/

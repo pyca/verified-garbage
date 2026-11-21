@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Avx2Lit
@@ -732,6 +733,9 @@ namespace VG.Proof.MlDsa.X86_64
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 
 /-- The AVX2 code. -/
+theorem avx2_sides : ArithSides .avx2Combined Impl.Scrub.X86_64.VecLevel.avx.level :=
+  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
+
 def ArithImpl.avx2 : ArithImpl where
   code := .avx2Combined
   ok :=
@@ -771,6 +775,17 @@ def ArithImpl.avx2 : ArithImpl where
         · exact FnOk.of Arith.YDot.verified5 (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
         · exact FnOk.of Arith.YDot.verified7 (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) }
   features := ["avx", "avx2"]
+  level := .avx
+  sides := avx2_sides
+
+/-- The AVX-512 code's backend. -/
+abbrev avx512Backend : Backend := { Backend.avx2Combined with
+    rej4 := Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2 true
+    expandMask4 := Impl.MlDsa.X86_64.Sample.Mask4.expandMask4Avx2 true
+    sfx := "_avx512" }
+
+theorem avx512_sides : ArithSides avx512Backend Impl.Scrub.X86_64.VecLevel.evex.level :=
+  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
 
 /-- AVX2 arithmetic with the AVX-512VL four-state permutation in both samplers: its other
 functions are the AVX2 code's, which it calls by their names (`asfx`, `_avx2`), so that they
@@ -791,5 +806,7 @@ def ArithImpl.avx512 : ArithImpl where
       ⟨Mask4.expandMask4Avx2_verified, h.1, h.2,
         by lit_decide, by lit_decide, Code.all_of_spTest (by lit_decide)⟩ }
   features := ["avx", "avx2", "avx512f", "avx512vl"]
+  level := .evex
+  sides := avx512_sides
 
 end VG.Proof.MlDsa.X86_64

@@ -88,18 +88,18 @@ open VG.Proof.P224.X86_64 (hasLaw)
 open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK p224 p224T_verified signCode_sp)
 open VG.Proof.HmacTable.X86_64 (tables names)
 
-def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
+    (hu : ∀ w ∈ vs, Proof.Ecdsa.Rfc6979.X86_64.HmacUp w) : List Artifact :=
   if hv : OK vs ∧ "VG_P224_COMB" ∉ names vs then [
-    Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
-      suffix := ""
-      tables := [("hmac", tables vs)]
-      code := signCodeT (p224 hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs
-      verified := p224T_verified hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv vs hv
-      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p224.combConsts _ _))]
+    Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact X86_64.target
+      { tables := [("hmac", tables vs)]
+        code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (p224 hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs)
+        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.p224T_scrubbed hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv vs hv hu)
+        spSafe := Proof.Ecdsa.Rfc6979.X86_64.p224T_spSafe hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv vs }]
   else []
 
 def artifacts : List Artifact :=
-  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants
+  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants Proof.Ecdsa.Rfc6979.X86_64.variants_up
 
 end VG.Artifacts.EcdsaP224.X86_64.Rfc6979
 
@@ -108,11 +108,10 @@ namespace VG.Artifacts.EcdsaP224.X86_64
 open VG.Proof.P224.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P224.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
-    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
-      Impl.Ecdsa.Verify.X86_64.jointVerifyP224
-    verified := Proof.Ecdsa.Verify.X86_64.P224.verifyHash_verified hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv }
-    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P224.inst Impl.Ecdsa.X86_64.p224.combConsts))] ++
+  Spec.Ecdsa.P224.verifyHashApi.artifact X86_64.target
+    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P224.inst.curve.len false Impl.Ecdsa.Verify.X86_64.jointVerifyP224
+      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.P224.verifyHash_scrubbed hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv)
+      spSafe := Proof.Ecdsa.Verify.X86_64.P224.verifyHash_spSafe }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP224.X86_64

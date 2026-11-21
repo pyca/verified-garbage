@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Md5.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
 public import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # Streaming MD5: 32-bit ARM implementation
@@ -58,22 +58,22 @@ end VG.Impl.Md5.Arm.Stream
 
 /-! ## The functions as emitted
 
-Each is its code, then its cleanup (`Impl/Residue/Arm.lean`): the registers
+Each is its code, then its cleanup (`Impl/Scrub/Arm.lean`): the registers
 a callee may change set to constants, and for `update` and `finalize` first
 the 128 bytes of their frame zeroed. None returns a value. -/
 
 namespace VG.Impl.Md5.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_md5_init`. -/
 def init : Prog isa := scrub 0 Stream.init
 
 /-- `vg_md5_update`: `Stream.update`, its scratch space in a frame of 128
 bytes, which is then zeroed. -/
-def update : Prog isa := scrubF 0 128 (Impl.StackScratch.Arm.withStackScratch 128 2 Stream.update)
+def update : Prog isa := scrubAll 0 128 (Impl.StackScratch.Arm.withStackScratch 128 2 Stream.update)
 
 /-- `vg_md5_finalize`, as `update`. -/
-def finalize : Prog isa := scrubF 0 128 (Impl.StackScratch.Arm.withStackScratch 128 1 Stream.finalize)
+def finalize : Prog isa := scrubAll 0 128 (Impl.StackScratch.Arm.withStackScratch 128 1 Stream.finalize)
 
 end VG.Impl.Md5.Arm.Fn

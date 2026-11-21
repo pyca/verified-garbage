@@ -1040,7 +1040,7 @@ Their postconditions read the memory on return only within the state and
 instructions that set the registers a callee may change and the flags to
 constants. The code has the same shape with either arithmetic, so what the
 cleanup needs of it (`CodeOk`) is proven once for both, and `Fn` has the
-theorem of each (`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
+theorem of each (`Arm.Scrub.verifiedScrubbedAll`), which its registration binds.
 `vg_poly1305_init` has no frame, and is emitted with only the second part of
 that cleanup (`Arm.Scrub.verifiedScrubbed`).
 -/
@@ -1154,7 +1154,7 @@ theorem init : VerifiedScrubbed target Impl.Poly1305.Arm.Fn.init (Spec.Poly1305.
 /-- `vg_poly1305_update`, with either arithmetic. -/
 theorem update (umaal : Bool) :
     VerifiedScrubbed target (Impl.Poly1305.Arm.Fn.update umaal) (Spec.Poly1305.updateContract abi 144) 0 :=
-  verifiedScrubbedF (api := Spec.Poly1305.updateApi)
+  verifiedScrubbedAll (api := Spec.Poly1305.updateApi)
     { code := Impl.StackScratch.Arm.withStackScratch 144 2 (Impl.Poly1305.Arm.update umaal)
       verified := update_framed }
     (Scrub.updateOut _) (scrubSideF_of (Scrub.update_codeOk umaal) Scrub.frameOk_144 _)
@@ -1162,7 +1162,7 @@ theorem update (umaal : Bool) :
 /-- `vg_poly1305_finalize`, with either arithmetic. -/
 theorem finalize (umaal : Bool) :
     VerifiedScrubbed target (Impl.Poly1305.Arm.Fn.finalize umaal) (Spec.Poly1305.finalizeContract abi 144) 0 :=
-  verifiedScrubbedF (api := Spec.Poly1305.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Poly1305.finalizeApi)
     { code := Impl.StackScratch.Arm.withStackScratch 144 1 (Impl.Poly1305.Arm.finalize umaal)
       verified := finalize_framed }
     (Scrub.finalizeOut _) (scrubSideF_of (Scrub.finalize_framed_codeOk umaal) Scrub.frameOk_144 _)

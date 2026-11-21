@@ -133,13 +133,4 @@ def gen3 (v : RoundImpl) : Geo := geo3 v Impl.Dsa.RISCV64.Params.checkParameters
 theorem params_verified (v : RoundImpl) : Verified target (code (gen1 v) (gen2 v) (gen3 v)) searchK :=
   search_verified (geoOk1 v checkOk) (geoOk2 v checkOk) (geoOk3 v checkOk)
 
-/-- What `Scrub.scrubOf` needs of the parameter search with each
-Miller-Rabin round: evaluated here. -/
-theorem parameterSearchSide (v : RoundImpl) (hv : v ∈ Proof.Variants.MillerRabin.RISCV64.variants) :
-    Scrub.scrubSide (code (gen1 v) (gen2 v) (gen3 v)) 512 (Spec.Dsa.parameterSearchSig.retBits 64) [] = true := by
-  have h : (Proof.Variants.MillerRabin.RISCV64.variants.all fun v =>
-      Scrub.scrubSide (code (gen1 v) (gen2 v) (gen3 v)) 512 (Spec.Dsa.parameterSearchSig.retBits 64) []) = true := by
-    lit_decide
-  exact List.all_eq_true.mp h v hv
-
 end VG.Proof.Dsa.RISCV64.PSearch

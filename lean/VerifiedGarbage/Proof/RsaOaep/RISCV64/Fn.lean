@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Rsa.RISCV64.Scrub
 the Merkle–Damgård hash functions of their tables, with their cleanup
 (`Impl.RsaOaep.RISCV64.Fn`): each meets its contract in constant time and
 returns without secret residue (`VerifiedScrubbed`, by
-`RISCV64.Scrub.verifiedScrubbed`), which is what its registration binds. What
+`RISCV64.Scrub.verifiedScrubbedAll`), which is what its registration binds. What
 the cleanup needs of each function's code (`Scrub.scrubSide`) is evaluated
 here, by the kernel, apart from the theorems, which take the tables'
 coherence (`OK`).
@@ -40,7 +40,7 @@ theorem decryptPrecomputed (h : OK vars) :
       (Spec.RsaOaep.decryptPrecomputedMdTablesContract
         (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig
           [("hash", tables vars), ("mgf1", tables vars)]) 3488) 32 :=
-  verifiedScrubbed (api := Spec.RsaOaep.decryptPrecomputedMdTablesApi) (W := 3488)
+  verifiedScrubbedAll (api := Spec.RsaOaep.decryptPrecomputedMdTablesApi) (W := 3488)
     { tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaOaep.RISCV64.Dec.decryptP (fns3 vars)
       verified := decP_ok vars h }
@@ -51,7 +51,7 @@ theorem encryptPrecomputed (h : OK vars) :
       (Spec.RsaOaep.encryptMdTablesContract
         (abi.withTables Spec.RsaOaep.encryptMdTablesSig
           [("hash", tables vars), ("mgf1", tables vars)]) 336) 32 :=
-  verifiedScrubbed (api := Spec.RsaOaep.encryptMdTablesApi) (W := 336)
+  verifiedScrubbedAll (api := Spec.RsaOaep.encryptMdTablesApi) (W := 336)
     { tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaOaep.RISCV64.encrypt (fns3 vars)
       verified := enc_ok vars h }

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubStream
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Md5.X86_64.Stream.Md
@@ -39,7 +40,7 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
 /-- MD5's functions. They call `vg_md5_init`'s code as the internal
 `vg_md5_init_core`: the function exported as `vg_md5_init` also clears what
-it leaves (`Proof.Md5.X86_64.initReg`), which its callers, which clear their
+it leaves (`Proof.Md5.X86_64.init_scrubbed`), which its callers, which clear their
 own, do not need. -/
 def hash : Hash where
   P := Impl.Md5.X86_64.Stream.params
@@ -199,8 +200,8 @@ theorem satPF : ∃ s, (Spec.Hmac.md5I.pbkdf2Contract X86_64.abi (24 + (24 + 8 *
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
-/-- `variant` before the residue analysis of HMAC's `finalize`. -/
-def unscrubbed : MdHash :=
+/-- MD5, as a variant of `MdHash`. -/
+def variant : MdHash :=
   MdHash.of (I := Spec.Hmac.md5I) ok coreOK callees ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl
     0 okU rfl satI satF satT satP (by decide)
     anyOK satA (by decide) Proof.Hmac.md5_local
@@ -218,22 +219,21 @@ def unscrubbed : MdHash :=
     (by decide) satPF
     "" [] []
 
-/-- HMAC's `finalize` over `unscrubbed`, followed by `Impl.Scrub.X86_64.scrubTail`,
-which wipes the registers and the granules of its stack that the residue
-analysis of its code finds may hold secrets (`MdHash.hmacFinReg`). -/
-def hmacFinKs : List Nat := keep_for% unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H)
-  (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
-      unscrubbed.H.hmacFin) []
+theorem fin_ok : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
+    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init variant.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) [])
+      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) .r8 variant.H.hmacFin) h).any
+      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) (Impl.Scrub.X86_64.runKs [(112, 2)])
+        (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H))) = true :=
+  VG.X86_64.Scrub.SelScrub.ok_of [(112, 2)] (by taint_decide)
 
-theorem hmacFinOk : ∃ h : VG.Taint.Hint VG.X86_64.RTaint.FT,
-    (VG.Taint.check VG.X86_64.RTaint.rtaint (VG.X86_64.RScrub.init unscrubbed.I.finalizeApi.sig (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) [])
-      (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) .r8
-      unscrubbed.H.hmacFin) h).any
-      (VG.X86_64.RScrub.resOkB · (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H) hmacFinKs (Impl.Scrub.X86_64.chunks (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame unscrubbed.H))) = true :=
-  VG.X86_64.RScrub.Analysed.ok_of hmacFinKs (by taint_decide)
+theorem fin_side : VG.X86_64.Scrub.scrubSideG
+    (Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) .r8 variant.H.hmacFin)
+    (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H) ((Spec.Hmac.finalizeSig variant.I.S).retBits 64) .sse true
+    (Impl.Scrub.X86_64.runKs [(112, 2)]) (Impl.Scrub.X86_64.chunksA (16 + Proof.Pbkdf2.Md.X86_64.hmacFrame variant.H))
+    (Impl.Scrub.X86_64.gsAll (Impl.Scrub.X86_64.runKs [(112, 2)])) [] = true := by
+  lit_decide
 
-/-- MD5, as a variant of `MdHash`. -/
-def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  { unscrubbed with hmacFinRes := some ⟨hmacFinKs, hmacFinOk⟩ }
+/-- HMAC's `finalize` over `variant`, with what its cleanup needs. -/
+def fin : Proof.Pbkdf2.Md.X86_64.FinImpl := ⟨variant, by decide, ⟨.sse, [(112, 2)], fin_ok, fin_side⟩⟩
 
 end VG.Proof.Pbkdf2.Md.X86_64.Md5

@@ -89,14 +89,14 @@ theorem brainpoolp512r1T_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.cur
 /-! ## What the scrubbed functions clear
 
 The registers the tails of `vg_ecdsa_brainpoolp512r1_sign` and `vg_ecdsa_brainpoolp512r1_verify`
-clear, and what `ScrubAll.scrubAllOf` needs of their code
-(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
+(`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 
 /-- No instruction of `vg_ecdsa_brainpoolp512r1_sign_k` writes PSTATE.DIT, and it calls
 nothing indirectly. -/
 theorem brainpoolp512r1_core_side :
-    AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
       Impl.Ecdsa.AArch64.BrainpoolP512r1.signComb = true := by
   lit_decide
 
@@ -120,11 +120,11 @@ theorem brainpoolp512r1Sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP512r1.
 /-- `vg_ecdsa_brainpoolp512r1_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Fn.verifyHash`): it meets its contract in
 constant time and returns without secret residue. What the cleanup needs of
-the code (`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+the code (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
 theorem brainpoolp512r1Verify (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
     VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.Fn.verifyHash
       (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract AArch64.abi 80) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdsa.BrainpoolP512r1.verifyHashApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP512r1.verifyHashApi)
     { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
         Impl.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.verify
       verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP512r1.Joint.verifyHash_verified hL hI } _

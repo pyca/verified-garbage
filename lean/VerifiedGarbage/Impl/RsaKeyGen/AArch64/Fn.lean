@@ -5,21 +5,21 @@ public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Search
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Caller
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 
 /-!
 # RSA's key search on AArch64, as emitted
 
 `vg_rsa_key_search` with the functions it calls, given the Montgomery
 multiplications of a Miller–Rabin round's implementation, and its cleanup
-(`Impl.Residue.AArch64.scrubOf`), so that it returns without secret residue.
+(`Impl.Scrub.AArch64.scrubOf`), so that it returns without secret residue.
 -/
 
 @[expose] public section
 
 namespace VG.Impl.RsaKeyGen.AArch64.Fn
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64
+open VG VG.AArch64 VG.Impl.Scrub.AArch64
 
 /-- `vg_rsa_keygen_candidate`: its own arithmetic with the multiplication
 `mm`, calling the shared round `vg_miller_rabin_round`, whose

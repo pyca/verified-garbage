@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
+import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
@@ -295,5 +298,25 @@ theorem pk_verified (hL : Weierstrass.Law Spec.P224.curve)
       (Spec.EcKey.P224.inst.publicKeyContract (X86_64.abi.withConsts p224.combConsts) 8) :=
   Verified.of_inline_ct pk_inlineOk (pk_x86 hL hT hI) pk_ct implies8
     (fun _ h => Sig.clear_of_pre_consts h) pk_patch
+
+
+theorem publicKey_codeSp : (publicKeyP224).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
+  sp_safe
+
+/-- `vg_ec_p224_public_key` as emitted (`Impl.EcKey.X86_64.Fn.publicKeyP224`), its cleanup included, meets its contract in
+constant time and returns without secret residue. -/
+theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.P224.curve)
+    (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) :
+    VerifiedScrubbed X86_64.target Impl.EcKey.X86_64.Fn.publicKeyP224
+      (Spec.EcKey.P224.publicKeyApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts) 8) 32 :=
+  X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P224.publicKeyApi)
+    { code := publicKeyP224
+      stack := 8
+      verified := pk_verified hL hT hI
+      spSafe := publicKey_codeSp } .sse (EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P224.inst 8 Impl.Ecdsa.X86_64.p224.combConsts)
+
+theorem publicKey_spSafe : Impl.EcKey.X86_64.Fn.publicKeyP224.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe publicKey_codeSp
 
 end VG.Proof.EcKey.X86_64.P224

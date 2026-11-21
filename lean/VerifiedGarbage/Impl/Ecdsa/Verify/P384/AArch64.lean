@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P384Joint
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Spec.Ecdsa.P384
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-! # ECDSA verification over P-384 on AArch64: six-word field elements and scalars
 
@@ -26,10 +26,10 @@ namespace Fn
 /-- `vg_ecdsa_p384_verify` as emitted: `VerifyHash.verifyHash` around `verifyP384`, then
 its cleanup, which clears the registers it writes that the calling convention
 does not preserve, but the 32 bits of its result, and zeroes its 80 bytes of
-stack (`Impl.Residue.AArch64.scrubAll`), so that it returns without secret
+stack (`Impl.Scrub.AArch64.scrubAll`), so that it returns without secret
 residue. -/
 def verifyHashP384 : Prog isa :=
-  Residue.AArch64.scrubAll 80 32
+  Scrub.AArch64.scrubAll 80 32
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
      [.v16, .v17, .v18, .v19, .v28, .v29],
      []⟩

@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Adx
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.CT
 
@@ -27,6 +28,11 @@ def variant : RoundImpl :=
     noMx := Proof.MillerRabin.X86_64.Ifma.code_noMx Adx.arith
     correct := Proof.MillerRabin.X86_64.Ifma.code_correct Adx.arith
     ct := Proof.MillerRabin.X86_64.Ifma.code_ct Adx.arith
+    level := .evex
+    side := by lit_decide
+    mmSide := by intro o a b; rfl
+    montSide := by intro o a b; rfl
+    inlineSide := Adx.inlineSide _
     suffix := "_ifma"
     features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"] }
 

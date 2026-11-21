@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.Arm.Shake
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 
 /-!
@@ -87,11 +87,11 @@ end VG.Impl.Ed448.Arm.Verify
 
 namespace VG.Impl.Ed448.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_ed448_verify`, with either multiplication of the field (`u`), then the 280 bytes
 of stack its contract reserves zeroed and the registers a callee may
 change, but the result, and the flags set to constants. -/
-def verify (u : Bool) : Prog isa := scrubF 32 280 (Verify.code u)
+def verify (u : Bool) : Prog isa := scrubAll 32 280 (Verify.code u)
 
 end VG.Impl.Ed448.Arm.Fn

@@ -1003,7 +1003,7 @@ return only within their buffers (`Arm.Scrub.PostOut`, as on PPC64LE,
 `Proof/AesGcmSiv/PPC64LE/Scrub.lean`). Each is emitted followed by a wipe
 of that stack and by instructions that set the registers a callee may
 change, but the result, and the flags to constants (`Impl.AesGcmSiv.Arm.Fn`), and `Fn` below states
-that it returns without secret residue (`Arm.Scrub.verifiedScrubbedF`), which
+that it returns without secret residue (`Arm.Scrub.verifiedScrubbedAll`), which
 is what its registration binds.
 
 That stack is a frame of the model (`Arm.Scrub.FrameOk`): the 3800 bytes
@@ -1092,7 +1092,7 @@ open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Aes.ScrubLocal VG.Impl.Ae
 
 /-- `vg_aes_gcm_siv_seal`. -/
 theorem «seal» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcmSiv.Arm.Fn.«seal» (Spec.GcmSiv.sealContract abi 3808) 0 :=
-  verifiedScrubbedF (api := Spec.GcmSiv.sealApi)
+  verifiedScrubbedAll (api := Spec.GcmSiv.sealApi)
     { code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«seal»
       verified := Proof.AesGcmSiv.seal_keyed (Verified.stack_le (by decide) Proof.AesGcmSiv.Arm.seal_framed
         Scrub.sealSat : Verified Arm.target _ (Proof.AesGcmSiv.sealRoundsContract Arm.abi 3808)) }
@@ -1100,7 +1100,7 @@ theorem «seal» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesG
 
 /-- `vg_aes_gcm_siv_open`. -/
 theorem «open» [VG.Proof.Gcm.Arm.GhashLaw] : VerifiedScrubbed target Impl.AesGcmSiv.Arm.Fn.«open» (Spec.GcmSiv.openContract abi 3808) 32 :=
-  verifiedScrubbedF (api := Spec.GcmSiv.openApi)
+  verifiedScrubbedAll (api := Spec.GcmSiv.openApi)
     { code := Impl.StackScratch.Arm.withStackScratch 3792 4 Impl.AesGcmSiv.Arm.«open»
       verified := Proof.AesGcmSiv.open_keyed (Verified.stack_le (by decide) Proof.AesGcmSiv.Arm.open_framed
         Scrub.openSat : Verified Arm.target _ (Proof.AesGcmSiv.openRoundsContract Arm.abi 3808)) }

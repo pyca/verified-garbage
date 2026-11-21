@@ -224,7 +224,7 @@ open VG.AArch64
 vector registers too, and the high halves of those it writes that the calling
 convention preserves the low halves of. -/
 def updateNeon : Prog isa :=
-  VG.Impl.Residue.AArch64.scrubAll 128 0
+  VG.Impl.Scrub.AArch64.scrubAll 128 0
     ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17],
      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25,
       .v26, .v27, .v28, .v29, .v30, .v31],

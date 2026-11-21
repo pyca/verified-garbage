@@ -50,7 +50,7 @@ def code (compress : Prog isa) (suffix : String) : Prog isa := wrap (body compre
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (Clear scrubAll)
+open VG.Impl.Scrub.AArch64 (Clear scrubAll)
 
 /-- The registers `vg_ed25519_verify`'s own instructions write. -/
 def verifyOwn : Clear :=
@@ -58,7 +58,7 @@ def verifyOwn : Clear :=
    [.v0, .v1, .v2, .v3, .v7, .v16, .v17, .v18, .v31], []⟩
 
 /-- `vg_ed25519_verify` over an implementation of SHA-512's compression
-function: `code`, then its cleanup (`Impl.Residue.AArch64.scrubAll`), which
+function: `code`, then its cleanup (`Impl.Scrub.AArch64.scrubAll`), which
 clears the registers its own instructions and the compression function write
 that the calling convention does not preserve, but its 32-bit result, and
 zeroes its 352 bytes of stack, so that it returns without secret residue. -/

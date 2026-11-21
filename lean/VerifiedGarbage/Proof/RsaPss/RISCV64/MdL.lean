@@ -490,7 +490,7 @@ def sha512FamM (iv : Spec.Sha512.HashValue) (D : Nat) (initN finN : String) (fin
   md := Proof.Sha512.md
   iv := iv
   be := true
-  hL := ⟨by simp [Hmac.Stream.RISCV64.Sha512Family.hash, Hash.B], by decide⟩
+  hL := ⟨by simp [Hmac.Stream.RISCV64.Sha512Family.hash, Impl.Sha512.RISCV64.Fn.hash, Hash.B], by decide⟩
   hDN := hD
   init := init
   hash := hash

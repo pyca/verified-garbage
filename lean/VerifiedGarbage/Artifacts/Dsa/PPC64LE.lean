@@ -35,8 +35,10 @@ def artifacts : List Artifact := [
   Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Generation.init
     verified := .scrubbed parameterInit_scrubbed }] ++
-  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.flatMap
-    fun (v : { v : Proof.MillerRabin.PPC64LE.RoundImpl // v ∈ VG.Proof.Variants.MillerRabin.PPC64LE.variants }) => [
-    Spec.Dsa.parameterSearchApi.artifact PPC64LE.target (parameterSearchReg v.1 v.2)])
+  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.attach.map fun ⟨v, hv⟩ =>
+    Spec.Dsa.parameterSearchApi.artifact PPC64LE.target {
+      suffix := v.suffix
+      code := Impl.Dsa.PPC64LE.Fn.parameterSearch v.suffix v.code
+      verified := .scrubbed (Proof.Dsa.PPC64LE.Scrub.parameterSearch_scrubbed v hv) })
 
 end VG.Artifacts.Dsa.PPC64LE

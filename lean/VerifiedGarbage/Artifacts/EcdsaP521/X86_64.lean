@@ -94,19 +94,17 @@ open VG.Proof.Variants.MdHash.X86_64 (variants)
 
 def artifacts : List Artifact :=
   if hv : OK variants ∧ "VG_P521_COMB" ∉ names variants then [
-    Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
-      tables := [("hmac", tables variants)]
-      code := signCodeT (p521Of false hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)
-        Spec.Ecdsa.Rfc6979.Curves.p521.tries variants
-      verified := p521T_verified false hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv variants hv
-      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p521.combConsts _ _)),
-    Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
-      suffix := "_adx"
-      tables := [("hmac", tables variants)]
-      code := signCodeT (p521Of true hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)
-        Spec.Ecdsa.Rfc6979.Curves.p521.tries variants
-      verified := p521T_verified true hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv variants hv
-      spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p521.combConsts _ _))]
+    Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact X86_64.target
+      { tables := [("hmac", tables variants)]
+        code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (p521Of false hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p521.tries variants)
+        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.p521T_scrubbed false hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv variants hv Proof.Ecdsa.Rfc6979.X86_64.variants_up)
+        spSafe := Proof.Ecdsa.Rfc6979.X86_64.p521T_spSafe false hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv variants },
+    Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact X86_64.target
+      { suffix := "_adx"
+        tables := [("hmac", tables variants)]
+        code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (p521Of true hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p521.tries variants)
+        verified := .scrubbed (Proof.Ecdsa.Rfc6979.X86_64.p521T_scrubbed true hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv variants hv Proof.Ecdsa.Rfc6979.X86_64.variants_up)
+        spSafe := Proof.Ecdsa.Rfc6979.X86_64.p521T_spSafe true hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv variants }]
   else []
 
 end VG.Artifacts.EcdsaP521.X86_64.Rfc6979
@@ -116,19 +114,15 @@ namespace VG.Artifacts.EcdsaP521.X86_64
 open VG.Proof.P521.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
-    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
-      Impl.Ecdsa.Verify.X86_64.jointVerifyP521
-    verified := Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law)
-      hasLaw.inv }
-    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P521.inst Impl.Ecdsa.X86_64.p521.combConsts)),
-  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
-    suffix := "_adx"
-    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
-      Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx
-    verified := Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law)
-      hasLaw.inv }
-    (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.P521.inst Impl.Ecdsa.X86_64.p521.combConsts))] ++
+  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target
+    { code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521
+      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.P521.verifyHash_scrubbed hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)
+      spSafe := Proof.Ecdsa.Verify.X86_64.P521.verifyHash_spSafe },
+  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target
+    { suffix := "_adx"
+      code := Impl.Ecdsa.X86_64.VerifyHash.Fn.verifyHash Spec.Ecdsa.P521.inst.curve.len true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx
+      verified := .scrubbed (Proof.Ecdsa.Verify.X86_64.P521.verifyHashAdx_scrubbed hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)
+      spSafe := Proof.Ecdsa.Verify.X86_64.P521.verifyHashAdx_spSafe }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP521.X86_64

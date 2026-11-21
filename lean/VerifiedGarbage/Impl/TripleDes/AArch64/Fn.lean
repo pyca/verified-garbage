@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
 public import VerifiedGarbage.Impl.TripleDes.AArch64.ExpandKey
@@ -22,7 +22,7 @@ it returns without secret residue (`Proof/TripleDes/AArch64/`).
 namespace VG.Impl.TripleDes.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `vg_triple_des_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa :=

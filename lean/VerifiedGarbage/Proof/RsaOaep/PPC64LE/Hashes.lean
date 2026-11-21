@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE.Fn
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.CTCalls
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Md5
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Sha1
@@ -55,7 +56,7 @@ theorem sha224CT : HashCT Sha224.ok where
   fin := ct_mono Proof.Sha256.PPC64LE.Stream.Finalize.finalize_verified.2.1 (fun _ hs => hs) fun _ _ h => h
 
 theorem sha512FamilyCT (iv : Spec.Sha512.HashValue) {D : Nat} {initN hmacInitN : String}
-    (hok : HashOK (Sha512Family.hash iv D initN hmacInitN)) : HashCT hok where
+    (hok : HashOK (Impl.Hmac.Stream.PPC64LE.sha512FamilyHash iv D initN hmacInitN)) : HashCT hok where
   init := ct_mono (Proof.Sha512.PPC64LE.Stream.init_verified iv).2.1 (fun _ hs => ⟨hs.1, hs.2.1⟩) fun _ _ h => h
   upd := ct_mono Proof.Sha512.PPC64LE.Stream.Update.update_verified.2.1
     (fun _ hs => ⟨hs.1, hs.2.1, hs.2.2.1, hs.2.2.2.1, hs.2.2.2.2.1⟩) fun _ _ h => h
@@ -90,15 +91,15 @@ theorem Link.lens_mem {H : Impl.Hmac.Stream.PPC64LE.Hash} (l : Link H) : H.D ∈
 theorem Link.valid {H : Impl.Hmac.Stream.PPC64LE.Hash} (l : Link H) : Proof.Mgf1.Valid l.G :=
   ⟨by rw [l.len]; exact l.ok.hD0, fun x => by rw [l.hash, l.ok.hashLen, l.len]⟩
 
-def md5L : Link Md5.hash := ⟨Md5.ok, md5CT, Spec.Mgf1.md5, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha1L : Link Sha1.hash := ⟨Sha1.ok, sha1CT, Spec.Mgf1.sha1, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha224L : Link Sha224.hash := ⟨Sha224.ok, sha224CT, Spec.Mgf1.sha224, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha256L : Link Sha256.hash := ⟨Sha256.ok, sha256CT, Spec.Mgf1.sha256, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha384L : Link Sha384.hash := ⟨Sha384.ok, sha384CT, Spec.Mgf1.sha384, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha512L : Link Sha512.hash := ⟨Sha512.ok, sha512CT, Spec.Mgf1.sha512, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha512_224L : Link Sha512_224.hash :=
+def md5L : Link Impl.Hmac.Stream.PPC64LE.md5Hash := ⟨Md5.ok, md5CT, Spec.Mgf1.md5, fun _ => rfl, rfl, by simp [labelHashes]⟩
+def sha1L : Link Impl.Hmac.Stream.PPC64LE.sha1Hash := ⟨Sha1.ok, sha1CT, Spec.Mgf1.sha1, fun _ => rfl, rfl, by simp [labelHashes]⟩
+def sha224L : Link Impl.Hmac.Stream.PPC64LE.sha224Hash := ⟨Sha224.ok, sha224CT, Spec.Mgf1.sha224, fun _ => rfl, rfl, by simp [labelHashes]⟩
+def sha256L : Link Impl.Hmac.Stream.PPC64LE.sha256Hash := ⟨Sha256.ok, sha256CT, Spec.Mgf1.sha256, fun _ => rfl, rfl, by simp [labelHashes]⟩
+def sha384L : Link Impl.Hmac.Stream.PPC64LE.sha384Hash := ⟨Sha384.ok, sha384CT, Spec.Mgf1.sha384, fun _ => rfl, rfl, by simp [labelHashes]⟩
+def sha512L : Link Impl.Hmac.Stream.PPC64LE.sha512Hash := ⟨Sha512.ok, sha512CT, Spec.Mgf1.sha512, fun _ => rfl, rfl, by simp [labelHashes]⟩
+def sha512_224L : Link Impl.Hmac.Stream.PPC64LE.sha512_224Hash :=
   ⟨Sha512_224.ok, sha512_224CT, Spec.Mgf1.sha512_224, fun _ => rfl, rfl, by simp [labelHashes]⟩
-def sha512_256L : Link Sha512_256.hash :=
+def sha512_256L : Link Impl.Hmac.Stream.PPC64LE.sha512_256Hash :=
   ⟨Sha512_256.ok, sha512_256CT, Spec.Mgf1.sha512_256, fun _ => rfl, rfl, by simp [labelHashes]⟩
 
 end VG.Proof.RsaOaep.PPC64LE

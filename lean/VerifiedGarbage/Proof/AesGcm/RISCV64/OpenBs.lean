@@ -1035,7 +1035,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem openBs_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.openBs
       (Spec.Gcm.openBitslicedContract RISCV64.abi 4640) 32 :=
-  verifiedScrubbedSelT (api := Spec.Gcm.openBitslicedApi) (W := 4640)
+  verifiedScrubbedSel (api := Spec.Gcm.openBitslicedApi) (W := 4640)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 3 Impl.AesGcm.RISCV64.openBs
       verified := Proof.AesGcm.openBitsliced_keyed openBs_framed }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (144, [(0, 18)])] []

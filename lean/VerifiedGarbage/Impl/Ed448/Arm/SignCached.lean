@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.Arm.Shake
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.Ed448.Arm.Scalar
 
 /-!
@@ -113,11 +113,11 @@ end VG.Impl.Ed448.Arm.SignCached
 
 namespace VG.Impl.Ed448.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm
+open VG.Arm VG.Impl.Scrub.Arm
 
 /-- `vg_ed448_sign_cached`, with either multiplication of the field (`u`), then the 280 bytes
 of stack its contract reserves zeroed and the registers a callee may
 change and the flags set to constants. -/
-def signCached (u : Bool) : Prog isa := scrubF 0 280 (SignCached.code u)
+def signCached (u : Bool) : Prog isa := scrubAll 0 280 (SignCached.code u)
 
 end VG.Impl.Ed448.Arm.Fn

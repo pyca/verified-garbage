@@ -90,7 +90,7 @@ end VG.Impl.AesCtr.X86
 
 /-! ## The functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
 bytes of stack below `esp` that it and its callees use zeroed, and the
 registers a callee may change cleared but the `rb` bits of the result, so
 that it returns without secret residue. -/
@@ -102,10 +102,10 @@ open VG.Impl.Aes.X86 (Blocks Ctr32)
 open Impl.StackScratch.X86 (withStackScratchWiped)
 
 /-- `vg_aes_ctr` over the counter-mode function `c`, as emitted. -/
-def crypt32 (c : Ctr32) : Prog isa := Impl.Scrub.X86.scrubF 0 32 (Impl.AesCtr.X86.crypt32 c)
+def crypt32 (c : Ctr32) : Prog isa := Impl.Scrub.X86.scrubAll 0 32 (Impl.AesCtr.X86.crypt32 c)
 
 /-- `vg_aes_ctr_final` over the block function `b`, of the variant `sfx`, as emitted. -/
 def cryptFinal (b : Blocks) (sfx : String) : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 116 (withStackScratchWiped 64 6 8 (Impl.AesCtr.X86.cryptFinal b sfx))
+  Impl.Scrub.X86.scrubAll 0 116 (withStackScratchWiped 64 6 8 (Impl.AesCtr.X86.cryptFinal b sfx))
 
 end VG.Impl.AesCtr.X86.Fn

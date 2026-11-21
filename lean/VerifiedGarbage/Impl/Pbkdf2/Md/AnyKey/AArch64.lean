@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
@@ -73,7 +73,7 @@ def initEntry (B : Nat) (short long : Prog isa) : Prog isa :=
 `vg_hmac_<hash>_init`, `vg_hmac_<hash>_finalize` and `vg_pbkdf2_hmac_<hash>`
 over hash function `H`: each is its `_scratch` form with its working space in
 a frame on the stack, sized to what `H`'s functions need, then its cleanup
-(`Impl.Residue.AArch64.scrubOf`), which clears the registers the code may
+(`Impl.Scrub.AArch64.scrubOf`), which clears the registers the code may
 write, the functions it calls included, and zeroes that stack, so
 that it returns without secret residue. -/
 
@@ -98,7 +98,7 @@ end Hash
 
 namespace Fn
 
-open VG.Impl.Residue.AArch64 (scrubOf)
+open VG.Impl.Scrub.AArch64 (scrubOf)
 open VG.Impl.StackScratch.AArch64 (withStackScratch withStackScratchWiped)
 
 /-- `vg_hmac_<hash>_init`: for a key of at most a block (the common case),

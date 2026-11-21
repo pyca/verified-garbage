@@ -32,6 +32,8 @@ open VG VG.X86_64 VG.Proof.Argon2.X86_64
   suffix := ""
   features := []
   code := Impl.Argon2.X86_64.compress
+  level := .sse
+  side := by change VG.X86_64.Scrub.calleeSide (Impl.Argon2.X86_64.compress) _ 0 = true; lit_decide
   correct := compress_correct
   ct := compress_ct
   noSp := noSp_of_allInstrs (by lit_decide)

@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Scrub
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
@@ -157,5 +160,29 @@ theorem p256T_verified (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve)
   cases adx
   · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
   · exact signT_verified ⟨rfl, by decide, by decide⟩ rfl h.1 hsat
+
+
+/-! ## The function as emitted -/
+
+theorem p256_stub (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve) (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (hI : Weierstrass.X86_64.InvSounds) : SignStub (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries := by
+  cases adx <;> (dsimp only [SignStub, cfgS, cfgT, p256Of, cond, p256, p256x]; exact ⟨by lit_decide, by lit_decide⟩)
+
+/-- `vg_ecdsa_p256_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
+cleanup included, meets its contract in constant time and returns without secret residue. -/
+theorem p256T_scrubbed (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve) (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P256_COMB" ∉ Proof.HmacTable.X86_64.names vs)
+    (hu : ∀ w ∈ vs, HmacUp w) :
+    VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs))
+      (specK Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.X86_64.p256.combConsts vs) 32 :=
+  sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p256SignApi)
+    { tables := [("hmac", Proof.HmacTable.X86_64.tables vs)]
+      code := signCodeT (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs
+      verified := p256T_verified adx hL hT hI vs h
+      spSafe := signCode_sp _ _ _ }
+    (signOut _ Impl.Ecdsa.X86_64.p256.combConsts _ _) rfl rfl hu (p256_stub adx hL hT hI)
+
+theorem p256T_spSafe (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve) (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) :
+    (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs)).all
+      (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.Scrub.scrubKs_spSafe (signCode_sp _ _ _)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

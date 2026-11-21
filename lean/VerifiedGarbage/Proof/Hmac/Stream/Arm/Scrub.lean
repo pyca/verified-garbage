@@ -28,7 +28,7 @@ postconditions read the memory on return only within their buffers
 stack its contract reserves and by instructions that set the registers a
 callee may change, but the result, and the flags to constants
 (`Impl.Hmac.Stream.Arm.Fn`), and `Fn` below states that it returns without
-secret residue (`Arm.Scrub.verifiedScrubbedF`), which its registration binds.
+secret residue (`Arm.Scrub.verifiedScrubbedAll`), which its registration binds.
 What that cleanup needs of the code follows from what the hash function's
 own code gives (`MdOk`, `Proof/Hmac/Stream/Arm/CodeOk.lean`). `init`'s proof
 reserves `24 + anyFrame I` bytes, which is no frame size of the model
@@ -205,7 +205,7 @@ open VG VG.Arm VG.Arm.Scrub VG.Proof.Hmac.Stream.Arm VG.Proof.Hmac.Stream.Arm.Sc
 /-- `vg_hmac_md5_init`. -/
 theorem initMd5 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initMd5
     (Spec.Hmac.md5I.initAnyKeyContract abi 1088) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.md5I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.md5I.initAnyKeyApi)
     { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.md5I Pbkdf2.Md.Arm.md5Md.hmacInit
         Pbkdf2.Whole.Arm.md5F
       verified := md5_initArm }
@@ -215,7 +215,7 @@ theorem initMd5 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initMd5
 /-- `vg_hmac_md5_finalize`. -/
 theorem finalizeMd5 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeMd5
     (Spec.Hmac.md5I.finalizeContract abi 432) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.md5I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.md5I.finalizeApi)
     { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.md5I Pbkdf2.Md.Arm.md5Md
       verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.md5_finalize Hmac.md5_local
         Pbkdf2.Md.Arm.md5_finFrameSat }
@@ -225,7 +225,7 @@ theorem finalizeMd5 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeMd
 /-- `vg_hmac_sha1_init`. -/
 theorem initSha1 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha1
     (Spec.Hmac.sha1I.initAnyKeyContract abi 1184) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha1I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha1I.initAnyKeyApi)
     { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha1I Pbkdf2.Md.Arm.sha1Md.hmacInit
         Pbkdf2.Whole.Arm.sha1F
       verified := sha1_initArm }
@@ -235,7 +235,7 @@ theorem initSha1 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha1
 /-- `vg_hmac_sha1_finalize`. -/
 theorem finalizeSha1 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha1
     (Spec.Hmac.sha1I.finalizeContract abi 496) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha1I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha1I.finalizeApi)
     { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha1I Pbkdf2.Md.Arm.sha1Md
       verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha1_finalize Hmac.sha1_local
         Pbkdf2.Md.Arm.sha1_finFrameSat }
@@ -245,7 +245,7 @@ theorem finalizeSha1 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeS
 /-- `vg_hmac_sha224_init`. -/
 theorem initSha224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha224
     (Spec.Hmac.sha224I.initAnyKeyContract abi 1664) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha224I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha224I.initAnyKeyApi)
     { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha224I Pbkdf2.Md.Arm.sha224Md.hmacInit
         Pbkdf2.Whole.Arm.sha224F
       verified := sha224_initArm }
@@ -255,7 +255,7 @@ theorem initSha224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha224
 /-- `vg_hmac_sha224_finalize`. -/
 theorem finalizeSha224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha224
     (Spec.Hmac.sha224I.finalizeContract abi 880) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha224I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha224I.finalizeApi)
     { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha224I Pbkdf2.Md.Arm.sha224Md
       verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha224_finalize Hmac.sha224_local
         Pbkdf2.Md.Arm.sha224_finFrameSat }
@@ -265,7 +265,7 @@ theorem finalizeSha224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finaliz
 /-- `vg_hmac_sha256_init`. -/
 theorem initSha256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha256
     (Spec.Hmac.sha256I.initAnyKeyContract abi 1664) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha256I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha256I.initAnyKeyApi)
     { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha256I Pbkdf2.Md.Arm.sha256Md.hmacInit
         Pbkdf2.Whole.Arm.sha256F
       verified := sha256_initArm }
@@ -275,7 +275,7 @@ theorem initSha256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha256
 /-- `vg_hmac_sha256_finalize`. -/
 theorem finalizeSha256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha256
     (Spec.Hmac.sha256I.finalizeContract abi 880) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha256I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha256I.finalizeApi)
     { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha256I Pbkdf2.Md.Arm.sha256Md
       verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha256_finalize Hmac.sha256_local
         Pbkdf2.Md.Arm.sha256_finFrameSat }
@@ -285,7 +285,7 @@ theorem finalizeSha256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finaliz
 /-- `vg_hmac_sha384_init`. -/
 theorem initSha384 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha384
     (Spec.Hmac.sha384I.initAnyKeyContract abi 3456) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha384I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha384I.initAnyKeyApi)
     { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha384I Pbkdf2.Md.Arm.sha384Md.hmacInit
         Pbkdf2.Whole.Arm.sha384F
       verified := sha384_initArm }
@@ -295,7 +295,7 @@ theorem initSha384 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha384
 /-- `vg_hmac_sha384_finalize`. -/
 theorem finalizeSha384 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha384
     (Spec.Hmac.sha384I.finalizeContract abi 1904) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha384I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha384I.finalizeApi)
     { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha384I Pbkdf2.Md.Arm.sha384Md
       verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha384_finalize Hmac.sha384_local
         Pbkdf2.Md.Arm.sha384_finFrameSat }
@@ -305,7 +305,7 @@ theorem finalizeSha384 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finaliz
 /-- `vg_hmac_sha512_init`. -/
 theorem initSha512 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha512
     (Spec.Hmac.sha512I.initAnyKeyContract abi 3456) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512I.initAnyKeyApi)
     { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512I Pbkdf2.Md.Arm.sha512Md'.hmacInit
         Pbkdf2.Whole.Arm.sha512F
       verified := sha512_initArm }
@@ -315,7 +315,7 @@ theorem initSha512 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha512
 /-- `vg_hmac_sha512_finalize`. -/
 theorem finalizeSha512 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha512
     (Spec.Hmac.sha512I.finalizeContract abi 1904) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512I.finalizeApi)
     { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha512I Pbkdf2.Md.Arm.sha512Md'
       verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha512_finalize Hmac.sha512_local
         Pbkdf2.Md.Arm.sha512_finFrameSat }
@@ -325,7 +325,7 @@ theorem finalizeSha512 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finaliz
 /-- `vg_hmac_sha512_224_init`. -/
 theorem initSha512_224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha512_224
     (Spec.Hmac.sha512_224I.initAnyKeyContract abi 3456) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512_224I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_224I.initAnyKeyApi)
     { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_224I Pbkdf2.Md.Arm.sha512_224Md.hmacInit
         Pbkdf2.Whole.Arm.sha512_224F
       verified := sha512_224_initArm }
@@ -335,7 +335,7 @@ theorem initSha512_224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha
 /-- `vg_hmac_sha512_224_finalize`. -/
 theorem finalizeSha512_224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha512_224
     (Spec.Hmac.sha512_224I.finalizeContract abi 1904) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512_224I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_224I.finalizeApi)
     { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha512_224I Pbkdf2.Md.Arm.sha512_224Md
       verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha512_224_finalize Hmac.sha512_224_local
         Pbkdf2.Md.Arm.sha512_224_finFrameSat }
@@ -345,7 +345,7 @@ theorem finalizeSha512_224 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.fin
 /-- `vg_hmac_sha512_256_init`. -/
 theorem initSha512_256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha512_256
     (Spec.Hmac.sha512_256I.initAnyKeyContract abi 3456) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512_256I.initAnyKeyApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_256I.initAnyKeyApi)
     { code := Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha512_256I Pbkdf2.Md.Arm.sha512_256Md.hmacInit
         Pbkdf2.Whole.Arm.sha512_256F
       verified := sha512_256_initArm }
@@ -355,7 +355,7 @@ theorem initSha512_256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.initSha
 /-- `vg_hmac_sha512_256_finalize`. -/
 theorem finalizeSha512_256 : VerifiedScrubbed target Impl.Hmac.Stream.Arm.Fn.finalizeSha512_256
     (Spec.Hmac.sha512_256I.finalizeContract abi 1904) 0 :=
-  verifiedScrubbedF (api := Spec.Hmac.sha512_256I.finalizeApi)
+  verifiedScrubbedAll (api := Spec.Hmac.sha512_256I.finalizeApi)
     { code := Impl.Hmac.Stream.Arm.finCode Spec.Hmac.sha512_256I Pbkdf2.Md.Arm.sha512_256Md
       verified := Pbkdf2.Md.Arm.finFramed Pbkdf2.Md.Arm.Instances.sha512_256_finalize Hmac.sha512_256_local
         Pbkdf2.Md.Arm.sha512_256_finFrameSat }

@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
+public import VerifiedGarbage.Proof.Framework.X86_64.CalleeSide
 
 /-! # Shared round implementations for generic RSA and FFDH callers -/
 
@@ -133,12 +134,29 @@ structure RoundImpl extends RoundArith where
   noMx : code.allInstrs (fun i => !touchesMxcsr i) = true
   correct : ∀ s, roundPre s → ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ roundPost s t
   ct : ConstantTime isa roundPre roundPub code
+  /-- The level of the vector instructions of its round and multiplication. -/
+  level : Impl.Scrub.X86_64.VecLevel
+  /-- What the cleanup of a function that calls the round needs of its code
+  (`X86_64.Scrub.calleeSide`), evaluated here, once. -/
+  side : X86_64.Scrub.calleeSide code level.level 120 = true
+  /-- What the cleanup of a function that runs its multiplication needs of
+  it, wherever it runs it. -/
+  mmSide : ∀ o a b, X86_64.Scrub.calleeSide (mm o a b) level.level 8 = true
+  /-- The same of its arithmetic inline (`mont.mm`). -/
+  montSide : ∀ o a b, X86_64.Scrub.calleeSide (mont.mm o a b) level.level 0 = true
+  /-- The same of its arithmetic for callers that inline it (`inlineMont.mm`). -/
+  inlineSide : ∀ o a b, X86_64.Scrub.calleeSide (inlineMont.mm o a b) level.level 0 = true
   suffix : String
   features : List String
 
 /-- The backend whose round is `round mm`. -/
 def RoundImpl.ofArith (a : RoundArith) (spSafe : (round a.mm).all (fun i => !isa.writesSp i) = true)
-    (depth : (round a.mm).x86_64Depth ≤ 120) (suffix : String) (features : List String) : RoundImpl :=
+    (depth : (round a.mm).x86_64Depth ≤ 120) (level : Impl.Scrub.X86_64.VecLevel)
+    (side : X86_64.Scrub.calleeSide (round a.mm) level.level 120 = true)
+    (mmSide : ∀ o a' b, X86_64.Scrub.calleeSide (a.mm o a' b) level.level 8 = true)
+    (montSide : ∀ o a' b, X86_64.Scrub.calleeSide (a.mont.mm o a' b) level.level 0 = true)
+    (inlineSide : ∀ o a' b, X86_64.Scrub.calleeSide (a.inlineMont.mm o a' b) level.level 0 = true)
+    (suffix : String) (features : List String) : RoundImpl :=
   { a with
     code := round a.mm
     spSafe := spSafe
@@ -147,6 +165,11 @@ def RoundImpl.ofArith (a : RoundArith) (spSafe : (round a.mm).all (fun i => !isa
     noMx := a.mxSafe
     correct := a.round_correct
     ct := a.round_ct
+    level := level
+    side := side
+    mmSide := mmSide
+    montSide := montSide
+    inlineSide := inlineSide
     suffix := suffix
     features := features }
 

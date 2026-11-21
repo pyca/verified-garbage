@@ -20,8 +20,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Impl.Residue.AArch64
-meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+meta import VerifiedGarbage.Impl.Scrub.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Clears
 public import VerifiedGarbage.TCB.Registration
 meta import VerifiedGarbage.TCB.Registration

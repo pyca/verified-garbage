@@ -29,7 +29,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 The postconditions of key generation, of `pk_tr` and of signing a message
 (with a key or a prepared key) read the memory on return only within their
-outputs, and those of verifying a message not at all (`ScrubAll.ScrubAllOk`,
+outputs, and those of verifying a message not at all (`Scrub.ScrubAllOk`,
 as x86-64's `Proof/MlDsa/X86_64/Scrub.lean` proves them): each
 implementation, generic over the Keccak-f[1600] implementation it calls,
 returns with every register the calling convention does not preserve cleared
@@ -43,7 +43,7 @@ registrations bind.
 
 namespace VG.Proof.MlDsa.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.MlDsa
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.MlDsa
 
 /-- The `n` bytes at `q` read the memory only within a region at `q` of at
 least `n` bytes. -/
@@ -244,23 +244,23 @@ theorem preparedVerifySelectedOk : ScrubAllOk
 /-- The message functions call the entries as emitted, scrubbed whole: that
 code keeps `Message.DLe 4`, its frame of 64 bytes being 4 units, whatever
 registers it clears. -/
-theorem dle_scrubAll {c : Prog VG.AArch64.isa} (cl : VG.Impl.Residue.AArch64.Clear)
+theorem dle_scrubAll {c : Prog VG.AArch64.isa} (cl : VG.Impl.Scrub.AArch64.Clear)
     (h : VG.Proof.MlDsa.AArch64.Message.DLe 4 c) :
-    VG.Proof.MlDsa.AArch64.Message.DLe 4 (VG.Impl.Residue.AArch64.scrubAll 64 32 cl c) := by
+    VG.Proof.MlDsa.AArch64.Message.DLe 4 (VG.Impl.Scrub.AArch64.scrubAll 64 32 cl c) := by
   refine ⟨?_, ?_⟩
   · have hl := h.le
-    show Code.aarch64Depth (.seq (VG.Impl.Residue.AArch64.withRet 32
-      (.seq c (.block (VG.Impl.Residue.AArch64.clearsOf cl))))
-      (VG.Impl.Residue.AArch64.scrubTailG 64 (List.range 4))) ≤ 4
-    simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.aarch64Depth,
+    show Code.aarch64Depth (.seq (VG.Impl.Scrub.AArch64.withRet 32
+      (.seq c (.block (VG.Impl.Scrub.AArch64.clearsOf cl))))
+      (VG.Impl.Scrub.AArch64.scrubTailG 64 (List.range 4))) ≤ 4
+    simp only [VG.Impl.Scrub.AArch64.withRet, VG.Impl.Scrub.AArch64.scrubTailG, Code.aarch64Depth,
       Instr.frameUnits, Nat.max_le, Nat.zero_le, Nat.reduceDiv, Nat.zero_add, Nat.le_refl, and_true]
     exact hl
   · have hn := h.nd
-    show Code.all (fun i => !i.touchesDit) (.seq (VG.Impl.Residue.AArch64.withRet 32
-      (.seq c (.block (VG.Impl.Residue.AArch64.clearsOf cl))))
-      (VG.Impl.Residue.AArch64.scrubTailG 64 (List.range 4))) = true
-    simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.all, hn,
-      Bool.true_and, VG.Impl.Residue.AArch64.clearsOf, List.all_append, List.all_map,
+    show Code.all (fun i => !i.touchesDit) (.seq (VG.Impl.Scrub.AArch64.withRet 32
+      (.seq c (.block (VG.Impl.Scrub.AArch64.clearsOf cl))))
+      (VG.Impl.Scrub.AArch64.scrubTailG 64 (List.range 4))) = true
+    simp only [VG.Impl.Scrub.AArch64.withRet, VG.Impl.Scrub.AArch64.scrubTailG, Code.all, hn,
+      Bool.true_and, VG.Impl.Scrub.AArch64.clearsOf, List.all_append, List.all_map,
       Function.comp_def]
     simp [Instr.touchesDit]
     exact ⟨by decide, by decide⟩
@@ -271,7 +271,7 @@ open VG.Proof.MlDsa.AArch64.PreparedKey (MessageSignFn MessageVerifyFn message_s
 theorem message_sign_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.MlDsa.AArch64.Sign.Ok3 p)
     (name : String) (prepared : Bool) :
     MessageSignFn p prepared
-      (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all
+      (VG.Impl.Scrub.AArch64.scrubAll 64 32 VG.Impl.Scrub.AArch64.Clear.all
         (Proof.MlDsa.AArch64.PreparedKey.signCode v p name prepared)) := by
   obtain h := message_sign_fn v hp name prepared
   refine ⟨Verified.scrubAll clearAll_wf h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
@@ -283,7 +283,7 @@ theorem message_sign_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.M
 theorem message_verify_fn_scrub (v : Proof.Sha3.AArch64.Permutation) (hp : Proof.MlDsa.AArch64.Sign.Ok3 p)
     (name : String) (prepared : Bool) :
     MessageVerifyFn p prepared
-      (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all
+      (VG.Impl.Scrub.AArch64.scrubAll 64 32 VG.Impl.Scrub.AArch64.Clear.all
         (Proof.MlDsa.AArch64.PreparedKey.verifyCode v p name prepared)) := by
   obtain h := message_verify_fn v hp name prepared
   refine ⟨Verified.scrubAll clearAll_wf h.ver (by decide) (by decide) ?_, dle_scrubAll _ h.dle⟩
@@ -368,7 +368,7 @@ theorem prepareSecretOk {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = m
 
 /-! ## What the cleanup needs of the code that prepares keys
 
-`ScrubAll.scrubSide` of the two functions, with each parameter set:
+`Scrub.scrubSide` of the two functions, with each parameter set:
 evaluated here, by the kernel. -/
 
 /-- Of preparing a verifying key. -/
@@ -437,11 +437,11 @@ function's contract in constant time and returns without secret residue. -/
 
 namespace VG.Proof.MlDsa.AArch64.Fn
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.MlDsa
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.MlDsa
 
 theorem preparePublic {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.preparePublic p) (preparePublicKeyContract p abi 80) 0 :=
-  verifiedScrubbed (api := preparePublicKeyApi p "" "")
+  verifiedScrubbedAll (api := preparePublicKeyApi p "" "")
     { code := Impl.MlDsa.AArch64.PreparedKey.preparePublic p,
       verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified p hp }
     _ (Scrub.preparePublicOk hp 80) (Scrub.preparePublicSide hp)
@@ -460,7 +460,7 @@ theorem preparePublic87 :
 
 theorem prepareSecret {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.prepareSecret p) (prepareSecretKeyContract p abi 80) 0 :=
-  verifiedScrubbed (api := prepareSecretKeyApi p "" "")
+  verifiedScrubbedAll (api := prepareSecretKeyApi p "" "")
     { code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret p,
       verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified p hp }
     _ (Scrub.prepareSecretOk hp 80) (Scrub.prepareSecretSide hp)
@@ -479,21 +479,21 @@ theorem prepareSecret87 :
 
 theorem pkTr44 (v : Proof.Sha3.AArch64.Permutation) :
     VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.pkTr v.callee mlDsa44) (pkTrContract mlDsa44 abi 16) 0 :=
-  verifiedScrubbed (api := pkTr44Api)
+  verifiedScrubbedAll (api := pkTr44Api)
     { code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee mlDsa44,
       verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inl rfl) }
     _ (Scrub.pkTrOk _ 16) (Scrub.pkTr_side v _)
 
 theorem pkTr65 (v : Proof.Sha3.AArch64.Permutation) :
     VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.pkTr v.callee mlDsa65) (pkTrContract mlDsa65 abi 16) 0 :=
-  verifiedScrubbed (api := pkTr65Api)
+  verifiedScrubbedAll (api := pkTr65Api)
     { code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee mlDsa65,
       verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inl rfl)) }
     _ (Scrub.pkTrOk _ 16) (Scrub.pkTr_side v _)
 
 theorem pkTr87 (v : Proof.Sha3.AArch64.Permutation) :
     VerifiedScrubbed target (Impl.MlDsa.AArch64.Fn.pkTr v.callee mlDsa87) (pkTrContract mlDsa87 abi 16) 0 :=
-  verifiedScrubbed (api := pkTr87Api)
+  verifiedScrubbedAll (api := pkTr87Api)
     { code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee mlDsa87,
       verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inr rfl)) }
     _ (Scrub.pkTrOk _ 16) (Scrub.pkTr_side v _)
@@ -622,12 +622,12 @@ private theorem verifyEntry_sd {name : String} {code : Prog isa} {p : Params}
 
 /-- The depth of a function as emitted, in a frame of 64 bytes: its code's,
 if that is at most the frame's 4 units. -/
-private theorem depth_scrubAll64 {c : Prog isa} (cl : VG.Impl.Residue.AArch64.Clear)
-    (h : c.aarch64Depth ≤ 4) : (VG.Impl.Residue.AArch64.scrubAll 64 32 cl c).aarch64Depth ≤ 4 := by
-  show Code.aarch64Depth (.seq (VG.Impl.Residue.AArch64.withRet 32
-    (.seq c (.block (VG.Impl.Residue.AArch64.clearsOf cl))))
-    (VG.Impl.Residue.AArch64.scrubTailG 64 (List.range 4))) ≤ 4
-  simp only [VG.Impl.Residue.AArch64.withRet, VG.Impl.Residue.AArch64.scrubTailG, Code.aarch64Depth,
+private theorem depth_scrubAll64 {c : Prog isa} (cl : VG.Impl.Scrub.AArch64.Clear)
+    (h : c.aarch64Depth ≤ 4) : (VG.Impl.Scrub.AArch64.scrubAll 64 32 cl c).aarch64Depth ≤ 4 := by
+  show Code.aarch64Depth (.seq (VG.Impl.Scrub.AArch64.withRet 32
+    (.seq c (.block (VG.Impl.Scrub.AArch64.clearsOf cl))))
+    (VG.Impl.Scrub.AArch64.scrubTailG 64 (List.range 4))) ≤ 4
+  simp only [VG.Impl.Scrub.AArch64.withRet, VG.Impl.Scrub.AArch64.scrubTailG, Code.aarch64Depth,
     Instr.frameUnits, Nat.max_le, Nat.zero_le, Nat.reduceDiv, Nat.zero_add, Nat.le_refl, and_true]
   exact h
 
@@ -701,11 +701,11 @@ private theorem signMessage_sd (c : Impl.Sha3.AArch64.Callee)
     (hod : (Impl.Sha3.AArch64.Stream.absorbWith c).aarch64Depth ≤ 1) {p : Params}
     (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (name name' : String) (prepared : Bool) :
     sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.Message.signMessage c name'
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+        (VG.Impl.Scrub.AArch64.scrubAll 64 32 VG.Impl.Scrub.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
           (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache c
             (Impl.MlDsa.AArch64.Fn.signPrims c) p) p prepared)) p) = true ∧
       (Impl.MlDsa.AArch64.Message.signMessage c name'
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+        (VG.Impl.Scrub.AArch64.scrubAll 64 32 VG.Impl.Scrub.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
           (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache c
             (Impl.MlDsa.AArch64.Fn.signPrims c) p) p prepared)) p).aarch64Depth ≤ 4 := by
   obtain ⟨hs, hd⟩ := sign_sd c hb hbd ho hod hp name prepared
@@ -717,11 +717,11 @@ private theorem verifyMessage_sd (c : Impl.Sha3.AArch64.Callee)
     (hod : (Impl.Sha3.AArch64.Stream.absorbWith c).aarch64Depth ≤ 1) {p : Params}
     (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (name name' : String) (prepared : Bool) :
     sideAll (fun i => !i.writesDit) (Impl.MlDsa.AArch64.Optimized.verifyMessageCached c name'
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+        (VG.Impl.Scrub.AArch64.scrubAll 64 32 VG.Impl.Scrub.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
           (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache c
             (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) p prepared)) p) = true ∧
       (Impl.MlDsa.AArch64.Optimized.verifyMessageCached c name'
-        (VG.Impl.Residue.AArch64.scrubAll 64 32 VG.Impl.Residue.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+        (VG.Impl.Scrub.AArch64.scrubAll 64 32 VG.Impl.Scrub.AArch64.Clear.all (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
           (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache c
             (Impl.MlDsa.AArch64.KeyGen.primsWith c) p) p prepared)) p).aarch64Depth ≤ 4 := by
   obtain ⟨hs, hd⟩ := verify_sd c hb hbd ho hod hp name prepared
@@ -743,7 +743,7 @@ theorem keyGen {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
       (keyGenContract p (abi.withConsts Proof.MlDsa.AArch64.Sign.signRootConsts) 16) 32 := by
   obtain ⟨hs, hd⟩ := keyGen_sd v.callee (perm_side v) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames)
     (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
-  exact verifiedScrubbedAll (Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v hp)
+  exact verifiedScrubbedClearAll (Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v hp)
     (Scrub.keyGenOk_consts _ 16 _ _) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
 
 theorem keyGen44 :
@@ -772,9 +772,9 @@ theorem sign {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (mo
     (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
     (s!"vg_{module}_sign_with_cache" ++ v.callee.suffix) prepared
   cases prepared
-  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.sign_entry_verified v hp _ false)
+  · exact verifiedScrubbedClearAll (Proof.MlDsa.AArch64.PreparedKey.sign_entry_verified v hp _ false)
       (Scrub.signPairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
-  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.sign_entry_verified v hp _ true)
+  · exact verifiedScrubbedClearAll (Proof.MlDsa.AArch64.PreparedKey.sign_entry_verified v hp _ true)
       (Scrub.preparedSignPairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
 
 /-- `vg_<module>_verify` (or `_verify_prepared`) over `v`, as emitted. -/
@@ -786,9 +786,9 @@ theorem verify {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) (
     (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
     (s!"vg_{module}_verify_with_cache" ++ v.callee.suffix) prepared
   cases prepared
-  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.verify_entry_verified v hp _ false)
+  · exact verifiedScrubbedClearAll (Proof.MlDsa.AArch64.PreparedKey.verify_entry_verified v hp _ false)
       (Scrub.verifySelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
-  · exact verifiedScrubbedAll (Proof.MlDsa.AArch64.PreparedKey.verify_entry_verified v hp _ true)
+  · exact verifiedScrubbedClearAll (Proof.MlDsa.AArch64.PreparedKey.verify_entry_verified v hp _ true)
       (Scrub.preparedVerifySelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
 
 /-- `vg_<module>_sign_message` (or `_sign_message_prepared`) over `v`, as
@@ -801,14 +801,14 @@ theorem signMessage {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa
   · obtain ⟨hs, hd⟩ := signMessage_sd v.callee (perm_side v)
       (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
       (s!"vg_{module}_sign_with_cache" ++ v.callee.suffix) (s!"vg_{module}_sign" ++ v.callee.suffix) false
-    exact verifiedScrubbedAll
+    exact verifiedScrubbedClearAll
       (Proof.MlDsa.AArch64.PreparedKey.message_sign_verified v hp (Scrub.message_sign_fn_scrub p v hp _ false))
       (Scrub.signMessagePairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
   · obtain ⟨hs, hd⟩ := signMessage_sd v.callee (perm_side v)
       (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
       (s!"vg_{module}_sign_with_cache" ++ v.callee.suffix) (s!"vg_{module}_sign_prepared" ++ v.callee.suffix)
       true
-    exact verifiedScrubbedAll
+    exact verifiedScrubbedClearAll
       (Proof.MlDsa.AArch64.PreparedKey.message_sign_verified v hp (Scrub.message_sign_fn_scrub p v hp _ true))
       (Scrub.preparedSignMessagePairedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
 
@@ -822,7 +822,7 @@ theorem verifyMessage {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlD
   · obtain ⟨hs, hd⟩ := verifyMessage_sd v.callee (perm_side v)
       (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
       (s!"vg_{module}_verify_with_cache" ++ v.callee.suffix) (s!"vg_{module}_verify" ++ v.callee.suffix) false
-    exact verifiedScrubbedAll
+    exact verifiedScrubbedClearAll
       (Proof.MlDsa.AArch64.PreparedKey.message_verify_verified v hp
         (Scrub.message_verify_fn_scrub p v hp _ false))
       (Scrub.verifyMessageCachedSelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)
@@ -830,7 +830,7 @@ theorem verifyMessage {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlD
       (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (absorb_side v) (Nat.le_of_eq v.absorb_depth) hp
       (s!"vg_{module}_verify_with_cache" ++ v.callee.suffix)
       (s!"vg_{module}_verify_prepared" ++ v.callee.suffix) true
-    exact verifiedScrubbedAll
+    exact verifiedScrubbedClearAll
       (Proof.MlDsa.AArch64.PreparedKey.message_verify_verified v hp
         (Scrub.message_verify_fn_scrub p v hp _ true))
       (Scrub.preparedVerifyMessageSelectedOk p) (by decide) (Nat.le_trans (Nat.mul_le_mul_left 16 hd) (by decide)) hs (by decide)

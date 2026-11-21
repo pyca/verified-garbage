@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Aese
 public import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
-public import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.TCB.AArch64.Isa
 
@@ -19,7 +19,7 @@ it returns without secret residue (`Proof/Aes/AArch64/`).
 namespace VG.Impl.Aes.AArch64.Fn
 
 open VG.AArch64
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 /-- `vg_aes_expand_key_aes`. -/
 def expandKeyAes : Prog isa :=

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.AesSiv.X86.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.Spec.Siv.Contract
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.AesSiv.X86
 import VerifiedGarbage.Proof.AesSiv.Scratch
 import VerifiedGarbage.Proof.Framework.Lit
@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Spec.Siv.Contract
 meta import VerifiedGarbage.Proof.AesSiv.Scratch
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Impl.AesSiv.X86
 
 /-!
@@ -32,7 +32,7 @@ what the scrub of their frames and calls needs (`X86.Scrub.PostOut`).
 Each as emitted (`Impl.AesSiv.X86.Fn`) zeroes the stack of its contract
 below `esp` (its frame of working space, `withStackScratch`, and its
 callees') and clears the registers, and returns without secret residue
-(`X86.Scrub.verifiedScrubbedF`: `init_scrubbed`, `encrypt_scrubbed`,
+(`X86.Scrub.verifiedScrubbedAll`: `init_scrubbed`, `encrypt_scrubbed`,
 `decrypt_scrubbed`). What that needs of the code (`scrubFSide`) holds whatever the
 implementation of AES (`init_scrub`, …): from SIV's code with stub
 implementations, whose code is `.block []`, which the kernel evaluates once
@@ -190,7 +190,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem init_scrubbed (v : Ctr32Impl) :
     VerifiedScrubbed X86.target (Impl.AesSiv.X86.Fn.init v.expand v.callee v.suffix)
       (Spec.Siv.initContract X86.abi 2632) 0 :=
-  verifiedScrubbedF (api := Spec.Siv.initApi) {
+  verifiedScrubbedAll (api := Spec.Siv.initApi) {
       suffix := v.suffix
       code := withStackScratch 2580 3 (Impl.AesSiv.X86.initCore v.expand v.callee v.suffix)
       verified := init_framed v
@@ -202,7 +202,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem encrypt_scrubbed (v : Ctr32Impl) :
     VerifiedScrubbed X86.target (Impl.AesSiv.X86.Fn.encrypt v.callee v.suffix)
       (Spec.Siv.encryptContract X86.abi 2672) 0 :=
-  verifiedScrubbedF (api := Spec.Siv.encryptApi) {
+  verifiedScrubbedAll (api := Spec.Siv.encryptApi) {
       suffix := v.suffix
       code := withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt v.callee v.suffix)
       verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
@@ -214,7 +214,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem decrypt_scrubbed (v : Ctr32Impl) :
     VerifiedScrubbed X86.target (Impl.AesSiv.X86.Fn.decrypt v.callee v.suffix)
       (Spec.Siv.decryptContract X86.abi 2672) 32 :=
-  verifiedScrubbedF (api := Spec.Siv.decryptApi) {
+  verifiedScrubbedAll (api := Spec.Siv.decryptApi) {
       suffix := v.suffix
       code := withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt v.callee v.suffix)
       verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
@@ -224,16 +224,16 @@ theorem decrypt_scrubbed (v : Ctr32Impl) :
 /-- `Impl.AesSiv.X86.Fn.init` writes `esp` only in its frames and calls. -/
 theorem init_fnSpSafe (v : Ctr32Impl) :
     (Impl.AesSiv.X86.Fn.init v.expand v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v))
+  scrubAll_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v))
 
 /-- `Impl.AesSiv.X86.Fn.encrypt` writes `esp` only in its frames and calls. -/
 theorem encrypt_fnSpSafe (v : Ctr32Impl) :
     (Impl.AesSiv.X86.Fn.encrypt v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (encrypt_spSafe v))
+  scrubAll_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (encrypt_spSafe v))
 
 /-- `Impl.AesSiv.X86.Fn.decrypt` writes `esp` only in its frames and calls. -/
 theorem decrypt_fnSpSafe (v : Ctr32Impl) :
     (Impl.AesSiv.X86.Fn.decrypt v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (decrypt_spSafe v))
+  scrubAll_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (decrypt_spSafe v))
 
 end VG.Proof.AesSiv.X86.Scrub

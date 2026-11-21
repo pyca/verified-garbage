@@ -47,7 +47,7 @@ structure CfbImpl where
   decNoFrames : dec.noFrames = true
   decKeepsV : dec.allInstrs keepsV = true
   /-- `dec` has no indirect call and never writes `DIT`. -/
-  decSide : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) dec = true
+  decSide : AArch64.Scrub.sideAll (fun i => !i.writesDit) dec = true
 
 namespace CfbImpl
 
@@ -85,16 +85,16 @@ def neon (v : BlocksImpl) : CfbImpl where
   decSide := by kernel_rfl
 
 private theorem decrypt_side0 :
-    AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
       (Impl.AesCfb.AArch64.decrypt ⟨"", .block [], ⟨[], [], []⟩, 0⟩) = true := by
   kernel_rfl
 
 theorem decrypt_side (v : BlocksImpl) :
-    AArch64.ScrubAll.sideAll (fun i => !i.writesDit) (Impl.AesCfb.AArch64.decrypt v.enc) = true := by
+    AArch64.Scrub.sideAll (fun i => !i.writesDit) (Impl.AesCfb.AArch64.decrypt v.enc) = true := by
   have h0 := decrypt_side0
-  have hc := AArch64.ScrubAll.sideAll_noDit_of_calleeSide v.encScrub
+  have hc := AArch64.Scrub.sideAll_noDit_of_calleeSide v.encScrub
   simp only [Impl.AesCfb.AArch64.decrypt, Impl.AesCbc.AArch64.batched, Impl.AesCbc.AArch64.groups,
-    Impl.AesCfb.AArch64.decGroup, Impl.AesCfb.AArch64.body, AArch64.ScrubAll.sideAll, Bool.and_eq_true] at h0 ⊢
+    Impl.AesCfb.AArch64.decGroup, Impl.AesCfb.AArch64.body, AArch64.Scrub.sideAll, Bool.and_eq_true] at h0 ⊢
   simp only [h0, hc, and_self]
 
 theorem decrypt_noFrames (v : BlocksImpl) : (Impl.AesCfb.AArch64.decrypt v.enc).noFrames = true := by

@@ -23,7 +23,7 @@ implementation's (`CrtImpl.crtPSide`, `PublicImpl.side`). -/
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64
 
-open VG VG.AArch64 VG.AArch64.ScrubAll VG.Proof.Rsa.AArch64
+open VG VG.AArch64 VG.AArch64.Scrub VG.Proof.Rsa.AArch64
 
 /-- `vg_rsa_pkcs1_sign_precomputed` as emitted, cleanup included. -/
 theorem signPrecomputed_scrubbed (v : CrtImpl) :

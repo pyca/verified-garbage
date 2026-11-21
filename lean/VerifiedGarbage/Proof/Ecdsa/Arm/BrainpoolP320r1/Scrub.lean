@@ -34,12 +34,12 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 of 96 bytes and makes no indirect call, and its postcondition does not read
 the memory on return (`Proof/Ecdsa/Verify/Arm/Scrub.lean`): it is emitted
 followed by a wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its
-theorem (`Arm.Scrub.verifiedScrubbedF`).
+theorem (`Arm.Scrub.verifiedScrubbedAll`).
 `vg_ecdsa_brainpoolp320r1_sign` calls indirectly only the HMAC functions of
 its table, from frames within the stack its contract reserves, and its
 postcondition reads the memory on return only at `out`
 (`Proof/Ecdsa/Rfc6979/Arm/Scrub.lean`): it is emitted followed by a wipe of
-that stack, and `Fn` below has its theorem (`Arm.Scrub.verifiedScrubbedF`).
+that stack, and `Fn` below has its theorem (`Arm.Scrub.verifiedScrubbedAll`).
 What the cleanup needs of
 signing's code follows, for any curve, from `Rfc6979.Arm.Scrub.sign_okT` and
 from what the core states of its own code (`signCore_ok`, by `lit_decide`);
@@ -110,7 +110,7 @@ theorem verifyBrainpoolP320r1 (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) 
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyBrainpoolP320r1
       (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract
         (abi.withConsts Impl.Weierstrass.Arm.brainpoolp320r1CombConsts) 96) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
     { code := BrainpoolP320r1.Scrub.verifyCode false
       verified := Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.verifyHash_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.BrainpoolP320r1.inst
@@ -123,7 +123,7 @@ theorem verifyBrainpoolP320r1U (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve)
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyBrainpoolP320r1U
       (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract
         (abi.withConsts Impl.Weierstrass.Arm.brainpoolp320r1CombConsts) 96) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
     { code := BrainpoolP320r1.Scrub.verifyCode true
       verified := Proof.Ecdsa.Verify.Arm.BrainpoolP320r1.verifyHashU_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.BrainpoolP320r1.inst
@@ -137,7 +137,7 @@ theorem signBrainpoolP320r1 (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signBrainpoolP320r1 (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
       (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
         (Ecdsa.Rfc6979.Arm.brainpoolp320r1CombCurve hC).coreConsts HmacTable.Arm.vars) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi)
     { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
       code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.brainpoolp320r1CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries HmacTable.Arm.vars
       verified := Ecdsa.Rfc6979.Arm.brainpoolp320r1T_verified hC }
@@ -150,7 +150,7 @@ theorem signBrainpoolP320r1U (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signBrainpoolP320r1U (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
       (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1
         (Ecdsa.Rfc6979.Arm.brainpoolp320r1CombCurveU hC).coreConsts HmacTable.Arm.vars) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi)
     { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
       code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.brainpoolp320r1CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries HmacTable.Arm.vars
       verified := Ecdsa.Rfc6979.Arm.brainpoolp320r1UT_verified hC }

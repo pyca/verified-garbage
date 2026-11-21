@@ -116,10 +116,6 @@ theorem allocState16_gpr (s : State) {q : Reg} (h : q ≠ .rsp) : (allocState 16
 def cwSave (r : Reg) (s : State) : State :=
   { allocState 16 s with mem := s.mem.writeW (s.gpr .rsp - BitVec.ofNat 64 8) (s.gpr r) }
 
-@[simp] theorem cwSave_rd (r : Reg) (s : State) : (cwSave r s).rd = s.rd := rfl
-@[simp] theorem cwSave_wr (r : Reg) (s : State) :
-    (cwSave r s).wr = ⟨s.gpr .rsp - BitVec.ofNat 64 16, 16⟩ :: s.wr := rfl
-@[simp] theorem cwSave_mxcsr (r : Reg) (s : State) : (cwSave r s).mxcsr = s.mxcsr := rfl
 theorem cwSave_gpr (r : Reg) (s : State) : (cwSave r s).gpr = (allocState 16 s).gpr := rfl
 theorem cwSave_mem (r : Reg) (s : State) :
     (cwSave r s).mem = s.mem.writeW (s.gpr .rsp - BitVec.ofNat 64 8) (s.gpr r) := rfl

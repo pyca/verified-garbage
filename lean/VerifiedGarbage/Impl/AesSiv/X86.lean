@@ -433,7 +433,7 @@ end VG.Impl.AesSiv.X86
 
 /-! ## The functions as emitted
 
-Each function, then its cleanup (`Impl.Scrub.X86.scrubF rb W`): the `W`
+Each function, then its cleanup (`Impl.Scrub.X86.scrubAll rb W`): the `W`
 bytes of stack below `esp` that it and its callees use zeroed, and the
 registers a callee may change cleared but the `rb` bits of the result, so
 that it returns without secret residue. -/
@@ -446,14 +446,14 @@ open Impl.StackScratch.X86 (withStackScratch)
 /-- `vg_aes_siv_init` over the key expansion `e` and counter-mode function
 `c`, of the variant `sfx`, as emitted. -/
 def init (e : Impl.Aes.X86.ExpandKey) (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2632 (withStackScratch 2580 3 (Impl.AesSiv.X86.initCore e c sfx))
+  Impl.Scrub.X86.scrubAll 0 2632 (withStackScratch 2580 3 (Impl.AesSiv.X86.initCore e c sfx))
 
 /-- `vg_aes_siv_encrypt` over `c`, of the variant `sfx`, as emitted. -/
 def encrypt (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 2672 (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt c sfx))
+  Impl.Scrub.X86.scrubAll 0 2672 (withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt c sfx))
 
 /-- `vg_aes_siv_decrypt` over `c`, of the variant `sfx`, as emitted. -/
 def decrypt (c : Impl.Aes.X86.Ctr32) (sfx : String) : Prog isa :=
-  Impl.Scrub.X86.scrubF 32 2672 (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt c sfx))
+  Impl.Scrub.X86.scrubAll 32 2672 (withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt c sfx))
 
 end VG.Impl.AesSiv.X86.Fn

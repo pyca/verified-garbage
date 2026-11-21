@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86.ScrubCall
 public import VerifiedGarbage.Proof.Aes.X86.Variant
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86
 public import VerifiedGarbage.Impl.StackScratch.X86
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Impl.CmacAes.Stream.X86
 meta import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
@@ -26,10 +26,10 @@ meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 
 `vg_cmac_aes_init`, `vg_cmac_aes_absorb` and `vg_cmac_aes_finish` are
 generic over the implementation of AES they call (`Ctr32Impl`,
-`Proof/Variants/AesCtr32/X86.lean`). What `X86.Scrub.scrubFOf` needs of
-their code over the stack of their contracts (`scrubFSide`) holds of every
-implementation (`init_scrub`, `absorb_scrub`, `finish_scrub`): from their
-code with a stub implementation, whose code is `.block []`, which the kernel
+`Proof/Variants/AesCtr32/X86.lean`). What the cleanup needs of their
+code over the stack of their contracts (`X86.Scrub.scrubFSide`, for
+`verifiedScrubbedAll`) holds of every implementation (`init_scrub`,
+`absorb_scrub`, `finish_scrub`): from their code with a stub implementation, whose code is `.block []`, which the kernel
 evaluates once here (`init_side`, …), the implementation's own facts
 (`Ctr32Impl.scrub`, `expandScrub`, its stack), and `Fill`, which `fill_calls`
 proves of any implementation by walking only CMAC's code. `vg_cmac_aes_update`
@@ -38,7 +38,7 @@ chains in a register with AES-NI and by calls otherwise
 
 The functions as emitted (`Impl.CmacAes.Stream.X86.Fn`) return without
 secret residue for each variant (`init_scrubbed`, `absorb_scrubbed`,
-`finish_scrubbed`), from these as `X86.Scrub.verifiedScrubbedF`'s `hs`, with
+`finish_scrubbed`), from these as `X86.Scrub.verifiedScrubbedAll`'s `hs`, with
 the contract's stack as `W`: they evaluate no code. Their postconditions read the memory on return only within the
 state and the tag, by the target-independent lemmas of
 `Proof/CmacAes/Stream/Scratch.lean`.
@@ -140,7 +140,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem init_scrubbed (v : Ctr32Impl) :
     VerifiedScrubbed X86.target (Impl.CmacAes.Stream.X86.Fn.init v.expand v.callee v.suffix)
       (Spec.Cmac.aesInitContract X86.abi 2376) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.aesInitApi) {
+  verifiedScrubbedAll (api := Spec.Cmac.aesInitApi) {
       suffix := v.suffix
       code := withStackScratch 2324 3 (init v.expand v.callee v.suffix)
       verified := Proof.CmacAes.Stream.X86.init_framed v
@@ -152,7 +152,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem absorb_scrubbed (v : Ctr32Impl) :
     VerifiedScrubbed X86.target (Impl.CmacAes.Stream.X86.Fn.absorb v.callee v.suffix)
       (Spec.Cmac.aesAbsorbContract X86.abi 2396) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.aesAbsorbApi) {
+  verifiedScrubbedAll (api := Spec.Cmac.aesAbsorbApi) {
       suffix := v.suffix
       code := withStackScratch 2336 6 (absorb v.callee v.suffix)
       verified := Proof.CmacAes.Stream.X86.absorb_framed v
@@ -164,7 +164,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem finish_scrubbed (v : Ctr32Impl) :
     VerifiedScrubbed X86.target (Impl.CmacAes.Stream.X86.Fn.finish v.callee v.suffix)
       (Spec.Cmac.aesFinishContract X86.abi 2392) 0 :=
-  verifiedScrubbedF (api := Spec.Cmac.aesFinishApi) {
+  verifiedScrubbedAll (api := Spec.Cmac.aesFinishApi) {
       suffix := v.suffix
       code := withStackScratch 2332 5 (finish v.callee v.suffix)
       verified := Proof.CmacAes.Stream.X86.finish_framed v
@@ -174,16 +174,16 @@ theorem finish_scrubbed (v : Ctr32Impl) :
 /-- `Impl.CmacAes.Stream.X86.Fn.init` writes `esp` only in its frames and calls. -/
 theorem init_fnSpSafe (v : Ctr32Impl) :
     (Impl.CmacAes.Stream.X86.Fn.init v.expand v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.init_spSafe v))
+  scrubAll_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.init_spSafe v))
 
 /-- `Impl.CmacAes.Stream.X86.Fn.absorb` writes `esp` only in its frames and calls. -/
 theorem absorb_fnSpSafe (v : Ctr32Impl) :
     (Impl.CmacAes.Stream.X86.Fn.absorb v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.absorb_spSafe v))
+  scrubAll_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.absorb_spSafe v))
 
 /-- `Impl.CmacAes.Stream.X86.Fn.finish` writes `esp` only in its frames and calls. -/
 theorem finish_fnSpSafe (v : Ctr32Impl) :
     (Impl.CmacAes.Stream.X86.Fn.finish v.callee v.suffix).all (fun i => !X86.isa.writesSp i) = true :=
-  scrubF_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.finish_spSafe v))
+  scrubAll_spSafe (Proof.CmacAes.Stream.X86.withStackScratch_spSafe (Proof.CmacAes.Stream.X86.finish_spSafe v))
 
 end VG.Proof.CmacAes.Stream.X86.Scrub

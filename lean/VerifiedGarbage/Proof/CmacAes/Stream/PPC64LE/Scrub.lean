@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Streaming AES-CMAC on PPC64LE, without secret residue
 
 `vg_cmac_aes_init`, `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which
 clears the volatile registers they may write and the stack their frames used:
 they keep their working space, the key schedule among it, in a 160-byte
 frame they do not wipe themselves (`withStackScratch`). Their postconditions
@@ -44,7 +44,7 @@ its contract in constant time and returns without secret residue. -/
 theorem init_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.CmacAes.Stream.PPC64LE.Fn.init
       (Spec.Cmac.aesInitContract PPC64LE.abi 160) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.aesInitApi) {
+  verifiedScrubbedAll (api := Spec.Cmac.aesInitApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r6 Impl.CmacAes.Stream.PPC64LE.init
       verified := Proof.CmacAes.Stream.PPC64LE.init_framed }
     160 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -57,7 +57,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem absorb_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.CmacAes.Stream.PPC64LE.Fn.absorb
       (Spec.Cmac.aesAbsorbContract PPC64LE.abi 160) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.aesAbsorbApi) {
+  verifiedScrubbedAll (api := Spec.Cmac.aesAbsorbApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r8 Impl.CmacAes.Stream.PPC64LE.absorb
       verified := Proof.CmacAes.Stream.PPC64LE.absorb_framed }
     160 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,
@@ -70,7 +70,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem finish_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.CmacAes.Stream.PPC64LE.Fn.finish
       (Spec.Cmac.aesFinishContract PPC64LE.abi 160) 0 :=
-  verifiedScrubbed (api := Spec.Cmac.aesFinishApi) {
+  verifiedScrubbedAll (api := Spec.Cmac.aesFinishApi) {
       code := Impl.StackScratch.PPC64LE.withStackScratch 160 .r7 Impl.CmacAes.Stream.PPC64LE.finish
       verified := Proof.CmacAes.Stream.PPC64LE.finish_framed }
     160 ⟨true, false, [.r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false,

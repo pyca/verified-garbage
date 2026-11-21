@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "SIsGSItOCEiLVhBMi0YYSIlHGEiJTyBIiVcoTIlHMLgAAAAASIkHSIlHCEiJRxAxwDHJMdJFMcDD"
+        r#".base64 "SIsGSItOCEiLVhBMi0YYSIlHGEiJTyBIiVcoTIlHMLgAAAAASIkHSIlHCEiJRxBmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/8xwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
     )
 }
@@ -49,7 +49,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "TInYSIPABUiJ2kiD0gBJiexJg9QATYnlScHtAkG+AAAAAE0p7kmD5ANMMdhMIfBJMcNIMdpMIfJIMdNJMexNIfRMMeVMA18oSBNfMEyJGUiJWQhIi19ISItvUEyLZ1hMi29gTIt3aEyLf3BIjaQkiAAAAEiNpCR4////SI2kJIgAAAAxwDHJMdJFMcBFMclFMdJFMdvD"
+.base64 "TInYSIPABUiJ2kiD0gBJiexJg9QATYnlScHtAkG+AAAAAE0p7kmD5ANMMdhMIfBJMcNIMdpMIfJIMdNJMexNIfRMMeVMA18oSBNfMEyJGUiJWQhIi19ISItvUEyLZ1hMi29gTIt3aEyLf3BIjaQkiAAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCT4SI1kJIBIjaQkgAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
     )
 }
@@ -113,7 +113,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCT4SI2kJGj///9IjaQkmAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_poly1305_blocks_ifma = sym super::poly1305::vg_poly1305_blocks_ifma::vg_poly1305_blocks_ifma,
     )
@@ -178,7 +178,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCT4SI2kJGj///9IjaQkmAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512::vg_poly1305_blocks_avx512,
     )
@@ -243,7 +243,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNZCT4SI2kJGj///9IjaQkmAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2::vg_poly1305_blocks_avx2,
     )
@@ -304,7 +304,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAEiNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCT4SI2kJGj///9IjaQkmAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
     )

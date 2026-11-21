@@ -22,13 +22,13 @@ evaluation of the code, with the literal of the verification core), and
 their postcondition does not read the memory on return
 (`Proof/Ecdsa/Verify/Arm/Scrub.lean`): each is emitted followed by a
 wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its theorem
-(`Arm.Scrub.verifiedScrubbedF`).
+(`Arm.Scrub.verifiedScrubbedAll`).
 `vg_ecdsa_p192_sign` and its `_umaal` variant call indirectly only the HMAC
 functions of their table, from frames within the stack their contract
 reserves, and their postcondition reads the memory on return only at
 `out` (`Proof/Ecdsa/Rfc6979/Arm/Scrub.lean`): each is emitted followed
 by a wipe of that stack (`Impl.Ecdsa.Arm.Fn`), and `Fn` below has its theorem
-(`Arm.Scrub.verifiedScrubbedF`). What the cleanup needs of
+(`Arm.Scrub.verifiedScrubbedAll`). What the cleanup needs of
 signing's code follows, for any curve, from `Rfc6979.Arm.Scrub.sign_okT` and
 from what the core states of its own code (`signCore_ok`, by `lit_decide`);
 `signCode_eq` is that the code `cfgT` builds is that of
@@ -91,7 +91,7 @@ theorem verifyP192 (hC : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyP192
       (Spec.Ecdsa.P192.inst.verifyHashContract
         (abi.withConsts Impl.Weierstrass.Arm.p192CombConsts) 96) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.P192.verifyHashApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.P192.verifyHashApi)
     { code := P192.Scrub.verifyCode false
       verified := Proof.Ecdsa.Verify.Arm.P192.verifyHash_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P192.inst
@@ -103,7 +103,7 @@ theorem verifyP192U (hC : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyP192U
       (Spec.Ecdsa.P192.inst.verifyHashContract
         (abi.withConsts Impl.Weierstrass.Arm.p192CombConsts) 96) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.P192.verifyHashApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.P192.verifyHashApi)
     { code := P192.Scrub.verifyCode true
       verified := Proof.Ecdsa.Verify.Arm.P192.verifyHashU_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P192.inst
@@ -116,7 +116,7 @@ theorem signP192 (hC : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signP192 (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
       (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.p192
         (Ecdsa.Rfc6979.Arm.p192CombCurve hC).coreConsts HmacTable.Arm.vars) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.p192SignApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.p192SignApi)
     { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
       code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.p192CombCurve hC) Spec.Ecdsa.Rfc6979.Curves.p192.tries HmacTable.Arm.vars
       verified := Ecdsa.Rfc6979.Arm.p192T_verified hC }
@@ -129,7 +129,7 @@ theorem signP192U (hC : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target (Impl.Ecdsa.Arm.Fn.signP192U (HmacTable.Arm.fnsOf HmacTable.Arm.vars))
       (Ecdsa.Rfc6979.Arm.specK Spec.Ecdsa.Rfc6979.Curves.p192
         (Ecdsa.Rfc6979.Arm.p192CombCurveU hC).coreConsts HmacTable.Arm.vars) 32 :=
-  verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.p192SignApi)
+  verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.p192SignApi)
     { tables := [("hmac", HmacTable.Arm.tables HmacTable.Arm.vars)]
       code := Ecdsa.Rfc6979.Arm.signCodeT (Ecdsa.Rfc6979.Arm.p192CombCurveU hC) Spec.Ecdsa.Rfc6979.Curves.p192.tries HmacTable.Arm.vars
       verified := Ecdsa.Rfc6979.Arm.p192UT_verified hC }

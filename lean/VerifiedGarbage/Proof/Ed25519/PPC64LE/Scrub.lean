@@ -16,14 +16,14 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Ed25519 on PPC64LE, without secret residue
 
 `vg_ed25519_key_pair`, `vg_ed25519_sign_expanded` and `vg_ed25519_verify`,
-each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`),
+each followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`),
 which clears the volatile registers, the vector registers and the stack
 their frames use (720, 320 and 224 bytes). The postconditions of
 `key_pair` and `sign_expanded` read the memory on return only within
 their outputs, and that of `verify` not at all (`PPC64LE.Scrub.PostOut`),
 whatever tables of constants their code takes, by RISC-V's proofs
-(`Proof/Ed25519/RISCV64/Scrub.lean`). `scrubOf`'s side condition
-(`scrubSide`) is proved at each registration, by the kernel's evaluation of
+(`Proof/Ed25519/RISCV64/Scrub.lean`). `verifiedScrubbedAll`'s side condition
+(`scrubSide`) is proved at each theorem, by the kernel's evaluation of
 it when this module is built.
 -/
 
@@ -71,9 +71,11 @@ theorem verifyOut :
 
 /-! ## The functions as emitted -/
 
-/-- `Spec.Ed25519.keyPairApi`. -/
-def keyPairReg : Registration Spec.Ed25519.keyPairApi PPC64LE.target :=
-  scrubOf {
+/-- `vg_ed25519_key_pair` as emitted (`Impl.Ed25519.PPC64LE.Fn.keyPair`) meets
+its contract in constant time and returns without secret residue. -/
+theorem keyPair_scrubbed :
+    VerifiedScrubbed PPC64LE.target Impl.Ed25519.PPC64LE.Fn.keyPair Proof.Ed25519.PPC64LE.KeyPair.spec 0 :=
+  verifiedScrubbedAll (api := Spec.Ed25519.keyPairApi) {
       code := Impl.Ed25519.PPC64LE.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ "_core")
         Proof.Ed25519.PPC64LE.KeyPair.dgCode "vg_ed25519_public_key_expanded"
         Impl.Ed25519.PPC64LE.Whole.publicKeyExpandedCode
@@ -89,7 +91,7 @@ meets its contract in constant time and returns without secret residue. -/
 theorem signExpanded_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ed25519.PPC64LE.Fn.signExpanded
       (Spec.Ed25519.signExpandedContract (PPC64LE.abi.withConsts Impl.Ed25519.PPC64LE.combConsts) (48 + 320)) 0 :=
-  verifiedScrubbed (api := Spec.Ed25519.signExpandedApi) {
+  verifiedScrubbedAll (api := Spec.Ed25519.signExpandedApi) {
       code := Impl.Ed25519.PPC64LE.Whole.signExpandedCode
       verified := Proof.Ed25519.PPC64LE.Whole.signExpanded_framed }
     320 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
@@ -103,7 +105,7 @@ contract in constant time and returns without secret residue. -/
 theorem verify_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ed25519.PPC64LE.Fn.verify
       (Spec.Ed25519.verifyContract (PPC64LE.abi.withConsts Impl.Ed25519.PPC64LE.bConsts) (48 + 224)) 32 :=
-  verifiedScrubbed (api := Spec.Ed25519.verifyApi) {
+  verifiedScrubbedAll (api := Spec.Ed25519.verifyApi) {
       code := Impl.Ed25519.PPC64LE.Whole.verifyCode
       verified := Proof.Ed25519.PPC64LE.Whole.verify_framed }
     224 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,

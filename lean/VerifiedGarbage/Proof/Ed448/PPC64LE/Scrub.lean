@@ -15,13 +15,13 @@ import VerifiedGarbage.Proof.Framework.Lit
 # Ed448 on PPC64LE, without secret residue
 
 `vg_ed448_public_key`, `vg_ed448_sign_cached` and `vg_ed448_verify`, each
-followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`), which
+followed by `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which
 clears the volatile registers and the stack their frames use (240, 624 and
 352 bytes). The postconditions of `public_key` and `sign_cached` read the
 memory on return only within their outputs, and that of `verify` not at
 all (`PPC64LE.Scrub.PostOut`), by RISC-V's proofs
-(`Proof/Ed448/RISCV64/Scrub.lean`). `scrubOf`'s side condition
-(`scrubSide`) is proved at each registration, by the kernel's evaluation of
+(`Proof/Ed448/RISCV64/Scrub.lean`). `verifiedScrubbedAll`'s side condition
+(`scrubSide`) is proved at each theorem, by the kernel's evaluation of
 it when this module is built.
 -/
 
@@ -74,7 +74,7 @@ contract in constant time and returns without secret residue. -/
 theorem publicKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ed448.PPC64LE.Fn.publicKey
       (Spec.Ed448.publicKeyContract PPC64LE.abi (48 + 192)) 0 :=
-  verifiedScrubbed (api := Spec.Ed448.publicKeyApi) {
+  verifiedScrubbedAll (api := Spec.Ed448.publicKeyApi) {
       code := Impl.Ed448.PPC64LE.Whole.publicKeyCode
       verified := Proof.Ed448.PPC64LE.Whole.publicKey_framed Proof.Ed448.baseLadder2_ok }
     240 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
@@ -86,7 +86,7 @@ its contract in constant time and returns without secret residue. -/
 theorem signCached_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ed448.PPC64LE.Fn.signCached
       (Spec.Ed448.signCachedContract PPC64LE.abi (48 + 576)) 0 :=
-  verifiedScrubbed (api := Spec.Ed448.signCachedApi) {
+  verifiedScrubbedAll (api := Spec.Ed448.signCachedApi) {
       code := Impl.Ed448.PPC64LE.Whole.signCachedCode
       verified := Proof.Ed448.PPC64LE.Whole.signCached_framed Proof.Ed448.baseLadder2_ok }
     624 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
@@ -98,7 +98,7 @@ contract in constant time and returns without secret residue. -/
 theorem verify_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Ed448.PPC64LE.Fn.verify
       (Spec.Ed448.verifyContract PPC64LE.abi (48 + 304)) 32 :=
-  verifiedScrubbed (api := Spec.Ed448.verifyApi) {
+  verifiedScrubbedAll (api := Spec.Ed448.verifyApi) {
       code := Impl.Ed448.PPC64LE.Whole.verifyCode
       verified := Proof.Ed448.PPC64LE.Whole.verify_framed Proof.Ed448.recover_ok }
     352 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩

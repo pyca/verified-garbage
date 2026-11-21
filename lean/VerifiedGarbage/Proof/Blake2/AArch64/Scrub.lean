@@ -22,7 +22,7 @@ stack, the frame of its scratch space and of its return address, zeroed
 
 namespace VG.Proof.Blake2.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.Blake2
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.Blake2
 
 theorem updateBOk (W : Nat) (hW : 0 < W := by decide) :
     ScrubAllOk (updateBContract abi W) W (updateBSig.retBits abi.ptrBits) :=
@@ -53,7 +53,7 @@ contract in constant time and returns without secret residue. -/
 
 namespace VG.Proof.Blake2.AArch64.Fn
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.Blake2
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.Blake2
 
 theorem initB :
     VerifiedScrubbed target (Impl.Blake2.AArch64.Fn.init b) (initBContract abi) 0 :=
@@ -61,14 +61,14 @@ theorem initB :
 
 theorem updateB :
     VerifiedScrubbed target (Impl.Blake2.AArch64.Fn.update b) (updateBContract abi (16 + 112)) 0 :=
-  verifiedScrubbed (api := updateBApi)
+  verifiedScrubbedAll (api := updateBApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 (Impl.Blake2.AArch64.Stream.update b),
       verified := Stream.updateB_framed }
     _ (Scrub.updateBOk 128) (by dsimp only; lit_decide)
 
 theorem finalizeB :
     VerifiedScrubbed target (Impl.Blake2.AArch64.Fn.finalize b) (finalizeBContract abi (16 + 112)) 0 :=
-  verifiedScrubbed (api := finalizeBApi)
+  verifiedScrubbedAll (api := finalizeBApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 (Impl.Blake2.AArch64.Stream.finalize b),
       verified := Stream.finalizeB_framed }
     _ (Scrub.finalizeBOk 128) (by dsimp only; lit_decide)
@@ -79,14 +79,14 @@ theorem initS :
 
 theorem updateS :
     VerifiedScrubbed target (Impl.Blake2.AArch64.Fn.update s) (updateSContract abi (16 + 112)) 0 :=
-  verifiedScrubbed (api := updateSApi)
+  verifiedScrubbedAll (api := updateSApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 (Impl.Blake2.AArch64.Stream.update s),
       verified := Stream.updateS_framed }
     _ (Scrub.updateSOk 128) (by dsimp only; lit_decide)
 
 theorem finalizeS :
     VerifiedScrubbed target (Impl.Blake2.AArch64.Fn.finalize s) (finalizeSContract abi (16 + 112)) 0 :=
-  verifiedScrubbed (api := finalizeSApi)
+  verifiedScrubbedAll (api := finalizeSApi)
     { code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 (Impl.Blake2.AArch64.Stream.finalize s),
       verified := Stream.finalizeS_framed }
     _ (Scrub.finalizeSOk 128) (by dsimp only; lit_decide)

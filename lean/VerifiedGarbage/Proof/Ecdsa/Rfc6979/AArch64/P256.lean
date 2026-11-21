@@ -99,7 +99,7 @@ theorem p256T_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
 /-- No instruction of `vg_ecdsa_p256_sign_k` writes PSTATE.DIT, and it calls
 nothing indirectly. -/
 theorem p256_core_side :
-    AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
       Impl.P256.Booth.sign = true := by
   lit_decide
 

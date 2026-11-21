@@ -166,8 +166,8 @@ structure Compress where
   noDit : code.all (fun i => !i.writesDit) = true
   /-- No instruction of it writes PSTATE.DIT, and it calls nothing indirectly:
   what the cleanup of the functions that call it needs of its code
-  (`ScrubAll.verifiedScrubbedOf`). -/
-  side : ScrubAll.sideAll (fun i => !i.writesDit) code = true
+  (`Scrub.verifiedScrubbedOf`). -/
+  side : Scrub.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre
@@ -188,9 +188,9 @@ structure Compress where
     suffix code
   /-- The registers `code` writes, of those the calling convention does not
   preserve: what the cleanup of a function that calls it clears for it
-  (`ScrubAll.scrubSide_union`). -/
-  clear : Impl.Residue.AArch64.Clear
-  scrub : AArch64.ScrubAll.calleeSide code clear = true
+  (`Scrub.scrubSide_union`). -/
+  clear : Impl.Scrub.AArch64.Clear
+  scrub : AArch64.Scrub.calleeSide code clear = true
 
 /-- The implementation, as the code of a function that hashes takes it. -/
 def Compress.impl (v : Compress) : Impl.Sha512.AArch64.Stream.Compress := ⟨v.code, v.suffix, v.clear⟩

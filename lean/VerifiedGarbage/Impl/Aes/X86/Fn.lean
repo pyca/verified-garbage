@@ -11,9 +11,10 @@ public import VerifiedGarbage.Impl.StackScratch.X86
 `vg_aes_expand_key` (`Impl.Aes.X86.expandKey`) and
 `vg_aes_expand_key_aesni` (`Impl.Aes.X86.AesNi.expandKey`), each in a frame
 of 532 bytes of its own whose first 128 words it zeroes before it returns
-(`withStackScratchWiped`), then its cleanup (`Impl.Scrub.X86.scrubF 0 532`):
-those 532 bytes of stack below `esp` zeroed, and the registers a callee may
-change cleared, so that it returns without secret residue.
+(`withStackScratchWiped`), then its cleanup (`Impl.Scrub.X86.scrub 0`): the
+registers a callee may change cleared, so that it returns without secret
+residue. The code in the frame calls nothing, so the frame's own wipe leaves
+no secret on the stack, which the cleanup need not zero again.
 -/
 
 -- separate module: a definition in `ExpandKey.lean` or `AesNi.lean` rebuilds every AES caller on x86
@@ -26,10 +27,10 @@ open VG.X86
 open Impl.StackScratch.X86 (withStackScratchWiped)
 
 /-- `vg_aes_expand_key`, as emitted. -/
-def expandKey : Prog isa := Impl.Scrub.X86.scrubF 0 532 (withStackScratchWiped 532 3 128 Impl.Aes.X86.expandKey)
+def expandKey : Prog isa := Impl.Scrub.X86.scrub 0 (withStackScratchWiped 532 3 128 Impl.Aes.X86.expandKey)
 
 /-- `vg_aes_expand_key_aesni`, as emitted. -/
 def expandKeyAesni : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 532 (withStackScratchWiped 532 3 128 Impl.Aes.X86.AesNi.expandKey)
+  Impl.Scrub.X86.scrub 0 (withStackScratchWiped 532 3 128 Impl.Aes.X86.AesNi.expandKey)
 
 end VG.Impl.Aes.X86.Fn

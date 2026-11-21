@@ -166,7 +166,7 @@ returns without secret residue. -/
 theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.AArch64.InvSounds) :
     VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeP192
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst AArch64.abi) 32 :=
-  VG.AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdh.P192.exchangeApi)
+  VG.AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P192.exchangeApi)
     { code := VG.Impl.Ecdh.AArch64.P192.exchange, verified := ecdh_verified hL hI } _
     (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 

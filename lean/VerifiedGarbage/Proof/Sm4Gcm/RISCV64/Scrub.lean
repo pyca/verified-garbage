@@ -38,12 +38,12 @@ pointers it cannot place, which makes every frame then allocated secret, `W`
 among them, and the callees' frames hold the keystream, the GHASH table and
 the key schedule's working space. So the tail after the code wipes the whole
 stack its frames use, its contract's `stack`, and clears the caller-saved
-registers (`RISCV64.Scrub.verifiedScrubbed`).
+registers (`RISCV64.Scrub.verifiedScrubbedAll`).
 
 `vg_sm4_gcm_stream_init` and `vg_sm4_gcm_stream_aad`, AES-GCM's functions,
 call only `vg_ghash`, whose table does not reach the bottom 400 bytes of
 their 4608: the tail clears only the 526 doublewords above them
-(`RISCV64.Scrub.verifiedScrubbedSelT`, `scrubSel_noResidue`).
+(`RISCV64.Scrub.verifiedScrubbedSel`, `scrubSel_noResidue`).
 
 Their postconditions read the memory on return only within their buffers, by
 the target-independent lemmas the frames' proofs use
@@ -119,7 +119,7 @@ time and returns without secret residue: the theorem its registration binds. -/
 theorem init_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.init
       (Spec.Sm4.Gcm.initContract RISCV64.abi 5808) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.initApi) (W := 5808)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.initApi) (W := 5808)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a2 Impl.Sm4Gcm.RISCV64.init
       verified := init_framed }
     (initOut _) init_scrubSide
@@ -137,7 +137,7 @@ time and returns without secret residue: the theorem its registration binds. -/
 theorem seal_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.«seal»
       (Spec.Sm4.Gcm.sealContract RISCV64.abi 5824) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.sealApi) (W := 5824)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.sealApi) (W := 5824)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 0 Impl.Sm4Gcm.RISCV64.«seal»
       verified := seal_framed }
     (sealOut _) seal_scrubSide
@@ -155,7 +155,7 @@ time and returns without secret residue: the theorem its registration binds. -/
 theorem open_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.«open»
       (Spec.Sm4.Gcm.openContract RISCV64.abi 5824) 32 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.openApi) (W := 5824)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.openApi) (W := 5824)
     { code := Impl.StackScratch.RISCV64.withStackScratchArgs 2576 1 Impl.Sm4Gcm.RISCV64.«open»
       verified := open_framed }
     (openOut _) open_scrubSide
@@ -165,7 +165,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem streamInit_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamInit
       (Spec.Gcm.streamInitContract RISCV64.abi 4608) 0 :=
-  verifiedScrubbedSelT (api := Spec.Sm4.Gcm.streamInitApi) (W := 4608)
+  verifiedScrubbedSel (api := Spec.Sm4.Gcm.streamInitApi) (W := 4608)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a4 Impl.AesGcm.RISCV64.streamInit
       verified := Proof.AesGcm.RISCV64.streamInit_framed }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])] []
@@ -176,7 +176,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem streamAad_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamAad
       (Spec.Gcm.streamAadContract RISCV64.abi 4608) 0 :=
-  verifiedScrubbedSelT (api := Spec.Sm4.Gcm.streamAadApi) (W := 4608)
+  verifiedScrubbedSel (api := Spec.Sm4.Gcm.streamAadApi) (W := 4608)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.AesGcm.RISCV64.streamAad
       verified := Proof.AesGcm.RISCV64.streamAad_framed }
     [(2048, [(0, 256)]), (2048, [(0, 256)]), (112, [(0, 14)])] []
@@ -196,7 +196,7 @@ theorem streamEncrypt_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamEncrypt
       (Spec.Sm4.Gcm.streamCryptSig.contract RISCV64.abi
         (post := Spec.Sm4.Gcm.streamEncryptPost RISCV64.abi.ptrBits) (writeArgs := true) (stack := 5808)) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.streamEncryptApi) (W := 5808)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamEncryptApi) (W := 5808)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamEncrypt
       verified := streamEncrypt_framed }
     (streamEncryptOut _) streamEncrypt_scrubSide
@@ -215,7 +215,7 @@ theorem streamDecrypt_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamDecrypt
       (Spec.Sm4.Gcm.streamCryptSig.contract RISCV64.abi
         (post := Spec.Sm4.Gcm.streamDecryptPost RISCV64.abi.ptrBits) (writeArgs := true) (stack := 5808)) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.streamDecryptApi) (W := 5808)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamDecryptApi) (W := 5808)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamDecrypt
       verified := streamDecrypt_framed }
     (streamDecryptOut _) streamDecrypt_scrubSide
@@ -234,7 +234,7 @@ theorem streamFinish_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamFinish
       (Spec.Sm4.Gcm.streamFinishSig.contract RISCV64.abi
         (post := Spec.Sm4.Gcm.streamFinishPost RISCV64.abi.ptrBits) (writeArgs := true) (stack := 5808)) 0 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.streamFinishApi) (W := 5808)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamFinishApi) (W := 5808)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a5 Impl.Sm4Gcm.RISCV64.streamFinish
       verified := streamFinish_framed }
     (streamFinishOut _) streamFinish_scrubSide
@@ -253,7 +253,7 @@ theorem streamVerify_scrubbed [VG.Proof.Gcm.RISCV64.GhashLaw] :
     VerifiedScrubbed target Impl.Sm4Gcm.RISCV64.Fn.streamVerify
       (Spec.Sm4.Gcm.streamVerifySig.contract RISCV64.abi
         (post := Spec.Sm4.Gcm.streamVerifyPost RISCV64.abi.ptrBits) (writeArgs := true) (stack := 5808)) 32 :=
-  verifiedScrubbed (api := Spec.Sm4.Gcm.streamVerifyApi) (W := 5808)
+  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamVerifyApi) (W := 5808)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2560 .a6 Impl.Sm4Gcm.RISCV64.streamVerify
       verified := streamVerify_framed }
     (streamVerifyOut _) streamVerify_scrubSide

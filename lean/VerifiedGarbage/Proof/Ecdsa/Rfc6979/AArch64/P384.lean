@@ -90,14 +90,14 @@ theorem p384T_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.
 /-! ## What the scrubbed functions clear
 
 The registers the tails of `vg_ecdsa_p384_sign` and `vg_ecdsa_p384_verify`
-clear, and what `ScrubAll.scrubAllOf` needs of their code
-(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
+(`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 
 /-- No instruction of `vg_ecdsa_p384_sign_k` writes PSTATE.DIT, and it calls
 nothing indirectly. -/
 theorem p384_core_side :
-    AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
       Impl.Ecdsa.AArch64.signP384 = true := by
   lit_decide
 
@@ -121,13 +121,13 @@ theorem p384Sign_scrubbed (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstra
 /-- `vg_ecdsa_p384_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP384`): it meets its contract in
 constant time and returns without secret residue. What the cleanup needs of
-the code (`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+the code (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
 theorem p384Verify (hL : Weierstrass.Law Spec.P384.curve) (hO : Weierstrass.PrimeOrder Spec.P384.curve)
     (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 9 1 Impl.P384.p384G9 Impl.P384.p384G9Start) :
     VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.Fn.verifyHashP384
       (Spec.Ecdsa.P384.inst.verifyHashContract (AArch64.abi.withConsts Impl.Ecdsa.Verify.AArch64.P384Joint.p384v.combConsts) 80) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdsa.P384.verifyHashApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.P384.verifyHashApi)
     { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
         Impl.Ecdsa.Verify.AArch64.verifyP384
       verified := Proof.Ecdsa.Verify.AArch64.P384.verifyHash_verified hL hO hI hT } _

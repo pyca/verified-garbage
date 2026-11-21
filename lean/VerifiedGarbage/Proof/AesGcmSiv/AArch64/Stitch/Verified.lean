@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
+public import VerifiedGarbage.Impl.AesGcmSiv.AArch64.Fn
+public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubAll
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.GcmSiv.Contract
@@ -1655,11 +1657,11 @@ theorem openCode_framed (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) :
 
 `seal`'s and `open`'s postconditions read the memory on return only within
 the data and the tag, so their frames are zeroed whole on return
-(`ScrubAll.withScrubAll`: `sealReg`, `openReg`). -/
+(`seal_scrubbed`, `open_scrubbed`). -/
 
 theorem sealOk (W : Nat) (hW : 0 < W) :
-    ScrubAll.ScrubAllOk (Spec.GcmSiv.sealContract AArch64.abi W) W (Spec.GcmSiv.sealSig.retBits AArch64.abi.ptrBits) :=
-  ScrubAll.scrubAllOk_regs (sig := Spec.GcmSiv.sealSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
+    Scrub.ScrubAllOk (Spec.GcmSiv.sealContract AArch64.abi W) W (Spec.GcmSiv.sealSig.retBits AArch64.abi.ptrBits) :=
+  Scrub.scrubAllOk_regs (sig := Spec.GcmSiv.sealSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _)
     fun vs m m₁ m₂ r hlen hb h => by
     match vs, hlen with
     | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
@@ -1675,10 +1677,10 @@ theorem sealOk (W : Nat) (hW : 0 < W) :
         Proof.AesSiv.bytesAt_congr fun i hi => Proof.AesSiv.agree_of hb.2.2.2.2 i hi]
 
 theorem openOk (W : Nat) (hW : 0 < W) :
-    ScrubAll.ScrubAllOk (Spec.GcmSiv.openContract AArch64.abi W) W (Spec.GcmSiv.openSig.retBits AArch64.abi.ptrBits) := by
+    Scrub.ScrubAllOk (Spec.GcmSiv.openContract AArch64.abi W) W (Spec.GcmSiv.openSig.retBits AArch64.abi.ptrBits) := by
   -- The postcondition is a `match` on a decryption: prove the locality
   -- by intros, so that no expected type of a `fun` is reduced to it.
-  refine ScrubAll.scrubAllOk_regs (sig := Spec.GcmSiv.openSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) ?_
+  refine Scrub.scrubAllOk_regs (sig := Spec.GcmSiv.openSig) (Nat.le_of_ble_eq_true rfl) hW (Nat.le_refl _) ?_
   intro vs m m₁ m₂ r hlen hb h
   match vs, hlen with
   | [schedule, rounds, nonce, aad, aadLen, data, len, tag], _ =>
@@ -1694,24 +1696,82 @@ theorem openOk (W : Nat) (hW : 0 < W) :
     rw [e]
     exact @h
 
-/-- `vg_aes_gcm_siv_seal` over `v` in its frame (`sealCode_framed`), zeroed
-whole on return: 2288 bytes over implementations of counter mode that need
-no working space, else 3824. -/
-def sealReg (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) : Registration Spec.GcmSiv.sealApi AArch64.target :=
-  ScrubAll.withScrubAll
-    { suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackArgScratch (gsivWn v + 16) 0 (sealCode v)
-      verified := Proof.AesGcmSiv.seal_keyed (sealCode_framed hP gh v)
-      consts := []
-      stack := gsivWn v + 16 } (sealOk _ (by omega_using []))
+/-! ## The functions as emitted
 
-/-- `vg_aes_gcm_siv_open` over `v`, as `sealReg`. -/
-def openReg (hP : PrepPow) (gh : Gh8Ok) (v : GcmImpl) : Registration Spec.GcmSiv.openApi AArch64.target :=
-  ScrubAll.withScrubAll
-    { suffix := v.suffix
-      code := Impl.StackScratch.AArch64.withStackArgScratch (gsivWn v + 16) 0 (openCode v)
-      verified := Proof.AesGcmSiv.open_keyed (openCode_framed hP gh v)
-      consts := []
-      stack := gsivWn v + 16 } (openOk _ (by omega_using []))
+`seal_scrubbed`, `open_scrubbed`: the functions of `Impl/AesGcmSiv/AArch64/Fn.lean`,
+for any variant, as AES-GCM's (`Proof/AesGcm/AArch64/GhashImpls.lean`): what
+the cleanup needs of the code is evaluated once for each shape of the code,
+with holes where the implementations are. -/
+
+open VG.AArch64.Scrub
+open VG.Impl.AesGcm.AArch64 (Calls)
+open VG.Impl.AesGcm.AArch64.Fn (own)
+open VG.Impl.StackScratch.AArch64 (withStackArgScratch)
+open VG.Proof.AesGcm.AArch64 (GcmVariant)
+open VG.Proof.AesGcm.AArch64.Scrubbed (CallsOk fnOk_nil holes side_of_holes)
+
+theorem wn_eq (v : GcmImpl) : Impl.AesGcmSiv.AArch64.Fn.wn v.calls = gsivWn v := by
+  simp only [Impl.AesGcmSiv.AArch64.Fn.wn, gsivWn, GcmImpl.calls, v.ctr.scratch_eq]
+
+theorem wn_cases {c : Calls} (h : CallsOk c) : Impl.AesGcmSiv.AArch64.Fn.wn c = 2272 ∨ Impl.AesGcmSiv.AArch64.Fn.wn c = 3808 := by
+  rcases h.scratch with h | h <;> simp [Impl.AesGcmSiv.AArch64.Fn.wn, h]
+
+theorem sealCode_cases (c : Calls) :
+    Impl.AesGcmSiv.AArch64.Fn.sealCode c = Impl.AesGcmSiv.AArch64.Stitch.«seal» true c.callees ∨ Impl.AesGcmSiv.AArch64.Fn.sealCode c = Impl.AesGcmSiv.AArch64.Stitch.«seal» false c.callees ∨
+      Impl.AesGcmSiv.AArch64.Fn.sealCode c = Impl.AesGcmSiv.AArch64.«seal» c.callees := by
+  unfold Impl.AesGcmSiv.AArch64.Fn.sealCode
+  split
+  · rcases Bool.eq_false_or_eq_true c.stitch with h | h <;> simp [h]
+  · simp
+
+theorem seal_side {c : Calls} (hc : CallsOk c) :
+    scrubSide (withStackArgScratch (Impl.AesGcmSiv.AArch64.Fn.wn c + 16) 0 (Impl.AesGcmSiv.AArch64.Fn.sealCode c)) (Impl.AesGcmSiv.AArch64.Fn.wn c + 16) 0 own [] = true := by
+  rcases wn_cases hc with h | h <;> rcases sealCode_cases c with hp | hp | hp <;> rw [h, hp]
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (2272 + 16) 0 (Impl.AesGcmSiv.AArch64.Stitch.«seal» true holes))
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (2272 + 16) 0 (Impl.AesGcmSiv.AArch64.Stitch.«seal» false holes))
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (2272 + 16) 0 (Impl.AesGcmSiv.AArch64.«seal» holes))
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (3808 + 16) 0 (Impl.AesGcmSiv.AArch64.Stitch.«seal» true holes))
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (3808 + 16) 0 (Impl.AesGcmSiv.AArch64.Stitch.«seal» false holes))
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (3808 + 16) 0 (Impl.AesGcmSiv.AArch64.«seal» holes))
+
+theorem openCode_cases (c : Calls) :
+    Impl.AesGcmSiv.AArch64.Fn.openCode c = Impl.AesGcmSiv.AArch64.Stitch.«open» true c.callees ∨ Impl.AesGcmSiv.AArch64.Fn.openCode c = Impl.AesGcmSiv.AArch64.Stitch.«open» false c.callees ∨
+      Impl.AesGcmSiv.AArch64.Fn.openCode c = Impl.AesGcmSiv.AArch64.«open» c.callees := by
+  unfold Impl.AesGcmSiv.AArch64.Fn.openCode
+  split
+  · rcases Bool.eq_false_or_eq_true c.stitch with h | h <;> simp [h]
+  · simp
+
+theorem open_side {c : Calls} (hc : CallsOk c) :
+    scrubSide (withStackArgScratch (Impl.AesGcmSiv.AArch64.Fn.wn c + 16) 0 (Impl.AesGcmSiv.AArch64.Fn.openCode c)) (Impl.AesGcmSiv.AArch64.Fn.wn c + 16) 32 own [] = true := by
+  rcases wn_cases hc with h | h <;> rcases openCode_cases c with hp | hp | hp <;> rw [h, hp]
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (2272 + 16) 0 (Impl.AesGcmSiv.AArch64.Stitch.«open» true holes))
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (2272 + 16) 0 (Impl.AesGcmSiv.AArch64.Stitch.«open» false holes))
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (2272 + 16) 0 (Impl.AesGcmSiv.AArch64.«open» holes))
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (3808 + 16) 0 (Impl.AesGcmSiv.AArch64.Stitch.«open» true holes))
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (3808 + 16) 0 (Impl.AesGcmSiv.AArch64.Stitch.«open» false holes))
+  · exact side_of_holes hc fnOk_nil (withStackArgScratch (3808 + 16) 0 (Impl.AesGcmSiv.AArch64.«open» holes))
+
+/-- `vg_aes_gcm_siv_seal` as emitted, cleanup included. -/
+theorem seal_scrubbed (g : GcmVariant) :
+    VerifiedScrubbed AArch64.target (Impl.AesGcmSiv.AArch64.Fn.seal g.calls)
+      (Spec.GcmSiv.sealContract AArch64.abi (Impl.AesGcmSiv.AArch64.Fn.wn g.calls + 16)) 0 := by
+  have hv : Verified AArch64.target
+      (withStackArgScratch (Impl.AesGcmSiv.AArch64.Fn.wn g.impl.calls + 16) 0 (Impl.AesGcmSiv.AArch64.Fn.sealCode g.impl.calls))
+      (Proof.AesGcmSiv.sealRoundsContract AArch64.abi (Impl.AesGcmSiv.AArch64.Fn.wn g.impl.calls + 16)) := by
+    rw [wn_eq]; exact sealCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok g.impl
+  exact verifiedScrubbedAll (api := Spec.GcmSiv.sealApi) { code := _, verified := Proof.AesGcmSiv.seal_keyed hv } own
+    (sealOk _ (Nat.add_pos_right _ (by decide))) (seal_side g.impl.callsOk)
+
+/-- `vg_aes_gcm_siv_open` as emitted, cleanup included. -/
+theorem open_scrubbed (g : GcmVariant) :
+    VerifiedScrubbed AArch64.target (Impl.AesGcmSiv.AArch64.Fn.open g.calls)
+      (Spec.GcmSiv.openContract AArch64.abi (Impl.AesGcmSiv.AArch64.Fn.wn g.calls + 16)) 32 := by
+  have hv : Verified AArch64.target
+      (withStackArgScratch (Impl.AesGcmSiv.AArch64.Fn.wn g.impl.calls + 16) 0 (Impl.AesGcmSiv.AArch64.Fn.openCode g.impl.calls))
+      (Proof.AesGcmSiv.openRoundsContract AArch64.abi (Impl.AesGcmSiv.AArch64.Fn.wn g.impl.calls + 16)) := by
+    rw [wn_eq]; exact openCode_framed Proof.Gcm.AArch64.Pmull.prepPow Proof.Gcm.AArch64.Stitch.gh8Ok g.impl
+  exact verifiedScrubbedAll (api := Spec.GcmSiv.openApi) { code := _, verified := Proof.AesGcmSiv.open_keyed hv } own
+    (openOk _ (Nat.add_pos_right _ (by decide))) (open_side g.impl.callsOk)
 
 end VG.Proof.AesGcmSiv.AArch64.Stitch

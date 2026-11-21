@@ -105,8 +105,8 @@ structure Compress where
   keepsV : code.allInstrs keepsV = true
   /-- No instruction of it writes PSTATE.DIT, and it calls nothing indirectly:
   what the cleanup of the functions that call it needs of its code
-  (`ScrubAll.verifiedScrubbedOf`). -/
-  side : ScrubAll.sideAll (fun i => !i.writesDit) code = true
+  (`Scrub.verifiedScrubbedOf`). -/
+  side : Scrub.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre
@@ -639,31 +639,31 @@ contract in constant time and returns without secret residue. -/
 theorem update_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha1.AArch64.Stream.Fn.update v.name v.code)
       (Spec.Sha1.updateContract AArch64.abi (16 + 160)) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (Proof.Sha1.AArch64.Shared.update_of v.update_verified)
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha1.updateSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha1.updatePost_out _))
+    (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha1.updateSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha1.updatePost_out _))
     (by decide) (depth_frame_le (mdUpdate_depth _ _ _ v.updateDepth))
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl (mdUpdate_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdUpdate_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
 
 /-- `Impl.Sha1.AArch64.Stream.Fn.finalize`, the function as emitted, cleanup included: it meets its
 contract in constant time and returns without secret residue. -/
 theorem finalize_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha1.AArch64.Stream.Fn.finalize v.name v.code)
       (Spec.Sha1.finalizeContract AArch64.abi (16 + 160)) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (Proof.Sha1.AArch64.Shared.finalize_of v.finalize_verified)
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha1.finalizeSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha1.finalizePost_out _))
+    (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha1.finalizeSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha1.finalizePost_out _))
     (by decide) (depth_frame_le (mdFinalize_depth _ _ _ v.finalizeDepth))
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
 
 /-- `Impl.Sha1.AArch64.Stream.Fn.digest`, the function as emitted, cleanup included: it meets its
 contract in constant time and returns without secret residue. -/
 theorem digest_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha1.AArch64.Stream.Fn.digest v.name v.code)
       (Spec.Sha1.digestContract AArch64.abi Proof.Sha1.AArch64.OneShot.stack) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (v.oneShot_verified.of_implies Proof.Sha1.AArch64.OneShot.implies)
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha1.digestSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha1.digestPost_out _))
+    (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha1.digestSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha1.digestPost_out _))
     (by decide) (mdDigest_depth _ _ _ _ (by decide) v.noFrames)
     (mdDigest_side _ _ _ (by kernel_rfl) v.side) (Or.inl rfl)
 
@@ -911,20 +911,20 @@ contract in constant time and returns without secret residue. -/
 theorem finalize224_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha256.AArch64.Stream.Fn.finalize224 v.name v.code)
       (Spec.Sha256.finalize224Contract AArch64.abi (16 + 160)) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (Proof.Sha256.AArch64.Shared.finalize224_of v.finalize224_verified)
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha256.finalize224Sig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.finalize224Post_out _))
+    (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha256.finalize224Sig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.finalize224Post_out _))
     (by decide) (depth_frame_le (mdFinalize_depth _ _ _ v.finalize224Depth))
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
 
 /-- `Impl.Sha256.AArch64.Stream.Fn.digest224`, the function as emitted, cleanup included: it meets its
 contract in constant time and returns without secret residue. -/
 theorem digest224_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha256.AArch64.Stream.Fn.digest224 v.name v.code)
       (Spec.Sha256.digestContract AArch64.abi 28 Spec.Sha256.sha224 Proof.Sha256.AArch64.OneShot.stack) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     ((v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape224 v.oneShot224).of_implies (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.sha224_take))
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 28)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.digestPost_out _ _ _ (by decide)))
+    (AArch64.Scrub.scrubAllOk_regs (sig := (Spec.Sha256.digestSig 28)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha256.digestPost_out _ _ _ (by decide)))
     (by decide) (mdDigest_depth _ _ _ _ (by decide) v.noFrames)
     (mdDigest_side _ _ _ (by kernel_rfl) v.side) (Or.inl rfl)
 
@@ -1217,7 +1217,7 @@ and calls nothing indirectly: the compression function's (`Compress.side`),
 the streaming functions' own instructions, and `init`'s for the member's
 initial hash value. -/
 theorem calleeSide (v : Compress) (I : Spec.Hmac.Instance) (D : Nat) (initN : String)
-    (iv : Spec.Sha512.HashValue) (hi : ScrubAll.sideAll noDit (Impl.Sha512.AArch64.Stream.init iv) = true) :
+    (iv : Spec.Sha512.HashValue) (hi : Scrub.sideAll noDit (Impl.Sha512.AArch64.Stream.init iv) = true) :
     CalleeSide (hash v I D initN iv) :=
   ⟨v.side, hi, mdUpdate_side _ _ (by kernel_rfl) v.side, mdFinalize_side _ _ (by kernel_rfl) v.side⟩
 
@@ -1226,31 +1226,31 @@ contract in constant time and returns without secret residue. -/
 theorem update_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha512.AArch64.Stream.Fn.update v.suffix v.code)
       (Spec.Sha512.updateContract AArch64.abi (16 + 688)) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (Proof.Sha512.AArch64.Shared.update_of v.update_verified)
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha512.updateSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.updatePost_out _))
+    (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha512.updateSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.updatePost_out _))
     (by decide) (depth_frame_le (mdUpdate_depth _ _ _ v.updateDepth))
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl (mdUpdate_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdUpdate_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
 
 /-- `Impl.Sha512.AArch64.Stream.Fn.finalize`, the function as emitted, cleanup included: it meets its
 contract in constant time and returns without secret residue. -/
 theorem finalize_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha512.AArch64.Stream.Fn.finalize v.suffix v.code)
       (Spec.Sha512.finalizeContract AArch64.abi (16 + 688)) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (Proof.Sha512.AArch64.Shared.finalize_of v.finalize_verified)
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := Spec.Sha512.finalizeSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.finalizePost_out _))
+    (AArch64.Scrub.scrubAllOk_regs (sig := Spec.Sha512.finalizeSig) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.finalizePost_out _))
     (by decide) (depth_frame_le (mdFinalize_depth _ _ _ v.finalizeDepth))
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
 
 /-- `Impl.Sha512.AArch64.Stream.Fn.digest512`, the function as emitted, cleanup included: it meets its
 contract in constant time and returns without secret residue. -/
 theorem digest512_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha512.AArch64.Stream.Fn.digest512 v.suffix v.code)
       (Spec.Sha512.digestContract AArch64.abi 64 Spec.Sha512.sha512 Proof.Sha512.AArch64.OneShot.stack) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     ((v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape.toD v.oneShot512).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun m => List.take_of_length_le (Nat.le_of_eq (Hmac.Generic.Common.finalHash_length _ m))))
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 64)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.digestPost_out _ _ _ (by decide)))
+    (AArch64.Scrub.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 64)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.digestPost_out _ _ _ (by decide)))
     (by decide) (mdDigest_depth _ _ _ _ (by decide) v.noFrames)
     (mdDigest_side _ _ _ (by kernel_rfl) v.side) (Or.inl rfl)
 
@@ -1259,20 +1259,20 @@ contract in constant time and returns without secret residue. -/
 theorem finalize384_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha512.AArch64.Stream.Fn.finalize384 v.suffix v.code)
       (Spec.Sha512.finalizeDigestContract AArch64.abi H0_384 48 Spec.Sha512.sha384 (16 + 688)) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inl rfl) (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape384 v.digest384) (fun _ => rfl))
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 48)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)))
+    (AArch64.Scrub.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 48)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)))
     (by decide) (depth_frame_le (mdFinalize_depth _ _ _ v.digest384.depth))
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
 
 /-- `Impl.Sha512.AArch64.Stream.Fn.digest384`, the function as emitted, cleanup included: it meets its
 contract in constant time and returns without secret residue. -/
 theorem digest384_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha512.AArch64.Stream.Fn.digest384 v.suffix v.code)
       (Spec.Sha512.digestContract AArch64.abi 48 Spec.Sha512.sha384 Proof.Sha512.AArch64.OneShot.stack) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     ((v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape384 v.oneShot384).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl))
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 48)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.digestPost_out _ _ _ (by decide)))
+    (AArch64.Scrub.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 48)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.digestPost_out _ _ _ (by decide)))
     (by decide) (mdDigest_depth _ _ _ _ (by decide) v.noFrames)
     (mdDigest_side _ _ _ (by kernel_rfl) v.side) (Or.inl rfl)
 
@@ -1281,20 +1281,20 @@ contract in constant time and returns without secret residue. -/
 theorem finalize512_256_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha512.AArch64.Stream.Fn.finalize512_256 v.suffix v.code)
       (Spec.Sha512.finalizeDigestContract AArch64.abi H0_512_256 32 Spec.Sha512.sha512_256 (16 + 688)) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inr (.inl rfl)) (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape512_256 v.digest512_256) (fun _ => rfl))
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 32)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)))
+    (AArch64.Scrub.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 32)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)))
     (by decide) (depth_frame_le (mdFinalize_depth _ _ _ v.digest512_256.depth))
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
 
 /-- `Impl.Sha512.AArch64.Stream.Fn.digest512_256`, the function as emitted, cleanup included: it meets its
 contract in constant time and returns without secret residue. -/
 theorem digest512_256_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha512.AArch64.Stream.Fn.digest512_256 v.suffix v.code)
       (Spec.Sha512.digestContract AArch64.abi 32 Spec.Sha512.sha512_256 Proof.Sha512.AArch64.OneShot.stack) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     ((v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape512_256 v.oneShot512_256).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl))
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 32)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.digestPost_out _ _ _ (by decide)))
+    (AArch64.Scrub.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 32)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.digestPost_out _ _ _ (by decide)))
     (by decide) (mdDigest_depth _ _ _ _ (by decide) v.noFrames)
     (mdDigest_side _ _ _ (by kernel_rfl) v.side) (Or.inl rfl)
 
@@ -1303,20 +1303,20 @@ contract in constant time and returns without secret residue. -/
 theorem finalize512_224_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha512.AArch64.Stream.Fn.finalize512_224 v.suffix v.code)
       (Spec.Sha512.finalizeDigestContract AArch64.abi H0_512_224 28 Spec.Sha512.sha512_224 (16 + 688)) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     (Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inr (.inr rfl)) (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape512_224 v.digest512_224) (fun _ => rfl))
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 28)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)))
+    (AArch64.Scrub.scrubAllOk_regs (sig := (Spec.Sha512.finalizeDigestSig 28)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.finalizeDigestPost_out _ _ _ _ (by decide)))
     (by decide) (depth_frame_le (mdFinalize_depth _ _ _ v.digest512_224.depth))
-    (AArch64.ScrubAll.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
+    (AArch64.Scrub.sideAll_withStackScratch rfl rfl rfl (mdFinalize_side _ _ (by kernel_rfl) v.side)) (Or.inl rfl)
 
 /-- `Impl.Sha512.AArch64.Stream.Fn.digest512_224`, the function as emitted, cleanup included: it meets its
 contract in constant time and returns without secret residue. -/
 theorem digest512_224_scrubbed (v : Compress) :
     VerifiedScrubbed AArch64.target (Impl.Sha512.AArch64.Stream.Fn.digest512_224 v.suffix v.code)
       (Spec.Sha512.digestContract AArch64.abi 28 Spec.Sha512.sha512_224 Proof.Sha512.AArch64.OneShot.stack) 0 :=
-  AArch64.ScrubAll.verifiedScrubbedOf
+  AArch64.Scrub.verifiedScrubbedOf
     ((v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape512_224 v.oneShot512_224).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl))
-    (AArch64.ScrubAll.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 28)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.digestPost_out _ _ _ (by decide)))
+    (AArch64.Scrub.scrubAllOk_regs (sig := (Spec.Sha512.digestSig 28)) (by decide) (by decide) (Nat.le_refl _) (Proof.Sha512.digestPost_out _ _ _ (by decide)))
     (by decide) (mdDigest_depth _ _ _ _ (by decide) v.noFrames)
     (mdDigest_side _ _ _ (by kernel_rfl) v.side) (Or.inl rfl)
 

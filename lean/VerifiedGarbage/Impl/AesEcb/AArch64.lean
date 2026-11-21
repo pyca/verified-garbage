@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Impl.CallWipe.AArch64
 public import VerifiedGarbage.Impl.Zeroize.AArch64Wide
-public import VerifiedGarbage.Impl.Residue.AArch64
-public import VerifiedGarbage.Impl.Residue.AArch64.Writes
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64.Writes
 
 /-!
 # AES-ECB on AArch64
@@ -34,8 +34,8 @@ namespace Fn
 /-- `vg_aes_ecb_encrypt`, or `vg_aes_ecb_decrypt`, over the blocks function
 `b`, as emitted. -/
 def blocks (b : Impl.Aes.AArch64.Blocks) : Prog isa :=
-  if b.scratch = 0 then Impl.Residue.AArch64.withClears [] b.clear.vecs none b.code
-  else Impl.Residue.AArch64.scrubOf 32 0 (wiped b.name b.code)
+  if b.scratch = 0 then Impl.Scrub.AArch64.withClears [] b.clear.vecs none b.code
+  else Impl.Scrub.AArch64.scrubOf 32 0 (wiped b.name b.code)
 
 end Fn
 

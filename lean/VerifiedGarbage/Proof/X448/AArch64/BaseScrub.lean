@@ -11,17 +11,17 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # X448's base-point multiplication on AArch64, without secret residue
 
 The postcondition of `vg_x448_base` reads the memory on return only within
-`out` (`ScrubAll.ScrubAllOk`, as x86-64's `baseOut` in
+`out` (`Scrub.ScrubAllOk`, as x86-64's `baseOut` in
 `Proof/X448/X86_64/Scrub.lean` proves it): its implementation, which has no
 frames, returns with every register it may leave secret cleared
-(`ScrubAll.withScrubAll`).
+(`Scrub.verifiedScrubbedAll`).
 -/
 
 @[expose] public section
 
 namespace VG.Proof.X448.AArch64.BaseScrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 theorem baseOk (c₀ : String × List (BitVec 64)) (cs : List (String × List (BitVec 64))) :
     ScrubAllOk (Spec.X448.x448BaseContract (abi.withConsts (c₀ :: cs)) 0) 0
@@ -46,11 +46,11 @@ theorem baseOk (c₀ : String × List (BitVec 64)) (cs : List (String × List (B
 /-- `vg_x448_base` as emitted, cleanup included
 (`Impl.X448.AArch64.Base.Fn.x448Base`): it meets its contract in constant
 time and returns without secret residue. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+(`Scrub.scrubSide`) is evaluated here, by the kernel. -/
 theorem x448Base :
     VerifiedScrubbed AArch64.target Impl.X448.AArch64.Base.Fn.x448Base
       (Spec.X448.x448BaseContract (AArch64.abi.withConsts Impl.X448.AArch64.Base.combConsts)) 0 :=
-  ScrubAll.verifiedScrubbed (api := Spec.X448.x448BaseApi)
+  Scrub.verifiedScrubbedAll (api := Spec.X448.x448BaseApi)
     { code := Impl.X448.AArch64.Base.x448Base
       verified := Proof.X448.AArch64.Base.x448Base_verified
       consts := Impl.X448.AArch64.Base.combConsts

@@ -89,14 +89,14 @@ theorem secp256k1T_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : We
 /-! ## What the scrubbed functions clear
 
 The registers the tails of `vg_ecdsa_secp256k1_sign` and `vg_ecdsa_secp256k1_verify`
-clear, and what `ScrubAll.scrubAllOf` needs of their code
-(`ScrubAll.scrubSide`): evaluated here, by the kernel, so that the emitter
+clear, and what `Scrub.verifiedScrubbedAll` needs of their code
+(`Scrub.scrubSide`): evaluated here, by the kernel, so that the emitter
 works out nothing. -/
 
 /-- No instruction of `vg_ecdsa_secp256k1_sign_k` writes PSTATE.DIT, and it calls
 nothing indirectly. -/
 theorem secp256k1_core_side :
-    AArch64.ScrubAll.sideAll (fun i => !i.writesDit)
+    AArch64.Scrub.sideAll (fun i => !i.writesDit)
       Impl.Ecdsa.AArch64.signSecp256k1 = true := by
   lit_decide
 
@@ -119,11 +119,11 @@ theorem secp256k1Sign_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI :
 /-- `vg_ecdsa_secp256k1_verify` as emitted, cleanup included
 (`Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.Fn.verifyHash`): it meets its contract in
 constant time and returns without secret residue. What the cleanup needs of
-the code (`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+the code (`Scrub.scrubSide`) is evaluated here, by the kernel. -/
 theorem secp256k1Verify (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.AArch64.InvSounds) :
     VerifiedScrubbed AArch64.target Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.Fn.verifyHash
       (Spec.Ecdsa.Secp256k1.inst.verifyHashContract AArch64.abi 80) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdsa.Secp256k1.verifyHashApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.Secp256k1.verifyHashApi)
     { code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
         Impl.Ecdsa.Verify.AArch64.Secp256k1.Joint.verify
       verified := Proof.Ecdsa.Verify.AArch64.Secp256k1.Joint.verifyHash_verified hL hI } _

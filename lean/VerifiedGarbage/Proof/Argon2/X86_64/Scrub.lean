@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 `vg_argon2`'s postcondition reads the memory on return only within `out`
 (`X86_64.Scrub.PostOut`): each implementation returns with its whole stack
-wiped (`X86_64.Scrub.withScrubAll`).
+wiped (`Impl.Scrub.X86_64.scrubAll`).
 -/
 
 @[expose] public section

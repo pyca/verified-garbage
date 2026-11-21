@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.Sha1.Arm.Stream
 public import VerifiedGarbage.Impl.Sha256.Arm.Stream
 public import VerifiedGarbage.Impl.Sha512.Arm.Stream
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.Impl.Residue.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # HMAC and PBKDF2 on ARMv7, for each hash function, as emitted
@@ -25,7 +25,7 @@ space (`frame`, `anyFrame`, `pbkFrame`, each rounded up to a multiple of 32
 bytes, which an ARM immediate encodes).
 
 `Fn` is each function as emitted: its code, then its cleanup
-(`Impl/Residue/Arm.lean`), the stack its contract reserves zeroed and the
+(`Impl/Scrub/Arm.lean`), the stack its contract reserves zeroed and the
 registers a callee may change set to constants. None returns a value. The
 stack is `24 + anyFrame I` for HMAC's `init` and `24 + pbkFrame I` for
 PBKDF2, each rounded up to a multiple of 32 bytes (a frame size of the
@@ -173,65 +173,65 @@ end VG.Impl.Hmac.Stream.Arm
 
 namespace VG.Impl.Hmac.Stream.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm VG.Impl.Hmac.Stream.Arm
+open VG.Arm VG.Impl.Scrub.Arm VG.Impl.Hmac.Stream.Arm
 
 /-- `vg_hmac_md5_init`. -/
-def initMd5 : Prog isa := scrubF 0 1088 (initCode Spec.Hmac.md5I md5Md.hmacInit md5F)
+def initMd5 : Prog isa := scrubAll 0 1088 (initCode Spec.Hmac.md5I md5Md.hmacInit md5F)
 /-- `vg_hmac_sha1_init`. -/
-def initSha1 : Prog isa := scrubF 0 1184 (initCode Spec.Hmac.sha1I sha1Md.hmacInit sha1F)
+def initSha1 : Prog isa := scrubAll 0 1184 (initCode Spec.Hmac.sha1I sha1Md.hmacInit sha1F)
 /-- `vg_hmac_sha224_init`. -/
-def initSha224 : Prog isa := scrubF 0 1664 (initCode Spec.Hmac.sha224I sha224Md.hmacInit sha224F)
+def initSha224 : Prog isa := scrubAll 0 1664 (initCode Spec.Hmac.sha224I sha224Md.hmacInit sha224F)
 /-- `vg_hmac_sha256_init`. -/
-def initSha256 : Prog isa := scrubF 0 1664 (initCode Spec.Hmac.sha256I sha256Md.hmacInit sha256F)
+def initSha256 : Prog isa := scrubAll 0 1664 (initCode Spec.Hmac.sha256I sha256Md.hmacInit sha256F)
 /-- `vg_hmac_sha384_init`. -/
-def initSha384 : Prog isa := scrubF 0 3456 (initCode Spec.Hmac.sha384I sha384Md.hmacInit sha384F)
+def initSha384 : Prog isa := scrubAll 0 3456 (initCode Spec.Hmac.sha384I sha384Md.hmacInit sha384F)
 /-- `vg_hmac_sha512_init`. -/
-def initSha512 : Prog isa := scrubF 0 3456 (initCode Spec.Hmac.sha512I sha512Md'.hmacInit sha512F)
+def initSha512 : Prog isa := scrubAll 0 3456 (initCode Spec.Hmac.sha512I sha512Md'.hmacInit sha512F)
 /-- `vg_hmac_sha512_224_init`. -/
 def initSha512_224 : Prog isa :=
-  scrubF 0 3456 (initCode Spec.Hmac.sha512_224I sha512_224Md.hmacInit sha512_224F)
+  scrubAll 0 3456 (initCode Spec.Hmac.sha512_224I sha512_224Md.hmacInit sha512_224F)
 /-- `vg_hmac_sha512_256_init`. -/
 def initSha512_256 : Prog isa :=
-  scrubF 0 3456 (initCode Spec.Hmac.sha512_256I sha512_256Md.hmacInit sha512_256F)
+  scrubAll 0 3456 (initCode Spec.Hmac.sha512_256I sha512_256Md.hmacInit sha512_256F)
 
 /-- `vg_hmac_md5_finalize`. -/
-def finalizeMd5 : Prog isa := scrubF 0 432 (finCode Spec.Hmac.md5I md5Md)
+def finalizeMd5 : Prog isa := scrubAll 0 432 (finCode Spec.Hmac.md5I md5Md)
 /-- `vg_hmac_sha1_finalize`. -/
-def finalizeSha1 : Prog isa := scrubF 0 496 (finCode Spec.Hmac.sha1I sha1Md)
+def finalizeSha1 : Prog isa := scrubAll 0 496 (finCode Spec.Hmac.sha1I sha1Md)
 /-- `vg_hmac_sha224_finalize`. -/
-def finalizeSha224 : Prog isa := scrubF 0 880 (finCode Spec.Hmac.sha224I sha224Md)
+def finalizeSha224 : Prog isa := scrubAll 0 880 (finCode Spec.Hmac.sha224I sha224Md)
 /-- `vg_hmac_sha256_finalize`. -/
-def finalizeSha256 : Prog isa := scrubF 0 880 (finCode Spec.Hmac.sha256I sha256Md)
+def finalizeSha256 : Prog isa := scrubAll 0 880 (finCode Spec.Hmac.sha256I sha256Md)
 /-- `vg_hmac_sha384_finalize`. -/
-def finalizeSha384 : Prog isa := scrubF 0 1904 (finCode Spec.Hmac.sha384I sha384Md)
+def finalizeSha384 : Prog isa := scrubAll 0 1904 (finCode Spec.Hmac.sha384I sha384Md)
 /-- `vg_hmac_sha512_finalize`. -/
-def finalizeSha512 : Prog isa := scrubF 0 1904 (finCode Spec.Hmac.sha512I sha512Md')
+def finalizeSha512 : Prog isa := scrubAll 0 1904 (finCode Spec.Hmac.sha512I sha512Md')
 /-- `vg_hmac_sha512_224_finalize`. -/
-def finalizeSha512_224 : Prog isa := scrubF 0 1904 (finCode Spec.Hmac.sha512_224I sha512_224Md)
+def finalizeSha512_224 : Prog isa := scrubAll 0 1904 (finCode Spec.Hmac.sha512_224I sha512_224Md)
 /-- `vg_hmac_sha512_256_finalize`. -/
-def finalizeSha512_256 : Prog isa := scrubF 0 1904 (finCode Spec.Hmac.sha512_256I sha512_256Md)
+def finalizeSha512_256 : Prog isa := scrubAll 0 1904 (finCode Spec.Hmac.sha512_256I sha512_256Md)
 
 end VG.Impl.Hmac.Stream.Arm.Fn
 
 namespace VG.Impl.Pbkdf2.Whole.Arm.Fn
 
-open VG.Arm VG.Impl.Residue.Arm VG.Impl.Hmac.Stream.Arm
+open VG.Arm VG.Impl.Scrub.Arm VG.Impl.Hmac.Stream.Arm
 
 /-- `vg_pbkdf2_hmac_md5`. -/
-def md5 : Prog isa := scrubF 0 1088 (pbkdf2Code Spec.Hmac.md5I md5F)
+def md5 : Prog isa := scrubAll 0 1088 (pbkdf2Code Spec.Hmac.md5I md5F)
 /-- `vg_pbkdf2_hmac_sha1`. -/
-def sha1 : Prog isa := scrubF 0 1184 (pbkdf2Code Spec.Hmac.sha1I sha1F)
+def sha1 : Prog isa := scrubAll 0 1184 (pbkdf2Code Spec.Hmac.sha1I sha1F)
 /-- `vg_pbkdf2_hmac_sha224`. -/
-def sha224 : Prog isa := scrubF 0 1664 (pbkdf2Code Spec.Hmac.sha224I sha224F)
+def sha224 : Prog isa := scrubAll 0 1664 (pbkdf2Code Spec.Hmac.sha224I sha224F)
 /-- `vg_pbkdf2_hmac_sha256`. -/
-def sha256 : Prog isa := scrubF 0 1664 (pbkdf2Code Spec.Hmac.sha256I sha256F)
+def sha256 : Prog isa := scrubAll 0 1664 (pbkdf2Code Spec.Hmac.sha256I sha256F)
 /-- `vg_pbkdf2_hmac_sha384`. -/
-def sha384 : Prog isa := scrubF 0 3488 (pbkdf2Code Spec.Hmac.sha384I sha384F)
+def sha384 : Prog isa := scrubAll 0 3488 (pbkdf2Code Spec.Hmac.sha384I sha384F)
 /-- `vg_pbkdf2_hmac_sha512`. -/
-def sha512 : Prog isa := scrubF 0 3488 (pbkdf2Code Spec.Hmac.sha512I sha512F)
+def sha512 : Prog isa := scrubAll 0 3488 (pbkdf2Code Spec.Hmac.sha512I sha512F)
 /-- `vg_pbkdf2_hmac_sha512_224`. -/
-def sha512_224 : Prog isa := scrubF 0 3488 (pbkdf2Code Spec.Hmac.sha512_224I sha512_224F)
+def sha512_224 : Prog isa := scrubAll 0 3488 (pbkdf2Code Spec.Hmac.sha512_224I sha512_224F)
 /-- `vg_pbkdf2_hmac_sha512_256`. -/
-def sha512_256 : Prog isa := scrubF 0 3488 (pbkdf2Code Spec.Hmac.sha512_256I sha512_256F)
+def sha512_256 : Prog isa := scrubAll 0 3488 (pbkdf2Code Spec.Hmac.sha512_256I sha512_256F)
 
 end VG.Impl.Pbkdf2.Whole.Arm.Fn

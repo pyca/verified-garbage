@@ -24,13 +24,13 @@ public import VerifiedGarbage.Proof.Ed448.WholeLocal
 
 The postconditions of `vg_ed448_public_key` and `vg_ed448_sign_cached` read
 the memory on return only within their outputs, and that of
-`vg_ed448_verify` not at all (`ScrubAll.ScrubAllOk`, from
+`vg_ed448_verify` not at all (`Scrub.ScrubAllOk`, from
 `Proof.Ed448.WholeLocal`): each function as emitted
 (`Impl.Ed448.AArch64.Fn`), generic over the Keccak permutation it calls,
 returns with every register it may leave secret cleared and its whole stack
 zeroed. `Fn` below has the theorem of each, which its registration binds.
 
-What the cleanup needs of the code (`ScrubAll.scrubSide`) is proved of each
+What the cleanup needs of the code (`Scrub.scrubSide`) is proved of each
 function's own instructions here, once, with a permutation that does nothing
 in its place (`Proof.Sha3.AArch64.Scrub.stub`), of the sponge's functions it
 calls in `Proof.Sha3.AArch64.Scrub`, and of each implementation of the
@@ -41,7 +41,7 @@ permutation where it is defined (`Permutation.scrub`).
 
 namespace VG.Proof.Ed448.AArch64.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 
 theorem publicKeyOk : ScrubAllOk
     (Spec.Ed448.publicKeyContract (AArch64.abi.withConsts Impl.X448.AArch64.Base.combConsts) 352)
@@ -165,13 +165,13 @@ returns without secret residue. -/
 
 namespace VG.Proof.Ed448.AArch64.Fn
 
-open VG.AArch64 VG.AArch64.ScrubAll
+open VG.AArch64 VG.AArch64.Scrub
 open VG.Proof.Sha3.AArch64 (Permutation)
 
 theorem publicKey (v : Permutation) :
     VerifiedScrubbed target (Impl.Ed448.AArch64.Fn.publicKey v.callee)
       (Spec.Ed448.publicKeyContract (abi.withConsts Impl.X448.AArch64.Base.combConsts) 352) 0 :=
-  verifiedScrubbed (api := Spec.Ed448.publicKeyApi)
+  verifiedScrubbedAll (api := Spec.Ed448.publicKeyApi)
     { code := Impl.Ed448.AArch64.PublicKey.publicKeyWith v.callee,
       verified := Proof.Ed448.AArch64.PublicKey.publicKey_verified v Proof.Ed448.AArch64.scalarBase_baseOk }
     _ Scrub.publicKeyOk (Scrub.publicKey_side v)
@@ -179,7 +179,7 @@ theorem publicKey (v : Permutation) :
 theorem signCached (v : Permutation) :
     VerifiedScrubbed target (Impl.Ed448.AArch64.Fn.signCached v.callee)
       (Spec.Ed448.signCachedContract (abi.withConsts Impl.X448.AArch64.Base.combConsts) 352) 0 :=
-  verifiedScrubbed (api := Spec.Ed448.signCachedApi)
+  verifiedScrubbedAll (api := Spec.Ed448.signCachedApi)
     { code := Impl.Ed448.AArch64.SignCached.signCachedWith v.callee,
       verified := Proof.Ed448.AArch64.SignCached.signCached_verified v Proof.Ed448.AArch64.scalarBase_baseOk }
     _ Scrub.signCachedOk (Scrub.signCached_side v)
@@ -187,7 +187,7 @@ theorem signCached (v : Permutation) :
 theorem verify (v : Permutation) :
     VerifiedScrubbed target (Impl.Ed448.AArch64.Fn.verify v.callee)
       (Spec.Ed448.verifyContract (abi.withConsts Impl.Ed448.AArch64.Sparse.baseConsts) 352) 32 :=
-  verifiedScrubbed (api := Spec.Ed448.verifyApi)
+  verifiedScrubbedAll (api := Spec.Ed448.verifyApi)
     { code := Impl.Ed448.AArch64.Verify.verifyWith v.callee,
       verified := Proof.Ed448.AArch64.Verify.verify_verified v
         (Proof.Ed448.AArch64.Sparse.verified_eqOk Proof.Ed448.recover_ok) }

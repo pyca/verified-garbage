@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 # RSA key generation on PPC64LE, without secret residue
 
 `vg_rsa_generate_init` and `vg_rsa_generate`, each followed by
-`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbed`): `init` has no
+`Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`): `init` has no
 frame, so the tail only clears the volatile registers it may write;
 `vg_rsa_generate` keeps the candidates, the Miller–Rabin state and its
 callers' state in frames it does not wipe themselves, which the tail zeroes.
@@ -107,14 +107,14 @@ its contract in constant time and returns without secret residue. -/
 theorem keyInit_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.RsaKeyGen.PPC64LE.Fn.keyInit
       (Spec.RsaKeyGen.keyInitContract PPC64LE.abi) 32 :=
-  verifiedScrubbed (api := Spec.RsaKeyGen.keyInitApi) {
+  verifiedScrubbedAll (api := Spec.RsaKeyGen.keyInitApi) {
       code := Impl.RsaKeyGen.PPC64LE.KeyInit.init
       verified := Proof.RsaKeyGen.PPC64LE.KeyInit.init_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
     keyInitOut
     (by dsimp only; lit_decide)
 
-/-- What `scrubOf` needs of the search with each Miller–Rabin round:
+/-- What `verifiedScrubbedAll` needs of the search with each Miller–Rabin round:
 evaluated here. -/
 theorem keySearchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
@@ -127,12 +127,15 @@ theorem keySearchSide (v : Proof.MillerRabin.PPC64LE.RoundImpl)
           [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10]⟩) = true := by lit_decide
   exact List.all_eq_true.mp h v hv
 
-/-- `Spec.RsaKeyGen.keySearchApi`, with the Miller–Rabin round `v`. -/
-def keySearchReg (v : Proof.MillerRabin.PPC64LE.RoundImpl)
+/-- `vg_rsa_generate_search` as emitted (`Impl.RsaKeyGen.PPC64LE.Fn.keySearch`),
+with the Miller–Rabin round `v`, meets its contract in constant time and
+returns without secret residue. -/
+theorem keySearch_scrubbed (v : Proof.MillerRabin.PPC64LE.RoundImpl)
     (hv : v ∈ Proof.Variants.MillerRabin.PPC64LE.variants) :
-    Registration Spec.RsaKeyGen.keySearchApi PPC64LE.target :=
-  scrubOf {
-      suffix := v.suffix
+    VerifiedScrubbed PPC64LE.target (Impl.RsaKeyGen.PPC64LE.Fn.keySearch v.suffix v.code)
+      (Spec.RsaKeyGen.keySearchContract (PPC64LE.abi.withConsts Proof.RsaKeyGen.PPC64LE.Generate.tables)
+        Proof.RsaKeyGen.PPC64LE.Generate.stackUse) 32 :=
+  verifiedScrubbedAll (api := Spec.RsaKeyGen.keySearchApi) {
       code := Proof.RsaKeyGen.PPC64LE.Generate.genCode v
       verified := Proof.RsaKeyGen.PPC64LE.Generate.gen_verified v }
     1088 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,

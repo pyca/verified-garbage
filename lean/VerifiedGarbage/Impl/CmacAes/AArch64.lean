@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
-public import VerifiedGarbage.Impl.Residue.AArch64.Union
+public import VerifiedGarbage.Impl.Scrub.AArch64.Union
 
 /-!
 # AES-CMAC: AArch64 implementation
@@ -135,7 +135,7 @@ def update (c : Ctr32) : Prog isa :=
 convention does not preserve: with those the implementation of
 `vg_aes_ctr32` it calls writes, what a function that calls it clears for
 it. -/
-def updateOwn : Impl.Residue.AArch64.Clear :=
+def updateOwn : Impl.Scrub.AArch64.Clear :=
   ⟨[.x1, .x2, .x3, .x4, .x5, .x9, .x10, .x16, .x17], [], []⟩
 
 /-! ## `vg_cmac_aes_finalize` -/

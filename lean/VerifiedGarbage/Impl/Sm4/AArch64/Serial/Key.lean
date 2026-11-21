@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.AArch64.Serial.Core
-public import VerifiedGarbage.Impl.Residue.AArch64.Scrub
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-!
 # The SM4 key schedule on AArch64, one word at a time
@@ -60,10 +60,10 @@ namespace Fn
 
 /-- `vg_sm4_expand_key` as emitted: `expandKey`, then its cleanup, which
 clears the registers it writes that the calling convention does not preserve
-(`Impl.Residue.AArch64.scrubAll`; it has no result and uses no stack), so
+(`Impl.Scrub.AArch64.scrubAll`; it has no result and uses no stack), so
 that it returns without secret residue. -/
 def expandKey : Prog isa :=
-  Residue.AArch64.scrubAll 0 0
+  Scrub.AArch64.scrubAll 0 0
     ⟨[.x6, .x7, .x8, .x9, .x10, .x11, .x15],
      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24,
       .v25, .v26, .v27, .v28, .v29, .v30, .v31],

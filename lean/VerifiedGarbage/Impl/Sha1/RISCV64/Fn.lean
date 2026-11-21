@@ -8,7 +8,7 @@ public import VerifiedGarbage.Spec.Sha1.Contract
 /-!
 # SHA-1 on RISC-V, as emitted
 
-Each streaming function, then its cleanup (`Impl.Scrub.RISCV64.scrub rb W`):
+Each streaming function, then its cleanup (`Impl.Scrub.RISCV64.scrubAll rb W`):
 the zeroing of the `W` bytes of stack its frames use (none for `init`, the
 144-byte frame of `update` and `finalize`), and the clearing of the
 caller-saved registers, `a0` included (none returns a value), so that it
@@ -27,17 +27,17 @@ may differ between two runs: the code wipes most of its own scratch space.
 namespace VG.Impl.Sha1.RISCV64.Fn
 
 open VG.RISCV64
-open VG.Impl.Scrub.RISCV64 (scrub scrubSel)
+open VG.Impl.Scrub.RISCV64 (scrubAll scrubSel)
 open VG.Impl.Hmac.Stream.RISCV64 (Hash)
 
 /-- `vg_sha1_init`, as emitted. -/
-def init : Prog isa := scrub 0 0 Stream.init
+def init : Prog isa := scrubAll 0 0 Stream.init
 
 /-- `vg_sha1_update`, as emitted. -/
-def update : Prog isa := scrub 0 144 Stream.update
+def update : Prog isa := scrubAll 0 144 Stream.update
 
 /-- `vg_sha1_finalize`, as emitted. -/
-def finalize : Prog isa := scrub 0 144 Stream.finalize
+def finalize : Prog isa := scrubAll 0 144 Stream.finalize
 
 /-- SHA-1's streaming functions, as the one-shot digest calls them, under
 the internal names `vg_sha1_init_core`, …: a 64-byte block, a 20-byte hash

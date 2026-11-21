@@ -28,7 +28,7 @@ structure PublicImpl where
   noDit : code.all (fun i => !i.touchesDit) = true
   /-- It has no indirect call and never writes `DIT`: what the cleanup of
   the functions that call it needs. -/
-  side : AArch64.ScrubAll.sideAll (fun i => !i.writesDit) code = true
+  side : AArch64.Scrub.sideAll (fun i => !i.writesDit) code = true
   suffix : String
   features : List String
 

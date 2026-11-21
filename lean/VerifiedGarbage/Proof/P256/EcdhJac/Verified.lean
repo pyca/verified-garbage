@@ -331,7 +331,7 @@ theorem exchange_scrubbed (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.InvToM Spec.P256.curve.p) :
     VerifiedScrubbed AArch64.target VG.Impl.Ecdh.AArch64.Fn.exchangeP256
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi) 32 :=
-  VG.AArch64.ScrubAll.verifiedScrubbed (api := Spec.Ecdh.P256.exchangeApi)
+  VG.AArch64.Scrub.verifiedScrubbedAll (api := Spec.Ecdh.P256.exchangeApi)
     { code := Impl.P256.EcdhJac.exchange, verified := verified hL hI hO hT } _
     (VG.Proof.EcKey.AArch64.Scrub.exchangeOk _) (by dsimp only; lit_decide)
 

@@ -542,10 +542,10 @@ theorem init_verified : Verified target init (Spec.RsaKeyGen.keyInitContract abi
 /-- `vg_rsa_key_init` as emitted, cleanup included
 (`Impl.RsaKeyGen.AArch64.KeyInit.Fn.init`): it meets its contract in constant
 time and returns without secret residue. What the cleanup needs of the code
-(`ScrubAll.scrubSide`) is evaluated here, by the kernel. -/
+(`Scrub.scrubSide`) is evaluated here, by the kernel. -/
 theorem init_scrubbed :
     VerifiedScrubbed target Impl.RsaKeyGen.AArch64.KeyInit.Fn.init (Spec.RsaKeyGen.keyInitContract abi) 32 :=
-  AArch64.ScrubAll.verifiedScrubbed (api := Spec.RsaKeyGen.keyInitApi)
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.RsaKeyGen.keyInitApi)
     { code := init, verified := init_verified } _ Proof.Rsa.AArch64.Scrub.keyInitOk (by dsimp only; lit_decide)
 
 end VG.Proof.RsaKeyGen.AArch64.KeyInit

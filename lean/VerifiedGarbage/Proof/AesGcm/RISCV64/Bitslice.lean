@@ -52,7 +52,7 @@ its algebra), and of `copyLoopW` (`copyLoopW_ok`). Then constant time (only
 the pointers reach addresses and branches), the shared contract with the
 working space in a frame of its own (`bitslice_framed`), and that frame,
 which holds the bitsliced round keys, cleared on return with the
-caller-saved registers (`bitslice_scrubbed`, `RISCV64.Scrub.verifiedScrubbedSelT`).
+caller-saved registers (`bitslice_scrubbed`, `RISCV64.Scrub.verifiedScrubbedSel`).
 -/
 
 @[expose] public section
@@ -483,7 +483,7 @@ constant time and returns without secret residue: the theorem its registration b
 theorem bitslice_scrubbed [Proof.Gcm.RISCV64.PrepLaw] :
     VerifiedScrubbed target Impl.AesGcm.RISCV64.Fn.bitslice
       (Spec.Gcm.bitsliceContract RISCV64.abi 2048) 0 :=
-  verifiedScrubbedSelT (api := Spec.Gcm.bitsliceApi) (W := 2048)
+  verifiedScrubbedSel (api := Spec.Gcm.bitsliceApi) (W := 2048)
     { code := Impl.StackScratch.RISCV64.withStackScratch 2048 .a2 Impl.AesGcm.RISCV64.Bitslice.bitslice
       verified := bitslice_framed }
     [(2048, [(0, 256)])] [] bitsliceOut (by lit_decide) (hbp_nil _) ⟨_, by taint_decide_ct⟩

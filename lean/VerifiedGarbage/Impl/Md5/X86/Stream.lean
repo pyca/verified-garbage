@@ -57,7 +57,7 @@ frame, then the clearing of the registers a callee may change
 (`Impl.Scrub.X86.scrub 0`); `update` and `finalize`, in a frame of their own
 (`withStackScratch`), then the zeroing of the `W` bytes of stack below `esp`
 that they and the compression function use and that clearing
-(`Impl.Scrub.X86.scrubF 0 W`), so that each returns without secret residue. -/
+(`Impl.Scrub.X86.scrubAll 0 W`), so that each returns without secret residue. -/
 
 namespace VG.Impl.Md5.X86.Fn
 
@@ -68,10 +68,10 @@ def init : Prog isa := Impl.Scrub.X86.scrub 0 Stream.init
 
 /-- `vg_md5_update`, as emitted. -/
 def update : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 160 (Impl.StackScratch.X86.withStackScratch 140 5 Stream.update)
+  Impl.Scrub.X86.scrubAll 0 160 (Impl.StackScratch.X86.withStackScratch 140 5 Stream.update)
 
 /-- `vg_md5_finalize`, as emitted. -/
 def finalize : Prog isa :=
-  Impl.Scrub.X86.scrubF 0 156 (Impl.StackScratch.X86.withStackScratch 136 4 Stream.finalize)
+  Impl.Scrub.X86.scrubAll 0 156 (Impl.StackScratch.X86.withStackScratch 136 4 Stream.finalize)
 
 end VG.Impl.Md5.X86.Fn

@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.TableSat
-public import VerifiedGarbage.Proof.Framework.X86.ScrubFn
+public import VerifiedGarbage.Proof.Framework.X86.ScrubProved
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.X86Fn
 import VerifiedGarbage.Proof.BrainpoolP320r1.X86.Law
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
@@ -115,7 +115,7 @@ theorem brainpoolp320r1T_scrub (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve)
 
 /-- `vg_ecdsa_brainpoolp320r1_sign` as emitted (`Impl.Ecdsa.X86.Fn.signBrainpoolP320r1`), with
 the tables of every HMAC implementation, meets its contract in constant time and returns without
-secret residue (`X86.Scrub.verifiedScrubbedF`). -/
+secret residue (`X86.Scrub.verifiedScrubbedAll`). -/
 theorem brainpoolp320r1Sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve)
     (hv : OK (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants) ∧
       "VG_BRAINPOOLP320R1_COMB" ∉ Proof.HmacTable.X86.names
@@ -124,7 +124,7 @@ theorem brainpoolp320r1Sign_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.
       (Impl.Ecdsa.X86.Fn.signBrainpoolP320r1 (Proof.HmacTable.X86.fnsOf (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants)))
       (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1 Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts
         (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants)) 32 :=
-  X86.Scrub.verifiedScrubbedF (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi)
+  X86.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi)
     { tables := [("hmac", Proof.HmacTable.X86.tables
         (Proof.HmacTable.X86.vars Proof.Variants.Sha1.X86.variants Proof.Variants.Sha256.X86.variants))]
       code := signCodeT (brainpoolp320r1 hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1.tries

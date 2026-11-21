@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Rc2.AArch64.Fn
 public meta import VerifiedGarbage.Impl.Rc2.AArch64.Fn
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Impl.Residue.AArch64
-public meta import VerifiedGarbage.Impl.Residue.AArch64
+public import VerifiedGarbage.Impl.Scrub.AArch64
+public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public meta import VerifiedGarbage.Proof.Framework.AArch64.ResidueWin
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Chained
@@ -36,7 +36,7 @@ both runs on return, so they need no clearing of the stack
 
 namespace VG.Proof.Rc2.AArch64.CbcResidue
 
-open VG VG.AArch64 VG.Impl.Residue.AArch64 VG.AArch64.RTaintG
+open VG VG.AArch64 VG.Impl.Scrub.AArch64 VG.AArch64.RTaintG
 
 /-- `vg_rc2_cbc_encrypt_chained`. -/
 abbrev cbcEncryptChainedCode : Prog isa := Impl.Rc2.AArch64.Fn.cbcEncryptChained

@@ -5,28 +5,30 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ScrubSide
 public import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
-# Scrubbed code registered with its facts proved (AArch64)
+# The cleanup's theorems (AArch64)
 
-`scrubAllOf`: what `ScrubAll.withScrubAll` registers, with nothing left for
-the emitter to work out. The registers the tail clears are an argument (a
-literal at the call site), and what the scrub needs of the code is one
-Boolean (`scrubSide`) whose proof the call site gives, checked by the kernel
-when its module is built: the registration is a record whose code is
-`scrubAll` of literals and the code, and evaluating it inspects no code.
+The theorems a registration binds (`verified := .scrubbed …`), about a
+function's code as emitted, its body and then its cleanup
+(`Impl.Scrub.AArch64.scrubAll W rb cl`): `verifiedScrubbedAll`, with the
+registers it clears stated, and `verifiedScrubbedOf`, with them read off the
+code. What the cleanup needs of the code is one Boolean (`scrubSide`), which
+the proof module gives by `lit_decide`, so the kernel checks it when that
+module is built.
 -/
 
 @[expose] public section
 
-namespace VG.AArch64.ScrubAll
+namespace VG.AArch64.Scrub
 
-open VG.Impl.Residue.AArch64
+open VG.Impl.Scrub.AArch64
 
 theorem wf_of_wfB {cl : Clear} (h : wfB cl = true) : cl.WF := by
   simp only [wfB, Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem] at h
   exact ⟨h.1.1, h.1.2, h.2⟩
 
-/-- What `scrubAllOf` needs of code `c` run by `scrubAll W rb cl`, with the
-tables `ts`: `withScrubAll`'s conditions, and that `cl` is a `Clear` that has
+/-- What `verifiedScrubbedAll` needs of code `c` run by `scrubAll W rb cl`,
+with the tables `ts`: conditions on its stack, its instructions and its
+calls, and that `cl` is a `Clear` that has
 every register `c` (callees included) may write, the link registers among
 them if `c` calls. One pass over the instructions, with the registers as bit
 masks (`RegSet`); only the kernel evaluates it (`Code.allInstrs`). -/
@@ -72,62 +74,13 @@ theorem keeps_of_side {c : Prog isa} {W rb : Nat} {cl : Clear} {ts : List (Strin
     rw [Code.allInstrs_eq, List.all_eq_true]
     exact fun i hi' => (hall i hi').1
 
-/-- `r`, its code run by `scrubAll` over its whole stack with the registers
-`cl` cleared, returning without secret residue: `withScrubAll`, with the
-registers the tail clears stated and what it needs of the code proved
-(`scrubSide`, which the kernel evaluates where the registration is defined)
-rather than found when the registration is evaluated. `W` and `rb` are the
-stack and the result's bits as `hok` states them, so that `hs` is stated
-with them and not with projections of `r`. -/
-def scrubAllOf {api : Api} (r : Unscrubbed api target) (cl : Clear) {W rb : Nat}
-    (hok : ScrubAllOk r.contract W rb)
-    (hs : scrubSide r.code W rb cl r.tables = true := by
-      (try dsimp only [VG.AArch64.ScrubAll.retBitsOf]); lit_decide)
-    (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl)
-    (hw : r.written = [] := by rfl) : Registration api target :=
-  have hok : ScrubAllOk r.contract r.stack (retBitsOf r) := by rw [hW, hb]; exact hok
-  have h : scrubSide r.code r.stack (retBitsOf r) cl r.tables = true := by rw [hW, hb]; exact hs
-  {
-  suffix := r.suffix
-  tables := r.tables
-  code := scrubAll r.stack (retBitsOf r) cl r.code
-  contract := r.contract
-  verified := .scrubbed <| .abi (cs := r.consts) (sig' := api.sig) (ts := r.tables) ⟨(by
-    obtain ⟨hwf, -, -, hrb⟩ := keeps_of_side h
-    rcases Nat.eq_zero_or_pos r.stack with h0 | hpos
-    · rw [h0]; exact Verified.scrubAll0 hwf r.verified hrb (h0 ▸ hok)
-    · have hs := h
-      simp only [scrubSide, Nat.pos_iff_ne_zero.mp hpos, ↓reduceIte, Bool.and_eq_true,
-        decide_eq_true_eq, beq_iff_eq] at hs
-      exact Verified.scrubAll hwf r.verified ⟨hpos, hs.1.1.1.1.1.1.1, hs.1.1.1.1.1.1.2⟩ hrb hok), by
-    obtain ⟨hwf, hkp, hdit, hrb⟩ := keeps_of_side h
-    rcases Nat.eq_zero_or_pos r.stack with h0 | hpos
-    · have hs := h
-      simp only [scrubSide, h0, ↓reduceIte, Bool.and_eq_true, beq_iff_eq] at hs
-      rw [h0]; exact noResidue_scrubAll0 hwf hkp r.verified hs.1.1.1.1 hdit hrb
-    · have hs := h
-      simp only [scrubSide, Nat.pos_iff_ne_zero.mp hpos, ↓reduceIte, Bool.and_eq_true,
-        decide_eq_true_eq, beq_iff_eq] at hs
-      exact noResidue_scrubAll hwf hkp r.verified ⟨hpos, hs.1.1.1.1.1.1.1, hs.1.1.1.1.1.1.2⟩ hok.sp
-        hs.1.1.1.1.1.2 hdit (tablesCall_syms hs.1.1.1.1.2) hrb⟩
-  consts := r.consts
-  stack := r.stack
-  ofApi := r.ofApi
-  ofSig := r.ofSig
-  spSafe := all_spSafe _
-  written := r.written
-  writtenOk := by rw [hw]; exact fun _ _ _ _ _ => True.intro
-  extra := r.extra
-  vendor := r.vendor
-  notWith := r.notWith }
-
-/-- What `scrubAllOf` proves of the code, for code verified against any
+/-- What `verifiedScrubbedAll` proves of the code, for code verified against any
 contract `k`: a caller that calls the scrubbed code by name (as
 `vg_aes_gcm_seal_gather` calls `vg_aes_gcm_seal`) proves its call against
 it. -/
 theorem Verified.scrubAllOfV {c : Prog isa} {k : Contract isa} {cl : Clear} {W rb : Nat}
     {ts : List (String × List FnTable)} (hv : Verified target c k) (hok : ScrubAllOk k W rb)
-    (h : scrubSide c W rb cl ts = true) : Verified target (VG.Impl.Residue.AArch64.scrubAll W rb cl c) k := by
+    (h : scrubSide c W rb cl ts = true) : Verified target (VG.Impl.Scrub.AArch64.scrubAll W rb cl c) k := by
   obtain ⟨hwf, -, -, hrb⟩ := keeps_of_side h
   rcases Nat.eq_zero_or_pos W with h0 | hpos
   · subst h0; exact Verified.scrubAll0 hwf hv hrb hok
@@ -136,49 +89,13 @@ theorem Verified.scrubAllOfV {c : Prog isa} {k : Contract isa} {cl : Clear} {W r
       decide_eq_true_eq, beq_iff_eq] at hs
     exact Verified.scrubAll hwf hv ⟨hpos, hs.1.1.1.1.1.1.1, hs.1.1.1.1.1.1.2⟩ hrb hok
 
-/-- `scrubAllOf` for code without frames (`scrubSide` with no stack, whose
-depth is then 0) that keeps what `r` states of `written`: `withScrubAllW`,
-with the registers the tail clears stated and what it needs of the code
-proved (`scrubSide` with no stack). -/
-def scrubAllWOf {api : Api} (r : Unscrubbed api target) (cl : Clear) {rb : Nat}
-    (hok : ScrubAllOk r.contract 0 rb)
-    (hs : scrubSide r.code 0 rb cl r.tables = true := by
-      (try dsimp only [VG.AArch64.ScrubAll.retBitsOf]); lit_decide)
-    (hb : retBitsOf r = rb := by rfl) : Registration api target :=
-  have hok : ScrubAllOk r.contract 0 (retBitsOf r) := by rw [hb]; exact hok
-  have h : scrubSide r.code 0 (retBitsOf r) cl r.tables = true := by rw [hb]; exact hs
-  have hk := keeps_of_side h
-  have hd : r.code.aarch64Depth = 0 := by
-    have hs := h
-    simp only [scrubSide, ↓reduceIte, Bool.and_eq_true, beq_iff_eq] at hs
-    exact hs.1.1.1.1
-  { suffix := r.suffix
-    tables := r.tables
-    code := scrubAll 0 (retBitsOf r) cl r.code
-    contract := r.contract
-    verified := .scrubbed <| .abi ⟨Verified.scrubAll0 hk.1 r.verified hk.2.2.2 hok,
-      noResidue_scrubAll0 hk.1 hk.2.1 r.verified hd hk.2.2.1 hk.2.2.2⟩
-    consts := r.consts
-    stack := r.stack
-    ofApi := r.ofApi
-    ofSig := r.ofSig
-    spSafe := all_spSafe _
-    written := r.written
-    writtenOk := fun s t s' hs he => by
-      obtain ⟨t', u, hc, hm⟩ := scrubAll0_mem hk.1 hk.2.2.2 he
-      exact writtenWithin_of_mem hm (r.writtenOk s t' u hs hc)
-    extra := r.extra
-    vendor := r.vendor
-    notWith := r.notWith }
-
 /-- `Clear.union`: the registers of `a` and of `b`, in `Clear.all`'s order
 (which is `Clear.of`'s). -/
 abbrev clearUnion (a b : Clear) : Clear := a.union b
 
 /-! ## The cleanup as part of the code
 
-`verifiedScrubbed` is what `scrubAllOf` registers, as a theorem about the
-code with its cleanup (`scrubAll W rb cl c`, which `Impl/` defines as the
+`verifiedScrubbedAll` is the theorem about the code with its cleanup (`scrubAll W rb cl c`, which `Impl/` defines as the
 function): the proof a registration binds (`verified := .scrubbed …`).
 `scrubSide_union` gives its side condition for a function that calls an
 implementation chosen among several, from what the function proves of its
@@ -294,20 +211,25 @@ theorem linkRegs_union {a b : Clear} (h : (linkRegs.all fun q => !(keptG a).cont
 
 /-- `r`'s code with its cleanup (`scrubAll`, over its whole stack, the
 registers `cl` cleared) meets `r`'s contract in constant time and returns
-without secret residue: what `scrubAllOf` registers, as the theorem about
-the code that a registration binds (`verified := .scrubbed …`). -/
-theorem verifiedScrubbed {api : Api} (r : Unscrubbed api target) (cl : Clear) {W rb : Nat}
+without secret residue: the theorem about the code that a registration binds
+(`verified := .scrubbed …`). -/
+theorem verifiedScrubbedAll {api : Api} (r : Unscrubbed api target) (cl : Clear) {W rb : Nat}
     (hok : ScrubAllOk r.contract W rb) (hs : scrubSide r.code W rb cl r.tables = true)
-    (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl)
-    (hw : r.written = [] := by rfl) :
+    (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl) :
     VerifiedScrubbed target (scrubAll W rb cl r.code) r.contract rb := by
-  have e : api.sig.retBits target.abi.ptrBits = retBitsOf r :=
-    (Abi.retBits_withConsts_withTables target.abi api.sig api.sig r.consts r.tables).symm
   subst hW hb
-  have h := (scrubAllOf r cl hok hs rfl rfl hw).verified
-  have hn := h.noResidue
-  rw [e] at hn
-  exact ⟨h.verified, hn⟩
+  have hv := Verified.scrubAllOfV (ts := r.tables) r.verified hok hs
+  refine ⟨hv, ?_⟩
+  obtain ⟨hwf, hkp, hdit, hrb⟩ := keeps_of_side hs
+  rcases Nat.eq_zero_or_pos r.stack with h0 | hpos
+  · have hs' := hs
+    simp only [scrubSide, h0, ↓reduceIte, Bool.and_eq_true, beq_iff_eq] at hs'
+    rw [h0]; exact noResidue_scrubAll0 hwf hkp r.verified hs'.1.1.1.1 hdit hrb
+  · have hs' := hs
+    simp only [scrubSide, Nat.pos_iff_ne_zero.mp hpos, ↓reduceIte, Bool.and_eq_true,
+      decide_eq_true_eq, beq_iff_eq] at hs'
+    exact noResidue_scrubAll hwf hkp r.verified ⟨hpos, hs'.1.1.1.1.1.1.1, hs'.1.1.1.1.1.1.2⟩ hok.sp
+      hs'.1.1.1.1.1.2 hdit (tablesCall_syms hs'.1.1.1.1.2) hrb
 
 /-- `c` with its cleanup over `W` bytes of stack, the registers it may write
 cleared (`Clear.of`, read off the code), meets `c`'s contract in constant
@@ -356,7 +278,7 @@ theorem sideAll_scrubAll {W rb : Nat} {cl : Clear} {c : Prog isa}
   have hbody : sideAll (fun i => !i.writesDit) (withRet rb (.seq c (.block (clearsOf cl)))) = true := by
     simp only [withRet, sideAll, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true]
     exact ⟨⟨hc, hcl⟩, hr⟩
-  unfold scrubAll withScrubG
+  unfold scrubAll scrubSel
   split
   · exact hbody
   · simp only [sideAll, scrubTailG, Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true, hbody,
@@ -370,4 +292,4 @@ theorem sideAll_scrubAll {W rb : Nat} {cl : Clear} {c : Prog isa}
     obtain ⟨k, -, rfl⟩ := hi
     rfl
 
-end VG.AArch64.ScrubAll
+end VG.AArch64.Scrub

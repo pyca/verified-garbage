@@ -22,7 +22,7 @@ implementation of the keystream it calls (`Fn.apply`).
 
 namespace VG.Proof.ChaCha20.AArch64.Stream.Scrub
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.ChaCha20
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.ChaCha20
 
 theorem applyOk (W : Nat) :
     ScrubAllOk (applyContract abi W) W (applySig.retBits abi.ptrBits) :=
@@ -76,11 +76,11 @@ meets its contract in constant time and returns without secret residue. -/
 
 namespace VG.Proof.ChaCha20.AArch64.Fn
 
-open VG.AArch64 VG.AArch64.ScrubAll VG.Spec.ChaCha20
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.ChaCha20
 
 theorem apply (v : Proof.ChaCha20.AArch64.XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20.AArch64.Fn.apply v.callee) (applyContract abi 0) 32 :=
-  verifiedScrubbed (api := applyApi)
+  verifiedScrubbedAll (api := applyApi)
     { code := Impl.ChaCha20.AArch64.Stream.apply v.callee,
       verified := Proof.ChaCha20.AArch64.Stream.apply_verified v }
     _ (Stream.Scrub.applyOk 0) (Stream.Scrub.apply_side v)

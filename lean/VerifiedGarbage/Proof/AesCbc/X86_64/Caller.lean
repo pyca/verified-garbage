@@ -19,8 +19,6 @@ def hardware (v : BlocksImpl) : Bool :=
 def encrypt (v : BlocksImpl) : Prog isa :=
   if hardware v then Impl.AesCbc.X86_64.Encrypt.encrypt else Impl.AesCbc.X86_64.encrypt v.enc
 
-def encFeatures (v : BlocksImpl) : List String := if hardware v then ["aes"] else v.features
-
 theorem verified (v : BlocksImpl) :
     Verified X86_64.target (encrypt v) (Proof.AesCbc.encryptRoundsContract X86_64.abi 8) := by
   unfold encrypt
@@ -70,9 +68,6 @@ def vaes (v : BlocksImpl) : Bool := v.dec.name == "vg_aes_decrypt_blocks_vaes"
 def decrypt (v : BlocksImpl) : Prog isa :=
   if vaes v then Impl.AesCbc.X86_64.VaesDecrypt.decrypt
   else if hardware v then Impl.AesCbc.X86_64.Decrypt.decrypt else Impl.AesCbc.X86_64.decrypt v.dec
-
-def decFeatures (v : BlocksImpl) : List String :=
-  if vaes v then ["aes","avx","avx2","vaes"] else if hardware v then ["aes"] else v.features
 
 theorem decryptVerified (v : BlocksImpl) :
     Verified X86_64.target (decrypt v) (Proof.AesCbc.decryptRoundsContract X86_64.abi 8) := by
