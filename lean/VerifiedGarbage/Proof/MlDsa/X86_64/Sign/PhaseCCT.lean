@@ -958,7 +958,7 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 section
-variable {p : Params} {D : Nat}
+variable {p : Params} {D : Nat} {SL : List String}
 
 theorem lrel_rbx {x y : State} (h : LRel D SL (sgR p) (sgW p) x y) : ∀ r ∈ [Reg.rbx], x.gpr r = y.gpr r := by
   intro r hr

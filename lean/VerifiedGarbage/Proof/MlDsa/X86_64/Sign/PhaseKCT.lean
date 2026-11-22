@@ -907,7 +907,7 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 section
-variable {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params}
+variable {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D) {p : Params}
 include hP
 
 theorem normAt_post {s : State} (L : Lay D SL (sgR p) (sgW p) s) {f : Ptr} {B : Nat} (hB : B < 2 ^ 32)

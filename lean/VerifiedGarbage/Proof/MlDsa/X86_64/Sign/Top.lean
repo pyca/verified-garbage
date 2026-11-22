@@ -327,7 +327,7 @@ structure Top (σ s : State) : Prop where
   flag : s.mem.readW (pa s (sc oFL)) 64 = σ.gpr .r9
 
 section
-variable {p : Params} {D : Nat} {σ : State} (hp : (signK p D).pre σ)
+variable {p : Params} {D : Nat} {SL : List String} {σ : State} (hp : (signK p D).pre σ)
 include hp
 
 /-- The layout with the first `L` bytes of the key at `rbp`. -/

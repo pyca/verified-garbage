@@ -82,7 +82,7 @@ abbrev bitsC (Q : Nat → Poly → Mem → Addr → Prop) (S : Nat) : Contract i
     (stack := S)
 
 theorem bitsPre {Q : Nat → Poly → Mem → Addr → Prop} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State}
-    (A : At D rbs wbs s s1) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
+    (A : At D SL rbs wbs s s1) {r out : Ptr} {γ : Nat} (hγ : γ ∈ gamma2s)
     (hc : rwChk (rbs ++ wbs) wbs r 1024 out 1024 = true) (hA : ArgsIn [.ptr r, .imm γ, .ptr out] s s1)
     (hr : Reduced s.mem (pa s r)) :
     (bitsC Q S).pre (s1.callEntry.withRegions [pR (pa s r)] [pR (pa s out)]) := by
@@ -166,7 +166,7 @@ theorem lowBitsAt_tr {P : Prims} (hP : PrimsOk P D) {r out : Ptr} {γ : Nat} (h�
 def normChk (bs : List (Reg × Nat)) (f : Ptr) : Bool :=
   inB bs f 1024 && decide (f.1 ∈ bases) && decide (f.2 < 2 ^ 31)
 
-theorem normPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {f : Ptr} {B : Nat}
+theorem normPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {f : Ptr} {B : Nat}
     (hc : normChk (rbs ++ wbs) f = true) (hA : ArgsIn [.ptr f, .imm B] s s1)
     (hr : Reduced s.mem (pa s f)) :
     (normLtContract X86_64.abi S).pre (s1.callEntry.withRegions [pR (pa s f)] []) := by
@@ -247,7 +247,7 @@ theorem hintArgs_ok {bs : List (Reg × Nat)} {z r h : Ptr} {γ : Nat} (hγ : γ 
   simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, b3, o3, decide_true, Bool.and_true,
     decide_eq_true (gamma2_lt hγ)]
 
-theorem hintPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {z r h : Ptr} {γ : Nat}
+theorem hintPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {z r h : Ptr} {γ : Nat}
     (hγ : γ ∈ gamma2s) (hc : hintChk (rbs ++ wbs) wbs z r h = true)
     (hA : ArgsIn [.ptr z, .ptr r, .imm γ, .ptr h] s s1) (rz : Reduced s.mem (pa s z))
     (rr : Reduced s.mem (pa s r)) :
@@ -344,7 +344,7 @@ theorem sbpArgs_ok {bs : List (Reg × Nat)} {f out : Ptr} {b len : Nat} (hb : b 
   simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, decide_true, Bool.and_true,
     decide_eq_true hb, decide_eq_true hl]
 
-theorem sbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {f out : Ptr} {b len : Nat}
+theorem sbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {f out : Ptr} {b len : Nat}
     (hb : b ∈ simpleBitPackBounds) (hl : len = 32 * bitlen b) (hc : rwChk (rbs ++ wbs) wbs f 1024 out len = true)
     (hA : ArgsIn [.ptr f, .imm b, .ptr out, .imm len] s s1)
     (hle : ∀ i < 256, (coeffAt s.mem (pa s f) i).toNat ≤ b) :
@@ -425,7 +425,7 @@ theorem bpArgs_ok {bs : List (Reg × Nat)} {f out : Ptr} {a b len : Nat} (ha : a
 def InRange (m : Mem) (p : Addr) (a b : Nat) : Prop :=
   ∀ i < 256, -(a : Int) ≤ modPm (coeffAt m p i).toNat q ∧ modPm (coeffAt m p i).toNat q ≤ b
 
-theorem bpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {f out : Ptr} {a b len : Nat}
+theorem bpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {f out : Ptr} {a b len : Nat}
     (hp : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hc : rwChk (rbs ++ wbs) wbs f 1024 out len = true)
     (hA : ArgsIn [.ptr f, .imm a, .imm b, .ptr out, .imm len] s s1) (hr : Reduced s.mem (pa s f))
     (hrg : InRange s.mem (pa s f) a b) :
@@ -494,7 +494,7 @@ theorem bupArgs_ok {bs : List (Reg × Nat)} {v f : Ptr} {a b len : Nat} (ha : a 
   simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, decide_true, Bool.and_true,
     decide_eq_true ha, decide_eq_true hb, decide_eq_true hl]
 
-theorem bupPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {v f : Ptr} {a b len : Nat}
+theorem bupPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {v f : Ptr} {a b len : Nat}
     (hp : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hc : rwChk (rbs ++ wbs) wbs v len f 1024 = true)
     (hA : ArgsIn [.ptr v, .imm len, .imm a, .imm b, .ptr f] s s1) :
     (bitUnpackContract X86_64.abi S).pre (s1.callEntry.withRegions [⟨pa s v, len⟩] [pR (pa s f)]) := by
@@ -564,7 +564,7 @@ theorem hintParams_lt {ω k : Nat} (h : (ω, k) ∈ hintParams) : ω < 2 ^ 32 �
   simp only [hintParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
-theorem hbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {h y : Ptr} {ω k : Nat}
+theorem hbpPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {h y : Ptr} {ω k : Nat}
     (hp : (ω, k) ∈ hintParams) (hc : rwChk (rbs ++ wbs) wbs h (256 * k * 4) y (ω + k) = true)
     (hA : ArgsIn [.ptr h, .imm (256 * k), .imm ω, .ptr y, .imm (ω + k)] s s1)
     (hones : hintOnes (hintAt s.mem (pa s h) k) ≤ ω) :
@@ -779,7 +779,7 @@ theorem dChk_spec {p : Params} (hc : dChk p = true) :
 theorem sLen_eq (p : Params) : sLen p = 32 * bitlen (p.η + p.η) := by rw [← Nat.two_mul]
 
 section
-variable {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : dChk p = true) {σ : State}
+variable {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D) {p : Params} (hc : dChk p = true) {σ : State}
 include hP hc
 
 theorem decS1_ok {r : Nat} (hr : r < p.ℓ) {s : State} (hs : ID p D σ r 0 0 s) :
@@ -989,7 +989,7 @@ def RR (p : Params) (D : Nat) (I E : State → State → Prop) (x y : State) : P
   Rel2 (signK p D).pre (signK p D).pub I x y ∧ E x y
 
 section
-variable {p : Params} {D : Nat}
+variable {p : Params} {D : Nat} {SL : List String}
 
 theorem relInvE {I J E E' : State → State → Prop} {c : Prog isa}
     (hw : ∀ σ s, (signK p D).pre σ → I σ s → WP isa c s (J σ))
@@ -1058,7 +1058,7 @@ def RS (p : Params) (D : Nat) (E I : State → State → Prop) (x y : State) : P
   ∃ σ₁ σ₂, (signK p D).pre σ₁ ∧ (signK p D).pre σ₂ ∧ (signK p D).pub σ₁ σ₂ ∧ E σ₁ σ₂ ∧ I σ₁ x ∧ I σ₂ y
 
 section
-variable {p : Params} {D : Nat}
+variable {p : Params} {D : Nat} {SL : List String}
 
 theorem lrel_of {σ₁ σ₂ x y : State} (hpub : (signK p D).pub σ₁ σ₂) (S₁ : St p D σ₁ x) (S₂ : St p D σ₂ y) :
     LRel D SL (sgR p) (sgW p) x y := by

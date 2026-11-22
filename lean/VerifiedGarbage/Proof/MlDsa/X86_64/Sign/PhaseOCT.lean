@@ -459,7 +459,7 @@ end
 /-! ## Pieces from runs related through their entry states -/
 
 section
-variable {p : Params} {D : Nat}
+variable {p : Params} {D : Nat} {SL : List String}
 
 /-- A piece that takes each run from `I` to `J` (and `s` to `s'` with `F s s'`), and leaks the same from runs
 related by `RS p D E I` and `G`, with `Q₀` of the final states. -/
@@ -517,7 +517,7 @@ abbrev IX (p : Params) (D : Nat) (t : Nat) (x y : State) : Prop :=
     (x.zf = some true → OX p D x y)
 
 section
-variable {p : Params} {D : Nat}
+variable {p : Params} {D : Nat} {SL : List String}
 
 theorem endPF_tr (hp : ParamsOk p) (hc : lChk p = true) {t : Nat} :
     RelCT isa (fun x y => RS p D (LeakEq p t) (fun σ s => EP p D σ t s ∨ EF p D σ t s) x y ∧ True)
@@ -760,7 +760,7 @@ abbrev sigV (p : Params) (σ : State) (κ : Nat) : List Byte :=
   sigOf p (CTv p σ κ, (List.range p.ℓ).map (Zv p σ κ), (List.range p.k).map (Hv p σ κ))
 
 section
-variable {P : Prims} {D : Nat} (hPO : PrimsOk P D) {p : Params} (hc : oChk p = true) {σ : State} {κ : Nat}
+variable {P : Prims} {D : Nat} {SL : List String} (hPO : PrimsOk P D) {p : Params} (hc : oChk p = true) {σ : State} {κ : Nat}
 include hc
 
 omit hPO in
@@ -1090,7 +1090,7 @@ def IOr (p : Params) (D : Nat) (r : Nat) (σ s : State) : Prop := ∃ κ, OS p D
 abbrev HJ (p : Params) (x y : State) : Prop := ∃ f, HFam x 5 p.k f ∧ HFam y 5 p.k f
 
 section
-variable {p : Params} {D : Nat}
+variable {p : Params} {D : Nat} {SL : List String}
 
 theorem IOr.zr {r' : Nat} {σ s : State} (h : IOr p D r' σ s) {r : Nat} (hr : r < p.ℓ) :
     Reduced s.mem (pa s (yP p r)) ∧ InRange s.mem (pa s (yP p r)) (p.γ₁ - 1) p.γ₁ := by

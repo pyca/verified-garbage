@@ -85,16 +85,16 @@ theorem toNat64 {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 64 v).toNat = v := by
 
 /-- The setting of a call from a state in a layout: the stack pointer and
 memory as they were, and the layout. -/
-structure At (D : Nat) (rbs wbs : List (Reg × Nat)) (s s1 : State) : Prop where
+structure At (D : Nat) (SL : List String) (rbs wbs : List (Reg × Nat)) (s s1 : State) : Prop where
   L : Lay D SL rbs wbs s
   mem : s1.mem = s.mem
   rsp : s1.gpr .rsp = s.gpr .rsp
 
 theorem At.of {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s1 : State} (L : Lay D SL rbs wbs s) (hm : s1.mem = s.mem)
-    (k : Keep argRegs s s1) : At D rbs wbs s s1 := ⟨L, hm, k.gpr (by decide)⟩
+    (k : Keep argRegs s s1) : At D SL rbs wbs s s1 := ⟨L, hm, k.gpr (by decide)⟩
 
 section
-variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s1 : State} (A : At D rbs wbs s s1)
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s1 : State} (A : At D SL rbs wbs s s1)
 include A
 
 theorem At.ret {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) (hD : 8 ≤ D) :
@@ -169,7 +169,7 @@ end
 /-! ## `NTT` and `NTT⁻¹` in place -/
 
 section
-variable {P : Prims} {D : Nat} {rbs wbs : List (Reg × Nat)}
+variable {P : Prims} {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)}
 
 /-- What a call of an in-place transformation of `f` needs of the layout. -/
 def ipChk (bs wbs : List (Reg × Nat)) (f : Ptr) : Bool :=
@@ -182,7 +182,7 @@ theorem ipChk_spec {bs wbs : List (Reg × Nat)} {f : Ptr} (h : ipChk bs wbs f = 
   simp only [ipChk, Bool.and_eq_true, decide_eq_true_eq] at h
   exact ⟨h.1.1.1.1.1.1, h.1.1.1.1.1.2, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
-theorem ipPre {t : Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {f : Ptr}
+theorem ipPre {t : Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {f : Ptr}
     (hc : ipChk (rbs ++ wbs) wbs f = true) (hA : ArgsIn [.ptr f, .ptr (sc oPS)] s s1)
     (hr : Reduced s.mem (pa s f)) :
     (inPlaceContract X86_64.abi t S).pre (s1.callEntry.withRegions [] [pR (pa s f), pR (pa s (sc oPS))]) := by
@@ -252,7 +252,7 @@ theorem mulChk_spec {bs wbs : List (Reg × Nat)} {h f g : Ptr} (hc : mulChk bs w
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩ := hc
   exact ⟨h1, h2, h3, h4, h5, h6, by simp [Arg.ok, h7, h8, h9, h10, h11, h12]⟩
 
-theorem mulPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {h f g : Ptr}
+theorem mulPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {h f g : Ptr}
     (hc : mulChk (rbs ++ wbs) wbs h f g = true) (hA : ArgsIn [.ptr h, .ptr f, .ptr g] s s1)
     (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
     (productContract P.montgomery X86_64.abi S).pre (s1.callEntry.withRegions [pR (pa s f), pR (pa s g)] [pR (pa s h)]) := by
@@ -336,7 +336,7 @@ theorem dotChk_spec {bs wbs : List (Reg × Nat)} {h f g : Ptr} {c : Nat} (hc : d
   have := List.all_eq_true.mp h12 j (List.mem_range.mpr hj)
   simpa only [Bool.and_eq_true] using this
 
-theorem dotPre {c S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {h f g : Ptr}
+theorem dotPre {c S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {h f g : Ptr}
     (hc : dotChk (rbs ++ wbs) wbs h f g c = true) (hA : ArgsIn [.ptr h, .ptr f, .ptr g, .ptr (sc oPS)] s s1)
     (rf : ∀ j < c, Reduced s.mem (pa s (famP f j))) (rg : ∀ j < c, Reduced s.mem (pa s (famP g j))) :
     (dotInverseContract c X86_64.abi S).pre (s1.callEntry.withRegions [⟨pa s f, c * 256 * 4⟩, ⟨pa s g, c * 256 * 4⟩]

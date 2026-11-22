@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.ICall
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
@@ -676,6 +677,43 @@ theorem glueCall_tr {glue : List Instr} {n : String} {c : Prog isa} {k : Contrac
       fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩)
     (RelCT.callEx hv hct fun x1 y1 ⟨x, y, hp, h1, h2⟩ => hP x y x1 y1 hp h1 h2)
 
+/-- Two runs of moves that access no memory, then the indirect call
+through `m` of `n`, are two runs of the moves then the call of `n`, where
+the moves end in each run with `n`'s address at `m`, the same address in
+both runs and the same address of `n`. -/
+theorem RelCT.seq_callm {g : List Instr} {m : MemOp} {n : String} {c : Prog isa}
+    {P Q : State → State → Prop} (hgn : ∀ i ∈ g, ∀ s, isa.addrs i s = [])
+    (hs : ∀ x y tx x1 ty y1, P x y → Exec isa (.block g) x tx x1 → Exec isa (.block g) y ty y1 →
+      x1.ea m = y1.ea m ∧ x1.load64 (x1.ea m) = some (x1.syms n) ∧
+        y1.load64 (y1.ea m) = some (y1.syms n) ∧ x1.syms n = y1.syms n)
+    (h : RelCT isa P (.seq (.block g) (.call n c)) Q) :
+    RelCT isa P (.seq (.block g) (Code.icalls (.callm m) [(n, c)])) Q := by
+  intro x y t₁ t₂ x' y' hp e₁ e₂
+  cases e₁ with
+  | seq ex1 ex2 =>
+  cases e₂ with
+  | seq ey1 ey2 =>
+  obtain ⟨hea, hx, hy, hsy⟩ := hs _ _ _ _ _ _ hp ex1 ey1
+  obtain ⟨a₁, n₁, b₁, u₁, v₁, w₁, hi₁, hf₁, hc₁, hb₁, hr₁, rfl⟩ := Exec.icalls_inv ex2
+  obtain ⟨a₂, n₂, b₂, u₂, v₂, w₂, hi₂, hf₂, hc₂, hb₂, hr₂, rfl⟩ := Exec.icalls_inv ey2
+  have hx' : isa.icall (.callm m) _ = some _ := hx
+  have hy' : isa.icall (.callm m) _ = some _ := hy
+  obtain rfl := Option.some.inj (hi₁.symm.trans hx')
+  obtain rfl := Option.some.inj (hi₂.symm.trans hy')
+  simp only [icallTarget, List.find?_cons, List.find?_nil] at hf₁ hf₂
+  split at hf₁ <;> [skip; cases hf₁]
+  split at hf₂ <;> [skip; cases hf₂]
+  obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hf₁)
+  obtain ⟨rfl, rfl⟩ := Prod.mk.inj (Option.some.inj hf₂)
+  obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq ex1 (.call hc₁ hb₁ hr₁)) (.seq ey1 (.call hc₂ hb₂ hr₂))
+  refine ⟨?_, hq⟩
+  rw [Exec.block_iff] at ex1 ey1
+  rw [execBlock_nomem hgn ex1, execBlock_nomem hgn ey1] at ht ⊢
+  simp only [List.nil_append] at ht ⊢
+  simp only [icallTrace, hsy, ht]
+  show [Leak.addr _] ++ _ = [Leak.addr _] ++ _
+  rw [hea]
+
 /-- A call of verified code whose result is public in its own runs, narrowed
 in each run to regions of its own: the same trace, and the same result. -/
 theorem RelCT.callRet {n : String} {c : Prog isa} {k : Contract isa}
@@ -890,6 +928,54 @@ theorem callP_ok {D : Nat} {n : String} {c : Prog isa} {k : Contract isa}
       ∃ s1, ArgsIn as s s1 ∧ s1.mem = s.mem ∧ Keep argRegs s s1 ∧ ∃ s₂ : State, s₂.mem = s'.mem ∧
         (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧ k.post (s1.callEntry.withRegions rd wr) s₂ :=
   glueCall_ok hv hsp hd hD (setArgs_ok as ha s) hpre hc hw
+
+/-- The moves of a call's arguments, then the indirect call through `m` of
+`n`, runs as the moves then the call of `n`, where every run of the moves
+ends with `n`'s address at `m`. -/
+theorem WP.seq_callm {g : List Instr} {m : MemOp} {n : String} {c : Prog isa} {s : State}
+    {Q : State → Prop} (hg : WP isa (.block g) s fun s1 => s1.load64 (s1.ea m) = some (s1.syms n))
+    (h : WP isa (.seq (.block g) (.call n c)) s Q) :
+    WP isa (.seq (.block g) (Code.icalls (.callm m) [(n, c)])) s Q := by
+  obtain ⟨_, _, e, hq⟩ := h
+  cases e with
+  | seq e1 e2 =>
+    obtain ⟨_, _, e1', hs1⟩ := hg
+    obtain ⟨-, rfl⟩ := Exec.det e1' e1
+    obtain ⟨_, _, e2', hq'⟩ := callm_ok hs1 ⟨_, _, e2, hq⟩
+    exact ⟨_, _, .seq e1 e2', hq'⟩
+
+/-- `n`'s address is at the word `slotM i` of a state in a layout whose
+`i`-th callee is `n`, after moves that keep `rsp`, the memory and the regions. -/
+theorem slot_load {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s1 : State}
+    (L : Lay D SL rbs wbs s) {i : Nat} {n : String} (hn : SL[i]? = some n) (hm : s1.mem = s.mem)
+    (k : Keep argRegs s s1) (hy : s1.syms = s.syms) :
+    s1.load64 (s1.ea (slotM i)) = some (s1.syms n) := by
+  obtain ⟨hi, rfl⟩ := List.getElem?_eq_some_iff.mp hn
+  have hl := L.slots i hi
+  have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
+  have he : s1.ea (slotM i) = s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i) := by
+    simp only [State.ea, slotM, Impl.MlKem.X86_64.at_, hsp]
+    congr 1
+  simp only [he, State.load64, hm, k.2.1, k.2.2, hy] at hl ⊢
+  exact hl
+
+/-- `callP_ok` for `callV`: the call by the word `slotM i` runs as the call,
+where the layout's `i`-th callee is `n`. -/
+theorem callV_ok {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {v : Bool} {i : Nat}
+    {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hsp : NoSp c) (hd : 8 * (c.depth + 1) ≤ D) (hD : D < 2 ^ 32) {as : List Arg} (ha : as.all Arg.ok = true)
+    {s : State} (L : Lay D SL rbs wbs s) (hsl : v = true → SL[i]? = some n) {rd wr : List Region}
+    (hpre : ∀ s1, ArgsIn as s s1 → s1.mem = s.mem → Keep argRegs s s1 → k.pre (s1.callEntry.withRegions rd wr))
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) :
+    WP isa (callV v i n c as) s fun s' => PostB D s s' wr ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+      ∃ s1, ArgsIn as s s1 ∧ s1.mem = s.mem ∧ Keep argRegs s s1 ∧ ∃ s₂ : State, s₂.mem = s'.mem ∧
+        (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧ k.post (s1.callEntry.withRegions rd wr) s₂ := by
+  cases v with
+  | false => exact callP_ok hv hsp hd hD ha hpre hc hw
+  | true =>
+    exact WP.seq_callm (WP.mono_syms (setArgs_ok as ha s) fun s1 ⟨⟨_, hm⟩, k1⟩ hy =>
+      slot_load L (hsl rfl) hm k1 hy) (callP_ok hv hsp hd hD ha hpre hc hw)
 
 theorem callP_tr {n : String} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')

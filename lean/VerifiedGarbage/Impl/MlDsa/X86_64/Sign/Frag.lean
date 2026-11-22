@@ -274,6 +274,23 @@ def bitUnpackAt (v : Ptr) (len a b : Nat) (f : Ptr) : Prog isa :=
 def hintBitPackAt (h : Ptr) (hlen omega : Nat) (y : Ptr) (len : Nat) : Prog isa :=
   callP "vg_mldsa_hint_bit_pack" P.hintBitPack [.ptr h, .imm hlen, .imm omega, .ptr y, .imm len]
 
+/-- The variant callees the body calls by their words when `viaSlots`
+(`callV`), in the order of their words, for `ℓ` the number of products of
+each dot product (`dotInvAt`). -/
+def slotNames (ℓ : Nat) : List String :=
+  ["vg_mldsa_ntt" ++ P.asfx,
+    (if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.asfx,
+    dotInvName ℓ ++ P.asfx,
+    (if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.asfx,
+    "vg_mldsa_add" ++ P.asfx, "vg_mldsa_sub" ++ P.asfx,
+    "vg_mldsa_rej_ntt_poly4" ++ P.sfx, "vg_mldsa_expand_mask_poly4" ++ P.sfx,
+    "vg_mldsa_high_bits" ++ P.asfx, "vg_mldsa_low_bits" ++ P.asfx, "vg_mldsa_norm_lt" ++ P.asfx,
+    "vg_mldsa_make_hint" ++ P.asfx]
+
+/-- The callees in the words above the return address: `slotNames` if
+`viaSlots`, else none. -/
+def slotsOf (ℓ : Nat) : List String := if P.viaSlots then slotNames P ℓ else []
+
 end
 
 /-! ## Branches, entry and exit -/

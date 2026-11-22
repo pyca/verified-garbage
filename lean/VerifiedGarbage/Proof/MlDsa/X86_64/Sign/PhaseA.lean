@@ -70,7 +70,7 @@ theorem accChk_spec {bs wbs : List (Reg × Nat)} {f g : Ptr} (hc : accChk bs wbs
   obtain ⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩ := hc
   exact ⟨h1, h2, h3, h4, by simp [Arg.ok, h5, h6, h7, h8]⟩
 
-theorem accPre {t : Poly → Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1)
+theorem accPre {t : Poly → Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1)
     {f g : Ptr} (hc : accChk (rbs ++ wbs) wbs f g = true) (hA : ArgsIn [.ptr f, .ptr g] s s1)
     (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
     (accC t S).pre (s1.callEntry.withRegions [pR (pa s g)] [pR (pa s f)]) := by
@@ -163,7 +163,7 @@ theorem rejChk_spec {bs wbs : List (Reg × Nat)} {a : Ptr} (hc : rejChk bs wbs a
   simp only [List.all_cons, List.all_nil, Arg.ok, h9, h10, decide_true, Bool.and_true]
   decide
 
-theorem rejPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {a : Ptr}
+theorem rejPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {a : Ptr}
     (hc : rejChk (rbs ++ wbs) wbs a = true) (hA : ArgsIn [.ptr (sc oRS), .ptr a, .ptr (sc oPS)] s s1) :
     (rejNTTContract X86_64.abi S).pre
       (s1.callEntry.withRegions [⟨pa s (sc oRS), 34⟩] [pR (pa s a), ⟨pa s (sc oPS), 2048⟩]) := by
@@ -246,7 +246,7 @@ theorem rej4Chk_spec {bs wbs : List (Reg × Nat)} {a w : Ptr} (hc : rej4Chk bs w
   simp only [List.all_cons, List.all_nil, Arg.ok, h9, h10, h11, h12, decide_true, Bool.and_true]
   decide
 
-theorem rej4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {a w : Ptr}
+theorem rej4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {a w : Ptr}
     (hc : rej4Chk (rbs ++ wbs) wbs a w = true) (hA : ArgsIn [.ptr (sc oRS4), .ptr a, .ptr w] s s1) :
     (rejNTT4Contract X86_64.abi S).pre
       (s1.callEntry.withRegions [⟨pa s (sc oRS4), 136⟩] [⟨pa s a, 4096⟩, ⟨pa s w, 8192⟩]) := by
@@ -264,7 +264,7 @@ theorem rej4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s 
   exact ⟨A.stk hS i1, A.stk hS i2, A.stk hS i3⟩
 
 /-- The seeds on entry to the call are those before it. -/
-theorem At.seeds4 {s s1 : State} (A : At D rbs wbs s s1) (hi : inB (rbs ++ wbs) (sc oRS4) 136 = true) (hD : 8 ≤ D)
+theorem At.seeds4 {s s1 : State} (A : At D SL rbs wbs s s1) (hi : inB (rbs ++ wbs) (sc oRS4) 136 = true) (hD : 8 ≤ D)
     {k : Nat} (hk : k < 4) :
     seed4 (s1.mem.writeW (s1.gpr .rsp - 8) (s1.unknowns 0)) (pa s (sc oRS4)) k = seed4 s.mem (pa s (sc oRS4)) k := by
   unfold seed4
@@ -342,7 +342,7 @@ theorem maskChk_spec {bs wbs : List (Reg × Nat)} {a : Ptr} (hc : maskChk bs wbs
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩ := hc
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10⟩
 
-theorem maskPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {γ : Nat} {a : Ptr}
+theorem maskPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {γ : Nat} {a : Ptr}
     (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) (hc : maskChk (rbs ++ wbs) wbs a = true)
     (hA : ArgsIn [.ptr (sc oMS), .imm γ, .ptr a, .ptr (sc oPS)] s s1) :
     (expandMaskContract X86_64.abi S).pre
@@ -419,7 +419,7 @@ theorem mask4Chk_spec {bs wbs : List (Reg × Nat)} {a w : Ptr} (hc : mask4Chk bs
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩ := hc
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
 
-theorem mask4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {γ : Nat} {a w : Ptr}
+theorem mask4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {γ : Nat} {a w : Ptr}
     (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) (hc : mask4Chk (rbs ++ wbs) wbs a w = true)
     (hA : ArgsIn [.ptr (sc oMS4), .imm γ, .ptr a, .ptr w] s s1) :
     (expandMask4Contract X86_64.abi S).pre
@@ -439,7 +439,7 @@ theorem mask4Pre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s
   exact ⟨A.stk hS i1, A.stk hS i2, A.stk hS i3⟩
 
 /-- The seeds on entry to the call are those before it. -/
-theorem At.seeds66 {s s1 : State} (A : At D rbs wbs s s1) (hi : inB (rbs ++ wbs) (sc oMS4) 264 = true) (hD : 8 ≤ D)
+theorem At.seeds66 {s s1 : State} (A : At D SL rbs wbs s s1) (hi : inB (rbs ++ wbs) (sc oMS4) 264 = true) (hD : 8 ≤ D)
     {k : Nat} (hk : k < 4) :
     seed66 (s1.mem.writeW (s1.gpr .rsp - 8) (s1.unknowns 0)) (pa s (sc oMS4)) k = seed66 s.mem (pa s (sc oMS4)) k := by
   unfold seed66
@@ -514,7 +514,7 @@ theorem ballArgs_ok {len tau : Nat} {c : Ptr} (hp : (len, tau) ∈ ballParams) (
     decide_eq_true this.2]
   decide
 
-theorem ballPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {len tau : Nat} {c : Ptr}
+theorem ballPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D SL rbs wbs s s1) {len tau : Nat} {c : Ptr}
     (hp : (len, tau) ∈ ballParams) (hc : ballChk (rbs ++ wbs) wbs len c = true)
     (hA : ArgsIn [.ptr (sc oCT), .imm len, .imm tau, .ptr c, .ptr (sc oPS)] s s1) :
     (sampleInBallContract X86_64.abi S).pre

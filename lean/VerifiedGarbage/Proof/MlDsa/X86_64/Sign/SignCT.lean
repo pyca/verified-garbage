@@ -209,7 +209,7 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 section
-variable {p : Params} {D : Nat}
+variable {p : Params} {D : Nat} {SL : List String}
 
 /-- Two runs whose `ExpandA` finished agree on what their loops leak. -/
 theorem pub_leq {σ₁ σ₂ : State} (hpub : (signK p D).pub σ₁ σ₂)
