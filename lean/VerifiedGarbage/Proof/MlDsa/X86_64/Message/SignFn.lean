@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCall
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
@@ -126,8 +127,11 @@ theorem signEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n :
     Verified X86_64.target (Impl.MlDsa.X86_64.Sign.entry n (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) 0)
       (signContract p X86_64.abi 40) :=
   have hS := signFn v hp
-  have hK : Sign.KernelFn p (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) := ⟨hS.ok, hS.ct, hS.nosp, hS.depth⟩
-  Verified.of_correct (Sign.entry0_correct hK) (Sign.entry0_ct hK) (Sign.signK0_implies (ok3_of hp))
+  have hK : Sign.KernelFn p 32 [] (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) :=
+    ⟨hS.ok, fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => hS.ct _ _ _ _ _ _ h₁ h₂ hp.1 e₁ e₂,
+      SpSafe.of_all (Proof.MlDsa.X86_64.Sign.sign_spSafe v (ok3_of hp)),
+      by rw [x86_64Depth_noSp hS.nosp]; have := hS.depth; omega_using [this], by decide⟩
+  Verified.of_correct (Sign.entry0_correct hK) (Sign.entry0_ct hK) (Sign.signK0N_nil_implies (Sign.signK0_implies (ok3_of hp)))
 
 theorem signEntry_spSafe {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)
     (flag : Nat) : (Impl.MlDsa.X86_64.Sign.entry n c flag).all (fun i => !isa.writesSp i) = true := by
