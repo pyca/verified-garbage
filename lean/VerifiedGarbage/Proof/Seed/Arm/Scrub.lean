@@ -54,10 +54,9 @@ residue (`Arm.Scrub.verifiedScrubbedSel`, whose analysis, `Arm.rtaint`, the
 kernel evaluates here: `taint_decide_ct`), which is what its registration
 binds.
 
-The modes call ECB's code as it is verified, without the wipe, under names
-of their own (`vg_seed_ecb_encrypt_entry`, `Impl.Seed.Arm.ecbCore`), which
-the emitter writes as internal functions: the analysis of each mode covers
-the frame of that call.
+The modes call the ECB artifacts as they are emitted, cleanup included
+(`Impl.Seed.Arm.ecbCore`), whose theorems are in `ModeCore.lean`: the
+analysis of each mode covers the frame of that call.
 -/
 
 @[expose] public section
@@ -70,9 +69,6 @@ open VG VG.Spec.Seed VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Modes.Arm
 
 theorem expandKeyOut (stack : Nat) : PostOut (expandKeyContract Arm.abi stack) (expandKeySig.retBits 32) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Seed.expandKeyPostOut_local _)
-
-theorem ecbOut (d : Direction) (stack : Nat) : PostOut (ecbContract Arm.abi d stack) (ecbSig.retBits 32) :=
-  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Seed.ecbPostOut_local _ d)
 
 theorem cbcEncryptOut (stack : Nat) :
     PostOut (cbcEncryptChainedContract Arm.abi stack) (cbcChainedSig.retBits 32) :=
@@ -116,26 +112,6 @@ theorem expandKey :
       verified := Proof.Seed.Arm.expandKey_framed }
     Impl.Seed.Arm.Fn.noWords []
     (Scrub.expandKeyOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
-
-/-- `vg_seed_ecb_encrypt`. -/
-theorem ecbEncrypt :
-    VerifiedScrubbed target Impl.Seed.Arm.Fn.ecbEncrypt (ecbContract Arm.abi .encrypt 752) 0 :=
-  verifiedScrubbedSel (api := ecbEncryptApi) (W := 752)
-    { code := Impl.Seed.Arm.ecbCode .encrypt
-      verified := Proof.Seed.Arm.ecb_framed .encrypt }
-    Impl.Seed.Arm.Fn.noWords []
-    (Scrub.ecbOut .encrypt _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
-
-/-- `vg_seed_ecb_decrypt`. -/
-theorem ecbDecrypt :
-    VerifiedScrubbed target Impl.Seed.Arm.Fn.ecbDecrypt (ecbContract Arm.abi .decrypt 752) 0 :=
-  verifiedScrubbedSel (api := ecbDecryptApi) (W := 752)
-    { code := Impl.Seed.Arm.ecbCode .decrypt
-      verified := Proof.Seed.Arm.ecb_framed .decrypt }
-    Impl.Seed.Arm.Fn.noWords []
-    (Scrub.ecbOut .decrypt _)
     (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_seed_cbc_encrypt_chained`. -/
