@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeyInitVerified
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInitVerified
 public import VerifiedGarbage.Impl.Ffdh.Arm.Fn
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPrivateInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedDeriveInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeVerified
@@ -61,7 +62,7 @@ theorem checkDomainOut :
     exact h
 
 theorem checkPrivateOut :
-    PostOut (Spec.Ffdh.checkPrivateContract abi 128) (Spec.Ffdh.checkPrivateSig.retBits 32) :=
+    PostOut (Spec.Ffdh.checkPrivateContract abi 176) (Spec.Ffdh.checkPrivateSig.retBits 32) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen _ h => by
     iterate 9
       obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
@@ -280,6 +281,13 @@ theorem checkPublicStub : CodeOk (Impl.Ffdh.Arm.SharedCheckPublic.code (MontCall
 theorem checkPublicOk (b : MontBackend) : CodeOk (SharedCheckPublic.calledCode b) 176 :=
   b.callerOk _ _ ((show FillB _ (SharedCheckPublic.code b) by have := b.mulOk; fill_holes).codeOk checkPublicStub)
 
+theorem checkPrivateStub :
+    CodeOk (Impl.Ffdh.Arm.SharedCheckPrivate.code (MontCall.op "" (holeStub 40))) 176 := by
+  lit_decide
+
+theorem checkPrivateOk (b : MontBackend) : CodeOk (SharedCheckPrivate.calledCode b) 176 :=
+  b.callerOk _ _ ((show FillB _ (SharedCheckPrivate.code b) by have := b.mulOk; fill_holes).codeOk checkPrivateStub)
+
 theorem deriveStub : CodeOk (Impl.Ffdh.Arm.SharedDerive.code (MontCall.op "" (holeStub 40))) 176 := by
   lit_decide
 
@@ -438,13 +446,14 @@ theorem checkDomain (v : Backend) :
     { code := v.checkDomain, verified := v.checkDomain_verified }
     Scrub.checkDomainOut (scrubSideF_of v.checkDomain_ok Scrub.frameOk_128 _)
 
-/-- `vg_ffdh_check_private`, with the implementation `v`. -/
-theorem checkPrivate (v : Backend) :
-    VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.checkPrivate v.checkPrivate)
-      (Spec.Ffdh.checkPrivateContract abi 128) 32 :=
+open VG.Proof.Bignum.Arm in
+/-- `vg_ffdh_check_private`, with the Montgomery product `b`. -/
+theorem checkPrivate (b : MontBackend) :
+    VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.checkPrivate (SharedCheckPrivate.calledCode b))
+      (Spec.Ffdh.checkPrivateContract abi 176) 32 :=
   verifiedScrubbedAll (api := Spec.Ffdh.checkPrivateApi)
-    { code := v.checkPrivate, verified := v.checkPrivate_verified }
-    Scrub.checkPrivateOut (scrubSideF_of v.checkPrivate_ok Scrub.frameOk_128 _)
+    { code := SharedCheckPrivate.calledCode b, verified := SharedCheckPrivate.called_verified b }
+    Scrub.checkPrivateOut (scrubSideF_of (Scrub.checkPrivateOk b) Scrub.frameOk_176 _)
 
 open VG.Proof.Bignum.Arm in
 /-- `vg_ffdh_check_public`, with the Montgomery product `b`. -/

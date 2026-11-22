@@ -17,10 +17,7 @@ def variant : VG.Proof.Ffdh.Arm.Backend where
   checkDomain_verified := umaalArithmetic_verified Base.variant.checkDomain_verified
   checkPublic := umaalArithmetic Base.variant.checkPublic
   checkPublic_verified := umaalArithmetic_verified Base.variant.checkPublic_verified
-  checkPrivate := umaalArithmetic Base.variant.checkPrivate
-  checkPrivate_verified := umaalArithmetic_verified Base.variant.checkPrivate_verified
   checkDomain_ok := by lit_decide
-  checkPrivate_ok := by lit_decide
   exchange := umaalArithmetic Base.variant.exchange
   exchange_verified := umaalArithmetic_verified Base.variant.exchange_verified
   suffix := "_umaal"

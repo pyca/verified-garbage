@@ -27,6 +27,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.SharedDeriveInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
 public import VerifiedGarbage.Proof.Variants.Ffdh.Arm
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPrivateInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on ARMv7 -/
@@ -76,20 +77,20 @@ def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
   [Spec.Ffdh.checkDomainApi.artifact VG.Arm.target {
     suffix := v.suffix
     code := Impl.Ffdh.Arm.Fn.checkDomain v.checkDomain
-    verified := Proof.Ffdh.Arm.Fn.checkDomain v },
-  Spec.Ffdh.checkPrivateApi.artifact VG.Arm.target {
-    suffix := v.suffix
-    code := Impl.Ffdh.Arm.Fn.checkPrivate v.checkPrivate
-    verified := Proof.Ffdh.Arm.Fn.checkPrivate v }]
+    verified := Proof.Ffdh.Arm.Fn.checkDomain v }]
 
 end VG.Artifacts.Ffdh.Arm.Domain.Ffdh
 
--- Public-key validation inherits every shared RSA Montgomery backend
+-- Public- and private-key validation inherit every shared RSA Montgomery backend
 namespace VG.Artifacts.Ffdh.Arm.Domain.RsaMont
 open VG
 
 def artifacts (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
-  [Spec.Ffdh.checkPublicApi.artifact VG.Arm.target {
+  [Spec.Ffdh.checkPrivateApi.artifact VG.Arm.target {
+    suffix := b.suffix
+    code := Impl.Ffdh.Arm.Fn.checkPrivate (Proof.Ffdh.Arm.SharedCheckPrivate.calledCode b)
+    verified := Proof.Ffdh.Arm.Fn.checkPrivate b },
+  Spec.Ffdh.checkPublicApi.artifact VG.Arm.target {
     suffix := b.suffix
     code := Impl.Ffdh.Arm.Fn.checkPublic (Proof.Ffdh.Arm.SharedCheckPublic.calledCode b)
     verified := Proof.Ffdh.Arm.Fn.checkPublic b }]

@@ -138,19 +138,6 @@ def entry : List Instr := [
 def scalarRange : Prog isa := .seq (nonzero 1) (.seq (.block saveFlag)
   (.seq (withQ (.seq (importAt 6 60 32) (arrayCompare 1 6)) (belowP 1)) (.block andFlag)))
 
-def matchPublic : Prog isa := .seq (powerAt 56 40 44)
-  (.seq (importAt 1 36 32) (.seq (equal 6 1) finishFlag))
-
-def tail : Prog isa := withQ
-  (.seq (subgroup 36) (ifFlag matchPublic (ret 0))) matchPublic
-
-def publicCheck : Prog isa := .seq (importAt 1 36 32)
-  (.seq (inRange 1) (ifFlag tail (ret 0)))
-
-def main : Prog isa := .seq (prepareAt 24) (.seq (importAt 1 40 44)
-  (.seq scalarRange (ifFlag publicCheck (ret 2))))
-
-def code : Prog isa := framed (.seq (.block entry) (head main))
 end CheckPrivate
 
 end VG.Impl.Ffdh.Arm.Domain

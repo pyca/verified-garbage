@@ -818,10 +818,7 @@ def variant : VG.Proof.Ffdh.Arm.Backend where
   checkDomain_verified := VG.Proof.Ffdh.Arm.VettedValidation.verified
   checkPublic := VG.Impl.Ffdh.Arm.Domain.CheckPublic.code
   checkPublic_verified := VG.Proof.Ffdh.Arm.checkPublic_verified
-  checkPrivate := VG.Impl.Ffdh.Arm.Domain.CheckPrivate.code
-  checkPrivate_verified := VG.Proof.Ffdh.Arm.private_verified
   checkDomain_ok := by lit_decide
-  checkPrivate_ok := by lit_decide
   exchange := VG.Impl.Ffdh.Arm.Domain.Exchange.code
   exchange_verified := VG.Proof.Ffdh.Arm.exchange_verified
   suffix := ""
