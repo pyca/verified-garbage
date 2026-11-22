@@ -302,7 +302,7 @@ def signK (p : Params) (D : Nat) : Contract isa where
 `SL` (`Impl.MlDsa.X86_64.Sign.slotM`), apart from the buffers and not wrapping
 around. -/
 def SlotsPre (SL : List String) (s : State) : Prop :=
-  (∀ r ∈ s.rd ++ s.wr, (slotR SL s).Disjoint r) ∧ (s.gpr .rsp).toNat + 8 + 8 * SL.length ≤ 2 ^ 64 ∧
+  (∀ r ∈ s.rd ++ s.wr, (slotR SL s).Disjoint r) ∧ (SL = [] ∨ (s.gpr .rsp).toNat + 8 + 8 * SL.length ≤ 2 ^ 64) ∧
     ∀ i (h : i < SL.length), s.load64 (s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i)) = some (s.syms SL[i])
 
 /-- `signK` of a body that calls the callees `SL` by the addresses in the
@@ -311,6 +311,15 @@ def signKS (p : Params) (D : Nat) (SL : List String) : Contract isa where
   pre s := (signK p D).pre s ∧ SlotsPre SL s
   post := (signK p D).post
   pub s₁ s₂ := (signK p D).pub s₁ s₂ ∧ ∀ n ∈ SL, s₁.syms n = s₂.syms n
+
+/-- `signK`'s precondition is `signKS`'s, for a body with no callees in words. -/
+theorem signKS_nil_pre {p : Params} {D : Nat} {s : State} (h : (signK p D).pre s) : (signKS p D []).pre s :=
+  ⟨h, fun _ _ _ hx _ => by simp only [Region.Contains, List.length_nil, Nat.mul_zero] at hx; omega_using [hx],
+    .inl rfl, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+
+theorem signKS_nil_pub {p : Params} {D : Nat} {s₁ s₂ : State} (h : (signK p D).pub s₁ s₂) :
+    (signKS p D []).pub s₁ s₂ :=
+  ⟨h, fun _ h => absurd h List.not_mem_nil⟩
 
 /-! ## The layout -/
 

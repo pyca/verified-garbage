@@ -220,7 +220,7 @@ variable {p : Params} {D : Nat} {SL : List String}
 theorem pub_leq {σ₁ σ₂ : State} (hpub : (signKS p D SL).pub σ₁ σ₂)
     (hA₁ : expandA p maxBounds (rhoOf p σ₁) = some (amat p (Am p σ₁)))
     (hA₂ : expandA p maxBounds (rhoOf p σ₂) = some (amat p (Am p σ₂))) : LeakEq p 0 σ₁ σ₂ := by
-  have e := hpub.2.2.2.2.2.2.1
+  have e := hpub.1.2.2.2.2.2.2.1
   rw [signLeak_eq hA₁, signLeak_eq hA₂] at e
   have hρ : (skOf p σ₁).take 32 = (skOf p σ₂).take 32 := pub_rho hpub
   rw [hρ] at e
@@ -230,7 +230,7 @@ theorem rr_rs {I E : State → State → Prop} {x y : State} (h : RR p D SL I E 
   obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, _⟩ := h
   exact ⟨σ₁, σ₂, p₁, p₂, hpub, trivial, i₁, i₂⟩
 
-theorem sign_ct {P : Prims} (hP : PrimsOk P D SL) (h3 : Ok3 p) :
+theorem sign_ct {P : Prims} (hP : PrimsOk P D SL) (h3 : Ok3 p) (hdot : DotSl P p SL) :
     ConstantTime isa (signKS p D SL).pre (signKS p D SL).pub (Impl.MlDsa.X86_64.Sign.sign P p) := by
   have hc := allChk_ok h3
   simp only [allChk, Bool.and_eq_true] at hc
@@ -243,15 +243,15 @@ theorem sign_ct {P : Prims} (hP : PrimsOk P D SL) (h3 : Ok3 p) :
   refine RelCT.seq (RelCT.mono (relInvE (J := fun σ s => St p D SL σ s ∧ s.gpr .r15 = 1) (E := fun _ _ => True)
     (fun σ s hp hs => by
       subst hs
-      exact WP.mono (pro_ok hp hsz.1) fun s₁ ⟨h₁, _, hf₁, h15⟩ => ⟨entry_st hP h3 hp h₁ hf₁, h15⟩)
+      exact WP.mono_syms (pro_ok hp hsz.1) fun s₁ ⟨h₁, _, hf₁, h15⟩ hy => ⟨entry_st hP h3 hp h₁ hf₁ hy, h15⟩)
     (block_tr (rs := [.r8]) rfl fun x y ⟨⟨σ₁, σ₂, _, _, hpub, h₁, h₂⟩, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr h₁ h₂
-      exact hpub.2.2.2.2.1)) (fun x y h => ⟨h, trivial⟩) fun _ _ h => h) ?_
+      exact hpub.1.2.2.2.2.1)) (fun x y h => ⟨h, trivial⟩) fun _ _ h => h) ?_
   refine RelCT.seq (expandA_tr hP ha) ?_
   refine RelCT.seq (Q := fun _ _ => True) (R := fun (x y : State) => ∀ r ∈ [Reg.rbx], x.gpr r = y.gpr r) ?_
     (VG.Proof.MlKem.X86_64.taintRel [.rbx] (fun x y h => h) (by taint_decide))
   unfold ifOk
-  refine ifOkElse_tr (D := D) (P := RA p D SL (p.k * p.ℓ)) (fun x y h => by rw [h.2]) (RelCT.mono (rest_tr hP h3)
+  refine ifOkElse_tr (D := D) (P := RA p D SL (p.k * p.ℓ)) (fun x y h => by rw [h.2]) (RelCT.mono (rest_tr hP h3 hdot)
     (fun x y ⟨x₀, y₀, ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, h15⟩, ⟨hPx, _, _⟩, ⟨hPy, _, _⟩, hne⟩ => ?_)
     fun x y h => lrel_rbx (h.lrel fun _ _ h => h.st))
     (RelCT.mono nil_tr (fun _ _ h => h) fun x y h =>

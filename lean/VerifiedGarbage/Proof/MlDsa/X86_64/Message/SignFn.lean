@@ -72,7 +72,12 @@ theorem signFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :
   have h3 := ok3_of hp
   have dep : ∀ {c : Prog isa}, c.depth ≤ 3 → decide (c.depth ≤ 3) = true := fun h => decide_eq_true h
   have dep2 : ∀ {c : Prog isa}, c.depth ≤ 2 → decide (c.depth ≤ 3) = true := fun h => decide_eq_true (by omega_using [h])
-  refine ⟨sign_correct (prims_okWith v) h3 (Proof.MlDsa.X86_64.Sign.sign_ctl v h3), sign_ct (prims_okWith v) h3,
+  have hdot : Proof.MlDsa.X86_64.Sign.DotSl (primsWith v.code) p [] := fun h => Bool.noConfusion h
+  refine ⟨fun σ h => sign_correct (prims_okWith v) h3 hdot (Proof.MlDsa.X86_64.Sign.sign_ctl v h3) σ
+      (Proof.MlDsa.X86_64.Sign.signKS_nil_pre h),
+    fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => sign_ct (prims_okWith v) h3 hdot _ _ _ _ _ _
+      (Proof.MlDsa.X86_64.Sign.signKS_nil_pre h₁) (Proof.MlDsa.X86_64.Sign.signKS_nil_pre h₂)
+      (Proof.MlDsa.X86_64.Sign.signKS_nil_pub hp) e₁ e₂,
     noSp_of (Same.ok (sign_same (Comp.all _) (noSpB_of v.ok.ntt.nosp) (noSpB_of v.ok.invNtt.nosp)
       (noSpB_of v.ok.mul.nosp) (noSpB_of v.ok.add.nosp) (noSpB_of v.ok.sub.nosp)
       (noSpB_of v.ok.rej4.nosp) (noSpB_of v.ok.expandMask4.nosp) (noSpB_of v.ok.highBits.nosp)

@@ -172,7 +172,7 @@ structure Lay (SL : List String) (rbs wbs : List (Reg × Nat)) (s : State) : Pro
   addresses (`slotR`, `Impl.MlDsa.X86_64.Sign.slotM`): apart from the
   writable regions, not wrapping around, each holding its callee's address. -/
   slotWr : ∀ r ∈ s.wr, (slotR SL s).Disjoint r
-  slotNw : (s.gpr .rsp).toNat + 8 + 8 * SL.length ≤ 2 ^ 64
+  slotNw : SL = [] ∨ (s.gpr .rsp).toNat + 8 + 8 * SL.length ≤ 2 ^ 64
   slots : ∀ i (h : i < SL.length), s.load64 (s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i)) = some (s.syms SL[i])
 
 end
@@ -343,7 +343,7 @@ theorem Lay.post {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s
       · exact hl
       rcases List.mem_append.mp hr with hr | hr
       · exact (L.slotWr r hr).sub_left (slot_sub hi)
-      · rw [List.mem_singleton] at hr; subst hr; exact slot_below hi L.slotNw L.sp
+      · rw [List.mem_singleton] at hr; subst hr; exact slot_below hi (L.slotNw.resolve_left fun h => by subst h; exact absurd hi (Nat.not_lt_zero _)) L.sp
     · cases hl
 
 section

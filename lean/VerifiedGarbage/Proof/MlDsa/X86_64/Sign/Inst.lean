@@ -144,7 +144,8 @@ def calleeOf {k : Nat → Contract isa} {c : Prog isa} (h : FnOk k c) : Callee k
 
 /-- The primitives, with the polynomial arithmetic of `v`, satisfy what the
 proofs of signing need of them. -/
-def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
+def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack [] where
+  sl := fun _ _ h => Bool.noConfusion h
   ntt := calleeOf v.ok.ntt
   invNtt := calleeOf v.ok.invNtt
   mul := calleeOf v.ok.mul
