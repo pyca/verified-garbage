@@ -89,9 +89,10 @@ theorem agree_insert {τ : T} {s₁ s₂ : State} (ha : VG.Arm.Taint.Agree τ s�
 
 /-- The instructions that neither access memory nor change the stack. -/
 theorem exec_pure {i : Instr} (hi : ∀ t n off, i ≠ .ldr t n off ∧ i ≠ .ldrb t n off ∧ i ≠ .str t n off ∧
-      i ≠ .strb t n off ∧ i ≠ .ldrSp t off)
+      i ≠ .strb t n off ∧ i ≠ .ldrSp t off) (hd : ∀ t t2 n off, i ≠ .strd t t2 n off)
     {s s' : State} (h : exec i s = some s') : s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   cases i with
+  | strd t t2 n off => exact absurd rfl (hd t t2 n off)
   | ldr t n off => exact absurd rfl (hi t n off).1
   | ldrb t n off => exact absurd rfl (hi t n off).2.1
   | str t n off => exact absurd rfl (hi t n off).2.2.1
@@ -119,12 +120,13 @@ theorem mstep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
   obtain ⟨hA, hrd, hwr, hm⟩ := ha
   -- Instructions the base analysis handles, which keep the memory.
   have base : ∀ {j : Instr}, (∀ t n off, j ≠ .ldr t n off ∧ j ≠ .ldrb t n off ∧ j ≠ .str t n off ∧
-      j ≠ .strb t n off ∧ j ≠ .ldrSp t off) → VG.Arm.Taint.stepK τ j = some τ' → exec j s₁ = some s₁' →
-      exec j s₂ = some s₂' → addrs j s₁ = addrs j s₂ ∧ MAgree τ' s₁' s₂' := fun hj hs' e₁ e₂ => by
+      j ≠ .strb t n off ∧ j ≠ .ldrSp t off) → (∀ t t2 n off, j ≠ .strd t t2 n off) →
+      VG.Arm.Taint.stepK τ j = some τ' → exec j s₁ = some s₁' →
+      exec j s₂ = some s₂' → addrs j s₁ = addrs j s₂ ∧ MAgree τ' s₁' s₂' := fun hj hjd hs' e₁ e₂ => by
     obtain ⟨hadd, ht⟩ := VG.Arm.Taint.step_sound ⟨hA.rf, hA.wr, hA.wf₁, hA.wf₂, hA.ok, hA.slots, hA.sp, hA.argMem⟩
       (VG.Arm.Taint.stepK_eq ▸ hs') e₁ e₂
-    obtain ⟨m₁, r₁, w₁⟩ := exec_pure hj e₁
-    obtain ⟨m₂, r₂, w₂⟩ := exec_pure hj e₂
+    obtain ⟨m₁, r₁, w₁⟩ := exec_pure hj hjd e₁
+    obtain ⟨m₂, r₂, w₂⟩ := exec_pure hj hjd e₂
     exact ⟨hadd, ht, by rw [r₁, r₂, hrd], by rw [w₁, w₂, hwr], by rw [m₁, m₂, r₁, w₁]; exact hm⟩
   cases i with
   | ldr t n off =>
@@ -188,22 +190,23 @@ theorem mstep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     rw [hadd, hA.reg hp]
     exact hm.writeW _ _
   | ldrSp => simp only [mstep, reduceCtorEq] at hs
+  | strd => simp only [mstep, VG.Arm.Taint.stepK, reduceCtorEq] at hs
   | push => simp only [mstep, reduceCtorEq] at hs
   | pop => simp only [mstep, reduceCtorEq] at hs
-  | mov | mvn => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | dp => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | adds => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | adc => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | subs => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | cmp => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | movw => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | movt => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | adrSym => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | rev => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | mul => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | mla => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | addSp => exact base (fun _ _ _ => by simp) hs e₁ e₂
-  | umaal => exact base (fun _ _ _ => by simp) hs e₁ e₂
+  | mov | mvn => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | dp => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | adds => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | adc => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | subs => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | cmp => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | movw => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | movt => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | adrSym => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | rev => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | mul => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | mla => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | addSp => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
+  | umaal => exact base (fun _ _ _ => by simp) (fun _ _ _ _ => by simp) hs e₁ e₂
   | alloc | free | blx => simp only [reduceExec, reduceCtorEq] at e₁
 
 /-- Taint tracking over memory both runs agree on, for ARMv7. -/
@@ -254,7 +257,7 @@ theorem RelCT.narrow {c : Prog isa} {P : State → State → Prop} (rd wr : Stat
 
 /-- The instructions whose addresses depend only on the stack pointer. -/
 def spOnly : Instr → Bool
-  | .ldr .. | .str .. | .ldrb .. | .strb .. | .push _ | .pop .. => false
+  | .ldr .. | .str .. | .ldrb .. | .strb .. | .strd .. | .push _ | .pop .. => false
   | _ => true
 
 theorem addrs_spOnly {i : Instr} (hi : spOnly i = true) {s₁ s₂ : State} (hsp : s₁.sp = s₂.sp) :

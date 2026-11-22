@@ -558,7 +558,7 @@ theorem stepB_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     (hb : ∀ n, base i = some n → pubR τ n = true) (hs : stepB τ i = some τ')
     (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') : AgreeOk τ' s₁' s₂' := by
   cases i with
-  | blx | push | pop | alloc | free => simp only [stepB, reduceCtorEq] at hs
+  | strd | blx | push | pop | alloc | free => simp only [stepB, reduceCtorEq] at hs
   | mov d op2 =>
     cases op2 with
     | reg r =>

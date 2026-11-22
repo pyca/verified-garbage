@@ -130,7 +130,7 @@ def localOnlyInstr : Instr → Bool
   | .addSp _ _ => true
   | .str _ base _ => base == .r12
   | .ldrSp dst _ => dst != .r12
-  | .ldr .. | .ldrb .. | .strb .. | .push .. | .pop .. | .alloc .. | .free .. => false
+  | .ldr .. | .ldrb .. | .strb .. | .strd .. | .push .. | .pop .. | .alloc .. | .free .. => false
   | op => !(clobbers op .r12)
 
 private theorem localOnly_addresses {i : Instr} (allowed : localOnlyInstr i = true)

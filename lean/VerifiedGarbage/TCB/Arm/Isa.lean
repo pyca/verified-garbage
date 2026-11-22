@@ -45,6 +45,12 @@ Modelling choices:
   Rust builds with `+strict-align` for this reason) must do the same: turn
   alignment checking off and run the code with the MMU on, with every buffer
   it passes in Normal memory. The model does not describe any other setting.
+* The doubleword store `strd` is the exception: it needs a word-aligned
+  address whatever the alignment setting, and the model faults on any other.
+  DDI 0406C.d A3.2.1, Table A3-1: `LDRD`, `STRD` take a word-aligned address
+  with `SCTLR.A` = 0 (and an unaligned one gives an Alignment fault); on
+  ARMv7-M, DDI 0403E.b A3.2.1: "LDRD and STRD ... always generate a
+  UsageFault" on an address that is not word-aligned.
 * Instructions whose timing depends on their operands (e.g. `sdiv`, `udiv`)
   must never be added: the constant-time leakage model assumes they do not
   exist. ARMv7 makes no architectural promise about multiply timing (it has
@@ -184,6 +190,9 @@ inductive Instr
   | ldr (t n : Reg) (off : Nat)
   /-- `str t, [n, #off]` (`0 ≤ off < 4096`) -/
   | str (t n : Reg) (off : Nat)
+  /-- `strd t, t2, [n, #off]`: `t` at `n + off` and `t2` at `n + off + 4`
+  (see `strdOk` for the operands and offsets it takes) -/
+  | strd (t t2 n : Reg) (off : Nat)
   /-- `ldrb t, [n, #off]` (`0 ≤ off < 4096`) -/
   | ldrb (t n : Reg) (off : Nat)
   /-- `strb t, [n, #off]` (`0 ≤ off < 4096`) -/
@@ -230,6 +239,18 @@ def regList : List Reg → Bool
 8-bit value rotated right by an even amount. -/
 def encodable (v : BitVec 32) : Bool :=
   (List.range 16).any fun k => (v.rotateLeft (2 * k)).toNat < 256
+
+/-- The operands of `strd t, t2, [n, #off]` that both its A32 and its Thumb
+encodings take, DDI 0406C A8.8.210 "STRD (immediate)". Encoding A1 (ARM):
+`if Rt<0> == '1' then UNDEFINED; t2 = t+1; imm32 = ZeroExtend(imm4H:imm4L,
+32)` (an 8-bit offset), and `if t2 == 15 then UNPREDICTABLE`. Encoding T1
+(Thumb): `imm32 = ZeroExtend(imm8:'00', 32)` (a multiple of 4 below 1024),
+any `t` and `t2` but SP and PC. Both: an even `t`, `t2 = t + 1` (so neither
+is `lr`, as no register `r15` is modelled), and an offset that is a multiple
+of 4 below 256. The base register is never SP or PC, which are not operands
+of the model. -/
+def strdOk (t t2 : Reg) (off : Nat) : Bool :=
+  t.num % 2 == 0 && t2.num == t.num + 1 && off < 256 && off % 4 == 0
 
 namespace State
 
@@ -404,6 +425,20 @@ def exec : Instr → State → Option State
   | .str t n off, s =>
     if off < 4096 then s.store32 (State.addr (s.gpr n + BitVec.ofNat 32 off)) (s.gpr t)
     else none
+  -- DDI 0406C A8.8.210 "STRD (immediate)", with `index`, `add` and not
+  -- `wback` (an offset, no write-back): `offset_addr = R[n] + imm32; address
+  -- = offset_addr; MemA[address,4] = R[t]; MemA[address+4,4] = R[t2]`. Each
+  -- word is a store of `str`'s (`store32`), the first before the second;
+  -- `MemA` faults on an address that is not word-aligned (see "The
+  -- doubleword store" above). The two stores are `store32`'s, the first
+  -- before the second, so it faults unless both words are writable (a store
+  -- does not change which are).
+  | .strd t t2 n off, s =>
+    let a := s.gpr n + BitVec.ofNat 32 off
+    if strdOk t t2 off ∧ a.toNat % 4 = 0 ∧ InRegions s.wr (State.addr a) 4 ∧
+        InRegions s.wr (State.addr (a + 4)) 4 then
+      some { s with mem := (s.mem.writeW (State.addr a) (s.gpr t)).writeW (State.addr (a + 4)) (s.gpr t2) }
+    else none
   | .ldrb t n off, s =>
     if off < 4096 then
       (s.load8 (State.addr (s.gpr n + BitVec.ofNat 32 off))).map fun x => s.setReg t (x.setWidth 32)
@@ -428,6 +463,8 @@ def words (a : BitVec 32) (n : Nat) : List Addr :=
 def addrs : Instr → State → List Addr
   | .ldr _ n off, s => [State.addr (s.gpr n + BitVec.ofNat 32 off)]
   | .str _ n off, s => [State.addr (s.gpr n + BitVec.ofNat 32 off)]
+  | .strd _ _ n off, s =>
+    [State.addr (s.gpr n + BitVec.ofNat 32 off), State.addr (s.gpr n + BitVec.ofNat 32 off + 4)]
   | .ldrb _ n off, s => [State.addr (s.gpr n + BitVec.ofNat 32 off)]
   | .strb _ n off, s => [State.addr (s.gpr n + BitVec.ofNat 32 off)]
   | .ldrSp _ off, s => [State.addr (s.sp + BitVec.ofNat 32 off)]

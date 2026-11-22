@@ -13,7 +13,7 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm
 
 def stackOnlyInstr : Instr → Bool
-  | .ldr .. | .str .. | .ldrb .. | .strb .. | .push .. | .pop .. | .alloc .. | .free .. => false
+  | .ldr .. | .str .. | .ldrb .. | .strb .. | .strd .. | .push .. | .pop .. | .alloc .. | .free .. => false
   | _ => true
 
 private theorem stackOnly_addresses {i : Instr} (allowed : stackOnlyInstr i = true)

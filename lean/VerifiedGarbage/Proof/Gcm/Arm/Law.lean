@@ -58,7 +58,7 @@ def okI (rs : List Reg) (i : Instr) : Bool :=
   (dsts i).all rs.contains &&
     match i with
     | .str _ n _ => n == .r12
-    | .strb .. => false
+    | .strb .. | .strd .. => false
     | _ => true
 
 def okB (rs : List Reg) (is : List Instr) : Bool := is.all (okI rs)
@@ -82,9 +82,10 @@ theorem stOffs_mem {i : Instr} {is : List Instr} (hi : i ∈ is) {off : Nat} (ho
 
 /-- An instruction that is not a store keeps the memory. -/
 theorem exec_mem {i : Instr} {s s' : State} (h : exec i s = some s')
-    (hs : match i with | .str .. => False | .strb .. => False | _ => True) : s'.mem = s.mem := by
+    (hs : match i with | .str .. => False | .strb .. => False | .strd .. => False | _ => True) : s'.mem = s.mem := by
   cases i with
   | str t n off | strb t n off => exact hs.elim
+  | strd _ _ _ _ => exact hs.elim
   | umaal lo hi n m =>
     simp only [reduceExec] at h
     split at h <;> [cases h; skip]
@@ -138,6 +139,7 @@ theorem exec_outOf {rs : List Reg} (hb : Reg.r12 ∉ rs) {offs : List Nat} {i : 
       rw [hi.2] at *
       exact Mem.write_apply this
     | strb t n off => simp at hi
+    | strd _ _ _ _ => simp at hi
     | _ => rw [exec_mem h trivial]
   · rfl
 

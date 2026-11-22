@@ -954,17 +954,19 @@ keep it (`exec_keepsLrWord`) whatever their loops. -/
 not write `r3`. -/
 def keepsLr : Instr → Bool
   | .str _ n d => n == .r3 && d % 4 == 0 && d / 4 != 6 && decide (d < 1024)
-  | .strb .. | .push _ | .pop .. | .alloc _ | .free _ => false
+  | .strb .. | .strd .. | .push _ | .pop .. | .alloc _ | .free _ => false
   | i => !clobbers i .r3
 
 theorem keepsLr_r3 {i : Instr} (hi : keepsLr i = true) : clobbers i .r3 = false := by
   cases i <;> simp_all [keepsLr, clobbers, dstOf]
 
 theorem exec_mem_of_noStore {i : Instr} {s s' : State} (h : exec i s = some s')
-    (hi : ∀ t n off, i ≠ .str t n off) (hb : ∀ t n off, i ≠ .strb t n off) : s'.mem = s.mem := by
+    (hi : ∀ t n off, i ≠ .str t n off) (hb : ∀ t n off, i ≠ .strb t n off)
+    (hd : ∀ t t2 n off, i ≠ .strd t t2 n off) : s'.mem = s.mem := by
   cases i with
   | str t n off => exact absurd rfl (hi t n off)
   | strb t n off => exact absurd rfl (hb t n off)
+  | strd t t2 n off => exact absurd rfl (hd t t2 n off)
   | _ =>
     simp only [reduceExec, State.load32, State.load8, Option.map_eq_some_iff] at h
     (repeat' split at h) <;>
@@ -992,7 +994,8 @@ theorem exec_keepsLr {i : Instr} {s s' : State} (hi : keepsLr i = true)
     first
     | (simp [keepsLr] at hi; done)
     | (simp only [fw, exec_gpr (keepsLr_r3 hi) h,
-        exec_mem_of_noStore h (fun _ _ _ e => nomatch e) (fun _ _ _ e => nomatch e)])
+        exec_mem_of_noStore h (fun _ _ _ e => nomatch e) (fun _ _ _ e => nomatch e)
+          (fun _ _ _ _ e => nomatch e)])
 
 /-- What the passes keep: `r3`, and word 6 where the working space fits. -/
 def lrGet (s : State) : BitVec 32 × BitVec 32 :=

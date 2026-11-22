@@ -26,7 +26,7 @@ open VG VG.Arm
 loads and stores of `[b, #off]`, none for the instructions without a memory
 access, and `none` for the others (the stack pointer's). -/
 def memBase : Instr → Option (List Reg)
-  | .ldr _ n _ | .str _ n _ | .ldrb _ n _ | .strb _ n _ => some [n]
+  | .ldr _ n _ | .str _ n _ | .ldrb _ n _ | .strb _ n _ | .strd _ _ n _ => some [n]
   | .ldrSp .. | .push _ | .pop .. => none
   | _ => some []
 

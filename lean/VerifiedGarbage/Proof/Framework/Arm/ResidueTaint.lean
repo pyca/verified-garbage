@@ -176,7 +176,8 @@ def stepB (τ : T) : Instr → Option T
   | .str t n off => some (storeT τ (wpOf τ n) (bpOf τ n) off 4 (pubR τ t))
   | .strb t n off => some (storeT τ (wpOf τ n) (bpOf τ n) off 1 (pubR τ t))
   | .addSp d imm => some (setR τ d true (some (τ.sp + imm)) none)
-  | .blx _ | .push _ | .pop .. | .alloc _ | .free _ => none
+  -- A doubleword store is not analysed.
+  | .strd .. | .blx _ | .push _ | .pop .. | .alloc _ | .free _ => none
 
 /-- The base register of a load or a store. -/
 def base : Instr → Option Reg

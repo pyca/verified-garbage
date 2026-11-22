@@ -51,6 +51,7 @@ def Instr.asm : Instr → List String
   | .umaal lo hi n m => [s!"umaal {lo.name}, {hi.name}, {n.name}, {m.name}"]
   | .ldr t n off => [s!"ldr {t.name}, [{n.name}, #{off}]"]
   | .str t n off => [s!"str {t.name}, [{n.name}, #{off}]"]
+  | .strd t t2 n off => [s!"strd {t.name}, {t2.name}, [{n.name}, #{off}]"]
   | .ldrb t n off => [s!"ldrb {t.name}, [{n.name}, #{off}]"]
   | .strb t n off => [s!"strb {t.name}, [{n.name}, #{off}]"]
   | .addSp d imm => [s!"add {d.name}, sp, #{imm}"]

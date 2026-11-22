@@ -1589,17 +1589,19 @@ open VG.Impl.Aes.Arm (sb)
 and does not write `sb`. -/
 def storesIn (lo hi : Nat) : Instr → Bool
   | .str _ n d => n == sb && decide (lo ≤ d) && decide (d + 4 ≤ hi)
-  | .strb .. | .push _ | .pop .. | .alloc _ | .free _ => false
+  | .strb .. | .strd .. | .push _ | .pop .. | .alloc _ | .free _ => false
   | i => !clobbers i sb
 
 /-- The bytes `[sb + lo, sb + hi)`. -/
 abbrev storeRegion (b : BitVec 32) (lo hi : Nat) : Region := ⟨State.addr b + BitVec.ofNat 64 lo, hi - lo⟩
 
 theorem exec_mem_of_noStore {i : Instr} {s s' : State} (h : exec i s = some s')
-    (hi : ∀ t n off, i ≠ .str t n off) (hb : ∀ t n off, i ≠ .strb t n off) : s'.mem = s.mem := by
+    (hi : ∀ t n off, i ≠ .str t n off) (hb : ∀ t n off, i ≠ .strb t n off)
+    (hd : ∀ t t2 n off, i ≠ .strd t t2 n off) : s'.mem = s.mem := by
   cases i with
   | str t n off => exact absurd rfl (hi t n off)
   | strb t n off => exact absurd rfl (hb t n off)
+  | strd t t2 n off => exact absurd rfl (hd t t2 n off)
   | _ =>
     simp only [reduceExec, State.load32, State.load8, Option.map_eq_some_iff] at h
     (repeat' split at h) <;>
@@ -1627,7 +1629,8 @@ theorem exec_storesIn {lo hi : Nat} {i : Instr} {s s' : State} (hs : storesIn lo
     first
     | (simp [storesIn] at hs; done)
     | (refine ⟨exec_gpr (by simp_all [storesIn]) h, ?_⟩
-       rw [exec_mem_of_noStore h (fun _ _ _ e => nomatch e) (fun _ _ _ e => nomatch e)]
+       rw [exec_mem_of_noStore h (fun _ _ _ e => nomatch e) (fun _ _ _ e => nomatch e)
+          (fun _ _ _ _ e => nomatch e)]
        exact Frame.refl _ _)
 
 theorem runBlock_storesIn {lo hi : Nat} : ∀ (is : List Instr) {s s' : State},

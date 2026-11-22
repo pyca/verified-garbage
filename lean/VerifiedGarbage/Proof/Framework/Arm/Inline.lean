@@ -47,7 +47,7 @@ def dstOf : Instr → Option Reg
   | .mov d _ | .mvn d _ | .dp _ d _ _ | .adds d _ _ | .adc d _ _ | .subs d _ _ | .movw d _ | .movt d _ | .rev d _
   | .addSp d _ | .mul d _ _ | .mla d _ _ _ | .ldr d _ _ | .ldrb d _ _ | .ldrSp d _ | .pop d _ | .adrSym d _
   | .umaal d _ _ _ => some d
-  | .cmp .. | .str .. | .strb .. | .push _ | .alloc _ | .free _ | .blx _ => none
+  | .cmp .. | .str .. | .strb .. | .strd .. | .push _ | .alloc _ | .free _ | .blx _ => none
 
 /-- The registers instruction `i` writes. -/
 def dsts (i : Instr) : List Reg :=
@@ -130,6 +130,15 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     subst h
     simp only [State.withRegions_wr, State.withRegions_gpr, hw _ _ hi, ite_true]
     rfl
+  | strd t t2 n off =>
+    simp only [reduceExec] at h ⊢
+    split at h <;> [rename_i hi; cases h]
+    obtain ⟨hok, hal, h1, h2⟩ := hi
+    simp only [Option.some.injEq] at h
+    subst h
+    simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_mem, hok, hal, hw _ _ h1,
+      hw _ _ h2, and_self, ite_true]
+    rfl
   | addSp d imm =>
     simp only [reduceExec] at h ⊢
     split at h <;> [skip; cases h]
@@ -168,6 +177,13 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     split at h <;> [cases h; skip]
     simp only [Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
+  | strd t t2 n off =>
+    simp only [reduceExec] at h
+    split at h <;> [rename_i hi; cases h]
+    obtain ⟨_, _, ⟨r₁, hr₁, hc₁⟩, ⟨r₂, hr₂, hc₂⟩⟩ := hi
+    simp only [Option.some.injEq] at h
+    subst h
+    exact ⟨rfl, rfl, rfl, ((Frame.refl _ _).writeW hr₁ _ hc₁).writeW hr₂ _ hc₂⟩
   | _ =>
     simp only [reduceExec, State.load32, State.load8, Option.map_eq_some_iff] at h
     (repeat' split at h) <;>

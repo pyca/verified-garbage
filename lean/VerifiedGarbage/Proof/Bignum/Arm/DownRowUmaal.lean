@@ -74,7 +74,7 @@ theorem advance_noFlags {a b : State} (h : NoFlags a b) :
 
 /-- An instruction that accesses no memory. -/
 def noMem : Instr → Bool
-  | .ldr .. | .str .. | .ldrb .. | .strb .. | .ldrSp .. | .push _ | .pop .. => false
+  | .ldr .. | .str .. | .ldrb .. | .strb .. | .strd .. | .ldrSp .. | .push _ | .pop .. => false
   | _ => true
 
 theorem addrs_noMem {i : Instr} (h : noMem i = true) (s : State) : addrs i s = [] := by
