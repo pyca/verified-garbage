@@ -654,7 +654,7 @@ theorem boundAt_eq {dlen : Nat} {rd wr : List Region} (G : DomGeo args base byte
 
 /-- The bound's octets are within the domain: q's, or p's. -/
 theorem bound_geo {dlen : Nat} {sp : BitVec 32} {rd wr : List Region} (G : DomGeo args base bytes len dlen rd wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96)) :
+    (RF : RoomF sp base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 176)) :
     KeyScan.BGeo base bytes len (KeyScan.boundAt args) sp rd wr := by
   have dl := G.dl
   have up := G.upper
@@ -662,7 +662,7 @@ theorem bound_geo {dlen : Nat} {sp : BitVec 32} {rd wr : List Region} (G : DomGe
   obtain ho : 2 * (dlen - 2 * len) + len ≤ dlen := by omega_arith
   obtain ea : byteAddr (KeyScan.boundAt args) = byteAddr (args 2) + BitVec.ofNat 64 (2 * (dlen - 2 * len)) := by
     rw [boundAt_eq G]; exact addr_eq (by omega_arith)
-  refine ⟨?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, RF, ?_⟩
   · rw [boundAt_eq G, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2 * _) (by omega_arith),
       Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   · rw [ea]; exact VG.CallLay.inRegions_sub G.rd ho (by omega_arith)
@@ -758,10 +758,10 @@ structure CutPar (Ex : List Region → List Region → Prop) (base : Addr) (byte
 
 /-- The front up to the bound, with a stage choosing the cut at `ld` with the mask `tt`. -/
 theorem prefixWith_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
+    (RF : RoomF (s.gpr .esp) base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 176))
     (C : KeyCut.CutGeo base bytes len (args 10) (args 0) (s.gpr .esp) s.rd s.wr)
     (rWs : Region.Disjoint ⟨byteAddr (args 10), len⟩ ⟨base, bytes⟩)
-    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 96))
+    (r40 : Region.Disjoint ⟨byteAddr (args 10), len⟩ (below (s.gpr .esp) 176))
     (domX : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ ⟨byteAddr (args 0), len⟩) {st : Prog isa} {ld : Nat}
     {tt : Byte} (hld : ld < len)
     (hst : ∀ u, Step Ex base bytes len args s u → WP isa st u (CutPar Ex base bytes len args u ld tt)) :
@@ -792,7 +792,7 @@ theorem prefixWith_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo
   -- g.
   refine WP.seq (WP.mono (loadComp_ok I₁ (G.keep ⟨rfl, rfl⟩ K₁) (k := 1) (j := 10) (by decide) (by omega_arith)
     (by decide)) fun u₂ ⟨V₂, O₂, K₂⟩ => ?_)
-  rw [comp_keep h G hb40 F₁ (by omega_arith), hG] at V₂
+  rw [comp_keep h G RF hb40 F₁ (by omega_arith), hG] at V₂
   obtain S₂ : Step Ex base bytes len args u₁ u₂ := Step.slot I₁ (by decide) O₂ K₂
   obtain k₂ := kept_slot I₁ (a := 10) O₂
   obtain S₁₂ := S₁.trans S₂
@@ -809,7 +809,7 @@ theorem prefixWith_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ofNat, BitVec.toNat_setWidth])) fun u₄ Ct => ?_)
   obtain rb : Spec.Rsa.bytesAt u₃.mem (byteAddr (args 10)) len = Spec.Rsa.bytesAt s.mem (byteAddr (args 10)) len :=
-    KeyScan.bytes_keep h rWs (by omega_arith) r40 S₁₃.frame
+    KeyScan.bytes_keep h rWs (by omega_arith) RF r40 S₁₃.frame
   have Cxv := Ct.x
   rw [rb] at Cxv
   obtain kc := kept_out Sc.step.inp Ct.frame C.xWs.symm
@@ -841,8 +841,8 @@ theorem prefixWith_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo
   obtain q₅ : ¬ dlen = 2 * len → comp u₅.mem args len 2 = comp s.mem args len 2 := fun _ => by
     have F₅ := S₅.frame
     rw [sp₄] at F₅
-    rw [comp_keep h G hb40 F₅ (by omega_arith), comp_x G domX Ct.frame (by omega_arith),
-      comp_keep h G hb40 S₁₃.frame (by omega_arith)]
+    rw [comp_keep h G RF hb40 F₅ (by omega_arith), comp_x G domX Ct.frame (by omega_arith),
+      comp_keep h G RF hb40 S₁₃.frame (by omega_arith)]
   have F₅ := S₅.frame
   rw [sp₄] at F₅
   have F₃ := S₁₃.frame

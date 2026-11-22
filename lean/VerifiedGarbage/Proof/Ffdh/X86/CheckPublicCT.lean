@@ -72,31 +72,31 @@ abbrev Rd (s : State) : List Region → List Region → Prop :=
     InRegions (rd ++ wr) (argumentPointer s 3) (arg s 4).toNat
 
 /-- The domain and y, as the synthetic arguments give them, for permissions that read them, apart from
-the 96 bytes below the frame. -/
+the 176 bytes below the frame. -/
 theorem frame_geo {s : State} (A : CheckPublicABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) {rd wr : List Region} (hrd : Rd s rd wr) :
     DomGeo (synth Impl.Ffdh.X86.CheckPublic.args (arg s)) (wsBase Impl.Ffdh.X86.CheckPublic.args s)
       (wsSize Impl.Ffdh.X86.CheckPublic.args s) (pLenOf Impl.Ffdh.X86.CheckPublic.args s) (arg s 1).toNat rd wr ∧
     YGeo (synth Impl.Ffdh.X86.CheckPublic.args (arg s)) (wsBase Impl.Ffdh.X86.CheckPublic.args s)
       (wsSize Impl.Ffdh.X86.CheckPublic.args s) (pLenOf Impl.Ffdh.X86.CheckPublic.args s) rd wr ∧
-    Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPublic.args (arg s) 2), (arg s 1).toNat⟩ (below sp 96) ∧
+    Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPublic.args (arg s) 2), (arg s 1).toNat⟩ (below sp 176) ∧
     Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.CheckPublic.args (arg s) 8),
-      pLenOf Impl.Ffdh.X86.CheckPublic.args s⟩ (below sp 96) := by
+      pLenOf Impl.Ffdh.X86.CheckPublic.args s⟩ (below sp 176) := by
   have fb : argsFrame = 76 := rfl
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have yl := A.yLen
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega_using [fb, low, st'])
   have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega_using [fb, low, st'])
   have ofn : ∀ x : BitVec 32, BitVec.ofNat 32 x.toNat = x := fun x => by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  have sub40 : Region.Sub (below sp 96) ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+  have sub40 : Region.Sub (below sp 176) ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
     simp only [below]
     rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [low, st']), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
+      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 176#64 = BitVec.ofNat 64 252 from rfl]
     exact Region.sub_prefix (by decide)
   have yR : (arg s 4).toNat = pLenOf Impl.Ffdh.X86.CheckPublic.args s := yl
   refine ⟨⟨(ofn _).symm, (ofn _).symm, (ofn _).symm, rfl, rfl, (ofn _).symm, A.dLen, A.domBound, hrd.1,
@@ -115,11 +115,11 @@ theorem frame_keep {s : State} (A : CheckPublicABI s) {m : Mem}
     (Ft : Frame [⟨wsBase Impl.Ffdh.X86.CheckPublic.args s, wsSize Impl.Ffdh.X86.CheckPublic.args s⟩,
       ⟨frameAt s, argsFrame⟩] s.mem m) {p : Addr} {n : Nat}
     (hws : Region.Disjoint ⟨p, n⟩ ⟨wsBase Impl.Ffdh.X86.CheckPublic.args s, wsSize Impl.Ffdh.X86.CheckPublic.args s⟩)
-    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
+    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt m p n = Spec.Rsa.bytesAt s.mem p n := by
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   exact frame_bytes Ft (fun r hr => by
@@ -142,10 +142,11 @@ theorem frame_ok {s : State} (A : CheckPublicABI s) (f : State)
       ⟨frameAt s, argsFrame⟩] s.mem f.mem) :
     WP isa Impl.Ffdh.X86.CheckPublic.body f fun t =>
       (Spec.Ffdh.domainValid (arg s 2).toNat (entryDom s) = true → (t.gpr .eax).toNat = spec s) ∧
-      Frame ([] ++ CrtRt.frameR (wsBase Impl.Ffdh.X86.CheckPublic.args s) (f.gpr .esp)
+      Frame ([] ++ frameF (wsBase Impl.Ffdh.X86.CheckPublic.args s) (f.gpr .esp)
         (fR (pLenOf Impl.Ffdh.X86.CheckPublic.args s))) f.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t := by
   obtain ⟨G, Y, hb40, hy40⟩ := frame_geo A espf I.extra
+  obtain RF := (wrapABI A).roomF espf
   have D : domBytes f.mem (synth Impl.Ffdh.X86.CheckPublic.args (arg s)) (arg s 1).toNat = entryDom s :=
     frame_keep A Ft A.domScratch A.belowDom (by have := A.domBound; omega_using [])
   have Yv : yv f.mem (synth Impl.Ffdh.X86.CheckPublic.args (arg s)) (pLenOf Impl.Ffdh.X86.CheckPublic.args s) =
@@ -154,7 +155,7 @@ theorem frame_ok {s : State} (A : CheckPublicABI s) (f : State)
     show Spec.Rsa.os2ip (Spec.Rsa.bytesAt f.mem (argumentPointer s 3) _) = _
     rw [← yR]
     exact congrArg _ (frame_keep A Ft A.yScratch A.belowY (by have := A.yBound; omega_using []))
-  refine WP.mono (body_ok I G Y hb40 hy40)
+  refine WP.mono (body_ok I G Y RF hb40 hy40)
     fun t ⟨r, ⟨E, F, K⟩, V⟩ => ⟨fun v => ?_, by rw [List.nil_append]; exact F, K⟩
   rw [show pLenOf Impl.Ffdh.X86.CheckPublic.args s = (arg s 2).toNat from rfl] at V Yv
   rw [D] at V
@@ -174,7 +175,7 @@ theorem operation_ok {s : State} (A : CheckPublicABI s) :
     (fun _ h => by cases h)
     (P := fun _ e => Spec.Ffdh.domainValid (arg s 2).toNat (entryDom s) = true → e.toNat = spec s)
     (hP := fun _ _ _ _ h => h)
-    fun f I espf Ft => frame_ok A f I espf Ft
+    fun f I espf _ Ft => frame_ok A f I espf Ft
 
 end VG.Proof.Ffdh.X86.CheckPublic
 
@@ -225,7 +226,7 @@ structure PubAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes
     (args : Nat → BitVec 32) (sp : BitVec 32) (D Yb : List Byte) (u : State) : Prop where
   dom : DomAt Ex base bytes len dlen args sp D u
   geo : YGeo args base bytes len u.rd u.wr
-  hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below sp 96)
+  hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below sp 176)
   y : Spec.Rsa.bytesAt u.mem (byteAddr (args 8)) len = Yb
 
 theorem PubAt.yv {u : State} (A : PubAt Ex base bytes len dlen args sp D Yb u) :

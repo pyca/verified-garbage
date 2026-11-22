@@ -135,8 +135,8 @@ theorem body_eq : Impl.Ffdh.X86.Exchange.body =
 /-- p's context, with y in slot 5 and x in 8. -/
 theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96))
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) :
+    (RF : RoomF (s.gpr .esp) base bytes) (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 176))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 176)) :
     WP isa (Prog.chain exFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       CtxOk Ex base bytes len args .wide (safeM (comp s.mem args len 0)) u ∧ sv u.mem base len .wide 3 = 1 ∧
       sv u.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % safeM (comp s.mem args len 0) ∧
@@ -166,13 +166,13 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   obtain Y₂ := Y.keep ⟨rfl, rfl⟩ S₁₂.keeps
   refine WP.seq (WP.mono (loadCtx_ok C₂ (d := 5) (p := 8) (l := 9) (L := len) (by decide) (by decide) (by decide)
     (by decide) Y₂.e9 (by omega_arith) (Nat.le_refl _) Y₂.fit Y₂.rd Y₂.apart) fun u₃ ⟨C₃, V₃, O₃, K₃⟩ => ?_)
-  rw [bytes_keep h Y.apart (by omega_arith) hy40 S₁₂.frame] at V₃
+  rw [bytes_keep h Y.apart (by omega_arith) RF hy40 S₁₂.frame] at V₃
   obtain S₃ : Step Ex base bytes len args u₂ u₃ := Step.slot C₂.inp (by decide) O₃ K₃
   obtain S₁₃ := S₁₂.trans S₃
   obtain X₃ := X.keep ⟨rfl, rfl⟩ S₁₃.keeps
   refine WP.seq (WP.mono (loadTopCtx_ok C₃ (d := 8) (p := 10) (l := 11) (L := xl) (by decide) (by decide) (by decide)
     (by decide) X₃.e11 X₃.pos X₃.le X₃.fit X₃.rd X₃.apart) fun u₄ ⟨C₄, V₄, O₄, K₄⟩ => WP.block_nil ?_)
-  rw [bytes_keep h X.apart (by omega_arith) hx40 S₁₃.frame] at V₄
+  rw [bytes_keep h X.apart (by omega_arith) RF hx40 S₁₃.frame] at V₄
   obtain S₄ : Step Ex base bytes len args u₃ u₄ := Step.slot C₃.inp (by decide) O₄ K₄
   obtain k₃ := kept_slot C₂.inp (a := 5) O₃
   obtain k₄ := kept_slot C₃.inp (a := 8) O₄
@@ -199,8 +199,8 @@ abbrev acc (m : Mem) (args : Nat → BitVec 32) (len xl : Nat) : Bool :=
 theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr) (X : XGeo args base bytes len xl s.rd s.wr)
     (O : OutGeo args base bytes len s.wr)
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96))
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) :
+    (RF : RoomF (s.gpr .esp) base bytes) (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 176))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 176)) :
     WP isa Impl.Ffdh.X86.Exchange.body s fun t =>
       t.gpr .eax = BitVec.ofNat 32 (acc s.mem args len xl).toNat ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =
@@ -236,7 +236,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   generalize hz : zv s.mem args len xl = z at zlt
   generalize hc : acc s.mem args len xl = c
   rw [body_eq]
-  refine WP.chain_split (front_ok h G Y X hy40 hx40) fun u ⟨S, C, one, R2, V5, V8, V14, V15⟩ => ?_
+  refine WP.chain_split (front_ok h G Y X RF hy40 hx40) fun u ⟨S, C, one, R2, V5, V8, V14, V15⟩ => ?_
   -- z.
   have xp := X.pos
   have xle := X.le
@@ -353,7 +353,7 @@ abbrev Rd (s : State) : List Region → List Region → Prop :=
     InRegions (rd ++ wr) (argumentPointer s 7) (arg s 8).toNat ∧
     InRegions (rd ++ wr) (argumentPointer s 5) (arg s 6).toNat ∧ InRegions wr (argumentPointer s 0) (arg s 1).toNat
 
-/-- The inputs and the output, as the synthetic arguments give them, apart from the 96 bytes below
+/-- The inputs and the output, as the synthetic arguments give them, apart from the 176 bytes below
 the frame. -/
 theorem frame_geo {s : State} (A : ExchangeABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) {rd wr : List Region} (hrd : Rd s rd wr) :
@@ -366,13 +366,13 @@ theorem frame_geo {s : State} (A : ExchangeABI s) {sp : BitVec 32}
     OutGeo (synth Impl.Ffdh.X86.Exchange.args (arg s)) (wsBase Impl.Ffdh.X86.Exchange.args s)
       (wsSize Impl.Ffdh.X86.Exchange.args s) (pLenOf Impl.Ffdh.X86.Exchange.args s) wr ∧
     Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.Exchange.args (arg s) 8),
-      pLenOf Impl.Ffdh.X86.Exchange.args s⟩ (below sp 96) ∧
+      pLenOf Impl.Ffdh.X86.Exchange.args s⟩ (below sp 176) ∧
     Region.Disjoint ⟨byteAddr (synth Impl.Ffdh.X86.Exchange.args (arg s) 10), (arg s 6).toNat⟩
-      (below sp 96) := by
+      (below sp 176) := by
   have fb : argsFrame = 76 := rfl
   obtain hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have yR : (arg s 8).toNat = pLenOf Impl.Ffdh.X86.Exchange.args s := A.yLen
   have oR : (arg s 1).toNat = pLenOf Impl.Ffdh.X86.Exchange.args s := A.outLen
   obtain FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
@@ -380,11 +380,11 @@ theorem frame_geo {s : State} (A : ExchangeABI s) {sp : BitVec 32}
   obtain espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega_using [fb, low, st'])
   obtain ofn : ∀ x : BitVec 32, BitVec.ofNat 32 x.toNat = x := fun x => by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  obtain sub40 : Region.Sub (below sp 96) ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+  obtain sub40 : Region.Sub (below sp 176) ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
     simp only [below]
     rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [low, st']), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 172 from rfl]
+      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 176#64 = BitVec.ofNat 64 252 from rfl]
     exact Region.sub_prefix (by decide)
   refine ⟨⟨(ofn _).symm, (ofn _).symm, (ofn _).symm, rfl, rfl, (ofn _).symm, A.dLen, A.domBound, hrd.1,
     A.domScratch, A.pLen.1, A.pLen.2⟩, ⟨(ofn _).symm, ?_, ?_, ?_⟩,
@@ -410,11 +410,11 @@ theorem frame_keep {s : State} (A : ExchangeABI s) {m : Mem}
     (Ft : Frame [⟨wsBase Impl.Ffdh.X86.Exchange.args s, wsSize Impl.Ffdh.X86.Exchange.args s⟩,
       ⟨frameAt s, argsFrame⟩] s.mem m) {p : Addr} {n : Nat}
     (hws : Region.Disjoint ⟨p, n⟩ ⟨wsBase Impl.Ffdh.X86.Exchange.args s, wsSize Impl.Ffdh.X86.Exchange.args s⟩)
-    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
+    (hb : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ ⟨p, n⟩) (hn : n ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt m p n = Spec.Rsa.bytesAt s.mem p n := by
   obtain hE := (s.gpr .esp).isLt
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   obtain FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   exact frame_bytes Ft (fun r hr => by
@@ -480,10 +480,11 @@ theorem frame_ok {s : State} (A : ExchangeABI s) (f : State)
     (Ft : Frame [⟨wsBase Impl.Ffdh.X86.Exchange.args s, wsSize Impl.Ffdh.X86.Exchange.args s⟩,
       ⟨frameAt s, argsFrame⟩] s.mem f.mem) :
     WP isa Impl.Ffdh.X86.Exchange.body f fun t => spec s t.mem (t.gpr .eax) ∧
-      Frame ([outR s] ++ CrtRt.frameR (wsBase Impl.Ffdh.X86.Exchange.args s) (f.gpr .esp)
+      Frame ([outR s] ++ frameF (wsBase Impl.Ffdh.X86.Exchange.args s) (f.gpr .esp)
         (fR (pLenOf Impl.Ffdh.X86.Exchange.args s))) f.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t := by
   obtain ⟨G, Y, X, O, hy40, hx40⟩ := frame_geo A espf I.extra
+  obtain RF := (wrapABI A).roomF espf
   have yR : (arg s 8).toNat = pLenOf Impl.Ffdh.X86.Exchange.args s := A.yLen
   have oR : (arg s 1).toNat = pLenOf Impl.Ffdh.X86.Exchange.args s := A.outLen
   obtain D : domBytes f.mem (synth Impl.Ffdh.X86.Exchange.args (arg s)) (arg s 3).toNat = entryDom s :=
@@ -499,7 +500,7 @@ theorem frame_ok {s : State} (A : ExchangeABI s) (f : State)
       (Spec.Ffdh.domainOf (pLenOf Impl.Ffdh.X86.Exchange.args s) (entryDom s)).p := by
     rw [comp_p f.mem _ (dlen := (arg s 3).toNat) (by have := G.dl; omega_using [this])]
     exact congrArg (fun d => (Spec.Ffdh.domainOf _ d).p) D
-  refine WP.mono (body_ok I G Y X O hy40 hx40) fun t ⟨E, B, F, K⟩ =>
+  refine WP.mono (body_ok I G Y X O RF hy40 hx40) fun t ⟨E, B, F, K⟩ =>
     ⟨fun v pv => ?_, by rw [List.singleton_append, outR, oR]; exact F, K⟩
   obtain Z : zv f.mem (synth Impl.Ffdh.X86.Exchange.args (arg s)) (pLenOf Impl.Ffdh.X86.Exchange.args s)
       (arg s 6).toNat = Spec.Rsa.os2ip (entryY s) ^ Spec.Rsa.os2ip (entryX s) %
@@ -532,7 +533,7 @@ theorem operation_ok {s : State} (A : ExchangeABI s) :
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact A.outScratch.symm)
     (P := fun m e => spec s m e) (hP := fun m m' e F h dv pv =>
       VG.Proof.Rsa.written_frame F (by have := (arg s 1).isLt; omega_arith) (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact A.belowOut.symm) (h dv pv))
-    fun f I espf Ft => frame_ok A f I espf Ft
+    fun f I espf _ Ft => frame_ok A f I espf Ft
 
 end VG.Proof.Ffdh.X86.Exchange
 
@@ -586,8 +587,8 @@ structure ExAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes 
   y : YGeo args base bytes len u.rd u.wr
   x : XGeo args base bytes len xl u.rd u.wr
   out : OutGeo args base bytes len u.wr
-  hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below sp 96)
-  hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 96)
+  hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below sp 176)
+  hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)
 
 /-- The body up to the power leaks the same traces: p and its copies by the taint analysis, p's
 context by `ctxP_relCT`. -/
@@ -668,7 +669,7 @@ theorem exAt_of {s f : State} (A : ExchangeABI s) (Bf : BodyAt (Rd s) Impl.Ffdh.
   have hx := narrowRd Bf.1.extra ⟨wsBase Impl.Ffdh.X86.Exchange.args s, wsSize Impl.Ffdh.X86.Exchange.args s⟩
   obtain ⟨G, Y, X, O, hy, hxx⟩ := frame_geo A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl hx
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   exact ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A) (Out := [outR s]) fun r hr => by

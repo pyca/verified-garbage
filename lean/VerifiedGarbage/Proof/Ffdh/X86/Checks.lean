@@ -160,8 +160,8 @@ theorem frame_bytes {rs : List Region} {m m' : Mem} (F : Frame rs m m') {p : Add
 
 /-- The domain apart from a stage's changes: the working space and the 176 bytes below `sp`. -/
 theorem dom_frame (h : In Ex base bytes len args s) {rd wr : List Region}
-    (G : DomGeo args base bytes len dlen rd wr) {sp : BitVec 32} (R : RoomF sp base bytes)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 176)) :
+    (G : DomGeo args base bytes len dlen rd wr) {sp : BitVec 32}
+    (RF : RoomF sp base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 176)) :
     ∀ r ∈ frameF base sp (fR len), Region.Disjoint ⟨byteAddr (args 2), dlen⟩ r := by
   have fit := fR_fit h
   have bl := h.bytes_lt
@@ -169,27 +169,27 @@ theorem dom_frame (h : In Ex base bytes len args s) {rd wr : List Region}
   rw [frameF, frameR, List.mem_cons, List.mem_cons, List.mem_map] at hr
   rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
   · exact hb40
-  · exact hb40.sub_right (VG.X86.below_sub (by decide) R.low)
+  · exact hb40.sub_right (VG.X86.below_sub (by decide) RF.low)
   · have := fit p hp
     exact G.apart.sub_right (Offset.sub_base _ (by omega_using [this]))
 
 /-- The domain's bytes after a stage. -/
 theorem dom_keep (h : In Ex base bytes len args s) {rd wr : List Region} (G : DomGeo args base bytes len dlen rd wr)
-    {sp : BitVec 32} (R : RoomF sp base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 176))
+    {sp : BitVec 32} (RF : RoomF sp base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 176))
     {m m' : Mem}
     (F : Frame (frameF base sp (fR len)) m m') :
     Spec.Rsa.bytesAt m' (byteAddr (args 2)) dlen = Spec.Rsa.bytesAt m (byteAddr (args 2)) dlen :=
-  frame_bytes F (dom_frame h G R hb40) (by have := G.fit; omega_using [this])
+  frame_bytes F (dom_frame h G RF hb40) (by have := G.fit; omega_using [this])
 
 /-- A component after a stage. -/
 theorem comp_keep (h : In Ex base bytes len args s) {rd wr : List Region} (G : DomGeo args base bytes len dlen rd wr)
-    {sp : BitVec 32} (R : RoomF sp base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 176))
+    {sp : BitVec 32} (RF : RoomF sp base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 176))
     {m m' : Mem}
     (F : Frame (frameF base sp (fR len)) m m') {k : Nat} (hk : k * len + len ≤ dlen) :
     comp m' args len k = comp m args len k := by
   have := G.fit
   unfold comp
-  rw [frame_bytes F (fun r hr => (dom_frame h G R hb40 r hr).sub_left (Offset.sub_base _ hk)) (by omega_using [hk, this])]
+  rw [frame_bytes F (fun r hr => (dom_frame h G RF hb40 r hr).sub_left (Offset.sub_base _ hk)) (by omega_using [hk, this])]
 
 /-- `domain_len − 2 p_len`: ZF set exactly when the domain has no q. -/
 theorem qTest_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 32 len)

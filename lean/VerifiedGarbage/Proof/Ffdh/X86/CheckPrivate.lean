@@ -117,7 +117,7 @@ theorem powTop_eq (b : Nat) :
 
 /-- p's context, the number in slot `b` in slot 5, and x at the top of slot 8. -/
 theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) {P b : Nat} (hb9 : 9 ≤ b)
+    (RF : RoomF (s.gpr .esp) base bytes) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 176)) {P b : Nat} (hb9 : 9 ≤ b)
     (hb : b ≤ 19) (hP : safeM (sv s.mem base len .wide 9) = P) :
     WP isa (Prog.chain (topFront b) (.block [])) s fun u =>
       CtxOk Ex base bytes len args .wide P u ∧ sv u.mem base len .wide 3 = 1 ∧
@@ -147,7 +147,7 @@ theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes 
   obtain X₂ := X.keep ⟨rfl, rfl⟩ S₂.keeps
   refine WP.seq (WP.mono (loadTopCtx_ok C₂ (d := 8) (p := 10) (l := 11) (L := xl) (by decide) (by decide)
     (by decide) (by decide) X₂.e11 X₂.pos X₂.le X₂.fit X₂.rd X₂.apart) fun u₃ ⟨C₃, V₃, O₃, K₃⟩ => WP.block_nil ?_)
-  rw [bytes_keep h X.apart (by omega_arith) hx40 S₂.frame] at V₃
+  rw [bytes_keep h X.apart (by omega_arith) RF hx40 S₂.frame] at V₃
   obtain G₃ : Frame (frameR base (s.gpr .esp) (stR len 0)) u₂.mem u₃.mem :=
     stR_of_outside h (by decide) O₃ ⟨_, by simp, slot_in h .wide (j := 8) (by decide)⟩
   refine ⟨C₃, ?_, ?_, ?_, V₃, (F₁.trans G₂).trans G₃,
@@ -158,7 +158,7 @@ theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes 
 
 /-- The number in slot `b` to the power of x, raised over x's `xl` bytes from the top of slot 8. -/
 theorem powTop_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) {P b : Nat} (hb9 : 9 ≤ b)
+    (RF : RoomF (s.gpr .esp) base bytes) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 176)) {P b : Nat} (hb9 : 9 ≤ b)
     (hb : b ≤ 19) (hP : safeM (sv s.mem base len .wide 9) = P) :
     WP isa (Impl.Ffdh.X86.powTop b) s fun u =>
       CtxOk Ex base bytes len args .wide P u ∧
@@ -171,7 +171,7 @@ theorem powTop_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes le
   obtain lb := len_le_bc len
   obtain bw := bc_eq_cwc len .wide
   rw [powTop_eq]
-  refine WP.chain_split (topFront_ok h X hx40 hb9 hb hP) fun u₃ ⟨C₃, one₃, R₃, B₃, V₃, F₃, k₃, K₃⟩ => ?_
+  refine WP.chain_split (topFront_ok h X RF hx40 hb9 hb hP) fun u₃ ⟨C₃, one₃, R₃, B₃, V₃, F₃, k₃, K₃⟩ => ?_
   refine WP.mono (windowPowerWith_ok C₃ one₃ R₃ (N := 2 * xl) (by omega_arith) (by omega_arith) fun t Ct =>
     wp_movS (Ct.inp.arg (i := 11) (by decide)) fun t₁ a₁ _ => wp_addS rfl fun t₂ a₂ _ => WP.block_nil
       ⟨a₁.keeps.trans (a₂.keeps.mono (by decide)), by rw [a₂.mem, a₁.mem], by
@@ -326,9 +326,9 @@ theorem scalar_iff {p q x : Nat} {a : Spec.Ffdh.Parameters} (hp : a.p = p) {dlen
 invalid scalar. -/
 theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96))
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) :
+    (RF : RoomF (s.gpr .esp) base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 176))
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 176))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 176)) :
     WP isa (Prog.chain privFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       Gate u (Spec.Ffdh.privateValid (params s.mem args len dlen) (xv s.mem args xl) = false) ∧
       sv u.mem base len .wide 9 = comp s.mem args len 0 ∧ sv u.mem base len .wide 10 = comp s.mem args len 1 ∧
@@ -365,17 +365,17 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   -- g, y and x.
   refine WP.seq (WP.mono (loadComp_ok I₁ (G.keep ⟨rfl, rfl⟩ K₁) (k := 1) (j := 10) (by decide) (by omega_arith)
     (by decide)) fun u₂ ⟨V₂, O₂, K₂⟩ => ?_)
-  rw [comp_keep h G hb40 F₁ (by omega_arith), hG] at V₂
+  rw [comp_keep h G RF hb40 F₁ (by omega_arith), hG] at V₂
   obtain S₂ : Step Ex base bytes len args u₁ u₂ := Step.slot I₁ (by decide) O₂ K₂
   obtain k₂ := kept_slot I₁ (a := 10) O₂
   obtain S₁₂ := S₁.trans S₂
   refine WP.seq (WP.mono (loadY_ok S₂.inp (Y.keep ⟨rfl, rfl⟩ S₁₂.keeps)) fun u₃ ⟨V₃, O₃, K₃⟩ => ?_)
-  rw [show yv u₂.mem args len = y by rw [yv, bytes_keep h Y.apart (by omega_arith) hy40 S₁₂.frame]; exact hY] at V₃
+  rw [show yv u₂.mem args len = y by rw [yv, bytes_keep h Y.apart (by omega_arith) RF hy40 S₁₂.frame]; exact hY] at V₃
   obtain S₃ : Step Ex base bytes len args u₂ u₃ := Step.slot S₂.inp (by decide) O₃ K₃
   obtain k₃ := kept_slot S₂.inp (a := 12) O₃
   obtain S₁₃ := S₁₂.trans S₃
   refine WP.seq (WP.mono (loadX_ok S₃.inp (X.keep ⟨rfl, rfl⟩ S₁₃.keeps)) fun u₄ ⟨V₄, O₄, K₄⟩ => ?_)
-  rw [show xv u₃.mem args xl = x by rw [xv, bytes_keep h X.apart (by omega_arith) hx40 S₁₃.frame]; exact hX] at V₄
+  rw [show xv u₃.mem args xl = x by rw [xv, bytes_keep h X.apart (by omega_arith) RF hx40 S₁₃.frame]; exact hX] at V₄
   obtain S₄ : Step Ex base bytes len args u₃ u₄ := Step.slot S₃.inp (by decide) O₄ K₄
   obtain k₄ := kept_slot S₃.inp (a := 13) O₄
   obtain S₁₄ := S₁₃.trans S₄
@@ -388,7 +388,7 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   obtain v15 : sv u₄.mem base len .wide 15 = pm1 len p := by rw [k₄.slot_eq, k₃.slot_eq, k₂.slot_eq, V15]
   -- The bound and the scalar's test.
   refine WP.mono (boundTest_ok S₄.inp (G.keep ⟨rfl, rfl⟩ S₁₄.keeps) v15 V₄ v9
-    (fun n2 => comp_keep h G hb40 S₁₄.frame (by omega_arith))) fun u₁₂ ⟨S₁₂, k₁₂, z, _⟩ => ?_
+    (fun n2 => comp_keep h G RF hb40 S₁₄.frame (by omega_arith))) fun u₁₂ ⟨S₁₂, k₁₂, z, _⟩ => ?_
   obtain S := S₁₄.trans S₁₂
   obtain kk : ∀ {j}, 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [16, 17] →
       sv u₁₂.mem base len .wide j = sv u₄.mem base len .wide j := fun hj => k₁₂.slot_eq hj
@@ -403,7 +403,7 @@ theorem front_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
 /-- y in range and `g^x mod M = y`, as a status. -/
 theorem pair_ok (h : In Ex base bytes len args s) {p g y x : Nat} (h9 : sv s.mem base len .wide 9 = p)
     (h10 : sv s.mem base len .wide 10 = g) (h12 : sv s.mem base len .wide 12 = y)
-    (X : XGeo args base bytes len xl s.rd s.wr) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96))
+    (X : XGeo args base bytes len xl s.rd s.wr) (RF : RoomF (s.gpr .esp) base bytes) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 176))
     (hx : xv s.mem args xl = x) (h14 : sv s.mem base len .wide 14 = 1)
     (h15 : sv s.mem base len .wide 15 = pm1 len p) :
     WP isa Impl.Ffdh.X86.CheckPrivate.pair s (Res base len s
@@ -422,10 +422,10 @@ theorem pair_ok (h : In Ex base bytes len args s) {p g y x : Nat} (h9 : sv s.mem
   obtain k₁₂ : Kept base len [] [maskOff, accOff] s.mem u₂.mem := k₁.mono.trans k₂.mono
   obtain S₁₂ := S₁.trans S₂
   have xf := X.fit
-  refine WP.seq (WP.mono (powTop_ok S₂.inp (X.keep ⟨rfl, rfl⟩ S₁₂.keeps) (by rw [S₁₂.esp]; exact hx40)
+  refine WP.seq (WP.mono (powTop_ok S₂.inp (X.keep ⟨rfl, rfl⟩ S₁₂.keeps) (by rw [S₁₂.esp]; exact RF) (by rw [S₁₂.esp]; exact hx40)
     (P := safeM p) (b := 10) (by decide) (by decide) (by rw [k₁₂.slot_eq, h9]))
     fun u₃ ⟨C₃, Y₃, _, F₃, k₃, K₃⟩ => ?_)
-  obtain xe : xv u₂.mem args xl = x := by rw [xv, bytes_keep h X.apart (by omega_arith) hx40 S₁₂.frame]; exact hx
+  obtain xe : xv u₂.mem args xl = x := by rw [xv, bytes_keep h X.apart (by omega_arith) RF hx40 S₁₂.frame]; exact hx
   rw [k₁₂.slot_eq, h10, xe] at Y₃
   obtain S₃ : Step Ex base bytes len args u₂ u₃ := Step.ops S₂.inp F₃ K₃
   refine WP.seq (WP.mono (eqW_ok C₃.inp (a := 6) (b := 12) (by decide) (by decide)) fun u₄ ⟨m₄, e₄, K₄⟩ => ?_)
@@ -445,9 +445,9 @@ abbrev expected (len dlen xl : Nat) (m : Mem) (args : Nat → BitVec 32) : Nat :
 /-- `vg_ffdh_check_private`'s body: a status, `expected` for a valid domain. -/
 theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
     (Y : YGeo args base bytes len s.rd s.wr) (X : XGeo args base bytes len xl s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
-    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 96))
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96)) :
+    (RF : RoomF (s.gpr .esp) base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 176))
+    (hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below (s.gpr .esp) 176))
+    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 176)) :
     WP isa Impl.Ffdh.X86.CheckPrivate.body s fun t => ∃ r, Res base len s r t ∧
       (Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true → r = expected len dlen xl s.mem args) := by
   have dl := G.dl
@@ -455,10 +455,10 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   obtain hpa := comp_p s.mem args h2
   obtain hga := comp_g s.mem args h2
   rw [body_eq]
-  refine WP.chain_split (front_ok h G Y X hb40 hy40 hx40) fun u ⟨S, Gt, V9, V10, V12, _, V14, V15⟩ => ?_
+  refine WP.chain_split (front_ok h G Y X RF hb40 hy40 hx40) fun u ⟨S, Gt, V9, V10, V12, _, V14, V15⟩ => ?_
   refine WP.gate Gt (fun inval => WP.mono (ret_res (base := base) (len := len)) fun t R => ⟨2, S.res R, ?_⟩)
-    (fun val => WP.mono (pair_ok (x := xv s.mem args xl) S.inp V9 V10 V12 (X.keep ⟨rfl, rfl⟩ S.keeps) (by rw [S.esp]; exact hx40)
-      (by have := X.fit; rw [xv, bytes_keep h X.apart (by omega_arith) hx40 S.frame]) V14 V15) fun t R => ⟨_, S.res R, ?_⟩)
+    (fun val => WP.mono (pair_ok (x := xv s.mem args xl) S.inp V9 V10 V12 (X.keep ⟨rfl, rfl⟩ S.keeps) (by rw [S.esp]; exact RF) (by rw [S.esp]; exact hx40)
+      (by have := X.fit; rw [xv, bytes_keep h X.apart (by omega_arith) RF hx40 S.frame]) V14 V15) fun t R => ⟨_, S.res R, ?_⟩)
   · intro _
     simp only [expected, Spec.Ffdh.privateStatus, inval, Bool.not_false, ↓reduceIte]
   · intro v

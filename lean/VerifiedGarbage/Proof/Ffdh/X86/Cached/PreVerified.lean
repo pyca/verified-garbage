@@ -106,13 +106,13 @@ structure RP (Ex : List Region → List Region → Prop) (base : Addr) (bytes le
     (sp : BitVec 32) (dlen : Nat) (D : List Byte) (T : BitVec 32) (x : State) : Prop where
   inp : In Ex base bytes len args x
   geo : DomGeo args base bytes len dlen x.rd x.wr
-  b40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96)
+  b40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 176)
   sym : x.syms VG.Impl.Ffdh.X86.VettedValidation.tableSym = T
   tfit : T.toNat + 17744 ≤ 2 ^ 32
   tread : InRegions (x.rd ++ x.wr) (byteAddr T) 17744
   tbytes : Spec.Rsa.bytesAt x.mem (byteAddr T) 17744 = VG.Impl.Ffdh.VettedGroups.tableBytes
   tws : Region.Disjoint ⟨byteAddr T, 17744⟩ ⟨base, bytes⟩
-  t40 : Region.Disjoint ⟨byteAddr T, 17744⟩ (below sp 96)
+  t40 : Region.Disjoint ⟨byteAddr T, 17744⟩ (below sp 176)
   esp : x.gpr .esp = sp
   dom : Spec.Rsa.bytesAt x.mem (byteAddr (args 2)) dlen = D
 
@@ -1004,10 +1004,10 @@ theorem pe_of {s f : State} (A : PreABI s) (hc : ConstsOk pcConsts stack s) (Bf 
   have I := pc_in A Bf
   obtain ⟨G, hb40, domC, C, tfit, tbytes, tws, t40, dd⟩ := pc_frame_facts A hc _ I Bf.2.1 Bf.2.2.2.2
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
-  have sub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+  have sub : Region.Sub ⟨frameAt s, argsFrame⟩ ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
     rw [FA]; exact Offset.sub_below _ (by decide) (by decide)
   have espf : (narrowed (wsBase pArgs s) (wsSize pArgs s) f (pcOut s)).gpr .esp =
       s.gpr .esp - BitVec.ofNat 32 argsFrame := Bf.2.1
@@ -1172,7 +1172,7 @@ theorem pcSat_regions (words : List (BitVec 64)) (size : words.length = 2218) :
   change (0x200000 : Addr).toNat + 17744 ≤ 2 ^ 32 ∧
     (∀ q ∈ ([⟨0x100000, 2200⟩, ⟨0x9000, 8448⟩, ⟨0x20004, 28⟩] : List Region),
       (⟨0x200000, 17744⟩ : Region).Disjoint q) ∧
-    ∀ q ∈ ([⟨0x20000, 4⟩, ⟨(0x20000 : Addr) - 172#64, 172⟩] : List Region),
+    ∀ q ∈ ([⟨0x20000, 4⟩, ⟨(0x20000 : Addr) - 252#64, 252⟩] : List Region),
       (⟨0x200000, 17744⟩ : Region).Disjoint q
   refine ⟨by decide, ?_, ?_⟩
   · intro q hq

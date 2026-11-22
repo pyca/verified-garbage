@@ -445,8 +445,8 @@ theorem WrapABI.base_toNat (_ : WrapABI a n s) : (wsBase a s).toNat = (arg s a.w
     Nat.mod_eq_of_lt (Nat.lt_trans (arg s a.ws).isLt (by decide : 2 ^ 32 < 2 ^ 64))]
 
 /-- The 176 bytes below the frame of the synthetic arguments are apart from the working space. -/
-theorem WrapABI.roomF (A : WrapABI a n s) {f : State} (espf : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame) :
-    RoomF (f.gpr .esp) (wsBase a s) (wsSize a s) := by
+theorem WrapABI.room (A : WrapABI a n s) :
+    RoomF (s.gpr .esp - BitVec.ofNat 32 argsFrame) (wsBase a s) (wsSize a s) := by
   have fb : argsFrame = 76 := rfl
   have st' : stack = 252 := rfl
   have low := A.stackLow
@@ -454,12 +454,16 @@ theorem WrapABI.roomF (A : WrapABI a n s) {f : State} (espf : f.gpr .esp = s.gpr
     VG.X86.sub_toNat (by omega_using [fb, st', low])
   obtain FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega_using [fb, st', low])
-  refine ⟨by rw [espf, espN]; omega_using [st', low], A.belowScratch.sub_left ?_⟩
-  show Region.Sub ⟨(f.gpr .esp - BitVec.ofNat 32 176).setWidth 64, 176⟩ _
-  rw [espf, VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [st', low]),
+  refine ⟨by rw [espN]; omega_using [st', low], A.belowScratch.sub_left ?_⟩
+  show Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 argsFrame - BitVec.ofNat 32 176).setWidth 64, 176⟩ _
+  rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [st', low]),
     show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
     ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 176#64 = BitVec.ofNat 64 252 from rfl]
   exact Region.sub_prefix (by decide)
+
+theorem WrapABI.roomF (A : WrapABI a n s) {f : State} (espf : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame) :
+    RoomF (f.gpr .esp) (wsBase a s) (wsSize a s) := by
+  rw [espf]; exact A.room
 
 /-- `entry a`: `edi` the working space, the callee-saved registers saved in its header. -/
 theorem entry_ok (A : WrapABI a n s) :

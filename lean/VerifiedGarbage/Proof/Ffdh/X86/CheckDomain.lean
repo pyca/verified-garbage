@@ -232,7 +232,7 @@ theorem checked_eq : checked = Prog.chain checkedFront (.ite .e (Impl.Ffdh.X86.r
 
 /-- p, one, g and `p − 1` into slots 9, 14, 10 and 15, and ZF telling whether g is out of range. -/
 theorem checkedFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
+    (RF : RoomF (s.gpr .esp) base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 176))
     (valid : Spec.Rsa.modulusValid (comp s.mem args len 0) len = true) :
     WP isa (Prog.chain checkedFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
       Gate u (¬ (1 < comp s.mem args len 1 ∧ comp s.mem args len 1 < comp s.mem args len 0 - 1)) ∧
@@ -258,7 +258,7 @@ theorem checkedFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base 
   -- g, and its range.
   refine WP.seq (WP.mono (loadComp_ok I₁ (G.keep ⟨rfl, rfl⟩ K₁) (k := 1) (j := 10) (by decide) (by omega_arith)
     (by decide)) fun u₂ ⟨V₂, O₂, K₂⟩ => ?_)
-  rw [comp_keep h G hb40 F₁ (by omega_arith), hG] at V₂
+  rw [comp_keep h G RF hb40 F₁ (by omega_arith), hG] at V₂
   obtain S₂ : Step Ex base bytes len args u₁ u₂ := Step.slot I₁ (by decide) O₂ K₂
   obtain k₂ := kept_slot I₁ (a := 10) O₂
   refine WP.seq (WP.mono (rangeMask_ok S₂.inp (a := 10) (by decide)) fun u₃ ⟨I₃, e₃, O₃, K₃⟩ => ?_)
@@ -275,7 +275,7 @@ theorem checkedFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base 
 
 /-- For a valid modulus p: `1 < g < p − 1`, then q if there is one. -/
 theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96))
+    (RF : RoomF (s.gpr .esp) base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 176))
     (valid : Spec.Rsa.modulusValid (comp s.mem args len 0) len = true) :
     WP isa checked s (Res base len s
       (if Spec.Ffdh.domainValid len (domBytes s.mem args dlen) then 1 else 0)) := by
@@ -286,7 +286,7 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
   obtain hp := comp_p s.mem args h2
   obtain hg := comp_g s.mem args h2
   rw [checked_eq]
-  refine WP.chain_split (checkedFront_ok h G hb40 valid) fun u₄ ⟨S, Gt, V9, V10, V15⟩ => ?_
+  refine WP.chain_split (checkedFront_ok h G RF hb40 valid) fun u₄ ⟨S, Gt, V9, V10, V15⟩ => ?_
   generalize hP : comp s.mem args len 0 = p at valid hp V9 V15 Gt
   generalize hG : comp s.mem args len 1 = g at hg V10 Gt
   have mv := valid
@@ -321,7 +321,7 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
     obtain hq := comp_q (len := len) s.mem args
     refine WP.mono (withQ_ok S₅.inp (G.keep ⟨rfl, rfl⟩ S'.keeps) (p := p) (g := g) (by rw [m₅, V9])
       (by rw [m₅, V10]) (by rw [m₅, V15]) pgt podd) fun t R => S'.res ?_
-    rw [comp_keep h G hb40 S'.frame (by omega_arith)] at R
+    rw [comp_keep h G RF hb40 S'.frame (by omega_arith)] at R
     generalize hQ : comp s.mem args len 2 = Q at R hq
     obtain key : Spec.Ffdh.domainValid len (domBytes s.mem args (3 * len)) = true ↔
         ((Q % 2 = 1 ∧ 2 < Q ∧ Q < p - 1) ∧ ((p - 1) % Q = 0 ∧ g ^ Q % p = 1)) := by
@@ -371,7 +371,7 @@ theorem bodyFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base byt
 
 /-- `vg_ffdh_check_domain`'s body: 1 exactly when the domain is valid. -/
 theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len dlen s.rd s.wr)
-    (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 96)) :
+    (RF : RoomF (s.gpr .esp) base bytes) (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below (s.gpr .esp) 176)) :
     WP isa Impl.Ffdh.X86.CheckDomain.body s (Res base len s
       (if Spec.Ffdh.domainValid len (domBytes s.mem args dlen) then 1 else 0)) := by
   have fit := G.fit
@@ -396,7 +396,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   rw [e0] at Z
   refine WP.ite _ Z (fun valid => ?_) (fun invalid => WP.mono (ret_res (base := base) (len := len))
     fun t R => S.res ?_)
-  · refine WP.mono (checked_ok S.inp (G.keep ⟨rfl, rfl⟩ S.keeps) (by rw [S.esp]; exact hb40)
+  · refine WP.mono (checked_ok S.inp (G.keep ⟨rfl, rfl⟩ S.keeps) (by rw [S.esp]; exact RF) (by rw [S.esp]; exact hb40)
       (by rw [Mvs]; exact valid)) fun t R => S.res ?_
     rw [Mvs] at R; exact R
   · have nv : Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = false := by

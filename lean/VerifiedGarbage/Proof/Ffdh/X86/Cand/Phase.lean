@@ -885,7 +885,8 @@ structure TapeGeo (Ex : List Region → List Region → Prop) (args : Nat → Bi
   fit : (args 2).toNat + n ≤ 2 ^ 32
   rd : ∀ rd wr, Ex rd wr → InRegions (rd ++ wr) (byteAddr (args 2)) n
   apart : Region.Disjoint ⟨byteAddr (args 2), n⟩ ⟨base, bytes⟩
-  far : Region.Disjoint ⟨byteAddr (args 2), n⟩ (below sp 96)
+  room : RoomF sp base bytes
+  far : Region.Disjoint ⟨byteAddr (args 2), n⟩ (below sp 176)
 
 variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {bytes len : Nat}
   {args : Nat → BitVec 32}
@@ -898,9 +899,10 @@ theorem tape_keep {n : Nat} (G : TapeGeo Ex args base bytes (s.gpr .esp) n) {t :
   obtain fit := fR_fit h
   have bl := h.bytes_lt
   refine frame_bytes S.frame (fun r hr => ?_) (by have := G.fit; omega_arith)
-  rw [frameR, List.mem_cons, List.mem_map] at hr
-  rcases hr with rfl | ⟨p, hp, rfl⟩
+  rw [frameF, frameR, List.mem_cons, List.mem_cons, List.mem_map] at hr
+  rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
   · exact G.far
+  · exact G.far.sub_right (VG.X86.below_sub (by decide) G.room.low)
   · have := fit p hp
     exact G.apart.sub_right (Offset.sub_base _ (by omega_arith))
 

@@ -118,7 +118,7 @@ namespace VG.Proof.Ffdh.X86.VettedValidation
 open VG VG.X86 VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.X86.Wp
 open VG.Impl.Ffdh.X86.VettedValidation
 
-def contract := Spec.Ffdh.checkDomainContract (abi.withConsts tableConsts) 172
+def contract := Spec.Ffdh.checkDomainContract (abi.withConsts tableConsts) 252
 def plain (s : State) := stripConsts tableConsts s
 def domain (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (byteAddr (arg s 0)) (arg s 1).toNat
 def scratch (s : State) : Region := ⟨byteAddr (arg s 3), (arg s 4).toNat * 8⟩
@@ -128,12 +128,12 @@ theorem plain_arg (s : State) (i : Nat) : arg (plain s) i = arg s i := rfl
 theorem plain_argAddr (s : State) (i : Nat) : argAddr (plain s) i = argAddr s i := rfl
 
 theorem pre_plain {s : State} (h : contract.pre s) :
-    (Spec.Ffdh.checkDomainContract abi 172).pre (plain s) ∧ ConstsOk tableConsts 172 s := pre_consts.mp h
+    (Spec.Ffdh.checkDomainContract abi 252).pre (plain s) ∧ ConstsOk tableConsts 252 s := pre_consts.mp h
 
 theorem geometry {s : State} (h : contract.pre s) : CheckDomainABI (plain s) :=
   checkDomainABI_of (pre_plain h).1
 
-theorem stack_low {s : State} (h : contract.pre s) : 172 ≤ (s.gpr .esp).toNat := (geometry h).stackLow
+theorem stack_low {s : State} (h : contract.pre s) : 252 ≤ (s.gpr .esp).toNat := (geometry h).stackLow
 
 theorem stack_bound {s : State} (h : contract.pre s) : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 :=
   (geometry h).stackBound
@@ -213,7 +213,7 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86 VG.Proof.Bignum.X86
 def writes (s : State) : List Region := [scratch s, below (s.gpr .esp) 4]
 
 theorem symbol_sub {s : State} (h : contract.pre s) :
-    Region.Sub (below (s.gpr .esp) 4) ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := by
+    Region.Sub (below (s.gpr .esp) 4) ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := by
   have low := stack_low h
   unfold below
   rw [VG.X86.Taint.sub_setWidth (by omega_using [low])]
@@ -237,7 +237,7 @@ theorem domain_separate {s : State} (h : contract.pre s) :
   simp only [writes, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (geometry h).domScratch
-  · have belowDom : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint
+  · have belowDom : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint
         ⟨byteAddr (arg s 0), (arg s 1).toNat⟩ := (geometry h).belowDom
     exact (belowDom.sub_left (symbol_sub h)).symm
 
@@ -373,7 +373,7 @@ theorem Tracking.after {s t u : State} {rs : List Reg} (track : Tracking s t)
     by rw [mem]; exact track.frame⟩
 
 theorem Tracking.pre {s t : State} (track : Tracking s t) (h : contract.pre s) :
-    (Spec.Ffdh.checkDomainContract abi 172).pre (plain t) := by
+    (Spec.Ffdh.checkDomainContract abi 252).pre (plain t) := by
   have old := (pre_plain h).1
   sig_pre [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argSlots, argVal, argBytes,
     stackBelow] at old ⊢
@@ -402,8 +402,8 @@ theorem table_separate {s : State} (h : contract.pre s) :
       change s.wr = [scratch s, ⟨argAddr s 0, 20⟩] at wr
       rw [wr]; exact List.mem_cons_self)
   · have full : (⟨symAddr s tableSym, 17744⟩ : Region).Disjoint
-        ⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ := regions.2 _ (by
-      change _ ∈ ([⟨(s.gpr .esp).setWidth 64, 4⟩] ++ stackBelow ((s.gpr .esp).setWidth 64) 172)
+        ⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ := regions.2 _ (by
+      change _ ∈ ([⟨(s.gpr .esp).setWidth 64, 4⟩] ++ stackBelow ((s.gpr .esp).setWidth 64) 252)
       simp only [stackBelow, List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
       exact Or.inr trivial)
     exact full.sub_right (symbol_sub h)
@@ -477,7 +477,7 @@ theorem setup_ok {s : State} (h : contract.pre s) : WP isa setup s (Ready s) := 
       intro r hr
       obtain rfl := List.mem_singleton.mp hr
       rw [spU]
-      have sep : (⟨(s.gpr .esp).setWidth 64 - 172#64, 172⟩ : Region).Disjoint (scratch s) :=
+      have sep : (⟨(s.gpr .esp).setWidth 64 - 252#64, 252⟩ : Region).Disjoint (scratch s) :=
         (geometry h).belowScratch
       exact (sep.sub_left (symbol_sub h)).symm)
   have writable : InRegions v.wr (addr (v.gpr .ebx) 16) 4 := by
@@ -603,9 +603,9 @@ namespace VG.Proof.Ffdh.X86.VettedValidation
 open VG VG.X86
 
 theorem fallback_run {s : State}
-    (h : (Spec.Ffdh.checkDomainContract abi 172).pre (plain s)) :
+    (h : (Spec.Ffdh.checkDomainContract abi 252).pre (plain s)) :
     ∃ trace t, Exec isa VG.Impl.Ffdh.X86.CheckDomain.code s trace t ∧
-      abiPreserved s t ∧ (Spec.Ffdh.checkDomainContract abi 172).post s t := by
+      abiPreserved s t ∧ (Spec.Ffdh.checkDomainContract abi 252).post s t := by
   obtain ⟨trace, t, run, preserved, post⟩ := CheckDomain.verified.1 (plain s) h
   have wide := VG.X86.Exec.widen run (rd := s.rd) (wr := s.wr)
     (plain_covers s) (Covers.refl _)
@@ -614,9 +614,9 @@ theorem fallback_run {s : State}
 
 theorem fallback_ct :
     RelCT isa (fun s t =>
-      (Spec.Ffdh.checkDomainContract abi 172).pre (plain s) ∧
-      (Spec.Ffdh.checkDomainContract abi 172).pre (plain t) ∧
-      (Spec.Ffdh.checkDomainContract abi 172).pub s t)
+      (Spec.Ffdh.checkDomainContract abi 252).pre (plain s) ∧
+      (Spec.Ffdh.checkDomainContract abi 252).pre (plain t) ∧
+      (Spec.Ffdh.checkDomainContract abi 252).pub s t)
       VG.Impl.Ffdh.X86.CheckDomain.code (fun _ _ => True) := by
   intro s t ts tt u w ⟨hs, ht, hp⟩ es et
   obtain ⟨ts', u', eu, _, _⟩ := CheckDomain.verified.1 (plain s) hs
@@ -684,7 +684,7 @@ theorem correct (s : State) (h : contract.pre s) :
     · have kept := tested.abi h
       exact ⟨fun r hr => (W.other r (by revert r; decide)).trans (kept.1 r hr),
         by rw [W.mem]; exact kept.2⟩
-    · change (Spec.Ffdh.checkDomainContract abi 172).post s w
+    · change (Spec.Ffdh.checkDomainContract abi 252).post s w
       sig_post [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argSlots, argVal, argBytes]
       rw [BitVec.setWidth_append_eq_right, W.gpr]
       change 1 = if Spec.Ffdh.domainValid (arg s 2).toNat (domain s) then 1 else 0
@@ -692,7 +692,7 @@ theorem correct (s : State) (h : contract.pre s) :
   · intro _
     obtain ⟨tr, w, run, kept, post⟩ := fallback_run (tested.tracking.pre h)
     refine ⟨tr, w, run, abi_trans (tested.abi h) kept, ?_⟩
-    change (Spec.Ffdh.checkDomainContract abi 172).post s w
+    change (Spec.Ffdh.checkDomainContract abi 252).post s w
     sig_post [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argSlots, argVal, argBytes] at post ⊢
     rw [BitVec.setWidth_append_eq_right] at post ⊢
     change (w.gpr .eax).toNat = if Spec.Ffdh.domainValid (arg u 2).toNat (domain u) then 1 else 0 at post
@@ -730,14 +730,14 @@ private theorem singleton_sym {name : String} {words : List (BitVec 64)} {s t : 
     (Nat.lt_trans (t.syms name).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using value
 
 theorem start_of_pub {a s : State} (h : contract.pre s) (pub : contract.pub a s) : Start a s := by
-  have relation : (Spec.Ffdh.checkDomainContract abi 172).pub a s ∧
+  have relation : (Spec.Ffdh.checkDomainContract abi 252).pub a s ∧
       ∀ c ∈ tableConsts, symAddr a c.1 = symAddr s c.1 := pub_consts.mp pub
   obtain ⟨sp, args, bytes⟩ := CheckDomain.pub_facts relation.1
   exact ⟨h, sp.symm, fun i hi => (args i hi).symm, bytes.symm, (singleton_sym relation.2).symm⟩
 
 def After (a t : State) : Prop := ∃ s, Start a s ∧ Result s t
 
-theorem After.pre {a t : State} (h : After a t) : (Spec.Ffdh.checkDomainContract abi 172).pre (plain t) := by
+theorem After.pre {a t : State} (h : After a t) : (Spec.Ffdh.checkDomainContract abi 252).pre (plain t) := by
   obtain ⟨s, start, result⟩ := h
   exact result.tracking.pre start.pre
 
@@ -755,7 +755,7 @@ theorem After.domain_eq {a t : State} (h : After a t) : domain t = domain a := b
   exact (result.tracking.domain_eq start.pre).trans start.domain
 
 theorem After.public {a s t : State} (hs : After a s) (ht : After a t) :
-    (Spec.Ffdh.checkDomainContract abi 172).pub s t := by
+    (Spec.Ffdh.checkDomainContract abi 252).pub s t := by
   sig_pub [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argSlots, argVal, argBytes]
   refine ⟨hs.stack.trans ht.stack.symm, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · change (domain s).map (·.toNat) = (domain t).map (·.toNat)
@@ -964,7 +964,7 @@ private def satState (words : List (BitVec 64)) : State :=
     syms := fun _ => 0x100000 }
 
 private theorem satPre (words : List (BitVec 64)) :
-    (Spec.Ffdh.checkDomainContract abi 172).pre (stripConsts [(tableSym, words)] (satState words)) := by
+    (Spec.Ffdh.checkDomainContract abi 252).pre (stripConsts [(tableSym, words)] (satState words)) := by
   -- The arguments are read below the table, where the memory is `CheckDomain.satState`'s: the kernel
   -- finds that at once, and the elaborator, asked by `change`, in up to a second for each.
   have a0 : arg (satState words) 0 = 8192 :=
@@ -1012,14 +1012,14 @@ private theorem satRegions (words : List (BitVec 64)) (size : words.length = 221
     ∀ r ∈ constRegs [(tableSym, words)] (satState words),
       r.base.toNat + r.len ≤ 2 ^ abi.ptrBits ∧
       (∀ q ∈ (satState words).wr, r.Disjoint q) ∧
-      ∀ q ∈ abi.reserved 172 (satState words), r.Disjoint q := by
+      ∀ q ∈ abi.reserved 252 (satState words), r.Disjoint q := by
   intro r hr
   simp only [constRegs, Abi.constRegions, List.mem_map, List.mem_singleton] at hr
   obtain ⟨c, rfl, rfl⟩ := hr
   rw [size]
   change (0x100000 : Addr).toNat + 17744 ≤ 2 ^ 32 ∧
     (∀ q ∈ ([⟨36864, 8448⟩, ⟨0x20004, 20⟩] : List Region), (⟨0x100000, 17744⟩ : Region).Disjoint q) ∧
-    ∀ q ∈ ([⟨0x20000, 4⟩, ⟨(0x20000 : Addr) - 172#64, 172⟩] : List Region),
+    ∀ q ∈ ([⟨0x20000, 4⟩, ⟨(0x20000 : Addr) - 252#64, 252⟩] : List Region),
       (⟨0x100000, 17744⟩ : Region).Disjoint q
   refine ⟨by decide +kernel, ?_, ?_⟩
   · intro q hq
@@ -1029,7 +1029,7 @@ private theorem satRegions (words : List (BitVec 64)) (size : words.length = 221
     · obtain rfl := List.mem_singleton.mp hq
       exact Region.disjoint_of_sep (by decide +kernel)
   · intro q hq
-    change q ∈ ([⟨0x20000, 4⟩, ⟨(0x20000 : Addr) - 172#64, 172⟩] : List Region) at hq
+    change q ∈ ([⟨0x20000, 4⟩, ⟨(0x20000 : Addr) - 252#64, 252⟩] : List Region) at hq
     rcases List.mem_cons.mp hq with rfl | hq
     · exact Region.disjoint_of_sep (by decide +kernel)
     · obtain rfl := List.mem_singleton.mp hq
