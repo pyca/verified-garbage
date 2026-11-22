@@ -554,7 +554,7 @@ theorem code_correct [InvLaw] (s : State) (hpre : (Spec.Rsa.crtValuesContract RI
   obtain h := preC_of hpre
   refine WP.mono (WP.rdwr (Q := fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.gpr .ra = s.gpr .ra ∧
     fnPost s t) ?_) fun t ⟨⟨hp, hra, hpost⟩, _, _, hsp⟩ => ⟨⟨hp, hsp, hra⟩, hpost⟩
-  unfold code
+  unfold Impl.Rsa.RISCV64.CrtValues.code
   rw [WP.seq_iff]
   refine WP.mono (entry_ok h) fun e c => ?_
   rw [WP.seq_iff]

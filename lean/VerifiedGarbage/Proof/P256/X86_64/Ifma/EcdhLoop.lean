@@ -52,14 +52,18 @@ theorem ainv_dbl (hC : Law Cv) (ha : AM3 Cv) {xn un z : Fe Cv} {A : Point Cv} (h
 theorem ainv_set (hC : Law Cv) {X Y Z : Fe Cv} {B : Point Cv} (h : InvJ Cv X Y Z B) :
     Ainv (entQ X Y Z false 0 0 0).ex (entQ X Y Z false 0 0 0).ey (entQ X Y Z false 0 0 0).ez B := by
   obtain ⟨hi, hy⟩ := entQ_inv hC h false 0 0 0
-  exact hi.rescale hC two_ne one_ne (by grind) (by rw [hy]; grind) (by grind)
+  -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+  -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+  exact hi.rescale hC two_ne one_ne (by grind -lia) (by rw [hy]; grind -lia) (by grind -lia)
 
 /-- An entry's `Z` is not zero if its point's is not. -/
 theorem entQ_ez_ne (hC : Law Cv) {X Y Z : Fe Cv} (hZ : Z ≠ 0) (neg : Bool) (xn un z : Fe Cv) :
     (entQ X Y Z neg xn un z).ez ≠ 0 := by
   have k16 := kapC16
   obtain h8 : (8 : Fe Cv) * kapC ≠ 0 := fun h8 =>
-    one_ne (by rw [← k16, show (16 : Fe Cv) * kapC = 2 * (8 * kapC) by grind, h8]; grind)
+    -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+    -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+    one_ne (by rw [← k16, show (16 : Fe Cv) * kapC = 2 * (8 * kapC) by grind -lia, h8]; grind -lia)
   exact hC.mul_ne_zero h8 hZ
 
 /-- An iteration's addition, of digit `i`'s point to the accumulator's, which is `[32 S_{i+1}]P` for
@@ -83,7 +87,9 @@ theorem ainv_stepO (hC : Law Cv) (ha : AM3 Cv) (hO : PrimeOrder Cv) {P : Point C
   have hz : (entQ X Y Z false xn un z).z = z := rfl
   rw [hxn, hun, hz] at e
   rw [e] at hj
-  exact ⟨Q, hQ, hQe, hj.rescale hC one_ne two_ne (by grind) (by grind) (by grind)⟩
+  -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+  -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+  exact ⟨Q, hQ, hQe, hj.rescale hC one_ne two_ne (by grind -lia) (by grind -lia) (by grind -lia)⟩
 
 /-! ### The accumulator in the slots, across the selection -/
 

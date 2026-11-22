@@ -189,7 +189,7 @@ theorem lbit_xor (a b : Bool) : lbit (a ^^ b) = lbit a + lbit b := by
 theorem lp_ext {n : ℕ} {a b : BitVec n} (h : lp a = lp b) : a = b := by
   apply BitVec.eq_of_getLsbD_eq
   intro i _
-  have := congrArg (coeff · i) h
+  have := congrArg (fun p : (ZMod 2)[X] => p.coeff i) h
   simp only [coeff_lp] at this
   exact lbit_inj this
 

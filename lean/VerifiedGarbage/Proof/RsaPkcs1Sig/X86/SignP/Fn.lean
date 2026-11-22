@@ -283,7 +283,7 @@ theorem signFnP_ok (v : CrtImpl) (w : CrtPImpl) (s : State) {g : Geometry} {bs :
     have := h.stackFit
     simp only [sigStack, VG.Impl.RsaPkcs1Sig.X86.Sign.frameBytes] at *
     omega_using [this]
-  unfold code
+  unfold Impl.RsaPkcs1Sig.X86.Sign.code
   refine WP.frameLocal (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
     (innerP_noSp v w)
     (fun _ _ _ ⟨abi, out⟩ fl => ⟨VG.Proof.Dsa.X86.abiPreserved_frame stackFit abi fl,

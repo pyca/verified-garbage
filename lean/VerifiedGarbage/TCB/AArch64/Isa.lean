@@ -1643,5 +1643,7 @@ abbrev isa : ISA where
   icall := icall
   -- A function's symbol, as a static's (`adrSym`).
   fnAddr s name := s.syms name
+  ptrEq := withPtrEq
+  ptrEqDec := withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl)
 
 end VG.AArch64

@@ -100,6 +100,23 @@ inductive Leak where
   | branch (taken : Bool)
   deriving DecidableEq, Repr
 
+/-- Structured code. -/
+inductive Code (I C : Type) where
+  | block (is : List I)
+  | seq (c₁ c₂ : Code I C)
+  /-- `if c then t else e` -/
+  | ite (c : C) (t e : Code I C)
+  /-- `do body while c` -/
+  | loop (body : Code I C) (c : C)
+  /-- A call of the function `name`, whose code is `body`. -/
+  | call (name : String) (body : Code I C)
+  /-- `push; body; pop`: a stack frame around `body`. -/
+  | frame (push : I) (body : Code I C) (pop : I)
+  /-- An indirect call by the instruction `i`: of the function `name`,
+  whose code is `body`, if `i` calls its address, and otherwise `next`, an
+  indirect call by `i` of another function (see the module docs). -/
+  | icall (i : I) (name : String) (body : Code I C) (next : Code I C)
+
 /-- The interface between an architecture model and the generic framework. -/
 structure ISA where
   State : Type
@@ -156,23 +173,19 @@ structure ISA where
   linker resolves, fixed for the run of the program (as no instruction
   changes it). -/
   fnAddr : State → String → Addr := fun _ _ => 0
-
-/-- Structured code. -/
-inductive Code (I C : Type) where
-  | block (is : List I)
-  | seq (c₁ c₂ : Code I C)
-  /-- `if c then t else e` -/
-  | ite (c : C) (t e : Code I C)
-  /-- `do body while c` -/
-  | loop (body : Code I C) (c : C)
-  /-- A call of the function `name`, whose code is `body`. -/
-  | call (name : String) (body : Code I C)
-  /-- `push; body; pop`: a stack frame around `body`. -/
-  | frame (push : I) (body : Code I C) (pop : I)
-  /-- An indirect call by the instruction `i`: of the function `name`,
-  whose code is `body`, if `i` calls its address, and otherwise `next`, an
-  indirect call by `i` of another function (see the module docs). -/
-  | icall (i : I) (name : String) (body : Code I C) (next : Code I C)
+  /-- `withPtrEq` at this ISA's code: `k ()`, which the compiled code
+  returns at once if `a` and `b` are the same value in memory. The checks of
+  the emitter that compare the code of many calls use it
+  (`Code.distinctCalls`, `badCall`). Each ISA sets it to `withPtrEq`, at the
+  concrete type of its code: Lean 4.36 compiles `withPtrEq` only where it
+  can check that equal pointers are equal values, which it is there, and not
+  at a type variable (`Code I C`). -/
+  ptrEq : (a b : Code Instr Cond) → (k : Unit → Bool) → (a = b → k () = true) → Bool
+  /-- `withPtrEqDecEq` at this ISA's code, for the same reason: whether
+  `a = b`, at once if they are the same value in memory, else by `k`
+  (`Code.dec`). Each ISA sets it to `withPtrEqDecEq` with its `withPtrEq`,
+  which Lean's `withPtrEqDecEq` takes since it is polymorphic. -/
+  ptrEqDec : (a b : Code Instr Cond) → (Unit → Decidable (a = b)) → Decidable (a = b)
 
 /-- `if c then t else e`, with `t` laid out after the function's return
 (cold): `Code.ite c (.seq (.seq (.block []) (.block [])) t) e`. It is an

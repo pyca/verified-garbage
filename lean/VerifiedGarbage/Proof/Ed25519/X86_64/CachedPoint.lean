@@ -67,10 +67,14 @@ theorem pointAddAffine_eval (e : Env) (q : Spec.Ed25519.Point)
   have h5 : e 5 = q.Y + q.X := congrArg Spec.Ed25519.Point.Y hq
   have h6 : e 6 = q.T * 2 * Spec.Ed25519.d := congrArg Spec.Ed25519.Point.Z hq
   have h7 : (2 : Spec.X25519.Fe) = q.Z * 2 := congrArg Spec.Ed25519.Point.T hq
-  have hdd : e 2 + e 2 = e 2 * (q.Z * 2) := by rw [← h7]; grind
+  -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+  -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+  have hdd : e 2 + e 2 = e 2 * (q.Z * 2) := by rw [← h7]; grind -lia
   rw [pointAddAffine_formula]
   simp only [addAffineResult, point, Spec.Ed25519.pointAdd, h4, h5, h6, hdd]
-  congr 1 <;> grind
+  -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+  -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+  congr 1 <;> grind -lia
 
 theorem pointAddAffine_high (e : Env) (i : Slot) (hi : 16 ≤ i.val) :
     evalOps pointAddAffineOps e i = e i :=

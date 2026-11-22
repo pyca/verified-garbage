@@ -1152,7 +1152,9 @@ private theorem addCachedOps_split : addCachedOps false = affPre ++ .mul 11 2 7 
 /-- With `2Z = 2` in slot 7, `addAffOps` is `addCachedOps false`. -/
 theorem addAffOps_eq (e : Env) (h7 : e 7 = 2) : evalOps addAffOps e = evalOps (addCachedOps false) e := by
   obtain h : ∀ e' : Env, e' 7 = 2 → evalOp (.add 11 2 2) e' = evalOp (.mul 11 2 7) e' := by
-    intro e' h; simp only [evalOp, h]; exact congrArg _ (by grind)
+    -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+    -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+    intro e' h; simp only [evalOp, h]; exact congrArg _ (by grind -lia)
   rw [addAffOps_split, addCachedOps_split]
   simp only [evalOps, List.foldl_append, List.foldl_cons]
   rw [h]

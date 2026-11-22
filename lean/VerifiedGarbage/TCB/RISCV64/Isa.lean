@@ -600,5 +600,7 @@ abbrev isa : ISA where
   icall := icall
   -- A function's symbol, as a static's (`lla`).
   fnAddr s name := s.syms name
+  ptrEq := withPtrEq
+  ptrEqDec := withPtrEqDecEq withPtrEq (fun _ _ _ _ => rfl)
 
 end VG.RISCV64

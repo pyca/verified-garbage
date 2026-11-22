@@ -22,10 +22,10 @@ gives. A check written with it gives what the check itself gives
 
 namespace VG
 
-variable {I C : Type} [DecidableEq I] [DecidableEq C]
+variable {M : ISA} [DecidableEq M.Instr] [DecidableEq M.Cond]
 
-theorem Code.eq_of_same {a b : Code I C} (h : Code.same a b = true) : a = b :=
-  @of_decide_eq_true _ (withPtrEqDecEq a b fun _ => Code.dec a b) h
+theorem Code.eq_of_same {a b : Prog M} (h : Code.same a b = true) : a = b :=
+  @of_decide_eq_true _ (M.ptrEqDec a b fun _ => Code.dec a b) h
 
 section Memo
 
@@ -33,8 +33,8 @@ variable {β κ : Type} [DecidableEq κ]
 
 /-- `Code.memoCall` gives `spec`'s value, and calls with `spec`'s values, if
 `run` does and the calls it is given have them. -/
-theorem Code.memoCall_ok {spec : Code I C → κ → β} {n : String} {b : Code I C} {key : κ}
-    {k : List (String × Code I C × κ × β)} {run : Unit → β × List (String × Code I C × κ × β)}
+theorem Code.memoCall_ok {spec : Prog M → κ → β} {n : String} {b : Prog M} {key : κ}
+    {k : List (String × Prog M × κ × β)} {run : Unit → β × List (String × Prog M × κ × β)}
     (hk : ∀ e ∈ k, e.2.2.2 = spec e.2.1 e.2.2.1)
     (hr : (run ()).1 = spec b key ∧ ∀ e ∈ (run ()).2, e.2.2.2 = spec e.2.1 e.2.2.1) :
     (Code.memoCall n b key k run).1 = spec b key ∧
@@ -56,7 +56,7 @@ theorem Code.memoCall_ok {spec : Code I C → κ → β} {n : String} {b : Code 
 
 end Memo
 
-theorem Code.allFrom_ok (p : I → Bool) : ∀ (c : Code I C) (k : List (String × Code I C × Unit × Bool)),
+theorem Code.allFrom_ok (p : M.Instr → Bool) : ∀ (c : Prog M) (k : List (String × Prog M × Unit × Bool)),
     (∀ e ∈ k, e.2.2.2 = e.2.1.all p) →
       (allFrom p c k).1 = c.all p ∧ ∀ e ∈ (allFrom p c k).2, e.2.2.2 = e.2.1.all p
   | .block is, k, hk => ⟨rfl, hk⟩
@@ -106,7 +106,7 @@ theorem Code.allFrom_ok (p : I → Bool) : ∀ (c : Code I C) (k : List (String 
     · rename_i hi
       exact ⟨by rw [Bool.not_eq_true _ |>.mp hi, Bool.false_and, Bool.false_and], hk⟩
 
-theorem Code.allOnce_eq (p : I → Bool) (c : Code I C) : c.allOnce p = c.all p :=
+theorem Code.allOnce_eq (p : M.Instr → Bool) (c : Prog M) : c.allOnce p = c.all p :=
   (Code.allFrom_ok p c [] fun _ h => by cases h).1
 
 end VG

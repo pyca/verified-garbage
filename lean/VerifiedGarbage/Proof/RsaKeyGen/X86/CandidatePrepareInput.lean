@@ -143,7 +143,7 @@ theorem code_ok {s : State} {base : Addr} {size w : Nat}
     (scratch : Scr s base size) (fit : 256 ≤ size) :
     WP isa (.block (code w)) s fun t =>
       t.mem = headerMemory base (s.gpr .edi) w s.mem ∧ Keeps [.eax, .edx] s t := by
-  unfold code
+  unfold Impl.RsaKeyGen.X86.Header.code
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_movS rfl fun a A _ => ?_
   refine WP.block_append (WP.mono (literal_ok (scratch.of_keeps A.keeps (by decide)) (by omega_using [fit]) A.gpr)
@@ -436,7 +436,7 @@ theorem code_ok (s : State) :
     WP isa (.block code) s fun t =>
       t.gpr .edx ++ t.gpr .eax = (s.gpr .esi ++ s.gpr .ebx) &&& -(s.gpr .esi ++ s.gpr .ebx) ∧
       t.mem = s.mem ∧ Keeps [.eax, .edx] s t := by
-  unfold code
+  unfold Impl.RsaKeyGen.X86.LowBit.code
   refine wp_movS rfl fun a A _ => wp_subS rfl fun b B cfB => wp_movS rfl fun c C cfC => ?_
   refine wp_sbbS rfl (cfC.trans cfB) fun d D _ => wp_and fun e E => wp_and fun t T => WP.block_nil ?_
   have low : t.gpr .eax = (0#32 - s.gpr .ebx) &&& s.gpr .ebx := by
@@ -1311,7 +1311,7 @@ theorem code_ok {s : State} {base : Addr} {size w : Nat} (scratch : Scr s base s
     (bound : w ≤ 128) (len : s.mem.readW (off base 4) 32 = BitVec.ofNat 32 (8 * w)) :
     WP isa (.block code) s fun t =>
       t.mem = headerMemory base (s.gpr .edi) w s.mem ∧ Keeps [.eax, .ecx, .edx] s t := by
-  unfold code
+  unfold Impl.RsaKeyGen.X86.HeaderRt.code
   simp only [List.cons_append]
   refine wp_movS (readSrc_sc scratch (d := 4) (by omega_using [fit])) fun a A _ => wp_movS rfl fun b B _ =>
     VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun c C => wp_movS rfl fun d D _ => ?_
@@ -1485,7 +1485,7 @@ theorem code_ok (s : State) :
     WP isa (.block code) s fun t =>
       t.gpr .eax = upper (s.gpr .ebx) (s.gpr .esi) (s.gpr .ecx) ∧
       t.mem = s.mem ∧ Keeps [.eax, .edx, .ebp] s t := by
-  unfold code
+  unfold Impl.RsaKeyGen.X86.InverseLift.code
   refine wp_movS rfl fun a A _ => wp_mul fun b B => wp_addS rfl fun c C cfC =>
     wp_adcS rfl cfC fun d D _ => ?_
   have Kd : Keeps [.eax, .edx] s d :=

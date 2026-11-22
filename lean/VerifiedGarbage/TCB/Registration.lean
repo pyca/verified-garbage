@@ -339,17 +339,17 @@ function.
 
 `calls` holds a function once per call of it, through every function that
 calls it, and its code is usually the same value in memory at each of them:
-`withPtrEq` finds that at once, without computing `f` again (which, on the
+`ISA.ptrEq` finds that at once, without computing `f` again (which, on the
 code of every call, was most of the time of the checks using this). -/
-def Code.distinctCalls {I C β : Type} [BEq β] [LawfulBEq β] (f : Code I C → β)
-    (calls : List (String × Code I C)) : List β := Id.run do
+def Code.distinctCalls {M : ISA} {β : Type} [BEq β] [LawfulBEq β] (f : Prog M → β)
+    (calls : List (String × Prog M)) : List β := Id.run do
   -- The first call of each function so far, with its code and its value.
-  let mut first : List {p : String × Code I C × β // p.2.2 = f p.2.1} := []
+  let mut first : List {p : String × Prog M × β // p.2.2 = f p.2.1} := []
   let mut values : List β := []
   for (n, body) in calls do
     match first.find? (·.1.1 == n) with
     | some ⟨(_, body₀, v₀), h₀⟩ =>
-      unless withPtrEq body body₀ (fun _ => f body == v₀) (fun h => by simp_all) do
+      unless M.ptrEq body body₀ (fun _ => f body == v₀) (fun h => by simp_all) do
         values := f body :: values
     | none =>
       let v := f body
@@ -390,10 +390,11 @@ calls, require (`Code.requires`), each once: those of the instructions of
 the functions an indirect call may reach),
 skipping a call whose code requires what the first call of the same
 function's does (`distinctCalls`). These are the features of
-`dedup (c.requires req)`, without building the list with repetitions or
-going through the code of a function once per call of it. -/
-def Code.requiresDedup {I C : Type} (req : I → List String) (c : Code I C) : List String :=
-  (distinctCalls (ownRequires req []) (reqCalls c)).foldl ownRequires.add (ownRequires req [] c)
+`dedup (c.requires M.requires)`, without building the list with repetitions
+or going through the code of a function once per call of it. -/
+def Code.requiresDedup (M : ISA) (c : Prog M) : List String :=
+  (distinctCalls (ownRequires M.requires []) (reqCalls c)).foldl ownRequires.add
+    (ownRequires M.requires [] c)
 
 /-- `api`'s contract under the calling convention `A`, for an implementation
 whose calls and frames use `stack` bytes of stack (`Api.contracts`), or, if
@@ -480,7 +481,7 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
     unfold Api.contract
     cases api.contracts <;> exact (by trivial)
   spSafe := r.spSafe
-  features := Code.requiresDedup target.isa.requires r.code
+  features := Code.requiresDedup target.isa r.code
   written := r.written
   writtenOk := r.writtenOk
   extra := r.extra

@@ -211,14 +211,14 @@ def keyCode (v : RoundImpl) : Prog isa := code (attemptCall v)
 
 private theorem controller_all (p : Instr → Bool) (c : Prog isa)
     (hp : (code (.block [])).all p = true) (hc : c.all p = true) : (code c).all p = true := by
-  unfold code iteration attemptOrRequest attemptRun at hp ⊢
+  unfold Impl.Ffdh.X86_64.Cached.Search.code iteration attemptOrRequest attemptRun at hp ⊢
   simp only [seqs, Code.all, List.all_nil, hc, Bool.and_true] at hp ⊢
   exact hp
 
 private theorem controller_instrs (p : Instr → Bool) (c : Prog isa)
     (hp : (code (.block [])).allInstrs p = true) (hc : c.allInstrs p = true) :
     (code c).allInstrs p = true := by
-  unfold code iteration attemptOrRequest attemptRun at hp ⊢
+  unfold Impl.Ffdh.X86_64.Cached.Search.code iteration attemptOrRequest attemptRun at hp ⊢
   simp only [seqs, Code.allInstrs, hc, Bool.and_true] at hp ⊢
   exact hp
 
@@ -236,7 +236,7 @@ theorem keyCode_depth (v : RoundImpl) : (keyCode v).x86_64Depth ≤ stackUse := 
   have hr : request.x86_64Depth = 0 := rfl
   have hc : classify.x86_64Depth = 0 := rfl
   have ha := attemptCall_depth v
-  unfold keyCode code iteration attemptOrRequest attemptRun
+  unfold keyCode Impl.Ffdh.X86_64.Cached.Search.code iteration attemptOrRequest attemptRun
   simp only [seqs, Code.x86_64Depth, Instr.frameBytes, he, hr, hc, Nat.zero_max, Nat.max_zero,
     stackUse]
   exact Nat.add_le_add_right ha 56

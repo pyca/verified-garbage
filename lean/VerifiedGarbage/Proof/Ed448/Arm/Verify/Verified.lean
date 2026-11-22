@@ -806,7 +806,7 @@ theorem checked_lt {s : State} (h : isa.eval .eq (checked s) = some true) : (s.g
 
 theorem verify_ct (hv : EqOk fv) (hct : EqCT fv) : ConstantTime isa verifyLocal.pre verifyLocal.pub (code fv) := by
   apply RelCT.constantTime (Q := fun _ _ => True)
-  unfold code
+  unfold Impl.Ed448.Arm.Verify.code
   have hblk := ((Whole.quiet_block_ct check (by
       intro i hi s
       simp only [check, List.mem_cons, List.not_mem_nil, or_false] at hi

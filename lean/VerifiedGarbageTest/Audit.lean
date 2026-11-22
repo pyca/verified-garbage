@@ -46,6 +46,33 @@ theorem swapped_eq : swapped = 2 := rfl
 #guard_msgs in
 #assert_no_compiler_overrides two swapped_eq
 
+/-- An inductive of several constructors: Lean compiles its `ctorIdx` by its own
+`ctorIdx._impl`, which reads the constructor's tag (`AuditRecords.isCoreCtorIdx`). -/
+inductive Color where
+  | red | green | blue (n : Nat)
+
+def colorIdx (c : Color) : Nat := c.ctorIdx
+
+/-- info: the compiled code of [VG.Test.Audit.colorIdx] is what the kernel checked -/
+#guard_msgs in
+#assert_no_compiler_overrides colorIdx
+
+inductive Shade where
+  | light | dark
+
+/-- The kernel sees `Shade.ctorIdx`; compiled code always returns `0`. -/
+def zeroIdx (_ : Shade) : Nat := 0
+
+attribute [implemented_by zeroIdx] Shade.ctorIdx
+
+def shadeIdx (s : Shade) : Nat := s.ctorIdx
+
+-- Any other code for a `ctorIdx` is an override.
+/-- error: the compiled code of [VG.Test.Audit.shadeIdx] is not what the kernel checked:
+@[implemented_by] on VG.Test.Audit.Shade.ctorIdx -/
+#guard_msgs in
+#assert_no_compiler_overrides shadeIdx
+
 end VG.Test.Audit
 
 /-- A contract that `Spec/` never declared. -/

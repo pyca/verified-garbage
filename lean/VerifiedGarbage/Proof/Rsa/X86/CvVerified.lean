@@ -1330,7 +1330,7 @@ theorem operation_ok [VG.Proof.Rsa.X86.BatchLaw] {s : State} (a : ABI s) :
     WP isa code s fun t => Written (caller s) s.mem t ∧ abiPreserved s t := by
   obtain low : 16 ≤ (caller s).size := by have := a.used; omega
   obtain high : (caller s).size ≤ 2 ^ 64 := by have := a.scratchBound; omega
-  unfold code
+  unfold Impl.Rsa.X86.CrtValuesRt.code
   refine WP.seq (WP.mono (installed_ok a) fun u ⟨inputs, saved, k, o⟩ => ?_)
   refine WP.seq (WP.mono (body_ok inputs a.lengths_ok) fun v ⟨iv, written, frame, kv⟩ => ?_)
   obtain saveV := bodyFrame_saved inputs frame saved

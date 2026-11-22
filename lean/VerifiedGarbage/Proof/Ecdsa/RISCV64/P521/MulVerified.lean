@@ -359,7 +359,9 @@ theorem quad_ok (hL : Law W) {base : Addr} {s : State} (hw : WsReg s base) (hK :
     rw [show wordsVal s₇.mem base (c.sl T0) 9 = _ from e₇, pack_zero_iff]
     show ev base s₆ (c.sl RZ) = 0 ↔ _
     rw [vz', vz]
-    exact ⟨fun h => by_contra fun hz => cube_ne_zero hL hz h, fun h => by rw [h]; grind⟩
+    -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+    -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+    exact ⟨fun h => by_contra fun hz => cube_ne_zero hL hz h, fun h => by rw [h]; grind -lia⟩
   obtain hrep := InvJ.out hL J₅
   refine ⟨KK.kp.trans ((Kp.of_rest r₈).trans (Kp.of_rest r₉)), (UK.trans O₉.unch).cover (by decide),
     ⟨?_, ?_, ?_, ?_⟩⟩

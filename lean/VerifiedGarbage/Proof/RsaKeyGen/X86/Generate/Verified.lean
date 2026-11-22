@@ -2277,7 +2277,7 @@ theorem body_ct (srch : Srch) (key : KeyImpl) :
 
 theorem code_ct (srch : Srch) (key : KeyImpl) :
     RelCT isa (Two GenStart) (code srch.call key.call) fun _ _ => True := by
-  unfold code
+  unfold Impl.RsaKeyGen.X86.Generate.code
   refine RelCT.frame (R := fun _ _ => True) (fun s₁ s₂ ⟨q, h₁, h₂⟩ => ?_) ?_
   · exact (congrArg (fun q => q.inputs.sp) h₁.2).trans (congrArg (fun q => q.inputs.sp) h₂.2).symm
   · exact (body_ct srch key).mono (fun a b ⟨s₁, s₂, ⟨q, h₁, h₂⟩, e₁, e₂⟩ => ⟨q, ⟨s₁, h₁, e₁⟩, ⟨s₂, h₂, e₂⟩⟩)

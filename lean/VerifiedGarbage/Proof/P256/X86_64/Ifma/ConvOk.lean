@@ -283,7 +283,9 @@ theorem out_mont {v : Int} {x : Fin pN} (c : Nat) (h : D v = x * D ((c * 2 ^ 256
   have e : ofI pN ((c * 2 ^ 256 % pN : Nat) : Int) = Fin.ofNat pN c * Fin.ofNat pN (2 ^ 256) := by
     rw [ofI_natCast, Weierstrass.ofNat_mod, Weierstrass.ofNat_mul']
   simp only [D, dec, e] at h
-  grind
+  -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+  -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+  grind -lia
 
 end VG.Proof.P256.X86_64.Ifma
 

@@ -144,7 +144,9 @@ theorem fieldEqual_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : All
   · rw [tz, ue]
     change decide (env s.mem base a - env s.mem base b = 0) = _
     simp only [show ∀ u v : VG.Spec.X25519.Fe, u - v = 0 ↔ u = v from
-      fun _ _ => ⟨fun _ => by grind, fun _ => by grind⟩]
+      -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+      -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+      fun _ _ => ⟨fun _ => by grind -lia, fun _ => by grind -lia⟩]
 
 end VG.Proof.Ed25519.Arm
 end

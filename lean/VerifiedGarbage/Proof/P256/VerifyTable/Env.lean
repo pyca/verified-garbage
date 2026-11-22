@@ -663,8 +663,10 @@ theorem coz_x {Q : Point C} (hQ : onCurve C Q=true) (hQ0 : Q≠.infinity) {k : N
   obtain hn : 17≤C.n := by decide
   intro hx
   obtain hx' : X1*(Z*Z)-X2*(Z*Z)=0 := by
-    obtain e : X1*(Z*Z)-X2*(Z*Z)=(X1-X2)*(Z*Z) := by grind
-    rw [e,hx]; grind
+    -- `grind -lia` here and below: Lean 4.36's `grind` builds a proof the
+    -- kernel rejects from `lia` over `Fin` of a non-literal modulus.
+    obtain e : X1*(Z*Z)-X2*(Z*Z)=(X1-X2)*(Z*Z) := by grind -lia
+    rw [e,hx]; grind -lia
   by_cases hy : Y1*Z*(Z*Z)-Y2*Z*(Z*Z)=0
   · have he := h2.same hC h1 hz hz hx' hy
     obtain h' : zmul ((2*k+1 : Nat) : Int) Q=zmul (2 : Nat) Q := by
@@ -777,7 +779,7 @@ theorem coz_dblu {Q : Point C} (hQ : onCurve C Q=true) {E : Nat → Fe C}
     rw [show add Q Q=add (mul 1 Q) (mul 1 Q) by rw [mul_one_pt],hC.add_mul_mul hQ]] at j2
   obtain hz : r 10≠0 := fun hh => mul_ne_infinity hO hQ hQ0 (m:=2) (by decide) (by omega_arith)
     ((j2.z_zero_iff hC).mp hh)
-  obtain jd : InvJ C (r 5) (r 4) (r 10) Q := jp.rescale hC hz hC.one_ne_zero h5 h4 (by grind only)
+  obtain jd : InvJ C (r 5) (r 4) (r 10) Q := jp.rescale hC hz hC.one_ne_zero h5 h4 (by grind -lia only)
   have g (i : Nat) (hi : i<13) : runOps (ops true) (startEnv E) (tblσ i)=r i := at' i
   -- After the swap.
   obtain sw : ∀ x,dbluEnv E x=copiesEnv l2 (runOps (ops true) (startEnv E)) x := fun _ => rfl
@@ -814,7 +816,7 @@ theorem coz_dblu {Q : Point C} (hQ : onCurve C Q=true) {E : Nat → Fe C}
   · obtain rfl : a=1 := by omega_arith
     rw [n0,n1,n2,show 2*1-1=1 from rfl,mul_one_pt]; exact jp
   · obtain rfl : a=1 := by omega_arith
-    rw [n3,n2]; grind
+    rw [n3,n2]; grind -lia
   · obtain rfl : a=1 := by omega_arith
     rw [n4,n3,n2]; grind
 

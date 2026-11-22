@@ -109,7 +109,7 @@ theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
     WP isa (code v.name v.code) s fun t => abiPreserved s t ∧ CPost s t := by
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega_using [spLo])
-  unfold code
+  unfold Impl.RsaKeyGen.Arm.Candidate.code
   refine WP.frame (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [spLo]) (by decide) ?_
   rw [WP.seq_iff]
   obtain ⟨tr, w, t, run', -, pre, st, mt, ⟨_, bk, r0, outs, used⟩⟩ := body_wide v h

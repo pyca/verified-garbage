@@ -693,7 +693,7 @@ private theorem loop_done (v : RoundImpl) (a : SearchPublic × List Nat) (s : St
 
 theorem search_code_ct (v : RoundImpl) :
     RelCT isa (Two SearchStart) (searchCode v) (fun _ _ => True) := by
-  unfold searchCode code
+  unfold searchCode Impl.RsaKeyGen.X86_64.Search.code
   apply frame_alloc_ct
   change RelCT isa _ (.seq _ (.seq _ _)) _
   refine (RelCT.seq (two_post search_entry_ct entry_started)

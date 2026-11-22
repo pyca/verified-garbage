@@ -410,7 +410,7 @@ theorem codeAny_eq (p : Instr → Bool) (c : Prog isa) : codeAny p c = (instrs c
     induction c with
     | block is => rfl
     | _ => simp [Code.all, instrs, List.all_append, Bool.and_assoc, *]
-  rw [codeAny, Code.allOnce_eq, h, List.not_all_eq_any_not]
+  rw [codeAny, Code.allOnce_eq (M := isa), h, List.not_all_eq_any_not]
   simp
 
 theorem _root_.VG.Impl.Scrub.AArch64.Clear.of_wf (c : Prog isa) : (Clear.of c).WF :=

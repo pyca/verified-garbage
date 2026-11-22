@@ -162,7 +162,9 @@ open Spec.Weierstrass
   · rw [hv 2 (by decide)]
     exact (by decide : (1 : Fin C.p) ≠ 0)
   · simp only [hv 3 (by decide),hv 2 (by decide),Nat.reduceEqDiff,ite_false]
-    grind
+    -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+    -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+    grind -lia
   · simp only [hv 4 (by decide),hv 3 (by decide),hv 2 (by decide),Nat.reduceEqDiff,ite_false]
     grind
 

@@ -1040,7 +1040,7 @@ theorem code_ct (sname : String) (c : Search.Cand) (name : String) {kc : Prog is
     (hv : Verified target kc (Proof.RsaKeyGen.keyContract abi 56)) (hks : FrameStack.armStack kc ≤ 56) :
     RelCT isa (fun s t => genPre s ∧ genPre t ∧ genPub s t)
       (code (.call sname (Impl.RsaKeyGen.Arm.Search.code c.call)) (.call name kc)) (fun _ _ => True) := by
-  unfold code
+  unfold Impl.RsaKeyGen.Arm.Generate.code
   rw [show pushBytes = 4 * pushRegs.length from rfl]
   refine RelCT.frame (fun _ _ h => h.2.2.1) ?_
   rintro a b ta tb u v ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ e1 e2

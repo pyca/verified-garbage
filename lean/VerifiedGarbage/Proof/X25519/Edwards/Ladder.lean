@@ -142,7 +142,7 @@ theorem URep.dbl [hP : Fact (Params d)] {a24 X Z : F} (ha : (1 + d) * a24 = -d) 
     have key := dbl_core (l := l) p.on ha
     simp only at key
     have key' := mul_left_cancel₀ h1d key
-    rw [one_sub_div hd, one_add_div hd, ← mul_div_assoc, ← mul_div_assoc, div_left_inj' hd]
+    rw [one_sub_div hd, one_add_div hd, ← mul_div_assoc, ← mul_div_assoc, div_left_inj₀ hd]
     simp only [AA, BB, E, hX, hZ]
     linear_combination key'
   · -- `AA BB = 16 l⁴ y²`, and `E (AA + a24 E) = 16 l⁴ (1 - y²) (1 + d y²) / (1 + d)`.
@@ -195,7 +195,7 @@ theorem URep.dadd [hP : Fact (Params d)] {X2 Z2 X3 Z3 u1 : F} {p q b : EPoint d}
       simp only [add_y, neg_x, neg_y, addY]
       rw [one_sub_div hdm, one_sub_div hdm', one_add_div hdm, one_add_div hdm']
       simp only [mul_div_assoc', div_mul_eq_mul_div, div_div]
-      rw [div_left_inj' (mul_ne_zero hdm hdm')]
+      rw [div_left_inj₀ (mul_ne_zero hdm hdm')]
       have := dadd_core (l2 := l2) (l3 := l3) p.on q.on
       simp only at this
       simp only [DA, CB, hX2, hZ2, hX3, hZ3]

@@ -631,7 +631,7 @@ theorem framed_ok {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationL
 theorem verify_ok {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLocal eq) {s : State}
     (hp : vfLocal.pre s) : WP isa (code eq) s fun t => abiPreserved s t ∧ vfLocal.post s t := by
   have h := facts hp
-  unfold code
+  unfold Impl.Ed448.X86.Verify.code
   refine WP.seq (WP.mono (check_ok h hp.1) fun t ⟨he, hm, hrd, hwr, hg, hz⟩ => ?_)
   refine WP.ite _ hz (fun hcl => ?_) (fun hcl => ?_)
   · have hcl' : (arg s 2).toNat < 256 := of_decide_eq_true hcl
@@ -915,7 +915,7 @@ def After (σ t : State) : Prop :=
 theorem verify_ct {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLocal eq) :
     ConstantTime isa vfLocal.pre vfLocal.pub (code eq) := by
   apply RelCT.constantTime
-  unfold code
+  unfold Impl.Ed448.X86.Verify.code
   refine RelCT.seq (Q := fun _ _ => True) ((RelCT.taint (A := taint) (τr [.esp]) (fun a b h => agree_regs fun r hr => by
       rw [List.mem_singleton.mp hr]; exact h.2.2.1) (by taint_decide)).wpDep (F := After)
     (fun s₁ s₂ h => ⟨check_ok (facts h.1) h.1.1, check_ok (facts h.2.1) h.2.1.1⟩)) ?_

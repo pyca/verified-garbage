@@ -166,7 +166,9 @@ theorem entry_rep (hL : Law W) {k i : Nat} (hi : i < 37) :
       toM_zero, toM_montP]
     have := rep_affine' hL (Fin.ofNat W.p (entOf i m).1) (-Fin.ofNat W.p (entOf i m).2)
     simp only [negPt]
-    rwa [show (0 : Fe W) - Fin.ofNat W.p (entOf i m).2 = -Fin.ofNat W.p (entOf i m).2 by grind]
+    -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+    -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+    rwa [show (0 : Fe W) - Fin.ofNat W.p (entOf i m).2 = -Fin.ofNat W.p (entOf i m).2 by grind -lia]
 
 
 /-! ## The negation and the addition -/

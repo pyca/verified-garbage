@@ -67,7 +67,9 @@ theorem kap16 : 16 * kap = 1 := by
   obtain e : Fin.ofNat pN (2 ^ 260) = 16 * Fin.ofNat pN (2 ^ 256) := by decide +kernel
   rw [e] at h
   unfold kap
-  grind
+  -- `grind -lia` here and below: Lean 4.36's `grind` builds a proof the
+  -- kernel rejects from `lia` over `Fin` of a non-literal modulus.
+  grind -lia
 
 /-- `kap`, as an element of the curve's field. -/
 def kapC : Fe Cv := kap
@@ -79,7 +81,7 @@ theorem D_words (w : Nat) : D (w : Int) = toM pN (2 ^ 256) w * kap := by
   obtain h := mul_rinv (unitMod_pow_two (m := pN) (by decide) 256)
   unfold D dec toM kap
   rw [ofI_natCast]
-  grind
+  grind -lia
 
 /-- The accumulator `(xn, un, z)` stands for `A`, or its `z` is zero. -/
 def Pinv (xn un z : Fe Cv) (A : Point Cv) : Prop := z = 0 ∨ InvJ Cv (4 * xn) (4 * un) (2 * z) A
@@ -104,11 +106,11 @@ theorem pinv_add (hC : Law Cv) (ha : AM3 Cv) {p : AP (Fe Cv)} {y : Fe Cv} {A B :
     (hzz : p.ezz = p.ez * p.ez) (hzzz : p.ezzz = p.ez * p.ez * p.ez) :
     Pinv p.X3 p.Un p.Z3 (Spec.Weierstrass.add A (if p.neg then negPt B else B)) := by
   by_cases hz : p.z = 0
-  · exact Or.inl (by simp only [AP.Z3, hz]; grind)
+  · exact Or.inl (by simp only [AP.Z3, hz]; grind -lia)
   by_cases hez : p.ez = 0
-  · exact Or.inl (by simp only [AP.Z3, hez]; grind)
+  · exact Or.inl (by simp only [AP.Z3, hez]; grind -lia)
   by_cases hH : p.H = 0
-  · exact Or.inl (by simp only [AP.Z3, hH]; grind)
+  · exact Or.inl (by simp only [AP.Z3, hH]; grind -lia)
   rcases h with h | h
   · exact absurd h hz
   obtain hB' : onCurve Cv (if p.neg then negPt B else B) = true := by
@@ -118,21 +120,21 @@ theorem pinv_add (hC : Law Cv) (ha : AM3 Cv) {p : AP (Fe Cv)} {y : Fe Cv} {A B :
   obtain he' : InvJ Cv p.ex (if p.neg then 0 - y else y) p.ez (if p.neg then negPt B else B) := by
     split
     · have := he.negY
-      rw [show (0 : Fe Cv) - y = -y by grind]
+      rw [show (0 : Fe Cv) - y = -y by grind -lia]
       exact this
     · exact he
   obtain hj := InvJ.add_ne hC ha hA hB' h he' (hC.mul_ne_zero two_ne hz) hez (by
     intro h0
     apply hH
     simp only [AP.H, hzz]
-    have : (4 : Fe Cv) * (p.z * p.z * p.ex - p.xn * (p.ez * p.ez)) = 0 := by grind
+    have : (4 : Fe Cv) * (p.z * p.z * p.ex - p.xn * (p.ez * p.ez)) = 0 := by grind -lia
     rcases (by by_contra hn; exact hC.mul_ne_zero (by decide : (4 : Fe Cv) ≠ 0) hn this :
       p.z * p.z * p.ex - p.xn * (p.ez * p.ez) = 0) with h1
     exact h1)
   obtain e := add_jac p y hy hzz hzzz
   dsimp only at hj
   rw [e] at hj
-  exact Or.inr (hj.rescale hC one_ne two_ne (by grind) (by grind) (by grind))
+  exact Or.inr (hj.rescale hC one_ne two_ne (by grind -lia) (by grind -lia) (by grind -lia))
 
 /-- The entry of the triple `(ex, y, ez)` of `B`, or of its negative, as the accumulator. -/
 theorem pinv_set (hC : Law Cv) {ex ey ez y : Fe Cv} {B : Point Cv} (neg : Bool) (he : InvJ Cv ex y ez B)
@@ -144,7 +146,7 @@ theorem pinv_set (hC : Law Cv) {ex ey ez y : Fe Cv} {B : Point Cv} (neg : Bool) 
       exact this
     · exact he
   refine Or.inr (he'.rescale hC two_ne one_ne (by grind) ?_ (by grind))
-  cases neg <;> simp only [hy, Bool.false_eq_true, ↓reduceIte] <;> grind
+  cases neg <;> simp only [hy, Bool.false_eq_true, ↓reduceIte] <;> grind -lia
 
 end
 
@@ -199,14 +201,14 @@ theorem entQ_zz (X Y Z : Fe Cv) (neg : Bool) (xn un z : Fe Cv) :
     (entQ X Y Z neg xn un z).ezz = (entQ X Y Z neg xn un z).ez * (entQ X Y Z neg xn un z).ez := by
   have := kapC16
   simp only [entQ]
-  grind
+  grind -lia
 
 theorem entQ_zzz (X Y Z : Fe Cv) (neg : Bool) (xn un z : Fe Cv) :
     (entQ X Y Z neg xn un z).ezzz =
       (entQ X Y Z neg xn un z).ez * (entQ X Y Z neg xn un z).ez * (entQ X Y Z neg xn un z).ez := by
   have := kapC16
   simp only [entQ]
-  grind
+  grind -lia
 
 /-- The entry's triple is the point's. -/
 theorem entQ_inv (hC : Law Cv) {X Y Z : Fe Cv} {B : Point Cv} (h : InvJ Cv X Y Z B) (neg : Bool) (xn un z : Fe Cv) :
@@ -214,10 +216,10 @@ theorem entQ_inv (hC : Law Cv) {X Y Z : Fe Cv} {B : Point Cv} (h : InvJ Cv X Y Z
       (entQ X Y Z neg xn un z).ey = 2 * (2 * kapC * Y) := by
   have k := kapC16
   refine ⟨h.rescale hC one_ne two_ne ?_ ?_ ?_, ?_⟩
-  · simp only [entQ]; grind
-  · grind
-  · simp only [entQ]; grind
-  · simp only [entQ]; grind
+  · simp only [entQ]; grind -lia
+  · grind -lia
+  · simp only [entQ]; grind -lia
+  · simp only [entQ]; grind -lia
 
 /-- `entQ`, with the field's elements as numbers modulo `pN`. -/
 def entQN (X Y Z : Fin pN) (neg : Bool) (xn un z : Fin pN) : AP (Fin pN) :=
@@ -350,15 +352,15 @@ theorem dp_pts (hC : Law Cv) (hO : PrimeOrder Cv) (ha : AM3 Cv) (h3 : 3 ≤ Cv.n
       hC.add_mul_mul hQ]] at j2
   obtain jT : InvJ Cv (DP.XT ⟨x, y', z * z⟩) (DP.YT ⟨x, y', z * z⟩) y' (mul 2 Q) := by
     refine j2.rescale hC (l := 2) (m := 1) two_ne one_ne ?_ ?_ ?_
-    · simp only [dblJF, DP.XT, DP.MM, DP.M, DP.XX, DP.ZZ, DP.S, DP.YY, hy]; grind
-    · simp only [dblJF, DP.YT, DP.w, DP.YY2, DP.MM, DP.M, DP.XX, DP.ZZ, DP.S, DP.YY, hy]; grind
-    · simp only [dblJF, hy]; grind
+    · simp only [dblJF, DP.XT, DP.MM, DP.M, DP.XX, DP.ZZ, DP.S, DP.YY, hy]; grind -lia
+    · simp only [dblJF, DP.YT, DP.w, DP.YY2, DP.MM, DP.M, DP.XX, DP.ZZ, DP.S, DP.YY, hy]; grind -lia
+    · simp only [dblJF, hy]; grind -lia
   obtain hy0 : y' ≠ 0 := fun h0 =>
     CoZTable.two_ne_zero_pt hO hQ hQ0 h3 ((jT.z_zero_iff hC).mp h0)
   refine ⟨jT, hj.rescale hC (l := 2 * y') (m := 1) (hC.mul_ne_zero two_ne hy0) one_ne ?_ ?_ ?_, hy0⟩
-  · simp only [DP.S, DP.YY]; grind
-  · simp only [DP.YY2, DP.YY, hy]; grind
-  · grind
+  · simp only [DP.S, DP.YY]; grind -lia
+  · simp only [DP.YY2, DP.YY, hy]; grind -lia
+  · grind -lia
 
 /-- `zaddu`'s points: from `2 Q` and `[2 k + 1]Q` with one `Z`, `[2 k + 3]Q` and `2 Q` with the sum's. -/
 theorem zp_pts (hC : Law Cv) (hO : PrimeOrder Cv) (ha : AM3 Cv) (hn : 17 ≤ Cv.n) {Q : Point Cv}
@@ -601,7 +603,7 @@ theorem entQN_virt (x y z : Fin pN) (neg : Bool) (xn un z0 : Fin pN) :
     entQN (4 * x) (8 * y) (2 * z) neg xn un z0 = ⟨xn, un, z0, x, 2 * y, z, z * z, z * (z * z), neg⟩ := by
   have := kap16
   simp only [entQN, AP.mk.injEq, true_and, and_true]
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> grind
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> grind -lia
 
 /-- The first `n` entries of `Q`'s table kept as limbs, from `TOFF` of the working space: entry `a` is that
 of the triple `Tq a`. -/
@@ -927,7 +929,7 @@ theorem chainZ_pts (hC : Law Cv) (hO : PrimeOrder Cv) (ha : AM3 Cv) {Q : Spec.We
     obtain h2z : 2 * (entQ X Y 1 false 0 0 0).ez = 1 := by
       have := kapC16
       simp only [entQ]
-      grind
+      grind -lia
     obtain dp := dp_pts hC hO ha (by decide) hQ hQ0 hi h2z hy2
     rw [← entQ_zz X Y 1 false 0 0 0] at dp
     obtain ⟨d1, d2, d3⟩ := dp
@@ -952,10 +954,10 @@ theorem tabQ_pts (hC : Law Cv) (hO : PrimeOrder Cv) (ha : AM3 Cv) {Q : Spec.Weie
     obtain hQ0 : Q ≠ .infinity := fun e => one_ne ((hJ.z_zero_iff hC).mpr e)
     obtain ⟨j1, j2, hz⟩ := chainZ_pts hC hO ha hQ hJ k (by omega_using [ha'])
     obtain ⟨js, -, -⟩ := zp_pts hC hO ha (by decide) hQ hQ0 (k := k) (by omega_using [ha']) j1 j2 hz
-    obtain e1 : 4 * (chainZ X Y k).x3 * (1 * 1) = (chainZ X Y k).x3 * (2 * 2) := by grind
+    obtain e1 : 4 * (chainZ X Y k).x3 * (1 * 1) = (chainZ X Y k).x3 * (2 * 2) := by grind -lia
     obtain e2 : 8 * ((chainZ X Y k).Ev - (chainZ X Y k).A1) * (1 * 1 * 1) =
-        ((chainZ X Y k).Ev - (chainZ X Y k).A1) * (2 * 2 * 2) := by grind
-    obtain e3 : 2 * (chainZ X Y k).z3 * 1 = (chainZ X Y k).z3 * 2 := by grind
+        ((chainZ X Y k).Ev - (chainZ X Y k).A1) * (2 * 2 * 2) := by grind -lia
+    obtain e3 : 2 * (chainZ X Y k).z3 * 1 = (chainZ X Y k).z3 * 2 := by grind -lia
     exact js.rescale hC (l := 2) (m := 1) two_ne one_ne e1 e2 e3
 
 /-- After entry `k` of the table of the point `(X, Y)`: the entries so far are kept as limbs, `rbp` is at
@@ -1269,7 +1271,7 @@ theorem entQN_zz (X Y Z : Fin pN) (neg : Bool) (xn un z : Fin pN) :
     (entQN X Y Z neg xn un z).ezz = (entQN X Y Z neg xn un z).ez * (entQN X Y Z neg xn un z).ez := by
   have := kap16
   simp only [entQN]
-  grind
+  grind -lia
 
 /-- The accumulator of the vectors: not set yet (`r11` zero), or standing for a triple. -/
 def AccSt (s : State) : Option (Fin pN × Fin pN × Fin pN) → Prop

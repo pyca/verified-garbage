@@ -256,7 +256,7 @@ theorem code_eq : code = seqs (([.block (entry ++ head)] : List (Prog isa)) ++
     (((loadA aPa kPp kPl ++ (loadA aQa kQp kPl ++ (loadE ++ ([.block [.store (hdr kEv) .rbx]] : List (Prog isa))))) ++
       (order ++ (decTo aPm aPa ++ (decTo aQm aQa ++ (lcmPart ++ ([dPart] ++ smallMask)))))) ++
     ([.ite .ne (zeros 2) keyPart] : List (Prog isa)))) := by
-  simp only [code, List.append_assoc]
+  simp only [Impl.RsaKeyGen.X86_64.Key.code, List.append_assoc]
 
 /-- The working space set up: `KS` from the state on entry, after `entry`
 and `head`. -/

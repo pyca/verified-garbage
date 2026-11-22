@@ -473,7 +473,7 @@ theorem code_wp (v : RoundArith) (s : State) (h : roundPre s) : WP isa (code v.m
   obtain ⟨hdim, bm, hctx, -⟩ := initial_ctx h
   have hg := hctx.good
   obtain hw31 : Proof.Rsa.Mont.wOf s.mem (s.gpr .rdi) < 2 ^ 31 := by have := hdim.w128; omega_arith
-  unfold code
+  unfold Impl.MillerRabin.X86_64.Ifma.code
   have m₀ : s.mem = s.mem := rfl
   obtain k₀ : Keep [.rax] s s := Keep.refl _ _
   refine WP.seq (WP.mono (isW_ok 16 hg hdim.z (by decide) hw31) fun u1 ⟨z1, m1, k1⟩ => ?_)
@@ -548,7 +548,7 @@ theorem ifma_noMx (hl : MrOk l) : (ifma l).allInstrs (fun i => !touchesMxcsr i) 
 
 /-- The round with the IFMA layouts never touches MXCSR, where `round mul` does not. -/
 theorem code_noMx (v : RoundArith) : (code v.mm).allInstrs (fun i => !touchesMxcsr i) = true := by
-  simp only [code, Code.allInstrs, ifma_noMx (.inl rfl), ifma_noMx (.inr (.inl rfl)),
+  simp only [Impl.MillerRabin.X86_64.Ifma.code, Code.allInstrs, ifma_noMx (.inl rfl), ifma_noMx (.inr (.inl rfl)),
     ifma_noMx (.inr (.inr (.inl rfl))), ifma_noMx (.inr (.inr (.inr (.inl rfl)))),
     ifma_noMx (.inr (.inr (.inr (.inr rfl)))), v.mxSafe, Bool.and_true, Bool.true_and]
   decide

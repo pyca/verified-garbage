@@ -114,7 +114,7 @@ private theorem loop_done (v : RoundImpl) (a : KeyPublic × List Nat) (s : State
 
 theorem key_code_ct (v : RoundImpl) :
     RelCT isa (Two KeyStart) (code (attemptCall v)) (fun _ _ => True) := by
-  unfold code
+  unfold Impl.Ffdh.X86_64.Cached.Search.code
   change RelCT isa _ (.seq _ (.seq _ _)) _
   exact RelCT.seq (two_post (two_map Prod.fst (fun _ _ h => h.1) key_entry_ct) entry_started)
     (RelCT.seq (two_post (two_map initialPoint (fun _ _ h => h) (key_loop_ct v)) (loop_done v))
