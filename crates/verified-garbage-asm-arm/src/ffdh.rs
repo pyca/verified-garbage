@@ -19044,7 +19044,7 @@ pub const VG_FFDH_GENERATE_PARAMETERS_UMAAL_FEATURES: verified_garbage_cpu::Feat
 /// * `scratch_len` must be at least `16 * out_len + 32`.
 /// * The last twelve controller words and the scratch contents are private workspace.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -19262,10 +19262,10 @@ ldr r10, [sp, #8]
 ldr r11, [sp, #12]
 ldr lr, [sp, #20]
 ldr r4, [sp], #24
-sub sp, sp, #232
+sub sp, sp, #280
 add r12, sp, #0
 mov r2, #0
-mov r3, #7
+mov r3, #8
 222:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -19280,7 +19280,11 @@ subs r3, r3, #1
 bne 222b
 str r2, [r12, #0]
 str r2, [r12, #4]
-add sp, sp, #232
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #280
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -19307,7 +19311,7 @@ bx lr",
 /// * `scratch_len` must be at least `16 * out_len + 32`.
 /// * The last twelve controller words and the scratch contents are private workspace.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 280 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -19523,10 +19527,10 @@ ldr r10, [sp, #8]
 ldr r11, [sp, #12]
 ldr lr, [sp, #20]
 ldr r4, [sp], #24
-sub sp, sp, #232
+sub sp, sp, #280
 add r12, sp, #0
 mov r2, #0
-mov r3, #7
+mov r3, #8
 222:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -19541,7 +19545,11 @@ subs r3, r3, #1
 bne 222b
 str r2, [r12, #0]
 str r2, [r12, #4]
-add sp, sp, #232
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #280
 mov r1, #0
 mov r2, #0
 mov r3, #0

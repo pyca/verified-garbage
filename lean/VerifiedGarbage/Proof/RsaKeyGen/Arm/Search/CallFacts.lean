@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-! # The regions of a candidate call (ARMv7)
 
 The candidate runs on the tape from `used`, with its stack arguments in its
-frame at `S2 = sp - 72` and its own stack the 112 bytes below: what its
+frame at `S2 = sp - 72` and its own stack the 160 bytes below: what its
 precondition says of them, from the search's.
 -/
 
@@ -27,11 +27,11 @@ abbrev rP (p : SearchPublic) : Region := ⟨State.addr p.pp, p.plen⟩
 abbrev rR (p : SearchPublic) (used : Nat) : Region := ⟨State.addr (p.rp + BitVec.ofNat 32 used), p.randLen - used⟩
 abbrev rS (p : SearchPublic) : Region := ⟨State.addr p.B, p.words * 8⟩
 abbrev rA (p : SearchPublic) : Region := ⟨State.addr p.S2, 28⟩
-abbrev rF (p : SearchPublic) : Region := ⟨State.addr p.S2 - 112#64, 112⟩
+abbrev rF (p : SearchPublic) : Region := ⟨State.addr p.S2 - 160#64, 160⟩
 
 /-- What the candidate's precondition says of its regions. -/
 structure CallFacts (p : SearchPublic) (used : Nat) : Prop where
-  spLo : 112 ≤ p.S2.toNat
+  spLo : 160 ≤ p.S2.toNat
   spHi : p.S2.toNat + 28 ≤ 2 ^ 32
   oU : (rO p).Disjoint (rU p)
   oE : (rO p).Disjoint (rE p)
@@ -96,7 +96,7 @@ theorem A_sub (h : SearchInput p o) : Region.Sub (rA p) (inStack o) := by
 
 theorem F_sub (h : SearchInput p o) : Region.Sub (rF p) (inStack o) := by
   have room := h.facts.room
-  change Region.Sub ⟨State.addr (p.sp - BitVec.ofNat 32 72) - 112#64, 112⟩ _
+  change Region.Sub ⟨State.addr (p.sp - BitVec.ofNat 32 72) - 160#64, 160⟩ _
   rw [FrameStack.addr_sub' (by omega_using [room]), h.sp_eq, BitVec.sub_sub]
   exact h.stack_sub (by decide) (by decide)
 
@@ -134,7 +134,7 @@ theorem callFacts (h : SearchInput p o) {used : Nat} (hu : used ≤ p.randLen) :
   have fR : (rF p).Disjoint (rR p used) :=
     (disj_sub (fW (List.mem_append_right _ mR)).symm hR).symm
   have fA : (rF p).Disjoint (rA p) := by
-    exact (Offset.base_disjoint_below (State.addr p.S2) (n := 112) (k := 28) (by decide)).symm
+    exact (Offset.base_disjoint_below (State.addr p.S2) (n := 160) (k := 28) (by decide)).symm
   refine ⟨by omega_using [room, S2n], by have := f.top; omega_using [S2n], dOU, ?_, ?_, ?_, dOS, ?_, ?_, ?_, ?_, dUS, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, fR, ?_, fA, f.nO, f.nU, f.nE, f.nP, ?_, f.nS⟩
   · rw [← eO]; exact wE mO

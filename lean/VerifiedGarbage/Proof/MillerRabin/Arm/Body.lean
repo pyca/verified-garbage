@@ -15,8 +15,6 @@ public import VerifiedGarbage.Proof.MillerRabin.Word32 -- shake: keep: re-export
 public import VerifiedGarbage.Proof.Rsa.Arm.Stage.VP
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Base
-import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Mont2
 public import VerifiedGarbage.Impl.MillerRabin.Arm.Round
@@ -27,156 +25,12 @@ meta import VerifiedGarbage.Impl.MillerRabin.Arm.Round
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTRounds
-import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineBase
-public import VerifiedGarbage.Impl.MillerRabin.Arm.Arithmetic
-import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
-import VerifiedGarbage.Proof.Bignum.Arm.MontPipelineCTFnBody
-import VerifiedGarbage.Proof.Bignum.Arm.FiosFastRound
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.MontOp
-public import VerifiedGarbage.Impl.Bignum.Arm.FiosFast
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundCT
-import VerifiedGarbage.Proof.Bignum.Arm.FiosArgs
-import VerifiedGarbage.Proof.Bignum.Arm.FiosCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Impl.Bignum.Arm.FiosFast
-meta import VerifiedGarbage.Proof.Bignum.Arm.FiosCT
-
-/-! ### `MillerRabin.Arm.ArithmeticCT`, which only this module used -/
-
-section
-
-/-! ### `Bignum.Arm.FiosFastCT`, which only this module used -/
-
-section
-
-/-! The fused scan's addresses and branches depend only on public pointers and counts. -/
-
-@[expose] public section
-namespace VG.Proof.Bignum.Arm.FiosFast
-open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont VG.Proof.Bignum.Arm.Fios
-open VG.Proof.X25519.Arm (wp_ldr)
-
-private theorem keeping_r0 {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
-    (hp : ∀ s t, P s t → ∀ r ∈ rs, s.gpr r = t.gpr r)
-    {hint : VG.Taint.Hint VG.Arm.Taint.T}
-    (hc : ((FiosTaint.analysis.check (Taint.ofRegs rs) c hint).map
-      fun τ => (RegSet.ofList [.r0]).subset τ.regs) = some true) :
-    RelCT isa P c (fun s t => s.gpr .r0 = t.gpr .r0) := by
-  intro s t tr₁ tr₂ u v h ex ey
-  obtain ⟨τ, ht, ho⟩ := Option.map_eq_some_iff.mp hc
-  obtain ⟨trace, final⟩ := VG.Taint.check_sound ht (Taint.agree_ofRegs (hp s t h)) ex ey
-  exact ⟨trace, final.rf.1 .r0 (RegSet.mem_of_subset ho (RegSet.mem_ofList.mpr (by simp)))⟩
-
-theorem code_relCT : RelCT isa
-    (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r12 = t.gpr .r12 ∧
-      s.gpr .r4 = t.gpr .r4 ∧ s.gpr .lr = t.gpr .lr)
-    VG.Impl.Bignum.Arm.FiosFast.code (fun s t => s.gpr .r0 = t.gpr .r0) := by
-  apply keeping_r0 [.r0,.r12,.r4,.lr] ?_ (by taint_decide)
-  intro s t h r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact h.1
-  · exact h.2.1
-  · exact h.2.2.1
-  · exact h.2.2.2
-
-theorem round_ct {base : BitVec 32} {size tmp a b mod acc n i : Nat} (hi : i < n) :
-    RelCT isa (fun s t => RoundReady base size tmp a b mod acc n i s ∧
-      RoundReady base size tmp a b mod acc n i t)
-      VG.Impl.Bignum.Arm.FiosFast.round (fun _ _ => True) := by
-  let P := RoundReady base size tmp a b mod acc n i
-  let Q := fun s : State => s.gpr .r0 = base + BitVec.ofNat 32 acc ∧
-    s.gpr .r12 = base + BitVec.ofNat 32 b ∧ s.gpr .r4 = base + BitVec.ofNat 32 mod ∧
-    s.gpr .lr = BitVec.ofNat 32 n
-  have ct : RelCT isa (fun s t => P s ∧ P t) (.block VG.Impl.Bignum.Arm.Fios.args)
-      (fun _ _ => True) := args_ct.mono
-    (fun _ _ h => ⟨h.1.stage,h.2.stage⟩) (fun _ _ h => h)
-  have wp (s : State) (h : P s) : WP isa (.block VG.Impl.Bignum.Arm.Fios.args) s Q := by
-    obtain ⟨inv,hdr,_⟩ := h.secret
-    refine WP.mono (args_ok s h.ctx hdr hi h.ptr) ?_
-    rintro t ⟨_,p0,p12,p4,_,count,_⟩
-    exact ⟨p0,p12,p4,count⟩
-  have scan : RelCT isa (fun s t => Q s ∧ Q t) VG.Impl.Bignum.Arm.FiosFast.code
-      (fun s t => s.gpr .r0 = t.gpr .r0) := code_relCT.mono
-    (fun _ _ h => ⟨h.1.1.trans h.2.1.symm,h.1.2.1.trans h.2.2.1.symm,
-      h.1.2.2.1.trans h.2.2.2.1.symm,h.1.2.2.2.trans h.2.2.2.2.symm⟩)
-    (fun _ _ h => h)
-  have finish : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0)
-      (.block roundFinish) (fun _ _ => True) := by
-    apply RelCT.taint (A := taint) (Taint.ofRegs [.r0]) _ (by taint_decide)
-    intro s t h
-    exact Taint.agree_ofRegs (by simpa using h)
-  exact (pair_posts ct wp).seq (scan.seq finish)
-
-end VG.Proof.Bignum.Arm.FiosFast
-
-end
-
-end
-
-/-! # Fixed-index Montgomery operations have public traces -/
-
-@[expose] public section
-
-namespace VG.Proof.MillerRabin.Arm.Arithmetic
-open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
-open VG.Impl.MillerRabin.Arm.Arithmetic
-open VG.Proof.Rsa.Mont (Operand numAt arrAt)
-
-private theorem product_fios_ct {base : BitVec 32} {len w o a b : Nat}
-    (ho : Operand o) (ha : Operand a) (hb : Operand b) (fit : arrAt w 3 + 32 ≤ 8 * len) :
-    RelCT isa (fun s t =>
-      (ArithmeticReady base len w s ∧ numAt s.mem (State.addr base) w b < numAt s.mem (State.addr base) w 0) ∧
-      (ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w b < numAt t.mem (State.addr base) w 0) ∧ s.sp = t.sp)
-      (product true o a b) (fun _ _ => True) := by
-  let P := fun (s t : State) =>
-    (ArithmeticReady base len w s ∧ numAt s.mem (State.addr base) w b < numAt s.mem (State.addr base) w 0) ∧
-    (ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w b < numAt t.mem (State.addr base) w 0) ∧ s.sp = t.sp
-  have args : RelCT isa P (.block (montOpArgs o a b)) (fun _ _ => True) := by
-    apply RelCT.taint (A := taint) (Taint.ofRegs []) _ (hc := .block []) (by rfl)
-    intro s t _
-    exact Taint.agree_ofRegs (by simp)
-  have ready := (relCT_keep_sp args (fun _ _ h => h.2.2)).wp
-    (fun s t h => ⟨montOpArgs_ready s h.1.1 ho ha hb h.1.2, montOpArgs_ready t h.2.1.1 ho ha hb h.2.1.2⟩)
-  have body := relCT_keep_sp ((MontPipeline.fnBody_ct FiosFast.round (MontPipeline.RoundLaw.loop FiosFast.round_law)
-    (MontPipeline.RoundCTLaw.loop FiosFast.round_law (by intro _ _ _ _ _ _ _ _ _ _ hi; exact FiosFast.round_ct hi)) ho ha hb fit).mono
-    (P' := fun (s t : State) => s.sp = t.sp ∧ FnBodyReady base len w o a b s ∧ FnBodyReady base len w o a b t)
-    (fun _ _ h => h.2) (fun _ _ h => h)) (fun _ _ h => h.1)
-  simp only [product, ↓reduceIte]
-  exact (ready.seq (body.seq (loadStack_ct .r0 0))).mono (fun _ _ h => h) (fun _ _ _ => trivial)
-
-theorem product_ct (fios : Bool) {base : BitVec 32} {len w o a b : Nat}
-    (ho : Operand o) (ha : Operand a) (hb : Operand b) (fit : arrAt w 3 + 32 ≤ 8 * len) :
-    RelCT isa (fun s t =>
-      (ArithmeticReady base len w s ∧ numAt s.mem (State.addr base) w b < numAt s.mem (State.addr base) w 0) ∧
-      (ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w b < numAt t.mem (State.addr base) w 0) ∧ s.sp = t.sp)
-      (product fios o a b) (fun _ _ => True) := by
-  cases fios with
-  | false => exact montOp_ct ho ha hb fit
-  | true => exact product_fios_ct ho ha hb fit
-
-theorem square_ct (fios : Bool) {base : BitVec 32} {len w o a : Nat}
-    (ho : Operand o) (ha : Operand a) (fit : arrAt w 3 + 32 ≤ 8 * len) :
-    RelCT isa (fun s t =>
-      (ArithmeticReady base len w s ∧ numAt s.mem (State.addr base) w a < numAt s.mem (State.addr base) w 0) ∧
-      (ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w a < numAt t.mem (State.addr base) w 0) ∧ s.sp = t.sp)
-      (square fios o a) (fun _ _ => True) := by
-  cases fios with
-  | false => exact squareOp_ct ho ha
-  | true => exact product_fios_ct ho ha ha fit
-
-end VG.Proof.MillerRabin.Arm.Arithmetic
-
-end
-
-end
-
 /-! ### `MillerRabin.Arm.Taint`, which only this module used -/
 
 section
@@ -351,8 +205,8 @@ structure AfterM (P : MP) (E : State → Prop) (A : State → Nat → Nat) (L : 
 
 /-- `mulY b`: `[aY] := mm c w [aY] [b]`. -/
 theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hbL : b ∈ aY :: L)
-    (hYv : ∀ σ, E σ → A σ aY < cOf P σ.mem) (hbv : ∀ σ, E σ → A σ b < cOf P σ.mem) (fios : Bool := false) :
-    VP (St P E A (aY :: L) V LS) (seqs (mulY (fios := fios) b))
+    (hYv : ∀ σ, E σ → A σ aY < cOf P σ.mem) (hbv : ∀ σ, E σ → A σ b < cOf P σ.mem) (M : CallOp) :
+    VP (St P E A (aY :: L) V LS) (seqs (mulY M.op b))
       (St P E (fun σ => upd (A σ) aY (mm (cOf P σ.mem) P.w (A σ aY) (A σ b))) (aY :: L) V LS) := by
   have opd : Operand aY ∧ Operand b := by
     refine ⟨by simp [Operand, aY, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp], ?_⟩
@@ -375,23 +229,23 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
       rw [u1.gpr]; have := h.frameWord (o := 0) (by decide); simp only [off, BitVec.add_zero] at this
       rw [this, pre.saved]
   -- The product.
-  · have rdy : ∀ σ s, G1 σ s → ArithmeticReady P.ws P.len P.w s ∧
+  · have rdy : ∀ σ s, G1 σ s → ArithmeticReady P.ws P.len P.w s ∧ CallStack P.ws P.len s ∧
         numAt s.mem (State.addr P.ws) P.w b < numAt s.mem (State.addr P.ws) P.w 0 := fun σ s ⟨⟨e, h, _⟩, r0⟩ => by
       have pre := h.pre
       have cR := pre.c_lt
       have hb' := h.arrs b hbL
-      refine ⟨h.ready r0, ?_⟩
+      refine ⟨h.ready r0, h.callStack, ?_⟩
       rw [pre.numAt_eq (by rw [hb']; have := hbv σ e; omega_arith), hb',
         show numAt s.mem (State.addr P.ws) P.w 0 = cOf P s.mem from rfl, h.c_eq]
       exact hbv σ e
     refine VP.of_ct (fun σ₁ σ₂ => ?_) fun σ s hs => ?_
     · intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
       have len := hp.1.1.2.1.pre.len
-      have ct := Arithmetic.product_ct fios (base := P.ws) (len := P.len) (w := P.w) opd.1 opd.1 opd.2
+      have ct := M.op_ct (base := P.ws) (len := P.len) (w := P.w) opd.1 opd.1 opd.2
         (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith)
       exact ct s₁ s₂ t₁ t₂ u₁ u₂ ⟨rdy _ _ hp.1, rdy _ _ hp.2, by
         rw [hp.1.1.2.1.sp, hp.1.1.2.1.pre.sp, hp.2.1.2.1.sp, hp.2.1.2.1.pre.sp]⟩ e₁ e₂
-    · obtain ⟨ar, lt⟩ := rdy σ s hs
+    · obtain ⟨ar, cs, lt⟩ := rdy σ s hs
       obtain ⟨⟨e, h, _⟩, r0⟩ := hs
       have pre := h.pre
       have cR := pre.c_lt
@@ -402,13 +256,15 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
       have eB : numAt s.mem (State.addr P.ws) P.w b = A σ b := by
         rw [pre.numAt_eq (by rw [hB]; have := hbv σ e; omega_arith), hB]
       have c0 : numAt s.mem (State.addr P.ws) P.w 0 = cOf P σ.mem := h.c_eq
-      refine WP.mono (Arithmetic.product_ok fios s ar opd.1 opd.1 opd.2 (by decide) lt)
+      have spP : s.sp = P.sp := h.sp.trans pre.sp
+      refine WP.mono (M.op_ok s ar cs opd.1 opd.1 opd.2 (by decide) lt)
         fun t ⟨ar', _, lt', v, keeps, frame, rest⟩ => ?_
+      rw [spP] at frame
       have k := keep_of_mont pre keeps frame
       have hL : KS P σ (A σ) L (V σ) LS s := h.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, rfl⟩)
         (fun d hd => ⟨hd, rfl⟩)
-      refine ⟨e, hL.core k (by decide) (by simp) rest.sp rest.rd rest.wr (hL.arrs_keep k ?_ (by simp))
-        (hL.sl_keep k (by simp) (by simp)) hL.live_lt hL.ls_ok, ?_, ?_⟩
+      refine ⟨e, hL.coreOff k (by decide) (by simp) rest.sp rest.rd rest.wr (hL.arrs_keepOff k ?_ (by simp))
+        (hL.sl_keepOff k (by simp) (by simp)) hL.live_lt hL.ls_ok, ?_, ?_⟩
       · intro j hj hj'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hj'
         rcases hj' with rfl | rfl | rfl
@@ -440,8 +296,8 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
 
 
 /-- `sqY`: `[aY] := mm c w [aY] [aY]`, by the dedicated square. -/
-theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E σ → A σ aY < cOf P σ.mem) (fios : Bool := false) :
-    VP (St P E A (aY :: L) V LS) (seqs (sqY (fios := fios)))
+theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E σ → A σ aY < cOf P σ.mem) (M : CallOp) :
+    VP (St P E A (aY :: L) V LS) (seqs (sqY M.op))
       (St P E (fun σ => upd (A σ) aY (mm (cOf P σ.mem) P.w (A σ aY) (A σ aY))) (aY :: L) V LS) := by
   have opd : Operand aY := by simp [Operand, aY, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have hbL : aY ∈ aY :: L := List.mem_cons_self
@@ -464,23 +320,23 @@ theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E 
       rw [u1.gpr]; have := h.frameWord (o := 0) (by decide); simp only [off, BitVec.add_zero] at this
       rw [this, pre.saved]
   -- The product.
-  · have rdy : ∀ σ s, G1 σ s → ArithmeticReady P.ws P.len P.w s ∧
+  · have rdy : ∀ σ s, G1 σ s → ArithmeticReady P.ws P.len P.w s ∧ CallStack P.ws P.len s ∧
         numAt s.mem (State.addr P.ws) P.w aY < numAt s.mem (State.addr P.ws) P.w 0 := fun σ s ⟨⟨e, h, _⟩, r0⟩ => by
       have pre := h.pre
       have cR := pre.c_lt
       have hb' := h.arrs aY hbL
-      refine ⟨h.ready r0, ?_⟩
+      refine ⟨h.ready r0, h.callStack, ?_⟩
       rw [pre.numAt_eq (by rw [hb']; have := hbv σ e; omega_arith), hb',
         show numAt s.mem (State.addr P.ws) P.w 0 = cOf P s.mem from rfl, h.c_eq]
       exact hbv σ e
     refine VP.of_ct (fun σ₁ σ₂ => ?_) fun σ s hs => ?_
     · intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
       have len := hp.1.1.2.1.pre.len
-      have ct := Arithmetic.square_ct fios (base := P.ws) (len := P.len) (w := P.w) opd opd
+      have ct := M.op_ct (base := P.ws) (len := P.len) (w := P.w) opd opd opd
         (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_arith)
       exact ct s₁ s₂ t₁ t₂ u₁ u₂ ⟨rdy _ _ hp.1, rdy _ _ hp.2, by
         rw [hp.1.1.2.1.sp, hp.1.1.2.1.pre.sp, hp.2.1.2.1.sp, hp.2.1.2.1.pre.sp]⟩ e₁ e₂
-    · obtain ⟨ar, lt⟩ := rdy σ s hs
+    · obtain ⟨ar, cs, lt⟩ := rdy σ s hs
       obtain ⟨⟨e, h, _⟩, r0⟩ := hs
       have pre := h.pre
       have cR := pre.c_lt
@@ -491,13 +347,15 @@ theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E 
       have eB : numAt s.mem (State.addr P.ws) P.w aY = A σ aY := by
         rw [pre.numAt_eq (by rw [hB]; have := hbv σ e; omega_arith), hB]
       have c0 : numAt s.mem (State.addr P.ws) P.w 0 = cOf P σ.mem := h.c_eq
-      refine WP.mono (Arithmetic.square_ok fios s ar opd opd (by decide) lt)
+      have spP : s.sp = P.sp := h.sp.trans pre.sp
+      refine WP.mono (M.op_ok s ar cs opd opd opd (by decide) lt)
         fun t ⟨ar', _, lt', v, keeps, frame, rest⟩ => ?_
+      rw [spP] at frame
       have k := keep_of_mont pre keeps frame
       have hL : KS P σ (A σ) L (V σ) LS s := h.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, rfl⟩)
         (fun d hd => ⟨hd, rfl⟩)
-      refine ⟨e, hL.core k (by decide) (by simp) rest.sp rest.rd rest.wr (hL.arrs_keep k ?_ (by simp))
-        (hL.sl_keep k (by simp) (by simp)) hL.live_lt hL.ls_ok, ?_, ?_⟩
+      refine ⟨e, hL.coreOff k (by decide) (by simp) rest.sp rest.rd rest.wr (hL.arrs_keepOff k ?_ (by simp))
+        (hL.sl_keepOff k (by simp) (by simp)) hL.live_lt hL.ls_ok, ?_, ?_⟩
       · intro j hj hj'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hj'
         rcases hj' with rfl | rfl | rfl
@@ -937,8 +795,7 @@ theorem St.pwordLd {m : Nat} (hE : ∀ σ, E σ → In P σ) (hm : 1 ≤ m) (hm2
   obtain v : (s5.gpr .r2).toNat = ew P σ (m - 1) := by
     rw [u5.gpr, u4.mem, u3.mem, u2.mem, m1]
     show w32 s.mem (State.addr P.B) (arr P.W aE + 4 * (m - 1)) = _
-    exact h.keep.word (by omega_arith) (fun k hk e' => by subst e'; revert hk; decide)
-      (fun d hd => wDs_hdr d hd) (h.fit (by decide))
+    exact h.word_input (by omega_arith) (fun k hk e' => by subst e'; revert hk; decide) (by decide)
   rwa [v] at ht
 
 /-- Z when no window is left. -/
@@ -998,8 +855,7 @@ theorem St.plowBits (hE : ∀ σ, E σ → In P σ) :
     rw [u3.mem, u2.mem, m1]
     apply BitVec.eq_of_toNat_eq
     rw [ofNat_toNat32 (σ.mem.readW _ 32).isLt]
-    exact h.keep.word (by omega_arith) (fun k hk e' => by subst e'; revert hk; decide)
-      (fun d hd => wDs_hdr d hd) (h.fit (by decide))
+    exact h.word_input (by omega_arith) (fun k hk e' => by subst e'; revert hk; decide) (by decide)
   obtain g4 : s4.gpr .r1 = BitVec.ofNat 32 (ew P σ (2 * P.w)) := by rw [u4.gpr]; exact mem 0 (by decide)
   obtain g5 : s5.gpr .r2 = BitVec.ofNat 32 (ew P σ (2 * P.w + 1)) := by
     rw [u5.gpr, u4.mem]; exact mem 1 (by decide)
@@ -1139,8 +995,8 @@ theorem sqst_lt (hE : ∀ σ, E σ → In P σ) (h0 : ∀ σ, E σ → (st0 σ).
 theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L) (hX : aX ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L)
     (hF : sF ∈ LS) (hQ : sQ ∈ LS) (hR : sR ∈ LS) (hE2 : sE2 ∉ LS) (hT : sT ∉ LS)
     (vM : ∀ σ, E σ → A σ aM1 = mOf P σ) (vR : ∀ σ, E σ → V σ sR = r σ) (rl : ∀ σ, E σ → r σ < 2 ^ 31)
-    (hq0 : q0 < 2 ^ 31) (h0 : ∀ σ, E σ → (st0 σ).1 < cOf P σ.mem) (k : Nat) (fios : Bool := false) :
-    VP (SqS P E A L V LS q0 r st0 (k + 1)) (sqStep (fios := fios)) fun σ s =>
+    (hq0 : q0 < 2 ^ 31) (h0 : ∀ σ, E σ → (st0 σ).1 < cOf P σ.mem) (k : Nat) (M : CallOp) :
+    VP (SqS P E A L V LS q0 r st0 (k + 1)) (sqStep M.op) fun σ s =>
       isa.eval .ne s = some (decide (0 < k)) ∧ (k = 0 → SqS P E A L V LS q0 r st0 0 σ s) ∧
         (0 < k → SqS P E A L V LS q0 r st0 k σ s) := by
   by_cases hk : k + 1 ≤ q0
@@ -1164,7 +1020,7 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
   refine VP.seq (G := St P E A2 (aY :: L) V1 LS) ?_
     (VP.seq (G := St P E A2 (aY :: L) V3 (sE2 :: LS)) ?_ ?_)
   -- `y²`.
-  · exact St.psqY (fios := fios) hYL h2 h3 (fun σ e => by rw [a1Y]; exact lt σ e _)
+  · exact St.psqY (M := M) hYL h2 h3 (fun σ e => by rw [a1Y]; exact lt σ e _)
   -- `y = −1`.
   · exact St.peqS eq2_taint List.mem_cons_self (List.mem_cons_of_mem _ hM) (by decide) (by decide)
       (fun h => (List.mem_cons.mp h).elim (fun e => absurd e (by decide)) hX) hT (by decide)
@@ -1217,9 +1073,9 @@ theorem sq_step (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L
 theorem sq_loop (hE : ∀ σ, E σ → In P σ) (hYL : aY ∉ L) (hM : aM1 ∈ L) (hX : aX ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L)
     (hF : sF ∈ LS) (hQ : sQ ∈ LS) (hR : sR ∈ LS) (hE2 : sE2 ∉ LS) (hT : sT ∉ LS)
     (vM : ∀ σ, E σ → A σ aM1 = mOf P σ) (vR : ∀ σ, E σ → V σ sR = r σ) (rl : ∀ σ, E σ → r σ < 2 ^ 31)
-    (hq0 : q0 < 2 ^ 31) (h0 : ∀ σ, E σ → (st0 σ).1 < cOf P σ.mem) (n : Nat) (fios : Bool := false) :
-    VP (SqS P E A L V LS q0 r st0 (n + 1)) (sqLoop (fios := fios)) (SqS P E A L V LS q0 r st0 0) :=
-  VP.loop (fun k => sq_step (fios := fios) hE hYL hM hX h2 h3 hF hQ hR hE2 hT vM vR rl hq0 h0 k) n
+    (hq0 : q0 < 2 ^ 31) (h0 : ∀ σ, E σ → (st0 σ).1 < cOf P σ.mem) (n : Nat) (M : CallOp) :
+    VP (SqS P E A L V LS q0 r st0 (n + 1)) (sqLoop M.op) (SqS P E A L V LS q0 r st0 0) :=
+  VP.loop (fun k => sq_step (M := M) hE hYL hM hX h2 h3 hF hQ hR hE2 hT vM vR rl hq0 h0 k) n
 
 end
 
@@ -1507,14 +1363,14 @@ private theorem St.ptabCopy {P : MP} {E : State → Prop} {A : State → Nat →
         fun t ⟨ht,hwt⟩ => ⟨e,by rwa [h.arrs aY ha] at ht,hwt⟩
 
 /-- One fixed, public entry index. -/
-theorem tab_step {P : MP} (i : Nat) (hi : i < 14) (fios : Bool := false) :
-    VP (TS P (14 - i)) (tabStep (fios := fios)) (fun σ s => TS P (13-i) σ s ∧ s.z=decide (13-i=0)) := by
+theorem tab_step {P : MP} (i : Nat) (hi : i < 14) (M : CallOp) :
+    VP (TS P (14 - i)) (tabStep M.op) (fun σ s => TS P (13-i) σ s ∧ s.z=decide (13-i=0)) := by
   let V := fun (_ : State) => upd (fun _ => 0) sK (14 - i)
   refine VP.mono (F := St P (In P) (AT P i) LT V [sK]) ?_
     (fun σ s h => by simpa only [TS, Nat.sub_sub_self (by omega_using [hi] : i ≤ 14)] using h.2)
     (fun _ _ h => h)
   simp only [tabStep, seqs]
-  refine VP.seq (St.pmulY (fios := fios) (P := P) (A := AT P i) (L := LT.tail) (.inr rfl)
+  refine VP.seq (St.pmulY (M := M) (P := P) (A := AT P i) (L := LT.tail) (.inr rfl)
     (by decide) (by decide) (by decide) (by decide) (fun σ e => tv_lt e _) (fun σ e => e.x5)) ?_
   refine VP.seq (St.ptabCopy i hi (by simp) (by simp) (fun _ _ => rfl)) ?_
   refine (St.pcnt (n := 13 - i) (by simp) (fun σ _ => by simp [V, upd]; omega_using [hi]) (by omega_using [])).mono
@@ -1530,14 +1386,14 @@ theorem tab_step {P : MP} (i : Nat) (hi : i < 14) (fios : Bool := false) :
   omega_using [hi]
 
 /-- The compact loop advances the completed prefix. -/
-theorem tab_loop {P : MP} (fios : Bool := false) :
-    VP (TS P 14) (tabBuild (fios := fios)) (TS P 0) := by
+theorem tab_loop {P : MP} (M : CallOp) :
+    VP (TS P 14) (tabBuild M.op) (TS P 0) := by
   refine VP.loop (fun n => ?_) 13
   by_cases hn : n+1 ≤ 14
   · have hi : 14-(n+1)<14 := by omega_using []
     obtain eq1 : 14-(14-(n+1))=n+1 := by omega_using [hn]
     obtain eq2 : 13-(14-(n+1))=n := by omega_using [hn]
-    refine (tab_step (P := P) (14-(n+1)) hi (fios := fios)).mono ?_ ?_
+    refine (tab_step (P := P) (14-(n+1)) hi (M := M)).mono ?_ ?_
     · intro σ s h
       simpa only [eq1] using h
     · intro σ s h
@@ -1715,8 +1571,8 @@ theorem wst_next (h : In P σ) (hm1 : 1 ≤ m) (hm : m ≤ 2 * P.w) (hn : n + 1 
 end
 
 /-- One window. -/
-theorem win_step {P : MP} {m : Nat} (n : Nat) (fios : Bool := false) :
-    VP (WI P m (n + 1)) (win (fios := fios)) fun σ s =>
+theorem win_step {P : MP} {m : Nat} (n : Nat) (M : CallOp) :
+    VP (WI P m (n + 1)) (win M.op) fun σ s =>
       isa.eval .ne s = some (decide (0 < n)) ∧ (n = 0 → WO P (m - 1) σ s) ∧ (0 < n → WI P m n σ s) := by
   by_cases hc : 1 ≤ m ∧ m ≤ 2 * P.w ∧ n + 1 ≤ 8
   swap
@@ -1739,7 +1595,7 @@ theorem win_step {P : MP} {m : Nat} (n : Nat) (fios : Bool := false) :
       rcases hd with rfl | rfl | rfl | rfl | rfl <;> rfl
   -- The squarings.
   refine VP.seq (G := St P (In P) (A2w P m n) (aY :: LW.tail) (V2w P m n) LS4)
-    ((sq_loop (fios := fios) (fun σ e => e) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    ((sq_loop (M := M) (fun σ e => e) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (fun σ _ => rfl) (fun σ _ => upd_self _ _ _)
       (fun _ _ => by decide) (by decide) (fun σ e => wst_lt e _) 3).mono (fun _ _ h => h)
       (fun σ s h => h.2)) ?_
@@ -1767,7 +1623,7 @@ theorem win_step {P : MP} {m : Nat} (n : Nat) (fios : Bool := false) :
   refine VP.seq (G := St P (In P) (A5w P m n) (aY :: aM1 :: aX :: Lt) (V2w P m n) LS4) ?_ ?_
   · refine VP.mono (F := St P (In P) (A4w P m n) (aY :: aM1 :: aX :: Lt) (V2w P m n) LS4) ?_ (fun σ s h => ?_)
       (fun _ _ h => h)
-    · refine (St.pmulY (fios := fios) (.inr rfl) (by decide) (by decide) (by decide) (by decide)
+    · refine (St.pmulY (M := M) (.inr rfl) (by decide) (by decide) (by decide) (by decide)
         (fun σ e => by rw [A4w_Y]; exact sqst_lt (q0 := 4) (fun σ e => e) (fun σ e => wst_lt e _) σ e 4)
         (fun σ e => by rw [A4w_X]; exact tv_lt e _)).mono (fun _ _ h => h) fun σ s h => ?_
       refine h.mono (fun i hi => ⟨hi, ?_⟩) (fun d hd => ⟨hd, rfl⟩)
@@ -1842,8 +1698,8 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP)
 
 /-- A word's windows. -/
-theorem word_step {P : MP} (n : Nat) (fios : Bool := false) :
-    VP (WO P (n + 1)) (word (fios := fios)) fun σ s =>
+theorem word_step {P : MP} (n : Nat) (M : CallOp) :
+    VP (WO P (n + 1)) (word M.op) fun σ s =>
       isa.eval .ne s = some (decide (0 < n)) ∧ (n = 0 → WO P 0 σ s) ∧ (0 < n → WO P n σ s) := by
   by_cases hc : n + 1 ≤ 2 * P.w
   swap
@@ -1855,7 +1711,7 @@ theorem word_step {P : MP} (n : Nat) (fios : Bool := false) :
   simp only [Impl.MillerRabin.Arm.word, seqs]
   refine VP.seq (St.pwordK (K := 8 * (n + 1)) (by decide) (fun σ _ => by
     rw [upd_self])) (VP.seq (St.pwordLd (m := n + 1) (fun σ e => e) (by omega_arith) hc) ?_)
-  refine VP.seq ((VP.loop (I := fun k => WI P (n + 1) k) (fun k => win_step (fios := fios) k) 7).mono (fun σ s h => ?_)
+  refine VP.seq ((VP.loop (I := fun k => WI P (n + 1) k) (fun k => win_step (M := M) k) 7).mono (fun σ s h => ?_)
     (fun _ _ h => h)) ?_
   · refine ⟨by omega_arith, hc, by decide, ?_⟩
     refine h.mono (fun i hi => ⟨hi, ?_⟩) (fun d hd => ⟨?_, ?_⟩)
@@ -1877,9 +1733,9 @@ theorem word_step {P : MP} (n : Nat) (fios : Bool := false) :
     by_cases h0 : n = 0 <;> simp [h0, Nat.pos_iff_ne_zero, Nat.mul_eq_zero]
 
 /-- The words. -/
-theorem words_loop {P : MP} (fios : Bool := false) : VP (WO P (2 * P.w)) (.loop (word (fios := fios)) .ne) (WO P 0) := by
+theorem words_loop {P : MP} (M : CallOp) : VP (WO P (2 * P.w)) (.loop (word M.op) .ne) (WO P 0) := by
   refine VP.of_imp (p := 1 ≤ P.w) (fun σ s h => by have := (h.2.1 : In P σ).w4; omega_arith) fun w1 => ?_
-  have := VP.loop (I := fun k => WO P k) (fun k => word_step (fios := fios) k) (2 * P.w - 1)
+  have := VP.loop (I := fun k => WO P k) (fun k => word_step (M := M) k) (2 * P.w - 1)
   rwa [show 2 * P.w - 1 + 1 = 2 * P.w by omega_arith] at this
 
 end VG.Proof.MillerRabin.Arm
@@ -1951,7 +1807,7 @@ theorem tabInit_vp : VP (Start P) (seqs tabInit) (TS P 14) := by
       rw [h₁.1, h₂.1, h₁.2.2, h₂.2.2]
     · rw [hs, ← List.append_nil ctx]
       have k0 : KS P σ (A0 σ) L0 (fun _ => 0) [] σ :=
-        ⟨pre, rfl, rfl, rfl, Keep.refl _ _ _ _ _, fun j _ => rfl, fun _ h => absurd h List.not_mem_nil,
+        ⟨pre, rfl, rfl, rfl, Keep.off (Keep.refl _ _ _ _ _), fun j _ => rfl, fun _ h => absurd h List.not_mem_nil,
           by decide, fun _ h => absurd h List.not_mem_nil⟩
       exact k0.ctx_ok r0 fun t ht hwt _ _ => WP.block_nil ⟨pre, ht, hwt⟩
   refine VP.seq (St.pcopyClr cT0_taint (by decide) (by decide) (by decide) (by decide)) ?_
@@ -2005,9 +1861,9 @@ theorem rEnd_eq {σ : State} (pre : In P σ) :
   obtain ⟨e1, e2⟩ := pre.ew_low
   rw [e1, e2, foldR_eq _ (Nat.mod_lt _ (by decide)), ofNat_toNat32 (by omega_using [])]
 
-theorem body_vp (fios : Bool := false) : VP (Start P) (body (fios := fios)) (Done P) := by
+theorem body_vp (M : CallOp) : VP (Start P) (body M.op) (Done P) := by
   simp only [body, seqs]
-  refine VP.seq tabInit_vp (VP.seq (tab_loop (fios := fios)) (VP.seq winInit_vp (VP.seq (words_loop (fios := fios)) ?_)))
+  refine VP.seq tabInit_vp (VP.seq (tab_loop (M := M)) (VP.seq winInit_vp (VP.seq (words_loop (M := M)) ?_)))
   refine VP.mono (F := St P (In P) (AW P (16 * P.w)) LW
     (fun σ => upd (upd (fun _ => 0) sF (wst P σ (16 * P.w)).2.toNat) sK 0) [sK, sF]) ?_ (fun σ s h => h.2)
     (fun _ _ h => h)
@@ -2026,7 +1882,7 @@ theorem body_vp (fios : Bool := false) : VP (Start P) (body (fios := fios)) (Don
         exact rEnd_eq h.1
       · simp only [V', upd, show sK ≠ sQ by decide, show sK ≠ sF by decide, show sK ≠ sR by decide, ↓reduceIte]
       · simp only [V', upd, show sF ≠ sQ by decide, show sF ≠ sR by decide, ↓reduceIte]; rfl
-  refine VP.seq (sq_loop (fios := fios) (fun σ e => e) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine VP.seq (sq_loop (M := M) (fun σ e => e) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (fun σ _ => rfl) (fun σ _ => upd_self _ _ _)
     (fun σ _ => by show 4 - sigOf (tOf P σ % 64) < 2 ^ 31; omega_using []) (by decide) (fun σ e => wst_lt e _) 2) ?_
   refine VP.kv ret_taint (fun _ _ h => h.2.2.2) fun σ s ⟨_, e, h, hw⟩ => ?_

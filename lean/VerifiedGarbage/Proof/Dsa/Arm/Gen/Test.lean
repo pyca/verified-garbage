@@ -435,7 +435,7 @@ section
 /-! # DSA's probable-prime test on ARMv7, as its callers see it
 
 The contract of `vg_dsa_probable_prime` (`Proof.Dsa.ProbablePrime.sizedContract`
-for the ARMv7 layout and sizes, 144 bytes of stack) for a size `bits` in plain
+for the ARMv7 layout and sizes, 192 bytes of stack) for a size `bits` in plain
 facts: its precondition (`PIn`, `pre_of_pin`), its postcondition (`PPost`,
 `ppost_of_post`) and what two calls must agree on (`pub_of`).
 `PrimeOk bits code`: a verified test, and `bits` one of its sizes.
@@ -448,12 +448,12 @@ open VG VG.Arm
 open VG.Impl.Dsa.Arm.ProbablePrime (keyOff keyWords layout sizes)
 
 /-- The test's contract. -/
-abbrev primeK : Contract isa := Proof.Dsa.ProbablePrime.sizedContract layout sizes abi 144
+abbrev primeK : Contract isa := Proof.Dsa.ProbablePrime.sizedContract layout sizes abi 192
 
 /-- A verified test, with the stack it uses, for a size it takes. -/
 structure PrimeOk (bits : Nat) (code : Prog isa) : Prop where
   verified : Verified target code primeK
-  stack : FrameStack.armStack code ≤ 144
+  stack : FrameStack.armStack code ≤ 192
   sized : bits ∈ sizes
 
 /-- The candidate at `ws`. -/
@@ -464,7 +464,7 @@ abbrev candOf (bits : Nat) (s : State) : Nat :=
 structure PIn (bits : Nat) (s : State) : Prop where
   sized : bits ∈ sizes
   arg : stackArg s 1 = BitVec.ofNat 32 bits
-  spLo : 144 ≤ s.sp.toNat
+  spLo : 192 ≤ s.sp.toNat
   spHi : s.sp.toNat + 8 ≤ 2 ^ 32
   rd : s.rd = [⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩, ⟨stackArgAddr s 0, 8⟩]
   wr : s.wr = [⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat * 8⟩, ⟨State.addr (stackArg s 0), 8⟩]
@@ -473,10 +473,10 @@ structure PIn (bits : Nat) (s : State) : Prop where
   wA : Region.Disjoint ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat * 8⟩ ⟨stackArgAddr s 0, 8⟩
   rU : Region.Disjoint ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ ⟨State.addr (stackArg s 0), 8⟩
   uA : Region.Disjoint ⟨State.addr (stackArg s 0), 8⟩ ⟨stackArgAddr s 0, 8⟩
-  FW : Region.Disjoint ⟨State.addr s.sp - 144#64, 144⟩ ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat * 8⟩
-  FR : Region.Disjoint ⟨State.addr s.sp - 144#64, 144⟩ ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩
-  FU : Region.Disjoint ⟨State.addr s.sp - 144#64, 144⟩ ⟨State.addr (stackArg s 0), 8⟩
-  FA : Region.Disjoint ⟨State.addr s.sp - 144#64, 144⟩ ⟨stackArgAddr s 0, 8⟩
+  FW : Region.Disjoint ⟨State.addr s.sp - 192#64, 192⟩ ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat * 8⟩
+  FR : Region.Disjoint ⟨State.addr s.sp - 192#64, 192⟩ ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩
+  FU : Region.Disjoint ⟨State.addr s.sp - 192#64, 192⟩ ⟨State.addr (stackArg s 0), 8⟩
+  FA : Region.Disjoint ⟨State.addr s.sp - 192#64, 192⟩ ⟨stackArgAddr s 0, 8⟩
   fw : (s.gpr .r0).toNat + (s.gpr .r1).toNat * 8 ≤ 2 ^ 32
   fr : (s.gpr .r2).toNat + (s.gpr .r3).toNat ≤ 2 ^ 32
   fu : (stackArg s 0).toNat + 8 ≤ 2 ^ 32
@@ -609,7 +609,7 @@ theorem pushed_arg1 {s : State} {r r' : Reg} {rs : List Reg} (h : 4 * (rs.length
 section
 variable {G : GP} {σ s : State} {V : Nat → BitVec 32} {LS : List Nat}
 
-theorem GI.sp176 (h : GI G σ V LS s) : 176 ≤ G.sp.toNat := by
+theorem GI.sp176 (h : GI G σ V LS s) : 224 ≤ G.sp.toNat := by
   have := h.spN; have := h.pre.spLo; simp only [F] at *; omega_arith
 
 /-- Where the witnesses from `u` on start: `witnesses` itself when none is left. -/
@@ -673,18 +673,18 @@ theorem GI.randBytes (h : GI G σ V LS s) {u : Nat} (hu : u ≤ G.witLen) :
       List.take_of_length_le (by rw [List.length_drop]; omega_arith)]
   · rw [show G.witLen - u = 0 by omega_arith, List.drop_of_length_le (by omega_arith)]; rfl
 
-/-- The stack the call uses, below the frame: the pushed words and the test's 144 bytes. -/
+/-- The stack the call uses, below the frame: the pushed words and the test's 192 bytes. -/
 theorem GI.pushSub (h : GI G σ V LS s) :
     Region.Sub (belowA G.sp 32) G.rBelow := by
   have := h.sp176
-  show Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 32), 32⟩ ⟨State.addr G.sp - 176#64, 176⟩
+  show Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 32), 32⟩ ⟨State.addr G.sp - 224#64, 224⟩
   rw [FrameStack.addr_sub' (by omega_arith)]
   exact Offset.sub_below _ (by omega_arith) (by omega_arith)
 
 theorem GI.testSub (h : GI G σ V LS s) :
-    Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 (4 * callPush.length)) - 144#64, 144⟩ G.rBelow := by
+    Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 (4 * callPush.length)) - 192#64, 192⟩ G.rBelow := by
   have := h.sp176
-  show Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 32) - BitVec.ofNat 64 144, 144⟩ ⟨State.addr G.sp - 176#64, 176⟩
+  show Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 32) - BitVec.ofNat 64 192, 192⟩ ⟨State.addr G.sp - 224#64, 224⟩
   rw [FrameStack.addr_sub' (by omega_arith), BitVec.sub_sub, ← BitVec.ofNat_add]
   exact Offset.sub_below _ (by omega_arith) (by omega_arith)
 
@@ -792,7 +792,7 @@ theorem SS.tEntry_pin (h : SS G σ c s) {L u bits : Nat} (hL : L = G.pLen) (regs
   obtain randW := gi.randSub hu
   have pre := gi.pre
   obtain fW := pre.fW; have wC := pre.wC; rw [gi.hG] at fW wC
-  obtain stk : Region.Sub ⟨State.addr (tEntry G G.pLen u s).sp - 144#64, 144⟩ G.rBelow := by
+  obtain stk : Region.Sub ⟨State.addr (tEntry G G.pLen u s).sp - 192#64, 192⟩ G.rBelow := by
     rw [esp]; exact gi.testSub
   have sv := pre.spLo
   refine ⟨hbits, a1, by omega_arith, by omega_arith, by rw [State.withRegions_rd, e2, e3, aA],
@@ -812,7 +812,7 @@ theorem SS.tEntry_pin (h : SS G σ c s) {L u bits : Nat} (hL : L = G.pLen) (regs
     have : State.addr (G.sp - BitVec.ofNat 32 32 + BitVec.ofNat 32 (4 * 0)) = State.addr (G.sp - BitVec.ofNat 32 32) := by
       rw [Nat.mul_zero, BitVec.add_zero]
     rw [show (4 * callPush.length) = 32 from rfl, this]
-    exact (Offset.base_disjoint_below _ (n := 144) (k := 8) (by omega_arith)).symm
+    exact (Offset.base_disjoint_below _ (n := 192) (k := 8) (by omega_arith)).symm
   · rw [e0, e1, wl, h.toNat (by simp only [sK]; omega_arith)]; simp only [sK] at big; omega_arith
   · rw [e2, e3, gi.randLen]; exact gi.randFit hu
   · rw [a0, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := fUsedOut) (by decide),
@@ -931,8 +931,8 @@ theorem SS.primeCall_ok (h : SS G σ c s) {L u bits : Nat} {name : String} {code
     (by rw [popped_sp, hsp, pushed_sp, BitVec.sub_add_cancel])
     (by rw [popped_rd, hrd, pushed_rd]) (by rw [popped_wr, hwr, pushed_wr, List.tail_cons]) ?_
     (by dsimp only; rw [popped_gpr (by decide)]; exact r0) fun b rest e => ?_
-  · have bl : Region.Sub (belowA G.sp 176) G.rBelow := by
-      show Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 176), 176⟩ ⟨State.addr G.sp - 176#64, 176⟩
+  · have bl : Region.Sub (belowA G.sp 224) G.rBelow := by
+      show Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 224), 224⟩ ⟨State.addr G.sp - 224#64, 224⟩
       rw [FrameStack.addr_sub' (by omega_arith)]; exact fun _ h => h
     obtain kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
     obtain aS : State.addr (G.scr + BitVec.ofNat 32 sA) = G.sa sA := h.addr (n := wa G.pLen)
@@ -950,8 +950,8 @@ theorem SS.primeCall_ok (h : SS G σ c s) {L u bits : Nat} {name : String} {code
       · exact ⟨G.rU, by simp, by rw [gi.usedAddr]; exact fun _ h => h⟩
       · refine ⟨G.rBelow, by simp, fun a ha => bl a ?_⟩
         rw [pushed_sp, sp] at ha
-        exact FrameStack.belowA_inner (a := armStack code) (k := 4 * callPush.length) (b := 176)
-          (by have := ok.stack; show armStack code + 32 ≤ 176; omega_arith) (by omega_arith) a ha
+        exact FrameStack.belowA_inner (a := armStack code) (k := 4 * callPush.length) (b := 224)
+          (by have := ok.stack; show armStack code + 32 ≤ 224; omega_arith) (by omega_arith) a ha
   · have := used b rest e
     rw [h.tEntry_arg0 regs, gi.usedAddr, State.callEntry_gpr _ (by decide), pushed_gpr, regs.2.2.2.1,
       gi.randLen] at this

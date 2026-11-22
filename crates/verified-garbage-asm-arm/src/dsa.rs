@@ -66727,7 +66727,7 @@ pub const VG_DSA_PARAMETER_SEARCH_UMAAL_FEATURES: verified_garbage_cpu::Features
 /// * `scratch_len` must be at least `64 * state[1] + 1024` words.
 /// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -72304,10 +72304,10 @@ ldr r10, [sp, #24]
 ldr r11, [sp, #28]
 ldr lr, [sp, #32]
 add sp, sp, #128
-sub sp, sp, #304
+sub sp, sp, #352
 add r12, sp, #0
 mov r2, #0
-mov r3, #9
+mov r3, #11
 2352:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -72320,11 +72320,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 2352b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #304
+add sp, sp, #352
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -72360,7 +72356,7 @@ bx lr",
 /// * `scratch_len` must be at least `64 * state[1] + 1024` words.
 /// * `rand` must hold independent uniform random octets. They are public under this contract and must never be used for private scalars or nonces.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_parameter_search(out: *mut u8, out_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 4]) -> u32 {
     core::arch::naked_asm!(
@@ -77935,10 +77931,10 @@ ldr r10, [sp, #24]
 ldr r11, [sp, #28]
 ldr lr, [sp, #32]
 add sp, sp, #128
-sub sp, sp, #304
+sub sp, sp, #352
 add r12, sp, #0
 mov r2, #0
-mov r3, #9
+mov r3, #11
 2352:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -77951,11 +77947,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 2352b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #304
+add sp, sp, #352
 mov r1, #0
 mov r2, #0
 mov r3, #0

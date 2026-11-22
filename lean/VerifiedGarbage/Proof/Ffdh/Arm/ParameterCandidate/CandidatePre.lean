@@ -28,7 +28,7 @@ structure CandidateAbi (p : CandidateParams) (s : State) : Prop where
   capacity : stackArg s 4 = BitVec.ofNat 32 p.capacity
   bytes : Spec.Rsa.bytesAt s.mem (State.addr p.tape) p.bytes.length = p.bytes
 
-theorem candidatePublic (s : State) (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre s) :
+theorem candidatePublic (s : State) (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 232).pre s) :
     ∃ p, CandidateAbi p s := by
   sig_pre [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre

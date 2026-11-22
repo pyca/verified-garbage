@@ -209,7 +209,7 @@ the same selected compact-window primality kernel that RSA uses. -/
 section
 
 /-! Call the existing RSA/shared compact Miller–Rabin implementation with
-its exact selected name and body, and its existing 56-byte stack bound. -/
+its exact selected name and body, and its 104-byte stack bound. -/
 
 section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -223,14 +223,14 @@ theorem sharedRoundCall_ok (v : RoundImpl) {s : State} {base : BitVec 32} {capac
     (capacityBound : capacity < 2 ^ 32)
     (width : wOf s.mem (State.addr base) = w)
     (layout : LayoutLite s.mem (State.addr base) capacity) (prepared : PreparedLite s.mem (State.addr base))
-    (stack : 56 ≤ s.sp.toNat)
-    (separate : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr base, 8 * capacity⟩)
+    (stack : 104 ≤ s.sp.toNat)
+    (separate : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr base, 8 * capacity⟩)
     (encoded : numAt s.mem (State.addr base) w 5 =
       witness % numAt s.mem (State.addr base) w 0 * 2 ^ (64 * w) % numAt s.mem (State.addr base) w 0) :
     WP isa (.call v.name v.code) s fun t =>
       (t.gpr .r0).toNat = (if Proof.MillerRabin.Round.round (numAt s.mem (State.addr base) w 0) witness then 1 else 0) ∧
       KeepsLite (State.addr base) capacity w s.mem t.mem ∧
-      Frame [⟨State.addr base, 8 * capacity⟩, FrameStack.belowA s.sp 56] s.mem t.mem ∧
+      Frame [⟨State.addr base, 8 * capacity⟩, FrameStack.belowA s.sp 104] s.mem t.mem ∧
       Rest roundClobbers s t := by
   have r0entry : (s.callEntry.withRegions [] [⟨State.addr base, 8 * capacity⟩]).gpr .r0 = base := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), ptr]
@@ -289,8 +289,8 @@ theorem roundArgs_ok {s : State} {base : BitVec 32} {capacity w : Nat}
 
 /-- The 48 bytes below the stack that the shared product's calls use. -/
 theorem callStack_of_below {s : State} {base : BitVec 32} {capacity : Nat}
-    (below : 56 ≤ s.sp.toNat)
-    (separate : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr base, 8 * capacity⟩) :
+    (below : 104 ≤ s.sp.toNat)
+    (separate : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr base, 8 * capacity⟩) :
     CallStack base capacity s :=
   ⟨by omega_using [below], separate.sub_left (FrameStack.belowA_sub (by decide) below)⟩
 
@@ -325,14 +325,14 @@ theorem roundKernel_ok (b : MontBackend) (v : RoundImpl) {s : State} {base : Bit
     (stack : Workspace s s.sp 72)
     (stackSep : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩)
     (saved : s.mem.readW (State.addr (s.sp + 36#32)) 32 = BitVec.ofNat 32 capacity)
-    (stackBelow : 56 ≤ s.sp.toNat)
-    (belowSep : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr base, 8 * capacity⟩)
+    (stackBelow : 104 ≤ s.sp.toNat)
+    (belowSep : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr base, 8 * capacity⟩)
     (input : numAt s.mem (State.addr base) w 1 = witness) :
     WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel
       (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s fun t =>
       RoundData base capacity w n t.mem ∧
       (t.gpr .r0).toNat = (if Proof.MillerRabin.Round.round n witness then 1 else 0) ∧
-      Frame [⟨State.addr base, 8 * capacity⟩, FrameStack.belowA s.sp 56] s.mem t.mem ∧
+      Frame [⟨State.addr base, 8 * capacity⟩, FrameStack.belowA s.sp 104] s.mem t.mem ∧
       Rest roundClobbers s t := by
   have operand (j : Nat) (member : j = 1 ∨ j = 5) : Operand j := by
     rcases member with rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
@@ -341,7 +341,7 @@ theorem roundKernel_ok (b : MontBackend) (v : RoundImpl) {s : State} {base : Bit
     (operand 5 (by simp)) (operand 1 (by simp)) (by decide) data.modulus data.odd data.r2) ?_)
   rintro u ⟨readyU, _, modulusU, encodedU, keepsU, frameU, restU⟩
   rw [input] at encodedU
-  have frameU56 : Frame [⟨State.addr base, 8 * capacity⟩, FrameStack.belowA s.sp 56] s.mem u.mem :=
+  have frameU56 : Frame [⟨State.addr base, 8 * capacity⟩, FrameStack.belowA s.sp 104] s.mem u.mem :=
     FrameStack.Frame.belowA_mono (wr := [⟨State.addr base, 8 * capacity⟩]) frameU (by decide) stackBelow
   have dataU := data.after_operand (by decide) (by decide) (by decide) keepsU
   have stackU : Workspace u u.sp 72 := by rw [restU.sp]; exact stack.congr restU.wr
@@ -349,9 +349,9 @@ theorem roundKernel_ok (b : MontBackend) (v : RoundImpl) {s : State} {base : Bit
     have separate : (⟨State.addr (s.sp + 36#32), 4⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩ := by
       rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this])]
       exact stackSep.sub_left (Offset.sub_base _ (by decide : 36 + 4 ≤ 72))
-    have below : (⟨State.addr (s.sp + 36#32), 4⟩ : Region).Disjoint (FrameStack.belowA s.sp 56) := by
+    have below : (⟨State.addr (s.sp + 36#32), 4⟩ : Region).Disjoint (FrameStack.belowA s.sp 104) := by
       change (⟨State.addr (s.sp + BitVec.ofNat 32 36), 4⟩ : Region).Disjoint
-        ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩
+        ⟨State.addr (s.sp - BitVec.ofNat 32 104), 104⟩
       rw [VG.Arm.addr_add (by have := stack.nowrap; omega_using [this]), FrameStack.addr_sub' stackBelow]
       exact Offset.disjoint_below _ (by omega_using [])
     rw [restU.sp, frameU56.readW (r := ⟨State.addr (s.sp + 36#32), 4⟩) (Region.contains_self _ _)
@@ -562,9 +562,9 @@ open VG VG.Arm VG.Proof.Mont VG.Proof.X25519.Arm
 theorem SavedFrame.after_round {s t : State} {base : BitVec 32} {capacity : Nat}
     {values : Nat → BitVec 32} {slots : List Nat} {rs : List Reg}
     (h : SavedFrame values slots s) (bounds : ∀ d ∈ slots, d + 4 ≤ 72)
-    (stackBelow : 56 ≤ s.sp.toNat)
+    (stackBelow : 104 ≤ s.sp.toNat)
     (separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩)
-    (changed : Frame [⟨State.addr base, 8 * capacity⟩, FrameStack.belowA s.sp 56] s.mem t.mem)
+    (changed : Frame [⟨State.addr base, 8 * capacity⟩, FrameStack.belowA s.sp 104] s.mem t.mem)
     (rest : Rest rs s t) : SavedFrame values slots t := by
   refine h.after_frame changed rest ?_
   intro d hd r hr
@@ -574,7 +574,7 @@ theorem SavedFrame.after_round {s t : State} {base : BitVec 32} {capacity : Nat}
   · rw [VG.Arm.addr_add (by have := h.space.nowrap; omega)]
     exact separate.sub_left (Offset.sub_base _ fit)
   · change (⟨State.addr (s.sp + BitVec.ofNat 32 d), 4⟩ : Region).Disjoint
-      ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩
+      ⟨State.addr (s.sp - BitVec.ofNat 32 104), 104⟩
     rw [VG.Arm.addr_add (by have := h.space.nowrap; omega), FrameStack.addr_sub' stackBelow]
     exact Offset.disjoint_below _ (by omega)
 
@@ -598,7 +598,7 @@ theorem WitnessState.ready {s : State} {p : WitnessParams} {used passed : Nat}
 
 theorem WitnessState.after_round {s t : State} {p : WitnessParams} {used passed : Nat} {rs : List Reg}
     (h : WitnessState p used passed s) (data : RoundData p.base p.capacity p.words p.modulus t.mem)
-    (changed : Frame [⟨State.addr p.base, 8 * p.capacity⟩, FrameStack.belowA s.sp 56] s.mem t.mem)
+    (changed : Frame [⟨State.addr p.base, 8 * p.capacity⟩, FrameStack.belowA s.sp 104] s.mem t.mem)
     (rest : Rest rs s t) : WitnessState p used passed t :=
   h.after_frame data (h.saved.after_round (fun _ hd => witnessSlots_bound hd) h.stackBelow h.stackScratch changed rest)
     h.usedBound h.passedBound (changed.mono (by simp [witnessRegions])) rest

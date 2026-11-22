@@ -184,7 +184,7 @@ theorem MS.of_round (pre : In P σ) (h : MS P σ s) (spw : s.sp = P.sp)
         fun h => by simpa using h)).symm.sub_right pre.subR
     · have spf := pre.spFit
       rw [pre.rC_eq]
-      have := Offset.disjoint_below (State.addr P.sp) (n := 56) (d := 0) (k := 4) (by omega_arith)
+      have := Offset.disjoint_below (State.addr P.sp) (n := 104) (d := 0) (k := 4) (by omega_arith)
       simpa using this
 
 /-- After the round: the stage, and `MS`. -/
@@ -271,9 +271,9 @@ theorem round_pre (h : KS P σ A live V ls s) (m : MS P σ s) (r0 : s.gpr .r0 = 
   rw [e0, e1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt lt]
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩
   · rw [pre.M0_toNat]; have := pre.lenR_fit; have := pre.fS; omega_arith
-  · show 56 ≤ s.sp.toNat
+  · show 104 ≤ s.sp.toNat
     rw [sp]; exact pre.spLo
-  · show (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr P.M0, 8 * P.lenR⟩
+  · show (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr P.M0, 8 * P.lenR⟩
     rw [sp]; exact pre.sC.symm.sub_right pre.subR
   · show LayoutLite s.mem (State.addr P.M0) P.lenR
     have wd := m.width
@@ -453,7 +453,7 @@ theorem round_vp (v : RoundImpl) {b : State → Nat} (h9 : mBase + 9 ∈ L) (h10
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
     · refine ⟨P.rC, by simp, ?_⟩
-      have := FrameStack.belowA_sub (sp := s.sp) (a := FrameStack.armStack v.code) (b := 56) v.stack
+      have := FrameStack.belowA_sub (sp := s.sp) (a := FrameStack.armStack v.code) (b := 104) v.stack
         (by rw [spw]; exact pre.spLo)
       rw [spw] at this ⊢; exact this
   change roundPost _ _ at hpost

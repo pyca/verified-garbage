@@ -48,10 +48,53 @@ theorem KS.sl_keep {js ds : List Nat} (h : KS P σ A live V ls s) (k : Keep P.B 
   rw [k.slot (wDs_hdr d (h.ls_ok d hd)) (fun e he => wDs_sep d (h.ls_ok d hd) e (hds e he)
     (fun x => hls d hd (x ▸ he))), h.sl d hd]
 
+/-- `arrs_keep`, for a step that may also write the bytes below the frame. -/
+theorem KS.arrs_keepOff {js ds : List Nat} (h : KS P σ A live V ls s) (k : KeepOff P js ds s.mem t.mem)
+    (hl : ∀ j ∈ live, j ∉ js) (hds : ∀ d ∈ ds, d ∈ wDs) : Arrs t.mem P.B P.W A live := by
+  have pre := h.pre
+  intro j hj
+  have a := h.arrs_keep (t := { t with mem := patch P s.mem t.mem }) k.patch hl hds j hj
+  have := arr_end (w := P.W) (h.live_lt j hj)
+  have := pre.fitsK
+  show val32 t.mem _ (arr P.W j) P.W = _
+  rw [← pre.patch_val32 (m := s.mem) (by simp only [S] at *; omega_arith)]
+  exact a
+
+/-- `sl_keep`, for a step that may also write the bytes below the frame. -/
+theorem KS.sl_keepOff {js ds : List Nat} (h : KS P σ A live V ls s) (k : KeepOff P js ds s.mem t.mem)
+    (hls : ∀ d ∈ ls, d ∉ ds) (hds : ∀ d ∈ ds, d ∈ wDs) : ∀ d ∈ ls, slot t.mem P.B d = V d := by
+  have pre := h.pre
+  intro d hd
+  have a := h.sl_keep (t := { t with mem := patch P s.mem t.mem }) k.patch hls hds d hd
+  have := wDs_hdr d (h.ls_ok d hd)
+  have : hdr ≤ arr P.W nArr := Nat.le_add_right _ _
+  have := pre.fitsK
+  show val32 t.mem _ d 1 = _
+  rw [← pre.patch_val32 (m := s.mem) (by omega_arith)]
+  exact a
+
+/-- A word of an array the round does not write keeps its value. -/
+theorem KS.word_input (h : KS P σ A live V ls s) {j i : Nat} (hi : 4 * i + 4 ≤ S P.W)
+    (hj : ∀ k ∈ wJs, k ≠ j) (hjn : j < nArr) :
+    w32 s.mem (State.addr P.B) (arr P.W j + 4 * i) = w32 σ.mem (State.addr P.B) (arr P.W j + 4 * i) := by
+  have pre := h.pre
+  have a := h.keep.patch.word hi hj wDs_hdr (h.fit hjn)
+  have := arr_end (w := P.W) hjn
+  have := pre.fitsK
+  have e := pre.patch_val32 (m := σ.mem) (m' := s.mem) (d := arr P.W j + 4 * i) (k := 1)
+    (by simp only [S] at *; omega_arith)
+  simp only [val32, Nat.mul_zero, Nat.add_zero] at e
+  rw [← e]; exact a
+
 /-- An array the round does not write keeps its value. -/
 theorem KS.input (h : KS P σ A live V ls s) {j : Nat} (hj : j < nArr) (hw : j ∉ wJs) :
-    num s.mem P.B P.W j = num σ.mem P.B P.W j :=
-  h.keep.num (fun _ hi e => hw (by subst e; exact hi)) wDs_hdr (h.fit hj)
+    num s.mem P.B P.W j = num σ.mem P.B P.W j := by
+  have pre := h.pre
+  have := arr_end (w := P.W) hj
+  have := pre.fitsK
+  show val32 s.mem _ (arr P.W j) P.W = _
+  rw [← pre.patch_val32 (m := σ.mem) (by simp only [S] at *; omega_arith)]
+  exact h.keep.patch.num (fun _ hi e => hw (by subst e; exact hi)) wDs_hdr (h.fit hj)
 
 /-- An array of the working space the round does not write keeps its number. -/
 theorem KS.numAt_input (h : KS P σ A live V ls s) {j : Nat} (hj : j < nArr) (hw : j ∉ wJs) :

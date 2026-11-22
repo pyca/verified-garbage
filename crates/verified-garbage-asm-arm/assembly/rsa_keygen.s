@@ -335,10 +335,10 @@ vg_rsa_generate_umaal:
 	ldr r11, [sp, #28]
 	ldr lr, [sp, #36]
 	ldr r4, [sp], #40
-	sub sp, sp, #256
+	sub sp, sp, #304
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #8
+	mov r3, #9
 220:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -351,7 +351,11 @@ vg_rsa_generate_umaal:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 220b
-	add sp, sp, #256
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #304
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -601,10 +605,10 @@ vg_rsa_generate:
 	ldr r11, [sp, #28]
 	ldr lr, [sp, #36]
 	ldr r4, [sp], #40
-	sub sp, sp, #256
+	sub sp, sp, #304
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #8
+	mov r3, #9
 220:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -617,7 +621,11 @@ vg_rsa_generate:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 220b
-	add sp, sp, #256
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	add sp, sp, #304
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0

@@ -71927,10 +71927,10 @@ vg_dsa_parameter_search_umaal:
 	ldr r11, [sp, #28]
 	ldr lr, [sp, #32]
 	add sp, sp, #128
-	sub sp, sp, #304
+	sub sp, sp, #352
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #9
+	mov r3, #11
 2352:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -71943,11 +71943,7 @@ vg_dsa_parameter_search_umaal:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 2352b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #304
+	add sp, sp, #352
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -77527,10 +77523,10 @@ vg_dsa_parameter_search:
 	ldr r11, [sp, #28]
 	ldr lr, [sp, #32]
 	add sp, sp, #128
-	sub sp, sp, #304
+	sub sp, sp, #352
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #9
+	mov r3, #11
 2352:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -77543,11 +77539,7 @@ vg_dsa_parameter_search:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 2352b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #304
+	add sp, sp, #352
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0

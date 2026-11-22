@@ -563,8 +563,8 @@ structure PhaseInput (p : WitnessParams) (src : BitVec 32) (k used : Nat) (s : S
   modulus : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) = p.modulus
   space : Spec.Rsa.scratchWords k ≤ p.capacity
   stackScratch : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
-  stackBelow : 56 ≤ s.sp.toNat
-  belowScratch : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
+  stackBelow : 104 ≤ s.sp.toNat
+  belowScratch : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
   bitsExact : p.bits = Spec.RsaKeyGen.bitLength (p.modulus - 1)
   bitsPositive : 0 < p.bits
   bitsBound : p.bits ≤ 8192
@@ -577,7 +577,7 @@ structure PhaseInput (p : WitnessParams) (src : BitVec 32) (k used : Nat) (s : S
   tapeRead : InRegions (s.rd ++ s.wr) (State.addr p.tape) p.bytes.length
   tapeScratch : (⟨State.addr p.tape, p.bytes.length⟩ : Region).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
   tapeStack : (⟨State.addr p.tape, p.bytes.length⟩ : Region).Disjoint ⟨State.addr s.sp, 72⟩
-  tapeBelow : (⟨State.addr p.tape, p.bytes.length⟩ : Region).Disjoint (FrameStack.belowA s.sp 56)
+  tapeBelow : (⟨State.addr p.tape, p.bytes.length⟩ : Region).Disjoint (FrameStack.belowA s.sp 104)
   tapeBytes : Spec.Rsa.bytesAt s.mem (State.addr p.tape) p.bytes.length = p.bytes
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

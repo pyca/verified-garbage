@@ -1104,7 +1104,7 @@ open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 def candidateEnteredRegions (p : CandidateParams) (sp : BitVec 32) : List Region :=
   [⟨State.addr p.out, p.length⟩, ⟨State.addr p.usedPtr, 8⟩, ⟨State.addr p.base, 8 * p.capacity⟩,
-    ⟨State.addr sp, 72⟩, FrameStack.belowA sp 56]
+    ⟨State.addr sp, 72⟩, FrameStack.belowA sp 104]
 
 def candidatePost (p : CandidateParams) (m : Mem) (r : BitVec 32) : Prop :=
   r = BitVec.ofNat 32 (witnessResultStatus (candidateAnswer p)) ∧
@@ -1161,7 +1161,7 @@ open VG VG.Arm VG.Proof.Ffdh.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 structure CandidateFnInput (p : CandidateParams) (s : State) : Prop where
-  stackFits : 184 ≤ s.sp.toNat
+  stackFits : 232 ≤ s.sp.toNat
   start : CandidateStart p (entered s)
   incoming : CandidateIncoming p (entered s)
   out : (entered s).gpr .r0 = p.out
@@ -1207,14 +1207,14 @@ end
 
 section
 
-/-! The public signature supplies all permissions, incoming words and 184 bytes of stack. -/
+/-! The public signature supplies all permissions, incoming words and 232 bytes of stack. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
 
 theorem candidateInput {s : State} {p : CandidateParams}
-    (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre s) (args : CandidateAbi p s) :
+    (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 232).pre s) (args : CandidateAbi p s) :
     CandidateFnInput p s := by
   sig_pre [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
@@ -1232,15 +1232,15 @@ theorem candidateInput {s : State} {p : CandidateParams}
   rw [args.used] at stackUsed
   rw [args.tape, tapeNat] at stackTape
   rw [args.base, capacityNat, Nat.mul_comm p.capacity 8] at stackScratch
-  have reserved : s.sp.setWidth 64 - 184#64 = State.addr (s.sp - 184#32) := (FrameStack.addr_sub' stackFit).symm
+  have reserved : s.sp.setWidth 64 - 232#64 = State.addr (s.sp - 232#32) := (FrameStack.addr_sub' stackFit).symm
   rw [reserved] at stackOut stackUsed stackTape stackScratch stackArgs
   have fit128 : 128 ≤ s.sp.toNat := by omega_using [stackFit]
-  have sub128 := FrameStack.belowA_sub (sp := s.sp) (a := 128) (b := 184) (by decide) stackFit
-  have localsSub : (⟨State.addr (entered s).sp, 72⟩ : Region).Sub (FrameStack.belowA s.sp 184) :=
+  have sub128 := FrameStack.belowA_sub (sp := s.sp) (a := 128) (b := 232) (by decide) stackFit
+  have localsSub : (⟨State.addr (entered s).sp, 72⟩ : Region).Sub (FrameStack.belowA s.sp 232) :=
     fun x hx => sub128 x (locals_sub_reserved s fit128 x hx)
-  have savedSub : (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Sub (FrameStack.belowA s.sp 184) :=
+  have savedSub : (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Sub (FrameStack.belowA s.sp 232) :=
     fun x hx => sub128 x (saved_sub_reserved s fit128 x hx)
-  have belowSub : (FrameStack.belowA (entered s).sp 56).Sub (FrameStack.belowA s.sp 184) := by
+  have belowSub : (FrameStack.belowA (entered s).sp 104).Sub (FrameStack.belowA s.sp 232) := by
     rw [entered_sp]
     exact FrameStack.belowA_inner (by decide) stackFit
   have workspace : Workspace s p.base (8 * p.capacity) := ⟨p.scratchFits, by rw [wr]; simp [State.addr]⟩
@@ -1292,7 +1292,7 @@ theorem candidateInput {s : State} {p : CandidateParams}
   · have shift : (pcPushed s).sp = (entered s).sp + 72#32 := (BitVec.sub_add_cancel _ _).symm
     have room : (entered s).sp.toNat + 72 < 2 ^ 32 := by rw [entered_nat s fit128]; have := s.sp.isLt; omega_using []
     rw [shift, VG.Arm.addr_add room, FrameStack.belowA, FrameStack.addr_sub' start.stackBelow]
-    exact (Offset.disjoint_below_above _ (m := 56) (a := 72) (l := 56) (by decide)).symm
+    exact (Offset.disjoint_below_above _ (m := 104) (a := 72) (l := 56) (by decide)).symm
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 
@@ -1769,9 +1769,9 @@ open VG VG.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 theorem candidate_correct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) (s : State)
-    (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre s) :
+    (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 232).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.ParameterCandidate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s tr t ∧
-      abiPreserved s t ∧ (Proof.Ffdh.sievedParameterCandidateContract abi 184).post s t := by
+      abiPreserved s t ∧ (Proof.Ffdh.sievedParameterCandidateContract abi 232).post s t := by
   obtain ⟨p, args⟩ := candidatePublic s pre
   obtain ⟨tr, t, run, preserved, post⟩ := candidateFn_ok b v (candidateInput pre args)
   refine ⟨tr, t, run, preserved, ?_⟩
@@ -2143,8 +2143,8 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem candidate_contract_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : ConstantTime isa (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre
-    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pub (VG.Impl.Ffdh.Arm.ParameterCandidate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) := by
+theorem candidate_contract_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : ConstantTime isa (Proof.Ffdh.sievedParameterCandidateContract abi 232).pre
+    (Proof.Ffdh.sievedParameterCandidateContract abi 232).pub (VG.Impl.Ffdh.Arm.ParameterCandidate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) := by
   intro s t trS trT u z hs ht hp runS runT
   obtain ⟨p, args⟩ := candidatePublic s hs
   sig_pub [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
@@ -2185,14 +2185,14 @@ open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 theorem candidate_verified (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
     Verified target (VG.Impl.Ffdh.Arm.ParameterCandidate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)
-      (Proof.Ffdh.sievedParameterCandidateContract abi 184) :=
+      (Proof.Ffdh.sievedParameterCandidateContract abi 232) :=
   ⟨candidate_correct b v, candidate_contract_ct b v, candidate_sat⟩
 
 /-- The candidate with the product's rewriting of its callers. -/
 theorem called_verified (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
     Verified target (b.caller.code (VG.Impl.Ffdh.Arm.ParameterCandidate.code
       (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code))
-      (Proof.Ffdh.sievedParameterCandidateContract abi 184) :=
+      (Proof.Ffdh.sievedParameterCandidateContract abi 232) :=
   b.caller.verified (candidate_verified b v)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -2227,7 +2227,7 @@ end
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/Stack.lean`, which only this module imported.
 section
 
-/-! The candidate frame and shared round require at most 184 bytes of stack. -/
+/-! The candidate frame and shared round require at most 232 bytes of stack. -/
 
 section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -2279,7 +2279,7 @@ private theorem candidate_code_stack (b : VG.Proof.Bignum.Arm.MontBackend) (name
 
 theorem candidate_stack (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
     FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.code
-      (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) ≤ 184 := by
+      (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) ≤ 232 := by
   rw [candidate_code_stack]
   have := v.stack
   have := b.stackOk
@@ -2287,7 +2287,7 @@ theorem candidate_stack (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
 
 theorem called_stack (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
     FrameStack.armStack (b.caller.code (VG.Impl.Ffdh.Arm.ParameterCandidate.code
-      (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)) ≤ 184 :=
+      (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)) ≤ 232 :=
   (b.caller.stack_le _).trans (candidate_stack b v)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -2301,8 +2301,8 @@ open VG VG.Arm
 
 structure ParameterBackend where
   candidate : Prog isa
-  candidate_verified : Verified target candidate (Proof.Ffdh.sievedParameterCandidateContract abi 184)
-  candidateStack : FrameStack.armStack candidate ≤ 184
+  candidate_verified : Verified target candidate (Proof.Ffdh.sievedParameterCandidateContract abi 232)
+  candidateStack : FrameStack.armStack candidate ≤ 232
   suffix : String
   features : List String
 

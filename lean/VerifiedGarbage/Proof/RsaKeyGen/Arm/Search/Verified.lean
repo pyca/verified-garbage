@@ -217,7 +217,7 @@ theorem search_correct_ok (c : Cand) {s : State} (h : searchPre s) :
   let p := searchOfState s
   have hp : SearchInput p s := ⟨h, rfl⟩
   have f := hp.facts
-  have room : 184 ≤ s.sp.toNat := h.1
+  have room : 232 ≤ s.sp.toNat := h.1
   have hv := f.valid
   unfold Spec.RsaKeyGen.primeLenValid at hv
   have rl := f.randLen
@@ -539,7 +539,7 @@ def CallCT (p : SearchPublic) (T : List Nat) (q : Pt) (u : State) : Prop :=
 
 theorem call_pub {p : SearchPublic} {T : List Nat} {q : Pt} {u₁ u₂ : State}
     (h₁ : CallCT p T q u₁) (h₂ : CallCT p T q u₂) (sp : u₁.sp = u₂.sp) :
-    (Proof.RsaKeyGen.candidateContract abi 112).pub (u₁.callEntry.withRegions (callRd p q.1) (callWr p))
+    (Proof.RsaKeyGen.candidateContract abi 160).pub (u₁.callEntry.withRegions (callRd p q.1) (callWr p))
       (u₂.callEntry.withRegions (callRd p q.1) (callWr p)) := by
   obtain ⟨o₁, s₁, T₁, l₁, f₁, hk, hroom, d₁⟩ := h₁
   obtain ⟨o₂, s₂, T₂, l₂, f₂, -, -, d₂⟩ := h₂
@@ -1098,8 +1098,8 @@ theorem code_ct (c : Cand) :
   unfold Impl.RsaKeyGen.Arm.Search.code
   refine RelCT.frame (fun _ _ h => h.2.2.1) ?_
   rintro a b ta tb u v ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ e1 e2
-  have rs : 184 ≤ s.sp.toNat := hs.1
-  have rt : 184 ≤ t.sp.toNat := ht.1
+  have rs : 232 ≤ s.sp.toNat := hs.1
+  have rt : 232 ≤ t.sp.toNat := ht.1
   rw [push_pushed (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)] at ea eb
   cases ea
   cases eb
@@ -1120,7 +1120,7 @@ end
 
 /-! # The verified prime search (ARMv7)
 
-For any candidate within 112 bytes of stack (`search_verified_of`), and for
+For any candidate within 160 bytes of stack (`search_verified_of`), and for
 the candidate calling each shared Miller–Rabin round (`search_verified`), as
 `Generic/MillerRabin/Arm/RsaKeyGen.lean` registers it.
 -/
@@ -1134,7 +1134,7 @@ open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 /-- The candidate's frame, 56 bytes, above the round's 56. -/
 theorem cand_stack (v : RoundImpl) :
-    FrameStack.armStack (Impl.RsaKeyGen.Arm.Candidate.code v.name v.code v.mont.callOp.op) ≤ 112 := by
+    FrameStack.armStack (Impl.RsaKeyGen.Arm.Candidate.code v.name v.code v.mont.callOp.op) ≤ 160 := by
   have h1 := v.stack
   have h2 := v.mont.stackOk
   simp only [Impl.RsaKeyGen.Arm.Candidate.foL, Impl.RsaKeyGen.Arm.Candidate.foUsed, Impl.RsaKeyGen.Arm.Candidate.foE,

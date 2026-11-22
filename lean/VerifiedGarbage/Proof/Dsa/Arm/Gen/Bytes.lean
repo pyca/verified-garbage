@@ -100,7 +100,7 @@ abbrev seedsB : List Byte := G.witB
 abbrev sp : BitVec 32 := G.sp0 - BitVec.ofNat 32 F
 abbrev rFrame : Region := ⟨State.addr G.sp, F⟩
 /-- The stack of the functions we call. -/
-abbrev rBelow : Region := ⟨State.addr G.sp - 176#64, 176⟩
+abbrev rBelow : Region := ⟨State.addr G.sp - 224#64, 224⟩
 abbrev rScr : Region := ⟨State.addr G.scr, G.scrLen * 8⟩
 abbrev rOut : Region := ⟨State.addr G.out, G.outLen⟩
 abbrev rUsed : Region := ⟨State.addr G.usedP, 8⟩
@@ -116,7 +116,7 @@ end GP
 
 /-- The contract's precondition. -/
 structure CIn (s : State) : Prop where
-  spLo : 304 ≤ s.sp.toNat
+  spLo : 352 ≤ s.sp.toNat
   spHi : s.sp.toNat + 16 ≤ 2 ^ 32
   rd : s.rd = [(mkG s).rWit, (mkG s).rArgs]
   wr : s.wr = [(mkG s).rOut, (mkG s).rUsed, (mkG s).rScr, (mkG s).rSt]
@@ -134,12 +134,12 @@ structure CIn (s : State) : Prop where
   cS : (mkG s).rScr.Disjoint (mkG s).rSt
   cA : (mkG s).rScr.Disjoint (mkG s).rArgs
   sA : (mkG s).rSt.Disjoint (mkG s).rArgs
-  fO : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rOut
-  fU : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rUsed
-  fW : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rWit
-  fC : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rScr
-  fS : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rSt
-  fA : (⟨State.addr s.sp - 304#64, 304⟩ : Region).Disjoint (mkG s).rArgs
+  fO : (⟨State.addr s.sp - 352#64, 352⟩ : Region).Disjoint (mkG s).rOut
+  fU : (⟨State.addr s.sp - 352#64, 352⟩ : Region).Disjoint (mkG s).rUsed
+  fW : (⟨State.addr s.sp - 352#64, 352⟩ : Region).Disjoint (mkG s).rWit
+  fC : (⟨State.addr s.sp - 352#64, 352⟩ : Region).Disjoint (mkG s).rScr
+  fS : (⟨State.addr s.sp - 352#64, 352⟩ : Region).Disjoint (mkG s).rSt
+  fA : (⟨State.addr s.sp - 352#64, 352⟩ : Region).Disjoint (mkG s).rArgs
   nO : (s.gpr .r0).toNat + (s.gpr .r1).toNat ≤ 2 ^ 32
   nU : (s.gpr .r2).toNat + 8 ≤ 2 ^ 32
   nW : (s.gpr .r3).toNat + (stackArg s 0).toNat ≤ 2 ^ 32
@@ -152,7 +152,7 @@ structure CIn (s : State) : Prop where
   budget : s.mem.readW (State.addr (stackArg s 3) + 16#64) 64 = BitVec.ofNat 64 (Spec.Dsa.parameterEntropy (pLenOf s))
   randLen : (stackArg s 0).toNat ≤ Spec.Dsa.parameterEntropy (pLenOf s)
 
-theorem cin_of_pre (s : State) (h : (Spec.Dsa.parameterSearchContract abi 304).pre s) : CIn s := by
+theorem cin_of_pre (s : State) (h : (Spec.Dsa.parameterSearchContract abi 352).pre s) : CIn s := by
   sig_pre [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
     Loc.val] at h
   obtain ⟨spLo, spHi, rd, wr, oU, oW, oC, oS, oA, uW, uC, uS, uA, wC, wS, cS, cA, sA, fO, fU, fW, fC, fS, fA, nO, nU, nW, nC, nS, valid, outLen, scrLen, seeds, budget, randLen⟩ := h
@@ -260,8 +260,8 @@ theorem GI.ldV (h : GI G σ V LS s) {o : Nat} (ho : o + 4 ≤ F + 16) (h4 : o % 
   VG.Proof.Bignum.Arm.wp_loadStack (by simp only [F] at ho; omega_using [ho]) (h.addr (by omega_using [ho])) (h.read ho h4)
     fun s' u => k s' (by rw [← hv]; exact u)
 
-/-- The 304 bytes below the caller's stack pointer. -/
-abbrev rStack (σ : State) : Region := ⟨State.addr σ.sp - 304#64, 304⟩
+/-- The 352 bytes below the caller's stack pointer. -/
+abbrev rStack (σ : State) : Region := ⟨State.addr σ.sp - 352#64, 352⟩
 
 theorem GI.frameSub (h : GI G σ V LS s) : Region.Sub G.rFrame (rStack σ) := by
   have := h.pre.spLo
@@ -271,7 +271,7 @@ theorem GI.frameSub (h : GI G σ V LS s) : Region.Sub G.rFrame (rStack σ) := by
 
 theorem GI.belowSub (h : GI G σ V LS s) : Region.Sub G.rBelow (rStack σ) := by
   have := h.pre.spLo
-  show Region.Sub ⟨State.addr (G.sp0 - BitVec.ofNat 32 F) - 176#64, 176⟩ _
+  show Region.Sub ⟨State.addr (G.sp0 - BitVec.ofNat 32 F) - 224#64, 224⟩ _
   rw [h.sp0, addr_sub' (by simp only [F]; omega_using [this]), BitVec.sub_sub, ← BitVec.ofNat_add]
   exact Offset.sub_below _ (by simp only [F]; omega_using []) (by simp only [F]; omega_using [])
 
@@ -319,8 +319,8 @@ theorem GI.frame_scr (h : GI G σ V LS s) : G.rFrame.Disjoint G.rScr := by
 
 theorem GI.frame_below (h : GI G σ V LS s) : G.rFrame.Disjoint G.rBelow := by
   have := h.spN; have := h.pre.spLo
-  show Region.Disjoint ⟨State.addr G.sp, F⟩ ⟨State.addr G.sp - 176#64, 176⟩
-  have := Offset.base_disjoint_below (State.addr G.sp) (n := 176) (k := F) (by simp only [F]; omega_using [])
+  show Region.Disjoint ⟨State.addr G.sp, F⟩ ⟨State.addr G.sp - 224#64, 224⟩
+  have := Offset.base_disjoint_below (State.addr G.sp) (n := 224) (k := F) (by simp only [F]; omega_using [])
   exact this
 
 /-- A frame word keeps its value through writes outside the frame. -/

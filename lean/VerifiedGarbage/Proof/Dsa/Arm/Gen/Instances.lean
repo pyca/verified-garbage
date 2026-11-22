@@ -267,7 +267,7 @@ theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.Probabl
       (by have := v.stack; omega_using [this]), hb⟩
 
 theorem powOk (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)
-    (hen : e ≤ 2 * n := by decide) (hs : FrameStack.armStack (Impl.Dsa.Arm.Pow.body umaal n e) ≤ 176 := by decide) :
+    (hen : e ≤ 2 * n := by decide) (hs : FrameStack.armStack (Impl.Dsa.Arm.Pow.body umaal n e) ≤ 224 := by decide) :
     PowOk n e (Impl.Dsa.Arm.Pow.body umaal n e) :=
   ⟨Proof.Dsa.Arm.Pow.powArm_correct hn hn48 he hen, Proof.Dsa.Arm.Pow.powArm_ct n e hn hn48, hs⟩
 
@@ -395,7 +395,7 @@ def searchPairs : List (Proof.Variants.DsaArithmetic.Arm.Variant × RoundImpl) :
 
 /-- `vg_dsa_parameter_search` over the round `v` meets its contract. -/
 theorem search_params (v : RoundImpl) :
-    Verified target (code (geo1 umaal v) (geo2 umaal v) (geo3 umaal v)) (Spec.Dsa.parameterSearchContract abi 304) :=
+    Verified target (code (geo1 umaal v) (geo2 umaal v) (geo3 umaal v)) (Spec.Dsa.parameterSearchContract abi 352) :=
   search_verified (geoOk1 umaal v) (geoOk2 umaal v) (geoOk3 umaal v)
 
 end VG.Proof.Dsa.Arm.Gen

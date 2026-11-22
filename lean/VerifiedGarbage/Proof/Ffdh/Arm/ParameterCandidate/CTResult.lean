@@ -1173,8 +1173,8 @@ structure SharedRoundStart (p : MontMathData) (s : State) : Prop where
   width : wOf s.mem (State.addr p.base) = p.words
   layout : LayoutLite s.mem (State.addr p.base) p.capacity
   prepared : PreparedLite s.mem (State.addr p.base)
-  stackBelow : 56 ≤ s.sp.toNat
-  belowSep : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
+  stackBelow : 104 ≤ s.sp.toNat
+  belowSep : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
 
 private theorem sharedRoundPre {p : MontMathData} {s : State} (h : SharedRoundStart p s) :
     roundPre (s.callEntry.withRegions [] [⟨State.addr p.base, 8 * p.capacity⟩]) := by
@@ -1240,8 +1240,8 @@ structure RoundKernelStart (p : RoundKernelData) (s : State) : Prop where
   stack : Workspace s s.sp 72
   stackSep : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.math.base, 8 * p.math.capacity⟩
   saved : s.mem.readW (State.addr (s.sp + 36#32)) 32 = BitVec.ofNat 32 p.math.capacity
-  below : 56 ≤ s.sp.toNat
-  belowSep : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.math.base, 8 * p.math.capacity⟩
+  below : 104 ≤ s.sp.toNat
+  belowSep : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.math.base, 8 * p.math.capacity⟩
 
 private structure RoundEncoded (p : RoundKernelData) (s : State) : Prop where
   start : RoundKernelStart p s

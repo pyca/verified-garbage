@@ -856,7 +856,7 @@ theorem entry_ct : RelCT isa (Two StartCT) (.block entry) (Two EnteredCT) := by
 /-- The key's buffer's `p` on entry is the progress' `p`. -/
 theorem entry_other {p : GenPublic} {o s : State} (hi : GenInput p o) (hm : s.mem = (pushed pushRegs o).mem) :
     ∀ pB, (genProgress o).phase = .q pB → Spec.Rsa.bytesAt s.mem (p.slot 4) p.L = pB := by
-  have room : 256 ≤ o.sp.toNat := hi.1.1
+  have room : 304 ≤ o.sp.toNat := hi.1.1
   have hroom : 40 ≤ o.sp.toNat := by omega_using [room]
   have cf := hi.cfacts
   have f := hi.facts
@@ -887,7 +887,7 @@ theorem clear_ct : RelCT isa (Two EnteredCT) clearAround (Two GenCTL) := by
     have hp : q.inputs = genOfState o := hi.2.symm
     simp only [startOf, tailOf, List.drop_zero, hp]
     rfl
-  · have room : 256 ≤ o.sp.toNat := hi.1.1
+  · have room : 304 ≤ o.sp.toNat := hi.1.1
     have hroom : 40 ≤ o.sp.toNat := by omega_using [room]
     have cf := hi.cfacts
     have hst := cf.stack
@@ -1044,8 +1044,8 @@ theorem code_ct (sname : String) (c : Search.Cand) (name : String) {kc : Prog is
   rw [show pushBytes = 4 * pushRegs.length from rfl]
   refine RelCT.frame (fun _ _ h => h.2.2.1) ?_
   rintro a b ta tb u v ⟨s, t, ⟨hs, ht, hp⟩, ea, eb⟩ e1 e2
-  have rs : 256 ≤ s.sp.toNat := hs.1
-  have rt : 256 ≤ t.sp.toNat := ht.1
+  have rs : 304 ≤ s.sp.toNat := hs.1
+  have rt : 304 ≤ t.sp.toNat := ht.1
   rw [push_pushed (by decide) (by simp only [List.length_cons, List.length_nil]; omega_arith)] at ea eb
   cases ea
   cases eb

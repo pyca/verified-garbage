@@ -44,7 +44,7 @@ pub unsafe fn vg_rsa_generate_init_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
 /// * `scratch_len` must be at least `32 * state[1] + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
 /// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_generate_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {

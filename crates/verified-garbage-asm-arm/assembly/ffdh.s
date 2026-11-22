@@ -18804,10 +18804,10 @@ vg_ffdh_generate_parameters_umaal:
 	ldr r11, [sp, #12]
 	ldr lr, [sp, #20]
 	ldr r4, [sp], #24
-	sub sp, sp, #232
+	sub sp, sp, #280
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #7
+	mov r3, #8
 222:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -18822,7 +18822,11 @@ vg_ffdh_generate_parameters_umaal:
 	bne 222b
 	str r2, [r12, #0]
 	str r2, [r12, #4]
-	add sp, sp, #232
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #280
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -19043,10 +19047,10 @@ vg_ffdh_generate_parameters:
 	ldr r11, [sp, #12]
 	ldr lr, [sp, #20]
 	ldr r4, [sp], #24
-	sub sp, sp, #232
+	sub sp, sp, #280
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #7
+	mov r3, #8
 222:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -19061,7 +19065,11 @@ vg_ffdh_generate_parameters:
 	bne 222b
 	str r2, [r12, #0]
 	str r2, [r12, #4]
-	add sp, sp, #232
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #280
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0

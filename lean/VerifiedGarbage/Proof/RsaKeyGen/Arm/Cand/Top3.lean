@@ -79,11 +79,11 @@ abbrev cP (s : State) : Region := ⟨State.addr (stackArg s 1), (stackArg s 2).t
 abbrev cR (s : State) : Region := ⟨State.addr (stackArg s 3), (stackArg s 4).toNat⟩
 abbrev cS (s : State) : Region := ⟨State.addr (stackArg s 5), (stackArg s 6).toNat * 8⟩
 abbrev cA (s : State) : Region := ⟨stackArgAddr s 0, 28⟩
-abbrev cF (s : State) : Region := ⟨State.addr s.sp - 112#64, 112⟩
+abbrev cF (s : State) : Region := ⟨State.addr s.sp - 160#64, 160⟩
 
 /-- The contract's precondition. -/
 structure CIn (s : State) : Prop where
-  spLo : 112 ≤ s.sp.toNat
+  spLo : 160 ≤ s.sp.toNat
   spHi : s.sp.toNat + 28 ≤ 2 ^ 32
   rd : s.rd = [cE s, cP s, cR s, cA s]
   wr : s.wr = [cO s, cU s, cS s]
@@ -121,7 +121,7 @@ structure CIn (s : State) : Prop where
   plv : (stackArg s 2).toNat = 0 ∨ (stackArg s 2).toNat = (s.gpr .r1).toNat
   scr : Spec.Rsa.scratchWords (s.gpr .r1).toNat ≤ (stackArg s 6).toNat
 
-theorem cin_of_pre (s : State) (h : (Proof.RsaKeyGen.candidateContract abi 112).pre s) : CIn s := by
+theorem cin_of_pre (s : State) (h : (Proof.RsaKeyGen.candidateContract abi 160).pre s) : CIn s := by
   sig_pre [Proof.RsaKeyGen.candidateContract, Proof.RsaKeyGen.candidateSig, abi, argRegs, reduceClassify, Loc.val] at h
   obtain ⟨spLo, spHi, rd, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,
     fo, fu, fe, fp, fr, fS, valid, el1, el2, plv, scr⟩ := h
@@ -137,7 +137,7 @@ end
 /-! # A candidate on ARMv7: the body's start (`entry_ok`)
 
 After the push, with the regions `xRegs`, the entry: the start `In` of the
-body. The frame and the round's frame below it are the 112 bytes below the
+body. The frame and the round's stack below it are the 160 bytes below the
 caller's stack pointer (`cF`), at offsets of `cF`'s base (`fB`).
 -/
 
@@ -151,17 +151,17 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 abbrev sx (s : State) : State := (pcPushed s).withRegions s.rd (xRegs s)
 
 /-- `cF`'s base. -/
-abbrev fB (s : State) : Addr := State.addr s.sp - 112#64
+abbrev fB (s : State) : Addr := State.addr s.sp - 160#64
 
 section
 variable {s t : State}
 
-theorem CIn.spP (h : CIn s) : State.addr (mkP s).sp = fB s + BitVec.ofNat 64 56 := by
+theorem CIn.spP (h : CIn s) : State.addr (mkP s).sp = fB s + BitVec.ofNat 64 104 := by
   show State.addr (s.sp - BitVec.ofNat 32 56) = _
-  rw [FrameStack.addr_sub' (by have := h.spLo; omega_using [this]), Offset.sub_ofNat_eq _ (show 56 ≤ 112 by decide)]
+  rw [FrameStack.addr_sub' (by have := h.spLo; omega_using [this]), Offset.sub_ofNat_eq _ (show 56 ≤ 160 by decide)]
 
-theorem spA_eq (s : State) : stackArgAddr s 0 = fB s + BitVec.ofNat 64 112 := by
-  rw [show fB s = State.addr s.sp - BitVec.ofNat 64 112 from rfl, BitVec.sub_add_cancel]
+theorem spA_eq (s : State) : stackArgAddr s 0 = fB s + BitVec.ofNat 64 160 := by
+  rw [show fB s = State.addr s.sp - BitVec.ofNat 64 160 from rfl, BitVec.sub_add_cancel]
   simp [stackArgAddr]
 
 theorem CIn.argAddr (h : CIn s) {i : Nat} (hi : i < 7) :
@@ -172,27 +172,27 @@ theorem CIn.argAddr (h : CIn s) {i : Nat} (hi : i < 7) :
   rw [FrameStack.addr_sub' (by omega_arith), addr_add (by omega_using [hi, this]), ← Offset.add_add, BitVec.sub_add_cancel]
 
 theorem CIn.frSub (h : CIn s) : Region.Sub (mkP s).rFr (cF s) := by
-  show Region.Sub ⟨State.addr (mkP s).sp, 56⟩ ⟨fB s, 112⟩
+  show Region.Sub ⟨State.addr (mkP s).sp, 56⟩ ⟨fB s, 160⟩
   rw [h.spP]; exact Offset.sub_base _ (by decide)
 
 theorem CIn.rcSub (h : CIn s) : Region.Sub (mkP s).rC (cF s) := by
   have := h.spLo
-  show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 56), 56⟩ ⟨fB s, 112⟩
+  show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 104), 104⟩ ⟨fB s, 160⟩
   rw [BitVec.sub_sub, ← BitVec.ofNat_add, FrameStack.addr_sub' (by omega_using [this])]
-  simpa using Offset.sub_base (fB s) (d := 0) (n := 56) (k := 112) (by decide)
+  simpa using Offset.sub_base (fB s) (d := 0) (n := 104) (k := 160) (by decide)
 
 theorem CIn.disjF (h : CIn s) {r : Region} (h1 : r.Disjoint (cF s)) (h2 : r.Disjoint (cA s)) :
     r.Disjoint (mkP s).rF := by
   show r.Disjoint ⟨State.addr (mkP s).sp, 84⟩
   rw [h.spP]
   intro x hx hc
-  have e1 := (Offset.lt_iff x (fB s) (d := 56) (n := 84) (by decide)).mp (by simp only [Region.Contains] at hc; omega_using [hc])
-  by_cases hlt : (x - fB s).toNat < 112
-  · exact h1 x hx (by show (x - fB s).toNat + 1 ≤ 112; omega_using [hlt])
+  have e1 := (Offset.lt_iff x (fB s) (d := 104) (n := 84) (by decide)).mp (by simp only [Region.Contains] at hc; omega_using [hc])
+  by_cases hlt : (x - fB s).toNat < 160
+  · exact h1 x hx (by show (x - fB s).toNat + 1 ≤ 160; omega_using [hlt])
   · refine h2 x hx ?_
     simp only [Region.Contains]
     rw [spA_eq s]
-    have := (Offset.lt_iff x (fB s) (d := 112) (n := 28) (by decide)).mpr ⟨by omega_using [hlt], by omega_using [e1]⟩
+    have := (Offset.lt_iff x (fB s) (d := 160) (n := 28) (by decide)).mpr ⟨by omega_using [hlt], by omega_using [e1]⟩
     omega_using [this]
 
 /-- Memory after the push and the entry: changed only in the frames. -/

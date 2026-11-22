@@ -116,7 +116,7 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 theorem call_public {q : SearchPoint} {s t : State} (hs : CallCT q s) (ht : CallCT q t) (sp : s.sp = t.sp) :
-    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pub (callState q.inputs q.used s) (callState q.inputs q.used t) := by
+    (Proof.Ffdh.sievedParameterCandidateContract abi 232).pub (callState q.inputs q.used s) (callState q.inputs q.used t) := by
   obtain ⟨originalS, liveS, roomS, argsS, memS, restS⟩ := hs
   obtain ⟨originalT, liveT, roomT, argsT, memT, restT⟩ := ht
   have spS : s.sp = originalS.sp - 24#32 := restS.sp
@@ -166,7 +166,7 @@ open VG VG.Arm
 open VG.Proof.Ffdh.Arm.KeySearch (Two two_post)
 
 private theorem call_ready {q : SearchPoint} {s : State} (h : CallCT q s) :
-    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre (callState q.inputs q.used s) ∧
+    (Proof.Ffdh.sievedParameterCandidateContract abi 232).pre (callState q.inputs q.used s) ∧
       Covers (callRd q.inputs q.used s.sp ++ callWr q.inputs) (s.rd ++ s.wr) ∧ Covers (callWr q.inputs) s.wr := by
   obtain ⟨original, live, room, args, mem, rest⟩ := h
   have sp : s.sp = original.sp - 24#32 := rest.sp

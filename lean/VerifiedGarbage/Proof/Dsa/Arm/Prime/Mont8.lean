@@ -311,9 +311,9 @@ theorem MS.of_keeps {σ s t : State} (pre : In P σ) (h : MS P σ s) {o : Nat} (
     · have spf := pre.spFit
       have lo := pre.spLo
       rw [spw]
-      show (⟨State.addr P.sp, 4⟩ : Region).Disjoint ⟨State.addr (P.sp - BitVec.ofNat 32 56), 56⟩
+      show (⟨State.addr P.sp, 4⟩ : Region).Disjoint ⟨State.addr (P.sp - BitVec.ofNat 32 104), 104⟩
       rw [FrameStack.addr_sub' lo]
-      have := Offset.disjoint_below (State.addr P.sp) (n := 56) (d := 0) (k := 4) (by omega_arith)
+      have := Offset.disjoint_below (State.addr P.sp) (n := 104) (d := 0) (k := 4) (by omega_arith)
       simpa using this
 
 /-- `mont0`: the base into `r0`. -/
