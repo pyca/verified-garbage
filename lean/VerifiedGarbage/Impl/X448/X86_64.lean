@@ -305,6 +305,10 @@ def step (F : Field) : List Instr :=
 def ladder (F : Field) : Prog isa :=
   .seq (.block [.mov32 .rbx (.imm 448)]) (.loop (.block (step F)) .ne)
 
+/-- `ladder F`, as a call of the function `name`, which `vg_x448` and
+`vg_x448_base` share. -/
+def ladderCall (F : Field) (name : String) : Prog isa := .call name (ladder F)
+
 /-- `[rdi + 8 rbx + BITS + j]`: bit `j` of byte `rbx` of the scalar. -/
 def bitAt (j : Nat) : MemOp :=
   { base := .rdi, index := some .rbx, scale := 8, disp := ((BITS + j : Nat) : Int) }
@@ -472,8 +476,8 @@ def x448BaseOf (F : Field) (lad : Prog isa) (inv : Prog isa := invert F) : Prog 
   .seq (.block setupBase) <| .seq bits <| .seq (.block [.mov .rsi (.reg .r15)]) <| .seq lad <|
     .seq (.block lastSwap) <| .seq inv (.block (finish F))
 
-def x448 : Prog isa := x448Of baseline (ladder baseline) (invertCall baseline)
+def x448 : Prog isa := x448Of baseline (ladderCall baseline "vg_x448_ladder") (invertCall baseline)
 
-def x448Base : Prog isa := x448BaseOf baseline (ladder baseline) (invertCall baseline)
+def x448Base : Prog isa := x448BaseOf baseline (ladderCall baseline "vg_x448_ladder") (invertCall baseline)
 
 end VG.Impl.X448.X86_64
