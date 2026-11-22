@@ -3,6 +3,40 @@
 //! `assembly/sm4.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_sm4_expand_key_aesni` requires (`Artifact.features`).
+pub const VG_SM4_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// SM4 key expansion (draft-ribose-cfrg-sm4-10 §7.3): expands the 16-byte key at `key` into the 32 round keys, written to `schedule` as 32 little-endian 32-bit words `rk_0`, …, `rk_31`.
+///
+/// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 16 bytes.
+/// * `schedule` must be valid for reads and writes of 128 bytes.
+/// * `schedule` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 4 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_expand_key_aesni(key: *const [u8; 16], schedule: *mut [u8; 128]) {
+    core::arch::naked_asm!(
+        r#"call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_SM4_KEY_AESNI} - 2b
+.base64 "WYtUJAjzD2+wAAEAAPMPfzLzD2+wEAEAAPMPf3IQ8w9vsCABAADzD39yIPMPb7AwAQAA8w9/cjDzD2+wQAEAAPMPf3JA8w9vsFABAADzD39yUPMPb7BgAQAA8w9/cmDzD2+wcAEAAPMPf3Jwi0wkBPMPbzjzD28hZg9v7GYPctUEZg/b72YP2+fzD29wEGYPOAD08w9vYCBmDzgA5WYP7/TzD2+o4AAAAGYP7/VmD3DGAGYPcM5VZg9w1qpmD3De/7kIAAAA"
+20:
+.base64 "8w9vImYP7+FmD+/iZg/v4/MPb7DwAAAAZg84AOZmDzjd52YPb+xmD3LVBGYP2+9mD9vn8w9vcGBmDzgA9GYP78bzD29wcGYPOAD1Zg/vxmYPcOQ5Zg9w7TnzD2+wgAAAAGYPOAD0Zg/vxvMPb7CQAAAAZg84APVmD+/GZg9w5DlmD3DtOfMPb7CgAAAAZg84APRmD+/G8w9vsLAAAABmDzgA9WYP78ZmD3DkOWYPcO058w9vsMAAAABmDzgA9GYP78bzD2+w0AAAAGYPOAD1Zg/vxvMPbyJmD3DkAWYP7+JmD+/jZg/v4PMPb7DwAAAAZg84AOZmDzjd52YPb+xmD3LVBGYP2+9mD9vn8w9vcGBmDzgA9GYP787zD29wcGYPOAD1Zg/vzmYPcOQ5Zg9w7TnzD2+wgAAAAGYPOAD0Zg/vzvMPb7CQAAAAZg84APVmD+/OZg9w5DlmD3DtOfMPb7CgAAAAZg84APRmD+/O8w9vsLAAAABmDzgA9WYP785mD3DkOWYPcO058w9vsMAAAABmDzgA9GYP787zD2+w0AAAAGYPOAD1Zg/vzvMPbyJmD3DkAmYP7+NmD+/gZg/v4fMPb7DwAAAAZg84AOZmDzjd52YPb+xmD3LVBGYP2+9mD9vn8w9vcGBmDzgA9GYP79bzD29wcGYPOAD1Zg/v1mYPcOQ5Zg9w7TnzD2+wgAAAAGYPOAD0Zg/v1vMPb7CQAAAAZg84APVmD+/WZg9w5DlmD3DtOfMPb7CgAAAAZg84APRmD+/W8w9vsLAAAABmDzgA9WYP79ZmD3DkOWYPcO058w9vsMAAAABmDzgA9GYP79bzD2+w0AAAAGYPOAD1Zg/v1vMPbyJmD3DkA2YP7+BmD+/hZg/v4vMPb7DwAAAAZg84AOZmDzjd52YPb+xmD3LVBGYP2+9mD9vn8w9vcGBmDzgA9GYP797zD29wcGYPOAD1Zg/v3mYPcOQ5Zg9w7TnzD2+wgAAAAGYPOAD0Zg/v3vMPb7CQAAAAZg84APVmD+/eZg9w5DlmD3DtOfMPb7CgAAAAZg84APRmD+/e8w9vsLAAAABmDzgA9WYP795mD3DkOWYPcO058w9vsMAAAABmDzgA9GYP797zD2+w0AAAAGYPOAD1Zg/v3mYPb/BmD2zxZg9w9ohmD2/qZg9s62YPcO2IZg9s9WYPb+5mD3LVBGYP2+9mD9v38w9vYDBmDzgA5vMPb3BAZg84APVmD+/m8w9vcFBmDzgA5vMPfyKDwhCD6QE="
+jne 20b
+.base64 "uAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.p2align 6"#,
+        VG_SM4_KEY_AESNI = sym super::consts::VG_SM4_KEY_AESNI,
+    )
+}
+
 /// SM4 key expansion (draft-ribose-cfrg-sm4-10 §7.3): expands the 16-byte key at `key` into the 32 round keys, written to `schedule` as 32 little-endian 32-bit words `rk_0`, …, `rk_31`.
 ///
 /// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
@@ -166,6 +200,10 @@ pub(crate) mod vg_sm4_ctr32;
 #[rustfmt::skip]
 #[path = "internal/vg_sm4_expand_key_core.rs"]
 pub(crate) mod vg_sm4_expand_key_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_expand_key_core_aesni.rs"]
+pub(crate) mod vg_sm4_expand_key_core_aesni;
 
 #[rustfmt::skip]
 #[path = "internal/vg_sm4_prepare_keys.rs"]
