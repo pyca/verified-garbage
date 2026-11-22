@@ -564,6 +564,117 @@ theorem Verified.entryD8C {n name : String} {body : Prog isa}
     · obtain ⟨rfl, rfl⟩ := hab
       exact ⟨hbody σ₁ h₁', hbody σ₂ h₂'⟩
 
+/-- The public data under `A.withFns [n]`, from that under `A` and `n`'s address. -/
+theorem pub_fns_mk {A : Abi isa} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {st : Nat} {n : String} {s₁ s₂ : State}
+    (h : (sig.contract A pre post wa st leak).pub s₁ s₂) (hn : s₁.syms n = s₂.syms n) :
+    (sig.contract (A.withFns [n]) pre post wa st leak).pub s₁ s₂ := by
+  simp only [Sig.contract, Abi.withFns] at h ⊢
+  revert h
+  split
+  · exact fun h => h.elim
+  · intro h
+    have hf : ∀ f ∈ [n], isa.fnAddr s₁ f = isa.fnAddr s₂ f := fun f hf => by
+      rw [List.mem_singleton.mp hf]; exact hn
+    cases leak with
+    | none => exact ⟨⟨h.1, hf⟩, h.2⟩
+    | some f => exact ⟨⟨⟨h.1.1, hf⟩, h.1.2⟩, h.2⟩
+
+/-- `Verified.callWipeC'` under `(abi.withConsts (c₀ :: cs)).withFns [fn]`. -/
+theorem Verified.callWipeCF' {fn : String} {post' : sig.Post abi.ptrBits} {name zname : String}
+    {body zcode : Prog isa} {zst : Nat} {ps₁ ps₂ : List (String × Param)} {nm : String} {e : Elem}
+    {k n i : Nat}
+    (h : Verified target body (sig.contract ((abi.withConsts (c₀ :: cs)).withFns [fn]) pre post wa stack leak))
+    (hz : Verified target zcode (Spec.Zeroize.zeroizeContract abi zst))
+    (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    (hps : sig.params = ps₁ ++ (nm, .array true e k) :: ps₂)
+    (hi : i = (ps₁.flatMap fun p => p.2.words 64).length)
+    (hn : n ≤ k * e.size) (hn16 : n < 2 ^ 16)
+    (hd : 16 * body.aarch64Depth ≤ stack) (hzdit : zcode.all (fun i => !i.touchesDit) = true)
+    (hzd : 16 * zcode.aarch64Depth ≤ zst) (hzs : zst ≤ stack)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' x, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
+    (hpostOut : ∀ vs m m₁ m₂ x, vs.length = (sig.words abi.ptrBits).length →
+      (Sig.bufs sig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs sig.params vs, b.1.Disjoint ⟨vs.getD i 0, k * e.size⟩ →
+        ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ x)
+    (hwiped : ∀ vs m m' x, vs.length = (sig.words abi.ptrBits).length →
+      Curry.apply (sig.words abi.ptrBits) post vs m m' x →
+      Spec.Zeroize.bytesAt m' (vs.getD i 0) n = Spec.Zeroize.zeros n →
+        Curry.apply (sig.words abi.ptrBits) post' vs m m' x)
+    (hsat : ∃ s, (sig.contract ((abi.withConsts (c₀ :: cs)).withFns [fn]) pre post' wa (stack + 32) leak).pre s)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    Verified target (Impl.CallWipe.AArch64.callWipe (argRegs.getD i .x0) n name body zname zcode)
+      (sig.contract ((abi.withConsts (c₀ :: cs)).withFns [fn]) pre post' wa (stack + 32) leak) := by
+  subst hi
+  generalize hr' : argRegs.getD (ps₁.flatMap fun p => p.2.words 64).length .x0 = r
+  have hget := cw_get hk hps hr'
+  have harr : ∀ s : State, (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s) :=
+    cw_arr hk hps hr'
+  -- The postcondition reads the memory on return only within the buffers apart from the array.
+  have hout : ∀ s, (sig.contract abi pre post wa (stack + 32) leak).pre (stripConsts (c₀ :: cs) s) →
+      ∀ m₁ m₂ x, (∀ b ∈ Sig.bufs sig.params (regArgs sig s), b.1.Disjoint ⟨s.gpr r, k * e.size⟩ →
+        ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post (regArgs sig s) s.mem m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post (regArgs sig s) s.mem m₂ x := by
+    intro s hs m₁ m₂ x hag hq
+    have hpw : (Sig.bufs sig.params (regArgs sig s)).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) :=
+      ((pre_regs' hk hl).mp hs).2.2.2.1
+    exact hpostOut _ _ _ _ _ (regArgs_length sig s hk) hpw (by rw [hget]; exact hag) hq
+  -- The first function's run, from the caller's state.
+  have hbody : ∀ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + 32) leak).pre s →
+      WP isa (.call name body) (cwSave r s) (AfterBody sig post r stack s) := fun s hs =>
+    cw_body_wpOf (rd := (stripConsts (c₀ :: cs) s).rd) h.1 (fun _ _ h => (post_consts (c₀ := c₀) (cs := cs)).mp h) hk hl hd hpost
+      (pre_consts.mp hs).1 (cw_bodyPreK hk hl hpre hs)
+  refine ⟨fun s hs => ?_, ?_, hsat⟩
+  · have hs' : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + 32) leak).pre s := hs
+    have hs₀ := (pre_consts.mp hs').1
+    obtain ⟨t, g, he, habi, hq, hz0⟩ :=
+      cw_wp (r := r) (post := post) (leak := leak) (rd := (stripConsts (c₀ :: cs) s).rd) hz hk hl hzd hzs
+        hn hn16 hs₀ (harr s) (hbody s hs') (hout s hs₀)
+    refine ⟨t, g, he, habi, ?_⟩
+    show (sig.contract abi pre post' wa (stack + 32) leak).post s g
+    rw [post_regs hk] at hq ⊢
+    exact hwiped _ _ _ _ (regArgs_length sig s hk) hq (by rw [hget]; exact hz0)
+  · refine RelCT.constantTime (Q := fun _ _ => True) (RelCT.alloc (R := fun _ _ => True) ?_)
+    refine RelCT.exists_ fun σ₁ => RelCT.exists_ fun σ₂ => ?_
+    by_cases hP0 : (sig.contract ((abi.withConsts (c₀ :: cs)).withFns [fn]) pre post' wa (stack + 32) leak).pre σ₁ ∧
+        (sig.contract ((abi.withConsts (c₀ :: cs)).withFns [fn]) pre post' wa (stack + 32) leak).pre σ₂ ∧
+        (sig.contract ((abi.withConsts (c₀ :: cs)).withFns [fn]) pre post' wa (stack + 32) leak).pub σ₁ σ₂
+    swap
+    · exact RelCT.of_false fun a b hab => hP0 hab.1
+    obtain ⟨h₁, h₂, hp⟩ := hP0
+    have h₁' : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + 32) leak).pre σ₁ := h₁
+    have h₂' : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + 32) leak).pre σ₂ := h₂
+    have hp' : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + 32) leak).pub σ₁ σ₂ := (pub_fns hp).1
+    have hp₀ := (pub_consts.mp hp').1
+    have hsp12 : σ₁.sp = σ₂.sp := ((pub_regs hk).mp hp₀).1.1.1
+    have hpp : σ₁.gpr r = σ₂.gpr r := cw_pubArr hk hps hr' hp₀
+    refine RelCT.mono (P := fun a b => a = allocated 32 σ₁ ∧ b = allocated 32 σ₂)
+      (cw_ct (post := post) (leak := leak) (rd₁ := (stripConsts (c₀ :: cs) σ₁).rd)
+        (rd₂ := (stripConsts (c₀ :: cs) σ₂).rd) hz hk hl hzd hzdit hzs hn hn16 (pre_consts.mp h₁').1
+        (pre_consts.mp h₂').1 (harr σ₁) (harr σ₂) hsp12 hpp ?_)
+      (fun a b hab => hab.2) (fun _ _ h => h)
+    -- The first function.
+    have hcov : ∀ σ : State, Covers (σ.rd ++ σ.wr) ((cwSave r σ).rd ++ (cwSave r σ).wr) ∧
+        Covers σ.wr (cwSave r σ).wr := fun σ =>
+      ⟨Covers.append (Covers.refl _) (Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx),
+        Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx⟩
+    refine RelCT.mono (RelCT.wp (F₁ := AfterBody sig post r stack σ₁) (F₂ := AfterBody sig post r stack σ₂)
+      (RelCT.callEx h.1 h.2.1 fun a b hab => ?_) fun a b hab => ?_) (fun _ _ h => h) (fun _ _ h => h.2)
+    · obtain ⟨rfl, rfl⟩ := hab
+      exact ⟨σ₁.rd, σ₁.wr, σ₂.rd, σ₂.wr, cw_bodyPreK hk hl hpre h₁', cw_bodyPreK hk hl hpre h₂',
+        pub_fns_mk (cw_bodyPubK hk hl r h₁' h₂' hp' hleak) (pub_fns hp).2, (hcov σ₁).1, (hcov σ₁).2, (hcov σ₂).1, (hcov σ₂).2⟩
+    · obtain ⟨rfl, rfl⟩ := hab
+      exact ⟨hbody σ₁ h₁', hbody σ₂ h₂'⟩
+
 end
 
 end VG.Proof.Sha3.AArch64
