@@ -1732,7 +1732,7 @@ theorem exponentiate_ok {n size m expWords : Nat} {base : Addr} {s : State}
   · have o₃ : Outs base (exponentRanges n) s₂.mem s₃.mem := by rw [u₃.mem]; exact Outs.refl _ _ _
     exact (((O₁.trans (exponentRanges_op K₂.mem (by decide) (by decide))).trans o₃).trans I.mem).trans
       (exponentRanges_op Kt.mem (by decide) (by decide))
-  · exact (((R₁.trans (K₂.rest.mono (by decide))).trans (u₃.rest (by decide))).trans I.rest).trans
+  · exact (((R₁.trans (K₂.rest.mono (by decide))).trans (u₃.rest (by decide))).trans (I.rest.mono (by decide))).trans
       (Kt.rest.mono (by decide))
 
 /-! ## A product of two powers
@@ -1772,14 +1772,154 @@ def opsDone : List (Nat × Nat × Nat) → List Nat → List Nat
 
 theorem tableOps_all : ∀ j < 16, j ∈ opsDone tableOps [4, 1, 0] := by decide
 
+/-! ### A product by a call
+
+`mulC n o a b` copies `[a]` and `[b]` into the result's and the product's
+slots, calls `vg_dsa_mul_{n}` on them, and copies the result into `[o]`
+(`context_mulC_ok`), as `mul` would compute it in place; it changes those
+two slots too, which the table's products leave unused. -/
+
+/-- What a product by a call keeps: every register but `lr`, `r11` and
+`r0`–`r10`; the memory outside what a product of two powers may change; and
+every slot but the product's, the result's, the product slot's, the
+temporary and the accumulator. -/
+structure OpKeepC (n : Nat) (base : Addr) (o : Nat) (s t : State) : Prop where
+  rest : Rest (.lr :: .r11 :: dclob) s t
+  mem : Outs base (exponentRanges2 n) s.mem t.mem
+  val : ∀ i k, i < 30 → k ≤ 2 * n → i ≠ o → i ≠ 9 → i ≠ 10 → i ≠ 1 → (6 ≤ i ∨ i = 0) →
+    val32 t.mem base (slot n i) k = val32 s.mem base (slot n i) k
+
+/-- A call of code that returns to where it was called from. -/
+theorem wp_callRaw {nm : String} {c : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa c s.callEntry fun t => t.gpr .lr = s.callEntry.gpr .lr ∧ Q t) : WP isa (.call nm c) s Q := by
+  obtain ⟨tr, t, he, hl, hq⟩ := h
+  exact ⟨_, t, .call (call_callEntry s) he (by show (if _ then _ else _) = _; rw [ite_eq_left hl]), hq⟩
+
+/-- `d = r12 + k`, alone. -/
+theorem ptr_ok {s : State} {d : Reg} {k : Nat} (hd : d ≠ .r12) (hk : k < 2 ^ 16) :
+    WP isa (.block (ptr d k)) s fun t => Upd s t d (s.gpr .r12 + BitVec.ofNat 32 k) := by
+  have h := wp_ptr (is := []) (s := s) (Q := fun t => Upd s t d (s.gpr .r12 + BitVec.ofNat 32 k)) hd hk
+    fun _ u => WP.block_nil u
+  rwa [List.append_nil] at h
+
+theorem context_mulC_ok {n size m o a b : Nat} {base : Addr} {s : State} (h : Context n m base size s)
+    (ho : 12 ≤ o ∧ o < 30) (ha : 6 ≤ a ∧ a < 30) (hb : 6 ≤ b ∧ b < 30)
+    (ha' : a ≠ 9 ∧ a ≠ 10) (hb' : b ≠ 9 ∧ b ≠ 10)
+    (hB : val32 s.mem base (slot n b) (2 * n) < m) :
+    WP isa (mulC umaal n (slot n o) (slot n a) (slot n b)) s fun t =>
+      Context n m base size t ∧ OpKeepC n base o s t ∧
+      val32 t.mem base (slot n o) (2 * n) < m ∧
+      val32 t.mem base (slot n o) (2 * n) * 2 ^ (64 * n) % m =
+        val32 s.mem base (slot n a) (2 * n) * val32 s.mem base (slot n b) (2 * n) % m := by
+  have sm := h.small
+  have sz := h.size_le
+  have n0 := h.n0
+  have st : stride n = 8 * n + 8 := rfl
+  have e8 : 4 * (2 * n) = 8 * n := by omega_using []
+  obtain fit : ∀ i, i < 30 → slot n i + 4 * (2 * n) ≤ size := fun i hi => by
+    have := slot_bound (n := n) hi; omega_using [this, sz, st]
+  obtain f16 : ∀ i, i < 30 → slot n i + 4 * (2 * n) < 2 ^ 16 := fun i hi => by
+    have := slot_bound (n := n) hi; omega_using [this, sm, st]
+  obtain sep : ∀ i j, i ≠ j → slot n i + 4 * (2 * n) ≤ slot n j ∨ slot n j + 4 * (2 * n) ≤ slot n i :=
+    fun i j hij => by have := slot_sep (n := n) hij; omega_using [this, st]
+  obtain ss : 4 * (2 * n) ≤ stride n := by omega_using [st]
+  obtain sk : 4 * (2 * n) ≤ stride n := ss
+  unfold mulC
+  -- `[a]` into the result's slot
+  refine WP.seq (WP.mono (ptr_ok (d := .r11) (k := slot n 9) (by decide) (by have := f16 9 (by decide); omega_using [this]))
+    fun s₁ u₁ => ?_)
+  have w₁ := h.ws.of_upd u₁ (by decide)
+  refine WP.seq (WP.mono (copyOut_ok w₁ (k := 2 * n) (src := slot n a) (dst := slot n 9)
+    (by rw [u₁.gpr, u₁.other _ (by decide)]) (by omega_using [n0]) (fit a ha.2) (fit 9 (by decide))
+    (f16 a ha.2) (f16 9 (by decide)) (sep a 9 ha'.1)) fun s₂ ⟨w₂, V₂, O₂, _, R₂⟩ => ?_)
+  rw [e8] at O₂
+  have m₂ : ∀ i k, i < 30 → k ≤ 2 * n → i ≠ 9 →
+      val32 s₂.mem base (slot n i) k = val32 s.mem base (slot n i) k := fun i k hi hk h9 => by
+    rw [slot_outside O₂ (by omega_using [st]) h9 (by omega_using [hk, st]) hi sm, u₁.mem]
+  -- `[b]` into the product's slot
+  refine WP.seq (WP.mono (ptr_ok (d := .r11) (k := slot n 10) (by decide) (by have := f16 10 (by decide); omega_using [this]))
+    fun s₃ u₃ => ?_)
+  have w₃ := w₂.of_upd u₃ (by decide)
+  refine WP.seq (WP.mono (copyOut_ok w₃ (k := 2 * n) (src := slot n b) (dst := slot n 10)
+    (by rw [u₃.gpr, u₃.other _ (by decide)]) (by omega_using [n0]) (fit b hb.2) (fit 10 (by decide))
+    (f16 b hb.2) (f16 10 (by decide)) (sep b 10 hb'.2)) fun s₄ ⟨w₄, V₄, O₄, _, R₄⟩ => ?_)
+  rw [e8] at O₄
+  have m₄ : ∀ i k, i < 30 → k ≤ 2 * n → i ≠ 10 →
+      val32 s₄.mem base (slot n i) k = val32 s₂.mem base (slot n i) k := fun i k hi hk h10 => by
+    rw [slot_outside O₄ (by omega_using [st]) h10 (by omega_using [hk, st]) hi sm, u₃.mem]
+  have c₄ : Context n m base size s₄ :=
+    Context.of_slot (Context.of_slot h w₂ (by rw [← u₁.mem]; exact O₂) (by decide)) w₄
+      (by rw [← u₃.mem]; exact O₄) (by decide)
+  obtain A₄ : val32 s₄.mem base (slot n 9) (2 * n) = val32 s.mem base (slot n a) (2 * n) := by
+    rw [m₄ 9 _ (by decide) (Nat.le_refl _) (by decide), V₂, u₁.mem]
+  obtain B₄ : val32 s₄.mem base (slot n 10) (2 * n) = val32 s.mem base (slot n b) (2 * n) := by
+    rw [V₄, u₃.mem, m₂ b _ hb.2 (Nat.le_refl _) hb'.1]
+  -- the base into `r11`, and the call
+  refine WP.seq (wp_mov (VG.Proof.X25519.Arm.op2_reg s₄ .r12) fun s₅ u₅ => WP.block_nil ?_)
+  have c₅ : Context n m base size s₅ := Context.of_slot c₄ (w₄.of_upd u₅ (by decide))
+    (by rw [u₅.mem]; exact Outside.refl _ _ _ _) (i := 9) (by decide)
+  refine WP.seq (wp_callRaw ?_)
+  unfold mulFn
+  refine WP.seq (wp_mov (VG.Proof.X25519.Arm.op2_reg s₅.callEntry .r11) fun s₆ u₆ => WP.block_nil ?_)
+  have b₆ : s₆.gpr .r12 = s₅.gpr .r12 := by
+    rw [u₆.gpr, State.callEntry_gpr _ (by decide), u₅.gpr, u₅.other _ (by decide)]
+  have c₆ : Context n m base size s₆ :=
+    ⟨⟨by rw [b₆]; exact c₅.ws.wb, by rw [u₆.wr, State.callEntry_wr]; exact c₅.ws.wr, c₅.ws.nowrap⟩,
+      c₅.size_le, c₅.small, c₅.n0, by rw [u₆.mem, State.callEntry_mem]; exact c₅.modulus, c₅.gt_one,
+      by rw [u₆.mem, State.callEntry_mem]; exact c₅.inverse⟩
+  have mem₆ : s₆.mem = s₄.mem := by rw [u₆.mem, State.callEntry_mem, u₅.mem]
+  refine WP.mono (context_mul_ok c₆ (o := 9) (a := 9) (b := 10) (by decide) (by decide) (by decide)
+    (by rw [mem₆, B₄]; exact hB)) fun t ⟨ct, Kt, ltt, Vt⟩ => ⟨?_, ?_⟩
+  · rw [Kt.rest.gpr _ (by decide), u₆.other _ (by decide)]
+  -- the result into `[o]`
+  have wt := ct.ws
+  refine WP.seq (WP.mono (ptr_ok (d := .r11) (by decide) (by have := f16 o ho.2; omega_using [this]))
+    fun t₁ v₁ => ?_)
+  have wt₁ := wt.of_upd v₁ (by decide)
+  refine WP.mono (copyOut_ok wt₁ (k := 2 * n) (src := slot n 9) (dst := slot n o)
+    (by rw [v₁.gpr, v₁.other _ (by decide)]) (by omega_using [n0]) (fit 9 (by decide)) (fit o ho.2)
+    (f16 9 (by decide)) (f16 o ho.2) (sep 9 o (by omega_using [ho]))) fun v ⟨wv, Vv, Ov, _, Rv⟩ => ?_
+  rw [e8] at Ov
+  have mv : ∀ i k, i < 30 → k ≤ 2 * n → i ≠ o →
+      val32 v.mem base (slot n i) k = val32 t.mem base (slot n i) k := fun i k hi hk hio => by
+    rw [slot_outside Ov (by omega_using [st]) hio (by omega_using [hk, st]) hi sm, v₁.mem]
+  have nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by have := h.ws.nowrap; omega_arith
+  obtain Rv9 : val32 v.mem base (slot n o) (2 * n) = val32 t.mem base (slot n 9) (2 * n) := by
+    rw [Vv, v₁.mem]
+  refine ⟨Context.of_slot ct wv (by rw [← v₁.mem]; exact Ov) (by omega_using [ho]), ⟨?_, ?_, ?_⟩, ?_, ?_⟩
+  · -- the registers
+    refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
+    · have e : r = .r12 := by revert hr; cases r <;> decide
+      subst e
+      rw [Rv.gpr _ (by decide), v₁.other _ (by decide), Kt.rest.gpr _ (by decide), b₆, u₅.other _ (by decide),
+        R₄.gpr _ (by decide), u₃.other _ (by decide), R₂.gpr _ (by decide), u₁.other _ (by decide)]
+    · rw [Rv.rd, v₁.rd, Kt.rest.rd, u₆.rd, State.callEntry_rd, u₅.rd, R₄.rd, u₃.rd, R₂.rd, u₁.rd]
+    · rw [Rv.wr, v₁.wr, Kt.rest.wr, u₆.wr, State.callEntry_wr, u₅.wr, R₄.wr, u₃.wr, R₂.wr, u₁.wr]
+    · rw [Rv.sp, v₁.sp, Kt.rest.sp, u₆.sp, State.callEntry_sp, u₅.sp, R₄.sp, u₃.sp, R₂.sp, u₁.sp]
+  · -- the memory
+    have o₂ : Outs base (exponentRanges2 n) s.mem s₂.mem := by
+      rw [← u₁.mem]; exact exponentRanges2_of O₂ (by decide) (by decide) (by omega_using [st])
+    have o₄ : Outs base (exponentRanges2 n) s₂.mem s₄.mem := by
+      rw [← u₃.mem]; exact exponentRanges2_of O₄ (by decide) (by decide) (by omega_using [st])
+    have o₆ : Outs base (exponentRanges2 n) s₄.mem t.mem := by
+      rw [← mem₆]; exact exponentRanges2_op Kt.mem (by decide) (by decide)
+    have o₈ : Outs base (exponentRanges2 n) t.mem v.mem := by
+      rw [← v₁.mem]; exact exponentRanges2_of Ov (by omega_using [ho]) ho.2 (by omega_using [st])
+    exact ((o₂.trans o₄).trans o₆).trans o₈
+  · -- the slots
+    intro i k hi hk hio h9 h10 h1 h6
+    rw [mv i k hi hk hio, Kt.val32 hi hk h9 h1 h6 nw', mem₆, m₄ i k hi hk h10, m₂ i k hi hk h9]
+  · rw [Rv9]; exact ltt
+  · rw [Rv9, Vt, mem₆, A₄, B₄]
+
 theorem tableFill_ok {n size m b1 b2 : Nat} {base : Addr} :
     ∀ (ops : List (Nat × Nat × Nat)) (D : List Nat) (s : State), opsOk ops D = true → Context n m base size s →
     (∀ j ∈ D, j < 16 ∧ val32 s.mem base (slot n (12 + j)) (2 * n) = tabv b1 b2 j * 2 ^ (64 * n) % m) →
     WP isa (tableFill umaal n ops) s fun t => Context n m base size t ∧
       (∀ j ∈ opsDone ops D, val32 t.mem base (slot n (12 + j)) (2 * n) = tabv b1 b2 j * 2 ^ (64 * n) % m) ∧
-      (∀ i k, (6 ≤ i ∧ i < 12) ∨ (28 ≤ i ∧ i < 30) → k ≤ 2 * n →
+      (∀ i k, ((6 ≤ i ∧ i < 9) ∨ i = 11 ∨ (28 ≤ i ∧ i < 30)) → k ≤ 2 * n →
         val32 t.mem base (slot n i) k = val32 s.mem base (slot n i) k) ∧
-      Outs base (exponentRanges2 n) s.mem t.mem ∧ Rest dclob s t
+      Outs base (exponentRanges2 n) s.mem t.mem ∧ Rest (.lr :: .r11 :: dclob) s t
   | [], D, s, _, h, hD =>
     WP.block_nil ⟨h, fun j hj => (hD j hj).2, fun _ _ _ _ => rfl, Outs.refl _ _ _, Rest.refl _ _⟩
   | (k, a, b) :: r, D, s, ok, h, hD => by
@@ -1790,22 +1930,24 @@ theorem tableFill_ok {n size m b1 b2 : Nat} {base : Addr} :
     obtain ⟨a16, Va⟩ := hD a ha
     obtain ⟨b16, Vb⟩ := hD b hb
     rw [tableFill]
-    refine WP.seq (WP.mono (context_mul_ok h (o := 12 + k) (a := 12 + a) (b := 12 + b) (by omega_arith)
-      (by omega_arith) (by omega_arith) (by rw [Vb]; exact Nat.mod_lt _ hm0)) fun s₁ ⟨c₁, K₁, lt₁, V₁⟩ => ?_)
+    refine WP.seq (WP.mono (context_mulC_ok h (o := 12 + k) (a := 12 + a) (b := 12 + b) (by omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by rw [Vb]; exact Nat.mod_lt _ hm0))
+      fun s₁ ⟨c₁, K₁, lt₁, V₁⟩ => ?_)
     obtain new : val32 s₁.mem base (slot n (12 + k)) (2 * n) = tabv b1 b2 k * 2 ^ (64 * n) % m := by
       obtain v := VG.Proof.Dsa.mont_product h.coprime (a := tabv b1 b2 a) (b := tabv b1 b2 b)
         (by rw [Va, Nat.mod_mod]) (by rw [Vb, Nat.mod_mod]) V₁
       rwa [Nat.mod_eq_of_lt lt₁, tabv_mul h1 h2] at v
     refine WP.mono (tableFill_ok r (k :: D) s₁ okr c₁ (fun j hj => ?_)) fun t ⟨ct, T, Kp, O, R⟩ =>
-      ⟨ct, T, fun i q hi hq => ?_, (exponentRanges2_op K₁.mem (by omega_arith) (by omega_arith)).trans O,
-        K₁.rest.trans R⟩
+      ⟨ct, T, fun i q hi hq => ?_, K₁.mem.trans O, (K₁.rest.mono (by decide)).trans R⟩
     · by_cases e : j = k
       · rw [e]; exact ⟨hk, new⟩
       · obtain ⟨j16, Vj⟩ := hD j ((List.mem_cons.mp hj).resolve_left e)
         refine ⟨j16, ?_⟩
-        rw [K₁.val32 (by omega_arith) (Nat.le_refl _) (by omega_arith) (by omega_arith) (.inl (by omega_arith)) nw']
+        rw [K₁.val _ _ (by omega_arith) (Nat.le_refl _) (by omega_arith) (by omega_arith) (by omega_arith)
+          (by omega_arith) (.inl (by omega_arith))]
         exact Vj
-    · rw [Kp i q hi hq, K₁.val32 (by omega_arith) hq (by omega_arith) (by omega_arith) (.inl (by omega_arith)) nw']
+    · rw [Kp i q hi hq, K₁.val _ _ (by omega_arith) hq (by omega_arith) (by omega_arith) (by omega_arith)
+        (by omega_arith) (.inl (by omega_arith))]
 
 /-- The table of a product of two powers; the slots from 6 to 11 and the
 second base's and exponent's keep their numbers. -/
@@ -1815,47 +1957,47 @@ theorem table2_ok {n size m : Nat} {base : Addr} {s : State} (h : Context n m ba
     WP isa (table2 umaal n) s fun t => Context n m base size t ∧
       (∀ j < 16, val32 t.mem base (slot n (12 + j)) (2 * n) =
         tabv (val32 s.mem base (slot n 8) (2 * n)) (val32 s.mem base (slot n 28) (2 * n)) j * 2 ^ (64 * n) % m) ∧
-      (∀ i k, (6 ≤ i ∧ i < 12) ∨ (28 ≤ i ∧ i < 30) → k ≤ 2 * n →
+      (∀ i k, ((6 ≤ i ∧ i < 9) ∨ i = 11 ∨ (28 ≤ i ∧ i < 30)) → k ≤ 2 * n →
         val32 t.mem base (slot n i) k = val32 s.mem base (slot n i) k) ∧
-      Outs base (exponentRanges2 n) s.mem t.mem ∧ Rest dclob s t := by
+      Outs base (exponentRanges2 n) s.mem t.mem ∧ Rest (.lr :: .r11 :: dclob) s t := by
   obtain hm0 : 0 < m := by have := h.gt_one; omega_arith
-  obtain nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by have := h.ws.nowrap; have := h.size_le; omega_arith
   unfold table2
-  refine WP.seq (WP.mono (context_mul_ok h (o := 12) (a := 7) (b := 6) (by decide) (by decide) (by decide)
-    (by rw [hone]; exact h.gt_one)) fun s₁ ⟨c₁, K₁, lt₁, V₁⟩ => ?_)
+  refine WP.seq (WP.mono (context_mulC_ok h (o := 12) (a := 7) (b := 6) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by rw [hone]; exact h.gt_one)) fun s₁ ⟨c₁, K₁, lt₁, V₁⟩ => ?_)
   obtain T0₁ : val32 s₁.mem base (slot n 12) (2 * n) = 2 ^ (64 * n) % m :=
     mont_one h.coprime lt₁ (by rw [V₁, hone, hr2, Nat.mul_one, Nat.mod_mod])
-  have k₁ : ∀ (i q : Nat), (6 ≤ i ∧ i < 12) ∨ (28 ≤ i ∧ i < 30) → q ≤ 2 * n →
+  have k₁ : ∀ (i q : Nat), ((6 ≤ i ∧ i < 9) ∨ i = 11 ∨ (28 ≤ i ∧ i < 30)) → q ≤ 2 * n →
       val32 s₁.mem base (slot n i) q = val32 s.mem base (slot n i) q := fun i q hi hq =>
-    K₁.val32 (by omega_arith) hq (by omega_arith) (by omega_arith) (.inl (by omega_arith)) nw'
-  obtain rr₁ := (k₁ 7 (2 * n) (.inl (by decide)) (Nat.le_refl _)).trans hr2
-  refine WP.seq (WP.mono (context_mul_ok c₁ (o := 13) (a := 8) (b := 7) (by decide) (by decide) (by decide)
-    (by rw [rr₁]; exact Nat.mod_lt _ hm0)) fun s₂ ⟨c₂, K₂, lt₂, V₂⟩ => ?_)
+    K₁.val i q (by omega_arith) hq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (.inl (by omega_arith))
+  obtain rr₁ := (k₁ 7 (2 * n) (by decide) (Nat.le_refl _)).trans hr2
+  refine WP.seq (WP.mono (context_mulC_ok c₁ (o := 13) (a := 8) (b := 7) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by rw [rr₁]; exact Nat.mod_lt _ hm0)) fun s₂ ⟨c₂, K₂, lt₂, V₂⟩ => ?_)
   obtain T1₂ : val32 s₂.mem base (slot n 13) (2 * n) = val32 s.mem base (slot n 8) (2 * n) * 2 ^ (64 * n) % m :=
-    mont_encode h.coprime lt₂ (by rw [V₂, rr₁, k₁ 8 (2 * n) (.inl (by decide)) (Nat.le_refl _)])
-  have k₂ : ∀ (i q : Nat), (6 ≤ i ∧ i < 12) ∨ (28 ≤ i ∧ i < 30) → q ≤ 2 * n →
+    mont_encode h.coprime lt₂ (by rw [V₂, rr₁, k₁ 8 (2 * n) (by decide) (Nat.le_refl _)])
+  have k₂ : ∀ (i q : Nat), ((6 ≤ i ∧ i < 9) ∨ i = 11 ∨ (28 ≤ i ∧ i < 30)) → q ≤ 2 * n →
       val32 s₂.mem base (slot n i) q = val32 s.mem base (slot n i) q := fun i q hi hq =>
-    (K₂.val32 (by omega_arith) hq (by omega_arith) (by omega_arith) (.inl (by omega_arith)) nw').trans (k₁ i q hi hq)
+    (K₂.val i q (by omega_arith) hq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (.inl (by omega_arith))).trans (k₁ i q hi hq)
   obtain T0₂ : val32 s₂.mem base (slot n 12) (2 * n) = 2 ^ (64 * n) % m := by
-    rw [K₂.val32 (by decide) (Nat.le_refl _) (by decide) (by decide) (.inl (by decide)) nw', T0₁]
-  obtain rr₂ := (k₂ 7 (2 * n) (.inl (by decide)) (Nat.le_refl _)).trans hr2
-  refine WP.seq (WP.mono (context_mul_ok c₂ (o := 16) (a := 28) (b := 7) (by decide) (by decide) (by decide)
-    (by rw [rr₂]; exact Nat.mod_lt _ hm0)) fun s₃ ⟨c₃, K₃, lt₃, V₃⟩ => ?_)
+    rw [K₂.val _ _ (by decide) (Nat.le_refl _) (by decide) (by decide) (by decide) (by decide) (.inl (by decide)), T0₁]
+  obtain rr₂ := (k₂ 7 (2 * n) (by decide) (Nat.le_refl _)).trans hr2
+  refine WP.seq (WP.mono (context_mulC_ok c₂ (o := 16) (a := 28) (b := 7) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by rw [rr₂]; exact Nat.mod_lt _ hm0)) fun s₃ ⟨c₃, K₃, lt₃, V₃⟩ => ?_)
   obtain T4₃ : val32 s₃.mem base (slot n 16) (2 * n) = val32 s.mem base (slot n 28) (2 * n) * 2 ^ (64 * n) % m :=
-    mont_encode h.coprime lt₃ (by rw [V₃, rr₂, k₂ 28 (2 * n) (.inr (by decide)) (Nat.le_refl _)])
-  have k₃ : ∀ (i q : Nat), (6 ≤ i ∧ i < 12) ∨ (28 ≤ i ∧ i < 30) → q ≤ 2 * n →
+    mont_encode h.coprime lt₃ (by rw [V₃, rr₂, k₂ 28 (2 * n) (by decide) (Nat.le_refl _)])
+  have k₃ : ∀ (i q : Nat), ((6 ≤ i ∧ i < 9) ∨ i = 11 ∨ (28 ≤ i ∧ i < 30)) → q ≤ 2 * n →
       val32 s₃.mem base (slot n i) q = val32 s.mem base (slot n i) q := fun i q hi hq =>
-    (K₃.val32 (by omega_arith) hq (by omega_arith) (by omega_arith) (.inl (by omega_arith)) nw').trans (k₂ i q hi hq)
+    (K₃.val i q (by omega_arith) hq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (.inl (by omega_arith))).trans (k₂ i q hi hq)
   obtain T0₃ : val32 s₃.mem base (slot n 12) (2 * n) = 2 ^ (64 * n) % m := by
-    rw [K₃.val32 (by decide) (Nat.le_refl _) (by decide) (by decide) (.inl (by decide)) nw', T0₂]
+    rw [K₃.val _ _ (by decide) (Nat.le_refl _) (by decide) (by decide) (by decide) (by decide) (.inl (by decide)), T0₂]
   obtain T1₃ : val32 s₃.mem base (slot n 13) (2 * n) = val32 s.mem base (slot n 8) (2 * n) * 2 ^ (64 * n) % m := by
-    rw [K₃.val32 (by decide) (Nat.le_refl _) (by decide) (by decide) (.inl (by decide)) nw', T1₂]
+    rw [K₃.val _ _ (by decide) (Nat.le_refl _) (by decide) (by decide) (by decide) (by decide) (.inl (by decide)), T1₂]
   refine WP.mono (tableFill_ok (b1 := val32 s.mem base (slot n 8) (2 * n)) (b2 := val32 s.mem base (slot n 28) (2 * n))
     tableOps [4, 1, 0] s₃ (by decide) c₃ (fun j hj => ?_)) fun t ⟨ct, T, Kp, O, R⟩ =>
     ⟨ct, fun j hj => T j (tableOps_all j hj), fun i q hi hq => (Kp i q hi hq).trans (k₃ i q hi hq),
-      (((exponentRanges2_op K₁.mem (by decide) (by decide)).trans
-        (exponentRanges2_op K₂.mem (by decide) (by decide))).trans
-        (exponentRanges2_op K₃.mem (by decide) (by decide))).trans O, ((K₁.rest.trans K₂.rest).trans K₃.rest).trans R⟩
+      ((K₁.mem.trans K₂.mem).trans K₃.mem).trans O, ((K₁.rest.trans K₂.rest).trans K₃.rest).trans R⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl
   · exact ⟨by decide, by rw [tabv_four]; exact T4₃⟩
@@ -2082,20 +2224,20 @@ theorem exponentiate2_ok {n size m expWords : Nat} {base : Addr} {s : State}
       val32 t.mem base (slot n 9) (2 * n) =
         val32 s.mem base (slot n 8) (2 * n) ^ val32 s.mem base (slot n 11) expWords *
           val32 s.mem base (slot n 28) (2 * n) ^ val32 s.mem base (slot n 29) expWords % m ∧
-      Outs base (exponentRanges2 n) s.mem t.mem ∧ Rest (.lr :: dclob) s t := by
+      Outs base (exponentRanges2 n) s.mem t.mem ∧ Rest (.lr :: .r11 :: dclob) s t := by
   have sm := h.small
   obtain nw' : base.toNat + contextBytes n ≤ 2 ^ 32 := by have := h.ws.nowrap; have := h.size_le; omega_arith
   unfold exponentiate2
   refine WP.seq (WP.mono (table2_ok h hone hr2) fun s₁ ⟨c₁, T₁, Kp₁, O₁, R₁⟩ => ?_)
   obtain one₁ : val32 s₁.mem base (slot n 6) (2 * n) = 1 := by
-    rw [Kp₁ 6 (2 * n) (.inl (by decide)) (Nat.le_refl _), hone]
+    rw [Kp₁ 6 (2 * n) (by decide) (Nat.le_refl _), hone]
   obtain rr₁ : val32 s₁.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m := by
-    rw [Kp₁ 7 (2 * n) (.inl (by decide)) (Nat.le_refl _), hr2]
+    rw [Kp₁ 7 (2 * n) (by decide) (Nat.le_refl _), hr2]
   refine WP.seq (WP.mono (context_mul_ok c₁ (o := 9) (a := 7) (b := 6) (by decide) (by decide) (by decide)
     (by rw [one₁]; exact h.gt_one)) fun s₂ ⟨c₂, K₂, lt₂, V₂⟩ => ?_)
   obtain Y₂ : val32 s₂.mem base (slot n 9) (2 * n) = 2 ^ (64 * n) % m :=
     mont_one h.coprime lt₂ (by rw [V₂, one₁, rr₁, Nat.mul_one, Nat.mod_mod])
-  have keep₂ : ∀ (i q : Nat), (6 ≤ i ∧ i < 12) ∨ (28 ≤ i ∧ i < 30) → i ≠ 9 → q ≤ 2 * n →
+  have keep₂ : ∀ (i q : Nat), ((6 ≤ i ∧ i < 9) ∨ i = 11 ∨ (28 ≤ i ∧ i < 30)) → i ≠ 9 → q ≤ 2 * n →
       val32 s₂.mem base (slot n i) q = val32 s.mem base (slot n i) q := fun i q hi h9 hq => by
     rw [K₂.val32 (by omega_arith) hq h9 (by omega_arith) (.inl (by omega_arith)) nw', Kp₁ i q hi hq]
   refine WP.seq (wp_movw fun s₃ u₃ => WP.block_nil ?_)
@@ -2107,7 +2249,7 @@ theorem exponentiate2_ok {n size m expWords : Nat} {base : Addr} {s : State}
     (by rw [u₃.mem]; exact Y₂) (by rw [u₃.gpr, movw_ofNat (by omega_arith)])) fun s₄ I => ?_)
   obtain one₄ : val32 s₄.mem base (slot n 6) (2 * n) = 1 := by
     rw [exponentRanges2_slot I.mem (.inr (.inl rfl)) (Nat.le_refl _) sm, u₃.mem,
-      keep₂ 6 (2 * n) (.inl (by decide)) (by decide) (Nat.le_refl _), hone]
+      keep₂ 6 (2 * n) (by decide) (by decide) (Nat.le_refl _), hone]
   obtain fin : val32 s₄.mem base (slot n 9) (2 * n) =
       (val32 s.mem base (slot n 28) (2 * n) ^ val32 s.mem base (slot n 29) expWords *
         val32 s.mem base (slot n 8) (2 * n) ^ val32 s.mem base (slot n 11) expWords) * 2 ^ (64 * n) % m := by
@@ -2115,7 +2257,7 @@ theorem exponentiate2_ok {n size m expWords : Nat} {base : Addr} {s : State}
     rw [pow4_16] at Q1 Q2
     rw [Y, shifted_out (Nat.two_pow_pos _) (val32_lt s₄.mem base (slot n 11) expWords) Q1,
       shifted_out (Nat.two_pow_pos _) (val32_lt s₄.mem base (slot n 29) expWords) Q2, u₃.mem,
-      keep₂ 11 expWords (.inl (by decide)) (by decide) hen, keep₂ 29 expWords (.inr (by decide)) (by decide) hen]
+      keep₂ 11 expWords (by decide) (by decide) hen, keep₂ 29 expWords (by decide) (by decide) hen]
   refine WP.mono (context_mul_ok I.context (o := 9) (a := 9) (b := 6) (by decide) (by decide) (by decide)
     (by rw [one₄]; exact h.gt_one)) fun t ⟨ct, Kt, ltt, Vt⟩ => ⟨ct, ?_, ?_, ?_⟩
   · have v := VG.Proof.Dsa.mont_decode (A := val32 s₄.mem base (slot n 9) (2 * n))
@@ -2126,7 +2268,7 @@ theorem exponentiate2_ok {n size m expWords : Nat} {base : Addr} {s : State}
   · have o₃ : Outs base (exponentRanges2 n) s₂.mem s₃.mem := by rw [u₃.mem]; exact Outs.refl _ _ _
     exact (((O₁.trans (exponentRanges2_op K₂.mem (by decide) (by decide))).trans o₃).trans I.mem).trans
       (exponentRanges2_op Kt.mem (by decide) (by decide))
-  · exact ((((R₁.mono (by decide)).trans (K₂.rest.mono (by decide))).trans (u₃.rest (by decide))).trans I.rest).trans
+  · exact ((((R₁.mono (by decide)).trans (K₂.rest.mono (by decide))).trans (u₃.rest (by decide))).trans (I.rest.mono (by decide))).trans
       (Kt.rest.mono (by decide))
 
 end VG.Proof.Mont.Arm.Dyn

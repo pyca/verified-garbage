@@ -32,13 +32,15 @@ def Instr.eraseOff : Instr → Instr
   | i => i
 
 /-- The code with the offsets of its loads and stores from registers, and
-the immediates of its `movw`, zeroed. -/
+the immediates of its `movw`, zeroed, and the names of the functions it calls
+emptied (which the analysis does not read), so that code that calls a
+function of each size erases to the same code. -/
 def Code.eraseOff : Prog isa → Prog isa
   | .block is => .block (is.map Instr.eraseOff)
   | .seq a b => .seq (eraseOff a) (eraseOff b)
   | .ite c t e => .ite c (eraseOff t) (eraseOff e)
   | .loop b c => .loop (eraseOff b) c
-  | .call n b => .call n (eraseOff b)
+  | .call _ b => .call "" (eraseOff b)
   | .frame p b q => .frame p (eraseOff b) q
   | .icall i n b nx => .icall i n b nx
 
