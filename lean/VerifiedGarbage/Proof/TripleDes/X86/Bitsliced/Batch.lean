@@ -425,13 +425,16 @@ structure BatchPre (s : State) (A Sb : BitVec 32) : Prop where
   key : (⟨Sb.setWidth 64, 384⟩ : Region) ∈ s.rd
   keyFit : Sb.toNat + 384 ≤ 2 ^ 32
   apart : (⟨Sb.setWidth 64, 384⟩ : Region).Disjoint ⟨A.setWidth 64, 4 * wsWords⟩
+  stk : (below (s.gpr .esp) 4).Disjoint ⟨A.setWidth 64, 4 * wsWords⟩
+  stkKey : (below (s.gpr .esp) 4).Disjoint ⟨Sb.setWidth 64, 384⟩
+  sp4 : 4 ≤ (s.gpr .esp).toNat
 
 /-- What `batch d` does. -/
 structure BatchPost (d : Direction) (s : State) (A Sb : BitVec 32) (s' : State) : Prop where
   callee : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  frame : Frame [⟨A.setWidth 64, 4 * wsWords⟩] s.mem s'.mem
+  frame : Frame [⟨A.setWidth 64, 4 * wsWords⟩, below (s.gpr .esp) 4] s.mem s'.mem
   mid : ∀ k, 87 ≤ k → k < bufSlot → s'.mem.readW (wordAddr A k) 32 = s.mem.readW (wordAddr A k) 32
   blocks : ∀ b < 32, blockAt s'.mem (wordAddr A (bufSlot + 2 * b)) =
     blockOut (scheduleAt s.mem (Sb.setWidth 64)) d (blockAt s.mem (wordAddr A (bufSlot + 2 * b)))
@@ -459,7 +462,11 @@ theorem batch_wp (d : Direction) {s : State} {A Sb : BitVec 32} (hp : BatchPre s
   have hs₁ : Sched s₁ Sb :=
     ⟨by rw [rd₁]; exact hp.key, hp.keyFit, by rw [frameR, b₁]; exact hp.apart⟩
   apply WP.seq
-  refine WP.mono (passes_ok d h₃ (k₁₃.sched hs₁) ((k₁₃.fw h₁ (by decide) (by decide)).trans sc₁))
+  have esp₃ : s₃.gpr .esp = s.gpr .esp := k₁₃.esp.trans sp₁
+  have ebp₃ : s₃.gpr .ebp = A := k₁₃.ebp.trans b₁
+  have hst₃ : (below (s₃.gpr .esp) 4).Disjoint (frameR s₃) := by rw [esp₃, frameR, ebp₃]; exact hp.stk
+  refine WP.mono (passes_ok d h₃ (k₁₃.sched hs₁) ((k₁₃.fw h₁ (by decide) (by decide)).trans sc₁) hst₃
+      (by rw [esp₃]; exact hp.stkKey) (by rw [esp₃]; exact hp.sp4))
     fun s₄ ⟨w₄, k₄⟩ => ?_
   have h₄ : Room s₄ := k₄.room h₃
   apply WP.seq
@@ -472,20 +479,20 @@ theorem batch_wp (d : Direction) {s : State} {A Sb : BitVec 32} (hp : BatchPre s
   have h₆ : Room s₆ := k₆.room h₅
   refine WP.mono (leave_ok h₆) fun s₇ ⟨ebx₇, esi₇, edi₇, ebp₇, esp₇, m₇, rd₇, wr₇⟩ => ?_
   -- the whole run, from the entry's working space on
-  have k₁₆ : Kept wsWords s₁ s₆ :=
-    (k₁₃.mono (by decide)).trans ((k₄.mono (by decide)).trans ((k₅.mono (by decide)).trans k₆))
+  have k₁₆ : KeptS wsWords s₁ s₆ :=
+    (k₁₃.mono (by decide)).toS.trans ((k₄.mono (by decide)).trans ((k₅.mono (by decide)).toS.trans k₆.toS))
   -- the words from `schedSlot` up to the blocks are kept from `s₁` on
   have mid : ∀ k, schedSlot ≤ k → k < bufSlot → fw s₆ k = fw s₁ k := by
     intro k hlo hhi
     have hk : k < wsWords := by unfold wsWords; unfold bufSlot at hhi; omega_using [hhi]
     unfold schedSlot at hlo
-    rw [o₆ k hhi, k₅.fw h₄ (by unfold spills; omega_using [hlo]) hk, k₄.fw h₃ hlo hk,
+    rw [o₆ k hhi, k₅.fw h₄ (by unfold spills; omega_using [hlo]) hk, k₄.fw h₃ hst₃ hlo hk,
       k₁₃.fw h₁ (by unfold spills; omega_using [hlo]) hk]
-  have fr : Frame [⟨A.setWidth 64, 4 * wsWords⟩] s.mem s₇.mem := by
+  have fr : Frame [⟨A.setWidth 64, 4 * wsWords⟩, below (s.gpr .esp) 4] s.mem s₇.mem := by
     rw [m₇]
-    refine (fr₁.sub fun r hr => ?_).trans (by have := k₁₆.frame; rwa [headR, b₁] at this)
+    refine (fr₁.sub fun r hr => ?_).trans (by have := k₁₆.frame; rwa [headR, b₁, sp₁] at this)
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
+    exact ⟨_, List.mem_cons_self, Region.sub_prefix (by decide)⟩
   have fwA : ∀ k, s₇.mem.readW (wordAddr A k) 32 = fw s₆ k := fun k => by rw [m₇, fw, k₁₆.ebp, b₁]
   have sched : scheduleAt s₃.mem (Sb.setWidth 64) = scheduleAt s.mem (Sb.setWidth 64) := by
     rw [scheduleAt_frame hs₁ (by decide) k₁₃.frame]
