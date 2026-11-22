@@ -214,3 +214,7 @@ b 24f
 #[rustfmt::skip]
 #[path = "internal/vg_camellia_crypt_prepared.rs"]
 pub(crate) mod vg_camellia_crypt_prepared;
+
+#[rustfmt::skip]
+#[path = "internal/vg_camellia_serial_crypt.rs"]
+pub(crate) mod vg_camellia_serial_crypt;

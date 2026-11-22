@@ -32,9 +32,10 @@ no address depends on the key or the data.
 The subkeys are read, big-endian, from the schedule at `r3`, in its order
 (`Spec.Camellia.scheduleWords`); the block is the buffer's first
 (`tailSlot`), and the tables are in `v7`–`v19`, loaded from the static
-`tableSym` (`lxvd2xTbl`, its address in `r10`). The core writes only `r0`,
-`r4`, `r6`–`r12`, `v0`–`v3` and `v7`–`v19`, and the link register
-(`adrSym`), which the modes restore. Its slots are the bitsliced core's, so
+`tableSym` (`lxvd2xTbl`, its address in `r10`). The core is a call of
+`vg_camellia_serial_crypt`, shared by every mode, which writes only `r0`,
+`r4`, `r6`–`r12`, `v0`–`v3` and `v7`–`v19`, and keeps the link register in
+`r0` around `adrSym`. Its slots are the bitsliced core's, so
 that the modes over either take the same scratch buffer (`[u64; 422]`).
 -/
 
@@ -95,9 +96,13 @@ mask `m0f`, which goes to `r12`, in `v0`. -/
 def treg (k : Nat) : VReg :=
   [VReg.v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19, .v7, .v0].getD k .v0
 
-/-- The tables to their registers, and the mask `0x0f0f…` to `r12`. -/
+/-- The tables' address into `r10`: `adrSym` writes the link register, which
+waits in `r0`. -/
+def tableAddr : List Instr := [.mflr .r0, .adrSym .r10 tableSym, .mtlr .r0]
+
+/-- The tables (at `r10`) to their registers, and the mask `0x0f0f…` to `r12`. -/
 def loadTables : List Instr :=
-  .adrSym .r10 tableSym :: (List.range 14).flatMap (fun k =>
+  (List.range 14).flatMap (fun k =>
     [.li .r11 (16 * k), .lxvd2xTbl (treg k) .r10 .r11 tableSym tableWords]) ++
   [.mfvsrd .r12 .v0]
 
@@ -181,9 +186,15 @@ def prefixRounds : List Instr := six 2 ++ flPair 8 ++ six 10 ++ flPair 16 ++ six
 
 /-- The single-block core, for encryption (the schedule's words in order),
 the number of rounds in `r28`. -/
-def crypt : Prog isa :=
+def cryptRest : Prog isa :=
   .seq (.block (loadTables ++ loadBlock ++ prefixRounds ++ [.subi .r9 .r28 18]))
     (.ite (.zero .d .r9) (.block (whitening 24)) (.block (flPair 24 ++ six 26 ++ whitening 32)))
+
+/-- The core's code, which keeps the link register. -/
+def cryptBody : Prog isa := .seq (.block tableAddr) cryptRest
+
+/-- The single-block core: a call of its code, which every mode shares. -/
+def crypt : Prog isa := .call "vg_camellia_serial_crypt" cryptBody
 
 def core : Modes.PPC64LE.Core where
   prepare := .block []
