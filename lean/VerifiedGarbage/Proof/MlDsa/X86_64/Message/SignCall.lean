@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignPre
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Via
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -28,7 +29,7 @@ namespace VG.Proof.MlDsa.X86_64.Message
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Message
 open VG.Proof.MlDsa.Message
 open VG.Proof.MlKem.X86_64 (Keep)
-open VG.Proof.MlDsa.X86_64.Sign (signK scrLen skL)
+open VG.Proof.MlDsa.X86_64.Sign (signK scrLen skL prepared_congr)
 open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
@@ -42,22 +43,6 @@ structure SignFn (p : Params) (c : Prog isa) : Prop where
 /-- The arguments of the call of the signing function on `μ`. -/
 abbrev signArgs (p : Params) (prep : Bool) : List Arg :=
   [.slot fKey, aMu p, .slot fRnd, .slot fSig, .slot fScr, .imm (flagOf prep)]
-
-/-- A prepared key is in the bytes of its region. -/
-theorem prepared_congr {p : Params} {m m' : Mem} {a : Addr}
-    (hb : bytesAt m' a (preparedSecretKeyBytes p) = bytesAt m a (preparedSecretKeyBytes p))
-    (h : PreparedSecretKey p m a) : PreparedSecretKey p m' a := by
-  have hl : p.skLen + 1024 * (p.ℓ + 2 * p.k) = preparedSecretKeyBytes p := by
-    simp only [preparedSecretKeyBytes, n]
-  have hsk : bytesAt m' a p.skLen = bytesAt m a p.skLen := by
-    rw [← Proof.MlKem.bytesAt_take m' a (show p.skLen ≤ preparedSecretKeyBytes p by omega_using [hl]), hb,
-      Proof.MlKem.bytesAt_take m a (show p.skLen ≤ preparedSecretKeyBytes p by omega_using [hl])]
-  intro i hi
-  rw [hsk]
-  have e4 : 4 * n * i = 1024 * i := by simp only [n]
-  have hk : p.skLen + 4 * n * i + 1024 ≤ preparedSecretKeyBytes p := by rw [e4]; omega_using [hl, hi]
-  refine polyStored_iff.mpr (PreparedKey.polyIs_of_copy ?_ (polyStored_iff.mp (h i hi)))
-  rw [← Proof.MlKem.bytesAt_slice _ _ hk, hb, Proof.MlKem.bytesAt_slice _ _ hk]
 
 section
 variable {p : Params} {prep : Bool} {s : State}
