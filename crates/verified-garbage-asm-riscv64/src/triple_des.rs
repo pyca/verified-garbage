@@ -249,6 +249,10 @@ j 21f
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_triple_des_block_decrypt.rs"]
+pub(crate) mod vg_triple_des_block_decrypt;
+
+#[rustfmt::skip]
 #[path = "internal/vg_triple_des_block_encrypt.rs"]
 pub(crate) mod vg_triple_des_block_encrypt;
 
