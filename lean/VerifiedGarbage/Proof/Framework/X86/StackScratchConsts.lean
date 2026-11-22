@@ -560,11 +560,15 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
     obtain ⟨m', hblk, hfr⟩ := wipe_run _ s₃ (8 + 4 * slots sig) words hmem (fun k hk => by
       rw [hesp₃, sub_add_setWidth (by omega_using [hb, hw, hk]) (by omega_using [h0])]
       exact Offset.contains_below _ (by omega_using []) (by omega_using [hw, hk]) (by omega_using [h0]))
+      (fun k hk => by
+        rw [hesp₃, sub_add_setWidth (by omega_using [hb, hw, hk]) (by omega_using [h0])]
+        exact Offset.contains_below _ (by omega_using []) (by omega_using [hw, hk]) (by omega_using [h0]))
     have he' := Exec.seq he (Exec.block hblk)
-    have ha' : abiPreserved (narrowC sig e n bytes wa (c₀ :: cs) s) { s₃.setReg .ecx 0 with mem := m' } := by
+    have ha' : abiPreserved (narrowC sig e n bytes wa (c₀ :: cs) s) { wipeRegs s₃ with mem := m' } := by
       refine ⟨fun q hq => ?_, ?_⟩
       · have hq' : q ≠ .ecx := by rintro rfl; simp [calleeSaved] at hq
-        simp only [State.setReg, hq', ↓reduceIte]
+        show (wipeRegs s₃).gpr q = _
+        rw [wipeRegs_gpr hq']
         exact ha.1 q hq
       · show m'.readW _ 32 = _
         rw [hespC, Taint.sub_setWidth (by omega_using [h0])]
@@ -578,8 +582,8 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
         rwa [hespC, Taint.sub_setWidth (by omega_using [h0])] at h2
     obtain ⟨hex, habi, hm, heax, hedx⟩ := withStackScratchC_run hb hnsp' hd' hs he' ha'
     refine ⟨t, s₃, _, he, hq, hfr, hesp₃, hex, habi, hm, ?_, ?_⟩
-    · rw [heax]; simp [State.setReg]
-    · rw [hedx]; simp [State.setReg]
+    · rw [heax]; exact wipeRegs_gpr (u := s₃) (r := .eax) (by decide)
+    · rw [hedx]; exact wipeRegs_gpr (u := s₃) (r := .edx) (by decide)
   -- The public data in `narrowC`.
   have hpub : ∀ s₁ s₂,
       (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + bytes) leak).pre s₁ →

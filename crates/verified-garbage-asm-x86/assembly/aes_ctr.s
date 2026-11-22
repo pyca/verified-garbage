@@ -319,15 +319,10 @@ vg_aes_ctr_final_aesni:
 	mov esi, DWORD PTR [eax+4]
 	mov edi, DWORD PTR [eax+8]
 	mov ebp, DWORD PTR [eax+12]
+	pxor xmm0, xmm0
 	mov ecx, 0
-	mov DWORD PTR [esp+32], ecx
-	mov DWORD PTR [esp+36], ecx
-	mov DWORD PTR [esp+40], ecx
-	mov DWORD PTR [esp+44], ecx
-	mov DWORD PTR [esp+48], ecx
-	mov DWORD PTR [esp+52], ecx
-	mov DWORD PTR [esp+56], ecx
-	mov DWORD PTR [esp+60], ecx
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
 	lea esp, [esp+64]
 	pxor xmm0, xmm0
 	mov ecx, 0
@@ -452,15 +447,10 @@ vg_aes_ctr_final:
 	mov esi, DWORD PTR [eax+4]
 	mov edi, DWORD PTR [eax+8]
 	mov ebp, DWORD PTR [eax+12]
+	pxor xmm0, xmm0
 	mov ecx, 0
-	mov DWORD PTR [esp+32], ecx
-	mov DWORD PTR [esp+36], ecx
-	mov DWORD PTR [esp+40], ecx
-	mov DWORD PTR [esp+44], ecx
-	mov DWORD PTR [esp+48], ecx
-	mov DWORD PTR [esp+52], ecx
-	mov DWORD PTR [esp+56], ecx
-	mov DWORD PTR [esp+60], ecx
+	movdqu XMMWORD PTR [esp+32], xmm0
+	movdqu XMMWORD PTR [esp+48], xmm0
 	lea esp, [esp+64]
 	pxor xmm0, xmm0
 	mov ecx, 0

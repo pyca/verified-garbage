@@ -90,7 +90,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsjWQkMGYP78C5AAAAAI1kJJzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUIlMJGCNZCRkuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i0QkHIsYi3AEi3gIi2gMZg/vwLkAAAAA8w9/RCQgjWQkMGYP78C5AAAAAI1kJJzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUIlMJGCNZCRkuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_ofb_aesni_core = sym super::aes_ofb::vg_aes_ofb_aesni_core::vg_aes_ofb_aesni_core,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
@@ -164,7 +164,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "i0QkHIsYi3AEi3gIi2gMuQAAAACJTCQgiUwkJIlMJCiJTCQsjWQkMGYP78C5AAAAAI1kJJzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUIlMJGCNZCRkuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i0QkHIsYi3AEi3gIi2gMZg/vwLkAAAAA8w9/RCQgjWQkMGYP78C5AAAAAI1kJJzzD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUIlMJGCNZCRkuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_aes_ofb_core = sym super::aes_ofb::vg_aes_ofb_core::vg_aes_ofb_core,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
