@@ -26,21 +26,21 @@ namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
 structure CallFacts (p : SearchParams) (used : Nat) (sp : BitVec 32) : Prop where
-  stackFits : 184 ≤ sp.toNat
+  stackFits : 232 ≤ sp.toNat
   argsFits : sp.toNat + 20 ≤ 2 ^ 32
   outputArgs : (⟨State.addr p.c.out, p.c.length⟩ : Region).Disjoint ⟨State.addr sp, 20⟩
   usedArgs : (⟨State.addr (p.control + 112#32), 8⟩ : Region).Disjoint ⟨State.addr sp, 20⟩
   scratchArgs : (⟨State.addr p.c.base, 8 * p.c.capacity⟩ : Region).Disjoint ⟨State.addr sp, 20⟩
-  stackOutput : (FrameStack.belowA sp 184).Disjoint ⟨State.addr p.c.out, p.c.length⟩
-  stackUsed : (FrameStack.belowA sp 184).Disjoint ⟨State.addr (p.control + 112#32), 8⟩
-  stackTape : (FrameStack.belowA sp 184).Disjoint
+  stackOutput : (FrameStack.belowA sp 232).Disjoint ⟨State.addr p.c.out, p.c.length⟩
+  stackUsed : (FrameStack.belowA sp 232).Disjoint ⟨State.addr (p.control + 112#32), 8⟩
+  stackTape : (FrameStack.belowA sp 232).Disjoint
     ⟨State.addr (p.c.tape + BitVec.ofNat 32 used), p.c.bytes.length - used⟩
-  stackScratch : (FrameStack.belowA sp 184).Disjoint ⟨State.addr p.c.base, 8 * p.c.capacity⟩
-  stackArgs : (FrameStack.belowA sp 184).Disjoint ⟨State.addr sp, 20⟩
+  stackScratch : (FrameStack.belowA sp 232).Disjoint ⟨State.addr p.c.base, 8 * p.c.capacity⟩
+  stackArgs : (FrameStack.belowA sp 232).Disjoint ⟨State.addr sp, 20⟩
 
 theorem SearchBuffers.callFacts {p : SearchParams} {s : State} (h : SearchBuffers p s) (used : Nat)
     (room : used + p.c.length ≤ p.c.bytes.length) : CallFacts p used (s.sp - 24#32) := by
-  have argsSub : (⟨State.addr (s.sp - 24#32), 20⟩ : Region).Sub (FrameStack.belowA s.sp 208) :=
+  have argsSub : (⟨State.addr (s.sp - 24#32), 20⟩ : Region).Sub (FrameStack.belowA s.sp 256) :=
     fun a ha => callArguments_sub h.below a (Region.sub_prefix (by decide : 20 ≤ 24) a ha)
   have stackSub := callStack_sub h.below
   have out := (h.stackSeparate ⟨State.addr p.c.out, p.c.length⟩ (by simp)).2
@@ -157,7 +157,7 @@ theorem call_post {p : SearchParams} {used : Nat} {s t : State} {m : Mem}
     (memory : s.mem = callMem p used m s.sp)
     (bytes : Spec.Rsa.bytesAt s.mem (State.addr (p.c.tape + BitVec.ofNat 32 used))
       (p.c.bytes.length - used) = p.c.bytes.drop used)
-    (post : (Proof.Ffdh.sievedParameterCandidateContract abi 184).post (callState p used s)
+    (post : (Proof.Ffdh.sievedParameterCandidateContract abi 232).post (callState p used s)
       (t.withRegions (callRd p used s.sp) (callWr p))) : CandidatePost p used t := by
   have a0 := call_stackArg (j := 0) facts.argsFits memory (by decide)
   have a1 := call_stackArg (j := 1) facts.argsFits memory (by decide)

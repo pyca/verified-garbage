@@ -58,7 +58,8 @@ theorem pd_entry_ready (s : State) {base dst np ep xp : BitVec 32} {len k eLen N
   refine ⟨⟨?_, ?_, ptr, h.sourceFit, ?_, h.modulusSeparate.symm, ?_, ?_, ?_⟩, frame, ?_, rest.mono (by decide)⟩
   · refine ⟨⟨h.workspace.nowrap, ?_⟩, h.minLength, h.maxLength, h.space, h.exponentPositive, h.exponentFits,
       keepBytes h.exponent h.stackExponent, keepBytes h.input h.stackInput,
-      h.outputFit, ?_, h.exponentSeparate, h.inputSeparate, h.outputSeparate, ?_, ?_, ?_⟩
+      h.outputFit, ?_, h.exponentSeparate, h.inputSeparate, h.outputSeparate, ?_, ?_, ?_,
+      h.callStack rest.sp, (h.callApart rest.sp).1, (h.callApart rest.sp).2⟩
     · rw [rest.wr]; exact List.mem_cons_of_mem _ h.workspace.writable
     · rw [rest.wr]
       obtain ⟨r, hr, hc⟩ := h.write

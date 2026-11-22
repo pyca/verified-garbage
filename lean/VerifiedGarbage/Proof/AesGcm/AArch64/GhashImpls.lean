@@ -1524,22 +1524,6 @@ theorem seal_side {c : Calls} (hc : CallsOk c) :
   · exact side_of_holes hc fnOk_nil (withStackArgScratch (2560 + 16) 1 (Impl.AesGcm.AArch64.Fast.«seal» holes))
   · exact side_of_holes hc fnOk_nil (withStackArgScratch (2560 + 16) 1 (Impl.AesGcm.AArch64.«seal» holes))
 
-theorem open_side {c : Calls} (hc : CallsOk c) :
-    scrubSide (withStackArgScratch (c.wn + 32) 2 (Impl.AesGcm.AArch64.Fn.openCode c)) (c.wn + 32) 32 own [] = true := by
-  rcases wn_cases hc with h | h <;> rcases openCode_cases c with hp | hp <;> rw [h, hp]
-  · exact side_of_holes hc fnOk_nil (withStackArgScratch (768 + 32) 2 (Impl.AesGcm.AArch64.Fast.«open» holes))
-  · exact side_of_holes hc fnOk_nil (withStackArgScratch (768 + 32) 2 (Impl.AesGcm.AArch64.«open» holes))
-  · exact side_of_holes hc fnOk_nil (withStackArgScratch (2560 + 32) 2 (Impl.AesGcm.AArch64.Fast.«open» holes))
-  · exact side_of_holes hc fnOk_nil (withStackArgScratch (2560 + 32) 2 (Impl.AesGcm.AArch64.«open» holes))
-
-theorem openTo_side {c : Calls} (hc : CallsOk c) :
-    scrubSide (withStackArgScratch (c.wn + 48) 4 (Impl.AesGcm.AArch64.Fn.openToCode c)) (c.wn + 48) 32 own [] = true := by
-  rcases wn_cases hc with h | h <;> rcases openToCode_cases c with hp | hp <;> rw [h, hp]
-  · exact side_of_holes hc fnOk_nil (withStackArgScratch (768 + 48) 4 (Impl.AesGcm.AArch64.Fast.openTo holes))
-  · exact side_of_holes hc fnOk_nil (withStackArgScratch (768 + 48) 4 (Impl.AesGcm.AArch64.openG holes true 4))
-  · exact side_of_holes hc fnOk_nil (withStackArgScratch (2560 + 48) 4 (Impl.AesGcm.AArch64.Fast.openTo holes))
-  · exact side_of_holes hc fnOk_nil (withStackArgScratch (2560 + 48) 4 (Impl.AesGcm.AArch64.openG holes true 4))
-
 theorem sealWithPowersBase_side {c : Calls} (hc : CallsOk c) :
     scrubSide (withStackArgScratch 2576 1 (Impl.AesGcm.AArch64.Fn.sealCode c)) 2576 0 own [] = true := by
   rcases sealCode_cases c with hp | hp <;> rw [hp]
@@ -1731,36 +1715,6 @@ theorem init_scrubbed (g : GcmVariant) :
     rw [initWn_eq]; exact init_framedW g.impl
   exact verifiedScrubbedAll (api := Spec.Gcm.initApi) { code := _, verified := hv } own
     (Scrub.initOk _ (initWn_pos g.impl.callsOk)) (init_side g.impl.callsOk)
-
-/-- `vg_aes_gcm_seal` as emitted, cleanup included. -/
-theorem seal_scrubbed (g : GcmVariant) :
-    VerifiedScrubbed AArch64.target (Impl.AesGcm.AArch64.Fn.«seal» g.calls)
-      (Spec.Gcm.sealContract AArch64.abi (g.calls.wn + 16)) 0 := by
-  have hv : Verified AArch64.target (withStackArgScratch (g.impl.calls.wn + 16) 1 (Impl.AesGcm.AArch64.Fn.sealCode g.impl.calls))
-      (Proof.AesGcm.sealRoundsContract AArch64.abi (g.impl.calls.wn + 16)) := by
-    rw [wn_eq]; exact sealCode_framedW g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV
-  exact verifiedScrubbedAll (api := Spec.Gcm.sealApi) { code := _, verified := Proof.AesGcm.seal_keyed hv } own
-    (Scrub.sealOk _) (seal_side g.impl.callsOk)
-
-/-- `vg_aes_gcm_open` as emitted, cleanup included. -/
-theorem open_scrubbed (g : GcmVariant) :
-    VerifiedScrubbed AArch64.target (Impl.AesGcm.AArch64.Fn.«open» g.calls)
-      (Spec.Gcm.openContract AArch64.abi (g.calls.wn + 32)) 32 := by
-  have hv : Verified AArch64.target (withStackArgScratch (g.impl.calls.wn + 32) 2 (Impl.AesGcm.AArch64.Fn.openCode g.impl.calls))
-      (Proof.AesGcm.openRoundsContract AArch64.abi (g.impl.calls.wn + 32)) := by
-    rw [wn_eq]; exact openCode_framedW g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV
-  exact verifiedScrubbedAll (api := Spec.Gcm.openApi) { code := _, verified := Proof.AesGcm.open_keyed hv } own
-    (Scrub.openOk _) (open_side g.impl.callsOk)
-
-/-- `vg_aes_gcm_open_to` as emitted, cleanup included. -/
-theorem openTo_scrubbed (g : GcmVariant) :
-    VerifiedScrubbed AArch64.target (Impl.AesGcm.AArch64.Fn.openTo g.calls)
-      (Spec.Gcm.openToContract AArch64.abi (g.calls.wn + 48)) 32 := by
-  have hv : Verified AArch64.target (withStackArgScratch (g.impl.calls.wn + 48) 4 (Impl.AesGcm.AArch64.Fn.openToCode g.impl.calls))
-      (Proof.AesGcm.openToRoundsContract AArch64.abi (g.impl.calls.wn + 48)) := by
-    rw [wn_eq]; exact openToCode_framedW g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV
-  exact verifiedScrubbedAll (api := Spec.Gcm.openToApi) { code := _, verified := Proof.AesGcm.openTo_keyed hv } own
-    (Scrub.openToOk _) (openTo_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_seal_gather` as emitted, cleanup included. -/
 theorem sealGather_scrubbed (g : GcmVariant) :

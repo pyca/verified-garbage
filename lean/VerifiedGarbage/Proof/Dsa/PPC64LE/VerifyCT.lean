@@ -596,9 +596,9 @@ theorem w_OM {v : VD} {s : State} (h : O2 v s ∧ s.gpr .r0 = 0) : WP isa pModQ 
 /-- `setupP`, from a state in the Q space with q in its array 0, for a key
 satisfying `K`. -/
 theorem w_setupP {K : VD → Prop} (hK : ∀ v, K v → KO v) {v : VD} {s : State} (B : Base v s)
-    (r2 : s.gpr .r2 = pack v.L.pl v.L.ql v.qb v.d) (qf : QF v s) (kv : K v) : WP isa setupP s (PP K v) := by
+    (r2 : s.gpr .r2 = pack v.L.pl v.L.ql v.qb v.d) (qf : QF v s) (kv : K v) : WP isa setupPCall s (PP K v) := by
   have bd := (hK v kv).bounds
-  refine WP.mono (setupP_ok B.ok B.scr B.regs (B.hk.take B.kn) (by rw [B.p]; exact bd.1)
+  refine WP.mono (setupPCall_ok B.ok B.scr B.regs (B.hk.take B.kn) (by rw [B.p]; exact bd.1)
       (by rw [B.p]; exact (hK v kv).2.1))
     fun t ⟨⟨ip, p0, ptop, p8, pb⟩, k⟩ => ⟨B.step k (pb.body B.ok), ?_, envP_of ip,
       ⟨ip, ?_, ptop, ?_, (pb.arrQ B.ok 0 (by decide)).trans qf.1, (pb.qtop B.ok).trans qf.2⟩, kv⟩
@@ -606,7 +606,7 @@ theorem w_setupP {K : VD → Prop} (hK : ∀ v, K v → KO v) {v : VD} {s : Stat
   · rw [p0, B.p]; rfl
   · rw [p8, B.p]; rfl
 
-theorem w_P {v : VD} {s : State} (h : OM v s ∧ s.gpr .r0 = 0) : WP isa setupP s (PP KM v) := by
+theorem w_P {v : VD} {s : State} (h : OM v s ∧ s.gpr .r0 = 0) : WP isa setupPCall s (PP KM v) := by
   obtain ⟨⟨B, r2, -, ⟨ko, qf⟩, e0⟩, z⟩ := h
   exact w_setupP (K := KM) (fun _ h => h.1) B r2 qf ⟨ko, e0.mp z⟩
 
@@ -659,6 +659,77 @@ theorem setupP_rel {Φ : VD → State → Prop} (hpin : Pins Φ (coreRegs ++ [])
     have ⟨B, r2, hpo⟩ := hΦ v s h; w_pre0 B r2 hpo) ?_
   exact rel_ite_zero (zero_iff_agree _ fun _ _ h => h.2.2.2)
     (rel_pins (pins_and pins_SPre) t4a) (rel_pins (pins_and pins_SPre) t4b)
+
+/-- A call of code proven here: two runs leak the same trace when the
+callee's two runs, from the states the call enters it in, do (`bl` leaks no
+address). -/
+theorem rel_callBody {name : String} {body : Prog isa} {P R : State → State → Prop}
+    (h : RelCT isa R body fun _ _ => True) (hpre : ∀ s t, P s t → R s.callEntry t.callEntry) :
+    RelCT isa P (.call name body) fun _ _ => True := by
+  intro s t ts tt s' t' hp es et
+  cases es with
+  | call cs bs rs =>
+    cases et with
+    | call ct bt rt =>
+      have hs := Option.some.inj ((call_callEntry s).symm.trans cs)
+      have ht := Option.some.inj ((call_callEntry t).symm.trans ct)
+      subst hs
+      subst ht
+      refine ⟨?_, trivial⟩
+      rw [(h _ _ _ _ _ _ (hpre s t hp) bs bt).1]
+
+/-- Two runs of a block, whose traces agree. -/
+theorem rel_block_of {P Q : State → State → Prop} {l : List Instr}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ u₁ u₂ t, execBlock isa l s₁ = some (u₁, t) ∧
+      execBlock isa l s₂ = some (u₂, t) ∧ Q u₁ u₂) :
+    RelCT isa P (.block l) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  obtain ⟨u₁, u₂, t, h₁, h₂, hq⟩ := h _ _ hp
+  rw [Exec.block_iff, h₁, Option.some.injEq, Prod.mk.injEq] at e₁
+  rw [Exec.block_iff, h₂, Option.some.injEq, Prod.mk.injEq] at e₂
+  obtain ⟨rfl, rfl⟩ := e₁
+  obtain ⟨rfl, rfl⟩ := e₂
+  exact ⟨rfl, hq⟩
+
+/-- The state the call of `setupP` enters it in, from `x`. -/
+def enterSetup (x : State) : State := (x.write .r25 x.lr).callEntry
+
+theorem enterSetup_gpr (x : State) {r : Reg} (h : r ∈ regsRegs) : (enterSetup x).gpr r = x.gpr r := by
+  obtain ⟨h1, h2⟩ : r ∉ linkRegs ∧ r ≠ .r25 := by
+    simp only [regsRegs, List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl | rfl | rfl | rfl <;> decide
+  rw [enterSetup, State.callEntry_gpr _ h1, VG.Proof.Bignum.PPC64LE.gpr_write, ite_eq_right_iff.mpr fun h => absurd h h2]
+
+theorem Base.enterSetup {v : VD} {x : State} (B : Base v x) : Base v (enterSetup x) :=
+  ⟨B.ok, ⟨(enterSetup_gpr x (by decide)).trans B.regs.r21, (enterSetup_gpr x (by decide)).trans B.regs.r27,
+      (enterSetup_gpr x (by decide)).trans B.regs.r28, (enterSetup_gpr x (by decide)).trans B.regs.r26,
+      by rw [enterSetup_gpr x (by decide)]; exact B.regs.pl, by rw [enterSetup_gpr x (by decide)]; exact B.regs.ql⟩,
+    B.scr.congr rfl, B.hk.keep rfl rfl, B.hsg.keep rfl rfl, B.hdg.keep rfl rfl, B.kb, B.hx.keep rfl rfl, B.hdr,
+    B.sgn, B.kn⟩
+
+/-- `setupPCall`: `setupP_rel`, through the call. -/
+theorem setupPCall_rel {Φ : VD → State → Prop} (hpin : Pins Φ (coreRegs ++ []))
+    (hΦ : ∀ v s, Φ v s → Base v s ∧ s.gpr .r2 = pack v.L.pl v.L.ql v.qb v.d ∧ v.p % 2 = 1) :
+    RelCT isa (Two Φ) setupPCall fun _ _ => True := by
+  unfold setupPCall
+  refine RelCT.seq (R := fun a b => ∃ x y, Two Φ x y ∧ a = x.write .r25 x.lr ∧ b = y.write .r25 y.lr)
+    (rel_block_of fun x y h => ⟨_, _, [], rfl, rfl, x, y, h, rfl, rfl⟩) ?_
+  refine RelCT.seq (rel_callBody (R := Two fun v a => ∃ x, Φ v x ∧ a = enterSetup x) (setupP_rel ?_ ?_) ?_)
+    (rel_block_of fun x y _ => ⟨_, _, [], rfl, rfl, trivial⟩)
+  · intro v a b ⟨x, hx, ea⟩ ⟨y, hy, eb⟩ r hr
+    subst ea eb
+    have hr' : r ∈ regsRegs := by
+      simp only [coreRegs, List.append_nil] at hr
+      exact hr
+    rw [enterSetup_gpr x hr', enterSetup_gpr y hr']
+    exact hpin v x y hx hy r hr
+  · intro v a ⟨x, hx, ea⟩
+    subst ea
+    obtain ⟨B, r2, hpo⟩ := hΦ v x hx
+    exact ⟨B.enterSetup, (enterSetup_gpr x (by decide)).trans r2, hpo⟩
+  · intro a b ⟨x, y, ⟨v, hx, hy, hsp⟩, ea, eb⟩
+    subst ea eb
+    exact ⟨v, ⟨x, hx, rfl⟩, ⟨y, hy, rfl⟩, hsp⟩
 
 /-! ## An element's check -/
 
@@ -752,7 +823,7 @@ abbrev K8 : VD → State → Prop := PP fun v => KM v ∧ EOk (fun L => L.pl + L
 theorem paramsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : VD → Prop}
     (hrest : RelCT isa (Two fun v s => K8 v s ∧ G v) rest Q)
     (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s ∧ G v) → RelCT isa (Two Φ) fail Q) :
-    RelCT isa (Two fun v s => S5 v s ∧ G v) (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG)
+    RelCT isa (Two fun v s => S5 v s ∧ G v) (odds (andThen pModQ (.seq setupPCall (andThen (.seq (.block ptrG)
       checkElem) rest fail)) fail) fail) Q := by
   have hG := elem_rel ptrG (fun L => L.pl + L.ql) (G := G) (fun _ _ B _ => by have := B.kn; omega_using [this])
     (fun h => ptrG_ok h) t5 (K := KM) (fun _ => KM_p)
@@ -763,7 +834,7 @@ theorem paramsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G 
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   refine RelCT.seq (two_postG (rel_pins (pins_and pins_O2) t3) fun _ _ h => w_OM h)
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
-  refine RelCT.seq (two_postG (setupP_rel (pins_and pins_OM)
+  refine RelCT.seq (two_postG (setupPCall_rel (pins_and pins_OM)
       fun _ _ ⟨⟨B, r2, _, ⟨ko, _⟩, _⟩, _⟩ => ⟨B, r2, ko.2.1⟩) fun _ _ h => w_P h) (RelCT.seq
     hG (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩)))
   exact hrest.mono (fun _ _ => two_mono fun _ _ ⟨⟨⟨B, r2, fx, pf, k, e⟩, z⟩, g⟩ =>
@@ -775,7 +846,7 @@ theorem oddsTail_rel {rest fail : Prog isa} {Q : State → State → Prop} {G : 
     (hy : ∀ v s, Base v s → G v → 3 * v.L.pl + v.L.ql ≤ v.kn)
     (hrest : RelCT isa (Two fun v s => K9 v s ∧ G v) rest Q)
     (hfail : ∀ Φ : VD → State → Prop, (∀ v s, Φ v s → Base v s ∧ G v) → RelCT isa (Two Φ) fail Q) :
-    RelCT isa (Two fun v s => S5 v s ∧ G v) (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG)
+    RelCT isa (Two fun v s => S5 v s ∧ G v) (odds (andThen pModQ (.seq setupPCall (andThen (.seq (.block ptrG)
       checkElem) (andThen (.seq (.block ptrY) checkElem) rest fail) fail)) fail) fail) Q := by
   refine paramsTail_rel ?_ hfail
   have hY := elem_rel ptrY (fun L => 2 * L.pl + L.ql) (G := G) (fun v s B g => by have := hy v s B g; omega_using [this])

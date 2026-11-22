@@ -138,7 +138,7 @@ structure EP where
   mask : List Nat
 
 /-- The stack of the call: `vg_rsa_pkcs1_encrypt_precomputed`'s. -/
-abbrev callStack : Nat := 1168
+abbrev callStack : Nat := 1216
 
 namespace EP
 
@@ -249,13 +249,13 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
   rename_i hsp hsa hrd hwr oT oN oE oM oR oS oQ oA tN tE tM tR tS tQ tA nS eS mS rS sQ sA
     kO kT kN kE kM kR kS kQ kA fO fT fN fE fM fR fS fQ kv olk el1 elK mlK rlK slK
   have qlK := h
-  have h2312 : 2312 ≤ s.sp.toNat := hsp
+  have h2312 : 2360 ≤ s.sp.toNat := hsp
   obtain r1 : s.gpr .r1 = stackArg s 0 := BitVec.eq_of_toNat_eq olk
   rw [olk] at hwr oT oN oE oM oR oS oQ oA kO fO
   obtain hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   obtain below : Region.Sub (FrameStack.belowA s.sp 56)
-      ⟨State.addr s.sp - BitVec.ofNat 64 2312, 2312⟩ := by
+      ⟨State.addr s.sp - BitVec.ofNat 64 2360, 2360⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)

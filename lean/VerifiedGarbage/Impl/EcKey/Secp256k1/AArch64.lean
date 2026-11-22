@@ -47,7 +47,11 @@ def compressSecp256k1 : Prog VG.AArch64.isa :=
 /-- `vg_ec_secp256k1_decompress_public_key`: its code, then the registers that held the
 field elements, and the flags, cleared. -/
 def decompressSecp256k1 : Prog VG.AArch64.isa :=
-  withClears [.x2, .x3, .x4, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17] [] (some .x2)
+  scrubAll 0 32
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16,
+      .x17],
+     [.v16, .v17, .v29],
+     []⟩
     (Compressed.AArch64.decompress Ecdsa.AArch64.secp256k1)
 
 end Fn

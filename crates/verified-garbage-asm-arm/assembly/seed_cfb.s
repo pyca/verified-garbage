@@ -40,7 +40,7 @@ vg_seed_cfb128_encrypt:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_seed_ecb_encrypt_entry}
+	bl {vg_seed_ecb_encrypt}
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
 	eor r9, r9, r10
@@ -243,7 +243,7 @@ vg_seed_cfb128_decrypt:
 	mov r0, r4
 	mov r1, r12
 	mov r2, #8
-	bl {vg_seed_ecb_encrypt_entry}
+	bl {vg_seed_ecb_encrypt}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -437,7 +437,7 @@ vg_seed_cfb128_decrypt:
 	mov r0, r4
 	mov r1, r12
 	mov r2, #4
-	bl {vg_seed_ecb_encrypt_entry}
+	bl {vg_seed_ecb_encrypt}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -551,7 +551,7 @@ vg_seed_cfb128_decrypt:
 	mov r0, r4
 	mov r1, r12
 	mov r2, #2
-	bl {vg_seed_ecb_encrypt_entry}
+	bl {vg_seed_ecb_encrypt}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -642,7 +642,7 @@ vg_seed_cfb128_decrypt:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_seed_ecb_encrypt_entry}
+	bl {vg_seed_ecb_encrypt}
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
 	eor r9, r9, r10
@@ -761,7 +761,7 @@ vg_seed_cfb128_encrypt_final:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_seed_ecb_encrypt_entry}
+	bl {vg_seed_ecb_encrypt}
 	lsr r9, r7, #4
 	cmp r9, #0
 	beq 23f
@@ -896,7 +896,7 @@ vg_seed_cfb128_decrypt_final:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_seed_ecb_encrypt_entry}
+	bl {vg_seed_ecb_encrypt}
 	lsr r9, r7, #4
 	cmp r9, #0
 	beq 23f

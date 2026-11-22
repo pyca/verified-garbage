@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
 public import VerifiedGarbage.Proof.Ffdh.Arm.DomainCallMemory
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
 public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
@@ -164,7 +165,7 @@ section
 
 /-! Subgroup membership is a native power followed by a fixed-width equality. -/
 
-section
+public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
 open VG.Proof.Rsa.Mont (numAt Operand)
@@ -278,7 +279,7 @@ theorem sharedCheckPublicMain_ok (backend : MontBackend) (s : State) {p : Inputs
     (large : 1 < p.P) (odd : p.P % 2 = 1)
     (value : Octets p.base p.publicValue p.len yb s) (length : yb.length = p.k)
     (valueStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) s fun t =>
       t.gpr .r0 = publicFlag p (Spec.Rsa.os2ip yb) ∧ Frame (domainPrepareWrites p s) s.mem t.mem := by
   have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
@@ -371,7 +372,7 @@ theorem sharedCheckPublicBody_ok (backend : MontBackend) (s : State) {p : Inputs
     (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots) (h32 : 32 ∈ slots) (h36 : 36 ∈ slots)
     (value : Octets p.base p.publicValue p.len yb s) (length : yb.length = p.k)
     (valueStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩) :
-    WP isa (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl)) s fun t =>
       t.gpr .r0 = checkedPublicFlag p (Spec.Rsa.os2ip yb) ∧ Frame (sharedPublicBodyWrites p s) s.mem t.mem := by
   unfold VG.Impl.Ffdh.Arm.Domain.head
   apply WP.assoc
@@ -437,7 +438,7 @@ theorem sharedCheckPublicEntered_ok (backend : MontBackend) (s : State) {p : Inp
     (value : Octets p.base p.publicValue p.len yb s) (length : yb.length = p.k)
     (valueStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩) :
     WP isa (.seq (.block VG.Impl.Ffdh.Arm.Domain.CheckPublic.entry)
-      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)))) s fun t =>
+      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl))) s fun t =>
       t.gpr .r0 = checkedPublicFlag p (Spec.Rsa.os2ip yb) ∧ Frame (sharedPublicBodyWrites p s) s.mem t.mem := by
   rw [WP.seq_iff]
   refine WP.mono (withAllRest (checkPublicEntry_ok s h incoming domain domainLength count publicValue)) ?_
@@ -465,7 +466,7 @@ structure SharedCheckPublicFnInput (p : Inputs) (yb : List Byte) (s : State) : P
     (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Disjoint r
 
 theorem sharedCheckPublicFn_ok (backend : MontBackend) (s : State) {p : Inputs} {yb : List Byte} (h : SharedCheckPublicFnInput p yb s) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedCheckPublic.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckPublic.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) s fun t =>
       abiPreserved s t ∧ t.gpr .r0 = checkedPublicFlag p (Spec.Rsa.os2ip yb) := by
   unfold VG.Impl.Ffdh.Arm.SharedCheckPublic.code
   refine framed_of_separate _ s h.input.stackFits (sharedPublicBodyWrites p (entered s))
@@ -549,7 +550,7 @@ namespace VG.Proof.Ffdh.Arm.SharedCheckPublic
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
 def code (b : MontBackend) : Prog isa :=
-  VG.Impl.Ffdh.Arm.SharedCheckPublic.code (MontCall.op b.name b.mul)
+  VG.Impl.Ffdh.Arm.SharedCheckPublic.code (MontCall.op b.name b.mul) b.dbl
 
 end VG.Proof.Ffdh.Arm.SharedCheckPublic
 
@@ -693,10 +694,11 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 theorem sharedPrecompute_ct {base src : BitVec 32} {len w k : Nat}
     {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len w P regions) (ct : TwoExp.MontgomeryTiming K)
+    (D : TwoExp.Doubling base len w P regions) (dct : TwoExp.DoublingTiming D)
     (countFits : 128 * w < 2 ^ 32) :
     RelCT isa (fun s t => (PrecomputeInput base src len w k s ∧ P s) ∧
       (PrecomputeInput base src len w k t ∧ P t) ∧ s.sp = t.sp)
-      (SharedPrecompute.precompute K.op) (fun _ _ => True) := by
+      (SharedPrecompute.precompute K.op D.dbl) (fun _ _ => True) := by
   have imported (s : State) (h : PrecomputeInput base src len w k s ∧ P s) :
       WP isa importModulus s fun t => PrecomputeModulus base len w t ∧ P t := by
     refine (importModulus_ready s h.1).and ?_
@@ -715,7 +717,7 @@ theorem sharedPrecompute_ct {base src : BitVec 32} {len w k : Nat}
   refine relCT_chain ((importModulus_ct (base := base) (src := src) (len := len) (w := w) (k := k)).mono
     (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h)) imported imported ?_
   exact relCT_chain ((precomputeInverse_ct (base := base) (len := len) (w := w)).mono
-    (fun _ _ h => ⟨h.1.1, h.2.1.1⟩) (fun _ _ h => h)) inverse inverse (SharedR2.r2_ct K ct countFits)
+    (fun _ _ h => ⟨h.1.1, h.2.1.1⟩) (fun _ _ h => h)) inverse inverse (SharedR2.r2_ct K ct D dct countFits)
 
 end VG.Proof.Bignum.Arm
 end
@@ -729,17 +731,19 @@ open VG VG.Arm VG.Proof.Bignum.Arm
 theorem sharedPrepare_ct {base src : BitVec 32} {len k : Nat}
     {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len (Spec.Rsa.modulusWords k) P regions)
-    (ct : TwoExp.MontgomeryTiming K) (countFits : 128 * Spec.Rsa.modulusWords k < 2 ^ 32) :
+    (ct : TwoExp.MontgomeryTiming K)
+    (D : TwoExp.Doubling base len (Spec.Rsa.modulusWords k) P regions) (dct : TwoExp.DoublingTiming D)
+    (countFits : 128 * Spec.Rsa.modulusWords k < 2 ^ 32) :
     RelCT isa (fun s t => (PrepareInput base src len k s ∧ P s) ∧
       (PrepareInput base src len k t ∧ P t) ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedPrepare.code K.op) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedPrepare.code K.op D.dbl) (fun _ _ => True) := by
   have ready (s : State) (h : PrepareInput base src len k s ∧ P s) :
       WP isa VG.Impl.Bignum.Arm.PublicFn.prepare s fun t =>
         PrecomputeInput base src len (Spec.Rsa.modulusWords k) k t ∧ P t :=
     WP.mono (prepare_input s h.1) fun _ r => ⟨r.1, K.stable r.2.1 r.2.2 h.2⟩
   unfold VG.Impl.Ffdh.Arm.SharedPrepare.code
   exact relCT_chain (prepareInput_ct.mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h))
-    ready ready (sharedPrecompute_ct K ct countFits)
+    ready ready (sharedPrecompute_ct K ct D dct countFits)
 
 end VG.Proof.Ffdh.Arm
 
@@ -829,7 +833,7 @@ section
 
 /-! Public subgroup checking calls the shared Montgomery window. -/
 
-section
+public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Mont (Operand)
@@ -945,7 +949,7 @@ section
 
 /-! # The shared native domain-preparation boundary hides modulus values -/
 
-section
+public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
 
@@ -955,17 +959,19 @@ theorem domainSharedPrepareAt24_ct (backend : MontBackend) {p : Inputs} {slots :
     RelCT isa (fun s t => (Context p slots s ∧ DomainCallMemory p s) ∧
       (Context p slots t ∧ DomainCallMemory p t) ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) 24) (fun _ _ => True) := by
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl 24) (fun _ _ => True) := by
   have family (sp0 : BitVec 32) :
       RelCT isa (fun s t => (Context p slots s ∧ DomainCallMemory p s ∧ s.sp = sp0) ∧
         (Context p slots t ∧ DomainCallMemory p t ∧ t.sp = sp0) ∧ s.sp = t.sp)
         (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt
-          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) 24) (fun _ _ => True) := by
+          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl 24) (fun _ _ => True) := by
     let correct := fun o a b ho ha hb v input => backend.correct v (base := p.base) (len := p.len) (w := p.w) (o := o) (a := a) (b := b) input ho ha hb
     let K := TwoExp.sharedMontgomery p.base sp0 p.len p.w backend.name backend.mul correct backend.stackOk
     have timing : TwoExp.MontgomeryTiming K :=
       TwoExp.sharedMontgomeryTiming p.base sp0 p.len p.w backend.name backend.mul correct backend.stackOk
         (fun _ _ _ ho ha hb => backend.rawCT ho ha hb)
+    let D := backend.doubling p.base sp0 p.len p.w
+    have dtiming : TwoExp.DoublingTiming D := backend.doublingTiming p.base sp0 p.len p.w
     have argsInput (s : State) (h : Context p slots s ∧ DomainCallMemory p s ∧ s.sp = sp0) :
         WP isa (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs 24)) s fun u =>
           PrepareInput p.base p.domain p.len p.k u ∧ TwoExp.CallReady p.base sp0 p.len u := by
@@ -983,7 +989,7 @@ theorem domainSharedPrepareAt24_ct (backend : MontBackend) {p : Inputs} {slots :
         by rw [bytes]; exact large, by rw [bytes]; exact odd⟩
     unfold VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt
     exact relCT_chain ((prepareArgs_ct 24).mono (fun _ _ h => h.2.2) (fun _ _ h => h))
-      argsInput argsInput (sharedPrepare_ct K timing p.width.2.2.2.2)
+      argsInput argsInput (sharedPrepare_ct K timing D dtiming p.width.2.2.2.2)
   intro s t tr1 tr2 u v h e1 e2
   exact family s.sp s t tr1 tr2 u v
     ⟨⟨h.1.1, h.1.2, rfl⟩, ⟨h.2.1.1, h.2.1.2, h.2.2.symm⟩, h.2.2⟩ e1 e2
@@ -1009,7 +1015,7 @@ theorem sharedCheckPublicMain_ct (backend : MontBackend) {p : Inputs} {slots : L
     (h32 : 32 ∈ slots) (h36 : 36 ∈ slots) (h60 : 60 ∈ slots)
     (length : yb.length = p.k) (large : 1 < p.P) (odd : p.P % 2 = 1) :
     RelCT isa (fun s t => SharedPublicMainInput p slots yb s ∧ SharedPublicMainInput p slots yb t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) (fun _ _ => True) := by
   have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
@@ -1017,7 +1023,7 @@ theorem sharedCheckPublicMain_ct (backend : MontBackend) {p : Inputs} {slots : L
     (P' := fun (s t : State) => SharedPublicMainInput p slots yb s ∧ SharedPublicMainInput p slots yb t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.context,h.1.calls⟩,⟨h.2.1.context,h.2.1.calls⟩,h.2.2⟩) (fun _ _ h => h)
   have wpPrep (s : State) (h : SharedPublicMainInput p slots yb s) :
-      WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) 24) s (SharedSubgroupInput p slots 36 yb) := by
+      WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl 24) s (SharedSubgroupInput p slots 36 yb) := by
     refine WP.mono (domainSharedPrepareAt24_ok backend s h.context h.calls stable h0 h24 h32 large odd) ?_
     rintro u ⟨context, ready, modulus, r2, frame, rest⟩
     refine ⟨⟨context, ready, modulus, r2, h.value.after_frame frame rest ?_⟩, h.calls.after rest⟩
@@ -1103,7 +1109,7 @@ theorem sharedCheckPublicBody_ct (backend : MontBackend) {p : Inputs} {slots : L
     (stable : stableSlots slots = true) (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots)
     (h32 : 32 ∈ slots) (h36 : 36 ∈ slots) (length : yb.length = p.k) :
     RelCT isa (fun s t => SharedPublicMainInput p slots yb s ∧ SharedPublicMainInput p slots yb t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl)) (fun _ _ => True) := by
   let Q := fun s : State => SharedPublicMainInput p (60 :: 56 :: slots) yb s ∧ s.z = Spec.Rsa.modulusValid p.P p.k
   have head := (head_ct stable h0 h24 h32).mono
     (P' := fun (s t : State) => SharedPublicMainInput p slots yb s ∧ SharedPublicMainInput p slots yb t ∧ s.sp = t.sp)
@@ -1124,7 +1130,7 @@ theorem sharedCheckPublicBody_ct (backend : MontBackend) {p : Inputs} {slots : L
     change (true && (true && stableSlots slots)) = true
     rw [Bool.true_and, Bool.true_and, stable]
   have branches : RelCT isa (fun s t => Q s ∧ Q t ∧ s.sp = t.sp)
-      (.ite .eq (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (VG.Impl.Ffdh.Arm.Domain.ret 0)) (fun _ _ => True) := by
+      (.ite .eq (VG.Impl.Ffdh.Arm.SharedCheckPublic.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) (VG.Impl.Ffdh.Arm.Domain.ret 0)) (fun _ _ => True) := by
     apply iteKnown_ct (Spec.Rsa.modulusValid p.P p.k) (fun s h => by change some s.z = _; rw [h.2])
     · intro valid
       have facts := VG.Proof.Bignum.valid_facts valid p.minLength
@@ -1153,7 +1159,7 @@ open VG VG.Arm VG.Proof.Bignum.Arm
 
 theorem sharedCheckPublicFn_ct (backend : MontBackend) {p : Inputs} {yb : List Byte} (length : yb.length = p.k) :
     RelCT isa (fun s t => SharedCheckPublicFnInput p yb s ∧ SharedCheckPublicFnInput p yb t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedCheckPublic.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedCheckPublic.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) (fun _ _ => True) := by
   let P := fun a : State => ∃ s, SharedCheckPublicFnInput p yb s ∧ a = entered s
   have entry := checkPublicEntry_ct.mono
     (P' := fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)

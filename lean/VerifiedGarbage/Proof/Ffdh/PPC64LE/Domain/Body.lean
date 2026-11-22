@@ -439,7 +439,7 @@ theorem leadScan_ok {s : State} {Q : Addr} {bs : List Byte} (hl : bs.length ≤ 
 
 /-- The registers `subgroup` writes. -/
 def subRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20,
-  .r22, .r24, .r30, .r31]
+  .r22, .r24, .r25, .r30, .r31]
 
 /-- What holds after `subFront`, from `s`. -/
 structure SubMid (s : State) (B D : Addr) (Z w k : Nat) (t : State) : Prop where
@@ -586,11 +586,10 @@ theorem subgroup_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h2
   obtain hbq : Spec.Rsa.bytesAt s₆.mem (off D (2 * k)) k = Spec.Rsa.bytesAt s.mem (off D (2 * k)) k := by
     simp only [Spec.Rsa.bytesAt]
     exact List.map_congr_left fun i hi => hmq i (List.mem_range.mp hi)
-  refine WP.seq (WP.mono (Win.powWin_ok (D := off (off D (2 * k)) (lead bs)) (L := k - lead bs)
+  refine WP.seq (WP.mono (Win.powWinCall_ok (D := off (off D (2 * k)) (lead bs)) (L := k - lead bs)
     (hs.congr k16.wr) (by omega_arith)
     (by omega_arith) (by omega_arith) g10 g29 g11
-    (by rw [(k6.gpr .r12 (by decide))]; exact hm.r12lt)
-    (by rw [(k6.gpr .r12 (by decide)), m6s]; exact hm.r12inv) (by rw [p4]; exact hp2) (by rw [p4]; exact hodd)
+    (Win.word_odd (by omega_arith) p4 hodd) (by rw [p4]; exact hp2) (by rw [p4]; exact hodd)
     (by rw [hr2, p4]; exact Nat.mod_lt _ (by omega_arith)) (by rw [a30, boff_off_add]; rfl)
     (by rw [a31, hbl]) (by omega_using [hbl, hlead]) (by omega_arith)
     (fun i hi => by rw [k16.rd, k16.wr, boff_off_add, off_off_add, ← off_off_add]; exact hrd _ (by omega_using [hi]))

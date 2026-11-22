@@ -145,7 +145,7 @@ theorem post_of {s s' : State} (h : EPost brainpoolp256r1 s s') : ecdhX86.post s
   rcases q with _ | z <;> exact id
 
 /-- No instruction writes `esp`, and the calls use 28 bytes of stack. -/
-theorem ecdh_sp : SpOk exchangeBrainpoolP256r1 brainpoolp256r1.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
+theorem ecdh_sp : SpOk exchangeBrainpoolP256r1 24 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Inv.InvSounds) (s : State) (hs : ecdhX86.pre s) :
     ∃ t s', Exec isa exchangeBrainpoolP256r1 s t s' ∧ abiPreserved s s' ∧ ecdhX86.post s s' := by

@@ -38,6 +38,10 @@ def finish : Prog isa := .seq (.block outputArgs) exportMasked
 def applyInput : Prog isa :=
   .seq importInput (.seq acceptInput (.seq controls (.seq expPhase finish)))
 
+/-- `applyInput`, its products by `op`. -/
+def applyInputWith (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq importInput (.seq acceptInput (.seq controls (.seq (expPhaseWith op) finish)))
+
 def prepare : Prog isa := .seq (.block PcFn.head) (.seq setup (.block PcFn.inputs))
 
 def failArgs : List Instr := [.ldrSp .r0 4, .ldrSp .lr 12, .mov .r2 (.imm 0)]

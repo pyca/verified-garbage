@@ -69,7 +69,7 @@ theorem combBufBytes {L : Lay} (hL : L.Ok) {a n : Nat} {m m' : Mem} (h : Outside
 /-- The registers `powP` writes. -/
 def combPowRegs : List Reg :=
   [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22, .r24,
-    .r30, .r31]
+    .r25, .r30, .r31]
 
 /-- `powP`: the `p_len` octets at `N` (`r12`) to the power of the `q_len`
 octets at `off L.Buf o` (`r24`), modulo p, into array 4. -/
@@ -112,7 +112,6 @@ theorem combPowP_ok {s : State} {L : Lay} {key sig dig N : Addr} {o p : Nat} (hL
   have hr3 := hr.keep k13
   -- The exponent's pointer and length, and `-p⁻¹`.
   refine WP.seq ?_
-  rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r30, .r31] (Q := fun t => t.gpr .r30 = off L.Buf o ∧
       t.gpr .r31 = BitVec.ofNat 64 L.ql ∧ t.mem = s₃.mem) (by
       unfold getQ
@@ -127,39 +126,36 @@ theorem combPowP_ok {s : State} {L : Lay} {key sig dig N : Addr} {o p : Nat} (hL
         w32 s₄.mem L.S (slot L.wp 0) + 2 ^ 32 * val32 s₄.mem L.S (slot L.wp 0 + 4) (2 * L.wp - 1) := rfl
     rw [Nat.sub_add_cancel (by omega_arith : 1 ≤ 2 * L.wp), p4] at h2
     omega_arith
-  refine WP.mono (Pub.minv_ok (en.hs.congr (k13.trans k4).wr) g10 (by omega_arith) hlow)
-    fun s₅ ⟨⟨r12lt, r12inv, m5⟩, k5⟩ => ?_
-  have k15 := (k13.trans k4).trans k5
-  have p5 : val32 s₅.mem L.S (slot L.wp 0) (2 * L.wp) = p := by rw [m5]; exact p4
-  have r1 : val32 s₅.mem L.S (slot L.wp 1) (2 * L.wp) = 2 ^ (128 * L.wp) % p := by
-    rw [m5, m4]
+  have k15 := k13.trans k4
+  have r1 : val32 s₄.mem L.S (slot L.wp 1) (2 * L.wp) = 2 ^ (128 * L.wp) % p := by
+    rw [m4]
     show arr s₃.mem L.S L.wp 1 = _
     rw [v1, arr, Outside.val32 o2 (by omega_arith) (by omega_arith)]; exact hrr
-  have x5 : val32 s₅.mem L.S (slot L.wp 4) (2 * L.wp) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem N L.pl) := by
-    rw [m5, m4, Outside.val32 o3 (by omega_arith) (by omega_arith)]; exact v4
-  have e5 : Spec.Rsa.bytesAt s₅.mem (off L.Buf o) L.ql = Spec.Rsa.bytesAt s.mem (off L.Buf o) L.ql := by
-    rw [m5, m4]; exact combBufBytes hL o23 (by omega_arith) ho
-  refine WP.seq (WP.mono (Win.powWin_ok (D := off L.Buf o) (L := L.ql) (en.hs.congr k15.wr) (by omega_arith)
-    (by omega_arith) (by omega_arith) ((k5.gpr .r10 (by decide)).trans g10) ((k15.gpr .r29 (by decide)).trans en.h29)
-    ((k15.gpr .r11 (by decide)).trans en.h11) r12lt (by rw [m5]; exact r12inv) (by rw [p5]; exact hp)
-    (by rw [p5]; exact hpo) (by rw [r1, p5]; exact Nat.mod_lt _ (by omega_arith))
-    (by rw [k5.gpr .r30 (by decide), a30]; exact (BitVec.add_zero _).symm)
-    ((k5.gpr .r31 (by decide)).trans a31) (by omega_arith) (by omega_arith)
+  have x5 : val32 s₄.mem L.S (slot L.wp 4) (2 * L.wp) = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem N L.pl) := by
+    rw [m4, Outside.val32 o3 (by omega_arith) (by omega_arith)]; exact v4
+  have e5 : Spec.Rsa.bytesAt s₄.mem (off L.Buf o) L.ql = Spec.Rsa.bytesAt s.mem (off L.Buf o) L.ql := by
+    rw [m4]; exact combBufBytes hL o23 (by omega_arith) ho
+  refine WP.seq (WP.mono (Win.powWinCall_ok (D := off L.Buf o) (L := L.ql) (en.hs.congr k15.wr) (by omega_arith)
+    (by omega_arith) (by omega_arith) g10 ((k15.gpr .r29 (by decide)).trans en.h29)
+    ((k15.gpr .r11 (by decide)).trans en.h11) hlow (by rw [p4]; exact hp)
+    (by rw [p4]; exact hpo) (by rw [r1, p4]; exact Nat.mod_lt _ (by omega_arith))
+    (by rw [a30]; exact (BitVec.add_zero _).symm)
+    a31 (by omega_arith) (by omega_arith)
     (by rw [k15.rd, k15.wr]; exact combBufRd hL hs (k := L.ql) ho)
     (fun i hi x hx => combBufSepP hL ho i hi x hx)) fun s₆ ⟨⟨hpow, o6⟩, k6⟩ => ?_)
-  rw [e5, p5, x5] at hpow
+  rw [e5, p4, x5] at hpow
   have v6 := hpow (by rw [r1, ← Nat.pow_add, show 64 * L.wp + 64 * L.wp = 128 * L.wp by omega_arith])
   have k16 := k15.trans k6
   refine WP.mono (WP.keep [.r31] (Q := fun t => t.gpr .r31 = L.S ∧ t.mem = s₆.mem) (by
       prun [(k16.gpr .r23 (by decide)).trans hin.h23, BitVec.add_zero]) (by decide)) fun t ⟨⟨t31, mt⟩, kt⟩ => ?_
-  have k3t := (((k4.trans k5).trans k6).trans kt)
-  have o6' : Outside L.S (slot L.wp 1) (slot L.wp 24 - slot L.wp 1) s₅.mem s₆.mem := outs_within o6 fun r hr => by
+  have k3t := ((k4.trans k6).trans kt)
+  have o6' : Outside L.S (slot L.wp 1) (slot L.wp 24 - slot L.wp 1) s₄.mem s₆.mem := outs_within o6 fun r hr => by
     rw [Win.win, List.mem_singleton] at hr
     subst hr
     dsimp only
     rw [Lay.slot_eq, Lay.slot_eq]
     omega_arith
-  rw [m5, m4] at o6'
+  rw [m4] at o6'
   refine ⟨⟨by rw [arrP, arr, mt]; exact v6, ⟨env_keep31 (en2.keep k3 (by decide)) k3t (by decide) t31,
       ((k16.trans kt).gpr .r21 (by decide)).trans hin.h21, ((k16.trans kt).gpr .r23 (by decide)).trans hin.h23⟩,
     by rw [mt]; exact o23.trans o6'⟩, (k16.trans kt).mono (by decide)⟩

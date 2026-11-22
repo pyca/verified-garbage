@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.Arm.NormalizedPrepare
 public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpDoubling
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareCT
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
@@ -102,11 +103,12 @@ abbrev LoopReady (base : BitVec 32) (len w : Nat) (P : State → Prop) (s : Stat
 
 theorem r2_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len w P regions) (ct : TwoExp.MontgomeryTiming K)
+    (D : TwoExp.Doubling base len w P regions) (dct : TwoExp.DoublingTiming D)
     (countFits : 128 * w < 2 ^ 32) :
     RelCT isa (fun s t =>
       (ArithmeticReady base len w s ∧ P s ∧ 2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0) ∧
       (ArithmeticReady base len w t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt t.mem (State.addr base) w 0) ∧ s.sp = t.sp)
-      (VG.Impl.Bignum.Arm.NormalizedR2.r2 K.op) (fun _ _ => True) := by
+      (VG.Impl.Bignum.Arm.NormalizedR2.r2 K.op D.dbl) (fun _ _ => True) := by
   have initPost (s : State) (h : ArithmeticReady base len w s ∧ P s ∧
       2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt s.mem (State.addr base) w 0) :
       WP isa VG.Impl.Bignum.Arm.NormalizedR2.init s (LoopReady base len w P) := by
@@ -120,15 +122,16 @@ theorem r2_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : L
     (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h))
     (fun _ _ h => h.2.2)).wp (fun s t h => ⟨initPost s h.1, initPost t h.2.1⟩)
   have loopPost (s : State) (h : LoopReady base len w P s) :
-      WP isa doubleLoop s (SharedR2.SqReady base len w P w) := by
-    refine WP.mono (normalizedR2Loop_ok s h.1.1 h.1.2.1 h.1.2.2 countFits) ?_
-    rintro t ⟨sq, frame, rest⟩
-    exact ⟨⟨_, sq⟩, K.stable frame rest h.2⟩
+      WP isa (DoubleCall.loop D.dbl) s (SharedR2.SqReady base len w P w) := by
+    refine WP.mono (normalizedR2Loop_ok D s h.1.1 h.1.2.1 h.1.2.2 h.2 countFits) ?_
+    rintro t ⟨sq, pt, _, _⟩
+    exact ⟨⟨_, sq⟩, pt⟩
   have loop : RelCT isa (fun s t => s.sp = t.sp ∧ LoopReady base len w P s ∧ LoopReady base len w P t)
-      doubleLoop (fun _ _ => True) := by
+      (DoubleCall.loop D.dbl) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     have hw : 2 ≤ w := h.2.1.1.1.width ▸ h.2.1.1.1.layout.1
-    exact doubleLoop_ct (by omega_using []) (by omega_using [countFits]) s t tr1 tr2 u v ⟨h.2.1.1.1, h.2.2.1.1, h.1⟩ e1 e2
+    exact D.loop_ct dct (by omega_using []) (by omega_using [countFits]) s t tr1 tr2 u v
+      ⟨⟨h.2.1.1.1, h.2.1.1.2.2, h.2.1.2⟩, ⟨h.2.2.1.1, h.2.2.1.2.2, h.2.2.2⟩, h.1⟩ e1 e2
   have loopCT := (relCT_keep_sp loop (fun _ _ h => h.1)).wp
     (fun s t h => ⟨loopPost s h.2.1, loopPost t h.2.2⟩)
   unfold VG.Impl.Bignum.Arm.NormalizedR2.r2
@@ -155,10 +158,11 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 theorem normalizedPrecompute_ct {base src : BitVec 32} {len w k : Nat}
     {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len w P regions) (ct : TwoExp.MontgomeryTiming K)
+    (D : TwoExp.Doubling base len w P regions) (dct : TwoExp.DoublingTiming D)
     (countFits : 128 * w < 2 ^ 32) :
     RelCT isa (fun s t => (PrecomputeInput base src len w k s ∧ P s ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) ∧
       (PrecomputeInput base src len w k t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (State.addr src) k)) ∧ s.sp = t.sp)
-      (NormalizedPrecompute.precompute K.op) (fun _ _ => True) := by
+      (NormalizedPrecompute.precompute K.op D.dbl) (fun _ _ => True) := by
   have imported (s : State) (h : PrecomputeInput base src len w k s ∧ P s ∧ 2 ^ (64 * (w - 1)) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) :
       WP isa importModulus s fun t => PrecomputeModulus base len w t ∧ P t ∧ 2 ^ (64 * (w - 1)) ≤ Proof.Rsa.Mont.numAt t.mem (State.addr base) w 0 := by
     refine (importModulus_ready s h.1).and ?_
@@ -177,7 +181,7 @@ theorem normalizedPrecompute_ct {base src : BitVec 32} {len w k : Nat}
   refine relCT_chain ((importModulus_ct (base := base) (src := src) (len := len) (w := w) (k := k)).mono
     (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h)) imported imported ?_
   exact relCT_chain ((precomputeInverse_ct (base := base) (len := len) (w := w)).mono
-    (fun _ _ h => ⟨h.1.1, h.2.1.1⟩) (fun _ _ h => h)) inverse inverse (NormalizedR2.r2_ct K ct countFits)
+    (fun _ _ h => ⟨h.1.1, h.2.1.1⟩) (fun _ _ h => h)) inverse inverse (NormalizedR2.r2_ct K ct D dct countFits)
 
 end VG.Proof.Bignum.Arm
 end
@@ -191,10 +195,12 @@ open VG VG.Arm VG.Proof.Bignum.Arm
 theorem normalizedPrepare_ct {base src : BitVec 32} {len k : Nat}
     {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len (Spec.Rsa.modulusWords k) P regions)
-    (ct : TwoExp.MontgomeryTiming K) (countFits : 128 * Spec.Rsa.modulusWords k < 2 ^ 32) :
+    (ct : TwoExp.MontgomeryTiming K)
+    (D : TwoExp.Doubling base len (Spec.Rsa.modulusWords k) P regions) (dct : TwoExp.DoublingTiming D)
+    (countFits : 128 * Spec.Rsa.modulusWords k < 2 ^ 32) :
     RelCT isa (fun s t => (PrepareInput base src len k s ∧ P s ∧ 2 ^ (64 * (Spec.Rsa.modulusWords k - 1)) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) ∧
       (PrepareInput base src len k t ∧ P t ∧ 2 ^ (64 * (Spec.Rsa.modulusWords k - 1)) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (State.addr src) k)) ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.NormalizedPrepare.code K.op) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.NormalizedPrepare.code K.op D.dbl) (fun _ _ => True) := by
   have ready (s : State) (h : PrepareInput base src len k s ∧ P s ∧ 2 ^ (64 * (Spec.Rsa.modulusWords k - 1)) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) :
       WP isa VG.Impl.Bignum.Arm.PublicFn.prepare s fun t =>
         PrecomputeInput base src len (Spec.Rsa.modulusWords k) k t ∧ P t ∧ 2 ^ (64 * (Spec.Rsa.modulusWords k - 1)) ≤ Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (State.addr src) k) :=
@@ -206,6 +212,6 @@ theorem normalizedPrepare_ct {base src : BitVec 32} {len k : Nat}
     exact ⟨ready, K.stable frame rest h.2.1, by rw [bytes]; exact h.2.2⟩
   unfold VG.Impl.Ffdh.Arm.NormalizedPrepare.code
   exact relCT_chain (prepareInput_ct.mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h))
-    ready ready (normalizedPrecompute_ct K ct countFits)
+    ready ready (normalizedPrecompute_ct K ct D dct countFits)
 
 end VG.Proof.Ffdh.Arm

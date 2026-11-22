@@ -667,17 +667,27 @@ def bodyOf (a : Artifact) (lines : List Line) : List Line :=
 
 /-- The `naked_asm!` of a function of the target `T` whose lines are `body`:
 its template, then the `sym` operand of each function it calls, at the path
-`<root>::<module>::<name>` (`moduleOf` gives the module), and of each table
-of constants it names, at `<root>::consts::<name>`; `root` is the path of the
-crate's root from the function's file. -/
+`<root>::<module>::<name>` (`moduleOf` gives the module), and of each symbol
+it names (`Line.sym`): a function of the target (one `moduleOf` knows, with a
+module other than `""`) at the same path as a call of it, and a table of
+constants at `<root>::consts::<name>`; `root` is the path of the crate's
+root from the function's file. Which of the two a name is decides only how
+the linker resolves it: `checkConsts` requires each named symbol to be one
+of the artifact's tables or a function its code runs, whose code the model
+runs at the symbol's address (`ISA.fnAddr`, `Code.icall`), as `checkCalls`
+checks. -/
 def asmOf (T : EmitTarget) (body : List Line) (moduleOf : String → String) (root : String) :
     String :=
   let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
   let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
+  let symPath (n : String) : String :=
+    match moduleOf n with
+    | "" => s!"{root}::consts::{n}"
+    | m => s!"{root}::{m}::{n}"
   "    core::arch::naked_asm!(\n" ++
   template T.printer.call body ++
   String.join (callees.map fun n => s!"        {n} = sym {root}::{moduleOf n}::{n},\n") ++
-  String.join (syms.map fun n => s!"        {n} = sym {root}::consts::{n},\n") ++
+  String.join (syms.map fun n => s!"        {n} = sym {symPath n},\n") ++
   "    )\n"
 
 /-- The text of `a`'s function after its name, given `a`'s printed code
@@ -901,6 +911,15 @@ def consistent (cs ds : List (String × List (BitVec 64))) : Bool :=
   cs.all fun (n, ws) => ds.all fun (m, vs) =>
     m != n || withPtrEq vs ws (fun _ => vs == ws) (fun h => by simp [h])
 
+/-- Whether code may name the symbol `n` (`Line.sym`): `n` is one of the
+tables of constants `tables` it has or carries, or one of the functions
+`calls` its code runs (`Code.calls`, which has the candidates of its
+indirect calls), at whose symbol the model runs that function's code
+(`ISA.fnAddr`, `Code.icall`) and which `checkCalls` checks it is emitted
+with. -/
+def symNamed (tables calls : List String) (n : String) : Bool :=
+  tables.contains n || calls.contains n
+
 /-- The tables of constants of `a` (`Artifact.consts`) have distinct names,
 and so do those its instructions carry but for repeats of the same table;
 every name is a Rust constant's, none is named `consts` or the module of an
@@ -929,11 +948,15 @@ def checkConsts (ps : List Prepared) (p : Prepared) : Except String Unit := do
   if (ps.any fun q => q.art.target.name == a.target.name && q.art.module == "fn_tables") then
     throw s!"{a.target.name}: an artifact's module is `fn_tables`, the module of the tables of \
       functions"
+  -- A symbol the code names (`adrSym`, `leaSym`, ...) is one of its tables, or the
+  -- address of a function its code runs (a call or a candidate of an indirect
+  -- call: `Code.calls`), whose emitted code `checkCalls` compares with the code
+  -- the model runs at that address (`ISA.fnAddr`, `Code.icall`).
   let used := p.lines.filterMap fun | .sym _ _ n => some n | _ => none
   for n in used do
-    unless (ts.map (·.1)).contains n do
-      throw s!"{a.target.name}: {a.name} names the table {n}, which it does not have \
-        (`Artifact.consts`) or carry"
+    unless symNamed (ts.map (·.1)) (p.calls.map (·.1)) n do
+      throw s!"{a.target.name}: {a.name} names the symbol {n}, which is neither a table it has \
+        (`Artifact.consts`) or carries nor a function its code runs"
 
 /-! ## Internal functions -/
 

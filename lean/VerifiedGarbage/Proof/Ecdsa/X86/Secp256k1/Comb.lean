@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombRcbCT
+import VerifiedGarbage.Proof.Ecdsa.X86.GMul
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.X86Comb
@@ -91,7 +92,7 @@ theorem combCT : CombRcbCT secp256k1Comb secp256k1d where
 /-- The constant time of the comb, as the stages take it. -/
 theorem secp256k1Comb_gMul (hL : Law secp256k1Comb.C) (hI : Inv.InvSounds) {scratchSecond : Bool} :
     GMulRel secp256k1Comb secp256k1d scratchSecond :=
-  gMulRcb_rel (secp256k1Comb_ok hI) hL (secp256k1Comb_tables hL) rfl secp256k1Comb_shape rfl combCT
+  GMulRel.of_body (d := secp256k1d) (secp256k1Comb_ok hI) rfl (gMulRcb_rel (secp256k1Comb_ok hI) hL (secp256k1Comb_tables hL) rfl secp256k1Comb_shape rfl combCT)
 
 def signPrepCode : Prog isa := secp256k1Comb.signPrep
 def signTailCode : Prog isa := secp256k1Comb.signTail
@@ -107,7 +108,7 @@ theorem signCT : SignStagesCT secp256k1Comb where
     change RelCT isa _ signTailCode _
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
-/-- No instruction of the signature writes `esp`, and its calls use 20 bytes of stack. -/
+/-- No instruction of the signature writes `esp`, and its calls use 24 bytes of stack. -/
 theorem signComb_sp : SpOk signSecp256k1Comb secp256k1Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 end VG.Proof.Ecdsa.X86.Secp256k1

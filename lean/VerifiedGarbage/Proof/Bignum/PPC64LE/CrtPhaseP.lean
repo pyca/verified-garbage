@@ -47,10 +47,8 @@ theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x oD oLen : Nat}
     (hsepD : ∀ i < L, ∀ x, ofs BX x < Z → off D i ≠ x)
     (hP : val32 s.mem (off BX oA) (slot wA 0) (2 * wA) = Pv) (hP2 : 2 ≤ Pv) (hPodd : Pv % 2 = 1)
     (h1 : val32 s.mem (off BX oA) (slot wA 1) (2 * wA) = 2 ^ (128 * wA) % Pv)
-    (hx : val32 s.mem (off BX oA) (slot wA 4) (2 * wA) = x)
-    (h12 : (s.gpr .r12).toNat < 2 ^ 32)
-    (hinv : (w32 s.mem (off BX oA) (slot wA 0) * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0) :
-    WP isa (.seq (.block [.load .d .r30 .r23 oD, .load .d .r31 .r23 oLen]) ModExp.powWin) s fun t =>
+    (hx : val32 s.mem (off BX oA) (slot wA 4) (2 * wA) = x) :
+    WP isa (.seq (.block [.load .d .r30 .r23 oD, .load .d .r31 .r23 oLen]) ModExp.powWinFn) s fun t =>
       (val32 t.mem (off BX oA) (slot wA 0) (2 * wA) = Pv ∧
         val32 t.mem (off BX oA) (slot wA 4) (2 * wA) = x ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
         Outside BX oA (slot wA 24) s.mem t.mem) ∧ Keep powerRegs s t := by
@@ -67,12 +65,20 @@ theorem powerB_ok {s : State} {BX D : Addr} {Z oA wA L Pv x oD oLen : Nat}
         exec_load_d (show Reg.r23 ≠ .r0 by decide) ⟨show oLen < 2 ^ 15 by omega_arith, show oLen % 4 = 0 by omega_arith⟩,
         hs.ld (show oD + 8 ≤ Z by omega_arith), hs.ld (show oLen + 8 ≤ Z by omega_arith), hD', hL'']) rfl)
     fun s₁ ⟨⟨a30, a31, m1⟩, k1⟩ => ?_)
-  rw [← m1] at hP h1 hx hinv
+  rw [← m1] at hP h1 hx
+  obtain hlow : (word s₁.mem (off BX oA) (slot wA 0)).toNat % 2 = 1 := by
+    obtain h1' := word_eq_w32 s₁.mem (off BX oA) (slot wA 0)
+    have h2 : val32 s₁.mem (off BX oA) (slot wA 0) (2 * wA - 1 + 1) =
+        w32 s₁.mem (off BX oA) (slot wA 0) + 2 ^ 32 * val32 s₁.mem (off BX oA) (slot wA 0 + 4) (2 * wA - 1) := rfl
+    rw [Nat.sub_add_cancel (by omega_arith : 1 ≤ 2 * wA), hP] at h2
+    simp only [Nat.reducePow] at h1' h2
+    obtain hw : w32 s₁.mem (off BX oA) (slot wA 0) % 2 = 1 := by omega_using [h2, hPodd]
+    rw [h1']
+    omega_using [hw]
   have hb : Spec.Rsa.bytesAt s₁.mem D L = Spec.Rsa.bytesAt s.mem D L := by rw [m1]
-  refine WP.mono (Win.powWin_ok (hsA.congr k1.wr) hw2 hw' (Nat.le_refl _)
+  refine WP.mono (Win.powWinCall_ok (hsA.congr k1.wr) hw2 hw' (Nat.le_refl _)
     ((k1.gpr _ (by decide)).trans h10) ((k1.gpr _ (by decide)).trans h29)
-    ((k1.gpr _ (by decide)).trans h11) (by rw [k1.gpr _ (by decide)]; exact h12)
-    (by rw [k1.gpr _ (by decide)]; exact hinv) (by rw [hP]; exact hP2) (by rw [hP]; exact hPodd)
+    ((k1.gpr _ (by decide)).trans h11) hlow (by rw [hP]; exact hP2) (by rw [hP]; exact hPodd)
     (by rw [h1, hP]; exact Nat.mod_lt _ (by omega_arith)) a30 a31 hL hL'
     (fun i hi => by rw [k1.rd, k1.wr]; exact hrdD i hi)
     (fun i hi y hy => hsepD i hi y (by rw [ofs_sub hy (by omega_arith)]; omega_arith))) fun t ⟨⟨hpow, out10⟩, k10⟩ => ?_
@@ -126,7 +132,7 @@ theorem power_ok {pc q : Bool} {s : State} {BX D : Addr} {Z oA wA wX xj k L Pv C
   refine WP.mono (powerB_ok (hs.congr k.wr) hA hw2 hw' (by omega_arith) t10
     ((k.gpr _ (by decide)).trans h29) ((k.gpr _ (by decide)).trans h11) ((k.gpr _ (by decide)).trans h23)
     hoD hoL (by rw [hd _ hoD.1]; exact hDp) (by rw [hd _ hoL.1]; exact hLw) hL hL'
-    (fun i hi => by rw [k.rd, k.wr]; exact hrdD i hi) hsepD v0 hP2 hPodd v1 v4 t12 tinv)
+    (fun i hi => by rw [k.rd, k.wr]; exact hrdD i hi) hsepD v0 hP2 hPodd v1 v4)
     fun u ⟨⟨u0, u4, uo⟩, ku⟩ => ⟨⟨u0, ?_, out.trans uo, (ku.gpr _ (by decide)).trans t10⟩,
       (k.trans ku).mono (by decide +kernel)⟩
   rw [u4, hb, ← Nat.pow_mod]

@@ -634,7 +634,7 @@ theorem storeW_mem {dst : Reg} {o : Nat} {xs : List Byte} {n : Nat} {i : Instr}
 
 theorem hash_noSp (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) (n dst : Nat) (hc : NoSp H.compC)
     (hout : ∀ i ∈ H.out, Taint.clobbers i .esp = false) : NoSp (hash H iv n dst) := by
-  unfold VG.Impl.Dsa.X86.Generation.hash
+  unfold VG.Impl.Dsa.X86.Generation.hash VG.Impl.Dsa.X86.Generation.hashTo
   simp only [seqs]
   refine nosp_seq ?_ (nosp_seq ?_ ?_)
   · intro i hi
@@ -647,6 +647,23 @@ theorem hash_noSp (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) (n dst :
   · intro i hi
     simp only [instrs, scr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with ((rfl | rfl) | (rfl | rfl)) | h
+    all_goals first | rfl | exact hout i h
+
+theorem hashTo_noSp (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) (n : Nat) (hc : NoSp H.compC)
+    (hout : ∀ i ∈ H.out, Taint.clobbers i .esp = false) : NoSp (hashTo H iv n [.mov .eax (.reg .esi)]) := by
+  unfold VG.Impl.Dsa.X86.Generation.hashTo
+  simp only [seqs]
+  refine nosp_seq ?_ (nosp_seq ?_ ?_)
+  · intro i hi
+    simp only [instrs, ivStore, scr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with (((((rfl | rfl) | h) | h) | (rfl | rfl)) | (rfl | rfl))
+    all_goals first | rfl | exact storeW_mem h
+  · apply NoSp.of_all
+    simp only [Impl.MdStream.X86.compressAt, Impl.MdStream.X86.compressWith, Code.allInstrs, checked hc]
+    rfl
+  · intro i hi
+    simp only [instrs, scr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with ((rfl | rfl) | rfl) | h
     all_goals first | rfl | exact hout i h
 
 theorem test_noSp (name : String) {callee : Prog isa} (C : NoSp callee) : NoSp (test name callee) := by
@@ -684,18 +701,15 @@ theorem qPart_noSp (hq : NoSp g.qCode) : NoSp g.qPart := by
     checked (test_noSp _ hq)]
   rfl
 
-theorem pHash_noSp (j : Nat) : NoSp (g.pHash j) := by
+theorem pHash_noSp : NoSp g.pHash := by
   apply NoSp.of_all
-  simp only [Geo.pHash, seqs, Code.allInstrs, checked (seedIn_noSp' g), checked (hash_noSp _ _ _ _ hc hout)]
+  simp only [Geo.pHash, seqs, Code.allInstrs, checked (seedIn_noSp' g), checked (hashTo_noSp _ _ _ hc hout)]
   rfl
 
 theorem pX_noSp : NoSp g.pX := by
-  unfold Geo.pX
-  refine nosp_seqs fun p hp => ?_
-  simp only [List.mem_append, List.mem_map, List.mem_range, List.mem_singleton] at hp
-  rcases hp with ⟨j, _, rfl⟩ | rfl
-  · exact pHash_noSp hc hout j
-  · exact NoSp.of_all rfl
+  apply NoSp.of_all
+  simp only [Geo.pX, seqs, Code.allInstrs, checked (pHash_noSp hc hout)]
+  rfl
 
 theorem pAttempt_noSp (hp : NoSp g.pCode) : NoSp g.pAttempt := by
   apply NoSp.of_all

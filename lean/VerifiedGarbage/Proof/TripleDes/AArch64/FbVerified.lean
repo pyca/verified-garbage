@@ -70,6 +70,8 @@ public import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
 public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Verified
+import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Block
 import VerifiedGarbage.Proof.CmacTripleDes.Bytes
 import VerifiedGarbage.Proof.Cmac.Mem
@@ -423,52 +425,58 @@ theorem batchCrypt_wp {d : Direction} {s : State} {B : Addr} {k : Spec.TripleDes
   have hw := hs.wr
   have hfit := hs.fit
   rw [batchTotal_eq] at hw hfit
-  -- `sb` to `x16`, and `x4` to the buffer.
-  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := Modes.AArch64.movR_ok s .x16 sb
+  -- `sb` to `x15`, and `x4` to the buffer.
+  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := Modes.AArch64.movR_ok s .x15 sb
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := Modes.AArch64.movR_ok s₁ .x4 sb
-  obtain g₂ : ∀ r, r ≠ .x16 → r ≠ .x4 → s₂.gpr r = s.gpr r := fun r h1 h2 => by rw [o₂ r h2, o₁ r h1]
-  obtain x16₂ : s₂.gpr .x16 = B := by rw [o₂ _ (by decide), r₁, hB]
+  obtain g₂ : ∀ r, r ≠ .x15 → r ≠ .x4 → s₂.gpr r = s.gpr r := fun r h1 h2 => by rw [o₂ r h2, o₁ r h1]
+  obtain x15₂ : s₂.gpr .x15 = B := by rw [o₂ _ (by decide), r₁, hB]
   obtain x4₂ : s₂.gpr .x4 = B := by rw [r₂, o₁ _ (by decide), hB]
   obtain x0₂ : s₂.gpr .x0 = p := by rw [g₂ _ (by decide) (by decide), hp]
   obtain mem₂ : s₂.mem = s.mem := by rw [m₂, m₁]
   obtain rdE₂ : s₂.rd = s.rd := by rw [rd₂, rd₁]
   obtain wrE₂ : s₂.wr = s.wr := by rw [wr₂, wr₁]
-  show WP isa (.seq (.block ([Impl.Aes.AArch64.movR .x16 sb] ++ ([Impl.Aes.AArch64.movR .x4 sb] : List Instr)))
-    (.seq (BitsliceNeon.batch d) (.block [Impl.Aes.AArch64.movR sb .x16]))) s _
+  show WP isa (.seq (.block ([Impl.Aes.AArch64.movR .x15 sb] ++ ([Impl.Aes.AArch64.movR .x4 sb] : List Instr)))
+    (.seq (BitsliceNeon.batchCall d) (.block [Impl.Aes.AArch64.movR sb .x15]))) s _
   refine WP.seq (WP.of_runBlock ⟨s₂, by rw [runBlock_app, e₁, Option.bind_some, e₂], ?_⟩)
-  -- The batch.
-  obtain hRoom : BitslicedNeon.Room s₂ := ⟨fun j hj => by
-    show InRegions s₂.wr (s₂.gpr .x4 + BitVec.ofNat 64 (16 * j)) 16
-    rw [x4₂, wrE₂]
-    have hj64 : j < 64 := hj
-    exact ⟨_, hw, Offset.contains_base B (by omega_using [hj64]) (by omega_using [hj64])⟩,
-    by decide⟩
-  obtain hSched : BitslicedNeon.Sched s₂ := ⟨fun i hi => by
-      rw [x0₂, rdE₂]
-      exact ⟨_, List.mem_append_left _ hS.rd, Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])⟩,
-    by
-      show Region.Disjoint ⟨s₂.gpr .x0, 384⟩ ⟨s₂.gpr .x4, 1024⟩
-      rw [x0₂, x4₂]
-      exact (hS.sep _ hw).sub_right (Region.sub_prefix (by decide))⟩
-  refine WP.seq (WP.mono (BitslicedNeon.batch_ok d hRoom hSched) fun s₃ P => ?_)
+  -- The batch, called.
+  obtain st₂ : BitslicedNeon.stateR s₂ = ⟨B, 1024⟩ := by simp only [BitslicedNeon.stateR, x4₂]
+  obtain hW : Covers [BitslicedNeon.stateR s₂] s₂.wr := by
+    rw [st₂, wrE₂]
+    exact Covers.of_sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, hw, 0, (BitVec.add_zero _).symm, by show 0 + 1024 ≤ 8 * 140; decide⟩
+  obtain hR : Covers [⟨s₂.gpr .x0, 384⟩] (s₂.rd ++ s₂.wr) := by
+    rw [x0₂, rdE₂]
+    exact Covers.of_mem fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact List.mem_append_left _ hS.rd
+  obtain hsep : Region.Disjoint ⟨s₂.gpr .x0, 384⟩ (BitslicedNeon.stateR s₂) := by
+    rw [x0₂, st₂]
+    exact (hS.sep _ hw).sub_right (Region.sub_prefix (by decide))
+  refine WP.seq (WP.mono (BitslicedNeon.batchCall_ok d hW hR hsep) fun s₃ P => ?_)
   -- `sb` back.
-  obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := Modes.AArch64.movR_ok s₃ sb .x16
+  obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := Modes.AArch64.movR_ok s₃ sb .x15
   refine WP.of_runBlock ⟨s₄, e₄, ?_⟩
-  obtain g₄ : ∀ r, r ≠ sb → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x16 → r ≠ .x4 → s₄.gpr r = s.gpr r :=
-    fun r h5 h7 h9 h10 h16 h4 => by rw [o₄ r h5, P.gpr r h5 h7 h9 h10, g₂ r h16 h4]
+  obtain g₄ : ∀ r, r ≠ sb → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x15 → r ≠ .x4 → r ≠ .x14 → r ≠ .x16 →
+      r ≠ .x17 → s₄.gpr r = s.gpr r :=
+    fun r h5 h7 h9 h10 h15 h4 h14 h16 h17 => by
+      rw [o₄ r h5, P.gpr r h5 h7 h9 h10 h14 h16 h17, g₂ r h15 h4]
   obtain rdE : s₄.rd = s.rd := by rw [rd₄, P.rd, rdE₂]
   obtain wrE : s₄.wr = s.wr := by rw [wr₄, P.wr, wrE₂]
   obtain fr : Frame [⟨B, 1024⟩] s.mem s₄.mem := by
     have := P.frame
-    rw [show BitslicedNeon.stateR s₂ = ⟨B, 1024⟩ by simp only [BitslicedNeon.stateR, x4₂], mem₂] at this
+    rw [st₂, mem₂] at this
     rw [m₄]; exact this
   obtain sch : ∀ r ∈ [(⟨B, 1024⟩ : Region)], Region.Disjoint ⟨p, 384⟩ r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (hS.sep _ hw).sub_right (Region.sub_prefix (by decide))
-  refine ⟨by rw [r₄, P.gpr _ (by decide) (by decide) (by decide) (by decide), x16₂],
-    g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-    g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-    ⟨p, by rw [g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hp], ?_,
+  refine ⟨by rw [r₄, P.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide), x15₂],
+    g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide),
+    g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide),
+    ⟨p, by rw [g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide) (by decide), hp], ?_,
       hS.congr rdE wrE⟩, by rw [batchCore_eq]; exact fr, fun j hj => ?_, rdE, wrE⟩
   · rw [scheduleAt_eq_of_frame _ fr sch]; exact hK
   · have hj128 : j < 128 := hj
@@ -738,6 +746,15 @@ theorem crypt_keeps_x30 (d : Direction) : KeepsReg .x30 (dirCore d).crypt := by
     cases hR with
     | seq hC hB => exact crypt_keeps_x30_aux d hA hC hB
 
+/-- The batched core's `crypt` keeps the return address, which the call of
+the batch keeps in `x14`. -/
+theorem batchCrypt_keeps_x30 (d : Direction) : KeepsReg .x30 (batchCrypt d) :=
+  KeepsReg.seq (Modes.AArch64.keepsReg_of_regSafe (by decide))
+    (KeepsReg.seq (BitslicedNeon.batchCall_keeps_x30 d) (Modes.AArch64.keepsReg_of_regSafe (by decide)))
+
+theorem batchCore_crypt_keeps_x30 (d : Direction) : KeepsReg .x30 (batchCore d).crypt :=
+  batchCrypt_keeps_x30 d
+
 /-- `WP.gprs` for `x30`, from `KeepsReg` rather than the absence of calls. -/
 theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (hk : KeepsReg .x30 c) (h : WP isa c s Q) :
     WP isa c s fun s' => Q s' ∧ ∀ r ∈ [Reg.x30], s'.gpr r = s.gpr r := by
@@ -749,6 +766,8 @@ theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (hk : KeepsReg 
 blocks that do not write `x30`. -/
 tactic_template "keeps_x30" : tactic => `(tactic| repeat (first
   | with_reducible exact crypt_keeps_x30 _
+  | with_reducible exact batchCrypt_keeps_x30 _
+  | with_reducible exact batchCore_crypt_keeps_x30 _
   | apply KeepsReg.seq
   | apply KeepsReg.ite
   | apply KeepsReg.loop

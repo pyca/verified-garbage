@@ -74,7 +74,7 @@ open VG VG.Arm
 theorem call_pre {p : SearchParams} {used : Nat} {s : State} {m : Mem}
     (facts : CallFacts p used s.sp) (context : ArgumentContext p used s)
     (memory : s.mem = callMem p used m s.sp) (room : used + p.c.length ≤ p.c.bytes.length) :
-    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre (callState p used s) := by
+    (Proof.Ffdh.sievedParameterCandidateContract abi 232).pre (callState p used s) := by
   let q := p.candidateParams used room
   have a0 := call_stackArg (j := 0) facts.argsFits memory (by decide)
   have a1 := call_stackArg (j := 1) facts.argsFits memory (by decide)
@@ -100,7 +100,7 @@ theorem call_pre {p : SearchParams} {used : Nat} {s : State} {m : Mem}
   rw [argAddr]
   simp only [Nat.mul_comm p.c.capacity 8]
   have address := FrameStack.addr_sub' facts.stackFits
-  change BitVec.setWidth 64 (s.sp - 184#32) = BitVec.setWidth 64 s.sp - 184#64 at address
+  change BitVec.setWidth 64 (s.sp - 232#32) = BitVec.setWidth 64 s.sp - 232#64 at address
   rw [← address]
   refine ⟨facts.stackFits, facts.argsFits, rfl, rfl, q.outputUsed, ?_, q.outputScratch,
     facts.outputArgs, ?_, q.usedScratch, facts.usedArgs, ?_, facts.scratchArgs,
@@ -167,7 +167,7 @@ theorem argument_frame {p : SearchParams} {used : Nat} {s u : State}
   exact ⟨_, by simp [callChanges], callArguments_sub h.below⟩
 
 theorem candidate_frame {p : SearchParams} {s u t : State} {depth : Nat}
-    (h : SearchBuffers p s) (sp : u.sp = s.sp - 24#32) (limit : depth ≤ 184)
+    (h : SearchBuffers p s) (sp : u.sp = s.sp - 24#32) (limit : depth ≤ 232)
     (frame : Frame (callWr p ++ [FrameStack.belowA u.sp depth]) u.mem t.mem) :
     Frame (callChanges p s.sp) u.mem t.mem := by
   apply frame.sub
@@ -177,7 +177,7 @@ theorem candidate_frame {p : SearchParams} {s u t : State} {depth : Nat}
     rcases hr with rfl | rfl | rfl
     all_goals exact ⟨_, by simp [callChanges], fun _ h => h⟩
   · obtain rfl := List.mem_singleton.mp hr
-    refine ⟨FrameStack.belowA s.sp 208, by simp [callChanges], ?_⟩
+    refine ⟨FrameStack.belowA s.sp 256, by simp [callChanges], ?_⟩
     rw [sp]
     exact fun a ha => callStack_sub h.below a
       (FrameStack.belowA_sub limit (callStack_fits h.below) a ha)
@@ -247,7 +247,7 @@ theorem candidateRun_ok (backend : VG.Proof.Ffdh.Arm.ParameterBackend)
       exact BitVec.sub_add_cancel _ _
   have totalFrame : Frame (callChanges p s.sp) s.mem lm :=
     ((argument_frame h.buffers memU).trans (candidate_frame h.buffers spU backend.candidateStack frame)).trans
-      (hfl.sub fun r hr => ⟨FrameStack.belowA s.sp 208, by simp [callChanges], by
+      (hfl.sub fun r hr => ⟨FrameStack.belowA s.sp 256, by simp [callChanges], by
         obtain rfl := List.mem_singleton.mp hr; exact argsSub⟩)
   have cp := call_post facts args memAtSp (h.call_bytes room memU) post
   have outSep := ((h.buffers.stackSeparate ⟨State.addr p.c.out, p.c.length⟩ (by simp)).2.sub_left argsSub).symm

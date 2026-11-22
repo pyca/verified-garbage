@@ -979,7 +979,7 @@ mov r0, r4
 mov r1, r11
 mov r2, r12
 mov r3, #8
-bl {vg_camellia_ecb_encrypt_entry}
+bl {vg_camellia_ecb_encrypt}
 add r12, sp, #0
 ldr r9, [r6, #0]
 ldr r10, [r12, #0]
@@ -1174,7 +1174,7 @@ mov r0, r4
 mov r1, r11
 mov r2, r12
 mov r3, #4
-bl {vg_camellia_ecb_encrypt_entry}
+bl {vg_camellia_ecb_encrypt}
 add r12, sp, #0
 ldr r9, [r6, #0]
 ldr r10, [r12, #0]
@@ -1289,7 +1289,7 @@ mov r0, r4
 mov r1, r11
 mov r2, r12
 mov r3, #2
-bl {vg_camellia_ecb_encrypt_entry}
+bl {vg_camellia_ecb_encrypt}
 add r12, sp, #0
 ldr r9, [r6, #0]
 ldr r10, [r12, #0]
@@ -1381,7 +1381,7 @@ mov r0, r4
 mov r1, r11
 add r2, r8, #40
 mov r3, #1
-bl {vg_camellia_ecb_encrypt_entry}
+bl {vg_camellia_ecb_encrypt}
 ldr r9, [r6, #0]
 ldr r10, [r8, #40]
 eor r9, r9, r10
@@ -1513,7 +1513,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_camellia_ecb_encrypt_entry = sym super::camellia::vg_camellia_ecb_encrypt_entry::vg_camellia_ecb_encrypt_entry,
+        vg_camellia_ecb_encrypt = sym super::camellia::vg_camellia_ecb_encrypt,
     )
 }
 
@@ -1573,7 +1573,7 @@ mov r0, r4
 mov r1, r11
 add r2, r8, #40
 mov r3, #1
-bl {vg_camellia_ecb_encrypt_entry}
+bl {vg_camellia_ecb_encrypt}
 lsr r9, r7, #4
 cmp r9, #0
 beq 23f
@@ -1697,7 +1697,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_camellia_ecb_encrypt_entry = sym super::camellia::vg_camellia_ecb_encrypt_entry::vg_camellia_ecb_encrypt_entry,
+        vg_camellia_ecb_encrypt = sym super::camellia::vg_camellia_ecb_encrypt,
     )
 }
 
@@ -1757,7 +1757,7 @@ mov r0, r4
 mov r1, r11
 add r2, r8, #40
 mov r3, #1
-bl {vg_camellia_ecb_encrypt_entry}
+bl {vg_camellia_ecb_encrypt}
 lsr r9, r7, #4
 cmp r9, #0
 beq 23f
@@ -1889,6 +1889,6 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_camellia_ecb_encrypt_entry = sym super::camellia::vg_camellia_ecb_encrypt_entry::vg_camellia_ecb_encrypt_entry,
+        vg_camellia_ecb_encrypt = sym super::camellia::vg_camellia_ecb_encrypt,
     )
 }

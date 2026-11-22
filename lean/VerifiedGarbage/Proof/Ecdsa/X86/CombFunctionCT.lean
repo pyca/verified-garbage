@@ -249,13 +249,16 @@ theorem signCombBody_rel (hc : CfgOk c) (hC : Law c.C)
     (hp : Pre c s₀ extra₁) (hq : Pre c t₀ extra₂)
     (ht₁ : CombTables c d s₀) (ht₂ : CombTables c d t₀)
     (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 5, arg s₀ j = arg t₀ j)
-    (hg : s₀.gpr .eax = t₀.gpr .eax) (hsp : SpOk (c.signWithMul c.gMul) 20) :
+    (hg : s₀.gpr .eax = t₀.gpr .eax) (hsp : SpOk (c.signWithMul c.gMul) c.stk) :
     RelCT isa (fun s t => s = s₀ ∧ t = t₀) (c.signWithMul c.gMul) (fun _ _ => True) := by
-  have hspG : SpOk c.gMul 20 := hsp.right.left
-  have hspG' : SpOk c.gMul c.stk := ⟨hspG.1, Nat.le_trans hspG.2 (Cfg.stk_ge _)⟩
+  have hspG : SpOk c.gMul c.stk := hsp.right.left
+  have hspG' : SpOk c.gMul c.stk := hspG
   have hsp20 : ∀ {u₀ u : State} {extra : List Region}, Pre c u₀ extra →
-      Keep c u₀ (ptr u₀ 4) u → 20 ≤ (u.gpr .esp).toNat := fun hp k => by
-    rw [k.esp]; exact Nat.le_trans (Cfg.stk_ge _) hp.sp_lo
+      Keep c u₀ (ptr u₀ 4) u → c.stk ≤ (u.gpr .esp).toNat := fun hp k => by
+    rw [k.esp]; exact hp.sp_lo
+  have hstw : ∀ {u₀ u : State} {extra : List Region}, Pre c u₀ extra →
+      Keep c u₀ (ptr u₀ 4) u → ∀ r ∈ u.wr, Region.Disjoint (below (u.gpr .esp) c.stk) r :=
+    fun hp k r hr => by rw [k.wr] at hr; rw [k.esp]; exact hp.stk_wr r hr
   have prep := ct.prep.mono (P' := fun s t => s = s₀ ∧ t = t₀)
     (fun _ _ h => by
       rcases h with ⟨rfl, rfl⟩
@@ -285,6 +288,7 @@ theorem signCombBody_rel (hc : CfgOk c) (hC : Law c.C)
     rw [← hb] at T'
     exact hG S.scr T'.scr S.fixed T'.fixed
       (S.k ▸ wordsVal_lt _ _ _ _) (T'.k ▸ wordsVal_lt _ _ _ _) S.t₀ T'.t₀ tb₁ tb₂ ht₁.2.1 ap₁ ap₂
+      (hstw hp S.toKeep) (hstw hq T.toKeep)
       (hsp20 hp S.toKeep) (hsp20 hq T.toKeep) hg
       (keepCombWf hp S.toKeep) (keepCombWf hq T.toKeep)
       (by rw [S.wr, T.wr, hp.wr, hq.wr]; simp only [outR, scR, ptr, ha 0 (by decide), ha 4 (by decide)])
@@ -295,7 +299,7 @@ theorem signCombBody_rel (hc : CfgOk c) (hC : Law c.C)
       WP isa c.gMul u (Keep c u₀ (ptr u₀ 4)) := by
     intro u₀ u extra hp ht S
     refine S.toKeep.withSp hspG' (WP.mono (gMul_ok' hc hC hT hCo S.scr S.fixed
-      (S.k ▸ wordsVal_lt _ _ _ _) S.rx S.ry S.rz S.t₀ ?_ (hsp20 hp S.toKeep) hspG)
+      (S.k ▸ wordsVal_lt _ _ _ _) S.rx S.ry S.rz S.t₀ ?_ (hstw hp S.toKeep) (hsp20 hp S.toKeep) hspG)
       fun _ h f => S.toKeep.gMul hc h.1 h.2.1 f)
     intro d' h
     have e : d = d' := Option.some.inj (hcd.symm.trans h)
@@ -342,7 +346,7 @@ theorem CombSignPre.sp4 {s : State} (hp : CombSignPre c s) : 4 ≤ (s.gpr .esp).
 and preserves the cdecl ABI, including the return address. -/
 theorem signComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     (hCo : ∀ d, c.comb = some d → CombOk c d)
-    {d : CombData} (hcd : c.comb = some d) (hsp₁ : SpOk c.gMul 20) (hsp : SpOk c.signTail c.stk)
+    {d : CombData} (hcd : c.comb = some d) (hsp₁ : SpOk c.gMul c.stk) (hsp : SpOk c.signTail c.stk)
     {s₀ : State} (hp : CombSignPre c s₀) :
     WP isa c.signComb s₀ fun s' => abiPreserved s₀ s' ∧ SignPost c s₀ s' := by
   unfold Cfg.signComb Cfg.tableAddr
@@ -416,7 +420,7 @@ theorem tableAddr_eq (hcd : c.comb = some d) :
 
 theorem signComb_ct (hc : CfgOk c) (hC : Law c.C)
     (hT : CombTbls c) (hcd : c.comb = some d) (hd : CombOk c d) (hG : GMulRel c d true)
-    (ct : SignStagesCT c) (hsp : SpOk (c.signWithMul c.gMul) 20) :
+    (ct : SignStagesCT c) (hsp : SpOk (c.signWithMul c.gMul) c.stk) :
     ConstantTime isa (CombSignPre c) (CombSignPub d) c.signComb := by
   apply RelCT.constantTime (Q := fun _ _ => True)
   have preCT : RelCT isa (fun s t => CombSignPre c s ∧ CombSignPre c t ∧ CombSignPub d s t)

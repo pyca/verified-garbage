@@ -96,11 +96,11 @@ def table (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (initial op) (.seq (.block [.mov .r3 (.imm 2), .addSp .r12 0, Domain.st .r3 36])
     (.loop (basis op) .ne))
 
-def main (op : Nat → Nat → Nat → Prog isa) (bound : Prog isa) : Prog isa :=
-  .seq (NormalizedPrepare.prepareAt op 24)
+def main (op : Nat → Nat → Nat → Prog isa) (dbl bound : Prog isa) : Prog isa :=
+  .seq (NormalizedPrepare.prepareAt op dbl 24)
     (.seq bound (.seq metadata (.seq montgomeryOut (.seq (table op) (Domain.ret 1)))))
 
-def code (op : Nat → Nat → Nat → Prog isa) (bound : Prog isa) : Prog isa :=
-  framed (.seq (.block entry) (main op bound))
+def code (op : Nat → Nat → Nat → Prog isa) (dbl bound : Prog isa) : Prog isa :=
+  framed (.seq (.block entry) (main op dbl bound))
 
 end VG.Impl.Ffdh.Arm.CombPrecompute

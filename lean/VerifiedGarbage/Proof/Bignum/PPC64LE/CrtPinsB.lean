@@ -690,7 +690,7 @@ theorem pins124 : Pins (At (C0 pc) (crtF pc) (ix pc 124 118)) [.r10, .r11, .r23,
 abbrev NP (pc : Bool) (c : Prog isa) : Prog isa :=
   NL pc (.seq (.block (setupP oBP oPLen)) (.seq (powerG pc false 4 oDP oPLen) c))
 
-theorem pins148 : Pins (At (C0 pc) (crtF pc) (ix pc 148 142)) (pwRegs pc) := by
+theorem pins129 : Pins (At (C0 pc) (crtF pc) (ix pc 129 123)) (pwRegs pc) := by
   refine pins_at_list (fun s₀ => [off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 0), BitVec.ofNat 64 (2 * cwQ s₀),
       off (cS s₀) (oQa s₀ + slot (cwQ s₀) 0), off (cS s₀) (slot (cwX s₀) 5),
       off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 0), cS s₀, BitVec.ofNat 64 (ck s₀), off (cS s₀) (slot (cwX s₀) 0),
@@ -724,7 +724,7 @@ theorem pins148 : Pins (At (C0 pc) (crtF pc) (ix pc 148 142)) (pwRegs pc) := by
     · simp only [eS, eX, eQ, eoQ, ek, Bool.false_eq_true, ↓reduceIte]
     · simp only [eS, eX, eP, eQ, eoQ, ek, E.r31 rfl, ↓reduceIte]
 
-theorem pins172 : Pins (At (C0 pc) (crtF pc) (ix pc 172 160)) [.r10, .r11, .r23, .r29, .r30, .r31] := by
+theorem pins153 : Pins (At (C0 pc) (crtF pc) (ix pc 153 141)) [.r10, .r11, .r23, .r29, .r30, .r31] := by
   refine pins_at_list (fun s₀ => [off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 0), BitVec.ofNat 64 (2 * cwQ s₀), cS s₀,
       BitVec.ofNat 64 (8 * (cwQ s₀ + 2)), off (stackArg s₀ 4) 0, BitVec.ofNat 64 (cqL s₀)])
     (fun _ s₀ h => WP.of_flat (c := NP pc (.seq (.block (setupP oBQ oQLen))
@@ -777,7 +777,7 @@ abbrev EX1 : List Instr :=
   setupP oBQ oQLen ++ PublicChecked.base .r15 4 ++ [.addi .r22 .r11 0] ++ xb .r14 6 ++
     [.addi .r11 .r28 0, .subi .r11 .r11 16, .lsr .d .r11 .r11 2]
 
-theorem pins195 : Pins (At (C0 pc) (crtF pc) (ix pc 195 183)) [.r11, .r14, .r15, .r22, .r23, .r27, .r28] := by
+theorem pins157 : Pins (At (C0 pc) (crtF pc) (ix pc 157 145)) [.r11, .r14, .r15, .r22, .r23, .r27, .r28] := by
   refine pins_at_list (fun s₀ => [BitVec.ofNat 64 (2 * cwX s₀), off (cS s₀) (slot (cwX s₀) 6),
       off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 4), BitVec.ofNat 64 (2 * cwQ s₀), cS s₀,
       off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
@@ -805,7 +805,7 @@ theorem pins195 : Pins (At (C0 pc) (crtF pc) (ix pc 195 183)) [.r11, .r14, .r15,
 /-- `m₂`'s export and `p`'s registers, then `c`. -/
 abbrev NE (pc : Bool) (c : Prog isa) : Prog isa := NQ pc (.seq exportM2 (.seq (.block (setupP oBP oPLen)) c))
 
-theorem pins202 : Pins (At (C0 pc) (crtF pc) (ix pc 202 190))
+theorem pins164 : Pins (At (C0 pc) (crtF pc) (ix pc 164 152))
     (([.r10, .r11, .r21, .r23, .r27, .r28, .r29, .r25] : List Reg) ++ if pc then [.r30] else []) := by
   refine pins_at_list (fun s₀ => [off (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0), BitVec.ofNat 64 (2 * cwP s₀),
       off (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0), cS s₀, off (cS s₀) (slot (cwX s₀) 0),
@@ -892,7 +892,7 @@ abbrev X2 : List Instr :=
   setupP oBQ oQLen ++ PublicChecked.base .r15 4 ++ [.addi .r22 .r11 0] ++ xb .r14 6 ++
     [.addi .r11 .r28 0, .subi .r11 .r11 16, .lsr .d .r11 .r11 2]
 
-theorem pins252 : Pins (At (C0 pc) (crtF pc) (ix pc 252 234)) [.r11, .r14, .r15, .r22, .r23, .r27, .r28] := by
+theorem pins214 : Pins (At (C0 pc) (crtF pc) (ix pc 214 196)) [.r11, .r14, .r15, .r22, .r23, .r27, .r28] := by
   refine pins_at_list (fun s₀ => [BitVec.ofNat 64 (2 * cwX s₀), off (cS s₀) (slot (cwX s₀) 7),
       off (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 4), BitVec.ofNat 64 (2 * cwP s₀), cS s₀,
       off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
@@ -913,7 +913,7 @@ theorem pins252 : Pins (At (C0 pc) (crtF pc) (ix pc 252 234)) [.r11, .r14, .r15,
   · obtain ⟨eS, eX, eP, -, eoP, -, -, -, -⟩ := layout_eq h h'
     simp only [eS, eX, eP, eoP]
 
-theorem pins258 : Pins (At (C0 pc) (crtF pc) (ix pc 258 240)) [.r11, .r14, .r15, .r22, .r23, .r27, .r28] := by
+theorem pins220 : Pins (At (C0 pc) (crtF pc) (ix pc 220 202)) [.r11, .r14, .r15, .r22, .r23, .r27, .r28] := by
   refine pins_at_list (fun s₀ => [BitVec.ofNat 64 (2 * cwX s₀), off (cS s₀) (slot (cwX s₀) 6),
       off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 4), BitVec.ofNat 64 (2 * cwQ s₀), cS s₀,
       off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
@@ -960,7 +960,7 @@ theorem pins258 : Pins (At (C0 pc) (crtF pc) (ix pc 258 240)) [.r11, .r14, .r15,
 /-- The output's registers. -/
 abbrev FIN : List Instr := [.addi .r10 .r27 0, .addi .r29 .r28 0, .load .d .r27 .r23 oOut, .load .d .r28 .r23 oNLen]
 
-theorem pins271 : Pins (At (C0 pc) (crtF pc) (ix pc 271 253)) [.r10, .r23, .r27, .r28, .r29] := by
+theorem pins233 : Pins (At (C0 pc) (crtF pc) (ix pc 233 215)) [.r10, .r23, .r27, .r28, .r29] := by
   refine pins_at_list (fun s₀ => [off (cS s₀) (slot (cwX s₀) 0), cS s₀, off (s₀.gpr .r3) 0,
       BitVec.ofNat 64 (ck s₀), BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
     (fun _ s₀ h => WP.of_flat (c := NE pc (.seq (recombinePG pc) (.seq recombineX (.block FIN)))) (by cases pc <;> kernel_rfl)

@@ -27,7 +27,7 @@ its own code (`CrtImpl.pdOk`), with the code around the call by
 signature, as on x86 and PPC64LE (`Proof/RsaPkcs1Sig/X86/Scrub.lean`,
 `Proof/RsaPkcs1Sig/PPC64LE/Scrub.lean`).
 
-Signing's 4616 bytes of stack are zeroed in two frames
+Signing's 4664 bytes of stack are zeroed in two frames
 (`Proof.Rsa.Arm.ScrubTwo.verifiedScrubbedAll2`): its frames' bytes, and the
 private operation's (`privCodeP_ok`).
 -/
@@ -80,31 +80,31 @@ theorem signPrecomputedOut (stack : Nat) :
 /-! ## What the cleanup needs of the code -/
 
 /-- Signing's code, over the private operation `priv`. -/
-theorem sign_ok {privN : String} {priv : Prog isa} (h : CodeOk priv 3440) :
-    CodeOk (Impl.RsaPkcs1Sig.Arm.Sign.code true privN priv) 4616 := by
-  refine wrap_codeOk (n := 3440) (F := 1120) (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.ite ?_
+theorem sign_ok {privN : String} {priv : Prog isa} (h : CodeOk priv 3488) :
+    CodeOk (Impl.RsaPkcs1Sig.Arm.Sign.code true privN priv) 4664 := by
+  refine wrap_codeOk (n := 3488) (F := 1120) (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.ite ?_
     (CodeOk.seq ?_ (CodeOk.seq (CodeOk.call h) ?_))))))
   all_goals lit_decide
 
 theorem frameOk_4080 : FrameOk 4080 := by decide
 
-theorem frameOk_536 : FrameOk 536 := by decide
+theorem frameOk_584 : FrameOk 584 := by decide
 
 /-- Verification's code, over the public operation `pd`. -/
-theorem verify_ok {pdName : String} {pd : Prog isa} (h : CodeOk pd 56) :
-    CodeOk (Impl.RsaPkcs1Sig.Arm.Precomputed.code pdName pd) 2192 := by
-  refine wrap_codeOk (n := 56) (F := 2080) (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.ite ?_
+theorem verify_ok {pdName : String} {pd : Prog isa} (h : CodeOk pd 104) :
+    CodeOk (Impl.RsaPkcs1Sig.Arm.Precomputed.code pdName pd) 2240 := by
+  refine wrap_codeOk (n := 104) (F := 2080) (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.ite ?_
     (CodeOk.seq ?_ (CodeOk.seq (CodeOk.call h) ?_)))))
   all_goals lit_decide
 
 /-- Recovery's code, over the public operation `pd`. -/
-theorem recover_ok {pdName : String} {pd : Prog isa} (h : CodeOk pd 56) :
-    CodeOk (Impl.RsaPkcs1Sig.Arm.RecoverPrecomputed.code pdName pd) 2192 := by
-  refine wrap_codeOk (n := 56) (F := 2080) (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.ite ?_
+theorem recover_ok {pdName : String} {pd : Prog isa} (h : CodeOk pd 104) :
+    CodeOk (Impl.RsaPkcs1Sig.Arm.RecoverPrecomputed.code pdName pd) 2240 := by
+  refine wrap_codeOk (n := 104) (F := 2080) (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.ite ?_
     (CodeOk.seq ?_ (CodeOk.seq (CodeOk.call h) ?_)))))
   all_goals lit_decide
 
-theorem frameOk_2192 : FrameOk 2192 := by decide
+theorem frameOk_2240 : FrameOk 2240 := by decide
 
 end VG.Proof.RsaPkcs1Sig.Arm.Scrub
 
@@ -116,30 +116,30 @@ open VG VG.Arm VG.Arm.Scrub VG.Proof.RsaPkcs1Sig.Arm.Scrub
 theorem verifyPrecomputed (v : Proof.Rsa.Arm.CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Sig.Arm.Fn.verifyPrecomputed (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code)
-      (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi 2192) 32 :=
+      (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi 2240) 32 :=
   verifiedScrubbedAll (api := Spec.RsaPkcs1Sig.verifyPrecomputedApi)
     { code := Impl.RsaPkcs1Sig.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code
       verified := Proof.RsaPkcs1Sig.Arm.Vf.code_verified (Proof.Rsa.Arm.pdOfCrt v) }
-    (verifyPrecomputedOut _) (scrubSideF_of (verify_ok v.pdOk) frameOk_2192 _)
+    (verifyPrecomputedOut _) (scrubSideF_of (verify_ok v.pdOk) frameOk_2240 _)
 
 /-- `vg_rsa_pkcs1_recover_precomputed`, calling `v`'s public operation. -/
 theorem recoverPrecomputed (v : Proof.Rsa.Arm.CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Sig.Arm.Fn.recoverPrecomputed (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code)
-      (Spec.RsaPkcs1Sig.recoverPrecomputedContract abi 2192) 32 :=
+      (Spec.RsaPkcs1Sig.recoverPrecomputedContract abi 2240) 32 :=
   verifiedScrubbedAll (api := Spec.RsaPkcs1Sig.recoverPrecomputedApi)
     { code := Impl.RsaPkcs1Sig.Arm.RecoverPrecomputed.code (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code
       verified := Proof.RsaPkcs1Sig.Arm.Rc.code_verified (Proof.Rsa.Arm.pdOfCrt v) }
-    (recoverPrecomputedOut _) (scrubSideF_of (recover_ok v.pdOk) frameOk_2192 _)
+    (recoverPrecomputedOut _) (scrubSideF_of (recover_ok v.pdOk) frameOk_2240 _)
 
 /-- `vg_rsa_pkcs1_sign_precomputed`, calling `vg_rsa_private_checked_precomputed`
 over `v`. -/
 theorem signPrecomputed (v : Proof.Rsa.Arm.CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Sig.Arm.Fn.signPrecomputed (Proof.Rsa.Arm.privNameP v) (Proof.Rsa.Arm.privCodeP v))
-      (Spec.RsaPkcs1Sig.signPrecomputedContract abi 4616) 32 :=
-  Proof.Rsa.Arm.ScrubTwo.verifiedScrubbedAll2 (a := 4080) (b := 536)
+      (Spec.RsaPkcs1Sig.signPrecomputedContract abi 4664) 32 :=
+  Proof.Rsa.Arm.ScrubTwo.verifiedScrubbedAll2 (a := 4080) (b := 584)
     (Proof.RsaPkcs1Sig.Arm.Sg.signPrecomputed_verified v) (sign_ok (Proof.Rsa.Arm.Scrub.privCodeP_ok v))
-    frameOk_4080 frameOk_536 rfl (signPrecomputedOut _)
+    frameOk_4080 frameOk_584 rfl (signPrecomputedOut _)
 
 end VG.Proof.RsaPkcs1Sig.Arm.Fn

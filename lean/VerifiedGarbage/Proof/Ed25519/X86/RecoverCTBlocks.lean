@@ -41,7 +41,7 @@ theorem edi_agree {base : BitVec 32} {s t : State} (hs : s.gpr .edi = base) (ht 
 theorem recoverCandidate_ct (base : BitVec 32) :
     RelCT isa (CallCTPre base) recoverCandidate (fun _ _ => True) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ recoverCandidate h).isSome = true := by
-    native_taint_decide_sum [VG.Proof.X25519.X86.pow250Sum]
+    native_taint_decide_sum [VG.Proof.X25519.X86.gfMulSum, VG.Proof.X25519.X86.gfSqnSum]
   exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) hc
 
 theorem parityBlock_ct (base : BitVec 32) :

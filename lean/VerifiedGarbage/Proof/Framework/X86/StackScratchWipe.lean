@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 `Verified.stackScratchWiped`: as `Verified.stackScratch`, for
 `withStackScratchWiped`, which zeroes the first `words` doublewords of the
 buffer after the code. The wipe stores only into the buffer, within the
-frame (`wipe_run`), so the run of the code followed by the wipe keeps what the
+frame (`wipe_run`: 16 bytes at a time through `xmm0`, the last doublewords
+through `ecx`, both zeroed), so the run of the code followed by the wipe keeps what the
 calling convention requires and the return value, and its trace depends only
 on the stack pointer. The postcondition holds of the memory after the wipe
 if it reads the memory on return only within the function's buffers
@@ -24,19 +25,47 @@ namespace VG.X86
 open VG.Impl.StackScratch.X86
 
 /-- The trace of `wipeStores off words` from a state whose `esp` is `E`. -/
-def wipeTrace (E : BitVec 32) (off words : Nat) : List Leak :=
+def wipeTrace4 (E : BitVec 32) (off words : Nat) : List Leak :=
   (List.range words).map fun k => .addr ((E + BitVec.ofNat 32 (off + 4 * k)).setWidth 64)
+
+/-- The trace of `wipeStores16 off n` from a state whose `esp` is `E`. -/
+def wipeTrace16 (E : BitVec 32) (off n : Nat) : List Leak :=
+  (List.range n).map fun k => .addr ((E + BitVec.ofNat 32 (off + 16 * k)).setWidth 64)
+
+/-- The trace of `wipe off words` from a state whose `esp` is `E`. -/
+def wipeTrace (E : BitVec 32) (off words : Nat) : List Leak :=
+  wipeTrace16 E off (words / 4) ++ wipeTrace4 E (off + 16 * (words / 4)) (words % 4)
+
+/-- The registers the wipe sets: `xmm0` and `ecx`, to zero. -/
+def wipeRegs (u : State) : State := (u.setXmm .xmm0 0).setReg .ecx 0
+
+theorem wipeRegs_gpr {u : State} {r : Reg} (h : r ≠ .ecx) : (wipeRegs u).gpr r = u.gpr r := by
+  simp [wipeRegs, State.setReg, State.setXmm, h]
+
+theorem wipeRegs_ecx (u : State) : (wipeRegs u).gpr .ecx = 0 := by
+  simp [wipeRegs, State.setReg]
+
+theorem wipeRegs_xmm0 (u : State) : (wipeRegs u).xmm .xmm0 = 0 := by
+  simp [wipeRegs, State.setReg, State.setXmm]
+
+theorem wipeRegs_mem (u : State) : (wipeRegs u).mem = u.mem := rfl
+theorem wipeRegs_rd (u : State) : (wipeRegs u).rd = u.rd := rfl
+theorem wipeRegs_wr (u : State) : (wipeRegs u).wr = u.wr := rfl
 
 theorem wipeStores_succ (off w : Nat) :
     wipeStores off (w + 1) = wipeStores off w ++ ([.store ⟨.esp, off + 4 * w⟩ .ecx] : List Instr) := by
   simp only [wipeStores, List.range_succ, List.map_append, List.map_cons, List.map_nil]
+
+theorem wipeStores16_succ (off w : Nat) :
+    wipeStores16 off (w + 1) = wipeStores16 off w ++ ([.movdquStore ⟨.esp, off + 16 * w⟩ .xmm0] : List Instr) := by
+  simp only [wipeStores16, List.range_succ, List.map_append, List.map_cons, List.map_nil]
 
 /-- The stores of `wipeStores` change memory only in the region `R`, which
 holds each of them and which `u` may write. -/
 theorem wipeStores_run (R : Region) (u : State) (hR : R ∈ u.wr) (off : Nat) : ∀ words,
     (∀ k < words, R.Contains ((u.gpr .esp + BitVec.ofNat 32 (off + 4 * k)).setWidth 64) 4) →
     ∃ m', execBlock isa (wipeStores off words) u =
-        some ({ u with mem := m' }, wipeTrace (u.gpr .esp) off words) ∧ Frame [R] u.mem m'
+        some ({ u with mem := m' }, wipeTrace4 (u.gpr .esp) off words) ∧ Frame [R] u.mem m'
   | 0, _ => ⟨u.mem, rfl, Frame.refl _ _⟩
   | w + 1, hc => by
     obtain ⟨m', he, hf⟩ := wipeStores_run R u hR off w fun k hk => hc k (by omega_using [hk])
@@ -46,29 +75,61 @@ theorem wipeStores_run (R : Region) (u : State) (hR : R ∈ u.wr) (off : Nat) : 
       hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_using []))⟩
     rw [wipeStores_succ, execBlock_append, he]
     simp only [Option.bind_some, execBlock, isa, exec, State.store32, State.ea, hin, ↓reduceIte,
-      Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, wipeTrace,
+      Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, wipeTrace4,
+      List.range_succ, List.map_append]
+
+/-- The stores of `wipeStores16` change memory only in the region `R`, which
+holds each of them and which `u` may write. -/
+theorem wipeStores16_run (R : Region) (u : State) (hR : R ∈ u.wr) (off : Nat) : ∀ n,
+    (∀ k < n, R.Contains ((u.gpr .esp + BitVec.ofNat 32 (off + 16 * k)).setWidth 64) 16) →
+    ∃ m', execBlock isa (wipeStores16 off n) u =
+        some ({ u with mem := m' }, wipeTrace16 (u.gpr .esp) off n) ∧ Frame [R] u.mem m'
+  | 0, _ => ⟨u.mem, rfl, Frame.refl _ _⟩
+  | w + 1, hc => by
+    obtain ⟨m', he, hf⟩ := wipeStores16_run R u hR off w fun k hk => hc k (by omega_using [hk])
+    have hin : InRegions u.wr ((u.gpr .esp + BitVec.ofNat 32 (off + 16 * w)).setWidth 64) 16 :=
+      ⟨R, hR, hc w (by omega_using [])⟩
+    refine ⟨m'.writeW ((u.gpr .esp + BitVec.ofNat 32 (off + 16 * w)).setWidth 64) (u.xmm .xmm0), ?_,
+      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_using []))⟩
+    rw [wipeStores16_succ, execBlock_append, he]
+    simp only [Option.bind_some, execBlock, isa, exec, State.store128, State.ea, hin, ↓reduceIte,
+      Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, wipeTrace16,
       List.range_succ, List.map_append]
 
 /-- `wipe off words` from `u`, with the `words` doublewords at `esp + off` in
-the region `R`, which `u` may write: it sets `ecx` to zero and changes memory
-only in `R`, with a trace of the addresses alone. -/
+the region `R`, which `u` may write (`hc` for each doubleword, `hc16` for
+each 16 bytes of the first `4 (words / 4)`): it sets `xmm0` and `ecx` to
+zero and changes memory only in `R`, with a trace of the addresses alone. -/
 theorem wipe_run (R : Region) (u : State) (off words : Nat) (hR : R ∈ u.wr)
-    (hc : ∀ k < words, R.Contains ((u.gpr .esp + BitVec.ofNat 32 (off + 4 * k)).setWidth 64) 4) :
+    (hc : ∀ k < words, R.Contains ((u.gpr .esp + BitVec.ofNat 32 (off + 4 * k)).setWidth 64) 4)
+    (hc16 : ∀ k < words / 4, R.Contains ((u.gpr .esp + BitVec.ofNat 32 (off + 16 * k)).setWidth 64) 16) :
     ∃ m', execBlock isa (wipe off words) u =
-        some ({ u.setReg .ecx 0 with mem := m' }, wipeTrace (u.gpr .esp) off words) ∧
+        some ({ wipeRegs u with mem := m' }, wipeTrace (u.gpr .esp) off words) ∧
       Frame [R] u.mem m' := by
-  have hsp : (u.setReg .ecx 0).gpr .esp = u.gpr .esp := by simp [State.setReg]
-  obtain ⟨m', he, hf⟩ := wipeStores_run R (u.setReg .ecx 0) (by simpa [State.setReg]) off words
-    (by rw [hsp]; exact hc)
-  refine ⟨m', ?_, by simpa [State.setReg] using hf⟩
-  simp only [wipe, execBlock, isa, exec, readSrc, Option.map_some]
-  rw [he, hsp]
-  simp [addrs, srcAddrs]
+  have hsp : (wipeRegs u).gpr .esp = u.gpr .esp := wipeRegs_gpr (by decide)
+  obtain ⟨m₁, he₁, hf₁⟩ := wipeStores16_run R (wipeRegs u) (by rw [wipeRegs_wr]; exact hR) off (words / 4)
+    (by rw [hsp]; exact hc16)
+  obtain ⟨m₂, he₂, hf₂⟩ := wipeStores_run R { wipeRegs u with mem := m₁ } (by exact hR)
+    (off + 16 * (words / 4)) (words % 4) (fun k hk => by
+      show R.Contains (((wipeRegs u).gpr .esp + _).setWidth 64) 4
+      rw [hsp, show off + 16 * (words / 4) + 4 * k = off + 4 * (4 * (words / 4) + k) by omega_using []]
+      exact hc _ (by omega_using [hk]))
+  refine ⟨m₂, ?_, hf₁.trans hf₂⟩
+  have e₀ : execBlock isa [.xop (.bin .pxor .xmm0 .xmm0), .mov .ecx (.imm 0)] u = some (wipeRegs u, []) := by
+    simp [execBlock, isa, exec, readSrc, Option.map_some, addrs, srcAddrs, wipeRegs, XOp.exec, XBinOp.eval,
+      BitVec.xor_self]
+  rw [wipe, show (.xop (.bin .pxor .xmm0 .xmm0) :: .mov .ecx (.imm 0) ::
+      (wipeStores16 off (words / 4) ++ wipeStores (off + 16 * (words / 4)) (words % 4)) : List Instr) =
+      [.xop (.bin .pxor .xmm0 .xmm0), .mov .ecx (.imm 0)] ++
+        (wipeStores16 off (words / 4) ++ wipeStores (off + 16 * (words / 4)) (words % 4)) from rfl,
+    execBlock_append, e₀, Option.bind_some, execBlock_append, he₁, Option.bind_some, he₂]
+  simp only [Option.map_some, List.nil_append, wipeTrace, hsp]
 
 theorem wipe_noSp (off words : Nat) : NoSp (.block (wipe off words) : Prog isa) := by
   intro i hi
-  simp only [instrs, wipe, wipeStores, List.mem_cons, List.mem_map, List.mem_range] at hi
-  rcases hi with rfl | ⟨k, -, rfl⟩ <;> rfl
+  simp only [instrs, wipe, wipeStores, wipeStores16, List.mem_cons, List.mem_append, List.mem_map,
+    List.mem_range] at hi
+  rcases hi with rfl | rfl | ⟨k, -, rfl⟩ | ⟨k, -, rfl⟩ <;> rfl
 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
@@ -173,11 +234,15 @@ theorem Verified.stackScratchWipedPre {c : Prog isa}
     obtain ⟨m', hblk, hfr⟩ := wipe_run _ s₃ (8 + 4 * slots sig) words hmem (fun k hk => by
       rw [hesp₃, sub_add_setWidth (by omega_using [hb, hw, hk]) (by omega_using [h0])]
       exact Offset.contains_below _ (by omega_using []) (by omega_using [hw, hk]) (by omega_using [h0]))
+      (fun k hk => by
+        rw [hesp₃, sub_add_setWidth (by omega_using [hb, hw, hk]) (by omega_using [h0])]
+        exact Offset.contains_below _ (by omega_using []) (by omega_using [hw, hk]) (by omega_using [h0]))
     have he' := Exec.seq he (Exec.block hblk)
-    have ha' : abiPreserved (narrow sig e n bytes wa s) { s₃.setReg .ecx 0 with mem := m' } := by
+    have ha' : abiPreserved (narrow sig e n bytes wa s) { wipeRegs s₃ with mem := m' } := by
       refine ⟨fun q hq => ?_, ?_⟩
       · have hq' : q ≠ .ecx := by rintro rfl; simp [calleeSaved] at hq
-        simp only [State.setReg, hq', ↓reduceIte]
+        show (wipeRegs s₃).gpr q = _
+        rw [wipeRegs_gpr hq']
         exact ha.1 q hq
       · show m'.readW _ 32 = _
         rw [hesp, Taint.sub_setWidth (by omega_using [h0])]
@@ -191,8 +256,8 @@ theorem Verified.stackScratchWipedPre {c : Prog isa}
         rwa [hesp, Taint.sub_setWidth (by omega_using [h0])] at h2
     obtain ⟨hex, habi, hm, heax, hedx⟩ := withStackScratch_run hb hnsp' hd' hs he' ha'
     refine ⟨t, s₃, _, he, hq, hfr, hesp₃, hex, habi, hm, ?_, ?_⟩
-    · rw [heax]; simp [State.setReg]
-    · rw [hedx]; simp [State.setReg]
+    · rw [heax]; exact wipeRegs_gpr (u := s₃) (r := .eax) (by decide)
+    · rw [hedx]; exact wipeRegs_gpr (u := s₃) (r := .edx) (by decide)
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, s₄, -, hq, hfr, -, hex, ha, hm, heax, hedx⟩ := hrun s hs
     refine ⟨_, _, hex, ha, ?_⟩

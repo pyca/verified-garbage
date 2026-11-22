@@ -9,7 +9,10 @@ run of Cargo, in parallel; the benchmarks for the targets with `bench`, whose
 C cross compiler and OpenSSL the image has for the build scripts of AWS-LC
 and OpenSSL's bindings, one target at a time: in one run, Cargo would enable
 the features of a dependency for one target (aws-lc-sys's `all-bindings`, on
-x86-64 and AArch64) on every target it builds.
+x86-64 and AArch64) on every target it builds. The rustls provider
+(`crates/rustls-verified-garbage/`, a member of the workspace that the
+library's runs do not build) for x86-64 Linux, in the `rustls-provider` job,
+which tests it there.
 
 The library is also built in release for every target, in one run of Cargo:
 Clippy and the tests build it unoptimized, and an optimized build with
@@ -20,7 +23,7 @@ which needs no linker either.
 
   rust_lint.py targets library|benchmarks
       the crate's targets, comma-separated, for rustup
-  rust_lint.py run library|benchmarks
+  rust_lint.py run library|benchmarks|provider
       check the crate's formatting, then lint it for its targets
 """
 
@@ -53,6 +56,11 @@ def cargo(args, cwd):
 
 
 def run(crate):
+    if crate == "provider":
+        package = ["-p", "rustls-verified-garbage"]
+        cargo(["fmt", "--check", *package], ROOT)
+        cargo(["clippy", "--all-targets", "--locked", *package], ROOT)
+        return
     if crate == "library":
         targets = [arg for e in entries(crate) for arg in ("--target", e["target"])]
         cargo(["fmt", "--check"], ROOT)

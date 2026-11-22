@@ -73,7 +73,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Sm4Gcm.X86 VG.WriteBytes VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -159,7 +159,7 @@ variable {Ctx St W SP : BitVec 32} (L : Lay4 Ctx St W SP 1536)
 include L
 
 theorem finTag_pc {o : Nat} (ho : o = 0 ∨ o = 112) {al ah xl xh : BitVec 32} :
-    Pc (fun (m₀ : Mem) s => FinIn Ctx St W SP al ah xl xh s ∧ s.mem = m₀) (finTag vg.callees o)
+    Pc (fun (m₀ : Mem) s => FinIn Ctx St W SP al ah xl xh s ∧ s.mem = m₀) (finTag vg.callees ci.fn o)
       (FinOut Ctx St W SP o al ah xl xh ·) := by
   generalize hv : (if (xl ||| xh == 0) = true then al else xl) = v
   refine Pc.seq (Q := fun m₀ s => (FinIn Ctx St W SP al ah xl xh s ∧ s.mem = m₀) ∧ s.gpr .eax = xl ∧
@@ -274,7 +274,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Sm4Gcm.X86 VG.WriteBytes VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -286,9 +286,9 @@ open VG.Spec.Sm4.Gcm (ctxCiph)
 
 abbrev finKeeps : List (Nat × Nat) := [(0, ctxO), (2, alO), (3, ahO), (4, xlO), (5, xhO)]
 
-theorem streamFinish_eq : (streamFinish vg.callees) = .seq (entry 7 (([.mov .esi (argOp 1)] : List Instr) ++
+theorem streamFinish_eq : (streamFinish vg.callees ci.fn) = .seq (entry 7 (([.mov .esi (argOp 1)] : List Instr) ++
     ((finKeeps ++ [(6, tpO)]).flatMap (fun (p : Nat × Nat) => keep p.1 p.2) ++ [])))
-    (.seq (finTag vg.callees 0) (.seq (tagOut 0) (.block restore))) := rfl
+    (.seq (finTag vg.callees ci.fn 0) (.seq (tagOut 0) (.block restore))) := rfl
 
 /-- What the precondition of `finish` and `verify` (with `nA` arguments, `W`
 the last, `w`) gives. -/
@@ -517,7 +517,7 @@ theorem slot_tagFrame {Ctx St W SP : BitVec 32} (L : Lay4 Ctx St W SP 1536) {m m
   · exact (L.stk_w (by omega_using [h₂])).symm
 
 theorem streamFinish_pc (p : BitVec 32 × (Nat → BitVec 32)) :
-    Pc (fun (s₀ : State) s => finPre s₀ ∧ pubSw 8 6 s₀ = p ∧ s = s₀) (streamFinish vg.callees)
+    Pc (fun (s₀ : State) s => finPre s₀ ∧ pubSw 8 6 s₀ = p ∧ s = s₀) (streamFinish vg.callees ci.fn)
       (fun s₀ s' => abiPreserved s₀ s' ∧ streamFinishX86.post s₀ s') := by
   by_cases hex : ∃ s₀, finPre s₀ ∧ pubSw 8 6 s₀ = p
   swap
@@ -573,10 +573,10 @@ theorem streamFinish_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   exact this
 
 theorem streamFinish_correct (s : State) (hs : streamFinishX86.pre s) :
-    ∃ t s', Exec isa (streamFinish vg.callees) s t s' ∧ abiPreserved s s' ∧ streamFinishX86.post s s' :=
+    ∃ t s', Exec isa (streamFinish vg.callees ci.fn) s t s' ∧ abiPreserved s s' ∧ streamFinishX86.post s s' :=
   (streamFinish_pc (pubSw 8 6 s)).wp s s ⟨hs, rfl, rfl⟩
 
-theorem streamFinish_ct : ConstantTime isa streamFinishX86.pre streamFinishX86.pub (streamFinish vg.callees) :=
+theorem streamFinish_ct : ConstantTime isa streamFinishX86.pre streamFinishX86.pub (streamFinish vg.callees ci.fn) :=
   Pc.constantTime (pubSw 8 6) (fun _ _ _ _ h => pubSw_eq (by decide) h) streamFinish_pc fun _ hs => ⟨hs, rfl, rfl⟩
 
 end VG.Proof.Sm4Gcm.X86
@@ -603,7 +603,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Sm4Gcm.X86 VG.WriteBytes VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -613,10 +613,10 @@ open VG.Spec.Gcm (Block blockAt StreamRepr fullTag zeros)
 open VG.Spec.Gcm (ctxH)
 open VG.Spec.Sm4.Gcm (ctxCiph)
 
-theorem streamVerify_eq : (streamVerify vg.callees) = .seq (entry 8 (([.mov .esi (argOp 1)] : List Instr) ++
+theorem streamVerify_eq : (streamVerify vg.callees ci.fn) = .seq (entry 8 (([.mov .esi (argOp 1)] : List Instr) ++
     ((finKeeps ++ [(6, tpO), (7, tglO)]).flatMap (fun (p : Nat × Nat) => keep p.1 p.2) ++ [])))
     (.seq tagLenOk (.seq (.ite .e (.block [.mov .eax (imm 0)])
-      (.seq recv (.seq (finTag vg.callees 0) (cmp 0)))) (.block restore))) := rfl
+      (.seq recv (.seq (finTag vg.callees ci.fn 0) (cmp 0)))) (.block restore))) := rfl
 
 /-- Where the received tag is copied. -/
 abbrev rR (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 rO, 16⟩
@@ -666,7 +666,7 @@ def VOut (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop :=
     Frame (rR (p.2 6) :: tagFrame (p.2 1) (p.2 6) p.1 0) s₁.mem s.mem ∧ streamVerifyX86.post s₀ s
 
 theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
-    Pc (fun (s₀ : State) s => verifyPre s₀ ∧ pubSw 9 6 s₀ = p ∧ s = s₀) (streamVerify vg.callees)
+    Pc (fun (s₀ : State) s => verifyPre s₀ ∧ pubSw 9 6 s₀ = p ∧ s = s₀) (streamVerify vg.callees ci.fn)
       (fun s₀ s' => abiPreserved s₀ s' ∧ streamVerifyX86.post s₀ s') := by
   by_cases hex : ∃ s₀, verifyPre s₀ ∧ pubSw 9 6 s₀ = p
   swap
@@ -806,10 +806,10 @@ theorem streamVerify_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   exact hpost
 
 theorem streamVerify_correct (s : State) (hs : streamVerifyX86.pre s) :
-    ∃ t s', Exec isa (streamVerify vg.callees) s t s' ∧ abiPreserved s s' ∧ streamVerifyX86.post s s' :=
+    ∃ t s', Exec isa (streamVerify vg.callees ci.fn) s t s' ∧ abiPreserved s s' ∧ streamVerifyX86.post s s' :=
   (streamVerify_pc (pubSw 9 6 s)).wp s s ⟨hs, rfl, rfl⟩
 
-theorem streamVerify_ct : ConstantTime isa streamVerifyX86.pre streamVerifyX86.pub (streamVerify vg.callees) :=
+theorem streamVerify_ct : ConstantTime isa streamVerifyX86.pre streamVerifyX86.pub (streamVerify vg.callees ci.fn) :=
   Pc.constantTime (pubSw 9 6) (fun _ _ _ _ h => pubSw_eq (by decide) h) streamVerify_pc fun _ hs => ⟨hs, rfl, rfl⟩
 
 end VG.Proof.Sm4Gcm.X86
@@ -999,7 +999,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Sm4Gcm.X86 VG.WriteBytes VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -1010,9 +1010,9 @@ open VG.Spec.Gcm (ctxH)
 open VG.Spec.Sm4.Gcm (ctxCiph)
 open VG.Proof.Gcm (Absorbed Ctr xorKs)
 
-theorem streamEncrypt_eq : (streamEncrypt vg.callees) = .seq (entry 8 (([.mov .esi (argOp 1)] : List Instr) ++
+theorem streamEncrypt_eq : (streamEncrypt vg.callees ci.fn) = .seq (entry 8 (([.mov .esi (argOp 1)] : List Instr) ++
     (crKeeps.flatMap (fun p => keep p.1 p.2) ++ [])))
-    (.seq (.block setText) (.seq crypt (.seq (textAbsorb vg.callees) (.block restore)))) := rfl
+    (.seq (.block setText) (.seq (crypt ci.fn) (.seq (textAbsorb vg.callees) (.block restore)))) := rfl
 
 /-- After `setText`: the text ready for `crypt`. -/
 structure CSet (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop where
@@ -1126,7 +1126,7 @@ theorem cr_exit {p : BitVec 32 × (Nat → BitVec 32)} (hc : CrPure p) {s₀ s�
     fun s' ⟨abi, m', _, _, _⟩ => ⟨abi, m'⟩
 
 theorem streamEncrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
-    Pc (fun (s₀ : State) s => streamCryptPre s₀ ∧ pubOf 9 s₀ = p ∧ s = s₀) (streamEncrypt vg.callees)
+    Pc (fun (s₀ : State) s => streamCryptPre s₀ ∧ pubOf 9 s₀ = p ∧ s = s₀) (streamEncrypt vg.callees ci.fn)
       (fun s₀ s' => abiPreserved s₀ s' ∧ streamEncryptX86.post s₀ s') := by
   by_cases hex : ∃ s₀, streamCryptPre s₀ ∧ pubOf 9 s₀ = p
   swap
@@ -1222,10 +1222,10 @@ theorem streamEncrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       List.drop_left' (by rw [Proof.Gcm.length_gctr])]
 
 theorem streamEncrypt_correct (s : State) (hs : streamEncryptX86.pre s) :
-    ∃ t s', Exec isa (streamEncrypt vg.callees) s t s' ∧ abiPreserved s s' ∧ streamEncryptX86.post s s' :=
+    ∃ t s', Exec isa (streamEncrypt vg.callees ci.fn) s t s' ∧ abiPreserved s s' ∧ streamEncryptX86.post s s' :=
   (streamEncrypt_pc (pubOf 9 s)).wp s s ⟨hs, rfl, rfl⟩
 
-theorem streamEncrypt_ct : ConstantTime isa streamEncryptX86.pre streamEncryptX86.pub (streamEncrypt vg.callees) :=
+theorem streamEncrypt_ct : ConstantTime isa streamEncryptX86.pre streamEncryptX86.pub (streamEncrypt vg.callees ci.fn) :=
   Pc.constantTime (pubOf 9) (fun _ _ _ _ h => pubOf_eq h) streamEncrypt_pc fun _ hs => ⟨hs, rfl, rfl⟩
 
 end VG.Proof.Sm4Gcm.X86
@@ -1249,7 +1249,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Sm4Gcm.X86 VG.WriteBytes VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -1260,12 +1260,12 @@ open VG.Spec.Gcm (ctxH)
 open VG.Spec.Sm4.Gcm (ctxCiph)
 open VG.Proof.Gcm (Absorbed Ctr xorKs)
 
-theorem streamDecrypt_eq : (streamDecrypt vg.callees) = .seq (entry 8 (([.mov .esi (argOp 1)] : List Instr) ++
+theorem streamDecrypt_eq : (streamDecrypt vg.callees ci.fn) = .seq (entry 8 (([.mov .esi (argOp 1)] : List Instr) ++
     (crKeeps.flatMap (fun p => keep p.1 p.2) ++ [])))
-    (.seq (textAbsorb vg.callees) (.seq (.block setText) (.seq crypt (.block restore)))) := rfl
+    (.seq (textAbsorb vg.callees) (.seq (.block setText) (.seq (crypt ci.fn) (.block restore)))) := rfl
 
 theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
-    Pc (fun (s₀ : State) s => streamCryptPre s₀ ∧ pubOf 9 s₀ = p ∧ s = s₀) (streamDecrypt vg.callees)
+    Pc (fun (s₀ : State) s => streamCryptPre s₀ ∧ pubOf 9 s₀ = p ∧ s = s₀) (streamDecrypt vg.callees ci.fn)
       (fun s₀ s' => abiPreserved s₀ s' ∧ streamDecryptX86.post s₀ s') := by
   by_cases hex : ∃ s₀, streamCryptPre s₀ ∧ pubOf 9 s₀ = p
   swap
@@ -1380,10 +1380,10 @@ theorem streamDecrypt_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   · rw [List.length_append, length_bytesAt, ← hct]; exact hct₄
 
 theorem streamDecrypt_correct (s : State) (hs : streamDecryptX86.pre s) :
-    ∃ t s', Exec isa (streamDecrypt vg.callees) s t s' ∧ abiPreserved s s' ∧ streamDecryptX86.post s s' :=
+    ∃ t s', Exec isa (streamDecrypt vg.callees ci.fn) s t s' ∧ abiPreserved s s' ∧ streamDecryptX86.post s s' :=
   (streamDecrypt_pc (pubOf 9 s)).wp s s ⟨hs, rfl, rfl⟩
 
-theorem streamDecrypt_ct : ConstantTime isa streamDecryptX86.pre streamDecryptX86.pub (streamDecrypt vg.callees) :=
+theorem streamDecrypt_ct : ConstantTime isa streamDecryptX86.pre streamDecryptX86.pub (streamDecrypt vg.callees ci.fn) :=
   Pc.constantTime (pubOf 9) (fun _ _ _ _ h => pubOf_eq h) streamDecrypt_pc fun _ hs => ⟨hs, rfl, rfl⟩
 
 end VG.Proof.Sm4Gcm.X86
@@ -1463,9 +1463,9 @@ abbrev initMid : List Instr :=
       ([.mov .eax (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm tO),
         .mov .ebx (.reg .esi), .alu .add .ebx (imm 240), .mov .edi (imm 1)] : List Instr)
 
-theorem init_eq (k : Fn) : init k = .seq (entry 2 (([.mov .esi (argOp 1)] : List Instr) ++
+theorem init_eq (k t : Fn) : init k t = .seq (entry 2 (([.mov .esi (argOp 1)] : List Instr) ++
     (([] : List (Nat × Nat)).flatMap (fun p => keep p.1 p.2) ++ initTail)))
-    (.seq (keyCall k) (.seq (.block initMid) (.seq ctrCall (.block restore)))) := rfl
+    (.seq (keyCall k) (.seq (.block initMid) (.seq (ctrCall t) (.block restore)))) := rfl
 
 /-- After the entry: the arguments of `vg_sm4_expand_key`. -/
 structure IEnt (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop where
@@ -1670,8 +1670,8 @@ theorem iMid_ok {p : BitVec 32 × (Nat → BitVec 32)} (hc : InitPure p) {s₀ s
       simp only [List.mem_singleton] at hr; subst hr; exact cd, ← hZ₁, blockAt, zero4_bytes', ofBytes_zeros]
   · simp only [mem_setMem, mem_setReg, mem_arithFlags]; exact hsv
 
-theorem init_pc (ki : KeyImpl) (p : BitVec 32 × (Nat → BitVec 32)) :
-    Pc (fun (s₀ : State) s => initPre s₀ ∧ pubOf 3 s₀ = p ∧ s = s₀) (init ki.fn)
+theorem init_pc (ki : KeyImpl) (ci : CtrImpl) (p : BitVec 32 × (Nat → BitVec 32)) :
+    Pc (fun (s₀ : State) s => initPre s₀ ∧ pubOf 3 s₀ = p ∧ s = s₀) (init ki.fn ci.fn)
       (fun s₀ s' => abiPreserved s₀ s' ∧ initX86.post s₀ s') := by
   by_cases hex : ∃ s₀, initPre s₀ ∧ pubOf 3 s₀ = p
   swap
@@ -1689,8 +1689,8 @@ theorem init_pc (ki : KeyImpl) (p : BitVec 32 × (Nat → BitVec 32)) :
       · rw [g₁.saved .esi (by decide), g₂.saved .esi (by decide), h₁.esi, h₂.esi]
       · rw [g₁.saved .ebp (by decide), g₂.saved .ebp (by decide), h₁.ebp, h₂.ebp]) (by taint_decide)) ?_
   refine Pc.seq (Pc.of (I := fun s => CtrCall s (p.2 1) (p.2 2 + BitVec.ofNat 32 96)
-    (p.2 1 + BitVec.ofNat 32 240) 1 ∧ s.gpr .esp = p.1) (fun s h => ctr_call h.1)
-    (ctr_ct fun s h => h) _ fun _ _ h => ⟨h.call, h.esp⟩) ?_
+    (p.2 1 + BitVec.ofNat 32 240) 1 ∧ s.gpr .esp = p.1) (fun s h => ctr_call ci h.1)
+    (ctr_ct ci fun s h => h) _ fun _ _ h => ⟨h.call, h.esp⟩) ?_
   refine Pc.taint [.ebp] (fun s₀ s' ⟨s, hm, g⟩ => ?_) (fun _ _ s₁ s₂ ⟨_, h₁, g₁⟩ ⟨_, h₂, g₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       rw [g₁.saved .ebp (by decide), g₂.saved .ebp (by decide), h₁.ebp, h₂.ebp]) (by taint_decide)
@@ -1762,12 +1762,12 @@ theorem init_pc (ki : KeyImpl) (p : BitVec 32 × (Nat → BitVec 32)) :
   simp only [Spec.Sm4.gcmCipherOfKey, hkey]
   exact BitVec.zero_xor
 
-theorem init_correct (ki : KeyImpl) (s : State) (hs : initX86.pre s) :
-    ∃ t s', Exec isa (init ki.fn) s t s' ∧ abiPreserved s s' ∧ initX86.post s s' :=
-  (init_pc ki (pubOf 3 s)).wp s s ⟨hs, rfl, rfl⟩
+theorem init_correct (ki : KeyImpl) (ci : CtrImpl) (s : State) (hs : initX86.pre s) :
+    ∃ t s', Exec isa (init ki.fn ci.fn) s t s' ∧ abiPreserved s s' ∧ initX86.post s s' :=
+  (init_pc ki ci (pubOf 3 s)).wp s s ⟨hs, rfl, rfl⟩
 
-theorem init_ct (ki : KeyImpl) : ConstantTime isa initX86.pre initX86.pub (init ki.fn) :=
-  Pc.constantTime (pubOf 3) (fun _ _ _ _ h => pubOf_eq h) (init_pc ki) fun _ hs => ⟨hs, rfl, rfl⟩
+theorem init_ct (ki : KeyImpl) (ci : CtrImpl) : ConstantTime isa initX86.pre initX86.pub (init ki.fn ci.fn) :=
+  Pc.constantTime (pubOf 3) (fun _ _ _ _ h => pubOf_eq h) (init_pc ki ci) fun _ hs => ⟨hs, rfl, rfl⟩
 
 end VG.Proof.Sm4Gcm.X86
 
@@ -1797,7 +1797,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.Impl.Sm4Gcm.X86 VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -1817,7 +1817,7 @@ def crSat : State where
   rd := [⟨0x1000, 256⟩]
   wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 36⟩]
 
-theorem streamEncrypt_verified : Verified X86.target (streamEncrypt vg.callees) (Proof.Sm4Gcm.streamEncryptScratchContract X86.abi 1536) :=
+theorem streamEncrypt_verified : Verified X86.target (streamEncrypt vg.callees ci.fn) (Proof.Sm4Gcm.streamEncryptScratchContract X86.abi 1536) :=
   Verified.of_correct streamEncrypt_correct streamEncrypt_ct (by
     have a0 : arg crSat 0 = 0x1000 := by decide
     have a1 : arg crSat 1 = 0x3000 := by decide
@@ -1834,7 +1834,7 @@ theorem streamEncrypt_verified : Verified X86.target (streamEncrypt vg.callees) 
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, e, esp] using crSat)
 
-theorem streamDecrypt_verified : Verified X86.target (streamDecrypt vg.callees) (Proof.Sm4Gcm.streamDecryptScratchContract X86.abi 1536) :=
+theorem streamDecrypt_verified : Verified X86.target (streamDecrypt vg.callees ci.fn) (Proof.Sm4Gcm.streamDecryptScratchContract X86.abi 1536) :=
   Verified.of_correct streamDecrypt_correct streamDecrypt_ct (by
     have a0 : arg crSat 0 = 0x1000 := by decide
     have a1 : arg crSat 1 = 0x3000 := by decide
@@ -1866,7 +1866,7 @@ def finSat : State where
   wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 32⟩]
 
 theorem streamFinish_verified :
-    Verified X86.target (streamFinish vg.callees) (Proof.Sm4Gcm.streamFinishScratchContract X86.abi 1536) :=
+    Verified X86.target (streamFinish vg.callees ci.fn) (Proof.Sm4Gcm.streamFinishScratchContract X86.abi 1536) :=
   Verified.of_correct streamFinish_correct streamFinish_ct (by
     have a0 : arg finSat 0 = 0x1000 := by decide
     have a1 : arg finSat 1 = 0x3000 := by decide
@@ -1897,7 +1897,7 @@ def verSat : State where
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 36⟩]
 
 theorem streamVerify_verified :
-    Verified X86.target (streamVerify vg.callees) (Proof.Sm4Gcm.streamVerifyScratchContract X86.abi 1536) :=
+    Verified X86.target (streamVerify vg.callees ci.fn) (Proof.Sm4Gcm.streamVerifyScratchContract X86.abi 1536) :=
   Verified.of_correct streamVerify_correct streamVerify_ct (by
     have a0 : arg verSat 0 = 0x1000 := by decide
     have a1 : arg verSat 1 = 0x3000 := by decide
@@ -1931,7 +1931,7 @@ def sealSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩]
   wr := [⟨0x3000, 0⟩, ⟨0x5000, 16⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 36⟩]
 
-theorem seal_verified : Verified X86.target («seal» vg.callees) (Proof.Sm4Gcm.sealScratchContract X86.abi 1536) :=
+theorem seal_verified : Verified X86.target («seal» vg.callees ci.fn) (Proof.Sm4Gcm.sealScratchContract X86.abi 1536) :=
   Verified.of_correct seal_correct seal_ct (by
     have a0 : arg sealSat 0 = 0x1000 := by decide
     have a1 : arg sealSat 1 = 0x2000 := by decide
@@ -1974,7 +1974,7 @@ theorem open_pre : ∀ s, (Proof.Sm4Gcm.openScratchContract X86.abi 1536).pre s 
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 
 /-- `open`'s public data include its leak, whether it succeeds. -/
-theorem open_verified : Verified X86.target («open» vg.callees) (Proof.Sm4Gcm.openScratchContract X86.abi 1536) :=
+theorem open_verified : Verified X86.target («open» vg.callees ci.fn) (Proof.Sm4Gcm.openScratchContract X86.abi 1536) :=
   Verified.of_correct open_correct open_ct
     { pre := open_pre
       post := by sig_implies_post [Proof.Sm4Gcm.openScratchContract, Proof.Sm4Gcm.openScratchSig,
@@ -2028,9 +2028,9 @@ def initSat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 256⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 12⟩]
 
-theorem init_verified (ki : KeyImpl) :
-    Verified X86.target (init ki.fn) (Proof.Sm4Gcm.initScratchContract X86.abi 1536) :=
-  Verified.of_correct (init_correct ki) (init_ct ki) (by
+theorem init_verified (ki : KeyImpl) (ci : CtrImpl) :
+    Verified X86.target (init ki.fn ci.fn) (Proof.Sm4Gcm.initScratchContract X86.abi 1536) :=
+  Verified.of_correct (init_correct ki ci) (init_ct ki ci) (by
     have a0 : arg initSat 0 = 0x1000 := by decide
     have a1 : arg initSat 1 = 0x2000 := by decide
     have a2 : arg initSat 2 = 0x4000 := by decide
@@ -2042,44 +2042,44 @@ theorem init_verified (ki : KeyImpl) :
 /-! ## The stack pointer -/
 
 section
-variable (vg : GcmImpl)
+variable (vg : GcmImpl) (ci : CtrImpl)
 
-theorem init_spSafe (ki : KeyImpl) : (init ki.fn).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [init, keyCall, ctrCall, entry, Code.all, ctr_spSafe, ki.spSafe,
+theorem init_spSafe (ki : KeyImpl) (ci : CtrImpl) : (init ki.fn ci.fn).all (fun i => !X86.isa.writesSp i) = true := by
+  simp only [init, keyCall, ctrCall, entry, Code.all, ci.spSafe, ki.spSafe,
     Bool.true_and, Bool.and_true]
   lit_decide
 
-theorem streamEncrypt_spSafe : (streamEncrypt vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
+theorem streamEncrypt_spSafe : (streamEncrypt vg.callees ci.fn).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, firstFlush, flush, ghCall,
-    ghash1, textAbsorb, streamEncrypt, Code.all, GcmImpl.callees, ctr_spSafe, vg.gh.spSafe, Bool.true_and,
+    ghash1, textAbsorb, streamEncrypt, Code.all, GcmImpl.callees, ci.spSafe, vg.gh.spSafe, Bool.true_and,
     Bool.and_true]
   lit_decide
 
-theorem streamDecrypt_spSafe : (streamDecrypt vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
+theorem streamDecrypt_spSafe : (streamDecrypt vg.callees ci.fn).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, firstFlush, flush, ghCall,
-    ghash1, textAbsorb, streamDecrypt, Code.all, GcmImpl.callees, ctr_spSafe, vg.gh.spSafe, Bool.true_and,
+    ghash1, textAbsorb, streamDecrypt, Code.all, GcmImpl.callees, ci.spSafe, vg.gh.spSafe, Bool.true_and,
     Bool.and_true]
   lit_decide
 
-theorem streamFinish_spSafe : (streamFinish vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
+theorem streamFinish_spSafe : (streamFinish vg.callees ci.fn).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [ctrCall, finTag, flush, ghCall, ghash1, lens, tag, tagOut, streamFinish, Code.all, GcmImpl.callees,
-    ctr_spSafe, vg.gh.spSafe, Bool.true_and, Bool.and_true]
+    ci.spSafe, vg.gh.spSafe, Bool.true_and, Bool.and_true]
   lit_decide
 
-theorem streamVerify_spSafe : (streamVerify vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
+theorem streamVerify_spSafe : (streamVerify vg.callees ci.fn).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [ctrCall, finTag, flush, ghCall, ghash1, lens, tag, streamVerify, Code.all, GcmImpl.callees,
-    ctr_spSafe, vg.gh.spSafe, Bool.true_and, Bool.and_true]
+    ci.spSafe, vg.gh.spSafe, Bool.true_and, Bool.and_true]
   lit_decide
 
-theorem seal_spSafe : («seal» vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
+theorem seal_spSafe : («seal» vg.callees ci.fn).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, flush, ghCall, ghash1, j0,
-    j0hash, lens, oneAad, oneCrypt, oneTag, tag, tagOut, «seal», Code.all, GcmImpl.callees, ctr_spSafe,
+    j0hash, lens, oneAad, oneCrypt, oneTag, tag, tagOut, «seal», Code.all, GcmImpl.callees, ci.spSafe,
     vg.gh.spSafe, Bool.true_and, Bool.and_true]
   lit_decide
 
-theorem open_spSafe : («open» vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
+theorem open_spSafe : («open» vg.callees ci.fn).all (fun i => !X86.isa.writesSp i) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, flush, ghCall, ghash1, j0,
-    j0hash, lens, oneAad, oneCrypt, oneTag, tag, «open», Code.all, GcmImpl.callees, ctr_spSafe, vg.gh.spSafe,
+    j0hash, lens, oneAad, oneCrypt, oneTag, tag, «open», Code.all, GcmImpl.callees, ci.spSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
   lit_decide
 
@@ -2120,88 +2120,107 @@ private theorem noEsp_of {c : Prog isa} (h : NoSp c) :
   rw [Code.allInstrs_eq]
   exact List.all_eq_true.mpr fun i hi => by simp [h i hi]
 
-variable (vg : GcmImpl)
+variable (vg : GcmImpl) (ci : CtrImpl)
 
-theorem init_noEsp (ki : KeyImpl) : (init ki.fn).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
-  simp only [init, keyCall, ctrCall, entry, Code.allInstrs, noEsp_of ctr_nosp,
+theorem init_noEsp (ki : KeyImpl) (ci : CtrImpl) : (init ki.fn ci.fn).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+  simp only [init, keyCall, ctrCall, entry, Code.allInstrs, noEsp_of ci.nosp,
     noEsp_of ki.nosp, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem init_stackUse (ki : KeyImpl) : stackUse (init ki.fn) ≤ 1536 := by
+theorem init_stackUse (ki : KeyImpl) (ci : CtrImpl) : stackUse (init ki.fn ci.fn) ≤ 1536 := by
   have hk := ki.stack
-  simp only [init, keyCall, ctrCall, entry, stackUse, ctrFn, ctr_stack', Nat.max_le, X86.frameBytes,
+  have hc := ci.stack
+  simp only [init, keyCall, ctrCall, entry, stackUse, Nat.max_le, X86.frameBytes,
     List.length_cons, List.length_nil]
-  omega_using [hk]
+  omega_using [hk, hc]
 
 theorem streamEncrypt_noEsp :
-    (streamEncrypt vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+    (streamEncrypt vg.callees ci.fn).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, firstFlush, flush, ghCall,
-    ghash1, textAbsorb, streamEncrypt, Code.allInstrs, GcmImpl.callees, noEsp_of ctr_nosp,
+    ghash1, textAbsorb, streamEncrypt, Code.allInstrs, GcmImpl.callees, noEsp_of ci.nosp,
     noEsp_of vg.gh.nosp, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem streamEncrypt_stackUse : stackUse (streamEncrypt vg.callees) ≤ 1536 := by
+theorem streamEncrypt_stackUse : stackUse (streamEncrypt vg.callees ci.fn) ≤ 1536 := by
+  have hc := ci.stack
+  have hp : X86.frameBytes (Instr.push [Reg.edi, Reg.ebx, Reg.edx, Reg.eax]) = 16 := rfl
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, firstFlush, flush, ghCall,
-    ghash1, textAbsorb, streamEncrypt, stackUse, GcmImpl.callees, ctrFn, ctr_stack', vg.gh.stack, Nat.max_le]
-  decide +kernel
+    ghash1, textAbsorb, streamEncrypt, stackUse, GcmImpl.callees, vg.gh.stack, Nat.max_le]
+  repeat' apply And.intro
+  all_goals first | omega_using [hc, hp] | decide
 
 theorem streamDecrypt_noEsp :
-    (streamDecrypt vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+    (streamDecrypt vg.callees ci.fn).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, firstFlush, flush, ghCall,
-    ghash1, textAbsorb, streamDecrypt, Code.allInstrs, GcmImpl.callees, noEsp_of ctr_nosp,
+    ghash1, textAbsorb, streamDecrypt, Code.allInstrs, GcmImpl.callees, noEsp_of ci.nosp,
     noEsp_of vg.gh.nosp, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem streamDecrypt_stackUse : stackUse (streamDecrypt vg.callees) ≤ 1536 := by
+theorem streamDecrypt_stackUse : stackUse (streamDecrypt vg.callees ci.fn) ≤ 1536 := by
+  have hc := ci.stack
+  have hp : X86.frameBytes (Instr.push [Reg.edi, Reg.ebx, Reg.edx, Reg.eax]) = 16 := rfl
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, firstFlush, flush, ghCall,
-    ghash1, textAbsorb, streamDecrypt, stackUse, GcmImpl.callees, ctrFn, ctr_stack', vg.gh.stack, Nat.max_le]
-  decide +kernel
+    ghash1, textAbsorb, streamDecrypt, stackUse, GcmImpl.callees, vg.gh.stack, Nat.max_le]
+  repeat' apply And.intro
+  all_goals first | omega_using [hc, hp] | decide
 
 theorem streamFinish_noEsp :
-    (streamFinish vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+    (streamFinish vg.callees ci.fn).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [ctrCall, finTag, flush, ghCall, ghash1, lens, tag, streamFinish, Code.allInstrs, GcmImpl.callees,
-    noEsp_of ctr_nosp, noEsp_of vg.gh.nosp, Bool.true_and, Bool.and_true]
+    noEsp_of ci.nosp, noEsp_of vg.gh.nosp, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem streamFinish_stackUse : stackUse (streamFinish vg.callees) ≤ 1536 := by
-  simp only [ctrCall, finTag, flush, ghCall, ghash1, lens, tag, streamFinish, stackUse, GcmImpl.callees, ctrFn,
-    ctr_stack', vg.gh.stack, Nat.max_le]
-  decide +kernel
+theorem streamFinish_stackUse : stackUse (streamFinish vg.callees ci.fn) ≤ 1536 := by
+  have hc := ci.stack
+  have hp : X86.frameBytes (Instr.push [Reg.edi, Reg.ebx, Reg.edx, Reg.eax]) = 16 := rfl
+  simp only [ctrCall, finTag, flush, ghCall, ghash1, lens, tag, streamFinish, stackUse, GcmImpl.callees,
+    vg.gh.stack, Nat.max_le]
+  repeat' apply And.intro
+  all_goals first | omega_using [hc, hp] | decide
 
 theorem streamVerify_noEsp :
-    (streamVerify vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+    (streamVerify vg.callees ci.fn).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [ctrCall, finTag, flush, ghCall, ghash1, lens, tag, streamVerify, Code.allInstrs, GcmImpl.callees,
-    noEsp_of ctr_nosp, noEsp_of vg.gh.nosp, Bool.true_and, Bool.and_true]
+    noEsp_of ci.nosp, noEsp_of vg.gh.nosp, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem streamVerify_stackUse : stackUse (streamVerify vg.callees) ≤ 1536 := by
-  simp only [ctrCall, finTag, flush, ghCall, ghash1, lens, tag, streamVerify, stackUse, GcmImpl.callees, ctrFn,
-    ctr_stack', vg.gh.stack, Nat.max_le]
-  decide +kernel
+theorem streamVerify_stackUse : stackUse (streamVerify vg.callees ci.fn) ≤ 1536 := by
+  have hc := ci.stack
+  have hp : X86.frameBytes (Instr.push [Reg.edi, Reg.ebx, Reg.edx, Reg.eax]) = 16 := rfl
+  simp only [ctrCall, finTag, flush, ghCall, ghash1, lens, tag, streamVerify, stackUse, GcmImpl.callees,
+    vg.gh.stack, Nat.max_le]
+  repeat' apply And.intro
+  all_goals first | omega_using [hc, hp] | decide
 
-theorem seal_noEsp : («seal» vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+theorem seal_noEsp : («seal» vg.callees ci.fn).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, flush, ghCall, ghash1, j0,
-    j0hash, lens, oneAad, oneCrypt, oneTag, tag, «seal», Code.allInstrs, GcmImpl.callees, noEsp_of ctr_nosp,
+    j0hash, lens, oneAad, oneCrypt, oneTag, tag, «seal», Code.allInstrs, GcmImpl.callees, noEsp_of ci.nosp,
     noEsp_of vg.gh.nosp, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem seal_stackUse : stackUse («seal» vg.callees) ≤ 1536 := by
+theorem seal_stackUse : stackUse («seal» vg.callees ci.fn) ≤ 1536 := by
+  have hc := ci.stack
+  have hp : X86.frameBytes (Instr.push [Reg.edi, Reg.ebx, Reg.edx, Reg.eax]) = 16 := rfl
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, flush, ghCall, ghash1, j0,
-    j0hash, lens, oneAad, oneCrypt, oneTag, tag, «seal», stackUse, GcmImpl.callees, ctrFn, ctr_stack',
+    j0hash, lens, oneAad, oneCrypt, oneTag, tag, «seal», stackUse, GcmImpl.callees,
     vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons, List.length_nil, Nat.zero_le, true_and, and_true]
-  decide +kernel
+  repeat' apply And.intro
+  all_goals first | omega_using [hc, hp] | decide
 
-theorem open_noEsp : («open» vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+theorem open_noEsp : («open» vg.callees ci.fn).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, flush, ghCall, ghash1, j0,
-    j0hash, lens, oneAad, oneCrypt, oneTag, tag, «open», Code.allInstrs, GcmImpl.callees, noEsp_of ctr_nosp,
+    j0hash, lens, oneAad, oneCrypt, oneTag, tag, «open», Code.allInstrs, GcmImpl.callees, noEsp_of ci.nosp,
     noEsp_of vg.gh.nosp, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem open_stackUse : stackUse («open» vg.callees) ≤ 1536 := by
+theorem open_stackUse : stackUse («open» vg.callees ci.fn) ≤ 1536 := by
+  have hc := ci.stack
+  have hp : X86.frameBytes (Instr.push [Reg.edi, Reg.ebx, Reg.edx, Reg.eax]) = 16 := rfl
   simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, flush, ghCall, ghash1, j0,
-    j0hash, lens, oneAad, oneCrypt, oneTag, tag, «open», stackUse, GcmImpl.callees, ctrFn, ctr_stack',
+    j0hash, lens, oneAad, oneCrypt, oneTag, tag, «open», stackUse, GcmImpl.callees,
     vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons, List.length_nil, Nat.zero_le, true_and, and_true]
-  decide +kernel
+  repeat' apply And.intro
+  all_goals first | omega_using [hc, hp] | decide
 
 /-- A state satisfying `vg_sm4_gcm_init`'s precondition, without the working
 space: a 16-byte key at `0x1000` and the context at `0x2000`, as stack
@@ -2214,12 +2233,12 @@ theorem initFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.initContract X86.abi 4112).pre s
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [initFrameSat, initSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using initFrameSat
 
-theorem init_framed (ki : KeyImpl) :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2576 2 (init ki.fn))
+theorem init_framed (ki : KeyImpl) (ci : CtrImpl) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2576 2 (init ki.fn ci.fn))
       (Spec.Sm4.Gcm.initContract X86.abi 4112) :=
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (post := Spec.Sm4.Gcm.initPost X86.abi.ptrBits) (wa := true) (stack := 1536) (bytes := 2576)
-    (init_verified ki) (by decide) (init_noEsp ki) (init_stackUse ki)
+    (init_verified ki ci) (by decide) (init_noEsp ki ci) (init_stackUse ki ci)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (initPost_local _) (fun vs m m₁ m₂ r hl _ => initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 /-- A state satisfying the preconditions of `vg_sm4_gcm_stream_encrypt` and
@@ -2234,12 +2253,12 @@ theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamEncryptContract X
     [crFrameSat, crSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using crFrameSat
 
 theorem streamEncrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2600 8 (streamEncrypt vg.callees))
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2600 8 (streamEncrypt vg.callees ci.fn))
       (Spec.Sm4.Gcm.streamEncryptContract X86.abi 4136) :=
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Sm4.Gcm.streamEncryptPost X86.abi.ptrBits) (wa := true) (stack := 1536)
-    (bytes := 2600) (streamEncrypt_verified (vg := vg)) (by decide) (streamEncrypt_noEsp vg)
-    (streamEncrypt_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (bytes := 2600) (streamEncrypt_verified (vg := vg) (ci := ci)) (by decide) (streamEncrypt_noEsp vg ci)
+    (streamEncrypt_stackUse vg ci) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (streamEncryptPost_local _) (fun vs m m₁ m₂ r hl _ => streamEncryptPostOut_local _ vs m m₁ m₂ r hl) streamEncryptFrameSat_pre
 
 theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract X86.abi 4136).pre s := by
@@ -2248,12 +2267,12 @@ theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract X
     [crFrameSat, crSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using crFrameSat
 
 theorem streamDecrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2600 8 (streamDecrypt vg.callees))
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2600 8 (streamDecrypt vg.callees ci.fn))
       (Spec.Sm4.Gcm.streamDecryptContract X86.abi 4136) :=
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Sm4.Gcm.streamDecryptPost X86.abi.ptrBits) (wa := true) (stack := 1536)
-    (bytes := 2600) (streamDecrypt_verified (vg := vg)) (by decide) (streamDecrypt_noEsp vg)
-    (streamDecrypt_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (bytes := 2600) (streamDecrypt_verified (vg := vg) (ci := ci)) (by decide) (streamDecrypt_noEsp vg ci)
+    (streamDecrypt_stackUse vg ci) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (streamDecryptPost_local _) (fun vs m m₁ m₂ r hl _ => streamDecryptPostOut_local _ vs m m₁ m₂ r hl) streamDecryptFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_finish`'s precondition, without
@@ -2267,12 +2286,12 @@ theorem finFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamFinishContract X86.abi 4132
     [finFrameSat, finSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finFrameSat
 
 theorem streamFinish_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2596 7 (streamFinish vg.callees))
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2596 7 (streamFinish vg.callees ci.fn))
       (Spec.Sm4.Gcm.streamFinishContract X86.abi 4132) :=
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64)
     (n := 320) (post := Spec.Sm4.Gcm.streamFinishPost X86.abi.ptrBits) (wa := true) (stack := 1536)
-    (bytes := 2596) (streamFinish_verified (vg := vg)) (by decide) (streamFinish_noEsp vg)
-    (streamFinish_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (bytes := 2596) (streamFinish_verified (vg := vg) (ci := ci)) (by decide) (streamFinish_noEsp vg ci)
+    (streamFinish_stackUse vg ci) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (streamFinishPost_local _) (fun vs m m₁ m₂ r hl _ => streamFinishPostOut_local _ vs m m₁ m₂ r hl) finFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_verify`'s precondition, without
@@ -2286,12 +2305,12 @@ theorem verFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract X86.abi 4136
     [verFrameSat, verSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using verFrameSat
 
 theorem streamVerify_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2600 8 (streamVerify vg.callees))
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2600 8 (streamVerify vg.callees ci.fn))
       (Spec.Sm4.Gcm.streamVerifyContract X86.abi 4136) :=
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64)
     (n := 320) (post := Spec.Sm4.Gcm.streamVerifyPost X86.abi.ptrBits) (wa := true) (stack := 1536)
-    (bytes := 2600) (streamVerify_verified (vg := vg)) (by decide) (streamVerify_noEsp vg)
-    (streamVerify_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (bytes := 2600) (streamVerify_verified (vg := vg) (ci := ci)) (by decide) (streamVerify_noEsp vg ci)
+    (streamVerify_stackUse vg ci) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (streamVerifyPost_local _) (fun vs m m₁ m₂ r hl _ => streamVerifyPostOut_local _ vs m m₁ m₂ r hl) verFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_seal`'s precondition, without the working
@@ -2305,12 +2324,12 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.sealContract X86.abi 4136).pre s
     [sealFrameSat, sealSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using sealFrameSat
 
 theorem seal_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2600 8 («seal» vg.callees))
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2600 8 («seal» vg.callees ci.fn))
       (Spec.Sm4.Gcm.sealContract X86.abi 4136) :=
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (post := Spec.Sm4.Gcm.sealPost X86.abi.ptrBits) (wa := true) (stack := 1536)
-    (bytes := 2600) (seal_verified (vg := vg)) (by decide) (seal_noEsp vg)
-    (seal_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (sealPost_local _) (fun vs m m₁ m₂ r hl _ => sealPostOut_local _ vs m m₁ m₂ r hl)
+    (bytes := 2600) (seal_verified (vg := vg) (ci := ci)) (by decide) (seal_noEsp vg ci)
+    (seal_stackUse vg ci) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (sealPost_local _) (fun vs m m₁ m₂ r hl _ => sealPostOut_local _ vs m m₁ m₂ r hl)
     sealFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_open`'s precondition, without the working
@@ -2324,13 +2343,13 @@ theorem openFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.openContract X86.abi 4140).pre s
     [openFrameSat, openSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using openFrameSat
 
 theorem open_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2604 9 («open» vg.callees))
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2604 9 («open» vg.callees ci.fn))
       (Spec.Sm4.Gcm.openContract X86.abi 4140) :=
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (post := Spec.Sm4.Gcm.openPost X86.abi.ptrBits) (wa := true) (stack := 1536)
     (leak := some (Spec.Sm4.Gcm.openLeak X86.abi.ptrBits))
-    (bytes := 2604) (open_verified (vg := vg)) (by decide) (open_noEsp vg)
-    (open_stackUse vg) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (openPost_local _) (fun vs m m₁ m₂ r hl _ => openPostOut_local _ vs m m₁ m₂ r hl)
+    (bytes := 2604) (open_verified (vg := vg) (ci := ci)) (by decide) (open_noEsp vg ci)
+    (open_stackUse vg ci) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (openPost_local _) (fun vs m m₁ m₂ r hl _ => openPostOut_local _ vs m m₁ m₂ r hl)
     openFrameSat_pre (hleak := openLeak_local _)
 
 end VG.Proof.Sm4Gcm.X86

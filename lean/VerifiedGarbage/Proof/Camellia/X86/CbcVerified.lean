@@ -57,7 +57,7 @@ def decPost (s s' : State) : Prop :=
 /-- `fbX86`'s precondition gives the modes'. -/
 theorem seqPre_of {post : State → State → Prop} {M : Mode} (d : Dir) (hstep : M.step = 16) {s : State}
     (h : (fbX86 post).pre s) : SeqPre (dirCore d) M s := by
-  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, hRn, sD, sV, sS, sA, sE⟩ := h
+  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, hRn, sD, sV, sS, sA, sE, sK⟩ := h
   have hL := (dirCoreSpec d).layout
   refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, slots_eq]),
       (by simp only [dirCore, slots_eq]; omega)⟩, (by rw [hwr]; simp [dirCore]),
@@ -80,7 +80,7 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (d : Dir) (hstep 
 theorem keyArgs_of {post : State → State → Prop} (d : Dir) {s : State} (h : (fbX86 post).pre s) :
     KeyArgs s [Modes.X86.scrR s (dirCore d)]
       ((arg s 1).toNat, schedWords s.mem ((arg s 0).setWidth 64) (arg s 1).toNat) := by
-  obtain ⟨hrd, hwr, dKS, -, -, -, dAD, dAV, dAS, -, -, -, fK, -, -, -, fE, hRn, sD, sV, sS, sA, sE⟩ := h
+  obtain ⟨hrd, hwr, dKS, -, -, -, dAD, dAV, dAS, -, -, -, fK, -, -, -, fE, hRn, sD, sV, sS, sA, sE, sK⟩ := h
   have inA : ∀ i < 6, InRegions (s.rd ++ s.wr) (s.ea (VG.Impl.Aes.X86.argOp i)) 4 := fun i hi =>
     ⟨⟨argAddr s 0, 24⟩, by rw [hrd]; simp, by
       rw [show s.ea (VG.Impl.Aes.X86.argOp i) = argAddr s i from rfl, argAddr_eq s (n := 6) (by omega_using [fE]) hi]
@@ -89,7 +89,8 @@ theorem keyArgs_of {post : State → State → Prop} (d : Dir) {s : State} (h : 
     rw [show s.ea (VG.Impl.Aes.X86.argOp i) = argAddr s i from rfl, argAddr_eq s (n := 6) (by omega_using [fE]) hi]
     exact VG.Offset.sub_base _ (by omega_using [hi])
   refine ⟨arg s 0, inA 0 (by decide), rfl, inA 1 (by decide), ?_, hRn, rfl, by rw [hrd]; simp, fK,
-    fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, ?_⟩
+    fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, ?_, ?_,
+    inA 5 (by decide), fun r hr => ?_, fun r hr => ?_, ?_⟩
   · show arg s 1 = BitVec.ofNat 32 (arg s 1).toNat
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]; exact dKS
@@ -107,6 +108,12 @@ theorem keyArgs_of {post : State → State → Prop} (d : Dir) {s : State} (h : 
     rw [show Proof.Modes.X86.stkRegion (s.gpr .esp) 16 = _ from stk_eq sE d]; exact sS
   · rw [show Proof.Modes.X86.stkRegion (s.gpr .esp) 16 = _ from stk_eq sE d]
     exact sA.sub_right (subA 1 (by decide))
+  · rw [show Proof.Modes.X86.stkRegion (s.gpr .esp) 16 = _ from stk_eq sE d]; exact sK
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]
+    exact dAS.sub_left (subA 5 (by decide))
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]; rfl
+  · rw [show Proof.Modes.X86.stkRegion (s.gpr .esp) 16 = _ from stk_eq sE d]
+    exact sA.sub_right (subA 5 (by decide))
 
 theorem data_eq (d : Dir) (m : Mem) (s : State) :
     Proof.Modes.chunksAt (4 * (dirCore d).bw) m ((arg s 3).setWidth 64) (arg s 4).toNat = dataAt m s := rfl

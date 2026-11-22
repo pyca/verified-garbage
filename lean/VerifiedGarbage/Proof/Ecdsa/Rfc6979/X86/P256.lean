@@ -33,7 +33,7 @@ P-256 as the proof's curve (`p256`): scalars of 4 64-bit words, the order
 correct (given the group law) and constant time against its contract
 (`coreK` at P-256's sizes). Its seven-bit comb reads the same immutable
 table as public-key generation and verification, using four bytes of stack
-for position-independent addressing, within the 20 its calls use.
+for position-independent addressing, within the 24 the call of its comb uses.
 -/
 
 @[expose] public section

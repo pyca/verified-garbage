@@ -142,15 +142,6 @@ def «seal» (v : Calls) : Prog isa :=
 def init (v : Calls) : Prog isa :=
   scrubAll v.initWn 0 own (withStackScratch v.initWn .x3 (AesGcm.AArch64.init v.callees))
 
-/-- `vg_aes_gcm_open`, which returns 32 bits: its working space after copies
-of its two stack arguments. -/
-def «open» (v : Calls) : Prog isa :=
-  scrubAll (v.wn + 32) 32 own (withStackArgScratch (v.wn + 32) 2 (openCode v))
-
-/-- `vg_aes_gcm_open_to`, as `open`, with four stack arguments. -/
-def openTo (v : Calls) : Prog isa :=
-  scrubAll (v.wn + 48) 32 own (withStackArgScratch (v.wn + 48) 4 (openToCode v))
-
 /-- `vg_aes_gcm_seal_gather`, calling `seal`, the instance of
 `vg_aes_gcm_seal` of the same variant. -/
 def sealGather (v : Calls) : Prog isa :=

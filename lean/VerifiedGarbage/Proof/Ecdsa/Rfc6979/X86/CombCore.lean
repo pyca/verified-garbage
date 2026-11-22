@@ -26,10 +26,6 @@ variable {c : Cfg} {d : CombData}
 theorem combConsts_eq (hcd : c.comb = some d) : c.combConsts = [(d.tsym, c.combWords d)] := by
   simp [Cfg.combConsts, hcd]
 
-/-- A curve with a comb uses the 20 bytes of stack of its calls. -/
-theorem stk_comb (hcd : c.comb = some d) : c.stk = 20 := by
-  simp [Cfg.stk, hcd]
-
 theorem coreComb_pre {s : State} (h : (coreK c).pre s) : CombSignPre c s := by
   obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, ds, gs, ks,
     ht⟩ := h
@@ -47,10 +43,8 @@ theorem coreComb_pub (hcd : c.comb = some d) {s t : State} (h : (coreK c).pub s 
   | 4, _ => exact a4
 
 /-- The stack of the parts of the signature with a comb, from the whole code's. -/
-theorem signComb_spMul (hcd : c.comb = some d) (hsp : SpOk c.signComb c.stk) :
-    SpOk (c.signWithMul c.gMul) 20 := by
-  rw [stk_comb hcd] at hsp
-  exact SpOk.right (a := c.tableAddr) hsp
+theorem signComb_spMul (hsp : SpOk c.signComb c.stk) : SpOk (c.signWithMul c.gMul) c.stk :=
+  SpOk.right (a := c.tableAddr) hsp
 
 /-- `vg_ecdsa_<curve>_sign_k`, with a comb, computes the signature. -/
 theorem coreX_comb (hc : CfgOk c) (hL : Weierstrass.Law c.C) (hT : CombTbls c) (hcd : c.comb = some d)
@@ -61,10 +55,9 @@ theorem coreX_comb (hc : CfgOk c) (hL : Weierstrass.Law c.C) (hT : CombTbls c) (
     intro d' hd'
     have he : d = d' := Option.some.inj (hcd.symm.trans hd')
     rw [← he]; exact hd
-  have hm := signComb_spMul hcd hsp
-  have hG : SpOk c.gMul 20 := SpOk.left (SpOk.right (a := c.signPrep) hm)
-  have hTl : SpOk c.signTail c.stk := by
-    rw [stk_comb hcd]; exact SpOk.right (SpOk.right (a := c.signPrep) hm)
+  have hm := signComb_spMul hsp
+  have hG : SpOk c.gMul c.stk := SpOk.left (SpOk.right (a := c.signPrep) hm)
+  have hTl : SpOk c.signTail c.stk := SpOk.right (SpOk.right (a := c.signPrep) hm)
   obtain ⟨tr, t, he, ha, hp⟩ := signComb_ok hc hL hT co hcd hG hTl (coreComb_pre h)
   refine ⟨tr, t, he, ha, ?_⟩
   simp only [coreK, coreSigOf, SignPost, ptr, BitVec.setWidth_append_eq_right] at hp ⊢
@@ -79,7 +72,7 @@ theorem coreCT_comb (hc : CfgOk c) (hL : Weierstrass.Law c.C) (hT : CombTbls c) 
     (hd : CombOk c d) (hG : GMulRel c d true) (ct : SignStagesCT c) (hsp : SpOk c.signComb c.stk) :
     ConstantTime isa (coreK c).pre (coreK c).pub c.signComb := by
   intro s t tr₁ tr₂ s' t' hs ht hp
-  exact signComb_ct hc hL hT hcd hd hG ct (signComb_spMul hcd hsp)
+  exact signComb_ct hc hL hT hcd hd hG ct (signComb_spMul hsp)
     s t tr₁ tr₂ s' t' (coreComb_pre hs) (coreComb_pre ht) (coreComb_pub hcd hp)
 
 end VG.Proof.Ecdsa.Rfc6979.X86

@@ -39,4 +39,26 @@ def expBytes : Prog isa := .loop (.seq expByteHead (.seq expBits (.block expByte
 /-- Encode the input, scan the exponent bytes, then convert back to ordinary form. -/
 def expPhase : Prog isa := .seq expInit (.seq expBytes (montOp 6 6 7))
 
+/-! ## By any Montgomery product `op`
+
+The same steps, each product by `op` (its squares `op 6 6 6`, which the
+shared product computes as squares). -/
+
+def expInitWith (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (smallConst 7 1) (.seq (op 6 4 7) (op 5 1 4))
+
+def expBitWith (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (op 6 6 6) (.seq (.block expBitTest) (.ite .ne (op 6 6 5) (.block [])))
+
+def expBitRoundWith (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (expBitWith op) (.seq (.block expShift) (.block expDecrement))
+
+def expBitsWith (op : Nat → Nat → Nat → Prog isa) : Prog isa := .loop (expBitRoundWith op) .ne
+
+def expBytesWith (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .loop (.seq expByteHead (.seq (expBitsWith op) (.block expByteNext))) .ne
+
+def expPhaseWith (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (expInitWith op) (.seq (expBytesWith op) (op 6 6 7))
+
 end VG.Impl.Bignum.Arm

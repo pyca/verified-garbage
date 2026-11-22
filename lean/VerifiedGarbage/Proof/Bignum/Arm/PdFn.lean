@@ -16,9 +16,9 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 
-theorem pdFn_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb : List Byte}
+theorem pdFn_ok (A : CallOp) (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb : List Byte}
     (h : PdFnInput base dst np ep xp len k eLen N R eb xb s) :
-    WP isa PdFn.code s fun t => abiPreserved s t ∧
+    WP isa (PdFn.code A.op) s fun t => abiPreserved s t ∧
       (if Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb) then PdOutput dst k N R eb xb t
        else t.gpr .r0 = 0 ∧ Spec.Rsa.bytesAt t.mem (State.addr dst) k = List.replicate k 0) := by
   unfold PdFn.code
@@ -27,13 +27,13 @@ theorem pdFn_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : Na
   refine WP.mono (pd_entry_ready s h) ?_
   rintro u ⟨ready, _, savedU, restU⟩
   rw [WP.seq_iff]
-  refine WP.mono (pdBody_ok u ready) ?_
+  refine WP.mono (pdBody_ok A u ready) ?_
   rintro v ⟨result, frameV, restV⟩
   have spV : v.sp = s.sp - BitVec.ofNat 32 56 := restV.sp.trans restU.sp
   have wrV : v.wr = (pcPushed s).wr := restV.wr.trans restU.wr
   have saved : Spill.Saved v.mem (State.addr v.sp) s.gpr pcCalleeSaved := by
     rw [restV.sp]
-    apply public_callee_saved savedU frameV
+    apply public_callee_saved savedU frameV ready.buffers.call.fit
     · rw [restU.sp]; exact h.stackWorkspace
     · rw [restU.sp]; exact h.stackOutput
   have fit : v.sp.toNat + 56 ≤ 2 ^ 32 := by

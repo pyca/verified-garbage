@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Ecdsa.X86
 
-abbrev vCombSpec : Contract isa := Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86.abi.withConsts p256Comb.combConsts) 20
+abbrev vCombSpec : Contract isa := Proof.Ecdsa.verifyContract Spec.Ecdsa.P256.inst (X86.abi.withConsts p256Comb.combConsts) 24
 
 def vCombLocal : Contract isa where
   pre := VCombPre p256Comb
@@ -38,21 +38,21 @@ theorem vComb_pre {s : State} (h : vCombSpec.pre s) :
   obtain ⟨lo, sp, _drop, held, fit, dw, _ret, st, -, _take, wr,
     ps, _pa, ds, _da, ss, _sia, sa, _rp, _rd, _rsi, rs, _ra,
     spk, sdg, ssi, _ss, _sa, fp, fd, fsi, fs⟩ := h
-  have hb : below (s.gpr .esp) 20 = ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩ := by
+  have hb : below (s.gpr .esp) 24 = ⟨(s.gpr .esp).setWidth 64 - 24#64, 24⟩ := by
     unfold below
     rw [VG.X86.Taint.sub_setWidth lo]
   rw [← hb] at st spk sdg ssi
-  have h4 := VG.Proof.Weierstrass.X86.below_le_sub (sp := s.gpr .esp) (a := 4) (b := 20) (by decide) lo
+  have h4 := VG.Proof.Weierstrass.X86.below_le_sub (sp := s.gpr .esp) (a := 4) (b := 24) (by decide) lo
   refine ⟨⟨rfl, rfl, ps, ds, ss, sa.symm, rs, fp, fd, fsi, fs, sp, lo, _ss⟩, ?_, ?_, ?_, ?_⟩
   · change TblsHeld p256Comb (s.withRegions (vCombRd s) (vCombWr s))
-      (below (s.gpr .esp) 20 :: vCombWr s)
+      (below (s.gpr .esp) 24 :: vCombWr s)
     simp only [TblsHeld, p256Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil,
       Sig.forall_mem_const_single]
     simp only [Abi.constsHeld, List.mem_singleton, forall_eq, State.withRegions_mem]
     change (∀ i < p256W.length, s.mem.readW ((s.syms "VG_P256_COMB").setWidth 64 +
       BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0) ∧
       ((s.syms "VG_P256_COMB").setWidth 64).toNat + 8 * p256W.length ≤ 2 ^ 32 ∧
-      ∀ r ∈ below (s.gpr .esp) 20 :: vCombWr s,
+      ∀ r ∈ below (s.gpr .esp) 24 :: vCombWr s,
         Region.Disjoint ⟨(s.syms "VG_P256_COMB").setWidth 64, 8 * p256W.length⟩ r
     refine ⟨held, ?_, ?_⟩
     · simp only [BitVec.toNat_setWidth]; omega_using [fit]

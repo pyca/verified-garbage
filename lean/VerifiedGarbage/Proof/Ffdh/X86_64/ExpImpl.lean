@@ -38,18 +38,21 @@ def ExpSlots (sp sl : Nat) : Prop := (sp = sX ∧ sl = sXl) ∨ (sp = sEp ∧ sl
 
 /-- An exponentiation of the domain operations. -/
 structure ExpImpl where
+  /-- The code as emitted, which may call functions of its own. -/
   code : (Nat → Nat → Nat → Prog isa) → Nat → Nat → List (Prog isa)
+  /-- The code as proven: `code` with its own calls inlined (`inline`). -/
+  codeI : (Nat → Nat → Nat → Prog isa) → Nat → Nat → List (Prog isa) := code
   E : (M : Mont) → CrtExpL M
-  code_eq : ∀ M, (E M).code = code M.mm
+  code_eq : ∀ M, (E M).code = codeI M.mm
   inline : ∀ mul sp sl, ExpSlots sp sl →
     @List.map (Code Instr Cond) (Prog isa) (@Code.inline Instr Cond) (code mul sp sl) =
-      code (fun o a b => (mul o a b).inline) sp sl
+      codeI (fun o a b => (mul o a b).inline) sp sl
   inlineOk : ∀ mul, (∀ o a b, (mul o a b).InlineOk = true) → ∀ sp sl, ExpSlots sp sl →
     (code mul sp sl).all Code.InlineOk = true
   spSafe : ∀ mul, (∀ o a b, (mul o a b).allInstrs (fun i => !isa.writesSp i) = true) → ∀ sp sl, ExpSlots sp sl →
-    (code mul sp sl).all (fun c => c.allInstrs (fun i => !isa.writesSp i)) = true
+    (codeI mul sp sl).all (fun c => c.allInstrs (fun i => !isa.writesSp i)) = true
   ctl : ∀ mul, (∀ o a b, (mul o a b).allInstrs (fun i => !loadsMxcsr i) = true) → ∀ sp sl, ExpSlots sp sl →
-    (code mul sp sl).all ctlOk = true
+    (codeI mul sp sl).all ctlOk = true
   ctX : ∀ M, ExpCTL (E M) sX sXl
   ctE : ∀ M, ExpCTL (E M) sEp sEl
   /-- The level of its own vector instructions. -/

@@ -27,7 +27,7 @@ open VG.X86
 
 /-- `vg_ecdsa_secp256k1_verify`, as emitted. -/
 def verifySecp256k1 : Prog isa :=
-  Impl.Scrub.X86.scrubAll 32 128
+  Impl.Scrub.X86.scrubAll 32 132
     (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false (Impl.Ecdsa.Verify.X86.verifySecp256k1))
 
 /-- `vg_ecdsa_secp256k1_sign`, as emitted, with `f` the functions its table's calls may reach. -/

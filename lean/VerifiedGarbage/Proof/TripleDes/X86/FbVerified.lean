@@ -577,7 +577,7 @@ theorem cryptW_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDe
       (B.setWidth 64 + BitVec.ofNat 64 off) = r'.base + BitVec.ofNat 64 o ∧ o + n ≤ r'.len :=
     fun off n h => ⟨_, by rw [wr₂]; exact hw, off, rfl, h⟩
   obtain e0 : B.setWidth 64 = B.setWidth 64 + BitVec.ofNat 64 0 := by simp
-  obtain b12 : Region.Sub (below (s.gpr .esp) 12) (stkRegion (s.gpr .esp) 16) := below_sub (by decide) hst'
+  obtain b12 : Region.Sub (below (s.gpr .esp) 16) (stkRegion (s.gpr .esp) 16) := below_sub (by decide) hst'
   obtain hpre : Ecb.BatchCallPre .eax .edi s₂ := by
     refine ⟨Covers.right (Covers.of_sub fun r hr => ?_), Covers.of_sub fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -598,7 +598,7 @@ theorem cryptW_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.TripleDe
   rw [aW, esp₂, m₂] at hfr
   have hblk := hc.blocks
   rw [edi₂, aK, m₂] at hblk
-  obtain copyOut : ∀ r ∈ [(⟨B.setWidth 64, 784⟩ : Region), below (s.gpr .esp) 12],
+  obtain copyOut : ∀ r ∈ [(⟨B.setWidth 64, 784⟩ : Region), below (s.gpr .esp) 16],
       Region.Disjoint ⟨slotA B wideSchedSlot, 384⟩ r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

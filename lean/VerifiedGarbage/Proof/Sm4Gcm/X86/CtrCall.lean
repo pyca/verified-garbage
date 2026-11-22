@@ -46,10 +46,10 @@ is constant time (`ctr_ct`, `key_ct`) by the callee's own proof, when the
 arguments are the same in both runs. They keep their working space on the
 stack, and are called by their shared contracts (`Proof.Sm4.ctr32Contract`
 with 1516 bytes of stack, `Spec.Sm4.expandKeyContract` with 1448), from the
-layout the call gives them. The key schedule is any implementation of it
-(`KeyImpl`: its code, that it meets that contract, and what its callers'
-stack and cleanup need of it), of which `KeyImpl.scalar` is the baseline
-ISA's. The calls of `vg_ghash` are AES-GCM's
+layout the call gives them. Each is any implementation of it (`CtrImpl`,
+`KeyImpl`: its code, that it meets that contract, and what its callers'
+stack and cleanup need of it), of which `CtrImpl.scalar` and
+`KeyImpl.scalar` are the baseline ISA's. The calls of `vg_ghash` are AES-GCM's
 (`Proof/AesGcm/X86/Callee.lean`).
 -/
 
@@ -239,16 +239,66 @@ theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p
     (hd : ∀ r ∈ rs, (⟨p, 128⟩ : Region).Disjoint r) : Spec.Sm4.scheduleAt m' p = Spec.Sm4.scheduleAt m p :=
   Proof.Sm4.scheduleAt_congr fun i hi => hf.bytes (R := ⟨p, 128⟩) hd (by show 128 ≤ 2 ^ 64; omega_using []) hi
 
-theorem ctr_call {s : State} {K C D : BitVec 32} {n : Nat} (h : CtrCall s K C D n) :
-    WP isa (ctrCall) s (CtrPost s K C D n) := by
+/-- An implementation of `vg_sm4_ctr32` on x86, as verified code calls it:
+an internal function, which keeps its working space on its own stack. -/
+structure CtrImpl where
+  /-- Its symbol and code. -/
+  fn : Fn
+  /-- It is correct. -/
+  ok : ∀ s, ctrK.pre s → ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ ctrK.post s s'
+  /-- It is constant time. -/
+  ct : ConstantTime isa ctrK.pre ctrK.pub fn.code
+  /-- It never writes the stack pointer, and its calls and frames use at most
+  the 1516 bytes of stack its contract reserves. -/
+  nosp : NoSp fn.code
+  stack : stackUse fn.code ≤ 1516
+  spSafe : fn.code.all (fun i => !isa.writesSp i) = true
+  /-- Its code has no MMX instruction and makes no indirect call (`calleeOk`):
+  what the cleanup of every function that calls it needs of it, with its
+  stack (`X86.Scrub.calleeSide`), so that each proves only its own code,
+  whatever the implementation (`Proof/Framework/X86/ScrubCall.lean`). -/
+  scrub : calleeOk fn.code = true
+  /-- What the names of its callers' instances end with (nothing for the
+  baseline implementation). -/
+  suffix : String
+  /-- The CPU features its code requires, which its callers require too. -/
+  features : List String
+
+theorem ctr_ok (s : State) (h : ctrK.pre s) :
+    ∃ t s', Exec isa ctrFn.code s t s' ∧ abiPreserved s s' ∧ ctrK.post s s' :=
+  Proof.Sm4.X86.Ctr32.ctr32_framed.1 s h
+
+theorem ctr_ctK : ConstantTime isa ctrK.pre ctrK.pub ctrFn.code := Proof.Sm4.X86.Ctr32.ctr32_framed.2.1
+
+theorem ctr_calleeOk : calleeOk ctrFn.code = true := by unfold ctrFn; lit_decide
+
+namespace CtrImpl
+
+/-- `vg_sm4_ctr32`'s code in the baseline ISA, its working space in a frame
+of its own. -/
+def scalar : CtrImpl where
+  fn := ctrFn
+  ok := ctr_ok
+  ct := ctr_ctK
+  nosp := ctr_nosp
+  stack := Nat.le_of_eq ctr_stack
+  spSafe := ctr_spSafe
+  scrub := ctr_calleeOk
+  suffix := ""
+  features := []
+
+end CtrImpl
+
+theorem ctr_call (ci : CtrImpl) {s : State} {K C D : BitVec 32} {n : Nat} (h : CtrCall s K C D n) :
+    WP isa (ctrCall ci.fn) s (CtrPost s K C D n) := by
   have hn := toNat_ofNat32 h.n_lt
   unfold ctrCall
-  refine WP.callWith (rs := ctrRegs) (k := ctrK) Proof.Sm4.X86.Ctr32.ctr32_framed.1 ctr_nosp (by simp)
-    ctrRegs_esp (by rw [ctr_stack']; have := h.esp
-                    simp only [List.length_cons, List.length_nil]; omega_using [this])
+  have hst := ci.stack
+  have hlen : ctrRegs.length = 4 := rfl
+  refine WP.callWith (rs := ctrRegs) (k := ctrK) ci.ok ci.nosp (by simp)
+    ctrRegs_esp (by have := h.esp; omega_using [this, hst, hlen])
     h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, a3⟩ := h.args
-  rw [ctr_stack'] at f'
   have fE := callEntry_frame h.fit ctrRegs_esp
   rw [show 4 * ctrRegs.length + 4 = 20 from rfl] at fE
   have fE' : Frame [below (s.gpr .esp) 1536] s.mem (pushed ctrRegs s).callEntry.mem :=
@@ -271,13 +321,13 @@ theorem ctr_call {s : State} {K C D : BitVec 32} {n : Nat} (h : CtrCall s K C D 
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact ⟨⟨w64 D, 16 * n⟩, by simp, by rw [Nat.mul_comm]; exact fun _ h => h⟩
   · exact ⟨below (s.gpr .esp) 1536, by simp, VG.X86.below_sub (by decide) h.esp⟩
-  · exact ⟨below (s.gpr .esp) 1536, by simp, VG.X86.below_sub (by decide) h.esp⟩
+  · exact ⟨below (s.gpr .esp) 1536, by simp, VG.X86.below_sub (by omega_using [hst, hlen]) h.esp⟩
 
 /-- Calls of `vg_sm4_ctr32` with the same arguments and stack pointer in
 both runs are constant time. -/
-theorem ctr_ct {I : State → Prop} {K C D E : BitVec 32} {n : Nat}
-    (h : ∀ s, I s → CtrCall s K C D n ∧ s.gpr .esp = E) : CT I (ctrCall) := by
-  refine CT.callWith Proof.Sm4.X86.Ctr32.ctr32_framed.1 Proof.Sm4.X86.Ctr32.ctr32_framed.2.1 (ctrRd K)
+theorem ctr_ct (ci : CtrImpl) {I : State → Prop} {K C D E : BitVec 32} {n : Nat}
+    (h : ∀ s, I s → CtrCall s K C D n ∧ s.gpr .esp = E) : CT I (ctrCall ci.fn) := by
+  refine CT.callWith ci.ok ci.ct (ctrRd K)
     (ctrWr E C D n) fun s₁ s₂ i₁ i₂ => ?_
   obtain ⟨h₁, e₁⟩ := h s₁ i₁
   obtain ⟨h₂, e₂⟩ := h s₂ i₂
@@ -392,6 +442,14 @@ def scalar : KeyImpl where
   features := []
 
 end KeyImpl
+
+/-- The implementation of `vg_sm4_ctr32` that `vg_sm4_gcm_init` calls with
+the key schedule `k`: the first of `cs`, best first, whose CPU features are
+all among `k`'s, and the baseline's where there is none. The function then
+requires the features of `k` and no other, and its name ends with `k`'s
+suffix. -/
+def CtrImpl.forKey (cs : List CtrImpl) (k : KeyImpl) : CtrImpl :=
+  (cs.find? fun c => c.features.all k.features.contains).getD .scalar
 
 namespace KeyCall
 variable {s : State} {K C : BitVec 32} (h : KeyCall s K C)
@@ -656,8 +714,8 @@ theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {Ctx : B
   simp only [ciphOf]
   rw [scheduleAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by decide)))]
 
-/-- The call of `vg_sm4_ctr32`. -/
-abbrev ctrW : Prog isa := ctrCall
+/-- The call of `vg_sm4_ctr32`, by its implementation `t`. -/
+abbrev ctrW (t : Fn) : Prog isa := ctrCall t
 
 /-- Ready for `ctrW`: the arguments of `vg_sm4_ctr32` in their registers. -/
 structure CtrReady (Ctx St W SP : BitVec 32) (C Dp : BitVec 32) (nb : Nat) (s : State) : Prop where
@@ -696,7 +754,7 @@ structure CtrOut (Ctx St W SP : BitVec 32) (C Dp : BitVec 32) (nb : Nat) (s s' :
   wr : s'.wr = s.wr
 
 section
-variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay4 Ctx St W SP K) (hK : K = 1536)
+variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay4 Ctx St W SP K) (hK : K = 1536) {ci : CtrImpl}
 include L hK
 
 theorem CtrReady.call {C Dp : BitVec 32} {nb : Nat} {s : State}
@@ -719,8 +777,8 @@ theorem CtrReady.kept {C Dp : BitVec 32} {nb : Nat} {s : State}
 
 theorem ctrW_ok {C Dp : BitVec 32} {nb : Nat} {s : State}
     (h : CtrReady Ctx St W SP C Dp nb s) :
-    WP isa ctrW s (CtrOut Ctx St W SP C Dp nb s) := by
-  refine WP.mono (ctr_call (h.call L hK)) fun s₁ g => ?_
+    WP isa (ctrW ci.fn) s (CtrOut Ctx St W SP C Dp nb s) := by
+  refine WP.mono (ctr_call ci (h.call L hK)) fun s₁ g => ?_
   have gf := g.frame
   have hsp : below (s.gpr .esp) 1536 = below SP 1536 := by rw [h.esp]
   rw [hsp] at gf
@@ -735,8 +793,8 @@ theorem ctrW_ok {C Dp : BitVec 32} {nb : Nat} {s : State}
   · rw [g.wr]; exact h.wW
   · rw [ctx_frame gf hk, h.ctx]
 
-theorem ctrW_ct {C Dp : BitVec 32} {nb : Nat} : CT (CtrReady Ctx St W SP C Dp nb) ctrW :=
-  ctr_ct (E := SP) fun _ h => ⟨h.call L hK, h.esp⟩
+theorem ctrW_ct {C Dp : BitVec 32} {nb : Nat} : CT (CtrReady Ctx St W SP C Dp nb) (ctrW ci.fn) :=
+  ctr_ct ci (E := SP) fun _ h => ⟨h.call L hK, h.esp⟩
 
 end
 

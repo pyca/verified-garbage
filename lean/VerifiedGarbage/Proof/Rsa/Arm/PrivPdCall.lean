@@ -72,7 +72,7 @@ theorem kept_true (g : PrivGeometry) : Kept g fun _ => True := fun _ _ _ => triv
 theorem pc_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (slots : PrivSlots g s.mem) (args : PcArgs g s) :
     WP isa (.call v.pcName v.pc) s (PcPost g bs s) := by
-  refine WP.mono (private_call_ok h slots v.pcVerified v.pcStack (pcCall_pre h args)
+  refine WP.mono (private_call_ok h slots v.pcVerified (Nat.le_trans v.pcStack (by decide)) (pcCall_pre h args)
     (pcCovers h).1 (pcCovers h).2 (pcWrites_sub h.valid) (pcWrites_slots h.valid)) ?_
   rintro t ⟨ht, slotsT, frame, rest, post⟩
   unfold PcPost
@@ -137,7 +137,7 @@ theorem pd_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
     WP isa (.call v.pdName v.pd) s fun t => PrivContext g bs t ∧ PrivSlots g t.mem ∧
       Frame (pdWr g ++ [g.calleeRegion]) s.mem t.mem ∧ Rest callClobbers s t ∧
       PdOut g bs s t := by
-  refine WP.mono (private_call_ok h slots v.pdVerified v.pdStack (pdCall_pre h args)
+  refine WP.mono (private_call_ok h slots v.pdVerified (Nat.le_trans v.pdStack (by decide)) (pdCall_pre h args)
     (pdCovers h).1 (pdCovers h).2 pdWrites_sub (pdWrites_slots h.valid)) ?_
   rintro t ⟨ht, slotsT, frame, rest, post⟩
   refine ⟨ht, slotsT, frame, rest, ?_⟩

@@ -30,7 +30,7 @@ private def searchSat : State where
   rd := [⟨0x2000, 0⟩, ⟨0x8000, 24⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1100, 8⟩, ⟨0x3000, 8448⟩, ⟨0x6000, 128⟩]
 
-theorem search_sat : ∃ s, (Spec.Ffdh.sievedParameterSearchContract abi 232).pre s := by
+theorem search_sat : ∃ s, (Spec.Ffdh.sievedParameterSearchContract abi 280).pre s := by
   sig_implies_sat [Spec.Ffdh.sievedParameterSearchContract, Spec.Ffdh.parameterSearchSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
     [searchSat, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.scratchWords,

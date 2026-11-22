@@ -60,4 +60,7 @@ materialize_code transposeProg
 materialize_code encryptBatch
 materialize_code decryptBatch
 
+materialize_code passForwardCode := passRounds .encrypt
+materialize_code passBackwardCode := passRounds .decrypt
+
 end VG.Impl.TripleDes.X86.Bitslice

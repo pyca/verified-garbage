@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.PPC64LE
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
@@ -33,8 +34,12 @@ def wipeStores (words : Nat) : List Instr :=
   (List.range words).map fun k => .store .d .r11 .r12 (8 * k)
 
 /-- Zeroes the `words` doublewords of the buffer, at `r1 + 32`, through `r12`
-(their address) and `r11` (zero). -/
-def wipe (words : Nat) : List Instr := .addSp .r12 32 :: .li .r11 0 :: wipeStores words
+(their address) and `r0` (zero), as the clearing of `scrubAll` zeroes its
+frames' regions (`Impl.Scrub.PPC64LE.zeroRegion`): by `std`s for fewer than
+64 doublewords, else by `dcbz`s of the 128-byte blocks within them and `std`s
+of the rest. -/
+def wipe (words : Nat) : List Instr :=
+  .addSp .r12 32 :: .li .r0 0 :: Impl.Scrub.PPC64LE.zeroRegion (8 * words)
 
 /-- `withStackScratch`, zeroing the first `words` doublewords of the buffer
 after the code. -/

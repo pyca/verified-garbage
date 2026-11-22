@@ -7,10 +7,13 @@ public import VerifiedGarbage.Spec.Seed
 /-!
 # SEED ECB on x86 (32-bit)
 
-`ecb d(schedule, data, n, scratch)`, cdecl (the arguments at `[esp + 4]` …
-`[esp + 16]`): `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt` with their
-working space in the scratch buffer, which the artifact allocates on the
-stack. As on ARMv7 (`Impl/Seed/Arm/Ecb.lean`): eight blocks at a time, each
+`blocks(schedule, data, n, scratch)`, cdecl (the arguments at `[esp + 4]` …
+`[esp + 16]`): `vg_seed_blocks`, which `vg_seed_ecb_encrypt` and
+`vg_seed_ecb_decrypt` call (`ecbCall`) with their working space in the
+scratch buffer, which the artifact allocates on the stack, and so do the
+modes (`Modes.lean`). Its callers store the direction's flag (`dirFlag`) in
+the scratch buffer's slot `dirSlot` first, which the function reads before
+it builds the table: the rest is the same for both directions. As on ARMv7 (`Impl/Seed/Arm/Ecb.lean`): eight blocks at a time, each
 round's three `G`s computed for all eight at once by `g8`.
 
 The scratch buffer at `edi` holds, in 4-byte slots: `g8`'s slots (0–79,
@@ -20,10 +23,10 @@ word of the block, `L0`, `L1`, `R0`, `R1` (`arrSlot`, 104–135); the tail
 buffer of eight blocks (136–167); the table of round keys, in the order the
 rounds use them (168–199); the callee-saved registers `ebx`, `esi`, `edi`
 and `ebp` (200–203); and the group's data pointer and the blocks left
-(204, 205).
+(204, 205), the first of which holds the direction's flag on entry.
 
 * The callee-saved registers are saved, and the scratch buffer's address
-  moves to `edi`. The round keys are copied to the table: `K1,0`, `K1,1`,
+  moves to `edi`. The round keys are copied, in the order the flag selects, to the table: `K1,0`, `K1,1`,
   …, `K16,1` for encryption, and the rounds' keys in reverse order for
   decryption (RFC 4269 §2.4), so that both run the same rounds
   (`keyTable`).
@@ -230,34 +233,54 @@ def advance : List Instr := [addI .ebx 128, subR .edx .ecx]
 /-- Eight blocks, or the last one to seven. -/
 def group : Prog isa := .seq copyIn (.seq (.block stash) (.seq crypt8 (.seq copyOut (.block advance))))
 
-/-- The whole function: the table, then the groups. -/
-def ecb (d : Direction) : Prog isa :=
-  .seq (.block (saveRegs 3 ++ keyTable d))
-    (.seq (.block [.mov .ebx (.mem (argOp 1)), .mov .edx (.mem (argOp 2)), .alu .test .edx (.reg .edx)])
-      (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreBE)))
+/-- The groups, after the table, and the epilogue. -/
+def groups : Prog isa :=
+  .seq (.block [.mov .ebx (.mem (argOp 1)), .mov .edx (.mem (argOp 2)), .alu .test .edx (.reg .edx)])
+    (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreBE))
 
-/-- `vg_seed_encrypt_blocks` and `vg_seed_decrypt_blocks`. -/
-def encrypt : Prog isa := ecb .encrypt
-def decrypt : Prog isa := ecb .decrypt
+/-- The slot of the direction's flag (`dirFlag`), which the callers store
+before the call: the group's data pointer's, which the function stores only
+after it reads the flag. -/
+def dirSlot : Nat := ptrSlot
+
+/-- The flag of a direction. -/
+def dirFlag : Direction → Nat
+  | .encrypt => 0
+  | .decrypt => 1
+
+/-- The registers saved, and the flag of the direction compared with 0. -/
+def entry : List Instr := saveRegs 3 ++ [movS .eax dirSlot, .alu .test .eax (.reg .eax)]
+
+/-- `vg_seed_blocks(schedule, data, n, scratch)`: the table in the order of
+the direction whose flag (`dirFlag`) is in the scratch buffer's slot
+`dirSlot`, then the groups, which both directions share. -/
+def blocks : Prog isa :=
+  .seq (.block entry) (.seq (.ite .e (.block (keyTable .encrypt)) (.block (keyTable .decrypt))) groups)
 
 /-! ## Calls -/
 
-/-- A call of `vg_seed_encrypt_blocks` or `vg_seed_decrypt_blocks`. -/
-def blocksCall : Direction → Prog isa
-  | .encrypt => .call "vg_seed_encrypt_blocks" encrypt
-  | .decrypt => .call "vg_seed_decrypt_blocks" decrypt
+/-- A call of `vg_seed_blocks`. -/
+def blocksCall : Prog isa := .call "vg_seed_blocks" blocks
 
-/-- `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`, with their working
+/-- The call of `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`, with their working
 space as the fourth argument (the frame `withStackScratchWiped` makes on the
 stack): a call of the blocks function of the direction `d` with their four
 arguments, pushed in a frame from `eax`, `ecx`, `edx` and `ebx`, the
 caller's `ebx` kept in a frame of its own (the arguments four bytes further
 up). -/
-def ecbCall (d : Direction) : Prog isa :=
+def ecbFrame : Prog isa :=
   .frame (.push [.ebx])
     (.seq (.block [.mov .eax (.mem (argOp 1)), .mov .ecx (.mem (argOp 2)), .mov .edx (.mem (argOp 3)),
         .mov .ebx (.mem (argOp 4))])
-      (.frame (.push [.ebx, .edx, .ecx, .eax]) (blocksCall d) (.pop .eax 4)))
+      (.frame (.push [.ebx, .edx, .ecx, .eax]) blocksCall (.pop .eax 4)))
     (.pop .ebx 1)
+
+/-- The flag of the direction `d` to the working space's slot `dirSlot`,
+through `eax` and `ecx`. -/
+def flagStore (d : Direction) : List Instr :=
+  [.mov .eax (.mem (argOp 3)), movI .ecx (BitVec.ofNat 32 (dirFlag d)), .store (at_ .eax (4 * dirSlot)) .ecx]
+
+/-- The flag of `d`, then the call. -/
+def ecbCall (d : Direction) : Prog isa := .seq (.block (flagStore d)) ecbFrame
 
 end VG.Impl.Seed.X86

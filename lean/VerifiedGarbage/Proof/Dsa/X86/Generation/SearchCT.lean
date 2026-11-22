@@ -181,7 +181,7 @@ theorem hashPrep_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} 
     WP isa (.block (scr .ebx sState ++ ivStore g.iv ++
       Impl.Pbkdf2.Md.X86.storeW .ebx (g.H.N + g.qLen) (padBytes g.qLen) ((64 - g.qLen) / 4) ++
       ([.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 g.H.N))] : List Instr) ++ scr .ebp sHScr)) s
-      (HashMid E g) := by
+      fun t => HashMid E g t ∧ t.gpr .esi = s.gpr .esi := by
   have sz := v.size_ge
   have nl := G.hash.N_le
   have hB := G.hash.B
@@ -223,16 +223,16 @@ theorem hashPrep_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) {s : State} 
         exact hstk.sub_right (Offset.sub_base E.base (by simp only [sHScr]; omega_using [sz, so, sW]))
       nst := by rw [yNat, hB]; simp only [sState]; omega_using [sz, nl, nw]
       nsc := by rw [cNat]; simp only [sHScr]; omega_using [sz, so, sW, nw] }
-  exact ⟨cargs, tsp.trans B.sp, tdi.trans B.edi⟩
+  exact ⟨⟨cargs, tsp.trans B.sp, tdi.trans B.edi⟩, gt _ (by decide) (by decide) (by decide) (by decide)⟩
 
 theorem hash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (dst : Nat) :
     RelCT isa (Both fun (_ : Unit) s => Base E s) (hash g.H g.iv g.qLen dst) fun _ _ => True := by
   have hB := G.hash.B
-  unfold Impl.Dsa.X86.Generation.hash
+  unfold Impl.Dsa.X86.Generation.hash Impl.Dsa.X86.Generation.hashTo
   simp only [seqs]
   refine RelCT.seq (both_post (Ψ := fun _ t => HashMid E g t)
     (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ B => base_pins B) G.prepCt)
-    fun _ s B => hashPrep_ok G v B) ?_
+    fun _ s B => WP.mono (hashPrep_ok G v B) fun _ h => h.1) ?_
   refine RelCT.seq (both_post (Ψ := fun _ t => t.gpr .esp = E.sp ∧ t.gpr .edi = E.base.setWidth 32)
     ((cmp_rel G.hash.ok.comp (by rw [hB]; decide) (sp := E.sp)
       (fun s s' ⟨_, h, h'⟩ => ⟨h.1, h'.1, h.2.1, h'.2.1⟩)).mono (fun _ _ h => h) fun _ _ h => h)
@@ -244,6 +244,31 @@ theorem hash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (dst : Nat) :
     rcases hr with rfl | rfl
     · exact h.1
     · exact h.2
+
+/-- `hashTo` with the digest's place in `esi`, the same in both runs. -/
+theorem hashS_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) :
+    RelCT isa (Both fun (d : BitVec 32) s => Base E s ∧ s.gpr .esi = d)
+      (hashTo g.H g.iv g.qLen [.mov .eax (.reg .esi)]) fun _ _ => True := by
+  have hB := G.hash.B
+  unfold Impl.Dsa.X86.Generation.hashTo
+  simp only [seqs]
+  refine RelCT.seq (both_post (Ψ := fun d t => HashMid E g t ∧ t.gpr .esi = d)
+    (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ B => base_pins B.1) G.prepCt)
+    fun d s B => WP.mono (hashPrep_ok G v B.1) fun t h => ⟨h.1, h.2.trans B.2⟩) ?_
+  refine RelCT.seq (both_post (Ψ := fun d t => t.gpr .esp = E.sp ∧ t.gpr .edi = E.base.setWidth 32 ∧ t.gpr .esi = d)
+    ((cmp_rel G.hash.ok.comp (by rw [hB]; decide) (sp := E.sp)
+      (fun s s' ⟨_, h, h'⟩ => ⟨h.1.1, h'.1.1, h.1.2.1, h'.1.2.1⟩)).mono (fun _ _ h => h) fun _ _ h => h)
+    fun _ t h => ?_) ?_
+  · refine cmp_ok G.hash.ok.comp (by rw [hB]; decide) h.1.1 fun u au _ => ?_
+    exact ⟨(au.cs .esp (by decide)).trans h.1.2.1, (au.cs .edi (by decide)).trans h.1.2.2,
+      (au.cs .esi (by decide)).trans h.2⟩
+  · refine both_agree [.esp, .edi, .esi] (fun d r => if r = .esi then d else baseVal E r)
+      (fun d s h r hr => ?_) G.outCtS
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h.1
+    · exact h.2.1
+    · exact h.2.2
 
 end VG.Proof.Dsa.X86.Generation
 
@@ -587,60 +612,86 @@ def PH (E : Env) (g : Geo) (a : Nat × Nat) (s : State) : Prop :=
 
 theorem addBE_erase (n : Nat) : Code.erase (addBE n) = Code.erase (addBE 1) := rfl
 
-theorem pHash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen) {j : Nat}
-    (hj : j ≤ g.count) : RelCT isa (Both (PH E g)) (g.pHash j) (Both (PH E g)) := by
+/-- Before hash `a.2` of X: `PH` of `a.1`, and the loop's words. -/
+def PHj (E : Env) (g : Geo) (a : (Nat × Nat) × Nat) (s : State) : Prop :=
+  PH E g a.1 s ∧ a.2 ≤ g.count ∧ s.mem.readW (off E.base fJ) 32 = BitVec.ofNat 32 a.2 ∧
+    s.mem.readW (off E.base fDst) 32 = E.base.setWidth 32 + BitVec.ofNat 32 (hashAt g a.2)
+
+/-- `pHash`, from runs at the same hash `a` of X, which it keeps there, with
+any fact `C a`. -/
+theorem pHash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen)
+    (C : (Nat × Nat) × Nat → Prop) :
+    RelCT isa (Both fun a s => C a ∧ PHj E g a s) g.pHash (Both fun a s => C a ∧ PHj E g a s) := by
   have sz := v.size_ge
   have nl := G.hash.N_le
   have bd := G.bounds
   have hN := G.N
-  obtain Ap := hRanges_apart G v hj
-  obtain hjq : (j + 1) * g.qLen ≤ (g.count + 1) * g.qLen := Nat.mul_le_mul_right _ (by omega_using [hj])
-  refine both_post ?_ fun a s h => WP.mono (pHash_ok G v hq h.1 h.2.1 h.2.2.1 h.2.2.2.1
-    (by have := h.2.2.2.2; omega_using [hj, this]) hj)
-    fun t ⟨B', _, C, _⟩ => ⟨B', h.2.1, ?_, ?_, h.2.2.2.2⟩
+  -- The words below the block and the scratch, and the loop's, keep their values.
+  obtain keepW : ∀ {j : Nat} {m m' : Mem}, j ≤ g.count → E.Chg (hRanges g j) m m' → ∀ d,
+      (d + 4 ≤ sState ∨ (sX - 48 ≤ d ∧ d + 4 ≤ sX - 40)) → m'.readW (off E.base d) 32 = m.readW (off E.base d) 32 :=
+    fun {j m m'} hj C d hd => by
+      obtain hjq : (j + 1) * g.qLen ≤ (g.count + 1) * g.qLen := Nat.mul_le_mul_right _ (by omega_using [hj])
+      exact Env.Chg.word v C (by simp only [sState, sX] at hd; omega_arith) (fun o ho => ⟨(hRanges_apart G v hj o ho).1, by
+        simp only [hRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
+        rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX] at hd ⊢ <;> omega_arith⟩)
+  refine both_post (both_map id (fun _ _ h => h.2) ?_) fun a s ⟨c, h⟩ => WP.mono (pHash_ok G v hq h.1.1 h.1.2.1
+    h.1.2.2.1 h.1.2.2.2.1 h.2.2.1 (by rw [h.2.2.2, h.1.1.edi]) (by have := h.1.2.2.2.2; omega_using [h.2.1, this]) h.2.1)
+    fun t ⟨B', _, Ch, _⟩ => ⟨c, ⟨B', h.1.2.1, ?_, ?_, h.1.2.2.2.2⟩, h.2.1, ?_, ?_⟩
   rotate_left
-  · rw [Env.Chg.word v C (by simp only [fSeed, hdr]; omega_using [sz]) (fun o ho => ⟨(Ap o ho).1, by
-      simp only [hRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fSeed, hdr] <;> omega_arith⟩),
-      h.2.2.1]
-  · rw [Env.Chg.word v C (by simp only [fOffset, hdr]; omega_using [sz]) (fun o ho => ⟨(Ap o ho).1, by
-      simp only [hRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fOffset, hdr] <;> omega_arith⟩),
-      h.2.2.2.1]
+  · rw [keepW h.2.1 Ch fSeed (.inl (by simp only [fSeed, hdr, sState]; omega_arith)), h.1.2.2.1]
+  · rw [keepW h.2.1 Ch fOffset (.inl (by simp only [fOffset, hdr, sState]; omega_arith)), h.1.2.2.2.1]
+  · rw [keepW h.2.1 Ch fJ (.inr ⟨by simp only [fJ, sX]; omega_arith, by simp only [fJ, sX]; omega_arith⟩), h.2.2.1]
+  · rw [keepW h.2.1 Ch fDst (.inr ⟨by simp only [fDst, sX]; omega_arith, by simp only [fDst, sX]; omega_arith⟩), h.2.2.2]
+  -- The words a part that writes only the block keeps.
+  obtain blkW : ∀ {m m' : Mem}, E.Chg [(sState, 128)] m m' → ∀ d, (d + 4 ≤ sState ∨ (sX - 48 ≤ d ∧ d + 4 ≤ sX - 40)) →
+      m'.readW (off E.base d) 32 = m.readW (off E.base d) 32 := fun {m m'} C d hd =>
+    Env.Chg.word v C (by simp only [sState, sX] at hd; omega_arith) (fun o ho => by
+      simp only [List.mem_singleton] at ho; subst ho
+      exact ⟨by simp only [sState]; omega_arith, by simp only [sState, sX] at hd ⊢; omega_arith⟩)
+  obtain inBlk : ∀ {m m' : Mem}, Frame [⟨off E.base (sState + g.H.N), g.qLen⟩] m m' → E.Chg [(sState, 128)] m m' :=
+    fun {m m'} F => Env.Chg.of_frame F fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Env.in_range (o := (sState, 128)) (List.mem_singleton_self _) (by omega_arith) (by simp only [sState]; omega_arith)
   unfold Geo.pHash
   simp only [seqs]
   -- The seed.
-  refine RelCT.seq (both_post (Ψ := fun a t => Base E t ∧ t.mem.readW (off E.base fOffset) 32 = BitVec.ofNat 32 a.2 ∧
-      a.2 + g.count + 256 ≤ 2 ^ 32)
-    (both_map (fun a => (E.seeds + BitVec.ofNat 64 (a.1 * E.qLen)).setWidth 32) (fun a s h => ⟨h.1, h.2.2.1⟩)
+  refine RelCT.seq (both_post (Ψ := fun a t => Base E t ∧ t.mem.readW (off E.base fOffset) 32 = BitVec.ofNat 32 a.1.2 ∧
+      a.1.2 + g.count + 256 ≤ 2 ^ 32 ∧ a.2 ≤ g.count ∧ t.mem.readW (off E.base fJ) 32 = BitVec.ofNat 32 a.2 ∧
+      t.mem.readW (off E.base fDst) 32 = E.base.setWidth 32 + BitVec.ofNat 32 (hashAt g a.2))
+    (both_map (fun a => (E.seeds + BitVec.ofNat 64 (a.1.1 * E.qLen)).setWidth 32) (fun a s h => ⟨h.1.1, h.1.2.2.1⟩)
       (copyIn_ct v (w := fSeed) (by decide) _ _)) fun a s h => ?_) ?_
-  · refine VG.X86.WP.mono_syms (seedIn_ok G v hq h.1 h.2.1 h.2.2.1) fun t₁ ⟨_, F₁, K₁⟩ sy₁ => ?_
-    obtain C₁ : E.Chg (hRanges g j) s.mem t₁.mem := Env.Chg.of_frame F₁ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact Env.in_range (o := (sState, 128)) (by simp [hRanges]) (by omega_using []) (by simp only [sState]; omega_using [nl, bd])
-    refine ⟨h.1.keep v C₁ Ap (K₁.1 _ (by decide)) (K₁.1 _ (by decide)) K₁.2.1 K₁.2.2 sy₁, ?_, h.2.2.2.2⟩
-    rw [Env.Chg.word v C₁ (by simp only [fOffset, hdr]; omega_using [sz]) (fun o ho => ⟨(Ap o ho).1, by
-      simp only [hRanges, List.mem_cons, List.not_mem_nil, or_false] at ho
-      rcases ho with rfl | rfl | rfl <;> simp only [hashAt, sState, sHScr, sX, fOffset, hdr] <;> omega_arith⟩),
-      h.2.2.2.1]
+  · refine VG.X86.WP.mono_syms (seedIn_ok G v hq h.1.1 h.1.2.1 h.1.2.2.1) fun t₁ ⟨_, F₁, K₁⟩ sy₁ => ?_
+    obtain C₁ := inBlk F₁
+    refine ⟨h.1.1.keep v C₁ (fun o ho => by
+        simp only [List.mem_singleton] at ho; subst ho; simp only [sState, fOut, fWitLen, hdr]; omega_using [sz])
+      (K₁.1 _ (by decide)) (K₁.1 _ (by decide)) K₁.2.1 K₁.2.2 sy₁, ?_, h.1.2.2.2.2, h.2.1, ?_, ?_⟩
+    · rw [blkW C₁ fOffset (.inl (by simp only [fOffset, hdr, sState]; omega_arith)), h.1.2.2.2.1]
+    · rw [blkW C₁ fJ (.inr ⟨by simp only [fJ, sX]; omega_arith, by simp only [fJ, sX]; omega_arith⟩), h.2.2.1]
+    · rw [blkW C₁ fDst (.inr ⟨by simp only [fDst, sX]; omega_arith, by simp only [fDst, sX]; omega_arith⟩), h.2.2.2]
   -- `seed + offset + j`'s addend and the end of the seed.
   refine RelCT.seq (both_post (Ψ := fun a t => Base E t ∧
       t.gpr .edx = E.base.setWidth 32 + BitVec.ofNat 32 (sState + g.H.N + g.qLen - 1) ∧
-      t.gpr .ecx = BitVec.ofNat 32 (a.2 + j) ∧ a.2 + j + 256 ≤ 2 ^ 32)
+      t.gpr .ecx = BitVec.ofNat 32 (a.1.2 + a.2) ∧ a.1.2 + a.2 + 256 ≤ 2 ^ 32 ∧
+      t.mem.readW (off E.base fDst) 32 = E.base.setWidth 32 + BitVec.ofNat 32 (hashAt g a.2))
     (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins h.1)
-      (tcheckE _ _ (.block (scr .edx 0 ++ [.mov .ecx (.mem (sc 0)), .alu .add .ecx (.imm (BitVec.ofNat 32 0))]))
+      (tcheckE _ _ (.block (scr .edx 0 ++ [.mov .ecx (.mem (sc 0)), .alu .add .ecx (.mem (sc 0))]))
         rfl (by decide +kernel) (by decide +kernel))) fun a t h => ?_) ?_
   · refine scr_ok fun t₂ e₂ g₂ m₂ rd₂ wr₂ sy₂ =>
       ld_ok (Scr.of_eq h.1.scr (g₂ _ (by decide)) (g₂ _ (by decide)) wr₂) (d := fOffset)
-        (by simp only [fOffset, hdr]; omega_using [sz]) fun t₃ u₃ => wp_addi fun t₄ u₄ => WP.block_nil ?_
+        (by simp only [fOffset, hdr]; omega_using [sz]) fun t₃ u₃ =>
+      addm_ok (Scr.of_eq h.1.scr (by rw [u₃.other _ (by decide), g₂ _ (by decide)])
+        (by rw [u₃.other _ (by decide), g₂ _ (by decide)]) (by rw [u₃.wr, wr₂])) (d := fJ)
+        (by simp only [fJ, sX]; omega_using [sz]) fun t₄ u₄ => WP.block_nil ?_
     obtain edi₄ : t₄.gpr .edi = t.gpr .edi := by rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide)]
     obtain esp₄ : t₄.gpr .esp = t.gpr .esp := by rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide)]
-    refine ⟨h.1.regs (by rw [u₄.mem, u₃.mem, m₂]) edi₄ esp₄ (by rw [u₄.rd, u₃.rd, rd₂]) (by rw [u₄.wr, u₃.wr, wr₂])
-      (by rw [u₄.syms, u₃.syms, sy₂]), ?_, ?_, by omega⟩
+    obtain m₄ : t₄.mem = t.mem := by rw [u₄.mem, u₃.mem, m₂]
+    refine ⟨h.1.regs m₄ edi₄ esp₄ (by rw [u₄.rd, u₃.rd, rd₂]) (by rw [u₄.wr, u₃.wr, wr₂])
+      (by rw [u₄.syms, u₃.syms, sy₂]), ?_, ?_, by omega_using [h.2.2.1, h.2.2.2.1], by rw [m₄]; exact h.2.2.2.2.2⟩
     · rw [u₄.other _ (by decide), u₃.other _ (by decide), e₂, h.1.edi]
-    · rw [u₄.gpr, u₃.gpr, m₂, h.2.1, BitVec.ofNat_add]
+    · rw [u₄.gpr, u₃.gpr, u₃.mem, m₂, h.2.1, h.2.2.2.2.1, BitVec.ofNat_add]
   -- The addition.
-  refine RelCT.seq (both_post (Ψ := fun _ t => Base E t)
+  refine RelCT.seq (both_post (Ψ := fun a t => Base E t ∧
+      t.mem.readW (off E.base fDst) 32 = E.base.setWidth 32 + BitVec.ofNat 32 (hashAt g a.2))
     (both_agree [.esp, .edi, .edx] (fun _ r => if r = .edx then
         E.base.setWidth 32 + BitVec.ofNat 32 (sState + g.H.N + g.qLen - 1) else baseVal E r)
       (fun a t h r hr => by
@@ -651,25 +702,112 @@ theorem pHash_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = 
         · exact h.2.1)
       (tcheckE _ _ (addBE 1) (addBE_erase _) (by decide +kernel) (by decide +kernel))) fun a t h => ?_) ?_
   · have hs := h.1.scr
-    refine VG.X86.WP.mono_syms (addBE_ok hs (o := sState + g.H.N) (n := g.qLen) (c := a.2 + j)
-      (by omega_using [bd]) (by simp only [sState]; omega_using [sz, nl, bd]) h.2.2.2 (by rw [h.2.1, h.1.edi]) h.2.2.1) fun t₅ ⟨_, F₅, K₅, _⟩ sy₅ => ?_
-    refine h.1.keep v (os := [(sState, 128)]) (Env.Chg.of_frame F₅ fun r hr => ?_) (fun o ho => ?_)
-      (K₅.1 _ (by decide)) (K₅.1 _ (by decide)) K₅.2.1 K₅.2.2 sy₅
-    · simp only [List.mem_singleton] at hr; subst hr
+    refine VG.X86.WP.mono_syms (addBE_ok hs (o := sState + g.H.N) (n := g.qLen) (c := a.1.2 + a.2)
+      (by omega_using [bd]) (by simp only [sState]; omega_using [sz, nl, bd]) h.2.2.2.1 (by rw [h.2.1, h.1.edi]) h.2.2.1)
+      fun t₅ ⟨_, F₅, K₅, _⟩ sy₅ => ?_
+    obtain C₅ : E.Chg [(sState, 128)] t.mem t₅.mem := Env.Chg.of_frame F₅ fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
       exact Env.in_range (o := (sState, 128)) (List.mem_singleton_self _) (by omega_using []) (by simp only [sState]; omega_using [nl, bd])
+    refine ⟨h.1.keep v C₅ (fun o ho => ?_) (K₅.1 _ (by decide)) (K₅.1 _ (by decide)) K₅.2.1 K₅.2.2 sy₅, ?_⟩
     · simp only [List.mem_singleton] at ho; subst ho
       simp only [sState, fOut, fWitLen, hdr]; omega_using [sz]
+    · rw [blkW C₅ fDst (.inr ⟨by simp only [fDst, sX]; omega_arith, by simp only [fDst, sX]; omega_arith⟩), h.2.2.2.2]
+  -- The digest's place into `esi`.
+  refine RelCT.seq (both_post (Ψ := fun a t => Base E t ∧
+      t.gpr .esi = E.base.setWidth 32 + BitVec.ofNat 32 (hashAt g a.2))
+    (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins h.1)
+      (tcheckE _ _ (.block [.mov .esi (.mem (sc 0))]) rfl (by decide +kernel) (by decide +kernel)))
+    fun a t h => ld_ok h.1.scr (d := fDst) (by simp only [fDst, sX]; omega_using [sz]) fun t₆ u₆ => WP.block_nil
+      ⟨h.1.regs u₆.mem (u₆.other _ (by decide)) (u₆.other _ (by decide)) u₆.rd u₆.wr u₆.syms, by rw [u₆.gpr, h.2]⟩) ?_
   -- The hash.
-  exact both_map (fun _ => ()) (fun _ _ h => h) (hash_ct G v _)
+  exact both_map (fun a => E.base.setWidth 32 + BitVec.ofNat 32 (hashAt g a.2)) (fun _ _ h => h) (hashS_ct G v)
 
 theorem pX_ct {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen) :
     RelCT isa (Both (PH E g)) g.pX fun _ _ => True := by
+  have sz := v.size_ge
+  have bd := G.bounds
   unfold Geo.pX
-  refine seqs_last (fun p hp => ?_) (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins h.1)
-    (tcheckE _ _ (.block (orByte 0 0x80 ++ orByte 0 1)) rfl (by decide +kernel) (by decide +kernel)))
-  simp only [List.mem_map, List.mem_range] at hp
-  obtain ⟨j, hj, rfl⟩ := hp
-  exact pHash_ct G v hq (by omega_using [hj])
+  simp only [seqs]
+  -- The loop's words.
+  refine RelCT.seq (both_post (Ψ := fun a t => PHj E g (a, 0) t)
+    (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins h.1)
+      (tcheckE [.esp, .edi] _ (.block (scr .eax 0 ++ [.store (sc 0) .eax, .mov .eax (.imm 0), .store (sc 0) .eax]))
+        rfl (by decide +kernel) (by decide +kernel))) fun a s h => ?_) ?_
+  · refine scr_ok fun t₁ e₁ g₁ m₁ rd₁ wr₁ sy₁ => ?_
+    obtain hs₁ : Scr t₁ E.base E.size := Scr.of_eq h.1.scr (g₁ _ (by decide)) (g₁ _ (by decide)) wr₁
+    refine st_ok hs₁ (d := fDst) (by simp only [fDst, sX]; omega_arith) fun t₂ u₂ => wp_movi fun t₃ u₃ => ?_
+    refine st_ok (Scr.of_eq hs₁ (by rw [u₃.other _ (by decide), u₂.gpr]) (by rw [u₃.other _ (by decide), u₂.gpr])
+      (by rw [u₃.wr, u₂.wr])) (d := fJ) (by simp only [fJ, sX]; omega_arith) fun t₄ u₄ => WP.block_nil ?_
+    obtain m₄ : t₄.mem = (s.mem.writeW (off E.base fDst) (E.base.setWidth 32 + BitVec.ofNat 32 (hashAt g 0))).writeW
+        (off E.base fJ) (BitVec.ofNat 32 0) := by
+      rw [u₄.mem, u₃.mem, u₂.mem, m₁, u₃.gpr, e₁, h.1.edi]
+      simp only [hashAt, Nat.zero_add, Nat.one_mul]
+      rfl
+    obtain w : ∀ d, d + 4 ≤ sState → t₄.mem.readW (off E.base d) 32 = s.mem.readW (off E.base d) 32 := fun d hd => by
+      rw [m₄, readW_other v (by simp only [sState] at hd; omega_arith) (by simp only [fJ, sX]; omega_arith)
+          (by simp only [fJ, sX, sState] at hd ⊢; omega_arith),
+        readW_other v (by simp only [sState] at hd; omega_arith) (by simp only [fDst, sX]; omega_arith)
+          (by simp only [fDst, sX, sState] at hd ⊢; omega_arith)]
+    obtain C₄ : E.Chg [(fJ, 8)] s.mem t₄.mem := by
+      rw [m₄]
+      exact Frame.writeW (Frame.writeW (Frame.refl _ _) (r := ⟨off E.base fJ, 8⟩)
+          (List.mem_append_left _ (List.mem_singleton_self _)) _
+          (Offset.contains E.base (by simp only [fJ, fDst]; omega_arith) (by simp only [fJ, fDst]; omega_arith)
+            (by simp only [fJ, sX]; omega_arith)))
+        (r := ⟨off E.base fJ, 8⟩) (List.mem_append_left _ (List.mem_singleton_self _)) _
+        (Offset.contains E.base (Nat.le_refl _) (by omega_arith) (by simp only [fJ, sX]; omega_arith))
+    obtain gr : ∀ r, r ≠ .eax → t₄.gpr r = s.gpr r := fun r hr => by
+      rw [u₄.gpr, u₃.other _ hr, u₂.gpr, g₁ _ hr]
+    refine ⟨⟨h.1.keep v C₄ (fun o ho => by
+        simp only [List.mem_singleton] at ho; subst ho
+        exact ⟨by simp only [fJ, sX]; omega_arith, .inr (.inr (by simp only [fJ, fWitLen, hdr, sX]; omega_arith))⟩)
+      (gr _ (by decide)) (gr _ (by decide)) (by rw [u₄.rd, u₃.rd, u₂.rd, rd₁]) (by rw [u₄.wr, u₃.wr, u₂.wr, wr₁])
+      (by rw [u₄.syms, u₃.syms, u₂.syms, sy₁]), h.2.1,
+      by rw [w fSeed (by simp only [fSeed, hdr, sState]; omega_arith)]; exact h.2.2.1,
+      by rw [w fOffset (by simp only [fOffset, hdr, sState]; omega_arith)]; exact h.2.2.2.1, h.2.2.2.2⟩,
+      Nat.zero_le _, by rw [m₄, Mem.readW_writeW_self32], by
+        rw [m₄, readW_other v (by simp only [fDst, sX]; omega_arith) (by simp only [fJ, sX]; omega_arith)
+          (by simp only [fJ, fDst, sX]; omega_arith), Mem.readW_writeW_self32]⟩
+  -- The hashes, then the top and low bits.
+  refine RelCT.seq (R := Both fun (_ : (Nat × Nat) × Nat) t => Base E t) ?_
+    (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins h)
+      (tcheckE [.esp, .edi] (.block (orByte sX 0x80 ++ orByte (sX + g.pLen - 1) 1)) (.block (orByte 0 0x80 ++ orByte 0 1)) rfl (by decide +kernel) (by decide +kernel)))
+  let C : Nat → (Nat × Nat) × Nat → Prop := fun n a => a.2 = g.count + 1 - n ∧ 1 ≤ n ∧ n ≤ g.count + 1
+  refine (RelCT.loop (I := fun n => Both fun a t => C n a ∧ PHj E g a t) (fun n => ?_) (g.count + 1)).mono
+    (fun s₁ s₂ ⟨a, h₁, h₂⟩ => ⟨(a, 0), ⟨⟨by omega_arith, by omega_arith, Nat.le_refl _⟩, h₁⟩,
+      ⟨⟨by omega_arith, by omega_arith, Nat.le_refl _⟩, h₂⟩⟩) fun _ _ h => h
+  refine RelCT.seq (pHash_ct G v hq (C n)) ?_
+  -- The next place and `j`, and the test.
+  refine (both_post (Φ := fun a s => C n a ∧ PHj E g a s) (Ψ := fun a u => C n a ∧ Base E u ∧ PH E g a.1 u ∧
+      u.mem.readW (off E.base fJ) 32 = BitVec.ofNat 32 (a.2 + 1) ∧
+      u.mem.readW (off E.base fDst) 32 = E.base.setWidth 32 + BitVec.ofNat 32 (hashAt g (a.2 + 1)) ∧
+      isa.eval .ne u = some (!decide (a.2 + 1 = g.count + 1)))
+    (both_agree [.esp, .edi] (fun _ => baseVal E) (fun _ _ h => base_pins h.2.1.1)
+      (tcheckE [.esp, .edi] (.block g.pNext) (.block [.mov .eax (.mem (sc 0)), .alu .sub .eax (.imm 0), .store (sc 0) .eax,
+          .mov .eax (.mem (sc 0)), .alu .add .eax (.imm 0), .store (sc 0) .eax, .alu .cmp .eax (.imm 0)])
+        rfl (by decide +kernel) (by decide +kernel))) fun a t ⟨c, h⟩ => ?_).mono (fun _ _ h => h) ?_
+  · refine WP.mono (pNext_ok G v h.2.1 h.1.1 h.2.2.1 (by rw [h.2.2.2, h.1.1.edi]))
+      fun u ⟨Bu, mu, _, _, _, _, _, ev⟩ => ⟨c, Bu, ⟨Bu, h.1.2.1, ?_, ?_, h.1.2.2.2.2⟩, ?_, ?_, ev⟩
+    all_goals rw [mu]
+    · rw [readW_other v (by simp only [fSeed, hdr]; omega_arith) (by simp only [fJ, sX]; omega_arith)
+          (by simp only [fSeed, hdr, fJ, sX]; omega_arith),
+        readW_other v (by simp only [fSeed, hdr]; omega_arith) (by simp only [fDst, sX]; omega_arith)
+          (by simp only [fSeed, hdr, fDst, sX]; omega_arith)]
+      exact h.1.2.2.1
+    · rw [readW_other v (by simp only [fOffset, hdr]; omega_arith) (by simp only [fJ, sX]; omega_arith)
+          (by simp only [fOffset, hdr, fJ, sX]; omega_arith),
+        readW_other v (by simp only [fOffset, hdr]; omega_arith) (by simp only [fDst, sX]; omega_arith)
+          (by simp only [fOffset, hdr, fDst, sX]; omega_arith)]
+      exact h.1.2.2.2.1
+    · exact Mem.readW_writeW_self32 ..
+    · rw [readW_other v (by simp only [fDst, sX]; omega_arith) (by simp only [fJ, sX]; omega_arith)
+        (by simp only [fJ, fDst, sX]; omega_arith), Mem.readW_writeW_self32, h.1.1.edi]
+  · rintro s₁ s₂ ⟨a, ⟨⟨c₁, c₂, c₃⟩, B₁, P₁, J₁, D₁, e₁⟩, ⟨-, B₂, P₂, J₂, D₂, e₂⟩⟩
+    refine ⟨by rw [e₁, e₂], fun hf => ⟨a, B₁, B₂⟩, fun ht => ?_⟩
+    obtain hne : a.2 + 1 ≠ g.count + 1 := by
+      intro hh; rw [e₁, hh] at ht; simp at ht
+    refine ⟨n - 1, by omega_arith, (a.1, a.2 + 1), ⟨⟨by omega_arith, by omega_arith, by omega_arith⟩, P₁,
+      by omega_arith, J₁, D₁⟩, ⟨⟨by omega_arith, by omega_arith, by omega_arith⟩, P₂, by omega_arith, J₂, D₂⟩⟩
 
 /-- p's arithmetic: its trace depends only on `esp` and `edi`, which it keeps. -/
 theorem pArith_ct {g : Geo} (G : GeoOk g) :

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm.Base
-public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm.Umaal
+public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm.Backend
+public import VerifiedGarbage.Proof.Variants.RsaMont.Arm
 
 /-! # The implementations of `RsaPrivateCrt` on 32-bit ARM -/
 
@@ -9,13 +9,11 @@ public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm.Umaal
 
 namespace VG.Proof.Variants.RsaPrivateCrt.Arm
 
-def base : Proof.Rsa.Arm.CrtImpl := Proof.Variants.RsaPrivateCrt.Arm.Base.variant
-
-def umaal : Proof.Rsa.Arm.CrtImpl := Proof.Variants.RsaPrivateCrt.Arm.Umaal.variant
-
-/-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this), and its
-dispatcher tries them in this order. -/
-def variants := [umaal, base]
+/-- Every implementation, best first, one for each Montgomery product it
+calls (`RsaMont.Arm.variants`): each function generic over them is emitted
+with each (the registration files that import this), and its dispatcher
+tries them in this order. -/
+def variants : List Proof.Rsa.Arm.CrtImpl :=
+  Proof.Variants.RsaMont.Arm.variants.map Proof.Variants.RsaPrivateCrt.Arm.Backend.variant
 
 end VG.Proof.Variants.RsaPrivateCrt.Arm

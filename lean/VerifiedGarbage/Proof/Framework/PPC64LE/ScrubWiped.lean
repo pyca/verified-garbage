@@ -30,64 +30,13 @@ open VG.Impl.Scrub.PPC64LE VG.Impl.StackScratch.PPC64LE
 
 namespace VG.PPC64LE.Scrub
 
-/-- `wipeStores words` zeroes the `8 * words` bytes at `r12`, within a
-writable region `⟨r12, B⟩`, with `r11` zero. -/
-theorem wipeStores_zero (u : State) (B : Nat) (hB : B < 4096) (hqB : (u.gpr .r12).toNat + B ≤ 2 ^ 64)
-    (hR : ⟨u.gpr .r12, B⟩ ∈ u.wr) (h0 : u.gpr .r11 = 0) :
-    ∀ w, 8 * w ≤ B → execBlock isa (wipeStores w) u =
-      some ({ u with mem := zeroOn (u.gpr .r12) 0 (8 * w) u.mem }, wipeTrace (u.gpr .r12) w)
-  | 0, _ => by
-    have hz : zeroOn (u.gpr .r12) 0 (8 * 0) u.mem = u.mem := by
-      funext x; simp only [zeroOn, Nat.mul_zero]; split
-      · next h => omega_using [h.1, h.2]
-      · rfl
-    rw [hz]; rfl
-  | w + 1, hw => by
-    rw [wipeStores_succ, execBlock_append, wipeStores_zero u B hB hqB hR h0 w (by omega_using [hw])]
-    have hlt : (u.gpr .r12).toNat + 8 * w < 2 ^ 64 := by omega_using [hw, hqB]
-    have hc : InRegions ({ u with mem := zeroOn (u.gpr .r12) 0 (8 * w) u.mem } : State).wr
-        (({ u with mem := zeroOn (u.gpr .r12) 0 (8 * w) u.mem } : State).gpr .r12 + BitVec.ofNat 64 (8 * w)) 8 := by
-      refine ⟨_, hR, ?_⟩
-      simp only [Region.Contains]
-      rw [show u.gpr .r12 + BitVec.ofNat 64 (8 * w) - u.gpr .r12 = BitVec.ofNat 64 (8 * w) by bv_omega,
-        BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hlt])]
-      omega_using [hw]
-    simp only [Option.bind_some, execBlock, isa, exec_store_d (show Reg.r12 ≠ .r0 by decide)
-      ⟨by omega_using [hw, hB], by omega_using []⟩ hc, Option.map_some, addrs, List.map_cons,
-      List.map_nil, List.append_nil, Option.some.injEq, Prod.mk.injEq]
-    refine ⟨?_, ?_⟩
-    · congr 1
-      funext x
-      have e := off_lt x (u.gpr .r12) (8 * w) 8 (by omega_using [hw, hB])
-      simp only [zeroOn, Mem.writeW, Mem.write, h0, Nat.reduceDiv, Nat.reduceMul] at e ⊢
-      generalize (x - (_ + BitVec.ofNat 64 (8 * w))).toNat = r at e ⊢
-      generalize (x - _).toNat = d at e ⊢
-      repeat' split
-      all_goals first | (exfalso; omega) | rfl | (simp; done)
-    · simp only [wipeTrace, List.range_succ, List.map_append, List.map_cons, List.map_nil]
-
 /-- `wipe words` from a state whose frame region `⟨sp + 32, B⟩` it may write:
 it zeroes the `8 * words` bytes at `sp + 32`. -/
 theorem wipe_zero {u u' : State} {t : List Leak} {B words : Nat} (hB : B < 4096) (hw : 8 * words ≤ B)
     (hqB : (u.sp + 32).toNat + B ≤ 2 ^ 64) (hR : ⟨u.sp + 32, B⟩ ∈ u.wr)
     (h : execBlock isa (Impl.StackScratch.PPC64LE.wipe words) u = some (u', t)) :
     u'.mem = zeroOn (u.sp + 32) 0 (8 * words) u.mem := by
-  have h12 : ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0)).gpr .r12 =
-      u.sp + 32 := by
-    simp [State.write]
-  have h11 : ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0)).gpr .r11 = 0 := by
-    simp [State.write]
-  have he := wipeStores_zero ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0)) B hB
-    (by rw [h12]; exact hqB) (by simpa [State.write] using hR) h11 words hw
-  have e : execBlock isa (Impl.StackScratch.PPC64LE.wipe words) u =
-      some ({ ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0)) with
-        mem := zeroOn (u.sp + 32) 0 (8 * words) u.mem }, wipeTrace (u.sp + 32) words) := by
-    simp only [Impl.StackScratch.PPC64LE.wipe, execBlock, isa, exec, show (32 : Nat) < 2 ^ 15 by decide,
-      show (0 : Nat) < 2 ^ 15 by decide, ↓reduceIte]
-    rw [show ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0 : BitVec 64)) =
-        ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0)) from rfl]
-    simp only [Option.map_some, he, h12, addrs, List.map_nil, List.nil_append]
-    rfl
+  have e := wipe_exec B u words hR hw hB hqB
   rw [e] at h
   obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj h)
   rfl

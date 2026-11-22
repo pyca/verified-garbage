@@ -1,0 +1,86 @@
+diff --git a/rustls-test/Cargo.toml b/rustls-test/Cargo.toml
+index e5ff4836..9a4ecf86 100644
+--- a/rustls-test/Cargo.toml
++++ b/rustls-test/Cargo.toml
+@@ -23,6 +23,7 @@ macro_rules_attribute = { workspace = true }
+ num-bigint = { workspace = true }
+ pki-types = { workspace = true }
+ rustls-aws-lc-rs = { path = "../rustls-aws-lc-rs", features = ["std"] }
++rustls-verified-garbage = { path = "@VG_PROVIDER@" }
+ rustls-util = { path = "../rustls-util", default-features = false }
+ x509-parser = { workspace = true }
+ webpki = { workspace = true }
+diff --git a/rustls-test/src/lib.rs b/rustls-test/src/lib.rs
+index 748c8105..60a91606 100644
+--- a/rustls-test/src/lib.rs
++++ b/rustls-test/src/lib.rs
+@@ -2225,6 +2225,27 @@ pub mod macros {
+         };
+     }
+ 
++    #[macro_export]
++    macro_rules! provider_verified_garbage {
++        () => {
++            #[allow(unused_imports)]
++            use rustls_verified_garbage as provider;
++            // Like aws-lc-rs, it prefers X25519MLKEM768.
++            #[allow(dead_code)]
++            const fn provider_is_aws_lc_rs() -> bool {
++                true
++            }
++            #[allow(dead_code)]
++            const fn provider_is_ring() -> bool {
++                false
++            }
++            #[allow(dead_code)]
++            const fn provider_is_fips() -> bool {
++                false
++            }
++        };
++    }
++
+     #[macro_export]
+     macro_rules! provider_aws_lc_rs {
+         () => {
+diff --git a/rustls-test/tests/api.rs b/rustls-test/tests/api.rs
+index 3b8aa8a2..f545ed28 100644
+--- a/rustls-test/tests/api.rs
++++ b/rustls-test/tests/api.rs
+@@ -68,3 +68,37 @@ mod tests_with_aws_lc_rs {
+     #[path = "api/api.rs"]
+     mod tests;
+ }
++
++#[path = "."]
++mod tests_with_verified_garbage {
++    rustls_test::provider_verified_garbage!();
++
++    #[path = "api/client_cert_verifier.rs"]
++    mod client_cert_verifier;
++    #[path = "api/compress.rs"]
++    mod compress;
++    #[path = "api/crypto.rs"]
++    mod crypto;
++    #[path = "api/ffdhe.rs"]
++    mod ffdhe;
++    #[path = "api/io.rs"]
++    mod io;
++    #[path = "api/kernel.rs"]
++    mod kernel;
++    #[path = "api/kx.rs"]
++    mod kx;
++    #[path = "api/quic.rs"]
++    mod quic;
++    #[path = "api/raw_keys.rs"]
++    mod raw_keys;
++    #[path = "api/resolve.rs"]
++    mod resolve;
++    #[path = "api/resume.rs"]
++    mod resume;
++    #[path = "api/server_cert_verifier.rs"]
++    mod server_cert_verifier;
++    #[path = "api/split.rs"]
++    mod split;
++    #[path = "api/api.rs"]
++    mod tests;
++}

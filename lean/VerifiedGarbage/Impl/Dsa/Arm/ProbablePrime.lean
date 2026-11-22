@@ -148,15 +148,15 @@ def witnessFix : List (Prog isa) :=
 
 /-- One witness: `sStat := 0` (`rand` too short), `3` (it failed), or as
 `onPass` sets it; Z iff on. -/
-def mrBody (name : String) (round : Prog isa) : Prog isa :=
+def mrBody (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs [.block avFlag,
     .ite .eq (.block (setS sStat 0))
-      (seqs (witnessLoad ++ witnessFix ++ mrCall name round ++
+      (seqs (witnessLoad ++ witnessFix ++ mrCall name round op ++
         [.block (VG.Impl.RsaKeyGen.Arm.Key.isOne sF), .ite .eq (.block onPass) (.block (setS sStat 3))])),
     .block [.ldr .r1 .r8 sStat, .cmp .r1 (.imm 4)]]
 
-def millerRabin (name : String) (round : Prog isa) : Prog isa :=
-  .seq (.block mrInit) (.loop (mrBody name round) .eq)
+def millerRabin (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block mrInit) (.loop (mrBody name round op) .eq)
 
 /-! ## The result -/
 
@@ -171,18 +171,19 @@ def mrResult : Prog isa :=
         (.ite .eq (.block (done 1)) (.block (done 2)))))
 
 /-- Once `c` passed trial division. -/
-def mrPart (name : String) (round : Prog isa) : Prog isa :=
-  seqs ([sub3 aCm1 aC aOne] ++ expSetup ++ [montA, montB, millerRabin name round, mrResult])
+def mrPart (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs ([sub3 aCm1 aC aOne] ++ expSetup ++ [montA op, montB op, millerRabin name round op, mrResult])
 
-def body (name : String) (round : Prog isa) : Prog isa :=
-  seqs (loadC ++ trial ++ [.ite .eq (mrPart name round) (.block ([.mov .r3 (.imm 0)] ++ done 2))])
+def body (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs (loadC ++ trial ++ [.ite .eq (mrPart name round op) (.block ([.mov .r3 (.imm 0)] ++ done 2))])
 
-/-- `vg_dsa_probable_prime`, calling the round `round` named `name`. -/
-def code (name : String) (round : Prog isa) : Prog isa :=
+/-- `vg_dsa_probable_prime`, calling the round `round` named `name`, and
+multiplying modulo `c` by `op`. -/
+def code (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .frame (.alloc 32)
     (.seq (.block pre)
       (.frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-        (.seq (body name round) (.block PcFn.restore)) (.pop .r12 56)))
+        (.seq (body name round op) (.block PcFn.restore)) (.pop .r12 56)))
     (.free 32)
 
 end VG.Impl.Dsa.Arm.ProbablePrime

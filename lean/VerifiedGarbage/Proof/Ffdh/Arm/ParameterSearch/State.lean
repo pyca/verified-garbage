@@ -52,7 +52,7 @@ def searchSlots : List Nat := [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
 def searchRegions (p : SearchParams) (sp : BitVec 32) : List Region :=
   [⟨State.addr p.c.out, p.c.length⟩, ⟨State.addr p.c.base, 8 * p.c.capacity⟩,
-    ⟨State.addr p.control, 128⟩, FrameStack.belowA sp 208]
+    ⟨State.addr p.control, 128⟩, FrameStack.belowA sp 256]
 
 end VG.Proof.Ffdh.Arm.ParameterSearch
 
@@ -75,11 +75,11 @@ structure SearchBuffers (p : SearchParams) (s : State) : Prop where
   tapeRead : InRegions (s.rd ++ s.wr) (State.addr p.c.tape) p.c.bytes.length
   tapeBytes : Spec.Rsa.bytesAt s.mem (State.addr p.c.tape) p.c.bytes.length = p.c.bytes
   stack : InRegions (s.rd ++ s.wr) (State.addr s.sp) 24
-  below : 208 ≤ s.sp.toNat
+  below : 256 ≤ s.sp.toNat
   stackSeparate : ∀ r ∈ [⟨State.addr p.c.out, p.c.length⟩, ⟨State.addr p.c.usedPtr, 8⟩,
     ⟨State.addr p.c.base, 8 * p.c.capacity⟩, ⟨State.addr p.control, 128⟩,
     ⟨State.addr p.c.tape, p.c.bytes.length⟩],
-    (⟨State.addr s.sp, 24⟩ : Region).Disjoint r ∧ (FrameStack.belowA s.sp 208).Disjoint r
+    (⟨State.addr s.sp, 24⟩ : Region).Disjoint r ∧ (FrameStack.belowA s.sp 256).Disjoint r
 
 structure SearchLive (p : SearchParams) (used remaining : Nat) (s : State) : Prop where
   buffers : SearchBuffers p s

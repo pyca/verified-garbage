@@ -12,19 +12,20 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.X25519.Chain250
 
-/-! ### `X25519.X86.Field32.Chain`, which this module and modules that import it used -/
+/-! ### The chain's slots -/
 
 section
 
 /-!
-# `vg_gf25519_r32_pow250` on x86 (32-bit): the addition chain
+# Curve25519's field on x86 (32-bit): the addition chain's slots
 
 The chain runs on five slots of the working space from byte 512 (`coff`):
-`E0`, `E1`, `E2`, `E3` and `AC`, the copy of `a`. Each multiplication and
-run of squarings changes one of them (`mulC`, `sqnC`), and memory only in
-bytes 512 to 927, the slots and X25519's product (`CKeep`), so the chain
-takes the slots' values `e` to `chainEnv e` (`chain_spec`), in which `E1`
-holds `a^(2^250 - 1)` and `E0` holds `a^11` (`chainEnv_eval`).
+`E0`, `E1`, `E2`, `E3` and `AC`, the copy of `a`. Inline, a multiplication
+and a run of squarings change one of them (`mulC`, `sqnC`), and memory only
+in bytes 512 to 927, the slots and X25519's product (`CKeep`). The chain
+takes the slots' values `e` to `chainEnv e` (`Field32/Call`'s `chain_spec`),
+in which `E1` holds `a^(2^250 - 1)` and `E0` holds `a^11`
+(`chainEnv_eval`).
 -/
 
 @[expose] public section
@@ -190,35 +191,6 @@ def chainEnv (e : CEnv) : CEnv :=
     (opMul 2 0 0 (opMul 0 0 1 (opMul 1 4 1 (opMul 1 1 1 (opMul 1 0 0
     (opMul 0 4 4 e))))))))))))))))))))
 
-theorem chain_eq : chain =
-    .seq (.block (mul (coff 0) (coff 4) (coff 4))) (
-    .seq (.block (mul (coff 1) (coff 0) (coff 0) ++ mul (coff 1) (coff 1) (coff 1))) (
-    .seq (.block (mul (coff 1) (coff 4) (coff 1) ++ mul (coff 0) (coff 0) (coff 1) ++
-      mul (coff 2) (coff 0) (coff 0) ++ mul (coff 1) (coff 1) (coff 2))) (
-    .seq (Impl.X25519.X86.Field32.sqn (coff 2) (coff 1) 5) (.seq (.block (mul (coff 1) (coff 2) (coff 1))) (
-    .seq (Impl.X25519.X86.Field32.sqn (coff 2) (coff 1) 10) (.seq (.block (mul (coff 2) (coff 2) (coff 1))) (
-    .seq (Impl.X25519.X86.Field32.sqn (coff 3) (coff 2) 20) (.seq (.block (mul (coff 2) (coff 3) (coff 2))) (
-    .seq (Impl.X25519.X86.Field32.sqn (coff 2) (coff 2) 10) (.seq (.block (mul (coff 1) (coff 2) (coff 1))) (
-    .seq (Impl.X25519.X86.Field32.sqn (coff 2) (coff 1) 50) (.seq (.block (mul (coff 2) (coff 2) (coff 1))) (
-    .seq (Impl.X25519.X86.Field32.sqn (coff 3) (coff 2) 100) (.seq (.block (mul (coff 2) (coff 3) (coff 2))) (
-    .seq (Impl.X25519.X86.Field32.sqn (coff 2) (coff 2) 50) (.block (mul (coff 1) (coff 2) (coff 1)))))))))))))))))) :=
-  rfl
-
-theorem chain_spec (x : BitVec 32) : CSpec x chain chainEnv := by
-  rw [chain_eq]
-  have h : CSpec x _ _ :=
-    (mulC x 0 4 4).seq <|
-    ((mulC x 1 0 0).append (mulC x 1 1 1)).seq <|
-    ((((mulC x 1 4 1).append (mulC x 0 0 1)).append (mulC x 2 0 0)).append (mulC x 1 1 2)).seq <|
-    (sqnC x 2 1 5 (by decide) (by decide)).seq <| (mulC x 1 2 1).seq <|
-    (sqnC x 2 1 10 (by decide) (by decide)).seq <| (mulC x 2 2 1).seq <|
-    (sqnC x 3 2 20 (by decide) (by decide)).seq <| (mulC x 2 3 2).seq <|
-    (sqnC x 2 2 10 (by decide) (by decide)).seq <| (mulC x 1 2 1).seq <|
-    (sqnC x 2 1 50 (by decide) (by decide)).seq <| (mulC x 2 2 1).seq <|
-    (sqnC x 3 2 100 (by decide) (by decide)).seq <| (mulC x 2 3 2).seq <|
-    (sqnC x 2 2 50 (by decide) (by decide)).seq <| (mulC x 1 2 1)
-  exact h
-
 theorem chainEnv_eval (e : CEnv) : chainEnv e 1 = (chainF (e 4)).1 ∧ chainEnv e 0 = (chainF (e 4)).2 := by
   simp only [chainEnv, opMul, opSqn, Function.update_apply]
   simp only [↓reduceIte, Fin.isValue, Fin.reduceEq]
@@ -230,20 +202,20 @@ end
 
 end
 
-/-! ### `X25519.X86.Field32.Fn`, which only this module used -/
+
+/-! ### The functions -/
 
 section
 
 /-!
-# `vg_gf25519_r32_pow250` on x86 (32-bit): what it computes
+# `vg_gf25519_r32_mul` and `vg_gf25519_r32_sqn` on x86 (32-bit)
 
-From its entry (`Entry`: the working space `ws` at `x`, its argument on the
-stack), `entry` saves `ebx`, `esi`, `edi` and `ebp` at `SAVE`, points `edi`
-at the working space and copies `a` to `AC` (`entry_ok`); the chain leaves
-`a^(2^250 - 1)` in `E1` and `a^11` in `E0` (`chain_spec`); `exit` restores
-the registers (`exit_ok`). `pow250Fn_ok`: the function keeps the
-callee-saved registers, changes memory only in bytes 512 to 1023, and
-leaves the two powers at bytes 544 and 512.
+From the working space `ws = edi` (`Ctx 4096`), each saves `ebx`, `esi`,
+`edi` and `ebp` at `SAVE` (`saveRegs_ok`), changes the element at `OpA` and
+no other slot (`Upd1`): to `P · OpB` (`mulFn_ok`), or to `OpA^(2^n)` for the
+count `n ≥ 1` in `eax` (`sqnFn_ok`, squaring in place counted by `esi`,
+`sqLoopP`), and restores the registers (`exit_ok`). Memory changes only in
+bytes 512 to 1023.
 -/
 
 @[expose] public section
@@ -251,16 +223,14 @@ leaves the two powers at bytes 544 and 512.
 namespace VG.Proof.X25519.X86.Field32
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.X25519.X86.Field32 VG.Proof.X25519.X86 VG.Spec.X25519
-open VG.Proof.X25519 (pw)
+open VG.Proof.X25519 (sqn)
 
-/-- The function's entry: the working space `ws = x` (its argument), writable
-for 4096 bytes and within the 32-bit address space, and the argument
-readable. -/
-structure Entry (s : State) (x : BitVec 32) : Prop where
-  ws : arg s 0 = x
-  fit : x.toNat + 4096 ≤ 2 ^ 32
-  wr : scR 4096 x ∈ s.wr
-  read : InRegions (s.rd ++ s.wr) (argAddr s 0) 4
+/-- The slots from byte 512 keep their elements, but `o`, which gets `v`. -/
+def Upd1 (m m' : Mem) (x : BitVec 32) (o : Nat) (v : Fe) : Prop :=
+  ∀ q, isSlot 512 q = true → F m' x q = Function.update (F m x) o v q
+
+theorem OpA_slot : isSlot 512 OpA = true := by decide
+theorem OpB_slot : isSlot 512 OpB = true := by decide
 
 /-- The registers saved at `SAVE`. -/
 structure Saved (x : BitVec 32) (g : Reg → BitVec 32) (m : Mem) : Prop where
@@ -269,43 +239,31 @@ structure Saved (x : BitVec 32) (g : Reg → BitVec 32) (m : Mem) : Prop where
   edi : wd m x (SAVE + 8) = g .edi
   ebp : wd m x (SAVE + 12) = g .ebp
 
-theorem below_AC : Below AC := by decide
-theorem below_aAt : Below Impl.X25519.X86.Field32.aAt := by decide
-
-theorem save_ok {s : State} {x : BitVec 32} (h : Entry s x) :
-    WP isa (.block [.mov .eax (.mem (at_ .esp 4)), .store (at_ .eax SAVE) .ebx,
-      .store (at_ .eax (SAVE + 4)) .esi, .store (at_ .eax (SAVE + 8)) .edi,
-      .store (at_ .eax (SAVE + 12)) .ebp, .mov .edi (.reg .eax)]) s fun t =>
-      Ctx 4096 x t ∧ t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+theorem saveRegs_ok {W : Nat} {x : BitVec 32} {s : State} {c : Bool} (hc : Ctx W x s c) :
+    WP isa (.block saveRegs) s fun t => t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       Frame [sub x SAVE 16] s.mem t.mem ∧ Saved x s.gpr t.mem := by
-  have hfit := h.fit
-  refine Wp.wp_ldm (b := .esp) (o := 4 + 4 * 0) rfl h.read fun s₁ u₁ => ?_
-  have e₁ : s₁.gpr .eax = x := by rw [u₁.gpr]; exact h.ws
-  refine Wp.wp_stm e₁ ⟨_, by rw [u₁.wr]; exact h.wr, scR_contains hfit (by decide) (by decide)⟩ fun s₂ u₂ => ?_
-  refine Wp.wp_stm (by rw [u₂.gpr]; exact e₁)
-    ⟨_, by rw [u₂.wr, u₁.wr]; exact h.wr, scR_contains hfit (by decide) (by decide)⟩ fun s₃ u₃ => ?_
-  refine Wp.wp_stm (by rw [u₃.gpr, u₂.gpr]; exact e₁)
-    ⟨_, by rw [u₃.wr, u₂.wr, u₁.wr]; exact h.wr, scR_contains hfit (by decide) (by decide)⟩ fun s₄ u₄ => ?_
-  refine Wp.wp_stm (by rw [u₄.gpr, u₃.gpr, u₂.gpr]; exact e₁)
-    ⟨_, by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact h.wr, scR_contains hfit (by decide) (by decide)⟩
-    fun s₅ u₅ => ?_
-  refine Wp.wp_mov fun s₆ u₆ => WP.block_nil ?_
-  have m₆ : s₆.mem = (((s.mem.writeW (addr x SAVE) (s.gpr .ebx)).writeW (addr x (SAVE + 4)) (s.gpr .esi)).writeW
+  have hfit := hc.fit4
+  refine Wp.wp_stm (B := x) hc.edi (hc.inW4 (d := SAVE) (n := 4) (by decide) (by decide)) fun s₁ u₁ => ?_
+  refine Wp.wp_stm (B := x) (by rw [u₁.gpr]; exact hc.edi)
+    (by rw [u₁.wr]; exact hc.inW4 (d := SAVE + 4) (n := 4) (by decide) (by decide)) fun s₂ u₂ => ?_
+  refine Wp.wp_stm (B := x) (by rw [u₂.gpr, u₁.gpr]; exact hc.edi)
+    (by rw [u₂.wr, u₁.wr]; exact hc.inW4 (d := SAVE + 8) (n := 4) (by decide) (by decide)) fun s₃ u₃ => ?_
+  refine Wp.wp_stm (B := x) (by rw [u₃.gpr, u₂.gpr, u₁.gpr]; exact hc.edi)
+    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hc.inW4 (d := SAVE + 12) (n := 4) (by decide) (by decide))
+    fun s₄ u₄ => WP.block_nil ?_
+  have m₄ : s₄.mem = (((s.mem.writeW (addr x SAVE) (s.gpr .ebx)).writeW (addr x (SAVE + 4)) (s.gpr .esi)).writeW
       (addr x (SAVE + 8)) (s.gpr .edi)).writeW (addr x (SAVE + 12)) (s.gpr .ebp) := by
-    rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₄.gpr, u₃.gpr, u₂.gpr, u₁.other .edi (by decide),
-      u₁.other .ebp (by decide), u₁.other .esi (by decide), u₁.other .ebx (by decide)]
+    rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₃.gpr, u₂.gpr, u₁.gpr]
   have hS : ∀ d, SAVE ≤ d → d + 4 ≤ SAVE + 16 → (sub x SAVE 16).Contains (addr x d) 4 := fun d h₁ h₂ =>
     sub_contains (by simp only [SAVE]; omega_using [hfit]) h₁ h₂ (by decide)
-  refine ⟨⟨by rw [u₆.gpr, u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr]; exact e₁, hfit,
-      by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact h.wr, by decide, fun _ hW => absurd hW (by decide)⟩,
-    by rw [u₆.other _ (by decide), u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.other _ (by decide)],
-    by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd], by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr], ?_, ?_⟩
-  · rw [m₆]
+  refine ⟨by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr], by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd],
+    by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr], ?_, ?_⟩
+  · rw [m₄]
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (hS _ (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (hS _ (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (hS _ (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (hS _ (by decide) (by decide))
-  · rw [m₆]
+  · rw [m₄]
     have w : ∀ {m : Mem} {d e : Nat} {v : BitVec 32}, SAVE ≤ d → d + 4 ≤ SAVE + 16 → SAVE ≤ e →
         e + 4 ≤ SAVE + 16 → d + 4 ≤ e ∨ e + 4 ≤ d → wd (m.writeW (addr x e) v) x d = wd m x d := fun h₁ h₂ h₃ h₄ hne =>
       wd_write_ne _ _ (by simp only [SAVE] at *; omega_using [hfit, h₂]) (by simp only [SAVE] at *; omega_using [hfit, h₄])
@@ -318,26 +276,6 @@ theorem save_ok {s : State} {x : BitVec 32} (h : Entry s x) :
         w (by decide) (by decide) (by decide) (by decide) (by decide), wd_write_self]
     · rw [w (by decide) (by decide) (by decide) (by decide) (by decide), wd_write_self]
     · rw [wd_write_self]
-
-theorem entry_ok {s : State} {x : BitVec 32} (h : Entry s x) :
-    WP isa (.block entry) s fun t =>
-      Ctx 4096 x t ∧ t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Frame [sub x SAVE 16, sub x AC 32] s.mem t.mem ∧ Saved x s.gpr t.mem ∧
-      F t.mem x AC = F s.mem x Impl.X25519.X86.Field32.aAt := by
-  have hfit := h.fit
-  rw [entry, WP.block_append_iff]
-  refine WP.mono (save_ok h) fun t ⟨hc, esp, rd, wr, hf, hsv⟩ => ?_
-  refine WP.mono (copy_ok hc below_AC below_aAt (.inr (.inl (by decide)))) fun u ⟨k, fu, eu⟩ => ?_
-  have k₁ : ∀ d, SAVE ≤ d → d + 4 ≤ SAVE + 16 → wd u.mem x d = wd t.mem x d := fun d h₁ h₂ =>
-    wd_frame1 fu hfit (by decide) (by simp only [SAVE] at h₂; omega_using [h₂]) (.inr (by simp only [SAVE, AC] at *; omega_using [h₁]))
-  refine ⟨k.ctx hc, by rw [k.esp, esp], by rw [k.rd, rd], by rw [k.wr, wr],
-    (hf.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..).trans
-      (fu.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp),
-    ⟨(k₁ _ (by decide) (by decide)).trans hsv.ebx, (k₁ _ (by decide) (by decide)).trans hsv.esi,
-      (k₁ _ (by decide) (by decide)).trans hsv.edi, (k₁ _ (by decide) (by decide)).trans hsv.ebp⟩, ?_⟩
-  simp only [F]
-  rw [eu]
-  exact congrArg VG.Proof.X25519.toFe (fe_frame1 hf hfit (by decide) (by decide) (.inl (by decide)))
 
 theorem exit_ok {u : State} {x : BitVec 32} {g : Reg → BitVec 32} (hc : Ctx 4096 x u) (hsv : Saved x g u.mem) :
     WP isa (.block exit) u fun v => v.gpr .ebx = g .ebx ∧ v.gpr .esi = g .esi ∧ v.gpr .edi = g .edi ∧
@@ -364,49 +302,120 @@ theorem exit_ok {u : State} {x : BitVec 32} {g : Reg → BitVec 32} (hc : Ctx 40
   · rw [v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide), v₂.other _ (by decide),
       v₁.other _ (by decide)]
 
-/-- The regions the function writes: bytes 512 to 1023. -/
-abbrev powW (x : BitVec 32) : List Region := [sub x 512 512]
+/-- The registers saved at `SAVE` survive a change of bytes 512 to 927. -/
+theorem Saved.frame {x : BitVec 32} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved x g m)
+    (hf : Frame [sub x 512 416] m m') (hfit : x.toNat + 4096 ≤ 2 ^ 32) : Saved x g m' :=
+  have k : ∀ d, SAVE ≤ d → d + 4 ≤ SAVE + 16 → wd m' x d = wd m x d := fun d h₁ h₂ =>
+    wd_frame1 hf hfit (by decide) (by simp only [SAVE] at h₂; omega_using [h₂])
+      (.inr (by simp only [SAVE] at h₁; omega_using [h₁]))
+  ⟨(k _ (by decide) (by decide)).trans h.ebx, (k _ (by decide) (by decide)).trans h.esi,
+    (k _ (by decide) (by decide)).trans h.edi, (k _ (by decide) (by decide)).trans h.ebp⟩
 
-theorem pow250Fn_ok {s : State} {x : BitVec 32} (h : Entry s x) :
-    WP isa pow250Fn s fun t => (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Frame (powW x) s.mem t.mem ∧
-      F t.mem x E1 = pw (F s.mem x Impl.X25519.X86.Field32.aAt) (2 ^ 250 - 1) ∧
-      F t.mem x E0 = pw (F s.mem x Impl.X25519.X86.Field32.aAt) 11 := by
-  have hfit := h.fit
-  refine WP.seq (WP.mono (entry_ok h) fun t ⟨hc, esp, rd, wr, hf, hsv, ha⟩ => ?_)
-  refine WP.seq (WP.mono (chain_spec x t hc) fun u ⟨ku, eu⟩ => ?_)
-  have hsv' : Saved x s.gpr u.mem := by
-    have k : ∀ d, SAVE ≤ d → d + 4 ≤ SAVE + 16 → wd u.mem x d = wd t.mem x d := fun d h₁ h₂ =>
-      wd_frame1 ku.frame hfit (by decide) (by simp only [SAVE] at h₂; omega_using [h₂]) (.inr (by simp only [SAVE] at h₁; omega_using [h₁]))
-    exact ⟨(k _ (by decide) (by decide)).trans hsv.ebx, (k _ (by decide) (by decide)).trans hsv.esi,
-      (k _ (by decide) (by decide)).trans hsv.edi, (k _ (by decide) (by decide)).trans hsv.ebp⟩
-  refine WP.mono (exit_ok (ku.ctx hc) hsv') fun v ⟨rb, rs, ri, rp, re, rr, rw', rm⟩ => ?_
-  obtain ⟨v1, v0⟩ := chainEnv_eval (cenv t.mem x)
-  have e1 := congrFun eu 1
-  have e0 := congrFun eu 0
-  have hz : cenv t.mem x 4 = F s.mem x Impl.X25519.X86.Field32.aAt := ha
-  refine ⟨fun r hr => ?_, by rw [rr, ku.rd, rd], by rw [rw', ku.wr, wr], ?_, ?_, ?_⟩
+/-- The slots keep their elements across a change of the saved registers. -/
+theorem F_save {x : BitVec 32} {m m' : Mem} (hf : Frame [sub x SAVE 16] m m') (hfit : x.toNat + 4096 ≤ 2 ^ 32)
+    {q : Nat} (hq : isSlot 512 q = true) : F m' x q = F m x q := by
+  obtain hb := slot_below hq
+  simp only [Below, T] at hb
+  exact congrArg VG.Proof.X25519.toFe (fe_frame1 hf hfit (by decide) (by omega_using [hb]) (.inl (by
+    simp only [SAVE]; omega_using [hb])))
+
+/-- The end of both functions: the registers restored; what holds of the
+state then. -/
+theorem exit_end {x : BitVec 32} {s t u : State} (hfit : x.toNat + 4096 ≤ 2 ^ 32) (hc : Ctx 4096 x u)
+    (g : t.gpr = s.gpr) (hsv : Saved x s.gpr t.mem) (rd : t.rd = s.rd) (wr : t.wr = s.wr)
+    (esp : u.gpr .esp = t.gpr .esp) (urd : u.rd = t.rd) (uwr : u.wr = t.wr)
+    (hf : Frame [sub x SAVE 16] s.mem t.mem) (fu : Frame [sub x 512 416] t.mem u.mem) {v : Fe}
+    (eu : Upd1 t.mem u.mem x OpA v) :
+    WP isa (.block exit) u fun w => (∀ r ∈ calleeSaved, w.gpr r = s.gpr r) ∧ w.rd = s.rd ∧ w.wr = s.wr ∧
+      Frame [sub x 512 512] s.mem w.mem ∧ Upd1 s.mem w.mem x OpA v := by
+  refine WP.mono (exit_ok hc (hsv.frame fu hfit)) fun w ⟨rb, rs, ri, rp, re, rr, rw', rm⟩ => ?_
+  refine ⟨fun r hr => ?_, by rw [rr, urd, rd], by rw [rw', uwr, wr], ?_, fun q hq => ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact rb
     · exact rs
     · exact ri
     · exact rp
-    · rw [re, ku.esp, esp]
+    · rw [re, esp, g]
   · rw [rm]
-    have sub512 : ∀ r ∈ [sub x SAVE 16, sub x AC 32], ∃ r' ∈ powW x, Region.Sub r r' := fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;>
-        exact ⟨_, List.mem_singleton_self _, sub_sub hfit (by decide) (by decide) (by decide)⟩
-    refine (hf.sub sub512).trans (ku.frame.sub fun r hr => ?_)
-    rw [List.mem_singleton.mp hr]
-    exact ⟨_, List.mem_singleton_self _, sub_sub hfit (Nat.le_refl _) (by decide) (by decide)⟩
-  · rw [rm]
-    change cenv u.mem x 1 = _
-    rw [e1, v1, hz, chainF_eq]
-  · rw [rm]
-    change cenv u.mem x 0 = _
-    rw [e0, v0, hz, chainF_eq]
+    exact (hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact sub_sub hfit (by decide) (by decide) (by decide)⟩).trans
+      (fu.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        rw [List.mem_singleton.mp hr]; exact sub_sub hfit (Nat.le_refl _) (by decide) (by decide)⟩)
+  · rw [rm, eu q hq]
+    by_cases e : q = OpA
+    · subst e; rw [Function.update_self, Function.update_self]
+    · rw [Function.update_of_ne e, Function.update_of_ne e, F_save hf hfit hq]
+
+theorem mulFn_ok {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) :
+    WP isa mulFn s fun t => (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame [sub x 512 512] s.mem t.mem ∧ Upd1 s.mem t.mem x OpA (F s.mem x OpA * F s.mem x OpB) := by
+  have hfit := hc.fit
+  rw [mulFn, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (saveRegs_ok hc) fun t ⟨g, rd, wr, hf, hsv⟩ => ?_
+  have ct : Ctx 4096 x t := hc.keep (by rw [g]) wr (by rw [g])
+  refine WP.mono (op_ok (lo := 512) ct (.mul OpA OpA OpB) (by decide)) fun u ⟨k, fu, eu⟩ => ?_
+  refine exit_end hfit (k.ctx ct) g hsv rd wr k.esp k.rd k.wr hf fu fun q hq => ?_
+  rw [eu q hq]
+  show Function.update (F t.mem x) OpA (F t.mem x OpA * F t.mem x OpB) q = _
+  rw [F_save hf hfit OpA_slot, F_save hf hfit OpB_slot]
+
+/-- `sqnFn`'s loop: `[OpA]` squared in place, `esi` times. -/
+theorem sqLoopP {x : BitVec 32} {s₀ : State} (hc₀ : Ctx 4096 x s₀) (v : Fe) (n : Nat) (hn : n < 2 ^ 32) :
+    ∀ m s, 1 ≤ m → m ≤ n → CKeep x s₀ s → s.gpr .esi = BitVec.ofNat 32 m →
+      Upd1 s₀.mem s.mem x OpA (sqn v (n - m)) →
+      WP isa (.loop (.block (mul OpA OpA OpA ++ ([.alu .sub .esi (.imm 1)] : List Instr))) .ne) s fun t =>
+        CKeep x s₀ t ∧ Upd1 s₀.mem t.mem x OpA (sqn v n) := by
+  intro m s h1 h2 hk hb he
+  refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m ≤ n ∧ CKeep x s₀ s ∧
+    s.gpr .esi = BitVec.ofNat 32 m ∧ Upd1 s₀.mem s.mem x OpA (sqn v (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
+  intro m s ⟨h1, h2, hk, hb, he⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (op_ok (lo := 512) (hk.ctx hc₀) (.mul OpA OpA OpA) (by decide)) fun t ⟨kt, ft, et⟩ => ?_
+  refine Wp.wp_subi fun u hu _ hz => WP.block_nil ?_
+  have ht : CKeep x s t := ⟨kt.edi, kt.esp, kt.rd, kt.wr, ft⟩
+  have ku := hk.trans (ht.trans (CKeep.of_counter hu))
+  have bu : u.gpr .esi = BitVec.ofNat 32 (m - 1) := by
+    rw [hu.gpr, kt.esi, hb]; exact Wp.ofNat_pred h1
+  have eu : Upd1 s₀.mem u.mem x OpA (sqn v (n - (m - 1))) := fun q hq => by
+    rw [hu.mem, et q hq]
+    show Function.update (F s.mem x) OpA (F s.mem x OpA * F s.mem x OpA) q = _
+    rw [he OpA OpA_slot, Function.update_self, show n - (m - 1) = (n - m) + 1 by omega_using [h1, h2]]
+    by_cases e : q = OpA
+    · subst e; rw [Function.update_self, Function.update_self]; rfl
+    · rw [Function.update_of_ne e, Function.update_of_ne e, he q hq, Function.update_of_ne e]
+  have ev : isa.eval .ne u = some (!decide (m - 1 = 0)) := by
+    show u.zf.map (!·) = _
+    rw [hz, kt.esi, hb, Wp.ofNat_pred h1, Wp.ofNat_beq_zero (by omega_using [h2, hn])]
+    rfl
+  by_cases hm : m = 1
+  · subst m
+    exact .inl ⟨by rw [ev]; rfl, ku, by simpa only [Nat.sub_self, Nat.sub_zero] using eu⟩
+  · exact .inr ⟨by rw [ev]; simp only [show m - 1 ≠ 0 by omega_using [h1, hm], decide_false]; rfl,
+      m - 1, by omega_using [h1], by omega_using [h1, hm], by omega_using [h2], ku, bu, eu⟩
+
+theorem sqnFn_ok {x : BitVec 32} {s : State} (hc : Ctx 4096 x s) {n : Nat}
+    (hn : s.gpr .eax = BitVec.ofNat 32 n) (h1 : 1 ≤ n) (h2 : n < 2 ^ 32) :
+    WP isa sqnFn s fun t => (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame [sub x 512 512] s.mem t.mem ∧ Upd1 s.mem t.mem x OpA (sqn (F s.mem x OpA) n) := by
+  have hfit := hc.fit
+  rw [sqnFn]
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (saveRegs_ok hc) fun t ⟨g, rd, wr, hf, hsv⟩ => ?_
+  refine Wp.wp_mov fun t₁ u₁ => WP.block_nil ?_
+  have g₁ : ∀ r, r ≠ .esi → t₁.gpr r = s.gpr r := fun r h => by rw [u₁.other r h, g]
+  have ct : Ctx 4096 x t₁ := hc.keep (g₁ _ (by decide)) (by rw [u₁.wr, wr]) (g₁ _ (by decide))
+  have e₁ : t₁.gpr .esi = BitVec.ofNat 32 n := by rw [u₁.gpr, g, hn]
+  refine WP.seq (WP.mono (sqLoopP ct (F t₁.mem x OpA) n h2 n t₁ h1 (Nat.le_refl _) (CKeep.refl x t₁) e₁
+    fun q _ => by
+      rw [Nat.sub_self]
+      show F t₁.mem x q = Function.update (F t₁.mem x) OpA (F t₁.mem x OpA) q
+      rw [Function.update_eq_self]) fun u ⟨ku, eu⟩ => ?_)
+  have fu : Frame [sub x 512 416] t.mem u.mem := by rw [← u₁.mem]; exact ku.frame
+  refine exit_end hfit (ku.ctx ct) g hsv rd wr (by rw [ku.esp, g₁ _ (by decide), g]) (by rw [ku.rd, u₁.rd])
+    (by rw [ku.wr, u₁.wr]) hf fu fun q hq => ?_
+  rw [eu q hq, u₁.mem, F_save hf hfit OpA_slot]
 
 end VG.Proof.X25519.X86.Field32
 
@@ -414,18 +423,22 @@ end
 
 end
 
+/-! ### The calls and the chain -/
+
+section
 
 /-!
-# Calls of `vg_gf25519_r32_pow250` on x86 (32-bit)
+# The addition chain of `pow250Call` on x86 (32-bit), by calls
 
-`pow250Call` (`Impl/X25519/X86/Field32.lean`) pushes the working space at
-`edi` as the argument of `vg_gf25519_r32_pow250` and calls it
-(`pow250Call_ok`): from a working space of 8192 bytes apart from the 8
-bytes of stack the call uses (`Ctx`'s `stk`), it keeps what the field
-arithmetic keeps (`Keep`), changes memory only in bytes 512 to 1023 of the
-working space and that stack, and leaves `a^(2^250 - 1)` at byte 544 and
-`a^11` at byte 512, for `a` the element at byte 128. The call's correctness
-is the function's own (`pow250Fn_ok`, through `WP.callWith`).
+A call of `vg_gf25519_r32_mul` or `vg_gf25519_r32_sqn` (`fieldCall_ok`,
+through `WP.call`) keeps what the field arithmetic keeps (`Keep`), changes
+memory only in bytes 512 to 1023 and the 4 bytes below `esp` of its return
+address, and sets `OpA` as the function does (`mulCall_ok`, `sqnCall_ok`).
+With their copies, `cmul` and `csqn` are a product and a run of squarings of
+the chain's slots (`cmulS`, `csqnS`, as `SSpec`s), so the chain takes the
+slots' values `e` to `chainEnv e` (`chain_spec`). `pow250Call_ok'`: `a`
+copied to `AC` and the chain, from a working space of `W` bytes apart from
+the 8 bytes of stack below `esp`.
 -/
 
 @[expose] public section
@@ -433,82 +446,273 @@ is the function's own (`pow250Fn_ok`, through `WP.callWith`).
 namespace VG.Proof.X25519.X86.Field32
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.X25519.X86.Field32 VG.Proof.X25519.X86 VG.Spec.X25519
-open VG.Proof.X25519 (pw)
+open VG.Proof.X25519 (pw sqn)
 
-theorem pow250Fn_noSp : NoSp pow250Fn := NoSp.of_all (by lit_decide)
+theorem mulFn_noSp : NoSp mulFn := NoSp.of_all (by lit_decide)
+theorem sqnFn_noSp : NoSp sqnFn := NoSp.of_all (by lit_decide)
+theorem mulFn_stack : stackUse mulFn = 0 := rfl
+theorem sqnFn_stack : stackUse sqnFn = 0 := rfl
 
-theorem pow250Fn_stack : stackUse pow250Fn = 0 := rfl
+theorem below_AC : Below AC := by decide
+theorem below_aAt : Below Impl.X25519.X86.Field32.aAt := by decide
 
-/-- A call from a working space of `W` bytes, the 4096 the function uses apart
+/-- The callee's state: `s` once the call has stored its return address,
+with the working space's 4096 bytes its only region. -/
+abbrev callee (x : BitVec 32) (s : State) : State := s.callEntry.withRegions [] [scR 4096 x]
+
+theorem callee_ctx {W : Nat} {x : BitVec 32} {s : State} {c : Bool} (hc : Ctx W x s c) :
+    Ctx 4096 x (callee x s) :=
+  ⟨by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide)]; exact hc.edi, hc.fit4,
+    List.mem_singleton_self _, Nat.le_refl _, fun _ hW => absurd hW (by decide)⟩
+
+/-- The return address stored below `esp`. -/
+theorem callee_frame {s : State} (hE : 4 ≤ (s.gpr .esp).toNat) :
+    Frame [below (s.gpr .esp) 4] s.mem s.callEntry.mem :=
+  Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_top (k := 4) (Nat.le_refl _) hE (by decide))
+
+/-- The working space's elements are the callee's. -/
+theorem F_callee {W : Nat} {x : BitVec 32} {s : State} {c : Bool} (hc : Ctx W x s c) (hE : 4 ≤ (s.gpr .esp).toNat)
+    (dis : (scR 4096 x).Disjoint (below (s.gpr .esp) 4)) {q : Nat} (hq : q + 32 ≤ 4096) :
+    F (callee x s).mem x q = F s.mem x q := by
+  have hfit := hc.fit4
+  exact congrArg VG.Proof.X25519.toFe (fe_frame fun k hk => wd_frame (callee_frame hE) fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact dis.sub_left (by
+      rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by omega_using [hq, hk]) (by omega_using [hq, hk])))
+
+/-- A call of a function of the field, `n` with the code `body`, which
+from the callee's state keeps the callee-saved registers and the regions,
+changes memory only in bytes 512 to 1023 and sets `OpA` to `v`; from a
+working space of `W` bytes apart from the 4 bytes of stack below `esp`. -/
+theorem fieldCall_ok {W : Nat} {x : BitVec 32} {s : State} {c : Bool} (hc : Ctx W x s c)
+    (hE : 4 ≤ (s.gpr .esp).toNat) (dis : (scR 4096 x).Disjoint (below (s.gpr .esp) 4)) {n : String}
+    {body : Prog isa} (hsp : NoSp body) (hst : stackUse body = 0) {v : Fe}
+    (hb : WP isa body (callee x s) fun t => (∀ r ∈ calleeSaved, t.gpr r = (callee x s).gpr r) ∧
+      t.rd = (callee x s).rd ∧ t.wr = (callee x s).wr ∧ Frame [sub x 512 512] (callee x s).mem t.mem ∧
+      Upd1 (callee x s).mem t.mem x OpA v) :
+    WP isa (.call n body) s fun t => Keep s t ∧ Frame [sub x 512 512, below (s.gpr .esp) 4] s.mem t.mem ∧
+      Upd1 s.mem t.mem x OpA v := by
+  have hfit : x.toNat + 4096 ≤ 2 ^ 32 := hc.fit4
+  let K : Contract isa :=
+    { pre := fun t => t = callee x s
+      post := fun t t' => Frame [sub x 512 512] t.mem t'.mem ∧ Upd1 t.mem t'.mem x OpA v
+      pub := fun _ _ => True }
+  have hK : ∀ t, K.pre t → ∃ tr t', Exec isa body t tr t' ∧ abiPreserved t t' ∧ K.post t t' := by
+    intro t ht
+    change t = callee x s at ht
+    subst ht
+    obtain ⟨tr, t', ex, hcs, -, -, hf, hu⟩ := hb
+    refine ⟨tr, t', ex, ⟨hcs, ?_⟩, hf, hu⟩
+    refine hf.readW (Region.contains_self _ _) (fun r hr => dis.symm.sub_right ?_) (by decide)
+    rw [List.mem_singleton.mp hr, scR_eq]
+    exact sub_sub hfit (by decide) (by decide) (by decide)
+  have cov : ∀ ts : List Region, scR W x ∈ ts → Covers [scR 4096 x] ts := fun ts h =>
+    Covers.of_sub fun r hr => ⟨scR W x, h, 0, by
+      rw [List.mem_singleton.mp hr]; exact (BitVec.add_zero _).symm, by
+      rw [List.mem_singleton.mp hr]; show 0 + 4096 ≤ W; omega_using [hc.room]⟩
+  refine WP.call (k := K) (rd := []) (wr := [scR 4096 x]) hK hsp (by rw [hst]; exact hE) rfl
+    (cov _ (List.mem_append_right _ hc.wr)) (cov _ hc.wr)
+    fun s' hrd hwr hcs _ _ ⟨s₂, hm2, _, hf2, hu2⟩ => ?_
+  rw [← hm2]
+  refine ⟨⟨hcs .esi (by decide), hcs .edi (by decide), hcs .esp (by decide), hrd, hwr⟩, ?_, fun q hq => ?_⟩
+  · exact ((callee_frame hE).mono fun r hr => by
+      rw [List.mem_singleton.mp hr]; simp).trans (hf2.mono fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..)
+  · obtain hb := slot_below hq
+    simp only [Below, T] at hb
+    rw [hu2 q hq]
+    by_cases e : q = OpA
+    · subst e; rw [Function.update_self, Function.update_self]
+    · rw [Function.update_of_ne e, Function.update_of_ne e]
+      exact F_callee hc hE dis (by omega_using [hb])
+
+theorem mulCall_ok {W : Nat} {x : BitVec 32} {s : State} {c : Bool} (hc : Ctx W x s c)
+    (hE : 4 ≤ (s.gpr .esp).toNat) (dis : (scR 4096 x).Disjoint (below (s.gpr .esp) 4)) :
+    WP isa mulCall s fun t => Keep s t ∧ Frame [sub x 512 512, below (s.gpr .esp) 4] s.mem t.mem ∧
+      Upd1 s.mem t.mem x OpA (F s.mem x OpA * F s.mem x OpB) := by
+  have h := fieldCall_ok (n := "vg_gf25519_r32_mul") hc hE dis mulFn_noSp mulFn_stack (mulFn_ok (callee_ctx hc))
+  rwa [F_callee hc hE dis (by decide), F_callee hc hE dis (q := OpB) (by decide)] at h
+
+theorem sqnCall_ok {W : Nat} {x : BitVec 32} {s : State} {c : Bool} (hc : Ctx W x s c)
+    (hE : 4 ≤ (s.gpr .esp).toNat) (dis : (scR 4096 x).Disjoint (below (s.gpr .esp) 4)) {n : Nat}
+    (hn : s.gpr .eax = BitVec.ofNat 32 n) (h1 : 1 ≤ n) (h2 : n < 2 ^ 32) :
+    WP isa sqnCall s fun t => Keep s t ∧ Frame [sub x 512 512, below (s.gpr .esp) 4] s.mem t.mem ∧
+      Upd1 s.mem t.mem x OpA (sqn (F s.mem x OpA) n) := by
+  have hn' : (callee x s).gpr .eax = BitVec.ofNat 32 n := by
+    rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide)]; exact hn
+  have h := fieldCall_ok (n := "vg_gf25519_r32_sqn") hc hE dis sqnFn_noSp sqnFn_stack
+    (sqnFn_ok (callee_ctx hc) hn' h1 h2)
+  rwa [F_callee hc hE dis (by decide)] at h
+
+/-- What a product or a run of squarings of the chain keeps: what the field
+arithmetic keeps, and memory outside bytes 512 to 1023 and the 4 bytes of
+stack below `esp`. -/
+structure SKeep (x : BitVec 32) (s t : State) : Prop where
+  keep : Keep s t
+  frame : Frame [sub x 512 512, below (s.gpr .esp) 4] s.mem t.mem
+
+theorem SKeep.trans {x : BitVec 32} {s t u : State} (h : SKeep x s t) (k : SKeep x t u) : SKeep x s u :=
+  ⟨h.keep.trans k.keep, h.frame.trans (by rw [← h.keep.esp]; exact k.frame)⟩
+
+theorem SKeep.of_keep {x : BitVec 32} {s t : State} (k : Keep s t) (f : Frame [sub x 512 416] s.mem t.mem)
+    (hfit : x.toNat + 4096 ≤ 2 ^ 32) : SKeep x s t :=
+  ⟨k, f.sub fun r hr => ⟨_, List.mem_cons_self .., by
+    rw [List.mem_singleton.mp hr]; exact sub_sub hfit (Nat.le_refl _) (by decide) (by decide)⟩⟩
+
+/-- `c` takes the slots' values `e` to `f e`, keeping what `SKeep` keeps,
+from a working space of `W` bytes apart from the 4 bytes of stack below
+`esp`. -/
+def SSpec (W : Nat) (x : BitVec 32) (c : Prog isa) (f : CEnv → CEnv) : Prop :=
+  ∀ s, Ctx W x s → 4 ≤ (s.gpr .esp).toNat → (scR 4096 x).Disjoint (below (s.gpr .esp) 4) →
+    WP isa c s fun t => SKeep x s t ∧ cenv t.mem x = f (cenv s.mem x)
+
+theorem SSpec.seq {W : Nat} {x : BitVec 32} {c d : Prog isa} {f g : CEnv → CEnv}
+    (h : SSpec W x c f) (k : SSpec W x d g) : SSpec W x (.seq c d) (fun e => g (f e)) :=
+  fun s hc hE hd => WP.seq (WP.mono (h s hc hE hd) fun t ⟨ht, et⟩ => by
+    have sp := ht.keep.esp
+    exact WP.mono (k t (ht.keep.ctx hc) (by rw [sp]; exact hE) (by rw [sp]; exact hd))
+      fun u ⟨hu, eu⟩ => ⟨ht.trans hu, by rw [eu, et]⟩)
+
+theorem coff_ne_OpA (i : Cs) : coff i ≠ OpA := (by decide : ∀ i : Cs, coff i ≠ OpA) i
+theorem coff_ne_OpB (i : Cs) : coff i ≠ OpB := (by decide : ∀ i : Cs, coff i ≠ OpB) i
+theorem OpA_ne_OpB : OpA ≠ OpB := by decide
+
+/-- A copy of slots from byte 512, with what it keeps. -/
+theorem copyS {W : Nat} {x : BitVec 32} {s : State} (hc : Ctx W x s) {o a : Nat} (ho : isSlot 512 o = true)
+    (ha : isSlot 512 a = true) :
+    WP isa (.block (copy o a)) s fun t => Keep s t ∧ Frame [sub x 512 416] s.mem t.mem ∧
+      F t.mem x o = F s.mem x a ∧ ∀ q, isSlot 512 q = true → q ≠ o → F t.mem x q = F s.mem x q := by
+  have hv : opValid 512 (.copy o a) = true := by
+    simp only [opValid, opOut, opIns, ho, ha, List.all_cons, List.all_nil, Bool.and_self]
+  refine WP.mono (op_ok (lo := 512) hc (.copy o a) hv) fun t ⟨k, f, e⟩ => ⟨k, f, ?_, fun q hq h => ?_⟩
+  · rw [e o ho]; exact Function.update_self ..
+  · rw [e q hq]; exact Function.update_of_ne h ..
+
+theorem cmulS {W : Nat} (x : BitVec 32) (o a b : Cs) :
+    SSpec W x (cmul (coff o) (coff a) (coff b)) (opMul o a b) := by
+  intro s hc hE hd
+  have hfit := hc.fit4
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (copyS hc OpA_slot (coff_slot a)) fun t₁ ⟨k₁, f₁, p₁, a₁⟩ => ?_
+  obtain c₁ := k₁.ctx hc
+  refine WP.mono (copyS c₁ OpB_slot (coff_slot b)) fun t₂ ⟨k₂, f₂, q₂, a₂⟩ => ?_
+  obtain c₂ := k₂.ctx c₁
+  obtain sp₂ : t₂.gpr .esp = s.gpr .esp := k₂.esp.trans k₁.esp
+  refine WP.seq (WP.mono (mulCall_ok c₂ (by rw [sp₂]; exact hE) (by rw [sp₂]; exact hd)) fun t₃ ⟨k₃, f₃, e₃⟩ => ?_)
+  obtain c₃ := k₃.ctx c₂
+  refine WP.mono (copyS c₃ (coff_slot o) OpA_slot) fun t₄ ⟨k₄, f₄, o₄, a₄⟩ => ?_
+  obtain p₃ : F t₃.mem x OpA = F t₂.mem x OpA * F t₂.mem x OpB := by rw [e₃ OpA OpA_slot]; exact Function.update_self ..
+  obtain a₃ : ∀ q, isSlot 512 q = true → q ≠ OpA → F t₃.mem x q = F t₂.mem x q := fun q hq h => by
+    rw [e₃ q hq]; exact Function.update_of_ne h ..
+  refine ⟨((SKeep.of_keep k₁ f₁ hfit).trans (SKeep.of_keep k₂ f₂ hfit)).trans
+    ((⟨k₃, f₃⟩ : SKeep x t₂ t₃).trans (SKeep.of_keep k₄ f₄ hfit)), funext fun i => ?_⟩
+  show F t₄.mem x (coff i) = opMul o a b (cenv s.mem x) i
+  by_cases h : i = o
+  · subst h
+    rw [o₄, p₃, a₂ OpA OpA_slot OpA_ne_OpB, p₁, q₂, a₁ (coff b) (coff_slot b) (coff_ne_OpA b)]
+    simp only [opMul, Function.update_self]
+    rfl
+  · rw [a₄ (coff i) (coff_slot i) (fun e => h (coff_inj e)), a₃ _ (coff_slot i) (coff_ne_OpA i),
+      a₂ _ (coff_slot i) (coff_ne_OpB i), a₁ _ (coff_slot i) (coff_ne_OpA i)]
+    simp only [opMul, Function.update_of_ne h]
+    rfl
+
+theorem csqnS {W : Nat} (x : BitVec 32) (o a : Cs) (n : Nat) (h1 : 1 ≤ n) (h2 : n < 2 ^ 32) :
+    SSpec W x (csqn (coff o) (coff a) n) (opSqn o a n) := by
+  intro s hc hE hd
+  have hfit := hc.fit4
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (copyS hc OpA_slot (coff_slot a)) fun t₁ ⟨k₁, f₁, p₁, a₁⟩ => ?_
+  refine Wp.wp_movi fun t₂ u₂ => WP.block_nil ?_
+  obtain k₂ : Keep t₁ t₂ := ⟨u₂.other _ (by decide), u₂.other _ (by decide), u₂.other _ (by decide), u₂.rd, u₂.wr⟩
+  obtain c₂ := k₂.ctx (k₁.ctx hc)
+  obtain sp₂ : t₂.gpr .esp = s.gpr .esp := k₂.esp.trans k₁.esp
+  refine WP.seq (WP.mono (sqnCall_ok c₂ (by rw [sp₂]; exact hE) (by rw [sp₂]; exact hd) u₂.gpr h1 h2)
+    fun t₃ ⟨k₃, f₃, e₃⟩ => ?_)
+  obtain c₃ := k₃.ctx c₂
+  refine WP.mono (copyS c₃ (coff_slot o) OpA_slot) fun t₄ ⟨k₄, f₄, o₄, a₄⟩ => ?_
+  obtain p₃ : F t₃.mem x OpA = sqn (F t₂.mem x OpA) n := by rw [e₃ OpA OpA_slot]; exact Function.update_self ..
+  obtain a₃ : ∀ q, isSlot 512 q = true → q ≠ OpA → F t₃.mem x q = F t₂.mem x q := fun q hq h => by
+    rw [e₃ q hq]; exact Function.update_of_ne h ..
+  obtain f₂ : Frame [sub x 512 416] t₁.mem t₂.mem := by rw [u₂.mem]; exact Frame.refl _ _
+  refine ⟨((SKeep.of_keep k₁ f₁ hfit).trans (SKeep.of_keep k₂ f₂ hfit)).trans
+    ((⟨k₃, f₃⟩ : SKeep x t₂ t₃).trans (SKeep.of_keep k₄ f₄ hfit)), funext fun i => ?_⟩
+  show F t₄.mem x (coff i) = opSqn o a n (cenv s.mem x) i
+  by_cases h : i = o
+  · subst h
+    rw [o₄, p₃, u₂.mem, p₁]
+    simp only [opSqn, Function.update_self]
+    rfl
+  · rw [a₄ (coff i) (coff_slot i) (fun e => h (coff_inj e)), a₃ _ (coff_slot i) (coff_ne_OpA i), u₂.mem,
+      a₁ _ (coff_slot i) (coff_ne_OpA i)]
+    simp only [opSqn, Function.update_of_ne h]
+    rfl
+
+/-- A square, as a run of one squaring. -/
+theorem sq1S {W : Nat} (x : BitVec 32) (o a : Cs) :
+    SSpec W x (csqn (coff o) (coff a) 1) (opMul o a a) := fun s hc hE hd =>
+  WP.mono (csqnS x o a 1 (by decide) (by decide) s hc hE hd) fun _ ⟨k, e⟩ => ⟨k, by rw [e]; rfl⟩
+
+theorem chain_eq : chain =
+    .seq (csqn (coff 0) (coff 4) 1) (.seq (csqn (coff 1) (coff 0) 1) (.seq (csqn (coff 1) (coff 1) 1) (
+    .seq (cmul (coff 1) (coff 4) (coff 1)) (.seq (cmul (coff 0) (coff 0) (coff 1)) (
+    .seq (csqn (coff 2) (coff 0) 1) (.seq (cmul (coff 1) (coff 1) (coff 2)) (
+    .seq (csqn (coff 2) (coff 1) 5) (.seq (cmul (coff 1) (coff 2) (coff 1)) (
+    .seq (csqn (coff 2) (coff 1) 10) (.seq (cmul (coff 2) (coff 2) (coff 1)) (
+    .seq (csqn (coff 3) (coff 2) 20) (.seq (cmul (coff 2) (coff 3) (coff 2)) (
+    .seq (csqn (coff 2) (coff 2) 10) (.seq (cmul (coff 1) (coff 2) (coff 1)) (
+    .seq (csqn (coff 2) (coff 1) 50) (.seq (cmul (coff 2) (coff 2) (coff 1)) (
+    .seq (csqn (coff 3) (coff 2) 100) (.seq (cmul (coff 2) (coff 3) (coff 2)) (
+    .seq (csqn (coff 2) (coff 2) 50) (cmul (coff 1) (coff 2) (coff 1))))))))))))))))))))) :=
+  rfl
+
+theorem chain_spec {W : Nat} (x : BitVec 32) : SSpec W x chain chainEnv := by
+  rw [chain_eq]
+  have h : SSpec W x _ _ :=
+    (sq1S x 0 4).seq <| (sq1S x 1 0).seq <| (sq1S x 1 1).seq <|
+    (cmulS x 1 4 1).seq <| (cmulS x 0 0 1).seq <| (sq1S x 2 0).seq <| (cmulS x 1 1 2).seq <|
+    (csqnS x 2 1 5 (by decide) (by decide)).seq <| (cmulS x 1 2 1).seq <|
+    (csqnS x 2 1 10 (by decide) (by decide)).seq <| (cmulS x 2 2 1).seq <|
+    (csqnS x 3 2 20 (by decide) (by decide)).seq <| (cmulS x 2 3 2).seq <|
+    (csqnS x 2 2 10 (by decide) (by decide)).seq <| (cmulS x 1 2 1).seq <|
+    (csqnS x 2 1 50 (by decide) (by decide)).seq <| (cmulS x 2 2 1).seq <|
+    (csqnS x 3 2 100 (by decide) (by decide)).seq <| (cmulS x 2 3 2).seq <|
+    (csqnS x 2 2 50 (by decide) (by decide)).seq <| (cmulS x 1 2 1)
+  exact h
+
+/-- The chain from a working space of `W` bytes, the 4096 it uses apart
 from the 8 bytes of stack below `esp`. -/
 theorem pow250Call_ok' {W : Nat} {x : BitVec 32} {s : State} (hc : Ctx W x s) (hE : 8 ≤ (s.gpr .esp).toNat)
     (dis4 : (scR 4096 x).Disjoint (callStk s)) :
     WP isa pow250Call s fun t => Keep s t ∧ Frame [sub x 512 512, callStk s] s.mem t.mem ∧
       F t.mem x E1 = pw (F s.mem x Impl.X25519.X86.Field32.aAt) (2 ^ 250 - 1) ∧
       F t.mem x E0 = pw (F s.mem x Impl.X25519.X86.Field32.aAt) 11 := by
-  have hfit : x.toNat + 4096 ≤ 2 ^ 32 := hc.fit4
-  have fit : 4 * [Reg.edi].length + 4 ≤ (s.gpr .esp).toNat := hE
-  let rd : List Region := [below (s.gpr .esp) 4]
-  let wr : List Region := [scR 4096 x]
-  obtain ⟨e, he⟩ : ∃ e, e = (pushed [.edi] s).callEntry.withRegions rd wr := ⟨_, rfl⟩
-  have esp_e : e.gpr .esp = s.gpr .esp - BitVec.ofNat 32 8 := by
-    rw [he, State.withRegions_gpr]; exact callEntry_esp' [.edi] s
-  have entry : Entry e x := by
-    refine ⟨?_, hfit, by rw [he]; exact List.mem_singleton_self _, ?_⟩
-    · rw [he, arg_withRegions, callEntry_arg fit (by decide) (by decide)]; exact hc.edi
-    · rw [he, argAddr_withRegions, callEntry_argAddr0]
-      exact ⟨_, List.mem_append_left _ (List.mem_singleton_self _), Region.contains_self _ _⟩
-  let K : Contract isa :=
-    { pre := fun t => t = e
-      post := fun t t' => Frame (powW x) t.mem t'.mem ∧
-        F t'.mem x E1 = pw (F t.mem x Impl.X25519.X86.Field32.aAt) (2 ^ 250 - 1) ∧
-        F t'.mem x E0 = pw (F t.mem x Impl.X25519.X86.Field32.aAt) 11
-      pub := fun _ _ => True }
-  have hret : (⟨(e.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (scR 4096 x) := by
-    rw [esp_e]
-    exact (dis4.sub_right (Region.sub_prefix (len := 4) (len' := 8) (by decide))).symm
-  have hK : ∀ t, K.pre t → ∃ tr t', Exec isa pow250Fn t tr t' ∧ abiPreserved t t' ∧ K.post t t' := by
-    intro t ht
-    change t = e at ht
-    subst ht
-    obtain ⟨tr, t', ex, hcs, -, -, hf, h1, h0⟩ := pow250Fn_ok entry
-    refine ⟨tr, t', ex, ⟨hcs, ?_⟩, hf, h1, h0⟩
-    refine hf.readW (Region.contains_self _ _) (fun r hr => hret.sub_right ?_) (by decide)
-    rw [List.mem_singleton.mp hr, scR_eq]
-    exact sub_sub hfit (Nat.zero_le _) (by decide) (by decide)
-  have cov4 : ∀ ts : List Region, scR W x ∈ ts → Covers wr ts := fun ts h =>
-    Covers.of_sub fun r hr => ⟨scR W x, h, 0, by
-      rw [List.mem_singleton.mp hr]; exact (BitVec.add_zero _).symm, by
-      rw [List.mem_singleton.mp hr]; show 0 + 4096 ≤ W; omega_using [hc.room]⟩
-  refine WP.callWith (k := K) (rd := rd) (wr := wr) hK pow250Fn_noSp (by decide) (by decide)
-    (by rw [pow250Fn_stack]; exact hE)
-    ⟨he.symm, Covers.append_left (Covers.of_mem fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact List.mem_append_right _ List.mem_cons_self)
-        (cov4 _ (List.mem_append_right _ (List.mem_cons_of_mem _ hc.wr))),
-      cov4 _ (List.mem_cons_of_mem _ hc.wr)⟩
-    fun s' hrd hwr hcs _ ⟨s₂, hm2, hf2, h1, h0⟩ => ?_
-  rw [← he] at hf2 h1 h0
-  -- Memory: the call's stack, then the function's writes.
-  have fs : Frame [callStk s] s.mem e.mem := by
-    rw [he, State.withRegions_mem]; exact callEntry_frame (rs := [.edi]) fit (by decide)
-  have fstk : ∀ q, q + 32 ≤ 4096 → F e.mem x q = F s.mem x q := fun q hq =>
-    congrArg VG.Proof.X25519.toFe (fe_frame fun k hk => wd_frame fs fun r hr => by
-      rw [List.mem_singleton.mp hr]
-      exact dis4.sub_left (by rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by omega_using [hq, hk]) (by omega_using [hq, hk])))
-  -- The pop loses the argument's frame, below `esp`, apart from the slots.
-  have fP : Frame [callStk s] s₂.mem s'.mem := hm2.sub fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact ⟨callStk s, List.mem_singleton_self _, below_sub (by decide) hE⟩
-  have flost : ∀ q, q + 32 ≤ 4096 → F s'.mem x q = F s₂.mem x q := fun q hq =>
-    congrArg VG.Proof.X25519.toFe (fe_frame fun k hk => wd_frame fP fun r hr => by
-      rw [List.mem_singleton.mp hr]
-      exact dis4.sub_left (by rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by omega_using [hq, hk]) (by omega_using [hq, hk])))
-  refine ⟨⟨hcs .esi (by decide), hcs .edi (by decide), hcs .esp (by decide), hrd, hwr⟩, ?_, ?_, ?_⟩
-  · exact ((fs.mono fun r hr => by
-      rw [List.mem_singleton.mp hr]; simp) |>.trans (hf2.mono fun r hr => by
-      rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..)).trans
-      (fP.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp)
-  · rw [flost _ (by decide), h1, fstk _ (by decide)]
-  · rw [flost _ (by decide), h0, fstk _ (by decide)]
+  have hfit := hc.fit4
+  have b48 : Region.Sub (below (s.gpr .esp) 4) (callStk s) := below_sub (by decide) hE
+  refine WP.seq (WP.mono (copy_ok hc below_AC below_aAt (.inr (.inl (by decide)))) fun t ⟨k, ft, et⟩ => ?_)
+  have sp : t.gpr .esp = s.gpr .esp := k.esp
+  refine WP.mono (chain_spec x t (k.ctx hc) (by rw [sp]; omega_using [hE]) (by rw [sp]; exact dis4.sub_right b48))
+    fun u ⟨ku, eu⟩ => ?_
+  obtain ⟨v1, v0⟩ := chainEnv_eval (cenv t.mem x)
+  have hz : cenv t.mem x 4 = F s.mem x Impl.X25519.X86.Field32.aAt := by
+    show VG.Proof.X25519.toFe (fe t.mem x AC) = _
+    rw [et]; rfl
+  have fu := ku.frame
+  rw [sp] at fu
+  refine ⟨k.trans ku.keep, ?_, ?_, ?_⟩
+  · exact (ft.sub fun r hr => ⟨_, List.mem_cons_self .., by
+      rw [List.mem_singleton.mp hr]; exact sub_sub hfit (by decide) (by decide) (by decide)⟩).trans
+      (fu.sub fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+        · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, b48⟩)
+  · change cenv u.mem x 1 = _
+    rw [eu, v1, hz, chainF_eq]
+  · change cenv u.mem x 0 = _
+    rw [eu, v0, hz, chainF_eq]
 
 theorem pow250Call_ok {x : BitVec 32} {s : State} (hc : Ctx 8192 x s) :
     WP isa pow250Call s fun t => Keep s t ∧ Frame [sub x 512 512, callStk s] s.mem t.mem ∧
@@ -518,3 +722,7 @@ theorem pow250Call_ok {x : BitVec 32} {s : State} (hc : Ctx 8192 x s) :
   pow250Call_ok' hc h.1 (h.2.sub_left (Region.sub_prefix (by decide)))
 
 end VG.Proof.X25519.X86.Field32
+
+end
+
+end

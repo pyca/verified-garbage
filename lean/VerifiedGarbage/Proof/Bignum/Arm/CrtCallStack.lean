@@ -26,9 +26,13 @@ structure CrtCallStack (g : CrtGeometry) (s : State) : Prop where
   count : s.mem.readW (off (State.addr s.sp) 12) 32 = BitVec.ofNat 32 g.length
   pointer : ∀ i : Fin 6, s.mem.readW (off (State.addr s.sp) (56 + 8 * i.val)) 32 = g.source i.succ
   length : ∀ i : Fin 6, s.mem.readW (off (State.addr s.sp) (60 + 8 * i.val)) 32 = BitVec.ofNat 32 (g.sourceLength i.succ)
+  /-- The 48 bytes below the stack, of the calls the CRT makes, apart from its storage. -/
+  belowFit : 48 ≤ s.sp.toNat
+  below : (FrameStack.belowA s.sp 48).Disjoint ⟨State.addr g.base, g.size⟩
 
 def crtMutable (g : CrtGeometry) (sp : BitVec 32) : List Region :=
-  [⟨State.addr g.base, g.size⟩, ⟨State.addr sp, 4⟩, ⟨off (State.addr sp) 8, 4⟩, ⟨off (State.addr sp) 48, 4⟩]
+  [⟨State.addr g.base, g.size⟩, ⟨State.addr sp, 4⟩, ⟨off (State.addr sp) 8, 4⟩, ⟨off (State.addr sp) 48, 4⟩,
+    FrameStack.belowA sp 48]
 
 theorem CrtCallStack.read {g : CrtGeometry} {s : State} (h : CrtCallStack g s) {d : Nat}
     (fit : d + 4 ≤ 112) (side : d + 4 ≤ 56 ∨ 56 ≤ d := by omega) :
@@ -50,11 +54,12 @@ theorem CrtCallStack.word_kept {g : CrtGeometry} {s t : State} {d : Nat}
   apply frame.readW (r := ⟨off (State.addr s.sp) d, 4⟩) (Region.contains_self _ _) _ (by decide)
   intro r hr
   simp only [crtMutable, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact h.separate.sub_left (Offset.sub_base _ fit)
   · exact Offset.disjoint_base _ (by omega_using [safe]) (by omega_using [fit])
   · exact Offset.disjoint _ (by omega_using [safe]) (by omega_using [fit]) (by decide)
   · exact Offset.disjoint _ (by omega_using [safe]) (by omega_using [fit]) (by decide)
+  · exact ((belowA_disjoint_from (n := 112) h.belowFit (by decide)).sub_right (Offset.sub_base _ fit)).symm
 
 theorem CrtCallStack.after_frame {g : CrtGeometry} {s t : State} {rs : List Reg}
     (h : CrtCallStack g s) (frame : Frame (crtMutable g s.sp) s.mem t.mem) (rest : Rest rs s t) :
@@ -62,7 +67,8 @@ theorem CrtCallStack.after_frame {g : CrtGeometry} {s t : State} {rs : List Reg}
   refine ⟨by rw [rest.sp]; exact h.nowrap,
     by rw [rest.rd, rest.wr, rest.sp]; exact h.readable,
     by rw [rest.wr, rest.sp]; exact h.writable,
-    by rw [rest.sp]; exact h.separate, ?_, ?_, ?_, ?_⟩
+    by rw [rest.sp]; exact h.separate, ?_, ?_, ?_, ?_, by rw [rest.sp]; exact h.belowFit,
+    by rw [rest.sp]; exact h.below⟩
   · rw [rest.sp, h.word_kept frame (d := 4) (by decide) (by simp)]; exact h.output
   · rw [rest.sp, h.word_kept frame (d := 12) (by decide) (by simp)]; exact h.count
   · intro i

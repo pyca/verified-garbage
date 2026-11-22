@@ -91,7 +91,7 @@ def verifyP521 : Prog isa :=
   .seq (.block ((Sign.Cfg.nConsts p521).flatMap (fun (i, x) => setConst 9 (p521.sl i) x))) <|
   .seq (Verify.Cfg.uv p521 p521Order) <|
   .seq (VerifyComb.Cfg.joint p521 "vg_p521_mul" mulP521 CombU.mulGP521Name CombU.mulGP521) <|
-  .seq (chainPow (Cfg.chainP p521) (p521.sl ONEP) p521.FP) <|
+  .seq (Ecdh.RISCV64.Cfg.invP p521) <|
   .seq (Cfg.affineCoord p521 XM XO RX) <|
   .seq compareP521 (.block (Verify.Cfg.finish p521))
 

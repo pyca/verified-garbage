@@ -27,12 +27,14 @@ theorem pcBody_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     (write : InRegions s.wr (State.addr dst) (16 * Spec.Rsa.modulusWords k))
     (dstSep : Region.Disjoint ⟨State.addr base, 8 * len⟩ ⟨State.addr dst, 16 * Spec.Rsa.modulusWords k⟩)
     (ptr : s.gpr .r0 = base) (source : s.gpr .r4 = src) (count : s.gpr .r6 = BitVec.ofNat 32 k)
+    (cs : CallStack base len s)
     (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : WP isa (PcFn.bodyWith kernel.code) s fun t =>
       (match Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (State.addr src) k) with
       | some words => t.gpr .r0 = 1 ∧ Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) = words
       | none => t.gpr .r0 = 0 ∧ Spec.Rsa.wordsAt t.mem (State.addr dst) (2 * Spec.Rsa.modulusWords k) =
           List.replicate (2 * Spec.Rsa.modulusWords k) 0) ∧
-      Frame [⟨State.addr base, 8 * len⟩, ⟨State.addr dst, 16 * Spec.Rsa.modulusWords k⟩] s.mem t.mem ∧
+      Frame [⟨State.addr base, 8 * len⟩, ⟨State.addr dst, 16 * Spec.Rsa.modulusWords k⟩,
+        FrameStack.belowA s.sp 48] s.mem t.mem ∧
       Rest roundClobbers s t := by
   rw [PcFn.bodyWith, WP.seq_iff]
   refine WP.mono (modulusCheck_ok s hk hk' srcFit read source count) ?_
@@ -44,9 +46,10 @@ theorem pcBody_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     refine WP.mono (pcValid_ok (kernel := kernel) u (ws.congr rest.wr) stackU hk hk' space srcFit
       (by rw [rest.rd, rest.wr]; exact read) srcSep dstFit (by rw [rest.wr]; exact write) dstSep
       ((rest.gpr .r0 (by decide)).trans ptr) ((rest.gpr .r6 (by decide)).trans count)
-      (by rw [mem]; exact valid)) ?_
+      (by rw [mem]; exact valid) (cs.of_rest rest)) ?_
     rintro t ⟨result, words, frameT, keep⟩
-    rw [mem] at words frameT
+    rw [mem, rest.sp] at frameT
+    rw [mem] at words
     rw [publicPrecompute_some (bytesAt_length _ _ _) valid]
     exact ⟨⟨result, words⟩, frameT, (rest.mono (by decide)).trans keep⟩
   · intro invalid

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
 public import VerifiedGarbage.Proof.TripleDes.Core
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
@@ -752,7 +753,55 @@ theorem pairLoop_ok {s₀ : State} (h₀ : Room s₀) {c : Nat} (hc : c < 3) (d 
   · right; exact ⟨by simp; omega_using [hm, e], 8 - (m + 1), by omega_using [hm, hn], m + 1, by omega_using [hm, e], rfl, J'⟩
 
 /-- The registers a pass leaves alone. -/
-def passKept : List Reg := [.s0, .a1, .a2, .s11, .ra]
+def passKept : List Reg := [.s0, .a1, .a2, .s11]
+
+/-- A call returns where its body leaves `ra` as it found it. -/
+theorem callBody_wp {name : String} {body : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa body s.callEntry fun u => u.gpr .ra = s.callEntry.gpr .ra ∧ Q u) :
+    WP isa (.call name body) s Q := by
+  obtain ⟨t, u, he, hra, hq⟩ := h
+  have hret : isa.ret s.callEntry u = some u := by
+    simp only [isa, ret]; exact ite_eq_left_of_eq_true _ _ (eq_true hra)
+  exact ⟨_, u, Exec.call (call_callEntry s) he hret, hq⟩
+
+/-- The pass's function, from the key pointer at the pass's first key. -/
+theorem passBody_ok (c : Nat) (hc : c < 3) (d : Direction) {s : State} (h : Room s)
+    (hA : s.gpr .a3 = passP s c d) :
+    WP isa (passBody d) s fun s' =>
+      (∀ x < 64, words s' x = passW (componentSchedule (scheduleAt s.mem (schedA s)) c) d (words s) x) ∧
+      (∀ r ∈ .ra :: passKept, s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame [stR s] s.mem s'.mem := by
+  unfold passBody
+  apply WP.seq
+  have e₂ := exec_li (s := s) (d := .a4) (imm := 8) (by decide)
+  refine WP.of_runBlock ⟨_, by
+    rw [runBlock_cons, show Impl.TripleDes.RISCV64.Bitslice.pairs = Reg.a4 from rfl, e₂, runStep_some,
+      runBlock_nil], ?_⟩
+  have z : BitVec.ofNat 64 (2 * 0) * δ d = 0#64 := by cases d <;> decide
+  have I0 : PairInv s c d 0 (s.write .a4 (BitVec.ofInt 64 8)) := by
+    refine ⟨by decide, by simp [RegUpd.gpr_write], by simp [RegUpd.gpr_write],
+      by simp [RegUpd.gpr_write], by simp [RegUpd.gpr_write], by simp [RegUpd.gpr_write], ?_,
+      by simp [RegUpd.gpr_write], fun x hx => rfl, rfl, rfl, rfl,
+      Frame.refl _ _⟩
+    simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, z]
+    rw [BitVec.add_zero]; exact hA
+  apply WP.seq
+  refine WP.mono (pairLoop_ok h hc d I0) fun v J => ?_
+  have hv : Room v := h.congr J.s0 J.wr
+  obtain ⟨v', run, w, k, rd, wr, sp, f⟩ := swapHalves_ok hv
+  refine WP.of_runBlock ⟨v', run, fun x hx => ?_, fun r hr => ?_, rd.trans J.rd, wr.trans J.wr,
+    sp.trans J.sp, ?_⟩
+  · rw [w x hx, VG.Proof.TripleDes.Bitslice.passW]
+    refine VG.Proof.TripleDes.Bitslice.swapW_congr (fun y hy => ?_) x hx
+    rw [J.wds y hy, VG.Proof.TripleDes.Bitslice.pairs_keys_congr 8 (fun r hr => keyOf_pass _ _ hc d hr)]
+  · simp only [passKept, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · rw [k _ (by decide) (by decide), J.ra]
+    · rw [k _ (by decide) (by decide), J.s0]
+    · rw [k _ (by decide) (by decide), J.a1]
+    · rw [k _ (by decide) (by decide), J.a2]
+    · rw [k _ (by decide) (by decide), J.s11]
+  · rw [stR_congr J.s0] at f; exact J.frame.trans f
 
 theorem pass_ok (c : Nat) (hc : c < 3) (d : Direction) {s : State} (h : Room s) :
     WP isa (pass c d) s fun s' =>
@@ -766,10 +815,9 @@ theorem pass_ok (c : Nat) (hc : c < 3) (d : Direction) {s : State} (h : Room s) 
     (by cases d <;> (simp only [imm12, schedOff, reduceCtorEq, ite_true, ite_false]; omega_using [hc]))
   let s₁ := s.write .a3 (s.gpr .s0 +
     BitVec.ofInt 64 ((schedOff : Int) + 128 * (c : Int) + if d = .encrypt then 0 else 120))
-  have e₂ := exec_li (s := s₁) (d := .a4) (imm := 8) (by decide)
-  refine WP.of_runBlock ⟨_, by
+  refine WP.of_runBlock ⟨s₁, by
     rw [runBlock_cons, show keyPtr = .a3 from rfl, show base = .s0 from rfl, e₁, runStep_some,
-      runBlock_cons, show Impl.TripleDes.RISCV64.Bitslice.pairs = Reg.a4 from rfl, e₂, runStep_some, runBlock_nil], ?_⟩
+      runBlock_nil], ?_⟩
   have hI : BitVec.ofInt 64 ((schedOff : Int) + 128 * (c : Int) + if d = .encrypt then 0 else 120) =
       BitVec.ofNat 64 schedOff + BitVec.ofNat 64 (kOff c d) := by
     cases d
@@ -779,32 +827,25 @@ theorem pass_ok (c : Nat) (hc : c < 3) (d : Direction) {s : State} (h : Room s) 
     · exact (by decide : ∀ c : Nat, c < 3 → BitVec.ofInt 64 ((schedOff : Int) + 128 * (c : Int) +
         if Direction.decrypt = .encrypt then 0 else 120) =
         BitVec.ofNat 64 schedOff + BitVec.ofNat 64 (kOff c .decrypt)) c hc
-  have z : BitVec.ofNat 64 (2 * 0) * δ d = 0#64 := by cases d <;> decide
-  have I0 : PairInv s c d 0 (s₁.write .a4 (BitVec.ofInt 64 8)) := by
-    refine ⟨by decide, by simp [s₁, RegUpd.gpr_write], by simp [s₁, RegUpd.gpr_write],
-      by simp [s₁, RegUpd.gpr_write], by simp [s₁, RegUpd.gpr_write], by simp [s₁, RegUpd.gpr_write], ?_,
-      by simp [RegUpd.gpr_write], fun x hx => rfl, rfl, rfl, rfl,
-      Frame.refl _ _⟩
-    simp only [s₁, RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, passP, schedA, z]
-    rw [hI, BitVec.add_zero]
-    exact (BitVec.add_assoc _ _ _).symm
-  apply WP.seq
-  refine WP.mono (pairLoop_ok h hc d I0) fun v J => ?_
-  have hv : Room v := h.congr J.s0 J.wr
-  obtain ⟨v', run, w, k, rd, wr, sp, f⟩ := swapHalves_ok hv
-  refine WP.of_runBlock ⟨v', run, fun x hx => ?_, fun r hr => ?_, rd.trans J.rd, wr.trans J.wr,
-    sp.trans J.sp, ?_⟩
-  · rw [w x hx, VG.Proof.TripleDes.Bitslice.passW]
-    refine VG.Proof.TripleDes.Bitslice.swapW_congr (fun y hy => ?_) x hx
-    rw [J.wds y hy, VG.Proof.TripleDes.Bitslice.pairs_keys_congr 8 (fun r hr => keyOf_pass _ _ hc d hr)]
-  · simp only [passKept, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · rw [k _ (by decide) (by decide), J.s0]
-    · rw [k _ (by decide) (by decide), J.a1]
-    · rw [k _ (by decide) (by decide), J.a2]
-    · rw [k _ (by decide) (by decide), J.s11]
-    · rw [k _ (by decide) (by decide), J.ra]
-  · rw [stR_congr J.s0] at f; exact J.frame.trans f
+  -- The call's entry: `ra` and the temporaries unknown, the rest as before.
+  let u := s₁.callEntry
+  have g : ∀ r, r ∉ linkRegs → r ≠ .a3 → u.gpr r = s.gpr r := fun r hl h3 => by
+    rw [State.callEntry_gpr _ hl]; simp [s₁, RegUpd.gpr_write, h3]
+  have s0u : u.gpr .s0 = s.gpr .s0 := g _ (by decide) (by decide)
+  have hu : Room u := h.congr s0u rfl
+  have sAu : schedA u = schedA s := by simp only [schedA, s0u]
+  have wu : words u = words s := by funext x; simp only [words, sl, s0u]; rfl
+  have hA : u.gpr .a3 = passP u c d := by
+    rw [State.callEntry_gpr _ (by decide)]
+    simp only [s₁, RegUpd.gpr_write, ite_true, passP, schedA]
+    rw [hI, BitVec.add_assoc, s0u]
+  refine callBody_wp (WP.mono (passBody_ok c hc d hu hA) fun v ⟨w, k, rd, wr, sp, f⟩ => ⟨k _ (by simp), ?_⟩)
+  refine ⟨fun x hx => ?_, fun r hr => ?_, rd, wr, sp, ?_⟩
+  · rw [w x hx, wu, sAu]; rfl
+  · rw [k r (List.mem_cons_of_mem _ hr)]
+    simp only [passKept, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide)
+  · rw [show stR u = stR s from stR_congr s0u] at f; exact f
 
 /-! ## The three passes -/
 

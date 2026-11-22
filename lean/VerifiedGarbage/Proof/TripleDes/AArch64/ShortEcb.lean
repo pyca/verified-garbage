@@ -374,11 +374,39 @@ open VG.Impl.TripleDes.AArch64 (BitsliceNeon.ecb)
 
 theorem savedRegs_ne13 : ∀ r ∈ VG.Proof.CmacTripleDes.AArch64.savedRegs, r ≠ .x13 := by decide
 
+/-- `WP.gprs` for registers the calls of `c` keep (none of `linkRegs`). -/
+theorem gprs_of_notLink {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) {rs : List Reg}
+    (hc : c.allInstrs (fun i => rs.all fun r => !clobbers i r) = true) (hl : ∀ r ∈ rs, r ∉ linkRegs) :
+    WP isa c s fun s' => Q s' ∧ ∀ r ∈ rs, s'.gpr r = s.gpr r := by
+  obtain ⟨t, s', he, hq⟩ := h
+  rw [Code.allInstrs_eq] at hc
+  refine ⟨t, s', he, hq, fun r hr => Exec.gpr (fun i hi => ?_) he (.inr (hl r hr))⟩
+  have := List.all_eq_true.mp (List.all_eq_true.mp hc i hi) r hr
+  simpa using this
+
+/-- Either path keeps the return address: the table block's, which calls
+nothing and does not write it, and the bitsliced ECB's. -/
+theorem few_ecb_keeps_x30 (d : Direction)
+    (hs : (ecb d).allInstrs (fun i => !clobbers i .x30) = true) (hn : (ecb d).noCalls = true)
+    {s s' : State} {t : List Leak} (he : Exec isa (few .x2 (ecb d) (BitsliceNeon.ecb d)) s t s') :
+    s'.gpr .x30 = s.gpr .x30 := by
+  unfold few at he
+  cases he with
+  | seq hA hR =>
+    obtain k : ∀ i ∈ instrs (.block [.addImm .x .x13 .x2 5, .lsr .x .x13 .x13 4] : Prog isa),
+        clobbers i .x30 = false := by decide
+    rw [← Exec.gpr k hA (.inl rfl)]
+    cases hR with
+    | iteT _ h =>
+      refine Exec.gpr (fun i hi => ?_) h (.inl hn)
+      have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hs) i hi
+      revert this; cases clobbers i .x30 <;> simp
+    | iteF _ h => exact VG.Proof.TripleDes.AArch64.BitslicedNeon.ecb_keeps_x30 d h
+
 /-- Either path is ECB and keeps the registers the table block saves. -/
 theorem few_ecb_wp (d : Direction) {s₀ : State} (hp : (contract d).pre s₀)
     (hk : (BitsliceNeon.ecb d).allInstrs (fun i =>
-      VG.Proof.CmacTripleDes.AArch64.savedRegs.all fun r => !clobbers i r) = true)
-    (hn : (BitsliceNeon.ecb d).noCalls = true) :
+      VG.Proof.CmacTripleDes.AArch64.savedRegs.all fun r => !clobbers i r) = true) :
     WP isa (few .x2 (ecb d) (BitsliceNeon.ecb d)) s₀ fun s' =>
       (contract d).post s₀ s' ∧ ∀ r ∈ VG.Proof.CmacTripleDes.AArch64.savedRegs, s'.gpr r = s₀.gpr r := by
   refine few_wp fun s₁ g₁ m₁ rd₁ wr₁ => ?_
@@ -392,52 +420,54 @@ theorem few_ecb_wp (d : Direction) {s₀ : State} (hp : (contract d).pre s₀)
     refine WP.mono (ecb_wp d ⟨hrd, hwr, kd, ks, ds, fit⟩) fun s' ⟨res, sv⟩ => ⟨back res, fun r hr => ?_⟩
     obtain ⟨i, hi, rfl⟩ := mem_savedRegs hr
     exact (sv i hi).trans (g₁ _ (savedRegs_ne13 _ hr))
-  · refine WP.mono (WP.gprs (VG.Proof.TripleDes.AArch64.BitslicedNeon.ecb_contract d s₁ hp₁) hk hn)
+  · refine WP.mono (gprs_of_notLink (VG.Proof.TripleDes.AArch64.BitslicedNeon.ecb_contract d s₁ hp₁) hk
+      (by decide))
       fun s' ⟨res, sv⟩ => ⟨back res, fun r hr => (sv r hr).trans (g₁ _ (savedRegs_ne13 _ hr))⟩
 
 theorem few_ecb_correct (d : Direction) {c : Prog isa} (hc : c = few .x2 (ecb d) (BitsliceNeon.ecb d))
     (hk : (BitsliceNeon.ecb d).allInstrs (fun i =>
       VG.Proof.CmacTripleDes.AArch64.savedRegs.all fun r => !clobbers i r) = true)
-    (hn : (BitsliceNeon.ecb d).noCalls = true)
+    (hs : (ecb d).allInstrs (fun i => !clobbers i .x30) = true) (hn : (ecb d).noCalls = true)
     (ho : c.allInstrs (fun i => (preserved.filter
-      (· ∉ VG.Proof.CmacTripleDes.AArch64.savedRegs)).all (fun r => !clobbers i r)) = true)
-    (hnc : c.noCalls = true)
+      (fun r => r ∉ VG.Proof.CmacTripleDes.AArch64.savedRegs ∧ r ≠ .x30)).all (fun r => !clobbers i r)) = true)
     (hv : c.allInstrs keepsV = true)
     (s : State) (hp : (contract d).pre s) :
     ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (contract d).post s s' := by
   subst hc
-  obtain ⟨t, s', he, ⟨post, sv⟩, other⟩ := WP.gprs (few_ecb_wp d hp hk hn) ho hnc
+  obtain ⟨t, s', he, ⟨post, sv⟩, other⟩ := gprs_of_notLink (few_ecb_wp d hp hk) ho (by decide)
   refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he hv⟩, post⟩
-  by_cases hs : r ∈ VG.Proof.CmacTripleDes.AArch64.savedRegs
-  · exact sv r hs
-  · exact other r (List.mem_filter.mpr ⟨hr, by simpa using hs⟩)
+  by_cases h30 : r = .x30
+  · subst h30; exact few_ecb_keeps_x30 d hs hn he
+  by_cases hsv : r ∈ VG.Proof.CmacTripleDes.AArch64.savedRegs
+  · exact sv r hsv
+  · exact other r (List.mem_filter.mpr ⟨hr, by simpa using And.intro hsv h30⟩)
 
 /-- What `few_ecb_correct` asks of the code `c` of direction `d`. -/
 def EcbChecks (d : Direction) (c : Prog isa) : Prop :=
   ((BitsliceNeon.ecb d).allInstrs (fun i =>
       VG.Proof.CmacTripleDes.AArch64.savedRegs.all fun r => !clobbers i r) = true ∧
-    (BitsliceNeon.ecb d).noCalls = true) ∧
+    (ecb d).allInstrs (fun i => !clobbers i .x30) = true ∧ (ecb d).noCalls = true) ∧
   c.allInstrs (fun i => (preserved.filter
-    (· ∉ VG.Proof.CmacTripleDes.AArch64.savedRegs)).all (fun r => !clobbers i r)) = true ∧
-  c.noCalls = true ∧ c.allInstrs keepsV = true
+    (fun r => r ∉ VG.Proof.CmacTripleDes.AArch64.savedRegs ∧ r ≠ .x30)).all (fun r => !clobbers i r)) = true ∧
+  c.allInstrs keepsV = true
 
 /-- The checks of both directions' code, in one kernel evaluation (`taint_decide_all`): what an
 instruction writes is evaluated once, for the checks of the registers the table block saves and
 of the others, and for both directions, whose code is mostly the same instructions. -/
 theorem ecb_checks : EcbChecks .encrypt ecbEncrypt ∧ EcbChecks .decrypt ecbDecrypt := by
   unfold EcbChecks
-  refine ⟨⟨⟨?_, ?_⟩, ?_, ?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+  refine ⟨⟨⟨?_, ?_, ?_⟩, ?_, ?_⟩, ⟨?_, ?_, ?_⟩, ?_, ?_⟩
   taint_decide_all
 
 theorem ecbEncrypt_correct (s : State) (hp : (contract .encrypt).pre s) :
     ∃ t s', Exec isa ecbEncrypt s t s' ∧ abiPreserved s s' ∧ (contract .encrypt).post s s' :=
-  few_ecb_correct .encrypt rfl ecb_checks.1.1.1 ecb_checks.1.1.2 ecb_checks.1.2.1 ecb_checks.1.2.2.1
-    ecb_checks.1.2.2.2 s hp
+  few_ecb_correct .encrypt rfl ecb_checks.1.1.1 ecb_checks.1.1.2.1 ecb_checks.1.1.2.2 ecb_checks.1.2.1
+    ecb_checks.1.2.2 s hp
 
 theorem ecbDecrypt_correct (s : State) (hp : (contract .decrypt).pre s) :
     ∃ t s', Exec isa ecbDecrypt s t s' ∧ abiPreserved s s' ∧ (contract .decrypt).post s s' :=
-  few_ecb_correct .decrypt rfl ecb_checks.2.1.1 ecb_checks.2.1.2 ecb_checks.2.2.1 ecb_checks.2.2.2.1
-    ecb_checks.2.2.2.2 s hp
+  few_ecb_correct .decrypt rfl ecb_checks.2.1.1 ecb_checks.2.1.2.1 ecb_checks.2.1.2.2 ecb_checks.2.2.1
+    ecb_checks.2.2.2 s hp
 
 theorem ecbEncrypt_constantTime (pre : State → Prop) :
     ConstantTime isa pre (PublicRegs [.x0, .x1, .x2, .x3]) ecbEncrypt := by

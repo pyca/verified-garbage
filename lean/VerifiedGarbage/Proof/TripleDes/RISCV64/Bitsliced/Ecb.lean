@@ -257,6 +257,23 @@ theorem frame_in {rs : List Region} {m m' : Mem} {r : Region} (h : Frame [r] m m
 
 theorem shr3 : ∀ k ≤ 64, BitVec.ofNat 64 (8 * k) >>> 3 = BitVec.ofNat 64 k := by decide
 
+/-- The transposition, through its call. -/
+theorem transposeCall_ok {s : State} (h : Room s) (hm : MasksAt s) :
+    WP isa transposeCall s fun s' => (∀ j < 64, words s' j = transposeW (words s) j) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.gpr .s0 = s.gpr .s0 ∧
+      s'.gpr .a1 = s.gpr .a1 ∧ s'.gpr .a2 = s.gpr .a2 ∧ s'.gpr .s11 = s.gpr .s11 ∧
+      Frame [stR s] s.mem s'.mem := by
+  let u := s.callEntry
+  have g : ∀ r, r ∉ linkRegs → u.gpr r = s.gpr r := fun r hl => State.callEntry_gpr _ hl
+  have s0u : u.gpr .s0 = s.gpr .s0 := g _ (by decide)
+  have hu : Room u := h.congr s0u rfl
+  have hmu : MasksAt u := fun k hk => by rw [s0u]; exact hm k hk
+  have wu : words u = words s := by funext x; simp only [words, sl, s0u]; rfl
+  obtain ⟨s', run, w, rd, wr, sp, s0, a1, a2, s11, ra, f⟩ := transpose_ok hu hmu
+  refine callBody_wp (WP.of_runBlock ⟨s', run, ra, fun j hj => by rw [w j hj, wu], rd, wr, sp,
+    s0.trans s0u, a1.trans (g _ (by decide)), a2.trans (g _ (by decide)), s11.trans (g _ (by decide)), ?_⟩)
+  rw [show stR u = stR s from stR_congr s0u] at f; exact f
+
 theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d) s (BatchPost d s) := by
   have hpos := h.pos
   have fit := h.data.fit
@@ -311,9 +328,8 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
     rw [Offset.add_add, e, ← Offset.add_add]
   -- the transposition
   apply WP.seq
-  obtain ⟨s₃, run₃, w₃, -, wr₃, -, s0₃, a1₃, a2₃, -, -, f₃⟩ :=
-    transpose_ok h₂ (masksAt_frame s0₂ h.room fs₂ h.masks)
-  refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
+  refine WP.mono (transposeCall_ok h₂ (masksAt_frame s0₂ h.room fs₂ h.masks))
+    fun s₃ ⟨w₃, _, wr₃, _, s0₃, a1₃, a2₃, _, f₃⟩ => ?_
   have s0₃' : s₃.gpr .s0 = s.gpr .s0 := s0₃.trans s0₂
   have wr₃' : s₃.wr = s.wr := wr₃.trans (wr₂.trans wr₁)
   have h₃ : Room s₃ := h.room.congr s0₃' wr₃'
@@ -329,9 +345,8 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
     rw [show schedA s₃ = schedA s by simp only [schedA, s0₃']]; exact sched_frame h.room fs₃
   -- the transposition back
   apply WP.seq
-  obtain ⟨s₅, run₅, w₅, -, wr₅, -, s0₅, a1₅, a2₅, -, -, f₅⟩ :=
-    transpose_ok h₄ (masksAt_frame s0₄ h.room fs₄ h.masks)
-  refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
+  refine WP.mono (transposeCall_ok h₄ (masksAt_frame s0₄ h.room fs₄ h.masks))
+    fun s₅ ⟨w₅, _, wr₅, _, s0₅, a1₅, a2₅, _, f₅⟩ => ?_
   have s0₅' : s₅.gpr .s0 = s.gpr .s0 := s0₅.trans s0₄
   have wr₅' : s₅.wr = s.wr := wr₅.trans wr₄'
   have fs₅ : Frame [stR s] s.mem s₅.mem := fs₄.trans (by rw [← stR_congr s0₄]; exact f₅)

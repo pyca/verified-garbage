@@ -85,4 +85,18 @@ def code (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) : List (Prog isa
       (.seq (.block (fits PubIfma.pay4096 sl)) (.ite .e (seqs (exp PubIfma.pay4096 sp sl))
         (seqs (Crt.expLoop mul tabSelect sp sl)))))))]
 
+/-- `exp`, with the vector code a call of the function `name`, which every
+domain operation shares. -/
+def expC (name : String) (sp sl : Nat) : List (Prog isa) :=
+  [.block (head l sl)] ++ region l 0 sp sl ++ [.block (bases l), .call name (vec l)] ++ result l 0 ++
+    [.block (tail l)]
+
+/-- `code` as emitted: each layout's vector code a call (`expC`), which
+inlines to `code`. -/
+def codeC (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) : List (Prog isa) :=
+  [.seq (.block (fits PubIfma.pay2048 sl)) (.ite .e (seqs (expC PubIfma.pay2048 "vg_ffdh_exp_ifma_2048" sp sl))
+    (.seq (.block (fits PubIfma.pay3072 sl)) (.ite .e (seqs (expC PubIfma.pay3072 "vg_ffdh_exp_ifma_3072" sp sl))
+      (.seq (.block (fits PubIfma.pay4096 sl)) (.ite .e (seqs (expC PubIfma.pay4096 "vg_ffdh_exp_ifma_4096" sp sl))
+        (seqs (Crt.expLoop mul tabSelect sp sl)))))))]
+
 end VG.Impl.Ffdh.X86_64.Ifma

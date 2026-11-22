@@ -84,7 +84,7 @@ theorem toNat_diff {a b : Nat} (hb : b ≤ a) (ha : a < 2 ^ 32) :
 
 theorem call_pre {p : SearchPublic} {o a u : State} {used : Nat} (h : ArgDone p o a used u)
     (hu : used ≤ p.randLen) :
-    (Proof.RsaKeyGen.candidateContract abi 112).pre (u.callEntry.withRegions (callRd p used) (callWr p)) := by
+    (Proof.RsaKeyGen.candidateContract abi 160).pre (u.callEntry.withRegions (callRd p used) (callWr p)) := by
   have hi := h.1.input
   have f := hi.facts
   have cf := hi.callFacts hu
@@ -159,7 +159,7 @@ theorem S1_toNat {p : SearchPublic} {o : State} (h : SearchInput p o) : (State.a
 theorem S2_toNat {p : SearchPublic} {o : State} (h : SearchInput p o) : (State.addr p.S2).toNat = p.sp.toNat - 72 := by
   rw [addr_toNat]; exact FrameStack.sub_toNat' (Nat.le_trans (by decide) h.facts.room)
 
-theorem below_toNat {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 112) :
+theorem below_toNat {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 160) :
     (FrameStack.belowA p.S2 k).base.toNat = p.sp.toNat - 72 - k := by
   have room := h.facts.room
   have e := FrameStack.sub_toNat' (sp := p.S2) (k := k) (by rw [← addr_toNat, S2_toNat h]; omega_using [hk, room])
@@ -172,15 +172,15 @@ theorem S2_sub {p : SearchPublic} {o : State} (h : SearchInput p o) :
   rw [SearchPublic.S2, FrameStack.addr_sub' (by omega_using [room]), h.sp_eq]
   exact h.stack_sub (by decide) (by decide)
 
-theorem below_sub {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 112) :
+theorem below_sub {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 160) :
     Region.Sub (FrameStack.belowA p.S2 k) (inStack o) := by
   have room := h.facts.room
   change Region.Sub ⟨State.addr (p.sp - BitVec.ofNat 32 72 - BitVec.ofNat 32 k), k⟩ _
   rw [BitVec.sub_sub, ← BitVec.ofNat_add, FrameStack.addr_sub' (by omega_using [hk, room]), h.sp_eq]
-  exact h.stack_sub (by show 72 + k ≤ 184; omega_using [hk]) (by show 184 - (72 + k) + k ≤ 184; omega_using [hk])
+  exact h.stack_sub (by show 72 + k ≤ 232; omega_using [hk]) (by show 232 - (72 + k) + k ≤ 232; omega_using [hk])
 
 /-- What a call may change, among what the search may. -/
-theorem call_changes {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 112) :
+theorem call_changes {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 160) :
     ∀ r ∈ (⟨State.addr p.S2, 32⟩ :: callWr p) ++ [FrameStack.belowA p.S2 k], ∃ q ∈ changes o, Region.Sub r q := by
   obtain ⟨eO, eU, -, -, -, eS, -⟩ := h.regions
   have st : inStack o ∈ changes o := by simp [changes]
@@ -194,7 +194,7 @@ theorem call_changes {p : SearchPublic} {o : State} (h : SearchInput p o) {k : N
   · exact ⟨_, st, below_sub h hk⟩
 
 /-- The pushed registers are apart from what a call may change. -/
-theorem saved_apart {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 112) :
+theorem saved_apart {p : SearchPublic} {o : State} (h : SearchInput p o) {k : Nat} (hk : k ≤ 160) :
     ∀ r ∈ (⟨State.addr p.S2, 32⟩ :: callWr p) ++ [FrameStack.belowA p.S2 k],
       Region.Disjoint ⟨State.addr p.S1 + BitVec.ofNat 64 0, 40 - 0⟩ r := by
   have room := h.facts.room
@@ -236,7 +236,7 @@ theorem candidateRun_ok (c : Cand) {p : SearchPublic} {o s : State} {used remain
   refine WP.seq (WP.mono (arguments_ok h) fun u ⟨hd, ku⟩ => ?_)
   have hu : used ≤ p.randLen := by omega_using [hroom]
   obtain ⟨cov, covW⟩ := call_covers h rfl hd (by omega_using [hroom, hl])
-  have hS2 : 112 ≤ u.sp.toNat := by rw [hd.1.sp, ← addr_toNat, S2_toNat hi]; omega_using [room]
+  have hS2 : 160 ≤ u.sp.toNat := by rw [hd.1.sp, ← addr_toNat, S2_toNat hi]; omega_using [room]
   refine FrameStack.WP.callF c.verified.1 (call_pre hd hu) cov covW (Nat.le_trans c.stack hS2)
     fun t hrd hwr hspt hfr hpres hpost ml ul hfl => ?_
   rw [hd.1.sp] at hfr

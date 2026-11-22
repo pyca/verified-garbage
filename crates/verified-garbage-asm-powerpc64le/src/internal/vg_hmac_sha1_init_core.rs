@@ -65,7 +65,7 @@ bl {vg_sha1_update_scratch}
 bl {vg_sha1_finalize_scratch}
 .base64 "AAB2OAAAlzgkAbU4FADAOAAA9Tg4AZXqSAHV6lAB9epYARXrYAE160ABteo="
 bl {vg_hmac_sha1_init_scratch}
-.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPmwASE4"
+.base64 "IAAB6DAAITimAwh8IACBOQAAADgAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPiwASE4"
 b 21b"#,
         vg_sha1_init = sym crate::sha1::vg_sha1_init,
         vg_sha1_update_scratch = sym crate::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,

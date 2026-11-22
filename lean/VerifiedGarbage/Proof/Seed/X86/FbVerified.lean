@@ -260,10 +260,11 @@ theorem block_of_ecb {d : Direction} {m m' : Mem} {K : Spec.Seed.Schedule} {P : 
   cases d <;> simpa [Spec.Seed.blocksAt, Spec.Seed.ecb, Spec.Seed.encryptBlock, Spec.Seed.decryptBlock,
     dirKeys, hj] using e
 
-theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Schedule}
+theorem cryptFrame_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Schedule}
     (hB : s.gpr VG.Impl.Modes.X86.sb = B) (hs : VG.Proof.Modes.X86.ScrIn s B (dirCore d).total)
-    (hr : Ready s B k) (hst : (dirCore d).stack ≤ (s.gpr .esp).toNat) :
-    WP isa (dirCore d).crypt s fun s' => s'.gpr VG.Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
+    (hr : Ready s B k) (hst : (dirCore d).stack ≤ (s.gpr .esp).toNat)
+    (hfl : s.mem.readW (wordAddr B dirSlot) 32 = BitVec.ofNat 32 (dirFlag d)) :
+    WP isa blocksFrame s fun s' => s'.gpr VG.Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
       Ready s' B k ∧ Frame [coreRegion (dirCore d) B, stkRegion (s.gpr .esp) (dirCore d).stack] s.mem s'.mem ∧
       (∀ j < (dirCore d).G, bytesAt s'.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw) =
         dirCipher d k (bytesAt s.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw))) ∧
@@ -279,8 +280,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
   obtain slotIn : ∀ o, o + 4 ≤ 4 * 286 → (⟨B.setWidth 64, 4 * 286⟩ : Region).Contains (addr B o) 4 := fun o h => by
     rw [addr_eq (by omega_arith)]; exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
   obtain hK : Region.Disjoint ⟨p.setWidth 64, 128⟩ ⟨B.setWidth 64, 4 * 286⟩ := hwK _ hw
-  show WP isa (cryptCall d) s _
-  unfold cryptCall callHead
+  unfold blocksFrame callHead
   refine WP.seq ?_
   refine wp_ldm (b := .edi) (o := 4 * modeDSlot) hB'
     ⟨_, List.mem_append_right _ hw, slotIn _ (by rw [modeDSlot_eq]; omega_arith)⟩
@@ -369,21 +369,26 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
     fun _ _ => by rw [hbufA]; rfl
   obtain hbw : ∀ d' : Direction, 4 * (dirCore d').bw = 16 := fun _ => rfl
   refine WP.seq ?_
-  cases d <;>
-  · refine WP.callWith (k := ecbX86W modeWs _) (ecb_correctW _ (by decide)) (ecb_noSp _) (by decide) hrs
+  · refine WP.callWith (k := ecbX86W modeWs d) (ecb_correctW d (by decide)) blocks_noSp (by decide) hrs
       (by rw [ecb_stackUse, esp₆]; show 20 ≤ _; omega_arith)
       (rd := [⟨p.setWidth 64, 128⟩, ⟨argAddr (pushed [Reg.edi, .edx, .ecx, .eax] s₆).callEntry 0, 16⟩])
       (wr := [⟨(B + BitVec.ofNat 32 (4 * bufSlot)).setWidth 64, 16 * 8⟩, ⟨B.setWidth 64, 4 * modeWs⟩])
       ⟨?_, ?_, ?_⟩ fun s' rd' wr' cs f ⟨s₃', m₃', post⟩ => ?_
     · simp only [ecbX86W, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, arg_withRegions,
-        argAddr_withRegions, a0, a1, a2, a3]
+        argAddr_withRegions, State.withRegions_mem, a0, a1, a2, a3]
       refine ⟨trivial, rfl, hK.sub_right bufSub, hK.sub_right wsSub, bufWs, ?_, ?_, ?_, ?_, hfitK, ?_,
-        by rw [modeWs_eq]; omega_arith, by rw [espE]; omega_arith⟩
+        by rw [modeWs_eq]; omega_arith, by rw [espE]; omega_arith, ?_⟩
       · exact (hsS.sub_right bufSub).sub_left argsSub
       · exact (hsS.sub_right wsSub).sub_left argsSub
       · exact (hsS.sub_right bufSub).sub_left retSub
       · exact (hsS.sub_right wsSub).sub_left retSub
       · rw [hbuf32, bufSlot_eq, show (8 : BitVec 32).toNat = 8 from rfl]; omega_arith
+      · rw [fE.readW (Region.contains_self _ _) (fun r hr => by
+          rw [List.mem_singleton] at hr; subst hr
+          exact (hsS.sub_right (show Region.Sub ⟨addr B (4 * dirSlot), 4⟩ ⟨B.setWidth 64, 4 * 286⟩ by
+            rw [addr_eq (by rw [dirSlot, ptrSlot_eq]; omega_using [hfB'])]
+            exact VG.Offset.sub_base _ (by decide))).symm) (by decide)]
+        exact hfl
     · refine Covers.append_left (Covers.of_mem fun r hr => ?_) (Covers.right (Covers.of_sub fun r hr => ?_))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
@@ -491,6 +496,67 @@ theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Sche
       · rw [show (8 : BitVec 32).toNat = 8 from rfl, hschE, hblkE, ← hblk₃] at post
         obtain hb := block_of_ecb (show j < 8 from hj) post
         rw [hbw, ha, dirCipher_bytes, bytesAt_eq, m₉, hb]
+
+theorem crypt_wp (d : Direction) {s : State} {B : BitVec 32} {k : Spec.Seed.Schedule}
+    (hB : s.gpr VG.Impl.Modes.X86.sb = B) (hs : VG.Proof.Modes.X86.ScrIn s B (dirCore d).total)
+    (hr : Ready s B k) (hst : (dirCore d).stack ≤ (s.gpr .esp).toNat) :
+    WP isa (dirCore d).crypt s fun s' => s'.gpr VG.Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
+      Ready s' B k ∧ Frame [coreRegion (dirCore d) B, stkRegion (s.gpr .esp) (dirCore d).stack] s.mem s'.mem ∧
+      (∀ j < (dirCore d).G, bytesAt s'.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw) =
+        dirCipher d k (bytesAt s.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw))) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hB' : s.gpr .edi = B := hB
+  have hw := hs.wr
+  rw [dirCore_total] at hw
+  obtain ⟨hk, hq, hfB, hstk⟩ := hr
+  have hfB' : B.toNat + 4 * 286 ≤ 2 ^ 32 := hfB
+  obtain wA : addr B (4 * dirSlot) = B.setWidth 64 + BitVec.ofNat 64 (4 * dirSlot) :=
+    addr_eq (by rw [dirSlot, ptrSlot_eq]; omega_using [hfB'])
+  obtain wSub : Region.Sub ⟨addr B (4 * dirSlot), 4⟩ ⟨B.setWidth 64, 4 * 286⟩ := by
+    rw [wA]; exact VG.Offset.sub_base _ (by decide)
+  obtain wIn : InRegions s.wr (addr B (4 * dirSlot)) 4 :=
+    ⟨_, hw, by rw [wA]; exact VG.Offset.contains_base _ (by decide) (by decide)⟩
+  show WP isa (cryptCall d) s _
+  unfold cryptCall modeFlag
+  refine WP.seq ?_
+  refine wp_movi fun s₁ u₁ => wp_stm (b := .edi) (B := B) (o := 4 * dirSlot) ((u₁.other _ (by decide)).trans hB')
+    (by rw [u₁.wr]; exact wIn) fun s₂ u₂ => WP.block_nil ?_
+  obtain m₂ : s₂.mem = s.mem.writeW (addr B (4 * dirSlot)) (BitVec.ofNat 32 (dirFlag d)) := by
+    rw [u₂.mem, u₁.mem, u₁.gpr]
+  obtain f₂ : Frame [⟨addr B (4 * dirSlot), 4⟩] s.mem s₂.mem := by
+    rw [m₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  obtain g₂ : ∀ r, r ≠ .eax → s₂.gpr r = s.gpr r := fun r hr => by rw [u₂.gpr]; exact u₁.other r hr
+  obtain esp₂ : s₂.gpr .esp = s.gpr .esp := g₂ _ (by decide)
+  obtain rd₂ : s₂.rd = s.rd := by rw [u₂.rd, u₁.rd]
+  obtain wr₂ : s₂.wr = s.wr := by rw [u₂.wr, u₁.wr]
+  obtain hs' : ∀ r ∈ [(⟨addr B (4 * dirSlot), 4⟩ : Region)], ∃ r' ∈ s.wr, Region.Sub r r' := fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr; exact ⟨_, hw, wSub⟩
+  obtain ⟨p, -, hp, -, -, -, hdis, hadis, -, -⟩ := id hk
+  obtain hr₂ : Ready s₂ B k :=
+    ⟨keyIn_frame hk esp₂ rd₂ wr₂ f₂ (by rw [hp]; exact disj_sub hdis hs') (disj_sub hadis hs'),
+      scrArg_frame hq esp₂ rd₂ wr₂ f₂ (disj_sub hq.2.2.1 hs'), hfB, by rw [esp₂]; exact hstk⟩
+  obtain hfl : s₂.mem.readW (wordAddr B dirSlot) 32 = BitVec.ofNat 32 (dirFlag d) := by
+    rw [m₂]; exact Mem.readW_writeW_self32 _ _ _
+  refine WP.mono (cryptFrame_wp d (by show s₂.gpr .edi = B; rw [g₂ _ (by decide)]; exact hB')
+      ⟨by rw [wr₂]; exact hs.wr, hs.fit⟩ hr₂ (by rw [esp₂]; exact hst) hfl)
+    fun s' ⟨b', e', r', f', c', rd', wr'⟩ => ⟨b', e'.trans esp₂, r', ?_, fun j hj => ?_, rd'.trans rd₂, wr'.trans wr₂⟩
+  · rw [esp₂] at f'
+    refine (f₂.sub fun r hr => ?_).trans f'
+    rw [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_cons_self, by
+      rw [wA]; exact VG.Offset.sub_base _ (by simp only [dirCore, coreSlots, bufSlot_eq, dirSlot, ptrSlot_eq]; decide)⟩
+  · rw [c' j hj]
+    have hj8 : j < 8 := hj
+    congr 1
+    simp only [bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    have hi : i < 16 := List.mem_range.mp hi
+    exact f₂.bytes (R := ⟨blkAddr (dirCore d) B j, 16⟩) (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr
+      rw [wA]
+      simp only [blkAddr, dirCore, VG.Offset.add_add]
+      exact VG.Offset.disjoint _ (.inr (by rw [bufSlot_eq, dirSlot, ptrSlot_eq]; omega_arith))
+        (by rw [bufSlot_eq]; omega_arith) (by decide)) (by show 16 ≤ 2 ^ 64; decide) hi
 
 /-- SEED's core for the direction `d` meets what the modes need. -/
 def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where

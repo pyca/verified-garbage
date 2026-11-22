@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Rsa.MontContract
+public import VerifiedGarbage.Proof.Bignum.Arm.CallStack
 import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 public import VerifiedGarbage.Proof.Bignum.Arm.R2
@@ -71,6 +72,33 @@ def PrecomputeLaw (code : Prog isa) : Prop := ∀ (s : State) {base src : BitVec
       numAt t.mem (State.addr base) w 4 =
         2 ^ (128 * w) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
+
+/-- `PrecomputeLaw`, for code that may also write the 48 bytes below the
+stack its callers leave it, as a call of the shared Montgomery product does. -/
+def PrecomputeLawS (code : Prog isa) : Prop := ∀ (s : State) {base src : BitVec 32} {len w k : Nat}
+    (_ws : Workspace s base (8 * len)) (_layout : Layout s.mem (State.addr base) len)
+    (_width : wOf s.mem (State.addr base) = w)
+    (_hk : 0 < k) (_fit : k ≤ 8 * w) (_srcFit : src.toNat + k ≤ 2 ^ 32)
+    (_read : InRegions (s.rd ++ s.wr) (State.addr src) k)
+    (_sep : Region.Disjoint ⟨State.addr src, k⟩ ⟨State.addr base, 8 * len⟩)
+    (_ptr : s.gpr .r0 = base) (_source : s.gpr .r4 = src) (_count : s.gpr .r6 = BitVec.ofNat 32 k)
+    (_stackRead : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4)
+    (_stackSep : Region.Disjoint ⟨State.addr s.sp, 4⟩ ⟨State.addr base, 8 * len⟩)
+    (_saved : s.mem.readW (State.addr s.sp) 32 = base)
+    (_large : 1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k))
+    (_odd : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) % 2 = 1)
+    (_countFits : 128 * w < 2 ^ 32) (_cs : CallStack base len s),
+    WP isa code s fun t => DoubleLoopReady base len w 0 t ∧
+      numAt t.mem (State.addr base) w 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
+      numAt t.mem (State.addr base) w 4 =
+        2 ^ (128 * w) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
+      Frame [⟨State.addr base, 8 * len⟩, FrameStack.belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t
+
+theorem PrecomputeLaw.toS {code : Prog isa} (h : PrecomputeLaw code) : PrecomputeLawS code := by
+  intro s base src len w k ws layout width hk fit srcFit read sep ptr source count stackRead stackSep saved large odd
+    countFits _
+  exact (h s ws layout width hk fit srcFit read sep ptr source count stackRead stackSep saved large odd countFits).mono
+    fun _ ⟨a, b, c, f, r⟩ => ⟨a, b, c, f.mono (by simp), r⟩
 
 end VG.Proof.Bignum.Arm
 end

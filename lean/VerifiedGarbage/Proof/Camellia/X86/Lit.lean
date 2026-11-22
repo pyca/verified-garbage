@@ -31,5 +31,7 @@ materialize_flat_code expandKeyCode := Impl.Camellia.X86.expandKey
 materialize_flat_code ecbEncrypt := Impl.Camellia.X86.ecb .encrypt
 materialize_flat_code ecbDecrypt := Impl.Camellia.X86.ecb .decrypt
 materialize_flat_code cryptPreparedCode := Impl.Camellia.X86.cryptPrepared
+materialize_flat_code prepareKeysEncCode := Impl.Camellia.X86.prepareKeys .encrypt
+materialize_flat_code prepareKeysDecCode := Impl.Camellia.X86.prepareKeys .decrypt
 
 end VG.Proof.Camellia.X86

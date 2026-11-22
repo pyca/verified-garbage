@@ -83,7 +83,7 @@ def openOwn : Clear :=
    [.v8, .v9]⟩
 
 /-- `seal`'s code in its frame of 1280 bytes, 96 words of them its working
-space: what `seal_gather` calls, as `vg_chacha20_poly1305_seal_core`. -/
+space. -/
 def sealBody (c : XorCallee) (stitched : Bool) : Prog isa :=
   withStackScratchWiped 1280 .x7 96 (sealCode c stitched)
 
@@ -95,11 +95,6 @@ def openBody (c : XorCallee) (stitched : Bool) : Prog isa :=
 the stack. -/
 def openToBody (c : XorCallee) (stitched : Bool) : Prog isa :=
   withStackArgScratchWiped 1328 1 96 (openTo c stitched)
-
-/-- `seal_gather`'s code: the gathering, then `seal`'s (`sealBody`), called
-as the internal `vg_chacha20_poly1305_seal_core`. -/
-def sealGatherBody (c : XorCallee) (stitched : Bool) : Prog isa :=
-  SealGather.sealGather ("vg_chacha20_poly1305_seal_core" ++ c.suffix) (sealBody c stitched)
 
 /-- `vg_chacha20_poly1305_seal`, with the stream `c`, the data absorbed
 inside the eight-block kernel if `stitched`. -/
@@ -113,6 +108,11 @@ def openZero (c : XorCallee) (stitched : Bool) : Prog isa :=
 /-- `vg_chacha20_poly1305_open_to`. -/
 def openTo (c : XorCallee) (stitched : Bool) : Prog isa :=
   scrubAll 1328 32 (openOwn.union c.clear) (openToBody c stitched)
+
+/-- `seal_gather`'s code: the gathering, then a call of `seal`
+(`sealWhole`), the exported function with the same stream. -/
+def sealGatherBody (c : XorCallee) (stitched : Bool) : Prog isa :=
+  SealGather.sealGather ("vg_chacha20_poly1305_seal" ++ c.suffix) (sealWhole c stitched)
 
 /-- `vg_chacha20_poly1305_seal_gather`. -/
 def sealGather (c : XorCallee) (stitched : Bool) : Prog isa :=

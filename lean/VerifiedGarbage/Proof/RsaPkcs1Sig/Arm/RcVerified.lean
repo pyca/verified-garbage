@@ -123,6 +123,7 @@ abbrev lay : Lay where
   argv := P.argv
   ro := [P.N, P.E, P.SIG, P.PRE]
   rw := [P.OUT, P.SCR]
+  C := 104
 
 end EP
 
@@ -155,7 +156,7 @@ end In
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the call's. -/
-abbrev stackBytes : Nat := 56 + frameBytes + 56
+abbrev stackBytes : Nat := 56 + frameBytes + 104
 
 /-- The shared contract, with that stack. -/
 abbrev spec : Contract isa := Spec.RsaPkcs1Sig.recoverPrecomputedContract abi stackBytes
@@ -181,18 +182,18 @@ def ep (s : State) : EP where
 
 theorem ep_lay (s : State) :
     (ep s).lay = layOf frameBytes 36 (ep s).argv [(ep s).N, (ep s).E, (ep s).SIG, (ep s).PRE]
-      [(ep s).OUT, (ep s).SCR] s := rfl
+      [(ep s).OUT, (ep s).SCR] s 104 := rfl
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaPkcs1Sig.recoverPrecomputedContract, Spec.RsaPkcs1Sig.recoverPrecomputedSig, abi,
     argRegs, reduceClassify, Loc.val] at h
   obtain ⟨hsp, hsa, hrd, hwr, oN, oE, oG, oS, oR, oA, nS, eS, gS, sR, sA, kO, kN, kE, kG, kS, kR, kA,
     fO, fN, fE, fG, fS, fR, kv, el1, elK, hh, slK, rlK⟩ := h
-  have h2192 : 2192 ≤ s.sp.toNat := hsp
+  have h2240 : 2240 ≤ s.sp.toNat := hsp
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
-      ⟨State.addr s.sp - BitVec.ofNat 64 2192, 2192⟩ := by
+      ⟨State.addr s.sp - BitVec.ofNat 64 2240, 2240⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)
@@ -497,7 +498,7 @@ theorem outA (P : EP) {σ : State} (h : In P σ) : State.addr (P.B + BitVec.ofNa
   h.ok.addrB (by show oEM1 < frameBytes + 56 + 36; decide)
 
 theorem call_pre {σ s : State} (h : C1 P σ s) :
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre
       (s.callEntry.withRegions (pdRd P.B P.pre P.e P.sig P.K P.el P.rl)
         (pdWr (P.B + BitVec.ofNat 32 oEM1) P.scr P.K P.sl)) := by
   have hs := h.1.1
@@ -530,7 +531,7 @@ theorem call_pre {σ s : State} (h : C1 P σ s) :
     (by rw [sigR]; exact (ok.rw_ro (by simp) (by simp)).symm)
     (by rw [q0]; exact (hfr (R := P.SCR) (.inr (by simp)) (by decide)).symm) ?_
   intro r hr
-  have low : (⟨State.addr P.B - BitVec.ofNat 64 56, 56⟩ : Region) = P.lay.LOW := rfl
+  have low : (⟨State.addr P.B - BitVec.ofNat 64 104, 104⟩ : Region) = P.lay.LOW := rfl
   rw [low]
   simp only [pdRd, pdWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -580,7 +581,7 @@ theorem call_vp (c : PdImpl) : VP (C1 P) (.call c.name c.code) (C2 P) := by
     have ok := hs.1.ok
     have hK := hs.1.k1024
     obtain e := outA P hs.1
-    obtain low : FrameStack.belowA s.sp 56 = P.lay.LOW := by rw [hs.2.sp]; exact ok.low_eq
+    obtain low : FrameStack.belowA s.sp 104 = P.lay.LOW := by rw [hs.2.sp]; exact ok.low_eq
     rw [low] at fr
     have fr' : Frame [⟨State.addr (P.B + BitVec.ofNat 32 oEM1), P.K⟩, P.SCR, P.lay.LOW] s.mem s'.mem := fr
     obtain st : P.lay.St σ s' := hs.2.write fr' (fun r hr => by
@@ -1270,7 +1271,7 @@ theorem code_ok (c : PdImpl) {s : State} (h : spec.pre s) :
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
     (WP.mono ((body_vp c).wp _ _ st) fun u hu => ⟨hu.1.2.frame, hu.2⟩)
     (hQ := fun _ m₁ m₂ hf hres nB hl hp hh hid => by
-      have ok : (layOf frameBytes 36 (ep s).argv [(ep s).N, (ep s).E, (ep s).SIG, (ep s).PRE] [(ep s).OUT, (ep s).SCR] s).Ok (entered frameBytes s) := by
+      have ok : (layOf frameBytes 36 (ep s).argv [(ep s).N, (ep s).E, (ep s).SIG, (ep s).PRE] [(ep s).OUT, (ep s).SCR] s 104).Ok (entered frameBytes s) := by
         rw [← ep_lay]; exact hin.ok
       have fit := ok.fits (ep s).OUT (List.mem_append_right _ List.mem_cons_self)
       exact written_frame hf (released_apart ok hsp (R := (ep s).OUT) (Or.inr (by simp)))

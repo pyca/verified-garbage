@@ -39,8 +39,12 @@ words between are the caller's.
   to. Rounds alternate between reading the words of `R` (`.ba`) and of `L`
   (`.ab`), so no word moves; a pass of sixteen rounds, eight times both,
   ends by exchanging the halves, as DES's swap and the next pass's IP do.
-* The three passes are unrolled, each with its schedule component and key
-  direction; then the state is transposed back and copied to the blocks.
+* Each of the three passes sets its schedule component's first key and the
+  count, and calls the rounds of its key direction and the exchange of the
+  halves, `vg_triple_des_pass_forward` or `vg_triple_des_pass_backward`
+  (`passRounds`), which the two functions share (4 bytes of stack, the
+  return address); then the state is transposed back and copied to the
+  blocks.
 
 Every address and branch depends only on the pointers and the loop
 counters, which are in registers or in words of the working space that only
@@ -395,9 +399,27 @@ def passStart (c : Nat) (d : Direction) : List Instr :=
   [.mov .eax (.mem (ws schedSlot)), .alu .add .eax (.imm (BitVec.ofNat 32 (keyOff c d))),
    .store (ws kpSlot) .eax, .mov .eax (.imm 8), .store (ws cntSlot) .eax]
 
-/-- A DES pass with schedule component `c`, in direction `d`. -/
+/-- The caller's `ebx`, `esi` and `edi`, which `passRounds` restores, from
+their slots. -/
+def callerRegs : List Instr := [.mov .ebx (.mem (ws 83)), .mov .esi (.mem (ws 84)), .mov .edi (.mem (ws 85))]
+
+/-- `vg_triple_des_pass_forward` and `vg_triple_des_pass_backward`: the
+sixteen rounds of a pass with the key pointer stepping in direction `d`, and
+the exchange of the halves, on the working space at `ebp`, called with the
+key pointer and the count in their slots and `ebx`, `esi` and `edi` the words
+in their slots (`callerRegs`), to which it restores them. -/
+def passRounds (d : Direction) : Prog isa :=
+  .seq (.loop (.block (roundPair d)) .ne) (.block (swapHalves ++ callerRegs))
+
+/-- The name of `passRounds d`. -/
+def passName : Direction → String
+  | .encrypt => "vg_triple_des_pass_forward"
+  | .decrypt => "vg_triple_des_pass_backward"
+
+/-- A DES pass with schedule component `c`, in direction `d`: a call of
+`passRounds d`. -/
 def pass (c : Nat) (d : Direction) : Prog isa :=
-  .seq (.block (passStart c d)) (.seq (.loop (.block (roundPair d)) .ne) (.block swapHalves))
+  .seq (.block (passStart c d ++ callerRegs)) (.call (passName d) (passRounds d))
 
 /-- The three passes of the operation. -/
 def passes : Direction → Prog isa

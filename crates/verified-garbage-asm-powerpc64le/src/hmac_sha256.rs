@@ -73,7 +73,7 @@ bl {vg_sha256_update_scratch}
 bl {vg_sha256_finalize_scratch}
 .base64 "AAB2OAAAlzgwAbU4IADAOAAA9ThQAZXqYAHV6mgB9epwARXreAE161gBteo="
 bl {vg_hmac_sha256_init_scratch}
-.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+TABbPk4AWz5QAFs+UgBbPlQAWz5WAFs+WABbPloAWz5cAFs+XgBbPkwAyE4"
+.base64 "IAAB6DAAITimAwh8IACBOQAAADgAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+DABDPg4AQz4QAEM+EgBDPhQAQz4WAEM+GABDPhoAQz4cAEM+HgBDPgwAyE4"
 b 21b"#,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
@@ -114,6 +114,10 @@ bl {vg_sha256_finalize_scratch}
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha256_finalize_scratch.rs"]
 pub(crate) mod vg_hmac_sha256_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_sha256_init_any_scratch;
 
 #[rustfmt::skip]
 #[path = "internal/vg_hmac_sha256_init_core.rs"]

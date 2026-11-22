@@ -292,4 +292,22 @@ def callOf (M : Mod) : Option (String × Nat) :=
     (fns.find? fun S => S.k == M.n && BitVec.ofNat 64 (minv S.m) == M.minv).map fun S => (S.fn "mul", S.m)
   else none
 
+open Impl.Weierstrass.Mont in
+/-- The moduli whose products are functions for the square root of public-key
+decompression alone (`Impl.EcKey.Compressed.AArch64.rootMod`), which runs
+once a key: there a call costs little beside the product, while the curves'
+other code keeps their products inline. -/
+def rootFns : List Modulus := [brainpoolp320r1p, brainpoolp256r1p, secp256k1p, p224p]
+
+/-- The function computing the root's products of `M`: `callOf`'s, else one
+of `rootFns`, on the same terms. -/
+def rootCallOf (M : Mod) : Option (String × Nat) :=
+  match callOf M with
+  | some f => some f
+  | none =>
+    if M.tmp = moAt M.n then
+      (rootFns.find? fun S => S.k == M.n && BitVec.ofNat 64 (minv S.m) == M.minv).map
+        fun S => (S.fn "mul", S.m)
+    else none
+
 end VG.Impl.Weierstrass.AArch64.Mont

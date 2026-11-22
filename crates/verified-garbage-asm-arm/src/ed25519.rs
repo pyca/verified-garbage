@@ -1514,9 +1514,25 @@ pub(crate) mod vg_gf25519_r16_mul;
 pub(crate) mod vg_gf25519_r16_mul_umaal;
 
 #[rustfmt::skip]
-#[path = "internal/vg_gf25519_r16_pow250.rs"]
-pub(crate) mod vg_gf25519_r16_pow250;
+#[path = "internal/vg_gf25519_r16_sqr15.rs"]
+pub(crate) mod vg_gf25519_r16_sqr15;
 
 #[rustfmt::skip]
-#[path = "internal/vg_gf25519_r16_pow250_umaal.rs"]
-pub(crate) mod vg_gf25519_r16_pow250_umaal;
+#[path = "internal/vg_gf25519_r16_sqr15_umaal.rs"]
+pub(crate) mod vg_gf25519_r16_sqr15_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_gf25519_r16_sqr16.rs"]
+pub(crate) mod vg_gf25519_r16_sqr16;
+
+#[rustfmt::skip]
+#[path = "internal/vg_gf25519_r16_sqr16_umaal.rs"]
+pub(crate) mod vg_gf25519_r16_sqr16_umaal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_gf25519_r16_sqr17.rs"]
+pub(crate) mod vg_gf25519_r16_sqr17;
+
+#[rustfmt::skip]
+#[path = "internal/vg_gf25519_r16_sqr17_umaal.rs"]
+pub(crate) mod vg_gf25519_r16_sqr17_umaal;

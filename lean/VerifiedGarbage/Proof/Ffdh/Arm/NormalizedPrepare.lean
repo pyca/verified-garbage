@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.Arm.NormalizedPrepare
 public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpDoubling
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.Bignum.Arm.NormalizedPrecompute
@@ -28,7 +29,8 @@ open VG.Proof.X25519.Arm (Rest)
 
 theorem normalizedPrecompute_ok {base src : BitVec 32} {len w k : Nat}
     {P : State → Prop} {regions : List Region}
-    (K : TwoExp.Montgomery base len w P regions) (s : State) (hp : P s)
+    (K : TwoExp.Montgomery base len w P regions) (D : TwoExp.Doubling base len w P regions)
+    (s : State) (hp : P s)
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
     (width : wOf s.mem (State.addr base) = w)
     (hk : 0 < k) (fit : k ≤ 8 * w) (srcFit : src.toNat + k ≤ 2 ^ 32)
@@ -43,7 +45,7 @@ theorem normalizedPrecompute_ok {base src : BitVec 32} {len w k : Nat}
     (countFits : 128 * w < 2 ^ 32)
     (normalized : 2 ^ (64 * (w - 1)) ≤
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) :
-    WP isa (NormalizedPrecompute.precompute K.op) s fun t => DoubleLoopReady base len w 0 t ∧
+    WP isa (NormalizedPrecompute.precompute K.op D.dbl) s fun t => DoubleLoopReady base len w 0 t ∧
       numAt t.mem (State.addr base) w 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
       numAt t.mem (State.addr base) w 4 =
         2 ^ (128 * w) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
@@ -60,7 +62,7 @@ theorem normalizedPrecompute_ok {base src : BitVec 32} {len w k : Nat}
     (by rw [restU.sp]; exact stackSep) (saved_base_kept frameU stackSep saved restU.sp)) ?_
   rintro v ⟨ready, modV, frameV, restV⟩
   have pv := K.stable frameV restV pu
-  refine WP.mono (normalizedR2_ok K v ready pv countFits
+  refine WP.mono (normalizedR2_ok K D v ready pv countFits
     (by rw [modV, modulus]; exact normalized)) ?_
   rintro t ⟨done, value, modT, pt, frameT, restT⟩
   rw [modV, modulus] at value
@@ -82,10 +84,11 @@ open VG.Proof.Rsa.Mont (numAt)
 theorem normalizedPrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
     {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len (Spec.Rsa.modulusWords k) P regions)
+    (D : TwoExp.Doubling base len (Spec.Rsa.modulusWords k) P regions)
     (h : PrepareInput base src len k s) (hp : P s)
     (normalized : 2 ^ (64 * (Spec.Rsa.modulusWords k - 1)) ≤
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) :
-    WP isa (VG.Impl.Ffdh.Arm.NormalizedPrepare.code K.op) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.NormalizedPrepare.code K.op D.dbl) s fun t =>
       ArithmeticReady base len (Spec.Rsa.modulusWords k) t ∧
       numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 0 =
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
@@ -99,7 +102,7 @@ theorem normalizedPrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
   have countFit := (pc_dimensions h.minLength h.maxLength h.space).2.2.2.2
   have bytes := rsa_bytes_frame (src := State.addr src) (k := k) frameU
     (by have := h.maxLength; omega_using [this]) (by simpa using h.separate)
-  refine WP.mono (normalizedPrecompute_ok K u pu ready.workspace ready.layout ready.width ready.positive ready.fits
+  refine WP.mono (normalizedPrecompute_ok K D u pu ready.workspace ready.layout ready.width ready.positive ready.fits
     ready.sourceFits ready.readable ready.separate ready.ptr ready.source ready.count ready.stackRead
     ready.stackSep ready.saved ready.large ready.odd countFit (by rw [bytes]; exact normalized)) ?_
   rintro t ⟨done, modulus, r2, pt, frameT, restT⟩

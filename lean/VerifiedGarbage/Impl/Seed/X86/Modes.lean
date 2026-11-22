@@ -9,8 +9,8 @@ public import VerifiedGarbage.Impl.Modes.CbcChained
 
 `dirCore d`: the core for the modes (`Impl/Modes/X86/Seq.lean`), with the
 round keys in the order of the direction `d`: encryption's for CBC
-encryption, OFB and CFB128, decryption's for CBC decryption. `crypt` calls
-`vg_seed_encrypt_blocks` or `vg_seed_decrypt_blocks` (`Ecb.lean`) on the
+encryption, OFB and CFB128, decryption's for CBC decryption. `crypt` stores
+the direction's flag (`modeFlag`) and calls `vg_seed_blocks` (`Ecb.lean`) on the
 buffer's eight blocks, a group of the function's, which it enciphers in one
 pass, with the schedule (the first stack argument) and the working space,
 the scratch buffer's first 244 slots (`modeWs`: the functions use 206 of
@@ -67,10 +67,16 @@ def callHead : List Instr :=
 pointer and steps left back to their slots. -/
 def callTail : List Instr := [.mov sb (.mem (argOp 4)), st modeDSlot .esi, st modeNSlot .ebp]
 
-/-- The buffer's blocks through the blocks function of the direction `d`. -/
-def cryptCall (d : Direction) : Prog isa :=
-  .seq (.block callHead) (.seq (.frame (.push [.edi, .edx, .ecx, .eax]) (blocksCall d) (.pop .eax 4))
+/-- The buffer's blocks through the blocks function. -/
+def blocksFrame : Prog isa :=
+  .seq (.block callHead) (.seq (.frame (.push [.edi, .edx, .ecx, .eax]) blocksCall (.pop .eax 4))
     (.block callTail))
+
+/-- The flag of the direction `d` to the working space's slot `dirSlot`. -/
+def modeFlag (d : Direction) : List Instr := [movI .eax (BitVec.ofNat 32 (dirFlag d)), st dirSlot .eax]
+
+/-- The buffer's blocks through the blocks function, in the direction `d`. -/
+def cryptCall (d : Direction) : Prog isa := .seq (.block (modeFlag d)) blocksFrame
 
 /-- SEED's core for the direction `d`. -/
 def dirCore (d : Direction) : Modes.X86.Core where

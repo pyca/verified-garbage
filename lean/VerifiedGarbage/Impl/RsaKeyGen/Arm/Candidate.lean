@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
 public import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
+public import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 /-!
 # A candidate for a prime of an RSA key on ARMv7
@@ -328,13 +329,13 @@ def mont0 : List Instr := [.ldrSp .r0 0]
 def clrTop (j : Nat) : List Instr := Rsa.Arm.Recover.clrTop j
 
 /-- The working space, `−c⁻¹`, `R² mod c` (array 4), `c`'s top words cleared,
-and the stride. -/
-def montA : Prog isa :=
-  seqs [.block montSet, setup, precomputeInverse, r2, .block (ctx ++ clrTop mBase), .block mont0, .block strideW]
+and the stride, by the Montgomery product `op`. -/
+def montA (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs [.block montSet, setup, precomputeInverse, r2With op, .block (ctx ++ clrTop mBase), .block mont0, .block strideW]
 
 /-- `R mod c` (array 9, from `1 · R²`) and `c − R mod c` (array 10). -/
-def montB : Prog isa :=
-  seqs [copy (mBase + 1) aOne, .block mont0, montOp 1 1 4, .block (ctx ++ clrTop (mBase + 1)),
+def montB (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs [copy (mBase + 1) aOne, .block mont0, op 1 1 4, .block (ctx ++ clrTop (mBase + 1)),
     copy (mBase + 9) (mBase + 1), sub3 (mBase + 10) mBase (mBase + 9)]
 
 /-! ## The exponent of the round -/
@@ -436,8 +437,8 @@ def wsLen : List Instr :=
 
 /-- The witness in Montgomery form (array 5), the round, and its result
 into `sF`. -/
-def mrCall (name : String) (round : Prog isa) : List (Prog isa) :=
-  [copy (mBase + 1) aH1, .block mont0, montOp 5 1 4, .block wsLen, .call name round,
+def mrCall (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  [copy (mBase + 1) aH1, .block mont0, op 5 1 4, .block wsLen, .call name round,
     .block (ctx ++ [.str .r0 .r8 sF])]
 
 /-- `r1 := 1` if more witnesses are needed: `i ≤ 16` or `uniform < checks`. -/
@@ -455,15 +456,15 @@ def onPass : List Instr :=
 
 /-- One witness: `sStat := 0` (`rand` too short), `3` (it failed), or as
 `onPass` sets it; Z iff on. -/
-def mrBody (name : String) (round : Prog isa) : Prog isa :=
+def mrBody (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs [.block avFlag,
     .ite .eq (.block (setS sStat 0))
-      (seqs (witnessLoad ++ witnessFix ++ mrCall name round ++
+      (seqs (witnessLoad ++ witnessFix ++ mrCall name round op ++
         [.block (Key.isOne sF), .ite .eq (.block onPass) (.block (setS sStat 3))])),
     .block [.ldr .r1 .r8 sStat, .cmp .r1 (.imm 4)]]
 
-def millerRabin (name : String) (round : Prog isa) : Prog isa :=
-  .seq (.block mrInit) (.loop (mrBody name round) .eq)
+def millerRabin (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block mrInit) (.loop (mrBody name round op) .eq)
 
 /-- The result of Miller–Rabin. -/
 def mrResult : Prog isa :=
@@ -473,20 +474,21 @@ def mrResult : Prog isa :=
 /-! ## `vg_rsa_keygen_candidate` -/
 
 /-- Once the candidate passed trial division and `gcd(c − 1, e) = 1`. -/
-def mrPart (name : String) (round : Prog isa) : Prog isa :=
-  seqs (expSetup ++ [montA, montB, millerRabin name round, mrResult])
+def mrPart (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs (expSetup ++ [montA op, montB op, millerRabin name round op, mrResult])
 
 /-- Once `rand` has the candidate's octets. -/
-def main (name : String) (round : Prog isa) : Prog isa :=
+def main (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs (loadC ++ closeCheck ++ [.ite .eq (finUsed 2) (seqs (trial ++
-    [.ite .eq (seqs (gcdCheck ++ [.ite .eq (mrPart name round) (finUsed 3)])) (finUsed 3)]))])
+    [.ite .eq (seqs (gcdCheck ++ [.ite .eq (mrPart name round op) (finUsed 3)])) (finUsed 3)]))])
 
-def body (name : String) (round : Prog isa) : Prog isa :=
-  seqs [.block entry, .block lenCheck, .ite .eq finNone (main name round)]
+def body (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs [.block entry, .block lenCheck, .ite .eq finNone (main name round op)]
 
-/-- `vg_rsa_keygen_candidate`, calling the round `round` named `name`. -/
-def code (name : String) (round : Prog isa) : Prog isa :=
+/-- `vg_rsa_keygen_candidate`, calling the round `round` named `name`, and
+multiplying modulo the candidate by `op`. -/
+def code (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (.seq (body name round) (.block PcFn.restore)) (.pop .r12 56)
+    (.seq (body name round op) (.block PcFn.restore)) (.pop .r12 56)
 
 end VG.Impl.RsaKeyGen.Arm.Candidate

@@ -92,11 +92,21 @@ theorem stagesCT : VerifyStagesCT p521Comb where
 /-! The field functions modulo `p`, analysed once from what is public on
 entry to their calls from the windows (`τWin`), in place of each call. -/
 
-taint_summary mulSum : sseTaint τWin
+taint_summary mulSum : sseTaint { τWin with room := 24 }
   (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
-taint_summary addSum : sseTaint τWin
+taint_summary addSum : sseTaint { τWin with room := 24 }
   (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
-taint_summary subSum : sseTaint τWin
+taint_summary subSum : sseTaint { τWin with room := 24 }
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
+
+/-! The same functions, from their calls within the windows' function
+(`vg_<curve>_window`), one return address deeper. -/
+
+taint_summary mulSumW : sseTaint { τWin with room := 24, stk := [none, some 16, none] }
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
+taint_summary addSumW : sseTaint { τWin with room := 24, stk := [none, some 16, none] }
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
+taint_summary subSumW : sseTaint { τWin with room := 24, stk := [none, some 16, none] }
   (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p521p.k Impl.Weierstrass.Mont.p521p.m)
 
 /-- The taint checks of `[u]G + [v]Q` around the comb. -/
@@ -107,16 +117,16 @@ theorem ladderCT : VerifyLadderCT p521Comb where
   ladder := by
     change RelCT isa _ vLadderCode _
     obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false p521Comb.stk) vLadderCode h).isSome = true := by
-      taint_decide_sum [mulSum, addSum, subSum]
+      taint_decide_sum [mulSum, addSum, subSum, mulSumW, addSumW, subSumW]
     exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
 theorem verify_sp : SpOk verifyP521 p521Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem verifyBody_sp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody p521Comb) p521Comb.stk :=
   SpOk.right (a := p521Comb.tableAddr) verify_sp
 
-theorem gMul_sp : SpOk p521Comb.gMul 20 :=
+theorem gMul_sp : SpOk p521Comb.gMul p521Comb.stk :=
   SpOk.left (SpOk.right (a := p521Comb.signPrep) (SpOk.right (a := p521Comb.tableAddr) signComb_sp))
 
 /-- The order of the base point is below `2^(8 len)`. -/
@@ -134,7 +144,7 @@ theorem verify_ct (hC : Weierstrass.Law Spec.P521.curve) :
     (p521Comb_gMul hC) stagesCT ladderCT gMul_sp verifyBody_sp
 
 abbrev vSpec : Contract isa :=
-  Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86.abi.withConsts p521Comb.combConsts) 20
+  Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst (X86.abi.withConsts p521Comb.combConsts) 24
 
 def vLocal : Contract isa where
   pre := VCombPre p521Comb
@@ -155,21 +165,21 @@ theorem v_pre {s : State} (h : vSpec.pre s) :
   obtain ⟨lo, sp, _drop, held, fit, dw, _ret, st, -, _take, wr,
     ps, _pa, ds, _da, ss, _sia, sa, _rp, _rd, _rsi, rs, _ra,
     spk, sdg, ssi, _ss, _sa, fp, fd, fsi, fs⟩ := h
-  have hb : below (s.gpr .esp) 20 = ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩ := by
+  have hb : below (s.gpr .esp) 24 = ⟨(s.gpr .esp).setWidth 64 - 24#64, 24⟩ := by
     unfold below
     rw [VG.X86.Taint.sub_setWidth lo]
   rw [← hb] at st spk sdg ssi
-  have h4 := VG.Proof.Weierstrass.X86.below_le_sub (sp := s.gpr .esp) (a := 4) (b := 20) (by decide) lo
+  have h4 := VG.Proof.Weierstrass.X86.below_le_sub (sp := s.gpr .esp) (a := 4) (b := 24) (by decide) lo
   refine ⟨⟨rfl, rfl, ps, ds, ss, sa.symm, rs, fp, fd, fsi, fs, sp, lo, _ss⟩, ?_, ?_, ?_, ?_⟩
   · change TblsHeld p521Comb (s.withRegions (vRd s) (vWr s))
-      (below (s.gpr .esp) 20 :: vWr s)
+      (below (s.gpr .esp) 24 :: vWr s)
     simp only [TblsHeld, p521Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil,
       Sig.forall_mem_const_single]
     simp only [Abi.constsHeld, List.mem_singleton, forall_eq, State.withRegions_mem]
     change (∀ i < p521W.length, s.mem.readW ((s.syms "VG_P521_COMB").setWidth 64 +
       BitVec.ofNat 64 (8 * i)) 64 = p521W.getD i 0) ∧
       ((s.syms "VG_P521_COMB").setWidth 64).toNat + 8 * p521W.length ≤ 2 ^ 32 ∧
-      ∀ r ∈ below (s.gpr .esp) 20 :: vWr s,
+      ∀ r ∈ below (s.gpr .esp) 24 :: vWr s,
         Region.Disjoint ⟨(s.syms "VG_P521_COMB").setWidth 64, 8 * p521W.length⟩ r
     refine ⟨held, ?_, ?_⟩
     · simp only [BitVec.toNat_setWidth]; omega_using [fit]
@@ -320,7 +330,7 @@ def vHashSatState : State := { vSatTbl with
 
 theorem vHashSat_pre :
     (Spec.Ecdsa.P521.inst.verifyHashContract (X86.abi.withConsts p521Comb.combConsts)
-      (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre vHashSatState := by
+      (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre vHashSatState := by
   have a0 : arg vHashSatState 0 = 0x1000 := (vSat_arg 0 (by decide)).trans (by decide)
   have a1 : arg vHashSatState 1 = 0x2000 := (vSat_arg 1 (by decide)).trans (by decide)
   have a2 : arg vHashSatState 2 = 0x3000 := (vSat_arg 2 (by decide)).trans (by decide)
@@ -358,7 +368,7 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.P521.curve) :
     Verified X86.target
       (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true verifyP521)
       (Spec.Ecdsa.P521.inst.verifyHashContract (X86.abi.withConsts p521Comb.combConsts)
-        (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
+        (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
   Hash.verifyHash_verifiedC Proof.Ecdsa.Verify.p521_len (by decide) (verify_verified hL)
     verify_sp.1 verify_sp.2 (by taint_decide) ⟨_, vHashSat_pre⟩
 

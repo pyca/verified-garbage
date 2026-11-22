@@ -494,7 +494,7 @@ theorem hs {i : Nat} (hi : i < 44) : p521.sl i < 4095 := by rw [sl_eq]; omega_us
 theorem nback_ok {base : Addr} {s : State} {k d e x : Nat} (hb : BackPre base s k d e x) :
     WP isa (.seq (addCall p521Order (p521.sl RR) (p521.sl XO) (p521.sl ZERO)) (Cfg.scalars p521 p521Order)) s
       fun s' => Kc s s' ∧
-        Unch base (cw RR ++ cw KM ++ chainWx (Cfg.chainN p521) 9 ++ cw EM ++ cw RM ++ cw DM ++ cw TT ++ cw SU ++
+        Unch base (cw RR ++ cw KM ++ ((VG.Impl.Ecdh.RISCV64.Cfg.invSave p521, 8) :: chainWx (Cfg.chainN p521) 9) ++ cw EM ++ cw RM ++ cw DM ++ cw TT ++ cw SU ++
           cw SMM ++ cw SS) s.mem s'.mem ∧
         sv base s' RR = x % W.n ∧ sv base s' SS < W.n ∧
         Fin.ofNat W.n (sv base s' SS) =
@@ -537,8 +537,8 @@ theorem nback_ok {base : Addr} {s : State} {k d e x : Nat} (hb : BackPre base s 
   obtain on₂ : sv base s₂ ONEN = 2 ^ 576 % W.n := by
     show wordsVal _ _ _ _ = _
     rw [sv_unch U₂ ONEN (by decide), sv_unch U₁ ONEN (by decide)]; exact hb.onen
-  refine WP.seq (WP.mono (chainPow_ok (P := Cfg.chainN p521) (F := p521Order) order_ok chainNLay unitN hw₂
-    (one := p521.sl ONEN) (by decide) (by decide) (by show sv base s₂ ONEN = _; rw [on₂]; rfl) chainN_ok)
+  refine WP.seq (WP.mono (chainCall_ok (P := Cfg.chainN p521) (F := p521Order) order_ok chainNLay unitN hw₂
+    (one := p521.sl ONEN) (by decide) (by decide) (by show sv base s₂ ONEN = _; rw [on₂]; rfl) chainN_ok (by decide) (by decide) (by decide) (by decide) (by decide))
     fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
   obtain hw₃ := hw₂.of_kc K₃
   obtain acc₃ : toM W.n (2 ^ 576) (sv base s₃ ACC) = Fin.ofNat W.n k ^ (W.n - 2) := by

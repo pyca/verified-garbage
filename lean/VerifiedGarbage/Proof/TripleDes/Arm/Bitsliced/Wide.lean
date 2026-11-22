@@ -430,7 +430,7 @@ theorem kernel_ok (d : Direction) {s : State} (h : Room s) {Sb : BitVec 32} (hs 
   have st0 : fw t 76 = Sb := by rw [to _ (by decide) (by decide), a0, h0]
   -- the passes
   apply WP.seq
-  refine WP.mono (passes_ok d h₄ (hs.congr r3₄' rd₄')
+  refine WP.mono (passesCall_ok d h₄ (hs.congr r3₄' rd₄')
     ((fw_of_frame ht r3₄ G₄ (by decide) (by decide)).trans st0)) fun s₅ ⟨w₅, r3₅, rd₅, wr₅, _, f₅⟩ => ?_
   have r3₅' : s₅.gpr .r3 = s.gpr .r3 := r3₅.trans r3₄'
   have h₅ : Room s₅ := h.congr r3₅' (wr₅.trans wr₄')

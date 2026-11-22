@@ -290,7 +290,7 @@ variable {d : CombData}
 
 theorem vTables_keep {s₀ s : State} (ht : VCombTables c d s₀) (K : Keep c s₀ (ptr s₀ 3) s) :
     TblMem s ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
-      ∀ r ∈ s.wr ++ [below (s.gpr .esp) 20],
+      ∀ r ∈ s.wr ++ [below (s.gpr .esp) c.stk],
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r :=
   K.tbls ht.1 ht.2.2
 
@@ -298,7 +298,8 @@ theorem vPoints_keep (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.l
     (hcd : c.comb = some d)
     (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : c.n = 4 ∧ c.combJac = true → AM3 c.C)
     {s₀ s : State} (ht : VCombTables c d s₀) (h : Mid c s₀ (ptr s₀ 3) s)
-    (hspG : SpOk c.gMul 20) (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) c.stk) :
+    (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
+    (hspG : SpOk c.gMul c.stk) (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) c.stk) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) s (Keep c s₀ (ptr s₀ 3)) := by
   let P := Ecdh.X86.peerPt c (s₀.mem (ptr s₀ 0) = 4)
     (keyX c s₀) (keyY c s₀)
@@ -314,7 +315,7 @@ theorem vPoints_keep (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.l
       have e : d = d' := Option.some.inj (hcd.symm.trans hd)
       subst d'
       exact ⟨(vTables_keep ht h.keep).1, ht.2.1, ht.2.2⟩)
-    hPc hQ hspG hsp
+    hPc hQ hst (Cfg.stk_comb hcd) hspG hsp
     (rest := .block []) (fun _ P => WP.block_nil P.keep)
   exact WP.mono (WP.seq_iff.mp H) (fun _ q => WP.block_nil_iff.mp q)
 
@@ -401,13 +402,16 @@ theorem vPointsLadder_rel (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd :
     (hp : VPre c s₀ extra₁) (hq : VPre c t₀ extra₂)
     (ht₁ : VCombTables c d s₀) (ht₂ : VCombTables c d t₀)
     (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 4, arg s₀ j = arg t₀ j)
-    (hg : s₀.gpr .eax = t₀.gpr .eax) (hspG : SpOk c.gMul 20) :
+    (hg : s₀.gpr .eax = t₀.gpr .eax) (hspG : SpOk c.gMul c.stk) :
     RelCT isa (fun s t => Mid c s₀ (ptr s₀ 3) s ∧ Mid c t₀ (ptr t₀ 3) t)
       (Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder c) (fun _ _ => True) := by
-  have hspG' : SpOk c.gMul c.stk := ⟨hspG.1, Nat.le_trans hspG.2 (Cfg.stk_ge _)⟩
+  have hspG' : SpOk c.gMul c.stk := hspG
   have hsp20 : ∀ {u₀ u : State} {extra : List Region}, VPre c u₀ extra →
-      Keep c u₀ (ptr u₀ 3) u → 20 ≤ (u.gpr .esp).toNat := fun hp k => by
-    rw [k.esp]; exact Nat.le_trans (Cfg.stk_ge _) hp.sp_lo
+      Keep c u₀ (ptr u₀ 3) u → c.stk ≤ (u.gpr .esp).toNat := fun hp k => by
+    rw [k.esp]; exact hp.sp_lo
+  have hstw : ∀ {u₀ u : State} {extra : List Region}, VPre c u₀ extra →
+      Keep c u₀ (ptr u₀ 3) u → ∀ r ∈ u.wr, Region.Disjoint (below (u.gpr .esp) c.stk) r :=
+    fun hp k r hr => by rw [k.wr] at hr; rw [k.esp]; exact hp.stk_wr r hr
   have bits := ct.bits.mono
     (P' := fun s t => Mid c s₀ (ptr s₀ 3) s ∧ Mid c t₀ (ptr t₀ 3) t)
     (fun _ _ h => vKeepArgAgree hp hq h.1.keep h.2.keep he ha) (fun _ _ _ => trivial)
@@ -428,7 +432,8 @@ theorem vPointsLadder_rel (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd :
     obtain ⟨k₁, hk₁, b₁⟩ := S.scalar
     obtain ⟨k₂, hk₂, b₂⟩ := T'.scalar
     exact hG S.scr T'.scr S.fixed T'.fixed
-      hk₁ hk₂ b₁ b₂ tb₁ tb₂ ht₁.2.1 ap₁ ap₂ (hsp20 hp S.toKeep) (hsp20 hq T.toKeep) hg
+      hk₁ hk₂ b₁ b₂ tb₁ tb₂ ht₁.2.1 ap₁ ap₂ (hstw hp S.toKeep) (hstw hq T.toKeep)
+      (hsp20 hp S.toKeep) (hsp20 hq T.toKeep) hg
       (vKeepCombWf hp S.toKeep) (vKeepCombWf hq T.toKeep)
       (by rw [S.wr, T.wr, hp.wr, hq.wr]; simp only [ptr, ha 3 (by decide)])
       (by rw [S.esp, T.esp, he])
@@ -439,7 +444,8 @@ theorem vPointsLadder_rel (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd :
     intro u₀ u extra hp ht S
     obtain ⟨k, hk, b⟩ := S.scalar
     refine S.toKeep.withSp hspG' (WP.mono (gMul_ok' hc hC hT hCo S.scr S.fixed
-      hk S.rx S.ry S.rz b ?_ (hsp20 hp S.toKeep) hspG) fun t h f => S.toKeep.gMul hc h.1 h.2.1 f)
+      hk S.rx S.ry S.rz b ?_ (hstw hp S.toKeep) (hsp20 hp S.toKeep) hspG)
+      fun t h f => S.toKeep.gMul hc h.1 h.2.1 f)
     intro d' h
     have e : d = d' := Option.some.inj (hcd.symm.trans h)
     subst d'
@@ -461,7 +467,7 @@ theorem vCombBody_rel (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.
     (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 4, arg s₀ j = arg t₀ j)
     (hPts : RelCT isa (fun s t => Mid c s₀ (ptr s₀ 3) s ∧ Mid c t₀ (ptr t₀ 3) t)
       (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) (fun _ _ => True))
-    (hspG : SpOk c.gMul 20)
+    (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) c.stk) :
     RelCT isa (fun s t => s = s₀ ∧ t = t₀) (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c)
       (fun _ _ => True) := by
@@ -489,8 +495,8 @@ theorem vCombBody_rel (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.
   have hCo : ∀ d', c.comb = some d' → CombOk c d' := by
     intro d' h; have e : d = d' := Option.some.inj (hcd.symm.trans h); rw [← e]; exact hd
   have pts' := pts.wp (F₁ := Keep c s₀ (ptr s₀ 3)) (F₂ := Keep c t₀ (ptr t₀ 3))
-    (fun _ _ h => ⟨vPoints_keep hc hC hne hT hcd hCo ham3 ht₁ h.2.1 hspG H.points,
-      vPoints_keep hc hC hne hT hcd hCo ham3 ht₂ h.2.2 hspG H.points⟩)
+    (fun _ _ h => ⟨vPoints_keep hc hC hne hT hcd hCo ham3 ht₁ h.2.1 hp.stk_wr hspG H.points,
+      vPoints_keep hc hC hne hT hcd hCo ham3 ht₂ h.2.2 hq.stk_wr hspG H.points⟩)
   exact front'.seq (mid'.seq (pts'.seq (ct.final.mono
     (fun _ _ h => vKeepScratchAgree hp hq h.2.1 h.2.2 he ha) (fun _ _ _ => trivial))))
 
@@ -506,7 +512,7 @@ theorem pointsComb_ladder (hcd : c.comb = some d) (hj : d.jac = false) :
 /-- Verification with the comb and the windows: the specification's result, the cdecl ABI kept. -/
 theorem verifyComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.len)) (hT : CombTbls c)
     (hcd : c.comb = some d)
-    (hd : CombOk c d) (hj : d.jac = false) (hspG : SpOk c.gMul 20)
+    (hd : CombOk c d) (hj : d.jac = false) (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) c.stk) {s₀ : State} (hp : VCombPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.verifyComb c) s₀ fun s' => abiPreserved s₀ s' ∧ VPost c s₀ s' := by
   have hCo : ∀ d', c.comb = some d' → CombOk c d' := by
@@ -519,7 +525,7 @@ theorem verifyComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.
   refine WP.mono (verifyCombBody_ok hc hC hne hT hCo
     (fun h => absurd h.2 (by simp [Cfg.combJac, hcd, hj])) hp₁
     (fun d' hd' => by have e : d = d' := Option.some.inj (hcd.symm.trans hd'); subst d'; exact ht)
-    hspG hsp) fun s₂ ⟨K, post⟩ => ?_
+    (Cfg.stk_comb hcd) hspG hsp) fun s₂ ⟨K, post⟩ => ?_
   have ha := K.abi hp₁
   have he := P.gpr .esp (by decide)
   refine ⟨⟨fun r hr => (ha.1 r hr).trans (P.gpr r (by
@@ -543,7 +549,7 @@ def VCombPubL (d : CombData) (s t : State) : Prop :=
 theorem verifyComb_ct (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.len)) (hT : CombTbls c)
     (hcd : c.comb = some d)
     (hd : CombOk c d) (hj : d.jac = false) (hG : GMulRel c d false) (ct : VerifyStagesCT c)
-    (cl : VerifyLadderCT c) (hspG : SpOk c.gMul 20)
+    (cl : VerifyLadderCT c) (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) c.stk) :
     ConstantTime isa (VCombPre c) (VCombPubL d) (Impl.Ecdsa.Verify.X86.Cfg.verifyComb c) := by
   apply RelCT.constantTime (Q := fun _ _ => True)

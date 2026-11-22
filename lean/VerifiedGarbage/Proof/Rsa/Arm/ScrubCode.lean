@@ -38,11 +38,11 @@ theorem checkP_tail_ok : CodeOk Impl.Rsa.Arm.PrivChecked.tail 0 := by lit_decide
 theorem pcCopy_ok : CodeOk Impl.Rsa.Arm.PrivChecked.pcCopy 0 := by lit_decide
 
 /-- `vg_rsa_private_checked_precomputed`'s code, over `v`. -/
-theorem privCodeP_ok (v : CrtImpl) : CodeOk (privCodeP v) 3440 :=
-  CodeOk.push (n := 3384) (CodeOk.seq (CodeOk.alloc (n := 56)
+theorem privCodeP_ok (v : CrtImpl) : CodeOk (privCodeP v) 3488 :=
+  CodeOk.push (n := 3432) (CodeOk.seq (CodeOk.alloc (n := 104)
     (CodeOk.seq (CodeOk.zero (CodeOk.block _)) (CodeOk.seq (CodeOk.call v.crtPOk)
       (CodeOk.seq (CodeOk.zero (CodeOk.block _)) (CodeOk.seq (CodeOk.zero pcCopy_ok)
-        (CodeOk.seq (CodeOk.zero (CodeOk.block _)) (CodeOk.seq (CodeOk.call v.pdOk)
+        (CodeOk.seq (CodeOk.zero (CodeOk.block _)) (CodeOk.seq (CodeOk.call (v.pdOk.mono (by decide)))
           (CodeOk.zero checkP_tail_ok))))))))
     (CodeOk.zero (CodeOk.block _)))
 

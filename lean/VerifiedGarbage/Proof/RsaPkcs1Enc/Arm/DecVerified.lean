@@ -1974,12 +1974,12 @@ theorem code_ok (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : spec.pre s) :
     (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)
     (hQ := fun _ m₁ m₂ hf hres => by
       have ap := fun {R : Region} (hR : R ∈ [(ep s).OUT, (ep s).ML, (ep s).SCR]) =>
-        released_apart (F := frameBytes) (A := 76) (C := 3440) (argv := (ep s).argv)
+        released_apart (F := frameBytes) (A := 76) (C := 3488) (argv := (ep s).argv)
           (ro := [(ep s).N, (ep s).E, (ep s).D, (ep s).INP, (ep s).PP, (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI])
           hin.ok hsp (Or.inr hR)
       exact Res_frame hf (ap (by simp)) (ap (by simp))
         (by have := hin.out_fit; omega_using [this]) hres)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
-  · rw [pushRegion_eq (F := frameBytes) (A := 76) (C := 3440) (argv := (ep s).argv)
+  · rw [pushRegion_eq (F := frameBytes) (A := 76) (C := 3488) (argv := (ep s).argv)
       (ro := [(ep s).N, (ep s).E, (ep s).D, (ep s).INP, (ep s).PP, (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI])
       (rw := [(ep s).OUT, (ep s).ML, (ep s).SCR]) hsp]
     exact hin.ok.push_apart r hr
@@ -1988,7 +1988,7 @@ theorem code_ok (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : spec.pre s) :
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ [(ep s).N, (ep s).E, (ep s).D, (ep s).INP, (ep s).PP, (ep s).QQ,
         (ep s).DP, (ep s).DQ, (ep s).QI]) =>
-      entered_ro (F := frameBytes) (A := 76) (C := 3440) (argv := (ep s).argv)
+      entered_ro (F := frameBytes) (A := 76) (C := 3488) (argv := (ep s).argv)
         (rw := [(ep s).OUT, (ep s).ML, (ep s).SCR]) hin.ok hsp hR
     have hD : dB (ep s) (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 3))
         (stackArg s 4).toNat := ro (R := (ep s).D) (by simp)

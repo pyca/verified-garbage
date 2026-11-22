@@ -15,25 +15,12 @@ namespace VG.Artifacts.AesGcm.AArch64
 
 open VG.Proof.AesGcm.AArch64
 
-/-- `vg_aes_gcm_seal`, `vg_aes_gcm_init`, `vg_aes_gcm_open`, `vg_aes_gcm_open_to`, the
-stream functions and `vg_aes_gcm_seal_gather` of the variant `g`. -/
+/-- `vg_aes_gcm_init`, the stream functions and `vg_aes_gcm_seal_gather` of the variant `g`. -/
 def artifactsOf (g : GcmVariant) : List Artifact := [
-  Spec.Gcm.sealApi.artifact AArch64.target {
-    suffix := g.impl.suffix
-    code := Impl.AesGcm.AArch64.Fn.seal g.calls
-    verified := Proof.AesGcm.AArch64.seal_scrubbed g },
   Spec.Gcm.initApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.init g.calls
     verified := Proof.AesGcm.AArch64.init_scrubbed g },
-  Spec.Gcm.openApi.artifact AArch64.target {
-    suffix := g.impl.suffix
-    code := Impl.AesGcm.AArch64.Fn.open g.calls
-    verified := Proof.AesGcm.AArch64.open_scrubbed g },
-  Spec.Gcm.openToApi.artifact AArch64.target {
-    suffix := g.impl.suffix
-    code := Impl.AesGcm.AArch64.Fn.openTo g.calls
-    verified := Proof.AesGcm.AArch64.openTo_scrubbed g },
   Spec.Gcm.streamInitApi.artifact AArch64.target {
     suffix := g.impl.suffix
     code := Impl.AesGcm.AArch64.Fn.streamInit g.calls

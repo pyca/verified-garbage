@@ -107,6 +107,10 @@ def sState : Nat := 7296
 def sHScr : Nat := 7424
 /-- `X`, big-endian; the high hash may start up to 12 bytes before it. -/
 def sX : Nat := 8032
+/-- The hash of `X` the loop is at, and the address of its place: below
+`X`'s lowest hash and above the compression's scratch. -/
+def fJ : Nat := sX - 48
+def fDst : Nat := sX - 44
 /-- p||q||g, big-endian. -/
 def sPk : Nat := 8448
 /-- The arrays of 32-bit words, little-endian. -/
@@ -182,13 +186,17 @@ def ivStore (iv : List (BitVec 32)) : List Instr :=
   Impl.Pbkdf2.Md.X86.storeW .ebx 0 (ivBytes iv) iv.length
 
 /-- The message of `n` bytes in the block hashed from the initial value
-`iv`, its digest to `scratch + dst`. -/
-def hash (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) (n dst : Nat) : Prog isa := seqs [
+`iv`, its digest to where `dst` points `eax`. -/
+def hashTo (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) (n : Nat) (dst : List Instr) : Prog isa := seqs [
   .block (scr .ebx sState ++ ivStore iv ++
     Impl.Pbkdf2.Md.X86.storeW .ebx (H.N + n) (padBytes n) ((64 - n) / 4) ++
     [.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 H.N))] ++ scr .ebp sHScr),
   Impl.MdStream.X86.compressAt H.compN H.compC .ebx .ebp,
-  .block (scr .ebx sState ++ scr .eax dst ++ H.out)]
+  .block (scr .ebx sState ++ dst ++ H.out)]
+
+/-- `hashTo` with the digest to `scratch + dst`. -/
+def hash (H : Impl.Pbkdf2.Md.X86.Hash) (iv : List (BitVec 32)) (n dst : Nat) : Prog isa :=
+  hashTo H iv n (scr .eax dst)
 
 /-! ## Calls -/
 
@@ -282,18 +290,30 @@ def qPart : Prog isa := seqs [
   copyS (sPP + (ProbablePrime.layout (8 * g.qLen)).candidate) (sPk + g.pLen) g.qLen,
   test g.qName g.qCode]
 
-/-- The hash of `seed + offset + j`, into its place in `X`. -/
-def pHash (j : Nat) : Prog isa := seqs [
+/-- The hash of `seed + offset + j`, for the `j` in `fJ`, to where `fDst`
+points, its place in `X`, which `esi` holds across the compression. -/
+def pHash : Prog isa := seqs [
   g.seedIn,
   .block (scr .edx (sState + g.H.N + g.qLen - 1) ++
-    [.mov .ecx (.mem (sc fOffset)), .alu .add .ecx (.imm (BitVec.ofNat 32 j))]),
+    [.mov .ecx (.mem (sc fOffset)), .alu .add .ecx (.mem (sc fJ))]),
   addBE g.qLen,
-  hash g.H g.iv g.qLen (sX + g.pLen - (j + 1) * g.qLen)]
+  .block [.mov .esi (.mem (sc fDst))],
+  hashTo g.H g.iv g.qLen [.mov .eax (.reg .esi)]]
 
-/-- `X`: the hashes, the top bit set, and the low bit, which the reduction
-modulo `2 q` discards, as q's shaping does. -/
-def pX : Prog isa :=
-  seqs ((List.range (g.count + 1)).map g.pHash ++ [.block (orByte sX 0x80 ++ orByte (sX + g.pLen - 1) 1)])
+/-- The next hash's place, `qLen` bytes lower, and `j`; ZF once all
+`count + 1` are done. -/
+def pNext : List Instr :=
+  [.mov .eax (.mem (sc fDst)), .alu .sub .eax (.imm (BitVec.ofNat 32 g.qLen)), .store (sc fDst) .eax,
+    .mov .eax (.mem (sc fJ)), .alu .add .eax (.imm 1), .store (sc fJ) .eax,
+    .alu .cmp .eax (.imm (BitVec.ofNat 32 (g.count + 1)))]
+
+/-- `X`: the hashes, the last at its top, in a loop over `j`, then the top
+bit set, and the low bit, which the reduction modulo `2 q` discards, as q's
+shaping does. -/
+def pX : Prog isa := seqs [
+  .block (scr .eax (sX + g.pLen - g.qLen) ++ [.store (sc fDst) .eax, .mov .eax (.imm 0), .store (sc fJ) .eax]),
+  .loop (.seq g.pHash (.block g.pNext)) .ne,
+  .block (orByte sX 0x80 ++ orByte (sX + g.pLen - 1) 1)]
 
 /-- A counter's candidate: `fP` := 0 if the witnesses ran out, 1 if it is a
 probable prime, else as it was. -/

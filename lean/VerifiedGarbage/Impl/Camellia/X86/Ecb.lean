@@ -12,7 +12,8 @@ public import VerifiedGarbage.Impl.Camellia.X86.Prepared
 
 * The callee-saved registers are saved in the scratch buffer, whose address
   moves to `edi`.
-* The subkeys are bitsliced into the table at slot 104, for 18 rounds or 24
+* The subkeys are bitsliced into the table at slot 104 by a call of
+  `vg_camellia_prepare_keys_<dir>` (`prepareCall`), for 18 rounds or 24
   (three groups of six rounds or four), in the order the rounds use them:
   the stored order for encryption; for decryption the order RFC 3713
   §2.3.3 swaps them into, `kw3, kw4`, then the subkeys between `kw2` and
@@ -71,6 +72,40 @@ def decKeys (g : Nat) : Prog isa :=
 def keys (dir : Dir) (g : Nat) : Prog isa :=
   match dir with | .encrypt => encKeys g | .decrypt => decKeys g
 
+/-! ## The table, as a function of each direction -/
+
+/-- The function that builds the table of `dir`. -/
+def prepareName : Dir → String
+  | .encrypt => "vg_camellia_prepare_keys_encrypt"
+  | .decrypt => "vg_camellia_prepare_keys_decrypt"
+
+/-- `ebx`, `esi` and `ebp` restored from their slots from `j`, and `edi`
+(`ws`, which its callers keep there) from the third stack argument, which
+holds it: the function returns with the registers its callers had. -/
+def restoreKeysRegs (j : Nat) : List Instr :=
+  [movS .ebx j, movS .esi (j + 1), movS .ebp (j + 3), .mov .edi (.mem (argOp 2))]
+
+/-- `vg_camellia_prepare_keys_<dir>(schedule, rounds, ws)`, cdecl, called
+with `ws` in `edi`: the table of subkeys in `dir`'s order for 18 rounds or
+24, in the working space `ws`, with the callee-saved registers saved in
+`vg_camellia_crypt_prepared`'s slots (655–658), apart from those of its
+callers. -/
+def prepareKeys (dir : Dir) : Prog isa :=
+  .seq (.block (saveRegsAt cryptSavedSlot 2 ++ [.mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 18)]))
+    (.seq (.ite .e (keys dir 3) (keys dir 4)) (.block (restoreKeysRegs cryptSavedSlot)))
+
+/-- A call of `vg_camellia_prepare_keys_<dir>` on the working space at `sb`,
+the schedule and the number of rounds the caller's first two stack
+arguments: the arguments pushed in a frame (16 bytes of stack with the return
+address). `sb`, which the function restores, is loaded again from the
+caller's stack argument `ws`, the working space: the analysis of constant
+time forgets what the function's frame holds across its stores through a
+pointer into the table. -/
+def prepareCall (dir : Dir) (ws : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (.mem (argOp 1)), .mov .edx (.mem (argOp 0)), movR .ecx sb])
+    (.seq (.frame (.push [.ecx, .eax, .edx]) (.call (prepareName dir) (prepareKeys dir)) (.pop .eax 3))
+      (.block [.mov sb (.mem (argOp ws))]))
+
 /-! ## The groups -/
 
 /-- Copy `ecx` blocks from `edx` to `ebx` (through `eax`). -/
@@ -115,7 +150,6 @@ def groups : Prog isa :=
 
 /-- The whole function: the table for 18 rounds or 24, and the groups. -/
 def ecb (dir : Dir) : Prog isa :=
-  .seq (.block (saveRegs 4 ++ [.mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 18)]))
-    (.seq (.ite .e (keys dir 3) (keys dir 4)) (.seq groups (.block restoreRegs)))
+  .seq (.block (saveRegs 4)) (.seq (prepareCall dir 4) (.seq groups (.block restoreRegs)))
 
 end VG.Impl.Camellia.X86

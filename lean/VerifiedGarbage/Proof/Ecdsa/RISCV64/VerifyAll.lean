@@ -49,7 +49,7 @@ open VG.Proof.Ecdh.RISCV64.Kit (sv sl8 sl_lo sl_le sl_sep sl_top all_app all_one
   apart_consts flag_consts lo_consts maskOf_and not_mask and_one out_of_disj sep_at' bytesAt_unch
   lo_word own_ge wp_syms_frame cslots mem_cslots mask_eq valid_iff_of valid_on peer_bytes)
 open VG.Proof.Ecdsa.RISCV64.SignAll (le55 sl_64 sl_lt flag_top flag_64 below_own flag_own all_cons sv_unch cw cw_keep
-  cw_flag cw_lo chainNLay chainN_keep chainN_flag chainN_lo nconsts_nodup nconsts_le apart_nconsts flag_nconsts
+  cw_flag cw_lo chainNLay invN_keep invN_flag invN_lo invSave_eq invSave_lt invSave8 invSave_chain invSave_below chainN_keep chainN_flag chainN_lo nconsts_nodup nconsts_le apart_nconsts flag_nconsts
   lo_nconsts addCall_kit nzFlag_ok)
 
 /-- `∀ w ∈ W, P w` for ranges `W` given as a list of lists: `t` proves it of each. -/
@@ -140,26 +140,27 @@ theorem chW_top {c : Cfg} (h1 : 1 ≤ c.n) (h9 : c.n ≤ 9) : ∀ w ∈ chW c, w
 
 /-- What `u` and `v` write. -/
 abbrev uvW (c : Cfg) : List (Nat × Nat) :=
-  cw c KM ++ chainWx (Sign.Cfg.chainN c) c.n ++ cw c EM ++ cw c UM ++ cw c UU ++ cw c RM ++ cw c VM ++ cw c VV
+  cw c KM ++ ((VG.Impl.Ecdh.RISCV64.Cfg.invSave c, 8) :: chainWx (Sign.Cfg.chainN c) c.n) ++ cw c EM ++ cw c UM ++ cw c UU ++ cw c RM ++ cw c VM ++ cw c VV
 
 theorem uvW_keep {c : Cfg} (h9 : c.n ≤ 9) {i : Nat} (hi : i < 45)
     (h : ∀ j ∈ [KM, ACC, EM, UM, UU, RM, VM, VV], i ≠ j) :
     ∀ w ∈ uvW c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   repeat' with_reducible apply all_app
-  all_goals first | exact cw_keep h9 (h _ (by decide)) hi | exact chainN_keep h9 hi (h _ (by decide))
+  all_goals first | exact cw_keep h9 (h _ (by decide)) hi | exact invN_keep h9 hi (h _ (by decide))
 
 theorem uvW_flag (c : Cfg) (h1 : 1 ≤ c.n) (h9 : c.n ≤ 9) :
     ∀ w ∈ uvW c, c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
   repeat' with_reducible apply all_app
-  all_goals first | exact cw_flag h9 (by decide) | exact chainN_flag h1 h9
+  all_goals first | exact cw_flag h9 (by decide) | exact invN_flag h1 h9
 
 theorem uvW_lo (c : Cfg) (h9 : c.n ≤ 9) : ∀ w ∈ uvW c, 40 ≤ w.1 := by
   repeat' with_reducible apply all_app
-  all_goals first | exact cw_lo h9 _ | exact chainN_lo h9
+  all_goals first | exact cw_lo h9 _ | exact invN_lo h9
 
 theorem uvW_top (c : Cfg) (h1 : 1 ≤ c.n) (h9 : c.n ≤ 9) : ∀ w ∈ uvW c, w.1 + w.2 ≤ 8192 := by
   repeat' with_reducible apply all_app
-  all_goals first | exact cw_top h9 (by decide) | (rw [chainN_chW]; exact chW_top h1 h9)
+  all_goals first | exact cw_top h9 (by decide) |
+    exact all_cons (by simp only [invSave_eq, Cfg.sl, slot]; omega_using [h9]) (by rw [chainN_chW]; exact chW_top h1 h9)
 
 /-- What the coordinate `x` out of Montgomery's form writes. -/
 abbrev affW (c : Cfg) : List (Nat × Nat) :=
@@ -461,8 +462,9 @@ theorem uv_ok {base : Addr} {s : State} {r sg e : Nat} (hb : Kt.UvPre base s r s
   -- `w`.
   obtain on₂ : sv Kt.c base s₂ ONEN = 2 ^ (64 * Kt.c.n) % Kt.c.C.n := by
     show wordsVal _ _ _ _ = _; rw [sv_unch h9 U₂ ONEN (kp (by decide) (by decide))]; exact hb.onen
-  refine WP.seq (WP.mono (TKit.chainPow_kit (P := Sign.Cfg.chainN Kt.c) hF hk hm (chainNLay Kt.c Kt.toSKit.n1 h9) hU hw₂
-    (one := Kt.c.sl ONEN) (hl (by decide)) (hs (by decide)) on₂ Kt.chainN_ok)
+  refine WP.seq (WP.mono (TKit.chainCall_kit (P := Sign.Cfg.chainN Kt.c) hF hk hm (chainNLay Kt.c Kt.toSKit.n1 h9) hU hw₂
+    (one := Kt.c.sl ONEN) (hl (by decide)) (hs (by decide)) on₂ Kt.chainN_ok (invSave_lt h9) (invSave8 _)
+    (invSave_chain Kt.toSKit.n1 h9) (invSave_below _ (by decide)) (invSave_below _ (by decide)))
     fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
   obtain hw₃ := hw₂.of_kc K₃
   obtain acc₃ : toM Kt.c.C.n (2 ^ (64 * Kt.c.n)) (sv Kt.c base s₃ ACC) = Fin.ofNat Kt.c.C.n sg ^ (Kt.c.C.n - 2) := by
@@ -472,7 +474,7 @@ theorem uv_ok {base : Addr} {s : State} {r sg e : Nat} (hb : Kt.UvPre base s r s
   have acclt₃ : sv Kt.c base s₃ ACC < Kt.c.C.n := lt₃
   obtain k13 : ∀ i ∈ [VE, VR, R2N, ONE], sv Kt.c base s₃ i = sv Kt.c base s i := fun i hi => by
     obtain ⟨h1, h2, h3⟩ := (by decide : ∀ i ∈ [VE, VR, R2N, ONE], i < 45 ∧ i ≠ ACC ∧ i ≠ KM) i hi
-    exact (sv_unch h9 U₃ i (chainN_keep h9 h1 h2) (le55 h1)).trans (sv_unch h9 U₂ i (kp h3 h1) (le55 h1))
+    exact (sv_unch h9 U₃ i (invN_keep h9 h1 h2) (le55 h1)).trans (sv_unch h9 U₂ i (kp h3 h1) (le55 h1))
   obtain r2₃ : sv Kt.c base s₃ R2N = 2 ^ (64 * Kt.c.n) * 2 ^ (64 * Kt.c.n) % Kt.c.C.n :=
     (k13 R2N (by decide)).trans hb.r2n
   -- `e R`.
@@ -723,7 +725,7 @@ def prog (joint : Prog isa) : Prog isa :=
   .seq (.block ((Sign.Cfg.nConsts Kt.c).flatMap (fun (i, x) => setConst Kt.c.n (Kt.c.sl i) x))) <|
   .seq (Verify.Cfg.uv Kt.c Kt.FN) <|
   .seq joint <|
-  .seq (chainPow (chainP Kt.c) (Kt.c.sl ONEP) Kt.c.FP) <|
+  .seq (invP Kt.c) <|
   .seq (affineCoord Kt.c XM XO RX) <|
   .seq (Verify.Cfg.compare Kt.c Kt.FN) (.block (Verify.Cfg.finish Kt.c))
 
@@ -879,11 +881,12 @@ theorem verify_ok (hL : Law Kt.c.C) {joint : Prog isa} {JW : List (Nat × Nat)} 
   obtain tc₆ := tc₄.of_unch h9 U₆ hJ.consts
   -- `Z^(p-2)` and `x`.
   obtain kpC : ∀ {i : Nat}, i < 45 → i ≠ ACC →
-      ∀ w ∈ chainWx (chainP Kt.c) Kt.c.n, Kt.c.sl i + 8 * Kt.c.n ≤ w.1 ∨ w.1 + w.2 ≤ Kt.c.sl i :=
-    fun hi ha => chainN_keep h9 hi ha
-  refine WP.seq (WP.mono (TKit.chainPow_kit (P := chainP Kt.c) Kt.field_ok Kt.FPk Kt.FPm
+      ∀ w ∈ (VG.Impl.Ecdh.RISCV64.Cfg.invSave Kt.c, 8) :: chainWx (chainP Kt.c) Kt.c.n, Kt.c.sl i + 8 * Kt.c.n ≤ w.1 ∨ w.1 + w.2 ≤ Kt.c.sl i :=
+    fun hi ha => invN_keep h9 hi ha
+  refine WP.seq (WP.mono (TKit.chainCall_kit (P := chainP Kt.c) Kt.field_ok Kt.FPk Kt.FPm
     (TKit.chainLay Kt.c h1 h9) hU hw₆ (one := Kt.c.sl ONEP) (below_own h9 (by decide)) (sl_lt h1 h9 (by decide))
-    (by show sv Kt.c base s₆ ONEP = _; rw [tc₆.onep, Nat.one_mul]) Kt.chainP_ok)
+    (by show sv Kt.c base s₆ ONEP = _; rw [tc₆.onep, Nat.one_mul]) Kt.chainP_ok (invSave_lt h9) (invSave8 _)
+    (invSave_chain h1 h9) (invSave_below _ (by decide)) (invSave_below _ (by decide)))
     fun s₇ ⟨K₇, U₇, lt₇, v₇⟩ => ?_)
   obtain hw₇ := hw₆.of_kc K₇
   obtain tc₇ := tc₆.of_unch h9 U₇ fun i hi => by
@@ -917,15 +920,15 @@ theorem verify_ok (hL : Law Kt.c.C) {joint : Prog isa} {JW : List (Nat × Nat)} 
       !decide (ofBytes (bytesAt s.mem (s.gpr .a2 + BitVec.ofNat 64 Kt.L) Kt.L) = 0)) &&
       decide (Kt.toSKit.toKit.CC.Valid x y)))
     (by rw [U₂₉.word (all_app (all_app (all_app (all_app (all_app (flag_nconsts _) (uvW_flag Kt.c h1 h9)) hJ.flag)
-          (chainN_flag h1 h9)) (affW_flag h9)) (all_app (all_app (cw_flag h9 (by decide)) (cw_flag h9 (by decide)))
+          (invN_flag h1 h9)) (affW_flag h9)) (all_app (all_app (cw_flag h9 (by decide)) (cw_flag h9 (by decide)))
           (cw_flag h9 (by decide)))) (flag_64 h1 h9), hF, f₂, Sflag, mask_eq, maskOf_and]))
     fun s' ⟨a0', s0', s1', s2', ra', s3', regs', sp'⟩ => ?_
   -- The registers.
   obtain U₁₉ := U₂.trans U₂₉
   obtain lo : ∀ w ∈ Kt.toSKit.toKit.checkKW ++ ((((((Sign.Cfg.nConsts Kt.c).map (fun e => (Kt.c.sl e.1, 8 * Kt.c.n)) ++
-      uvW Kt.c) ++ JW) ++ chainWx (chainP Kt.c) Kt.c.n) ++ affW Kt.c) ++ cmpW Kt.c), 40 ≤ w.1 :=
+      uvW Kt.c) ++ JW) ++ ((VG.Impl.Ecdh.RISCV64.Cfg.invSave Kt.c, 8) :: chainWx (chainP Kt.c) Kt.c.n)) ++ affW Kt.c) ++ cmpW Kt.c), 40 ≤ w.1 :=
     all_app Kt.toSKit.toKit.check_lo (all_app (all_app (all_app (all_app (all_app (lo_nconsts _) (uvW_lo Kt.c h9)) hJ.lo)
-      (chainN_lo h9)) (affW_lo h9)) (all_app (all_app (cw_lo h9 _) (cw_lo h9 _)) (cw_lo h9 _)))
+      (invN_lo h9)) (affW_lo h9)) (all_app (all_app (cw_lo h9 _) (cw_lo h9 _)) (cw_lo h9 _)))
   refine ⟨⟨fun r hr => ?_, by rw [sp', K₉.sp, K₈.sp, K₇.sp, K₆.sp, K₄.sp, r₃.sp, K₂.sp, S.sp],
     by rw [ra', lo_word U₁₉ lo (d := 24) (by decide), S.sv3]⟩, ?_⟩
   · by_cases h0 : r = .s0
