@@ -15,3 +15,5 @@ __pycache__/
 /bench-src
 # CI metrics (ci/ci_metrics.py fetch)
 /.ci-metrics
+# The rustls provider's comparison with aws-lc-rs, a workspace of its own.
+/crates/rustls-verified-garbage/bench/aws-lc-compare/target
