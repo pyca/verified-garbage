@@ -4,8 +4,7 @@
 # (default: the workspace's target/rustls), and applies each patch here to
 # it: `tests.patch` gives rustls's API test suite a
 # `tests_with_verified_garbage` module, which runs it with this provider,
-# and `bench.patch` gives rustls-bench a `verified-garbage` provider and the
-# `provider-primitives` binary.
+# and `bench.patch` gives rustls-bench a `verified-garbage` provider.
 set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
 dir=${1:-$here/../../target/rustls}

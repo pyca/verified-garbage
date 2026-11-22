@@ -43,20 +43,16 @@ CI runs all of them (`rustls-provider` in `.github/workflows/ci.yml`).
 
 ## Benchmarks
 
-`bench/run.sh [rounds]` (Linux) runs everything
-[`bench/RESULTS.md`](bench/RESULTS.md) reports, verified-garbage against
-aws-lc-rs, each pinned to one CPU (`BENCH_CPU`, default 2), into
-`target/bench-results`, and summarizes it with `bench/summarize.py`:
+`bench/run.sh [rounds]` (Linux) runs rustls-bench's whole suite with this
+provider and with aws-lc-rs's, `rounds` times each (default 5), from the
+rustls checkout `rustls/setup.sh` makes in `target/rustls`, whose
+`bench.patch` adds the `verified-garbage` provider to rustls-bench. It
+writes the results to `target/bench-results/rustls-bench.json`, a results
+file that `ci/bench_report.py` charts against aws-lc-rs:
 
-* rustls-bench's whole suite, `rounds` times (default 5) per provider, from
-  the rustls checkout `rustls/setup.sh` makes in `target/rustls` (if
-  there is none yet), whose `bench.patch` adds the `verified-garbage` provider;
-* `provider-primitives`, a binary the patch adds to rustls-bench, which
-  times both providers' primitives through the rustls traits (key exchange,
-  signing, verification, records, HKDF, tickets);
-* `bench/aws-lc-compare`, which times both libraries' primitives through
-  their own APIs (with RSA keys it generates with `openssl`), to tell the
-  library's costs from the provider's, and the AEADs at sizes up to 2 KiB.
+```sh
+python3 ci/bench_report.py html target/bench-results -o rustls-bench.html
+```
 
 To compare the providers on one thing, e.g. a cipher suite's bulk throughput:
 
