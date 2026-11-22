@@ -10,7 +10,7 @@
 //! pseudorandom key derived elsewhere (as TLS 1.3's key schedule does with
 //! each of its secrets).
 
-#![cfg(target_arch = "riscv64")]
+#![cfg(any(target_arch = "riscv64", target_arch = "x86_64"))]
 
 use core::marker::PhantomData;
 

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
+public import VerifiedGarbage.Proof.HmacTable.X86_64.Up
 public import VerifiedGarbage.Proof.Framework.X86_64.TableFill
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Table
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
@@ -25,6 +26,7 @@ needs to scrub its implementations.
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 
 open VG.X86_64 VG.X86_64.Scrub
+open VG.Proof.HmacTable.X86_64 (HmacUp variants_up)
 
 /-- `TableInstance.signContract`'s postcondition reads the memory on return
 only in `out`. -/
@@ -61,21 +63,6 @@ variant's code where it calls them (`Code.icalls`). It clears at the level
 `sse`, in the baseline ISA, which the AVX code it may run through the table
 needs no more of than that its upper halves agree after it
 (`X86_64.Scrub.verifiedScrubbedAllUp`). -/
-
-/-- What the cleanup of a caller through a table needs of the HMAC functions
-of `w` (`X86_64.Scrub.upCallee`), with 24 bytes of stack. -/
-def HmacUp (w : Proof.Pbkdf2.Md.X86_64.MdHash) : Prop :=
-  upCallee w.H.hmacInitAny 24 = true ∧ upCallee w.H.updC 24 = true ∧ upCallee w.H.hmacFin 24 = true
-
-/-- `HmacUp` of every variant, evaluated once for every curve. -/
-theorem variants_hmacUp : (VG.Proof.Variants.MdHash.X86_64.variants.all fun w =>
-    upCallee w.H.hmacInitAny 24 && upCallee w.H.updC 24 && upCallee w.H.hmacFin 24) = true := by
-  lit_decide
-
-theorem variants_up : ∀ w ∈ VG.Proof.Variants.MdHash.X86_64.variants, HmacUp w := fun w hw => by
-  have h := List.all_eq_true.mp variants_hmacUp w hw
-  simp only [Bool.and_eq_true] at h
-  exact ⟨h.1.1, h.1.2, h.2⟩
 
 /-- The table's functions, each a stub (`X86_64.Scrub.tableStub`). -/
 def stubFns : Impl.Mgf1.X86_64.Table.Fns :=

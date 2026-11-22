@@ -170,7 +170,7 @@ theorem p256_stub (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve) (hT : Weie
 /-- `vg_ecdsa_p256_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
 cleanup included, meets its contract in constant time and returns without secret residue. -/
 theorem p256T_scrubbed (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve) (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P256_COMB" ∉ Proof.HmacTable.X86_64.names vs)
-    (hu : ∀ w ∈ vs, HmacUp w) :
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
     VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p256Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs))
       (specK Spec.Ecdsa.Rfc6979.Curves.p256 Impl.Ecdsa.X86_64.p256.combConsts vs) 32 :=
   sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p256SignApi)

@@ -84,7 +84,7 @@ open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK p192 p192T_verified signCode_sp
 open VG.Proof.HmacTable.X86_64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
-    (hu : ∀ w ∈ vs, Proof.Ecdsa.Rfc6979.X86_64.HmacUp w) : List Artifact :=
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) : List Artifact :=
   if hv : OK vs then [
     Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact X86_64.target
       { tables := [("hmac", tables vs)]
@@ -94,7 +94,7 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
   else []
 
 def artifacts : List Artifact :=
-  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants Proof.Ecdsa.Rfc6979.X86_64.variants_up
+  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants Proof.HmacTable.X86_64.variants_up
 
 end VG.Artifacts.EcdsaP192.X86_64.Rfc6979
 

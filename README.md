@@ -1655,7 +1655,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA extensions, SHA512, AVX-512F, AVX-512VL, AVX2, BMI1, BMI2</td>
 
 <td>❌</td>
 

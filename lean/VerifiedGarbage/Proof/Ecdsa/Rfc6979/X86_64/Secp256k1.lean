@@ -88,7 +88,7 @@ theorem secp256k1_stub (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierst
 /-- `vg_ecdsa_secp256k1_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
 cleanup included, meets its contract in constant time and returns without secret residue. -/
 theorem secp256k1T_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs)
-    (hu : ∀ w ∈ vs, HmacUp w) :
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
     VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (secp256k1 hL hI) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs))
       (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 Impl.Ecdsa.X86_64.secp256k1.combConsts vs) 32 :=
   sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi)

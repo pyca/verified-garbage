@@ -96,7 +96,7 @@ theorem p224_stub (hL : Weierstrass.Law Spec.P224.curve) (hT : Weierstrass.CombO
 /-- `vg_ecdsa_p224_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
 cleanup included, meets its contract in constant time and returns without secret residue. -/
 theorem p224T_scrubbed (hL : Weierstrass.Law Spec.P224.curve) (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P224_COMB" ∉ Proof.HmacTable.X86_64.names vs)
-    (hu : ∀ w ∈ vs, HmacUp w) :
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
     VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p224 hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs))
       (specK Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Ecdsa.X86_64.p224.combConsts vs) 32 :=
   sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p224SignApi)

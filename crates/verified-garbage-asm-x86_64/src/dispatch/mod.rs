@@ -270,6 +270,9 @@ pub mod fn_tables;
 pub mod gcm;
 
 #[rustfmt::skip]
+pub mod hkdf;
+
+#[rustfmt::skip]
 pub mod hmac_md5;
 
 #[rustfmt::skip]
