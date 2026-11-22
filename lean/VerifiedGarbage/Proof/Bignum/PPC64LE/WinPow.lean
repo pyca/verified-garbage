@@ -834,6 +834,17 @@ theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 :
   exact VG.Proof.Bignum.mont_cancel hR (by rw [e, hu.pw hE])
 
 
+/-- An odd number of `2 w` words has an odd low word. -/
+theorem word_odd {m : Mem} {B : Addr} {d w N : Nat} (hw : 1 ≤ w) (hN : val32 m B d (2 * w) = N)
+    (hodd : N % 2 = 1) : (word m B d).toNat % 2 = 1 := by
+  obtain h1 := word_eq_w32 m B d
+  have h2 : val32 m B d (2 * w - 1 + 1) = w32 m B d + 2 ^ 32 * val32 m B (d + 4) (2 * w - 1) := rfl
+  rw [Nat.sub_add_cancel (by omega_using [hw] : 1 ≤ 2 * w), hN] at h2
+  simp only [Nat.reducePow] at h1 h2
+  obtain hw32 : w32 m B d % 2 = 1 := by omega_using [h2, hodd]
+  rw [h1]
+  omega_using [hw32]
+
 /-- `2 w` into `r11` from the arrays' size `r29 = 8 (w + 2)`. -/
 theorem twoW_ok {s : State} {w : Nat} (hw' : w < 2 ^ 31) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) :
     WP isa (.block [.lsr .d .r11 .r29 2, .subi .r11 .r11 4]) s fun t =>

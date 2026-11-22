@@ -199,10 +199,10 @@ def pModQ : Prog isa :=
     (.seq (.block ([.addi .r30 .r27 0] ++ getP .r31)) (.seq ModArith.reduce
       (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 1 7) (.block unmask))))))
 
-/-- `ModExp.powWin`, as the function `vg_dsa_pow_win` (`ModExp.powWinCall`,
+/-- `ModExp.powWin`, as the function `vg_bignum_pow_win` (`ModExp.powWinFn`,
 which keeps the return address in `r25`, free while the DSA functions run:
 they save it with the other nonvolatile registers). -/
-def powWin : Prog isa := ModExp.powWinCall "vg_dsa_pow_win"
+def powWin : Prog isa := ModExp.powWinFn
 
 /-- `r3 :=` p's top word (word `w − 1` of array 0, at `r10`; `r11 = 2 w`). -/
 def topWord : List Instr := [.lsl .r3 .r11 2, .add .r3 .r10 .r3, .subi .r3 .r3 8, .load .d .r3 .r3 0]

@@ -111,7 +111,7 @@ def subFront : Prog isa :=
 /-- The power by the octets at `r30` (`r31` of them, `ModExp.powWin`), and
 `r3 := 1` if it is 1, else 0. -/
 def subBack : Prog isa :=
-  .seq ModExp.powWin (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 4 7)
+  .seq ModExp.powWinFn (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 4 7)
     (.block [.li .r0 1, .logic .and .r3 .r3 .r0]))))
 
 /-- `r3 := 1` if `y^q mod p = 1`, else 0: the power by q's octets from its
@@ -203,8 +203,8 @@ def exPre : Prog isa :=
     (.seq Precompute.r2Hi (.block [.load .d .r30 .r23 64, .load .d .r31 .r23 72])))
 
 /-- `z = y^x mod p` into array 4: `exPre`, then the power by x's `x_len`
-octets, by four-bit windows (`ModExp.powWin`, its table in arrays 8–23). -/
-def exPower : Prog isa := .seq exPre ModExp.powWin
+octets, by four-bit windows (`ModExp.powWinFn`, the function `vg_bignum_pow_win`, its table in arrays 8–23). -/
+def exPower : Prog isa := .seq exPre ModExp.powWinFn
 
 /-- The mask of `1 < z < p − 1` into `r26`, and `out` back from the header
 into `r27`. -/

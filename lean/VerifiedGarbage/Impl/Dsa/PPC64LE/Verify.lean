@@ -144,7 +144,7 @@ def products : Prog isa :=
 
 /-- In the P space, with `R² mod p` in array 24, the power of the number at
 `r12` (`p_len` octets) by the `q_len` octets at `r24`, into array 4, by
-four-bit windows (`powWin`, the function `vg_dsa_pow_win`, constant time: its
+four-bit windows (`powWin`, the function `vg_bignum_pow_win`, constant time: its
 table entries are read by a masked scan). -/
 def powP : Prog isa :=
   .seq (.block (getP .r6)) (.seq (loadArr 4) (.seq (copy 1 24)
