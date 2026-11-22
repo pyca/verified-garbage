@@ -117,7 +117,7 @@ theorem copy_ok (dst src : Ptr) (n : Nat) (hn0 : 0 < n ∧ n % 8 = 0) (hn : n < 
     exact List.map_congr_left fun i hi => hc i (by have := List.mem_range.mp hi; omega_using [hn0, this])
 
 section
-variable {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D rbs wbs s)
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D SL rbs wbs s)
 include L
 
 /-! ## Copies -/

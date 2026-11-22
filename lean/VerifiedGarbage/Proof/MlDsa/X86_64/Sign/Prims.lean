@@ -86,15 +86,15 @@ theorem toNat64 {v : Nat} (h : v < 2 ^ 32) : (BitVec.ofNat 64 v).toNat = v := by
 /-- The setting of a call from a state in a layout: the stack pointer and
 memory as they were, and the layout. -/
 structure At (D : Nat) (rbs wbs : List (Reg × Nat)) (s s1 : State) : Prop where
-  L : Lay D rbs wbs s
+  L : Lay D SL rbs wbs s
   mem : s1.mem = s.mem
   rsp : s1.gpr .rsp = s.gpr .rsp
 
-theorem At.of {D : Nat} {rbs wbs : List (Reg × Nat)} {s s1 : State} (L : Lay D rbs wbs s) (hm : s1.mem = s.mem)
+theorem At.of {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s1 : State} (L : Lay D SL rbs wbs s) (hm : s1.mem = s.mem)
     (k : Keep argRegs s s1) : At D rbs wbs s s1 := ⟨L, hm, k.gpr (by decide)⟩
 
 section
-variable {D : Nat} {rbs wbs : List (Reg × Nat)} {s s1 : State} (A : At D rbs wbs s s1)
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s1 : State} (A : At D rbs wbs s s1)
 include A
 
 theorem At.ret {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true) (hD : 8 ≤ D) :
@@ -200,7 +200,7 @@ theorem ipPre {t : Poly → Poly} {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A
   · exact (A.red i1 hD).mpr hr
 
 theorem ipAt_ok {t : Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun S => inPlaceContract X86_64.abi t S) D c)
-    {s : State} (L : Lay D rbs wbs s) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true)
+    {s : State} (L : Lay D SL rbs wbs s) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true)
     (hr : Reduced s.mem (pa s f)) :
     WP isa (callP n c [.ptr f, .ptr (sc oPS)]) s fun s' => PPostB D s s' [(f, 1024), (sc oPS, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ PolyIs s'.mem (pa s f) (t (polyAt s.mem (pa s f))) := by
@@ -218,7 +218,7 @@ theorem ipAt_ok {t : Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun
 
 theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun S => inPlaceContract X86_64.abi t S) D c)
     {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
       (callP n c [.ptr f, .ptr (sc oPS)]) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, _, b1, o1⟩ := ipChk_spec hc
   refine callP_tr C.okMx (C.ctMx fun _ _ h => h) (by simp [Arg.ok, b1, o1]; decide)
@@ -269,7 +269,7 @@ theorem mulPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
   exact ⟨A.stk hS i1, A.stk hS i2, A.stk hS i3⟩
 
 theorem mulAt_ok {P : Prims} (C : Callee (fun S => productContract P.montgomery X86_64.abi S) D P.mul)
-    {s : State} (L : Lay D rbs wbs s) {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true)
+    {s : State} (L : Lay D SL rbs wbs s) {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true)
     (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
     WP isa (mulAt P h f g) s fun s' => PPostB D s s' [(h, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
@@ -288,7 +288,7 @@ theorem mulAt_ok {P : Prims} (C : Callee (fun S => productContract P.montgomery 
 
 theorem mulAt_tr {P : Prims} (C : Callee (fun S => productContract P.montgomery X86_64.abi S) D P.mul)
     {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (mulAt P h f g) fun _ _ => True := by
   obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
   refine callP_tr C.okMx (C.ctMx fun _ _ h => h) ok
@@ -363,7 +363,7 @@ theorem dotPre {c S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s
 
 
 theorem dotAt_ok {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract c X86_64.abi S) D (P.dotInv c))
-    {s : State} (L : Lay D rbs wbs s) {h f g : Ptr} (hc : dotChk (rbs ++ wbs) wbs h f g c = true)
+    {s : State} (L : Lay D SL rbs wbs s) {h f g : Ptr} (hc : dotChk (rbs ++ wbs) wbs h f g c = true)
     (rf : ∀ j < c, Reduced s.mem (pa s (famP f j))) (rg : ∀ j < c, Reduced s.mem (pa s (famP g j))) :
     WP isa (dotInvAt P c h f g) s fun s' => PPostB D s s' [(h, 1024), (sc oPS, 1024)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
@@ -386,7 +386,7 @@ theorem dotAt_ok {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract 
 
 theorem dotAt_tr {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract c X86_64.abi S) D (P.dotInv c))
     {h f g : Ptr} (hc : dotChk (rbs ++ wbs) wbs h f g c = true) :
-    RelCT isa (fun x y => LRel D rbs wbs x y ∧
+    RelCT isa (fun x y => LRel D SL rbs wbs x y ∧
       ((∀ j < c, Reduced x.mem (pa x (famP f j))) ∧ ∀ j < c, Reduced x.mem (pa x (famP g j))) ∧
       ((∀ j < c, Reduced y.mem (pa y (famP f j))) ∧ ∀ j < c, Reduced y.mem (pa y (famP g j))))
       (dotInvAt P c h f g) fun _ _ => True := by

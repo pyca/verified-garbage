@@ -440,7 +440,7 @@ theorem bytes2_write (m : Mem) (a : Addr) (v w : Byte) :
     VG.Proof.MlKem.writeW8_apply, ifp rfl]
 
 /-- `κ + r` to `scratch + o`, as the two bytes of `ExpandMask`'s seed. -/
-theorem setKap_okB {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D rbs wbs s) {r x : Nat}
+theorem setKap_okB {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D SL rbs wbs s) {r x : Nat}
     {o : Nat} (hr : r < 2 ^ 31) (hx : x + r < 2 ^ 16) (h1 : inB (rbs ++ wbs) (sc oKAP) 8 = true)
     (h2 : inB wbs (sc o) 2 = true) (hk : s.mem.readW (pa s (sc oKAP)) 64 = BitVec.ofNat 64 x) :
     WP isa (.block (setKap o r)) s fun s' => PPostB D s s' [(sc o, 2)] ∧
@@ -466,7 +466,7 @@ theorem setKap_okB {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay 
   rw [hm, e65, bytes2_write, hk, ofNat64_add, kappa_bytes hx]
 
 /-- `κ + r` to `MS + 64`, as the two bytes of `ExpandMask`'s seed. -/
-theorem setKappa_okB {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D rbs wbs s) {r x : Nat}
+theorem setKappa_okB {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D SL rbs wbs s) {r x : Nat}
     (hr : r < 2 ^ 31) (hx : x + r < 2 ^ 16) (h1 : inB (rbs ++ wbs) (sc oKAP) 8 = true)
     (h2 : inB wbs (sc (oMS + 64)) 2 = true) (hk : s.mem.readW (pa s (sc oKAP)) 64 = BitVec.ofNat 64 x) :
     WP isa (.block (setKappa r)) s fun s' => PPostB D s s' [(sc (oMS + 64), 2)] ∧
@@ -676,7 +676,7 @@ structure ICT (p : Params) (D : Nat) (σ : State) (t r : Nat) (s : State) : Prop
 def tmpChk (p : Params) (ws : List (Ptr × Nat)) : Bool :=
   (List.range 3).all fun k => keepB (sgB p) ws (pS (1 + k)) 1024
 
-theorem tmp_keep {p : Params} {D : Nat} {σ : State} {t r : Nat} {s s' : State} (L : Lay D (sgR p) (sgW p) s)
+theorem tmp_keep {p : Params} {D : Nat} {SL : List String} {σ : State} {t r : Nat} {s s' : State} (L : Lay D SL (sgR p) (sgW p) s)
     {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) (hc : tmpChk p ws = true)
     (h : ∀ k < 3, r ≤ 4 * (p.ℓ / 4) + k → Pl s (1 + k) (Yv p σ (p.ℓ * t) (4 * (p.ℓ / 4) + k))) :
     ∀ k < 3, r ≤ 4 * (p.ℓ / 4) + k → Pl s' (1 + k) (Yv p σ (p.ℓ * t) (4 * (p.ℓ / 4) + k)) := fun k hk hr =>
@@ -960,7 +960,7 @@ open VG.Spec.Sha3 (bytesAt)
 section
 variable {p : Params} {D : Nat}
 
-theorem lrel_rbx {x y : State} (h : LRel D (sgR p) (sgW p) x y) : ∀ r ∈ [Reg.rbx], x.gpr r = y.gpr r := by
+theorem lrel_rbx {x y : State} (h : LRel D SL (sgR p) (sgW p) x y) : ∀ r ∈ [Reg.rbx], x.gpr r = y.gpr r := by
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
   exact h.regs (.rbx, scrLen p) (by simp [sgR, sgW])
@@ -969,7 +969,7 @@ end
 
 /-! ## `y` and `ŷ` -/
 
-theorem setKappa_post {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D rbs wbs s) {r : Nat}
+theorem setKappa_post {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D SL rbs wbs s) {r : Nat}
     (hr : r < 2 ^ 31) (h1 : inB (rbs ++ wbs) (sc oKAP) 8 = true) (h2 : inB wbs (sc (oMS + 64)) 2 = true) :
     WP isa (.block (setKappa r)) s fun s' => ∃ W, PostB D s s' W := by
   have e65 : pa s (sc (oMS + 65)) = pa s (sc (oMS + 64)) + 1 := (pa_sc_add s (oMS + 64) 1).symm
@@ -989,8 +989,8 @@ theorem setKappa_post {D : Nat} {rbs wbs : List (Reg × Nat)} {s : State} (L : L
   rw [hm]
   exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c1
 
-theorem maskR_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {r : Nat} (hc : mChk p r = true) :
-    RelCT isa (LRel D (sgR p) (sgW p)) (maskR P p r) fun _ _ => True := by
+theorem maskR_trL {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D) {p : Params} {r : Nat} (hc : mChk p r = true) :
+    RelCT isa (LRel D SL (sgR p) (sgW p)) (maskR P p r) fun _ _ => True := by
   simp only [mChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨_, k1⟩, w1⟩, cm⟩, _⟩, cc⟩, _⟩, _⟩, ci⟩, _⟩, _⟩, _⟩, hr⟩, hγ⟩ := hc
   have hcc := copyChk_spec cc
@@ -1012,8 +1012,8 @@ theorem maskR_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {r : Nat
 
 /-! ## `y` and `ŷ`, four at a time -/
 
-theorem ms4_trL {D : Nat} {p : Params} {g k : Nat} (hc : ms4Chk p g k = true) :
-    RelCT isa (LRel D (sgR p) (sgW p)) (cpM4 g k) fun _ _ => True := by
+theorem ms4_trL {D : Nat} {SL : List String} {p : Params} {g k : Nat} (hc : ms4Chk p g k = true) :
+    RelCT isa (LRel D SL (sgR p) (sgW p)) (cpM4 g k) fun _ _ => True := by
   simp only [ms4Chk, Bool.and_eq_true] at hc
   have cc := hc.1.1.1.1.1.1.1.1
   have hcc := copyChk_spec cc
@@ -1026,9 +1026,9 @@ theorem ms4_trL {D : Nat} {p : Params} {g k : Nat} (hc : ms4Chk p g k = true) :
     (block_tr rfl fun x y h => lrel_rbx h.1))
     (fun _ _ h => ⟨h, trivial, trivial⟩) fun _ _ h => h
 
-theorem yhR_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {t ry r : Nat} (hc : yhChk p ry r = true)
+theorem yhR_trL {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D) {p : Params} {t ry r : Nat} (hc : yhChk p ry r = true)
     (hr : r < ry) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ (∃ σ, ICy p D σ t ry r x) ∧ ∃ σ, ICy p D σ t ry r y)
+    RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ (∃ σ, ICy p D σ t ry r x) ∧ ∃ σ, ICy p D σ t ry r y)
       (yhR P p r) fun _ _ => True := by
   simp only [yhChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨cc, _⟩, ci⟩, _⟩ := hc
@@ -1062,9 +1062,9 @@ theorem mask4_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {g : Nat}
 
 /-! ## The last three polynomials of `y`, four at a time -/
 
-theorem tailR_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {t r : Nat} (hc : tChk p r = true)
+theorem tailR_trL {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D) {p : Params} {t r : Nat} (hc : tChk p r = true)
     (h1 : 4 * (p.ℓ / 4) ≤ r) (h2 : r < 4 * (p.ℓ / 4) + 3) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ (∃ σ, ICT p D σ t r x) ∧ ∃ σ, ICT p D σ t r y)
+    RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ (∃ σ, ICT p D σ t r x) ∧ ∃ σ, ICT p D σ t r y)
       (tailR P p r) fun _ _ => True := by
   simp only [tChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨c0, _⟩, _⟩, cc⟩, _⟩, _⟩, _⟩, ci⟩, _⟩, _⟩, _⟩ := hc
@@ -1130,9 +1130,9 @@ theorem maskRest_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : 
 /-! ## `w` -/
 
 /-- `w[i]` from runs in iteration `t` with `y`, `ŷ` and the first `i` polynomials of `w`. -/
-theorem rowW_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {t i : Nat} (hc : wChk p i = true)
+theorem rowW_trL {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D) {p : Params} {t i : Nat} (hc : wChk p i = true)
     (hi : i < p.k) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ (∃ σ, ICw p D σ t i x) ∧ ∃ σ, ICw p D σ t i y) (rowW P p i)
+    RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ (∃ σ, ICw p D σ t i x) ∧ ∃ σ, ICw p D σ t i y) (rowW P p i)
       fun _ _ => True := by
   simp only [wChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨cd, _⟩, hl⟩ := hc
@@ -1144,9 +1144,9 @@ theorem rowW_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {t i : Na
 
 /-! ## `w₁` -/
 
-theorem w1R_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {t i : Nat} (hc : hChk p i = true)
+theorem w1R_trL {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D) {p : Params} {t i : Nat} (hc : hChk p i = true)
     (hi : i < p.k) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ (∃ σ, ICh p D σ t i x) ∧ ∃ σ, ICh p D σ t i y) (w1R P p i)
+    RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ (∃ σ, ICh p D σ t i x) ∧ ∃ σ, ICh p D σ t i y) (w1R P p i)
       fun _ _ => True := by
   simp only [hChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨c1, c2⟩, _⟩, _⟩, _⟩, _⟩, hb⟩, hγ⟩ := hc

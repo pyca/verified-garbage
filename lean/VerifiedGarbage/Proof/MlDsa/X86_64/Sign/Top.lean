@@ -65,7 +65,7 @@ theorem pieces_length (s : State) (ps : List (Ptr × Nat)) : (pieces s ps).lengt
     rw [ih]; simp [totLen]
 
 section
-variable {D : Nat} {rbs wbs : List (Reg × Nat)}
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)}
 
 theorem pieceChk_keep {p : Ptr × Nat} (h : pieceChk (rbs ++ wbs) p = true) :
     keepB (rbs ++ wbs) [(sc 0, 200), (sc 200, 640)] p.1 p.2 = true := by
@@ -73,7 +73,7 @@ theorem pieceChk_keep {p : Ptr × Nat} (h : pieceChk (rbs ++ wbs) p = true) :
   obtain ⟨⟨⟨⟨⟨⟨hin, _⟩, _⟩, _⟩, s1⟩, s2⟩, hcs⟩ := h
   simp only [keepB, List.all_cons, List.all_nil, s1, s2, hin, decide_eq_true hcs, Bool.and_self]
 
-theorem pieces_keep {s s' : State} (L : Lay D rbs wbs s) {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) :
+theorem pieces_keep {s s' : State} (L : Lay D SL rbs wbs s) {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) :
     ∀ {ps : List (Ptr × Nat)}, (∀ p ∈ ps, keepB (rbs ++ wbs) ws p.1 p.2 = true) → pieces s' ps = pieces s ps
   | [], _ => rfl
   | p :: ps, h => by
@@ -90,7 +90,7 @@ theorem bases_all : ∀ w ∈ [((sc 0 : Ptr), 200), ((sc 200 : Ptr), 640)], w.1.
 
 /-- What absorbing the pieces `ps` from position `pos` does. -/
 def AbsOk (D : Nat) (rbs wbs : List (Reg × Nat)) (rate : Nat) (ps : List (Ptr × Nat)) : Prop :=
-  ∀ (s : State) (_ : Lay D rbs wbs s) (pos : Nat) (msg : List Byte),
+  ∀ (s : State) (_ : Lay D SL rbs wbs s) (pos : Nat) (msg : List Byte),
     ps.all (pieceChk (rbs ++ wbs)) = true → pos < rate → pos = msg.length % rate →
     Repr s.mem (pa s (sc 0)) rate msg →
     WP isa (absAll rate ps pos) s fun s' => PPostB D s s' [(sc 0, 200), (sc 200, 640)] ∧
@@ -130,7 +130,7 @@ theorem shakeChk_spec {bs wbs : List (Reg × Nat)} {ps : List (Ptr × Nat)} {out
   exact ⟨h.1.1, h.1.2, h.2⟩
 
 theorem shake_ok (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps : List (Ptr × Nat)} {out : Ptr}
-    {len : Nat} (hc : shakeChk (rbs ++ wbs) wbs ps out len = true) {s : State} (L : Lay D rbs wbs s) :
+    {len : Nat} (hc : shakeChk (rbs ++ wbs) wbs ps out len = true) {s : State} (L : Lay D SL rbs wbs s) :
     WP isa (shakeAt ps out len) s fun s' => PPostB D s s' [(sc 0, 200), (sc 200, 640), (out, len)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ bytesAt s'.mem (pa s out) len = H (pieces s ps) len := by
   obtain ⟨hk, hps, hsq⟩ := shakeChk_spec hc
@@ -177,9 +177,9 @@ theorem shake_ok (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps
 /-! ## Constant time -/
 
 theorem LRel.step (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {c : Prog isa}
-    (htr : RelCT isa (LRel D rbs wbs) c fun _ _ => True)
-    (hok : ∀ x, Lay D rbs wbs x → WP isa c x fun x' => ∃ W, PostB D x x' W) :
-    RelCT isa (LRel D rbs wbs) c (LRel D rbs wbs) :=
+    (htr : RelCT isa (LRel D SL rbs wbs) c fun _ _ => True)
+    (hok : ∀ x, Lay D SL rbs wbs x → WP isa c x fun x' => ∃ W, PostB D x x' W) :
+    RelCT isa (LRel D SL rbs wbs) c (LRel D SL rbs wbs) :=
   VG.Proof.MlKem.X86_64.RelCT.postDep htr (F := fun x x' => ∃ W, PostB D x x' W) (fun x y h => ⟨hok x h.lx, hok y h.ly⟩)
     fun _ _ _ _ h ⟨_, hx⟩ ⟨_, hy⟩ => h.post hcs hx hy
 
@@ -190,7 +190,7 @@ theorem nil_tr {P : State → State → Prop} : RelCT isa P (.block []) P :=
 theorem absAll_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
     {rate : Nat} (hrate : rate ∈ rates) :
     ∀ (ps : List (Ptr × Nat)) (pos : Nat), ps.all (pieceChk (rbs ++ wbs)) = true → pos < rate →
-      RelCT isa (LRel D rbs wbs) (absAll rate ps pos) (LRel D rbs wbs)
+      RelCT isa (LRel D SL rbs wbs) (absAll rate ps pos) (LRel D SL rbs wbs)
   | [], _, _, _ => nil_tr
   | (p, l) :: ps, pos, hps, hpos => by
     simp only [List.all_cons, Bool.and_eq_true] at hps
@@ -204,7 +204,7 @@ theorem absAll_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) (h
 
 theorem shake_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps : List (Ptr × Nat)} {out : Ptr}
     {len : Nat} (hc : shakeChk (rbs ++ wbs) wbs ps out len = true) :
-    RelCT isa (LRel D rbs wbs) (shakeAt ps out len) (LRel D rbs wbs) := by
+    RelCT isa (LRel D SL rbs wbs) (shakeAt ps out len) (LRel D SL rbs wbs) := by
   obtain ⟨hk, hps, hsq⟩ := shakeChk_spec hc
   have hrate : (136 : Nat) ∈ rates := by decide
   have i0 : inB (rbs ++ wbs) (sc 0) 200 = true := (kChk_spec hk).2.2.1
@@ -333,7 +333,7 @@ include hp
 /-- The layout with the first `L` bytes of the key at `rbp`. -/
 theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
     (hsz : scrLen p < 2 ^ 32 ∧ L < 2 ^ 32 ∧ p.sigLen < 2 ^ 32) {s : State}
-    (h : Top σ s) : Lay D [(.rbp, L), (.r12, 64), (.r13, 32)] (sgW p) s := by
+    (h : Top σ s) : Lay D SL [(.rbp, L), (.r12, 64), (.r13, 32)] (sgW p) s := by
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp, -⟩ := hp
   have hsub : Region.Sub ⟨σ.gpr .rdi, L⟩ ⟨σ.gpr .rdi, skL p σ⟩ := Region.sub_prefix hL
   replace d1 := d1.sub_left hsub
@@ -381,7 +381,7 @@ theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
     exacts [r1, r2, r3, r5, r4]
 
 theorem sgLay (hD : D < 2 ^ 32) (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 32) {s : State}
-    (h : Top σ s) : Lay D (sgR p) (sgW p) s :=
+    (h : Top σ s) : Lay D SL (sgR p) (sgW p) s :=
   sgLayL hp (skLen_le_skL p σ) hD hsz h
 
 end
@@ -391,8 +391,8 @@ def topChk (bs : List (Reg × Nat)) (ws : List (Ptr × Nat)) : Bool :=
   (List.range 6).all (fun k => keepB bs ws (sc (oSV + 8 * k)) 8) && ws.all (fun w => inB bs w.1 w.2) &&
     keepB bs ws (sc oFL) 8
 
-theorem Top.step {D : Nat} {σ s s' : State} {rbs wbs : List (Reg × Nat)} (h : Top σ s)
-    (L : Lay D rbs wbs s) {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws)
+theorem Top.step {D : Nat} {SL : List String} {σ s s' : State} {rbs wbs : List (Reg × Nat)} (h : Top σ s)
+    (L : Lay D SL rbs wbs s) {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws)
     (hc : topChk (rbs ++ wbs) ws = true) : Top σ s' := by
   simp only [topChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
   refine ⟨hP.rd.trans h.rd, hP.wr.trans h.wr, hP.rsp.trans h.rsp,

@@ -61,7 +61,7 @@ def ksqzChk (bs wbs : List (Reg × Nat)) (dst : Ptr) (len : Nat) : Bool :=
     sepB bs (sc 0) 200 dst len && sepB bs dst len (sc 200) 640
 
 section
-variable {D : Nat} {rbs wbs : List (Reg × Nat)}
+variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)}
 
 theorem kChk_spec {bs wbs : List (Reg × Nat)} (h : kChk bs wbs = true) :
     inB wbs (sc 0) 200 = true ∧ inB wbs (sc 200) 640 = true ∧ inB bs (sc 0) 200 = true ∧
@@ -82,7 +82,7 @@ theorem ksqzChk_spec {bs wbs : List (Reg × Nat)} {dst : Ptr} {len : Nat} (h : k
   exact ⟨h.1.1.1.1.1.1, h.1.1.1.1.1.2, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
 /-- The 16 bytes of stack of a call of a sponge function, from the layout. -/
-theorem k16 {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true)
+theorem k16 {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true)
     {s1 : State} (hsp : s1.gpr .rsp = s.gpr .rsp) : (below (s1.gpr .rsp) 16).Disjoint ⟨pa s p, l⟩ := by
   rw [hsp]; exact (L.stkD h).sub_left (below_sub (by omega_arith) (by have := L.dsm; omega_arith))
 
@@ -132,7 +132,7 @@ theorem zeroSt_ok (b : Reg) (off : Nat) (s : State) (h0 : s.gpr .rax = 0)
     simp only [Spec.Sha3.stateAt, Spec.Sha3.zero, Vector.getElem_ofFn, Vector.getElem_replicate]
     exact hz i hi
 
-theorem kzero_ok {s : State} (L : Lay D rbs wbs s) (hk : kChk (rbs ++ wbs) wbs = true) :
+theorem kzero_ok {s : State} (L : Lay D SL rbs wbs s) (hk : kChk (rbs ++ wbs) wbs = true) :
     WP isa (.block kzero) s fun s' => PPostB D s s' [(sc 0, 200)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       stateAt s'.mem (pa s (sc 0)) = Spec.Sha3.zero := by
   obtain ⟨w0, _, _, _, _⟩ := kChk_spec hk
@@ -159,7 +159,7 @@ theorem kzero_tr {P : State → State → Prop} (h : ∀ x y, P x y → x.gpr .r
 
 /-! ## Absorbing -/
 
-theorem kabsArgs {s s1 : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
+theorem kabsArgs {s s1 : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
     {src : Ptr} {len rate pos : Nat} (hc : kabsChk (rbs ++ wbs) src len = true) (hrate : rate ∈ rates)
     (hpos : pos < rate) (hA : ArgsIn [.ptr (sc 0), .imm rate, .imm pos, .ptr src, .imm len, .ptr (sc 200)] s s1)
     (hsp : s1.gpr .rsp = s.gpr .rsp) :
@@ -179,7 +179,7 @@ theorem kabsOk {bs : List (Reg × Nat)} {src : Ptr} {len rate pos : Nat} (hc : k
     decide_eq_true (show len < 2 ^ 32 by omega_arith)]
   decide
 
-theorem kabs_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
+theorem kabs_ok {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
     {src : Ptr} {len rate pos : Nat} (hc : kabsChk (rbs ++ wbs) src len = true) (hrate : rate ∈ rates)
     (hpos : pos < rate) :
     WP isa (kabs src len rate pos) s fun s' => PPostB D s s' [(sc 0, 200), (sc 200, 640)] ∧
@@ -207,7 +207,7 @@ theorem kabs_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rb
 
 theorem kabs_tr (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true) {src : Ptr} {len rate pos : Nat}
     (hc : kabsChk (rbs ++ wbs) src len = true) (hrate : rate ∈ rates) (hpos : pos < rate) :
-    RelCT isa (LRel D rbs wbs) (kabs src len rate pos) fun _ _ => True := by
+    RelCT isa (LRel D SL rbs wbs) (kabs src len rate pos) fun _ _ => True := by
   obtain ⟨w0, w1, i0, i1, _⟩ := kChk_spec hk
   obtain ⟨is, _, _, _, _, _⟩ := kabsChk_spec hc
   refine callP_tr Proof.Sha3.X86_64.Stream.Absorb.absorb_correct Proof.Sha3.X86_64.Stream.Absorb.absorb_ct
@@ -230,7 +230,7 @@ theorem kabs_tr (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true) {src : Ptr} 
 
 /-! ## Padding -/
 
-theorem kpadArgs {s s1 : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
+theorem kpadArgs {s s1 : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
     {rate pos suffix : Nat} (hrate : rate ∈ rates) (hpos : pos < rate)
     (hA : ArgsIn [.ptr (sc 0), .imm rate, .imm pos, .imm suffix, .ptr (sc 200)] s s1)
     (hsp : s1.gpr .rsp = s.gpr .rsp) :
@@ -252,7 +252,7 @@ theorem b8_ofNat64 {v : Nat} (_hv : v < 256) : BitVec.setWidth 8 (BitVec.ofNat 6
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega_arith
 
-theorem kpad_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
+theorem kpad_ok {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
     {rate pos suffix : Nat} (hrate : rate ∈ rates) (hpos : pos < rate) (hs : suffix < 256) :
     WP isa (kpad rate pos suffix) s fun s' => PPostB D s s' [(sc 0, 200), (sc 200, 640)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
@@ -277,7 +277,7 @@ theorem kpad_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rb
 
 theorem kpad_tr (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true) {rate pos suffix : Nat} (hrate : rate ∈ rates)
     (hpos : pos < rate) (hs : suffix < 256) :
-    RelCT isa (LRel D rbs wbs) (kpad rate pos suffix) fun _ _ => True := by
+    RelCT isa (LRel D SL rbs wbs) (kpad rate pos suffix) fun _ _ => True := by
   obtain ⟨w0, w1, i0, i1, _⟩ := kChk_spec hk
   refine callP_tr Proof.Sha3.X86_64.Stream.Pad.pad_correct Proof.Sha3.X86_64.Stream.Pad.pad_ct
     (kpadOk hrate hpos hs) fun x y x1 y1 R ⟨⟨hAx, _⟩, kx⟩ ⟨⟨hAy, _⟩, ky⟩ => ?_
@@ -297,7 +297,7 @@ theorem kpad_tr (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true) {rate pos su
 
 /-! ## Squeezing -/
 
-theorem ksqzArgs {s s1 : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
+theorem ksqzArgs {s s1 : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
     {dst : Ptr} {len rate : Nat} (hc : ksqzChk (rbs ++ wbs) wbs dst len = true) (hrate : rate ∈ rates)
     (hA : ArgsIn [.ptr (sc 0), .imm rate, .imm 0, .ptr dst, .imm len, .ptr (sc 200)] s s1)
     (hsp : s1.gpr .rsp = s.gpr .rsp) :
@@ -316,7 +316,7 @@ theorem ksqzOk {bs wbs : List (Reg × Nat)} {dst : Ptr} {len rate : Nat} (hc : k
     decide_eq_true (show rate < 2 ^ 32 by omega_arith), decide_eq_true (show len < 2 ^ 32 by omega_arith)]
   decide
 
-theorem ksqz_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
+theorem ksqz_ok {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true)
     {dst : Ptr} {len rate : Nat} (hc : ksqzChk (rbs ++ wbs) wbs dst len = true) (hrate : rate ∈ rates) :
     WP isa (ksqz rate dst len) s fun s' => PPostB D s s' [(sc 0, 200), (dst, len), (sc 200, 640)] ∧
       (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
@@ -338,7 +338,7 @@ theorem ksqz_ok {s : State} (L : Lay D rbs wbs s) (hD : 24 ≤ D) (hk : kChk (rb
 
 theorem ksqz_tr (hD : 24 ≤ D) (hk : kChk (rbs ++ wbs) wbs = true) {dst : Ptr} {len rate : Nat}
     (hc : ksqzChk (rbs ++ wbs) wbs dst len = true) (hrate : rate ∈ rates) :
-    RelCT isa (LRel D rbs wbs) (ksqz rate dst len) fun _ _ => True := by
+    RelCT isa (LRel D SL rbs wbs) (ksqz rate dst len) fun _ _ => True := by
   obtain ⟨w0, w1, i0, i1, _⟩ := kChk_spec hk
   obtain ⟨wd, id, _, _, _, _, _⟩ := ksqzChk_spec hc
   refine callP_tr Proof.Sha3.X86_64.Stream.Squeeze.squeeze_correct Proof.Sha3.X86_64.Stream.Squeeze.squeeze_ct

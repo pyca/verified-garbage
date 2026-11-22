@@ -525,7 +525,7 @@ theorem endPF_tr (hp : ParamsOk p) (hc : lChk p = true) {t : Nat} :
         .store (VG.Impl.MlKem.X86_64.at_ .rbx oCNT) .rax]) (IX p D t) := by
   refine liftQ (J := fun σ s => LP p D σ t s) (fun σ s _ h => WP.conj (dec_end hp hc (h.elim .inl (.inr ∘ .inl)))
       (decF hc (h.elim (·.k) (·.k))))
-    (RelCT.mono (block_tr (rs := [.rbx]) rfl (P := fun x y => LRel D (sgR p) (sgW p) x y) fun x y h => lrel_rbx h)
+    (RelCT.mono (block_tr (rs := [.rbx]) rfl (P := fun x y => LRel D SL (sgR p) (sgW p) x y) fun x y h => lrel_rbx h)
       (fun x y h => h.1.lrel fun σ s h => h.elim (·.k.d.im.st) (·.k.d.im.st)) fun _ _ h => h) ?_
   intro σ₁ σ₂ x y x' y' p₁ p₂ hpub he i₁ i₂ _ j₁ j₂ ⟨z₁, r₁, b₁, h₁⟩ ⟨z₂, r₂, b₂, h₂⟩ _
   rcases i₁ with e₁ | f₁ <;> rcases i₂ with e₂ | f₂
@@ -548,7 +548,7 @@ theorem endB_tr (hp : ParamsOk p) (hc : lChk p = true) {t : Nat} :
       (.block [.mov .rax (.mem (VG.Impl.MlKem.X86_64.at_ .rbx oCNT)), .alu .sub .rax (.imm 1),
         .store (VG.Impl.MlKem.X86_64.at_ .rbx oCNT) .rax]) (IX p D t) := by
   refine liftQ (J := fun σ s => LP p D σ t s) (fun σ s _ h => WP.conj (dec_end hp hc (.inr (.inr h))) (decF hc h.k))
-    (RelCT.mono (block_tr (rs := [.rbx]) rfl (P := fun x y => LRel D (sgR p) (sgW p) x y) fun x y h => lrel_rbx h)
+    (RelCT.mono (block_tr (rs := [.rbx]) rfl (P := fun x y => LRel D SL (sgR p) (sgW p) x y) fun x y h => lrel_rbx h)
       (fun x y h => h.1.lrel fun σ s h => h.k.d.im.st) fun _ _ h => h) ?_
   intro σ₁ σ₂ x y x' y' p₁ p₂ hpub _ e₁ e₂ _ j₁ j₂ ⟨z₁, r₁, _⟩ ⟨z₂, r₂, _⟩ _
   have zx : x'.zf = some true := by rw [z₁, e₁.cnt]; rfl
@@ -1110,7 +1110,7 @@ theorem output_tr {P : Prims} (hP : PrimsOk P D) (hc : oChk p = true) {E : State
     (fun σ s _ ⟨κ, hk, hct, hz, hh, hpass, h15⟩ =>
       WP.mono (outCopy_ok hc hk hct hz hh h15) fun _ h => ⟨⟨κ, h.1, hpass⟩, h.2⟩)
     (RelCT.mono (copy_tr hcc.2.2.2.1 hcc.2.2.2.2.1 hcc.2.2.2.2.2.1 hcc.2.2.2.2.2.2.1 hcc.2.2.2.2.2.2.2
-        (P := fun x y => LRel D (sgR p) (sgW p) x y)
+        (P := fun x y => LRel D SL (sgR p) (sgW p) x y)
         fun x y h => ⟨h.regs (.r14, p.sigLen) (by simp [sgR, sgW]), lrel_rbx h _ (List.mem_singleton_self _)⟩)
       (fun x y h => h.1.lrel fun σ s ⟨_, hk, _⟩ => hk.d.im.st) fun _ _ h => h)
     fun σ₁ σ₂ x y x' y' p₁ p₂ hpub he _ _ ⟨f, hx, hy⟩ j₁ j₂ g₁ g₂ _ =>

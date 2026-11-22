@@ -104,8 +104,8 @@ theorem ball_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : bChk
 
 /-! ## Norms, into `r15` -/
 
-theorem normAt_okB {P : Prims} {D : Nat} (hP : PrimsOk P D) {rbs wbs : List (Reg × Nat)} {s : State}
-    (L : Lay D rbs wbs s) {f : Ptr} {B : Nat} (hB : B < 2 ^ 32) (hc : normChk (rbs ++ wbs) f = true)
+theorem normAt_okB {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D) {rbs wbs : List (Reg × Nat)} {s : State}
+    (L : Lay D SL rbs wbs s) {f : Ptr} {B : Nat} (hB : B < 2 ^ 32) (hc : normChk (rbs ++ wbs) f = true)
     (hr : Reduced s.mem (pa s f)) {a : Prop} [Decidable a] (h15 : s.gpr .r15 = bit a) :
     WP isa (normAt P f B) s fun s' => PPostB D s s' [] ∧ (∀ r ∈ calleeSaved, r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.gpr .r15 = bit (a ∧ normRq [polyAt s.mem (pa s f)] < B) := by
@@ -354,7 +354,7 @@ theorem hintIs_congr {m m' : Mem} {a : Addr} {h : List (Vector Bool n)}
 def HFam (s : State) (b m : Nat) (f : Nat → Vector Bool n) : Prop :=
   ∀ j < m, HintIs s.mem (pa s (pS (b + j))) 1 [f j]
 
-theorem HFam.keep {D : Nat} {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay D rbs wbs s)
+theorem HFam.keep {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay D SL rbs wbs s)
     {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) {b m : Nat} {f : Nat → Vector Bool n}
     (hc : famChk (rbs ++ wbs) ws b m = true) (h : HFam s b m f) : HFam s' b m f := fun j hj => by
   obtain hk := famChk_one hc hj
@@ -910,7 +910,7 @@ section
 variable {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params}
 include hP
 
-theorem normAt_post {s : State} (L : Lay D (sgR p) (sgW p) s) {f : Ptr} {B : Nat} (hB : B < 2 ^ 32)
+theorem normAt_post {s : State} (L : Lay D SL (sgR p) (sgW p) s) {f : Ptr} {B : Nat} (hB : B < 2 ^ 32)
     (hc : normChk (sgB p) f = true) (hr : Reduced s.mem (pa s f)) :
     WP isa (normAt P f B) s fun s' => PPostB D s s' [] := by
   refine WP.seq (WP.mono (normCall_ok hP L hB hc hr) fun s1 ⟨hP1, _, _⟩ => ?_)
@@ -918,7 +918,7 @@ theorem normAt_post {s : State} (L : Lay D (sgR p) (sgW p) s) {f : Ptr} {B : Nat
   exact PostB.trans hP1 (postB15 (D := D) k2 hm2 ([] : List Region)).1 (fun r h => h) fun _ h => absurd h List.not_mem_nil
 
 theorem normAt_trL {f : Ptr} {B : Nat} (hB : B < 2 ^ 32) (hc : normChk (sgB p) f = true) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f)) (normAt P f B)
+    RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f)) (normAt P f B)
       fun _ _ => True :=
   seqL (J := fun _ => True) (normCall_tr hP hB hc)
     (fun x L hr => WP.mono (normCall_ok hP L hB hc hr) fun _ h => ⟨⟨_, h.1⟩, trivial⟩)
@@ -927,7 +927,7 @@ theorem normAt_trL {f : Ptr} {B : Nat} (hB : B < 2 ^ 32) (hc : normChk (sgB p) f
 /-! ## `z` -/
 
 theorem zR_trL {t r : Nat} (hc : zChk p r = true) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ (∃ σ, IZ p D σ t r x) ∧ ∃ σ, IZ p D σ t r y) (zR P p r)
+    RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ (∃ σ, IZ p D σ t r x) ∧ ∃ σ, IZ p D σ t r y) (zR P p r)
       fun _ _ => True := by
   simp only [zChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨cm, ci⟩, ca⟩, cn⟩, z1⟩, z2⟩, _⟩, _⟩, y1⟩, y2⟩, _⟩, _⟩, _⟩, _⟩, hB⟩, hr⟩ := hc
@@ -953,7 +953,7 @@ theorem zR_trL {t r : Nat} (hc : zChk p r = true) :
 /-! ## `r₀` -/
 
 theorem r0R_trL {t i : Nat} (hc : rChk p i = true) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ (∃ σ, IR p D σ t i x) ∧ ∃ σ, IR p D σ t i y) (r0R P p i)
+    RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ (∃ σ, IR p D σ t i x) ∧ ∃ σ, IR p D σ t i y) (r0R P p i)
       fun _ _ => True := by
   simp only [rChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨cm, ci⟩, ca⟩, cl⟩, cn⟩, z1⟩, z2⟩, _⟩, _⟩, _⟩, y1⟩, y2⟩, _⟩, _⟩, _⟩, _⟩, hB⟩,
@@ -985,7 +985,7 @@ theorem r0R_trL {t i : Nat} (hc : rChk p i = true) :
 /-! ## `ct₀` and `h` -/
 
 theorem hR_trL {t i : Nat} (hc : hChk2 p i = true) :
-    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ (∃ σ, IH p D σ t i x) ∧ ∃ σ, IH p D σ t i y) (hR P p i)
+    RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ (∃ σ, IH p D σ t i x) ∧ ∃ σ, IH p D σ t i y) (hR P p i)
       fun _ _ => True := by
   simp only [hChk2, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨cm, ci⟩, cn⟩, cc⟩, ca⟩, cs⟩, ch⟩, g1⟩, g2⟩, g3⟩, g4⟩, _⟩, g6⟩, _⟩, _⟩,
