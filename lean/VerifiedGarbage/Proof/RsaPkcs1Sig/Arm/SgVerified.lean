@@ -45,12 +45,12 @@ theorem code_ok (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : spec.pre s) :
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
     (WP.mono hb fun u hu => ⟨hu.1.2.frame, hu.2⟩)
     (hQ := fun _ m₁ m₂ hf hres => by
-      have ok : (layOf frameBytes 68 (ep s).argv [(ep s).N, (ep s).E, (ep s).DIG, (ep s).PP, (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI] [(ep s).OUT, (ep s).SCR] s 3440).Ok (entered frameBytes s) := by
+      have ok : (layOf frameBytes 68 (ep s).argv [(ep s).N, (ep s).E, (ep s).DIG, (ep s).PP, (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI] [(ep s).OUT, (ep s).SCR] s 3488).Ok (entered frameBytes s) := by
         rw [← ep_lay]; exact hin.ok
       have fit := ok.fits (ep s).OUT (List.mem_append_right _ List.mem_cons_self)
       exact writtenOutcome_frame hf (released_apart ok hsp (R := (ep s).OUT) (Or.inr (by simp)))
         (by change (ep s).OUT.len ≤ 2 ^ 64; omega_using [fit]) hres)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
-  · rw [pushRegion_eq (F := frameBytes) (A := 68) (C := 3440) (argv := (ep s).argv)
+  · rw [pushRegion_eq (F := frameBytes) (A := 68) (C := 3488) (argv := (ep s).argv)
       (ro := [(ep s).N, (ep s).E, (ep s).DIG, (ep s).PP, (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI])
       (rw := [(ep s).OUT, (ep s).SCR]) hsp]
     exact hin.ok.push_apart r hr
@@ -59,7 +59,7 @@ theorem code_ok (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : spec.pre s) :
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ [(ep s).N, (ep s).E, (ep s).DIG, (ep s).PP, (ep s).QQ, (ep s).DP,
         (ep s).DQ, (ep s).QI]) =>
-      entered_ro (F := frameBytes) (A := 68) (C := 3440) (argv := (ep s).argv) (rw := [(ep s).OUT, (ep s).SCR])
+      entered_ro (F := frameBytes) (A := 68) (C := 3488) (argv := (ep s).argv) (rw := [(ep s).OUT, (ep s).SCR])
         hin.ok hsp hR
     have hD : digB (ep s) (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 3))
         (stackArg s 4).toNat := ro (R := (ep s).DIG) (by simp)

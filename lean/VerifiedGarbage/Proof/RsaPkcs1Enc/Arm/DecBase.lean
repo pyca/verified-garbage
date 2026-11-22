@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 `EP`: what two runs share (the frame's base `B`, the pointers, the lengths,
 and the public key's bytes `nB` and `eB`), and its layout (`EP.lay`,
-`Proof/RsaPkcs1Sig/Arm/Lay.lean`), with the 3440 bytes below the frame that
+`Proof/RsaPkcs1Sig/Arm/Lay.lean`), with the 3488 bytes below the frame that
 the private-key operation uses. `In P σ`: the state `σ` the body starts
 from; `S P σ s`: a state of the body. The shared contract, with the stack of
 the frames and of the calls, gives `In (ep s) (entered frameBytes s)`
@@ -91,7 +91,7 @@ abbrev lay : Lay where
   argv := P.argv
   ro := P.ro
   rw := [P.OUT, P.ML, P.SCR]
-  C := 3440
+  C := 3488
 
 theorem lt_lay {d : Nat} (h : d < frameBytes + 56 + 76) : d < P.lay.F + 56 + P.lay.A := by
   show d < frameBytes + 56 + (if P.pc then 84 else 76); split <;> omega_using [h]
@@ -135,7 +135,7 @@ end In
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the calls'. -/
-abbrev stackBytes : Nat := 56 + frameBytes + 3440
+abbrev stackBytes : Nat := 56 + frameBytes + 3488
 
 /-- The shared contract, with that stack. -/
 abbrev spec : Contract isa := Spec.RsaPkcs1Enc.decryptContract abi stackBytes
@@ -171,7 +171,7 @@ def ep (s : State) (pc : Bool := false) : EP where
 
 theorem ep_lay (s : State) :
     (ep s).lay = layOf frameBytes 76 (ep s).argv [(ep s).N, (ep s).E, (ep s).D, (ep s).INP, (ep s).PP,
-      (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI] [(ep s).OUT, (ep s).ML, (ep s).SCR] s 3440 := by
+      (ep s).QQ, (ep s).DP, (ep s).DQ, (ep s).QI] [(ep s).OUT, (ep s).ML, (ep s).SCR] s 3488 := by
   simp [ep, EP.lay, EP.argv, EP.ro, layOf]
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
@@ -182,7 +182,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
     dS iS pS qS dpS dqS qiS sA kO kM kN kE kD kI kP kQ kDP kDQ kQI kS kA fO fM fN fE fD fI fP fQ fDP fDQ fQI
     fS kv olk ilk el1 elK dl1 dlK pl1 plK ql1 qlK dpl qil dql
   have slK := h
-  have h3592 : 3592 ≤ s.sp.toNat := hsp
+  have h3592 : 3640 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = stackArg s 0 := BitVec.eq_of_toNat_eq olk
   have a6 : stackArg s 6 = stackArg s 0 := BitVec.eq_of_toNat_eq ilk
   have a12 : stackArg s 12 = stackArg s 8 := BitVec.eq_of_toNat_eq dpl
@@ -196,7 +196,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
-      ⟨State.addr s.sp - BitVec.ofNat 64 3592, 3592⟩ := by
+      ⟨State.addr s.sp - BitVec.ofNat 64 3640, 3640⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)

@@ -30,7 +30,7 @@ section
 
 `EP`: what two runs share (the frame's base `B`, the pointers, the lengths,
 the hash function's number, and the public key's bytes `nB` and `eB`), and
-its layout (`EP.lay`, `Proof/RsaPkcs1Sig/Arm/Lay.lean`), with the 3440
+its layout (`EP.lay`, `Proof/RsaPkcs1Sig/Arm/Lay.lean`), with the 3488
 bytes below the frame that the call uses. `In P σ`: the state `σ` the body
 starts from; `S P σ s`: a state of the body. The shared contract, with the
 stack of the frames and of the call, gives `In (ep s) (entered frameBytes s)`
@@ -105,7 +105,7 @@ abbrev lay : Lay where
   argv := P.argv
   ro := P.ro
   rw := [P.OUT, P.SCR]
-  C := 3440
+  C := 3488
 
 theorem lt_lay {d : Nat} (h : d < frameBytes + 56 + 68) : d < P.lay.F + 56 + P.lay.A := by
   show d < frameBytes + 56 + (if P.pc then 76 else 68); split <;> omega_using [h]
@@ -148,7 +148,7 @@ end In
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the call's. -/
-abbrev stackBytes : Nat := 56 + frameBytes + 3440
+abbrev stackBytes : Nat := 56 + frameBytes + 3488
 
 /-- The shared contract, with that stack. -/
 abbrev spec : Contract isa := Spec.RsaPkcs1Sig.signContract abi stackBytes
@@ -183,7 +183,7 @@ def ep (s : State) (pc : Bool := false) : EP where
 
 theorem ep_lay (s : State) :
     (ep s).lay = layOf frameBytes 68 (ep s).argv [(ep s).N, (ep s).E, (ep s).DIG, (ep s).PP, (ep s).QQ,
-      (ep s).DP, (ep s).DQ, (ep s).QI] [(ep s).OUT, (ep s).SCR] s 3440 := by
+      (ep s).DP, (ep s).DQ, (ep s).QI] [(ep s).OUT, (ep s).SCR] s 3488 := by
   simp [ep, EP.lay, EP.argv, EP.ro, layOf]
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
@@ -193,7 +193,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
   rename_i hsp hsa hrd hwr oN oE oD oP oQ oDP oDQ oQI oS oA nS eS dS pS qS dpS dqS qiS sA kO kN kE kD kP kQ
     kDP kDQ kQI kS kA fO fN fE fD fP fQ fDP fDQ fQI fS kv olk el1 elK pl1 plK ql1 qlK dpl qil dql
   have slK := h
-  have h4616 : 4616 ≤ s.sp.toNat := hsp
+  have h4616 : 4664 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
   have a10 : stackArg s 10 = stackArg s 6 := BitVec.eq_of_toNat_eq dpl
   have a14 : stackArg s 14 = stackArg s 6 := BitVec.eq_of_toNat_eq qil
@@ -205,7 +205,7 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
-      ⟨State.addr s.sp - BitVec.ofNat 64 4616, 4616⟩ := by
+      ⟨State.addr s.sp - BitVec.ofNat 64 4664, 4664⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)
@@ -688,7 +688,7 @@ theorem call_pre {σ s : State} (h : R1 P σ s) :
     · exact ok.rw_ro hw' (by simp)
     · rw [q0]; exact (ok.stk_fr (d := 0) (n := 64) (.inr hw') (by simp only [frameBytes]; omega_using [])).symm
   · intro r hr
-    have low : (⟨State.addr P.B - BitVec.ofNat 64 3440, 3440⟩ : Region) = P.lay.LOW := rfl
+    have low : (⟨State.addr P.B - BitVec.ofNat 64 3488, 3488⟩ : Region) = P.lay.LOW := rfl
     rw [low]
     simp only [privRd, privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hr
@@ -815,7 +815,7 @@ theorem call_preP {σ s : State} (hpc : P.pc = true) (h : R1 P σ s) :
     · exact ok.rw_ro hw' preRo
     · rw [q0]; exact (ok.stk_fr (d := 0) (n := 72) (.inr hw') (by simp only [frameBytes]; omega_using [])).symm
   · intro r hr
-    have low : (⟨State.addr P.B - BitVec.ofNat 64 3440, 3440⟩ : Region) = P.lay.LOW := rfl
+    have low : (⟨State.addr P.B - BitVec.ofNat 64 3488, 3488⟩ : Region) = P.lay.LOW := rfl
     rw [low]
     simp only [privRdP, privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hr

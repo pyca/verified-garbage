@@ -96,7 +96,7 @@ theorem in_of_preP {s : State} (h : specP.pre s) : In (ep s true) (entered frame
     kQ kDP kDQ kQI kS kPre kA fO fN fE fD fP fQ fDP fDQ fQI fS fPre kv olk el1 elK pl1 plK ql1 qlK dpl qil dql slK
     prl
   have key := h
-  have h4616 : 4616 ≤ s.sp.toNat := hsp
+  have h4616 : 4664 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
   have a10 : stackArg s 10 = stackArg s 6 := BitVec.eq_of_toNat_eq dpl
   have a14 : stackArg s 14 = stackArg s 6 := BitVec.eq_of_toNat_eq qil
@@ -108,22 +108,22 @@ theorem in_of_preP {s : State} (h : specP.pre s) : In (ep s true) (entered frame
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
-      ⟨State.addr s.sp - BitVec.ofNat 64 4616, 4616⟩ := by
+      ⟨State.addr s.sp - BitVec.ofNat 64 4664, 4664⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)
-  have bytesE {R : Region} (hR : (⟨State.addr s.sp - BitVec.ofNat 64 4616, 4616⟩ : Region).Disjoint R)
+  have bytesE {R : Region} (hR : (⟨State.addr s.sp - BitVec.ofNat 64 4664, 4664⟩ : Region).Disjoint R)
       (hl : R.len ≤ 2 ^ 64) : Spec.Rsa.bytesAt (entered frameBytes s).mem R.base R.len =
         Spec.Rsa.bytesAt s.mem R.base R.len :=
     bytesAt_frame hpush (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (hR.sub_left below).symm) hl
-  have wordsE {n : Nat} (hR : (⟨State.addr s.sp - BitVec.ofNat 64 4616, 4616⟩ : Region).Disjoint
+  have wordsE {n : Nat} (hR : (⟨State.addr s.sp - BitVec.ofNat 64 4664, 4664⟩ : Region).Disjoint
       ⟨State.addr (stackArg s 17), 8 * n⟩) (hl : 8 * n < 2 ^ 64) :
       Spec.Rsa.wordsAt (entered frameBytes s).mem (State.addr (stackArg s 17)) n =
         Spec.Rsa.wordsAt s.mem (State.addr (stackArg s 17)) n :=
     VG.Proof.Rsa.wordsAt_frame hpush hl (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (hR.sub_left below).symm)
-  have kPre' : (⟨State.addr s.sp - BitVec.ofNat 64 4616, 4616⟩ : Region).Disjoint
+  have kPre' : (⟨State.addr s.sp - BitVec.ofNat 64 4664, 4664⟩ : Region).Disjoint
       ⟨State.addr (stackArg s 17), 8 * (stackArg s 18).toNat⟩ := by rw [Nat.mul_comm]; exact kPre
   have hn := bytesE (R := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩) kN (by show (s.gpr .r3).toNat ≤ 2 ^ 64; omega_arith)
   have hp := bytesE (R := ⟨State.addr (stackArg s 5), (stackArg s 6).toNat⟩) kP (by show (stackArg s 6).toNat ≤ 2 ^ 64; omega_arith)
@@ -163,7 +163,7 @@ theorem in_of_preP {s : State} (h : specP.pre s) : In (ep s true) (entered frame
     rw [Proof.Rsa.Arm.wordsAt_take le, Proof.Rsa.Arm.wordsAt_take (m := s.mem) le, hw]
   have lay : (ep s true).lay = layOf frameBytes 76 (ep s true).argv [(ep s true).N, (ep s true).E, (ep s true).DIG,
       (ep s true).PP, (ep s true).QQ, (ep s true).DP, (ep s true).DQ, (ep s true).QI, (ep s true).PRE]
-      [(ep s true).OUT, (ep s true).SCR] s 3440 := by
+      [(ep s true).OUT, (ep s true).SCR] s 3488 := by
     simp [ep, EP.lay, EP.argv, EP.ro, layOf]
   rw [lay]
   refine ok_entered (by decide) (by decide) rfl hsp hsa hrd hwr ?_ ?_ ?_ ?_ ?_ ?_
@@ -225,18 +225,18 @@ theorem code_okP (v : Proof.Rsa.Arm.CrtImpl) {s : State} (h : specP.pre s) :
     (hQ := fun _ m₁ m₂ hf hres => by
       have fit := hin.ok.fits (ep s true).OUT (List.mem_append_right _ List.mem_cons_self)
       exact writtenOutcome_frame hf
-        (released_apart (F := frameBytes) (A := 76) (C := 3440) (argv := (ep s true).argv)
+        (released_apart (F := frameBytes) (A := 76) (C := 3488) (argv := (ep s true).argv)
           (ro := (ep s true).ro) (rw := [(ep s true).OUT, (ep s true).SCR]) hin.ok hsp
           (R := (ep s true).OUT) (Or.inr (by simp)))
         (by change (ep s true).OUT.len ≤ 2 ^ 64; omega_using [fit]) hres)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
-  · rw [pushRegion_eq (F := frameBytes) (A := 76) (C := 3440) (argv := (ep s true).argv)
+  · rw [pushRegion_eq (F := frameBytes) (A := 76) (C := 3488) (argv := (ep s true).argv)
       (ro := (ep s true).ro) (rw := [(ep s true).OUT, (ep s true).SCR]) hsp]
     exact hin.ok.push_apart r hr
   · sig_post [Spec.RsaPkcs1Sig.signPrecomputedContract, Spec.RsaPkcs1Sig.signPrecomputedSig,
       Spec.RsaPkcs1Sig.signSig, abi, argRegs, reduceClassify, Loc.val]
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ (ep s true).ro) =>
-      entered_ro (F := frameBytes) (A := 76) (C := 3440) (argv := (ep s true).argv)
+      entered_ro (F := frameBytes) (A := 76) (C := 3488) (argv := (ep s true).argv)
         (rw := [(ep s true).OUT, (ep s true).SCR]) hin.ok hsp hR
     have hD : digB (ep s true) (entered frameBytes s) = Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 3))
         (stackArg s 4).toNat := ro (R := (ep s true).DIG) (by simp)

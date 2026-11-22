@@ -27,7 +27,7 @@ its own code (`CrtImpl.pdOk`), with the code around the call by
 signature, as on x86 and PPC64LE (`Proof/RsaPkcs1Sig/X86/Scrub.lean`,
 `Proof/RsaPkcs1Sig/PPC64LE/Scrub.lean`).
 
-Signing's 4616 bytes of stack are zeroed in two frames
+Signing's 4664 bytes of stack are zeroed in two frames
 (`Proof.Rsa.Arm.ScrubTwo.verifiedScrubbedAll2`): its frames' bytes, and the
 private operation's (`privCodeP_ok`).
 -/
@@ -80,15 +80,15 @@ theorem signPrecomputedOut (stack : Nat) :
 /-! ## What the cleanup needs of the code -/
 
 /-- Signing's code, over the private operation `priv`. -/
-theorem sign_ok {privN : String} {priv : Prog isa} (h : CodeOk priv 3440) :
-    CodeOk (Impl.RsaPkcs1Sig.Arm.Sign.code true privN priv) 4616 := by
-  refine wrap_codeOk (n := 3440) (F := 1120) (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.ite ?_
+theorem sign_ok {privN : String} {priv : Prog isa} (h : CodeOk priv 3488) :
+    CodeOk (Impl.RsaPkcs1Sig.Arm.Sign.code true privN priv) 4664 := by
+  refine wrap_codeOk (n := 3488) (F := 1120) (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.ite ?_
     (CodeOk.seq ?_ (CodeOk.seq (CodeOk.call h) ?_))))))
   all_goals lit_decide
 
 theorem frameOk_4080 : FrameOk 4080 := by decide
 
-theorem frameOk_536 : FrameOk 536 := by decide
+theorem frameOk_584 : FrameOk 584 := by decide
 
 /-- Verification's code, over the public operation `pd`. -/
 theorem verify_ok {pdName : String} {pd : Prog isa} (h : CodeOk pd 56) :
@@ -137,9 +137,9 @@ over `v`. -/
 theorem signPrecomputed (v : Proof.Rsa.Arm.CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Sig.Arm.Fn.signPrecomputed (Proof.Rsa.Arm.privNameP v) (Proof.Rsa.Arm.privCodeP v))
-      (Spec.RsaPkcs1Sig.signPrecomputedContract abi 4616) 32 :=
-  Proof.Rsa.Arm.ScrubTwo.verifiedScrubbedAll2 (a := 4080) (b := 536)
+      (Spec.RsaPkcs1Sig.signPrecomputedContract abi 4664) 32 :=
+  Proof.Rsa.Arm.ScrubTwo.verifiedScrubbedAll2 (a := 4080) (b := 584)
     (Proof.RsaPkcs1Sig.Arm.Sg.signPrecomputed_verified v) (sign_ok (Proof.Rsa.Arm.Scrub.privCodeP_ok v))
-    frameOk_4080 frameOk_536 rfl (signPrecomputedOut _)
+    frameOk_4080 frameOk_584 rfl (signPrecomputedOut _)
 
 end VG.Proof.RsaPkcs1Sig.Arm.Fn

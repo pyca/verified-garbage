@@ -1005,6 +1005,14 @@ structure PpFnInput (s : State) : Prop where
   stQ : (FrameStack.belowA s.sp 168).Disjoint ⟨State.addr (stackArg s 2), (stackArg s 3).toNat⟩
   stWs : (FrameStack.belowA s.sp 168).Disjoint ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩
   stArgs : (FrameStack.belowA s.sp 168).Disjoint ⟨State.addr s.sp, 24⟩
+  /-- The 216 bytes of the contract's stack: the 168 of the frames and the 48
+  of a call the CRT makes from its own. -/
+  stackFit216 : 216 ≤ s.sp.toNat
+  st216Pre : (FrameStack.belowA s.sp 216).Disjoint ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat * 8⟩
+  st216N : (FrameStack.belowA s.sp 216).Disjoint ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩
+  st216P : (FrameStack.belowA s.sp 216).Disjoint ⟨State.addr (stackArg s 0), (stackArg s 1).toNat⟩
+  st216Q : (FrameStack.belowA s.sp 216).Disjoint ⟨State.addr (stackArg s 2), (stackArg s 3).toNat⟩
+  st216Ws : (FrameStack.belowA s.sp 216).Disjoint ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩
   preFit : (s.gpr .r0).toNat + (s.gpr .r1).toNat * 8 ≤ 2 ^ 32
   nFit : (s.gpr .r2).toNat + (s.gpr .r3).toNat ≤ 2 ^ 32
   pFit : (stackArg s 0).toNat + (stackArg s 1).toNat ≤ 2 ^ 32
@@ -1019,22 +1027,29 @@ structure PpFnInput (s : State) : Prop where
     Spec.Rsa.privatePrecomputedWords (s.gpr .r3).toNat (stackArg s 1).toNat (stackArg s 3).toNat
   space : Spec.Rsa.scratchWords (s.gpr .r3).toNat ≤ (stackArg s 5).toNat
 
-theorem pp_contract_pre (s : State) (h : (Spec.Rsa.privatePrecomputeContract abi 168).pre s) :
+theorem pp_contract_pre (s : State) (h : (Spec.Rsa.privatePrecomputeContract abi 216).pre s) :
     PpFnInput s := by
   sig_pre [Spec.Rsa.privatePrecomputeContract, Spec.Rsa.privatePrecomputeSig, abi, argRegs, reduceClassify,
     Loc.val] at h
   obtain argAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   rw [argAddr] at h
-  obtain ⟨stackFit, argFit, rd, wr, preN, preP, preQ, preWs, preArgs, nWs, pWs, qWs, _,
+  obtain ⟨stackFit216, argFit, rd, wr, preN, preP, preQ, preWs, preArgs, nWs, pWs, qWs, _,
     stPre, stN, stP, stQ, stWs, stArgs, preFit, nFit, pFit, qFit, wsFit,
     valid, pPositive, pShort, qPositive, qShort, preLen, space⟩ := h
-  obtain below : FrameStack.belowA s.sp 168 = ⟨State.addr s.sp - BitVec.ofNat 64 168, 168⟩ := by
+  obtain stackFit : 168 ≤ s.sp.toNat := by omega_using [stackFit216]
+  obtain below : FrameStack.belowA s.sp 216 = ⟨State.addr s.sp - BitVec.ofNat 64 216, 216⟩ := by
     unfold FrameStack.belowA
-    rw [FrameStack.addr_sub' stackFit]
+    rw [FrameStack.addr_sub' stackFit216]
+  obtain sub : Region.Sub (FrameStack.belowA s.sp 168) (FrameStack.belowA s.sp 216) :=
+    FrameStack.belowA_sub (by decide) stackFit216
   refine ⟨stackFit, argFit, by rw [rd]; simp [State.addr], by rw [wr]; simp [State.addr], by rw [wr]; simp [State.addr],
     by rw [rd]; simp [State.addr], by rw [rd]; simp [State.addr], by rw [rd]; simp [State.addr],
-    preN, preP, preQ, preWs, preArgs, nWs, pWs, qWs, by rw [below]; exact stPre, by rw [below]; exact stN,
-    by rw [below]; exact stP, by rw [below]; exact stQ, by rw [below]; exact stWs, by rw [below]; exact stArgs,
+    preN, preP, preQ, preWs, preArgs, nWs, pWs, qWs,
+    Region.Disjoint.sub_left (by rw [below]; exact stPre) sub, Region.Disjoint.sub_left (by rw [below]; exact stN) sub,
+    Region.Disjoint.sub_left (by rw [below]; exact stP) sub, Region.Disjoint.sub_left (by rw [below]; exact stQ) sub,
+    Region.Disjoint.sub_left (by rw [below]; exact stWs) sub, Region.Disjoint.sub_left (by rw [below]; exact stArgs) sub,
+    stackFit216, by rw [below]; exact stPre, by rw [below]; exact stN, by rw [below]; exact stP,
+    by rw [below]; exact stQ, by rw [below]; exact stWs,
     preFit, nFit, pFit, qFit, wsFit, valid, pPositive, pShort, qPositive, qShort, preLen, space⟩
 
 /-! ## Helpers -/
@@ -1497,7 +1512,26 @@ theorem pp_call_ok (s : State) (h : PpFnInput s) {B : Addr} {P : Nat} (L : PpLay
       stackOutput := by rw [belowY]; exact (preD.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix nLe)
       stackArgs := by
         rw [belowY, addrY]
-        exact (Offset.disjoint_base B (Nat.le_refl 56) (by omega_using [])).symm }
+        exact (Offset.disjoint_base B (Nat.le_refl 56) (by omega_using [])).symm
+      reserve := by
+        obtain sub : Region.Sub (FrameStack.belowA y.sp 104) (FrameStack.belowA s.sp 216) := by
+          rw [spY', BitVec.sub_sub, ← BitVec.ofNat_add]
+          exact FrameStack.belowA_inner (by decide) h.stackFit216
+        obtain pre216 : (FrameStack.belowA s.sp 216).Disjoint ⟨State.addr (s.gpr .r0), 8 * P⟩ := by
+          have := h.st216Pre; rw [lenP] at this; exact this
+        refine ⟨by omega_using [h.stackFit216, ySpNat], h.st216Ws.sub_left sub, ?_,
+          (pre216.sub_left sub).sub_right (Region.sub_prefix nLe),
+          belowA_disjoint_from (by omega_using [h.stackFit216, ySpNat]) (by decide), fun _ ha => by cases ha⟩
+        intro i
+        rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_using []) with
+          rfl | rfl | rfl | rfl | rfl | rfl | rfl
+        · exact h.st216N.sub_left sub
+        · exact (pre216.sub_left sub).sub_right (Region.sub_prefix nLe)
+        · exact h.st216P.sub_left sub
+        · exact h.st216Q.sub_left sub
+        · exact h.st216P.sub_left sub
+        · exact h.st216Q.sub_left sub
+        · exact (pre216.sub_left sub).sub_right (Region.sub_prefix pLe) }
     · intro i
       rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_using []) with
         rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -1750,8 +1784,8 @@ theorem pp_result (s : State) (h : PpFnInput s) :
     · next hg => exact absurd hg.1 hv
     · rfl
 
-theorem pp_contract_correct (s : State) (h : (Spec.Rsa.privatePrecomputeContract abi 168).pre s) :
-    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.privatePrecomputeContract abi 168).post s t := by
+theorem pp_contract_correct (s : State) (h : (Spec.Rsa.privatePrecomputeContract abi 216).pre s) :
+    ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ (Spec.Rsa.privatePrecomputeContract abi 216).post s t := by
   obtain hi := pp_contract_pre s h
   obtain ⟨tr, t, run, preserved, r0, words⟩ := ppFn_ok s hi
   refine ⟨tr, t, run, preserved, ?_⟩
@@ -1878,8 +1912,8 @@ theorem ppFn_ct (s0 t0 : State) (hs : PpFnInput s0) (ht : PpFnInput t0) (sp : s0
     (crt_seq_ct zCT (fun a h => pp_zero_ok x hs Ls a h) (fun b h => pp_zero_ok y ht Lt b h) tail')
     _ _ _ _ _ _ ⟨rfl, rfl, by simp only [pcPushed, pushed_sp, sp]⟩ e1 e2
 
-theorem pp_contract_ct : ConstantTime isa (Spec.Rsa.privatePrecomputeContract abi 168).pre
-    (Spec.Rsa.privatePrecomputeContract abi 168).pub code := by
+theorem pp_contract_ct : ConstantTime isa (Spec.Rsa.privatePrecomputeContract abi 216).pre
+    (Spec.Rsa.privatePrecomputeContract abi 216).pub code := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := pp_contract_pre s hs
   have it := pp_contract_pre t ht
@@ -1915,18 +1949,18 @@ def ppSatState : State where
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 32⟩, ⟨0x3100, 32⟩, ⟨0x8000, 24⟩]
   wr := [⟨0x1000, 192⟩, ⟨0x4000, 8448⟩]
 
-theorem pp_contract_sat : ∃ s, (Spec.Rsa.privatePrecomputeContract abi 168).pre s := by
+theorem pp_contract_sat : ∃ s, (Spec.Rsa.privatePrecomputeContract abi 216).pre s := by
   sig_implies_sat [Spec.Rsa.privatePrecomputeContract, Spec.Rsa.privatePrecomputeSig, abi, argRegs, reduceClassify,
     Loc.val, State.addr]
     [ppSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid, Spec.Rsa.scratchWords,
       Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.primeWords, Spec.Rsa.modulusWords]
     using ppSatState
 
-theorem privPre_verified : Verified target code (Spec.Rsa.privatePrecomputeContract abi 168) :=
+theorem privPre_verified : Verified target code (Spec.Rsa.privatePrecomputeContract abi 216) :=
   ⟨pp_contract_correct, pp_contract_ct, pp_contract_sat⟩
 
 /-- `vg_rsa_private_precompute_umaal`. -/
-theorem privPre_umaal_verified : Verified target codeU (Spec.Rsa.privatePrecomputeContract abi 168) :=
+theorem privPre_umaal_verified : Verified target codeU (Spec.Rsa.privatePrecomputeContract abi 216) :=
   umaalArithmetic_verified privPre_verified
 
 end VG.Proof.Bignum.Arm

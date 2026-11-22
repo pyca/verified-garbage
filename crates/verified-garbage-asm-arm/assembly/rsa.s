@@ -47966,10 +47966,10 @@ vg_rsa_private_precompute_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #168
+	sub sp, sp, #216
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #5
+	mov r3, #6
 2329:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -47984,7 +47984,11 @@ vg_rsa_private_precompute_umaal:
 	bne 2329b
 	str r2, [r12, #0]
 	str r2, [r12, #4]
-	add sp, sp, #168
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #216
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -54983,10 +54987,10 @@ vg_rsa_private_precompute:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #168
+	sub sp, sp, #216
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #5
+	mov r3, #6
 2329:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -55001,7 +55005,11 @@ vg_rsa_private_precompute:
 	bne 2329b
 	str r2, [r12, #0]
 	str r2, [r12, #4]
-	add sp, sp, #168
+	str r2, [r12, #8]
+	str r2, [r12, #12]
+	str r2, [r12, #16]
+	str r2, [r12, #20]
+	add sp, sp, #216
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0

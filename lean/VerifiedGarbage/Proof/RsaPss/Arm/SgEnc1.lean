@@ -71,7 +71,7 @@ section
 the public key's bytes `nB` and `eB`, and the tables: the hash function's of
 `MdHash`, `hd`, with what each run's entry state holds of it, `HT`, and
 MGF1's of `MdHash`, `tab`, its functions at `ai`, `au` and `af`, and `T`), and
-its layout (`EP.lay`), with the 3440 bytes below the frame that the call of
+its layout (`EP.lay`), with the 3488 bytes below the frame that the call of
 `vg_rsa_private_checked` uses. `In P σ`: the state `σ` the body starts
 from. The shared contract, with the tables one of those it lists and the
 stack of the frames and of the call, gives `In (ep s …) (entered frameBytes
@@ -161,7 +161,7 @@ abbrev lay : Lay where
   argv := P.argv D ++ P.xargs
   ro := [P.N, P.E, P.PP, P.QQ, P.DP, P.DQ, P.QI, P.DIG D, P.SALT] ++ P.X ++ [P.HTAB, P.TAB]
   rw := [P.OUT, P.SCR]
-  C := 3440
+  C := 3488
 
 end EP
 
@@ -200,7 +200,7 @@ theorem geo : Geo (P.lay D) P.scr := by
   have hf := h.ok.fits (P.SCR) (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hf
   unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs
-  exact ⟨rfl, by unfold oRsa; omega_arith, ⟨P.scl * 8, by unfold oRsa; omega_arith, by simp⟩, ⟨σ, h.ok⟩, by show 16 ≤ 3440; decide⟩
+  exact ⟨rfl, by unfold oRsa; omega_arith, ⟨P.scl * 8, by unfold oRsa; omega_arith, by simp⟩, ⟨σ, h.ok⟩, by show 16 ≤ 3488; decide⟩
 
 /-- The table of `MdHash`, in a buffer only read. -/
 theorem htbl : ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 44 → R.Contains (RsaOaep.Arm.tA P.hd o) 4 := by
@@ -225,7 +225,7 @@ end In
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the call's. -/
-abbrev stackBytes : Nat := 56 + frameBytes + 3440
+abbrev stackBytes : Nat := 56 + frameBytes + 3488
 
 /-- The shared contract, with the hash function one of the tables `hs`,
 MGF1's one of `ts`, and that stack. -/
@@ -284,7 +284,7 @@ theorem ep_lay (D : Nat) (s : State) :
       [(ep s hi hc hdg HT ai au af T).N, (ep s hi hc hdg HT ai au af T).E, (ep s hi hc hdg HT ai au af T).PP, (ep s hi hc hdg HT ai au af T).QQ,
         (ep s hi hc hdg HT ai au af T).DP, (ep s hi hc hdg HT ai au af T).DQ, (ep s hi hc hdg HT ai au af T).QI, (ep s hi hc hdg HT ai au af T).DIG D,
         (ep s hi hc hdg HT ai au af T).SALT, (ep s hi hc hdg HT ai au af T).HTAB, (ep s hi hc hdg HT ai au af T).TAB]
-      [(ep s hi hc hdg HT ai au af T).OUT, (ep s hi hc hdg HT ai au af T).SCR] s 3440 := rfl
+      [(ep s hi hc hdg HT ai au af T).OUT, (ep s hi hc hdg HT ai au af T).SCR] s 3488 := rfl
 
 theorem in_of_pre {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) {D : Nat}
     (hD : (stackArg s 13).toNat = D) (hHT : HT (entered frameBytes s)) (hT : T (entered frameBytes s)) :
@@ -311,7 +311,7 @@ theorem in_of_pre {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) {D
   rename_i hsp hsa hheld hheld2 hpw hrd hwr oN oE oP oQ oDP oDQ oQI oD oSl oS oTH oT oA nS eS pS qS dpS dqS qiS dS
     slS sTH sT sA kO kN kE kP kQ kDP kDQ kQI kD kSl kS kTH kT kA fO fN fE fP fQ fDP fDQ fQI fD fSl fS fTH fT kv _
     el1 elK pl1 plK ql1 qlK _ _ _ slK
-  have h3624 : 3624 ≤ s.sp.toNat := hsp
+  have h3624 : 3672 ≤ s.sp.toNat := hsp
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)

@@ -134,14 +134,14 @@ namespace VG.Proof.Bignum.Arm
 open VG.Arm VG.Impl.Bignum.Arm
 
 theorem crtUmaal_verified :
-    Verified target CrtFios.code (Proof.Rsa.privateCrtContract abi 56) :=
+    Verified target CrtFios.code (Proof.Rsa.privateCrtContract abi 104) :=
   umaalArithmetic_verified (crt_verified (kernel := InlineWindow.kernel Fios.round (MontPipeline.RoundLaw.loop Fios.round_law)
     (MontPipeline.RoundCTLaw.loop Fios.round_law (by
       intro base size tmp a b mod acc n i _ hi
       exact Fios.round_ct hi))))
 
 theorem crtUmaal_verifiedP :
-    Verified target CrtFios.codeGiven (Proof.Rsa.privateCrtPrecomputedContract abi 56) :=
+    Verified target CrtFios.codeGiven (Proof.Rsa.privateCrtPrecomputedContract abi 104) :=
   umaalArithmetic_verified (crt_verifiedP (kernel := InlineWindow.kernel Fios.round (MontPipeline.RoundLaw.loop Fios.round_law)
     (MontPipeline.RoundCTLaw.loop Fios.round_law (by
       intro base size tmp a b mod acc n i _ hi
