@@ -119,6 +119,15 @@ theorem wp_keep_lr {c : Prog isa} (h : WP isa c s Q) (hc : c.noCalls = true)
   have := List.all_eq_true.mp h14 i hi
   simpa using this
 
+/-- Code that does not write `r14` keeps it (a call clobbers only the link registers). -/
+theorem wp_keep_r14 {c : Prog isa} (h : WP isa c s Q)
+    (h14 : (instrs c).all (fun i => dstOf i != some Reg.r14) = true) :
+    WP isa c s fun t => Q t ∧ t.gpr .r14 = s.gpr .r14 := by
+  obtain ⟨tr, t, he, hq⟩ := h
+  refine ⟨tr, t, he, hq, Exec.gpr (fun i hi => ?_) he (.inr (by decide))⟩
+  have := List.all_eq_true.mp h14 i hi
+  simpa using this
+
 /-- `wp_keep_lr` for `r15`–`r31`: code that writes none of them keeps them. -/
 theorem wp_keep_nv {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) (hc : c.noCalls = true)
     (hn : (instrs c).all (fun i => (List.range 17).all fun k => dstOf i != some (nvR k)) = true) :
@@ -385,16 +394,23 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
     rw [h13, Proof.Ed448.encodePoint_rep r9, Spec.Ed448.scalarBase, hK,
       Proof.Ed448.encodePoint_rep (Proof.Ed448.pointMul_rep K Proof.Ed448.basePoint_rep)]
   -- The encoding, then `r15`–`r31` loaded back.
-  refine WP.mono (wp_keep_lr (Q := fun t => Spec.Ed448.bytesAt t.mem (s.gpr .r3) 57 =
-        Spec.Ed448.encodePoint (Comb.ptOf (FS s9.mem b)) ∧ ∀ i < 17, t.gpr (nvR i) = s.gpr (nvR i))
+  obtain lrm12 : s12.mem.readW (b + BitVec.ofNat 64 LRS) 64 = s.lr := by
+    rw [m12, keep9 _ (by omega_using [hL]) (by omega_using [hL]), lr7]
+  refine WP.mono (wp_keep_r14 (Q := fun t => Spec.Ed448.bytesAt t.mem (s.gpr .r3) 57 =
+        Spec.Ed448.encodePoint (Comb.ptOf (FS s9.mem b)) ∧ (∀ i < 17, t.gpr (nvR i) = s.gpr (nvR i)) ∧
+        t.lr = s.lr)
       (WP.seq (WP.mono (baseEncode_ok hc12 e12 (by
         rw [hr12.wr, h9.stp.rest.wr, u8.wr, hr7.wr, hr6'.wr, hwr]; simp) (hb ▸ hwo) hS)
-        fun s13 ⟨h13, hi13, hc13⟩ => ?_))
-    (by decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel))
-    fun s14 ⟨⟨h14b, nv14⟩, l14, r14'⟩ => ⟨enc s14 h14b, by rw [l14, lr12], by rw [r14', r14_12], nv14⟩
+        fun s13 ⟨h13, hi13, hc13, l13⟩ => ?_))
+      (by rw [← Code.allInstrs_eq]; decide +kernel))
+    fun s14 ⟨⟨h14b, nv14, l14⟩, r14'⟩ => ⟨enc s14 h14b, l14, by rw [r14', r14_12], nv14⟩
   rw [← List.append_nil (ldsAt SNV (slotsOf nvR 17))]
-  refine ldsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide)) (by decide)
-    (by decide) hc13 fun s14 _ _ m14 _ v14 => WP.block_nil ⟨by rw [m14]; exact h13, fun i hi => ?_⟩
+  refine WP.mono (WP.keepLr (Q := fun (t : State) =>
+      Spec.Ed448.bytesAt t.mem (s.gpr .r3) 57 = Spec.Ed448.encodePoint (Comb.ptOf (FS s9.mem b)) ∧
+        ∀ i < 17, t.gpr (nvR i) = s.gpr (nvR i)) (by decide)
+    (ldsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide))
+    (by decide) (by decide) hc13 fun s14 _ _ m14 _ v14 => WP.block_nil ⟨by rw [m14]; exact h13, fun i hi => ?_⟩))
+    fun t ⟨lt, h1, h2⟩ => ⟨h1, h2, by rw [lt, l13, lrm12]⟩
   rw [v14 (nvR i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩)]
   show s13.mem.readW (b + BitVec.ofNat 64 SNV + BitVec.ofNat 64 (8 * i)) 64 = _
   rw [Offset.add_add, hi13 _ (by omega_using [hSNV]) (by omega_using [hSNV, hi]), sv12 i hi]

@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.X448.Bytes
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.CallOf
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.TCB.PPC64LE.Target
@@ -290,7 +292,8 @@ end
 # X448 on PPC64LE: the whole function
 
 `vg_x448` writes `X448(k, u)` to `out`, and restores `r15`–`r31`, which it
-saves at `NV` for `mul` (`x448_correct`).
+saves at `NV` for `mul`, and the link register, which it saves there for the
+call of the inversion (`x448_correct`).
 -/
 
 @[expose] public section
@@ -389,33 +392,39 @@ theorem afterSetup_correct {s s1 : State} {pb : List Byte}
     (hr1 : Rest [.r5, .r7, .r8] s s1) :
     WP isa afterSetup s1 fun s' =>
       bytesAt s'.mem (s.gpr .r3) 56 = VG.Spec.X448.x448 (bytesAt s.mem (s.gpr .r4) 56) pb ∧
-      ∀ i < 17, s'.gpr (nvR i) = s1.gpr (nvR i) := by
+      (∀ i < 17, s'.gpr (nvR i) = s1.gpr (nvR i)) ∧ s'.lr = s1.lr := by
   have hB : BITS = 1064 := rfl
   have hNV : NV = 1512 := rfl
   have hA := ACC_eq
   unfold afterSetup
-  -- `r14`–`r31` saved at `NV`.
-  rw [← List.append_nil (stdsAt NV (slotsOf nvR 17))]
-  refine WP.seq (stdsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide)) hc1
-    fun s1' g1' rd1' wr1' sp1' mem1' => WP.block_nil ?_)
-  obtain hc1' : Ctx (s.gpr .r6) s1' := ⟨by rw [g1']; exact hc1.r6, by rw [wr1']; exact hc1.wr⟩
-  obtain hfNV : Frame [⟨s.gpr .r6 + BitVec.ofNat 64 NV, 136⟩] s1.mem s1'.mem := by
-    rw [mem1']; exact saveMem_frame_base (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
-      (by decide) _ _ _
-  obtain hsv1 : Saved (s.gpr .r6 + BitVec.ofNat 64 NV) s1.gpr (slotsOf nvR 17) s1'.mem := by
+  -- `r15`–`r31` and the link register (in `r0`) saved at `NV`.
+  rw [← List.append_nil (stdsAt NV nvSlots)]
+  let s1m := s1.write .r0 s1.lr
+  obtain hr1m : Rest [.r0] s1 s1m := ⟨fun r h => RegUpd.gpr_write_of_ne _ _ (by intro e; exact h (by simp [e])),
+    rfl, rfl, rfl⟩
+  obtain hc1m : Ctx (s.gpr .r6) s1m := hc1.of_rest hr1m (by decide)
+  obtain g1m : ∀ i < 17, s1m.gpr (nvR i) = s1.gpr (nvR i) := fun i hi => hr1m.gpr _ (by revert i; decide)
+  refine WP.seq (WP.cons exec_mflr (stdsAt_ok (l := nvSlots) (by decide) (by decide) hc1m
+    fun s1' g1' rd1' wr1' sp1' mem1' => WP.block_nil ?_))
+  obtain hc1' : Ctx (s.gpr .r6) s1' := ⟨by rw [g1']; exact hc1m.r6, by rw [wr1']; exact hc1m.wr⟩
+  obtain hfNV : Frame [⟨s.gpr .r6 + BitVec.ofNat 64 NV, 144⟩] s1.mem s1'.mem := by
+    rw [mem1']; exact saveMem_frame_base (by decide) (by decide) _ _ _
+  obtain hsv1 : Saved (s.gpr .r6 + BitVec.ofNat 64 NV) s1m.gpr nvSlots s1'.mem := by
     rw [mem1']; exact saveMem_saved (by decide) _ _ _
   obtain hS1' := hS1.above (by decide) (by rw [hB]; decide) (by omega_using [hNV]) hfNV
   obtain hf1' : Frame [⟨s.gpr .r6, 8192⟩] s.mem s1'.mem := hf1.trans (hfNV.sub fun r hr =>
     ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_using [hNV])⟩)
-  obtain hr1' : Rest [.r5, .r7, .r8] s s1' := ⟨fun r hr => by rw [congrFun g1']; exact hr1.gpr r hr,
-    by rw [rd1', hr1.rd], by rw [wr1', hr1.wr], by rw [sp1', hr1.sp]⟩
+  obtain hr1' : Rest [.r0, .r5, .r7, .r8] s s1' := ⟨fun r hr => by
+      rw [congrFun g1', hr1m.gpr r (fun e => hr (List.mem_cons.mpr (.inl (List.mem_singleton.mp e))))]
+      exact hr1.gpr r (fun e => hr (List.mem_cons_of_mem _ e)),
+    by rw [rd1', hr1m.rd, hr1.rd], by rw [wr1', hr1m.wr, hr1.wr], by rw [sp1', hr1m.sp, hr1.sp]⟩
   refine WP.seq (WP.mono (bits_ok hc1' (hr1'.gpr .r4 (by decide)) (by rw [hr1'.rd, hr1'.wr]; exact hsc_in)
     (disj4096 sc_ws)) fun s2 ⟨hc2, hr2, hf2, hb2⟩ => ?_)
   obtain hS2 := hS1'.bits (by decide) hf2
   refine WP.seq (WP.mono (ladder_ok hc2 hb2 hS2) fun s3 ⟨hst3, hc3, h0, hS3⟩ => ?_)
   refine WP.seq (WP.mono (lastSwap_ok hc3 (ladderAfter_swap_le _ _ (by decide)) h0 hS3)
     fun s4 ⟨hst4, hc4, hS4⟩ => ?_)
-  refine WP.seq (WP.mono (invert_ok hc4 (hS4.mono (by decide)) rfl) fun s5 ⟨hst5, hc5, hS5⟩ => ?_)
+  refine WP.seq (WP.mono (invertCall_ok hc4 (hS4.mono (by decide))) fun s5 ⟨hst5, hc5, hS5⟩ => ?_)
   refine WP.seq (WP.mono (mulS (o := X2) (x := X2) (y := R) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) hc5 hS5) fun s6 ⟨hr6, hf6, hS6⟩ => ?_)
   -- The registers and regions along the way.
@@ -423,27 +432,30 @@ theorem afterSetup_correct {s s1 : State} {pb : List Byte}
     hst3.trans ((hst4.mono (by decide)).trans (hst5.trans ⟨hr6.mono (by decide), hf6⟩))
   obtain hc6 : Ctx (s.gpr .r6) s6 := hc5.of_rest hr6 (by decide)
   -- `r14`–`r31` restored.
-  obtain hsv6 : Saved (s.gpr .r6 + BitVec.ofNat 64 NV) s1.gpr (slotsOf nvR 17) s6.mem := by
-    obtain h2 := hsv1.frame_in (lo := 0) (n := 136) (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
+  obtain hsv6 : Saved (s.gpr .r6 + BitVec.ofNat 64 NV) s1m.gpr nvSlots s6.mem := by
+    obtain h2 := hsv1.frame_in (lo := 0) (n := 144) (by decide)
       hf2 (fun r hr => by
-        rw [List.mem_singleton.mp hr]; simpa using Offset.disjoint (s.gpr .r6) (d := NV) (n := 136)
+        rw [List.mem_singleton.mp hr]; simpa using Offset.disjoint (s.gpr .r6) (d := NV) (n := 144)
           (e := BITS) (k := 448) (.inr (by omega_using [hB, hNV])) (by omega_using [hNV]) (by omega_using [hB]))
-    exact h2.frame_in (lo := 0) (n := 136) (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
+    exact h2.frame_in (lo := 0) (n := 144) (by decide)
       hst6.frame (fun r hr => by
-        rw [List.mem_singleton.mp hr]; simpa using Offset.disjoint_base (s.gpr .r6) (d := NV) (n := 136)
+        rw [List.mem_singleton.mp hr]; simpa using Offset.disjoint_base (s.gpr .r6) (d := NV) (n := 144)
           (k := ACC + 112) (by omega_using [hNV, hA]) (by omega_using [hNV]))
-  refine ldsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide)) (by decide)
-    (by decide) hc6 fun s7 hc7 r7 m7 _ v7 => ?_
+  refine ldsAt_ok (l := nvSlots) (by decide) (by decide) (by decide) (by decide) hc6 fun s7 hc7 r7 m7 _ v7 => ?_
   obtain nv7 : ∀ i < 17, s7.gpr (nvR i) = s1.gpr (nvR i) := fun i hi => by
-    rw [v7 (nvR i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩)]
-    exact hsv6 (nvR i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩)
+    have hm : (nvR i, 8 * i) ∈ nvSlots := List.mem_append_left _ (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩)
+    rw [v7 _ hm, hsv6 _ hm, g1m i hi]
+  obtain lr7 : s7.gpr .r0 = s1.lr := by
+    rw [v7 (.r0, 136) (by decide), hsv6 (.r0, 136) (by decide)]; exact RegUpd.gpr_write_self _ _ _
   obtain h3' : s7.gpr .r3 = s.gpr .r3 := by
     rw [r7.gpr _ (by decide), hst6.rest.gpr _ (by decide), hr2.gpr _ (by decide), hr1'.gpr _ (by decide)]
   obtain hwr7 : s7.wr = s.wr := by rw [r7.wr, hst6.rest.wr, hr2.wr, hr1'.wr]
-  refine WP.mono (freeze_ok hc7 h3'
-    (fun k hk => in_base (len := 56) (by rw [hwr7]; exact hout) (by omega_using [hk]) (by omega_using [hk])) (disj4096 out_ws).symm)
-    fun s8 ⟨hbytes, hr8, _⟩ => ⟨?_, fun i hi => by
-      rw [hr8.gpr _ (by revert i; decide), nv7 i hi]⟩
+  -- The link register back.
+  refine WP.cons exec_mtlr ?_
+  refine WP.mono (WP.keepLr (by decide) (freeze_ok (s := { s7 with lr := s7.gpr .r0 }) ⟨hc7.r6, hc7.wr⟩ h3'
+    (fun k hk => in_base (len := 56) (by rw [hwr7]; exact hout) (by omega_using [hk]) (by omega_using [hk])) (disj4096 out_ws).symm))
+    fun s8 ⟨l8, hbytes, hr8, _⟩ => ⟨?_, fun i hi => by
+      rw [hr8.gpr _ (by revert i; decide)]; exact nv7 i hi, l8.trans lr7⟩
   -- The result.
   rw [hbytes, m7, VG.Proof.X448.x448_eq]
   -- The scalar, as read by `bits`.
@@ -458,11 +470,12 @@ theorem afterSetup_correct {s s1 : State} {pb : List Byte}
     X1, X2, Z2, X3, Z3, R, Nat.reduceEqDiff, ite_false]
 
 theorem x448_correct {s : State} (hp : XPre s) :
-    WP isa x448 s fun s' => x448PPC64LE.post s s' ∧ ∀ i < 17, s'.gpr (nvR i) = s.gpr (nvR i) := by
+    WP isa x448 s fun s' => x448PPC64LE.post s s' ∧ (∀ i < 17, s'.gpr (nvR i) = s.gpr (nvR i)) ∧
+      s'.lr = s.lr := by
   unfold x448
-  exact WP.seq (WP.mono (setup_ok hp) fun s1 ⟨hc1, hf1, hS1, hr1⟩ =>
+  exact WP.seq (WP.mono (WP.keepLr (by decide) (setup_ok hp)) fun s1 ⟨l1, hc1, hf1, hS1, hr1⟩ =>
     WP.mono (afterSetup_correct (by rw [hp.rd]; simp) (by rw [hp.wr]; simp) hp.sc_ws hp.out_ws hc1 hf1 hS1 hr1)
-      fun s' ⟨h1, h2⟩ => ⟨h1, fun i hi => by rw [h2 i hi, hr1.gpr _ (by revert i; decide)]⟩)
+      fun s' ⟨h1, h2, h3⟩ => ⟨h1, fun i hi => by rw [h2 i hi, hr1.gpr _ (by revert i; decide)], h3.trans l1⟩)
 
 end VG.Proof.X448.PPC64LE
 
@@ -476,9 +489,9 @@ end
 
 `vg_x448` meets the shared contract of `Spec/X448/Contract.lean`: the
 proof against `x448PPC64LE`, which it implies, and a state satisfying it.
-The code restores the nonvolatile registers `r15`–`r31` it uses
-(`x448_correct`), never writes `r2`, `r14` or the link register, and calls no
-function, so the ABI's obligations hold of every execution.
+The code restores the nonvolatile registers `r15`–`r31` it uses and the
+link register, which its call of the inversion changes (`x448_correct`), and
+never writes `r2` or `r14`, so the ABI's obligations hold of every execution.
 -/
 
 @[expose] public section
@@ -489,14 +502,16 @@ open VG VG.PPC64LE
 
 theorem x448_ok (s : State) (hs : x448PPC64LE.pre s) :
     ∃ t s', Exec isa Impl.X448.PPC64LE.x448 s t s' ∧ abiPreserved s s' ∧ x448PPC64LE.post s s' := by
-  obtain ⟨t, s', he, h, hnv⟩ := x448_correct (XPre.of hs)
+  obtain ⟨t, s', he, h, hnv, hlr⟩ := x448_correct (XPre.of hs)
   obtain hd : ∀ r ∈ [Reg.r2, .r14], ∀ i ∈ instrs Impl.X448.PPC64LE.x448, dstOf i ≠ some r :=
     nv_of_avoids (by decide +kernel)
   obtain hpre : ∀ r ∈ preserved, r ∈ [Reg.r2, .r14] ∨ ∃ i < 17, Impl.X448.PPC64LE.nvR i = r := by decide
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he,
-    Exec.lr he (by decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, hlr⟩, h⟩
   rcases hpre r hr with h2 | ⟨i, hi, rfl⟩
-  · exact Exec.gpr (hd _ h2) he (.inl (by decide +kernel))
+  · exact Exec.gpr (hd _ h2) he (.inr (by
+      rcases List.mem_cons.mp h2 with rfl | h2
+      · decide
+      · rw [List.mem_singleton.mp h2]; decide))
   · exact hnv i hi
 
 theorem x448_ct' : ConstantTime isa x448PPC64LE.pre x448PPC64LE.pub Impl.X448.PPC64LE.x448 :=
