@@ -290,16 +290,17 @@ its keys still to take), as the bytes of block `L` of the pair, in `xmm0`
 or `xmm2`, with the last keys (at byte 64). -/
 theorem join_wp (he : Env s) :
     WP isa (.block joinX) s fun s' => Same s s' ∧
-      ∀ L < 2, ∀ q < 16, byte (s'.xmm (if L = 0 then .xmm0 else .xmm2)) q =
+      (∀ L < 2, ∀ q < 16, byte (s'.xmm (if L = 0 then .xmm0 else .xmm2)) q =
         qI (isA (slot (bswq q % 8)))
           (if bswq q < 8 then byte (s.xmm .xmm1) (8 * L + bswq q) ^^^ kb s (56 + bswq q)
-            else byte (s.xmm .xmm0) (8 * L + (bswq q - 8))) ^^^ kb s (64 + q) := by
+            else byte (s.xmm .xmm0) (8 * L + (bswq q - 8))) ^^^ kb s (64 + q)) ∧
+      (∀ q < 16, byte (s'.xmm m0) q = 0x0f#8) := by
   have hok := conv_all.2.2.2.2.2
   unfold joinOk at hok
   split at hok <;> [cases hok; rename_i ρ hrun]
   simp only [Bool.and_eq_true, Bool.not_eq_true'] at hok
-  obtain ⟨⟨⟨h0, h2⟩, c0⟩, c2⟩ := hok
-  refine run_wp he.rel hrun fun s' hr hs => ⟨hs, fun L hL q hq => ?_⟩
+  obtain ⟨⟨⟨⟨h0, h2⟩, c0⟩, c2⟩, hm⟩ := hok
+  refine run_wp he.rel hrun fun s' hr hs => ⟨hs, fun L hL q hq => ?_, AesNi.rel_mask hr hm⟩
   have hb := AesNi.bswq_lt hq
   have key : ∀ (r : XReg) (hsh : (ρ.get r).sh = false)
       (hc : ((List.range 16).all fun q => (get (ρ.get r).bs q).same (joinRef L q)) = true),
@@ -841,6 +842,338 @@ theorem rounds_wp (hs : Scr s₀ B) (hk : Keys s₀.mem B g E) (hi : i < g) (hg 
   refine ⟨a₁.upd u₂ (by decide), by rw [xe]; exact m₁, ?_, ?_, by rw [u₂.mem]; exact t₁⟩
   · rw [u₂.gpr, c₁]; exact Wp.ofNat_pred hn
   · rw [z₂, c₁, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, Wp.sub_beq (by omega_arith) (by decide)]
+
+end
+
+/-! ### The FL layer -/
+
+section
+variable {s₀ s : State} {B : BitVec 32} {g i : Nat} {E : Nat → BitVec 64}
+
+/-- FL (`h = 0`) or FL⁻¹ (`h = 1`) of the half `A L` in each quadword of
+pair `p`'s place `h`, into the next group's form. -/
+theorem halfLayer_wp {p h : Nat} (hp : p < 2) (hh : h = 0 ∨ h = 1) (hs : Scr s₀ B) (hk : Keys s₀.mem B g E)
+    (hi : i + 1 < g) (hg : g ≤ 4) (hw : WAt s₀ B i s) (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8)
+    {A : Nat → BitVec 64}
+    (hv : Lanes (pw s.mem B (plc p h)) fun L j => dq (A L) j ^^^ (if h = 1 then kb s (56 + slot j) else 0#8)) :
+    WP isa (.block (halfLayer (plc p h) h)) s (Part s fun m =>
+      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 (plc p h), 16⟩] s.mem m ∧
+      Lanes (pw m B (plc p h)) (fun L j =>
+        dq (if h = 0 then Spec.Camellia.fl (A L) (E (8 + 8 * i)) else Spec.Camellia.flinv (A L) (E (9 + 8 * i))) j ^^^
+          kb s (112 + 8 * h + slot j))) := by
+  have hf := hs.fit
+  have hi4 : i < 4 := by omega_arith
+  have he := hw.env hs hi4 hm
+  have hh2 : h < 2 := by rcases hh with rfl | rfl <;> decide
+  have l := plc_le hp hh2
+  refine WP.mono (ld1_st1 (r := .xmm1) (X := halfIn h ++ halfMid h ++ halfOut h) (P := fun f =>
+      (∀ q < 16, byte (f m0) q = 0x0f#8) ∧ Lanes (f .xmm1) (fun L j =>
+        dq (if h = 0 then Spec.Camellia.fl (A L) (E (8 + 8 * i)) else Spec.Camellia.flinv (A L) (E (9 + 8 * i))) j ^^^
+          kb s (112 + 8 * h + slot j)))
+    hw.base (by rw [hw.wr]; exact hs.wr) hf (by omega_arith) ?_) ?_
+  · have he₁ : Env (s.setXmm .xmm0 (pw s.mem B (plc p h))) := ⟨he.tb, he.fit, he.acc, hm⟩
+    refine WP.block_append_iff.mpr (WP.block_append_iff.mpr (WP.mono (halfIn_wp hh he₁) fun s₂ ⟨e₂, v₂, m₂⟩ => ?_))
+    have he₂ := he₁.same e₂ m₂
+    obtain ⟨f₂, rfl⟩ := e₂
+    have hv₂ : f₂ .xmm3 = AesNi.hl (A 0) (A 1) := AesNi.eq_hl fun j hj => by
+      have sj := slot_lt j
+      have a0 := hv 0 (by decide) j hj
+      have a1 := hv 1 (by decide) j hj
+      rw [Nat.mul_zero, Nat.zero_add] at a0
+      rw [show 8 * 1 + slot j = slot j + 8 by omega_arith] at a1
+      refine ⟨?_, ?_⟩
+      · refine (v₂ _ (by omega_arith)).trans ?_
+        rw [show slot j % 8 = slot j by omega_arith, slot_slot hj]
+        show qI (isA j) (byte (pw s.mem B (plc p h)) (slot j) ^^^ (if h = 1 then kb s (56 + slot j) else 0#8)) = _
+        rw [a0, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+        exact AesNi.qI_qT _ _
+      · refine (v₂ _ (by omega_arith)).trans ?_
+        rw [show (slot j + 8) % 8 = slot j by omega_arith, slot_slot hj]
+        show qI (isA j) (byte (pw s.mem B (plc p h)) (slot j + 8) ^^^ (if h = 1 then kb s (56 + slot j) else 0#8)) = _
+        rw [a1, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+        exact AesNi.qI_qT _ _
+    refine WP.mono (halfMid_wp hh he₂) fun s₃ ⟨e₃, he₃, v₃⟩ => ?_
+    obtain ⟨f₃, rfl⟩ := e₃
+    have hv₃ : f₃ .xmm3 = if h = 0 then AesNi.hl (Spec.Camellia.fl (A 0) (E (8 + 8 * i))) (Spec.Camellia.fl (A 1) (E (8 + 8 * i)))
+        else AesNi.hl (Spec.Camellia.flinv (A 0) (E (9 + 8 * i))) (Spec.Camellia.flinv (A 1) (E (9 + 8 * i))) := by
+      refine v₃.trans ?_
+      show fl3 (f₂ .xmm3) _ _ _ = _
+      rw [hv₂]
+      exact fl3_half hh (hk.fl i hi) (A 0) (A 1)
+        (fun a ha c hc => hw.dword_kq hf hi4 (o := 64) (by decide) hh2 ha hc)
+        (fun a ha c hc => hw.dword_kq hf hi4 (o := 96) (by decide) hh2 ha hc)
+        (fun a ha c hc => hw.dword_kq hf hi4 (o := 80) (by decide) hh2 ha hc)
+    refine WP.mono (halfOut_wp hh he₃) fun s₄ ⟨e₄, v₄, m₄⟩ => ?_
+    obtain ⟨f₄, rfl⟩ := e₄
+    refine ⟨f₄, rfl, m₄, fun L hL j hj => ?_⟩
+    obtain ⟨h16, h8, _⟩ := lane_idx (j := j) hL
+    refine (v₄ _ h16).trans ?_
+    rw [h8, slot_slot hj]
+    show qT (isA j) (byte (f₃ .xmm3) (8 * L + slot j)) ^^^ kb s (112 + 8 * h + slot j) =
+      dq (if h = 0 then Spec.Camellia.fl (A L) (E (8 + 8 * i)) else Spec.Camellia.flinv (A L) (E (9 + 8 * i))) j ^^^
+        kb s (112 + 8 * h + slot j)
+    rw [hv₃]
+    rcases hh with rfl | rfl
+    · rw [ite_eq_left rfl, ite_eq_left rfl]
+      rcases two hL with rfl | rfl
+      · rw [Nat.mul_zero, Nat.zero_add, (AesNi.byte_hl _ _ hj).1]; rfl
+      · rw [show 8 * 1 + slot j = slot j + 8 by omega_arith, (AesNi.byte_hl _ _ hj).2]; rfl
+    · rw [ite_eq_right (by decide), ite_eq_right (by decide)]
+      rcases two hL with rfl | rfl
+      · rw [Nat.mul_zero, Nat.zero_add, (AesNi.byte_hl _ _ hj).1]; rfl
+      · rw [show 8 * 1 + slot j = slot j + 8 by omega_arith, (AesNi.byte_hl _ _ hj).2]; rfl
+  · rintro s' ⟨f, ⟨hm', y⟩, rfl⟩
+    exact ⟨⟨f, _, rfl⟩, hm', frame_write _ _ _ _, by rw [pw_write_self]; exact y⟩
+
+/-- The 16 bytes of a place are among the places and the blocks. -/
+theorem sub_place {p h : Nat} (hp : p < 2) (hh : h < 2) {m m' : Mem}
+    (hF : Frame [⟨B.setWidth 64 + BitVec.ofNat 64 (plc p h), 16⟩] m m') :
+    Frame [⟨B.setWidth 64 + BitVec.ofNat 64 (plc p 0), 32⟩] m m' :=
+  hF.sub fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by unfold plc; omega_arith) (by unfold plc; omega_arith)⟩
+
+/-- The FL layer after group `i` on pair `p`: FL of its first halves, and
+FL⁻¹ of its second, which first take the last round's key. -/
+theorem pairLayer_wp {p : Nat} (hp : p < 2) (hs : Scr s₀ B) (hk : Keys s₀.mem B g E) (hi : i + 1 < g) (hg : g ≤ 4)
+    (h : WAt s₀ B i s) (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) {a b : Nat → BitVec 64}
+    (h0 : Lanes (pw s.mem B (plc p 0)) fun L => dq (a L))
+    (h1 : Lanes (pw s.mem B (plc p 1)) fun L j => dq (b L) j ^^^ dq (E (2 + 8 * i + 5)) j ^^^ c5) :
+    WP isa (.block (pairLayer p)) s (Part s fun m =>
+      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 (plc p 0), 32⟩] s.mem m ∧
+      Lanes (pw m B (plc p 0)) (fun L j =>
+        dq (Spec.Camellia.fl (a L) (E (8 + 8 * i))) j ^^^ dq (E (2 + 8 * (i + 1))) j ^^^ c5) ∧
+      Lanes (pw m B (plc p 1)) (fun L j =>
+        dq (Spec.Camellia.flinv (b L) (E (9 + 8 * i))) j ^^^ dq (E (2 + 8 * (i + 1) + 1)) j ^^^ c5 ^^^ gc j)) := by
+  have hf := hs.fit
+  have hi4 : i < 4 := by omega_arith
+  refine WP.block_append_iff.mpr (WP.mono (halfLayer_wp (h := 0) (A := a) hp (.inl rfl) hs hk hi hg h hm
+    (h0.congr fun L _ j _ => by rw [ite_eq_right (by decide), BitVec.xor_zero])) fun s₁ ⟨e₁, m₁, F₁, x₁⟩ => ?_)
+  have a₁ := h.part e₁ (sub_places hp (sub_place hp (by decide) F₁))
+  have q1 : pw s₁.mem B (plc p 1) = pw s.mem B (plc p 1) :=
+    pw_frame F₁ (.inr (by unfold plc; omega_arith)) (by unfold plc; omega_arith) (by unfold plc; omega_arith)
+  have k56 : ∀ j < 8, kb s₁ (56 + slot j) = dq (E (2 + 8 * i + 5)) j ^^^ c5 := fun j hj => by
+    have := slot_lt j
+    rw [a₁.key hf hi4 (by omega_arith)]; exact hk.rk5 i (by omega_arith) j hj
+  refine WP.mono (halfLayer_wp (h := 1) (A := b) hp (.inr rfl) hs hk hi hg a₁ m₁ (by
+    rw [q1]
+    exact h1.congr fun L _ j hj => by rw [ite_eq_left rfl, k56 j hj, BitVec.xor_assoc])) fun s₂ ⟨e₂, m₂, F₂, y₂⟩ => ?_
+  refine ⟨xm_trans e₁ e₂, m₂, (sub_place hp (by decide) F₁).trans (sub_place hp (by decide) F₂), ?_, ?_⟩
+  · rw [pw_frame F₂ (.inl (by unfold plc; omega_arith)) (by unfold plc; omega_arith) (by unfold plc; omega_arith)]
+    refine x₁.congr fun L _ j hj => ?_
+    have := slot_lt j
+    rw [ite_eq_left rfl, show 112 + 8 * 0 + slot j = 112 + slot j by omega_arith, h.key hf hi4 (by omega_arith),
+      (hk.kin i hi j hj).1, BitVec.xor_assoc]
+  · refine y₂.congr fun L _ j hj => ?_
+    have := slot_lt j
+    rw [ite_eq_right (by decide), show 112 + 8 * 1 + slot j = 120 + slot j by omega_arith,
+      a₁.key hf hi4 (by omega_arith), (hk.kin i hi j hj).2]
+    simp only [BitVec.xor_assoc]
+
+/-- The FL layer after group `i`, a pair at a time. -/
+theorem refLayer_wp (hs : Scr s₀ B) (hk : Keys s₀.mem B g E) (hi : i + 1 < g) (hg : g ≤ 4) (h : WAt s₀ B i s)
+    (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) {P : Nat → BitVec 64 × BitVec 64}
+    (ht : TriAt s.mem B (E (2 + 8 * i + 5)) P) :
+    WP isa (.block refLayer) s (Part s fun m =>
+      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 512, 128⟩] s.mem m ∧
+      HalvesAt m B E (i + 1) (fun b => (Spec.Camellia.fl (P b).1 (E (8 + 8 * i)), Spec.Camellia.flinv (P b).2 (E (9 + 8 * i))))) := by
+  refine WP.block_append_iff.mpr (WP.mono (pairLayer_wp (p := 0) (by decide) hs hk hi hg h hm
+    (a := fun L => (P (2 * 0 + L)).1) (b := fun L => (P (2 * 0 + L)).2) (ht 0 (by decide)).1 (ht 0 (by decide)).2)
+    fun s₁ ⟨e₁, m₁, F₁, x₁, y₁⟩ => ?_)
+  have a₁ := h.part e₁ (sub_places (by decide) F₁)
+  have q0 : pw s₁.mem B (plc 1 0) = pw s.mem B (plc 1 0) := pw_frame F₁ (.inr (by decide)) (by decide) (by decide)
+  have q1 : pw s₁.mem B (plc 1 1) = pw s.mem B (plc 1 1) := pw_frame F₁ (.inr (by decide)) (by decide) (by decide)
+  refine WP.mono (pairLayer_wp (p := 1) (by decide) hs hk hi hg a₁ m₁
+    (a := fun L => (P (2 * 1 + L)).1) (b := fun L => (P (2 * 1 + L)).2) (by rw [q0]; exact (ht 1 (by decide)).1)
+    (by rw [q1]; exact (ht 1 (by decide)).2)) fun s₂ ⟨e₂, m₂, F₂, x₂, y₂⟩ => ?_
+  refine ⟨xm_trans e₁ e₂, m₂, (sub_places (by decide) F₁).trans (sub_places (by decide) F₂), fun p hp => ?_⟩
+  rcases two hp with rfl | rfl
+  · rw [pw_frame F₂ (.inl (by decide)) (by decide) (by decide),
+      pw_frame F₂ (.inl (by decide)) (by decide) (by decide)]
+    exact ⟨x₁, y₁⟩
+  · exact ⟨x₂, y₂⟩
+
+/-- FL and FL⁻¹ after group `i`, into the next group's form. -/
+theorem layer_wp (hs : Scr s₀ B) (hk : Keys s₀.mem B g E) (hi : i + 1 < g) (hg : g ≤ 4) (h : WAt s₀ B i s)
+    (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) {P : Nat → BitVec 64 × BitVec 64}
+    (ht : TriAt s.mem B (E (2 + 8 * i + 5)) P) {n : Nat} (hc : s.gpr .ecx = BitVec.ofNat 32 n) (hn : 1 ≤ n)
+    (hn4 : n ≤ 4) :
+    WP isa (.block layer) s fun s' => WAt s₀ B (i + 1) s' ∧ (∀ q < 16, byte (s'.xmm m0) q = 0x0f#8) ∧
+      s'.gpr .ecx = BitVec.ofNat 32 n ∧ s'.zf = some false ∧
+      HalvesAt s'.mem B E (i + 1) (fun b => (Spec.Camellia.fl (P b).1 (E (8 + 8 * i)), Spec.Camellia.flinv (P b).2 (E (9 + 8 * i)))) := by
+  refine WP.block_append_iff.mpr (WP.mono (transfer layer_equiv (h.pre hs (by omega_arith))
+    (refLayer_wp hs hk hi hg h hm ht)) fun s₃ ⟨e₃, m₃, F₃, h₃⟩ => ?_)
+  have a₃ := h.part e₃ F₃
+  have c₃ : s₃.gpr .ecx = BitVec.ofNat 32 n := by obtain ⟨f, m, rfl⟩ := e₃; exact hc
+  refine AesNi.wp_addi_x fun s₄ u₄ xe₄ => AesNi.wp_test_x fun s₅ u₅ xe₅ z₅ => WP.block_nil ?_
+  have x₅ : s₅.xmm = s₃.xmm := xe₅.trans xe₄
+  refine ⟨⟨?_, ?_, by rw [u₅.mem, u₄.mem]; exact a₃.frame, u₅.rd.trans (u₄.rd.trans a₃.rd),
+    u₅.wr.trans (u₄.wr.trans a₃.wr), u₅.syms.trans (u₄.syms.trans a₃.syms), ?_, ?_⟩, by rw [x₅]; exact m₃, ?_, ?_,
+    by rw [u₅.mem, u₄.mem]; exact h₃⟩
+  · rw [u₅.gpr, u₄.other _ (by decide)]; exact a₃.base
+  · rw [u₅.gpr, u₄.other _ (by decide)]; exact a₃.esp
+  · rw [u₅.gpr, u₄.other _ (by decide)]; exact a₃.tb
+  · rw [u₅.gpr, u₄.gpr, a₃.kp, show (112 : BitVec 32) = BitVec.ofNat 32 112 from rfl, Offset.add_ofNat_add_ofNat,
+      show 24 + 112 * i + 112 = 24 + 112 * (i + 1) by omega_arith]
+  · rw [u₅.gpr, u₄.other _ (by decide)]; exact c₃
+  · rw [z₅, u₄.other _ (by decide), c₃, BitVec.and_self, Wp.ofNat_beq_zero (by omega_arith),
+      decide_eq_false (by omega_arith)]
+
+end
+
+/-! ### The blocks to the places, and back -/
+
+section
+variable {s₀ s : State} {B : BitVec 32} {g i : Nat} {E : Nat → BitVec 64}
+
+theorem blk_le {b : Nat} (hb : b < 4) : blk b + 16 ≤ 640 ∧ 576 ≤ blk b := by unfold blk; omega_arith
+
+/-- Pair `p`'s two blocks to its places, in the rounds' form with the first
+keys. -/
+theorem pairIn_wp {p : Nat} (hp : p < 2) (hs : Scr s₀ B) (h : WAt s₀ B 0 s)
+    (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) :
+    WP isa (.block (pairIn p)) s (Part s fun m =>
+      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 (plc p 0), 32⟩] s.mem m ∧
+      ∀ L < 2, ∀ r < 8,
+        byte (pw m B (plc p 0)) (8 * L + r) =
+          qT (isA (slot r)) (s.mem (B.setWidth 64 + BitVec.ofNat 64 (blk (2 * p + L) + bswq r))) ^^^
+            kAt s₀.mem B r ∧
+        byte (pw m B (plc p 1)) (8 * L + r) =
+          qT (isA (slot r)) (s.mem (B.setWidth 64 + BitVec.ofNat 64 (blk (2 * p + L) + bswq (r + 8)))) ^^^
+            kAt s₀.mem B (8 + r)) := by
+  have hf := hs.fit
+  have he := h.env hs (by decide) hm
+  have b0 := blk_le (b := 2 * p) (by omega_arith)
+  have b1 := blk_le (b := 2 * p + 1) (by omega_arith)
+  have l0 := plc_le hp (show 0 < 2 by decide)
+  have l1 := plc_le hp (show 1 < 2 by decide)
+  refine WP.mono (ld2_st2 (r₁ := .xmm3) (r₂ := .xmm1) (X := inX) (o₁ := blk (2 * p)) (o₂ := blk (2 * p + 1))
+    (P := fun f => (∀ q < 16, byte (f m0) q = 0x0f#8) ∧
+      (∀ q < 16, byte (f .xmm3) q = qT (isA (slot (q % 8)))
+        (byte (pw s.mem B (blk (2 * p + q / 8))) (bswq (q % 8))) ^^^ kb s (q % 8)) ∧
+      (∀ q < 16, byte (f .xmm1) q = qT (isA (slot (q % 8)))
+        (byte (pw s.mem B (blk (2 * p + q / 8))) (bswq (q % 8 + 8))) ^^^ kb s (8 + q % 8)))
+    h.base (by rw [h.wr]; exact hs.wr) hf (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) ?_) ?_
+  · refine WP.mono (inX_wp
+      (s := (s.setXmm .xmm0 (pw s.mem B (blk (2 * p)))).setXmm .xmm1 (pw s.mem B (blk (2 * p + 1))))
+      ⟨he.tb, he.fit, he.acc, hm⟩) fun s' ⟨⟨f, e⟩, v3, v1, m'⟩ => ⟨f, e, ?_⟩
+    subst e
+    have reg : ∀ q < 16,
+        ((s.setXmm .xmm0 (pw s.mem B (blk (2 * p)))).setXmm .xmm1 (pw s.mem B (blk (2 * p + 1)))).xmm (xreg (q / 8)) =
+          pw s.mem B (blk (2 * p + q / 8)) := fun q hq => by
+      have : q / 8 = 0 ∨ q / 8 = 1 := by omega_arith
+      rcases this with e | e <;> rw [e] <;> rfl
+    exact ⟨m', fun q hq => by rw [v3 q hq, reg q hq]; rfl, fun q hq => by rw [v1 q hq, reg q hq]; rfl⟩
+  · rintro s' ⟨f, ⟨hm', v3, v1⟩, rfl⟩
+    obtain ⟨r1, r2, fr⟩ := st2_mem s.mem B (f .xmm3) (f .xmm1) (show plc p 0 + 16 = plc p 1 from rfl)
+      (by omega_arith)
+    refine ⟨⟨f, _, rfl⟩, hm', fr, fun L hL r hr => ?_⟩
+    have h16 : 8 * L + r < 16 := by omega_arith
+    rw [r1, r2, v3 _ h16, v1 _ h16, show (8 * L + r) % 8 = r by omega_arith,
+      show (8 * L + r) / 8 = L by omega_arith, byte_pw _ _ _ (AesNi.bswq_lt (show r < 16 by omega_arith)),
+      byte_pw _ _ _ (AesNi.bswq_lt (show r + 8 < 16 by omega_arith)), h.key hf (by decide) (by omega_arith),
+      h.key hf (by decide) (by omega_arith), Nat.mul_zero, Nat.zero_add, Nat.zero_add]
+    exact ⟨rfl, rfl⟩
+
+/-- The four blocks to the places, a pair at a time. -/
+theorem refIn_wp (hs : Scr s₀ B) (h : WAt s₀ B 0 s) (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) :
+    WP isa (.block refIn) s (Part s fun m =>
+      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 512, 128⟩] s.mem m ∧
+      ∀ p < 2, ∀ L < 2, ∀ r < 8,
+        byte (pw m B (plc p 0)) (8 * L + r) =
+          qT (isA (slot r)) (s.mem (B.setWidth 64 + BitVec.ofNat 64 (blk (2 * p + L) + bswq r))) ^^^
+            kAt s₀.mem B r ∧
+        byte (pw m B (plc p 1)) (8 * L + r) =
+          qT (isA (slot r)) (s.mem (B.setWidth 64 + BitVec.ofNat 64 (blk (2 * p + L) + bswq (r + 8)))) ^^^
+            kAt s₀.mem B (8 + r)) := by
+  refine WP.block_append_iff.mpr (WP.mono (pairIn_wp (p := 0) (by decide) hs h hm)
+    fun s₁ ⟨e₁, m₁, F₁, x₁⟩ => ?_)
+  have a₁ := h.part e₁ (sub_places (by decide) F₁)
+  refine WP.mono (pairIn_wp (p := 1) (by decide) hs a₁ m₁) fun s₂ ⟨e₂, m₂, F₂, x₂⟩ => ?_
+  refine ⟨xm_trans e₁ e₂, m₂, (sub_places (by decide) F₁).trans (sub_places (by decide) F₂),
+    fun p hp L hL r hr => ?_⟩
+  rcases two hp with rfl | rfl
+  · rw [pw_frame F₂ (.inl (by decide)) (by decide) (by decide),
+      pw_frame F₂ (.inl (by decide)) (by decide) (by decide)]
+    exact x₁ L hL r hr
+  · have b := blk_le (b := 2 * 1 + L) (by omega_arith)
+    have q0 := AesNi.bswq_lt (show r < 16 by omega_arith)
+    have q1 := AesNi.bswq_lt (show r + 8 < 16 by omega_arith)
+    have := x₂ L hL r hr
+    rw [byte_frame F₁ (.inr (by unfold plc; omega_arith)) (by decide) (by omega_arith),
+      byte_frame F₁ (.inr (by unfold plc; omega_arith)) (by decide) (by omega_arith)] at this
+    exact this
+
+/-- The mask, from the table. -/
+theorem m0_wp (htb : s.gpr tbr = s.syms tableName) (hfit : (s.gpr kr).toNat + 136 ≤ 2 ^ 32)
+    (hacc : ∀ o, o + 16 ≤ 136 → InRegions (s.rd ++ s.wr) (addr (s.gpr kr) o) 16) :
+    WP isa (.block [tb m0 wM0]) s fun s' => Same s s' ∧ ∀ q < 16, byte (s'.xmm m0) q = 0x0f#8 := by
+  have hok := m0_ok
+  unfold m0Ok at hok
+  split at hok <;> [cases hok; rename_i ρ hrun]
+  exact run_wp (rel_init (p := wparams) htb hfit hacc) hrun fun s' hr hs => ⟨hs, AesNi.rel_mask hr hok⟩
+
+theorem bswq_rev {j : Nat} (hj : j < 8) : bswq (7 - j) = slot j ∧ bswq (15 - j) = slot j + 8 := by
+  unfold bswq slot
+  constructor <;> (repeat' split) <;> omega_arith
+
+theorem xor4 (b k c : Byte) : b ^^^ k ^^^ c ^^^ (k ^^^ c) = b := by
+  rw [BitVec.xor_assoc b k c, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+
+/-- Pair `p`'s halves after the last round, the second with that round's
+key, to its two blocks, with the last two subkeys. -/
+theorem pairOut_wp {p : Nat} (hp : p < 2) (hs : Scr s₀ B) (hk : Keys s₀.mem B g E) (hg1 : 1 ≤ g) (hg : g ≤ 4)
+    (h : WAt s₀ B (g - 1) s) (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) {a b : Nat → BitVec 64}
+    (h0 : Lanes (pw s.mem B (plc p 0)) fun L => dq (a L))
+    (h1 : Lanes (pw s.mem B (plc p 1)) fun L j => dq (b L) j ^^^ dq (E (2 + 8 * (g - 1) + 5)) j ^^^ c5) :
+    WP isa (.block (pairOut p)) s (Part s fun m =>
+      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 (blk (2 * p)), 32⟩] s.mem m ∧
+      ∀ L < 2, ∀ j < 8, byte (pw m B (blk (2 * p + L))) (7 - j) = bz (b L ^^^ E (8 * g)) j ∧
+        byte (pw m B (blk (2 * p + L))) (15 - j) = bz (a L ^^^ E (8 * g + 1)) j) := by
+  have hf := hs.fit
+  have hi4 : g - 1 < 4 := by omega_arith
+  have he := h.env hs hi4 hm
+  have b0 := blk_le (b := 2 * p) (by omega_arith)
+  have b1 := blk_le (b := 2 * p + 1) (by omega_arith)
+  have l0 := plc_le hp (show 0 < 2 by decide)
+  have l1 := plc_le hp (show 1 < 2 by decide)
+  have k56 : ∀ j < 8, kb s (56 + slot j) = dq (E (2 + 8 * (g - 1) + 5)) j ^^^ c5 := fun j hj => by
+    have := slot_lt j
+    rw [h.key hf hi4 (by omega_arith)]; exact hk.rk5 (g - 1) (by omega_arith) j hj
+  refine WP.mono (ld2_st2 (r₁ := .xmm0) (r₂ := .xmm2) (X := joinX) (o₁ := plc p 0) (o₂ := plc p 1)
+    (p₁ := blk (2 * p)) (p₂ := blk (2 * p + 1))
+    (P := fun f => (∀ q < 16, byte (f m0) q = 0x0f#8) ∧ ∀ L < 2, ∀ j < 8,
+      byte (f (if L = 0 then .xmm0 else .xmm2)) (7 - j) = bz (b L ^^^ E (8 * g)) j ∧
+      byte (f (if L = 0 then .xmm0 else .xmm2)) (15 - j) = bz (a L ^^^ E (8 * g + 1)) j)
+    h.base (by rw [h.wr]; exact hs.wr) hf (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) ?_) ?_
+  · refine WP.mono (join_wp
+      (s := (s.setXmm .xmm0 (pw s.mem B (plc p 0))).setXmm .xmm1 (pw s.mem B (plc p 1)))
+      ⟨he.tb, he.fit, he.acc, hm⟩) fun s' ⟨⟨f, e⟩, v, m'⟩ => ⟨f, e, ?_⟩
+    subst e
+    refine ⟨m', fun L hL j hj => ?_⟩
+    have sj := slot_lt j
+    obtain ⟨r7, r15⟩ := bswq_rev hj
+    refine ⟨?_, ?_⟩
+    · refine (v L hL (7 - j) (by omega_arith)).trans ?_
+      rw [r7, ite_eq_left sj, show slot j % 8 = slot j by omega_arith, slot_slot hj]
+      show qI (isA j) (byte (pw s.mem B (plc p 1)) (8 * L + slot j) ^^^ kb s (56 + slot j)) ^^^
+        kb s (64 + (7 - j)) = _
+      rw [h1 L hL j hj, k56 j hj, xor4, h.key hf hi4 (by omega_arith), (hk.out j hj).1, AesNi.bz_xor]
+      exact congrArg (· ^^^ _) (AesNi.qI_qT _ _)
+    · refine (v L hL (15 - j) (by omega_arith)).trans ?_
+      rw [r15, ite_eq_right (by omega_arith), show (slot j + 8) % 8 = slot j by omega_arith, slot_slot hj,
+        Nat.add_sub_cancel]
+      show qI (isA j) (byte (pw s.mem B (plc p 0)) (8 * L + slot j)) ^^^ kb s (64 + (15 - j)) = _
+      rw [h0 L hL j hj, h.key hf hi4 (by omega_arith), show 64 + (15 - j) = 72 + (7 - j) by omega_arith,
+        (hk.out j hj).2, AesNi.bz_xor]
+      exact congrArg (· ^^^ _) (AesNi.qI_qT _ _)
+  · rintro s' ⟨f, ⟨hm', v⟩, rfl⟩
+    obtain ⟨r1, r2, fr⟩ := st2_mem s.mem B (f .xmm0) (f .xmm2)
+      (show blk (2 * p) + 16 = blk (2 * p + 1) by unfold blk; omega_arith) (by omega_arith)
+    refine ⟨⟨f, _, rfl⟩, hm', fr, fun L hL j hj => ?_⟩
+    rcases two hL with rfl | rfl
+    · rw [show blk (2 * p + 0) = blk (2 * p) from rfl, r1]; exact v 0 (by decide) j hj
+    · rw [r2]; exact v 1 (by decide) j hj
 
 end
 

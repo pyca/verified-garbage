@@ -135,8 +135,10 @@ def halfOut (h : Nat) : List Instr := conv .xmm3 .xmm0 .xmm1 .xmm2 .xmm4 wT ++ k
 def halfLayer (o h : Nat) : List Instr :=
   [ld .xmm0 sb o] ++ halfIn h ++ halfMid h ++ halfOut h ++ [stx sb o .xmm1]
 
-def refLayer : List Instr :=
-  halfLayer (plc 0 0) 0 ++ halfLayer (plc 0 1) 1 ++ halfLayer (plc 1 0) 0 ++ halfLayer (plc 1 1) 1
+/-- The FL layer on pair `p`: FL of its first halves, FL⁻¹ of its second. -/
+def pairLayer (p : Nat) : List Instr := halfLayer (plc p 0) 0 ++ halfLayer (plc p 1) 1
+
+def refLayer : List Instr := pairLayer 0 ++ pairLayer 1
 
 /-- The halves in `xmm0` and `xmm1` (the second without the last round's
 keys) to the two blocks' bytes, in `xmm0` and `xmm2`, with the last keys. -/
@@ -231,11 +233,19 @@ def joinOk : Bool :=
   | none => false
   | some ρ => !(ρ.get .xmm0).sh && !(ρ.get .xmm2).sh &&
     ((List.range 16).all fun q => (get (ρ.get .xmm0).bs q).same (joinRef 0 q)) &&
-    ((List.range 16).all fun q => (get (ρ.get .xmm2).bs q).same (joinRef 1 q))
+    ((List.range 16).all fun q => (get (ρ.get .xmm2).bs q).same (joinRef 1 q)) && maskOk ρ
 
 theorem conv_all : inOk = true ∧ halfInOk 0 = true ∧ halfInOk 1 = true ∧ halfOutOk 0 = true ∧
     halfOutOk 1 = true ∧ joinOk = true := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> lit_decide
+
+/-- The mask, from the table. -/
+def m0Ok : Bool :=
+  match run wparams Regs.init [tb m0 wM0] with
+  | none => false
+  | some ρ => maskOk ρ
+
+theorem m0_ok : m0Ok = true := by lit_decide
 
 /-! ## The parts as they run -/
 
