@@ -186,15 +186,16 @@ theorem secp256k1Sign_scrubbed (hL : Law Spec.Secp256k1.curve) (hv : OK vars ∧
 /-- `vg_ecdsa_brainpoolp256r1_sign` as emitted (`Impl.Ecdsa.Rfc6979.PPC64LE.Fn.brainpoolp256r1`), with the
 HMAC implementations of `HmacTable.PPC64LE.vars`, meets its contract in constant
 time and returns without secret residue. -/
-theorem brainpoolp256r1Sign_scrubbed (hL : Law Spec.BrainpoolP256r1.curve) (hv : OK vars ∧ "VG_BRAINPOOLP256R1_COMB" ∉ names vars) :
+theorem brainpoolp256r1Sign_scrubbed (hL : Law Spec.BrainpoolP256r1.curve) (hv : OK vars ∧ "VG_BRAINPOOLP256R1_COMB" ∉ names vars ∧
+    "VG_BRAINPOOLP256R1_FRAME_CONSTS" ∉ names vars) :
     VerifiedScrubbed PPC64LE.target (Impl.Ecdsa.Rfc6979.PPC64LE.Fn.brainpoolp256r1 (fnsOf vars))
-      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 Impl.Weierstrass.PPC64LE.brainpoolp256r1CombConsts vars) 32 :=
+      (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 Proof.Ecdsa.PPC64LE.BrainpoolP256r1.sK vars) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi) {
       tables := [("hmac", tables vars)]
       code := signCodeT (brainpoolp256r1R hL) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vars
       verified := brainpoolp256r1T_verified hL vars hv }
     784 .all
-    (signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 Impl.Weierstrass.PPC64LE.brainpoolp256r1CombConsts vars)
+    (signOut Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1 Proof.Ecdsa.PPC64LE.BrainpoolP256r1.sK vars)
     (by dsimp only [signCodeT, cfgT, brainpoolp256r1R, brainpoolp256r1Core, RfcCurve.Q]; lit_decide)
 
 /-- `vg_ecdsa_brainpoolp320r1_sign` as emitted (`Impl.Ecdsa.Rfc6979.PPC64LE.Fn.brainpoolp320r1`), with the
