@@ -634,6 +634,55 @@ holes (`Code.fillHoles`) keeps, so they commute with it: two programs whose
 code with holes has the same normal form are the same with the holes filled
 by any callee (`Same.of_fillHoles`). -/
 
+/-- Filling holes keeps whether code is a block, and which. -/
+theorem fillHoles_block (n : String) (b : Prog M) {p : Prog M} {xs : List M.Instr} :
+    Code.fillHoles n b p = .block xs ↔ p = .block xs := by
+  cases p with
+  | block ys => simp [Code.fillHoles]
+  | call m body => cases body with
+    | block is => cases is <;> simp [Code.fillHoles]
+    | _ => simp [Code.fillHoles]
+  | icall i m x y => cases x with
+    | block is => cases is <;> simp [Code.fillHoles]
+    | _ => simp [Code.fillHoles]
+  | _ => simp [Code.fillHoles]
+
+theorem fillHoles_seq (n : String) (b : Prog M) {p x y : Prog M} (h : Code.fillHoles n b p = .seq x y) :
+    ∃ x' y', p = .seq x' y' ∧ x = Code.fillHoles n b x' ∧ y = Code.fillHoles n b y' := by
+  cases p with
+  | seq x' y' => simp only [Code.fillHoles, Code.seq.injEq] at h; exact ⟨x', y', rfl, h.1.symm, h.2.symm⟩
+  | call m body => cases body with
+    | block is => cases is <;> simp [Code.fillHoles] at h
+    | _ => simp [Code.fillHoles] at h
+  | icall i m x y => cases x with
+    | block is => cases is <;> simp [Code.fillHoles] at h
+    | _ => simp [Code.fillHoles] at h
+  | _ => simp [Code.fillHoles] at h
+
+theorem append_block_other {x : M.Instr} {xs : List M.Instr} {p : Prog M} (h₁ : ∀ ys, p ≠ .block ys)
+    (h₂ : ∀ ys d, p ≠ .seq (.block ys) d) : append (.block (x :: xs)) p = .seq (.block (x :: xs)) p := by
+  unfold append; split <;> simp_all
+
+theorem append_other {a : Prog M} (h₁ : ∀ xs, a ≠ .block xs) (h₂ : ∀ x y, a ≠ .seq x y) {p : Prog M}
+    (hp : p ≠ .block []) : append a p = .seq a p := by
+  unfold append; split <;> simp_all
+
+theorem append_other_nil {a : Prog M} (h₁ : ∀ xs, a ≠ .block xs) (h₂ : ∀ x y, a ≠ .seq x y) :
+    append a (.block []) = a := by
+  unfold append; split <;> simp_all
+
+theorem fillHoles_append_other (n : String) (b : Prog M) {a : Prog M} (h₁ : ∀ xs, a ≠ .block xs)
+    (h₂ : ∀ x y, a ≠ .seq x y) (c : Prog M) :
+    Code.fillHoles n b (append a c) = append (Code.fillHoles n b a) (Code.fillHoles n b c) := by
+  have g₁ : ∀ xs, Code.fillHoles n b a ≠ .block xs := fun xs h => h₁ xs ((fillHoles_block n b).mp h)
+  have g₂ : ∀ x y, Code.fillHoles n b a ≠ .seq x y := fun x y h => by
+    obtain ⟨x', y', e, -, -⟩ := fillHoles_seq n b h; exact h₂ _ _ e
+  by_cases hc : c = .block []
+  · subst hc
+    rw [append_other_nil h₁ h₂, show Code.fillHoles n b (.block [] : Prog M) = .block [] from rfl,
+      append_other_nil g₁ g₂]
+  · rw [append_other h₁ h₂ hc, append_other g₁ g₂ (fun h => hc ((fillHoles_block n b).mp h))]; rfl
+
 theorem fillHoles_append (n : String) (b : Prog M) (a c : Prog M) :
     Code.fillHoles n b (append a c) = append (Code.fillHoles n b a) (Code.fillHoles n b c) := by
   induction a generalizing c with
@@ -642,57 +691,22 @@ theorem fillHoles_append (n : String) (b : Prog M) (a c : Prog M) :
     cases xs with
     | nil => rfl
     | cons x xs =>
-      cases c with
-      | block ys => rfl
-      | seq c₁ c₂ =>
-        cases c₁ with
-        | block ys => rfl
-        | call m body =>
-          cases body with
-          | block is => cases is <;> rfl
-          | _ => rfl
-        | _ => rfl
-      | call m body =>
-        cases body with
-        | block is => cases is <;> rfl
-        | _ => rfl
-      | _ => rfl
-  | call m body =>
-    cases body with
-    | block is =>
-      cases is with
-      | nil =>
-        cases c with
-        | block ys => cases ys <;> rfl
-        | call m' body' =>
-          cases body' with
-          | block is' => cases is' <;> rfl
-          | _ => rfl
-        | _ => rfl
-      | cons i is =>
-        cases c with
-        | block ys => cases ys <;> rfl
-        | call m' body' =>
-          cases body' with
-          | block is' => cases is' <;> rfl
-          | _ => rfl
-        | _ => rfl
-    | _ =>
-      cases c with
-      | block ys => cases ys <;> rfl
-      | call m' body' =>
-        cases body' with
-        | block is' => cases is' <;> rfl
-        | _ => rfl
-      | _ => rfl
-  | _ =>
-    cases c with
-    | block ys => cases ys <;> rfl
-    | call m' body' =>
-      cases body' with
-      | block is' => cases is' <;> rfl
-      | _ => rfl
-    | _ => rfl
+      by_cases hc : ∃ ys, c = .block ys
+      · obtain ⟨ys, rfl⟩ := hc; rfl
+      by_cases hs : ∃ ys d, c = .seq (.block ys) d
+      · obtain ⟨ys, d, rfl⟩ := hs; rfl
+      have n₁ : ∀ ys, c ≠ .block ys := fun ys h => hc ⟨ys, h⟩
+      have n₂ : ∀ ys d, c ≠ .seq (.block ys) d := fun ys d h => hs ⟨ys, d, h⟩
+      rw [append_block_other n₁ n₂]
+      show Code.fillHoles n b ((Code.block (x :: xs)).seq c) =
+        append (Code.block (x :: xs)) (Code.fillHoles n b c)
+      rw [append_block_other (p := Code.fillHoles n b c)
+        (fun ys h => n₁ ys ((fillHoles_block n b).mp h))
+        (fun ys d h => by
+          obtain ⟨x', y', rfl, hx, -⟩ := fillHoles_seq n b h
+          exact n₂ ys y' (by rw [(fillHoles_block n b).mp hx.symm]))]
+      rfl
+  | _ => exact fillHoles_append_other n b (fun _ h => by cases h) (fun _ _ h => by cases h) c
 
 theorem normalize_fillHoles (n : String) (b : Prog M) (a : Prog M) :
     normalize (Code.fillHoles n b a) = Code.fillHoles n b (normalize a) := by
@@ -700,6 +714,10 @@ theorem normalize_fillHoles (n : String) (b : Prog M) (a : Prog M) :
   | seq x y ihx ihy => simp only [Code.fillHoles, normalize, ihx, ihy, fillHoles_append]
   | call m body =>
     cases body with
+    | block is => cases is <;> rfl
+    | _ => rfl
+  | icall i m x y =>
+    cases x with
     | block is => cases is <;> rfl
     | _ => rfl
   | _ => rfl
