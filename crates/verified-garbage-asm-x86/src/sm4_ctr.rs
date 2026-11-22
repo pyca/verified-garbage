@@ -3,6 +3,80 @@
 //! `assembly/sm4_ctr.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_sm4_ctr_aesni` requires (`Artifact.features`).
+pub const VG_SM4_CTR_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 756 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_ctr_aesni(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkEP3//4uEJPQCAACJRCQEi4Qk+AIAAIlEJAiLhCT8AgAAiUQkDIuEJAADAACJRCQQieCDwBiJRCQUi0QkFImYsAIAAImwtAIAAIm4uAIAAImovAIAAInHi3QkCIsGiYfIAgAAi0YEiYfMAgAAi0YIiYfQAgAAi0YMiYfUAgAA"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_SM4_AESNI_WIDE} - 2b
+.base64 "WYkHicOLRCQEif6DxmC5CAAAAPMPbzs="
+20:
+.base64 "8w9vAPMPb4vgAAAAZg84AMFmD2/IZg9y0QRmD9vPZg/bx/MPb5PAAAAAZg84ANDzD2+b0AAAAGYPOADZZg/v02YPcNoA8w9/HmYPcNpV8w9/XhBmD3DaqvMPf14gZg9w2v/zD39eMIPAEIPGQIPpAQ=="
+jne 20b
+.base64 "i0QkDImHwAIAAItEJBCJh8QCAACFwIuHxAIAAIP4BA=="
+jb 21f
+23:
+.base64 "i7fAAgAAi6/EAgAAi4fIAgAAiYdwAgAAi4fMAgAAiYd0AgAAi4fQAgAAiYd4AgAAi4fUAgAAiYd8AgAAi4fUAgAAD8iDwAEPyImH1AIAAIuH0AIAAA/Ig9AAD8iJh9ACAACLh8wCAAAPyIPQAA/IiYfMAgAAi4fIAgAAD8iD0AAPyImHyAIAAIuHyAIAAImHgAIAAIuHzAIAAImHhAIAAIuH0AIAAImHiAIAAIuH1AIAAImHjAIAAIuH1AIAAA/Ig8ABD8iJh9QCAACLh9ACAAAPyIPQAA/IiYfQAgAAi4fMAgAAD8iD0AAPyImHzAIAAIuHyAIAAA/Ig9AAD8iJh8gCAACLh8gCAACJh5ACAACLh8wCAACJh5QCAACLh9ACAACJh5gCAACLh9QCAACJh5wCAACLh9QCAAAPyIPAAQ/IiYfUAgAAi4fQAgAAD8iD0AAPyImH0AIAAIuHzAIAAA/Ig9AAD8iJh8wCAACLh8gCAAAPyIPQAA/IiYfIAgAAi4fIAgAAiYegAgAAi4fMAgAAiYekAgAAi4fQAgAAiYeoAgAAi4fUAgAAiYesAgAAi4fUAgAAD8iDwAEPyImH1AIAAIuH0AIAAA/Ig9AAD8iJh9ACAACLh8wCAAAPyIPQAA/IiYfMAgAAi4fIAgAAD8iD0AAPyImHyAIAAIsfif6DxmC4CAAAAPMPbzvzD2+ncAIAAGYPb+xmD3LVBGYP2+9mD9vn8w9vg4AAAABmDzgAxPMPb7OQAAAAZg84APVmD+/G8w9vp4ACAABmD2/sZg9y1QRmD9vvZg/b5/MPb4uAAAAAZg84AMzzD2+zkAAAAGYPOAD1Zg/vzvMPb6eQAgAAZg9v7GYPctUEZg/b72YP2+fzD2+TgAAAAGYPOADU8w9vs5AAAABmDzgA9WYP79bzD2+noAIAAGYPb+xmD3LVBGYP2+9mD9vn8w9vm4AAAABmDzgA3PMPb7OQAAAAZg84APVmD+/eZg9v4GYPbMFmD3DA2GYPbeFmD3Dk2GYPb+pmD2zTZg9w0thmD23rZg9w7dhmD2/YZg9swmYPbdpmD2/MZg9s5WYPbc1mD2/TZg/v1GYP79HzD39HIPMPf18w8w9/Z0DzD39PUPMPbwZmD+/C"
+24:
+.base64 "8w9vVhDzD293QGYP79ZmD+/R8w9vXyBmD+/a8w9vs/AAAABmDzgAxmYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1cg8w9vTiDzD293UGYP785mD+/K8w9vXzBmD+/Z8w9vs/AAAABmDzgA5mYPON3nZg9v1GYP29dmD3LUBGYP2+fzD29DEGYPOADC8w9vazBmDzgA6mYPb9DzD29zIGYPOAD0Zg/vxmYP79bzD29zQGYPOAD0Zg/v7mYP79hmD+/d8w9vc1BmDzgAxvMPb2NgZg84ANRmD+/C8w9vc3BmDzgA7mYP791mD+/DZg/vyPMPf08w8w9vVjDzD293IGYP79ZmD+/R8w9vX0BmD+/a8w9vs/AAAABmDzgAxmYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1dA8w9vTkDzD293MGYP785mD+/K8w9vX1BmD+/Z8w9vs/AAAABmDzgA5mYPON3nZg9v1GYP29dmD3LUBGYP2+fzD29DEGYPOADC8w9vazBmDzgA6mYPb9DzD29zIGYPOAD0Zg/vxmYP79bzD29zQGYPOAD0Zg/v7mYP79hmD+/d8w9vc1BmDzgAxvMPb2NgZg84ANRmD+/C8w9vc3BmDzgA7mYP791mD+/DZg/vyPMPf09Qg8ZAg+gB"
+jne 24b
+.base64 "8w9vZ1BmD2/sZg9y1QRmD9vvZg/b5/MPb4OgAAAAZg84AMTzD2+zsAAAAGYPOAD1Zg/vxvMPb2dAZg9v7GYPctUEZg/b72YP2+fzD2+LoAAAAGYPOADM8w9vs7AAAABmDzgA9WYP787zD29nMGYPb+xmD3LVBGYP2+9mD9vn8w9vk6AAAABmDzgA1PMPb7OwAAAAZg84APVmD+/W8w9vZyBmD2/sZg9y1QRmD9vvZg/b5/MPb5ugAAAAZg84ANzzD2+zsAAAAGYPOAD1Zg/v3mYPb+BmD2zBZg9wwNhmD23hZg9w5NhmD2/qZg9s02YPcNLYZg9t62YPcO3YZg9v2GYPbMJmD23aZg9vzGYPbOVmD23N8w9/h3ACAADzD3+fgAIAAPMPf6eQAgAA8w9/j6ACAACLt8ACAACLr8QCAACLBjOHcAIAAIkGi0YEM4d0AgAAiUYEi0YIM4d4AgAAiUYIi0YMM4d8AgAAiUYMi0YQM4eAAgAAiUYQi0YUM4eEAgAAiUYUi0YYM4eIAgAAiUYYi0YcM4eMAgAAiUYci0YgM4eQAgAAiUYgi0YkM4eUAgAAiUYki0YoM4eYAgAAiUYoi0YsM4ecAgAAiUYsi0YwM4egAgAAiUYwi0Y0M4ekAgAAiUY0i0Y4M4eoAgAAiUY4i0Y8M4esAgAAiUY8g8ZAg+0EibfAAgAAia/EAgAAg/0E"
+jae 23b
+jmp 22f
+21:
+22:
+.base64 "i4fEAgAAg/gC"
+jb 25f
+27:
+.base64 "i7fAAgAAi6/EAgAAi4fIAgAAiYdwAgAAi4fMAgAAiYd0AgAAi4fQAgAAiYd4AgAAi4fUAgAAiYd8AgAAi4fUAgAAD8iDwAEPyImH1AIAAIuH0AIAAA/Ig9AAD8iJh9ACAACLh8wCAAAPyIPQAA/IiYfMAgAAi4fIAgAAD8iD0AAPyImHyAIAAIuHyAIAAImHgAIAAIuHzAIAAImHhAIAAIuH0AIAAImHiAIAAIuH1AIAAImHjAIAAIuH1AIAAA/Ig8ABD8iJh9QCAACLh9ACAAAPyIPQAA/IiYfQAgAAi4fMAgAAD8iD0AAPyImHzAIAAIuHyAIAAA/Ig9AAD8iJh8gCAACLH4n+g8ZguAgAAADzD2878w9vp3ACAABmD2/sZg9y1QRmD9vvZg/b5/MPb4OAAAAAZg84AMTzD2+zkAAAAGYPOAD1Zg/vxvMPb6eAAgAAZg9v7GYPctUEZg/b72YP2+fzD2+LgAAAAGYPOADM8w9vs5AAAABmDzgA9WYP787zD2+nkAIAAGYPb+xmD3LVBGYP2+9mD9vn8w9vk4AAAABmDzgA1PMPb7OQAAAAZg84APVmD+/W8w9vp6ACAABmD2/sZg9y1QRmD9vvZg/b5/MPb5uAAAAAZg84ANzzD2+zkAAAAGYPOAD1Zg/v3mYPb+BmD2zBZg9wwNhmD23hZg9w5NhmD2/qZg9s02YPcNLYZg9t62YPcO3YZg9v2GYPbMJmD23aZg9vzGYPbOVmD23NZg9v02YP79RmD+/R8w9/RyDzD39fMPMPf2dA8w9/T1DzD28GZg/vwg=="
+28:
+.base64 "8w9vVhDzD293QGYP79ZmD+/R8w9vXyBmD+/a8w9vs/AAAABmDzgAxmYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1cg8w9vTiDzD293UGYP785mD+/K8w9vXzBmD+/Z8w9vs/AAAABmDzgA5mYPON3nZg9v1GYP29dmD3LUBGYP2+fzD29DEGYPOADC8w9vazBmDzgA6mYPb9DzD29zIGYPOAD0Zg/vxmYP79bzD29zQGYPOAD0Zg/v7mYP79hmD+/d8w9vc1BmDzgAxvMPb2NgZg84ANRmD+/C8w9vc3BmDzgA7mYP791mD+/DZg/vyPMPf08w8w9vVjDzD293IGYP79ZmD+/R8w9vX0BmD+/a8w9vs/AAAABmDzgAxmYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1dA8w9vTkDzD293MGYP785mD+/K8w9vX1BmD+/Z8w9vs/AAAABmDzgA5mYPON3nZg9v1GYP29dmD3LUBGYP2+fzD29DEGYPOADC8w9vazBmDzgA6mYPb9DzD29zIGYPOAD0Zg/vxmYP79bzD29zQGYPOAD0Zg/v7mYP79hmD+/d8w9vc1BmDzgAxvMPb2NgZg84ANRmD+/C8w9vc3BmDzgA7mYP791mD+/DZg/vyPMPf09Qg8ZAg+gB"
+jne 28b
+.base64 "8w9vZ1BmD2/sZg9y1QRmD9vvZg/b5/MPb4OgAAAAZg84AMTzD2+zsAAAAGYPOAD1Zg/vxvMPb2dAZg9v7GYPctUEZg/b72YP2+fzD2+LoAAAAGYPOADM8w9vs7AAAABmDzgA9WYP787zD29nMGYPb+xmD3LVBGYP2+9mD9vn8w9vk6AAAABmDzgA1PMPb7OwAAAAZg84APVmD+/W8w9vZyBmD2/sZg9y1QRmD9vvZg/b5/MPb5ugAAAAZg84ANzzD2+zsAAAAGYPOAD1Zg/v3mYPb+BmD2zBZg9wwNhmD23hZg9w5NhmD2/qZg9s02YPcNLYZg9t62YPcO3YZg9v2GYPbMJmD23aZg9vzGYPbOVmD23N8w9/h3ACAADzD3+fgAIAAPMPf6eQAgAA8w9/j6ACAACLt8ACAACLr8QCAACLBjOHcAIAAIkGi0YEM4d0AgAAiUYEi0YIM4d4AgAAiUYIi0YMM4d8AgAAiUYMi0YQM4eAAgAAiUYQi0YUM4eEAgAAiUYUi0YYM4eIAgAAiUYYi0YcM4eMAgAAiUYcg8Ygg+0CibfAAgAAia/EAgAAg/0C"
+jae 27b
+jmp 26f
+25:
+26:
+.base64 "i4fEAgAAhcA="
+je 29f
+211:
+.base64 "i7fAAgAAi6/EAgAAi4fIAgAAiYdwAgAAi4fMAgAAiYd0AgAAi4fQAgAAiYd4AgAAi4fUAgAAiYd8AgAAi4fUAgAAD8iDwAEPyImH1AIAAIuH0AIAAA/Ig9AAD8iJh9ACAACLh8wCAAAPyIPQAA/IiYfMAgAAi4fIAgAAD8iD0AAPyImHyAIAAIsfif6DxmC4CAAAAPMPbzvzD2+ncAIAAGYPb+xmD3LVBGYP2+9mD9vn8w9vg4AAAABmDzgAxPMPb7OQAAAAZg84APVmD+/G8w9vp4ACAABmD2/sZg9y1QRmD9vvZg/b5/MPb4uAAAAAZg84AMzzD2+zkAAAAGYPOAD1Zg/vzvMPb6eQAgAAZg9v7GYPctUEZg/b72YP2+fzD2+TgAAAAGYPOADU8w9vs5AAAABmDzgA9WYP79bzD2+noAIAAGYPb+xmD3LVBGYP2+9mD9vn8w9vm4AAAABmDzgA3PMPb7OQAAAAZg84APVmD+/eZg9v4GYPbMFmD3DA2GYPbeFmD3Dk2GYPb+pmD2zTZg9w0thmD23rZg9w7dhmD2/YZg9swmYPbdpmD2/MZg9s5WYPbc1mD2/TZg/v1GYP79HzD39HIPMPf18w8w9/Z0DzD39PUPMPbwZmD+/C"
+212:
+.base64 "8w9vVhDzD293QGYP79ZmD+/R8w9vXyBmD+/a8w9vs/AAAABmDzgAxmYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1cg8w9vTiDzD293UGYP785mD+/K8w9vXzBmD+/Z8w9vs/AAAABmDzgA5mYPON3nZg9v1GYP29dmD3LUBGYP2+fzD29DEGYPOADC8w9vazBmDzgA6mYPb9DzD29zIGYPOAD0Zg/vxmYP79bzD29zQGYPOAD0Zg/v7mYP79hmD+/d8w9vc1BmDzgAxvMPb2NgZg84ANRmD+/C8w9vc3BmDzgA7mYP791mD+/DZg/vyPMPf08w8w9vVjDzD293IGYP79ZmD+/R8w9vX0BmD+/a8w9vs/AAAABmDzgAxmYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1dA8w9vTkDzD293MGYP785mD+/K8w9vX1BmD+/Z8w9vs/AAAABmDzgA5mYPON3nZg9v1GYP29dmD3LUBGYP2+fzD29DEGYPOADC8w9vazBmDzgA6mYPb9DzD29zIGYPOAD0Zg/vxmYP79bzD29zQGYPOAD0Zg/v7mYP79hmD+/d8w9vc1BmDzgAxvMPb2NgZg84ANRmD+/C8w9vc3BmDzgA7mYP791mD+/DZg/vyPMPf09Qg8ZAg+gB"
+jne 212b
+.base64 "8w9vZ1BmD2/sZg9y1QRmD9vvZg/b5/MPb4OgAAAAZg84AMTzD2+zsAAAAGYPOAD1Zg/vxvMPb2dAZg9v7GYPctUEZg/b72YP2+fzD2+LoAAAAGYPOADM8w9vs7AAAABmDzgA9WYP787zD29nMGYPb+xmD3LVBGYP2+9mD9vn8w9vk6AAAABmDzgA1PMPb7OwAAAAZg84APVmD+/W8w9vZyBmD2/sZg9y1QRmD9vvZg/b5/MPb5ugAAAAZg84ANzzD2+zsAAAAGYPOAD1Zg/v3mYPb+BmD2zBZg9wwNhmD23hZg9w5NhmD2/qZg9s02YPcNLYZg9t62YPcO3YZg9v2GYPbMJmD23aZg9vzGYPbOVmD23N8w9/h3ACAADzD3+fgAIAAPMPf6eQAgAA8w9/j6ACAACLt8ACAACLr8QCAACLBjOHcAIAAIkGi0YEM4d0AgAAiUYEi0YIM4d4AgAAiUYIi0YMM4d8AgAAiUYMg8YQg+0BibfAAgAAia/EAgAA"
+jne 211b
+jmp 210f
+29:
+210:
+.base64 "i3QkCIuHyAIAAIkGi4fMAgAAiUYEi4fQAgAAiUYIi4fUAgAAiUYMi5+wAgAAi7e0AgAAi6+8AgAAi7+4AgAAuQAAAACJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACJjCREAQAAiYwkSAEAAImMJEwBAACJjCRQAQAAiYwkVAEAAImMJFgBAACJjCRcAQAAiYwkYAEAAImMJGQBAACJjCRoAQAAiYwkbAEAAImMJHABAACJjCR0AQAAiYwkeAEAAImMJHwBAACJjCSAAQAAiYwkhAEAAImMJIgBAACJjCSMAQAAiYwkkAEAAImMJJQBAACJjCSYAQAAiYwknAEAAImMJKABAACJjCSkAQAAiYwkqAEAAImMJKwBAACJjCSwAQAAiYwktAEAAImMJLgBAACJjCS8AQAAiYwkwAEAAImMJMQBAACJjCTIAQAAiYwkzAEAAImMJNABAACJjCTUAQAAiYwk2AEAAImMJNwBAACJjCTgAQAAiYwk5AEAAImMJOgBAACJjCTsAQAAiYwk8AEAAImMJPQBAACJjCT4AQAAiYwk/AEAAImMJAACAACJjCQEAgAAiYwkCAIAAImMJAwCAACJjCQQAgAAiYwkFAIAAImMJBgCAACJjCQcAgAAiYwkIAIAAImMJCQCAACJjCQoAgAAiYwkLAIAAImMJDACAACJjCQ0AgAAiYwkOAIAAImMJDwCAACJjCRAAgAAiYwkRAIAAImMJEgCAACJjCRMAgAAiYwkUAIAAImMJFQCAACJjCRYAgAAiYwkXAIAAImMJGACAACJjCRkAgAAiYwkaAIAAImMJGwCAACJjCRwAgAAiYwkdAIAAImMJHgCAACJjCR8AgAAiYwkgAIAAImMJIQCAACJjCSIAgAAiYwkjAIAAImMJJACAACJjCSUAgAAiYwkmAIAAImMJJwCAACJjCSgAgAAiYwkpAIAAImMJKgCAACJjCSsAgAAiYwksAIAAImMJLQCAACJjCS4AgAAiYwkvAIAAImMJMACAACJjCTEAgAAiYwkyAIAAImMJMwCAACJjCTQAgAAiYwk1AIAAImMJNgCAACJjCTcAgAAiYwk4AIAAImMJOQCAACJjCToAgAAiYwk7AIAAI2kJPACAACNpCQM/f//uQAAAACJTCQEiUwkCIlMJAyJTCQQiUwkFIlMJBiNpCT0AgAAuAAAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.p2align 6"#,
+        VG_SM4_AESNI_WIDE = sym super::consts::VG_SM4_AESNI_WIDE,
+    )
+}
+
 /// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
@@ -70,6 +144,47 @@ jmp 210f
     )
 }
 
+/// The CPU features `vg_sm4_ctr_final_aesni` requires (`Artifact.features`).
+pub const VG_SM4_CTR_FINAL_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ctrFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the counter block or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_ctr_final_aesni(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jWQkyItEJDyJRCQEi0QkQIlEJAiLRCREiUQkDItEJEiJRCQQieCDwBiJRCQUi0QkFIkYiXAEiXgIiWgMi0QkBItUJAiLXCQMi3QkEMHuBFZTUlA="
+call {vg_sm4_ctr_core_aesni}
+.base64 "WFhYWItEJBCD4A+FwA=="
+je 20f
+.base64 "i0QkFLkAAAAAiUgQiUgUiUgYiUgcicODwxCLRCQEi1QkCL4BAAAAVlNSUA=="
+call {vg_sm4_ctr_core_aesni}
+.base64 "WFhYWItcJBSDwxCLdCQMi2wkEInog+UPKegBxg=="
+22:
+.base64 "D7YDD7YOMcGIDoPDAYPGAYPtAQ=="
+jne 22b
+jmp 21f
+20:
+21:
+.base64 "i0QkFIsYi3AEi3gIi2gMuQAAAACJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNI1kJDiNpCTI+f//uQAAAACJjCT8AgAAiYwkAAMAAImMJAQDAACJjCQIAwAAiYwkDAMAAImMJBADAACJjCTsBQAAiYwk8AUAAImMJPQFAACJjCT4BQAAiYwk/AUAAImMJAAGAACJjCQEBgAAiYwkCAYAAImMJAwGAACJjCQQBgAAiYwkFAYAAI2kJDgGAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_sm4_ctr_core_aesni = sym super::sm4_ctr::vg_sm4_ctr_core_aesni::vg_sm4_ctr_core_aesni,
+    )
+}
+
 /// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of the last piece of a message, of any length, in place: XORs the `len` bytes at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), a partial last block `Pₙ*` of `u` bytes with `MSB_u(Oₙ)`, and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message if `len` is a multiple of 16; after a partial last block the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.ctrFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the counter block or the data.
@@ -110,3 +225,7 @@ jmp 21f
 #[rustfmt::skip]
 #[path = "internal/vg_sm4_ctr_core.rs"]
 pub(crate) mod vg_sm4_ctr_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_ctr_core_aesni.rs"]
+pub(crate) mod vg_sm4_ctr_core_aesni;
