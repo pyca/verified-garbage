@@ -61,9 +61,7 @@ fn cases() -> Vec<Case> {
                 case.0
                     .push((name.trim().to_string(), value.trim().to_string()));
             }
-        } else if indent > 3
-            && let Some((_, v)) = case.0.last_mut()
-        {
+        } else if let Some((_, v)) = case.0.last_mut().filter(|_| indent > 3) {
             v.push(' ');
             v.push_str(l.trim());
         }
