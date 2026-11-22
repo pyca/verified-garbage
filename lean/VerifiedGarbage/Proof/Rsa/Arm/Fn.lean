@@ -101,6 +101,8 @@ theorem recoverPrimesDetOut (stack : Nat) :
 
 theorem frameOk_56 : FrameOk 56 := by decide
 
+theorem frameOk_104 : FrameOk 104 := by decide
+
 theorem frameOk_216 : FrameOk 216 := by decide
 
 theorem checkKey_noFrames : Impl.Rsa.Arm.CheckKey.code.noFrames = true := by lit_decide
@@ -169,8 +171,8 @@ theorem privatePrecompute (b : MontBackend) :
 
 /-- `vg_rsa_public_precompute`, of the implementation `v`. -/
 theorem publicPrecompute (v : CrtImpl) :
-    VerifiedScrubbed target (Impl.Rsa.Arm.Fn.publicPrecompute v.pc) (Spec.Rsa.publicPrecomputeContract abi 56) 32 :=
+    VerifiedScrubbed target (Impl.Rsa.Arm.Fn.publicPrecompute v.pc) (Spec.Rsa.publicPrecomputeContract abi 104) 32 :=
   verifiedScrubbedAll (api := Spec.Rsa.publicPrecomputeApi) { code := v.pc, verified := v.pcVerified }
-    (publicPrecomputeOut _) (scrubSideF_of v.pcOk frameOk_56 _)
+    (publicPrecomputeOut _) (scrubSideF_of v.pcOk frameOk_104 _)
 
 end VG.Proof.Rsa.Arm.Fn

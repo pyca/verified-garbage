@@ -13,8 +13,8 @@ functions it calls kept the key's values, the encoded message and the
 padding, then the registers a callee may change set to constants, but the
 32 bits of the result, and the flags. Each takes the functions it calls, as
 its registration maps over their implementations. Their frames use 3592
-and 2312 bytes, which are not frame sizes of the model, so their contracts
-reserve, and the cleanup zeroes, the next ones, 3648 and 2320.
+and 2360 bytes, which are not frame sizes of the model, so their contracts
+reserve, and the cleanup zeroes, the next ones, 3648 and 2368.
 -/
 
 @[expose] public section
@@ -32,6 +32,6 @@ def decryptPrecomputed (H : Decrypt.Fns) (privN : String) (priv : Prog isa) : Pr
 /-- `vg_rsa_pkcs1_encrypt_random`, calling `vg_rsa_pkcs1_encrypt_precomputed`
 (`enc`, by its name `encName`). -/
 def encryptRandom (encName : String) (enc : Prog isa) : Prog isa :=
-  scrubAll 32 2320 (Random.code encName enc)
+  scrubAll 32 2368 (Random.code encName enc)
 
 end VG.Impl.RsaPkcs1Enc.Arm.Fn

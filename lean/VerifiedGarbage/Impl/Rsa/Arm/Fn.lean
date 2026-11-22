@@ -42,6 +42,6 @@ def recoverPrimesDet (um : Bool) : Prog isa := scrubAll 32 56 (RecoverDet.codeFo
 def privatePrecompute (pp : Prog isa) : Prog isa := scrubAll 32 216 pp
 
 /-- `vg_rsa_public_precompute`, of an implementation's code `pc`. -/
-def publicPrecompute (pc : Prog isa) : Prog isa := scrubAll 32 56 pc
+def publicPrecompute (pc : Prog isa) : Prog isa := scrubAll 32 104 pc
 
 end VG.Impl.Rsa.Arm.Fn

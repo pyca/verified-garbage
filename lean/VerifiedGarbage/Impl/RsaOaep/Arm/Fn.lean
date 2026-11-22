@@ -32,6 +32,6 @@ def decryptPrecomputed (f : Fns) (privN : String) (privC : Prog isa) : Prog isa 
 /-- `vg_rsa_oaep_encrypt_precomputed`, calling a precomputed public
 operation (`pubC`, by its name `pubN`). -/
 def encryptPrecomputed (f : Fns) (pubN : String) (pubC : Prog isa) : Prog isa :=
-  scrubAll 32 240 (Impl.RsaOaep.Arm.encryptPrecomputed f pubN pubC)
+  scrubAll 32 288 (Impl.RsaOaep.Arm.encryptPrecomputed f pubN pubC)
 
 end VG.Impl.RsaOaep.Arm.Fn

@@ -133,6 +133,7 @@ abbrev lay : Lay where
   argv := P.argv
   ro := [P.N, P.E, P.LAB, P.MSG, P.SEED D, P.PRE, P.TABL, P.TAB]
   rw := [P.OUT, P.SCR]
+  C := 104
 
 end EP
 
@@ -174,14 +175,14 @@ theorem geo : Geo (P.lay D) P.scr := by
   have hf := h.ok.fits (P.SCR) (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hf
   exact ⟨rfl, by unfold oRsa; omega_using [hs, hf], ⟨P.scl * 8, by unfold oRsa; omega_using [hs], by simp⟩, ⟨σ, h.ok⟩,
-    by show 16 ≤ 56; decide⟩
+    by show 16 ≤ 104; decide⟩
 
 end In
 
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the call's. -/
-abbrev stackBytes : Nat := 56 + frameBytes + 56
+abbrev stackBytes : Nat := 56 + frameBytes + 104
 
 /-- The shared contract, with both hash functions each one of the tables
 `ts`, and that stack. -/
@@ -241,7 +242,7 @@ theorem ep_lay (D : Nat) (s : State) :
         (ep s ai au af T aiL auL afL TL).LAB, (ep s ai au af T aiL auL afL TL).MSG,
         (ep s ai au af T aiL auL afL TL).SEED D, (ep s ai au af T aiL auL afL TL).PRE,
         (ep s ai au af T aiL auL afL TL).TABL, (ep s ai au af T aiL auL afL TL).TAB]
-      [(ep s ai au af T aiL auL afL TL).OUT, (ep s ai au af T aiL auL afL TL).SCR] s := rfl
+      [(ep s ai au af T aiL auL afL TL).OUT, (ep s ai au af T aiL auL afL TL).SCR] s 104 := rfl
 
 /-- The tables, as the contract gives them: each one of `ts`, the label's
 hash function's at the stack argument 12 and MGF1's at 13, with the
@@ -268,12 +269,12 @@ theorem in_of_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (spe
     kM kS kC kP kTL kT kA fO fN fE fL fM fS fC fP fTL fT kv olk el1 elK scrK rlK
   have hl := h H hH
   rw [hl] at hrd oS sC kS fS
-  have h240 : 240 ≤ s.sp.toNat := hsp
+  have h288 : 288 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
   rw [olk] at hwr oN oE oL oM oS oC oP oTL oT oA kO fO
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
-  have below : Region.Sub (FrameStack.belowA s.sp 56) ⟨State.addr s.sp - BitVec.ofNat 64 240, 240⟩ := by
+  have below : Region.Sub (FrameStack.belowA s.sp 56) ⟨State.addr s.sp - BitVec.ofNat 64 288, 288⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)

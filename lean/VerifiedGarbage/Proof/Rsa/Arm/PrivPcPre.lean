@@ -247,7 +247,7 @@ theorem pdArgs_stack {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
 
 theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : PdArgs g s) :
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre (s.callEntry.withRegions (pdRd g) (pdWr g)) := by
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre (s.callEntry.withRegions (pdRd g) (pdWr g)) := by
   have sa := fun {j} (hj : j < 6) => pdArgs_stack h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
   have efit : g.exponentLength < 2 ^ 32 := by have := h.valid.exponentFits; omega_using [kfit, this]
@@ -277,12 +277,12 @@ theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   have argSub : (⟨State.addr g.stack, 24⟩ : Region).Sub g.innerRegion := Region.sub_prefix (by decide)
   have argStack : (⟨State.addr g.stack, 24⟩ : Region).Sub g.wholeStack :=
     fun x hx => h.valid.innerSub x (argSub x hx)
-  have callee : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region).Sub g.calleeRegion := by
-    have e : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region) = FrameStack.belowA g.stack 56 := by
+  have callee : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 104, 104⟩ : Region).Sub g.calleeRegion := by
+    have e : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 104, 104⟩ : Region) = FrameStack.belowA g.stack 104 := by
       unfold FrameStack.belowA
-      rw [FrameStack.addr_sub' h.valid.stackLow]; rfl
+      rw [FrameStack.addr_sub' h.valid.stackLow104]; rfl
     rw [e]; exact FrameStack.belowA_sub (by decide) h.valid.stackLow104
-  refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega_using [this], rfl, rfl,
+  refine ⟨h.valid.stackLow104, by have := h.valid.stackHigh; omega_using [this], rfl, rfl,
     (h.valid.stackOutput.sub_left preStack).symm, h.valid.outputSources 1,
     (h.valid.stackOutput.sub_left tempStack).symm, h.valid.outputWorkspace,
     (h.valid.stackOutput.sub_left argStack).symm,
@@ -392,7 +392,7 @@ theorem pcArgs_stack {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
 
 theorem pcCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : PcArgs g s) :
-    (Spec.Rsa.publicPrecomputeContract abi 56).pre (s.callEntry.withRegions (pcRd g) (pcWr g)) := by
+    (Spec.Rsa.publicPrecomputeContract abi 104).pre (s.callEntry.withRegions (pcRd g) (pcWr g)) := by
   have sa := pcArgs_stack h a
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
   have wfit : g.scratchLength < 2 ^ 32 := by have := h.valid.workspaceFit; omega_using [this]
@@ -411,12 +411,12 @@ theorem pcCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   have preStack : (⟨State.addr g.precomputation, 16 * Spec.Rsa.modulusWords g.length⟩ : Region).Sub g.wholeStack :=
     fun x hx => h.valid.innerSub x (preSub x hx)
   have argSub : (⟨State.addr g.stack, 8⟩ : Region).Sub g.innerRegion := Region.sub_prefix (by decide)
-  have callee : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region).Sub g.calleeRegion := by
-    have e : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region) = FrameStack.belowA g.stack 56 := by
+  have callee : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 104, 104⟩ : Region).Sub g.calleeRegion := by
+    have e : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 104, 104⟩ : Region) = FrameStack.belowA g.stack 104 := by
       unfold FrameStack.belowA
-      rw [FrameStack.addr_sub' h.valid.stackLow]; rfl
+      rw [FrameStack.addr_sub' h.valid.stackLow104]; rfl
     rw [e]; exact FrameStack.belowA_sub (by decide) h.valid.stackLow104
-  refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega_using [this], rfl, rfl,
+  refine ⟨h.valid.stackLow104, by have := h.valid.stackHigh; omega_using [this], rfl, rfl,
     (h.valid.stackSources 0).sub_left preStack, h.valid.stackWorkspace.sub_left preStack, ?_,
     h.valid.sourcesWorkspace 0, ?_, ?_, ?_, ?_, ?_, h.valid.precomputationFit,
     h.valid.sourceFits 0, h.valid.workspaceFit, ⟨h.valid.minLength, h.valid.maxLength⟩, rfl, publicScratch_le ⟨h.valid.minLength, h.valid.maxLength⟩ h.valid.space⟩

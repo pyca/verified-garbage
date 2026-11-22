@@ -557,10 +557,10 @@ vg_rsa_pkcs1_encrypt_random_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #2320
+	sub sp, sp, #2368
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #72
+	mov r3, #74
 216:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -573,11 +573,7 @@ vg_rsa_pkcs1_encrypt_random_umaal:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 216b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #2320
+	add sp, sp, #2368
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -1138,10 +1134,10 @@ vg_rsa_pkcs1_encrypt_random:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #2320
+	sub sp, sp, #2368
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #72
+	mov r3, #74
 216:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -1154,11 +1150,7 @@ vg_rsa_pkcs1_encrypt_random:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 216b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #2320
+	add sp, sp, #2368
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0

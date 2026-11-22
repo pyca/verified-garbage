@@ -33,6 +33,6 @@ def signPrecomputed (f : MdFns) (g : Impl.RsaOaep.Arm.Fns) (privN : String) (pri
 /-- `vg_rsa_pss_verify_precomputed`, calling a precomputed public operation
 (`pubC`, by its name `pubN`). -/
 def verifyPrecomputed (f : MdFns) (g : Impl.RsaOaep.Arm.Fns) (pubN : String) (pubC : Prog isa) : Prog isa :=
-  scrubAll 32 240 (Impl.RsaPss.Arm.verifyPrecomputed f g pubN pubC)
+  scrubAll 32 288 (Impl.RsaPss.Arm.verifyPrecomputed f g pubN pubC)
 
 end VG.Impl.RsaPss.Arm.Fn

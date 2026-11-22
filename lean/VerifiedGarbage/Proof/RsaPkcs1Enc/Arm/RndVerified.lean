@@ -143,7 +143,7 @@ The frames around the body (`wrap_ok`, `wrap_ct`), the result as the shared
 contract states it, and a state that meets it (`sat`):
 `vg_rsa_pkcs1_encrypt_random`, calling any implementation `c` of
 `vg_rsa_public_precomputed_checked` through `vg_rsa_pkcs1_encrypt_precomputed`,
-is verified (`code_verified`), with `stackBytes` (2312) bytes of stack.
+is verified (`code_verified`), with `stackBytes` (2360) bytes of stack.
 -/
 
 open VG VG.Arm VG.Impl.RsaPkcs1Enc.Arm.Random VG.Proof.RsaPkcs1Sig.Arm
@@ -160,7 +160,7 @@ theorem spec_sp {s : State} (h : spec.pre s) : stackBytes ≤ s.sp.toNat := by
 theorem code_ok (encName : String) (c : PdImpl) {s : State} (h : spec.pre s) :
     WP isa (code encName (Impl.RsaPkcs1Enc.Arm.Precomputed.code c.name c.code)) s fun t =>
       abiPreserved s t ∧ spec.post s t := by
-  have hs : 2312 ≤ s.sp.toNat := spec_sp h
+  have hs : 2360 ≤ s.sp.toNat := spec_sp h
   have hin := in_of_pre h
   have st := entered_state h
   have hsp : 56 + frameBytes ≤ s.sp.toNat := by show 56 + 1088 ≤ _; omega_using [hs]
@@ -243,7 +243,7 @@ theorem code_ct (encName : String) (c : PdImpl) :
   refine (VG.Proof.RsaPkcs1Sig.Arm.wrap_ct (F := frameBytes) (by decide) (P := fun a b => a = s₁ ∧ b = s₂)
     (fun a b h => by rw [h.1, h.2]; exact hsp)
     (fun a b h => by
-      rw [h.1]; have : 2312 ≤ s₁.sp.toNat := spec_sp h₁; show 1088 + 56 ≤ _; omega_using [this]) ?_
+      rw [h.1]; have : 2360 ≤ s₁.sp.toNat := spec_sp h₁; show 1088 + 56 ≤ _; omega_using [this]) ?_
     s₁ s₂ t₁ t₂ s₁' s₂' ⟨rfl, rfl⟩ e₁ e₂).1
   refine (main_vp (P := ep s₁) encName c).ct.mono ?_ fun _ _ _ => trivial
   rintro a b ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩

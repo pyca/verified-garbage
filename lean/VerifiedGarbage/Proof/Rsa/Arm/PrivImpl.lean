@@ -35,13 +35,13 @@ structure CrtImpl where
   crtPNoIcall : noIcall crtP = true
   pcName : String
   pc : Prog isa
-  pcVerified : Verified target pc (Spec.Rsa.publicPrecomputeContract abi 56)
-  pcStack : FrameStack.armStack pc ≤ 56
+  pcVerified : Verified target pc (Spec.Rsa.publicPrecomputeContract abi 104)
+  pcStack : FrameStack.armStack pc ≤ 104
   pcNoIcall : noIcall pc = true
   pdName : String
   pd : Prog isa
-  pdVerified : Verified target pd (Proof.Rsa.publicPrecomputedCheckedContract abi 56)
-  pdStack : FrameStack.armStack pd ≤ 56
+  pdVerified : Verified target pd (Proof.Rsa.publicPrecomputedCheckedContract abi 104)
+  pdStack : FrameStack.armStack pd ≤ 104
   pdNoIcall : noIcall pd = true
   suffix : String
   features : List String
@@ -50,10 +50,10 @@ structure CrtImpl where
 theorem CrtImpl.crtPOk (v : CrtImpl) : Arm.Scrub.CodeOk v.crtP 104 := ⟨v.crtPStack, v.crtPNoIcall⟩
 
 /-- What `vg_rsa_public_precompute`'s code gives its callers' cleanup. -/
-theorem CrtImpl.pcOk (v : CrtImpl) : Arm.Scrub.CodeOk v.pc 56 := ⟨v.pcStack, v.pcNoIcall⟩
+theorem CrtImpl.pcOk (v : CrtImpl) : Arm.Scrub.CodeOk v.pc 104 := ⟨v.pcStack, v.pcNoIcall⟩
 
 /-- What `vg_rsa_public_precomputed_checked`'s code gives its callers' cleanup. -/
-theorem CrtImpl.pdOk (v : CrtImpl) : Arm.Scrub.CodeOk v.pd 56 := ⟨v.pdStack, v.pdNoIcall⟩
+theorem CrtImpl.pdOk (v : CrtImpl) : Arm.Scrub.CodeOk v.pd 104 := ⟨v.pdStack, v.pdNoIcall⟩
 
 def privName (v : CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 def privCode (v : CrtImpl) : Prog isa := Impl.Rsa.Arm.PrivChecked.code v.name v.code v.pcName v.pc v.pdName v.pd

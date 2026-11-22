@@ -67,6 +67,7 @@ abbrev lay : Lay where
   argv := P.argv
   ro := [P.N, P.E, P.MSG, P.PS, P.PRE]
   rw := [P.OUT, P.SCR]
+  C := 104
 
 end EP
 
@@ -101,7 +102,7 @@ end In
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the call's. -/
-abbrev stackBytes : Nat := 56 + frameBytes + 56
+abbrev stackBytes : Nat := 56 + frameBytes + 104
 
 /-- The shared contract, with that stack. -/
 abbrev spec : Contract isa := Proof.RsaPkcs1Enc.encryptPrecomputedContract abi stackBytes
@@ -127,7 +128,7 @@ def ep (s : State) : EP where
 
 theorem ep_lay (s : State) :
     (ep s).lay = layOf frameBytes 40 (ep s).argv [(ep s).N, (ep s).E, (ep s).MSG, (ep s).PS, (ep s).PRE]
-      [(ep s).OUT, (ep s).SCR] s := rfl
+      [(ep s).OUT, (ep s).SCR] s 104 := rfl
 
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Proof.RsaPkcs1Enc.encryptPrecomputedContract, Proof.RsaPkcs1Enc.encryptPrecomputedSig, abi,
@@ -136,13 +137,13 @@ theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s
   rename_i hsp hsa hrd hwr oN oE oM oP oS oR oA nS eS mS pS sR sA kO kN kE kM kP kS kR kA fO fN fE fM fP fS
     fR kv olk el1 elK mlK plK slK
   have rlK := h
-  have h1168 : 1168 ≤ s.sp.toNat := hsp
+  have h1168 : 1216 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
   rw [olk] at hwr oN oE oM oP oS oR oA kO fO
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
   have below : Region.Sub (FrameStack.belowA s.sp 56)
-      ⟨State.addr s.sp - BitVec.ofNat 64 1168, 1168⟩ := by
+      ⟨State.addr s.sp - BitVec.ofNat 64 1216, 1216⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)

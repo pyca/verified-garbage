@@ -132,9 +132,9 @@ theorem crtPOk (b : MontBackend) : CodeOk (b.caller.code (CrtCall.codeGiven b.na
 
 def pc : Prog isa := PcFn.codeWith normalizedPublicPrecomputeKernel.code
 
-theorem pcOk : CodeOk pc 56 := ⟨by decide +kernel, by lit_decide⟩
+theorem pcOk : CodeOk pc 104 := ⟨by decide +kernel, by lit_decide⟩
 
-theorem pdOk : CodeOk PdFn.code 56 := ⟨by decide +kernel, by lit_decide⟩
+theorem pdOk : CodeOk PdFn.code 104 := ⟨by decide +kernel, by lit_decide⟩
 
 def variant (b : MontBackend) : Proof.Rsa.Arm.CrtImpl where
   name := "vg_rsa_private_crt" ++ b.suffix

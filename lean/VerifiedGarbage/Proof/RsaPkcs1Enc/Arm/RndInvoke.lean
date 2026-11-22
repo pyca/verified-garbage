@@ -100,10 +100,10 @@ theorem call_pre (h : C2 P σ s) : Pc.spec.pre (s.callEntry.withRegions (cRd P) 
     rw [Proof.X25519.Arm.toNat_add_lt (by simp only [oBuf, frameBytes] at fit ⊢; rw [BitVec.toNat_ofNat]; omega_using [fit]),
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by decide)]
   obtain kA : P.lay.LOW.Disjoint ⟨State.addr P.B, 40⟩ := by
-    have := (Lay.fr_low (L := P.lay) (d := 0) (n := 40) (by decide) (show 1168 ≤ 2 ^ 32 by decide)).symm
+    have := (Lay.fr_low (L := P.lay) (d := 0) (n := 40) (by decide) (show 1216 ≤ 2 ^ 32 by decide)).symm
     rwa [← q0] at this
   obtain kP : P.lay.LOW.Disjoint ⟨P.lay.fr oBuf, P.pl⟩ :=
-    (Lay.fr_low (L := P.lay) (by simp only [oBuf, frameBytes] at hps ⊢; omega_using [hps]) (show 1168 ≤ 2 ^ 32 by decide)).symm
+    (Lay.fr_low (L := P.lay) (by simp only [oBuf, frameBytes] at hps ⊢; omega_using [hps]) (show 1216 ≤ 2 ^ 32 by decide)).symm
   refine ⟨hB, by simp only [frameBytes] at fit; omega_using [fit], rfl, rfl,
     ok.rw_ro (w := P.OUT) (r := P.N) (by simp) (by simp), ok.rw_ro (w := P.OUT) (r := P.E) (by simp) (by simp),
     ok.rw_ro (w := P.OUT) (r := P.MSG) (by simp) (by simp),
@@ -203,7 +203,7 @@ theorem call_post {s' : State} (h : C2 P σ s) (rd : s'.rd = s.rd) (wr : s'.wr =
     rcases hr with rfl | rfl | rfl
     · exact ok.stk_fr (.inr (by simp)) hps
     · exact ok.stk_fr (.inr (by simp)) hps
-    · exact Lay.fr_low (L := P.lay) (by simp only [oBuf, frameBytes] at hps ⊢; omega_using [hpl]) (show 1168 ≤ 2 ^ 32 by decide)
+    · exact Lay.fr_low (L := P.lay) (by simp only [oBuf, frameBytes] at hps ⊢; omega_using [hpl]) (show 1216 ≤ 2 ^ 32 by decide)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hs.1.dOT.symm

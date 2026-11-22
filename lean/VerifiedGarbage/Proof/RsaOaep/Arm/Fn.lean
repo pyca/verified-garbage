@@ -147,8 +147,8 @@ theorem names_tableFns (vs : List TVar) :
 /-- Encryption's code, for any functions of the tables and public operation. -/
 theorem encrypt_okT {f : Impl.RsaOaep.Arm.Fns} {T : List String} {N : String} {C : Prog isa}
     (hi : ∀ p ∈ f.init, CodeOk p.2 0 ∧ p.1 ∈ T) (hu : ∀ p ∈ f.upd, CodeOk p.2 0 ∧ p.1 ∈ T)
-    (hf : ∀ p ∈ f.fin, CodeOk p.2 0 ∧ p.1 ∈ T) (hc : CodeOk C 56) :
-    CodeOkT (Impl.RsaOaep.Arm.encryptPrecomputed f N C) 240 T := by
+    (hf : ∀ p ∈ f.fin, CodeOk p.2 0 ∧ p.1 ∈ T) (hc : CodeOk C 104) :
+    CodeOkT (Impl.RsaOaep.Arm.encryptPrecomputed f N C) 288 T := by
   code_okT
 
 /-- Decryption's code, for any functions of the tables and private operation. -/
@@ -160,7 +160,7 @@ theorem decrypt_okT {f : Impl.RsaOaep.Arm.Fns} {T : List String} {N : String} {C
 
 theorem frameOk_3680 : FrameOk 3680 := by decide
 
-theorem frameOk_240 : FrameOk 240 := by decide
+theorem frameOk_288 : FrameOk 288 := by decide
 
 end VG.Proof.RsaOaep.Arm.Scrub
 
@@ -190,12 +190,12 @@ theorem encryptPrecomputed (vs : List TVar) (hok : OK vs) (v : CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaOaep.Arm.Fn.encryptPrecomputed (fnsOf vs) (pdOfCrt v).name (pdOfCrt v).code)
       (Spec.RsaOaep.encryptMdTablesContract
-        (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", tables vs), ("mgf1", tables vs)]) 240) 32 :=
+        (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", tables vs), ("mgf1", tables vs)]) 288) 32 :=
   have hs := fnsOf_scrub (names_tableFns vs)
   verifiedScrubbedAll (api := Spec.RsaOaep.encryptMdTablesApi)
     { tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Proof.RsaOaep.Arm.Enc.encryptCode vs (pdOfCrt v)
       verified := enc_ok vs hok (pdOfCrt v) }
-    (encryptOut _ _) (scrubSideF_ofT (encrypt_okT hs.1 hs.2.1 hs.2.2 v.pdOk) frameOk_240)
+    (encryptOut _ _) (scrubSideF_ofT (encrypt_okT hs.1 hs.2.1 hs.2.2 v.pdOk) frameOk_288)
 
 end VG.Proof.RsaOaep.Arm.Fn

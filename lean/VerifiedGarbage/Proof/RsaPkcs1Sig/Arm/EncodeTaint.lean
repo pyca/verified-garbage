@@ -227,7 +227,7 @@ theorem outA (P : EP) {σ : State} (h : In P σ) : State.addr (P.B + BitVec.ofNa
   h.ok.addrB (by show oEM1 < frameBytes + 56 + 36; decide)
 
 theorem call_pre {σ s : State} (h : C1 P σ s) :
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre
       (s.callEntry.withRegions (pdRd P.B P.pre P.e P.sig P.K P.el P.rl)
         (pdWr (P.B + BitVec.ofNat 32 oEM1) P.scr P.K P.sl)) := by
   have hs := h.1.1
@@ -260,7 +260,7 @@ theorem call_pre {σ s : State} (h : C1 P σ s) :
     (by rw [sigR]; exact (ok.rw_ro (by simp) (by simp)).symm)
     (by rw [q0]; exact (hfr (R := P.SCR) (.inr (by simp)) (by decide)).symm) ?_
   intro r hr
-  have low : (⟨State.addr P.B - BitVec.ofNat 64 56, 56⟩ : Region) = P.lay.LOW := rfl
+  have low : (⟨State.addr P.B - BitVec.ofNat 64 104, 104⟩ : Region) = P.lay.LOW := rfl
   rw [low]
   simp only [pdRd, pdWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -310,7 +310,7 @@ theorem call_vp (c : PdImpl) : VP (C1 P) (.call c.name c.code) (C2 P) := by
     have ok := hs.1.ok
     have hK := hs.1.k1024
     obtain e := outA P hs.1
-    obtain low : FrameStack.belowA s.sp 56 = P.lay.LOW := by rw [hs.2.sp]; exact ok.low_eq
+    obtain low : FrameStack.belowA s.sp 104 = P.lay.LOW := by rw [hs.2.sp]; exact ok.low_eq
     rw [low] at fr
     have fr' : Frame [⟨State.addr (P.B + BitVec.ofNat 32 oEM1), P.K⟩, P.SCR, P.lay.LOW] s.mem s'.mem := fr
     obtain st : P.lay.St σ s' := hs.2.write fr' (fun r hr => by

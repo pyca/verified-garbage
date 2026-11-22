@@ -227,13 +227,13 @@ theorem verify_okT {f : Impl.RsaPss.Arm.MdFns} {g : Impl.RsaOaep.Arm.Fns} {T : L
     (h1 : ∀ p ∈ f.init, CodeOk p.2 0 ∧ p.1 ∈ T) (h2 : ∀ p ∈ f.comp, CodeOk p.2 0 ∧ p.1 ∈ T)
     (h3 : ∀ p ∈ f.dig, CodeOk p.2 0 ∧ p.1 ∈ T)
     (hi : ∀ p ∈ g.init, CodeOk p.2 0 ∧ p.1 ∈ T) (hu : ∀ p ∈ g.upd, CodeOk p.2 0 ∧ p.1 ∈ T)
-    (hf : ∀ p ∈ g.fin, CodeOk p.2 0 ∧ p.1 ∈ T) (hc : CodeOk C 56) :
-    CodeOkT (Impl.RsaPss.Arm.verifyPrecomputed f g N C) 240 T := by
+    (hf : ∀ p ∈ g.fin, CodeOk p.2 0 ∧ p.1 ∈ T) (hc : CodeOk C 104) :
+    CodeOkT (Impl.RsaPss.Arm.verifyPrecomputed f g N C) 288 T := by
   code_okT
 
 theorem frameOk_3680 : FrameOk 3680 := by decide
 
-theorem frameOk_240 : FrameOk 240 := by decide
+theorem frameOk_288 : FrameOk 288 := by decide
 
 end VG.Proof.RsaPss.Arm.Scrub
 
@@ -271,7 +271,7 @@ theorem verifyPrecomputed {mvs : List MVar} {vs : List TVar} (hok : OK mvs vs) (
         (pdOfCrt v).name (pdOfCrt v).code)
       (Spec.RsaPss.verifyPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig
-          [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 240) 32 :=
+          [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 288) 32 :=
   have hm := MdHashTable.Arm.fnsOf_scrub (names_tableFns mvs vs).1
   have hg := HashTable.Arm.fnsOf_scrub (names_tableFns mvs vs).2
   verifiedScrubbedAll (api := Spec.RsaPss.verifyPrecomputedMdTableApi)
@@ -279,6 +279,6 @@ theorem verifyPrecomputed {mvs : List MVar} {vs : List TVar} (hok : OK mvs vs) (
       code := Proof.RsaPss.Arm.Vf.verifyCode mvs vs (pdOfCrt v)
       verified := verify_ok hok (pdOfCrt v) }
     (verifyOut _ _ _)
-    (scrubSideF_ofT (verify_okT hm.1 hm.2.1 hm.2.2 hg.1 hg.2.1 hg.2.2 v.pdOk) frameOk_240)
+    (scrubSideF_ofT (verify_okT hm.1 hm.2.1 hm.2.2 hg.1 hg.2.1 hg.2.2 v.pdOk) frameOk_288)
 
 end VG.Proof.RsaPss.Arm.Fn

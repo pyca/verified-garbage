@@ -50196,9 +50196,11 @@ vg_rsa_public_precompute_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #56
+	sub sp, sp, #104
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #3
+246:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -50207,13 +50209,12 @@ vg_rsa_public_precompute_umaal:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	add sp, sp, #56
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 246b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #104
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -51257,9 +51258,11 @@ vg_rsa_public_precompute:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #56
+	sub sp, sp, #104
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #3
+246:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -51268,13 +51271,12 @@ vg_rsa_public_precompute:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	add sp, sp, #56
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 246b
+	str r2, [r12, #0]
+	str r2, [r12, #4]
+	add sp, sp, #104
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
