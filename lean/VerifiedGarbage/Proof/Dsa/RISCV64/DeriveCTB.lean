@@ -401,7 +401,7 @@ theorem pinsTd6 : Pins (At C0d FTd 6) [.s6] :=
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
     have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0d) (F := FTd) (n := 1) (M := P0)
       (fun _ _ h => WP.of_flat (c := .block Derive.entry) rfl (frontD _ _ h)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_keptd e₂ rfl).trans h₁, trivial⟩
+    exact ⟨(Exec.gpr s6_keptd e₂).trans h₁, trivial⟩
 
 theorem derive_rel : RelCT isa (Two C0d) Derive.derive fun _ _ => True := by
   refine chain_start (chain_cons runTd (m := 1) (by decide)

@@ -103,7 +103,7 @@ theorem szero_rel {Φ : VD → State → Prop} (hrun : ∀ v s, Φ v s → WP is
 def vdS (s : State) : VD :=
   ⟨slayOf s, s.gpr .a2, s.gpr .a5, s.gpr .a7, (stackArg s 0).toNat,
     Spec.Rsa.bytesAt s.mem (s.gpr .a2) (3 * (s.gpr .a4).toNat + (s.gpr .a6).toNat),
-    3 * (s.gpr .a4).toNat + (s.gpr .a6).toNat, (s.gpr .a6).toNat, true, some (s.gpr .a0), false⟩
+    3 * (s.gpr .a4).toNat + (s.gpr .a6).toNat, (s.gpr .a6).toNat, true, some (s.gpr .a0)⟩
 
 /-- The contract's buffers are apart from `scratch`. -/
 theorem ssrc {s : State} {A : Addr} {n k : Nat} (hm : (⟨A, n⟩ : Region) ∈ s.rd)
@@ -129,7 +129,7 @@ theorem frontS : ∀ v s, C0s v s → WP isa (.block Sign.entry) s (P0 v) := by
     ssrc (by rw [hrd]; simp) dDS (stackArg s 0).isLt (Nat.min_le_left _ _) k.2.1 k.2.2,
     hK.bytes F.out (by simp only [slayOf] at hZ ⊢; omega_using [hZ]),
     (by simp only [vdS, slayOf]; omega_using []), (fun _ => F.dig), (fun o ho => by cases ho; exact F.outw),
-    fun h => nomatch h⟩, F.lens⟩
+    F.sigw⟩, F.lens⟩
 
 theorem outS : ∀ v s, C0s v s → v.out = some (oOf v) := by
   rintro _ s ⟨-, rfl⟩
@@ -308,7 +308,7 @@ theorem pinsTs6 : Pins (At C0s FTs 6) [.s6] :=
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
     have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0s) (F := FTs) (n := 1) (M := P0)
       (fun _ _ h => WP.of_flat (c := .block Sign.entry) rfl (frontS _ _ h)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_kepts e₂ rfl).trans h₁, trivial⟩
+    exact ⟨(Exec.gpr s6_kepts e₂).trans h₁, trivial⟩
 
 section Levels
 

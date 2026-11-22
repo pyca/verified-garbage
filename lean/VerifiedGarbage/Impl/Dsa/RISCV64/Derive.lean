@@ -34,11 +34,12 @@ open VG VG.RISCV64 VG.Impl.Bignum.RISCV64 VG.Impl.Dsa.RISCV64
 open VG.Impl.Bignum.RISCV64.PublicChecked (one)
 
 /-- The working space (`scratch`), the registers saved there, the domain and
-x into `s11` and `ra`, and `out` and the lengths into the header. -/
+x into `s11` and `ra`, and `out`, the lengths and x's address into the
+header. -/
 def entry : List Instr :=
   [.addi .t2 .a7 0] ++ save .t2 ++
     [.addi .s11 .a2 0, .addi .ra .a5 0, .store .d .a0 .s6 Sign.hOut, .shift .sll .d .t3 .a6 16,
-      .add .t3 .a4 .t3, .store .d .t3 .s6 hLens]
+      .add .t3 .a4 .t3, .store .d .t3 .s6 hLens, .store .d .ra .s6 hSig]
 
 /-- In the P space: `y = g^x mod p` into array 4, `a4 :=` the mask of
 `y ≠ 0` and `y ≠ 1`, and y to the buffer's first `p_len` octets. -/

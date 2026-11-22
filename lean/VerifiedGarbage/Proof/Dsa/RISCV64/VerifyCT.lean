@@ -46,7 +46,7 @@ abbrev GV (v : VD) : Prop := KY v ∧ VB v
 
 theorem gC0 : ∀ v s, C0 v s → GV v := by
   rintro _ s ⟨-, rfl⟩
-  exact ⟨Nat.le_refl _, rfl, rfl, rfl⟩
+  exact ⟨Nat.le_refl _, rfl, rfl⟩
 
 theorem onX1 : ∀ v u, ΦX1 v u → SX1 v u := fun _ _ h => semX1 front0 ⟨atTF rfl h.1, h.2⟩
 theorem onX2 : ∀ v u, ΦX2 v u → SX2 v u := fun _ _ h => semX2 onX1 h

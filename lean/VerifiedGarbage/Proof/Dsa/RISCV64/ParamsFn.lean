@@ -102,7 +102,7 @@ theorem checkLike_ok {X : Prog isa → Prog isa → Prog isa} {Ok : Mem → Lay 
     (hOk : ∀ {m' : Mem}, Outside (playOf s).S 0 (playOf s).Z s.mem m' →
       (Ok m' (playOf s) (s.gpr .a0) ↔ Ok s.mem (playOf s) (s.gpr .a0)))
     (hX : ∀ {u : State} {Q : State → Prop} {rest fail : Prog isa}, ScrL u (playOf s) →
-      Regs u (playOf s) (s.gpr .a0) 0 →
+      Regs u (playOf s) (s.gpr .a0) 0 → word u.mem (playOf s).S hSig = 0 →
       word u.mem (playOf s).S hLens = pack (playOf s).pl (playOf s).ql 0 0 →
       Src u (playOf s) (s.gpr .a0) n →
       (∀ t, Ok u.mem (playOf s) (s.gpr .a0) → Checked u t (playOf s) (s.gpr .a0) 0 0 →
@@ -121,7 +121,7 @@ theorem checkLike_ok {X : Prog isa → Prog isa → Prog isa} {Ok : Mem → Lay 
   have Out₁ : Outside (playOf s).S 0 (playOf s).Z s.mem s₁.mem :=
     F.out.mono (Nat.le_refl _) (by simp only [playOf] at hZ ⊢; omega_using [hZ])
   have hPs := hOk Out₁
-  refine WP.seq (hX F.scr F.regs F.lens (hsrc k₁.2.1 k₁.2.2) (fun t hP hc hkp kc => ?_)
+  refine WP.seq (hX F.scr F.regs F.sigw F.lens (hsrc k₁.2.1 k₁.2.2) (fun t hP hc hkp kc => ?_)
     (fun t hn hkp hrt scrt kc => ?_))
   · refine WP.mono (pret_ok (c := 1) (Or.inr rfl) hL hc.regs.s6 hc.scr (hsav' t hkp)) fun u hu =>
       WP.mono hu fun w ⟨hab, w0⟩ => ⟨hab, by rw [w0, ite_eq_left (hPs.mp hP)]⟩
@@ -143,7 +143,7 @@ theorem checkParameters_correct (s : State) (h : pcContract.pre s) :
     fun hr hw => psrc_of hrd dPS (Nat.le_of_eq hplq) hr hw
   unfold Params.checkParameters
   refine WP.mono (WP.rdwr (checkLike_ok (X := checkParams) (Ok := ParamsOk) hL hwr nw alS src (fun Out => ?_)
-    (fun hs hr h2 hk hrest hfail => checkParams_ok hL hs hr h2 (by decide) hk hrest hfail)))
+    (fun hs hr hw h2 hk hrest hfail => checkParams_ok hL hs hr hw h2 (by decide) hk hrest hfail)))
     fun w ⟨⟨⟨hp, hra⟩, w0⟩, _, _, hsp⟩ => ⟨⟨hp, hsp, hra⟩, ?_⟩
   · have hk := src rfl rfl
     simp only [ParamsOk, pOf, qOf, gOf]

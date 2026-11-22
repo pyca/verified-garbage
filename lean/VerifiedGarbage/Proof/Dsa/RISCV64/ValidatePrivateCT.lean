@@ -244,7 +244,7 @@ theorem validatePriv_correct (s : State) (h : vpkContract.pre s) :
     (by omega_using [])) Out₁
   have hKs : SignKeyOk s₁.mem (playOf s) (s.gpr .a0) ↔ SignKeyOk s.mem (playOf s) (s.gpr .a0) := by
     simp only [SignKeyOk, ParamsOk, ep₁, eq₁, eg₁, ey₁]
-  refine WP.seq (checkSignKey_ok hL F.scr F.regs F.lens (by decide) ((src k₁.2.1 k₁.2.2).take (by omega_using []))
+  refine WP.seq (checkSignKey_ok hL F.scr F.regs F.sigw F.lens (by decide) ((src k₁.2.1 k₁.2.2).take (by omega_using []))
     (fun t hK hc Kd kc => ?_) (fun t hn Kd hrt scrt kc => ?_))
   · have kt := k₁.trans kc
     refine WP.mono (vrest_ok hL hK.1 hc Kd (src kt.2.1 kt.2.2)) fun u ⟨⟨u0, u6, scru, Ku⟩, _⟩ => ?_
@@ -316,7 +316,7 @@ open VG.Proof.Bignum (slot)
 /-- A call's public data: the key's public octets. -/
 def vdV (s : State) : VD :=
   ⟨playOf s, s.gpr .a0, 0, 0, 0, Spec.Rsa.bytesAt s.mem (s.gpr .a0) (3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat),
-    3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat, 0, false, none, false⟩
+    3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat, 0, false, none⟩
 
 /-- On entry. -/
 def C0v (v : VD) (s : State) : Prop := vpkContract.pre s ∧ vdV s = v
@@ -331,7 +331,7 @@ theorem frontV : ∀ v s, C0v v s → WP isa (.block Params.entry) s (P0 v) := b
     psrc_of hrd dKS (by omega_using [hkl]) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, src_nil rfl, src_nil (Nat.zero_min _),
     hK.bytes F.out (by simp only [playOf] at hZ ⊢; omega_using [hZ]), (by simp only [vdV, playOf]; omega_using []),
-    (fun h => nomatch h), fun _ h => (nomatch h), fun h => nomatch h⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
+    (fun h => nomatch h), fun _ h => (nomatch h), F.sigw⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
 
 theorem kyC0v : ∀ v s, C0v v s → KY v := by
   rintro _ s ⟨-, rfl⟩
@@ -631,7 +631,7 @@ theorem pinsTv6 : Pins (At C0v FTv 6) [.s6] :=
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
     have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0v) (F := FTv) (n := 1) (M := P0)
       (fun _ _ h => WP.of_flat (c := .block Params.entry) rfl (frontV _ _ h)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_keptv e₂ rfl).trans h₁, trivial⟩
+    exact ⟨(Exec.gpr s6_keptv e₂).trans h₁, trivial⟩
 
 theorem pins_a4v {Φ : VD → State → Prop} (h : ∀ v s, Φ v s → vdV s = v) : Pins Φ [.a4] := by
   intro v s₁ s₂ h₁ h₂ r hr
