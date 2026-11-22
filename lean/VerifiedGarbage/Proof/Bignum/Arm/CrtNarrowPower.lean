@@ -1106,7 +1106,7 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
         (Spec.Rsa.powMod (Spec.Rsa.os2ip (bs 1)) (Spec.Rsa.os2ip (bs i.succ)) M) t.mem ∧
       t.mem.readW (off (State.addr t.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 ∧
       Frame [⟨State.addr s.sp, 4⟩, ⟨State.addr child, 8 * workspaceWords g.words⟩,
-        ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s.mem t.mem ∧
+        ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA s.sp 48] s.mem t.mem ∧
       Rest roundClobbers s t := by
   obtain ⟨member, childWs, _, sepCN, slotFit, hs, _⟩ := h.child kind
   obtain primeJ : j = 1 ∨ j = 2 := by rcases pair with ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> simp
@@ -1211,7 +1211,8 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
       sharedE.stack.read (by omega_using []), sharedE.stack.read (by omega_using []), sharedE.stack.pointer i, ?_,
       sharedE.buffers.source i.succ, (sharedE.buffers.sourceSeparate i.succ).sub_right
         (crt_region_sub_workspace sharedE.buffers.workspace sharedE.buffers.storageFits sharedE.narrow_member), ?_, ?_,
-        ?_⟩
+        ?_, sharedE.stack.belowFit, sharedE.stack.below.sub_right
+          (crt_region_sub_workspace sharedE.buffers.workspace sharedE.buffers.storageFits sharedE.narrow_member)⟩
     · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega_using []] using sharedE.stack.length i
     · rcases expI with rfl | rfl
       · exact h.buffers.pPositive
@@ -1224,10 +1225,17 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   refine WP.mono ((crt_narrowExp_ok (kernel := kernel)) e expIn) ?_
   rintro r ⟨readyR, valueR, frameR, restR⟩
   rw [powMod_mod_base] at valueR
-  obtain sharedR := sharedE.after_narrow (frameR.mono (by simp)) restR
-  obtain flagNR := sharedE.acceptance_after_workspace sharedE.narrow_member frameR restR
+  obtain sharedR := sharedE.after_narrowB (frameR.mono (by simp)) restR
+  obtain flagNR := sharedE.acceptance_after_workspaceB sharedE.narrow_member frameR restR
   obtain eqCR := sharedE.eq_of_frame (sharedE.child kind).2.1 member
-    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frameR.mono (by simp)) sepN
+    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA e.sp 48])
+    (frameR.mono (by simp)) (by
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact sepN _ (by simp)
+      · exact sharedE.stack.below.symm.sub_left
+          (crt_region_sub_workspace sharedE.buffers.workspace sharedE.buffers.storageFits member))
   -- The result back to the full-width array 6.
   obtain layoutR := (layoutX.congr eqCE).congr eqCR
   obtain ctxR : CrtCopyCtx g bs child slot v r :=
@@ -1266,6 +1274,8 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   refine ⟨sharedT, ⟨layoutT, positive, modCT, resultT⟩,
     flagNT.trans (flagNR.trans (flagNE.trans (flagNX.trans (flagNY.trans flagSZ)))), ?_, restAll⟩
   rw [restSU.sp] at frameZ
+  obtain spE : e.sp = s.sp := (restSU.trans (restZ.trans (restY.trans (restX.trans restE)))).sp
+  rw [spE] at frameR
   exact (frameU.mono (by simp)).trans ((frameZ.mono (by simp)).trans ((frameY.mono (by simp)).trans
     ((frameXC.mono (by simp)).trans ((frameE.mono (by simp)).trans ((frameR.mono (by simp)).trans
       (frameTC.mono (by simp)))))))
