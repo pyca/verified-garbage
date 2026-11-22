@@ -443,6 +443,14 @@ def scalar : KeyImpl where
 
 end KeyImpl
 
+/-- The implementation of `vg_sm4_ctr32` that `vg_sm4_gcm_init` calls with
+the key schedule `k`: the first of `cs`, best first, whose CPU features are
+all among `k`'s, and the baseline's where there is none. The function then
+requires the features of `k` and no other, and its name ends with `k`'s
+suffix. -/
+def CtrImpl.forKey (cs : List CtrImpl) (k : KeyImpl) : CtrImpl :=
+  (cs.find? fun c => c.features.all k.features.contains).getD .scalar
+
 namespace KeyCall
 variable {s : State} {K C : BitVec 32} (h : KeyCall s K C)
 include h
