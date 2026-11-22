@@ -134,6 +134,10 @@ structure Cfg where
   `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
   verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
   mul : Option Impl.Weierstrass.Mul.Curve
+  /-- Whether the setup copies its constants from their table (`constTbl`,
+  `copyTbl`), which the functions' contracts then list, or stores each word
+  as an immediate (`setConst`). -/
+  tbl : Bool
 
 namespace Cfg
 
@@ -219,6 +223,11 @@ def constSym : String := s!"vg_{c.SP.curve}_frame_consts"
 /-- The table of constants every function that runs the setup reads. -/
 def constsK : List (String × List (BitVec 64)) := [(c.constSym, c.constTbl)]
 
+/-- The constants into their slots: from their table, or as immediates (`tbl`). -/
+def constsCode : Prog isa :=
+  if c.tbl then copyTbl c.constSym (17 * c.n) (c.sl 0)
+  else .block (c.consts.flatMap fun (i, x) => VG.Impl.Mont.PPC64LE.setConst c.n (c.sl i) x)
+
 /-- The saves, at `[sc]`, and `out` (`r3`) to `r14`, the working space to `r3`. -/
 def saveCode (sc : Reg) : List Instr :=
   saved.map (fun (r, d) => .store .d r sc d) ++ [.mflr .r0, .store .d .r0 sc lrAt, mov .r14 .r3, mov .r3 sc]
@@ -237,8 +246,7 @@ def setupWith (A : Args) : Prog isa :=
   .seq (.block (saveCode A.sc ++
     loadBytes c.C.len c.n (c.sl K) A.k ++ loadBytes c.C.len c.n (c.sl D) A.d ++
     loadBytes c.C.len c.n (c.sl E) A.e ++ c.shiftCode A.hs)) <|
-  .seq (copyTbl c.constSym (17 * c.n) (c.sl 0))
-    (.block [.li .r4 0, .subi .r4 .r4 1, .store .d .r4 wb (c.sl FLAG)])
+  .seq c.constsCode (.block [.li .r4 0, .subi .r4 .r4 1, .store .d .r4 wb (c.sl FLAG)])
 
 /-- The setup of `sign`. -/
 def setup : Prog isa := c.setupWith .sign

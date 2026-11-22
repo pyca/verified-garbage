@@ -983,7 +983,7 @@ structure EPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   peer_fit : (s.gpr .r5).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64
   sc_fit : (s.gpr .r6).toNat + size ≤ 2 ^ 64
   /-- The table of constants the setup copies (`tbl_of_consts`). -/
-  tbl : TblOk c (s.gpr .r6) s
+  tbl : c.tbl = true → TblOk c (s.gpr .r6) s
 
 theorem EPre.setup {s : State} {extra : List Region} (hp : EPre c s extra) : SetupPre c Impl.Ecdh.PPC64LE.Args.ecdh s where
   shift := .inl rfl

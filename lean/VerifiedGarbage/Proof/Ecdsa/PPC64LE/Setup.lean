@@ -399,12 +399,51 @@ theorem tbl_of_consts {c : Cfg} {K : List (String × List (BitVec 64))} {st : Na
   have : size = 8192 := rfl
   omega_using [hn, this]
 
+/-- The constants into their slots (`Cfg.constsCode`): from their table,
+which `TblOk` gives, or as immediates. Only their slots change, and what
+`copyTbl` may (`copyClob`). -/
+theorem constsCode_ok {c : Cfg} (hc : CfgOk c) {s₀ t : State} {base : Addr} (hw : WsReg t base)
+    (hT : c.tbl = true → TblOk c base s₀) (hO : Outside base 0 4096 s₀.mem t.mem)
+    (hr : t.rd = s₀.rd ∧ t.wr = s₀.wr ∧ t.syms = s₀.syms) :
+    WP isa c.constsCode t fun t' =>
+      (∀ ix ∈ c.consts, wordsVal t'.mem base (c.sl ix.1) c.n = ix.2) ∧ Kp copyClob t t' ∧
+        Outside base (c.sl 0) (8 * c.n * 17) t.mem t'.mem := by
+  have h7 := hc.n10
+  obtain hsl0 : c.sl 0 = 64 := by rw [sl_eq]; omega_arith
+  obtain h17 := sl_le c h7 (i := 17) (by decide)
+  obtain h0' : c.sl 0 + 8 * c.n * 17 = c.sl 17 := by rw [sl_eq, sl_eq]; omega_arith
+  unfold Cfg.constsCode
+  cases htb : c.tbl
+  · -- As immediates.
+    simp only [Bool.false_eq_true, ↓reduceIte]
+    refine WP.mono (setupConsts_ok hc c.consts hw (fun ix h =>
+      ⟨Nat.lt_trans (consts_bounds hc ix h).1 (by decide), (consts_bounds hc ix h).2⟩) (consts_nodup c))
+      fun t' ⟨e, k, U⟩ => ⟨e, k.mono (by decide), U.outside fun w hw => ?_⟩
+    obtain ⟨ix, hix, rfl⟩ := List.mem_map.mp hw
+    have := sl_lt c (consts_bounds hc ix hix).1
+    have : c.sl 0 ≤ c.sl ix.1 := by rw [hsl0, sl_eq]; omega_arith
+    exact ⟨this, by rw [sl_eq c 17] at *; omega_arith⟩
+  · -- From the table.
+    simp only [↓reduceIte]
+    obtain T := hT htb
+    have h0 := hc.n0
+    obtain hL := constTbl_length c
+    rw [← hL]
+    refine WP.mono (copyTbl_ok hw.ws hw.at3 (sym := c.constSym) (ws := c.constTbl) (dst := c.sl 0)
+      (by rw [hL]; omega_arith) (by rw [hL]; omega_arith) (by rw [hL]; omega_arith) (by rw [hsl0])
+      (fun i hi => by rw [hr.1, hr.2.1, hr.2.2]; exact T.rd i (by rw [← hL]; exact hi))
+      (fun m hm i hi => by
+        rw [hr.2.2]
+        exact T.val m (hO.trans (hm.mono (Nat.zero_le _) (by rw [hL]; omega_arith))) i (by rw [← hL]; exact hi)))
+      fun t' ⟨e, k, O⟩ => ⟨fun ix hix => ?_, k, by rw [hL, show 8 * (17 * c.n) = 8 * c.n * 17 by omega_arith] at O; exact O⟩
+    rw [hL] at e
+    exact wordsVal_of_tbl (consts_bounds hc ix hix).1 (slotVal_of_mem c ix hix) (consts_bounds hc ix hix).2 e
+
 theorem setup_eq (c : Cfg) (A : Args) : c.setupWith A = .seq (.block (Cfg.saveCode A.sc ++
     (loadBytes c.C.len c.n (c.sl K) A.k ++ (loadBytes c.C.len c.n (c.sl D) A.d ++
     (loadBytes c.C.len c.n (c.sl E) A.e ++ c.shiftCode A.hs)))))
-    (.seq (copyTbl c.constSym c.constTbl.length (c.sl 0))
-      (.block [.li .r4 0, .subi .r4 .r4 1, .store .d .r4 wb (c.sl FLAG)])) := by
-  simp only [Cfg.setupWith, List.append_assoc, constTbl_length]
+    (.seq c.constsCode (.block [.li .r4 0, .subi .r4 .r4 1, .store .d .r4 wb (c.sl FLAG)])) := by
+  simp only [Cfg.setupWith, List.append_assoc]
 
 theorem allOnes_eq : BitVec.ofNat 64 0 - BitVec.ofNat 64 1 = BitVec.allOnes 64 := by decide
 
@@ -461,28 +500,14 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   -- the shift
   refine WP.mono (setupShift_ok hc hp.shift w₄) fun sS ⟨fK, fD, fE, kS, OS⟩ hyS => ?_
   obtain wS := w₄.of_kp kS
-  -- the constants, from their table
-  obtain hsl0 : c.sl 0 = 64 := by rw [sl_eq]; omega_arith
-  obtain hL := constTbl_length c
-  obtain h17 := sl_le c h7 (i := 17) (by decide)
-  obtain h0' : c.sl 0 + 8 * c.n * 17 = c.sl 17 := by rw [sl_eq, sl_eq]; omega_arith
-  -- What the setup wrote before the copy is in the first `4096` bytes.
+  -- the constants
   obtain OS' : Outside (s.gpr A.sc) 0 4096 s.mem sS.mem :=
     ((O₃'.trans (O₄.mono (Nat.zero_le _) (by have := sl_le c h7 (i := E) (by decide); omega_arith))).trans
       (OS.mono (Nat.zero_le _) (by
         have := sl_le c h7 (i := E) (by decide); rw [sl_eq] at this ⊢; simp only [K, E] at this ⊢; omega_arith)))
-  obtain hrS : sS.rd = s.rd ∧ sS.wr = s.wr ∧ sS.syms = s.syms :=
-    ⟨by rw [kS.rd, k₄.rd, K₃.rd], by rw [kS.wr, k₄.wr, K₃.wr], hyS⟩
-  refine WP.seq (WP.mono (copyTbl_ok wS.ws wS.at3 (sym := c.constSym) (ws := c.constTbl) (dst := c.sl 0)
-    (by rw [hL]; omega_arith) (by rw [hL]; omega_arith) (by rw [hL]; omega_arith) (by rw [hsl0])
-    (fun i hi => by rw [hrS.1, hrS.2.1, hrS.2.2]; exact hp.tbl.rd i (by rw [← hL]; exact hi))
-    (fun m hm i hi => by
-      rw [hrS.2.2]
-      exact hp.tbl.val m (OS'.trans (hm.mono (Nat.zero_le _) (by rw [hL]; omega_arith))) i (by rw [← hL]; exact hi)))
-    fun s₇ ⟨e₇, k₇, O₇⟩ => ?_)
+  refine WP.seq (WP.mono (constsCode_ok hc wS hp.tbl OS'
+    ⟨by rw [kS.rd, k₄.rd, K₃.rd], by rw [kS.wr, k₄.wr, K₃.wr], hyS⟩) fun s₇ ⟨e₇, k₇, O₇⟩ => ?_)
   obtain w₇ := wS.of_kp k₇
-  rw [hL, show 8 * (17 * c.n) = 8 * c.n * 17 by omega_arith] at O₇
-  rw [hL] at e₇
   -- the flag
   obtain hF := sl_le c h7 (i := FLAG) (by decide)
   refine WP.mono (flag_ok w₇.ws w₇.at3 (sl_al c FLAG) (by omega_arith)) fun s' ⟨K', m'⟩ => ?_
@@ -498,6 +523,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   obtain hED := sl_lt c (i := D) (j := E) (by decide)
   obtain hFE := sl_lt c (i := E) (j := FLAG) (by decide)
   obtain h0' : c.sl 0 + 8 * c.n * 17 = c.sl 17 := by rw [sl_eq, sl_eq]; omega_arith
+  obtain hsl0 : c.sl 0 = 64 := by rw [sl_eq]; omega_arith
   obtain Ol : Outside (s.gpr A.sc) 64 (4096 - 64) s₁.mem s'.mem := by
     exact (((((O₂.mono (by omega_arith) (by omega_arith)).trans (O₃.mono (by omega_arith) (by omega_arith))).trans
       (O₄.mono (by omega_arith) (by omega_arith))).trans (OS.mono (by omega_arith) (by omega_arith))).trans
@@ -526,8 +552,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
     have := sl_lt c (i := ix.1) (j := FLAG) (by have := (consts_bounds hc ix hix).1; show ix.1 < 44; omega_arith)
     have := sl_le c h7 (i := ix.1) (by have := (consts_bounds hc ix hix).1; omega_arith)
     show wordsVal s'.mem _ _ _ = _
-    rw [O'.wordsVal (by omega_arith) (by omega_arith)]
-    exact wordsVal_of_tbl (consts_bounds hc ix hix).1 (slotVal_of_mem c ix hix) (consts_bounds hc ix hix).2 e₇
+    rw [O'.wordsVal (by omega_arith) (by omega_arith), e₇ ix hix]
   · rw [flagW, m', word_writeW_self]
 
 end VG.Proof.Ecdsa.PPC64LE
