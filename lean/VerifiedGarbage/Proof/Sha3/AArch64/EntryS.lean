@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 
 /-!
 # Calling a function with stack arguments with an address in `d8` (AArch64)
@@ -562,6 +563,170 @@ theorem s_body_wpOf {n name : String} {body : Prog isa} {kb : Contract isa}
     rw [show (sSave n (nStack sig) s).callEntry.withRegions _ _ = eEntryS sig n s from rfl,
       allArgs_eEntryS n s hE, eEntryS_mem, State.withRegions_mem, State.withRegions_gpr] at hq'
     exact hpost _ _ _ _ _ (allArgs_length sig s) (fun b hb x hx => hag b hb x hx) hq'
+
+/-- A run of `entryD8S n`, from the caller's state `s`, from the run of the
+call of the function (`hb`): it keeps what the calling convention requires,
+and its postcondition is the function's if that reads the memory on return
+only within the buffers (`hout`). -/
+theorem s_wp {n name : String} {body : Prog isa} (hA : ArgsOk sig) (hl : Sig.noLists sig.params = true)
+    (hE : frameS (nStack sig) < 4096) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s)
+    (hb : WP isa (.call name body) (sSave n (nStack sig) s) (AfterS sig post stack s))
+    (hout : ∀ m₁ m₂ x, (∀ b ∈ Sig.bufs sig.params (allArgs sig s), ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post (allArgs sig s) s.mem m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post (allArgs sig s) s.mem m₂ x) :
+    WP isa (entryD8S n name (nStack sig) body) s fun g =>
+      abiPreserved s g ∧ (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).post s g := by
+  obtain ⟨hsb, hfit, hr, hout'⟩ := s_facts hA hl hs
+  have hF := frameS_pos (nStack sig)
+  have hsk := saveOff_ge (nStack sig)
+  have hfs : saveOff (nStack sig) + 16 = frameS (nStack sig) := rfl
+  refine WP.alloc ⟨hF, hE, frameS_mod16 _⟩ (by omega) ?_
+  refine WP.seq (WP.block ⟨_, enterS_run n _ s (by omega) hr, ?_⟩)
+  refine WP.seq (WP.mono hb fun c hc => ?_)
+  obtain ⟨hwrc, hspc, hcs, hvc, h0, h8, -, hq⟩ := hc
+  have hin : ∀ off, off + 8 ≤ frameS (nStack sig) →
+      InRegions (c.rd ++ c.wr) (c.sp + BitVec.ofNat 64 off) 8 := fun off h => by
+    rw [hwrc, hspc]
+    exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), Offset.contains_base _ h (by omega)⟩
+  refine WP.block ⟨_, leaveS_run (by omega) (hin _ (by omega)) (hin _ (by omega)), ?_⟩
+  intro m u f
+  refine ⟨⟨fun q hq => ?_, ?_, fun q hq => ?_⟩, ?_⟩
+  · show (sRestore (nStack sig) c).gpr q = s.gpr q
+    by_cases hq30 : q = .x30
+    · subst hq30; rw [sRestore_x30, hspc]; exact h0
+    · rw [sRestore_gpr (fun e => by subst e; simp [preserved] at hq) hq30]
+      exact hcs q hq hq30
+  · show (sRestore (nStack sig) c).sp + BitVec.ofNat 64 (frameS (nStack sig)) = s.sp
+    rw [sRestore_sp, hspc, BitVec.sub_add_cancel]
+  · show ((sRestore (nStack sig) c).v q).extractLsb' 0 64 = (s.v q).extractLsb' 0 64
+    by_cases hq8 : q = .v8
+    · subst hq8; rw [sRestore_d8, hspc]; exact h8
+    · rw [sRestore_v hq8]; exact hvc q hq hq8
+  · rw [post_args hA]
+    show Curry.apply _ post (allArgs sig s) s.mem m (((sRestore (nStack sig) c).gpr .x0).setWidth _)
+    rw [sRestore_gpr (by decide) (by decide)]
+    refine hout c.mem _ _ (fun b hb x hx => ?_) hq
+    refine (f x fun R hR hc => ?_).symm
+    simp only [List.mem_singleton] at hR; subst hR
+    exact hout' b (List.mem_append_left _ hb) x (below_sub (by omega) (by omega) x hc) hx
+
+/-- Two runs of the frame's body from callers' states `σ₁` and `σ₂` which
+agree on `sp` leak the same, if the two calls of the function do (`hbody`). -/
+theorem s_ct {n name : String} {body : Prog isa} {σ₁ σ₂ : State} (hsp12 : σ₁.sp = σ₂.sp)
+    (hE : frameS (nStack sig) < 4096)
+    (hr₁ : ∀ j < nStack sig, InRegions σ₁.rd (stackArgAddr σ₁ j) 8)
+    (hr₂ : ∀ j < nStack sig, InRegions σ₂.rd (stackArgAddr σ₂ j) 8)
+    (hbody : RelCT isa (fun a b => a = sSave n (nStack sig) σ₁ ∧ b = sSave n (nStack sig) σ₂) (.call name body)
+      fun c₁ c₂ => AfterS sig post stack σ₁ c₁ ∧ AfterS sig post stack σ₂ c₂) :
+    RelCT isa (fun a b => a = allocated (frameS (nStack sig)) σ₁ ∧ b = allocated (frameS (nStack sig)) σ₂)
+      (.seq (.block (enterD8S n (nStack sig)))
+        (.seq (.call name body) (.block (leaveD8S (nStack sig))))) fun _ _ => True := by
+  have hsk := saveOff_ge (nStack sig)
+  have hfs : saveOff (nStack sig) + 16 = frameS (nStack sig) := rfl
+  refine RelCT.seq (R := fun a b => a = sSave n (nStack sig) σ₁ ∧ b = sSave n (nStack sig) σ₂)
+    (RelCT.block_of fun a b hab => ?_) ?_
+  · obtain ⟨rfl, rfl⟩ := hab
+    exact ⟨_, _, _, enterS_run n _ σ₁ (by omega) hr₁,
+      by rw [enterS_run n _ σ₂ (by omega) hr₂]; simp only [sslot, hsp12], rfl, rfl⟩
+  refine RelCT.seq (R := fun c₁ c₂ => AfterS sig post stack σ₁ c₁ ∧ AfterS sig post stack σ₂ c₂) hbody ?_
+  refine RelCT.block_of fun g₁ g₂ hg => ?_
+  obtain ⟨⟨hw₁, hs₁, -⟩, ⟨hw₂, hs₂, -⟩⟩ := hg
+  have i₁ : ∀ off, off + 8 ≤ frameS (nStack sig) → InRegions (g₁.rd ++ g₁.wr) (g₁.sp + BitVec.ofNat 64 off) 8 :=
+    fun off h => by
+      rw [hw₁, hs₁]
+      exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), Offset.contains_base _ h (by omega)⟩
+  have i₂ : ∀ off, off + 8 ≤ frameS (nStack sig) → InRegions (g₂.rd ++ g₂.wr) (g₂.sp + BitVec.ofNat 64 off) 8 :=
+    fun off h => by
+      rw [hw₂, hs₂]
+      exact ⟨_, List.mem_append_right _ (List.mem_cons_self ..), Offset.contains_base _ h (by omega)⟩
+  refine ⟨_, sRestore (nStack sig) g₂, _, leaveS_run (by omega) (i₁ _ (by omega)) (i₁ _ (by omega)), ?_, trivial⟩
+  rw [leaveS_run (by omega) (i₂ _ (by omega)) (i₂ _ (by omega)), hs₁, hs₂, hsp12]
+
+/-- **Code verified against `Contract.d8 n` of a contract under `abi` with
+`stack` bytes of stack, for a function with arguments on the stack, is
+verified against the contract under `abi.withFns [n]` with `frameS` more
+bytes when called by `entryD8S n`**: `Verified.entryD8` for any number of
+arguments. -/
+theorem Verified.entryD8S {n name : String} {body : Prog isa}
+    (h : Verified target body (Contract.d8 n (sig.contract abi pre post wa stack leak)))
+    (hl : Sig.noLists sig.params = true) (hE : frameS (nStack sig) < 4096)
+    (hd : 16 * body.aarch64Depth ≤ stack)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' x, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
+    (hpostR : ∀ vs m m₁ m₂ x, vs.length = (sig.words abi.ptrBits).length →
+      (Sig.bufs sig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ x)
+    (hsat : ∃ s, (sig.contract (abi.withFns [n]) pre post wa (stack + frameS (nStack sig)) leak).pre s)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    Verified target (Impl.Sha3.AArch64.entryD8S n name (nStack sig) body)
+      (sig.contract (abi.withFns [n]) pre post wa (stack + frameS (nStack sig)) leak) := by
+  have hA : ArgsOk sig := by
+    obtain ⟨s, hs⟩ := hsat
+    exact argsOk_of_pre (pre := pre) (post := post) (wa := wa) (leak := leak)
+      (stack := stack + frameS (nStack sig)) (s := s) hs
+  have hE' : frameS (nStack sig) ≤ 32768 := by omega
+  have hout : ∀ s, (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s →
+      ∀ m₁ m₂ x, (∀ b ∈ Sig.bufs sig.params (allArgs sig s), ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post (allArgs sig s) s.mem m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post (allArgs sig s) s.mem m₂ x := by
+    intro s hs m₁ m₂ x hag hq
+    have hpw := (List.pairwise_append.mp ((pre_args hA hl).mp hs).2.2.2.1).1
+    exact hpostR _ _ _ _ _ (allArgs_length sig s) hpw hag hq
+  have hbody : ∀ s, (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s →
+      WP isa (.call name body) (sSave n (nStack sig) s) (AfterS sig post stack s) := fun s hs =>
+    s_body_wpOf h.1 (fun _ _ h => h) hA hl hE' hd hpost hs ⟨s_bodyPre hA hl hE' hpre hs, eEntryS_d8 sig n s⟩
+  refine ⟨fun s hs => ?_, ?_, hsat⟩
+  · have hs' : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s := hs
+    obtain ⟨t, g, he, habi, hq⟩ := s_wp hA hl hE hs' (hbody s hs') (hout s hs')
+    exact ⟨t, g, he, habi, hq⟩
+  · refine RelCT.constantTime (Q := fun _ _ => True) (RelCT.alloc (R := fun _ _ => True) ?_)
+    refine RelCT.exists_ fun σ₁ => RelCT.exists_ fun σ₂ => ?_
+    by_cases hP0 :
+        (sig.contract (abi.withFns [n]) pre post wa (stack + frameS (nStack sig)) leak).pre σ₁ ∧
+        (sig.contract (abi.withFns [n]) pre post wa (stack + frameS (nStack sig)) leak).pre σ₂ ∧
+        (sig.contract (abi.withFns [n]) pre post wa (stack + frameS (nStack sig)) leak).pub σ₁ σ₂
+    swap
+    · exact RelCT.of_false fun a b hab => hP0 hab.1
+    obtain ⟨h₁, h₂, hp⟩ := hP0
+    have h₁' : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre σ₁ := h₁
+    have h₂' : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre σ₂ := h₂
+    have hp₀ := (pub_fns hp).1
+    have hsp12 : σ₁.sp = σ₂.sp := pub_args_sp hA hp₀
+    obtain ⟨-, -, hr₁, -⟩ := s_facts hA hl h₁'
+    obtain ⟨-, -, hr₂, -⟩ := s_facts hA hl h₂'
+    refine RelCT.mono (P := fun a b => a = allocated (frameS (nStack sig)) σ₁ ∧ b = allocated (frameS (nStack sig)) σ₂)
+      (s_ct (post := post) (stack := stack) hsp12 hE hr₁ hr₂ ?_) (fun a b hab => hab.2) (fun _ _ h => h)
+    have hcov : ∀ σ : State, (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre σ →
+        Covers ((((allRegions sig (sSave n (nStack sig) σ).callEntry).filter fun x : Region × Bool => !x.2).map
+            fun x : Region × Bool => x.1) ++
+          (((allRegions sig (sSave n (nStack sig) σ).callEntry).filter fun x : Region × Bool => x.2).map
+            fun x : Region × Bool => x.1))
+          ((sSave n (nStack sig) σ).rd ++ (sSave n (nStack sig) σ).wr) ∧
+        Covers (((allRegions sig (sSave n (nStack sig) σ).callEntry).filter fun x : Region × Bool => x.2).map
+            fun x : Region × Bool => x.1) (sSave n (nStack sig) σ).wr := fun σ hσ => by
+      obtain ⟨hcR, hcW⟩ := s_covers hA hl n hE' hσ
+      rw [sSave_rd, sSave_wr]
+      exact ⟨Covers.append_left hcR (Covers.right (Covers.of_mem fun x hx => List.mem_cons_of_mem _ (hcW x hx))),
+        Covers.of_mem fun x hx => List.mem_cons_of_mem _ (hcW x hx)⟩
+    refine RelCT.mono (RelCT.wp (F₁ := AfterS sig post stack σ₁) (F₂ := AfterS sig post stack σ₂)
+      (RelCT.callEx h.1 h.2.1 fun a b hab => ?_) fun a b hab => ?_) (fun _ _ h => h) (fun _ _ h => h.2)
+    · obtain ⟨rfl, rfl⟩ := hab
+      exact ⟨_, _, _, _, ⟨s_bodyPre hA hl hE' hpre h₁', eEntryS_d8 sig n σ₁⟩,
+        ⟨s_bodyPre hA hl hE' hpre h₂', eEntryS_d8 sig n σ₂⟩,
+        ⟨s_bodyPub hA hl n hE' h₁' h₂' hp₀ hleak, by
+          show (eEntryS sig n σ₁).syms n = (eEntryS sig n σ₂).syms n
+          rw [eEntryS_syms, eEntryS_syms]; exact (pub_fns hp).2⟩,
+        (hcov σ₁ h₁').1, (hcov σ₁ h₁').2, (hcov σ₂ h₂').1, (hcov σ₂ h₂').2⟩
+    · obtain ⟨rfl, rfl⟩ := hab
+      exact ⟨hbody σ₁ h₁', hbody σ₂ h₂'⟩
 
 end
 
