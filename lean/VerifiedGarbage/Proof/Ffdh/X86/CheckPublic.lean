@@ -51,7 +51,7 @@ abbrev yv (m : Mem) (args : Nat → BitVec 32) (len : Nat) : Nat :=
 /-- Bytes apart from the working space and the 96 bytes below `sp`, after a stage. -/
 theorem bytes_keep (h : In Ex base bytes len args s) {p : Addr} {n : Nat}
     (apart : Region.Disjoint ⟨p, n⟩ ⟨base, bytes⟩) (hn : n ≤ 2 ^ 64) {sp : BitVec 32}
-    (hb40 : Region.Disjoint ⟨p, n⟩ (below sp 96)) {m m' : Mem} (F : Frame (frameR base sp (fR len)) m m') :
+    (hb40 : Region.Disjoint ⟨p, n⟩ (below sp 96)) {m m' : Mem} (F : Frame (frameF base sp (fR len)) m m') :
     Spec.Rsa.bytesAt m' p n = Spec.Rsa.bytesAt m p n := by
   have fit := fR_fit h
   have bl := h.bytes_lt

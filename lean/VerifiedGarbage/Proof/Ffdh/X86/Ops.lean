@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ffdh.X86.Domain
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 
@@ -35,12 +36,69 @@ abbrev fR (len : Nat) : List (Nat × Nat) := [(0, 32), (48, CrtRt.need len - 48)
 abbrev InF (len : Nat) (p : Nat × Nat) : Prop :=
   p.1 + p.2 ≤ 32 ∨ (48 ≤ p.1 ∧ p.1 + p.2 ≤ CrtRt.need len)
 
+/-- The regions a stage may change: those of the operations (`frameR`), and the 176 bytes below `sp`,
+room for a call of a callee that copies the 76 bytes of arguments below its return address and
+calls the operations. -/
+def frameF (base : Addr) (sp : BitVec 32) (ws : List (Nat × Nat)) : List Region :=
+  below sp 176 :: frameR base sp ws
+
+/-- The 176 bytes below `sp` that a stage may change are apart from the working space. -/
+structure RoomF (sp : BitVec 32) (base : Addr) (size : Nat) : Prop where
+  low : 176 ≤ sp.toNat
+  apart : Region.Disjoint (below sp 176) ⟨base, size⟩
+
+theorem RoomF.call {sp : BitVec 32} {size : Nat} (R : RoomF sp base size) : CallRoom sp base size :=
+  ⟨by have := R.low; omega, R.apart.sub_left (VG.X86.below_sub (by decide) R.low)⟩
+
+theorem frameF_of {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem} (F : Frame (frameR base sp ws) m m') :
+    Frame (frameF base sp ws) m m' :=
+  F.mono fun _ hr => List.mem_cons_of_mem _ hr
+
+theorem frameF_mono {sp : BitVec 32} {ws ws' : List (Nat × Nat)} {m m' : Mem} (F : Frame (frameF base sp ws) m m')
+    (h : ∀ p ∈ ws, p ∈ ws' := by decide) : Frame (frameF base sp ws') m m' :=
+  F.mono fun r hr => by
+    simp only [frameF, frameR, List.mem_cons, List.mem_map] at hr ⊢
+    rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
+    · exact .inl rfl
+    · exact .inr (.inl rfl)
+    · exact .inr (.inr ⟨p, h p hp, rfl⟩)
+
+theorem fF_widen {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem} (F : Frame (frameF base sp ws) m m')
+    (hw : ∀ p ∈ ws, InF len p) : Frame (frameF base sp (fR len)) m m' :=
+  F.sub fun r hr => by
+    simp only [frameF, frameR, List.mem_cons, List.mem_map] at hr
+    rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
+    · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
+    · obtain ⟨q, hq, h1, h2⟩ : ∃ q ∈ fR len, q.1 ≤ p.1 ∧ p.1 + p.2 ≤ q.1 + q.2 := by
+        rcases hw p hp with e | e
+        · exact ⟨(0, 32), by simp, by omega_using [], by omega_using [e]⟩
+        · exact ⟨(48, CrtRt.need len - 48), by simp, by dsimp only; omega_using [e], by dsimp only; omega_using [e]⟩
+      exact ⟨⟨off base q.1, q.2⟩,
+        List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_map.mpr ⟨q, hq, rfl⟩)), VG.Offset.sub base h1 h2⟩
+
 theorem fR_widen {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem} (F : Frame (frameR base sp ws) m m')
-    (hw : ∀ p ∈ ws, InF len p) : Frame (frameR base sp (fR len)) m m' :=
-  frameR_widen F fun p hp => by
-    rcases hw p hp with e | e
-    · exact ⟨(0, 32), by simp, by omega_using [], by omega_using [e]⟩
-    · exact ⟨(48, CrtRt.need len - 48), by simp, by dsimp only; omega_using [e], by dsimp only; omega_using [e]⟩
+    (hw : ∀ p ∈ ws, InF len p) : Frame (frameF base sp (fR len)) m m' :=
+  fF_widen (frameF_of F) hw
+
+/-- A number apart from the ranges keeps its value. -/
+theorem frameF_val32 {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem} (F : Frame (frameF base sp ws) m m')
+    (R : RoomF sp base bytes) (nw : base.toNat + bytes ≤ 2 ^ 32) {d k : Nat} (hd : d + 4 * k ≤ bytes)
+    (hws : ∀ p ∈ ws, d + 4 * k ≤ p.1 ∨ p.1 + p.2 ≤ d) (hfit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes) :
+    val32 m' base d k = val32 m base d k := by
+  rw [← VG.Proof.Bignum.read_eq_val32, ← VG.Proof.Bignum.read_eq_val32]
+  refine congrArg BitVec.toNat (F.read (r := ⟨off base d, 4 * k⟩) (Region.contains_self _ _) (fun r hr => ?_)
+    (by omega_using [nw, hd]))
+  obtain sub : Region.Sub ⟨off base d, 4 * k⟩ ⟨base, bytes⟩ := by
+    have := Offset.sub base (d := d) (n := 4 * k) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [hd])
+    simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
+  simp only [frameF, frameR, List.mem_cons, List.mem_map] at hr
+  rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
+  · exact (R.apart.sub_right sub).symm
+  · exact (R.call.apart.sub_right sub).symm
+  · have := hws p hp
+    have := hfit p hp
+    exact Offset.disjoint base (by omega_arith) (by omega_using [nw, hd]) (by omega_using [nw, this])
 
 theorem fR_fit (h : In Ex base bytes len args s) : ∀ p ∈ fR len, p.1 + p.2 ≤ bytes := by
   have := h.need
@@ -50,7 +108,7 @@ theorem fR_fit (h : In Ex base bytes len args s) : ∀ p ∈ fR len, p.1 + p.2 �
   rcases hp with rfl | rfl <;> dsimp only <;> omega_arith
 
 theorem fR_of_outside (h : In Ex base bytes len args s) {sp : BitVec 32} {a n : Nat} {m m' : Mem}
-    (O : Outside base a n m m') (hw : InF len (a, n)) : Frame (frameR base sp (fR len)) m m' := by
+    (O : Outside base a n m m') (hw : InF len (a, n)) : Frame (frameF base sp (fR len)) m m' := by
   have := fR_fit h
   have bl := h.bytes_lt
   have : a + n ≤ bytes := by

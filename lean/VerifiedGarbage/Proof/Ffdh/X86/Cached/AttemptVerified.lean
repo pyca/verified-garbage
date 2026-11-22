@@ -392,7 +392,7 @@ theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args 
     (CV : CtxVals len args (comp s.mem args len 0) (comp s.mem args len 1)
       (Spec.Ffdh.generationScalarBits (CheckPrivate.params s.mem args len dlen)) s.mem) :
     WP isa Generate.body s fun t => ∃ r, t.gpr .eax = BitVec.ofNat 32 r ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
+      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameF base (s.gpr .esp) (fR len))
         s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ CachedKeyPost len dlen s.mem args r t.mem := by
   have fit := G.fit
@@ -452,8 +452,8 @@ theorem body_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo args 
   obtain Ox' : OutAt args base bytes len 0 (u.gpr .esp) u.wr := by rw [spu]; exact Ox.keep rfl Ku
   obtain Oy' : OutAt args base bytes len 8 (u.gpr .esp) u.wr := by rw [spu]; exact Oy.keep rfl Ku
   obtain FF : ∀ {t : State}, Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ ::
-      frameR base (u.gpr .esp) (fR len)) u.mem t.mem →
-      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
+      frameF base (u.gpr .esp) (fR len)) u.mem t.mem →
+      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameF base (s.gpr .esp) (fR len))
         s.mem t.mem := fun {t} Ft => by
     have Fv := F.frame
     have Fs := S.frame
@@ -893,7 +893,7 @@ theorem frame_ok {s : State} (A : CachedABI s) (f : State)
     (espf : f.gpr .esp = s.gpr .esp - BitVec.ofNat 32 argsFrame)
     (Ft : Frame [⟨wsBase gArgs s, wsSize gArgs s⟩, ⟨frameAt s, argsFrame⟩] s.mem f.mem) :
     WP isa Impl.Ffdh.X86.Cached.Generate.body f fun t => spec s t.mem (t.gpr .eax) ∧
-      Frame ([xR s, yR s] ++ CrtRt.frameR (wsBase gArgs s) (f.gpr .esp) (fR (pLenOf gArgs s))) f.mem t.mem ∧
+      Frame ([xR s, yR s] ++ frameF (wsBase gArgs s) (f.gpr .esp) (fR (pLenOf gArgs s))) f.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t := by
   obtain Gm := frame_geo A espf I.extra
   obtain ⟨CR, cstk, cx⟩ := frame_ctx A espf I.extra

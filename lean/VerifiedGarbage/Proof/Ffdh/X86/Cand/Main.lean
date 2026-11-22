@@ -118,7 +118,7 @@ structure Fin (base : Addr) (len : Nat) (args : Nat → BitVec 32) (up : BitVec 
   eax : t.gpr .eax = BitVec.ofNat 32 r
   bytes : Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = out
   used : t.mem.readW (byteAddr up) 64 = BitVec.ofNat 64 used
-  frame : Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr up, 8⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem
+  frame : Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr up, 8⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t
 
 /-- A result after a stage. -/
@@ -152,7 +152,7 @@ theorem finish_ok (h : In Ex base bytes len args s) {up : BitVec 32}
 theorem zeroOut_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr) :
     WP isa zeroOut s fun t =>
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = List.replicate len 0 ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ In Ex base bytes len args t ∧
       Kept base len [19] [accOff] s.mem t.mem := by
   have ao : accOff = 8 := rfl
@@ -233,7 +233,7 @@ theorem reject_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes 
 theorem acceptOut_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr)
     {p : Nat} (hp : sv s.mem base len .wide 9 = p) (hpl : p < 2 ^ (8 * len)) :
     WP isa acceptOut s fun u => Spec.Rsa.bytesAt u.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp p len ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem u.mem ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧ In Ex base bytes len args u ∧
       Kept base len [19] [accOff] s.mem u.mem := by
   have ao : accOff = 8 := rfl

@@ -225,7 +225,7 @@ theorem found_tb_sep (base : Addr) (m : Mem) (v : BitVec 32) :
 /-- Bytes apart from the working space and the stack below `sp`, through a stage. -/
 theorem bytes_keep (h : In Ex base bytes len args s) {p : Addr} {n : Nat}
     (apart : Region.Disjoint ⟨p, n⟩ ⟨base, bytes⟩) (hn : n ≤ 2 ^ 64) {sp : BitVec 32}
-    (hb40 : Region.Disjoint ⟨p, n⟩ (below sp 96)) {m m' : Mem} (F : Frame (frameR base sp (fR len)) m m') :
+    (hb40 : Region.Disjoint ⟨p, n⟩ (below sp 96)) {m m' : Mem} (F : Frame (frameF base sp (fR len)) m m') :
     Spec.Rsa.bytesAt m' p n = Spec.Rsa.bytesAt m p n := by
   obtain fit := fR_fit h
   refine frame_bytes F (fun r hr => ?_) hn

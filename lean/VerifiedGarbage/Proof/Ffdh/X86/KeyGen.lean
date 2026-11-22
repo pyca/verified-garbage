@@ -430,7 +430,7 @@ theorem export_ok (h : In Ex base bytes len args s) {p l : Nat} (hp : p < 18) (h
     WP isa (exportTo p l) s fun t =>
       Spec.Rsa.bytesAt t.mem (byteAddr (args p)) len = Spec.Rsa.i2osp (if c then v else 0) len ∧
       t.gpr .eax = BitVec.ofNat 32 c.toNat ∧
-      Frame (⟨byteAddr (args p), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+      Frame (⟨byteAddr (args p), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ In Ex base bytes len args t ∧
       Kept base len [19] [] s.mem t.mem := by
   have ao : accOff = 8 := rfl
@@ -483,7 +483,7 @@ theorem outputs_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp (if c then x else 0) len ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 8)) len = Spec.Rsa.i2osp (if c then y else 0) len ∧
       t.gpr .eax = BitVec.ofNat 32 c.toNat ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
+      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameF base (s.gpr .esp) (fR len))
         s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have ao : accOff = 8 := rfl
@@ -628,7 +628,7 @@ theorem tailWith_ok (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr)
         Spec.Rsa.i2osp (if accept len p Y then x else 0) len ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 8)) len =
         Spec.Rsa.i2osp (if accept len p Y then Y else 0) len ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
+      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameF base (s.gpr .esp) (fR len))
         s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   refine WP.chain_split (tailFrontWith_ok hpow) fun u ⟨Su, k, V12, W⟩ => ?_
@@ -720,7 +720,7 @@ theorem w32_ofNat {m : Mem} {d n : Nat} (h : w32 m base d = n) (hn : n < 2 ^ 32)
 structure FrontW (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat)
     (args : Nat → BitVec 32) (s : State) (xs : Nat) (u : State) : Prop where
   inp : In Ex base bytes len args u
-  frame : Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem u.mem
+  frame : Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem u.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u
   gate : Gate u (Spec.Ffdh.privateValid (CheckPrivate.params s.mem args len dlen) xs = false)
   v9 : sv u.mem base len .wide 9 = comp s.mem args len 0
@@ -738,7 +738,7 @@ abbrev prefixWith (st : Prog isa) : List (Prog isa) :=
 structure PrefW (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat)
     (args : Nat → BitVec 32) (s : State) (xs : Nat) (u : State) : Prop where
   inp : In Ex base bytes len args u
-  frame : Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem u.mem
+  frame : Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem u.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u
   v9 : sv u.mem base len .wide 9 = comp s.mem args len 0
   v10 : sv u.mem base len .wide 10 = comp s.mem args len 1
@@ -893,7 +893,7 @@ theorem fail_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes le
       t.gpr .eax = BitVec.ofNat 32 2 ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = List.replicate len 0 ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 8)) len = List.replicate len 0 ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameR base (s.gpr .esp) (fR len))
+      Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr (args 8), len⟩ :: frameF base (s.gpr .esp) (fR len))
         s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have ao : accOff = 8 := rfl

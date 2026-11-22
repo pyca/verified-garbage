@@ -93,7 +93,7 @@ theorem pSetup_ok (h : In Ex base bytes len args s) (h3 : args 3 = BitVec.ofNat 
     (fit : (args 2).toNat + len ≤ 2 ^ 32) (rd : InRegions (s.rd ++ s.wr) (byteAddr (args 2)) len)
     (apart : Region.Disjoint ⟨byteAddr (args 2), len⟩ ⟨base, bytes⟩) :
     WP isa Impl.Ffdh.X86.pSetup s fun u =>
-      In Ex base bytes len args u ∧ Frame (frameR base (s.gpr .esp) (fR len)) s.mem u.mem ∧
+      In Ex base bytes len args u ∧ Frame (frameF base (s.gpr .esp) (fR len)) s.mem u.mem ∧
       Kept base len [9, 14, 15] [] s.mem u.mem ∧
       sv u.mem base len .wide 9 = argNum s.mem args 2 len ∧ sv u.mem base len .wide 14 = 1 ∧
       sv u.mem base len .wide 15 = pm1 len (argNum s.mem args 2 len) ∧
@@ -422,12 +422,12 @@ theorem zeroW_ok (h : In Ex base bytes len args s) {a : Nat} (ha : a ≤ 27) :
 
 /-- A number written into a wide slot (to 27), within `fR`. -/
 theorem slotF (h : In Ex base bytes len args s) {sp : BitVec 32} {a : Nat} (ha : a ≤ 27) {m m' : Mem}
-    (O : Outside base (lo len (.slot .wide a)) (bc len .wide) m m') : Frame (frameR base sp (fR len)) m m' :=
+    (O : Outside base (lo len (.slot .wide a)) (bc len .wide) m m') : Frame (frameF base sp (fR len)) m m' :=
   fR_of_outside h O (slot_inF ha (by have est : st len .wide = 2 * bc len .wide + 32 := rfl; omega_arith))
 
 /-- A header word written, within `fR`. -/
 theorem wordF (h : In Ex base bytes len args s) {sp : BitVec 32} {d : Nat} (hd : d + 4 ≤ 32) {m m' : Mem}
-    (O : Outside base d 4 m m') : Frame (frameR base sp (fR len)) m m' :=
+    (O : Outside base d 4 m m') : Frame (frameF base sp (fR len)) m m' :=
   fR_of_outside h O (.inl hd)
 
 /-- A header word written keeps the wide slots. -/
@@ -446,13 +446,13 @@ theorem kept_word (h : In Ex base bytes len args s) {d : Nat} (hd : d + 4 ≤ nu
 
 /-- What a stage leaves: the status `r`, the changes within `fR`, and the registers. -/
 def Res (base : Addr) (len : Nat) (s : State) (r : Nat) (t : State) : Prop :=
-  t.gpr .eax = BitVec.ofNat 32 r ∧ Frame (frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+  t.gpr .eax = BitVec.ofNat 32 r ∧ Frame (frameF base (s.gpr .esp) (fR len)) s.mem t.mem ∧
     Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t
 
 /-- A stage's result after one before it. -/
 theorem Res.after {u t : State} {r : Nat} (R : Res base len u r t) {rs : List Reg} (K : Keeps rs s u)
     (hrs : ∀ q ∈ rs, q ∈ [.eax, .ebx, .ecx, .edx, .ebp, .esi] := by decide)
-    (F : Frame (frameR base (s.gpr .esp) (fR len)) s.mem u.mem) : Res base len s r t := by
+    (F : Frame (frameF base (s.gpr .esp) (fR len)) s.mem u.mem) : Res base len s r t := by
   obtain ⟨E, F', K'⟩ := R
   rw [K.1 _ (by intro hm; have := hrs _ hm; simp at this)] at F'
   exact ⟨E, F.trans F', (K.mono hrs).trans K'⟩
@@ -474,7 +474,7 @@ theorem eqStatus_res (h : In Ex base bytes len args s) {a b : Nat} (ha : a ≤ 2
 structure Step (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
     (s u : State) : Prop where
   inp : In Ex base bytes len args u
-  frame : Frame (frameR base (s.gpr .esp) (fR len)) s.mem u.mem
+  frame : Frame (frameF base (s.gpr .esp) (fR len)) s.mem u.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u
 
 theorem Step.trans {u t : State} (A : Step Ex base bytes len args s u) (B : Step Ex base bytes len args u t) :

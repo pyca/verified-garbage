@@ -170,7 +170,7 @@ theorem fail_ok (h : In Ex base bytes len args s) (O : OutAt args base bytes len
     WP isa DerivePublic.fail s fun t =>
       t.gpr .eax = BitVec.ofNat 32 2 ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = List.replicate len 0 ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have ao : accOff = 8 := rfl
   have nb : numBase = 3336 := rfl
@@ -203,7 +203,7 @@ theorem tail_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len 
       t.gpr .eax = BitVec.ofNat 32 (if accept len p (g ^ x % P) then 1 else 3) ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =
         Spec.Rsa.i2osp (if accept len p (g ^ x % P) then g ^ x % P else 0) len ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have ao : accOff = 8 := rfl
   have mo : maskOff = 12 := rfl
@@ -260,7 +260,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
     (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below (s.gpr .esp) 96))
     (O : OutAt args base bytes len 0 (s.gpr .esp) s.wr) (h1 : args 1 = BitVec.ofNat 32 len) :
     WP isa DerivePublic.body s fun t => ∃ r, t.gpr .eax = BitVec.ofNat 32 r ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ DerivePost len dlen xl s.mem args r t.mem := by
   have dl := G.dl
   have lw := G.lower
@@ -270,8 +270,8 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
   rw [body_eq]
   refine WP.chain_split (front_ok h G X hb40 hx40) fun u ⟨S, Gt, V9, V10, V14, V15⟩ => ?_
   have Ou : OutAt args base bytes len 0 (u.gpr .esp) u.wr := by rw [S.esp]; exact O.keep rfl S.keeps
-  have FF : ∀ {t : State}, Frame (⟨byteAddr (args 0), len⟩ :: frameR base (u.gpr .esp) (fR len)) u.mem t.mem →
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem := fun {t} Ft => by
+  have FF : ∀ {t : State}, Frame (⟨byteAddr (args 0), len⟩ :: frameF base (u.gpr .esp) (fR len)) u.mem t.mem →
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem := fun {t} Ft => by
     rw [S.esp] at Ft
     exact (S.frame.mono fun r hr => List.mem_cons_of_mem _ hr).trans Ft
   have pvOf : Spec.Ffdh.domainValid len (domBytes s.mem args dlen) = true →

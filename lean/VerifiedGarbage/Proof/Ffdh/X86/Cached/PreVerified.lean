@@ -767,7 +767,7 @@ theorem front_trace {Q : State → State → Prop} {rest : Prog isa}
 def MQ (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
     (sp : BitVec 32) (dlen : Nat) (D : List Byte) (T : BitVec 32) (X : State → Prop) (u : State) : Prop :=
   ∃ x₀, PE Ex base bytes len args sp dlen D T x₀ ∧ In Ex base bytes len args u ∧ CtxW base bytes len args u ∧
-    Frame (ctxR args len :: frameR base sp (fR len)) x₀.mem u.mem ∧
+    Frame (ctxR args len :: frameF base sp (fR len)) x₀.mem u.mem ∧
     Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] x₀ u ∧
     w32 u.mem base rowsOff = Spec.Rsa.FixedBaseComb.rows (pW len D) ∧ X u
 
@@ -793,8 +793,8 @@ theorem middle_trace (dv : Spec.Ffdh.domainValid len D = true) (hl : len ≤ 102
       (.seq (.block metadata) (.seq VG.Impl.Ffdh.X86.pSetup (.seq (load (.slot .wide 10) (one .wide) 4 5)
         (.seq VG.Impl.Ffdh.X86.ctxP (.seq (storeRow (rowImm 0) 9) (.seq (storeRow (rowImm 1) 4)
           (.seq table (VG.Impl.Ffdh.X86.ret 1)))))))) fun _ _ => True := by
-  obtain upB : ∀ {m m' : Mem}, Frame (frameR base sp (fR len)) m m' →
-      Frame (ctxR args len :: frameR base sp (fR len)) m m' :=
+  obtain upB : ∀ {m m' : Mem}, Frame (frameF base sp (fR len)) m m' →
+      Frame (ctxR args len :: frameF base sp (fR len)) m m' :=
     fun F => F.mono fun r hr => List.mem_cons_of_mem _ hr
   -- The metadata.
   refine VG.RelCT.seq (aRel (fun _ h => h.run) metadata_check (F := MQ Ex base bytes len args sp dlen D T fun _ => True)

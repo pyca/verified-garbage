@@ -205,7 +205,7 @@ theorem body_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes le
       t.gpr .eax = BitVec.ofNat 32 (acc s.mem args len xl).toNat ∧
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len =
         Spec.Rsa.i2osp (if acc s.mem args len xl then zv s.mem args len xl else 0) len ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have lw := G.lower
   have bl := h.bytes_lt

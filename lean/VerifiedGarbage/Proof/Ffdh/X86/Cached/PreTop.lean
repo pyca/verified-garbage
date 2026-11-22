@@ -299,7 +299,7 @@ structure TS (Ex : List Region → List Region → Prop) (base : Addr) (bytes le
   ents : ∀ e < n, rowV u.mem args len (2 + e) = entV len P G bits e
   rows : w32 u.mem base rowsOff = Spec.Rsa.FixedBaseComb.rows bits
   pre : preV u.mem args len = preV s₀.mem args len
-  frame : Frame (ctxR args len :: frameR base (s₀.gpr .esp) (fR len)) s₀.mem u.mem
+  frame : Frame (ctxR args len :: frameF base (s₀.gpr .esp) (fR len)) s₀.mem u.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s₀ u
 
 section
@@ -814,7 +814,7 @@ structure RH (Ex : List Region → List Region → Prop) (base : Addr) (bytes le
   ebx : v.gpr .ebx = s.gpr .edi
   sp : v.gpr .esp = s.gpr .esp
   keeps : Keeps [.eax, .ebx, .ecx] s v
-  frame : Frame (frameR base (s.gpr .esp) (fR len)) s.mem v.mem
+  frame : Frame (frameF base (s.gpr .esp) (fR len)) s.mem v.mem
   kept : Kept base len [] [tbOff, recOff] s.mem v.mem
   tw : v.mem.readW (off base 16) 32 = T
   syms : v.syms = s.syms
@@ -842,10 +842,10 @@ theorem rh_of (h : In Ex base bytes len args s) {T : BitVec 32}
     rw [U₁.mem, U₁.other _ (by decide)] at F
     exact F.sub fun r hr => by
       obtain rfl := List.mem_singleton.mp hr; exact ⟨_, List.mem_singleton_self _, below4_sub low⟩
-  obtain F₂ : Frame (frameR base (s.gpr .esp) (fR len)) s.mem s₂.mem := stk_frameR Fs₂
+  obtain F₂ : Frame (frameF base (s.gpr .esp) (fR len)) s.mem s₂.mem := stk_frameR Fs₂
   obtain O₃ : Outside base 16 4 s₂.mem s₃.mem := by rw [M₃.mem]; exact writeW32_outside _ _ _ (by omega_using [])
   obtain K₃ : Keeps [.eax, .ebx, .ecx] s s₃ := K₂.trans ((M₃.keeps []).mono (by decide))
-  obtain F₃ : Frame (frameR base (s.gpr .esp) (fR len)) s.mem s₃.mem :=
+  obtain F₃ : Frame (frameF base (s.gpr .esp) (fR len)) s.mem s₃.mem :=
     F₂.trans (fR_of_outside h O₃ (.inl (by omega_using [])))
   exact ⟨h.keepF K₃ (by decide) (by decide) F₃ (fR_fit h), by rw [M₃.gpr]; exact ebx₂,
     by rw [M₃.gpr, sp₂], K₃, F₃,
@@ -929,7 +929,7 @@ theorem scanCtx_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo ar
     rw [Kw.2.2, K₂'.2.2, K₁.2.2, allocFrame_wr, sp₃]
   obtain wesp' : w.gpr .esp = s.gpr .esp - BitVec.ofNat 32 16 := by
     rw [Kw.1 _ (by decide), K₂'.1 _ (by decide), K₁.1 _ (by decide), aesp, sp₃]
-  obtain Fsw : Frame (frameR base (s.gpr .esp) (fR len)) s.mem w.mem := H.frame.trans (stk_frameR Fw)
+  obtain Fsw : Frame (frameF base (s.gpr .esp) (fR len)) s.mem w.mem := H.frame.trans (stk_frameR Fw)
   obtain dw : Spec.Rsa.bytesAt w.mem (byteAddr (args 2)) dlen = Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) dlen :=
     KeyScan.bytes_keep h G.apart (by omega_using [dfit]) hb40 Fsw
   generalize hP : s.gpr .esp - BitVec.ofNat 32 16 = P at *
@@ -1053,7 +1053,7 @@ theorem recognize_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo 
     · rw [U₅.gpr, K₄.1 _ (by decide)]; exact H.ebx
     · rw [U₅.other _ (by decide), sp₄]
   obtain Fs₅ : Frame [below (s.gpr .esp) 96] s₃.mem s₅.mem := by rw [U₅.mem]; exact Fr₄
-  obtain F₅ : Frame (frameR base (s.gpr .esp) (fR len)) s.mem s₅.mem := F₃.trans (stk_frameR Fs₅)
+  obtain F₅ : Frame (frameF base (s.gpr .esp) (fR len)) s.mem s₅.mem := F₃.trans (stk_frameR Fs₅)
   obtain h₅ : In Ex base bytes len args s₅ := h.keepF K₅ (by decide) (by decide) F₅ (fR_fit h)
   refine WP.mono (hdr_store h₅ (d := recOff) (by simp only [recOff]; omega_using [nb]) .eax) fun u ⟨I, O, W, K, _⟩ => ?_
   refine ⟨⟨I, F₅.trans (fR_of_outside h₅ O (.inr ⟨by simp only [recOff]; omega_using [], by simp only [recOff]; omega_using [nb, en]⟩)),
@@ -1218,7 +1218,7 @@ words, the width, its bytes and its rows, 64 bits each. -/
 theorem metadata_ok (h : In Ex base bytes len args s) (C : CtxW base bytes len args s) {W : Nat}
     (he : s.gpr .eax = BitVec.ofNat 32 W) (hW : W ≤ 8192) :
     WP isa (.block metadata) s fun u => In Ex base bytes len args u ∧ CtxW base bytes len args u ∧
-      Frame (ctxR args len :: frameR base (s.gpr .esp) (fR len)) s.mem u.mem ∧
+      Frame (ctxR args len :: frameF base (s.gpr .esp) (fR len)) s.mem u.mem ∧
       Keeps [.eax, .ecx, .edx] s u ∧ w32 u.mem base bitsOff = W ∧
       w32 u.mem base rowsOff = Spec.Rsa.FixedBaseComb.rows W ∧
       w32 u.mem (ctxAddr args) 0 = W ∧ w32 u.mem (ctxAddr args) 4 = 0 ∧
@@ -1319,10 +1319,10 @@ theorem metadata_ok (h : In Ex base bytes len args s) (C : CtxW base bytes len a
   rw [U₁₃.mem] at F₁₄
   rw [U₁₅.mem] at F₁₆
   obtain up : ∀ {m m' : Mem}, Frame [ctxR args len] m m' →
-      Frame (ctxR args len :: frameR base (s.gpr .esp) (fR len)) m m' :=
+      Frame (ctxR args len :: frameF base (s.gpr .esp) (fR len)) m m' :=
     fun F => F.mono fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact List.mem_cons_self ..
-  obtain upB : ∀ {m m' : Mem}, Frame (frameR base (s.gpr .esp) (fR len)) m m' →
-      Frame (ctxR args len :: frameR base (s.gpr .esp) (fR len)) m m' :=
+  obtain upB : ∀ {m m' : Mem}, Frame (frameF base (s.gpr .esp) (fR len)) m m' →
+      Frame (ctxR args len :: frameF base (s.gpr .esp) (fR len)) m m' :=
     fun F => F.mono fun r hr => List.mem_cons_of_mem _ hr
   obtain Fb₁ := upB (fR_of_outside h O₁ (.inr ⟨by omega, by omega⟩))
   obtain Fb₁₂ := upB (fR_of_outside h O₁₂ (.inr ⟨by omega, by omega⟩))
@@ -1500,7 +1500,7 @@ theorem comp_keepC (h : In Ex base bytes len args s) {dlen : Nat} {rd wr : List 
     (G : DomGeo args base bytes len dlen rd wr) {sp : BitVec 32}
     (hb40 : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (below sp 96))
     (domC : Region.Disjoint ⟨byteAddr (args 2), dlen⟩ (ctxR args len)) {m m' : Mem}
-    (F : Frame (ctxR args len :: frameR base sp (fR len)) m m') {k : Nat} (hk : k * len + len ≤ dlen) :
+    (F : Frame (ctxR args len :: frameF base sp (fR len)) m m') {k : Nat} (hk : k * len + len ≤ dlen) :
     comp m' args len k = comp m args len k := by
   have := G.fit
   unfold comp
@@ -1540,7 +1540,7 @@ theorem pcBody_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo arg
     (t40 : Region.Disjoint ⟨byteAddr T, 17744⟩ (below (s.gpr .esp) 96))
     (dv : Spec.Ffdh.domainValid len (KeyGen.domOf s.mem args dlen) = true) :
     WP isa Precompute.body s fun t => t.gpr .eax = 1 ∧
-      Frame (ctxR args len :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+      Frame (ctxR args len :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧
       Spec.Rsa.wordsAt t.mem (ctxAddr args) (3 + 34 * mw len) = generationValues len (KeyGen.domOf s.mem args dlen) := by
   have nb : numBase = 3336 := rfl
@@ -1560,10 +1560,10 @@ theorem pcBody_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo arg
   obtain hp : comp s.mem args len 0 = (Spec.Ffdh.domainOf len dom).p := by rw [comp_p s.mem args h2, ← hD]
   obtain hg : comp s.mem args len 1 = (Spec.Ffdh.domainOf len dom).g := by rw [comp_g s.mem args h2, ← hD]
   obtain up' : ∀ {m m' : Mem}, Frame [ctxR args len] m m' →
-      Frame (ctxR args len :: frameR base (s.gpr .esp) (fR len)) m m' :=
+      Frame (ctxR args len :: frameF base (s.gpr .esp) (fR len)) m m' :=
     fun F => F.mono fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact List.mem_cons_self ..
-  obtain upB : ∀ {m m' : Mem}, Frame (frameR base (s.gpr .esp) (fR len)) m m' →
-      Frame (ctxR args len :: frameR base (s.gpr .esp) (fR len)) m m' :=
+  obtain upB : ∀ {m m' : Mem}, Frame (frameF base (s.gpr .esp) (fR len)) m m' →
+      Frame (ctxR args len :: frameF base (s.gpr .esp) (fR len)) m m' :=
     fun F => F.mono fun r hr => List.mem_cons_of_mem _ hr
   unfold Precompute.body
   -- The recognized width.
@@ -1618,7 +1618,7 @@ theorem pcBody_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo arg
   refine WP.seq (WP.mono (metadata_ok h₅ (C.keep K₁₅) e₅ bW)
     fun u₆ ⟨h₆, C₆, F₆, K₆, _, wr₆, c0, c4, c8, c12, c16, c20⟩ => ?_)
   rw [sp₅, m₂₅] at F₆
-  obtain FA₆ : Frame (ctxR args len :: frameR base (s.gpr .esp) (fR len)) s.mem u₆.mem := (upB S₁₂.frame).trans F₆
+  obtain FA₆ : Frame (ctxR args len :: frameF base (s.gpr .esp) (fR len)) s.mem u₆.mem := (upB S₁₂.frame).trans F₆
   obtain K₁₆ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u₆ := K₁₅.trans (K₆.mono (by decide))
   obtain sp₆ : u₆.gpr .esp = s.gpr .esp := K₁₆.1 _ (by decide)
   obtain G₆ := G.keep ⟨rfl, rfl⟩ K₁₆
@@ -1684,7 +1684,7 @@ theorem pcBody_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo arg
   obtain bg := bc_ge lw .wide
   have cbn : ctxBytes len = 24 + bc len .wide * 34 := rfl
   have cw := C.ws.nowrap
-  obtain F69 : Frame (frameR base (s.gpr .esp) (fR len)) u₆.mem u₉.mem :=
+  obtain F69 : Frame (frameF base (s.gpr .esp) (fR len)) u₆.mem u₉.mem :=
     (F₇.trans F₈).trans (fR_widen F₉ (stR_inF S₈.inp))
   obtain hdr : ∀ i, i < 6 → w32 t.mem (ctxAddr args) (4 * i) = w32 u₆.mem (ctxAddr args) (4 * i) := fun i hi => by
     rw [mt, pre_word S₁₂'.pre hi, O₁₁.w32 (.inl (by omega_using [hi])) (by omega_using [hi]), O₁₀.w32 (.inl (by omega_using [hi])) (by omega_using [hi]),
@@ -1954,7 +1954,7 @@ theorem pc_frame_ok {s : State} (A : PreABI s) (hc : ConstsOk pcConsts stack s) 
       (t.gpr .eax = 1 ∧ Spec.Rsa.wordsAt t.mem (argumentPointer s 0) (arg s 1).toNat =
         generationValues (pLenOf pArgs s) (pcDom s)) ∧
       Frame ([ctxR (synth pArgs (arg s)) (pLenOf pArgs s)] ++
-        CrtRt.frameR (wsBase pArgs s) (f.gpr .esp) (fR (pLenOf pArgs s))) f.mem t.mem ∧
+        frameF (wsBase pArgs s) (f.gpr .esp) (fR (pLenOf pArgs s))) f.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] f t := by
   obtain ⟨G, hb40, domC, C, tfit', tbytes, tws, t40, dd⟩ := pc_frame_facts A hc f I espf Ft
   obtain dv : Spec.Ffdh.domainValid (pLenOf pArgs s) (KeyGen.domOf f.mem (synth pArgs (arg s)) (arg s 3).toNat) := by
