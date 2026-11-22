@@ -75,7 +75,6 @@ class Arches(unittest.TestCase):
                 [
                     "lean/VerifiedGarbage/Proof/Md5/X86_64/Compress.lean",
                     "bench/benches/primitives/md5.rs",
-                    "crates/rustls-verified-garbage/src/kx.rs",
                     "docs/algorithms/md5.toml",
                     "README.md",
                     "CLAUDE.md",
@@ -154,18 +153,11 @@ class Output(unittest.TestCase):
         self.assertIs(run("pull_request", "crates/verified-garbage-asm-arm/src/md5.rs\n")["provider"], False)
         self.assertIs(run("pull_request", "crates/verified-garbage-asm-x86_64/src/md5.rs\n")["provider"], True)
         self.assertIs(run("pull_request", "src/lib.rs\n")["provider"], True)
+        # The provider is shared code: its tests run on every architecture.
         out = run("pull_request", "crates/rustls-verified-garbage/src/kx.rs\n")
-        self.assertEqual((out["arches"], out["rust"], out["lint"], out["provider"]), ([], [], [], True))
+        self.assertEqual((out["arches"], out["provider"]), (ALL, True))
         self.assertIs(run("merge_group")["provider"], True)
         self.assertIs(run("push")["provider"], True)
-
-    def test_coverage_runs_when_some_job_tests(self):
-        self.assertIs(run("pull_request", "lean/A.lean\n")["coverage"], False)
-        self.assertIs(run("pull_request", "crates/verified-garbage-asm-arm/src/md5.rs\n")["coverage"], True)
-        self.assertIs(run("pull_request", "crates/rustls-verified-garbage/src/kx.rs\n")["coverage"], True)
-        self.assertIs(run("merge_group")["coverage"], True)
-        # A push to main builds, for the caches, and tests nothing.
-        self.assertIs(run("push")["coverage"], False)
 
     def test_bench_is_whether_the_benchmarks_measure_the_arch(self):
         for event in ("merge_group", "push"):
@@ -254,18 +246,18 @@ class Workflow(unittest.TestCase):
         self.assertIn("if: ${{ matrix.bench && (matrix.rust == 'stable' || matrix.rust == 'host') "
                       "&& runner.os == 'Linux' && github.event_name == 'push' }}", job("rust"))
 
+    def test_rust_jobs_test_the_provider(self):
+        # The provider is a crate of the workspace: the `rust` jobs run its
+        # tests with the library's, and export their coverage.
+        self.assertIn("PACKAGES: -p verified-garbage -p rustls-verified-garbage", job("rust"))
+        self.assertIn("cargo test --locked $PACKAGES --no-run", job("rust"))
+        self.assertIn("ci/export_rust_coverage.py .rust-cov $PACKAGES", job("rust"))
+
     def test_provider_job_runs_when_rust_arches_says(self):
         self.assertIn("if: ${{ needs.rust-arches.outputs.provider == 'true' }}", job("rustls-provider"))
         self.assertIn("python3 ci/rust_lint.py run provider", job("rustls-provider"))
         self.assertIn("rustls-provider", job("all-green"))
         self.assertIn("needs: rustls-provider", job("cancel-rustls-provider"))
-
-    def test_coverage_merges_the_providers_coverage(self):
-        self.assertIn("needs.rust-arches.outputs.coverage == 'true'", job("coverage"))
-        self.assertIn("rustls-provider", job("coverage"))
-        self.assertIn("needs.rust-arches.outputs.coverage != 'true'", job("all-green"))
-        self.assertIn("name: coverage-data-provider", job("rustls-provider"))
-        self.assertIn("--only crates/rustls-verified-garbage/", job("rustls-provider"))
 
     def test_jobs_read_their_matrices(self):
         for name, output in (("rust", "rust"), ("rust-thumb", "thumb"), ("rust-cpu-features", "cpu")):
