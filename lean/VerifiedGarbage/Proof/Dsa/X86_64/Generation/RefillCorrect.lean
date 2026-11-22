@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
@@ -190,20 +191,20 @@ def BodyPost (u t : State) : Prop :=
 variable {checkName : String}
 
 theorem body_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : Nat → Nat → Nat → Prog isa}
-    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes)
-    (hA : AttemptOk h (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
+    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {N : FnNames}
+    (hA : AttemptOk h N (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
       pBytes qBytes))
-    {u : State} (a : RefillAllocated h u) :
+    {u : State} (a : RefillAllocated h u) (hy : FnSyms N (refillContext h) u) :
     WP isa (Impl.Dsa.X86_64.Generation.Refill.body (checkName := checkName) G1 G256 sq mul prime pBytes qBytes) u
       (BodyPost h u) := by
   simp only [Impl.Dsa.X86_64.Generation.Refill.body, Impl.Dsa.X86_64.Generation.Refill.controller,
     Impl.Dsa.X86_64.Generation.Refill.finish, VG.Impl.Bignum.X86_64.seqs]
   apply WP.seq
-  refine WP.mono (entry_ok h a hq) fun v ⟨W, hm, h16, _, c0, c1, c2, fE, kE⟩ => ?_
+  refine WP.mono_syms (entry_ok h a hq) fun v ⟨W, hm, h16, _, c0, c1, c2, fE, kE⟩ yv => ?_
   have hcv : ctlRegion (refillBase s₀) ∈ v.wr := kE.2.2 ▸ a.ctl
   have hwv : ∀ r ∈ s₀.wr, r ∈ v.wr := fun r hr => kE.2.2 ▸ a.wr r hr
   apply WP.seq
-  refine WP.mono (controller_ok h hq hA hcv _ v (loop_initial h hm h16 c0 c1 c2)) fun t hd => ?_
+  refine WP.mono (controller_ok h hq hA hcv (hy.congr yv) _ v (loop_initial h hm h16 c0 c1 c2)) fun t hd => ?_
   apply WP.seq
   refine WP.mono (results_ok h hcv hwv hd) fun t₁ hr => ?_
   obtain ⟨hs, W', m₁, r0, r3, uv, hin, hm₁, fm₁, mem₁, e0, e3, eu, est, hres, sp₁, rd₁, wr₁⟩ := hr
@@ -356,12 +357,12 @@ theorem RefillRes.lost {t t' : State} (r : RefillRes h t) (hr : t'.gpr .rax = t.
     exact d
 
 theorem inner_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : Nat → Nat → Nat → Prog isa}
-    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes)
-    (hA : AttemptOk h (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
+    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {N : FnNames}
+    (hA : AttemptOk h N (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
       pBytes qBytes))
     {u : State} (hg : u.gpr = (allocState 48 s₀).gpr) (hr : u.rd = s₀.rd) (hw : u.wr = (allocState 48 s₀).wr)
     (hf : Frame [⟨(allocState 48 s₀).gpr .rsp, 48⟩] s₀.mem u.mem)
-    (saved : Saved u.mem ((allocState 48 s₀).gpr .rsp) s₀.gpr spillSlots) :
+    (saved : Saved u.mem ((allocState 48 s₀).gpr .rsp) s₀.gpr spillSlots) (hy : FnSyms N (refillContext h) u) :
     WP isa (.frame (.alloc 32) (.frame (.alloc Impl.Dsa.X86_64.Generation.Refill.frameBytes)
         (Impl.Dsa.X86_64.Generation.Refill.body (checkName := checkName) G1 G256 sq mul prime pBytes qBytes)
         (.free Impl.Dsa.X86_64.Generation.Refill.frameBytes)) (.free 32)) u fun t =>
@@ -395,7 +396,7 @@ theorem inner_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul :
       mem := by
         change Frame _ s₀.mem u.mem
         rw [show off (low s₀) 520 = (allocState 48 s₀).gpr .rsp from (saved_alloc _).symm]; exact hf }
-  refine WP.mono (body_ok h hq hA a) fun t ⟨rax, bytes, uw, sw, fr, sp, rd, wr⟩ =>
+  refine WP.mono (body_ok h hq hA a (hy.congr rfl)) fun t ⟨rax, bytes, uw, sw, fr, sp, rd, wr⟩ =>
     ⟨sp, wr, fun m₁ u₁ fm₁ => ⟨?_, ?_, fun m₂ u₂ fm₂ => ?_⟩⟩
   · change (freeState 296 t).gpr .rsp = _; exact freeState_rsp sp
   · exact freeState_wr wr
@@ -429,15 +430,15 @@ theorem inner_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul :
     freeState_rsp (freeState_rsp sp), rd, freeState_wr (freeState_wr wr)⟩
 
 theorem run_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : Nat → Nat → Nat → Prog isa}
-    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes)
-    (hA : AttemptOk h (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
-      pBytes qBytes)) :
+    {prime : Prog isa} {qBytes : Nat} (hq : qBytes = Spec.Dsa.generationQLen pBytes) {N : FnNames}
+    (hA : AttemptOk h N (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) G1 G256 sq mul prime
+      pBytes qBytes)) (hN : FnRegs N s₀) :
     WP isa (Impl.Dsa.X86_64.Generation.Refill.code (checkName := checkName) G1 G256 sq mul prime pBytes qBytes) s₀
       fun t => RefillRes h t ∧ (∀ r ∈ calleeSaved, t.gpr r = s₀.gpr r) ∧ t.rd = s₀.rd ∧ t.wr = s₀.wr := by
   unfold Impl.Dsa.X86_64.Generation.Refill.code
   apply alloc_frame_ok (by decide) (by have hl : 568 ≤ (s₀.gpr .rsp).toNat := h.stackLower; omega_using [hl])
-  refine WP.seq (WP.mono (entrySave_ok (s := allocState 48 s₀) (List.mem_cons_self ..)) ?_)
-  intro u ⟨hg, hr, hw, saved, hf⟩
+  refine WP.seq (WP.mono_syms (entrySave_ok (s := allocState 48 s₀) (List.mem_cons_self ..)) ?_)
+  intro u ⟨hg, hr, hw, saved, hf⟩ yu
   have saved' : Saved u.mem ((allocState 48 s₀).gpr .rsp) s₀.gpr spillSlots := by
     intro p hp
     have hh := saved p hp
@@ -448,7 +449,7 @@ theorem run_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {sq : Prog isa} {mul : N
       simp only [spillSlots, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     simp [allocState, State.setReg, hn]
-  refine WP.seq (WP.mono (inner_ok h hq hA hg hr hw hf saved') ?_)
+  refine WP.seq (WP.mono (inner_ok h hq hA hg hr hw hf saved' ((fnSyms_entry h hN).congr yu)) ?_)
   intro v ⟨result, sv, spv, rdv, wrv⟩
   have vsp : v.gpr .rsp = (allocState 48 s₀).gpr .rsp := by rw [spv, hg]
   have vwr : (⟨v.gpr .rsp, 48⟩ : Region) ∈ v.wr := by
@@ -480,6 +481,7 @@ variable {checkName : String}
 /-- One seed's attempt is correct (`RefillAttempt.lean`'s `refillAttempt_ok`). -/
 def AttemptCorrect (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest) : Prop :=
   ∀ {p : GenerationContext} {W : Nat → BitVec 64} {s : State}, GenerationMemory p W s →
+    FnSyms (fnNames H.sha1 H.sha256 T p.geo.qLen) p s →
     Region.Sub ⟨p.hs.ptr, p.hs.bytes.length⟩ ⟨p.rand.ptr, p.rand.bytes.length⟩ →
     ∀ (seed : GenerationTape p.geo), seed.bytes.length = p.geo.qLen → GenerationTapeMemory seed s →
     W 1 = seed.ptr → ∀ {used : Nat}, W 16 = BitVec.ofNat 64 used → used ≤ p.rand.bytes.length →
@@ -497,16 +499,17 @@ theorem refill_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Prime
       pBytes qBytes).x86_64Depth ≤ refillStack)
     (ctl : ctlOk (Impl.Dsa.X86_64.Generation.Refill.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run
       pBytes qBytes) = true)
-    (s : State) (pre : (contract pBytes abi refillStack).pre s) :
+    (s : State) (pre : (contractF (fnNames H.sha1 H.sha256 T qBytes) pBytes abi refillStack).pre s) :
     ∃ tr t, Exec isa (Impl.Dsa.X86_64.Generation.Refill.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm
         T.run pBytes qBytes) s tr t ∧
-      abiPreserved s t ∧ (contract pBytes abi refillStack).post s t := by
+      abiPreserved s t ∧ (contractF (fnNames H.sha1 H.sha256 T qBytes) pBytes abi refillStack).post s t := by
   subst hq
-  have h := refillABI_of pre
-  have hA : AttemptOk h (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) H.sha1 H.sha256
+  have h := refillABI_of pre.1
+  have hA : AttemptOk h (fnNames H.sha1 H.sha256 T (Spec.Dsa.generationQLen pBytes))
+      (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) H.sha1 H.sha256
       Sq.mm M.mm T.run pBytes (Spec.Dsa.generationQLen pBytes)) :=
-    fun hs W t seed hin hm hlen hseed h1 used h16 hu => attempt_ok hm hin seed hlen hseed h1 h16 hu
-  obtain ⟨tr, t, he, result, callee, _, _⟩ := run_ok h rfl hA
+    fun hs W t seed hin hm hy hlen hseed h1 used h16 hu => attempt_ok hm hy hin seed hlen hseed h1 h16 hu
+  obtain ⟨tr, t, he, result, callee, _, _⟩ := run_ok h rfl hA pre.2
   refine ⟨tr, t, he, ⟨callee, ?_, VG.X86_64.Exec.ctl ctl he⟩, ?_⟩
   · have hf := Exec.stackFrame (SpSafe.of_all sp) he (by have : refillStack = 568 := rfl; omega_using [depth, this])
     have hfb := VG.X86_64.Frame.below_mono hf depth (by decide)

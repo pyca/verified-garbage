@@ -7530,25 +7530,39 @@ je 20f
 .base64 "SD0AAQAA"
 je 22f
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_3072_sha256_shani_mr_ifma}
+lea rax, [rip + {vg_sha256_update_scratch_shani}]
+lea r10, [rip + {vg_sha256_finalize_scratch_shani}]
+lea r11, [rip + {vg_dsa_probable_prime_ifma}]
+call {vg_dsa_parameter_search_3072}
 .base64 "SI1kJDg="
 23:
 21:
 .base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJJD9///F/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCRwAgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_2048_sha256_shani_mr_ifma}
+lea rax, [rip + {vg_sha256_update_scratch_shani}]
+lea r10, [rip + {vg_sha256_finalize_scratch_shani}]
+lea r11, [rip + {vg_dsa_probable_prime_ifma}]
+call {vg_dsa_parameter_search_2048}
 .base64 "SI1kJDg="
 jmp 23b
 20:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_1024_sha1_shani_mr_ifma}
+lea rax, [rip + {vg_sha1_update_scratch_shani}]
+lea r10, [rip + {vg_sha1_finalize_scratch_shani}]
+lea r11, [rip + {vg_dsa_probable_prime_ifma}]
+call {vg_dsa_parameter_search_1024}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_shani_mr_ifma = sym super::dsa::vg_dsa_parameter_search_3072_sha256_shani_mr_ifma::vg_dsa_parameter_search_3072_sha256_shani_mr_ifma,
-        vg_dsa_parameter_search_2048_sha256_shani_mr_ifma = sym super::dsa::vg_dsa_parameter_search_2048_sha256_shani_mr_ifma::vg_dsa_parameter_search_2048_sha256_shani_mr_ifma,
-        vg_dsa_parameter_search_1024_sha1_shani_mr_ifma = sym super::dsa::vg_dsa_parameter_search_1024_sha1_shani_mr_ifma::vg_dsa_parameter_search_1024_sha1_shani_mr_ifma,
+        vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
+        vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
+        vg_dsa_parameter_search_1024 = sym super::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
+        vg_dsa_probable_prime_ifma = sym super::dsa::vg_dsa_probable_prime_ifma::vg_dsa_probable_prime_ifma,
+        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
+        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
     )
 }
 
@@ -7584,25 +7598,39 @@ je 20f
 .base64 "SD0AAQAA"
 je 22f
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_3072_sha256_shani_mr_adx}
+lea rax, [rip + {vg_sha256_update_scratch_shani}]
+lea r10, [rip + {vg_sha256_finalize_scratch_shani}]
+lea r11, [rip + {vg_dsa_probable_prime_adx}]
+call {vg_dsa_parameter_search_3072}
 .base64 "SI1kJDg="
 23:
 21:
 .base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJJD9///zD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRwAgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_2048_sha256_shani_mr_adx}
+lea rax, [rip + {vg_sha256_update_scratch_shani}]
+lea r10, [rip + {vg_sha256_finalize_scratch_shani}]
+lea r11, [rip + {vg_dsa_probable_prime_adx}]
+call {vg_dsa_parameter_search_2048}
 .base64 "SI1kJDg="
 jmp 23b
 20:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_1024_sha1_shani_mr_adx}
+lea rax, [rip + {vg_sha1_update_scratch_shani}]
+lea r10, [rip + {vg_sha1_finalize_scratch_shani}]
+lea r11, [rip + {vg_dsa_probable_prime_adx}]
+call {vg_dsa_parameter_search_1024}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_shani_mr_adx = sym super::dsa::vg_dsa_parameter_search_3072_sha256_shani_mr_adx::vg_dsa_parameter_search_3072_sha256_shani_mr_adx,
-        vg_dsa_parameter_search_2048_sha256_shani_mr_adx = sym super::dsa::vg_dsa_parameter_search_2048_sha256_shani_mr_adx::vg_dsa_parameter_search_2048_sha256_shani_mr_adx,
-        vg_dsa_parameter_search_1024_sha1_shani_mr_adx = sym super::dsa::vg_dsa_parameter_search_1024_sha1_shani_mr_adx::vg_dsa_parameter_search_1024_sha1_shani_mr_adx,
+        vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
+        vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
+        vg_dsa_parameter_search_1024 = sym super::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
+        vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx::vg_dsa_probable_prime_adx,
+        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
+        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
     )
 }
 
@@ -7638,25 +7666,39 @@ je 20f
 .base64 "SD0AAQAA"
 je 22f
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_3072_sha256_shani}
+lea rax, [rip + {vg_sha256_update_scratch_shani}]
+lea r10, [rip + {vg_sha256_finalize_scratch_shani}]
+lea r11, [rip + {vg_dsa_probable_prime}]
+call {vg_dsa_parameter_search_3072}
 .base64 "SI1kJDg="
 23:
 21:
 .base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJJD9///zD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRwAgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_2048_sha256_shani}
+lea rax, [rip + {vg_sha256_update_scratch_shani}]
+lea r10, [rip + {vg_sha256_finalize_scratch_shani}]
+lea r11, [rip + {vg_dsa_probable_prime}]
+call {vg_dsa_parameter_search_2048}
 .base64 "SI1kJDg="
 jmp 23b
 20:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_1024_sha1_shani}
+lea rax, [rip + {vg_sha1_update_scratch_shani}]
+lea r10, [rip + {vg_sha1_finalize_scratch_shani}]
+lea r11, [rip + {vg_dsa_probable_prime}]
+call {vg_dsa_parameter_search_1024}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_shani = sym super::dsa::vg_dsa_parameter_search_3072_sha256_shani::vg_dsa_parameter_search_3072_sha256_shani,
-        vg_dsa_parameter_search_2048_sha256_shani = sym super::dsa::vg_dsa_parameter_search_2048_sha256_shani::vg_dsa_parameter_search_2048_sha256_shani,
-        vg_dsa_parameter_search_1024_sha1_shani = sym super::dsa::vg_dsa_parameter_search_1024_sha1_shani::vg_dsa_parameter_search_1024_sha1_shani,
+        vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
+        vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
+        vg_dsa_parameter_search_1024 = sym super::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
+        vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani::vg_sha256_update_scratch_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
+        vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime::vg_dsa_probable_prime,
+        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
+        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
     )
 }
 
@@ -7692,25 +7734,39 @@ je 20f
 .base64 "SD0AAQAA"
 je 22f
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma}
+lea rax, [rip + {vg_sha256_update_scratch_avx2}]
+lea r10, [rip + {vg_sha256_finalize_scratch_avx2}]
+lea r11, [rip + {vg_dsa_probable_prime_ifma}]
+call {vg_dsa_parameter_search_3072}
 .base64 "SI1kJDg="
 23:
 21:
 .base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJJD9///F/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCRwAgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma}
+lea rax, [rip + {vg_sha256_update_scratch_avx2}]
+lea r10, [rip + {vg_sha256_finalize_scratch_avx2}]
+lea r11, [rip + {vg_dsa_probable_prime_ifma}]
+call {vg_dsa_parameter_search_2048}
 .base64 "SI1kJDg="
 jmp 23b
 20:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma}
+lea rax, [rip + {vg_sha1_update_scratch_avx_bmi}]
+lea r10, [rip + {vg_sha1_finalize_scratch_avx_bmi}]
+lea r11, [rip + {vg_dsa_probable_prime_ifma}]
+call {vg_dsa_parameter_search_1024}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma = sym super::dsa::vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma::vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma,
-        vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma = sym super::dsa::vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma::vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma,
-        vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma,
+        vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
+        vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
+        vg_dsa_parameter_search_1024 = sym super::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
+        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
+        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
+        vg_dsa_probable_prime_ifma = sym super::dsa::vg_dsa_probable_prime_ifma::vg_dsa_probable_prime_ifma,
+        vg_sha1_update_scratch_avx_bmi = sym super::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi,
+        vg_sha1_finalize_scratch_avx_bmi = sym super::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi,
     )
 }
 
@@ -7746,25 +7802,39 @@ je 20f
 .base64 "SD0AAQAA"
 je 22f
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_3072_sha256_avx2_mr_adx}
+lea rax, [rip + {vg_sha256_update_scratch_avx2}]
+lea r10, [rip + {vg_sha256_finalize_scratch_avx2}]
+lea r11, [rip + {vg_dsa_probable_prime_adx}]
+call {vg_dsa_parameter_search_3072}
 .base64 "SI1kJDg="
 23:
 21:
 .base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJJD9///F/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCRwAgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_2048_sha256_avx2_mr_adx}
+lea rax, [rip + {vg_sha256_update_scratch_avx2}]
+lea r10, [rip + {vg_sha256_finalize_scratch_avx2}]
+lea r11, [rip + {vg_dsa_probable_prime_adx}]
+call {vg_dsa_parameter_search_2048}
 .base64 "SI1kJDg="
 jmp 23b
 20:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx}
+lea rax, [rip + {vg_sha1_update_scratch_avx_bmi}]
+lea r10, [rip + {vg_sha1_finalize_scratch_avx_bmi}]
+lea r11, [rip + {vg_dsa_probable_prime_adx}]
+call {vg_dsa_parameter_search_1024}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_avx2_mr_adx = sym super::dsa::vg_dsa_parameter_search_3072_sha256_avx2_mr_adx::vg_dsa_parameter_search_3072_sha256_avx2_mr_adx,
-        vg_dsa_parameter_search_2048_sha256_avx2_mr_adx = sym super::dsa::vg_dsa_parameter_search_2048_sha256_avx2_mr_adx::vg_dsa_parameter_search_2048_sha256_avx2_mr_adx,
-        vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx::vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx,
+        vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
+        vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
+        vg_dsa_parameter_search_1024 = sym super::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
+        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
+        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
+        vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx::vg_dsa_probable_prime_adx,
+        vg_sha1_update_scratch_avx_bmi = sym super::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi,
+        vg_sha1_finalize_scratch_avx_bmi = sym super::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi,
     )
 }
 
@@ -7800,25 +7870,39 @@ je 20f
 .base64 "SD0AAQAA"
 je 22f
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_3072_sha256_avx2}
+lea rax, [rip + {vg_sha256_update_scratch_avx2}]
+lea r10, [rip + {vg_sha256_finalize_scratch_avx2}]
+lea r11, [rip + {vg_dsa_probable_prime}]
+call {vg_dsa_parameter_search_3072}
 .base64 "SI1kJDg="
 23:
 21:
 .base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJJD9///F/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCRwAgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_2048_sha256_avx2}
+lea rax, [rip + {vg_sha256_update_scratch_avx2}]
+lea r10, [rip + {vg_sha256_finalize_scratch_avx2}]
+lea r11, [rip + {vg_dsa_probable_prime}]
+call {vg_dsa_parameter_search_2048}
 .base64 "SI1kJDg="
 jmp 23b
 20:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_1024_sha1_avx_bmi}
+lea rax, [rip + {vg_sha1_update_scratch_avx_bmi}]
+lea r10, [rip + {vg_sha1_finalize_scratch_avx_bmi}]
+lea r11, [rip + {vg_dsa_probable_prime}]
+call {vg_dsa_parameter_search_1024}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_sha256_avx2 = sym super::dsa::vg_dsa_parameter_search_3072_sha256_avx2::vg_dsa_parameter_search_3072_sha256_avx2,
-        vg_dsa_parameter_search_2048_sha256_avx2 = sym super::dsa::vg_dsa_parameter_search_2048_sha256_avx2::vg_dsa_parameter_search_2048_sha256_avx2,
-        vg_dsa_parameter_search_1024_sha1_avx_bmi = sym super::dsa::vg_dsa_parameter_search_1024_sha1_avx_bmi::vg_dsa_parameter_search_1024_sha1_avx_bmi,
+        vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
+        vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
+        vg_dsa_parameter_search_1024 = sym super::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
+        vg_sha256_update_scratch_avx2 = sym super::sha256::vg_sha256_update_scratch_avx2::vg_sha256_update_scratch_avx2,
+        vg_sha256_finalize_scratch_avx2 = sym super::sha256::vg_sha256_finalize_scratch_avx2::vg_sha256_finalize_scratch_avx2,
+        vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime::vg_dsa_probable_prime,
+        vg_sha1_update_scratch_avx_bmi = sym super::sha1::vg_sha1_update_scratch_avx_bmi::vg_sha1_update_scratch_avx_bmi,
+        vg_sha1_finalize_scratch_avx_bmi = sym super::sha1::vg_sha1_finalize_scratch_avx_bmi::vg_sha1_finalize_scratch_avx_bmi,
     )
 }
 
@@ -7854,25 +7938,39 @@ je 20f
 .base64 "SD0AAQAA"
 je 22f
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_3072_mr_ifma}
+lea rax, [rip + {vg_sha256_update_scratch}]
+lea r10, [rip + {vg_sha256_finalize_scratch}]
+lea r11, [rip + {vg_dsa_probable_prime_ifma}]
+call {vg_dsa_parameter_search_3072}
 .base64 "SI1kJDg="
 23:
 21:
 .base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//YqH9QO/AYqH1QO/JYqHtQO/SYqHlQO/bYqHdQO/kYqHVQO/tYqHNQO/2YqHFQO//YgG9QO/AYgG1QO/JYgGtQO/SYgGlQO/bYgGdQO/kYgGVQO/tYgGNQO/2YgGFQO//RTHbSI1kJPhMiRwkSI2kJJD9///F/n+EJFACAADF/n+EJDACAADF/n+EJBACAADF/n+EJPABAADF/n+EJNABAADF/n+EJLABAADF/n+EJJABAADF/n+EJHABAADF/n+EJFABAADF/n+EJDABAADF/n+EJBABAADF/n+EJPAAAADF/n+EJNAAAADF/n+EJLAAAADF/n+EJJAAAADF/n9EJHDF/n9EJFDF/n9EJDDF/n9EJBDzD38EJEiNpCRwAgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_2048_mr_ifma}
+lea rax, [rip + {vg_sha256_update_scratch}]
+lea r10, [rip + {vg_sha256_finalize_scratch}]
+lea r11, [rip + {vg_dsa_probable_prime_ifma}]
+call {vg_dsa_parameter_search_2048}
 .base64 "SI1kJDg="
 jmp 23b
 20:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_1024_mr_ifma}
+lea rax, [rip + {vg_sha1_update_scratch}]
+lea r10, [rip + {vg_sha1_finalize_scratch}]
+lea r11, [rip + {vg_dsa_probable_prime_ifma}]
+call {vg_dsa_parameter_search_1024}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_mr_ifma = sym super::dsa::vg_dsa_parameter_search_3072_mr_ifma::vg_dsa_parameter_search_3072_mr_ifma,
-        vg_dsa_parameter_search_2048_mr_ifma = sym super::dsa::vg_dsa_parameter_search_2048_mr_ifma::vg_dsa_parameter_search_2048_mr_ifma,
-        vg_dsa_parameter_search_1024_mr_ifma = sym super::dsa::vg_dsa_parameter_search_1024_mr_ifma::vg_dsa_parameter_search_1024_mr_ifma,
+        vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
+        vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
+        vg_dsa_parameter_search_1024 = sym super::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_dsa_probable_prime_ifma = sym super::dsa::vg_dsa_probable_prime_ifma::vg_dsa_probable_prime_ifma,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
     )
 }
 
@@ -7908,25 +8006,39 @@ je 20f
 .base64 "SD0AAQAA"
 je 22f
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_3072_mr_adx}
+lea rax, [rip + {vg_sha256_update_scratch}]
+lea r10, [rip + {vg_sha256_finalize_scratch}]
+lea r11, [rip + {vg_dsa_probable_prime_adx}]
+call {vg_dsa_parameter_search_3072}
 .base64 "SI1kJDg="
 23:
 21:
 .base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJJD9///zD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRwAgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_2048_mr_adx}
+lea rax, [rip + {vg_sha256_update_scratch}]
+lea r10, [rip + {vg_sha256_finalize_scratch}]
+lea r11, [rip + {vg_dsa_probable_prime_adx}]
+call {vg_dsa_parameter_search_2048}
 .base64 "SI1kJDg="
 jmp 23b
 20:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
-call {vg_dsa_parameter_search_1024_mr_adx}
+lea rax, [rip + {vg_sha1_update_scratch}]
+lea r10, [rip + {vg_sha1_finalize_scratch}]
+lea r11, [rip + {vg_dsa_probable_prime_adx}]
+call {vg_dsa_parameter_search_1024}
 .base64 "SI1kJDg="
 jmp 21b
 .p2align 6"#,
-        vg_dsa_parameter_search_3072_mr_adx = sym super::dsa::vg_dsa_parameter_search_3072_mr_adx::vg_dsa_parameter_search_3072_mr_adx,
-        vg_dsa_parameter_search_2048_mr_adx = sym super::dsa::vg_dsa_parameter_search_2048_mr_adx::vg_dsa_parameter_search_2048_mr_adx,
-        vg_dsa_parameter_search_1024_mr_adx = sym super::dsa::vg_dsa_parameter_search_1024_mr_adx::vg_dsa_parameter_search_1024_mr_adx,
+        vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
+        vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
+        vg_dsa_parameter_search_1024 = sym super::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_dsa_probable_prime_adx = sym super::dsa::vg_dsa_probable_prime_adx::vg_dsa_probable_prime_adx,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
     )
 }
 
@@ -7958,6 +8070,9 @@ je 20f
 .base64 "SD0AAQAA"
 je 22f
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+lea rax, [rip + {vg_sha256_update_scratch}]
+lea r10, [rip + {vg_sha256_finalize_scratch}]
+lea r11, [rip + {vg_dsa_probable_prime}]
 call {vg_dsa_parameter_search_3072}
 .base64 "SI1kJDg="
 23:
@@ -7965,11 +8080,17 @@ call {vg_dsa_parameter_search_3072}
 .base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJJD9///zD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRwAgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 22:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+lea rax, [rip + {vg_sha256_update_scratch}]
+lea r10, [rip + {vg_sha256_finalize_scratch}]
+lea r11, [rip + {vg_dsa_probable_prime}]
 call {vg_dsa_parameter_search_2048}
 .base64 "SI1kJDg="
 jmp 23b
 20:
 .base64 "SI1kJMhIi0QkQEiJBCRIi0QkSEiJRCQI"
+lea rax, [rip + {vg_sha1_update_scratch}]
+lea r10, [rip + {vg_sha1_finalize_scratch}]
+lea r11, [rip + {vg_dsa_probable_prime}]
 call {vg_dsa_parameter_search_1024}
 .base64 "SI1kJDg="
 jmp 21b
@@ -7977,6 +8098,11 @@ jmp 21b
         vg_dsa_parameter_search_3072 = sym super::dsa::vg_dsa_parameter_search_3072::vg_dsa_parameter_search_3072,
         vg_dsa_parameter_search_2048 = sym super::dsa::vg_dsa_parameter_search_2048::vg_dsa_parameter_search_2048,
         vg_dsa_parameter_search_1024 = sym super::dsa::vg_dsa_parameter_search_1024::vg_dsa_parameter_search_1024,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_dsa_probable_prime = sym super::dsa::vg_dsa_probable_prime::vg_dsa_probable_prime,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
     )
 }
 
@@ -8005,108 +8131,12 @@ pub(crate) mod vg_dsa_generation_check_parameters;
 pub(crate) mod vg_dsa_parameter_search_1024;
 
 #[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_1024_mr_adx.rs"]
-pub(crate) mod vg_dsa_parameter_search_1024_mr_adx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_1024_mr_ifma.rs"]
-pub(crate) mod vg_dsa_parameter_search_1024_mr_ifma;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_1024_sha1_avx_bmi.rs"]
-pub(crate) mod vg_dsa_parameter_search_1024_sha1_avx_bmi;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx.rs"]
-pub(crate) mod vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_adx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma.rs"]
-pub(crate) mod vg_dsa_parameter_search_1024_sha1_avx_bmi_mr_ifma;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_1024_sha1_shani.rs"]
-pub(crate) mod vg_dsa_parameter_search_1024_sha1_shani;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_1024_sha1_shani_mr_adx.rs"]
-pub(crate) mod vg_dsa_parameter_search_1024_sha1_shani_mr_adx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_1024_sha1_shani_mr_ifma.rs"]
-pub(crate) mod vg_dsa_parameter_search_1024_sha1_shani_mr_ifma;
-
-#[rustfmt::skip]
 #[path = "internal/vg_dsa_parameter_search_2048.rs"]
 pub(crate) mod vg_dsa_parameter_search_2048;
 
 #[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_2048_mr_adx.rs"]
-pub(crate) mod vg_dsa_parameter_search_2048_mr_adx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_2048_mr_ifma.rs"]
-pub(crate) mod vg_dsa_parameter_search_2048_mr_ifma;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_2048_sha256_avx2.rs"]
-pub(crate) mod vg_dsa_parameter_search_2048_sha256_avx2;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_2048_sha256_avx2_mr_adx.rs"]
-pub(crate) mod vg_dsa_parameter_search_2048_sha256_avx2_mr_adx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma.rs"]
-pub(crate) mod vg_dsa_parameter_search_2048_sha256_avx2_mr_ifma;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_2048_sha256_shani.rs"]
-pub(crate) mod vg_dsa_parameter_search_2048_sha256_shani;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_2048_sha256_shani_mr_adx.rs"]
-pub(crate) mod vg_dsa_parameter_search_2048_sha256_shani_mr_adx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_2048_sha256_shani_mr_ifma.rs"]
-pub(crate) mod vg_dsa_parameter_search_2048_sha256_shani_mr_ifma;
-
-#[rustfmt::skip]
 #[path = "internal/vg_dsa_parameter_search_3072.rs"]
 pub(crate) mod vg_dsa_parameter_search_3072;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_3072_mr_adx.rs"]
-pub(crate) mod vg_dsa_parameter_search_3072_mr_adx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_3072_mr_ifma.rs"]
-pub(crate) mod vg_dsa_parameter_search_3072_mr_ifma;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_3072_sha256_avx2.rs"]
-pub(crate) mod vg_dsa_parameter_search_3072_sha256_avx2;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_3072_sha256_avx2_mr_adx.rs"]
-pub(crate) mod vg_dsa_parameter_search_3072_sha256_avx2_mr_adx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma.rs"]
-pub(crate) mod vg_dsa_parameter_search_3072_sha256_avx2_mr_ifma;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_3072_sha256_shani.rs"]
-pub(crate) mod vg_dsa_parameter_search_3072_sha256_shani;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_3072_sha256_shani_mr_adx.rs"]
-pub(crate) mod vg_dsa_parameter_search_3072_sha256_shani_mr_adx;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_parameter_search_3072_sha256_shani_mr_ifma.rs"]
-pub(crate) mod vg_dsa_parameter_search_3072_sha256_shani_mr_ifma;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_probable_prime.rs"]

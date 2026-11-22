@@ -100,6 +100,11 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ViaSlot
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
@@ -145,15 +150,19 @@ structure PrimeTestPublic (bits : Nat) where
   N : Nat
   used : Nat
   geometry : PrimeCallGeometry bits F S A rp rand.length
+  /-- The test's address. -/
+  pa : Addr
 
-def PrimeTestBefore (bits : Nat) (a : PrimeTestPublic bits) (s : State) : Prop :=
-  ∃ W V, PrimeCallInputs bits a.F a.S a.A a.rp a.rand a.N a.used W V s
+/-- Before the call of the test `np`, at the address `a.pa`. -/
+def PrimeTestBefore (bits : Nat) (np : String) (a : PrimeTestPublic bits) (s : State) : Prop :=
+  ∃ W V, PrimeCallInputs bits np a.F a.S a.A a.rp a.rand a.N a.used W V s ∧ s.syms np = a.pa
 
-theorem PrimeCallInputs.congr {bits : Nat} {F S A rp : Addr} {rand : List Byte} {N used : Nat}
+theorem PrimeCallInputs.congr {bits : Nat} {np : String} {F S A rp : Addr} {rand : List Byte} {N used : Nat}
     {W : Nat → BitVec 64} {V : Nat → Byte} {s t : State}
-    (h : PrimeCallInputs bits F S A rp rand N used W V s)
-    (hm : t.mem = s.mem) (hsp : t.gpr .rsp = s.gpr .rsp) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr) :
-    PrimeCallInputs bits F S A rp rand N used W V t where
+    (h : PrimeCallInputs bits np F S A rp rand N used W V s)
+    (hm : t.mem = s.mem) (hsp : t.gpr .rsp = s.gpr .rsp) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
+    (hy : t.syms = s.syms) :
+    PrimeCallInputs bits np F S A rp rand N used W V t where
   layout := h.layout.congr hsp hwr (by rw [hm])
   rep := hm ▸ h.rep
   arena := h.arena
@@ -168,10 +177,11 @@ theorem PrimeCallInputs.congr {bits : Nat} {F S A rp : Addr} {rand : List Byte} 
   candidate := by rw [hm]; exact h.candidate
   odd := h.odd
   bitLen := h.bitLen
+  fnSlot := by rw [hy]; exact h.fnSlot
 
 /-- The arguments in their registers. -/
-def PrimeTestReady (bits : Nat) (a : PrimeTestPublic bits) (u : State) : Prop :=
-  ∃ s W V, PrimeCallInputs bits a.F a.S a.A a.rp a.rand a.N a.used W V s ∧
+def PrimeTestReady (bits : Nat) (np : String) (a : PrimeTestPublic bits) (u : State) : Prop :=
+  ∃ s W V, PrimeCallInputs bits np a.F a.S a.A a.rp a.rand a.N a.used W V s ∧ u.syms = s.syms ∧ s.syms np = a.pa ∧
     u.gpr .rdi = a.A ∧ u.gpr .rsi = BitVec.ofNat 64 (domainCheck / 8) ∧
     u.gpr .rdx = a.rp + BitVec.ofNat 64 a.used ∧ u.gpr .rcx = BitVec.ofNat 64 (a.rand.length - a.used) ∧
     u.gpr .r8 = off a.F 152 ∧ u.gpr .r9 = BitVec.ofNat 64 bits ∧ u.mem = s.mem ∧ u.gpr .rsp = a.F ∧
@@ -192,27 +202,37 @@ def PrimeTestDone (bits : Nat) (a : PrimeTestPublic bits) (t : State) : Prop :=
 def PrimeTestStatus (bits : Nat) (a : PrimeTestPublic bits) (t : State) : Prop :=
   t.gpr .rsp = a.F ∧ t.gpr .rax = BitVec.ofNat 64 a.status
 
-theorem primeCallArgs_ct {bits : Nat} (hb : ProbablePrime.Supported bits) :
-    RelCT isa (Two (PrimeTestBefore bits)) (.block (Impl.Dsa.X86_64.Generation.primeCallArgs bits))
-      (Two (PrimeTestReady bits)) := by
-  have pins : Pins (PrimeTestBefore bits) [.rsp] := fun a s₁ s₂ ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ r hr => by
+theorem primeCallArgs_ct {bits : Nat} {np : String} (hb : ProbablePrime.Supported bits) :
+    RelCT isa (Two (PrimeTestBefore bits np)) (.block (Impl.Dsa.X86_64.Generation.primeCallArgs bits))
+      (Two (PrimeTestReady bits np)) := by
+  have pins : Pins (PrimeTestBefore bits np) [.rsp] := fun a s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
     obtain rfl := List.mem_singleton.mp hr
     exact h₁.layout.rsp.trans h₂.layout.rsp.symm
-  refine two_post ?_ fun a s ⟨W, V, h⟩ => ?_
+  refine two_post ?_ fun a s ⟨W, V, h, hy⟩ => ?_
   · rcases hb with rfl | rfl | rfl | rfl | rfl <;> exact two_taint [.rsp] pins (by taint_decide)
-  exact WP.mono (primeCallArgs_ok hb h) fun u ⟨hdi, hsi, hdx, hcx, h8, h9, hm, ku⟩ =>
-    ⟨s, W, V, h, hdi, hsi, hdx, hcx, h8, h9, hm, (ku.gpr (by decide)).trans h.layout.rsp, ku.2.1, ku.2.2⟩
+  exact WP.mono_syms (primeCallArgs_ok hb h) fun u ⟨hdi, hsi, hdx, hcx, h8, h9, hm, ku⟩ uy =>
+    ⟨s, W, V, h, uy, hy, hdi, hsi, hdx, hcx, h8, h9, hm, (ku.gpr (by decide)).trans h.layout.rsp, ku.2.1, ku.2.2⟩
 
 theorem primeCallTest_ct (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported bits) :
-    RelCT isa (Two (PrimeTestReady bits)) T.run (Two (PrimeTestDone bits)) := by
-  refine two_post ?_ fun a u ⟨s, W, V, h, hdi, hsi, hdx, hcx, h8, h9, hm, hsp, hrd, hwr⟩ =>
-    WP.mono (primeCall_call_ok T hb h a.geometry hdi hsi hdx hcx h8 h9 hm hsp hrd hwr)
+    RelCT isa (Two (PrimeTestReady bits T.name)) T.run (Two (PrimeTestDone bits)) := by
+  refine two_post ?_ fun a u ⟨s, W, V, h, uy, _, hdi, hsi, hdx, hcx, h8, h9, hm, hsp, hrd, hwr⟩ =>
+    WP.mono (primeCall_call_ok T hb h a.geometry hdi hsi hdx hcx h8 h9 hm hsp hrd hwr uy)
       fun t C => ⟨C.rsp, C.status⟩
+  refine two_viaSlot (fun a s₁ s₂ h₁ h₂ => by
+    obtain ⟨_, _, _, _, y₁, p₁, -, -, -, -, -, -, -, sp₁, -⟩ := h₁
+    obtain ⟨_, _, _, _, y₂, p₂, -, -, -, -, -, -, -, sp₂, -⟩ := h₂
+    exact ⟨sp₁.trans sp₂.symm, by rw [y₁, y₂, p₁, p₂]⟩) ?_
   refine RelCT.callExMx T.verified.1 T.verified.2.1 T.noMx (fun _ _ h => h) fun s₁ s₂ ⟨a, h₁, h₂⟩ => ?_
-  obtain ⟨_, _, _, i₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁, hm₁, hsp₁, hrd₁, hwr₁⟩ := h₁
-  obtain ⟨_, _, _, i₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂, hm₂, hsp₂, hrd₂, hwr₂⟩ := h₂
-  have E₁ := primeCall_entry hb i₁ a.geometry hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁ hm₁ hsp₁ hrd₁ hwr₁
-  have E₂ := primeCall_entry hb i₂ a.geometry hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂ hm₂ hsp₂ hrd₂ hwr₂
+  obtain ⟨u₁, ⟨_, _, _, i₁, -, -, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁, hm₁, hsp₁, hrd₁, hwr₁⟩, rfl⟩ := h₁
+  obtain ⟨u₂, ⟨_, _, _, i₂, -, -, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂, hm₂, hsp₂, hrd₂, hwr₂⟩, rfl⟩ := h₂
+  have g₁ : ∀ {r : Reg}, r ≠ .rax → (slotState u₁ T.name).gpr r = u₁.gpr r := slotState_gpr u₁ T.name
+  have g₂ : ∀ {r : Reg}, r ≠ .rax → (slotState u₂ T.name).gpr r = u₂.gpr r := slotState_gpr u₂ T.name
+  have E₁ := primeCall_entry hb i₁ a.geometry ((g₁ (by decide)).trans hdi₁) ((g₁ (by decide)).trans hsi₁)
+    ((g₁ (by decide)).trans hdx₁) ((g₁ (by decide)).trans hcx₁) ((g₁ (by decide)).trans h8₁)
+    ((g₁ (by decide)).trans h9₁) hm₁ ((g₁ (by decide)).trans hsp₁) hrd₁ hwr₁
+  have E₂ := primeCall_entry hb i₂ a.geometry ((g₂ (by decide)).trans hdi₂) ((g₂ (by decide)).trans hsi₂)
+    ((g₂ (by decide)).trans hdx₂) ((g₂ (by decide)).trans hcx₂) ((g₂ (by decide)).trans h8₂)
+    ((g₂ (by decide)).trans h9₂) hm₂ ((g₂ (by decide)).trans hsp₂) hrd₂ hwr₂
   refine ⟨_, _, _, _, E₁.pre, E₂.pre, ?_, E₁.reads, E₁.writes, E₂.reads, E₂.writes, hsp₁.trans hsp₂.symm⟩
   sig_pub [Contract.mxFree, ProbablePrime.contract, Proof.Dsa.ProbablePrime.sizedContract,
     Proof.Dsa.ProbablePrime.sizedSig, abi, argRegs]
@@ -220,8 +240,10 @@ theorem primeCallTest_ct (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppor
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := i₁.tapeSize; omega_using [this])]
   have hbits : (BitVec.ofNat 64 bits).toNat = bits := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hb.le; omega_using [this])]
+  have F₁ := primeCall_entry hb i₁ a.geometry hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁ hm₁ hsp₁ hrd₁ hwr₁
+  have F₂ := primeCall_entry hb i₂ a.geometry hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂ hm₂ hsp₂ hrd₂ hwr₂
   rw [hsp₁, hsp₂, hdi₁, hdi₂, hdx₁, hdx₂, hcx₁, hcx₂, hsi₁, hsi₂, h8₁, h8₂, h9₁, h9₂, hl, hbits,
-    E₁.candidate, E₂.candidate, E₁.tape, E₂.tape]
+    F₁.candidate, F₂.candidate, F₁.tape, F₂.tape]
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 theorem primeCallResult_ct (bits : Nat) :
@@ -243,7 +265,7 @@ theorem primeCallResult_ct (bits : Nat) :
       · exact h₁.2.trans h₂.2.symm) (by taint_decide)
 
 theorem primeCall_ct (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported bits) :
-    RelCT isa (Two (PrimeTestBefore bits)) (Impl.Dsa.X86_64.Generation.primeCall T.run bits)
+    RelCT isa (Two (PrimeTestBefore bits T.name)) (Impl.Dsa.X86_64.Generation.primeCall T.run bits)
       fun _ _ => True := by
   unfold Impl.Dsa.X86_64.Generation.primeCall
   exact RelCT.seq (primeCallArgs_ct hb) (RelCT.seq (primeCallTest_ct T hb) (primeCallResult_ct bits))
@@ -267,18 +289,115 @@ section
 @[expose] public section
 namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.Bignum (off)
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64
+
+/-- A point of `hashLabelI G`: one of `hashLabel` (`LW`), with frame words
+29 and 30 holding the public addresses `a.2.1` and `a.2.2` of `G`'s
+`update` and `finalize`. -/
+structure LWI (n : Nat) (nu nf : String) (a : LQ × Addr × Addr) (t : State) : Prop where
+  lw : LW n a.1 t
+  wu : Bignum.word t.mem a.1.F Impl.Dsa.X86_64.Generation.updSlot = a.2.1
+  wf : Bignum.word t.mem a.1.F Impl.Dsa.X86_64.Generation.finSlot = a.2.2
+  su : t.syms nu = a.2.1
+  sf : t.syms nf = a.2.2
+
+theorem LWI.congr {n : Nat} {nu nf : String} {a : LQ × Addr × Addr} {t t' : State}
+    (h : LWI n nu nf a t) (hsp : t'.gpr .rsp = t.gpr .rsp) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
+    (hm : t'.mem = t.mem) (hy : t'.syms = t.syms) : LWI n nu nf a t' :=
+  ⟨h.lw.congr hsp hrd hwr hm, by rw [hm]; exact h.wu, by rw [hm]; exact h.wf, by rw [hy]; exact h.su,
+    by rw [hy]; exact h.sf⟩
+
+/-- After a call that keeps the frame's words `W`. -/
+theorem LWI.after {n : Nat} {nu nf : String} {a : LQ × Addr × Addr} {t t' : State}
+    (h : LWI n nu nf a t) (L' : Lay t' a.1.F a.1.S) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
+    {V V' : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem a.1.F a.1.S V W) (R' : Rep t'.mem a.1.F a.1.S V' W)
+    (A : LabAt t a.1.F a.1.S W a.1.lab a.1.labLen) (hy : t'.syms = t.syms) : LWI n nu nf a t' :=
+  ⟨h.lw.after L' hrd hwr R' A, by rw [← h.wu]; exact (R'.fr 29 (by decide)).trans (R.fr 29 (by decide)).symm,
+    by rw [← h.wf]; exact (R'.fr 30 (by decide)).trans (R.fr 30 (by decide)).symm, by rw [hy]; exact h.su,
+    by rw [hy]; exact h.sf⟩
+
+/-- The label's hash to `scratch + oDig` by `hashLabelI`, in two runs with
+the same `LQ` and addresses of `update` and `finalize`. -/
+theorem hashLabelI_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) :
+    RelCT isa (Two (LWI n G.updN G.finN)) (Impl.Dsa.X86_64.Generation.hashLabelI G oDig) fun _ _ => True := by
+  have hoo : oSt + 256 ≤ oDig ∧ oDig + 64 ≤ oW := by decide
+  unfold Impl.Dsa.X86_64.Generation.hashLabelI Impl.Mgf1.X86_64.seqs Impl.Mgf1.X86_64.seqs
+    Impl.Mgf1.X86_64.seqs Impl.Mgf1.X86_64.seqs Impl.Mgf1.X86_64.seqs
+  refine RelCT.seq (two_pieceF (Ψ := fun a t => LWI n G.updN G.finN a t ∧ t.gpr .rdi = off a.1.S oSt) [] []
+    (fun a => a.1.F) (fun a => a.1.ws) (fun _ _ => 0)
+    (fun a t h => h.lw.fr) nopin (by decide) (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩)
+    fun a t h => WP.mono_syms (scr_ok h.lw.L (d := .rdi) (by decide) (o := oSt) (by decide))
+        fun t' ⟨hdi, hm, k⟩ y => ⟨h.congr (k.gpr (by decide)) k.2.1 k.2.2 hm y, hdi⟩) ?_
+  refine RelCT.seq (two_post (Ψ := LWI n G.updN G.finN)
+    (two_map (fun a => a.1) (fun (a : LQ × Addr × Addr) (t : State)
+        (h : LWI n G.updN G.finN a t ∧ t.gpr .rdi = off a.1.S oSt) =>
+        (⟨h.1.lw.L, h.2⟩ : Lay t a.1.F a.1.S ∧ t.gpr .rdi = off a.1.S oSt))
+      (two_init hG (Φ := fun q t => Lay t q.F q.S ∧ t.gpr .rdi = off q.S oSt) LQ.F LQ.S fun q t h => h))
+    fun a t h => ?_) ?_
+  · obtain ⟨V, W, R, A⟩ := h.1.lw.rep
+    exact WP.mono_syms (init_ok hG h.1.lw.L R h.2) fun t' ⟨L', rd', wr', _, R', _⟩ y =>
+      h.1.after L' rd' wr' R R' A y
+  refine RelCT.seq (two_pieceF (Ψ := fun a t => LWI n G.updN G.finN a t ∧ t.gpr .rdi = off a.1.S oSt ∧
+      t.gpr .rsi = BitVec.ofNat 64 0 ∧ t.gpr .rdx = a.1.lab ∧ t.gpr .rcx = BitVec.ofNat 64 a.1.labLen ∧
+      t.gpr .r8 = off a.1.S oW) [] [] (fun a => a.1.F) (fun a => a.1.ws) (fun _ _ => 0)
+    (fun a t h => h.lw.fr) nopin (by decide) (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩)
+    fun a t h => ?_) ?_
+  · obtain ⟨V, W, R, A⟩ := h.lw.rep
+    exact WP.mono_syms (labA_ok h.lw.L R A) fun t' ⟨hdi, hsi, hdx, hcx, h8, hm, k⟩ y =>
+      ⟨h.congr (k.gpr (by decide)) k.2.1 k.2.2 hm y, hdi, hsi, hdx, hcx, h8⟩
+  refine RelCT.seq (two_post (Ψ := LWI n G.updN G.finN)
+    (two_viaSlot (fun a s₁ s₂ h₁ h₂ => ⟨h₁.1.lw.L.rsp.trans h₂.1.lw.L.rsp.symm, h₁.1.su.trans h₂.1.su.symm⟩)
+      (two_map (fun a => a.1) (fun a t h => ?_) (two_updExt hG (Φ := fun q t => Lay t q.F q.S ∧
+        q.labLen < 2 ^ 64 ∧ Covers [⟨q.lab, q.labLen⟩] (t.rd ++ t.wr) ∧
+        Region.Disjoint ⟨q.lab, q.labLen⟩ ⟨q.S, oRsa⟩ ∧ (below q.F 16).Disjoint ⟨q.lab, q.labLen⟩ ∧
+        t.gpr .rdi = off q.S oSt ∧ t.gpr .rsi = BitVec.ofNat 64 0 ∧ t.gpr .rdx = q.lab ∧
+        t.gpr .rcx = BitVec.ofNat 64 q.labLen ∧ t.gpr .r8 = off q.S oW) LQ.F LQ.S LQ.lab LQ.labLen
+        (fun _ => BitVec.ofNat 64 0) fun q t h => h)))
+    fun a t h => ?_) ?_
+  · obtain ⟨t₀, h, rfl⟩ := h
+    obtain ⟨V, W, R, A⟩ := h.1.lw.rep
+    have g : ∀ {r : Reg}, r ≠ .rax → (slotState t₀ G.updN).gpr r = t₀.gpr r := slotState_gpr t₀ G.updN
+    exact ⟨lay_slotState h.1.lw.L G.updN, A.len, by rw [RegUpd.rd_setReg, RegUpd.wr_setReg]; exact A.cov,
+      A.dS, A.dK, (g (by decide)).trans h.2.1, (g (by decide)).trans h.2.2.1, (g (by decide)).trans h.2.2.2.1,
+      (g (by decide)).trans h.2.2.2.2.1, (g (by decide)).trans h.2.2.2.2.2⟩
+  · obtain ⟨V, W, R, A⟩ := h.1.lw.rep
+    have g : ∀ {r : Reg}, r ≠ .rax → (slotState t G.updN).gpr r = t.gpr r := slotState_gpr t G.updN
+    refine viaSlot_ok h.1.lw.L (by decide) (h.1.wu.trans h.1.su.symm)
+      (WP.mono_syms (updExt_ok hG (lay_slotState h.1.lw.L G.updN) (RegUpd.mem_setReg t .rax (t.syms G.updN) ▸ R)
+        A.len (by rw [RegUpd.rd_setReg, RegUpd.wr_setReg]; exact A.cov) A.dS A.dK
+        ((g (by decide)).trans h.2.1) ((g (by decide)).trans h.2.2.2.1) ((g (by decide)).trans h.2.2.2.2.1)
+        ((g (by decide)).trans h.2.2.2.2.2))
+      fun t' ⟨L', rd', wr', _, R', _⟩ y => h.1.after L' rd' wr' R R' A y)
+  refine RelCT.seq (two_pieceF (Ψ := fun a t => LWI n G.updN G.finN a t ∧ t.gpr .rdi = off a.1.S oSt ∧
+      t.gpr .rsi = BitVec.ofNat 64 a.1.labLen ∧ t.gpr .rdx = off a.1.S oDig ∧ t.gpr .rcx = off a.1.S oW) [] []
+    (fun a => a.1.F) (fun a => a.1.ws) (fun _ _ => 0) (fun a t h => h.lw.fr) nopin (by decide)
+    (by rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩)
+    fun a t h => ?_) ?_
+  · obtain ⟨V, W, R, A⟩ := h.lw.rep
+    exact WP.mono_syms (labF_ok h.lw.L R A.hll (o := oDig) (by decide))
+      fun t' ⟨hdi, hsi, hdx, hcx, hm, k⟩ y => ⟨h.congr (k.gpr (by decide)) k.2.1 k.2.2 hm y, hdi, hsi, hdx, hcx⟩
+  refine two_viaSlot (fun a s₁ s₂ h₁ h₂ => ⟨h₁.1.lw.L.rsp.trans h₂.1.lw.L.rsp.symm, h₁.1.sf.trans h₂.1.sf.symm⟩)
+    (two_map (fun a => a.1) (fun a t h => ?_) (two_fin hG (Φ := fun q t => Lay t q.F q.S ∧
+      (oDig + 64 ≤ oSt ∨ (oSt + 256 ≤ oDig ∧ oDig + 64 ≤ oW)) ∧ t.gpr .rdi = off q.S oSt ∧
+      t.gpr .rsi = BitVec.ofNat 64 q.labLen ∧ t.gpr .rdx = off q.S oDig ∧ t.gpr .rcx = off q.S oW)
+      LQ.F LQ.S (fun _ => oDig) (fun q => BitVec.ofNat 64 q.labLen) fun q t h => h))
+  obtain ⟨t₀, h, rfl⟩ := h
+  have g : ∀ {r : Reg}, r ≠ .rax → (slotState t₀ G.finN).gpr r = t₀.gpr r := slotState_gpr t₀ G.finN
+  exact ⟨lay_slotState h.1.lw.L G.finN, Or.inr hoo, (g (by decide)).trans h.2.1, (g (by decide)).trans h.2.2.1,
+    (g (by decide)).trans h.2.2.2.1, (g (by decide)).trans h.2.2.2.2⟩
 
 theorem seedHashAt_ct {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream}
     (h1 : Calls.StreamOK G1) (h256 : Calls.StreamOK G256)
     (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (len : Nat) :
-    RelCT isa (Two (LW n)) (Impl.Dsa.X86_64.Generation.seedHashAt G1 G256 len)
-      (fun _ _ => True) := by
+    RelCT isa (Two (LWI n (if len = 20 then G1 else G256).updN (if len = 20 then G1 else G256).finN))
+      (Impl.Dsa.X86_64.Generation.seedHashAt G1 G256 len) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.seedHashAt
-  split
-  · exact hashLabel_ct h1 n hn (Or.inl rfl)
-  · exact hashLabel_ct h256 n hn (Or.inl rfl)
+  by_cases hl : len = 20
+  · simp only [hl, ↓reduceIte]; exact hashLabelI_ct h1 n hn
+  · simp only [hl, ↓reduceIte]; exact hashLabelI_ct h256 n hn
 
 end VG.Proof.Dsa.X86_64.Generation
 
@@ -297,54 +416,72 @@ structure QHashPlan where
   hash : LQ
   output : Addr
   width : hash.labLen = 20 ∨ hash.labLen = 32
+  /-- The addresses of the hash's `update` and `finalize`. -/
+  au : Addr
+  af : Addr
 
-structure QHashState (n : Nat) (p : QHashPlan) (s : State) : Prop where
+/-- A point of the subgroup candidate's hashing, by the functions `nu` and `nf`. -/
+structure QHashState (n : Nat) (nu nf : String) (p : QHashPlan) (s : State) : Prop where
   frame : FrV n p.hash.F p.hash.ws s
   layout : Lay s p.hash.F p.hash.S
   rep : ∃ V W, Rep s.mem p.hash.F p.hash.S V W ∧
-    LabAt s p.hash.F p.hash.S W p.hash.lab p.hash.labLen ∧ W 0 = p.output
+    LabAt s p.hash.F p.hash.S W p.hash.lab p.hash.labLen ∧ W 0 = p.output ∧ W 29 = p.au ∧ W 30 = p.af
+  su : s.syms nu = p.au
+  sf : s.syms nf = p.af
 
-theorem QHashState.label {n : Nat} {p : QHashPlan} {s : State} (h : QHashState n p s) : LW n p.hash s := by
-  obtain ⟨V, W, R, A, _⟩ := h.rep
-  exact ⟨h.frame, h.layout, V, W, R, A⟩
+theorem QHashState.label {n : Nat} {nu nf : String} {p : QHashPlan} {s : State} (h : QHashState n nu nf p s) :
+    LWI n nu nf (p.hash, p.au, p.af) s := by
+  obtain ⟨V, W, R, A, _, h29, h30⟩ := h.rep
+  exact ⟨⟨h.frame, h.layout, V, W, R, A⟩, (R.fr 29 (by decide)).trans h29, (R.fr 30 (by decide)).trans h30,
+    h.su, h.sf⟩
+
+/-- The names of the hash's `update` and `finalize` for the width `len`. -/
+abbrev qnu (H : GenerationHashes) (len : Nat) : String := (if len = 20 then H.sha1 else H.sha256).updN
+abbrev qnf (H : GenerationHashes) (len : Nat) : String := (if len = 20 then H.sha1 else H.sha256).finN
 
 theorem qHash_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (len : Nat) :
-    RelCT isa (Two (QHashState n)) (Impl.Dsa.X86_64.Generation.seedHashAt H.sha1 H.sha256 len)
-      (Two (QHashState n)) := by
-  refine two_post (two_map QHashPlan.hash (fun _ _ h => h.label) (seedHashAt_ct H.h1 H.h256 n hn len)) ?_
+    RelCT isa (Two (QHashState n (qnu H len) (qnf H len)))
+      (Impl.Dsa.X86_64.Generation.seedHashAt H.sha1 H.sha256 len)
+      (Two (QHashState n (qnu H len) (qnf H len))) := by
+  refine two_post (two_map (fun p : QHashPlan => (p.hash, p.au, p.af)) (fun _ _ h => h.label)
+    (seedHashAt_ct H.h1 H.h256 n hn len)) ?_
   intro p s h
-  obtain ⟨V, W, R, A, hop⟩ := h.rep
+  obtain ⟨V, W, R, A, hop, h29, h30⟩ := h.rep
+  have hu : W 29 = s.syms (qnu H len) := h29.trans h.su.symm
+  have hf : W 30 = s.syms (qnf H len) := h30.trans h.sf.symm
   unfold Impl.Dsa.X86_64.Generation.seedHashAt
-  split
-  · exact WP.mono (hash_bytes_frame H.h1 H.hash1 H.size1 h.layout R A)
-      fun t ⟨L, rd, wr, _, _, V', R', _, _⟩ =>
+  by_cases hl : len = 20
+  · simp only [qnu, qnf, hl, ↓reduceIte] at hu hf h ⊢
+    exact WP.mono_syms (hash_bytes_frame H.h1 H.hash1 H.size1 h.layout R A hu hf)
+      fun t ⟨L, rd, wr, _, _, V', R', _, _⟩ y =>
         ⟨h.frame.congr (L.rsp.trans h.layout.rsp.symm) wr, L,
-          V', W, R', A.congr rd wr rfl rfl, hop⟩
-  · exact WP.mono (hash_bytes_frame H.h256 H.hash256 H.size256 h.layout R A)
-      fun t ⟨L, rd, wr, _, _, V', R', _, _⟩ =>
+          ⟨V', W, R', A.congr rd wr rfl rfl, hop, h29, h30⟩, by rw [y]; exact h.su, by rw [y]; exact h.sf⟩
+  · simp only [qnu, qnf, hl, ↓reduceIte] at hu hf h ⊢
+    exact WP.mono_syms (hash_bytes_frame H.h256 H.hash256 H.size256 h.layout R A hu hf)
+      fun t ⟨L, rd, wr, _, _, V', R', _, _⟩ y =>
         ⟨h.frame.congr (L.rsp.trans h.layout.rsp.symm) wr, L,
-          V', W, R', A.congr rd wr rfl rfl, hop⟩
+          ⟨V', W, R', A.congr rd wr rfl rfl, hop, h29, h30⟩, by rw [y]; exact h.su, by rw [y]; exact h.sf⟩
 
 def QShapeState (p : QHashPlan) (s : State) : Prop :=
   s.gpr .rdi = p.output ∧ s.gpr .rsi = off p.hash.S oDig ∧
     s.gpr .rcx = BitVec.ofNat 64 p.hash.labLen ∧
     s.gpr .rdx = BitVec.ofNat 64 (8 * p.hash.labLen)
 
-theorem qArgs_ct (n : Nat) :
-    RelCT isa (Two (QHashState n)) (.block Impl.Dsa.X86_64.Generation.qArgs) (Two QShapeState) := by
+theorem qArgs_ct (n : Nat) (nu nf : String) :
+    RelCT isa (Two (QHashState n nu nf)) (.block Impl.Dsa.X86_64.Generation.qArgs) (Two QShapeState) := by
   refine two_post (two_taint [.rsp] ?_ (by taint_decide)) ?_
   · intro p s t hs ht r hr
     simp only [List.mem_singleton] at hr
     subst r
     exact hs.layout.rsp.trans ht.layout.rsp.symm
   · intro p s h
-    obtain ⟨V, W, R, A, hop⟩ := h.rep
+    obtain ⟨V, W, R, A, hop, -⟩ := h.rep
     exact WP.mono (qArgs_ok h.layout R hop A.hll) fun _ ⟨a, b, c, d, _, _⟩ => ⟨a, b, c, d⟩
 
 theorem qCandidate_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (len : Nat) :
-    RelCT isa (Two (QHashState n)) (Impl.Dsa.X86_64.Generation.qCandidate H.sha1 H.sha256 len)
+    RelCT isa (Two (QHashState n (qnu H len) (qnf H len))) (Impl.Dsa.X86_64.Generation.qCandidate H.sha1 H.sha256 len)
       (fun _ _ => True) := by
-  refine RelCT.seq (qHash_ct H n hn len) (RelCT.seq (qArgs_ct n) ?_)
+  refine RelCT.seq (qHash_ct H n hn len) (RelCT.seq (qArgs_ct n _ _) ?_)
   apply VG.Proof.Ffdh.X86_64.ParameterCandidate.shape_ct
   intro p s t hs ht r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -379,7 +516,7 @@ structure SubgroupPublic where
   header : PrimeHeaderLayout (plan.W 5) wr
 
 def SubgroupPlan.withWords (p : SubgroupPlan) (W : Nat → BitVec 64)
-    (hw : ∀ i ∈ [0, 5, 13, 15], W i = p.W i) : SubgroupPlan :=
+    (hw : ∀ i ∈ [0, 5, 13, 15, 29, 30, 31], W i = p.W i) : SubgroupPlan :=
   { p with W := W
            base := by rw [hw 5 (by simp)]; exact p.base
            outputPtr := by rw [hw 5 (by simp)]; exact p.outputPtr
@@ -389,20 +526,23 @@ def SubgroupPlan.withWords (p : SubgroupPlan) (W : Nat → BitVec 64)
            tapeLength := (hw 15 (by simp)).trans p.tapeLength
            geometry := by rw [hw 5 (by simp)]; exact p.geometry }
 
-def SubgroupBefore (n : Nat) (p : SubgroupPublic) (s : State) : Prop :=
-  ∃ W, ∃ hw : ∀ i ∈ [0, 5, 13, 15], W i = p.plan.W i,
+/-- Before the subgroup phase, which calls the functions `N` by the
+addresses in the plan's frame words. -/
+def SubgroupBefore (N : FnNames) (n : Nat) (p : SubgroupPublic) (s : State) : Prop :=
+  ∃ W, ∃ hw : ∀ i ∈ [0, 5, 13, 15, 29, 30, 31], W i = p.plan.W i,
     SubgroupState (p.plan.withWords W hw) p.used s ∧
-      FrV n p.plan.prime.sp p.ws s ∧ s.wr = p.wr
+      FrV n p.plan.prime.sp p.ws s ∧ s.wr = p.wr ∧ FnSlots N p.plan.W s
 
 def SubgroupPublic.hash (p : SubgroupPublic) : QHashPlan :=
   ⟨⟨p.plan.prime.sp, p.plan.hash, p.ws, p.plan.seedPtr, p.plan.prime.len⟩,
-    p.plan.output, p.plan.width⟩
+    p.plan.output, p.plan.width, p.plan.W 29, p.plan.W 30⟩
 
-theorem subgroup_hash {n : Nat} {p : SubgroupPublic} {s : State}
-    (h : SubgroupBefore n p s) : QHashState n p.hash s := by
-  obtain ⟨W, hw, hs, hf, _⟩ := h
+theorem subgroup_hash {N : FnNames} {n : Nat} {p : SubgroupPublic} {s : State}
+    (h : SubgroupBefore N n p s) : QHashState n N.upd N.fin p.hash s := by
+  obtain ⟨W, hw, hs, hf, _, hfn⟩ := h
   obtain ⟨V, R⟩ := hs.rep
-  exact ⟨hf, hs.layout, V, W, R, hs.label, (p.plan.withWords W hw).outputSlot⟩
+  exact ⟨hf, hs.layout, ⟨V, W, R, hs.label, (p.plan.withWords W hw).outputSlot, hw 29 (by simp),
+    hw 30 (by simp)⟩, hfn.upd.symm, hfn.fin.symm⟩
 
 def SubgroupPublic.primeCall (p : SubgroupPublic) : PrimeTestPublic (8 * p.plan.prime.len) where
   F := p.plan.prime.sp
@@ -413,6 +553,7 @@ def SubgroupPublic.primeCall (p : SubgroupPublic) : PrimeTestPublic (8 * p.plan.
   N := p.plan.prime.N
   used := p.used
   geometry := p.plan.geometry
+  pa := p.plan.W 31
 
 end VG.Proof.Dsa.X86_64.Generation
 
@@ -433,22 +574,22 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.RsaOaep.X86_64 VG.Proof.RsaOaep.X86_64
 open VG.Impl.Dsa.X86_64.Generation
 
-theorem subgroup_candidate_ready (H : GenerationHashes) {n : Nat}
-    {p : SubgroupPublic} {s : State} (h : SubgroupBefore n p s) :
+theorem subgroup_candidate_ready (H : GenerationHashes) (T : PrimeTest) {n : Nat}
+    {p : SubgroupPublic} {s : State} (h : SubgroupBefore (fnNames H.sha1 H.sha256 T p.plan.prime.len) n p s) :
     WP isa (qCandidate H.sha1 H.sha256 p.plan.prime.len) s fun t =>
-      PrimeTestBefore (8 * p.plan.prime.len) p.primeCall t := by
-  obtain ⟨W, hw, hs, _, hwr⟩ := h
+      PrimeTestBefore (8 * p.plan.prime.len) T.name p.primeCall t := by
+  obtain ⟨W, hw, hs, _, hwr, hfn⟩ := h
   let q := p.plan.withWords W hw
   have plen : p.plan.prime.len ≤ 32 := by rcases p.plan.width with h | h <;> omega
   obtain ⟨V, R⟩ := hs.rep
   have candidate := qCandidate_ok H.h1 H.h256 H.hash1 H.hash256 H.size1 H.size256
-    H.width1 H.width256 p.plan.width hs.layout R hs.label q.outputSlot hs.outputWrite
-    (fun i hi j hj => ?_) p.plan.outputHash
+    H.width1 H.width256 p.plan.width hs.layout R hs.label q.outputSlot ((hw 29 (by simp)).trans hfn.upd)
+    ((hw 30 (by simp)).trans hfn.fin) hs.outputWrite (fun i hi j hj => ?_) p.plan.outputHash
   case refine_1 =>
     have he := p.plan.outputHash.scratch j hj (oDig + i) (by unfold oDig oRsa; omega)
     simpa only [off_off, SubgroupPlan.withWords, q] using Ne.symm he
   dsimp only [q, SubgroupPlan.withWords] at candidate
-  refine WP.mono candidate fun t ⟨tq, rd, wr, _, ff, L, V', R'⟩ => ?_
+  refine WP.mono_syms candidate fun t ⟨tq, rd, wr, _, ff, L, V', R'⟩ ty => ?_
   have bt : Spec.Rsa.bytesAt t.mem p.plan.output p.plan.prime.len =
       Spec.Dsa.encodeBE p.plan.prime.len p.plan.prime.N := by
     have se : Spec.Rsa.bytesAt s.mem p.plan.seedPtr p.plan.prime.len = p.plan.seed := hs.seed
@@ -458,7 +599,7 @@ theorem subgroup_candidate_ready (H : GenerationHashes) {n : Nat}
     unfold Impl.Dsa.X86_64.ProbablePrime.candidate
     rcases p.plan.width with hh | hh <;> rw [hh] <;> decide
   have h5 := hw 5 (by simp)
-  exact ⟨W, V', {
+  refine ⟨W, V', {
     layout := L
     rep := R'
     arena := h5
@@ -481,7 +622,9 @@ theorem subgroup_candidate_ready (H : GenerationHashes) {n : Nat}
       rw [p.plan.modulus]
       exact (VG.Proof.Dsa.Generation.qCandidate_shape
         (show 2 ≤ 8 * p.plan.prime.len by rcases p.plan.width with hh | hh <;> omega) p.plan.seed).1
-    bitLen := p.plan.bits }⟩
+    bitLen := p.plan.bits
+    fnSlot := by rw [ty, hw 31 (by simp)]; exact hfn.prime }, ?_⟩
+  rw [ty]; exact hfn.prime.symm
 
 end VG.Proof.Dsa.X86_64.Generation
 end
@@ -498,26 +641,28 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.Dsa.X86_64.Generation
 
-def SubgroupSized (n len : Nat) (p : SubgroupPublic) (s : State) : Prop :=
-  SubgroupBefore n p s ∧ p.plan.prime.len = len
+def SubgroupSized (N : FnNames) (n len : Nat) (p : SubgroupPublic) (s : State) : Prop :=
+  SubgroupBefore N n p s ∧ p.plan.prime.len = len
 
-def SubgroupCall (len : Nat) (p : SubgroupPublic) (s : State) : Prop :=
-  PrimeTestBefore (8 * p.plan.prime.len) p.primeCall s ∧ p.plan.prime.len = len
+def SubgroupCall (np : String) (len : Nat) (p : SubgroupPublic) (s : State) : Prop :=
+  PrimeTestBefore (8 * p.plan.prime.len) np p.primeCall s ∧ p.plan.prime.len = len
 
-theorem subgroupCandidate_ct (H : GenerationHashes) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (len : Nat) :
-    RelCT isa (Two (SubgroupSized n len)) (qCandidate H.sha1 H.sha256 len) (Two (SubgroupCall len)) := by
+theorem subgroupCandidate_ct (H : GenerationHashes) (T : PrimeTest) (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6)
+    (len : Nat) :
+    RelCT isa (Two (SubgroupSized (fnNames H.sha1 H.sha256 T len) n len)) (qCandidate H.sha1 H.sha256 len)
+      (Two (SubgroupCall T.name len)) := by
   refine two_post (two_map SubgroupPublic.hash (fun _ _ h => subgroup_hash h.1)
     (qCandidate_ct H n hn len)) ?_
   intro p s ⟨h, hl⟩
   subst hl
-  exact WP.mono (subgroup_candidate_ready H h) fun _ ht => ⟨ht, rfl⟩
+  exact WP.mono (subgroup_candidate_ready H T h) fun _ ht => ⟨ht, rfl⟩
 
 theorem subgroup_ct (H : GenerationHashes) (T : PrimeTest)
     (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (len : Nat) (hlen : len = 20 ∨ len = 32) :
-    RelCT isa (Two (SubgroupSized n len)) (subgroup H.sha1 H.sha256 T.run len)
+    RelCT isa (Two (SubgroupSized (fnNames H.sha1 H.sha256 T len) n len)) (subgroup H.sha1 H.sha256 T.run len)
       (fun _ _ => True) := by
   unfold subgroup
-  refine RelCT.seq (subgroupCandidate_ct H n hn len) ?_
+  refine RelCT.seq (subgroupCandidate_ct H T n hn len) ?_
   refine (primeCall_ct T (bits := 8 * len) ?_).mono (fun s t ⟨p, ⟨hs, hl⟩, ⟨ht, _⟩⟩ => ?_) fun _ _ h => h
   · rcases hlen with rfl | rfl <;> unfold ProbablePrime.Supported <;> decide
   · subst hl
@@ -557,40 +702,47 @@ def SeedPublic.subgroup (p : SeedPublic) : SubgroupPublic where
     rw [p.context.baseSlot]
     exact p.header
 
-def SeedBefore (n qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
+/-- Before a seed's attempt, which calls the functions `N` by their
+addresses (`FnSyms`). -/
+def SeedBefore (N : FnNames) (n qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   (∃ W, GenerationMemory p.context W s ∧ W 1 = p.seed.ptr ∧ W 16 = BitVec.ofNat 64 p.used ∧ W 10 = p.seedCursor) ∧
-  GenerationTapeMemory p.seed s ∧ FrV n p.context.geo.F p.ws s ∧ s.wr = p.wr ∧ p.context.geo.qLen = qLen
+  GenerationTapeMemory p.seed s ∧ FrV n p.context.geo.F p.ws s ∧ s.wr = p.wr ∧ p.context.geo.qLen = qLen ∧
+  FnSyms N p.context s
 
-def SeedPrepared (n qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
+def SeedPrepared (N : FnNames) (n qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   (∃ W, GenerationMemory p.context W s ∧ W 0 = off p.context.geo.B q ∧
     W 27 = p.seed.ptr ∧ W 16 = BitVec.ofNat 64 p.used ∧ W 10 = p.seedCursor) ∧
-  GenerationTapeMemory p.seed s ∧ FrV n p.context.geo.F p.ws s ∧ s.wr = p.wr ∧ p.context.geo.qLen = qLen
+  GenerationTapeMemory p.seed s ∧ FnSyms N p.context s ∧ FrV n p.context.geo.F p.ws s ∧ s.wr = p.wr ∧
+  p.context.geo.qLen = qLen
 
-theorem seedPrepared_subgroup {n qLen : Nat} {p : SeedPublic} {s : State}
-    (h : SeedPrepared n qLen p s) : SubgroupSized n qLen p.subgroup s := by
-  obtain ⟨⟨W, hm, h0, h27, h16, _⟩, seed, hf, hw, he⟩ := h
-  have matchWords : ∀ i ∈ [0, 5, 13, 15], W i = p.subgroup.plan.W i := by
+theorem seedPrepared_subgroup {N : FnNames} {n qLen : Nat} {p : SeedPublic} {s : State}
+    (h : SeedPrepared N n qLen p s) : SubgroupSized N n qLen p.subgroup s := by
+  obtain ⟨⟨W, hm, h0, h27, h16, _⟩, seed, hy, hf, hw, he⟩ := h
+  have matchWords : ∀ i ∈ [0, 5, 13, 15, 29, 30, 31], W i = p.subgroup.plan.W i := by
     intro i hi
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl | rfl
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact h0
     · exact hm.slots 5 (by simp [generationSlots])
     · exact hm.slots 13 (by simp [generationSlots])
     · exact hm.slots 15 (by simp [generationSlots])
+    · exact hm.slots 29 (by simp [generationSlots])
+    · exact hm.slots 30 (by simp [generationSlots])
+    · exact hm.slots 31 (by simp [generationSlots])
   have state := hm.subgroupState p.seed p.length seed h0 h27 h16 p.bound
-  exact ⟨⟨W, matchWords, state, hf, hw⟩, he⟩
+  exact ⟨⟨W, matchWords, state, hf, hw, ⟨hy.upd, hy.fin, hy.prime⟩⟩, he⟩
 
-theorem seedArguments_ready {n qLen : Nat} {p : SeedPublic} {s : State}
-    (h : SeedBefore n qLen p s) :
-    WP isa (.block (Impl.Dsa.X86_64.Generation.seedArguments qLen)) s (SeedPrepared n qLen p) := by
-  obtain ⟨⟨W, hm, h1, h16, h10⟩, seed, hf, hw, he⟩ := h
+theorem seedArguments_ready {N : FnNames} {n qLen : Nat} {p : SeedPublic} {s : State}
+    (h : SeedBefore N n qLen p s) :
+    WP isa (.block (Impl.Dsa.X86_64.Generation.seedArguments qLen)) s (SeedPrepared N n qLen p) := by
+  obtain ⟨⟨W, hm, h1, h16, h10⟩, seed, hf, hw, he, hy⟩ := h
   have hb := (hm.slots 5 (by simp [generationSlots])).trans p.context.baseSlot
   have step := prepareSeed_ok hm
   rw [he] at step
-  refine WP.mono step fun t ⟨ht, ff, hk⟩ => ?_
+  refine WP.mono_syms step fun t ⟨ht, ff, hk⟩ ty => ?_
   exact ⟨⟨seedWords W qLen, ht,
     by simp [seedWords, upd, hb], by simp [seedWords, upd, h1], by simpa [seedWords, upd] using h16, by simpa [seedWords, upd] using h10⟩,
-    seed.frame ff hk.2.1 hk.2.2, hf.congr (hk.gpr (by decide)) hk.2.2, hk.2.2.trans hw, he⟩
+    seed.frame ff hk.2.1 hk.2.2, hy.congr ty, hf.congr (hk.gpr (by decide)) hk.2.2, hk.2.2.trans hw, he⟩
 
 end VG.Proof.Dsa.X86_64.Generation
 
@@ -867,26 +1019,35 @@ def HashPlan.withWords (p : HashPlan) (W : Nat → BitVec 64)
            output_slot := (hw 4 (by decide)).trans p.output_slot
            offset_slot := (hw 2 (by decide)).trans p.offset_slot }
 
-def PHashBefore (n : Nat) (H : Spec.Mgf1.Hash) (k : Nat) (p : PHashPublic) (s : State) : Prop :=
-  ∃ W, ∃ hw : ∀ i < 5, W i = p.plan.W i,
-    HashState (p.plan.withWords W hw) H k s ∧ FrV n p.plan.F p.ws s
+/-- The frame words `W` hold the plan's addresses of the functions `N`
+(`FnSlots`). -/
+def PlanSlots (N : FnNames) (P W : Nat → BitVec 64) (s : State) : Prop :=
+  FnSlots N W s ∧ W 29 = P 29 ∧ W 30 = P 30 ∧ W 31 = P 31
 
-def PSeedReady (n : Nat) (H : Spec.Mgf1.Hash) (k j : Nat) (p : PHashPublic) (s : State) : Prop :=
-  PHashBefore n H k p s ∧ s.gpr .rsi = p.plan.seedPtr ∧ s.gpr .rdi = p.plan.wrapped ∧
+theorem PlanSlots.congr {N : FnNames} {P W : Nat → BitVec 64} {s t : State} (h : PlanSlots N P W s)
+    (hy : t.syms = s.syms) : PlanSlots N P W t :=
+  ⟨h.1.congr rfl rfl rfl hy, h.2⟩
+
+def PHashBefore (n : Nat) (N : FnNames) (H : Spec.Mgf1.Hash) (k : Nat) (p : PHashPublic) (s : State) : Prop :=
+  ∃ W, ∃ hw : ∀ i < 5, W i = p.plan.W i,
+    HashState (p.plan.withWords W hw) H k s ∧ FrV n p.plan.F p.ws s ∧ PlanSlots N p.plan.W W s
+
+def PSeedReady (n : Nat) (N : FnNames) (H : Spec.Mgf1.Hash) (k j : Nat) (p : PHashPublic) (s : State) : Prop :=
+  PHashBefore n N H k p s ∧ s.gpr .rsi = p.plan.seedPtr ∧ s.gpr .rdi = p.plan.wrapped ∧
     s.gpr .rax = BitVec.ofNat 64 (p.plan.offset + j)
 
 def PHashPublic.label (p : PHashPublic) : LQ :=
   ⟨p.plan.F, p.plan.S, p.ws, p.plan.wrapped, p.plan.len⟩
 
-theorem seedInputArgs_ready {n k j : Nat} {H : Spec.Mgf1.Hash} {p : PHashPublic} {s : State}
-    (hj : j < 2 ^ 31) (h : PHashBefore n H k p s) :
-    WP isa (.block (Impl.Dsa.X86_64.Generation.seedInputArgs j)) s (PSeedReady n H k j p) := by
+theorem seedInputArgs_ready {n k j : Nat} {N : FnNames} {H : Spec.Mgf1.Hash} {p : PHashPublic} {s : State}
+    (hj : j < 2 ^ 31) (h : PHashBefore n N H k p s) :
+    WP isa (.block (Impl.Dsa.X86_64.Generation.seedInputArgs j)) s (PSeedReady n N H k j p) := by
   obtain ⟨W, hw, h⟩ := h
   let q := p.plan.withWords W hw
   obtain ⟨V, R⟩ := h.1.rep
-  refine WP.mono (seedInputArgs_ok hj h.1.layout R q.seed_slot q.wrapped_slot
-    q.offset_slot) fun t ⟨hsi, hdi, hax, hm, hk⟩ => ?_
-  refine ⟨⟨W, hw, ?_, h.2.congr (hk.gpr (by decide)) hk.2.2⟩, hsi, hdi, hax⟩
+  refine WP.mono_syms (seedInputArgs_ok hj h.1.layout R q.seed_slot q.wrapped_slot
+    q.offset_slot) fun t ⟨hsi, hdi, hax, hm, hk⟩ ty => ?_
+  refine ⟨⟨W, hw, ?_, h.2.1.congr (hk.gpr (by decide)) hk.2.2, h.2.2.congr ty⟩, hsi, hdi, hax⟩
   refine ⟨h.1.layout.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm]),
     ⟨V, hm ▸ R⟩, h.1.hashArgs.congr hk.2.1 hk.2.2 rfl rfl, ?_, ?_, ?_, ?_, ?_⟩
   · intro i hi; rw [hk.2.1, hk.2.2]; exact h.1.seedRead i hi
@@ -895,9 +1056,9 @@ theorem seedInputArgs_ready {n k j : Nat} {H : Spec.Mgf1.Hash} {p : PHashPublic}
   · rw [hm]; exact h.1.seed
   · intro i hi; rw [hm]; exact h.1.hashes i hi
 
-theorem seedInputArgs_ct (n : Nat) (H : Spec.Mgf1.Hash) (k j : Nat) (hj : j < 2 ^ 31) :
-    RelCT isa (Two (PHashBefore n H k)) (.block (Impl.Dsa.X86_64.Generation.seedInputArgs j))
-      (Two (PSeedReady n H k j)) := by
+theorem seedInputArgs_ct (n : Nat) (N : FnNames) (H : Spec.Mgf1.Hash) (k j : Nat) (hj : j < 2 ^ 31) :
+    RelCT isa (Two (PHashBefore n N H k)) (.block (Impl.Dsa.X86_64.Generation.seedInputArgs j))
+      (Two (PSeedReady n N H k j)) := by
   refine two_post (two_taint [.rsp] ?_ (hc := .block []) (by rfl))
     (fun _ _ h => seedInputArgs_ready hj h)
   intro p s t hs ht r hr
@@ -907,10 +1068,13 @@ theorem seedInputArgs_ct (n : Nat) (H : Spec.Mgf1.Hash) (k j : Nat) (hj : j < 2 
   obtain ⟨_, _, ht, _⟩ := ht
   exact hs.layout.rsp.trans ht.layout.rsp.symm
 
-theorem wrappedSeed_label {n k j : Nat} {H : Spec.Mgf1.Hash} {p : PHashPublic} {s : State}
-    (hj : j ≤ p.plan.count) (h : PSeedReady n H k j p s) :
-    WP isa (Impl.Dsa.X86_64.Generation.seedAdd p.plan.len) s (LW n p.label) := by
-  obtain ⟨⟨W, hw, hs, hfr⟩, hsi, hdi, hax⟩ := h
+/-- The label's public data, with the plan's addresses of `update` and `finalize`. -/
+def PHashPublic.labelI (p : PHashPublic) : LQ × Addr × Addr := (p.label, p.plan.W 29, p.plan.W 30)
+
+theorem wrappedSeed_label {n k j : Nat} {N : FnNames} {H : Spec.Mgf1.Hash} {p : PHashPublic} {s : State}
+    (hj : j ≤ p.plan.count) (h : PSeedReady n N H k j p s) :
+    WP isa (Impl.Dsa.X86_64.Generation.seedAdd p.plan.len) s (LWI n N.upd N.fin p.labelI) := by
+  obtain ⟨⟨W, hw, hs, hfr, hps⟩, hsi, hdi, hax⟩ := h
   have plen := p.plan.size.2.1
   have carry := p.plan.carry
   have hlen := p.plan.seed_len
@@ -929,12 +1093,14 @@ theorem wrappedSeed_label {n k j : Nat} {H : Spec.Mgf1.Hash} {p : PHashPublic} {
         Offset.contains_base _ (by omega_using [hlen, hl]) (by omega_using [plen, hlen, hl])
       exact p.plan.seed_wrap _ (he ▸ a) b)
   rw [hlen] at hc
-  refine WP.mono hc fun t ⟨_, hf, hk⟩ => ?_
+  refine WP.mono_syms hc fun t ⟨_, hf, hk⟩ ty => ?_
   obtain ⟨V, R⟩ := hs.rep
   have Rt := rep_of_external_write R p.plan.wrapped_sep hf
   have Lt := lay_of_rep hs.layout R Rt rfl (hk.gpr (by decide)) hk.2.2
-  exact ⟨hfr.congr (hk.gpr (by decide)) hk.2.2, Lt, V, W, Rt,
-    hs.hashArgs.congr hk.2.1 hk.2.2 rfl rfl⟩
+  exact ⟨⟨hfr.congr (hk.gpr (by decide)) hk.2.2, Lt, V, W, Rt,
+    hs.hashArgs.congr hk.2.1 hk.2.2 rfl rfl⟩, (Rt.fr 29 (by decide)).trans hps.2.1,
+    (Rt.fr 30 (by decide)).trans hps.2.2.1, by rw [ty]; exact hps.1.upd.symm.trans hps.2.1,
+    by rw [ty]; exact hps.1.fin.symm.trans hps.2.2.1⟩
 
 end VG.Proof.Dsa.X86_64.Generation
 end
@@ -947,34 +1113,35 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Proof.Pbkdf2.Md.X86_64
 
-def ContributionBefore (n : Nat) (H : Spec.Mgf1.Hash) (k len count : Nat)
+def ContributionBefore (n : Nat) (N : FnNames) (H : Spec.Mgf1.Hash) (k len count : Nat)
     (p : PHashPublic) (s : State) : Prop :=
-  PHashBefore n H k p s ∧ p.plan.len = len ∧ p.plan.count = count
+  PHashBefore n N H k p s ∧ p.plan.len = len ∧ p.plan.count = count
 
-def ContributionReady (n : Nat) (H : Spec.Mgf1.Hash) (k len count j : Nat)
+def ContributionReady (n : Nat) (N : FnNames) (H : Spec.Mgf1.Hash) (k len count j : Nat)
     (p : PHashPublic) (s : State) : Prop :=
-  PSeedReady n H k j p s ∧ p.plan.len = len ∧ p.plan.count = count
+  PSeedReady n N H k j p s ∧ p.plan.len = len ∧ p.plan.count = count
 
-theorem contributionArgs_ct (n : Nat) (H : Spec.Mgf1.Hash) (k len count j : Nat) (hj : j < 2 ^ 31) :
-    RelCT isa (Two (ContributionBefore n H k len count))
+theorem contributionArgs_ct (n : Nat) (N : FnNames) (H : Spec.Mgf1.Hash) (k len count j : Nat) (hj : j < 2 ^ 31) :
+    RelCT isa (Two (ContributionBefore n N H k len count))
       (.block (Impl.Dsa.X86_64.Generation.seedInputArgs j))
-      (Two (ContributionReady n H k len count j)) := by
-  refine two_post ((seedInputArgs_ct n H k j hj).mono
+      (Two (ContributionReady n N H k len count j)) := by
+  refine two_post ((seedInputArgs_ct n N H k j hj).mono
     (fun _ _ => two_mono fun _ _ h => h.1) (fun _ _ _ => True.intro)) ?_
   intro p s h
   exact WP.mono (seedInputArgs_ready hj h.1) fun _ ht => ⟨ht, h.2⟩
 
-theorem contributionWrap_ct (n : Nat) (H : Spec.Mgf1.Hash) (k len count j : Nat)
+theorem contributionWrap_ct (n : Nat) (N : FnNames) (H : Spec.Mgf1.Hash) (k len count j : Nat)
     (hlen : len = 20 ∨ len = 32) (hj : j ≤ count) :
-    RelCT isa (Two (ContributionReady n H k len count j))
-      (Impl.Dsa.X86_64.Generation.seedAdd len) (Two fun (p : PHashPublic) s => LW n p.label s) := by
-  have pins : Pins (ContributionReady n H k len count j) [.rdi, .rsi] := by
+    RelCT isa (Two (ContributionReady n N H k len count j))
+      (Impl.Dsa.X86_64.Generation.seedAdd len)
+      (Two fun (p : PHashPublic) s => LWI n N.upd N.fin p.labelI s) := by
+  have pins : Pins (ContributionReady n N H k len count j) [.rdi, .rsi] := by
     intro p s t hs ht r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hs.1.2.2.1.trans ht.1.2.2.1.symm
     · exact hs.1.2.1.trans ht.1.2.1.symm
-  have ct : RelCT isa (Two (ContributionReady n H k len count j))
+  have ct : RelCT isa (Two (ContributionReady n N H k len count j))
       (Impl.Dsa.X86_64.Generation.seedAdd len) (fun _ _ => True) := by
     rcases hlen with rfl | rfl
     · exact seedAdd20_ct pins
@@ -986,13 +1153,15 @@ theorem contributionWrap_ct (n : Nat) (H : Spec.Mgf1.Hash) (k len count j : Nat)
   exact hw
 
 theorem pSeedHash_ct {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK G)
-    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (H : Spec.Mgf1.Hash) (k len count j : Nat)
+    (n : Nat) (hn : n = 2 ∨ n = 3 ∨ n = 6) (N : FnNames) (hN : N.upd = G.updN ∧ N.fin = G.finN)
+    (H : Spec.Mgf1.Hash) (k len count j : Nat)
     (hlen : len = 20 ∨ len = 32) (hj : j ≤ count) (hj' : j < 2 ^ 31) :
-    RelCT isa (Two (ContributionBefore n H k len count))
+    RelCT isa (Two (ContributionBefore n N H k len count))
       (Impl.Dsa.X86_64.Generation.pSeedHash G len j) (fun _ _ => True) := by
-  refine RelCT.seq (contributionArgs_ct n H k len count j hj')
-    (RelCT.seq (contributionWrap_ct n H k len count j hlen hj) ?_)
-  exact two_map PHashPublic.label (fun _ _ h => h) (hashLabel_ct hG n hn (Or.inl rfl))
+  refine RelCT.seq (contributionArgs_ct n N H k len count j hj')
+    (RelCT.seq (contributionWrap_ct n N H k len count j hlen hj) ?_)
+  rw [hN.1, hN.2]
+  exact two_map PHashPublic.labelI (fun _ _ h => h) (hashLabelI_ct hG n hn)
 
 end VG.Proof.Dsa.X86_64.Generation
 
@@ -1739,19 +1908,19 @@ structure PConstructPublic where
   plan : PConstructPlan
   ws : List Region
 
-def PConstructBefore (n : Nat) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+def PConstructBefore (n : Nat) (N : FnNames) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
     (p : PConstructPublic) (s : State) : Prop :=
   (∃ W, ∃ hw : ∀ i < 6, W i = p.plan.hash.W i,
-    PConstructState (p.plan.withWords W hw) H s ∧ FrV n p.plan.hash.F p.ws s) ∧
+    PConstructState (p.plan.withWords W hw) H s ∧ FrV n p.plan.hash.F p.ws s ∧ PlanSlots N p.plan.hash.W W s) ∧
     p.plan.len = pLen ∧ p.plan.hash.len = qLen
 
 def PConstructPublic.hash (p : PConstructPublic) : PHashPublic := ⟨p.plan.hash, p.ws⟩
 
-theorem pConstruct_hash {n pLen qLen : Nat} {H : Spec.Mgf1.Hash} {p : PConstructPublic} {s : State}
-    (h : PConstructBefore n H pLen qLen p s) :
-    ContributionBefore n H 0 qLen ((8 * pLen - 1) / (8 * qLen)) p.hash s := by
-  obtain ⟨⟨W, hw, hs, hf⟩, hp, hq⟩ := h
-  exact ⟨⟨W, (fun i hi => hw i (by omega_using [hi])), hs.hash, hf⟩, hq,
+theorem pConstruct_hash {n pLen qLen : Nat} {N : FnNames} {H : Spec.Mgf1.Hash} {p : PConstructPublic} {s : State}
+    (h : PConstructBefore n N H pLen qLen p s) :
+    ContributionBefore n N H 0 qLen ((8 * pLen - 1) / (8 * qLen)) p.hash s := by
+  obtain ⟨⟨W, hw, hs, hf, hps⟩, hp, hq⟩ := h
+  exact ⟨⟨W, (fun i hi => hw i (by omega_using [hi])), hs.hash, hf, hps⟩, hq,
     p.plan.hashCount.trans (by rw [hp, hq])⟩
 
 def PConstructPublic.workspace (p : PConstructPublic) (H : Spec.Mgf1.Hash) : CandidateWorkspacePublic where
@@ -1833,26 +2002,27 @@ structure PPrimalityPublic where
 
 def PPrimalityPublic.construct (p : PPrimalityPublic) : PConstructPublic := ⟨p.plan.construct, p.ws⟩
 
-def PPrimalityBefore (n : Nat) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+def PPrimalityBefore (n : Nat) (N : FnNames) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
     (p : PPrimalityPublic) (s : State) : Prop :=
   (∃ W, ∃ hw : PPrimalityWords p.plan W,
     PConstructState (p.plan.construct.withWords W hw.1) H s ∧
-      FrV n p.plan.construct.hash.F p.ws s ∧ W 16 = BitVec.ofNat 64 p.used) ∧
+      FrV n p.plan.construct.hash.F p.ws s ∧ W 16 = BitVec.ofNat 64 p.used ∧
+      PlanSlots N p.plan.construct.hash.W W s) ∧
     s.wr = p.wr ∧ p.used ≤ p.plan.rand.length ∧
     Src s p.plan.construct.B p.plan.construct.Z p.plan.rp p.plan.rand ∧
     (Scr s (p.plan.construct.hash.W 5) domainCheck ∧
       Covers [⟨p.plan.rp, p.plan.rand.length⟩] (s.rd ++ s.wr)) ∧
     p.plan.construct.len = pLen ∧ p.plan.construct.hash.len = qLen
 
-theorem pPrimality_construct {n pLen qLen : Nat} {H : Spec.Mgf1.Hash} {p : PPrimalityPublic} {s : State}
-    (h : PPrimalityBefore n H pLen qLen p s) : PConstructBefore n H pLen qLen p.construct s := by
-  obtain ⟨W, hw, hs, hf, _⟩ := h.1
-  exact ⟨⟨W, hw.1, hs, hf⟩, h.2.2.2.2.2⟩
+theorem pPrimality_construct {n pLen qLen : Nat} {N : FnNames} {H : Spec.Mgf1.Hash} {p : PPrimalityPublic}
+    {s : State} (h : PPrimalityBefore n N H pLen qLen p s) : PConstructBefore n N H pLen qLen p.construct s := by
+  obtain ⟨W, hw, hs, hf, _, hps⟩ := h.1
+  exact ⟨⟨W, hw.1, hs, hf, hps⟩, h.2.2.2.2.2⟩
 
-structure PPrimalityAfter (p : PPrimalityPublic) (s : State) : Prop where
+structure PPrimalityAfter (N : FnNames) (p : PPrimalityPublic) (s : State) : Prop where
   layout : Lay s p.plan.construct.hash.F p.plan.construct.hash.S
   frame : ∃ V W, Rep s.mem p.plan.construct.hash.F p.plan.construct.hash.S V W ∧
-    PPrimalityWords p.plan W ∧ W 16 = BitVec.ofNat 64 p.used
+    PPrimalityWords p.plan W ∧ W 16 = BitVec.ofNat 64 p.used ∧ PlanSlots N p.plan.construct.hash.W W s
   ws : VG.Proof.Rsa.X86_64.Ws s p.plan.construct.B p.plan.construct.Z (p.plan.construct.len / 8)
   pointer : word s.mem p.plan.construct.B 160 = off (p.plan.construct.hash.W 5) Impl.Dsa.Generation.Layout.p
   bytes : Spec.Rsa.bytesAt s.mem (off (p.plan.construct.hash.W 5) Impl.Dsa.Generation.Layout.p) p.plan.construct.len =
@@ -1921,8 +2091,8 @@ def SearchPublic.attempt (p : SearchPublic) : PPrimalityPublic where
     simpa [SearchPublic.attemptPlan, PPrimalityPlan.reframe, PConstructPlan.reframe, HashPlan.reframe,
       attemptWords, VG.Proof.RsaOaep.X86_64.upd] using p.header
 
-def SearchBefore (n pLen qLen : Nat) (p : SearchPublic) (s : State) : Prop :=
-  (∃ W, SearchMemory p.plan W s ∧ W 16 = BitVec.ofNat 64 p.used) ∧
+def SearchBefore (N : FnNames) (n pLen qLen : Nat) (p : SearchPublic) (s : State) : Prop :=
+  (∃ W, SearchMemory p.plan W s ∧ W 16 = BitVec.ofNat 64 p.used ∧ FnSlots N W s) ∧
     SearchControl p.plan.C p.counter (p.plan.attempt.construct.hash.count + 1) s ∧
     FrV n p.plan.attempt.construct.hash.F p.ws s ∧ s.wr = p.wr ∧
     p.used ≤ p.plan.attempt.rand.length ∧ p.plan.attempt.construct.len = pLen ∧
@@ -1931,8 +2101,8 @@ def SearchBefore (n pLen qLen : Nat) (p : SearchPublic) (s : State) : Prop :=
 def SearchPublic.pointers (p : SearchPublic) : ArgumentPointers :=
   ⟨p.plan.C, p.plan.attempt.construct.hash.F⟩
 
-theorem searchBefore_pointers {n pLen qLen : Nat} {p : SearchPublic} {s : State}
-    (h : SearchBefore n pLen qLen p s) : ArgumentRegisters p.pointers s := by
+theorem searchBefore_pointers {N : FnNames} {n pLen qLen : Nat} {p : SearchPublic} {s : State}
+    (h : SearchBefore N n pLen qLen p s) : ArgumentRegisters p.pointers s := by
   obtain ⟨W, hs, _⟩ := h.1
   exact ⟨h.2.1.rdi, hs.layout.rsp⟩
 
@@ -1978,8 +2148,8 @@ def SeedPublic.search (p : SeedPublic) : SearchPublic where
     change 0 < 32 * p.context.geo.pLen
     rcases p.context.geo.width with h | h | h <;> omega_using [h]
 
-def SeedPrimeBefore (n pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
-  SeedBefore n qLen p s ∧ p.context.geo.pLen = pLen ∧
+def SeedPrimeBefore (N : FnNames) (n pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
+  SeedBefore N n qLen p s ∧ p.context.geo.pLen = pLen ∧
   Spec.Rsa.bytesAt s.mem (off p.context.geo.B q) p.context.geo.qLen =
     Spec.Dsa.encodeBE p.context.geo.qLen (Spec.Dsa.qCandidate (8 * p.context.geo.qLen) p.seed.bytes)
 

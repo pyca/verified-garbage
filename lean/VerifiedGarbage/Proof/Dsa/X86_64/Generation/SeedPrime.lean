@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchPlan
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Dsa.Generation.SearchDomain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
@@ -538,7 +539,7 @@ theorem generator_body_ok (M : Mont) (Sq : MontS)
   have ht : GeneratorSearchMemory p Wt t := h.frame Lt ⟨V, Rt⟩ (by
     intro k hk
     simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Wt, upd] <;> exact words _ (by decide)) ff kt.2.1 kt.2.2
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Wt, upd] <;> exact words _ (by decide)) ff kt.2.1 kt.2.2
   have hc := ht.chunk room (by
     change Wt 21 = off p.tapePtr used
     simp [Wt, upd, words 11 (by decide), h.tapeBase])
@@ -547,7 +548,7 @@ theorem generator_body_ok (M : Mont) (Sq : MontS)
   have mem : GeneratorSearchMemory p Wu u := ht.frame hu.layout hu.rep (by
     intro k hk
     simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) fu ku.2.1 ku.2.2
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) fu ku.2.1 ku.2.2
   have frame := (fi.trans ff).trans fu
   have rd := ku.2.1.trans (kt.2.1.trans ri)
   have wr := ku.2.2.trans (kt.2.2.trans wi)
@@ -632,7 +633,7 @@ theorem nativeGenerator_ok (M : Mont) (Sq : MontS)
     by simp [upd], rfl, (Nat.zero_add _).symm, ff, kt.2.1, kt.2.2⟩
   intro k hk
   simp only [generatorSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 end VG.Proof.Dsa.X86_64.Generation
 end
@@ -694,7 +695,7 @@ theorem seedGenerator_ok (M : Mont) (Sq : MontS)
   have slots : ∀ k ∈ generatorSlots, Wt k = W k := mt.slots
   have mem := h.frame mt.layout mt.rep (fun k hk => slots k (by
     simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [generatorSlots])) ff rd wr
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [generatorSlots])) ff rd wr
   refine ⟨Wt, mem, slots, count ▸ h20, ?_, (p.geo.generator_q fg).trans bq, ?_, ff, rd, wr⟩
   · have bytes := source_octets mt.pArithmetic
     change Spec.Rsa.bytesAt t.mem (off p.geo.B VG.Impl.Dsa.Generation.Layout.p)
@@ -995,7 +996,7 @@ def SearchInvariant (p : SearchPlan) (res : Option (Option Nat × List Byte)) (s
     (counter : Nat) (t : State) : Prop :=
   ∃ W used, SearchMemory p W t ∧ used ≤ p.attempt.rand.length ∧ W 16 = BitVec.ofNat 64 used ∧
     (0 < counter → W 19 = BitVec.ofNat 64 3) ∧ res = p.remaining counter used ∧
-    Frame (searchWrites p.attempt p.C) s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr
+    Frame (searchWrites p.attempt p.C) s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms
 
 def SearchFinished (p : SearchPlan) (res : Option (Option Nat × List Byte)) (s t : State) : Prop :=
   ∃ W used, SearchMemory p W t ∧ used ≤ p.attempt.rand.length ∧ W 16 = BitVec.ofNat 64 used ∧
@@ -1012,17 +1013,18 @@ theorem controller_frame {C : Addr} {m m' : Mem} (hf : Outside C 0 24 m m') : Fr
 
 theorem searchInvariant_stable (p : SearchPlan) (res : Option (Option Nat × List Byte)) (s : State) (c : Nat) :
     SearchPayload p.C (SearchInvariant p res s c) := by
-  intro u t h hf hk
-  obtain ⟨W, used, hm, hu, h16, h19, hr, ff, rd, wr⟩ := h
-  exact ⟨W, used, SearchMemory.stable hm hf hk, hu, h16, h19, hr,
+  intro u t h hf hk hy
+  obtain ⟨W, used, hm, hu, h16, h19, hr, ff, rd, wr, sy⟩ := h
+  exact ⟨W, used, SearchMemory.stable hm hf hk hy, hu, h16, h19, hr,
     ff.trans ((controller_frame hf).mono (by
-      intro r hr; rcases List.mem_singleton.mp hr with rfl; simp [searchWrites])), hk.2.1.trans rd, hk.2.2.trans wr⟩
+      intro r hr; rcases List.mem_singleton.mp hr with rfl; simp [searchWrites])), hk.2.1.trans rd, hk.2.2.trans wr,
+    hy.trans sy⟩
 
 theorem searchFinished_stable (p : SearchPlan) (res : Option (Option Nat × List Byte)) (s : State) :
     SearchPayload p.C (SearchFinished p res s) := by
-  intro u t h hf hk
+  intro u t h hf hk hy
   obtain ⟨W, used, hm, hu, h16, ho, ff, rd, wr⟩ := h
-  refine ⟨W, used, SearchMemory.stable hm hf hk, hu, h16, ?_,
+  refine ⟨W, used, SearchMemory.stable hm hf hk hy, hu, h16, ?_,
     ff.trans ((controller_frame hf).mono (by
       intro r hr; rcases List.mem_singleton.mp hr with rfl; simp [searchWrites])), hk.2.1.trans rd, hk.2.2.trans wr⟩
   rcases ho with ho | ⟨h19, value, hr, hp, he⟩ | ho
@@ -1038,7 +1040,7 @@ theorem searchFinished_stable (p : SearchPlan) (res : Option (Option Nat × List
 
 theorem searchInvariant_done {p : SearchPlan} {res : Option (Option Nat × List Byte)} {s t : State}
     (h : SearchInvariant p res s (32 * p.attempt.construct.len) t) : SearchFinished p res s t := by
-  obtain ⟨W, used, hm, hu, h16, h19, hr, ff, rd, wr⟩ := h
+  obtain ⟨W, used, hm, hu, h16, h19, hr, ff, rd, wr, -⟩ := h
   refine ⟨W, used, hm, hu, h16, Or.inr (Or.inr ⟨h19 ?_, ?_⟩), ff, rd, wr⟩
   · rcases p.attempt.construct.width with hh | hh | hh <;> omega
   · exact hr.trans (p.remaining_done used)
@@ -1068,7 +1070,8 @@ theorem nativeSearch_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : SearchPlan
     (hhash : ∀ bs, H.hash bs = Spec.Dsa.seedHash (8 * p.attempt.construct.hash.len) bs)
     (hseedsize : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * p.attempt.construct.hash.len) bs).length = 8 * p.attempt.construct.hash.len)
     {s : State} {W : Nat → BitVec 64} {used : Nat} (h : SearchMemory p W s)
-    (hC : Scr s p.C 24) (hused : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.attempt.rand.length) :
+    (hC : Scr s p.C 24) (hused : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.attempt.rand.length)
+    (hfn : FnSlots (fnNames G1 G256 T p.attempt.construct.hash.len) p.attempt.construct.hash.W s) :
     WP isa (Impl.Dsa.X86_64.Generation.primeSearch G1 G256 T.run
       p.attempt.construct.len p.attempt.construct.hash.len) s
       (SearchFinished p (p.remaining 0 used) s) := by
@@ -1079,8 +1082,8 @@ theorem nativeSearch_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : SearchPlan
   obtain ⟨V, R⟩ := h.rep
   unfold Impl.Dsa.X86_64.Generation.primeSearch
   rw [← p.attempt.construct.hashCount]
-  refine WP.seq (WP.mono (controlBase_ok (B := p.C) h.layout R (by
-    rw [h.slots 5 (by simp [searchSlots])]; exact p.controlBase)) fun u ⟨udi, um, ku⟩ => ?_)
+  refine WP.seq (WP.mono_syms (controlBase_ok (B := p.C) h.layout R (by
+    rw [h.slots 5 (by simp [searchSlots])]; exact p.controlBase)) fun u ⟨udi, um, ku⟩ uy => ?_)
   have Ru : Rep u.mem p.attempt.construct.hash.F p.attempt.construct.hash.S V W := um ▸ R
   have Lu := lay_of_rep h.layout R Ru rfl (ku.gpr (by decide)) ku.2.2
   have fu : Frame (searchWrites p.attempt p.C) s.mem u.mem := by rw [um]; exact Frame.refl _ _
@@ -1090,11 +1093,13 @@ theorem nativeSearch_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : SearchPlan
     (fun t ht _ _ => searchInvariant_done ht)
     (fun c v hc hi ctrl => ?_)
     (show SearchInvariant p (p.remaining 0 used) s 0 u from
-      ⟨W, used, mu, hu, hused, by omega, rfl, fu, ku.2.1, ku.2.2⟩)
+      ⟨W, used, mu, hu, hused, by omega, rfl, fu, ku.2.1, ku.2.2, uy⟩)
     (hC.congr ku.2.2) udi
-  obtain ⟨Wv, usedv, mv, huv, h16v, _, hremaining, fv, rdv, wrv⟩ := hi
-  refine WP.mono (searchBody_ok hG hHh hsize T hd hhash hseedsize mv ctrl hc h16v huv)
-    fun t ⟨ct, Wt, usedt, status, mt, hut, h16t, h19t, hct, bp, be, he, hr, ft, rdt, wrt⟩ => ?_
+  obtain ⟨Wv, usedv, mv, huv, h16v, _, hremaining, fv, rdv, wrv, yv⟩ := hi
+  refine WP.mono_syms (searchBody_ok hG hHh hsize T hd hhash hseedsize mv ctrl hc h16v huv
+    (hfn.congr (mv.slots 29 (by simp [searchSlots])) (mv.slots 30 (by simp [searchSlots]))
+      (mv.slots 31 (by simp [searchSlots])) yv))
+    fun t ⟨ct, Wt, usedt, status, mt, hut, h16t, h19t, hct, bp, be, he, hr, ft, rdt, wrt⟩ yt => ?_
   have frame := fv.trans ft
   have rd := rdt.trans rdv
   have wr := wrt.trans wrv
@@ -1111,7 +1116,7 @@ theorem nativeSearch_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : SearchPlan
     | false =>
       refine ⟨ct, 3, by decide, hct.trans hs, ?_⟩
       change SearchInvariant p (p.remaining 0 used) s (c + 1) t
-      refine ⟨Wt, usedt, mt, hut, h16t, fun _ => h19t.trans hs, ?_, frame, rd, wr⟩
+      refine ⟨Wt, usedt, mt, hut, h16t, fun _ => h19t.trans hs, ?_, frame, rd, wr, yt.trans yv⟩
       rw [hcursor]
       exact step
     | true =>
@@ -1147,7 +1152,8 @@ theorem seedPrime_ok (H : GenerationHashes) (T : PrimeTest)
     (hseed : GenerationTapeMemory seed s) (h1 : W 1 = seed.ptr)
     (hq : Spec.Rsa.bytesAt s.mem (off p.geo.B q) p.geo.qLen =
       Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes))
-    {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length) :
+    {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length)
+    (hy : FnSyms (fnNames H.sha1 H.sha256 T p.geo.qLen) p s) :
     WP isa (Impl.Dsa.X86_64.Generation.primeSearch H.sha1 H.sha256 T.run p.geo.pLen p.geo.qLen) s fun t =>
       let res := Spec.Dsa.primeFromSeed (8 * p.geo.pLen) (8 * p.geo.qLen)
         (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) seed.bytes (p.rand.bytes.drop used)
@@ -1180,7 +1186,9 @@ theorem seedPrime_ok (H : GenerationHashes) (T : PrimeTest)
       seed.bytes (p.rand.bytes.drop used) = _
     rw [qdecode]
   refine WP.mono (nativeSearch_ok (H.streamOK _) (H.hash_matches _) (H.hash_size _) T
-    (H.hash_width hw) (generationHash_seed hw) (H.seed_size hw) state hc h16 hu)
+    (H.hash_width hw) (generationHash_seed hw) (H.seed_size hw) state hc h16 hu
+    ((h.fnSlots hy).congr (state.slots 29 (by simp [searchSlots])).symm
+      (state.slots 30 (by simp [searchSlots])).symm (state.slots 31 (by simp [searchSlots])).symm rfl))
     fun t ⟨Wt, usedt, mt, hut, h16t, outcome, ft, rd, wr⟩ => ?_
   have ff := h.search_frame seed hlen h1 ft
   have slots : ∀ k ∈ searchSlots, Wt k = W k := by
@@ -1191,7 +1199,7 @@ theorem seedPrime_ok (H : GenerationHashes) (T : PrimeTest)
     simpa [searchWords, upd, hn.1, hn.2.1, hn.2.2] using he
   have mem := h.frame mt.layout mt.rep (fun k hk => slots k (by
     simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [searchSlots])) ff rd wr
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [searchSlots])) ff rd wr
   refine ⟨Wt, usedt, hut, mem, h16t, slots, ?_, ?_, ff, rd, wr⟩
   · have bytes := source_octets mt.qSource
     change Spec.Rsa.bytesAt t.mem (off (W 5) q) (Spec.Dsa.encodeBE p.geo.qLen

@@ -1154,7 +1154,7 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Proof.RsaOaep.X86_64 VG.Impl.RsaOaep.X86_64 VG.Impl.Dsa.Generation.Layout
 
-def generatorSlots : List Nat := [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 28]
+def generatorSlots : List Nat := [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 28, 29, 30, 31]
 
 structure GeneratorSearchMemory (p : GeneratorSearchPlan) (W : Nat → BitVec 64) (s : State) : Prop where
   layout : Lay s p.core.F p.core.S

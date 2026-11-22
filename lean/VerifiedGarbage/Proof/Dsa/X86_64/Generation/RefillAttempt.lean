@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.Generation.RefillSeed
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RefillOutcome
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAttempt
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrime
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
@@ -95,7 +96,7 @@ theorem GenerationGeometry.frame_bytes {g : GenerationGeometry} {m m' : Mem}
 
 theorem refillSlots_search {k : Nat} (h : k ∈ refillSlots) : k ∈ searchSlots := by
   simp only [refillSlots, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp [searchSlots]
 
 theorem RefillFinished.prepend {p : GenerationContext} {Wi Wm : Nat → BitVec 64}
@@ -300,7 +301,7 @@ theorem refillShort_ok {p : GenerationContext} {W : Nat → BitVec 64} {s : Stat
 theorem refillSlots_cases {k : Nat} (h : k ∈ refillSlots) :
     k ∈ generatorSlots ∧ k ≠ 11 ∧ k ≠ 12 ∧ k ≠ 16 ∧ k ≠ 19 := by
   simp only [refillSlots, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp [generatorSlots]
 
 theorem refillGeneratorFinish_ok (M : Mont) (Sq : MontS)
@@ -434,7 +435,7 @@ theorem refillGeneratorFinish_ok (M : Mont) (Sq : MontS)
         rfl
   · rw [ite_eq_right (fun hh => hh.1 h19)] at mx
     apply onSuccess_generation_ok mx
-    · intro y my hm ky _
+    · intro y my hm ky _ yy
       obtain pbytes : Spec.Rsa.bytesAt y.mem (off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen =
           Spec.Dsa.encodeBE p.geo.pLen value := by
         rw [hm, p.geo.frame_bytes fx hp_b, p.geo.frame_bytes fw hp_b]; exact bpv
@@ -468,7 +469,7 @@ theorem refillPrimeFinish_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T :
     {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length)
     {rest : List Byte}
     (hprime : Spec.Dsa.probablePrime (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) rest =
-      some (true, p.rand.bytes.drop used)) :
+      some (true, p.rand.bytes.drop used)) (hy : FnSyms (fnNames H.sha1 H.sha256 T p.geo.qLen) p s) :
     WP isa (.seq (Impl.Dsa.X86_64.Generation.primeSearch H.sha1 H.sha256 T.run p.geo.pLen p.geo.qLen)
       (Impl.Dsa.X86_64.Generation.onSuccess (VG.Impl.Bignum.X86_64.seqs [
         Impl.Dsa.X86_64.Generation.Refill.window p.geo.pLen,
@@ -482,7 +483,7 @@ theorem refillPrimeFinish_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T :
     have shape := VG.Proof.Dsa.Generation.qCandidate_shape
       (by rcases p.geo.qWidth with hh | hh <;> omega_using [hh] : 2 ≤ 8 * p.geo.qLen) seed.bytes
     simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using shape.2.2
-  refine WP.seq (WP.mono (seedPrime_ok H T h seed hlen hseed h1 hq h16 hu)
+  refine WP.seq (WP.mono (seedPrime_ok H T h seed hlen hseed h1 hq h16 hu hy)
     fun u ⟨Wu, usedu, huu, mu, u16, slots, bqu, result, fu, ru, wu⟩ => ?_)
   rcases result with ⟨h19, hr⟩ | ⟨h19, value, hr, domain, bp, be⟩ | ⟨h19, hr⟩
   · apply onSuccess_generation_ok mu
@@ -494,7 +495,7 @@ theorem refillPrimeFinish_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T :
         (kt.2.1.trans ru) (kt.2.2.trans wu)
       simp only [VG.Proof.Dsa.Generation.refillAttempt, hprime, hr]
   · apply onSuccess_generation_ok mu
-    · intro v mv hm kv _
+    · intro v mv hm kv _ vy
       obtain bv : Spec.Rsa.bytesAt v.mem (off p.geo.B VG.Impl.Dsa.Generation.Layout.p) p.geo.pLen =
           Spec.Dsa.encodeBE p.geo.pLen value := hm ▸ bp
       obtain ev : Spec.Rsa.bytesAt v.mem (off p.geo.B exponent) p.geo.pLen = Spec.Dsa.encodeBE p.geo.pLen
@@ -527,21 +528,22 @@ theorem refillAttempt_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Pri
     (hhs : Region.Sub ⟨p.hs.ptr, p.hs.bytes.length⟩ ⟨p.rand.ptr, p.rand.bytes.length⟩)
     (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
     (hseed : GenerationTapeMemory seed s) (h1 : W 1 = seed.ptr)
-    {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length) :
+    {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length)
+    (hy : FnSyms (fnNames H.sha1 H.sha256 T p.geo.qLen) p s) :
     WP isa (Impl.Dsa.X86_64.Generation.Refill.refillAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm
         T.run p.geo.pLen p.geo.qLen) s
       (RefillFinished p W (VG.Proof.Dsa.Generation.refillAttempt p.geo.pLen p.geo.qLen seed.bytes
         (p.rand.bytes.drop used)) s) := by
   unfold Impl.Dsa.X86_64.Generation.Refill.refillAttempt
-  refine WP.seq (WP.mono (seedSubgroup_ok H T h seed hlen hseed h1 h16 hu)
-    fun u ⟨usedu, status, huu, mu, bqu, fail, result, fu, ru, wu⟩ => ?_)
+  refine WP.seq (WP.mono_syms (seedSubgroup_ok H T h seed hlen hseed h1 h16 hu hy)
+    fun u ⟨usedu, status, huu, mu, bqu, fail, result, fu, ru, wu⟩ uy => ?_)
   let Wu := upd (upd (seedWords W p.geo.qLen) 16 (BitVec.ofNat 64 usedu)) 19 status
   obtain u16 : Wu 16 = BitVec.ofNat 64 usedu := by simp [Wu, upd]
   obtain u19 : Wu 19 = status := by simp [Wu, upd]
   obtain slots : ∀ k ∈ searchSlots, Wu k = W k := by
     intro k hk
     simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals first
       | rfl
       | simpa [Wu, seedWords, upd] using ((h.slots 28 (by simp [generationSlots])).trans p.hashLenSlot).symm
@@ -578,12 +580,12 @@ theorem refillAttempt_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : Pri
     | true =>
       obtain hstatus : Wu 19 = 1 := u19.trans hs
       apply onSuccess_generation_ok mu
-      · intro v mv hm kv _
+      · intro v mv hm kv _ vy
         obtain seedv := seedu.frame (p := p) (by rw [hm]; exact Frame.refl _ _) kv.2.1 kv.2.2
         obtain qv : Spec.Rsa.bytesAt v.mem (off p.geo.B q) p.geo.qLen =
             Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) := hm ▸ bqu
         obtain call := refillPrimeFinish_ok (checkName := checkName) H M Sq T mv hhs seed hlen seedv u1 qv u16 huu
-          (by rw [qr, suffix])
+          (by rw [qr, suffix]) (hy.congr (vy.trans uy))
         exact WP.mono call fun t ht => ht.prepend slots (by rw [hm]; exact fu) (kv.2.1.trans ru) (kv.2.2.trans wu)
       · intro _ _ _ _ hn
         exact False.elim (hn hstatus)

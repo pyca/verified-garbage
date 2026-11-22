@@ -22,7 +22,7 @@ theorem refillCT : RefillCTObligation := fun checkName H M Sq T pBytes hp =>
 
 theorem search_verified (v1 v256 : Proof.Pbkdf2.Md.X86_64.MdHash) (v : RoundImpl)
     (h1 : v1.mgf.G.rust = "sha1") (h256 : v256.mgf.G.rust = "sha256") :
-    Verified target (searchCode v1 v256 v) (Spec.Dsa.parameterSearchContract abi 632) :=
+    Verified target (searchCode v1 v256 v) (Spec.Dsa.parameterSearchContract (abi.withFns (fns v1 v256 v)) 632) :=
   searchCode_verified refillCT v1 v256 v h1 h256
 
 /-- A SHA-1 and a SHA-256 implementation, as the parameter search takes
