@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.RISCV64.Core
+public import VerifiedGarbage.Proof.Modes.RISCV64.Shared
 public import VerifiedGarbage.Impl.TripleDes.RISCV64.Ecb
 public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 import VerifiedGarbage.Proof.TripleDes.Schedule
@@ -1560,8 +1561,8 @@ end
 /-!
 # Triple DES's core for the modes on RISC-V
 
-`dirCoreSpec d`: Triple DES's core for the direction `d`
-(`Impl.TripleDes.RISCV64.dirCore d`) meets what the modes need of a core
+`inlineCoreSpec d`: Triple DES's core for the direction `d`
+(`Impl.TripleDes.RISCV64.inlineCore d`) meets what the modes need of a core
 (`Proof.Modes.RISCV64.CoreSpec`), with the key a schedule, its cipher
 `Proof.TripleDes.dirCipher d`. The schedule at `a0` is readable and apart
 from the regions the mode writes (`KeyArgs`); `prepare` copies it into the
@@ -1606,17 +1607,17 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Schedule} (h : KeyA
 
 /-- The copy is in the core's slots, apart from its buffer. -/
 theorem copy_sub (d : Direction) (B : Addr) :
-    Region.Sub ⟨B + BitVec.ofNat 64 keyOff, 384⟩ (coreRegion (dirCore d) B) :=
+    Region.Sub ⟨B + BitVec.ofNat 64 keyOff, 384⟩ (coreRegion (inlineCore d) B) :=
   Offset.sub _ (by cases d <;> decide) (by cases d <;> decide)
 
 theorem copy_blk (d : Direction) (B : Addr) :
-    Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ (blkRegion (dirCore d) B) :=
+    Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ (blkRegion (inlineCore d) B) :=
   Offset.disjoint _ (.inr (by cases d <;> decide)) (by decide) (by cases d <;> decide)
 
 theorem ready_frame (d : Direction) {s s' : State} {B : Addr} {ws : List Region} {k : Schedule}
     {rs : List Region} (h : Ready s B ws k) (hf : Frame rs s.mem s'.mem)
-    (hc : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d) B) r ∨
-      Region.Sub r (blkRegion (dirCore d) B)) :
+    (hc : ∀ r ∈ rs, Region.Disjoint (coreRegion (inlineCore d) B) r ∨
+      Region.Sub r (blkRegion (inlineCore d) B)) :
     Ready s' B ws k := by
   obtain ⟨hk, hfit⟩ := h
   refine ⟨?_, hfit⟩
@@ -1625,7 +1626,7 @@ theorem ready_frame (d : Direction) {s s' : State} {B : Addr} {ws : List Region}
   · exact h.sub_left (copy_sub d B)
   · exact (copy_blk d B).sub_right h
 
-theorem layout (d : Direction) : Layout (dirCore d) :=
+theorem inlineLayout (d : Direction) : Layout (inlineCore d) :=
   ⟨by cases d <;> decide, .inl rfl, by cases d <;> decide, by cases d <;> decide,
     by cases d <;> decide, by cases d <;> decide, by cases d <;> decide⟩
 
@@ -1672,15 +1673,15 @@ theorem copy_wp {s : State} {B : Addr} {k : Schedule} (hB : s.gpr sb = B)
     tf, by rw [tk.2.1, ard], by rw [tk.2.2, awr]⟩
 
 theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k : Schedule}
-    (hB : s.gpr sb = B) (hS : ScrIn s B (dirCore d).total)
-    (hm : (⟨B, 8 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa (dirCore d).prepare s fun s' => Ready s' B rs k ∧ s'.gpr sb = B ∧
-      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
+    (hB : s.gpr sb = B) (hS : ScrIn s B (inlineCore d).total)
+    (hm : (⟨B, 8 * (inlineCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
+    WP isa (inlineCore d).prepare s fun s' => Ready s' B rs k ∧ s'.gpr sb = B ∧
+      (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (inlineCore d) B] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hfit : B.toNat + 8 * 118 ≤ 2 ^ 64 := hS.fit
   obtain ⟨hkk, hin, hd⟩ := hk
   have dK : (keyR s).Disjoint ⟨B, 8 * 118⟩ := hd _ hm
-  have hmin : min (8 * (dirCore d).total) 2032 = 944 := by cases d <;> rfl
+  have hmin : min (8 * (inlineCore d).total) 2032 = 944 := by cases d <;> rfl
   show WP isa modePrepare s _
   refine WP.mono (copy_wp hB (fun o w h => hS.low o w (hmin ▸ h)) hkk hin
     (Region.Disjoint.sub_left (Region.Disjoint.symm dK) (Offset.sub_base _ (by decide))))
@@ -1701,11 +1702,11 @@ theorem dirCipher_bytes (d : Direction) (k : Schedule) (m : Mem) (p : Addr) :
 theorem kept_sub : ∀ r ∈ kept, r ∈ blockKept := by decide
 
 theorem crypt_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : Schedule}
-    (hB : s.gpr sb = B) (hS : ScrIn s B (dirCore d).total) (hR : Ready s B ws k) :
-    WP isa (dirCore d).crypt s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      Ready s' B ws k ∧ Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
-      (∀ j < (dirCore d).G, Spec.Aes.bytesAt s'.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw) =
-        dirCipher d k (Spec.Aes.bytesAt s.mem (blkAddr (dirCore d) B j) (4 * (dirCore d).bw))) ∧
+    (hB : s.gpr sb = B) (hS : ScrIn s B (inlineCore d).total) (hR : Ready s B ws k) :
+    WP isa (inlineCore d).crypt s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      Ready s' B ws k ∧ Frame [coreRegion (inlineCore d) B] s.mem s'.mem ∧
+      (∀ j < (inlineCore d).G, Spec.Aes.bytesAt s'.mem (blkAddr (inlineCore d) B j) (4 * (inlineCore d).bw) =
+        dirCipher d k (Spec.Aes.bytesAt s.mem (blkAddr (inlineCore d) B j) (4 * (inlineCore d).bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hfit : B.toNat + 8 * 118 ≤ 2 ^ 64 := hS.fit
   have hal : B.toNat % 16 = 0 := hS.al
@@ -1723,7 +1724,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : 
   refine WP.mono (block_ok k d sb bufOff s hpre) fun t ht => ?_
   have hBt : t.gpr sb = B := (ht.regs sb (by decide)).trans hB
   have hsub : ∀ r ∈ [(⟨s.gpr sb + BitVec.ofNat 64 bufOff, 8⟩ : Region), workRegion s],
-      Region.Sub r (coreRegion (dirCore d) B) := fun r hr => by
+      Region.Sub r (coreRegion (inlineCore d) B) := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rw [hB]; exact Offset.sub _ (by cases d <;> decide) (by cases d <;> decide)
@@ -1735,22 +1736,43 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : 
     rcases hr with rfl | rfl
     · rw [hB]; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
     · simp only [workRegion, hB]; exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
-  · obtain rfl : j = 0 := by simpa [dirCore] using hj
-    have e : blkAddr (dirCore d) B 0 = s.gpr sb + BitVec.ofNat 64 bufOff := by
-      rw [hB]; simp [blkAddr, slotA, dirCore, bufOff, bufSlot]
-    rw [show 4 * (dirCore d).bw = 8 from rfl, e, bytesAt_eq, ht.result, dirCipher_bytes]
+  · obtain rfl : j = 0 := by simpa [inlineCore] using hj
+    have e : blkAddr (inlineCore d) B 0 = s.gpr sb + BitVec.ofNat 64 bufOff := by
+      rw [hB]; simp [blkAddr, slotA, inlineCore, bufOff, bufSlot]
+    rw [show 4 * (inlineCore d).bw = 8 from rfl, e, bytesAt_eq, ht.result, dirCipher_bytes]
 
 /-- Triple DES's core for the direction `d` meets what the modes need. -/
-def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where
+def inlineCoreSpec (d : Direction) : CoreSpec (inlineCore d) where
   Key := Schedule
   cipher := dirCipher d
   KeyArgs := KeyArgs
   Ready := Ready
-  cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.TripleDes.cipher, Spec.TripleDes.invCipher, dirCore]
-  layout := layout d
+  cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.TripleDes.cipher, Spec.TripleDes.invCipher, inlineCore]
+  layout := inlineLayout d
   keyArgs_congr h e r w _ f := keyArgs_congr h e.a0 r w f
   ready_frame h _ _ _ _ f _ hc := ready_frame d h f hc
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
+
+open VG.Proof.Modes.RISCV64 (KeyMove ReadyMove)
+
+theorem shared_key (d : Direction) : KeyMove (inlineCoreSpec d) := by
+  intro s t rs ts k hk ha rd wr hf hs
+  obtain ⟨hk', hin, hd⟩ := keyArgs_congr hk ha rd wr hf
+  exact ⟨hk', hin, fun r hr => by
+    obtain ⟨r', hr', sub⟩ := hs r hr
+    exact (hd r' hr').sub_right sub⟩
+
+theorem shared_ready (d : Direction) : ReadyMove (inlineCoreSpec d) := by
+  intro s t B ws k rs hr _ _ _ hf _ hd
+  exact ready_frame (ws := ws) d hr hf hd
+
+/-- The core with its preparation and block called (`Impl.TripleDes.RISCV64.dirCore d`). -/
+def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) :=
+  (inlineCoreSpec d).shared (by dsimp only [inlineCore]; decide) (by dsimp only [inlineCore]; decide)
+    (shared_key d) (shared_ready d) (by cases d <;> rfl) rfl _ _
+
+theorem layout (d : Direction) : Layout (dirCore d) :=
+  VG.Proof.Modes.RISCV64.shared_layout (inlineLayout d) (by dsimp only [inlineCore]; decide) _ _
 
 end VG.Proof.TripleDes.RISCV64.Mode

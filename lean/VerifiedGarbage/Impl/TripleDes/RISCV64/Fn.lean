@@ -34,7 +34,7 @@ def ecbDecrypt : Prog isa :=
 
 /-- `Spec.TripleDes.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncryptChained : Prog isa :=
-  scrubAll 0 944 Impl.TripleDes.RISCV64.cbcEncryptChained
+  scrubAll 0 960 Impl.TripleDes.RISCV64.cbcEncryptChained
 
 /-- `Spec.TripleDes.cbcDecryptChainedApi`'s function as emitted. -/
 def cbcDecryptChained : Prog isa :=
@@ -42,7 +42,7 @@ def cbcDecryptChained : Prog isa :=
 
 /-- `Spec.TripleDes.cfbEncryptApi`'s function as emitted. -/
 def cfbEncrypt : Prog isa :=
-  scrubAll 0 944 Impl.TripleDes.RISCV64.cfbEncrypt
+  scrubAll 0 960 Impl.TripleDes.RISCV64.cfbEncrypt
 
 /-- `Spec.TripleDes.cfbDecryptApi`'s function as emitted. -/
 def cfbDecrypt : Prog isa :=
@@ -50,26 +50,26 @@ def cfbDecrypt : Prog isa :=
 
 /-- `Spec.TripleDes.cfbEncryptFinalApi`'s function as emitted. -/
 def cfbEncryptFinal : Prog isa :=
-  scrubAll 0 944 Impl.TripleDes.RISCV64.cfbEncryptFinal
+  scrubAll 0 960 Impl.TripleDes.RISCV64.cfbEncryptFinal
 
 /-- `Spec.TripleDes.cfbDecryptFinalApi`'s function as emitted. -/
 def cfbDecryptFinal : Prog isa :=
-  scrubAll 0 944 Impl.TripleDes.RISCV64.cfbDecryptFinal
+  scrubAll 0 960 Impl.TripleDes.RISCV64.cfbDecryptFinal
 
 /-- `Spec.TripleDes.cfb8EncryptApi`'s function as emitted. -/
 def cfb8Encrypt : Prog isa :=
-  scrubAll 0 944 Impl.TripleDes.RISCV64.cfb8Encrypt
+  scrubAll 0 960 Impl.TripleDes.RISCV64.cfb8Encrypt
 
 /-- `Spec.TripleDes.cfb8DecryptApi`'s function as emitted. -/
 def cfb8Decrypt : Prog isa :=
-  scrubAll 0 944 Impl.TripleDes.RISCV64.cfb8Decrypt
+  scrubAll 0 960 Impl.TripleDes.RISCV64.cfb8Decrypt
 
 /-- `Spec.TripleDes.ofbApi`'s function as emitted. -/
 def ofb : Prog isa :=
-  scrubAll 0 944 Impl.TripleDes.RISCV64.ofb
+  scrubAll 0 960 Impl.TripleDes.RISCV64.ofb
 
 /-- `Spec.TripleDes.ofbFinalApi`'s function as emitted. -/
 def ofbFinal : Prog isa :=
-  scrubAll 0 944 Impl.TripleDes.RISCV64.ofbFinal
+  scrubAll 0 960 Impl.TripleDes.RISCV64.ofbFinal
 
 end VG.Impl.TripleDes.RISCV64.Fn

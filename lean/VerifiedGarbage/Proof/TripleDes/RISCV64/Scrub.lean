@@ -144,7 +144,7 @@ end
 
 `cbcEncryptChained_verified`, `ofb_verified`, … : the modes of
 `Proof/Modes/RISCV64/` over Triple DES's core (`Mode.dirCoreSpec`) meet the
-shared contracts, with `stack := 944`: the mode's frame of 118 slots below
+shared contracts, with `stack := 960`: the mode's frame of 120 slots below
 the stack pointer, which it zeroes before returning (`seq_changes_wp`).
 CBC and CFB decryption, whose blocks' cipher calls do not depend on each
 other, are over the core on 64 blocks (`Mode.wideCoreSpec`), by groups of
@@ -164,7 +164,7 @@ open VG.Proof.TripleDes.RISCV64 (modePub)
 open VG.Proof.TripleDes (bytesAt_eq)
 
 /-- The frame's bytes. -/
-abbrev frameBytes : Nat := 944
+abbrev frameBytes : Nat := 960
 /-- The frame's bytes, of the modes over the core on 64 blocks. -/
 abbrev wideBytes : Nat := 1120
 
@@ -407,7 +407,7 @@ end
 
 The modes' CFB and OFB over a message's last piece (`Proof.Modes.RISCV64.cfbEncFinal_wp`,
 `cfbDecFinal_wp`, `ofbFinal_wp`) over TripleDes's one-block encryption core meet the contracts,
-with `stack := 944`, that core's frame (`ModesVerified.lean`), whose
+with `stack := 960`, that core's frame (`ModesVerified.lean`), whose
 precondition, with the data `len` bytes, is `seq`'s for the data a byte at a
 time (`byteMode`). Constant time as the whole-block functions.
 -/
@@ -709,7 +709,7 @@ in constant time and returns without secret residue. -/
 theorem cbcEncryptChained_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cbcEncryptChained
       (Spec.TripleDes.cbcEncryptChainedContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbedAll (api := Spec.TripleDes.cbcEncryptChainedApi) (W := 944) (rb := 0)
+  verifiedScrubbedAll (api := Spec.TripleDes.cbcEncryptChainedApi) (W := 960) (rb := 0)
     { code := Impl.TripleDes.RISCV64.cbcEncryptChained
       verified := Proof.TripleDes.RISCV64.Modes.cbcEncryptChained_verified }
     (cbcEncryptOut _) (by dsimp only; lit_decide)
@@ -729,7 +729,7 @@ in constant time and returns without secret residue. -/
 theorem cfbEncrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfbEncrypt
       (Spec.TripleDes.cfbEncryptContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbedAll (api := Spec.TripleDes.cfbEncryptApi) (W := 944) (rb := 0)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbEncryptApi) (W := 960) (rb := 0)
     { code := Impl.TripleDes.RISCV64.cfbEncrypt
       verified := Proof.TripleDes.RISCV64.Modes.cfbEncrypt_verified }
     (cfbEncryptOut _) (by dsimp only; lit_decide)
@@ -749,7 +749,7 @@ in constant time and returns without secret residue. -/
 theorem cfbEncryptFinal_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfbEncryptFinal
       (Spec.TripleDes.cfbEncryptFinalContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbedAll (api := Spec.TripleDes.cfbEncryptFinalApi) (W := 944) (rb := 0)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbEncryptFinalApi) (W := 960) (rb := 0)
     { code := Impl.TripleDes.RISCV64.cfbEncryptFinal
       verified := Proof.TripleDes.RISCV64.Modes.cfbEncryptFinal_verified }
     (cfbEncryptFinalOut _) (by dsimp only; lit_decide)
@@ -759,7 +759,7 @@ in constant time and returns without secret residue. -/
 theorem cfbDecryptFinal_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfbDecryptFinal
       (Spec.TripleDes.cfbDecryptFinalContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbedAll (api := Spec.TripleDes.cfbDecryptFinalApi) (W := 944) (rb := 0)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbDecryptFinalApi) (W := 960) (rb := 0)
     { code := Impl.TripleDes.RISCV64.cfbDecryptFinal
       verified := Proof.TripleDes.RISCV64.Modes.cfbDecryptFinal_verified }
     (cfbDecryptFinalOut _) (by dsimp only; lit_decide)
@@ -769,7 +769,7 @@ in constant time and returns without secret residue. -/
 theorem cfb8Encrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfb8Encrypt
       (Spec.TripleDes.cfb8EncryptContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbedAll (api := Spec.TripleDes.cfb8EncryptApi) (W := 944) (rb := 0)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfb8EncryptApi) (W := 960) (rb := 0)
     { code := Impl.TripleDes.RISCV64.cfb8Encrypt
       verified := Proof.TripleDes.RISCV64.Modes.cfb8Encrypt_verified }
     (cfb8EncryptOut _) (by dsimp only; lit_decide)
@@ -779,7 +779,7 @@ in constant time and returns without secret residue. -/
 theorem cfb8Decrypt_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.cfb8Decrypt
       (Spec.TripleDes.cfb8DecryptContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbedAll (api := Spec.TripleDes.cfb8DecryptApi) (W := 944) (rb := 0)
+  verifiedScrubbedAll (api := Spec.TripleDes.cfb8DecryptApi) (W := 960) (rb := 0)
     { code := Impl.TripleDes.RISCV64.cfb8Decrypt
       verified := Proof.TripleDes.RISCV64.Modes.cfb8Decrypt_verified }
     (cfb8DecryptOut _) (by dsimp only; lit_decide)
@@ -789,7 +789,7 @@ in constant time and returns without secret residue. -/
 theorem ofb_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.ofb
       (Spec.TripleDes.ofbContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbedAll (api := Spec.TripleDes.ofbApi) (W := 944) (rb := 0)
+  verifiedScrubbedAll (api := Spec.TripleDes.ofbApi) (W := 960) (rb := 0)
     { code := Impl.TripleDes.RISCV64.ofb
       verified := Proof.TripleDes.RISCV64.Modes.ofb_verified }
     (ofbOut _) (by dsimp only; lit_decide)
@@ -799,7 +799,7 @@ in constant time and returns without secret residue. -/
 theorem ofbFinal_scrubbed :
     VerifiedScrubbed RISCV64.target Impl.TripleDes.RISCV64.Fn.ofbFinal
       (Spec.TripleDes.ofbFinalContract RISCV64.abi Proof.TripleDes.RISCV64.Modes.frameBytes) 0 :=
-  verifiedScrubbedAll (api := Spec.TripleDes.ofbFinalApi) (W := 944) (rb := 0)
+  verifiedScrubbedAll (api := Spec.TripleDes.ofbFinalApi) (W := 960) (rb := 0)
     { code := Impl.TripleDes.RISCV64.ofbFinal
       verified := Proof.TripleDes.RISCV64.Modes.ofbFinal_verified }
     (ofbFinalOut _) (by dsimp only; lit_decide)

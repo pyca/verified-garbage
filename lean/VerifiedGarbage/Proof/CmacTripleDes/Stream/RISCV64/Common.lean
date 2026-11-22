@@ -264,11 +264,11 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
         blockResult (Spec.TripleDes.scheduleAt s.mem (s.gpr .a0)) d
           (Spec.TripleDes.blockAt s.mem (wAt (s.gpr .a1) b)) := by
   have fit := h.fit
-  let c := dirCore d
+  let c := inlineCore d
   let D := s.gpr .a1
   let n := (s.gpr .a2).toNat
   let k := Spec.TripleDes.scheduleAt s.mem (s.gpr .a0)
-  obtain hL := Mode.layout d
+  obtain hL := Mode.inlineLayout d
   have htot : c.total = 118 := rfl
   have hB : Fb s c = s.sp - 944 := rfl
   unfold Ecb.ecb
