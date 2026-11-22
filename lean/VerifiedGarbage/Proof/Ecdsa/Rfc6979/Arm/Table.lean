@@ -1231,7 +1231,7 @@ open VG.Impl.Pbkdf2.Stream.Arm (scrAt)
 open VG.Proof.X25519.Arm (op2_reg op2_imm dpVal)
 open VG.Proof.Ecdsa.Rfc6979 (kvAtB candAtB stepB)
 open VG.Proof.Pbkdf2.Whole.Arm (hf_rel frame2_rel)
-open VG.Proof.HmacTable.Arm (TabOK TabMem tA)
+open VG.Proof.HmacTable.Arm (TabOK TabMem tA any_rel)
 
 /-! ## Frames and single instructions -/
 

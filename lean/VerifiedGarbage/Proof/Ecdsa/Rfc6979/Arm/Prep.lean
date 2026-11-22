@@ -33,8 +33,8 @@ which `Ctx` says holds the function of `L.F`, whose call an indirect call of
 PBKDF2's code calls them (`VG.Proof.Pbkdf2.Whole.Arm`), with the lengths and
 counts the table's `D` and `B` give:
 
-* HMAC's `init` for a key of any length (`initAny`, called as `any_frame`
-  says), with the key `K` (`D` bytes, the frame's first) and `W + S` words
+* HMAC's `init` for a key of any length (`initAny`, called as `any_frame`,
+  `Proof/HmacTable/Arm.lean`, says), with the key `K` (`D` bytes, the frame's first) and `W + S` words
   of working space: HMAC's states for the block key `K₀` of `K`
   (`init_step`);
 * the streaming `update` of the inner state with `len` bytes of data in the
@@ -59,161 +59,8 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm
 open VG VG.Arm VG.Impl.Ecdsa.Rfc6979.Arm
 open VG.Impl.Pbkdf2.Stream.Arm (scrAt)
 open VG.Proof.Pbkdf2.Whole.Arm (After HiArgs HfArgs UpdL hf_frame upd_frame stk fr1 fr2 upd4)
-open VG.Proof.HmacTable.Arm (TabOK TabMem tA)
+open VG.Proof.HmacTable.Arm (TabOK TabMem tA AnyArgs any_frame)
 open VG.Proof.X25519.Arm (op2_reg op2_imm dpVal)
-
-/-! ## HMAC's `init` for a key of any length, in a frame of `scratch`
-
-As `HiArgs`, `hi_frame` and `hi_rel` are `init`'s for a key of at most a
-block (`Proof/Pbkdf2/Whole/Arm/Calls.lean`), for the function the tables
-hold, `initAny` (`Impl/Pbkdf2/Md/AnyKey/Arm.lean`), verified against
-`anyScratchContract` with `W` words of working space: what the state before
-the frame's push needs (`AnyArgs`: a key of any length, and the 32 bytes
-below the stack pointer, the frame's 8 and the 24 that `initAny`'s contract
-takes, apart from the buffers), what holds when it returns (`any_frame`),
-and that two runs with the same arguments leak the same trace (`any_rel`).
-It writes only the 24 bytes below the stack pointer (`After`), as its code's
-frames use at most 16 (`armStack`). -/
-
-section
-open VG.Arm.FrameStack
-open VG.Proof.Pbkdf2.Whole.Arm (Sound ReprOK frame2_ok frame2_rel p2_sub p2_arg0 p2_argAddr p2_bytes stk_repr)
-open VG.Proof.Pbkdf2.Whole.Arm.Any (anyScratchContract)
-
-/-- What a framed call of `initAny` needs of the state before its push: the
-states at `inn` and `out` in `r0` and `r1`, the `kl` bytes of key at `k` in
-`r2` and `r3`, and `8 W` bytes of working space at `sc` in `r12`; the
-regions the callee may read and write; that they are disjoint as it needs,
-and from the 32 bytes below the stack pointer; and that none of them wraps
-around. -/
-structure AnyArgs (S : Spec.Hmac.StreamingHash) (W : Nat) (s : State) (inn out k sc : BitVec 32) (kl : Nat) : Prop where
-  r0 : s.gpr .r0 = inn
-  r1 : s.gpr .r1 = out
-  r2 : s.gpr .r2 = k
-  r3 : s.gpr .r3 = BitVec.ofNat 32 kl
-  r12 : s.gpr .r12 = sc
-  kl32 : kl < 2 ^ 32
-  sp : 32 ≤ s.sp.toNat
-  cr : Covers [⟨State.addr k, kl⟩] (s.rd ++ s.wr)
-  cw : Covers [⟨State.addr inn, S.stateBytes⟩, ⟨State.addr out, S.stateBytes⟩, ⟨State.addr sc, W * 8⟩] s.wr
-  i_o : Region.Disjoint ⟨State.addr inn, S.stateBytes⟩ ⟨State.addr out, S.stateBytes⟩
-  i_k : Region.Disjoint ⟨State.addr inn, S.stateBytes⟩ ⟨State.addr k, kl⟩
-  i_s : Region.Disjoint ⟨State.addr inn, S.stateBytes⟩ ⟨State.addr sc, W * 8⟩
-  o_k : Region.Disjoint ⟨State.addr out, S.stateBytes⟩ ⟨State.addr k, kl⟩
-  o_s : Region.Disjoint ⟨State.addr out, S.stateBytes⟩ ⟨State.addr sc, W * 8⟩
-  k_s : Region.Disjoint ⟨State.addr k, kl⟩ ⟨State.addr sc, W * 8⟩
-  b_i : Region.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ ⟨State.addr inn, S.stateBytes⟩
-  b_o : Region.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ ⟨State.addr out, S.stateBytes⟩
-  b_k : Region.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ ⟨State.addr k, kl⟩
-  b_s : Region.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ ⟨State.addr sc, W * 8⟩
-  ni : inn.toNat + S.stateBytes ≤ 2 ^ 32
-  no : out.toNat + S.stateBytes ≤ 2 ^ 32
-  nk : k.toNat + kl ≤ 2 ^ 32
-  nsc : sc.toNat + W * 8 ≤ 2 ^ 32
-
-/-- The 24 bytes below the stack pointer are among the 32. -/
-theorem stk_sub32 (s : State) : Region.Sub (stk s) ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ :=
-  Offset.sub_below _ (a := 24) (b := 32) (by decide) (by decide)
-
-namespace AnyArgs
-variable {S : Spec.Hmac.StreamingHash} {W : Nat} {s : State} {inn out k sc : BitVec 32} {kl : Nat}
-  (h : AnyArgs S W s inn out k sc kl)
-include h
-
-/-- `initAny`'s precondition on entry. -/
-theorem pre : (anyScratchContract S W).pre
-    ((pushed fr1 s).callEntry.withRegions (HiArgs.rd s.sp k kl) (HiArgs.wr S W inn out sc)) := by
-  have e := h.sp
-  have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega_using [e])
-  have a8 : State.addr (s.sp - BitVec.ofNat 32 8) = State.addr s.sp - BitVec.ofNat 64 8 := addr_sub' (by omega_using [e])
-  -- The frame's first word, the stack argument, and the 24 bytes below it, among the 32.
-  have sA4 : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8), 4⟩ ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ := by
-    rw [a8]; exact Offset.sub_below _ (a := 8) (b := 32) (by decide) (by decide)
-  have e24 : State.addr (s.sp - BitVec.ofNat 32 8) - 24 = State.addr s.sp - BitVec.ofNat 64 32 := by
-    rw [a8, BitVec.sub_sub]; rfl
-  have sR : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8) - 24, 24⟩
-      ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ := by
-    rw [e24]; exact Region.sub_prefix (by decide)
-  have cA : Region.Disjoint ⟨State.addr (s.sp - BitVec.ofNat 32 8) - 24, 24⟩
-      ⟨State.addr (s.sp - BitVec.ofNat 32 8), 4⟩ := by
-    rw [e24, a8]
-    exact VG.Proof.Pbkdf2.Whole.Arm.bdisj _ 32 (a := 32) (b := 8) (by decide) (by decide) (by omega_using [])
-      (by decide) (by decide)
-  sig_pre [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
-    Arm.reduceClassify, Arm.Loc.val]
-  simp only [h.r0, h.r1, h.r2, h.r3, p2_arg0 (s := s) (by omega_using [e]), p2_argAddr, h.r12, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt h.kl32]
-  exact ⟨by rw [h8]; omega_using [e], by rw [h8]; have := s.sp.isLt; omega_using [], rfl, rfl, h.i_o, h.i_k, h.i_s,
-    (h.b_i.sub_left sA4).symm, h.o_k, h.o_s, (h.b_o.sub_left sA4).symm, h.k_s, (h.b_s.sub_left sA4).symm,
-    h.b_i.sub_left sR, h.b_o.sub_left sR, h.b_k.sub_left sR, h.b_s.sub_left sR, cA,
-    h.ni, h.no, h.nk, h.nsc⟩
-
-/-- The `HiArgs` of the same registers and regions, but the key's length. -/
-theorem cov : Covers (HiArgs.rd s.sp k kl ++ HiArgs.wr S W inn out sc) ((pushed fr1 s).rd ++ (pushed fr1 s).wr) := by
-  intro a n ⟨q, hq, hc⟩
-  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rw [pushed_rd, pushed_wr]
-  rcases hq with rfl | rfl | rfl | rfl | rfl
-  · obtain ⟨q', hq', hc'⟩ := h.cr a n ⟨_, List.mem_singleton_self _, hc⟩
-    rcases List.mem_append.mp hq' with hq' | hq'
-    · exact ⟨q', List.mem_append_left _ hq', hc'⟩
-    · exact ⟨q', List.mem_append_right _ (List.mem_cons_of_mem _ hq'), hc'⟩
-  · refine ⟨_, List.mem_append_right _ List.mem_cons_self, ?_⟩
-    show Region.Contains ⟨State.addr (s.sp - BitVec.ofNat 32 8), 8⟩ a n
-    simp only [Region.Contains] at hc ⊢; omega_using [hc]
-  all_goals
-    obtain ⟨q', hq', hc'⟩ := h.cw a n ⟨_, by simp, hc⟩
-    exact ⟨q', List.mem_append_right _ (List.mem_cons_of_mem _ hq'), hc'⟩
-
-theorem covW : Covers (HiArgs.wr S W inn out sc) (pushed fr1 s).wr := by
-  intro a n hi
-  obtain ⟨q', hq', hc'⟩ := h.cw a n hi
-  exact ⟨q', by rw [pushed_wr]; exact List.mem_cons_of_mem _ hq', hc'⟩
-
-end AnyArgs
-
-/-- A framed call of `initAny`: its states are those of the block key of
-the key, of any length. -/
-theorem any_frame {S : Spec.Hmac.StreamingHash} {W : Nat} {n : String} {c : Prog isa} (hR : ReprOK S)
-    (hSn : S.stateBytes ≤ 2 ^ 64) (hv : Sound c (anyScratchContract S W)) (hst : armStack c ≤ 16)
-    {s : State} {inn out k sc : BitVec 32} {kl : Nat} (h : AnyArgs S W s inn out k sc kl) {Q : State → Prop}
-    (hQ : ∀ s', After s (HiArgs.wr S W inn out sc) s' →
-      S.Repr s'.mem (State.addr inn) (Spec.Hmac.xorPad (Spec.Hmac.blockKey S.H (Spec.Sha256.bytesAt s.mem (State.addr k) kl)) Spec.Hmac.ipad) →
-      S.Repr s'.mem (State.addr out) (Spec.Hmac.xorPad (Spec.Hmac.blockKey S.H (Spec.Sha256.bytesAt s.mem (State.addr k) kl)) Spec.Hmac.opad) → Q s') :
-    WP isa (.frame (.push fr1) (.call n c) (.pop .r12 8)) s Q := by
-  have h24 : 24 ≤ s.sp.toNat := by have := h.sp; omega_using [this]
-  refine frame2_ok rfl (by decide) hv.ok hst h24 h.pre h.cov h.covW fun s₂ mL uL hfl a post => ?_
-  sig_post [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
-    Arm.reduceClassify, Arm.Loc.val] at post
-  simp only [h.r0, h.r1, h.r2, h.r3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h.kl32] at post
-  have ek : Spec.Sha256.bytesAt (storeWords s.mem (s.sp - BitVec.ofNat 32 8) [s.gpr .r12, s.gpr .lr]) (BitVec.setWidth 64 k) kl =
-      Spec.Sha256.bytesAt s.mem (State.addr k) kl :=
-    p2_bytes (ra := .r12) (rb := .lr) h24 (h.b_k.sub_left (stk_sub32 s)) (by have := h.kl32; omega_using [this])
-  rw [ek] at post
-  exact hQ _ a (stk_repr hR hSn hfl (h.b_i.sub_left (stk_sub32 s)) post.1)
-    (stk_repr hR hSn hfl (h.b_o.sub_left (stk_sub32 s)) post.2)
-
-/-- Two framed calls of `initAny` with the same arguments, from the same
-stack pointer, leak the same trace. -/
-theorem any_rel {S : Spec.Hmac.StreamingHash} {W : Nat} {n : String} {c : Prog isa}
-    (hv : Sound c (anyScratchContract S W)) {P : State → State → Prop}
-    {sp inn out k sc : BitVec 32} {kl : Nat}
-    (h : ∀ s s', P s s' → AnyArgs S W s inn out k sc kl ∧ AnyArgs S W s' inn out k sc kl ∧
-      s.sp = sp ∧ s'.sp = sp) :
-    RelCT isa P (.frame (.push fr1) (.call n c) (.pop .r12 8)) fun _ _ => True := by
-  refine frame2_rel rfl hv.ok hv.ct (HiArgs.rd sp k kl) (HiArgs.wr S W inn out sc) fun s s' hp => ?_
-  obtain ⟨a, a', e, e'⟩ := h s s' hp
-  have c := a.pre; have c' := a'.pre
-  rw [e] at c; rw [e'] at c'
-  have v := a.cov; have v' := a'.cov
-  rw [e] at v; rw [e'] at v'
-  refine ⟨e.trans e'.symm, c, c', ?_, v, a.covW, v', a'.covW⟩
-  sig_pub [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
-    Arm.reduceClassify, Arm.Loc.val]
-  simp only [a.r0, a'.r0, a.r1, a'.r1, a.r2, a'.r2, a.r3, a'.r3, p2_arg0 (s := s) (by have := a.sp; omega_using [this]),
-    p2_arg0 (s := s') (by have := a'.sp; omega_using [this]), a.r12, a'.r12, e, e', and_self]
-
-end
 
 variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 
