@@ -452,6 +452,49 @@ pub fn bench(c: &mut Criterion) {
         });
         g.finish();
 
+        // Append the payload and content type to a reusable record buffer.
+        let mut record = Vec::with_capacity(size + 1 + 16);
+        let mut g = c.benchmark_group("aes-128-gcm-encrypt-append-reused-key");
+        g.throughput(Throughput::Bytes(size as u64 + 1));
+        g.bench(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                record.clear();
+                vg_key
+                    .encrypt_append(
+                        black_box(&nonce),
+                        black_box(&aad),
+                        &[black_box(&data), black_box(&ty)],
+                        black_box(&mut record),
+                    )
+                    .unwrap()
+            })
+        });
+        g.bench(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                record.clear();
+                record.resize(size + 1 + 16, 0);
+                ossl_seal(&[black_box(&data), black_box(&ty)], black_box(&mut record))
+            })
+        });
+        g.bench(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                record.clear();
+                record.resize(size + 1 + 16, 0);
+                let (ciphertext, tail) = record.split_at_mut(size);
+                aws_lc_reused
+                    .seal_out_of_place_scatter(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&data),
+                        ciphertext,
+                        black_box(&ty),
+                        tail,
+                    )
+                    .unwrap()
+            })
+        });
+        g.finish();
+
         // Two halves, so that whole blocks follow the first piece.
         let (h1, h2) = data.split_at(size / 2);
         let mut out = vec![0u8; size];

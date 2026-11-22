@@ -686,6 +686,44 @@ impl AesGcm {
         out: &mut [u8],
     ) -> Result<Block, Error> {
         crate::dit::enter!(dit);
+        let len = Self::plaintext_len(nonce, plaintext)?;
+        if len != out.len() as u64 {
+            return Err(Error::InvalidOutputLength);
+        }
+        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        // SAFETY: the unique output slice is writable for the checked length.
+        Ok(unsafe { self.seal_pieces(dit, nonce, aad, plaintext, out.as_mut_ptr(), out.len()) })
+    }
+
+    /// Encrypts the concatenation of `plaintext` onto the end of `out`,
+    /// returning its authentication tag. The input limits are those of
+    /// [`encrypt`](Self::encrypt). An error leaves `out` unchanged.
+    #[cfg(feature = "alloc")]
+    pub fn encrypt_append(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut alloc::vec::Vec<u8>,
+    ) -> Result<Block, Error> {
+        crate::dit::enter!(dit);
+        let len = Self::plaintext_len(nonce, plaintext)?;
+        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        let len = usize::try_from(len).map_err(|_| Error::InvalidTextLength)?;
+        let start = out.len();
+        out.reserve(len);
+        let dst = out.spare_capacity_mut().as_mut_ptr().cast();
+        // SAFETY: reserve provided len writable bytes beyond the initialized
+        // prefix. sealGatherPost specifies every ciphertext byte for arbitrary
+        // prior destination contents. Publish exactly those bytes after it returns.
+        unsafe {
+            let tag = self.seal_pieces(dit, nonce, aad, plaintext, dst, len);
+            out.set_len(start + len);
+            Ok(tag)
+        }
+    }
+
+    fn plaintext_len(nonce: &[u8], plaintext: &[&[u8]]) -> Result<u64, Error> {
         if plaintext.len() > Self::MAX_PIECES {
             return Err(Error::TooManyPieces);
         }
@@ -694,22 +732,21 @@ impl AesGcm {
         for p in plaintext {
             len = add_len(len, p.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         }
-        if len != out.len() as u64 {
-            return Err(Error::InvalidOutputLength);
-        }
-        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        Ok(self.seal_pieces(dit, nonce, aad, plaintext, out))
+        Ok(len)
     }
 
     /// Seal the caller's plaintext pieces into a separate ciphertext buffer.
+    /// The caller must provide an exclusive destination writable for `len`
+    /// bytes, the checked total length of the input pieces.
     #[inline(always)]
-    fn seal_pieces(
+    unsafe fn seal_pieces(
         &self,
         dit: crate::dit::Dit<'_>,
         nonce: &[u8],
         aad: &[u8],
         plaintext: &[&[u8]],
-        out: &mut [u8],
+        dst: *mut u8,
+        len: usize,
     ) -> Block {
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
@@ -720,12 +757,12 @@ impl AesGcm {
         }
         let src: *const [usize; 2] = descs.as_ptr().cast();
         let mut tag: Block = [0; 16];
-        // SAFETY: as in `seal`, with `out` valid for reads and writes of
-        // `out.len()` bytes; `src` points to `plaintext.len()` initialized
+        // SAFETY: as in `seal`, with `dst` writable for
+        // `len` bytes; `src` points to `plaintext.len()` initialized
         // descriptors (in `descs`, a local), each the address and the length
-        // of a piece valid for reads, which are `out.len()` bytes in all.
+        // of a piece valid for reads, which are `len` bytes in all.
         // The pieces and the descriptors are read only, and overlap neither
-        // `out` (a unique borrow) nor `tag`, nor anything on the stack the
+        // the exclusive destination nor `tag`, nor anything on the stack the
         // function uses.
         unsafe {
             #[cfg(target_arch = "x86_64")]
@@ -739,8 +776,8 @@ impl AesGcm {
                 aad.len(),
                 src,
                 plaintext.len(),
-                out.as_mut_ptr(),
-                out.len(),
+                dst,
+                len,
                 &mut tag,
             );
             #[cfg(target_arch = "riscv64")]
@@ -754,8 +791,8 @@ impl AesGcm {
                 aad.len(),
                 src,
                 plaintext.len(),
-                out.as_mut_ptr(),
-                out.len(),
+                dst,
+                len,
                 &mut tag,
                 &self.bk.0,
             );
@@ -770,8 +807,8 @@ impl AesGcm {
                 aad.len(),
                 src,
                 plaintext.len(),
-                out.as_mut_ptr(),
-                out.len(),
+                dst,
+                len,
                 &mut tag,
             );
         }
@@ -1575,6 +1612,19 @@ mod tests {
         let tag = k.encrypt(&nonce, &[], &bytes, &mut out);
         assert_eq!((&out[..], tag), (&want[..n], Ok(want_tag)));
         let empty = [&msg[..0]; AesGcm::MAX_PIECES + 1];
+        #[cfg(feature = "alloc")]
+        {
+            let mut out = alloc::vec![0x5a];
+            assert_eq!(
+                k.encrypt_append(&nonce, &[], &empty, &mut out),
+                Err(Error::TooManyPieces)
+            );
+            assert_eq!(
+                k.encrypt_append(&[], &[], &bytes, &mut out),
+                Err(Error::InvalidNonceLength)
+            );
+            assert_eq!(out, [0x5a]);
+        }
         let tag = k.encrypt(&nonce, &[], &empty, &mut []);
         assert_eq!(tag, Err(Error::TooManyPieces));
         assert_eq!(

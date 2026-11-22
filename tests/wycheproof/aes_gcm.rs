@@ -110,6 +110,16 @@ fn aes_gcm() {
                     let mut out = vec![0; c.msg.0.len()];
                     let sealed = key.encrypt(&c.iv.0, &c.aad.0, pieces, &mut out);
                     assert_eq!((out, sealed), (c.ct.0.clone(), Ok(tag)), "tcId {id}");
+                    #[cfg(feature = "alloc")]
+                    {
+                        let mut out = vec![0x55; 5];
+                        assert_eq!(
+                            key.encrypt_append(&c.iv.0, &c.aad.0, pieces, &mut out),
+                            Ok(tag)
+                        );
+                        assert_eq!(&out[..5], &[0x55; 5], "tcId {id}");
+                        assert_eq!(&out[5..], &c.ct.0, "tcId {id}");
+                    }
                 }
                 assert_eq!(stream_decrypt(&key, c), Ok(c.msg.0.clone()), "tcId {id}");
                 for (so, doff) in OFFSETS {
