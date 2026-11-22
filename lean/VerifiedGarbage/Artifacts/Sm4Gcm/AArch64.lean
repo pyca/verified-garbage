@@ -20,7 +20,7 @@ open VG.Proof.Sm4Gcm.AArch64
 def artifactsOf (v : GcmVariant) : List Artifact := [
   Spec.Sm4.Gcm.sealApi.artifact AArch64.target {
     suffix := v.impl.suffix
-    code := Impl.Sm4Gcm.AArch64.Fn.«seal» v.calls
+    code := Impl.Sm4Gcm.AArch64.Fn.«seal» v.calls v.impl.ctrSuffix
     verified := Proof.Sm4Gcm.AArch64.seal_scrubbed v },
   Spec.Sm4.Gcm.openApi.artifact AArch64.target {
     suffix := v.impl.suffix

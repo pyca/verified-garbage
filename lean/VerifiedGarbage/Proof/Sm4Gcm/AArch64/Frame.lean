@@ -1244,6 +1244,18 @@ theorem sealFrameSat_pre1008 : ∃ s, (Spec.Sm4.Gcm.sealContract AArch64.abi 100
     List.range.loop, stackBelow] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
     using sealFrameSat
 
+theorem sealFrameSat_pre1024 : ∃ s, (Spec.Sm4.Gcm.sealContract AArch64.abi 1024).pre s := by
+  implies_sat [Spec.Sm4.Gcm.sealContract, Spec.Sm4.Gcm.sealSig, Spec.Sm4.Gcm.sealPost,
+    AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+    List.range.loop, stackBelow] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+    using sealFrameSat
+
+theorem sealFrameSat_pre4064 : ∃ s, (Spec.Sm4.Gcm.sealContract AArch64.abi 4064).pre s := by
+  implies_sat [Spec.Sm4.Gcm.sealContract, Spec.Sm4.Gcm.sealSig, Spec.Sm4.Gcm.sealPost,
+    AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+    List.range.loop, stackBelow] [sealFrameSat, sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+    using sealFrameSat
+
 theorem seal_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 784 0 («seal» v.callees))
