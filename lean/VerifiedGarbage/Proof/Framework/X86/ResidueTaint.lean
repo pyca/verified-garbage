@@ -223,6 +223,8 @@ def stepB (τ : T) : Instr → Option T
     let p := pubR τ .eax && pubR τ r
     some (setF (setR (setR τ .eax p none) .edx p none) false)
   | .movdquLoad d _ | .movqLoad d _ | .pmuludq d _ => some (setX τ d false)
+  -- The words of a table an instruction carries: the same in both runs.
+  | .movdquTbl d .. | .movqTbl d .. => some (setX τ d true)
   | .movdquStore m x => some (storeT τ (wpOf τ m.base) m.disp 16 (pubX τ x))
   | .movqStore m x => some (storeT τ (wpOf τ m.base) m.disp 8 (pubX τ x))
   | .xop op => some (setX τ (xdst op) (xzero op))

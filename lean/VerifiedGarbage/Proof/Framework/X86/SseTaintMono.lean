@@ -44,7 +44,7 @@ theorem step_upd {τ : T} {r : RegSet Reg} {f : Bool} {sl : Slots}
   | movdquStore m _ => exact hst m 16 hs
   | movqStore m _ => exact hst m 8 hs
   | mmxStore m _ => exact hst m 8 hs
-  | xop _ | pmuludq _ _ =>
+  | xop _ | pmuludq _ _ | movdquTbl _ _ _ _ | movqTbl _ _ _ _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     subst hs
     exact ⟨_, rfl, leR_upd hr hf hsl⟩
@@ -87,7 +87,7 @@ theorem step_keeps {F Φ σ σ' : T} (i : Instr) (hk : keepsI F i = true) (hΦF 
   | movdquStore m _ => exact hst m 16 hs
   | movqStore m _ => exact hst m 8 hs
   | mmxStore m _ => exact hst m 8 hs
-  | xop _ | pmuludq _ _ =>
+  | xop _ | pmuludq _ _ | movdquTbl _ _ _ _ | movqTbl _ _ _ _ =>
     simp only [step, Option.some.injEq] at hs
     subst hs; exact hΦ
   | mop op =>

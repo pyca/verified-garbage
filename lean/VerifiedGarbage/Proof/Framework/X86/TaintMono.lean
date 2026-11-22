@@ -258,6 +258,8 @@ theorem step_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = tr
   | movdquStore _ _ => simp only [step, reduceCtorEq] at hs
   | movqLoad _ _ => simp only [step, reduceCtorEq] at hs
   | movqStore _ _ => simp only [step, reduceCtorEq] at hs
+  | movdquTbl _ _ _ _ => simp only [step, reduceCtorEq] at hs
+  | movqTbl _ _ _ _ => simp only [step, reduceCtorEq] at hs
   | mop _ => simp only [step, reduceCtorEq] at hs
   | mmxStore _ _ => simp only [step, reduceCtorEq] at hs
   | mmxEnter => simp only [step, reduceCtorEq] at hs
@@ -345,28 +347,53 @@ theorem pushWbases_upd (rs : List Reg) (o : Nat) :
   | nil => rfl
   | cons q rs ih => simp only [pushWbases, ih]; rfl
 
+theorem pushRegs_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
+    (hsl : τ.slots.Sub sl) (rs : List Reg) {τ' : T} (hs : pushStep τ (.push rs) = some τ') :
+    ∃ σ', pushStep (upd τ r f sl) (.push rs) = some σ' ∧ LeR τ' σ' := by
+  simp only [pushStep] at hs ⊢
+  split at hs <;> [rename_i hok; cases hs]
+  cases hs
+  simp only [Bool.and_eq_true] at hok
+  rw [ite_t (by simp only [Bool.and_eq_true]; exact ⟨⟨pub_upd hr hok.1.1, hok.1.2⟩, hok.2⟩)]
+  refine ⟨_, rfl, ⟨hr, hf, fun j k hk => ?_, ?_⟩⟩
+  · cases j with
+    | zero =>
+      simp only [pushed, Slots.has_push_zero, ← Slots.has_eq, Slots.has_ofList] at hk ⊢
+      obtain ⟨x, hx, h⟩ := hk
+      exact ⟨x, pushSlots_upd hr rs _ x hx, h⟩
+    | succ j =>
+      simp only [pushed, Slots.has_push_succ] at hk ⊢
+      exact hsl j k hk
+  · have e := pushWbases_upd (τ := τ) (r := r) (f := f) (sl := sl) rs (4 * rs.length)
+    simp only [pushed]
+    rw [e]; rfl
+
+/-- Writing a secret to a register keeps the order. -/
+theorem LeR.changed {τ σ : T} (h : LeR τ σ) (d : Reg) : LeR (changed τ d false) (changed σ d false) :=
+  ⟨RegSet.erase_mono h.regs d, (fun e => by cases e), h.slots,
+    (congrArg (fun x => Taint.changed x d false) h.shape).trans rfl⟩
+
 theorem pushStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
     (hsl : τ.slots.Sub sl) (i : Instr) {τ' : T} (hs : pushStep τ i = some τ') :
     ∃ σ', pushStep (upd τ r f sl) i = some σ' ∧ LeR τ' σ' := by
   cases i with
-  | push rs =>
-    simp only [pushStep] at hs ⊢
-    split at hs <;> [rename_i hok; cases hs]
+  | push rs => exact pushRegs_upd hr hf hsl rs hs
+  | symPush d name =>
+    -- The push of the register, after a secret is written to it and before another.
+    simp only [pushStep] at hs
+    split at hs <;> [rename_i hc; cases hs]
     cases hs
-    simp only [Bool.and_eq_true] at hok
-    rw [ite_t (by simp only [Bool.and_eq_true]; exact ⟨⟨pub_upd hr hok.1.1, hok.1.2⟩, hok.2⟩)]
-    refine ⟨_, rfl, ⟨hr, hf, fun j k hk => ?_, ?_⟩⟩
-    · cases j with
-      | zero =>
-        simp only [pushed, Slots.has_push_zero, ← Slots.has_eq, Slots.has_ofList] at hk ⊢
-        obtain ⟨x, hx, h⟩ := hk
-        exact ⟨x, pushSlots_upd hr rs _ x hx, h⟩
-      | succ j =>
-        simp only [pushed, Slots.has_push_succ] at hk ⊢
-        exact hsl j k hk
-    · have e := pushWbases_upd (τ := τ) (r := r) (f := f) (sl := sl) rs (4 * rs.length)
-      simp only [pushed]
-      rw [e]; rfl
+    obtain ⟨hd, hok⟩ := Bool.and_eq_true_iff.mp hc
+    have ht : pushStep (changed τ d false) (.push [d]) = some (pushed (changed τ d false) [d]) := by
+      simp only [pushStep, hok, ↓reduceIte]
+    obtain ⟨σ₁, h₁, h₂⟩ := pushRegs_upd (τ := changed τ d false) (r := r.erase d) (f := false) (sl := sl)
+      (RegSet.erase_mono hr d) id hsl [d] ht
+    have e : changed (upd τ r f sl) d false = upd (changed τ d false) (r.erase d) false sl := rfl
+    simp only [pushStep] at h₁
+    split at h₁ <;> [rename_i hok'; cases h₁]
+    cases h₁
+    refine ⟨_, ?_, h₂.changed d⟩
+    simp only [pushStep, e, hd, hok', Bool.and_self, ↓reduceIte]
   | _ => simp only [pushStep, reduceCtorEq] at hs
 
 theorem popStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
@@ -481,7 +508,7 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     (hr : σ.regs.bits.testBit j = true) : σ'.regs.bits.testBit j = true := by
   cases i
   case store | store8 => rw [storeStep_regs hs]; exact hr
-  case symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms | pmuludq | mcdtEnter | mcdtLeave =>
+  case symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms | pmuludq | mcdtEnter | mcdtLeave =>
     simp only [step, reduceCtorEq] at hs
   case mul q =>
     simp only [step, Option.some.injEq, mulStep] at hs
@@ -526,14 +553,18 @@ theorem step_keeps' {F Φ σ σ' : T} (i : Instr) (hk : keepsI F i = true) (hΦF
   refine frLe_iff.mpr ⟨RegSet.subset_iff.mpr fun j hb => ?_, fun h => by rw [hf] at h; cases h⟩
   exact step_bits hs (hj j hb) (RegSet.subset_iff.mp (frLe_iff.mp hΦ).1 j hb)
 
-theorem pushStep_regs {σ σ' : T} {i : Instr} (hs : pushStep σ i = some σ') :
+theorem pushStep_regs {σ σ' : T} {rs : List Reg} (hs : pushStep σ (.push rs) = some σ') :
     σ'.regs = σ.regs ∧ σ'.flags = σ.flags := by
-  cases i with
-  | push rs =>
-    simp only [pushStep] at hs
-    split at hs <;> [skip; cases hs]
-    cases hs; exact ⟨rfl, rfl⟩
-  | _ => simp only [pushStep, reduceCtorEq] at hs
+  simp only [pushStep] at hs
+  split at hs <;> [skip; cases hs]
+  cases hs; exact ⟨rfl, rfl⟩
+
+/-- The push of a static's address frame leaves its register secret, and the flags. -/
+theorem symPush_regs {σ σ' : T} {d : Reg} {name : String} (hs : pushStep σ (.symPush d name) = some σ') :
+    σ'.regs = (σ.regs.erase d).erase d ∧ σ'.flags = false := by
+  simp only [pushStep] at hs
+  split at hs <;> [skip; cases hs]
+  cases hs; exact ⟨rfl, rfl⟩
 
 theorem popStep_regs {σ σ' : T} {d : Reg} {k : Nat} (hs : popStep σ (.pop d k) = some σ') :
     σ'.regs = σ.regs.erase d ∧ σ'.flags = σ.flags := by
@@ -697,10 +728,22 @@ instance : VG.Taint.Frame taint where
     obtain ⟨e₁, e₂⟩ := retStep_regs hs
     obtain ⟨a₁, a₂⟩ := frLe_iff.mp hΦ
     exact frLe_iff.mpr ⟨e₁ ▸ a₁, fun h => e₂ ▸ a₂ h⟩
-  push_keeps _ _ _ hΦ hs := by
-    obtain ⟨e₁, e₂⟩ := pushStep_regs hs
-    obtain ⟨a₁, a₂⟩ := frLe_iff.mp hΦ
-    exact frLe_iff.mpr ⟨e₁ ▸ a₁, fun h => e₂ ▸ a₂ h⟩
+  push_keeps {F Φ σ σ'} i hk hΦF hΦ hs := by
+    have hs : pushStep σ i = some σ' := hs
+    cases i with
+    | push rs =>
+      obtain ⟨e₁, e₂⟩ := pushStep_regs hs
+      obtain ⟨a₁, a₂⟩ := frLe_iff.mp hΦ
+      exact frLe_iff.mpr ⟨e₁ ▸ a₁, fun h => e₂ ▸ a₂ h⟩
+    | symPush d name =>
+      obtain ⟨e₁, -⟩ := symPush_regs hs
+      obtain ⟨hf, hj⟩ := keepsI_spec hk hΦF
+      obtain ⟨a₁, -⟩ := frLe_iff.mp hΦ
+      refine frLe_iff.mpr ⟨RegSet.subset_iff.mpr fun j hb => ?_, fun h => by rw [hf] at h; cases h⟩
+      rw [e₁]
+      have hne := ne_of_dst (i := .symPush d name) rfl (hj j hb)
+      exact bit_erase hne (bit_erase hne (RegSet.subset_iff.mp a₁ j hb))
+    | _ => simp only [pushStep, reduceCtorEq] at hs
   pop_keeps {F Φ σ σ'} i hk hΦF hΦ hs := by
     have hs : popStep σ i = some σ' := hs
     cases i with
