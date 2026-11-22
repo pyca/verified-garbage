@@ -171,15 +171,16 @@ theorem p521Sign_scrubbed (hL : Law Spec.P521.curve) (hv : OK vars ∧ "VG_P521_
 /-- `vg_ecdsa_secp256k1_sign` as emitted (`Impl.Ecdsa.Rfc6979.PPC64LE.Fn.secp256k1`), with the
 HMAC implementations of `HmacTable.PPC64LE.vars`, meets its contract in constant
 time and returns without secret residue. -/
-theorem secp256k1Sign_scrubbed (hL : Law Spec.Secp256k1.curve) (hv : OK vars ∧ "VG_SECP256K1_COMB" ∉ names vars) :
+theorem secp256k1Sign_scrubbed (hL : Law Spec.Secp256k1.curve) (hv : OK vars ∧ "VG_SECP256K1_COMB" ∉ names vars ∧
+    "VG_SECP256K1_FRAME_CONSTS" ∉ names vars) :
     VerifiedScrubbed PPC64LE.target (Impl.Ecdsa.Rfc6979.PPC64LE.Fn.secp256k1 (fnsOf vars))
-      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 Impl.Weierstrass.PPC64LE.secp256k1CombConsts vars) 32 :=
+      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 Proof.Ecdsa.PPC64LE.Secp256k1.sK vars) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi) {
       tables := [("hmac", tables vars)]
       code := signCodeT (secp256k1R hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars
       verified := secp256k1T_verified hL vars hv }
     784 .all
-    (signOut Spec.Ecdsa.Rfc6979.Curves.secp256k1 Impl.Weierstrass.PPC64LE.secp256k1CombConsts vars)
+    (signOut Spec.Ecdsa.Rfc6979.Curves.secp256k1 Proof.Ecdsa.PPC64LE.Secp256k1.sK vars)
     (by dsimp only [signCodeT, cfgT, secp256k1R, secp256k1Core, RfcCurve.Q]; lit_decide)
 
 /-- `vg_ecdsa_brainpoolp256r1_sign` as emitted (`Impl.Ecdsa.Rfc6979.PPC64LE.Fn.brainpoolp256r1`), with the

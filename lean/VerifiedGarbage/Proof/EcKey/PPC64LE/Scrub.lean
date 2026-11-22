@@ -303,13 +303,13 @@ theorem p521Decompress_scrubbed (hL : Law Spec.P521.curve) :
 time and returns without secret residue. -/
 theorem secp256k1PublicKey_scrubbed (hL : Law Spec.Secp256k1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.secp256k1PublicKey
-      (Spec.EcKey.Secp256k1.inst.publicKeyContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.secp256k1CombConsts)) 32 :=
+      (Spec.EcKey.Secp256k1.inst.publicKeyContract (PPC64LE.abi.withConsts Proof.EcKey.PPC64LE.Secp256k1.pkK)) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.publicKeyApi) {
       code := Impl.EcKey.PPC64LE.publicKeySecp256k1Comb
       verified := Proof.EcKey.PPC64LE.Secp256k1.combPk_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v18, .v19]⟩
-    (publicKeyOut _ _ Impl.Weierstrass.PPC64LE.secp256k1CombConsts)
+    (publicKeyOut _ _ Proof.EcKey.PPC64LE.Secp256k1.pkK)
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.Secp256k1.inst.compressPublicKeyApi`'s function as emitted
@@ -317,12 +317,13 @@ theorem secp256k1PublicKey_scrubbed (hL : Law Spec.Secp256k1.curve) :
 time and returns without secret residue. -/
 theorem secp256k1Compress_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.secp256k1Compress
-      (Spec.EcKey.Secp256k1.inst.compressPublicKeyContract PPC64LE.abi) 32 :=
+      (Spec.EcKey.Secp256k1.inst.compressPublicKeyContract (PPC64LE.abi.withConsts
+        (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.secp256k1))) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.inst.compressPublicKeyApi) {
       code := Impl.EcKey.Compressed.PPC64LE.compressSecp256k1
       verified := Proof.EcKey.Compressed.PPC64LE.Secp256k1.compress_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (compressOut _ _ [])
+    (compressOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.secp256k1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi`'s function as emitted
@@ -330,12 +331,13 @@ theorem secp256k1Compress_scrubbed :
 time and returns without secret residue. -/
 theorem secp256k1Decompress_scrubbed (hL : Law Spec.Secp256k1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.secp256k1Decompress
-      (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract PPC64LE.abi) 32 :=
+      (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract (PPC64LE.abi.withConsts
+        (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.secp256k1))) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi) {
       code := Impl.EcKey.Compressed.PPC64LE.decompressSecp256k1
       verified := Proof.EcKey.Compressed.PPC64LE.Secp256k1.decompress_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (decompressOut _ _ [])
+    (decompressOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.secp256k1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP256r1.publicKeyApi`'s function as emitted
