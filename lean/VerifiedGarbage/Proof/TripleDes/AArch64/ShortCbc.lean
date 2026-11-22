@@ -23,6 +23,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.AArch64.CbcLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.Short
@@ -473,12 +475,20 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
     · rw [e]; exact o _ (by simp)
   · exact WP.mono (VG.Proof.TripleDes.AArch64.cbcDecryptChained_wp hp₁) fun _ h => transfer h
 
+/-- Either path keeps the return address: the table block's, which calls
+nothing and does not write it, and the batch's, which keeps it across its
+calls. -/
+theorem cbcDecryptChained_keeps_x30 : Modes.AArch64.KeepsReg .x30 VG.Impl.TripleDes.AArch64.Short.cbcDecryptChained := by
+  refine Modes.AArch64.KeepsReg.seq (Modes.AArch64.keepsReg_of_regSafe (by decide))
+    (Modes.AArch64.KeepsReg.ite (Modes.AArch64.keepsReg_of_regSafe (by lit_decide)) ?_)
+  show Modes.AArch64.KeepsReg .x30 VG.Impl.TripleDes.AArch64.cbcDecryptChained
+  keeps_x30
+
 theorem cbcDecryptChained_verified :
     Verified AArch64.target cbcDecryptChained
       (Proof.TripleDes.cbcDecChainedScratchContract AArch64.abi 140) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcDecryptChained_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := VG.Proof.TripleDes.AArch64.WP.gprs' cbcDecryptChained_keeps_x30 (cbcDecryptChained_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) batchTaint_agree
       (by taint_decide)) (by

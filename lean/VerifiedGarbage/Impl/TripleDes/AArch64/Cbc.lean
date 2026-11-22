@@ -35,9 +35,10 @@ each group of up to 128 blocks by one batch. Its slots are the buffer's 128
 blocks, the batch's state words, on which the batch runs in place. The key
 is the schedule where the caller passed it, at `x0`, which neither the
 modes nor the batch write; `prepare` does nothing. `crypt` keeps the
-scratch buffer's address (`sb` = `x5`, which the batch writes) in `x16`,
-points `x4` at the buffer and runs the batch, which keeps `x23` and `x24`
-and writes no register the calling convention preserves.
+scratch buffer's address (`sb` = `x5`, which the batch writes) in `x15`,
+points `x4` at the buffer and calls the batch (`BitsliceNeon.batchCall`,
+the return address kept in `x14`), which keeps `x23` and `x24` and writes
+no register the calling convention preserves.
 
 `tableCore`, the table core: CMAC's block (`CmacTripleDes.AArch64.block`,
 the S-boxes by `tbl` from tables in vector registers) on one 8-byte block,
@@ -100,7 +101,7 @@ def dirCore (d : Direction) : Impl.Modes.AArch64.Core where
 
 /-- The batched core's `crypt`: the batch of the direction `d` on the buffer. -/
 def batchCrypt (d : Direction) : Prog isa :=
-  .seq (.block [movR .x16 sb, movR .x4 sb]) (.seq (BitsliceNeon.batch d) (.block [movR sb .x16]))
+  .seq (.block [movR .x15 sb, movR .x4 sb]) (.seq (BitsliceNeon.batchCall d) (.block [movR sb .x15]))
 
 /-- Triple DES's core for the modes whose blocks are independent, in the
 direction `d`: 128 blocks by one bitsliced batch. -/
