@@ -43,6 +43,7 @@ vg_dsa_sign_prevalidated:
 	add t3, a4, t3
 	add t3, t3, a1
 	sd t3, 16(s6)
+	sd ra, 32(s6)
 	addi s7, s11, 0
 	ld s8, 16(s6)
 	slli s8, s8, 48

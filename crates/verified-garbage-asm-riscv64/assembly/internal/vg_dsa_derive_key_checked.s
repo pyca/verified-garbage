@@ -28,6 +28,7 @@ vg_dsa_derive_key_checked:
 	slli t3, a6, 16
 	add t3, a4, t3
 	sd t3, 16(s6)
+	sd ra, 32(s6)
 	addi s7, s11, 0
 	ld s8, 16(s6)
 	slli s8, s8, 48
