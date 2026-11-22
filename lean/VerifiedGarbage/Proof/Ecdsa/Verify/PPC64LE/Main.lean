@@ -77,6 +77,8 @@ structure VPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   dg_fit : (s.gpr .r4).toNat + c.C.len ≤ 2 ^ 64
   sig_fit : (s.gpr .r5).toNat + 2 * c.C.len ≤ 2 ^ 64
   sc_fit : (s.gpr .r6).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r6) s
 
 /-- The key's `x` and `y`, the hash, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=
@@ -130,6 +132,7 @@ theorem VPre.setup {s : State} {extra : List Region} (hp : VPre c s extra) : Set
   k_fit := show (s.gpr .r5).toNat + c.C.len ≤ 2 ^ 64 by have := hp.sig_fit; omega_arith
   d_fit := hp.dg_fit
   e_fit := hp.dg_fit
+  tbl := hp.tbl
 
 theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
   intro w hw
@@ -142,7 +145,7 @@ theorem flag_le (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1 + w.2 ≤ size
   rw [List.mem_singleton.mp hw]; have := sl_le c h7 (i := FLAG) (by decide); dsimp only; omega_arith
 
 theorem prefix_eq (c : Cfg) : Impl.Ecdsa.Verify.PPC64LE.Cfg.prefix' c =
-    .seq (.block (c.setupWith Args.verify ++ [mov .r12 .r5]))
+    .seq (.seq (c.setupWith Args.verify) (.block [mov .r12 .r5]))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))) := rfl
 
@@ -155,7 +158,7 @@ theorem prefix_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre
       St₁ c Args.verify s₀ (s₀.gpr .r6) (BitVec.allOnes 64) s ∧ s.gpr .r12 = s₀.gpr .r5 := by
   have h7 := hc.n10
   rw [prefix_eq]
-  refine WP.seq (wp_append (WP.mono (stage₀' hc hp.setup) fun s₁ ⟨S₁, kp₁⟩ =>
+  refine WP.seq (WP.seq (WP.mono (stage₀' hc hp.setup) fun s₁ ⟨S₁, kp₁⟩ =>
     wp_step exec_mov (WP.block_nil ?_)))
   replace S₁ : St₀ c Args.verify s₀ (s₀.gpr .r6) (BitVec.allOnes 64) s₁ := S₁
   obtain kw : Kp [.r12] s₁ (s₁.write .r12 (s₁.gpr .r5)) := Kp.write _ _ (by decide)

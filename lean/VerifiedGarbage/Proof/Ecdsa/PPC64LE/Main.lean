@@ -500,6 +500,8 @@ structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   digest_fit : (s.gpr .r5).toNat + c.C.len ≤ 2 ^ 64
   k_fit : (s.gpr .r6).toNat + c.C.len ≤ 2 ^ 64
   sc_fit : (s.gpr .r7).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r7) s
 
 theorem Pre.setup {s : State} {extra : List Region} (hp : Pre c s extra) : SetupPre c Args.sign s where
   shift := .inr (.inr rfl)
@@ -518,6 +520,7 @@ theorem Pre.setup {s : State} {extra : List Region} (hp : Pre c s extra) : Setup
   k_fit := hp.k_fit
   d_fit := hp.d_fit
   e_fit := hp.digest_fit
+  tbl := hp.tbl
 
 /-- The hash's integer is the bytes shifted as the setup shifts them. -/
 theorem hashToInt_eq (c : Cfg) (m : Mem) (q : Addr) :

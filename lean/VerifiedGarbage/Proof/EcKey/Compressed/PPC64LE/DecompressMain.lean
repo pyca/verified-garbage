@@ -479,16 +479,18 @@ variable {c : Cfg}
 /-- The arguments: `out` (`1 + len` bytes), `public` (`1 + 2 len` bytes) and
 `scratch`, readable and writable as the contract says and apart from each
 other as it says. -/
-structure CPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r4, 1 + 2 * c.C.len⟩]
+structure CPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [⟨s.gpr .r4, 1 + 2 * c.C.len⟩] ++ extra
   wr : s.wr = [⟨s.gpr .r3, 1 + c.C.len⟩, ⟨s.gpr .r5, size⟩]
   pk_sc : Region.Disjoint ⟨s.gpr .r4, 1 + 2 * c.C.len⟩ ⟨s.gpr .r5, size⟩
   out_sc : Region.Disjoint ⟨s.gpr .r3, 1 + c.C.len⟩ ⟨s.gpr .r5, size⟩
   out_fit : (s.gpr .r3).toNat + (1 + c.C.len) ≤ 2 ^ 64
   pk_fit : (s.gpr .r4).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64
   sc_fit : (s.gpr .r5).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r5) s
 
-theorem CPre.setup {s : State} (hp : CPre c s) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
+theorem CPre.setup {s : State} {extra : List Region} (hp : CPre c s extra) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
   obtain hr12 : (s.write .r12 (s.gpr .r4)).gpr .r12 = s.gpr .r4 := by simp only [write_gpr, ite_true]
   obtain hr5 : (s.write .r12 (s.gpr .r4)).gpr .r5 = s.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
@@ -505,7 +507,8 @@ theorem CPre.setup {s : State} (hp : CPre c s) : SetupPre c args (s.write .r12 (
   obtain hwr : (⟨(s.write .r12 (s.gpr .r4)).gpr .r5, size⟩ : Region) ∈ (s.write .r12 (s.gpr .r4)).wr := by
     rw [hr5, write_wr, hp.wr]; simp
   obtain hsf : ((s.write .r12 (s.gpr .r4)).gpr .r5).toNat + size ≤ 2 ^ 64 := by rw [hr5]; exact hp.sc_fit
-  exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf⟩
+  exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf,
+    by rw [hr5]; exact ⟨hp.tbl.rd, hp.tbl.val⟩⟩
 
 /-- The key's `x` and `y`. -/
 abbrev keyX (c : Cfg) (s : State) : Nat :=
@@ -523,13 +526,13 @@ structure CKeep (s₀ s' : State) : Prop where
   lr : s'.lr = s₀.lr
 
 theorem compress_eq' (c : Cfg) : Impl.EcKey.Compressed.PPC64LE.compress c =
-    .seq (.block (mov .r12 .r4 :: c.setupWith args))
+    .seq (.seq (.block [mov .r12 .r4]) (c.setupWith args))
       (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r12))
       (.seq (Impl.Ecdh.PPC64LE.Cfg.valCall c) (.block (Impl.EcKey.Compressed.PPC64LE.compressFinish c)))) := rfl
 
 /-- `vg_ec_<curve>_compress_public_key` writes the compressed key, or zeros,
 and returns 1 or 0, restoring the callee-saved registers and `lr`. -/
-theorem compress_ok (hc : CfgOk c) {s₀ : State} (hp : CPre c s₀) :
+theorem compress_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : CPre c s₀ extra) :
     WP isa (Impl.EcKey.Compressed.PPC64LE.compress c) s₀ fun s' => CKeep s₀ s' ∧
       Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .r3) (1 + c.C.len) =
         (if KeyOk c s₀ then BitVec.ofNat 8 (2 + keyY c s₀ % 2) :: toBytes c.C.len (keyX c s₀)
@@ -542,7 +545,7 @@ theorem compress_ok (hc : CfgOk c) {s₀ : State} (hp : CPre c s₀) :
   have hsz : size = 8192 := rfl
   rw [compress_eq']
   -- `public` to `r12`, and the setup.
-  refine WP.seq (wp_step exec_mov (WP.mono (stage₀' hc hp.setup) fun s₂ ⟨S₂, kp₂⟩ => ?_))
+  refine WP.seq (WP.seq (wp_step exec_mov (WP.block_nil (WP.mono (stage₀' hc hp.setup) fun s₂ ⟨S₂, kp₂⟩ => ?_))))
   obtain hr5 : (s₀.write .r12 (s₀.gpr .r4)).gpr .r5 = s₀.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
   generalize hb : (s₀.write .r12 (s₀.gpr .r4)).gpr args.sc = base at S₂
@@ -1424,16 +1427,18 @@ instance (c : Cfg) (root : Fe c.C → Fe c.C) (s : State) : Decidable (DAccept c
 /-- The arguments: `out` (`1 + 2 len` bytes), `public` (`1 + len` bytes)
 and `scratch`, readable and writable as the contract says and apart from
 each other as it says. -/
-structure DPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r4, 1 + c.C.len⟩]
+structure DPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [⟨s.gpr .r4, 1 + c.C.len⟩] ++ extra
   wr : s.wr = [⟨s.gpr .r3, 1 + 2 * c.C.len⟩, ⟨s.gpr .r5, size⟩]
   pk_sc : Region.Disjoint ⟨s.gpr .r4, 1 + c.C.len⟩ ⟨s.gpr .r5, size⟩
   out_sc : Region.Disjoint ⟨s.gpr .r3, 1 + 2 * c.C.len⟩ ⟨s.gpr .r5, size⟩
   out_fit : (s.gpr .r3).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64
   pk_fit : (s.gpr .r4).toNat + (1 + c.C.len) ≤ 2 ^ 64
   sc_fit : (s.gpr .r5).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r5) s
 
-theorem DPre.setup {s : State} (hp : DPre c s) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
+theorem DPre.setup {s : State} {extra : List Region} (hp : DPre c s extra) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
   obtain hr12 : (s.write .r12 (s.gpr .r4)).gpr .r12 = s.gpr .r4 := by simp only [write_gpr, ite_true]
   obtain hr5 : (s.write .r12 (s.gpr .r4)).gpr .r5 = s.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
@@ -1450,10 +1455,11 @@ theorem DPre.setup {s : State} (hp : DPre c s) : SetupPre c args (s.write .r12 (
   obtain hwr : (⟨(s.write .r12 (s.gpr .r4)).gpr .r5, size⟩ : Region) ∈ (s.write .r12 (s.gpr .r4)).wr := by
     rw [hr5, write_wr, hp.wr]; simp
   obtain hsf : ((s.write .r12 (s.gpr .r4)).gpr .r5).toNat + size ≤ 2 ^ 64 := by rw [hr5]; exact hp.sc_fit
-  exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf⟩
+  exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf,
+    by rw [hr5]; exact ⟨hp.tbl.rd, hp.tbl.val⟩⟩
 
 theorem decompress_eq' (c : Cfg) : Impl.EcKey.Compressed.PPC64LE.decompress c =
-    .seq (.block (mov .r12 .r4 :: c.setupWith args))
+    .seq (.seq (.block [mov .r12 .r4]) (c.setupWith args))
       (.seq (.block (Impl.EcKey.Compressed.PPC64LE.decompressPeer c))
       (.seq (fprog c.SP (Impl.EcKey.Compressed.PPC64LE.rhsOps c))
       (.seq (.seq (Impl.EcKey.Compressed.PPC64LE.rootCandidate c)
@@ -1463,7 +1469,7 @@ theorem decompress_eq' (c : Cfg) : Impl.EcKey.Compressed.PPC64LE.decompress c =
 /-- `vg_ec_<curve>_decompress_public_key` writes the uncompressed key, or
 zeros, and returns 1 or 0, restoring the callee-saved registers and `lr`. -/
 theorem decompress_ok (hc : CfgOk c) {root : Fe c.C → Fe c.C} (hroot : CandidateCorrect c root)
-    {s₀ : State} (hp : DPre c s₀) :
+    {s₀ : State} {extra : List Region} (hp : DPre c s₀ extra) :
     WP isa (Impl.EcKey.Compressed.PPC64LE.decompress c) s₀ fun s' => CKeep s₀ s' ∧
       Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .r3) (1 + 2 * c.C.len) =
         (if DAccept c root s₀ then 4 :: (toBytes c.C.len (keyX c s₀) ++ toBytes c.C.len (keyRoot c root s₀).val)
@@ -1478,7 +1484,7 @@ theorem decompress_ok (hc : CfgOk c) {root : Fe c.C → Fe c.C} (hroot : Candida
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [decompress_eq']
   -- `public` to `r12`, and the setup.
-  refine WP.seq (wp_step exec_mov (WP.mono (stage₀' hc hp.setup) fun s₂ ⟨S₂, kp₂⟩ => ?_))
+  refine WP.seq (WP.seq (wp_step exec_mov (WP.block_nil (WP.mono (stage₀' hc hp.setup) fun s₂ ⟨S₂, kp₂⟩ => ?_))))
   obtain hr5 : (s₀.write .r12 (s₀.gpr .r4)).gpr .r5 = s₀.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
   generalize hb : (s₀.write .r12 (s₀.gpr .r4)).gpr args.sc = base at S₂

@@ -972,8 +972,8 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
 /-- The arguments: `out` (`len` bytes), `d` (`len` bytes), `peer`
 (`1 + 2 len` bytes) and `scratch`, readable and writable as the contract
 says and apart from each other as it says. -/
-structure EPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r4, c.C.len⟩, ⟨s.gpr .r5, 1 + 2 * c.C.len⟩]
+structure EPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [⟨s.gpr .r4, c.C.len⟩, ⟨s.gpr .r5, 1 + 2 * c.C.len⟩] ++ extra
   wr : s.wr = [⟨s.gpr .r3, c.C.len⟩, ⟨s.gpr .r6, size⟩]
   out_sc : Region.Disjoint ⟨s.gpr .r3, c.C.len⟩ ⟨s.gpr .r6, size⟩
   d_sc : Region.Disjoint ⟨s.gpr .r4, c.C.len⟩ ⟨s.gpr .r6, size⟩
@@ -982,8 +982,10 @@ structure EPre (c : Cfg) (s : State) : Prop where
   d_fit : (s.gpr .r4).toNat + c.C.len ≤ 2 ^ 64
   peer_fit : (s.gpr .r5).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64
   sc_fit : (s.gpr .r6).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r6) s
 
-theorem EPre.setup {s : State} (hp : EPre c s) : SetupPre c Impl.Ecdh.PPC64LE.Args.ecdh s where
+theorem EPre.setup {s : State} {extra : List Region} (hp : EPre c s extra) : SetupPre c Impl.Ecdh.PPC64LE.Args.ecdh s where
   shift := .inl rfl
   k_reg := by decide
   d_reg := by decide
@@ -1000,6 +1002,7 @@ theorem EPre.setup {s : State} (hp : EPre c s) : SetupPre c Impl.Ecdh.PPC64LE.Ar
   k_fit := hp.d_fit
   d_fit := hp.d_fit
   e_fit := hp.d_fit
+  tbl := hp.tbl
 
 /-- The private key. -/
 abbrev dk (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .r4) c.C.len)
@@ -1058,7 +1061,7 @@ theorem peer_bytes (m : Mem) (p : Addr) (L : Nat) :
   rfl
 
 theorem exchangeWith_eq' (c : Cfg) (mul : Prog isa) : Impl.Ecdh.PPC64LE.Cfg.exchangeWith c mul =
-    .seq (.block (c.setupWith Impl.Ecdh.PPC64LE.Args.ecdh ++ [mov .r12 .r5]))
+    .seq (.seq (c.setupWith Impl.Ecdh.PPC64LE.Args.ecdh) (.block [mov .r12 .r5]))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
       (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r12)) (.seq (Impl.Ecdh.PPC64LE.Cfg.valCall c)
@@ -1091,7 +1094,8 @@ theorem qMul_mulPowOk (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (s₀ : Sta
 /-- `vg_ecdh_<curve>`, with `[d]P` by any `mul` that meets `MulPowOk`,
 computes the specification's shared secret and restores the callee-saved
 registers and `lr`. -/
-theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) {mul : Prog isa}
+theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Region} (hp : EPre c s₀ extra)
+    {mul : Prog isa}
     (hMul : MulPowOk c s₀ mul) :
     WP isa (Impl.Ecdh.PPC64LE.Cfg.exchangeWith c mul) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' := by
   have h0 := hc.n0
@@ -1103,7 +1107,7 @@ theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre 
   have hsz : size = 8192 := rfl
   rw [exchangeWith_eq']
   -- The setup, and `peer` to `r12`.
-  refine WP.seq (wp_append (WP.mono (stage₀' hc hp.setup) fun s₁ ⟨S₁, kp₁⟩ =>
+  refine WP.seq (WP.seq (WP.mono (stage₀' hc hp.setup) fun s₁ ⟨S₁, kp₁⟩ =>
     wp_step exec_mov (WP.block_nil ?_)))
   generalize hb : s₀.gpr .r6 = base at S₁
   replace S₁ : St₀ c Impl.Ecdh.PPC64LE.Args.ecdh s₀ base (BitVec.allOnes 64) s₁ := S₁
@@ -1226,7 +1230,8 @@ theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre 
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers and `lr`. -/
-theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} {extra : List Region}
+    (hp : EPre c s₀ extra) :
     WP isa (Impl.Ecdh.PPC64LE.Cfg.exchange c) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' :=
   exchangeWith_ok hc hC hp (qMul_mulPowOk hc h3 hC s₀)
 

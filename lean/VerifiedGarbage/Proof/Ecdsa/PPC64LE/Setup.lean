@@ -381,10 +381,7 @@ and apart from a working space at `sc`, so that its words survive the
 setup's writes there. -/
 theorem tbl_of_consts {c : Cfg} {K : List (String × List (BitVec 64))} {st : Nat} {s : State} {sc : Addr}
     (hk : ConstsOk K st s) (hc : (c.constSym, c.constTbl) ∈ K)
-    (hd : Region.Disjoint ⟨s.syms c.constSym, 8 * c.constTbl.length⟩ ⟨sc, size⟩) :
-    (∀ i < 17 * c.n, InRegions (s.rd ++ s.wr) (s.syms c.constSym + BitVec.ofNat 64 (8 * i)) 8) ∧
-    ∀ m : Mem, Outside sc 0 4096 s.mem m →
-      ∀ i < 17 * c.n, m.readW (s.syms c.constSym + BitVec.ofNat 64 (8 * i)) 64 = c.constTbl.getD i 0 := by
+    (hd : Region.Disjoint ⟨s.syms c.constSym, 8 * c.constTbl.length⟩ ⟨sc, size⟩) : TblOk c sc s := by
   obtain hL := constTbl_length c
   obtain hfit := hk.fit hc
   refine ⟨fun i hi => hk.inRegions hc (by rw [hL]; omega_arith) (by decide) s.wr, fun m hm i hi => ?_⟩
@@ -478,10 +475,10 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
     ⟨by rw [kS.rd, k₄.rd, K₃.rd], by rw [kS.wr, k₄.wr, K₃.wr], hyS⟩
   refine WP.seq (WP.mono (copyTbl_ok wS.ws wS.at3 (sym := c.constSym) (ws := c.constTbl) (dst := c.sl 0)
     (by rw [hL]; omega_arith) (by rw [hL]; omega_arith) (by rw [hL]; omega_arith) (by rw [hsl0])
-    (fun i hi => by rw [hrS.1, hrS.2.1, hrS.2.2]; exact hp.tbl_in i (by rw [← hL]; exact hi))
+    (fun i hi => by rw [hrS.1, hrS.2.1, hrS.2.2]; exact hp.tbl.rd i (by rw [← hL]; exact hi))
     (fun m hm i hi => by
       rw [hrS.2.2]
-      exact hp.tbl m (OS'.trans (hm.mono (Nat.zero_le _) (by rw [hL]; omega_arith))) i (by rw [← hL]; exact hi)))
+      exact hp.tbl.val m (OS'.trans (hm.mono (Nat.zero_le _) (by rw [hL]; omega_arith))) i (by rw [← hL]; exact hi)))
     fun s₇ ⟨e₇, k₇, O₇⟩ => ?_)
   obtain w₇ := wS.of_kp k₇
   rw [hL, show 8 * (17 * c.n) = 8 * c.n * 17 by omega_arith] at O₇
