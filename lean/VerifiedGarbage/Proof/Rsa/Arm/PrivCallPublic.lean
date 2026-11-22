@@ -13,7 +13,7 @@ open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 theorem crtCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     (hs : PrivContext g bs1 s) (ht : PrivContext g bs2 t) (as : CrtArgs g s) (argT : CrtArgs g t)
     (nb : bs1 0 = bs2 0) :
-    (Proof.Rsa.privateCrtContract abi 56).pub
+    (Proof.Rsa.privateCrtContract abi 104).pub
       (s.callEntry.withRegions (crtRd g) (crtWr g)) (t.callEntry.withRegions (crtRd g) (crtWr g)) := by
   sig_pub [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   have sa := fun {j} (hj : j < 14) => crtArgs_stack hs as hj

@@ -926,7 +926,7 @@ theorem call_pre {G : Spec.Mgf1.Hash} {P : EP} {σ s : State} (hr : R1 h G P σ 
     · rw [q0]; exact ((ok.stk_fr (R := P.SCR) (.inr (by simp)) (d := 0) (n := 64)
         (by show 0 + 64 ≤ frameBytes + 56; decide)).symm).sub_left sS'
   · intro r hr
-    have low : (⟨State.addr P.B - BitVec.ofNat 64 3440, 3440⟩ : Region) = (P.lay h.D).LOW := rfl
+    have low : (⟨State.addr P.B - BitVec.ofNat 64 3488, 3488⟩ : Region) = (P.lay h.D).LOW := rfl
     rw [low]
     simp only [privRd, privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

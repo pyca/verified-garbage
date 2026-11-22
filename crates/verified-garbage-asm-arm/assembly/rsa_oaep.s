@@ -3346,10 +3346,10 @@ vg_rsa_oaep_decrypt_precomputed_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #3632
+	sub sp, sp, #3680
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #113
+	mov r3, #115
 2100:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -3362,11 +3362,7 @@ vg_rsa_oaep_decrypt_precomputed_umaal:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 2100b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #3632
+	add sp, sp, #3680
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -9389,10 +9385,10 @@ vg_rsa_oaep_decrypt_precomputed:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #3632
+	sub sp, sp, #3680
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #113
+	mov r3, #115
 2100:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -9405,11 +9401,7 @@ vg_rsa_oaep_decrypt_precomputed:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 2100b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #3632
+	add sp, sp, #3680
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0

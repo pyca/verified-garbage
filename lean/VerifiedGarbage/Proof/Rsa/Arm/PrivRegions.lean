@@ -13,27 +13,36 @@ open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked
 namespace PrivGeometry
 
 theorem Valid.stackBase {g : PrivGeometry} (h : g.Valid) :
-    State.addr g.stack = State.addr (g.stack - BitVec.ofNat 32 56) + BitVec.ofNat 64 56 := by
-  rw [FrameStack.addr_sub' h.stackLow]
+    State.addr g.stack = State.addr (g.stack - BitVec.ofNat 32 104) + BitVec.ofNat 64 104 := by
+  rw [FrameStack.addr_sub' h.stackLow104]
   exact (BitVec.sub_add_cancel _ _).symm
 
 theorem Valid.innerSub {g : PrivGeometry} (h : g.Valid) : g.innerRegion.Sub g.wholeStack := by
   unfold innerRegion wholeStack
   rw [h.stackBase]
-  exact Offset.sub_base _ (by decide : 56 + frameBytes ≤ stackBytes)
+  exact Offset.sub_base _ (by decide : 104 + frameBytes ≤ stackBytes)
 
 theorem Valid.savedSub {g : PrivGeometry} (h : g.Valid) : g.savedRegion.Sub g.wholeStack := by
   unfold savedRegion wholeStack
   rw [h.stackBase, Offset.add_add]
-  exact Offset.sub_base _ (by decide : (56 + frameBytes) + 56 ≤ stackBytes)
+  exact Offset.sub_base _ (by decide : (104 + frameBytes) + 56 ≤ stackBytes)
 
-theorem Valid.calleeSub {g : PrivGeometry} (_h : g.Valid) : g.calleeRegion.Sub g.wholeStack :=
-  Region.sub_prefix (by decide : 56 ≤ stackBytes)
+theorem Valid.crtCalleeSub {g : PrivGeometry} (h : g.Valid) : g.crtCalleeRegion.Sub g.wholeStack := by
+  unfold crtCalleeRegion FrameStack.belowA wholeStack
+  rw [FrameStack.addr_sub' h.stackLow104]
+  exact Region.sub_prefix (by decide : 104 ≤ stackBytes)
 
-theorem Valid.calleeInner {g : PrivGeometry} (h : g.Valid) : g.calleeRegion.Disjoint g.innerRegion := by
-  unfold calleeRegion FrameStack.belowA innerRegion
-  rw [h.stackBase]
-  exact (Offset.disjoint_base _ (by decide : 56 ≤ 56) (by decide : 56 + frameBytes ≤ 2 ^ 64)).symm
+theorem Valid.calleeSub {g : PrivGeometry} (h : g.Valid) : g.calleeRegion.Sub g.wholeStack :=
+  fun x hx => h.crtCalleeSub x (FrameStack.belowA_sub (by decide) h.stackLow104 x hx)
+
+theorem Valid.crtCalleeInner {g : PrivGeometry} (h : g.Valid) : g.crtCalleeRegion.Disjoint g.innerRegion := by
+  unfold crtCalleeRegion FrameStack.belowA innerRegion
+  rw [FrameStack.addr_sub' h.stackLow104, show (⟨State.addr g.stack, frameBytes⟩ : Region) =
+    ⟨State.addr g.stack - BitVec.ofNat 64 104 + BitVec.ofNat 64 104, frameBytes⟩ by rw [BitVec.sub_add_cancel]]
+  exact (Offset.disjoint_base _ (by decide : 104 ≤ 104) (by decide : 104 + frameBytes ≤ 2 ^ 64)).symm
+
+theorem Valid.calleeInner {g : PrivGeometry} (h : g.Valid) : g.calleeRegion.Disjoint g.innerRegion :=
+  h.crtCalleeInner.sub_left (FrameStack.belowA_sub (by decide) h.stackLow104)
 
 theorem Valid.innerSaved {g : PrivGeometry} (_h : g.Valid) : g.innerRegion.Disjoint g.savedRegion :=
   (Offset.disjoint_base _ (by decide : frameBytes ≤ frameBytes) (by decide : frameBytes + 56 ≤ 2 ^ 64)).symm

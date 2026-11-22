@@ -336,7 +336,7 @@ theorem call_pre {σ s : State} (h : R1 P σ s) :
     · exact ok.rw_ro hw' (by simp)
     · rw [q0]; exact (ok.stk_fr (d := 0) (n := 64) (.inr hw') (by simp only [frameBytes]; omega_using [])).symm
   · intro r hr
-    have low : (⟨State.addr P.B - BitVec.ofNat 64 3440, 3440⟩ : Region) = P.lay.LOW := rfl
+    have low : (⟨State.addr P.B - BitVec.ofNat 64 3488, 3488⟩ : Region) = P.lay.LOW := rfl
     rw [low]
     simp only [privRd, privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hr
@@ -463,7 +463,7 @@ theorem call_preP {σ s : State} (hpc : P.pc = true) (h : R1 P σ s) :
     · exact ok.rw_ro hw' preRo
     · rw [q0]; exact (ok.stk_fr (d := 0) (n := 72) (.inr hw') (by simp only [frameBytes]; omega_using [])).symm
   · intro r hr
-    have low : (⟨State.addr P.B - BitVec.ofNat 64 3440, 3440⟩ : Region) = P.lay.LOW := rfl
+    have low : (⟨State.addr P.B - BitVec.ofNat 64 3488, 3488⟩ : Region) = P.lay.LOW := rfl
     rw [low]
     simp only [privRdP, privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hr
@@ -899,7 +899,7 @@ end
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the calls of the hash functions
 
-A call of verified code that writes only within `scratch` and the 3440
+A call of verified code that writes only within `scratch` and the 3488
 bytes below the frame (`hashCall`): it leaves a state of the body, and the
 call's result (`Base.after`).
 -/
@@ -929,7 +929,7 @@ theorem Base.after {σ s t : State} (h : Base P σ s) (st : P.lay.St σ t) {wr :
 /-- A call of verified code `c`, given the regions `rd` and `wr`, writing only
 within `scratch` and below the frame. -/
 theorem hashCall {n : String} {c : Prog isa} {k : Contract isa} (hv : Verified target c k)
-    (hst : FrameStack.armStack c ≤ 3440) (rd wr : List Region) {F G : State → State → Prop}
+    (hst : FrameStack.armStack c ≤ 3488) (rd wr : List Region) {F G : State → State → Prop}
     (hS : ∀ σ s, F σ s → S P σ s)
     (pre : ∀ σ s, F σ s → k.pre (s.callEntry.withRegions rd wr))
     (cov : ∀ σ s, F σ s → Covers (rd ++ wr) (s.rd ++ s.wr) ∧ Covers wr s.wr)
@@ -943,7 +943,7 @@ theorem hashCall {n : String} {c : Prog isa} {k : Contract isa} (hv : Verified t
   VP.callF hv hst rd wr pre cov (fun σ s h => by rw [(hS σ s h).2.sp]; exact (hS σ s h).1.ok.B56) pub
     fun σ s s' h rd' wr' sp' fr g po => by
       have hs := hS σ s h
-      have low : FrameStack.belowA s.sp 3440 = P.lay.LOW := by rw [hs.2.sp]; exact hs.1.ok.low_eq
+      have low : FrameStack.belowA s.sp 3488 = P.lay.LOW := by rw [hs.2.sp]; exact hs.1.ok.low_eq
       rw [low] at fr
       have st : P.lay.St σ s' := hs.2.write fr (fun r hr => by
         rcases List.mem_append.mp hr with hr | hr
@@ -1560,19 +1560,19 @@ theorem shaInit_vp : VP (H1 P) (.call decFns.initN decFns.initC) (H2 P) := by
         rwa [sc0R] at this
       · exact (hs.1.low_sc (by simp only [sD]; omega_arith)).symm
     · rw [sc0]; exact shInit_post hr0 po
-theorem In.lowR_sub {σ : State} (_h : In P σ) {S : Nat} (hS : S ≤ 3440) :
+theorem In.lowR_sub {σ : State} (_h : In P σ) {S : Nat} (hS : S ≤ 3488) :
     Region.Sub (lowR P.B S) P.lay.LOW :=
-  Offset.sub_below _ (by show S ≤ 3440; omega_arith) (by show 3440 - S + S ≤ 3440; omega_arith)
+  Offset.sub_below _ (by show S ≤ 3488; omega_arith) (by show 3488 - S + S ≤ 3488; omega_arith)
 
-theorem In.lowR_sc {σ : State} (h : In P σ) {S o n : Nat} (hS : S ≤ 3440) (hn : o + n ≤ 8448) (ho : o < 8448) :
+theorem In.lowR_sc {σ : State} (h : In P σ) {S o n : Nat} (hS : S ≤ 3488) (hn : o + n ≤ 8448) (ho : o < 8448) :
     (lowR P.B S).Disjoint ⟨State.addr (P.scr + BitVec.ofNat 32 o), n⟩ := by
   rw [h.scrA ho]; exact (h.low_sc hn).sub_left (h.lowR_sub hS)
 
-theorem In.lowR_sc0 {σ : State} (h : In P σ) {S n : Nat} (hS : S ≤ 3440) (hn : n ≤ 8448) :
+theorem In.lowR_sc0 {σ : State} (h : In P σ) {S n : Nat} (hS : S ≤ 3488) (hn : n ≤ 8448) :
     (lowR P.B S).Disjoint ⟨State.addr P.scr, n⟩ := by
   rw [← sc0R]; exact (h.low_sc (by omega_arith)).sub_left (h.lowR_sub hS)
 
-theorem In.lowR_fr {σ : State} (h : In P σ) {S n : Nat} (hS : S ≤ 3440) (hn : n ≤ frameBytes) :
+theorem In.lowR_fr {σ : State} (h : In P σ) {S n : Nat} (hS : S ≤ 3488) (hn : n ≤ frameBytes) :
     (lowR P.B S).Disjoint ⟨State.addr P.B, n⟩ := by
   obtain q0 : State.addr P.B = P.lay.fr 0 := by simp
   rw [q0]; exact (Lay.fr_low (by simp only [frameBytes] at hn; omega_arith)).symm.sub_left (h.lowR_sub hS)
@@ -1873,7 +1873,7 @@ theorem macInit_vp {key : Nat} (hk : 192 ≤ key) (hk' : key + 32 ≤ 8448) {F G
     (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => hi_pub (hF _ _ h₁).2 (hF _ _ h₂).2 (by rw [(hF _ _ h₁).1.2.sp, (hF _ _ h₂).1.2.sp]) _ _)
     (fun σ s s' h st fr _ po => ?_)
   · obtain ⟨hs, ha⟩ := hF σ s h
-    refine hi_pre ha hs.2.sp (Nat.le_trans (by decide : 1656 ≤ 3440) hs.1.ok.B56)
+    refine hi_pre ha hs.2.sp (Nat.le_trans (by decide : 1656 ≤ 3488) hs.1.ok.B56)
       (hs.1.sc0_sepW (by decide) (by decide) (by decide) (by decide))
       (hs.1.sc0_sepW (by omega_using [hk]) (by decide) hk' (by omega_using [hk']))
       (hs.1.sc_sepW (.inl (by simp only [sOuter]; omega_using [hk])) (by decide) hk' (by decide) (by omega_using [hk'])) (fun r hr => ?_)
@@ -1927,7 +1927,7 @@ theorem macUpd_vp {dp : BitVec 32} {dl : Nat} {F G : State → State → Prop} {
       (by rw [(hF _ _ h₁).1.2.sp, (hF _ _ h₂).1.2.sp]) _ _)
     (fun σ s s' h st fr _ po => ?_)
   · obtain ⟨hs, ua, -, dk, -⟩ := hF σ s h
-    refine upd_pre ua hs.2.sp (Nat.le_trans (by decide : 624 ≤ 3440) hs.1.ok.B56)
+    refine upd_pre ua hs.2.sp (Nat.le_trans (by decide : 624 ≤ 3488) hs.1.ok.B56)
       (by have := hs.1.ok.fit; simp only [frameBytes] at this; omega_using [this]) dk.dS
       (hs.1.sc0_fr0 (by decide) (by decide)) (fun r hr => ?_) (scr96 hs.1) dk.fit
     simp only [updWr, updRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1967,7 +1967,7 @@ theorem macFin_vp {o tl : Nat} (ho : 192 ≤ o) (ho' : o + 32 ≤ 8448) {F G : S
     (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => hf_pub (hF _ _ h₁).2.1 (hF _ _ h₂).2.1 (by rw [(hF _ _ h₁).1.2.sp, (hF _ _ h₂).1.2.sp]) _ _)
     (fun σ s s' h st fr _ po => ?_)
   · obtain ⟨hs, ha, -, -, -⟩ := hF σ s h
-    refine hf_pre ha hs.2.sp (Nat.le_trans (by decide : 880 ≤ 3440) hs.1.ok.B56)
+    refine hf_pre ha hs.2.sp (Nat.le_trans (by decide : 880 ≤ 3488) hs.1.ok.B56)
       (by have := hs.1.ok.fit; simp only [frameBytes] at this; omega_using [this])
       (hs.1.sc0_sepW (by decide) (by decide) (by decide) (by decide))
       (hs.1.sc0_sepW (by omega_using [ho]) (by decide) ho' (by omega_using [ho'])) (hs.1.sc0_fr0 (by decide) (by decide))

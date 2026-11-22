@@ -24,12 +24,12 @@ open VG VG.Arm
 structure CrtImpl where
   name : String
   code : Prog isa
-  verified : Verified target code (Proof.Rsa.privateCrtContract abi 56)
+  verified : Verified target code (Proof.Rsa.privateCrtContract abi 104)
   stack : FrameStack.armStack code ≤ 56
   /-- `vg_rsa_private_crt_precomputed`, of the same arithmetic. -/
   crtPName : String
   crtP : Prog isa
-  crtPVerified : Verified target crtP (Proof.Rsa.privateCrtPrecomputedContract abi 56)
+  crtPVerified : Verified target crtP (Proof.Rsa.privateCrtPrecomputedContract abi 104)
   crtPStack : FrameStack.armStack crtP ≤ 56
   crtPNoIcall : noIcall crtP = true
   pcName : String
@@ -58,6 +58,7 @@ def privName (v : CrtImpl) : String := "vg_rsa_private_checked" ++ v.suffix
 def privCode (v : CrtImpl) : Prog isa := Impl.Rsa.Arm.PrivChecked.code v.name v.code v.pcName v.pc v.pdName v.pd
 def privNameP (v : CrtImpl) : String := "vg_rsa_private_checked_precomputed" ++ v.suffix
 def privCodeP (v : CrtImpl) : Prog isa := Impl.Rsa.Arm.PrivChecked.codeP v.crtPName v.crtP v.pdName v.pd
-/-- Inner frame, register save, and the largest callee frame. -/
-def stackBytes : Nat := 3440
+/-- Inner frame, register save, and the largest callee's stack: the private
+CRT's frame of 56 and the 48 of a Montgomery call it makes. -/
+def stackBytes : Nat := 3488
 end VG.Proof.Rsa.Arm

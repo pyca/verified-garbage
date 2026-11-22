@@ -15,7 +15,7 @@ but the 32 bits of the result, and the flags. Each takes the functions it
 calls: those of every table (`f`) and the RSA operation, as its
 registration maps over their implementations. Decryption's frames use 3624
 bytes, which is no frame size of the model, so its contract reserves, and
-its cleanup zeroes, the next one, 3632.
+its cleanup zeroes, the next one, 3680.
 -/
 
 @[expose] public section
@@ -27,7 +27,7 @@ open VG.Arm VG.Impl.Scrub.Arm
 /-- `vg_rsa_oaep_decrypt_precomputed`, calling `vg_rsa_private_checked_precomputed`
 (`privC`, by its name `privN`). -/
 def decryptPrecomputed (f : Fns) (privN : String) (privC : Prog isa) : Prog isa :=
-  scrubAll 32 3632 (decryptP f privN privC)
+  scrubAll 32 3680 (decryptP f privN privC)
 
 /-- `vg_rsa_oaep_encrypt_precomputed`, calling a precomputed public
 operation (`pubC`, by its name `pubN`). -/

@@ -1079,10 +1079,10 @@ vg_rsa_pkcs1_sign_precomputed_umaal:
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	sub sp, sp, #536
+	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #16
+	mov r3, #18
 2101:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -1097,11 +1097,7 @@ vg_rsa_pkcs1_sign_precomputed_umaal:
 	bne 2101b
 	str r2, [r12, #0]
 	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	add sp, sp, #536
+	add sp, sp, #584
 	add sp, sp, #4080
 	mov r1, #0
 	mov r2, #0
@@ -4357,10 +4353,10 @@ vg_rsa_pkcs1_sign_precomputed:
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	sub sp, sp, #536
+	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #16
+	mov r3, #18
 2101:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -4375,11 +4371,7 @@ vg_rsa_pkcs1_sign_precomputed:
 	bne 2101b
 	str r2, [r12, #0]
 	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	add sp, sp, #536
+	add sp, sp, #584
 	add sp, sp, #4080
 	mov r1, #0
 	mov r2, #0

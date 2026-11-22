@@ -18,7 +18,7 @@ name `pdName`), as its registration maps over its implementations.
 Signing with the key's precomputed values keeps 4616 bytes below the stack
 pointer (its frames, 1176 bytes, and the private operation's 3440), more than
 one frame of the model holds (fewer than 4096), so its cleanup zeroes them in
-two frames, of 4080 and 536 bytes (`Impl.Rsa.Arm.WipeTwo.scrubAll2`).
+two frames, of 4080 and 584 bytes (`Impl.Rsa.Arm.WipeTwo.scrubAll2`).
 -/
 
 @[expose] public section
@@ -38,6 +38,6 @@ def recoverPrecomputed (pdName : String) (pd : Prog isa) : Prog isa :=
 /-- `vg_rsa_pkcs1_sign_precomputed`, calling `vg_rsa_private_checked_precomputed`
 (`priv`, by its name `privN`). -/
 def signPrecomputed (privN : String) (priv : Prog isa) : Prog isa :=
-  Impl.Rsa.Arm.WipeTwo.scrubAll2 32 4080 536 (Sign.code true privN priv)
+  Impl.Rsa.Arm.WipeTwo.scrubAll2 32 4080 584 (Sign.code true privN priv)
 
 end VG.Impl.RsaPkcs1Sig.Arm.Fn

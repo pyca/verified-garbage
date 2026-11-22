@@ -19,8 +19,8 @@ interface: it meets its contract in constant time and returns without
 secret residue (`VerifiedScrubbed`), which is what its registration binds
 (`Arm.Scrub.verifiedScrubbedAll`).
 
-Their frames use 3592 and 2312 bytes, which are not frame sizes of the model
-(`FrameOk`), so their contracts reserve the next ones, 3600 and 2320
+Their frames use 3640 and 2312 bytes, which are not frame sizes of the model
+(`FrameOk`), so their contracts reserve the next ones, 3648 and 2320
 (`Arm.Scrub.Verified.stack_le`, with the witnesses of their preconditions
 again). What the cleanup needs of the code (`CodeOk`: its frames within
 those bytes, no indirect call) is proven once for any implementation, from
@@ -88,7 +88,7 @@ theorem decryptPrecomputedOut (stack : Nat) :
 
 /-! ## The stacks, at frame sizes of the model -/
 
-theorem decryptSat : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3600).pre s := by
+theorem decryptSat : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3648).pre s := by
   open Proof.RsaPkcs1Enc.Arm.Dec in
   have p11 : BitVec.setWidth 64 (stackArg preState 7) = 0x4200 := by decide
   have p13 : BitVec.setWidth 64 (stackArg preState 9) = 0x4300 := by decide
@@ -110,7 +110,7 @@ theorem decryptSat : ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 360
     | (simp only [Spec.Rsa.lenValid]; decide)
 
 theorem decryptVerified (v : CrtImpl) :
-    Verified target (Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v) (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3600) :=
+    Verified target (Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v) (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3648) :=
   Verified.stack_le (by decide) (Proof.RsaPkcs1Enc.Arm.Dec.decryptPrecomputed_verified v) decryptSat
 
 theorem randomSat : ∃ s, (Spec.RsaPkcs1Enc.encryptRandomContract abi 2320).pre s := by
@@ -133,12 +133,12 @@ theorem decRest_ok : CodeOk (.seq (.block Impl.RsaPkcs1Enc.Arm.Decrypt.dZero) (.
     (.seq (Impl.RsaPkcs1Enc.Arm.Decrypt.kdkMac Proof.RsaPkcs1Enc.Arm.decFns)
     (.seq (Impl.RsaPkcs1Enc.Arm.Decrypt.clLoop Proof.RsaPkcs1Enc.Arm.decFns)
     (.seq (Impl.RsaPkcs1Enc.Arm.Decrypt.amLoop Proof.RsaPkcs1Enc.Arm.decFns)
-    (.seq Impl.RsaPkcs1Enc.Arm.Decrypt.alPart Impl.RsaPkcs1Enc.Arm.Decrypt.selPart)))))))) : Prog isa) 3440 := by
+    (.seq Impl.RsaPkcs1Enc.Arm.Decrypt.alPart Impl.RsaPkcs1Enc.Arm.Decrypt.selPart)))))))) : Prog isa) 3488 := by
   lit_decide
 
 /-- Decryption's code, over `v`. -/
-theorem decrypt_ok (v : CrtImpl) : CodeOk (Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v) 3600 :=
-  (wrap_codeOk (n := 3440) (F := 96)
+theorem decrypt_ok (v : CrtImpl) : CodeOk (Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v) 3648 :=
+  (wrap_codeOk (n := 3488) (F := 96)
     (CodeOk.seq (CodeOk.zero (CodeOk.block _)) (CodeOk.seq (CodeOk.call (privCodeP_ok v)) decRest_ok))).mono
     (by decide)
 
@@ -156,7 +156,7 @@ theorem random_ok {encName : String} {enc : Prog isa} (h : CodeOk enc 1168) :
     (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.seq ?_ (CodeOk.seq (CodeOk.call h) ?_)))) ?_))))).mono (by decide)
   all_goals lit_decide
 
-theorem frameOk_3600 : FrameOk 3600 := by decide
+theorem frameOk_3648 : FrameOk 3648 := by decide
 
 theorem frameOk_2320 : FrameOk 2320 := by decide
 
@@ -170,10 +170,10 @@ open VG VG.Arm VG.Arm.Scrub VG.Proof.Rsa.Arm VG.Proof.RsaPkcs1Enc.Arm.Scrub
 theorem decryptPrecomputed (v : CrtImpl) :
     VerifiedScrubbed target
       (Impl.RsaPkcs1Enc.Arm.Fn.decryptPrecomputed Proof.RsaPkcs1Enc.Arm.decFns (privNameP v) (privCodeP v))
-      (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3600) 32 :=
+      (Spec.RsaPkcs1Enc.decryptPrecomputedContract abi 3648) 32 :=
   verifiedScrubbedAll (api := Spec.RsaPkcs1Enc.decryptPrecomputedApi)
     { code := Proof.RsaPkcs1Enc.Arm.Dec.decryptCodeP v, verified := decryptVerified v }
-    (decryptPrecomputedOut _) (scrubSideF_of (decrypt_ok v) frameOk_3600 _)
+    (decryptPrecomputedOut _) (scrubSideF_of (decrypt_ok v) frameOk_3648 _)
 
 /-- `vg_rsa_pkcs1_encrypt_random`, calling `vg_rsa_pkcs1_encrypt_precomputed`
 over `v`'s public operation, by the name `encName`. -/

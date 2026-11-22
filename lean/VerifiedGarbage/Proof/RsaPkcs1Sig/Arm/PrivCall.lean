@@ -90,6 +90,8 @@ structure R2In (g : PrivGeometry) (bs : Fin 8 → List Byte) (pre preLen : BitVe
   fit : pre.toNat + 8 * preLen.toNat ≤ 2 ^ 32
   read : InRegions (s.rd ++ s.wr) (State.addr pre) (8 * preLen.toNat)
   separate : ∀ r ∈ bodyWrites g, (⟨State.addr pre, 8 * preLen.toNat⟩ : Region).Disjoint r
+  /-- Apart from the private CRT's stack too, its frame and the calls it makes. -/
+  stackSeparate : (⟨State.addr pre, 8 * preLen.toNat⟩ : Region).Disjoint g.crtCalleeRegion
   words : Spec.Rsa.wordsAt s.mem (State.addr (pre + BitVec.ofNat 32 (16 * Spec.Rsa.modulusWords g.length)))
     (r2Words g) = Spec.Rsa.primeR2 (bs 3) ++ Spec.Rsa.primeR2 (bs 4)
   pq : Spec.Rsa.os2ip (bs 3) * Spec.Rsa.os2ip (bs 4) = Spec.Rsa.os2ip (bs 0)
@@ -131,7 +133,7 @@ theorem r2In_kept (g : PrivGeometry) (bs : Fin 8 → List Byte) (pre preLen : Bi
   intro s t rs h frame rest
   obtain fit : 8 * r2Words g < 2 ^ 64 := by have := r2Words_lt' h; omega_using [this]
   refine ⟨by rw [rest.rd, rest.wr]; exact h.lenRead, ?_, h.lenSeparate, h.lenFit, h.len, h.fit,
-    by rw [rest.rd, rest.wr]; exact h.read, h.separate, ?_, h.pq⟩
+    by rw [rest.rd, rest.wr]; exact h.read, h.separate, h.stackSeparate, ?_, h.pq⟩
   · rw [frame.readW (r := ⟨off (State.addr g.stack) (arg 17), 4⟩) (Region.contains_self _ _)
       h.lenSeparate (by decide)]
     exact h.lenSlot
@@ -253,7 +255,7 @@ theorem r2Out_stack {g : PrivGeometry} {bs : Fin 8 → List Byte} {pre : BitVec 
 
 theorem crtCall_preP {g : PrivGeometry} {bs : Fin 8 → List Byte} {pre preLen : BitVec 32} {s : State}
     (h : PrivContext g bs s) (a : CrtArgs g s) (o : R2Out g pre s.mem) (r : R2In g bs pre preLen s) :
-    (Proof.Rsa.privateCrtPrecomputedContract abi 56).pre (s.callEntry.withRegions (crtRdP g pre) (crtWr g)) := by
+    (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre (s.callEntry.withRegions (crtRdP g pre) (crtWr g)) := by
   obtain sa := fun {j} (hj : j < 14) => crtArgs_stackP (pre := pre) h a hj
   obtain r2a := r2Out_stack (rd := crtRdP g pre) (wr := crtWr g) h o
   obtain kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
@@ -283,12 +285,12 @@ theorem crtCall_preP {g : PrivGeometry} {bs : Fin 8 → List Byte} {pre preLen :
   obtain tempArgs : (⟨State.addr g.temporary, g.length⟩ : Region).Disjoint ⟨State.addr g.stack, 56⟩ := by
     rw [PrivGeometry.temporary, h.valid.offsetAddr (by decide)]
     exact Offset.disjoint_base _ (by decide : 56 ≤ oM) (by have := h.valid.maxLength; simp only [oM]; omega_using [kfit])
-  obtain callee : (⟨State.addr g.stack - BitVec.ofNat 64 56, 56⟩ : Region) = g.calleeRegion := by
-    unfold PrivGeometry.calleeRegion FrameStack.belowA
-    rw [FrameStack.addr_sub' h.valid.stackLow]
+  obtain callee : (⟨State.addr g.stack - BitVec.ofNat 64 104, 104⟩ : Region) = g.crtCalleeRegion := by
+    unfold PrivGeometry.crtCalleeRegion FrameStack.belowA
+    rw [FrameStack.addr_sub' h.valid.stackLow104]
   simp only [State.addr] at callee
-  obtain calleeSources := fun i => (h.valid.stackSources i).sub_left h.valid.calleeSub
-  obtain calleeWorkspace := h.valid.stackWorkspace.sub_left h.valid.calleeSub
+  obtain calleeSources := fun i => (h.valid.stackSources i).sub_left h.valid.crtCalleeSub
+  obtain calleeWorkspace := h.valid.stackWorkspace.sub_left h.valid.crtCalleeSub
   obtain argsWorkspace := (h.valid.stackWorkspace.sub_left (fun x hx => h.valid.innerSub x (outgoingSub x hx))).symm
   obtain outgoing64 : (⟨State.addr g.stack, 64⟩ : Region).Sub g.innerRegion :=
     Region.sub_prefix (by decide : 64 ≤ frameBytes)
@@ -301,9 +303,9 @@ theorem crtCall_preP {g : PrivGeometry} {bs : Fin 8 → List Byte} {pre preLen :
   obtain r2Temp : (r2Region g pre).Disjoint ⟨State.addr g.temporary, g.length⟩ :=
     (r2Sep _ (by simp [bodyWrites])).sub_right temporarySub
   obtain r2Ws : (r2Region g pre).Disjoint g.workspaceRegion := r2Sep _ (by simp [bodyWrites])
-  obtain r2Callee : (r2Region g pre).Disjoint g.calleeRegion := r2Sep _ (by simp [bodyWrites])
+  obtain r2Callee : (r2Region g pre).Disjoint g.crtCalleeRegion := r.stackSeparate.sub_left r.r2Sub
   have r2Fit := r.r2Fit
-  refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega_using [this],
+  refine ⟨h.valid.stackLow104, by have := h.valid.stackHigh; omega_using [this],
     by simp only [crtRdP, r2Region, PrivGeometry.sourceRegion, PrivGeometry.sourceLength, State.addr, Nat.mul_comm]; rfl, ?_,
     tempSources 0, tempSources 2, tempSources 3, tempSources 4, tempSources 5, tempSources 6, tempSources 7,
     ?_, ?_, tempArgs64, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
@@ -331,7 +333,7 @@ theorem crtCall_preP {g : PrivGeometry} {bs : Fin 8 → List Byte} {pre preLen :
     rw [Nat.mul_comm]; exact h.valid.sourcesWorkspace 7
   · simpa only [r2Region, PrivGeometry.workspaceRegion, State.addr, Nat.mul_comm] using r2Ws.symm
   · simpa only [PrivGeometry.workspaceRegion, State.addr, Nat.mul_comm] using argsWorkspace64
-  · rw [callee]; exact h.valid.calleeInner.sub_right temporarySub
+  · rw [callee]; exact h.valid.crtCalleeInner.sub_right temporarySub
   · rw [callee]; exact calleeSources 0
   · rw [callee]; exact calleeSources 2
   · rw [callee]; exact calleeSources 3
@@ -341,7 +343,7 @@ theorem crtCall_preP {g : PrivGeometry} {bs : Fin 8 → List Byte} {pre preLen :
   · rw [callee]; exact calleeSources 7
   · rw [callee]; simpa only [PrivGeometry.workspaceRegion, State.addr, Nat.mul_comm] using calleeWorkspace
   · rw [callee]; simpa only [r2Region, State.addr, Nat.mul_comm] using r2Callee.symm
-  · rw [callee]; exact h.valid.calleeInner.sub_right outgoing64
+  · rw [callee]; exact h.valid.crtCalleeInner.sub_right outgoing64
   · simpa only [Nat.mul_comm] using h.valid.workspaceFit
   · simpa only [Nat.mul_comm] using r2Fit
   · rfl
@@ -409,7 +411,7 @@ theorem crt_callP (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {p
 theorem crtCall_pubP {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {pre : BitVec 32} {s t : State}
     (hs : PrivContext g bs1 s) (ht : PrivContext g bs2 t) (as : CrtArgs g s) (argT : CrtArgs g t)
     (os : R2Out g pre s.mem) (ot : R2Out g pre t.mem) (nb : bs1 0 = bs2 0) :
-    (Proof.Rsa.privateCrtPrecomputedContract abi 56).pub
+    (Proof.Rsa.privateCrtPrecomputedContract abi 104).pub
       (s.callEntry.withRegions (crtRdP g pre) (crtWr g)) (t.callEntry.withRegions (crtRdP g pre) (crtWr g)) := by
   sig_pub [Proof.Rsa.privateCrtPrecomputedContract, Proof.Rsa.privateCrtPrecomputedSig, Proof.Rsa.privateCrtSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
@@ -853,7 +855,9 @@ theorem private_contract_preP (s : State)
     exacts [nFit, eFit, iFit, pFit, qFit, dpFit, dqFit, qiFit]
   obtain geometry : (privateGeometry s).Valid := by
     refine ⟨valid.1, valid.2, ePositive, eFits, pPositive, pShort, qPositive, qShort, space,
-      ?_, ?_, outFit, sourceFit, wsFit, ?_, outWs, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      ?_, ?_, ?_, outFit, sourceFit, wsFit, ?_, outWs, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [privateGeometry_stackNat s stackFit]
+      simp only [stackBytes, frameBytes] at stackFit ⊢; omega_arith
     · rw [privateGeometry_stackNat s stackFit]
       simp only [stackBytes, frameBytes] at stackFit ⊢; omega_arith
     · rw [privateGeometry_stackNat s stackFit]
@@ -1019,13 +1023,17 @@ theorem private_contract_preP (s : State)
       fun r hr => (args72 r hr).sub_left slot17Sub, ?_, lenEq, by rw [Nat.mul_comm]; exact preFit,
       entered_read ⟨⟨State.addr (stackArg s 16), (stackArg s 17).toNat * 8⟩,
         List.mem_append_left _ (by rw [rd]; simp [State.addr]), by rw [Nat.mul_comm]; exact Region.contains_self _ _⟩,
-      preSepFull, ?_, pq⟩
+      preSepFull, ?_, ?_, pq⟩
     · rw [frameE.readW (r := ⟨off (State.addr (privateGeometry s).stack) (arg 17), 4⟩) (Region.contains_self _ _)
         (fun r hr => (savedSep r hr).sub_left slot17Sub) (by decide), slot17Addr]
       unfold stackArg stackArgAddr
       rw [addr_add (by omega_using [argFit] : s.sp.toNat + 4 * 17 < 2 ^ 32)]
     · rw [privateGeometry_stackNat s stackFit]
       simp only [arg, stackBytes, frameBytes] at stackFit ⊢; omega_using [argFit]
+    · obtain whole : (privateGeometry s).wholeStack.Disjoint ⟨State.addr (stackArg s 16), (stackArg s 17).toNat * 8⟩ := by
+        rw [privateGeometry_wholeStack s stackFit]; exact stackPre
+      rw [Nat.mul_comm]
+      exact (whole.sub_left geometry.crtCalleeSub).symm
     · have fit16 : (stackArg s 16).toNat + 16 * Spec.Rsa.modulusWords (privateGeometry s).length < 2 ^ 32 := by
         omega_using [preFit, lenEq, r2pos]
       obtain r2fit : 8 * r2Words (privateGeometry s) < 2 ^ 64 := by omega_using [lenEq]
@@ -1128,7 +1136,7 @@ end
 # The ARMv7 PKCS #1 v1.5 functions: their callee `vg_rsa_private_checked`
 
 `vg_rsa_private_checked` calling an implementation `v` of
-`vg_rsa_private_crt` (`privCode v`) uses at most 3440 bytes of stack
+`vg_rsa_private_crt` (`privCode v`) uses at most 3488 bytes of stack
 (`privCode_stack`). Its contract, at a call with given arguments
 (`priv_pre`, `priv_pub`, `priv_post`).
 -/
@@ -1204,11 +1212,11 @@ theorem PrivArgs.k32 (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql s
   have := h.kv.2; omega_arith
 
 theorem priv_pre {sp : BitVec 32} (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl) (hspE : s.sp = sp)
-    (hsp : 3440 ≤ sp.toNat) (hsa : sp.toNat + 64 ≤ 2 ^ 32)
+    (hsp : 3488 ≤ sp.toNat) (hsa : sp.toNat + 64 ≤ 2 ^ 32)
     (dW : ∀ w ∈ privWr out scr K sl, ∀ r ∈ privRd sp n e inp p q dp dq qinv K el pl ql, w.Disjoint r)
     (dWW : Region.Disjoint ⟨State.addr out, K⟩ ⟨State.addr scr, sl * 8⟩)
     (dLow : ∀ r ∈ privWr out scr K sl ++ privRd sp n e inp p q dp dq qinv K el pl ql,
-      Region.Disjoint ⟨State.addr sp - BitVec.ofNat 64 3440, 3440⟩ r)
+      Region.Disjoint ⟨State.addr sp - BitVec.ofNat 64 3488, 3488⟩ r)
     (fit : ∀ r ∈ privBufs out n e inp p q dp dq qinv scr K el pl ql sl, r.base.toNat + r.len ≤ 2 ^ 32) :
     (Proof.Rsa.privateCheckedContract abi Proof.Rsa.Arm.stackBytes).pre
       (s.callEntry.withRegions (privRd sp n e inp p q dp dq qinv K el pl ql) (privWr out scr K sl)) := by
@@ -1302,11 +1310,11 @@ abbrev privRdP (sp n e inp p q dp dq qinv pre : BitVec 32) (K el pl ql prl : Nat
 theorem priv_preP {sp pre : BitVec 32} {prl : Nat} (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     (a16 : stackArg s 16 = pre) (a17 : stackArg s 17 = BitVec.ofNat 32 prl) (prl32 : prl < 2 ^ 32)
     (hspE : s.sp = sp)
-    (hsp : 3440 ≤ sp.toNat) (hsa : sp.toNat + 72 ≤ 2 ^ 32)
+    (hsp : 3488 ≤ sp.toNat) (hsa : sp.toNat + 72 ≤ 2 ^ 32)
     (dW : ∀ w ∈ privWr out scr K sl, ∀ r ∈ privRdP sp n e inp p q dp dq qinv pre K el pl ql prl, w.Disjoint r)
     (dWW : Region.Disjoint ⟨State.addr out, K⟩ ⟨State.addr scr, sl * 8⟩)
     (dLow : ∀ r ∈ privWr out scr K sl ++ privRdP sp n e inp p q dp dq qinv pre K el pl ql prl,
-      Region.Disjoint ⟨State.addr sp - BitVec.ofNat 64 3440, 3440⟩ r)
+      Region.Disjoint ⟨State.addr sp - BitVec.ofNat 64 3488, 3488⟩ r)
     (fit : ∀ r ∈ privBufs out n e inp p q dp dq qinv scr K el pl ql sl ++ [⟨State.addr pre, prl * 8⟩],
       r.base.toNat + r.len ≤ 2 ^ 32)
     (len : prl = Spec.Rsa.privatePrecomputedWords K pl ql)

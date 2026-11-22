@@ -41682,7 +41682,7 @@ pub const VG_RSA_PRIVATE_PRECOMPUTE_UMAAL_FEATURES: verified_garbage_cpu::Featur
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre` and `scratch` must not overlap each other, `n`, `p`, `q` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the 168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the 216 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -48178,10 +48178,10 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
-sub sp, sp, #168
+sub sp, sp, #216
 add r12, sp, #0
 mov r2, #0
-mov r3, #5
+mov r3, #6
 2329:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -48196,7 +48196,11 @@ subs r3, r3, #1
 bne 2329b
 str r2, [r12, #0]
 str r2, [r12, #4]
-add sp, sp, #168
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #216
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -48226,7 +48230,7 @@ bx lr",
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre` and `scratch` must not overlap each other, `n`, `p`, `q` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the 168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the 216 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_private_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -55220,10 +55224,10 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
-sub sp, sp, #168
+sub sp, sp, #216
 add r12, sp, #0
 mov r2, #0
-mov r3, #5
+mov r3, #6
 2329:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -55238,7 +55242,11 @@ subs r3, r3, #1
 bne 2329b
 str r2, [r12, #0]
 str r2, [r12, #4]
-add sp, sp, #168
+str r2, [r12, #8]
+str r2, [r12, #12]
+str r2, [r12, #16]
+str r2, [r12, #20]
+add sp, sp, #216
 mov r1, #0
 mov r2, #0
 mov r3, #0

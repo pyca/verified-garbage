@@ -26,8 +26,8 @@ code (`CodeOkT`) is proven once, for code whose hash functions and RSA
 operation are variables (`code_okT`), from what each hash function states of
 its own code (`PssHash.scrub`, `MdHashTable.Arm.fnsOf_scrub`,
 `HashTable.Arm.fnsOf_scrub`) and each CRT implementation of its own; no hash
-function's code is evaluated. Signing's frames use 3624 bytes, which is no
-frame size of the model, so its contract reserves the next one, 3632
+function's code is evaluated. Signing's frames use 3672 bytes, which is no
+frame size of the model, so its contract reserves the next one, 3680
 (`Verified.stack_leT`, with the witnesses of its precondition again). Their
 postconditions read the memory on return only within `out`, as on PPC64LE
 (`Proof/RsaPss/PPC64LE/Scrub.lean`).
@@ -88,7 +88,7 @@ open VG.Proof.HashTable.Arm (TVar)
 open VG.Proof.MdHashTable.Arm (MVar)
 
 /-- The precomputed signing's precondition, from the facts of a state. -/
-theorem sign_pre_of3632 {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : State}
+theorem sign_pre_of3680 {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : State}
     (hg : s.gpr = (satStateP D).gpr) (hsp : s.sp = (satStateP D).sp)
     (ha : ∀ j < 22, stackArg s j = BitVec.ofNat 32 ((satArgsP D).getD j 0))
     (hrd : s.rd = (satStateP D).rd) (hwr : s.wr = (satStateP D).wr)
@@ -100,7 +100,7 @@ theorem sign_pre_of3632 {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : St
     (hkey : Spec.Rsa.privatePrecompute (Spec.Rsa.bytesAt s.mem 0x2000 64) (Spec.Rsa.bytesAt s.mem 0x4200 32)
       (Spec.Rsa.bytesAt s.mem 0x4300 32) = some (Spec.Rsa.wordsAt s.mem 0x4800 24)) :
     (Spec.RsaPss.signPrecomputedMdTableContract
-      (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig [("hash", hs), ("mgf1", ts)]) 3632).pre s := by
+      (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig [("hash", hs), ("mgf1", ts)]) 3680).pre s := by
   have g0 : s.gpr .r0 = 0x1000 := by rw [hg]; rfl
   have g1 : s.gpr .r1 = 64 := by rw [hg]; rfl
   have g2 : s.gpr .r2 = 0x2000 := by rw [hg]; rfl
@@ -139,13 +139,13 @@ theorem sign_pre_of3632 {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : St
     | (rw [hD']; apply Region.disjoint_of_sep; simp [Region.sep]; omega)
     | (rw [hD']; simp; omega_using [hD])
 
-theorem sign_sat_of3632 {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ mvs) (hwg : wg ∈ vs)
+theorem sign_sat_of3680 {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} (hw : w ∈ mvs) (hwg : wg ∈ vs)
     (hl : (allNames mvs vs).length < 2 ^ 24) {D : Nat} (hD : D ≤ 64) (hlen : w.h.G.len = D)
     (hb : ∀ j < 22, stackArg (satStateP D) j = BitVec.ofNat 32 ((satArgsP D).getD j 0)) :
     (Spec.RsaPss.signPrecomputedMdTableContract
       (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig
-        [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 3632).pre (withTabs (satStateP D) mvs vs w wg) :=
-  sign_pre_of3632 hD rfl rfl (fun j hj => (withTabs_arg _ (sat_argsP D j hj)).trans (hb j hj)) rfl rfl
+        [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 3680).pre (withTabs (satStateP D) mvs vs w wg) :=
+  sign_pre_of3680 hD rfl rfl (fun j hj => (withTabs_arg _ (sat_argsP D j hj)).trans (hb j hj)) rfl rfl
     ⟨_, List.mem_map_of_mem hw, withTabs_heldH _⟩ ⟨_, List.mem_map_of_mem hwg, withTabs_heldG _⟩
     (by rw [List.append_nil]; exact symsOf32_distinct hl) (fun H hH => by
       have e3 : State.addr (0x300000 : BitVec 32) = (0x300000 : Addr) := by decide
@@ -164,19 +164,19 @@ theorem signSat {mvs : List MVar} {vs : List TVar} {w : MVar} {wg : TVar} (hw : 
     (hl : (allNames mvs vs).length < 2 ^ 24) :
     ∃ s, (Spec.RsaPss.signPrecomputedMdTableContract
       (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig
-        [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 3632).pre s := by
+        [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 3680).pre s := by
   have hG : w.h.G ∈ Spec.Mgf1.hashes := List.mem_of_getElem? w.idx
   have hlen : w.h.G.len = 16 ∨ w.h.G.len = 20 ∨ w.h.G.len = 28 ∨ w.h.G.len = 32 ∨ w.h.G.len = 48 ∨
       w.h.G.len = 64 := by
     simp only [Spec.Mgf1.hashes, List.mem_cons, List.not_mem_nil, or_false] at hG
     rcases hG with e | e | e | e | e | e | e | e | e | e | e | e | e | e <;> rw [e] <;> decide
   rcases hlen with e | e | e | e | e | e
-  · exact ⟨_, sign_sat_of3632 hw hwg hl (by decide) e satP_b16⟩
-  · exact ⟨_, sign_sat_of3632 hw hwg hl (by decide) e satP_b20⟩
-  · exact ⟨_, sign_sat_of3632 hw hwg hl (by decide) e satP_b28⟩
-  · exact ⟨_, sign_sat_of3632 hw hwg hl (by decide) e satP_b32⟩
-  · exact ⟨_, sign_sat_of3632 hw hwg hl (by decide) e satP_b48⟩
-  · exact ⟨_, sign_sat_of3632 hw hwg hl (by decide) e satP_b64⟩
+  · exact ⟨_, sign_sat_of3680 hw hwg hl (by decide) e satP_b16⟩
+  · exact ⟨_, sign_sat_of3680 hw hwg hl (by decide) e satP_b20⟩
+  · exact ⟨_, sign_sat_of3680 hw hwg hl (by decide) e satP_b28⟩
+  · exact ⟨_, sign_sat_of3680 hw hwg hl (by decide) e satP_b32⟩
+  · exact ⟨_, sign_sat_of3680 hw hwg hl (by decide) e satP_b48⟩
+  · exact ⟨_, sign_sat_of3680 hw hwg hl (by decide) e satP_b64⟩
 
 end VG.Proof.RsaPss.Arm.Sg
 
@@ -191,7 +191,7 @@ theorem signVerified {mvs : List MVar} {vs : List TVar} (hok : OK mvs vs) (v : C
     Verified target (Proof.RsaPss.Arm.Sg.signCodeP mvs vs v)
       (Spec.RsaPss.signPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig
-          [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 3632) :=
+          [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 3680) :=
   Verified.stack_leT (by decide) (signP_ok hok v)
     (let ⟨_, hw⟩ := List.exists_mem_of_ne_nil _ hok.2.2.2.1
      let ⟨_, hwg⟩ := List.exists_mem_of_ne_nil _ hok.2.2.2.2
@@ -217,8 +217,8 @@ theorem sign_okT {f : Impl.RsaPss.Arm.MdFns} {g : Impl.RsaOaep.Arm.Fns} {T : Lis
     (h1 : ∀ p ∈ f.init, CodeOk p.2 0 ∧ p.1 ∈ T) (h2 : ∀ p ∈ f.comp, CodeOk p.2 0 ∧ p.1 ∈ T)
     (h3 : ∀ p ∈ f.dig, CodeOk p.2 0 ∧ p.1 ∈ T)
     (hi : ∀ p ∈ g.init, CodeOk p.2 0 ∧ p.1 ∈ T) (hu : ∀ p ∈ g.upd, CodeOk p.2 0 ∧ p.1 ∈ T)
-    (hf : ∀ p ∈ g.fin, CodeOk p.2 0 ∧ p.1 ∈ T) (hc : CodeOk C 3440) :
-    CodeOkT (Impl.RsaPss.Arm.signP f g N C) 3632 T := by
+    (hf : ∀ p ∈ g.fin, CodeOk p.2 0 ∧ p.1 ∈ T) (hc : CodeOk C 3488) :
+    CodeOkT (Impl.RsaPss.Arm.signP f g N C) 3680 T := by
   code_okT
 
 /-- Verification's code, for any functions of the tables and public operation. -/
@@ -231,7 +231,7 @@ theorem verify_okT {f : Impl.RsaPss.Arm.MdFns} {g : Impl.RsaOaep.Arm.Fns} {T : L
     CodeOkT (Impl.RsaPss.Arm.verifyPrecomputed f g N C) 240 T := by
   code_okT
 
-theorem frameOk_3632 : FrameOk 3632 := by decide
+theorem frameOk_3680 : FrameOk 3680 := by decide
 
 theorem frameOk_240 : FrameOk 240 := by decide
 
@@ -253,7 +253,7 @@ theorem signPrecomputed {mvs : List MVar} {vs : List TVar} (hok : OK mvs vs) (v 
         (privCodeP v))
       (Spec.RsaPss.signPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.signPrecomputedMdTableSig
-          [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 3632) 32 :=
+          [("hash", MdHashTable.Arm.tables mvs), ("mgf1", HashTable.Arm.tables vs)]) 3680) 32 :=
   have hm := MdHashTable.Arm.fnsOf_scrub (names_tableFns mvs vs).1
   have hg := HashTable.Arm.fnsOf_scrub (names_tableFns mvs vs).2
   verifiedScrubbedAll (api := Spec.RsaPss.signPrecomputedMdTableApi)
@@ -261,7 +261,7 @@ theorem signPrecomputed {mvs : List MVar} {vs : List TVar} (hok : OK mvs vs) (v 
       code := Proof.RsaPss.Arm.Sg.signCodeP mvs vs v
       verified := signVerified hok v }
     (signOut _ _ _)
-    (scrubSideF_ofT (sign_okT hm.1 hm.2.1 hm.2.2 hg.1 hg.2.1 hg.2.2 (privCodeP_ok v)) frameOk_3632)
+    (scrubSideF_ofT (sign_okT hm.1 hm.2.1 hm.2.2 hg.1 hg.2.1 hg.2.2 (privCodeP_ok v)) frameOk_3680)
 
 /-- `vg_rsa_pss_verify_precomputed`, with the hash function any of the
 tables of `mvs` and MGF1's any of `vs`, calling `v`'s public operation. -/

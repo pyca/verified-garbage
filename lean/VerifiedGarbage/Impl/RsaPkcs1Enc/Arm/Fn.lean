@@ -14,7 +14,7 @@ padding, then the registers a callee may change set to constants, but the
 32 bits of the result, and the flags. Each takes the functions it calls, as
 its registration maps over their implementations. Their frames use 3592
 and 2312 bytes, which are not frame sizes of the model, so their contracts
-reserve, and the cleanup zeroes, the next ones, 3600 and 2320.
+reserve, and the cleanup zeroes, the next ones, 3648 and 2320.
 -/
 
 @[expose] public section
@@ -27,7 +27,7 @@ open VG.Arm VG.Impl.Scrub.Arm
 functions `H` and `vg_rsa_private_checked_precomputed` (`priv`, by its name
 `privN`). -/
 def decryptPrecomputed (H : Decrypt.Fns) (privN : String) (priv : Prog isa) : Prog isa :=
-  scrubAll 32 3600 (Decrypt.code H true privN priv)
+  scrubAll 32 3648 (Decrypt.code H true privN priv)
 
 /-- `vg_rsa_pkcs1_encrypt_random`, calling `vg_rsa_pkcs1_encrypt_precomputed`
 (`enc`, by its name `encName`). -/

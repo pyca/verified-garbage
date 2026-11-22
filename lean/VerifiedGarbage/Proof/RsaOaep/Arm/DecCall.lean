@@ -26,7 +26,7 @@ section
 
 `EP`: what two runs share (the frame's base `B`, the pointers, the lengths
 and the public key's bytes `nB` and `eB`), and its layout (`EP.lay`), with
-the 3440 bytes below the frame that the call of `vg_rsa_private_checked`
+the 3488 bytes below the frame that the call of `vg_rsa_private_checked`
 uses, and MGF1's table, the argument 23 (`EP.TAB`). `In P σ`: the state `σ`
 the body starts from (`in_of_pre`).
 -/
@@ -119,7 +119,7 @@ abbrev lay : Lay where
   argv := P.argv ++ P.xargs
   ro := [P.N, P.E, P.PP, P.QQ, P.DP, P.DQ, P.QI, P.LAB, P.CT] ++ P.X ++ [P.TABL, P.TAB]
   rw := [P.OUT, P.ML, P.SCR]
-  C := 3440
+  C := 3488
 
 end EP
 
@@ -158,14 +158,14 @@ theorem geo : Geo P.lay P.scr := by
   have hf := h.ok.fits (P.SCR) (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hf
   unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs
-  exact ⟨rfl, by unfold oRsa; omega_using [hs, hf], ⟨P.scl * 8, by unfold oRsa; omega_using [hs], by simp⟩, ⟨σ, h.ok⟩, by show 16 ≤ 3440; decide⟩
+  exact ⟨rfl, by unfold oRsa; omega_using [hs, hf], ⟨P.scl * 8, by unfold oRsa; omega_using [hs], by simp⟩, ⟨σ, h.ok⟩, by show 16 ≤ 3488; decide⟩
 
 end In
 
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the call's. -/
-abbrev stackBytes : Nat := 56 + frameBytes + 3440
+abbrev stackBytes : Nat := 56 + frameBytes + 3488
 
 /-- The shared contract, with MGF1's hash function one of the tables `ts` and
 that stack. -/
@@ -229,7 +229,7 @@ theorem ep_lay (s : State) :
         (ep s ai au af T aiL auL afL TL).LAB, (ep s ai au af T aiL auL afL TL).CT,
         (ep s ai au af T aiL auL afL TL).TABL, (ep s ai au af T aiL auL afL TL).TAB]
       [(ep s ai au af T aiL auL afL TL).OUT, (ep s ai au af T aiL auL afL TL).ML,
-        (ep s ai au af T aiL auL afL TL).SCR] s 3440 := rfl
+        (ep s ai au af T aiL auL afL TL).SCR] s 3488 := rfl
 
 /-- The tables, as the contract gives them: each one of `ts`, the label's
 hash function's at the stack argument 19 and MGF1's at 20, with the
@@ -256,7 +256,7 @@ theorem in_of_pre {ts : List FnTable} {s : State} (h : (spec ts).pre s)
     mC mS mTL mT mA nS eS pS qS dpS dqS qiS lS cS sTL sT sA kO kM kN kE kP kQ kDP kDQ kQI kL kC kS kTL kT kA fO fM fN
     fE fP fQ fDP fDQ fQI fL fC fS fTL fT kv olk clk el1 elK pl1 plK ql1 qlK dpl qil dql
   have slK := h
-  have h3624 : 3624 ≤ s.sp.toNat := hsp
+  have h3624 : 3672 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = stackArg s 0 := BitVec.eq_of_toNat_eq olk
   have a16 : stackArg s 16 = stackArg s 0 := BitVec.eq_of_toNat_eq clk
   have a8 : stackArg s 8 = stackArg s 4 := BitVec.eq_of_toNat_eq dpl
@@ -638,7 +638,7 @@ theorem call_pre {P : EP} {σ s : State} (hr : R1 P σ s) :
     · exact ro P.QI (by simp) sS'
     · exact fr sS'
   · intro r hr
-    have low : (⟨State.addr P.B - BitVec.ofNat 64 3440, 3440⟩ : Region) = P.lay.LOW := rfl
+    have low : (⟨State.addr P.B - BitVec.ofNat 64 3488, 3488⟩ : Region) = P.lay.LOW := rfl
     rw [low]
     simp only [privRd, privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

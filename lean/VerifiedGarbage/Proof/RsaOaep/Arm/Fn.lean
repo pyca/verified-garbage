@@ -29,8 +29,8 @@ for code whose hash functions and RSA operation are variables
 (`code_okT`), from what each hash function states of its own code
 (`PssHash.scrub`, `HashTable.Arm.fnsOf_scrub`) and each CRT implementation
 of its own (`CrtImpl.pdOk`, `privCodeP_ok`): no hash function's code is
-evaluated. Decryption's frames use 3624 bytes, which is no frame size of the
-model, so its contract reserves the next one, 3632
+evaluated. Decryption's frames use 3672 bytes, which is no frame size of the
+model, so its contract reserves the next one, 3680
 (`Verified.stack_leT`, with the witness of its precondition again). Their
 postconditions read the memory on return only within `out` and
 decryption's `msg_len`, as on PPC64LE (`Proof/RsaOaep/PPC64LE/Scrub.lean`).
@@ -99,7 +99,7 @@ open VG.Proof.HashTable (symsOf32_distinct2) in
 theorem decryptSat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 24) :
     ∃ s, (Spec.RsaOaep.decryptPrecomputedMdTablesContract
       (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", tables vs), ("mgf1", tables vs)])
-      3632).pre s := by
+      3680).pre s := by
   refine ⟨withTable satStateP vs w, ?_⟩
   obtain hA : ∀ j < 23, (stackArgAddr satStateP j).toNat + 4 ≤ 0x300000 := by decide
   obtain hb : ∀ j < 23, stackArg (withTable satStateP vs w) j = BitVec.ofNat 32 (satArgsP.getD j 0) :=
@@ -132,7 +132,7 @@ theorem decryptVerified (vs : List TVar) (hok : OK vs) (v : CrtImpl) :
     Verified target (Proof.RsaOaep.Arm.Dec.decCodeP vs v)
       (Spec.RsaOaep.decryptPrecomputedMdTablesContract
         (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", tables vs), ("mgf1", tables vs)])
-        3632) :=
+        3680) :=
   Verified.stack_leT (by decide) (decP_ok vs hok v) (let ⟨_, hw⟩ := hok.mem; decryptSat hw hok.2.1)
 
 /-! ## What the cleanup needs of the code -/
@@ -154,11 +154,11 @@ theorem encrypt_okT {f : Impl.RsaOaep.Arm.Fns} {T : List String} {N : String} {C
 /-- Decryption's code, for any functions of the tables and private operation. -/
 theorem decrypt_okT {f : Impl.RsaOaep.Arm.Fns} {T : List String} {N : String} {C : Prog isa}
     (hi : ∀ p ∈ f.init, CodeOk p.2 0 ∧ p.1 ∈ T) (hu : ∀ p ∈ f.upd, CodeOk p.2 0 ∧ p.1 ∈ T)
-    (hf : ∀ p ∈ f.fin, CodeOk p.2 0 ∧ p.1 ∈ T) (hc : CodeOk C 3440) :
-    CodeOkT (Impl.RsaOaep.Arm.decryptP f N C) 3632 T := by
+    (hf : ∀ p ∈ f.fin, CodeOk p.2 0 ∧ p.1 ∈ T) (hc : CodeOk C 3488) :
+    CodeOkT (Impl.RsaOaep.Arm.decryptP f N C) 3680 T := by
   code_okT
 
-theorem frameOk_3632 : FrameOk 3632 := by decide
+theorem frameOk_3680 : FrameOk 3680 := by decide
 
 theorem frameOk_240 : FrameOk 240 := by decide
 
@@ -176,13 +176,13 @@ theorem decryptPrecomputed (vs : List TVar) (hok : OK vs) (v : CrtImpl) :
     VerifiedScrubbed target (Impl.RsaOaep.Arm.Fn.decryptPrecomputed (fnsOf vs) (privNameP v) (privCodeP v))
       (Spec.RsaOaep.decryptPrecomputedMdTablesContract
         (abi.withTables Spec.RsaOaep.decryptPrecomputedMdTablesSig [("hash", tables vs), ("mgf1", tables vs)])
-        3632) 32 :=
+        3680) 32 :=
   have hs := fnsOf_scrub (names_tableFns vs)
   verifiedScrubbedAll (api := Spec.RsaOaep.decryptPrecomputedMdTablesApi)
     { tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Proof.RsaOaep.Arm.Dec.decCodeP vs v
       verified := decryptVerified vs hok v }
-    (decryptOut _ _) (scrubSideF_ofT (decrypt_okT hs.1 hs.2.1 hs.2.2 (privCodeP_ok v)) frameOk_3632)
+    (decryptOut _ _) (scrubSideF_ofT (decrypt_okT hs.1 hs.2.1 hs.2.2 (privCodeP_ok v)) frameOk_3680)
 
 /-- `vg_rsa_oaep_encrypt_precomputed`, with both hash functions any of the
 tables of `vs`, calling `v`'s public operation. -/

@@ -212,7 +212,7 @@ pub unsafe fn vg_rsa_check_key_auto(_dit: verified_garbage_cpu::Dit<'_>, n: *con
 /// * `scratch_len` must be at least `16 * n_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre` and `scratch` must not overlap each other, `n`, `p`, `q` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the 168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `pre`, `n`, `p`, `q` and `scratch` may overlap the 216 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_private_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>, pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {

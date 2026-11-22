@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBuffers
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Offset
 
 
 /-! # Native ARM arguments and buffers for private RSA -/
@@ -25,6 +26,25 @@ structure CrtR2In (g : CrtGeometry) (bs : Fin 7 → List Byte) (a : BitVec 32) (
   stack : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr a, 8 * g.r2Words⟩
   output : Region.Disjoint ⟨State.addr a, 8 * g.r2Words⟩ ⟨State.addr g.output, g.length⟩
   words : Spec.Rsa.wordsAt s.mem (State.addr a) g.r2Words = Spec.Rsa.primeR2 (bs 2) ++ Spec.Rsa.primeR2 (bs 3)
+
+/-- The bytes below the stack are apart from those from it. -/
+theorem belowA_disjoint_from {sp : BitVec 32} {a n : Nat} (h : a ≤ sp.toNat) (hn : a + n ≤ 2 ^ 64) :
+    (FrameStack.belowA sp a).Disjoint ⟨State.addr sp, n⟩ := by
+  unfold FrameStack.belowA
+  rw [FrameStack.addr_sub' h, show (⟨State.addr sp, n⟩ : Region) =
+    ⟨State.addr sp - BitVec.ofNat 64 a + BitVec.ofNat 64 a, n⟩ by rw [BitVec.sub_add_cancel]]
+  exact (Offset.disjoint_base _ (Nat.le_refl a) hn).symm
+
+/-- At entry: the 104 bytes below the stack, the function's own 56 and the 48
+of a call it makes from there (`MontCall.op`), are apart from every buffer. -/
+structure CrtReserve (g : CrtGeometry) (s : State) : Prop where
+  fit : 104 ≤ s.sp.toNat
+  workspace : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr g.base, g.size⟩
+  source : ∀ i, (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr (g.source i), g.sourceLength i⟩
+  output : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr g.output, g.length⟩
+  args : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr s.sp, 56⟩
+  r2 : ∀ a, g.r2 = some a → (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr a, 8 * g.r2Words⟩ ∧
+    (FrameStack.belowA s.sp 104).Disjoint ⟨off (State.addr s.sp) 56, 4⟩
 
 structure CrtFnInput (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : Prop where
   workspace : Workspace s g.base g.size
@@ -54,5 +74,6 @@ structure CrtFnInput (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : 
   stackOutput : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr g.output, g.length⟩
   stackArgs : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr s.sp, 56⟩
   r2 : ∀ a, g.r2 = some a → CrtR2In g bs a s
+  reserve : CrtReserve g s
 
 end VG.Proof.Bignum.Arm
