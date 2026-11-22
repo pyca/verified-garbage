@@ -1120,7 +1120,7 @@ theorem sign_eq (P : RfcHash) :
 /-- The contract the code for `P`'s hash function is proven against, after
 the entry, with `P`'s table and the functions `ns`' addresses public. -/
 abbrev rfcP (P : RfcHash) (ns : List String) : Contract isa :=
-  rfcX86_64 P.R.E.combConsts P.I (248 + 8 * 48) (tabFacts P.H P.f) ns
+  rfcX86_64 P.R.E.combConsts P.I (256 + 8 * 48) (tabFacts P.H P.f) ns
 
 /-- The layout of a call from `s`. -/
 abbrev layOf (P : RfcHash) (s : State) : Lay P.I.hashLen :=
@@ -1354,7 +1354,7 @@ def TabFn (P : RfcHash) (j : Nat) (n : String) (c : Prog isa) (ts : List (String
     m₀.readW (L.tab + BitVec.ofNat 64 (8 * j)) 64 = t.syms n ∧
       ts.find? (fun q => t.syms q.1 == t.syms n) = some (n, c) ∧ t.syms n = L.fa n
 
-theorem tfn_init : TabFn P 0 P.H.hmacInitN P.H.hmacInit P.f.init := fun L _ _ _ _ hk hc => by
+theorem tfn_init : TabFn P 0 P.H.hmacInitAnyN P.H.hmacInitAny P.f.init := fun L _ _ _ _ hk hc => by
   have hok := hc.tabOk; have htm := hc.tabMem; have hf := hc.fsy
   rw [hk.2.2.1, hk.2.2.2] at hok; rw [hk.2.2.1] at htm hf
   exact ⟨htm.1, hok.i, hf _ (by simp)⟩
@@ -1430,15 +1430,16 @@ def IA (P : RfcHash) : Pr P := fun L _ u =>
     u.gpr .rdx = L.B + BitVec.ofNat 64 24 ∧ u.gpr .rcx = BitVec.ofNat 64 P.H.D ∧
     u.gpr .r8 = L.scr + BitVec.ofNat 64 384
 
-theorem hinit_piece : Piece P (IA P) (.call P.H.hmacInitN P.H.hmacInit) (Tt P) := by
-  refine Piece.of (two_call fun L => Proof.Pbkdf2.Md.X86_64.Pbk.hinit_rel P.ok P.hI
+theorem hinit_piece : Piece P (IA P) (.call P.H.hmacInitAnyN P.H.hmacInitAny) (Tt P) := by
+  have hA := P.hWA
+  refine Piece.of (two_call fun L => Proof.Pbkdf2.Md.X86_64.Any.any_rel P.ok P.A
       fun _ _ ⟨_, _, _, _, hL, _, c₁, c₂, a₁, a₂⟩ =>
-    ⟨initA hL c₁ a₁.1 a₁.2.1 a₁.2.2.1 a₁.2.2.2.1 a₁.2.2.2.2, initA hL c₂ a₂.1 a₂.2.1 a₂.2.2.1 a₂.2.2.2.1 a₂.2.2.2.2,
+    ⟨anyA hL c₁ a₁.1 a₁.2.1 a₁.2.2.1 a₁.2.2.2.1 a₁.2.2.2.2, anyA hL c₂ a₂.1 a₂.2.1 a₂.2.2.1 a₂.2.2.2.1 a₂.2.2.2.2,
       rsp_two c₁ c₂⟩) fun L g m₀ u hL _ hc a => ?_
-  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Pbk.hinit_call P.ok P.hI P.hIsp P.hId
-    (initA hL hc a.1 a.2.1 a.2.2.1 a.2.2.2.1 a.2.2.2.2) fun v hrd hwr hcs hf _ _ hsy => ?_)
+  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Any.any_call P.ok P.A P.Asp P.Ad
+    (anyA hL hc a.1 a.2.1 a.2.2.1 a.2.2.2.1 a.2.2.2.2) (by nums) fun v hrd hwr hcs hf _ _ hsy => ?_)
   have hsafe : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.S⟩ : Region), ⟨L.scr + BitVec.ofNat 64 192, P.H.S⟩,
-      ⟨L.scr + BitVec.ofNat 64 384, 8 * P.H.W⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
+      ⟨L.scr + BitVec.ofNat 64 384, 8 * (P.H.W + P.H.S)⟩], Region.Sub r ⟨L.scr, 3488⟩ := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) <;> exact scr_work (by nums)
   exact ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf
@@ -1463,7 +1464,7 @@ theorem upd_piece {cnt : Nat} {da : Lay P.I.hashLen → Addr} {len : Nat}
   refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Calls.upd_call P.ok.stream
     (updA hL hc (hd L hL) hlen a.1 a.2.2.1 a.2.2.2.1 a.2.2.2.2) (by omega_using [hlen]) fun w' af _ hsy => ?_)
   have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.stream.S⟩ : Region),
-      ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
+      ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩], Region.Sub r ⟨L.scr, 3488⟩ := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> exact scr_work (by nums)
   exact ⟨hc.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr) af.frame
@@ -1585,10 +1586,10 @@ theorem copyStates_piece {Φ : Pr P} (b : Bool) : Piece P Φ (.block (Cfg.scrPtr
     rw [WP.block_append_iff]
     refine WP.mono (scrPtr_ok hL hc) fun u ⟨hcu, _, hdi, _⟩ => ?_
     cases b
-    · exact WP.mono (copy_ok hL hcu (src := .rdi) (S := L.scr) hdi (by decide) hdi (so := 3072) (d := 0) (K := 48)
+    · exact WP.mono (copy_ok hL hcu (src := .rdi) (S := L.scr) hdi (by decide) hdi (so := 4304) (d := 0) (K := 48)
         (by decide) (fun j hj => hcu.inScr (by omega_using [hj])) (Offset.disjoint _ (by decide) (by decide) (by decide)))
         fun _ h => ⟨h.1, trivial⟩
-    · exact WP.mono (copy_ok hL hcu (src := .rdi) (S := L.scr) hdi (by decide) hdi (so := 0) (d := 3072) (K := 48)
+    · exact WP.mono (copy_ok hL hcu (src := .rdi) (S := L.scr) hdi (by decide) hdi (so := 0) (d := 4304) (K := 48)
         (by decide) (fun j hj => hcu.inScr (by omega_using [hj])) (Offset.disjoint _ (by decide) (by decide) (by decide)))
         fun _ h => ⟨h.1, trivial⟩
 
@@ -1932,7 +1933,7 @@ theorem body_ct :
 /-- Runs whose public data agree (with the addresses of the hash function's
 HMAC functions among `ns`) have the same layout, and stop at the same
 candidate. -/
-theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.H.hmacInitN, P.H.updN, P.H.hmacFinN], n ∈ ns) :
+theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.H.hmacInitAnyN, P.H.updN, P.H.hmacFinN], n ∈ ns) :
     ConstantTime isa (rfcP P ns).pre (rfcP P ns).pub (cfgOf P).sign := by
   rw [sign_eq]
   refine VG.RelCT.constantTime (Q := fun _ _ => True) (RelCT.frame (R := fun _ _ => True) (fun _ _ h => h.2.2.1) ?_)
@@ -1944,8 +1945,8 @@ theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.H.hmacInitN, P.H.updN, P.
     split
     · next h => obtain ⟨c, hc, rfl⟩ := List.mem_map.mp h; exact hsy c hc
     · rfl
-  have hfa : (fun n => if n ∈ [P.H.hmacInitN, P.H.updN, P.H.hmacFinN] then s₁.syms n else 0) =
-      fun n => if n ∈ [P.H.hmacInitN, P.H.updN, P.H.hmacFinN] then s₂.syms n else 0 :=
+  have hfa : (fun n => if n ∈ [P.H.hmacInitAnyN, P.H.updN, P.H.hmacFinN] then s₁.syms n else 0) =
+      fun n => if n ∈ [P.H.hmacInitAnyN, P.H.updN, P.H.hmacFinN] then s₂.syms n else 0 :=
     funext fun n => by
       split
       · next h => exact hns' n (hns n h)
@@ -2007,7 +2008,7 @@ def cfgT (R : RfcCurve) (tries : Nat) (vs : List MdHash) : Cfg where
 def signCodeT (R : RfcCurve) (tries : Nat) (vs : List MdHash) : Prog isa := signCode (cfgT R tries vs)
 
 /-- The stack it uses. -/
-def stackT : Nat := 248 + 8 * 48
+def stackT : Nat := 256 + 8 * 48
 
 /-! ## The variants -/
 
@@ -2018,7 +2019,7 @@ def WOk (w : MdHash) : Prop :=
   (match Spec.HmacTable.hmacOf w.mgf.G with
     | some F => F.blockSize = w.H.P.B
     | none => False) ∧
-  (w.H.D, w.H.P.B) ∈ shapes ∧ 8 * w.H.W ≤ 1872 ∧ w.ok.stream.Wb ≤ 1872
+  (w.H.D, w.H.P.B) ∈ shapes ∧ 8 * w.H.W ≤ 1872 ∧ w.ok.stream.Wb ≤ 1872 ∧ 8 * (w.H.W + w.H.S) ≤ 3104
 
 instance (w : MdHash) : Decidable (WOk w) := by
   unfold WOk; cases Spec.HmacTable.hmacOf w.mgf.G <;> infer_instance
@@ -2086,7 +2087,11 @@ def hashOf {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R 
   hDB := hw.2.1
   hS := by have := w.ok.N_le; have := w.ok.B_le; show _ + _ ≤ 192; omega_arith
   hW := hw.2.2.1
-  hWb := hw.2.2.2
+  hWb := hw.2.2.2.1
+  A := w.hmacAny
+  Asp := w.hmacAnyNs
+  Ad := w.hmacAnyD
+  hWA := hw.2.2.2.2
 
 /-- The body for `w`'s hash function is the same as for every other. -/
 theorem cfgT_eq {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R T) (vs : List MdHash)
@@ -2296,7 +2301,7 @@ theorem signT_ct (hC : CurveT R T) :
   refine entry_ct.seq ?_
   intro u₁ u₂ t₁ t₂ u₁' u₂' ⟨σ₁, σ₂, ⟨_, _, w, hv, hw, p₁, p₂, hpub⟩, f₁, f₂⟩ e₁ e₂
   rw [cfgT_eq hC vs hw] at e₁ e₂
-  have hns : ∀ n ∈ [(hashOf hC vs w hw).H.hmacInitN, (hashOf hC vs w hw).H.updN,
+  have hns : ∀ n ∈ [(hashOf hC vs w hw).H.hmacInitAnyN, (hashOf hC vs w hw).H.updN,
       (hashOf hC vs w hw).H.hmacFinN], n ∈ names vs := by
     have := mem_names hv
     intro n hn
@@ -2326,9 +2331,7 @@ theorem signT_ct (hC : CurveT R T) :
 
 theorem fnsOk_of (vs : List MdHash) : FnsOk (fnsOf vs).init ∧ FnsOk (fnsOf vs).upd ∧ FnsOk (fnsOf vs).fin := by
   refine ⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩ <;> obtain ⟨w, -, rfl⟩ := List.mem_map.mp hq
-  · exact VG.Proof.RsaOaep.X86_64.okI_all_of
-      (Proof.Pbkdf2.Md.X86_64.nosp_of (Proof.Pbkdf2.Md.X86_64.core_hmacInit w.K.iNs w.K.b.bNs w.C.hinitNs))
-      (Proof.Pbkdf2.Md.X86_64.core_hmacInit w.K.iMx w.K.b.bMx w.C.hinitMx)
+  · exact VG.Proof.RsaOaep.X86_64.okI_all_of w.hmacAnyNs w.hmacAnyMx
   · exact (Proof.RsaOaep.X86_64.HGood.of w.ok w.K).upd
   · exact VG.Proof.RsaOaep.X86_64.okI_all_of
       (Proof.Pbkdf2.Md.X86_64.nosp_of (Proof.Pbkdf2.Md.X86_64.core_hmacFin w.K.cNs w.C.hfinNs))

@@ -50,7 +50,7 @@ which `Ctx` says holds the function of `L.H`, whose call an indirect call of
 
 `St P L g m₀ k0 text` is what holds between them: `Ctx`, and HMAC's states
 for `K₀` with the inner one holding `text`. They change only HMAC's states
-and working space (the first 2256 bytes of `scratch`), the 16 bytes below
+and working space (`scratch` from `sInner`), the 16 bytes below
 the frame (`W`), and `dst`.
 -/
 
@@ -65,7 +65,7 @@ open VG.Proof.Pbkdf2.Md.AArch64.Calls (After)
 above HMAC's working space. -/
 def DataOk {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (da : Addr) (len : Nat) : Prop :=
   (∃ o, da = L.B + BitVec.ofNat 64 o ∧ 16 ≤ o ∧ o + len ≤ 200) ∨
-    (∃ o, da = L.scr + BitVec.ofNat 64 o ∧ 2256 ≤ o ∧ o + len ≤ 8192)
+    (∃ o, da = L.scr + BitVec.ofNat 64 o ∧ 16 ≤ o ∧ o + len ≤ 1216)
 
 variable {P : RfcHash} {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem}
 
@@ -76,20 +76,20 @@ variable {da : Addr} {len : Nat}
 theorem low (hd : DataOk L da len) (hL : L.Ok) : Region.Disjoint ⟨L.B, 16⟩ ⟨da, len⟩ := by
   rcases hd with ⟨o, rfl, h₁, h₂⟩ | ⟨o, rfl, h₁, h₂⟩
   · exact Offset.base_disjoint _ h₁ (by omega_using [h₂])
-  · exact hL.low_scr h₂
+  · exact hL.low_scr (by omega_using [h₂])
 
 /-- The data is apart from HMAC's states and working space. -/
-theorem work (hd : DataOk L da len) (hL : L.Ok) {e k : Nat} (h : e + k ≤ 2256) :
+theorem work (hd : DataOk L da len) (hL : L.Ok) {e k : Nat} (h₀ : 1216 ≤ e) (h : e + k ≤ 5008) :
     Region.Disjoint ⟨da, len⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ := by
   rcases hd with ⟨o, rfl, h₁, h₂⟩ | ⟨o, rfl, h₁, h₂⟩
   · exact hL.stk_scr (by have := L.he; omega_using [h₂]) (by omega_using [h])
-  · exact Offset.disjoint _ (by omega_using [h, h₁]) (by omega_using [h₂]) (by omega_using [h])
+  · exact Offset.disjoint _ (by omega_using [h₀, h₂]) (by omega_using [h₂]) (by omega_using [h])
 
 theorem within (hd : DataOk L da len) :
     ∃ R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR], Within ⟨da, len⟩ R := by
   rcases hd with ⟨o, rfl, h₁, h₂⟩ | ⟨o, rfl, h₁, h₂⟩
   · exact ⟨L.FR, by simp, within_fr _ h₁ (by omega_using [h₂])⟩
-  · exact ⟨L.SCR, by simp, within_off _ h₂⟩
+  · exact ⟨L.SCR, by simp, within_off _ (by omega_using [h₂])⟩
 
 end DataOk
 
@@ -207,15 +207,16 @@ structure St (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E
   ctx : Ctx L g m₀ u
   klen : k0.length = P.H.P.B
   tlen : text.length ≤ 512
-  inner : P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 0) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad ++ text)
-  outer : P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 192) (Spec.Hmac.xorPad k0 Spec.Hmac.opad)
+  inner : P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 1216) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad ++ text)
+  outer : P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 1408) (Spec.Hmac.xorPad k0 Spec.Hmac.opad)
 
 /-- What HMAC's functions write: their states and working space, and the
 stack below the frame. -/
-abbrev W {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : List Region := [⟨L.scr, 2256⟩, ⟨L.B, 16⟩]
+abbrev W {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : List Region := [⟨L.scr + BitVec.ofNat 64 1216, 3792⟩, ⟨L.B, 16⟩]
 
-theorem scr_work {e k : Nat} (h : e + k ≤ 2256) : Region.Sub ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr, 2256⟩ :=
-  Offset.sub_base _ h
+theorem scr_work {e k : Nat} (h₀ : 1216 ≤ e) (h : e + k ≤ 5008) :
+    Region.Sub ⟨L.scr + BitVec.ofNat 64 e, k⟩ ⟨L.scr + BitVec.ofNat 64 1216, 3792⟩ :=
+  Offset.sub _ h₀ (by omega_using [h])
 
 /-- What a call leaves keeps `Ctx`, if it writes only safe regions and the
 16 bytes below the frame. -/
@@ -228,13 +229,13 @@ theorem Ctx.after (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List Re
       rw [hc.below_eq]
       exact .inr (.inr (.inl (Region.sub_prefix (by omega_using []))))
 
-/-- The memory a call changes: within `ws`, each in `⟨scratch, 2256⟩` or in
+/-- The memory a call changes: within `ws`, each in HMAC's states and working space or in
 the 16 bytes below the frame. -/
 theorem after_frame {u u' : State} (hc : Ctx L g m₀ u) {ws : List Region} (ha : After u ws u')
-    (hs : ∀ r ∈ ws, Region.Sub r ⟨L.scr, 2256⟩) : Frame (W L) u.mem u'.mem :=
+    (hs : ∀ r ∈ ws, Region.Sub r ⟨L.scr + BitVec.ofNat 64 1216, 3792⟩) : Frame (W L) u.mem u'.mem :=
   ha.frame.sub fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
-    · exact ⟨⟨L.scr, 2256⟩, by simp, hs r hr⟩
+    · exact ⟨⟨L.scr + BitVec.ofNat 64 1216, 3792⟩, by simp, hs r hr⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨L.B, 16⟩, by simp, by rw [hc.below_eq]; exact sub_refl _⟩
 
@@ -243,31 +244,32 @@ theorem after_frame {u u' : State} (hc : Ctx L g m₀ u) {ws : List Region} (ha 
 /-- The arguments of HMAC's `init`. -/
 theorem initArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block Cfg.initArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧
-      t'.gpr .x0 = L.scr + BitVec.ofNat 64 0 ∧ t'.gpr .x1 = L.scr + BitVec.ofNat 64 192 ∧
+      t'.gpr .x0 = L.scr + BitVec.ofNat 64 1216 ∧ t'.gpr .x1 = L.scr + BitVec.ofNat 64 1408 ∧
       t'.gpr .x2 = L.B + BitVec.ofNat 64 16 ∧ t'.gpr .x3 = BitVec.ofNat 64 P.H.D ∧
-      t'.gpr .x4 = L.scr + BitVec.ofNat 64 384 := by
+      t'.gpr .x4 = L.scr + BitVec.ofNat 64 1600 := by
   rw [Cfg.initArgs, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (scr_ok hL hc (d := .x0) (by decide) (a := 0) (by decide)) fun u₁ h₁ => ?_
-  refine WP.mono (scr_ok hL h₁.ctx (d := .x1) (by decide) (a := 192) (by decide)) fun u₂ h₂ => ?_
+  refine WP.mono (scr_ok hL hc (d := .x0) (by decide) (a := 1216) (by decide)) fun u₁ h₁ => ?_
+  refine WP.mono (scr_ok hL h₁.ctx (d := .x1) (by decide) (a := 1408) (by decide)) fun u₂ h₂ => ?_
   refine WP.mono (fr_ok hL h₂.ctx (d := .x2) (by decide) (o := 0) (by decide)) fun u₃ h₃ => ?_
   refine WP.mono (ldD_ok hL hT h₃.ctx (d := .x3) (by decide)) fun u₄ h₄ => ?_
-  refine WP.mono (scr_ok hL h₄.ctx (d := .x4) (by decide) (a := 384) (by decide)) fun u₅ h₅ => ?_
+  refine WP.mono (scr_ok hL h₄.ctx (d := .x4) (by decide) (a := 1600) (by decide)) fun u₅ h₅ => ?_
   refine ⟨h₅.ctx, by rw [h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, ?_, h₅.val⟩
   · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.val]
   · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]
   · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.val]
   · rw [h₅.keep _ (by decide), h₄.val]
 
-theorem initA (hL : L.Ok) {u : State} (hcu : Ctx L g m₀ u) (h0 : u.gpr .x0 = L.scr + BitVec.ofNat 64 0)
-    (h1 : u.gpr .x1 = L.scr + BitVec.ofNat 64 192) (h2 : u.gpr .x2 = L.B + BitVec.ofNat 64 16)
-    (h3 : u.gpr .x3 = BitVec.ofNat 64 P.H.D) (h4 : u.gpr .x4 = L.scr + BitVec.ofNat 64 384) :
-    Proof.Pbkdf2.Md.AArch64.Pbk.InitArgs (H := P.H) u (L.scr + BitVec.ofNat 64 0)
-      (L.scr + BitVec.ofNat 64 192) (L.B + BitVec.ofNat 64 16) (L.scr + BitVec.ofNat 64 384) P.H.D := by
+theorem anyA (hL : L.Ok) {u : State} (hcu : Ctx L g m₀ u) (h0 : u.gpr .x0 = L.scr + BitVec.ofNat 64 1216)
+    (h1 : u.gpr .x1 = L.scr + BitVec.ofNat 64 1408) (h2 : u.gpr .x2 = L.B + BitVec.ofNat 64 16)
+    (h3 : u.gpr .x3 = BitVec.ofNat 64 P.H.D) (h4 : u.gpr .x4 = L.scr + BitVec.ofNat 64 1600) :
+    Proof.Pbkdf2.Md.AArch64.Any.AnyArgs (H := P.H) u (L.scr + BitVec.ofNat 64 1216)
+      (L.scr + BitVec.ofNat 64 1408) (L.B + BitVec.ofNat 64 16) (L.scr + BitVec.ofNat 64 1600) P.H.D := by
   have hsp : below u.sp 16 = ⟨L.B, 16⟩ := hcu.below_eq
   have he := L.he
+  have hWA := P.hWA
   exact
     { x0 := h0, x1 := h1, x2 := h2, x3 := by rw [h3, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by anums)
-      x4 := h4, klB := by anums
+      x4 := h4
       cr := hcu.covers fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨L.FR, by simp, within_fr _ (by omega_using []) (by anums)⟩
@@ -312,17 +314,18 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
   refine tcall_ok hL hcu (j := 0) (by decide) htm.1 hok.i fun u' hc' hm' hk' _ => ?_
   have hk0 : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4], u'.gpr r = u.gpr r := fun r hr => hk' r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
-  have a := initA (P := P) hL hc' ((hk0 _ (by simp)).trans h0) ((hk0 _ (by simp)).trans h1)
+  have a := anyA (P := P) hL hc' ((hk0 _ (by simp)).trans h0) ((hk0 _ (by simp)).trans h1)
     ((hk0 _ (by simp)).trans h2) ((hk0 _ (by simp)).trans h3) ((hk0 _ (by simp)).trans h4)
-  refine Proof.Pbkdf2.Md.AArch64.Pbk.hinit_call P.ok P.hI P.hId a fun v ha hi ho => ?_
-  have hsafe : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.S⟩ : Region), ⟨L.scr + BitVec.ofNat 64 192, P.H.S⟩,
-      ⟨L.scr + BitVec.ofNat 64 384, 8 * P.H.W⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
+  refine Proof.Pbkdf2.Md.AArch64.Any.any_call P.ok P.A P.Ad a fun v ha hi ho => ?_
+  have hsafe : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 1216, P.H.S⟩ : Region), ⟨L.scr + BitVec.ofNat 64 1408, P.H.S⟩,
+      ⟨L.scr + BitVec.ofNat 64 1600, 8 * (P.H.W + P.H.S)⟩], Region.Sub r ⟨L.scr + BitVec.ofNat 64 1216, 3792⟩ := by
+    have hWA := P.hWA
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl) <;> exact scr_work (by anums)
+    rintro r (rfl | rfl | rfl) <;> exact scr_work (by anums) (by anums)
   have hkey : Spec.Sha256.bytesAt u'.mem (L.B + BitVec.ofNat 64 16) P.H.D = keyOf P L t.mem := by
     rw [hm', hmu]
   rw [hkey] at hi ho
-  refine ⟨⟨hc'.after hL ha fun r hr => .inr (.inl (sub_trans (hsafe r hr) (Region.sub_prefix (by omega_using [])))),
+  refine ⟨⟨hc'.after hL ha fun r hr => .inr (.inl (sub_trans (hsafe r hr) (Offset.sub_base _ (by omega_using [])))),
     blockKey_length (keyOf_length _), by simp, by simpa using hi, ho⟩, ?_⟩
   rw [← hmu, ← hm']
   exact after_frame hc' ha hsafe
@@ -332,15 +335,15 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
 /-- The arguments of the streaming `update` with `V`. -/
 theorem updVArgs_ok (hL : L.Ok) (hT : TabL P L) {u : State} (hc : Ctx L g m₀ u) :
     WP isa (.block Cfg.updVArgs) u fun u' => Ctx L g m₀ u' ∧
-      u'.mem = u.mem ∧ u'.gpr .x0 = L.scr + BitVec.ofNat 64 0 ∧ u'.gpr .x1 = BitVec.ofNat 64 P.H.P.B ∧
+      u'.mem = u.mem ∧ u'.gpr .x0 = L.scr + BitVec.ofNat 64 1216 ∧ u'.gpr .x1 = BitVec.ofNat 64 P.H.P.B ∧
       u'.gpr .x2 = L.B + BitVec.ofNat 64 80 ∧ u'.gpr .x3 = BitVec.ofNat 64 P.H.D ∧
-      u'.gpr .x4 = L.scr + BitVec.ofNat 64 384 := by
+      u'.gpr .x4 = L.scr + BitVec.ofNat 64 1600 := by
   rw [Cfg.updVArgs, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (scr_ok hL hc (d := .x0) (by decide) (a := 0) (by decide)) fun u₁ h₁ => ?_
+  refine WP.mono (scr_ok hL hc (d := .x0) (by decide) (a := 1216) (by decide)) fun u₁ h₁ => ?_
   refine WP.mono (ldB_ok hL hT h₁.ctx (d := .x1) (by decide)) fun u₂ h₂ => ?_
   refine WP.mono (fr_ok hL h₂.ctx (d := .x2) (by decide) (o := fV) (by decide)) fun u₃ h₃ => ?_
   refine WP.mono (ldD_ok hL hT h₃.ctx (d := .x3) (by decide)) fun u₄ h₄ => ?_
-  refine WP.mono (scr_ok hL h₄.ctx (d := .x4) (by decide) (a := 384) (by decide)) fun u₅ h₅ => ?_
+  refine WP.mono (scr_ok hL h₄.ctx (d := .x4) (by decide) (a := 1600) (by decide)) fun u₅ h₅ => ?_
   refine ⟨h₅.ctx, by rw [h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, ?_, h₅.val⟩
   · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.val]
   · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]
@@ -351,12 +354,12 @@ theorem updVArgs_ok (hL : L.Ok) (hT : TabL P L) {u : State} (hc : Ctx L g m₀ u
 theorem updMArgs_ok (hL : L.Ok) (hT : TabL P L) {u : State} (hc : Ctx L g m₀ u) {len : Nat}
     (hlen : len < 2 ^ 16) :
     WP isa (.block (Cfg.updMArgs len)) u fun u' => Ctx L g m₀ u' ∧
-      u'.mem = u.mem ∧ u'.gpr .x0 = L.scr + BitVec.ofNat 64 0 ∧
+      u'.mem = u.mem ∧ u'.gpr .x0 = L.scr + BitVec.ofNat 64 1216 ∧
       u'.gpr .x1 = BitVec.ofNat 64 (P.H.P.B + P.H.D) ∧
       u'.gpr .x2 = L.scr + BitVec.ofNat 64 sMsg ∧ u'.gpr .x3 = BitVec.ofNat 64 len ∧
-      u'.gpr .x4 = L.scr + BitVec.ofNat 64 384 := by
+      u'.gpr .x4 = L.scr + BitVec.ofNat 64 1600 := by
   rw [Cfg.updMArgs, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (scr_ok hL hc (d := .x0) (by decide) (a := 0) (by decide)) fun u₁ h₁ => ?_
+  refine WP.mono (scr_ok hL hc (d := .x0) (by decide) (a := 1216) (by decide)) fun u₁ h₁ => ?_
   rw [show ([.ldrSp .x1 fBl, .ldrSp .x9 fDl, .add .x .x1 .x1 .x9] : List Instr) =
     [.ldrSp .x1 fBl] ++ [.ldrSp .x9 fDl] ++ [.add .x .x1 .x1 .x9] from rfl, WP.block_append_iff,
     WP.block_append_iff]
@@ -365,7 +368,7 @@ theorem updMArgs_ok (hL : L.Ok) (hT : TabL P L) {u : State} (hc : Ctx L g m₀ u
   refine WP.mono (add_ok hL h₂'.ctx (d := .x1) (r := .x9) (by decide)) fun u₂'' h₂'' => ?_
   refine WP.mono (scr_ok hL h₂''.ctx (d := .x2) (by decide) (a := sMsg) (by decide)) fun u₃ h₃ => ?_
   refine WP.mono (movz_ok hL h₃.ctx (d := .x3) (by decide) hlen) fun u₄ h₄ => ?_
-  refine WP.mono (scr_ok hL h₄.ctx (d := .x4) (by decide) (a := 384) (by decide)) fun u₅ h₅ => ?_
+  refine WP.mono (scr_ok hL h₄.ctx (d := .x4) (by decide) (a := 1600) (by decide)) fun u₅ h₅ => ?_
   refine ⟨h₅.ctx, by rw [h₅.mem, h₄.mem, h₃.mem, h₂''.mem, h₂'.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, ?_, h₅.val⟩
   · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂''.keep _ (by decide),
       h₂'.keep _ (by decide), h₂.keep _ (by decide), h₁.val]
@@ -376,10 +379,10 @@ theorem updMArgs_ok (hL : L.Ok) (hT : TabL P L) {u : State} (hc : Ctx L g m₀ u
 
 /-- The arguments of the streaming `update`. -/
 theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : Addr} {len : Nat} (hd : DataOk L da len)
-    (hlen : len ≤ 256) (h0 : w.gpr .x0 = L.scr + BitVec.ofNat 64 0) (h2 : w.gpr .x2 = da)
-    (h3 : w.gpr .x3 = BitVec.ofNat 64 len) (h4 : w.gpr .x4 = L.scr + BitVec.ofNat 64 384) :
-    Proof.Pbkdf2.Md.AArch64.Calls.UpdArgs P.ok.stream w (L.scr + BitVec.ofNat 64 0) da
-      (L.scr + BitVec.ofNat 64 384) len := by
+    (hlen : len ≤ 256) (h0 : w.gpr .x0 = L.scr + BitVec.ofNat 64 1216) (h2 : w.gpr .x2 = da)
+    (h3 : w.gpr .x3 = BitVec.ofNat 64 len) (h4 : w.gpr .x4 = L.scr + BitVec.ofNat 64 1600) :
+    Proof.Pbkdf2.Md.AArch64.Calls.UpdArgs P.ok.stream w (L.scr + BitVec.ofNat 64 1216) da
+      (L.scr + BitVec.ofNat 64 1600) len := by
   have hsp : below w.sp 16 = ⟨L.B, 16⟩ := hcw.below_eq
   exact
     { x0 := h0, x2 := h2, x3 := by rw [h3, BitVec.toNat_ofNat]; omega_using [hlen], x4 := h4
@@ -389,8 +392,8 @@ theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : Addr} {len : N
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by anums)⟩
       st_sc := Offset.disjoint _ (by anums) (by anums) (by anums)
-      d_st := hd.work hL (by anums)
-      d_sc := hd.work hL (by anums)
+      d_st := hd.work hL (by anums) (by anums)
+      d_sc := hd.work hL (by anums) (by anums)
       sp16 := hcw.sp16 hL
       stk_st := by rw [hsp]; exact hL.low_scr (by anums)
       stk_d := by rw [hsp]; exact hd.low hL
@@ -399,8 +402,8 @@ theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : Addr} {len : N
 /-- The table's `update` of the inner state, holding `text`, with the data. -/
 theorem upd_call_ok (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State} (hu : St P L g m₀ k0 text u)
     {da : Addr} {len : Nat} (hd : DataOk L da len) (hlen : len ≤ 256) (htl : text.length + len ≤ 512)
-    (h0 : u.gpr .x0 = L.scr + BitVec.ofNat 64 0) (h1 : u.gpr .x1 = BitVec.ofNat 64 (P.H.P.B + text.length))
-    (h2 : u.gpr .x2 = da) (h3 : u.gpr .x3 = BitVec.ofNat 64 len) (h4 : u.gpr .x4 = L.scr + BitVec.ofNat 64 384) :
+    (h0 : u.gpr .x0 = L.scr + BitVec.ofNat 64 1216) (h1 : u.gpr .x1 = BitVec.ofNat 64 (P.H.P.B + text.length))
+    (h2 : u.gpr .x2 = da) (h3 : u.gpr .x3 = BitVec.ofNat 64 len) (h4 : u.gpr .x4 = L.scr + BitVec.ofNat 64 1600) :
     WP isa (Cfg.tcall 1 P.f.upd) u fun u' => St P L g m₀ k0 (text ++ Spec.Sha256.bytesAt u.mem da len) u' ∧
       Frame (W L) u.mem u'.mem := by
   have hc := hu.ctx
@@ -414,18 +417,18 @@ theorem upd_call_ok (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State
   have a := updA (P := P) hL hcw hd hlen ((hk0 _ (by simp)).trans h0) ((hk0 _ (by simp)).trans h2)
     ((hk0 _ (by simp)).trans h3) ((hk0 _ (by simp)).trans h4)
   refine Proof.Pbkdf2.Md.AArch64.Calls.upd_call P.ok.stream a fun w' af hr => ?_
-  have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.stream.S⟩ : Region),
-      ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
+  have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 1216, P.H.stream.S⟩ : Region),
+      ⟨L.scr + BitVec.ofNat 64 1600, P.ok.stream.Wb⟩], Region.Sub r ⟨L.scr + BitVec.ofNat 64 1216, 3792⟩ := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> exact scr_work (by anums)
+    rintro r (rfl | rfl) <;> exact scr_work (by anums) (by anums)
   have hkl := hu.klen
-  refine ⟨⟨hcw.after hL af fun r hr => .inr (.inl (sub_trans (hws r hr) (Region.sub_prefix (by omega_using [])))),
+  refine ⟨⟨hcw.after hL af fun r hr => .inr (.inl (sub_trans (hws r hr) (Offset.sub_base _ (by omega_using [])))),
     hkl, by simp [Spec.Sha256.bytesAt]; omega_using [htl], ?_, ?_⟩, hmw ▸ after_frame hcw af hws⟩
   · rw [← hmw, ← List.append_assoc]
     exact hr _ (hmw ▸ hu.inner) (by
       rw [(hk0 _ (by simp)).trans h1, List.length_append, xorPad_length, hkl])
   · refine P.ok.stream.repr w.mem w'.mem _ _ _ (fun i hi => ?_) (hmw ▸ hu.outer)
-    refine Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 192, P.H.stream.S⟩) af.frame (fun r hr => ?_)
+    refine Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 1408, P.H.stream.S⟩) af.frame (fun r hr => ?_)
       (by show P.H.stream.S ≤ 2 ^ 64; anums) hi
     rcases List.mem_append.mp hr with hr | hr
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -466,12 +469,12 @@ theorem updM_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State}
 theorem finArgs_ok (hL : L.Ok) (hT : TabL P L) {u : State} (hc : Ctx L g m₀ u) {len dst : Nat}
     (hlen : len < 4096) (hdst : dst < 4096) :
     WP isa (.block (Cfg.finArgs len dst)) u
-      fun u' => Ctx L g m₀ u' ∧ u'.mem = u.mem ∧ u'.gpr .x0 = L.scr + BitVec.ofNat 64 0 ∧
-        u'.gpr .x1 = L.scr + BitVec.ofNat 64 192 ∧ u'.gpr .x2 = BitVec.ofNat 64 (P.H.P.B + P.H.D + len) ∧
-        u'.gpr .x3 = L.B + BitVec.ofNat 64 (16 + dst) ∧ u'.gpr .x4 = L.scr + BitVec.ofNat 64 384 := by
+      fun u' => Ctx L g m₀ u' ∧ u'.mem = u.mem ∧ u'.gpr .x0 = L.scr + BitVec.ofNat 64 1216 ∧
+        u'.gpr .x1 = L.scr + BitVec.ofNat 64 1408 ∧ u'.gpr .x2 = BitVec.ofNat 64 (P.H.P.B + P.H.D + len) ∧
+        u'.gpr .x3 = L.B + BitVec.ofNat 64 (16 + dst) ∧ u'.gpr .x4 = L.scr + BitVec.ofNat 64 1600 := by
   rw [Cfg.finArgs, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (scr_ok hL hc (d := .x0) (by decide) (a := 0) (by decide)) fun u₁ h₁ => ?_
-  refine WP.mono (scr_ok hL h₁.ctx (d := .x1) (by decide) (a := 192) (by decide)) fun u₂ h₂ => ?_
+  refine WP.mono (scr_ok hL hc (d := .x0) (by decide) (a := 1216) (by decide)) fun u₁ h₁ => ?_
+  refine WP.mono (scr_ok hL h₁.ctx (d := .x1) (by decide) (a := 1408) (by decide)) fun u₂ h₂ => ?_
   rw [show ([.ldrSp .x2 fBl, .ldrSp .x9 fDl, .add .x .x2 .x2 .x9, .addImm .x .x2 .x2 len] : List Instr) =
     [.ldrSp .x2 fBl] ++ [.ldrSp .x9 fDl] ++ [.add .x .x2 .x2 .x9] ++ [.addImm .x .x2 .x2 len] from rfl,
     WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
@@ -480,7 +483,7 @@ theorem finArgs_ok (hL : L.Ok) (hT : TabL P L) {u : State} (hc : Ctx L g m₀ u)
   refine WP.mono (add_ok hL h₃'.ctx (d := .x2) (r := .x9) (by decide)) fun u₃'' h₃'' => ?_
   refine WP.mono (addI_ok hL h₃''.ctx (d := .x2) (by decide) hlen) fun u₃''' h₃''' => ?_
   refine WP.mono (fr_ok hL h₃'''.ctx (d := .x3) (by decide) hdst) fun u₄ h₄ => ?_
-  refine WP.mono (scr_ok hL h₄.ctx (d := .x4) (by decide) (a := 384) (by decide)) fun u₅ h₅ => ?_
+  refine WP.mono (scr_ok hL h₄.ctx (d := .x4) (by decide) (a := 1600) (by decide)) fun u₅ h₅ => ?_
   refine ⟨h₅.ctx, by rw [h₅.mem, h₄.mem, h₃'''.mem, h₃''.mem, h₃'.mem, h₃.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, ?_,
     h₅.val⟩
   · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃'''.keep _ (by decide), h₃''.keep _ (by decide),
@@ -493,12 +496,12 @@ theorem finArgs_ok (hL : L.Ok) (hT : TabL P L) {u : State} (hc : Ctx L g m₀ u)
 
 /-- The arguments of HMAC's `finalize`. -/
 theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {cnt : Nat} {dst : Nat} (hdst : dst + P.H.D ≤ 184)
-    (h0 : w.gpr .x0 = L.scr + BitVec.ofNat 64 0) (h1 : w.gpr .x1 = L.scr + BitVec.ofNat 64 192)
+    (h0 : w.gpr .x0 = L.scr + BitVec.ofNat 64 1216) (h1 : w.gpr .x1 = L.scr + BitVec.ofNat 64 1408)
     (h2 : w.gpr .x2 = BitVec.ofNat 64 cnt) (h3 : w.gpr .x3 = L.B + BitVec.ofNat 64 (16 + dst))
-    (h4 : w.gpr .x4 = L.scr + BitVec.ofNat 64 384) :
-    Proof.Pbkdf2.Md.AArch64.Pbk.FinArgs (H := P.H) w (L.scr + BitVec.ofNat 64 0)
-      (L.scr + BitVec.ofNat 64 192) (BitVec.ofNat 64 cnt) (L.B + BitVec.ofNat 64 (16 + dst))
-      (L.scr + BitVec.ofNat 64 384) := by
+    (h4 : w.gpr .x4 = L.scr + BitVec.ofNat 64 1600) :
+    Proof.Pbkdf2.Md.AArch64.Pbk.FinArgs (H := P.H) w (L.scr + BitVec.ofNat 64 1216)
+      (L.scr + BitVec.ofNat 64 1408) (BitVec.ofNat 64 cnt) (L.B + BitVec.ofNat 64 (16 + dst))
+      (L.scr + BitVec.ofNat 64 1600) := by
   have hsp : below w.sp 16 = ⟨L.B, 16⟩ := hcw.below_eq
   have he := L.he
   exact
@@ -546,14 +549,14 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State} (
     ((hk0 _ (by simp)).trans h1) ((hk0 _ (by simp)).trans h2) ((hk0 _ (by simp)).trans h3)
     ((hk0 _ (by simp)).trans h4)
   refine Proof.Pbkdf2.Md.AArch64.Pbk.hfin_call P.ok P.hF P.hFd a fun w' ha hpost => ?_
-  have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.S⟩ : Region),
-      ⟨L.B + BitVec.ofNat 64 (16 + dst), P.H.D⟩, ⟨L.scr + BitVec.ofNat 64 384, 8 * P.H.W⟩] ++
+  have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 1216, P.H.S⟩ : Region),
+      ⟨L.B + BitVec.ofNat 64 (16 + dst), P.H.D⟩, ⟨L.scr + BitVec.ofNat 64 1600, 8 * P.H.W⟩] ++
       [below w₁.sp 16], ∃ r' ∈ W L ++ [⟨L.B + BitVec.ofNat 64 (16 + dst), P.H.D⟩], Region.Sub r r' := by
     simp only [W, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, hc₁.below_eq]
     rintro r (rfl | rfl | rfl | rfl)
-    · exact ⟨⟨L.scr, 2256⟩, by simp, scr_work (by anums)⟩
+    · exact ⟨⟨L.scr + BitVec.ofNat 64 1216, 3792⟩, by simp, scr_work (by anums) (by anums)⟩
     · exact ⟨⟨L.B + BitVec.ofNat 64 (16 + dst), P.H.D⟩, by simp, sub_refl _⟩
-    · exact ⟨⟨L.scr, 2256⟩, by simp, scr_work (by anums)⟩
+    · exact ⟨⟨L.scr + BitVec.ofNat 64 1216, 3792⟩, by simp, scr_work (by anums) (by anums)⟩
     · exact ⟨⟨L.B, 16⟩, by simp, sub_refl _⟩
   have hm : w₁.mem = u.mem := hm₁.trans hmw
   refine ⟨hc₁.keep hL ha.rd ha.wr ha.sp ha.cs ha.frame (hsy := ha.syms) fun r hr => ?_,
@@ -561,7 +564,7 @@ theorem fin_step (hL : L.Ok) (hT : TabL P L) {k0 text : List Byte} {u : State} (
   · obtain ⟨r', hr', hs⟩ := hws r hr
     simp only [W, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl
-    · exact .inr (.inl (sub_trans hs (Region.sub_prefix (by omega_using []))))
+    · exact .inr (.inl (sub_trans hs (Offset.sub_base _ (by omega_using []))))
     · exact .inr (.inr (.inl (sub_trans hs (Region.sub_prefix (by omega_using [])))))
     · exact (safe_low L (by anums)).of_sub hs
   · have hk := hu.klen
@@ -581,7 +584,7 @@ end
 Each HMAC with the key `K` and `V` (both of the digest length `D`, at the
 start of the frame) is HMAC's states for `K` (by `init`, then saved, or
 restored from the copy), the table's `update` with `V` and, for a new `K`,
-with the message at `scratch + 2256`, then `finalize` into `V`
+with the message at `scratch + sMsg`, then `finalize` into `V`
 (`vfin_ok`) or `K` (`vmfin_ok`): `V = HMAC_K(V)` from a new `K`, saving the
 states (`hmacVS_ok`), or from the saved ones (`hmacVR_ok`);
 `K = HMAC_K(V ‖ m)` (`hmacKB_ok`). With the message `b ‖ d ‖ h` or `b`
@@ -589,7 +592,7 @@ states (`hmacVS_ok`), or from the saved ones (`hmacVR_ok`);
 change only `scratch`, the stack below the frame, `K` and `V` (`KVW`).
 
 HMAC's two states just after `init` with the key `K` depend only on `K`, so
-the code keeps a copy of them at `scratch + 3072` (`SavedB`) after an `init`
+the code keeps a copy of them at `scratch + sSave` (`SavedB`) after an `init`
 (`save_ok`), and, for a later HMAC with the same `K`, copies them back in
 place of `init` (`restore_ok`). A state moves with its bytes
 (`StreamOK.repr`), as on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Prep.lean`).
@@ -610,13 +613,13 @@ theorem scrPtr_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   WP.mono (ldF_ok hL hc (d := .x9) (by decide) (o := fScratch) (by simp only [fScratch]; have := L.he; omega_using []) rfl)
     fun u h => ⟨h.ctx, h.mem, h.val.trans hc.pScr, h.keep⟩
 
-/-- A copy at `scratch + 3072` of HMAC's inner and outer states for the block key `k0`. -/
+/-- A copy at `scratch + sSave` of HMAC's inner and outer states for the block key `k0`. -/
 def SavedB (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (m : Mem) (k0 : List Byte) : Prop :=
-  P.ok.SH.Repr m (L.scr + BitVec.ofNat 64 3072) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad) ∧
-    P.ok.SH.Repr m (L.scr + BitVec.ofNat 64 3264) (Spec.Hmac.xorPad k0 Spec.Hmac.opad)
+  P.ok.SH.Repr m (L.scr + BitVec.ofNat 64 832) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad) ∧
+    P.ok.SH.Repr m (L.scr + BitVec.ofNat 64 1024) (Spec.Hmac.xorPad k0 Spec.Hmac.opad)
 
 /-- The copy's region. -/
-abbrev SaveR {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : Region := ⟨L.scr + BitVec.ofNat 64 3072, 384⟩
+abbrev SaveR {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : Region := ⟨L.scr + BitVec.ofNat 64 832, 384⟩
 
 theorem state_le (P : RfcHash) : P.H.P.N + P.H.P.B ≤ 192 ∧ P.H.stream.S = P.H.P.N + P.H.P.B := by
   have := P.ok.B_le; have := P.ok.N_le; exact ⟨by omega_arith, rfl⟩
@@ -632,10 +635,10 @@ theorem byte_of_bytesAt {m m' : Mem} {p q : Addr} {n : Nat}
 theorem SavedB.frame {m m' : Mem} {k0 : List Byte} (hS : SavedB P L m k0) {ws : List Region}
     (hf : Frame ws m m') (hd : ∀ r ∈ ws, Region.Disjoint (SaveR L) r) : SavedB P L m' k0 := by
   obtain ⟨hle, hS'⟩ := state_le P
-  refine ⟨P.ok.stream.repr _ _ _ _ _ (fun i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 3072, 192⟩) hf
+  refine ⟨P.ok.stream.repr _ _ _ _ _ (fun i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 832, 192⟩) hf
       (fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega_using []) (by omega_using []))) (by decide : (192 : Nat) ≤ 2 ^ 64)
       (show i < 192 by omega_using [hle, hS', hi])) hS.1,
-    P.ok.stream.repr _ _ _ _ _ (fun i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 3264, 192⟩) hf
+    P.ok.stream.repr _ _ _ _ _ (fun i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 1024, 192⟩) hf
       (fun r hr => (hd r hr).sub_left (Offset.sub _ (by omega_using []) (by omega_using []))) (by decide : (192 : Nat) ≤ 2 ^ 64)
       (show i < 192 by omega_using [hle, hS', hi])) hS.2⟩
 
@@ -644,7 +647,7 @@ theorem W_save (hL : L.Ok) : ∀ r ∈ W L, Region.Disjoint (SaveR L) r := by
   intro r hr
   simp only [W, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact (Offset.disjoint_base _ (by decide) (by decide))
+  · exact Offset.disjoint _ (.inl (by omega_using [])) (by omega_using []) (by omega_using [])
   · exact ((hL.kc.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Offset.sub_base _ (by decide))).symm
 
 /-- The arguments of the copy of 384 bytes from `scratch + a` to `scratch + d`. -/
@@ -681,43 +684,43 @@ theorem copy384_ok (hL : L.Ok) {a d : Nat} (ha : a < 4096) (hd : d < 4096) (hsep
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_using [hd]), Nat.mod_eq_of_lt (by omega_using [hd, hnc])]
   omega_using [hd, hnc]
 
-/-- After `init`: the states copied to `scratch + 3072`, and `St` kept. -/
+/-- After `init`: the states copied to `scratch + sSave`, and `St` kept. -/
 theorem save_ok (hL : L.Ok) {k0 : List Byte} {u : State} (hu : St P L g m₀ k0 [] u) :
     WP isa Cfg.save u fun u' => St P L g m₀ k0 [] u' ∧ SavedB P L u'.mem k0 ∧
       Frame [SaveR L] u.mem u'.mem := by
   obtain ⟨hle, hS'⟩ := state_le P
-  refine WP.mono (copy384_ok hL (a := 0) (d := 3072) (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (copy384_ok hL (a := 1216) (d := 832) (by decide) (by decide) (by decide) (by decide)
     hu.ctx) fun u' ⟨hc', hf', hb'⟩ => ?_
-  have hst : ∀ o, o + 192 ≤ 384 → ∀ i < P.H.P.N + P.H.P.B,
+  have hst : ∀ o, 1216 ≤ o → o + 192 ≤ 1600 → ∀ i < P.H.P.N + P.H.P.B,
       u'.mem (L.scr + BitVec.ofNat 64 o + BitVec.ofNat 64 i) = u.mem (L.scr + BitVec.ofNat 64 o + BitVec.ofNat 64 i) :=
-    fun o ho i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 o, 192⟩) hf'
+    fun o ho₀ ho i hi => Frame.bytes (R := ⟨L.scr + BitVec.ofNat 64 o, 192⟩) hf'
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint _ (by omega_using [ho]) (by omega_using [ho]) (by omega_using [])) (by decide : (192 : Nat) ≤ 2 ^ 64)
+        exact Offset.disjoint _ (by omega_using [ho₀]) (by omega_using [ho]) (by omega_using [])) (by decide : (192 : Nat) ≤ 2 ^ 64)
       (show i < 192 by omega_using [hle, hi])
   have hin := hu.inner
   rw [List.append_nil] at hin
   refine ⟨⟨hc', hu.klen, hu.tlen, ?_, ?_⟩, ⟨?_, ?_⟩, hf'⟩
-  · rw [List.append_nil]; exact P.ok.stream.repr _ _ _ _ _ (fun i hi => hst 0 (by decide) i hi) hin
-  · exact P.ok.stream.repr _ _ _ _ _ (fun i hi => hst 192 (by decide) i hi) hu.outer
+  · rw [List.append_nil]; exact P.ok.stream.repr _ _ _ _ _ (fun i hi => hst 1216 (by decide) (by decide) i hi) hin
+  · exact P.ok.stream.repr _ _ _ _ _ (fun i hi => hst 1408 (by decide) (by decide) i hi) hu.outer
   · exact P.ok.stream.repr _ _ _ _ _ (fun i hi => byte_of_bytesAt hb' (by omega_using [hle, hS', hi])) hin
   · exact P.ok.stream.repr _ _ _ _ _ (fun i hi => by
       have h := byte_of_bytesAt hb' (i := 192 + i) (by omega_using [hle, hS', hi])
-      have e1 : L.scr + BitVec.ofNat 64 3264 + BitVec.ofNat 64 i =
-          L.scr + BitVec.ofNat 64 3072 + BitVec.ofNat 64 (192 + i) := by
+      have e1 : L.scr + BitVec.ofNat 64 1024 + BitVec.ofNat 64 i =
+          L.scr + BitVec.ofNat 64 832 + BitVec.ofNat 64 (192 + i) := by
         rw [Offset.add_add, Offset.add_add]; congr 2; omega_using []
-      have e2 : L.scr + BitVec.ofNat 64 192 + BitVec.ofNat 64 i =
-          L.scr + BitVec.ofNat 64 0 + BitVec.ofNat 64 (192 + i) := by
-        rw [Offset.add_add, Offset.add_add, Nat.zero_add]
+      have e2 : L.scr + BitVec.ofNat 64 1408 + BitVec.ofNat 64 i =
+          L.scr + BitVec.ofNat 64 1216 + BitVec.ofNat 64 (192 + i) := by
+        rw [Offset.add_add, Offset.add_add]; congr 2; omega_using []
       rw [e1, e2]; exact h) hu.outer
 
 /-- The copy back: HMAC's states for the block key `k0`, and the copy kept. -/
 theorem restore_ok (hL : L.Ok) {k0 : List Byte} {t : State} (hc : Ctx L g m₀ t) (hS : SavedB P L t.mem k0)
     (hk : k0.length = P.H.P.B) :
     WP isa Cfg.restore t fun u => St P L g m₀ k0 [] u ∧
-      Frame [⟨L.scr + BitVec.ofNat 64 0, 8 * 48⟩] t.mem u.mem ∧ SavedB P L u.mem k0 := by
+      Frame [⟨L.scr + BitVec.ofNat 64 1216, 8 * 48⟩] t.mem u.mem ∧ SavedB P L u.mem k0 := by
   obtain ⟨hle, hS'⟩ := state_le P
-  refine WP.mono (copy384_ok hL (a := 3072) (d := 0) (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (copy384_ok hL (a := 832) (d := 1216) (by decide) (by decide) (by decide) (by decide)
     hc) fun u ⟨hcu, hf, hb⟩ => ?_
   refine ⟨⟨hcu, hk, by simp, ?_, ?_⟩, hf, hS.frame hf fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
@@ -725,11 +728,11 @@ theorem restore_ok (hL : L.Ok) {k0 : List Byte} {t : State} (hc : Ctx L g m₀ t
   · rw [List.append_nil]; exact P.ok.stream.repr _ _ _ _ _ (fun i hi => byte_of_bytesAt hb (by omega_using [hle, hS', hi])) hS.1
   · exact P.ok.stream.repr _ _ _ _ _ (fun i hi => by
       have h := byte_of_bytesAt hb (i := 192 + i) (by omega_using [hle, hS', hi])
-      have e1 : L.scr + BitVec.ofNat 64 192 + BitVec.ofNat 64 i =
-          L.scr + BitVec.ofNat 64 0 + BitVec.ofNat 64 (192 + i) := by
-        rw [Offset.add_add, Offset.add_add, Nat.zero_add]
-      have e2 : L.scr + BitVec.ofNat 64 3264 + BitVec.ofNat 64 i =
-          L.scr + BitVec.ofNat 64 3072 + BitVec.ofNat 64 (192 + i) := by
+      have e1 : L.scr + BitVec.ofNat 64 1408 + BitVec.ofNat 64 i =
+          L.scr + BitVec.ofNat 64 1216 + BitVec.ofNat 64 (192 + i) := by
+        rw [Offset.add_add, Offset.add_add]; congr 2; omega_using []
+      have e2 : L.scr + BitVec.ofNat 64 1024 + BitVec.ofNat 64 i =
+          L.scr + BitVec.ofNat 64 832 + BitVec.ofNat 64 (192 + i) := by
         rw [Offset.add_add, Offset.add_add]; congr 2; omega_using []
       rw [e1, e2]; exact h) hS.2
 
@@ -769,7 +772,7 @@ theorem wd_kvw {dst : Nat} (h : dst + P.H.D ≤ 128) :
   kvw_of fun r hr => by
     simp only [W, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inl (Region.sub_prefix (by omega_using []))
+    · exact .inl (Offset.sub_base _ (by omega_using []))
     · exact .inr (Region.sub_prefix (by omega_using []))
     · exact .inr (Offset.sub_base _ (by omega_using [h]))
 
@@ -783,7 +786,7 @@ theorem kv_frame {dst : Nat} (hL : L.Ok) {m m' : Mem}
     have := L.he
     simp only [W, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact hL.stk_scr0 (by omega_using [hoe]) (by decide)
+    · exact hL.stk_scr (by omega_using [hoe]) (by decide)
     · exact Offset.disjoint_base _ ho (by anums)
     · exact Offset.disjoint _ hod (by omega_using [hoe]) (by omega_using [hdst])) (by anums)
 
@@ -797,12 +800,12 @@ theorem wd_save (hL : L.Ok) {dst : Nat} (hdst : dst + P.H.D ≤ 184) :
     exact (hL.stk_scr (by have := L.he; anums) (by decide)).symm
 
 /-- The message's bytes survive HMAC's writes. -/
-theorem msg_W (hL : L.Ok) {m m' : Mem} (hf : Frame (W L) m m') {len : Nat} (hlen : 2256 + len ≤ 8192) :
-    Spec.Sha256.bytesAt m' (L.scr + BitVec.ofNat 64 2256) len = Spec.Sha256.bytesAt m (L.scr + BitVec.ofNat 64 2256) len :=
+theorem msg_W (hL : L.Ok) {m m' : Mem} (hf : Frame (W L) m m') {len : Nat} (hlen : 16 + len ≤ 1216) :
+    Spec.Sha256.bytesAt m' (L.scr + BitVec.ofNat 64 16) len = Spec.Sha256.bytesAt m (L.scr + BitVec.ofNat 64 16) len :=
   bytesAt_frame hf (fun r hr => by
     simp only [W, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint_base _ (Nat.le_refl _) (by omega_using [hlen])
+    · exact Offset.disjoint _ (.inl (by omega_using [hlen])) (by omega_using [hlen]) (by omega_using [])
     · exact (hL.low_scr (by omega_using [hlen])).symm) (by omega_using [hlen])
 
 /-- `update` with `V`, then `finalize` into the frame at `dst`: `HMAC(K₀, V)`. -/
@@ -824,7 +827,7 @@ theorem vmfin_ok (hL : L.Ok) (hT : TabL P L) {k0 : List Byte} {u : State} (hu : 
     WP isa (.seq (cfgOf P).updV (.seq ((cfgOf P).updM len) ((cfgOf P).fin len fK))) u fun u' => Ctx L g m₀ u' ∧
       Frame (W L ++ [⟨L.B + BitVec.ofNat 64 (16 + fK), P.H.D⟩]) u.mem u'.mem ∧
       kOf P L u'.mem = Spec.Hmac.hmacBlockKey P.ok.SH.H k0
-        (vOf P L u.mem ++ Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 2256) len) := by
+        (vOf P L u.mem ++ Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 16) len) := by
   refine WP.seq (WP.mono (updV_step hL hT hu) fun w ⟨hw, hfw⟩ => ?_)
   refine WP.seq (WP.mono (updM_step hL hT hw (by simp [Spec.Sha256.bytesAt]) hlen) fun w' ⟨hw', hfw'⟩ => ?_)
   refine WP.mono (fin_step hL hT hw' (len := len) (dst := fK)
@@ -833,7 +836,7 @@ theorem vmfin_ok (hL : L.Ok) (hT : TabL P L) {k0 : List Byte} {u : State} (hu : 
       (hfw'.sub fun r hr => ⟨r, List.mem_append_left _ hr, sub_refl _⟩)).trans hf'
   · show Spec.Sha256.bytesAt u'.mem (L.B + BitVec.ofNat 64 16) P.H.D = _
     rw [show L.B + BitVec.ofNat 64 16 = L.B + BitVec.ofNat 64 (16 + fK) from rfl, hm',
-      show sMsg = 2256 from rfl, msg_W hL hfw (len := len) (by omega_using [hlen])]
+      show sMsg = 16 from rfl, msg_W hL hfw (len := len) (by omega_using [hlen])]
 
 /-- `V = HMAC_K(V)`, HMAC's states for `K` saved. -/
 theorem hmacVS_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) :
@@ -853,7 +856,7 @@ theorem hmacVS_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
       rcases List.mem_append.mp hr with hr | hr
       · simp only [W, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact hL.stk_scr0 (by have := L.he; anums) (by decide)
+        · exact hL.stk_scr (by have := L.he; anums) (by decide)
         · exact Offset.disjoint_base _ (by omega_using []) (by anums)
       · simp only [List.mem_singleton] at hr; subst hr
         exact hL.stk_scr (by have := L.he; anums) (by decide)) (by anums)
@@ -862,7 +865,7 @@ theorem hmacVS_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
       rcases List.mem_append.mp hr with hr | hr
       · simp only [W, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact hL.stk_scr0 (by have := L.he; anums) (by decide)
+        · exact hL.stk_scr (by have := L.he; anums) (by decide)
         · exact Offset.disjoint_base _ (by omega_using []) (by anums)
       · simp only [List.mem_singleton] at hr; subst hr
         exact hL.stk_scr (by have := L.he; anums) (by decide)) (by anums)
@@ -884,7 +887,7 @@ theorem hmacVR_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t)
       SavedK P L t'.mem (kOf P L t'.mem) := by
   refine WP.seq (WP.mono (restore_ok hL hc hS (blockKey_length (keyOf_length _))) fun u ⟨hu, hfu, hSu⟩ => ?_)
   refine WP.mono (vfin_ok hL hT hu (dst := fV) (by simp only [fV]; anums)) fun t' ⟨hc', hf', hm⟩ => ?_
-  have hR : Region.Disjoint ⟨L.B + BitVec.ofNat 64 16, 128⟩ ⟨L.scr + BitVec.ofNat 64 0, 8 * 48⟩ :=
+  have hR : Region.Disjoint ⟨L.B + BitVec.ofNat 64 16, 128⟩ ⟨L.scr + BitVec.ofNat 64 1216, 8 * 48⟩ :=
     hL.stk_scr (by have := L.he; anums) (by decide)
   have hk : kOf P L t'.mem = kOf P L t.mem := by
     show Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 16) P.H.D = _
@@ -905,22 +908,22 @@ theorem hmacVR_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t)
   · rw [hk]; exact hSu.frame hf' (wd_save hL (by simp only [fV]; anums))
 
 /-- `K = HMAC_K(V ‖ m)`, for the message `m` of `len` bytes at
-`scratch + 2256`, from HMAC's states for `K` by `init` or, if `fresh` is
+`scratch + sMsg`, from HMAC's states for `K` by `init` or, if `fresh` is
 false, from the saved ones. -/
 theorem hmacKB_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen : len ≤ 256)
     (fresh : Bool) (hS : fresh = false → SavedK P L t.mem (kOf P L t.mem)) :
     WP isa ((cfgOf P).hmacK fresh len) t fun t' =>
       Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧ vOf P L t'.mem = vOf P L t.mem ∧
       kOf P L t'.mem = P.mac (kOf P L t.mem)
-        (vOf P L t.mem ++ Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 2256) len) := by
+        (vOf P L t.mem ++ Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 16) len) := by
   have post : ∀ {u : State}, St P L g m₀ (Spec.Hmac.blockKey P.ok.SH.H (kOf P L t.mem)) [] u →
       ∀ {ws : List Region}, Frame ws t.mem u.mem → (∀ r ∈ ws, ∃ r' ∈ KVW L, Region.Sub r r') →
       (∀ r ∈ ws, Region.Disjoint ⟨L.B + BitVec.ofNat 64 80, P.H.D⟩ r) →
-      (∀ r ∈ ws, Region.Disjoint ⟨L.scr + BitVec.ofNat 64 2256, len⟩ r) →
+      (∀ r ∈ ws, Region.Disjoint ⟨L.scr + BitVec.ofNat 64 16, len⟩ r) →
       WP isa (.seq (cfgOf P).updV (.seq ((cfgOf P).updM len) ((cfgOf P).fin len fK))) u fun t' =>
         Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧ vOf P L t'.mem = vOf P L t.mem ∧
         kOf P L t'.mem = P.mac (kOf P L t.mem)
-          (vOf P L t.mem ++ Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 2256) len) := by
+          (vOf P L t.mem ++ Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 16) len) := by
     intro u hu ws hf hk hdv hdm
     refine WP.mono (vmfin_ok hL hT hu hlen) fun t' ⟨hc', hf', hm⟩ => ⟨hc', ?_, ?_, ?_⟩
     · exact (hf.sub hk).trans (hf'.sub (wd_kvw (P := P) (dst := fK) (by simp only [fK]; anums)))
@@ -929,8 +932,8 @@ theorem hmacKB_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
       exact bytesAt_frame hf hdv (by anums)
     · rw [hm]
       have hv : vOf P L u.mem = vOf P L t.mem := bytesAt_frame hf hdv (by anums)
-      have hmsg : Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 2256) len =
-          Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 2256) len := bytesAt_frame hf hdm (by omega_using [hlen])
+      have hmsg : Spec.Sha256.bytesAt u.mem (L.scr + BitVec.ofNat 64 16) len =
+          Spec.Sha256.bytesAt t.mem (L.scr + BitVec.ofNat 64 16) len := bytesAt_frame hf hdm (by omega_using [hlen])
       rw [hv, hmsg, mac_eq]
   cases fresh
   · refine WP.seq (WP.mono (restore_ok hL hc (hS rfl) (blockKey_length (keyOf_length _))) fun u ⟨hu, hfu, _⟩ => ?_)
@@ -939,15 +942,15 @@ theorem hmacKB_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
       simp only [List.mem_singleton] at hr <;> subst hr
     · exact ⟨L.SCR, by simp, Offset.sub_base _ (by decide)⟩
     · exact hL.stk_scr (by have := L.he; anums) (by decide)
-    · exact Offset.disjoint _ (by omega_using []) (by omega_using [hlen]) (by decide)
+    · exact Offset.disjoint _ (by omega_using [hlen]) (by omega_using [hlen]) (by decide)
   · refine WP.seq (WP.mono (init_step hL hT hc) fun u ⟨hu, hfu⟩ => ?_)
     refine post hu hfu (fun r hr => ?_) (fun r hr => ?_) (fun r hr => ?_) <;>
       simp only [W, List.mem_cons, List.not_mem_nil, or_false] at hr <;> rcases hr with rfl | rfl
-    · exact ⟨L.SCR, by simp, Region.sub_prefix (by omega_using [])⟩
+    · exact ⟨L.SCR, by simp, Offset.sub_base _ (by omega_using [])⟩
     · exact ⟨⟨L.B, 144⟩, by simp, Region.sub_prefix (by omega_using [])⟩
-    · exact hL.stk_scr0 (by have := L.he; anums) (by decide)
+    · exact hL.stk_scr (by have := L.he; anums) (by decide)
     · exact Offset.disjoint_base _ (by omega_using []) (by anums)
-    · exact Offset.disjoint_base _ (by decide) (by omega_using [hlen])
+    · exact Offset.disjoint _ (.inl (by omega_using [hlen])) (by omega_using [hlen]) (by omega_using [])
     · exact hL.low_scr (by omega_using [hlen]) |>.symm
 
 /-- What the steps need of the layout: the scalars' bytes, and the table of `P`. -/
@@ -966,7 +969,7 @@ theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {
   refine WP.seq (WP.mono (ptrs_ok hL hc) fun p ⟨hcp, hmp, h9p, h10p, h15p⟩ => ?_)
   rw [← hmp] at hS ⊢
   refine WP.seq (WP.mono (msg_ok (P := P) hL hq.1 hcp h9p h10p h15p b full) fun u ⟨hcu, hfu, hbu⟩ => ?_)
-  have hsafe : Region.Disjoint ⟨L.B + BitVec.ofNat 64 16, 128⟩ ⟨L.scr + BitVec.ofNat 64 2256, 1 + 2 * P.Q⟩ :=
+  have hsafe : Region.Disjoint ⟨L.B + BitVec.ofNat 64 16, 128⟩ ⟨L.scr + BitVec.ofNat 64 16, 1 + 2 * P.Q⟩ :=
     hL.stk_scr (by have := L.he; anums) (by anums)
   have hku : kOf P L u.mem = kOf P L p.mem := bytesAt_frame hfu (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
@@ -1023,7 +1026,7 @@ section
 As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Wide.lean`), for P-521 (`big`),
 whose scalars are longer than any digest and whose `n` has fewer bits than
 them: the `Q` bytes at an offset above the frame's pointers, shifted right
-in place through the words at `scratch + 2560` (`conv_ok`, by
+in place through the words at `scratch + sSlot` (`conv_ok`, by
 `loadBytes_ok`, `shrWords_ok` and `storeBytes_ok`, with `scratch` in `x0`),
 as for the candidate `T`'s first `Q` bytes (`candTop_ok`); zero words above
 the pointers (`zero9_ok`); and `genT` with one more `V` (`genT_succ`).
@@ -1068,11 +1071,11 @@ theorem keep_pres {rs : List Reg} {s s' : State} (h : KeepRegs rs s s') (hrs : �
   h.gpr r fun h' => hrs r h' hr
 
 /-- `conv o s`: the `Q` bytes at `sp + o`, in the frame's top bytes, shifted
-right by `s` bits in place, through the words at `scratch + 2560`. -/
+right by `s` bits in place, through the words at `scratch + sSlot`. -/
 theorem conv_ok (hL : L.Ok) (hW : P.R.big = true) {t : State} (hc : Ctx L g m₀ t)
     {o s : Nat} (ho₁ : 232 ≤ o) (ho₂ : o + 72 ≤ 600) (ho8 : o % 8 = 0) (hs₁ : 1 ≤ s) (hs₂ : s < 64) :
     WP isa ((cfgOf P).conv o s) t fun t' => Ctx L g m₀ t' ∧
-      Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (16 + o), P.Q⟩] t.mem t'.mem ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 320, 72⟩, ⟨L.B + BitVec.ofNat 64 (16 + o), P.Q⟩] t.mem t'.mem ∧
       Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 (16 + o)) P.Q =
         Spec.Weierstrass.toBytes P.Q
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 (16 + o)) P.Q) >>> s) := by
@@ -1094,13 +1097,13 @@ theorem conv_ok (hL : L.Ok) (hW : P.R.big = true) {t : State} (hc : Ctx L g m₀
     ⟨by rw [h₂.keep _ (by decide), h₁.val], by rw [hc₂.wr]; simp, nc, by decide⟩
   have hx6 : u₂.gpr .x6 = L.B + BitVec.ofNat 64 (16 + o) := h₂.val
   rw [WP.block_append_iff]
-  refine WP.mono_syms (loadBytes_ok hS₂ (len := 66) (n := 9) (o := 2560) (src := .x6) (by decide) (by decide)
+  refine WP.mono_syms (loadBytes_ok hS₂ (len := 66) (n := 9) (o := 320) (src := .x6) (by decide) (by decide)
     (by omega_arith) (by decide) (by decide) (by decide) (by decide) (by decide)
     (fun d hd => by rw [hx6, Offset.add_add]; exact hc₂.inFr (by omega_arith) (by omega_arith))
     (by rw [hx6]; exact (hL.stk_scr (by omega_arith) (by omega_arith)))) fun u₃ ⟨hv₃, k₃, O₃⟩ sy₃ => ?_
   rw [WP.block_append_iff]
   obtain hS₃ : Scr u₃ L.scr 8192 := ⟨by rw [k₃.gpr _ (by decide)]; exact hS₂.x0, k₃.wr ▸ hS₂.wr, nc, by decide⟩
-  refine WP.mono_syms (shrWords_ok hS₃ (n := 9) (o := 2560) (sh := s) (by omega_arith) (by decide) hs₁ hs₂)
+  refine WP.mono_syms (shrWords_ok hS₃ (n := 9) (o := 320) (sh := s) (by omega_arith) (by decide) hs₁ hs₂)
     fun u₄ ⟨hv₄, k₄, O₄⟩ sy₄ => ?_
   rw [WP.block_append_iff]
   refine WP.mono_syms (ones_ok u₄) fun u₅ ⟨h3₅, k₅, m₅, _⟩ sy₅ => ?_
@@ -1109,15 +1112,15 @@ theorem conv_ok (hL : L.Ok) (hW : P.R.big = true) {t : State} (hc : Ctx L g m₀
   obtain hx6₅ : u₅.gpr .x6 = L.B + BitVec.ofNat 64 (16 + o) := by
     rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (by decide), hx6]
   obtain hwr₅ : u₅.wr = u₂.wr := by rw [k₅.wr, k₄.wr, k₃.wr]
-  refine WP.mono_syms (storeBytes_ok hS₅ (len := 66) (n := 9) (d := 0) (a := 2560) (dst := .x6) (by decide)
+  refine WP.mono_syms (storeBytes_ok hS₅ (len := 66) (n := 9) (d := 0) (a := 320) (dst := .x6) (by decide)
     (by decide) (by decide) true (by rw [h3₅]; rfl) (by omega_arith) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by rw [hx6₅, add_ofNat_zero, toNat_add_of (by omega_arith)]; omega_arith)
     (fun e m hem => by
       rw [hx6₅, add_ofNat_zero, Offset.add_add, hwr₅]; exact hc₂.inFrW (by omega_arith) (by omega_arith))
     (by rw [hx6₅, add_ofNat_zero]; exact (hL.stk_scr (by omega_arith) (by omega_arith)).symm)) fun u₆ ⟨hb₆, k₆, O₆⟩ sy₆ => ?_
   rw [hx6₅, add_ofNat_zero] at hb₆ O₆
-  -- What changed: the words at `scratch + 2560`, and the bytes converted.
-  obtain hf : Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (16 + o), 66⟩] t.mem u₆.mem := by
+  -- What changed: the words at `scratch + sSlot`, and the bytes converted.
+  obtain hf : Frame [⟨L.scr + BitVec.ofNat 64 320, 72⟩, ⟨L.B + BitVec.ofNat 64 (16 + o), 66⟩] t.mem u₆.mem := by
     obtain f₃ := frame_of_outside (O₃.trans O₄) (by omega_arith)
     obtain f₆ := frame_of_outside O₆ (by omega_arith)
     rw [add_ofNat_zero, m₅] at f₆
@@ -1224,7 +1227,7 @@ theorem genT_length (P : RfcHash) (K : List Byte) : ∀ (k : Nat) (V : List Byte
 theorem candTop_ok (hL : L.Ok) (hW : P.R.big = true) (hsh : P.R.sh ≠ 0) (hsh8 : P.R.sh < 8) {t : State}
     (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).candTop t fun u => Ctx L g m₀ u ∧
-      Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (16 + fT), P.Q⟩] t.mem u.mem ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 320, 72⟩, ⟨L.B + BitVec.ofNat 64 (16 + fT), P.Q⟩] t.mem u.mem ∧
       Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 (16 + fT)) P.Q =
         Spec.Weierstrass.toBytes P.Q
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 (16 + fT)) P.Q) >>> P.R.sh) := by
@@ -1396,7 +1399,7 @@ theorem shift_back (e sh : Nat) (hs : sh < 8) : (e * 2 ^ 8) >>> (8 - sh) = e * 2
 theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.H.D ≤ dn) {t : State}
     (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).prepC t fun u => Ctx L g m₀ u ∧
-      Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (16 + fXc), 72⟩] t.mem u.mem ∧
+      Frame [⟨L.scr + BitVec.ofNat 64 320, 72⟩, ⟨L.B + BitVec.ofNat 64 (16 + fXc), 72⟩] t.mem u.mem ∧
       Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 (16 + fXc)) P.Q =
         Spec.Weierstrass.toBytes P.Q
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem L.dg P.H.D) * 2 ^ P.R.sh) := by

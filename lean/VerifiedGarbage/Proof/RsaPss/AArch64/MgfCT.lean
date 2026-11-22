@@ -80,7 +80,7 @@ theorem pins_nil {α : Type} {Φ : α → State → Prop} (h : ∀ a s₁ s₂, 
 /-- A hash function with every size zero and no code: the code that depends
 on a hash function only through its immediates is, without them, that of
 `zH` (`Code.eraseOff`), which the taint analysis evaluates. -/
-def zH : Hash := ⟨⟨0, 0, 0, 0, [], []⟩, 0, 0, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
+def zH : Hash := ⟨⟨0, 0, 0, 0, [], []⟩, 0, 0, "", .block [], "", .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 /-- What two runs of `ctHashWith` share. -/
 structure HA where
@@ -637,7 +637,7 @@ variable {G : Impl.Pbkdf2.Md.AArch64.Stream} (hG : VG.Proof.Pbkdf2.Md.AArch64.Ca
 
 /-- A hash function with no sizes, for the taint analysis of MGF1's
 arguments without their immediates. -/
-def zH' : Hash := ⟨⟨0, 0, 0, 0, [], []⟩, 0, 0, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
+def zH' : Hash := ⟨⟨0, 0, 0, 0, [], []⟩, 0, 0, "", .block [], "", .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 include hG in
 theorem mgfXor_ct {H : Hash} : RelCT isa (Two (MS G g H.D)) (mgfXor H g) fun _ _ => True := by

@@ -72,6 +72,7 @@ def hash (v : Compress) : Hash where
   updN := "vg_sha256_update_scratch" ++ v.suffix
   finN := "vg_sha256_finalize_scratch" ++ v.suffix
   hmacInitN := "vg_hmac_sha224_init_scratch" ++ v.suffix
+  hmacInitAnyN := "vg_hmac_sha224_init_any_scratch" ++ v.suffix
   hmacFinN := "vg_hmac_sha224_finalize_scratch" ++ v.suffix
   iterN := "vg_pbkdf2_hmac_sha224_iterate" ++ v.suffix
 
@@ -79,7 +80,7 @@ def hash (v : Compress) : Hash where
 `so` bytes of scratch space. -/
 def coreHS (so : Nat) : Hash :=
   ⟨Proof.Sha256.X86_64.Stream.paramsS so, 28, Hash.wOf (Proof.Sha256.X86_64.Stream.paramsS so), "", .block [],
-    "", .block [], "", "", "", "", "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
+    "", .block [], "", "", "", "", "", Proof.Pbkdf2.Md.X86_64.coreBoth, ""⟩
 
 /-- The scratch space the implementations use. -/
 abbrev SoOk (so : Nat) : Prop := so = 0 ∨ so = 112 ∨ so = 560
@@ -128,7 +129,7 @@ theorem coreOKS (so : Nat) (h : SoOk so) : CoreOK (coreHS so) := by
   taint_decide_all
 
 theorem anyOKS (so : Nat) (h : SoOk so) : Any.AnyOK (coreHS so) := by
-  rcases h with rfl | rfl | rfl <;> refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+  rcases h with rfl | rfl | rfl <;> refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   taint_decide_all
 
 variable (v : Compress)

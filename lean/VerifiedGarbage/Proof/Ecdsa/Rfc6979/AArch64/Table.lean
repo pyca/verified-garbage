@@ -1254,7 +1254,7 @@ def TabFn (P : RfcHash) (j : Nat) (n : String) (c : Prog isa) (ts : List (String
     m₀.readW (L.tab + BitVec.ofNat 64 (8 * j)) 64 = t.syms n ∧
       ts.find? (fun q => t.syms q.1 == t.syms n) = some (n, c) ∧ t.syms n = L.fa n
 
-theorem tfn_init : TabFn P 0 P.H.hmacInitN P.H.hmacInit P.f.init := fun L _ _ _ _ hk hc => by
+theorem tfn_init : TabFn P 0 P.H.hmacInitAnyN P.H.hmacInitAny P.f.init := fun L _ _ _ _ hk hc => by
   have hok := hc.tabOk; have htm := hc.tabMem; have hf := hc.fsy
   rw [hk.2.1, hk.2.2] at hok; rw [hk.2.1] at htm hf
   exact ⟨htm.1, hok.i, hf _ (by simp)⟩
@@ -1319,22 +1319,22 @@ theorem tcall_piece {Φ Ψ : Pr P} {j : Nat} (hj : 8 * j + 8 ≤ 48) {n : String
 
 /-- HMAC's `init`'s arguments. -/
 def IA (P : RfcHash) : Pr P := fun L _ u =>
-  u.gpr .x0 = L.scr + BitVec.ofNat 64 0 ∧ u.gpr .x1 = L.scr + BitVec.ofNat 64 192 ∧
+  u.gpr .x0 = L.scr + BitVec.ofNat 64 1216 ∧ u.gpr .x1 = L.scr + BitVec.ofNat 64 1408 ∧
     u.gpr .x2 = L.B + BitVec.ofNat 64 16 ∧ u.gpr .x3 = BitVec.ofNat 64 P.H.D ∧
-    u.gpr .x4 = L.scr + BitVec.ofNat 64 384
+    u.gpr .x4 = L.scr + BitVec.ofNat 64 1600
 
 /-- The streaming `update`'s arguments: the inner state holding `cnt`
 bytes, the `len` bytes at `da`, and the working space. -/
 def UA (P : RfcHash) (cnt : Nat) (da : Lay P.I.hashLen P.R.E → Addr) (len : Nat) : Pr P := fun L _ u =>
-  u.gpr .x0 = L.scr + BitVec.ofNat 64 0 ∧ u.gpr .x1 = BitVec.ofNat 64 cnt ∧ u.gpr .x2 = da L ∧
-    u.gpr .x3 = BitVec.ofNat 64 len ∧ u.gpr .x4 = L.scr + BitVec.ofNat 64 384
+  u.gpr .x0 = L.scr + BitVec.ofNat 64 1216 ∧ u.gpr .x1 = BitVec.ofNat 64 cnt ∧ u.gpr .x2 = da L ∧
+    u.gpr .x3 = BitVec.ofNat 64 len ∧ u.gpr .x4 = L.scr + BitVec.ofNat 64 1600
 
 /-- HMAC's `finalize`'s arguments: the states, the `cnt` bytes the inner one
 holds, the MAC's place in the frame at `dst`, and the working space. -/
 def FA (P : RfcHash) (cnt dst : Nat) : Pr P := fun L _ u =>
-  u.gpr .x0 = L.scr + BitVec.ofNat 64 0 ∧ u.gpr .x1 = L.scr + BitVec.ofNat 64 192 ∧
+  u.gpr .x0 = L.scr + BitVec.ofNat 64 1216 ∧ u.gpr .x1 = L.scr + BitVec.ofNat 64 1408 ∧
     u.gpr .x2 = BitVec.ofNat 64 cnt ∧ u.gpr .x3 = L.B + BitVec.ofNat 64 (16 + dst) ∧
-    u.gpr .x4 = L.scr + BitVec.ofNat 64 384
+    u.gpr .x4 = L.scr + BitVec.ofNat 64 1600
 
 theorem ce_sp_two {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {t₁ t₂ : State} {g₁ g₂ : Reg → BitVec 64}
     {m₁ m₂ : Mem} (c₁ : Ctx L g₁ m₁ t₁) (c₂ : Ctx L g₂ m₂ t₂) (rd₁ wr₁ rd₂ wr₂ : List Region) :
@@ -1347,25 +1347,26 @@ theorem ce_two {t₁ t₂ : State} {r : Reg} (hr : r ∉ linkRegs) {x : BitVec 6
   rw [ce_gpr _ _ _ hr, ce_gpr _ _ _ hr, h₁, h₂]
 
 theorem scr_sub {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {r : Region}
-    (h : Region.Sub r ⟨L.scr, 2256⟩) : Safe L r :=
-  .inr (.inl (sub_trans h (Region.sub_prefix (by omega_using []))))
+    (h : Region.Sub r ⟨L.scr + BitVec.ofNat 64 1216, 3792⟩) : Safe L r :=
+  .inr (.inl (sub_trans h (Offset.sub_base _ (by omega_using []))))
 
-theorem hinit_piece : Piece P (IA P) (.call P.H.hmacInitN P.H.hmacInit) (Tt P) := by
-  refine Piece.of (AArch64.RelCT.callEx P.hI.1 P.hI.2.1 fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, _, c₁, c₂, a₁, a₂⟩ => by
+theorem hinit_piece : Piece P (IA P) (.call P.H.hmacInitAnyN P.H.hmacInitAny) (Tt P) := by
+  refine Piece.of (AArch64.RelCT.callEx P.A.1 P.A.2.1 fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, _, c₁, c₂, a₁, a₂⟩ => by
     obtain ⟨d₁, s₁, x₁, k₁, r₁⟩ := a₁
     obtain ⟨d₂, s₂, x₂, k₂, r₂⟩ := a₂
-    have A₁ := initA (P := P) hL c₁ d₁ s₁ x₁ k₁ r₁
-    have A₂ := initA (P := P) hL c₂ d₂ s₂ x₂ k₂ r₂
-    exact ⟨_, _, _, _, Pbkdf2.Md.AArch64.Pbk.InitArgs.pre P.ok A₁, Pbkdf2.Md.AArch64.Pbk.InitArgs.pre P.ok A₂,
+    have A₁ := anyA (P := P) hL c₁ d₁ s₁ x₁ k₁ r₁
+    have A₂ := anyA (P := P) hL c₂ d₂ s₂ x₂ k₂ r₂
+    exact ⟨_, _, _, _, Pbkdf2.Md.AArch64.Any.AnyArgs.pre P.ok A₁, Pbkdf2.Md.AArch64.Any.AnyArgs.pre P.ok A₂,
       ⟨ce_two (by decide) d₁ d₂ _ _ _ _, ce_two (by decide) s₁ s₂ _ _ _ _, ce_two (by decide) x₁ x₂ _ _ _ _,
         ce_two (by decide) k₁ k₂ _ _ _ _, ce_two (by decide) r₁ r₂ _ _ _ _, ce_sp_two c₁ c₂ _ _ _ _⟩,
       Pbkdf2.Md.AArch64.Pbk.covers_app A₁.cr A₁.cw, A₁.cw, Pbkdf2.Md.AArch64.Pbk.covers_app A₂.cr A₂.cw, A₂.cw⟩)
     fun L g m₀ u hL _ hc a => ?_
   obtain ⟨d, s, x, k, r⟩ := a
-  refine Pbkdf2.Md.AArch64.Pbk.hinit_call P.ok P.hI P.hId (initA (P := P) hL hc d s x k r)
+  refine Pbkdf2.Md.AArch64.Any.any_call P.ok P.A P.Ad (anyA (P := P) hL hc d s x k r)
     fun u' ha _ _ => ⟨hc.after hL ha fun r hr => scr_sub ?_, trivial⟩
+  have hWA := P.hWA
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> exact scr_work (by anums)
+  rcases hr with rfl | rfl | rfl <;> exact scr_work (by anums) (by anums)
 
 theorem upd_piece {cnt : Nat} {da : Lay P.I.hashLen P.R.E → Addr} {len : Nat}
     (hd : ∀ L : Lay P.I.hashLen P.R.E, L.Ok → DataOk L (da L) len) (hlen : len ≤ 256) :
@@ -1386,7 +1387,7 @@ theorem upd_piece {cnt : Nat} {da : Lay P.I.hashLen P.R.E → Addr} {len : Nat}
   refine Pbkdf2.Md.AArch64.Calls.upd_call P.ok.stream (updA (P := P) hL hc (hd L hL) hlen d x k r)
     fun u' af _ => ⟨hc.after hL af fun r hr => scr_sub ?_, trivial⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact scr_work (by anums)
+  rcases hr with rfl | rfl <;> exact scr_work (by anums) (by anums)
 
 theorem hfin_piece {cnt dst : Nat} (hdst : dst + P.H.D ≤ 184) :
     Piece P (FA P cnt dst) (.call P.H.hmacFinN P.H.hmacFin) (Tt P) := by
@@ -1405,9 +1406,9 @@ theorem hfin_piece {cnt dst : Nat} (hdst : dst + P.H.D ≤ 184) :
     fun u' ha _ => ⟨hc.after hL ha fun r hr => ?_, trivial⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact scr_sub (scr_work (by anums))
+  · exact scr_sub (scr_work (by anums) (by anums))
   · exact safe_low L (by anums)
-  · exact scr_sub (scr_work (by anums))
+  · exact scr_sub (scr_work (by anums) (by anums))
 
 theorem r16_ia : R16 (IA P) := fun _ _ _ _ ⟨d, s, x, k, r⟩ hr _ _ => ⟨(hr _ (by decide)).trans d,
   (hr _ (by decide)).trans s, (hr _ (by decide)).trans x, (hr _ (by decide)).trans k, (hr _ (by decide)).trans r⟩
@@ -1499,11 +1500,11 @@ theorem copy384_piece {Φ : Pr P} {a d : Nat} (ha : a < 4096) (hd : d < 4096) (h
 
 /-- HMAC's states saved. -/
 theorem save_piece {Φ : Pr P} : Piece P Φ Cfg.save (Tt P) :=
-  copy384_piece (a := 0) (d := 3072) (by decide) (by decide) (by decide) (by decide) ⟨_, by taint_decide⟩
+  copy384_piece (a := 1216) (d := 832) (by decide) (by decide) (by decide) (by decide) ⟨_, by taint_decide⟩
 
 /-- HMAC's states restored. -/
 theorem restore_piece {Φ : Pr P} : Piece P Φ Cfg.restore (Tt P) :=
-  copy384_piece (a := 3072) (d := 0) (by decide) (by decide) (by decide) (by decide) ⟨_, by taint_decide⟩
+  copy384_piece (a := 832) (d := 1216) (by decide) (by decide) (by decide) (by decide) ⟨_, by taint_decide⟩
 
 /-! ## HMAC -/
 
@@ -1880,7 +1881,7 @@ theorem save_taint : TaintOk [] Cfg.saveArgs := ⟨_, by taint_decide⟩
 /-- Saving the arguments: the runs have the same layout, and stop at the same
 candidate (with the addresses of the hash function's HMAC functions among
 `ns`). -/
-theorem save_ct {ns : List String} (hns : ∀ n ∈ [P.H.hmacInitN, P.H.updN, P.H.hmacFinN], n ∈ ns) :
+theorem save_ct {ns : List String} (hns : ∀ n ∈ [P.H.hmacInitAnyN, P.H.updN, P.H.hmacFinN], n ∈ ns) :
     RelCT isa (Entered P ns) (.block Cfg.saveArgs) (Two P (Tt P)) := by
   intro a b ta tb a' b' ⟨s₁, s₂, h₁, h₂, ⟨hsp, h0, h1, h2, h4, h5, hres, hsy, hns'⟩, ea, eb⟩ e₁ e₂
   subst ea eb
@@ -1894,8 +1895,8 @@ theorem save_ct {ns : List String} (hns : ∀ n ∈ [P.H.hmacInitN, P.H.updN, P.
   obtain ⟨_, u₂, x₂, c₂⟩ := save_ctx h₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  have hfa : (fun n => if n ∈ [P.H.hmacInitN, P.H.updN, P.H.hmacFinN] then s₁.syms n else 0) =
-      fun n => if n ∈ [P.H.hmacInitN, P.H.updN, P.H.hmacFinN] then s₂.syms n else 0 :=
+  have hfa : (fun n => if n ∈ [P.H.hmacInitAnyN, P.H.updN, P.H.hmacFinN] then s₁.syms n else 0) =
+      fun n => if n ∈ [P.H.hmacInitAnyN, P.H.updN, P.H.hmacFinN] then s₂.syms n else 0 :=
     funext fun n => by
       split
       · next h => exact hns' n (hns n h)
@@ -1910,7 +1911,7 @@ theorem save_ct {ns : List String} (hns : ∀ n ∈ [P.H.hmacInitN, P.H.updN, P.
 /-- Runs whose public data agree (with the addresses of the hash function's
 HMAC functions among `ns`) have the same layout, and stop at the same
 candidate. -/
-theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.H.hmacInitN, P.H.updN, P.H.hmacFinN], n ∈ ns) :
+theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.H.hmacInitAnyN, P.H.updN, P.H.hmacFinN], n ∈ ns) :
     ConstantTime isa (rfcP P ns).pre (rfcP P ns).pub (cfgOf P).sign := by
   refine VG.RelCT.constantTime (Q := fun _ _ => True) (RelCT.pushFrame (R := fun _ _ => True)
     (fun _ _ h => h.2.2.1) (RelCT.alloc (R := fun _ _ => True) ?_))
@@ -1980,7 +1981,7 @@ def WOk (w : MdHash) : Prop :=
   (match Spec.HmacTable.hmacOf w.mgf.G with
     | some F => F.blockSize = w.H.P.B
     | none => False) ∧
-  (w.H.D, w.H.P.B) ∈ shapes ∧ 8 * w.H.W ≤ 1872 ∧ w.ok.stream.Wb ≤ 1872
+  (w.H.D, w.H.P.B) ∈ shapes ∧ 8 * w.H.W ≤ 1872 ∧ w.ok.stream.Wb ≤ 1872 ∧ 8 * (w.H.W + w.H.S) ≤ 3408
 
 instance (w : MdHash) : Decidable (WOk w) := by
   unfold WOk; cases Spec.HmacTable.hmacOf w.mgf.G <;> infer_instance
@@ -2036,7 +2037,6 @@ def hashOf {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R 
   H := w.H
   ok := w.ok
   C := w.C
-  satI := by rw [w.hSH, w.hW]; exact w.hmacInit.2.2
   satF := by rw [w.hSH, w.hW]; exact w.hmacFin.2.2
   f := fnsOf vs
   ecdsa := hC.ecdsa
@@ -2047,7 +2047,10 @@ def hashOf {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R 
   hDB := hw.2.1
   hS := by have := w.ok.N_le; have := w.ok.B_le; show _ + _ ≤ 192; omega_arith
   hW := hw.2.2.1
-  hWb := hw.2.2.2
+  hWb := hw.2.2.2.1
+  A := w.hmacAny
+  Ad := w.hmacAnyD
+  hWA := hw.2.2.2.2
 
 /-- The body for `w`'s hash function is the same as for every other. -/
 theorem cfgT_eq {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R T) (vs : List MdHash)
@@ -2259,7 +2262,7 @@ theorem signT_ct (hC : CurveT R T) :
   refine entry_ct.seq ?_
   intro u₁ u₂ t₁ t₂ u₁' u₂' ⟨σ₁, σ₂, ⟨_, _, w, hv, hw, p₁, p₂, hpub⟩, f₁, f₂⟩ e₁ e₂
   rw [cfgT_eq hC vs hw] at e₁ e₂
-  have hns : ∀ n ∈ [(hashOf hC vs w hw).H.hmacInitN, (hashOf hC vs w hw).H.updN,
+  have hns : ∀ n ∈ [(hashOf hC vs w hw).H.hmacInitAnyN, (hashOf hC vs w hw).H.updN,
       (hashOf hC vs w hw).H.hmacFinN], n ∈ names vs := by
     have := mem_names hv
     intro n hn
@@ -2283,7 +2286,7 @@ theorem signT_ct (hC : CurveT R T) :
 
 theorem fnsOk_of (vs : List MdHash) : FnsOk (fnsOf vs).init ∧ FnsOk (fnsOf vs).upd ∧ FnsOk (fnsOf vs).fin := by
   refine ⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩ <;> obtain ⟨w, -, rfl⟩ := List.mem_map.mp hq
-  · exact w.ok.hmacInit_keepsV
+  · exact Proof.Pbkdf2.Md.AArch64.Any.hmacInitAny_keepsV w.ok
   · exact w.ok.updKeepsV
   · exact w.ok.hmacFin_keepsV
 

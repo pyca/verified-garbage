@@ -57,7 +57,8 @@ theorem scrypt_fill (c : Proof.Sha256.X86_64.Compress) (R : RMImpl) {k : Nat} {s
         initC := Impl.Sha256.X86_64.Stream.init, updN := "vg_sha256_update_scratch" ++ c.suffix,
         finN := "vg_sha256_finalize_scratch" ++ c.suffix, hmacInitN := "vg_hmac_sha256_init_scratch" ++ c.suffix,
         hmacFinN := "vg_hmac_sha256_finalize_scratch" ++ c.suffix,
-        iterN := "vg_pbkdf2_hmac_sha256_iterate" ++ c.suffix } := by
+        iterN := "vg_pbkdf2_hmac_sha256_iterate" ++ c.suffix,
+        hmacInitAnyN := "vg_hmac_sha256_init_any_scratch" ++ c.suffix } := by
     simp only [Proof.Pbkdf2.Md.X86_64.Sha256.hash, hso]
   rw [this]
   fill_calls

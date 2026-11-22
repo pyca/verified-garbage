@@ -406,6 +406,18 @@ pub(crate) mod vg_hmac_sha512_256_finalize_scratch_avx2;
 pub(crate) mod vg_hmac_sha512_256_finalize_scratch_shani;
 
 #[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_256_init_any_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_init_any_scratch_avx2.rs"]
+pub(crate) mod vg_hmac_sha512_256_init_any_scratch_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_256_init_any_scratch_shani.rs"]
+pub(crate) mod vg_hmac_sha512_256_init_any_scratch_shani;
+
+#[rustfmt::skip]
 #[path = "internal/vg_hmac_sha512_256_init_scratch.rs"]
 pub(crate) mod vg_hmac_sha512_256_init_scratch;
 

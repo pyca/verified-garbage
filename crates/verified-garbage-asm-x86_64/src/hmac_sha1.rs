@@ -332,6 +332,18 @@ pub(crate) mod vg_hmac_sha1_finalize_scratch_avx_bmi;
 pub(crate) mod vg_hmac_sha1_finalize_scratch_shani;
 
 #[rustfmt::skip]
+#[path = "internal/vg_hmac_sha1_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_sha1_init_any_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha1_init_any_scratch_avx_bmi.rs"]
+pub(crate) mod vg_hmac_sha1_init_any_scratch_avx_bmi;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha1_init_any_scratch_shani.rs"]
+pub(crate) mod vg_hmac_sha1_init_any_scratch_shani;
+
+#[rustfmt::skip]
 #[path = "internal/vg_hmac_sha1_init_scratch.rs"]
 pub(crate) mod vg_hmac_sha1_init_scratch;
 

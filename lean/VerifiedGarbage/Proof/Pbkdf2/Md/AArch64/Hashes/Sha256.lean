@@ -53,10 +53,11 @@ def hash (v : Compress) : Hash where
   hmacInitN := "vg_hmac_sha256_init_scratch" ++ v.suffix
   hmacFinN := "vg_hmac_sha256_finalize_scratch" ++ v.suffix
   iterN := "vg_pbkdf2_hmac_sha256_iterate" ++ v.suffix
+  hmacInitAnyN := "vg_hmac_sha256_init_any_scratch" ++ v.suffix
 
 /-- `hash` without the functions it calls. -/
 def coreH : Hash := ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha256.AArch64.Stream.params, 32, 104, "", .block [], "",
-  .block [], "", .block [], "", .block [], "", "", ""⟩
+  .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 theorem coreOK : CoreOK coreH := by
   refine {

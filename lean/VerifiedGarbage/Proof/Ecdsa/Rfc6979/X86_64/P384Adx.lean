@@ -176,7 +176,7 @@ theorem p384_stub (adx : Bool) (hL : Weierstrass.Law Spec.P384.curve) (hT : Weie
 /-- `vg_ecdsa_p384_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
 cleanup included, meets its contract in constant time and returns without secret residue. -/
 theorem p384T_scrubbed (adx : Bool) (hL : Weierstrass.Law Spec.P384.curve) (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P384_COMB" ∉ Proof.HmacTable.X86_64.names vs)
-    (hu : ∀ w ∈ vs, HmacUp w) :
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
     VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p384Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs))
       (specK Spec.Ecdsa.Rfc6979.Curves.p384 Impl.Ecdsa.X86_64.p384.combConsts vs) 32 :=
   sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p384SignApi)

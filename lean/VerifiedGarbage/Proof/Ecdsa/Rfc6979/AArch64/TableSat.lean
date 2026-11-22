@@ -75,7 +75,7 @@ def satT (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q : Nat) (Tr : List Regio
     | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x3 => BitVec.ofNat 64 w.H.D | .x4 => 0x8000
     | .x5 => 0x300000 | _ => 0
   sp := 0x20000
-  mem := put6 m₀ 0x300000 (symT vs w.H.hmacInitN) (symT vs w.H.updN) (symT vs w.H.hmacFinN)
+  mem := put6 m₀ 0x300000 (symT vs w.H.hmacInitAnyN) (symT vs w.H.updN) (symT vs w.H.hmacFinN)
     (BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G)) (BitVec.ofNat 64 w.mgf.G.len)
     (BitVec.ofNat 64 (Spec.HmacTable.blockSize w.mgf.G))
   rd := [⟨0x2000, Q⟩, ⟨0x3000, w.H.D⟩, ⟨0x300000, 48⟩] ++ Tr
@@ -84,7 +84,7 @@ def satT (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q : Nat) (Tr : List Regio
 
 theorem satT_held (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q : Nat) (Tr : List Region) :
     Abi.tableHeld 64 (satT vs w m₀ Q Tr).mem 0x300000 (FnTable.words isa (satT vs w m₀ Q Tr) (tableOf w)) :=
-  put6_held (ws := [symT vs w.H.hmacInitN, symT vs w.H.updN, symT vs w.H.hmacFinN,
+  put6_held (ws := [symT vs w.H.hmacInitAnyN, symT vs w.H.updN, symT vs w.H.hmacFinN,
     BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G), BitVec.ofNat 64 w.mgf.G.len,
     BitVec.ofNat 64 (Spec.HmacTable.blockSize w.mgf.G)]) rfl
 

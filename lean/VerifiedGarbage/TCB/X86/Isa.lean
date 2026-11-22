@@ -66,6 +66,25 @@ Modelling choices:
   changes `syms`. The CALL rel32 with displacement zero does not push a
   shadow-stack entry (SDM Vol. 2, CALL pseudocode, `DEST != 0`), so the
   sequence also works with CET shadow stacks enabled.
+* A table of constants an instruction carries (`movdquTbl` and `movqTbl`,
+  its name and its words) is the `static` of that name the emitter writes
+  from it (`TCB/Rust.lean`), as x86-64's `movdquTbl` is
+  (`TCB/X86_64/Isa.lean`): for the whole run of the program it is mapped
+  readable at `State.syms name` and holds exactly those words, 8 bytes each,
+  little-endian, and does not wrap around the address space; and no memory
+  any code writes overlaps it: no region a contract lets a function write,
+  nor the stack. This is what a Rust `static` without interior mutability
+  is: an immutable object, which the linker places in read-only memory,
+  apart from every other object and from the stack, and which no `&mut`
+  (safe Rust cannot make one to it) nor any other pointer the program may
+  write through can reach. So the model reads the words from the
+  instruction rather than from `State.mem`, whose writes never reach it,
+  and no contract states any of this. The printed load reads wherever its
+  base register points, so the model faults unless that register holds
+  `State.syms name`, which `symPush` puts in a register: an instruction
+  that executes reads the static. Its address, fixed when the program is
+  loaded, does not depend on the data the code works on: an access to it
+  is observed (`addrs`) as its offset in the table.
 * `push` and `pop` (of registers other than `esp`) only occur as the push
   and pop of a frame (see `push`), as a sequence of them.
 * A frame may instead allocate a buffer of `bytes` bytes on the stack
@@ -207,6 +226,15 @@ inductive Instr
   /-- `movq QWORD PTR [m], xmm` (66 0F D6 /r): a 64-bit store of the low
   quadword. -/
   | movqStore (dst : MemOp) (src : XReg)
+  /-- `movdqu xmm, XMMWORD PTR [m]` (F3 0F 6F /r, as `movdquLoad`), whose
+  base register holds the address of the `static` `name`, whose words are
+  `words`: the emitter writes that static from this instruction
+  (`TCB/Rust.lean`), as x86-64's `movdquTbl`. -/
+  | movdquTbl (dst : XReg) (m : MemOp) (name : String) (words : List (BitVec 64))
+  /-- `movq xmm, QWORD PTR [m]` (F3 0F 7E /r, as `movqLoad`), whose base
+  register holds the address of the `static` `name`, whose words are
+  `words`, as for `movdquTbl`. -/
+  | movqTbl (dst : XReg) (m : MemOp) (name : String) (words : List (BitVec 64))
   /-- A legacy SSE instruction that writes only an XMM register. -/
   | xop (op : XOp)
   /-- An MMX instruction that writes only an MMX or XMM register
@@ -350,6 +378,31 @@ def exec : Instr → State → Option State
   | .movdquStore m r, s => s.store128 (s.ea m) (s.xmm r)
   | .movqLoad d m, s => (s.load64 (s.ea m)).map fun v => s.setXmm d ((0 : BitVec 64) ++ v)
   | .movqStore m r, s => s.store64 (s.ea m) ((s.xmm r).extractLsb' 0 64)
+  -- `movdquTbl`: SDM Vol. 2, "MOVDQU—Move Unaligned Packed Integer Values",
+  -- `MOVDQU xmm1, xmm2/m128` (F3 0F 6F /r, SSE2): `DEST[127:0] :=
+  -- SRC[127:0]`, as `movdquLoad d m` (no alignment is required; "Flags
+  -- Affected: None"), its source the 16 bytes at `m`, little-endian (SDM
+  -- Vol. 1 §1.3.1): when `m`'s base register holds the static's address and
+  -- `m`'s displacement, the offset in the table, is a multiple of 8 with
+  -- two words of the table from there, words `disp / 8` and `disp / 8 + 1`
+  -- of the static `name` (bits 63:0 the first); otherwise it faults. The
+  -- static is the immutable object of these words the emitter writes (see
+  -- the module docs), so the bytes there are always these.
+  | .movdquTbl d m name ws, s =>
+    if s.gpr m.base = s.syms name ∧ m.disp % 8 = 0 ∧ m.disp / 8 + 2 ≤ ws.length then
+      some (s.setXmm d (ws.getD (m.disp / 8 + 1) 0 ++ ws.getD (m.disp / 8) 0))
+    else none
+  -- `movqTbl`: SDM Vol. 2, "MOVQ—Move Quadword", `MOVQ xmm1, xmm2/m64`
+  -- (F3 0F 7E /r, SSE2), "MOVQ instruction when the source operand is XMM
+  -- register or m64 and destination operand is XMM register": `DEST[63:0]
+  -- := SRC[63:0]; DEST[127:64] := 0000000000000000H`, as `movqLoad d m`,
+  -- its source the 8 bytes at `m`, little-endian: under the same conditions
+  -- on the base register and the displacement, with one word of the table
+  -- there, word `disp / 8` of the static `name`; otherwise it faults.
+  | .movqTbl d m name ws, s =>
+    if s.gpr m.base = s.syms name ∧ m.disp % 8 = 0 ∧ m.disp / 8 < ws.length then
+      some (s.setXmm d ((0 : BitVec 64) ++ ws.getD (m.disp / 8) 0))
+    else none
   | .xop op, s => some (op.exec s)
   | .mop op, s => op.exec s
   | .mmxStore m r, s => if s.mmx then s.store64 (s.ea m) (s.mm r) else none
@@ -380,6 +433,10 @@ def addrs : Instr → State → List Addr
   | .mcdtLeave, s => [(s.gpr .esp + 4).setWidth 64]
   | .movdquLoad _ m, s | .movdquStore m _, s => [s.ea m]
   | .movqLoad _ m, s | .movqStore m _, s => [s.ea m]
+  -- A table an instruction carries is observed as the offset in the table,
+  -- a constant of the instruction: the table's address does not depend on
+  -- the data (see the module docs).
+  | .movdquTbl _ m .., _ | .movqTbl _ m .., _ => [BitVec.ofNat 64 m.disp]
   | .push rs, s => (List.range rs.length).map fun i =>
     (s.gpr .esp - BitVec.ofNat 32 (4 * (i + 1))).setWidth 64
   | .pop _ k, s => (List.range k).map fun i =>
@@ -595,7 +652,7 @@ def Instr.dst : Instr → Option Reg
   | .symPush d _ | .mcdtEnter d => some d
   | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .xop _
-  | .movqLoad .. | .movqStore .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave | .callr _ => none
 
 /-- The address an indirect call instruction calls: SDM Vol. 2, "CALL—Call

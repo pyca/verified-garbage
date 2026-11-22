@@ -434,6 +434,14 @@ pub(crate) mod vg_hmac_sha512_224_finalize_scratch;
 pub(crate) mod vg_hmac_sha512_224_finalize_scratch_sha512;
 
 #[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_224_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_sha512_224_init_any_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_hmac_sha512_224_init_any_scratch_sha512.rs"]
+pub(crate) mod vg_hmac_sha512_224_init_any_scratch_sha512;
+
+#[rustfmt::skip]
 #[path = "internal/vg_hmac_sha512_224_init_scratch.rs"]
 pub(crate) mod vg_hmac_sha512_224_init_scratch;
 

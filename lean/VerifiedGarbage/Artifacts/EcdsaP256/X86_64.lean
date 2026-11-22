@@ -114,13 +114,13 @@ def artifacts : List Artifact :=
     Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact X86_64.target
       { tables := [("hmac", tables variants)]
         code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (p256Of false hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p256.tries variants)
-        verified := Proof.Ecdsa.Rfc6979.X86_64.p256T_scrubbed false hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv variants hv Proof.Ecdsa.Rfc6979.X86_64.variants_up
+        verified := Proof.Ecdsa.Rfc6979.X86_64.p256T_scrubbed false hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv variants hv Proof.HmacTable.X86_64.variants_up
         spSafe := Proof.Ecdsa.Rfc6979.X86_64.p256T_spSafe false hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv variants },
     Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact X86_64.target
       { suffix := "_adx"
         tables := [("hmac", tables variants)]
         code := Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (Proof.Ecdsa.Rfc6979.X86_64.cfgT (p256Of true hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p256.tries variants)
-        verified := Proof.Ecdsa.Rfc6979.X86_64.p256T_scrubbed true hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv variants hv Proof.Ecdsa.Rfc6979.X86_64.variants_up
+        verified := Proof.Ecdsa.Rfc6979.X86_64.p256T_scrubbed true hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv variants hv Proof.HmacTable.X86_64.variants_up
         spSafe := Proof.Ecdsa.Rfc6979.X86_64.p256T_spSafe true hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv variants }]
   else []
 

@@ -163,7 +163,7 @@ theorem p521_stub (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve) (hT : Weie
 /-- `vg_ecdsa_p521_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
 cleanup included, meets its contract in constant time and returns without secret residue. -/
 theorem p521T_scrubbed (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve) (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_P521_COMB" ∉ Proof.HmacTable.X86_64.names vs)
-    (hu : ∀ w ∈ vs, HmacUp w) :
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
     VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p521Of adx hL hT hI) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs))
       (specK Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Ecdsa.X86_64.p521.combConsts vs) 32 :=
   sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p521SignApi)
