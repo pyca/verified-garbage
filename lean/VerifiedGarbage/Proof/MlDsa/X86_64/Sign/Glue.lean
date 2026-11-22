@@ -170,8 +170,8 @@ structure Lay (SL : List String) (rbs wbs : List (Reg × Nat)) (s : State) : Pro
   dsm : D < 2 ^ 32
   /-- The words above the return address that hold the variant callees'
   addresses (`slotR`, `Impl.MlDsa.X86_64.Sign.slotM`): apart from the
-  buffers, not wrapping around, each holding its callee's address. -/
-  slotDj : ∀ b ∈ rbs ++ wbs, (slotR SL s).Disjoint ⟨s.gpr b.1, b.2⟩
+  writable regions, not wrapping around, each holding its callee's address. -/
+  slotWr : ∀ r ∈ s.wr, (slotR SL s).Disjoint r
   slotNw : (s.gpr .rsp).toNat + 8 + 8 * SL.length ≤ 2 ^ 64
   slots : ∀ i (h : i < SL.length), s.load64 (s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i)) = some (s.syms SL[i])
 
@@ -248,6 +248,8 @@ structure PostB (D : Nat) (s s' : State) (W : List Region) : Prop where
   rsp : s'.gpr .rsp = s.gpr .rsp
   frame : Frame (W ++ [below (s.gpr .rsp) D]) s.mem s'.mem
   syms : s'.syms = s.syms
+  /-- Memory changed only within the writable regions and the stack. -/
+  wfr : Frame (s.wr ++ [below (s.gpr .rsp) D]) s.mem s'.mem
 
 /-- `PostB`, with the regions written given as pointers. -/
 abbrev PPostB (D : Nat) (s s' : State) (ws : List (Ptr × Nat)) : Prop := PostB D s s' (ws.map (toR s))
@@ -262,12 +264,24 @@ theorem PostB.pa {D : Nat} {s s' : State} {W : List Region} (hP : PostB D s s' W
   simp only [VG.Proof.MlDsa.X86_64.Sign.pa, hP.bs _ h]
 
 theorem PostB.refl (D : Nat) (s : State) (W : List Region) : PostB D s s W :=
-  ⟨rfl, rfl, fun _ _ => rfl, rfl, Frame.refl _ _, rfl⟩
+  ⟨rfl, rfl, fun _ _ => rfl, rfl, Frame.refl _ _, rfl, Frame.refl _ _⟩
+
+/-- A frame of regions that the writable regions cover. -/
+theorem Frame.covers {W wr X : List Region} {m m' : Mem} (h : Frame (W ++ X) m m') (hc : Covers W wr) :
+    Frame (wr ++ X) m m' := fun x hx => h x fun r hr hcx => by
+  rcases List.mem_append.mp hr with hr | hr
+  · obtain ⟨r', hr', hc'⟩ := hc x 1 ⟨r, hr, hcx⟩
+    exact hx r' (List.mem_append_left _ hr') hc'
+  · exact hx r (List.mem_append_right _ hr) hcx
 
 theorem PostB.trans {D : Nat} {s s₁ s₂ : State} {W₁ W₂ W : List Region} (h₁ : PostB D s s₁ W₁)
     (h₂ : PostB D s₁ s₂ W₂) (hw₁ : ∀ r ∈ W₁, r ∈ W) (hw₂ : ∀ r ∈ W₂, r ∈ W) : PostB D s s₂ W := by
   refine ⟨h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, fun r hr => (h₂.bs r hr).trans (h₁.bs r hr),
-    h₂.rsp.trans h₁.rsp, ?_, h₂.syms.trans h₁.syms⟩
+    h₂.rsp.trans h₁.rsp, ?_, h₂.syms.trans h₁.syms, ?_⟩
+  rotate_left
+  · have g₂ := h₂.wfr
+    rw [h₁.rsp, h₁.wr] at g₂
+    exact h₁.wfr.trans g₂
   have f₂ := h₂.frame
   rw [h₁.rsp] at f₂
   refine (h₁.frame.mono fun r hr => ?_).trans (f₂.mono fun r hr => ?_)
@@ -305,11 +319,10 @@ theorem slot_below {SL : List String} {s : State} {D i : Nat} (hi : i < SL.lengt
   bv_omega_using [hi, hn, hD, h₁, h₂]
 
 theorem Lay.post {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s' : State} {W : List Region} (L : Lay D SL rbs wbs s)
-    (hP : PostB D s s' W) (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases)
-    (hW : ∀ r ∈ W, (slotR SL s).Disjoint r) : Lay D SL rbs wbs s' := by
+    (hP : PostB D s s' W) (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) : Lay D SL rbs wbs s' := by
   have e : ∀ b ∈ rbs ++ wbs, s'.gpr b.1 = s.gpr b.1 := fun b hb => hP.bs _ (hcs b hb)
   refine ⟨L.small, fun b hb b' hb' hne hw => ?_, fun b hb => ?_, fun b hb => ?_, fun b hb => ?_, fun b hb => ?_,
-    fun b hb => ?_, ?_, ?_, fun b hb => ?_, ?_, fun i hi => ?_⟩
+    fun b hb => ?_, ?_, ?_, fun r hr => ?_, ?_, fun i hi => ?_⟩
   · rw [e b hb, e b' hb']; exact L.dj b hb b' hb' hne hw
   · rw [e b hb, hP.rsp]; exact L.stk b hb
   · rw [e b hb]; exact L.nw b hb
@@ -318,35 +331,20 @@ theorem Lay.post {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s
   · simp only [retR, e b hb, hP.rsp]; exact L.ret b hb
   · rw [hP.rsp]; exact L.sp
   · exact L.dsm
-  · simp only [slotR, hP.rsp]; rw [e b hb]; exact L.slotDj b hb
+  · rw [hP.wr] at hr; simp only [slotR, hP.rsp]; exact L.slotWr r hr
   · rw [hP.rsp]; exact L.slotNw
   · have hl := L.slots i hi
     simp only [State.load64, hP.rsp, hP.rd, hP.wr, hP.syms] at hl ⊢
     split at hl
     · rename_i hin
       simp only [hin, ↓reduceIte]
-      rw [hP.frame.readW (r := ⟨s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i), 8⟩)
+      rw [hP.wfr.readW (r := ⟨s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i), 8⟩)
         (Region.contains_self _ _) (fun r hr => ?_) (by decide)]
       · exact hl
       rcases List.mem_append.mp hr with hr | hr
-      · exact (hW r hr).sub_left (slot_sub hi)
+      · exact (L.slotWr r hr).sub_left (slot_sub hi)
       · rw [List.mem_singleton] at hr; subst hr; exact slot_below hi L.slotNw L.sp
     · cases hl
-
-/-- The regions of buffers of the layout lie apart from the callees' words. -/
-theorem Lay.slotWs {D : Nat} {SL : List String} {rbs wbs bs : List (Reg × Nat)} {s : State} (L : Lay D SL rbs wbs s)
-    (hbs : ∀ b ∈ bs, b ∈ rbs ++ wbs) {ws : List (Ptr × Nat)} (hw : ws.all (fun w => inB bs w.1 w.2) = true) :
-    ∀ r ∈ ws.map (toR s), (slotR SL s).Disjoint r := by
-  intro r hr
-  obtain ⟨w, hw', rfl⟩ := List.mem_map.mp hr
-  obtain ⟨n, hn, hl⟩ := inB_spec (List.all_eq_true.mp hw w hw')
-  have hm := hbs _ hn
-  exact (L.slotDj _ hm).sub_right (sub_offset' hl (by have := L.small _ hm; omega))
-
-/-- `Lay.slotWs` for pieces of the written buffers. -/
-theorem Lay.slotW {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay D SL rbs wbs s)
-    {ws : List (Ptr × Nat)} (h : ∀ w ∈ ws, inB wbs w.1 w.2 = true) : ∀ r ∈ ws.map (toR s), (slotR SL s).Disjoint r :=
-  L.slotWs (fun _ hb => List.mem_append_right _ hb) (List.all_eq_true.mpr h)
 
 section
 variable {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s s' : State} (L : Lay D SL rbs wbs s) {ws : List (Ptr × Nat)}
@@ -434,10 +432,9 @@ theorem LRel.pa {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {x y 
   simp only [VG.Proof.MlDsa.X86_64.Sign.pa, h.eq hp]
 
 theorem LRel.post {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {x y x' y' : State} {W₁ W₂ : List Region}
-    (h : LRel D SL rbs wbs x y) (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hx : PostB D x x' W₁) (hy : PostB D y y' W₂)
-    (hWx : ∀ r ∈ W₁, (slotR SL x).Disjoint r) (hWy : ∀ r ∈ W₂, (slotR SL y).Disjoint r) :
+    (h : LRel D SL rbs wbs x y) (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hx : PostB D x x' W₁) (hy : PostB D y y' W₂) :
     LRel D SL rbs wbs x' y' :=
-  ⟨h.lx.post hx hcs hWx, h.ly.post hy hcs hWy, fun b hb => by rw [hx.bs _ (hcs b hb), hy.bs _ (hcs b hb), h.regs b hb],
+  ⟨h.lx.post hx hcs, h.ly.post hy hcs, fun b hb => by rw [hx.bs _ (hcs b hb), hy.bs _ (hcs b hb), h.regs b hb],
     by rw [hx.rsp, hy.rsp, h.rsp], fun n hn => by rw [hx.syms, hy.syms]; exact h.sy n hn⟩
 
 end VG.Proof.MlDsa.X86_64.Sign
@@ -671,11 +668,12 @@ theorem glueCall_ok {D : Nat} {glue : List Instr} {n : String} {c : Prog isa} {k
   refine WP.call_sy hv hsp (by omega_using [hd, hD]) (hpre s1 hV hm k1) (by rw [k1.2.1, k1.2.2]; exact hc)
     (by rw [k1.2.2]; exact hw) fun s' hrd hwr hcs hf _ hpost hy => ⟨⟨hrd.trans k1.2.1, hwr.trans k1.2.2,
       fun r hr => by rw [hcs r (bases_cs r hr), k1.gpr (argRegs_cs r (bases_cs r hr))],
-      by rw [hcs .rsp (by decide), k1.gpr (by decide)], ?_, hy.trans hy1⟩,
+      by rw [hcs .rsp (by decide), k1.gpr (by decide)], ?_, hy.trans hy1, ?_⟩,
       fun r hr => by rw [hcs r hr, k1.gpr (argRegs_cs r hr)], s1, hV, hm, k1, hpost⟩
-  have hsp1 : s1.gpr .rsp = s.gpr .rsp := k1.gpr (by decide)
-  rw [hm, hsp1] at hf
-  exact Frame.below_mono hf hd (by omega_using [hD])
+  all_goals have hsp1 : s1.gpr .rsp = s.gpr .rsp := k1.gpr (by decide)
+  all_goals rw [hm, hsp1] at hf
+  · exact Frame.below_mono hf hd (by omega_using [hD])
+  · exact Frame.covers (Frame.below_mono hf hd (by omega_using [hD])) hw
 
 /-- The trace of the moves then a call, from two runs where the moves are
 the same and the callee's public data agree. -/
@@ -1053,5 +1051,34 @@ theorem callPRet_tr {n : String} {c : Prog isa} {k : Contract isa}
     RelCT isa P (callP n c as) fun s₁ s₂ => (s₁.gpr .rax).setWidth 32 = (s₂.gpr .rax).setWidth 32 :=
   glueCallRet_tr hv hr (block_nomem_tr (setArgs_nomem as)) (fun x y _ => ⟨setArgs_ok as ha x, setArgs_ok as ha y⟩)
     hP
+
+/-- `callPRet_tr` for `callV`, from states in layouts whose `i`-th callee is `n`. -/
+theorem callVRet_tr {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {v : Bool} {i : Nat}
+    {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hr : RetPub k c) {as : List Arg} (ha : as.all Arg.ok = true) {P : State → State → Prop}
+    (hR : ∀ x y, P x y → LRel D SL rbs wbs x y) (hsl : v = true → SL[i]? = some n)
+    (hP : ∀ x y x1 y1, P x y → (ArgsIn as x x1 ∧ x1.mem = x.mem) ∧ Keep argRegs x x1 →
+      (ArgsIn as y y1 ∧ y1.mem = y.mem) ∧ Keep argRegs y y1 → ∃ rd₁ wr₁ rd₂ wr₂ : List Region,
+      k.pre (x1.callEntry.withRegions rd₁ wr₁) ∧ k.pre (y1.callEntry.withRegions rd₂ wr₂) ∧
+      k.pub (x1.callEntry.withRegions rd₁ wr₁) (y1.callEntry.withRegions rd₂ wr₂) ∧
+      Covers (rd₁ ++ wr₁) (x1.rd ++ x1.wr) ∧ Covers wr₁ x1.wr ∧
+      Covers (rd₂ ++ wr₂) (y1.rd ++ y1.wr) ∧ Covers wr₂ y1.wr ∧ x1.gpr .rsp = y1.gpr .rsp) :
+    RelCT isa P (callV v i n c as) fun s₁ s₂ => (s₁.gpr .rax).setWidth 32 = (s₂.gpr .rax).setWidth 32 := by
+  cases v with
+  | false => exact callPRet_tr hv hr ha hP
+  | true =>
+    refine RelCT.seq_callm (setArgs_nomem as) (fun x y _ x1 _ y1 hp ex ey => ?_) (callPRet_tr hv hr ha hP)
+    have R := hR x y hp
+    have hn := hsl rfl
+    obtain ⟨_, _, ex', ⟨_, hmx⟩, kx⟩ := setArgs_ok as ha x
+    obtain ⟨_, _, ey', ⟨_, hmy⟩, ky⟩ := setArgs_ok as ha y
+    obtain ⟨-, ex1⟩ := Exec.det ex' ex
+    obtain ⟨-, ey1⟩ := Exec.det ey' ey
+    subst ex1 ey1
+    refine ⟨by rw [slot_ea kx, slot_ea ky, R.rsp], slot_load R.lx hn hmx kx (Exec.syms ex),
+      slot_load R.ly hn hmy ky (Exec.syms ey), ?_⟩
+    rw [Exec.syms ex, Exec.syms ey]
+    exact R.sy n (List.mem_of_getElem? hn)
 
 end VG.Proof.MlDsa.X86_64.Sign

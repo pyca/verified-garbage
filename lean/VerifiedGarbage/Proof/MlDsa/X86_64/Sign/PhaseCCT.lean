@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
@@ -533,7 +534,7 @@ theorem maskR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} {σ : 
     show PolyIs _ _ _
     rw [hP3.pa (pS_bases _)]
     exact polyIs_of_bytes hb3 (hy2 r (by omega_using []))
-  refine WP.mono (ipAt_ok (t := ntt) hP.ntt I3.l.st.lay ci hyh3.1) fun s4 ⟨hP4, _, hq4⟩ => ?_
+  refine WP.mono (ipAt_ok (t := ntt) hP.ntt hP.sl.ntt I3.l.st.lay ci hyh3.1) fun s4 ⟨hP4, _, hq4⟩ => ?_
   have I4 := I3.step hP4 c4
   refine ⟨I4.l, Fam.keep I3.l.st.lay hP4 f4 (Fam.keep I2.l.st.lay hP3 f3 hy2), Fam.snoc I4.yh ?_⟩
   show PolyIs _ _ _
@@ -576,7 +577,7 @@ theorem yhR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} {σ : St
     show PolyIs _ _ _
     rw [hP3.pa (pS_bases _)]
     exact polyIs_of_bytes hb3 (h.y r hr)
-  refine WP.mono (ipAt_ok (t := ntt) hP.ntt I3.l.st.lay ci hyh3.1) fun s4 ⟨hP4, _, hq4⟩ => ?_
+  refine WP.mono (ipAt_ok (t := ntt) hP.ntt hP.sl.ntt I3.l.st.lay ci hyh3.1) fun s4 ⟨hP4, _, hq4⟩ => ?_
   have I4 := I3.step hP4 c4
   refine ⟨I4.l, I4.y, Fam.snoc I4.yh ?_⟩
   show PolyIs _ _ _
@@ -720,7 +721,7 @@ theorem tailR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} {σ : 
     show PolyIs _ _ _
     rw [hP3.pa (pS_bases _)]
     exact polyIs_of_bytes hb3 (hy1 r (by omega_using []))
-  refine WP.mono (ipAt_ok (t := ntt) hP.ntt I3.l.st.lay ci hyh3.1) fun s4 ⟨hP4, _, hq4⟩ => ?_
+  refine WP.mono (ipAt_ok (t := ntt) hP.ntt hP.sl.ntt I3.l.st.lay ci hyh3.1) fun s4 ⟨hP4, _, hq4⟩ => ?_
   have I4 := I3.step hP4 c4
   refine ⟨⟨I4.l, Fam.keep I3.l.st.lay hP4 f4 (Fam.keep I1.l.st.lay hP3 f3 hy1), Fam.snoc I4.yh ?_⟩,
     fun k hk hr => tmp_keep I3.l.st.lay hP4 k4 T3 k hk (by omega_using [hr])⟩
@@ -1013,7 +1014,7 @@ theorem maskR_trL {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D SL)
           (fun _ _ h => h) fun _ _ h => h)
         (fun x L hy => WP.mono (copy_okB L cc) fun x' ⟨hP', _, hb⟩ =>
           ⟨⟨_, hP'⟩, by rw [hP'.pa (pS_bases _)]; exact reduced_congr₂ (bytes_of_bytesAt hb) hy⟩)
-        (ipAt_tr (t := ntt) hP.ntt ci))))
+        (ipAt_tr (t := ntt) hP.ntt hP.sl.ntt ci))))
     (fun _ _ h => ⟨h, trivial, trivial⟩) fun _ _ h => h
 
 /-! ## `y` and `ŷ`, four at a time -/
@@ -1046,7 +1047,7 @@ theorem yhR_trL {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D SL) {
       (fun _ _ h => h) fun _ _ h => h)
     (fun x L ⟨_, I⟩ => WP.mono (copy_okB L cc) fun x' ⟨hP', _, hb⟩ =>
       ⟨⟨_, hP'⟩, by rw [hP'.pa (pS_bases _)]; exact reduced_congr₂ (bytes_of_bytesAt hb) (I.y r hr).1⟩)
-    (ipAt_tr (t := ntt) hP.ntt ci)
+    (ipAt_tr (t := ntt) hP.ntt hP.sl.ntt ci)
 
 theorem mask4_tr {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} {g : Nat} (hc : m4Chk p g = true)
     {E : State → State → Prop} {t : Nat} :
@@ -1091,7 +1092,7 @@ theorem tailR_trL {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D SL)
         (fun _ _ h => h) fun _ _ h => h)
       (fun x L hy => WP.mono (copy_okB L cc) fun x' ⟨hP', _, hb⟩ =>
         ⟨⟨_, hP'⟩, by rw [hP'.pa (pS_bases _)]; exact reduced_congr₂ (bytes_of_bytesAt hb) hy⟩)
-      (ipAt_tr (t := ntt) hP.ntt ci))
+      (ipAt_tr (t := ntt) hP.ntt hP.sl.ntt ci))
 
 theorem maskTail_tr {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hl : p.ℓ % 4 = 3)
     (hc : tailChk p = true) {E : State → State → Prop} {t : Nat} :

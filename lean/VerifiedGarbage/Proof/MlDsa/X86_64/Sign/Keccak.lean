@@ -72,14 +72,6 @@ theorem kChk_spec {bs wbs : List (Reg × Nat)} (h : kChk bs wbs = true) :
   simp only [kChk, Bool.and_eq_true] at h
   exact ⟨h.1.1.1.1, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
-theorem kChk_w {bs wbs : List (Reg × Nat)} (h : kChk bs wbs = true) :
-    ∀ w ∈ [((sc 0 : Ptr), 200), ((sc 200 : Ptr), 640)], inB wbs w.1 w.2 = true := by
-  obtain ⟨w0, w1, -⟩ := kChk_spec h; simp [w0, w1]
-
-theorem kChk_w0 {bs wbs : List (Reg × Nat)} (h : kChk bs wbs = true) :
-    ∀ w ∈ [((sc 0 : Ptr), 200)], inB wbs w.1 w.2 = true := by
-  obtain ⟨w0, -⟩ := kChk_spec h; simp [w0]
-
 theorem kabsChk_spec {bs : List (Reg × Nat)} {src : Ptr} {len : Nat} (h : kabsChk bs src len = true) :
     inB bs src len = true ∧ src.1 ∈ bases ∧ src.2 < 2 ^ 31 ∧ len < 2 ^ 31 ∧ sepB bs src len (sc 0) 200 = true ∧
       sepB bs src len (sc 200) 640 = true := by
@@ -91,11 +83,6 @@ theorem ksqzChk_spec {bs wbs : List (Reg × Nat)} {dst : Ptr} {len : Nat} (h : k
       sepB bs (sc 0) 200 dst len = true ∧ sepB bs dst len (sc 200) 640 = true := by
   simp only [ksqzChk, Bool.and_eq_true, decide_eq_true_eq] at h
   exact ⟨h.1.1.1.1.1.1, h.1.1.1.1.1.2, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
-
-theorem ksqzChk_w {bs wbs : List (Reg × Nat)} {dst : Ptr} {len : Nat} (hk : kChk bs wbs = true)
-    (h : ksqzChk bs wbs dst len = true) :
-    ∀ w ∈ [((sc 0 : Ptr), 200), (dst, len), ((sc 200 : Ptr), 640)], inB wbs w.1 w.2 = true := by
-  obtain ⟨w0, w1, -⟩ := kChk_spec hk; obtain ⟨wd, -⟩ := ksqzChk_spec h; simp [w0, w1, wd]
 
 /-- The 16 bytes of stack of a call of a sponge function, from the layout. -/
 theorem k16 {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true)
@@ -166,9 +153,10 @@ theorem kzero_ok {s : State} (L : Lay D SL rbs wbs s) (hk : kChk (rbs ++ wbs) wb
     have hcs : ∀ r ∈ calleeSaved, s2.gpr r = s.gpr r := fun r hr => k.gpr fun h => by
       simp only [List.mem_singleton] at h; subst h; exact absurd hr (by decide)
     intro hsy
-    refine ⟨⟨k.2.1, k.2.2, fun r hr => hcs r (bases_cs r hr), hcs .rsp (by decide), ?_, hsy⟩, hcs, hz⟩
     rw [hm] at hf
-    exact hf.mono fun r hr => List.mem_append_left _ hr
+    exact ⟨⟨k.2.1, k.2.2, fun r hr => hcs r (bases_cs r hr), hcs .rsp (by decide),
+      hf.mono fun r hr => List.mem_append_left _ hr, hsy,
+      Frame.covers (X := [below (s.gpr .rsp) D]) (hf.mono fun r hr => List.mem_append_left _ hr) (L.cW w0)⟩, hcs, hz⟩
 
 theorem kzero_tr {P : State → State → Prop} (h : ∀ x y, P x y → x.gpr .rbx = y.gpr .rbx) :
     RelCT isa P (.block kzero) fun _ _ => True :=
@@ -215,7 +203,10 @@ theorem kabs_ok {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk 
     (Covers.append_left (by rw [k.2.1, k.2.2]; exact L.cR is) (Covers.right cW)) cW
     fun s' hrd hwr hcs hf hR _ => fun hsy => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
       fun r hr => by rw [hcs r (bases_cs r hr), k.gpr (argRegs_cs r (bases_cs r hr))],
-      by rw [hcs .rsp (by decide), hsp], ?_, hsy⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
+      by rw [hcs .rsp (by decide), hsp], ?_, hsy, ?_⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
+  on_goal 2 =>
+    rw [← hm, ← hsp, ← k.2.2]
+    exact Frame.covers (Frame.below_mono (by simpa using hf) (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)) cW
   · rw [← hm, ← hsp]
     have := Frame.below_mono (wr := [⟨pa s (sc 0), 200⟩, ⟨pa s (sc 200), 640⟩]) (by simpa using hf)
       (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)
@@ -287,7 +278,10 @@ theorem kpad_ok {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk 
   refine pad_call (kpadArgs L hD hk hrate hpos hA hsp) (Covers.append_left Covers.nil (Covers.right cW)) cW
     fun s' hrd hwr hcs hf hR => fun hsy => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
       fun r hr => by rw [hcs r (bases_cs r hr), k.gpr (argRegs_cs r (bases_cs r hr))],
-      by rw [hcs .rsp (by decide), hsp], ?_, hsy⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
+      by rw [hcs .rsp (by decide), hsp], ?_, hsy, ?_⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
+  on_goal 2 =>
+    rw [← hm, ← hsp, ← k.2.2]
+    exact Frame.covers (Frame.below_mono (by simpa using hf) (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)) cW
   · rw [← hm, ← hsp]
     exact Frame.below_mono (wr := [⟨pa s (sc 0), 200⟩, ⟨pa s (sc 200), 640⟩]) (by simpa using hf)
       (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)
@@ -351,7 +345,10 @@ theorem ksqz_ok {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk 
   refine squeeze_call (ksqzArgs L hD hk hc hrate hA hsp) (Covers.append_left Covers.nil (Covers.right cW)) cW
     fun s' hrd hwr hcs hf ho => fun hsy => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
       fun r hr => by rw [hcs r (bases_cs r hr), k.gpr (argRegs_cs r (bases_cs r hr))],
-      by rw [hcs .rsp (by decide), hsp], ?_, hsy⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
+      by rw [hcs .rsp (by decide), hsp], ?_, hsy, ?_⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
+  on_goal 2 =>
+    rw [← hm, ← hsp, ← k.2.2]
+    exact Frame.covers (Frame.below_mono (by simpa using hf) (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)) cW
   · rw [← hm, ← hsp]
     exact Frame.below_mono (wr := [⟨pa s (sc 0), 200⟩, ⟨pa s dst, len⟩, ⟨pa s (sc 200), 640⟩]) (by simpa using hf)
       (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)

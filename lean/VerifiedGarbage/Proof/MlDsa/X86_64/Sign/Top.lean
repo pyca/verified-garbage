@@ -110,7 +110,7 @@ theorem absAll_ok (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) (h
     have hr0 : 0 < rate := Nat.lt_of_le_of_lt (Nat.zero_le _) hpos
     rw [absAll]
     refine WP.seq (WP.mono (kabs_ok L hD hk hkc hrate hpos) fun s₁ ⟨hP₁, hc₁, hR₁⟩ => ?_)
-    have L₁ := L.post hP₁ hcs (L.slotW (kChk_w hk))
+    have L₁ := L.post hP₁ hcs
     have e0 : pa s₁ (sc 0) = pa s (sc 0) := hP₁.pa (by decide)
     have hR₁' := hR₁ msg hR hm
     rw [← e0] at hR₁'
@@ -141,7 +141,7 @@ theorem shake_ok (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps
     simp only [ksqzChk, Bool.and_eq_true, decide_eq_true_eq] at hsq; exact hsq.1.1.1.1.2
   have hrate : (136 : Nat) ∈ rates := by decide
   refine WP.seq (WP.mono (kzero_ok L hk) fun s₁ ⟨hP₁, hc₁, hz⟩ => ?_)
-  have L₁ := L.post hP₁ hcs (L.slotW (kChk_w0 hk))
+  have L₁ := L.post hP₁ hcs
   have e1 : pa s₁ (sc 0) = pa s (sc 0) := hP₁.pa (by decide)
   have hpk : ∀ p ∈ ps, keepB (rbs ++ wbs) [(sc 0, 200)] p.1 p.2 = true := fun p hp => by
     have := pieceChk_keep (List.all_eq_true.mp hps p hp)
@@ -150,12 +150,12 @@ theorem shake_ok (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps
   have epc : pieces s₁ ps = pieces s ps := pieces_keep L hP₁ hpk
   refine WP.seq (WP.mono (absAll_ok hcs hD hk hrate ps s₁ L₁ 0 [] hps (by decide) rfl
     (by rw [e1]; exact repr_nil hz)) fun s₂ ⟨hP₂, hc₂, hR₂⟩ => ?_)
-  have L₂ := L₁.post hP₂ hcs (L₁.slotW (kChk_w hk))
+  have L₂ := L₁.post hP₂ hcs
   have e2 : pa s₂ (sc 0) = pa s₁ (sc 0) := hP₂.pa (by decide)
   rw [List.nil_append, epc] at hR₂
   refine WP.seq (WP.mono (kpad_ok L₂ hD hk hrate (pos := totLen ps % 136) (Nat.mod_lt _ (by decide))
     (show 0x1f < 256 by decide)) fun s₃ ⟨hP₃, hc₃, hS₃⟩ => ?_)
-  have L₃ := L₂.post hP₃ hcs (L₂.slotW (kChk_w hk))
+  have L₃ := L₂.post hP₃ hcs
   have e3 : pa s₃ (sc 0) = pa s₂ (sc 0) := hP₃.pa (by decide)
   have hS := hS₃ (pieces s ps) (by rw [e2]; exact hR₂) (by rw [pieces_length])
   refine WP.mono (ksqz_ok L₃ hD hk hsq hrate) fun s₄ ⟨hP₄, hc₄, ho⟩ => ?_
@@ -181,10 +181,10 @@ theorem shake_ok (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps
 
 theorem LRel.step (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {c : Prog isa}
     (htr : RelCT isa (LRel D SL rbs wbs) c fun _ _ => True)
-    (hok : ∀ x, Lay D SL rbs wbs x → WP isa c x fun x' => ∃ W, PostB D x x' W ∧ ∀ r ∈ W, (slotR SL x).Disjoint r) :
+    (hok : ∀ x, Lay D SL rbs wbs x → WP isa c x fun x' => ∃ W, PostB D x x' W) :
     RelCT isa (LRel D SL rbs wbs) c (LRel D SL rbs wbs) :=
-  VG.Proof.MlKem.X86_64.RelCT.postDep htr (F := fun x x' => ∃ W, PostB D x x' W ∧ ∀ r ∈ W, (slotR SL x).Disjoint r) (fun x y h => ⟨hok x h.lx, hok y h.ly⟩)
-    fun _ _ _ _ h ⟨_, hx, hwx⟩ ⟨_, hy, hwy⟩ => h.post hcs hx hy hwx hwy
+  VG.Proof.MlKem.X86_64.RelCT.postDep htr (F := fun x x' => ∃ W, PostB D x x' W) (fun x y h => ⟨hok x h.lx, hok y h.ly⟩)
+    fun _ _ _ _ h ⟨_, hx⟩ ⟨_, hy⟩ => h.post hcs hx hy
 
 theorem nil_tr {P : State → State → Prop} : RelCT isa P (.block []) P :=
   VG.Proof.MlKem.X86_64.RelCT.postDep (block_nomem_tr fun _ hi => absurd hi List.not_mem_nil)
@@ -202,7 +202,7 @@ theorem absAll_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) (h
     have hr0 : 0 < rate := Nat.lt_of_le_of_lt (Nat.zero_le _) hpos
     rw [absAll]
     exact RelCT.seq (LRel.step hcs (kabs_tr hD hk hkc hrate hpos)
-      fun x Lx => WP.mono (kabs_ok Lx hD hk hkc hrate hpos) fun _ h => ⟨_, h.1, Lx.slotW (kChk_w hk)⟩)
+      fun x Lx => WP.mono (kabs_ok Lx hD hk hkc hrate hpos) fun _ h => ⟨_, h.1⟩)
       (absAll_tr hcs hD hk hrate ps ((pos + l) % rate) hps.2 (Nat.mod_lt _ hr0))
 
 theorem shake_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps : List (Ptr × Nat)} {out : Ptr}
@@ -212,12 +212,12 @@ theorem shake_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) (hD : 24 ≤ D) {ps
   have hrate : (136 : Nat) ∈ rates := by decide
   have i0 : inB (rbs ++ wbs) (sc 0) 200 = true := (kChk_spec hk).2.2.1
   refine RelCT.seq (LRel.step hcs (kzero_tr fun x y h => h.eq i0)
-    fun x Lx => WP.mono (kzero_ok Lx hk) fun _ h => ⟨_, h.1, Lx.slotW (kChk_w0 hk)⟩)
+    fun x Lx => WP.mono (kzero_ok Lx hk) fun _ h => ⟨_, h.1⟩)
     (RelCT.seq (absAll_tr hcs hD hk hrate ps 0 hps (by decide)) (RelCT.seq (LRel.step hcs
       (kpad_tr hD hk hrate (Nat.mod_lt _ (by decide)) (show 0x1f < 256 by decide))
       fun x Lx => WP.mono (kpad_ok Lx hD hk hrate (Nat.mod_lt _ (by decide)) (show 0x1f < 256 by decide))
-        fun _ h => ⟨_, h.1, Lx.slotW (kChk_w hk)⟩)
-      (LRel.step hcs (ksqz_tr hD hk hsq hrate) fun x Lx => WP.mono (ksqz_ok Lx hD hk hsq hrate) fun _ h => ⟨_, h.1, Lx.slotW (ksqzChk_w hk hsq)⟩)))
+        fun _ h => ⟨_, h.1⟩)
+      (LRel.step hcs (ksqz_tr hD hk hsq hrate) fun x Lx => WP.mono (ksqz_ok Lx hD hk hsq hrate) fun _ h => ⟨_, h.1⟩)))
 
 end
 
@@ -358,11 +358,6 @@ theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
   obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp, -⟩ := hp.1
   obtain ⟨hs1, hs2, -⟩ := hp.2
   have hsub : Region.Sub ⟨σ.gpr .rdi, L⟩ ⟨σ.gpr .rdi, skL p σ⟩ := Region.sub_prefix hL
-  have q1 := (hs1 ⟨σ.gpr .rdi, skL p σ⟩ (by rw [hrd]; simp)).sub_right hsub
-  have q2 := hs1 ⟨σ.gpr .rsi, 64⟩ (by rw [hrd]; simp)
-  have q3 := hs1 ⟨σ.gpr .rdx, 32⟩ (by rw [hrd]; simp)
-  have q4 := hs1 ⟨σ.gpr .r8, scrLen p⟩ (by rw [hwr]; simp)
-  have q5 := hs1 ⟨σ.gpr .rcx, p.sigLen⟩ (by rw [hwr]; simp)
   have hsR : slotR SL s = slotR SL σ := by simp only [slotR, h.rsp]
   replace d1 := d1.sub_left hsub
   replace d2 := d2.sub_left hsub
@@ -379,7 +374,7 @@ theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
   have memw : ∀ r ∈ σ.wr, InRegions s.wr r.base r.len := fun r hr =>
     ⟨r, by rw [h.wr]; exact hr, Region.contains_self _ _⟩
   refine ⟨?_, fun b hb b' hb' hne hw => ?_, fun b hb => ?_, fun b hb => ?_, fun b hb => ?_, fun b hb => ?_,
-    fun b hb => ?_, by rw [h.rsp]; exact hsp, hD, fun b hb => ?_, by rw [h.rsp]; exact hs2, hsl⟩
+    fun b hb => ?_, by rw [h.rsp]; exact hsp, hD, fun r hr => ?_, by rw [h.rsp]; exact hs2, hsl⟩
   · intro b hb
     simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
@@ -407,10 +402,7 @@ theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
   · simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only [retR, e1, e2, e3, e4, e5, h.rsp]
     exacts [r1, r2, r3, r5, r4]
-  · rw [hsR]
-    simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
-    rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only [e1, e2, e3, e4, e5]
-    exacts [q1, q2, q3, q4, q5]
+  · rw [hsR]; rw [h.wr] at hr; exact hs1 r (List.mem_append_right _ hr)
 
 theorem sgLay (hD : D < 2 ^ 32) (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 32) {s : State}
     (h : Top σ s)
@@ -551,7 +543,7 @@ theorem test15_ok (s : State) (D : Nat) :
     fun s₁ ⟨⟨hm, h15, hz⟩, k⟩ hsy => ⟨⟨k.2.1, k.2.2, fun r hr => k.gpr (by
         simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide), k.gpr (by decide),
-        by rw [hm]; exact Frame.refl _ _, hsy⟩,
+        by rw [hm]; exact Frame.refl _ _, hsy, by rw [hm]; exact Frame.refl _ _⟩,
       fun r hr => by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl

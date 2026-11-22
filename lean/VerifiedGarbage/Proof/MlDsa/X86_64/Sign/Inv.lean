@@ -73,7 +73,7 @@ def Ok3 (p : Params) : Prop := p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
 /-! ## Every state -/
 
 /-- What holds of every state of the function entered in `σ`. -/
-structure St (p : Params) (D : Nat) (SL : List String) (SL : List String) (σ s : State) : Prop where
+structure St (p : Params) (D : Nat) (SL : List String) (σ s : State) : Prop where
   top : Top σ s
   lay : Lay D SL (sgR p) (sgW p) s
   sk : bytesAt s.mem (pa s (.rbp, 0)) p.skLen = skOf p σ
@@ -118,7 +118,7 @@ theorem St.step {p : Params} {D : Nat} {SL : List String} {σ s s' : State} (h :
     (hP : PPostB D s s' ws) (hc : stChk p ws = true) : St p D SL σ s' := by
   simp only [stChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hc
-  exact ⟨h.top.step h.lay hP h1, h.lay.post hP (sgB_bases p) (h.lay.slotWs (fun _ hb => List.mem_append_right _ hb) h5),
+  exact ⟨h.top.step h.lay hP h1, h.lay.post hP (sgB_bases p),
     (h.lay.keepBytes hP h2).trans h.sk, (h.lay.keepBytes hP h3).trans h.mu, (h.lay.keepBytes hP h4).trans h.rnd,
     h.fr.trans (frame_ws h.lay h.top.wr h.top.rsp h5 hP.frame), hP.syms.trans h.syms⟩
 
