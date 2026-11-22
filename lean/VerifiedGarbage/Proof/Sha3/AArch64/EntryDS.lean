@@ -282,4 +282,234 @@ theorem rRegs_lane : ∀ (L : List (String × VReg)) (i : Nat) (g : State), (L.m
 
 end
 
+/-! ## The frame -/
+
+section
+variable (L : List (String × VReg)) (k : Nat) (s : State)
+
+/-- The state after the frame's allocation and the copies of `k` stack words. -/
+abbrev dCopied : State :=
+  copiedState (frameDS k L.length) (baseState (allocated (frameDS k L.length) s)) k
+
+/-- The state after the copies and the save of the return address. -/
+abbrev dX : State :=
+  { dCopied L k s with
+    mem := (dCopied L k s).mem.write ((dCopied L k s).sp + BitVec.ofNat 64 (saveOff k)) 8 ((dCopied L k s).gpr .x30) }
+
+/-- The state after the frame's allocation and `enterDS L k`. -/
+def dSave : State := sRegs (saveOff k) 0 L (dX L k s)
+
+/-- The address `off` bytes into the frame of `s`'s caller. -/
+abbrev dslot (off : Nat) : Addr := s.sp - BitVec.ofNat 64 (frameDS k L.length) + BitVec.ofNat 64 off
+
+theorem dCopied_sp : (dCopied L k s).sp = s.sp - BitVec.ofNat 64 (frameDS k L.length) := by
+  rw [copiedState_sp]; rfl
+
+theorem dX_sp : (dX L k s).sp = s.sp - BitVec.ofNat 64 (frameDS k L.length) := dCopied_sp L k s
+
+@[simp] theorem dSave_sp : (dSave L k s).sp = s.sp - BitVec.ofNat 64 (frameDS k L.length) := by
+  rw [dSave, sRegs_sp]; exact dX_sp L k s
+@[simp] theorem dSave_rd : (dSave L k s).rd = s.rd := by
+  rw [dSave, sRegs_rd]; show (dCopied L k s).rd = _; rw [copiedState_rd]; rfl
+@[simp] theorem dSave_wr :
+    (dSave L k s).wr = ⟨s.sp - BitVec.ofNat 64 (frameDS k L.length), frameDS k L.length⟩ :: s.wr := by
+  rw [dSave, sRegs_wr]; show (dCopied L k s).wr = _; rw [copiedState_wr]; rfl
+@[simp] theorem dSave_syms : (dSave L k s).syms = s.syms := by
+  rw [dSave, sRegs_syms]; show (dCopied L k s).syms = _; rw [copiedState_syms]; rfl
+@[simp] theorem dSave_dit : (dSave L k s).dit = s.dit := by
+  rw [dSave, sRegs_dit]; show (dCopied L k s).dit = _; rw [copiedState_dit]; rfl
+
+theorem dCopied_gpr {q : Reg} (h₁ : q ≠ .x16) (h₂ : q ≠ .x17) : (dCopied L k s).gpr q = s.gpr q := by
+  rw [copiedState_gpr _ _ h₂, RegUpd.gpr_write_of_ne _ _ _ h₁]; rfl
+
+theorem dSave_gpr {q : Reg} (h₁ : q ≠ .x16) (h₂ : q ≠ .x17) : (dSave L k s).gpr q = s.gpr q := by
+  rw [dSave, sRegs_gpr _ h₁]; exact dCopied_gpr L k s h₁ h₂
+
+theorem dCopied_v : (dCopied L k s).v = s.v := by rw [copiedState_v]; rfl
+
+theorem dSave_v {q : VReg} (h : ∀ p ∈ L, p.2 ≠ q) : (dSave L k s).v q = s.v q := by
+  rw [dSave, sRegs_v _ _ _ _ h]; show (dCopied L k s).v q = _; rw [dCopied_v]
+
+theorem dSave_DL (hn : (L.map (·.2)).Nodup) : DL L (dSave L k s) := sRegs_DL _ L 0 _ hn
+
+end
+
+theorem saveOff_le_frameDS (k j : Nat) : saveOff k + 8 + 8 * j ≤ frameDS k j := by
+  unfold frameDS; omega
+
+theorem frameDS_mod16 (k j : Nat) : frameDS k j % 16 = 0 := by unfold frameDS saveOff; omega
+
+theorem frameDS_mod (k j : Nat) : frameDS k j % 8 = 0 := by unfold frameDS saveOff; omega
+
+theorem frameDS_pos (k j : Nat) : 0 < frameDS k j := by unfold frameDS; omega
+
+theorem dslot_in (L : List (String × VReg)) (k : Nat) (s : State) {off : Nat}
+    (h : off + 8 ≤ frameDS k L.length) (hE : frameDS k L.length < 4096) :
+    InRegions (⟨s.sp - BitVec.ofNat 64 (frameDS k L.length), frameDS k L.length⟩ :: s.wr) (dslot L k s off) 8 :=
+  ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by omega)⟩
+
+/-- A run of `enterDS L k` from the caller's state `s`, whose `k` stack
+words are readable. -/
+theorem enterDS_run (L : List (String × VReg)) (k : Nat) (s : State) (hE : frameDS k L.length < 4096)
+    (hr : ∀ j < k, InRegions s.rd (stackArgAddr s j) 8) :
+    execBlock isa (enterDS L k) (allocated (frameDS k L.length) s) =
+      some (dSave L k s, copyTrace (frameDS k L.length) (s.sp - BitVec.ofNat 64 (frameDS k L.length)) k ++
+        (.addr (dslot L k s (saveOff k)) ::
+          regsTrace (saveOff k) (s.sp - BitVec.ofNat 64 (frameDS k L.length)) 0 L)) := by
+  have hsk := saveOff_ge k
+  have hle := saveOff_le_frameDS k L.length
+  have hm := saveOff_mod k
+  have e_add : exec (.addSp .x16 0) (allocated (frameDS k L.length) s) =
+      some (baseState (allocated (frameDS k L.length) s)) := exec_addSp (by decide)
+  have hc := copies_run (bytes := frameDS k L.length) (w := baseState (allocated (frameDS k L.length) s))
+    (baseState_x16 _) (frameDS_mod k _) k (by omega)
+    (fun j hj => by
+      obtain ⟨R, hR, hcR⟩ := hr j hj
+      refine ⟨R, List.mem_append_left _ hR, ?_⟩
+      show R.Contains (s.sp - BitVec.ofNat 64 (frameDS k L.length) + BitVec.ofNat 64 (frameDS k L.length + 8 * j)) 8
+      rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+      exact hcR)
+    (fun j hj => dslot_in L k s (by omega) hE)
+  have e_x30 : exec (.strSp .x30 (saveOff k)) (dCopied L k s) = some (dX L k s) :=
+    exec_strSp' ⟨hm, by omega⟩ (by
+      rw [copiedState_wr, dCopied_sp]; exact dslot_in L k s (by omega) hE)
+  have hregs := saveRegs_run hm L 0 (dX L k s) (by omega) (fun idx h => by
+    show InRegions (dCopied L k s).wr ((dX L k s).sp + _) 8
+    rw [copiedState_wr, dX_sp]; exact dslot_in L k s (by omega) hE)
+  rw [enterDS, execBlock_append, execBlock_cons_of e_add, hc]
+  simp only [Option.map_some, Option.bind_some]
+  rw [execBlock_cons_of e_x30, hregs]
+  simp only [Option.map_some, addrs, List.map_cons, List.map_nil, List.nil_append, List.singleton_append,
+    dCopied_sp]
+  rfl
+
+section
+variable (L : List (String × VReg)) (k : Nat) (s : State)
+
+theorem dslot_contains {off : Nat} (h : off + 8 ≤ frameDS k L.length) (hE : frameDS k L.length < 4096) :
+    (below s.sp (frameDS k L.length)).Contains (dslot L k s off) 8 :=
+  Offset.contains_base _ h (by omega)
+
+theorem dX_mem : (dX L k s).mem = (dCopied L k s).mem.write (dslot L k s (saveOff k)) 8 (s.gpr .x30) := by
+  show (dCopied L k s).mem.write ((dCopied L k s).sp + _) 8 ((dCopied L k s).gpr .x30) = _
+  rw [dCopied_sp, dCopied_gpr L k s (by decide) (by decide)]
+
+/-- The saves of the registers write only above the return address. -/
+theorem dSave_regs_frame (hE : frameDS k L.length < 4096) :
+    Frame [⟨dslot L k s (saveOff k + 8), 8 * L.length⟩] (dX L k s).mem (dSave L k s).mem := by
+  have f := sRegs_frame (saveOff k) L 0 (dX L k s) (by have := saveOff_le_frameDS k L.length; omega)
+  rw [dX_sp, Nat.mul_zero, Nat.add_zero] at f
+  exact f
+
+/-- The entry writes only its frame. -/
+theorem dSave_frame (hE : frameDS k L.length < 4096) :
+    Frame [below s.sp (frameDS k L.length)] s.mem (dSave L k s).mem := by
+  have hsk := saveOff_ge k
+  have hle := saveOff_le_frameDS k L.length
+  obtain ⟨f, -⟩ := copiedState_mem (bytes := frameDS k L.length)
+    (w := baseState (allocated (frameDS k L.length) s)) (baseState_x16 _) k (by omega) (by omega)
+  have f₁ : Frame [below s.sp (frameDS k L.length)] s.mem (dX L k s).mem := by
+    rw [dX_mem]
+    refine Frame.write (Frame.sub f fun r hr => ?_) (List.mem_singleton_self _) _
+      (dslot_contains L k s (by omega) hE)
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩
+  refine Frame.trans f₁ (Frame.sub (dSave_regs_frame L k s hE) fun r hr => ?_)
+  simp only [List.mem_singleton] at hr; subst hr
+  exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩
+
+/-- The frame's bottom holds the caller's stack words. -/
+theorem dSave_args (hE : frameDS k L.length < 4096) {j : Nat} (hj : j < k) :
+    (dSave L k s).mem.readW (dslot L k s (8 * j)) 64 = s.mem.readW (stackArgAddr s j) 64 := by
+  have hsk := saveOff_ge k
+  have hle := saveOff_le_frameDS k L.length
+  obtain ⟨-, hv⟩ := copiedState_mem (bytes := frameDS k L.length)
+    (w := baseState (allocated (frameDS k L.length) s)) (baseState_x16 _) k (by omega) (by omega)
+  rw [(dSave_regs_frame L k s hE).readW (r := ⟨dslot L k s (8 * j), 8⟩) (Region.contains_self _ _)
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
+  rw [dX_mem]
+  simp only [Mem.readW]
+  rw [Mem.read_write_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide)]
+  have h := hv j hj
+  simp only [Mem.readW] at h
+  rw [show (baseState (allocated (frameDS k L.length) s)).sp = s.sp - BitVec.ofNat 64 (frameDS k L.length)
+    from rfl] at h
+  rw [h, stackArgAddr]
+  show (s.mem.read _ (64 / 8)).setWidth 64 = _
+  rw [show s.sp - BitVec.ofNat 64 (frameDS k L.length) + BitVec.ofNat 64 (frameDS k L.length + 8 * j) =
+      s.sp + BitVec.ofNat 64 (8 * j) by
+    rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]]
+
+theorem dSave_read_x30 (hE : frameDS k L.length < 4096) :
+    (dSave L k s).mem.read (dslot L k s (saveOff k)) 8 = s.gpr .x30 := by
+  have hle := saveOff_le_frameDS k L.length
+  rw [(dSave_regs_frame L k s hE).read (r := ⟨dslot L k s (saveOff k), 8⟩) (Region.contains_self _ _)
+    (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)) (by decide),
+    dX_mem, read_write_self]
+
+theorem dSave_read_reg (hn : (L.map (·.2)).Nodup) (hE : frameDS k L.length < 4096) {idx : Nat}
+    (h : idx < L.length) :
+    (dSave L k s).mem.read (dslot L k s (saveOff k + 8 + 8 * idx)) 8 = laneOf s (L[idx]).2 0 := by
+  have hle := saveOff_le_frameDS k L.length
+  have r := sRegs_read (saveOff k) L 0 (dX L k s) hn (by omega) idx h
+  rw [dX_sp, Nat.zero_add] at r
+  rw [dSave, r]
+  show ((dCopied L k s).v _).extractLsb' _ _ = _
+  rw [dCopied_v]
+
+end
+
+/-- The state after `leaveDS L k`, from `g`. -/
+def dRestore (L : List (String × VReg)) (k : Nat) (g : State) : State :=
+  (rRegs (saveOff k) 0 L g).write .x .x30
+    ((rRegs (saveOff k) 0 L g).mem.read ((rRegs (saveOff k) 0 L g).sp + BitVec.ofNat 64 (saveOff k)) 8)
+
+theorem leaveDS_run {L : List (String × VReg)} {k : Nat} {g : State} (hE : frameDS k L.length < 4096)
+    (hin : ∀ off, off + 8 ≤ frameDS k L.length → InRegions (g.rd ++ g.wr) (g.sp + BitVec.ofNat 64 off) 8) :
+    execBlock isa (leaveDS L k) g =
+      some (dRestore L k g, rTrace (saveOff k) g.sp 0 L ++ [.addr (g.sp + BitVec.ofNat 64 (saveOff k))]) := by
+  have hle := saveOff_le_frameDS k L.length
+  have hm := saveOff_mod k
+  have hr := restoreRegs_run (saveOff k) hm L 0 g (by omega) (fun idx h => hin _ (by omega))
+  have hrd : (rRegs (saveOff k) 0 L g).rd ++ (rRegs (saveOff k) 0 L g).wr = g.rd ++ g.wr := by
+    have : ∀ (L : List (String × VReg)) (i : Nat) (g : State),
+        (rRegs (saveOff k) i L g).rd = g.rd ∧ (rRegs (saveOff k) i L g).wr = g.wr := by
+      intro L
+      induction L with
+      | nil => intro i g; exact ⟨rfl, rfl⟩
+      | cons p L ih => intro i g; exact ih (i + 1) _
+    rw [(this L 0 g).1, (this L 0 g).2]
+  have e := exec_ldrSp' (s := rRegs (saveOff k) 0 L g) (t := .x30) (off := saveOff k) ⟨hm, by omega⟩
+    (by rw [hrd, rRegs_sp]; exact hin _ (by omega))
+  rw [leaveDS, execBlock_append, hr]
+  simp only [Option.bind_some]
+  rw [execBlock_cons_of e]
+  simp only [execBlock, Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, rRegs_sp]
+  rw [dRestore, rRegs_sp]
+
+theorem dRestore_sp (L : List (String × VReg)) (k : Nat) (g : State) : (dRestore L k g).sp = g.sp :=
+  rRegs_sp _ L 0 g
+
+theorem dRestore_gpr {L : List (String × VReg)} {k : Nat} {g : State} {q : Reg} (h16 : q ≠ .x16)
+    (h30 : q ≠ .x30) : (dRestore L k g).gpr q = g.gpr q := by
+  rw [dRestore, RegUpd.gpr_write_of_ne _ _ _ h30, rRegs_gpr _ h16]
+
+theorem dRestore_x30 (L : List (String × VReg)) (k : Nat) (g : State) :
+    (dRestore L k g).gpr .x30 = g.mem.read (g.sp + BitVec.ofNat 64 (saveOff k)) 8 := by
+  rw [dRestore, RegUpd.gpr_write_self, BitVec.setWidth_eq, rRegs_mem, rRegs_sp]
+
+theorem dRestore_v {L : List (String × VReg)} {k : Nat} {g : State} {q : VReg} (h : ∀ p ∈ L, p.2 ≠ q) :
+    (dRestore L k g).v q = g.v q := by
+  rw [dRestore, RegUpd.v_write, rRegs_v _ _ _ _ h]
+
+theorem dRestore_lane {L : List (String × VReg)} {k : Nat} {g : State} (hn : (L.map (·.2)).Nodup)
+    {idx : Nat} (h : idx < L.length) :
+    ((dRestore L k g).v (L[idx]).2).extractLsb' 0 64 =
+      g.mem.read (g.sp + BitVec.ofNat 64 (saveOff k + 8 + 8 * idx)) 8 := by
+  rw [dRestore, RegUpd.v_write, rRegs_lane _ L 0 g hn idx h, Nat.zero_add]
+
 end VG.Proof.Sha3.AArch64
