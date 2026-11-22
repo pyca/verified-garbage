@@ -29,6 +29,28 @@ Differences from the aws-lc-rs provider:
 * ECDSA signatures are deterministic (RFC 6979).
 * Not FIPS-validated.
 
+## What is not verified
+
+The primitives are verified-garbage's, and so is TLS 1.3's HKDF
+(`verified_garbage::kdf::hkdf`). The provider is Rust, tested but not
+proven, as rustls is. Most of it only adapts rustls's traits to the
+library's API, but some of it is cryptography of its own:
+
+* **ECDH key generation on P-256 and P-384** (`src/kx.rs`) is rejection
+  sampling in Rust (FIPS 186-5 §A.4.2). It draws a candidate from the
+  operating system, and derives the public key, which rejects a candidate
+  outside `[1, n − 1]`, until one is accepted. The library has no verified
+  EC key generation.
+* **QUIC header protection** (`src/quic.rs`) is RFC 9001 §5.4.1: it masks
+  the first byte's low bits and the packet number with the mask from the
+  verified AES-ECB or ChaCha20, as rustls's own providers do.
+* **TLS 1.2's PRF** is rustls's `PrfUsingHmac` over the verified HMAC.
+* **Session tickets** (`src/ticketer.rs`) are sealed with the verified
+  AES-256-GCM. The provider lays out
+  the ticket (key name, random nonce, ciphertext, tag), authenticates the
+  key name as associated data, and compares it with `subtle`.
+* Keys and signatures are parsed and encoded with rust-asn1 (`src/der.rs`).
+
 ## Testing
 
 The provider runs rustls' own API test suite: `bench/setup-rustls.sh`
