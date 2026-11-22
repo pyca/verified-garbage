@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """rustls-bench's results as a results file of ci/bench_report.py's format.
 
+    python3 bench/results.py --start DIR
     python3 bench/results.py DIR [-o FILE] [--meta KEY=VALUE ...]
 
-reads bench/run.sh's output in DIR (`rustls-bench-<provider>-<round>.tsv`)
-and writes, for each scenario and provider, the median of its runs, as
-a time: nanoseconds per handshake, or per megabyte for bulk transfers.
+`--start` records a run's context in DIR/context.json: this machine, the
+checkout's commit, the time, and the CPU features the libraries are
+restricted to. bench/run.sh records it before it runs rustls-bench, so
+that the results file describes what was measured, wherever and whenever
+it is written.
+
+Without `--start`, it reads bench/run.sh's output in DIR
+(`rustls-bench-<provider>-<round>.tsv`) and that context, and writes, for
+each scenario and provider, the median of its runs, as a time:
+nanoseconds per handshake, or per megabyte for bulk transfers.
 (rustls-bench runs a bulk transfer once for each key type its suite
 allows, which its rows do not name: those are runs of the same scenario.)
 A scenario's size is its `max_fragment_size` (bulk) or its resumption
@@ -60,14 +68,38 @@ def read(out):
     return rates
 
 
+def context():
+    """The context of a run starting now, with the checkout's commit."""
+    return {
+        "arch": bench_report.arch_name(),
+        "os": platform.system(),
+        "cpu": cpu_model(),
+        "cpu_features": os.environ.get("VG_CPU_FEATURES", ""),
+        "openssl_ia32cap": os.environ.get("OPENSSL_ia32cap"),
+        "ref": bench_report.git(ROOT, "rev-parse", "--abbrev-ref", "HEAD"),
+        "commit": bench_report.commit_of(ROOT),
+        "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "source": "local",
+    }
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("out", type=pathlib.Path, help="bench/run.sh's output directory")
+    p.add_argument("--start", action="store_true", help="record the context of a run starting now")
     p.add_argument("-o", "--output", type=pathlib.Path)
     p.add_argument("--meta", action="append", metavar="KEY=VALUE", help="a field of the run (repeatable)")
     args = p.parse_args(argv)
 
-    commit = bench_report.commit_of(ROOT)
+    recorded = args.out / "context.json"
+    if args.start:
+        args.out.mkdir(parents=True, exist_ok=True)
+        recorded.write_text(json.dumps(context(), indent=1) + "\n")
+        return 0
+    if not recorded.is_file():
+        p.error(f"{recorded}: no context recorded (bench/run.sh records it with --start)")
+    run = json.loads(recorded.read_text())
+    commit = run.pop("commit", None)
     results = []
     for (group, size, library), rates in read(args.out).items():
         times = [1e9 / r for r in rates]
@@ -75,19 +107,9 @@ def main(argv=None):
                                            samples=times, commit=commit))
     if not results:
         p.error(f"{args.out}: no rustls-bench results")
-    context = {
-        "arch": bench_report.arch_name(),
-        "os": platform.system(),
-        "cpu": cpu_model(),
-        "cpu_features": os.environ.get("VG_CPU_FEATURES", ""),
-        "openssl_ia32cap": os.environ.get("OPENSSL_ia32cap"),
-        "ref": bench_report.git(ROOT, "rev-parse", "--abbrev-ref", "HEAD"),
-        "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "source": "local",
-        **bench_report.parse_meta(args.meta),
-    }
+    doc = bench_report.document({**run, **bench_report.parse_meta(args.meta)}, results)
     output = args.output or args.out / "rustls-bench.json"
-    output.write_text(json.dumps(bench_report.document(context, results), indent=1) + "\n")
+    output.write_text(json.dumps(doc, indent=1) + "\n")
     print(f"{output}: {len(results)} results", file=sys.stderr)
     return 0
 

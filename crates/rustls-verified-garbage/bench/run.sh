@@ -3,8 +3,9 @@
 # verified-garbage, `rounds` times (default 5), alone on CPU $BENCH_CPU
 # (default 2), into $BENCH_OUT (default target/bench-results), and writes
 # the results there as a results file of ci/bench_report.py's format,
-# rustls-bench.json (bench/results.py), which `python3 ci/bench_report.py
-# html` charts. Linux only (`taskset`).
+# rustls-bench.json (bench/results.py, with the context it records as the
+# run starts), which `python3 ci/bench_report.py html` charts. Linux only
+# (`taskset`).
 #
 # To measure an older CPU class on a newer x86-64 machine, restrict both
 # libraries' CPU features: verified-garbage's with VG_CPU_FEATURES (the
@@ -29,7 +30,7 @@ rounds=${1:-5}
 [ -d "$rustls" ] || "$here/rustls/setup.sh" "$rustls"
 (cd "$rustls" && cargo build --profile=bench -p rustls-bench --features aws-lc-rs,verified-garbage)
 
-mkdir -p "$out"
+python3 "$here/bench/results.py" --start "$out"
 for r in $(seq 1 "$rounds"); do
     for p in aws-lc-rs verified-garbage; do
         echo "rustls-bench $p, round $r" >&2
