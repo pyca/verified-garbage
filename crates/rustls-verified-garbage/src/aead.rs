@@ -48,56 +48,27 @@ impl Algorithm {
 }
 
 impl Key {
-    /// Encrypts the plaintext `plain ‖ extra` into `out`, which is exactly as
-    /// long, returning the tag. Both AEADs read the pieces where they are
-    /// and write only `out`; a plaintext of more pieces than `encrypt`
-    /// takes is copied into `out` and encrypted there.
-    pub(crate) fn seal_to(
+    /// Appends the plaintext `plain ‖ extra` to `out`, seals it there and
+    /// appends its tag: one copy of the plaintext, which a record's buffer
+    /// needs anyway, rather than writing every byte of it twice (zeroed,
+    /// then encrypted into from where the plaintext is).
+    pub(crate) fn seal_append(
         &self,
         nonce: &[u8; 12],
         aad: &[u8],
         plain: &OutboundPlain<'_>,
         extra: &[u8],
-        out: &mut [u8],
-    ) -> Result<[u8; TAG_LEN], ()> {
-        debug_assert_eq!(out.len(), plain.len() + extra.len());
-        // The usual record, one chunk, without the array below, whose
-        // initialization costs about a sixth of a 1 KiB record.
-        if let Some(p) = plain.single_chunk() {
-            return self.encrypt(nonce, aad, &[p, extra], out);
+        out: &mut Vec<u8>,
+    ) -> Result<(), ()> {
+        let start = out.len();
+        out.reserve(plain.len() + extra.len() + TAG_LEN);
+        for piece in plain.chunks() {
+            out.extend_from_slice(piece);
         }
-        // `encrypt` takes at most `MAX_PIECES` pieces (the same for both).
-        const MAX_PIECES: usize = AesGcm::MAX_PIECES;
-        const _: () = assert!(ChaCha20Poly1305::MAX_PIECES == MAX_PIECES);
-        if plain.chunks().count() < MAX_PIECES {
-            let mut pieces: [&[u8]; MAX_PIECES] = [&[]; MAX_PIECES];
-            let mut n = 0;
-            for piece in plain.chunks().chain([extra]) {
-                pieces[n] = piece;
-                n += 1;
-            }
-            return self.encrypt(nonce, aad, &pieces[..n], out);
-        }
-        let mut used = 0;
-        for piece in plain.chunks().chain([extra]) {
-            out[used..used + piece.len()].copy_from_slice(piece);
-            used += piece.len();
-        }
-        self.seal(nonce, aad, out)
-    }
-
-    /// Encrypts the concatenation of `pieces` into `out`, returning the tag.
-    fn encrypt(
-        &self,
-        nonce: &[u8; 12],
-        aad: &[u8],
-        pieces: &[&[u8]],
-        out: &mut [u8],
-    ) -> Result<[u8; TAG_LEN], ()> {
-        match self {
-            Self::AesGcm(k) => k.encrypt(nonce, aad, pieces, out).map_err(|_| ()),
-            Self::ChaCha20Poly1305(k) => k.encrypt(nonce, aad, pieces, out).map_err(|_| ()),
-        }
+        out.extend_from_slice(extra);
+        let tag = self.seal(nonce, aad, &mut out[start..])?;
+        out.extend_from_slice(&tag);
+        Ok(())
     }
 
     /// Encrypts `data` in place, returning the tag.
@@ -132,16 +103,14 @@ impl Key {
 }
 
 /// Appends to `out` the header of a record of type `typ`, `version` and a
-/// payload of `len` bytes, then room for the payload, which it returns.
-pub(crate) fn append_record(
+/// payload of `len` bytes.
+pub(crate) fn append_header(
     out: &mut Vec<u8>,
     typ: ContentType,
     version: EncodableVersion,
     len: usize,
-) -> Result<&mut [u8], Error> {
-    let header_len = u16::try_from(len).map_err(|_| Error::EncryptError)?;
-    out.extend_from_slice(&encode_record_header(typ, version, header_len));
-    let start = out.len();
-    out.resize(start + len, 0);
-    Ok(&mut out[start..])
+) -> Result<(), Error> {
+    let len = u16::try_from(len).map_err(|_| Error::EncryptError)?;
+    out.extend_from_slice(&encode_record_header(typ, version, len));
+    Ok(())
 }

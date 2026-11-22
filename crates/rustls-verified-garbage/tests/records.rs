@@ -1,7 +1,6 @@
 //! Every cipher suite seals a record the same from contiguous and from
-//! fragmented plaintext (in more pieces than `AesGcm::encrypt` takes, too),
-//! appending the whole record (its header too) after what the output
-//! already holds, and opens what it sealed.
+//! fragmented plaintext, appending the whole record (its header too) after
+//! what the output already holds, and opens what it sealed.
 
 use rustls::crypto::cipher::{
     AeadKey, EncodableVersion, InboundOpaque, Iv, OutboundPlain, Record, RecordDecrypter,

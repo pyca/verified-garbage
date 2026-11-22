@@ -131,19 +131,13 @@ impl RecordEncrypter for Tls13RecordEncrypter {
     ) -> Result<(), Error> {
         let total_len = self.encrypted_payload_len(msg.payload.len());
         let typ = ContentType::ApplicationData;
-        let record = aead::append_record(out, typ, msg.version, total_len)?;
-
         let nonce = Nonce::new(&self.iv, seq).to_array()?;
         let aad = make_tls13_aad(typ, msg.version.encode(), total_len);
-        // The plaintext is the payload followed by its content type, each
-        // encrypted from where it is into `record`.
-        let (ciphertext, tag_out) = record.split_at_mut(total_len - TAG_LEN);
-        let tag = self
-            .key
-            .seal_to(&nonce, &aad, &msg.payload, &msg.typ.to_array(), ciphertext)
-            .map_err(|_| Error::EncryptError)?;
-        tag_out.copy_from_slice(&tag);
-        Ok(())
+        aead::append_header(out, typ, msg.version, total_len)?;
+        // The plaintext is the payload followed by its content type.
+        self.key
+            .seal_append(&nonce, &aad, &msg.payload, &msg.typ.to_array(), out)
+            .map_err(|_| Error::EncryptError)
     }
 
     fn encrypted_payload_len(&self, payload_len: usize) -> usize {

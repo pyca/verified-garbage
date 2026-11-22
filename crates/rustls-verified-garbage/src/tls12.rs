@@ -274,8 +274,6 @@ impl RecordEncrypter for GcmRecordEncrypter {
         out: &mut Vec<u8>,
     ) -> Result<(), Error> {
         let total_len = self.encrypted_payload_len(record.payload.len());
-        let out = aead::append_record(out, record.typ, record.version, total_len)?;
-
         let nonce: [u8; NONCE_LEN] = Nonce::new(&self.iv, seq).to_array()?;
         let aad = make_tls12_aad(
             seq,
@@ -283,17 +281,12 @@ impl RecordEncrypter for GcmRecordEncrypter {
             record.version.encode(),
             record.payload.len(),
         );
-        // The explicit nonce, then the ciphertext, encrypted from the
-        // payload where it is, then the tag.
-        let (explicit, rest) = out.split_at_mut(GCM_EXPLICIT_NONCE_LEN);
-        explicit.copy_from_slice(&nonce[4..]);
-        let (ciphertext, tag_out) = rest.split_at_mut(record.payload.len());
-        let tag = self
-            .key
-            .seal_to(&nonce, &aad, &record.payload, &[], ciphertext)
-            .map_err(|_| Error::EncryptError)?;
-        tag_out.copy_from_slice(&tag);
-        Ok(())
+        aead::append_header(out, record.typ, record.version, total_len)?;
+        // The explicit nonce, then the ciphertext, then the tag.
+        out.extend_from_slice(&nonce[4..]);
+        self.key
+            .seal_append(&nonce, &aad, &record.payload, &[], out)
+            .map_err(|_| Error::EncryptError)
     }
 
     fn encrypted_payload_len(&self, payload_len: usize) -> usize {
@@ -356,8 +349,6 @@ impl RecordEncrypter for ChaCha20Poly1305RecordEncrypter {
         out: &mut Vec<u8>,
     ) -> Result<(), Error> {
         let total_len = self.encrypted_payload_len(record.payload.len());
-        let out = aead::append_record(out, record.typ, record.version, total_len)?;
-
         let nonce = Nonce::new(&self.offset, seq).to_array()?;
         let aad = make_tls12_aad(
             seq,
@@ -365,13 +356,10 @@ impl RecordEncrypter for ChaCha20Poly1305RecordEncrypter {
             record.version.encode(),
             record.payload.len(),
         );
-        let (ciphertext, tag_out) = out.split_at_mut(record.payload.len());
-        let tag = self
-            .key
-            .seal_to(&nonce, &aad, &record.payload, &[], ciphertext)
-            .map_err(|_| Error::EncryptError)?;
-        tag_out.copy_from_slice(&tag);
-        Ok(())
+        aead::append_header(out, record.typ, record.version, total_len)?;
+        self.key
+            .seal_append(&nonce, &aad, &record.payload, &[], out)
+            .map_err(|_| Error::EncryptError)
     }
 
     fn encrypted_payload_len(&self, payload_len: usize) -> usize {
