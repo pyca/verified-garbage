@@ -46,7 +46,10 @@ is constant time (`ctr_ct`, `key_ct`) by the callee's own proof, when the
 arguments are the same in both runs. They keep their working space on the
 stack, and are called by their shared contracts (`Proof.Sm4.ctr32Contract`
 with 1516 bytes of stack, `Spec.Sm4.expandKeyContract` with 1448), from the
-layout the call gives them. The calls of `vg_ghash` are AES-GCM's
+layout the call gives them. The key schedule is any implementation of it
+(`KeyImpl`: its code, that it meets that contract, and what its callers'
+stack and cleanup need of it), of which `KeyImpl.scalar` is the baseline
+ISA's. The calls of `vg_ghash` are AES-GCM's
 (`Proof/AesGcm/X86/Callee.lean`).
 -/
 
@@ -340,6 +343,56 @@ abbrev keyWr (C : BitVec 32) : List Region := [⟨w64 C, 128⟩]
 /-- The contract `vg_sm4_expand_key` is called by. -/
 abbrev keyK : Contract isa := Spec.Sm4.expandKeyContract X86.abi 1448
 
+/-- An implementation of `vg_sm4_expand_key` on x86, as verified code calls
+it: an internal function, which keeps its working space on its own stack. -/
+structure KeyImpl where
+  /-- Its symbol and code. -/
+  fn : Fn
+  /-- It is correct. -/
+  ok : ∀ s, keyK.pre s → ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ keyK.post s s'
+  /-- It is constant time. -/
+  ct : ConstantTime isa keyK.pre keyK.pub fn.code
+  /-- It never writes the stack pointer, and its calls and frames use at most
+  the 1448 bytes of stack its contract reserves. -/
+  nosp : NoSp fn.code
+  stack : stackUse fn.code ≤ 1448
+  spSafe : fn.code.all (fun i => !isa.writesSp i) = true
+  /-- Its code has no MMX instruction and makes no indirect call (`calleeOk`):
+  what the cleanup of every function that calls it needs of it, with its
+  stack (`X86.Scrub.calleeSide`), so that each proves only its own code,
+  whatever the implementation (`Proof/Framework/X86/ScrubCall.lean`). -/
+  scrub : calleeOk fn.code = true
+  /-- What the names of its callers' instances end with (nothing for the
+  baseline implementation). -/
+  suffix : String
+  /-- The CPU features its code requires, which its callers require too. -/
+  features : List String
+
+theorem key_ok (s : State) (h : keyK.pre s) :
+    ∃ t s', Exec isa keyFn.code s t s' ∧ abiPreserved s s' ∧ keyK.post s s' :=
+  Proof.Sm4.X86.expandKey_framed.1 s h
+
+theorem key_ctK : ConstantTime isa keyK.pre keyK.pub keyFn.code := Proof.Sm4.X86.expandKey_framed.2.1
+
+theorem key_calleeOk : calleeOk keyFn.code = true := by unfold keyFn; lit_decide
+
+namespace KeyImpl
+
+/-- `vg_sm4_expand_key`'s code in the baseline ISA, its working space in a
+frame of its own: `vg_sm4_expand_key_core`. -/
+def scalar : KeyImpl where
+  fn := keyFn
+  ok := key_ok
+  ct := key_ctK
+  nosp := key_nosp
+  stack := Nat.le_of_eq key_stack'
+  spSafe := key_spSafe
+  scrub := key_calleeOk
+  suffix := ""
+  features := []
+
+end KeyImpl
+
 namespace KeyCall
 variable {s : State} {K C : BitVec 32} (h : KeyCall s K C)
 include h
@@ -423,15 +476,15 @@ theorem sm4BlockAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p
   simp only [Spec.Sm4.blockAt, Vector.getElem_ofFn]
   exact hf.bytes (R := ⟨p, 16⟩) hd (by show 16 ≤ 2 ^ 64; omega_using []) hi
 
-theorem key_call {s : State} {K C : BitVec 32} (h : KeyCall s K C) :
-    WP isa (keyCall) s (KeyPost s K C) := by
+theorem key_call (ki : KeyImpl) {s : State} {K C : BitVec 32} (h : KeyCall s K C) :
+    WP isa (keyCall ki.fn) s (KeyPost s K C) := by
   unfold keyCall
-  refine WP.callWith (rs := keyRegs) (k := keyK) Proof.Sm4.X86.expandKey_framed.1 key_nosp (by simp)
-    keyRegs_esp (by rw [key_stack']; have := h.esp
-                    simp only [List.length_cons, List.length_nil]; omega_using [this])
+  have hst := ki.stack
+  have hlen : keyRegs.length = 2 := rfl
+  refine WP.callWith (rs := keyRegs) (k := keyK) ki.ok ki.nosp (by simp)
+    keyRegs_esp (by have := h.esp; omega_using [this, hst, hlen])
     h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1⟩ := h.args
-  rw [key_stack'] at f'
   have fE := callEntry_frame h.fit keyRegs_esp
   rw [show 4 * keyRegs.length + 4 = 12 from rfl] at fE
   have fE' : Frame [below (s.gpr .esp) 1460] s.mem (pushed keyRegs s).callEntry.mem :=
@@ -449,13 +502,13 @@ theorem key_call {s : State} {K C : BitVec 32} (h : KeyCall s K C) :
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨_, by simp, fun _ h => h⟩
-  · exact ⟨below (s.gpr .esp) 1460, by simp, VG.X86.below_sub (by decide) h.esp⟩
+  · exact ⟨below (s.gpr .esp) 1460, by simp, VG.X86.below_sub (by omega_using [hst, hlen]) h.esp⟩
 
 /-- Calls of `vg_sm4_expand_key` with the same arguments and stack pointer in
 both runs are constant time. -/
-theorem key_ct {I : State → Prop} {K C E : BitVec 32}
-    (h : ∀ s, I s → KeyCall s K C ∧ s.gpr .esp = E) : CT I (keyCall) := by
-  refine CT.callWith Proof.Sm4.X86.expandKey_framed.1 Proof.Sm4.X86.expandKey_framed.2.1 (keyRd E K)
+theorem key_ct (ki : KeyImpl) {I : State → Prop} {K C E : BitVec 32}
+    (h : ∀ s, I s → KeyCall s K C ∧ s.gpr .esp = E) : CT I (keyCall ki.fn) := by
+  refine CT.callWith ki.ok ki.ct (keyRd E K)
     (keyWr C) fun s₁ s₂ i₁ i₂ => ?_
   obtain ⟨h₁, e₁⟩ := h s₁ i₁
   obtain ⟨h₂, e₂⟩ := h s₂ i₂

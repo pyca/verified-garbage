@@ -3,6 +3,56 @@
 //! `assembly/sm4_cbc.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_sm4_cbc_encrypt_chained_aesni` requires (`Artifact.features`).
+pub const VG_SM4_CBC_ENCRYPT_CHAINED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// SM4-CBC encryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`. No padding is added.
+///
+/// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 692 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_cbc_encrypt_chained_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkUP3//4uEJLQCAACJRCQEi4QkuAIAAIlEJAiLhCS8AgAAiUQkDIuEJMACAACJRCQQieCDwBiJRCQUi0QkFImYcAIAAImwdAIAAIm4eAIAAImofAIAAInHi3QkCIsGiYeIAgAAi0YEiYeMAgAAi0YIiYeQAgAAi0YMiYeUAgAA"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_SM4_AESNI} - 2b
+.base64 "WYkHicOLRCQEif6DxmC5CAAAAPMPbzs="
+20:
+.base64 "8w9vAPMPb4vgAAAAZg84AMFmD2/IZg9y0QRmD9vPZg/bx/MPb5PAAAAAZg84ANDzD2+b0AAAAGYPOADZZg/v02YPcNoA8w9/HmYPcNpV8w9/XhBmD3DaqvMPf14gZg9w2v/zD39eMIPAEIPGQIPpAQ=="
+jne 20b
+.base64 "i0QkDImHgAIAAItEJBCJh4QCAACFwA=="
+je 21f
+23:
+.base64 "i7eAAgAAi6+EAgAAiwYzh4gCAACJRwiLRgQzh4wCAACJRwyLRggzh5ACAACJRxCLRgwzh5QCAACJRxSLH4n+g8ZguAgAAADzD29HCPMPbztmD2/IZg9y0QRmD9vPZg/bx/MPb5OAAAAAZg84ANDzD2+bkAAAAGYPOADZZg/v02YPcNoA8w9/XyBmD3DCVfMPf0cwZg9w2qrzD39fQGYPcMr/8w9/T1BmD+/DZg/vwfMPbx5mD+/D"
+24:
+.base64 "8w9vVhDzD293QGYP79ZmD+/R8w9vXyBmD+/aZg843cdmD2/IZg/bz2YPctAEZg/bx/MPb2MQZg84AOHzD29rMGYPOADpZg9vzPMPb3MgZg84APBmD+/mZg/vzvMPb3NAZg84APBmD+/uZg/v3GYP793zD29zUGYPOADm8w9vQ2BmDzgAyGYP7+HzD29zcGYPOADuZg/v3WYP7+NmD+/U8w9/VyDzD29OIPMPb3dQZg/vzmYP78rzD29fMGYP79lmDzjd52YPb9RmD9vXZg9y1ARmD9vn8w9vQxBmDzgAwvMPb2swZg84AOpmD2/Q8w9vcyBmDzgA9GYP78ZmD+/W8w9vc0BmDzgA9GYP7+5mD+/YZg/v3fMPb3NQZg84AMbzD29jYGYPOADUZg/vwvMPb3NwZg84AO5mD+/dZg/vw2YP78jzD39PMPMPb1Yw8w9vdyBmD+/WZg/v0fMPb19AZg/v2mYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1dA8w9vTkDzD293MGYP785mD+/K8w9vX1BmD+/ZZg843edmD2/UZg/b12YPctQEZg/b5/MPb0MQZg84AMLzD29rMGYPOADqZg9v0PMPb3MgZg84APRmD+/GZg/v1vMPb3NAZg84APRmD+/uZg/v2GYP793zD29zUGYPOADG8w9vY2BmDzgA1GYP78LzD29zcGYPOADuZg/v3WYP78NmD+/I8w9/T1CDxkCD6AE="
+jne 24b
+.base64 "8w9vR1DzD29PQGYPbMFmD3DAiPMPb08w8w9vVyBmD2zKZg9wyYhmD2zBZg9vyGYPctEEZg/bz2YP28fzD2+ToAAAAGYPOADQ8w9vm7AAAABmDzgA2WYP79PzD39XCIu3gAIAAIuvhAIAAItHCImHiAIAAItHDImHjAIAAItHEImHkAIAAItHFImHlAIAAItHCIkGi0cMiUYEi0cQiUYIi0cUiUYMg8YQg+0BibeAAgAAia+EAgAA"
+jne 23b
+jmp 22f
+21:
+22:
+.base64 "i3QkCIuHiAIAAIkGi4eMAgAAiUYEi4eQAgAAiUYIi4eUAgAAiUYMi59wAgAAi7d0AgAAi698AgAAi794AgAAuQAAAACJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACJjCREAQAAiYwkSAEAAImMJEwBAACJjCRQAQAAiYwkVAEAAImMJFgBAACJjCRcAQAAiYwkYAEAAImMJGQBAACJjCRoAQAAiYwkbAEAAImMJHABAACJjCR0AQAAiYwkeAEAAImMJHwBAACJjCSAAQAAiYwkhAEAAImMJIgBAACJjCSMAQAAiYwkkAEAAImMJJQBAACJjCSYAQAAiYwknAEAAImMJKABAACJjCSkAQAAiYwkqAEAAImMJKwBAACJjCSwAQAAiYwktAEAAImMJLgBAACJjCS8AQAAiYwkwAEAAImMJMQBAACJjCTIAQAAiYwkzAEAAImMJNABAACJjCTUAQAAiYwk2AEAAImMJNwBAACJjCTgAQAAiYwk5AEAAImMJOgBAACJjCTsAQAAiYwk8AEAAImMJPQBAACJjCT4AQAAiYwk/AEAAImMJAACAACJjCQEAgAAiYwkCAIAAImMJAwCAACJjCQQAgAAiYwkFAIAAImMJBgCAACJjCQcAgAAiYwkIAIAAImMJCQCAACJjCQoAgAAiYwkLAIAAImMJDACAACJjCQ0AgAAiYwkOAIAAImMJDwCAACJjCRAAgAAiYwkRAIAAImMJEgCAACJjCRMAgAAiYwkUAIAAImMJFQCAACJjCRYAgAAiYwkXAIAAImMJGACAACJjCRkAgAAiYwkaAIAAImMJGwCAACJjCRwAgAAiYwkdAIAAImMJHgCAACJjCR8AgAAiYwkgAIAAImMJIQCAACJjCSIAgAAiYwkjAIAAImMJJACAACJjCSUAgAAiYwkmAIAAImMJJwCAACJjCSgAgAAiYwkpAIAAImMJKgCAACJjCSsAgAAjaQksAIAAI2kJEz9//+5AAAAAIlMJASJTCQIiUwkDIlMJBCJTCQUiUwkGI2kJLQCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        VG_SM4_AESNI = sym super::consts::VG_SM4_AESNI,
+    )
+}
+
 /// SM4-CBC encryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`. No padding is added.
 ///
 /// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.

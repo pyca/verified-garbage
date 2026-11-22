@@ -26,9 +26,9 @@ each a fact about the 256 bytes that the kernel evaluates:
 And what the straight-line parts of the code leave in the registers and
 store, as expressions of the bytes they start with
 (`Proof/Framework/X86/ByteMap.lean`), each compared by the kernel with the
-expression the proofs use: the two rounds of a turn (`round_all`), the
-conversions at the two ends (`conv_all`), and a group of `prepare`
-(`prep_all`).
+expression the proofs use: the four rounds of a turn, each but its key's
+load and its word's store (`round_all`), the conversions at the two ends
+(`conv_all`), and a group of `prepare` (`prep_all`).
 -/
 
 @[expose] public section
