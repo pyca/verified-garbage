@@ -194,10 +194,18 @@ def halfStep : Prog isa := seqs ([.block (bitOf X0 aU ++ bitOf X1 aV ++ notS X1 
 def halving : Prog isa :=
   seqs [mulTo aF aPm aQm cnt8, copy aU aPm, copy aV aQm, .block cnt8, .loop halfStep (.nonzero .d .r11)]
 
+/-- A call of `vg_rsa_inv_batch` (`InvBatch.inverseFn`), `n` from `r11` in
+`r10`: the call writes the link register, which it keeps in the first
+doubleword of array `aNM`, which the inverse does not write. -/
+def invCall : Prog isa :=
+  seqs [.block (.mflr .r0 :: ptr .r5 aNM ++ [.store .d .r0 .r5 0, .addi .r10 .r11 0]),
+    .call "vg_rsa_inv_batch" VG.Impl.Rsa.PPC64LE.InvBatch.inverseFn,
+    .block (ptr .r5 aNM ++ [.load .d .r0 .r5 0, .mtlr .r0])]
+
 /-- `[a]` modulo `[m]` by the batched inverse (`Impl/Rsa/PPC64LE/InvBatch.lean`):
 `a` into array 0 and `m` into `aM`, and `k` sets its width, `r11` digits. -/
 def invOf (a m : Nat) (k : List Instr) : Prog isa :=
-  seqs [copy aM m, copy 0 a, .block k, VG.Impl.Rsa.PPC64LE.InvBatch.inverse]
+  seqs [copy aM m, copy 0 a, .block k, invCall]
 
 /-- The width of the primes, `p_len / 4` digits. -/
 def nP : List Instr := [.lsr .d .r11 .r22 2]
