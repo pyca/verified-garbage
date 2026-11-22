@@ -99,7 +99,7 @@ def esAddr : Instr → Bool
   | .mov .. | .alu .. => true
   | .store m _ | .store8 m _ | .movzx8 _ m => esBase m
   | .shift .. | .bswap _ | .mul _ => true
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .pmuludq .. | .mcdtEnter _ | .mcdtLeave | .callr _ => false
 
 /-- `i` writes neither `esp` nor `esi`, and addresses through them. -/
@@ -126,7 +126,7 @@ theorem esAddr_addrs {i : Instr} (h : esAddr i = true) {s s' : State} (h₁ : s.
   | store8 m r => simp only [esAddr] at h; simp only [addrs, esBase_ea h h₁ h₂]
   | movzx8 d m => simp only [esAddr] at h; simp only [addrs, esBase_ea h h₁ h₂]
   | shift | bswap | mul => rfl
-  | symPush | push | pop | alloc | free | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms
+  | symPush | push | pop | alloc | free | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms
   | pmuludq | mcdtEnter | mcdtLeave | callr => simp [esAddr] at h
 
 theorem esOk_block : ∀ {is : List Instr}, is.all esOk = true →

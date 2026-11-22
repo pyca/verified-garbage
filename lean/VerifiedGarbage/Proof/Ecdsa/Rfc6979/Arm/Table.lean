@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.ICall
 import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 import VerifiedGarbage.Proof.Framework.Arm.Reduce
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Prep
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
@@ -971,7 +972,7 @@ def lay (dn q : Nat) (cs : List (String × List (BitVec 64))) (F : Impl.Pbkdf2.W
   sy n := if n ∈ cs.map Prod.fst then s.syms n else 0
   F := F
   f := f
-  fa n := if n ∈ [F.hiN, F.H.updN, F.hfN] then s.syms n else 0
+  fa n := if n ∈ [F.hiAnyN, F.H.updN, F.hfN] then s.syms n else 0
 
 section
 variable {dn q : Nat} {cs : List (String × List (BitVec 64))} {F : Impl.Pbkdf2.Whole.Arm.Fns} {f : Fns}
@@ -989,13 +990,25 @@ theorem lay_tbls (s : State) :
 theorem lay_ok {I : Proof.Ecdsa.Rfc6979.Instance} {ns : List String} {s : State}
     (h : (rfcArm I stackT cs (tabFacts F f) ns).pre s) : (lay I.hashLen I.ecdsa.curve.len cs F f s).Ok := by
   obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nB, na, ao, ac, nt, to, tc, tk, tables, -⟩ := h
-  refine ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nt, to, tc, tk, ao, ac, nB, na, ?_⟩
+  -- The stack the frame uses, and the 8 bytes below it, within the stack the contract gives.
+  have hS : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 536, 536⟩ ⟨State.addr s.sp - BitVec.ofNat 64 544, 544⟩ :=
+    Offset.sub_below _ (by decide) (by decide)
+  have h8 : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 536 - BitVec.ofNat 64 8, 8⟩
+      ⟨State.addr s.sp - BitVec.ofNat 64 544, 544⟩ := by
+    rw [Offset.sub_sub_ofNat]; exact Region.sub_prefix (by decide)
+  refine ⟨od, og, oc, dc, gc, ko.sub_left hS, kd.sub_left hS, kg.sub_left hS, kc.sub_left hS, no, nd, ng, nc, nt,
+    to, tc, tk.sub_right hS, ao, ac, nB, na, ?_, kc.sub_left h8⟩
   intro r hr
   rw [lay_tbls] at hr
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr
   obtain tc := tables c hc
-  refine ⟨?_, tc.2.2.1, tc.2.2.2⟩
-  simpa only [toNat_addr] using tc.2.1
+  refine ⟨?_, fun w hw => ?_, tc.2.2.2⟩
+  · simpa only [toNat_addr] using tc.2.1
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl | rfl
+    · exact tc.2.2.1 _ (.head _)
+    · exact tc.2.2.1 _ (.tail _ (.head _))
+    · exact (tc.2.2.1 _ (.tail _ (.tail _ (.head _)))).sub_right hS
 end
 
 /-- Words stored at offsets apart from a range below them change nothing outside it. -/
@@ -1036,7 +1049,7 @@ theorem entry_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
     WP isa (.block Cfg.prologue) (allocated frameBytes s) (Ctx (layOf P s) s.gpr s.mem) := by
   apply WP.of_syms
   obtain hL : (layOf P s).Ok := lay_ok h
-  have hN : 536 ≤ s.sp.toNat := hL.nB
+  have hN : 544 ≤ s.sp.toNat := hL.nB
   have hna : s.sp.toNat + 8 ≤ 2 ^ 32 := hL.na
   have htf : tabFacts P.F P.f s := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
   have tables := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
@@ -1109,7 +1122,7 @@ theorem entry_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
     fun c hc => by rw [syEnd]; exact (lay_sy s hc).symm, fun c hc i hi => ?_, by rw [syEnd]; exact htf.1,
     by rw [syEnd]; exact htf.2.1, htf.2.2.1, htf.2.2.2, fun n hn => by
       rw [syEnd]
-      show s.syms n = (if n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN] then s.syms n else 0)
+      show s.syms n = (if n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN] then s.syms n else 0)
       exact (ite_eq_left_of_eq_true _ _ (eq_true hn)).symm⟩
   · rw [K₈.wr, K₂.wr, v₁.wr]
     show ⟨State.addr (layOf P s).fp, frameBytes⟩ :: s.wr = _
@@ -1147,7 +1160,7 @@ theorem sign_ok {ns : List String} {s : State} (h : (rfcP P ns).pre s) :
     WP isa (cfgOf P).sign s fun s' => ((∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp) ∧
       (rfcP P ns).post s s' := by
   obtain hL : (layOf P s).Ok := lay_ok h
-  have hN : 536 ≤ s.sp.toNat := hL.nB
+  have hN : 544 ≤ s.sp.toNat := hL.nB
   obtain hk := coreOk_lay P s
   refine WP.alloc frameBytes_ok (by show 512 ≤ _; omega_arith) ?_
   rw [Cfg.body]
@@ -1201,7 +1214,7 @@ contents depend on the curve: `RfcT`, each curve's `RfcCurve.blk`), or, for
 the byte loops, from registers both runs set alike (`T`'s length, `D`); an
 indirect call reaches, through the table, whose address `r6` holds, the
 same function in both runs (`tcall_ct`), each of which is constant time with
-arguments that agree (`hi_rel`, `upd_rel`, `hf_rel`, `frame2_rel`); and the
+arguments that agree (`any_rel`, `upd_rel`, `hf_rel`, `frame2_rel`); and the
 loop's branch agrees, since in both runs it goes on after candidate `i` iff
 `i` is before the candidate it stops at (`go_iff`). The prologue's first
 instruction reads `sp`, which agrees (`start_blk`), and the frame's
@@ -1217,8 +1230,8 @@ open VG.Impl.AesGcm.Arm (copyLoop)
 open VG.Impl.Pbkdf2.Stream.Arm (scrAt)
 open VG.Proof.X25519.Arm (op2_reg op2_imm dpVal)
 open VG.Proof.Ecdsa.Rfc6979 (kvAtB candAtB stepB)
-open VG.Proof.Pbkdf2.Whole.Arm (hi_rel hf_rel frame2_rel)
-open VG.Proof.HmacTable.Arm (TabOK TabMem tA)
+open VG.Proof.Pbkdf2.Whole.Arm (hf_rel frame2_rel)
+open VG.Proof.HmacTable.Arm (TabOK TabMem tA any_rel)
 
 /-! ## Frames and single instructions -/
 
@@ -1415,7 +1428,7 @@ def TabFn (P : RfcHash) (j : Nat) (n : String) (c : Prog isa) (ts : List (String
     m₀.readW (tA L.tab (4 * j)) 32 = t.syms n ∧
       ts.find? (fun q => (t.syms q.1).setWidth 64 == (t.syms n).setWidth 64) = some (n, c) ∧ t.syms n = L.fa n
 
-theorem tfn_init : TabFn P 0 P.F.hiN P.F.hiC P.f.init := fun L _ _ _ _ hk hc => by
+theorem tfn_init : TabFn P 0 P.F.hiAnyN P.F.hmacInitAny P.f.init := fun L _ _ _ _ hk hc => by
   have hok := hc.tabOk; have htm := hc.tabMem; have hf := hc.fsy
   rw [hk.2.2.1.1, hk.2.2.1.2] at hok; rw [hk.2.2.1.1] at htm hf
   exact ⟨htm.1, hok.i, hf _ (by simp)⟩
@@ -1504,11 +1517,11 @@ theorem lr_fa {cnt dst : Nat} : LR (FA P cnt dst) :=
     (hr _ (by decide)).trans c, (hr _ (by decide)).trans d, (hr _ (by decide)).trans e, (hr _ (by decide)).trans f⟩
 
 theorem hinit_ct :
-    RelCT isa (Two P (IA P)) (.frame (.push [.r12, .lr]) (.call P.F.hiN P.F.hiC) (.pop .r12 8))
+    RelCT isa (Two P (IA P)) (.frame (.push [.r12, .lr]) (.call P.F.hiAnyN P.F.hmacInitAny) (.pop .r12 8))
       fun _ _ => True :=
-  two_exists fun e => hi_rel P.ok.hi (sp := e.1.fp) fun _ _ ⟨hL, _, _, c₁, c₂, a₁, a₂⟩ =>
-    ⟨initA (P := P) hL c₁ a₁.1 a₁.2.1 a₁.2.2.1 a₁.2.2.2.1 a₁.2.2.2.2,
-      initA (P := P) hL c₂ a₂.1 a₂.2.1 a₂.2.2.1 a₂.2.2.2.1 a₂.2.2.2.2, c₁.sp, c₂.sp⟩
+  two_exists fun e => any_rel P.any (sp := e.1.fp) fun _ _ ⟨hL, _, _, c₁, c₂, a₁, a₂⟩ =>
+    ⟨anyA (P := P) hL c₁ a₁.1 a₁.2.1 a₁.2.2.1 a₁.2.2.2.1 a₁.2.2.2.2,
+      anyA (P := P) hL c₂ a₂.1 a₂.2.1 a₂.2.2.1 a₂.2.2.2.1 a₂.2.2.2.2, c₁.sp, c₂.sp⟩
 
 theorem hupd_ct {cnt : Nat} {dv : Lay P.I.hashLen → BitVec 32} {len : Nat}
     (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (dv L) len) (hlen : len ≤ 256) :
@@ -2025,7 +2038,7 @@ theorem start_blk {ns : List String} : RelCT isa (Entered P ns) (.block Cfg.prol
 
 /-- After the prologue, the runs are related by `Two`, with the layout of the
 arguments, which agree, and the same number of candidates. -/
-theorem start_ct {ns : List String} (hns : ∀ n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN], n ∈ ns) :
+theorem start_ct {ns : List String} (hns : ∀ n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN], n ∈ ns) :
     RelCT isa (Entered P ns) (.block Cfg.prologue) (Two P (Tt P)) := by
   intro a b t₁ t₂ a' b' hp e₁ e₂
   obtain ⟨ht, -⟩ := start_blk _ _ _ _ _ _ hp e₁ e₂
@@ -2042,10 +2055,10 @@ theorem start_ct {ns : List String} (hns : ∀ n ∈ [P.F.hiN, P.F.H.updN, P.F.h
       simp only [hn, ↓reduceIte]
       exact (hsy c hc).symm
     · simp only [hn, ↓reduceIte]
-  have eqFa : (fun n => if n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN] then s₂.syms n else 0) =
-      (fun n => if n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN] then s₁.syms n else 0) := by
+  have eqFa : (fun n => if n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN] then s₂.syms n else 0) =
+      (fun n => if n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN] then s₁.syms n else 0) := by
     funext n
-    by_cases hn : n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN]
+    by_cases hn : n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN]
     · simp only [hn, ↓reduceIte]
       exact (hns' n (hns n hn)).symm
     · simp only [hn, ↓reduceIte]
@@ -2063,7 +2076,7 @@ theorem start_ct {ns : List String} (hns : ∀ n ∈ [P.F.hiN, P.F.H.updN, P.F.h
 /-- Runs whose public data agree (with the addresses of the hash function's
 HMAC functions among `ns`) have the same layout, and stop at the same
 candidate. -/
-theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN], n ∈ ns) :
+theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN], n ∈ ns) :
     ConstantTime isa (rfcP P ns).pre (rfcP P ns).pub (cfgOf P).sign := by
   refine VG.RelCT.constantTime (Q := fun _ _ => True) (alloc_ct (R := fun _ _ => True) ?_)
   rw [Cfg.body]
@@ -2098,7 +2111,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm
 
 open VG VG.Arm VG.Impl.Ecdsa.Rfc6979.Arm
 open VG.Proof.HmacTable.Arm (HVar vars tables fnsOf names Coh tableOf mem_names tabOK_of held_tableOf
-  hashAt_tableOf tA)
+  hashAt_tableOf tA vars_coh vars_macLen)
 
 /-! ## The code -/
 
@@ -2129,83 +2142,20 @@ structure WOk (w : HVar) : Prop where
   hWi : w.ok.Wi * 8 ≤ 1872
   hWf : w.ok.Wf * 8 ≤ 1872
   hWb : w.ok.hH.Wb ≤ 1872
+  hWA : (w.F.W + w.F.H.S) * 8 ≤ 3408
   macLen : ∀ x, (w.ok.hH.SH.H.hash x).length = w.F.H.D
 
 /-- What the proof needs of the hash functions whose tables the function
 takes. -/
 def OK (vs : List HVar) : Prop := Coh vs ∧ ∀ w ∈ vs, WOk w
 
-theorem sha512_len (iv : Spec.Sha512.HashValue) (n : Nat) (hn : n ≤ 64) (x : List Byte) :
-    ((Spec.Sha512.finalHash iv x).take n).length = n := by
-  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; omega_using [hn]
-
-/-- Which of `vars` have a function's name in common: none HMAC's `init` or `finalize`, and
-`update` only SHA-224 with SHA-256 and the four of SHA-512. One evaluation, in which the kernel
-reads each name once. -/
-private theorem vars_names : ∀ (i : Nat) (hi : i < 8) (j : Nat) (hj : j < 8),
-    ((vars[i]'hi).F.hiN = (vars[j]'hj).F.hiN → i = j) ∧
-    ((vars[i]'hi).F.H.updN = (vars[j]'hj).F.H.updN →
-      i = j ∨ (2 ≤ i ∧ i < 4 ∧ 2 ≤ j ∧ j < 4) ∨ (4 ≤ i ∧ 4 ≤ j)) ∧
-    ((vars[i]'hi).F.hfN = (vars[j]'hj).F.hfN → i = j) := by
-  decide +kernel
-
-/-- Every hash function with HMAC on ARMv7 meets `WOk`. -/
-theorem vars_coh : Coh vars := by
-  intro w hw w' hw'
-  obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hw
-  obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hw'
-  obtain ⟨n₁, n₂, n₃⟩ := vars_names i hi j hj
-  refine ⟨fun h => ?_, fun h => ?_, fun h => ?_⟩
-  · obtain rfl := n₁ h; rfl
-  · rcases n₂ h with rfl | ⟨a, b, c, d⟩ | ⟨a, b⟩
-    · rfl
-    · obtain rfl | rfl : i = 2 ∨ i = 3 := by omega
-      all_goals obtain rfl | rfl : j = 2 ∨ j = 3 := by omega
-      all_goals rfl
-    · have hi' : i < 8 := hi
-      have hj' : j < 8 := hj
-      obtain rfl | rfl | rfl | rfl : i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
-      all_goals obtain rfl | rfl | rfl | rfl : j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega
-      all_goals rfl
-  · obtain rfl := n₃ h; rfl
-
 theorem vars_ok : OK vars := by
   refine ⟨vars_coh, fun w hw => ?_⟩
+  have hl := vars_macLen w hw
   simp only [vars, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, fun x => by
-        show (Spec.Md5.hash x).length = 16
-        rw [Proof.Md5.hash_eq]; exact Proof.Md5.md.digest_length _⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, fun x => by
-        show (Spec.Sha1.hash x).length = 20
-        rw [Proof.Sha1.hash_eq]; exact Proof.Sha1.md.digest_length _⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, fun x => by
-        show (Spec.Sha256.sha224 x).length = 28
-        simp [Spec.Sha256.sha224, Spec.Sha256.finalHash, Spec.Sha256.wordBytes, List.length_flatMap,
-          List.map_const']⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, fun x => by
-        show (Spec.Sha256.hash x).length = 32
-        rw [Proof.Sha256.hash_eq]; exact Proof.Sha256.md.digest_length _⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, fun x => by
-        show ((Spec.Sha512.finalHash Spec.Sha512.H0_384 x).take 48).length = 48
-        exact sha512_len _ 48 (by decide) x⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, fun x => by
-        show (Spec.Sha512.finalHash Spec.Sha512.H0_512 x).length = 64
-        exact Proof.Hmac.Generic.Common.finalHash_length _ _⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, fun x => by
-        show ((Spec.Sha512.finalHash Spec.Sha512.H0_512_224 x).take 28).length = 28
-        exact sha512_len _ 28 (by decide) x⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, fun x => by
-        show ((Spec.Sha512.finalHash Spec.Sha512.H0_512_256 x).take 32).length = 32
-        exact sha512_len _ 32 (by decide) x⟩
+  all_goals exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
+    Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, hl⟩
 
 /-- The instance with `w`'s hash function fixed. -/
 def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) : Proof.Ecdsa.Rfc6979.Instance where
@@ -2240,6 +2190,9 @@ def hashOf {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R 
   hWi := hw.hWi
   hWf := hw.hWf
   hWb := hw.hWb
+  any := w.any
+  anySt := w.scrub.1.1
+  hWA := hw.hWA
 
 /-- The body for `w`'s hash function is the same as for every other. -/
 theorem cfgT_eq {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R T) (vs : List HVar)
@@ -2323,7 +2276,7 @@ theorem signT_ct (hC : CurveT R T) :
   intro s₁ s₂ t₁ t₂ s₁' s₂' _ _ ⟨w, hv, hw, p₁, p₂, hpub⟩ e₁ e₂
   unfold signCodeT at e₁ e₂
   rw [cfgT_eq hC vs hw] at e₁ e₂
-  have hns : ∀ n ∈ [(hashOf hC vs w hw).F.hiN, (hashOf hC vs w hw).F.H.updN, (hashOf hC vs w hw).F.hfN],
+  have hns : ∀ n ∈ [(hashOf hC vs w hw).F.hiAnyN, (hashOf hC vs w hw).F.H.updN, (hashOf hC vs w hw).F.hfN],
       n ∈ names vs := by
     have := mem_names hv
     intro n hn

@@ -32,7 +32,7 @@ def verifyBrainpoolP320r1 : Prog isa :=
 
 /-- `vg_ecdsa_brainpoolp320r1_sign`, as emitted, with `f` the functions its table's calls may reach. -/
 def signBrainpoolP320r1 (f : Impl.Ecdsa.Rfc6979.X86.Fns) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 32 588 (Impl.Ecdsa.Rfc6979.X86.signCode {
+  Impl.Scrub.X86.scrubAll 32 612 (Impl.Ecdsa.Rfc6979.X86.signCode {
     f := f
     w := 2 * Impl.Ecdsa.X86.brainpoolp320r1Comb.n - (if Impl.Ecdsa.X86.brainpoolp320r1Comb.C.len = 28 then 1 else 0)
     len := Impl.Ecdsa.X86.brainpoolp320r1Comb.C.len

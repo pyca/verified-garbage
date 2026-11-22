@@ -43,7 +43,7 @@ theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms 
     split at h <;> cases h; rfl
   | symPush | push | pop | alloc | free | callr | mmxEnter | emms | mcdtEnter | mcdtLeave =>
     simp only [exec, reduceCtorEq] at h
-  | pmuludq =>
+  | pmuludq | movdquTbl | movqTbl =>
     simp only [exec] at h
     split at h <;> cases h; rfl
   | _ => simp only [exec, Option.some.injEq] at h; subst h; rfl

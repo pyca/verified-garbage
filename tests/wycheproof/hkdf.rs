@@ -1,7 +1,13 @@
 //! HKDF-SHA-1, HKDF-SHA-256, HKDF-SHA-384 and HKDF-SHA-512 (`HkdfTest`
 //! vectors).
 
-#![cfg(any(target_arch = "riscv64", target_arch = "x86_64"))]
+#![cfg(any(
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "riscv64",
+    target_arch = "x86",
+    target_arch = "x86_64"
+))]
 
 use verified_garbage::hashes::sha1::Sha1;
 use verified_garbage::hashes::sha256::Sha256;

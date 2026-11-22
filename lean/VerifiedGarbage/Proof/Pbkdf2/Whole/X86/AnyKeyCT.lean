@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 import VerifiedGarbage.Proof.Hmac.AnyKey
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Md5.X86.Lit
 public import VerifiedGarbage.Proof.Sha512.X86.Lit
 
@@ -1304,5 +1306,224 @@ theorem withStackScratchWiped_spSafe {bytes n words : Nat} {c : Prog isa}
       (fun i => !isa.writesSp i) = true := by decide +kernel) :
     (Impl.StackScratch.X86.withStackScratchWiped bytes n words c).all (fun i => !isa.writesSp i) = true :=
   Md.X86.withStackScratch_spSafe (c := .seq c (.block _)) (by simp only [Code.all, h, Bool.true_and]; exact hw) hf
+
+
+/-! ## Calling `initAny`
+
+A call of `initAny`, verified against `anyScratchContract` with `W` words of
+working space, in a frame of its five arguments (`hi5`, as for HMAC's
+`init`), as a table of `Hmac` holds it: what the caller's state needs
+(`AnyArgs`: as `HiArgs`, with no bound on the key's length, and the 100
+bytes below `esp` that the frame, the return address and the callee's 76
+bytes take apart from the buffers), what holds when it returns
+(`any_frame`), and that two runs with the same arguments leak the same trace
+(`any_rel`). -/
+
+section
+
+open VG.Proof.Pbkdf2.Whole.X86 (Sound below_eq bdisj argVal32 toNat_setWidth64 setWidth32_64 entry_bytes
+  back_repr ReprOK hi5 ret_args)
+
+/-- The 100 bytes below `esp` a framed call of `initAny` uses: its five
+arguments, its return address, and the 76 bytes below that. -/
+abbrev stk100 (s : State) : Region := below (s.gpr .esp) 100
+
+section Frames
+variable {E : BitVec 32} (hE : 100 ≤ E.toNat)
+include hE
+
+theorem args_sub100 : Region.Sub ⟨(E - BitVec.ofNat 32 20).setWidth 64, 20⟩ (below E 100) := by
+  rw [below_eq hE, Taint.sub_setWidth (by omega_arith)]
+  exact Offset.sub_below _ (by omega_arith) (by omega_arith)
+
+theorem ret_sub100 : Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64, 4⟩ (below E 100) := by
+  rw [below_eq hE, Taint.sub_setWidth (by omega_arith)]
+  exact Offset.sub_below _ (by omega_arith) (by omega_arith)
+
+theorem cstk_sub100 :
+    Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64 - BitVec.ofNat 64 76, 76⟩ (below E 100) := by
+  rw [below_eq hE, Taint.sub_setWidth (by omega_arith), Offset.sub_sub_ofNat]
+  exact Offset.sub_below _ (by omega_arith) (by omega_arith)
+
+theorem cstk_args100 :
+    Region.Disjoint ⟨(E - BitVec.ofNat 32 24).setWidth 64 - BitVec.ofNat 64 76, 76⟩
+      ⟨(E - BitVec.ofNat 32 20).setWidth 64, 20⟩ := by
+  rw [Taint.sub_setWidth (by omega_arith), Taint.sub_setWidth (by omega_arith), Offset.sub_sub_ofNat]
+  exact bdisj _ 100 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+
+end Frames
+
+structure AnyArgs (S : StreamingHash) (W : Nat) (s : State) (inn out k sc : BitVec 32) (kl : Nat) : Prop where
+  edi : s.gpr .edi = inn
+  esi : s.gpr .esi = out
+  edx : s.gpr .edx = k
+  ecx : s.gpr .ecx = BitVec.ofNat 32 kl
+  ebp : s.gpr .ebp = sc
+  kl32 : kl < 2 ^ 32
+  sp : 100 ≤ (s.gpr .esp).toNat
+  cr : Covers [⟨k.setWidth 64, kl⟩] (s.rd ++ s.wr)
+  cw : Covers [⟨inn.setWidth 64, S.stateBytes⟩, ⟨out.setWidth 64, S.stateBytes⟩, ⟨sc.setWidth 64, W * 8⟩] s.wr
+  i_o : Region.Disjoint ⟨inn.setWidth 64, S.stateBytes⟩ ⟨out.setWidth 64, S.stateBytes⟩
+  i_k : Region.Disjoint ⟨inn.setWidth 64, S.stateBytes⟩ ⟨k.setWidth 64, kl⟩
+  i_s : Region.Disjoint ⟨inn.setWidth 64, S.stateBytes⟩ ⟨sc.setWidth 64, W * 8⟩
+  o_k : Region.Disjoint ⟨out.setWidth 64, S.stateBytes⟩ ⟨k.setWidth 64, kl⟩
+  o_s : Region.Disjoint ⟨out.setWidth 64, S.stateBytes⟩ ⟨sc.setWidth 64, W * 8⟩
+  k_s : Region.Disjoint ⟨k.setWidth 64, kl⟩ ⟨sc.setWidth 64, W * 8⟩
+  b_i : (stk100 s).Disjoint ⟨inn.setWidth 64, S.stateBytes⟩
+  b_o : (stk100 s).Disjoint ⟨out.setWidth 64, S.stateBytes⟩
+  b_k : (stk100 s).Disjoint ⟨k.setWidth 64, kl⟩
+  b_s : (stk100 s).Disjoint ⟨sc.setWidth 64, W * 8⟩
+  ni : inn.toNat + S.stateBytes ≤ 2 ^ 32
+  no : out.toNat + S.stateBytes ≤ 2 ^ 32
+  nk : k.toNat + kl ≤ 2 ^ 32
+  nsc : sc.toNat + W * 8 ≤ 2 ^ 32
+
+abbrev AnyArgs.rd (k : BitVec 32) (kl : Nat) : List Region := [⟨k.setWidth 64, kl⟩]
+abbrev AnyArgs.wr (S : StreamingHash) (W : Nat) (sp inn out sc : BitVec 32) : List Region :=
+  [⟨inn.setWidth 64, S.stateBytes⟩, ⟨out.setWidth 64, S.stateBytes⟩, ⟨sc.setWidth 64, W * 8⟩,
+    ⟨(sp - BitVec.ofNat 32 20).setWidth 64, 20⟩]
+
+theorem AnyArgs.pre_of {S : StreamingHash} {W : Nat} {s : State} {inn out k sc : BitVec 32} {kl : Nat}
+    (h : AnyArgs S W s inn out k sc kl) {t : State} (hsp : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 24)
+    (a0 : arg t 0 = inn) (a1 : arg t 1 = out) (a2 : arg t 2 = k) (a3 : arg t 3 = BitVec.ofNat 32 kl)
+    (a4 : arg t 4 = sc) (hA : argAddr t 0 = (s.gpr .esp - BitVec.ofNat 32 20).setWidth 64)
+    (hrd : t.rd = AnyArgs.rd k kl) (hwr : t.wr = AnyArgs.wr S W (s.gpr .esp) inn out sc) :
+    (anyScratchContract S W).pre t := by
+  have e := h.sp
+  sig_pre [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, X86.abi]
+  simp only [argVal32, a0, a1, a2, a3, a4, hA, hsp, hrd, hwr, toNat_setWidth64, toNat_ofNat32 h.kl32,
+    show argBytes [32, 32, 32, 32, 32] = 20 from rfl]
+  have sA := args_sub100 e
+  have sR := ret_sub100 e
+  have sK := cstk_sub100 e
+  have rA := ret_args (E := s.gpr .esp) (by omega_arith) (n := 5) (by decide)
+  have kA := cstk_args100 e
+  simp only [Nat.reduceMul, Nat.reduceAdd] at sA sR sK rA kA
+  refine ⟨by rw [sub_toNat (by omega_arith)]; omega_arith, by rw [sub_toNat (by omega_arith)]; omega_arith, trivial, trivial,
+    h.i_o, h.i_k, h.i_s, (h.b_i.sub_left sA).symm, h.o_k, h.o_s, (h.b_o.sub_left sA).symm, h.k_s,
+    (h.b_k.sub_left sA).symm, (h.b_s.sub_left sA).symm,
+    h.b_i.sub_left sR, h.b_o.sub_left sR, h.b_k.sub_left sR, h.b_s.sub_left sR, rA,
+    h.b_i.sub_left sK, h.b_o.sub_left sK, h.b_k.sub_left sK, h.b_s.sub_left sK, kA,
+    h.ni, h.no, h.nk, h.nsc⟩
+
+theorem any_pub {S : StreamingHash} {W : Nat} {t t' : State} (he : t.gpr .esp = t'.gpr .esp)
+    (a0 : arg t 0 = arg t' 0) (a1 : arg t 1 = arg t' 1) (a2 : arg t 2 = arg t' 2) (a3 : arg t 3 = arg t' 3)
+    (a4 : arg t 4 = arg t' 4) :
+    (anyScratchContract S W).pub t t' := by
+  sig_pub [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, X86.abi]
+  simp only [argVal32, he, a0, a1, a2, a3, a4, and_self]
+
+theorem any_post {S : StreamingHash} {W : Nat} {t t' : State} {inn out k : BitVec 32} {kl : Nat}
+    (hkl : kl < 2 ^ 32) (a0 : arg t 0 = inn) (a1 : arg t 1 = out) (a2 : arg t 2 = k)
+    (a3 : arg t 3 = BitVec.ofNat 32 kl) (h : (anyScratchContract S W).post t t') :
+    S.Repr t'.mem (inn.setWidth 64) (xorPad (blockKey S.H (bytesAt t.mem (k.setWidth 64) kl)) ipad) ∧
+      S.Repr t'.mem (out.setWidth 64) (xorPad (blockKey S.H (bytesAt t.mem (k.setWidth 64) kl)) opad) := by
+  sig_post [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, X86.abi] at h
+  simp only [argVal32, a0, a1, a2, a3, setWidth32_64, toNat_ofNat32 hkl] at h
+  exact h
+
+namespace AnyArgs
+variable {S : StreamingHash} {W : Nat} {s : State} {inn out k sc : BitVec 32} {kl : Nat}
+  (h : AnyArgs S W s inn out k sc kl)
+include h
+
+theorem fit : 4 * hi5.length + 4 ≤ (s.gpr .esp).toNat := by have := h.sp; simp only [List.length_cons, List.length_nil]; omega_arith
+
+omit h in
+theorem nesp : Reg.esp ∉ hi5 := by decide
+
+theorem a0 : arg (pushed hi5 s).callEntry 0 = inn := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edi
+theorem a1 : arg (pushed hi5 s).callEntry 1 = out := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.esi
+theorem a2 : arg (pushed hi5 s).callEntry 2 = k := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edx
+theorem a3 : arg (pushed hi5 s).callEntry 3 = BitVec.ofNat 32 kl := by
+  rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ecx
+theorem a4 : arg (pushed hi5 s).callEntry 4 = sc := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ebp
+
+theorem pre : (anyScratchContract S W).pre
+    ((pushed hi5 s).callEntry.withRegions (AnyArgs.rd k kl) (AnyArgs.wr S W (s.gpr .esp) inn out sc)) :=
+  h.pre_of (by rw [State.withRegions_gpr, callEntry_esp']; rfl) (by rw [arg_withRegions, h.a0])
+    (by rw [arg_withRegions, h.a1]) (by rw [arg_withRegions, h.a2]) (by rw [arg_withRegions, h.a3])
+    (by rw [arg_withRegions, h.a4]) (by rw [argAddr_withRegions, callEntry_argAddr0]; rfl) rfl rfl
+
+theorem callPre : CallPre (anyScratchContract S W) hi5 (AnyArgs.rd k kl)
+    (AnyArgs.wr S W (s.gpr .esp) inn out sc) s := by
+  refine ⟨h.pre, ?_, ?_⟩
+  · intro a n ⟨q, hq, hc⟩
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl | rfl | rfl
+    · obtain ⟨q', hq', hc'⟩ := h.cr a n ⟨_, List.mem_singleton_self _, hc⟩
+      exact InRegions_append_cons.mpr (.inr ⟨q', hq', hc'⟩)
+    rotate_right
+    · exact InRegions_append_cons.mpr (.inl (by simpa using hc))
+    all_goals
+      obtain ⟨q', hq', hc'⟩ := h.cw a n ⟨_, by simp, hc⟩
+      exact InRegions_append_cons.mpr (.inr ⟨q', List.mem_append_right _ hq', hc'⟩)
+  · intro a n ⟨q, hq, hc⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl | rfl
+    rotate_right
+    · exact ⟨_, List.mem_cons_self, by simpa using hc⟩
+    all_goals
+      obtain ⟨q', hq', hc'⟩ := h.cw a n ⟨_, by simp, hc⟩
+      exact ⟨q', List.mem_cons_of_mem _ hq', hc'⟩
+
+/-- The 76 bytes below `esp` are among the 100. -/
+theorem b76 {R : Region} (hR : (stk100 s).Disjoint R) : (Proof.Pbkdf2.Whole.X86.stk s).Disjoint R :=
+  hR.sub_left (below_sub (by omega_arith) h.sp)
+
+end AnyArgs
+
+/-- A call of `initAny` in a frame of its five arguments: it changes only
+its states and working space and the 100 bytes below `esp`, keeps the
+callee-saved registers, and leaves its states representing the padded key. -/
+theorem any_frame {S : StreamingHash} {W : Nat} {n : String} {c : Prog isa} (hR : ReprOK S)
+    (hv : Sound c (anyScratchContract S W)) (hsp : NoSp c) (hsu : stackUse c ≤ 76)
+    {s : State} {inn out k sc : BitVec 32} {kl : Nat} (h : AnyArgs S W s inn out k sc kl) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
+      Frame ([⟨inn.setWidth 64, S.stateBytes⟩, ⟨out.setWidth 64, S.stateBytes⟩, ⟨sc.setWidth 64, W * 8⟩] ++
+        [stk100 s]) s.mem s'.mem →
+      S.Repr s'.mem (inn.setWidth 64) (xorPad (blockKey S.H (bytesAt s.mem (k.setWidth 64) kl)) ipad) →
+      S.Repr s'.mem (out.setWidth 64) (xorPad (blockKey S.H (bytesAt s.mem (k.setWidth 64) kl)) opad) → Q s') :
+    WP isa (.frame (.push hi5) (.call n c) (.pop .eax hi5.length)) s Q := by
+  have e := h.sp
+  have e76 : 76 ≤ (s.gpr .esp).toNat := by omega_arith
+  refine WP.callWith hv.ok hsp (by simp) AnyArgs.nesp (by simp only [List.length_cons, List.length_nil]; omega_arith)
+    h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
+  have f'' : Frame ([⟨inn.setWidth 64, S.stateBytes⟩, ⟨out.setWidth 64, S.stateBytes⟩, ⟨sc.setWidth 64, W * 8⟩] ++
+      [stk100 s]) s.mem s'.mem := by
+    refine Frame.sub f' fun q hq => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
+    · exact ⟨_, by simp, args_sub100 e⟩
+    · exact ⟨_, by simp, below_sub (by simp only [List.length_cons, List.length_nil]; omega_arith) e⟩
+  have post' := any_post h.kl32 (t := (pushed hi5 s).callEntry.withRegions (AnyArgs.rd k kl)
+    (AnyArgs.wr S W (s.gpr .esp) inn out sc)) (by rw [arg_withRegions, h.a0]) (by rw [arg_withRegions, h.a1])
+    (by rw [arg_withRegions, h.a2]) (by rw [arg_withRegions, h.a3]) post
+  have ek : bytesAt (pushed hi5 s).callEntry.mem (k.setWidth 64) kl = bytesAt s.mem (k.setWidth 64) kl :=
+    entry_bytes AnyArgs.nesp (by decide) e76 (h.b76 h.b_k) (by have := h.kl32; omega_arith)
+  rw [State.withRegions_mem, ek] at post'
+  exact hQ s' rd' wr' cs' f'' (back_repr hR (by have := h.ni; omega_arith) (by decide) e76 m₂ (h.b76 h.b_i) post'.1)
+    (back_repr hR (by have := h.no; omega_arith) (by decide) e76 m₂ (h.b76 h.b_o) post'.2)
+
+/-- Two framed calls of `initAny` with the same arguments, from the same `esp`, leak the same trace. -/
+theorem any_rel {S : StreamingHash} {W : Nat} {n : String} {c : Prog isa}
+    (hv : Sound c (anyScratchContract S W)) {P : State → State → Prop}
+    {sp inn out k sc : BitVec 32} {kl : Nat}
+    (h : ∀ s s', P s s' → AnyArgs S W s inn out k sc kl ∧ AnyArgs S W s' inn out k sc kl ∧
+      s.gpr .esp = sp ∧ s'.gpr .esp = sp) :
+    RelCT isa P (.frame (.push hi5) (.call n c) (.pop .eax hi5.length)) fun _ _ => True := by
+  refine RelCT.callWith hv.ok hv.ct (AnyArgs.rd k kl) (AnyArgs.wr S W sp inn out sc) fun s s' hp => ?_
+  obtain ⟨a, a', e, e'⟩ := h s s' hp
+  have c := a.callPre
+  have c' := a'.callPre
+  rw [e] at c; rw [e'] at c'
+  refine ⟨c, c', e.trans e'.symm, any_pub ?_ ?_ ?_ ?_ ?_ ?_⟩
+  · simp only [State.withRegions_gpr, callEntry_esp', e, e']
+  all_goals simp only [arg_withRegions, a.a0, a'.a0, a.a1, a'.a1, a.a2, a'.a2, a.a3, a'.a3, a.a4, a'.a4]
+
+end
 
 end VG.Proof.Pbkdf2.Whole.X86.Any

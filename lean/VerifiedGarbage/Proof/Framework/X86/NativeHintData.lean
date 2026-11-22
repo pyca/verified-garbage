@@ -193,7 +193,7 @@ def step (τ : T) : Instr → Option T
   | .mul r => some (mulStep τ r)
   -- A frame's push and pop are analysed by the `push` and `pop` hooks
   -- (`pushStep`, `popStep`), not here; the SSE instructions are not analysed.
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => none
 
 def meet (τ₁ τ₂ : T) : T where
@@ -278,12 +278,25 @@ def pushed (τ : T) (rs : List Reg) : T :=
     wbases := pushWbases τ rs n ++ τ.wbases.map fun p => (p.1 + 1, p.2.1, p.2.2 + 1)
     argBases := τ.argBases.map fun p => (p.1, p.2 + 1) }
 
+/-- Forget a register's region-base identity and flags; set its publicity. -/
+def changed (τ : T) (d : Reg) (p : Bool) : T :=
+  { τ with regs := set τ d p, flags := false, bases := kill τ d }
+
 /-- A frame's push stores its registers below `esp`, within the bytes that the
 stack may use, which become a new writable region. -/
 def pushStep (τ : T) : Instr → Option T
   | .push rs =>
     if pub τ .esp && τ.lens != [] && decide (depth τ.stk + 4 * rs.length ≤ τ.room) then
       some (pushed τ rs)
+    else none
+  -- The push of a static's address frame: the push of a secret word (the
+  -- saved instruction pointer) and a secret register, with secret flags
+  -- (the ADD's). The address is the same in two runs only where a contract
+  -- says so (`taintSym`, `Proof/Framework/X86/TaintSym.lean`).
+  | .symPush d _ =>
+    if d != .esp && (pub (changed τ d false) .esp && (changed τ d false).lens != [] &&
+        decide (depth (changed τ d false).stk + 4 * [d].length ≤ (changed τ d false).room)) then
+      some (changed (pushed (changed τ d false) [d]) d false)
     else none
   | _ => none
 

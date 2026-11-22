@@ -124,7 +124,7 @@ theorem exec_keep {i : Instr} {s s' : State} (h : exec i s = some s') :
     cases op <;> simp only [Option.some.injEq] at h <;> subst h <;> exact ⟨rfl, rfl, rfl, rfl, fun _ => rfl⟩
   | bswap d | mul d =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl, fun _ => rfl⟩
-  | pmuludq d r =>
+  | pmuludq d r | movdquTbl d m name ws | movqTbl d m name ws =>
     simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     cases h; exact ⟨rfl, rfl, rfl, rfl, fun _ => rfl⟩

@@ -11,7 +11,9 @@ agreement relation. SIMD values are secret, and register-only SIMD operations
 cannot change any general-purpose register, flag or memory. Loads must use
 public addresses; stores use the existing checked secret-store rule for sixteen
 bytes (eight for `movq`). MMX values are secret too, as are the MMX
-instructions' memory sources' contents: their addresses must be public.
+instructions' memory sources' contents: their addresses must be public. A
+load of a table its instruction carries (`movdquTbl`, `movqTbl`) is observed
+as its offset in the table, a constant, whatever its base register holds.
 -/
 
 @[expose] public section
@@ -45,7 +47,8 @@ def step (τ : T) : Instr → Option T
   | .movdquStore m _ => storeStepK τ m 16 false []
   | .movqLoad _ m => if memPub τ m then some τ else none
   | .movqStore m _ => storeStepK τ m 8 false []
-  | .xop _ | .pmuludq .. => some τ
+  -- A table an instruction carries is observed as its offset, a constant.
+  | .xop _ | .pmuludq .. | .movdquTbl .. | .movqTbl .. => some τ
   | .mop op => if mopOk τ op then some τ else none
   | .mmxStore m _ => storeStepK τ m 8 false []
   | i => Taint.stepK τ i
@@ -139,6 +142,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     subst e₁ e₂
     rw [XOp.exec_eq op s₁, XOp.exec_eq op s₂]
     exact ⟨rfl, agree_withXmm ha _ _⟩
+  | movdquTbl d m name ws | movqTbl d m name ws =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    simp only [exec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact ⟨rfl, agree_withXmm ha _ _⟩
 
 /-! ### Steps the kernel finds again
 
@@ -155,7 +166,7 @@ def stepKeepFn : Instr → Taint.Step
   | .movdquLoad _ m | .movqLoad _ m => ⟨fun τ => bif pub τ m.base then some τ else none⟩
   | .movdquStore m _ => ⟨fun τ => storeKeep τ m 16 false []⟩
   | .movqStore m _ | .mmxStore m _ => ⟨fun τ => storeKeep τ m 8 false []⟩
-  | .xop _ | .pmuludq .. => ⟨some⟩
+  | .xop _ | .pmuludq .. | .movdquTbl .. | .movqTbl .. => ⟨some⟩
   | .mop op => ⟨fun τ => bif mopOk τ op then some τ else none⟩
   | i => Taint.stepKeepFn i
 
@@ -204,7 +215,7 @@ theorem stepKeep_spec (τ : T) (i : Instr) :
     · simp only [memPub, h, ↓reduceIte, Bool.cond_true]
   | movdquStore m _ => exact st m 16
   | movqStore m _ | mmxStore m _ => exact st m 8
-  | xop _ | pmuludq _ _ => exact same (o := some τ) rfl rfl
+  | xop _ | pmuludq _ _ | movdquTbl _ _ _ _ | movqTbl _ _ _ _ => exact same (o := some τ) rfl rfl
   | mop op =>
     refine same (o := bif mopOk τ op then some τ else none) rfl ?_
     simp only [step, Bool.cond_eq_ite]

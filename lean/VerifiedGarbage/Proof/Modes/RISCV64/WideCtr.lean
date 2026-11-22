@@ -36,7 +36,7 @@ theorem ctrEarlyLevels_loops {o : Op} {g : List Byte → List Byte} (hbw : c.bw 
     {lgs : List Nat} (hfit : LevelsFit c lgs) :
     LoopsOk cs (Mode.ctrEarlyWith o) (ctrStep (cs.cipher k) g) s₀ k
       (Core.aligned (Mode.ctrEarlyWith o).step fun w =>
-        c.levels w (fun G => Mode.widen G 16 (Mode.ctrEarlyWith o)) lgs (c.steps w (Mode.ctrEarlyWith o))) := by
+        c.levels w (Mode.ctrEarlyWith o) lgs (c.steps w (Mode.ctrEarlyWith o))) := by
   have e4 : 4 * c.bw = 16 := by rw [hbw]
   have hc : ∀ x, (cs.cipher k x).length = 16 := fun x => by rw [cs.cipher_len, e4]
   obtain ⟨hn1, hn2⟩ := ctrEarly_inBounds (len := lens c 16 (4 * c.bw)) (ho _ (by simp [lens, e4]))
@@ -45,7 +45,8 @@ theorem ctrEarlyLevels_loops {o : Op} {g : List Byte → List Byte} (hbw : c.bw 
     append_ok (copyBlk_wordAl _ _ _) fun o' h => by simp only [List.mem_singleton] at h; subst h; exact hoA
   have hqA : ∀ o' ∈ (Mode.ctrEarlyWith o).post, WordAl o' := xorBlk_wordAl _ _ _ _
   have hwide : ∀ lg ∈ lgs, WideOk cs (Mode.ctrEarlyWith o) (ctrStep (cs.cipher k) g) k
-      (Mode.widen (2 ^ lg) 16 (Mode.ctrEarlyWith o)) lg := fun lg hl => by
+      (Mode.widen (2 ^ lg) (4 * c.bw) (Mode.ctrEarlyWith o)) lg := fun lg hl => by
+    rw [e4]
     obtain ⟨hlg, hG, hstle⟩ := hfit lg hl
     obtain ⟨hw1, hw2⟩ := ctrWide_inBounds (len := lens c (2 ^ lg * 16) (4 * c.bw * 2 ^ lg)) hsh
       (ho _ (by simp [lens, e4])) (2 ^ lg) (by simp [lens, Nat.mul_comm]) (by simp [lens, e4])
@@ -63,7 +64,7 @@ theorem ctrEarlyLevels_loops {o : Op} {g : List Byte → List Byte} (hbw : c.bw 
 turn, then one block at a time. -/
 theorem ctrLevels_wp (hbw : c.bw = 4) {lgs : List Nat} (hfit : LevelsFit c lgs)
     (hp : SeqPre c Mode.ctrEarly s₀) (hk : cs.KeyArgs s₀ (wrs0 c Mode.ctrEarly s₀) k) :
-    WP isa (c.seqLevels Mode.ctrWide lgs Mode.ctrEarly) s₀ fun s' => abiPreserved s₀ s' ∧
+    WP isa (c.seqLevels lgs Mode.ctrEarly) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) =
         Spec.Ctr.crypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Ctr.next (iv0 c s₀) (N s₀) ∧
@@ -79,7 +80,7 @@ theorem ctrLevels_wp (hbw : c.bw = 4) {lgs : List Nat} (hfit : LevelsFit c lgs)
 `lg` of `lgs` in turn, then one block at a time. -/
 theorem ctr32Levels_wp (hbw : c.bw = 4) {lgs : List Nat} (hfit : LevelsFit c lgs)
     (hp : SeqPre c Mode.ctr32Early s₀) (hk : cs.KeyArgs s₀ (wrs0 c Mode.ctr32Early s₀) k) :
-    WP isa (c.seqLevels Mode.ctr32Wide lgs Mode.ctr32Early) s₀ fun s' => abiPreserved s₀ s' ∧
+    WP isa (c.seqLevels lgs Mode.ctr32Early) s₀ fun s' => abiPreserved s₀ s' ∧
       (chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀)).map Spec.Gcm.ofBytes =
         Spec.Gcm.ctr32 (onBlocks (cs.cipher k)) (Spec.Gcm.ofBytes (iv0 c s₀))
           ((blocks0 (c := c) s₀).map Spec.Gcm.ofBytes) ∧

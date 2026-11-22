@@ -50,7 +50,7 @@ variable {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar}
 /-- The facts of the contract with the table of `w`, on entry. -/
 theorem preW_of {w : HVar} (hv : w ∈ vs) (hc : Coh vs) {cs : List (String × List (BitVec 64))} {s : State}
     (hcs : R.coreConsts = cs)
-    (hsp : 536 ≤ s.sp.toNat) (hsp8 : s.sp.toNat + 8 ≤ 2 ^ 32)
+    (hsp : 544 ≤ s.sp.toNat) (hsp8 : s.sp.toNat + 8 ≤ 2 ^ 32)
     (hrd : s.rd = [⟨State.addr (s.gpr .r1), T.ecdsa.curve.len⟩, ⟨State.addr (s.gpr .r2), w.F.H.D⟩,
       ⟨State.addr (stackArg s 1), 24⟩, ⟨State.addr s.sp, 8⟩] ++ Abi.constRegions (fun n => State.addr (s.syms n)) cs)
     (hwr : s.wr = [⟨State.addr (s.gpr .r0), 2 * T.ecdsa.curve.len⟩, ⟨State.addr (stackArg s 0), 8192⟩])
@@ -63,16 +63,16 @@ theorem preW_of {w : HVar} (hv : w ∈ vs) (hc : Coh vs) {cs : List (String × L
     (gc : Region.Disjoint ⟨State.addr (s.gpr .r2), w.F.H.D⟩ ⟨State.addr (stackArg s 0), 8192⟩)
     (ct : Region.Disjoint ⟨State.addr (stackArg s 0), 8192⟩ ⟨State.addr (stackArg s 1), 24⟩)
     (ca : Region.Disjoint ⟨State.addr (stackArg s 0), 8192⟩ ⟨State.addr s.sp, 8⟩)
-    (ko : Region.Disjoint (stkR s.sp 536) ⟨State.addr (s.gpr .r0), 2 * T.ecdsa.curve.len⟩)
-    (kd : Region.Disjoint (stkR s.sp 536) ⟨State.addr (s.gpr .r1), T.ecdsa.curve.len⟩)
-    (kg : Region.Disjoint (stkR s.sp 536) ⟨State.addr (s.gpr .r2), w.F.H.D⟩)
-    (kc : Region.Disjoint (stkR s.sp 536) ⟨State.addr (stackArg s 0), 8192⟩)
-    (kt : Region.Disjoint (stkR s.sp 536) ⟨State.addr (stackArg s 1), 24⟩)
+    (ko : Region.Disjoint (stkR s.sp 544) ⟨State.addr (s.gpr .r0), 2 * T.ecdsa.curve.len⟩)
+    (kd : Region.Disjoint (stkR s.sp 544) ⟨State.addr (s.gpr .r1), T.ecdsa.curve.len⟩)
+    (kg : Region.Disjoint (stkR s.sp 544) ⟨State.addr (s.gpr .r2), w.F.H.D⟩)
+    (kc : Region.Disjoint (stkR s.sp 544) ⟨State.addr (stackArg s 0), 8192⟩)
+    (kt : Region.Disjoint (stkR s.sp 544) ⟨State.addr (stackArg s 1), 24⟩)
     (no : (s.gpr .r0).toNat + 2 * T.ecdsa.curve.len ≤ 2 ^ 32) (nd : (s.gpr .r1).toNat + T.ecdsa.curve.len ≤ 2 ^ 32)
     (ng : (s.gpr .r2).toNat + w.F.H.D ≤ 2 ^ 32) (nc : (stackArg s 0).toNat + 8192 ≤ 2 ^ 32)
     (nt : (stackArg s 1).toNat + 24 ≤ 2 ^ 32)
     (htab : TablesOk cs s.syms s.mem [⟨State.addr (s.gpr .r0), 2 * T.ecdsa.curve.len⟩,
-      ⟨State.addr (stackArg s 0), 8192⟩, stkR s.sp 536])
+      ⟨State.addr (stackArg s 0), 8192⟩, stkR s.sp 544])
     (hheld : Abi.tableHeld 32 s.mem (State.addr (stackArg s 1)) (FnTable.words isa s (tableOf w)))
     (hpw : (names vs).Pairwise fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) :
     PreW R T vs w s := by
@@ -280,74 +280,12 @@ any, at `0x100000`, where the memory `m₀` holds it (`sat_nil`, `sat_one`).
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 
 open VG VG.Arm
-open VG.Proof.HmacTable.Arm (HVar vars sha256V tables names tableOf held_tableOf hashAt_tableOf)
-open VG.Proof.HashTable (symsOf32 symsOf32_distinct)
-
-/-- A word read apart from a word written. -/
-theorem readW_sepW {m : Mem} {a b : Addr} {w : Nat} {v : BitVec 32} (h : a.toNat + w / 8 ≤ b.toNat ∨ b.toNat + 4 ≤ a.toNat)
-    (ha : a.toNat + w / 8 ≤ 2 ^ 64) (hb : b.toNat + 4 ≤ 2 ^ 64) (hw : w / 8 < 2 ^ 64) :
-    (m.writeW b v).readW a w = m.readW a w :=
-  Mem.readW_writeW_sep (fun x h1 h2 => by
-    simp only [Nat.reduceDiv] at h1 h2
-    rcases h with h | h <;> bv_omega) hw
-
-/-- Six words at `p`. -/
-def put6w (m : Mem) (p : Addr) (w₀ w₁ w₂ w₃ w₄ w₅ : BitVec 32) : Mem :=
-  (((((m.writeW (p + BitVec.ofNat 64 (4 * 0)) w₀).writeW (p + BitVec.ofNat 64 (4 * 1)) w₁).writeW
-    (p + BitVec.ofNat 64 (4 * 2)) w₂).writeW (p + BitVec.ofNat 64 (4 * 3)) w₃).writeW
-    (p + BitVec.ofNat 64 (4 * 4)) w₄).writeW (p + BitVec.ofNat 64 (4 * 5)) w₅
-
-/-- The table `put6w` writes at `0x300000`, of the low halves of `ws`. -/
-theorem put6w_held {m : Mem} {ws : List (BitVec 64)} (hl : ws.length = 6) :
-    Abi.tableHeld 32 (put6w m 0x300000 ((ws.getD 0 0).setWidth 32) ((ws.getD 1 0).setWidth 32)
-      ((ws.getD 2 0).setWidth 32) ((ws.getD 3 0).setWidth 32) ((ws.getD 4 0).setWidth 32)
-      ((ws.getD 5 0).setWidth 32)) 0x300000 ws := by
-  intro i hi
-  rw [hl] at hi
-  simp only [put6w, Nat.reduceDiv]
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
-  · rw [Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32,
-      Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32, Mem.readW_writeW_self32] <;> decide
-  · rw [Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32,
-      Proof.HashTable.readW_sep32, Mem.readW_writeW_self32] <;> decide
-  · rw [Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32,
-      Mem.readW_writeW_self32] <;> decide
-  · rw [Proof.HashTable.readW_sep32, Proof.HashTable.readW_sep32, Mem.readW_writeW_self32] <;> decide
-  · rw [Proof.HashTable.readW_sep32, Mem.readW_writeW_self32] <;> decide
-  · rw [Mem.readW_writeW_self32]
-
-/-- Below `0x300000`, `put6w` at `0x300000` changes no word. -/
-theorem put6w_below {m : Mem} {a : Addr} {w : Nat} (hw : w / 8 ≤ 8) (ha : a.toNat + w / 8 ≤ 0x300000)
-    (w₀ w₁ w₂ w₃ w₄ w₅ : BitVec 32) : (put6w m 0x300000 w₀ w₁ w₂ w₃ w₄ w₅).readW a w = m.readW a w := by
-  have h0 : (0x300000 + BitVec.ofNat 64 (4 * 0) : Addr).toNat = 0x300000 := by decide
-  have h1 : (0x300000 + BitVec.ofNat 64 (4 * 1) : Addr).toNat = 0x300004 := by decide
-  have h2 : (0x300000 + BitVec.ofNat 64 (4 * 2) : Addr).toNat = 0x300008 := by decide
-  have h3 : (0x300000 + BitVec.ofNat 64 (4 * 3) : Addr).toNat = 0x30000C := by decide
-  have h4 : (0x300000 + BitVec.ofNat 64 (4 * 4) : Addr).toNat = 0x300010 := by decide
-  have h5 : (0x300000 + BitVec.ofNat 64 (4 * 5) : Addr).toNat = 0x300014 := by decide
-  simp only [put6w]
-  rw [readW_sepW, readW_sepW, readW_sepW, readW_sepW, readW_sepW, readW_sepW]
-  all_goals first | (simp only [h0, h1, h2, h3, h4, h5]; omega_arith) | omega_arith
-
-/-- The stack arguments, at `0x9000`. -/
-def put2w (m : Mem) (w₀ w₁ : BitVec 32) : Mem := (m.writeW 0x9000 w₀).writeW 0x9004 w₁
-
-/-- Above the stack arguments, `put2w` changes no word. -/
-theorem put2w_above {m : Mem} {a : Addr} {w : Nat} (hw : w / 8 ≤ 8) (ha : 0x9008 ≤ a.toNat)
-    (ha' : a.toNat + w / 8 ≤ 2 ^ 64) (w₀ w₁ : BitVec 32) : (put2w m w₀ w₁).readW a w = m.readW a w := by
-  have e₀ : (0x9000 : Addr).toNat = 0x9000 := by decide
-  have e₄ : (0x9004 : Addr).toNat = 0x9004 := by decide
-  simp only [put2w]
-  rw [readW_sepW (.inr (by rw [e₄]; omega_using [ha])) ha' (by decide) (by omega_using [hw]),
-    readW_sepW (.inr (by rw [e₀]; omega_using [ha])) ha' (by decide) (by omega_using [hw])]
-
-/-- The functions of `vs` at distinct addresses, and every other symbol at `0x100000`. -/
-def symT (vs : List HVar) (n : String) : BitVec 32 :=
-  if n ∈ names vs then symsOf32 (names vs) n else 0x100000
+open VG.Proof.HmacTable.Arm (HVar vars sha256V tables names tableOf held_tableOf hashAt_tableOf readW_sepW put6w
+  put6w_held put6w_below put2w put2w_above symT symT_distinct)
 
 /-- The words of `w`'s table. -/
 def tw6 (vs : List HVar) (w : HVar) : List (BitVec 64) :=
-  [(symT vs w.F.hiN).setWidth 64, (symT vs w.F.H.updN).setWidth 64, (symT vs w.F.hfN).setWidth 64,
+  [(symT vs w.F.hiAnyN).setWidth 64, (symT vs w.F.H.updN).setWidth 64, (symT vs w.F.hfN).setWidth 64,
     BitVec.ofNat 64 (Spec.HashTable.index w.G), BitVec.ofNat 64 w.G.len,
     BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G)]
 
@@ -388,11 +326,6 @@ theorem satT_arg1 (vs : List HVar) (w : HVar) (m₀ : Mem) (Q : Nat) (Tr : List 
   rw [put6w_below (by decide) (by decide)]
   simp only [put2w]
   exact Mem.readW_writeW_self32 _ _ _
-
-theorem symT_distinct {vs : List HVar} (hl : (names vs).length < 2 ^ 24) :
-    (names vs).Pairwise fun f g => f ≠ g → (symT vs f).setWidth 64 ≠ (symT vs g).setWidth 64 :=
-  (symsOf32_distinct hl).imp_of_mem fun {f g} hf hg h hne => by
-    simp only [symT, hf, hg, ite_true]; exact h hne
 
 theorem constRegions_symT (vs : List HVar) (n : String) (W : List (BitVec 64)) (hna : n ∉ names vs) :
     Abi.constRegions (fun name => (symT vs name).setWidth 64) [(n, W)] = [⟨0x100000, 8 * W.length⟩] := by

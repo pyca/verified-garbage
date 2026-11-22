@@ -820,6 +820,10 @@ pub(crate) mod vg_hmac_sha256_finalize_core;
 pub(crate) mod vg_hmac_sha256_finalize_scratch;
 
 #[rustfmt::skip]
+#[path = "internal/vg_hmac_sha256_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_sha256_init_any_scratch;
+
+#[rustfmt::skip]
 #[path = "internal/vg_hmac_sha256_init_core.rs"]
 pub(crate) mod vg_hmac_sha256_init_core;
 

@@ -54,7 +54,7 @@ theorem exec_mxcsr {i : Instr} {s s' : State} (h : exec i s = some s') : s'.mxcs
     split at h <;> cases h; rfl
   | symPush | push | pop | alloc | free | mmxEnter | emms | mcdtEnter | mcdtLeave | callr =>
     simp only [exec, reduceCtorEq] at h
-  | pmuludq =>
+  | pmuludq | movdquTbl | movqTbl =>
     simp only [exec] at h
     split at h <;> cases h; rfl
   | _ => simp only [exec, Option.some.injEq] at h; subst h; rfl

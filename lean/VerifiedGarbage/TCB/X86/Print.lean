@@ -130,6 +130,8 @@ def Instr.asm : Instr → List String
   | .movdquStore m r => [s!"movdqu {m.str128}, {r.name}"]
   | .movqLoad d m => [s!"movq {d.name}, {m.str64}"]
   | .movqStore m r => [s!"movq {m.str64}, {r.name}"]
+  | .movdquTbl d m .. => [s!"movdqu {d.name}, {m.str128}"]
+  | .movqTbl d m .. => [s!"movq {d.name}, {m.str64}"]
   | .xop op => [op.asm]
   | .mop op => [op.asm]
   | .mmxStore m r => [s!"movq {m.str64}, {r.name}"]
@@ -167,6 +169,10 @@ def printer : Printer isa where
         .text s!"mov {d.name}, DWORD PTR [esp]",
         .text s!".byte 0x81, {192 + d.ctorIdx}", .sym ".long " .x86PcRel name]
     | _ => none
+  tables
+    | .movdquTbl _ _ name ws => [(name, ws)]
+    | .movqTbl _ _ name ws => [(name, ws)]
+    | _ => []
   branch c l := [.text s!"j{c.name} {l}"]
   jump l := s!"jmp {l}"
   ret := [.code "ret" retBytes]

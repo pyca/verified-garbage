@@ -14,8 +14,8 @@ scratch = [sp], hmac = [sp + 4]) -> r0` (`Cfg.sign`), for a curve of
 (`Impl/Ecdsa/Rfc6979/X86_64.lean`), with HMAC over the hash function of the
 table `hmac` of the interface `Hmac` (`Spec/HmacTable.lean`), whose
 functions it calls indirectly (`tcall`: the table's word `j` into `lr`, then
-`blx lr`, in the frame of the call's stack arguments): HMAC's `init` (word
-0), the streaming `update` (word 1), on the inner state, and HMAC's
+`blx lr`, in the frame of the call's stack arguments): HMAC's `init` for a
+key of any length (word 0, `init_any_scratch`), the streaming `update` (word 1), on the inner state, and HMAC's
 `finalize` (word 2); and each candidate tried by calling `core`, the
 signature with a given `k` (`vg_ecdsa_<curve>_sign_k`), which reads `Q`
 bytes of the digest and of `k`, and takes their leftmost `qlen` bits
@@ -61,8 +61,10 @@ HMAC's `init` and for `core`, `push {r1, r7, r10, r12}` for `update` and
 entirely, and the stack below the frame; the frame below the saved
 registers is cleared (`wipe`, a loop of word stores) before it is freed. In
 `scratch`: HMAC's inner and outer streaming states (192 bytes each), the
-working space of the table's functions, the message, and the words of a
-shift.
+working space of the table's functions (`init`'s for a key of any length,
+the largest, `W + S` words: 3408 bytes for SHA-512), then what the code
+addresses with an immediate offset (below 4096): the message and the words
+of a shift.
 
 1. `X`; `h` (`reduce`, or `prepC`); `V = 0x01…`, `K = 0x00…`.
 2. Steps d to g: `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`, `V = HMAC_K(V)`,
@@ -109,13 +111,16 @@ def frameBytes : Nat := 512
 /-- The words the wipe clears: the frame below the saved registers. -/
 def wipeWords : Nat := 117
 
-/-! Where things are in `scratch`. -/
+/-! Where things are in `scratch`: what HMAC's functions write, in one
+range (the two streaming states and the working space of the table's
+functions, at most 3408 bytes), then the message and the words of a
+conversion, which the code addresses with an immediate offset. -/
 def sInner : Nat := 0
 def sOuter : Nat := 192
 def sWork : Nat := 384
-def sMsg : Nat := 2256
+def sMsg : Nat := 3792
 /-- The words of a conversion, if `big`. -/
-def sSlot : Nat := 2560
+def sSlot : Nat := 3936
 
 /-! Where the table's data is. -/
 /-- The digest length `D`, the table's word 4. -/

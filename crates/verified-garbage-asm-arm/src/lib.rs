@@ -365,6 +365,10 @@ pub mod gcm;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
+pub mod hkdf;
+
+#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
+#[rustfmt::skip]
 pub mod hmac_md5;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]

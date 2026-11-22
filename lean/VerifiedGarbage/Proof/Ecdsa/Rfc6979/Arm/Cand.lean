@@ -28,7 +28,7 @@ section
 /-!
 # Deterministic ECDSA on 32-bit ARM: the messages of steps d, f and h.3
 
-`b`, and `‖ d ‖ h` if `full`, at `scratch + 2256` (`msg_ok`): the byte `b`
+`b`, and `‖ d ‖ h` if `full`, at `scratch + 3792` (`msg_ok`): the byte `b`
 (`strb_ok`), then the private key (`r5`) and `h`, from the frame at `fHo`,
 each copied to `scratch` (`r11`) by `copyBytes` (`copyB_ok`).
 -/
@@ -106,7 +106,7 @@ theorem fHo_le (P : RfcHash) : (cfgOf P).fHo ≤ 192 := by
 theorem fHo_ge (P : RfcHash) : 128 ≤ (cfgOf P).fHo := by
   simp only [Cfg.fHo]; split <;> simp [fX, fH]
 
-/-- The message `b` (`‖ d ‖ h` if `full`, `Q` bytes each) at `scratch + 2256`. -/
+/-- The message `b` (`‖ d ‖ h` if `full`, `Q` bytes each) at `scratch + 3792`. -/
 theorem msg_ok (hL : L.Ok) (hq : P.Q ≤ L.q) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b < 2) (full : Bool) :
     WP isa (.block ((cfgOf P).msg b full)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧
       Frame [⟨msgA L, 2 * P.Q + 1⟩] t.mem t'.mem ∧
@@ -122,12 +122,12 @@ theorem msg_ok (hL : L.Ok) (hq : P.Q ≤ L.q) {t : State} (hc : Ctx L g m₀ t) 
   rw [WP.block_append_iff]
   refine WP.mono (strb_ok hL hc hb (o := sMsg) (by decide) (by decide)) fun u ⟨hcu, hg, hm⟩ => ?_
   simp only [sMsg] at hm
-  have hf : Frame [⟨State.addr L.scr + BitVec.ofNat 64 2256, 1⟩] t.mem u.mem := by
+  have hf : Frame [⟨State.addr L.scr + BitVec.ofNat 64 3792, 1⟩] t.mem u.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by
-      have := Region.contains_self (State.addr L.scr + BitVec.ofNat 64 2256) 1
+      have := Region.contains_self (State.addr L.scr + BitVec.ofNat 64 3792) 1
       exact this)
   have hb₁ : Spec.Sha256.bytesAt u.mem (msgA L) 1 = [BitVec.ofNat 8 b] := by
-    show [u.mem (State.addr L.scr + BitVec.ofNat 64 2256 + BitVec.ofNat 64 0)] = _
+    show [u.mem (State.addr L.scr + BitVec.ofNat 64 3792 + BitVec.ofNat 64 0)] = _
     rw [BitVec.add_zero, hm, byte_self]
   cases full
   · simp only [Bool.false_eq_true, ite_false, List.append_nil]
@@ -181,13 +181,13 @@ theorem msg_ok (hL : L.Ok) (hq : P.Q ≤ L.q) {t : State} (hc : Ctx L g m₀ t) 
           bytesAt_frame hf₁ (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith), hb₁]
-      have e2 : Spec.Sha256.bytesAt u₂.mem (State.addr L.scr + BitVec.ofNat 64 (2256 + 1)) P.Q =
+      have e2 : Spec.Sha256.bytesAt u₂.mem (State.addr L.scr + BitVec.ofNat 64 (3792 + 1)) P.Q =
           Spec.Sha256.bytesAt t.mem (State.addr L.d) P.Q := by
         rw [bytesAt_frame hf₂ (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith),
           hd₁, BitVec.add_zero, hfd]
-      have e3 : Spec.Sha256.bytesAt u₂.mem (State.addr L.scr + BitVec.ofNat 64 (2256 + 1 + P.Q)) P.Q =
+      have e3 : Spec.Sha256.bytesAt u₂.mem (State.addr L.scr + BitVec.ofNat 64 (3792 + 1 + P.Q)) P.Q =
           hOf P L t.mem := by
         rw [hd₂, hL.fpA0, Offset.add_add, ← hfh, ← hfh₁]
       rw [e1, e2, e3]
@@ -203,7 +203,7 @@ end
 # Deterministic ECDSA on 32-bit ARM: the steps on `K` and `V`
 
 `V = HMAC_K(V)` (`hmacV_ok`); `K = HMAC_K(V ‖ m)` for the message `m` at
-`scratch + 2256` (`hmacK_ok`); `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then
+`scratch + 3792` (`hmacK_ok`); `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then
 `V = HMAC_K(V)` (`rekeyFull_ok`, steps d–g); and `K = HMAC_K(V ‖ 0x00)`,
 then `V = HMAC_K(V)` (`rekey_ok`, step h.3). Each changes only `scratch`,
 the stack below the frame, and `K` and `V`.
@@ -272,7 +272,7 @@ theorem hmacV_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) :
     bytesAt_frame (p := L.B + BitVec.ofNat 64 (24 + 0)) h.frame (kv_disj (d := 0) (.inl rfl) hL) (by anums),
     h.mac⟩
 
-/-- `K = HMAC_K(V ‖ m)`, for the message `m` of `len` bytes at `scratch + 2256`. -/
+/-- `K = HMAC_K(V ‖ m)`, for the message `m` of `len` bytes at `scratch + 3792`. -/
 theorem hmacK_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen : len ≤ 256)
     (hle : encodable (BitVec.ofNat 32 len) = true) :
     WP isa ((cfgOf P).hmacK len) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧
@@ -688,7 +688,7 @@ theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (Spec.Sha256.bytesAt m p
 theorem candTop_ok (hL : L.Ok) (hW : P.R.big = true) (hsh : P.R.sh ≠ 0) (hsh8 : P.R.sh < 8) {t : State}
     (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).candTop) t fun u => Ctx L g m₀ u ∧
-      Frame [⟨State.addr L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨kArg L, P.Q⟩] t.mem u.mem ∧
+      Frame [⟨State.addr L.scr + BitVec.ofNat 64 3936, 72⟩, ⟨kArg L, P.Q⟩] t.mem u.mem ∧
       Spec.Sha256.bytesAt u.mem (kArg L) P.Q =
         Spec.Weierstrass.toBytes P.Q (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem (kArg L) P.Q) >>> P.R.sh) ∧
       u.gpr .r9 = t.gpr .r9 := by

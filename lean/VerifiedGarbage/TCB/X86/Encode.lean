@@ -212,6 +212,10 @@ def Instr.encode : Instr → Option (List (List Nat))
   | .movdquStore m r => (mem (xreg r) m).map fun b => [[0xF3, 0x0F, 0x7F] ++ b]
   | .movqLoad d m => (mem (xreg d) m).map fun b => [[0xF3, 0x0F, 0x7E] ++ b]
   | .movqStore m r => (mem (xreg r) m).map fun b => [[0x66, 0x0F, 0xD6] ++ b]
+  -- The loads of a table an instruction carries: `movdquLoad`'s and
+  -- `movqLoad`'s bytes, through the base register.
+  | .movdquTbl d m .. => (mem (xreg d) m).map fun b => [[0xF3, 0x0F, 0x6F] ++ b]
+  | .movqTbl d m .. => (mem (xreg d) m).map fun b => [[0xF3, 0x0F, 0x7E] ++ b]
   | .xop op => op.encode.map ([·])
   | .mop op => op.encode.map ([·])
   -- "MOVQ" (`NP 0F 7F /r`, a store from an MMX register).

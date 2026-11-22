@@ -14,8 +14,9 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 `wideSteps_ok`: the loops of `Core.seq2` (`Impl/Modes/RISCV64/Wide.lean`)
 take all the steps of the mode `Mn`, one block of `st` bytes each, as
-`Core.steps Mn` does (`LoopsOk`): the steps of `Mw`, each of a group of
-`g = 2 ^ lg` blocks, which compute `group st g F` (`loopWide_wp`), while
+`Core.steps Mn` does (`LoopsOk`): the steps of `Mn` widened to groups of
+`g = 2 ^ lg` blocks (`Mode.widen`, whose operations `Core.groupLoop` runs a
+block at a time), which compute `group st g F` (`loopWide_wp`), while
 a group is left, then those of `Mn` (`loop_wp`) for the rest. The data
 splits at the first `g q` blocks (`q = n / g`): running `group st g F` on
 the groups is running `F` on their blocks (`run_group_blocks`), and `F`
@@ -28,7 +29,7 @@ loop (`wideThen_ok`, whose level `WideOk` states what it needs) leaves the
 blocks after its groups to the code after it, which takes all the steps
 from wherever it starts (`StepsOk`), as the narrow steps do (`narrow_ok`).
 `wideSteps_ok` is the case of one level. As on PPC64LE
-(`Proof/Modes/PPC64LE/Wide.lean`).
+(`Proof/Modes/PPC64LE/Wide.lean`), whose groups' operations are unrolled.
 
 `cbcDecLevels_wp`, `cfbDecLevels_wp`: `Core.seqLevels` over CBC and CFB
 decryption, whose levels fit the core (`LevelsFit`), with the conclusions
@@ -172,10 +173,15 @@ theorem stepsOne_ok (hone : OneOk cs one)
   have d := h'.done hxs
   exact ⟨d.b, d.keep, d.rd, d.wr, d.data, d.chn, d.frame⟩
 
-/-- A wide loop of `Mw`, then `rest` on the blocks it leaves. -/
-theorem wideThen_ok {rest : Prog isa} (hw : WideOk cs Mn F k Mw lg) (hFb : Blockwise F Mn.step (4 * c.bw))
+/-- A wide loop of `Mn` on groups of `2 ^ lg` blocks, then `rest` on the
+blocks it leaves. -/
+theorem wideThen_ok {rest : Prog isa} (hw : WideOk cs Mn F k (Mode.widen (2 ^ lg) (4 * c.bw) Mn) lg)
+    (hFb : Blockwise F Mn.step (4 * c.bw))
+    (hpreN : ∀ o ∈ Mn.pre, o.InBounds (lens c Mn.step (4 * c.bw)))
+    (hpostN : ∀ o ∈ Mn.post, o.InBounds (lens c Mn.step (4 * c.bw)))
+    (hpreNA : ∀ o ∈ Mn.pre, WordAl o) (hpostNA : ∀ o ∈ Mn.post, WordAl o)
     (hrest : StepsOk cs w Mn F k rest) :
-    StepsOk cs w Mn F k (.seq (c.loopWide w Mw lg) rest) := by
+    StepsOk cs w Mn F k (.seq (c.loopWide w Mn lg) rest) := by
   intro s₂ B D n W iv xs hFx hI hD
   obtain ⟨hlg, hG, hstw, hstle, hpreW, hpostW, hpreWA, hpostWA, ciphB, hcompW, hB⟩ := hw
   have hL := hFx.layout
@@ -186,7 +192,6 @@ theorem wideThen_ok {rest : Prog isa} (hw : WideOk cs Mn F k Mw lg) (hFb : Block
   obtain hivl : iv.length = 4 * c.bw := by
     have e : bytesAt s₂.mem (slotA B Core.chnSlot) (4 * c.bw) = iv := hI.chn
     rw [← e]; simp [bytesAt]
-  generalize hsd : Mn.step = st at hFx hI hstw hstle hcompW hFb hD ⊢
   have hst := hFx.step
   have hN := hFx.nFit
   have hDf := hFx.dataFit
@@ -196,22 +201,22 @@ theorem wideThen_ok {rest : Prog isa} (hw : WideOk cs Mn F k Mw lg) (hFb : Block
   let r := n - g * q
   obtain hq : g * q ≤ n := Nat.mul_div_le _ _
   obtain hnr : n = g * q + r := by omega_using [hq]
-  obtain hwq' : Mw.step * q = st * (g * q) := by rw [hstw, Nat.mul_assoc, Nat.mul_left_comm]
-  obtain hwq : Mw.step * q + st * r = st * n := by rw [hwq', ← Nat.mul_add, ← hnr]
+  obtain hwq' : (2 ^ lg * Mn.step) * q = Mn.step * (g * q) := by rw [Nat.mul_assoc, Nat.mul_left_comm]
+  obtain hwq : (2 ^ lg * Mn.step) * q + Mn.step * r = Mn.step * n := by rw [hwq', ← Nat.mul_add, ← hnr]
   obtain ⟨RW, hRW, hDW⟩ := hFx.dataIn
   obtain coreScr : Region.Sub (coreRegion c B) (scrRegion c B) := VG.Offset.sub_base _ (by
     obtain h1 := total_ge hL; simp only [coreSlot] at h1 ⊢; omega_using [h1])
   obtain chnScr : Region.Sub (chnRegion c B) (scrRegion c B) := VG.Offset.sub_base _ (by
     obtain h1 := total_ge hL; have h2 := bw_le hL; simp only [Core.chnSlot, coreSlot] at h1 ⊢; omega_using [h1, h2])
   -- The groups.
-  obtain hFw : Fixed c s₂ B D q Mw.step (4 * c.bw * 2 ^ lg) W n (2 ^ lg) :=
+  obtain hFw : Fixed c s₂ B D q (2 ^ lg * Mn.step) (4 * c.bw * 2 ^ lg) W n (2 ^ lg) :=
     ⟨hFx.scr, dataW_mono hFx.dataW (by omega_using [hwq]), by omega_using [hDf, hwq],
       hFx.dataScr.sub_left (Region.sub_prefix (by omega_using [hwq])), hN, Nat.mul_div_le _ _, hg11,
-      ⟨by rw [hstw]; exact Nat.mul_pos hg hst.1, by rw [hstw]; exact hstle⟩,
+      ⟨by exact Nat.mul_pos hg hst.1, by exact hstle⟩,
       ⟨Nat.mul_pos (by omega_using [hbw]) hg, Nat.mul_le_mul_left _ hG⟩,
       ⟨RW, hRW, fun a ha => hDW a (Region.sub_prefix (by omega_using [hwq]) a ha)⟩, hFx.scrIn, hL⟩
-  generalize hxw : chunksAt Mw.step s₂.mem D q = xw
-  obtain hIw : Inv cs s₂ B D q Mw.step W n (2 ^ lg) k (group st (2 ^ lg) F) iv xw 0 s₂ := by
+  generalize hxw : chunksAt (2 ^ lg * Mn.step) s₂.mem D q = xw
+  obtain hIw : Inv cs s₂ B D q (2 ^ lg * Mn.step) W n (2 ^ lg) k (group Mn.step (2 ^ lg) F) iv xw 0 s₂ := by
     refine ⟨hI.b, hI.keep, hI.rd, hI.wr, ?_, ?_, hI.ready, ?_, ?_, Frame.refl _ _⟩
     · rw [hI.dp, Nat.mul_zero, Nat.mul_zero]
     · rw [hI.np, Nat.mul_zero, Nat.mul_zero]
@@ -219,36 +224,38 @@ theorem wideThen_ok {rest : Prog isa} (hw : WideOk cs Mn F k Mw lg) (hFb : Block
     · rw [hI.chn]; rfl
   obtain hxwl : xw.length = q := by rw [← hxw, chunksAt_length]
   obtain hBal : B.toNat % 4 = 0 := by have := hFx.scr.al; omega_using [this]
-  obtain hww : WordOk c w Mw B D Mw.step := ⟨hpreWA, hpostWA, hBal, fun hw =>
-    ⟨(hD hw).1, by rw [hstw, Nat.mul_mod, (hD hw).2, Nat.mul_zero, Nat.zero_mod]⟩⟩
-  refine WP.seq (WP.mono (loopWide_wp cs (by omega_using [hlg]) hFw hww rfl rfl hB hpreW hpostW hcompW hxwl hIw)
+  obtain hww : WordOk c w (Mode.widen (2 ^ lg) (4 * c.bw) Mn) B D (2 ^ lg * Mn.step) := ⟨hpreWA, hpostWA, hBal, fun hw =>
+    ⟨(hD hw).1, by rw [Nat.mul_mod, (hD hw).2, Nat.mul_zero, Nat.zero_mod]⟩⟩
+  obtain hgl : 2 ^ lg < 2048 := by
+    obtain h1 := Nat.le_mul_of_pos_right (2 ^ lg) hst.1; omega_using [hstle, h1]
+  refine WP.seq (WP.mono (loopWide_wp cs hlg hgl hFw hww rfl hB hpostW hcompW hpreN hpostN hpreNA hpostNA
+    (fun hw => (hD hw).2) hxwl hIw)
     fun s₃ h₃ => ?_)
   -- The blocks left.
-  let D' := D + BitVec.ofNat 64 (Mw.step * q)
-  obtain hD'fit : D'.toNat + st * r ≤ 2 ^ 64 := by
-    show (D + BitVec.ofNat 64 (Mw.step * q)).toNat + st * r ≤ 2 ^ 64
+  let D' := D + BitVec.ofNat 64 ((2 ^ lg * Mn.step) * q)
+  obtain hD'fit : D'.toNat + Mn.step * r ≤ 2 ^ 64 := by
+    show (D + BitVec.ofNat 64 ((2 ^ lg * Mn.step) * q)).toNat + Mn.step * r ≤ 2 ^ 64
     have := D.isLt
     rw [VG.Offset.toNat_add_ofNat]; omega_using [hDf, hwq, this]
-  obtain hsubN : Region.Sub (dataRegion D' st r) (dataRegion D st n) := VG.Offset.sub_base _ (by omega_using [hwq])
-  obtain hFn : Fixed c s₃ B D' r st (4 * c.bw) W r 1 :=
+  obtain hsubN : Region.Sub (dataRegion D' Mn.step r) (dataRegion D Mn.step n) := VG.Offset.sub_base _ (by omega_using [hwq])
+  obtain hFn : Fixed c s₃ B D' r Mn.step (4 * c.bw) W r 1 :=
     ⟨hFx.scr.congr h₃.wr, by rw [h₃.wr]; exact dataW_shift hFx.dataW (by omega_using [hwq]), hD'fit,
       hFx.dataScr.sub_left hsubN, by omega_using [hN], by omega_using [], by decide, hst, hFx.buf,
       ⟨RW, hRW, fun a ha => hDW a (hsubN a ha)⟩, hFx.scrIn, hL⟩
-  generalize hxn : chunksAt st s₃.mem D' r = xn
-  obtain hIn : Inv cs s₃ B D' r st W r 1 k F (run (group st (2 ^ lg) F) iv xw).2 xn 0 s₃ := by
+  generalize hxn : chunksAt Mn.step s₃.mem D' r = xn
+  obtain hIn : Inv cs s₃ B D' r Mn.step W r 1 k F (run (group Mn.step (2 ^ lg) F) iv xw).2 xn 0 s₃ := by
     refine ⟨h₃.b, fun _ _ _ _ => rfl, rfl, rfl, ?_, ?_, h₃.ready, ?_, ?_, Frame.refl _ _⟩
     · rw [h₃.dp, Nat.mul_zero, BitVec.add_zero]
     · rw [h₃.np, Nat.mul_zero, Nat.sub_zero]
     · simp only [hxn, List.take_zero, run, List.nil_append, List.drop_zero]
     · rw [h₃.chn, List.take_of_length_le (by omega_using [hxwl])]; rfl
   obtain hxnl : xn.length = r := by rw [← hxn, chunksAt_length]
-  obtain hD' : w = true → D'.toNat % 4 = 0 ∧ st % 4 = 0 := fun hw =>
-    ⟨al4 (hD hw).1 (by rw [hstw, Nat.mul_assoc, Nat.mul_mod, Nat.mul_mod st, (hD hw).2]; simp), (hD hw).2⟩
-  subst hsd
+  obtain hD' : w = true → D'.toNat % 4 = 0 ∧ Mn.step % 4 = 0 := fun hw =>
+    ⟨al4 (hD hw).1 (by rw [Nat.mul_assoc, Nat.mul_mod, Nat.mul_mod Mn.step, (hD hw).2]; simp), (hD hw).2⟩
   refine WP.mono (hrest hFn hIn hD') fun s₄ d₄ => ?_
   obtain d₃ := h₃.done hxwl
   -- How the data split.
-  obtain hdis₃ : ∀ R ∈ big c B D q Mw.step, Region.Disjoint (dataRegion D' Mn.step r) R := by
+  obtain hdis₃ : ∀ R ∈ big c B D q (2 ^ lg * Mn.step), Region.Disjoint (dataRegion D' Mn.step r) R := by
     intro R hR
     simp only [big, List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl
@@ -263,20 +270,20 @@ theorem wideThen_ok {rest : Prog isa} (hw : WideOk cs Mn F k Mw lg) (hFb : Block
     rcases hR with rfl | rfl | rfl
     · exact (hFx.dataScr.sub_left hpre').sub_right coreScr
     · exact (hFx.dataScr.sub_left hpre').sub_right chnScr
-    · show Region.Disjoint ⟨D, Mn.step * (g * q)⟩ ⟨D + BitVec.ofNat 64 (Mw.step * q), Mn.step * r⟩
+    · show Region.Disjoint ⟨D, Mn.step * (g * q)⟩ ⟨D + BitVec.ofNat 64 ((2 ^ lg * Mn.step) * q), Mn.step * r⟩
       rw [hwq']
       exact VG.Offset.base_disjoint _ (Nat.le_refl _) (by omega_using [hDf, hwq, hwq'])
   obtain hsplit : ∀ m : Mem, chunksAt Mn.step m D n = chunksAt Mn.step m D (g * q) ++ chunksAt Mn.step m D' r :=
     fun m => by
-      show _ = _ ++ chunksAt Mn.step m (D + BitVec.ofNat 64 (Mw.step * q)) r
+      show _ = _ ++ chunksAt Mn.step m (D + BitVec.ofNat 64 ((2 ^ lg * Mn.step) * q)) r
       rw [hnr, chunksAt_add, hwq']
-  obtain hgroup : ∀ m : Mem, chunksAt Mn.step m D (g * q) = (chunksAt Mw.step m D q).flatMap (split Mn.step g) :=
-    fun m => by rw [chunksAt_group, hstw]
+  obtain hgroup : ∀ m : Mem, chunksAt Mn.step m D (g * q) = (chunksAt (2 ^ lg * Mn.step) m D q).flatMap (split Mn.step g) :=
+    fun m => by rw [chunksAt_group]
   obtain hlen : ∀ x ∈ xw, x.length = g * Mn.step := fun x hx => by
     rw [← hxw] at hx
     simp only [chunksAt, List.mem_map, List.mem_range] at hx
     obtain ⟨_, _, rfl⟩ := hx
-    simp only [bytesAt, List.length_map, List.length_range, hstw]; rfl
+    simp only [bytesAt, List.length_map, List.length_range]; rfl
   obtain ⟨rg1, rg2⟩ := run_group_blocks hFb iv xw hivl hlen
   -- The inputs: the groups' blocks, then the blocks left.
   obtain hxs' : xs = xw.flatMap (split Mn.step g) ++ xn := by
@@ -305,57 +312,65 @@ theorem wideThen_ok {rest : Prog isa} (hw : WideOk cs Mn F k Mw lg) (hFb : Block
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), hsubN⟩
 
 /-- The wide loops of `levels`, then `rest`. -/
-theorem levels_ok {wide : Nat → Mode} {lgs : List Nat} {rest : Prog isa}
-    (hw : ∀ lg ∈ lgs, WideOk cs Mn F k (wide (2 ^ lg)) lg) (hFb : Blockwise F Mn.step (4 * c.bw))
-    (hrest : StepsOk cs w Mn F k rest) : StepsOk cs w Mn F k (c.levels w wide lgs rest) := by
+theorem levels_ok {lgs : List Nat} {rest : Prog isa}
+    (hw : ∀ lg ∈ lgs, WideOk cs Mn F k (Mode.widen (2 ^ lg) (4 * c.bw) Mn) lg) (hFb : Blockwise F Mn.step (4 * c.bw))
+    (hpreN : ∀ o ∈ Mn.pre, o.InBounds (lens c Mn.step (4 * c.bw)))
+    (hpostN : ∀ o ∈ Mn.post, o.InBounds (lens c Mn.step (4 * c.bw)))
+    (hpreNA : ∀ o ∈ Mn.pre, WordAl o) (hpostNA : ∀ o ∈ Mn.post, WordAl o)
+    (hrest : StepsOk cs w Mn F k rest) : StepsOk cs w Mn F k (c.levels w Mn lgs rest) := by
   induction lgs with
   | nil => exact hrest
   | cons lg lgs ih =>
-    exact wideThen_ok cs (hw lg List.mem_cons_self) hFb (ih fun l hl => hw l (List.mem_cons_of_mem _ hl))
+    exact wideThen_ok cs (hw lg List.mem_cons_self) hFb hpreN hpostN hpreNA hpostNA
+      (ih fun l hl => hw l (List.mem_cons_of_mem _ hl))
 
 /-- The loops of `seqLevels`, for the data read as `w` says: the levels'
 groups, then the blocks left. -/
-theorem levels_loops {wide : Nat → Mode} {lgs : List Nat}
-    (hw : ∀ lg ∈ lgs, WideOk cs Mn F k (wide (2 ^ lg)) lg) (hFb : Blockwise F Mn.step (4 * c.bw))
+theorem levels_loops {lgs : List Nat}
+    (hw : ∀ lg ∈ lgs, WideOk cs Mn F k (Mode.widen (2 ^ lg) (4 * c.bw) Mn) lg) (hFb : Blockwise F Mn.step (4 * c.bw))
     (hpre : ∀ o ∈ Mn.pre, o.InBounds (lens c Mn.step (4 * c.bw)))
     (hpost : ∀ o ∈ Mn.post, o.InBounds (lens c Mn.step (4 * c.bw)))
     (hpreA : ∀ o ∈ Mn.pre, WordAl o) (hpostA : ∀ o ∈ Mn.post, WordAl o)
     (hcomp : Computes Mn (4 * c.bw) (cs.cipher k) F)
     (hD : w = true → (Dp s₀).toNat % 4 = 0 ∧ Mn.step % 4 = 0) :
-    LoopsOk cs Mn F s₀ k (c.levels w wide lgs (c.steps w Mn)) := fun _ hFx hI =>
-  levels_ok cs hw hFb (narrow_ok cs hpre hpost hpreA hpostA hcomp) hFx hI hD
+    LoopsOk cs Mn F s₀ k (c.levels w Mn lgs (c.steps w Mn)) := fun _ hFx hI =>
+  levels_ok cs hw hFb hpre hpost hpreA hpostA (narrow_ok cs hpre hpost hpreA hpostA hcomp) hFx hI hD
 
 /-- The loops of `seqLevelsWith`, for the data read as `w` says: the levels'
 groups, then the blocks left on `c.withOne one`. -/
-theorem levelsWith_loops {wide : Nat → Mode} {lgs : List Nat} (hone : OneOk cs one)
-    (hw : ∀ lg ∈ lgs, WideOk cs Mn F k (wide (2 ^ lg)) lg) (hFb : Blockwise F Mn.step (4 * c.bw))
+theorem levelsWith_loops {lgs : List Nat} (hone : OneOk cs one)
+    (hw : ∀ lg ∈ lgs, WideOk cs Mn F k (Mode.widen (2 ^ lg) (4 * c.bw) Mn) lg) (hFb : Blockwise F Mn.step (4 * c.bw))
     (hpre : ∀ o ∈ Mn.pre, o.InBounds (lens c Mn.step (4 * c.bw)))
     (hpost : ∀ o ∈ Mn.post, o.InBounds (lens c Mn.step (4 * c.bw)))
     (hpreA : ∀ o ∈ Mn.pre, WordAl o) (hpostA : ∀ o ∈ Mn.post, WordAl o)
     (hcomp : Computes Mn (4 * c.bw) (cs.cipher k) F)
     (hD : w = true → (Dp s₀).toNat % 4 = 0 ∧ Mn.step % 4 = 0) :
-    LoopsOk cs Mn F s₀ k (c.levels w wide lgs ((c.withOne one).steps w Mn)) := fun _ hFx hI =>
-  levels_ok cs hw hFb (stepsOne_ok cs hone hpre hpost hpreA hpostA hcomp) hFx hI hD
+    LoopsOk cs Mn F s₀ k (c.levels w Mn lgs ((c.withOne one).steps w Mn)) := fun _ hFx hI =>
+  levels_ok cs hw hFb hpre hpost hpreA hpostA (stepsOne_ok cs hone hpre hpost hpreA hpostA hcomp) hFx hI hD
 
 /-- The loops of `seq2`: the groups, then the blocks left. -/
-theorem wideSteps_ok (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstw : Mw.step = 2 ^ lg * Mn.step)
+theorem wideSteps_ok (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G)
     (hstle : 2 ^ lg * Mn.step ≤ 2032)
-    (hpreW : ∀ o ∈ Mw.pre, o.InBounds (lens c Mw.step (4 * c.bw * 2 ^ lg)))
-    (hpostW : ∀ o ∈ Mw.post, o.InBounds (lens c Mw.step (4 * c.bw * 2 ^ lg)))
-    (hcompW : ComputesB Mw (4 * c.bw) (4 * c.bw * 2 ^ lg) ciphB (group Mn.step (2 ^ lg) F))
+    (hpreW : ∀ o ∈ (Mode.widen (2 ^ lg) (4 * c.bw) Mn).pre,
+      o.InBounds (lens c (2 ^ lg * Mn.step) (4 * c.bw * 2 ^ lg)))
+    (hpostW : ∀ o ∈ (Mode.widen (2 ^ lg) (4 * c.bw) Mn).post,
+      o.InBounds (lens c (2 ^ lg * Mn.step) (4 * c.bw * 2 ^ lg)))
+    (hcompW : ComputesB (Mode.widen (2 ^ lg) (4 * c.bw) Mn) (4 * c.bw) (4 * c.bw * 2 ^ lg) ciphB
+      (group Mn.step (2 ^ lg) F))
     (hB : BufCipher c (cs.cipher k) ciphB (4 * c.bw * 2 ^ lg))
     (hFb : Blockwise F Mn.step (4 * c.bw))
     (hpre : ∀ o ∈ Mn.pre, o.InBounds (lens c Mn.step (4 * c.bw)))
     (hpost : ∀ o ∈ Mn.post, o.InBounds (lens c Mn.step (4 * c.bw)))
     (hcomp : Computes Mn (4 * c.bw) (cs.cipher k) F)
-    (hpreWA : ∀ o ∈ Mw.pre, WordAl o) (hpostWA : ∀ o ∈ Mw.post, WordAl o)
+    (hpreWA : ∀ o ∈ (Mode.widen (2 ^ lg) (4 * c.bw) Mn).pre, WordAl o)
+    (hpostWA : ∀ o ∈ (Mode.widen (2 ^ lg) (4 * c.bw) Mn).post, WordAl o)
     (hpreA : ∀ o ∈ Mn.pre, WordAl o) (hpostA : ∀ o ∈ Mn.post, WordAl o)
     (hD : w = true → (Dp s₀).toNat % 4 = 0 ∧ Mn.step % 4 = 0) :
-    LoopsOk cs Mn F s₀ k (.seq (c.loopWide w Mw lg) (c.steps w Mn)) :=
-  levels_loops cs (wide := fun _ => Mw) (lgs := [lg])
+    LoopsOk cs Mn F s₀ k (.seq (c.loopWide w Mn lg) (c.steps w Mn)) :=
+  levels_loops cs (lgs := [lg])
     (fun l hl => by
       obtain rfl : l = lg := List.mem_singleton.mp hl
-      exact ⟨hlg, hG, hstw, hstle, hpreW, hpostW, hpreWA, hpostWA, ⟨ciphB, hcompW, hB⟩⟩)
+      exact ⟨hlg, hG, rfl, hstle, hpreW, hpostW, hpreWA, hpostWA, ⟨ciphB, hcompW, hB⟩⟩)
     hFb hpre hpost hpreA hpostA hcomp hD
 
 end
@@ -372,10 +387,10 @@ section
 variable (cs : CoreSpec c) {s₀ : State} {k : cs.Key} {lg : Nat}
 
 /-- The function of `seq2`, as `seq_changes_wp`. -/
-theorem seq2_changes_wp {Mw Mn : Mode} {F : StepFn} (hp : SeqPre c Mn s₀)
-    (hloops : LoopsOk cs Mn F s₀ k (Core.aligned Mn.step fun w => .seq (c.loopWide w Mw lg) (c.steps w Mn)))
+theorem seq2_changes_wp {Mn : Mode} {F : StepFn} (hp : SeqPre c Mn s₀)
+    (hloops : LoopsOk cs Mn F s₀ k (Core.aligned Mn.step fun w => .seq (c.loopWide w Mn lg) (c.steps w Mn)))
     (hk : cs.KeyArgs s₀ (wrs0 c Mn s₀) k) :
-    WP isa (c.seq2 Mw Mn lg) s₀ fun s' => abiPreserved s₀ s' ∧
+    WP isa (c.seq2 Mn lg) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt Mn.step s'.mem (Dp s₀) (N s₀) = (run F (iv0 c s₀) (xs0 Mn s₀)).1 ∧
       (Mn.ivOut = true → bytesAt s'.mem (P s₀) (4 * c.bw) = (run F (iv0 c s₀) (xs0 Mn s₀)).2) ∧
       Changes c Mn s₀ s' :=
@@ -388,7 +403,7 @@ theorem lens_wide (G : Nat) (l : Loc) (hl : l ≠ .chn) :
 theorem cbcDecWide_loops (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstle : 2 ^ lg * (4 * c.bw) ≤ 2032) :
     LoopsOk cs (Mode.cbcDecChained c.bw) (cbcDecF (cs.cipher k)) s₀ k
       (Core.aligned (Mode.cbcDecChained c.bw).step fun w =>
-        .seq (c.loopWide w (Mode.cbcDecWide c.bw (2 ^ lg)) lg) (c.steps w (Mode.cbcDecChained c.bw))) := by
+        .seq (c.loopWide w (Mode.cbcDecChained c.bw) lg) (c.steps w (Mode.cbcDecChained c.bw))) := by
   obtain b := blk_bounds (c := c) (st := (Mode.cbcDecChained c.bw).step) rfl
   obtain ⟨hw1, hw2⟩ := cbcDecWide_inBounds (bw := c.bw) (len := lens c (2 ^ lg * (4 * c.bw)) (4 * c.bw * 2 ^ lg))
     (2 ^ lg) (lens_wide _ _ (by decide)) (lens_wide _ _ (by decide)) (by simp [lens])
@@ -396,7 +411,7 @@ theorem cbcDecWide_loops (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstle : 2 ^ lg
   obtain hqA : ∀ o ∈ (Mode.cbcDecChained c.bw).post, WordAl o :=
     append_ok (append_ok (xorBlk_wordAl _ _ _ _) (copyBlk_wordAl _ _ _)) (copyBlk_wordAl _ _ _)
   obtain h4 : (4 * c.bw) % 4 = 0 := Nat.mul_mod_right 4 _
-  exact aligned_ok cs fun w hD => wideSteps_ok cs hlg hG rfl hstle hw1 hw2 (cbcDecWide_computes (cs.cipher_len k) _)
+  exact aligned_ok cs fun w hD => wideSteps_ok cs hlg hG hstle hw1 hw2 (cbcDecWide_computes (cs.cipher_len k) _)
     (bufCipher_blocks hG) (cbcDecF_blockwise (cs.cipher_len k)) (copyBlk_inBounds (b _) (b _))
     (append_ok (append_ok (xorBlk_inBounds (b _) (b _) (b _)) (copyBlk_inBounds (b _) (b _)))
       (copyBlk_inBounds (b _) (b _)))
@@ -405,14 +420,14 @@ theorem cbcDecWide_loops (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstle : 2 ^ lg
 theorem cfbDecWide_loops (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstle : 2 ^ lg * (4 * c.bw) ≤ 2032) :
     LoopsOk cs (Mode.cfbDecEarly c.bw) (cfbDecF (cs.cipher k)) s₀ k
       (Core.aligned (Mode.cfbDecEarly c.bw).step fun w =>
-        .seq (c.loopWide w (Mode.cfbDecWide c.bw (2 ^ lg)) lg) (c.steps w (Mode.cfbDecEarly c.bw))) := by
+        .seq (c.loopWide w (Mode.cfbDecEarly c.bw) lg) (c.steps w (Mode.cfbDecEarly c.bw))) := by
   obtain b := blk_bounds (c := c) (st := (Mode.cfbDecEarly c.bw).step) rfl
   obtain ⟨hw1, hw2⟩ := cfbDecWide_inBounds (bw := c.bw) (len := lens c (2 ^ lg * (4 * c.bw)) (4 * c.bw * 2 ^ lg))
     (2 ^ lg) (lens_wide _ _ (by decide)) (lens_wide _ _ (by decide)) (by simp [lens])
   obtain hpA : ∀ o ∈ (Mode.cfbDecEarly c.bw).pre, WordAl o := append_ok (copyBlk_wordAl _ _ _) (copyBlk_wordAl _ _ _)
   obtain hqA : ∀ o ∈ (Mode.cfbDecEarly c.bw).post, WordAl o := xorBlk_wordAl _ _ _ _
   obtain h4 : (4 * c.bw) % 4 = 0 := Nat.mul_mod_right 4 _
-  exact aligned_ok cs fun w hD => wideSteps_ok cs hlg hG rfl hstle hw1 hw2 (cfbDecWide_computes (cs.cipher_len k) _)
+  exact aligned_ok cs fun w hD => wideSteps_ok cs hlg hG hstle hw1 hw2 (cfbDecWide_computes (cs.cipher_len k) _)
     (bufCipher_blocks hG) (cfbDecF_blockwise (cs.cipher_len k))
     (append_ok (copyBlk_inBounds (b _) (b _)) (copyBlk_inBounds (b _) (b _))) (xorBlk_inBounds (b _) (b _) (b _))
     (cfbDecEarly_computes (cs.cipher_len k)) (widen_wordAl hpA h4 h4) (widen_wordAl hqA h4 h4) hpA hqA hD
@@ -420,7 +435,7 @@ theorem cfbDecWide_loops (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstle : 2 ^ lg
 /-- CBC decryption, `2 ^ lg` blocks at a time. -/
 theorem cbcDecWide_wp (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstle : 2 ^ lg * (4 * c.bw) ≤ 2032)
     (hp : SeqPre c (Mode.cbcDecChained c.bw) s₀) (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cbcDecChained c.bw) s₀) k) :
-    WP isa (c.seq2 (Mode.cbcDecWide c.bw (2 ^ lg)) (Mode.cbcDecChained c.bw) lg) s₀ fun s' => abiPreserved s₀ s' ∧
+    WP isa (c.seq2 (Mode.cbcDecChained c.bw) lg) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) = Spec.Cbc.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       Changes c (Mode.cbcDecChained c.bw) s₀ s' :=
@@ -431,7 +446,7 @@ theorem cbcDecWide_wp (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstle : 2 ^ lg * 
 /-- CFB decryption, `2 ^ lg` blocks at a time. -/
 theorem cfbDecWide_wp (hlg : lg ≤ 11) (hG : 2 ^ lg ≤ c.G) (hstle : 2 ^ lg * (4 * c.bw) ≤ 2032)
     (hp : SeqPre c (Mode.cfbDecEarly c.bw) s₀) (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cfbDecEarly c.bw) s₀) k) :
-    WP isa (c.seq2 (Mode.cfbDecWide c.bw (2 ^ lg)) (Mode.cfbDecEarly c.bw) lg) s₀ fun s' => abiPreserved s₀ s' ∧
+    WP isa (c.seq2 (Mode.cfbDecEarly c.bw) lg) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) = Spec.Cfb.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       Changes c (Mode.cfbDecEarly c.bw) s₀ s' :=
@@ -470,7 +485,7 @@ abbrev LevelsFit (c : Core) (lgs : List Nat) : Prop :=
 theorem cbcDecLevels_loops {lgs : List Nat} (hfit : LevelsFit c lgs) :
     LoopsOk cs (Mode.cbcDecChained c.bw) (cbcDecF (cs.cipher k)) s₀ k
       (Core.aligned (Mode.cbcDecChained c.bw).step fun w =>
-        c.levels w (Mode.cbcDecWide c.bw) lgs (c.steps w (Mode.cbcDecChained c.bw))) := by
+        c.levels w (Mode.cbcDecChained c.bw) lgs (c.steps w (Mode.cbcDecChained c.bw))) := by
   have b := blk_bounds (c := c) (st := (Mode.cbcDecChained c.bw).step) rfl
   exact aligned_ok cs fun w hD => levels_loops cs
     (fun lg hl => cbcDecWide_ok cs (hfit lg hl).1 (hfit lg hl).2.1 (hfit lg hl).2.2)
@@ -484,7 +499,7 @@ theorem cbcDecLevels_loops {lgs : List Nat} (hfit : LevelsFit c lgs) :
 theorem cfbDecLevels_loops {lgs : List Nat} (hfit : LevelsFit c lgs) :
     LoopsOk cs (Mode.cfbDecEarly c.bw) (cfbDecF (cs.cipher k)) s₀ k
       (Core.aligned (Mode.cfbDecEarly c.bw).step fun w =>
-        c.levels w (Mode.cfbDecWide c.bw) lgs (c.steps w (Mode.cfbDecEarly c.bw))) := by
+        c.levels w (Mode.cfbDecEarly c.bw) lgs (c.steps w (Mode.cfbDecEarly c.bw))) := by
   have b := blk_bounds (c := c) (st := (Mode.cfbDecEarly c.bw).step) rfl
   exact aligned_ok cs fun w hD => levels_loops cs
     (fun lg hl => cfbDecWide_ok cs (hfit lg hl).1 (hfit lg hl).2.1 (hfit lg hl).2.2)
@@ -497,7 +512,7 @@ theorem cfbDecLevels_loops {lgs : List Nat} (hfit : LevelsFit c lgs) :
 turn, then one block at a time. -/
 theorem cbcDecLevels_wp {lgs : List Nat} (hfit : LevelsFit c lgs)
     (hp : SeqPre c (Mode.cbcDecChained c.bw) s₀) (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cbcDecChained c.bw) s₀) k) :
-    WP isa (c.seqLevels (Mode.cbcDecWide c.bw) lgs (Mode.cbcDecChained c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
+    WP isa (c.seqLevels lgs (Mode.cbcDecChained c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) = Spec.Cbc.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       Changes c (Mode.cbcDecChained c.bw) s₀ s' :=
@@ -508,7 +523,7 @@ theorem cbcDecLevels_wp {lgs : List Nat} (hfit : LevelsFit c lgs)
 turn, then one block at a time. -/
 theorem cfbDecLevels_wp {lgs : List Nat} (hfit : LevelsFit c lgs)
     (hp : SeqPre c (Mode.cfbDecEarly c.bw) s₀) (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cfbDecEarly c.bw) s₀) k) :
-    WP isa (c.seqLevels (Mode.cfbDecWide c.bw) lgs (Mode.cfbDecEarly c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
+    WP isa (c.seqLevels lgs (Mode.cfbDecEarly c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) = Spec.Cfb.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       Changes c (Mode.cfbDecEarly c.bw) s₀ s' :=
@@ -518,7 +533,7 @@ theorem cfbDecLevels_wp {lgs : List Nat} (hfit : LevelsFit c lgs)
 theorem cbcDecLevelsWith_loops {one : Prog isa} {lgs : List Nat} (hone : OneOk cs one) (hfit : LevelsFit c lgs) :
     LoopsOk cs (Mode.cbcDecChained c.bw) (cbcDecF (cs.cipher k)) s₀ k
       (Core.aligned (Mode.cbcDecChained c.bw).step fun w =>
-        c.levels w (Mode.cbcDecWide c.bw) lgs ((c.withOne one).steps w (Mode.cbcDecChained c.bw))) := by
+        c.levels w (Mode.cbcDecChained c.bw) lgs ((c.withOne one).steps w (Mode.cbcDecChained c.bw))) := by
   have b := blk_bounds (c := c) (st := (Mode.cbcDecChained c.bw).step) rfl
   exact aligned_ok cs fun w hD => levelsWith_loops cs hone
     (fun lg hl => cbcDecWide_ok cs (hfit lg hl).1 (hfit lg hl).2.1 (hfit lg hl).2.2)
@@ -532,7 +547,7 @@ theorem cbcDecLevelsWith_loops {one : Prog isa} {lgs : List Nat} (hone : OneOk c
 theorem cfbDecLevelsWith_loops {one : Prog isa} {lgs : List Nat} (hone : OneOk cs one) (hfit : LevelsFit c lgs) :
     LoopsOk cs (Mode.cfbDecEarly c.bw) (cfbDecF (cs.cipher k)) s₀ k
       (Core.aligned (Mode.cfbDecEarly c.bw).step fun w =>
-        c.levels w (Mode.cfbDecWide c.bw) lgs ((c.withOne one).steps w (Mode.cfbDecEarly c.bw))) := by
+        c.levels w (Mode.cfbDecEarly c.bw) lgs ((c.withOne one).steps w (Mode.cfbDecEarly c.bw))) := by
   have b := blk_bounds (c := c) (st := (Mode.cfbDecEarly c.bw).step) rfl
   exact aligned_ok cs fun w hD => levelsWith_loops cs hone
     (fun lg hl => cfbDecWide_ok cs (hfit lg hl).1 (hfit lg hl).2.1 (hfit lg hl).2.2)
@@ -545,7 +560,7 @@ theorem cfbDecLevelsWith_loops {one : Prog isa} {lgs : List Nat} (hone : OneOk c
 turn, then the blocks left by `one`. -/
 theorem cbcDecLevelsWith_wp {one : Prog isa} {lgs : List Nat} (hone : OneOk cs one) (hfit : LevelsFit c lgs)
     (hp : SeqPre c (Mode.cbcDecChained c.bw) s₀) (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cbcDecChained c.bw) s₀) k) :
-    WP isa (c.seqLevelsWith one (Mode.cbcDecWide c.bw) lgs (Mode.cbcDecChained c.bw)) s₀ fun s' =>
+    WP isa (c.seqLevelsWith one lgs (Mode.cbcDecChained c.bw)) s₀ fun s' =>
       abiPreserved s₀ s' ∧
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) = Spec.Cbc.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) ∧
@@ -557,7 +572,7 @@ theorem cbcDecLevelsWith_wp {one : Prog isa} {lgs : List Nat} (hone : OneOk cs o
 turn, then the blocks left by `one`. -/
 theorem cfbDecLevelsWith_wp {one : Prog isa} {lgs : List Nat} (hone : OneOk cs one) (hfit : LevelsFit c lgs)
     (hp : SeqPre c (Mode.cfbDecEarly c.bw) s₀) (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cfbDecEarly c.bw) s₀) k) :
-    WP isa (c.seqLevelsWith one (Mode.cfbDecWide c.bw) lgs (Mode.cfbDecEarly c.bw)) s₀ fun s' =>
+    WP isa (c.seqLevelsWith one lgs (Mode.cfbDecEarly c.bw)) s₀ fun s' =>
       abiPreserved s₀ s' ∧
       chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) = Spec.Cfb.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
       bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) ∧
