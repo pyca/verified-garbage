@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.ConstMem
 
 /-!
 # ECDSA on PPC64LE: the setup
@@ -374,6 +375,16 @@ theorem wordsVal_of_tbl {c : Cfg} {m : Mem} {base : Addr} {i x : Nat} (hi : i < 
     show (c.n * i + j) / c.n = i by rw [Nat.mul_comm, Nat.add_comm, Nat.add_mul_div_right _ _ h0, Nat.div_eq_of_lt hj,
       Nat.zero_add],
     show (c.n * i + j) % c.n = j by rw [Nat.mul_comm, Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hj], hx]
+
+/-- A memory holding the table of constants at `0x100000`, for the witnesses
+that a contract with it can be met (irreducible: unfolding it in a
+definitional check would evaluate the table). -/
+@[irreducible] def tblSatMem (c : Cfg) : Mem := constMem 0x100000 c.constTbl
+
+theorem tblSatMem_held (c : Cfg) (h7 : c.n < 10) : ∀ i < c.constTbl.length,
+    (tblSatMem c).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = c.constTbl.getD i 0 := by
+  unfold tblSatMem
+  exact constMem_held _ _ (by rw [constTbl_length]; omega_arith)
 
 /-- The table of constants, under a contract that lists it
 (`Abi.withConsts`, `ConstsOk`), as `SetupPre` takes it: readable word by word,

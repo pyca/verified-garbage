@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 public import VerifiedGarbage.Impl.EcKey.Compressed
 public import VerifiedGarbage.Proof.EcKey.Compressed.Root
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
@@ -642,6 +643,34 @@ theorem compress_correct (c : Cfg) (hc : CfgOk c) (s : State) (hs : (compressCon
       by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using hpw,
       by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using how,
       by omega_arith, by omega_arith, hwfit, ht⟩
+  obtain ⟨t, s', he, K, bytes, ret⟩ := compress_ok hc hp
+  refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
+  show (match Spec.EcKey.compressPublicKey c.C (Spec.EcKey.bytesAt s.mem (s.gpr .r4) (2 * c.C.len + 1)) with
+    | some bs => _ | none => _)
+  rw [compress_key]
+  change Spec.EcKey.bytesAt s'.mem (s.gpr .r3) (1 + c.C.len) = _ at bytes
+  rw [show 1 + c.C.len = c.C.len + 1 by omega_arith] at bytes
+  by_cases hk : KeyOk c s
+  · rw [ite_eq_left hk] at bytes ret ⊢
+    exact ⟨ret, bytes⟩
+  · rw [ite_eq_right hk] at bytes ret ⊢
+    exact ⟨ret, bytes⟩
+
+
+/-- `compress_correct` under a contract that lists the table of constants. -/
+theorem compress_correctT (c : Cfg) (hc : CfgOk c) {K : List (String × List (BitVec 64))}
+    (hK : (c.constSym, c.constTbl) ∈ K) (s : State) (hs : ((compressContract c.C).withTables K).pre s) :
+    ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.compress c) s t s' ∧
+      abiPreserved s s' ∧ ((compressContract c.C).withTables K).post s s' := by
+  obtain ⟨⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩, hk⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hpo hpw how hfit hpkfit hwfit
+  obtain hp : CPre c s (constRegs K s) :=
+    ⟨hk.rd_strip (by rw [hrd, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith]),
+      by rw [hwr, show c.C.len + 1 = 1 + c.C.len by omega_arith],
+      by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using hpw,
+      by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using how,
+      by omega_arith, by omega_arith, hwfit, fun _ => tbl_of_consts hk hK (hk.disjoint_wr hK (by
+        rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
   obtain ⟨t, s', he, K, bytes, ret⟩ := compress_ok hc hp
   refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
   show (match Spec.EcKey.compressPublicKey c.C (Spec.EcKey.bytesAt s.mem (s.gpr .r4) (2 * c.C.len + 1)) with
@@ -1639,6 +1668,36 @@ theorem decompress_correct (c : Cfg) (hc : CfgOk c) (root : Fe c.C → Fe c.C) (
   obtain ⟨t, s', he, K, bytes, ret⟩ := decompress_ok hc hroot hp
   refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
   dsimp only [decompressContract]
+  rw [decompress_key]
+  change Spec.EcKey.bytesAt s'.mem (s.gpr .r3) (1 + 2 * c.C.len) = _ at bytes
+  rw [show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega_arith] at bytes
+  by_cases hk : DAccept c root s
+  · rw [ite_eq_left hk] at bytes ret ⊢
+    refine ⟨ret, ?_⟩
+    rw [bytes]
+    simp only [Spec.EcKey.encodePoint, Fin.val_ofNat, Nat.mod_eq_of_lt hk.1.2]
+  · rw [ite_eq_right hk] at bytes ret ⊢
+    exact ⟨ret, bytes⟩
+
+
+/-- `decompress_correct` under a contract that lists the table of constants. -/
+theorem decompress_correctT (c : Cfg) (hc : CfgOk c) (root : Fe c.C → Fe c.C) (hroot : CandidateCorrect c root)
+    {K : List (String × List (BitVec 64))} (hK : (c.constSym, c.constTbl) ∈ K)
+    (s : State) (hs : ((decompressContract c.C root).withTables K).pre s) :
+    ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.decompress c) s t s' ∧
+      abiPreserved s s' ∧ ((decompressContract c.C root).withTables K).post s s' := by
+  obtain ⟨⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩, hk⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hpo hpw how hfit hpkfit hwfit
+  obtain hp : DPre c s (constRegs K s) :=
+    ⟨hk.rd_strip (by rw [hrd, show c.C.len + 1 = 1 + c.C.len by omega_arith]),
+      by rw [hwr, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith],
+      by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using hpw,
+      by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using how,
+      by omega_arith, by omega_arith, hwfit, fun _ => tbl_of_consts hk hK (hk.disjoint_wr hK (by
+        rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
+  obtain ⟨t, s', he, K, bytes, ret⟩ := decompress_ok hc hroot hp
+  refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
+  dsimp only [Contract.withTables, decompressContract, stripConsts_mem, stripConsts_gpr]
   rw [decompress_key]
   change Spec.EcKey.bytesAt s'.mem (s.gpr .r3) (1 + 2 * c.C.len) = _ at bytes
   rw [show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega_arith] at bytes
