@@ -1,14 +1,16 @@
 [package]
 name = "rustls-verified-garbage"
-version = "0.0.0"
-edition = "2024"
 description = "A rustls CryptoProvider backed by verified-garbage"
-license = "Apache-2.0 OR BSD-3-Clause"
-publish = false
+readme = "README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
 
-# A workspace of its own, which the library's excludes, so that the library's tests,
-# lints and coverage never build rustls.
-[workspace]
+[lints]
+workspace = true
 
 [features]
 default = ["std"]

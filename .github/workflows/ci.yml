@@ -773,8 +773,9 @@ jobs:
         if: ${{ steps.cached.outputs.cache-hit != 'true' }}
         run: python3 ci/rust_lint.py run "$CRATE"
 
-  # The rustls provider (`crates/rustls-verified-garbage/`, a package of its own, which the
-  # jobs above never build), on x86-64 Linux: its formatting and lints
+  # The rustls provider (`crates/rustls-verified-garbage/`, a member of the
+  # workspace, which the jobs above, building only the library, never build),
+  # on x86-64 Linux: its formatting and lints
   # (ci/rust_lint.py), its tests with Wycheproof's vectors, and rustls's own
   # API test suite run with it (`bench/setup-rustls.sh`). It builds on the
   # library, so it runs whenever x86-64's tests do, and when it changes
@@ -788,9 +789,6 @@ jobs:
       RUSTUP_TOOLCHAIN: stable
       RUSTFLAGS: -D warnings
       WYCHEPROOF_ROOT: ${{ github.workspace }}/wycheproof
-      # One target directory for the provider and the rustls checkout, which
-      # build the same dependencies, and which the cache keeps.
-      CARGO_TARGET_DIR: ${{ github.workspace }}/crates/rustls-verified-garbage/target
       TESTS: ${{ github.event_name != 'push' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -820,20 +818,21 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: rustls-provider
-          workspaces: crates/rustls-verified-garbage -> target
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: rustc -vV
       - name: Lint
         run: python3 ci/rust_lint.py run provider
       - name: Test
-        working-directory: crates/rustls-verified-garbage
-        run: cargo test --release --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
+        run: cargo test -p rustls-verified-garbage --release --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
       # rustls's API tests, which a patch (`bench/rustls.patch`) runs with
       # the provider too, at the revision the provider builds against. Its
       # warnings are rustls's, not this repository's.
       - name: rustls's API tests
         env:
           RUSTFLAGS: ""
+          # The workspace's, which the cache keeps: the rustls checkout
+          # builds the same dependencies.
+          CARGO_TARGET_DIR: ${{ github.workspace }}/target
         run: |
           sh crates/rustls-verified-garbage/bench/setup-rustls.sh "$RUNNER_TEMP/rustls"
           cd "$RUNNER_TEMP/rustls"

@@ -62,8 +62,8 @@ ARCHES = {
 
 # Paths that no Rust test reads or runs: the Lean sources (whose output is
 # the crates of generated code), the benchmarks (a crate of their own, which only `rust-lint`
-# builds, for every target: see `output`), the rustls provider (a package of
-# its own, which only `rustls-provider` builds), documentation (agents' skills
+# builds, for every target: see `output`), the rustls provider (a member of
+# the workspace that only `rustls-provider` builds), documentation (agents' skills
 # too), the workflows and actions of the Lean build and the benchmarks, and
 # the workflow that comments on conflicting pull requests.
 NOT_RUST_PREFIXES = (
