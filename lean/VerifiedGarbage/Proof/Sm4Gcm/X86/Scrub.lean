@@ -34,14 +34,19 @@ zeroing of the stack its contract reserves below `esp` (that frame, and the
 frames of its calls of `vg_sm4_ctr32`, `vg_sm4_expand_key_core` and
 `vg_ghash`) and by the clearing of the registers
 (`Impl.Scrub.X86.scrubAll`). One theorem each states `VerifiedScrubbed` of
-it, for every implementation `v` of `vg_ghash` it calls (`init_scrubbed`,
-…), from `X86.Scrub.verifiedScrubbedAll` with:
+it, for every implementation it calls, `ki` of the key schedule for `init`
+and `v` of `vg_ghash` for the others (`init_scrubbed`, …), from
+`X86.Scrub.verifiedScrubbedAll` with:
 
 * the postcondition reading the memory on return only within the key
   context, the state and the buffers (`Proof/Sm4Gcm/Scratch.lean`, for any
   pointer width);
-* what the cleanup needs of the code (`scrubFSide`): for `init`, which
-  calls no implementation, evaluated once; for the others, for every `v`,
+* what the cleanup needs of the code (`scrubFSide`): for `init`, for every
+  `ki`, from its code with a stub for the key schedule, a frame of its
+  1448 bytes of stack around nothing (`keyStub`, `holeStub 1448`), which
+  the kernel evaluates once here (`init_side`), the implementation's own
+  facts (`KeyImpl.scrub`, `KeyImpl.stack`) and `FillB`, which `fillB_calls`
+  proves by walking only `init`'s code; for the others, for every `v`,
   from SM4-GCM's code with AES-GCM's stub implementations
   (`Proof.AesGcm.X86.Scrub.stub`, whose code is `.block []`), which the
   kernel evaluates once here (`streamEncrypt_side`, …), `vg_ghash`'s own
@@ -95,7 +100,11 @@ theorem openOut (stack : Nat) :
 /-! ## What the cleanup needs of the code -/
 
 -- SM4-GCM's own code, with AES-GCM's stubs, as literals for the kernel's evaluation.
-materialize_code initCode := withStackScratch 2576 2 init
+/-- An implementation of the key schedule with no code: a frame of its 1448
+bytes of stack around nothing. -/
+def keyStub : Impl.AesGcm.X86.Fn := ⟨"", holeStub 1448⟩
+
+materialize_code initStub := withStackScratch 2576 2 (init keyStub)
 materialize_code streamEncryptStub := withStackScratch 2600 8 (streamEncrypt stub)
 materialize_code streamDecryptStub := withStackScratch 2600 8 (streamDecrypt stub)
 materialize_code streamFinishStub := withStackScratch 2596 7 (streamFinish stub)
@@ -103,7 +112,7 @@ materialize_code streamVerifyStub := withStackScratch 2600 8 (streamVerify stub)
 materialize_code sealStub := withStackScratch 2600 8 («seal» stub)
 materialize_code openStub := withStackScratch 2604 9 («open» stub)
 
-theorem init_side : scrubFSide (withStackScratch 2576 2 init) [] 4112 = true := by lit_decide
+theorem init_side : scrubFSide (withStackScratch 2576 2 (init keyStub)) [] 4112 = true := by lit_decide
 theorem streamEncrypt_side : scrubFSide (withStackScratch 2600 8 (streamEncrypt stub)) [] 4136 = true := by
   lit_decide
 theorem streamDecrypt_side : scrubFSide (withStackScratch 2600 8 (streamDecrypt stub)) [] 4136 = true := by
@@ -116,6 +125,11 @@ theorem seal_side : scrubFSide (withStackScratch 2600 8 («seal» stub)) [] 4136
   lit_decide
 theorem open_side : scrubFSide (withStackScratch 2604 9 («open» stub)) [] 4140 = true := by
   lit_decide
+
+/-- `scrubFSide` of `vg_sm4_gcm_init`, whatever the implementation of the key schedule. -/
+theorem init_scrub (ki : KeyImpl) : scrubFSide (withStackScratch 2576 2 (init ki.fn)) [] 4112 = true := by
+  have hk : calleeSide ki.fn.code 1448 = true := calleeSide_of_le ki.stack ki.scrub
+  exact scrubFSide_of_fillB (by fillB_calls) init_side
 
 variable (v : GcmImpl)
 
@@ -145,14 +159,14 @@ theorem open_scrub : scrubFSide (withStackScratch 2604 9 («open» v.callees)) [
 
 /-! ## The functions as emitted -/
 
-/-- `vg_sm4_gcm_init`. -/
-theorem init_scrubbed :
-    VerifiedScrubbed target Impl.Sm4Gcm.X86.Fn.init (Spec.Sm4.Gcm.initContract X86.abi 4112) 0 :=
+/-- `vg_sm4_gcm_init`, calling the implementation `ki` of the key schedule. -/
+theorem init_scrubbed (ki : KeyImpl) :
+    VerifiedScrubbed target (Impl.Sm4Gcm.X86.Fn.init ki.fn) (Spec.Sm4.Gcm.initContract X86.abi 4112) 0 :=
   verifiedScrubbedAll (api := Spec.Sm4.Gcm.initApi)
-    { code := withStackScratch 2576 2 init
-      verified := init_framed
-      spSafe := withStackScratch_spSafe init_spSafe }
-    (initOut _) (hs := init_side)
+    { code := withStackScratch 2576 2 (init ki.fn)
+      verified := init_framed ki
+      spSafe := withStackScratch_spSafe (init_spSafe ki) }
+    (initOut _) (hs := init_scrub ki)
 
 /-- `vg_sm4_gcm_stream_encrypt`. -/
 theorem streamEncrypt_scrubbed :
@@ -210,8 +224,8 @@ theorem open_scrubbed :
 
 /-! ## `spSafe` of the functions as emitted, which their registrations state -/
 
-theorem init_spSafeF : Impl.Sm4Gcm.X86.Fn.init.all (fun i => !isa.writesSp i) = true :=
-  scrubAll_spSafe (withStackScratch_spSafe init_spSafe)
+theorem init_spSafeF (ki : KeyImpl) : (Impl.Sm4Gcm.X86.Fn.init ki.fn).all (fun i => !isa.writesSp i) = true :=
+  scrubAll_spSafe (withStackScratch_spSafe (init_spSafe ki))
 theorem streamEncrypt_spSafeF : (Impl.Sm4Gcm.X86.Fn.streamEncrypt v.callees).all (fun i => !isa.writesSp i) = true :=
   scrubAll_spSafe (withStackScratch_spSafe (streamEncrypt_spSafe v))
 theorem streamDecrypt_spSafeF : (Impl.Sm4Gcm.X86.Fn.streamDecrypt v.callees).all (fun i => !isa.writesSp i) = true :=

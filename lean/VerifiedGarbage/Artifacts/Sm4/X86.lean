@@ -2,9 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.Scrub
 public import VerifiedGarbage.Impl.Sm4.X86.Fn
+public import VerifiedGarbage.Proof.Sm4.X86.AesNiKey
+public import VerifiedGarbage.Impl.Sm4.X86.AesNiKey
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.Lit
+import VerifiedGarbage.Proof.Sm4.X86.AesNiKeyLit
 
 /-! # SM4 on x86 -/
 
@@ -13,6 +16,10 @@ import VerifiedGarbage.Proof.Sm4.X86.Lit
 namespace VG.Artifacts.Sm4.X86
 
 def artifacts : List Artifact := [
+  Spec.Sm4.expandKeyApi.artifact X86.target {
+    suffix := "_aesni"
+    code := Impl.Sm4.X86.AesNiKey.Fn.expandKey
+    verified := Proof.Sm4.X86.AesNiKey.expandKey_scrubbed },
   Spec.Sm4.expandKeyApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.expandKey
     verified := Proof.Sm4.X86.Scrub.expandKey_scrubbed },
