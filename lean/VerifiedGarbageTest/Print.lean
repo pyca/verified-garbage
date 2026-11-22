@@ -992,7 +992,7 @@ instructions. -/
 
 /-! ## CPU features
 
-`Code.requires` collects what every instruction needs, through calls and
+`Code.requiresDedup` collects what every instruction needs, through calls and
 frames; `Rust.featureCheck` accepts exactly the declared set; the emitted
 `# Safety` item and constant list it. -/
 
@@ -1008,11 +1008,8 @@ def featureSample : Code String Unit :=
     (.ite () (.loop (.call "vg_f" (.block ["pshufb"])) ())
       (.frame "push" (.block ["pblendw"]) "pop"))
 
-#guard featureSample.requires req == ["sha", "sha", "ssse3", "sse4.1"]
-#guard (Code.block ["mov", "add"] : Code String Unit).requires req == []
-
 /-! `Code.requiresDedup` goes through the code of each call once
-(`Code.distinctCalls`): the features of `Code.requires` each once.
+(`Code.distinctCalls`): each feature once.
 `Rust.ownFirstSome?` goes through the code but for its calls. -/
 
 /-- An ISA of instructions named by strings, which require `req`: what the
@@ -1042,9 +1039,23 @@ def nestedSample : Code String Unit :=
   .seq (.call "k" (.seq (.block ["mov"]) (.call "g" (.call "f" (.block ["sha256rnds2"])))))
     (.seq (.call "f" (.block ["sha256rnds2"])) (.call "f" (.block ["pblendw"])))
 
-#guard Code.requiresDedup strIsa featureSample == ["sha", "sse4.1", "ssse3"]
-#guard Code.requiresDedup strIsa nestedSample == ["sha", "sse4.1"]
-#guard Code.requiresDedup strIsa (Code.block ["mov", "add"] : Code String Unit) == []
+#guard Code.requiresDedup strIsa featureSample (fun _ => false) == ["sha", "sse4.1", "ssse3"]
+#guard Code.requiresDedup strIsa nestedSample (fun _ => false) == ["sha", "sse4.1"]
+#guard Code.requiresDedup strIsa (Code.block ["mov", "add"] : Code String Unit) (fun _ => false) == []
+
+/-- An indirect call that may reach `t`, whose code requires `sha`, or `u`,
+whose code calls a function requiring `sse4.1`. -/
+def icallSample : Code String Unit :=
+  .seq (.block ["mov"])
+    (.icall "call" "t" (.block ["sha256rnds2"])
+      (.icall "call" "u" (.call "v" (.block ["pblendw"])) (.block [])))
+
+-- A candidate of an indirect call counts as a call does (`Abi.withFns`), but
+-- for one of a table of functions (`Abi.withTables`), whose features the
+-- caller leaves out, with those of the functions it calls.
+#guard Code.requiresDedup strIsa icallSample (fun _ => false) == ["sha", "sse4.1"]
+#guard Code.requiresDedup strIsa icallSample (· == "t") == ["sse4.1"]
+#guard Code.requiresDedup strIsa icallSample (fun n => n == "t" || n == "u") == []
 -- The value of each call's code, but for a later call of a function whose
 -- value is the first call's.
 #guard Code.distinctCalls (M := strIsa) (Code.ownRequires req []) nestedSample.calls ==
@@ -1066,7 +1077,7 @@ def err : Except String Unit → Option String
 def safeDoc : String := "Does things.\n\n# Safety\n\n* `p` must be valid."
 
 #guard (Rust.featureCheck "f" "No safety requirements." [] []).toBool
-#guard (Rust.featureCheck "f" safeDoc (featureSample.requires req) ["sse4.1", "sha", "ssse3"]).toBool
+#guard (Rust.featureCheck "f" safeDoc ["sha", "sha", "ssse3", "sse4.1"] ["sse4.1", "sha", "ssse3"]).toBool
 -- An undeclared feature, an unneeded one, and a doc the item can't be added to.
 #guard err (Rust.featureCheck "f" safeDoc ["sha", "ssse3"] ["sha"]) ==
   some "f requires the CPU feature ssse3 but does not declare it"
