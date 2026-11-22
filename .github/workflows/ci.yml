@@ -393,6 +393,7 @@ jobs:
       lint: ${{ steps.arches.outputs.lint }}
       cpu: ${{ steps.arches.outputs.cpu }}
       provider: ${{ steps.arches.outputs.provider }}
+      coverage: ${{ steps.arches.outputs.coverage }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -776,9 +777,11 @@ jobs:
   # The rustls provider (`crates/rustls-verified-garbage/`, a member of the
   # workspace, which the jobs above, building only the library, never build),
   # on x86-64 Linux: its formatting and lints (ci/rust_lint.py), its tests,
-  # and rustls's own API test suite run with it (`rustls/setup.sh`). It builds on the
-  # library, so it runs whenever x86-64's tests do, and when it changes
-  # (`rust-arches`' `provider`); a push to main only builds, for the cache.
+  # and rustls's own API test suite run with it (`rustls/setup.sh`), whose
+  # coverage of the provider's files `coverage` merges with the library's.
+  # It builds on the library, so it runs whenever x86-64's tests do, and
+  # when it changes (`rust-arches`' `provider`); a push to main only builds,
+  # for the cache.
   rustls-provider:
     name: "Rust: rustls provider"
     needs: rust-arches
@@ -786,7 +789,8 @@ jobs:
     runs-on: ubuntu-26.04
     env:
       RUSTUP_TOOLCHAIN: stable
-      RUSTFLAGS: -D warnings
+      RUSTFLAGS: -D warnings -Cinstrument-coverage
+      LLVM_PROFILE_FILE: ${{ github.workspace }}/.rust-cov/cov-%p-%m.profraw
       TESTS: ${{ github.event_name != 'push' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -814,13 +818,13 @@ jobs:
       - name: Lint
         run: python3 ci/rust_lint.py run provider
       - name: Test
-        run: cargo test -p rustls-verified-garbage --release --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
+        run: cargo test -p rustls-verified-garbage --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
       # rustls's API tests, which a patch (`rustls/tests.patch`) runs with
       # the provider too, at the release the provider builds against. Its
       # warnings are rustls's, not this repository's.
       - name: rustls's API tests
         env:
-          RUSTFLAGS: ""
+          RUSTFLAGS: -Cinstrument-coverage
           # The workspace's, which the cache keeps: the rustls checkout
           # builds the same dependencies.
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
@@ -828,6 +832,23 @@ jobs:
           sh crates/rustls-verified-garbage/rustls/setup.sh "$RUNNER_TEMP/rustls"
           cd "$RUNNER_TEMP/rustls"
           cargo test -p rustls-test --test api ${{ case(env.TESTS == 'true', '', '--no-run') }} tests_with_verified_garbage
+      # The provider's files only (`--only`): the library's coverage is the
+      # library's tests'. One lcov file for the provider's tests and one for
+      # rustls's, whose test binary is the rustls checkout's (`--cargo-dir`,
+      # with that step's environment, which built it).
+      - name: Export coverage
+        if: ${{ env.TESTS == 'true' }}
+        run: |
+          python3 ci/export_rust_coverage.py .rust-cov --only crates/rustls-verified-garbage/ -p rustls-verified-garbage
+          RUSTFLAGS=-Cinstrument-coverage CARGO_TARGET_DIR="$GITHUB_WORKSPACE/target" \
+            python3 ci/export_rust_coverage.py .rust-cov --cargo-dir "$RUNNER_TEMP/rustls" \
+            --only crates/rustls-verified-garbage/ -p rustls-test --test api
+      - if: ${{ env.TESTS == 'true' }}
+        uses: ./.github/actions/upload-artifact
+        with:
+          name: coverage-data-provider
+          path: "*.lcov"
+          if-no-files-found: error
 
   # The latest CPU time of each line of `rust-cpu-features`' runs on `main`,
   # per class of host, which its shards deal out their lines by
@@ -1169,12 +1190,13 @@ jobs:
   # architectures were not tested, but not when one failed.
   coverage:
     name: Rust coverage
-    needs: [rust-arches, rust, rust-cpu-features]
+    needs: [rust-arches, rust, rust-cpu-features, rustls-provider]
     if: >-
-      ${{ !cancelled() && needs.rust-arches.outputs.arches != '[]'
+      ${{ !cancelled() && needs.rust-arches.outputs.coverage == 'true'
       && needs.rust-arches.result == 'success'
       && contains(fromJSON('["success", "skipped"]'), needs.rust.result)
-      && contains(fromJSON('["success", "skipped"]'), needs.rust-cpu-features.result) }}
+      && contains(fromJSON('["success", "skipped"]'), needs.rust-cpu-features.result)
+      && contains(fromJSON('["success", "skipped"]'), needs.rustls-provider.result) }}
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1335,8 +1357,8 @@ jobs:
           LINT: ${{ needs.rust-lint.result }} ${{ needs.rust-arches.outputs.lint == '[]' }}
           CPU: ${{ needs.rust-cpu-features.result }} ${{ needs.rust-arches.outputs.cpu == '[]' }}
           PROVIDER: ${{ needs.rustls-provider.result }} ${{ needs.rust-arches.outputs.provider != 'true' }}
-          # Skipped exactly when no architecture ran its tests (`rust-arches`).
-          COVERAGE: ${{ needs.coverage.result }} ${{ needs.rust-arches.outputs.arches == '[]' }}
+          # Skipped exactly when no job ran tests (`rust-arches`).
+          COVERAGE: ${{ needs.coverage.result }} ${{ needs.rust-arches.outputs.coverage != 'true' }}
           # Skipped when `lean` built the proofs itself.
           SHARDS: ${{ needs.lean-shard.result }}
           GH_TOKEN: ${{ github.token }}

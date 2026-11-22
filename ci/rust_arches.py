@@ -35,6 +35,8 @@ every one when the benchmarks changed, or on a push to main (for its
 caches). `provider=` is whether the `rustls-provider` job runs: when the
 provider changes, or x86-64's tests run (the library it builds on
 changed), in the merge queue, and on a push to main (for its cache).
+`coverage=` is whether `coverage` runs: when some job runs tests, an
+architecture's or the provider's (not on a push to main, which runs none).
 """
 
 import json
@@ -179,7 +181,9 @@ def output(matrix, selected, tests=True, bench=False, provider=False):
         lines.append(f"{job}={json.dumps(keep, separators=(',', ':'))}")
     lint = [e for e in matrix["lint"] if bench or not tests or e["arch"] in selected]
     lines.append(f"lint={json.dumps(lint, separators=(',', ':'))}")
-    lines.append(f"provider={str(provider or not tests or 'x86_64' in selected).lower()}")
+    provider = provider or not tests or "x86_64" in selected
+    lines.append(f"provider={str(provider).lower()}")
+    lines.append(f"coverage={str(tests and (bool(selected) or provider)).lower()}")
     return "".join(line + "\n" for line in lines)
 
 

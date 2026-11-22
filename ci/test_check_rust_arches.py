@@ -159,6 +159,14 @@ class Output(unittest.TestCase):
         self.assertIs(run("merge_group")["provider"], True)
         self.assertIs(run("push")["provider"], True)
 
+    def test_coverage_runs_when_some_job_tests(self):
+        self.assertIs(run("pull_request", "lean/A.lean\n")["coverage"], False)
+        self.assertIs(run("pull_request", "crates/verified-garbage-asm-arm/src/md5.rs\n")["coverage"], True)
+        self.assertIs(run("pull_request", "crates/rustls-verified-garbage/src/kx.rs\n")["coverage"], True)
+        self.assertIs(run("merge_group")["coverage"], True)
+        # A push to main builds, for the caches, and tests nothing.
+        self.assertIs(run("push")["coverage"], False)
+
     def test_bench_is_whether_the_benchmarks_measure_the_arch(self):
         for event in ("merge_group", "push"):
             out = run(event)
@@ -251,6 +259,13 @@ class Workflow(unittest.TestCase):
         self.assertIn("python3 ci/rust_lint.py run provider", job("rustls-provider"))
         self.assertIn("rustls-provider", job("all-green"))
         self.assertIn("needs: rustls-provider", job("cancel-rustls-provider"))
+
+    def test_coverage_merges_the_providers_coverage(self):
+        self.assertIn("needs.rust-arches.outputs.coverage == 'true'", job("coverage"))
+        self.assertIn("rustls-provider", job("coverage"))
+        self.assertIn("needs.rust-arches.outputs.coverage != 'true'", job("all-green"))
+        self.assertIn("name: coverage-data-provider", job("rustls-provider"))
+        self.assertIn("--only crates/rustls-verified-garbage/", job("rustls-provider"))
 
     def test_jobs_read_their_matrices(self):
         for name, output in (("rust", "rust"), ("rust-thumb", "thumb"), ("rust-cpu-features", "cpu")):

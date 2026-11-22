@@ -16,6 +16,16 @@ repository's files, with repository-relative `/`-separated paths, so lcov
 files from different platforms can be merged by `ci/merge_rust_coverage.py`,
 which also checks each architecture's alone. A file may have a record for
 each test binary; the merge sums them.
+
+Two options may come before the Cargo options:
+
+* `--cargo-dir <dir>` lists the test binaries of the `cargo test` run in
+  `<dir>`, another workspace (the rustls checkout whose API tests run the
+  rustls provider), rather than in this one;
+* `--only <prefix>` keeps only the files under `<prefix>` (the rustls
+  provider's, `crates/rustls-verified-garbage/`): the library's tests cover
+  the library, and a run that tests only the provider must not count the
+  library lines it builds but does not test.
 """
 
 import json
@@ -28,13 +38,14 @@ import uuid
 EXE = ".exe" if sys.platform == "win32" else ""
 
 
-def test_binaries(cargo_args: list[str]) -> list[str]:
+def test_binaries(cargo_args: list[str], cargo_dir: str | None = None) -> list[str]:
     # `cargo test` has already built these; this only lists them.
     out = subprocess.run(
         ["cargo", "test", "--locked", "--no-run", "--message-format=json", *cargo_args],
         check=True,
         capture_output=True,
         text=True,
+        cwd=cargo_dir,
     ).stdout
     binaries = []
     for line in out.splitlines():
@@ -48,8 +59,9 @@ def test_binaries(cargo_args: list[str]) -> list[str]:
     return binaries
 
 
-def relative_records(lcov: str, root: pathlib.Path) -> str:
-    """Keeps only records for files under `root`, with relative paths."""
+def relative_records(lcov: str, root: pathlib.Path, only: str = "") -> str:
+    """Keeps only records for files under `root` (and its `only`), with
+    relative paths."""
     out = []
     for record in lcov.replace("\r\n", "\n").split("end_of_record\n"):
         lines = record.strip().splitlines()
@@ -61,7 +73,7 @@ def relative_records(lcov: str, root: pathlib.Path) -> str:
             rel = path.relative_to(root)
         except ValueError:
             continue  # the standard library or a dependency
-        if rel.parts[0] == "target":
+        if rel.parts[0] == "target" or not rel.as_posix().startswith(only):
             continue
         out.append("\n".join([f"SF:{rel.as_posix()}", *lines[1:], "end_of_record"]))
     return "".join(line + "\n" for line in out)
@@ -81,8 +93,17 @@ def target_arch() -> str:
     return arch
 
 
-def main(profraw_dir: str, *cargo_args: str) -> None:
+def main(profraw_dir: str, *args: str) -> None:
     root = pathlib.Path.cwd().resolve()
+    cargo_args = list(args)
+    cargo_dir = None
+    only = ""
+    while cargo_args[:1] in (["--cargo-dir"], ["--only"]):
+        if cargo_args[0] == "--cargo-dir":
+            cargo_dir = cargo_args[1]
+        else:
+            only = cargo_args[1]
+        cargo_args = cargo_args[2:]
     libdir = subprocess.run(
         ["rustc", "--print", "target-libdir"],
         check=True,
@@ -107,7 +128,7 @@ def main(profraw_dir: str, *cargo_args: str) -> None:
     # ("functions have mismatched data"), so the counts depended on the order
     # of the binaries. `ci/merge_rust_coverage.py` sums the records of a file.
     records = []
-    for binary in test_binaries(list(cargo_args)):
+    for binary in test_binaries(cargo_args, cargo_dir):
         lcov = subprocess.run(
             [
                 str(bindir / f"llvm-cov{EXE}"),
@@ -120,7 +141,7 @@ def main(profraw_dir: str, *cargo_args: str) -> None:
             capture_output=True,
             text=True,
         ).stdout
-        records.append(relative_records(lcov, root))
+        records.append(relative_records(lcov, root, only))
 
     out = f"{target_arch()}-{uuid.uuid4()}.lcov"
     with open(out, "w", newline="\n") as f:
