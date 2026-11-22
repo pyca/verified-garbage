@@ -20,31 +20,31 @@ jmp 21f
 .base64 "TInvSIPHQL6AAgAAuv//BwC5AAAIAEmJ2EmBwABAAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAEAAAL6I/wcA"
-call {vg_mldsa_norm_lt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_norm_lt_avx2]
 .base64 "QSHHTInvSIHHwAIAAL6AAgAAuv//BwC5AAAIAEmJ2EmBwABEAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAEQAAL6I/wcA"
-call {vg_mldsa_norm_lt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_norm_lt_avx2]
 .base64 "QSHHTInvSIHHQAUAAL6AAgAAuv//BwC5AAAIAEmJ2EmBwABIAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAEgAAL6I/wcA"
-call {vg_mldsa_norm_lt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_norm_lt_avx2]
 .base64 "QSHHTInvSIHHwAcAAL6AAgAAuv//BwC5AAAIAEmJ2EmBwABMAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAEwAAL6I/wcA"
-call {vg_mldsa_norm_lt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_norm_lt_avx2]
 .base64 "QSHHTInvSIHHQAoAAL6AAgAAuv//BwC5AAAIAEmJ2EmBwABQAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAFAAAL6I/wcA"
-call {vg_mldsa_norm_lt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_norm_lt_avx2]
 .base64 "QSHHTInvSIHHwAwAAL6AAgAAuv//BwC5AAAIAEmJ2EmBwABUAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAFQAAL6I/wcA"
-call {vg_mldsa_norm_lt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_norm_lt_avx2]
 .base64 "QSHHTInvSIHHQA8AAL6AAgAAuv//BwC5AAAIAEmJ2EmBwABYAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAFgAAL6I/wcA"
-call {vg_mldsa_norm_lt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_norm_lt_avx2]
 .base64 "QSHHRYX/"
 jne 22f
 jmp 23f
@@ -70,85 +70,85 @@ jne 27b
 .base64 "D7YGiAdIg8cBSIPGAUiD6QE="
 jne 28b
 .base64 "uAAAAACIgyAKAAC4AAAAAIiDIQoAALgBAAAAiINCCgAAuAAAAACIg0MKAAC4AgAAAIiDZAoAALgAAAAAiINlCgAAuAMAAACIg4YKAAC4AAAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAcAAASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHAHAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 29:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 29b
 .base64 "uAQAAACIgyAKAAC4AAAAAIiDIQoAALgFAAAAiINCCgAAuAAAAACIg0MKAAC4BgAAAIiDZAoAALgAAAAAiINlCgAAuAAAAACIg4YKAAC4AQAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAgAAASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHAIAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 210:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 210b
 .base64 "uAEAAACIgyAKAAC4AQAAAIiDIQoAALgCAAAAiINCCgAAuAEAAACIg0MKAAC4AwAAAIiDZAoAALgBAAAAiINlCgAAuAQAAACIg4YKAAC4AQAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAkAAASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHAJAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 211:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 211b
 .base64 "uAUAAACIgyAKAAC4AQAAAIiDIQoAALgGAAAAiINCCgAAuAEAAACIg0MKAAC4AAAAAIiDZAoAALgCAAAAiINlCgAAuAEAAACIg4YKAAC4AgAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAoAAASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHAKAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 212:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 212b
 .base64 "uAIAAACIgyAKAAC4AgAAAIiDIQoAALgDAAAAiINCCgAAuAIAAACIg0MKAAC4BAAAAIiDZAoAALgCAAAAiINlCgAAuAUAAACIg4YKAAC4AgAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAsAAASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHALAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 213:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 213b
 .base64 "uAYAAACIgyAKAAC4AgAAAIiDIQoAALgAAAAAiINCCgAAuAMAAACIg0MKAAC4AQAAAIiDZAoAALgDAAAAiINlCgAAuAIAAACIg4YKAAC4AwAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAwAAASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHAMAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 214:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 214b
 .base64 "uAMAAACIgyAKAAC4AwAAAIiDIQoAALgEAAAAiINCCgAAuAMAAACIg0MKAAC4BQAAAIiDZAoAALgDAAAAiINlCgAAuAYAAACIg4YKAAC4AwAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYA0AAASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHANAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 215:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 215b
 .base64 "uAAAAACIgyAKAAC4BAAAAIiDIQoAALgBAAAAiINCCgAAuAQAAACIg0MKAAC4AgAAAIiDZAoAALgEAAAAiINlCgAAuAMAAACIg4YKAAC4BAAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYA4AAASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHAOAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 216:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 216b
 .base64 "uAQAAACIgyAKAAC4BAAAAIiDIQoAALgFAAAAiINCCgAAuAQAAACIg0MKAAC4BgAAAIiDZAoAALgEAAAAiINlCgAAuAAAAACIg4YKAAC4BQAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYA8AAASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHAPAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 217:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 217b
 .base64 "uAEAAACIgyAKAAC4BQAAAIiDIQoAALgCAAAAiINCCgAAuAUAAACIg0MKAAC4AwAAAIiDZAoAALgFAAAAiINlCgAAuAQAAACIg4YKAAC4BQAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAAAEASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHAAABALkAAQAAugAAAAApwmZID27CZg9wwAA="
 218:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 218b
 .base64 "uAUAAACIgyAKAAC4BQAAAIiDIQoAALgGAAAAiINCCgAAuAUAAACIg0MKAAC4AAAAAIiDZAoAALgGAAAAiINlCgAAuAEAAACIg4YKAAC4BgAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAEAEASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHABABALkAAQAAugAAAAApwmZID27CZg9wwAA="
 219:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 219b
 .base64 "uAIAAACIgyAKAAC4BgAAAIiDIQoAALgDAAAAiINCCgAAuAYAAACIg0MKAAC4BAAAAIiDZAoAALgGAAAAiINlCgAAuAUAAACIg4YKAAC4BgAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAIAEASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHACABALkAAQAAugAAAAApwmZID27CZg9wwAA="
 220:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 220b
 .base64 "uAYAAACIgyAKAAC4BgAAAIiDIQoAALgAAAAAiINCCgAAuAcAAACIg0MKAAC4AQAAAIiDZAoAALgHAAAAiINlCgAAuAIAAACIg4YKAAC4BwAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAMAEASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHADABALkAAQAAugAAAAApwmZID27CZg9wwAA="
 221:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 221b
 .base64 "uAMAAACIgyAKAAC4BwAAAIiDIQoAALgEAAAAiINCCgAAuAcAAACIg0MKAAC4BQAAAIiDZAoAALgHAAAAiINlCgAAuAYAAACIg4YKAAC4BwAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAQAEASInaSIHCAHABAA=="
-call {vg_mldsa_rej_ntt_poly4_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2]
 .base64 "QSHHSInfSIHHAEABALkAAQAAugAAAAApwmZID27CZg9wwAA="
 222:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
@@ -160,41 +160,41 @@ call {vg_mldsa_sample_in_ball}
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 223b
 .base64 "SInfSIHHAEAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 .base64 "SInfSIHHAEQAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 .base64 "SInfSIHHAEgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 .base64 "SInfSIHHAEwAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 .base64 "SInfSIHHAFAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 .base64 "SInfSIHHAFQAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 .base64 "SInfSIHHAFgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 .base64 "SInfSIHHAFwAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBwAABIidpIgcIAQAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgB0AABIidpIgcIARAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgB4AABIidpIgcIASAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgB8AABIidpIgcIATAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCAAABIidpIgcIAUAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCEAABIidpIgcIAVAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCIAABIidpIgcIAWAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SIuDeAMAAEiFwA=="
 jne 224f
 .base64 "SInvSIPHIEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 jmp 225f
 224:
 .base64 "SInfSIHHAGAAAEiJ7kiBxiAKAAC5gAAAAA=="
@@ -203,35 +203,35 @@ jmp 225f
 jne 226b
 225:
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_sub_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_inv_ntt_avx2]
 .base64 "SInfSIHHACAAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_use_hint_avx2]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCAAQAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCMAABIidpIgcIAQAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCQAABIidpIgcIARAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCUAABIidpIgcIASAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCYAABIidpIgcIATAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCcAABIidpIgcIAUAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCgAABIidpIgcIAVAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCkAABIidpIgcIAWAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SIuDeAMAAEiFwA=="
 jne 227f
 .base64 "SInvSIHHYAEAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 jmp 228f
 227:
 .base64 "SInfSIHHAGAAAEiJ7kiBxiAOAAC5gAAAAA=="
@@ -240,35 +240,35 @@ jmp 228f
 jne 229b
 228:
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_sub_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_inv_ntt_avx2]
 .base64 "SInfSIHHACQAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_use_hint_avx2]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCgAQAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCoAABIidpIgcIAQAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCsAABIidpIgcIARAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCwAABIidpIgcIASAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgC0AABIidpIgcIATAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgC4AABIidpIgcIAUAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgC8AABIidpIgcIAVAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDAAABIidpIgcIAWAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SIuDeAMAAEiFwA=="
 jne 230f
 .base64 "SInvSIHHoAIAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 jmp 231f
 230:
 .base64 "SInfSIHHAGAAAEiJ7kiBxiASAAC5gAAAAA=="
@@ -277,35 +277,35 @@ jmp 231f
 jne 232b
 231:
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_sub_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_inv_ntt_avx2]
 .base64 "SInfSIHHACgAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_use_hint_avx2]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCAAUAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDEAABIidpIgcIAQAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDIAABIidpIgcIARAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDMAABIidpIgcIASAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDQAABIidpIgcIATAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDUAABIidpIgcIAUAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDYAABIidpIgcIAVAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDcAABIidpIgcIAWAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SIuDeAMAAEiFwA=="
 jne 233f
 .base64 "SInvSIHH4AMAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 jmp 234f
 233:
 .base64 "SInfSIHHAGAAAEiJ7kiBxiAWAAC5gAAAAA=="
@@ -314,35 +314,35 @@ jmp 234f
 jne 235b
 234:
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_sub_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_inv_ntt_avx2]
 .base64 "SInfSIHHACwAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_use_hint_avx2]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCgAUAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDgAABIidpIgcIAQAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDkAABIidpIgcIARAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDoAABIidpIgcIASAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDsAABIidpIgcIATAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDwAABIidpIgcIAUAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgD0AABIidpIgcIAVAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgD4AABIidpIgcIAWAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SIuDeAMAAEiFwA=="
 jne 236f
 .base64 "SInvSIHHIAUAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 jmp 237f
 236:
 .base64 "SInfSIHHAGAAAEiJ7kiBxiAaAAC5gAAAAA=="
@@ -351,35 +351,35 @@ jmp 237f
 jne 238b
 237:
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_sub_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_inv_ntt_avx2]
 .base64 "SInfSIHHADAAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_use_hint_avx2]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCAAYAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgD8AABIidpIgcIAQAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAAAQBIidpIgcIARAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAEAQBIidpIgcIASAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAIAQBIidpIgcIATAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAMAQBIidpIgcIAUAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAQBIidpIgcIAVAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAUAQBIidpIgcIAWAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SIuDeAMAAEiFwA=="
 jne 239f
 .base64 "SInvSIHHYAYAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 jmp 240f
 239:
 .base64 "SInfSIHHAGAAAEiJ7kiBxiAeAAC5gAAAAA=="
@@ -388,35 +388,35 @@ jmp 240f
 jne 241b
 240:
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_sub_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_inv_ntt_avx2]
 .base64 "SInfSIHHADQAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_use_hint_avx2]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCgAYAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAYAQBIidpIgcIAQAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAcAQBIidpIgcIARAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAgAQBIidpIgcIASAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAkAQBIidpIgcIATAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAoAQBIidpIgcIAUAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAsAQBIidpIgcIAVAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAwAQBIidpIgcIAWAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SIuDeAMAAEiFwA=="
 jne 242f
 .base64 "SInvSIHHoAcAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 jmp 243f
 242:
 .base64 "SInfSIHHAGAAAEiJ7kiBxiAiAAC5gAAAAA=="
@@ -425,35 +425,35 @@ jmp 243f
 jne 244b
 243:
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_sub_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_inv_ntt_avx2]
 .base64 "SInfSIHHADgAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_use_hint_avx2]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCAAcAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgA0AQBIidpIgcIAQAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgA4AQBIidpIgcIARAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgA8AQBIidpIgcIASAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBAAQBIidpIgcIATAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBEAQBIidpIgcIAUAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBIAQBIidpIgcIAVAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBMAQBIidpIgcIAWAAA"
-call {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2]
 .base64 "SIuDeAMAAEiFwA=="
 jne 245f
 .base64 "SInvSIHH4AgAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2]
 jmp 246f
 245:
 .base64 "SInfSIHHAGAAAEiJ7kiBxiAmAAC5gAAAAA=="
@@ -462,13 +462,13 @@ jmp 246f
 jne 247b
 246:
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
-call {vg_mldsa_montgomery_multiply_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_sub_avx2]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_montgomery_inv_ntt_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_inv_ntt_avx2]
 .base64 "SInfSIHHADwAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint_avx2}
+call qword ptr [rip + .Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_use_hint_avx2]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCgAcAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "uAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuEAAAABJidlJgcHIAAAA"
@@ -487,6 +487,25 @@ jne 248b
 23:
 21:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
+.pushsection .data.rel.ro,"aw",@progbits
+.p2align 3
+.Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_norm_lt_avx2:
+.quad {vg_mldsa_norm_lt_avx2}
+.Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_rej_ntt_poly4_avx2:
+.quad {vg_mldsa_rej_ntt_poly4_avx2}
+.Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_ntt_avx2:
+.quad {vg_mldsa_ntt_avx2}
+.Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_ntt_avx2:
+.quad {vg_mldsa_montgomery_multiply_ntt_avx2}
+.Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_multiply_add_ntt_avx2:
+.quad {vg_mldsa_montgomery_multiply_add_ntt_avx2}
+.Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_sub_avx2:
+.quad {vg_mldsa_sub_avx2}
+.Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_montgomery_inv_ntt_avx2:
+.quad {vg_mldsa_montgomery_inv_ntt_avx2}
+.Lvgt_vg_mldsa87_verify_with_cache_avx2_vg_mldsa_use_hint_avx2:
+.quad {vg_mldsa_use_hint_avx2}
+.popsection
 .p2align 6"#,
         vg_mldsa_hint_bit_unpack = sym crate::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
         vg_mldsa_bit_unpack = sym crate::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,

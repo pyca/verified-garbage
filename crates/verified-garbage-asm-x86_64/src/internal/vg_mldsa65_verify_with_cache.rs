@@ -20,23 +20,23 @@ jmp 21f
 .base64 "TInvSIPHML6AAgAAuv//BwC5AAAIAEmJ2EmBwABAAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAEAAAL48/wcA"
-call {vg_mldsa_norm_lt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_norm_lt]
 .base64 "QSHHTInvSIHHsAIAAL6AAgAAuv//BwC5AAAIAEmJ2EmBwABEAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAEQAAL48/wcA"
-call {vg_mldsa_norm_lt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_norm_lt]
 .base64 "QSHHTInvSIHHMAUAAL6AAgAAuv//BwC5AAAIAEmJ2EmBwABIAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAEgAAL48/wcA"
-call {vg_mldsa_norm_lt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_norm_lt]
 .base64 "QSHHTInvSIHHsAcAAL6AAgAAuv//BwC5AAAIAEmJ2EmBwABMAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAEwAAL48/wcA"
-call {vg_mldsa_norm_lt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_norm_lt]
 .base64 "QSHHTInvSIHHMAoAAL6AAgAAuv//BwC5AAAIAEmJ2EmBwABQAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAFAAAL48/wcA"
-call {vg_mldsa_norm_lt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_norm_lt]
 .base64 "QSHHRYX/"
 jne 22f
 jmp 23f
@@ -62,49 +62,49 @@ jne 27b
 .base64 "D7YGiAdIg8cBSIPGAUiD6QE="
 jne 28b
 .base64 "uAAAAACIgyAKAAC4AAAAAIiDIQoAALgBAAAAiINCCgAAuAAAAACIg0MKAAC4AgAAAIiDZAoAALgAAAAAiINlCgAAuAMAAACIg4YKAAC4AAAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAcAAASInaSIHCADABAA=="
-call {vg_mldsa_rej_ntt_poly4}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_rej_ntt_poly4]
 .base64 "QSHHSInfSIHHAHAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 29:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 29b
 .base64 "uAQAAACIgyAKAAC4AAAAAIiDIQoAALgAAAAAiINCCgAAuAEAAACIg0MKAAC4AQAAAIiDZAoAALgBAAAAiINlCgAAuAIAAACIg4YKAAC4AQAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAgAAASInaSIHCADABAA=="
-call {vg_mldsa_rej_ntt_poly4}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_rej_ntt_poly4]
 .base64 "QSHHSInfSIHHAIAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 210:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 210b
 .base64 "uAMAAACIgyAKAAC4AQAAAIiDIQoAALgEAAAAiINCCgAAuAEAAACIg0MKAAC4AAAAAIiDZAoAALgCAAAAiINlCgAAuAEAAACIg4YKAAC4AgAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAkAAASInaSIHCADABAA=="
-call {vg_mldsa_rej_ntt_poly4}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_rej_ntt_poly4]
 .base64 "QSHHSInfSIHHAJAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 211:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 211b
 .base64 "uAIAAACIgyAKAAC4AgAAAIiDIQoAALgDAAAAiINCCgAAuAIAAACIg0MKAAC4BAAAAIiDZAoAALgCAAAAiINlCgAAuAAAAACIg4YKAAC4AwAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAoAAASInaSIHCADABAA=="
-call {vg_mldsa_rej_ntt_poly4}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_rej_ntt_poly4]
 .base64 "QSHHSInfSIHHAKAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 212:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 212b
 .base64 "uAEAAACIgyAKAAC4AwAAAIiDIQoAALgCAAAAiINCCgAAuAMAAACIg0MKAAC4AwAAAIiDZAoAALgDAAAAiINlCgAAuAQAAACIg4YKAAC4AwAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAsAAASInaSIHCADABAA=="
-call {vg_mldsa_rej_ntt_poly4}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_rej_ntt_poly4]
 .base64 "QSHHSInfSIHHALAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 213:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 213b
 .base64 "uAAAAACIgyAKAAC4BAAAAIiDIQoAALgBAAAAiINCCgAAuAQAAACIg0MKAAC4AgAAAIiDZAoAALgEAAAAiINlCgAAuAMAAACIg4YKAAC4BAAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYAwAAASInaSIHCADABAA=="
-call {vg_mldsa_rej_ntt_poly4}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_rej_ntt_poly4]
 .base64 "QSHHSInfSIHHAMAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 214:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 214b
 .base64 "uAQAAACIgyAKAAC4BAAAAIiDIQoAALgAAAAAiINCCgAAuAUAAACIg0MKAAC4AQAAAIiDZAoAALgFAAAAiINlCgAAuAIAAACIg4YKAAC4BQAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYA0AAASInaSIHCADABAA=="
-call {vg_mldsa_rej_ntt_poly4}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_rej_ntt_poly4]
 .base64 "QSHHSInfSIHHANAAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 215:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 215b
 .base64 "uAEAAACIgyAKAAC4BQAAAIiDIQoAALgCAAAAiINCCgAAuAUAAACIg0MKAAC4AwAAAIiDZAoAALgFAAAAiINlCgAAuAQAAACIg4YKAAC4BQAAAIiDhwoAAEiJ30iBxwAKAABIid5IgcYA2AAASInaSIHCADABAA=="
-call {vg_mldsa_rej_ntt_poly4}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_rej_ntt_poly4]
 .base64 "QSHHSInfSIHHANgAALkAAQAAugAAAAApwmZID27CZg9wwAA="
 216:
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
@@ -116,17 +116,17 @@ call {vg_mldsa_sample_in_ball}
 .base64 "8w9vD2YP28jzD38PSIPHEEiD6QE="
 jne 217b
 .base64 "SInfSIHHAEAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 .base64 "SInfSIHHAEQAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 .base64 "SInfSIHHAEgAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 .base64 "SInfSIHHAEwAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 .base64 "SInfSIHHAFAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 .base64 "SInfSIHHAFwAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBwAABIidpIgcIAQAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgB0AABIidpIgcIARAAA"
@@ -142,7 +142,7 @@ jne 218f
 .base64 "SInvSIPHIEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 jmp 219f
 218:
 .base64 "SInfSIHHAGAAAEiJ7kiBxqAHAAC5gAAAAA=="
@@ -153,11 +153,11 @@ jne 220b
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_sub]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHACAAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_use_hint]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCAAQAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCEAABIidpIgcIAQAAA"
@@ -175,7 +175,7 @@ jne 221f
 .base64 "SInvSIHHYAEAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 jmp 222f
 221:
 .base64 "SInfSIHHAGAAAEiJ7kiBxqALAAC5gAAAAA=="
@@ -186,11 +186,11 @@ jne 223b
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_sub]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHACQAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_use_hint]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCgAQAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCYAABIidpIgcIAQAAA"
@@ -208,7 +208,7 @@ jne 224f
 .base64 "SInvSIHHoAIAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 jmp 225f
 224:
 .base64 "SInfSIHHAGAAAEiJ7kiBxqAPAAC5gAAAAA=="
@@ -219,11 +219,11 @@ jne 226b
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_sub]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHACgAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_use_hint]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCAAUAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgCsAABIidpIgcIAQAAA"
@@ -241,7 +241,7 @@ jne 227f
 .base64 "SInvSIHH4AMAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 jmp 228f
 227:
 .base64 "SInfSIHHAGAAAEiJ7kiBxqATAAC5gAAAAA=="
@@ -252,11 +252,11 @@ jne 229b
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_sub]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHACwAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_use_hint]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCgAUAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDAAABIidpIgcIAQAAA"
@@ -274,7 +274,7 @@ jne 230f
 .base64 "SInvSIHHIAUAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 jmp 231f
 230:
 .base64 "SInfSIHHAGAAAEiJ7kiBxqAXAAC5gAAAAA=="
@@ -285,11 +285,11 @@ jne 232b
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_sub]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHADAAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_use_hint]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCAAYAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgDUAABIidpIgcIAQAAA"
@@ -307,7 +307,7 @@ jne 233f
 .base64 "SInvSIHHYAYAAEiJ3kiBxgBgAAA="
 call {vg_mldsa_unpack_t1}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAQAAA="
-call {vg_mldsa_ntt}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt]
 jmp 234f
 233:
 .base64 "SInfSIHHAGAAAEiJ7kiBxqAbAAC5gAAAAA=="
@@ -318,11 +318,11 @@ jne 235b
 .base64 "SInfSIHHAGQAAEiJ3kiBxgBcAABIidpIgcIAYAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_sub]
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAQAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHADQAAEiJ3kiBxgBoAAC6AP8DAEiJ2UiBwQBsAAA="
-call {vg_mldsa_use_hint}
+call qword ptr [rip + .Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_use_hint]
 .base64 "SInfSIHHAGwAAL4PAAAASInaSIHCgAYAALmAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "uAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuEAAAABJidlJgcHIAAAA"
@@ -341,6 +341,19 @@ jne 236b
 23:
 21:
 .base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
+.pushsection .data.rel.ro,"aw",@progbits
+.p2align 3
+.Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_norm_lt:
+.quad {vg_mldsa_norm_lt}
+.Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_rej_ntt_poly4:
+.quad {vg_mldsa_rej_ntt_poly4}
+.Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_ntt:
+.quad {vg_mldsa_ntt}
+.Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_sub:
+.quad {vg_mldsa_sub}
+.Lvgt_vg_mldsa65_verify_with_cache_vg_mldsa_use_hint:
+.quad {vg_mldsa_use_hint}
+.popsection
 .p2align 6"#,
         vg_mldsa_hint_bit_unpack = sym crate::mldsa44::vg_mldsa_hint_bit_unpack::vg_mldsa_hint_bit_unpack,
         vg_mldsa_bit_unpack = sym crate::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
