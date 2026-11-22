@@ -27,16 +27,23 @@ theorem vPoints_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
     (ht₁ : VCombTables p256Comb p256d s₀) (ht₂ : VCombTables p256Comb p256d t₀)
     (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 4, arg s₀ j = arg t₀ j)
     (hv : VInputEq p256Comb s₀ t₀)
-    (hg : s₀.gpr .eax = t₀.gpr .eax) (hspG : SpOk p256Comb.gMul 20) :
+    (hg : s₀.gpr .eax = t₀.gpr .eax) (hspG : SpOk p256Comb.gMul p256Comb.stk) :
     RelCT isa (fun s t => Mid p256Comb s₀ (ptr s₀ 3) s ∧ Mid p256Comb t₀ (ptr t₀ 3) t)
       (Impl.Ecdsa.Verify.X86.Cfg.pointsComb p256Comb) (fun _ _ => True) := by
-  have hspG' : SpOk p256Comb.gMul p256Comb.stk := ⟨hspG.1, Nat.le_trans hspG.2 (Cfg.stk_ge _)⟩
+  have hspG' : SpOk p256Comb.gMul p256Comb.stk := hspG
   have hsp20 : ∀ {u₀ u : State} {extra : List Region}, VPre p256Comb u₀ extra →
-      Keep p256Comb u₀ (ptr u₀ 3) u → 20 ≤ (u.gpr .esp).toNat := fun hp k => by
-    rw [k.esp]; exact Nat.le_trans (Cfg.stk_ge _) hp.sp_lo
+      Keep p256Comb u₀ (ptr u₀ 3) u → p256Comb.stk ≤ (u.gpr .esp).toNat := fun hp k => by
+    rw [k.esp]; exact hp.sp_lo
+  have hstw : ∀ {u₀ u : State} {extra : List Region}, VPre p256Comb u₀ extra →
+      Keep p256Comb u₀ (ptr u₀ 3) u → ∀ r ∈ u.wr, Region.Disjoint (below (u.gpr .esp) p256Comb.stk) r :=
+    fun hp k r hr => by rw [k.wr] at hr; rw [k.esp]; exact hp.stk_wr r hr
+  have hG : GMulRel p256Comb p256d false := GMulRel.of_body (d := p256d) hc rfl (by
+    intro base g₁ g₂ s₀ t₀ k₁ k₂ h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15 h16 h17 h18 h19 h20
+    exact gMul_rel hc hC hT hd h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15 h16 h17 h18 h19 h20)
   have bits := vBits_rel.mono
     (P' := fun s t => Mid p256Comb s₀ (ptr s₀ 3) s ∧ Mid p256Comb t₀ (ptr t₀ 3) t)
-    (fun _ _ h => vKeepArgAgree hp hq h.1.keep h.2.keep he ha) (fun _ _ _ => trivial)
+    (fun _ _ h => argAgree_room (vKeepArgAgree hp hq h.1.keep h.2.keep he ha) (Cfg.stk_ge _))
+    (fun _ _ _ => trivial)
   have bits' := bits.wp (F₁ := VCombInput p256Comb s₀ (ptr s₀ 3))
     (F₂ := VCombInput p256Comb t₀ (ptr t₀ 3)) (by
       intro s t h
@@ -57,8 +64,9 @@ theorem vPoints_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
     rw [← hb] at T'
     obtain ⟨k₁, hk₁, b₁⟩ := S.scalar
     obtain ⟨k₂, hk₂, b₂⟩ := T'.scalar
-    exact gMul_rel hc hC hT hd S.scr T'.scr S.fixed T'.fixed
-      hk₁ hk₂ b₁ b₂ tb₁ tb₂ ht₁.2.1 ap₁ ap₂ (hsp20 hp S.toKeep) (hsp20 hq T.toKeep) hg
+    exact hG S.scr T'.scr S.fixed T'.fixed
+      hk₁ hk₂ b₁ b₂ tb₁ tb₂ ht₁.2.1 ap₁ ap₂ (hstw hp S.toKeep) (hstw hq T.toKeep)
+      (hsp20 hp S.toKeep) (hsp20 hq T.toKeep) hg
       (vKeepCombWf hp S.toKeep) (vKeepCombWf hq T.toKeep)
       (by rw [S.wr, T.wr, hp.wr, hq.wr]; simp only [ptr, ha 3 (by decide)])
       (by rw [S.esp, T.esp, he])
@@ -69,7 +77,7 @@ theorem vPoints_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
     intro u₀ u extra hp ht S
     obtain ⟨k, hk, b⟩ := S.scalar
     refine S.toKeep.withSp hspG' (WP.mono (gMul_ok' hc hC hT hCo S.scr S.fixed
-      hk S.rx S.ry S.rz b ?_ (hsp20 hp S.toKeep) hspG) fun t h f => ⟨S.toKeep.gMul hc h.1 h.2.1 f,S.values.transfer (by
+      hk S.rx S.ry S.rz b ?_ (hstw hp S.toKeep) (hsp20 hp S.toKeep) hspG) fun t h f => ⟨S.toKeep.gMul hc h.1 h.2.1 f,S.values.transfer (by
         intro i hi
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hi
         rcases hi with rfl|rfl|rfl <;>
@@ -86,6 +94,8 @@ theorem vPoints_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
     (fun _ _ h => h.2) (fun _ _ _ => trivial)))
 
 /-- The taint checks of the stages of P-256's verification. -/
-theorem p256VerifyCT : VerifyStagesCT p256Comb := ⟨vFront_rel, vMid_rel, vFinal_rel⟩
+theorem p256VerifyCT : VerifyStagesCT p256Comb :=
+  ⟨vFront_rel, vMid_rel.mono (fun _ _ h => scratchArgAgree_room h (Cfg.stk_ge _)) (fun _ _ _ => trivial),
+    vFinal_rel.mono (fun _ _ h => scratchArgAgree_room h (Cfg.stk_ge _)) (fun _ _ _ => trivial)⟩
 
 end VG.Proof.Ecdsa.Verify.X86

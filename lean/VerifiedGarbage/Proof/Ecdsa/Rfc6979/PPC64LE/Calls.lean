@@ -17,8 +17,12 @@ import VerifiedGarbage.Proof.Framework.Contract
 What the proof needs of a hash function (`Kit`): its streaming functions
 with what HMAC's proofs know of them (`HashOK`, for the streaming `update`),
 and HMAC's `init` and `finalize` with their working space as an argument,
-verified against the shared contracts of their instance (`Spec.Hmac`). The
-calls of HMAC's `init` and `finalize` (`initCall`, `finCall`), whose
+verified against the shared contracts of their instance (`Spec.Hmac`): the
+code a table's word 0 holds, HMAC's `init` for a key of any length, against
+`init`'s contract, for a key of at most a block (`K`), with what a run of it
+changes (`frI`: what `init` would, though its code for a longer key uses
+more stack, `callFr`). The calls of HMAC's `init` and `finalize`
+(`initCall`, `finCall`), whose
 contracts' preconditions follow from the facts at the call, and of the
 signature with a given `k` (`coreCall`), against the curve's contract.
 -/
@@ -56,7 +60,11 @@ structure Kit where
     (Proof.Hmac.Stream.PPC64LE.updK H.S H.W hH.SH.Repr).pub H.updC
   hkI : kI + 1 ≤ 96
   hkF : kF + 1 ≤ 96
-  dI : sdepth initC ≤ 96
+  /-- What a run of `init` changes: its regions and the 96 bytes below the
+  stack pointer (a table's word 0 runs `init` alone for a key of at most a
+  block, though its code for a longer key uses more). -/
+  frI : ∀ s t s', (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi (kI + 1)).pre s → Exec isa initC s t s' →
+    Frame (s.wr ++ [below s.sp 96]) s.mem s'.mem
   dF : sdepth finC ≤ 96
   /-- The working space of HMAC's functions, and of `update`, between the
   states and the message. -/
@@ -99,6 +107,39 @@ theorem initPre (P : Kit) {s : State} {inner outer key scr : Addr} {kl : Nat}
     h.sub_left (below_sub hk (by omega_arith))
   exact ⟨by omega_arith, trivial, trivial, d₁, d₂, d₃, d₄, d₅, d₆, kb k₁, kb k₂, kb k₃, kb k₄, n₁, n₂, n₃, n₄, hkl⟩
 
+/-- `WP.callAny`, for code whose runs from `k`'s precondition change memory
+only in their regions and the `d` bytes below the stack pointer (`hfr`). -/
+theorem callFr {name : String} {c : Prog isa} {k : Contract isa} {d : Nat}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hfr : ∀ s t s', k.pre s → Exec isa c s t s' → Frame (s.wr ++ [below s.sp d]) s.mem s'.mem)
+    {s : State} {rd wr : List Region} (hpre : k.pre (s.callEntry.withRegions rd wr))
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
+      Frame (wr ++ [below s.sp d]) s.mem s'.mem →
+      (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
+      k.post (s.callEntry.withRegions rd wr) (s'.withRegions rd wr) → Q s') : WP isa (.call name c) s Q := by
+  obtain ⟨t, s₁, he, habi, hpost⟩ := hv _ hpre
+  have hf := hfr _ _ _ hpre he
+  obtain ⟨hr, hwr, -⟩ := Exec.rdwr he
+  simp only [State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
+    State.withRegions_sp, State.callEntry_mem, State.callEntry_sp] at hr hwr hf
+  have he' := Exec.widen he (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
+  have e₀ : (s.callEntry.withRegions rd wr).withRegions s.rd s.wr = s.callEntry := rfl
+  rw [e₀] at he'
+  have hlr : s₁.lr = s.callEntry.lr := habi.2.2
+  have hret : isa.ret s.callEntry (s₁.withRegions s.rd s.wr) = some (s₁.withRegions s.rd s.wr) := by
+    simp only [isa, ret]
+    exact ite_eq_left_of_eq_true _ _ (eq_true hlr)
+  refine ⟨_, _, Exec.call (call_callEntry s) he' hret, hQ _ rfl rfl ?_ hf ?_ ?_⟩
+  · simp only [State.withRegions_sp]; exact habi.2.1
+  · intro r hr'
+    have hl : r ∉ linkRegs := preserved_not_link r hr'
+    simp only [State.withRegions_gpr]
+    rw [habi.1 r hr', State.withRegions_gpr, State.callEntry_gpr s hl]
+  · have : (s₁.withRegions s.rd s.wr).withRegions rd wr = s₁ := by
+      rw [State.withRegions_withRegions, ← hr, ← hwr]; rfl
+    rw [this]; exact hpost
+
 /-- The call of HMAC's `init` with the key of `kl` bytes at `key`, the
 states at `inner` and `outer` and the working space at `scr`. -/
 theorem initCall (P : Kit) {n : String} {s : State} {inner outer key scr : Addr} {kl : Nat}
@@ -127,15 +168,14 @@ theorem initCall (P : Kit) {n : String} {s : State} {inner outer key scr : Addr}
     WP isa (.call n P.initC) s Q := by
   have hS := P.hStates
   have hk := P.hkI
-  refine WP.callAny (k := Proof.Hmac.Instance.initScratchContract P.I PPC64LE.abi (P.kI + 1)) P.initV (rd := [⟨key, kl⟩])
+  refine callFr (k := Proof.Hmac.Instance.initScratchContract P.I PPC64LE.abi (P.kI + 1)) P.initV P.frI (rd := [⟨key, kl⟩])
     (wr := [⟨inner, P.H.S⟩, ⟨outer, P.H.S⟩, ⟨scr, P.I.scratch * 8⟩])
     (initPre P h3 h4 h5 h6 h7 hkl d₁ d₂ d₃ d₄ d₅ d₆ hsp k₁ k₂ k₃ k₄ n₁ n₂ n₃ n₄) hc hw ?_
-    (by have := P.dI; omega_arith)
   · intro s' h₁ h₂ h₃ h₄ hcs hpost
     sig_post [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract,
       Proof.Hmac.initScratchSig, Spec.Hmac.initPost, PPC64LE.abi, PPC64LE.argRegs, stackBelow] at hpost
     simp only [h3, h4, h5, h6] at hpost
-    exact hQ s' h₁ h₂ h₃ (Frame.below_mono h₄ (by have := P.dI; omega_arith) (by omega_arith)) hcs hpost.1 hpost.2
+    exact hQ s' h₁ h₂ h₃ h₄ hcs hpost.1 hpost.2
 
 theorem finPre (P : Kit) {s : State} {inner outer out scr : Addr}
     (h3 : s.gpr .r3 = inner) (h4 : s.gpr .r4 = outer) (h6 : s.gpr .r6 = out) (h7 : s.gpr .r7 = scr)

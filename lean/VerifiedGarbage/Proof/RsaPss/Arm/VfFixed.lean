@@ -162,6 +162,7 @@ abbrev lay : Lay where
   argv := P.argv D
   ro := [P.N, P.E, P.DIG D, P.SIG, P.PRE, P.HTAB, P.TAB]
   rw := [P.SCR]
+  C := 104
 
 end EP
 
@@ -204,7 +205,7 @@ theorem geo : Geo (P.lay D) P.scr := by
   have hf := h.ok.fits (P.SCR) (by simp)
   simp only [Proof.X25519.Arm.addr_toNat] at hf
   exact ⟨rfl, by unfold oRsa; omega_arith, ⟨P.scl * 8, by unfold oRsa; omega_arith, by simp⟩, ⟨σ, h.ok⟩,
-    by show 16 ≤ 56; decide⟩
+    by show 16 ≤ 104; decide⟩
 
 /-- The table of `MdHash`, in a buffer only read. -/
 theorem htbl : ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 44 → R.Contains (RsaOaep.Arm.tA P.hd o) 4 := by
@@ -229,7 +230,7 @@ end In
 /-! ## The entry -/
 
 /-- The stack the function uses: the push, the inner frame and the call's. -/
-abbrev stackBytes : Nat := 56 + frameBytes + 56
+abbrev stackBytes : Nat := 56 + frameBytes + 104
 
 /-- The shared contract, with the hash function one of the tables `hs`,
 MGF1's one of `ts`, and that stack. -/
@@ -286,7 +287,7 @@ theorem ep_lay (D : Nat) (s : State) :
     (ep G s hi hc hdg HT ai au af T).lay D = layOf frameBytes 48 ((ep G s hi hc hdg HT ai au af T).argv D)
       [(ep G s hi hc hdg HT ai au af T).N, (ep G s hi hc hdg HT ai au af T).E, (ep G s hi hc hdg HT ai au af T).DIG D,
         (ep G s hi hc hdg HT ai au af T).SIG, (ep G s hi hc hdg HT ai au af T).PRE, (ep G s hi hc hdg HT ai au af T).HTAB,
-        (ep G s hi hc hdg HT ai au af T).TAB] [(ep G s hi hc hdg HT ai au af T).SCR] s := rfl
+        (ep G s hi hc hdg HT ai au af T).TAB] [(ep G s hi hc hdg HT ai au af T).SCR] s 104 := rfl
 
 theorem in_of_pre {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) {D : Nat}
     (hD : (stackArg s 1).toNat = D) (hHT : HT (entered frameBytes s)) (hT : T (entered frameBytes s)) :
@@ -295,13 +296,13 @@ theorem in_of_pre {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) {D
   sig_split h
   rename_i hsp hsa hheld hheld2 hpw hrd hwr nS eS dS gS sR sTH sT sA kN kE kD kG kS kR kTH kT kA fN fE fD fG fS fR
     fTH fT kv el1 elK glK scrK rlK
-  have h240 : 240 ≤ s.sp.toNat := hsp
+  have h288 : 288 ≤ s.sp.toNat := hsp
   have a1 : stackArg s 1 = BitVec.ofNat 32 D := by
     apply BitVec.eq_of_toNat_eq; rw [hD, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by rw [← hD]; exact (stackArg s 1).isLt)]
   rw [hD] at dS kD fD hrd
   have hpush : Frame [FrameStack.belowA s.sp 56] s.mem (entered frameBytes s).mem :=
     FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega_arith)
-  have below : Region.Sub (FrameStack.belowA s.sp 56) ⟨State.addr s.sp - BitVec.ofNat 64 240, 240⟩ := by
+  have below : Region.Sub (FrameStack.belowA s.sp 56) ⟨State.addr s.sp - BitVec.ofNat 64 288, 288⟩ := by
     show Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ _
     rw [FrameStack.addr_sub' (by omega_arith)]
     exact Offset.sub_below _ (by omega_arith) (by omega_arith)
@@ -825,7 +826,7 @@ theorem call_geo {P : EP} {σ : State} (hi : In h.D P σ) :
       (by unfold oRsa; omega_arith)
 
 theorem call_pre {P : EP} {σ s : State} (hr : V1 h P σ s) :
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre
       (s.callEntry.withRegions (pdRd P.B P.pre P.e P.sig P.K P.el P.rl)
         (pdWr (P.scr + BitVec.ofNat 32 oEm) (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024))) := by
   obtain ⟨⟨hc, hi, -, -⟩, pa⟩ := hr
@@ -854,7 +855,7 @@ theorem call_pre {P : EP} {σ s : State} (hr : V1 h P σ s) :
     (by rw [sigR]; exact (ok.rw_ro (w := P.SCR) (r := P.SIG) (by simp) (by simp)).symm.sub_right sS')
     (by rw [q0]; exact ((hfr (R := P.SCR) (.inr (by simp)) (d := 0) (n := 24) (by decide)).symm).sub_left sS') ?_
   intro r hr
-  have low : (⟨State.addr P.B - BitVec.ofNat 64 56, 56⟩ : Region) = (P.lay h.D).LOW := rfl
+  have low : (⟨State.addr P.B - BitVec.ofNat 64 104, 104⟩ : Region) = (P.lay h.D).LOW := rfl
   rw [low]
   simp only [pdRd, pdWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -896,7 +897,7 @@ theorem call_vp (P : EP) (c : PdImpl) : VP (V1 h P) (.call c.name c.code) (V2 h 
     have ok := hi.ok
     have hs := hc.st
     obtain ⟨e1, e2, sI, sS', dIS, hfit, hs1, hK⟩ := call_geo h hi
-    obtain low : FrameStack.belowA s.sp 56 = (P.lay h.D).LOW := by rw [hs.sp]; exact ok.low_eq
+    obtain low : FrameStack.belowA s.sp 104 = (P.lay h.D).LOW := by rw [hs.sp]; exact ok.low_eq
     rw [low] at fr
     have fr' : Frame [⟨State.addr (P.scr + BitVec.ofNat 32 oEm), P.K⟩,
         ⟨State.addr (P.scr + BitVec.ofNat 32 oRsa), (P.scl - 1024) * 8⟩, (P.lay h.D).LOW] s.mem s'.mem := fr

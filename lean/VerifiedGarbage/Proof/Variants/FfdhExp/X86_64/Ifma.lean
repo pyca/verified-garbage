@@ -117,6 +117,38 @@ theorem lok {sp sl : Nat} (hs : ExpSlots sp sl) :
   · exact ⟨lok2048X, lok3072X, lok4096X⟩
   · exact ⟨lok2048E, lok3072E, lok4096E⟩
 
+/-- Each layout's vector code touches no `rsp`, so that it can be called
+(`Code.InlineOk`). -/
+theorem vecs_free : (VG.Impl.Ffdh.X86_64.Ifma.vec PubIfma.pay2048).allInstrs (hasBits bFree) = true ∧
+    (VG.Impl.Ffdh.X86_64.Ifma.vec PubIfma.pay3072).allInstrs (hasBits bFree) = true ∧
+    (VG.Impl.Ffdh.X86_64.Ifma.vec PubIfma.pay4096).allInstrs (hasBits bFree) = true := by
+  lit_decide
+
+/-- `expC` inlines to `exp`. -/
+theorem expC_inline {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} {sp sl : Nat} (n : String)
+    (h : (VG.Impl.Ffdh.X86_64.Ifma.exp l sp sl).all Code.noCalls = true) :
+    @List.map (Code Instr Cond) (Prog isa) (@Code.inline Instr Cond) (VG.Impl.Ffdh.X86_64.Ifma.expC l n sp sl) =
+      VG.Impl.Ffdh.X86_64.Ifma.exp l sp sl := by
+  unfold VG.Impl.Ffdh.X86_64.Ifma.exp at h ⊢
+  unfold VG.Impl.Ffdh.X86_64.Ifma.expC
+  simp only [List.all_append, List.all_cons, List.all_nil, Bool.and_eq_true, and_true] at h
+  simp only [List.map_append, List.map_cons, List.map_nil, Code.inline, map_inline_of_noCalls h.1.1.1.2,
+    map_inline_of_noCalls h.1.2]
+
+/-- `expC` can be inlined where `exp` can and its vector code touches no `rsp`. -/
+theorem expC_inlineOk {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} {sp sl : Nat} (n : String)
+    (h : (VG.Impl.Ffdh.X86_64.Ifma.exp l sp sl).all Code.noCalls = true)
+    (hk : (seqs (VG.Impl.Ffdh.X86_64.Ifma.exp l sp sl)).InlineOk = true)
+    (hv : (VG.Impl.Ffdh.X86_64.Ifma.vec l).allInstrs (hasBits bFree) = true) :
+    (seqs (VG.Impl.Ffdh.X86_64.Ifma.expC l n sp sl)).InlineOk = true := by
+  rw [inlineOk_seqs] at hk ⊢
+  unfold VG.Impl.Ffdh.X86_64.Ifma.exp at h hk
+  unfold VG.Impl.Ffdh.X86_64.Ifma.expC
+  simp only [List.all_append, List.all_cons, List.all_nil, Bool.and_eq_true, and_true] at h hk ⊢
+  refine ⟨⟨⟨hk.1.1.1, hk.1.1.2.1, ?_⟩, hk.1.2⟩, hk.2⟩
+  simp only [Code.InlineOk, Bool.and_eq_true]
+  exact ⟨h.1.1.2.2, Code.rspFree_of_bits rfl hv⟩
+
 theorem code_eq (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) :
     VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl =
       [.seq (.block (VG.Impl.Ffdh.X86_64.Ifma.fits PubIfma.pay2048 sl))
@@ -127,24 +159,35 @@ theorem code_eq (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) :
                 (.ite .e (seqs (VG.Impl.Ffdh.X86_64.Ifma.exp PubIfma.pay4096 sp sl))
                   (seqs (Crt.expLoop mul Crt.tabSelect sp sl)))))))] := rfl
 
+theorem codeC_eq (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) :
+    VG.Impl.Ffdh.X86_64.Ifma.codeC mul sp sl =
+      [.seq (.block (VG.Impl.Ffdh.X86_64.Ifma.fits PubIfma.pay2048 sl))
+        (.ite .e (seqs (VG.Impl.Ffdh.X86_64.Ifma.expC PubIfma.pay2048 "vg_ffdh_exp_ifma_2048" sp sl))
+          (.seq (.block (VG.Impl.Ffdh.X86_64.Ifma.fits PubIfma.pay3072 sl))
+            (.ite .e (seqs (VG.Impl.Ffdh.X86_64.Ifma.expC PubIfma.pay3072 "vg_ffdh_exp_ifma_3072" sp sl))
+              (.seq (.block (VG.Impl.Ffdh.X86_64.Ifma.fits PubIfma.pay4096 sl))
+                (.ite .e (seqs (VG.Impl.Ffdh.X86_64.Ifma.expC PubIfma.pay4096 "vg_ffdh_exp_ifma_4096" sp sl))
+                  (seqs (Crt.expLoop mul Crt.tabSelect sp sl)))))))] := rfl
+
 theorem ifma_inline (mul : Nat → Nat → Nat → Prog isa) (sp sl : Nat) (hs : ExpSlots sp sl) :
-    @List.map (Code Instr Cond) (Prog isa) (@Code.inline Instr Cond) (VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl) =
+    @List.map (Code Instr Cond) (Prog isa) (@Code.inline Instr Cond) (VG.Impl.Ffdh.X86_64.Ifma.codeC mul sp sl) =
       VG.Impl.Ffdh.X86_64.Ifma.code (fun o a b => (mul o a b).inline) sp sl := by
   have hb := ExpImpl.base.inline mul sp sl hs
   simp only [ExpImpl.base] at hb
   obtain ⟨a, b, c⟩ := lok hs
-  rw [code_eq, code_eq]
-  simp only [List.map_cons, List.map_nil, Code.inline, inline_seqs, hb, map_inline_of_noCalls a.1,
-    map_inline_of_noCalls b.1, map_inline_of_noCalls c.1]
+  rw [codeC_eq, code_eq]
+  simp only [List.map_cons, List.map_nil, Code.inline, inline_seqs, hb, expC_inline _ a.1,
+    expC_inline _ b.1, expC_inline _ c.1]
 
 theorem ifma_inlineOk (mul : Nat → Nat → Nat → Prog isa) (hm : ∀ o a b, (mul o a b).InlineOk = true)
-    (sp sl : Nat) (hs : ExpSlots sp sl) : (VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl).all Code.InlineOk = true := by
+    (sp sl : Nat) (hs : ExpSlots sp sl) : (VG.Impl.Ffdh.X86_64.Ifma.codeC mul sp sl).all Code.InlineOk = true := by
   have hb := ExpImpl.base.inlineOk mul hm sp sl hs
   simp only [ExpImpl.base] at hb
   obtain ⟨a, b, c⟩ := lok hs
-  rw [code_eq, List.all_cons, List.all_nil, Bool.and_true]
-  exact ok_seq a.2.1 (ok_ite a.2.2.1 (ok_seq b.2.1 (ok_ite b.2.2.1 (ok_seq c.2.1
-    (ok_ite c.2.2.1 ((inlineOk_seqs _).trans hb))))))
+  rw [codeC_eq, List.all_cons, List.all_nil, Bool.and_true]
+  exact ok_seq a.2.1 (ok_ite (expC_inlineOk _ a.1 a.2.2.1 vecs_free.1) (ok_seq b.2.1
+    (ok_ite (expC_inlineOk _ b.1 b.2.2.1 vecs_free.2.1) (ok_seq c.2.1
+      (ok_ite (expC_inlineOk _ c.1 c.2.2.1 vecs_free.2.2) ((inlineOk_seqs _).trans hb))))))
 
 theorem ifma_spSafe (mul : Nat → Nat → Nat → Prog isa)
     (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !isa.writesSp i) = true) (sp sl : Nat) (hs : ExpSlots sp sl) :
@@ -168,30 +211,31 @@ theorem ifma_ctl (mul : Nat → Nat → Nat → Prog isa)
 
 private theorem ifma_fill (mul : Nat → Nat → Nat → Prog isa) (k : Nat)
     (hm : ∀ o a b, X86_64.Scrub.calleeSide (mul o a b) k 8 = true) (sp sl : Nat) :
-    List.Forall₂ (X86_64.Scrub.FillG k (fun _ => 8)) (VG.Impl.Ffdh.X86_64.Ifma.code stubMM sp sl)
-      (VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl) := by
-  rw [code_eq, code_eq]
+    List.Forall₂ (X86_64.Scrub.FillG k (fun _ => 8)) (VG.Impl.Ffdh.X86_64.Ifma.codeC stubMM sp sl)
+      (VG.Impl.Ffdh.X86_64.Ifma.codeC mul sp sl) := by
+  rw [codeC_eq, codeC_eq]
   unfold Crt.expLoop Crt.expLoopS Crt.expWin Crt.tabBuild Crt.tabBuildN
   fill_gen
 
-private theorem ifma_stubX : (VG.Impl.Ffdh.X86_64.Ifma.code stubMM sX sXl).all
+private theorem ifma_stubX : (VG.Impl.Ffdh.X86_64.Ifma.codeC stubMM sX sXl).all
     (fun a => X86_64.Scrub.stubCalleeG a Impl.Scrub.X86_64.VecLevel.evex.level (fun _ => 8) 8) = true := by
   lit_decide
 
-private theorem ifma_stubE : (VG.Impl.Ffdh.X86_64.Ifma.code stubMM sEp sEl).all
+private theorem ifma_stubE : (VG.Impl.Ffdh.X86_64.Ifma.codeC stubMM sEp sEl).all
     (fun a => X86_64.Scrub.stubCalleeG a Impl.Scrub.X86_64.VecLevel.evex.level (fun _ => 8) 8) = true := by
   lit_decide
 
 theorem ifma_side (mul : Nat → Nat → Nat → Prog isa) (k : Nat) (hk : Impl.Scrub.X86_64.VecLevel.evex.level ≤ k)
     (hm : ∀ o a b, X86_64.Scrub.calleeSide (mul o a b) k 8 = true) (sp sl : Nat) (hs : ExpSlots sp sl) :
-    ∀ c ∈ VG.Impl.Ffdh.X86_64.Ifma.code mul sp sl, X86_64.Scrub.calleeSide c k 8 = true := by
+    ∀ c ∈ VG.Impl.Ffdh.X86_64.Ifma.codeC mul sp sl, X86_64.Scrub.calleeSide c k 8 = true := by
   refine X86_64.Scrub.calleeSide_of_forall₂ (ifma_fill mul k hm sp sl) hk ?_
   rcases hs with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   · exact ifma_stubX
   · exact ifma_stubE
 
 def variant : ExpImpl where
-  code := VG.Impl.Ffdh.X86_64.Ifma.code
+  code := VG.Impl.Ffdh.X86_64.Ifma.codeC
+  codeI := VG.Impl.Ffdh.X86_64.Ifma.code
   E := Proof.Ffdh.X86_64.Ifma.expL
   code_eq _ := rfl
   inline := ifma_inline

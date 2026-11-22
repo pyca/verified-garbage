@@ -40,7 +40,7 @@ vg_triple_des_cfb8_encrypt:
 	mov r0, r4
 	add r1, r8, #48
 	mov r2, #1
-	bl {vg_triple_des_ecb_encrypt_entry}
+	bl {vg_triple_des_ecb_encrypt}
 	ldrb r9, [r6, #0]
 	ldrb r10, [r8, #48]
 	eor r9, r9, r10
@@ -147,7 +147,7 @@ vg_triple_des_cfb8_decrypt:
 	mov r0, r4
 	add r1, r8, #48
 	mov r2, #1
-	bl {vg_triple_des_ecb_encrypt_entry}
+	bl {vg_triple_des_ecb_encrypt}
 	ldrb r9, [r8, #41]
 	strb r9, [r8, #40]
 	ldrb r9, [r8, #42]

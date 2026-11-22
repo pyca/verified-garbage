@@ -114,7 +114,7 @@ def vCombHashSatState : State := { combSatState with
 
 theorem vCombHashSat_pre :
     (Spec.Ecdsa.P256.inst.verifyHashContract (X86.abi.withConsts p256Comb.combConsts)
-      (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre vCombHashSatState := by
+      (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre vCombHashSatState := by
   have a0 : arg vCombHashSatState 0 = 0x1000 := (combSat_arg 0 (by decide)).trans (by decide)
   have a1 : arg vCombHashSatState 1 = 0x2000 := (combSat_arg 1 (by decide)).trans (by decide)
   have a2 : arg vCombHashSatState 2 = 0x3000 := (combSat_arg 2 (by decide)).trans (by decide)
@@ -152,7 +152,7 @@ theorem vCombHash_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstr
     Verified X86.target
       (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false vCombCode)
       (Spec.Ecdsa.P256.inst.verifyHashContract (X86.abi.withConsts p256Comb.combConsts)
-        (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
+        (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
   Hash.verifyHash_verifiedC Proof.Ecdsa.Verify.p256_len (by decide) (vComb_verified hL hI)
     vComb_sp.1 vComb_sp.2 (by taint_decide) ⟨_, vCombHashSat_pre⟩
 

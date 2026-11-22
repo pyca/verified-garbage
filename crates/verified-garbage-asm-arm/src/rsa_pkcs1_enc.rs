@@ -38,7 +38,7 @@ pub const VG_RSA_PKCS1_DECRYPT_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu:
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3648 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -417,10 +417,10 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
-sub sp, sp, #3600
+sub sp, sp, #3648
 add r12, sp, #0
 mov r2, #0
-mov r3, #112
+mov r3, #114
 28:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -433,11 +433,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 28b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #3600
+add sp, sp, #3648
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -484,7 +480,7 @@ pub const VG_RSA_PKCS1_ENCRYPT_RANDOM_UMAAL_FEATURES: verified_garbage_cpu::Feat
 /// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `tape` and `scratch` must not overlap each other, `n`, `e`, `msg`, `rand`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the 2320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the 2368 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -644,10 +640,10 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
-sub sp, sp, #2320
+sub sp, sp, #2368
 add r12, sp, #0
 mov r2, #0
-mov r3, #72
+mov r3, #74
 216:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -660,11 +656,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 216b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #2320
+add sp, sp, #2368
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -706,7 +698,7 @@ bx lr",
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉ + max(2, ⌈p_len / 8⌉) + max(2, ⌈q_len / 8⌉)`.
 /// * `pre` must hold what `vg_rsa_private_precompute` wrote for `n`, `p` and `q` (returning 1), and not have changed since.
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `msg_len`, `n`, `e`, `d`, `input`, `p`, `q`, `dp`, `dq`, `qinv`, `scratch` and `pre` may overlap the 3648 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_precomputed(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -1083,10 +1075,10 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
-sub sp, sp, #3600
+sub sp, sp, #3648
 add r12, sp, #0
 mov r2, #0
-mov r3, #112
+mov r3, #114
 28:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -1099,11 +1091,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 28b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #3600
+add sp, sp, #3648
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -1146,7 +1134,7 @@ bx lr",
 /// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out`, `tape` and `scratch` must not overlap each other, `n`, `e`, `msg`, `rand`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the 2320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `tape`, `n`, `e`, `msg`, `rand`, `scratch` and `pre` may overlap the 2368 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_encrypt_random(out: *mut u8, out_len: usize, tape: *mut [u64; 2], n: *const u8, n_len: usize, e: *const u8, e_len: usize, msg: *const u8, msg_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -1304,10 +1292,10 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
-sub sp, sp, #2320
+sub sp, sp, #2368
 add r12, sp, #0
 mov r2, #0
-mov r3, #72
+mov r3, #74
 216:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -1320,11 +1308,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 216b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #2320
+add sp, sp, #2368
 mov r1, #0
 mov r2, #0
 mov r3, #0

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Weierstrass.Pow
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.Call
 
 /-!
 # Powers, on RISC-V
@@ -661,6 +662,64 @@ theorem chainPow_ok (hF : FieldOk F) (hL : ChainLayR P F.S.k) (hm : UnitMod F.S.
   refine WP.mono (stepsR_ok hF hL hm P.steps hC.steps S₂ T₂ (by rw [e₂]; exact Ti.1)
     (v := P.first) (by rw [e₂, Ti.2]; congr 1; have := hC.first; omega_using [this])) fun s₃ ⟨S₃, lt₃, v₃⟩ =>
     ⟨S₃.keep, S₃.unch, lt₃, by rw [v₃, hC.val]⟩
+
+/-- A call's code run from the call's entry state, which leaves `ra` as it
+found it, returns. -/
+theorem callBody_wp {name : String} {body : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa body s.callEntry fun u => u.gpr .ra = s.callEntry.gpr .ra ∧ Q u) :
+    WP isa (.call name body) s Q := by
+  obtain ⟨t, u, he, hra, hq⟩ := h
+  have hret : isa.ret s.callEntry u = some u := by
+    simp only [isa, ret]; exact ite_eq_left_of_eq_true _ _ (eq_true hra)
+  exact ⟨_, u, Exec.call (call_callEntry s) he hret, hq⟩
+
+/-- `chainPow_ok` for the chain called as a function of its own
+(`chainCall`), which keeps `ra` at `sv`, apart from the chain's slots, its
+operand and `R mod m`: it writes that word too. -/
+theorem chainCall_ok (hF : FieldOk F) (hL : ChainLayR P F.S.k) (hm : UnitMod F.S.m (2 ^ (64 * F.S.k)))
+    {name : String} {base : Addr} {s : State} {e one sv : Nat} (hs : WsReg s base)
+    (hone : one + 8 * F.S.k ≤ own F.S.k)
+    (hone' : one < 4095) (hO : wordsVal s.mem base one F.S.k = 2 ^ (64 * F.S.k) % F.S.m)
+    (hC : ChainOkR P e) (hsv : sv < 4095) (hsv8 : sv % 8 = 0)
+    (hsW : ∀ w ∈ chainWx P F.S.k, sv + 8 ≤ w.1 ∨ w.1 + w.2 ≤ sv)
+    (hsb : sv + 8 ≤ P.base ∨ P.base + 8 * F.S.k ≤ sv) (hso : sv + 8 ≤ one ∨ one + 8 * F.S.k ≤ sv) :
+    WP isa (chainCall name P one F sv) s fun s' => Kc s s' ∧
+      Unch base ((sv, 8) :: chainWx P F.S.k) s.mem s'.mem ∧
+      wordsVal s'.mem base P.acc F.S.k < F.S.m ∧
+      toM F.S.m (2 ^ (64 * F.S.k)) (wordsVal s'.mem base P.acc F.S.k) =
+        toM F.S.m (2 ^ (64 * F.S.k)) (wordsVal s.mem base P.base F.S.k) ^ e := by
+  have hsh := hL.short
+  have := hL.tbl
+  have hnw := hs.nowrap
+  have hk1 := hL.k1
+  obtain hu : WsReg s.callEntry base :=
+    ⟨by rw [State.callEntry_gpr _ (by decide)]; exact hs.s0, by rw [State.callEntry_wr]; exact hs.wr, hs.nowrap, hs.al⟩
+  refine callBody_wp ?_
+  rw [chainFn]
+  have h₁ : WP isa (.block (sdAt .ra wb sv)) s.callEntry fun s₁ =>
+      Mupd s.callEntry s₁ (s.callEntry.mem.writeW (off base sv) (s.callEntry.gpr .ra)) := by
+    rw [← List.append_nil (sdAt .ra wb sv)]
+    exact sdAt_ws hu (by decide) hsv hsv8 fun s₁ m₁ => WP.block_nil m₁
+  refine WP.seq (WP.mono h₁ fun s₁ m₁ => ?_)
+  obtain O₁ : Outside base sv 8 s.mem s₁.mem := by
+    rw [m₁.mem]; exact writeW_outside _ _ _ (by omega_using [hsv])
+  obtain hw₁ : WsReg s₁ base := ⟨by rw [m₁.gpr]; exact hu.s0, by rw [m₁.wr]; exact hu.wr, hs.nowrap, hs.al⟩
+  obtain hO₁ : wordsVal s₁.mem base one F.S.k = 2 ^ (64 * F.S.k) % F.S.m := by
+    rw [O₁.unch.wordsVal (by simp only [List.mem_singleton, forall_eq]; exact hso.symm)
+      (by omega_using [hone', hsh.1])]; exact hO
+  refine WP.seq (WP.mono (chainPow_ok hF hL hm hw₁ hone hone' hO₁ hC) fun s₂ ⟨K₂, U₂, lt₂, v₂⟩ => ?_)
+  obtain hw₂ := hw₁.of_kc K₂
+  rw [← List.append_nil (ldAt .ra wb sv)]
+  refine ldAt_ws hw₂ hsv hsv8 fun s₃ u₃ => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [u₃.gpr, U₂.word hsW (by omega_using [hsv]), m₁.mem, word_writeW_self]
+  · refine ⟨fun r hr h1 => ?_, by rw [u₃.rd, K₂.rd, m₁.rd]; rfl, by rw [u₃.wr, K₂.wr, m₁.wr]; rfl,
+      by rw [u₃.sp, K₂.sp, m₁.sp]; rfl⟩
+    rw [u₃.other _ (by intro h; subst h; exact absurd hr (by decide)), K₂.gpr r hr h1, m₁.gpr,
+      State.callEntry_gpr _ (fun h => preserved_not_link r hr h)]
+  · rw [u₃.mem]; exact O₁.unch.trans U₂
+  · show wordsVal s₃.mem _ _ _ < _; rw [u₃.mem]; exact lt₂
+  · rw [u₃.mem, v₂, O₁.unch.wordsVal (by simp only [List.mem_singleton, forall_eq]; exact hsb.symm)
+      (by omega_using [hsh.2.1])]
 
 end chain
 

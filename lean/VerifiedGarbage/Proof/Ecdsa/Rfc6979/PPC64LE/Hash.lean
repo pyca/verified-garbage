@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Calls
 public import VerifiedGarbage.Proof.Hmac.Contract
-import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.InitLong
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Finalize
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Common
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Layout
@@ -18,8 +17,10 @@ section
 
 The `Kit` of a streaming hash function whose HMAC `init` and `finalize`
 (the code over any streaming hash, `Impl/Hmac/Stream/PPC64LE.lean`) are
-verified against their shared contracts with 96 bytes of stack: their
-frames are within those 96 bytes (`fdepth` ≤ 2).
+verified against their shared contracts with 96 bytes of stack: `finalize`'s
+frames are within those 96 bytes (`fdepth` ≤ 2), and `init`, a table's word
+0 (HMAC's `init` for a key of any length, `HVar.initC`), changes only them
+for a key of at most a block (`HVar.shortFr`).
 -/
 
 @[expose] public section
@@ -30,9 +31,12 @@ open VG VG.PPC64LE
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
 
-/-- The `Kit` of a streaming hash function. -/
-def Kit.ofStream (H : Hash) (hH : HashOK H) (I : Spec.Hmac.Instance) (hIS : I.S = hH.SH)
-    (hi : Verified PPC64LE.target H.init (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi 96))
+/-- The `Kit` of a streaming hash function, whose HMAC `init` is `initC`
+(a table's word 0), for a key of at most a block. -/
+def Kit.ofStream (H : Hash) (hH : HashOK H) (I : Spec.Hmac.Instance) (hIS : I.S = hH.SH) (initC : Prog isa)
+    (hi : Verified PPC64LE.target initC (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi 96))
+    (hfr : ∀ s t s', (Proof.Hmac.Instance.initScratchContract I PPC64LE.abi 96).pre s → Exec isa initC s t s' →
+      Frame (s.wr ++ [below s.sp 96]) s.mem s'.mem)
     (hf : Verified PPC64LE.target H.finalize (Proof.Hmac.Instance.finalizeScratchContract I PPC64LE.abi 96))
     (hu : ConstantTime isa (Proof.Hmac.Stream.PPC64LE.updK H.S H.W hH.SH.Repr).pre
       (Proof.Hmac.Stream.PPC64LE.updK H.S H.W hH.SH.Repr).pub H.updC)
@@ -43,7 +47,7 @@ def Kit.ofStream (H : Hash) (hH : HashOK H) (I : Spec.Hmac.Instance) (hIS : I.S 
   hH := hH
   I := I
   hIS := hIS
-  initC := H.init
+  initC := initC
   finC := H.finalize
   kI := 95
   kF := 95
@@ -54,10 +58,7 @@ def Kit.ofStream (H : Hash) (hH : HashOK H) (I : Spec.Hmac.Instance) (hIS : I.S 
   updCT := hu
   hkI := Nat.le_refl _
   hkF := Nat.le_refl _
-  dI := by
-    have h₁ := sdepth_le_fdepth _ (Proof.Hmac.Stream.PPC64LE.InitLong.init_pf hH)
-    have h₂ := Proof.Hmac.Stream.PPC64LE.InitLong.init_fdepth hH
-    omega_using [h₁, h₂]
+  frI := hfr
   dF := by
     have h₁ := sdepth_le_fdepth H.finalize (by
       simp [Hash.finalize, pushFrames, Instr.isPush, Proof.Hmac.Stream.PPC64LE.Finalize.finalizeMain_pf hH])
@@ -202,11 +203,12 @@ variable (P : RfcHash)
 
 /-- What the proof of HMAC's steps needs of the hash function. -/
 def K : Kit :=
-  Kit.ofStream P.v.H P.v.ok P.v.I P.v.hIS P.v.initV P.v.finV P.v.ct.upd P.hScr P.hW P.hS
+  Kit.ofStream P.v.H P.v.ok P.v.I P.v.hIS P.v.initC P.v.shortV (fun _ _ _ => P.v.shortFr) P.v.finV P.v.ct.upd
+    P.hScr P.hW P.hS
 
 @[simp] theorem K_H : P.K.H = P.v.H := rfl
 @[simp] theorem K_hH : P.K.hH = P.v.ok := rfl
-@[simp] theorem K_initC : P.K.initC = P.v.H.init := rfl
+@[simp] theorem K_initC : P.K.initC = P.v.initC := rfl
 @[simp] theorem K_finC : P.K.finC = P.v.H.finalize := rfl
 
 /-- HMAC with the hash function. -/

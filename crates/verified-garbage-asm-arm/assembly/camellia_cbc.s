@@ -928,7 +928,7 @@ vg_camellia_cbc_decrypt_chained:
 	mov r1, r11
 	mov r2, r6
 	mov r3, #8
-	bl {vg_camellia_ecb_decrypt_entry}
+	bl {vg_camellia_ecb_decrypt}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
@@ -1123,7 +1123,7 @@ vg_camellia_cbc_decrypt_chained:
 	mov r1, r11
 	mov r2, r6
 	mov r3, #4
-	bl {vg_camellia_ecb_decrypt_entry}
+	bl {vg_camellia_ecb_decrypt}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
@@ -1238,7 +1238,7 @@ vg_camellia_cbc_decrypt_chained:
 	mov r1, r11
 	mov r2, r6
 	mov r3, #2
-	bl {vg_camellia_ecb_decrypt_entry}
+	bl {vg_camellia_ecb_decrypt}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
@@ -1346,7 +1346,7 @@ vg_camellia_cbc_decrypt_chained:
 	mov r1, r11
 	add r2, r6, #0
 	mov r3, #1
-	bl {vg_camellia_ecb_decrypt_entry}
+	bl {vg_camellia_ecb_decrypt}
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
 	eor r9, r9, r10

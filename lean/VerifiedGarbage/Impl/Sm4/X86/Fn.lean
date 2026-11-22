@@ -33,9 +33,9 @@ namespace VG.Impl.Sm4.X86.Fn
 open VG.X86
 
 /-- The doublewords of the stack below `esp` that the residue analysis finds
-each function may leave different in two runs: of the 1452 bytes ECB
+each function may leave different in two runs: of the 1512 bytes ECB
 reserves, … -/
-def ecbWords : List Nat := [0, 1, 2, 3, 4]
+def ecbWords : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 /-- … of the 1516 bytes the CBC, CFB128, OFB and CTR functions reserve, … -/
 def modeWords : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -50,13 +50,13 @@ def expandKey : Prog isa :=
 
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 1452 ecbWords
-    (Impl.StackScratch.X86.withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .encrypt))
+  Impl.Scrub.X86.scrubSel 0 1512 ecbWords
+    (Impl.StackScratch.X86.withStackScratchWiped 1492 3 368 (Impl.Sm4.X86.ecb .encrypt))
 
 /-- `Spec.Sm4.ecbDecryptApi`'s function as emitted. -/
 def ecbDecrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 1452 ecbWords
-    (Impl.StackScratch.X86.withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .decrypt))
+  Impl.Scrub.X86.scrubSel 0 1512 ecbWords
+    (Impl.StackScratch.X86.withStackScratchWiped 1492 3 368 (Impl.Sm4.X86.ecb .decrypt))
 
 /-- `Spec.Sm4.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncryptChained : Prog isa :=

@@ -782,13 +782,13 @@ def crtCallGeometry (s : State) : CrtGeometry where
 def crtCallBytes (s : State) (i : Fin 7) : List Byte :=
   Spec.Rsa.bytesAt s.mem (State.addr ((crtCallGeometry s).source i)) ((crtCallGeometry s).sourceLength i)
 
-theorem crt_contract_pre (s : State) (h : (Proof.Rsa.privateCrtContract abi 56).pre s) :
+theorem crt_contract_pre (s : State) (h : (Proof.Rsa.privateCrtContract abi 104).pre s) :
     CrtFnInput (crtCallGeometry s) (crtCallBytes s) s := by
   sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have argAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   rw [argAddr] at h
   sig_split h
-  rename_i stackFit argFit rd wr _ _ _ _ _ _ _ outWs _
+  rename_i stackFit104 argFit rd wr _ _ _ _ _ _ _ outWs _
     nWs inputWs pWs qWs dpWs dqWs qiWs wsArgs
     stackOut stackN stackInput stackP stackQ stackDp stackDq stackQi stackWs stackArgs
     outFit nFit inputFit pFit qFit dpFit dqFit qiFit wsFit
@@ -800,9 +800,12 @@ theorem crt_contract_pre (s : State) (h : (Proof.Rsa.privateCrtContract abi 56).
   rw [dpLen] at dpWs stackDp dpFit
   rw [qiLen] at qiWs stackQi qiFit
   rw [dqLen] at dqWs stackDq dqFit
-  have frame : FrameStack.belowA s.sp 56 = ⟨State.addr s.sp - BitVec.ofNat 64 56, 56⟩ := by
+  have stackFit : 56 ≤ s.sp.toNat := by omega_using [stackFit104]
+  have frame104 : FrameStack.belowA s.sp 104 = ⟨State.addr s.sp - BitVec.ofNat 64 104, 104⟩ := by
     unfold FrameStack.belowA
-    rw [FrameStack.addr_sub' stackFit]
+    rw [FrameStack.addr_sub' stackFit104]
+  have sub : Region.Sub (FrameStack.belowA s.sp 56) (FrameStack.belowA s.sp 104) :=
+    FrameStack.belowA_sub (by decide) stackFit104
   have argRead (i : Nat) (hi : i < 14) :
       s.mem.readW (VG.Proof.Mont.off (State.addr s.sp) (4 * i)) 32 = stackArg s i := by
     unfold stackArg stackArgAddr VG.Proof.Mont.off
@@ -815,7 +818,8 @@ theorem crt_contract_pre (s : State) (h : (Proof.Rsa.privateCrtContract abi 56).
     source := ?_, sourceSeparate := ?_, outputFits := outFit, write := ?_, outputSeparate := ?_,
     output := rfl, modulus := rfl, count := ?_, stackFit := stackFit, argFit := argFit,
     argRead := ?_, pointer := ?_, length := ?_, workspaceArg := argRead 12 (by decide),
-    stackWorkspace := ?_, argsWorkspace := ?_, stackSource := ?_, stackOutput := ?_, stackArgs := ?_ }
+    stackWorkspace := ?_, argsWorkspace := ?_, stackSource := ?_, stackOutput := ?_, stackArgs := ?_,
+    reserve := ?_ }
   · simpa only [crtCallGeometry, Nat.mul_comm] using wsFit
   · rw [wr]; simp [crtCallGeometry, State.addr, Nat.mul_comm]
   · intro i
@@ -894,10 +898,11 @@ theorem crt_contract_pre (s : State) (h : (Proof.Rsa.privateCrtContract abi 56).
       rw [argRead 11 (by decide)]
       rw [← qiLen]
       simp only [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · rw [frame]; simpa only [crtCallGeometry, State.addr, Nat.mul_comm] using stackWs
+  · exact Region.Disjoint.sub_left (by rw [frame104]; simpa only [crtCallGeometry, State.addr, Nat.mul_comm] using stackWs) sub
   · simpa only [crtCallGeometry, State.addr, Nat.mul_comm] using wsArgs.symm
   · intro i
-    rw [frame]
+    refine Region.Disjoint.sub_left ?_ sub
+    rw [frame104]
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact stackN
     · exact stackInput
@@ -906,8 +911,20 @@ theorem crt_contract_pre (s : State) (h : (Proof.Rsa.privateCrtContract abi 56).
     · exact stackDp
     · exact stackDq
     · exact stackQi
-  · rw [frame]; exact stackOut
-  · rw [frame]; exact stackArgs
+  · exact Region.Disjoint.sub_left (by rw [frame104]; exact stackOut) sub
+  · exact Region.Disjoint.sub_left (by rw [frame104]; exact stackArgs) sub
+  · refine ⟨stackFit104, by rw [frame104]; simpa only [crtCallGeometry, State.addr, Nat.mul_comm] using stackWs, ?_,
+      by rw [frame104]; exact stackOut, by rw [frame104]; exact stackArgs, fun _ ha => by cases ha⟩
+    intro i
+    rw [frame104]
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact stackN
+    · exact stackInput
+    · exact stackP
+    · exact stackQ
+    · exact stackDp
+    · exact stackDq
+    · exact stackQi
 
 end VG.Proof.Bignum.Arm
 
@@ -923,14 +940,14 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 
 def crtCallGeometryP (s : State) : CrtGeometry := { crtCallGeometry s with r2 := some (stackArg s 14) }
 
-theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContract abi 56).pre s) :
+theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre s) :
     CrtFnInput (crtCallGeometryP s) (crtCallBytes s) s := by
   sig_pre [Proof.Rsa.privateCrtPrecomputedContract, Proof.Rsa.privateCrtPrecomputedSig, Proof.Rsa.privateCrtSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have argAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   rw [argAddr] at h
   sig_split h
-  rename_i stackFit argFit rd wr _ _ _ _ _ _ _ outWs outR2 outArgs
+  rename_i stackFit104 argFit rd wr _ _ _ _ _ _ _ outWs outR2 outArgs
     nWs inputWs pWs qWs dpWs dqWs qiWs wsR2 wsArgs
     stackOut stackN stackInput stackP stackQ stackDp stackDq stackQi stackWs stackR2 stackArgs
     outFit nFit inputFit pFit qFit dpFit dqFit qiFit wsFit r2Fit
@@ -942,9 +959,12 @@ theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContr
   rw [dpLen] at dpWs stackDp dpFit
   rw [qiLen] at qiWs stackQi qiFit
   rw [dqLen] at dqWs stackDq dqFit
-  have frame : FrameStack.belowA s.sp 56 = ⟨State.addr s.sp - BitVec.ofNat 64 56, 56⟩ := by
+  have stackFit : 56 ≤ s.sp.toNat := by omega_using [stackFit104]
+  have frame104 : FrameStack.belowA s.sp 104 = ⟨State.addr s.sp - BitVec.ofNat 64 104, 104⟩ := by
     unfold FrameStack.belowA
-    rw [FrameStack.addr_sub' stackFit]
+    rw [FrameStack.addr_sub' stackFit104]
+  have sub : Region.Sub (FrameStack.belowA s.sp 56) (FrameStack.belowA s.sp 104) :=
+    FrameStack.belowA_sub (by decide) stackFit104
   have argRead (i : Nat) (hi : i < 16) :
       s.mem.readW (VG.Proof.Mont.off (State.addr s.sp) (4 * i)) 32 = stackArg s i := by
     unfold stackArg stackArgAddr VG.Proof.Mont.off
@@ -957,7 +977,8 @@ theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContr
     source := ?_, sourceSeparate := ?_, outputFits := outFit, write := ?_, outputSeparate := ?_,
     output := rfl, modulus := rfl, count := ?_, stackFit := stackFit, argFit := by omega_using [argFit],
     argRead := ?_, pointer := ?_, length := ?_, workspaceArg := argRead 12 (by decide),
-    stackWorkspace := ?_, argsWorkspace := ?_, stackSource := ?_, stackOutput := ?_, stackArgs := ?_ }
+    stackWorkspace := ?_, argsWorkspace := ?_, stackSource := ?_, stackOutput := ?_, stackArgs := ?_,
+    reserve := ?_ }
   · simpa only [crtCallGeometryP, crtCallGeometry, Nat.mul_comm] using wsFit
   · rw [wr]; simp [crtCallGeometryP, crtCallGeometry, State.addr, Nat.mul_comm]
   · intro i
@@ -1037,11 +1058,11 @@ theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContr
       rw [argRead 11 (by decide)]
       rw [← qiLen]
       simp only [BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · rw [frame]; simpa only [crtCallGeometryP, crtCallGeometry, State.addr, Nat.mul_comm] using stackWs
+  · refine Region.Disjoint.sub_left ?_ sub; rw [frame104]; simpa only [crtCallGeometryP, crtCallGeometry, State.addr, Nat.mul_comm] using stackWs
   · exact (by simpa only [crtCallGeometryP, crtCallGeometry, State.addr, Nat.mul_comm] using wsArgs.symm : Region.Disjoint _ _).sub_left
       (Region.sub_prefix (by decide))
   · intro i
-    rw [frame]
+    refine Region.Disjoint.sub_left ?_ sub; rw [frame104]
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact stackN
     · exact stackInput
@@ -1050,8 +1071,8 @@ theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContr
     · exact stackDp
     · exact stackDq
     · exact stackQi
-  · rw [frame]; exact stackOut
-  · rw [frame]; exact stackArgs.sub_right (Region.sub_prefix (by decide))
+  · refine Region.Disjoint.sub_left ?_ sub; rw [frame104]; exact stackOut
+  · refine Region.Disjoint.sub_left ?_ sub; rw [frame104]; exact stackArgs.sub_right (Region.sub_prefix (by decide))
   · intro a ha
     cases ha
     have words : 8 * (crtCallGeometryP s).r2Words = (stackArg s 15).toNat * 8 := by
@@ -1064,16 +1085,34 @@ theorem crt_contract_preP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContr
       argRead 14 (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · exact (by simpa only [crtCallGeometryP, crtCallGeometry, State.addr, Nat.mul_comm] using wsArgs.symm : Region.Disjoint _ _).sub_left slotSub
     · exact (by simpa only [crtCallGeometryP, crtCallGeometry, State.addr] using outArgs.symm : Region.Disjoint _ _).sub_left slotSub
-    · rw [frame]; exact stackArgs.sub_right slotSub
+    · refine Region.Disjoint.sub_left ?_ sub; rw [frame104]; exact stackArgs.sub_right slotSub
     · rw [words]; simpa only [State.addr] using r2Fit
     · rw [words]; exact ⟨_, List.mem_append_left _ (by rw [rd]; simp [State.addr]), Region.contains_self _ _⟩
     · rw [words]; simpa only [crtCallGeometryP, crtCallGeometry, State.addr, Nat.mul_comm] using wsR2.symm
-    · rw [words, frame]; simpa only [State.addr] using stackR2
+    · rw [words]; refine Region.Disjoint.sub_left ?_ sub; rw [frame104]; simpa only [State.addr] using stackR2
     · rw [words]; simpa only [crtCallGeometryP, crtCallGeometry, State.addr] using outR2.symm
     · rw [show (crtCallGeometryP s).r2Words = (stackArg s 15).toNat by omega_using [words]]
       exact r2Words
+  · refine ⟨stackFit104, by rw [frame104]; simpa only [crtCallGeometryP, crtCallGeometry, State.addr, Nat.mul_comm] using stackWs,
+      ?_, by rw [frame104]; exact stackOut, by rw [frame104]; exact stackArgs.sub_right (Region.sub_prefix (by decide)), ?_⟩
+    · intro i
+      rw [frame104]
+      rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 from by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact stackN
+      · exact stackInput
+      · exact stackP
+      · exact stackQ
+      · exact stackDp
+      · exact stackDq
+      · exact stackQi
+    · intro a ha
+      cases ha
+      have words : 8 * (crtCallGeometryP s).r2Words = (stackArg s 15).toNat * 8 := by
+        rw [r2Len]; simp [crtCallGeometryP, crtCallGeometry, CrtGeometry.r2Words, Nat.mul_comm]
+      refine ⟨by rw [words, frame104]; simpa only [State.addr] using stackR2, ?_⟩
+      rw [frame104]; exact stackArgs.sub_right (Offset.sub_base _ (by decide))
 
-theorem crt_contract_pqP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContract abi 56).pre s) :
+theorem crt_contract_pqP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre s) :
     Spec.Rsa.os2ip (crtCallBytes s 2) * Spec.Rsa.os2ip (crtCallBytes s 3) = Spec.Rsa.os2ip (crtCallBytes s 0) := by
   sig_pre [Proof.Rsa.privateCrtPrecomputedContract, Proof.Rsa.privateCrtPrecomputedSig, Proof.Rsa.privateCrtSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at h
@@ -1126,7 +1165,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 theorem crtFn_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0)
     (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtFnInput g bs1 s ∧ CrtFnInput g bs2 t ∧ s.sp = t.sp)
-      (CrtFn.codeOf st.check st.prime kernel.code) (fun _ _ => True) := by
+      (CrtFn.codeOf st.check st.prime kernel.code kernel.mul.op) (fun _ _ => True) := by
   unfold CrtFn.codeOf
   apply RelCT.frame (fun _ _ h => h.2.2)
   intro s t tr1 tr2 u v hp e1 e2
@@ -1174,7 +1213,8 @@ theorem crt_callee_saved {s t : State} {g : CrtGeometry} {regs : Reg → BitVec 
     (saved : Spill.Saved s.mem (State.addr s.sp) regs pcCalleeSaved)
     (frame : Frame (crtMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem)
     (workspace : (⟨State.addr s.sp, 56⟩ : Region).Disjoint ⟨State.addr g.base, g.size⟩)
-    (output : (⟨State.addr s.sp, 56⟩ : Region).Disjoint ⟨State.addr g.output, g.length⟩) :
+    (output : (⟨State.addr s.sp, 56⟩ : Region).Disjoint ⟨State.addr g.output, g.length⟩)
+    (belowFit : 48 ≤ s.sp.toNat) :
     Spill.Saved t.mem (State.addr s.sp) regs pcCalleeSaved := by
   intro p hp
   have fit : p.2 + 4 ≤ 56 := by
@@ -1192,11 +1232,12 @@ theorem crt_callee_saved {s t : State} {g : CrtGeometry} {regs : Reg → BitVec 
     (by
       intro r hr
       simp only [crtMutable, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with (rfl | rfl | rfl | rfl) | rfl
+      rcases hr with (rfl | rfl | rfl | rfl | rfl) | rfl
       · exact workspace.sub_left sub
       · exact Offset.disjoint_base _ (by omega_using [low]) (by omega_using [fit])
       · exact Offset.disjoint _ (Or.inr (by omega_using [low])) (by omega_using [fit]) (by decide)
       · exact Offset.disjoint _ gap (by omega_using [fit]) (by decide)
+      · exact ((belowA_disjoint_from (n := 56) belowFit (by decide)).sub_right sub).symm
       · exact output.sub_left sub) (by decide : 32 / 8 < 2 ^ 64)
   exact keep.trans (saved p hp)
 
@@ -1217,7 +1258,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 
 theorem crtFn_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtFnInput g bs s)
     (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (CrtFn.codeOf st.check st.prime kernel.code) s fun t => abiPreserved s t ∧
+    WP isa (CrtFn.codeOf st.check st.prime kernel.code kernel.mul.op) s fun t => abiPreserved s t ∧
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) := by
   unfold CrtFn.codeOf
@@ -1235,6 +1276,8 @@ theorem crtFn_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : C
     apply crt_callee_saved savedU frameV
     · rw [restU.sp]; exact h.stackWorkspace
     · rw [restU.sp]; exact h.stackOutput
+    · rw [restU.sp]; change 48 ≤ (s.sp - BitVec.ofNat 32 56).toNat
+      rw [FrameStack.sub_toNat' h.stackFit]; have := h.reserve.fit; omega_using [this]
   have fit : v.sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [spV, FrameStack.sub_toNat' h.stackFit]
     have := s.sp.isLt
@@ -1334,17 +1377,17 @@ end
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem crt_contract_correct (s : State) (h : (Proof.Rsa.privateCrtContract abi 56).pre s) (kernel : WindowKernel := baselineWindowKernel) :
-    ∃ tr t, Exec isa (CrtFn.codeWith kernel.code) s tr t ∧ abiPreserved s t ∧
-      (Proof.Rsa.privateCrtContract abi 56).post s t := by
+theorem crt_contract_correct (s : State) (h : (Proof.Rsa.privateCrtContract abi 104).pre s) (kernel : WindowKernel := baselineWindowKernel) :
+    ∃ tr t, Exec isa (CrtFn.codeWith kernel.code kernel.mul.op) s tr t ∧ abiPreserved s t ∧
+      (Proof.Rsa.privateCrtContract abi 104).post s t := by
   obtain ⟨tr, t, run, preserved, post⟩ := (crtFn_ok (kernel := kernel)) s (crt_contract_pre s h) baselineStages trivial
   refine ⟨tr, t, run, preserved, ?_⟩
   sig_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   rw [BitVec.setWidth_append_eq_right]
   exact post
 
-theorem crt_contract_ct (kernel : WindowKernel := baselineWindowKernel) : ConstantTime isa (Proof.Rsa.privateCrtContract abi 56).pre
-    (Proof.Rsa.privateCrtContract abi 56).pub (CrtFn.codeWith kernel.code) := by
+theorem crt_contract_ct (kernel : WindowKernel := baselineWindowKernel) : ConstantTime isa (Proof.Rsa.privateCrtContract abi 104).pre
+    (Proof.Rsa.privateCrtContract abi 104).pub (CrtFn.codeWith kernel.code kernel.mul.op) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := crt_contract_pre s hs
   have it := crt_contract_pre t ht
@@ -1360,10 +1403,10 @@ theorem crt_contract_ct (kernel : WindowKernel := baselineWindowKernel) : Consta
 
 /-! ## `vg_rsa_private_crt_precomputed` -/
 
-theorem crt_contract_correctP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContract abi 56).pre s)
+theorem crt_contract_correctP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre s)
     (kernel : WindowKernel := baselineWindowKernel) :
-    ∃ tr t, Exec isa (CrtFn.codeGiven kernel.code) s tr t ∧ abiPreserved s t ∧
-      (Proof.Rsa.privateCrtPrecomputedContract abi 56).post s t := by
+    ∃ tr t, Exec isa (CrtFn.codeGiven kernel.code kernel.mul.op) s tr t ∧ abiPreserved s t ∧
+      (Proof.Rsa.privateCrtPrecomputedContract abi 104).post s t := by
   obtain ⟨tr, t, run, preserved, post⟩ := (crtFn_ok (kernel := kernel)) s (crt_contract_preP s h) givenStages
     (show GivenOk _ _ from ⟨rfl, crt_contract_pqP s h⟩)
   refine ⟨tr, t, run, preserved, ?_⟩
@@ -1373,8 +1416,8 @@ theorem crt_contract_correctP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedC
   exact post
 
 theorem crt_contract_ctP (kernel : WindowKernel := baselineWindowKernel) :
-    ConstantTime isa (Proof.Rsa.privateCrtPrecomputedContract abi 56).pre
-      (Proof.Rsa.privateCrtPrecomputedContract abi 56).pub (CrtFn.codeGiven kernel.code) := by
+    ConstantTime isa (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre
+      (Proof.Rsa.privateCrtPrecomputedContract abi 104).pub (CrtFn.codeGiven kernel.code kernel.mul.op) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := crt_contract_preP s hs
   have it := crt_contract_preP t ht
@@ -1434,12 +1477,12 @@ def crtSatState : State where
     ⟨0x3300, 32⟩, ⟨0x3400, 32⟩, ⟨0x3500, 32⟩, ⟨0x8000, 56⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x4000, 8448⟩]
 
-theorem crt_contract_sat : ∃ s, (Proof.Rsa.privateCrtContract abi 56).pre s := by
+theorem crt_contract_sat : ∃ s, (Proof.Rsa.privateCrtContract abi 104).pre s := by
   sig_implies_sat [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.scratchWords] using crtSatState
 
-theorem crt_verified (kernel : WindowKernel := baselineWindowKernel) : Verified target (CrtFn.codeWith kernel.code) (Proof.Rsa.privateCrtContract abi 56) :=
+theorem crt_verified (kernel : WindowKernel := baselineWindowKernel) : Verified target (CrtFn.codeWith kernel.code kernel.mul.op) (Proof.Rsa.privateCrtContract abi 104) :=
   ⟨(crt_contract_correct (kernel := kernel)), (crt_contract_ct (kernel := kernel)), crt_contract_sat⟩
 
 theorem os2ip_replicate_zero' (n : Nat) : Spec.Rsa.os2ip (List.replicate n 0) = 0 := by
@@ -1458,7 +1501,7 @@ def crtSatStateP : State :=
     rd := [⟨0x2000, 64⟩, ⟨0x3000, 64⟩, ⟨0x3100, 1⟩, ⟨0x3200, 1⟩,
       ⟨0x3300, 1⟩, ⟨0x3400, 1⟩, ⟨0x3500, 1⟩, ⟨0x3600, 32⟩, ⟨0x8000, 64⟩] }
 
-theorem crt_contract_satP : ∃ s, (Proof.Rsa.privateCrtPrecomputedContract abi 56).pre s := by
+theorem crt_contract_satP : ∃ s, (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre s := by
   refine ⟨crtSatStateP, ?_⟩
   sig_pre [Proof.Rsa.privateCrtPrecomputedContract, Proof.Rsa.privateCrtPrecomputedSig,
       Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
@@ -1482,7 +1525,7 @@ theorem crt_contract_satP : ∃ s, (Proof.Rsa.privateCrtPrecomputedContract abi 
        bv_omega)
 
 theorem crt_verifiedP (kernel : WindowKernel := baselineWindowKernel) :
-    Verified target (CrtFn.codeGiven kernel.code) (Proof.Rsa.privateCrtPrecomputedContract abi 56) :=
+    Verified target (CrtFn.codeGiven kernel.code kernel.mul.op) (Proof.Rsa.privateCrtPrecomputedContract abi 104) :=
   ⟨(crt_contract_correctP (kernel := kernel)), (crt_contract_ctP (kernel := kernel)), crt_contract_satP⟩
 
 end VG.Proof.Bignum.Arm

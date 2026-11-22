@@ -461,8 +461,9 @@ constants. -/
 
 theorem x25519Base_noFrames (umaal : Bool) : (x25519Base umaal).noFrames = true := by
   simp only [x25519Base, engine, uEncode, Impl.Ed25519.Arm.combInit, Impl.Ed25519.Arm.combStep, Impl.Ed25519.Arm.combNeg, Impl.Ed25519.Arm.pointAffine,
-    Impl.Ed25519.Arm.invert, Impl.Ed25519.Arm.power250, Impl.Ed25519.Arm.pow250Fn, Impl.Ed25519.Arm.asFn, Impl.Ed25519.Arm.chain250,
-    Impl.Ed25519.Arm.sqn, Impl.Ed25519.Arm.mulP, Impl.Ed25519.Arm.sqnLoop, Impl.Ed25519.Arm.mulPc, Impl.Ed25519.Arm.mulCall, Code.noFrames,
+    Impl.Ed25519.Arm.invert, Impl.Ed25519.Arm.asFn, Impl.Ed25519.Arm.chain250,
+    Impl.Ed25519.Arm.sqn, Impl.Ed25519.Arm.sqnLoop, Impl.Ed25519.Arm.sqrCall, Impl.Ed25519.Arm.sqrFn,
+    Impl.Ed25519.Arm.sqLoop, Impl.Ed25519.Arm.mulP, Impl.Ed25519.Arm.mulPc, Impl.Ed25519.Arm.mulCall, Code.noFrames,
     (Proof.Ed25519.Arm.Shape.fieldCode _ _).1, (Proof.Ed25519.Arm.Shape.mulIn _ _ _ _).1,
     (Proof.Ed25519.Arm.Shape.mulFn _).1, Bool.and_self]
 

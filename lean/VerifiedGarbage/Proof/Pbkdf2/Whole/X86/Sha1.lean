@@ -68,7 +68,7 @@ reduces each side to it field by field rather than comparing the backends'
 functions. -/
 def sha1Shape : Fns :=
   ⟨⟨64, 84, 20, 20, 20, "", .block [], "", .block [], "", .block []⟩, Spec.Hmac.sha1I.scratch, "", .block [], "",
-    .block [], "", .block []⟩
+    .block [], "", .block [], ""⟩
 
 theorem sha1Shape_checks : Checks sha1Shape := by
   refine {

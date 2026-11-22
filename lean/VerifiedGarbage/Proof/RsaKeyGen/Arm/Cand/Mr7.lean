@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr6
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr2
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
@@ -98,14 +99,14 @@ theorem r2v_eq (P : CP) (σ : State) : r2v P σ = 2 ^ (64 * P.w) * 2 ^ (64 * P.w
   rw [← Nat.pow_add, show 64 * P.w + 64 * P.w = 128 * P.w by omega_using []]
 
 /-- The round on the witness of iteration `k`: its result into `sF`. -/
-theorem mrCall_vp (v : RoundImpl) {k : Nat} :
-    VP (fun σ s => St P E (AF P k) LF (VF P k) LSF σ s ∧ MS P σ s) (seqs (mrCall v.name v.code))
+theorem mrCall_vp (v : RoundImpl) (M : CallOp) {k : Nat} :
+    VP (fun σ s => St P E (AF P k) LF (VF P k) LSF σ s ∧ MS P σ s) (seqs (mrCall v.name v.code M.op))
       (fun σ s => St P E (AF P k) LF (fun σ => upd (VF P k σ) sF (rv P σ k)) (sF :: LSF) σ s ∧ MS P σ s) := by
   simp only [mrCall, seqs]
   refine VP.seq (VP.withMS (St.pcopy copy1X_taint (by decide) (by simp) (by decide)) (fun σ s h => h.inSp)
     (copy_keepM (by decide) (by simp) (by decide) (by decide))) ?_
   refine VP.seq St.pmont0 ?_
-  refine VP.seq ((St.pmontOp (o := 5) (a := 1) (b := 4) ⟨by decide, by decide, by decide⟩
+  refine VP.seq ((St.pmontOp M (o := 5) (a := 1) (b := 4) ⟨by decide, by decide, by decide⟩
     ⟨by decide, by decide, by decide⟩ ⟨by decide, by decide, by decide⟩ (by decide) (by decide)
     (na := fun σ => (wf P σ k).1) (nb := r2v P) (L' := LF) (fun σ s h m => ⟨?_, m.r2⟩)
     (fun σ _ pre => Nat.mod_lt _ (by have := cv_gt pre; omega_using [this]))

@@ -141,7 +141,43 @@ theorem z_wl : ∀ c ∈ witnessLoad ++ witnessFix, armStack c = 0 := by decide
 
 theorem z_le {c : Prog isa} {B : Nat} (h : armStack c = 0) : armStack c ≤ B := h ▸ Nat.zero_le _
 
-theorem body_stack (name : String) (round : Prog isa) : armStack (body name round) ≤ armStack round := by
+/-- `R² mod c` and the forms of 1 and −1, within the stack of the product `op`. -/
+theorem montA_stack {op : Nat → Nat → Nat → Prog isa} {B : Nat} (hop : ∀ o a b, armStack (op o a b) ≤ B) :
+    armStack (VG.Impl.RsaKeyGen.Arm.Candidate.montA op) ≤ B := by
+  unfold VG.Impl.RsaKeyGen.Arm.Candidate.montA
+  refine seqs_le _ fun c hc => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+  · have h1 : armStack VG.Impl.Bignum.Arm.r2Init = 0 := by decide
+    have h2 : armStack VG.Impl.Bignum.Arm.doubleLoop = 0 := by decide
+    have h3 : armStack (.block VG.Impl.Bignum.Arm.r2SquareCount : Prog isa) = 0 := by decide
+    have h4 : armStack (.block VG.Impl.Bignum.Arm.doubleCount : Prog isa) = 0 := by decide
+    have := hop 4 4 4
+    simp only [VG.Impl.Bignum.Arm.r2With, VG.Impl.Bignum.Arm.r2SquaresWith, VG.Impl.Bignum.Arm.r2SquareStepWith,
+      armStack] at h3 h4 ⊢
+    omega_using [h1, h2, h3, h4, this]
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+
+theorem montB_stack {op : Nat → Nat → Nat → Prog isa} {B : Nat} (hop : ∀ o a b, armStack (op o a b) ≤ B) :
+    armStack (VG.Impl.RsaKeyGen.Arm.Candidate.montB op) ≤ B := by
+  unfold VG.Impl.RsaKeyGen.Arm.Candidate.montB
+  refine seqs_le _ fun c hc => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
+  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+  · exact hop 1 1 4
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+  · exact z_le (by decide)
+
+theorem body_stack (name : String) (round : Prog isa) {op : Nat → Nat → Nat → Prog isa} {B : Nat}
+    (hop : ∀ o a b, armStack (op o a b) ≤ B) : armStack (body name round op) ≤ max (armStack round) B := by
   unfold body
   refine seqs_le _ fun c hc => ?_
   simp only [List.mem_append, List.mem_singleton] at hc
@@ -155,8 +191,8 @@ theorem body_stack (name : String) (round : Prog isa) : armStack (body name roun
   rcases hc with rfl | hc | rfl | rfl | rfl | rfl
   · exact z_le (by decide)
   · exact z_le (z_exp c hc)
-  · exact z_le (by decide)
-  · exact z_le (by decide)
+  · exact Nat.le_trans (montA_stack hop) (Nat.le_max_right _ _)
+  · exact Nat.le_trans (montB_stack hop) (Nat.le_max_right _ _)
   · unfold millerRabin mrBody
     simp only [armStack, seqs, Nat.zero_max, Nat.max_zero]
     refine seqs_le _ fun c hc => ?_
@@ -168,9 +204,9 @@ theorem body_stack (name : String) (round : Prog isa) : armStack (body name roun
       rcases hc with rfl | rfl | rfl | rfl | rfl | rfl
       · exact z_le (by decide)
       · exact z_le (by decide)
+      · exact Nat.le_trans (hop 5 1 4) (Nat.le_max_right _ _)
       · exact z_le (by decide)
-      · exact z_le (by decide)
-      · exact Nat.le_refl _
+      · exact Nat.le_max_left _ _
       · exact z_le (by decide)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
       rcases hc with rfl | rfl
@@ -178,9 +214,9 @@ theorem body_stack (name : String) (round : Prog isa) : armStack (body name roun
       · exact z_le (by decide)
   · exact z_le (by decide)
 
-theorem code_stack (name : String) (round : Prog isa) :
-    armStack (code name round) ≤ 88 + armStack round := by
-  have := body_stack name round
+theorem code_stack (name : String) (round : Prog isa) {op : Nat → Nat → Nat → Prog isa} {B : Nat}
+    (hop : ∀ o a b, armStack (op o a b) ≤ B) : armStack (code name round op) ≤ 88 + max (armStack round) B := by
+  have := body_stack name round hop
   simp only [Impl.Dsa.Arm.ProbablePrime.code, armStack, List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero]
   omega_using [this]
 
@@ -215,12 +251,20 @@ variable {umaal : Bool}
 /-- The geometry of `(pLen, qLen)`, hashing with `G`, testing with the round `v`
 (`Impl.Dsa.Arm.Fn.geo`). -/
 def geo (umaal : Bool) (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo :=
-  Impl.Dsa.Arm.Fn.geo umaal pLen qLen G v.suffix v.code
+  Impl.Dsa.Arm.Fn.geo umaal pLen qLen G v.suffix v.code v.mont.callOp.op
+
+/-- The stack of a call of the shared product: its eight-byte frame and the product's own. -/
+theorem callOp_stack (b : Proof.Bignum.Arm.MontBackend) (o a c : Nat) :
+    FrameStack.armStack (b.callOp.op o a c) ≤ 48 := by
+  have := b.stackOk
+  simp only [Proof.Bignum.Arm.MontBackend.callOp, Impl.Bignum.Arm.MontCall.op, FrameStack.armStack]
+  omega_using [this]
 
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes := by decide) :
-    PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code) :=
-  ⟨VG.Proof.Dsa.Arm.Prime.prime_verified v,
-    (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code).trans (by have := v.stack; omega_using [this]), hb⟩
+    PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code v.mont.callOp.op) :=
+  ⟨VG.Proof.Dsa.Arm.Prime.prime_verified v v.mont.callOp,
+    (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code (callOp_stack v.mont)).trans
+      (by have := v.stack; omega_using [this]), hb⟩
 
 theorem powOk (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)
     (hen : e ≤ 2 * n := by decide) (hs : FrameStack.armStack (Impl.Dsa.Arm.Pow.body umaal n e) ≤ 176 := by decide) :

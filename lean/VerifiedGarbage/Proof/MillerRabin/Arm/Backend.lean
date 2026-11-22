@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Scrub
+public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 
 import VerifiedGarbage.Proof.MillerRabin.Arm.Verified
 
@@ -11,6 +12,8 @@ A `RoundImpl` is verified against the contract its callers use
 (`roundContract`, `Proof/MillerRabin/Arm/Contract.lean`), within the 56
 bytes of stack its callers leave it, and makes no indirect call
 (`icallFree`), which the cleanup of its callers needs of it (`Arm.Scrub.CodeOk`).
+Its callers' own Montgomery products call `mont`, the shared product for the
+same CPU features.
 -/
 
 @[expose] public section
@@ -24,6 +27,9 @@ structure RoundImpl where
   verified : Verified target code roundContract
   stack : FrameStack.armStack code ≤ 56
   icallFree : noIcall code = true
+  /-- The Montgomery product the round's callers call (`vg_rsa_mont_mul`),
+  for the CPU features the round needs. -/
+  mont : VG.Proof.Bignum.Arm.MontBackend
   suffix : String
   features : List String
 

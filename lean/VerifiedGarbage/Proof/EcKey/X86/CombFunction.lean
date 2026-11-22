@@ -32,13 +32,13 @@ open VG.Impl.EcKey.X86 (Args.publicKey)
 def pkCombCode : Prog isa := Impl.EcKey.X86.Cfg.publicKeyComb p256Comb
 materialize_code pkCombCode
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
 theorem pkComb_sp : SpOk pkCombCode p256Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
-theorem pkComb_body_sp : SpOk (.seq p256Comb.gMul (.seq p256Comb.pPow (Impl.EcKey.X86.Cfg.middle p256Comb))) 20 :=
+theorem pkComb_body_sp : SpOk (.seq p256Comb.gMul (.seq p256Comb.pPow (Impl.EcKey.X86.Cfg.middle p256Comb))) 24 :=
   (SpOk.right (a := p256Comb.tableAddr) pkComb_sp).right
 
-theorem pkComb_spG : SpOk p256Comb.gMul 20 := pkComb_body_sp.left
+theorem pkComb_spG : SpOk p256Comb.gMul 24 := pkComb_body_sp.left
 
 theorem pkComb_spP : SpOk p256Comb.pPow p256Comb.stk := pkComb_body_sp.right.left
 

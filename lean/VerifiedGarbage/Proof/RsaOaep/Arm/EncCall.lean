@@ -144,7 +144,7 @@ theorem call_geo {P : EP} {σ : State} (hi : In h.H.D P σ) :
       (by unfold oRsa; omega_arith)
 
 theorem call_pre {P : EP} {σ s : State} (hr : V1 h g P σ s) :
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre
       (s.callEntry.withRegions (pdRd P.B P.pre P.e (P.scr + BitVec.ofNat 32 oEm) P.K P.el P.rl)
         (pdWr P.out (P.scr + BitVec.ofNat 32 oRsa) P.K (P.scl - 1024))) := by
   obtain ⟨⟨⟨hc, hi, -⟩, -⟩, pa⟩ := hr
@@ -172,7 +172,7 @@ theorem call_pre {P : EP} {σ s : State} (hr : V1 h g P σ s) :
     ((ok.rw_ro (w := P.SCR) (r := P.E) (by simp) (by simp)).symm.sub_right sS') dIS
     (by rw [q0]; exact ((hfr (R := P.SCR) (.inr (by simp)) (d := 0) (n := 24) (by decide)).symm).sub_left sS') ?_
   intro r hr
-  have low : (⟨State.addr P.B - BitVec.ofNat 64 56, 56⟩ : Region) = (P.lay h.H.D).LOW := rfl
+  have low : (⟨State.addr P.B - BitVec.ofNat 64 104, 104⟩ : Region) = (P.lay h.H.D).LOW := rfl
   rw [low]
   simp only [pdRd, pdWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -247,7 +247,7 @@ theorem call_vp (P : EP) (c : PdImpl) : VP (V1 h g P) (.call c.name c.code) (Fin
     have ok := hi.ok
     have hs := hc.st
     obtain ⟨e1, e2, sI, sS', dIS, hfit, hs1, hK⟩ := call_geo h hi
-    have low : FrameStack.belowA s.sp 56 = (P.lay h.H.D).LOW := by rw [hs.sp]; exact ok.low_eq
+    have low : FrameStack.belowA s.sp 104 = (P.lay h.H.D).LOW := by rw [hs.sp]; exact ok.low_eq
     rw [low] at fr
     have fr' : Frame [P.OUT, ⟨State.addr (P.scr + BitVec.ofNat 32 oRsa), (P.scl - 1024) * 8⟩, (P.lay h.H.D).LOW]
         s.mem s'.mem := fr

@@ -53,8 +53,23 @@ def cfgT (R : RfcCurve) (tries : Nat) (vs : List HVar) : Cfg where
 /-- `vg_ecdsa_<curve>_sign`. -/
 def signCodeT (R : RfcCurve) (tries : Nat) (vs : List HVar) : Prog isa := (cfgT R tries vs).sign
 
-/-- The stack it uses. -/
-def stackT : Nat := 736
+/-- The stack its contract gives it: its frames' 640 bytes and the 144
+bytes below them that the table's functions may use (HMAC's `init` for a key
+of any length, `Hash.initAny`, for a key longer than a block, which it never
+passes: the proof needs only 96 of them, `rfcPPC_pre_mono`). -/
+def stackT : Nat := 784
+
+/-- The precondition with `N` bytes of stack gives it with the 736 the
+proof is written against. -/
+theorem rfcPPC_pre_mono {I : Proof.Ecdsa.Rfc6979.Instance} {TF : State → Prop} {ns : List String}
+    {cs : List (String × List (BitVec 64))} {N : Nat} (hN : 736 ≤ N) {s : State}
+    (h : (rfcPPC I N TF ns cs).pre s) : (rfcPPC I 736 TF ns cs).pre s := by
+  obtain ⟨hrd, hwr, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, nt, tout, tsc, tstk, tf, held, tbl⟩ := h
+  have hsub : Region.Sub (below s.sp 736) (below s.sp N) := below_sub hN (by have := s.sp.isLt; omega_using [hsp, this])
+  exact ⟨hrd, hwr, od, og, oc, dc, gc, ko.sub_left hsub, kd.sub_left hsub, kg.sub_left hsub, kc.sub_left hsub,
+    no, nd, ng, nc, by omega_using [hsp, hN], nt, tout, tsc, tstk.sub_left hsub, tf, held, fun t ht =>
+      let ⟨a, b, c, d, e⟩ := tbl t ht
+      ⟨a, b, c, d.sub_left hsub, e⟩⟩
 
 /-! ## The variants -/
 
@@ -185,7 +200,8 @@ theorem signT_ok (hC : CurveT R T) {s : State} (h : (tabK R T vs).pre s) :
   obtain ⟨w, -, hw, hp⟩ := h
   unfold signCodeT
   rw [cfgT_eq hC vs hw]
-  refine WP.mono (sign_ok (P := hashOf hC vs w hw) (ns := names vs) hp.1) fun s' ⟨hab, hpost⟩ => ⟨hab, ?_⟩
+  refine WP.mono (sign_ok (P := hashOf hC vs w hw) (ns := names vs) (rfcPPC_pre_mono (by decide) hp.1))
+    fun s' ⟨hab, hpost⟩ => ⟨hab, ?_⟩
   intro w' _ hw' hp'
   obtain ⟨hG, hH⟩ := same_hash hw hw' (hp'.2.symm.trans hp.2)
   rw [hG, hH]
@@ -213,7 +229,8 @@ theorem signT_ct (hC : CurveT R T) (B : RfcT (cfgC R.w R.Q R.big R.sh R.C.E.curv
     · exact this.1
     · exact this.2.1
     · exact this.2.2
-  exact sign_ct (P := hashOf hC vs w hw) B hns s₁ s₂ t₁ t₂ s₁' s₂' p₁.1 p₂.1 hpub e₁ e₂
+  exact sign_ct (P := hashOf hC vs w hw) B hns s₁ s₂ t₁ t₂ s₁' s₂' (rfcPPC_pre_mono (by decide) p₁.1)
+    (rfcPPC_pre_mono (by decide) p₂.1) hpub e₁ e₂
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
 
@@ -255,18 +272,18 @@ theorem preW_of {w : HVar} (hv : w ∈ vs) (hO : OK vs) {s : State}
     (dc : Region.Disjoint ⟨s.gpr .r4, T.ecdsa.curve.len⟩ ⟨s.gpr .r7, 8192⟩)
     (gc : Region.Disjoint ⟨s.gpr .r5, w.H.D⟩ ⟨s.gpr .r7, 8192⟩)
     (ct : Region.Disjoint ⟨s.gpr .r7, 8192⟩ ⟨s.gpr .r8, 48⟩)
-    (ko : (below s.sp 736).Disjoint ⟨s.gpr .r3, 2 * T.ecdsa.curve.len⟩)
-    (kd : (below s.sp 736).Disjoint ⟨s.gpr .r4, T.ecdsa.curve.len⟩)
-    (kg : (below s.sp 736).Disjoint ⟨s.gpr .r5, w.H.D⟩)
-    (kc : (below s.sp 736).Disjoint ⟨s.gpr .r7, 8192⟩)
-    (kt : (below s.sp 736).Disjoint ⟨s.gpr .r8, 48⟩)
+    (ko : (below s.sp 784).Disjoint ⟨s.gpr .r3, 2 * T.ecdsa.curve.len⟩)
+    (kd : (below s.sp 784).Disjoint ⟨s.gpr .r4, T.ecdsa.curve.len⟩)
+    (kg : (below s.sp 784).Disjoint ⟨s.gpr .r5, w.H.D⟩)
+    (kc : (below s.sp 784).Disjoint ⟨s.gpr .r7, 8192⟩)
+    (kt : (below s.sp 784).Disjoint ⟨s.gpr .r8, 48⟩)
     (no : (s.gpr .r3).toNat + 2 * T.ecdsa.curve.len ≤ 2 ^ 64) (nd : (s.gpr .r4).toNat + T.ecdsa.curve.len ≤ 2 ^ 64)
-    (ng : (s.gpr .r5).toNat + w.H.D ≤ 2 ^ 64) (nc : (s.gpr .r7).toNat + 8192 ≤ 2 ^ 64) (hsp : 736 ≤ s.sp.toNat)
+    (ng : (s.gpr .r5).toNat + w.H.D ≤ 2 ^ 64) (nc : (s.gpr .r7).toNat + 8192 ≤ 2 ^ 64) (hsp : 784 ≤ s.sp.toNat)
     (nt : (s.gpr .r8).toNat + 48 ≤ 2 ^ 64)
     (held : Abi.constsHeld s.mem s.syms R.C.cs)
     (fit : ∀ t ∈ Abi.constRegions s.syms R.C.cs, t.base.toNat + t.len ≤ 2 ^ 64 ∧
       t.Disjoint ⟨s.gpr .r3, 2 * T.ecdsa.curve.len⟩ ∧ t.Disjoint ⟨s.gpr .r7, 8192⟩ ∧
-      (below s.sp 736).Disjoint t ∧ t.base.toNat % 64 = 0)
+      (below s.sp 784).Disjoint t ∧ t.base.toNat % 64 = 0)
     (hheld : HeldW w s) (hpw : (names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) :
     PreW R T vs w s := by
   have hh := held_tableOf hheld

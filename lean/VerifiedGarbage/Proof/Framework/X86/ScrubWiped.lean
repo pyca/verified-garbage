@@ -90,54 +90,107 @@ theorem zeroOn_frame (q : Addr) {lo hi : Nat} (h : hi ≤ 2 ^ 64) (m : Mem) :
     · rfl
 
 /-- `wipeStores off w` from `u`, whose `ecx` is zero and whose `esp` is `E`,
-which may write the `4 W` bytes at offset `off` from `E`: it zeroes the bytes
-at offsets `off` to `off + 4 w` from `E`. -/
-theorem wipeStores_zero (E : BitVec 32) (off W : Nat) (hq : E.toNat + off + 4 * W ≤ 2 ^ 32) (u : State)
+which may write the `L` bytes at offset `b` from `E`, from `off` to
+`off + 4 W` among them: it zeroes the bytes at offsets `off` to `off + 4 w`
+from `E`. -/
+theorem wipeStores_zero (E : BitVec 32) (off W b L : Nat) (hb : b ≤ off) (hL : off + 4 * W ≤ b + L)
+    (hq : E.toNat + b + L ≤ 2 ^ 32) (u : State)
     (h0 : u.gpr .ecx = 0) (h1 : u.gpr .esp = E)
-    (hw : (⟨E.setWidth 64 + BitVec.ofNat 64 off, 4 * W⟩ : Region) ∈ u.wr) :
+    (hw : (⟨E.setWidth 64 + BitVec.ofNat 64 b, L⟩ : Region) ∈ u.wr) :
     ∀ w, w ≤ W → execBlock isa (wipeStores off w) u =
-      some ({ u with mem := zeroOn (E.setWidth 64) off (off + 4 * w) u.mem }, wipeTrace E off w)
+      some ({ u with mem := zeroOn (E.setWidth 64) off (off + 4 * w) u.mem }, wipeTrace4 E off w)
   | 0, _ => by
     simp only [wipeStores, List.range_zero, List.map_nil, execBlock, Nat.mul_zero, Nat.add_zero, zeroOn_self,
-      wipeTrace]
+      wipeTrace4]
   | w + 1, hk => by
-    have hlt : E.toNat + (off + 4 * w) < 2 ^ 32 := by omega_using [hk, hq]
+    have hlt : E.toNat + (off + 4 * w) < 2 ^ 32 := by omega_using [hk, hq, hL]
     have ha : (E + BitVec.ofNat 32 (off + 4 * w)).setWidth 64 = E.setWidth 64 + BitVec.ofNat 64 (off + 4 * w) :=
       addr_eq hlt
-    rw [wipeStores_succ, execBlock_append, wipeStores_zero E off W hq u h0 h1 hw w (by omega_using [hk])]
+    rw [wipeStores_succ, execBlock_append, wipeStores_zero E off W b L hb hL hq u h0 h1 hw w (by omega_using [hk])]
     have hin : InRegions ({ u with mem := zeroOn (E.setWidth 64) off (off + 4 * w) u.mem } : State).wr
         ((({ u with mem := zeroOn (E.setWidth 64) off (off + 4 * w) u.mem } : State).gpr .esp +
           BitVec.ofNat 32 (off + 4 * w)).setWidth 64) 4 :=
       ⟨_, hw, by
-        show (⟨E.setWidth 64 + BitVec.ofNat 64 off, 4 * W⟩ : Region).Contains
+        show (⟨E.setWidth 64 + BitVec.ofNat 64 b, L⟩ : Region).Contains
           ((u.gpr .esp + BitVec.ofNat 32 (off + 4 * w)).setWidth 64) 4
         rw [h1, ha]
-        exact Offset.contains _ (by omega_using []) (by omega_using [hk]) (by omega_using [hk, hq])⟩
+        exact Offset.contains _ (by omega_using [hb]) (by omega_using [hk, hL]) (by omega_using [hk, hq])⟩
     simp only [Option.bind_some, execBlock, isa, exec, State.store32, State.ea, hin, ↓reduceIte,
       Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, Option.some.injEq, Prod.mk.injEq]
     refine ⟨?_, ?_⟩
     · show { u with mem := ((zeroOn (E.setWidth 64) off (off + 4 * w) u.mem).writeW
           ((u.gpr .esp + BitVec.ofNat 32 (off + 4 * w)).setWidth 64) (u.gpr .ecx)) } = _
-      rw [h1, h0, ha, zeroOn_writeW_top _ (by omega_using []) (by omega_using [hk, hq]),
+      rw [h1, h0, ha, zeroOn_writeW_top _ (by omega_using []) (by omega_using [hk, hq, hL]),
         show off + 4 * w + 32 / 8 = off + 4 * (w + 1) by omega_using []]
-    · show wipeTrace E off w ++ [.addr ((u.gpr .esp + BitVec.ofNat 32 (off + 4 * w)).setWidth 64)] = _
+    · show wipeTrace4 E off w ++ [.addr ((u.gpr .esp + BitVec.ofNat 32 (off + 4 * w)).setWidth 64)] = _
       rw [h1]
-      simp only [wipeTrace, List.range_succ, List.map_append, List.map_cons, List.map_nil]
+      simp only [wipeTrace4, List.range_succ, List.map_append, List.map_cons, List.map_nil]
+
+/-- `wipeStores16 off w` from `u`, whose `xmm0` is zero and whose `esp` is
+`E`, which may write the `L` bytes at offset `b` from `E`, from `off` to
+`off + 16 W` among them: it zeroes the bytes at offsets `off` to
+`off + 16 w` from `E`. -/
+theorem wipeStores16_zero (E : BitVec 32) (off W b L : Nat) (hb : b ≤ off) (hL : off + 16 * W ≤ b + L)
+    (hq : E.toNat + b + L ≤ 2 ^ 32) (u : State)
+    (h0 : u.xmm .xmm0 = 0) (h1 : u.gpr .esp = E)
+    (hw : (⟨E.setWidth 64 + BitVec.ofNat 64 b, L⟩ : Region) ∈ u.wr) :
+    ∀ w, w ≤ W → execBlock isa (wipeStores16 off w) u =
+      some ({ u with mem := zeroOn (E.setWidth 64) off (off + 16 * w) u.mem }, wipeTrace16 E off w)
+  | 0, _ => by
+    simp only [wipeStores16, List.range_zero, List.map_nil, execBlock, Nat.mul_zero, Nat.add_zero, zeroOn_self,
+      wipeTrace16]
+  | w + 1, hk => by
+    have hlt : E.toNat + (off + 16 * w) < 2 ^ 32 := by omega_using [hk, hq, hL]
+    have ha : (E + BitVec.ofNat 32 (off + 16 * w)).setWidth 64 = E.setWidth 64 + BitVec.ofNat 64 (off + 16 * w) :=
+      addr_eq hlt
+    rw [wipeStores16_succ, execBlock_append, wipeStores16_zero E off W b L hb hL hq u h0 h1 hw w (by omega_using [hk])]
+    have hin : InRegions ({ u with mem := zeroOn (E.setWidth 64) off (off + 16 * w) u.mem } : State).wr
+        ((({ u with mem := zeroOn (E.setWidth 64) off (off + 16 * w) u.mem } : State).gpr .esp +
+          BitVec.ofNat 32 (off + 16 * w)).setWidth 64) 16 :=
+      ⟨_, hw, by
+        show (⟨E.setWidth 64 + BitVec.ofNat 64 b, L⟩ : Region).Contains
+          ((u.gpr .esp + BitVec.ofNat 32 (off + 16 * w)).setWidth 64) 16
+        rw [h1, ha]
+        exact Offset.contains _ (by omega_using [hb]) (by omega_using [hk, hL]) (by omega_using [hk, hq])⟩
+    simp only [Option.bind_some, execBlock, isa, exec, State.store128, State.ea, hin, ↓reduceIte,
+      Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, Option.some.injEq, Prod.mk.injEq]
+    refine ⟨?_, ?_⟩
+    · show { u with mem := ((zeroOn (E.setWidth 64) off (off + 16 * w) u.mem).writeW
+          ((u.gpr .esp + BitVec.ofNat 32 (off + 16 * w)).setWidth 64) (u.xmm .xmm0)) } = _
+      rw [h1, h0, ha, zeroOn_writeW_top _ (by omega_using []) (by omega_using [hk, hq, hL]),
+        show off + 16 * w + 128 / 8 = off + 16 * (w + 1) by omega_using []]
+    · show wipeTrace16 E off w ++ [.addr ((u.gpr .esp + BitVec.ofNat 32 (off + 16 * w)).setWidth 64)] = _
+      rw [h1]
+      simp only [wipeTrace16, List.range_succ, List.map_append, List.map_cons, List.map_nil]
 
 /-- `wipe off words` from `u`, whose `esp` is `E`, which may write the
-`4 words` bytes at offset `off` from `E`: it sets `ecx` to zero and zeroes
-them. -/
+`4 words` bytes at offset `off` from `E`: it sets `xmm0` and `ecx` to zero
+and zeroes them. -/
 theorem wipe_zero (E : BitVec 32) (off words : Nat) (hq : E.toNat + off + 4 * words ≤ 2 ^ 32)
     (u : State) (h1 : u.gpr .esp = E) (hw : (⟨E.setWidth 64 + BitVec.ofNat 64 off, 4 * words⟩ : Region) ∈ u.wr) :
     execBlock isa (Impl.StackScratch.X86.wipe off words) u =
-      some ({ u.setReg .ecx 0 with mem := zeroOn (E.setWidth 64) off (off + 4 * words) u.mem },
+      some ({ wipeRegs u with mem := zeroOn (E.setWidth 64) off (off + 4 * words) u.mem },
         wipeTrace E off words) := by
-  have he := wipeStores_zero E off words hq (u.setReg .ecx 0) (by simp [State.setReg])
-    (by simpa [State.setReg] using h1) (by simpa [State.setReg] using hw) words (Nat.le_refl _)
-  rw [show (u.setReg .ecx 0).mem = u.mem from rfl] at he
-  simp only [Impl.StackScratch.X86.wipe, execBlock, isa, exec, readSrc, Option.map_some]
-  rw [he]
-  simp [addrs, srcAddrs]
+  have hsp : (wipeRegs u).gpr .esp = E := (wipeRegs_gpr (by decide)).trans h1
+  have he₁ := wipeStores16_zero E off (words / 4) off (4 * words) (Nat.le_refl _) (by omega_using [])
+    (by omega_using [hq]) (wipeRegs u) (wipeRegs_xmm0 u) hsp (by rw [wipeRegs_wr]; exact hw) (words / 4)
+    (Nat.le_refl _)
+  have he₂ := wipeStores_zero E (off + 16 * (words / 4)) (words % 4) off (4 * words) (by omega_using [])
+    (by omega_using []) (by omega_using [hq])
+    { wipeRegs u with mem := zeroOn (E.setWidth 64) off (off + 16 * (words / 4)) (wipeRegs u).mem }
+    (wipeRegs_ecx u) hsp (by rw [show ({ wipeRegs u with mem := _ } : State).wr = u.wr from rfl]; exact hw)
+    (words % 4) (Nat.le_refl _)
+  have e₀ : execBlock isa [.xop (.bin .pxor .xmm0 .xmm0), .mov .ecx (.imm 0)] u = some (wipeRegs u, []) := by
+    simp [execBlock, isa, exec, readSrc, Option.map_some, addrs, srcAddrs, wipeRegs, XOp.exec, XBinOp.eval,
+      BitVec.xor_self]
+  rw [Impl.StackScratch.X86.wipe, show (.xop (.bin .pxor .xmm0 .xmm0) :: .mov .ecx (.imm 0) ::
+      (wipeStores16 off (words / 4) ++ wipeStores (off + 16 * (words / 4)) (words % 4)) : List Instr) =
+      [.xop (.bin .pxor .xmm0 .xmm0), .mov .ecx (.imm 0)] ++
+        (wipeStores16 off (words / 4) ++ wipeStores (off + 16 * (words / 4)) (words % 4)) from rfl,
+    execBlock_append, e₀, Option.bind_some, execBlock_append, he₁, Option.bind_some, he₂]
+  simp only [Option.map_some, List.nil_append, wipeTrace, wipeRegs_mem]
+  rw [zeroOn_zeroOn _ (by omega_using []) (by omega_using []),
+    show off + 16 * (words / 4) + 4 * (words % 4) = off + 4 * words by omega_using []]
 
 /-- A byte of a released frame depends only on what it held, where the
 frame is and the unknowns. -/
@@ -231,7 +284,7 @@ theorem wiped_run {c : Prog isa}
       Exec isa (withStackScratchWiped bytes (slots sig) words c) s
         (setArgsTrace bytes (s.gpr .esp - BitVec.ofNat 32 bytes) (slots sig) ++
           (t ++ wipeTrace (s.gpr .esp - BitVec.ofNat 32 bytes) (8 + 4 * slots sig) words))
-        (popState bytes s { s₃.setReg .ecx 0 with
+        (popState bytes s { wipeRegs s₃ with
           mem := zeroOn ((s.gpr .esp - BitVec.ofNat 32 bytes).setWidth 64) (8 + 4 * slots sig)
             (8 + 4 * slots sig + 4 * words) s₃.mem }) := by
   have hst := (pre_stackL.mp hs).1.1
@@ -258,11 +311,12 @@ theorem wiped_run {c : Prog isa}
       · exact wipe_noSp _ _ i hi
   have hd' : stackUse (.seq c (.block (Impl.StackScratch.X86.wipe (8 + 4 * slots sig) words)) : Prog isa) ≤ 0 := by
     simp only [stackUse]; omega_using [hd]
-  have ha' : abiPreserved (narrow sig e n bytes false s) { s₃.setReg .ecx 0 with
+  have ha' : abiPreserved (narrow sig e n bytes false s) { wipeRegs s₃ with
       mem := zeroOn (E.setWidth 64) (8 + 4 * slots sig) (8 + 4 * slots sig + 4 * words) s₃.mem } := by
     refine ⟨fun q hq => ?_, ?_⟩
     · have hq' : q ≠ .ecx := by rintro rfl; simp [calleeSaved] at hq
-      simp only [State.setReg, hq', ↓reduceIte]
+      show (wipeRegs s₃).gpr q = _
+      rw [wipeRegs_gpr hq']
       exact ha.1 q hq
     · show (zeroOn _ _ _ s₃.mem).readW _ 32 = _
       rw [hesp]
@@ -438,7 +492,7 @@ theorem verifiedScrubbedWiped {c : Prog isa}
           (narrow_pub hb.1 p₁ p₂ hp hleak.toL) x₁ x₂]) hN).2
     refine Ends.outside ho k₁ k₂ fun x hx => ?_
     rw [m₁, m₂]
-    have su : ∀ s : State, (s.setReg .ecx 0).unknowns = s.unknowns := fun _ => rfl
+    have su : ∀ s : State, (wipeRegs s).unknowns = s.unknowns := fun _ => rfl
     simp only [popState, osp]
     rw [su, su, hU]
     refine lose_congr ?_ _ _ _

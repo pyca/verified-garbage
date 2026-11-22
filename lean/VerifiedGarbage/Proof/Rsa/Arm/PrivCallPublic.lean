@@ -13,7 +13,7 @@ open VG VG.Arm VG.Impl.Rsa.Arm.PrivChecked VG.Proof.Bignum.Arm VG.Proof.Mont
 theorem crtCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     (hs : PrivContext g bs1 s) (ht : PrivContext g bs2 t) (as : CrtArgs g s) (argT : CrtArgs g t)
     (nb : bs1 0 = bs2 0) :
-    (Proof.Rsa.privateCrtContract abi 56).pub
+    (Proof.Rsa.privateCrtContract abi 104).pub
       (s.callEntry.withRegions (crtRd g) (crtWr g)) (t.callEntry.withRegions (crtRd g) (crtWr g)) := by
   sig_pub [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   have sa := fun {j} (hj : j < 14) => crtArgs_stack hs as hj
@@ -35,7 +35,7 @@ theorem crtCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : St
 theorem pcCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     (hs : PrivContext g bs1 s) (ht : PrivContext g bs2 t) (argsS : PcArgs g s) (argsT : PcArgs g t)
     (nb : bs1 0 = bs2 0) :
-    (Spec.Rsa.publicPrecomputeContract abi 56).pub
+    (Spec.Rsa.publicPrecomputeContract abi 104).pub
       (s.callEntry.withRegions (pcRd g) (pcWr g)) (t.callEntry.withRegions (pcRd g) (pcWr g)) := by
   sig_pub [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   have sa := pcArgs_stack hs argsS
@@ -53,7 +53,7 @@ theorem pdCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : Sta
     (eb : bs1 1 = bs2 1)
     (pre : Spec.Rsa.wordsAt s.mem (State.addr g.precomputation) (2 * Spec.Rsa.modulusWords g.length) =
       Spec.Rsa.wordsAt t.mem (State.addr g.precomputation) (2 * Spec.Rsa.modulusWords g.length)) :
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pub
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pub
       (s.callEntry.withRegions (pdRd g) (pdWr g)) (t.callEntry.withRegions (pdRd g) (pdWr g)) := by
   sig_pub [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   have sa := fun {j} (hj : j < 6) => pdArgs_stack hs argsS hj

@@ -26,13 +26,14 @@ call (`Core.shared`). `prepare` copies the schedules as `dirCore`'s does
 and stores the masks; `crypt` transposes the buffer, runs the three passes
 and transposes it back.
 
-The passes write every register but `a1`, `a2`, `s11`, `ra` and their base
-(`s0`), and memory is secret to the analysis of constant time, so the
-modes' state (`s1`–`s3`, which address and count) waits in `a1`, `a2` and
-`s11` (`wideIn`), and the frame's base (`s4`) is ECB's base less `wideOff`
-(`wideOut`). The caller's `s0` and `s5`–`s11` and the key's argument `a0`
-wait in the working space: they come back secret, and nothing addresses or
-branches on them after.
+The passes write every register but `a1`, `a2`, `s11` and their base
+(`s0`), and the calls of the passes and of the transposition write `ra`;
+memory is secret to the analysis of constant time, so the modes' state
+(`s1`–`s3`, which address and count) waits in `a1`, `a2` and `s11`
+(`wideIn`), and the frame's base (`s4`) is ECB's base less `wideOff`
+(`wideOut`). The return address, the caller's `s0` and `s5`–`s11` and the
+key's argument `a0` wait in the working space: they come back secret, and
+nothing addresses or branches on them after.
 
 ECB costs the same whatever the number of blocks, about three blocks by the
 block function: so the blocks left after the groups of 64 go by groups of
@@ -53,10 +54,11 @@ open VG.Spec.TripleDes (Direction)
 /-- ECB's base, as an offset from the frame's: the buffer. -/
 def wideOff : Nat := 8 * bufSlot
 
-/-- The key's argument and the caller's registers the passes write, and
-where they wait, as offsets from ECB's base; the base itself last. -/
+/-- The return address, the key's argument and the caller's registers the
+passes write, and where they wait, as offsets from ECB's base; the base
+itself last. -/
 def wideSaved : List (Reg × Nat) :=
-  [(.a0, 1032), (.s5, 976), (.s6, 984), (.s7, 992), (.s8, 1000), (.s9, 1008), (.s10, 1016), (.s11, 1024),
+  [(.ra, 968), (.a0, 1032), (.s5, 976), (.s6, 984), (.s7, 992), (.s8, 1000), (.s9, 1008), (.s10, 1016), (.s11, 1024),
     (.s0, 1040)]
 
 /-- The schedules copied as the block function has them, and ECB's masks
@@ -78,8 +80,8 @@ def wideOut : List Instr :=
 
 /-- The buffer's 64 blocks, transposed, through the three passes, and back. -/
 def wideCrypt (d : Direction) : Prog isa :=
-  .seq (.block wideIn) (.seq (.block Bitslice.transpose) (.seq (Bitslice.passes d)
-    (.seq (.block Bitslice.transpose) (.block wideOut))))
+  .seq (.block wideIn) (.seq Bitslice.transposeCall (.seq (Bitslice.passes d)
+    (.seq Bitslice.transposeCall (.block wideOut))))
 
 /-- Triple DES's core for the modes, in the direction `d`, on 64 blocks. -/
 def wideInline (d : Direction) : Modes.RISCV64.Core where
@@ -106,7 +108,7 @@ def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncCha
 
 /-- `vg_triple_des_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa :=
-  (wideCore .decrypt).seqLevelsWith (wideOne .decrypt) (Modes.Mode.cbcDecWide 2) levels (Modes.Mode.cbcDecChained 2)
+  (wideCore .decrypt).seqLevelsWith (wideOne .decrypt) levels (Modes.Mode.cbcDecChained 2)
 
 /-- `vg_triple_des_ofb`. -/
 def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 2)
@@ -116,7 +118,7 @@ def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 2)
 
 /-- `vg_triple_des_cfb64_decrypt`. -/
 def cfbDecrypt : Prog isa :=
-  (wideCore .encrypt).seqLevelsWith (wideOne .encrypt) (Modes.Mode.cfbDecWide 2) levels (Modes.Mode.cfbDecEarly 2)
+  (wideCore .encrypt).seqLevelsWith (wideOne .encrypt) levels (Modes.Mode.cfbDecEarly 2)
 
 /-- `vg_triple_des_cfb8_encrypt`. -/
 def cfb8Encrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfb8Enc 2)

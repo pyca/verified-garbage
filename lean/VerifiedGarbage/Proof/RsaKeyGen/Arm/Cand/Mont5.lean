@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont4
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont1
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
-import VerifiedGarbage.Proof.Bignum.Arm.R2CT
+import VerifiedGarbage.Proof.Bignum.Arm.R2With
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Seqs
 import VerifiedGarbage.Proof.Rsa.Arm.RdTwos
@@ -91,22 +92,36 @@ theorem pinv_vp {E : State → Prop} : VP (SC P E) VG.Impl.Bignum.Arm.precompute
 
 theorem countFits {σ : State} (pre : In P σ) : 128 * P.w < 2 ^ 32 := by have := pre.w4; omega_using [this]
 
-/-- `r2`. -/
-theorem r2_vp {E : State → Prop} : VP (SD P E) VG.Impl.Bignum.Arm.r2 (SE P E) := by
+/-- `R² mod c` (`r2With`), its squarings by the product `A`. -/
+theorem r2_vp (A : CallOp) {E : State → Prop} : VP (SD P E) (VG.Impl.Bignum.Arm.r2With A.op) (SE P E) := by
   refine VP.ofImp (p := 128 * P.w < 2 ^ 32) (fun σ s h => countFits h.1.2.pre) fun cf => ?_
-  refine VP.of_ct (fun σ₁ σ₂ => (r2_ct cf).mono (fun s t h => ⟨h.1.2.1, h.2.2.1, ?_⟩) fun _ _ _ => trivial)
+  have fitM : arrAt P.w 3 + 32 ≤ 8 * P.lenM := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega_arith
+  rw [← A.mont_op P.M0 P.sp P.lenM P.w]
+  have spOf : ∀ {σ s : State}, SD P E σ s → s.sp = P.sp := fun h => h.1.2.sp.trans h.1.2.pre.sp
+  refine VP.of_ct (fun σ₁ σ₂ => (r2With_ct (A.timing P.M0 P.sp P.lenM P.w fitM) cf).mono
+    (fun s t h => ⟨⟨h.1.2.1, h.1.1.2.pre.callStack (spOf h.1), spOf h.1⟩,
+      ⟨h.2.2.1, h.2.1.2.pre.callStack (spOf h.2), spOf h.2⟩, ?_⟩) fun _ _ _ => trivial)
     fun σ s h => ?_
-  · rw [h.1.1.2.sp, h.1.1.2.pre.sp, h.2.1.2.sp, h.2.1.2.pre.sp]
+  · rw [spOf h.1, spOf h.2]
+  have sp := spOf h
   obtain ⟨⟨e, k⟩, ar, n0⟩ := h
   have pre := k.pre
-  refine WP.mono (r2_ok s ar cf) fun t ⟨dl, v4, n0', f, rest⟩ => ⟨⟨⟨e, ?_⟩, ?_, by rw [n0', n0]⟩, by rw [v4, n0]⟩
-  · have kp := keep_of_frameM pre f
-    refine k.core kp (by simp only [List.mem_range'_1]; intro j hj; simp only [nArr]; omega_using [hj]) (by simp) rest.sp
-      rest.rd rest.wr (k.arrs_keep kp (fun j hj hj' => by
+  refine WP.mono (r2With_ok (A.mont P.M0 P.sp P.lenM P.w) s ar ⟨pre.callStack sp, sp⟩ cf)
+    fun t ⟨dl, v4, n0', _, f, rest⟩ => ⟨⟨⟨e, ?_⟩, ?_, by rw [n0', n0]⟩, by rw [v4, n0]⟩
+  · have fr : Frame [P.rM, P.rC] s.mem t.mem := f.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨P.rM, by simp, fun _ h => h⟩
+      · exact ⟨P.rC, by simp, pre.below48⟩
+    refine k.of_outJ (outs_of_mixC pre (keep_of_frameM pre (frame_mixC fr))) (fun j hj hj' => by
         simp only [List.mem_range'_1] at hj'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-        rcases hj with rfl | rfl | rfl | rfl <;> simp [mBase, aCm1, aTwo, aOne] at hj' <;> omega) (by simp))
-      (k.sl_keep kp (by simp) (by simp)) k.live_lt k.ls_ok
+        rcases hj with rfl | rfl | rfl | rfl <;> simp [mBase, aCm1, aTwo, aOne] at hj' <;> omega)
+      (k.frame.trans (fr.sub fun r hr => ?_)) rest.sp rest.rd rest.wr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨P.rS, by simp, pre.rM_sub⟩
+    · exact ⟨P.rC, by simp, fun _ h => h⟩
   · exact ⟨dl.workspace, dl.layout, dl.width, dl.ptr, dl.inverse, by rw [n0', n0]; exact cv_gt pre, dl.stackRead,
       dl.stackSep, dl.saved⟩
 

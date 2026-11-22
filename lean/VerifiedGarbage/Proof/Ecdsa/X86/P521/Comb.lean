@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombRcbCT
+import VerifiedGarbage.Proof.Ecdsa.X86.GMul
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 public import VerifiedGarbage.Impl.Ecdsa.P521.X86Comb
@@ -108,7 +109,7 @@ theorem combCT : CombRcbCT p521Comb p521d where
 /-- The constant time of the comb, as the stages take it. -/
 theorem p521Comb_gMul (hL : Law p521Comb.C) {scratchSecond : Bool} :
     GMulRel p521Comb p521d scratchSecond :=
-  gMulRcb_rel (p521Comb_ok) hL (p521Comb_tables hL) rfl p521Comb_shape rfl combCT
+  GMulRel.of_body (d := p521d) (p521Comb_ok) rfl (gMulRcb_rel (p521Comb_ok) hL (p521Comb_tables hL) rfl p521Comb_shape rfl combCT)
 
 def signPrepCode : Prog isa := p521Comb.signPrep
 def signTailCode : Prog isa := p521Comb.signTail
@@ -124,7 +125,7 @@ theorem signCT : SignStagesCT p521Comb where
     change RelCT isa _ signTailCode _
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
-/-- No instruction of the signature writes `esp`, and its calls use 20 bytes of stack. -/
+/-- No instruction of the signature writes `esp`, and its calls use 24 bytes of stack. -/
 theorem signComb_sp : SpOk signP521Comb p521Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 end VG.Proof.Ecdsa.X86.P521

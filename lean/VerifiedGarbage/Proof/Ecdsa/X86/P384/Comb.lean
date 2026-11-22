@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombRcbCT
+import VerifiedGarbage.Proof.Ecdsa.X86.GMul
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
 public import VerifiedGarbage.Impl.Ecdsa.P384.X86Comb
@@ -81,7 +82,7 @@ theorem combCT : CombRcbCT p384Comb p384d where
 /-- The constant time of the comb, as the stages take it. -/
 theorem p384Comb_gMul (hL : Law p384Comb.C) {scratchSecond : Bool} :
     GMulRel p384Comb p384d scratchSecond :=
-  gMulRcb_rel (p384Comb_ok) hL (p384Comb_tables hL) rfl p384Comb_shape rfl combCT
+  GMulRel.of_body (d := p384d) (p384Comb_ok) rfl (gMulRcb_rel (p384Comb_ok) hL (p384Comb_tables hL) rfl p384Comb_shape rfl combCT)
 
 def signPrepCode : Prog isa := p384Comb.signPrep
 def signTailCode : Prog isa := p384Comb.signTail
@@ -97,7 +98,7 @@ theorem signCT : SignStagesCT p384Comb where
     change RelCT isa _ signTailCode _
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
-/-- No instruction of the signature writes `esp`, and its calls use 20 bytes of stack. -/
+/-- No instruction of the signature writes `esp`, and its calls use 24 bytes of stack. -/
 theorem signComb_sp : SpOk signP384Comb p384Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 end VG.Proof.Ecdsa.X86.P384

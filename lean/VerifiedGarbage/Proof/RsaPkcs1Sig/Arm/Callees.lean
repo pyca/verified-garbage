@@ -24,8 +24,8 @@ open VG VG.Arm
 structure PdImpl where
   name : String
   code : Prog isa
-  verified : Verified target code (Proof.Rsa.publicPrecomputedCheckedContract abi 56)
-  stack : FrameStack.armStack code ≤ 56
+  verified : Verified target code (Proof.Rsa.publicPrecomputedCheckedContract abi 104)
+  stack : FrameStack.armStack code ≤ 104
 
 theorem stackArg_call (s : State) (rd wr : List Region) (i : Nat) :
     stackArg (s.callEntry.withRegions rd wr) i = stackArg s i := by
@@ -71,7 +71,7 @@ theorem PdArgs.rl32 (h : PdArgs s out pre e inp scr K el rl sl) : rl < 2 ^ 32 :=
   have := h.kv.2; rw [h.rlK]; simp only [Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords]; omega_using [this]
 
 theorem pd_pre {sp : BitVec 32} (h : PdArgs s out pre e inp scr K el rl sl) (hspE : s.sp = sp)
-    (hsp : 56 ≤ sp.toNat) (hsa : sp.toNat + 24 ≤ 2 ^ 32)
+    (hsp : 104 ≤ sp.toNat) (hsa : sp.toNat + 24 ≤ 2 ^ 32)
     (fOut : out.toNat + K ≤ 2 ^ 32) (fPre : pre.toNat + rl * 8 ≤ 2 ^ 32) (fE : e.toNat + el ≤ 2 ^ 32)
     (fInp : inp.toNat + K ≤ 2 ^ 32) (fScr : scr.toNat + sl * 8 ≤ 2 ^ 32)
     (dOP : Region.Disjoint ⟨State.addr out, K⟩ ⟨State.addr pre, rl * 8⟩)
@@ -84,8 +84,8 @@ theorem pd_pre {sp : BitVec 32} (h : PdArgs s out pre e inp scr K el rl sl) (hsp
     (dIS : Region.Disjoint ⟨State.addr inp, K⟩ ⟨State.addr scr, sl * 8⟩)
     (dSA : Region.Disjoint ⟨State.addr scr, sl * 8⟩ ⟨State.addr sp, 24⟩)
     (lowD : ∀ r ∈ pdRd sp pre e inp K el rl ++ pdWr out scr K sl,
-      Region.Disjoint ⟨State.addr sp - BitVec.ofNat 64 56, 56⟩ r) :
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
+      Region.Disjoint ⟨State.addr sp - BitVec.ofNat 64 104, 104⟩ r) :
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre
       (s.callEntry.withRegions (pdRd sp pre e inp K el rl) (pdWr out scr K sl)) := by
   subst hspE
   have k32 := h.k32
@@ -113,7 +113,7 @@ theorem pd_pub {s₁ s₂ : State} (h₁ : PdArgs s₁ out pre e inp scr K el rl
     (hpre : Spec.Rsa.wordsAt s₁.mem (State.addr pre) rl = Spec.Rsa.wordsAt s₂.mem (State.addr pre) rl)
     (he : Spec.Rsa.bytesAt s₁.mem (State.addr e) el = Spec.Rsa.bytesAt s₂.mem (State.addr e) el)
     (rd wr : List Region) :
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pub (s₁.callEntry.withRegions rd wr)
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pub (s₁.callEntry.withRegions rd wr)
       (s₂.callEntry.withRegions rd wr) := by
   have k32 := h₁.k32
   have rl32 := h₁.rl32
@@ -131,7 +131,7 @@ theorem pd_pub {s₁ s₂ : State} (h₁ : PdArgs s₁ out pre e inp scr K el rl
 /-- The call's result: what it writes to `out` and returns, for every
 modulus whose precomputed values are `pre`'s. -/
 theorem pd_post {s t : State} (h : PdArgs s out pre e inp scr K el rl sl) {rd wr : List Region}
-    (hp : (Proof.Rsa.publicPrecomputedCheckedContract abi 56).post (s.callEntry.withRegions rd wr)
+    (hp : (Proof.Rsa.publicPrecomputedCheckedContract abi 104).post (s.callEntry.withRegions rd wr)
       (t.withRegions rd wr)) :
     ∀ nB : List Byte, nB.length = K →
       Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt s.mem (State.addr pre) rl) →

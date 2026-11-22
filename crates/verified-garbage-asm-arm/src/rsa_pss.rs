@@ -42,7 +42,7 @@ pub const VG_RSA_PSS_SIGN_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::Feat
 /// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3632 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3680 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `umaal` target feature.
@@ -4166,10 +4166,10 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
-sub sp, sp, #3632
+sub sp, sp, #3680
 add r12, sp, #0
 mov r2, #0
-mov r3, #113
+mov r3, #115
 2166:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -4182,11 +4182,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 2166b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #3632
+add sp, sp, #3680
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -4228,7 +4224,7 @@ pub const VG_RSA_PSS_VERIFY_PRECOMPUTED_UMAAL_FEATURES: verified_garbage_cpu::Fe
 /// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `umaal` target feature.
@@ -10658,10 +10654,10 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
-sub sp, sp, #240
+sub sp, sp, #288
 add r12, sp, #0
 mov r2, #0
-mov r3, #7
+mov r3, #9
 2230:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -10674,11 +10670,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 2230b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #240
+add sp, sp, #288
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -10724,7 +10716,7 @@ bx lr",
 /// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3632 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3680 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
@@ -14846,10 +14838,10 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
-sub sp, sp, #3632
+sub sp, sp, #3680
 add r12, sp, #0
 mov r2, #0
-mov r3, #113
+mov r3, #115
 2166:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -14862,11 +14854,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 2166b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #3632
+add sp, sp, #3680
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -14904,7 +14892,7 @@ bx lr",
 /// * `hash` names the hash function of the digest and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' `MdHash` tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
@@ -21332,10 +21320,10 @@ ldr r10, [sp, #40]
 ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
-sub sp, sp, #240
+sub sp, sp, #288
 add r12, sp, #0
 mov r2, #0
-mov r3, #7
+mov r3, #9
 2230:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -21348,11 +21336,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 2230b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-add sp, sp, #240
+add sp, sp, #288
 mov r1, #0
 mov r2, #0
 mov r3, #0

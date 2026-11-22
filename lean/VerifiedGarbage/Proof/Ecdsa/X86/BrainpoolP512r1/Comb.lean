@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombRcbCT
+import VerifiedGarbage.Proof.Ecdsa.X86.GMul
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86Comb
@@ -108,7 +109,7 @@ theorem combCT : CombRcbCT brainpoolp512r1Comb brainpoolp512r1d where
 /-- The constant time of the comb, as the stages take it. -/
 theorem brainpoolp512r1Comb_gMul (hL : Law brainpoolp512r1Comb.C) {scratchSecond : Bool} :
     GMulRel brainpoolp512r1Comb brainpoolp512r1d scratchSecond :=
-  gMulRcb_rel (brainpoolp512r1Comb_ok) hL (brainpoolp512r1Comb_tables hL) rfl brainpoolp512r1Comb_shape rfl combCT
+  GMulRel.of_body (d := brainpoolp512r1d) (brainpoolp512r1Comb_ok) rfl (gMulRcb_rel (brainpoolp512r1Comb_ok) hL (brainpoolp512r1Comb_tables hL) rfl brainpoolp512r1Comb_shape rfl combCT)
 
 def signPrepCode : Prog isa := brainpoolp512r1Comb.signPrep
 def signTailCode : Prog isa := brainpoolp512r1Comb.signTail
@@ -124,7 +125,7 @@ theorem signCT : SignStagesCT brainpoolp512r1Comb where
     change RelCT isa _ signTailCode _
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
-/-- No instruction of the signature writes `esp`, and its calls use 20 bytes of stack. -/
+/-- No instruction of the signature writes `esp`, and its calls use 24 bytes of stack. -/
 theorem signComb_sp : SpOk signBrainpoolP512r1Comb brainpoolp512r1Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 end VG.Proof.Ecdsa.X86.BrainpoolP512r1

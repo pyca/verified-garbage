@@ -552,7 +552,7 @@ every backend (`Sha256.lean`, `Sha1.lean`). -/
 between the calls depends on nothing else. -/
 def shapeOf (F : Fns) : Fns :=
   ⟨⟨F.H.B, F.H.S, F.H.D, F.H.F, F.H.W, "", .block [], "", .block [], "", .block []⟩, F.W, "", .block [], "",
-    .block [], "", .block []⟩
+    .block [], "", .block [], ""⟩
 
 theorem checks_of_shape {F : Fns} (h : Checks (shapeOf F)) : Checks F :=
   ⟨h.pro, h.cmp, h.hk1, h.hk3, h.hk5, h.hk7, h.short, h.su1, h.su3, h.su4, h.init, h.b1, h.b2, h.b4, h.b6, h.b7,

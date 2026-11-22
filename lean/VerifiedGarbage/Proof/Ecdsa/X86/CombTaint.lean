@@ -136,11 +136,11 @@ theorem widen32_inj {x y : BitVec 32} (h : x.setWidth 64 = y.setWidth 64) : x = 
   have h' := congrArg (BitVec.setWidth 32) h
   simpa only [BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide), BitVec.setWidth_eq] using h'
 
-/-- That `[k]G` by the comb `d` of `c` leaks the same in two runs whose working space, tables
-and stack are where the other's are, whatever their scalars: what the stages of a function
-that multiplies `G` take of the comb's constant time (`gMul_rel` for the comb with Booth's
-digits, `gMulRcb_rel` for the comb by complete additions). -/
-def GMulRel (c : Cfg) (d : CombData) (scratchSecond : Bool) : Prop :=
+/-- That `[k]G` by the code of the comb `d` of `c` (`Cfg.combBody`) leaks the same in two runs
+whose working space, tables and stack are where the other's are, whatever their scalars
+(`gMul_rel` for the comb with Booth's digits, `gMulRcb_rel` for the comb by complete
+additions). -/
+def GMulRelB (c : Cfg) (d : CombData) (scratchSecond : Bool) : Prop :=
   ∀ {base : Addr} {g₁ g₂ : Reg → BitVec 32} {s₀ t₀ : State} {k₁ k₂ : Nat},
     Scr s₀ base size → Scr t₀ base size →
     Fixed c base g₁ s₀.mem → Fixed c base g₂ t₀.mem →
@@ -158,7 +158,67 @@ def GMulRel (c : Cfg) (d : CombData) (scratchSecond : Bool) : Prop :=
     20 ≤ (s₀.gpr .esp).toNat → 20 ≤ (t₀.gpr .esp).toNat → g₁ .eax = g₂ .eax →
     VG.X86.Taint.Wf (combτAt scratchSecond) s₀ → VG.X86.Taint.Wf (combτAt scratchSecond) t₀ →
     s₀.wr = t₀.wr → s₀.gpr .esp = t₀.gpr .esp →
+    RelCT isa (fun s t => s = s₀ ∧ t = t₀) (c.combBody d) (fun _ _ => True)
+
+/-- That `[k]G` by a call of the comb `d` of `c` (`Cfg.gMul`) leaks the same in two runs whose
+working space, tables and stack are where the other's are, whatever their scalars, with the
+stack the function uses (24 bytes with a comb) apart from the writable regions: what the stages of a
+function that multiplies `G` take of the comb's constant time (`GMulRel.of_body`, from the
+code's, `GMulRelB`). -/
+def GMulRel (c : Cfg) (d : CombData) (scratchSecond : Bool) : Prop :=
+  ∀ {base : Addr} {g₁ g₂ : Reg → BitVec 32} {s₀ t₀ : State} {k₁ k₂ : Nat},
+    Scr s₀ base size → Scr t₀ base size →
+    Fixed c base g₁ s₀.mem → Fixed c base g₂ t₀.mem →
+    k₁ < 2 ^ (64 * c.n) → k₂ < 2 ^ (64 * c.n) →
+    (∀ t < 64 * c.n, s₀.mem (off base (bitsAt c.n 0 + t)) = if k₁.testBit t then 1 else 0) →
+    (∀ t < 64 * c.n, t₀.mem (off base (bitsAt c.n 0 + t)) = if k₂.testBit t then 1 else 0) →
+    TblMem s₀ ((g₁ .eax).setWidth 64) (c.combWords d) →
+    TblMem t₀ ((g₂ .eax).setWidth 64) (c.combWords d) →
+    (∀ i < (c.combWords d).length, ∀ b < 8,
+      size ≤ ofs base ((g₁ .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) →
+    (∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk],
+      Region.Disjoint ⟨(g₁ .eax).setWidth 64, 8 * (c.combWords d).length⟩ r) →
+    (∀ r ∈ t₀.wr ++ [below (t₀.gpr .esp) c.stk],
+      Region.Disjoint ⟨(g₂ .eax).setWidth 64, 8 * (c.combWords d).length⟩ r) →
+    (∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r) →
+    (∀ r ∈ t₀.wr, Region.Disjoint (below (t₀.gpr .esp) c.stk) r) →
+    c.stk ≤ (s₀.gpr .esp).toNat → c.stk ≤ (t₀.gpr .esp).toNat → g₁ .eax = g₂ .eax →
+    VG.X86.Taint.Wf (combτAt scratchSecond) s₀ → VG.X86.Taint.Wf (combτAt scratchSecond) t₀ →
+    s₀.wr = t₀.wr → s₀.gpr .esp = t₀.gpr .esp →
     RelCT isa (fun s t => s = s₀ ∧ t = t₀) c.gMul (fun _ _ => True)
+
+/-- The comb's taint holds in the state a call of the comb leaves, whose 24
+bytes of stack below `esp` are apart from the writable regions. -/
+theorem combWf_callEntry {s : State} (h : VG.X86.Taint.Wf (combτAt scratchSecond) s)
+    (h24 : 24 ≤ (s.gpr .esp).toNat)
+    (hst : ∀ r ∈ s.wr, Region.Disjoint (below (s.gpr .esp) 24) r) :
+    VG.X86.Taint.Wf (combτAt scratchSecond) s.callEntry := by
+  obtain e4 : (s.gpr .esp - 4 : BitVec 32) = s.gpr .esp - BitVec.ofNat 32 4 := rfl
+  have hesp : (s.callEntry.gpr .esp).toNat = (s.gpr .esp).toNat - 4 := by
+    rw [State.callEntry_esp, e4, X86.sub_toNat (by omega_using [h24])]
+  have s20 : Region.Sub (below (s.callEntry.gpr .esp) 20) (below (s.gpr .esp) 24) := by
+    rw [State.callEntry_esp, e4]; exact below_inner (by decide) h24
+  have hroom : 0 < (combτAt scratchSecond).room → (combτAt scratchSecond).room ≤
+      (s.callEntry.gpr .esp).toNat ∧
+      ∀ r ∈ s.callEntry.wr, Region.Disjoint ⟨(s.callEntry.gpr .esp).setWidth 64 -
+        BitVec.ofNat 64 (combτAt scratchSecond).room, (combτAt scratchSecond).room⟩ r := fun _ => by
+    refine ⟨by simp only [combτAt]; omega_using [hesp, h24], fun r hr => ?_⟩
+    rw [State.callEntry_wr] at hr
+    have := (hst r hr).sub_left s20
+    simp only [below] at this
+    rw [VG.X86.Taint.sub_setWidth (by omega_using [hesp, h24])] at this
+    simpa only [combτAt] using this
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨?_, ?_, ?_, ?_, ?_⟩ hroom
+  · intro hn
+    rw [State.callEntry_wr]; exact h.lens hn
+  · intro p hp
+    have : p = (.edi, combRegion scratchSecond, 0) := List.mem_singleton.mp hp
+    subst p
+    simp only [VG.X86.Taint.region, State.callEntry_wr, State.callEntry_gpr _ (show Reg.edi ≠ .esp by decide)]
+    exact h.bases _ (List.mem_singleton_self _)
+  · intro p hp; cases hp
+  · intro hp; cases hp
+  · intro p hp; cases hp
 
 /-- The scalar stages use public scratch and argument addresses. -/
 def argτ (rs : List Reg) (n : Nat := 5) (room : Nat := 20) : VG.X86.Taint.T :=
@@ -167,6 +227,29 @@ def argτ (rs : List Reg) (n : Nat := 5) (room : Nat := 20) : VG.X86.Taint.T :=
 /-- Public scratch addresses let fixed loop counters survive memory stores. -/
 def scratchArgτ (n : Nat) (second : Bool := true) (room : Nat := 20) : VG.X86.Taint.T :=
   { argτ [.esp, .edi] n room with lens := (combτAt second).lens, bases := (combτAt second).bases }
+
+/-- A taint whose room below the stack pointer is smaller holds where the
+taint holds. -/
+theorem wf_room_le {τ : VG.X86.Taint.T} {s : State} (h : VG.X86.Taint.Wf τ s) {r : Nat}
+    (hr : r ≤ τ.room) : VG.X86.Taint.Wf { τ with room := r } s :=
+  ⟨h.lens, h.bases, h.wbases, h.args, h.argBases, h.stk, h.frames, fun hpos =>
+    have h' := h.room (Nat.lt_of_lt_of_le hpos hr)
+    ⟨Nat.le_trans hr h'.1, fun q hq => (h'.2 q hq).sub_left
+      (Offset.sub_below _ (a := r) (n := r) hr (by omega_using [hr]))⟩⟩
+
+theorem agree_room_le {τ : VG.X86.Taint.T} {s t : State} (h : VG.X86.Taint.Agree τ s t) {r : Nat}
+    (hr : r ≤ τ.room) : VG.X86.Taint.Agree { τ with room := r } s t :=
+  ⟨h.rf, h.wr, wf_room_le h.wf₁ hr, wf_room_le h.wf₂ hr, h.ok, h.slots, h.sp, h.argMem⟩
+
+/-- The stages' agreement, with less room below the stack pointer. -/
+theorem argAgree_room {rs : List Reg} {n R r : Nat} {s t : State}
+    (h : VG.X86.Taint.Agree (argτ rs n R) s t) (hr : r ≤ R) : VG.X86.Taint.Agree (argτ rs n r) s t :=
+  agree_room_le h hr
+
+theorem scratchArgAgree_room {n R r : Nat} {second : Bool} {s t : State}
+    (h : VG.X86.Taint.Agree (scratchArgτ n second R) s t) (hr : r ≤ R) :
+    VG.X86.Taint.Agree (scratchArgτ n second r) s t :=
+  agree_room_le h hr
 
 /-- Writes within scratch leave all cdecl argument words unchanged. -/
 theorem Keep.arg {c : Cfg} {s₀ s : State} {extra : List Region}

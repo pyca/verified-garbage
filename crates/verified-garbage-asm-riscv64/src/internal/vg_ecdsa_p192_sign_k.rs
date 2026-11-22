@@ -15,353 +15,8 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_p192_sign_k() {
 .option arch, +m, +c
 .base64 "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"
 call {vg_p192_mul}
-.base64 "ToQihZMFAGATBgAkkwYADg=="
-call {vg_p192_mul_mod_p}
-.base64 "IoWTBQBwEwYAYJMGAGA="
-call {vg_p192_mul_mod_p}
-.base64 "IoWTBQBiEwYAYJMGAHA="
-call {vg_p192_mul_mod_p}
-.base64 "IoWTBQBkEwYAYpMGAHA="
-call {vg_p192_mul_mod_p}
-.base64 "IoWTBQBmEwYAZJMGAHA="
-call {vg_p192_mul_mod_p}
-.base64 "IoWTBQBoEwYAZpMGAHA="
-call {vg_p192_mul_mod_p}
-.base64 "IoWTBQBqEwYAaJMGAHA="
-call {vg_p192_mul_mod_p}
-.base64 "IoWTBQBsEwYAapMGAHA="
-call {vg_p192_mul_mod_p}
-.base64 "IoWTBQBuEwYAbJMGAHA="
-call {vg_p192_mul_mod_p}
-.base64 "gzIEbiMwVD6DMoRuIzRUPoMyBG8jOFQ+gzKEbyM8VD6RRA=="
-20:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 20b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-21:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 21b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-22:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 22b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-23:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 23b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-24:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 24b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-25:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 25b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-26:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 26b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-27:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 27b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-28:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 28b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-29:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 29b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-210:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 210b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-211:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 211b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-212:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 212b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-213:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 213b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-214:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 214b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-215:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 215b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-216:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 216b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-217:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 217b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-218:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 218b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-219:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 219b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-220:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 220b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-221:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 221b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-222:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 222b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-223:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 223b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-224:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 224b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-225:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 225b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-226:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 226b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-227:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 227b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-228:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 228b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-229:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 229b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "jUQ="
-230:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 230b
-.base64 "IoWTBQA+EwYAPpMGAGY="
-call {vg_p192_mul_mod_p}
-.base64 "lUQ="
-231:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 231b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-232:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 232b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-233:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 233b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-234:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 234b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-235:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 235b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-236:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 236b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-237:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 237b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-238:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 238b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-239:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 239b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-240:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 240b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-241:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 241b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-242:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 242b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-243:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 243b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-244:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 244b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-245:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 245b
-.base64 "IoWTBQA+EwYAPpMGAG4="
-call {vg_p192_mul_mod_p}
-.base64 "kUQ="
-246:
-.base64 "/RQihZMFAD4TBgA+kwYAPg=="
-call {vg_p192_mul_mod_p}
-bnez s1, 246b
-.base64 "IoWTBQA+EwYAPpMGAGw="
-call {vg_p192_mul_mod_p}
+.base64 "ToQ="
+call {vg_p192_inv_mod_p}
 .base64 "IoWTBQAmEwYAIJMGAD4="
 call {vg_p192_mul_mod_p}
 .base64 "IoWTBQAoEwYAJpMGAAw="
@@ -389,304 +44,304 @@ call {vg_p192_mul_mod_n}
 .base64 "IoWTBQBuEwYAbJMGAHA="
 call {vg_p192_mul_mod_n}
 .base64 "gzIEbiMwVD6DMoRuIzRUPoMyBG8jOFQ+gzKEbyM8VD6RRA=="
-247:
+20:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 247b
+bnez s1, 20b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-248:
+21:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 248b
+bnez s1, 21b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-249:
+22:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 249b
+bnez s1, 22b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-250:
+23:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 250b
+bnez s1, 23b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-251:
+24:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 251b
+bnez s1, 24b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-252:
+25:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 252b
+bnez s1, 25b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-253:
+26:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 253b
+bnez s1, 26b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-254:
+27:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 254b
+bnez s1, 27b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-255:
+28:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 255b
+bnez s1, 28b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-256:
+29:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 256b
+bnez s1, 29b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-257:
+210:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 257b
+bnez s1, 210b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-258:
+211:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 258b
+bnez s1, 211b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-259:
+212:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 259b
+bnez s1, 212b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-260:
+213:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 260b
+bnez s1, 213b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-261:
+214:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 261b
+bnez s1, 214b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-262:
+215:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 262b
+bnez s1, 215b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-263:
+216:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 263b
+bnez s1, 216b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-264:
+217:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 264b
+bnez s1, 217b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-265:
+218:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 265b
+bnez s1, 218b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-266:
+219:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 266b
+bnez s1, 219b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-267:
+220:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 267b
+bnez s1, 220b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-268:
+221:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 268b
+bnez s1, 221b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-269:
+222:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 269b
+bnez s1, 222b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-270:
+223:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 270b
+bnez s1, 223b
 .base64 "IoWTBQA+EwYAPpMGAGg="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-271:
+224:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 271b
+bnez s1, 224b
 .base64 "IoWTBQA+EwYAPpMGAGg="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-272:
+225:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 272b
+bnez s1, 225b
 .base64 "IoWTBQA+EwYAPpMGAGw="
 call {vg_p192_mul_mod_n}
 .base64 "jUQ="
-273:
+226:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 273b
+bnez s1, 226b
 .base64 "IoWTBQA+EwYAPpMGAGY="
 call {vg_p192_mul_mod_n}
 .base64 "lUQ="
-274:
+227:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 274b
+bnez s1, 227b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "hUQ="
-275:
+228:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 275b
+bnez s1, 228b
 .base64 "IoWTBQA+EwYAPpMGAGA="
 call {vg_p192_mul_mod_n}
 .base64 "pUQ="
-276:
+229:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 276b
+bnez s1, 229b
 .base64 "IoWTBQA+EwYAPpMGAGw="
 call {vg_p192_mul_mod_n}
 .base64 "hUQ="
-277:
+230:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 277b
+bnez s1, 230b
 .base64 "IoWTBQA+EwYAPpMGAGA="
 call {vg_p192_mul_mod_n}
 .base64 "nUQ="
-278:
+231:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 278b
+bnez s1, 231b
 .base64 "IoWTBQA+EwYAPpMGAGQ="
 call {vg_p192_mul_mod_n}
 .base64 "nUQ="
-279:
+232:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 279b
+bnez s1, 232b
 .base64 "IoWTBQA+EwYAPpMGAGw="
 call {vg_p192_mul_mod_n}
 .base64 "lUQ="
-280:
+233:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 280b
+bnez s1, 233b
 .base64 "IoWTBQA+EwYAPpMGAG4="
 call {vg_p192_mul_mod_n}
 .base64 "mUQ="
-281:
+234:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 281b
+bnez s1, 234b
 .base64 "IoWTBQA+EwYAPpMGAGg="
 call {vg_p192_mul_mod_n}
 .base64 "kUQ="
-282:
+235:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 282b
+bnez s1, 235b
 .base64 "IoWTBQA+EwYAPpMGAGo="
 call {vg_p192_mul_mod_n}
 .base64 "nUQ="
-283:
+236:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 283b
+bnez s1, 236b
 .base64 "IoWTBQA+EwYAPpMGAGw="
 call {vg_p192_mul_mod_n}
 .base64 "jUQ="
-284:
+237:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 284b
+bnez s1, 237b
 .base64 "IoWTBQA+EwYAPpMGAGQ="
 call {vg_p192_mul_mod_n}
 .base64 "mUQ="
-285:
+238:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 285b
+bnez s1, 238b
 .base64 "IoWTBQA+EwYAPpMGAGw="
 call {vg_p192_mul_mod_n}
 .base64 "jUQ="
-286:
+239:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 286b
+bnez s1, 239b
 .base64 "IoWTBQA+EwYAPpMGAGA="
 call {vg_p192_mul_mod_n}
 .base64 "mUQ="
-287:
+240:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 287b
+bnez s1, 240b
 .base64 "IoWTBQA+EwYAPpMGAGQ="
 call {vg_p192_mul_mod_n}
 .base64 "pUQ="
-288:
+241:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 288b
+bnez s1, 241b
 .base64 "IoWTBQA+EwYAPpMGAGo="
 call {vg_p192_mul_mod_n}
 .base64 "iUQ="
-289:
+242:
 .base64 "/RQihZMFAD4TBgA+kwYAPg=="
 call {vg_p192_mul_mod_n}
-bnez s1, 289b
+bnez s1, 242b
 .base64 "IoWTBQA+EwYAPpMGAGI="
 call {vg_p192_mul_mod_n}
 .base64 "IoWTBQAuEwYASJMGAEo="
@@ -706,6 +361,7 @@ call {vg_p192_mul_mod_n}
 .base64 "AU6DPgQqM27eAYM+hCozbt4Bgz4EKzNu3gGDPoQrM27eAYFOs47OQbPuzgGT3v4Dk4j+/5PI+P+DMgRcs/ISASMwVFwBToM+BDozbt4Bgz6EOjNu3gGDPgQ7M27eAYM+hDszbt4BgU6zjs5Bs+7OAZPe/gOTiP7/k8j4/4MyBFyz8hIBIzBUXIM4BFyDMgQrs/ISARPTggMjAGkAE9MCA6MAaQAT04ICIwFpABPTAgKjAWkAE9OCASMCaQAT0wIBowJpABPTggAjA2kAE9MCAKMDaQCDMoQqs/ISARPTggMjBGkAE9MCA6MEaQAT04ICIwVpABPTAgKjBWkAE9OCASMGaQAT0wIBowZpABPTggAjB2kAE9MCAKMHaQCDMgQqs/ISARPTggMjCGkAE9MCA6MIaQAT04ICIwlpABPTAgKjCWkAE9OCASMKaQAT0wIBowppABPTggAjC2kAE9MCAKMLaQCDMgQ7s/ISARPTggMjDGkAE9MCA6MMaQAT04ICIw1pABPTAgKjDWkAE9OCASMOaQAT0wIBow5pABPTggAjD2kAE9MCAKMPaQCDMoQ6s/ISARPTggMjAGkCE9MCA6MAaQIT04ICIwFpAhPTAgKjAWkCE9OCASMCaQIT0wIBowJpAhPTggAjA2kCE9MCAKMDaQKDMgQ6s/ISARPTggMjBGkCE9MCA6MEaQIT04ICIwVpAhPTAgKjBWkCE9OCASMGaQIT0wIBowZpAhPTggAjB2kCE9MCAKMHaQIDNQRcBYmDMIQBAzkEAQRkgzkEAgBggoA="
 .option pop"#,
         vg_p192_mul = sym crate::ec_p192::vg_p192_mul::vg_p192_mul,
+        vg_p192_inv_mod_p = sym crate::ec_p192::vg_p192_inv_mod_p::vg_p192_inv_mod_p,
         vg_p192_mul_mod_p = sym crate::ec_p192::vg_p192_mul_mod_p::vg_p192_mul_mod_p,
         vg_p192_add_mod_n = sym crate::ecdsa_p192::vg_p192_add_mod_n::vg_p192_add_mod_n,
         vg_p192_mul_mod_n = sym crate::ecdsa_p192::vg_p192_mul_mod_n::vg_p192_mul_mod_n,

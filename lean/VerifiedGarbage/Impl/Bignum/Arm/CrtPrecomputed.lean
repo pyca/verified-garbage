@@ -61,6 +61,7 @@ open VG VG.Arm
 /-- `validate` but for `p q = n`. -/
 def validateGiven : Prog isa := .seq acceptInput (.seq loadP loadQ)
 
-def codeGiven (phase : Prog isa) : Prog isa := codeOf validateGiven Crt.narrowPrimeGiven phase
+def codeGiven (phase : Prog isa) (op : Nat → Nat → Nat → Prog isa := montOp) : Prog isa :=
+  codeOf validateGiven Crt.narrowPrimeGiven phase op
 
 end VG.Impl.Bignum.Arm.CrtFn

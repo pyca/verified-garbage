@@ -67,7 +67,7 @@ pub unsafe fn vg_sm4_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1452 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1512 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
@@ -119,7 +119,7 @@ pub unsafe fn vg_sm4_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1452 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 1512 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {

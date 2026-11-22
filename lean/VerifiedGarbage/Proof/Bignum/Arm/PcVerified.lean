@@ -463,7 +463,7 @@ end
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 56).pre s) :
+theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 104).pre s) :
     PcFnInput (stackArg s 0) (s.gpr .r0) (s.gpr .r2) (stackArg s 1).toNat (s.gpr .r3).toNat s := by
   sig_pre [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have argAddr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
@@ -473,11 +473,18 @@ theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 
   have outBytes : (s.gpr .r1).toNat * 8 = 16 * Spec.Rsa.modulusWords (s.gpr .r3).toNat := by
     rw [outLen]; simp only [Spec.Rsa.precomputedWords]; omega_using []
   rw [outBytes] at wr outWs stackOut outFit
+  have fit56 : 56 ≤ s.sp.toNat := by omega_arith
   have frame : FrameStack.belowA s.sp 56 = ⟨State.addr s.sp - BitVec.ofNat 64 56, 56⟩ := by
     unfold FrameStack.belowA
+    rw [FrameStack.addr_sub' fit56]
+  have frame104 : FrameStack.belowA s.sp 104 = ⟨State.addr s.sp - BitVec.ofNat 64 104, 104⟩ := by
+    unfold FrameStack.belowA
     rw [FrameStack.addr_sub' stackFit]
+  have sub : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 56, 56⟩ ⟨State.addr s.sp - BitVec.ofNat 64 104, 104⟩ := by
+    rw [← frame, ← frame104]; exact FrameStack.belowA_sub (by decide) stackFit
+  simp only [State.addr] at sub
   refine ⟨⟨⟨?_, ?_⟩, valid.1, valid.2, space, srcFit, ?_, ?_, outFit, ?_, ?_⟩,
-    rfl, rfl, ?_, stackFit, argFit, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    rfl, rfl, ?_, fit56, argFit, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simpa only [Nat.mul_comm] using wsFit
   · rw [wr]; simp [State.addr, Nat.mul_comm]
   · exact ⟨_, List.mem_append_left _ (by rw [rd]; exact List.mem_cons_self), Region.contains_self _ _⟩
@@ -487,14 +494,14 @@ theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 
   · simp
   · exact ⟨_, List.mem_append_left _ (by rw [rd]; simp), Region.contains_self _ _⟩
   · simp only [stackArg, argAddr]
-  · rw [frame]; simpa only [State.addr, Nat.mul_comm] using stackWs
-  · rw [frame]; exact stackSrc
-  · rw [frame]; exact stackOut
-  · rw [frame]; exact stackArgs
+  · rw [frame]; simpa only [State.addr, Nat.mul_comm] using stackWs.sub_left sub
+  · rw [frame]; simpa only [State.addr] using stackSrc.sub_left sub
+  · rw [frame]; simpa only [State.addr] using stackOut.sub_left sub
+  · rw [frame]; simpa only [State.addr] using stackArgs.sub_left sub
 
-theorem pc_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 56).pre s)
+theorem pc_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 104).pre s)
     (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : ∃ tr t, Exec isa (PcFn.codeWith kernel.code) s tr t ∧ abiPreserved s t ∧
-      (Spec.Rsa.publicPrecomputeContract abi 56).post s t := by
+      (Spec.Rsa.publicPrecomputeContract abi 104).post s t := by
   obtain ⟨tr, t, run, preserved, post⟩ := pcFn_ok (kernel := kernel) s (pc_contract_pre s h)
   refine ⟨tr, t, run, preserved, ?_⟩
   sig_post [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
@@ -505,8 +512,8 @@ theorem pc_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputeContract 
   exact post
 
 theorem pc_contract_ct
-    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : ConstantTime isa (Spec.Rsa.publicPrecomputeContract abi 56).pre
-    (Spec.Rsa.publicPrecomputeContract abi 56).pub (PcFn.codeWith kernel.code) := by
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : ConstantTime isa (Spec.Rsa.publicPrecomputeContract abi 104).pre
+    (Spec.Rsa.publicPrecomputeContract abi 104).pub (PcFn.codeWith kernel.code) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := pc_contract_pre s hs
   have it := pc_contract_pre t ht
@@ -545,13 +552,13 @@ def pcSatState : State where
   rd := [⟨0x2000, 64⟩, ⟨0x8000, 8⟩]
   wr := [⟨0x1000, 128⟩, ⟨0x4000, 8448⟩]
 
-theorem pc_contract_sat : ∃ s, (Spec.Rsa.publicPrecomputeContract abi 56).pre s := by
+theorem pc_contract_sat : ∃ s, (Spec.Rsa.publicPrecomputeContract abi 104).pre s := by
   sig_implies_sat [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     [pcSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords, Spec.Rsa.scratchWords] using pcSatState
 
 theorem precompute_verified
-    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : Verified target (PcFn.codeWith kernel.code) (Spec.Rsa.publicPrecomputeContract abi 56) :=
+    (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : Verified target (PcFn.codeWith kernel.code) (Spec.Rsa.publicPrecomputeContract abi 104) :=
   ⟨pc_contract_correct (kernel := kernel), pc_contract_ct (kernel := kernel), pc_contract_sat⟩
 
 end VG.Proof.Bignum.Arm

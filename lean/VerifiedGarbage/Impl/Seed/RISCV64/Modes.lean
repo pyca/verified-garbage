@@ -113,7 +113,7 @@ def cbcEncryptChained : Prog isa := (dirCore .encrypt 1).seq (Modes.Mode.cbcEncC
 
 /-- `vg_seed_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa :=
-  (dirCore .decrypt 16).seqLevels (Modes.Mode.cbcDecWide 4) levels (Modes.Mode.cbcDecChained 4)
+  (dirCore .decrypt 16).seqLevels levels (Modes.Mode.cbcDecChained 4)
 
 /-- `vg_seed_ofb`. -/
 def ofb : Prog isa := (dirCore .encrypt 1).seq (Modes.Mode.ofb 4)
@@ -123,6 +123,6 @@ def cfbEncrypt : Prog isa := (dirCore .encrypt 1).seq (Modes.Mode.cfbEnc 4)
 
 /-- `vg_seed_cfb128_decrypt`. -/
 def cfbDecrypt : Prog isa :=
-  (dirCore .encrypt 16).seqLevels (Modes.Mode.cfbDecWide 4) levels (Modes.Mode.cfbDecEarly 4)
+  (dirCore .encrypt 16).seqLevels levels (Modes.Mode.cfbDecEarly 4)
 
 end VG.Impl.Seed.RISCV64

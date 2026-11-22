@@ -801,829 +801,7 @@ vg_ecdsa_p224_sign_k:
 	addi a0, s0, 0
 	call {vg_p224_mul_g}
 	addi s0, s3, 0
-	addi a0, s0, 0
-	addi a1, zero, 1536
-	addi a2, zero, 576
-	addi a3, zero, 224
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1792
-	addi a2, zero, 1536
-	addi a3, zero, 1536
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1568
-	addi a2, zero, 1536
-	addi a3, zero, 1792
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1600
-	addi a2, zero, 1568
-	addi a3, zero, 1792
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1632
-	addi a2, zero, 1600
-	addi a3, zero, 1792
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1664
-	addi a2, zero, 1632
-	addi a3, zero, 1792
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1696
-	addi a2, zero, 1664
-	addi a3, zero, 1792
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1728
-	addi a2, zero, 1696
-	addi a3, zero, 1792
-	call {vg_p224_mul_mod_p}
-	addi a0, s0, 0
-	addi a1, zero, 1760
-	addi a2, zero, 1728
-	addi a3, zero, 1792
-	call {vg_p224_mul_mod_p}
-	ld t0, 1760(s0)
-	sd t0, 992(s0)
-	ld t0, 1768(s0)
-	sd t0, 1000(s0)
-	ld t0, 1776(s0)
-	sd t0, 1008(s0)
-	ld t0, 1784(s0)
-	sd t0, 1016(s0)
-	addi s1, zero, 4
-20:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 20b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-21:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 21b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-22:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 22b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-23:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 23b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-24:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 24b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-25:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 25b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-26:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 26b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-27:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 27b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-28:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 28b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-29:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 29b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-210:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 210b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-211:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 211b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-212:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 212b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-213:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 213b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-214:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 214b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-215:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 215b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-216:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 216b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-217:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 217b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-218:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 218b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-219:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 219b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-220:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 220b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-221:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 221b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-222:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 222b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-223:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 223b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-224:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 224b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-225:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 225b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-226:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 226b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-227:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 227b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-228:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 228b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-229:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 229b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 3
-230:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 230b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1632
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 5
-231:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 231b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-232:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 232b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-233:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 233b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-234:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 234b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-235:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 235b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-236:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 236b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-237:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 237b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-238:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 238b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-239:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 239b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-240:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 240b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-241:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 241b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-242:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 242b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-243:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 243b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-244:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 244b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-245:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 245b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-246:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 246b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-247:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 247b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-248:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 248b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-249:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 249b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-250:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 250b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-251:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 251b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-252:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 252b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-253:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 253b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
-	addi s1, zero, 4
-254:
-	addi s1, s1, -1
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 992
-	call {vg_p224_mul_mod_p}
-	bnez s1, 254b
-	addi a0, s0, 0
-	addi a1, zero, 992
-	addi a2, zero, 992
-	addi a3, zero, 1760
-	call {vg_p224_mul_mod_p}
+	call {vg_p224_inv_mod_p}
 	addi a0, s0, 0
 	addi a1, zero, 608
 	addi a2, zero, 512
@@ -1698,714 +876,714 @@ vg_ecdsa_p224_sign_k:
 	ld t0, 1784(s0)
 	sd t0, 1016(s0)
 	addi s1, zero, 4
-255:
+20:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 255b
+	bnez s1, 20b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-256:
+21:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 256b
+	bnez s1, 21b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-257:
+22:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 257b
+	bnez s1, 22b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-258:
+23:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 258b
+	bnez s1, 23b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-259:
+24:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 259b
+	bnez s1, 24b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-260:
+25:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 260b
+	bnez s1, 25b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-261:
+26:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 261b
+	bnez s1, 26b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-262:
+27:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 262b
+	bnez s1, 27b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-263:
+28:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 263b
+	bnez s1, 28b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-264:
+29:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 264b
+	bnez s1, 29b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-265:
+210:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 265b
+	bnez s1, 210b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-266:
+211:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 266b
+	bnez s1, 211b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-267:
+212:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 267b
+	bnez s1, 212b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-268:
+213:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 268b
+	bnez s1, 213b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-269:
+214:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 269b
+	bnez s1, 214b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-270:
+215:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 270b
+	bnez s1, 215b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-271:
+216:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 271b
+	bnez s1, 216b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-272:
+217:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 272b
+	bnez s1, 217b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-273:
+218:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 273b
+	bnez s1, 218b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-274:
+219:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 274b
+	bnez s1, 219b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-275:
+220:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 275b
+	bnez s1, 220b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-276:
+221:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 276b
+	bnez s1, 221b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-277:
+222:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 277b
+	bnez s1, 222b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-278:
+223:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 278b
+	bnez s1, 223b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-279:
+224:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 279b
+	bnez s1, 224b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-280:
+225:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 280b
+	bnez s1, 225b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-281:
+226:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 281b
+	bnez s1, 226b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 7
-282:
+227:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 282b
+	bnez s1, 227b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1696
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-283:
+228:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 283b
+	bnez s1, 228b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1600
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 7
-284:
+229:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 284b
+	bnez s1, 229b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1696
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 1
-285:
+230:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 285b
+	bnez s1, 230b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1536
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 9
-286:
+231:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 286b
+	bnez s1, 231b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1696
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 1
-287:
+232:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 287b
+	bnez s1, 232b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1536
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 7
-288:
+233:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 288b
+	bnez s1, 233b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 10
-289:
+234:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 289b
+	bnez s1, 234b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1760
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 1
-290:
+235:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 290b
+	bnez s1, 235b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1536
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 8
-291:
+236:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 291b
+	bnez s1, 236b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1664
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 3
-292:
+237:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 292b
+	bnez s1, 237b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1632
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 4
-293:
+238:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 293b
+	bnez s1, 238b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1632
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 5
-294:
+239:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 294b
+	bnez s1, 239b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1664
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 5
-295:
+240:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 295b
+	bnez s1, 240b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1664
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 2
-296:
+241:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 296b
+	bnez s1, 241b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1536
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 6
-297:
+242:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 297b
+	bnez s1, 242b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1600
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 5
-298:
+243:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 298b
+	bnez s1, 243b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1696
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 1
-299:
+244:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 299b
+	bnez s1, 244b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1536
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 7
-2100:
+245:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 2100b
+	bnez s1, 245b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1696
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 1
-2101:
+246:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 2101b
+	bnez s1, 246b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1536
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 7
-2102:
+247:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 2102b
+	bnez s1, 247b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1600
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 2
-2103:
+248:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 2103b
+	bnez s1, 248b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1536
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 6
-2104:
+249:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 2104b
+	bnez s1, 249b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 1632
 	call {vg_p224_mul_mod_n}
 	addi s1, zero, 3
-2105:
+250:
 	addi s1, s1, -1
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992
 	addi a3, zero, 992
 	call {vg_p224_mul_mod_n}
-	bnez s1, 2105b
+	bnez s1, 250b
 	addi a0, s0, 0
 	addi a1, zero, 992
 	addi a2, zero, 992

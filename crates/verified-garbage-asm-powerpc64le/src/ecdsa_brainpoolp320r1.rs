@@ -2687,7 +2687,7 @@ bl {vg_brainpoolp320r1_sub_mod_n}
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `d`, `digest` or `hmac` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 736 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 784 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_brainpoolp320r1_sign(out: *mut [u8; 80], d: *const [u8; 40], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
@@ -2753,7 +2753,7 @@ bne %cr0, 213b
 214:
 .base64 "AADEmAEAhDj//6U4AAAlKA=="
 bne %cr0, 214b
-.base64 "UAIhOCAAAegwACE4pgMIfAAAADgh/SH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+OACITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
+.base64 "UAIhOCAAAegwACE4pgMIfAAAADjx/CH4IACBOQAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAIw57AcMfIAAjDnsBwx8gACMOewHDHyAAIw57AcMfAAADPgIAAz4EAAM+BgADPggAAz4KAAM+DAADPg4AAz4QAAM+EgADPhQAAz4WAAM+GAADPhoAAz4cAAM+HgADPiAAAz4iAAM+JAADPiYAAz4oAAM+KgADPiwAAz4uAAM+MAADPjIAAz40AAM+NgADPjgAAz46AAM+BADITjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKEcRcaxHEZIwRxGytEcR0zhHEfO8RxIQQEsSMMRLElFISxJxzEiAAgE4=""#,
         vg_ecdsa_brainpoolp320r1_sign_k = sym super::ecdsa_brainpoolp320r1::vg_ecdsa_brainpoolp320r1_sign_k::vg_ecdsa_brainpoolp320r1_sign_k,
     )
 }

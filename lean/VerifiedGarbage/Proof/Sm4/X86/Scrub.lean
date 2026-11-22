@@ -77,7 +77,7 @@ expansion calls nothing in its frame: as emitted
 (`Impl.Sm4.X86.Fn.expandKey`) it then clears the registers alone
 (`X86.Scrub.verifiedScrubbedWiped`). As emitted (`Impl.Sm4.X86.Fn`), each of
 the others then zeroes, of the stack its contract reserves below `esp`,
-only the 5 to 22 doublewords that the residue analysis (`X86.rtaint`) finds
+only the 10 to 22 doublewords that the residue analysis (`X86.rtaint`) finds
 it may leave different in two runs (the header of its frame and the frames
 of the calls below it), clears the registers a callee may change, and
 returns without secret residue (`X86.Scrub.verifiedScrubbedSel`, the kernel
@@ -154,18 +154,18 @@ theorem expandKey_scrubbed :
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted (`Impl.Sm4.X86.Fn.ecbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
-    VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbEncrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .encrypt) 1452) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.ecbEncryptApi) (W := 1452)
-    { code := withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .encrypt)
+    VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbEncrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .encrypt) 1512) 0 :=
+  verifiedScrubbedSel (api := Spec.Sm4.ecbEncryptApi) (W := 1512)
+    { code := withStackScratchWiped 1492 3 368 (Impl.Sm4.X86.ecb .encrypt)
       verified := Proof.Sm4.X86.ecb_framed .encrypt }
     Impl.Sm4.X86.Fn.ecbWords (ecbOut _ _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.ecbDecryptApi`'s function as emitted (`Impl.Sm4.X86.Fn.ecbDecrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
-    VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbDecrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .decrypt) 1452) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.ecbDecryptApi) (W := 1452)
-    { code := withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .decrypt)
+    VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbDecrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .decrypt) 1512) 0 :=
+  verifiedScrubbedSel (api := Spec.Sm4.ecbDecryptApi) (W := 1512)
+    { code := withStackScratchWiped 1492 3 368 (Impl.Sm4.X86.ecb .decrypt)
       verified := Proof.Sm4.X86.ecb_framed .decrypt }
     Impl.Sm4.X86.Fn.ecbWords (ecbOut _ _) (by decide) ⟨_, by taint_decide_ct⟩
 

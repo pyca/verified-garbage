@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Rsa.Arm.CvVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.RdTop
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 public import VerifiedGarbage.Proof.Bignum.Arm.PrivPreVerified
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubFill
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 import VerifiedGarbage.Proof.Framework.Lit
@@ -30,6 +32,16 @@ at `pre`, or the octets at `p` and `q`, as on x86 (`Proof/Rsa/X86/Scrub.lean`).
 -/
 
 @[expose] public section
+
+namespace VG.Proof.Rsa.Arm
+
+open VG VG.Arm VG.Proof.Bignum.Arm in
+/-- `vg_rsa_private_precompute` with `b`'s product: its products call it, and
+`b`'s caller transform applies to the rest (`MontBackend.caller`). -/
+def privatePrecomputeCode (b : MontBackend) : Prog isa :=
+  b.caller.code (Impl.Bignum.Arm.PrivPreFn.code (Impl.Bignum.Arm.MontCall.op b.name b.mul))
+
+end VG.Proof.Rsa.Arm
 
 namespace VG.Proof.Rsa.Arm.Scrub
 
@@ -89,7 +101,9 @@ theorem recoverPrimesDetOut (stack : Nat) :
 
 theorem frameOk_56 : FrameOk 56 := by decide
 
-theorem frameOk_168 : FrameOk 168 := by decide
+theorem frameOk_104 : FrameOk 104 := by decide
+
+theorem frameOk_216 : FrameOk 216 := by decide
 
 theorem checkKey_noFrames : Impl.Rsa.Arm.CheckKey.code.noFrames = true := by lit_decide
 
@@ -101,9 +115,15 @@ theorem crtValues_noFrames (um : Bool) : (Impl.Rsa.Arm.CrtValues.codeFor um).noF
 theorem recoverPrimesDet_ok (um : Bool) : CodeOk (Impl.Rsa.Arm.RecoverDet.codeFor um) 56 := by
   cases um <;> exact ⟨by lit_decide, by lit_decide⟩
 
-theorem privatePrecompute_ok : CodeOk Impl.Bignum.Arm.PrivPreFn.code 168 := ⟨by lit_decide, by lit_decide⟩
+open VG.Arm.ScrubFill in
+theorem privatePrecomputeStub :
+    CodeOk (Impl.Bignum.Arm.PrivPreFn.code (Impl.Bignum.Arm.MontCall.op "" (holeStub 40))) 216 :=
+  ⟨by lit_decide, by lit_decide⟩
 
-theorem privatePrecomputeU_ok : CodeOk Impl.Bignum.Arm.PrivPreFn.codeU 168 := ⟨by lit_decide, by lit_decide⟩
+open VG.Proof.Bignum.Arm VG.Arm.ScrubFill in
+theorem privatePrecomputeOk (b : MontBackend) : CodeOk (privatePrecomputeCode b) 216 :=
+  b.callerOk _ _ ((show FillB _ (Impl.Bignum.Arm.PrivPreFn.code (Impl.Bignum.Arm.MontCall.op b.name b.mul)) by
+    have := b.mulOk; fill_holes).codeOk privatePrecomputeStub)
 
 end VG.Proof.Rsa.Arm.Scrub
 
@@ -140,24 +160,19 @@ theorem recoverPrimesDet [Proof.Rsa.Arm.Keys.InvLaw] (um : Bool) :
       verified := Proof.Rsa.Arm.Recover.recover_primes_det_for_verified um }
     (recoverPrimesDetOut _) (scrubSideF_of (recoverPrimesDet_ok um) frameOk_56 _)
 
-/-- `vg_rsa_private_precompute`. -/
-theorem privatePrecompute :
-    VerifiedScrubbed target Impl.Rsa.Arm.Fn.privatePrecompute (Spec.Rsa.privatePrecomputeContract abi 168) 32 :=
+open VG.Proof.Bignum.Arm in
+/-- `vg_rsa_private_precompute`, with the Montgomery product `b`. -/
+theorem privatePrecompute (b : MontBackend) :
+    VerifiedScrubbed target (Impl.Rsa.Arm.Fn.privatePrecompute (privatePrecomputeCode b))
+      (Spec.Rsa.privatePrecomputeContract abi 216) 32 :=
   verifiedScrubbedAll (api := Spec.Rsa.privatePrecomputeApi)
-    { code := Impl.Bignum.Arm.PrivPreFn.code, verified := Proof.Bignum.Arm.privPre_verified }
-    (privatePrecomputeOut _) (scrubSideF_of privatePrecompute_ok frameOk_168 _)
-
-/-- `vg_rsa_private_precompute_umaal`. -/
-theorem privatePrecomputeU :
-    VerifiedScrubbed target Impl.Rsa.Arm.Fn.privatePrecomputeU (Spec.Rsa.privatePrecomputeContract abi 168) 32 :=
-  verifiedScrubbedAll (api := Spec.Rsa.privatePrecomputeApi)
-    { code := Impl.Bignum.Arm.PrivPreFn.codeU, verified := Proof.Bignum.Arm.privPre_umaal_verified }
-    (privatePrecomputeOut _) (scrubSideF_of privatePrecomputeU_ok frameOk_168 _)
+    { code := privatePrecomputeCode b, verified := b.caller.verified (privPre_verified b.callOp) }
+    (privatePrecomputeOut _) (scrubSideF_of (Scrub.privatePrecomputeOk b) frameOk_216 _)
 
 /-- `vg_rsa_public_precompute`, of the implementation `v`. -/
 theorem publicPrecompute (v : CrtImpl) :
-    VerifiedScrubbed target (Impl.Rsa.Arm.Fn.publicPrecompute v.pc) (Spec.Rsa.publicPrecomputeContract abi 56) 32 :=
+    VerifiedScrubbed target (Impl.Rsa.Arm.Fn.publicPrecompute v.pc) (Spec.Rsa.publicPrecomputeContract abi 104) 32 :=
   verifiedScrubbedAll (api := Spec.Rsa.publicPrecomputeApi) { code := v.pc, verified := v.pcVerified }
-    (publicPrecomputeOut _) (scrubSideF_of v.pcOk frameOk_56 _)
+    (publicPrecomputeOut _) (scrubSideF_of v.pcOk frameOk_104 _)
 
 end VG.Proof.Rsa.Arm.Fn

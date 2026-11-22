@@ -60,4 +60,7 @@ def r2PublicInit : Prog isa :=
 
 def r2Public : Prog isa := .seq r2PublicInit (.seq doubleLoop r2Squares)
 
+/-- `r2Public`, its squarings `op`'s (`r2SquaresWith`). -/
+def r2PublicWith (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq r2PublicInit (.seq doubleLoop (r2SquaresWith op))
+
 end VG.Impl.Bignum.Arm

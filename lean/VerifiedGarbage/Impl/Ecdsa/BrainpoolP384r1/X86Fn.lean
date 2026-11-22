@@ -27,12 +27,12 @@ open VG.X86
 
 /-- `vg_ecdsa_brainpoolp384r1_verify`, as emitted. -/
 def verifyBrainpoolP384r1 : Prog isa :=
-  Impl.Scrub.X86.scrubAll 32 128
+  Impl.Scrub.X86.scrubAll 32 132
     (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false (Impl.Ecdsa.Verify.X86.verifyBrainpoolP384r1))
 
 /-- `vg_ecdsa_brainpoolp384r1_sign`, as emitted, with `f` the functions its table's calls may reach. -/
 def signBrainpoolP384r1 (f : Impl.Ecdsa.Rfc6979.X86.Fns) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 32 588 (Impl.Ecdsa.Rfc6979.X86.signCode {
+  Impl.Scrub.X86.scrubAll 32 612 (Impl.Ecdsa.Rfc6979.X86.signCode {
     f := f
     w := 2 * Impl.Ecdsa.X86.brainpoolp384r1Comb.n - (if Impl.Ecdsa.X86.brainpoolp384r1Comb.C.len = 28 then 1 else 0)
     len := Impl.Ecdsa.X86.brainpoolp384r1Comb.C.len

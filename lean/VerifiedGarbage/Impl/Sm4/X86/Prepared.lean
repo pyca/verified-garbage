@@ -8,9 +8,10 @@ public import VerifiedGarbage.Spec.Sm4.Contract
 # SM4's round keys prepared once, and batches under them, on x86 (32-bit)
 
 `vg_sm4_prepare_keys` and `vg_sm4_crypt_prepared`
-(`Proof/Sm4/Prepared.lean`): ECB's two halves (`Ecb.lean`) as functions of
-the working space, for the modes, which call them (`Modes.lean`). Both are
-cdecl, their arguments at `[esp + 4]` on.
+(`Proof/Sm4/Prepared.lean`): the table of round keys and the bitsliced core
+(`Ecb.lean`) as functions of the working space, for the modes, which call
+them (`Modes.lean`), and for ECB (`ecb`, below), which calls the second.
+Both are cdecl, their arguments at `[esp + 4]` on.
 
 * `prepareKeys(schedule, decrypt, ws, ws_len)` saves the callee-saved
   registers in their slots (352–355) of `ws`, which moves to `edi`, builds
@@ -19,7 +20,7 @@ cdecl, their arguments at `[esp + 4]` on.
 * `cryptPrepared(ws, ws_len)` saves the registers the same way and
   transforms the eight blocks of the tail buffer (`crypt8`) under the table.
 
-The working space is ECB's 358 slots (`slots`). The table is what
+Their working space is 358 slots (`slots`). The table is what
 `vg_sm4_crypt_prepared` reads of the preparation (`layout`): each plane of a
 round key is a 32-bit word whose bit `8 i + b` is bit `j` of the key's byte
 `i` (`planeOf32`), for every block `b`.
@@ -68,11 +69,6 @@ def dirFlagOf : Dir → Nat
   | .encrypt => 0
   | .decrypt => 1
 
-/-- The modes' data pointer and steps left, after the functions' slots
-(`Impl/Modes/X86/Seq.lean`'s `dSlot` and `nSlot`). -/
-def modeDSlot : Nat := slots + 4
-def modeNSlot : Nat := slots + 5
-
 /-- A call of `vg_sm4_prepare_keys` for the direction `d`, with the schedule
 the mode's first argument and the working space at `edi`, of `slots` slots
 (`wsWords` 64-bit words): the arguments pushed, the last first. `edi`, which
@@ -95,5 +91,47 @@ def cryptCall : Prog isa :=
   .seq (.block [movS .esi modeDSlot, movS .ebp modeNSlot, movI .eax (BitVec.ofNat 32 wsWords)])
     (.seq (.frame (.push [.eax, .edi]) (.call "vg_sm4_crypt_prepared" cryptPrepared) (.pop .eax 2))
       (.block [st modeDSlot .esi, st modeNSlot .ebp]))
+
+/-! ## ECB
+
+`ecb dir(schedule, data, n, scratch)`, cdecl (the arguments at `[esp + 4]`
+… `[esp + 16]`): `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt`, with their
+working space in the scratch buffer, which the artifact allocates on the
+stack: the functions' 358 slots, then ECB's own where the modes keep theirs
+(`Impl/Modes/X86/Seq.lean`), 368 slots in all (`[u64; 184]`), and 20 bytes
+of stack for the calls.
+
+* The callee-saved registers are saved in the slots after the functions'
+  (`ecbSaved`), which `vg_sm4_crypt_prepared` does not change, and the
+  scratch buffer's address moves to `edi`.
+* The round keys are bitsliced into the table in the order of `dir`
+  (`keys`), and the data pointer and `n` go to their slots.
+* Each group of up to eight blocks is copied to the tail buffer, transformed
+  there by `vg_sm4_crypt_prepared` (`cryptCall`), which costs the same for
+  any number of the buffer's blocks, and copied back.
+-/
+
+/-- ECB's callee-saved registers, and their slots after the functions'. -/
+def ecbSaved : List (Reg × Nat) := [(.ebx, slots), (.esi, slots + 1), (.edi, slots + 2), (.ebp, slots + 3)]
+
+/-- The scratch buffer (the fourth argument) to `edi`, the callee-saved
+registers to their slots first. -/
+def ecbEntry : List Instr :=
+  [.mov .eax (.mem (argOp 3))] ++ ecbSaved.map (fun (r, j) => .store (slotAt .eax j) r) ++ [movR .edi .eax]
+
+/-- Restore the registers (`edi`, the base, last). -/
+def ecbRestore : List Instr :=
+  [movS .ebx slots, movS .esi (slots + 1), movS .ebp (slots + 3), movS .edi (slots + 2)]
+
+/-- Eight blocks, or the last one to seven. -/
+def group : Prog isa := .seq copyIn (.seq cryptCall (.seq copyOut advance))
+
+/-- The whole function: the table, then the groups. -/
+def ecb (dir : Dir) : Prog isa :=
+  .seq (.block ecbEntry)
+    (.seq (keys dir)
+      (.seq (.block [.mov .eax (.mem (argOp 1)), st modeDSlot .eax, .mov .eax (.mem (argOp 2)), st modeNSlot .eax,
+          .alu .test .eax (.reg .eax)])
+        (.seq (.ite .e (.block []) (.loop group .ne)) (.block ecbRestore))))
 
 end VG.Impl.Sm4.X86

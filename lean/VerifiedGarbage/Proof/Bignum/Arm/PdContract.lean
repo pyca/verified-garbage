@@ -22,9 +22,9 @@ public import VerifiedGarbage.Proof.Rsa.Contract
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem pd_contract_correct (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre s) :
+theorem pd_contract_correct (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre s) :
     ∃ tr t, Exec isa PdFn.code s tr t ∧ abiPreserved s t ∧
-      (Proof.Rsa.publicPrecomputedCheckedContract abi 56).post s t := by
+      (Proof.Rsa.publicPrecomputedCheckedContract abi 104).post s t := by
   have input := pd_contract_pre s h
   obtain ⟨tr, t, run, preserved, post⟩ := pdFn_ok s input
   refine ⟨tr, t, run, preserved, ?_⟩
@@ -34,8 +34,8 @@ theorem pd_contract_correct (s : State) (h : (Proof.Rsa.publicPrecomputedChecked
   rw [pd_contract_length s h] at pre
   exact pdOutput_written input.minLength length pre post
 
-theorem pd_contract_ct : ConstantTime isa (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pub PdFn.code := by
+theorem pd_contract_ct : ConstantTime isa (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pub PdFn.code := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := pd_contract_pre s hs
   have it := pd_contract_pre t ht

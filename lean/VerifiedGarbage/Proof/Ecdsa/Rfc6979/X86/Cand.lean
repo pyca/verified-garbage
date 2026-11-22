@@ -434,7 +434,7 @@ theorem tStep_ok (hL : L.Ok) (hT : TabL P L) {u : State} (hc : Ctx L g m₀ u) {
 /-- What the candidate's loop changes: `scratch`, the stack below the
 saved registers, `T`'s length, and `T`. -/
 abbrev CW {dn : Nat} (L : Lay dn) : List Region :=
-  [L.SCR, ⟨L.B, 204⟩, ⟨L.B + BitVec.ofNat 64 (76 + fTlen), 4⟩, ⟨kAddr L, 136⟩]
+  [L.SCR, L.LOW, ⟨L.B + BitVec.ofNat 64 (76 + fTlen), 4⟩, ⟨kAddr L, 136⟩]
 
 /-- After `j` of the candidate's `V`s, from `V₀` with the key `K`. -/
 structure CI (P : RfcHash) {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (t₀ : State)
@@ -466,13 +466,13 @@ theorem step_ok (hL : L.Ok) (hT : TabL P L) {t₀ : State} {K V₀ : List Byte} 
       simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hL.stk_SCR (by omega_using [hfTl])
-      · exact Offset.disjoint_base _ (by omega_using [hfTl]) (by omega_using [hfTl])) (by decide)
+      · exact Lay.LOW_disj (by omega_using [hfTl]) (by omega_using [hfTl])) (by decide)
   obtain ht₁ : Spec.Sha256.bytesAt u₁.mem (kAddr L) (j * P.F.H.D) = Spec.Sha256.bytesAt u.mem (kAddr L) (j * P.F.H.D) :=
     bytesAt_frame hf₁ (fun r hr => by
       simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hL.stk_SCR (by omega_using [hj, hjD, hfT])
-      · exact Offset.disjoint_base _ (by omega_using [hfT]) (by omega_using [hj, hjD, hfT])) (by omega_using [hj, hjD])
+      · exact Lay.LOW_disj (by omega_using [hfT]) (by omega_using [hj, hjD, hfT])) (by omega_using [hj, hjD])
   refine WP.seq (WP.mono (keepArgs_ok hL hT hc₁ hl₁) fun u₂ ⟨hc₂, hm₂, hsi₂, hbx₂, hcx₂⟩ => ?_)
   obtain eS : (L.F + BitVec.ofNat 32 fV).setWidth 64 = L.B + BitVec.ofNat 64 (76 + fV) := hL.frv (by decide)
   obtain eD : (L.F + BitVec.ofNat 32 (fT + j * P.F.H.D)).setWidth 64 = kAddr L + BitVec.ofNat 64 (j * P.F.H.D) := by
@@ -528,7 +528,7 @@ theorem step_ok (hL : L.Ok) (hT : TabL P L) {t₀ : State} {K V₀ : List Byte} 
     · simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
-      · exact ⟨⟨L.B, 204⟩, by simp, sub_refl _⟩
+      · exact ⟨L.LOW, by simp, sub_refl _⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨⟨kAddr L, 136⟩, by simp, Offset.sub_base _ (by omega_using [hj, hjD])⟩
     · simp only [List.mem_singleton] at hr; subst hr

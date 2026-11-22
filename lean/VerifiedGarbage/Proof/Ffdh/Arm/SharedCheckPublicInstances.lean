@@ -164,7 +164,7 @@ section
 
 /-! Subgroup membership is a native power followed by a fixed-width equality. -/
 
-section
+public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
 open VG.Proof.Rsa.Mont (numAt Operand)
@@ -829,7 +829,7 @@ section
 
 /-! Public subgroup checking calls the shared Montgomery window. -/
 
-section
+public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Mont (Operand)
@@ -945,7 +945,7 @@ section
 
 /-! # The shared native domain-preparation boundary hides modulus values -/
 
-section
+public section
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Proof.Bignum.Arm
 

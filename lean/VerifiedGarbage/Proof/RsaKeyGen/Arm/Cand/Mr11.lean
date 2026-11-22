@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr10
 import VerifiedGarbage.Proof.Framework.Omega
@@ -50,8 +51,8 @@ theorem cmp4_vp {n : Nat} : VP (GQ P E n) (.block [.ldr .r1 .r8 sStat, .cmp .r1 
       rfl
 
 /-- An iteration of Miller–Rabin, `n + 1` of them left. -/
-theorem body_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (n : Nat) :
-    VP (MRI P E (n + 1)) (mrBody v.name v.code)
+theorem body_vp (v : RoundImpl) (M : CallOp) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (n : Nat) :
+    VP (MRI P E (n + 1)) (mrBody v.name v.code M.op)
       (fun σ s => isa.eval .eq s = some (decide (0 < n)) ∧ (n = 0 → QS P E σ s) ∧ (0 < n → MRI P E n σ s)) := by
   refine VP.ofImp (p := n ≤ Nt P) (fun σ s h => by have := h.2.1; omega_using [this]) fun hn => ?_
   have hk : Nt P + 1 - (n + 1) = Nt P - n := by omega_using []
@@ -85,13 +86,13 @@ theorem body_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) (n :
     exact (VP.seqs_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _)
       (witnessLoad_vp (E := EK P E (Nt P - n) n) (k := Nt P - n) fun σ e => ⟨(hE σ e.1).1, e.2.2⟩)
       (VP.seqs_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _) witnessFix_vp
-        (VP.seqs_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _) (mrCall_vp v) (tail_vp hE hn)))).mono
+        (VP.seqs_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _) (mrCall_vp v M) (tail_vp hE hn)))).mono
       (fun σ s ⟨⟨⟨⟨⟨e, mr⟩, h, hw⟩, m⟩, _⟩, _⟩ => ⟨⟨⟨e, mr, hav⟩, h, hw⟩, m⟩) (fun _ _ h => h)
 
 /-- Miller–Rabin on the candidate, from its Montgomery forms of 1 and −1. -/
-theorem millerRabin_vp (v : RoundImpl) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
-    VP (SM P E) (millerRabin v.name v.code) (QS P E) :=
-  (mrInit_vp hE).seq (VP.loop (I := MRI P E) (body_vp v hE) (Nt P))
+theorem millerRabin_vp (v : RoundImpl) (M : CallOp) (hE : ∀ σ, E σ → In P σ ∧ EM P σ) :
+    VP (SM P E) (millerRabin v.name v.code M.op) (QS P E) :=
+  (mrInit_vp hE).seq (VP.loop (I := MRI P E) (body_vp v M hE) (Nt P))
 
 end
 

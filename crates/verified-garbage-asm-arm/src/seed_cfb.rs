@@ -54,7 +54,7 @@ beq 20f
 mov r0, r4
 add r1, r8, #40
 mov r2, #1
-bl {vg_seed_ecb_encrypt_entry}
+bl {vg_seed_ecb_encrypt}
 ldr r9, [r6, #0]
 ldr r10, [r8, #40]
 eor r9, r9, r10
@@ -136,7 +136,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_seed_ecb_encrypt_entry = sym super::seed::vg_seed_ecb_encrypt_entry::vg_seed_ecb_encrypt_entry,
+        vg_seed_ecb_encrypt = sym super::seed::vg_seed_ecb_encrypt,
     )
 }
 
@@ -275,7 +275,7 @@ str r9, [r8, #68]
 mov r0, r4
 mov r1, r12
 mov r2, #8
-bl {vg_seed_ecb_encrypt_entry}
+bl {vg_seed_ecb_encrypt}
 add r12, sp, #0
 ldr r9, [r6, #0]
 ldr r10, [r12, #0]
@@ -469,7 +469,7 @@ str r9, [r8, #68]
 mov r0, r4
 mov r1, r12
 mov r2, #4
-bl {vg_seed_ecb_encrypt_entry}
+bl {vg_seed_ecb_encrypt}
 add r12, sp, #0
 ldr r9, [r6, #0]
 ldr r10, [r12, #0]
@@ -583,7 +583,7 @@ str r9, [r8, #68]
 mov r0, r4
 mov r1, r12
 mov r2, #2
-bl {vg_seed_ecb_encrypt_entry}
+bl {vg_seed_ecb_encrypt}
 add r12, sp, #0
 ldr r9, [r6, #0]
 ldr r10, [r12, #0]
@@ -674,7 +674,7 @@ str r9, [r8, #68]
 mov r0, r4
 add r1, r8, #40
 mov r2, #1
-bl {vg_seed_ecb_encrypt_entry}
+bl {vg_seed_ecb_encrypt}
 ldr r9, [r6, #0]
 ldr r10, [r8, #40]
 eor r9, r9, r10
@@ -756,7 +756,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_seed_ecb_encrypt_entry = sym super::seed::vg_seed_ecb_encrypt_entry::vg_seed_ecb_encrypt_entry,
+        vg_seed_ecb_encrypt = sym super::seed::vg_seed_ecb_encrypt,
     )
 }
 
@@ -811,7 +811,7 @@ beq 20f
 mov r0, r4
 add r1, r8, #40
 mov r2, #1
-bl {vg_seed_ecb_encrypt_entry}
+bl {vg_seed_ecb_encrypt}
 lsr r9, r7, #4
 cmp r9, #0
 beq 23f
@@ -909,7 +909,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_seed_ecb_encrypt_entry = sym super::seed::vg_seed_ecb_encrypt_entry::vg_seed_ecb_encrypt_entry,
+        vg_seed_ecb_encrypt = sym super::seed::vg_seed_ecb_encrypt,
     )
 }
 
@@ -964,7 +964,7 @@ beq 20f
 mov r0, r4
 add r1, r8, #40
 mov r2, #1
-bl {vg_seed_ecb_encrypt_entry}
+bl {vg_seed_ecb_encrypt}
 lsr r9, r7, #4
 cmp r9, #0
 beq 23f
@@ -1070,6 +1070,6 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_seed_ecb_encrypt_entry = sym super::seed::vg_seed_ecb_encrypt_entry::vg_seed_ecb_encrypt_entry,
+        vg_seed_ecb_encrypt = sym super::seed::vg_seed_ecb_encrypt,
     )
 }

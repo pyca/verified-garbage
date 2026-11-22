@@ -31,9 +31,6 @@ open VG.Arm VG.Impl.Scrub.Arm
 /-- The words the key expansion leaves secret: none. -/
 def expandKeyWords : List Nat := []
 
-/-- The words ECB leaves secret. -/
-def ecbWords : List Nat := [0, 1] ++ List.range' 682 22
-
 /-- The words the modes one block at a time leave secret. -/
 def seqWords : List Nat := List.range' 2 5 ++ List.range' 705 3
 
@@ -49,11 +46,8 @@ def ctrFinalWords : List Nat := wideWords ++ List.range' 760 5 ++ [779]
 /-- `vg_camellia_expand_key`. -/
 def expandKey : Prog isa := scrubSel 0 2720 expandKeyWords (Impl.StackScratch.Arm.withRegScratchWiped 2720 .r3 680 Impl.Camellia.Arm.expandKey)
 
-/-- `vg_camellia_ecb_encrypt`. -/
-def ecbEncrypt : Prog isa := scrubSel 0 2816 ecbWords (Impl.Camellia.Arm.ecbCode .encrypt)
-
-/-- `vg_camellia_ecb_decrypt`. -/
-def ecbDecrypt : Prog isa := scrubSel 0 2816 ecbWords (Impl.Camellia.Arm.ecbCode .decrypt)
+-- `vg_camellia_ecb_encrypt` and `vg_camellia_ecb_decrypt` (`ecbEncrypt`,
+-- `ecbDecrypt`, with `ecbWords`) are in `Cbc.lean`, as the modes call them.
 
 /-- `vg_camellia_cbc_encrypt_chained`. -/
 def cbcEncrypt : Prog isa := scrubSel 0 2832 seqWords (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cbcEncryptChained)

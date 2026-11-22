@@ -481,6 +481,19 @@ theorem chainPow_kit {F : Field} {P : ChainCfg} (hF : FieldOk F) {k p : Nat} [Ne
         toM p (2 ^ (64 * k)) (wordsVal s.mem base P.base k) ^ e := by
   subst hk hm; exact chainPow_ok hF hL hU hs hone hone' hO hC
 
+/-- `chainCall_ok`, for a field of `k` words modulo `p`. -/
+theorem chainCall_kit {F : Field} {P : ChainCfg} (hF : FieldOk F) {k p : Nat} [NeZero p] (hk : F.S.k = k)
+    (hm : F.S.m = p) (hL : ChainLayR P k) (hU : UnitMod p (2 ^ (64 * k))) {name : String}
+    {base : Addr} {s : State} {e one sv : Nat} (hs : WsReg s base) (hone : one + 8 * k ≤ own k)
+    (hone' : one < 4095) (hO : wordsVal s.mem base one k = 2 ^ (64 * k) % p) (hC : ChainOkR P e)
+    (hsv : sv < 4095) (hsv8 : sv % 8 = 0) (hsW : ∀ w ∈ chainWx P k, sv + 8 ≤ w.1 ∨ w.1 + w.2 ≤ sv)
+    (hsb : sv + 8 ≤ P.base ∨ P.base + 8 * k ≤ sv) (hso : sv + 8 ≤ one ∨ one + 8 * k ≤ sv) :
+    WP isa (chainCall name P one F sv) s fun s' => Kc s s' ∧ Unch base ((sv, 8) :: chainWx P k) s.mem s'.mem ∧
+      wordsVal s'.mem base P.acc k < p ∧
+      toM p (2 ^ (64 * k)) (wordsVal s'.mem base P.acc k) =
+        toM p (2 ^ (64 * k)) (wordsVal s.mem base P.base k) ^ e := by
+  subst hk hm; exact chainCall_ok hF hL hU hs hone hone' hO hC hsv hsv8 hsW hsb hso
+
 /-! ## The layout -/
 
 /-- What `vg_<curve>_mul` may write, as ranges of offsets: the result, its
@@ -494,7 +507,7 @@ theorem chainP_tbl (c : Cfg) : (chainP c).tbl = c.sl TB := rfl
 
 /-- What `tail` writes. -/
 abbrev tailW (c : Cfg) : List (Nat × Nat) :=
-  [(c.sl FLAG, 8)] ++ mulKW c ++ chainWx (chainP c) c.n ++
+  [(c.sl FLAG, 8)] ++ mulKW c ++ ((invSave c, 8) :: chainWx (chainP c) c.n) ++
     [(c.sl XM, 8 * c.n), (own c.n, 64 * c.n), (c.sl XO, 8 * c.n), (own c.n, 64 * c.n)]
 
 /-- The writes of the check: its own working space or its results. -/
@@ -513,7 +526,7 @@ abbrev checkKW (c : Cfg) : List (Nat × Nat) :=
 words' count, with its bound `h9` and the place of the field's own working space `hown`. -/
 local macro "kit_layout" "[" hs:term,* "]" : tactic => `(tactic| (
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and, forall_eq,
-    mulKW, tailW, chkW, checkKW, chainWx, chainP_acc, chainP_tbl, Cfg.curveOps, List.map_cons, List.map_nil, FOp.out,
+    mulKW, tailW, chkW, checkKW, chainWx, chainP_acc, chainP_tbl, chainP_base, invSave, Cfg.mulSave, nslots, Cfg.curveOps, List.map_cons, List.map_nil, FOp.out,
     Cfg.sl, slot, MP, MN, ZERO, ONE, ONEP, AP, B3P, EXPP, K, RX, RY, RZ, ACC, TB, XM, XO, FLAG, TMP, CX, CY, CXM,
     CYM, W0, W1, W2, CPX, CPY, R2P, BP, GX, GY]
   omega_using [$hs,*]))
@@ -679,7 +692,7 @@ theorem tailWith_ok (hC : ChainOkR (chainP T.c) (T.c.C.p - 2)) (hL : Law T.c.C) 
   obtain h1 : 1 ≤ T.c.n := Nat.le_trans (by decide) T.n4
   obtain hown : 64 + 8 * T.c.n * 45 + 8 ≤ own T.c.n := own_ge h9
   obtain fit : ∀ {i}, i ≤ 55 → T.c.sl i + 8 * T.c.n ≤ 2 ^ 64 := fun hi => Nat.le_trans (sl_top h9 hi) (by decide)
-  rw [tail]
+  rw [tail, invP]
   -- The range.
   refine WP.seq (WP.mono (show WP isa _ s fun s' => _ ∧ s'.syms = s.syms from
     let ⟨t, s', he, hq⟩ := range_ok T.c h9 hw; ⟨t, s', he, hq, Exec.syms he⟩) fun s₁ ⟨⟨K₁, O₁, f₁⟩, sy₁⟩ => ?_)
@@ -697,9 +710,11 @@ theorem tailWith_ok (hC : ChainOkR (chainP T.c) (T.c.C.p - 2)) (hL : Law T.c.C) 
   obtain hw₂ := hw₁.of_kp K₂
   obtain hc₂ := hc₁.of_unch h9 U₂ (by kit_layout [h9, h1, hown])
   -- `Z^(p-2)`.
-  refine WP.seq (WP.mono (chainPow_kit (P := chainP T.c) T.field_ok T.FPk T.FPm (chainLay T.c h1 h9) T.unit hw₂
+  refine WP.seq (WP.mono (chainCall_kit (P := chainP T.c) T.field_ok T.FPk T.FPm (chainLay T.c h1 h9) T.unit hw₂
     (one := T.c.sl ONEP) (by kit_layout [h9, h1, hown]) (by kit_layout [h9, h1, hown])
-    (by show sv T.c base s₂ ONEP = _; rw [hc₂.onep, Nat.one_mul]) hC) fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
+    (by show sv T.c base s₂ ONEP = _; rw [hc₂.onep, Nat.one_mul]) hC (sv := invSave T.c)
+    (by kit_layout [h9, h1, hown]) (by kit_layout [h9, h1, hown]) (by kit_layout [h9, h1, hown])
+    (by kit_layout [h9, h1, hown]) (by kit_layout [h9, h1, hown])) fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
   obtain hw₃ := hw₂.of_kc K₃
   obtain hc₃ := hc₂.of_unch h9 U₃ (by kit_layout [h9, h1, hown])
   -- `x`.

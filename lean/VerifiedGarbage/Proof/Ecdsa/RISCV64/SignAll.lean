@@ -208,7 +208,7 @@ theorem tailW_keep (c : Cfg) (h9 : c.n ≤ 9) : ∀ i ∈ [ZERO, ONE, K, DD, EE,
   exact all_app (all_app (all_app (all_one (.inl (sl_le c h1)))
       (all_cons (run_apart c (by omega) h2) (all_cons (run_apart c (by omega) h3) (all_cons (sl_sep c h4)
         (all_cons (sl_sep c h5) (all_one (.inl (sl_le c h45))))))))
-      (chainN_keep h9 h45 h6))
+      (all_cons (.inl (sl_le c h45)) (chainN_keep h9 h45 h6)))
     (all_cons (sl_sep c h7) (all_cons (.inl hown) (all_cons (sl_sep c h8) (all_one (.inl hown)))))
 
 /-- What the values modulo `n` write. -/

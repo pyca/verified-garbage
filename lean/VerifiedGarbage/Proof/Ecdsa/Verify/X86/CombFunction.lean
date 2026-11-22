@@ -41,7 +41,7 @@ open VG.Proof.Ecdsa.X86
 def vCombCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.verifyComb p256Comb
 materialize_code vCombCode
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
 theorem vComb_sp : SpOk vCombCode p256Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem vCombBody_sp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody p256Comb) p256Comb.stk :=

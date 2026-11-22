@@ -44,10 +44,10 @@ def pkTailCode : Prog isa := .seq p256Comb.pPow
 materialize_code pkPrepCode
 materialize_code pkTailCode
 
-theorem pkPrep_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp] 3)) pkPrepCode (fun _ _ => True) :=
+theorem pkPrep_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp] 3 24)) pkPrepCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
-theorem pkTail_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 3 true)) pkTailCode (fun _ _ => True) :=
+theorem pkTail_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 3 true 24)) pkTailCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
 /-- The taint checks of the stages of P-256's public key. -/

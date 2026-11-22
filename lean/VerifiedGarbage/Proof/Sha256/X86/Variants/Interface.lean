@@ -104,6 +104,7 @@ def fns (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Whole.X
   H := hmacHash suffix updC finC
   W := Spec.Hmac.sha256I.scratch
   hiN := "vg_hmac_sha256_init_scratch" ++ suffix
+  hiAnyN := "vg_hmac_sha256_init_any_scratch" ++ suffix
   hiC := (mdHash suffix cmpN cmpC updC finC).hmacInit
   hfN := "vg_hmac_sha256_finalize_scratch" ++ suffix
   hfC := (mdHash suffix cmpN cmpC updC finC).hmacFin
@@ -131,6 +132,7 @@ def fns224 (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Whol
   H := hmacHash224 suffix updC finC
   W := Spec.Hmac.sha224I.scratch
   hiN := "vg_hmac_sha224_init_scratch" ++ suffix
+  hiAnyN := "vg_hmac_sha224_init_any_scratch" ++ suffix
   hiC := (mdHash224 suffix cmpN cmpC updC finC).hmacInit
   hfN := "vg_hmac_sha224_finalize_scratch" ++ suffix
   hfC := (mdHash224 suffix cmpN cmpC updC finC).hmacFin

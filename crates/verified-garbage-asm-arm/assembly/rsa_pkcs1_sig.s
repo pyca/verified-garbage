@@ -1079,10 +1079,10 @@ vg_rsa_pkcs1_sign_precomputed_umaal:
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	sub sp, sp, #536
+	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #16
+	mov r3, #18
 2101:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -1097,11 +1097,7 @@ vg_rsa_pkcs1_sign_precomputed_umaal:
 	bne 2101b
 	str r2, [r12, #0]
 	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	add sp, sp, #536
+	add sp, sp, #584
 	add sp, sp, #4080
 	mov r1, #0
 	mov r2, #0
@@ -2148,10 +2144,10 @@ vg_rsa_pkcs1_verify_precomputed_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #2192
+	sub sp, sp, #2240
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #68
+	mov r3, #70
 299:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -2164,11 +2160,7 @@ vg_rsa_pkcs1_verify_precomputed_umaal:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 299b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #2192
+	add sp, sp, #2240
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -3254,10 +3246,10 @@ vg_rsa_pkcs1_recover_precomputed_umaal:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #2192
+	sub sp, sp, #2240
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #68
+	mov r3, #70
 2102:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -3270,11 +3262,7 @@ vg_rsa_pkcs1_recover_precomputed_umaal:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 2102b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #2192
+	add sp, sp, #2240
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -4357,10 +4345,10 @@ vg_rsa_pkcs1_sign_precomputed:
 	str r2, [r12, #4]
 	str r2, [r12, #8]
 	str r2, [r12, #12]
-	sub sp, sp, #536
+	sub sp, sp, #584
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #16
+	mov r3, #18
 2101:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -4375,11 +4363,7 @@ vg_rsa_pkcs1_sign_precomputed:
 	bne 2101b
 	str r2, [r12, #0]
 	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	add sp, sp, #536
+	add sp, sp, #584
 	add sp, sp, #4080
 	mov r1, #0
 	mov r2, #0
@@ -5426,10 +5410,10 @@ vg_rsa_pkcs1_verify_precomputed:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #2192
+	sub sp, sp, #2240
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #68
+	mov r3, #70
 299:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -5442,11 +5426,7 @@ vg_rsa_pkcs1_verify_precomputed:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 299b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #2192
+	add sp, sp, #2240
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0
@@ -6532,10 +6512,10 @@ vg_rsa_pkcs1_recover_precomputed:
 	ldr r11, [sp, #44]
 	ldr lr, [sp, #52]
 	ldr r12, [sp], #56
-	sub sp, sp, #2192
+	sub sp, sp, #2240
 	add r12, sp, #0
 	mov r2, #0
-	mov r3, #68
+	mov r3, #70
 2102:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
@@ -6548,11 +6528,7 @@ vg_rsa_pkcs1_recover_precomputed:
 	add r12, r12, #32
 	subs r3, r3, #1
 	bne 2102b
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	add sp, sp, #2192
+	add sp, sp, #2240
 	mov r1, #0
 	mov r2, #0
 	mov r3, #0

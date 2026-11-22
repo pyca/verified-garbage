@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Rsa.Contract
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem pd_contract_pre (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre s) :
+theorem pd_contract_pre (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre s) :
     PdFnInput (stackArg s 4) (s.gpr .r0) (s.gpr .r2) (stackArg s 0) (stackArg s 2)
       (stackArg s 5).toNat (s.gpr .r1).toNat (stackArg s 1).toNat
       (s.mem.read (State.addr (s.gpr .r2)) (8 * Spec.Rsa.modulusWords (s.gpr .r1).toNat)).toNat
@@ -35,12 +35,19 @@ theorem pd_contract_pre (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedCont
     simp only [Spec.Rsa.precomputedWords]; omega_arith
   rw [preSize] at rd nWs stackN nFit
   rw [inputLen] at rd xWs stackX xFit
+  have fit56 : 56 ≤ s.sp.toNat := by omega_arith
   have frame : FrameStack.belowA s.sp 56 = ⟨State.addr s.sp - BitVec.ofNat 64 56, 56⟩ := by
     unfold FrameStack.belowA
+    rw [FrameStack.addr_sub' fit56]
+  have frame104 : FrameStack.belowA s.sp 104 = ⟨State.addr s.sp - BitVec.ofNat 64 104, 104⟩ := by
+    unfold FrameStack.belowA
     rw [FrameStack.addr_sub' stackFit]
+  have sub : Region.Sub ⟨State.addr s.sp - BitVec.ofNat 64 56, 56⟩ ⟨State.addr s.sp - BitVec.ofNat 64 104, 104⟩ := by
+    rw [← frame, ← frame104]; exact FrameStack.belowA_sub (by decide) stackFit
+  simp only [State.addr] at sub
   refine ⟨⟨?_, ?_⟩, valid.1, valid.2, space, ePositive, eLen,
     nFit, ?_, rfl, rfl, ⟨eFit, ?_, rfl⟩, ⟨xFit, ?_, rfl⟩, outFit, ?_, ?_, ?_, ?_, ?_,
-    rfl, rfl, ?_, stackFit, argFit, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    rfl, rfl, ?_, fit56, argFit, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simpa only [Nat.mul_comm] using wsFit
   · rw [wr]; simp [State.addr, Nat.mul_comm]
   · exact ⟨_, List.mem_append_left _ (by rw [rd]; simp [State.addr]), Region.contains_self _ _⟩
@@ -61,15 +68,15 @@ theorem pd_contract_pre (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedCont
     rw [addr_add (by omega_arith : s.sp.toNat + 4 * 1 < 2 ^ 32)]
   · unfold stackArg stackArgAddr
     rw [addr_add (by omega_arith : s.sp.toNat + 4 * 2 < 2 ^ 32)]
-  · rw [frame]; simpa only [State.addr, Nat.mul_comm] using stackWs
+  · rw [frame]; simpa only [State.addr, Nat.mul_comm] using stackWs.sub_left sub
   · simpa only [State.addr, Nat.mul_comm] using wsArgs.symm
-  · rw [frame]; exact stackN
-  · rw [frame]; exact stackE
-  · rw [frame]; exact stackX
-  · rw [frame]; exact stackOut
-  · rw [frame]; exact stackArgs
+  · rw [frame]; simpa only [State.addr] using stackN.sub_left sub
+  · rw [frame]; simpa only [State.addr] using stackE.sub_left sub
+  · rw [frame]; simpa only [State.addr] using stackX.sub_left sub
+  · rw [frame]; simpa only [State.addr] using stackOut.sub_left sub
+  · rw [frame]; simpa only [State.addr] using stackArgs.sub_left sub
 
-theorem pd_contract_length (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre s) :
+theorem pd_contract_length (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre s) :
     (s.gpr .r3).toNat = 2 * Spec.Rsa.modulusWords (s.gpr .r1).toNat := by
   sig_pre [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, preLen, _⟩ := h

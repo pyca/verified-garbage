@@ -117,17 +117,18 @@ theorem ladderCT : VerifyLadderCT brainpoolp320r1Comb where
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   ladder := by
     change RelCT isa _ vLadderCode _
-    obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false brainpoolp320r1Comb.stk) vLadderCode h).isSome = true := by
+    obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false) vLadderCode h).isSome = true := by
       taint_decide_sum [mulSum, addSum, subSum]
-    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
+    exact (RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc).mono
+      (fun _ _ h => scratchArgAgree_room h (Cfg.stk_ge _)) (fun _ _ _ => trivial)
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
 theorem verify_sp : SpOk verifyBrainpoolP320r1 brainpoolp320r1Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem verifyBody_sp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody brainpoolp320r1Comb) brainpoolp320r1Comb.stk :=
   SpOk.right (a := brainpoolp320r1Comb.tableAddr) verify_sp
 
-theorem gMul_sp : SpOk brainpoolp320r1Comb.gMul 20 :=
+theorem gMul_sp : SpOk brainpoolp320r1Comb.gMul brainpoolp320r1Comb.stk :=
   SpOk.left (SpOk.right (a := brainpoolp320r1Comb.signPrep) (SpOk.right (a := brainpoolp320r1Comb.tableAddr) signComb_sp))
 
 /-- The order of the base point is below `2^(8 len)`. -/
@@ -145,7 +146,7 @@ theorem verify_ct (hC : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     (brainpoolp320r1Comb_gMul hC) stagesCT ladderCT gMul_sp verifyBody_sp
 
 abbrev vSpec : Contract isa :=
-  Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP320r1.inst (X86.abi.withConsts brainpoolp320r1Comb.combConsts) 20
+  Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP320r1.inst (X86.abi.withConsts brainpoolp320r1Comb.combConsts) 24
 
 def vLocal : Contract isa where
   pre := VCombPre brainpoolp320r1Comb
@@ -166,21 +167,21 @@ theorem v_pre {s : State} (h : vSpec.pre s) :
   obtain ⟨lo, sp, _drop, held, fit, dw, _ret, st, -, _take, wr,
     ps, _pa, ds, _da, ss, _sia, sa, _rp, _rd, _rsi, rs, _ra,
     spk, sdg, ssi, _ss, _sa, fp, fd, fsi, fs⟩ := h
-  have hb : below (s.gpr .esp) 20 = ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩ := by
+  have hb : below (s.gpr .esp) 24 = ⟨(s.gpr .esp).setWidth 64 - 24#64, 24⟩ := by
     unfold below
     rw [VG.X86.Taint.sub_setWidth lo]
   rw [← hb] at st spk sdg ssi
-  have h4 := VG.Proof.Weierstrass.X86.below_le_sub (sp := s.gpr .esp) (a := 4) (b := 20) (by decide) lo
+  have h4 := VG.Proof.Weierstrass.X86.below_le_sub (sp := s.gpr .esp) (a := 4) (b := 24) (by decide) lo
   refine ⟨⟨rfl, rfl, ps, ds, ss, sa.symm, rs, fp, fd, fsi, fs, sp, lo, _ss⟩, ?_, ?_, ?_, ?_⟩
   · change TblsHeld brainpoolp320r1Comb (s.withRegions (vRd s) (vWr s))
-      (below (s.gpr .esp) 20 :: vWr s)
+      (below (s.gpr .esp) 24 :: vWr s)
     simp only [TblsHeld, brainpoolp320r1Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil,
       Sig.forall_mem_const_single]
     simp only [Abi.constsHeld, List.mem_singleton, forall_eq, State.withRegions_mem]
     change (∀ i < brainpoolp320r1W.length, s.mem.readW ((s.syms "VG_BRAINPOOLP320R1_COMB").setWidth 64 +
       BitVec.ofNat 64 (8 * i)) 64 = brainpoolp320r1W.getD i 0) ∧
       ((s.syms "VG_BRAINPOOLP320R1_COMB").setWidth 64).toNat + 8 * brainpoolp320r1W.length ≤ 2 ^ 32 ∧
-      ∀ r ∈ below (s.gpr .esp) 20 :: vWr s,
+      ∀ r ∈ below (s.gpr .esp) 24 :: vWr s,
         Region.Disjoint ⟨(s.syms "VG_BRAINPOOLP320R1_COMB").setWidth 64, 8 * brainpoolp320r1W.length⟩ r
     refine ⟨held, ?_, ?_⟩
     · simp only [BitVec.toNat_setWidth]; omega_using [fit]
@@ -331,7 +332,7 @@ def vHashSatState : State := { vSatTbl with
 
 theorem vHashSat_pre :
     (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract (X86.abi.withConsts brainpoolp320r1Comb.combConsts)
-      (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre vHashSatState := by
+      (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre vHashSatState := by
   have a0 : arg vHashSatState 0 = 0x1000 := (vSat_arg 0 (by decide)).trans (by decide)
   have a1 : arg vHashSatState 1 = 0x2000 := (vSat_arg 1 (by decide)).trans (by decide)
   have a2 : arg vHashSatState 2 = 0x3000 := (vSat_arg 2 (by decide)).trans (by decide)
@@ -369,7 +370,7 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     Verified X86.target
       (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false verifyBrainpoolP320r1)
       (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract (X86.abi.withConsts brainpoolp320r1Comb.combConsts)
-        (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
+        (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
   Hash.verifyHash_verifiedC Proof.Ecdsa.Verify.brainpoolP320r1_len (by decide) (verify_verified hL)
     verify_sp.1 verify_sp.2 (by taint_decide) ⟨_, vHashSat_pre⟩
 
@@ -378,12 +379,12 @@ its contract in constant time and returns without secret residue (`X86.Scrub.ver
 theorem verify_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed X86.target Impl.Ecdsa.X86.Fn.verifyBrainpoolP320r1
       (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract (X86.abi.withConsts brainpoolp320r1Comb.combConsts)
-        (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
+        (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
   X86.Scrub.verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false
         verifyBrainpoolP320r1
       verified := verifyHash_verified hL }
-    (Proof.EcKey.X86.Scrub.verifyHashOut (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)
+    (Proof.EcKey.X86.Scrub.verifyHashOut (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)
       brainpoolp320r1Comb.combConsts Spec.Ecdsa.BrainpoolP320r1.inst)
 
 end VG.Proof.Ecdsa.Verify.X86.BrainpoolP320r1

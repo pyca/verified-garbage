@@ -34,8 +34,11 @@ transposition's masks (`maskOff`) and the callee-saved registers and `ra`
   between reading the words of `R` (`.ba`) and of `L` (`.ab`), so no word
   moves; a pass of sixteen rounds, eight times both (counted in `a4`), ends
   by exchanging the halves, as DES's swap and the next pass's IP do.
-* The three passes are unrolled, each with its schedule component and key
-  direction.
+* The three passes are calls of a function for each direction
+  (`passBody`, `vg_triple_des_pass_{en,de}crypt`), each from the key
+  pointer at its schedule component's first key; the two transpositions
+  calls of one function (`vg_triple_des_transpose`), which ECB and the
+  modes' core share. The calls write `ra`, which the frame saves.
 * The state is transposed back and the blocks copied out; the data pointer
   `a1` and the blocks left `a2` advance.
 
@@ -311,10 +314,21 @@ def swapHalves : List Instr :=
     [.load .d .t0 base (stOff (lWord q)), .load .d .t1 base (stOff (rWord q)),
      .store .d .t1 base (stOff (lWord q)), .store .d .t0 base (stOff (rWord q))]
 
-/-- A DES pass with schedule component `c`, in direction `d`. -/
+/-- A DES pass in direction `d`, from the key at `keyPtr`: the eight pairs
+of rounds, then the halves exchanged. The same code for every pass of a
+direction, so the passes share it (`pass`). -/
+def passBody (d : Direction) : Prog isa :=
+  .seq (.block [.li pairs 8]) (.seq (.loop (.block (roundPair d)) (.nonzero pairs)) (.block swapHalves))
+
+/-- The name of the function of `passBody d`. -/
+def passName (d : Direction) : String :=
+  "vg_triple_des_pass_" ++ (if d = .encrypt then "encrypt" else "decrypt")
+
+/-- A DES pass with schedule component `c`, in direction `d`: the key
+pointer at its first key, then a call of the direction's pass. -/
 def pass (c : Nat) (d : Direction) : Prog isa :=
-  .seq (.block [.addi keyPtr base (schedOff + 128 * c + if d = .encrypt then 0 else 120), .li pairs 8])
-    (.seq (.loop (.block (roundPair d)) (.nonzero pairs)) (.block swapHalves))
+  .seq (.block [.addi keyPtr base (schedOff + 128 * c + if d = .encrypt then 0 else 120)])
+    (.call (passName d) (passBody d))
 
 /-- The three passes of the operation. -/
 def passes : Direction → Prog isa
@@ -367,6 +381,9 @@ def transposeBody : List Instr :=
 /-- `a0` at the masks, and the transposition. -/
 def transpose : List Instr := .addi .a0 base maskOff :: transposeBody
 
+/-- A call of the transposition, which every batch makes twice. -/
+def transposeCall : Prog isa := .call "vg_triple_des_transpose" (.block transpose)
+
 /-! ## Batches -/
 
 /-- The batch's bytes, `8 min(n, 64)`, into `s5`. -/
@@ -382,7 +399,7 @@ def copyBytes (src dst : Reg) : Prog isa :=
 the three passes, and back; then the next blocks. -/
 def batch (d : Direction) : Prog isa :=
   .seq batchBytes (.seq (copyBytes .a1 base)
-    (.seq (.block transpose) (.seq (passes d) (.seq (.block transpose) (.seq batchBytes
+    (.seq transposeCall (.seq (passes d) (.seq transposeCall (.seq batchBytes
       (.seq (copyBytes base .a1) (.block [.add .a1 .a1 .s5, .shift .srl .d .t0 .s5 3, .sub .a2 .a2 .t0])))))))
 
 /-! ## The function -/

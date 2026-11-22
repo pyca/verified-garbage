@@ -27,46 +27,8 @@ namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 
 open VG VG.AArch64
 open VG.Proof.Pbkdf2.Md.AArch64 (MdHash)
-open VG.Proof.HmacTable.AArch64 (tables names tableOf held_tableOf hashAt_tableOf mem_names)
-open VG.Proof.HashTable (symsOf symsOf_distinct readW_sep64)
-
-/-- Six words at `p`. -/
-def put6 (m : Mem) (p : Addr) (w₀ w₁ w₂ w₃ w₄ w₅ : BitVec 64) : Mem :=
-  (((((m.writeW (p + BitVec.ofNat 64 (8 * 0)) w₀).writeW (p + BitVec.ofNat 64 (8 * 1)) w₁).writeW
-    (p + BitVec.ofNat 64 (8 * 2)) w₂).writeW (p + BitVec.ofNat 64 (8 * 3)) w₃).writeW
-    (p + BitVec.ofNat 64 (8 * 4)) w₄).writeW (p + BitVec.ofNat 64 (8 * 5)) w₅
-
-/-- The table `put6` writes at `0x300000`. -/
-theorem put6_held {m : Mem} {ws : List (BitVec 64)} (hl : ws.length = 6) :
-    Abi.tableHeld 64 (put6 m 0x300000 (ws.getD 0 0) (ws.getD 1 0) (ws.getD 2 0) (ws.getD 3 0) (ws.getD 4 0)
-      (ws.getD 5 0)) 0x300000 ws := by
-  intro i hi
-  rw [hl] at hi
-  simp only [put6]
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
-  · rw [readW_sep64, readW_sep64, readW_sep64, readW_sep64, readW_sep64, Mem.readW_writeW_self64,
-      BitVec.setWidth_eq] <;> decide
-  · rw [readW_sep64, readW_sep64, readW_sep64, readW_sep64, Mem.readW_writeW_self64, BitVec.setWidth_eq] <;> decide
-  · rw [readW_sep64, readW_sep64, readW_sep64, Mem.readW_writeW_self64, BitVec.setWidth_eq] <;> decide
-  · rw [readW_sep64, readW_sep64, Mem.readW_writeW_self64, BitVec.setWidth_eq] <;> decide
-  · rw [readW_sep64, Mem.readW_writeW_self64, BitVec.setWidth_eq] <;> decide
-  · rw [Mem.readW_writeW_self64, BitVec.setWidth_eq]
-
-/-- What `put6` keeps below the table. -/
-theorem put6_below {m : Mem} {a : Addr} (ha : a.toNat + 8 ≤ 0x300000) (w₀ w₁ w₂ w₃ w₄ w₅ : BitVec 64) :
-    (put6 m 0x300000 w₀ w₁ w₂ w₃ w₄ w₅).readW a 64 = m.readW a 64 := by
-  have h0 : (0x300000 + BitVec.ofNat 64 (8 * 0) : Addr).toNat = 0x300000 := by decide
-  have h1 : (0x300000 + BitVec.ofNat 64 (8 * 1) : Addr).toNat = 0x300008 := by decide
-  have h2 : (0x300000 + BitVec.ofNat 64 (8 * 2) : Addr).toNat = 0x300010 := by decide
-  have h3 : (0x300000 + BitVec.ofNat 64 (8 * 3) : Addr).toNat = 0x300018 := by decide
-  have h4 : (0x300000 + BitVec.ofNat 64 (8 * 4) : Addr).toNat = 0x300020 := by decide
-  have h5 : (0x300000 + BitVec.ofNat 64 (8 * 5) : Addr).toNat = 0x300028 := by decide
-  simp only [put6]
-  rw [readW_sep64, readW_sep64, readW_sep64, readW_sep64, readW_sep64, readW_sep64]
-  all_goals first | (simp only [h0, h1, h2, h3, h4, h5]; omega_arith) | omega_using [ha]
-
-/-- The functions of `vs` at distinct addresses, and every other symbol at `0x100000`. -/
-def symT (vs : List MdHash) (n : String) : Addr := if n ∈ names vs then symsOf (names vs) n else 0x100000
+open VG.Proof.HmacTable.AArch64 (tables names tableOf held_tableOf hashAt_tableOf mem_names put6 put6_held
+  put6_below symT symT_distinct)
 
 /-- A state meeting the contract, for scalars of `Q` bytes, with the table
 of `w` and the memory `m₀` (the curve's comb tables `Tr`). -/
@@ -87,11 +49,6 @@ theorem satT_held (vs : List MdHash) (w : MdHash) (m₀ : Mem) (Q : Nat) (Tr : L
   put6_held (ws := [symT vs w.H.hmacInitAnyN, symT vs w.H.updN, symT vs w.H.hmacFinN,
     BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G), BitVec.ofNat 64 w.mgf.G.len,
     BitVec.ofNat 64 (Spec.HmacTable.blockSize w.mgf.G)]) rfl
-
-theorem symT_distinct {vs : List MdHash} (hl : (names vs).length < 2 ^ 32) :
-    (names vs).Pairwise fun f g => f ≠ g → symT vs f ≠ symT vs g :=
-  (symsOf_distinct hl).imp_of_mem fun {f g} hf hg h hne => by
-    simp only [symT, hf, hg, ite_true]; exact h hne
 
 /-- A state meeting the contract, with the comb tables `W` of the static
 `n` at `0x100000`, where `m₀` holds them. -/

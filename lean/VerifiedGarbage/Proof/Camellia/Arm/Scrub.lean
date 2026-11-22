@@ -59,11 +59,12 @@ without secret residue (`Arm.Scrub.verifiedScrubbedSel`, whose analysis,
 `Arm.rtaint`, the kernel evaluates here: `taint_decide_ct`), which is what
 its registration binds.
 
-The modes call ECB's and CTR's code as it is verified, without the wipe,
-under names of their own (`vg_camellia_ecb_encrypt_entry`,
-`Impl.Camellia.Arm.ecbCore`; `vg_camellia_ctr_entry`,
-`Impl.Camellia.Arm.ctrCall`), which the emitter writes as internal
-functions: the analysis of each mode covers the frame of that call.
+The modes call the ECB artifacts as they are emitted, cleanup included
+(`Impl.Camellia.Arm.ecbCore`, `Proof.Camellia.Arm.ecbVerifiedSk`), and CTR's
+code as it is verified, without the wipe, under a name of its own
+(`vg_camellia_ctr_entry`, `Impl.Camellia.Arm.ctrCall`), which the emitter
+writes as an internal function: the analysis of each mode covers the frame
+of that call.
 -/
 
 @[expose] public section

@@ -247,12 +247,12 @@ the slots of `S` below `2^16`, if `body` changes no register but `R` (each
 either `r1`–`r3` or saved) and no memory but the slots `W` and `ACC`, and
 maps the elements by `f`, then so does `asFn c body`, which changes no
 register but `r1`–`r3` and no memory but those and `SAVE`. -/
-theorem asFn_ok {b : BitVec 32} {c : Bool} {body : Prog isa} {R : List Reg} {f : Env → Env}
-    {S S' W : List Slot}
+theorem asFnG_ok {b : BitVec 32} {c : Bool} {body : Prog isa} {R : List Reg} {f : Env → Env}
+    {S S' W : List Slot} {s : State}
     (hR : ∀ r ∈ R, r ∈ fnClob ∨ r ∈ (regSlots c).map Prod.fst)
-    (hbody : ∀ s₁ : State, Ctx b s₁ → LimOn s₁.mem b S → WP isa body s₁ fun t =>
+    (hbody : ∀ s₁ : State, Ctx b s₁ → LimOn s₁.mem b S → s₁.gpr = s.gpr → WP isa body s₁ fun t =>
       Rest R s₁ t ∧ Frame (wRegions b W) s₁.mem t.mem ∧ LimOn t.mem b S' ∧ env t.mem b = f (env s₁.mem b))
-    {s : State} (hc : Ctx b s) (hl : LimOn s.mem b S) :
+    (hc : Ctx b s) (hl : LimOn s.mem b S) :
     WP isa (asFn c body) s fun t =>
       Rest fnClob s t ∧ Frame (wRegions b W ++ [saveR b]) s.mem t.mem ∧ LimOn t.mem b S' ∧
         env t.mem b = f (env s.mem b) := by
@@ -282,7 +282,7 @@ theorem asFn_ok {b : BitVec 32} {c : Bool} {body : Prog isa} {R : List Reg} {f :
     rw [hm₁, hlimb i k hk]; exact hl i hi k hk
   have he₁ : env s₁.mem b = env s.mem b := funext fun i => by
     rw [hm₁]; exact congrArg VG.Proof.X25519.toFe (val16_congr (hlimb i))
-  refine WP.seq (WP.mono (hbody s₁ hc₁ hl₁) fun t ⟨hrt, hf, hlt, het⟩ => ?_)
+  refine WP.seq (WP.mono (hbody s₁ hc₁ hl₁ (by rw [hs₁])) fun t ⟨hrt, hf, hlt, het⟩ => ?_)
   rw [hm₁] at hf
   have hct : Ctx b t := hc₁.of_rest (hrt.mono fun r h => h) (fun h => by
     rcases hR _ h with h | h <;> revert h <;> cases c <;> decide)
@@ -306,6 +306,18 @@ theorem asFn_ok {b : BitVec 32} {c : Bool} {body : Prog isa} {R : List Reg} {f :
     rw [List.mem_singleton.mp hr]; exact fun _ h => h
   · rw [hmu]; exact hlt
   · rw [hmu, het]; exact congrArg f he₁
+
+/-- `asFnG_ok`, for a body that needs nothing of the registers on entry. -/
+theorem asFn_ok {b : BitVec 32} {c : Bool} {body : Prog isa} {R : List Reg} {f : Env → Env}
+    {S S' W : List Slot}
+    (hR : ∀ r ∈ R, r ∈ fnClob ∨ r ∈ (regSlots c).map Prod.fst)
+    (hbody : ∀ s₁ : State, Ctx b s₁ → LimOn s₁.mem b S → WP isa body s₁ fun t =>
+      Rest R s₁ t ∧ Frame (wRegions b W) s₁.mem t.mem ∧ LimOn t.mem b S' ∧ env t.mem b = f (env s₁.mem b))
+    {s : State} (hc : Ctx b s) (hl : LimOn s.mem b S) :
+    WP isa (asFn c body) s fun t =>
+      Rest fnClob s t ∧ Frame (wRegions b W ++ [saveR b]) s.mem t.mem ∧ LimOn t.mem b S' ∧
+        env t.mem b = f (env s.mem b) :=
+  asFnG_ok hR (fun s₁ hc₁ hl₁ _ => hbody s₁ hc₁ hl₁) hc hl
 
 end VG.Proof.Ed25519.Arm
 
@@ -335,29 +347,33 @@ open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 variable {umaal : Bool}
 
-/-- What `fnCall_ok` asks of the function, as a contract on the working space. -/
-def fnK (b : BitVec 32) (f : Env → Env) : Contract isa where
-  pre t := t.rd = [] ∧ t.wr = [⟨State.addr b, 8192⟩] ∧ Ctx b t ∧ AllLim t.mem b
+/-- What `fnCallG_ok` asks of the function, as a contract on the working
+space, with the value `v` of `r10` on entry. -/
+def fnK (b : BitVec 32) (f : Env → Env) (v : BitVec 32) : Contract isa where
+  pre t := t.rd = [] ∧ t.wr = [⟨State.addr b, 8192⟩] ∧ Ctx b t ∧ AllLim t.mem b ∧ t.gpr .r10 = v
   post t t' := Rest fnClob t t' ∧ Frame [FA b] t.mem t'.mem ∧ AllLim t'.mem b ∧
     env t'.mem b = f (env t.mem b)
   pub _ _ := True
 
-theorem fnCall_ok {n : String} {c : Prog isa} {b : BitVec 32} {f : Env → Env}
-    (hfn : ∀ s, Ctx b s → AllLim s.mem b → WP isa c s fun t => Rest fnClob s t ∧
-      Frame [FA b] s.mem t.mem ∧ AllLim t.mem b ∧ env t.mem b = f (env s.mem b))
-    (hn : c.noCalls = true) {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) :
+/-- A call of a function that may read the value of `r10` on entry (a
+count of iterations), which a call keeps. -/
+theorem fnCallG_ok {n : String} {c : Prog isa} {b : BitVec 32} {f : Env → Env} {s : State}
+    (hfn : ∀ t, Ctx b t → AllLim t.mem b → t.gpr .r10 = s.gpr .r10 → WP isa c t fun t' => Rest fnClob t t' ∧
+      Frame [FA b] t.mem t'.mem ∧ AllLim t'.mem b ∧ env t'.mem b = f (env t.mem b))
+    (hn : c.noCalls = true) (hc : Ctx b s) (hl : AllLim s.mem b) :
     WP isa (.call n c) s fun t => Keep b s t ∧ AllLim t.mem b ∧ env t.mem b = f (env s.mem b) := by
-  have hv : ∀ t, (fnK b f).pre t → ∃ tr t', Exec isa c t tr t' ∧ abiPreserved t t' ∧ (fnK b f).post t t' :=
-    fun t ⟨_, _, ht, hlt⟩ => by
-      obtain ⟨tr, t', he, hR, hF, hL, hV⟩ := hfn t ht hlt
+  have hv : ∀ t, (fnK b f (s.gpr .r10)).pre t →
+      ∃ tr t', Exec isa c t tr t' ∧ abiPreserved t t' ∧ (fnK b f (s.gpr .r10)).post t t' :=
+    fun t ⟨_, _, ht, hlt, h10⟩ => by
+      obtain ⟨tr, t', he, hR, hF, hL, hV⟩ := hfn t ht hlt h10
       exact ⟨tr, t', he, ⟨fun r hr => hR.gpr r (by revert hr; cases r <;> decide), hR.sp⟩, hR, hF, hL, hV⟩
   have g : ∀ q, q ∉ VG.Arm.linkRegs → (s.callEntry.withRegions [] [⟨State.addr b, 8192⟩]).gpr q = s.gpr q :=
     fun q hq => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
   have hcov : Covers [⟨State.addr b, 8192⟩] s.wr :=
     Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; exact hc.wr
-  refine WP.call (k := fnK b f) hv (rd := []) (wr := [⟨State.addr b, 8192⟩])
+  refine WP.call (k := fnK b f (s.gpr .r10)) hv (rd := []) (wr := [⟨State.addr b, 8192⟩])
     ⟨rfl, rfl, ⟨by rw [g _ (by decide)]; exact hc.r0, hc.fit, List.mem_singleton_self _⟩,
-      by rw [State.withRegions_mem, State.callEntry_mem]; exact hl⟩
+      by rw [State.withRegions_mem, State.callEntry_mem]; exact hl, g _ (by decide)⟩
     (Covers.right hcov) hcov ?_ hn
   intro t hrd hwr hsp _ _ _ ⟨hR, hF, hL, hV⟩
   simp only [State.withRegions_mem, State.callEntry_mem] at hF hL hV
@@ -365,6 +381,13 @@ theorem fnCall_ok {n : String} {c : Prog isa} {b : BitVec 32} {f : Env → Env}
   have hR' := hR.gpr q (by revert hq; cases q <;> decide)
   simp only [State.withRegions_gpr] at hR'
   rw [hR', State.callEntry_gpr _ (by revert hq; cases q <;> decide)]
+
+theorem fnCall_ok {n : String} {c : Prog isa} {b : BitVec 32} {f : Env → Env}
+    (hfn : ∀ s, Ctx b s → AllLim s.mem b → WP isa c s fun t => Rest fnClob s t ∧
+      Frame [FA b] s.mem t.mem ∧ AllLim t.mem b ∧ env t.mem b = f (env s.mem b))
+    (hn : c.noCalls = true) {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) :
+    WP isa (.call n c) s fun t => Keep b s t ∧ AllLim t.mem b ∧ env t.mem b = f (env s.mem b) :=
+  fnCallG_ok (fun t ht hlt _ => hfn t ht hlt) hn hc hl
 
 /-- `limsAfter` keeps the slots it starts from. -/
 theorem limsAfter_sup : ∀ {ops : List FieldOp} {S S' : List Slot}, limsAfter ops S = some S' →

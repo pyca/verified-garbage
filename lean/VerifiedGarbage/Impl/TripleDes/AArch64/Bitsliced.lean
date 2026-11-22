@@ -402,12 +402,22 @@ def tailOut : Prog isa :=
 /-- The next 128 blocks. -/
 def wideOut : List Instr := [.addImm .x .x1 .x1 1024, .subImm .x .x2 .x2 128]
 
+/-- The internal function of the batch of the direction `d`. -/
+def batchName : Direction → String
+  | .encrypt => "vg_triple_des_batch_encrypt"
+  | .decrypt => "vg_triple_des_batch_decrypt"
+
+/-- A call of the batch, the return address kept in `x14`, which the batch
+does not write, across it. -/
+def batchCall (d : Direction) : Prog isa :=
+  .seq (.block [.addImm .x .x14 .x30 0]) (.seq (.call (batchName d) (batch d)) (.block [.addImm .x .x30 .x14 0]))
+
 /-- One batch: on the next 128 blocks in place if that many are left, else on
 the blocks left, through the scratch buffer. -/
 def step (d : Direction) : Prog isa :=
   .seq (.block [wholeLeft])
     (.seq (.ite (.zero .x .x10) tailIn (.block [.addImm .x .x4 .x1 0]))
-      (.seq (batch d) (.seq (.block [wholeLeft]) (.ite (.zero .x .x10) tailOut (.block wideOut)))))
+      (.seq (batchCall d) (.seq (.block [wholeLeft]) (.ite (.zero .x .x10) tailOut (.block wideOut)))))
 
 def ecb (d : Direction) : Prog isa := .ite (.zero .x .x2) (.block []) (.loop (step d) (.nonzero .x .x2))
 
