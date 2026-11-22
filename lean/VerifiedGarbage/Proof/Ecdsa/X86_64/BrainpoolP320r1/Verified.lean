@@ -225,7 +225,7 @@ theorem sign_x86 (hL : Law Spec.BrainpoolP320r1.curve)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signBrainpoolP320r1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signG_ok (brainpoolp320r1S_ok hI) hL brainpoolp320r1S_comb
-    (Proof.BrainpoolP320r1.combOk7 hL) rfl (pre_of hs)
+    (Proof.BrainpoolP320r1.combOk7 hL) rfl (pre_of hs) (by decide)
   obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signBrainpoolP320r1) (Code.allInstrs_mono
     (fun i h => by rw [noRsp_of_hasBits rfl h, noMx_of_hasBits rfl h]; rfl)
     (Code.allInstrs_of_inlineOkB sign_inlineOkB))

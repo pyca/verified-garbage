@@ -40,9 +40,12 @@ variable (c : Impl.Ecdsa.X86_64.Cfg)
 
 /-- `[v]Q`, into `R`, by the window method for any `a`: `v + offset J` and its
 bits (`winPrep`), then `windowA` on `Q` (at ECDH's `PX`, `PY`), with
-`3 b R mod p` (`B3P`) for its complete additions. -/
+`3 b R mod p` put in `PT` for its complete additions, calls of
+`vg_<curve>_add_complete` (`Cfg.addCompleteFn`). -/
 def mulVA : Prog isa :=
-  .seq (c.winPrep (c.sl V)) (WinCfg.windowA (c.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY B3P))
+  .seq (c.winPrep (c.sl V))
+    (WinCfg.windowA (c.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY B3P)
+      (c.mont (3 * c.C.b)) c.addCompleteFn)
 
 /-- `[u]G + [v]Q`, into `R`, from `u` and `v`, `[u]G` by the comb of `d` and
 `[v]Q` by `mulVA`. -/
