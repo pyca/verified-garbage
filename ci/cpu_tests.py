@@ -421,6 +421,18 @@ GROUPS = {
             "wycheproof::ecdsa_secp256k1",
         ],
     },
+    "seed_cbc": {
+        "lib": [],
+        "tests": ["cavp::seed_cbc"],
+    },
+    "seed_cfb": {
+        "lib": [],
+        "tests": ["cavp::seed_cfb"],
+    },
+    "seed_ofb": {
+        "lib": [],
+        "tests": ["cavp::seed_ofb"],
+    },
     "sha1": {
         "lib": ["hashes::sha1", "hmac::sha1", "kdf::pbkdf2_hmac::sha1"],
         "tests": ["cavp::sha1", "wycheproof::hmac_sha1", "wycheproof::pbkdf2_sha1"],
