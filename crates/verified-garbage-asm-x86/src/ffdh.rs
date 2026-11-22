@@ -20,7 +20,7 @@
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain` (distinct Rust objects never do).
-/// * Neither `domain` nor `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `domain` nor `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 252 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_check_domain(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -520,7 +520,7 @@ jmp 251f
 250:
 .base64 "uAEAAAA="
 251:
-.base64 "Zg/vwLkAAAAAjaQkVP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAjaQkrAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.base64 "Zg/vwLkAAAAAjaQkBP////MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAAiYwk8AAAAImMJPQAAACJjCT4AAAAjaQk/AAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
 .p2align 6"#,
         vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
         VG_FFDH_VETTED_GROUPS_X86 = sym super::consts::VG_FFDH_VETTED_GROUPS_X86,
@@ -547,7 +547,7 @@ jmp 251f
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain` or `y` (distinct Rust objects never do).
-/// * None of `domain`, `y` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `domain`, `y` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 252 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_check_public(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -757,7 +757,7 @@ jmp 211f
 210:
 .base64 "uAAAAAA="
 211:
-.base64 "jWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJFT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAI2kJKwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "jWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJAT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAI2kJPwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
@@ -785,7 +785,7 @@ jmp 211f
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain`, `y` or `x` (distinct Rust objects never do).
-/// * None of `domain`, `y`, `x` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `domain`, `y`, `x` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 252 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_check_private(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -1036,7 +1036,7 @@ jmp 222f
 221:
 .base64 "uAIAAAA="
 222:
-.base64 "jWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJFT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAI2kJKwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "jWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJAT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAI2kJPwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
@@ -1066,7 +1066,7 @@ jmp 222f
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `domain`, `x` or `peer` (distinct Rust objects never do).
-/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 252 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_exchange(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -1259,7 +1259,7 @@ jne 243b
 244:
 .base64 "D7YGiAODwwGD7gGD6QGD+QA="
 jne 244b
-.base64 "i0cIg+ABjWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJFT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAI2kJKwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i0cIg+ABjWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJAT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAI2kJPwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
@@ -1287,7 +1287,7 @@ jne 244b
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `y` and `scratch` must not overlap each other, `domain` or `x` (distinct Rust objects never do).
-/// * None of `y`, `domain`, `x` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `y`, `domain`, `x` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 252 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_derive_public(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -1542,7 +1542,7 @@ jne 259b
 jne 260b
 .base64 "i0cIg+ABuAIAAAA="
 220:
-.base64 "jWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJFT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAI2kJKwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "jWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJAT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAI2kJPwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
     )
@@ -1590,7 +1590,7 @@ jmp 21f
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `ctx` and `scratch` must not overlap each other or `domain` (distinct Rust objects never do).
-/// * None of `ctx`, `domain` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 172 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `domain` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 252 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_precompute(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -2203,7 +2203,7 @@ call {vg_rsa_mont_mul_at}
 2146:
 .base64 "iwOLVQAxwiHKMdCJA4PFBIPDBIPvBA=="
 jne 2146b
-.base64 "i3wkRLgBAAAAjWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJFT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAImMJKAAAACJjCSkAAAAiYwkqAAAAI2kJKwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
+.base64 "i3wkRLgBAAAAjWQkTItfIItvJIt3KIt/LGYP78C5AAAAAI2kJAT////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAImMJPAAAACJjCT0AAAAiYwk+AAAAI2kJPwAAAC6AAAAADHJZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7//D"
 .p2align 6"#,
         vg_rsa_mont_mul_at = sym super::rsa::vg_rsa_mont_mul_at::vg_rsa_mont_mul_at,
         VG_FFDH_VETTED_GROUPS_X86 = sym super::consts::VG_FFDH_VETTED_GROUPS_X86,
@@ -2235,7 +2235,7 @@ jne 2146b
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or `ctx` (distinct Rust objects never do).
-/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 228 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 308 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -2310,7 +2310,7 @@ jne 220b
 22:
 .base64 "i0ZIg/gE"
 je 20b
-.base64 "i05Mi0Y8iQG4AAAAAIlBBItGSIt2IGYP78C5AAAAAI2kJBz////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAImMJOAAAACNpCTkAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.base64 "i05Mi0Y8iQG4AAAAAIlBBItGSIt2IGYP78C5AAAAAI2kJMz+///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAPMPf4QkIAEAAImMJDABAACNpCQ0AQAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_ffdh_generate_key_cached = sym super::ffdh::vg_ffdh_generate_key_cached::vg_ffdh_generate_key_cached,
     )
@@ -2376,7 +2376,7 @@ jmp 21f
 /// * `scratch_len` must be at least `16 * out_len + 32`.
 /// * The last twelve controller words and the scratch contents are private workspace.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other or `rand` (distinct Rust objects never do).
-/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 212 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 292 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_generate_parameters(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -2429,7 +2429,7 @@ jne 214b
 22:
 .base64 "i0ZEg/gE"
 je 20b
-.base64 "i04oi0ZIiQG4AAAAAIlBBItGRIt2IGYP78C5AAAAAI2kJCz////zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAImMJNAAAACNpCTUAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.base64 "i04oi0ZIiQG4AAAAAIlBBItGRIt2IGYP78C5AAAAAI2kJNz+///zD38EJPMPf0QkEPMPf0QkIPMPf0QkMPMPf0QkQPMPf0QkUPMPf0QkYPMPf0QkcPMPf4QkgAAAAPMPf4QkkAAAAPMPf4QkoAAAAPMPf4QksAAAAPMPf4QkwAAAAPMPf4Qk0AAAAPMPf4Qk4AAAAPMPf4Qk8AAAAPMPf4QkAAEAAPMPf4QkEAEAAImMJCABAACNpCQkAQAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
 .p2align 6"#,
         vg_ffdh_parameter_candidate_sieved = sym super::ffdh::vg_ffdh_parameter_candidate_sieved::vg_ffdh_parameter_candidate_sieved,
     )

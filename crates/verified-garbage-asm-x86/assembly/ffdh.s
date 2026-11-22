@@ -3868,7 +3868,7 @@ vg_ffdh_check_domain:
 251:
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-172]
+	lea esp, [esp-252]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -3879,10 +3879,15 @@ vg_ffdh_check_domain:
 	movdqu XMMWORD PTR [esp+112], xmm0
 	movdqu XMMWORD PTR [esp+128], xmm0
 	movdqu XMMWORD PTR [esp+144], xmm0
-	mov DWORD PTR [esp+160], ecx
-	mov DWORD PTR [esp+164], ecx
-	mov DWORD PTR [esp+168], ecx
-	lea esp, [esp+172]
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	movdqu XMMWORD PTR [esp+192], xmm0
+	movdqu XMMWORD PTR [esp+208], xmm0
+	movdqu XMMWORD PTR [esp+224], xmm0
+	mov DWORD PTR [esp+240], ecx
+	mov DWORD PTR [esp+244], ecx
+	mov DWORD PTR [esp+248], ecx
+	lea esp, [esp+252]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -6305,7 +6310,7 @@ vg_ffdh_check_public:
 	mov edi, DWORD PTR [edi+44]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-172]
+	lea esp, [esp-252]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -6316,10 +6321,15 @@ vg_ffdh_check_public:
 	movdqu XMMWORD PTR [esp+112], xmm0
 	movdqu XMMWORD PTR [esp+128], xmm0
 	movdqu XMMWORD PTR [esp+144], xmm0
-	mov DWORD PTR [esp+160], ecx
-	mov DWORD PTR [esp+164], ecx
-	mov DWORD PTR [esp+168], ecx
-	lea esp, [esp+172]
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	movdqu XMMWORD PTR [esp+192], xmm0
+	movdqu XMMWORD PTR [esp+208], xmm0
+	movdqu XMMWORD PTR [esp+224], xmm0
+	mov DWORD PTR [esp+240], ecx
+	mov DWORD PTR [esp+244], ecx
+	mov DWORD PTR [esp+248], ecx
+	lea esp, [esp+252]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -9212,7 +9222,7 @@ vg_ffdh_check_private:
 	mov edi, DWORD PTR [edi+44]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-172]
+	lea esp, [esp-252]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -9223,10 +9233,15 @@ vg_ffdh_check_private:
 	movdqu XMMWORD PTR [esp+112], xmm0
 	movdqu XMMWORD PTR [esp+128], xmm0
 	movdqu XMMWORD PTR [esp+144], xmm0
-	mov DWORD PTR [esp+160], ecx
-	mov DWORD PTR [esp+164], ecx
-	mov DWORD PTR [esp+168], ecx
-	lea esp, [esp+172]
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	movdqu XMMWORD PTR [esp+192], xmm0
+	movdqu XMMWORD PTR [esp+208], xmm0
+	movdqu XMMWORD PTR [esp+224], xmm0
+	mov DWORD PTR [esp+240], ecx
+	mov DWORD PTR [esp+244], ecx
+	mov DWORD PTR [esp+248], ecx
+	lea esp, [esp+252]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -11548,7 +11563,7 @@ vg_ffdh_exchange:
 	mov edi, DWORD PTR [edi+44]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-172]
+	lea esp, [esp-252]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -11559,10 +11574,15 @@ vg_ffdh_exchange:
 	movdqu XMMWORD PTR [esp+112], xmm0
 	movdqu XMMWORD PTR [esp+128], xmm0
 	movdqu XMMWORD PTR [esp+144], xmm0
-	mov DWORD PTR [esp+160], ecx
-	mov DWORD PTR [esp+164], ecx
-	mov DWORD PTR [esp+168], ecx
-	lea esp, [esp+172]
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	movdqu XMMWORD PTR [esp+192], xmm0
+	movdqu XMMWORD PTR [esp+208], xmm0
+	movdqu XMMWORD PTR [esp+224], xmm0
+	mov DWORD PTR [esp+240], ecx
+	mov DWORD PTR [esp+244], ecx
+	mov DWORD PTR [esp+248], ecx
+	lea esp, [esp+252]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -14503,7 +14523,7 @@ vg_ffdh_derive_public:
 	mov edi, DWORD PTR [edi+44]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-172]
+	lea esp, [esp-252]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -14514,10 +14534,15 @@ vg_ffdh_derive_public:
 	movdqu XMMWORD PTR [esp+112], xmm0
 	movdqu XMMWORD PTR [esp+128], xmm0
 	movdqu XMMWORD PTR [esp+144], xmm0
-	mov DWORD PTR [esp+160], ecx
-	mov DWORD PTR [esp+164], ecx
-	mov DWORD PTR [esp+168], ecx
-	lea esp, [esp+172]
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	movdqu XMMWORD PTR [esp+192], xmm0
+	movdqu XMMWORD PTR [esp+208], xmm0
+	movdqu XMMWORD PTR [esp+224], xmm0
+	mov DWORD PTR [esp+240], ecx
+	mov DWORD PTR [esp+244], ecx
+	mov DWORD PTR [esp+248], ecx
+	lea esp, [esp+252]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -20516,7 +20541,7 @@ vg_ffdh_generate_key_precompute:
 	mov edi, DWORD PTR [edi+44]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-172]
+	lea esp, [esp-252]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -20527,10 +20552,15 @@ vg_ffdh_generate_key_precompute:
 	movdqu XMMWORD PTR [esp+112], xmm0
 	movdqu XMMWORD PTR [esp+128], xmm0
 	movdqu XMMWORD PTR [esp+144], xmm0
-	mov DWORD PTR [esp+160], ecx
-	mov DWORD PTR [esp+164], ecx
-	mov DWORD PTR [esp+168], ecx
-	lea esp, [esp+172]
+	movdqu XMMWORD PTR [esp+160], xmm0
+	movdqu XMMWORD PTR [esp+176], xmm0
+	movdqu XMMWORD PTR [esp+192], xmm0
+	movdqu XMMWORD PTR [esp+208], xmm0
+	movdqu XMMWORD PTR [esp+224], xmm0
+	mov DWORD PTR [esp+240], ecx
+	mov DWORD PTR [esp+244], ecx
+	mov DWORD PTR [esp+248], ecx
+	lea esp, [esp+252]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -20766,7 +20796,7 @@ vg_ffdh_generate_key_search_cached:
 	mov esi, DWORD PTR [esi+32]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-228]
+	lea esp, [esp-308]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -20781,8 +20811,13 @@ vg_ffdh_generate_key_search_cached:
 	movdqu XMMWORD PTR [esp+176], xmm0
 	movdqu XMMWORD PTR [esp+192], xmm0
 	movdqu XMMWORD PTR [esp+208], xmm0
-	mov DWORD PTR [esp+224], ecx
-	lea esp, [esp+228]
+	movdqu XMMWORD PTR [esp+224], xmm0
+	movdqu XMMWORD PTR [esp+240], xmm0
+	movdqu XMMWORD PTR [esp+256], xmm0
+	movdqu XMMWORD PTR [esp+272], xmm0
+	movdqu XMMWORD PTR [esp+288], xmm0
+	mov DWORD PTR [esp+304], ecx
+	lea esp, [esp+308]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
@@ -21122,7 +21157,7 @@ vg_ffdh_generate_parameters:
 	mov esi, DWORD PTR [esi+32]
 	pxor xmm0, xmm0
 	mov ecx, 0
-	lea esp, [esp-212]
+	lea esp, [esp-292]
 	movdqu XMMWORD PTR [esp], xmm0
 	movdqu XMMWORD PTR [esp+16], xmm0
 	movdqu XMMWORD PTR [esp+32], xmm0
@@ -21136,8 +21171,13 @@ vg_ffdh_generate_parameters:
 	movdqu XMMWORD PTR [esp+160], xmm0
 	movdqu XMMWORD PTR [esp+176], xmm0
 	movdqu XMMWORD PTR [esp+192], xmm0
-	mov DWORD PTR [esp+208], ecx
-	lea esp, [esp+212]
+	movdqu XMMWORD PTR [esp+208], xmm0
+	movdqu XMMWORD PTR [esp+224], xmm0
+	movdqu XMMWORD PTR [esp+240], xmm0
+	movdqu XMMWORD PTR [esp+256], xmm0
+	movdqu XMMWORD PTR [esp+272], xmm0
+	mov DWORD PTR [esp+288], ecx
+	lea esp, [esp+292]
 	mov edx, 0
 	xor ecx, ecx
 	pxor xmm0, xmm0
