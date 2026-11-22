@@ -1,5 +1,11 @@
 module
 
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+
+public import VerifiedGarbage.Proof.Framework.Covers
+
+import VerifiedGarbage.Proof.Framework.Block
+
 public import VerifiedGarbage.Impl.Gcm.AArch64.Fn
 public meta import VerifiedGarbage.Impl.Gcm.AArch64.Fn
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
@@ -1304,15 +1310,14 @@ theorem powersSKP_ok {H : Block} {s : State} (hI : KP H 1 s) :
 /-! ## The prologue -/
 
 /-- `H` loaded from byte 240 of the key context, and `H'`. -/
-theorem keyPrologue_ok {s₀ : State} (hp : keyPowersAArch64.pre s₀) :
+theorem keyPrologue_read_ok {s₀ : State}
+    (hin : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x0 + BitVec.ofNat 64 240) 16) :
     WP isa (.block Impl.Gcm.AArch64.Pmull.keyPrologue) s₀ fun s =>
       KP (Spec.Gcm.ctxH s₀.mem (s₀.gpr .x0)) 1 s ∧
         (∀ r, r ≠ .x5 → s.gpr r = s₀.gpr r) ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr := by
-  obtain ⟨hrd, -, -⟩ := hp
   simp only [Impl.Gcm.AArch64.Pmull.keyPrologue, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (ldrev_ok A .x0 240 s₀ rfl (by decide)
-    ⟨⟨s₀.gpr .x0, 256⟩, by simp [hrd], contains_offset (by decide) (by decide)⟩)
+  refine WP.mono (ldrev_ok A .x0 240 s₀ rfl (by decide) hin)
     fun s₁ ⟨l₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (constC_ok s₁) fun s₂ ⟨c₂, kv₂, kg₂, m₂, rd₂, wr₂⟩ => ?_
@@ -1336,6 +1341,14 @@ theorem keyPrologue_ok {s₀ : State} (hp : keyPowersAArch64.pre s₀) :
     rfl
   · obtain rfl : k = 1 := by omega_using [hk, hk1]
     rw [w₄, s₁', ext8_ext8]
+
+/-- `H` loaded from byte 240 of the key context, and `H'`. -/
+theorem keyPrologue_ok {s₀ : State} (hp : keyPowersAArch64.pre s₀) :
+    WP isa (.block Impl.Gcm.AArch64.Pmull.keyPrologue) s₀ fun s =>
+      KP (Spec.Gcm.ctxH s₀.mem (s₀.gpr .x0)) 1 s ∧
+        (∀ r, r ≠ .x5 → s.gpr r = s₀.gpr r) ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr := by
+  obtain ⟨hrd, -, -⟩ := hp
+  exact keyPrologue_read_ok ⟨⟨s₀.gpr .x0, 256⟩, by simp [hrd], contains_offset (by decide) (by decide)⟩
 
 /-! ## The stores -/
 
@@ -1455,5 +1468,75 @@ theorem keyPowersCleared_verified :
 
 theorem keyPowersCleared_noResidue (k : Contract isa) : NoResidue keyPowersCleared k 0 :=
   RTaint.noResidue_of_check ⟨_, by taint_decide⟩ k
+
+end VG.Proof.Gcm.AArch64.Pmull
+
+/-! The fixed eight-block batch used by direct gather sealing. -/
+namespace VG.Proof.Gcm.AArch64.Pmull
+
+open VG VG.AArch64 VG.Proof.Gcm.AArch64
+open VG.Impl.Gcm.AArch64.Pmull (prologueT powersS body)
+
+private theorem hashEight_ok (s : State) (hp : Pm s) (hn : nb s = 8) :
+    WP isa (.block (prologueT ++ powersS ++ body 8)) s (Inv s 8 8) := by
+  rw [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine (prologueT_ok hp).mono fun _ h => ?_
+  rw [WP.block_append_iff]
+  refine (powersS_ok h).mono fun _ h' => ?_
+  exact body_ok hp (k := 8) (by decide) (by decide) (by decide) (by simp [hn]) h'
+
+private theorem fixedHash_at {code : List Instr} {n : Nat} (s : State)
+    (hc : Covers ([hR s,dR s]++[yR s]) (s.rd++s.wr)) (hw : Covers [yR s] s.wr)
+    (hd : (yR s).Disjoint (dR s)) (keep : ((.block code : Prog isa).allInstrs
+      (fun i => [Reg.x19].all (fun r => !clobbers i r))) = true)
+    (go : ∀ u, Pm u → nb u = nb s → WP isa (.block code) u (Inv u 8 n)) :
+    WP isa (.block code) s fun t => t.v .v0 = ext8 (Ys s n) (Ys s n) ∧ t.mem = s.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19 := by
+  let u := s.withRegions [hR s, dR s] [yR s]
+  have hp : Pm u := {
+    h_in := ⟨hR s, by simp [u], by
+      change (hR s).Contains (s.gpr .x0 + 0#64) 16
+      rw [BitVec.add_zero]; exact Region.contains_self _ _⟩
+    d_in := by change dR s ∈ [hR s, dR s]; simp
+    y_in := List.mem_singleton_self _
+    y_d := hd }
+  refine WP.narrow (WP.gprs (go u hp rfl) (rs := [.x19]) keep rfl) hc hw ?_ rfl
+  intro t hrd hwr hsp _ hi
+  obtain ⟨inv, keep⟩ := hi
+  refine ⟨ρ_inj (by rw [ρ_ext8_self]; exact inv.y), inv.mem, hsp, hrd, hwr, keep _ (by simp)⟩
+
+/-- The batch in its caller's permissions. Its hash register is the eight-block
+GHASH in the byte order used by the tag, and all memory stays intact. -/
+theorem hashEight_at (s : State) (hn : nb s = 8)
+    (hc : Covers ([hR s, dR s] ++ [yR s]) (s.rd ++ s.wr))
+    (hw : Covers [yR s] s.wr) (hd : (yR s).Disjoint (dR s)) :
+    WP isa (.block (prologueT ++ powersS ++ body 8)) s fun t =>
+      t.v .v0 = ext8 (Ys s 8) (Ys s 8) ∧ t.mem = s.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19 := by
+  exact fixedHash_at s hc hw hd (by lit_decide) (fun u hp eqn => hashEight_ok u hp (eqn.trans hn))
+
+/-- Two successive eight-block batches use the same precomputed powers.
+The final reversal exposes the hash in memory byte order for the tag XOR. -/
+theorem hash16_at (s : State) (hn : nb s = 16)
+    (hc : Covers ([hR s,dR s]++[yR s]) (s.rd++s.wr)) (hw : Covers [yR s] s.wr)
+    (hd : (yR s).Disjoint (dR s)) :
+    WP isa (.block ((prologueT ++ powersS ++ body 8 ++ body 8) ++
+      ([.vop (.rev .rev64b .v16 .v0)] : List Instr))) s fun t =>
+      t.v .v16 = VRevOp.eval .rev64b (ext8 (Ys s 16) (Ys s 16)) ∧ t.mem = s.mem ∧
+      t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr .x19 = s.gpr .x19 := by
+  rw [WP.block_append_iff]
+  refine (fixedHash_at (n := 16) s hc hw hd (by lit_decide) (fun u hp eqn => ?_)).mono ?_
+  · simp only [List.append_assoc]
+    rw [WP.block_append_iff]
+    refine (prologueT_ok hp).mono fun _ h => ?_
+    rw [WP.block_append_iff]
+    refine (powersS_ok h).mono fun _ hi => ?_
+    rw [WP.block_append_iff]
+    refine (body_ok hp (k := 8) (by decide) (by decide) (by decide) (by rw [eqn,hn]; decide) hi).mono fun _ h8 => ?_
+    exact body_ok hp (k := 8) (by decide) (by decide) (by decide) (by rw [eqn,hn]) h8
+  · rintro u ⟨hash,mem,sp,rd,wr,x19⟩
+    refine WP.block_cons_iff.mpr ⟨_,exec_rev64b _ _ _,WP.block_nil ?_⟩
+    exact ⟨congrArg (VRevOp.eval .rev64b) hash,mem,sp,rd,wr,x19⟩
 
 end VG.Proof.Gcm.AArch64.Pmull

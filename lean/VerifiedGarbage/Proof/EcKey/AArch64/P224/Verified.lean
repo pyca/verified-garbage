@@ -176,7 +176,8 @@ theorem pk_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.
   have hn : CallsKeep publicKeyP224 := by lit_decide
   have hu : KeepsUntouched publicKeyP224 := by lit_decide
   have hv : publicKeyP224.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p224_ok hI) hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKeyWith_ok (p224_ok hI).toBaseCfgOk hL _
+    (Ecdsa.AArch64.P224.gMulP224_correct hL hI hT) (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP224 :=

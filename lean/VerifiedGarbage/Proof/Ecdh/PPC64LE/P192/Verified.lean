@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 public import VerifiedGarbage.Impl.Ecdh.P192.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
+public import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 public import VerifiedGarbage.Spec.EcKey.P192
 public import VerifiedGarbage.Spec.Ecdh.Generic
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.P192.Lit
@@ -11,6 +15,10 @@ import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 meta import VerifiedGarbage.Impl.Ecdh.P192.PPC64LE
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 meta import VerifiedGarbage.Spec.EcKey.P192
 meta import VerifiedGarbage.Spec.Ecdh.Generic
 meta import VerifiedGarbage.Proof.Ecdh.PPC64LE.P192.Lit
@@ -86,9 +94,16 @@ namespace VG.Proof.Ecdh.PPC64LE.P192
 
 open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Impl.Ecdh.PPC64LE VG.Proof.Ecdsa.PPC64LE Spec.Weierstrass
 
-theorem pre_of {s : State} (h : ecdhPPC.pre s) : EPre p192 s := by
+/-- The contract with the table of constants (`Cfg.constsK`), as the proof states it. -/
+abbrev ecdhPC : Contract isa := ecdhPPC.withTables p192.constsK
+
+theorem pre_of {s : State} (h : ecdhPPC.pre (stripConsts p192.constsK s)) (hk : ConstsOk p192.constsK 0 s) :
+    EPre p192 s (constRegs p192.constsK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, tbl_of_consts hk (List.mem_singleton_self _)
+    (hk.disjoint_wr (List.mem_singleton_self _) (by
+      show (⟨s.gpr .r6, size⟩ : Region) ∈ (stripConsts p192.constsK s).wr
+      rw [h2]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
 
 theorem post_of {s s' : State} (h : EPost p192 s s') : ecdhPPC.post s s' := by
   unfold EPost at h
@@ -101,20 +116,23 @@ theorem post_of {s s' : State} (h : EPost p192 s s') : ecdhPPC.post s s' := by
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .r5) (1 + 2 * p192.C.len)) = ex s.mem (s.gpr .r4) (s.gpr .r5) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_ppc (hL : Weierstrass.Law Spec.P192.curve) (s : State) (hs : ecdhPPC.pre s) :
-    ∃ t s', Exec isa exchangeP192 s t s' ∧ abiPreserved s s' ∧ ecdhPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p192_ok (by decide) hL (pre_of hs)
+theorem ecdh_ppc (hL : Weierstrass.Law Spec.P192.curve) (s : State) (hs : ecdhPC.pre s) :
+    ∃ t s', Exec isa exchangeP192 s t s' ∧ abiPreserved s s' ∧ ecdhPC.post s s' := by
+  obtain ⟨hp, hk⟩ := hs
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p192_ok (by decide) hL (pre_of hp hk)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
-theorem ecdh_ct : ConstantTime isa ecdhPPC.pre ecdhPPC.pub exchangeP192 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
-    (fun _ _ _ _ ⟨hsp, h3, h4, h5, h6⟩ => ⟨hsp, fun r hr => by
+theorem ecdh_ct : ConstantTime isa ecdhPC.pre ecdhPC.pub exchangeP192 :=
+  VG.Taint.constantTime (A := taintSym [p192.constSym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+    (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5, h6⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact h3
       · exact h4
       · exact h5
-      · exact h6⟩) (by taint_decide)
+      · exact h6⟩, fun n hn => by
+        simp only [List.mem_singleton] at hn; subst hn; exact sy _ (List.mem_singleton_self _)⟩)
+    (by taint_decide)
 
 /-- A state satisfying the precondition. -/
 def satState : State where
@@ -126,9 +144,9 @@ def satState : State where
   rd := [⟨0x2000, 24⟩, ⟨0x3000, 49⟩]
   wr := [⟨0x1000, 24⟩, ⟨0x8000, 8192⟩]
 
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P192.curve) :
-    Verified PPC64LE.target exchangeP192 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst PPC64LE.abi) :=
-  Verified.of_correct (ecdh_ppc hL) ecdh_ct
+/-- The contract as the proof states it implies the exchange's (without the table). -/
+theorem ecdhPPC_implies :
+    ecdhPPC.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst PPC64LE.abi) :=
     { pre := by
         sig_implies_pre [Spec.EcKey.P192.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.P192.curve, Spec.EcKey.scratchWords, ecdhPPC, ex, PPC64LE.abi,
@@ -150,5 +168,47 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P192.curve) :
         sig_implies_sat [Spec.EcKey.P192.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.P192.curve, Spec.EcKey.scratchWords, ecdhPPC, ex, PPC64LE.abi,
           PPC64LE.argRegs] [satState] using satState }
+
+/-- A state satisfying the precondition with the table. -/
+def satStateC : State where
+  gpr := satState.gpr
+  lr := satState.lr
+  sp := satState.sp
+  mem := constMem 0x100000 p192.constTbl
+  rd := satState.rd ++ [⟨0x100000, 8 * (17 * 3)⟩]
+  wr := satState.wr
+  syms := fun _ => 0x100000
+
+theorem satC_pre :
+    (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst (abi.withConsts p192.constsK)).pre satStateC := by
+  have hl := constTbl_length p192
+  have held := constMem_held 0x100000 p192.constTbl (by rw [hl]; decide)
+  obtain ⟨W, eW⟩ : ∃ W, p192.constTbl = W := ⟨_, rfl⟩
+  have hk : p192.constsK = [(p192.constSym, W)] := by rw [← eW]; rfl
+  rw [hk]
+  rw [eW] at hl held
+  generalize e : satStateC = s
+  sig_pre [Spec.EcKey.P192.inst, Spec.Ecdh.Instance.exchangeContract, Spec.Ecdh.Instance.exchangeSig,
+    Spec.P192.curve, Spec.EcKey.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
+    stackBelow]
+  subst e
+  rw [hl]
+  refine ⟨rfl, fun i hi => by
+      show (constMem 0x100000 p192.constTbl).readW _ 64 = _
+      rw [eW]; exact held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, ?_⟩
+  · change r ∈ [⟨0x1000, 24⟩, ⟨0x8000, 8192⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
+
+theorem ecdhPC_implies :
+    ecdhPC.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst (PPC64LE.abi.withConsts p192.constsK)) :=
+  withTables_implies ecdhPPC_implies ⟨satStateC, satC_pre⟩
+
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P192.curve) :
+    Verified PPC64LE.target exchangeP192
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst (PPC64LE.abi.withConsts p192.constsK)) :=
+  Verified.of_correct (ecdh_ppc hL) ecdh_ct ecdhPC_implies
 
 end VG.Proof.Ecdh.PPC64LE.P192

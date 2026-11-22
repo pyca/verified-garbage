@@ -4,20 +4,15 @@ public import VerifiedGarbage.Impl.Rc2.Arm.Stream
 public import VerifiedGarbage.Impl.Rc2.Arm.Cbc
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Scrub.Arm
-public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
 # RC2 on ARMv7, as emitted
 
-Each function's code, which wipes its own working space, followed by its
-cleanup (`Impl/Scrub/Arm/Sel.lean`, `scrubSel`): of the stack its contract
-reserves, where its frames were, only the words that the residue analysis
-(`Arm.rtaint`) finds may differ between two runs zeroed (`…Words`, offsets in
-words from the lowest address of that stack), and the registers a callee may
-change, but its result, set to constants. CBC encryption and decryption,
-whose working space is all the stack they reserve, instead leave it as it is
-(`withStackScratch`) and are followed by `scrubAll` (`Impl/Scrub/Arm.lean`),
-which zeroes that stack in a loop.
+Each function's code, which keeps its working space in a frame and leaves it
+as it is (`withStackScratch`), followed by its cleanup (`scrubAll`,
+`Impl/Scrub/Arm.lean`): the stack its contract reserves, where its frames
+were, zeroed in a loop, and the registers a callee may change, but its
+result, set to constants.
 `Proof/Rc2/Arm/Scrub.lean` states that each returns without secret residue.
 -/
 
@@ -27,11 +22,8 @@ namespace VG.Impl.Rc2.Arm.Fn
 
 open VG.Arm VG.Impl.Scrub.Arm
 
-/-- The words the CBC key setup leaves secret. -/
-def initWords : List Nat := List.range' 0 6
-
 /-- `vg_rc2_cbc_init`. -/
-def cbcInit : Prog isa := scrubSel 32 600 initWords (Impl.StackScratch.Arm.withStackScratchWiped 592 2 144 Impl.Rc2.Arm.Stream.init)
+def cbcInit : Prog isa := scrubAll 32 600 (Impl.StackScratch.Arm.withStackScratch 592 2 Impl.Rc2.Arm.Stream.init)
 
 /-- `vg_rc2_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := scrubAll 0 528 (Impl.StackScratch.Arm.withStackScratch 528 0 Impl.Rc2.Arm.Cbc.encrypt)

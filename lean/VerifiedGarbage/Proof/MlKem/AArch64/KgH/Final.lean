@@ -36,6 +36,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.PairTiming
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCallerI
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
@@ -52,6 +53,7 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.PairTiming
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCallerI
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
@@ -405,17 +407,20 @@ theorem preKS {s : State} (h : (keyGenAArch64S P).pre s) :
   · exact k3
 
 theorem keyGenP_relCT (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.HashFn)
-    (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6
+    (hG : FixedHash.HashCorrect hash v.callee.name .x28 ST WK 72 6
       [⟨.x25,0,32⟩,⟨.x28,BK,1⟩] [⟨.x28,SB,32⟩,⟨.x28,SG,32⟩])
     {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk128K P σ) (hk' : Stk128K P τ) (hr : Noise.Room P)
     (hk3 : 3 ≤ P.k)
     (taσ : Tables σ) (taτ : Tables τ) (tsσ : TStk σ) (tsτ : TStk τ) (sm : SameK P σ τ)
     (shuffle : σ.syms "VG_MLKEM_REJ_SHUFFLE" = τ.syms "VG_MLKEM_REJ_SHUFFLE")
     (symbols : ∀ name ∈ restSymbols, σ.syms name = τ.syms name)
+    (dσ : Proof.Sha3.AArch64.D8 v.callee.name σ) (dτ : Proof.Sha3.AArch64.D8 v.callee.name τ) (called : σ.syms v.callee.name = τ.syms v.callee.name)
+    (qa : Code.IcallsP (· = v.callee.name) (FixedHashCallers.kgAUsing hash P))
+    (qt : Code.IcallsP (· = v.callee.name) (Kem16.kgTail v.callee P))
     (depthA : (FixedHashCallers.kgAUsing hash P).aarch64Depth ≤ 1)
     (depthP : (Kem16P.kgPre sha3 P).aarch64Depth ≤ 1)
     (ha : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
-      (FixedHashCallers.kgAUsing hash P) h).isSome = true)
+      (Code.eraseI (FixedHashCallers.kgAUsing hash P)) h).isSome = true)
     (hpre : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
       (Kem16P.kgPre sha3 P) h).isSome = true)
     (hrow : ∀ i < P.k, ∃ h, ((VectorSymbols.analysis restSymbols).check
@@ -423,7 +428,7 @@ theorem keyGenP_relCT (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.Has
     (habs : ∀ blk, 136 * blk < (Kem16.kgSrc P).len → ∃ h, (taint.check (Taint.ofRegs [(Kem16.kgSrc P).r, .x28])
       (.block (Hybrid.absorbBlock (Kem16.kgSrc P) blk)) h).isSome = true)
     (htail : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Kem16.kgTail v.callee P) h).isSome = true) :
+      (Code.eraseI (Kem16.kgTail v.callee P)) h).isSome = true) :
     RelCT isa (fun s u => s = σ ∧ u = τ) (Kem16P.keyGen sha3 hash v.callee P) (fun _ _ => True) := by
   intro s u tr ur t w h et eu
   rcases h with ⟨hs, hu⟩; subst s; subst u
@@ -435,18 +440,18 @@ theorem keyGenP_relCT (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.Has
       (.seq (seqs (Kem16P.kgMatrixRows sha3 P)) (Kem16.kgTail v.callee P)))))) τ ur w := eu
   obtain ⟨sA, ta, tb, rfl, ea, eb⟩ := Paired.seq_parts et'
   obtain ⟨uA, ua, ub, rfl, fa, fb⟩ := Paired.seq_parts eu'
-  have aeq := (VectorTaint.relRegs [.x0,.x1,.x2,.x3]
+  have aeq := (VectorTaint.relRegsI [.x0,.x1,.x2,.x3] (Q := (· = v.callee.name))
     (P := fun s u => s = σ ∧ u = τ) (fun s u ⟨hs, hu⟩ => by
       subst s; subst u
-      refine ⟨sm.sp, ?_⟩
+      refine ⟨⟨sm.sp, ?_⟩, fun n hn => hn ▸ called⟩
       intro r hr
       rcases mem4 hr with rfl | rfl | rfl | rfl
       · exact sm.ptr 0
       · exact sm.ptr 1
       · exact sm.ptr 2
-      · exact sm.ptr 3) ha.choose_spec _ _ _ _ _ _ ⟨rfl, rfl⟩ ea fa).1
-  have hsA := Paired.exec_post (WP.tablesDepth (a_using_ok hash hG hp) taσ depthA) ea
-  have huA := Paired.exec_post (WP.tablesDepth (a_using_ok hash hG hq) taτ depthA) fa
+      · exact sm.ptr 3) qa ha.choose_spec _ _ _ _ _ _ ⟨rfl, rfl⟩ ea fa).1
+  have hsA := Paired.exec_post (WP.tablesDepth (a_using_ok hash hG hp dσ) taσ depthA) ea
+  have huA := Paired.exec_post (WP.tablesDepth (a_using_ok hash hG hq dτ) taτ depthA) fa
   have k0 : KF P σ τ (2 * 0) (3 * 0) sA uA :=
     ⟨FInv.zero hsA.1 hsA.2 (tsσ.of (Exec.syms ea) hsA.1.kb.sp),
       FInv.zero huA.1 huA.2 (tsτ.of (Exec.syms fa) huA.1.kb.sp),
@@ -479,22 +484,30 @@ theorem keyGenP_relCT (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.Has
       fun name hn => by rw [Exec.syms eg, Exec.syms fg]; exact k2.2.2.2 name hn⟩ ei fi
   have hsC := mr.2.1.b.kb
   have huC := mr.2.2.1.b.kb
-  have deq := symbol_taint [.x25,.x26,.x27,.x28] (by rw [hsC.sp, huC.sp, sm.sp]) (fun r hr => by
+  have deq := symbol_taintI [.x25,.x26,.x27,.x28] (Q := (· = v.callee.name))
+    (by rw [hsC.sp, huC.sp, sm.sp]) (fun r hr => by
       rcases mem4 hr with rfl | rfl | rfl | rfl
       · rw [hsC.x25, huC.x25, sm.ptr 0]
       · rw [hsC.x26, huC.x26, sm.ptr 1]
       · rw [hsC.x27, huC.x27, sm.ptr 2]
-      · rw [hsC.x28, huC.x28, sm.ptr 3]) mr.2.2.2.2 htail ej fj
+      · rw [hsC.x28, huC.x28, sm.ptr 3]) mr.2.2.2.2
+    (fun n hn => by
+      subst hn
+      rw [Exec.syms ei, Exec.syms eg, Exec.syms ee, Exec.syms ec, Exec.syms ea,
+        Exec.syms fi, Exec.syms fg, Exec.syms fe, Exec.syms fc, Exec.syms fa]; exact called)
+    qt htail ej fj
   exact ⟨by rw [aeq, r0.1, r1.1, beq, mr.1, deq], trivial⟩
 
 theorem keyGenP_ct (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.HashFn)
-    (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6
+    (hG : FixedHash.HashCorrect hash v.callee.name .x28 ST WK 72 6
       [⟨.x25,0,32⟩,⟨.x28,BK,1⟩] [⟨.x28,SB,32⟩,⟨.x28,SG,32⟩])
     (hw : P.Wf) (hr : Noise.Room P) (hk3 : 3 ≤ P.k)
     (depthA : (FixedHashCallers.kgAUsing hash P).aarch64Depth ≤ 1)
     (depthP : (Kem16P.kgPre sha3 P).aarch64Depth ≤ 1)
+    (qa : Code.IcallsP (· = v.callee.name) (FixedHashCallers.kgAUsing hash P))
+    (qt : Code.IcallsP (· = v.callee.name) (Kem16.kgTail v.callee P))
     (ha : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
-      (FixedHashCallers.kgAUsing hash P) h).isSome = true)
+      (Code.eraseI (FixedHashCallers.kgAUsing hash P)) h).isSome = true)
     (hpre : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
       (Kem16P.kgPre sha3 P) h).isSome = true)
     (hrow : ∀ i < P.k, ∃ h, ((VectorSymbols.analysis restSymbols).check
@@ -502,10 +515,11 @@ theorem keyGenP_ct (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.HashFn
     (habs : ∀ blk, 136 * blk < (Kem16.kgSrc P).len → ∃ h, (taint.check (Taint.ofRegs [(Kem16.kgSrc P).r, .x28])
       (.block (Hybrid.absorbBlock (Kem16.kgSrc P) blk)) h).isSome = true)
     (htail : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Kem16.kgTail v.callee P) h).isSome = true) :
-    ConstantTime isa (entryContractS (keyGenAArch64S P)).pre (entryContractS (keyGenAArch64S P)).pub
+      (Code.eraseI (Kem16.kgTail v.callee P)) h).isSome = true) :
+    ConstantTime isa (Proof.Sha3.AArch64.Contract.d8 v.callee.name (entryContractS (keyGenAArch64S P))).pre
+      (Proof.Sha3.AArch64.Contract.d8 v.callee.name (entryContractS (keyGenAArch64S P))).pub
       (Kem16P.keyGen sha3 hash v.callee P) := by
-  intro s u tr ur t w hs hu hpub et eu
+  intro s u tr ur t w ⟨hs, ds⟩ ⟨hu, du⟩ ⟨hpub, called⟩ et eu
   have ss := preKS hs.1
   have su := preKS hu.1
   have ps : Pre P s := keygen_unstrip (pre_of hw ss.1)
@@ -525,7 +539,8 @@ theorem keyGenP_ct (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.HashFn
     exact hh
   have sym := entryS_symbols hpub
   exact (keyGenP_relCT (sha3 := sha3) v hash hG ps pu ⟨ss.2.1, ss.2.2⟩ ⟨su.2.1, su.2.2⟩ hr hk3 ts.1 tu.1 ts.2 tu.2
-    ⟨ptr, sp, rho⟩ sym.1 sym.2 depthA depthP ha hpre hrow habs htail _ _ _ _ _ _ ⟨rfl, rfl⟩ et eu).1
+    ⟨ptr, sp, rho⟩ sym.1 sym.2 ds du called qa qt depthA depthP ha hpre hrow habs htail _ _ _ _ _ _ ⟨rfl, rfl⟩
+    et eu).1
 
 end VG.Proof.MlKem.AArch64.KeyGen
 
@@ -599,16 +614,27 @@ theorem kgRow1024_taint : ∀ i < Impl.MlKem1024.AArch64.lay1024.k, ∃ h, ((Vec
   · exact ⟨_, by taint_decide⟩
   · exact ⟨_, by taint_decide⟩
 
+theorem kgTail768_icalls (c : Impl.Sha3.AArch64.Callee) :
+    Code.IcallsP (· = c.name) (Kem16.kgTail c lay768) := by
+  rw [show Kem16.kgTail c lay768 = Code.fillHoles c.name c.code (Kem16.kgTail hole lay768) by kernel_rfl]
+  exact Code.icallsP_fillHoles (by decide +kernel)
+
+theorem kgTail1024_icalls (c : Impl.Sha3.AArch64.Callee) :
+    Code.IcallsP (· = c.name) (Kem16.kgTail c Impl.MlKem1024.AArch64.lay1024) := by
+  rw [show Kem16.kgTail c Impl.MlKem1024.AArch64.lay1024 =
+    Code.fillHoles c.name c.code (Kem16.kgTail hole Impl.MlKem1024.AArch64.lay1024) by kernel_rfl]
+  exact Code.icallsP_fillHoles (by decide +kernel)
+
 theorem kgTail768_taint (c : Impl.Sha3.AArch64.Callee)
     (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Kem16.kgTail c lay768) h).isSome = true := by
+      (Code.eraseI (Kem16.kgTail c lay768)) h).isSome = true := by
   taint_decide_generic c := hole using hS
 
 theorem kgTail1024_taint (c : Impl.Sha3.AArch64.Callee)
     (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Kem16.kgTail c Impl.MlKem1024.AArch64.lay1024) h).isSome = true := by
+      (Code.eraseI (Kem16.kgTail c Impl.MlKem1024.AArch64.lay1024)) h).isSome = true := by
   taint_decide_generic c := hole using hS
 
 theorem kgPre768_depth : (Kem16P.kgPre sha3 lay768).aarch64Depth ≤ 1 := by
@@ -628,31 +654,34 @@ theorem keyGenS768_base : (keyGenAArch64S lay768).Implies (Proof.MlKem.Scrubbed.
       KemLay.params, Spec.MlKem.mlKem768, KemLay.ekLen, KemLay.dkLen, AArch64.abi, AArch64.argRegs]
       [VG.Proof.MlKem.AArch64.KeyGen.sat] using VG.Proof.MlKem.AArch64.KeyGen.sat
 
-def keyGenH768Contract := Proof.MlKem.Scrubbed.keyGenBodyContract (abi.withConsts constants) 128
+def keyGenH768Base := Proof.MlKem.Scrubbed.keyGenBodyContract (abi.withConsts constants) 128
 
-theorem keyGenH768_entry {s : State} (h : keyGenH768Contract.pre s) :
+/-- The contract of the body over the permutation `n` it calls by the address
+in `d8`. -/
+def keyGenH768Contract (n : String) := Proof.Sha3.AArch64.Contract.d8 n keyGenH768Base
+
+theorem keyGenH768_entry {s : State} (h : keyGenH768Base.pre s) :
     (entryContractS (keyGenAArch64S lay768)).pre s := by
-  unfold keyGenH768Contract Proof.MlKem.Scrubbed.keyGenBodyContract constants at h
+  unfold keyGenH768Base Proof.MlKem.Scrubbed.keyGenBodyContract constants at h
   have hp := pre_consts.mp h
   exact ⟨keyGenS768_base.pre _ hp.1, hp.2⟩
 
-theorem keyGenH768_post {s t : State} (h : keyGenH768Contract.pre s)
-    (hp : (keyGenAArch64S lay768).post s t) : keyGenH768Contract.post s t := by
-  unfold keyGenH768Contract Proof.MlKem.Scrubbed.keyGenBodyContract constants at h ⊢
+theorem keyGenH768_post {s t : State} (h : keyGenH768Base.pre s)
+    (hp : (keyGenAArch64S lay768).post s t) : keyGenH768Base.post s t := by
+  unfold keyGenH768Base Proof.MlKem.Scrubbed.keyGenBodyContract constants at h ⊢
   have hh := pre_consts.mp h
   exact keyGenS768_base.post (stripConsts constants s) t hh.1 hp
 
-theorem keyGenH768_pub {s t : State} (hs : keyGenH768Contract.pre s) (ht : keyGenH768Contract.pre t)
-    (hp : keyGenH768Contract.pub s t) : (entryContractS (keyGenAArch64S lay768)).pub s t := by
-  unfold keyGenH768Contract Proof.MlKem.Scrubbed.keyGenBodyContract constants at hs ht hp
+theorem keyGenH768_pub {s t : State} (hs : keyGenH768Base.pre s) (ht : keyGenH768Base.pre t)
+    (hp : keyGenH768Base.pub s t) : (entryContractS (keyGenAArch64S lay768)).pub s t := by
+  unfold keyGenH768Base Proof.MlKem.Scrubbed.keyGenBodyContract constants at hs ht hp
   have hsp := pre_consts.mp hs
   have htp := pre_consts.mp ht
   have hpp := pub_consts.mp hp
   exact ⟨keyGenS768_base.pub (stripConsts constants s) (stripConsts constants t) hsp.1 htp.1 hpp.1, hpp.2⟩
 
-theorem keyGenH768_sat : ∃ s, keyGenH768Contract.pre s := by
-  refine ⟨addTables VG.Proof.MlKem.AArch64.KeyGen.sat, ?_⟩
-  unfold keyGenH768Contract Proof.MlKem.Scrubbed.keyGenBodyContract constants
+theorem keyGenH768_baseSat : keyGenH768Base.pre (addTables VG.Proof.MlKem.AArch64.KeyGen.sat) := by
+  unfold keyGenH768Base Proof.MlKem.Scrubbed.keyGenBodyContract constants
   apply pre_consts.mpr
   constructor
   · change (Proof.MlKem.Scrubbed.keyGenBodyContract abi 128).pre
@@ -687,18 +716,22 @@ theorem keyGenH768_sat : ∃ s, keyGenH768Contract.pre s := by
       all_goals first | contradiction | decide
 
 theorem keyGenP768_verified (v : Proof.Sha3.AArch64.Permutation) :
-    Verified AArch64.target (Kem16P.keyGen sha3 (fixedHash v.callee) v.callee lay768) keyGenH768Contract := by
-  refine Verified.of_correct (T := AArch64.target) (k := entryContractS (keyGenAArch64S lay768)) ?_
+    Verified AArch64.target (Kem16P.keyGen sha3 (fixedHash v.callee) v.callee lay768) (keyGenH768Contract v.callee.name) := by
+  refine Verified.of_correct (T := AArch64.target)
+    (k := Proof.Sha3.AArch64.Contract.d8 v.callee.name (entryContractS (keyGenAArch64S lay768))) ?_
     (keyGenP_ct (sha3 := sha3) v (fixedHash v.callee) (FixedHash.kgG768_correct v) VG.Proof.MlKem.AArch64.KeyGen.wf768 Noise.room768 (by decide) (FixedHash.kgA768_depth v) (kgPre768_depth (sha3 := sha3))
+      (FixedHash.kgA768_icalls v.callee) (kgTail768_icalls v.callee)
       (FixedHash.kgA768_taint v.callee v.callerSums) (kgPre768_taint (sha3 := sha3)) kgRow768_taint habsK768
       (kgTail768_taint v.callee (symSums v))) ?_
-  · intro s h
+  · intro s ⟨h, d⟩
     have ss := preKS h.1
     have ts := entryS_tables h
     exact using_correctP (sha3 := sha3) v (fixedHash v.callee) (FixedHash.kgG768_correct v) (keygen_unstrip (pre_of VG.Proof.MlKem.AArch64.KeyGen.wf768 ss.1))
-      ⟨ss.2.1, ss.2.2⟩ Noise.room768 (by decide) ts.1 ts.2 (FixedHash.kgA768_depth v) (kgPre768_depth (sha3 := sha3))
-  · exact ⟨fun _ h => keyGenH768_entry h, fun _ _ h hp => keyGenH768_post h hp,
-      fun _ _ hs ht hp => keyGenH768_pub hs ht hp, keyGenH768_sat⟩
+      ⟨ss.2.1, ss.2.2⟩ Noise.room768 (by decide) ts.1 ts.2 (FixedHash.kgA768_depth v) (kgPre768_depth (sha3 := sha3)) d
+  · exact ⟨fun _ h => ⟨keyGenH768_entry h.1, h.2⟩, fun _ _ h hp => keyGenH768_post h.1 hp,
+      fun _ _ hs ht hp => ⟨keyGenH768_pub hs.1 ht.1 hp.1, hp.2⟩,
+      Proof.Sha3.AArch64.Contract.d8_sat (s := addTables VG.Proof.MlKem.AArch64.KeyGen.sat)
+        (show keyGenH768Base.pre ((addTables VG.Proof.MlKem.AArch64.KeyGen.sat).setV .v8 _) from keyGenH768_baseSat)⟩
 
 /-! ## ML-KEM-1024 -/
 
@@ -707,31 +740,34 @@ theorem keyGenS1024_base : (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024).Impli
       KemLay.params, Spec.MlKem.mlKem1024, KemLay.ekLen, KemLay.dkLen, AArch64.abi, AArch64.argRegs]
       [VG.Proof.MlKem1024.AArch64.KeyGen.sat] using VG.Proof.MlKem1024.AArch64.KeyGen.sat
 
-def keyGenH1024Contract := Proof.MlKem.Scrubbed.keyGen1024BodyContract (abi.withConsts constants) 128
+def keyGenH1024Base := Proof.MlKem.Scrubbed.keyGen1024BodyContract (abi.withConsts constants) 128
 
-theorem keyGenH1024_entry {s : State} (h : keyGenH1024Contract.pre s) :
+/-- The contract of the body over the permutation `n` it calls by the address
+in `d8`. -/
+def keyGenH1024Contract (n : String) := Proof.Sha3.AArch64.Contract.d8 n keyGenH1024Base
+
+theorem keyGenH1024_entry {s : State} (h : keyGenH1024Base.pre s) :
     (entryContractS (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024)).pre s := by
-  unfold keyGenH1024Contract Proof.MlKem.Scrubbed.keyGen1024BodyContract constants at h
+  unfold keyGenH1024Base Proof.MlKem.Scrubbed.keyGen1024BodyContract constants at h
   have hp := pre_consts.mp h
   exact ⟨keyGenS1024_base.pre _ hp.1, hp.2⟩
 
-theorem keyGenH1024_post {s t : State} (h : keyGenH1024Contract.pre s)
-    (hp : (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024).post s t) : keyGenH1024Contract.post s t := by
-  unfold keyGenH1024Contract Proof.MlKem.Scrubbed.keyGen1024BodyContract constants at h ⊢
+theorem keyGenH1024_post {s t : State} (h : keyGenH1024Base.pre s)
+    (hp : (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024).post s t) : keyGenH1024Base.post s t := by
+  unfold keyGenH1024Base Proof.MlKem.Scrubbed.keyGen1024BodyContract constants at h ⊢
   have hh := pre_consts.mp h
   exact keyGenS1024_base.post (stripConsts constants s) t hh.1 hp
 
-theorem keyGenH1024_pub {s t : State} (hs : keyGenH1024Contract.pre s) (ht : keyGenH1024Contract.pre t)
-    (hp : keyGenH1024Contract.pub s t) : (entryContractS (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024)).pub s t := by
-  unfold keyGenH1024Contract Proof.MlKem.Scrubbed.keyGen1024BodyContract constants at hs ht hp
+theorem keyGenH1024_pub {s t : State} (hs : keyGenH1024Base.pre s) (ht : keyGenH1024Base.pre t)
+    (hp : keyGenH1024Base.pub s t) : (entryContractS (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024)).pub s t := by
+  unfold keyGenH1024Base Proof.MlKem.Scrubbed.keyGen1024BodyContract constants at hs ht hp
   have hsp := pre_consts.mp hs
   have htp := pre_consts.mp ht
   have hpp := pub_consts.mp hp
   exact ⟨keyGenS1024_base.pub (stripConsts constants s) (stripConsts constants t) hsp.1 htp.1 hpp.1, hpp.2⟩
 
-theorem keyGenH1024_sat : ∃ s, keyGenH1024Contract.pre s := by
-  refine ⟨addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat, ?_⟩
-  unfold keyGenH1024Contract Proof.MlKem.Scrubbed.keyGen1024BodyContract constants
+theorem keyGenH1024_baseSat : keyGenH1024Base.pre (addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat) := by
+  unfold keyGenH1024Base Proof.MlKem.Scrubbed.keyGen1024BodyContract constants
   apply pre_consts.mpr
   constructor
   · change (Proof.MlKem.Scrubbed.keyGen1024BodyContract abi 128).pre
@@ -766,17 +802,21 @@ theorem keyGenH1024_sat : ∃ s, keyGenH1024Contract.pre s := by
       all_goals first | contradiction | decide
 
 theorem keyGenP1024_verified (v : Proof.Sha3.AArch64.Permutation) :
-    Verified AArch64.target (Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024) keyGenH1024Contract := by
-  refine Verified.of_correct (T := AArch64.target) (k := entryContractS (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024)) ?_
+    Verified AArch64.target (Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024) (keyGenH1024Contract v.callee.name) := by
+  refine Verified.of_correct (T := AArch64.target)
+    (k := Proof.Sha3.AArch64.Contract.d8 v.callee.name (entryContractS (keyGenAArch64S Impl.MlKem1024.AArch64.lay1024))) ?_
     (keyGenP_ct (sha3 := sha3) v (fixedHash v.callee) (FixedHash.kgG1024_correct v) VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 Noise.room1024 (by decide) (FixedHash.kgA1024_depth v) (kgPre1024_depth (sha3 := sha3))
+      (FixedHash.kgA1024_icalls v.callee) (kgTail1024_icalls v.callee)
       (FixedHash.kgA1024_taint v.callee v.callerSums) (kgPre1024_taint (sha3 := sha3)) kgRow1024_taint habsK1024
       (kgTail1024_taint v.callee (symSums v))) ?_
-  · intro s h
+  · intro s ⟨h, d⟩
     have ss := preKS h.1
     have ts := entryS_tables h
     exact using_correctP (sha3 := sha3) v (fixedHash v.callee) (FixedHash.kgG1024_correct v) (keygen_unstrip (pre_of VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 ss.1))
-      ⟨ss.2.1, ss.2.2⟩ Noise.room1024 (by decide) ts.1 ts.2 (FixedHash.kgA1024_depth v) (kgPre1024_depth (sha3 := sha3))
-  · exact ⟨fun _ h => keyGenH1024_entry h, fun _ _ h hp => keyGenH1024_post h hp,
-      fun _ _ hs ht hp => keyGenH1024_pub hs ht hp, keyGenH1024_sat⟩
+      ⟨ss.2.1, ss.2.2⟩ Noise.room1024 (by decide) ts.1 ts.2 (FixedHash.kgA1024_depth v) (kgPre1024_depth (sha3 := sha3)) d
+  · exact ⟨fun _ h => ⟨keyGenH1024_entry h.1, h.2⟩, fun _ _ h hp => keyGenH1024_post h.1 hp,
+      fun _ _ hs ht hp => ⟨keyGenH1024_pub hs.1 ht.1 hp.1, hp.2⟩,
+      Proof.Sha3.AArch64.Contract.d8_sat (s := addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat)
+        (show keyGenH1024Base.pre ((addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat).setV .v8 _) from keyGenH1024_baseSat)⟩
 
 end VG.Proof.MlKem.AArch64.KeyGen

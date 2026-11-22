@@ -234,10 +234,10 @@ theorem write_zero16 (m : Mem) (a : Addr) :
   congr 1
 
 /-- The first `k` stores of `v0 = 0` to `B₂`: its first `16 k` bytes zeroed. -/
-theorem zstores_ok {Wn : Nat} {W : Addr} (k : Nat) (hk : k ≤ 8) (s : State) (hv : s.v .v0 = 0) (h19 : s.gpr .x19 = W)
-    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
-    WP isa (.block ((List.range k).map fun i => .strq .v0 .x19 (Impl.AesGcm.AArch64.Stitch.b2O + 16 * i))) s
-      fun s' => s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.b2O)
+theorem zstores_range {Wn off : Nat} {W : Addr} (k : Nat) (s : State) (hv : s.v .v0 = 0) (h19 : s.gpr .x19 = W)
+    (hw : Covers [⟨W, Wn⟩] s.wr) (hal : off % 16 = 0) (hbound : off + 16*k ≤ Wn) (hsize : Wn ≤ 65536) :
+    WP isa (.block ((List.range k).map fun i => .strq .v0 .x19 (off + 16 * i))) s
+      fun s' => s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 off)
           (List.replicate (16 * k) 0) ∧
         s'.gpr = s.gpr ∧ s'.v = s.v ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   induction k with
@@ -245,13 +245,13 @@ theorem zstores_ok {Wn : Nat} {W : Addr} (k : Nat) (hk : k ≤ 8) (s : State) (h
   | succ k ih =>
     rw [List.range_succ, List.map_append, WP.block_append_iff]
     refine WP.mono (ih (by omega_arith)) fun t ⟨mt, gt, vt, spt, rdt, wrt⟩ => ?_
-    obtain hout : InRegions t.wr (t.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Stitch.b2O + 16 * k)) 16 := by
+    obtain hout : InRegions t.wr (t.gpr .x19 + BitVec.ofNat 64 (off + 16 * k)) 16 := by
       rw [wrt, gt, h19]
-      exact Proof.AesGcm.AArch64.in_off hw (by unfold Impl.AesGcm.AArch64.Stitch.b2O; omega_arith) (by omega)
+      exact Proof.AesGcm.AArch64.in_off hw (by omega_arith) (by omega)
     refine WP.of_runBlock ⟨_, by
       simp only [List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil,
-        VG.Proof.Gcm.AArch64.Pmull.exec_strq (by unfold Impl.AesGcm.AArch64.Stitch.b2O; omega_arith)
-          (by unfold Impl.AesGcm.AArch64.Stitch.b2O; omega_arith) hout]
+        VG.Proof.Gcm.AArch64.Pmull.exec_strq (by omega_arith)
+          (by omega_arith) hout]
       rfl, ?_⟩
     refine ⟨?_, gt, vt, spt, rdt, wrt⟩
     dsimp only
@@ -260,6 +260,22 @@ theorem zstores_ok {Wn : Nat} {W : Addr} (k : Nat) (hk : k ≤ 8) (s : State) (h
       show BitVec.ofNat 64 (16 * k) = BitVec.ofNat 64 (List.replicate (16 * k) (0 : Byte)).length by
         rw [List.length_replicate]]
     exact writeBytes_append s.mem _ _ _ (by simp only [List.length_replicate]; omega_arith)
+
+theorem zstores_at {Wn off : Nat} {W : Addr} (k : Nat) (hk : k ≤ 8) (s : State) (hv : s.v .v0 = 0) (h19 : s.gpr .x19 = W)
+    (hw : Covers [⟨W, Wn⟩] s.wr) (hal : off % 16 = 0) (hbound : off + 128 ≤ Wn) (hsize : Wn ≤ 65536) :
+    WP isa (.block ((List.range k).map fun i => .strq .v0 .x19 (off + 16 * i))) s
+      fun s' => s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 off)
+          (List.replicate (16 * k) 0) ∧
+        s'.gpr = s.gpr ∧ s'.v = s.v ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
+  zstores_range k s hv h19 hw hal (by omega) hsize
+
+theorem zstores_ok {Wn : Nat} {W : Addr} (k : Nat) (hk : k ≤ 8) (s : State) (hv : s.v .v0 = 0) (h19 : s.gpr .x19 = W)
+    (hw : Covers [⟨W, Wn⟩] s.wr) (hWn : 768 ≤ Wn ∧ Wn ≤ 2560 := by first | with_reducible assumption | decide) (hWs : 1024 ≤ Wn := by first | with_reducible assumption | decide | omega) :
+    WP isa (.block ((List.range k).map fun i => .strq .v0 .x19 (Impl.AesGcm.AArch64.Stitch.b2O + 16 * i))) s
+      fun s' => s'.mem = writeBytes s.mem (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Stitch.b2O)
+          (List.replicate (16 * k) 0) ∧
+        s'.gpr = s.gpr ∧ s'.v = s.v ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
+  zstores_at k hk s hv h19 hw (by decide) hWs (by omega)
 
 /-! ## The lengths -/
 
@@ -801,6 +817,32 @@ theorem shortGh_ok {Wn : Nat} {W : Addr} {H : Spec.Gcm.Block} (gh : Gh8Ok) (s : 
 
 /-! ## The lengths block -/
 
+theorem lengthsAt_ok {Wn offset : Nat} {W : Addr} {al n : Nat} (s : State) (h19 : s.gpr .x19 = W) (hr : Covers [⟨W, Wn⟩] s.wr)
+    (h24 : s.gpr .x24 = BitVec.ofNat 64 al) (h26 : s.gpr .x26 = BitVec.ofNat 64 n)
+    (hal' : al < 2 ^ 64) (hn : n < 2 ^ 64)
+    (fits : offset + 16 ≤ Wn) (bounded : Wn ≤ 32768) (aligned : offset % 8 = 0) :
+    WP isa (.block (Impl.AesGcm.AArch64.Stitch.lengthsAt offset)) s fun s' =>
+      Spec.Aes.bytesAt s'.mem (W + BitVec.ofNat 64 offset) 16 = Proof.Gcm.lensBlock al n ∧
+      Frame [⟨W + BitVec.ofNat 64 offset, 16⟩] s.mem s'.mem ∧
+      Others [.x9, .x10] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.v = s.v := by
+  have valid₁ : offset % 8 = 0 ∧ offset < 32768 := ⟨aligned, by omega⟩
+  have valid₂ : (offset+8) % 8 = 0 ∧ offset+8 < 32768 := by omega
+  have w₁ : InRegions s.wr (W + BitVec.ofNat 64 offset) 8 := in_off hr (by omega) (by omega)
+  have w₂ : InRegions s.wr (W + BitVec.ofNat 64 (offset+8)) 8 := in_off hr (by omega) (by omega)
+  obtain ⟨s', run, m', og, sp', rd', wr', v'⟩ : ∃ s', runBlock isa (Impl.AesGcm.AArch64.Stitch.lengthsAt offset) s = some s' ∧
+      s'.mem = (s.mem.writeW (W + BitVec.ofNat 64 offset) (AArch64.rev64 (BitVec.ofNat 64 al <<< 3))).writeW
+        (W + BitVec.ofNat 64 offset + BitVec.ofNat 64 8) (AArch64.rev64 (BitVec.ofNat 64 n <<< 3)) ∧
+      Others [.x9, .x10] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.v = s.v := by
+    refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.lengthsAt, h19, w₁, w₂, valid₁, valid₂], ?_⟩
+    refine ⟨?_, by others_tac, rfl, rfl, rfl, rfl⟩
+    simp only [Mem.writeW, BitVec.setWidth_eq, Proof.AesGcm.AArch64.add_ofNat_assoc,
+      h24, h26]
+  refine WP.of_runBlock ⟨s', run, ?_, ?_, og, sp', rd', wr', v'⟩
+  · rw [m', Proof.Cmac.bytesAt_store2, Proof.AesGcm.AArch64.le8_lens, Proof.AesGcm.AArch64.le8_lens,
+      Proof.AesGcm.AArch64.toNat_ofNat_of_lt hal', Proof.AesGcm.AArch64.toNat_ofNat_of_lt hn]
+    rfl
+  · rw [m']; exact Proof.Cmac.frame_store2 _ _ _
+
 /-- `lensB`: the lengths block of `al` and `n` bytes, at block 7 of `B₂`. -/
 theorem lensB_ok {Wn : Nat} {W : Addr} {al n : Nat} (s : State) (h19 : s.gpr .x19 = W) (hr : Covers [⟨W, Wn⟩] s.wr)
     (h24 : s.gpr .x24 = BitVec.ofNat 64 al) (h26 : s.gpr .x26 = BitVec.ofNat 64 n)
@@ -808,22 +850,8 @@ theorem lensB_ok {Wn : Nat} {W : Addr} {al n : Nat} (s : State) (h19 : s.gpr .x1
     WP isa (.block Impl.AesGcm.AArch64.Stitch.lensB) s fun s' =>
       Spec.Aes.bytesAt s'.mem (W + BitVec.ofNat 64 1008) 16 = Proof.Gcm.lensBlock al n ∧
       Frame [⟨W + BitVec.ofNat 64 1008, 16⟩] s.mem s'.mem ∧
-      Others [.x9, .x10] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.v = s.v := by
-  have w₁ : InRegions s.wr (W + BitVec.ofNat 64 1008) 8 := Proof.AesGcm.AArch64.in_off hr (by omega) (by have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; have : Impl.AesGcm.AArch64.Stitch.cbO = 320 := rfl; have : Impl.AesGcm.AArch64.Stitch.b1O = 768 := rfl; have : Impl.AesGcm.AArch64.Stitch.b2O = 896 := rfl; omega)
-  have w₂ : InRegions s.wr (W + BitVec.ofNat 64 1016) 8 := Proof.AesGcm.AArch64.in_off hr (by omega) (by have : Impl.AesGcm.AArch64.Fast.hO = 288 := rfl; have : Impl.AesGcm.AArch64.Stitch.cbO = 320 := rfl; have : Impl.AesGcm.AArch64.Stitch.b1O = 768 := rfl; have : Impl.AesGcm.AArch64.Stitch.b2O = 896 := rfl; omega)
-  obtain ⟨s', run, m', og, sp', rd', wr', v'⟩ : ∃ s', runBlock isa Impl.AesGcm.AArch64.Stitch.lensB s = some s' ∧
-      s'.mem = (s.mem.writeW (W + BitVec.ofNat 64 1008) (AArch64.rev64 (BitVec.ofNat 64 al <<< 3))).writeW
-        (W + BitVec.ofNat 64 1008 + BitVec.ofNat 64 8) (AArch64.rev64 (BitVec.ofNat 64 n <<< 3)) ∧
-      Others [.x9, .x10] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.v = s.v := by
-    refine ⟨_, by arun [Impl.AesGcm.AArch64.Stitch.lensB, Impl.AesGcm.AArch64.Stitch.b2O, h19, w₁, w₂], ?_⟩
-    refine ⟨?_, by others_tac, rfl, rfl, rfl, rfl⟩
-    simp only [RegUpd.mem_write, Mem.writeW, BitVec.setWidth_eq, Proof.AesGcm.AArch64.add_ofNat_assoc, gpr_write,
-      ite_true, ite_false, reduceCtorEq, h24, h26]
-  refine WP.of_runBlock ⟨s', run, ?_, ?_, og, sp', rd', wr', v'⟩
-  · rw [m', Proof.Cmac.bytesAt_store2, Proof.AesGcm.AArch64.le8_lens, Proof.AesGcm.AArch64.le8_lens,
-      Proof.AesGcm.AArch64.toNat_ofNat_of_lt hal', Proof.AesGcm.AArch64.toNat_ofNat_of_lt hn]
-    rfl
-  · rw [m']; exact Proof.Cmac.frame_store2 _ _ _
+      Others [.x9, .x10] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.v = s.v :=
+  lengthsAt_ok s h19 hr h24 h26 hal' hn hWs (by omega) (by decide)
 
 /-! ## The tag -/
 

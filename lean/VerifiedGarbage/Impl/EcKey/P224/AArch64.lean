@@ -15,8 +15,9 @@ namespace VG.Impl.EcKey.AArch64
 
 open VG.AArch64
 
-/-- `vg_ec_p224_public_key`. -/
-def publicKeyP224 : Prog isa := Cfg.publicKey Impl.Ecdsa.AArch64.p224
+/-- `vg_ec_p224_public_key`: `[d]G` by a call of `vg_p224_comb` (`gMulP224`). -/
+def publicKeyP224 : Prog isa :=
+  Cfg.publicKeyWith Impl.Ecdsa.AArch64.p224 Impl.Ecdsa.AArch64.gMulP224
 
 /-! ## The functions, as emitted
 
@@ -33,7 +34,7 @@ open VG.Impl.Scrub.AArch64 (scrubAll withClears)
 result. -/
 def publicKeyP224 : Prog VG.AArch64.isa :=
   scrubAll 0 32
-    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17],
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x16, .x17],
      [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23,
       .v24, .v25, .v26, .v27, .v28, .v29, .v30, .v31],
      []⟩

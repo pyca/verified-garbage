@@ -126,8 +126,10 @@ theorem winMulA_ok (hc : BaseCfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Ad
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P) {ks : Nat} (hks : ks < 45)
     (hk8 : sv c base s ks < 2 ^ c.nbits) {rest : Prog isa} {R : State → Prop}
-    (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) (hkT : ks ≠ TMP := by decide) :
-    WP isa (.seq (.seq (c.winPrep (c.sl ks)) (WinCfg.windowA (winQA c)).inline) rest) s R := by
+    (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) (hnc : Mont.callOf c.MH = none)
+    (hkT : ks ≠ TMP := by decide) :
+    WP isa (.seq (.seq (c.winPrep (c.sl ks))
+      (WinCfg.windowA (winQA c) (c.mont (3 * c.C.b)) c.addCompleteFn).inline) rest) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -195,7 +197,7 @@ theorem winMulA_ok (hc : BaseCfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Ad
       exact b₂ t (by omega_arith)
   refine WP.mono (windowA_ok (winLayQA hc h9) (winXQA hc h9) hpR hC hP hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hs₂ (hM₂.inl c.hot) hF
-    (by rw [hJ]; exact hrec) (Nat.le_add_left _ _)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_
+    (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) (hmont _) (toM_cmont hc _) (fprogB_noCalls hnc _)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_
   rw [winWA_eq] at U₃
   rw [hJ, Nat.add_sub_cancel] at R₃
   obtain c₁ : ∀ r ∈ [Reg.rax, .r8], r ∈ powClob c.n := by
@@ -245,10 +247,10 @@ theorem mulVA_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9 : c.n ≤ 9) {base : Addr
     {P : Point c.C} (hP : onCurve c.C P = true) (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P)
-    {rest : Prog isa} {R : State → Prop} (hv8 : sv c base s V < 2 ^ c.nbits)
+    {rest : Prog isa} {R : State → Prop} (hv8 : sv c base s V < 2 ^ c.nbits) (hnc : Mont.callOf c.MH = none)
     (h : ∀ s', WinMulPost c base P (sv c base s V) s s' → WP isa rest s' R) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulVA c).inline rest) s R :=
-  winMulA_ok hc h9 hC hs F hP hpx hpy hrep (ks := V) (by decide) hv8 h
+  winMulA_ok hc h9 hC hs F hP hpx hpy hrep (ks := V) (by decide) hv8 h hnc
 
 /-- `[u]G + [v]Q`, into `R`, `[u]G` by the comb of `d` (`gMulG_ok'`): `pointsL_ok`'s proof. -/
 theorem pointsG_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9n : c.n ≤ 9) {d : CombData} (hd : CombOk c d)
@@ -258,7 +260,7 @@ theorem pointsG_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9n : c.n ≤ 9) {d : Comb
     (hrdT : ∀ r ∈ Abi.constRegions (fun n => s₀.syms n) c.combConsts, r ∈ s₀.rd)
     {P : Point c.C} (hP : onCurve c.C P = true)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
-      (tmv c.C c.n base s (c.sl ONEP)) P) {rest : Prog isa} {Q : State → Prop}
+      (tmv c.C c.n base s (c.sl ONEP)) P) {rest : Prog isa} {Q : State → Prop} (hnc : Mont.callOf c.MH = none)
     (h : ∀ s', Pts c s₀ base g (sv c base s U) (sv c base s V) P s' → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.pointsG c d).inline rest) s Q := by
   have h0 := hc.n0
@@ -294,7 +296,7 @@ theorem pointsG_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9n : c.n ≤ 9) {d : Comb
       · exact ⟨_, List.mem_singleton_self _, Nat.le_refl _, Nat.le_refl _⟩
       · exact ⟨_, List.mem_singleton_self _, Nat.zero_le _, by dsimp only; omega_arith⟩
   refine WP.seq (WP.mono (gMulG_ok' hc hC hd hW hs₁ F₁ (k := sv c base s U) (wordsVal_lt _ _ _ _)
-    (fun t ht => b₁ t ht) hTb.1 hTb.2)
+    (fun t ht => b₁ t ht) hTb.1 hTb.2 hnc)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
   obtain hs₂ := hs₁.of_keepRegs K₂ (rdi_not_powClob _)
   obtain F₂ := F₁.unch h7 hn fixedOk_gW U₂
@@ -315,7 +317,7 @@ theorem pointsG_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9n : c.n ≤ 9) {d : Comb
   refine mulVA_ok hc hC h9n hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]; exact hrep)
-    (by rw [W₃ (by decide) (by decide)]; exact Nat.lt_of_lt_of_le hM.v_lt hc.n_bits)
+    (by rw [W₃ (by decide) (by decide)]; exact Nat.lt_of_lt_of_le hM.v_lt hc.n_bits) hnc
     fun s₅ V₅ => ?_
   rw [show sv c base s₃ V = sv c base s V from W₃ (by decide) (by decide)] at V₅
   have hs₅ := V₅.scr
@@ -425,7 +427,7 @@ theorem verifyG_inline (c : Cfg) (d : CombData) : (Impl.Ecdsa.Verify.X86_64.Cfg.
 restores the callee-saved registers: `verify_ok`'s proof, with `pointsG_ok`. -/
 theorem verifyG_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9n : c.n ≤ 9) {d : CombData} (hd : CombOk c d)
     (hW : CombOkW c.C d.w (c.combJ d.w) d.tbl d.start) (hcd : c.gtab = some d) {s₀ : State}
-    (hp : VPre c s₀) :
+    (hp : VPre c s₀) (hnc : Mont.callOf c.MH = none) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verifyG c d).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -440,7 +442,7 @@ theorem verifyG_ok (hc : BaseCfgOk c) (hC : Law c.C) (h9n : c.n ≤ 9) {d : Comb
       (tmv c.C c.n (s₀.gpr .rcx) s₂ (c.sl ONEP)) P := by
     rw [h1]
     exact peerPt_rep hC _ _ _ hM.px hM.py
-  refine pointsG_ok hc hC h9n hd hW hcd hM hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hp.rd]; simp [hr]) hPc hQ
+  refine pointsG_ok hc hC h9n hd hW hcd hM hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hp.rd]; simp [hr]) hPc hQ hnc
     fun s₃ hP => ?_
   refine WP.mono (tail_dispatch_ok hc hC hP) fun s' ⟨saved, xo, hxo, hx, rax⟩ =>
     ⟨fun r hr => (saved r hr).trans (hg r hr), ?_⟩

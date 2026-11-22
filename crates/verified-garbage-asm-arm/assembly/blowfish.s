@@ -766,8 +766,12 @@ vg_blowfish_expand_key:
 	ldr r10, [r3, #24]
 	ldr r11, [r3, #28]
 	ldr lr, [r3, #32]
+	add sp, sp, #96
+	sub sp, sp, #96
 	add r12, sp, #0
 	mov r2, #0
+	mov r3, #3
+224:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -776,26 +780,9 @@ vg_blowfish_expand_key:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
-	add sp, sp, #96
-	sub sp, sp, #96
-	add r12, sp, #0
-	mov r2, #0
-	str r2, [r12, #80]
-	str r2, [r12, #84]
-	str r2, [r12, #88]
-	str r2, [r12, #92]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 224b
 	add sp, sp, #96
 	mov r0, #0
 	mov r1, #0
@@ -1149,28 +1136,6 @@ vg_blowfish_ecb_encrypt:
 	ldr r10, [r3, #24]
 	ldr r11, [r3, #28]
 	ldr lr, [r3, #32]
-	add r12, sp, #0
-	mov r2, #0
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
 	add sp, sp, #256
 	sub sp, sp, #256
 	add r12, sp, #0
@@ -1541,28 +1506,6 @@ vg_blowfish_ecb_decrypt:
 	ldr r10, [r3, #24]
 	ldr r11, [r3, #28]
 	ldr lr, [r3, #32]
-	add r12, sp, #0
-	mov r2, #0
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	str r2, [r12, #72]
-	str r2, [r12, #76]
 	add sp, sp, #256
 	sub sp, sp, #256
 	add r12, sp, #0

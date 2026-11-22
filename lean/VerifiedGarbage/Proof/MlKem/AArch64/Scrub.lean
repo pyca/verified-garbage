@@ -9,7 +9,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 public import VerifiedGarbage.Impl.MlKem.AArch64.Fn
-import VerifiedGarbage.Proof.Framework.AArch64.SideFill
+import VerifiedGarbage.Proof.Framework.AArch64.SideFillI
+import VerifiedGarbage.Proof.Sha3.AArch64.Entry
 import VerifiedGarbage.Proof.MlKem.AArch64.CallWipe
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
@@ -216,195 +217,226 @@ and once for the SHA-3 extension's (`Scrub.verifiedScrubbedOfFill`). -/
 
 section Fns
 
+/-- `ScrubAllOk` of a contract under `A.withFns [n]`, from that under `A`. -/
+theorem fnsOk {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → Prop)} {post : sig.Post A.ptrBits}
+    {wa : Bool} {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {st W rb : Nat} {n : String}
+    (h : ScrubAllOk (sig.contract A pre post wa st leak) W rb) :
+    ScrubAllOk (sig.contract (A.withFns [n]) pre post wa st leak) W rb :=
+  ⟨h.sp, h.post, fun _ _ hp => h.pub _ _ (Proof.Sha3.AArch64.pub_fns hp).1⟩
+
 open VG.Proof.MlKem.AArch64.FixedHash (hole)
 open VG.Proof.MlKem.AArch64.FixedHash.Inst (parts)
 open VG.Proof.MlKem.AArch64.Optimized (constants)
 open VG.Impl.MlKem.AArch64 (lay768)
 open VG.Impl.MlKem1024.AArch64 (lay1024)
 
-private theorem keyGen_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen sfx sha3 v.callee)
-      (Spec.MlKem.keyGenContract (abi.withConsts constants) 160) 32 := by
+private theorem keyGen_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx xsfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen sfx xsfx sha3 v.callee)
+      (Spec.MlKem.keyGenContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 := by
   cases sha3
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.keyGen sfx
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.keyGen sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.keyGen false (Impl.MlKem.AArch64.FixedHash.code hole) hole lay768))
-      (Proof.MlKem.AArch64.Wipe.keyGenP768_verified v sfx) (keyGenOk_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.keyGenP768_verified v sfx xsfx) (fnsOk (keyGenOk_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.keyGen sfx
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.keyGen sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.keyGen true (Impl.MlKem.AArch64.FixedHash.code hole) hole lay768))
-      (Proof.MlKem.AArch64.Wipe.keyGenP768_verified v sfx) (keyGenOk_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.keyGenP768_verified v sfx xsfx) (fnsOk (keyGenOk_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
 
 /-- `vg_mlkem768_keygen` over `x2` and `v`, as emitted. -/
 theorem keyGen_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
-      (Spec.MlKem.keyGenContract (abi.withConsts constants) 160) 32 :=
-  keyGen_of x2.sha3 v _
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen (qualifiedName "" (parts x2 v)) (qualifiedName "" [("x2", x2.suffix)]) x2.sha3
+      v.callee)
+      (Spec.MlKem.keyGenContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 :=
+  keyGen_of x2.sha3 v _ _
 
-private theorem encaps_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps sfx sha3 v.callee)
-      (Spec.MlKem.encapsContract (abi.withConsts constants) 160) 32 := by
+private theorem encaps_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx xsfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps sfx xsfx sha3 v.callee)
+      (Spec.MlKem.encapsContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 := by
   cases sha3
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.encaps sfx
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encaps sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.encaps false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
-      (Proof.MlKem.AArch64.Wipe.encapsP768_verified v sfx) (encapsOk_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.encapsP768_verified v sfx xsfx) (fnsOk (encapsOk_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.encaps sfx
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encaps sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.encaps true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
-      (Proof.MlKem.AArch64.Wipe.encapsP768_verified v sfx) (encapsOk_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.encapsP768_verified v sfx xsfx) (fnsOk (encapsOk_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
 
 /-- `vg_mlkem768_encaps` over `x2` and `v`, as emitted. -/
 theorem encaps_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
-      (Spec.MlKem.encapsContract (abi.withConsts constants) 160) 32 :=
-  encaps_of x2.sha3 v _
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps (qualifiedName "" (parts x2 v)) (qualifiedName "" [("x2", x2.suffix)]) x2.sha3
+      v.callee)
+      (Spec.MlKem.encapsContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 :=
+  encaps_of x2.sha3 v _ _
 
-private theorem encapsH_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH sfx sha3 v.callee)
-      (Spec.MlKem.encapsHContract (abi.withConsts constants) 160) 32 := by
+private theorem encapsH_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx xsfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH sfx xsfx sha3 v.callee)
+      (Spec.MlKem.encapsHContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 := by
   cases sha3
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.encapsH sfx
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encapsH sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.encapsH false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
-      (Proof.MlKem.AArch64.Wipe.encapsHP768_verified v sfx) (encapsHOk_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.encapsHP768_verified v sfx xsfx) (fnsOk (encapsHOk_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.encapsH sfx
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encapsH sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.encapsH true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
-      (Proof.MlKem.AArch64.Wipe.encapsHP768_verified v sfx) (encapsHOk_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.encapsHP768_verified v sfx xsfx) (fnsOk (encapsHOk_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
 
 /-- `vg_mlkem768_encaps_h` over `x2` and `v`, as emitted. -/
 theorem encapsH_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
-      (Spec.MlKem.encapsHContract (abi.withConsts constants) 160) 32 :=
-  encapsH_of x2.sha3 v _
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH (qualifiedName "" (parts x2 v)) (qualifiedName "" [("x2", x2.suffix)]) x2.sha3
+      v.callee)
+      (Spec.MlKem.encapsHContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 :=
+  encapsH_of x2.sha3 v _ _
 
-private theorem decaps_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps sfx sha3 v.callee)
-      (Spec.MlKem.decapsContract (abi.withConsts constants) 160) 32 := by
+private theorem decaps_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx xsfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps sfx xsfx sha3 v.callee)
+      (Spec.MlKem.decapsContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 := by
   cases sha3
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.decaps sfx
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.decaps sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.decaps false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
-      (Proof.MlKem.AArch64.Wipe.decapsP768_verified v sfx) (decapsOk_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.decapsP768_verified v sfx xsfx) (fnsOk (decapsOk_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.decaps sfx
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.decaps sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.decaps true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay768))
-      (Proof.MlKem.AArch64.Wipe.decapsP768_verified v sfx) (decapsOk_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.decapsP768_verified v sfx xsfx) (fnsOk (decapsOk_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
 
 /-- `vg_mlkem768_decaps` over `x2` and `v`, as emitted. -/
 theorem decaps_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
-      (Spec.MlKem.decapsContract (abi.withConsts constants) 160) 32 :=
-  decaps_of x2.sha3 v _
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps (qualifiedName "" (parts x2 v)) (qualifiedName "" [("x2", x2.suffix)]) x2.sha3
+      v.callee)
+      (Spec.MlKem.decapsContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 :=
+  decaps_of x2.sha3 v _ _
 
-private theorem keyGen1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen1024 sfx sha3 v.callee)
-      (Spec.MlKem1024.keyGenContract (abi.withConsts constants) 160) 32 := by
+private theorem keyGen1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx xsfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen1024 sfx xsfx sha3 v.callee)
+      (Spec.MlKem1024.keyGenContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 := by
   cases sha3
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.keyGen1024 sfx
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.keyGen1024 sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.keyGen false (Impl.MlKem.AArch64.FixedHash.code hole) hole lay1024))
-      (Proof.MlKem.AArch64.Wipe.keyGenP1024_verified v sfx) (keyGen1024Ok_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.keyGenP1024_verified v sfx xsfx) (fnsOk (keyGen1024Ok_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.keyGen1024 sfx
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.keyGen1024 sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.keyGen true (Impl.MlKem.AArch64.FixedHash.code hole) hole lay1024))
-      (Proof.MlKem.AArch64.Wipe.keyGenP1024_verified v sfx) (keyGen1024Ok_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.keyGenP1024_verified v sfx xsfx) (fnsOk (keyGen1024Ok_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
 
 /-- `vg_mlkem1024_keygen` over `x2` and `v`, as emitted. -/
 theorem keyGen1024_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
-      (Spec.MlKem1024.keyGenContract (abi.withConsts constants) 160) 32 :=
-  keyGen1024_of x2.sha3 v _
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.keyGen1024 (qualifiedName "" (parts x2 v)) (qualifiedName "" [("x2", x2.suffix)]) x2.sha3
+      v.callee)
+      (Spec.MlKem1024.keyGenContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 :=
+  keyGen1024_of x2.sha3 v _ _
 
-private theorem encaps1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps1024 sfx sha3 v.callee)
-      (Spec.MlKem1024.encapsContract (abi.withConsts constants) 160) 32 := by
+private theorem encaps1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx xsfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps1024 sfx xsfx sha3 v.callee)
+      (Spec.MlKem1024.encapsContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 := by
   cases sha3
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.encaps1024 sfx
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encaps1024 sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.encaps false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
-      (Proof.MlKem.AArch64.Wipe.encapsP1024_verified v sfx) (encaps1024Ok_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.encapsP1024_verified v sfx xsfx) (fnsOk (encaps1024Ok_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.encaps1024 sfx
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encaps1024 sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.encaps true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
-      (Proof.MlKem.AArch64.Wipe.encapsP1024_verified v sfx) (encaps1024Ok_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.encapsP1024_verified v sfx xsfx) (fnsOk (encaps1024Ok_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
 
 /-- `vg_mlkem1024_encaps` over `x2` and `v`, as emitted. -/
 theorem encaps1024_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
-      (Spec.MlKem1024.encapsContract (abi.withConsts constants) 160) 32 :=
-  encaps1024_of x2.sha3 v _
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encaps1024 (qualifiedName "" (parts x2 v)) (qualifiedName "" [("x2", x2.suffix)]) x2.sha3
+      v.callee)
+      (Spec.MlKem1024.encapsContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 :=
+  encaps1024_of x2.sha3 v _ _
 
-private theorem encapsH1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH1024 sfx sha3 v.callee)
-      (Spec.MlKem1024.encapsHContract (abi.withConsts constants) 160) 32 := by
+private theorem encapsH1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx xsfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH1024 sfx xsfx sha3 v.callee)
+      (Spec.MlKem1024.encapsHContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 := by
   cases sha3
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.encapsH1024 sfx
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encapsH1024 sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.encapsH false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
-      (Proof.MlKem.AArch64.Wipe.encapsHP1024_verified v sfx) (encapsH1024Ok_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.encapsHP1024_verified v sfx xsfx) (fnsOk (encapsH1024Ok_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.encapsH1024 sfx
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.encapsH1024 sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.encapsH true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
-      (Proof.MlKem.AArch64.Wipe.encapsHP1024_verified v sfx) (encapsH1024Ok_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.encapsHP1024_verified v sfx xsfx) (fnsOk (encapsH1024Ok_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
 
 /-- `vg_mlkem1024_encaps_h` over `x2` and `v`, as emitted. -/
 theorem encapsH1024_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
-      (Spec.MlKem1024.encapsHContract (abi.withConsts constants) 160) 32 :=
-  encapsH1024_of x2.sha3 v _
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.encapsH1024 (qualifiedName "" (parts x2 v)) (qualifiedName "" [("x2", x2.suffix)]) x2.sha3
+      v.callee)
+      (Spec.MlKem1024.encapsHContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 :=
+  encapsH1024_of x2.sha3 v _ _
 
-private theorem decaps1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx : String) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps1024 sfx sha3 v.callee)
-      (Spec.MlKem1024.decapsContract (abi.withConsts constants) 160) 32 := by
+private theorem decaps1024_of (sha3 : Bool) (v : Proof.Sha3.AArch64.Permutation) (sfx xsfx : String) :
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps1024 sfx xsfx sha3 v.callee)
+      (Spec.MlKem1024.decapsContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 := by
   cases sha3
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.decaps1024 sfx
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.decaps1024 sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.decaps false (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
-      (Proof.MlKem.AArch64.Wipe.decapsP1024_verified v sfx) (decaps1024Ok_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.decapsP1024_verified v sfx xsfx) (fnsOk (decaps1024Ok_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
-  · exact verifiedScrubbedOfFill (n := v.callee.name)
-      (e := Impl.MlKem.AArch64.Wipe.decaps1024 sfx
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
+  · exact verifiedScrubbedOfFillI (n := v.callee.name)
+      (e := Impl.MlKem.AArch64.Wipe.decaps1024 sfx xsfx v.callee.name
         (Impl.MlKem.AArch64.Kem16P.decaps true (Impl.MlKem.AArch64.FixedHash.code hole) (Impl.MlKem.AArch64.Fn.prf hole) lay1024))
-      (Proof.MlKem.AArch64.Wipe.decapsP1024_verified v sfx) (decaps1024Ok_tables 160) (by kernel_rfl)
+      (Proof.MlKem.AArch64.Wipe.decapsP1024_verified v sfx xsfx) (fnsOk (decaps1024Ok_tables 176)) (by kernel_rfl)
       (sideAll_noDit_of_calleeSide v.scrub) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by kernel_rfl)
       (by decide) (Nat.le_of_ble_eq_true (by kernel_rfl)) (by decide)
+      (fun _ _ hp => (Proof.Sha3.AArch64.pub_fns hp).2)
 
 /-- `vg_mlkem1024_decaps` over `x2` and `v`, as emitted. -/
 theorem decaps1024_scrubbed (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
-    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee)
-      (Spec.MlKem1024.decapsContract (abi.withConsts constants) 160) 32 :=
-  decaps1024_of x2.sha3 v _
+    VerifiedScrubbed target (Impl.MlKem.AArch64.Fn.decaps1024 (qualifiedName "" (parts x2 v)) (qualifiedName "" [("x2", x2.suffix)]) x2.sha3
+      v.callee)
+      (Spec.MlKem1024.decapsContract ((abi.withConsts constants).withFns [v.callee.name]) 176) 32 :=
+  decaps1024_of x2.sha3 v _ _
 
 end Fns
 

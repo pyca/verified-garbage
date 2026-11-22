@@ -34,7 +34,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP320r1.verifyHashApi.artifact PPC64LE.target {
     code := Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp320r1Verify
     verified := Proof.Ecdsa.Verify.PPC64LE.Scrub.brainpoolp320r1Verify_scrubbed hasLaw.law }] ++
-  (if hv : OK vars ∧ "VG_BRAINPOOLP320R1_COMB" ∉ names vars then [
+  (if hv : OK vars ∧ "VG_BRAINPOOLP320R1_COMB" ∉ names vars ∧ "VG_BRAINPOOLP320R1_FRAME_CONSTS" ∉ names vars then [
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp320r1SignApi.artifact PPC64LE.target {
       tables := [("hmac", tables vars)]
       code := Impl.Ecdsa.Rfc6979.PPC64LE.Fn.brainpoolp320r1 (fnsOf vars)

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 public import VerifiedGarbage.Spec.EcKey.Compressed.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 public import VerifiedGarbage.Impl.EcKey.Compressed
 public import VerifiedGarbage.Proof.EcKey.Compressed.Root
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
@@ -459,7 +460,7 @@ end
 uncompressed one at `public`, or zeros, for any curve the proof of the code
 supports (`CfgOk`), restores the callee-saved registers and `lr`: the
 signature's setup (`stage₀'`, after `public` to `r12`), ECDH's parsing
-(`peer_ok`) and validation (`validate_ok`) of the key, and `finish_ok`.
+(`peer_ok`) and validation (`valCall_ok`) of the key, and `finish_ok`.
 `compress_correct`: the same, against `compressContract`.
 -/
 
@@ -479,16 +480,18 @@ variable {c : Cfg}
 /-- The arguments: `out` (`1 + len` bytes), `public` (`1 + 2 len` bytes) and
 `scratch`, readable and writable as the contract says and apart from each
 other as it says. -/
-structure CPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r4, 1 + 2 * c.C.len⟩]
+structure CPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [⟨s.gpr .r4, 1 + 2 * c.C.len⟩] ++ extra
   wr : s.wr = [⟨s.gpr .r3, 1 + c.C.len⟩, ⟨s.gpr .r5, size⟩]
   pk_sc : Region.Disjoint ⟨s.gpr .r4, 1 + 2 * c.C.len⟩ ⟨s.gpr .r5, size⟩
   out_sc : Region.Disjoint ⟨s.gpr .r3, 1 + c.C.len⟩ ⟨s.gpr .r5, size⟩
   out_fit : (s.gpr .r3).toNat + (1 + c.C.len) ≤ 2 ^ 64
   pk_fit : (s.gpr .r4).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64
   sc_fit : (s.gpr .r5).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r5) s
 
-theorem CPre.setup {s : State} (hp : CPre c s) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
+theorem CPre.setup {s : State} {extra : List Region} (hp : CPre c s extra) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
   obtain hr12 : (s.write .r12 (s.gpr .r4)).gpr .r12 = s.gpr .r4 := by simp only [write_gpr, ite_true]
   obtain hr5 : (s.write .r12 (s.gpr .r4)).gpr .r5 = s.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
@@ -505,7 +508,8 @@ theorem CPre.setup {s : State} (hp : CPre c s) : SetupPre c args (s.write .r12 (
   obtain hwr : (⟨(s.write .r12 (s.gpr .r4)).gpr .r5, size⟩ : Region) ∈ (s.write .r12 (s.gpr .r4)).wr := by
     rw [hr5, write_wr, hp.wr]; simp
   obtain hsf : ((s.write .r12 (s.gpr .r4)).gpr .r5).toNat + size ≤ 2 ^ 64 := by rw [hr5]; exact hp.sc_fit
-  exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf⟩
+  exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf,
+    by rw [hr5]; exact ⟨hp.tbl.rd, hp.tbl.val⟩⟩
 
 /-- The key's `x` and `y`. -/
 abbrev keyX (c : Cfg) (s : State) : Nat :=
@@ -523,13 +527,13 @@ structure CKeep (s₀ s' : State) : Prop where
   lr : s'.lr = s₀.lr
 
 theorem compress_eq' (c : Cfg) : Impl.EcKey.Compressed.PPC64LE.compress c =
-    .seq (.block (mov .r12 .r4 :: c.setupWith args))
+    .seq (.seq (.block [mov .r12 .r4]) (c.setupWith args))
       (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r12))
-      (.seq (Impl.Ecdh.PPC64LE.Cfg.validate c) (.block (Impl.EcKey.Compressed.PPC64LE.compressFinish c)))) := rfl
+      (.seq (Impl.Ecdh.PPC64LE.Cfg.valCall c) (.block (Impl.EcKey.Compressed.PPC64LE.compressFinish c)))) := rfl
 
 /-- `vg_ec_<curve>_compress_public_key` writes the compressed key, or zeros,
 and returns 1 or 0, restoring the callee-saved registers and `lr`. -/
-theorem compress_ok (hc : CfgOk c) {s₀ : State} (hp : CPre c s₀) :
+theorem compress_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : CPre c s₀ extra) :
     WP isa (Impl.EcKey.Compressed.PPC64LE.compress c) s₀ fun s' => CKeep s₀ s' ∧
       Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .r3) (1 + c.C.len) =
         (if KeyOk c s₀ then BitVec.ofNat 8 (2 + keyY c s₀ % 2) :: toBytes c.C.len (keyX c s₀)
@@ -542,7 +546,7 @@ theorem compress_ok (hc : CfgOk c) {s₀ : State} (hp : CPre c s₀) :
   have hsz : size = 8192 := rfl
   rw [compress_eq']
   -- `public` to `r12`, and the setup.
-  refine WP.seq (wp_step exec_mov (WP.mono (stage₀' hc hp.setup) fun s₂ ⟨S₂, kp₂⟩ => ?_))
+  refine WP.seq (WP.seq (wp_step exec_mov (WP.block_nil (WP.mono (stage₀' hc hp.setup) fun s₂ ⟨S₂, kp₂⟩ => ?_))))
   obtain hr5 : (s₀.write .r12 (s₀.gpr .r4)).gpr .r5 = s₀.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
   generalize hb : (s₀.write .r12 (s₀.gpr .r4)).gpr args.sc = base at S₂
@@ -577,13 +581,13 @@ theorem compress_ok (hc : CfgOk c) {s₀ : State} (hp : CPre c s₀) :
       sv c base s₃ QY < c.C.p) := by
     rw [f₃, hq0, S₂.flag, BitVec.allOnes_and, mask64_and, mask64_and]
   -- The validation.
-  refine WP.seq (WP.mono (validate_ok hc K₃.ws K₃.fixed r2₃ bp₃ hf₃)
+  refine WP.seq (WP.mono (valCall_ok hc K₃.ws K₃.fixed r2₃ bp₃ hf₃)
     fun s₄ ⟨hw₄, k₄, U₄, f₄, _, _, _, _⟩ => ?_)
-  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_valW h7) (hWs := valW_le h7)
+  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_valWS h7) (hWs := valWS_le h7)
   obtain e₄ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, W0, W1, W2, W3, PY] → i ≠ FLAG → sv c base s₄ i = sv c base s₃ i :=
-    fun hi hl hf => sv_unch U₄ h7 hn hi (apart_append (apart_slW hl)
+    fun hi hl hf => sv_unch U₄ h7 hn hi (apart_valWS hi (apart_append (apart_slW hl)
       (show ∀ w ∈ [(own c.n, 64 * c.n)] ++ [(c.sl FLAG, 8)], _ from
-        apart_append (apart_own h7 hi) (apart_flag h0 hf)))
+        apart_append (apart_own h7 hi) (apart_flag h0 hf))))
   obtain hok : PeerOk c base s₃ ((s₀.mem (s₀.gpr .r4) = 4 ∧ sv c base s₃ E < c.C.p) ∧ sv c base s₃ QY < c.C.p) ↔
       KeyOk c s₀ := by
     unfold PeerOk
@@ -628,16 +632,45 @@ theorem compress_key (c : Cfg) (s : State) :
   change Spec.EcKey.compressPublicKey c.C (Spec.Ecdsa.bytesAt s.mem (s.gpr .r4) (2 * c.C.len + 1)) = _
   rw [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith, compress_eq hlen hhead hx hy]
 
-theorem compress_correct (c : Cfg) (hc : CfgOk c) (s : State) (hs : (compressContract c.C).pre s) :
+theorem compress_correct (c : Cfg) (hc : CfgOk c) (s : State) (hs : (compressContract c.C).pre s)
+    (ht : TblOk c (s.gpr .r5) s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.compress c) s t s' ∧
       abiPreserved s s' ∧ (compressContract c.C).post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
   obtain hp : CPre c s :=
-    ⟨by rw [hrd, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith],
+    ⟨by rw [hrd, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith, List.append_nil],
       by rw [hwr, show c.C.len + 1 = 1 + c.C.len by omega_arith],
       by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using hpw,
       by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using how,
-      by omega_arith, by omega_arith, hwfit⟩
+      by omega_arith, by omega_arith, hwfit, ht⟩
+  obtain ⟨t, s', he, K, bytes, ret⟩ := compress_ok hc hp
+  refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
+  show (match Spec.EcKey.compressPublicKey c.C (Spec.EcKey.bytesAt s.mem (s.gpr .r4) (2 * c.C.len + 1)) with
+    | some bs => _ | none => _)
+  rw [compress_key]
+  change Spec.EcKey.bytesAt s'.mem (s.gpr .r3) (1 + c.C.len) = _ at bytes
+  rw [show 1 + c.C.len = c.C.len + 1 by omega_arith] at bytes
+  by_cases hk : KeyOk c s
+  · rw [ite_eq_left hk] at bytes ret ⊢
+    exact ⟨ret, bytes⟩
+  · rw [ite_eq_right hk] at bytes ret ⊢
+    exact ⟨ret, bytes⟩
+
+
+/-- `compress_correct` under a contract that lists the table of constants. -/
+theorem compress_correctT (c : Cfg) (hc : CfgOk c) {K : List (String × List (BitVec 64))}
+    (hK : (c.constSym, c.constTbl) ∈ K) (s : State) (hs : ((compressContract c.C).withTables K).pre s) :
+    ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.compress c) s t s' ∧
+      abiPreserved s s' ∧ ((compressContract c.C).withTables K).post s s' := by
+  obtain ⟨⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩, hk⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hpo hpw how hfit hpkfit hwfit
+  obtain hp : CPre c s (constRegs K s) :=
+    ⟨hk.rd_strip (by rw [hrd, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith]),
+      by rw [hwr, show c.C.len + 1 = 1 + c.C.len by omega_arith],
+      by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using hpw,
+      by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using how,
+      by omega_arith, by omega_arith, hwfit, tbl_of_consts hk hK (hk.disjoint_wr hK (by
+        rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
   obtain ⟨t, s', he, K, bytes, ret⟩ := compress_ok hc hp
   refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
   show (match Spec.EcKey.compressPublicKey c.C (Spec.EcKey.bytesAt s.mem (s.gpr .r4) (2 * c.C.len + 1)) with
@@ -1424,16 +1457,18 @@ instance (c : Cfg) (root : Fe c.C → Fe c.C) (s : State) : Decidable (DAccept c
 /-- The arguments: `out` (`1 + 2 len` bytes), `public` (`1 + len` bytes)
 and `scratch`, readable and writable as the contract says and apart from
 each other as it says. -/
-structure DPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r4, 1 + c.C.len⟩]
+structure DPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [⟨s.gpr .r4, 1 + c.C.len⟩] ++ extra
   wr : s.wr = [⟨s.gpr .r3, 1 + 2 * c.C.len⟩, ⟨s.gpr .r5, size⟩]
   pk_sc : Region.Disjoint ⟨s.gpr .r4, 1 + c.C.len⟩ ⟨s.gpr .r5, size⟩
   out_sc : Region.Disjoint ⟨s.gpr .r3, 1 + 2 * c.C.len⟩ ⟨s.gpr .r5, size⟩
   out_fit : (s.gpr .r3).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64
   pk_fit : (s.gpr .r4).toNat + (1 + c.C.len) ≤ 2 ^ 64
   sc_fit : (s.gpr .r5).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r5) s
 
-theorem DPre.setup {s : State} (hp : DPre c s) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
+theorem DPre.setup {s : State} {extra : List Region} (hp : DPre c s extra) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
   obtain hr12 : (s.write .r12 (s.gpr .r4)).gpr .r12 = s.gpr .r4 := by simp only [write_gpr, ite_true]
   obtain hr5 : (s.write .r12 (s.gpr .r4)).gpr .r5 = s.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
@@ -1450,10 +1485,11 @@ theorem DPre.setup {s : State} (hp : DPre c s) : SetupPre c args (s.write .r12 (
   obtain hwr : (⟨(s.write .r12 (s.gpr .r4)).gpr .r5, size⟩ : Region) ∈ (s.write .r12 (s.gpr .r4)).wr := by
     rw [hr5, write_wr, hp.wr]; simp
   obtain hsf : ((s.write .r12 (s.gpr .r4)).gpr .r5).toNat + size ≤ 2 ^ 64 := by rw [hr5]; exact hp.sc_fit
-  exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf⟩
+  exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf,
+    by rw [hr5]; exact ⟨hp.tbl.rd, hp.tbl.val⟩⟩
 
 theorem decompress_eq' (c : Cfg) : Impl.EcKey.Compressed.PPC64LE.decompress c =
-    .seq (.block (mov .r12 .r4 :: c.setupWith args))
+    .seq (.seq (.block [mov .r12 .r4]) (c.setupWith args))
       (.seq (.block (Impl.EcKey.Compressed.PPC64LE.decompressPeer c))
       (.seq (fprog c.SP (Impl.EcKey.Compressed.PPC64LE.rhsOps c))
       (.seq (.seq (Impl.EcKey.Compressed.PPC64LE.rootCandidate c)
@@ -1463,7 +1499,7 @@ theorem decompress_eq' (c : Cfg) : Impl.EcKey.Compressed.PPC64LE.decompress c =
 /-- `vg_ec_<curve>_decompress_public_key` writes the uncompressed key, or
 zeros, and returns 1 or 0, restoring the callee-saved registers and `lr`. -/
 theorem decompress_ok (hc : CfgOk c) {root : Fe c.C → Fe c.C} (hroot : CandidateCorrect c root)
-    {s₀ : State} (hp : DPre c s₀) :
+    {s₀ : State} {extra : List Region} (hp : DPre c s₀ extra) :
     WP isa (Impl.EcKey.Compressed.PPC64LE.decompress c) s₀ fun s' => CKeep s₀ s' ∧
       Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .r3) (1 + 2 * c.C.len) =
         (if DAccept c root s₀ then 4 :: (toBytes c.C.len (keyX c s₀) ++ toBytes c.C.len (keyRoot c root s₀).val)
@@ -1478,7 +1514,7 @@ theorem decompress_ok (hc : CfgOk c) {root : Fe c.C → Fe c.C} (hroot : Candida
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [decompress_eq']
   -- `public` to `r12`, and the setup.
-  refine WP.seq (wp_step exec_mov (WP.mono (stage₀' hc hp.setup) fun s₂ ⟨S₂, kp₂⟩ => ?_))
+  refine WP.seq (WP.seq (wp_step exec_mov (WP.block_nil (WP.mono (stage₀' hc hp.setup) fun s₂ ⟨S₂, kp₂⟩ => ?_))))
   obtain hr5 : (s₀.write .r12 (s₀.gpr .r4)).gpr .r5 = s₀.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
   generalize hb : (s₀.write .r12 (s₀.gpr .r4)).gpr args.sc = base at S₂
@@ -1619,19 +1655,49 @@ theorem decompress_key (c : Cfg) (root : Fe c.C → Fe c.C) (s : State) :
     (by change ofBytes ((Spec.Ecdsa.bytesAt _ _ _).drop 1) = _; rw [hb]; rfl)
 
 theorem decompress_correct (c : Cfg) (hc : CfgOk c) (root : Fe c.C → Fe c.C) (hroot : CandidateCorrect c root)
-    (s : State) (hs : (decompressContract c.C root).pre s) :
+    (s : State) (hs : (decompressContract c.C root).pre s) (ht : TblOk c (s.gpr .r5) s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.decompress c) s t s' ∧
       abiPreserved s s' ∧ (decompressContract c.C root).post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
   obtain hp : DPre c s :=
-    ⟨by rw [hrd, show c.C.len + 1 = 1 + c.C.len by omega_arith],
+    ⟨by rw [hrd, show c.C.len + 1 = 1 + c.C.len by omega_arith, List.append_nil],
       by rw [hwr, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith],
       by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using hpw,
       by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using how,
-      by omega_arith, by omega_arith, hwfit⟩
+      by omega_arith, by omega_arith, hwfit, ht⟩
   obtain ⟨t, s', he, K, bytes, ret⟩ := decompress_ok hc hroot hp
   refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
   dsimp only [decompressContract]
+  rw [decompress_key]
+  change Spec.EcKey.bytesAt s'.mem (s.gpr .r3) (1 + 2 * c.C.len) = _ at bytes
+  rw [show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega_arith] at bytes
+  by_cases hk : DAccept c root s
+  · rw [ite_eq_left hk] at bytes ret ⊢
+    refine ⟨ret, ?_⟩
+    rw [bytes]
+    simp only [Spec.EcKey.encodePoint, Fin.val_ofNat, Nat.mod_eq_of_lt hk.1.2]
+  · rw [ite_eq_right hk] at bytes ret ⊢
+    exact ⟨ret, bytes⟩
+
+
+/-- `decompress_correct` under a contract that lists the table of constants. -/
+theorem decompress_correctT (c : Cfg) (hc : CfgOk c) (root : Fe c.C → Fe c.C) (hroot : CandidateCorrect c root)
+    {K : List (String × List (BitVec 64))} (hK : (c.constSym, c.constTbl) ∈ K)
+    (s : State) (hs : ((decompressContract c.C root).withTables K).pre s) :
+    ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.decompress c) s t s' ∧
+      abiPreserved s s' ∧ ((decompressContract c.C root).withTables K).post s s' := by
+  obtain ⟨⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩, hk⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hpo hpw how hfit hpkfit hwfit
+  obtain hp : DPre c s (constRegs K s) :=
+    ⟨hk.rd_strip (by rw [hrd, show c.C.len + 1 = 1 + c.C.len by omega_arith]),
+      by rw [hwr, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith],
+      by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using hpw,
+      by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using how,
+      by omega_arith, by omega_arith, hwfit, tbl_of_consts hk hK (hk.disjoint_wr hK (by
+        rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
+  obtain ⟨t, s', he, K, bytes, ret⟩ := decompress_ok hc hroot hp
+  refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
+  dsimp only [Contract.withTables, decompressContract, stripConsts_mem, stripConsts_gpr]
   rw [decompress_key]
   change Spec.EcKey.bytesAt s'.mem (s.gpr .r3) (1 + 2 * c.C.len) = _ at bytes
   rw [show 1 + 2 * c.C.len = 2 * c.C.len + 1 by omega_arith] at bytes

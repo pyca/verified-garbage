@@ -90,14 +90,14 @@ def rnd (r : Nat) : List Instr :=
 
 /-- The last two rounds, with round keys `nr − 1` and `nr`, and the text
 blocks at `x9 + o` added. -/
-def lastRnd (nr o : Nat) : List Instr :=
+def lastRnd (nr o : Nat) (src : Reg := .x9) : List Instr :=
   .ldrq K .x21 (16 * (nr - 1)) :: (List.range 8).flatMap (fun j => [.vop (.aese (breg j) K)]) ++
   .ldrq K .x21 (16 * nr) ::
-    (List.range 8).flatMap fun j => [.ldrq P .x9 (o + 16 * j), .vop (.eor3 (breg j) (breg j) P K)]
+    (List.range 8).flatMap fun j => [.ldrq P src (o + 16 * j), .vop (.eor3 (breg j) (breg j) P K)]
 
 /-- Eight blocks of counter mode, of the text at `x9 + o`, into `v0`–`v7`. -/
-def aesPart (nr o : Nat) : List Instr :=
-  (List.range 8).flatMap ctr1 ++ (List.range (nr - 1)).flatMap rnd ++ lastRnd nr o ++
+def aesPart (nr o : Nat) (src : Reg := .x9) : List Instr :=
+  (List.range 8).flatMap ctr1 ++ (List.range (nr - 1)).flatMap rnd ++ lastRnd nr o src ++
     ([.addImm .w .x10 .x10 8] : List Instr)
 
 /-! ## GHASH -/
@@ -152,8 +152,8 @@ def fuse : List Instr → List (List Instr)
   | [] => []
 
 /-- `aesPart nr o` woven with `ghPart`, each `aese` next to its `aesmc`. -/
-def parts (nr o : Nat) : List Instr :=
-  VG.Impl.Weave.weaveG (fuse (aesPart nr o)) (ghPart.map fun x => [x])
+def parts (nr o : Nat) (src : Reg := .x9) : List Instr :=
+  VG.Impl.Weave.weaveG (fuse (aesPart nr o src)) (ghPart.map fun x => [x])
 
 /-- Store `v0`–`v7` to the eight blocks at `p + o`. -/
 def storesAt (p : Reg) (o : Nat) : List Instr := (List.range 8).flatMap fun j => [.strq (breg j) p (o + 16 * j)]
@@ -183,6 +183,15 @@ def encLoop (nr : Nat) : Prog isa :=
   .seq (.block (aesPart nr 0 ++ stores 0 ++ ([.subImm .x .x11 .x11 1] : List Instr)))
     (.seq (.ite (.zero .x .x11) (.block []) (.loop (.block (encBody nr)) (.nonzero .x .x11)))
       (.block (ghPart ++ ([.addImm .x .x9 .x9 128] : List Instr))))
+
+/-- Sealing from a separate source in `x15`. GHASH and all stores use
+the destination at `x9`; only counter mode reads plaintext at `x15`. -/
+def encToLoop (nr : Nat) : Prog isa :=
+  let advance := [.addImm .x .x15 .x15 128, .addImm .x .x9 .x9 128]
+  let step := parts nr 128 .x15 ++ stores 128 ++ advance ++ [.subImm .x .x11 .x11 1]
+  .seq (.block (aesPart nr 0 .x15 ++ stores 0 ++ [.subImm .x .x11 .x11 1])) <|
+  .seq (.ite (.zero .x .x11) (.block []) (.loop (.block step) (.nonzero .x .x11))) <|
+    .block (ghPart ++ advance)
 
 /-- Where `open`'s loop stores the plaintext: over the ciphertext (`x9`), or,
 out of place (`to`), to the destination at `x15`, advanced with it. -/

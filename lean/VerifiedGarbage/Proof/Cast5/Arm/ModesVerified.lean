@@ -180,7 +180,7 @@ scratch buffer of 39 words (`Proof.Cast5.modeScratchContract`): the modes'
 72 bytes, then the 256 bytes the ECB function works in. The ECB functions use
 no stack of their own, so the modes need only the 8 bytes their push of that
 working space takes. The `_framed` theorems keep the buffer on the stack,
-zeroed on return: 328 bytes more. The contracts are under
+which the functions' cleanup (`scrubAll`) zeroes: 328 bytes more. The contracts are under
 `Arm.abi.withConsts ecbConsts`: the ECB functions read the table
 `VG_CAST5_S1234`, which the modes hold apart from what they write
 (`tabsOk_of`).
@@ -420,14 +420,15 @@ theorem cbcEncryptChained_verified : Verified Arm.target cbcEncryptChained
       (Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) (Proof.Cast5.cbcEncChainedPost Arm.abi.ptrBits) 8) :=
   seq_verified (ecbSpec true) (cbcEncChained_ok _) cbcEncryptChainedTaint cbcEncryptChained_implies
 
-/-- `cbcEncryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cbcEncryptChained`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem cbcEncryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 cbcEncryptChained)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 328 1 cbcEncryptChained)
       (Proof.Cast5.cbcEncryptChainedRoundsContract (Arm.abi.withConsts ecbConsts) 336) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig) (nm := "scratch")
+  Arm.Verified.stackScratchC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig) (nm := "scratch")
     (e := .u64) (n := 39) (pre := Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) (post := Proof.Cast5.cbcEncChainedPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 328)
-    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h) (Proof.Cast5.cbcEncChainedPost_local _)
     (Proof.Cast5.cbcEncChainedPostOut_local _) (cbcFrame_sat _)
 
@@ -465,14 +466,15 @@ theorem cbcDecryptChained_verified : Verified Arm.target cbcDecryptChained
       (Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) (Proof.Cast5.cbcDecChainedPost Arm.abi.ptrBits) 8) :=
   seq_verified (ecbSpec false) (cbcDecChained_ok _) cbcDecryptChainedTaint cbcDecryptChained_implies
 
-/-- `cbcDecryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cbcDecryptChained`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem cbcDecryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 cbcDecryptChained)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 328 1 cbcDecryptChained)
       (Proof.Cast5.cbcDecryptChainedRoundsContract (Arm.abi.withConsts ecbConsts) 336) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig) (nm := "scratch")
+  Arm.Verified.stackScratchC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig) (nm := "scratch")
     (e := .u64) (n := 39) (pre := Proof.Cast5.cbcChainedPre Arm.abi.ptrBits) (post := Proof.Cast5.cbcDecChainedPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 328)
-    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h) (Proof.Cast5.cbcDecChainedPost_local _)
     (Proof.Cast5.cbcDecChainedPostOut_local _) (cbcFrame_sat _)
 
@@ -510,14 +512,15 @@ theorem ofb_verified : Verified Arm.target ofb
       (Spec.Cast5.ofbPre Arm.abi.ptrBits) (Proof.Cast5.ofbPost Arm.abi.ptrBits) 8) :=
   seq_verified (ecbSpec true) (ofb_ok _) ofbTaint ofb_implies
 
-/-- `ofb`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `ofb`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem ofb_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 ofb)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 328 1 ofb)
       (Proof.Cast5.ofbRoundsContract (Arm.abi.withConsts ecbConsts) 336) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbSig) (nm := "scratch")
+  Arm.Verified.stackScratchC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbSig) (nm := "scratch")
     (e := .u64) (n := 39) (pre := Spec.Cast5.ofbPre Arm.abi.ptrBits) (post := Proof.Cast5.ofbPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 328)
-    ofb_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    ofb_verified (by decide) (by decide) (by decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h) (Proof.Cast5.ofbPost_local _)
     (Proof.Cast5.ofbPostOut_local _) (ofbFrame_sat _)
 
@@ -555,14 +558,15 @@ theorem cfbEncrypt_verified : Verified Arm.target cfbEncrypt
       (Spec.Cast5.cfbPre Arm.abi.ptrBits) (Proof.Cast5.cfbEncPost Arm.abi.ptrBits) 8) :=
   seq_verified (ecbSpec true) (cfbEnc_ok _) cfbEncryptTaint cfbEncrypt_implies
 
-/-- `cfbEncrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbEncrypt`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem cfbEncrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 cfbEncrypt)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 328 1 cfbEncrypt)
       (Proof.Cast5.cfbEncryptRoundsContract (Arm.abi.withConsts ecbConsts) 336) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig) (nm := "scratch")
+  Arm.Verified.stackScratchC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig) (nm := "scratch")
     (e := .u64) (n := 39) (pre := Spec.Cast5.cfbPre Arm.abi.ptrBits) (post := Proof.Cast5.cfbEncPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 328)
-    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h) (Proof.Cast5.cfbEncPost_local _)
     (Proof.Cast5.cfbEncPostOut_local _) (cfbFrame_sat _)
 
@@ -600,14 +604,15 @@ theorem cfbDecrypt_verified : Verified Arm.target cfbDecrypt
       (Spec.Cast5.cfbPre Arm.abi.ptrBits) (Proof.Cast5.cfbDecPost Arm.abi.ptrBits) 8) :=
   seq_verified (ecbSpec true) (cfbDec_ok _) cfbDecryptTaint cfbDecrypt_implies
 
-/-- `cfbDecrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbDecrypt`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem cfbDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 cfbDecrypt)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 328 1 cfbDecrypt)
       (Proof.Cast5.cfbDecryptRoundsContract (Arm.abi.withConsts ecbConsts) 336) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig) (nm := "scratch")
+  Arm.Verified.stackScratchC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig) (nm := "scratch")
     (e := .u64) (n := 39) (pre := Spec.Cast5.cfbPre Arm.abi.ptrBits) (post := Proof.Cast5.cfbDecPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 328)
-    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.modePre_local _ vs m₁ m₂ hl h) (Proof.Cast5.cfbDecPost_local _)
     (Proof.Cast5.cfbDecPostOut_local _) (cfbFrame_sat _)
 

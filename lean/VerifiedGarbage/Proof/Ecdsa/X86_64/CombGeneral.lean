@@ -95,6 +95,21 @@ theorem TEntryPost.setNeg {K : TCombCfg} {C : Curve} {base : Addr} {size k i : N
   · rw [ht _ (by simp), ht _ (by simp), ht _ (by simp)]; exact E.rep
   · rw [ht _ (by simp)]; exact E.z
 
+/-- Field operations call nothing where the products are not calls
+(`Mont.callOf M = none`): so a call of them, such as the complete addition's
+function (`vg_<curve>_add_complete`), runs as they do inlined. -/
+theorem fprogB_noCalls {M : Mod} (h : Mont.callOf M = none) (ops : List FOp) :
+    (fprogB M ops).noCalls = true := by
+  obtain hop : ∀ op, (opProg M op).noCalls = true := fun op => by
+    cases op <;> simp [opProg, opCall?, h, Code.noCalls]
+  unfold fprogB
+  induction ops with
+  | nil => rfl
+  | cons a l ih =>
+    cases l with
+    | nil => exact hop a
+    | cons b l => simp only [List.map_cons, progs, Code.noCalls, Bool.and_eq_true] at ih ⊢; exact ⟨hop a, ih⟩
+
 theorem generalStep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hC : Law C)
     (b3 : Nat) (hb : b3 < C.p) (hbm : toM C.p (2 ^ (64 * K.M.n)) b3 = Fin.ofNat C.p (3 * C.b))
@@ -103,8 +118,9 @@ theorem generalStep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {
     (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
     {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ K.J)
     (hI : TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s j)
-    (haS : tmv C K.M.n base s₀ K.S.a = Fin.ofNat C.p C.a) (publicLookup : Bool := false) :
-    WP isa (K.generalStep b3 publicLookup).inline s fun s' =>
+    (haS : tmv C K.M.n base s₀ K.S.a = Fin.ofNat C.p C.a) {fn : String} (hnc : Mont.callOf K.M = none)
+    (publicLookup : Bool := false) :
+    WP isa (K.generalStep b3 fn publicLookup).inline s fun s' =>
       TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (j - 1) ∧
         s'.zf = some (decide (j - 1 = 0)) := by
   have hn := hI.scr.nowrap
@@ -119,6 +135,7 @@ theorem generalStep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {
   refine WP.of_syms ?_
   unfold TCombCfg.generalStep
   simp only [Code.inline]
+  rw [← Code.inline_of_noCalls (fprogB_noCalls hnc (rcb K.generalS K.A K.E K.D))]
   refine WP.seq ?_
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono_syms (decRbx_ok s hj (by omega_using [hjn, hJ]) hI.rbx) fun s₁ ⟨b₁, k₁⟩ sy₁ => ?_
@@ -372,8 +389,9 @@ theorem generalComb_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {
     (hpn : C.p < 2 ^ (64 * K.M.n)) {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size C.p s.mem base)
     (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
-    (haS : tmv C K.M.n base s K.S.a = Fin.ofNat C.p C.a) (publicLookup : Bool := false) :
-    WP isa (K.generalComb b3 publicLookup).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧
+    (haS : tmv C K.M.n base s K.S.a = Fin.ofNat C.p C.a) {fn : String} (hnc : Mont.callOf K.M = none)
+    (publicLookup : Bool := false) :
+    WP isa (K.generalComb b3 fn publicLookup).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧
       Unch base (tcombW K) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.A.x) (tmv C K.M.n base s' K.A.y) (tmv C K.M.n base s' K.A.z)
@@ -386,7 +404,7 @@ theorem generalComb_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {
   refine WP.seq (WP.mono (tcomb_init_ok hL hV hpn hs hM hF) fun s₆ I₆ => ?_)
   exact countLoop_ok (Inv := fun j s' =>
       TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s' j) (n := K.J)
-    (fun j s' h1 h2 hi => generalStep_ok hL hC b3 hb hbm hG hV hpn hF h1 h2 hi haS publicLookup)
+    (fun j s' h1 h2 hi => generalStep_ok hL hC b3 hb hbm hG hV hpn hF h1 h2 hi haS hnc publicLookup)
     (fun s' hi => ⟨hi.keep, hi.unch, hi.mod, hi.lt, by rw [← combEW_zero hk]; exact hi.rep⟩)
     hJ.1 I₆
 
@@ -471,7 +489,8 @@ theorem gMulG_ok' (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk 
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (hTM : TblMem s (s.syms d.tsym) (c.combWords d))
     (hout : ∀ i < (c.combWords d).length, ∀ b < 8,
-      size ≤ ofs base (s.syms d.tsym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
+      size ≤ ofs base (s.syms d.tsym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b))
+    (hnc : Mont.callOf c.MH = none) :
     WP isa (c.gMulG d).inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (gW c) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem base ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
@@ -517,7 +536,7 @@ theorem gMulG_ok' (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk 
     show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem _ (c.sl AP) c.n) = _
     rw [hap₁]; exact toM_cmont hc _
   refine WP.mono (generalComb_ok (tcombLayG hc hd) hC (c.mont (3 * c.C.b)) (hmont _) (toM_cmont hc _)
-      hc.onG (tcombValsG hc hC hW) hc.p_lt hs₁ ((modP_of hc hmp₁).inl c.hot) hF haS)
+      hc.onG (tcombValsG hc hC hW) hc.p_lt hs₁ ((modP_of hc hmp₁).inl c.hot) hF haS hnc)
     fun s' ⟨K', U', M', L', R'⟩ =>
       ⟨(k₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [powClob, clob]).trans K', ?_, M'.of_inl, L', R'⟩
   rw [show tcombW (c.combCfgG d) = tcombW (c.combCfg d) from rfl, tcombW_eq] at U'
@@ -538,7 +557,8 @@ theorem gMulG_ok' (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk 
 /-- `R = [k]G` by `gMulG d`, after the setup and the tables. -/
 theorem gMulG_ok (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk c d)
     (hW : CombOkW c.C d.w (c.combJ d.w) d.tbl d.start) (hcd : c.gtab = some d) {hs : Option Nat}
-    {s₀ : State} (hp : Pre c s₀) {s : State} (hS : St₁ c hs s₀ (s₀.gpr .r8) s false) :
+    {s₀ : State} (hp : Pre c s₀) {s : State} (hS : St₁ c hs s₀ (s₀.gpr .r8) s false)
+    (hnc : Mont.callOf c.MH = none) :
     WP isa (c.gMulG d).inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gWA c) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem (s₀.gpr .r8) ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem (s₀.gpr .r8) x c.n < c.C.p) ∧
@@ -546,14 +566,15 @@ theorem gMulG_ok (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk c
         (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RZ)) (mul (kv c s₀) (G c.C)) := by
   obtain ⟨hTM, hout⟩ := tbl_of_gtab hcd hp hS.rd hS.unch
   rw [← hS.syms] at hTM hout
-  exact WP.mono (gMulG_ok' hc hC hd hW hS.scr hS.fixed (hS.k ▸ wordsVal_lt _ _ _ _) (hS.t₀ rfl) hTM hout)
+  exact WP.mono (gMulG_ok' hc hC hd hW hS.scr hS.fixed (hS.k ▸ wordsVal_lt _ _ _ _) (hS.t₀ rfl) hTM hout hnc)
     fun s' ⟨K', U', M', L', R'⟩ => ⟨K', U'.mono fun w hw => List.mem_append_left _ hw, M', L', R'⟩
 
 /-- `[k]G` by the comb of `combCfgG d`, then `Z^(p-2)`: `stage₂`. -/
 theorem stage₂G (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk c d)
     (hW : CombOkW c.C d.w (c.combJ d.w) d.tbl d.start) (hcd : c.gtab = some d) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀) {base : Addr}
     (hb : base = s₀.gpr .r8) {s : State} (hS : St₁ c hs s₀ base s false)
-    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
+    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q)
+    (hnc : Mont.callOf c.MH = none) :
     WP isa (.seq (c.gMulG d).inline (.seq c.pPow.inline rest)) s Q := by
   subst hb
   have h0 := hc.n0
@@ -561,7 +582,7 @@ theorem stage₂G (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk 
   have hn := hS.scr.nowrap
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have F := hS.fixed
-  refine WP.seq (WP.mono (gMulG_ok hc hC hd hW hcd hp hS) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
+  refine WP.seq (WP.mono (gMulG_ok hc hC hd hW hcd hp hS hnc) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   obtain hs₅ := hS.scr.of_keepRegs K₅ (rdi_not_powClob _)
   obtain F₅ := F.unch h7 hn fixedOk_gWA U₅
   refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
@@ -614,10 +635,11 @@ theorem signG_inline (c : Cfg) (d : CombData) : (c.signG d).inline = .seq (.bloc
 
 /-- `sign_ok` for `signG d`. -/
 theorem signG_ok (hc : BaseCfgOk c) (hC : Law c.C) {d : CombData} (hd : CombOk c d)
-    (hW : CombOkW c.C d.w (c.combJ d.w) d.tbl d.start) (hcd : c.gtab = some d) {s₀ : State} (hp : Pre c s₀) :
+    (hW : CombOkW c.C d.w (c.combJ d.w) d.tbl d.start) (hcd : c.gtab = some d) {s₀ : State} (hp : Pre c s₀)
+    (hnc : Mont.callOf c.MH = none) :
     WP isa (c.signG d).inline s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [signG_inline]
-  exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂G hc hC hd hW hcd hp rfl S₁ fun _ S₂ =>
-    stage₃ hc S₂ fun _ S₃ => stage₄ hc hC hp rfl S₃
+  exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂G hc hC hd hW hcd hp rfl S₁ (fun _ S₂ =>
+    stage₃ hc S₂ fun _ S₃ => stage₄ hc hC hp rfl S₃) hnc
 
 end VG.Proof.Ecdsa.X86_64

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Seed.CbcScratch
 public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 public import VerifiedGarbage.Proof.Modes.Arm.WideModes
 import VerifiedGarbage.Proof.Modes.Arm.CbcChained
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -16,7 +16,7 @@ meta import VerifiedGarbage.Proof.Seed.CbcScratch
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Modes.Arm.WideModes
 meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -36,7 +36,8 @@ which return the chaining value in the IV (`Impl/Modes/Arm/CbcChained.lean`,
 `seqW_verified` with `ecbSpec`) meet the chained contracts with a scratch
 buffer, as OFB and CFB do (`FbVerified.lean`), whose IV is also read and
 written; decryption with the 128 bytes of the groups' buffer more stack. The
-`_framed` theorems keep the scratch buffer on the stack, zeroed on return.
+`_framed` theorems keep the scratch buffer on the stack, which the functions'
+cleanup zeroes.
 -/
 
 @[expose] public section
@@ -91,14 +92,14 @@ theorem cbcEncryptChainedFrameSat : ∃ s, (Spec.Seed.cbcEncryptChainedContract 
   implies_sat [Spec.Seed.cbcEncryptChainedContract, Spec.Seed.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [cbcFrameSat, cbcSat] using cbcFrameSat 16
 
-/-- `cbcEncryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cbcEncryptChained`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cbcEncryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 cbcEncryptChained) (Spec.Seed.cbcEncryptChainedContract Arm.abi 832) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 9)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 80 0 cbcEncryptChained) (Spec.Seed.cbcEncryptChainedContract Arm.abi 832) :=
+  Arm.Verified.stackScratch (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 9)
     (post := Proof.Seed.cbcEncChainedPost Arm.abi.ptrBits) (wa := true) (stack := 752) (m := 0) (bytes := 80)
-    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Seed.cbcEncChainedPost_local _)
-    (Proof.Seed.cbcEncChainedPostOut_local _) cbcEncryptChainedFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Seed.cbcEncChainedPostOut_local _ vs mm m₁ m₂ r hl) cbcEncryptChainedFrameSat
 
 theorem cbcDecryptChainedTaint : SeqTaint (ecbCore .decrypt) cbcDecChained :=
   ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
@@ -139,13 +140,13 @@ theorem cbcDecryptChainedFrameSat : ∃ s, (Spec.Seed.cbcDecryptChainedContract 
   implies_sat [Spec.Seed.cbcDecryptChainedContract, Spec.Seed.cbcChainedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [cbcFrameSat, cbcSat] using cbcFrameSat 16
 
-/-- `cbcDecryptChained`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cbcDecryptChained`, with its scratch buffer on the stack (which its function's cleanup zeroes). -/
 theorem cbcDecryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 cbcDecryptChained) (Spec.Seed.cbcDecryptChainedContract Arm.abi 960) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 9)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 80 0 cbcDecryptChained) (Spec.Seed.cbcDecryptChainedContract Arm.abi 960) :=
+  Arm.Verified.stackScratch (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 9)
     (post := Proof.Seed.cbcDecChainedPost Arm.abi.ptrBits) (wa := true) (stack := 880) (m := 0) (bytes := 80)
-    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cbcDecryptChained_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Seed.cbcDecChainedPost_local _)
-    (Proof.Seed.cbcDecChainedPostOut_local _) cbcDecryptChainedFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Seed.cbcDecChainedPostOut_local _ vs mm m₁ m₂ r hl) cbcDecryptChainedFrameSat
 
 end VG.Proof.Seed.Arm

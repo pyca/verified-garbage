@@ -63,22 +63,23 @@ abbrev tailW (P : KemLay) (s₀ : State) : List Region :=
       ⟨kA s₀ ((enL P).slot 1) + BitVec.ofNat 64 0, 32⟩, ⟨kA s₀ (enL P).sc + BitVec.ofNat 64 RB, 32⟩]
 
 /-- The tail, after the first `n` entries of `Â`, with what it writes. -/
-theorem tailHN_ok {w16 : Bool} (hash : FixedHash.HashFn)
-    (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6 [⟨.x28,MB,32⟩,⟨.x28,HB,32⟩]
+theorem tailHN_ok {w16 : Bool} (hash : FixedHash.HashFn) {nm : String}
+    (hG : FixedHash.HashCorrect hash nm .x28 ST WK 72 6 [⟨.x28,MB,32⟩,⟨.x28,HB,32⟩]
       [⟨.x26,0,32⟩,⟨.x28,RB,32⟩])
     {s₀ sB : State} (hp : Pre P (enL P) s₀) {ρ : List Byte} {n : Nat} (hn : n ≤ P.k*P.k)
     (hB : BInvW w16 P (enL P) s₀ sB.mem ρ n sB)
     (hm : bytesAt sB.mem (sA (enL P) s₀ MB) 32 = mE s₀)
     (hst : stateAt sB.mem (kA s₀ (enL P).sc) =
-      Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 (BitVec.ofNat 8 6) (ekE P s₀))) :
+      Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 (BitVec.ofNat 8 6) (ekE P s₀)))
+    (hd : Proof.Sha3.AArch64.D8 nm sB) :
     WP isa (Impl.MlKem.AArch64.Hybrid.tailH hash) sB fun s =>
       AfterTN w16 P s₀ ρ n s ∧ Frame (tailW P s₀) sB.mem s.mem := by
   have hw := hp.wf
   -- `H(ek)`
-  refine WP.seq (WP.mono (KeyGen.copy_ok (S := kA s₀ 4) (D := kA s₀ 4) (so := KEM.ST) (dO := HB)
+  refine WP.seq (WP.mono_syms (KeyGen.copy_ok (S := kA s₀ 4) (D := kA s₀ 4) (so := KEM.ST) (dO := HB)
     (by decide) (by decide) (by decide) (by decide) (sdisj hp (by lom) (by lom) (by lom))
     hB.kb.x28 hB.kb.x28 (cov_sr hp hB.kb (by lom)) (cov_s hp hB.kb (by lom)))
-    fun s₃ ⟨k₁, f₁, b₁⟩ => ?_)
+    fun s₃ ⟨k₁, f₁, b₁⟩ sy₃ => ?_)
   obtain kb₃ := hB.kb.frame k₁ f₁ (by decide) fun r hr => by
     rw [List.mem_singleton.mp hr]; exact safe_scr hp (by lom)
   obtain far₁ : ∀ {o l : Nat}, o + l ≤ SV P + 48 → (o + l ≤ HB ∨ HB + 32 ≤ o) →
@@ -93,7 +94,7 @@ theorem tailHN_ok {w16 : Bool} (hash : FixedHash.HashFn)
     rw [bytesAt_frame f₁ (far₁ (o := MB) (l := 32) (by lom) (by decide)) (by decide)]; exact hm
   obtain x24₃ : s₃.gpr .x24 = sB.gpr .x24 := k₁.get .x24
   -- `G(m ‖ H(ek))`
-  refine WP.mono (hG (hsetup hp kb₃ (by decide : 72 ∈ Spec.Sha3.rates)) (by decide) (by simp)
+  refine WP.mono (hG (hsetup hp kb₃ (by decide : 72 ∈ Spec.Sha3.rates)) (hd.of k₁.vcs sy₃) (by decide) (by simp)
     (fun p hp' => by
       rcases mem2' hp' with rfl | rfl
       · exact pieceOk (k := 3) hp kb₃ (by decide) (by enk) (.inr (by decide)) (by decide) (by enk)

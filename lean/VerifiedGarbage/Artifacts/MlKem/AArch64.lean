@@ -27,42 +27,50 @@ def artifacts : List Artifact :=
     Spec.MlKem.keyGenApi.artifact AArch64.target {
       suffix := qualifiedName "" (parts x2 v)
       vendor := v.vendor
-      code := Impl.MlKem.AArch64.Fn.keyGen (qualifiedName "" (parts x2 v)) x2.sha3 v.callee
+      code := Impl.MlKem.AArch64.Fn.keyGen (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
       verified := Proof.MlKem.AArch64.Scrub.keyGen_scrubbed x2 v },
     Spec.MlKem.encapsApi.artifact AArch64.target {
       suffix := qualifiedName "" (parts x2 v)
       vendor := v.vendor
-      code := Impl.MlKem.AArch64.Fn.encaps (qualifiedName "" (parts x2 v)) x2.sha3 v.callee
+      code := Impl.MlKem.AArch64.Fn.encaps (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
       verified := Proof.MlKem.AArch64.Scrub.encaps_scrubbed x2 v },
     Spec.MlKem.encapsHApi.artifact AArch64.target {
       suffix := qualifiedName "" (parts x2 v)
       vendor := v.vendor
-      code := Impl.MlKem.AArch64.Fn.encapsH (qualifiedName "" (parts x2 v)) x2.sha3 v.callee
+      code := Impl.MlKem.AArch64.Fn.encapsH (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
       verified := Proof.MlKem.AArch64.Scrub.encapsH_scrubbed x2 v },
     Spec.MlKem.decapsApi.artifact AArch64.target {
       suffix := qualifiedName "" (parts x2 v)
       vendor := v.vendor
-      code := Impl.MlKem.AArch64.Fn.decaps (qualifiedName "" (parts x2 v)) x2.sha3 v.callee
+      code := Impl.MlKem.AArch64.Fn.decaps (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
       verified := Proof.MlKem.AArch64.Scrub.decaps_scrubbed x2 v },
     Spec.MlKem1024.keyGenApi.artifact AArch64.target {
       suffix := qualifiedName "" (parts x2 v)
       vendor := v.vendor
-      code := Impl.MlKem.AArch64.Fn.keyGen1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee
+      code := Impl.MlKem.AArch64.Fn.keyGen1024 (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
       verified := Proof.MlKem.AArch64.Scrub.keyGen1024_scrubbed x2 v },
     Spec.MlKem1024.encapsApi.artifact AArch64.target {
       suffix := qualifiedName "" (parts x2 v)
       vendor := v.vendor
-      code := Impl.MlKem.AArch64.Fn.encaps1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee
+      code := Impl.MlKem.AArch64.Fn.encaps1024 (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
       verified := Proof.MlKem.AArch64.Scrub.encaps1024_scrubbed x2 v },
     Spec.MlKem1024.encapsHApi.artifact AArch64.target {
       suffix := qualifiedName "" (parts x2 v)
       vendor := v.vendor
-      code := Impl.MlKem.AArch64.Fn.encapsH1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee
+      code := Impl.MlKem.AArch64.Fn.encapsH1024 (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
       verified := Proof.MlKem.AArch64.Scrub.encapsH1024_scrubbed x2 v },
     Spec.MlKem1024.decapsApi.artifact AArch64.target {
       suffix := qualifiedName "" (parts x2 v)
       vendor := v.vendor
-      code := Impl.MlKem.AArch64.Fn.decaps1024 (qualifiedName "" (parts x2 v)) x2.sha3 v.callee
+      code := Impl.MlKem.AArch64.Fn.decaps1024 (qualifiedName "" (parts x2 v))
+        (qualifiedName "" [("x2", x2.suffix)]) x2.sha3 v.callee
       verified := Proof.MlKem.AArch64.Scrub.decaps1024_scrubbed x2 v }]) ++
   [Spec.MlKem1024.checkEkApi.artifact AArch64.target {
     code := Impl.MlKem.AArch64.Fn.checkEk1024

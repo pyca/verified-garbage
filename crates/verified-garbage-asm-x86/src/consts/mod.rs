@@ -27,6 +27,10 @@ mod vg_camellia_aesni;
 pub use vg_camellia_aesni::VG_CAMELLIA_AESNI;
 
 #[rustfmt::skip]
+mod vg_camellia_aesni_wide;
+pub use vg_camellia_aesni_wide::VG_CAMELLIA_AESNI_WIDE;
+
+#[rustfmt::skip]
 mod vg_cast5_s1234;
 pub use vg_cast5_s1234::VG_CAST5_S1234;
 
@@ -77,6 +81,10 @@ pub use vg_secp256k1_comb::VG_SECP256K1_COMB;
 #[rustfmt::skip]
 mod vg_seed_aesni;
 pub use vg_seed_aesni::VG_SEED_AESNI;
+
+#[rustfmt::skip]
+mod vg_seed_aesni_wide;
+pub use vg_seed_aesni_wide::VG_SEED_AESNI_WIDE;
 
 #[rustfmt::skip]
 mod vg_sm4_aesni;

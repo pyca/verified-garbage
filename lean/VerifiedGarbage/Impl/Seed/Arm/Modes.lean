@@ -5,18 +5,21 @@ public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Impl.Modes.Arm.CbcChained
 public import VerifiedGarbage.Impl.Modes.Arm.Wide
 public import VerifiedGarbage.Spec.Seed.Contract
-public import VerifiedGarbage.Impl.Scrub.Arm.Sel
+public import VerifiedGarbage.Impl.Modes.Arm.Wrap
+public import VerifiedGarbage.Impl.Scrub.Arm
 
 /-!
 # SEED-CBC, SEED-OFB and SEED-CFB128 on ARMv7
 
 `cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and
 `cfbDecrypt` are the generic modes (`Impl/Modes/Arm/Seq.lean`,
-`CbcChained.lean`) over SEED's ECB functions, `vg_seed_ecb_encrypt` and
-`vg_seed_ecb_decrypt` as they are emitted (`ecbCore`), which `cbcEncryptChained`, `ofb` and
+`CbcChained.lean`) over SEED's ECB functions, `vg_seed_ecb_encrypt_core` and
+`vg_seed_ecb_decrypt_core` (`ecbCore`), which `cbcEncryptChained`, `ofb` and
 `cfbEncrypt` call once per block, and `cbcDecryptChained` and `cfbDecrypt`,
 whose blocks can be deciphered independently, once for a group of 8, 4 or 2
 blocks, then once per block for those left (`Impl/Modes/Arm/Wide.lean`).
+`vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt` call the same cores
+(`Core.wrap`), so that their code is in the crate once.
 -/
 
 @[expose] public section
@@ -26,34 +29,33 @@ namespace VG.Impl.Seed.Arm
 open VG.Arm VG.Impl.Modes.Arm
 open VG.Spec.Seed (Direction)
 
-/-- The code of `vg_seed_ecb_encrypt` or `vg_seed_ecb_decrypt`, as its
-artifact has it. -/
-def ecbCode (dir : Direction) : Prog isa := Impl.StackScratch.Arm.withRegScratchWiped 752 .r3 188 (ecb dir)
+/-- The code of SEED's ECB core in the direction `dir`: `ecb dir` with its
+working space in a frame on the stack, which its callers' cleanup zeroes. -/
+def ecbCode (dir : Direction) : Prog isa := Impl.StackScratch.Arm.withRegScratch 752 .r3 (ecb dir)
+
+/-- SEED's ECB function in the direction `dir`, as the modes and the public
+ECB functions call it: its code as it is verified, without a cleanup, under a
+name of its own (`vg_seed_ecb_encrypt_core`, which the emitter writes as an
+internal function), whose callers' cleanup covers the frames of the call. -/
+def ecbCore (dir : Direction) : Core where
+  name := match dir with
+    | .encrypt => Spec.Seed.ecbEncryptApi.name ++ "_core"
+    | .decrypt => Spec.Seed.ecbDecryptApi.name ++ "_core"
+  code := ecbCode dir
+  bw := 4
 
 namespace Fn
 
 open VG.Impl.Scrub.Arm
 
-/-- `vg_seed_ecb_encrypt`: its code, then its cleanup (`Impl/Seed/Arm/Fn.lean`),
-which leaves no word of the stack secret. -/
-def ecbEncrypt : Prog isa := scrubSel 0 752 [] (ecbCode .encrypt)
+/-- `vg_seed_ecb_encrypt`: a call of the core, then its cleanup, which zeroes
+the stack its contract reserves (`Impl/Seed/Arm/Fn.lean`). -/
+def ecbEncrypt : Prog isa := scrubAll 0 760 (ecbCore .encrypt).wrap
 
 /-- `vg_seed_ecb_decrypt`. -/
-def ecbDecrypt : Prog isa := scrubSel 0 752 [] (ecbCode .decrypt)
+def ecbDecrypt : Prog isa := scrubAll 0 760 (ecbCore .decrypt).wrap
 
 end Fn
-
-/-- SEED's ECB function in the direction `dir`, as the modes call it: the
-artifact `vg_seed_ecb_encrypt` or `vg_seed_ecb_decrypt`, as it is emitted,
-cleanup included (`Fn.ecbEncrypt`), so that its code is in the crate once. -/
-def ecbCore (dir : Direction) : Core where
-  name := match dir with
-    | .encrypt => Spec.Seed.ecbEncryptApi.name
-    | .decrypt => Spec.Seed.ecbDecryptApi.name
-  code := match dir with
-    | .encrypt => Fn.ecbEncrypt
-    | .decrypt => Fn.ecbDecrypt
-  bw := 4
 
 /-- `vg_seed_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := (ecbCore .encrypt).seq cbcEncChained

@@ -1,5 +1,18 @@
 module
 
+public import VerifiedGarbage.Impl.AesGcm.AArch64.DirectGather.Medium
+import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.MediumBody
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.Select
+public import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.GeneralFrame
+import VerifiedGarbage.Proof.AesGcm.AArch64.DirectGather.GeneralBodyCT
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.DirectBody
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.DirectBatches
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tbl
+
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Frame
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Instances
 public import VerifiedGarbage.Impl.Sm4Gcm.AArch64.Fn
@@ -1583,62 +1596,9 @@ theorem openToWithPowers_side {c : Calls} (hc : CallsOk c) (w : GhashWithImpl) :
   · exact side_of_holes hc hw (withStackArgScratch (768 + 48) 5 (Impl.AesGcm.AArch64.Fast.openToWithPw holes holeW))
   · exact side_of_holes hc hw (withStackArgScratch (2560 + 48) 5 (Impl.AesGcm.AArch64.Fast.openToWithPw holes holeW))
 
-/-! ## `seal_gather`, which calls `seal` as emitted -/
-
-/-- `seal`'s frames, its cleanup's included, use at most the 2576 bytes that
-`vg_aes_gcm_seal_gather` leaves to its call. -/
-theorem seal_depth {c : Calls} (hc : CallsOk c) : 16 * (Impl.AesGcm.AArch64.Fn.«seal» c).aarch64Depth ≤ 2576 := by
-  unfold Impl.AesGcm.AArch64.Fn.«seal»
-  rcases wn_cases hc with h | h <;> rcases sealCode_cases c with hp | hp <;> rw [h, hp]
-  · exact depth_of_holes hc fnOk_nil (scrubAll (768 + 16) 0 own (withStackArgScratch (768 + 16) 1 (Impl.AesGcm.AArch64.Fast.«seal» holes)))
-  · exact depth_of_holes hc fnOk_nil (scrubAll (768 + 16) 0 own (withStackArgScratch (768 + 16) 1 (Impl.AesGcm.AArch64.«seal» holes)))
-  · exact depth_of_holes hc fnOk_nil (scrubAll (2560 + 16) 0 own (withStackArgScratch (2560 + 16) 1 (Impl.AesGcm.AArch64.Fast.«seal» holes)))
-  · exact depth_of_holes hc fnOk_nil (scrubAll (2560 + 16) 0 own (withStackArgScratch (2560 + 16) 1 (Impl.AesGcm.AArch64.«seal» holes)))
-
-theorem sealGather_side {c : Calls} (hc : CallsOk c) :
-    scrubSide (Impl.AesGcm.AArch64.SealGather.sealGather ⟨"vg_aes_gcm_seal" ++ c.suffix, Impl.AesGcm.AArch64.Fn.«seal» c⟩) 2592 0 own [] =
-      true := by
-  unfold Impl.AesGcm.AArch64.Fn.«seal»
-  rcases wn_cases hc with h | h <;> rcases sealCode_cases c with hp | hp <;> rw [h, hp]
-  · exact side_of_holes hc fnOk_nil
-      (Impl.AesGcm.AArch64.SealGather.sealGather ⟨"vg_aes_gcm_seal" ++ c.suffix, scrubAll (768 + 16) 0 own (withStackArgScratch (768 + 16) 1 (Impl.AesGcm.AArch64.Fast.«seal» holes))⟩)
-  · exact side_of_holes hc fnOk_nil
-      (Impl.AesGcm.AArch64.SealGather.sealGather ⟨"vg_aes_gcm_seal" ++ c.suffix, scrubAll (768 + 16) 0 own (withStackArgScratch (768 + 16) 1 (Impl.AesGcm.AArch64.«seal» holes))⟩)
-  · exact side_of_holes hc fnOk_nil
-      (Impl.AesGcm.AArch64.SealGather.sealGather ⟨"vg_aes_gcm_seal" ++ c.suffix, scrubAll (2560 + 16) 0 own (withStackArgScratch (2560 + 16) 1 (Impl.AesGcm.AArch64.Fast.«seal» holes))⟩)
-  · exact side_of_holes hc fnOk_nil
-      (Impl.AesGcm.AArch64.SealGather.sealGather ⟨"vg_aes_gcm_seal" ++ c.suffix, scrubAll (2560 + 16) 0 own (withStackArgScratch (2560 + 16) 1 (Impl.AesGcm.AArch64.«seal» holes))⟩)
-
 theorem storePowers_side :
     scrubSide (withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers) 80 0 own [] = true := by
   kernel_rfl
-
-theorem seal_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
-    Verified AArch64.target (withStackArgScratch (v.calls.wn + 16) 1 (Impl.AesGcm.AArch64.Fn.sealCode v.calls))
-      (Proof.AesGcm.sealRoundsContract AArch64.abi (v.calls.wn + 16)) := by
-  rw [wn_eq]; exact sealCode_framedW v hMK
-
-/-- `seal` as emitted, against the contract its frame is proved with, which
-`vg_aes_gcm_seal_gather`'s proof uses. -/
-theorem seal_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
-    Verified AArch64.target (Impl.AesGcm.AArch64.Fn.«seal» v.calls)
-      (Proof.AesGcm.sealRoundsContract AArch64.abi (v.calls.wn + 16)) :=
-  Verified.scrubAllOfV (seal_framed v hMK) (Scrub.sealRoundsOk _) (seal_side v.callsOk)
-
-/-- The instance of `seal` that `seal_gather` calls: `seal` of the same
-implementations, as emitted. -/
-def sealFn (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) : Gather.SealFn .plain :=
-  if h : v.calls.wn = 768 then
-    .plain784 ⟨"vg_aes_gcm_seal" ++ v.calls.suffix, Impl.AesGcm.AArch64.Fn.«seal» v.calls⟩
-      (by have := seal_verified v hMK; rw [h] at this; exact this) (seal_depth v.callsOk)
-  else
-    .plain ⟨"vg_aes_gcm_seal" ++ v.calls.suffix, Impl.AesGcm.AArch64.Fn.«seal» v.calls⟩
-      (by have := seal_verified v hMK; rw [(wn_cases v.callsOk).resolve_left h] at this; exact this)
-      (seal_depth v.callsOk)
-
-theorem sealFn_fn (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
-    (sealFn v hMK).fn = ⟨"vg_aes_gcm_seal" ++ v.calls.suffix, Impl.AesGcm.AArch64.Fn.«seal» v.calls⟩ := by
-  unfold sealFn; split <;> rfl
 
 end Scrubbed
 
@@ -1716,16 +1676,6 @@ theorem init_scrubbed (g : GcmVariant) :
   exact verifiedScrubbedAll (api := Spec.Gcm.initApi) { code := _, verified := hv } own
     (Scrub.initOk _ (initWn_pos g.impl.callsOk)) (init_side g.impl.callsOk)
 
-/-- `vg_aes_gcm_seal_gather` as emitted, cleanup included. -/
-theorem sealGather_scrubbed (g : GcmVariant) :
-    VerifiedScrubbed AArch64.target (Impl.AesGcm.AArch64.Fn.sealGather g.calls)
-      (Spec.Gcm.sealGatherContract AArch64.abi 2592) 0 := by
-  have hv : Verified AArch64.target (Impl.AesGcm.AArch64.SealGather.sealGather ⟨"vg_aes_gcm_seal" ++ g.impl.calls.suffix, Impl.AesGcm.AArch64.Fn.«seal» g.impl.calls⟩)
-      (Spec.Gcm.sealGatherContract AArch64.abi 2592) := by
-    have h := Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified (sealFn g.impl Proof.Gcm.AArch64.Pmull.mulV_keyV))
-    rw [sealFn_fn] at h; exact h
-  exact verifiedScrubbedAll (api := Spec.Gcm.sealGatherApi) { code := _, verified := hv } own
-    (Scrub.sealGatherOk _) (sealGather_side g.impl.callsOk)
 
 /-- `vg_aes_gcm_seal_with_powers` calling `w`, as emitted, cleanup included. -/
 theorem sealWithPowers_scrubbed (g : GcmVariant) (w : GhashWithImpl) :
@@ -1806,6 +1756,155 @@ end VG.Proof.AesGcm.AArch64
 
 The postconditions read the memory on return only within the buffers
 (`Proof.Sm4Gcm.*PostOut_local`). -/
+
+namespace VG.Proof.Gcm.AArch64.Stitch
+open VG VG.AArch64 VG.AArch64.RegUpd
+open VG.Proof.Gcm.AArch64.Pmull
+open VG.Proof.AesGcm.AArch64.Stitch (PT tblR tbl_ok)
+open VG.Impl.Gcm.AArch64.Pmull (tReg sReg)
+open VG.Impl.AesGcm.AArch64.DirectGather (tableFromKey)
+
+private theorem tableFromKey_ok {s : State}
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr .x21 + BitVec.ofNat 64 240) 16)
+    (hout : InRegions s.wr (s.gpr .x19 + BitVec.ofNat 64 512) 192) :
+    WP isa (.block tableFromKey) s (DirectTablePost s) := by
+  simp only [tableFromKey, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.block_cons_iff.mpr ⟨_, exec_addImm_x (imm := 0) (by decide), WP.block_nil ?_⟩
+  let u := s.write .x .x0 (s.read .x .x21 + BitVec.ofNat 64 0)
+  have hctx : u.gpr .x0 = s.gpr .x21 := by simp [u, State.read, gpr_write_self]
+  have hu : InRegions (u.rd ++ u.wr) (u.gpr .x0 + BitVec.ofNat 64 240) 16 := by
+    rw [hctx]; exact hin
+  rw [WP.block_append_iff]
+  obtain ⟨t₁, u₁, run₁, kp₁, g₁, m₁, rd₁, wr₁⟩ := keyPrologue_read_ok hu
+  refine ⟨t₁, u₁, run₁, ?_⟩
+  dsimp only
+  rw [WP.block_append_iff]
+  obtain ⟨t₂, u₂, run₂, kp₂, o₂⟩ := powersSKP_ok kp₁
+  refine ⟨t₂, u₂, run₂, ?_⟩
+  have hpt : PT (Spec.Gcm.ctxH u.mem (u.gpr .x0)) 8 u₂ := by
+    have ht : ∀ k, 1 ≤ k → k ≤ 8 → u₂.v (tReg k) = pp (Spec.Gcm.ctxH u.mem (u.gpr .x0)) k :=
+      fun k h1 h8 => Poly.φ_inj (x_cancel (by rw [kp₂.t k h1 h8, x_φ_pp]))
+    exact ⟨ht, fun k h1 h8 => by rw [kp₂.sw k h1 h8, ht k h1 h8]⟩
+  have g₂ (r : Reg) (h0 : r ≠ .x0) (h5 : r ≠ .x5) : u₂.gpr r = s.gpr r := by
+    rw [o₂.gpr, g₁ r h5]; exact RegUpd.gpr_write_of_ne s _ _ h0
+  have gW := g₂ .x19 (by decide) (by decide)
+  refine WP.mono (tbl_ok hpt (by rw [o₂.wr, wr₁, gW]; exact hout)) fun t h => ?_
+  exact ⟨by simpa only [gW, hctx, u, RegUpd.mem_write] using h.tblOk,
+    by simpa only [gW, o₂.mem, m₁, u, RegUpd.mem_write] using h.frame,
+    fun r h0 h5 => by rw [h.gpr, g₂ r h0 h5],
+    by rw [h.sp, AArch64.Exec.sp run₂, AArch64.Exec.sp run₁]; rfl,
+    by rw [h.rd, o₂.rd, rd₁]; rfl, by rw [h.wr, o₂.wr, wr₁]; rfl⟩
+
+private theorem gatherLaws : GatherLaws := ⟨gh8Ok,tableFromKey_ok⟩
+end VG.Proof.Gcm.AArch64.Stitch
+
+namespace VG.Proof.AesGcm.AArch64.DirectGather
+
+open VG VG.AArch64 VG.AArch64.Scrub VG.Impl.Scrub.AArch64 VG.Proof.AesGcm.AArch64.Gather
+open VG.Impl.AesGcm.AArch64 (Calls)
+open VG.Impl.AesGcm.AArch64.DirectGather
+open VG.Impl.AesGcm.AArch64.Fn (own)
+open VG.Impl.StackScratch.AArch64 (withStackArgScratch)
+open Scrubbed
+
+theorem generalSide {c : Calls} (h : CallsOk c) :
+    scrubSide (framed c) (c.pwWn+32) 0 own [] = true := by
+  unfold framed
+  rcases pw_cases h with ⟨st,w|w⟩|⟨st,w|w⟩ <;> rw [st,w]
+  · exact side_of_holes h fnOk_nil (withStackArgScratch (1024+32) 3 (body holes true))
+  · exact side_of_holes h fnOk_nil (withStackArgScratch (2560+32) 3 (body holes true))
+  · exact side_of_holes h fnOk_nil (withStackArgScratch (768+32) 3 (body holes false))
+  · exact side_of_holes h fnOk_nil (withStackArgScratch (2560+32) 3 (body holes false))
+
+theorem generalSize {c : Calls} (h : CallsOk c) :
+    768 ≤ c.pwWn ∧ c.pwWn ≤ 2560 ∧ c.pwWn % 16 = 0 := by
+  rcases pw_cases h with ⟨_,w|w⟩|⟨_,w|w⟩ <;> rw [w] <;> decide
+
+private theorem generalScrub {wn : Nat} (h : wn ≤ 2560) :
+    ScrubAllOk (gatherAArch64 .plain) (wn+32) 0 := by
+  refine ⟨fun s hs => by have := (Gather.lay hs.1).w₁; omega,?_,fun _ _ hp => hp.2.2.2.2.2.2.2.2.1⟩
+  intro s t u hs post mem _
+  have l := Gather.lay hs.1
+  have f : Frame [genStack s wn] t.mem u.mem := fun a ha => mem a fun bad =>
+    ha _ (List.mem_singleton_self _) (by change (a - genBase s wn).toNat + 1 ≤ wn+32; exact bad)
+  have hd := (l.bd.sub_left (genStack_sub s h)).symm
+  have ht := (l.bt.sub_left (genStack_sub s h)).symm
+  change gatherPost s t at post
+  change gatherPost s u
+  unfold gatherPost at post ⊢
+  rwa [bytesAt_frame f (by simpa only [List.mem_singleton,forall_eq] using hd) (Nat.le_of_lt (stackArg s 1).isLt),
+    bytesAt_frame f (by simpa only [List.mem_singleton,forall_eq] using ht) (by decide)]
+
+theorem wrapGeneral {c : Calls} (h : CallsOk c) (raw : Verified target (framed c) (gatherAArch64 .plain)) :
+    VerifiedScrubbed target (longSeal c) (gatherAArch64 .plain) 0 := by
+  have side := generalSide h
+  have sizes := generalSize h
+  have hk := generalScrub sizes.2.1
+  obtain ⟨wf,kp,dit,rb⟩ := keeps_of_side side
+  refine ⟨Verified.scrubAllOfV raw hk side,?_⟩
+  have pos : 0 < c.pwWn+32 := by omega
+  simp only [scrubSide,Nat.ne_of_gt pos,↓reduceIte,Bool.and_eq_true,decide_eq_true_eq,beq_iff_eq] at side
+  refine noResidue_scrubAll wf kp raw ⟨pos,by omega,by omega⟩ hk.sp side.1.1.1.1.1.2 dit ?_ rb
+  intro a b _ n hn
+  have bad := of_decide_eq_true (List.all_eq_true.mp side.1.1.1.1.2 n hn)
+  exact False.elim (List.not_mem_nil bad)
+
+theorem mediumVerified_of {c : Calls} (callees : CallsOk c)
+    (correct : ∀ s, Gather.Lay .plain s → NL s = 12 → AL s ≤ 16 → L s ≤ 224 →
+      WP isa (Medium.body c.callees) (allocated Medium.work s) fun t => gatherPost s t ∧
+        (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp - BitVec.ofNat 64 Medium.work)
+    (timing : ∀ {a b}, Gather.Lay .plain a → Gather.Lay .plain b →
+      recordWithin 224 a → recordWithin 224 b → gatherPub a b →
+      RelCT isa (Eq2 (allocated Medium.work a) (allocated Medium.work b)) (Medium.body c.callees) TT) :
+    VerifiedScrubbed target (Medium.leaf c.callees) (boundedRecordContract 224) 0 := by
+  apply boundedLeaf_verified _ (by decide) _ correct timing
+  exact side_of_holes callees fnOk_nil (.frame (.alloc Medium.work) (Medium.body holes) (.free Medium.work))
+
+theorem registerGather {c : Calls} (h : CallsOk c)
+    (medium : c.ctr.scratch = 0 → VerifiedScrubbed target (Medium.leaf c.callees) (boundedRecordContract 224) 0)
+    (raw : Verified target (framed c) (gatherAArch64 .plain)) :
+    VerifiedScrubbed target (sealGather c) (Spec.Gcm.sealGatherContract abi 2592) 0 := by
+  have long := wrapGeneral h raw
+  have result : VerifiedScrubbed target (sealGather c) (gatherAArch64 .plain) 0 := by
+    unfold sealGather
+    split
+    next fast =>
+      simp only [Bool.and_eq_true,beq_iff_eq] at fast
+      have hzero := fast.2
+      exact chooseShort_scrubbed (shortLeaf_verified Proof.Gcm.AArch64.Pmull.hashEight_at)
+        (chooseRecord_scrubbed (.inr rfl) (medium hzero) long)
+    next => exact long
+  refine ⟨Proof.AesGcm.sealGather_keyed (result.verified.of_implies gather_implies),?_⟩
+  intro a b τ υ a' b' pa pb pub
+  exact result.noResidue a b τ υ a' b' ⟨gatherPre_of_spec pa,trivial⟩ ⟨gatherPre_of_spec pb,trivial⟩ (gatherPub_of pub)
+
+theorem generalGather_verified (v : GcmImpl) : Verified target (framed v.calls) (gatherAArch64 .plain) := by
+  have sz := generalSize v.callsOk
+  have hx : v.ctr.scratch ≤ v.calls.pwWn - 512 := by
+    rw [pwWn_eq]
+    rcases v.ctr.scratch_ok with h|h <;> cases st : v.stitch <;> simp [gcmPwWn,gcmWn,st,h]
+  refine ⟨?_,ct_of (fun a b pa pb pub => generalFramed_rel (Gather.lay pa.1) (Gather.lay pb.1)
+    pub sz.2.1 sz.2.2 _ (fun _ _ eu ew _ => generalBody_rel v v.stitch eu ew pub sz.1 hx (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws))),?_⟩
+  · intro o po
+    apply WP.withPreservedV (hc := keepsV_of_gatherSide (generalSide v.callsOk))
+    exact (generalFramed_wp o (Gather.lay po.1) sz.2.1 sz.2.2 _
+      (fun _ en => generalBody_ok v v.stitch en sz.1 hx (fun _ => Proof.Gcm.AArch64.Stitch.gatherLaws))).mono
+      (fun _ ⟨p,g⟩ => ⟨g,p⟩)
+  · obtain ⟨s,hs⟩ := gatherSat_pre
+    exact ⟨s,gatherPre_of_spec hs,trivial⟩
+
+/-- Each selected gather implementation, including its record guards and
+cleanup, satisfies the existing public keyed gather contract. -/
+theorem sealGather_scrubbed (v : GcmImpl) :
+    VerifiedScrubbed target (sealGather v.calls) (Spec.Gcm.sealGatherContract abi 2592) 0 := by
+  apply registerGather v.callsOk _ (generalGather_verified v)
+  intro scratch
+  have zero : v.ctr.scratch = 0 := v.ctr.scratch_eq.symm.trans scratch
+  exact mediumVerified_of v.callsOk (Mid.body_ok v zero Proof.Gcm.AArch64.Pmull.hash16_at)
+    (Mid.body_rel Proof.Gcm.AArch64.Pmull.hash16_at v zero)
+
+end VG.Proof.AesGcm.AArch64.DirectGather
 
 namespace VG.Proof.Sm4Gcm.AArch64.Scrub
 

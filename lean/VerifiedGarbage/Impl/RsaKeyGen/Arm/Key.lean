@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyFrame
+public import VerifiedGarbage.Impl.Rsa.Arm.InverseCall
 
 /-! # An RSA key from its two primes on ARMv7
 
@@ -252,9 +253,10 @@ def halving : Prog isa :=
     .loop halfStep .ne]
 
 /-- `inverse`'s start for `[a]` modulo `[m]` (copied into `aM`): `(u, v, x₁,
-x₂) = (a, m, 1, 0)` and the negated modulus. -/
+x₂) = (a, m, 1, 0)` and the negated modulus, then a call of `inverse`
+(`vg_rsa_inverse`). -/
 def invOf (a m : Nat) : Prog isa :=
-  seqs [copy aM m, copy 0 a, copy 1 aM, copy 2 aOne, copy 3 aZero, sub3 aNM aZero aM, inverse]
+  seqs [copy aM m, copy 0 a, copy 1 aM, copy 2 aOne, copy 3 aZero, sub3 aNM aZero aM, inverseCall]
 
 /-- `v` odd by a swap, `[aG] := gcd(u, v)` (1 for `v < 2`). -/
 def gcdUV : Prog isa := seqs ([.block (bitOf sVe aV ++ notS sVe sVe), sel aU2 aU aV sVe, sel aV2 aV aU sVe] ++

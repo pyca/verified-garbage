@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.Arm.Core
+public import VerifiedGarbage.Proof.Modes.Arm.Wrap
+public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 public import VerifiedGarbage.Impl.Seed.Arm.Modes
 public import VerifiedGarbage.Spec.Seed.Cbc
 public import VerifiedGarbage.TCB.Registration
@@ -11,12 +13,13 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Seed.Arm.Verified
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Seed.Scratch
 import VerifiedGarbage.Proof.Seed.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Modes.Arm.Core
+meta import VerifiedGarbage.Proof.Modes.Arm.Wrap
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 meta import VerifiedGarbage.Impl.Seed.Arm.Modes
 meta import VerifiedGarbage.Spec.Seed.Cbc
 meta import VerifiedGarbage.TCB.Registration
@@ -27,7 +30,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Seed.Arm.Verified
 meta import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Seed.Scratch
 meta import VerifiedGarbage.Proof.Seed.Arm.Lit
@@ -37,13 +39,17 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 /-!
 # SEED's ECB functions on ARMv7 as the modes' core
 
-`ecbSpec dir`: what the modes need of `vg_seed_ecb_encrypt` and
-`vg_seed_ecb_decrypt` (`Proof.Modes.Arm.CoreSpec`), from their shared
-contract (`Spec.Seed.ecbContract`, with 752 bytes of stack) and the proof of
-each as it is emitted, cleanup included (`Fn.ecbEncrypt`, `Fn.ecbDecrypt`,
-which their registrations bind; the modes call the artifacts themselves):
-the schedule is SEED's 128-byte schedule, and the cipher on
+`ecbSpec dir`: what the modes need of SEED's ECB cores,
+`vg_seed_ecb_encrypt_core` and `vg_seed_ecb_decrypt_core`
+(`Proof.Modes.Arm.CoreSpec`), from the ECB functions' shared contract
+(`Spec.Seed.ecbContract`, with 752 bytes of stack) and the proof of each
+(`ecb_framed`): the schedule is SEED's 128-byte schedule, and the cipher on
 a block is `Spec.Seed.cipher` or `Spec.Seed.invCipher` of it.
+
+`vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt` call the cores in a frame of
+8 bytes (`Core.wrap`, `Proof.Modes.Arm.wrap_verified`), and so meet the same
+contract with 760 bytes of stack (`ecbWrap_implies`); `Fn` has the theorems
+their registrations bind.
 -/
 
 @[expose] public section
@@ -89,32 +95,6 @@ theorem ecbOut (d : Spec.Seed.Direction) (stack : Nat) :
 
 end VG.Proof.Seed.Arm
 
-namespace VG.Proof.Seed.Arm.Fn
-
-open VG VG.Spec.Seed VG.Arm VG.Arm.Scrub
-
-/-- `vg_seed_ecb_encrypt`. -/
-theorem ecbEncrypt :
-    VerifiedScrubbed target Impl.Seed.Arm.Fn.ecbEncrypt (ecbContract Arm.abi .encrypt 752) 0 :=
-  verifiedScrubbedSel (api := ecbEncryptApi) (W := 752)
-    { code := Impl.Seed.Arm.ecbCode .encrypt
-      verified := Proof.Seed.Arm.ecb_framed .encrypt }
-    [] []
-    (ecbOut .encrypt _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
-
-/-- `vg_seed_ecb_decrypt`. -/
-theorem ecbDecrypt :
-    VerifiedScrubbed target Impl.Seed.Arm.Fn.ecbDecrypt (ecbContract Arm.abi .decrypt 752) 0 :=
-  verifiedScrubbedSel (api := ecbDecryptApi) (W := 752)
-    { code := Impl.Seed.Arm.ecbCode .decrypt
-      verified := Proof.Seed.Arm.ecb_framed .decrypt }
-    [] []
-    (ecbOut .decrypt _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
-
-end VG.Proof.Seed.Arm.Fn
-
 namespace VG.Proof.Seed.Arm
 
 open VG VG.Arm VG.Impl.Seed.Arm VG.Impl.Modes.Arm VG.Proof.Modes.Arm
@@ -123,11 +103,10 @@ open VG.Proof.Modes (blocksOf)
 theorem ecb_stack (dir : Spec.Seed.Direction) : VG.Arm.FrameStack.armStack (ecbCore dir).code ≤ 752 := by
   cases dir <;> lit_decide
 
-/-- The ECB functions as emitted, by their shared contract. -/
-theorem ecbVerified : ∀ dir : Spec.Seed.Direction,
-    Verified Arm.target (ecbCore dir).code (Spec.Seed.ecbContract Arm.abi dir 752)
-  | .encrypt => Fn.ecbEncrypt.verified
-  | .decrypt => Fn.ecbDecrypt.verified
+/-- The ECB cores, by the ECB functions' shared contract. -/
+theorem ecbVerified (dir : Spec.Seed.Direction) :
+    Verified Arm.target (ecbCore dir).code (Spec.Seed.ecbContract Arm.abi dir 752) :=
+  ecb_framed dir
 
 /-- SEED's ECB function in the direction `dir`, as the modes' core. -/
 def ecbSpec (dir : Spec.Seed.Direction) : CoreSpec (ecbCore dir) where
@@ -160,4 +139,60 @@ def ecbSpec (dir : Spec.Seed.Direction) : CoreSpec (ecbCore dir) where
   bw_le := by cases dir <;> decide
   bs_enc := by cases dir <;> decide
 
+/-- The public ECB functions' contract, with the 8 bytes of the call's frame
+more than the core's, is what the call of the core meets. -/
+theorem ecbWrap_implies (dir : Spec.Seed.Direction) :
+    (wrapContract (ecbSpec dir)).Implies (Spec.Seed.ecbContract Arm.abi dir 760) where
+  pre s h := by
+    sig_pre [Spec.Seed.ecbContract, Spec.Seed.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    obtain ⟨stk, -, rd, wr, kd, bk, bd, fK, fD⟩ := h
+    exact { stk := stk, rd := rd, wr := wr, kd := kd, bk := bk, bd := bd, fK := fK, fD := fD
+            rr := fun h => by cases h
+            a3 := fun _ h => by cases h }
+  post s s' _ h := by
+    sig_post [Spec.Seed.ecbContract, Spec.Seed.ecbSig, Spec.Seed.ecbPost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+      Arm.Loc.val]
+    change blocksOf 16 s'.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat =
+      (blocksOf 16 s.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat).map
+        (dirCipher dir (Spec.Seed.scheduleAt s.mem (State.addr (s.gpr .r0)))) at h
+    simp only [State.addr] at h
+    rw [blocksOf_eq, blocksOf_eq] at h
+    refine (List.map_inj_right (fun a b e => Vector.toList_inj.mp e)).1 ?_
+    rw [h, ecb_dir, List.map_map, List.map_map]
+    exact List.map_congr_left fun v _ => dirCipher_toList dir _ v
+  pub s₁ s₂ _ _ h := by
+    sig_pub [Spec.Seed.ecbContract, Spec.Seed.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    exact ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, fun h => by cases h⟩
+  sat := by
+    implies_sat [Spec.Seed.ecbContract, Spec.Seed.ecbSig, Spec.Seed.ecbPost, Arm.abi, Arm.argRegs,
+      Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [ecbFrameSat] using ecbFrameSat
+
 end VG.Proof.Seed.Arm
+
+namespace VG.Proof.Seed.Arm.Fn
+
+open VG VG.Spec.Seed VG.Arm VG.Arm.Scrub
+
+theorem ecbWrap_code (dir : Spec.Seed.Direction) : CodeOk (Impl.Seed.Arm.ecbCore dir).wrap 760 :=
+  CodeOk.push (n := 752) (CodeOk.seq ((CodeOk.block _).mono (Nat.zero_le _))
+    (CodeOk.seq (CodeOk.call ⟨ecb_stack dir, by cases dir <;> lit_decide⟩) ((CodeOk.block _).mono (Nat.zero_le _))))
+
+/-- `vg_seed_ecb_encrypt`. -/
+theorem ecbEncrypt :
+    VerifiedScrubbed target Impl.Seed.Arm.Fn.ecbEncrypt (ecbContract Arm.abi .encrypt 760) 0 :=
+  verifiedScrubbedAll (api := ecbEncryptApi)
+    { code := (Impl.Seed.Arm.ecbCore .encrypt).wrap
+      verified := Proof.Modes.Arm.wrap_verified (ecbSpec .encrypt) rfl (ecbWrap_implies .encrypt) }
+    (ecbOut .encrypt _)
+    (scrubSideF_of (ecbWrap_code .encrypt) (by decide) _)
+
+/-- `vg_seed_ecb_decrypt`. -/
+theorem ecbDecrypt :
+    VerifiedScrubbed target Impl.Seed.Arm.Fn.ecbDecrypt (ecbContract Arm.abi .decrypt 760) 0 :=
+  verifiedScrubbedAll (api := ecbDecryptApi)
+    { code := (Impl.Seed.Arm.ecbCore .decrypt).wrap
+      verified := Proof.Modes.Arm.wrap_verified (ecbSpec .decrypt) rfl (ecbWrap_implies .decrypt) }
+    (ecbOut .decrypt _)
+    (scrubSideF_of (ecbWrap_code .decrypt) (by decide) _)
+
+end VG.Proof.Seed.Arm.Fn

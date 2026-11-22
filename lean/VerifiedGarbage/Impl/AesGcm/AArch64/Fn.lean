@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
-public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Impl.Gcm.AArch64
 public import VerifiedGarbage.Impl.StackScratch.AArch64
@@ -141,11 +140,6 @@ def «seal» (v : Calls) : Prog isa :=
 /-- `vg_aes_gcm_init`. -/
 def init (v : Calls) : Prog isa :=
   scrubAll v.initWn 0 own (withStackScratch v.initWn .x3 (AesGcm.AArch64.init v.callees))
-
-/-- `vg_aes_gcm_seal_gather`, calling `seal`, the instance of
-`vg_aes_gcm_seal` of the same variant. -/
-def sealGather (v : Calls) : Prog isa :=
-  scrubAll 2592 0 own (SealGather.sealGather ⟨"vg_aes_gcm_seal" ++ v.suffix, «seal» v⟩)
 
 /-- `vg_aes_gcm_seal_with_powers`, calling `w`. -/
 def sealWithPowers (v : Calls) (w : AesGcm.AArch64.Fn) : Prog isa :=

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 public import VerifiedGarbage.Proof.Seed.Arm.Group
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Seed.Scratch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 meta import VerifiedGarbage.Impl.StackScratch.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Seed.Arm.Group
@@ -437,13 +437,15 @@ theorem ecbFrameSat_pre (d : Spec.Seed.Direction) :
   implies_sat [Spec.Seed.ecbContract, Spec.Seed.ecbSig, Spec.Seed.ecbPost, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [ecbFrameSat] using ecbFrameSat
 
-/-- ECB in the direction `dir`, with its working space on the stack. -/
+/-- ECB in the direction `dir`, with its working space on the stack, which
+its callers' cleanup zeroes. -/
 theorem ecb_framed (dir : Spec.Seed.Direction) :
-    Verified Arm.target (Impl.StackScratch.Arm.withRegScratchWiped 752 .r3 188 (ecb dir))
+    Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 752 .r3 (ecb dir))
       (Spec.Seed.ecbContract Arm.abi dir 752) :=
-  Arm.Verified.regScratchWiped (sig := Spec.Seed.ecbSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.regScratch (sig := Spec.Seed.ecbSig) (nm := "scratch") (e := .u64)
     (n := 94) (post := Spec.Seed.ecbPost dir Arm.abi.ptrBits) (wa := true) (stack := 0)
-    (ecb_verified dir) (by decide) (by decide) (by decide) (by decide) (Proof.Seed.ecbPostOut_local _ _)
+    (ecb_verified dir) (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Seed.ecbPostOut_local _ _ vs mm m₁ m₂ r hl)
     (ecbFrameSat_pre dir)
 
 end VG.Proof.Seed.Arm

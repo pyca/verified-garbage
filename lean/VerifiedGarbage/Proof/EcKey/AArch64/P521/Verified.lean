@@ -5,12 +5,14 @@ public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.EcKey.AArch64.P521.Lit
 public import VerifiedGarbage.Impl.EcKey.P521.AArch64
 meta import VerifiedGarbage.Proof.EcKey.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.CombCall
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.EcKey.AArch64.P521.Lit
 meta import VerifiedGarbage.Impl.EcKey.P521.AArch64
@@ -173,11 +175,12 @@ theorem pk_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.
     ∃ t s', Exec isa publicKeyP521 s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-521's
   -- terms before the literals' facts are known.
-  have hn : CallsKeep publicKeyP521 := by lit_decide
+  have hn : CallsKeepN publicKeyP521 := by lit_decide
   have hu : KeepsUntouched publicKeyP521 := by lit_decide
   have hv : publicKeyP521.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p521_ok hI) hL hT (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKeyWith_ok (p521_ok hI).toBaseCfgOk hL _
+    (Ecdsa.AArch64.P521.gMulP521_correct hL hI hT) (pre_of hs)
+  exact ⟨t, s', he, abiPreserved_ofN he hn hu hv hsv, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP521 :=
   VG.Taint.constantTime (A := taintS [p521.tsym]) (Taint.ofRegs [.x0, .x1, .x2])

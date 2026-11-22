@@ -5,6 +5,8 @@ meta import VerifiedGarbage.Impl.Camellia.X86.AesNiWide
 public import VerifiedGarbage.Proof.Camellia.X86.AesNiMaps
 meta import VerifiedGarbage.Proof.Camellia.X86.AesNiMaps
 public import VerifiedGarbage.Proof.Framework.X86.SseEquiv
+public import VerifiedGarbage.Proof.Camellia.Words
+meta import VerifiedGarbage.Proof.Camellia.Words
 meta import VerifiedGarbage.Proof.Framework.X86.SseEquiv
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
@@ -246,6 +248,34 @@ def m0Ok : Bool :=
   | some ρ => maskOk ρ
 
 theorem m0_ok : m0Ok = true := by lit_decide
+
+/-! ## `prepare`'s copy -/
+
+/-- The copy reads the schedule at `eax` and stores in the scratch buffer. -/
+def cparams : ByteMap.Params := { tb := tbr, name := Impl.Camellia.X86.AesNi.tableName, kreg := .eax, klen := 272 }
+def coparams : OParams := { oreg := sb, olen := 816 }
+
+/-- The copy `c` stores, for each `u < n`, at byte `16 u` of the schedule's
+copy the 16 bytes at `16 (src u)` of the schedule, their halves exchanged
+when `sw u`, and nothing else. -/
+def copyOk (c : List Instr) (n : Nat) (src : Nat → Nat) (sw : Nat → Bool) : Bool :=
+  match runS cparams coparams (Regs.init, []) c with
+  | none => false
+  | some σ => outsIn σ.2 544 816 && (List.range n).all fun u =>
+    decide (src u ≤ 16) && outOk σ.2 (544 + 16 * u) (fun q => .var (128 + (16 * src u + (if sw u then (q + 8) % 16 else q))))
+
+theorem copy_all : copyOk copyEnc 17 (fun u => u) (fun _ => false) = true ∧
+    copyOk (copyDec 3) 13 (fun u => 12 - u) (fun u => decide (0 < u ∧ u < 12)) = true ∧
+    copyOk (copyDec 4) 17 (fun u => 16 - u) (fun u => decide (0 < u ∧ u < 16)) = true := by
+  refine ⟨?_, ?_, ?_⟩ <;> lit_decide
+
+/-- The words of the copy are the schedule's in decryption's order. -/
+theorem perm_all :
+    ((List.range 26).all fun k => 2 * (12 - k / 2) + (if decide (0 < k / 2 ∧ k / 2 < 12) = true then 1 - k % 2 else k % 2) ==
+      Proof.Camellia.decPerm 3 k) = true ∧
+    ((List.range 34).all fun k => 2 * (16 - k / 2) + (if decide (0 < k / 2 ∧ k / 2 < 16) = true then 1 - k % 2 else k % 2) ==
+      Proof.Camellia.decPerm 4 k) = true := by
+  constructor <;> decide
 
 /-! ## The parts as they run -/
 

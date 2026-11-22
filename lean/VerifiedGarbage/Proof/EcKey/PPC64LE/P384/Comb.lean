@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.CombAll
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.EcKey.P384
@@ -98,9 +99,20 @@ namespace VG.Proof.EcKey.PPC64LE.P384
 open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Impl.Weierstrass.PPC64LE VG.Proof.Ecdsa.PPC64LE Spec.Weierstrass
 open VG.Proof.Weierstrass.PPC64LE.TComb
 
-theorem pre_of {s : State} (h : pkPPC.pre s) : PkPre p384 s := by
+/-- The tables of constants the public key reads: the comb's, and the setup's
+(`Cfg.constsK`). -/
+abbrev pkK : List (String × List (BitVec 64)) := p384CombConsts ++ p384.constsK
+
+theorem pkK_eq : pkK = [(p384Comb.tsym, p384CombWords), (p384.constSym, p384.constTbl)] := rfl
+
+theorem pre_of {s : State} (h : pkPPC.pre (stripConsts pkK s)) (hk : ConstsOk pkK 0 s) :
+    PkPre p384 s (constRegs pkK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, 
+    tbl_of_consts hk (List.mem_append_right _ (List.mem_singleton_self _)) (hk.disjoint_wr
+      (List.mem_append_right _ (List.mem_singleton_self _)) (by
+        show (⟨s.gpr .r5, size⟩ : Region) ∈ (stripConsts pkK s).wr
+        rw [h2]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
 
 theorem post_of {s s' : State} (h : PkPost p384 s s') : pkPPC.post s s' := by
   unfold PkPost at h
@@ -147,57 +159,95 @@ theorem pkPPC_implies : pkPPC.Implies (Spec.EcKey.P384.inst.publicKeyContract PP
           Spec.EcKey.Instance.publicKeySig, Spec.P384.curve, Spec.EcKey.scratchWords, pkPPC, pk, PPC64LE.abi,
           PPC64LE.argRegs] [satState] using satState }
 
-/-- The public key's contract with the table, as the proof states it. -/
-def pkPC : Contract isa := Tab.withTable pkPPC p384CombConsts p384Comb.tsym
+/-- The public key's contract with its tables, as the proof states it. -/
+abbrev pkPC : Contract isa := pkPPC.withTables pkK
 
 theorem combPk_ok (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : pkPC.pre s) :
     ∃ t s', Exec isa Impl.EcKey.PPC64LE.publicKeyP384Comb s t s' ∧ abiPreserved s s' ∧ pkPC.post s s' := by
   obtain ⟨hp, hk⟩ := hs
-  obtain ⟨t, s', he, K, hpost⟩ := Tab.pk_ok p384_ok (by decide) hL
-    (Proof.P384.PPC64LE.comb_generator_ok hL) (pre_of hp) hk
-  exact ⟨t, s', he, K, Tab.post_intro (post_of hpost)⟩
+  obtain ⟨t, s', he, K, hpost⟩ := Tab.pk_okK p384_ok (by decide) hL
+    (Proof.P384.PPC64LE.comb_generator_ok hL) (pre_of hp hk) hk (List.mem_append_left _ (List.mem_singleton_self _))
+  exact ⟨t, s', he, K, post_of hpost⟩
 
 theorem combPk_ct : ConstantTime isa pkPC.pre pkPC.pub Impl.EcKey.PPC64LE.publicKeyP384Comb :=
-  VG.Taint.constantTime (A := vectorTaintSym [p384Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5])
+  VG.Taint.constantTime (A := vectorTaintSym [p384Comb.tsym, p384.constSym]) (Taint.ofRegs [.r3, .r4, .r5])
     (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h3
       · exact h4
-      · exact h5⟩, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact sy⟩)
+      · exact h5⟩, fun n hn => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+        rcases hn with rfl | rfl
+        · exact sy _ (List.mem_append_left _ (List.mem_singleton_self _))
+        · exact sy _ (List.mem_append_right _ (List.mem_singleton_self _))⟩)
     (by taint_decide)
 
-theorem combConsts_eq : p384CombConsts = [(p384Comb.tsym, p384CombWords)] := rfl
+/-- The memory of the witness with the tables: the comb's at `0x100000`,
+the setup's at `0x200000` (irreducible: unfolding it in a definitional check
+would evaluate the tables). -/
+@[irreducible] def pkSatMem2 : Mem := constMem2 0x100000 p384CombWords 0x200000 p384.constTbl
 
-/-- A state satisfying the precondition with the table. -/
-def combSatC : State :=
-  { satState with mem := Proof.P384.PPC64LE.combSatMem, rd := [⟨0x2000, 48⟩, ⟨0x100000, 337920⟩], syms := fun _ => 0x100000 }
+theorem pkSatMem2_held₁ : ∀ i < p384CombWords.length,
+    pkSatMem2.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p384CombWords.getD i 0 := by
+  unfold pkSatMem2
+  exact constMem2_held₁ _ _ _ _ (by rw [Proof.P384.PPC64LE.comb_words_length]; decide) (by rw [constTbl_length]; decide)
 
-theorem combPk_sat : (Spec.EcKey.P384.inst.publicKeyContract (abi.withConsts p384CombConsts)).pre combSatC := by
-  have hl := Proof.P384.PPC64LE.comb_words_length
-  have held := Proof.P384.PPC64LE.combSatMem_held
-  rw [combConsts_eq]
-  obtain ⟨W, eW⟩ : ∃ W, p384CombWords = W := ⟨_, rfl⟩
-  rw [eW] at hl held ⊢
+theorem pkSatMem2_held₂ : ∀ i < p384.constTbl.length,
+    pkSatMem2.readW (0x200000 + BitVec.ofNat 64 (8 * i)) 64 = p384.constTbl.getD i 0 := by
+  unfold pkSatMem2
+  exact constMem2_held₂ _ _ _ _ (by rw [constTbl_length]; decide)
+
+/-- The addresses of the witness's tables. -/
+def pkSyms (n : String) : Addr := if n = p384.constSym then 0x200000 else 0x100000
+
+/-- A state satisfying the precondition with the tables. -/
+def combSatC : State where
+  gpr := satState.gpr
+  lr := satState.lr
+  sp := satState.sp
+  mem := pkSatMem2
+  rd := satState.rd ++ [⟨0x100000, 8 * 42240⟩, ⟨0x200000, 8 * (17 * 6)⟩]
+  wr := satState.wr
+  syms := pkSyms
+
+theorem combPk_sat : (Spec.EcKey.P384.inst.publicKeyContract (abi.withConsts pkK)).pre combSatC := by
+  have hl₁ := Proof.P384.PPC64LE.comb_words_length
+  have hl₂ := constTbl_length p384
+  have held₁ := pkSatMem2_held₁
+  have held₂ := pkSatMem2_held₂
+  rw [pkK_eq]
+  obtain ⟨W₁, eW₁⟩ : ∃ W, p384CombWords = W := ⟨_, rfl⟩
+  obtain ⟨W₂, eW₂⟩ : ∃ W, p384.constTbl = W := ⟨_, rfl⟩
+  rw [eW₁] at hl₁ held₁ ⊢
+  rw [eW₂] at hl₂ held₂ ⊢
   generalize e : combSatC = s
   sig_pre [Spec.EcKey.P384.inst, Spec.EcKey.Instance.publicKeyContract, Spec.EcKey.Instance.publicKeySig,
     Spec.P384.curve, Spec.EcKey.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
   subst e
-  rw [hl]
-  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, ?_⟩
-  · change r ∈ [⟨0x1000, 97⟩, ⟨0x8000, 8192⟩] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rw [hl₁, hl₂]
+  refine ⟨rfl, fun i hi => ?_, fun i hi => ?_, by decide, fun r hr => ?_, by decide, fun r hr => ?_, by decide,
+    by decide, ?_⟩
+  · show pkSatMem2.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = _
+    exact held₁ i (by rw [hl₁]; exact hi)
+  · show pkSatMem2.readW (0x200000 + BitVec.ofNat 64 (8 * i)) 64 = _
+    exact held₂ i (by rw [hl₂]; exact hi)
+  · change r ∈ satState.wr at hr
+    simp only [satState, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · change r ∈ satState.wr at hr
+    simp only [satState, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
-theorem pkPC_implies : pkPC.Implies (Spec.EcKey.P384.inst.publicKeyContract (abi.withConsts p384CombConsts)) :=
-  Tab.implies pkPPC_implies ⟨combSatC, combPk_sat⟩
+theorem pkPC_implies : pkPC.Implies (Spec.EcKey.P384.inst.publicKeyContract (abi.withConsts pkK)) :=
+  withTables_implies pkPPC_implies ⟨combSatC, combPk_sat⟩
 
 theorem combPk_verified (hL : Weierstrass.Law Spec.P384.curve) :
     Verified PPC64LE.target Impl.EcKey.PPC64LE.publicKeyP384Comb
-      (Spec.EcKey.P384.inst.publicKeyContract (PPC64LE.abi.withConsts p384CombConsts)) :=
+      (Spec.EcKey.P384.inst.publicKeyContract (PPC64LE.abi.withConsts pkK)) :=
   Verified.of_correct (combPk_ok hL) combPk_ct pkPC_implies
 
 end VG.Proof.EcKey.PPC64LE.P384

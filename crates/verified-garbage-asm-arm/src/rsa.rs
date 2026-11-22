@@ -49178,6 +49178,10 @@ bx lr",
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_inverse.rs"]
+pub(crate) mod vg_rsa_inverse;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_mont_double.rs"]
 pub(crate) mod vg_rsa_mont_double;
 

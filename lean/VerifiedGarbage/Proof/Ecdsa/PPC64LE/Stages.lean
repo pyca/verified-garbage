@@ -346,7 +346,7 @@ structure St₁ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (F : BitVec 64
 
 /-- The setup. -/
 theorem stage₀' (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) :
-    WP isa (.block (c.setupWith A)) s₀ fun s =>
+    WP isa (c.setupWith A) s₀ fun s =>
       St₀ c A s₀ (s₀.gpr A.sc) (BitVec.allOnes 64) s ∧ Kp setupClob s₀ s := by
   refine WP.mono (setup_ok hc hp) fun s P => ?_
   have hc' : ∀ ix ∈ c.consts, sv c (s₀.gpr A.sc) s ix.1 = ix.2 := P.consts
@@ -366,7 +366,7 @@ theorem stage₀' (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) :
   exact P.keep
 
 theorem stage₀ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) :
-    WP isa (.block (c.setupWith A)) s₀ (St₀ c A s₀ (s₀.gpr A.sc) (BitVec.allOnes 64)) :=
+    WP isa (c.setupWith A) s₀ (St₀ c A s₀ (s₀.gpr A.sc) (BitVec.allOnes 64)) :=
   WP.mono (stage₀' hc hp) fun _ h => h.1
 
 /-- The tables of bits of `k`, `p - 2` and `n - 2`. -/
@@ -424,7 +424,7 @@ theorem tables_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {F : BitVec 64} {s
 /-- The setup, then the three tables. -/
 theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s, St₁ c A s₀ (s₀.gpr A.sc) (BitVec.allOnes 64) s → WP isa rest s Q) :
-    WP isa (.seq (.block (c.setupWith A)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+    WP isa (.seq (c.setupWith A) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q :=
   WP.seq (WP.mono (stage₀ hc hp) fun _ S => tables_ok hc S fun s' S' _ => h s' S')

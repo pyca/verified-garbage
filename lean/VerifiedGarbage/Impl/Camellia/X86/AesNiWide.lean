@@ -394,9 +394,11 @@ def prepCopy : Dir → Prog isa
   | .encrypt => .block copyEnc
   | .decrypt => .seq (.block [.alu .cmp .ecx (.imm 3)]) (.ite .e (.block (copyDec 3)) (.block (copyDec 4)))
 
-/-- `AesNi.table`'s address to its register, the schedule's pointer, the
-groups and the keys' pointer. -/
-def prepHead : List Instr := [.mov tbr (.reg .eax), .mov .eax (.mem (argOp 0))] ++ AesNi.setup
+/-- This file's table's address (in `esi`) to the scratch buffer's first
+slot, `AesNi.table`'s to its register, the schedule's pointer, the groups
+and the keys' pointer. -/
+def prepHead : List Instr :=
+  [.store (at_ sb 0) kr, .mov tbr (.reg .eax), .mov .eax (.mem (argOp 0))] ++ AesNi.setup
 
 /-- The schedule's pointer to the copy, the mask, and the copy's first two
 subkeys in the rounds' form (`AesNi.prepHeadX`). -/
@@ -405,9 +407,10 @@ def prepStart : List Instr := [.mov .eax (.reg sb), .alu .add .eax (.imm 544)] +
 /-- The keys the rounds read, in `d`'s order, from the schedule and the
 number of rounds in the first two stack arguments: this file's table's
 address to the scratch buffer's first slot, and `AesNi.prepare`'s keys of
-the schedule's copy. -/
+the schedule's copy. Both tables' addresses are taken before anything is
+stored. -/
 def prepare (d : Dir) : Prog isa :=
-  .seq (.frame (.symPush .eax tableName) (.block []) (.pop .ecx 1)) (.seq (.block [.store (at_ sb 0) .eax]) (.seq
+  .seq (.frame (.symPush .eax tableName) (.block []) (.pop .ecx 1)) (.seq (.block [.mov kr (.reg .eax)]) (.seq
     (.frame (.symPush .eax AesNi.tableName) (.block []) (.pop .ecx 1)) (.seq (.block prepHead) (.seq (prepCopy d)
     (.seq (.block prepStart) (.seq
       (.loop (.seq (.block AesNi.prepGroup) (.ite .e (.block []) (.block AesNi.prepMasks))) .ne)

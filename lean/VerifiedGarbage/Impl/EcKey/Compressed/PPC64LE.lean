@@ -30,7 +30,7 @@ encoding; the peer's parsing replaces the hash's slot. -/
 abbrev args : Args := ⟨.r12, .r12, .r12, .r5, none⟩
 
 /-- `public` to `r12` and the signature's setup. -/
-def setup (c : Cfg) : List Instr := [mov .r12 .r4] ++ c.setupWith args
+def setup (c : Cfg) : Prog isa := .seq (.block [mov .r12 .r4]) (c.setupWith args)
 
 /-- The tag, `((y & 1) + 2) & flag`, to `out`'s first byte, through `r4` and
 `r5`. -/
@@ -47,8 +47,8 @@ def compressFinish (c : Cfg) : List Instr :=
 
 /-- `vg_ec_<curve>_compress_public_key`. -/
 def compress (c : Cfg) : Prog isa :=
-  .seq (.block (setup c)) <|
+  .seq (setup c) <|
   .seq (.block (Ecdh.PPC64LE.Cfg.peerAt c .r12)) <|
-  .seq (Ecdh.PPC64LE.Cfg.validate c) (.block (compressFinish c))
+  .seq (Ecdh.PPC64LE.Cfg.valCall c) (.block (compressFinish c))
 
 end VG.Impl.EcKey.Compressed.PPC64LE

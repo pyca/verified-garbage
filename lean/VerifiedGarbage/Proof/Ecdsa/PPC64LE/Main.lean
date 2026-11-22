@@ -500,6 +500,8 @@ structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   digest_fit : (s.gpr .r5).toNat + c.C.len ≤ 2 ^ 64
   k_fit : (s.gpr .r6).toNat + c.C.len ≤ 2 ^ 64
   sc_fit : (s.gpr .r7).toNat + size ≤ 2 ^ 64
+  /-- The table of constants the setup copies (`tbl_of_consts`). -/
+  tbl : TblOk c (s.gpr .r7) s
 
 theorem Pre.setup {s : State} {extra : List Region} (hp : Pre c s extra) : SetupPre c Args.sign s where
   shift := .inr (.inr rfl)
@@ -518,6 +520,7 @@ theorem Pre.setup {s : State} {extra : List Region} (hp : Pre c s extra) : Setup
   k_fit := hp.k_fit
   d_fit := hp.d_fit
   e_fit := hp.digest_fit
+  tbl := hp.tbl
 
 /-- The hash's integer is the bytes shifted as the setup shifts them. -/
 theorem hashToInt_eq (c : Cfg) (m : Mem) (q : Addr) :
@@ -610,13 +613,13 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Regi
     refine ⟨by rw [r3, hdc]; rfl, ?_⟩
     rw [bytes, hdc]; rfl
 
-theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith Args.sign))
+theorem sign_eq (c : Cfg) : c.sign = .seq (c.setupWith Args.sign)
     (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
     (.seq (c.qMul GX GY) (.seq c.invP (.seq c.middle
       (.seq c.invN c.scalar))))))) := rfl
 
-theorem signWith_eq (c : Cfg) (generator : Prog isa) : c.signWith generator = .seq (.block (c.setupWith Args.sign))
+theorem signWith_eq (c : Cfg) (generator : Prog isa) : c.signWith generator = .seq (c.setupWith Args.sign)
     (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
     (.seq generator (.seq c.invP (.seq c.middle

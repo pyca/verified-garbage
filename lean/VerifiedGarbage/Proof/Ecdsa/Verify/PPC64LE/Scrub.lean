@@ -82,13 +82,15 @@ open VG.Proof.Weierstrass (Law)
 time and returns without secret residue. -/
 theorem p192Verify_scrubbed (hL : Law Spec.P192.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.p192Verify
-      (Spec.Ecdsa.P192.inst.verifyHashContract PPC64LE.abi 112) 32 :=
+      (Spec.Ecdsa.P192.inst.verifyHashContract
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192)) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P192.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyP192
       verified := Proof.Ecdsa.Verify.PPC64LE.P192.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ [] Spec.Ecdsa.P192.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192)
+      Spec.Ecdsa.P192.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.P224.verifyHashApi`'s function as emitted
@@ -96,14 +98,14 @@ theorem p192Verify_scrubbed (hL : Law Spec.P192.curve) :
 time and returns without secret residue. -/
 theorem p224Verify_scrubbed (hL : Law Spec.P224.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.p224Verify
-      (Spec.Ecdsa.P224.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.p224CombConsts) 112) 32 :=
+      (Spec.Ecdsa.P224.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.P224.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P224.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyP224
       verified := Proof.Ecdsa.Verify.PPC64LE.P224.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.p224CombConsts Spec.Ecdsa.P224.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.P224.vK Spec.Ecdsa.P224.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.P256.verifyHashApi`'s function as emitted
@@ -111,14 +113,14 @@ theorem p224Verify_scrubbed (hL : Law Spec.P224.curve) :
 time and returns without secret residue. -/
 theorem p256Verify_scrubbed (hL : Law Spec.P256.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.p256Verify
-      (Spec.Ecdsa.P256.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.p256CombConsts) 112) 32 :=
+      (Spec.Ecdsa.P256.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P256.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyP256
       verified := Proof.Ecdsa.Verify.PPC64LE.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.p256CombConsts Spec.Ecdsa.P256.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.vK Spec.Ecdsa.P256.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.P384.verifyHashApi`'s function as emitted
@@ -126,14 +128,14 @@ theorem p256Verify_scrubbed (hL : Law Spec.P256.curve) :
 time and returns without secret residue. -/
 theorem p384Verify_scrubbed (hL : Law Spec.P384.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.p384Verify
-      (Spec.Ecdsa.P384.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.p384CombConsts) 112) 32 :=
+      (Spec.Ecdsa.P384.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.P384.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P384.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyP384
       verified := Proof.Ecdsa.Verify.PPC64LE.P384.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.p384CombConsts Spec.Ecdsa.P384.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.P384.vK Spec.Ecdsa.P384.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.P521.verifyHashApi`'s function as emitted
@@ -141,14 +143,14 @@ theorem p384Verify_scrubbed (hL : Law Spec.P384.curve) :
 time and returns without secret residue. -/
 theorem p521Verify_scrubbed (hL : Law Spec.P521.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.p521Verify
-      (Spec.Ecdsa.P521.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.p521CombConsts) 112) 32 :=
+      (Spec.Ecdsa.P521.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.P521.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P521.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
         Impl.Ecdsa.Verify.PPC64LE.verifyP521
       verified := Proof.Ecdsa.Verify.PPC64LE.P521.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.p521CombConsts Spec.Ecdsa.P521.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.P521.vK Spec.Ecdsa.P521.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.Secp256k1.verifyHashApi`'s function as emitted
@@ -156,14 +158,14 @@ theorem p521Verify_scrubbed (hL : Law Spec.P521.curve) :
 constant time and returns without secret residue. -/
 theorem secp256k1Verify_scrubbed (hL : Law Spec.Secp256k1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.secp256k1Verify
-      (Spec.Ecdsa.Secp256k1.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.secp256k1CombConsts) 112) 32 :=
+      (Spec.Ecdsa.Secp256k1.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.Secp256k1.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.Secp256k1.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifySecp256k1
       verified := Proof.Ecdsa.Verify.PPC64LE.Secp256k1.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.secp256k1CombConsts Spec.Ecdsa.Secp256k1.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.Secp256k1.vK Spec.Ecdsa.Secp256k1.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.BrainpoolP256r1.verifyHashApi`'s function as emitted
@@ -171,14 +173,14 @@ theorem secp256k1Verify_scrubbed (hL : Law Spec.Secp256k1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp256r1Verify_scrubbed (hL : Law Spec.BrainpoolP256r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp256r1Verify
-      (Spec.Ecdsa.BrainpoolP256r1.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.brainpoolp256r1CombConsts) 112) 32 :=
+      (Spec.Ecdsa.BrainpoolP256r1.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.BrainpoolP256r1.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP256r1.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyBrainpoolP256r1
       verified := Proof.Ecdsa.Verify.PPC64LE.BrainpoolP256r1.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.brainpoolp256r1CombConsts Spec.Ecdsa.BrainpoolP256r1.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.BrainpoolP256r1.vK Spec.Ecdsa.BrainpoolP256r1.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.BrainpoolP320r1.verifyHashApi`'s function as emitted
@@ -186,14 +188,14 @@ theorem brainpoolp256r1Verify_scrubbed (hL : Law Spec.BrainpoolP256r1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp320r1Verify_scrubbed (hL : Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp320r1Verify
-      (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.brainpoolp320r1CombConsts) 112) 32 :=
+      (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.BrainpoolP320r1.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyBrainpoolP320r1
       verified := Proof.Ecdsa.Verify.PPC64LE.BrainpoolP320r1.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.brainpoolp320r1CombConsts Spec.Ecdsa.BrainpoolP320r1.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.BrainpoolP320r1.vK Spec.Ecdsa.BrainpoolP320r1.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.BrainpoolP384r1.verifyHashApi`'s function as emitted
@@ -201,14 +203,14 @@ theorem brainpoolp320r1Verify_scrubbed (hL : Law Spec.BrainpoolP320r1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp384r1Verify_scrubbed (hL : Law Spec.BrainpoolP384r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp384r1Verify
-      (Spec.Ecdsa.BrainpoolP384r1.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.brainpoolp384r1CombConsts) 112) 32 :=
+      (Spec.Ecdsa.BrainpoolP384r1.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.BrainpoolP384r1.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP384r1.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyBrainpoolP384r1
       verified := Proof.Ecdsa.Verify.PPC64LE.BrainpoolP384r1.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.brainpoolp384r1CombConsts Spec.Ecdsa.BrainpoolP384r1.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.BrainpoolP384r1.vK Spec.Ecdsa.BrainpoolP384r1.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.BrainpoolP512r1.verifyHashApi`'s function as emitted
@@ -216,14 +218,14 @@ theorem brainpoolp384r1Verify_scrubbed (hL : Law Spec.BrainpoolP384r1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp512r1Verify_scrubbed (hL : Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp512r1Verify
-      (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.brainpoolp512r1CombConsts) 112) 32 :=
+      (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP512r1.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyBrainpoolP512r1
       verified := Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.brainpoolp512r1CombConsts Spec.Ecdsa.BrainpoolP512r1.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.vK Spec.Ecdsa.BrainpoolP512r1.inst)
     (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.Verify.PPC64LE.Scrub

@@ -73,12 +73,13 @@ open VG.Proof.Weierstrass (Law)
 returns without secret residue. -/
 theorem p192Exchange_scrubbed (hL : Law Spec.P192.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.p192Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.P192.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeP192
       verified := Proof.Ecdh.PPC64LE.P192.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.P224.exchangeApi`'s function as emitted
@@ -86,12 +87,13 @@ theorem p192Exchange_scrubbed (hL : Law Spec.P192.curve) :
 returns without secret residue. -/
 theorem p224Exchange_scrubbed (hL : Law Spec.P224.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.p224Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p224))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.P224.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeP224
       verified := Proof.Ecdh.PPC64LE.P224.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p224))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.P256.exchangeApi`'s function as emitted
@@ -99,12 +101,13 @@ theorem p224Exchange_scrubbed (hL : Law Spec.P224.curve) :
 returns without secret residue. -/
 theorem p256Exchange_scrubbed (hL : Law Spec.P256.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.p256Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p256))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.P256.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeP256
       verified := Proof.Ecdh.PPC64LE.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p256))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.P384.exchangeApi`'s function as emitted
@@ -112,12 +115,13 @@ theorem p256Exchange_scrubbed (hL : Law Spec.P256.curve) :
 returns without secret residue. -/
 theorem p384Exchange_scrubbed (hL : Law Spec.P384.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.p384Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p384))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.P384.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeP384
       verified := Proof.Ecdh.PPC64LE.P384.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p384))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.P521.exchangeApi`'s function as emitted
@@ -125,12 +129,13 @@ theorem p384Exchange_scrubbed (hL : Law Spec.P384.curve) :
 returns without secret residue. -/
 theorem p521Exchange_scrubbed (hL : Law Spec.P521.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.p521Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p521))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.P521.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeP521
       verified := Proof.Ecdh.PPC64LE.P521.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p521))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.Secp256k1.exchangeApi`'s function as emitted
@@ -138,12 +143,13 @@ theorem p521Exchange_scrubbed (hL : Law Spec.P521.curve) :
 and returns without secret residue. -/
 theorem secp256k1Exchange_scrubbed (hL : Law Spec.Secp256k1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.secp256k1Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.secp256k1))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.Secp256k1.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeSecp256k1
       verified := Proof.Ecdh.PPC64LE.Secp256k1.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.secp256k1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.BrainpoolP256r1.exchangeApi`'s function as emitted
@@ -151,12 +157,13 @@ theorem secp256k1Exchange_scrubbed (hL : Law Spec.Secp256k1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp256r1Exchange_scrubbed (hL : Law Spec.BrainpoolP256r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.brainpoolp256r1Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP256r1.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP256r1.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp256r1))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.BrainpoolP256r1.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeBrainpoolP256r1
       verified := Proof.Ecdh.PPC64LE.BrainpoolP256r1.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp256r1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.BrainpoolP320r1.exchangeApi`'s function as emitted
@@ -164,12 +171,13 @@ theorem brainpoolp256r1Exchange_scrubbed (hL : Law Spec.BrainpoolP256r1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp320r1Exchange_scrubbed (hL : Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.brainpoolp320r1Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP320r1.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp320r1))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.BrainpoolP320r1.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeBrainpoolP320r1
       verified := Proof.Ecdh.PPC64LE.BrainpoolP320r1.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp320r1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.BrainpoolP384r1.exchangeApi`'s function as emitted
@@ -177,12 +185,13 @@ theorem brainpoolp320r1Exchange_scrubbed (hL : Law Spec.BrainpoolP320r1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp384r1Exchange_scrubbed (hL : Law Spec.BrainpoolP384r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.brainpoolp384r1Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP384r1.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP384r1.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp384r1))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.BrainpoolP384r1.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeBrainpoolP384r1
       verified := Proof.Ecdh.PPC64LE.BrainpoolP384r1.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp384r1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.BrainpoolP512r1.exchangeApi`'s function as emitted
@@ -190,12 +199,13 @@ theorem brainpoolp384r1Exchange_scrubbed (hL : Law Spec.BrainpoolP384r1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp512r1Exchange_scrubbed (hL : Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.brainpoolp512r1Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp512r1))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.BrainpoolP512r1.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeBrainpoolP512r1
       verified := Proof.Ecdh.PPC64LE.BrainpoolP512r1.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp512r1))
     (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdh.PPC64LE.Scrub

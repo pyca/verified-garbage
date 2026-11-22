@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.P384.Ops
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Impl.Ecdsa.AArch64.CombCall
 
 /-!
 # P-384's comb arithmetic on AArch64
@@ -27,7 +28,12 @@ def mixed : List Instr :=
   (maddJ K.S K.A K.E K.D).flatMap Ops.op
 
 /-- The comb of P-384's signatures and public keys: by Jacobian mixed
-additions, each woven with the next window's selection in two passes. -/
-def comb : Prog isa := Impl.Ecdsa.AArch64.p384.combCfg.combJP2 program mixed
+additions, each woven with the next window's selection in two passes; the
+body of `vg_p384_comb`. -/
+def combBody : Prog isa := Impl.Ecdsa.AArch64.p384.combCfg.combJP2 program mixed
+
+/-- `[k]G`, by a call of `vg_p384_comb`: `x30` kept in lane 0 of `v27`, which
+the comb does not write. -/
+def comb : Prog isa := Impl.Ecdsa.AArch64.combCall "vg_p384_comb" (.vec .v27) combBody
 
 end VG.Impl.P384.CombArithmetic

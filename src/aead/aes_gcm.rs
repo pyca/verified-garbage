@@ -54,11 +54,7 @@ use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
     target_arch = "riscv64"
 )))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_auto;
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "riscv64"
-)))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "riscv64")))]
 use crate::arch::dispatch::gcm::vg_aes_gcm_seal_gather_auto;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dispatch::gcm::{
@@ -705,34 +701,7 @@ impl AesGcm {
         Ok(self.seal_pieces(dit, nonce, aad, plaintext, out))
     }
 
-    /// `encrypt` on AArch64, where no `_with_powers` function gathers the
-    /// pieces: copies the pieces `plaintext` to `out`, one after the other
-    /// (as `vg_aes_gcm_seal_gather` does), and seals them there. Which bytes
-    /// it copies where depends only on the pieces' lengths (whose sum
-    /// `encrypt` checked is `out.len()`).
-    #[cfg(target_arch = "aarch64")]
-    #[inline(never)]
-    fn seal_pieces(
-        &self,
-        dit: crate::dit::Dit<'_>,
-        nonce: &[u8],
-        aad: &[u8],
-        plaintext: &[&[u8]],
-        out: &mut [u8],
-    ) -> Block {
-        let mut rest = &mut *out;
-        for piece in plaintext {
-            let (dst, tail) = rest.split_at_mut(piece.len());
-            dst.copy_from_slice(piece);
-            rest = tail;
-        }
-        self.seal(dit, nonce, aad, out)
-    }
-
-    /// `encrypt` elsewhere, by `vg_aes_gcm_seal_gather` (on x86-64,
-    /// `vg_aes_gcm_seal_gather_prepared`; on RISC-V,
-    /// `vg_aes_gcm_seal_gather_bitsliced`).
-    #[cfg(not(target_arch = "aarch64"))]
+    /// Seal the caller's plaintext pieces into a separate ciphertext buffer.
     #[inline(always)]
     fn seal_pieces(
         &self,
@@ -1583,7 +1552,7 @@ mod tests {
         let msg: [u8; 300] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
         for aad_len in [0, 5, 16, 20] {
             let aad = &msg[..aad_len];
-            for len in [0, 1, 16, 17, 300] {
+            for len in [0, 1, 16, 17, 95, 96, 97, 128, 192, 223, 224, 225, 300] {
                 let mut want = msg;
                 let want_tag = k.encrypt_in_place(&nonce, aad, &mut want[..len]).unwrap();
                 let m = &msg[..len];

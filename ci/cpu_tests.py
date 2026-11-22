@@ -429,6 +429,10 @@ GROUPS = {
         "lib": [],
         "tests": ["cavp::seed_cfb"],
     },
+    "seed_ecb": {
+        "lib": [],
+        "tests": ["cavp::seed_ecb"],
+    },
     "seed_ofb": {
         "lib": [],
         "tests": ["cavp::seed_ofb"],
