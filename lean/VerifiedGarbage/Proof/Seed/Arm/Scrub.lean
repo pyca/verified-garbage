@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 public import VerifiedGarbage.Impl.Seed.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Seed.Arm.KeyVerified
@@ -17,7 +16,6 @@ import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 import VerifiedGarbage.Proof.Seed.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Impl.Seed.Arm.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.Seed.Arm.KeyVerified
@@ -37,26 +35,21 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 /-!
 # SEED on ARMv7, without secret residue
 
-Every public function of SEED on ARMv7 keeps its working space in a frame:
-key expansion's and ECB's 752 bytes (`withRegScratchWiped`), and the modes
-80 bytes of their own around ECB's 752, with the groups' 128 for those in
-groups of blocks (`Impl/Modes/Arm/Wide.lean`). None makes an indirect call,
-and their postconditions read the memory on return only within their
-buffers (`Arm.Scrub.PostOut`, from the lemmas of `Proof/Seed/Scratch.lean`,
-`CbcScratch.lean`, `FbScratch.lean` and `Proof/Modes/CfbFinalScratch.lean`
-that x86 uses too). Each wipes its own working space, and is
-emitted followed by a wipe of only the words of the stack its contract
-reserves that the residue analysis finds may differ between two runs
-(`Impl.Scrub.Arm.scrubSel`), and by instructions that set the
-registers a callee may change and the flags to constants
-(`Impl.Seed.Arm.Fn`). `Fn` below states that each returns without secret
-residue (`Arm.Scrub.verifiedScrubbedSel`, whose analysis, `Arm.rtaint`, the
-kernel evaluates here: `taint_decide_ct`), which is what its registration
-binds.
-
-The modes call the ECB artifacts as they are emitted, cleanup included
-(`Impl.Seed.Arm.ecbCore`), whose theorems are in `ModeCore.lean`: the
-analysis of each mode covers the frame of that call.
+Every public function of SEED on ARMv7 keeps its working space in a frame,
+left as it is: key expansion's 752 bytes (`withRegScratch`), and the modes'
+80 bytes of their own (`withStackScratch`) around the 752 of the ECB core
+they call (`Impl.Seed.Arm.ecbCore`, `ModeCore.lean`), with the groups' 128
+for those in groups of blocks (`Impl/Modes/Arm/Wide.lean`); the ECB
+functions call the core in a frame of 8 bytes (`Core.wrap`). None makes an
+indirect call, and their postconditions read the memory on return only
+within their buffers (`Arm.Scrub.PostOut`, from the lemmas of
+`Proof/Seed/Scratch.lean`, `CbcScratch.lean`, `FbScratch.lean` and
+`Proof/Modes/CfbFinalScratch.lean` that x86 uses too). Each is emitted
+followed by `scrubAll` (`Impl.Seed.Arm.Fn`), which zeroes the stack its
+contract reserves in a loop and sets the registers a callee may change and
+the flags to constants. `Fn` below states that each returns without secret
+residue (`Arm.Scrub.verifiedScrubbedAll`, given that its frames are within
+that stack: `CodeOk`), which is what its registration binds.
 -/
 
 @[expose] public section
@@ -104,6 +97,37 @@ theorem expandKey_code :
     CodeOk (Impl.StackScratch.Arm.withRegScratch 752 .r2 Impl.Seed.Arm.expandKey) 752 := by
   lit_decide
 
+private theorem stackScratch_code {b m n : Nat} {c : Prog isa} (h : CodeOk c n) :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch b m c) (n + b) :=
+  CodeOk.alloc (CodeOk.seq ((CodeOk.block _).mono (Nat.zero_le _)) h)
+
+private theorem core_code (d : Direction) :
+    armStack (Impl.Seed.Arm.ecbCore d).code + callExtraArm (Impl.Seed.Arm.ecbCore d) ≤ 752 ∧
+      noIcall (Impl.Seed.Arm.ecbCore d).code = true :=
+  ⟨by rw [show callExtraArm (Impl.Seed.Arm.ecbCore d) = 0 from rfl, Nat.add_zero]; exact ecb_stack d,
+    by cases d <;> lit_decide⟩
+
+theorem cbcEncrypt_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cbcEncryptChained) 832 :=
+  stackScratch_code (seq_scrubArm (core_code .encrypt) _)
+theorem cfbEncrypt_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cfbEncrypt) 832 :=
+  stackScratch_code (seq_scrubArm (core_code .encrypt) _)
+theorem ofb_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.ofb) 832 :=
+  stackScratch_code (seq_scrubArm (core_code .encrypt) _)
+theorem cfbEncryptFinal_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cfbEncryptFinal) 832 :=
+  stackScratch_code (seqFinal_scrubArm (core_code .encrypt) _)
+theorem cfbDecryptFinal_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cfbDecryptFinal) 832 :=
+  stackScratch_code (seqFinal_scrubArm (core_code .encrypt) _)
+theorem ofbFinal_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.ofbFinal) 832 :=
+  stackScratch_code (seqFinal_scrubArm (core_code .encrypt) _)
+theorem cbcDecrypt_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cbcDecryptChained) 960 := by
+  lit_decide
+theorem cfbDecrypt_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cfbDecrypt) 960 := by
+  lit_decide
+
 end VG.Proof.Seed.Arm.Scrub
 
 namespace VG.Proof.Seed.Arm.Fn
@@ -122,79 +146,71 @@ theorem expandKey :
 /-- `vg_seed_cbc_encrypt_chained`. -/
 theorem cbcEncrypt :
     VerifiedScrubbed target Impl.Seed.Arm.Fn.cbcEncrypt (cbcEncryptChainedContract Arm.abi 832) 0 :=
-  verifiedScrubbedSel (api := cbcEncryptChainedApi) (W := 832)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cbcEncryptChained
+  verifiedScrubbedAll (api := cbcEncryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cbcEncryptChained
       verified := Proof.Seed.Arm.cbcEncryptChained_framed }
-    Impl.Seed.Arm.Fn.modeWords []
     (Scrub.cbcEncryptOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cbcEncrypt_code (by decide) _)
 
 /-- `vg_seed_cbc_decrypt_chained`. -/
 theorem cbcDecrypt :
     VerifiedScrubbed target Impl.Seed.Arm.Fn.cbcDecrypt (cbcDecryptChainedContract Arm.abi 960) 0 :=
-  verifiedScrubbedSel (api := cbcDecryptChainedApi) (W := 960)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cbcDecryptChained
+  verifiedScrubbedAll (api := cbcDecryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cbcDecryptChained
       verified := Proof.Seed.Arm.cbcDecryptChained_framed }
-    Impl.Seed.Arm.Fn.wideWords []
     (Scrub.cbcDecryptOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cbcDecrypt_code (by decide) _)
 
 /-- `vg_seed_cfb128_encrypt`. -/
 theorem cfbEncrypt :
     VerifiedScrubbed target Impl.Seed.Arm.Fn.cfbEncrypt (cfbEncryptContract Arm.abi 832) 0 :=
-  verifiedScrubbedSel (api := cfbEncryptApi) (W := 832)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbEncrypt
+  verifiedScrubbedAll (api := cfbEncryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cfbEncrypt
       verified := Proof.Seed.Arm.cfbEncrypt_framed }
-    Impl.Seed.Arm.Fn.modeWords []
     (Scrub.cfbEncryptOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbEncrypt_code (by decide) _)
 
 /-- `vg_seed_cfb128_decrypt`. -/
 theorem cfbDecrypt :
     VerifiedScrubbed target Impl.Seed.Arm.Fn.cfbDecrypt (cfbDecryptContract Arm.abi 960) 0 :=
-  verifiedScrubbedSel (api := cfbDecryptApi) (W := 960)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbDecrypt
+  verifiedScrubbedAll (api := cfbDecryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cfbDecrypt
       verified := Proof.Seed.Arm.cfbDecrypt_framed }
-    Impl.Seed.Arm.Fn.wideWords []
     (Scrub.cfbDecryptOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbDecrypt_code (by decide) _)
 
 /-- `vg_seed_cfb128_encrypt_final`. -/
 theorem cfbEncryptFinal :
     VerifiedScrubbed target Impl.Seed.Arm.Fn.cfbEncryptFinal (cfbEncryptFinalContract Arm.abi 832) 0 :=
-  verifiedScrubbedSel (api := cfbEncryptFinalApi) (W := 832)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbEncryptFinal
+  verifiedScrubbedAll (api := cfbEncryptFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cfbEncryptFinal
       verified := Proof.Seed.Arm.cfbEncryptFinal_framed }
-    Impl.Seed.Arm.Fn.modeWords []
     (Scrub.cfbEncryptFinalOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbEncryptFinal_code (by decide) _)
 
 /-- `vg_seed_cfb128_decrypt_final`. -/
 theorem cfbDecryptFinal :
     VerifiedScrubbed target Impl.Seed.Arm.Fn.cfbDecryptFinal (cfbDecryptFinalContract Arm.abi 832) 0 :=
-  verifiedScrubbedSel (api := cfbDecryptFinalApi) (W := 832)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.cfbDecryptFinal
+  verifiedScrubbedAll (api := cfbDecryptFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.cfbDecryptFinal
       verified := Proof.Seed.Arm.cfbDecryptFinal_framed }
-    Impl.Seed.Arm.Fn.modeWords []
     (Scrub.cfbDecryptFinalOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbDecryptFinal_code (by decide) _)
 
 /-- `vg_seed_ofb`. -/
 theorem ofb : VerifiedScrubbed target Impl.Seed.Arm.Fn.ofb (ofbContract Arm.abi 832) 0 :=
-  verifiedScrubbedSel (api := ofbApi) (W := 832)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.ofb
+  verifiedScrubbedAll (api := ofbApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.ofb
       verified := Proof.Seed.Arm.ofb_framed }
-    Impl.Seed.Arm.Fn.modeWords []
     (Scrub.ofbOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.ofb_code (by decide) _)
 
 /-- `vg_seed_ofb_final`. -/
 theorem ofbFinal : VerifiedScrubbed target Impl.Seed.Arm.Fn.ofbFinal (ofbFinalContract Arm.abi 832) 0 :=
-  verifiedScrubbedSel (api := ofbFinalApi) (W := 832)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.ofbFinal
+  verifiedScrubbedAll (api := ofbFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 80 0 Impl.Seed.Arm.ofbFinal
       verified := Proof.Seed.Arm.ofbFinal_framed }
-    Impl.Seed.Arm.Fn.modeWords []
     (Scrub.ofbFinalOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.ofbFinal_code (by decide) _)
 
 end VG.Proof.Seed.Arm.Fn
