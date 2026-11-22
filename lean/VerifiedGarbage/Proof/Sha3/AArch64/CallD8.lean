@@ -34,6 +34,25 @@ theorem D8.of {n : String} {s t : State} (h : D8 n s)
     (hy : t.syms = s.syms) : D8 n t := by
   unfold D8 at h ⊢; rw [hv .v8 (by decide), hy]; exact h
 
+/-- The contract `k` of code that calls the function `n` by the address in
+`d8`: from states where `d8` holds it, and for runs that agree on it. -/
+def Contract.d8 (n : String) (k : Contract isa) : Contract isa :=
+  ⟨fun s => k.pre s ∧ D8 n s, k.post, fun s t => k.pub s t ∧ s.syms n = t.syms n⟩
+
+/-- A state where `d8` holds `n`'s address: `s` with it in `v8`. -/
+theorem D8.setV (n : String) (s : State) : D8 n (s.setV .v8 ((s.syms n).setWidth 128)) := by
+  unfold D8
+  rw [RegUpd.v_setV_self]
+  change ((s.syms n).setWidth 128).extractLsb' 0 64 = s.syms n
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.extractLsb', BitVec.toNat_setWidth]
+  omega
+
+/-- `Contract.d8` is satisfiable where `k` is, in a state with `n`'s address in `d8`. -/
+theorem Contract.d8_sat {n : String} {k : Contract isa} {s : State}
+    (h : k.pre (s.setV .v8 ((s.syms n).setWidth 128))) : ∃ s, (Contract.d8 n k).pre s :=
+  ⟨_, h, D8.setV n s⟩
+
 theorem callD8_ok (v : Permutation) {s : State} {st scr : Addr} (h0 : s.gpr .x0 = st)
     (h1 : s.gpr .x1 = scr) (hd : D8 v.callee.name s)
     (d₁ : Region.Disjoint ⟨st, 200⟩ ⟨scr, 512⟩)
