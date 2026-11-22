@@ -9,27 +9,29 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 namespace VG.Proof.Bignum.Arm.ConditionalExp
 
-variable {ok : Prop}
 open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Proof.Rsa.Mont (arrAt)
+variable {ok : Prop} {Q : State → Prop} {regions : List Region}
 
 theorem expBytes_ct {base ep : BitVec 32} {len w M1 M2 x1 x2 : Nat} {eb : List Byte}
-    (fit : arrAt w 3 + 32 ≤ 8 * len) (positive : 0 < eb.length) :
-    RelCT isa (fun s t => ExpByteState ok base ep len w M1 x1 eb 0 s ∧
-      ExpByteState ok base ep len w M2 x2 eb 0 t ∧ s.sp = t.sp) expBytes (fun _ _ => True) := by
+    (K : TwoExp.Montgomery base len w Q regions) (ct : TwoExp.MontgomeryTiming K) (positive : 0 < eb.length)
+    (sepR : ∀ r ∈ regions, Region.Disjoint ⟨State.addr ep, eb.length⟩ r) :
+    RelCT isa (fun s t => (ExpByteState ok base ep len w M1 x1 eb 0 s ∧ Q s) ∧
+      (ExpByteState ok base ep len w M2 x2 eb 0 t ∧ Q t) ∧ s.sp = t.sp) (expBytesWith K.op) (fun _ _ => True) := by
   let I := fun k (s t : State) => ∃ j, j + k = eb.length ∧ 0 < k ∧
-    ExpByteState ok base ep len w M1 x1 eb j s ∧ ExpByteState ok base ep len w M2 x2 eb j t ∧ s.sp = t.sp
-  have step : ∀ k, RelCT isa (I k) (.seq expByteHead (.seq expBits (.block expByteNext))) fun s t =>
+    (ExpByteState ok base ep len w M1 x1 eb j s ∧ Q s) ∧ (ExpByteState ok base ep len w M2 x2 eb j t ∧ Q t) ∧
+      s.sp = t.sp
+  have step : ∀ k, RelCT isa (I k) (.seq expByteHead (.seq (expBitsWith K.op) (.block expByteNext))) fun s t =>
       isa.eval .ne s = isa.eval .ne t ∧ (isa.eval .ne s = some false → True) ∧
       (isa.eval .ne s = some true → ∃ m, m < k ∧ I m s t) := by
     intro k s t tr1 tr2 u z h e1 e2
-    obtain ⟨j, jk, hk, hs, ht, sp⟩ := h
+    obtain ⟨j, jk, hk, ⟨hs, qs⟩, ⟨ht, qt⟩, sp⟩ := h
     have hj : j < eb.length := by omega_using [jk, hk]
-    have ct := relCT_keep_sp (expByte_ct (ok := ok) (base := base) (ep := ep + BitVec.ofNat 32 j)
-      (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2) (E := pre eb j) (b := eb[j]) fit) (fun _ _ h => h.2.2)
-    obtain ⟨trace, sp'⟩ := ct s t tr1 tr2 u z ⟨hs.input hj, ht.input hj, sp⟩ e1 e2
-    obtain ⟨_, _, run1, next1, zero1⟩ := expByteState_step s hs hj
-    obtain ⟨_, _, run2, next2, zero2⟩ := expByteState_step t ht hj
+    have ct' := relCT_keep_sp (expByte_ct (ok := ok) (base := base) (ep := ep + BitVec.ofNat 32 j)
+      (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2) (E := pre eb j) (b := eb[j]) K ct) (fun _ _ h => h.2.2)
+    obtain ⟨trace, sp'⟩ := ct' s t tr1 tr2 u z ⟨⟨hs.input hj, qs⟩, ⟨ht.input hj, qt⟩, sp⟩ e1 e2
+    obtain ⟨_, _, run1, next1, zero1⟩ := expByteState_step s K hs qs hj sepR
+    obtain ⟨_, _, run2, next2, zero2⟩ := expByteState_step t K ht qt hj sepR
     obtain ⟨-, rfl⟩ := Exec.det e1 run1
     obtain ⟨-, rfl⟩ := Exec.det e2 run2
     refine ⟨trace, ?_, fun _ => trivial, ?_⟩

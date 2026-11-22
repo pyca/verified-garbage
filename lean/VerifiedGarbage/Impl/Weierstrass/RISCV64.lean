@@ -33,7 +33,9 @@ projective coordinates `(X : Y : Z)`. As on PPC64LE
   table `x, x³, …, x¹⁵` and `x²` (`x` multiplied by `R mod m` first, so that
   the table's numbers are below the modulus, as the multiplication's second
   operand must be), then each step's squarings, by a loop
-  counting `s1` down, and its multiplication by the table.
+  counting `s1` down, and its multiplication by the table; `chainCall`
+  calls it as a function of its own (`chainFn`), which keeps `ra` in the
+  working space.
 
 The bit of iteration `j` (the counter, in `s1`) is read from the number
 itself (`bitMask`): its word `j / 64`, at the slot plus `8 (j >>> 6)`,
@@ -210,5 +212,16 @@ end ChainR
 `R mod m` at `one`. -/
 def chainPow (P : ChainCfg) (one : Nat) (F : Field) : Prog isa :=
   .seq (ChainR.table P F one) (.seq (.block (copy P.M.n P.acc (P.slot ((P.first - 1) / 2)))) (ChainR.steps P F P.steps))
+
+/-- `chainPow` as the code of a function of its own: its calls of the
+field's functions write `ra`, so it keeps `ra` at `sv` in the working space
+around them. -/
+def chainFn (P : ChainCfg) (one : Nat) (F : Field) (sv : Nat) : Prog isa :=
+  .seq (.block (sdAt .ra wb sv)) (.seq (chainPow P one F) (.block (ldAt .ra wb sv)))
+
+/-- A call of `name`, whose code is `chainFn P one F sv`: one copy of the
+chain for all of its callers. -/
+def chainCall (name : String) (P : ChainCfg) (one : Nat) (F : Field) (sv : Nat) : Prog isa :=
+  .call name (chainFn P one F sv)
 
 end VG.Impl.Weierstrass.RISCV64

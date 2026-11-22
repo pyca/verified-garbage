@@ -138,11 +138,10 @@ theorem ecb64_wp (d : Direction) {s : State} (h : Ecb64Pre s) :
   obtain dataStR : (⟨D, 512⟩ : Region).Disjoint ⟨B, 512⟩ := h.dataBuf.sub_right (Region.sub_prefix (by decide))
   unfold ecb64
   apply WP.seq
-  refine WP.mono (setup_ok ⟨h.buf⟩) fun v q => ?_
+  refine WP.mono (setup_ok ⟨h.buf⟩) fun v ⟨q, ql⟩ => ?_
   obtain stv : stR v = ⟨B, 512⟩ := by rw [stR, q.r10]
   -- the copy in and the transposition
   apply WP.seq
-  rw [WP.block_append_iff]
   obtain ⟨s₁, run₁, c₁, g₁, rd₁, wr₁, lr₁, f₁⟩ := copy64_run (src := .r4) (dst := .r10) (s := v)
     copyIn_check
     (by rw [q.r4, q.rd, q.wr]; exact covers_rdwr h.data)
@@ -153,9 +152,10 @@ theorem ecb64_wp (d : Direction) {s : State} (h : Ecb64Pre s) :
   obtain fs₁ : Frame [stR v] v.mem s₁.mem := by
     rw [stv]; rw [q.r10] at f₁; exact f₁
   obtain h₁ : Room s₁ := q.room.congr (g₁ _ (by decide)) wr₁
-  obtain ⟨s₂, run₂, w₂, rd₂, wr₂, -, lr₂, s10₂, k₂, f₂⟩ :=
-    transpose_ok h₁ (masksAt_frame (g₁ _ (by decide)) fs₁ q.masks)
-  refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
+  obtain ho₁ : Ones s₁ := by rw [Ones, g₁ _ (by decide)]; exact q.ones
+  apply WP.seq
+  refine WP.mono (transposeCall_ok h₁ (masksAt_frame (g₁ _ (by decide)) fs₁ q.masks) ho₁)
+    fun s₂ ⟨w₂, rd₂, wr₂, _, s10₂, k₂, f₂⟩ => ?_
   obtain s10₂' : s₂.gpr .r10 = B := s10₂.trans s10₁
   obtain hc₂ : ∀ r ∈ transKept, s₂.gpr r = v.gpr r := fun r hr => by
     rw [k₂ r hr, g₁ r (by revert hr; decide +revert)]
@@ -192,16 +192,16 @@ theorem ecb64_wp (d : Direction) {s : State} (h : Ecb64Pre s) :
     rw [hc₂ .r7 (by decide), q.r7]; exact keyF fs₂'
   -- the passes
   apply WP.seq
-  refine WP.mono (WP.rdwr (passes_ok d hR₂ hs₂ ho₂)) fun s₃ ⟨⟨w₃, k₃, rd₃, wr₃, _, lr₃, f₃⟩, _⟩ => ?_
+  refine WP.mono (WP.rdwr (passes_ok d hR₂ hs₂ ho₂)) fun s₃ ⟨⟨w₃, k₃, rd₃, wr₃, _, f₃⟩, _⟩ => ?_
   obtain s10₃ : s₃.gpr .r10 = B := (k₃ _ (by decide)).trans s10₂'
   obtain h₃ : Room s₃ := hR₂.congr (k₃ _ (by decide)) wr₃
   obtain fs₃ : Frame [⟨B, 512⟩] v.mem s₃.mem := fs₂.trans (by rw [stR, s10₂'] at f₃; exact f₃)
   -- the transposition back, the copy out and the registers back
   obtain q10 : s₃.gpr .r10 = v.gpr .r10 := s10₃.trans q.r10.symm
-  rw [List.append_assoc, WP.block_append_iff]
-  obtain ⟨s₄, run₄, w₄, rd₄, wr₄, -, lr₄, s10₄, k₄, f₄⟩ :=
-    transpose_ok h₃ (masksAt_frame q10 (by rw [stv]; exact fs₃) q.masks)
-  refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
+  obtain ho₃ : Ones s₃ := by rw [Ones, k₃ _ (by decide)]; exact ho₂
+  apply WP.seq
+  refine WP.mono (transposeCall_ok h₃ (masksAt_frame q10 (by rw [stv]; exact fs₃) q.masks) ho₃)
+    fun s₄ ⟨w₄, rd₄, wr₄, _, s10₄, k₄, f₄⟩ => ?_
   obtain s10₄' : s₄.gpr .r10 = B := s10₄.trans s10₃
   obtain hc₄ : ∀ r ∈ [Reg.r4, .r7], s₄.gpr r = v.gpr r := fun r hr => by
     obtain h1 : r ∈ transKept ∧ r ∈ passKept := by
@@ -233,17 +233,29 @@ theorem ecb64_wp (d : Direction) {s : State} (h : Ecb64Pre s) :
       have := (savedL_le p hp).2; omega_using [this]⟩) f₅' fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (h.dataBuf.sub_right (VG.Offset.sub_base _ (by omega_using []))).symm
-  rw [finish_eq]
-  refine WP.mono (Spill.restore_wp (b := .r10) (by decide) s10₅ savedL_fits.1 savedL_restorable
-    (fun p hp => ?_) saved₅) fun y r => ⟨fun q' hq => r.gpr_of (.inl (preserved_saved q' hq)), ?_, ?_, ?_,
-      by rw [r.mem]; exact fs₅, fun b hb => ?_⟩
-  · rw [rd₅, wr₅, rd₄', wr₄']
+  obtain hl₅ : s₅.mem.readW (B + BitVec.ofNat 64 lrOff) 64 = s.lr := by
+    rw [f₅'.readW (Region.contains_self _ 8) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (h.dataBuf.sub_right (VG.Offset.sub_base _ (by decide))).symm) (by decide),
+      fs₄.readW (Region.contains_self _ 8) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact VG.Offset.disjoint_base _ (by decide) (by decide)) (by decide)]
+    exact ql
+  obtain inB : ∀ e, e + 8 ≤ 1024 → InRegions (s₅.rd ++ s₅.wr) (B + BitVec.ofNat 64 e) 8 := fun e he => by
+    rw [rd₅, wr₅, rd₄', wr₄']
     exact covers_rdwr (covers_of_in h.buf) _ _ ⟨_, List.mem_singleton_self _,
-      VG.Offset.contains_base _ (by have := (savedL_le p hp).2; omega_using [this]) (by have := (savedL_le p hp).2; omega_using [this])⟩
-  · rw [r.lr, lr₅, lr₄, lr₃, lr₂, lr₁, q.lr]
-  · rw [r.other _ (by decide), s10₅]
-  · rw [r.other _ (by decide), g₅ _ (by decide), hc₄ .r7 (by decide), q.r7]
-  · show blockAt y.mem (wAt D b) = blockOut K d (blockAt s.mem (wAt D b))
+      VG.Offset.contains_base _ he (by omega_using [he])⟩
+  rw [finish, finish_eq, WP.block_append_iff]
+  refine WP.mono (Spill.restore_wp (b := .r10) (by decide) s10₅ savedL_fits.1 savedL_restorable
+    (fun p hp => inB _ (by have := (savedL_le p hp).2; omega_using [this])) saved₅) fun y r =>
+    WP.mono (lrRestore_ok ((r.other _ (by decide)).trans s10₅) (by rw [r.rd, r.wr]; exact inB _ (by decide))
+      (by rw [r.mem]; exact hl₅)) fun y' ⟨g', l', m', _⟩ =>
+    ⟨fun q' hq => by rw [g' q' (by revert hq; decide +revert)]; exact r.gpr_of (.inl (preserved_saved q' hq)),
+      l', ?_, ?_, by rw [m', r.mem]; exact fs₅, fun b hb => ?_⟩
+  · rw [g' _ (by decide), r.other _ (by decide), s10₅]
+  · rw [g' _ (by decide), r.other _ (by decide), g₅ _ (by decide), hc₄ .r7 (by decide), q.r7]
+  · show blockAt y'.mem (wAt D b) = blockOut K d (blockAt s.mem (wAt D b))
+    rw [m']
     obtain lane₂ : ipLane (words s₂) b = permute ip (decodeBlock (blockAt s.mem (wAt D b))) := by
       rw [VG.Proof.TripleDes.Bitslice.ipLane_congr w₂ b]
       refine VG.Proof.TripleDes.Bitslice.ipLane_transpose _ _ hb fun j hj => ?_
@@ -481,18 +493,10 @@ theorem blockOut_eq (k : Spec.TripleDes.Schedule) (d : Direction) (b : Spec.Trip
     VG.Proof.TripleDes.Bitslice.blockOut k d b = blockResult k d b := by
   cases d <;> rfl
 
-/-- A call of code that keeps the link register. -/
-theorem WP.callOf {name : String} {c : Prog isa} {s : State} {Q : State → Prop}
-    (h : WP isa c s.callEntry fun s₂ => s₂.lr = s.callEntry.lr ∧ Q s₂) : WP isa (.call name c) s Q := by
-  obtain ⟨t, s₂, he, hlr, hq⟩ := h
-  refine ⟨_, _, Exec.call (call_callEntry s) he ?_, hq⟩
-  simp only [isa, ret]
-  exact ite_eq_left_of_eq_true _ _ (eq_true hlr)
-
 theorem ecb64Call_wp (d : Direction) {s : State} {Q : State → Prop}
     (h : WP isa (Bitslice.ecb64 d) s.callEntry fun s₂ => s₂.lr = s.callEntry.lr ∧ Q s₂) :
     WP isa (ecb64Call d) s Q := by
-  cases d <;> exact WP.callOf h
+  cases d <;> exact Bitsliced.WP.callOf h
 
 /-- `kept` but `r3`: the callee-saved registers. -/
 theorem kept_cases : ∀ r ∈ kept, r = .r3 ∨ r ∈ preserved := by decide

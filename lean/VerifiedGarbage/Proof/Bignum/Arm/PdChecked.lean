@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
 public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 import VerifiedGarbage.Proof.Bignum.Arm.PdInverse
 import VerifiedGarbage.Proof.Bignum.Arm.PdApply
 import VerifiedGarbage.Proof.Bignum.Arm.PdFail
@@ -24,11 +25,12 @@ def PdOutput (dst : BitVec 32) (k N R : Nat) (eb xb : List Byte) (t : State) : P
        else List.replicate k 0) ∧
     t.gpr .r0 = BitVec.ofNat 32 (decide (Spec.Rsa.os2ip xb < N)).toNat
 
-theorem pdChecked_ok (s : State) {base dst pp ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb : List Byte}
+theorem pdChecked_ok (A : CallOp) (s : State) {base dst pp ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb : List Byte}
     (h : PdBodyInput base dst pp ep xp len k eLen N R eb xb s)
     (check : PdCheckState base len (Spec.Rsa.modulusWords k) N R s) :
-    WP isa PdFn.checked s fun t => PdOutput dst k N R eb xb t ∧
-      Frame [⟨State.addr base, 8 * len⟩, ⟨off (State.addr s.sp) 48, 4⟩, ⟨State.addr dst, k⟩] s.mem t.mem ∧
+    WP isa (PdFn.checked A.op) s fun t => PdOutput dst k N R eb xb t ∧
+      Frame [⟨State.addr base, 8 * len⟩, ⟨off (State.addr s.sp) 48, 4⟩, ⟨State.addr dst, k⟩,
+        FrameStack.belowA s.sp 48] s.mem t.mem ∧
       Rest roundClobbers s t := by
   rw [PdFn.checked, WP.seq_iff]
   refine WP.mono (pdChecks_ok s check) ?_
@@ -46,7 +48,7 @@ theorem pdChecked_ok (s : State) {base dst pp ep xp : BitVec 32} {len k eLen N R
     rw [PdFn.apply, WP.seq_iff]
     refine WP.mono (pdInverse_ok u hu checked accepted) ?_
     rintro v ⟨arithmetic, frameV, restV⟩
-    refine WP.mono (pdApply_ok v arithmetic) ?_
+    refine WP.mono (pdApply_ok A v arithmetic) ?_
     rintro t ⟨bytes, status, frameT, restT⟩
     rw [restV.sp, restU.sp] at frameT
     exact ⟨fun _ good bound => ⟨bytes good bound, status⟩,

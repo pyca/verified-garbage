@@ -109,7 +109,7 @@ theorem crtArgs_stack {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
 
 theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (a : CrtArgs g s) :
-    (Proof.Rsa.privateCrtContract abi 56).pre (s.callEntry.withRegions (crtRd g) (crtWr g)) := by
+    (Proof.Rsa.privateCrtContract abi 104).pre (s.callEntry.withRegions (crtRd g) (crtWr g)) := by
   have sa := fun {j} (hj : j < 14) => crtArgs_stack h a hj
   have kfit : g.length < 2 ^ 32 := by have := h.valid.maxLength; omega_using [this]
   have pfit : g.pLength < 2 ^ 32 := by have := h.valid.pFits; omega_using [kfit, this]
@@ -138,14 +138,14 @@ theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   have tempArgs : (⟨State.addr g.temporary, g.length⟩ : Region).Disjoint ⟨State.addr g.stack, 56⟩ := by
     rw [PrivGeometry.temporary, h.valid.offsetAddr (by decide)]
     exact Offset.disjoint_base _ (by decide : 56 ≤ oM) (by have := h.valid.maxLength; simp only [oM]; omega_using [kfit])
-  have callee : (⟨State.addr g.stack - BitVec.ofNat 64 56, 56⟩ : Region) = g.calleeRegion := by
-    unfold PrivGeometry.calleeRegion FrameStack.belowA
-    rw [FrameStack.addr_sub' h.valid.stackLow]
+  have callee : (⟨State.addr g.stack - BitVec.ofNat 64 104, 104⟩ : Region) = g.crtCalleeRegion := by
+    unfold PrivGeometry.crtCalleeRegion FrameStack.belowA
+    rw [FrameStack.addr_sub' h.valid.stackLow104]
   simp only [State.addr] at callee
-  have calleeSources := fun i => (h.valid.stackSources i).sub_left h.valid.calleeSub
-  have calleeWorkspace := h.valid.stackWorkspace.sub_left h.valid.calleeSub
+  have calleeSources := fun i => (h.valid.stackSources i).sub_left h.valid.crtCalleeSub
+  have calleeWorkspace := h.valid.stackWorkspace.sub_left h.valid.crtCalleeSub
   have argsWorkspace := (h.valid.stackWorkspace.sub_left (fun x hx => h.valid.innerSub x (outgoingSub x hx))).symm
-  refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega_using [this], rfl, ?_,
+  refine ⟨h.valid.stackLow104, by have := h.valid.stackHigh; omega_using [this], rfl, ?_,
     tempSources 0, tempSources 2, tempSources 3, tempSources 4, tempSources 5, tempSources 6, tempSources 7,
     ?_, tempArgs, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     h.valid.temporaryFit, h.valid.sourceFits 0, h.valid.sourceFits 2, h.valid.sourceFits 3,
@@ -176,7 +176,7 @@ theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     rw [Nat.mul_comm]
     exact h.valid.sourcesWorkspace 7
   · simpa only [PrivGeometry.workspaceRegion, State.addr, Nat.mul_comm] using argsWorkspace
-  · rw [callee]; exact h.valid.calleeInner.sub_right temporarySub
+  · rw [callee]; exact h.valid.crtCalleeInner.sub_right temporarySub
   · rw [callee]; exact calleeSources 0
   · rw [callee]; exact calleeSources 2
   · rw [callee]; exact calleeSources 3
@@ -185,6 +185,6 @@ theorem crtCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   · rw [callee]; exact calleeSources 6
   · rw [callee]; exact calleeSources 7
   · rw [callee]; simpa only [PrivGeometry.workspaceRegion, State.addr, Nat.mul_comm] using calleeWorkspace
-  · rw [callee]; exact h.valid.calleeInner.sub_right outgoingSub
+  · rw [callee]; exact h.valid.crtCalleeInner.sub_right outgoingSub
   · simpa only [Nat.mul_comm] using h.valid.workspaceFit
 end VG.Proof.Rsa.Arm

@@ -95,7 +95,7 @@ private theorem template_ctl (mul : Nat → Nat → Nat → Prog isa) (ex : Nat 
 
 /-- The function as proven: `mont.mm` inline. -/
 def exchangeInline (v : RoundImpl) (e : ExpImpl) : Prog isa :=
-  VG.Impl.Ffdh.X86_64.Domain.Exchange.code v.mont.mm (e.code v.mont.mm)
+  VG.Impl.Ffdh.X86_64.Domain.Exchange.code v.mont.mm (e.codeI v.mont.mm)
     (.seq (.block r2Head) (R2Words.choice v.mont.mm))
 
 /-- The function as emitted: `mm`, which inlines to `exchangeInline`. -/
@@ -103,7 +103,7 @@ def exchangeCode (v : RoundImpl) (e : ExpImpl) : Prog isa :=
   VG.Impl.Ffdh.X86_64.Domain.Exchange.code v.mm (e.code v.mm) (.seq (.block r2Head) (R2Words.choice v.mm))
 
 theorem exchangeCode_inline (v : RoundImpl) (e : ExpImpl) : (exchangeCode v e).inline = exchangeInline v e := by
-  have h := template_inline v.mm (e.code v.mm) (e.code fun o a b => (v.mm o a b).inline)
+  have h := template_inline v.mm (e.code v.mm) (e.codeI fun o a b => (v.mm o a b).inline)
     (e.inline v.mm _ _ (Or.inl ⟨rfl, rfl⟩))
   simp only [v.mmInline] at h
   exact h

@@ -56,7 +56,7 @@ vg_seed_cbc_encrypt_chained:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_seed_ecb_encrypt_entry}
+	bl {vg_seed_ecb_encrypt}
 	ldr r9, [r8, #40]
 	str r9, [r6, #0]
 	ldr r9, [r8, #44]
@@ -227,7 +227,7 @@ vg_seed_cbc_decrypt_chained:
 	mov r0, r4
 	mov r1, r6
 	mov r2, #8
-	bl {vg_seed_ecb_decrypt_entry}
+	bl {vg_seed_ecb_decrypt}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
@@ -421,7 +421,7 @@ vg_seed_cbc_decrypt_chained:
 	mov r0, r4
 	mov r1, r6
 	mov r2, #4
-	bl {vg_seed_ecb_decrypt_entry}
+	bl {vg_seed_ecb_decrypt}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
@@ -535,7 +535,7 @@ vg_seed_cbc_decrypt_chained:
 	mov r0, r4
 	mov r1, r6
 	mov r2, #2
-	bl {vg_seed_ecb_decrypt_entry}
+	bl {vg_seed_ecb_decrypt}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
@@ -642,7 +642,7 @@ vg_seed_cbc_decrypt_chained:
 	mov r0, r4
 	add r1, r6, #0
 	mov r2, #1
-	bl {vg_seed_ecb_decrypt_entry}
+	bl {vg_seed_ecb_decrypt}
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #40]
 	eor r9, r9, r10

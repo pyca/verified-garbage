@@ -77,15 +77,16 @@ expansion calls nothing in its frame: as emitted
 (`Impl.Sm4.X86.Fn.expandKey`) it then clears the registers alone
 (`X86.Scrub.verifiedScrubbedWiped`). As emitted (`Impl.Sm4.X86.Fn`), each of
 the others then zeroes, of the stack its contract reserves below `esp`,
-only the 5 to 22 doublewords that the residue analysis (`X86.rtaint`) finds
+only the 10 to 22 doublewords that the residue analysis (`X86.rtaint`) finds
 it may leave different in two runs (the header of its frame and the frames
 of the calls below it), clears the registers a callee may change, and
 returns without secret residue (`X86.Scrub.verifiedScrubbedSel`, the kernel
 evaluating the analysis: `taint_decide_ct`), given that its postcondition
 reads the memory on return only within the buffers (`Proof/Sm4/Scratch.lean`,
 `CbcScratch.lean`, `FbScratch.lean`, `CtrFinal.lean` and
-`Proof/Modes/CfbFinalScratch.lean`, for any pointer width). `vg_sm4_ctr_final` calls `vg_sm4_ctr`'s code as an internal
-function of its own, `vg_sm4_ctr_core` (`Impl.Sm4.X86.ctrFramed`), and
+`Proof/Modes/CfbFinalScratch.lean`, for any pointer width). `vg_sm4_ctr_final` calls an implementation of
+`vg_sm4_ctr`'s code (`CtrFinal.CtrImpl`), which states the doublewords it zeroes with it; the baseline's
+(`CtrFinal.CtrImpl.scalar`) is an internal function of its own, `vg_sm4_ctr_core` (`Impl.Sm4.X86.ctrFramed`), and
 SM4-GCM `vg_sm4_expand_key`'s as `vg_sm4_expand_key_core`
 (`Impl.Sm4Gcm.X86.keyFn`).
 -/
@@ -153,18 +154,18 @@ theorem expandKey_scrubbed :
 /-- `Spec.Sm4.ecbEncryptApi`'s function as emitted (`Impl.Sm4.X86.Fn.ecbEncrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
-    VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbEncrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .encrypt) 1452) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.ecbEncryptApi) (W := 1452)
-    { code := withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .encrypt)
+    VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbEncrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .encrypt) 1512) 0 :=
+  verifiedScrubbedSel (api := Spec.Sm4.ecbEncryptApi) (W := 1512)
+    { code := withStackScratchWiped 1492 3 368 (Impl.Sm4.X86.ecb .encrypt)
       verified := Proof.Sm4.X86.ecb_framed .encrypt }
     Impl.Sm4.X86.Fn.ecbWords (ecbOut _ _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-- `Spec.Sm4.ecbDecryptApi`'s function as emitted (`Impl.Sm4.X86.Fn.ecbDecrypt`) meets its contract
 in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
-    VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbDecrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .decrypt) 1452) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.ecbDecryptApi) (W := 1452)
-    { code := withStackScratchWiped 1452 3 358 (Impl.Sm4.X86.ecb .decrypt)
+    VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ecbDecrypt (Spec.Sm4.ecbContract X86.abi (Proof.Sm4.specDirX86 .decrypt) 1512) 0 :=
+  verifiedScrubbedSel (api := Spec.Sm4.ecbDecryptApi) (W := 1512)
+    { code := withStackScratchWiped 1492 3 368 (Impl.Sm4.X86.ecb .decrypt)
       verified := Proof.Sm4.X86.ecb_framed .decrypt }
     Impl.Sm4.X86.Fn.ecbWords (ecbOut _ _) (by decide) ⟨_, by taint_decide_ct⟩
 
@@ -249,14 +250,44 @@ theorem ctr_scrubbed :
       verified := Proof.Sm4.X86.Ctr.ctr_framed }
     Impl.Sm4.X86.Fn.modeWords (ctrOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Sm4.ctrFinalApi`'s function as emitted (`Impl.Sm4.X86.Fn.ctrFinal`) meets its contract
-in constant time and returns without secret residue. -/
-theorem ctrFinal_scrubbed :
-    VerifiedScrubbed X86.target Impl.Sm4.X86.Fn.ctrFinal (Spec.Sm4.ctrFinalContract X86.abi 1592) 0 :=
+/-- `Spec.Sm4.ctrFinalApi`'s function as emitted (`Impl.Sm4.X86.Fn.ctrFinal`), calling the
+implementation `c` of `vg_sm4_ctr`'s code, meets its contract in constant time and returns without
+secret residue. -/
+theorem ctrFinal_scrubbed (c : CtrFinal.CtrImpl) :
+    VerifiedScrubbed X86.target (Impl.Sm4.X86.Fn.ctrFinal c.name c.code c.words)
+      (Spec.Sm4.ctrFinalContract X86.abi 1592) 0 :=
   verifiedScrubbedSel (api := Spec.Sm4.ctrFinalApi) (W := 1592)
-    { code := withStackScratchWiped 56 4 8 Impl.Sm4.X86.ctrFinal
-      verified := Proof.Sm4.X86.CtrFinal.ctrFinal_framed
-      spSafe := Proof.Sm4.X86.CtrFinal.ctrFinal_framed_spSafe }
-    Impl.Sm4.X86.Fn.ctrFinalWords (ctrFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    { code := withStackScratchWiped 56 4 8 (Impl.Sm4.X86.ctrFinal c.name c.code)
+      verified := Proof.Sm4.X86.CtrFinal.ctrFinal_framed c
+      spSafe := Proof.Sm4.X86.CtrFinal.ctrFinal_framed_spSafe c }
+    c.words (ctrFinalOut _) c.wordsOk c.residue
+
+/-- `spSafe` of the function as emitted, which its registration states. -/
+theorem ctrFinal_spSafeF (c : CtrFinal.CtrImpl) :
+    (Impl.Sm4.X86.Fn.ctrFinal c.name c.code c.words).all (fun i => !isa.writesSp i) = true :=
+  scrubSel_spSafe (Proof.Sm4.X86.CtrFinal.ctrFinal_framed_spSafe c)
 
 end VG.Proof.Sm4.X86.Scrub
+
+namespace VG.Proof.Sm4.X86.CtrFinal.CtrImpl
+
+open VG.X86 VG.X86.Scrub
+
+/-- `vg_sm4_ctr`'s code in the baseline ISA, its working space in a frame of
+its own: `vg_sm4_ctr_core`, with the doublewords `vg_sm4_ctr_final` zeroes
+calling it (`Impl.Sm4.X86.Fn.ctrFinalWords`). -/
+def scalar : CtrImpl where
+  name := "vg_sm4_ctr_core"
+  code := Impl.Sm4.X86.ctrFramed
+  ok := Proof.Sm4.X86.Ctr.ctr_framed.1
+  ct := Proof.Sm4.X86.Ctr.ctr_framed.2.1
+  nosp := ctr_nosp
+  stack := Nat.le_of_eq ctr_stack
+  spSafe := Code.all_of_spTest (by unfold Impl.Sm4.X86.ctrFramed; lit_decide)
+  suffix := ""
+  features := []
+  words := Impl.Sm4.X86.Fn.ctrFinalWords
+  wordsOk := by decide
+  residue := by exact ⟨_, by taint_decide_ct⟩
+
+end VG.Proof.Sm4.X86.CtrFinal.CtrImpl

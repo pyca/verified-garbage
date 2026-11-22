@@ -69,7 +69,7 @@ structure EPre (s : State) : Prop where
   s16 : 16 ≤ (s.gpr .esp).toNat
 
 theorem EPre.of {dir : Dir} {s : State} (h : (ecbX86 dir).pre s) : EPre s := by
-  obtain ⟨h1, h2, -, -, h5, h6, h7, h8, h9, -, h11, h12, h13, -, h15, h16, -, h18⟩ := h
+  obtain ⟨h1, h2, -, -, h5, h6, h7, h8, h9, -, h11, h12, h13, -, h15, h16, -, h18, -⟩ := h
   exact ⟨h1, h2, h5, h6, h7, h8, h9, h11, h12, h13, h15, h16, h18⟩
 
 /-- The initial taint: `esp` public, and the words holding `data` and

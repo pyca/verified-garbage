@@ -60,10 +60,9 @@ secret residue (`Arm.Scrub.verifiedScrubbedSel`, whose analysis,
 `Arm.rtaint`, the kernel evaluates here: `taint_decide_ct`), which is what
 its registration binds.
 
-The modes call ECB's code as it is verified, without the wipe, under names
-of their own (`vg_triple_des_ecb_encrypt_entry`, `Impl.TripleDes.Arm.ecbCore`),
-which the emitter writes as internal functions: the analysis of each mode
-covers the frame of that call.
+The modes call the ECB artifacts as they are emitted, cleanup included
+(`Impl.TripleDes.Arm.ecbCore`), whose theorems are in `ModeCore.lean`: the
+analysis of each mode covers the frame of that call.
 -/
 
 @[expose] public section
@@ -76,10 +75,6 @@ open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Modes.Arm
 
 theorem expandKeyOut : PostOut (Spec.TripleDes.expandKeyContract Arm.abi 512) (Spec.TripleDes.expandKeySig.retBits 32) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.TripleDes.expandKeyPostOut_local _)
-
-theorem ecbOut (d : Spec.TripleDes.Direction) :
-    PostOut (Spec.TripleDes.ecbContract Arm.abi d 1024) (Spec.TripleDes.ecbSig.retBits 32) :=
-  postOut_of_local (leak := none) ScrubAbi.plain (Proof.TripleDes.ecbPostOut_local _ d)
 
 theorem cbcEncryptOut :
     PostOut (Spec.TripleDes.cbcEncryptChainedContract Arm.abi 1088) (Spec.TripleDes.cbcChainedSig.retBits 32) :=
@@ -129,26 +124,6 @@ theorem expandKey :
       verified := Proof.TripleDes.Arm.expandKey_framed }
     Impl.TripleDes.Arm.Fn.noWords []
     Scrub.expandKeyOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
-
-/-- `vg_triple_des_ecb_encrypt`. -/
-theorem ecbEncrypt :
-    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.ecbEncrypt (Spec.TripleDes.ecbContract Arm.abi .encrypt 1024) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.ecbEncryptApi) (W := 1024)
-    { code := Impl.TripleDes.Arm.ecbCode .encrypt
-      verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Bitsliced.encrypt_verified }
-    Impl.TripleDes.Arm.Fn.noWords []
-    (Scrub.ecbOut .encrypt)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
-
-/-- `vg_triple_des_ecb_decrypt`. -/
-theorem ecbDecrypt :
-    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.ecbDecrypt (Spec.TripleDes.ecbContract Arm.abi .decrypt 1024) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.ecbDecryptApi) (W := 1024)
-    { code := Impl.TripleDes.Arm.ecbCode .decrypt
-      verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Bitsliced.decrypt_verified }
-    Impl.TripleDes.Arm.Fn.noWords []
-    (Scrub.ecbOut .decrypt)
     (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
 
 /-- `vg_triple_des_cbc_encrypt_chained`. -/

@@ -31,7 +31,7 @@ namespace VG.Impl.EcKey.X86.Fn
 open VG.X86
 
 /-- `vg_ec_brainpoolp256r1_public_key`, as emitted. -/
-def publicKeyBrainpoolP256r1 : Prog isa := Impl.Scrub.X86.scrubAll 32 20 Impl.EcKey.X86.publicKeyBrainpoolP256r1
+def publicKeyBrainpoolP256r1 : Prog isa := Impl.Scrub.X86.scrubAll 32 24 Impl.EcKey.X86.publicKeyBrainpoolP256r1
 
 /-- `vg_ec_brainpoolp256r1_compress_public_key`, as emitted. -/
 def compressBrainpoolP256r1 : Prog isa := Impl.Scrub.X86.scrubAll 32 28 (Impl.EcKey.Compressed.X86.compress Impl.Ecdsa.X86.brainpoolp256r1)

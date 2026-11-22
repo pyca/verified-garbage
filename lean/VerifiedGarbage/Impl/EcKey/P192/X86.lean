@@ -31,7 +31,7 @@ namespace VG.Impl.EcKey.X86.Fn
 open VG.X86
 
 /-- `vg_ec_p192_public_key`, as emitted. -/
-def publicKeyP192 : Prog isa := Impl.Scrub.X86.scrubAll 32 20 Impl.EcKey.X86.publicKeyP192
+def publicKeyP192 : Prog isa := Impl.Scrub.X86.scrubAll 32 24 Impl.EcKey.X86.publicKeyP192
 
 /-- `vg_ec_p192_compress_public_key`, as emitted. -/
 def compressP192 : Prog isa := Impl.Scrub.X86.scrubAll 32 28 (Impl.EcKey.Compressed.X86.compress Impl.Ecdsa.X86.p192)

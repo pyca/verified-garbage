@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp7
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont2
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont9
 import VerifiedGarbage.Proof.Framework.Omega
@@ -73,13 +74,13 @@ theorem key_lt_R {σ : State} (pre : In P σ) {x : Nat} (hx : x < cv P σ) : x <
   have : 2 ^ (64 * P.w) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by have := pre.W_eq; omega_using [this])
   omega_arith
 
-theorem montB_vp : VP (fun σ s => SX P E σ s ∧ MS P σ s) montB (SM P E) := by
+theorem montB_vp (A : CallOp) : VP (fun σ s => SX P E σ s ∧ MS P σ s) (montB A.op) (SM P E) := by
   simp only [montB, seqs]
   refine VP.seq (VP.withMS (St.pcopy (E := E) (A := AX P) (L := LX) (V := V3 P) (LS := [sUsed]) copy1One_taint
     (by decide) (by simp) (by decide)) (fun σ s h => h.inSp)
     (copy_keepM (by decide) (by simp) (by decide) (by decide))) ?_
   refine VP.seq St.pmont0 ?_
-  refine VP.seq ((St.pmontOp (o := 1) (a := 1) (b := 4) (L' := LX) ⟨by decide, by decide, by decide⟩
+  refine VP.seq ((St.pmontOp A (o := 1) (a := 1) (b := 4) (L' := LX) ⟨by decide, by decide, by decide⟩
     ⟨by decide, by decide, by decide⟩ ⟨by decide, by decide, by decide⟩ (by decide) (by decide) (na := fun _ => 1) (nb := r2v P) (fun σ s h m => ⟨?_, m.r2⟩) (fun σ e pre => ?_)
     (fun j hj => ⟨by mem_sub, by mem_sub, by mem_sub, by mem_sub⟩)).mono (fun _ _ h => h)
     fun σ s ⟨k, m, lt, val⟩ => (⟨k, m, by

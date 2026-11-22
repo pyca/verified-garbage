@@ -75,6 +75,8 @@ import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalLit
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
 
 /-!
 # Triple DES on AArch64 returns without secret residue

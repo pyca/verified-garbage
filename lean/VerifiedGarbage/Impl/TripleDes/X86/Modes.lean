@@ -88,7 +88,7 @@ be enciphered independently (`Impl/Modes/X86/Wide.lean`): CBC and CFB64
 decryption. Its slots: the function's working space (slots 0 to 195, with
 the buffer's 32 blocks from slot 132 on) and the copy of the schedule
 (slots 196 to 291). `crypt` passes the working space, `sb` itself, and the
-copy to the function, pushed as its arguments, with 12 bytes of stack; the
+copy to the function, pushed as its arguments, with 16 bytes of stack; the
 function stores only through the working space's address, at fixed
 offsets, so the analysis of constant time keeps what the modes' slots
 hold. 302 slots in all, with the modes' (`[u64; 151]`).

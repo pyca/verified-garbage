@@ -230,62 +230,6 @@ theorem consts_ok {s : State} (hc : Ctx b s) :
   · exact hr3.trans ((hr8.mono (by decide)).trans ((r9.mono (by decide)).trans ((r10.mono (by decide)).trans
       (r11.mono (by decide)))))
 
-/-- The base point's u-coordinate, 5, as limbs. -/
-abbrev fiveLimb (k : Nat) : Nat := if k = 0 then 5 else 0
-
-theorem five_ok {s : State} (hc : Ctx b s) :
-    WP isa (.block five) s fun s' =>
-      (∀ k < 14, limb s'.mem b X1 k = fiveLimb k ∧ limb s'.mem b X3 k = fiveLimb k) ∧
-      Frame [⟨b + BitVec.ofNat 64 X1, 224⟩] s.mem s'.mem ∧ Rest [.r7, .r8] s s' := by
-  have hX1 : X1 = 0 := rfl
-  have hX3 : X3 = 168 := rfl
-  simp only [five, List.cons_append, List.nil_append]
-  refine wp_li (by decide) fun s1 u1 => wp_li (by decide) fun s2 u2 => ?_
-  have hr2 : Rest [.r7, .r8] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
-  have hc2 : Ctx b s2 := hc.of_rest hr2 (by decide)
-  have g4 : (s2.gpr .r7).setWidth 32 = 5 := by rw [u2.other _ (by decide), u1.gpr]; rfl
-  have g5 : s2.gpr .r8 = 0 := by rw [u2.gpr]; rfl
-  refine sw0_ok hc2 (d := X1) (by omega_arith) fun s3 u3 => ?_
-  refine sw0_ok (hc2.of_rest (u3.rest []) (by decide)) (d := X3) (by omega_arith) fun s4 u4 => ?_
-  have hr4 : Rest [] s2 s4 := (u3.rest []).trans (u4.rest [])
-  have hc4 : Ctx b s4 := hc2.of_rest hr4 (by decide)
-  have hg4 : ∀ r, s4.gpr r = s2.gpr r := fun r => hr4.gpr r (by simp)
-  have hm4 : s4.mem = (s2.mem.writeW (b + BitVec.ofNat 64 X1) ((s2.gpr .r7).setWidth 32)).writeW
-      (b + BitVec.ofNat 64 X3) ((s2.gpr .r7).setWidth 32) := by
-    rw [u4.mem, u3.gpr, u3.mem]
-  refine WP.append (stores_ok (r := .r8) (o := X1 + 4) (n := 13) (by omega_arith) hc4)
-    fun s5 ⟨w5, f5, g5', r5⟩ => ?_
-  have hc5 : Ctx b s5 := hc4.of_rest r5 (by decide)
-  refine WP.mono (stores_ok (r := .r8) (o := X3 + 4) (n := 13) (by omega_arith) hc5)
-    fun s6 ⟨w6, f6, _, r6⟩ => ?_
-  have e5 : (s4.gpr .r8).toNat % 2 ^ 32 = 0 := by rw [hg4, g5]; rfl
-  have e6 : (s5.gpr .r8).toNat % 2 ^ 32 = 0 := by rw [g5', hg4, g5]; rfl
-  refine ⟨fun k hk => ⟨?_, ?_⟩, ?_, ?_⟩
-  · rcases Nat.eq_zero_or_pos k with rfl | hk0
-    · rw [limb, Nat.mul_zero, Nat.add_zero, wd_keep f6 (by omega_arith) (by omega_arith) (by omega_arith),
-        wd_keep f5 (by omega_arith) (by omega_arith) (by omega_arith), hm4,
-        wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), wd_write_self, g4]; rfl
-    · rw [limb, wd_keep f6 (by omega_arith) (by omega_arith) (by omega_arith),
-        show X1 + 4 * k = X1 + 4 + 4 * (k - 1) by omega_arith, w5 (k - 1) (by omega_arith), e5]
-      simp only [fiveLimb, show k ≠ 0 by omega_arith, ite_false]
-  · rcases Nat.eq_zero_or_pos k with rfl | hk0
-    · rw [limb, Nat.mul_zero, Nat.add_zero, wd_keep f6 (by omega_arith) (by omega_arith) (by omega_arith),
-        wd_keep f5 (by omega_arith) (by omega_arith) (by omega_arith), hm4, wd_write_self, g4]; rfl
-    · rw [limb, show X3 + 4 * k = X3 + 4 + 4 * (k - 1) by omega_arith, w6 (k - 1) (by omega_arith), e6]
-      simp only [fiveLimb, show k ≠ 0 by omega_arith, ite_false]
-  · have m1 : (⟨b + BitVec.ofNat 64 X1, 224⟩ : Region) ∈ [(⟨b + BitVec.ofNat 64 X1, 224⟩ : Region)] :=
-      List.mem_singleton_self _
-    have f4 : Frame [⟨b + BitVec.ofNat 64 X1, 224⟩] s.mem s4.mem := by
-      rw [hm4, u2.mem, u1.mem]
-      exact ((Frame.refl _ _).writeW m1 _ (Offset.contains _ (d := X1) (n := 32 / 8) (by omega_arith)
-        (by omega_arith) (by omega_arith))).writeW m1 _ (Offset.contains _ (d := X3) (n := 32 / 8)
-        (by omega_arith) (by omega_arith) (by omega_arith))
-    exact f4.trans ((f5.sub fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact ⟨_, m1, Offset.sub b (by omega_arith) (by omega_arith)⟩).trans
-      (f6.sub fun r hr => by
-        rw [List.mem_singleton.mp hr]; exact ⟨_, m1, Offset.sub b (by omega_arith) (by omega_arith)⟩))
-  · exact hr2.trans ((hr4.mono (by decide)).trans ((r5.mono (by decide)).trans (r6.mono (by decide))))
-
 end
 
 /-! ## The whole setup -/
@@ -312,7 +256,7 @@ theorem slot_of {m : Mem} {B : Addr} {o : Nat} {f : Nat → Nat} (h : ∀ k < 14
     FS m B o = toFe (val32 f 14) := by rw [FS, V, val32_congr h]
 
 /-- The setup after the code that writes the u-coordinate's limbs `f` into `X1`
-and `X3` (`decode` or `five`): `consts`, and the ladder's initial state for
+and `X3` (`decode`): `consts`, and the ladder's initial state for
 `u = f`. -/
 theorem consts_post {s s4 : State} {f : Nat → Nat} (hc : Ctx (s.gpr .r6) s)
     (hl4 : ∀ k < 14, limb s4.mem (s.gpr .r6) X1 k = f k ∧ limb s4.mem (s.gpr .r6) X3 k = f k)
@@ -376,23 +320,6 @@ theorem setup_ok {s : State} (hp : XPre s) :
   have e : toFe (val32 (uLimb s.mem (s.gpr .r5)) 14) = uOf s := by rw [decode_val]; rfl
   rw [← e]
   exact consts_post hc hl4 hf4 (hr4.mono (by decide))
-
-theorem val32_five :
-    toFe (val32 fiveLimb 14) = toFe (VG.Spec.X448.decodeUCoordinate VG.Spec.X448.basePoint) := by
-  rw [val32_single _ (by decide), VG.Proof.X448.decodeUCoordinate_eq (by rfl)]; rfl
-
-/-- `setupBase`: the ladder's initial state for the base point. -/
-theorem setupBase_ok {s : State} (hws : (⟨s.gpr .r6, 8192⟩ : Region) ∈ s.wr) :
-    WP isa (.block setupBase) s fun s' =>
-      Ctx (s.gpr .r6) s' ∧ Frame [⟨s.gpr .r6, 8192⟩] s.mem s'.mem ∧
-      SlotsOk s'.mem (s.gpr .r6) LQ (ladV (toFe (VG.Spec.X448.decodeUCoordinate VG.Spec.X448.basePoint))
-        (VG.Proof.X448.init (toFe (VG.Spec.X448.decodeUCoordinate VG.Spec.X448.basePoint)))) ∧
-      Rest [.r5, .r7, .r8] s s' := by
-  have hc : Ctx (s.gpr .r6) s := ⟨rfl, 8192, by decide, hws⟩
-  unfold setupBase
-  refine WP.append (five_ok hc) fun s4 ⟨hl4, hf4, hr4⟩ => ?_
-  rw [← val32_five]
-  exact consts_post hc hl4 hf4 hr4
 
 end VG.Proof.X448.PPC64LE
 

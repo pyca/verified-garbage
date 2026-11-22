@@ -27,7 +27,7 @@ open VG.X86
 
 /-- `vg_ecdsa_brainpoolp256r1_verify`, as emitted. -/
 def verifyBrainpoolP256r1 : Prog isa :=
-  Impl.Scrub.X86.scrubAll 32 128
+  Impl.Scrub.X86.scrubAll 32 132
     (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false (Impl.Ecdsa.Verify.X86.verifyBrainpoolP256r1))
 
 /-- `vg_ecdsa_brainpoolp256r1_sign`, as emitted, with `f` the functions its table's calls may reach. -/

@@ -20,7 +20,7 @@
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified; the caller may reuse or destroy them.
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
-/// * None of `public`, `digest`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `public`, `digest`, `sig` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdsa_brainpoolp384r1_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, public: *const [u8; 97], digest: *const u8, digest_len: usize, sig: *const [u8; 96], scratch: *mut [u64; 1024]) -> u32 {

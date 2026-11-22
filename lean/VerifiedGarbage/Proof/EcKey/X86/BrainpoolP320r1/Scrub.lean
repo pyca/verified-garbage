@@ -34,7 +34,7 @@ theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) :
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP320r1.publicKeyApi)
     { code := Impl.EcKey.X86.publicKeyBrainpoolP320r1
       verified := Proof.EcKey.X86.BrainpoolP320r1.pk_verified hL }
-    (publicKeyOut Spec.EcKey.BrainpoolP320r1.inst 20 Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts)
+    (publicKeyOut Spec.EcKey.BrainpoolP320r1.inst 24 Impl.Ecdsa.X86.brainpoolp320r1Comb.combConsts)
 
 /-- `vg_ec_brainpoolp320r1_compress_public_key`. -/
 theorem compress_scrubbed :

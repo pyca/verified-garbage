@@ -40,7 +40,7 @@ code uses.
   sixteen rounds, eight times both, ends by exchanging the halves, as DES's
   swap and the next pass's IP do.
 * The three passes are unrolled, each with its schedule component and key
-  direction.
+  direction, in a function of their own (`passesCall`).
 * The state is transposed back and the blocks copied out; the data pointer
   `r1` and the blocks left `r2` advance.
 
@@ -353,6 +353,25 @@ def passes : Direction → Prog isa
   | .encrypt => .seq (pass 0 .encrypt) (.seq (pass 1 .decrypt) (pass 2 .encrypt))
   | .decrypt => .seq (pass 2 .decrypt) (.seq (pass 1 .encrypt) (pass 0 .decrypt))
 
+/-- The word of the working space that keeps the return address of the
+passes as a function: word 6, a word of the spills that the circuits do not
+use (`Proof/TripleDes/Arm/Bitsliced/Pass.lean`, `keepsLr`, checks that no
+instruction of the passes stores to it). -/
+def lrOff : Nat := 24
+
+/-- `vg_triple_des_passes_encrypt` and `vg_triple_des_passes_decrypt`: the
+three passes, which every bitsliced function of the direction calls, so that
+their code is in the crate once. -/
+def passesFn (d : Direction) : Prog isa :=
+  .seq (.block [.str .lr base lrOff]) (.seq (passes d) (.block [.ldr .lr base lrOff]))
+
+def passesName : Direction → String
+  | .encrypt => "vg_triple_des_passes_encrypt"
+  | .decrypt => "vg_triple_des_passes_decrypt"
+
+/-- A call of the passes. -/
+def passesCall (d : Direction) : Prog isa := .call (passesName d) (passesFn d)
+
 /-! ## Transposition -/
 
 /-- The bits `p` with `p &&& s = 0`. -/
@@ -430,7 +449,7 @@ def advance : List Instr := [.dp .add .r1 .r1 (.shifted .r12 .lsl 3), .subs .r2 
 /-- One batch: the next `min(n, 32)` blocks into the state words, through
 the three passes, and back; then the next blocks. -/
 def batch (d : Direction) : Prog isa :=
-  .seq batchCount (.seq copyIn (.seq (.block stash) (.seq (.block transpose) (.seq (passes d)
+  .seq batchCount (.seq copyIn (.seq (.block stash) (.seq (.block transpose) (.seq (passesCall d)
     (.seq (.block transpose) (.seq (.block unstash) (.seq copyOut (.block advance))))))))
 
 /-! ## The function -/

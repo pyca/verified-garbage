@@ -135,7 +135,7 @@ theorem post_of {s s' : State} (h : EPost p192 s s') : ecdhX86.post s s' := by
   rcases q with _ | z <;> exact id
 
 /-- No instruction writes `esp`, and the calls use 28 bytes of stack. -/
-theorem ecdh_sp : SpOk exchangeP192 p192.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
+theorem ecdh_sp : SpOk exchangeP192 24 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P192.curve) (s : State) (hs : ecdhX86.pre s) :
     ∃ t s', Exec isa exchangeP192 s t s' ∧ abiPreserved s s' ∧ ecdhX86.post s s' := by

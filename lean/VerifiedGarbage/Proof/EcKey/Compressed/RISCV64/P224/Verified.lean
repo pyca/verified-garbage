@@ -714,7 +714,7 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s s₆ s₇ : State} (hs : DP
     rw [U₆₁₀.word (by decide) (by decide), F.par, par_bit]
   obtain cx₁₀ : sv (s.gpr .a2) s₁₀ CX = ofBytes (bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 28) := by
     show wordsVal _ _ _ _ = _; rw [sv_unch U₆₁₀ CX (by decide)]; exact F.x
-  obtain K₆₁₀ : Ks [.s4, .s5, .s6] s₆ s₁₀ :=
+  obtain K₆₁₀ : Ks [.s1, .s4, .s5, .s6] s₆ s₁₀ :=
     D.ks.trans (K₈.mono.trans ((Ks.of_rest r₉).trans (Ks.of_kp K₁₀)))
   obtain h2₁₀ : s₁₀.gpr .s2 = s.gpr .a0 := by rw [K₆₁₀.gpr _ (by decide) (by decide), F.s2]
   obtain wr₁₀ : s₁₀.wr = s.wr := by rw [K₆₁₀.wr, F.wr]
@@ -743,7 +743,7 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s s₆ s₇ : State} (hs : DP
     · subst h5; rw [K₁₀.gpr _ (by decide), g5, ← m₉, w9 48 (by decide), F.sv6]
     by_cases h6 : r = .s6
     · subst h6; rw [K₁₀.gpr _ (by decide), g6, ← m₉, w9 56 (by decide), F.sv7]
-    rw [K₆₁₀.gpr r hr (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h4, h5, h6⟩),
+    rw [K₆₁₀.gpr r hr (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h1, h4, h5, h6⟩),
       F.regs r hr h0 h1 h2' h3' h4 h5]
   -- The values.
   rw [cx₁₀] at b'
@@ -1041,14 +1041,14 @@ theorem front_rel : RelCT isa (Two Φ0) front224 (Two (Φd 0)) :=
 
 /-! The constant-time analyses of the calls of the field's product and difference from their
 arguments, each done once for the checks of the 24 digits (`taint_decide_sum`), every one of which
-calls the second and all but the first the first; they keep what is public of `s0` and
+calls the second and all but the first the first; they keep what is public of `s0`, `s1` and
 `s4`–`s6`, which the functions do not write. -/
 taint_summary sqrtMulSum : (taintSym [sqrtSym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
   (.call (Impl.Ecdsa.RISCV64.p224Field.S.fn "mul") Impl.Ecdsa.RISCV64.p224Field.mulA)
-  keeping (Taint.ofRegs [.s0, .s4, .s5, .s6])
+  keeping (Taint.ofRegs [.s0, .s1, .s4, .s5, .s6])
 taint_summary sqrtSubSum : (taintSym [sqrtSym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
   (.call (Impl.Ecdsa.RISCV64.p224Field.S.fn "sub") Impl.Ecdsa.RISCV64.p224Field.subA)
-  keeping (Taint.ofRegs [.s0, .s4, .s5, .s6])
+  keeping (Taint.ofRegs [.s0, .s1, .s4, .s5, .s6])
 
 /-- Each digit is checked by the taint analysis from the registers of the digits. -/
 theorem digit_ct (j : Nat) (hj : j < 24) :

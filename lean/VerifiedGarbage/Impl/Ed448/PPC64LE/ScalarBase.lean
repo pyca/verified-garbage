@@ -24,7 +24,7 @@ apart. The table's sixteen entries (`Impl/Ed448/Comb.lean`) are built once
 at `CTAB`, past the field slots (`tabBuild`), and every row reads all of them
 (`combSelect`). The scalar's bits are expanded into bytes at X448's `BITS`
 (byte `t` is bit `t`), as X448 expands its scalar. Finally `R` is encoded
-(§5.2.2): `Z` inverted (X448's `invert`, `Z` being in its slot `Z2`),
+(§5.2.2): `Z` inverted (a call of X448's `vg_x448_invert`, `Z` being in its slot `Z2`),
 `x = X/Z` fully reduced into `out` for its low bit, then `y = Y/Z`, and the
 bit as the top bit of the 57th byte.
 
@@ -34,7 +34,7 @@ equation (`VerifyEquation.lean`), whose loop runs RFC 8032's addition
 
 The function writes only volatile registers, the link register and `r14`,
 which it loads back before it returns; it calls the two functions of the
-comb's point operations (below). The only branches are on the loop counters, and
+comb's point operations (below) and X448's inversion. The only branches are on the loop counters, and
 every address is a pointer plus a constant or a counter, so only the
 pointers can affect timing.
 -/
@@ -44,7 +44,7 @@ pointers can affect timing.
 namespace VG.Impl.Ed448.PPC64LE
 
 open VG.PPC64LE
-open VG.Impl.X448.PPC64LE (mul add sub cswap invert freeze bitsBody BITS R X2 Z2 slotsOf stdsAt ldsAt nvR)
+open VG.Impl.X448.PPC64LE (mul add sub cswap invertCall freeze bitsBody BITS R X2 Z2 slotsOf stdsAt ldsAt nvR)
 
 /-! ## The slots -/
 
@@ -104,13 +104,20 @@ def addition : Prog isa :=
   .seq (.block (sub TH TH TD)) <| .seq (mul TX TX TH) <| .seq (mul TY TA TG) <|
   .seq (.block (sub TH TD TC)) <| .seq (mul TY TY TH) (mul TZ TF TG)
 
+/-- The return address and the caller's `r14`, while the loop runs: past the table. -/
+def LRS : Nat := 3840
+def R14S : Nat := 3848
+/-- The caller's `r15`–`r31`, which the multiplication uses. -/
+def SNV : Nat := 3856
+
 /-! ## The encoding -/
 
-/-- `1/Z` into `R`; `x = X/Z` fully reduced into `out`, and its low bit as
-bit 7 of `r12`; `y = Y/Z` fully reduced into `out`, and the bit as the top
-bit of its 57th byte. -/
+/-- `1/Z` into `R` (a call of X448's inversion, after which the return
+address comes back from `LRS`); `x = X/Z` fully reduced into `out`, and its
+low bit as bit 7 of `r12`; `y = Y/Z` fully reduced into `out`, and the bit as
+the top bit of its 57th byte. -/
 def baseEncode : Prog isa :=
-  .seq invert <| .seq (mul X2 RX R) <|
+  .seq invertCall <| .seq (.block [.load .d .r7 .r6 LRS, .mtlr .r7]) <| .seq (mul X2 RX R) <|
   .seq (.block (freeze ++ [.lbz .r12 .r3 0, .li .r9 1, .logic .and .r12 .r12 .r9, .lsl .r12 .r12 7])) <|
   .seq (mul X2 RY R) (.block (freeze ++ [.stb .r12 .r3 56]))
 
@@ -152,12 +159,6 @@ def U8 : Nat := 784
 
 /-- The table: entry `i`'s `x` at `CTAB + 112 i`, its `y` at `CTAB + 112 i + 56`. -/
 def CTAB : Nat := 2048
-
-/-- The return address and the caller's `r14`, while the loop runs: past the table. -/
-def LRS : Nat := 3840
-def R14S : Nat := 3848
-/-- The caller's `r15`–`r31`, which the multiplication uses. -/
-def SNV : Nat := 3856
 
 /-- A field operation of X448's. -/
 inductive COp where

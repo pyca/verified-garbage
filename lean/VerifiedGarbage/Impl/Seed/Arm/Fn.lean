@@ -37,11 +37,8 @@ def wideWords : List Nat := List.range' 220 2
 def expandKey : Prog isa :=
   scrubSel 0 752 noWords (Impl.StackScratch.Arm.withRegScratchWiped 752 .r2 188 Impl.Seed.Arm.expandKey)
 
-/-- `vg_seed_ecb_encrypt`. -/
-def ecbEncrypt : Prog isa := scrubSel 0 752 noWords (Impl.Seed.Arm.ecbCode .encrypt)
-
-/-- `vg_seed_ecb_decrypt`. -/
-def ecbDecrypt : Prog isa := scrubSel 0 752 noWords (Impl.Seed.Arm.ecbCode .decrypt)
+-- `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt` (`ecbEncrypt`, `ecbDecrypt`,
+-- with no word) are in `Modes.lean`, as the modes call them.
 
 /-- `vg_seed_cbc_encrypt_chained`. -/
 def cbcEncrypt : Prog isa :=

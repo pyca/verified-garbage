@@ -322,16 +322,26 @@ theorem exponentiate_relCT (n expWords : Nat) :
 
 /-! ## A product of two powers -/
 
+theorem mulC_eraseOff (n o a b : Nat) :
+    Code.eraseOff (mulC umaal n o a b) = Code.eraseOff (mulC umaal 1 0 0 0) := by
+  simp only [mulC, mulFn, Code.eraseOff, ptr, List.map_cons, List.map_nil, Instr.eraseOff, copyOut_eraseOff,
+    mul_eraseOff]
+
+theorem mulC_check :
+    ∃ h, (VG.Taint.check taintU (wsT false false) (mulC umaal 1 0 0 0) h).map (taintU.le (wsT false false)) =
+      some true := by
+  cases umaal <;> exact ⟨_, by taint_decide⟩
+
 theorem tableFill_check (n : Nat) : ∀ ops : List (Nat × Nat × Nat),
     ∃ h, (VG.Taint.check taintU (wsT false false) (tableFill umaal n ops) h).map (taintU.le (wsT false false)) =
       some true
   | [] => ⟨.block [], rfl⟩
   | (k, a, b) :: r => by
-    obtain ⟨h₁, H₁⟩ := mul_check (umaal := umaal) false false
+    obtain ⟨h₁, H₁⟩ := mulC_check (umaal := umaal)
     obtain ⟨h₂, H₂⟩ := tableFill_check n r
     refine ⟨.seq (wsT false false) h₁ h₂, ?_⟩
     rw [tableFill]
-    exact check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁) H₂
+    exact check_seq_of (check_erased_map (mulC_eraseOff ..) (wsT_noBase _ _) H₁) H₂
 
 /-- The taint of a two-bit shift: the exponent's address in `r1` public too. -/
 def shiftT2 : taintU.T := Taint.ofRegs (.r1 :: wsRegs false true)
@@ -389,18 +399,19 @@ theorem exponentiate2_relCT (n expWords : Nat) :
     RelCT isa (VG.Arm.Taint.Agree (wsT false false)) (exponentiate2 umaal n expWords)
       (VG.Arm.Taint.Agree (wsT false false)) := by
   obtain ⟨h₁, H₁⟩ := mul_check (umaal := umaal) false false
+  obtain ⟨h₀, H₀⟩ := mulC_check (umaal := umaal)
   obtain ⟨h₂, H₂⟩ := tableFill_check (umaal := umaal) n tableOps
   obtain ⟨h₃, H₃⟩ := windowStep2_check (umaal := umaal) n expWords
   obtain ⟨h₄, H₄⟩ : ∃ h, (VG.Taint.check taintU (wsT false true) (mul umaal eraseMod 0 0 0 0 0) h).map
       (taintU.le (wsT false false)) = some true := by cases umaal <;> exact ⟨_, by taint_decide⟩
   refine relCT_of_check (h := .seq (wsT false false)
-    (.seq (wsT false false) h₁ (.seq (wsT false false) h₁ (.seq (wsT false false) h₁ h₂)))
+    (.seq (wsT false false) h₀ (.seq (wsT false false) h₀ (.seq (wsT false false) h₀ h₂)))
     (.seq (wsT false false) h₁ (.seq (wsT false true) (.block [])
       (.seq (wsT false true) (.loop (wsT false true) h₃) h₄)))) ?_
   unfold exponentiate2 table2
-  refine check_seq_of (check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁)
-    (check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁)
-      (check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁) H₂))) ?_
+  refine check_seq_of (check_seq_of (check_erased_map (mulC_eraseOff ..) (wsT_noBase _ _) H₀)
+    (check_seq_of (check_erased_map (mulC_eraseOff ..) (wsT_noBase _ _) H₀)
+      (check_seq_of (check_erased_map (mulC_eraseOff ..) (wsT_noBase _ _) H₀) H₂))) ?_
   refine check_seq_of (check_erased_map (mul_eraseOff ..) (wsT_noBase _ _) H₁) ?_
   refine check_seq_of (check_erased_map (c₀ := .block [.movw .lr 0]) rfl (wsT_noBase _ _) rfl) ?_
   refine check_seq_of (check_loop_of rfl H₃) ?_

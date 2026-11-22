@@ -10,6 +10,12 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
+meta import VerifiedGarbage.Proof.Framework.Arm.Reduce
+import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.Machine
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
@@ -933,5 +939,157 @@ theorem passes_ok (d : Direction) {s : State} (h : Room s) {Sb : BitVec 32} (hs 
     simp only [tdeaW]
     exact VG.Proof.TripleDes.Bitslice.passW_congr _ _
       (fun y hy => by rw [w₂ y hy]; exact VG.Proof.TripleDes.Bitslice.passW_congr _ _ w₁ y hy) x hx
+
+
+/-! ## The passes as a function
+
+`passesCall_ok`: a call of `vg_triple_des_passes_encrypt` or
+`vg_triple_des_passes_decrypt` does what the passes do (`passes_ok`). The
+function keeps its return address in word 6 of the working space, a word of
+the spills that no instruction of the passes stores to or that writes `r3`
+(`keepsLr`, checked of every instruction by evaluation), so that the passes
+keep it (`exec_keepsLrWord`) whatever their loops. -/
+
+/-- `i` stores only words of the working space other than word 6, and does
+not write `r3`. -/
+def keepsLr : Instr → Bool
+  | .str _ n d => n == .r3 && d % 4 == 0 && d / 4 != 6 && decide (d < 1024)
+  | .strb .. | .push _ | .pop .. | .alloc _ | .free _ => false
+  | i => !clobbers i .r3
+
+theorem keepsLr_r3 {i : Instr} (hi : keepsLr i = true) : clobbers i .r3 = false := by
+  cases i <;> simp_all [keepsLr, clobbers, dstOf]
+
+theorem exec_mem_of_noStore {i : Instr} {s s' : State} (h : exec i s = some s')
+    (hi : ∀ t n off, i ≠ .str t n off) (hb : ∀ t n off, i ≠ .strb t n off) : s'.mem = s.mem := by
+  cases i with
+  | str t n off => exact absurd rfl (hi t n off)
+  | strb t n off => exact absurd rfl (hb t n off)
+  | _ =>
+    simp only [reduceExec, State.load32, State.load8, Option.map_eq_some_iff] at h
+    (repeat' split at h) <;>
+    (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
+    first
+    | (subst h; rfl)
+    | (obtain ⟨_, _, rfl⟩ := h; rfl)
+    | (cases h)
+
+theorem exec_keepsLr {i : Instr} {s s' : State} (hi : keepsLr i = true)
+    (hfit : (s.gpr .r3).toNat + 1024 ≤ 2 ^ 32) (h : exec i s = some s') : fw s' 6 = fw s 6 := by
+  cases i with
+  | str t n d =>
+    simp only [keepsLr, Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq, decide_eq_true_eq] at hi
+    obtain ⟨⟨⟨rfl, h4⟩, h6⟩, hd⟩ := hi
+    obtain ⟨k, rfl⟩ : ∃ k, d = 4 * k := ⟨d / 4, by omega_using [h4]⟩
+    simp only [reduceExec, State.store32] at h
+    split at h <;> [skip; cases h]
+    split at h <;> [skip; cases h]
+    simp only [Option.some.injEq] at h; subst h
+    show (s.mem.writeW (wordAddr (s.gpr .r3) k) _).readW (wordAddr (s.gpr .r3) 6) 32 = _
+    exact Mem.readW_writeW_sep (w := 32) (w' := 32)
+      (VG.Arm.Straight.slot_sep _ (by omega_using [hfit]) (by omega_using [hfit, hd]) (by omega_using [h6])) (by decide)
+  | _ =>
+    first
+    | (simp [keepsLr] at hi; done)
+    | (simp only [fw, exec_gpr (keepsLr_r3 hi) h,
+        exec_mem_of_noStore h (fun _ _ _ e => nomatch e) (fun _ _ _ e => nomatch e)])
+
+/-- What the passes keep: `r3`, and word 6 where the working space fits. -/
+def lrGet (s : State) : BitVec 32 × BitVec 32 :=
+  (s.gpr .r3, if (s.gpr .r3).toNat + 1024 ≤ 2 ^ 32 then fw s 6 else 0)
+
+/-- Code every instruction of which `keepsLr` accepts, without calls, keeps
+`r3` and word 6. -/
+theorem exec_keepsLrWord {c : Prog isa} (hc : ∀ i ∈ instrs c, keepsLr i = true) (hn : c.noCalls = true)
+    {s s' : State} {t : List Leak} (h : Exec isa c s t s') (hfit : (s.gpr .r3).toNat + 1024 ≤ 2 ^ 32) :
+    fw s' 6 = fw s 6 := by
+  have e := Exec.keep lrGet (ok := fun i => keepsLr i = true)
+    (fun {i s s'} hi he => by
+      have h3 : s'.gpr .r3 = s.gpr .r3 := exec_gpr (keepsLr_r3 hi) he
+      unfold lrGet
+      rw [h3]
+      split
+      · rename_i hf; rw [exec_keepsLr hi hf he]
+      · rfl)
+    (fun {_ j _ _ _ _} hj _ hq _ => by
+      change pop j _ _ = some _ at hq
+      cases j <;> simp [keepsLr, pop] at hj hq) hc (.inl hn) h
+  have e1 := congrArg Prod.fst e
+  have e2 := congrArg Prod.snd e
+  simp only [lrGet] at e1 e2
+  rw [e1] at e2
+  simp only [hfit, ↓reduceIte] at e2
+  exact e2
+
+theorem tdeaW_congrA (K : Spec.TripleDes.Schedule) (d : Direction) {W W' : Nat → BitVec 32}
+    (hW : ∀ y < 64, W y = W' y) : ∀ x < 64, tdeaW K d W x = tdeaW K d W' x := by
+  intro x hx
+  cases d <;> simp only [tdeaW] <;>
+  refine VG.Proof.TripleDes.Bitslice.passW_congr _ _ (fun y hy => ?_) x hx
+  all_goals
+    refine VG.Proof.TripleDes.Bitslice.passW_congr _ _ (fun y hy => ?_) y hy
+    exact VG.Proof.TripleDes.Bitslice.passW_congr _ _ hW y hy
+
+theorem passes_lr (d : Direction) : (instrs (passes d)).all keepsLr = true := by
+  cases d <;> lit_decide
+
+theorem passes_noCalls (d : Direction) : (passes d).noCalls = true := by
+  cases d <;> lit_decide
+
+/-- The passes, as a function: as `passes_ok`, and `lr` back. -/
+theorem passesFn_ok (d : Direction) {s : State} (h : Room s) {Sb : BitVec 32} (hs : Sched s Sb)
+    (hS : fw s 76 = Sb) :
+    WP isa (passesFn d) s fun s' =>
+      ((∀ x < 64, words s' x = tdeaW (scheduleAt s.mem (State.addr Sb)) d (words s) x) ∧
+      s'.gpr .r3 = s.gpr .r3 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      Frame [headR s 76] s.mem s'.mem) ∧ s'.gpr .lr = s.gpr .lr := by
+  unfold passesFn
+  apply WP.seq
+  refine WP.of_runBlock ⟨stFw s 6 (s.gpr .lr), ?_, ?_⟩
+  · rw [runBlock_cons, show base = .r3 from rfl, exec_strFw h (off := lrOff) 6 rfl (by decide), runStep_some, runBlock_nil]
+  have h₁ : Room (stFw s 6 (s.gpr .lr)) := h.stFw _ _
+  have f₁ : Frame [headR s 76] s.mem (stFw s 6 (s.gpr .lr)).mem := stFw_frame h (by decide) (by decide) _
+  have hS₁ : fw (stFw s 6 (s.gpr .lr)) 76 = Sb := by
+    rw [fw_stFw h (by decide) (by decide), ite_eq_right (by decide), hS]
+  have hl₁ : fw (stFw s 6 (s.gpr .lr)) 6 = s.gpr .lr := by
+    rw [fw_stFw h (by decide) (by decide), ite_eq_left rfl]
+  have ws₁ : ∀ y < 64, words (stFw s 6 (s.gpr .lr)) y = words s y := fun y hy => by
+    simp only [words]
+    rw [fw_stFw h (by decide) (by unfold spills; omega_using [hy]), ite_eq_right (by unfold spills; omega_using [])]
+  apply WP.seq
+  obtain ⟨tr, s₂, he, ⟨w₂, r3₂, rd₂, wr₂, sp₂, f₂⟩⟩ := passes_ok d h₁ (hs.congr rfl rfl) hS₁
+  have l₂ : fw s₂ 6 = fw (stFw s 6 (s.gpr .lr)) 6 :=
+    exec_keepsLrWord (List.all_eq_true.mp (passes_lr d)) (passes_noCalls d) he h₁.fit
+  refine ⟨tr, s₂, he, ?_⟩
+  have h₂ : Room s₂ := h₁.congr r3₂ wr₂
+  refine WP.of_runBlock ⟨s₂.setReg .lr (fw s₂ 6), ?_, ⟨fun x hx => ?_, ?_, rd₂, wr₂, sp₂, ?_⟩, ?_⟩
+  · rw [runBlock_cons, show base = .r3 from rfl, exec_ldrFw h₂ (off := lrOff) 6 rfl (by decide), runStep_some, runBlock_nil]
+  · simp only [words]
+    rw [fw_setReg _ (by decide)]
+    show words s₂ x = _
+    rw [w₂ x hx, scheduleAt_frame hs (by decide) f₁]
+    exact tdeaW_congrA _ d ws₁ x hx
+  · rw [RegUpd.gpr_setReg_of_ne _ _ (by decide)]; exact r3₂
+  · exact f₁.trans f₂
+  · rw [RegUpd.gpr_setReg_self, l₂, hl₁]
+
+/-- A call of the passes does what the passes do. -/
+theorem passesCall_ok (d : Direction) {s : State} (h : Room s) {Sb : BitVec 32} (hs : Sched s Sb)
+    (hS : fw s 76 = Sb) :
+    WP isa (passesCall d) s fun s' =>
+      (∀ x < 64, words s' x = tdeaW (scheduleAt s.mem (State.addr Sb)) d (words s) x) ∧
+      s'.gpr .r3 = s.gpr .r3 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      Frame [headR s 76] s.mem s'.mem := by
+  have g3 : s.callEntry.gpr .r3 = s.gpr .r3 := State.callEntry_gpr _ (by decide)
+  have hc : Room s.callEntry := h.congr g3 rfl
+  have hw : ∀ y, words s.callEntry y = words s y := fun y => by
+    simp only [words, fw, State.callEntry_mem, g3]
+  obtain ⟨tr, s₂, he, ⟨w, r3, rd, wr, sp, f⟩, lr⟩ :=
+    passesFn_ok d hc (hs.congr g3 rfl) (by simp only [fw, State.callEntry_mem, g3]; exact hS)
+  refine ⟨_, s₂, .call (call_callEntry s) he (by show (if _ then _ else _) = _; rw [ite_eq_left lr]), fun x hx => ?_,
+    r3.trans g3, rd, wr, sp, ?_⟩
+  · rw [w x hx, State.callEntry_mem]
+    exact tdeaW_congrA _ d (fun y _ => hw y) x hx
+  · rw [headR_congr g3, State.callEntry_mem] at f; exact f
 
 end VG.Proof.TripleDes.Arm.Bitsliced

@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.Scrub
 public import VerifiedGarbage.Impl.Sm4.X86.Fn
+public import VerifiedGarbage.Proof.Sm4.X86.AesNiScrub
+public import VerifiedGarbage.Impl.Sm4.X86.AesNiFn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.FbLit
 import VerifiedGarbage.Proof.Sm4.X86.FbFinalLit
+import VerifiedGarbage.Proof.Sm4.X86.AesNiLit
 
 /-! # SM4-OFB on x86 -/
 
@@ -15,8 +18,16 @@ namespace VG.Artifacts.Sm4Ofb.X86
 
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact X86.target {
+    suffix := "_aesni"
+    code := Impl.Sm4.X86.AesNi.Fn.ofb
+    verified := Proof.Sm4.X86.AesNi.Scrub.ofb_scrubbed },
+  Spec.Sm4.ofbApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.ofb
     verified := Proof.Sm4.X86.Scrub.ofb_scrubbed },
+  Spec.Sm4.ofbFinalApi.artifact X86.target {
+    suffix := "_aesni"
+    code := Impl.Sm4.X86.AesNi.Fn.ofbFinal
+    verified := Proof.Sm4.X86.AesNi.Scrub.ofbFinal_scrubbed },
   Spec.Sm4.ofbFinalApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.ofbFinal
     verified := Proof.Sm4.X86.Scrub.ofbFinal_scrubbed }]

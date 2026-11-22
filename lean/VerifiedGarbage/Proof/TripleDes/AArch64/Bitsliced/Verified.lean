@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.TripleDes.Scratch
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Impl.Scrub.AArch64.Writes
+public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
@@ -282,6 +288,118 @@ end
 end
 
 /-!
+# The batch, called
+
+The batch is the internal function `batchName d` (`batchContract`): from the
+schedule's 384 bytes at `x0`, readable, and the 1024 bytes of state words at
+`x4`, writable, it enciphers each of the 128 blocks there (`batch_correct`,
+from `batch_ok`), and writes no register the calling convention preserves,
+no low half of a vector register it preserves, and no register but `x5`,
+`x7`, `x9` and `x10` (`batch_clobbers`). `batchCall_ok`: its call, with the
+return address kept in `x14` across it, which then changes too.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
+
+open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.TripleDes.AArch64.BitsliceNeon
+open VG.Spec.TripleDes
+open VG.Proof.TripleDes.Bitslice (blockOut wAt)
+
+/-- The batch's contract as an internal function. -/
+def batchContract (d : Direction) : Contract isa where
+  pre s := s.rd = [⟨s.gpr .x0, 384⟩] ∧ s.wr = [stateR s] ∧ (⟨s.gpr .x0, 384⟩ : Region).Disjoint (stateR s)
+  post s s' := (∀ b < 128, blockAt s'.mem (wAt (s.gpr .x4) b) =
+    blockOut (scheduleAt s.mem (s.gpr .x0)) d (blockAt s.mem (wAt (s.gpr .x4) b))) ∧
+    ∀ r, r ≠ .x5 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → s'.gpr r = s.gpr r
+  pub := PublicRegs [.x0, .x4]
+
+private theorem batch_checks (d : Direction) :
+    (batch d).allInstrs keepsV = true ∧ (batch d).noFrames = true := by
+  cases d
+  · exact ⟨by lit_decide, by lit_decide⟩
+  · exact ⟨by lit_decide, by lit_decide⟩
+
+theorem batch_correct (d : Direction) (s : State) (hs : (batchContract d).pre s) :
+    ∃ t s', Exec isa (batch d) s t s' ∧ abiPreserved s s' ∧ (batchContract d).post s s' := by
+  obtain ⟨hrd, hwr, hsep⟩ := hs
+  obtain room : Room s := StraightV.Ok.of_off (r := stateR s) (off := 0)
+    (by rw [hwr]; exact List.mem_singleton_self _)
+    (by show s.gpr .x4 = s.gpr .x4 + BitVec.ofNat 64 0; exact (BitVec.add_zero _).symm)
+    (by show 0 + 16 * 64 ≤ 1024; decide) (by show 1024 < 2 ^ 64; decide)
+  obtain sched : Sched s := ⟨fun i hi => by
+      rw [hrd]
+      exact ⟨_, List.mem_append_left _ (List.mem_singleton_self _),
+        Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩, hsep⟩
+  obtain ⟨t, s', he, P⟩ := batch_ok d room sched
+  obtain hp : ∀ r ∈ preserved, r ≠ .x5 ∧ r ≠ .x7 ∧ r ≠ .x9 ∧ r ≠ .x10 := by decide
+  exact ⟨t, s', he, ⟨fun r hr => P.gpr r (hp r hr).1 (hp r hr).2.1 (hp r hr).2.2.1 (hp r hr).2.2.2,
+    P.sp, Exec.preservedV he (batch_checks d).1⟩, P.out, P.gpr⟩
+
+/-- What the call of the batch leaves: `BatchPost`, but `x14`, `x16` and
+`x17` too may change. -/
+structure BatchCallPost (d : Direction) (s s' : State) : Prop where
+  out : ∀ b < 128, blockAt s'.mem (wAt (s.gpr .x4) b) =
+    blockOut (scheduleAt s.mem (s.gpr .x0)) d (blockAt s.mem (wAt (s.gpr .x4) b))
+  gpr : ∀ r, r ≠ .x5 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x14 → r ≠ .x16 → r ≠ .x17 →
+    s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  frame : Frame [stateR s] s.mem s'.mem
+
+/-- `batchCall d`: the batch called, the return address kept in `x14`. -/
+theorem batchCall_ok (d : Direction) {s : State} (hW : Covers [stateR s] s.wr)
+    (hR : Covers [⟨s.gpr .x0, 384⟩] (s.rd ++ s.wr)) (hsep : (⟨s.gpr .x0, 384⟩ : Region).Disjoint (stateR s)) :
+    WP isa (batchCall d) s (BatchCallPost d s) := by
+  let s₁ := s.write .x .x14 (s.read .x .x30 + BitVec.ofNat _ 0)
+  obtain g₁ : ∀ r, r ≠ .x14 → s₁.gpr r = s.gpr r := fun r hr => gpr_write_of_ne _ _ _ hr
+  obtain x14₁ : s₁.gpr .x14 = s.gpr .x30 := by
+    simp only [s₁, gpr_write_self, State.read, BitVec.setWidth_eq]; exact BitVec.add_zero _
+  refine WP.seq (WP.of_runBlock ⟨s₁, by rw [runBlock_cons, exec_addImm_x (by decide), runStep_some,
+    runBlock_nil], ?_⟩)
+  obtain x0₁ : s₁.gpr .x0 = s.gpr .x0 := g₁ _ (by decide)
+  obtain st₁ : stateR s₁ = stateR s := by simp only [stateR, g₁ .x4 (by decide)]
+  refine WP.seq (WP.call (s := s₁) (k := batchContract d) (batch_correct d) (rd := [⟨s.gpr .x0, 384⟩])
+    (wr := [stateR s]) ?_ (Covers.append_left hR (Covers.right hW)) hW
+    (fun s₂ hrd hwr hsp hf _ _ hpost => ?_) (batch_checks d).2)
+  · show (⟨s₁.callEntry.gpr .x0, 384⟩ : Region) :: [] = [⟨s.gpr .x0, 384⟩] ∧
+      [stateR s] = [stateR s₁.callEntry] ∧ _
+    rw [State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), x0₁,
+      show stateR s₁.callEntry = stateR s by
+        simp only [stateR, State.callEntry_gpr _ (by decide : Reg.x4 ∉ linkRegs), g₁ .x4 (by decide)]]
+    exact ⟨rfl, rfl, hsep⟩
+  · obtain ⟨post, pg⟩ := hpost
+    simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+      State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
+      State.callEntry_gpr _ (by decide : Reg.x4 ∉ linkRegs), x0₁, g₁ .x4 (by decide)] at post pg
+    obtain gk : ∀ r, r ≠ .x5 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x16 → r ≠ .x17 → r ≠ .x30 →
+        s₂.gpr r = s₁.gpr r := fun r a b c e f g k => by
+      rw [pg r a b c e, State.callEntry_gpr _ (by
+        simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨f, g, k⟩)]
+    let s₃ := s₂.write .x .x30 (s₂.read .x .x14 + BitVec.ofNat _ 0)
+    refine WP.of_runBlock ⟨s₃, by rw [runBlock_cons, exec_addImm_x (by decide), runStep_some,
+      runBlock_nil], ?_⟩
+    obtain x14₂ : s₂.gpr .x14 = s.gpr .x30 := (gk _ (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide)).trans x14₁
+    refine ⟨fun b hb => ?_, fun r a b c e f g k => ?_, hrd, hwr, hsp, ?_⟩
+    · show blockAt s₂.mem _ = _
+      rw [post b hb]
+      simp only [s₁, State.write]
+    · by_cases h30 : r = .x30
+      · subst h30
+        simp only [s₃, gpr_write_self, State.read, BitVec.setWidth_eq]
+        exact (BitVec.add_zero _).trans x14₂
+      · rw [show s₃.gpr r = s₂.gpr r from gpr_write_of_ne _ _ _ h30, gk r a b c e g k h30, g₁ r f]
+    · show Frame [stateR s] s.mem s₂.mem
+      exact hf
+
+end VG.Proof.TripleDes.AArch64.BitslicedNeon
+
+end
+
+/-!
 # The loop
 
 Each iteration of `step` runs one batch: on the next 128 blocks in place
@@ -312,7 +430,7 @@ theorem scratch_word {B : Addr} {i : Nat} (hi : i < 128) :
 /-- The registers the loop changes. -/
 def EcbRegs (r : Reg) : Prop :=
   r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x4 ∧ r ≠ .x5 ∧ r ≠ .x7 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧
-    r ≠ .x13
+    r ≠ .x13 ∧ r ≠ .x14 ∧ r ≠ .x16 ∧ r ≠ .x17
 
 /-- `m > 0` blocks left, a multiple of 128 fewer than `n`. -/
 structure EcbInv (d : Direction) (s₀ : State) (n m : Nat) (s : State) : Prop where
@@ -428,33 +546,31 @@ theorem step_ok (d : Direction) {s₀ : State} (E : Env s₀) {n : Nat}
       simp [s₄, gpr_write, State.read]
       exact (g₃ _ (by decide) (by decide) (by decide) (by decide)).trans hx3
     have wr₄ : s₄.wr = s.wr := c₃.wr
-    obtain room₄ : Room s₄ := Ok.of_off (off := 0) (by rw [wr₄]; exact scrR)
-      (by show s₄.gpr .x4 = _; rw [x4₄]; simp [B]) (by show 0 + 16 * 64 ≤ 1024; decide)
-      (by show 1024 < 2 ^ 64; decide)
     obtain st₄ : stateR s₄ = ⟨B, 1024⟩ := by simp only [stateR, x4₄]
     obtain x0₄ : s₄.gpr .x0 = S :=
       (g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide)).trans hx0
-    obtain S₄ : Sched s₄ := by
-      refine ⟨fun i hi => ?_, ?_⟩
-      · rw [x0₄]
-        show InRegions (s₃.rd ++ s₃.wr) _ 8
-        rw [c₃.rd, c₃.wr]
-        show InRegions (s.rd ++ s.wr) _ 8
-        rw [h.rd, h.wr]; exact E.keyIn i hi
-      · rw [x0₄, st₄]; exact keyB
+    obtain hW₄ : Covers [stateR s₄] s₄.wr := by
+      rw [st₄, wr₄]
+      exact Covers.of_mem fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact scrR
+    obtain hR₄ : Covers [⟨s₄.gpr .x0, 384⟩] (s₄.rd ++ s₄.wr) := by
+      rw [x0₄]
+      show Covers _ (s₃.rd ++ s₃.wr)
+      rw [c₃.rd, c₃.wr]
+      show Covers _ (s.rd ++ s.wr)
+      rw [h.rd, E.rd]; exact Covers.left (Covers.refl _)
     apply WP.seq
-    apply WP.mono (batch_ok d room₄ S₄)
+    apply WP.mono (batchCall_ok d hW₄ hR₄ (by rw [x0₄, st₄]; exact keyB))
     intro s₅ q₅
     obtain g₅ : ∀ r, r ≠ .x4 → r ≠ .x5 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 →
-        r ≠ .x13 → s₅.gpr r = s.gpr r :=
-      fun r a b c e f i j l => (q₅.gpr r b c e f).trans (g₄ r a f i j l)
+        r ≠ .x13 → r ≠ .x14 → r ≠ .x16 → r ≠ .x17 → s₅.gpr r = s.gpr r :=
+      fun r a b c e f i j l k₁ k₂ k₃ => (q₅.gpr r b c e f k₁ k₂ k₃).trans (g₄ r a f i j l)
     apply WP.seq
     let s₆ := s₅.write .x .x10 (s₅.read .x .x2 >>> 7)
     refine WP.of_runBlock ⟨s₆, by rw [runBlock_cons, wholeLeft, exec_lsr_x (by decide), runStep_some,
       runBlock_nil], ?_⟩
     obtain x2₅ : s₅.gpr .x2 = BitVec.ofNat 64 m :=
       (g₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide)).trans h.x2
+        (by decide) (by decide) (by decide) (by decide)).trans h.x2
     obtain x10₆ : s₆.gpr .x10 = BitVec.ofNat 64 (m / 128) := by
       simp only [s₆, State.write, State.read, BitVec.setWidth_eq, ite_true]
       rw [x2₅, lsr7 _ (by omega_arith)]
@@ -474,8 +590,8 @@ theorem step_ok (d : Direction) {s₀ : State} (E : Env s₀) {n : Nat}
         exec_addImm_x (by decide), runStep_some, runBlock_cons, exec_addImm_x (by decide),
         runStep_some, runBlock_nil], ?_⟩
     obtain r₆ : ∀ r, r ≠ .x4 → r ≠ .x5 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 →
-        r ≠ .x13 → s₆.gpr r = s.gpr r :=
-      fun r a b c e f i j l => (g₆ r f).trans (g₅ r a b c e f i j l)
+        r ≠ .x13 → r ≠ .x14 → r ≠ .x16 → r ≠ .x17 → s₆.gpr r = s.gpr r :=
+      fun r a b c e f i j l k₁ k₂ k₃ => (g₆ r f).trans (g₅ r a b c e f i j l k₁ k₂ k₃)
     obtain wr₇ : s₇'.wr = s.wr := q₅.wr.trans wr₄
     obtain rd₇ : s₇'.rd = s.rd := q₅.rd.trans (c₃.rd)
     obtain pre₂ : CopyPre B T m s₇' := by
@@ -488,13 +604,13 @@ theorem step_ok (d : Direction) {s₀ : State} (E : Env s₀) {n : Nat}
         rfl, rfl⟩
       · rw [wAt_zero]; simp [s₇', s₇, gpr_write, State.read]
         exact (r₆ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-          (by decide)).trans hx3
+          (by decide) (by decide) (by decide) (by decide)).trans hx3
       · rw [wAt_zero]; simp [s₇', s₇, gpr_write, State.read]
         exact (r₆ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-          (by decide)).trans ((g₁ _ (by decide)).symm.trans hx1)
+          (by decide) (by decide) (by decide) (by decide)).trans ((g₁ _ (by decide)).symm.trans hx1)
       · simp [s₇', s₇, gpr_write, State.read]
         rw [r₆ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-          (by decide), h.x2]
+          (by decide) (by decide) (by decide) (by decide), h.x2]
     apply WP.seq
     apply WP.mono (copy_ok pre₂ s₇' 0 inv₂)
     intro s₈ c₈
@@ -553,25 +669,28 @@ theorem step_ok (d : Direction) {s₀ : State} (E : Env s₀) {n : Nat}
       simp only [s₂, State.write, a, ite_false]; exact g₁ r b
     obtain x4₂ : s₂.gpr .x4 = wAt D (n - m) := by
       simp [s₂, State.write, State.read]; exact (g₁ _ (by decide)).trans h.x1
-    obtain room₂ : Room s₂ := Ok.of_off (off := 8 * (n - m)) (show _ ∈ s.wr from dataR)
-      (by show s₂.gpr .x4 = _; rw [x4₂]) (by show 8 * (n - m) + 16 * 64 ≤ 8 * n; omega_arith) (by omega_arith)
     obtain st₂ : stateR s₂ = ⟨wAt D (n - m), 1024⟩ := by simp only [stateR, x4₂]
     obtain stSub : Region.Sub (stateR s₂) ⟨D, 8 * n⟩ := by
       rw [st₂]; exact Offset.sub_base _ (by omega_arith)
     obtain x0₂ : s₂.gpr .x0 = S := (g₂ _ (by decide) (by decide)).trans hx0
-    obtain S₂ : Sched s₂ := by
-      refine ⟨fun i hi => ?_, ?_⟩
-      · rw [x0₂]
-        show InRegions (s.rd ++ s.wr) _ 8
-        rw [h.rd, h.wr]; exact E.keyIn i hi
-      · rw [x0₂]; exact keyData.sub_right stSub
+    obtain hW₂ : Covers [stateR s₂] s₂.wr := by
+      rw [st₂]
+      exact Covers.of_sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, dataR, 8 * (n - m), rfl, by show 8 * (n - m) + 1024 ≤ 8 * n; omega_arith⟩
+    obtain hR₂ : Covers [⟨s₂.gpr .x0, 384⟩] (s₂.rd ++ s₂.wr) := by
+      rw [x0₂]
+      show Covers _ (s.rd ++ s.wr)
+      rw [h.rd, E.rd]; exact Covers.left (Covers.refl _)
     apply WP.seq
-    apply WP.mono (batch_ok d room₂ S₂)
+    apply WP.mono (batchCall_ok d hW₂ hR₂ (by rw [x0₂]; exact keyData.sub_right stSub))
     intro s₃ q₃
-    obtain g₃ : ∀ r, r ≠ .x4 → r ≠ .x5 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → s₃.gpr r = s.gpr r :=
-      fun r a b c e f => (q₃.gpr r b c e f).trans (g₂ r a f)
+    obtain g₃ : ∀ r, r ≠ .x4 → r ≠ .x5 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x14 → r ≠ .x16 →
+        r ≠ .x17 → s₃.gpr r = s.gpr r :=
+      fun r a b c e f k₁ k₂ k₃ => (q₃.gpr r b c e f k₁ k₂ k₃).trans (g₂ r a f)
     obtain x2₃ : s₃.gpr .x2 = BitVec.ofNat 64 m :=
-      (g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.x2
+      (g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide)).trans h.x2
     apply WP.seq
     let s₄ := s₃.write .x .x10 (s₃.read .x .x2 >>> 7)
     refine WP.of_runBlock ⟨s₄, by rw [runBlock_cons, wholeLeft, exec_lsr_x (by decide), runStep_some,
@@ -588,24 +707,27 @@ theorem step_ok (d : Direction) {s₀ : State} (E : Env s₀) {n : Nat}
     refine WP.of_runBlock ⟨s₆, by
       rw [wideOut, runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons,
         exec_subImm_x (by decide), runStep_some, runBlock_nil], ?_⟩
-    obtain r₄ : ∀ r, r ≠ .x4 → r ≠ .x5 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → s₄.gpr r = s.gpr r :=
-      fun r a b c e f => (g₄ r f).trans (g₃ r a b c e f)
+    obtain r₄ : ∀ r, r ≠ .x4 → r ≠ .x5 → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x14 → r ≠ .x16 →
+        r ≠ .x17 → s₄.gpr r = s.gpr r :=
+      fun r a b c e f k₁ k₂ k₃ => (g₄ r f).trans (g₃ r a b c e f k₁ k₂ k₃)
     obtain x2₆ : s₆.gpr .x2 = BitVec.ofNat 64 (m - 128) := by
       simp only [s₆, s₅, State.write, State.read, BitVec.setWidth_eq, reduceCtorEq, ite_false,
         ite_true]
-      rw [r₄ _ (by decide) (by decide) (by decide) (by decide) (by decide), h.x2,
+      rw [r₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide), h.x2,
         BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) hm]
     obtain x1₆ : s₆.gpr .x1 = wAt D (n - (m - 128)) := by
       simp only [s₆, s₅, State.write, State.read, BitVec.setWidth_eq, reduceCtorEq, ite_false,
         ite_true]
-      rw [r₄ _ (by decide) (by decide) (by decide) (by decide) (by decide), h.x1, wAt,
+      rw [r₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide), h.x1, wAt,
         BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact congrArg (fun i => D + BitVec.ofNat 64 i) (by omega_arith)
     obtain g₆ : ∀ r, EcbRegs r → s₆.gpr r = s₀.gpr r := by
       intro r hr
-      have ⟨a, b, c, e, f, i, j, _, _, _⟩ := hr
+      have ⟨a, b, c, e, f, i, j, _, _, _, k₁, k₂, k₃⟩ := hr
       simp only [s₆, s₅, State.write, b, a, ite_false]
-      rw [r₄ r c e f i j, g r hr]
+      rw [r₄ r c e f i j k₁ k₂ k₃, g r hr]
     have mem₆ : s₆.mem = s₃.mem := rfl
     obtain frame' : Frame [⟨D, 8 * (n - (m - 128))⟩, ⟨B, 1024⟩] s₀.mem s₆.mem := by
       obtain f₁ : Frame [⟨D, 8 * (n - (m - 128))⟩, ⟨B, 1024⟩] s₀.mem s.mem := h.frame.sub fun r hr => by
@@ -730,5 +852,50 @@ theorem ecb_contract (d : Direction) (s : State) (hs : (contract d).pre s) :
   obtain ⟨hrd, hwr, keyData, keyBuf, dataBuf, fit⟩ := hs
   exact WP.mono (ecb_correct d ⟨hrd, hwr, keyData, keyBuf, dataBuf, fit⟩) fun s' h =>
     ecb_blocks _ _ _ _ _ _ h
+
+private theorem batch_keeps_x14 (d : Direction) : ∀ i ∈ instrs (batch d), clobbers i .x14 = false := by
+  have h : (batch d).allInstrs (fun i => !clobbers i .x14) = true := by
+    cases d
+    · lit_decide
+    · lit_decide
+  intro i hi
+  have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ h) i hi
+  revert this; cases clobbers i .x14 <;> simp
+
+/-- The state after a block, as a function. -/
+private theorem block_det {is : List Instr} {s s₁ s' : State} {t : List Leak} (h : Exec isa (.block is) s t s')
+    (e : runBlock isa is s = some s₁) : s' = s₁ := by
+  have w : WP isa (.block is) s fun x => x = s₁ := WP.of_runBlock ⟨s₁, e, rfl⟩
+  obtain ⟨t', s'', he, rfl⟩ := w
+  exact (Exec.det h he).2
+
+private theorem batchCall_keeps_aux (d : Direction) {s s₁ s₂ s' : State} {t₁ t₂ t₃ : List Leak}
+    (hA : Exec isa (.block [.addImm .x .x14 .x30 0]) s t₁ s₁)
+    (hC : Exec isa (.call (batchName d) (batch d)) s₁ t₂ s₂)
+    (hB : Exec isa (.block [.addImm .x .x30 .x14 0]) s₂ t₃ s') : s'.gpr .x30 = s.gpr .x30 := by
+  obtain ⟨a₁, e₁, r₁, -⟩ := Modes.AArch64.addImm_ok s .x14 .x30 (v := 0) (by decide)
+  obtain ⟨b₁, f₁, q₁, -⟩ := Modes.AArch64.addImm_ok s₂ .x30 .x14 (v := 0) (by decide)
+  rw [block_det hB f₁, q₁,
+    Exec.gpr (c := .call (batchName d) (batch d)) (fun i hi => batch_keeps_x14 d i hi) hC (.inr (by decide)),
+    block_det hA e₁, r₁, BitVec.add_zero, BitVec.add_zero]
+
+/-- The call of the batch keeps the return address, through `x14`
+(`Modes.AArch64.KeepsReg .x30 (batchCall d)`). -/
+theorem batchCall_keeps_x30 (d : Direction) :
+    ∀ s t s', Exec isa (batchCall d) s t s' → s'.gpr .x30 = s.gpr .x30 := by
+  intro s t s' h
+  cases h with
+  | seq hA hR =>
+    cases hR with
+    | seq hC hB => exact batchCall_keeps_aux d hA hC hB
+
+/-- The bitsliced ECB keeps the return address. -/
+theorem ecb_keeps_x30 (d : Direction) {s s' : State} {t : List Leak} (h : Exec isa (ecb d) s t s') :
+    s'.gpr .x30 = s.gpr .x30 := by
+  refine (?_ : Modes.AArch64.KeepsReg .x30 (ecb d)) s t s' h
+  exact Modes.AArch64.KeepsReg.ite (Modes.AArch64.keepsReg_of_regSafe (by decide))
+    (Modes.AArch64.KeepsReg.loop (Modes.AArch64.KeepsReg.seq (Modes.AArch64.keepsReg_of_regSafe (by decide))
+      (Modes.AArch64.KeepsReg.seq (Modes.AArch64.keepsReg_of_regSafe (by decide))
+        (Modes.AArch64.KeepsReg.seq (batchCall_keeps_x30 d) (Modes.AArch64.keepsReg_of_regSafe (by decide))))))
 
 end VG.Proof.TripleDes.AArch64.BitslicedNeon

@@ -57,4 +57,8 @@ def transposeProg : Prog isa := .block transpose
 
 materialize_code transposeProg
 
+-- The passes, which the check of their stores (`keepsLr`) reads.
+materialize_code passesEnc := passes .encrypt
+materialize_code passesDec := passes .decrypt
+
 end VG.Impl.TripleDes.Arm.Bitslice

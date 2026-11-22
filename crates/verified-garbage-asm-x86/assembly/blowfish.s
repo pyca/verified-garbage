@@ -2841,15 +2841,10 @@ vg_blowfish_expand_key:
 	mov esi, DWORD PTR [ebp+4]
 	mov edi, DWORD PTR [ebp+8]
 	mov ebp, DWORD PTR [ebp+12]
+	pxor xmm0, xmm0
 	mov ecx, 0
-	mov DWORD PTR [esp+20], ecx
-	mov DWORD PTR [esp+24], ecx
-	mov DWORD PTR [esp+28], ecx
-	mov DWORD PTR [esp+32], ecx
-	mov DWORD PTR [esp+36], ecx
-	mov DWORD PTR [esp+40], ecx
-	mov DWORD PTR [esp+44], ecx
-	mov DWORD PTR [esp+48], ecx
+	movdqu XMMWORD PTR [esp+20], xmm0
+	movdqu XMMWORD PTR [esp+36], xmm0
 	mov DWORD PTR [esp+52], ecx
 	mov DWORD PTR [esp+56], ecx
 	lea esp, [esp+84]
@@ -3233,15 +3228,10 @@ vg_blowfish_ecb_encrypt:
 	mov esi, DWORD PTR [ebp+4]
 	mov edi, DWORD PTR [ebp+8]
 	mov ebp, DWORD PTR [ebp+12]
+	pxor xmm0, xmm0
 	mov ecx, 0
-	mov DWORD PTR [esp+20], ecx
-	mov DWORD PTR [esp+24], ecx
-	mov DWORD PTR [esp+28], ecx
-	mov DWORD PTR [esp+32], ecx
-	mov DWORD PTR [esp+36], ecx
-	mov DWORD PTR [esp+40], ecx
-	mov DWORD PTR [esp+44], ecx
-	mov DWORD PTR [esp+48], ecx
+	movdqu XMMWORD PTR [esp+20], xmm0
+	movdqu XMMWORD PTR [esp+36], xmm0
 	mov DWORD PTR [esp+52], ecx
 	mov DWORD PTR [esp+56], ecx
 	lea esp, [esp+276]
@@ -3637,15 +3627,10 @@ vg_blowfish_ecb_decrypt:
 	mov esi, DWORD PTR [ebp+4]
 	mov edi, DWORD PTR [ebp+8]
 	mov ebp, DWORD PTR [ebp+12]
+	pxor xmm0, xmm0
 	mov ecx, 0
-	mov DWORD PTR [esp+20], ecx
-	mov DWORD PTR [esp+24], ecx
-	mov DWORD PTR [esp+28], ecx
-	mov DWORD PTR [esp+32], ecx
-	mov DWORD PTR [esp+36], ecx
-	mov DWORD PTR [esp+40], ecx
-	mov DWORD PTR [esp+44], ecx
-	mov DWORD PTR [esp+48], ecx
+	movdqu XMMWORD PTR [esp+20], xmm0
+	movdqu XMMWORD PTR [esp+36], xmm0
 	mov DWORD PTR [esp+52], ecx
 	mov DWORD PTR [esp+56], ecx
 	lea esp, [esp+276]

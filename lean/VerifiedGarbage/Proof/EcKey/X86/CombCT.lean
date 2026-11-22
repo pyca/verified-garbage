@@ -145,13 +145,16 @@ theorem pkCombBody_rel (hc : CfgOk c) (hC : Law c.C)
     (hp : PkPre c s₀ extra₁) (hq : PkPre c t₀ extra₂)
     (ht₁ : PkCombTables c d s₀) (ht₂ : PkCombTables c d t₀)
     (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 3, arg s₀ j = arg t₀ j)
-    (hg : s₀.gpr .eax = t₀.gpr .eax) (hspG : SpOk c.gMul 20) :
+    (hg : s₀.gpr .eax = t₀.gpr .eax) (hspG : SpOk c.gMul c.stk) :
     RelCT isa (fun s t => s = s₀ ∧ t = t₀) (.seq (c.prepareWith Args.publicKey) (.seq c.gMul
       (.seq c.pPow (Impl.EcKey.X86.Cfg.middle c)))) (fun _ _ => True) := by
-  have hspG' : SpOk c.gMul c.stk := ⟨hspG.1, Nat.le_trans hspG.2 (Cfg.stk_ge _)⟩
+  have hspG' : SpOk c.gMul c.stk := hspG
   have hsp20 : ∀ {u₀ u : State} {extra : List Region}, PkPre c u₀ extra →
-      Keep c u₀ (ptr u₀ 2) u → 20 ≤ (u.gpr .esp).toNat := fun hp k => by
-    rw [k.esp]; exact Nat.le_trans (Cfg.stk_ge _) hp.sp_lo
+      Keep c u₀ (ptr u₀ 2) u → c.stk ≤ (u.gpr .esp).toNat := fun hp k => by
+    rw [k.esp]; exact hp.sp_lo
+  have hstw : ∀ {u₀ u : State} {extra : List Region}, PkPre c u₀ extra →
+      Keep c u₀ (ptr u₀ 2) u → ∀ r ∈ u.wr, Region.Disjoint (below (u.gpr .esp) c.stk) r :=
+    fun hp k r hr => by rw [k.wr] at hr; rw [k.esp]; exact hp.stk_wr r hr
   have prep := ct.prep.mono (P' := fun s t => s = s₀ ∧ t = t₀)
     (fun _ _ h => by
       rcases h with ⟨rfl, rfl⟩
@@ -181,7 +184,7 @@ theorem pkCombBody_rel (hc : CfgOk c) (hC : Law c.C)
     rw [← hb] at T'
     exact hG S.scr T'.scr S.fixed T'.fixed
       (S.k ▸ wordsVal_lt _ _ _ _) (T'.k ▸ wordsVal_lt _ _ _ _) S.t₀ T'.t₀ tb₁ tb₂ ht₁.2.1 ap₁ ap₂
-      (hsp20 hp S.toKeep) (hsp20 hq T.toKeep) hg
+      (hstw hp S.toKeep) (hstw hq T.toKeep) (hsp20 hp S.toKeep) (hsp20 hq T.toKeep) hg
       (pkKeepCombWf hp S.toKeep) (pkKeepCombWf hq T.toKeep)
       (by rw [S.wr, T.wr, hp.wr, hq.wr]; simp only [ptr, ha 0 (by decide), ha 2 (by decide)])
       (by rw [S.esp, T.esp, he])
@@ -191,7 +194,7 @@ theorem pkCombBody_rel (hc : CfgOk c) (hC : Law c.C)
       WP isa c.gMul u (Keep c u₀ (ptr u₀ 2)) := by
     intro u₀ u extra hp ht S
     refine S.toKeep.withSp hspG' (WP.mono (gMul_ok' hc hC hT hCo S.scr S.fixed
-      (S.k ▸ wordsVal_lt _ _ _ _) S.rx S.ry S.rz S.t₀ ?_ (hsp20 hp S.toKeep) hspG)
+      (S.k ▸ wordsVal_lt _ _ _ _) S.rx S.ry S.rz S.t₀ ?_ (hstw hp S.toKeep) (hsp20 hp S.toKeep) hspG)
       fun _ h f => S.toKeep.gMul hc h.1 h.2.1 f)
     intro d' h
     have e : d = d' := Option.some.inj (hcd.symm.trans h)
@@ -259,17 +262,16 @@ theorem pkPrefixTables {s t : State} (hcd : c.comb = some d) (hp : PkCombPre c s
 
 /-- The stack of the parts of the public key with a comb. -/
 structure PkCombSp (c : Cfg) : Prop where
-  g : SpOk c.gMul 20
+  g : SpOk c.gMul c.stk
   p : SpOk c.pPow c.stk
   o : SpOk (pkOps c) c.stk
 
 /-- `PkCombSp` from the whole code's. -/
-theorem PkCombSp.of (hcd : c.comb = some d) (h : SpOk (Impl.EcKey.X86.Cfg.publicKeyComb c) c.stk) :
+theorem PkCombSp.of (h : SpOk (Impl.EcKey.X86.Cfg.publicKeyComb c) c.stk) :
     PkCombSp c := by
   have hb : SpOk (.seq c.gMul (.seq c.pPow (Impl.EcKey.X86.Cfg.middle c))) c.stk :=
     (SpOk.right (a := c.tableAddr) h).right
-  have h20 : c.stk = 20 := by simp [Cfg.stk, hcd]
-  refine ⟨h20 ▸ hb.left, hb.right.left, ?_⟩
+  refine ⟨hb.left, hb.right.left, ?_⟩
   have h := hb.right.right
   rw [middle_split] at h
   exact (SpOk.split _ _ _ h).1
@@ -305,7 +307,7 @@ def PkCombPub (d : CombData) (s t : State) : Prop :=
   s.gpr .esp = t.gpr .esp ∧ (∀ j < 3, arg s j = arg t j) ∧ s.syms d.tsym = t.syms d.tsym
 
 theorem publicKeyComb_ct (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.comb = some d)
-    (hd : CombOk c d) (hG : GMulRel c d true) (ct : PkStagesCT c) (hspG : SpOk c.gMul 20) :
+    (hd : CombOk c d) (hG : GMulRel c d true) (ct : PkStagesCT c) (hspG : SpOk c.gMul c.stk) :
     ConstantTime isa (PkCombPre c) (PkCombPub d) (Impl.EcKey.X86.Cfg.publicKeyComb c) := by
   apply RelCT.constantTime (Q := fun _ _ => True)
   unfold Impl.EcKey.X86.Cfg.publicKeyComb

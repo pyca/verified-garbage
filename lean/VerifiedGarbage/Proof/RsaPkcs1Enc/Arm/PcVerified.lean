@@ -622,7 +622,7 @@ theorem inpA (P : EP) {σ : State} (h : In P σ) : State.addr (P.B + BitVec.ofNa
   h.ok.addrB (by show oEM < frameBytes + 56 + 40; decide)
 
 theorem call_pre {σ s : State} (h : G7 P σ s) :
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 56).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre
       (s.callEntry.withRegions (pdRd P.B P.pre P.e (P.B + BitVec.ofNat 32 oEM) P.K P.el P.rl)
         (pdWr P.out P.scr P.K P.sl)) := by
   have hs := h.1.1
@@ -652,7 +652,7 @@ theorem call_pre {σ s : State} (h : G7 P σ s) :
     (by rw [e]; exact hfr (R := P.SCR) (.inr (by simp)) (by simp only [oEM, frameBytes]; omega_arith))
     (by rw [q0]; exact (hfr (R := P.SCR) (.inr (by simp)) (by decide)).symm) ?_
   intro r hr
-  have low : (⟨State.addr P.B - BitVec.ofNat 64 56, 56⟩ : Region) = P.lay.LOW := rfl
+  have low : (⟨State.addr P.B - BitVec.ofNat 64 104, 104⟩ : Region) = P.lay.LOW := rfl
   rw [low]
   simp only [pdRd, pdWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -705,7 +705,7 @@ theorem call_vp (c : PdImpl) : VP (G7 P) (.call c.name c.code) (G8 P) := by
     have ok := hs.1.ok
     have hK := hs.1.k1024
     have hpl := hs.1.em_len
-    obtain low : FrameStack.belowA s.sp 56 = P.lay.LOW := by rw [hs.2.sp]; exact ok.low_eq
+    obtain low : FrameStack.belowA s.sp 104 = P.lay.LOW := by rw [hs.2.sp]; exact ok.low_eq
     rw [low] at fr
     have fr' : Frame [P.OUT, P.SCR, P.lay.LOW] s.mem s'.mem := fr
     obtain st : P.lay.St σ s' := hs.2.write fr' (fun r hr => by
@@ -1010,7 +1010,7 @@ theorem code_ok (c : PdImpl) {s : State} (h : spec.pre s) :
     (Q := fun r m => Res (ep s) (entered frameBytes s) m r) (fun r hr => ?_)
     (WP.mono ((body_vp c).wp _ _ st) fun u hu => ⟨hu.1.2.frame, hu.2⟩)
     (hQ := fun _ m₁ m₂ hf hres nB hl hp => by
-      have ok : (layOf frameBytes 40 (ep s).argv [(ep s).N, (ep s).E, (ep s).MSG, (ep s).PS, (ep s).PRE] [(ep s).OUT, (ep s).SCR] s).Ok (entered frameBytes s) := by
+      have ok : (layOf frameBytes 40 (ep s).argv [(ep s).N, (ep s).E, (ep s).MSG, (ep s).PS, (ep s).PRE] [(ep s).OUT, (ep s).SCR] s 104).Ok (entered frameBytes s) := by
         rw [← ep_lay]; exact hin.ok
       have fit := ok.fits (ep s).OUT (List.mem_append_right _ List.mem_cons_self)
       exact written_frame hf (released_apart ok hsp (R := (ep s).OUT) (Or.inr (by simp)))

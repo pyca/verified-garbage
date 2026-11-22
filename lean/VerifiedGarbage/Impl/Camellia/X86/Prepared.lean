@@ -22,11 +22,12 @@ what `vg_camellia_crypt_prepared` reads (`layout`): sixteen 32-bit planes
 for each subkey, plane `8 w + j` its plane `j` of word `w`
 (`keyPlane32`), in the order the rounds use them.
 
-ECB and the modes build the table themselves, with ECB's key setup
-(`keys`, inline in the modes' core's `prepare`): its loop stores through a
-pointer that the analysis of constant time cannot place, after which it
-knows nothing of the working space, and a call would return the
-callee-saved registers as secrets.
+ECB and the modes build the table by a call of
+`vg_camellia_prepare_keys_<dir>` (`prepareCall`, `Ecb.lean`). Its loop stores
+through a pointer that the analysis of constant time cannot place, after
+which it knows nothing of the working space: it restores `sb` from its
+argument rather than its slot, and its callers store their data pointer and
+count after it.
 -/
 
 @[expose] public section

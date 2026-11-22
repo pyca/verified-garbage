@@ -41,7 +41,8 @@ The counter is `esi`, which the field arithmetic's functions keep, the only
 branches are on it, and every address is `edi` plus a constant or a multiple
 of the counter: nothing but `edi` and `esp` may affect timing. The field
 operations are calls of the Montgomery functions (`fprog`), which keep `edi`,
-so the code needs 20 bytes of stack.
+so the code needs 20 bytes of stack, and its callers 24, with the return
+address of their call of it (`ecdhMul`).
 -/
 
 @[expose] public section
@@ -270,10 +271,18 @@ def swinMul (px py : Nat) : Prog isa :=
   .seq (c.winBuild px py) <| .seq (c.swinTop px py) <|
   .seq (.block (c.swinInit px py)) (.loop c.swinStep .ne)
 
-/-- ECDH's multiplication: signed windows of four bits where the table has
-eight entries, else `winMul`. -/
-def ecdhMul (px py : Nat) : Prog isa :=
+/-- The windows: signed windows of four bits where the table has eight
+entries, else `winMul`. The code of `vg_<curve>_window`. -/
+def ecdhMulBody (px py : Nat) : Prog isa :=
   if 6 < c.n then c.swinMul px py else c.winMul px py
+
+/-- The name of the internal function of the curve's windows. -/
+def windowName : String := s!"vg_{c.SP.curve}_window"
+
+/-- ECDH's multiplication, which verification's `[v]Q` shares: a call of the
+windows (`ecdhMulBody`), an internal function. It keeps the working space in
+`edi`, as its caller has it, and takes no argument. -/
+def ecdhMul (px py : Nat) : Prog isa := .call c.windowName (c.ecdhMulBody px py)
 
 end Cfg
 

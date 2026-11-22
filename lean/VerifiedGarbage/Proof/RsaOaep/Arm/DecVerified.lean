@@ -384,13 +384,13 @@ theorem code_ok (hc : Coh vs) (v : Proof.Rsa.Arm.CrtImpl) {s : State} (hs : (dsp
     (hQ := fun _ m₁ m₂ hf hres => by
       have fit := hin.ok.fits (epw (vs := vs) s s w w₁).OUT (List.mem_append_right _ List.mem_cons_self)
       have rel := fun {R : Region} (hR : R ∈ (epw (vs := vs) s s w w₁).lay.rw) =>
-        released_apart (F := frameBytes) (A := 84) (C := 3440) (argv := (epw (vs := vs) s s w w₁).argv)
+        released_apart (F := frameBytes) (A := 84) (C := 3488) (argv := (epw (vs := vs) s s w w₁).argv)
           (ro := (epw (vs := vs) s s w w₁).lay.ro) (rw := (epw (vs := vs) s s w w₁).lay.rw) hin.ok hsp' (R := R)
           (Or.inr hR)
       exact writtenDecrypt_frame hf (rel (R := (epw (vs := vs) s s w w₁).OUT) (by simp))
         (rel (R := (epw (vs := vs) s s w w₁).ML) (by simp))
         (by change (epw (vs := vs) s s w w₁).OUT.len < 2 ^ 64; omega_using [fit]) hres)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
-  · rw [pushRegion_eq (F := frameBytes) (A := 84) (C := 3440) (argv := (epw (vs := vs) s s w w₁).argv)
+  · rw [pushRegion_eq (F := frameBytes) (A := 84) (C := 3488) (argv := (epw (vs := vs) s s w w₁).argv)
       (ro := (epw (vs := vs) s s w w₁).lay.ro) (rw := (epw (vs := vs) s s w w₁).lay.rw) hsp']
     exact hin.ok.push_apart r hr
   · sig_post [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
@@ -404,7 +404,7 @@ theorem code_ok (hc : Coh vs) (v : Proof.Rsa.Arm.CrtImpl) {s : State} (hs : (dsp
     subst hH hG
     rw [BitVec.setWidth_append_eq_right]
     have ro := fun {R : Region} (hR : R ∈ (epw (vs := vs) s s w w₁).lay.ro) =>
-      entered_ro (F := frameBytes) (A := 84) (C := 3440) (argv := (epw (vs := vs) s s w w₁).argv)
+      entered_ro (F := frameBytes) (A := 84) (C := 3488) (argv := (epw (vs := vs) s s w w₁).argv)
         (rw := (epw (vs := vs) s s w w₁).lay.rw) hin.ok hsp' hR
     have hP : pB (epw (vs := vs) s s w w₁) (entered frameBytes s) =
         Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 3)) (stackArg s 4).toNat :=

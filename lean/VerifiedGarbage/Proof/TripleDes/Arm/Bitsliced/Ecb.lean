@@ -914,7 +914,7 @@ theorem batch_ok (d : Direction) {s : State} {Sb D : BitVec 32} {n : Nat} (h : B
     rw [fw_of_frame h₃ r3₄ G₄ (by decide) (by decide), a0, k₂ _ (by decide) (by decide), h.r0]
   -- the passes
   apply WP.seq
-  refine WP.mono (passes_ok d h₄ (h.sched.congr r3₄' rd₄') S₄) fun s₅ ⟨w₅, r3₅, rd₅, wr₅, _, f₅⟩ => ?_
+  refine WP.mono (passesCall_ok d h₄ (h.sched.congr r3₄' rd₄') S₄) fun s₅ ⟨w₅, r3₅, rd₅, wr₅, _, f₅⟩ => ?_
   have r3₅' : s₅.gpr .r3 = s.gpr .r3 := r3₅.trans r3₄'
   have wr₅' : s₅.wr = s.wr := wr₅.trans wr₄'
   have rd₅' : s₅.rd = s.rd := rd₅.trans rd₄'

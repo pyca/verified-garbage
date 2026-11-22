@@ -470,9 +470,10 @@ end
 
 `ecb_wp`: with the working space as an argument (`ecbX86W w`, of any `w`
 slots that hold the code's `slots`; `ecbX86`, the `wsSlots` slots of the
-blocks functions), `ecb d` saves the callee-saved
-registers, copies the round keys to the table in the order the rounds of
-`d` use them (`keyTable_ok`), transforms the blocks a group at a time
+blocks function), `blocks`, called with the flag of the direction `d` in
+the working space's slot `dirSlot`, saves the callee-saved registers,
+copies the round keys to the table in the order the rounds of `d` use them
+(`keyTable_ok`), the branch on the flag, transforms the blocks a group at a time
 (`dataLoop_wp`), from the data pointer in `ebx`, and restores `ebx` and
 `edi` (the groups keep `esi` and `ebp`).
 -/
@@ -495,7 +496,9 @@ def ecbX86W (w : Nat) (d : Spec.Seed.Direction) : Contract X86.isa where
     sched.Disjoint data ∧ sched.Disjoint scratch ∧ data.Disjoint scratch ∧
     args.Disjoint data ∧ args.Disjoint scratch ∧ ret.Disjoint data ∧ ret.Disjoint scratch ∧
     (arg s 0).toNat + 128 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 16 * (arg s 2).toNat ≤ 2 ^ 32 ∧
-    (arg s 3).toNat + 4 * w ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
+    (arg s 3).toNat + 4 * w ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+    s.mem.readW (VG.X86.Straight.wordAddr (arg s 3) Impl.Seed.X86.dirSlot) 32 =
+      BitVec.ofNat 32 (Impl.Seed.X86.dirFlag d)
   post s s' :=
     Spec.Seed.blocksAt s'.mem ((arg s 1).setWidth 64) (arg s 2).toNat =
       Spec.Seed.ecb (Spec.Seed.scheduleAt s.mem ((arg s 0).setWidth 64)) d
@@ -679,8 +682,8 @@ theorem outF_spec (d : Spec.Seed.Direction) (m : Mem) {sched : BitVec 32} (hfit 
 
 theorem ecb_wpW (dir : Spec.Seed.Direction) {w : Nat} (hw : slots ≤ w) {s₀ : State}
     (hp : (ecbX86W w dir).pre s₀) :
-    WP isa (ecb dir) s₀ fun s' => abiPreserved s₀ s' ∧ (ecbX86W w dir).post s₀ s' := by
-  obtain ⟨hrd, hwr, dKD, dKS, dDS, dAD, dAS, dRD, dRS, fitK, fitD, fitB, fitE⟩ := hp
+    WP isa blocks s₀ fun s' => abiPreserved s₀ s' ∧ (ecbX86W w dir).post s₀ s' := by
+  obtain ⟨hrd, hwr, dKD, dKS, dDS, dAD, dAS, dRD, dRS, fitK, fitD, fitB, fitE, hflag⟩ := hp
   let sched := arg s₀ 0
   let D := arg s₀ 1
   let n := (arg s₀ 2).toNat
@@ -707,22 +710,54 @@ theorem ecb_wpW (dir : Spec.Seed.Direction) {w : Nat} (hw : slots ≤ w) {s₀ :
     rw [h1, h2, ea_arg h3]; exact ⟨_, List.mem_append_left _ hrA, arg_contains s₀ fitE hi⟩
   obtain subS : ∀ k < slots, Region.Sub ⟨wordAddr b k, 4⟩ ⟨b.setWidth 64, 4 * slots⟩ :=
     fun k hk => slot_sub hfit' hk
-  unfold ecb
-  -- The prologue and the table.
-  obtain ⟨s₁, e₁, b₁, g₁, sv₁, rd₁, wr₁, f₁, -⟩ := save_ok (k := 3) hwS (argIn rfl rfl rfl 3 (by decide))
+  unfold blocks
+  -- The prologue, and the direction's flag.
+  obtain ⟨s₁, e₁, b₁, g₁, sv₁, rd₁, wr₁, f₁, ks₁⟩ := save_ok (k := 3) hwS (argIn rfl rfl rfl 3 (by decide))
     (by rw [ea_arg rfl]; rfl)
   obtain esp₁ : s₁.gpr .esp = s₀.gpr .esp := g₁ _ (by decide) (by decide)
-  obtain ⟨s₁', e₁', c₁', o₁', m₁', rd₁', wr₁'⟩ := ldArg_ok s₁ .ecx 0 (argIn rd₁ wr₁ esp₁ 0 (by decide))
-  obtain ecx₁ : s₁'.gpr .ecx = sched := by rw [c₁', ea_arg esp₁]; exact argR f₁ 0 (by decide)
+  obtain ⟨s₁f, e₁f, v₁f, o₁f, m₁f, rd₁f, wr₁f, -, -⟩ := lptrSlot_ok s₁ .eax .edi (k := dirSlot) b₁
+    (by decide) (by rw [wr₁]; exact hwS)
+  let s₁t := arithFlags s₁f (s₁f.gpr .eax &&& s₁f.gpr .eax) false false
+  obtain e₁t : runBlock isa entry s₀ = some s₁t := by
+    rw [entry, runBlock_append, e₁, Option.bind_some,
+      show ([movS .eax dirSlot, .alu .test .eax (.reg .eax)] : List Instr) =
+        [movS .eax dirSlot] ++ [.alu .test .eax (.reg .eax)] from rfl, runBlock_append]
+    change (runBlock isa [.mov .eax (.mem (slotAt .edi dirSlot))] s₁).bind _ = _
+    rw [e₁f, Option.bind_some]
+    rfl
+  refine WP.seq (WP.of_runBlock ⟨s₁t, e₁t, ?_⟩)
+  obtain fl₁ : s₁f.gpr .eax = BitVec.ofNat 32 (dirFlag dir) := by
+    rw [v₁f, ks₁ _ (.inr (by decide)) (by decide)]
+    exact hflag
+  obtain hz₁ : s₁t.zf = some (decide (dirFlag dir = 0)) := by
+    rw [RegUpd.zf_arithFlags, fl₁, BitVec.and_self]
+    cases dir <;> rfl
+  obtain o₁t : ∀ r, r ≠ .eax → s₁t.gpr r = s₁.gpr r := fun r hr => by
+    show s₁f.gpr r = _; exact o₁f r hr
+  obtain m₁t : s₁t.mem = s₁.mem := by show s₁f.mem = _; exact m₁f
+  obtain rd₁t : s₁t.rd = s₀.rd := by show s₁f.rd = _; rw [rd₁f, rd₁]
+  obtain wr₁t : s₁t.wr = s₀.wr := by show s₁f.wr = _; rw [wr₁f, wr₁]
+  obtain esp₁t : s₁t.gpr .esp = s₀.gpr .esp := by rw [o₁t _ (by decide), esp₁]
+  -- The table, in the order of the direction.
+  refine WP.seq ?_
+  obtain ⟨s₁', e₁', c₁', o₁', m₁'', rd₁', wr₁'⟩ := ldArg_ok s₁t .ecx 0 (argIn rd₁t wr₁t esp₁t 0 (by decide))
+  obtain m₁' : s₁'.mem = s₁.mem := m₁''.trans m₁t
+  obtain ecx₁ : s₁'.gpr .ecx = sched := by rw [c₁', ea_arg esp₁t, m₁t]; exact argR f₁ 0 (by decide)
   obtain hk₁ : SchedPre s₁' b sched :=
-    ⟨by rw [o₁' _ (by decide)]; exact b₁, by rw [wr₁', wr₁]; exact hwS, ecx₁,
-      List.mem_append_left _ (by rw [rd₁', rd₁]; exact hrK), fitK, dKS'⟩
+    ⟨by rw [o₁' _ (by decide), o₁t _ (by decide)]; exact b₁, by rw [wr₁', wr₁t]; exact hwS, ecx₁,
+      List.mem_append_left _ (by rw [rd₁', rd₁t]; exact hrK), fitK, dKS'⟩
   obtain ⟨s₂, e₂, t₂, k₂, g₂, rd₂', wr₂', f₂⟩ := table_ok dir hk₁
-  obtain e₁₂ : runBlock isa (saveRegs 3 ++ keyTable dir) s₀ = some s₂ := by
+  obtain e₁₂ : runBlock isa (keyTable dir) s₁t = some s₂ := by
     rw [keyTable_eq, show Instr.mov .ecx (.mem (argOp 0)) :: loadsCode (tableMoves dir) =
         [.mov .ecx (.mem (argOp 0))] ++ loadsCode (tableMoves dir) from rfl,
-      runBlock_append, e₁, Option.bind_some, runBlock_append, e₁', Option.bind_some, e₂]
-  refine WP.seq (WP.of_runBlock ⟨s₂, e₁₂, ?_⟩)
+      runBlock_append, e₁', Option.bind_some, e₂]
+  suffices hK : WP isa (.block (keyTable dir)) s₁t
+      (fun s => WP isa groups s fun s' => abiPreserved s₀ s' ∧ (ecbX86W w dir).post s₀ s') by
+    cases dir
+    · exact WP.ite true ((eval_e s₁t).trans hz₁) (fun _ => hK) (fun h => absurd h (by decide))
+    · exact WP.ite false ((eval_e s₁t).trans hz₁) (fun h => absurd h (by decide)) (fun _ => hK)
+  refine WP.of_runBlock ⟨s₂, e₁₂, ?_⟩
+  unfold groups
   let E : Nat → Spec.Seed.Word := fun i => schW s₀.mem sched (keySrc dir i)
   have hfK : sched.toNat + 128 ≤ 2 ^ 32 := fitK
   obtain hsch : ∀ i < 32, schW s₁'.mem sched i = schW s₀.mem sched i := by
@@ -735,16 +770,16 @@ theorem ecb_wpW (dir : Spec.Seed.Direction) {w : Nat} (hw : slots ≤ w) {s₀ :
     exact dKS'
   obtain f₀₂ : Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem s₂.mem := f₁.trans (by rw [← m₁']; exact f₂)
   obtain g₁₂ : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edi → s₂.gpr r = s₀.gpr r := fun r h1 h2 h3 => by
-    rw [g₂ r h1, o₁' r h2, g₁ r h1 h3]
-  obtain base₂ : s₂.gpr sb = b := by rw [g₂ _ (by decide), o₁' _ (by decide)]; exact b₁
+    rw [g₂ r h1, o₁' r h2, o₁t r h1, g₁ r h1 h3]
+  obtain base₂ : s₂.gpr sb = b := by rw [g₂ _ (by decide), o₁' _ (by decide), o₁t _ (by decide)]; exact b₁
   obtain esp₂ : s₂.gpr .esp = s₀.gpr .esp := g₁₂ _ (by decide) (by decide) (by decide)
   obtain sc₂ : ScrOk s₀ b E s₂.mem := by
     refine ⟨fun e he => ?_, fun i hi => ?_⟩
     · rw [t₂ e he, hsch _ (keySrc_lt dir he)]
     · rw [← sv₁ i hi, ← m₁']
       exact k₂ _ (by rw [savedSlot_eq, slots_eq]; omega_arith) (.inr (by rw [savedSlot_eq, tableEnd_eq]; omega_arith))
-  obtain rd₂ : s₂.rd = s₀.rd := by rw [rd₂', rd₁', rd₁]
-  obtain wr₂ : s₂.wr = s₀.wr := by rw [wr₂', wr₁', wr₁]
+  obtain rd₂ : s₂.rd = s₀.rd := by rw [rd₂', rd₁', rd₁t]
+  obtain wr₂ : s₂.wr = s₀.wr := by rw [wr₂', wr₁', wr₁t]
   -- The data pointer to `ebx`, and whether there are any blocks.
   obtain ⟨s₃a, e₃a, a₃a, o₃a, m₃a, rd₃a, wr₃a⟩ := ldArg_ok s₂ .ebx 1 (argIn rd₂ wr₂ esp₂ 1 (by decide))
   obtain esp₃a : s₃a.gpr .esp = s₀.gpr .esp := by rw [o₃a _ (by decide), esp₂]
@@ -822,7 +857,7 @@ theorem ecb_wpW (dir : Spec.Seed.Direction) {w : Nat} (hw : slots ≤ w) {s₀ :
     exact outF_spec dir s₀.mem hfK _ j
 
 theorem ecb_wp (dir : Spec.Seed.Direction) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
-    WP isa (ecb dir) s₀ fun s' => abiPreserved s₀ s' ∧ (ecbX86 dir).post s₀ s' :=
+    WP isa blocks s₀ fun s' => abiPreserved s₀ s' ∧ (ecbX86 dir).post s₀ s' :=
   ecb_wpW dir (by decide) hp
 
 end VG.Proof.Seed.X86

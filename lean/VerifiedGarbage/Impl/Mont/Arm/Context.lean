@@ -231,6 +231,22 @@ def window2 (n expWords : Nat) : Prog isa :=
   .seq (.block [.mov .r6 (.shifted .r2 .lsl 2)]) <|
   .seq (.block (windowTwo (expS n) expWords)) (.block [.dp .orr .r2 .r2 (.reg .r6)])
 
+/-- `vg_dsa_mul_{n}`: `[resS] = [resS] [prodS] R⁻¹ mod m`, with the working
+space's base in `r11`, which a call keeps (a call may change `r12`). -/
+def mulFn (n : Nat) : Prog isa :=
+  .seq (.block [.mov .r12 (.reg .r11)]) (mul umaal (contextMod n) invO (accS n) (resS n) (resS n) (prodS n))
+
+def mulFnName (n : Nat) : String := s!"vg_dsa_mul_{n}" ++ suffix umaal
+
+/-- `[o] = [a] [b] R⁻¹ mod m`, by a call of `vg_dsa_mul_{n}`: `[a]` and `[b]`
+are copied into the result's and the product's slots, which the table's
+products leave unused, and the product out of the first. -/
+def mulC (n o a b : Nat) : Prog isa :=
+  .seq (.block (ptr .r11 (resS n))) <| .seq (copyOut (2 * n) a) <|
+  .seq (.block (ptr .r11 (prodS n))) <| .seq (copyOut (2 * n) b) <|
+  .seq (.block [.mov .r11 (.reg .r12)]) <| .seq (.call (mulFnName umaal n) (mulFn umaal n)) <|
+  .seq (.block (ptr .r11 o)) (copyOut (2 * n) (resS n))
+
 /-- The table's entries that are products of two others: `(k, a, b)` for
 entry `k`, the product of entries `a` and `b`. -/
 def tableOps : List (Nat × Nat × Nat) :=
@@ -240,14 +256,15 @@ def tableOps : List (Nat × Nat × Nat) :=
 def tableFill (n : Nat) : List (Nat × Nat × Nat) → Prog isa
   | [] => .block []
   | (k, a, b) :: r =>
-    .seq (mul umaal (contextMod n) invO (accS n) (tabS n k) (tabS n a) (tabS n b)) (tableFill n r)
+    .seq (mulC umaal n (tabS n k) (tabS n a) (tabS n b)) (tableFill n r)
 
 /-- The table of a product of two powers: one, the two bases, encoded, and
-their products. -/
+their products, each by a call (`mulC`): the table is built once per
+exponentiation. -/
 def table2 (n : Nat) : Prog isa :=
-  .seq (mul umaal (contextMod n) invO (accS n) (tabS n 0) (rrS n) (oneS n)) <|
-  .seq (mul umaal (contextMod n) invO (accS n) (tabS n 1) (baseS n) (rrS n)) <|
-  .seq (mul umaal (contextMod n) invO (accS n) (tabS n 4) (base2S n) (rrS n)) (tableFill umaal n tableOps)
+  .seq (mulC umaal n (tabS n 0) (rrS n) (oneS n)) <|
+  .seq (mulC umaal n (tabS n 1) (baseS n) (rrS n)) <|
+  .seq (mulC umaal n (tabS n 4) (base2S n) (rrS n)) (tableFill umaal n tableOps)
 
 /-- A window of both exponents: the result to its fourth power, times the
 table's entry for their top two bits. -/

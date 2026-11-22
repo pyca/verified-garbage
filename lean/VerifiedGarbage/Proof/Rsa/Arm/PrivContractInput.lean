@@ -35,7 +35,9 @@ theorem private_contract_pre (s : State) (h : (Proof.Rsa.privateCheckedContract 
     exacts [nFit, eFit, iFit, pFit, qFit, dpFit, dqFit, qiFit]
   have geometry : (privateGeometry s).Valid := by
     refine ⟨valid.1, valid.2, ePositive, eFits, pPositive, pShort, qPositive, qShort, h,
-      ?_, ?_, outFit, sourceFit, wsFit, ?_, outWs, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      ?_, ?_, ?_, outFit, sourceFit, wsFit, ?_, outWs, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [privateGeometry_stackNat s stackFit]
+      simp only [stackBytes, frameBytes] at stackFit ⊢; omega_arith
     · rw [privateGeometry_stackNat s stackFit]
       simp only [stackBytes, frameBytes] at stackFit ⊢; omega_arith
     · rw [privateGeometry_stackNat s stackFit]

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByte
+public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByte
 public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.CallLay
@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpState
 public import VerifiedGarbage.Impl.Bignum.Arm.Exp
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteHeadCT
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBitsCT
+public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBitsCT
 import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteHead
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -46,38 +46,39 @@ structure ExpByteInput (ok : Prop) (base ep : BitVec 32) (len w M x E : Nat) (b 
   byte : s.mem (State.addr ep) = b
 
 theorem expByte_ct {base ep : BitVec 32} {len w M1 M2 x1 x2 E : Nat} {b : Byte}
-    (fit : arrAt w 3 + 32 ≤ 8 * len) :
-    RelCT isa (fun s t => ExpByteInput ok base ep len w M1 x1 E b s ∧
-      ExpByteInput ok base ep len w M2 x2 E b t ∧ s.sp = t.sp)
-      (.seq expByteHead (.seq expBits (.block expByteNext))) (fun _ _ => True) := by
-  let P := fun (s t : State) => ExpByteInput ok base ep len w M1 x1 E b s ∧
-    ExpByteInput ok base ep len w M2 x2 E b t ∧ s.sp = t.sp
-  have wpHead (s : State) {M x : Nat} (h : ExpByteInput ok base ep len w M x E b s) :
-      WP isa expByteHead s (ExpBitState ok base len w M x E b.toNat 0) := by
-    have head := expByteHead_ok s h.power h.pointer h.read
-    rw [h.byte] at head
-    exact WP.mono head (fun _ h => h.1)
+    {Q : State → Prop} {regions : List Region}
+    (K : TwoExp.Montgomery base len w Q regions) (ct : TwoExp.MontgomeryTiming K) :
+    RelCT isa (fun s t => (ExpByteInput ok base ep len w M1 x1 E b s ∧ Q s) ∧
+      (ExpByteInput ok base ep len w M2 x2 E b t ∧ Q t) ∧ s.sp = t.sp)
+      (.seq expByteHead (.seq (expBitsWith K.op) (.block expByteNext))) (fun _ _ => True) := by
+  let P := fun (s t : State) => (ExpByteInput ok base ep len w M1 x1 E b s ∧ Q s) ∧
+    (ExpByteInput ok base ep len w M2 x2 E b t ∧ Q t) ∧ s.sp = t.sp
+  have wpHead (s : State) {M x : Nat} (h : ExpByteInput ok base ep len w M x E b s ∧ Q s) :
+      WP isa expByteHead s fun t => ExpBitState ok base len w M x E b.toNat 0 t ∧ Q t := by
+    have head := expByteHead_ok s h.1.power h.1.pointer h.1.read
+    rw [h.1.byte] at head
+    exact WP.mono head (fun _ j => ⟨j.1, K.stable j.2.2.1 (j.2.2.2.mono (by decide)) h.2⟩)
   have head := (relCT_keep_sp (expByteHead_ct.mono (P' := P)
-    (fun _ _ h => ⟨⟨h.1.power.ready, h.1.pointer⟩, ⟨h.2.1.power.ready, h.2.1.pointer⟩⟩)
+    (fun _ _ h => ⟨⟨h.1.1.power.ready, h.1.1.pointer⟩, ⟨h.2.1.1.power.ready, h.2.1.1.pointer⟩⟩)
     (fun _ _ h => h)) (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨wpHead s h.1, wpHead t h.2.1⟩)
-  have wpBits (s : State) {M x : Nat} (h : ExpBitState ok base len w M x E b.toNat 0 s) :
-      WP isa expBits s (ExpState ok base len w M x (256 * E + b.toNat)) :=
-    WP.mono (expBits_ok s h b.isLt) (fun _ h => h.1)
-  have bits := ((expBits_ct (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2) (E := E) fit b.isLt).mono
-    (P' := fun (s t : State) => s.sp = t.sp ∧ ExpBitState ok base len w M1 x1 E b.toNat 0 s ∧
-      ExpBitState ok base len w M2 x2 E b.toNat 0 t)
+  have wpBits (s : State) {M x : Nat} (h : ExpBitState ok base len w M x E b.toNat 0 s ∧ Q s) :
+      WP isa (expBitsWith K.op) s fun t => ExpState ok base len w M x (256 * E + b.toNat) t ∧ Q t :=
+    WP.mono (expBits_ok s K h.1 h.2 b.isLt) (fun _ h => ⟨h.1, h.2.1⟩)
+  have bits := ((expBits_ct (M1 := M1) (M2 := M2) (x1 := x1) (x2 := x2) (E := E) K ct b.isLt).mono
+    (P' := fun (s t : State) => s.sp = t.sp ∧ (ExpBitState ok base len w M1 x1 E b.toNat 0 s ∧ Q s) ∧
+      (ExpBitState ok base len w M2 x2 E b.toNat 0 t ∧ Q t))
     (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ h => h)).wp
     (fun s t h => ⟨wpBits s h.2.1, wpBits t h.2.2⟩)
-  have next : RelCT isa (fun s t => True ∧ ExpState ok base len w M1 x1 (256 * E + b.toNat) s ∧
-      ExpState ok base len w M2 x2 (256 * E + b.toNat) t) (.block expByteNext) (fun _ _ => True) := by
+  have next : RelCT isa (fun s t => True ∧ (ExpState ok base len w M1 x1 (256 * E + b.toNat) s ∧ Q s) ∧
+      (ExpState ok base len w M2 x2 (256 * E + b.toNat) t ∧ Q t)) (.block expByteNext) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (Taint.ofRegs [.r0]) _ (by taint_decide)
     intro s t h
     apply Taint.agree_ofRegs
     intro r hr
     simp only [List.mem_singleton] at hr
     subst r
-    exact h.2.1.ready.ptr.trans h.2.2.ready.ptr.symm
+    exact h.2.1.1.ready.ptr.trans h.2.2.1.ready.ptr.symm
   exact head.seq (bits.seq next)
 
 end VG.Proof.Bignum.Arm.ConditionalExp
@@ -117,26 +118,27 @@ theorem ExpByteState.input {s : State} {base ep : BitVec 32} {len w M x j : Nat}
   · rw [address]; exact h.bytes j hj
 
 theorem expByteState_step (s : State) {base ep : BitVec 32} {len w M x j : Nat} {eb : List Byte}
-    (h : ExpByteState ok base ep len w M x eb j s) (hj : j < eb.length) :
-    WP isa (.seq expByteHead (.seq expBits (.block expByteNext))) s fun t =>
-      ExpByteState ok base ep len w M x eb (j + 1) t ∧ t.z = decide (j + 1 = eb.length) := by
+    {Q : State → Prop} {regions : List Region} (K : TwoExp.Montgomery base len w Q regions)
+    (h : ExpByteState ok base ep len w M x eb j s) (q : Q s) (hj : j < eb.length)
+    (sepR : ∀ r ∈ regions, Region.Disjoint ⟨State.addr ep, eb.length⟩ r) :
+    WP isa (.seq expByteHead (.seq (expBitsWith K.op) (.block expByteNext))) s fun t =>
+      (ExpByteState ok base ep len w M x eb (j + 1) t ∧ Q t) ∧ t.z = decide (j + 1 = eb.length) := by
   have input := h.input hj
-  refine WP.mono (expByte_ok s h.power (by omega_using [hj]) (by have := h.countFit; omega_using [this])
+  refine WP.mono (expByte_ok s K h.power q (by omega_using [hj]) (by have := h.countFit; omega_using [this])
     h.pointer h.count input.read) ?_
-  rintro t ⟨power, pointer, count, zero, frame, rest⟩
+  rintro t ⟨power, qt, pointer, count, zero, frame, rest⟩
   rw [input.byte] at power
   have prefixEq : 256 * pre eb j + (eb[j]).toNat = pre eb (j + 1) := by
     rw [pre_succ eb hj, Nat.mul_comm]
   rw [prefixEq] at power
-  refine ⟨⟨power, ?_, ?_, h.countFit, h.sourceFit, ?_, h.separate, ?_⟩, ?_⟩
+  refine ⟨⟨⟨power, ?_, ?_, h.countFit, h.sourceFit, ?_, h.separate, ?_⟩, qt⟩, ?_⟩
   · rw [pointer]
     change ep + BitVec.ofNat 32 j + BitVec.ofNat 32 1 = _
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
   · rw [count]; congr 1
   · rw [rest.rd, rest.wr]; exact h.read
   · intro i hi
-    rw [frame.bytes (R := ⟨State.addr ep, eb.length⟩)
-      (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.separate)
+    rw [frame.bytes (R := ⟨State.addr ep, eb.length⟩) (fun r hr => sepR r hr)
       (by change eb.length ≤ 2 ^ 64; have := h.countFit; omega_using [this]) hi]
     exact h.bytes i hi
   · rw [zero]; exact decide_eq_decide.mpr (by omega_using [])

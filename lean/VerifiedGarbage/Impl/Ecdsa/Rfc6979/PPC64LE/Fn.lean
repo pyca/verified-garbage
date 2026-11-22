@@ -29,7 +29,9 @@ public import VerifiedGarbage.Spec.BrainpoolP512r1
 which calls HMAC through its table (the functions `f` an indirect call of the
 table's may reach) and the curve's `vg_ecdsa_<curve>_sign_k`, then its
 cleanup (`Impl.Scrub.PPC64LE.scrubAll`): the volatile registers cleared but
-the 32 bits of its result, and the 736 bytes of stack its frames use zeroed.
+the 32 bits of its result, and the 784 bytes of stack its frames (640) and
+the functions it calls (144: HMAC's `init` for a key of any length, its
+table's word 0, for a key longer than a block) use zeroed.
 Each curve's configuration (`<curve>Cfg`) gives the code's parameters. -/
 
 @[expose] public section
@@ -41,7 +43,7 @@ open VG.Impl.Scrub.PPC64LE (scrubAll)
 open VG.Impl.RsaOaep.PPC64LE (Fns)
 
 /-- `vg_ecdsa_<curve>_sign` as emitted, with the configuration `c`. -/
-def sign (c : Cfg) : Prog isa := scrubAll 32 736 .all c.sign
+def sign (c : Cfg) : Prog isa := scrubAll 32 784 .all c.sign
 
 /-- P-192's configuration, with the functions `f` its table's may be. -/
 def p192Cfg (f : Fns) : Cfg where

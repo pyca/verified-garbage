@@ -4,22 +4,48 @@ import VerifiedGarbage.Proof.TripleDes.Arm.Frame
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
 public import VerifiedGarbage.Spec.TripleDes.Cbc
+public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Framework.Arm.Scrub
 import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.Verified
+import VerifiedGarbage.Proof.TripleDes.Scratch
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
+meta import VerifiedGarbage.Proof.TripleDes.Arm.Frame
+meta import VerifiedGarbage.Proof.Modes.Arm.Core
+meta import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
+meta import VerifiedGarbage.Spec.TripleDes.Cbc
+meta import VerifiedGarbage.TCB.Registration
+meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
+meta import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+meta import VerifiedGarbage.Proof.TripleDes.Arm.Bitsliced.Verified
+meta import VerifiedGarbage.Proof.TripleDes.Scratch
+meta import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Registration
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # Triple DES's ECB functions on ARMv7 as the modes' core
 
 `ecbSpec d`: what the modes need of `vg_triple_des_ecb_encrypt` and
 `vg_triple_des_ecb_decrypt` (`Proof.Modes.Arm.CoreSpec`), from their shared
-contract (`Spec.TripleDes.ecbContract`, with 1024 bytes of stack) and its
-proof (`ecb_framed`): the schedule is the 384-byte schedule, and the cipher
-on a block is `Spec.TripleDes.cipher` or `Spec.TripleDes.invCipher` of it.
+contract (`Spec.TripleDes.ecbContract`, with 1024 bytes of stack) and the
+proof of each as it is emitted, cleanup included (`Fn.ecbEncrypt`,
+`Fn.ecbDecrypt`, which their registrations bind): the schedule is the
+384-byte schedule, and the cipher on a block is `Spec.TripleDes.cipher` or
+`Spec.TripleDes.invCipher` of it. The modes call the artifacts themselves.
 -/
 
 @[expose] public section
@@ -58,14 +84,51 @@ theorem ecb_dir (d : Spec.TripleDes.Direction) (k : Spec.TripleDes.Schedule) (xs
     Spec.TripleDes.ecb k d xs = xs.map (dirBlock d k) := by
   cases d <;> rfl
 
-theorem ecb_stack (d : Spec.TripleDes.Direction) : VG.Arm.FrameStack.armStack (ecbCode d) ≤ 1024 := by
+theorem ecbOut (d : Spec.TripleDes.Direction) :
+    VG.Arm.Scrub.PostOut (Spec.TripleDes.ecbContract Arm.abi d 1024) (Spec.TripleDes.ecbSig.retBits 32) :=
+  VG.Arm.Scrub.postOut_of_local (leak := none) VG.Arm.Scrub.ScrubAbi.plain (Proof.TripleDes.ecbPostOut_local _ d)
+
+end VG.Proof.TripleDes.Arm
+
+namespace VG.Proof.TripleDes.Arm.Fn
+
+open VG VG.Arm VG.Arm.Scrub
+
+/-- `vg_triple_des_ecb_encrypt`. -/
+theorem ecbEncrypt :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.ecbEncrypt (Spec.TripleDes.ecbContract Arm.abi .encrypt 1024) 0 :=
+  verifiedScrubbedSel (api := Spec.TripleDes.ecbEncryptApi) (W := 1024)
+    { code := Impl.TripleDes.Arm.ecbCode .encrypt
+      verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Bitsliced.encrypt_verified }
+    [] []
+    (ecbOut .encrypt)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+
+/-- `vg_triple_des_ecb_decrypt`. -/
+theorem ecbDecrypt :
+    VerifiedScrubbed target Impl.TripleDes.Arm.Fn.ecbDecrypt (Spec.TripleDes.ecbContract Arm.abi .decrypt 1024) 0 :=
+  verifiedScrubbedSel (api := Spec.TripleDes.ecbDecryptApi) (W := 1024)
+    { code := Impl.TripleDes.Arm.ecbCode .decrypt
+      verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Bitsliced.decrypt_verified }
+    [] []
+    (ecbOut .decrypt)
+    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+
+end VG.Proof.TripleDes.Arm.Fn
+
+namespace VG.Proof.TripleDes.Arm
+
+open VG VG.Arm VG.Impl.TripleDes.Arm VG.Impl.Modes.Arm VG.Proof.Modes.Arm
+open VG.Proof.Modes (blocksOf)
+
+theorem ecb_stack (d : Spec.TripleDes.Direction) : VG.Arm.FrameStack.armStack (ecbCore d).code ≤ 1024 := by
   cases d <;> lit_decide
 
-/-- The ECB functions, by their shared contract. -/
+/-- The ECB functions as emitted, by their shared contract. -/
 theorem ecbVerified : ∀ d : Spec.TripleDes.Direction,
-    Verified Arm.target (ecbCode d) (Spec.TripleDes.ecbContract Arm.abi d 1024)
-  | .encrypt => ecb_framed Bitsliced.encrypt_verified
-  | .decrypt => ecb_framed Bitsliced.decrypt_verified
+    Verified Arm.target (ecbCore d).code (Spec.TripleDes.ecbContract Arm.abi d 1024)
+  | .encrypt => Fn.ecbEncrypt.verified
+  | .decrypt => Fn.ecbDecrypt.verified
 
 /-- Triple DES's ECB function in the direction `d`, as the modes' core. -/
 def ecbSpec (d : Spec.TripleDes.Direction) : CoreSpec (ecbCore d) where

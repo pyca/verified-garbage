@@ -35,8 +35,12 @@ holds the 64 state words (`stOff`), the transposition's masks
   `L` (`.ab`), so no word moves; a pass of sixteen rounds, eight times both
   (counted in `r5`), ends by exchanging the halves, as DES's swap and the
   next pass's IP do.
-* The three passes are unrolled, each with its schedule component and key
-  direction.
+* Each of the three passes sets the key pointer to its schedule component
+  and calls the pass of its key direction (`vg_triple_des_pass_encrypt` or
+  `_decrypt`), and both transpositions call `vg_triple_des_transpose`: a
+  call does not keep `r11`, so these set it to all ones again, and the
+  link register waits in the scratch buffer (`lrOff`) from the setup to the
+  end.
 * The state is transposed back and the blocks copied out; the data pointer
   `r4` and the blocks left `r8` advance.
 
@@ -312,10 +316,22 @@ def swapHalves : List Instr :=
     [.load .d .r12 base (stOff (lWord q)), .load .d .r14 base (stOff (rWord q)),
      .store .d .r14 base (stOff (lWord q)), .store .d .r12 base (stOff (rWord q))]
 
+/-- All ones into `r11`, which a call does not keep. -/
+def onesCode : List Instr := [.lis ones 0xFFFF, .ori ones ones 0xFFFF]
+
+/-- A DES pass in direction `d`, from the round key at `r3`: all ones into
+`r11`, then eight pairs of rounds and the exchange of the halves. -/
+def passBody (d : Direction) : Prog isa :=
+  .seq (.block (onesCode ++ [.li pairs 8])) (.seq (.loop (.block (roundPair d)) (.nonzero .d pairs)) (.block swapHalves))
+
+/-- The call of the pass of direction `d`. -/
+def passCall : Direction → Prog isa
+  | .encrypt => .call "vg_triple_des_pass_encrypt" (passBody .encrypt)
+  | .decrypt => .call "vg_triple_des_pass_decrypt" (passBody .decrypt)
+
 /-- A DES pass with schedule component `c`, in direction `d`. -/
 def pass (c : Nat) (d : Direction) : Prog isa :=
-  .seq (.block [.addi keyPtr sched (128 * c + if d = .encrypt then 0 else 120), .li pairs 8])
-    (.seq (.loop (.block (roundPair d)) (.nonzero .d pairs)) (.block swapHalves))
+  .seq (.block [.addi keyPtr sched (128 * c + if d = .encrypt then 0 else 120)]) (passCall d)
 
 /-- The three passes of the operation. -/
 def passes : Direction → Prog isa
@@ -375,6 +391,9 @@ def transposeBody : List Instr :=
 /-- `r25` at the masks, and the transposition. -/
 def transpose : List Instr := .addi .r25 base maskOff :: transposeBody
 
+/-- The call of the transposition, which then sets `r11` to all ones again. -/
+def transposeCall : Prog isa := .call "vg_triple_des_transpose" (.block (transpose ++ onesCode))
+
 /-! ## Batches -/
 
 /-- The batch's blocks, `min(n, 64)`, into `r12`. -/
@@ -391,19 +410,33 @@ def copyBatch (src dst : Reg) : Prog isa :=
 the three passes, and back; then the next blocks. -/
 def batch (d : Direction) : Prog isa :=
   .seq batchBlocks (.seq (copyBatch .r4 base)
-    (.seq (.block transpose) (.seq (passes d) (.seq (.block transpose) (.seq batchBlocks
+    (.seq transposeCall (.seq (passes d) (.seq transposeCall (.seq batchBlocks
       (.seq (copyBatch base .r4) (.block [rr .r4 .r9, .sub left left batchN])))))))
 
 /-! ## The function -/
 
+/-- Where the link register waits for the calls, after the saved registers. -/
+def lrOff : Nat := 712
+
+/-- The link register into the scratch buffer, through `r0`. -/
+def lrSave : List Instr := [.mflr tmp, .store .d tmp base lrOff]
+
+/-- The link register back. -/
+def lrRestore : List Instr := [.load .d tmp base lrOff, .mtlr tmp]
+
 /-- The registers saved in the scratch buffer, the arguments moved, all ones
-and the masks stored. -/
-def setup : List Instr :=
+and the masks stored; then the link register saved. -/
+def setupRegs : List Instr :=
   saved.map (fun (r, o) => .store .d r .r6 (savedOff + o)) ++
     [rr base .r6, rr sched .r3, rr left .r5, .lis ones 0xFFFF, .ori ones ones 0xFFFF] ++ storeMasks
 
+def setup : List Instr := setupRegs ++ lrSave
+
 /-- The registers back. -/
-def finish : List Instr := saved.map fun (r, o) => .load .d r base (savedOff + o)
+def restoreRegs : List Instr := saved.map fun (r, o) => .load .d r base (savedOff + o)
+
+/-- The registers and the link register back. -/
+def finish : List Instr := restoreRegs ++ lrRestore
 
 def ecb (d : Direction) : Prog isa :=
   .ite (.zero .d .r5) (.block [])
@@ -429,7 +462,7 @@ modes' analysis of constant time (`SlotTaint`) see that the saved registers
 come back as they were. `r5` is ignored; `r10` and `r7` are left holding the
 working space's and the schedule's addresses, as by `ecb`. -/
 def ecb64 (d : Direction) : Prog isa :=
-  .seq (.block setup) (.seq (.block (copyIn64 ++ transpose))
-    (.seq (passes d) (.block (transpose ++ copyOut64 ++ finish))))
+  .seq (.block setup) (.seq (.block copyIn64) (.seq transposeCall
+    (.seq (passes d) (.seq transposeCall (.block (copyOut64 ++ finish))))))
 
 end VG.Impl.TripleDes.PPC64LE.Bitslice

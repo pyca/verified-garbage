@@ -197,11 +197,9 @@ vg_aes_ofb_final_aesni:
 	mov esi, DWORD PTR [eax+4]
 	mov edi, DWORD PTR [eax+8]
 	mov ebp, DWORD PTR [eax+12]
+	pxor xmm0, xmm0
 	mov ecx, 0
-	mov DWORD PTR [esp+32], ecx
-	mov DWORD PTR [esp+36], ecx
-	mov DWORD PTR [esp+40], ecx
-	mov DWORD PTR [esp+44], ecx
+	movdqu XMMWORD PTR [esp+32], xmm0
 	lea esp, [esp+48]
 	pxor xmm0, xmm0
 	mov ecx, 0
@@ -396,11 +394,9 @@ vg_aes_ofb_final:
 	mov esi, DWORD PTR [eax+4]
 	mov edi, DWORD PTR [eax+8]
 	mov ebp, DWORD PTR [eax+12]
+	pxor xmm0, xmm0
 	mov ecx, 0
-	mov DWORD PTR [esp+32], ecx
-	mov DWORD PTR [esp+36], ecx
-	mov DWORD PTR [esp+40], ecx
-	mov DWORD PTR [esp+44], ecx
+	movdqu XMMWORD PTR [esp+32], xmm0
 	lea esp, [esp+48]
 	pxor xmm0, xmm0
 	mov ecx, 0

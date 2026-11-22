@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Setup
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ecdsa.X86.CallWs
 
 /-!
 # ECDH on x86 (32-bit): the result, and the whole function
@@ -252,6 +253,16 @@ structure EPre (c : Cfg) (s : State) : Prop where
   stk_out : (stkR c s).Disjoint ⟨ptr s 0, c.C.len⟩
   stk_sc : (stkR c s).Disjoint ⟨ptr s 3, size⟩
 
+
+/-- The stack below the return address is apart from the writable regions. -/
+theorem EPre.stk_wr {s : State} (hp : EPre c s) :
+    ∀ r ∈ s.wr, Region.Disjoint (below (s.gpr .esp) c.stk) r := by
+  rw [hp.wr, ← stkR_eq_below hp.sp_lo]
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl)
+  · exact hp.stk_out
+  · exact hp.stk_sc
+
 theorem idx_ecdh {i : Nat} (hi : i ∈ Args.ecdh.idx) : i < 4 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
   omega_arith
@@ -373,21 +384,24 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.X86.Cfg.exchange c =
 /-- The stack the parts of `exchange` use. -/
 structure ESp (c : Cfg) : Prop where
   validate : SpOk (Impl.Ecdh.X86.Cfg.validate c) c.stk
-  ladder : SpOk (c.ecdhMul PX PY) c.stk
+  ladder : SpOk (c.ecdhMul PX PY) 24
   pPow : SpOk c.pPow c.stk
   ops : SpOk (ecOps c) c.stk
 
-theorem ESp.of (h : SpOk (Impl.Ecdh.X86.Cfg.exchange c) c.stk) : ESp c := by
+/-- The stack of the parts, from the whole code's: 24 bytes, for the call of
+the windows. -/
+theorem ESp.of (h : SpOk (Impl.Ecdh.X86.Cfg.exchange c) 24) : ESp c := by
   rw [exchange_eq'] at h
   have h₁ := h.right.right
   have h₂ := h₁.right.right.right
   rw [middle_split] at h₂
-  exact ⟨h₁.left, h₁.right.left, h₁.right.right.left, (SpOk.split _ _ _ h₂).1⟩
+  have hs := Cfg.stk_ge24 c
+  exact ⟨h₁.left.le hs, h₁.right.left, h₁.right.right.left.le hs, (SpOk.split _ _ _ h₂).1.le hs⟩
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers. -/
 theorem exchange_ok (hc : CfgOk c) (hC : Law c.C)
-    (hsp : SpOk (Impl.Ecdh.X86.Cfg.exchange c) c.stk)
+    (hsp : SpOk (Impl.Ecdh.X86.Cfg.exchange c) 24)
     {s₀ : State} (hp : EPre c s₀) :
     WP isa (Impl.Ecdh.X86.Cfg.exchange c) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' := by
   obtain H := ESp.of hsp
@@ -448,7 +462,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C)
   -- `[d]P`, then `Z^(p-2)`.
   obtain K₄ : Keep c s₀ (ptr s₀ 3) s₄ := ⟨hs₄, by rw [g₄ _ (by decide), K₃.esp], by rw [rd₄, K₃.rd],
     by rw [wr₄, K₃.wr], F₄, w₄, S₂.sp_lo⟩
-  refine ladPow_ok hc hC K₄ H.ladder H.pPow (peerPt_onCurve hc _ _ _) hpk px_lt py_lt
+  refine ladPow_ok hc hC K₄ hp.stk_wr H.ladder H.pPow (peerPt_onCurve hc _ _ _) hpk px_lt py_lt
     (peerPt_rep hC _ _ _ px py)
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, S₂.k])
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L w₅ => ?_

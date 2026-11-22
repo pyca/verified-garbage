@@ -318,7 +318,7 @@ def TabFn (P : RfcHash) (j : Nat) (n : String) (c : Prog isa) (ts : List (String
     m₀.readW (L.tab + BitVec.ofNat 64 (8 * j)) 64 = t.syms n ∧
       ts.find? (fun q => t.syms q.1 == t.syms n) = some (n, c) ∧ t.syms n = L.fa n
 
-theorem tfn_init : TabFn P 0 P.v.initN P.v.H.init P.f.init := fun L _ _ _ _ _ hq hc => by
+theorem tfn_init : TabFn P 0 P.v.initN P.v.initC P.f.init := fun L _ _ _ _ _ hq hc => by
   obtain hok := hc.tabOk; have htm := hc.tabMem; have hf := hc.fsy
   rw [hq.2.1.1, hq.2.1.2] at hok; rw [hq.2.1.1] at htm hf
   exact ⟨htm.1, hok.i, hf _ (by simp)⟩
@@ -450,7 +450,7 @@ theorem initAt {L : Lay P.I.hashLen} (hL : L.Ok) {u : State} (hcu : Ctx L g lr m
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact ⟨L.SCR, by simp, within_off _ (by nums)⟩
 
-theorem init_call_ct : RelCT isa (Two P (IA P)) (.call P.v.initN P.v.H.init) fun _ _ => True :=
+theorem init_call_ct : RelCT isa (Two P (IA P)) (.call P.v.initN P.v.initC) fun _ _ => True :=
   two_call P.K.initV P.K.initCT (initRd P) (initWr P) (fun _ _ _ _ _ hL _ hc ha => initAt hL hc ha)
     fun _ _ _ _ _ _ _ u₁ u₂ h => by
       sig_pub [Proof.Hmac.Instance.initScratchContract, Proof.Hmac.initScratchContract,

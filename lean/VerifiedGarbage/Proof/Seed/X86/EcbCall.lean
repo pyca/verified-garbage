@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -29,14 +30,14 @@ public meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 # SEED ECB on x86 (32-bit): calls of the blocks functions
 
 `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt` allocate their working
-space on the stack (1088 bytes, as `vg_seed_{en,de}crypt_blocks` need) and
-call the blocks function of their direction with it (`ecbCall`): the
-caller's `ebx` pushed in a frame of its own, the four arguments loaded into
+space on the stack (1088 bytes, as `vg_seed_blocks` needs), store their
+direction's flag in it (`flagStore`) and call the blocks function with it
+(`ecbCall`): the caller's `ebx` pushed in a frame of its own, the four arguments loaded into
 `eax`, `ecx`, `edx` and `ebx` and pushed in a frame for the call. That is 24
 bytes of stack (`callX86`): the two frames and the call's return address.
 
-`call_wp` proves the code from the blocks function's (`ecb_correct`, by
-`WP.callWith`).
+`frame_wp` proves the call from the blocks function's contract (`ecb_correct`, by
+`WP.callWith`), and `call_wp` the store of the flag before it.
 -/
 
 @[expose] public section
@@ -66,15 +67,9 @@ def callX86 (d : Spec.Seed.Direction) : Contract X86.isa where
   post := (ecbX86 d).post
   pub := (ecbX86 d).pub
 
-theorem ecb_noSp (d : Spec.Seed.Direction) : NoSp (ecb d) := by
-  cases d
-  · exact NoSp.of_all (by lit_decide)
-  · exact NoSp.of_all (by lit_decide)
+theorem blocks_noSp : NoSp blocks := NoSp.of_all (by lit_decide)
 
-theorem ecb_stackUse (d : Spec.Seed.Direction) : stackUse (ecb d) = 0 := by
-  cases d
-  · lit_decide
-  · lit_decide
+theorem ecb_stackUse : stackUse blocks = 0 := by lit_decide
 
 /-- The stack the code uses, as the contract writes it. -/
 theorem stk_eq {E : BitVec 32} (h : 24 ≤ E.toNat) :
@@ -177,8 +172,9 @@ the loads; on return, `esp` and the callee-saved registers as before it, the
 memory changed only in the data, the working space and the 20 bytes below
 `E - 4`, and the data the ECB of the schedule's blocks. -/
 theorem inner_wp (d : Spec.Seed.Direction) {s₀ s₂ : State} {E : BitVec 32} (hc : CallPre' s₀ E)
-    (hl : Loaded s₀ E s₂) :
-    WP isa (.frame (.push [.ebx, .edx, .ecx, .eax]) (blocksCall d) (.pop .eax 4)) s₂ fun s' =>
+    (hl : Loaded s₀ E s₂)
+    (hfl : s₀.mem.readW (wordAddr (arg s₀ 3) dirSlot) 32 = BitVec.ofNat 32 (dirFlag d)) :
+    WP isa (.frame (.push [.ebx, .edx, .ecx, .eax]) blocksCall (.pop .eax 4)) s₂ fun s' =>
       s'.rd = s₂.rd ∧ s'.wr = s₂.wr ∧ (∀ r ∈ calleeSaved, s'.gpr r = s₂.gpr r) ∧
       Frame ([⟨(arg s₀ 1).setWidth 64, 16 * (arg s₀ 2).toNat⟩, ⟨(arg s₀ 3).setWidth 64, 4 * wsSlots⟩] ++
         [below (s₂.gpr .esp) 20]) s₂.mem s'.mem ∧
@@ -228,16 +224,21 @@ theorem inner_wp (d : Spec.Seed.Direction) {s₀ s₂ : State} {E : BitVec 32} (
     rw [List.mem_singleton] at hr; subst hr; exact sK.symm
   obtain hblk := Proof.Seed.blocksAt_frame fE₀ (p := (arg s₀ 1).setWidth 64) (n := (arg s₀ 2).toNat)
     (fun r hr => by rw [List.mem_singleton] at hr; subst hr; rw [Nat.mul_comm]; exact sD.symm) (by omega_using [])
-  cases d <;>
-  · refine WP.callWith (k := ecbX86 _) (ecb_correct _) (ecb_noSp _) (by decide) hrs
+  obtain hws : Region.Sub ⟨wordAddr (arg s₀ 3) dirSlot, 4⟩ ⟨(arg s₀ 3).setWidth 64, 4 * wsSlots⟩ :=
+    fun x hx => Region.sub_prefix (by decide) x
+      (slot_sub (by have := fitB; rw [slots_eq]; unfold wsSlots at this; omega_using [this]) (by decide) x hx)
+  · refine WP.callWith (k := ecbX86 d) (ecb_correct d) blocks_noSp (by decide) hrs
       (by rw [ecb_stackUse, espN₂]; show 20 ≤ _; omega_using [hE])
       (rd := [⟨(arg s₀ 0).setWidth 64, 128⟩, ⟨argAddr (pushed [Reg.ebx, .edx, .ecx, .eax] s₂).callEntry 0, 16⟩])
       (wr := [⟨(arg s₀ 1).setWidth 64, 16 * (arg s₀ 2).toNat⟩, ⟨(arg s₀ 3).setWidth 64, 4 * wsSlots⟩])
       ⟨?_, ?_, ?_⟩ fun s' rd' wr' cs f ⟨s₃, m₃, post⟩ => ?_
     · simp only [ecbX86, ecbX86W, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr, arg_withRegions,
-        argAddr_withRegions, a0, a1, a2, a3]
-      exact ⟨trivial, trivial, dKD, dKS, dDS, sD.sub_left argsSub, sS.sub_left argsSub,
-        sD.sub_left retSub, sS.sub_left retSub, fitK, fitD, fitB, by rw [espE]; omega_using []⟩
+        argAddr_withRegions, State.withRegions_mem, a0, a1, a2, a3]
+      refine ⟨trivial, trivial, dKD, dKS, dDS, sD.sub_left argsSub, sS.sub_left argsSub,
+        sD.sub_left retSub, sS.sub_left retSub, fitK, fitD, fitB, by rw [espE]; omega_using [], ?_⟩
+      rw [fE₀.readW (Region.contains_self _ _) (fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr; exact (sS.sub_right hws).symm) (by decide)]
+      exact hfl
     · refine Covers.append_left (Covers.of_mem fun r hr => ?_) (Covers.right (Covers.of_mem fun r hr => ?_))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
@@ -262,8 +263,9 @@ theorem inner_wp (d : Spec.Seed.Direction) {s₀ s₂ : State} {E : BitVec 32} (
         (fun r hr => by rw [List.mem_singleton] at hr; subst hr; rw [Nat.mul_comm]; exact sD.symm) (by omega_using []),
         post, hsch, hblk]
 
-theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s₀) :
-    WP isa (ecbCall d) s₀ fun s' => abiPreserved s₀ s' ∧ (callX86 d).post s₀ s' := by
+theorem frame_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s₀)
+    (hfl : s₀.mem.readW (wordAddr (arg s₀ 3) dirSlot) 32 = BitVec.ofNat 32 (dirFlag d)) :
+    WP isa ecbFrame s₀ fun s' => abiPreserved s₀ s' ∧ (callX86 d).post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dDS, dAD, dAS, dRD, dRS, sK, sD, sS, hE, fitK, fitD, fitB, fitE⟩ := hp
   obtain ⟨E, hEd⟩ : ∃ E, s₀.gpr .esp = E := ⟨_, rfl⟩
   have hEl := E.isLt
@@ -274,15 +276,13 @@ theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s
   obtain h4 : 4 ≤ E.toNat := by omega_using [hE]
   obtain hbody : NoSp (.seq (.block [.mov .eax (.mem (argOp 1)), .mov .ecx (.mem (argOp 2)),
       .mov .edx (.mem (argOp 3)), .mov .ebx (.mem (argOp 4))])
-      (.frame (.push [.ebx, .edx, .ecx, .eax]) (blocksCall d) (.pop .eax 4)) : Prog isa) := by
-    cases d
-    · exact NoSp.of_all (by lit_decide)
-    · exact NoSp.of_all (by lit_decide)
+      (.frame (.push [.ebx, .edx, .ecx, .eax]) blocksCall (.pop .eax 4)) : Prog isa) :=
+    NoSp.of_all (by lit_decide)
   obtain hsub : Region.Sub (below (s₀.gpr .esp) (4 * [Reg.ebx].length)) (below E 24) := by
     rw [hEd]; exact below_sub (by simp) hE
   refine WP.frame (rs := [.ebx]) (r := .ebx) (by decide) (by decide) (by decide) (by simp; omega_using [hE']) hbody ?_
   obtain ⟨s₂, e₂, hl⟩ := argLoads_ok hEd hE fitE (by rw [hrd]; simp)
-  refine WP.seq (WP.of_runBlock ⟨s₂, e₂, WP.mono (inner_wp d hc hl) fun s' ⟨rd', wr', cs, f, post⟩ m u fl => ?_⟩)
+  refine WP.seq (WP.of_runBlock ⟨s₂, e₂, WP.mono (inner_wp d hc hl hfl) fun s' ⟨rd', wr', cs, f, post⟩ m u fl => ?_⟩)
   obtain esp' : s'.gpr .esp = E - BitVec.ofNat 32 4 := by rw [cs .esp (by decide), hl.esp]
   obtain hb4 : Region.Sub ⟨(E - BitVec.ofNat 32 4).setWidth 64, 4⟩ (below E 24) :=
     below_sub (a := 4) (by decide) hE
@@ -346,6 +346,62 @@ theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s
         rw [List.mem_singleton] at hr; subst hr; rw [Nat.mul_comm]; exact (sD.sub_left hsub).symm)
       (by omega_using [])]
     exact post
+
+theorem callX86_pre_congr {d : Spec.Seed.Direction} {s s' : State} (h : (callX86 d).pre s)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hesp : s'.gpr .esp = s.gpr .esp)
+    (harg : ∀ i < 4, arg s' i = arg s i) : (callX86 d).pre s' := by
+  have ha : argAddr s' 0 = argAddr s 0 := by simp only [argAddr, hesp]
+  simp only [callX86] at h ⊢
+  rw [hrd, hwr, hesp, ha, harg 0 (by decide), harg 1 (by decide), harg 2 (by decide), harg 3 (by decide)]
+  exact h
+
+open VG.X86.Wp in
+theorem call_wp (d : Spec.Seed.Direction) {s₀ : State} (hp : (callX86 d).pre s₀) :
+    WP isa (ecbCall d) s₀ fun s' => abiPreserved s₀ s' ∧ (callX86 d).post s₀ s' := by
+  have hp₀ := hp
+  obtain ⟨hrd, hwr, dKD, dKS, dDS, dAD, dAS, dRD, dRS, sK, sD, sS, hE, fitK, fitD, fitB, fitE⟩ := hp
+  obtain hrA : (⟨argAddr s₀ 0, 16⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+  obtain hwS : (⟨(arg s₀ 3).setWidth 64, 4 * wsSlots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain hcw : (⟨(arg s₀ 3).setWidth 64, 4 * wsSlots⟩ : Region).Contains (wordAddr (arg s₀ 3) dirSlot) 4 :=
+    slot_contains (arg s₀ 3) (by decide) fitB
+  obtain hws : Region.Sub ⟨wordAddr (arg s₀ 3) dirSlot, 4⟩ ⟨(arg s₀ 3).setWidth 64, 4 * wsSlots⟩ :=
+    fun x hx => Region.sub_prefix (by decide) x
+      (slot_sub (by have := fitB; rw [slots_eq]; unfold wsSlots at this; omega_using [this]) (by decide) x hx)
+  unfold ecbCall flagStore
+  refine WP.seq ?_
+  refine wp_ldm (b := .esp) (o := 4 + 4 * 3) rfl ⟨_, List.mem_append_left _ hrA, arg_contains s₀ fitE (by decide)⟩
+    fun s₁ u₁ => wp_movi fun s₂ u₂ => wp_stm (b := .eax) (B := arg s₀ 3) (o := 4 * dirSlot)
+      (by rw [u₂.other _ (by decide), u₁.gpr]; rfl) (by rw [u₂.wr, u₁.wr]; exact ⟨_, hwS, hcw⟩)
+      fun s₃ u₃ => WP.block_nil ?_
+  obtain m₃ : s₃.mem = s₀.mem.writeW (wordAddr (arg s₀ 3) dirSlot) (BitVec.ofNat 32 (dirFlag d)) := by
+    rw [u₃.mem, u₂.mem, u₁.mem, u₂.gpr]
+  obtain f₃ : Frame [⟨wordAddr (arg s₀ 3) dirSlot, 4⟩] s₀.mem s₃.mem := by
+    rw [m₃]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  obtain g₃ : ∀ r, r ≠ .eax → r ≠ .ecx → s₃.gpr r = s₀.gpr r := fun r h1 h2 => by
+    rw [u₃.gpr, u₂.other r h2, u₁.other r h1]
+  obtain esp₃ : s₃.gpr .esp = s₀.gpr .esp := g₃ _ (by decide) (by decide)
+  obtain rd₃ : s₃.rd = s₀.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
+  obtain wr₃ : s₃.wr = s₀.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
+  obtain harg : ∀ i < 4, arg s₃ i = arg s₀ i := fun i hi => by
+    show s₃.mem.readW (argAddr s₃ i) 32 = _
+    rw [show argAddr s₃ i = argAddr s₀ i by simp only [argAddr, esp₃]]
+    exact f₃.readW (arg_contains s₀ fitE hi) (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; exact dAS.sub_right hws) (by decide)
+  obtain hfl : s₃.mem.readW (wordAddr (arg s₃ 3) dirSlot) 32 = BitVec.ofNat 32 (dirFlag d) := by
+    rw [harg 3 (by decide), m₃]; exact Mem.readW_writeW_self32 _ _ _
+  refine WP.mono (frame_wp d (callX86_pre_congr hp₀ rd₃ wr₃ esp₃ harg) hfl) fun s' ⟨⟨cs, ret⟩, post⟩ => ?_
+  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+  · rw [cs r hr, g₃ r (fun h => by subst h; simp [calleeSaved] at hr) (fun h => by subst h; simp [calleeSaved] at hr)]
+  · rw [esp₃] at ret; rw [ret]
+    exact f₃.readW (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; exact dRS.sub_right hws) (by decide)
+  · show Spec.Seed.blocksAt s'.mem _ _ = _
+    have post' : Spec.Seed.blocksAt s'.mem ((arg s₃ 1).setWidth 64) (arg s₃ 2).toNat = _ := post
+    rw [harg 0 (by decide), harg 1 (by decide), harg 2 (by decide)] at post'
+    rw [post', Proof.Seed.scheduleAt_frame f₃ (fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr; exact dKS.sub_right hws),
+      Proof.Seed.blocksAt_frame f₃ (fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr; rw [Nat.mul_comm]; exact dDS.sub_right hws) (by omega_using [])]
 
 /-! ## Constant time and the contract -/
 

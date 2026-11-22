@@ -70,7 +70,7 @@ def verify (FN : Field) (checkName : String) (checkCode : Prog isa) (mulName : S
   .seq (.block ((Sign.Cfg.nConsts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x))) <|
   .seq (Verify.Cfg.uv c FN) <|
   .seq (joint c mulName mulCode gName gCode) <|
-  .seq (chainPow (Cfg.chainP c) (c.sl ONEP) c.FP) <|
+  .seq (Ecdh.RISCV64.Cfg.invP c) <|
   .seq (Cfg.affineCoord c XM XO RX) <|
   .seq (Verify.Cfg.compare c FN) (.block (Verify.Cfg.finish c))
 

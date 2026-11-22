@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.WinBase
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
@@ -831,5 +832,82 @@ theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 :
   rw [t7', Nat.mul_one] at e
   refine (Nat.mod_eq_of_lt lt).symm.trans ?_
   exact VG.Proof.Bignum.mont_cancel hR (by rw [e, hu.pw hE])
+
+
+/-- `2 w` into `r11` from the arrays' size `r29 = 8 (w + 2)`. -/
+theorem twoW_ok {s : State} {w : Nat} (hw' : w < 2 ^ 31) (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) :
+    WP isa (.block [.lsr .d .r11 .r29 2, .subi .r11 .r11 4]) s fun t =>
+      (t.gpr .r11 = BitVec.ofNat 64 (2 * w) ∧ t.mem = s.mem) ∧ Keep [.r11] s t := by
+  refine WP.keep [.r11] (by
+    prun [h29]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (by omega_using [hw'] : 8 * (w + 2) < 2 ^ 64), Nat.shiftRight_eq_div_pow]
+    simp only [BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+    omega_using [hw']) (by decide)
+
+/-- `powWinCall`: `powWin_ok` for the call of `powWin`, which computes `r11`
+and `r12` again: the same, and `r12` and `r25` written. -/
+theorem powWinCall_ok {name : String} {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 : 2 ≤ w)
+    (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h10 : s.gpr .r10 = off B (slot w 0))
+    (h29 : s.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))) (h11 : s.gpr .r11 = BitVec.ofNat 64 (2 * w))
+    (hlow : (word s.mem B (slot w 0)).toNat % 2 = 1)
+    (hN : 2 ≤ val32 s.mem B (slot w 0) (2 * w)) (hodd : val32 s.mem B (slot w 0) (2 * w) % 2 = 1)
+    (hRRlt : val32 s.mem B (slot w 1) (2 * w) < val32 s.mem B (slot w 0) (2 * w))
+    (h30 : s.gpr .r30 = off D 0) (h31 : s.gpr .r31 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L < 2 ^ 63)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hsep : ∀ i < L, ∀ x, ofs B x < Z → off D i ≠ x) :
+    WP isa (powWinCall name) s fun t =>
+      ((val32 s.mem B (slot w 1) (2 * w) = 2 ^ (64 * w) * 2 ^ (64 * w) % val32 s.mem B (slot w 0) (2 * w) →
+          val32 t.mem B (slot w 4) (2 * w) =
+            val32 s.mem B (slot w 4) (2 * w) ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) %
+              val32 s.mem B (slot w 0) (2 * w)) ∧
+        Outs B (win w) s.mem t.mem) ∧ Keep (powWRegs ++ ([.r12, .r25] : List Reg)) s t := by
+  unfold powWinCall
+  refine WP.seq (WP.mono (WP.keep [.r25] (Q := fun t => t.gpr .r25 = s.lr ∧ t.mem = s.mem)
+    (by prun [exec_mflr]) (by decide)) fun s₁ ⟨⟨a25, m1⟩, k1⟩ => ?_)
+  obtain ce : ∀ r, r ∉ linkRegs → s₁.callEntry.gpr r = s₁.gpr r := fun r hr => State.callEntry_gpr s₁ hr
+  obtain hs₁ : Scr s₁.callEntry B Z := hs.congr ((State.callEntry_wr s₁).trans k1.wr)
+  obtain me : s₁.callEntry.mem = s.mem := (State.callEntry_mem s₁).trans m1
+  -- The call: `-m⁻¹ mod 2³²` and `2 w` again, then `powWin`.
+  refine WP.seq (Pub.WP.callRaw (WP.seq ?_))
+  rw [WP.block_append_iff]
+  refine WP.mono (Pub.minv_ok hs₁ ((ce _ (by decide)).trans ((k1.gpr _ (by decide)).trans h10))
+    (by unfold slot at hZ ⊢; omega_using [hZ]) (by rw [me]; exact hlow)) fun s₂ ⟨⟨r12lt, r12inv, m2⟩, k2⟩ => ?_
+  rw [me] at r12inv
+  refine WP.mono (twoW_ok hw' ((k2.gpr _ (by decide)).trans ((ce _ (by decide)).trans ((k1.gpr _ (by decide)).trans h29))))
+    fun s₃ ⟨⟨a11, m3⟩, k3⟩ => ?_
+  obtain k23 := k2.trans k3
+  obtain hm3 : s₃.mem = s.mem := by rw [m3, m2, me]
+  obtain g : ∀ r, r ∉ [Reg.r0, .r3, .r4, .r12, .r11, .r25] → s₃.gpr r = s.gpr r := fun r hr => by
+    rw [k23.gpr r fun h => hr (by
+        simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h ⊢
+        rcases h with (h | h | h | h) | h <;> simp [h]),
+      ce r (by
+        simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false]
+        intro h; apply hr; rcases h with h | h | h <;> simp [h]),
+      k1.gpr r fun h => hr (by simp only [List.mem_singleton] at h; simp [h])]
+  refine WP.mono (powWin_ok (hs₁.congr k23.wr) hw2 hw' hZ ((g _ (by decide)).trans h10) ((g _ (by decide)).trans h29)
+    a11 (by rw [k3.gpr .r12 (by decide)]; exact r12lt) (by rw [k3.gpr .r12 (by decide), hm3]; exact r12inv)
+    (by rw [hm3]; exact hN) (by rw [hm3]; exact hodd) (by rw [hm3]; exact hRRlt) ((g _ (by decide)).trans h30)
+    ((g _ (by decide)).trans h31) hL hL'
+    (fun i hi => by rw [k23.rd, k23.wr, State.callEntry_rd, State.callEntry_wr, k1.rd, k1.wr]; exact hrd i hi) hsep)
+    fun t ⟨⟨hpow, hout⟩, kt⟩ => ⟨kt.lr.trans k23.lr, ?_⟩
+  rw [hm3] at hpow hout
+  apply WP.of_runBlock
+  simp only [runBlock_cons, exec_mtlr, runStep_some, runBlock_nil]
+  refine ⟨_, rfl, ⟨hpow, hout⟩, ⟨fun r hr => ?_, kt.rd.trans (k23.rd.trans k1.rd), kt.wr.trans (k23.wr.trans k1.wr),
+    kt.sp.trans (k23.sp.trans k1.sp), ?_⟩⟩
+  · show t.gpr r = s.gpr r
+    by_cases e11 : r = .r11
+    · subst e11; rw [kt.gpr .r11 (by decide), a11, h11]
+    rw [kt.gpr r fun h => hr (List.mem_append_left _ h), g r fun h => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+      rcases h with h | h | h | h | h | h
+      all_goals first
+        | exact e11 h
+        | exact hr (by rw [h]; decide)]
+  · show t.gpr .r25 = s.lr
+    rw [kt.gpr .r25 (by decide), k23.gpr .r25 (by decide), ce _ (by decide), a25]
 
 end VG.Proof.Bignum.PPC64LE.Win

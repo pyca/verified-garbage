@@ -34,7 +34,7 @@ theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Wei
   verifiedScrubbedAll (api := Spec.EcKey.Secp256k1.publicKeyApi)
     { code := Impl.EcKey.X86.publicKeySecp256k1
       verified := Proof.EcKey.X86.Secp256k1.pk_verified hL hI }
-    (publicKeyOut Spec.EcKey.Secp256k1.inst 20 Impl.Ecdsa.X86.secp256k1Comb.combConsts)
+    (publicKeyOut Spec.EcKey.Secp256k1.inst 24 Impl.Ecdsa.X86.secp256k1Comb.combConsts)
 
 /-- `vg_ec_secp256k1_compress_public_key`. -/
 theorem compress_scrubbed (hI : Weierstrass.X86.Inv.InvSounds) :

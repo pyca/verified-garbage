@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh.DerivePublicContract
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedDerive
 public import VerifiedGarbage.TCB.Arm.Target
@@ -394,7 +395,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (output : OutputBuffer p.output p.k s)
     (workspaceSep : Region.Disjoint ⟨State.addr p.base, 8 * p.len⟩ ⟨State.addr p.output, p.k⟩)
     (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.output, p.k⟩) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s
+    WP isa (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) s
       fun t => result p xb t ∧ Frame (SharedExchange.writes p s) s.mem t.mem := by
   obtain op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   obtain op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
@@ -584,7 +585,7 @@ theorem body_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (workspaceSep : Region.Disjoint ⟨State.addr p.base, 8 * p.len⟩ ⟨State.addr p.output, p.k⟩)
     (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.output, p.k⟩) :
     WP isa (VG.Impl.Ffdh.Arm.Domain.head
-      (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))) s fun t =>
+      (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl)) s fun t =>
       (Spec.Rsa.modulusValid p.P p.k = true → result p xb t) ∧
       Frame (SharedExchange.writes p s) s.mem t.mem := by
   unfold VG.Impl.Ffdh.Arm.Domain.head
@@ -645,7 +646,7 @@ theorem entered_ok (backend : MontBackend) (s : State) {p : Inputs} {xb : List B
     (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.output, p.k⟩) :
     WP isa (.seq (.block VG.Impl.Ffdh.Arm.SharedDerive.entry)
       (VG.Impl.Ffdh.Arm.Domain.head
-        (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)))) s
+        (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl))) s
       fun t => (Spec.Rsa.modulusValid p.P p.k = true → result p xb t) ∧
         Frame (SharedExchange.writes p s) s.mem t.mem := by
   rw [WP.seq_iff]
@@ -680,7 +681,7 @@ structure FnInput (p : Inputs) (xb : List Byte) (s : State) : Prop where
   saved : ∀ r ∈ SharedExchange.writes p (entered s), (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Disjoint r
 
 theorem fn_ok (backend : MontBackend) (s : State) {p : Inputs} {xb : List Byte} (h : FnInput p xb s) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedDerive.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s
+    WP isa (VG.Impl.Ffdh.Arm.SharedDerive.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) s
       fun t => abiPreserved s t ∧ (Spec.Rsa.modulusValid p.P p.k = true → result p xb t) := by
   unfold VG.Impl.Ffdh.Arm.SharedDerive.code
   refine framed_of_separate _ s h.stackFits (SharedExchange.writes p (entered s))
@@ -928,7 +929,7 @@ theorem data (s : State) (pre : (Spec.Ffdh.derivePublicContract abi 176).pre s) 
 
 theorem correct (backend : MontBackend) (s : State) (pre : (Spec.Ffdh.derivePublicContract abi 176).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.SharedDerive.code
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s tr t ∧
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) s tr t ∧
       abiPreserved s t ∧ (Spec.Ffdh.derivePublicContract abi 176).post s t := by
   obtain ⟨p, xb, _, out, domain, scalar, _, count, _, privateCount, domainBytes, scalarBytes, input⟩ :=
     data s pre
@@ -964,7 +965,7 @@ namespace VG.Proof.Ffdh.Arm.SharedDerive
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
 def code (b : MontBackend) : Prog isa :=
-  VG.Impl.Ffdh.Arm.SharedDerive.code (MontCall.op b.name b.mul)
+  VG.Impl.Ffdh.Arm.SharedDerive.code (MontCall.op b.name b.mul) b.dbl
 
 end VG.Proof.Ffdh.Arm.SharedDerive
 
@@ -1010,7 +1011,7 @@ theorem prepare_ready (backend : MontBackend) (s : State) {p : Inputs} {slots : 
     (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots)
     (large : 1 < p.P) (odd : p.P % 2 = 1) (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) :
     WP isa (VG.Impl.Ffdh.Arm.NormalizedPrepare.prepareAt
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) 24) s (Prepared p slots xb) := by
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl 24) s (Prepared p slots xb) := by
   refine WP.mono (domainNormalizedPrepareAt24_ok backend s h.context h.calls.toDomainCallMemory stable h0 h24 h32
     large odd normalized) ?_
   rintro u ⟨context, ready, modulus, r2, frame, rest⟩
@@ -1061,7 +1062,7 @@ theorem main_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {xb1 xb2
       (0 < Spec.Rsa.os2ip xb2 ∧ Spec.Rsa.os2ip xb2 < scalarBound p))
     (large : 1 < p.P) (odd : p.P % 2 = 1) (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) :
     RelCT isa (fun s t => MainInput p slots xb1 s ∧ MainInput p slots xb2 t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))
+      (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl)
       (fun _ _ => True) := by
   have fits : xb1.length < 2 ^ 32 := by have := p.maxLength; omega
   have prepare := (domainNormalizedPrepareAt24_ct backend stable h0 h24 h32 large odd normalized).mono
@@ -1146,7 +1147,7 @@ theorem body_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {xb1 xb2
       (0 < Spec.Rsa.os2ip xb2 ∧ Spec.Rsa.os2ip xb2 < scalarBound p)) :
     RelCT isa (fun s t => MainInput p slots xb1 s ∧ MainInput p slots xb2 t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.Domain.head
-        (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)))
+        (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl))
       (fun _ _ => True) := by
   let Q := fun (xb : List Byte) (s : State) => MainInput p (60 :: 56 :: slots) xb s ∧
     s.z = Spec.Rsa.modulusValid p.P p.k
@@ -1174,7 +1175,7 @@ theorem body_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {xb1 xb2
     · exact Or.inl (by decide)
     · exact saved d hd
   have branches : RelCT isa (fun s t => Q xb1 s ∧ Q xb2 t ∧ s.sp = t.sp)
-      (.ite .eq (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))
+      (.ite .eq (VG.Impl.Ffdh.Arm.SharedDerive.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl)
         (VG.Impl.Ffdh.Arm.Domain.ret 0)) (fun _ _ => True) := by
     apply RelCT.ite (fun s t h => by change some s.z = some t.z; rw [h.1.2, h.2.1.2])
     · intro s t tr1 tr2 u v h e1 e2
@@ -1197,7 +1198,7 @@ theorem fn_ct (backend : MontBackend) {p : Inputs} {xb1 xb2 : List Byte} (length
     (classification : (0 < Spec.Rsa.os2ip xb1 ∧ Spec.Rsa.os2ip xb1 < scalarBound p) ↔
       (0 < Spec.Rsa.os2ip xb2 ∧ Spec.Rsa.os2ip xb2 < scalarBound p)) :
     RelCT isa (fun s t => FnInput p xb1 s ∧ FnInput p xb2 t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedDerive.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))
+      (VG.Impl.Ffdh.Arm.SharedDerive.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl)
       (fun _ _ => True) := by
   let P := fun (xb : List Byte) (a : State) => ∃ s, FnInput p xb s ∧ a = entered s
   have entry := deriveEntry_ct.mono
@@ -1236,7 +1237,7 @@ open VG VG.Arm
 
 theorem contract_ct (backend : Bignum.Arm.MontBackend) : ConstantTime isa
     (Spec.Ffdh.derivePublicContract abi 176).pre (Spec.Ffdh.derivePublicContract abi 176).pub
-    (VG.Impl.Ffdh.Arm.SharedDerive.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) := by
+    (VG.Impl.Ffdh.Arm.SharedDerive.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   obtain ⟨p, xb, base, out, domain, scalar, publicValue, count, capacity, privateCount,
     domainBytes, scalarBytes, inputS⟩ := data s hs

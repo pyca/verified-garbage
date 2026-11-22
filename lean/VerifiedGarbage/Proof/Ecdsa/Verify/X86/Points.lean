@@ -69,6 +69,14 @@ structure VPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   sp_lo : c.stk ≤ (s.gpr .esp).toNat
   stk_sc : (stkR c s).Disjoint ⟨ptr s 3, size⟩
 
+/-- The stack below the return address is apart from the writable regions. -/
+theorem VPre.stk_wr {c : Cfg} {s : State} {extra : List Region} (hp : VPre c s extra) :
+    ∀ r ∈ s.wr, Region.Disjoint (below (s.gpr .esp) c.stk) r := by
+  rw [hp.wr, ← stkR_eq_below hp.sp_lo]
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r rfl
+  exact hp.stk_sc
+
 /-- The key's `x` and `y`, the hash's `e`, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=
   ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0 + BitVec.ofNat 64 1) c.C.len)

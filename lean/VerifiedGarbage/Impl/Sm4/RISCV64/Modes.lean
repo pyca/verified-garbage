@@ -103,7 +103,7 @@ def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncCha
 
 /-- `vg_sm4_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa :=
-  (dirCore .decrypt).seqLevels (Modes.Mode.cbcDecWide 4) levels (Modes.Mode.cbcDecChained 4)
+  (dirCore .decrypt).seqLevels levels (Modes.Mode.cbcDecChained 4)
 
 /-- `vg_sm4_ofb`. -/
 def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 4)
@@ -113,12 +113,12 @@ def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 4)
 
 /-- `vg_sm4_cfb128_decrypt`. -/
 def cfbDecrypt : Prog isa :=
-  (dirCore .encrypt).seqLevels (Modes.Mode.cfbDecWide 4) levels (Modes.Mode.cfbDecEarly 4)
+  (dirCore .encrypt).seqLevels levels (Modes.Mode.cfbDecEarly 4)
 
 /-- `vg_sm4_ctr`. -/
-def ctr : Prog isa := (dirCore .encrypt).seqLevels Modes.Mode.ctrWide levels Modes.Mode.ctrEarly
+def ctr : Prog isa := (dirCore .encrypt).seqLevels levels Modes.Mode.ctrEarly
 
 /-- `vg_sm4_ctr32`: counter mode with GCM's `inc₃₂`. -/
-def ctr32 : Prog isa := (dirCore .encrypt).seqLevels Modes.Mode.ctr32Wide levels Modes.Mode.ctr32Early
+def ctr32 : Prog isa := (dirCore .encrypt).seqLevels levels Modes.Mode.ctr32Early
 
 end VG.Impl.Sm4.RISCV64

@@ -57,22 +57,22 @@ theorem pkCT : PkStagesCT brainpoolp384r1Comb where
     change RelCT isa _ pkTailCode _
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
 theorem pk_sp : SpOk publicKeyBrainpoolP384r1 brainpoolp384r1Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem pk_ok (hC : Weierstrass.Law Spec.BrainpoolP384r1.curve) {s₀ : State}
     (hp : PkCombPre brainpoolp384r1Comb s₀) :
     WP isa publicKeyBrainpoolP384r1 s₀ fun s' => abiPreserved s₀ s' ∧ PkPost brainpoolp384r1Comb s₀ s' :=
   publicKeyComb_ok (d := brainpoolp384r1d) (brainpoolp384r1Comb_ok) hC (brainpoolp384r1Comb_tables hC) rfl brainpoolp384r1Comb_shape
-    (PkCombSp.of (d := brainpoolp384r1d) rfl pk_sp) hp
+    (PkCombSp.of pk_sp) hp
 
 theorem pk_ct (hC : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
     ConstantTime isa (PkCombPre brainpoolp384r1Comb) (PkCombPub brainpoolp384r1d) publicKeyBrainpoolP384r1 :=
   publicKeyComb_ct (d := brainpoolp384r1d) (brainpoolp384r1Comb_ok) hC (brainpoolp384r1Comb_tables hC) rfl brainpoolp384r1Comb_shape
-    (brainpoolp384r1Comb_gMul hC) pkCT (PkCombSp.of (d := brainpoolp384r1d) rfl pk_sp).g
+    (brainpoolp384r1Comb_gMul hC) pkCT (PkCombSp.of pk_sp).g
 
 abbrev pkSpec : Contract isa :=
-  Spec.EcKey.BrainpoolP384r1.inst.publicKeyContract (X86.abi.withConsts brainpoolp384r1Comb.combConsts) 20
+  Spec.EcKey.BrainpoolP384r1.inst.publicKeyContract (X86.abi.withConsts brainpoolp384r1Comb.combConsts) 24
 
 def pkLocal : Contract isa where
   pre := PkCombPre brainpoolp384r1Comb
@@ -92,21 +92,21 @@ theorem pk_pre {s : State} (h : pkSpec.pre s) :
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
   obtain ⟨lo, sp, _drop, held, fit, dw, _ret, st, -, _take, wr,
     od, os, oa, ds, _da, sa, ro, _rd, rs, _ra, _so, sd, _ss, _sa, fo, fd, fs⟩ := h
-  have hb : below (s.gpr .esp) 20 = ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩ := by
+  have hb : below (s.gpr .esp) 24 = ⟨(s.gpr .esp).setWidth 64 - 24#64, 24⟩ := by
     unfold below
     rw [VG.X86.Taint.sub_setWidth lo]
   rw [← hb] at st sd
-  have h4 := VG.Proof.Weierstrass.X86.below_le_sub (sp := s.gpr .esp) (a := 4) (b := 20) (by decide) lo
+  have h4 := VG.Proof.Weierstrass.X86.below_le_sub (sp := s.gpr .esp) (a := 4) (b := 24) (by decide) lo
   refine ⟨⟨rfl, rfl, os, od, ds, oa.symm, sa.symm, ro, rs, fo, fd, fs, sp, lo, _so, _ss⟩, ?_, ?_⟩
   · change TblsHeld brainpoolp384r1Comb (s.withRegions (pkRd s) (pkWr s))
-      (below (s.gpr .esp) 20 :: pkWr s)
+      (below (s.gpr .esp) 24 :: pkWr s)
     simp only [TblsHeld, brainpoolp384r1Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil,
       Sig.forall_mem_const_single]
     simp only [Abi.constsHeld, List.mem_singleton, forall_eq, State.withRegions_mem]
     change (∀ i < brainpoolp384r1W.length, s.mem.readW ((s.syms "VG_BRAINPOOLP384R1_COMB").setWidth 64 +
       BitVec.ofNat 64 (8 * i)) 64 = brainpoolp384r1W.getD i 0) ∧
       ((s.syms "VG_BRAINPOOLP384R1_COMB").setWidth 64).toNat + 8 * brainpoolp384r1W.length ≤ 2 ^ 32 ∧
-      ∀ r ∈ below (s.gpr .esp) 20 :: pkWr s,
+      ∀ r ∈ below (s.gpr .esp) 24 :: pkWr s,
         Region.Disjoint ⟨(s.syms "VG_BRAINPOOLP384R1_COMB").setWidth 64, 8 * brainpoolp384r1W.length⟩ r
     refine ⟨held, ?_, ?_⟩
     · simp only [BitVec.toNat_setWidth]; omega_using [fit]

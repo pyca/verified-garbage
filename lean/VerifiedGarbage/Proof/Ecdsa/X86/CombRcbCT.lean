@@ -114,12 +114,12 @@ theorem combRcbLoop_rel (hL : TCombLay (c.combCfg d) size) (hT : TCombTop (c.com
 /-- `[k]G` by the comb by complete additions is constant time for two
 arbitrary scalars when its working space's and tables' addresses agree. -/
 theorem gMulRcb_rel (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) (hcd : c.comb = some d)
-    (hd : CombOk c d) (hj : d.jac = false) (ct : CombRcbCT c d) : GMulRel c d scratchSecond := by
+    (hd : CombOk c d) (hj : d.jac = false) (ct : CombRcbCT c d) : GMulRelB c d scratchSecond := by
   intro base g₁ g₂ s₀ t₀ k₁ k₂ hs₁ hs₂ F₁ F₂ hk₁ hk₂ hb₁ hb₂ hTM₁ hTM₂ hout hap₁ hap₂ hsp₁ hsp₂ hg wf₁
     wf₂ hw he
-  have hgm : c.gMul = .seq (.block (Impl.Weierstrass.X86.setConst c.n (c.sl EM) (c.mont (3 * c.C.b))))
+  have hgm : c.combBody d = .seq (.block (Impl.Weierstrass.X86.setConst c.n (c.sl EM) (c.mont (3 * c.C.b))))
       (c.combCfg d).comb := by
-    unfold Cfg.gMul; rw [hcd]; dsimp only; rw [ite_eq_right (by rw [hj]; decide)]
+    unfold Cfg.combBody; rw [ite_eq_right (by rw [hj]; decide)]
   rw [hgm]
   have hout₂ : ∀ i < (c.combWords d).length, ∀ b < 8,
       size ≤ ofs base ((g₂ .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by

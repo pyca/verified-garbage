@@ -32,7 +32,5 @@ materialize_code addFnPlain := Point16.addFn false
 materialize_code addFnUmaal := Point16.addFn true
 materialize_code doubleFnPlain := Point16.doubleFn false
 materialize_code doubleFnUmaal := Point16.doubleFn true
-materialize_code pow250FnPlain := pow250Fn false
-materialize_code pow250FnUmaal := pow250Fn true
 
 end VG.Impl.Ed25519.Arm

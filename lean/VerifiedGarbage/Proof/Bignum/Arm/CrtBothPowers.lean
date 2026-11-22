@@ -100,14 +100,15 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
       1 < numAt s.mem (State.addr child) g.words 0 ∧ numAt s.mem (State.addr child) g.words 0 % 2 = 1)
     (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ))
     (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa ((CrtFn.powerOf st.prime kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
+    WP isa (CrtFn.powerOf st.prime kernel.code slot (56 + 8 * j.val) (56 + 8 * i.val) kernel.mul.op) s fun t =>
       let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr child) g.words 0)
       CrtShared g bs t ∧ LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       CrtPoweredState child (workspaceWords g.words) g.words M
         (Spec.Rsa.powMod (Spec.Rsa.os2ip (bs 1)) (Spec.Rsa.os2ip (bs i.succ)) M) t.mem ∧
       t.mem.readW (off (State.addr t.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 ∧
       Frame [⟨State.addr child, 8 * workspaceWords g.words⟩,
-        ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, ⟨State.addr s.sp, 4⟩] s.mem t.mem ∧
+        ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, ⟨State.addr s.sp, 4⟩,
+        FrameStack.belowA s.sp 48] s.mem t.mem ∧
       Rest roundClobbers s t := by
   obtain ⟨member, ws, layout, _, slotFit, slotSmall, link⟩ := h.child kind
   have exponent : i = 3 ∨ i = 4 := by rcases pair with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> simp
@@ -167,29 +168,34 @@ theorem CrtShared.workspace_eq_after_power {s t : State} {g : CrtGeometry} {bs :
     (sepN : Region.Disjoint ⟨State.addr other, 8 * workspaceWords g.words⟩
       ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩)
     (frame : Frame [⟨State.addr child, 8 * workspaceWords g.words⟩,
-      ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, ⟨State.addr s.sp, 4⟩] s.mem t.mem) :
+      ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, ⟨State.addr s.sp, 4⟩,
+      FrameStack.belowA s.sp 48] s.mem t.mem) :
     WorkspaceEq (State.addr other) (8 * workspaceWords g.words) s.mem t.mem := by
   apply h.eq_of_frame ws member (regions := [⟨State.addr child, 8 * workspaceWords g.words⟩,
-    ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frame.mono (by simp))
+    ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA s.sp 48])
+    (frame.mono (by simp))
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact sep
   · exact sepN
+  · exact h.stack.below.symm.sub_left (crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member)
 
 theorem CrtShared.live_after_power {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
     (h : CrtShared g bs s)
     (member : (⟨State.addr child, 8 * workspaceWords g.words⟩ : Region) ∈ crtRegions g.base (workspaceWords g.words) g.words)
     (frame : Frame [⟨State.addr child, 8 * workspaceWords g.words⟩,
-      ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, ⟨State.addr s.sp, 4⟩] s.mem t.mem) :
+      ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, ⟨State.addr s.sp, 4⟩,
+      FrameStack.belowA s.sp 48] s.mem t.mem) :
     Frame (crtLiveMutable g s.sp) s.mem t.mem := by
   apply frame.sub
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨_, by simp [crtLiveMutable], crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits member⟩
   · exact ⟨_, by simp [crtLiveMutable], crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits h.narrow_member⟩
   · exact ⟨⟨State.addr s.sp, 4⟩, by simp [crtLiveMutable], fun _ h => h⟩
+  · exact ⟨FrameStack.belowA s.sp 48, by simp [crtLiveMutable], fun _ h => h⟩
 
 theorem crt_bothPowers_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s)
@@ -197,7 +203,7 @@ theorem crt_bothPowers_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
     (q : numAt s.mem (State.addr (crtQ g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 3))
     (flag : s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0))
     (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (.seq ((CrtFn.powerOf st.prime kernel.code) 224 64 80) ((CrtFn.powerOf st.prime kernel.code) 228 72 88)) s fun t =>
+    WP isa (.seq (CrtFn.powerOf st.prime kernel.code 224 64 80 kernel.mul.op) (CrtFn.powerOf st.prime kernel.code 228 72 88 kernel.mul.op)) s fun t =>
       CrtShared g bs t ∧ LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       CrtPoweredState (crtP g.base g.words) (workspaceWords g.words) g.words (crtFactor bs 2)
         (Spec.Rsa.powMod (Spec.Rsa.os2ip (bs 1)) (Spec.Rsa.os2ip (bs 4)) (crtFactor bs 2)) t.mem ∧

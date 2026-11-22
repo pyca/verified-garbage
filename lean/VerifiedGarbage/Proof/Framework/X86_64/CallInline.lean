@@ -404,6 +404,12 @@ def VOp.rspFree : VOp → Bool
   | .vmovq _ r => r != .rsp
   | _ => false
 
+/-- An `EVEX` operation that does not touch `rsp`: all but `vmovq` from
+`rsp`. -/
+def EOp.rspFree : EOp → Bool
+  | .vmovq _ r => r != .rsp
+  | _ => true
+
 /-- An instruction that neither reads nor writes `rsp`: those of the
 functions `Code.InlineOk` lets code call (a short list; the others are
 `false`). -/
@@ -429,6 +435,8 @@ def Instr.rspFree : Instr → Bool
   | .leaSym d _ => d != .rsp
   | .vop op => op.rspFree
   | .vbinLoad _ _ _ _ m | .vmovdquStore _ m _ => m.noRsp
+  | .eop op => op.rspFree
+  | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m => m.noRsp
   | _ => false
 
 section
@@ -500,6 +508,11 @@ theorem eval_setRsp (c : Cond) : eval c (s.setReg .rsp x) = eval c s := by cases
 theorem bind_map_setRsp {α : Type} (o : Option α) (f : α → Option State) :
     (o.bind f).map (·.setReg .rsp x) = o.bind fun a => (f a).map (·.setReg .rsp x) := by
   cases o <;> rfl
+
+theorem vy_setRsp (r : VReg) : (s.setReg .rsp x).vy r = s.vy r := by cases r <;> rfl
+
+theorem setVy_setRsp (r : VReg) (v : BitVec 256) :
+    (s.setReg .rsp x).setVy r v = (s.setVy r v).setReg .rsp x := by cases r <;> rfl
 
 /-- An instruction that does not touch `rsp` runs from `s` with another
 `rsp` as from `s`. -/
@@ -639,6 +652,22 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     cases len
     · simp only [exec, ea_setRsp hi, store128_setRsp]; rfl
     · simp only [exec, ea_setRsp hi, store256_setRsp]; rfl
+  | eop op =>
+    simp only [exec, Option.map_some]; congr 1
+    cases op <;> simp only [Instr.rspFree, EOp.rspFree, bne_iff_ne, ne_eq] at hi
+    case vmovq d r => simp only [EOp.exec, setRsp_gpr hi, setVy_setRsp]
+    all_goals simp only [EOp.exec, vy_setRsp, setVy_setRsp]
+  | evLoad d m =>
+    simp only [Instr.rspFree] at hi
+    simp only [exec, Option.map_map]; rw [ea_setRsp hi]
+    simp only [Function.comp_def, setVy_setRsp]; rfl
+  | evStore m r =>
+    simp only [Instr.rspFree] at hi
+    simp only [exec, ea_setRsp hi, vy_setRsp, store256_setRsp]
+  | evMadd52Load hi' d a m =>
+    simp only [Instr.rspFree] at hi
+    simp only [exec, Option.map_map]; rw [ea_setRsp hi]
+    simp only [Function.comp_def, vy_setRsp, setVy_setRsp]; rfl
   | _ => cases hi
 
 theorem srcAddrs_setRsp {src : Src} (h : src.noRsp = true) : srcAddrs (s.setReg .rsp x) src = srcAddrs s src := by
@@ -652,7 +681,7 @@ theorem addrs_setRsp {i : Instr} (hi : i.rspFree = true) : addrs i (s.setReg .rs
     simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [srcAddrs_setRsp hi.2]
   case store | store8 | store16 =>
     simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.1]
-  case movdquLoad | movdquStore | vbinLoad | vmovdquStore =>
+  case movdquLoad | movdquStore | vbinLoad | vmovdquStore | evLoad | evStore | evMadd52Load =>
     simp only [Instr.rspFree] at hi; simp only [addrs]; rw [ea_setRsp hi]
   case movzx8 | movzx16 =>
     simp only [Instr.rspFree, Bool.and_eq_true] at hi; simp only [addrs]; rw [ea_setRsp hi.2]

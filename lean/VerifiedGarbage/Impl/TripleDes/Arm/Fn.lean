@@ -38,11 +38,8 @@ def wideWords : List Nat := List.range' 0 2 ++ List.range' 258 2
 /-- `vg_triple_des_expand_key`. -/
 def expandKey : Prog isa := scrubSel 0 512 noWords (Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.TripleDes.Arm.Key.expandKey)
 
-/-- `vg_triple_des_ecb_encrypt`. -/
-def ecbEncrypt : Prog isa := scrubSel 0 1024 noWords (Impl.TripleDes.Arm.ecbCode .encrypt)
-
-/-- `vg_triple_des_ecb_decrypt`. -/
-def ecbDecrypt : Prog isa := scrubSel 0 1024 noWords (Impl.TripleDes.Arm.ecbCode .decrypt)
+-- `vg_triple_des_ecb_encrypt` and `vg_triple_des_ecb_decrypt` (`ecbEncrypt`,
+-- `ecbDecrypt`, with no word) are in `Cbc.lean`, as the modes call them.
 
 /-- `vg_triple_des_cbc_encrypt_chained`. -/
 def cbcEncrypt : Prog isa := scrubSel 0 1088 modeWords (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcEncryptChained)

@@ -34,7 +34,7 @@ theorem publicKey_scrubbed (hL : Weierstrass.Law Spec.P192.curve) :
   verifiedScrubbedAll (api := Spec.EcKey.P192.publicKeyApi)
     { code := Impl.EcKey.X86.publicKeyP192
       verified := Proof.EcKey.X86.P192.pk_verified hL }
-    (publicKeyOut Spec.EcKey.P192.inst 20 Impl.Ecdsa.X86.p192Comb.combConsts)
+    (publicKeyOut Spec.EcKey.P192.inst 24 Impl.Ecdsa.X86.p192Comb.combConsts)
 
 /-- `vg_ec_p192_compress_public_key`. -/
 theorem compress_scrubbed :

@@ -96,7 +96,7 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
     (hPc : onCurve c.C P = true)
     (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
-      (tmv c.C c.n base s (c.sl ONEP)) P) (hspG : SpOk c.gMul 20)
+      (tmv c.C c.n base s (c.sl ONEP)) P) (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r) (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsWindow c) c.stk) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C))) (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.pointsWindow c) rest) s Q := by
@@ -128,13 +128,9 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
       refine ⟨ht.of_unch (by rw [k₁.rd, k₁.wr]) U₁
         (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7) ho, ho, ?_⟩
       rw [k₁.wr, k₁.1 _ (by decide), hM.wr, hM.esp]
-      intro r hr
-      rcases List.mem_append.mp hr with hr | hr
-      · exact hap r (List.mem_append_left _ hr)
-      · rw [List.mem_singleton.mp hr]
-        exact (hap _ (List.mem_append_right _ (List.mem_singleton_self _))).sub_right
-          (below_sub (Cfg.stk_ge c) hM.sp_lo))
-    (by rw [k₁.1 _ (by decide), hM.esp]; exact Nat.le_trans (Cfg.stk_ge c) hM.sp_lo) hspG)
+      exact hap)
+    (by rw [k₁.wr, k₁.1 _ (by decide), hM.wr, hM.esp]; exact hst)
+    (by rw [k₁.1 _ (by decide), hM.esp]; exact hM.sp_lo) hspG)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
   obtain hs₂ := hs₁.of_keeps K₂ (by decide)
   obtain F₂ := F₁.unch h7 hn fixedOk_gW U₂
@@ -237,7 +233,8 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
     (hPc : onCurve c.C P = true)
     (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
-      (tmv c.C c.n base s (c.sl ONEP)) P) (hspG : SpOk c.gMul 20)
+      (tmv c.C c.n base s (c.sl ONEP)) P) (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
+    (h24 : c.stk = 24) (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) c.stk) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C)))
       (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' → WP isa rest s' Q) :
@@ -245,13 +242,13 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.
   unfold Impl.Ecdsa.Verify.X86.Cfg.pointsComb at hsp ⊢
   by_cases h4 : c.n = 4 ∧ c.combJac = true
   · rw [ite_eq_left h4] at hsp ⊢
-    exact pointsWindow_ok hc h4.1 hC hT hCo (ham3 h4) hM hTb hPc hQ hspG hsp h
+    exact pointsWindow_ok hc h4.1 hC hT hCo (ham3 h4) hM hTb hPc hQ hst hspG hsp h
   · rw [ite_eq_right h4] at hsp ⊢
     obtain hQ' : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P := by
       have h1 : tmv c.C c.n base s (c.sl ONEP) = 1 := by
         change toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = _
         rw [hM.fixed.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)
       rw [← h1]; exact hQ
-    exact pointsCombLadder_ok hc hC hne hT hCo hM hTb hPc hQ' hspG hsp h
+    exact pointsCombLadder_ok hc hC hne hT hCo hM hTb hPc hQ' hst h24 hspG hsp h
 
 end VG.Proof.Ecdsa.Verify.X86

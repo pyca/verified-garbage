@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SharedR2
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpShared
 
 /-! ### `Ffdh.Arm.SharedPrepare`, which only this module used -/
@@ -37,7 +38,8 @@ open VG.Proof.X25519.Arm (Rest)
 
 theorem sharedPrecompute_ok {base src : BitVec 32} {len w k : Nat}
     {P : State → Prop} {regions : List Region}
-    (K : TwoExp.Montgomery base len w P regions) (s : State) (hp : P s)
+    (K : TwoExp.Montgomery base len w P regions) (D : TwoExp.Doubling base len w P regions)
+    (s : State) (hp : P s)
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
     (width : wOf s.mem (State.addr base) = w)
     (hk : 0 < k) (fit : k ≤ 8 * w) (srcFit : src.toNat + k ≤ 2 ^ 32)
@@ -50,7 +52,7 @@ theorem sharedPrecompute_ok {base src : BitVec 32} {len w k : Nat}
     (large : 1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k))
     (odd : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) % 2 = 1)
     (countFits : 128 * w < 2 ^ 32) :
-    WP isa (SharedPrecompute.precompute K.op) s fun t => DoubleLoopReady base len w 0 t ∧
+    WP isa (SharedPrecompute.precompute K.op D.dbl) s fun t => DoubleLoopReady base len w 0 t ∧
       numAt t.mem (State.addr base) w 0 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
       numAt t.mem (State.addr base) w 4 =
         2 ^ (128 * w) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
@@ -67,7 +69,7 @@ theorem sharedPrecompute_ok {base src : BitVec 32} {len w k : Nat}
     (by rw [restU.sp]; exact stackSep) (saved_base_kept frameU stackSep saved restU.sp)) ?_
   rintro v ⟨ready, modV, frameV, restV⟩
   have pv := K.stable frameV restV pu
-  refine WP.mono (sharedR2_ok K v ready pv countFits) ?_
+  refine WP.mono (sharedR2_ok K D v ready pv countFits) ?_
   rintro t ⟨done, value, modT, pt, frameT, restT⟩
   rw [modV, modulus] at value
   exact ⟨done, modT.trans (modV.trans modulus), value, pt,
@@ -88,8 +90,9 @@ open VG.Proof.Rsa.Mont (numAt)
 theorem sharedPrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
     {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len (Spec.Rsa.modulusWords k) P regions)
+    (D : TwoExp.Doubling base len (Spec.Rsa.modulusWords k) P regions)
     (h : PrepareInput base src len k s) (hp : P s) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.code K.op) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.code K.op D.dbl) s fun t =>
       ArithmeticReady base len (Spec.Rsa.modulusWords k) t ∧
       numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 0 =
         Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k) ∧
@@ -101,7 +104,7 @@ theorem sharedPrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
   rintro u ⟨ready, frameU, restU⟩
   have pu := K.stable frameU restU hp
   have countFit := (pc_dimensions h.minLength h.maxLength h.space).2.2.2.2
-  refine WP.mono (sharedPrecompute_ok K u pu ready.workspace ready.layout ready.width ready.positive ready.fits
+  refine WP.mono (sharedPrecompute_ok K D u pu ready.workspace ready.layout ready.width ready.positive ready.fits
     ready.sourceFits ready.readable ready.separate ready.ptr ready.source ready.count ready.stackRead
     ready.stackSep ready.saved ready.large ready.odd countFit) ?_
   rintro t ⟨done, modulus, r2, pt, frameT, restT⟩
@@ -135,7 +138,7 @@ theorem domainSharedPrepareAt24_ok (backend : MontBackend) (s : State) {p : Inpu
     (stable : stableSlots slots = true) (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots)
     (large : 1 < p.P) (odd : p.P % 2 = 1) :
     WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) 24) s fun t =>
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl 24) s fun t =>
       Context p slots t ∧ ArithmeticReady p.base p.len p.w t ∧
       numAt t.mem (State.addr p.base) p.w 0 = p.P ∧
       numAt t.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P ∧
@@ -156,7 +159,7 @@ theorem domainSharedPrepareAt24_ok (backend : MontBackend) (s : State) {p : Inpu
   let K := TwoExp.sharedMontgomery p.base s.sp p.len p.w backend.name backend.mul
     (fun _ _ _ ho ha hb v input => backend.correct v input ho ha hb) backend.stackOk
   have hp : TwoExp.CallReady p.base s.sp p.len u := ⟨(calls.after restU).stack, restU.sp⟩
-  refine WP.mono (sharedPrepare_ok u K input hp) ?_
+  refine WP.mono (sharedPrepare_ok u K (backend.doubling p.base s.sp p.len p.w) input hp) ?_
   rintro t ⟨ready, modulus, r2, _, frameT, restT⟩
   rw [bytes] at modulus r2
   have localFrame : Frame [⟨State.addr p.base, 8 * p.len⟩, FrameStack.belowA u.sp 48]

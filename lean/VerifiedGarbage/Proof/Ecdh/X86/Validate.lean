@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
 import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Ecdsa.X86.CallWs
 
 /-!
 # ECDH on x86 (32-bit): the peer's point, `[d]P` and `Z^(p-2)`
@@ -413,7 +414,8 @@ structure LadPost (c : Cfg) (base : Addr) (k : Nat) (P : Point c.C) (s s' : Stat
 /-- `[k]P` by the windows (`ecdhMul`), for the affine point `P` of the curve
 at `PX`, `PY` and `k < 2^(8 len)` in table 0, then `Z^(p-2)`. -/
 theorem ladPow_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (K : Keep c s₀ base s)
-    (hsp₁ : SpOk (c.ecdhMul PX PY) c.stk) (hsp₂ : SpOk c.pPow c.stk) {k : Nat} {P : Point c.C}
+    (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
+    (hsp₁ : SpOk (c.ecdhMul PX PY) 24) (hsp₂ : SpOk c.pPow c.stk) {k : Nat} {P : Point c.C}
     (hP : onCurve c.C P = true) (hk : k < 2 ^ (8 * c.C.len))
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hG : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P)
@@ -428,9 +430,13 @@ theorem ladPow_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s 
   have h7 := hc.n10
   have hn := hs.nowrap
   have hlen := hc.len_hi
-  refine WP.seq (K.withSp hsp₁ (WP.mono (ecdhMul_ok hc hC (px := PX) (py := PY) (by decide) (by decide) hs
-    F.mp F.ap F.b3p F.zero F.onep hpx hpy hP hG hk
-    (fun t ht => ht₀ t (Nat.lt_of_lt_of_le ht (by omega_using [hlen]))))
+  obtain s24 : Region.Sub (below (s₀.gpr .esp) 24) (below (s₀.gpr .esp) c.stk) :=
+    below_le_sub (Cfg.stk_ge24 c) K.sp_lo
+  refine WP.seq (K.withSp (hsp₁.le (Cfg.stk_ge24 c)) (WP.mono (ecdhMul_ok hc hC (px := PX) (py := PY)
+    (by decide) (by decide) hs F.mp F.ap F.b3p F.zero F.onep hpx hpy hP hG hk
+    (fun t ht => ht₀ t (Nat.lt_of_lt_of_le ht (by omega_using [hlen])))
+    (fun r hr => by rw [K.wr] at hr; rw [K.esp]; exact (hst r hr).sub_left s24)
+    (by rw [K.esp]; exact Nat.le_trans (Cfg.stk_ge24 c) K.sp_lo) hsp₁)
     fun s₅ ⟨K₅, U₅, L₅, R₅⟩ f₅ => ?_))
   obtain hs₅ := hs.of_keeps K₅ (by decide)
   obtain F₅ := F.unch h7 hn ((winW_winTW h7).fixedOk h7) U₅

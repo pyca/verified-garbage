@@ -852,7 +852,7 @@ vg_camellia_ofb_final:
 	mov r1, r11
 	add r2, r8, #40
 	mov r3, #1
-	bl {vg_camellia_ecb_encrypt_entry}
+	bl {vg_camellia_ecb_encrypt}
 	lsr r9, r7, #4
 	cmp r9, #0
 	beq 23f

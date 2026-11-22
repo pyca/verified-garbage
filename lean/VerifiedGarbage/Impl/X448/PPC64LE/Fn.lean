@@ -28,7 +28,7 @@ def exchange : Prog isa :=
 
 /-- `vg_x448_base`, as emitted. -/
 def base : Prog isa :=
-  scrubAll 0 0 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
+  scrubAll 0 96 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (Impl.X448.PPC64LE.x448Base)
 
 end VG.Impl.X448.PPC64LE.Fn

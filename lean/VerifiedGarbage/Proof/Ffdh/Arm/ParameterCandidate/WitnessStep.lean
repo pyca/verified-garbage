@@ -954,20 +954,26 @@ private theorem phaseWords {k : Nat} (lower : 64 ≤ k) (upper : k ≤ 1024) :
   simp only [Spec.Rsa.modulusWords]
   omega
 
-theorem phasePrepared_ok {s : State} {base src : BitVec 32} {capacity k : Nat}
+theorem phasePrepared_ok (b : MontBackend) {s : State} {base src : BitVec 32} {capacity k : Nat}
     (h : MontPrepInput base src capacity k s) (space : Spec.Rsa.scratchWords k ≤ capacity)
-    (stack : Workspace s s.sp 72)
+    (stack : Workspace s s.sp 72) (stackBelow : 56 ≤ s.sp.toNat)
     (separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩) :
-    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul)) s fun t =>
       RoundData base capacity (Spec.Rsa.modulusWords k)
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) t.mem ∧
       Frame [⟨State.addr base, 8 * capacity⟩, ⟨State.addr (s.sp + 60#32), 4⟩,
-        ⟨State.addr (s.sp + 64#32), 4⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+        ⟨State.addr (s.sp + 64#32), 4⟩, FrameStack.belowA s.sp 56] s.mem t.mem ∧ Rest roundClobbers s t := by
   let w := Spec.Rsa.modulusWords k
   let n := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)
   rw [VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared, WP.seq_iff]
-  refine WP.mono (montPrep_ok h space) ?_
+  refine WP.mono (montPrep_ok b h space) ?_
   rintro u ⟨readyU, dataU, fullU, oneU, minusU, modulusU, r2U, strideU, frameU, restU⟩
+  have frameU' : Frame [⟨State.addr base, 8 * capacity⟩, ⟨State.addr (s.sp + 60#32), 4⟩,
+      ⟨State.addr (s.sp + 64#32), 4⟩, FrameStack.belowA s.sp 56] s.mem u.mem := frameU.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨FrameStack.belowA s.sp 56, by simp, FrameStack.belowA_sub (by decide) stackBelow⟩
   obtain workspaceU := h.workspace.congr restU.wr
   obtain stackU : Workspace u u.sp 72 := by rw [restU.sp]; exact stack.congr restU.wr
   obtain separateU : (⟨State.addr u.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩ := by
@@ -992,7 +998,7 @@ theorem phasePrepared_ok {s : State} {base src : BitVec 32} {capacity k : Nat}
       (numbers 9 (by decide) (by decide) (by decide)).trans oneU,
       (numbers 10 (by decide) (by decide) (by decide)).trans minusU, exponentT, powerT⟩
   rw [restU.sp] at frameT
-  exact ⟨data, (frameU.mono (by simp)).trans frameT,
+  exact ⟨data, frameU'.trans (frameT.mono (by simp)),
     restU.trans (restT.mono (by simp [roundClobbers, VG.Proof.Rsa.Arm.Keys.opRegs]))⟩
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -1020,32 +1026,38 @@ theorem SavedFrame.after_preparation {s t : State} {base : BitVec 32} {capacity 
     {values : Nat → BitVec 32} {slots : List Nat} {rs : List Reg}
     (h : SavedFrame values slots s) (bounds : ∀ d ∈ slots, d + 4 ≤ 60)
     (separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩)
+    (stackBelow : 56 ≤ s.sp.toNat)
     (changed : Frame [⟨State.addr base, 8 * capacity⟩, ⟨State.addr (s.sp + 60#32), 4⟩,
-      ⟨State.addr (s.sp + 64#32), 4⟩] s.mem t.mem) (rest : Rest rs s t) : SavedFrame values slots t := by
+      ⟨State.addr (s.sp + 64#32), 4⟩, FrameStack.belowA s.sp 56] s.mem t.mem) (rest : Rest rs s t) : SavedFrame values slots t := by
   refine h.after_frame changed rest ?_
   intro d hd r hr
   obtain fit := bounds d hd
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · rw [VG.Arm.addr_add (by have := h.space.nowrap; omega)]
     exact separate.sub_left (Offset.sub_base _ (by omega))
   · exact locals_disjoint h.space fit (by decide : 60 + 4 ≤ 72)
   · exact locals_disjoint h.space (by omega) (by decide : 64 + 4 ≤ 72)
+  · change (⟨State.addr (s.sp + BitVec.ofNat 32 d), 4⟩ : Region).Disjoint
+      ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩
+    rw [VG.Arm.addr_add (by have := h.space.nowrap; omega), FrameStack.addr_sub' stackBelow]
+    exact Offset.disjoint_below _ (by omega)
 
-theorem phasePrepared_saved_ok {s : State} {base src : BitVec 32} {capacity k : Nat}
+theorem phasePrepared_saved_ok (b : MontBackend) {s : State} {base src : BitVec 32} {capacity k : Nat}
     {values : Nat → BitVec 32} {slots : List Nat}
     (h : MontPrepInput base src capacity k s) (space : Spec.Rsa.scratchWords k ≤ capacity)
     (saved : SavedFrame values slots s) (bounds : ∀ d ∈ slots, d + 4 ≤ 60)
-    (separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩) :
-    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared s fun t =>
+    (separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr base, 8 * capacity⟩)
+    (stackBelow : 56 ≤ s.sp.toNat) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul)) s fun t =>
       RoundData base capacity (Spec.Rsa.modulusWords k)
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k)) t.mem ∧
       SavedFrame values slots t ∧
       Frame [⟨State.addr base, 8 * capacity⟩, ⟨State.addr (s.sp + 60#32), 4⟩,
-        ⟨State.addr (s.sp + 64#32), 4⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  refine WP.mono (phasePrepared_ok h space saved.space separate) ?_
+        ⟨State.addr (s.sp + 64#32), 4⟩, FrameStack.belowA s.sp 56] s.mem t.mem ∧ Rest roundClobbers s t := by
+  refine WP.mono (phasePrepared_ok b h space saved.space stackBelow separate) ?_
   rintro t ⟨data, changed, rest⟩
-  exact ⟨data, saved.after_preparation bounds separate changed rest, changed, rest⟩
+  exact ⟨data, saved.after_preparation bounds separate stackBelow changed rest, changed, rest⟩
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end
@@ -1056,17 +1068,17 @@ end
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 
-theorem preparedWitness_ok {s : State} {p : WitnessParams} {src : BitVec 32} {k used : Nat}
+theorem preparedWitness_ok (b : MontBackend) {s : State} {p : WitnessParams} {src : BitVec 32} {k used : Nat}
     (h : PhaseInput p src k used s) :
-    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul)) s fun t =>
       WitnessState p used 0 t ∧
       Frame [⟨State.addr p.base, 8 * p.capacity⟩, ⟨State.addr (s.sp + 60#32), 4⟩,
-        ⟨State.addr (s.sp + 64#32), 4⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+        ⟨State.addr (s.sp + 64#32), 4⟩, FrameStack.belowA s.sp 56] s.mem t.mem ∧ Rest roundClobbers s t := by
   obtain bounds : ∀ d ∈ witnessSlots, d + 4 ≤ 60 := by
     intro d hd
     simp only [witnessSlots, List.mem_cons, List.not_mem_nil, or_false] at hd
     omega_using [hd]
-  refine WP.mono (phasePrepared_saved_ok h.preparation h.space h.saved bounds h.stackScratch) ?_
+  refine WP.mono (phasePrepared_saved_ok b h.preparation h.space h.saved bounds h.stackScratch h.stackBelow) ?_
   rintro t ⟨data, saved, changed, rest⟩
   rw [h.modulus, ← h.words] at data
   refine ⟨⟨data, h.preparation.workspace.congr rest.wr, saved, ?_, ?_, ?_, h.bitsExact, h.bitsPositive,
@@ -1081,12 +1093,13 @@ theorem preparedWitness_ok {s : State} {p : WitnessParams} {src : BitVec 32} {k 
   · refine (rsa_bytes_frame changed (by have := h.tapeCount; omega_using [this]) ?_).trans h.tapeBytes
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl
     · exact h.tapeScratch
     · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
       exact h.tapeStack.sub_right (Offset.sub_base _ (by decide : 60 + 4 ≤ 72))
     · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]
       exact h.tapeStack.sub_right (Offset.sub_base _ (by decide : 64 + 4 ≤ 72))
+    · exact h.tapeBelow
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 
@@ -1110,9 +1123,9 @@ def witnessNextPassed (p : WitnessParams) (used passed : Nat) : Nat :=
 def witnessNextStatus (p : WitnessParams) (used passed : Nat) : Nat :=
   if used + (p.bits + 7) / 8 ≤ p.bytes.length then drawStatus p passed used else 0
 
-theorem witnessStep_ok (v : RoundImpl) {s : State} {p : WitnessParams} {used passed : Nat}
+theorem witnessStep_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : WitnessParams} {used passed : Nat}
     (h : WitnessState p used passed s) (more : passed < p.checks) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep v.name v.code) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s fun t =>
       WitnessState p (witnessNextUsed p used) (witnessNextPassed p used passed) t ∧
       t.gpr .r3 = BitVec.ofNat 32 (witnessNextStatus p used passed) ∧
       t.z = decide (witnessNextStatus p used passed = 4) ∧
@@ -1133,7 +1146,7 @@ theorem witnessStep_ok (v : RoundImpl) {s : State} {p : WitnessParams} {used pas
     refine WP.seq (WP.ite false (by change some u.z = some false; rw [zero, decide_eq_false available])
       (by intro h; cases h) ?_)
     intro _
-    refine WP.mono (draw_ok v ctx more enough) ?_
+    refine WP.mono (draw_ok b v ctx more enough) ?_
     rintro t ⟨stateT, statusT, zeroT, frameT, restT⟩
     rw [rest.sp, memory] at frameT
     refine WP.block_nil ?_

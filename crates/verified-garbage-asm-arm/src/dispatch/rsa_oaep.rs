@@ -39,7 +39,7 @@
 /// * `hash` names the hash function of the label and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3632 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash`, `mgf1` and `pre` may overlap the 3680 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
@@ -110,7 +110,7 @@ pub unsafe fn vg_rsa_oaep_decrypt_precomputed_auto(_dit: verified_garbage_cpu::D
 /// * `hash` names the hash function of the label and of the encoding: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]

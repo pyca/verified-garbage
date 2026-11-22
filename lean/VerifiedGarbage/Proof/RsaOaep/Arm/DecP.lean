@@ -200,7 +200,7 @@ theorem call_preP {P : EP} (hP : PreP P) {σ s : State} (hr : R1P P σ s) :
     · exact ro P.PRE hPm sS'
     · exact fr sS'
   · intro r hr
-    have low : (⟨State.addr P.B - BitVec.ofNat 64 3440, 3440⟩ : Region) = P.lay.LOW := rfl
+    have low : (⟨State.addr P.B - BitVec.ofNat 64 3488, 3488⟩ : Region) = P.lay.LOW := rfl
     rw [low]
     simp only [privRdP, privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -380,7 +380,7 @@ theorem epP_lay (s : State) :
         (epP s ai au af T aiL auL afL TL).CT, ⟨State.addr (stackArg s 21), (stackArg s 22).toNat * 8⟩,
         (epP s ai au af T aiL auL afL TL).TABL, (epP s ai au af T aiL auL afL TL).TAB]
       [(epP s ai au af T aiL auL afL TL).OUT, (epP s ai au af T aiL auL afL TL).ML,
-        (epP s ai au af T aiL auL afL TL).SCR] s 3440 := rfl
+        (epP s ai au af T aiL auL afL TL).SCR] s 3488 := rfl
 
 theorem epP_pre {s : State} (h32 : (stackArg s 22).toNat < 2 ^ 32)
     (hl : (stackArg s 22).toNat = Spec.Rsa.privatePrecomputedWords (stackArg s 0).toNat (stackArg s 4).toNat
@@ -404,7 +404,7 @@ theorem in_of_preP {ts : List FnTable} {s : State} (h : (specP ts).pre s)
     kS kPr kTL kT kA fO fM fN fE fP fQ fDP fDQ fQI fL fC fS fPr fTL fT kv olk clk el1 elK pl1 plK ql1 qlK dpl qil
     dql slK prl
   have key := h
-  have h3624 : 3624 ≤ s.sp.toNat := hsp
+  have h3624 : 3672 ≤ s.sp.toNat := hsp
   obtain r1 : s.gpr .r1 = stackArg s 0 := BitVec.eq_of_toNat_eq olk
   obtain a16 : stackArg s 16 = stackArg s 0 := BitVec.eq_of_toNat_eq clk
   obtain a8 : stackArg s 8 = stackArg s 4 := BitVec.eq_of_toNat_eq dpl
@@ -580,11 +580,11 @@ theorem code_okP (hc : Coh vs) (v : Proof.Rsa.Arm.CrtImpl) {s : State} (hs : (ds
     (hQ := fun _ m₁ m₂ hf hres => by
       have fit := hin.ok.fits P.OUT (List.mem_append_right _ List.mem_cons_self)
       have rel := fun {R : Region} (hR : R ∈ P.lay.rw) =>
-        released_apart (F := frameBytes) (A := 92) (C := 3440) (argv := P.lay.argv) (ro := P.lay.ro)
+        released_apart (F := frameBytes) (A := 92) (C := 3488) (argv := P.lay.argv) (ro := P.lay.ro)
           (rw := P.lay.rw) hin.ok hsp' (R := R) (Or.inr hR)
       exact writtenDecrypt_frame hf (rel (R := P.OUT) (by simp)) (rel (R := P.ML) (by simp))
         (by change P.OUT.len < 2 ^ 64; omega_using [fit]) hres)) fun t ⟨abi, res⟩ => ⟨abi, ?_⟩
-  · rw [pushRegion_eq (F := frameBytes) (A := 92) (C := 3440) (argv := P.lay.argv) (ro := P.lay.ro)
+  · rw [pushRegion_eq (F := frameBytes) (A := 92) (C := 3488) (argv := P.lay.argv) (ro := P.lay.ro)
       (rw := P.lay.rw) hsp']
     exact hin.ok.push_apart r hr
   · sig_post [Spec.RsaOaep.decryptPrecomputedMdTablesContract, Spec.RsaOaep.decryptPrecomputedMdTablesSig,
@@ -598,7 +598,7 @@ theorem code_okP (hc : Coh vs) (v : Proof.Rsa.Arm.CrtImpl) {s : State} (hs : (ds
     subst hH hG
     rw [BitVec.setWidth_append_eq_right]
     obtain ro := fun {R : Region} (hR : R ∈ P.lay.ro) =>
-      entered_ro (F := frameBytes) (A := 92) (C := 3440) (argv := P.lay.argv) (rw := P.lay.rw) hin.ok hsp' hR
+      entered_ro (F := frameBytes) (A := 92) (C := 3488) (argv := P.lay.argv) (rw := P.lay.rw) hin.ok hsp' hR
     obtain hP' : pB P (entered frameBytes s) =
         Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 3)) (stackArg s 4).toNat := ro (R := P.PP) (by simp)
     obtain hQ : qB P (entered frameBytes s) =

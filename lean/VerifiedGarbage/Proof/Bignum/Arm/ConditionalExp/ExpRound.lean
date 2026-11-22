@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpState
 public import VerifiedGarbage.Impl.Bignum.Arm.Exp
 
-import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBit
+public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBit
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
@@ -13,28 +13,28 @@ import VerifiedGarbage.Proof.Framework.Block
 
 namespace VG.Proof.Bignum.Arm.ConditionalExp
 
-variable {ok : Prop}
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+variable {ok : Prop} {Q : State → Prop} {regions : List Region}
 open VG.Proof.Rsa.Mont (arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
 theorem expRound_ok (s : State) {base : BitVec 32} {len w M x E V c : Nat}
-    (h : ExpState ok base len w M x E s) (hv : V < 2 ^ 32) (hc : 0 < c) (hc' : c < 2 ^ 32)
+    (K : TwoExp.Montgomery base len w Q regions) (h : ExpState ok base len w M x E s) (q : Q s) (hv : V < 2 ^ 32) (hc : 0 < c) (hc' : c < 2 ^ 32)
     (byte : s.mem.readW (VG.Proof.Mont.off (State.addr base) 200) 32 = BitVec.ofNat 32 V)
     (count : s.mem.readW (VG.Proof.Mont.off (State.addr base) 192) 32 = BitVec.ofNat 32 c) :
-    WP isa expBitRound s fun t => ExpState ok base len w M x (2 * E + V / 128 % 2) t ∧
+    WP isa (expBitRoundWith K.op) s fun t => ExpState ok base len w M x (2 * E + V / 128 % 2) t ∧ Q t ∧
       t.mem.readW (VG.Proof.Mont.off (State.addr base) 200) 32 = BitVec.ofNat 32 (V + V) ∧
       t.mem.readW (VG.Proof.Mont.off (State.addr base) 192) 32 = BitVec.ofNat 32 (c - 1) ∧
       t.z = decide (c = 1) ∧
       (∀ d, d + 4 ≤ 192 → t.mem.readW (VG.Proof.Mont.off (State.addr base) d) 32 =
-        s.mem.readW (VG.Proof.Mont.off (State.addr base) d) 32) ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+        s.mem.readW (VG.Proof.Mont.off (State.addr base) d) 32) ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
   have size : 256 ≤ 8 * len := by
     have := h.ready.layout.2.2.1
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega_using [this]
-  rw [expBitRound, WP.seq_iff]
-  refine WP.mono (expBit_ok s h hv byte) ?_
-  rintro u ⟨stateU, keepsU, frameU, restU⟩
+  rw [expBitRoundWith, WP.seq_iff]
+  refine WP.mono (expBit_ok s K h q hv byte) ?_
+  rintro u ⟨stateU, qU, keepsU, frameU, restU⟩
   have byteU := (keeps_header_readW keepsU size (d := 200) (bits := 32) (by decide)).trans byte
   have countU := (keeps_header_readW keepsU size (d := 192) (bits := 32) (by decide)).trans count
   rw [WP.seq_iff]
@@ -53,7 +53,8 @@ theorem expRound_ok (s : State) {base : BitVec 32} {len w M x E V c : Nat}
   rintro t ⟨memT, flag, restT⟩
   obtain ⟨stateT, frameT⟩ := stateV.after_header (d := 192) (by decide) (by decide) memT restT
     ((restT.gpr .r0 (by decide)).trans stateV.ready.ptr)
-  refine ⟨stateT, ?_, ?_, flag, ?_, frameU.trans (frameV.trans frameT),
+  refine ⟨stateT, K.stable frameT (restT.mono (by decide)) (K.stable frameV (restV.mono (by decide)) qU), ?_, ?_, flag,
+    ?_, frameU.trans ((liftFrame K frameV).trans (liftFrame K frameT)),
     restU.trans ((restV.mono (by decide)).trans (restT.mono (by decide)))⟩
   · have outside := writeW32_outside v.mem (State.addr base) (d := 192) (BitVec.ofNat 32 (c - 1)) (by decide)
     rw [← memT] at outside
