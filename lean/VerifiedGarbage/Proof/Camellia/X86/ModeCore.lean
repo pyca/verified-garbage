@@ -58,7 +58,11 @@ def KeyArgs (s : State) (rs : List Region) (k : Nat × List (BitVec 64)) : Prop 
     (∀ r ∈ rs, Region.Disjoint ⟨p.setWidth 64, 272⟩ r) ∧ (∀ r ∈ rs, Region.Disjoint ⟨s.ea (argOp 0), 4⟩ r) ∧
     (∀ r ∈ rs, Region.Disjoint ⟨s.ea (argOp 1), 4⟩ r) ∧ (∀ r ∈ s.wr, Region.Disjoint ⟨s.ea (argOp 1), 4⟩ r) ∧
     (∀ r ∈ rs, Region.Disjoint (stkRegion (s.gpr .esp) 16) r) ∧
-    Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨s.ea (argOp 1), 4⟩
+    Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨s.ea (argOp 1), 4⟩ ∧
+    Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨p.setWidth 64, 272⟩ ∧
+    InRegions (s.rd ++ s.wr) (s.ea (argOp 5)) 4 ∧ (∀ r ∈ rs, Region.Disjoint ⟨s.ea (argOp 5), 4⟩ r) ∧
+    (∀ r ∈ rs, r.base = (s.mem.readW (s.ea (argOp 5)) 32).setWidth 64) ∧
+    Region.Disjoint (stkRegion (s.gpr .esp) 16) ⟨s.ea (argOp 5), 4⟩
 
 /-- The table of subkeys in the order of `d` for `k.1` rounds, in the scratch
 buffer at `B`. -/
@@ -124,12 +128,13 @@ theorem entry_keep {d : Dir} {B : BitVec 32} (hfit : B.toNat + 4 * (dirCore d).t
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec 64)} (h : KeyArgs s rs k)
     (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem) :
     KeyArgs s' rs k := by
-  obtain ⟨p, hin0, hp, hin1, hR, hRv, hws, hsch, hfit, hdis, hd0, hd1, hdw, hst, hsa⟩ := h
+  obtain ⟨p, hin0, hp, hin1, hR, hRv, hws, hsch, hfit, hdis, hd0, hd1, hdw, hst, hsa, hsk, hin5, hd5, hb5, hs5⟩ := h
   have hea : ∀ i, s'.ea (argOp i) = s.ea (argOp i) := fun i => by
     show (s'.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [hesp]
   refine ⟨p, by rw [hrd, hwr, hea]; exact hin0, ?_, by rw [hrd, hwr, hea]; exact hin1, ?_, hRv, ?_,
     by rw [hrd, hwr]; exact hsch, hfit, hdis, by rw [hea]; exact hd0, by rw [hea]; exact hd1,
-    by rw [hwr, hea]; exact hdw, by rw [hesp]; exact hst, by rw [hesp, hea]; exact hsa⟩
+    by rw [hwr, hea]; exact hdw, by rw [hesp]; exact hst, by rw [hesp, hea]; exact hsa, by rw [hesp]; exact hsk,
+    by rw [hrd, hwr, hea]; exact hin5, by rw [hea]; exact hd5, fun r hr => ?_, by rw [hesp, hea]; exact hs5⟩
   · rw [hea, hf.readW (Region.contains_self _ _) hd0 (by decide), hp]
   · rw [hea, hf.readW (Region.contains_self _ _) hd1 (by decide), hR]
   · rw [hws]
@@ -138,69 +143,48 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec
     have hi := List.mem_range.mp hi
     have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_using [hRv, hi]
     exact (wordAt_frame hf fun r hr => (hdis r hr).sub_left (VG.Offset.sub_base _ hl)).symm
-
-/-- `cmpRounds`: Z when there are 18 rounds. -/
-theorem cmpRounds_z {s : State} {R : Nat} (hR : R = 18 ∨ R = 24) (hin : InRegions (s.rd ++ s.wr) (s.ea (argOp 1)) 4)
-    (hv : s.mem.readW (s.ea (argOp 1)) 32 = BitVec.ofNat 32 R) :
-    ∃ s', runBlock isa cmpRounds s = some s' ∧ s'.zf = some (decide (R = 18)) ∧
-      (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s', e, z, o, m, rd, wr⟩ := cmpRounds_ok s hin
-  refine ⟨s', e, ?_, o, m, rd, wr⟩
-  rw [z, hv, show (18 : BitVec 32) = BitVec.ofNat 32 18 from rfl, ofNat32_sub_beq (by omega_using [hR]) (by decide)]
+  · rw [hea, hf.readW (Region.contains_self _ _) hd5 (by decide)]; exact hb5 r hr
 
 theorem prepare_wp (d : Dir) {s : State} {B : BitVec 32} {rs : List Region} {k : Nat × List (BitVec 64)}
     (hB : s.gpr VG.Impl.Modes.X86.sb = B) (hs : VG.Proof.Modes.X86.ScrIn s B (dirCore d).total)
-    (hR : (⟨B.setWidth 64, 4 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
+    (hR : (⟨B.setWidth 64, 4 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k)
+    (hesp : (dirCore d).stack ≤ (s.gpr .esp).toNat) :
     WP isa (dirCore d).prepare s fun s' => (ReadyAt d s'.mem B k ∧ RArg s' k.1) ∧
       s'.gpr VG.Impl.Modes.X86.sb = B ∧ s'.gpr .esp = s.gpr .esp ∧
       Frame [coreRegion (dirCore d) B, stkRegion (s.gpr .esp) (dirCore d).stack] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨R, ws⟩ := k
-  obtain ⟨p, hin0, hp, hin1, hRa, hRv, hws, hsch, hfit, hdis, hd0, -, hdw, -, -⟩ := hk
+  obtain ⟨p, hin0, hp, hin1, hRa, hRv, hws, hsch, hfit, hdis, hd0, -, hdw, hst, hsa, hsk, hin5, hd5, hb5, hs5⟩ := hk
   simp only at hRa hRv hws ⊢
   have hB' : s.gpr sb = B := hB
   have hw : ScrIn s.wr B := scrIn_of hs
   have hsub : Region.Sub ⟨B.setWidth 64, 4 * slots⟩ ⟨B.setWidth 64, 4 * (dirCore d).total⟩ :=
     Region.sub_prefix (by rw [dirCore_total, slots_eq]; decide)
-  -- The number of rounds.
-  obtain ⟨s₂, e₂, hz, g₂, mem₂, rd₂, wr₂⟩ := cmpRounds_z hRv hin1 hRa
-  have esp₂ : s₂.gpr .esp = s.gpr .esp := g₂ _ (by decide)
-  have hsep : Region.Disjoint ⟨p.setWidth 64, 272⟩ ⟨B.setWidth 64, 4 * slots⟩ := (hdis _ hR).sub_right hsub
-  have hpre : KeyPre s₂ B p :=
-    ⟨by rw [g₂ _ (by decide)]; exact hB', by rw [wr₂]; exact hw, by rw [rd₂, wr₂]; exact hsch, hfit, hsep⟩
-  have harg : InRegions (s₂.rd ++ s₂.wr) (s₂.ea (argOp 0)) 4 := by
-    rw [rd₂, wr₂, ea_arg esp₂]; exact hin0
-  have hparg : s₂.mem.readW (s₂.ea (argOp 0)) 32 = p := by
-    rw [ea_arg esp₂, mem₂]; exact hp
-  show WP isa (.seq (.block cmpRounds) (.ite .e (keys d 3) (keys d 4))) s _
-  refine WP.seq (WP.of_runBlock ⟨s₂, e₂, ?_⟩)
-  obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
-  have hg : g = 3 ∨ g = 4 := by omega_using [hRv, hgR]
-  refine WP.mono (M := isa) (Q := KeysPost s₂ B p g (permOf d g))
-    (WP.ite (decide (R = 18)) ((eval_e s₂).trans hz) (fun h => ?_) (fun h => ?_)) fun s₃ k₃ => ?_
-  · obtain rfl : g = 3 := by simp at h; omega_using [hgR, h]
-    exact keys_wp d (Or.inl rfl) hpre harg hparg
-  · obtain rfl : g = 4 := by simp at h; omega_using [hRv, hgR, h]
-    exact keys_wp d (Or.inr rfl) hpre harg hparg
-  have b₃ : s₃.gpr sb = B := k₃.pre.base
-  have esp₃ : s₃.gpr .esp = s.gpr .esp := by rw [k₃.regs _ (by decide) (by decide), esp₂]
-  have f₃ : Frame [⟨B.setWidth 64, 4 * slots⟩] s.mem s₃.mem := by
-    rw [← mem₂]
-    exact k₃.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact table_sub_scr⟩
-  refine ⟨⟨⟨hRv, fun i hi => ?_⟩, RArg.frame ⟨hin1, hRa, hdw⟩ esp₃ (by rw [k₃.rd, rd₂]) (by rw [k₃.wr, wr₂]) f₃
-      (sub_scr hs fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h)⟩,
-    b₃, esp₃, ?_, by rw [k₃.rd, rd₂], by rw [k₃.wr, wr₂]⟩
-  · rw [hgR] at hi ⊢
-    have hpl : permOf d g i < 8 * g + 2 := dirPerm_lt (specDir d) hi
-    have hl : permOf d g i < Spec.Camellia.scheduleLength R := by
-      simp only [Spec.Camellia.scheduleLength]; omega_using [hgR, hpl]
-    have := k₃.ent i hi
-    rw [mem₂] at this
+  have hv5 : s.mem.readW (s.ea (argOp 5)) 32 = B := by
+    have e := congrArg (BitVec.setWidth 32) (hb5 _ hR)
+    simp only [BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide), BitVec.setWidth_eq] at e
+    exact e.symm
+  show WP isa (prepareCall d 5) s _
+  refine WP.mono (prepareCall_wp d 5 (R := R) hB' hw hRv hin5 hv5 ((hd5 _ hR).sub_right hsub) hs5.symm hin0 hp hin1 hRa hsch hfit ((hdis _ hR).sub_right hsub)
+    hsk.symm ((hst _ hR).sub_right hsub) hesp)
+    fun s₃ ⟨b₃, cs₃, rd₃, wr₃, f₃, e₃, _⟩ => ?_
+  have esp₃ : s₃.gpr .esp = s.gpr .esp := cs₃ _ (by simp [calleeSaved])
+  have f₃' : Frame [⟨B.setWidth 64, 4 * slots⟩, below (s.gpr .esp) 16] s.mem s₃.mem := f₃
+  have hea : s₃.ea (argOp 1) = s.ea (argOp 1) := by
+    show (s₃.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [esp₃]
+  refine ⟨⟨⟨hRv, fun i hi => ?_⟩, ⟨by rw [rd₃, wr₃, hea]; exact hin1, ?_, by rw [wr₃, hea]; exact hdw⟩⟩,
+    b₃, esp₃, f₃', rd₃, wr₃⟩
+  · have hpl : permOf d (R / 6) i < 8 * (R / 6) + 2 := dirPerm_lt (specDir d) hi
+    have hl : permOf d (R / 6) i < Spec.Camellia.scheduleLength R := by
+      simp only [Spec.Camellia.scheduleLength]; omega_using [hRv, hpl]
     rw [hws, schedWords_getD _ _ hl]
-    exact this
-  · exact f₃.sub fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self,
-      fun _ h => h⟩
+    exact e₃ i hi
+  · rw [hea, f₃'.readW (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (hdw _ hs.wr).sub_right hsub
+      · exact hsa.symm) (by decide)]
+    exact hRa
 
 /-- The cipher of the direction `d`. -/
 def dirCipher : Dir → Spec.Camellia.Subkeys → Spec.Cbc.Cipher
@@ -303,8 +287,8 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
     have hg4 : 8 * (k.1 / 6) + 2 ≤ 34 := by omega_using [hR]
     exact ⟨⟨⟨hR, fun i hi => entry_keep hfit hf hd (by omega_using [hR, hi]) (he i hi)⟩, ha.frame e r w hf hs⟩, hfit,
       by rw [e]; exact hst, by rw [e, ea_arg e, ← ea_arg rfl]; exact hsa⟩
-  prepare_wp {s _ _ _} hB hs hR hk _ := WP.mono (prepare_wp d hB hs hR hk) fun s' ⟨r, h⟩ => by
-    obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, hst, hsa⟩ := hk
+  prepare_wp {s _ _ _} hB hs hR hk hsp := WP.mono (prepare_wp d hB hs hR hk hsp) fun s' ⟨r, h⟩ => by
+    obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, hst, hsa, -⟩ := hk
     exact ⟨⟨r, hs.fit, by rw [h.2.1]; exact hst _ hR, by rw [h.2.1, ea_arg h.2.1, ← ea_arg rfl]; exact hsa⟩, h⟩
   crypt_wp hB hs hr hsp := WP.mono (crypt_wp d hB hs hr.1.1 hr.1.2 hr.2.2.1 hr.2.2.2 hsp)
     fun _ ⟨b, e, r, h⟩ => ⟨b, e, ⟨r, hr.2.1, by rw [e]; exact hr.2.2.1, by
