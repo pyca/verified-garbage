@@ -3863,6 +3863,10 @@ bne %cr0, 2287b
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_inv_batch.rs"]
+pub(crate) mod vg_rsa_inv_batch;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_mont_kernel.rs"]
 pub(crate) mod vg_rsa_mont_kernel;
 
