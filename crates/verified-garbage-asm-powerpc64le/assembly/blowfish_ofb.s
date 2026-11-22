@@ -349,19 +349,19 @@ vg_blowfish_ofb:
 	ld %r0, 64(%r5)
 	mtlr %r0
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
-	std %r11, 32(%r12)
-	std %r11, 40(%r12)
-	std %r11, 48(%r12)
-	std %r11, 56(%r12)
-	std %r11, 64(%r12)
-	std %r11, 72(%r12)
-	std %r11, 80(%r12)
-	std %r11, 88(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
 	addi %r1, %r1, 128
 	li %r0, 0
 	li %r4, 0
@@ -759,19 +759,19 @@ vg_blowfish_ofb_final:
 	ld %r0, 64(%r5)
 	mtlr %r0
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
-	std %r11, 32(%r12)
-	std %r11, 40(%r12)
-	std %r11, 48(%r12)
-	std %r11, 56(%r12)
-	std %r11, 64(%r12)
-	std %r11, 72(%r12)
-	std %r11, 80(%r12)
-	std %r11, 88(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
 	addi %r1, %r1, 128
 	li %r0, 0
 	li %r4, 0

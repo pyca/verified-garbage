@@ -47,7 +47,7 @@ b 24f
 bl {vg_poly1305_blocks}
 .base64 "AuFEew8AgDk4YEx/DwCMOQLhjHkUYoR8AuGFew8AgDk4YIx/DwCMOQLhjHkUYqV8FCqEfAEAhDjkJoR4AAB4OAAAvTgQAtg4"
 bl {vg_poly1305_finalize_scratch}
-.base64 "AACYOQgCDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrAALs6yAAgTkAAGA5AABs+QgAbPkQAGz5GABs+SAAbPkoAGz5MABs+TgAbPlAAGz5SABs+VAAbPlYAGz5YABs+WgAbPlwAGz5eABs+YAAbPmIAGz5kABs+ZgAbPmgAGz5qABs+bAAbPm4AGz5wABs+cgAbPnQAGz52ABs+eAAbPnoAGz58ABs+fgAbPkAAWz5CAFs+RABbPkYAWz5IAFs+SgBbPkwAWz5OAFs+UABbPlIAWz5UAFs+VgBbPlgAWz5aAFs+XABbPl4AWz5gAFs+YgBbPmQAWz5mAFs+aABbPmoAWz5sAFs+bgBbPnAAWz5yAFs+dABbPnYAWz54AFs+egBbPnwAWz5+AFs+QACbPkIAmz5EAJs+RgCbPkgAmz5KAJs+TACbPk4Amz5QAJs+UgCbPlQAmz5WAJs+WACbPloAmz5cAJs+XgCbPmAAmz5iAJs+bACITggAIBO""#,
+.base64 "AACYOQgCDOimAwh80AEM69gBLOvgAUzr6AFs6/ABjOv4AazrAALs6yAAgTkAAAA4AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAAjDnsBwx8gACMOewHDHyAAIw57AcMfIAAjDnsBwx8AAAM+AgADPgQAAz4GAAM+CAADPgoAAz4MAAM+DgADPhAAAz4SAAM+FAADPhYAAz4YAAM+GgADPhwAAz4eAAM+IAADPiIAAz4sAIhOCAAgE4=""#,
         vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
         vg_chacha20_xor = sym crate::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_poly1305_init_core = sym crate::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,

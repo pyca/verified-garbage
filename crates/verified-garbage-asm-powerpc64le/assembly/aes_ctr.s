@@ -164,17 +164,17 @@ vg_aes_ctr_final:
 	ld %r20, 56(%r20)
 	mtlr %r0
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
-	std %r11, 32(%r12)
-	std %r11, 40(%r12)
-	std %r11, 48(%r12)
-	std %r11, 56(%r12)
-	std %r11, 64(%r12)
-	std %r11, 72(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
 	addi %r1, %r1, 112
 	li %r0, 0
 	stdu %r1, -112(%r1)
