@@ -1231,7 +1231,7 @@ open VG.Impl.Pbkdf2.Stream.Arm (scrAt)
 open VG.Proof.X25519.Arm (op2_reg op2_imm dpVal)
 open VG.Proof.Ecdsa.Rfc6979 (kvAtB candAtB stepB)
 open VG.Proof.Pbkdf2.Whole.Arm (hf_rel frame2_rel)
-open VG.Proof.HmacTable.Arm (TabOK TabMem tA)
+open VG.Proof.HmacTable.Arm (TabOK TabMem tA any_rel)
 
 /-! ## Frames and single instructions -/
 
@@ -2111,7 +2111,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm
 
 open VG VG.Arm VG.Impl.Ecdsa.Rfc6979.Arm
 open VG.Proof.HmacTable.Arm (HVar vars tables fnsOf names Coh tableOf mem_names tabOK_of held_tableOf
-  hashAt_tableOf tA)
+  hashAt_tableOf tA vars_coh vars_macLen)
 
 /-! ## The code -/
 
@@ -2149,77 +2149,13 @@ structure WOk (w : HVar) : Prop where
 takes. -/
 def OK (vs : List HVar) : Prop := Coh vs ∧ ∀ w ∈ vs, WOk w
 
-theorem sha512_len (iv : Spec.Sha512.HashValue) (n : Nat) (hn : n ≤ 64) (x : List Byte) :
-    ((Spec.Sha512.finalHash iv x).take n).length = n := by
-  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; omega_using [hn]
-
-/-- Which of `vars` have a function's name in common: none HMAC's `init` or `finalize`, and
-`update` only SHA-224 with SHA-256 and the four of SHA-512. One evaluation, in which the kernel
-reads each name once. -/
-private theorem vars_names : ∀ (i : Nat) (hi : i < 8) (j : Nat) (hj : j < 8),
-    ((vars[i]'hi).F.hiAnyN = (vars[j]'hj).F.hiAnyN → i = j) ∧
-    ((vars[i]'hi).F.H.updN = (vars[j]'hj).F.H.updN →
-      i = j ∨ (2 ≤ i ∧ i < 4 ∧ 2 ≤ j ∧ j < 4) ∨ (4 ≤ i ∧ 4 ≤ j)) ∧
-    ((vars[i]'hi).F.hfN = (vars[j]'hj).F.hfN → i = j) := by
-  decide +kernel
-
-/-- Every hash function with HMAC on ARMv7 meets `WOk`. -/
-theorem vars_coh : Coh vars := by
-  intro w hw w' hw'
-  obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hw
-  obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hw'
-  obtain ⟨n₁, n₂, n₃⟩ := vars_names i hi j hj
-  refine ⟨fun h => ?_, fun h => ?_, fun h => ?_⟩
-  · obtain rfl := n₁ h; rfl
-  · rcases n₂ h with rfl | ⟨a, b, c, d⟩ | ⟨a, b⟩
-    · rfl
-    · obtain rfl | rfl : i = 2 ∨ i = 3 := by omega
-      all_goals obtain rfl | rfl : j = 2 ∨ j = 3 := by omega
-      all_goals rfl
-    · have hi' : i < 8 := hi
-      have hj' : j < 8 := hj
-      obtain rfl | rfl | rfl | rfl : i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
-      all_goals obtain rfl | rfl | rfl | rfl : j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega
-      all_goals rfl
-  · obtain rfl := n₃ h; rfl
-
 theorem vars_ok : OK vars := by
   refine ⟨vars_coh, fun w hw => ?_⟩
+  have hl := vars_macLen w hw
   simp only [vars, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, fun x => by
-        show (Spec.Md5.hash x).length = 16
-        rw [Proof.Md5.hash_eq]; exact Proof.Md5.md.digest_length _⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, fun x => by
-        show (Spec.Sha1.hash x).length = 20
-        rw [Proof.Sha1.hash_eq]; exact Proof.Sha1.md.digest_length _⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, fun x => by
-        show (Spec.Sha256.sha224 x).length = 28
-        simp [Spec.Sha256.sha224, Spec.Sha256.finalHash, Spec.Sha256.wordBytes, List.length_flatMap,
-          List.map_const']⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, fun x => by
-        show (Spec.Sha256.hash x).length = 32
-        rw [Proof.Sha256.hash_eq]; exact Proof.Sha256.md.digest_length _⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, fun x => by
-        show ((Spec.Sha512.finalHash Spec.Sha512.H0_384 x).take 48).length = 48
-        exact sha512_len _ 48 (by decide) x⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, fun x => by
-        show (Spec.Sha512.finalHash Spec.Sha512.H0_512 x).length = 64
-        exact Proof.Hmac.Generic.Common.finalHash_length _ _⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, fun x => by
-        show ((Spec.Sha512.finalHash Spec.Sha512.H0_512_224 x).take 28).length = 28
-        exact sha512_len _ 28 (by decide) x⟩
-  · exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
-      Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, fun x => by
-        show ((Spec.Sha512.finalHash Spec.Sha512.H0_512_256 x).take 32).length = 32
-        exact sha512_len _ 32 (by decide) x⟩
+  all_goals exact ⟨by decide, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl,
+    Nat.le_of_ble_eq_true rfl, Nat.le_of_ble_eq_true rfl, hl⟩
 
 /-- The instance with `w`'s hash function fixed. -/
 def instOf (T : Spec.Ecdsa.Rfc6979.TableInstance) (w : HVar) : Proof.Ecdsa.Rfc6979.Instance where

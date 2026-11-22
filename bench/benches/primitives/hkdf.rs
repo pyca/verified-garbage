@@ -6,6 +6,7 @@ pub const USES: &[&str] = &["hkdf", "hmac_sha256", "hmac_sha384", "sha256", "sha
 
 #[cfg(any(
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "riscv64",
     target_arch = "x86_64"
 ))]
@@ -31,6 +32,7 @@ pub fn bench(c: &mut Criterion) {
 /// bytes (`EXPAND_ONLY`).
 #[cfg(any(
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "riscv64",
     target_arch = "x86_64"
 ))]
@@ -142,6 +144,7 @@ fn group<H: verified_garbage::kdf::hkdf::HkdfHash>(
 
 #[cfg(not(any(
     target_arch = "aarch64",
+    target_arch = "arm",
     target_arch = "riscv64",
     target_arch = "x86_64"
 )))]
