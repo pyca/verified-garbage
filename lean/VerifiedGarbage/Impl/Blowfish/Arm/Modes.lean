@@ -22,7 +22,7 @@ open VG.Arm VG.Impl.Modes.Arm
 
 /-- The code of `vg_blowfish_ecb_encrypt` (`up`) or `vg_blowfish_ecb_decrypt`,
 as it is verified, before its cleanup. -/
-def ecbCode (up : Bool) : Prog isa := Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 20 (ecb up)
+def ecbCode (up : Bool) : Prog isa := Impl.StackScratch.Arm.withRegScratch 256 .r3 (ecb up)
 
 /-- Blowfish's ECB function, encryption (`up`) or decryption, as the modes
 call it: its code as it is verified, under a name of its own

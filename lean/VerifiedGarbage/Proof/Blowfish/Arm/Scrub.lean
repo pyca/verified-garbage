@@ -7,7 +7,6 @@ public import VerifiedGarbage.Spec.Blowfish.CfbFinal
 public import VerifiedGarbage.Spec.Blowfish.Ofb
 public import VerifiedGarbage.Spec.Blowfish.OfbFinal
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 public import VerifiedGarbage.Impl.Blowfish.Arm.Fn
 public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
 public import VerifiedGarbage.Proof.Blowfish.Arm.CbcVerified
@@ -24,7 +23,6 @@ meta import VerifiedGarbage.Spec.Blowfish.CfbFinal
 meta import VerifiedGarbage.Spec.Blowfish.Ofb
 meta import VerifiedGarbage.Spec.Blowfish.OfbFinal
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Impl.Blowfish.Arm.Fn
 meta import VerifiedGarbage.Proof.Blowfish.Arm.Frame
 meta import VerifiedGarbage.Proof.Blowfish.Arm.CbcVerified
@@ -42,19 +40,16 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 The eleven Blowfish functions with their cleanup (`Impl.Blowfish.Arm.Fn`):
 each zeroes the stack its contract reserves and returns with the registers a
 callee may change set to constants (`Arm.Scrub.verifiedScrubbedAll`). Key
-expansion, which wipes its working space, zeroes only the words of that
-stack that the residue analysis (`Arm.rtaint`) finds may differ between two
-runs (`Arm.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates
-here: `taint_decide_ct`); ECB and the modes leave most of theirs secret, and
-keep the loop of `scrubAll`, the shorter code. Key
 expansion and ECB keep their working space in a frame of 96 and 256 bytes
-(`withRegScratchWiped`); the modes keep theirs in a frame of 64 bytes and
+(`withRegScratch`), which they leave as it is; the modes keep theirs in a
+frame of 64 bytes (`withStackScratch`) and
 call ECB's code, with its frame, under a name of its own
 (`vg_blowfish_ecb_encrypt_entry`, `Impl.Blowfish.Arm.ecbCore`), which the
 emitter writes as an internal function: 320 bytes in all. What the cleanup
 of ECB and the modes needs of their code (`CodeOk`) follows from ECB's,
 evaluated once by `lit_decide`, through the generic modes'
-(`Proof/Modes/Arm/ScrubCode.lean`), and their postconditions read the memory
+(`Proof/Modes/Arm/ScrubCode.lean`), and key expansion's is evaluated by
+`lit_decide`; and their postconditions read the memory
 on return only within the buffers (`Arm.Scrub.PostOut`), as on x86
 (`Proof/Blowfish/X86/Scrub.lean`); a length is the low 32 bits of its
 argument word.
@@ -250,8 +245,8 @@ theorem decrypt_noIcall : noIcall Impl.Blowfish.Arm.decrypt = true := by lit_dec
 /-- ECB's code, in its 256-byte scratch frame. -/
 theorem ecbCode_ok (up : Bool) : CodeOk (Impl.Blowfish.Arm.ecbCode up) 256 := by
   cases up
-  · exact withRegScratchWiped_scrubArm (n := 0) ⟨decrypt_armStack, decrypt_noIcall⟩
-  · exact withRegScratchWiped_scrubArm (n := 0) ⟨encrypt_armStack, encrypt_noIcall⟩
+  · exact CodeOk.alloc (n := 0) (CodeOk.seq (CodeOk.block _) ⟨decrypt_armStack, decrypt_noIcall⟩)
+  · exact CodeOk.alloc (n := 0) (CodeOk.seq (CodeOk.block _) ⟨encrypt_armStack, encrypt_noIcall⟩)
 
 /-- ECB's code, as the modes call it: it takes no working space of theirs,
 so its call needs no frame. -/
@@ -262,14 +257,20 @@ theorem ecbCore_ok (up : Bool) :
 
 /-- A mode one block at a time, in its 64-byte scratch frame. -/
 theorem seq_ok (up : Bool) (m : Impl.Modes.Arm.Mode) :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 ((Impl.Blowfish.Arm.ecbCore up).seq m)) 320 :=
-  withStackScratchWiped_scrubArm (seq_scrubArm (ecbCore_ok up) m)
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 64 0 ((Impl.Blowfish.Arm.ecbCore up).seq m)) 320 :=
+  CodeOk.alloc (n := 256) (CodeOk.seq ((CodeOk.block _).mono (Nat.zero_le _)) (seq_scrubArm (ecbCore_ok up) m))
 
 /-- A mode over a message's last piece, in its 64-byte scratch frame. -/
 theorem seqFinal_ok (up : Bool) (m : Impl.Modes.Arm.Mode) :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 ((Impl.Blowfish.Arm.ecbCore up).seqFinal m)) 320 :=
-  withStackScratchWiped_scrubArm (seqFinal_scrubArm (ecbCore_ok up) m)
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 64 0 ((Impl.Blowfish.Arm.ecbCore up).seqFinal m)) 320 :=
+  CodeOk.alloc (n := 256) (CodeOk.seq ((CodeOk.block _).mono (Nat.zero_le _)) (seqFinal_scrubArm (ecbCore_ok up) m))
 
+/-- Key expansion's code, in its 96-byte scratch frame. -/
+theorem expandKey_code :
+    CodeOk (Impl.StackScratch.Arm.withRegScratch 96 .r3 Impl.Blowfish.Arm.expandKey) 96 := by
+  lit_decide
+
+theorem frameOk_96 : FrameOk 96 := by decide
 theorem frameOk_256 : FrameOk 256 := by decide
 theorem frameOk_320 : FrameOk 320 := by decide
 
@@ -283,12 +284,10 @@ open VG VG.Arm VG.Arm.Scrub
 theorem expandKey :
     VerifiedScrubbed target Impl.Blowfish.Arm.Fn.expandKey
       (Spec.Blowfish.expandKeyContract (abi.withConsts Impl.Blowfish.Arm.initConsts) 96) 0 :=
-  verifiedScrubbedSel (api := Spec.Blowfish.expandKeyApi) (W := 96)
-    { code := Impl.StackScratch.Arm.withRegScratchWiped 96 .r3 20 Impl.Blowfish.Arm.expandKey
+  verifiedScrubbedAll (api := Spec.Blowfish.expandKeyApi)
+    { code := Impl.StackScratch.Arm.withRegScratch 96 .r3 Impl.Blowfish.Arm.expandKey
       verified := Proof.Blowfish.Arm.expandKey_framed }
-    Impl.Blowfish.Arm.Fn.expandKeyWords []
-    (Scrub.expandKeyOut 96)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (Scrub.expandKeyOut 96) (scrubSideF_of Scrub.expandKey_code Scrub.frameOk_96 _)
 
 /-- `vg_blowfish_ecb_encrypt`. -/
 theorem ecbEncrypt :
@@ -308,7 +307,7 @@ theorem ecbDecrypt :
 theorem cbcEncryptChained :
     VerifiedScrubbed target Impl.Blowfish.Arm.Fn.cbcEncryptChained (Spec.Blowfish.cbcEncryptChainedContract abi 320) 0 :=
   verifiedScrubbedAll (api := Spec.Blowfish.cbcEncryptChainedApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cbcEncryptChained
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.Blowfish.Arm.cbcEncryptChained
       verified := Proof.Blowfish.Arm.cbcEncryptChained_framed }
     (Scrub.cbcEncryptOut 320) (scrubSideF_of (Scrub.seq_ok true Impl.Modes.Arm.cbcEncChained) Scrub.frameOk_320 _)
 
@@ -316,7 +315,7 @@ theorem cbcEncryptChained :
 theorem cbcDecryptChained :
     VerifiedScrubbed target Impl.Blowfish.Arm.Fn.cbcDecryptChained (Spec.Blowfish.cbcDecryptChainedContract abi 320) 0 :=
   verifiedScrubbedAll (api := Spec.Blowfish.cbcDecryptChainedApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cbcDecryptChained
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.Blowfish.Arm.cbcDecryptChained
       verified := Proof.Blowfish.Arm.cbcDecryptChained_framed }
     (Scrub.cbcDecryptOut 320) (scrubSideF_of (Scrub.seq_ok false Impl.Modes.Arm.cbcDecChained) Scrub.frameOk_320 _)
 
@@ -324,7 +323,7 @@ theorem cbcDecryptChained :
 theorem cfbEncrypt :
     VerifiedScrubbed target Impl.Blowfish.Arm.Fn.cfbEncrypt (Spec.Blowfish.cfbEncryptContract abi 320) 0 :=
   verifiedScrubbedAll (api := Spec.Blowfish.cfbEncryptApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbEncrypt
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.Blowfish.Arm.cfbEncrypt
       verified := Proof.Blowfish.Arm.cfbEncrypt_framed }
     (Scrub.cfbEncryptOut 320) (scrubSideF_of (Scrub.seq_ok true Impl.Modes.Arm.cfbEnc) Scrub.frameOk_320 _)
 
@@ -332,7 +331,7 @@ theorem cfbEncrypt :
 theorem cfbDecrypt :
     VerifiedScrubbed target Impl.Blowfish.Arm.Fn.cfbDecrypt (Spec.Blowfish.cfbDecryptContract abi 320) 0 :=
   verifiedScrubbedAll (api := Spec.Blowfish.cfbDecryptApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbDecrypt
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.Blowfish.Arm.cfbDecrypt
       verified := Proof.Blowfish.Arm.cfbDecrypt_framed }
     (Scrub.cfbDecryptOut 320) (scrubSideF_of (Scrub.seq_ok true Impl.Modes.Arm.cfbDec) Scrub.frameOk_320 _)
 
@@ -340,7 +339,7 @@ theorem cfbDecrypt :
 theorem cfbEncryptFinal :
     VerifiedScrubbed target Impl.Blowfish.Arm.Fn.cfbEncryptFinal (Spec.Blowfish.cfbEncryptFinalContract abi 320) 0 :=
   verifiedScrubbedAll (api := Spec.Blowfish.cfbEncryptFinalApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbEncryptFinal
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.Blowfish.Arm.cfbEncryptFinal
       verified := Proof.Blowfish.Arm.cfbEncryptFinal_framed }
     (Scrub.cfbEncryptFinalOut 320) (scrubSideF_of (Scrub.seqFinal_ok true Impl.Modes.Arm.cfbEnc) Scrub.frameOk_320 _)
 
@@ -348,7 +347,7 @@ theorem cfbEncryptFinal :
 theorem cfbDecryptFinal :
     VerifiedScrubbed target Impl.Blowfish.Arm.Fn.cfbDecryptFinal (Spec.Blowfish.cfbDecryptFinalContract abi 320) 0 :=
   verifiedScrubbedAll (api := Spec.Blowfish.cfbDecryptFinalApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.cfbDecryptFinal
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.Blowfish.Arm.cfbDecryptFinal
       verified := Proof.Blowfish.Arm.cfbDecryptFinal_framed }
     (Scrub.cfbDecryptFinalOut 320) (scrubSideF_of (Scrub.seqFinal_ok true Impl.Modes.Arm.cfbDecF) Scrub.frameOk_320 _)
 
@@ -356,7 +355,7 @@ theorem cfbDecryptFinal :
 theorem ofb :
     VerifiedScrubbed target Impl.Blowfish.Arm.Fn.ofb (Spec.Blowfish.ofbContract abi 320) 0 :=
   verifiedScrubbedAll (api := Spec.Blowfish.ofbApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.ofb
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.Blowfish.Arm.ofb
       verified := Proof.Blowfish.Arm.ofb_framed }
     (Scrub.ofbOut 320) (scrubSideF_of (Scrub.seq_ok true Impl.Modes.Arm.ofb) Scrub.frameOk_320 _)
 
@@ -364,7 +363,7 @@ theorem ofb :
 theorem ofbFinal :
     VerifiedScrubbed target Impl.Blowfish.Arm.Fn.ofbFinal (Spec.Blowfish.ofbFinalContract abi 320) 0 :=
   verifiedScrubbedAll (api := Spec.Blowfish.ofbFinalApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Blowfish.Arm.ofbFinal
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.Blowfish.Arm.ofbFinal
       verified := Proof.Blowfish.Arm.ofbFinal_framed }
     (Scrub.ofbFinalOut 320) (scrubSideF_of (Scrub.seqFinal_ok true Impl.Modes.Arm.ofb) Scrub.frameOk_320 _)
 

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 import VerifiedGarbage.Proof.Framework.Arm.RegScratchConsts
 import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Blowfish.Scratch
@@ -1448,10 +1448,10 @@ Key expansion and ECB keep our caller's `r4`–`r11` and `lr`, and their
 pointer and counter, in working space that was their fourth argument, in
 `r3`: they run their code, proved with it as an argument (`Verified.lean`),
 in a frame that is the working space (96 bytes for key expansion, 256 for
-ECB, of which each uses the first 80) and whose first 80 bytes they zero
-after the code (`Verified.regScratchWiped`; `Verified.regScratchWipedC` for key
-expansion, which reads the table of the initial schedule). The code uses no
-other stack.
+ECB, of which each uses the first 80), which they leave as the code left it,
+for their functions' cleanup (`scrubAll`) to zero (`Verified.regScratch`;
+`Verified.regScratchC` for key expansion, which reads the table of the
+initial schedule). The code uses no other stack.
 -/
 
 @[expose] public section
@@ -1491,12 +1491,12 @@ theorem expandKeyFrameSat_pre :
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
 theorem expandKey_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withRegScratchWiped 96 .r3 20 Impl.Blowfish.Arm.expandKey)
+    Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 96 .r3 Impl.Blowfish.Arm.expandKey)
       (Spec.Blowfish.expandKeyContract (Arm.abi.withConsts Impl.Blowfish.Arm.initConsts) 96) :=
-  Arm.Verified.regScratchWipedC (sig := Spec.Blowfish.expandKeySig) (nm := "scratch") (e := .u64) (n := 12)
+  Arm.Verified.regScratchC (sig := Spec.Blowfish.expandKeySig) (nm := "scratch") (e := .u64) (n := 12)
     (pre := Spec.Blowfish.expandKeyPre Arm.abi.ptrBits) (post := Spec.Blowfish.expandKeyPost Arm.abi.ptrBits)
     (wa := false) (stack := 0)
-    expandKey_verified (by decide) (by decide) (by decide) (by decide)
+    expandKey_verified (by decide) (by decide) (by decide)
     (Proof.Blowfish.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
 /-- A state satisfying the ECB functions' precondition: the schedule at
@@ -1518,11 +1518,11 @@ theorem ecbFrameSat_pre (d : Spec.Blowfish.Direction) : ∃ s, (Spec.Blowfish.ec
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [ecbFrameSat] using ecbFrameSat
 
 theorem ecb_framed (up : Bool) :
-    Verified Arm.target (Impl.StackScratch.Arm.withRegScratchWiped 256 .r3 20 (Impl.Blowfish.Arm.ecb up))
+    Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 256 .r3 (Impl.Blowfish.Arm.ecb up))
       (Spec.Blowfish.ecbContract Arm.abi (dir up) 256) :=
-  Arm.Verified.regScratchWiped (sig := Spec.Blowfish.ecbSig) (nm := "scratch") (e := .u64) (n := 32)
+  Arm.Verified.regScratch (sig := Spec.Blowfish.ecbSig) (nm := "scratch") (e := .u64) (n := 32)
     (post := Spec.Blowfish.ecbPost (dir up) Arm.abi.ptrBits) (wa := true) (stack := 0)
-    (ecb_verified up) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Blowfish.ecbPostOut_local _ (dir up)) (ecbFrameSat_pre (dir up))
+    (ecb_verified up) (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Blowfish.ecbPostOut_local _ (dir up) vs mm m₁ m₂ r hl) (ecbFrameSat_pre (dir up))
 
 end VG.Proof.Blowfish.Arm

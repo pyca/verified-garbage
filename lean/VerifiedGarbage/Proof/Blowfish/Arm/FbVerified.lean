@@ -12,8 +12,8 @@ meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Spec.Blowfish.Cfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-!
 # Blowfish-OFB and Blowfish-CFB128 on ARMv7 meet their contracts
@@ -22,7 +22,8 @@ The generic OFB and CFB one block at a time over Blowfish's ECB encryption
 (`Proof.Modes.Arm.seq_verified` with `ecbSpec true`) meet the contracts
 with a scratch buffer of 7 words (`Proof.Blowfish.fbScratchContract`), with the
 256 bytes of stack the ECB function uses; the `_framed` theorems keep the
-buffer on the stack, zeroed on return: 64 bytes more.
+buffer on the stack, which the functions' cleanup (`scrubAll`) zeroes: 64
+bytes more.
 -/
 
 @[expose] public section
@@ -77,14 +78,15 @@ theorem ofbFrameSat : ∃ s, (Spec.Blowfish.ofbContract Arm.abi 320).pre s := by
   implies_sat [Spec.Blowfish.ofbContract, Spec.Blowfish.ofbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 8
 
-/-- `ofb`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `ofb`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem ofb_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 ofb) (Spec.Blowfish.ofbContract Arm.abi 320) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Blowfish.ofbSig) (nm := "scratch") (e := .u64) (n := 7)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 ofb) (Spec.Blowfish.ofbContract Arm.abi 320) :=
+  Arm.Verified.stackScratch (sig := Spec.Blowfish.ofbSig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.Blowfish.ofbPost Arm.abi.ptrBits) (wa := true) (stack := 256) (m := 0) (bytes := 64)
-    ofb_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    ofb_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blowfish.ofbPost_local _)
-    (Proof.Blowfish.ofbPostOut_local _) ofbFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Blowfish.ofbPostOut_local _ vs mm m₁ m₂ r hl) ofbFrameSat
 
 theorem cfbEncryptTaint : SeqTaint (ecbCore true) cfbEnc :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -115,14 +117,15 @@ theorem cfbEncryptFrameSat : ∃ s, (Spec.Blowfish.cfbEncryptContract Arm.abi 32
   implies_sat [Spec.Blowfish.cfbEncryptContract, Spec.Blowfish.cfbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 8
 
-/-- `cfbEncrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbEncrypt`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem cfbEncrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cfbEncrypt) (Spec.Blowfish.cfbEncryptContract Arm.abi 320) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Blowfish.cfbSig) (nm := "scratch") (e := .u64) (n := 7)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 cfbEncrypt) (Spec.Blowfish.cfbEncryptContract Arm.abi 320) :=
+  Arm.Verified.stackScratch (sig := Spec.Blowfish.cfbSig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.Blowfish.cfbEncPost Arm.abi.ptrBits) (wa := true) (stack := 256) (m := 0) (bytes := 64)
-    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blowfish.cfbEncPost_local _)
-    (Proof.Blowfish.cfbEncPostOut_local _) cfbEncryptFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Blowfish.cfbEncPostOut_local _ vs mm m₁ m₂ r hl) cfbEncryptFrameSat
 
 theorem cfbDecryptTaint : SeqTaint (ecbCore true) cfbDec :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -153,13 +156,14 @@ theorem cfbDecryptFrameSat : ∃ s, (Spec.Blowfish.cfbDecryptContract Arm.abi 32
   implies_sat [Spec.Blowfish.cfbDecryptContract, Spec.Blowfish.cfbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
     Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 8
 
-/-- `cfbDecrypt`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbDecrypt`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem cfbDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 cfbDecrypt) (Spec.Blowfish.cfbDecryptContract Arm.abi 320) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Blowfish.cfbSig) (nm := "scratch") (e := .u64) (n := 7)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 64 0 cfbDecrypt) (Spec.Blowfish.cfbDecryptContract Arm.abi 320) :=
+  Arm.Verified.stackScratch (sig := Spec.Blowfish.cfbSig) (nm := "scratch") (e := .u64) (n := 7)
     (post := Proof.Blowfish.cfbDecPost Arm.abi.ptrBits) (wa := true) (stack := 256) (m := 0) (bytes := 64)
-    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blowfish.cfbDecPost_local _)
-    (Proof.Blowfish.cfbDecPostOut_local _) cfbDecryptFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Blowfish.cfbDecPostOut_local _ vs mm m₁ m₂ r hl) cfbDecryptFrameSat
 
 end VG.Proof.Blowfish.Arm
