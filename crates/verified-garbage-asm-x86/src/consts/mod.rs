@@ -23,6 +23,10 @@ mod vg_brainpoolp512r1_comb;
 pub use vg_brainpoolp512r1_comb::VG_BRAINPOOLP512R1_COMB;
 
 #[rustfmt::skip]
+mod vg_camellia_aesni;
+pub use vg_camellia_aesni::VG_CAMELLIA_AESNI;
+
+#[rustfmt::skip]
 mod vg_cast5_s1234;
 pub use vg_cast5_s1234::VG_CAST5_S1234;
 
