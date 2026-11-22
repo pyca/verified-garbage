@@ -199,6 +199,11 @@ def pModQ : Prog isa :=
     (.seq (.block ([.addi .r30 .r27 0] ++ getP .r31)) (.seq ModArith.reduce
       (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 1 7) (.block unmask))))))
 
+/-- `ModExp.powWin`, as the function `vg_dsa_pow_win` (`ModExp.powWinCall`,
+which keeps the return address in `r25`, free while the DSA functions run:
+they save it with the other nonvolatile registers). -/
+def powWin : Prog isa := ModExp.powWinCall "vg_dsa_pow_win"
+
 /-- `r3 :=` p's top word (word `w − 1` of array 0, at `r10`; `r11 = 2 w`). -/
 def topWord : List Instr := [.lsl .r3 .r11 2, .add .r3 .r10 .r3, .subi .r3 .r3 8, .load .d .r3 .r3 0]
 
@@ -231,8 +236,8 @@ def elemRange : Prog isa :=
 exactly when array 4's q-th power modulo p is 1 (`powWin` over q's
 octets, compared with 1 in array 7). -/
 def elemOrder : Prog isa :=
-  .seq (copy 1 24) (.seq (.block (ptrQ ++ [.addi .r30 .r12 0, .addi .r31 .r6 0] ++ PublicChecked.minv))
-    (.seq ModExp.powWin (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one
+  .seq (copy 1 24) (.seq (.block (ptrQ ++ [.addi .r30 .r12 0, .addi .r31 .r6 0]))
+    (.seq powWin (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one
       (.seq (eqMask .r3 4 7) (.block unmask))))))
 
 /-- The number at `r12` (`p_len` octets, in `r6`) into array 4, then `r0 := 0`
