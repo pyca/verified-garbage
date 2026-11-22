@@ -33,6 +33,10 @@ What differs:
   arguments at other positions (`cryptEntry`, `finEntry`, `oneEntry`), and
   the working space `W + 512` on goes only to `vg_ghash`.
 
+`init` takes the implementation of the key schedule it calls (`keyCall`),
+so that it is emitted with each
+(`Proof/Variants/Sm4ExpandKey/X86.lean`).
+
 Only the pointers, the lengths, `tag_len` and (for `open`) whether the tag
 is right can affect timing, as for AES-GCM.
 -/
@@ -51,10 +55,10 @@ working space in a frame of its own. -/
 def ctrFn : Fn :=
   ⟨"vg_sm4_ctr32", Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ctr32⟩
 
-/-- `vg_sm4_expand_key`'s code (`Artifacts/Sm4/X86.lean`), called as an
-internal function of its own, `vg_sm4_expand_key_core`, rather than as
-`vg_sm4_expand_key`, which also clears the registers and the stack it leaves
-(`Impl.Sm4.X86.Fn.expandKey`). -/
+/-- `vg_sm4_expand_key`'s code in the baseline ISA (`Artifacts/Sm4/X86.lean`),
+called as an internal function of its own, `vg_sm4_expand_key_core`, rather
+than as `vg_sm4_expand_key`, which also clears the registers and the stack
+it leaves (`Impl.Sm4.X86.Fn.expandKey`). -/
 def keyFn : Fn :=
   ⟨"vg_sm4_expand_key_core", Impl.StackScratch.X86.withStackScratchWiped 1448 2 358 Impl.Sm4.X86.expandKey⟩
 
@@ -64,9 +68,9 @@ def keyFn : Fn :=
 def ctrCall : Prog isa :=
   .frame (.push [.edi, .ebx, .edx, .eax]) (.call ctrFn.name ctrFn.code) (.pop .eax 4)
 
-/-- `vg_sm4_expand_key(eax, edx)`. -/
-def keyCall : Prog isa :=
-  .frame (.push [.edx, .eax]) (.call keyFn.name keyFn.code) (.pop .eax 2)
+/-- `vg_sm4_expand_key(eax, edx)`, by its implementation `k`. -/
+def keyCall (k : Fn) : Prog isa :=
+  .frame (.push [.edx, .eax]) (.call k.name k.code) (.pop .eax 2)
 
 /-! ## Counter mode -/
 
@@ -119,12 +123,12 @@ def tag (o al ah tl th : Nat) : Prog isa :=
 /-! ## The functions -/
 
 /-- `vg_sm4_gcm_init(key, ctx, scratch)`: the key schedule into the key
-context's first 128 bytes, then `H = CIPH_K(0¹²⁸)` into its last 16, the
-encryption of a zero block at `ctx + 240` from a zero counter block at
-`W + 96`. -/
-def init : Prog isa :=
+context's first 128 bytes, by its implementation `k`, then
+`H = CIPH_K(0¹²⁸)` into its last 16, the encryption of a zero block at
+`ctx + 240` from a zero counter block at `W + 96`. -/
+def init (k : Fn) : Prog isa :=
   .seq (entry 2 [.mov .esi (argOp 1), .mov .eax (argOp 0), .mov .edx (.reg .esi)])
-  (.seq keyCall
+  (.seq (keyCall k)
   (.seq (.block (([.mov .eax (imm 0), .store (at_ .esi 240) .eax, .store (at_ .esi 244) .eax,
       .store (at_ .esi 248) .eax, .store (at_ .esi 252) .eax] : List Instr) ++ zero4 tO ++
       ([.mov .eax (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm tO),

@@ -153,6 +153,18 @@ GROUPS = {
             "wycheproof::ecdsa_brainpoolp512r1",
         ],
     },
+    "camellia_cbc": {
+        "lib": [],
+        "tests": ["cavp::camellia_cbc"],
+    },
+    "camellia_cfb": {
+        "lib": [],
+        "tests": ["cavp::camellia_cfb"],
+    },
+    "camellia_ofb": {
+        "lib": [],
+        "tests": ["cavp::camellia_ofb"],
+    },
     "chacha20": {
         "lib": ["cipher::chacha20", "aead::chacha20poly1305"],
         "tests": [
@@ -408,6 +420,18 @@ GROUPS = {
             "wycheproof::ecdh_secp256k1",
             "wycheproof::ecdsa_secp256k1",
         ],
+    },
+    "seed_cbc": {
+        "lib": [],
+        "tests": ["cavp::seed_cbc"],
+    },
+    "seed_cfb": {
+        "lib": [],
+        "tests": ["cavp::seed_cfb"],
+    },
+    "seed_ofb": {
+        "lib": [],
+        "tests": ["cavp::seed_ofb"],
     },
     "sha1": {
         "lib": ["hashes::sha1", "hmac::sha1", "kdf::pbkdf2_hmac::sha1"],

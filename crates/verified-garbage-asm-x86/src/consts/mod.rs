@@ -23,6 +23,10 @@ mod vg_brainpoolp512r1_comb;
 pub use vg_brainpoolp512r1_comb::VG_BRAINPOOLP512R1_COMB;
 
 #[rustfmt::skip]
+mod vg_camellia_aesni;
+pub use vg_camellia_aesni::VG_CAMELLIA_AESNI;
+
+#[rustfmt::skip]
 mod vg_cast5_s1234;
 pub use vg_cast5_s1234::VG_CAST5_S1234;
 
@@ -69,3 +73,15 @@ pub use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
 #[rustfmt::skip]
 mod vg_secp256k1_comb;
 pub use vg_secp256k1_comb::VG_SECP256K1_COMB;
+
+#[rustfmt::skip]
+mod vg_seed_aesni;
+pub use vg_seed_aesni::VG_SEED_AESNI;
+
+#[rustfmt::skip]
+mod vg_sm4_aesni;
+pub use vg_sm4_aesni::VG_SM4_AESNI;
+
+#[rustfmt::skip]
+mod vg_sm4_key_aesni;
+pub use vg_sm4_key_aesni::VG_SM4_KEY_AESNI;
