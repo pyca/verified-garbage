@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 
 /-!
 # ECDSA on PPC64LE: the setup
@@ -159,6 +162,116 @@ theorem setupShift_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk 
       · rw [shAt_E_K, Nat.shiftRight_zero]; exact O.wordsVal (by omega_arith) (by omega_arith)
       · rw [shAt_E_D, Nat.shiftRight_zero]; exact O.wordsVal (by omega_arith) (by omega_arith)
       · rw [shAt_self]; exact e
+
+/-! ## A table of constants copied into the working space -/
+
+/-- What `copyTbl` may change: the table's address, the counter, its index
+and the word in flight. -/
+abbrev copyClob : List Reg := [.r4, .r8, .r9, .r11, .r31]
+
+/-- `copyTbl`'s loop invariant, at `r31 = i`: the words from `i` up are
+copied, `r4` holds the table's address, and only the copy's range changed. -/
+structure CInv (base : Addr) (size : Nat) (sym : String) (tbl : List (BitVec 64)) (dst : Nat)
+    (s₀ s : State) (i : Nat) : Prop where
+  frame : Ws s base size
+  r3 : At s base .r3 0
+  r31 : s.gpr .r31 = BitVec.ofNat 64 i
+  r4 : s.gpr .r4 = s₀.syms sym
+  syms : s.syms = s₀.syms
+  keep : Kp copyClob s₀ s
+  mem : Outside base dst (8 * tbl.length) s₀.mem s.mem
+  done : ∀ t, i ≤ t → t < tbl.length → word s.mem base (dst + 8 * t) = tbl.getD t 0
+
+/-- `copyTbl sym (ws.length) dst`: word `i` of the working space's range at
+`dst` is word `i` of the table `ws` at `sym`, which the code may read and
+which the copy does not overwrite (`hv`, of any memory that agrees with this
+one outside the range); nothing else changes but `copyClob`. -/
+theorem copyTbl_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (h3 : At s base .r3 0)
+    {sym : String} {ws : List (BitVec 64)} {dst : Nat} (hk : 0 < ws.length) (hk' : ws.length < 2 ^ 12)
+    (hdst : dst + 8 * ws.length ≤ size) (hal : dst % 8 = 0)
+    (hrd : ∀ i < ws.length, InRegions (s.rd ++ s.wr) (s.syms sym + BitVec.ofNat 64 (8 * i)) 8)
+    (hv : ∀ m : Mem, Outside base dst (8 * ws.length) s.mem m →
+      ∀ i < ws.length, m.readW (s.syms sym + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0) :
+    WP isa (copyTbl sym ws.length dst) s fun s' =>
+      (∀ i < ws.length, word s'.mem base (dst + 8 * i) = ws.getD i 0) ∧ Kp copyClob s s' ∧
+        Outside base dst (8 * ws.length) s.mem s'.mem := by
+  have hs15 := hs.small
+  have hn := hs.nowrap
+  unfold copyTbl
+  -- The table's address, with the link register kept in `r11` around it.
+  refine WP.seq (wp_step exec_mflr (wp_step (exec_adrSym (d := .r4) (by decide))
+    (wp_step exec_mtlr (wp_step (exec_li (by omega_arith)) (WP.block_nil ?_)))))
+  generalize hs₁ : ({ ((s.write .r11 s.lr).write .r4 ((s.write .r11 s.lr).syms sym)) with lr := (s.write .r11 s.lr).unknowns 0, unknowns := fun n => (s.write .r11 s.lr).unknowns (n + 1) } : State) = s₁
+  obtain K₁ : Kp copyClob s { s₁ with lr := s₁.gpr .r11 } := by
+    rw [← hs₁]
+    exact ⟨fun r hr => by
+        simp only [write_gpr, ne_of_not_mem hr (x := .r4), ne_of_not_mem hr (x := .r11), ite_false], rfl, rfl, rfl,
+      by simp only [write_gpr, reduceCtorEq, ite_false, ite_true]⟩
+  obtain g₁ : s₁.gpr .r4 = s.syms sym := by rw [← hs₁]; simp only [write_gpr, ite_true]; rfl
+  obtain y₁ : s₁.syms = s.syms := by rw [← hs₁]; rfl
+  obtain m₁ : s₁.mem = s.mem := by rw [← hs₁]; rfl
+  generalize hs₂ : ({ s₁ with lr := s₁.gpr .r11 } : State).write .r31 (BitVec.ofNat 64 ws.length) = s₂
+  obtain I₂ : CInv base size sym ws dst s s₂ ws.length := by
+    rw [← hs₂]
+    exact ⟨(K₁.ws hs).write _ _, (K₁.at h3).write _, by simp only [write_gpr, ite_true],
+      by simp only [write_gpr, reduceCtorEq, ite_false]; exact g₁, y₁,
+      K₁.trans (Kp.write _ _ (by decide)), by rw [show (_ : State).mem = s₁.mem from rfl, m₁]; exact Outside.refl _ _ _ _,
+      fun t ht ht' => absurd ht' (by omega_arith)⟩
+  refine countLoop_ok (Inv := fun j t => CInv base size sym ws dst s t j) (n := ws.length)
+    (fun j t hb => hb.r31) (fun j t h1 h2 hb => ?_) (fun t hb => ⟨fun i hi => hb.done i (Nat.zero_le _) hi,
+      hb.keep, hb.mem⟩) hk (by omega_arith) I₂
+  -- One word: `r31 = i + 1`.
+  obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega_arith⟩
+  simp only [copyTblBody]
+  refine wp_decCounter (j := i + 1) (by omega_arith) hb.r31 ?_
+  rw [Nat.add_sub_cancel]
+  refine wp_step (exec_lsl (by decide)) ?_
+  refine wp_step exec_add ?_
+  generalize ht₁ : (((t.write .r31 (BitVec.ofNat 64 i)).write .r8
+    ((t.write .r31 (BitVec.ofNat 64 i)).gpr .r31 <<< 3)).write .r9 _) = t₁
+  obtain e8 : t₁.gpr .r8 = BitVec.ofNat 64 (8 * i) := by
+    rw [← ht₁]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]; exact shl3 i
+  obtain e9 : t₁.gpr .r9 = s.syms sym + BitVec.ofNat 64 (8 * i) := by
+    rw [← ht₁]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]; rw [hb.r4, shl3 i]
+  obtain k₁ : Kp copyClob t t₁ := by
+    rw [← ht₁]
+    exact ((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))
+  obtain tm₁ : t₁.mem = t.mem := by rw [← ht₁]; rfl
+  have hi : i < ws.length := by omega_arith
+  obtain hrd₁ : InRegions (t₁.rd ++ t₁.wr) (t₁.gpr .r9 + BitVec.ofNat 64 0) 8 := by
+    rw [e9, BitVec.add_zero, k₁.rd, k₁.wr, hb.keep.rd, hb.keep.wr]; exact hrd i hi
+  refine wp_step (exec_ld (off := 0) (by decide) hrd₁) ?_
+  refine wp_step exec_add ?_
+  generalize ht₂ : ((t₁.write .r11 (t₁.mem.readW (t₁.gpr .r9 + BitVec.ofNat 64 0) 64)).write .r9
+    ((t₁.write .r11 (t₁.mem.readW (t₁.gpr .r9 + BitVec.ofNat 64 0) 64)).gpr .r3 +
+      (t₁.write .r11 (t₁.mem.readW (t₁.gpr .r9 + BitVec.ofNat 64 0) 64)).gpr .r8)) = t₂
+  obtain k₂ : Kp copyClob t₁ t₂ := by
+    rw [← ht₂]; exact (Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))
+  obtain a₂ : At t₂ base .r9 (8 * i) := by
+    rw [← ht₂]; simp only [At, write_gpr, reduceCtorEq, ite_false, ite_true]
+    rw [(k₁.at hb.r3 : At t₁ base .r3 0), e8, off_add, Nat.zero_add]
+  obtain v₂ : t₂.gpr .r11 = ws.getD i 0 := by
+    rw [← ht₂]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
+    rw [e9, BitVec.add_zero, tm₁]; exact hv _ hb.mem i hi
+  obtain w₂ : Ws t₂ base size := k₂.ws (k₁.ws hb.frame)
+  refine wp_step (std_ok w₂ a₂ (by decide) (by omega_arith) (by omega_arith)) (WP.block_nil ?_)
+  obtain tm₂ : t₂.mem = t.mem := by rw [← ht₂, ← tm₁]; rfl
+  obtain O : Outside base (8 * i + dst) 8 t₂.mem (t₂.mem.writeW (off base (8 * i + dst)) (t₂.gpr .r11)) :=
+    writeW_outside _ _ _ (by omega_arith)
+  obtain c₂ : t₂.gpr .r31 = BitVec.ofNat 64 i := by
+    rw [← ht₂, ← ht₁]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
+  obtain g₂ : t₂.gpr .r4 = s.syms sym := by
+    rw [← ht₂, ← ht₁]; simp only [write_gpr, reduceCtorEq, ite_false]; exact hb.r4
+  obtain y₂ : t₂.syms = s.syms := by rw [← ht₂, ← ht₁]; exact hb.syms
+  refine ⟨w₂.store _, (k₂.at (k₁.at hb.r3)).store _, c₂, g₂, y₂,
+    ((hb.keep.trans k₁).trans k₂).trans (Kp.store _ _ _),
+    hb.mem.trans (by rw [← tm₂]; exact O.mono (by omega_arith) (by omega_arith)), fun t' ht' ht'' => ?_⟩
+  show word (t₂.mem.writeW (off base (8 * i + dst)) (t₂.gpr .r11)) base (dst + 8 * t') = _
+  rcases Nat.lt_or_ge i t' with h | h
+  · rw [word_writeW_ne _ (by omega_arith) (by omega_arith) (by omega_arith), tm₂]
+    exact hb.done t' (by omega_arith) ht''
+  · obtain rfl : t' = i := by omega_arith
+    rw [show dst + 8 * t' = 8 * t' + dst by omega_arith, word_writeW_self, v₂]
 
 /-! ## The constants -/
 
