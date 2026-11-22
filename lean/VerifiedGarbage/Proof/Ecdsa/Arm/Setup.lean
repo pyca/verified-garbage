@@ -27,7 +27,8 @@ moves `out` to `lr`, reads `k`, `d` and the hash (`len` bytes each)
 big-endian into their slots from the registers `A` names (`setupLoad_ok`),
 shifts the slot `A.hs` holding a hash (`setupShift_ok`), stores the constants
 (`constsCode_ok`: as immediates, `setupConsts_ok`, by induction on the list,
-or copied from their table, `copyTbl_ok`, a loop counted down in `r11`) and
+or copied from their table, `copyTbl_ok`, a loop of a slot an iteration
+counted down in `r11`) and
 sets the flag to all ones: `setup_ok`, the state `SetupPost` describes.
 -/
 
@@ -38,7 +39,7 @@ namespace VG.Proof.Ecdsa.Arm
 open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont VG.Impl.Weierstrass.Arm VG.Impl.Weierstrass
 open VG.Impl.Ecdsa.Arm
 open VG.Proof.Mont.Arm VG.Proof.Mont VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass Spec.Weierstrass
-open VG.Proof.X25519.Arm (Rest Upd Mupd wp_ldr wp_str wp_dp wp_mov op2_imm op2_reg op2_lsl dpVal)
+open VG.Proof.X25519.Arm (Rest Upd Mupd wp_ldr wp_str wp_dp wp_mov op2_imm op2_reg dpVal)
 
 /-- `ldr t, [sp, #off]`. -/
 theorem wp_ldrSp {s : State} {is : List Instr} {Q : State → Prop} {t : Reg} {off : Nat} (ho : off < 4096)
@@ -120,135 +121,191 @@ theorem setupShift_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk 
 
 /-! ## A table of constants copied into the working space -/
 
-/-- What `copyTbl` may change: the table's address, the counter, the
-addresses and the words in flight. -/
+/-- What `copyTbl` may change: the pointers, the counter and the words in
+flight. -/
 abbrev copyClob : List Reg := [.r4, .r5, .r9, .r10, .r11]
 
-/-- `copyTbl`'s loop invariant, at `r11 = i`: the words from `i` up are
-copied, `r10` holds the table's address `A`, and only the copy's range
-changed. -/
+/-- The table `ws` at `A`, as `copyTbl` reads it into `[base + dst]`: the
+range fits the working space and the address space, is readable, holds its
+words in `s₀` and lies apart from the working space. -/
+structure TblAt (s₀ : State) (base : Addr) (sz : Nat) (A : BitVec 32) (ws : List (BitVec 64)) (dst : Nat) :
+    Prop where
+  dst : dst + 8 * ws.length ≤ sz
+  fit : A.toNat + 8 * ws.length ≤ 2 ^ 32
+  rd : InRegions (s₀.rd ++ s₀.wr) (State.addr A) (8 * ws.length)
+  words : ∀ i < ws.length, s₀.mem.readW (State.addr A + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0
+  sep : Region.Disjoint ⟨State.addr A, 8 * ws.length⟩ ⟨base, sz⟩
+
+/-- `copyTbl`'s invariant, at `r11 = i`: `r10` and `r9` are `P` bytes into the
+table and the working space, the words below `w` are copied, and only the
+copy's range changed. -/
 structure CInv (base : Addr) (sz : Nat) (A : BitVec 32) (ws : List (BitVec 64)) (dst : Nat)
-    (s₀ s : State) (i : Nat) : Prop where
+    (s₀ s : State) (i P w : Nat) : Prop where
   scr : Scr s base sz
   r11 : s.gpr .r11 = BitVec.ofNat 32 i
-  r10 : s.gpr .r10 = A
+  r10 : s.gpr .r10 = A + BitVec.ofNat 32 P
+  r9 : s.gpr .r9 = s.gpr .r12 + BitVec.ofNat 32 P
   keep : Rest copyClob s₀ s
   mem : Outside base dst (8 * ws.length) s₀.mem s.mem
-  done : ∀ t, i ≤ t → t < ws.length → word s.mem base (dst + 8 * t) = ws.getD t 0
+  done : ∀ t < w, word s.mem base (dst + 8 * t) = ws.getD t 0
 
-/-- One word of `copyTbl`'s loop, at `r11 = i + 1`: word `i` of the table at
-`A`, which the copy so far left as it was (it is apart from the working
-space), to `[r12 + dst + 8 i]`, as its two halves. -/
-theorem copyTblBody_ok {s₀ t : State} {base : Addr} {sz : Nat} {A : BitVec 32} {ws : List (BitVec 64)}
-    {dst i : Nat} (hI : CInv base sz A ws dst s₀ t (i + 1)) (hi : i < ws.length)
-    (hdst : dst + 8 * ws.length ≤ sz) (hfit : A.toNat + 8 * ws.length ≤ 2 ^ 32)
-    (hrd : InRegions (s₀.rd ++ s₀.wr) (State.addr A) (8 * ws.length))
-    (hw : ∀ i < ws.length, s₀.mem.readW (State.addr A + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0)
-    (hsep : Region.Disjoint ⟨State.addr A, 8 * ws.length⟩ ⟨base, sz⟩) :
-    WP isa (.block (copyTblBody dst)) t fun t' => CInv base sz A ws dst s₀ t' i ∧ t'.z = decide (i = 0) := by
+/-- The invariant across an update that keeps `copyClob`'s other registers
+and the memory. -/
+theorem CInv.upd {base : Addr} {sz : Nat} {A : BitVec 32} {ws : List (BitVec 64)} {dst : Nat} {s₀ t t' : State}
+    {i i' P P' w : Nat} (hI : CInv base sz A ws dst s₀ t i P w) (k : Rest copyClob t t') (hm : t'.mem = t.mem)
+    (h11 : t'.gpr .r11 = BitVec.ofNat 32 i') (h10 : t'.gpr .r10 = A + BitVec.ofNat 32 P')
+    (h9 : t'.gpr .r9 = t'.gpr .r12 + BitVec.ofNat 32 P') : CInv base sz A ws dst s₀ t' i' P' w :=
+  ⟨hI.scr.of_rest k (by decide), h11, h10, h9, hI.keep.trans k, hm ▸ hI.mem, fun t ht => hm ▸ hI.done t ht⟩
+
+/-- Word `j` of a slot (`copyWord`), word `w` of the table, with the pointers
+`P = 8 (w - j)` bytes in: its two halves to `[base + dst + 8 w]`. -/
+theorem copyWord_ok {s₀ t : State} {base : Addr} {sz : Nat} {A : BitVec 32} {ws : List (BitVec 64)}
+    {dst i P w j : Nat} (hT : TblAt s₀ base sz A ws dst) (hI : CInv base sz A ws dst s₀ t i P w)
+    (hw : w < ws.length) (hP : P + 8 * j = 8 * w) :
+    WP isa (.block (copyWord dst j)) t fun t' => CInv base sz A ws dst s₀ t' i P (w + 1) := by
   have hn := hI.scr.nowrap
   have hsm := hI.scr.small
-  simp only [copyTblBody]
-  refine wp_decCounter (j := i + 1) (by omega_arith) hI.r11 fun t₁ u₁ => ?_
-  obtain c₁ : t₁.gpr .r11 = BitVec.ofNat 32 i := by rw [u₁.gpr, Nat.add_sub_cancel]
-  refine wp_dp (op2_lsl (by decide)) fun t₂ u₂ => ?_
-  obtain a₂ : t₂.gpr .r5 = A + BitVec.ofNat 32 (8 * i) := by
-    rw [u₂.gpr, dpVal, c₁, u₁.other _ (by decide), hI.r10]; exact rowAddr _ i
-  -- The table's word `i`, which the copy so far left as it was.
-  obtain hv : t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0 := by
-    rw [← hw i hi]
+  have hdst := hT.dst
+  have hfit := hT.fit
+  simp only [copyWord]
+  -- The table's word `w`, which the copy so far left as it was.
+  obtain hv : t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * w)) 64 = ws.getD w 0 := by
+    rw [← hT.words w hw]
     exact readW_keep fun j hj => keep_of_disjoint' (hI.mem.mono (o' := 0) (n' := sz) (Nat.zero_le _)
-      (by omega_arith)) hsep (by omega_arith) (by omega_arith) (by omega_arith)
-  obtain ad0 : State.addr (t₂.gpr .r5 + BitVec.ofNat 32 0) = State.addr A + BitVec.ofNat 64 (8 * i) := by
-    rw [a₂, Offset.add_add, Nat.add_zero]; exact addr_add (by omega_arith)
-  obtain ad4 : State.addr (A + BitVec.ofNat 32 (8 * i) + BitVec.ofNat 32 4) =
-      State.addr A + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 4 := by
-    rw [Offset.add_add, Offset.add_add]; exact addr_add (by omega_arith)
-  obtain rw₂ : t₂.rd ++ t₂.wr = s₀.rd ++ s₀.wr := by
-    rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr, hI.keep.rd, hI.keep.wr]
+      (by omega_arith)) hT.sep (by omega_arith) (by omega_arith) (by omega_arith)
+  obtain ad0 : State.addr (t.gpr .r10 + BitVec.ofNat 32 (8 * j)) = State.addr A + BitVec.ofNat 64 (8 * w) := by
+    rw [hI.r10, Offset.add_add, hP]; exact addr_add (by omega_arith)
+  obtain rw₀ : t.rd ++ t.wr = s₀.rd ++ s₀.wr := by rw [hI.keep.rd, hI.keep.wr]
   obtain hl64 : 8 * ws.length < 2 ^ 64 := by omega_arith
-  obtain hin0 : InRegions (s₀.rd ++ s₀.wr) (State.addr A + BitVec.ofNat 64 (8 * i)) 4 :=
-    CallLay.inRegions_sub (off := 8 * i) (l := 4) hrd (by omega_arith) hl64
-  obtain hin4 : InRegions (s₀.rd ++ s₀.wr) (State.addr A + BitVec.ofNat 64 (8 * i + 4)) 4 :=
-    CallLay.inRegions_sub (off := 8 * i + 4) (l := 4) hrd (by omega_arith) hl64
-  refine wp_ldr (by decide) ad0 (by rw [rw₂]; exact hin0) fun t₃ u₃ => ?_
-  refine wp_ldr (a := State.addr A + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 4) (by decide)
-    (by rw [u₃.other _ (by decide), a₂]; exact ad4)
-    (by rw [u₃.rd, u₃.wr, rw₂, Offset.add_add]; exact hin4) fun t₄ u₄ => ?_
-  refine wp_dp (op2_lsl (by decide)) fun t₅ u₅ => ?_
-  obtain c₄ : t₄.gpr .r11 = BitVec.ofNat 32 i := by
-    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), c₁]
-  obtain k₅ : Rest copyClob t t₅ := (u₁.rest (by simp)).trans ((u₂.rest (by simp)).trans
-    ((u₃.rest (by simp)).trans ((u₄.rest (by simp)).trans (u₅.rest (by simp)))))
-  obtain hs₅ := hI.scr.of_rest k₅ (by decide)
-  obtain a₅ : t₅.gpr .r9 = t₅.gpr .r12 + BitVec.ofNat 32 (8 * i) := by
-    rw [u₅.gpr, dpVal, c₄, u₅.other .r12 (by decide)]; exact rowAddr _ i
-  obtain v4 : t₅.gpr .r4 = t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * i)) 32 := by
-    rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.mem, u₁.mem]
-  obtain v5 : t₅.gpr .r5 = t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 4) 32 := by
-    rw [u₅.other _ (by decide), u₄.gpr, u₃.mem, u₂.mem, u₁.mem]
-  obtain m₅ : t₅.mem = t.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  refine wp_str (by omega_arith) (hs₅.ea_off a₅ (d := dst) (by omega_arith))
-    (hs₅.write (d := 8 * i + dst) (n := 4) (by omega_arith)) fun t₆ m₆ => ?_
-  obtain hs₆ := hs₅.of_rest (m₆.rest []) (by decide)
-  obtain a₆ : t₆.gpr .r9 = t₆.gpr .r12 + BitVec.ofNat 32 (8 * i) := by rw [m₆.gpr]; exact a₅
-  refine wp_str (by omega_arith) (hs₆.ea_off a₆ (d := dst + 4) (by omega_arith))
-    (hs₆.write (d := 8 * i + (dst + 4)) (n := 4) (by omega_arith)) fun t₇ m₇ => ?_
-  obtain c₇ : t₇.gpr .r11 = BitVec.ofNat 32 i := by rw [m₇.gpr, m₆.gpr, u₅.other _ (by decide), c₄]
-  refine wp_testCounter (by omega_arith) c₇ fun t₈ f₈ z₈ => WP.block_nil ⟨?_, z₈⟩
-  obtain M₈ : t₈.mem = (t.mem.writeW (off base (8 * i + dst)) (t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * i)) 32)).writeW
-      (off base (8 * i + (dst + 4))) (t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 4) 32) := by
-    rw [f₈.mem, m₇.mem, m₆.gpr, m₆.mem, m₅, v4, v5]
-  obtain k₈ : Rest copyClob t t₈ := k₅.trans ((m₆.rest _).trans ((m₇.rest _).trans (f₈.rest _)))
-  obtain O₈ : Outside base (8 * i + dst) 8 t.mem t₈.mem := by
-    rw [M₈]
-    exact ((writeW32_outside _ _ (d := 8 * i + dst) _ (by omega_arith)).mono (Nat.le_refl _) (by omega_arith)).trans
-      ((writeW32_outside _ _ (d := 8 * i + (dst + 4)) _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
-  refine ⟨hI.scr.of_rest k₈ (by decide), by rw [f₈.gpr]; exact c₇, ?_, hI.keep.trans k₈,
-    hI.mem.trans (O₈.mono (by omega_arith) (by omega_arith)), fun t' h1 h2 => ?_⟩
-  · rw [f₈.gpr, m₇.gpr, m₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), hI.r10]
-  rcases Nat.lt_or_ge i t' with h | h
-  · rw [O₈.word (by omega_arith) (by omega_arith)]; exact hI.done t' (by omega_arith) h2
-  · rw [show t' = i by omega_arith]
-    obtain hhi : t₈.mem.readW (off base (8 * i + dst) + BitVec.ofNat 64 4) 32 =
-        t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 4) 32 := by
-      rw [Offset.add_add (p := base), M₈, show 8 * i + dst + 4 = 8 * i + (dst + 4) by omega_arith,
+  obtain hin0 : InRegions (s₀.rd ++ s₀.wr) (State.addr A + BitVec.ofNat 64 (8 * w)) 4 :=
+    CallLay.inRegions_sub (off := 8 * w) (l := 4) hT.rd (by omega_arith) hl64
+  obtain hin4 : InRegions (s₀.rd ++ s₀.wr) (State.addr A + BitVec.ofNat 64 (8 * w + 4)) 4 :=
+    CallLay.inRegions_sub (off := 8 * w + 4) (l := 4) hT.rd (by omega_arith) hl64
+  refine wp_ldr (by omega_arith) ad0 (by rw [rw₀]; exact hin0) fun t₃ u₃ => ?_
+  refine wp_ldr (a := State.addr A + BitVec.ofNat 64 (8 * w) + BitVec.ofNat 64 4) (by omega_arith)
+    (by rw [u₃.other _ (by decide), hI.r10, Offset.add_add, Offset.add_add,
+          show P + (8 * j + 4) = 8 * w + 4 by omega_arith]; exact addr_add (by omega_arith))
+    (by rw [u₃.rd, u₃.wr, rw₀, Offset.add_add]; exact hin4) fun t₄ u₄ => ?_
+  obtain k₄ : Rest copyClob t t₄ := (u₃.rest (by simp)).trans (u₄.rest (by simp))
+  obtain hs₄ := hI.scr.of_rest k₄ (by decide)
+  obtain a₄ : t₄.gpr .r9 = t₄.gpr .r12 + BitVec.ofNat 32 P := by
+    rw [u₄.other _ (by decide), u₃.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide)]
+    exact hI.r9
+  obtain v4 : t₄.gpr .r4 = t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * w)) 32 := by
+    rw [u₄.other _ (by decide), u₃.gpr]
+  obtain v5 : t₄.gpr .r5 = t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * w) + BitVec.ofNat 64 4) 32 := by
+    rw [u₄.gpr, u₃.mem]
+  obtain m₄ : t₄.mem = t.mem := by rw [u₄.mem, u₃.mem]
+  refine wp_str (by omega_arith)
+    (by rw [hs₄.ea_off a₄ (d := dst + 8 * j) (by omega_arith), show P + (dst + 8 * j) = 8 * w + dst by omega_arith])
+    (hs₄.write (d := 8 * w + dst) (n := 4) (by omega_arith)) fun t₆ m₆ => ?_
+  obtain hs₆ := hs₄.of_rest (m₆.rest []) (by decide)
+  obtain a₆ : t₆.gpr .r9 = t₆.gpr .r12 + BitVec.ofNat 32 P := by rw [m₆.gpr]; exact a₄
+  refine wp_str (by omega_arith)
+    (by rw [hs₆.ea_off a₆ (d := dst + 8 * j + 4) (by omega_arith),
+          show P + (dst + 8 * j + 4) = 8 * w + (dst + 4) by omega_arith])
+    (hs₆.write (d := 8 * w + (dst + 4)) (n := 4) (by omega_arith)) fun t₇ m₇ => WP.block_nil ?_
+  obtain M₇ : t₇.mem = (t.mem.writeW (off base (8 * w + dst)) (t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * w)) 32)).writeW
+      (off base (8 * w + (dst + 4))) (t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * w) + BitVec.ofNat 64 4) 32) := by
+    rw [m₇.mem, m₆.gpr, m₆.mem, m₄, v4, v5]
+  obtain k₇ : Rest copyClob t t₇ := k₄.trans ((m₆.rest _).trans (m₇.rest _))
+  obtain O₇ : Outside base (8 * w + dst) 8 t.mem t₇.mem := by
+    rw [M₇]
+    exact ((writeW32_outside _ _ (d := 8 * w + dst) _ (by omega_arith)).mono (Nat.le_refl _) (by omega_arith)).trans
+      ((writeW32_outside _ _ (d := 8 * w + (dst + 4)) _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
+  refine ⟨hI.scr.of_rest k₇ (by decide), ?_, ?_, ?_, hI.keep.trans k₇,
+    hI.mem.trans (O₇.mono (by omega_arith) (by omega_arith)), fun t' h1 => ?_⟩
+  · rw [m₇.gpr, m₆.gpr, u₄.other _ (by decide), u₃.other _ (by decide)]; exact hI.r11
+  · rw [m₇.gpr, m₆.gpr, u₄.other _ (by decide), u₃.other _ (by decide)]; exact hI.r10
+  · rw [m₇.gpr]; exact a₆
+  rcases Nat.lt_or_ge t' w with h | h
+  · rw [O₇.word (by omega_arith) (by omega_arith)]; exact hI.done t' h
+  · rw [show t' = w by omega_arith]
+    obtain hhi : t₇.mem.readW (off base (8 * w + dst) + BitVec.ofNat 64 4) 32 =
+        t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * w) + BitVec.ofNat 64 4) 32 := by
+      rw [Offset.add_add (p := base), M₇, show 8 * w + dst + 4 = 8 * w + (dst + 4) by omega_arith,
         Mem.readW_writeW_self32]
-    obtain hlo : t₈.mem.readW (off base (8 * i + dst)) 32 = t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * i)) 32 := by
+    obtain hlo : t₇.mem.readW (off base (8 * w + dst)) 32 = t.mem.readW (State.addr A + BitVec.ofNat 64 (8 * w)) 32 := by
       apply BitVec.eq_of_toNat_eq
-      show w32 t₈.mem base (8 * i + dst) = _
-      rw [M₈, w32_write_ne (size := sz) hn (by omega_arith) (by omega_arith) (by omega_arith), w32_write_self]
-    show t₈.mem.readW (off base (dst + 8 * i)) 64 = _
-    rw [show dst + 8 * i = 8 * i + dst from Nat.add_comm _ _, Rc2.Word32.read64_pair t₈.mem, hhi, hlo,
+      show w32 t₇.mem base (8 * w + dst) = _
+      rw [M₇, w32_write_ne (size := sz) hn (by omega_arith) (by omega_arith) (by omega_arith), w32_write_self]
+    show t₇.mem.readW (off base (dst + 8 * w)) 64 = _
+    rw [show dst + 8 * w = 8 * w + dst from Nat.add_comm _ _, Rc2.Word32.read64_pair t₇.mem, hhi, hlo,
       ← Rc2.Word32.read64_pair, hv]
 
-/-- `copyTbl sym (ws.length) dst`: word `i` of the working space's range at
-`dst` is word `i` of the table `ws` at `sym`, which the code may read and
-which lies apart from the working space; nothing else changes but
-`copyClob`. -/
+/-- A slot's first `m` words (`copyWord`), from word `w₀` of the table, with
+the pointers at it. -/
+theorem copyWords_ok {s₀ : State} {base : Addr} {sz : Nat} {A : BitVec 32} {ws : List (BitVec 64)}
+    {dst i w₀ : Nat} (hT : TblAt s₀ base sz A ws dst) :
+    ∀ (m : Nat) {t : State}, CInv base sz A ws dst s₀ t i (8 * w₀) w₀ → w₀ + m ≤ ws.length →
+      WP isa (.block ((List.range m).flatMap (copyWord dst))) t fun t' =>
+        CInv base sz A ws dst s₀ t' i (8 * w₀) (w₀ + m)
+  | 0, _, hI, _ => WP.block_nil hI
+  | m + 1, _, hI, hm => by
+    rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+    rw [← Nat.add_assoc]
+    exact VG.Proof.X25519.Arm.WP.append (copyWords_ok hT m hI (by omega_arith)) fun t' h =>
+      copyWord_ok (w := w₀ + m) (j := m) hT h (by omega_arith) (by omega_arith)
+
+/-- One slot of `copyTbl`'s loop (`copyTblBody`), at `r11 = i + 1`, with the
+pointers at word `w`: its `n` words, the pointers on by `8 n`, and `Z` iff
+`i = 0`. -/
+theorem copyTblBody_ok {s₀ t : State} {base : Addr} {sz : Nat} {A : BitVec 32} {ws : List (BitVec 64)}
+    {dst i n w : Nat} (hT : TblAt s₀ base sz A ws dst) (hI : CInv base sz A ws dst s₀ t (i + 1) (8 * w) w)
+    (hw : w + n ≤ ws.length) (hi : i + 1 < 2 ^ 32) (h8 : encodable (BitVec.ofNat 32 (8 * n)) = true) :
+    WP isa (.block (copyTblBody n dst)) t fun t' =>
+      CInv base sz A ws dst s₀ t' i (8 * (w + n)) (w + n) ∧ t'.z = decide (i = 0) := by
+  simp only [copyTblBody, List.singleton_append]
+  refine wp_decCounter (j := i + 1) (by omega_arith) hI.r11 fun t₁ u₁ => ?_
+  obtain I₁ : CInv base sz A ws dst s₀ t₁ i (8 * w) w :=
+    hI.upd (u₁.rest (by simp)) u₁.mem (by rw [u₁.gpr, Nat.add_sub_cancel])
+      (by rw [u₁.other _ (by decide)]; exact hI.r10)
+      (by rw [u₁.other _ (by decide), u₁.other _ (by decide)]; exact hI.r9)
+  refine VG.Proof.X25519.Arm.WP.append (copyWords_ok hT n I₁ hw) fun t₂ I₂ => ?_
+  refine wp_dp (op2_imm h8) fun t₃ u₃ => ?_
+  refine wp_dp (op2_imm h8) fun t₄ u₄ => ?_
+  obtain c₄ : t₄.gpr .r11 = BitVec.ofNat 32 i := by
+    rw [u₄.other _ (by decide), u₃.other _ (by decide)]; exact I₂.r11
+  refine wp_testCounter (by omega_arith) c₄ fun t₅ f₅ z₅ => WP.block_nil ⟨?_, z₅⟩
+  obtain e : 8 * w + 8 * n = 8 * (w + n) := by omega_arith
+  refine I₂.upd ((u₃.rest (by simp)).trans ((u₄.rest (by simp)).trans (f₅.rest _)))
+    (by rw [f₅.mem, u₄.mem, u₃.mem]) (by rw [f₅.gpr]; exact c₄) ?_ ?_
+  · rw [f₅.gpr, u₄.other _ (by decide), u₃.gpr, dpVal, I₂.r10, Offset.add_add, e]
+  · rw [f₅.gpr, u₄.gpr, dpVal, u₄.other _ (by decide), u₃.other _ (by decide), I₂.r9, Offset.add_add, e,
+      u₃.other _ (by decide)]
+
+/-- `copyTbl sym n k dst`: word `i` of the working space's range at `dst` is
+word `i` of the table `ws` of `k` slots of `n` words at `sym`, which the code
+may read and which lies apart from the working space; nothing else changes
+but `copyClob`. -/
 theorem copyTbl_ok {s : State} {base : Addr} {sz : Nat} (hs : Scr s base sz) {sym : String}
-    {ws : List (BitVec 64)} {dst : Nat} (hk : 0 < ws.length) (henc : encodable (BitVec.ofNat 32 ws.length) = true)
-    (hdst : dst + 8 * ws.length ≤ sz) (hfit : (s.syms sym).toNat + 8 * ws.length ≤ 2 ^ 32)
-    (hrd : InRegions (s.rd ++ s.wr) (State.addr (s.syms sym)) (8 * ws.length))
-    (hw : ∀ i < ws.length, s.mem.readW (State.addr (s.syms sym) + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0)
-    (hsep : Region.Disjoint ⟨State.addr (s.syms sym), 8 * ws.length⟩ ⟨base, sz⟩) :
-    WP isa (copyTbl sym ws.length dst) s fun s' =>
+    {ws : List (BitVec 64)} {n k dst : Nat} (hk : 0 < k) (hl : ws.length = n * k) (hk32 : k < 2 ^ 32)
+    (henc : encodable (BitVec.ofNat 32 k) = true) (h8 : encodable (BitVec.ofNat 32 (8 * n)) = true)
+    (hT : TblAt s base sz (s.syms sym) ws dst) :
+    WP isa (copyTbl sym n k dst) s fun s' =>
       (∀ i < ws.length, word s'.mem base (dst + 8 * i) = ws.getD i 0) ∧ Rest copyClob s s' ∧
         Outside base dst (8 * ws.length) s.mem s'.mem := by
   unfold copyTbl
-  refine WP.seq (VG.Proof.X25519.Arm.WP.cons exec_adrSym (wp_mov (op2_imm henc) fun s₂ u₂ => WP.block_nil ?_))
+  refine WP.seq (VG.Proof.X25519.Arm.WP.cons exec_adrSym (wp_mov (op2_reg _ _) fun s₂ u₂ =>
+    wp_mov (op2_imm henc) fun s₃ u₃ => WP.block_nil ?_))
   obtain u₁ := Upd.setReg s .r10 (s.syms sym)
-  obtain K₂ : Rest copyClob s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
-  obtain I₂ : CInv base sz (s.syms sym) ws dst s s₂ ws.length :=
-    ⟨hs.of_rest K₂ (by decide), u₂.gpr, by rw [u₂.other _ (by decide), u₁.gpr], K₂,
-      by rw [u₂.mem, u₁.mem]; exact VG.Proof.Mont.Outside.refl _ _ _ _,
-      fun t ht ht' => absurd ht' (by omega_arith)⟩
-  refine countLoop_ok (Inv := fun j t => CInv base sz (s.syms sym) ws dst s t j) (n := ws.length)
-    (fun j t h1 h2 hb => ?_) (fun t hb => ⟨fun i hi => hb.done i (Nat.zero_le _) hi, hb.keep, hb.mem⟩) hk I₂
+  obtain K₃ : Rest copyClob s s₃ := (u₁.rest (by simp)).trans ((u₂.rest (by simp)).trans (u₃.rest (by simp)))
+  obtain I₃ : CInv base sz (s.syms sym) ws dst s s₃ k (8 * (n * (k - k))) (n * (k - k)) := by
+    rw [Nat.sub_self, Nat.mul_zero, Nat.mul_zero]
+    refine ⟨hs.of_rest K₃ (by decide), u₃.gpr, ?_, ?_, K₃,
+      by rw [u₃.mem, u₂.mem, u₁.mem]; exact VG.Proof.Mont.Outside.refl _ _ _ _,
+      fun t ht => absurd ht (Nat.not_lt_zero _)⟩
+    · rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, BitVec.add_zero]
+    · rw [u₃.other _ (by decide), u₂.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
+        BitVec.add_zero]
+  refine countLoop_ok (Inv := fun j t => CInv base sz (s.syms sym) ws dst s t j (8 * (n * (k - j))) (n * (k - j)))
+    (n := k) (fun j t h1 h2 hb => ?_)
+    (fun t hb => ⟨fun i hi => hb.done i (by rw [Nat.sub_zero, ← hl]; exact hi), hb.keep, hb.mem⟩) hk I₃
   obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega_arith⟩
-  rw [Nat.add_sub_cancel]
-  exact copyTblBody_ok hb (by omega_arith) hdst hfit hrd hw hsep
+  obtain hle : n * (k - (i + 1)) + n ≤ ws.length := by
+    rw [← Nat.mul_succ, hl]; exact Nat.mul_le_mul_left _ (by omega_arith)
+  rw [Nat.add_sub_cancel, show k - i = k - (i + 1) + 1 by omega_arith, Nat.mul_succ]
+  exact copyTblBody_ok hT hb hle (by omega_arith) h8
 
 /-! ## The constants -/
 
@@ -412,12 +469,12 @@ theorem constsCode_ok {c : Cfg} (hc : CfgOk c) {t : State} {base : Addr} (hs : S
     obtain T := hT htb
     have h0 := hc.n0
     obtain hL := constTbl_length c
-    obtain henc : encodable (BitVec.ofNat 32 c.constTbl.length) = true := by
-      have : ∀ n < 10, encodable (BitVec.ofNat 32 (17 * n)) = true := by decide
-      rw [hL]; exact this _ h7
-    rw [← hL]
-    refine WP.mono (copyTbl_ok hs (sym := c.constSym) (ws := c.constTbl) (dst := c.sl 0)
-      (by rw [hL]; omega_arith) henc (by rw [hL]; omega_arith) T.fit T.rd T.words T.sep)
+    obtain h8 : encodable (BitVec.ofNat 32 (8 * c.n)) = true := by
+      have : ∀ n < 10, encodable (BitVec.ofNat 32 (8 * n)) = true := by decide
+      exact this _ h7
+    refine WP.mono (copyTbl_ok hs (sym := c.constSym) (ws := c.constTbl) (n := c.n) (k := 17) (dst := c.sl 0)
+      (by decide) (by rw [hL, Nat.mul_comm]) (by decide) (by decide) h8
+      ⟨by rw [hL]; omega_arith, T.fit, T.rd, T.words, T.sep⟩)
       fun t' ⟨e, k, O⟩ => ⟨fun ix hix => ?_, k,
         by rw [hL, show 8 * (17 * c.n) = 8 * c.n * 17 by omega_arith] at O; exact O⟩
     rw [hL] at e

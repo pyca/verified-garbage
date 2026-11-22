@@ -75,15 +75,24 @@ vg_ecdsa_p192_sign_k:
 2:
 	add r10, pc
 3:
-	mov r11, #51
+	mov r9, r12
+	mov r11, #17
 20:
 	sub r11, r11, #1
-	add r5, r10, r11, lsl #3
-	ldr r4, [r5, #0]
-	ldr r5, [r5, #4]
-	add r9, r12, r11, lsl #3
+	ldr r4, [r10, #0]
+	ldr r5, [r10, #4]
 	str r4, [r9, #64]
 	str r5, [r9, #68]
+	ldr r4, [r10, #8]
+	ldr r5, [r10, #12]
+	str r4, [r9, #72]
+	str r5, [r9, #76]
+	ldr r4, [r10, #16]
+	ldr r5, [r10, #20]
+	str r4, [r9, #80]
+	str r5, [r9, #84]
+	add r10, r10, #24
+	add r9, r9, #24
 	cmp r11, #0
 	bne 20b
 	mov r4, #0

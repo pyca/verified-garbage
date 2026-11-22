@@ -229,7 +229,7 @@ def tbl : Bool := c.tblSym.isSome
 
 /-- The constants into their slots: from their table, or as immediates (`tbl`). -/
 def constsCode : Prog isa :=
-  if c.tbl then copyTbl c.constSym (17 * c.n) (c.sl 0)
+  if c.tbl then copyTbl c.constSym c.n 17 (c.sl 0)
   else .block (c.consts.flatMap fun (i, x) => setConst c.n (c.sl i) x)
 
 /-- Saves them at `[r12]`. -/
