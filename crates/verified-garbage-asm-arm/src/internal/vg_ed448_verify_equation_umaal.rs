@@ -23,6 +23,12 @@ str r11, [r3, #28]
 mov r8, r0
 mov r10, lr
 mov r0, r3
+movw r12, #:lower16:({vg_gf448_r16_mul_umaal} - (2f + 2 * (3f - 2f)))
+movt r12, #:upper16:({vg_gf448_r16_mul_umaal} - (2f + 2 * (3f - 2f)))
+2:
+add r12, pc
+3:
+str r12, [r0, #60]
 movw r6, #65535
 mov r12, r1
 str lr, [r0, #3560]
@@ -1931,7 +1937,8 @@ orr r10, r10, r3
 movw r1, #1600
 movw r2, #960
 movw r3, #960
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1728
 movw r2, #1600
 movw r3, #1344
@@ -1939,7 +1946,8 @@ bl {vg_gf448_r16_sub}
 movw r1, #448
 movw r2, #1472
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #448
 movw r2, #448
 movw r3, #1344
@@ -1947,27 +1955,33 @@ bl {vg_gf448_r16_sub}
 movw r1, #576
 movw r2, #1728
 movw r3, #448
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #576
 movw r2, #576
 movw r3, #576
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #704
 movw r2, #1728
 movw r3, #1728
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #704
 movw r2, #704
 movw r3, #1728
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #832
 movw r2, #704
 movw r3, #448
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1600
 movw r2, #832
 movw r3, #576
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #1600]
 str r3, [r0, #1856]
 ldr r3, [r0, #1604]
@@ -2029,13 +2043,15 @@ movw r11, #1
 movw r1, #1856
 movw r2, #1856
 movw r3, #1856
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 22b
 movw r1, #1856
 movw r2, #1856
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #1856]
 str r3, [r0, #1984]
 ldr r3, [r0, #1860]
@@ -2097,13 +2113,15 @@ movw r11, #2
 movw r1, #1984
 movw r2, #1984
 movw r3, #1984
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 23b
 movw r1, #1984
 movw r2, #1984
 movw r3, #1856
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #1984]
 str r3, [r0, #2112]
 ldr r3, [r0, #1988]
@@ -2165,13 +2183,15 @@ movw r11, #4
 movw r1, #2112
 movw r2, #2112
 movw r3, #2112
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 24b
 movw r1, #2112
 movw r2, #2112
 movw r3, #1984
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #2112]
 str r3, [r0, #2240]
 ldr r3, [r0, #2116]
@@ -2233,13 +2253,15 @@ movw r11, #8
 movw r1, #2240
 movw r2, #2240
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 25b
 movw r1, #2240
 movw r2, #2240
 movw r3, #2112
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #2240]
 str r3, [r0, #2368]
 ldr r3, [r0, #2244]
@@ -2301,13 +2323,15 @@ movw r11, #16
 movw r1, #2368
 movw r2, #2368
 movw r3, #2368
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 26b
 movw r1, #2368
 movw r2, #2368
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #2368]
 str r3, [r0, #2496]
 ldr r3, [r0, #2372]
@@ -2369,13 +2393,15 @@ movw r11, #32
 movw r1, #2496
 movw r2, #2496
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 27b
 movw r1, #2496
 movw r2, #2496
 movw r3, #2368
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #2496]
 str r3, [r0, #2624]
 ldr r3, [r0, #2500]
@@ -2437,73 +2463,85 @@ movw r11, #64
 movw r1, #2624
 movw r2, #2624
 movw r3, #2624
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 28b
 movw r1, #2624
 movw r2, #2624
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r11, #64
 29:
 movw r1, #2624
 movw r2, #2624
 movw r3, #2624
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 29b
 movw r1, #2624
 movw r2, #2624
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r11, #16
 210:
 movw r1, #2624
 movw r2, #2624
 movw r3, #2624
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 210b
 movw r1, #2624
 movw r2, #2624
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r11, #8
 211:
 movw r1, #2624
 movw r2, #2624
 movw r3, #2624
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 211b
 movw r1, #2624
 movw r2, #2624
 movw r3, #2112
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r11, #4
 212:
 movw r1, #2624
 movw r2, #2624
 movw r3, #2624
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 212b
 movw r1, #2624
 movw r2, #2624
 movw r3, #1984
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r11, #2
 213:
 movw r1, #2624
 movw r2, #2624
 movw r3, #2624
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 213b
 movw r1, #2624
 movw r2, #2624
 movw r3, #1856
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #2624]
 str r3, [r0, #192]
 ldr r3, [r0, #2628]
@@ -2565,37 +2603,44 @@ movw r11, #1
 movw r1, #192
 movw r2, #192
 movw r3, #192
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 214b
 movw r1, #192
 movw r2, #192
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r11, #223
 215:
 movw r1, #192
 movw r2, #192
 movw r3, #192
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 subs r11, r11, #1
 bne 215b
 movw r1, #192
 movw r2, #192
 movw r3, #2624
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #832
 movw r2, #832
 movw r3, #192
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1600
 movw r2, #832
 movw r3, #832
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1600
 movw r2, #448
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #1600]
 str r3, [r0, #192]
 ldr r3, [r0, #1604]
@@ -4787,15 +4832,18 @@ bl {vg_gf448_r16_add}
 movw r1, #1600
 movw r2, #1600
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1728
 movw r2, #832
 movw r3, #832
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1856
 movw r2, #960
 movw r3, #960
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1984
 movw r2, #1728
 movw r3, #1856
@@ -4803,7 +4851,8 @@ bl {vg_gf448_r16_add}
 movw r1, #2112
 movw r2, #192
 movw r3, #192
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2240
 movw r2, #2112
 movw r3, #2112
@@ -4819,7 +4868,8 @@ bl {vg_gf448_r16_sub}
 movw r1, #832
 movw r2, #2368
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2496
 movw r2, #1728
 movw r3, #1856
@@ -4827,36 +4877,44 @@ bl {vg_gf448_r16_sub}
 movw r1, #960
 movw r2, #1984
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #192
 movw r2, #1984
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 219:
 movw r1, #1600
 movw r2, #320
 movw r3, #192
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1728
 movw r2, #1600
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1856
 movw r2, #64
 movw r3, #832
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1984
 movw r2, #2752
 movw r3, #960
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2112
 movw r2, #1472
 movw r3, #1856
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2112
 movw r2, #2112
 movw r3, #1984
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2240
 movw r2, #1728
 movw r3, #2112
@@ -4876,11 +4934,13 @@ bl {vg_gf448_r16_add}
 movw r1, #2496
 movw r2, #2496
 movw r3, #2624
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2624
 movw r2, #1600
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2496
 movw r2, #2496
 movw r3, #1856
@@ -4892,11 +4952,13 @@ bl {vg_gf448_r16_sub}
 movw r1, #448
 movw r2, #2624
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2624
 movw r2, #1600
 movw r3, #2368
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2496
 movw r2, #1984
 movw r3, #1856
@@ -4904,11 +4966,13 @@ bl {vg_gf448_r16_sub}
 movw r1, #576
 movw r2, #2624
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #704
 movw r2, #2240
 movw r3, #2368
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #448]
 str r3, [r0, #64]
 ldr r3, [r0, #452]
@@ -5378,15 +5442,18 @@ bl {vg_gf448_r16_add}
 movw r1, #1600
 movw r2, #1600
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1728
 movw r2, #64
 movw r3, #64
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1856
 movw r2, #2752
 movw r3, #2752
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1984
 movw r2, #1728
 movw r3, #1856
@@ -5394,7 +5461,8 @@ bl {vg_gf448_r16_add}
 movw r1, #2112
 movw r2, #320
 movw r3, #320
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2240
 movw r2, #2112
 movw r3, #2112
@@ -5410,7 +5478,8 @@ bl {vg_gf448_r16_sub}
 movw r1, #64
 movw r2, #2368
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2496
 movw r2, #1728
 movw r3, #1856
@@ -5418,11 +5487,13 @@ bl {vg_gf448_r16_sub}
 movw r1, #2752
 movw r2, #1984
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #320
 movw r2, #1984
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 sub r3, r11, #114
 lsr r3, r3, #31
 cmp r3, #0
@@ -10061,27 +10132,33 @@ str r3, [r0, #1324]
 movw r1, #1600
 movw r2, #320
 movw r3, #1344
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1728
 movw r2, #1600
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1856
 movw r2, #64
 movw r3, #1088
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1984
 movw r2, #2752
 movw r3, #1216
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2112
 movw r2, #1472
 movw r3, #1856
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2112
 movw r2, #2112
 movw r3, #1984
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2240
 movw r2, #1728
 movw r3, #2112
@@ -10101,11 +10178,13 @@ bl {vg_gf448_r16_add}
 movw r1, #2496
 movw r2, #2496
 movw r3, #2624
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2624
 movw r2, #1600
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2496
 movw r2, #2496
 movw r3, #1856
@@ -10117,11 +10196,13 @@ bl {vg_gf448_r16_sub}
 movw r1, #448
 movw r2, #2624
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2624
 movw r2, #1600
 movw r3, #2368
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2496
 movw r2, #1984
 movw r3, #1856
@@ -10129,11 +10210,13 @@ bl {vg_gf448_r16_sub}
 movw r1, #576
 movw r2, #2624
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #704
 movw r2, #2240
 movw r3, #2368
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #448]
 str r3, [r0, #64]
 ldr r3, [r0, #452]
@@ -10483,27 +10566,33 @@ str r3, [r0, #300]
 movw r1, #1600
 movw r2, #320
 movw r3, #192
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1728
 movw r2, #1600
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1856
 movw r2, #64
 movw r3, #832
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1984
 movw r2, #2752
 movw r3, #960
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2112
 movw r2, #1472
 movw r3, #1856
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2112
 movw r2, #2112
 movw r3, #1984
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2240
 movw r2, #1728
 movw r3, #2112
@@ -10523,11 +10612,13 @@ bl {vg_gf448_r16_add}
 movw r1, #2496
 movw r2, #2496
 movw r3, #2624
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2624
 movw r2, #1600
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2496
 movw r2, #2496
 movw r3, #1856
@@ -10539,11 +10630,13 @@ bl {vg_gf448_r16_sub}
 movw r1, #448
 movw r2, #2624
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2624
 movw r2, #1600
 movw r3, #2368
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2496
 movw r2, #1984
 movw r3, #1856
@@ -10551,11 +10644,13 @@ bl {vg_gf448_r16_sub}
 movw r1, #576
 movw r2, #2624
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #704
 movw r2, #2240
 movw r3, #2368
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #448]
 str r3, [r0, #64]
 ldr r3, [r0, #452]
@@ -10848,15 +10943,18 @@ bl {vg_gf448_r16_add}
 movw r1, #1600
 movw r2, #1600
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1728
 movw r2, #64
 movw r3, #64
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1856
 movw r2, #2752
 movw r3, #2752
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1984
 movw r2, #1728
 movw r3, #1856
@@ -10864,7 +10962,8 @@ bl {vg_gf448_r16_add}
 movw r1, #2112
 movw r2, #320
 movw r3, #320
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2240
 movw r2, #2112
 movw r3, #2112
@@ -10880,7 +10979,8 @@ bl {vg_gf448_r16_sub}
 movw r1, #64
 movw r2, #2368
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2496
 movw r2, #1728
 movw r3, #1856
@@ -10888,11 +10988,13 @@ bl {vg_gf448_r16_sub}
 movw r1, #2752
 movw r2, #1984
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #320
 movw r2, #1984
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1600
 movw r2, #1088
 movw r3, #1216
@@ -10900,15 +11002,18 @@ bl {vg_gf448_r16_add}
 movw r1, #1600
 movw r2, #1600
 movw r3, #1600
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1728
 movw r2, #1088
 movw r3, #1088
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1856
 movw r2, #1216
 movw r3, #1216
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1984
 movw r2, #1728
 movw r3, #1856
@@ -10916,7 +11021,8 @@ bl {vg_gf448_r16_add}
 movw r1, #2112
 movw r2, #1344
 movw r3, #1344
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2240
 movw r2, #2112
 movw r3, #2112
@@ -10932,7 +11038,8 @@ bl {vg_gf448_r16_sub}
 movw r1, #1088
 movw r2, #2368
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #2496
 movw r2, #1728
 movw r3, #1856
@@ -10940,11 +11047,13 @@ bl {vg_gf448_r16_sub}
 movw r1, #1216
 movw r2, #1984
 movw r3, #2496
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1344
 movw r2, #1984
 movw r3, #2240
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 sub r11, r11, #1
 cmp r11, #0
 bne 225b
@@ -10953,11 +11062,13 @@ movw r11, #2
 movw r1, #1600
 movw r2, #64
 movw r3, #1344
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 movw r1, #1728
 movw r2, #1088
 movw r3, #320
-bl {vg_gf448_r16_mul_umaal}
+ldr r12, [r0, #60]
+blx r12
 ldr r3, [r0, #1600]
 str r3, [r0, #192]
 ldr r3, [r0, #1604]
