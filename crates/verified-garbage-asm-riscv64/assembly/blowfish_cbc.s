@@ -799,50 +799,36 @@ vg_blowfish_cbc_decrypt_chained:
 	srli t0, s3, 1
 	beqz t0, 22f
 24:
-	lbu t0, 0(s2)
-	lbu t2, 1(s2)
+	addi t3, s4, 48
+	addi t4, s2, 0
+	addi t5, zero, 2
+25:
+	lbu t0, 0(t4)
+	lbu t2, 1(t4)
 	slli t2, t2, 8
 	or t0, t0, t2
-	lbu t2, 2(s2)
+	lbu t2, 2(t4)
 	slli t2, t2, 16
 	or t0, t0, t2
-	lbu t2, 3(s2)
+	lbu t2, 3(t4)
 	slli t2, t2, 24
 	or t0, t0, t2
-	sw t0, 48(s4)
-	lbu t0, 4(s2)
-	lbu t2, 5(s2)
+	sw t0, 0(t3)
+	lbu t0, 4(t4)
+	lbu t2, 5(t4)
 	slli t2, t2, 8
 	or t0, t0, t2
-	lbu t2, 6(s2)
+	lbu t2, 6(t4)
 	slli t2, t2, 16
 	or t0, t0, t2
-	lbu t2, 7(s2)
+	lbu t2, 7(t4)
 	slli t2, t2, 24
 	or t0, t0, t2
-	sw t0, 52(s4)
-	lbu t0, 8(s2)
-	lbu t2, 9(s2)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 10(s2)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 11(s2)
-	slli t2, t2, 24
-	or t0, t0, t2
-	sw t0, 56(s4)
-	lbu t0, 12(s2)
-	lbu t2, 13(s2)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 14(s2)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 15(s2)
-	slli t2, t2, 24
-	or t0, t0, t2
-	sw t0, 60(s4)
+	sw t0, 4(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 25b
 	addi t6, s4, 2032
 	addi t6, t6, 2032
 	addi t6, t6, 256
@@ -852,98 +838,60 @@ vg_blowfish_cbc_decrypt_chained:
 	addi t6, t6, 2032
 	addi t6, t6, 256
 	ld ra, 0(t6)
-	lwu t0, 48(s4)
+	addi t3, s4, 48
+	addi t4, s2, 0
+	addi t5, zero, 2
+26:
+	lwu t0, 0(t3)
 	lwu t1, 32(s4)
 	xor t0, t0, t1
-	sw t0, 48(s4)
-	lwu t0, 52(s4)
+	sw t0, 0(t3)
+	lwu t0, 4(t3)
 	lwu t1, 36(s4)
 	xor t0, t0, t1
-	sw t0, 52(s4)
-	lbu t0, 0(s2)
-	lbu t2, 1(s2)
+	sw t0, 4(t3)
+	lbu t0, 0(t4)
+	lbu t2, 1(t4)
 	slli t2, t2, 8
 	or t0, t0, t2
-	lbu t2, 2(s2)
+	lbu t2, 2(t4)
 	slli t2, t2, 16
 	or t0, t0, t2
-	lbu t2, 3(s2)
+	lbu t2, 3(t4)
 	slli t2, t2, 24
 	or t0, t0, t2
 	sw t0, 32(s4)
-	lbu t0, 4(s2)
-	lbu t2, 5(s2)
+	lbu t0, 4(t4)
+	lbu t2, 5(t4)
 	slli t2, t2, 8
 	or t0, t0, t2
-	lbu t2, 6(s2)
+	lbu t2, 6(t4)
 	slli t2, t2, 16
 	or t0, t0, t2
-	lbu t2, 7(s2)
+	lbu t2, 7(t4)
 	slli t2, t2, 24
 	or t0, t0, t2
 	sw t0, 36(s4)
-	lwu t0, 48(s4)
-	sb t0, 0(s2)
+	lwu t0, 0(t3)
+	sb t0, 0(t4)
 	srli t2, t0, 8
-	sb t2, 1(s2)
+	sb t2, 1(t4)
 	srli t2, t0, 16
-	sb t2, 2(s2)
+	sb t2, 2(t4)
 	srli t2, t0, 24
-	sb t2, 3(s2)
-	lwu t0, 52(s4)
-	sb t0, 4(s2)
+	sb t2, 3(t4)
+	lwu t0, 4(t3)
+	sb t0, 4(t4)
 	srli t2, t0, 8
-	sb t2, 5(s2)
+	sb t2, 5(t4)
 	srli t2, t0, 16
-	sb t2, 6(s2)
+	sb t2, 6(t4)
 	srli t2, t0, 24
-	sb t2, 7(s2)
-	lwu t0, 56(s4)
-	lwu t1, 32(s4)
-	xor t0, t0, t1
-	sw t0, 56(s4)
-	lwu t0, 60(s4)
-	lwu t1, 36(s4)
-	xor t0, t0, t1
-	sw t0, 60(s4)
-	lbu t0, 8(s2)
-	lbu t2, 9(s2)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 10(s2)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 11(s2)
-	slli t2, t2, 24
-	or t0, t0, t2
-	sw t0, 32(s4)
-	lbu t0, 12(s2)
-	lbu t2, 13(s2)
-	slli t2, t2, 8
-	or t0, t0, t2
-	lbu t2, 14(s2)
-	slli t2, t2, 16
-	or t0, t0, t2
-	lbu t2, 15(s2)
-	slli t2, t2, 24
-	or t0, t0, t2
-	sw t0, 36(s4)
-	lwu t0, 56(s4)
-	sb t0, 8(s2)
-	srli t2, t0, 8
-	sb t2, 9(s2)
-	srli t2, t0, 16
-	sb t2, 10(s2)
-	srli t2, t0, 24
-	sb t2, 11(s2)
-	lwu t0, 60(s4)
-	sb t0, 12(s2)
-	srli t2, t0, 8
-	sb t2, 13(s2)
-	srli t2, t0, 16
-	sb t2, 14(s2)
-	srli t2, t0, 24
-	sb t2, 15(s2)
+	sb t2, 7(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 26b
 	addi s2, s2, 16
 	addi s3, s3, -2
 	srli t0, s3, 1
@@ -951,8 +899,8 @@ vg_blowfish_cbc_decrypt_chained:
 	j 23f
 22:
 23:
-	beqz s3, 25f
-27:
+	beqz s3, 27f
+29:
 	lbu t0, 0(s2)
 	lbu t2, 1(s2)
 	slli t2, t2, 8
@@ -1032,23 +980,27 @@ vg_blowfish_cbc_decrypt_chained:
 	sb t2, 7(s2)
 	addi s2, s2, 8
 	addi s3, s3, -1
-	bnez s3, 27b
-	j 26f
-25:
-26:
+	bnez s3, 29b
+	j 28f
+27:
+28:
 	j 21f
 20:
 	srli t0, s3, 1
-	beqz t0, 28f
-210:
-	lwu t0, 0(s2)
-	sw t0, 48(s4)
-	lwu t0, 4(s2)
-	sw t0, 52(s4)
-	lwu t0, 8(s2)
-	sw t0, 56(s4)
-	lwu t0, 12(s2)
-	sw t0, 60(s4)
+	beqz t0, 210f
+212:
+	addi t3, s4, 48
+	addi t4, s2, 0
+	addi t5, zero, 2
+213:
+	lwu t0, 0(t4)
+	sw t0, 0(t3)
+	lwu t0, 4(t4)
+	sw t0, 4(t3)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 213b
 	addi t6, s4, 2032
 	addi t6, t6, 2032
 	addi t6, t6, 256
@@ -1058,47 +1010,39 @@ vg_blowfish_cbc_decrypt_chained:
 	addi t6, t6, 2032
 	addi t6, t6, 256
 	ld ra, 0(t6)
-	lwu t0, 48(s4)
+	addi t3, s4, 48
+	addi t4, s2, 0
+	addi t5, zero, 2
+214:
+	lwu t0, 0(t3)
 	lwu t1, 32(s4)
 	xor t0, t0, t1
-	sw t0, 48(s4)
-	lwu t0, 52(s4)
+	sw t0, 0(t3)
+	lwu t0, 4(t3)
 	lwu t1, 36(s4)
 	xor t0, t0, t1
-	sw t0, 52(s4)
-	lwu t0, 0(s2)
+	sw t0, 4(t3)
+	lwu t0, 0(t4)
 	sw t0, 32(s4)
-	lwu t0, 4(s2)
+	lwu t0, 4(t4)
 	sw t0, 36(s4)
-	lwu t0, 48(s4)
-	sw t0, 0(s2)
-	lwu t0, 52(s4)
-	sw t0, 4(s2)
-	lwu t0, 56(s4)
-	lwu t1, 32(s4)
-	xor t0, t0, t1
-	sw t0, 56(s4)
-	lwu t0, 60(s4)
-	lwu t1, 36(s4)
-	xor t0, t0, t1
-	sw t0, 60(s4)
-	lwu t0, 8(s2)
-	sw t0, 32(s4)
-	lwu t0, 12(s2)
-	sw t0, 36(s4)
-	lwu t0, 56(s4)
-	sw t0, 8(s2)
-	lwu t0, 60(s4)
-	sw t0, 12(s2)
+	lwu t0, 0(t3)
+	sw t0, 0(t4)
+	lwu t0, 4(t3)
+	sw t0, 4(t4)
+	addi t3, t3, 8
+	addi t4, t4, 8
+	addi t5, t5, -1
+	bnez t5, 214b
 	addi s2, s2, 16
 	addi s3, s3, -2
 	srli t0, s3, 1
-	bnez t0, 210b
-	j 29f
-28:
-29:
-	beqz s3, 211f
-213:
+	bnez t0, 212b
+	j 211f
+210:
+211:
+	beqz s3, 215f
+217:
 	lwu t0, 0(s2)
 	sw t0, 48(s4)
 	lwu t0, 4(s2)
@@ -1130,10 +1074,10 @@ vg_blowfish_cbc_decrypt_chained:
 	sw t0, 4(s2)
 	addi s2, s2, 8
 	addi s3, s3, -1
-	bnez s3, 213b
-	j 212f
-211:
-212:
+	bnez s3, 217b
+	j 216f
+215:
+216:
 21:
 	addi s2, s1, 0
 	lwu t0, 32(s4)
@@ -1160,11 +1104,11 @@ vg_blowfish_cbc_decrypt_chained:
 	addi t0, zero, 0
 	addi t1, t3, 0
 	addi t2, zero, 542
-214:
+218:
 	sd t0, 0(t1)
 	addi t1, t1, 8
 	addi t2, t2, -1
-	bnez t2, 214b
+	bnez t2, 218b
 	addi sp, sp, 2032
 	addi sp, sp, 2032
 	addi sp, sp, 272
