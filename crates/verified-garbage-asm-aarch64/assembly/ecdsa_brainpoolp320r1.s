@@ -32225,8 +32225,8 @@ vg_ecdsa_brainpoolp320r1_sign:
 	ldr x10, [sp, #200]
 	add x15, sp, #0
 	movz x11, #0, lsl #0
-	strb w11, [x9, #2256]
-	add x12, x9, #2257
+	strb w11, [x9, #16]
+	add x12, x9, #17
 	ldr x11, [x10, #0]
 	str x11, [x12, #0]
 	ldr x11, [x10, #8]
@@ -32250,67 +32250,67 @@ vg_ecdsa_brainpoolp320r1_sign:
 	ldr x11, [x13, #32]
 	str x11, [x14, #32]
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	add x2, sp, #0
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #0]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #224]
 	add x2, sp, #64
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #8]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #224]
 	ldr x9, [sp, #216]
 	add x1, x1, x9
 	ldr x2, [sp, #184]
-	add x2, x2, #2256
+	add x2, x2, #16
 	movz x3, #81, lsl #0
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #8]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	ldr x2, [sp, #224]
 	ldr x9, [sp, #216]
 	add x2, x2, x9
 	add x2, x2, #81
 	add x3, sp, #0
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #16]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	add x2, sp, #0
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #0]
 	blr x16
 	ldr x9, [sp, #184]
-	add x11, x9, #0
-	add x12, x9, #3072
+	add x11, x9, #1216
+	add x12, x9, #832
 	movz x13, #384, lsl #0
 21:
 	ldrb w10, [x11, #0]
@@ -32320,26 +32320,26 @@ vg_ecdsa_brainpoolp320r1_sign:
 	sub x13, x13, #1
 	cbnz x13, 21b
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #224]
 	add x2, sp, #64
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #8]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	ldr x2, [sp, #224]
 	ldr x9, [sp, #216]
 	add x2, x2, x9
 	add x2, x2, #0
 	add x3, sp, #64
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #16]
 	blr x16
@@ -32347,8 +32347,8 @@ vg_ecdsa_brainpoolp320r1_sign:
 	ldr x10, [sp, #200]
 	add x15, sp, #0
 	movz x11, #1, lsl #0
-	strb w11, [x9, #2256]
-	add x12, x9, #2257
+	strb w11, [x9, #16]
+	add x12, x9, #17
 	ldr x11, [x10, #0]
 	str x11, [x12, #0]
 	ldr x11, [x10, #8]
@@ -32372,8 +32372,8 @@ vg_ecdsa_brainpoolp320r1_sign:
 	ldr x11, [x13, #32]
 	str x11, [x14, #32]
 	ldr x9, [sp, #184]
-	add x11, x9, #3072
-	add x12, x9, #0
+	add x11, x9, #832
+	add x12, x9, #1216
 	movz x13, #384, lsl #0
 22:
 	ldrb w10, [x11, #0]
@@ -32383,56 +32383,56 @@ vg_ecdsa_brainpoolp320r1_sign:
 	sub x13, x13, #1
 	cbnz x13, 22b
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #224]
 	add x2, sp, #64
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #8]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #224]
 	ldr x9, [sp, #216]
 	add x1, x1, x9
 	ldr x2, [sp, #184]
-	add x2, x2, #2256
+	add x2, x2, #16
 	movz x3, #81, lsl #0
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #8]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	ldr x2, [sp, #224]
 	ldr x9, [sp, #216]
 	add x2, x2, x9
 	add x2, x2, #81
 	add x3, sp, #0
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #16]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	add x2, sp, #0
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #0]
 	blr x16
 	ldr x9, [sp, #184]
-	add x11, x9, #0
-	add x12, x9, #3072
+	add x11, x9, #1216
+	add x12, x9, #832
 	movz x13, #384, lsl #0
 23:
 	ldrb w10, [x11, #0]
@@ -32442,26 +32442,26 @@ vg_ecdsa_brainpoolp320r1_sign:
 	sub x13, x13, #1
 	cbnz x13, 23b
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #224]
 	add x2, sp, #64
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #8]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	ldr x2, [sp, #224]
 	ldr x9, [sp, #216]
 	add x2, x2, x9
 	add x2, x2, #0
 	add x3, sp, #64
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #16]
 	blr x16
@@ -32474,8 +32474,8 @@ vg_ecdsa_brainpoolp320r1_sign:
 	str x9, [x15, #128]
 25:
 	ldr x9, [sp, #184]
-	add x11, x9, #3072
-	add x12, x9, #0
+	add x11, x9, #832
+	add x12, x9, #1216
 	movz x13, #384, lsl #0
 26:
 	ldrb w10, [x11, #0]
@@ -32485,26 +32485,26 @@ vg_ecdsa_brainpoolp320r1_sign:
 	sub x13, x13, #1
 	cbnz x13, 26b
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #224]
 	add x2, sp, #64
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #8]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	ldr x2, [sp, #224]
 	ldr x9, [sp, #216]
 	add x2, x2, x9
 	add x2, x2, #0
 	add x3, sp, #64
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #16]
 	blr x16
@@ -32552,69 +32552,69 @@ vg_ecdsa_brainpoolp320r1_sign:
 	ldr x10, [sp, #200]
 	add x15, sp, #0
 	movz x11, #0, lsl #0
-	strb w11, [x9, #2256]
+	strb w11, [x9, #16]
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	add x2, sp, #0
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #0]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #224]
 	add x2, sp, #64
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #8]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #224]
 	ldr x9, [sp, #216]
 	add x1, x1, x9
 	ldr x2, [sp, #184]
-	add x2, x2, #2256
+	add x2, x2, #16
 	movz x3, #1, lsl #0
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #8]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	ldr x2, [sp, #224]
 	ldr x9, [sp, #216]
 	add x2, x2, x9
 	add x2, x2, #1
 	add x3, sp, #0
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #16]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	add x2, sp, #0
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #0]
 	blr x16
 	ldr x9, [sp, #184]
-	add x11, x9, #0
-	add x12, x9, #3072
+	add x11, x9, #1216
+	add x12, x9, #832
 	movz x13, #384, lsl #0
 210:
 	ldrb w10, [x11, #0]
@@ -32624,26 +32624,26 @@ vg_ecdsa_brainpoolp320r1_sign:
 	sub x13, x13, #1
 	cbnz x13, 210b
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #224]
 	add x2, sp, #64
 	ldr x3, [sp, #216]
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #8]
 	blr x16
 	ldr x0, [sp, #184]
-	add x0, x0, #0
+	add x0, x0, #1216
 	ldr x1, [sp, #184]
-	add x1, x1, #192
+	add x1, x1, #1408
 	ldr x2, [sp, #224]
 	ldr x9, [sp, #216]
 	add x2, x2, x9
 	add x2, x2, #0
 	add x3, sp, #64
 	ldr x4, [sp, #184]
-	add x4, x4, #384
+	add x4, x4, #1600
 	ldr x16, [sp, #600]
 	ldr x16, [x16, #16]
 	blr x16

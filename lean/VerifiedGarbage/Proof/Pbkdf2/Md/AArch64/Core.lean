@@ -37,7 +37,7 @@ open VG.Proof.Pbkdf2.AArch64 (iterK iterImp)
 
 /-- `H` without the functions it calls: its own code. -/
 def core (H : Hash) : Hash :=
-  ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
+  ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 /-! ## How deeply frames nest -/
 

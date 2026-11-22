@@ -172,7 +172,7 @@ def shapeOf : Nat → Impl.Pbkdf2.AArch64.Params × Nat
 /-- The hash function of index `i`, as the code sees it: its parameters and
 digest length, all that `encode` and `checkEncoding` use of it. -/
 def ofIdx (i : Nat) : Hash :=
-  ⟨(shapeOf i).1, (shapeOf i).2, 0, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
+  ⟨(shapeOf i).1, (shapeOf i).2, 0, "", .block [], "", .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 /-- The names of `encode` and `checkEncoding` for the hash function of index
 `i`. -/

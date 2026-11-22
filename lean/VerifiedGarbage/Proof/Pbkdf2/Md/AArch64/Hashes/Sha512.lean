@@ -307,10 +307,11 @@ def hash : Hash where
   hmacInitN := "vg_hmac_md5_init_scratch"
   hmacFinN := "vg_hmac_md5_finalize_scratch"
   iterN := "vg_pbkdf2_hmac_md5_iterate"
+  hmacInitAnyN := "vg_hmac_md5_init_any_scratch"
 
 /-- `hash` without the functions it calls. -/
 def coreH : Hash := ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Md5.AArch64.Stream.params, 16, 48, "", .block [], "",
-  .block [], "", .block [], "", .block [], "", "", ""⟩
+  .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 theorem coreOK : CoreOK coreH := by
   refine {
@@ -508,10 +509,11 @@ def hash (v : Compress) : Hash where
   hmacInitN := "vg_hmac_sha1_init_scratch" ++ v.suffix
   hmacFinN := "vg_hmac_sha1_finalize_scratch" ++ v.suffix
   iterN := "vg_pbkdf2_hmac_sha1_iterate" ++ v.suffix
+  hmacInitAnyN := "vg_hmac_sha1_init_any_scratch" ++ v.suffix
 
 /-- `hash` without the functions it calls. -/
 def coreH : Hash := ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha1.AArch64.Stream.params, 20, 56, "", .block [], "",
-  .block [], "", .block [], "", .block [], "", "", ""⟩
+  .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 theorem coreOK : CoreOK coreH := by
   refine {
@@ -765,10 +767,11 @@ def hash (v : Compress) : Hash where
   hmacInitN := "vg_hmac_sha224_init_scratch" ++ v.suffix
   hmacFinN := "vg_hmac_sha224_finalize_scratch" ++ v.suffix
   iterN := "vg_pbkdf2_hmac_sha224_iterate" ++ v.suffix
+  hmacInitAnyN := "vg_hmac_sha224_init_any_scratch" ++ v.suffix
 
 /-- `hash` without the functions it calls. -/
 def coreH : Hash := ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha256.AArch64.Stream.params, 28, 104, "", .block [], "",
-  .block [], "", .block [], "", .block [], "", "", ""⟩
+  .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 theorem coreOK : CoreOK coreH := by
   refine {
@@ -1096,10 +1099,11 @@ def hash (v : Compress) (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv 
   hmacInitN := s!"vg_hmac_{I.rust}_init_scratch" ++ v.suffix
   hmacFinN := s!"vg_hmac_{I.rust}_finalize_scratch" ++ v.suffix
   iterN := s!"vg_pbkdf2_hmac_{I.rust}_iterate" ++ v.suffix
+  hmacInitAnyN := s!"vg_hmac_{I.rust}_init_any_scratch" ++ v.suffix
 
 /-- A member of the family without the functions it calls. -/
 def coreH (D : Nat) : Hash :=
-  ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha512.AArch64.Stream.params, D, 234, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
+  ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha512.AArch64.Stream.params, D, 234, "", .block [], "", .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 theorem coreOK (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : CoreOK (coreH D) := by
   rcases hD with rfl | rfl | rfl | rfl <;> refine {

@@ -138,6 +138,9 @@ structure Hash where
   hmacInitN : String
   hmacFinN : String
   iterN : String
+  /-- The name of HMAC's `init` for a key of any length with its working
+  space as an argument (`hmacInitAny`), which the tables of `Hmac` hold. -/
+  hmacInitAnyN : String := ""
 
 namespace Hash
 
