@@ -156,6 +156,131 @@ def MulCur (W : List Reg) (m : Nat → Nat → Nat → Prog isa) : Prop :=
 
 theorem mulCur_mul : MulCur work mul := fun hq ho hx hy hx4 hy4 ho4 _ h => opMul hq ho hx hy hx4 hy4 ho4 h
 
+/-- `vg_x448_mul_core` writes no link register. -/
+theorem mulCore_lrSafe : lrSafe (.block mulCore) = true := by
+  have hch : ∀ k r, (chainR k r).writesLr = false := fun k r => by unfold chainR; split <;> rfl
+  have hc : ∀ k, ((colR k).all fun i => !i.writesLr) = true := fun k => by
+    simp [colR, firstR, termR, Instr.writesLr]
+  have hr : (reduceR.all fun i => !i.writesLr) = true := by
+    simp only [reduceR, chain7, rotR, List.all_append, List.all_cons, List.all_map, List.all_flatMap,
+      List.all_nil, Function.comp_def, hch]
+    simp [Instr.writesLr]
+  show lrSafeBlock mulCore = true
+  rw [show lrSafeBlock mulCore = mulCore.all (fun i => !i.writesLr) from rfl]
+  simp only [mulCore, List.all_append, List.all_cons, List.all_nil, hr, List.all_flatMap, hc]
+  simp [Instr.writesLr]
+
+/-- `mul_ok`, for `mulC`: the product a call of `vg_x448_mul_core`, which
+gives `r12` and `r0` back as they were. -/
+theorem mulC_ok {b : Addr} {o x y : Nat} (ho : o + 56 ≤ ACC) (hx : x + 56 ≤ ACC)
+    (hy : y + 56 ≤ ACC) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) (ho4 : o % 4 = 0) {s : State}
+    (hc : Ctx b s) :
+    WP isa (mulC o x y) s fun s' => Ctx b s' ∧ Rest clobR s s' ∧
+      Frame [⟨b + BitVec.ofNat 64 o, 56⟩] s.mem s'.mem ∧
+      V s'.mem b o % P = (V s.mem b x * V s.mem b y) % P := by
+  have hA := ACC_eq
+  unfold mulC
+  simp only [List.append_assoc]
+  refine WP.seq ?_
+  -- The operands, and `r12` and `r0` into `r4` and `r5`.
+  refine ldsAt_ok (l := slotsOf opA 7) hx4 (slotsOf_fit hx4 (by omega_using [hx, hA])) (by decide) (by decide) hc
+    fun s2 hc2 r2 m2 _ v2 => ?_
+  refine ldsAt_ok (l := slotsOf opB 7) hy4 (slotsOf_fit hy4 (by omega_using [hy, hA])) (by decide) (by decide) hc2
+    fun s3 hc3 r3 m3 _ v3 => ?_
+  refine wp_addi (by decide) (by decide) fun s4 u4 => WP.cons exec_logic ?_
+  refine WP.block_nil ?_
+  generalize hs5 : s4.write .r5 (s4.gpr .r0 ||| s4.gpr .r0) = s5
+  obtain u5 : Upd s4 s5 .r5 (s4.gpr .r0 ||| s4.gpr .r0) := hs5 ▸ Upd.write _ _ _
+  obtain hr5 : Rest [.r4, .r5] s3 s5 := (u4.rest (by decide)).trans (u5.rest (by decide))
+  obtain hc5 : Ctx b s5 := hc3.of_rest hr5 (by decide)
+  obtain k12 : s5.gpr .r4 = s.gpr .r12 := by
+    rw [u5.other _ (by decide), u4.gpr, BitVec.add_zero, r3.gpr _ (by decide), r2.gpr _ (by decide)]
+  obtain k0 : s5.gpr .r5 = s.gpr .r0 := by
+    rw [u5.gpr, BitVec.or_self, u4.other _ (by decide), r3.gpr _ (by decide), r2.gpr _ (by decide)]
+  obtain opsA : ∀ i < 7, (s5.gpr (opA i)).toNat = ew s.mem b x i := fun i hi => by
+    rw [hr5.gpr _ (by revert i; decide), r3.gpr _ (by revert i; decide),
+      v2 (opA i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩), Offset.add_add]; rfl
+  obtain opsB : ∀ j < 7, (s5.gpr (opB j)).toNat = ew s.mem b y j := fun j hj => by
+    rw [hr5.gpr _ (by revert j; decide), v3 (opB j, 8 * j) (List.mem_map.mpr ⟨j, List.mem_range.mpr hj, rfl⟩),
+      m2, Offset.add_add]; rfl
+  obtain m5 : s5.mem = s.mem := by rw [u5.mem, u4.mem, m3, m2]
+  -- The call.
+  refine WP.seq (WP.callSafe mulCore_lrSafe ?_)
+  obtain e4 : s5.callEntry.gpr .r4 = s.gpr .r12 := by rw [State.callEntry_gpr _ (by decide), k12]
+  obtain e5 : s5.callEntry.gpr .r5 = s.gpr .r0 := by rw [State.callEntry_gpr _ (by decide), k0]
+  obtain hce : Ctx b s5.callEntry :=
+    ⟨by rw [State.callEntry_gpr _ (by decide)]; exact hc5.r6, by rw [State.callEntry_wr]; exact hc5.wr⟩
+  unfold mulCore
+  refine wp_addi (by decide) (by decide) fun s6 u6 => wp_addi (by decide) (by decide) fun s7 u7 => ?_
+  refine wp_li (by decide) fun s8 u8 => wp_li (by decide) fun s9 u9 => ?_
+  obtain hr9 : Rest [.r12, .r0, Impl.X448.PPC64LE.pw 0, Impl.X448.PPC64LE.pw 1] s5.callEntry s9 :=
+    (((u6.rest (by decide)).trans (u7.rest (by decide))).trans (u8.rest (by decide))).trans (u9.rest (by decide))
+  refine WP.append (columns_ok (b := b) (hce.of_rest hr9 (by decide))
+    (by rw [u9.other _ (by decide), u8.gpr]; rfl) (by rw [u9.gpr]; rfl)) fun s10 ⟨hc10, r10, m10, v10⟩ => ?_
+  obtain hA10 : colsV (fun i => (s9.gpr (opA i)).toNat) 7 = V s.mem b x := by
+    rw [V_eq_cols]; exact colsV_congr fun i hi => by
+      rw [hr9.gpr _ (by revert i; decide), State.callEntry_gpr _ (by revert i; decide), opsA i hi]
+  obtain hB10 : colsV (fun j => (s9.gpr (opB j)).toNat) 7 = V s.mem b y := by
+    rw [V_eq_cols]; exact colsV_congr fun j hj => by
+      rw [hr9.gpr _ (by revert j; decide), State.callEntry_gpr _ (by revert j; decide), opsB j hj]
+  rw [hA10, hB10] at v10
+  refine WP.mono (reduceR_ok hc10) fun s11 ⟨hc11, r11, m11, v11⟩ => ?_
+  -- The result stored at `o`.
+  rw [← List.append_nil (stdsAt o (slotsOf Impl.X448.PPC64LE.pw 7))]
+  refine stdsAt_ok (l := slotsOf Impl.X448.PPC64LE.pw 7) ho4 (slotsOf_fit ho4 (by omega_using [ho, hA])) hc11
+    fun s12 g12 rd12 wr12 sp12 mem12 => WP.block_nil ⟨⟨by rw [g12]; exact hc11.r6, by rw [wr12]; exact hc11.wr⟩,
+      ⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
+  · rw [congrFun g12, r11.gpr _ hr, r10.gpr _ hr]
+    by_cases h12 : r = .r12
+    · subst h12
+      rw [u9.other _ (by decide), u8.other _ (by decide), u7.other _ (by decide), u6.gpr, BitVec.add_zero, e4]
+    by_cases h0 : r = .r0
+    · subst h0
+      rw [u9.other _ (by decide), u8.other _ (by decide), u7.gpr, BitVec.add_zero, u6.other _ (by decide), e5]
+    have hp : r ∉ [Reg.r12, .r0, Impl.X448.PPC64LE.pw 0, Impl.X448.PPC64LE.pw 1] := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+      exact ⟨h12, h0, fun e => hr (e ▸ by decide), fun e => hr (e ▸ by decide)⟩
+    have hl : r ∉ linkRegs := by
+      simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
+      exact ⟨h0, fun e => hr (e ▸ by decide), h12⟩
+    rw [hr9.gpr _ hp, State.callEntry_gpr _ hl, hr5.gpr _ (fun e => hr (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at e; rcases e with rfl | rfl <;> decide)),
+      r3.gpr _ (fun h => hr (by obtain ⟨q, hq, rfl⟩ := List.mem_map.mp h; exact opsB_in q hq)),
+      r2.gpr _ (fun h => hr (by obtain ⟨q, hq, rfl⟩ := List.mem_map.mp h; exact opsA_in q hq))]
+  · rw [rd12, r11.rd, r10.rd, hr9.rd, State.callEntry_rd, hr5.rd, r3.rd, r2.rd]
+  · rw [wr12, r11.wr, r10.wr, hr9.wr, State.callEntry_wr, hr5.wr, r3.wr, r2.wr]
+  · rw [sp12, r11.sp, r10.sp, hr9.sp, State.callEntry_sp, hr5.sp, r3.sp, r2.sp]
+  · rw [mem12, m11, m10, u9.mem, u8.mem, u7.mem, u6.mem, State.callEntry_mem, m5]
+    exact VG.PPC64LE.Spill.saveMem_frame_base (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega) (by decide) _ _ _
+  · rw [V_eq_cols, ← v10, ← v11]
+    congr 1
+    refine colsV_congr fun k hk => ?_
+    rw [mem12]
+    show (Mem.readW _ _ 64).toNat = _
+    rw [← Offset.add_add, saved_dw (by decide) _ _ _ hk]
+
+
+
+theorem mulCS {b : Addr} {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
+    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0)
+    (ho4 : o % 4 = 0) {s : State} (hc : Ctx b s) (hS : SlotsOk s.mem b qs v) :
+    WP isa (mulC o x y) s fun s' => Rest clobR s s' ∧ Frame [FA b] s.mem s'.mem ∧
+      SlotsOk s'.mem b (o :: qs) (upd v o (v x * v y)) := by
+  refine WP.mono (mulC_ok ho (sep1_get hq hx).2 (sep1_get hq hy).2 hx4 hy4 ho4 hc)
+    fun s' ⟨_, hr, hf1, hv⟩ => ?_
+  have hf : Frame [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩] s.mem s'.mem :=
+    hf1.mono fun r hr => by simp [List.mem_singleton.mp hr]
+  refine ⟨hr, frame_FA ho hf, fun q hq' => ?_⟩
+  by_cases hqo : q = o
+  · subst hqo
+    rw [upd_self, ← hS x hx, ← hS y hy]
+    exact toFe_mul hv
+  · rw [upd_of_ne _ _ hqo]
+    exact slots_after hq ho hf hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
+
+theorem mulCur_mulC : MulCur work mulC := fun hq ho hx hy hx4 hy4 ho4 _ h =>
+  WP.mono (mulCS hq ho hx hy hx4 hy4 ho4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ =>
+    h.nextR (by decide) (by decide) (by decide) (by decide) hr hf hS
 /-! ## Sequences of field operations -/
 
 /-- A field operation: `o = x · y`, `a24 · x`, `x + y` or `x - y`. -/
@@ -824,33 +949,19 @@ theorem invert_ok {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
       SlotsOk s'.mem b IQ (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
   invertW_ok (by decide) mulCur_mul hc hS h0
 
-theorem invert_lrSafe : lrSafe Impl.X448.PPC64LE.invert = true := by decide +kernel
-
-/-- A call changes only `r0`, `r11` and `r12`, all of `work`. -/
-theorem stp_callEntry (s : State) : Stp b s s.callEntry :=
-  StpW.of_rest (ws := [.r0, .r11, .r12]) ⟨fun r h => State.callEntry_gpr s h, rfl, rfl, rfl⟩ (by decide) rfl
-
-/-- The call of the inversion, from what its code does from the call's entry. -/
-theorem invertCall_of {s : State} {Q : State → Prop}
-    (h : WP isa Impl.X448.PPC64LE.invert s.callEntry Q) :
-    WP isa Impl.X448.PPC64LE.invertCall s Q :=
-  WP.callSafe invert_lrSafe h
-
-/-- `invertQ_ok`, for the call of the inversion. -/
+/-- `invertQ_ok`, for the inversion as its callers run it, with `mulC`. -/
 theorem invertQCall_ok {qs : List Nat} (hq : Sep1 R qs = true) (hR : R ∈ qs) (hZ : Z2 ∈ qs)
     (hT : TempsOk qs = true) {v : Nat → Fe} {s : State} (hc : Ctx b s)
     (hS : ∀ q ∈ qs, q ≠ R → FS s.mem b q = v q) :
     WP isa Impl.X448.PPC64LE.invertCall s fun s' => Stp b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b qs (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
-  invertCall_of (WP.mono (invertQ_ok hq hR hZ hT (hc.of_rest (stp_callEntry (b := b) s).rest (by decide)) hS rfl)
-    fun _ ⟨h1, h2, h3⟩ => ⟨(stp_callEntry s).trans h1, h2, h3⟩)
+  invertQW_ok (by decide) mulCur_mulC hq hR hZ hT hc hS rfl
 
-/-- `invert_ok`, for the call of the inversion. -/
+/-- `invert_ok`, for the inversion as its callers run it, with `mulC`. -/
 theorem invertCall_ok {v : Nat → Fe} {s : State} (hc : Ctx b s) (hS : SlotsOk s.mem b [Z2, X2] v) :
     WP isa Impl.X448.PPC64LE.invertCall s fun s' => Stp b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b IQ (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
-  invertCall_of (WP.mono (invert_ok (hc.of_rest (stp_callEntry (b := b) s).rest (by decide)) hS rfl)
-    fun _ ⟨h1, h2, h3⟩ => ⟨(stp_callEntry s).trans h1, h2, h3⟩)
+  invertW_ok (by decide) mulCur_mulC hc hS rfl
 
 end
 
