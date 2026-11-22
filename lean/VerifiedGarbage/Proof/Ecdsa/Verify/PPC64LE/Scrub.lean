@@ -188,14 +188,14 @@ theorem brainpoolp256r1Verify_scrubbed (hL : Law Spec.BrainpoolP256r1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp320r1Verify_scrubbed (hL : Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp320r1Verify
-      (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.brainpoolp320r1CombConsts) 112) 32 :=
+      (Spec.Ecdsa.BrainpoolP320r1.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.BrainpoolP320r1.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP320r1.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP320r1.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyBrainpoolP320r1
       verified := Proof.Ecdsa.Verify.PPC64LE.BrainpoolP320r1.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.brainpoolp320r1CombConsts Spec.Ecdsa.BrainpoolP320r1.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.BrainpoolP320r1.vK Spec.Ecdsa.BrainpoolP320r1.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.BrainpoolP384r1.verifyHashApi`'s function as emitted
@@ -203,14 +203,14 @@ theorem brainpoolp320r1Verify_scrubbed (hL : Law Spec.BrainpoolP320r1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp384r1Verify_scrubbed (hL : Law Spec.BrainpoolP384r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp384r1Verify
-      (Spec.Ecdsa.BrainpoolP384r1.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.brainpoolp384r1CombConsts) 112) 32 :=
+      (Spec.Ecdsa.BrainpoolP384r1.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.BrainpoolP384r1.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP384r1.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyBrainpoolP384r1
       verified := Proof.Ecdsa.Verify.PPC64LE.BrainpoolP384r1.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.brainpoolp384r1CombConsts Spec.Ecdsa.BrainpoolP384r1.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.BrainpoolP384r1.vK Spec.Ecdsa.BrainpoolP384r1.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.BrainpoolP512r1.verifyHashApi`'s function as emitted
@@ -218,14 +218,14 @@ theorem brainpoolp384r1Verify_scrubbed (hL : Law Spec.BrainpoolP384r1.curve) :
 constant time and returns without secret residue. -/
 theorem brainpoolp512r1Verify_scrubbed (hL : Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.brainpoolp512r1Verify
-      (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.brainpoolp512r1CombConsts) 112) 32 :=
+      (Spec.Ecdsa.BrainpoolP512r1.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP512r1.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyBrainpoolP512r1
       verified := Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.brainpoolp512r1CombConsts Spec.Ecdsa.BrainpoolP512r1.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.BrainpoolP512r1.vK Spec.Ecdsa.BrainpoolP512r1.inst)
     (by dsimp only; lit_decide)
 
 end VG.Proof.Ecdsa.Verify.PPC64LE.Scrub

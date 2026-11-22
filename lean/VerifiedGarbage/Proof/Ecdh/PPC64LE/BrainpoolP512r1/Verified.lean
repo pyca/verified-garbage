@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 public import VerifiedGarbage.Spec.Ecdh.Generic
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP512r1.Lit
@@ -14,6 +18,10 @@ import VerifiedGarbage.Proof.Weierstrass.BytesLen
 meta import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.PPC64LE
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 meta import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 meta import VerifiedGarbage.Spec.Ecdh.Generic
 meta import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP512r1.Lit
@@ -94,9 +102,16 @@ namespace VG.Proof.Ecdh.PPC64LE.BrainpoolP512r1
 
 open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Impl.Ecdh.PPC64LE VG.Proof.Ecdsa.PPC64LE Spec.Weierstrass
 
-theorem pre_of {s : State} (h : ecdhPPC.pre s) : EPre brainpoolp512r1 s := by
+/-- The contract with the table of constants (`Cfg.constsK`), as the proof states it. -/
+abbrev ecdhPC : Contract isa := ecdhPPC.withTables brainpoolp512r1.constsK
+
+theorem pre_of {s : State} (h : ecdhPPC.pre (stripConsts brainpoolp512r1.constsK s)) (hk : ConstsOk brainpoolp512r1.constsK 0 s) :
+    EPre brainpoolp512r1 s (constRegs brainpoolp512r1.constsK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, fun h => absurd h (by decide)⟩
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, fun _ => tbl_of_consts hk (List.mem_singleton_self _)
+    (hk.disjoint_wr (List.mem_singleton_self _) (by
+      show (⟨s.gpr .r6, size⟩ : Region) ∈ (stripConsts brainpoolp512r1.constsK s).wr
+      rw [h2]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
 
 theorem post_of {s s' : State} (h : EPost brainpoolp512r1 s s') : ecdhPPC.post s s' := by
   unfold EPost at h
@@ -139,20 +154,23 @@ theorem win_mulPowOk (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s₀ : S
           ⟨g'.rep, g'.x, g'.y, g'.z⟩, hpre.on, Win.Bits.saved h7 hU hpre.bits, hpre.lt⟩) fun _ ⟨hk, hu, hr⟩ =>
       ⟨hk, hu, ⟨hr.rep, hr.x, hr.y, hr.z⟩⟩) h
 
-theorem ecdh_ppc (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State) (hs : ecdhPPC.pre s) :
-    ∃ t s', Exec isa exchangeBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ ecdhPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := exchangeWith_ok brainpoolp512r1_ok hL (pre_of hs) (win_mulPowOk hL s)
+theorem ecdh_ppc (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State) (hs : ecdhPC.pre s) :
+    ∃ t s', Exec isa exchangeBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ ecdhPC.post s s' := by
+  obtain ⟨hp, hk⟩ := hs
+  obtain ⟨t, s', he, K, hpost⟩ := exchangeWith_ok brainpoolp512r1_ok hL (pre_of hp hk) (win_mulPowOk hL s)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
-theorem ecdh_ct : ConstantTime isa ecdhPPC.pre ecdhPPC.pub exchangeBrainpoolP512r1 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
-    (fun _ _ _ _ ⟨hsp, h3, h4, h5, h6⟩ => ⟨hsp, fun r hr => by
+theorem ecdh_ct : ConstantTime isa ecdhPC.pre ecdhPC.pub exchangeBrainpoolP512r1 :=
+  VG.Taint.constantTime (A := taintSym [brainpoolp512r1.constSym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+    (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5, h6⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact h3
       · exact h4
       · exact h5
-      · exact h6⟩) (by taint_decide)
+      · exact h6⟩, fun n hn => by
+        simp only [List.mem_singleton] at hn; subst hn; exact sy _ (List.mem_singleton_self _)⟩)
+    (by taint_decide)
 
 /-- A state satisfying the precondition. -/
 def satState : State where
@@ -164,9 +182,9 @@ def satState : State where
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 129⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩]
 
-theorem ecdh_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
-    Verified PPC64LE.target exchangeBrainpoolP512r1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst PPC64LE.abi) :=
-  Verified.of_correct (ecdh_ppc hL) ecdh_ct
+/-- The contract as the proof states it implies the exchange's (without the table). -/
+theorem ecdhPPC_implies :
+    ecdhPPC.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst PPC64LE.abi) :=
     { pre := by
         sig_implies_pre [Spec.EcKey.BrainpoolP512r1.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP512r1.curve, Spec.EcKey.scratchWords, ecdhPPC, ex, PPC64LE.abi,
@@ -188,5 +206,45 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
         sig_implies_sat [Spec.EcKey.BrainpoolP512r1.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.BrainpoolP512r1.curve, Spec.EcKey.scratchWords, ecdhPPC, ex, PPC64LE.abi,
           PPC64LE.argRegs] [satState] using satState }
+
+/-- A state satisfying the precondition with the table. -/
+def satStateC : State where
+  gpr := satState.gpr
+  lr := satState.lr
+  sp := satState.sp
+  mem := tblSatMem brainpoolp512r1
+  rd := satState.rd ++ [⟨0x100000, 8 * (17 * 8)⟩]
+  wr := satState.wr
+  syms := fun _ => 0x100000
+
+theorem satC_pre :
+    (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst (abi.withConsts brainpoolp512r1.constsK)).pre satStateC := by
+  have hl := constTbl_length brainpoolp512r1
+  have held := tblSatMem_held brainpoolp512r1 (by decide)
+  obtain ⟨W, eW⟩ : ∃ W, brainpoolp512r1.constTbl = W := ⟨_, rfl⟩
+  have hk : brainpoolp512r1.constsK = [(brainpoolp512r1.constSym, W)] := by rw [← eW]; rfl
+  rw [hk]
+  rw [eW] at hl held
+  generalize e : satStateC = s
+  sig_pre [Spec.EcKey.BrainpoolP512r1.inst, Spec.Ecdh.Instance.exchangeContract, Spec.Ecdh.Instance.exchangeSig,
+    Spec.BrainpoolP512r1.curve, Spec.EcKey.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
+    stackBelow]
+  subst e
+  rw [hl]
+  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, ?_⟩
+  · change r ∈ [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
+
+theorem ecdhPC_implies :
+    ecdhPC.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst (PPC64LE.abi.withConsts brainpoolp512r1.constsK)) :=
+  withTables_implies ecdhPPC_implies ⟨satStateC, satC_pre⟩
+
+theorem ecdh_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
+    Verified PPC64LE.target exchangeBrainpoolP512r1
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst (PPC64LE.abi.withConsts brainpoolp512r1.constsK)) :=
+  Verified.of_correct (ecdh_ppc hL) ecdh_ct ecdhPC_implies
 
 end VG.Proof.Ecdh.PPC64LE.BrainpoolP512r1

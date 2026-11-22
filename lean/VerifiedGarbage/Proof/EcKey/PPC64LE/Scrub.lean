@@ -387,13 +387,13 @@ theorem brainpoolp256r1Decompress_scrubbed (hL : Law Spec.BrainpoolP256r1.curve)
 constant time and returns without secret residue. -/
 theorem brainpoolp320r1PublicKey_scrubbed (hL : Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.brainpoolp320r1PublicKey
-      (Spec.EcKey.BrainpoolP320r1.inst.publicKeyContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.brainpoolp320r1CombConsts)) 32 :=
+      (Spec.EcKey.BrainpoolP320r1.inst.publicKeyContract (PPC64LE.abi.withConsts Proof.EcKey.PPC64LE.BrainpoolP320r1.pkK)) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP320r1.publicKeyApi) {
       code := Impl.EcKey.PPC64LE.publicKeyBrainpoolP320r1Comb
       verified := Proof.EcKey.PPC64LE.BrainpoolP320r1.combPk_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v18, .v19]⟩
-    (publicKeyOut _ _ Impl.Weierstrass.PPC64LE.brainpoolp320r1CombConsts)
+    (publicKeyOut _ _ Proof.EcKey.PPC64LE.BrainpoolP320r1.pkK)
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP384r1.publicKeyApi`'s function as emitted
@@ -401,13 +401,13 @@ theorem brainpoolp320r1PublicKey_scrubbed (hL : Law Spec.BrainpoolP320r1.curve) 
 constant time and returns without secret residue. -/
 theorem brainpoolp384r1PublicKey_scrubbed (hL : Law Spec.BrainpoolP384r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.brainpoolp384r1PublicKey
-      (Spec.EcKey.BrainpoolP384r1.inst.publicKeyContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.brainpoolp384r1CombConsts)) 32 :=
+      (Spec.EcKey.BrainpoolP384r1.inst.publicKeyContract (PPC64LE.abi.withConsts Proof.EcKey.PPC64LE.BrainpoolP384r1.pkK)) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP384r1.publicKeyApi) {
       code := Impl.EcKey.PPC64LE.publicKeyBrainpoolP384r1Comb
       verified := Proof.EcKey.PPC64LE.BrainpoolP384r1.combPk_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v18, .v19]⟩
-    (publicKeyOut _ _ Impl.Weierstrass.PPC64LE.brainpoolp384r1CombConsts)
+    (publicKeyOut _ _ Proof.EcKey.PPC64LE.BrainpoolP384r1.pkK)
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi`'s function as emitted
@@ -415,12 +415,13 @@ theorem brainpoolp384r1PublicKey_scrubbed (hL : Law Spec.BrainpoolP384r1.curve) 
 constant time and returns without secret residue. -/
 theorem brainpoolp320r1Compress_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.brainpoolp320r1Compress
-      (Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyContract PPC64LE.abi) 32 :=
+      (Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyContract (PPC64LE.abi.withConsts
+        (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp320r1))) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP320r1.inst.compressPublicKeyApi) {
       code := Impl.EcKey.Compressed.PPC64LE.compressBrainpoolP320r1
       verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP320r1.compress_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (compressOut _ _ [])
+    (compressOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp320r1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi`'s function as emitted
@@ -428,12 +429,13 @@ theorem brainpoolp320r1Compress_scrubbed :
 constant time and returns without secret residue. -/
 theorem brainpoolp384r1Compress_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.brainpoolp384r1Compress
-      (Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyContract PPC64LE.abi) 32 :=
+      (Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyContract (PPC64LE.abi.withConsts
+        (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp384r1))) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi) {
       code := Impl.EcKey.Compressed.PPC64LE.compressBrainpoolP384r1
       verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP384r1.compress_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (compressOut _ _ [])
+    (compressOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp384r1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi`'s function as emitted
@@ -441,12 +443,13 @@ theorem brainpoolp384r1Compress_scrubbed :
 constant time and returns without secret residue. -/
 theorem brainpoolp320r1Decompress_scrubbed (hL : Law Spec.BrainpoolP320r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.brainpoolp320r1Decompress
-      (Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyContract PPC64LE.abi) 32 :=
+      (Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyContract (PPC64LE.abi.withConsts
+        (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp320r1))) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyApi) {
       code := Impl.EcKey.Compressed.PPC64LE.decompressBrainpoolP320r1
       verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP320r1.decompress_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (decompressOut _ _ [])
+    (decompressOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp320r1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi`'s function as emitted
@@ -454,12 +457,13 @@ theorem brainpoolp320r1Decompress_scrubbed (hL : Law Spec.BrainpoolP320r1.curve)
 constant time and returns without secret residue. -/
 theorem brainpoolp384r1Decompress_scrubbed (hL : Law Spec.BrainpoolP384r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.brainpoolp384r1Decompress
-      (Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyContract PPC64LE.abi) 32 :=
+      (Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyContract (PPC64LE.abi.withConsts
+        (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp384r1))) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi) {
       code := Impl.EcKey.Compressed.PPC64LE.decompressBrainpoolP384r1
       verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP384r1.decompress_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (decompressOut _ _ [])
+    (decompressOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp384r1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP512r1.publicKeyApi`'s function as emitted
@@ -467,13 +471,13 @@ theorem brainpoolp384r1Decompress_scrubbed (hL : Law Spec.BrainpoolP384r1.curve)
 constant time and returns without secret residue. -/
 theorem brainpoolp512r1PublicKey_scrubbed (hL : Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.brainpoolp512r1PublicKey
-      (Spec.EcKey.BrainpoolP512r1.inst.publicKeyContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.brainpoolp512r1CombConsts)) 32 :=
+      (Spec.EcKey.BrainpoolP512r1.inst.publicKeyContract (PPC64LE.abi.withConsts Proof.EcKey.PPC64LE.BrainpoolP512r1.pkK)) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP512r1.publicKeyApi) {
       code := Impl.EcKey.PPC64LE.publicKeyBrainpoolP512r1Comb
       verified := Proof.EcKey.PPC64LE.BrainpoolP512r1.combPk_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v18, .v19]⟩
-    (publicKeyOut _ _ Impl.Weierstrass.PPC64LE.brainpoolp512r1CombConsts)
+    (publicKeyOut _ _ Proof.EcKey.PPC64LE.BrainpoolP512r1.pkK)
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi`'s function as emitted
@@ -481,12 +485,13 @@ theorem brainpoolp512r1PublicKey_scrubbed (hL : Law Spec.BrainpoolP512r1.curve) 
 constant time and returns without secret residue. -/
 theorem brainpoolp512r1Compress_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.brainpoolp512r1Compress
-      (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract PPC64LE.abi) 32 :=
+      (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract (PPC64LE.abi.withConsts
+        (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp512r1))) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi) {
       code := Impl.EcKey.Compressed.PPC64LE.compressBrainpoolP512r1
       verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP512r1.compress_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (compressOut _ _ [])
+    (compressOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp512r1))
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi`'s function as emitted
@@ -494,12 +499,13 @@ theorem brainpoolp512r1Compress_scrubbed :
 constant time and returns without secret residue. -/
 theorem brainpoolp512r1Decompress_scrubbed (hL : Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.brainpoolp512r1Decompress
-      (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract PPC64LE.abi) 32 :=
+      (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract (PPC64LE.abi.withConsts
+        (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp512r1))) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi) {
       code := Impl.EcKey.Compressed.PPC64LE.decompressBrainpoolP512r1
       verified := Proof.EcKey.Compressed.PPC64LE.BrainpoolP512r1.decompress_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (decompressOut _ _ [])
+    (decompressOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.brainpoolp512r1))
     (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.PPC64LE.Scrub
