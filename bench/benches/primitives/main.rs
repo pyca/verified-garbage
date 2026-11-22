@@ -156,7 +156,8 @@ mod triple_des_ofb;
 mod x25519;
 mod x448;
 
-const SIZES: [usize; 3] = [64, 1024, 16384];
+// bench/ prototype only: one block (16 bytes) added, so that both sides measure it.
+const SIZES: [usize; 4] = [16, 64, 1024, 16384];
 
 /// A buffer of `len` bytes for an operation in place, into which each
 /// iteration first copies `source`.
