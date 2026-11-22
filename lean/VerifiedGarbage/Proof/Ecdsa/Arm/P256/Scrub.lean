@@ -90,24 +90,24 @@ open VG VG.Arm VG.Arm.Scrub
 theorem verifyP256 (hC : Weierstrass.Law Spec.P256.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyP256
       (Spec.Ecdsa.P256.inst.verifyHashContract
-        (abi.withConsts Impl.Weierstrass.Arm.p256CombConsts) 96) 32 :=
+        (abi.withConsts (Proof.Ecdsa.Verify.Arm.P256.combVerifyK false)) 96) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P256.verifyHashApi)
     { code := P256.Scrub.verifyCode false
       verified := Proof.Ecdsa.Verify.Arm.P256.verifyHash_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P256.inst
-      Impl.Weierstrass.Arm.p256CombConsts 96)
+      (Proof.Ecdsa.Verify.Arm.P256.combVerifyK false) 96)
     (scrubSideF_of P256.Scrub.verify_code P256.Scrub.frameOk_96 _)
 
 /-- `vg_ecdsa_p256_verify_umaal`, given the group law. -/
 theorem verifyP256U (hC : Weierstrass.Law Spec.P256.curve) :
     VerifiedScrubbed target Impl.Ecdsa.Arm.Fn.verifyP256U
       (Spec.Ecdsa.P256.inst.verifyHashContract
-        (abi.withConsts Impl.Weierstrass.Arm.p256CombConsts) 96) 32 :=
+        (abi.withConsts (Proof.Ecdsa.Verify.Arm.P256.combVerifyK true)) 96) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P256.verifyHashApi)
     { code := P256.Scrub.verifyCode true
       verified := Proof.Ecdsa.Verify.Arm.P256.verifyHashU_verified hC }
     (Proof.Ecdsa.Verify.Arm.Scrub.verifyHashOut Spec.Ecdsa.P256.inst
-      Impl.Weierstrass.Arm.p256CombConsts 96)
+      (Proof.Ecdsa.Verify.Arm.P256.combVerifyK true) 96)
     (scrubSideF_of P256.Scrub.verifyU_code P256.Scrub.frameOk_96 _)
 
 

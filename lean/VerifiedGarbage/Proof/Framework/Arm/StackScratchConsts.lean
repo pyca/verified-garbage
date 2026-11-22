@@ -180,6 +180,35 @@ theorem withTables_implies {K : Contract isa} (h : K.Implies (sig.contract abi p
       fun c hc => by simpa using congrArg (BitVec.setWidth 32) ((pub_consts.mp hp).2 c hc)⟩
     sat := sat }
 
+/-- The tables' addresses agree in two states of a contract with tables. -/
+theorem withTablesArm_syms {K : Contract isa} {consts : List (String × List (BitVec 64))} {s₁ s₂ : State}
+    (h : (K.withTablesArm consts).pub s₁ s₂) : ∀ n ∈ consts.map Prod.fst, s₁.syms n = s₂.syms n := fun _ hn => by
+  obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hn
+  exact h.2 c hc
+
+/-- Stripping the tables from a state with their regions after its readable
+ones gives it back. -/
+theorem stripConsts_append (K : List (String × List (BitVec 64))) (s : State) :
+    stripConsts K { s with rd := s.rd ++ constRegs K s } = s := by
+  unfold stripConsts
+  simp only [List.length_append, Abi.constRegions, List.length_map, Nat.add_sub_cancel, List.take_left']
+  rfl
+
+/-- A state satisfying the contract without tables, with the tables' regions
+after its readable ones, satisfies the contract with them if `ConstsOk`. -/
+theorem pre_consts_append {s : State} (h : (sig.contract abi pre post wa st leak).pre s)
+    (hk : ConstsOk (c₀ :: cs) st { s with rd := s.rd ++ constRegs (c₀ :: cs) s }) :
+    (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa st leak).pre
+      { s with rd := s.rd ++ constRegs (c₀ :: cs) s } :=
+  pre_consts.mpr ⟨by rw [stripConsts_append]; exact h, hk⟩
+
+/-- A witness of a contract with tables: one of the contract without them,
+with the tables' regions after its readable ones, where `ConstsOk` holds. -/
+theorem sat_consts {s : State} (h : (sig.contract abi pre post wa st leak).pre s)
+    (hk : ConstsOk (c₀ :: cs) st { s with rd := s.rd ++ constRegs (c₀ :: cs) s }) :
+    ∃ s', (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa st leak).pre s' :=
+  ⟨_, pre_consts_append h hk⟩
+
 end
 
 /-! ## Reading a table
@@ -202,6 +231,17 @@ theorem ConstsOk.rd_strip (h : ConstsOk K st s) {L : List Region} (hL : (stripCo
     s.rd = L ++ constRegs K s := by
   rw [← List.take_append_drop (s.rd.length - K.length) s.rd, h.1]
   exact congrArg (· ++ constRegs K s) hL
+
+/-- `ConstsOk` of a state whose readable regions end with the tables', as
+`sat_consts` asks. -/
+theorem constsOk_append {s : State} (hheld : Abi.constsHeld s.mem (symAddr s) K)
+    (hR : ∀ t ∈ constRegs K s, t.base.toNat + t.len ≤ 2 ^ 32 ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧
+      ∀ r ∈ abi.reserved st s, t.Disjoint r)
+    (hal : ∀ t ∈ constRegs K s, t.base.toNat % 64 = 0) :
+    ConstsOk K st { s with rd := s.rd ++ constRegs K s } := by
+  refine ⟨?_, hheld, hR, hal⟩
+  show (s.rd ++ constRegs K s).drop ((s.rd ++ constRegs K s).length - K.length) = constRegs K s
+  simp only [List.length_append, Abi.constRegions, List.length_map, Nat.add_sub_cancel, List.drop_left']
 
 /-- The table does not wrap around the 32-bit address space. -/
 theorem ConstsOk.fit (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :

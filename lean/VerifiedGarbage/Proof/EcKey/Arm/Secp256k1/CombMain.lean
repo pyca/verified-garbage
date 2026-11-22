@@ -9,6 +9,8 @@ public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmComb
 public import VerifiedGarbage.Proof.EcKey.Arm.Main
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombGenerator
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
@@ -135,30 +137,29 @@ open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Weierstrass.Arm
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm.TComb
 open VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.Secp256k1
 
-abbrev combPkSpec : Contract isa :=
-  Spec.EcKey.Secp256k1.inst.publicKeyContract (abi.withConsts secp256k1CombConsts)
+/-- The tables the public key reads: the comb's, and the setup's constants. -/
+abbrev combPkK (u : Bool) : List (String × List (BitVec 64)) := secp256k1CombConsts ++ (secp256k1With u).constsK
+
+abbrev combPkSpec (u : Bool) : Contract isa :=
+  Spec.EcKey.Secp256k1.inst.publicKeyContract (abi.withConsts (combPkK u))
 
 def combPkPre (u : Bool) (s : State) : Prop :=
-  PkPre (secp256k1With u) s (constRegs secp256k1CombConsts s) ∧ ConstsOk secp256k1CombConsts 0 s
+  PkPre (secp256k1With u) s (constRegs (combPkK u) s) ∧ ConstsOk (combPkK u) 0 s
 
-theorem pk_spec_pre {u : Bool} {s : State}
-    (h : (Spec.EcKey.Secp256k1.inst.publicKeyContract abi).pre s) : PkPre (secp256k1With u) s := by
+theorem combPk_pre {u : Bool} {s : State} (h : (combPkSpec u).pre s) : combPkPre u s := by
+  have hp : (Spec.EcKey.Secp256k1.inst.publicKeyContract abi).pre (stripConsts (combPkK u) s) ∧
+      ConstsOk (combPkK u) 0 s := pre_consts.mp h
+  obtain ⟨h₁, hk⟩ := hp
   sig_pre [Spec.EcKey.Secp256k1.inst,Spec.EcKey.Instance.publicKeyContract,Spec.EcKey.Instance.publicKeySig,
-    Spec.Secp256k1.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h
-  obtain ⟨_sp,rd,wr,_od,os,ds,fo,fd,fs⟩ := h
-  exact ⟨rd,wr,os,ds,fo,fd,fs,noTbl rfl⟩
-
-theorem combPk_pre {u : Bool} {s : State} (h : combPkSpec.pre s) : combPkPre u s := by
-  have hp : (Spec.EcKey.Secp256k1.inst.publicKeyContract abi).pre (stripConsts secp256k1CombConsts s) ∧
-      ConstsOk secp256k1CombConsts 0 s := pre_consts.mp h
-  have p := pk_spec_pre (u := u) hp.1
-  refine ⟨⟨?_,p.wr,p.out_sc,p.d_sc,p.out_fit,p.d_fit,p.sc_fit,noTbl rfl⟩,hp.2⟩
-  rw [← List.take_append_drop (s.rd.length-secp256k1CombConsts.length) s.rd,hp.2.1]
-  exact congrArg (fun rs => rs++constRegs secp256k1CombConsts s) p.rd
+    Spec.Secp256k1.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h₁
+  obtain ⟨_sp,rd,wr,_od,os,ds,fo,fd,fs⟩ := h₁
+  refine ⟨⟨hk.rd_strip rd,wr,os,ds,fo,fd,fs,fun _ => tbl_of_consts hk
+    (List.mem_append_right _ (List.mem_singleton_self _)) ?_⟩,hk⟩
+  rw [wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
 
 theorem combPk_ok (hC : Law Spec.Secp256k1.curve) {u : Bool} {s₀ : State} (hp : combPkPre u s₀) :
     WP isa (publicKeySecp256k1CombWith u) s₀ fun t => PkKeep (secp256k1With u) s₀ t ∧ PkPost (secp256k1With u) s₀ t := by
-  have member : (secp256k1Comb.tsym,secp256k1CombWords)∈secp256k1CombConsts := List.mem_singleton_self _
+  have member : (secp256k1Comb.tsym,secp256k1CombWords)∈combPkK u := List.mem_cons_self
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show (⟨ptr s₀ .r2,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)

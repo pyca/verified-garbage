@@ -430,6 +430,93 @@ theorem constMem_held₂ (T : Addr) (W₁ W₂ : List (BitVec 64)) (h : 8 * (W�
   · rw [Offset.add_add, ← Nat.mul_add, held _ (by rw [List.length_append]; omega_arith)]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_append_right (Nat.le_add_right _ _), Nat.add_sub_cancel_left]
 
+/-! ## Witnesses of the contracts that list the table -/
+
+/-- The table's region, `17 n` words at its symbol. -/
+theorem constRegs_tbl (c : Cfg) (s : State) :
+    constRegs c.constsK s = [⟨symAddr s c.constSym, 8 * (17 * c.n)⟩] := by
+  simp only [Cfg.constsK, Abi.constRegions, List.map_cons, List.map_nil, constTbl_length]
+
+theorem setWidth_toNat32 (T : BitVec 32) : (T.setWidth 64).toNat = T.toNat := by
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans T.isLt (by decide))]
+
+/-- What a table at `T` of `len` bytes needs of a witness's regions. -/
+theorem tblRegion_ok {s : State} {st : Nat} {T : BitVec 32} {len : Nat} (hfit : T.toNat + len ≤ 2 ^ 32)
+    (hwr : ∀ r ∈ s.wr, Region.sep ⟨T.setWidth 64, len⟩ r = true)
+    (hres : ∀ r ∈ abi.reserved st s, Region.sep ⟨T.setWidth 64, len⟩ r = true) :
+    (⟨T.setWidth 64, len⟩ : Region).base.toNat + len ≤ 2 ^ 32 ∧
+      (∀ r ∈ s.wr, (⟨T.setWidth 64, len⟩ : Region).Disjoint r) ∧
+      ∀ r ∈ abi.reserved st s, (⟨T.setWidth 64, len⟩ : Region).Disjoint r :=
+  ⟨by rw [setWidth_toNat32]; exact hfit, fun r hr => Region.disjoint_of_sep (hwr r hr),
+    fun r hr => Region.disjoint_of_sep (hres r hr)⟩
+
+/-- `ConstsOk` of a witness of a contract that lists only the table, which
+it holds at `T` (`constMem`), apart from its writable regions and the stack
+the contract reserves, as `sat_consts` asks. -/
+theorem constsOk_tbl (c : Cfg) {s : State} {st : Nat} {T : BitVec 32} (hsy : s.syms c.constSym = T)
+    (hm : s.mem = constMem (T.setWidth 64) c.constTbl) (hfit : T.toNat + 8 * (17 * c.n) ≤ 2 ^ 32)
+    (hal : T.toNat % 64 = 0) (hwr : ∀ r ∈ s.wr, Region.sep ⟨T.setWidth 64, 8 * (17 * c.n)⟩ r = true)
+    (hres : ∀ r ∈ abi.reserved st s, Region.sep ⟨T.setWidth 64, 8 * (17 * c.n)⟩ r = true) :
+    ConstsOk c.constsK st { s with rd := s.rd ++ constRegs c.constsK s } := by
+  obtain hA : symAddr s c.constSym = T.setWidth 64 := by rw [symAddr, hsy]
+  refine constsOk_append (fun x hx i hi => ?_) (fun t ht => ?_) (fun t ht => ?_)
+  · obtain rfl := List.mem_singleton.mp hx
+    rw [hm, hA]
+    exact constMem_held _ _ (by rw [constTbl_length]; omega_arith) i hi
+  · rw [constRegs_tbl, hA] at ht
+    obtain rfl := List.mem_singleton.mp ht
+    exact tblRegion_ok hfit hwr hres
+  · rw [constRegs_tbl, hA] at ht
+    obtain rfl := List.mem_singleton.mp ht
+    show (T.setWidth 64).toNat % 64 = 0
+    rw [setWidth_toNat32]; exact hal
+
+/-- The regions of the table `(n₁, W₁)` (the generator's comb) at `T` and
+the curve's table at `T₂`. -/
+theorem constRegs_two (c : Cfg) {n₁ : String} {W₁ : List (BitVec 64)} {s : State} {T T₂ : BitVec 32}
+    (hsy₁ : s.syms n₁ = T) (hsy₂ : s.syms c.constSym = T₂) :
+    constRegs ((n₁, W₁) :: c.constsK) s = [⟨T.setWidth 64, 8 * W₁.length⟩, ⟨T₂.setWidth 64, 8 * (17 * c.n)⟩] := by
+  simp only [Abi.constRegions, List.map_cons, List.map_nil, Cfg.constsK, constTbl_length, symAddr, hsy₁, hsy₂]
+
+/-- `ConstsOk` of a witness of a contract that lists the table `(n₁, W₁)`
+(the generator's comb), then the curve's table: both in `constMem` at `T`,
+the second at `T₂ = T + 8 |W₁|`, apart from the witness's writable regions
+and the stack the contract reserves. -/
+theorem constsOk_two (c : Cfg) {n₁ : String} {W₁ : List (BitVec 64)} {s : State} {st : Nat}
+    {T T₂ : BitVec 32} (hsy₁ : s.syms n₁ = T) (hsy₂ : s.syms c.constSym = T₂)
+    (hT₂ : T₂.toNat = T.toNat + 8 * W₁.length) (hm : s.mem = constMem (T.setWidth 64) (W₁ ++ c.constTbl))
+    (hfit : T₂.toNat + 8 * (17 * c.n) ≤ 2 ^ 32) (hal₁ : T.toNat % 64 = 0) (hal₂ : T₂.toNat % 64 = 0)
+    (hwr₁ : ∀ r ∈ s.wr, Region.sep ⟨T.setWidth 64, 8 * W₁.length⟩ r = true)
+    (hwr₂ : ∀ r ∈ s.wr, Region.sep ⟨T₂.setWidth 64, 8 * (17 * c.n)⟩ r = true)
+    (hres₁ : ∀ r ∈ abi.reserved st s, Region.sep ⟨T.setWidth 64, 8 * W₁.length⟩ r = true)
+    (hres₂ : ∀ r ∈ abi.reserved st s, Region.sep ⟨T₂.setWidth 64, 8 * (17 * c.n)⟩ r = true) :
+    ConstsOk ((n₁, W₁) :: c.constsK) st { s with rd := s.rd ++ constRegs ((n₁, W₁) :: c.constsK) s } := by
+  obtain hA₁ : symAddr s n₁ = T.setWidth 64 := by rw [symAddr, hsy₁]
+  obtain hA₂ : symAddr s c.constSym = T.setWidth 64 + BitVec.ofNat 64 (8 * W₁.length) := by
+    rw [symAddr, hsy₂]
+    apply BitVec.eq_of_toNat_eq
+    rw [setWidth_toNat32, BitVec.toNat_add, setWidth_toNat32, BitVec.toNat_ofNat, hT₂]
+    omega_arith
+  obtain hR := constRegs_two c (W₁ := W₁) hsy₁ hsy₂
+  obtain ⟨h₁, h₂⟩ := constMem_held₂ (T.setWidth 64) W₁ c.constTbl (by rw [constTbl_length]; omega_arith)
+  refine constsOk_append (fun x hx i hi => ?_) (fun t ht => ?_) (fun t ht => ?_)
+  · simp only [Cfg.constsK, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl
+    · rw [hm, hA₁]; exact h₁ i hi
+    · rw [hm, hA₂]; exact h₂ i hi
+  · rw [hR] at ht
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
+    rcases ht with rfl | rfl
+    · exact tblRegion_ok (by omega_arith) hwr₁ hres₁
+    · exact tblRegion_ok hfit hwr₂ hres₂
+  · rw [hR] at ht
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
+    rcases ht with rfl | rfl
+    · show (T.setWidth 64).toNat % 64 = 0
+      rw [setWidth_toNat32]; exact hal₁
+    · show (T₂.setWidth 64).toNat % 64 = 0
+      rw [setWidth_toNat32]; exact hal₂
+
 /-- The table of constants, under a contract that lists it
 (`Abi.withConsts`, `ConstsOk`), as `SetupPre` takes it, for the working
 space at the start of the writable region `⟨sc, 8192⟩`. -/

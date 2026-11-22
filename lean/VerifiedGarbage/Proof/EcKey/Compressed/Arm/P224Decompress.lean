@@ -3,6 +3,14 @@ module
 import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+public import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.P224
 import VerifiedGarbage.Proof.P224.Sqrt
@@ -1216,33 +1224,37 @@ theorem rel_assoc_left {a b c : Prog isa} {P Q : State → State → Prop}
           obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq a₁ (.seq b₁ c₁)) (.seq a₂ (.seq b₂ c₂))
           exact ⟨by simpa only [List.append_assoc] using ht, hq⟩
 
-theorem decompress_tonelli_ct {c : Cfg} (hc : CfgOk c) (hn : c.tblSym = none) (hp : c.C.p % 4 ≠ 3)
+/-- The decompression's constant time, under the contract with the tables `K`,
+which list the curve's table of constants (`hK`): from that of its pieces. -/
+theorem decompress_tonelli_ct {c : Cfg} (hc : CfgOk c) {K : List (String × List (BitVec 64))}
+    (hK : (c.constSym, c.constTbl) ∈ K) (hp : c.C.p % 4 ≠ 3)
     {root : Spec.Weierstrass.Fe c.C → Spec.Weierstrass.Fe c.C}
-    (hfront : ConstantTime isa (fun _ => True) (decompressContract c.C root).pub (conversionFront c))
+    (hfront : ConstantTime isa (fun _ => True) ((decompressContract c.C root).withTablesArm K).pub
+      (conversionFront c))
     (hprepare : ConstantTime isa (fun _ => True) RootPublic (prepareRoot c))
     (hprefix : ConstantTime isa (fun _ => True) RootPublic (descentPrefix c))
     (hsquare : ConstantTime isa (fun _ => True) PowerPublic (Impl.EcKey.Compressed.Arm.squarePower c))
     (hrest : ConstantTime isa (fun _ => True) RootPublic (descentRest c))
     (hsuffix : ConstantTime isa (fun _ => True) RootPublic (conversionSuffix c)) :
-    ConstantTime isa (decompressContract c.C root).pre (decompressContract c.C root).pub
-      (Impl.EcKey.Compressed.Arm.decompress c) := by
-  let P := fun s t => (decompressContract c.C root).pre s ∧
-    (decompressContract c.C root).pre t ∧ (decompressContract c.C root).pub s t
+    ConstantTime isa ((decompressContract c.C root).withTablesArm K).pre
+      ((decompressContract c.C root).withTablesArm K).pub (Impl.EcKey.Compressed.Arm.decompress c) := by
+  let P := fun s t => ((decompressContract c.C root).withTablesArm K).pre s ∧
+    ((decompressContract c.C root).withTablesArm K).pre t ∧ ((decompressContract c.C root).withTablesArm K).pub s t
   have Hfront := ((rel_of_ct hfront).mono (P' := P) (fun _ _ h => h.2.2)
     (fun _ _ _ => trivial)).wpDep
     (F := fun s t => DecompressFront c s t)
     (by
       rintro s t ⟨hs, ht, _⟩
-      have pre {u : State} (h : (decompressContract c.C root).pre u) : InputPre c (1 + c.C.len) u := by
-        obtain ⟨hrd, hwr, _, hd, _, _, hpk, hws⟩ := h
-        exact ⟨by rw [hrd]; simp [Nat.add_comm], by rw [hwr]; simp,
-          by simpa only [Nat.add_comm] using hd, by omega_using [hpk], hws, noTbl hn⟩
+      have pre {u : State} (h : ((decompressContract c.C root).withTablesArm K).pre u) :
+          InputPre c (1 + c.C.len) u :=
+        inputPre_of_strip K h.1 (tbl_of_tables hK h)
       exact ⟨conversionFront_ok hc (pre hs), conversionFront_ok hc (pre ht)⟩)
   have Hroot := rootCandidate_rel hc hp hprepare hprefix hsquare hrest
   have Hfront' : RelCT isa P (conversionFront c) (RootPair c) := Hfront.mono
     (fun _ _ h => h) (by
       rintro u v ⟨_, s, t, ⟨_, _, hp⟩, F, G⟩
-      rcases hp with ⟨_, ho, _, hb⟩
+      obtain ⟨⟨_, ho, _, hb⟩, _⟩ := hp
+      simp only [stripConsts_gpr] at ho hb
       have I : RootInput c (ptr s .r2) u := ⟨F.scr, F.far, modP_of hc F.fixed.mp, F.rhs_lt, F.fixed.onep⟩
       have J : RootInput c (ptr s .r2) v := by
         rw [show ptr s .r2 = ptr t .r2 from congrArg State.addr hb]
@@ -1309,19 +1321,39 @@ taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
     (Impl.Weierstrass.Arm.Mont.subFnWith false p224.SP.k p224.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
 
-theorem ct : ConstantTime isa (decompressContract Spec.P224.curve root).pre
-    (decompressContract Spec.P224.curve root).pub code := by
-  apply decompress_tonelli_ct p224_ok rfl (by decide +kernel)
-  · apply VG.Taint.constantTime_of_exists (A := taintS) (Taint.ofRegs [.r0, .r1, .r2])
-    · intro s t _ _ ⟨_, h0, h1, h2⟩
-      apply Taint.agree_ofRegs
-      intro r hr
+/-! The same, for the front's check (`taintSym`), which reads the table of constants. -/
+
+/-- The analysis of the front, which addresses the table of constants. -/
+abbrev taintC : VG.Taint isa := taintSym [p224.constSym]
+
+taint_summary mulPSumT : taintC (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (Impl.Weierstrass.Arm.Mont.mulName false p224.SP)
+    (Impl.Weierstrass.Arm.Mont.mulFnWith false p224.SP.k p224.SP.m))
+  keeping (Taint.ofRegs [.r10, .r11])
+taint_summary addPSumT : taintC (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (Impl.Weierstrass.Arm.Mont.addName false p224.SP)
+    (Impl.Weierstrass.Arm.Mont.addFnWith false p224.SP.k p224.SP.m))
+  keeping (Taint.ofRegs [.r10, .r11])
+taint_summary subPSumT : taintC (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (Impl.Weierstrass.Arm.Mont.subName false p224.SP)
+    (Impl.Weierstrass.Arm.Mont.subFnWith false p224.SP.k p224.SP.m))
+  keeping (Taint.ofRegs [.r10, .r11])
+
+/-- The contract with the table of constants (`Cfg.constsK`), as the proof states it. -/
+abbrev AC (u : Bool) : Contract isa := (decompressContract Spec.P224.curve root).withTablesArm (p224With u).constsK
+
+theorem ct : ConstantTime isa (AC false).pre (AC false).pub code := by
+  apply decompress_tonelli_ct p224_ok (List.mem_singleton_self _) (by decide +kernel)
+  · apply VG.Taint.constantTime_of_exists (A := taintC) (Taint.ofRegs [.r0, .r1, .r2])
+    · intro s t _ _ h
+      refine ⟨Taint.agree_ofRegs fun r hr => ?_, withTablesArm_syms h⟩
+      obtain ⟨⟨_, h0, h1, h2⟩, _⟩ := h
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h0
       · exact h1
       · exact h2
-    · taint_decide_sum [mulPSum, addPSum, subPSum]
+    · taint_decide_sum [mulPSumT, addPSumT, subPSumT]
   · apply VG.Taint.constantTime_of_exists (A := taintS) (Taint.ofRegs [.r12, .lr])
     · intro s t _ _ ⟨hb, ho⟩
       apply Taint.agree_ofRegs
@@ -1369,13 +1401,12 @@ theorem ct : ConstantTime isa (decompressContract Spec.P224.curve root).pre
       · exact ho
     · taint_decide_sum [mulPSum, addPSum, subPSum]
 
-theorem ctU : ConstantTime isa (decompressContract Spec.P224.curve root).pre
-    (decompressContract Spec.P224.curve root).pub codeU := by
-  apply decompress_tonelli_ct p224u_ok rfl (by decide +kernel)
-  · apply VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0, .r1, .r2])
-    · intro s t _ _ ⟨_, h0, h1, h2⟩
-      apply Taint.agree_ofRegs
-      intro r hr
+theorem ctU : ConstantTime isa (AC true).pre (AC true).pub codeU := by
+  apply decompress_tonelli_ct p224u_ok (List.mem_singleton_self _) (by decide +kernel)
+  · apply VG.Taint.constantTime (A := taintSymU [(p224With true).constSym]) (Taint.ofRegs [.r0, .r1, .r2])
+    · intro s t _ _ h
+      refine ⟨Taint.agree_ofRegs fun r hr => ?_, withTablesArm_syms h⟩
+      obtain ⟨⟨_, h0, h1, h2⟩, _⟩ := h
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h0
@@ -1435,17 +1466,40 @@ theorem sat : ∃ s, (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0).pr
     Spec.EcKey.Instance.decompressPublicKeySig, hlen, Spec.EcKey.scratchWords,
     abi, argRegs, reduceClassify, Loc.val, State.addr, decompressSatState] [decompressSatState] using (decompressSatState 28)
 
+/-- `decompressSatState`, holding the table at `0x100000`. -/
+def satStateC (u : Bool) : State := { decompressSatState 28 with
+  mem := constMem ((0x100000 : BitVec 32).setWidth 64) (p224With u).constTbl
+  syms := fun _ => 0x100000 }
+
+theorem satC (u : Bool) :
+    ∃ s, (Spec.EcKey.P224.inst.decompressPublicKeyContract (abi.withConsts (p224With u).constsK) 0).pre s :=
+  sat_consts (s := satStateC u)
+    (by
+      have hlen : Spec.P224.curve.len = 28 := rfl
+      cases u <;>
+      (sig_pre [Spec.EcKey.P224.inst, Spec.EcKey.Instance.decompressPublicKeyContract,
+        Spec.EcKey.Instance.decompressPublicKeySig, hlen, Spec.EcKey.scratchWords,
+        abi, argRegs, reduceClassify, Loc.val, State.addr, decompressSatState, satStateC]
+       sig_and_intros
+       all_goals first
+         | rfl
+         | decide
+         | exact Region.disjoint_of_sep (by decide)))
+    (constsOk_tbl _ (T := 0x100000) rfl rfl (by cases u <;> decide) (by decide) (by cases u <;> decide)
+      (by cases u <;> decide))
+
 theorem verified (hL : Proof.Weierstrass.Law Spec.P224.curve) :
-    Verified target code (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct p224 p224_ok rfl _ (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel))) ct
-    (decompress_implies Spec.EcKey.P224.inst _
-      (Proof.P224.rootFacts hL) sat)
+    Verified target code
+      (Spec.EcKey.P224.inst.decompressPublicKeyContract (abi.withConsts (p224With false).constsK) 0) :=
+  Verified.of_correct (decompress_correctT p224 p224_ok _
+      (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel)) (List.mem_singleton_self _)) ct
+    (withTables_implies (decompress_implies Spec.EcKey.P224.inst _ (Proof.P224.rootFacts hL) sat) (satC false))
 
 theorem verifiedU (hL : Proof.Weierstrass.Law Spec.P224.curve) :
-    Verified target codeU (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct (p224With true) p224u_ok rfl _
-      (candidateTonelli_correct p224u_ok (by decide +kernel) (by decide +kernel))) ctU
-    (decompress_implies Spec.EcKey.P224.inst _
-      (Proof.P224.rootFacts hL) sat)
+    Verified target codeU
+      (Spec.EcKey.P224.inst.decompressPublicKeyContract (abi.withConsts (p224With true).constsK) 0) :=
+  Verified.of_correct (decompress_correctT (p224With true) p224u_ok _
+      (candidateTonelli_correct p224u_ok (by decide +kernel) (by decide +kernel)) (List.mem_singleton_self _)) ctU
+    (withTables_implies (decompress_implies Spec.EcKey.P224.inst _ (Proof.P224.rootFacts hL) sat) (satC true))
 
 end VG.Proof.EcKey.Compressed.Arm.P224Decompress

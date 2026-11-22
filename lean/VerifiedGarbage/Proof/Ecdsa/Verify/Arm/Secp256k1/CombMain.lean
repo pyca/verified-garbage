@@ -9,6 +9,8 @@ public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.Arm
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmComb
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombGenerator
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
@@ -26,26 +28,25 @@ open VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.Secp256k1
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass.Arm.TComb
 open VG.Proof.Mont VG.Proof.Mont.Arm
 
-abbrev combVerifySpec : Contract isa :=
-  Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (abi.withConsts secp256k1CombConsts)
+/-- The tables verification reads: the comb's, and the setup's constants. -/
+abbrev combVerifyK (um : Bool) : List (String × List (BitVec 64)) := secp256k1CombConsts ++ (secp256k1With um).constsK
+
+abbrev combVerifySpec (um : Bool) : Contract isa :=
+  Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst (abi.withConsts (combVerifyK um))
 
 def combVerifyPre (um : Bool) (s : State) : Prop :=
-  VPre (secp256k1With um) s (constRegs secp256k1CombConsts s) ∧ ConstsOk secp256k1CombConsts 0 s
+  VPre (secp256k1With um) s (constRegs (combVerifyK um) s) ∧ ConstsOk (combVerifyK um) 0 s
 
-theorem verify_spec_pre {um : Bool} {s : State}
-    (h : (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst abi).pre s) : VPre (secp256k1With um) s := by
+theorem combVerify_pre {um : Bool} {s : State} (h : (combVerifySpec um).pre s) : combVerifyPre um s := by
+  have hp : (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst abi).pre (stripConsts (combVerifyK um) s) ∧
+      ConstsOk (combVerifyK um) 0 s := pre_consts.mp h
+  obtain ⟨h₁, hk⟩ := hp
   sig_pre [Spec.Ecdsa.Secp256k1.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
-    Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h
-  obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h
-  exact ⟨rd,wr,ps,ds,ss,fp,fd,fs,fc,noTbl rfl⟩
-
-theorem combVerify_pre {um : Bool} {s : State} (h : combVerifySpec.pre s) : combVerifyPre um s := by
-  have hp : (Proof.Ecdsa.verifyContract Spec.Ecdsa.Secp256k1.inst abi).pre (stripConsts secp256k1CombConsts s) ∧
-      ConstsOk secp256k1CombConsts 0 s := pre_consts.mp h
-  have p := verify_spec_pre (um := um) hp.1
-  refine ⟨⟨?_,p.wr,p.pk_sc,p.dg_sc,p.sig_sc,p.pk_fit,p.dg_fit,p.sig_fit,p.sc_fit,noTbl rfl⟩,hp.2⟩
-  rw [← List.take_append_drop (s.rd.length-secp256k1CombConsts.length) s.rd,hp.2.1]
-  exact congrArg (fun rs => rs++constRegs secp256k1CombConsts s) p.rd
+    Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h₁
+  obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h₁
+  refine ⟨⟨hk.rd_strip rd,wr,ps,ds,ss,fp,fd,fs,fc,fun _ => tbl_of_consts hk
+    (List.mem_append_right _ (List.mem_singleton_self _)) ?_⟩,hk⟩
+  rw [wr]; exact List.mem_singleton_self _
 
 /-- Verification's `[u]G` by the comb, as `verifyWith_ok` and `verifyHead_ok` ask. -/
 theorem comb_generatorWP (hC : Law Spec.Secp256k1.curve) {um : Bool} {s₀ : State} (hp : combVerifyPre um s₀) :
@@ -55,7 +56,7 @@ theorem comb_generatorWP (hC : Law Spec.Secp256k1.curve) {um : Bool} {s₀ : Sta
         (fun j X Y Z => Rep (secp256k1With um).C X Y Z
           (Spec.Weierstrass.mul (sv (secp256k1With um) (ptr s₀ .r3) s U >>> j) (Spec.Weierstrass.G (secp256k1With um).C)))
         s.syms false := by
-  have member : (secp256k1Comb.tsym,secp256k1CombWords)∈secp256k1CombConsts := List.mem_singleton_self _
+  have member : (secp256k1Comb.tsym,secp256k1CombWords)∈combVerifyK um := List.mem_cons_self
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show (⟨ptr s₀ .r3,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)

@@ -148,14 +148,12 @@ theorem p192T_verified (hL : Weierstrass.Law Spec.P192.curve) :
     Verified Arm.target (signCodeT (p192CombCurve hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries HmacTable.Arm.vars)
       (specK Spec.Ecdsa.Rfc6979.Curves.p192 (p192CombCurve hL).coreConsts HmacTable.Arm.vars) :=
   twoT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl (by decide) (by decide) (by decide)
-    Proof.P192.Arm.comb_words_length (by rw [constTbl_length]; decide)
-    (constMem_held₂ 0x100000 _ _ (by rw [Proof.P192.Arm.comb_words_length, constTbl_length]; decide))
+    (by rw [Proof.P192.Arm.comb_words_length]; decide) (by rw [constTbl_length]; decide)
 
 theorem p192UT_verified (hL : Weierstrass.Law Spec.P192.curve) :
     Verified Arm.target (signCodeT (p192CombCurveU hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries HmacTable.Arm.vars)
       (specK Spec.Ecdsa.Rfc6979.Curves.p192 (p192CombCurveU hL).coreConsts HmacTable.Arm.vars) :=
   twoT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl (by decide) (by decide) (by decide)
-    Proof.P192.Arm.comb_words_length (by rw [constTbl_length]; decide)
-    (constMem_held₂ 0x100000 _ _ (by rw [Proof.P192.Arm.comb_words_length, constTbl_length]; decide))
+    (by rw [Proof.P192.Arm.comb_words_length]; decide) (by rw [constTbl_length]; decide)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

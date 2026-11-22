@@ -88,395 +88,40 @@ vg_ec_secp256k1_public_key:
 	ldr r4, [r1, #0]
 	rev r4, r4
 	str r4, [r12, #1148]
-	movw r4, #64559
-	movt r4, #65535
-	str r4, [r12, #64]
-	movw r4, #65534
-	movt r4, #65535
-	str r4, [r12, #68]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #72]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #76]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #80]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #84]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #88]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #92]
-	movw r4, #16705
-	movt r4, #53302
-	str r4, [r12, #96]
-	movw r4, #24204
-	movt r4, #49106
-	str r4, [r12, #100]
-	movw r4, #41019
-	movt r4, #44872
-	str r4, [r12, #104]
-	movw r4, #56550
-	movt r4, #47790
-	str r4, [r12, #108]
-	movw r4, #65534
-	movt r4, #65535
-	str r4, [r12, #112]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #116]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #120]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #124]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #160]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #164]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #168]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #172]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #176]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #180]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #184]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #188]
-	movw r4, #1
-	movt r4, #0
-	str r4, [r12, #192]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #196]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #200]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #204]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #208]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #212]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #216]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #220]
-	movw r4, #977
-	movt r4, #0
-	str r4, [r12, #224]
-	movw r4, #1
-	movt r4, #0
-	str r4, [r12, #228]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #232]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #236]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #240]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #244]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #248]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #252]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #256]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #260]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #264]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #268]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #272]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #276]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #280]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #284]
-	movw r4, #20517
-	movt r4, #0
-	str r4, [r12, #288]
-	movw r4, #21
-	movt r4, #0
-	str r4, [r12, #292]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #296]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #300]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #304]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #308]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #312]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #316]
-	movw r4, #8343
-	movt r4, #18558
-	str r4, [r12, #320]
-	movw r4, #11866
-	movt r4, #55094
-	str r4, [r12, #324]
-	movw r4, #26331
-	movt r4, #10684
-	str r4, [r12, #328]
-	movw r4, #10579
-	movt r4, #8990
-	str r4, [r12, #332]
-	movw r4, #4764
-	movt r4, #13309
-	str r4, [r12, #336]
-	movw r4, #18624
-	movt r4, #38815
-	str r4, [r12, #340]
-	movw r4, #40776
-	movt r4, #59656
-	str r4, [r12, #344]
-	movw r4, #58947
-	movt r4, #39297
-	str r4, [r12, #348]
-	movw r4, #44002
-	movt r4, #54235
-	str r4, [r12, #352]
-	movw r4, #42706
-	movt r4, #45406
-	str r4, [r12, #356]
-	movw r4, #50765
-	movt r4, #7965
-	str r4, [r12, #360]
-	movw r4, #23901
-	movt r4, #36348
-	str r4, [r12, #364]
-	movw r4, #49462
-	movt r4, #44057
-	str r4, [r12, #368]
-	movw r4, #46490
-	movt r4, #28854
-	str r4, [r12, #372]
-	movw r4, #33494
-	movt r4, #54437
-	str r4, [r12, #376]
-	movw r4, #34079
-	movt r4, #53055
-	str r4, [r12, #380]
-	movw r4, #53568
-	movt r4, #26583
-	str r4, [r12, #384]
-	movw r4, #61972
-	movt r4, #35180
-	str r4, [r12, #388]
-	movw r4, #63608
-	movt r4, #3708
-	str r4, [r12, #392]
-	movw r4, #38594
-	movt r4, #29716
-	str r4, [r12, #396]
-	movw r4, #1990
-	movt r4, #23501
-	str r4, [r12, #400]
-	movw r4, #62948
-	movt r4, #59031
-	str r4, [r12, #404]
-	movw r4, #39877
-	movt r4, #33222
-	str r4, [r12, #408]
-	movw r4, #7381
-	movt r4, #40295
-	str r4, [r12, #412]
-	movw r4, #48831
-	movt r4, #12233
-	str r4, [r12, #416]
-	movw r4, #41331
-	movt r4, #16429
-	str r4, [r12, #420]
-	movw r4, #24516
-	movt r4, #20663
-	str r4, [r12, #424]
-	movw r4, #8985
-	movt r4, #17745
-	str r4, [r12, #428]
-	movw r4, #1
-	movt r4, #0
-	str r4, [r12, #432]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #436]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #440]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #444]
-	movw r4, #64557
-	movt r4, #65535
-	str r4, [r12, #448]
-	movw r4, #65534
-	movt r4, #65535
-	str r4, [r12, #452]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #456]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #460]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #464]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #468]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #472]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #476]
-	movw r4, #16703
-	movt r4, #53302
-	str r4, [r12, #480]
-	movw r4, #24204
-	movt r4, #49106
-	str r4, [r12, #484]
-	movw r4, #41019
-	movt r4, #44872
-	str r4, [r12, #488]
-	movw r4, #56550
-	movt r4, #47790
-	str r4, [r12, #492]
-	movw r4, #65534
-	movt r4, #65535
-	str r4, [r12, #496]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #500]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #504]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #508]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #512]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #516]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #520]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #524]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #528]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #532]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #536]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #540]
-	movw r4, #977
-	movt r4, #0
-	str r4, [r12, #544]
-	movw r4, #1
-	movt r4, #0
-	str r4, [r12, #548]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #552]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #556]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #560]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #564]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #568]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #572]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #576]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #580]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #584]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #588]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #592]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #596]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #600]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #604]
+	movw r10, #:lower16:({VG_SECP256K1_FRAME_CONSTS}
+	movt r10, #:upper16:({VG_SECP256K1_FRAME_CONSTS}
+2:
+	add r10, pc
+3:
+	mov r9, r12
+	mov r11, #17
+20:
+	sub r11, r11, #1
+	ldr r4, [r10, #0]
+	ldr r5, [r10, #4]
+	str r4, [r9, #64]
+	str r5, [r9, #68]
+	ldr r4, [r10, #8]
+	ldr r5, [r10, #12]
+	str r4, [r9, #72]
+	str r5, [r9, #76]
+	ldr r4, [r10, #16]
+	ldr r5, [r10, #20]
+	str r4, [r9, #80]
+	str r5, [r9, #84]
+	ldr r4, [r10, #24]
+	ldr r5, [r10, #28]
+	str r4, [r9, #88]
+	str r5, [r9, #92]
+	add r10, r10, #32
+	add r9, r9, #32
+	cmp r11, #0
+	bne 20b
 	mov r4, #0
 	sub r4, r4, #1
 	str r4, [r12, #1472]
 	mov r11, #32
-20:
+21:
 	sub r11, r11, #1
 	add r4, r12, r11
 	ldrb r4, [r4, #1056]
@@ -506,9 +151,9 @@ vg_ec_secp256k1_public_key:
 	and r7, r7, #1
 	strb r7, [r5, #7]
 	cmp r11, #0
-	bne 20b
+	bne 21b
 	mov r11, #32
-21:
+22:
 	sub r11, r11, #1
 	add r4, r12, r11
 	ldrb r4, [r4, #448]
@@ -538,9 +183,9 @@ vg_ec_secp256k1_public_key:
 	and r7, r7, #1
 	strb r7, [r5, #263]
 	cmp r11, #0
-	bne 21b
+	bne 22b
 	mov r11, #32
-22:
+23:
 	sub r11, r11, #1
 	add r4, r12, r11
 	ldrb r4, [r4, #480]
@@ -570,7 +215,7 @@ vg_ec_secp256k1_public_key:
 	and r7, r7, #1
 	strb r7, [r5, #519]
 	cmp r11, #0
-	bne 22b
+	bne 23b
 	ldr r4, [r12, #320]
 	str r4, [r12, #3424]
 	ldr r4, [r12, #324]
@@ -724,14 +369,14 @@ vg_ec_secp256k1_public_key:
 	movt r4, #0
 	str r4, [r12, #604]
 	mov r11, #37
-23:
+24:
 	sub r11, r11, #1
 	mov r4, #7
 	mul r4, r4, r11
 	add r4, r12, r4
 	add r4, r4, #4096
 	cmp r11, #36
-	beq 24f
+	beq 25f
 	mov r9, #0
 	add r9, r9, r9
 	ldrb r5, [r4, #6]
@@ -754,8 +399,8 @@ vg_ec_secp256k1_public_key:
 	add r9, r9, r9
 	ldrb r5, [r4, #0]
 	add r9, r9, r5
-	b 25f
-24:
+	b 26f
+25:
 	mov r9, #0
 	add r9, r9, r9
 	ldrb r5, [r4, #3]
@@ -769,7 +414,7 @@ vg_ec_secp256k1_public_key:
 	add r9, r9, r9
 	ldrb r5, [r4, #0]
 	add r9, r9, r5
-25:
+26:
 	sub r9, r9, #64
 	lsr r4, r9, #31
 	mov r5, #0
@@ -833,7 +478,7 @@ vg_ec_secp256k1_public_key:
 	movt r4, #0
 	str r4, [r12, #3484]
 	mov r7, #1
-26:
+27:
 	eor r10, r9, r7
 	sub r10, r10, #1
 	lsr r10, r10, #31
@@ -938,7 +583,7 @@ vg_ec_secp256k1_public_key:
 	add r8, r8, #64
 	add r7, r7, #1
 	cmp r7, #65
-	bne 26b
+	bne 27b
 	movw r4, #977
 	movt r4, #0
 	str r4, [r12, #3488]
@@ -1072,18 +717,18 @@ vg_ec_secp256k1_public_key:
 	bl {vg_secp256k1_sub_mod_p}
 	mov lr, r10
 	cmp r11, #36
-	beq 27f
+	beq 28f
 	mov r4, #7
 	mul r4, r4, r11
 	add r4, r12, r4
 	add r4, r4, #4096
 	ldrb r4, [r4, #6]
 	sub r10, r4, #1
-	b 28f
-27:
+	b 29f
+28:
 	movw r10, #65535
 	movt r10, #65535
-28:
+29:
 	ldr r4, [r12, #3456]
 	ldr r5, [r12, #704]
 	eor r5, r5, r4
@@ -1233,7 +878,7 @@ vg_ec_secp256k1_public_key:
 	ldr r4, [r12, #3324]
 	str r4, [r12, #604]
 	cmp r11, #0
-	bne 23b
+	bne 24b
 	ldr r4, [r12, #224]
 	str r4, [r12, #992]
 	ldr r4, [r12, #228]
@@ -1251,7 +896,7 @@ vg_ec_secp256k1_public_key:
 	ldr r4, [r12, #252]
 	str r4, [r12, #1020]
 	mov r11, #256
-29:
+210:
 	sub r11, r11, #1
 	mov r10, lr
 	mov r0, r12
@@ -1321,7 +966,7 @@ vg_ec_secp256k1_public_key:
 	eor r4, r4, r5
 	str r4, [r12, #1020]
 	cmp r11, #0
-	bne 29b
+	bne 210b
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1152
@@ -1684,395 +1329,40 @@ vg_ec_secp256k1_public_key_umaal:
 	ldr r4, [r1, #0]
 	rev r4, r4
 	str r4, [r12, #1148]
-	movw r4, #64559
-	movt r4, #65535
-	str r4, [r12, #64]
-	movw r4, #65534
-	movt r4, #65535
-	str r4, [r12, #68]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #72]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #76]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #80]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #84]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #88]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #92]
-	movw r4, #16705
-	movt r4, #53302
-	str r4, [r12, #96]
-	movw r4, #24204
-	movt r4, #49106
-	str r4, [r12, #100]
-	movw r4, #41019
-	movt r4, #44872
-	str r4, [r12, #104]
-	movw r4, #56550
-	movt r4, #47790
-	str r4, [r12, #108]
-	movw r4, #65534
-	movt r4, #65535
-	str r4, [r12, #112]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #116]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #120]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #124]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #160]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #164]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #168]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #172]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #176]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #180]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #184]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #188]
-	movw r4, #1
-	movt r4, #0
-	str r4, [r12, #192]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #196]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #200]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #204]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #208]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #212]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #216]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #220]
-	movw r4, #977
-	movt r4, #0
-	str r4, [r12, #224]
-	movw r4, #1
-	movt r4, #0
-	str r4, [r12, #228]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #232]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #236]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #240]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #244]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #248]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #252]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #256]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #260]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #264]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #268]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #272]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #276]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #280]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #284]
-	movw r4, #20517
-	movt r4, #0
-	str r4, [r12, #288]
-	movw r4, #21
-	movt r4, #0
-	str r4, [r12, #292]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #296]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #300]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #304]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #308]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #312]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #316]
-	movw r4, #8343
-	movt r4, #18558
-	str r4, [r12, #320]
-	movw r4, #11866
-	movt r4, #55094
-	str r4, [r12, #324]
-	movw r4, #26331
-	movt r4, #10684
-	str r4, [r12, #328]
-	movw r4, #10579
-	movt r4, #8990
-	str r4, [r12, #332]
-	movw r4, #4764
-	movt r4, #13309
-	str r4, [r12, #336]
-	movw r4, #18624
-	movt r4, #38815
-	str r4, [r12, #340]
-	movw r4, #40776
-	movt r4, #59656
-	str r4, [r12, #344]
-	movw r4, #58947
-	movt r4, #39297
-	str r4, [r12, #348]
-	movw r4, #44002
-	movt r4, #54235
-	str r4, [r12, #352]
-	movw r4, #42706
-	movt r4, #45406
-	str r4, [r12, #356]
-	movw r4, #50765
-	movt r4, #7965
-	str r4, [r12, #360]
-	movw r4, #23901
-	movt r4, #36348
-	str r4, [r12, #364]
-	movw r4, #49462
-	movt r4, #44057
-	str r4, [r12, #368]
-	movw r4, #46490
-	movt r4, #28854
-	str r4, [r12, #372]
-	movw r4, #33494
-	movt r4, #54437
-	str r4, [r12, #376]
-	movw r4, #34079
-	movt r4, #53055
-	str r4, [r12, #380]
-	movw r4, #53568
-	movt r4, #26583
-	str r4, [r12, #384]
-	movw r4, #61972
-	movt r4, #35180
-	str r4, [r12, #388]
-	movw r4, #63608
-	movt r4, #3708
-	str r4, [r12, #392]
-	movw r4, #38594
-	movt r4, #29716
-	str r4, [r12, #396]
-	movw r4, #1990
-	movt r4, #23501
-	str r4, [r12, #400]
-	movw r4, #62948
-	movt r4, #59031
-	str r4, [r12, #404]
-	movw r4, #39877
-	movt r4, #33222
-	str r4, [r12, #408]
-	movw r4, #7381
-	movt r4, #40295
-	str r4, [r12, #412]
-	movw r4, #48831
-	movt r4, #12233
-	str r4, [r12, #416]
-	movw r4, #41331
-	movt r4, #16429
-	str r4, [r12, #420]
-	movw r4, #24516
-	movt r4, #20663
-	str r4, [r12, #424]
-	movw r4, #8985
-	movt r4, #17745
-	str r4, [r12, #428]
-	movw r4, #1
-	movt r4, #0
-	str r4, [r12, #432]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #436]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #440]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #444]
-	movw r4, #64557
-	movt r4, #65535
-	str r4, [r12, #448]
-	movw r4, #65534
-	movt r4, #65535
-	str r4, [r12, #452]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #456]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #460]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #464]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #468]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #472]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #476]
-	movw r4, #16703
-	movt r4, #53302
-	str r4, [r12, #480]
-	movw r4, #24204
-	movt r4, #49106
-	str r4, [r12, #484]
-	movw r4, #41019
-	movt r4, #44872
-	str r4, [r12, #488]
-	movw r4, #56550
-	movt r4, #47790
-	str r4, [r12, #492]
-	movw r4, #65534
-	movt r4, #65535
-	str r4, [r12, #496]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #500]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #504]
-	movw r4, #65535
-	movt r4, #65535
-	str r4, [r12, #508]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #512]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #516]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #520]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #524]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #528]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #532]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #536]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #540]
-	movw r4, #977
-	movt r4, #0
-	str r4, [r12, #544]
-	movw r4, #1
-	movt r4, #0
-	str r4, [r12, #548]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #552]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #556]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #560]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #564]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #568]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #572]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #576]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #580]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #584]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #588]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #592]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #596]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #600]
-	movw r4, #0
-	movt r4, #0
-	str r4, [r12, #604]
+	movw r10, #:lower16:({VG_SECP256K1_FRAME_CONSTS}
+	movt r10, #:upper16:({VG_SECP256K1_FRAME_CONSTS}
+2:
+	add r10, pc
+3:
+	mov r9, r12
+	mov r11, #17
+20:
+	sub r11, r11, #1
+	ldr r4, [r10, #0]
+	ldr r5, [r10, #4]
+	str r4, [r9, #64]
+	str r5, [r9, #68]
+	ldr r4, [r10, #8]
+	ldr r5, [r10, #12]
+	str r4, [r9, #72]
+	str r5, [r9, #76]
+	ldr r4, [r10, #16]
+	ldr r5, [r10, #20]
+	str r4, [r9, #80]
+	str r5, [r9, #84]
+	ldr r4, [r10, #24]
+	ldr r5, [r10, #28]
+	str r4, [r9, #88]
+	str r5, [r9, #92]
+	add r10, r10, #32
+	add r9, r9, #32
+	cmp r11, #0
+	bne 20b
 	mov r4, #0
 	sub r4, r4, #1
 	str r4, [r12, #1472]
 	mov r11, #32
-20:
+21:
 	sub r11, r11, #1
 	add r4, r12, r11
 	ldrb r4, [r4, #1056]
@@ -2102,9 +1392,9 @@ vg_ec_secp256k1_public_key_umaal:
 	and r7, r7, #1
 	strb r7, [r5, #7]
 	cmp r11, #0
-	bne 20b
+	bne 21b
 	mov r11, #32
-21:
+22:
 	sub r11, r11, #1
 	add r4, r12, r11
 	ldrb r4, [r4, #448]
@@ -2134,9 +1424,9 @@ vg_ec_secp256k1_public_key_umaal:
 	and r7, r7, #1
 	strb r7, [r5, #263]
 	cmp r11, #0
-	bne 21b
+	bne 22b
 	mov r11, #32
-22:
+23:
 	sub r11, r11, #1
 	add r4, r12, r11
 	ldrb r4, [r4, #480]
@@ -2166,7 +1456,7 @@ vg_ec_secp256k1_public_key_umaal:
 	and r7, r7, #1
 	strb r7, [r5, #519]
 	cmp r11, #0
-	bne 22b
+	bne 23b
 	ldr r4, [r12, #320]
 	str r4, [r12, #3424]
 	ldr r4, [r12, #324]
@@ -2320,14 +1610,14 @@ vg_ec_secp256k1_public_key_umaal:
 	movt r4, #0
 	str r4, [r12, #604]
 	mov r11, #37
-23:
+24:
 	sub r11, r11, #1
 	mov r4, #7
 	mul r4, r4, r11
 	add r4, r12, r4
 	add r4, r4, #4096
 	cmp r11, #36
-	beq 24f
+	beq 25f
 	mov r9, #0
 	add r9, r9, r9
 	ldrb r5, [r4, #6]
@@ -2350,8 +1640,8 @@ vg_ec_secp256k1_public_key_umaal:
 	add r9, r9, r9
 	ldrb r5, [r4, #0]
 	add r9, r9, r5
-	b 25f
-24:
+	b 26f
+25:
 	mov r9, #0
 	add r9, r9, r9
 	ldrb r5, [r4, #3]
@@ -2365,7 +1655,7 @@ vg_ec_secp256k1_public_key_umaal:
 	add r9, r9, r9
 	ldrb r5, [r4, #0]
 	add r9, r9, r5
-25:
+26:
 	sub r9, r9, #64
 	lsr r4, r9, #31
 	mov r5, #0
@@ -2429,7 +1719,7 @@ vg_ec_secp256k1_public_key_umaal:
 	movt r4, #0
 	str r4, [r12, #3484]
 	mov r7, #1
-26:
+27:
 	eor r10, r9, r7
 	sub r10, r10, #1
 	lsr r10, r10, #31
@@ -2534,7 +1824,7 @@ vg_ec_secp256k1_public_key_umaal:
 	add r8, r8, #64
 	add r7, r7, #1
 	cmp r7, #65
-	bne 26b
+	bne 27b
 	movw r4, #977
 	movt r4, #0
 	str r4, [r12, #3488]
@@ -2668,18 +1958,18 @@ vg_ec_secp256k1_public_key_umaal:
 	bl {vg_secp256k1_sub_mod_p_umaal}
 	mov lr, r10
 	cmp r11, #36
-	beq 27f
+	beq 28f
 	mov r4, #7
 	mul r4, r4, r11
 	add r4, r12, r4
 	add r4, r4, #4096
 	ldrb r4, [r4, #6]
 	sub r10, r4, #1
-	b 28f
-27:
+	b 29f
+28:
 	movw r10, #65535
 	movt r10, #65535
-28:
+29:
 	ldr r4, [r12, #3456]
 	ldr r5, [r12, #704]
 	eor r5, r5, r4
@@ -2829,7 +2119,7 @@ vg_ec_secp256k1_public_key_umaal:
 	ldr r4, [r12, #3324]
 	str r4, [r12, #604]
 	cmp r11, #0
-	bne 23b
+	bne 24b
 	ldr r4, [r12, #224]
 	str r4, [r12, #992]
 	ldr r4, [r12, #228]
@@ -2847,7 +2137,7 @@ vg_ec_secp256k1_public_key_umaal:
 	ldr r4, [r12, #252]
 	str r4, [r12, #1020]
 	mov r11, #256
-29:
+210:
 	sub r11, r11, #1
 	mov r10, lr
 	mov r0, r12
@@ -2917,7 +2207,7 @@ vg_ec_secp256k1_public_key_umaal:
 	eor r4, r4, r5
 	str r4, [r12, #1020]
 	cmp r11, #0
-	bne 29b
+	bne 210b
 	mov r10, lr
 	mov r0, r12
 	movw r1, #1152

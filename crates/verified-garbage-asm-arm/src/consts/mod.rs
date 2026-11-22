@@ -15,6 +15,10 @@ mod vg_brainpoolp256r1_comb;
 pub use vg_brainpoolp256r1_comb::VG_BRAINPOOLP256R1_COMB;
 
 #[rustfmt::skip]
+mod vg_brainpoolp256r1_frame_consts;
+pub use vg_brainpoolp256r1_frame_consts::VG_BRAINPOOLP256R1_FRAME_CONSTS;
+
+#[rustfmt::skip]
 mod vg_brainpoolp320r1_comb;
 pub use vg_brainpoolp320r1_comb::VG_BRAINPOOLP320R1_COMB;
 
@@ -55,8 +59,16 @@ mod vg_p224_comb;
 pub use vg_p224_comb::VG_P224_COMB;
 
 #[rustfmt::skip]
+mod vg_p224_frame_consts;
+pub use vg_p224_frame_consts::VG_P224_FRAME_CONSTS;
+
+#[rustfmt::skip]
 mod vg_p256_comb;
 pub use vg_p256_comb::VG_P256_COMB;
+
+#[rustfmt::skip]
+mod vg_p256_frame_consts;
+pub use vg_p256_frame_consts::VG_P256_FRAME_CONSTS;
 
 #[rustfmt::skip]
 mod vg_p384_comb;
@@ -73,3 +85,7 @@ pub use vg_rc2_pitable::VG_RC2_PITABLE;
 #[rustfmt::skip]
 mod vg_secp256k1_comb;
 pub use vg_secp256k1_comb::VG_SECP256K1_COMB;
+
+#[rustfmt::skip]
+mod vg_secp256k1_frame_consts;
+pub use vg_secp256k1_frame_consts::VG_SECP256K1_FRAME_CONSTS;

@@ -1358,6 +1358,24 @@ theorem decompress_key (c : Cfg) (root : Fe c.C → Fe c.C) (s : State) :
     (by change (Spec.Ecdsa.bytesAt _ _ _).head? = _; rw [hb]; rfl)
     (by change ofBytes ((Spec.Ecdsa.bytesAt _ _ _).drop 1) = _; rw [hb]; rfl)
 
+/-- The front's precondition, from the contract's for the state without the
+tables `K` (none, or the curve's table of constants, which `ht` gives). -/
+theorem inputPre_of_strip {c : Cfg} {root : Fe c.C → Fe c.C} (K : List (String × List (BitVec 64)))
+    {s : State} (hs : (decompressContract c.C root).pre (stripConsts K s))
+    (ht : c.tbl = true → ConstTblOk c (ptr s .r2) s) : InputPre c (1 + c.C.len) s := by
+  obtain ⟨hrd, hwr, _, hpw, _, _, hpkfit, hwfit⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hpw hpkfit hwfit
+  exact ⟨List.mem_append_left _ (stripConsts_rd_mem (K := K) (by rw [hrd]; simp [Nat.add_comm])), by rw [hwr]; simp,
+    by simpa only [Nat.add_comm] using hpw, by omega_using [hpkfit], hwfit, ht⟩
+
+/-- The table of constants, under the contract with the tables `K` that
+lists it. -/
+theorem tbl_of_tables {c : Cfg} {root : Fe c.C → Fe c.C} {K : List (String × List (BitVec 64))}
+    (hK : (c.constSym, c.constTbl) ∈ K) {s : State} (hs : ((decompressContract c.C root).withTablesArm K).pre s) :
+    c.tbl = true → ConstTblOk c (ptr s .r2) s := fun _ =>
+  tbl_of_consts hs.2 hK (show (⟨ptr s .r2, 8192⟩ : Region) ∈ (stripConsts K s).wr by
+    rw [hs.1.2.1]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))
+
 /-- `decompress_correct` for a state whose readable regions are those of the
 contract, then the tables `K` (none, or the curve's table of constants, which
 `ht` gives). -/
@@ -1367,11 +1385,9 @@ theorem decompress_correctG (c : Cfg) (hc : CfgOk c)
     (ht : c.tbl = true → ConstTblOk c (ptr s .r2) s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.Arm.decompress c) s t s' ∧
       abiPreserved s s' ∧ (decompressContract c.C root).post s s' := by
+  have hp : InputPre c (1 + c.C.len) s := inputPre_of_strip K hs ht
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
   simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hpo hpw how hfit hpkfit hwfit
-  have hp : InputPre c (1 + c.C.len) s :=
-    ⟨List.mem_append_left _ (stripConsts_rd_mem (K := K) (by rw [hrd]; simp [Nat.add_comm])), by rw [hwr]; simp,
-      by simpa only [Nat.add_comm] using hpw, by omega_using [hpkfit], hwfit, ht⟩
   have hrun : WP isa (Impl.EcKey.Compressed.Arm.decompress c) s fun s' =>
       (decompressContract c.C root).post s s' ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s.gpr rd.1) ∧ s'.sp = s.sp := by
@@ -1428,10 +1444,6 @@ theorem decompress_correctT (c : Cfg) (hc : CfgOk c)
     (hK : (c.constSym, c.constTbl) ∈ K) (s : State) (hs : ((decompressContract c.C root).withTablesArm K).pre s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.Arm.decompress c) s t s' ∧
       abiPreserved s s' ∧ ((decompressContract c.C root).withTablesArm K).post s s' := by
-  obtain ⟨hp, hk⟩ := hs
-  obtain hwr := hp.2.1
-  exact decompress_correctG c hc root hroot K s hp fun _ => tbl_of_consts hk hK
-    (show (⟨ptr s .r2, 8192⟩ : Region) ∈ (stripConsts K s).wr by
-      rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _))
+  exact decompress_correctG c hc root hroot K s hs.1 (tbl_of_tables hK hs)
 
 end VG.Proof.EcKey.Compressed.Arm

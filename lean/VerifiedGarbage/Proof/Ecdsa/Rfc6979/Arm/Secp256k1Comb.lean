@@ -7,6 +7,7 @@ meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Secp256k1.Arm.CombSat
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmComb
 meta import VerifiedGarbage.Proof.Secp256k1.Arm.CombSat
@@ -78,8 +79,11 @@ section
 namespace VG.Proof.Ecdsa.Arm.Secp256k1
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Weierstrass.Arm
 
+/-- The tables signing reads: the comb's, and the setup's constants. -/
+abbrev combSignK (u : Bool) : List (String × List (BitVec 64)) := secp256k1CombConsts ++ (secp256k1With u).constsK
+
 def combSignPre (u : Bool) (s : State) : Prop :=
-  Pre (secp256k1With u) s (constRegs secp256k1CombConsts s) ∧ ConstsOk secp256k1CombConsts 0 s
+  Pre (secp256k1With u) s (constRegs (combSignK u) s) ∧ ConstsOk (combSignK u) 0 s
 
 end VG.Proof.Ecdsa.Arm.Secp256k1
 
@@ -97,21 +101,24 @@ section
 namespace VG.Proof.Ecdsa.Arm.Secp256k1
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Weierstrass.Arm
 
-def combSignPub (s t : State) : Prop := signArm.pub s t ∧ s.syms secp256k1Comb.tsym=t.syms secp256k1Comb.tsym
+def combSignPub (u : Bool) (s t : State) : Prop :=
+  signArm.pub s t ∧ s.syms secp256k1Comb.tsym=t.syms secp256k1Comb.tsym ∧ s.syms (secp256k1With u).constSym=t.syms (secp256k1With u).constSym
 
-theorem combSign_ct : ConstantTime isa (combSignPre false) combSignPub signSecp256k1Comb := by
-  refine VG.Taint.constantTime (A := taintSym [secp256k1Comb.tsym]) τ₁ ?_ (by native_taint_decide)
-  intro s t hs ht pub
-  exact ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
-    obtain rfl := List.mem_singleton.mp hn
-    exact pub.2⟩
+theorem combSign_agree {u : Bool} {s t : State} (hs : combSignPre u s) (ht : combSignPre u t)
+    (pub : combSignPub u s t) :
+    VG.Arm.Taint.Agree τ₁ s t ∧ ∀ n ∈ [secp256k1Comb.tsym,(secp256k1With u).constSym], s.syms n = t.syms n :=
+  ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hn
+    rcases hn with rfl|rfl
+    exacts [pub.2.1,pub.2.2]⟩
 
-theorem combSignU_ct : ConstantTime isa (combSignPre true) combSignPub signSecp256k1CombU := by
-  refine VG.Taint.constantTime (A := taintSymU [secp256k1Comb.tsym]) τ₁ ?_ (by taint_decide)
-  intro s t hs ht pub
-  exact ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
-    obtain rfl := List.mem_singleton.mp hn
-    exact pub.2⟩
+theorem combSign_ct : ConstantTime isa (combSignPre false) (combSignPub false) signSecp256k1Comb :=
+  VG.Taint.constantTime (A := taintSym [secp256k1Comb.tsym,(secp256k1With false).constSym]) τ₁
+    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by native_taint_decide)
+
+theorem combSignU_ct : ConstantTime isa (combSignPre true) (combSignPub true) signSecp256k1CombU :=
+  VG.Taint.constantTime (A := taintSymU [secp256k1Comb.tsym,(secp256k1With true).constSym]) τ₁
+    (fun _ _ hs ht pub => combSign_agree hs ht pub) (by taint_decide)
 
 end VG.Proof.Ecdsa.Arm.Secp256k1
 
@@ -132,7 +139,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm.TComb
 
 theorem combSign_ok (hC : Law Spec.Secp256k1.curve) {u : Bool} {s₀ : State} (hp : combSignPre u s₀) :
     WP isa (signSecp256k1CombWith u) s₀ fun t => SignKeep (secp256k1With u) s₀ t ∧ SignPost (secp256k1With u) s₀ t := by
-  have member : (secp256k1Comb.tsym,secp256k1CombWords)∈secp256k1CombConsts := List.mem_singleton_self _
+  have member : (secp256k1Comb.tsym,secp256k1CombWords)∈combSignK u := List.mem_cons_self
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show scR s₀∈s₀.wr by rw [hp.1.wr]; simp)
@@ -169,34 +176,6 @@ theorem secp256k1_nBits : Spec.Ecdsa.nBits Spec.Secp256k1.curve = 256 := by
   have h₂ : Spec.Secp256k1.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega_using [h₁, h₂]
 
-/-- secp256k1, with the group law `hL`. -/
-def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
-  E := Impl.Ecdsa.Arm.secp256k1
-  inst := Spec.Ecdsa.Secp256k1.inst
-  curve := rfl
-  big := false
-  sizes := ⟨.inr (.inl rfl), .inl rfl, secp256k1_nBits, by decide +kernel⟩
-  n_lt := by decide +kernel
-  sh := 0
-  sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.Secp256k1.curve = 0; rw [secp256k1_nBits]
-  coreN := "vg_ecdsa_secp256k1_sign_k"
-  coreC := Impl.Ecdsa.Arm.signSecp256k1
-  coreConsts := []
-  coreX := by
-    intro s hs
-    have pre : Proof.Ecdsa.Arm.Secp256k1.signArm.pre s := by
-      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.secp256k1,Impl.Ecdsa.Arm.secp256k1With,Spec.Secp256k1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
-        false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.Secp256k1.signArm] using hs
-    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.Secp256k1.sign_arm hL s pre
-    refine ⟨tr,t,exec,abi,?_⟩
-    change Proof.Ecdsa.Arm.Secp256k1.signArm.post s t
-    exact post
-  coreCT := by
-    simpa only [coreK,coreSigOf,Spec.Secp256k1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.secp256k1,Impl.Ecdsa.Arm.secp256k1With,Proof.Ecdsa.Arm.Secp256k1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
-      Proof.Ecdsa.Arm.Secp256k1.signArm] using Proof.Ecdsa.Arm.Secp256k1.sign_ct
-  coreStack := by lit_decide
-  blk := by rfcT_decide
-
 end VG.Proof.Ecdsa.Rfc6979.Arm
 
 end
@@ -211,87 +190,66 @@ open VG VG.Arm VG.Impl.Weierstrass.Arm
 open VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.Secp256k1
 
 theorem comb_core_pre {u : Bool} {s : State}
-    (h : (coreK Impl.Ecdsa.Arm.secp256k1 secp256k1CombConsts).pre s) : combSignPre u s := by
-  obtain ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,tables⟩ := h
-  have hp : Pre (Impl.Ecdsa.Arm.secp256k1With u) s (constRegs secp256k1CombConsts s) :=
-    ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,noTbl rfl⟩
-  refine ⟨hp,?_,?_,?_,?_⟩
-  · rw [rd]
-    rfl
-  · exact fun c hc i hi => (tables c hc).1 i hi
-  · intro r hr
-    obtain ⟨c,hc,rfl⟩ := List.mem_map.mp hr
-    refine ⟨?_,?_,?_⟩
-    · change (State.addr (s.syms c.1)).toNat+8*c.2.length≤2^32
-      rw [VG.Proof.X25519.Arm.addr_toNat]
-      exact (tables c hc).2.1
-    · intro w hw
-      rw [wr] at hw
-      exact (tables c hc).2.2.1 w hw
-    · intro w hw
-      change w∈[] at hw
-      cases hw
-  · intro r hr
-    obtain ⟨c,hc,rfl⟩ := List.mem_map.mp hr
-    exact (tables c hc).2.2.2
+    (h : (coreK Impl.Ecdsa.Arm.secp256k1 (combSignK u)).pre s) : combSignPre u s := by
+  have hk := constsOk_of_core h
+  obtain ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,-⟩ := h
+  exact ⟨⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,fun _ => tbl_of_consts hk
+    (List.mem_append_right _ (List.mem_singleton_self _)) (by rw [wr]; simp)⟩,hk⟩
 
-theorem comb_core_ct : ConstantTime isa
-    (coreK Impl.Ecdsa.Arm.secp256k1 secp256k1CombConsts).pre
-    (coreK Impl.Ecdsa.Arm.secp256k1 secp256k1CombConsts).pub Impl.Ecdsa.Arm.signSecp256k1Comb := by
+theorem comb_core_ctWith (u : Bool)
+    (hct : ConstantTime isa (combSignPre u) (combSignPub u) (Impl.Ecdsa.Arm.signSecp256k1CombWith u)) : ConstantTime isa
+    (coreK Impl.Ecdsa.Arm.secp256k1 (combSignK u)).pre
+    (coreK Impl.Ecdsa.Arm.secp256k1 (combSignK u)).pub (Impl.Ecdsa.Arm.signSecp256k1CombWith u) := by
   intro s t ts tt s' t' hs ht pub e1 e2
   obtain ⟨sp,h0,h1,h2,h3,arg,sy⟩ := pub
-  exact combSign_ct s t ts tt s' t' (comb_core_pre hs) (comb_core_pre ht)
-    ⟨⟨sp,h0,h1,h2,h3,arg⟩,sy _ (List.mem_singleton_self _)⟩ e1 e2
+  exact hct s t ts tt s' t' (comb_core_pre hs) (comb_core_pre ht)
+    ⟨⟨sp,h0,h1,h2,h3,arg⟩,sy (secp256k1Comb.tsym, secp256k1CombWords) List.mem_cons_self,
+      sy ((Impl.Ecdsa.Arm.secp256k1With u).constSym, (Impl.Ecdsa.Arm.secp256k1With u).constTbl)
+        (List.mem_append_right _ (List.mem_singleton_self _))⟩ e1 e2
 
-theorem comb_core_ctU : ConstantTime isa
-    (coreK Impl.Ecdsa.Arm.secp256k1 secp256k1CombConsts).pre
-    (coreK Impl.Ecdsa.Arm.secp256k1 secp256k1CombConsts).pub Impl.Ecdsa.Arm.signSecp256k1CombU := by
-  intro s t ts tt s' t' hs ht pub e1 e2
-  obtain ⟨sp,h0,h1,h2,h3,arg,sy⟩ := pub
-  exact combSignU_ct s t ts tt s' t' (comb_core_pre hs) (comb_core_pre ht)
-    ⟨⟨sp,h0,h1,h2,h3,arg⟩,sy _ (List.mem_singleton_self _)⟩ e1 e2
+/-- secp256k1 with the generator comb, with the group law `hL`, calling
+`vg_ecdsa_secp256k1_sign_k`, or with `u` its `_umaal` variant. -/
+def secp256k1CombCurveWith (hL : Weierstrass.Law Spec.Secp256k1.curve) (u : Bool) : RfcCurve where
+  E := Impl.Ecdsa.Arm.secp256k1
+  inst := Spec.Ecdsa.Secp256k1.inst
+  curve := rfl
+  big := false
+  sizes := ⟨.inr (.inl rfl), .inl rfl, secp256k1_nBits, by decide +kernel⟩
+  n_lt := by decide +kernel
+  sh := 0
+  sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.Secp256k1.curve = 0; rw [secp256k1_nBits]
+  coreN := if u then "vg_ecdsa_secp256k1_sign_k" ++ "_umaal" else "vg_ecdsa_secp256k1_sign_k"
+  coreConsts := combSignK u
+  coreC := Impl.Ecdsa.Arm.signSecp256k1CombWith u
+  coreX := by
+    intro s hs
+    obtain ⟨tr,t,exec,keep,post⟩ := combSign_ok hL (u := u) (comb_core_pre hs)
+    refine ⟨tr,t,exec,abi_of_saved keep.saved keep.sp,?_⟩
+    simp only [coreK,coreSigOf]
+    rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
+    exact post
+  coreCT := comb_core_ctWith u (by cases u; exacts [combSign_ct, combSignU_ct])
+  coreStack := by cases u <;> lit_decide
+  blk := by rfcT_decide
 
-def secp256k1CombCurve (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve :=
-  {secp256k1 hL with
-    coreConsts := secp256k1CombConsts
-    coreC := Impl.Ecdsa.Arm.signSecp256k1Comb
-    coreX := by
-      intro s hs
-      obtain ⟨tr,t,exec,keep,post⟩ := combSign_ok hL (comb_core_pre hs)
-      refine ⟨tr,t,exec,abi_of_saved keep.saved keep.sp,?_⟩
-      simp only [coreK,coreSigOf]
-      rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
-      exact post
-    coreCT := comb_core_ct
-    coreStack := by lit_decide }
+/-- secp256k1 with the generator comb, with the group law `hL`. -/
+def secp256k1CombCurve (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve := secp256k1CombCurveWith hL false
 
 /-- `secp256k1CombCurve`, calling `vg_ecdsa_secp256k1_sign_umaal`. -/
-def secp256k1CombCurveU (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve :=
-  {secp256k1CombCurve hL with
-    coreN := "vg_ecdsa_secp256k1_sign_k" ++ "_umaal"
-    coreC := Impl.Ecdsa.Arm.signSecp256k1CombU
-    coreX := by
-      intro s hs
-      obtain ⟨tr,t,exec,keep,post⟩ := combSign_ok hL (u := true) (comb_core_pre hs)
-      refine ⟨tr,t,exec,abi_of_saved keep.saved keep.sp,?_⟩
-      simp only [coreK,coreSigOf]
-      rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
-      exact post
-    coreCT := comb_core_ctU
-    coreStack := by lit_decide }
+def secp256k1CombCurveU (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve := secp256k1CombCurveWith hL true
 
 /-! ## With the tables of every hash function with HMAC -/
 
 theorem secp256k1T_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) :
     Verified Arm.target (signCodeT (secp256k1CombCurve hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries HmacTable.Arm.vars)
       (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 (secp256k1CombCurve hL).coreConsts HmacTable.Arm.vars) :=
-  oneT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl Proof.Secp256k1.Arm.combSatMem (by decide)
-    (by rw [Proof.Secp256k1.Arm.comb_words_length]; decide) Proof.Secp256k1.Arm.combSat_held
+  twoT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl (by decide) (by decide) (by decide)
+    (by rw [Proof.Secp256k1.Arm.comb_words_length]; decide) (by rw [constTbl_length]; decide)
 
 theorem secp256k1UT_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) :
     Verified Arm.target (signCodeT (secp256k1CombCurveU hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries HmacTable.Arm.vars)
       (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 (secp256k1CombCurveU hL).coreConsts HmacTable.Arm.vars) :=
-  oneT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl Proof.Secp256k1.Arm.combSatMem (by decide)
-    (by rw [Proof.Secp256k1.Arm.comb_words_length]; decide) Proof.Secp256k1.Arm.combSat_held
+  twoT_verified ⟨rfl, by decide, by decide⟩ rfl (by decide) rfl (by decide) (by decide) (by decide)
+    (by rw [Proof.Secp256k1.Arm.comb_words_length]; decide) (by rw [constTbl_length]; decide)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

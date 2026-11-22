@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Table
 public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Table
 
@@ -423,17 +425,18 @@ theorem sat_one {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} {w : HVa
 /-! ## Two tables of constants
 
 A curve whose code reads two tables (the generator's comb, and the setup's
-constants, `Cfg.constTbl`): the first at `0x100000`, of `0x15000` bytes, the
-second after it at `0x115000`, a symbol of its own (`symT2`). -/
+constants, `Cfg.constTbl`): the first at `0x100000`, of at most `0xFF000`
+bytes (every curve's comb), the second at `0x1FF000`, a symbol of its own
+(`symT2`), both in one memory (`twoMem`). -/
 
-/-- `symT`, but `n₂` at `0x115000`. -/
+/-- `symT`, but `n₂` at `0x1FF000`. -/
 def symT2 (vs : List HVar) (n₂ : String) (n : String) : BitVec 32 :=
-  if n = n₂ then 0x115000 else symT vs n
+  if n = n₂ then 0x1FF000 else symT vs n
 
 theorem symT2_of_ne {vs : List HVar} {n₂ n : String} (h : n ≠ n₂) : symT2 vs n₂ n = symT vs n := by
   simp only [symT2, h, ite_false]
 
-/-- `satT` with the second table's symbol at `0x115000`. -/
+/-- `satT` with the second table's symbol at `0x1FF000`. -/
 def satT2 (vs : List HVar) (w : HVar) (m₀ : Mem) (Q : Nat) (Tr : List Region) (n₂ : String) : State :=
   { satT vs w m₀ Q Tr with syms := symT2 vs n₂ }
 
@@ -456,35 +459,35 @@ theorem symT2_distinct {vs : List HVar} (hl : (names vs).length < 2 ^ 24) {n₂ 
 theorem constRegions_symT2 {vs : List HVar} {n₁ n₂ : String} (W₁ W₂ : List (BitVec 64)) (hna₁ : n₁ ∉ names vs)
     (hne : n₁ ≠ n₂) :
     Abi.constRegions (fun name => (symT2 vs n₂ name).setWidth 64) [(n₁, W₁), (n₂, W₂)] =
-      [⟨0x100000, 8 * W₁.length⟩, ⟨0x115000, 8 * W₂.length⟩] := by
+      [⟨0x100000, 8 * W₁.length⟩, ⟨0x1FF000, 8 * W₂.length⟩] := by
   simp only [Abi.constRegions, List.map_cons, List.map_nil, symT2, symT, hne, hna₁, ite_false, ite_true]; rfl
 
 theorem sat_two {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar} {w : HVar} (hv : w ∈ vs)
     (hl : (names vs).length < 2 ^ 24) (hD : w.F.H.D ≤ 64) {n₁ n₂ : String} {W₁ W₂ : List (BitVec 64)}
     (m₀ : Mem) (hna₁ : n₁ ∉ names vs) (hna₂ : n₂ ∉ names vs) (hne : n₁ ≠ n₂)
-    (hW₁ : W₁.length = 10752) (hW₂ : W₂.length ≤ 512)
+    (hW₁ : 8 * W₁.length ≤ 0xFF000) (hW₂ : W₂.length ≤ 512)
     (hheld₁ : ∀ i < W₁.length, m₀.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = W₁.getD i 0)
-    (hheld₂ : ∀ i < W₂.length, m₀.readW (0x115000 + BitVec.ofNat 64 (8 * i)) 64 = W₂.getD i 0)
+    (hheld₂ : ∀ i < W₂.length, m₀.readW (0x1FF000 + BitVec.ofNat 64 (8 * i)) 64 = W₂.getD i 0)
     (hQ : T.ecdsa.curve.len ≤ 66) (hsw : T.scratchWords = 1024) :
     ∃ s, (specK T [(n₁, W₁), (n₂, W₂)] vs).pre s := by
-  refine ⟨satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x115000, 8 * W₂.length⟩] n₂, ?_⟩
-  have a0 : stackArg (satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x115000, 8 * W₂.length⟩] n₂)
+  refine ⟨satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x1FF000, 8 * W₂.length⟩] n₂, ?_⟩
+  have a0 : stackArg (satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x1FF000, 8 * W₂.length⟩] n₂)
       0 = 0x10000 :=
-    satT_arg0 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x115000, 8 * W₂.length⟩]
-  have a1 : stackArg (satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x115000, 8 * W₂.length⟩] n₂)
+    satT_arg0 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x1FF000, 8 * W₂.length⟩]
+  have a1 : stackArg (satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x1FF000, 8 * W₂.length⟩] n₂)
       1 = 0x300000 :=
-    satT_arg1 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x115000, 8 * W₂.length⟩]
+    satT_arg1 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x1FF000, 8 * W₂.length⟩]
   have hG : Spec.HmacTable.hashAt 32
-      (satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x115000, 8 * W₂.length⟩] n₂).mem
+      (satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x1FF000, 8 * W₂.length⟩] n₂).mem
       (State.addr (0x300000 : BitVec 32)) = some w.G :=
     hashAt_tableOf (by decide) (held_tableOf (by decide) (satT2_held hv _ _ _ hna₂)).2.1
   have hDn : (BitVec.ofNat 32 w.F.H.D).toNat = w.F.H.D := by rw [BitVec.toNat_ofNat]; omega_using [hD]
-  have hsp : (satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x115000, 8 * W₂.length⟩] n₂).sp =
+  have hsp : (satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x1FF000, 8 * W₂.length⟩] n₂).sp =
     0x9000 := rfl
-  have hsy : (satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x115000, 8 * W₂.length⟩] n₂).syms =
+  have hsy : (satT2 vs w m₀ T.ecdsa.curve.len [⟨0x100000, 8 * W₁.length⟩, ⟨0x1FF000, 8 * W₂.length⟩] n₂).syms =
     symT2 vs n₂ := rfl
   have hs₁ : symT2 vs n₂ n₁ = 0x100000 := by simp only [symT2, symT, hne, hna₁, ite_false]
-  have hs₂ : symT2 vs n₂ n₂ = 0x115000 := by simp only [symT2, ite_true]
+  have hs₂ : symT2 vs n₂ n₂ = 0x1FF000 := by simp only [symT2, ite_true]
   sig_pre [Spec.Ecdsa.Rfc6979.TableInstance.signContract, Spec.Ecdsa.Rfc6979.TableInstance.signSig,
     Spec.HmacTable.param, Spec.HmacTable.wordCount, Spec.HmacTable.fns, Abi.withTables, Sig.wordIndex,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Abi.withConsts, stackBelow, stackT, String.reduceEq,
@@ -538,21 +541,58 @@ theorem oneT_verified {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC 
   signT_verified hC hsw vars_ok (by
     rw [hcs]; exact sat_one sha256V_mem names_len (by decide) m₀ hna hW hheld hQ hsw)
 
+/-- The memory of `sat_two`'s witness: the words `W₁` at `0x100000`, then
+zeros, and `W₂` at `0x1FF000`. -/
+def twoMem (W₁ W₂ : List (BitVec 64)) : Mem :=
+  constMem 0x100000 (W₁ ++ List.replicate (0x1FE00 - W₁.length) 0 ++ W₂)
+
+theorem twoMem_held {W₁ W₂ : List (BitVec 64)} (hW₁ : 8 * W₁.length ≤ 0xFF000) (hW₂ : W₂.length ≤ 512) :
+    (∀ i < W₁.length, (twoMem W₁ W₂).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = W₁.getD i 0) ∧
+      (∀ i < W₂.length, (twoMem W₁ W₂).readW (0x1FF000 + BitVec.ofNat 64 (8 * i)) 64 = W₂.getD i 0) := by
+  obtain hl : (W₁ ++ List.replicate (0x1FE00 - W₁.length) 0).length = 0x1FE00 := by
+    rw [List.length_append, List.length_replicate]; omega_using [hW₁]
+  obtain ⟨h₁, h₂⟩ := VG.Proof.Ecdsa.Arm.constMem_held₂ 0x100000 (W₁ ++ List.replicate (0x1FE00 - W₁.length) 0) W₂
+    (by rw [hl]; omega_using [hW₂])
+  refine ⟨fun i hi => ?_, fun i hi => ?_⟩
+  · rw [twoMem, h₁ i (by rw [hl]; omega_using [hW₁, hi])]
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_append_left hi]
+  · rw [twoMem, ← h₂ i hi, hl]
+    rfl
+
 /-- `vg_ecdsa_<curve>_sign` with the tables of every hash function with HMAC
-on ARMv7, for a curve whose code reads two tables of constants, the second
-of them after the first in `m₀` (`sat_two`). -/
+on ARMv7, for a curve whose code reads two tables of constants, the first of
+at most `0xFF000` bytes (`sat_two`, `twoMem`). -/
 theorem twoT_verified {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R T)
     (hsw : T.scratchWords = 1024) (hQ : T.ecdsa.curve.len ≤ 66) {n₁ n₂ : String} {W₁ W₂ : List (BitVec 64)}
     (hcs : R.coreConsts = [(n₁, W₁), (n₂, W₂)]) (hna₁ : n₁ ∉ names vars) (hna₂ : n₂ ∉ names vars)
-    (hne : n₁ ≠ n₂) (hW₁ : W₁.length = 10752) (hW₂ : W₂.length ≤ 512)
-    (hheld : (∀ i < W₁.length, (constMem 0x100000 (W₁ ++ W₂)).readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 =
-        W₁.getD i 0) ∧
-      (∀ i < W₂.length, (constMem 0x100000 (W₁ ++ W₂)).readW
-        (0x100000 + BitVec.ofNat 64 (8 * W₁.length) + BitVec.ofNat 64 (8 * i)) 64 = W₂.getD i 0)) :
+    (hne : n₁ ≠ n₂) (hW₁ : 8 * W₁.length ≤ 0xFF000) (hW₂ : W₂.length ≤ 512) :
     Verified Arm.target (signCodeT R T.tries vars) (specK T R.coreConsts vars) := by
-  obtain ⟨h₁, h₂⟩ := hheld
-  rw [hW₁, show (0x100000 : Addr) + BitVec.ofNat 64 (8 * 10752) = 0x115000 by decide] at h₂
+  obtain ⟨h₁, h₂⟩ := twoMem_held hW₁ hW₂
   exact signT_verified hC hsw vars_ok (by
     rw [hcs]; exact sat_two sha256V_mem names_len (by decide) _ hna₁ hna₂ hne hW₁ hW₂ h₁ h₂ hQ hsw)
+
+/-! ## The core's tables of constants -/
+
+/-- What the contract of `vg_ecdsa_<curve>_sign_k` with the tables `cs`
+says of them, as `abi.withConsts cs` (`ConstsOk`) states it. -/
+theorem constsOk_of_core {E : Impl.Ecdsa.Arm.Cfg} {cs : List (String × List (BitVec 64))} {s : State}
+    (h : (coreK E cs).pre s) : ConstsOk cs 0 s := by
+  obtain ⟨rd, wr, -, -, -, -, -, -, -, -, -, -, -, -, tables⟩ := h
+  refine ⟨?_, fun c hc i hi => (tables c hc).1 i hi, fun r hr => ?_, fun r hr => ?_⟩
+  · rw [rd]
+    simp only [List.length_append, List.length_cons, List.length_nil, Abi.constRegions, List.length_map,
+      Nat.add_sub_cancel, List.drop_left']
+    rfl
+  · obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr
+    refine ⟨?_, fun w hw => ?_, fun w hw => ?_⟩
+    · change (State.addr (s.syms c.1)).toNat + 8 * c.2.length ≤ 2 ^ 32
+      rw [VG.Proof.X25519.Arm.addr_toNat]
+      exact (tables c hc).2.1
+    · rw [wr] at hw
+      exact (tables c hc).2.2.1 w hw
+    · change w ∈ [] at hw
+      cases hw
+  · obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr
+    exact (tables c hc).2.2.2
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
