@@ -113,8 +113,8 @@ theorem normAt_okB {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D SL
     WP isa (normAt P f B) s fun s' => PPostB D s s' [] ∧ (∀ r ∈ calleeSaved, r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.gpr .r15 = bit (a ∧ normRq [polyAt s.mem (pa s f)] < B) := by
   refine WP.seq (WP.mono (normCall_ok hP hP.sl.normLt L hB hc hr) fun s1 ⟨hP1, hcs1, hq1⟩ => ?_)
-  refine WP.mono (and15_ok s1) fun s2 ⟨h15', hm2, k2⟩ => ?_
-  obtain ⟨hP2, hcs2⟩ := postB15 (D := D) k2 hm2 (([] : List (Ptr × Nat)).map (toR s1))
+  refine WP.mono_syms (and15_ok s1) fun s2 ⟨h15', hm2, k2⟩ hy2 => ?_
+  obtain ⟨hP2, hcs2⟩ := postB15 (D := D) k2 hm2 (([] : List (Ptr × Nat)).map (toR s1)) hy2
   refine ⟨PPostB.trans hP1 hP2 (fun _ h => absurd h List.not_mem_nil) (fun _ h => absurd h List.not_mem_nil)
     (fun _ h => absurd h List.not_mem_nil), fun r hr hne => (hcs2 r hr hne).trans (hcs1 r hr), ?_⟩
   rw [h15', bit_and (hcs1 _ (by decide) |>.trans h15) hq1]
@@ -527,10 +527,10 @@ theorem hR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} {σ : Sta
   -- `ONES`
   obtain ho7 : s7.mem.readW (pa s7 (sc oONES)) 32 = BitVec.ofNat 32 (onesSum (Hv p σ (p.ℓ * t)) i) := ones32 J7.ones
   have L7 := J7.b.l.st.lay
-  refine WP.mono (onesAdd_ok s7 (L7.iR i1) (L7.iW i2)) fun s8 ⟨hm8, k8⟩ => ?_
+  refine WP.mono_syms (onesAdd_ok s7 (L7.iR i1) (L7.iW i2)) fun s8 ⟨hm8, k8⟩ hy8 => ?_
   obtain hf : Frame [⟨pa s7 (sc oONES), 8⟩] s7.mem s8.mem := by
     rw [hm8]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  obtain ⟨hP8, hcs8⟩ := postB_of_keep (D := D) k8 (by decide) hf
+  obtain ⟨hP8, hcs8⟩ := postB_of_keep (D := D) k8 (by decide) hf hy8 (L7.cW i2)
   have hP8' : PPostB D s7 s8 [(sc oONES, 8)] := hP8
   simp only [hfam, Bool.and_eq_true] at g8
   obtain hS := onesSum_le (Hv p σ (p.ℓ * t)) i
@@ -680,9 +680,9 @@ theorem kInit_ok {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t : 
   refine ksChk_spec hc fun _ _ _ c4 c5 c6 c7 _ _ _ _ _ _ c13 _ _ c16 _ _ _ _ _ _ _ _ _ c22 _ => ?_
   have L1 := h.b.l.st.lay
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.r15] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r15 = 1) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
-    fun s2 ⟨⟨hm2, h152⟩, k2⟩ => ?_
-  obtain hP2 : PPostB D s s2 [] := (postB15 k2 hm2 _).1
+  refine WP.mono_syms (WP.keep [.r15] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r15 = 1) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
+    fun s2 ⟨⟨hm2, h152⟩, k2⟩ hy2 => ?_
+  obtain hP2 : PPostB D s s2 [] := (postB15 k2 hm2 _ hy2).1
   obtain B2 := h.b.step hP2 c13
   have L2 := B2.l.st.lay
   refine WP.mono (setQ_okB L2 (by decide) (by decide) c4) fun s3 ⟨hP3, hcs3, hm3⟩ => ?_
@@ -725,12 +725,12 @@ theorem onesOk_ok {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t :
   obtain ⟨J6, h156⟩ := h
   have L6 := J6.b.l.st.lay
   obtain hS := onesSum_le (Hv p σ (p.ℓ * t)) p.k
-  refine WP.mono (onesOk_run p hω s (L6.iR c8)) fun s7 ⟨⟨h157, hm7⟩, k7⟩ => ?_
+  refine WP.mono_syms (onesOk_run p hω s (L6.iR c8)) fun s7 ⟨⟨h157, hm7⟩, k7⟩ hy7 => ?_
   rw [ones32 J6.ones, sign_bit (by omega_arith) (by omega_arith), h156, bit_and', bit_congr passV_iff] at h157
   obtain hP7 : PPostB D s s7 [] := ⟨k7.2.1, k7.2.2, fun r hr => k7.gpr (by
       simp only [bases, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide), k7.gpr (by decide),
-      by rw [hm7]; exact Frame.refl _ _⟩
+      by rw [hm7]; exact Frame.refl _ _, hy7, by rw [hm7]; exact Frame.refl _ _⟩
   exact ⟨J6.b.step hP7 c13, fun _ => Fam.keep L6 hP7 c16 J6.z, fun _ => HFam.keep L6 hP7 c17 J6.h, h157⟩
 
 /-- `κ ← κ + ℓ`. -/
@@ -758,10 +758,10 @@ theorem kBranch_ok {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t 
     obtain hfail : ¬ PassV p σ (p.ℓ * t) := fun hp => (bit_ne.mpr hp) he
     obtain B8 := B7.step hP8 c13
     have L8 := B8.l.st.lay
-    refine WP.mono (addQ_ok (sc oKAP) p.ℓ (by decide) hl s8 (L8.iW c10) (L8.iR c23)) fun s9 ⟨hm9, k9⟩ => ?_
+    refine WP.mono_syms (addQ_ok (sc oKAP) p.ℓ (by decide) hl s8 (L8.iW c10) (L8.iR c23)) fun s9 ⟨hm9, k9⟩ hy9 => ?_
     obtain hf : Frame [⟨pa s8 (sc oKAP), 8⟩] s8.mem s9.mem := by
       rw [hm9]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-    obtain ⟨hP9, hcs9⟩ := postB_of_keep (D := D) k9 (by decide) hf
+    obtain ⟨hP9, hcs9⟩ := postB_of_keep (D := D) k9 (by decide) hf hy9 (L8.cW c10)
     have hP9' : PPostB D s8 s9 [(sc oKAP, 8)] := hP9
     refine .inr ⟨B8.l.k.step hP9' c19, ?_, by rw [L8.keepW hP9' c20, B8.l.cnt], B8.some, hfail,
       by rw [hcs9 _ (by decide), hcs8 _ (by decide), h.r15]; exact bit_zero.mpr hfail, B8.l.t_lt, B8.l.rej⟩
@@ -919,8 +919,8 @@ theorem normAt_post {s : State} (L : Lay D SL (sgR p) (sgW p) s) {f : Ptr} {B : 
     (hc : normChk (sgB p) f = true) (hr : Reduced s.mem (pa s f)) :
     WP isa (normAt P f B) s fun s' => PPostB D s s' [] := by
   refine WP.seq (WP.mono (normCall_ok hP hP.sl.normLt L hB hc hr) fun s1 ⟨hP1, _, _⟩ => ?_)
-  refine WP.mono (and15_ok s1) fun s2 ⟨_, hm2, k2⟩ => ?_
-  exact PostB.trans hP1 (postB15 (D := D) k2 hm2 ([] : List Region)).1 (fun r h => h) fun _ h => absurd h List.not_mem_nil
+  refine WP.mono_syms (and15_ok s1) fun s2 ⟨_, hm2, k2⟩ hy2 => ?_
+  exact PostB.trans hP1 (postB15 (D := D) k2 hm2 ([] : List Region) hy2).1 (fun r h => h) fun _ h => absurd h List.not_mem_nil
 
 theorem normAt_trL {f : Ptr} {B : Nat} (hB : B < 2 ^ 32) (hc : normChk (sgB p) f = true) :
     RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f)) (normAt P f B)

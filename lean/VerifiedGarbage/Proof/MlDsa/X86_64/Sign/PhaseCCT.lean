@@ -142,7 +142,7 @@ def J4 (p : Params) (D : Nat) (SL : List String) (e : Nat) (σ s : State) : Prop
 
 theorem callG_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} {σ : State} {e : Nat}
     (hc : callChk p e = true) {s : State} (h : GS p D SL σ e 4 s) :
-    WP isa (callP ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [.ptr (sc oRS4), .ptr (pS (aBase p + e)), .ptr (r4P p)]) s
+    WP isa (callV P.viaSlots 6 ("vg_mldsa_rej_ntt_poly4" ++ P.sfx) P.rej4 [.ptr (sc oRS4), .ptr (pS (aBase p + e)), .ptr (r4P p)]) s
       fun s' => J4 p D SL e σ s' ∧ s'.gpr .r15 = s.gpr .r15 := by
   simp only [callChk, Bool.and_eq_true] at hc
   exact WP.mono (rej4Call_ok hP h.ia4.ia.st.lay hc.2) fun s' h' => ⟨⟨s, h, h'⟩, h'.2.1 _ (by decide)⟩
@@ -154,8 +154,8 @@ theorem and4_ok {p : Params} {D : Nat} {σ : State} {e : Nat} (hc : callChk p e 
   obtain ⟨s₀, h, hP3, hcs3, hred, hout, hmax⟩ := hJ
   have L := h.ia4.ia.st.lay
   have I1 := h.ia4.step hP3 c3 k3 f3 r3 (hcs3 _ (by decide))
-  refine WP.mono (and15_ok s) fun s4 ⟨h15, hm4, k4⟩ => ?_
-  have hP4 : PPostB D s s4 [] := (postB15 k4 hm4 _).1
+  refine WP.mono_syms (and15_ok s) fun s4 ⟨h15, hm4, k4⟩ hy4 => ?_
+  have hP4 : PPostB D s s4 [] := (postB15 k4 hm4 _ hy4).1
   rw [hcs3 _ (by decide)] at h15
   have hr : (s.gpr .rax).setWidth 32 = 1 ∨ (s.gpr .rax).setWidth 32 = 0 := by
     rcases hout with ⟨h1, _⟩ | ⟨h0, _⟩
@@ -463,11 +463,11 @@ theorem setKap_okB {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {s
     rwa [BitVec.add_zero] at this
   have i1 : InRegions s.wr (pa s (sc (o + 1))) 1 := by
     rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega_using []) (by decide)
-  refine WP.mono (setKap_ok o r hr s (L.iR h1) i0 i1) fun s' ⟨hm, k⟩ => ?_
+  refine WP.mono_syms (setKap_ok o r hr s (L.iR h1) i0 i1) fun s' ⟨hm, k⟩ hy => ?_
   have hf : Frame [⟨pa s (sc o), 2⟩] s.mem s'.mem := by
     rw [hm]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c1
-  refine ⟨(postB_of_keep (D := D) k (by decide) hf).1, (postB_of_keep (D := D) k (by decide) hf).2, ?_⟩
+  refine ⟨(postB_of_keep (D := D) k (by decide) hf hy (L.cW h2)).1, (postB_of_keep (D := D) k (by decide) hf hy (L.cW h2)).2, ?_⟩
   rw [hm, e65, bytes2_write, hk, ofNat64_add, kappa_bytes hx]
 
 /-- `κ + r` to `MS + 64`, as the two bytes of `ExpandMask`'s seed. -/
@@ -829,13 +829,13 @@ theorem rowA {p : Params} {D : Nat} {σ : State} {t i : Nat} (hi : i < p.k) {s :
   rw [aVal_ij hj] at this
   rw [aP_ij]; exact this
 
-theorem rowW_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} {σ : State} {t i : Nat}
+theorem rowW_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hd : DotSl P p SL) {σ : State} {t i : Nat}
     (hc : wChk p i = true) (hi : i < p.k) {s : State} (h : ICw p D SL σ t i s) :
     WP isa (rowW P p i) s (ICw p D SL σ t (i + 1)) := by
   simp only [wChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨cd, c2⟩, hl⟩ := hc
   unfold rowW
-  refine WP.mono (dotAt_ok (hP.dotInv p.ℓ hl) h.l.st.lay cd
+  refine WP.mono (dotAt_ok (hP.dotInv p.ℓ hl) hd h.l.st.lay cd
     (fun j hj => by rw [famP_aP]; exact (rowA hi h hj).1) (fun j hj => by rw [famP_yhP]; exact (h.yh j hj).1))
     fun s3 ⟨hP3, _, hq3⟩ => ?_
   have I3 := h.step hP3 c2
@@ -910,7 +910,7 @@ def cChk (p : Params) : Bool :=
 theorem cChk_ok {p : Params} (h : Ok3 p) : cChk p = true := by
   rcases h with rfl | rfl | rfl <;> decide +kernel
 
-theorem commit_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hc : cChk p = true) {σ : State} {t : Nat}
+theorem commit_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hd : DotSl P p SL) (hc : cChk p = true) {σ : State} {t : Nat}
     {s : State} (h : IL p D SL σ t s) : WP isa (commit P p) s (IC p D SL σ t) := by
   simp only [cChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
   obtain ⟨⟨⟨⟨⟨⟨hm4, hm⟩, hrest⟩, hw⟩, hh⟩, hs⟩, hk⟩ := hc
@@ -921,7 +921,7 @@ theorem commit_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hc :
   rw [Nat.zero_add] at hs0
   refine WP.seq (WP.mono (maskRest_ok hP hrest hm hs0) fun s1 hs1 => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun i => ICw p D SL σ t i) p.k 0
-    (fun i _ hi s hs => rowW_ok hP (hw i (by omega_using [hi])) (by omega_using [hi]) hs) s1
+    (fun i _ hi s hs => rowW_ok hP hd (hw i (by omega_using [hi])) (by omega_using [hi]) hs) s1
     ⟨hs1.l, hs1.y, hs1.yh, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s2 hs2 => ?_)
   rw [Nat.zero_add] at hs2
   refine WP.seq (WP.mono (seqR_ok (I := fun i => ICh p D SL σ t i) p.k 0
@@ -991,8 +991,8 @@ theorem setKappa_post {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)}
     rwa [BitVec.add_zero] at this
   have i1 : InRegions s.wr (pa s (sc (oMS + 65))) 1 := by
     rw [e65]; exact inRegions_sub (off := 1) (l := 1) w2 (by omega_using []) (by decide)
-  refine WP.mono (setKap_ok (oMS + 64) r hr s (L.iR h1) i0 i1) fun s' ⟨hm, k⟩ => ⟨_, (postB_of_keep (D := D) k (by decide)
-    (W := [⟨pa s (sc (oMS + 64)), 2⟩]) ?_).1⟩
+  refine WP.mono_syms (setKap_ok (oMS + 64) r hr s (L.iR h1) i0 i1) fun s' ⟨hm, k⟩ hy => ⟨_, (postB_of_keep (D := D) k (by decide)
+    (W := [⟨pa s (sc (oMS + 64)), 2⟩]) ?_ hy (L.cW h2)).1⟩
   rw [hm]
   exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c1
 
@@ -1137,14 +1137,14 @@ theorem maskRest_tr {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hc
 /-! ## `w` -/
 
 /-- `w[i]` from runs in iteration `t` with `y`, `ŷ` and the first `i` polynomials of `w`. -/
-theorem rowW_trL {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D SL) {p : Params} {t i : Nat} (hc : wChk p i = true)
+theorem rowW_trL {P : Prims} {D : Nat} {SL : List String} (hP : PrimsOk P D SL) {p : Params} (hd : DotSl P p SL) {t i : Nat} (hc : wChk p i = true)
     (hi : i < p.k) :
     RelCT isa (fun x y => LRel D SL (sgR p) (sgW p) x y ∧ (∃ σ, ICw p D SL σ t i x) ∧ ∃ σ, ICw p D SL σ t i y) (rowW P p i)
       fun _ _ => True := by
   simp only [wChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   obtain ⟨⟨cd, _⟩, hl⟩ := hc
   unfold rowW
-  exact RelCT.mono (dotAt_tr (hP.dotInv p.ℓ hl) cd) (fun x y ⟨R, ⟨_, I₁⟩, ⟨_, I₂⟩⟩ =>
+  exact RelCT.mono (dotAt_tr (hP.dotInv p.ℓ hl) hd cd) (fun x y ⟨R, ⟨_, I₁⟩, ⟨_, I₂⟩⟩ =>
     ⟨R, ⟨fun j hj => by rw [famP_aP]; exact (rowA hi I₁ hj).1, fun j hj => by rw [famP_yhP]; exact (I₁.yh j hj).1⟩,
       ⟨fun j hj => by rw [famP_aP]; exact (rowA hi I₂ hj).1, fun j hj => by rw [famP_yhP]; exact (I₂.yh j hj).1⟩⟩)
     fun _ _ h => h
@@ -1181,7 +1181,7 @@ theorem ctShake_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hc 
   rw [Nat.mul_comm p.k, h.w1, h.c.l.st.mu]
   simp only [CTv, ctF, w1Encode, List.flatMap_map]
 
-theorem commit_tr {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hc : cChk p = true)
+theorem commit_tr {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hd : DotSl P p SL) (hc : cChk p = true)
     {E : State → State → Prop} {t : Nat} :
     RelCT isa (RS p D SL E fun σ s => IL p D SL σ t s) (commit P p) (RS p D SL E fun σ s => IC p D SL σ t s) := by
   have hc' := hc
@@ -1200,7 +1200,7 @@ theorem commit_tr {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hc :
       ⟨h.l, h.y, h.yh, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   · refine RelCT.mono (seqR_tr (R := fun i => RS p D SL E fun σ s => ICw p D SL σ t i s) p.k 0 fun i _ hi =>
       liftL (T := fun s => ∃ σ, ICw p D SL σ t i s) (fun σ s h => ⟨h.l.st, σ, h⟩)
-        (fun _ _ _ h => rowW_ok hP (hw i (by omega_using [hi])) (by omega_using [hi]) h) (rowW_trL hP (hw i (by omega_using [hi])) (by omega_using [hi])))
+        (fun _ _ _ h => rowW_ok hP hd (hw i (by omega_using [hi])) (by omega_using [hi]) h) (rowW_trL hP hd (hw i (by omega_using [hi])) (by omega_using [hi])))
       (fun x y h => h) fun x y h => by rw [Nat.zero_add] at h; exact h.mono (fun _ _ h => h) fun _ _ h =>
         ⟨h, by simp [w1Enc]; rfl⟩
   · refine RelCT.mono (seqR_tr (R := fun i => RS p D SL E fun σ s => ICh p D SL σ t i s) p.k 0 fun i _ hi =>

@@ -80,6 +80,10 @@ theorem SlotsOk.makeHint : P.viaSlots = true → SL[11]? = some ("vg_mldsa_make_
 
 end
 
+/-- The callee of slot 2 is the dot product of the parameter set's `ℓ`. -/
+abbrev DotSl (P : Prims) (p : Spec.MlDsa.Params) (SL : List String) : Prop :=
+  P.viaSlots = true → SL[2]? = some (dotInvName p.ℓ ++ P.asfx)
+
 /-- What the proofs need of the implementations `P` of the primitives, with
 `D` bytes of stack for each call. -/
 structure PrimsOk (P : Prims) (D : Nat) (SL : List String) where

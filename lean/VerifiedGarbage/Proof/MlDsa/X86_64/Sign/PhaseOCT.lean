@@ -143,10 +143,10 @@ theorem dec_end {D : Nat} {p : Params} (hp : ParamsOk p) (hc : lChk p = true) {�
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨w1, r1⟩, k1⟩, k2⟩, k3⟩, f1⟩, f2⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩ := hc
   have hk : IK p D SL σ s := by rcases h with h | h | h <;> exact h.k
   have L := hk.d.im.st.lay
-  refine WP.mono (decQ_ok (sc oCNT) (by decide) s (L.iW w1) (L.iR r1)) fun s' ⟨⟨hm, hz⟩, k⟩ => ?_
+  refine WP.mono_syms (decQ_ok (sc oCNT) (by decide) s (L.iW w1) (L.iR r1)) fun s' ⟨⟨hm, hz⟩, k⟩ hy => ?_
   have hf : Frame [⟨pa s (sc oCNT), 8⟩] s.mem s'.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  obtain ⟨hP', hcs⟩ := postB_of_keep (D := D) k (by decide) hf
+  obtain ⟨hP', hcs⟩ := postB_of_keep (D := D) k (by decide) hf hy (L.cW w1)
   have hP : PPostB D s s' [(sc oCNT, 8)] := hP'
   have K := hk.step hP k1
   have e15 : s'.gpr .r15 = s.gpr .r15 := hcs _ (by decide)
@@ -191,9 +191,9 @@ theorem test_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {t : N
     WP isa (.block [.alu32 .test .rax (.reg .rax)]) s fun s' =>
       (IB p D SL σ t s' ∧ s'.zf = some ((s'.gpr .rax).setWidth 32 == 0)) ∧
         (s'.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32 := by
-  refine WP.mono (testRax_ok s) fun s3 ⟨⟨hm3, hax3, hz3⟩, k3⟩ => ?_
+  refine WP.mono_syms (testRax_ok s) fun s3 ⟨⟨hm3, hax3, hz3⟩, k3⟩ hy3 => ?_
   have hf3 : Frame [] s.mem s3.mem := by rw [hm3]; exact Frame.refl _ _
-  obtain ⟨hP3', _⟩ := postB_of_keep (D := D) k3 (by decide) hf3
+  obtain ⟨hP3', _⟩ := postB_of_keep (D := D) k3 (by decide) hf3 hy3 Covers.nil
   have hP3 : PPostB D s s3 [] := hP3'
   rw [BitVec.and_self] at hz3
   exact ⟨⟨h.step0 hc4 hP3 hax3, by rw [hz3, hax3]⟩, by rw [hax3]⟩
@@ -209,9 +209,9 @@ theorem else_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {t : N
   simp only [lChk, Bool.and_eq_true] at hc4'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨w1, -⟩, k1⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, k0⟩, -⟩, -⟩, -⟩ := hc4'
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.r15] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r15 = 0) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
-    fun s4 ⟨⟨hm4, h154⟩, k4⟩ => ?_
-  have hP4 : PPostB D s s4 [] := (postB15 k4 hm4 _).1
+  refine WP.mono_syms (WP.keep [.r15] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r15 = 0) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
+    fun s4 ⟨⟨hm4, h154⟩, k4⟩ hy4 => ?_
+  have hP4 : PPostB D s s4 [] := (postB15 k4 hm4 _ hy4).1
   have K4 := h.c.l.k.step hP4 k0
   have L4 := K4.d.im.st.lay
   refine WP.mono (setQ_okB L4 (by decide) (by decide) w1) fun s5 ⟨hP5, hcs5, hm5⟩ => ?_
@@ -228,18 +228,18 @@ theorem decF {D : Nat} {p : Params} (hc : lChk p = true) {σ : State} {s : State
   simp only [lChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨w1, r1⟩, -⟩, -⟩, k3⟩, -⟩, f2⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩ := hc
   have L := hk.d.im.st.lay
-  refine WP.mono (decQ_ok (sc oCNT) (by decide) s (L.iW w1) (L.iR r1)) fun s' ⟨⟨hm, hz⟩, k⟩ => ?_
+  refine WP.mono_syms (decQ_ok (sc oCNT) (by decide) s (L.iW w1) (L.iR r1)) fun s' ⟨⟨hm, hz⟩, k⟩ hy => ?_
   have hf : Frame [⟨pa s (sc oCNT), 8⟩] s.mem s'.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  obtain ⟨hP', hcs⟩ := postB_of_keep (D := D) k (by decide) hf
+  obtain ⟨hP', hcs⟩ := postB_of_keep (D := D) k (by decide) hf hy (L.cW w1)
   have hP : PPostB D s s' [(sc oCNT, 8)] := hP'
   exact ⟨hz, hcs _ (by decide), L.keepBytes hP k3, fun f h => HFam.keep L hP f2 h⟩
 
-theorem iter_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hp : ParamsOk p) (hc1 : cChk p = true)
+theorem iter_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hp : ParamsOk p) (hdot : DotSl P p SL) (hc1 : cChk p = true)
     (hc2 : bChk p = true) (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) {σ : State} {t : Nat} {s : State}
     (h : IL p D SL σ t s) : WP isa (iter P p) s (LP p D SL σ t) := by
   unfold iter
-  refine WP.seq (WP.mono (commit_ok hP hc1 h) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (commit_ok hP hdot hc1 h) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (ball_ok hP hc2 h1) fun s2 h2 => ?_)
   refine WP.seq (WP.mono (test_ok hc4 h2) fun s3 ⟨⟨I3, hz3⟩, _⟩ => ?_)
   refine WP.seq (WP.ite (!((s3.gpr .rax).setWidth 32 == 0)) (show s3.zf.map (!·) = _ by rw [hz3]; rfl)
@@ -267,14 +267,14 @@ theorem loopInit_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {s
       rw [K1.d.im.st.lay.keepW hP2 kk', hP1.pa (by decide), hm1, Mem.readW_writeW_self64]; rfl,
     by rw [hP2.pa (by decide), hm2, Mem.readW_writeW_self64], by decide, fun _ h => absurd h (Nat.not_lt_zero _)⟩
 
-theorem signLoop_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hp : ParamsOk p) (hc1 : cChk p = true)
+theorem signLoop_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hp : ParamsOk p) (hdot : DotSl P p SL) (hc1 : cChk p = true)
     (hc2 : bChk p = true) (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) {σ : State} {s : State}
     (h : IK p D SL σ s) : WP isa (Impl.MlDsa.X86_64.Sign.signLoop P p) s (XS p D SL σ) := by
   unfold Impl.MlDsa.X86_64.Sign.signLoop
   refine WP.seq (WP.mono (loopInit_ok hc4 h) fun s2 I0 => ?_)
   refine WP.loop (M := isa) (fun n s => ∃ t, n = 814 - t ∧ IL p D SL σ t s) (fun n s ⟨t, hn, hs⟩ => ?_) 814 s2
     ⟨0, rfl, I0⟩
-  refine WP.mono (iter_ok hP hp hc1 hc2 hc3 hc3' hc4 hs) fun s' h' => ?_
+  refine WP.mono (iter_ok hP hp hdot hc1 hc2 hc3 hc3' hc4 hs) fun s' h' => ?_
   have hev : ∀ s : State, isa.eval .ne s = s.zf.map (!·) := fun _ => rfl
   rcases h' with ⟨hz, hI⟩ | ⟨hz, hX⟩
   · exact .inr ⟨by rw [hev, hz]; rfl, 814 - (t + 1), by have := hs.t_lt; omega_using [hn, this], t + 1, rfl, hI⟩
@@ -576,14 +576,14 @@ theorem ax_zero {s : State} (hz : s.zf = some ((s.gpr .rax).setWidth 32 == 0)) (
   rw [hz] at e
   simpa using e
 
-theorem iter_tr {P : Prims} (hP : PrimsOk P D SL) (hp : ParamsOk p) (hc1 : cChk p = true) (hc2 : bChk p = true)
+theorem iter_tr {P : Prims} (hP : PrimsOk P D SL) (hp : ParamsOk p) (hdot : DotSl P p SL) (hc1 : cChk p = true) (hc2 : bChk p = true)
     (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) {t : Nat} (ht : t < 814) :
     RelCT isa (RS p D SL (LeakEq p t) fun σ s => IL p D SL σ t s) (iter P p) (IX p D SL t) := by
   have hc2' := hc2
   simp only [bChk, Bool.and_eq_true, decide_eq_true_eq] at hc2'
   obtain ⟨⟨⟨c1, -⟩, -⟩, hbp⟩ := hc2'
   unfold iter
-  refine RelCT.seq (commit_tr hP hc1) ?_
+  refine RelCT.seq (commit_tr hP hdot hc1) ?_
   refine RelCT.seq (R := fun x y => RS p D SL (LeakEq p t) (fun σ s => IB p D SL σ t s) x y ∧
       (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32)
     (RelCT.mono (liftQ (G := fun _ _ => True) (J := fun σ s => IB p D SL σ t s) (F := fun _ _ => True)
@@ -620,7 +620,7 @@ theorem iter_tr {P : Prims} (hP : PrimsOk P D SL) (hp : ParamsOk p) (hc1 : cChk 
 
 /-! ## The loop -/
 
-theorem signLoop_tr {P : Prims} (hP : PrimsOk P D SL) (hp : ParamsOk p) (hc1 : cChk p = true) (hc2 : bChk p = true)
+theorem signLoop_tr {P : Prims} (hP : PrimsOk P D SL) (hp : ParamsOk p) (hdot : DotSl P p SL) (hc1 : cChk p = true) (hc2 : bChk p = true)
     (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) :
     RelCT isa (RS p D SL (LeakEq p 0) fun σ s => IK p D SL σ s) (Impl.MlDsa.X86_64.Sign.signLoop P p) (OX p D SL) := by
   unfold Impl.MlDsa.X86_64.Sign.signLoop
@@ -632,7 +632,7 @@ theorem signLoop_tr {P : Prims} (hP : PrimsOk P D SL) (hp : ParamsOk p) (hc1 : c
     (fun x y h => ⟨0, rfl, h⟩) fun _ _ h => h
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨t, hn, hr⟩ e₁ e₂
   have ht : t < 814 := by obtain ⟨_, _, _, _, _, _, i₁, _⟩ := hr; exact i₁.t_lt
-  obtain ⟨htr, hz, hc, ho⟩ := iter_tr hP hp hc1 hc2 hc3 hc3' hc4 ht _ _ _ _ _ _ hr e₁ e₂
+  obtain ⟨htr, hz, hc, ho⟩ := iter_tr hP hp hdot hc1 hc2 hc3 hc3' hc4 ht _ _ _ _ _ _ hr e₁ e₂
   refine ⟨htr, by rw [hev, hev, hz], fun h => ho (zf_of_eval h), fun h =>
     ⟨814 - (t + 1), by omega_using [hn, ht], t + 1, rfl, hc (zf_of_eval h)⟩⟩
 
@@ -956,7 +956,7 @@ theorem r15_zero {s : State} (h : s.gpr .r15 = 0 ∨ s.gpr .r15 = 1) (he : (s.gp
   · exact e
   · rw [e] at he; exact absurd he (by decide)
 
-theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h3 : Ok3 p) {σ s : State}
+theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h3 : Ok3 p) (hdot : DotSl P p SL) {σ s : State}
     (hpre : (signKS p D SL).pre σ) (h : IM p D SL σ s) :
     WP isa (rest P p) s (FS p D SL σ) := by
   have hc := allChk_ok h3
@@ -969,7 +969,7 @@ theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h3 : O
   have hA := expandA_max h.ok
   unfold rest
   refine WP.seq (WP.mono (decodeOrCopy_ok hP hd (pkChk_ok h3) hpre h) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (signLoop_ok hP hp hc1 hb hks (ksChk2_ok h3) hl h1) fun s2 h2 => ?_)
+  refine WP.seq (WP.mono (signLoop_ok hP hp hdot hc1 hb hks (ksChk2_ok h3) hl h1) fun s2 h2 => ?_)
   have L2 := h2.k.d.im.st.lay
   unfold ifOk
   refine ifOkElse_ok (D := D) (fun s3 hP3 hcs3 hm3 hne => ?_) fun s3 hP3 hcs3 hm3 he => ?_
@@ -993,22 +993,36 @@ theorem entry_bytes {σ s : State} {r : Reg} {len : Nat} {R : Region} (hf : Fram
   exact VG.Proof.MlKem.bytesAt_frame hf (fun R' hR => by rw [List.mem_singleton] at hR; subst hR; exact hd) hl
 
 theorem entry_st {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h3 : Ok3 p) {σ s : State}
-    (hpre : (signKS p D SL).pre σ) (ht : Top σ s) (hf : Frame [⟨σ.gpr .r8, scrLen p⟩] σ.mem s.mem) : St p D SL σ s := by
+    (hpre : (signKS p D SL).pre σ) (ht : Top σ s) (hf : Frame [⟨σ.gpr .r8, scrLen p⟩] σ.mem s.mem)
+    (hsy : s.syms = σ.syms) : St p D SL σ s := by
   have hc := fChk_ok h3
   simp only [fChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   have hsz := hc.2
   have hpre' := hpre
-  obtain ⟨_, hwr, d1, d2, d3, d4, d5, d6, d7, _, _, _, _, _, _, _, _, _, _, n1, n2, n3, n4, n5, _⟩ := hpre'
+  obtain ⟨_, hwr, d1, d2, d3, d4, d5, d6, d7, _, _, _, _, _, _, _, _, _, _, n1, n2, n3, n4, n5, _⟩ := hpre'.1
   have hsk := skLen_le_skL p σ
-  exact ⟨ht, sgLay hpre hP.hD' hsz ht,
+  have hsl : ∀ i (h : i < SL.length), s.load64 (s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i)) = some (s.syms SL[i]) := by
+    intro i hi
+    have hl := hpre.2.2.2 i hi
+    simp only [State.load64, ht.rsp, ht.rd, ht.wr, hsy] at hl ⊢
+    split at hl
+    · rename_i hin
+      simp only [hin, ↓reduceIte]
+      rw [hf.readW (r := ⟨σ.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i), 8⟩) (Region.contains_self _ _) (fun r hr => ?_)
+        (by decide)]
+      · exact hl
+      rw [List.mem_singleton] at hr; subst hr
+      exact (hpre.2.1 _ (List.mem_append_right _ (by rw [hwr]; simp))).sub_left (slot_sub hi)
+    · cases hl
+  exact ⟨ht, sgLay hpre hP.hD' hsz ht hsl,
     entry_bytes hf (d2.sub_left (Region.sub_prefix hsk)) (by omega_using [hsz]) (ht.regs (.rbp, .rdi) (by decide)),
     entry_bytes hf d4 (by omega_using []) (ht.regs (.r12, .rsi) (by decide)),
     entry_bytes hf d6 (by omega_using []) (ht.regs (.r13, .rdx) (by decide)),
     Frame.sub hf fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_append_left _ (by rw [hwr]; simp), fun _ h => h⟩⟩
+      exact ⟨_, List.mem_append_left _ (by rw [hwr]; simp), fun _ h => h⟩, hsy⟩
 
-theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h3 : Ok3 p)
+theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h3 : Ok3 p) (hdot : DotSl P p SL)
     (hmx : ctlOk (Impl.MlDsa.X86_64.Sign.sign P p) = true) (σ : State)
     (hpre : (signKS p D SL).pre σ) :
     ∃ t s', Exec isa (Impl.MlDsa.X86_64.Sign.sign P p) σ t s' ∧ abiPreserved σ s' ∧ (signK p D).post σ s' := by
@@ -1021,15 +1035,15 @@ theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h
   have main : WP isa (Impl.MlDsa.X86_64.Sign.sign P p) σ fun s₅ => gprPreserved σ s₅ ∧
       ∃ s₄, FS p D SL σ s₄ ∧ (s₅.gpr .rax).setWidth 32 = (s₄.gpr .r15).setWidth 32 ∧ s₅.mem = s₄.mem := by
     unfold Impl.MlDsa.X86_64.Sign.sign
-    refine WP.seq (WP.mono (pro_ok hpre hsz.1) fun s₁ ⟨h₁, _, hf₁, h15⟩ => ?_)
-    have S1 := entry_st hP h3 hpre h₁ hf₁
+    refine WP.seq (WP.mono_syms (pro_ok hpre hsz.1) fun s₁ ⟨h₁, _, hf₁, h15⟩ hy₁ => ?_)
+    have S1 := entry_st hP h3 hpre h₁ hf₁ hy₁
     refine WP.seq (WP.mono (expandA_ok hP ha S1 h15) fun s₂ h₂ => ?_)
     refine WP.seq (WP.mono (show WP isa (ifOk (rest P p)) s₂ (FS p D SL σ) from ?_) fun s₄ h₄ => ?_)
     · unfold ifOk
       refine ifOkElse_ok (D := D) (fun s₃ hP₃ hcs₃ hm₃ hne => ?_) fun s₃ hP₃ hcs₃ hm₃ he => ?_
       · have h1 := r15_one h₂.r01 hne
         obtain ⟨ok, fam⟩ := h₂.ok h1
-        exact rest_ok hP h3 hpre ⟨h₂.st.step hP₃ st0, ok, Fam.keep h₂.st.lay hP₃ fa0 fam⟩
+        exact rest_ok hP h3 hdot hpre ⟨h₂.st.step hP₃ st0, ok, Fam.keep h₂.st.lay hP₃ fa0 fam⟩
       · have h0 := r15_zero h₂.r01 he
         have e15 : s₃.gpr .r15 = 0 := by rw [hcs₃ _ (by decide), h0]
         exact WP.block_nil ⟨h₂.st.step hP₃ st0, .inl e15, fun h1 => absurd (h1.symm.trans e15) (by decide),
@@ -1151,9 +1165,9 @@ theorem XS.io (hf : fChk p = true) {σ x₀ x : State} (h : XS p D SL σ x₀) (
   exact ⟨p.ℓ * t, h.k.step hP ik, by rw [L.keepBytes hP kct, hct], Fam.keep L hP fy hz, HFam.keep L hP f5 hh, hpass,
     by rw [hcs _ (by decide), h15]⟩
 
-theorem rest_tr {P : Prims} (hP : PrimsOk P D SL) (h3 : Ok3 p) :
+theorem rest_tr {P : Prims} (hP : PrimsOk P D SL) (h3 : Ok3 p) (hdot : DotSl P p SL) :
     RelCT isa (RS p D SL (LeakEq p 0) (IM p D SL)) (rest P p) (RS p D SL (LeakEq p 0) (FS p D SL)) := by
-  refine liftR (fun σ s hpre h => rest_ok hP h3 hpre h) ?_
+  refine liftR (fun σ s hpre h => rest_ok hP h3 hdot hpre h) ?_
   have hc := allChk_ok h3
   simp only [allChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨-, hd⟩, hc1⟩, hb⟩, hks⟩, hl⟩, ho⟩, hf⟩ := hc
@@ -1162,7 +1176,7 @@ theorem rest_tr {P : Prims} (hP : PrimsOk P D SL) (h3 : Ok3 p) :
   obtain ⟨⟨⟨⟨⟨⟨⟨-, -⟩, -⟩, -⟩, f5⟩, -⟩, -⟩, -⟩ := hf'
   have hp := paramsOk h3
   unfold rest
-  refine RelCT.seq (decodeOrCopy_tr hP hd (pkChk_ok h3)) (RelCT.seq (signLoop_tr hP hp hc1 hb hks (ksChk2_ok h3) hl) ?_)
+  refine RelCT.seq (decodeOrCopy_tr hP hd (pkChk_ok h3)) (RelCT.seq (signLoop_tr hP hp hdot hc1 hb hks (ksChk2_ok h3) hl) ?_)
   unfold ifOk
   refine ifOkElse_tr (D := D) (fun x y h => by rw [h.2.1]) (RelCT.mono (output_tr hP ho (E := fun _ _ => True))
     (fun x y ⟨x₀, y₀, ⟨⟨σ₁, σ₂, p₁, p₂, hpub, _, s₁, s₂⟩, h15, hj⟩, ⟨hPx, hcx, _⟩, ⟨hPy, hcy, _⟩, hne⟩ => ?_)
