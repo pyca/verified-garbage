@@ -57,13 +57,13 @@ theorem wipeStores_run (R : Region) (u : State) (hR : R ∈ u.wr) : ∀ words, 8
       List.map_append]
 
 /-- The trace of `wipe words` from a state whose stack pointer is `p - 32`. -/
-def wipeTr (p : Addr) (words : Nat) : List Leak := Scrub.zeroTr p (8 * words)
+def wipeTr (p : Addr) (words : Nat) : List Leak := Scrub.zeroTrAt wipeCut p (8 * words)
 
 /-- The registers `wipe words` leaves, from `u`: `r0` zero and `r12` where
-`zeroRegion` leaves it. -/
+`zeroRegionAt` leaves it. -/
 def wipeRegs (u : State) (words : Nat) : State :=
   ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r0 (BitVec.ofNat 64 0)).write .r12
-    (Scrub.zeroEnd (u.sp + 32) (8 * words))
+    (Scrub.zeroEndAt wipeCut (u.sp + 32) (8 * words))
 
 /-- `wipe words` from `u`, which may write the region `⟨r1 + 32, B⟩` that
 holds the `words` doublewords: it zeroes them, with a trace of the addresses
@@ -78,7 +78,7 @@ theorem wipe_exec (B : Nat) (u : State) (words : Nat) (hR : ⟨u.sp + 32, B⟩ �
     simp [State.write]
   have h0 : ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r0 (BitVec.ofNat 64 0)).gpr .r0 = 0 := by
     simp [State.write]
-  have he := Scrub.zeroRegion_runIn (u.sp + 32) (8 * words) B hwb hB (by omega_using []) hqB _ h0 h12
+  have he := Scrub.zeroRegionAt_runIn wipeCut (by decide) (u.sp + 32) (8 * words) B hwb hB (by omega_using []) hqB _ h0 h12
     (by simpa [State.write] using hR)
   simp only [wipe, execBlock, isa, exec, show (32 : Nat) < 2 ^ 15 by decide,
     show (0 : Nat) < 2 ^ 15 by decide, ↓reduceIte]

@@ -33,13 +33,16 @@ def withStackScratch (bytes : Nat) (r : Reg) (c : Prog isa) : Prog isa :=
 def wipeStores (words : Nat) : List Instr :=
   (List.range words).map fun k => .store .d .r11 .r12 (8 * k)
 
+/-- The size from which `wipe` zeroes by `dcbz`. -/
+def wipeCut : Nat := 1024
+
 /-- Zeroes the `words` doublewords of the buffer, at `r1 + 32`, through `r12`
 (their address) and `r0` (zero), as the clearing of `scrubAll` zeroes its
-frames' regions (`Impl.Scrub.PPC64LE.zeroRegion`): by `std`s for fewer than
-64 doublewords, else by `dcbz`s of the 128-byte blocks within them and `std`s
+frames' regions (`Impl.Scrub.PPC64LE.zeroRegionAt`): by `std`s for fewer than
+`wipeCut` bytes, else by `dcbz`s of the 128-byte blocks within them and `std`s
 of the rest. -/
 def wipe (words : Nat) : List Instr :=
-  .addSp .r12 32 :: .li .r0 0 :: Impl.Scrub.PPC64LE.zeroRegion (8 * words)
+  .addSp .r12 32 :: .li .r0 0 :: Impl.Scrub.PPC64LE.zeroRegionAt wipeCut (8 * words)
 
 /-- `withStackScratch`, zeroing the first `words` doublewords of the buffer
 after the code. -/

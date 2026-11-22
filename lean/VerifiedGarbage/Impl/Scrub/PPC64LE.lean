@@ -82,13 +82,16 @@ def zeroBlocks : Nat → List Instr
   | 0 => []
   | k + 1 => .addi .r12 .r12 128 :: .dcbz .r12 .r0 :: zeroBlocks k
 
+/-- `zeroRegion`, by `std`s alone for fewer than `cut` bytes (at least 512). -/
+def zeroRegionAt (cut n : Nat) : List Instr :=
+  if n < cut then stores 0 (n / 8)
+  else stores 0 16 ++ zeroBlocks ((n - 128) / 128) ++ stores 0 ((n - 128 * ((n - 128) / 128)) / 8)
+
 /-- Zero the `n` bytes (a multiple of 8) at `r12`, with `r0` zero: by `std`s
 for fewer than 512 bytes, or by `std`s of the first 128 bytes, the `dcbz`s
 of `zeroBlocks` for as long as the block ends within the `n` bytes, and
 `std`s from the last `r12` to the end (see the module docs). -/
-def zeroRegion (n : Nat) : List Instr :=
-  if n < 512 then stores 0 (n / 8)
-  else stores 0 16 ++ zeroBlocks ((n - 128) / 128) ++ stores 0 ((n - 128 * ((n - 128) / 128)) / 8)
+def zeroRegion (n : Nat) : List Instr := zeroRegionAt 512 n
 
 /-- A frame of `b` bytes whose region, the `b - 32` bytes below the stack
 pointer, it zeroes. -/

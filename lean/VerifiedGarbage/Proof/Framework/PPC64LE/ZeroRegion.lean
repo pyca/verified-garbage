@@ -268,30 +268,36 @@ theorem zeroBlocks_run (q : Addr) (n : Nat) (hqn : q.toNat + n ≤ 2 ^ 64) (hn :
     funext r; split <;> rfl
 
 
-/-- Where `zeroRegion n` leaves `r12`, from `r12 = q`. -/
-def zeroEnd (q : Addr) (n : Nat) : Addr :=
-  if n < 512 then q else q + BitVec.ofNat 64 (128 * ((n - 128) / 128))
+/-- Where `zeroRegionAt cut n` leaves `r12`, from `r12 = q`. -/
+def zeroEndAt (cut : Nat) (q : Addr) (n : Nat) : Addr :=
+  if n < cut then q else q + BitVec.ofNat 64 (128 * ((n - 128) / 128))
 
-/-- The trace of `zeroRegion n` from `r12 = q`. -/
-def zeroTr (q : Addr) (n : Nat) : List Leak :=
-  if n < 512 then storesTr (q + BitVec.ofNat 64 0) 0 (n / 8)
+/-- The trace of `zeroRegionAt cut n` from `r12 = q`. -/
+def zeroTrAt (cut : Nat) (q : Addr) (n : Nat) : List Leak :=
+  if n < cut then storesTr (q + BitVec.ofNat 64 0) 0 (n / 8)
   else storesTr (q + BitVec.ofNat 64 0) 0 16 ++ zeroBlocksTr q 0 ((n - 128) / 128) ++
     storesTr (q + BitVec.ofNat 64 (128 * ((n - 128) / 128))) 0 ((n - 128 * ((n - 128) / 128)) / 8)
 
-/-- `zeroRegion n` zeroes the first `n` bytes of the writable region `⟨q, B⟩`
-at `r12 = q`. -/
-theorem zeroRegion_runIn (q : Addr) (n B : Nat) (hnB : n ≤ B) (hB : B < 4096) (h8 : n % 8 = 0)
-    (hqB : q.toNat + B ≤ 2 ^ 64)
+/-- Where `zeroRegion n` leaves `r12`, from `r12 = q`. -/
+def zeroEnd (q : Addr) (n : Nat) : Addr := zeroEndAt 512 q n
+
+/-- The trace of `zeroRegion n` from `r12 = q`. -/
+def zeroTr (q : Addr) (n : Nat) : List Leak := zeroTrAt 512 q n
+
+/-- `zeroRegionAt cut n` zeroes the first `n` bytes of the writable region
+`⟨q, B⟩` at `r12 = q`. -/
+theorem zeroRegionAt_runIn (cut : Nat) (hcut : 512 ≤ cut) (q : Addr) (n B : Nat) (hnB : n ≤ B)
+    (hB : B < 4096) (h8 : n % 8 = 0) (hqB : q.toNat + B ≤ 2 ^ 64)
     (u : State) (h0 : u.gpr .r0 = 0) (h12 : u.gpr .r12 = q) (hw : ⟨q, B⟩ ∈ u.wr) :
-    execBlock isa (zeroRegion n) u =
-      some ({ u.write .r12 (zeroEnd q n) with mem := zeroOn q 0 n u.mem }, zeroTr q n) := by
+    execBlock isa (zeroRegionAt cut n) u =
+      some ({ u.write .r12 (zeroEndAt cut q n) with mem := zeroOn q 0 n u.mem }, zeroTrAt cut q n) := by
   have hq0 : q + BitVec.ofNat 64 0 = q := BitVec.add_zero q
   have h12' : u.gpr .r12 = q + BitVec.ofNat 64 0 := by rw [hq0]; exact h12
-  by_cases hs : n < 512
-  · simp only [zeroRegion, zeroEnd, zeroTr, hs, ite_true]
+  by_cases hs : n < cut
+  · simp only [zeroRegionAt, zeroEndAt, zeroTrAt, hs, ite_true]
     rw [storesAt_run q 0 B hB hqB (n / 8) 0 u (by omega) h0 h12' hw, hq0,
       show 8 * (0 + n / 8) = n by omega, show 8 * 0 = 0 from rfl, ← h12, write_self12]
-  · simp only [zeroRegion, zeroEnd, zeroTr, hs, ite_false]
+  · simp only [zeroRegionAt, zeroEndAt, zeroTrAt, hs, ite_false]
     generalize hK : (n - 128) / 128 = K
     have hK1 : 128 * K + 128 ≤ n := by omega
     have hK2 : n - 128 * K < 256 := by omega
@@ -335,6 +341,6 @@ theorem zeroRegion_run (q : Addr) (n : Nat) (hn : n < 4096) (h8 : n % 8 = 0) (hq
     (u : State) (h0 : u.gpr .r0 = 0) (h12 : u.gpr .r12 = q) (hw : ⟨q, n⟩ ∈ u.wr) :
     execBlock isa (zeroRegion n) u =
       some ({ u.write .r12 (zeroEnd q n) with mem := zeroOn q 0 n u.mem }, zeroTr q n) :=
-  zeroRegion_runIn q n n (Nat.le_refl n) hn h8 hqn u h0 h12 hw
+  zeroRegionAt_runIn 512 (Nat.le_refl _) q n n (Nat.le_refl n) hn h8 hqn u h0 h12 hw
 
 end VG.PPC64LE.Scrub
