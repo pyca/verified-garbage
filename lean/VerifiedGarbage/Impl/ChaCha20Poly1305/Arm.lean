@@ -10,7 +10,8 @@ public import VerifiedGarbage.Impl.Poly1305.Arm
 len = [sp + 4], tag = [sp + 8], work = [sp + 12])` and `vg_chacha20_poly1305_open`
 (the same arguments, returning `r0`), composed of calls of the verified
 ChaCha20 and Poly1305 functions. `work` is the working space, which the
-artifact's frame allocates on the stack (`withStackScratchWiped`).
+artifact's frame allocates on the stack (`withStackScratch`), and its cleanup
+zeroes (`scrubAll`).
 
 One body serves in place and out of place: it reads the data at `r10`
 (`src`) and writes the result to the destination in `r6` (`dst`, either
