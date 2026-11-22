@@ -518,7 +518,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Sm4Gcm.X86 VG.WriteBytes VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -767,7 +767,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Sm4Gcm.X86 VG.WriteBytes VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -778,14 +778,14 @@ open VG.Spec.Gcm (ctxH)
 open VG.Spec.Sm4.Gcm (ctxCiph)
 open VG.Proof.Gcm (Absorbed Ctr xorKs lensBlock)
 
-theorem oneCrypt_eq : oneCrypt = .seq (.block [.mov .eax (slot dataO), .store (at_ .ebp dO) .eax,
-    .mov .eax (slot lenO), .store (at_ .ebp nO) .eax, .mov .eax (imm 0), .store (at_ .ebp bO) .eax]) crypt := rfl
+theorem oneCrypt_eq : (oneCrypt ci.fn) = .seq (.block [.mov .eax (slot dataO), .store (at_ .ebp dO) .eax,
+    .mov .eax (slot lenO), .store (at_ .ebp nO) .eax, .mov .eax (imm 0), .store (at_ .ebp bO) .eax]) (crypt ci.fn) := rfl
 
-theorem oneTag_eq (o : Nat) : (oneTag vg.callees) o = .seq (.block [.mov .eax (slot dataO), .store (at_ .ebp dO) .eax,
+theorem oneTag_eq (o : Nat) : (oneTag vg.callees ci.fn) o = .seq (.block [.mov .eax (slot dataO), .store (at_ .ebp dO) .eax,
     .mov .eax (slot lenO), .store (at_ .ebp nO) .eax, .mov .eax (imm 0), .store (at_ .ebp bO) .eax])
   (.seq (absorb vg.callees 16)
   (.seq (.block [.mov .eax (slot lenO), .alu .and .eax (imm 15), .store (at_ .ebp bO) .eax])
-  (.seq (flush vg.callees 16) (tag vg.callees o alO zO lenO zO)))) := rfl
+  (.seq (flush vg.callees 16) (tag vg.callees ci.fn o alO zO lenO zO)))) := rfl
 
 /-- What GHASH has absorbed before the data: the additional data, padded. -/
 abbrev xA (p : BitVec 32 × (Nat → BitVec 32)) (s₀ : State) : List Byte :=
@@ -835,7 +835,7 @@ theorem dataW_of {s₀ s : State} (h : OEnv p s₀ s) :
 
 theorem oneCrypt_pc (icb : State → Block) :
     Pc (fun (b : State × State) s => (OEnv p b.1 s ∧
-        CtrS s.mem (stOf (p.2 7)) (ctxCiph b.1.mem (w64 (p.2 0))) (icb b.1) 0) ∧ s = b.2) oneCrypt
+        CtrS s.mem (stOf (p.2 7)) (ctxCiph b.1.mem (w64 (p.2 0))) (icb b.1) 0) ∧ s = b.2) (oneCrypt ci.fn)
       (fun b s' => OEnv p b.1 s' ∧
         bytesAt s'.mem (w64 (p.2 5)) (p.2 6).toNat =
           xorKs (ctxCiph b.1.mem (w64 (p.2 0))) (icb b.1) 0 (bytesAt b.2.mem (w64 (p.2 5)) (p.2 6).toNat) ∧
@@ -970,7 +970,7 @@ theorem cb_oT {o : Nat} (ho : o = 0 ∨ o = 112) :
   · exact (G.L.stk_w (by decide)).symm
 
 theorem oneTag_pc {o : Nat} (ho : o = 0 ∨ o = 112) :
-    Pc (fun (b : State × State) s => OTIn p b.1 s ∧ s = b.2) (oneTag vg.callees o)
+    Pc (fun (b : State × State) s => OTIn p b.1 s ∧ s = b.2) (oneTag vg.callees ci.fn o)
       (fun b s' => OEnv p b.1 s' ∧
         bytesAt s'.mem (w64 (p.2 7) + BitVec.ofNat 64 o) 16 =
           toBytes (ghashFrom (ctxH b.1.mem (w64 (p.2 0))) (ghash (ctxH b.1.mem (w64 (p.2 0)))
@@ -1086,7 +1086,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Sm4Gcm.X86 VG.WriteBytes VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -1150,12 +1150,12 @@ theorem d_woF {o : Nat} (ho : o + 16 ≤ 2560) :
 
 end
 
-theorem seal_eq : («seal» vg.callees) = .seq (oneEntry 8 ([(7, tpO)].flatMap (fun (p : Nat × Nat) => keep p.1 p.2)))
-    (.seq (oneAad vg.callees) (.seq oneCrypt (.seq (oneTag vg.callees 0)
+theorem seal_eq : («seal» vg.callees ci.fn) = .seq (oneEntry 8 ([(7, tpO)].flatMap (fun (p : Nat × Nat) => keep p.1 p.2)))
+    (.seq (oneAad vg.callees) (.seq (oneCrypt ci.fn) (.seq (oneTag vg.callees ci.fn 0)
       (.seq (tagOut 0) (.block restore))))) := rfl
 
 theorem seal_pc (p : BitVec 32 × (Nat → BitVec 32)) :
-    Pc (fun (s₀ : State) s => sealPre s₀ ∧ pubSw 9 7 s₀ = p ∧ s = s₀) («seal» vg.callees)
+    Pc (fun (s₀ : State) s => sealPre s₀ ∧ pubSw 9 7 s₀ = p ∧ s = s₀) («seal» vg.callees ci.fn)
       (fun s₀ s' => abiPreserved s₀ s' ∧ sealX86.post s₀ s') := by
   by_cases hex : ∃ s₀, sealPre s₀ ∧ pubSw 9 7 s₀ = p
   swap
@@ -1229,10 +1229,10 @@ theorem seal_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   rw [b, ht, Proof.Gcm.fullTag_eq, toBytes_take16, padded_eq, length_bytesAt, length_bytesAt]
 
 theorem seal_correct (s : State) (hs : sealX86.pre s) :
-    ∃ t s', Exec isa («seal» vg.callees) s t s' ∧ abiPreserved s s' ∧ sealX86.post s s' :=
+    ∃ t s', Exec isa («seal» vg.callees ci.fn) s t s' ∧ abiPreserved s s' ∧ sealX86.post s s' :=
   (seal_pc (pubSw 9 7 s)).wp s s ⟨hs, rfl, rfl⟩
 
-theorem seal_ct : ConstantTime isa sealX86.pre sealX86.pub («seal» vg.callees) :=
+theorem seal_ct : ConstantTime isa sealX86.pre sealX86.pub («seal» vg.callees ci.fn) :=
   Pc.constantTime (pubSw 9 7) (fun _ _ _ _ h => pubSw_eq (by decide) h) seal_pc fun _ hs => ⟨hs, rfl, rfl⟩
 
 end VG.Proof.Sm4Gcm.X86
@@ -1261,7 +1261,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Sm4Gcm.X86 VG.WriteBytes VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -1394,15 +1394,15 @@ structure OD (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) (s₀ s : State) :
     gctr (ctxCiph s₀.mem (w64 (q.1.2 0))) (inc32 (jOf q.1 s₀))
       (bytesAt s₀.mem (w64 (q.1.2 5)) (q.1.2 6).toNat) else bytesAt s₀.mem (w64 (q.1.2 5)) (q.1.2 6).toNat
 
-theorem open_eq : («open» vg.callees) = .seq (oneEntry 9 ([(7, tpO), (8, tglO)].flatMap
+theorem open_eq : («open» vg.callees ci.fn) = .seq (oneEntry 9 ([(7, tpO), (8, tglO)].flatMap
     (fun (p : Nat × Nat) => keep p.1 p.2))) (.seq tagLenOk (.seq (.ite .e (.block [.mov .eax (imm 0)])
-    (.seq (oneAad vg.callees) (.seq (oneTag vg.callees uO) (.seq recv (.seq (cmp uO)
+    (.seq (oneAad vg.callees) (.seq (oneTag vg.callees ci.fn uO) (.seq recv (.seq (cmp uO)
       (.seq (.block [.store (at_ .ebp auxO) .eax, .alu .test .eax (.reg .eax)])
-      (.seq (.ite .e (.block []) oneCrypt) (.block [.mov .eax (slot auxO)]))))))))
+      (.seq (.ite .e (.block []) (oneCrypt ci.fn)) (.block [.mov .eax (slot auxO)]))))))))
     (.block restore))) := rfl
 
 theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
-    Pc (fun (s₀ : State) s => openPre s₀ ∧ (pubSw 10 7 s₀, (openRes s₀).isSome) = q ∧ s = s₀) («open» vg.callees)
+    Pc (fun (s₀ : State) s => openPre s₀ ∧ (pubSw 10 7 s₀, (openRes s₀).isSome) = q ∧ s = s₀) («open» vg.callees ci.fn)
       (fun s₀ s' => abiPreserved s₀ s' ∧ openX86.post s₀ s') := by
   by_cases hex : ∃ s₀, openPre s₀ ∧ (pubSw 10 7 s₀, (openRes s₀).isSome) = q
   swap
@@ -1614,10 +1614,10 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
   exact hpost
 
 theorem open_correct (s : State) (hs : openX86.pre s) :
-    ∃ t s', Exec isa («open» vg.callees) s t s' ∧ abiPreserved s s' ∧ openX86.post s s' :=
+    ∃ t s', Exec isa («open» vg.callees ci.fn) s t s' ∧ abiPreserved s s' ∧ openX86.post s s' :=
   (open_pc (pubSw 10 7 s, (openRes s).isSome)).wp s s ⟨hs, rfl, rfl⟩
 
-theorem open_ct : ConstantTime isa openX86.pre openX86.pub («open» vg.callees) :=
+theorem open_ct : ConstantTime isa openX86.pre openX86.pub («open» vg.callees ci.fn) :=
   Pc.constantTime (fun s => (pubSw 10 7 s, (openRes s).isSome))
     (fun _ _ _ _ h => by rw [pubSw_eq (by decide) h.1, h.2]) open_pc fun _ hs => ⟨hs, rfl, rfl⟩
 
