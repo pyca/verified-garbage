@@ -21,28 +21,6 @@ public import VerifiedGarbage.Proof.Rsa.CrtPrecomputedContract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 
-/-! ### `Bignum.Arm.PublicPrecomputeNormalized`, which only this module used -/
-
-section
-
-/-! Public normalized setup supplies the same kernel interface as the original setup. -/
-
-@[expose] public section
-namespace VG.Proof.Bignum.Arm
-open VG VG.Arm VG.Impl.Bignum.Arm
-
-def normalizedPublicPrecomputeKernel : PublicPrecomputeKernel where
-  code := precomputeWith r2Public
-  correct := by exact precomputeWith_ok ⟨r2Public, r2Public_ok⟩
-  ct := by exact precomputePublic_ct ⟨r2Public, r2Public_ok⟩ r2Public_ct
-
-end VG.Proof.Bignum.Arm
-
-end
-
-end
-
-
 section
 
 /-! The private CRT over a shared Montgomery product
@@ -130,9 +108,14 @@ theorem crtOk (b : MontBackend) : CodeOk (b.caller.code (CrtCall.code b.name b.m
 theorem crtPOk (b : MontBackend) : CodeOk (b.caller.code (CrtCall.codeGiven b.name b.mul)) 104 :=
   b.callerOk _ _ ((show FillB _ (CrtCall.codeGiven b.name b.mul) by have := b.mulOk; fill_holes).codeOk crtPStub)
 
-def pc : Prog isa := PcFn.codeWith normalizedPublicPrecomputeKernel.code
+/-- The public precomputation, its squarings calling `b`'s product. -/
+def pc (b : MontBackend) : Prog isa := PcFn.codeWith (callPublicPrecomputeKernel b.callOp).code
 
-theorem pcOk : CodeOk pc 104 := ⟨by decide +kernel, by lit_decide⟩
+theorem pcStub : CodeOk (PcFn.codeWith (precomputeWith (r2PublicWith (MontCall.op "" (holeStub 40))))) 104 := by
+  lit_decide
+
+theorem pcOk (b : MontBackend) : CodeOk (pc b) 104 :=
+  (show FillB _ (pc b) by have := b.mulOk; fill_holes).codeOk pcStub
 
 theorem pdOk : CodeOk PdFn.code 104 := ⟨by decide +kernel, by lit_decide⟩
 
@@ -147,10 +130,10 @@ def variant (b : MontBackend) : Proof.Rsa.Arm.CrtImpl where
   crtPStack := (crtPOk b).1
   crtPNoIcall := (crtPOk b).2
   pcName := Spec.Rsa.publicPrecomputeApi.name ++ b.suffix
-  pc := b.caller.code pc
-  pcVerified := b.caller.verified (precompute_verified (kernel := normalizedPublicPrecomputeKernel))
-  pcStack := (b.callerOk _ _ pcOk).1
-  pcNoIcall := (b.callerOk _ _ pcOk).2
+  pc := b.caller.code (pc b)
+  pcVerified := b.caller.verified (precompute_verified (kernel := callPublicPrecomputeKernel b.callOp))
+  pcStack := (b.callerOk _ _ (pcOk b)).1
+  pcNoIcall := (b.callerOk _ _ (pcOk b)).2
   pdName := "vg_rsa_public_precomputed_checked" ++ b.suffix
   pd := b.caller.code PdFn.code
   pdVerified := b.caller.verified pd_verified
