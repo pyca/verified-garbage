@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
+import VerifiedGarbage.Proof.Rsa.Arm.InverseCall
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -40,7 +41,7 @@ abbrev cvN (s0 : State) : Nat := Spec.Rsa.os2ip (nBytes s0)
 abbrev cvM (s0 : State) : Nat := 2 * (cvP s0 / 2) + 1
 
 def checksA : List (Prog isa) := [.block ctx, eqS sE1 aDQ aQ aT1, eqS sE2 aDR aZero aT1] ++ invSetup
-def checksB (um : Bool := false) : List (Prog isa) := [.block primeWidth, inverse um, .block ctx, eqS sE3 1 aOne aT1,
+def checksB (um : Bool := false) : List (Prog isa) := [.block primeWidth, inverseCall um, .block ctx, eqS sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ divHdr aDQ aDR2 aDD aDT)]
 
@@ -356,14 +357,14 @@ theorem checksB_ok [InvLaw] {um : Bool} {s0 s : State} {X₁ X₂ : Nat} (h : St
   obtain vQ : VG.Proof.Rsa.Arm.Inv.nk t0.mem (cvB s0) (cvW s0) 0 kq = cvQ s0 := by
     rw [m0]; exact val32_of_lt kqw h.u lenQ
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (InvLaw.inverseK_ok g0 (by decide) (by decide) (by omega_using [w16])) fun t1a ⟨g1, k1a, r1a, inv⟩ => ?_
+  refine WP.mono (inverseCall_ok g0 (by decide) (by decide) (by omega_using [w16])) fun t1a ⟨g1, k1a, r1a, inv⟩ => ?_
   rw [vM, vQ] at inv
   rw [m0] at k1a
   obtain R01 : Rest (.r6 :: .r7 :: .r8 :: .r9 :: opRegs) s t1a := (r0.mono (by decide)).trans (r1a.mono (by decide))
   obtain b1a := h.base.keep k1a (by decide) (by decide) (by decide) R01.sp R01.rd R01.wr
   rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil ctx]
   refine ctx_ok b1a fun t1 b1 h1 r1c m1c => WP.block_nil ?_
-  obtain k1 : Keep (cvB s0) (cvW s0) invArrs invSlots s.mem t1.mem := m1c ▸ k1a
+  obtain k1 : Keep (cvB s0) (cvW s0) invArrs invCallSlots s.mem t1.mem := m1c ▸ k1a
   obtain r1 : Rest (.r6 :: .r7 :: .r8 :: .r9 :: opRegs) s t1 :=
     R01.trans (r1c.mono (by decide))
   obtain I : 1 < cvM s0 → num t1.mem (cvB s0) (cvW s0) 1 = Nat.gcd (cvQ s0) (cvM s0) ∧
@@ -389,7 +390,7 @@ theorem checksB_ok [InvLaw] {um : Bool} {s0 s : State} {X₁ X₂ : Nat} (h : St
     rw [k2.slot (by simp only [hdr]; omega_arith)
         (by simp only [sT, sE3, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith),
       k1.slot (by simp only [hdr]; omega_arith)
-        (by simp only [invSlots, sOdd, sB, sC, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        (by simp only [invCallSlots, sOdd, sB, sC, sT, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
           forall_eq]; omega_arith)]
   rw [wp_seqs_cons (List.cons_ne_nil _ _), List.append_assoc, ← List.append_nil (andS sMask sMask sE3)]
   refine andS_ok h2 (d := sMask) (a := sPodd) (b := sE1) (by decide) (by decide) (by decide)
