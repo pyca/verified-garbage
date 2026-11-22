@@ -410,6 +410,159 @@ theorem s_bodyPre (hA : ArgsOk sig) (hl : Sig.noLists sig.params = true) {n : St
     simp only [List.mem_singleton] at hR; subst hR
     exact hbufs b hb x (below_sub (by omega) (by omega) x hc) hx
 
+/-- The entry's memory is the caller's in the buffers. -/
+theorem s_agree (hA : ArgsOk sig) (hl : Sig.noLists sig.params = true) (n : String)
+    (hE : frameS (nStack sig) ≤ 32768) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s) :
+    ∀ b ∈ Sig.bufs sig.params (allArgs sig s), ∀ x, b.1.Contains x 1 → (eEntryS sig n s).mem x = s.mem x := by
+  obtain ⟨hsb, -, -, hout⟩ := s_facts hA hl hs
+  intro b hb x hx
+  refine sSave_frame n _ s hE x fun R hR hc => ?_
+  simp only [List.mem_singleton] at hR; subst hR
+  exact hout b (List.mem_append_left _ hb) x (below_sub (by omega) (by omega) x hc) hx
+
+/-- The caller's public data is the function's at its entry. -/
+theorem s_bodyPub (hA : ArgsOk sig) (hl : Sig.noLists sig.params = true) (n : String)
+    (hE : frameS (nStack sig) ≤ 32768) {s₁ s₂ : State}
+    (h₁ : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s₁)
+    (h₂ : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s₂)
+    (hp : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pub s₁ s₂)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak) :
+    (sig.contract abi pre post wa stack leak).pub (eEntryS sig n s₁) (eEntryS sig n s₂) := by
+  have ag₁ := s_agree hA hl n hE h₁
+  have ag₂ := s_agree hA hl n hE h₂
+  rw [pub_args hA hl] at hp ⊢
+  obtain ⟨⟨⟨hsp, hdit⟩, hlk⟩, hpa⟩ := hp
+  rw [allArgs_eEntryS n s₁ hE, allArgs_eEntryS n s₂ hE, eEntryS_sp, eEntryS_sp, hsp, eEntryS_dit,
+    eEntryS_dit]
+  refine ⟨⟨⟨rfl, hdit⟩, ?_⟩, hpa⟩
+  cases leak with
+  | none => trivial
+  | some f =>
+    show Curry.apply _ f (allArgs sig s₁) (eEntryS sig n s₁).mem =
+      Curry.apply _ f (allArgs sig s₂) (eEntryS sig n s₂).mem
+    rw [hleak _ _ _ (allArgs_length sig s₁) ag₁, hleak _ _ _ (allArgs_length sig s₂) ag₂]
+    exact hlk
+
+/-- What the run of the function leaves, from the caller's state `s`. -/
+def AfterS (sig : Sig) (post : sig.Post abi.ptrBits) (stack : Nat) (s c : State) : Prop :=
+  c.wr = ⟨s.sp - BitVec.ofNat 64 (frameS (nStack sig)), frameS (nStack sig)⟩ :: s.wr ∧
+  c.sp = s.sp - BitVec.ofNat 64 (frameS (nStack sig)) ∧
+  (∀ q ∈ preserved, q ≠ .x30 → c.gpr q = s.gpr q) ∧
+  (∀ q ∈ preservedV, q ≠ .v8 → (c.v q).extractLsb' 0 64 = (s.v q).extractLsb' 0 64) ∧
+  c.mem.read (sslot (nStack sig) s (saveOff (nStack sig))) 8 = s.gpr .x30 ∧
+  c.mem.read (sslot (nStack sig) s (saveOff (nStack sig) + 8)) 8 = laneOf s .v8 0 ∧
+  Frame (s.wr ++ [below s.sp (stack + frameS (nStack sig))]) s.mem c.mem ∧
+  Curry.apply (sig.words abi.ptrBits) post (allArgs sig s) s.mem c.mem ((c.gpr .x0).setWidth _)
+
+/-- The function's regions at its entry are within the caller's and the frame. -/
+theorem s_covers (hA : ArgsOk sig) (hl : Sig.noLists sig.params = true) (n : String)
+    (hE : frameS (nStack sig) ≤ 32768) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s) :
+    Covers (((allRegions sig (eEntryS sig n s)).filter (!·.2)).map (·.1))
+        (s.rd ++ ⟨s.sp - BitVec.ofNat 64 (frameS (nStack sig)), frameS (nStack sig)⟩ :: s.wr) ∧
+      ∀ r ∈ ((allRegions sig (eEntryS sig n s)).filter (·.2)).map (·.1), r ∈ s.wr := by
+  have hsk := saveOff_ge (nStack sig)
+  have hfs : saveOff (nStack sig) + 16 = frameS (nStack sig) := rfl
+  rw [pre_args hA hl] at hs
+  obtain ⟨-, hrd, hwr, -, -, -, -⟩ := hs
+  rw [allRegions_eEntryS' n s hE]
+  refine ⟨Covers.of_forall fun r hr => ?_, fun r hr => ?_⟩
+  · obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
+    obtain ⟨ha, hf⟩ := List.mem_filter.mp ha
+    rcases List.mem_append.mp ha with ha | ha
+    · refine Covers.left (Covers.of_mem fun x hx => ?_)
+      simp only [List.mem_singleton] at hx; subst hx
+      rw [hrd]
+      exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨List.mem_append_left _ ha, hf⟩, rfl⟩
+    · unfold argArea at ha
+      split at ha
+      · cases ha
+      · simp only [List.mem_singleton] at ha; subst ha
+        refine Covers.right (Covers.one ⟨_, List.mem_cons_self .., ?_⟩)
+        show Region.Contains _ (stackArgAddr (eEntryS sig n s) 0) _
+        rw [stackArgAddr, eEntryS_sp, Nat.mul_zero, BitVec.add_zero]
+        exact Region.contains_self' (by omega)
+  · obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
+    obtain ⟨ha, hf⟩ := List.mem_filter.mp ha
+    rcases List.mem_append.mp ha with ha | ha
+    · rw [hwr]
+      exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨List.mem_append_left _ ha, hf⟩, rfl⟩
+    · unfold argArea at ha
+      split at ha
+      · cases ha
+      · simp only [List.mem_singleton] at ha; subst ha; simp at hf
+
+/-- The call of the function, from a caller's state `s` whose precondition
+holds, for code verified against a contract `kb` whose precondition holds at
+its entry (`hentry`) and whose postcondition gives the function's (`hkb`). -/
+theorem s_body_wpOf {n name : String} {body : Prog isa} {kb : Contract isa}
+    (hv : ∀ s, kb.pre s → ∃ t s', Exec isa body s t s' ∧ abiPreserved s s' ∧ kb.post s s')
+    (hkb : ∀ x y, kb.post x y → (sig.contract abi pre post wa stack leak).post x y)
+    (hA : ArgsOk sig) (hl : Sig.noLists sig.params = true) (hE : frameS (nStack sig) ≤ 32768)
+    (hd : 16 * body.aarch64Depth ≤ stack)
+    (hpost : ∀ vs m₁ m₂ m' x, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
+    {s : State} (hs : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s)
+    (hentry : kb.pre (eEntryS sig n s)) :
+    WP isa (.call name body) (sSave n (nStack sig) s) (AfterS sig post stack s) := by
+  obtain ⟨hsb, hfit, -, hout⟩ := s_facts hA hl hs
+  have hag := s_agree hA hl n hE hs
+  obtain ⟨hcR, hcW⟩ := s_covers hA hl n hE hs
+  have hF := frameS_pos (nStack sig)
+  have hb : saveOff (nStack sig) + 16 = frameS (nStack sig) := rfl
+  have hsk := saveOff_ge (nStack sig)
+  have hwrs : ∀ r ∈ ((allRegions sig (eEntryS sig n s)).filter (·.2)).map (·.1),
+      ∃ a ∈ allRegions sig s, a.1 = r := by
+    intro r hr
+    rw [pre_args hA hl] at hs
+    have := hs.2.2.1 ▸ hcW r hr
+    obtain ⟨a, ha, rfl⟩ := List.mem_map.mp this
+    exact ⟨a, (List.mem_filter.mp ha).1, rfl⟩
+  -- The frame is apart from the writable buffers and the stack below it.
+  have hap : ∀ x ∈ ((allRegions sig (eEntryS sig n s)).filter (·.2)).map (·.1) ++
+      [below (s.sp - BitVec.ofNat 64 (frameS (nStack sig))) (16 * body.aarch64Depth)],
+      (below s.sp (frameS (nStack sig))).Disjoint x := by
+    intro x hx
+    rcases List.mem_append.mp hx with hx | hx
+    · obtain ⟨a, ha, rfl⟩ := hwrs x hx
+      exact (hout a ha).sub_left (below_sub (by omega) (by omega))
+    · simp only [List.mem_singleton] at hx; subst hx
+      exact Offset.base_disjoint_below _ (by omega)
+  refine WP.callFV (k := kb) hv (s := sSave n (nStack sig) s)
+    (rd := ((allRegions sig (sSave n (nStack sig) s).callEntry).filter fun x : Region × Bool => !x.2).map
+      fun x : Region × Bool => x.1)
+    (wr := ((allRegions sig (sSave n (nStack sig) s).callEntry).filter fun x : Region × Bool => x.2).map
+      fun x : Region × Bool => x.1) hentry
+    (by rw [sSave_rd, sSave_wr]
+        exact Covers.append_left hcR (Covers.right (Covers.of_mem fun x hx => List.mem_cons_of_mem _ (hcW x hx))))
+    (by rw [sSave_wr]; exact Covers.of_mem fun x hx => List.mem_cons_of_mem _ (hcW x hx)) ?_ (by omega)
+  intro c _ hwr hsp hfr hcs hvs hq
+  rw [sSave_sp] at hfr hsp
+  rw [sSave_wr] at hwr
+  have hP : ∀ q ∈ preserved, q ≠ .x16 ∧ q ≠ .x17 := by decide
+  refine ⟨hwr, hsp, fun q hq hq30 => (hcs q hq hq30).trans (sSave_gpr n _ s (hP q hq).1 (hP q hq).2),
+    fun q hq hq8 => (hvs q hq).trans (by rw [sSave_v n _ s hq8]), ?_, ?_, ?_, ?_⟩
+  · rw [hfr.read (sslot_contains _ s (by omega) hE) hap (by decide), sSave_read_x30 n _ s hE]
+  · rw [hfr.read (sslot_contains _ s (by omega) hE) hap (by decide), sSave_read_d8]
+  · refine Frame.trans (Frame.sub (sSave_frame n _ s hE) fun x hx => ?_) (Frame.sub hfr fun x hx => ?_)
+    · simp only [List.mem_singleton] at hx; subst hx
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_sub (by omega) (by omega)⟩
+    · rcases List.mem_append.mp hx with hx | hx
+      · exact ⟨x, List.mem_append_left _ (hcW x hx), fun _ h => h⟩
+      · simp only [List.mem_singleton] at hx; subst hx
+        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+          fun y hy => below_sub (sp := s.sp) (a := 16 * body.aarch64Depth + frameS (nStack sig))
+            (b := stack + frameS (nStack sig)) (by omega) (by omega) y
+            (below_below _ (frameS (nStack sig)) _ y hy)⟩
+  · have hq' := hkb _ _ hq
+    rw [post_args hA] at hq'
+    rw [show (sSave n (nStack sig) s).callEntry.withRegions _ _ = eEntryS sig n s from rfl,
+      allArgs_eEntryS n s hE, eEntryS_mem, State.withRegions_mem, State.withRegions_gpr] at hq'
+    exact hpost _ _ _ _ _ (allArgs_length sig s) (fun b hb x hx => hag b hb x hx) hq'
+
 end
 
 end VG.Proof.Sha3.AArch64
