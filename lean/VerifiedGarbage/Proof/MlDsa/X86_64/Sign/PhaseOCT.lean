@@ -1012,7 +1012,7 @@ theorem entry_st {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h3 : 
         (by decide)]
       · exact hl
       rw [List.mem_singleton] at hr; subst hr
-      exact (hpre.2.1 _ (List.mem_append_right _ (by rw [hwr]; simp))).sub_left (slot_sub hi)
+      exact (hpre.2.1 _ (by rw [hwr]; simp)).sub_left (slot_sub hi)
     · cases hl
   exact ⟨ht, sgLay hpre hP.hD' hsz ht hsl,
     entry_bytes hf (d2.sub_left (Region.sub_prefix hsk)) (by omega_using [hsz]) (ht.regs (.rbp, .rdi) (by decide)),

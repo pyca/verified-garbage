@@ -298,23 +298,46 @@ def signK (p : Params) (D : Nat) : Contract isa where
         (bytesAt s₂.mem (s₂.gpr .rdx) 32) ∧
     s₁.gpr .r9 = s₂.gpr .r9
 
+/-- The words above the return address that hold the addresses of the
+callees `SL`, if any. -/
+def slotRs (SL : List String) (s : State) : List Region := if SL = [] then [] else [slotR SL s]
+
 /-- The words above the return address hold the addresses of the callees
-`SL` (`Impl.MlDsa.X86_64.Sign.slotM`), apart from the buffers and not wrapping
-around. -/
+`SL` (`Impl.MlDsa.X86_64.Sign.slotM`), apart from the writable regions and
+not wrapping around. -/
 def SlotsPre (SL : List String) (s : State) : Prop :=
-  (∀ r ∈ s.rd ++ s.wr, (slotR SL s).Disjoint r) ∧ (SL = [] ∨ (s.gpr .rsp).toNat + 8 + 8 * SL.length ≤ 2 ^ 64) ∧
+  (∀ r ∈ s.wr, (slotR SL s).Disjoint r) ∧ (SL = [] ∨ (s.gpr .rsp).toNat + 8 + 8 * SL.length ≤ 2 ^ 64) ∧
     ∀ i (h : i < SL.length), s.load64 (s.gpr .rsp + BitVec.ofNat 64 (8 + 8 * i)) = some (s.syms SL[i])
 
 /-- `signK` of a body that calls the callees `SL` by the addresses in the
-words above its return address (`SlotsPre`), on which two runs agree. -/
+words above its return address (`SlotsPre`), which it may read, and on
+which two runs agree. -/
 def signKS (p : Params) (D : Nat) (SL : List String) : Contract isa where
-  pre s := (signK p D).pre s ∧ SlotsPre SL s
+  pre s :=
+    (s.rd = [⟨s.gpr .rdi, skL p s⟩, ⟨s.gpr .rsi, 64⟩, ⟨s.gpr .rdx, 32⟩] ++ slotRs SL s ∧
+    s.wr = [⟨s.gpr .rcx, p.sigLen⟩, ⟨s.gpr .r8, scrLen p⟩] ∧
+    Region.Disjoint ⟨s.gpr .rdi, skL p s⟩ ⟨s.gpr .rcx, p.sigLen⟩ ∧
+    Region.Disjoint ⟨s.gpr .rdi, skL p s⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
+    Region.Disjoint ⟨s.gpr .rsi, 64⟩ ⟨s.gpr .rcx, p.sigLen⟩ ∧ Region.Disjoint ⟨s.gpr .rsi, 64⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
+    Region.Disjoint ⟨s.gpr .rdx, 32⟩ ⟨s.gpr .rcx, p.sigLen⟩ ∧ Region.Disjoint ⟨s.gpr .rdx, 32⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
+    Region.Disjoint ⟨s.gpr .rcx, p.sigLen⟩ ⟨s.gpr .r8, scrLen p⟩ ∧
+    (retR s).Disjoint ⟨s.gpr .rdi, skL p s⟩ ∧ (retR s).Disjoint ⟨s.gpr .rsi, 64⟩ ∧
+    (retR s).Disjoint ⟨s.gpr .rdx, 32⟩ ∧ (retR s).Disjoint ⟨s.gpr .rcx, p.sigLen⟩ ∧
+    (retR s).Disjoint ⟨s.gpr .r8, scrLen p⟩ ∧
+    (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rdi, skL p s⟩ ∧ (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rsi, 64⟩ ∧
+    (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rdx, 32⟩ ∧ (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .rcx, p.sigLen⟩ ∧
+    (below (s.gpr .rsp) D).Disjoint ⟨s.gpr .r8, scrLen p⟩ ∧
+    (s.gpr .rdi).toNat + skL p s ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 64 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 32 ≤ 2 ^ 64 ∧
+    (s.gpr .rcx).toNat + p.sigLen ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + scrLen p ≤ 2 ^ 64 ∧
+    D ≤ (s.gpr .rsp).toNat ∧
+    (s.gpr .r9 ≠ 0 → PreparedSecretKey p s.mem (s.gpr .rdi))) ∧ SlotsPre SL s
   post := (signK p D).post
   pub s₁ s₂ := (signK p D).pub s₁ s₂ ∧ ∀ n ∈ SL, s₁.syms n = s₂.syms n
 
 /-- `signK`'s precondition is `signKS`'s, for a body with no callees in words. -/
 theorem signKS_nil_pre {p : Params} {D : Nat} {s : State} (h : (signK p D).pre s) : (signKS p D []).pre s :=
-  ⟨h, fun _ _ _ hx _ => by simp only [Region.Contains, List.length_nil, Nat.mul_zero] at hx; omega_using [hx],
+  ⟨⟨by rw [h.1]; simp [slotRs], h.2⟩,
+    fun _ _ _ hx _ => by simp only [Region.Contains, List.length_nil, Nat.mul_zero] at hx; omega_using [hx],
     .inl rfl, fun _ h => absurd h (Nat.not_lt_zero _)⟩
 
 theorem signKS_nil_pub {p : Params} {D : Nat} {s₁ s₂ : State} (h : (signK p D).pub s₁ s₂) :
@@ -411,7 +434,7 @@ theorem sgLayL {L : Nat} (hL : L ≤ skL p σ) (hD : D < 2 ^ 32)
   · simp only [sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only [retR, e1, e2, e3, e4, e5, h.rsp]
     exacts [r1, r2, r3, r5, r4]
-  · rw [hsR]; rw [h.wr] at hr; exact hs1 r (List.mem_append_right _ hr)
+  · rw [hsR]; rw [h.wr] at hr; exact hs1 r hr
 
 theorem sgLay (hD : D < 2 ^ 32) (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 32) {s : State}
     (h : Top σ s)
