@@ -1327,9 +1327,10 @@ theorem st_wk_far {s₀ : State} (hp : Pre P s₀) {o l : Nat} (f : o + l ≤ 84
 
 /-- **One more block of `ek`**, absorbed and permuted. -/
 theorem block_step (v : Proof.Sha3.AArch64.Permutation) {s₀ s : State} (hp : Pre P s₀)
-    {mB : Mem} {vv : BitVec 64} {b : Nat} (hb : 136 * b < P.ekLen) (H : TT P s₀ mB vv b s) :
+    {mB : Mem} {vv : BitVec 64} {b : Nat} (hb : 136 * b < P.ekLen) (H : TT P s₀ mB vv b s)
+    (hd : Proof.Sha3.AArch64.D8 v.callee.name s) :
     WP isa (.seq (.block (Hybrid.absorbBlock (Kem16.kgSrc P) b)) (Kem16.kgPerm v.callee)) s
-      (TT P s₀ mB vv (b + 1)) := by
+      fun w => TT P s₀ mB vv (b + 1) w ∧ Proof.Sha3.AArch64.D8 v.callee.name w := by
   have hw := hp.wf
   obtain hsv : 200 ≤ SV P := by lom
   have kb := H.kb
@@ -1337,13 +1338,14 @@ theorem block_step (v : Proof.Sha3.AArch64.Permutation) {s₀ s : State} (hp : P
   obtain fS : 0 + 200 ≤ kL P 3 := by
     show 0 + 200 ≤ P.scl; omega_using [hw.facts.2.2.2.2.2.2.2.2.1]
   obtain fE : 0 + kL P 1 ≤ kL P 1 := by omega_using []
-  refine WP.seq (WP.mono (Hybrid.absorbBlock_ok (Kem16.kgSrc P) (srcOkK hw)
+  refine WP.seq (WP.mono_syms (Hybrid.absorbBlock_ok (Kem16.kgSrc P) (srcOkK hw)
     (by show s.gpr .x26 + BitVec.ofNat 64 0 = kA s₀ 1; rw [kb.x26, ptr_zero]) kb.x28 hb H.ek H.hash
     (by rw [ek]; exact cov_r hp kb (b := 1) (o := 0) (l := kL P 1) (by decide) fE)
     (by rw [stR_scratch]; exact cov_w hp kb (b := 3) (o := 0) (l := 200) (by decide) fS)
     (by rw [stR_scratch, ek]
         exact hp.args.rdisj (b₁ := 3) (o₁ := 0) (l₁ := 200) (b₂ := 1) (o₂ := 0) (l₂ := kL P 1)
-          (by decide) (by decide) fS fE (.inl (by decide)))) fun t ⟨kt, ft, st⟩ => ?_)
+          (by decide) (by decide) fS fE (.inl (by decide)))) fun t ⟨kt, ft, st⟩ ty => ?_)
+  have dt : Proof.Sha3.AArch64.D8 v.callee.name t := hd.of kt.vcs ty
   rw [stR_scratch] at ft
   obtain kbt := kb.frame kt ft (by decide) fun r hr => by
     rw [List.mem_singleton.mp hr]
@@ -1351,8 +1353,8 @@ theorem block_step (v : Proof.Sha3.AArch64.Permutation) {s₀ s : State} (hp : P
       (st_far hp (by decide) (by kl) (.inl (by decide)))⟩
   obtain et := H.e.frame hp kbt (kt.get .x24) ft fun r hr => by
     rw [List.mem_singleton.mp hr]; exact st_wk_far hp (by decide)
-  refine WP.mono (FixedHash.permute_ok v (hsetup hp kbt (rate := 136) (by decide))
-    ⟨rfl, rfl, rfl, fun _ _ _ => rfl⟩) fun w ⟨kw, sw⟩ => ?_
+  refine WP.mono_syms (FixedHash.permute_ok v (hsetup hp kbt (rate := 136) (by decide))
+    ⟨rfl, rfl, rfl, fun _ _ _ => rfl⟩ dt) fun w ⟨kw, sw⟩ wy => ?_
   obtain e3 : STr .x28 KG.ST t = R (kA s₀) 3 0 200 := by simp only [STr, R, kbt.x28, KG.ST]
   obtain e4 : (⟨t.gpr .x28 + BitVec.ofNat 64 KG.WK, 512⟩ : Region) = R (kA s₀) 3 KG.WK 512 := by
     simp only [R, kbt.x28]
@@ -1369,18 +1371,18 @@ theorem block_step (v : Proof.Sha3.AArch64.Permutation) {s₀ s : State} (hp : P
         (st_far hp (by decide) (by kl) (.inl (by decide)))⟩
     · exact ⟨hp.args.rdisj (by decide) (by decide) (by kl) (by kl) (.inr (.inr (by lom))),
         hp.args.rdisj (by decide) (by decide) (by kl) (by kl) (.inl (by decide))⟩
-  refine ⟨kbw, et.frame hp kbw (kw.cs .x24 (by decide) (by decide)) kw.frame far, ?_⟩
+  refine ⟨⟨kbw, et.frame hp kbw (kw.cs .x24 (by decide) (by decide)) kw.frame far, ?_⟩, dt.of kw.vcs wy⟩
   rw [kbt.x28, show KG.ST = 0 from rfl, ptr_zero] at sw
   rw [sw, ← st]
 
 /-- Blocks `b` to `b + d - 1` of `ek`. -/
 theorem blocks_ok (v : Proof.Sha3.AArch64.Permutation) {s₀ : State} (hp : Pre P s₀) {mB : Mem}
     {vv : BitVec 64} : ∀ (d b : Nat), b + d ≤ Hybrid.blocks (Kem16.kgSrc P) → ∀ {s : State},
-      TT P s₀ mB vv b s →
+      TT P s₀ mB vv b s → Proof.Sha3.AArch64.D8 v.callee.name s →
       WPs ((List.range' b d).map fun b => .seq (.block (Hybrid.absorbBlock (Kem16.kgSrc P) b))
-        (Kem16.kgPerm v.callee)) s (TT P s₀ mB vv (b + d))
-  | 0, b, _, s, H => by simpa only [List.range'_zero, List.map_nil, WPs, Nat.add_zero] using H
-  | d + 1, b, hd, s, H => by
+        (Kem16.kgPerm v.callee)) s fun t => TT P s₀ mB vv (b + d) t ∧ Proof.Sha3.AArch64.D8 v.callee.name t
+  | 0, b, _, s, H, d8 => by simpa only [List.range'_zero, List.map_nil, WPs, Nat.add_zero] using And.intro H d8
+  | d + 1, b, hd, s, H, d8 => by
     have hw := hp.wf
     have hf := hw.facts
     obtain hb : 136 * b < P.ekLen := by
@@ -1389,8 +1391,8 @@ theorem blocks_ok (v : Proof.Sha3.AArch64.Permutation) {s₀ : State} (hp : Pre 
       have := (Nat.le_div_iff_mul_le (by decide)).1 this
       omega_using [hd, hf]
     rw [List.range'_succ, List.map_cons]
-    refine WPs.cons (WP.mono (block_step v hp hb H) fun t ht => ?_)
-    obtain r := blocks_ok v hp d (b + 1) (by omega_using [hd]) ht
+    refine WPs.cons (WP.mono (block_step v hp hb H d8) fun t ht => ?_)
+    obtain r := blocks_ok v hp d (b + 1) (by omega_using [hd]) ht.1 ht.2
     rwa [show b + 1 + d = b + (d + 1) by omega_using []] at r
 
 /-- `H(ek)` and `z` into `dk`, and the epilogue. -/
@@ -1451,7 +1453,7 @@ theorem final_ok {s₀ s : State} (hp : Pre P s₀) {mB : Mem} {vv : BitVec 64}
 
 /-- **The tail**, once every row is encoded and the matrix has absorbed its blocks of `ek`. -/
 theorem tail_ok (v : Proof.Sha3.AArch64.Permutation) {s₀ s : State} (hp : Pre P s₀)
-    (H : IL P s₀ (P.k * P.k) P.k (Kem16.hashedBy P (P.k * P.k / 2)) s) :
+    (H : IL P s₀ (P.k * P.k) P.k (Kem16.hashedBy P (P.k * P.k / 2)) s) (hd : Proof.Sha3.AArch64.D8 v.callee.name s) :
     WP isa (Kem16.kgTail v.callee P) s (DoneW P s₀ s.mem (s.gpr .x24)) := by
   have hw := hp.wf
   have hf := hw.facts
@@ -1463,7 +1465,7 @@ theorem tail_ok (v : Proof.Sha3.AArch64.Permutation) {s₀ s : State} (hp : Pre 
     ⟨⟨kb, H.b.rho, H.b.sig, rfl, Nat.le_refl _, fun e he => ⟨H.b.red e he, rfl⟩⟩, H.sp, H.dk, H.rows⟩
   unfold Kem16.kgTail
   refine WPs.seqs (by simp) (WPs.append (WPs.append ?_))
-  refine WPs.cons (WP.mono (rho_okW hp tl) fun s₁ ⟨kb₁, e₁, f₁⟩ => ?_)
+  refine WPs.cons (WP.mono_syms (rho_okW hp tl) fun s₁ ⟨kb₁, e₁, f₁⟩ y₁ => ?_)
   simp only [WPs]
   obtain ek₁ : bytesAt s₁.mem (kA s₀ 1) P.ekLen = ekK P s₀ s.mem :=
     ek_at (T := tVW P s₀ s.mem) (ρ := rhoK P s₀) (fun i hi => (e₁.tl.ek i hi).1) e₁.rek
@@ -1491,8 +1493,9 @@ theorem tail_ok (v : Proof.Sha3.AArch64.Permutation) {s₀ s : State} (hp : Pre 
     omega_using [hle]
   obtain r := blocks_ok v hp (Hybrid.blocks (Kem16.kgSrc P) - Kem16.hashedBy P (P.k * P.k / 2))
     (Kem16.hashedBy P (P.k * P.k / 2)) (by omega_using [hb]) (s := s₁) ⟨kb₁, e₁, hs₁⟩
+    (hd.of (fun r hr => by rw [kb₁.vcs r hr, kb.vcs r hr]) y₁)
   rw [Nat.add_sub_cancel' hb] at r
-  exact WPs.mono r fun u hu => WPs.single (final_ok hp hu)
+  exact WPs.mono r fun u hu => WPs.single (final_ok hp hu.1)
 
 end VG.Proof.MlKem.AArch64.KeyGen
 
@@ -1530,22 +1533,23 @@ theorem matrixRows_ne_nil (P : KemLay) (hk3 : 3 ≤ P.k) : Impl.MlKem.AArch64.Ke
 
 /-- **The key generation computing the first PRF outputs in the matrix is correct.** -/
 theorem using_correctP (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.HashFn)
-    (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6
+    (hG : FixedHash.HashCorrect hash v.callee.name .x28 ST WK 72 6
       [⟨.x25,0,32⟩,⟨.x28,BK,1⟩] [⟨.x28,SB,32⟩,⟨.x28,SG,32⟩])
     {s₀ : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr : Noise.Room P) (hk3 : 3 ≤ P.k) (tables : Tables s₀)
     (ts : TStk s₀) (depthA : (FixedHashCallers.kgAUsing hash P).aarch64Depth ≤ 1)
-    (depthP : (Impl.MlKem.AArch64.Kem16P.kgPre sha3 P).aarch64Depth ≤ 1) :
+    (depthP : (Impl.MlKem.AArch64.Kem16P.kgPre sha3 P).aarch64Depth ≤ 1) (hd : Proof.Sha3.AArch64.D8 v.callee.name s₀) :
     WP isa (Impl.MlKem.AArch64.Kem16P.keyGen sha3 hash v.callee P) s₀ fun t =>
       abiPreserved s₀ t ∧ (keyGenAArch64 P).post s₀ t := by
   unfold Impl.MlKem.AArch64.Kem16P.keyGen
   refine WPs.seqs (by simp) ?_
-  refine WPs.cons (WP.mono_syms (WP.tablesDepth (a_using_ok hash hG hp) tables depthA) fun sA ⟨hA, ta⟩ hs => ?_)
-  refine WPs.cons (WP.mono (first_step (sha3 := sha3) hp hk (p := 0) (by decide) hk3
-    (FInv.zero hA ta (ts.of hs hA.kb.sp))) fun s₁ h₁ => ?_)
-  refine WPs.cons (WP.mono (first_step (sha3 := sha3) hp hk (p := 1) (by decide) hk3 h₁) fun s₂ h₂ => ?_)
-  refine WPs.cons (WP.mono (pre_ok (sha3 := sha3) hp hr hk3 h₂ depthP) fun s₃ h₃ => ?_)
-  refine WPs.cons (WP.mono (WPs.seqs (matrixRows_ne_nil (sha3 := sha3) P hk3) (matrixRows_ok (sha3 := sha3) hp hk hr hk3 h₃))
-    fun s₄ h₄ => ?_)
-  exact WPs.single (WP.mono (tail_ok v hp h₄) fun t ht => ⟨ht.abi, post_ofW h₄.b ht⟩)
+  refine WPs.cons (WP.mono_syms (WP.tablesDepth (a_using_ok hash hG hp hd) tables depthA) fun sA ⟨hA, ta⟩ hs => ?_)
+  refine WPs.cons (WP.mono_syms (first_step (sha3 := sha3) hp hk (p := 0) (by decide) hk3
+    (FInv.zero hA ta (ts.of hs hA.kb.sp))) fun s₁ h₁ y₁ => ?_)
+  refine WPs.cons (WP.mono_syms (first_step (sha3 := sha3) hp hk (p := 1) (by decide) hk3 h₁) fun s₂ h₂ y₂ => ?_)
+  refine WPs.cons (WP.mono_syms (pre_ok (sha3 := sha3) hp hr hk3 h₂ depthP) fun s₃ h₃ y₃ => ?_)
+  refine WPs.cons (WP.mono_syms (WPs.seqs (matrixRows_ne_nil (sha3 := sha3) P hk3) (matrixRows_ok (sha3 := sha3) hp hk hr hk3 h₃))
+    fun s₄ h₄ y₄ => ?_)
+  exact WPs.single (WP.mono (tail_ok v hp h₄ (hd.of h₄.b.kb.vcs (y₄.trans (y₃.trans (y₂.trans (y₁.trans hs))))))
+    fun t ht => ⟨ht.abi, post_ofW h₄.b ht⟩)
 
 end VG.Proof.MlKem.AArch64.KeyGen

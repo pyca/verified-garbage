@@ -19,7 +19,7 @@
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
@@ -81,7 +81,7 @@ pub unsafe fn vg_mlkem1024_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
@@ -145,7 +145,7 @@ pub unsafe fn vg_mlkem1024_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: 
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
@@ -205,7 +205,7 @@ pub unsafe fn vg_mlkem1024_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek
 /// * `dk` must have been written by `vg_mlkem1024_keygen` (so that it passes the checks of FIPS 203 §7.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mlkem1024_decaps_auto(_dit: verified_garbage_cpu::Dit<'_>, dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {

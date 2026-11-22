@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+public import VerifiedGarbage.Proof.Sha3.AArch64.CallD8
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
@@ -128,7 +129,7 @@ def actionCode (sc : Reg) (st : Nat) (a : Action) : List Instr :=
      .logic .eor .x .x9 .x9 .x10,.strb .x9 sc (st+a.pos)]
 
 def permute (c : Impl.Sha3.AArch64.Callee) (sc : Reg) (st wk : Nat) : Prog isa :=
-  .seq (.block (ptrTo .x0 sc st ++ ptrTo .x1 sc wk)) (.call c.name c.code)
+  .seq (.block (ptrTo .x0 sc st ++ ptrTo .x1 sc wk)) c.viaD8
 
 def compile (c : Impl.Sha3.AArch64.Callee) (sc : Reg) (st wk rate : Nat) : List Action → Prog isa
   | [] => .block []
@@ -1214,7 +1215,7 @@ theorem finish_ok (v : Proof.Sha3.AArch64.Permutation)
  (hp : outs.Pairwise (fun p q=>(preg s₀ p).Disjoint (preg s₀ q)))
  (hn : ∀p∈outs,p.off+p.len≤65536 ∧ p.len%8=0)
  (ht : (outs.map Piece.len).sum≤rate)
- (hk : Kept [STr sc st s₀,WKr sc wk s₀] s₀ s)
+ (hk : Kept [STr sc st s₀,WKr sc wk s₀] s₀ s) (hd : Proof.Sha3.AArch64.D8 v.callee.name s)
  (hm : stateAt s.mem (s₀.gpr sc+BitVec.ofNat 64 st)=Proof.Sha3.Rep rate msg)
  (hpos : pos=msg.length%rate)
  (hlink : s.mem.readW (linkSlot sc wk s₀) 64=s₀.gpr .x30) :
@@ -1226,13 +1227,14 @@ theorem finish_ok (v : Proof.Sha3.AArch64.Permutation)
  Outs s₀ t.mem rate (absorb rate (pad rate (BitVec.ofNat 8 sfx) msg)) 0 outs := by
  have gs:=hk.rg
  have es:=gs.cs sc hs.hsc.1 hs.hsc.2
- refine WP.seq (WP.mono (pad_repr (hsetup_rg hs gs) hb (by rw [Proof.Sha3.repr_iff]; simpa only [es] using hm) hpos) fun a ⟨ka,_,ma⟩=>?_)
+ refine WP.seq (WP.mono_syms (pad_repr (hsetup_rg hs gs) hb (by rw [Proof.Sha3.repr_iff]; simpa only [es] using hm) hpos) fun a ⟨ka,_,ma⟩ ay=>?_)
+ have da := hd.of ka.vcs ay
  simp only [STr,es] at ka
  rw [es] at ma
  have kaa:=hk.trans (ka.mono (by simp))
  have la : a.mem.readW (linkSlot sc wk s₀) 64=s₀.gpr .x30 := by
    rw [link_frame hs (ka.frame.mono (by simp)),hlink]
- refine WP.seq (WP.mono (permute_ok v hs kaa.rg) fun b ⟨kb,mb⟩=>?_)
+ refine WP.seq (WP.mono (permute_ok v hs kaa.rg da) fun b ⟨kb,mb⟩=>?_)
  have kb' : Kept [STr sc st s₀,WKr sc wk s₀] a b := kb.sub (by
    intro r hr; rcases mem2' hr with rfl|rfl
    · exact ⟨_,by simp,fun _ h=>h⟩
@@ -1333,7 +1335,7 @@ theorem compile_ok (v : Proof.Sha3.AArch64.Permutation)
  {ps : List Piece} {i pos last : Nat} {acts : List Action}
  (valid : Valid rate ps i pos acts last) :
  ∀s msg, (∀p∈ps,PieceOk sc st wk s₀ false p) → (∀p∈ps,p.off+p.len≤65536) →
- Kept [STr sc st s₀,WKr sc wk s₀] s₀ s →
+ Kept [STr sc st s₀,WKr sc wk s₀] s₀ s → Proof.Sha3.AArch64.D8 v.callee.name s →
  stateAt s.mem (s₀.gpr sc+BitVec.ofNat 64 st)=Rep rate msg → pos=msg.length%rate →
  WP isa (compile v.callee sc st wk rate acts) s fun t=>
  Kept [STr sc st s₀,WKr sc wk s₀] s₀ t ∧
@@ -1342,15 +1344,15 @@ theorem compile_ok (v : Proof.Sha3.AArch64.Permutation)
  Frame [STr sc st s₀,⟨s₀.gpr sc+BitVec.ofNat 64 wk,512⟩] s.mem t.mem := by
  induction valid with
  | done pos =>
-   intro s msg _ _ hk hm hp
+   intro s msg _ _ hk _ hm hp
    exact wp_nil ⟨hk,by simpa [remainingBytes] using hm,by simpa [remainingBytes] using hp,Frame.refl _ _⟩
  | @skip p ps pos acts last tail ih =>
-   intro s msg hp ho hk hm hpos
+   intro s msg hp ho hk hd hm hpos
    simpa only [remaining_skip] using ih s msg
      (fun q hq=>hp q (List.mem_cons_of_mem _ hq))
-     (fun q hq=>ho q (List.mem_cons_of_mem _ hq)) hk hm hpos
+     (fun q hq=>ho q (List.mem_cons_of_mem _ hq)) hk hd hm hpos
  | @step p ps i pos w acts last hi hfit hw tail ih =>
-   intro s msg hp ho hk hm hpos
+   intro s msg hp ho hk hd hm hpos
    have pOk:=hp p (List.mem_cons_self ..)
    have pOff:=ho p (List.mem_cons_self ..)
    have hr:=(rate_bounds hS.hrate).1
@@ -1361,28 +1363,29 @@ theorem compile_ok (v : Proof.Sha3.AArch64.Permutation)
    rw [bw,←hpos] at rep
    have nx := nextPos_mod hr hpos bw hfit
    dsimp only [compile,action]
-   refine WP.seq (WP.mono (action_piece_ok hS pOk hk.rg hi pOff hfit hw ha hb) fun t ⟨kt,mt⟩=> ?_)
+   refine WP.seq (WP.mono_syms (action_piece_ok hS pOk hk.rg hi pOff hfit hw ha hb) fun t ⟨kt,mt⟩ ty=> ?_)
+   have dt := hd.of kt.vcs ty
    have k':=hk.trans (kt.mono (by simp))
    rw [hm,chunkBytes_frame pOk hk hi] at mt
-   have finish {u : State} (ku : Kept [STr sc st s₀,WKr sc wk s₀] s₀ u)
+   have finish {u : State} (ku : Kept [STr sc st s₀,WKr sc wk s₀] s₀ u) (du : Proof.Sha3.AArch64.D8 v.callee.name u)
        (mu : stateAt u.mem (s₀.gpr sc+BitVec.ofNat 64 st)=
          Rep rate (msg++chunkBytes s₀ p i (width w))) :=
-     ih u (msg++chunkBytes s₀ p i (width w)) hp ho ku mu nx
+     ih u (msg++chunkBytes s₀ p i (width w)) hp ho ku du mu nx
    by_cases he : pos+width w=rate
    · rw [ite_eq_left he]
-     refine WP.seq (WP.mono (permute_ok v hS k'.rg) fun u ⟨ku,mu⟩=> ?_)
+     refine WP.seq (WP.mono_syms (permute_ok v hS k'.rg dt) fun u ⟨ku,mu⟩ uy=> ?_)
      have k'' := k'.trans (ku.sub (by
        intro r hh
        rcases mem2' hh with rfl|rfl
        · exact ⟨_,List.mem_cons_self ..,fun _ h=>h⟩
        · exact ⟨WKr sc wk s₀,by simp,fun _ h=>Nat.le_trans h (by decide : 512≤640)⟩))
-     have out := finish k'' (by rw [mu,mt,rep,ite_eq_left he])
+     have out := finish k'' (dt.of ku.vcs uy) (by rw [mu,mt,rep,ite_eq_left he])
      refine WP.mono out fun fin ⟨kf,mf,pf,ff⟩=>⟨kf,?_,?_,?_⟩
      · simpa only [remaining_step s₀ p ps hi,List.append_assoc] using mf
      · simpa only [remaining_step s₀ p ps hi,List.append_assoc] using pf
      · exact (kt.frame.mono (by simp)).trans (ku.frame.trans ff)
    · rw [ite_eq_right he]
-     have out := finish k' (by rw [mt,rep,ite_eq_right he])
+     have out := finish k' dt (by rw [mt,rep,ite_eq_right he])
      refine WP.mono out fun fin ⟨kf,mf,pf,ff⟩=>⟨kf,?_,?_,?_⟩
      · simpa only [remaining_step s₀ p ps hi,List.append_assoc] using mf
      · simpa only [remaining_step s₀ p ps hi,List.append_assoc] using pf
@@ -1410,18 +1413,19 @@ theorem compiled_ok (v : Proof.Sha3.AArch64.Permutation)
  (ho : ∀p∈outs,PieceOk sc st wk s₀ true p)
  (hp : outs.Pairwise (fun p q=>(preg s₀ p).Disjoint (preg s₀ q)))
  (hn : ∀p∈outs,p.off+p.len≤65536 ∧ p.len%8=0)
- (ht : (outs.map Piece.len).sum≤rate) :
+ (ht : (outs.map Piece.len).sum≤rate) (hd : Proof.Sha3.AArch64.D8 v.callee.name s₀) :
  WP isa (compiled v.callee sc st wk rate sfx ins outs) s₀ fun t=>
  Kept (STr sc st s₀::WKr sc wk s₀::outs.map (preg s₀)) s₀ t ∧
  t.gpr .x30=s₀.gpr .x30 ∧
  Outs s₀ t.mem rate (absorb rate (pad rate (BitVec.ofNat 8 sfx)
    (ins.map (pbytes s₀)).flatten)) 0 outs := by
  dsimp only [compiled]
- refine WP.seq (WP.mono (zeroSave_ok hs hl) fun a ⟨ka,za,la⟩=>?_)
- refine WP.seq (WP.mono (compile_ok v hs ha hb valid a [] hi hio ka
-   (by rw [Proof.Sha3.rep_nil]; exact za) (by simp)) fun b ⟨kb,mb,pb,fb⟩=>?_)
+ refine WP.seq (WP.mono_syms (zeroSave_ok hs hl) fun a ⟨ka,za,la⟩ ay=>?_)
+ have da := hd.of ka.vcs ay
+ refine WP.seq (WP.mono_syms (compile_ok v hs ha hb valid a [] hi hio ka da
+   (by rw [Proof.Sha3.rep_nil]; exact za) (by simp)) fun b ⟨kb,mb,pb,fb⟩ by'=>?_)
  simp only [List.nil_append,remaining_zero] at mb pb
- exact finish_ok v hs ha hb hl ho hp hn ht kb mb pb (by rw [link_frame hs fb,la])
+ exact finish_ok v hs ha hb hl ho hp hn ht kb (hd.of kb.vcs (by'.trans ay)) mb pb (by rw [link_frame hs fb,la])
 
 /-- Original hash interface, with only the specialization's encoding and schedule checks added. -/
 theorem code_ok (v : Proof.Sha3.AArch64.Permutation)
@@ -1436,13 +1440,14 @@ theorem code_ok (v : Proof.Sha3.AArch64.Permutation)
  (hn : ∀p∈outs,p.off+p.len≤65536 ∧ p.len%8=0)
  (ht : (outs.map Piece.len).sum≤rate)
  (same : Fusion.Same (compiled v.callee sc st wk rate sfx ins outs)
-   (Impl.MlKem.AArch64.FixedHash.code v.callee sc st wk rate sfx ins outs)) :
+   (Impl.MlKem.AArch64.FixedHash.code v.callee sc st wk rate sfx ins outs))
+ (hd : Proof.Sha3.AArch64.D8 v.callee.name s₀) :
  WP isa (Impl.MlKem.AArch64.FixedHash.code v.callee sc st wk rate sfx ins outs) s₀ fun t=>
  Kept (STr sc st s₀::WKr sc wk s₀::below s₀.sp 16::outs.map (preg s₀)) s₀ t ∧
  Outs s₀ t.mem rate (absorb rate (pad rate (BitVec.ofNat 8 sfx)
    (ins.map (pbytes s₀)).flatten)) 0 outs := by
  apply same.wp.mp
- refine WP.mono (compiled_ok v hs ha hb hl hi hio valid ho hp hn ht) fun t ⟨hk,_,out⟩=>⟨hk.mono ?_,out⟩
+ refine WP.mono (compiled_ok v hs ha hb hl hi hio valid ho hp hn ht hd) fun t ⟨hk,_,out⟩=>⟨hk.mono ?_,out⟩
  intro r hr
  simp only [List.mem_cons] at hr ⊢
  rcases hr with h|h|h
@@ -1461,73 +1466,73 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64
 /-! The fixed hash's shapes are correct for any permutation `v`. -/
 
 theorem kgG768_correct (v : Proof.Sha3.AArch64.Permutation) :
- HashCorrect (fixedHash v.callee) .x28 KG.ST KG.WK 72 6
+ HashCorrect (fixedHash v.callee) v.callee.name .x28 KG.ST KG.WK 72 6
         [⟨.x25,0,32⟩,⟨.x28,KG.BK,1⟩] [⟨.x28,KG.SB,32⟩,⟨.x28,KG.SG,32⟩] := by
- intro s hs _ _ hi ho hp
+ intro s hs hd _ _ hi ho hp
  apply code_ok v hs (by decide) (by decide) (by decide) hi
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
    (certified_sound kgG768_schedule) ho hp
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (by decide) (kgG768_compiled v.callee)
+   (by decide) (kgG768_compiled v.callee) hd
 
 theorem prf768_correct (v : Proof.Sha3.AArch64.Permutation) :
- HashCorrect (fixedHash v.callee) .x28 KEM.ST KEM.WK 136 0x1f
+ HashCorrect (fixedHash v.callee) v.callee.name .x28 KEM.ST KEM.WK 136 0x1f
         [⟨.x28,KEM.RB,33⟩] [⟨.x28,KEM.PB,128⟩] := by
- intro s hs _ _ hi ho hp
+ intro s hs hd _ _ hi ho hp
  apply code_ok v hs (by decide) (by decide) (by decide) hi
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
    (certified_sound prf768_schedule) ho hp
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (by decide) (prf768_compiled v.callee)
+   (by decide) (prf768_compiled v.callee) hd
 
 theorem enG768_correct (v : Proof.Sha3.AArch64.Permutation) :
- HashCorrect (fixedHash v.callee) .x28 KEM.ST KEM.WK 72 6
+ HashCorrect (fixedHash v.callee) v.callee.name .x28 KEM.ST KEM.WK 72 6
         [⟨.x28,KEM.MB,32⟩,⟨.x28,KEM.HB,32⟩] [⟨.x26,0,32⟩,⟨.x28,KEM.RB,32⟩] := by
- intro s hs _ _ hi ho hp
+ intro s hs hd _ _ hi ho hp
  apply code_ok v hs (by decide) (by decide) (by decide) hi
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
    (certified_sound enG768_schedule) ho hp
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (by decide) (enG768_compiled v.callee)
+   (by decide) (enG768_compiled v.callee) hd
 
 theorem deG768_correct (v : Proof.Sha3.AArch64.Permutation) :
- HashCorrect (fixedHash v.callee) .x28 KEM.ST KEM.WK 72 6
+ HashCorrect (fixedHash v.callee) v.callee.name .x28 KEM.ST KEM.WK 72 6
         [⟨.x28,KEM.MB,32⟩,⟨.x25,2336,32⟩] [⟨.x28,KEM.KP,32⟩,⟨.x28,KEM.RB,32⟩] := by
- intro s hs _ _ hi ho hp
+ intro s hs hd _ _ hi ho hp
  apply code_ok v hs (by decide) (by decide) (by decide) hi
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
    (certified_sound deG768_schedule) ho hp
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (by decide) (deG768_compiled v.callee)
+   (by decide) (deG768_compiled v.callee) hd
 
 theorem kgG1024_correct (v : Proof.Sha3.AArch64.Permutation) :
- HashCorrect (fixedHash v.callee) .x28 KG.ST KG.WK 72 6
+ HashCorrect (fixedHash v.callee) v.callee.name .x28 KG.ST KG.WK 72 6
         [⟨.x25,0,32⟩,⟨.x28,KG.BK,1⟩] [⟨.x28,KG.SB,32⟩,⟨.x28,KG.SG,32⟩] := by
- intro s hs _ _ hi ho hp
+ intro s hs hd _ _ hi ho hp
  apply code_ok v hs (by decide) (by decide) (by decide) hi
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
    (certified_sound kgG1024_schedule) ho hp
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (by decide) (kgG1024_compiled v.callee)
+   (by decide) (kgG1024_compiled v.callee) hd
 
 theorem enG1024_correct (v : Proof.Sha3.AArch64.Permutation) :
- HashCorrect (fixedHash v.callee) .x28 KEM.ST KEM.WK 72 6
+ HashCorrect (fixedHash v.callee) v.callee.name .x28 KEM.ST KEM.WK 72 6
         [⟨.x28,KEM.MB,32⟩,⟨.x28,KEM.HB,32⟩] [⟨.x26,0,32⟩,⟨.x28,KEM.RB,32⟩] := by
- intro s hs _ _ hi ho hp
+ intro s hs hd _ _ hi ho hp
  apply code_ok v hs (by decide) (by decide) (by decide) hi
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
    (certified_sound enG1024_schedule) ho hp
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (by decide) (enG1024_compiled v.callee)
+   (by decide) (enG1024_compiled v.callee) hd
 
 theorem deG1024_correct (v : Proof.Sha3.AArch64.Permutation) :
- HashCorrect (fixedHash v.callee) .x28 KEM.ST KEM.WK 72 6
+ HashCorrect (fixedHash v.callee) v.callee.name .x28 KEM.ST KEM.WK 72 6
         [⟨.x28,KEM.MB,32⟩,⟨.x25,3104,32⟩] [⟨.x28,KEM.KP,32⟩,⟨.x28,KEM.RB,32⟩] := by
- intro s hs _ _ hi ho hp
+ intro s hs hd _ _ hi ho hp
  apply code_ok v hs (by decide) (by decide) (by decide) hi
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
    (certified_sound deG1024_schedule) ho hp
    (by intro p h; simp at h; first | (subst p; decide) | (rcases h with rfl|rfl <;> decide))
-   (by decide) (deG1024_compiled v.callee)
+   (by decide) (deG1024_compiled v.callee) hd
 
 end VG.Proof.MlKem.AArch64.FixedHash
