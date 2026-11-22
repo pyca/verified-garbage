@@ -83,20 +83,19 @@ theorem pow_ok (hc : CfgOk c) {E : Nat} (hWs : ∀ w ∈ WAll.mulW c E, w.1 + w.
   have lx₅ : sv c base s₅ RX < c.C.p := R₅.x
   have ly₅ : sv c base s₅ RY < c.C.p := R₅.y
   have lz₅ : sv c base s₅ RZ < c.C.p := R₅.z
-  refine WP.seq (WP.mono (chainPow_ok (P := c.chainP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc)
+  refine WP.seq (WP.mono (chainCallC_ok h7 chainWP_eq (i := RZ) rfl (by decide) (P := c.chainP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc)
     (chainLayP hc) hpR K₅'.ws lz₅ hc.chainP) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [chainWP_eq] at U₆
-  have K₆' : Keep c s₀ base s₆ := K₅'.step h7 K₆ (hU := U₆) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  have K₆' : Keep c s₀ base s₆ := K₅'.step h7 K₆ (hU := U₆) (hW := fixedOk_chainWS h7) (hWs := chainWS_le h7)
   have e₆ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv c base s₆ i = sv c base s₅ i := fun hi hr ht =>
-    sv_unch U₆ h7 hn hi (apart_chainW h7 hi hr ht)
+    sv_unch U₆ h7 hn hi (apart_chainWS h7 hi hr ht)
   have hF := sl_le c h7 (i := FLAG) (by decide)
   have apF₅ : ∀ w ∈ WAll.mulW c E, c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
     rcases apart_mulW h7 E (i := FLAG) (by decide) (by decide) w hw with h | h
     · exact Or.inl (by omega_using [h, n1])
     · exact Or.inr h
-  have apF₆ : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (Mont.own c.n, 64 * c.n)],
+  have apF₆ : ∀ w ∈ chainWS c,
       c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
-    rcases apart_chainW h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
+    rcases apart_chainWS h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
     · exact Or.inl (by omega_using [h, n1])
     · exact Or.inr h
   have tR : ∀ i ∈ [RX, RY, RZ], Point.tmv c.C c.n base s₆ (c.sl i) = Point.tmv c.C c.n base s₅ (c.sl i) := by
@@ -113,7 +112,7 @@ theorem pow_ok (hc : CfgOk c) {E : Nat} (hWs : ∀ w ∈ WAll.mulW c E, w.1 + w.
   · rw [e₆ hi (by intro h; subst h; simp at hl)
       ((by decide : ∀ i < 45, i ∉ ACC :: PT :: ladIx → i < DX ∨ T2 < i) _ hi hl), e₅ hi hl]
   · intro t ht
-    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_chainW h7 2 t),
+    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_chainWS h7 2 t),
       tbl_unch U₅ h7 (j := 2) (by decide) ht (tA₅ t ht)]
   · rw [tR RZ (by simp)]; exact v₆
 

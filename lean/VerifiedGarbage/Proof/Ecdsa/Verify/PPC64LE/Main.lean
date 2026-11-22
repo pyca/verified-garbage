@@ -393,30 +393,20 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   obtain sm₃ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₃ SM') = Fin.ofNat c.C.n (sigS c s₀) := by
     rw [toM_r2 hnR (by rw [e₃, show sv c base s₂ R2N = _ from K₂.fixed.r2n]), v₂ (by decide) (by decide), hF.pt]
   -- `w = s^(n-2)`.
-  refine WP.seq (WP.mono (chainPow_ok (P := c.chainN) (S := c.SN) (e := c.C.n - 2) hc.fnk hc.fnm (modN hc)
+  refine WP.seq (WP.mono (chainCallC_ok h7 chainWN_eq (i := KM) rfl (by decide) (P := c.chainN) (S := c.SN) (e := c.C.n - 2) hc.fnk hc.fnm (modN hc)
     (chainLayN hc) hnR K₃.ws (show sv c base s₃ KM < c.C.n from lt₃) hc.chainN) fun s₄ ⟨k₄, U₄, lt₄, w₄⟩ => ?_)
-  rw [chainWN_eq] at U₄
-  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_chainWS h7) (hWs := chainWS_le h7)
   obtain e₄ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv c base s₄ i = sv c base s₃ i := fun hi hr ht =>
-    sv_unch U₄ h7 hn hi (apart_chainW h7 hi hr ht)
+    sv_unch U₄ h7 hn hi (apart_chainWS h7 hi hr ht)
   obtain f₄ : flagW c base s₄ = flagW c base s₃ := by
     simp only [flagW]
     exact U₄.word (fun w hw => by
-      rcases apart_chainW h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
+      rcases apart_chainWS h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
       · exact Or.inl (by omega_arith)
       · exact Or.inr h) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)
   obtain t₄ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
       s₄.mem (off base (bitsAt c.n j + t)) = s₃.mem (off base (bitsAt c.n j + t)) := fun {j} hj t ht =>
-    tbl_unch U₄ h7 hj ht (fun w hw => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl | rfl
-      · exact Or.inr (sl_below_bits c h7 (i := ACC) (by decide) j t)
-      · have h26 := sl_below_bits c h7 (i := 26) (by decide) j t
-        rw [sl_eq] at h26
-        refine Or.inr ?_
-        show c.sl 17 + 9 * (8 * c.n) ≤ _
-        rw [sl_eq]; omega_using [h26]
-      · exact tbl_apart_own h7 j t _ (List.mem_singleton_self _))
+    tbl_unch U₄ h7 hj ht (tbl_apart_chainWS h7 j t)
   obtain w₄' : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₄ ACC) = Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [← sm₃]; exact w₄
   -- `u` and `v`.
@@ -1228,17 +1218,16 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
   have hn3 := hc.n_ge
   obtain hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   -- `Z^(p-2)`.
-  refine WP.seq (WP.mono (chainPow_ok (P := c.chainP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc)
+  refine WP.seq (WP.mono (chainCallC_ok h7 chainWP_eq (i := RZ) rfl (by decide) (P := c.chainP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc)
     (chainLayP hc) hpR hP.ws hP.rz_lt hc.chainP) fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)
-  rw [chainWP_eq] at U₁
-  obtain K₁ : Keep c s₀ base s₁ := hP.toKeep.step h7 k₁ (hU := U₁) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  obtain K₁ : Keep c s₀ base s₁ := hP.toKeep.step h7 k₁ (hU := U₁) (hW := fixedOk_chainWS h7) (hWs := chainWS_le h7)
   obtain e₁ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv c base s₁ i = sv c base s i := fun hi hr ht =>
-    sv_unch U₁ h7 hn hi (apart_chainW h7 hi hr ht)
+    sv_unch U₁ h7 hn hi (apart_chainWS h7 hi hr ht)
   obtain fl₁ : flagW c base s₁ = flagW c base s := by
-    obtain apF : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)],
+    obtain apF : ∀ w ∈ chainWS c,
         c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
       have := sl_le c h7 (i := FLAG) (by decide)
-      rcases apart_chainW h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
+      rcases apart_chainWS h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
       · exact Or.inl (by omega_arith)
       · exact Or.inr h
     rw [flagW, U₁.word apF (by omega_arith), ← flagW]

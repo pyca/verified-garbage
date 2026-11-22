@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.Chain
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.CallOf
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -376,5 +377,62 @@ theorem chainPow_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : Chain
   refine WP.mono (steps_ok hkS hmS hM hL hm P.steps hC.steps S₂ T₂ (by rw [e₂]; exact Ti.1)
     (v := P.first) (by rw [e₂, Ti.2]; congr 1; have := hC.first; omega_using [this])) fun s₃ ⟨S₃, lt₃, v₃⟩ =>
     ⟨S₃.keep, S₃.unch, lt₃, by rw [v₃, hC.val]⟩
+
+/-- `chainPow_ok` for the chain called as a function of its own
+(`ChainCfg.call`), which keeps the link register at `sv`, apart from what the
+chain writes and from its operand: it writes that word too. -/
+theorem chainCall_ok (hkS : S.k = k) (hmS : S.m = m) (hM : ModOk k m) (hL : ChainLay P k)
+    (hm : UnitMod m (2 ^ (64 * k))) {base : Addr} {e sv : Nat} {s : State} (hs : WsReg s base)
+    (hB : wordsVal s.mem base P.base k < m) (hC : ChainOk P e) (hsv4 : sv % 4 = 0) (hsv : sv + 8 ≤ 8192)
+    (hsW : ∀ w ∈ chainW P k, sv + 8 ≤ w.1 ∨ w.1 + w.2 ≤ sv) (hsb : sv + 8 ≤ P.base ∨ P.base + 8 * k ≤ sv) :
+    WP isa (VG.Impl.Weierstrass.PPC64LE.ChainCfg.call P S sv) s fun s' => Rk powClob s s' ∧
+      Unch base ((sv, 8) :: chainW P k) s.mem s'.mem ∧
+      wordsVal s'.mem base P.acc k < m ∧
+      toM m (2 ^ (64 * k)) (wordsVal s'.mem base P.acc k) =
+        toM m (2 ^ (64 * k)) (wordsVal s.mem base P.base k) ^ e := by
+  have hn := hs.nowrap
+  have hb := hL.base
+  have hf := hL.fit
+  obtain hu : WsReg s.callEntry base :=
+    ⟨by rw [State.callEntry_gpr _ (by decide)]; exact hs.r3, by rw [State.callEntry_wr]; exact hs.wr, hs.nowrap⟩
+  refine WP.callOf ?_
+  rw [VG.Impl.Weierstrass.PPC64LE.ChainCfg.fn]
+  -- The link register into `r0`, then to `[sv]`.
+  have h₁ : WP isa (.block [.mflr .r0, .store .d .r0 wb sv]) s.callEntry fun t => WsReg t base ∧
+      t.mem = s.mem.writeW (off base sv) s.callEntry.lr ∧ Kp [.r0] s.callEntry t := by
+    refine wp_step exec_mflr ?_
+    refine wp_step (std0_ok ((hu.ws).write _ _) (hu.at3.write _) (by decide) hsv4 hsv) (WP.block_nil ?_)
+    have hk : Kp [.r0] s.callEntry { s.callEntry.write .r0 s.callEntry.lr with
+        mem := (s.callEntry.write .r0 s.callEntry.lr).mem.writeW (off base sv)
+          ((s.callEntry.write .r0 s.callEntry.lr).gpr .r0) } :=
+      (Kp.write _ _ (by decide)).trans (Kp.store _ _ _)
+    refine ⟨hu.of_kp hk, ?_, hk⟩
+    simp only [write_mem, write_gpr, ite_true, State.callEntry_mem]
+  refine WP.seq (WP.mono h₁ fun s₁ ⟨hs₁, hm₁, hg₁⟩ => ?_)
+  obtain O₁ : Outside base sv 8 s.mem s₁.mem := by rw [hm₁]; exact writeW_outside _ _ _ (by omega_arith)
+  obtain hB₁ : wordsVal s₁.mem base P.base k < m := by
+    rw [O₁.wordsVal hsb.symm (by omega_arith)]; exact hB
+  refine WP.seq (WP.mono (chainPow_ok hkS hmS hM hL hm hs₁ hB₁ hC) fun s₂ ⟨K₂, U₂, lt₂, v₂⟩ => ?_)
+  obtain hw₂ : WsReg s₂ base := hs₁.of_rk K₂
+  have hlr : word s₂.mem base sv = s.callEntry.lr := by
+    rw [U₂.word hsW (by omega_arith), hm₁, word_writeW_self]
+  refine wp_step (ld0_ok hw₂.ws hw₂.at3 (by decide) hsv4 hsv) ?_
+  refine wp_step exec_mtlr (WP.block_nil ⟨?_, ?_, ?_, ?_, ?_⟩)
+  · simp only [write_gpr, ite_true, hlr]
+  · refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
+    · have h0 : r ≠ .r0 := fun h => hr (by subst h; decide)
+      have hl : r ∉ linkRegs := fun h => hr (by
+        simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false] at h
+        rcases h with rfl | rfl | rfl <;> decide)
+      simp only [write_gpr, h0, ite_false]
+      rw [K₂.gpr r hr, hg₁.g (r := r) (by simpa using h0), State.callEntry_gpr _ hl]
+    · simp only [write_rd]; rw [K₂.rd, hg₁.rd]; rfl
+    · simp only [write_wr]; rw [K₂.wr, hg₁.wr]; rfl
+    · simp only [write_sp]; rw [K₂.sp, hg₁.sp]; rfl
+  · simp only [write_mem]
+    exact fun x hx => (U₂ x fun w hw => hx w (List.mem_cons_of_mem _ hw)).trans
+      (by rw [hm₁]; exact writeW_outside _ _ _ (by omega_arith) x (hx _ List.mem_cons_self))
+  · simp only [write_mem]; exact lt₂
+  · simp only [write_mem]; rw [v₂, O₁.wordsVal hsb.symm (by omega_arith)]
 
 end VG.Proof.Weierstrass.PPC64LE
