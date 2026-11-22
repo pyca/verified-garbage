@@ -459,7 +459,7 @@ end
 uncompressed one at `public`, or zeros, for any curve the proof of the code
 supports (`CfgOk`), restores the callee-saved registers and `lr`: the
 signature's setup (`stage₀'`, after `public` to `r12`), ECDH's parsing
-(`peer_ok`) and validation (`validate_ok`) of the key, and `finish_ok`.
+(`peer_ok`) and validation (`valCall_ok`) of the key, and `finish_ok`.
 `compress_correct`: the same, against `compressContract`.
 -/
 
@@ -525,7 +525,7 @@ structure CKeep (s₀ s' : State) : Prop where
 theorem compress_eq' (c : Cfg) : Impl.EcKey.Compressed.PPC64LE.compress c =
     .seq (.block (mov .r12 .r4 :: c.setupWith args))
       (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r12))
-      (.seq (Impl.Ecdh.PPC64LE.Cfg.validate c) (.block (Impl.EcKey.Compressed.PPC64LE.compressFinish c)))) := rfl
+      (.seq (Impl.Ecdh.PPC64LE.Cfg.valCall c) (.block (Impl.EcKey.Compressed.PPC64LE.compressFinish c)))) := rfl
 
 /-- `vg_ec_<curve>_compress_public_key` writes the compressed key, or zeros,
 and returns 1 or 0, restoring the callee-saved registers and `lr`. -/
@@ -577,13 +577,13 @@ theorem compress_ok (hc : CfgOk c) {s₀ : State} (hp : CPre c s₀) :
       sv c base s₃ QY < c.C.p) := by
     rw [f₃, hq0, S₂.flag, BitVec.allOnes_and, mask64_and, mask64_and]
   -- The validation.
-  refine WP.seq (WP.mono (validate_ok hc K₃.ws K₃.fixed r2₃ bp₃ hf₃)
+  refine WP.seq (WP.mono (valCall_ok hc K₃.ws K₃.fixed r2₃ bp₃ hf₃)
     fun s₄ ⟨hw₄, k₄, U₄, f₄, _, _, _, _⟩ => ?_)
-  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_valW h7) (hWs := valW_le h7)
+  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_valWS h7) (hWs := valWS_le h7)
   obtain e₄ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, W0, W1, W2, W3, PY] → i ≠ FLAG → sv c base s₄ i = sv c base s₃ i :=
-    fun hi hl hf => sv_unch U₄ h7 hn hi (apart_append (apart_slW hl)
+    fun hi hl hf => sv_unch U₄ h7 hn hi (apart_valWS hi (apart_append (apart_slW hl)
       (show ∀ w ∈ [(own c.n, 64 * c.n)] ++ [(c.sl FLAG, 8)], _ from
-        apart_append (apart_own h7 hi) (apart_flag h0 hf)))
+        apart_append (apart_own h7 hi) (apart_flag h0 hf))))
   obtain hok : PeerOk c base s₃ ((s₀.mem (s₀.gpr .r4) = 4 ∧ sv c base s₃ E < c.C.p) ∧ sv c base s₃ QY < c.C.p) ↔
       KeyOk c s₀ := by
     unfold PeerOk

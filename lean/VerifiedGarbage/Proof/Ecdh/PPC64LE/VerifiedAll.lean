@@ -63,10 +63,7 @@ theorem apart_mulW (h7 : c.n < 10) (E : Nat) {i : Nat} (hi : i < 45) (hr : i ∉
     rw [sl_eq c 29] at this
     rcases hw with rfl | rfl | rfl <;> simp only <;> omega_using [this, ho]
 
-/-- A multiplication `m` as a function (`Cfg.winCall`), with `r31` and `lr`
-kept at `c.sl 45` around it: from `m`'s run on the state after the saves,
-which keeps `powClob`, changes only `W` (apart from the saved words) and
-ends with `P`, of the memory alone. -/
+/-- `winCallL_of` for the windows' function, which keeps `powClob`. -/
 theorem winCall_of (h7 : c.n < 10) {m : Prog isa} {W : List (Nat × Nat)} {base : Addr} {s : State}
     {P : State → Prop} (hs : WsReg s base)
     (hW : ∀ w ∈ W, c.sl 45 + 16 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl 45)
@@ -74,51 +71,10 @@ theorem winCall_of (h7 : c.n < 10) {m : Prog isa} {W : List (Nat × Nat)} {base 
     (hm : ∀ t : State, WsReg t base → Unch base [(c.sl 45, 16)] s.mem t.mem →
       WP isa m t fun t' => Rk powClob t t' ∧ Unch base W t.mem t'.mem ∧ P t') :
     WP isa (c.winCall m) s fun s' => Rk powClob s s' ∧ Unch base ((c.sl nslots, 16) :: W) s.mem s'.mem ∧
-      P s' := by
-  obtain hown := save_le_own (c := c) h7
-  obtain h45 := sl_eq c 45
-  obtain hO8 := own_eq c.n
-  have hn := hs.nowrap
-  obtain hu : WsReg s.callEntry base :=
-    ⟨by rw [State.callEntry_gpr _ (by decide)]; exact hs.r3, by rw [State.callEntry_wr]; exact hs.wr, hn⟩
-  refine WP.callOf ?_
-  rw [Cfg.winFn]
-  -- `r31` and `lr` saved.
-  refine WP.seq (WP.mono (saves_ok h7 hu) fun s₂ ⟨K₂, m₂⟩ => ?_)
-  obtain hw₂ := hu.of_kp K₂
-  obtain O₂ : Unch base [(c.sl 45, 16)] s.mem s₂.mem := by
-    rw [m₂, State.callEntry_mem]
-    refine ((writeW_outside s.mem base (s.callEntry.gpr .r31) (d := c.sl 45) (by omega_arith)).unch.trans
-      (writeW_outside _ base s.callEntry.lr (d := c.sl 45 + 8) (by omega_arith)).unch).cover fun w hw => ?_
-    refine ⟨(c.sl 45, 16), List.mem_singleton_self _, ?_⟩
-    simp only [List.mem_append, List.mem_singleton] at hw
-    rcases hw with rfl | rfl <;> exact ⟨by dsimp only; omega_arith, by dsimp only; omega_arith⟩
-  -- The body.
-  refine WP.seq (WP.mono (hm s₂ hw₂ O₂) fun s₃ ⟨K₃, U₃, R₃⟩ => ?_)
-  obtain hw₃ := hw₂.of_rk K₃
-  obtain apS : ∀ {d : Nat}, c.sl 45 ≤ d → d + 8 ≤ c.sl 45 + 16 → ∀ w ∈ W, d + 8 ≤ w.1 ∨ w.1 + w.2 ≤ d :=
-    fun h1 h2 w hw => (hW w hw).imp (fun h => by omega_arith) (fun h => by omega_arith)
-  obtain w31 : word s₃.mem base (c.sl 45) = s.gpr .r31 := by
-    rw [U₃.word (apS (Nat.le_refl _) (by omega_arith)) (by omega_arith), m₂,
-      word_writeW_ne _ (by omega_arith) (by omega_arith) (by omega_arith), word_writeW_self,
-      State.callEntry_gpr _ (by decide)]
-  obtain wlr : word s₃.mem base (c.sl 45 + 8) = s.callEntry.lr := by
-    rw [U₃.word (apS (by omega_arith) (by omega_arith)) (by omega_arith), m₂, word_writeW_self]
-  -- `lr` and `r31` restored.
-  refine WP.mono (loads_ok h7 hw₃) fun s₄ ⟨m₄, lr₄, r31₄, K₄⟩ => ⟨by rw [lr₄, wlr], ?_, ?_, hP _ _ m₄ R₃⟩
-  · refine ⟨fun r hr => ?_, by rw [K₄.rd, K₃.rd, K₂.rd]; rfl, by rw [K₄.wr, K₃.wr, K₂.wr]; rfl,
-      by rw [K₄.sp, K₃.sp, K₂.sp]; rfl⟩
-    have h0 : r ∉ [Reg.r0, .r31] := fun h => hr (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at h; rcases h with rfl | rfl <;> decide)
-    have hl : r ∉ linkRegs := fun h => hr (by
-      simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false] at h
-      rcases h with rfl | rfl | rfl <;> decide)
-    rw [K₄.gpr r h0, K₃.gpr r hr, K₂.gpr r (fun h => h0 (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; exact .inl h)), State.callEntry_gpr _ hl]
-  · rw [m₄]
-    exact (O₂.trans U₃).mono fun w hw => by
-      simp only [nslots, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
-      exact hw
+      P s' :=
+  winCallL_of h7 (fun r hr h => hr (by
+    simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl | rfl <;> decide)) (by decide) hs hW hP hm
 
 /-- A slot's number, after `r31` and `lr` are saved. -/
 theorem sv_saved (h7 : c.n < 10) {base : Addr} {s t : State} (_hn : base.toNat + size ≤ 2 ^ 64)

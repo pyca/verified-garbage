@@ -339,7 +339,7 @@ def mulAt (C : Impl.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
   .seq (.block (copy c.n (c.sl RX) (c.sl px) ++ copy c.n (c.sl RY) (c.sl py)))
     (.call s!"vg_{C.curve}_mul" c.mulFn)
 
-/-- A multiplication `m` as a function: `r31` and `lr` kept around it, through
+/-- Code `m` as a function: `r31` and `lr` kept around it, through
 `r0`, where `vg_<curve>_mul` keeps them (`mulFn`). -/
 def winFn (m : Prog isa) : Prog isa :=
   .seq (.block [.store .d .r31 wb c.mulAt31, .mflr .r0, .store .d .r0 wb c.mulAtLr]) <|

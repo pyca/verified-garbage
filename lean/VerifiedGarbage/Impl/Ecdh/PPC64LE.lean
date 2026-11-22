@@ -121,6 +121,10 @@ def validate : Prog isa :=
   .seq (mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P)) <|
   .seq (fprog c.SP (curveOps c)) (.block (checkZero c (c.sl W1) ++ select c))
 
+/-- `validate` as a function, `vg_<curve>_validate`, which ECDH and ECDSA
+verification both call. -/
+def valCall : Prog isa := .call s!"vg_{c.SP.curve}_validate" (Impl.Ecdsa.PPC64LE.Cfg.winFn c (validate c))
+
 /-- `x` (or zeros) to `out` (in `r14`), the flag's low bit to `r3`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
@@ -142,7 +146,7 @@ def exchangeWith (mul : Prog isa) : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq (.block (peerAt c .r12)) <|
-  .seq (validate c) <|
+  .seq (valCall c) <|
   .seq mul <| .seq c.invP (middle c)
 
 /-- `vg_ecdh_<curve>`, with `[d]P` by `qMul`. -/

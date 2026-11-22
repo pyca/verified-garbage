@@ -182,7 +182,7 @@ def backWith (pts : Prog isa) : Prog isa :=
 /-- `vg_ecdsa_<curve>_verify`, with `pts` for `[u]G + [v]Q`. -/
 def verifyWith (pts : Prog isa) : Prog isa :=
   .seq (prefix' c) <| .seq (.block (loadS c)) <|
-  .seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r14)) <| .seq (Impl.Ecdh.PPC64LE.Cfg.validate c) (backWith c pts)
+  .seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r14)) <| .seq (Impl.Ecdh.PPC64LE.Cfg.valCall c) (backWith c pts)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa := backWith c (points c)

@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
+import VerifiedGarbage.Proof.Framework.PPC64LE.CallOf
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
@@ -542,6 +543,67 @@ theorem tbl_apart_valW (h7 : c.n < 10) (h0 : 0 < c.n) (j t : Nat) :
     (show ∀ w ∈ [(own c.n, 64 * c.n)] ++ [(c.sl FLAG, 8)], _ from
       apart_append (tbl_apart_own h7 j t) (tbl_apart_flag h7 h0 j t))
 
+/-- Code `m` as a function (`Cfg.winFn`, as `Cfg.winCall` calls the windows), with `r31` and `lr`
+kept at `c.sl 45` around it: from `m`'s run on the state after the saves,
+which keeps `L`, changes only `W` (apart from the saved words) and
+ends with `P`, of the memory alone. -/
+theorem winCallL_of (h7 : c.n < 10) {L : List Reg} (hL : ∀ r, r ∉ L → r ∉ linkRegs) (h3 : .r3 ∉ L)
+    {name : String} {m : Prog isa} {W : List (Nat × Nat)} {base : Addr} {s : State}
+    {P : State → Prop} (hs : WsReg s base)
+    (hW : ∀ w ∈ W, c.sl 45 + 16 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl 45)
+    (hP : ∀ t t' : State, t'.mem = t.mem → P t → P t')
+    (hm : ∀ t : State, WsReg t base → Unch base [(c.sl 45, 16)] s.mem t.mem →
+      WP isa m t fun t' => Rk L t t' ∧ Unch base W t.mem t'.mem ∧ P t') :
+    WP isa (.call name (c.winFn m)) s fun s' => Rk L s s' ∧ Unch base ((c.sl nslots, 16) :: W) s.mem s'.mem ∧
+      P s' := by
+  obtain hown := save_le_own (c := c) h7
+  obtain h45 := sl_eq c 45
+  obtain hO8 := own_eq c.n
+  have hn := hs.nowrap
+  obtain hu : WsReg s.callEntry base :=
+    ⟨by rw [State.callEntry_gpr _ (by decide)]; exact hs.r3, by rw [State.callEntry_wr]; exact hs.wr, hn⟩
+  refine WP.callOf ?_
+  rw [Cfg.winFn]
+  -- `r31` and `lr` saved.
+  refine WP.seq (WP.mono (saves_ok h7 hu) fun s₂ ⟨K₂, m₂⟩ => ?_)
+  obtain hw₂ := hu.of_kp K₂
+  obtain O₂ : Unch base [(c.sl 45, 16)] s.mem s₂.mem := by
+    rw [m₂, State.callEntry_mem]
+    refine ((writeW_outside s.mem base (s.callEntry.gpr .r31) (d := c.sl 45) (by omega_arith)).unch.trans
+      (writeW_outside _ base s.callEntry.lr (d := c.sl 45 + 8) (by omega_arith)).unch).cover fun w hw => ?_
+    refine ⟨(c.sl 45, 16), List.mem_singleton_self _, ?_⟩
+    simp only [List.mem_append, List.mem_singleton] at hw
+    rcases hw with rfl | rfl <;> exact ⟨by dsimp only; omega_arith, by dsimp only; omega_arith⟩
+  -- The body.
+  refine WP.seq (WP.mono (hm s₂ hw₂ O₂) fun s₃ ⟨K₃, U₃, R₃⟩ => ?_)
+  obtain hw₃ := hw₂.of_rk K₃ (hr := h3)
+  obtain apS : ∀ {d : Nat}, c.sl 45 ≤ d → d + 8 ≤ c.sl 45 + 16 → ∀ w ∈ W, d + 8 ≤ w.1 ∨ w.1 + w.2 ≤ d :=
+    fun h1 h2 w hw => (hW w hw).imp (fun h => by omega_arith) (fun h => by omega_arith)
+  obtain w31 : word s₃.mem base (c.sl 45) = s.gpr .r31 := by
+    rw [U₃.word (apS (Nat.le_refl _) (by omega_arith)) (by omega_arith), m₂,
+      word_writeW_ne _ (by omega_arith) (by omega_arith) (by omega_arith), word_writeW_self,
+      State.callEntry_gpr _ (by decide)]
+  obtain wlr : word s₃.mem base (c.sl 45 + 8) = s.callEntry.lr := by
+    rw [U₃.word (apS (by omega_arith) (by omega_arith)) (by omega_arith), m₂, word_writeW_self]
+  -- `lr` and `r31` restored.
+  refine WP.mono (loads_ok h7 hw₃) fun s₄ ⟨m₄, lr₄, r31₄, K₄⟩ => ⟨by rw [lr₄, wlr], ?_, ?_, hP _ _ m₄ R₃⟩
+  · refine ⟨fun r hr => ?_, by rw [K₄.rd, K₃.rd, K₂.rd]; rfl, by rw [K₄.wr, K₃.wr, K₂.wr]; rfl,
+      by rw [K₄.sp, K₃.sp, K₂.sp]; rfl⟩
+    have hl := hL r hr
+    by_cases h31 : r = .r31
+    · subst h31; rw [r31₄, w31]
+    have h0 : r ∉ [Reg.r0, .r31] := fun h => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+      rcases h with rfl | rfl
+      · exact hl (by decide)
+      · exact h31 rfl
+    rw [K₄.gpr r h0, K₃.gpr r hr, K₂.gpr r (fun h => h0 (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; exact .inl h)), State.callEntry_gpr _ hl]
+  · rw [m₄]
+    exact (O₂.trans U₃).mono fun w hw => by
+      simp only [nslots, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+      exact hw
+
 theorem validate_eq (c : Cfg) : Impl.Ecdh.PPC64LE.Cfg.validate c =
     .seq (mulCall c.SP (c.sl QXM) (c.sl E) (c.sl R2P)) (.seq (mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P))
       (.seq (fprog c.SP (Impl.Ecdh.PPC64LE.Cfg.curveOps c))
@@ -628,6 +690,91 @@ theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base)
     · rw [qy, Mp.y]
     · show toM _ _ (wordsVal s₄.mem base (c.sl GY) c.n) = _
       rw [F₄.gy, toM_cmont hc]
+
+
+/-- What `vg_<curve>_validate` writes: the validation's ranges, and where it
+keeps `r31` and `lr` (`Cfg.winFn`, past the numbered slots). -/
+abbrev valWS (c : Cfg) : List (Nat × Nat) := (c.sl nslots, 16) :: valW c
+
+theorem fixedOk_valWS (h7 : c.n < 10) : FixedOk c (valWS c) := fun w hw => by
+  rcases List.mem_cons.mp hw with rfl | hw
+  · exact .inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide : 12 < 45)))
+  · exact fixedOk_valW h7 w hw
+
+theorem valWS_le (h7 : c.n < 10) : ∀ w ∈ valWS c, w.1 + w.2 ≤ size := fun w hw => by
+  rcases List.mem_cons.mp hw with rfl | hw
+  · have := save_le_own (c := c) h7
+    have := own_below_bits c h7 0
+    have := bitsAt_le c h7 (j := 0) (by decide)
+    simp only [nslots]; omega_arith
+  · exact valW_le h7 w hw
+
+/-- A slot apart from what the validation writes. -/
+theorem apart_valWS {i : Nat} (hi : i < 45) {W : List (Nat × Nat)}
+    (h : ∀ w ∈ W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i) :
+    ∀ w ∈ (c.sl nslots, 16) :: W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := fun w hw => by
+  rcases List.mem_cons.mp hw with rfl | hw
+  · exact .inl (sl_lt c hi)
+  · exact h w hw
+
+theorem tbl_apart_valWS (h7 : c.n < 10) (h0 : 0 < c.n) (j t : Nat) :
+    ∀ w ∈ valWS c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := fun w hw => by
+  rcases List.mem_cons.mp hw with rfl | hw
+  · have := save_le_own (c := c) h7
+    have := own_below_bits c h7 j
+    exact .inr (by simp only [nslots]; omega_arith)
+  · exact tbl_apart_valW h7 h0 j t w hw
+
+/-- `validate_ok` through its function, `vg_<curve>_validate` (`Cfg.valCall`). -/
+theorem valCall_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base) {g : Reg → BitVec 64}
+    {lr : BitVec 64} (F : Fixed c base g lr s.mem) (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
+    (hbp : sv c base s BP = c.mont c.C.b) {P₀ : Prop} [Decidable P₀] (hf : flagW c base s = mask64 P₀) :
+    WP isa (Impl.Ecdh.PPC64LE.Cfg.valCall c) s fun s' =>
+      WsReg s' base ∧ Rk fnClob s s' ∧ Unch base (valWS c) s.mem s'.mem ∧
+      flagW c base s' = mask64 (PeerOk c base s P₀) ∧
+      sv c base s' PX < c.C.p ∧ sv c base s' PY < c.C.p ∧
+      toM c.C.p (2 ^ (64 * c.n)) (sv c base s' PX) =
+        (if PeerOk c base s P₀ then Fin.ofNat c.C.p (sv c base s E) else Fin.ofNat c.C.p c.C.gx) ∧
+      toM c.C.p (2 ^ (64 * c.n)) (sv c base s' PY) =
+        (if PeerOk c base s P₀ then Fin.ofNat c.C.p (sv c base s QY) else Fin.ofNat c.C.p c.C.gy) := by
+  have h0 := hc.n0
+  have h7 := hc.n10
+  have hn := hw.nowrap
+  refine WP.mono (winCallL_of h7 (L := fnClob) (fun r hr h => hr (by
+      simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false] at h
+      rcases h with rfl | rfl | rfl <;> decide)) (by decide) hw (W := valW c)
+    (fun w hw => by
+      rcases List.mem_append.mp hw with hw | hw
+      · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+        exact .inr (sl_lt c ((by decide : ∀ i ∈ [QXM, QYM, W0, W1, W2, W3, PY], i < 45) i hi))
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+        rcases hw with rfl | rfl
+        · exact .inl (save_le_own (c := c) h7)
+        · exact .inr (Nat.le_trans (Nat.add_le_add_left (by omega) _) (sl_lt c (by decide : FLAG < 45))))
+    (P := fun t => flagW c base t = mask64 (PeerOk c base s P₀) ∧
+      sv c base t PX < c.C.p ∧ sv c base t PY < c.C.p ∧
+      toM c.C.p (2 ^ (64 * c.n)) (sv c base t PX) =
+        (if PeerOk c base s P₀ then Fin.ofNat c.C.p (sv c base s E) else Fin.ofNat c.C.p c.C.gx) ∧
+      toM c.C.p (2 ^ (64 * c.n)) (sv c base t PY) =
+        (if PeerOk c base s P₀ then Fin.ofNat c.C.p (sv c base s QY) else Fin.ofNat c.C.p c.C.gy))
+    (fun t t' hm R => by simp only [flagW, sv, hm]; exact R) fun t ht hU => ?_)
+    fun s' ⟨k, u, R⟩ => ⟨hw.of_rk k, k, u, R⟩
+  -- The saves change only the two words past the slots.
+  obtain svT : ∀ {i}, i < 45 → sv c base t i = sv c base s i := fun hi =>
+    hU.wordsVal (fun w hw => by rw [List.mem_singleton.mp hw]; exact .inl (sl_lt c hi))
+      (by have := sl_le c h7 hi; omega_arith)
+  obtain hE : sv c base t E = sv c base s E := svT (by decide)
+  obtain hQ : sv c base t QY = sv c base s QY := svT (by decide)
+  obtain hPe : PeerOk c base t P₀ = PeerOk c base s P₀ := by simp only [PeerOk, hE, hQ]
+  obtain fT : flagW c base t = flagW c base s :=
+    flag_unch h7 h0 hU (fun w hw => by rw [List.mem_singleton.mp hw]; exact .inl (sl_lt c (by decide)))
+  obtain F' := F.unch h7 hn (W := [(c.sl 45, 16)]) (fun w hw => by
+    rw [List.mem_singleton.mp hw]
+    exact .inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide : 12 < 45)))) hU
+  refine WP.mono (validate_ok hc ht F' (P₀ := P₀) (by rw [svT (by decide)]; exact hr2) (by rw [svT (by decide)]; exact hbp)
+    (by rw [fT]; exact hf)) fun t' ⟨_, k, u, f, a, b, x, y⟩ => ⟨k, u, ?_⟩
+  simp only [hPe, hE, hQ] at f x y
+  exact ⟨f, a, b, x, y⟩
 
 end VG.Proof.Ecdh.PPC64LE
 
@@ -914,7 +1061,7 @@ theorem exchangeWith_eq' (c : Cfg) (mul : Prog isa) : Impl.Ecdh.PPC64LE.Cfg.exch
     .seq (.block (c.setupWith Impl.Ecdh.PPC64LE.Args.ecdh ++ [mov .r12 .r5]))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-      (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r12)) (.seq (Impl.Ecdh.PPC64LE.Cfg.validate c)
+      (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r12)) (.seq (Impl.Ecdh.PPC64LE.Cfg.valCall c)
       (.seq mul (.seq c.invP (Impl.Ecdh.PPC64LE.Cfg.middle c)))))))) :=
   rfl
 
@@ -996,17 +1143,17 @@ theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre 
   obtain hf₃ : flagW c base s₃ = mask64 ((s₀.mem (s₀.gpr .r5) = 4 ∧ sv c base s₃ E < c.C.p) ∧
       sv c base s₃ QY < c.C.p) := by
     rw [f₃, hq0, S₂.flag, BitVec.allOnes_and, mask64_and, mask64_and]
-  refine WP.seq (WP.mono (validate_ok hc K₃.ws K₃.fixed r2₃ bp₃ hf₃)
+  refine WP.seq (WP.mono (valCall_ok hc K₃.ws K₃.fixed r2₃ bp₃ hf₃)
     fun s₄ ⟨hw₄, k₄, U₄, f₄, px_lt, py_lt, px, py⟩ => ?_)
-  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_valW h7) (hWs := valW_le h7)
+  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := fixedOk_valWS h7) (hWs := valWS_le h7)
   obtain e₄ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, W0, W1, W2, W3, PY] → i ≠ FLAG → sv c base s₄ i = sv c base s₃ i :=
-    fun hi hl hf => sv_unch U₄ h7 hn hi (apart_append (apart_slW hl)
+    fun hi hl hf => sv_unch U₄ h7 hn hi (apart_valWS hi (apart_append (apart_slW hl)
       (show ∀ w ∈ [(own c.n, 64 * c.n)] ++ [(c.sl FLAG, 8)], _ from
-        apart_append (apart_own h7 hi) (apart_flag h0 hf)))
+        apart_append (apart_own h7 hi) (apart_flag h0 hf))))
   obtain t₄ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
       s₄.mem (off base (bitsAt c.n j + t)) = s₂.mem (off base (bitsAt c.n j + t)) :=
     fun hj t ht => by
-      rw [tbl_unch U₄ h7 hj ht (tbl_apart_valW h7 h0 _ t),
+      rw [tbl_unch U₄ h7 hj ht (tbl_apart_valWS h7 h0 _ t),
         tbl_unch U₃ h7 hj ht (apart_append (tbl_apart_slW h7 (by decide) _ t) (tbl_apart_flag h7 h0 _ t))]
   have hkv : kv c Impl.Ecdh.PPC64LE.Args.ecdh s₀ = dk c s₀ := Nat.shiftRight_zero
   have hdv : dv c Impl.Ecdh.PPC64LE.Args.ecdh s₀ = dk c s₀ := Nat.shiftRight_zero

@@ -49,6 +49,6 @@ def compressFinish (c : Cfg) : List Instr :=
 def compress (c : Cfg) : Prog isa :=
   .seq (.block (setup c)) <|
   .seq (.block (Ecdh.PPC64LE.Cfg.peerAt c .r12)) <|
-  .seq (Ecdh.PPC64LE.Cfg.validate c) (.block (compressFinish c))
+  .seq (Ecdh.PPC64LE.Cfg.valCall c) (.block (compressFinish c))
 
 end VG.Impl.EcKey.Compressed.PPC64LE
