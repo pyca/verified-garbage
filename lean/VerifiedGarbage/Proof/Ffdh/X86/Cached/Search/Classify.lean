@@ -416,7 +416,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
     · rw [← yr]; exact A.ys.symm
     · exact A.bs.symm
     · exact A.lowS.symm.sub_right Fs
-    · exact A.lowS.symm.sub_right (Region.sub_prefix (by decide))
+    · exact A.lowS.symm.sub_right (low_sub (by decide))
   · apply BitVec.eq_of_toNat_eq
     rw [hr, attemptStatus, toNat_ofNat_lt (Nat.lt_of_le_of_lt (keyStatus_le3 _ _) (by decide))]
     rfl
