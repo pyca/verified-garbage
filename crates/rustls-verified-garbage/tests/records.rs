@@ -7,6 +7,7 @@ use rustls::crypto::cipher::{
     RecordEncrypter,
 };
 use rustls::enums::{ContentType, ProtocolVersion};
+use rustls::error::Error;
 use rustls_verified_garbage as provider;
 
 const SEQ: u64 = 7;
@@ -65,13 +66,9 @@ fn check(
         let whole = seal(&mut *enc(), version, OutboundPlain::from(plain), 0x00);
         for n in [2, 3, 63, 64, 65, 200] {
             let pieces = chunked(plain, n);
+            let count = pieces.len();
             let fragmented = seal(&mut *enc(), version, OutboundPlain::new(&pieces), 0xff);
-            assert_eq!(
-                whole,
-                fragmented,
-                "{name}: {len} bytes in {} pieces",
-                pieces.len()
-            );
+            assert_eq!(whole, fragmented, "{name}: {len} bytes in {count} pieces");
         }
         let mut sealed = whole.clone();
         let record = Record::new(
@@ -112,5 +109,40 @@ fn tls12_records() {
             || alg.encrypter(key(shape.enc_key_len), &iv, &explicit),
             || alg.decrypter(key(shape.enc_key_len), &iv),
         );
+    }
+}
+
+/// No TLS 1.2 cipher suite opens a record too short for its explicit nonce
+/// and tag, or one whose plaintext is longer than a record's may be (2^14
+/// bytes), though it sealed it.
+#[test]
+fn tls12_bad_records() {
+    for suite in provider::ALL_TLS12_CIPHER_SUITES {
+        let alg = suite.aead_alg;
+        let shape = alg.key_block_shape();
+        let iv = vec![0x55; shape.fixed_iv_len];
+        let explicit = vec![0x66; shape.explicit_nonce_len];
+        let mut enc = alg.encrypter(key(shape.enc_key_len), &iv, &explicit);
+        let open = |mut payload: Vec<u8>| {
+            let record = Record::new(
+                ContentType::ApplicationData,
+                EncodableVersion::Legacy(ProtocolVersion::TLSv1_2),
+                InboundOpaque(&mut payload),
+            );
+            let mut dec = alg.decrypter(key(shape.enc_key_len), &iv);
+            dec.decrypt(record, SEQ).err()
+        };
+        let name = format!("{:?}", suite.common.suite);
+        let short = vec![0; enc.encrypted_payload_len(0) - 1];
+        assert_eq!(open(short), Some(Error::DecryptError), "{name}");
+        let plain = vec![0; (1 << 14) + 1];
+        let oversized = seal(
+            &mut *enc,
+            ProtocolVersion::TLSv1_2,
+            OutboundPlain::from(&plain[..]),
+            0,
+        );
+        let err = Some(Error::PeerSentOversizedRecord);
+        assert_eq!(open(oversized), err, "{name}");
     }
 }

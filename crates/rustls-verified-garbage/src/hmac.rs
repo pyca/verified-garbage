@@ -50,3 +50,20 @@ where
         H::OUTPUT_SIZE
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rustls::crypto::hmac::Hmac;
+
+    use super::{HMAC_SHA256, HMAC_SHA384, HMAC_SHA512};
+
+    /// Each HMAC's output is as long as it says, and as its keys' tags.
+    #[test]
+    fn output_len() {
+        for hmac in [&HMAC_SHA256 as &dyn Hmac, &HMAC_SHA384, &HMAC_SHA512] {
+            let key = hmac.with_key(b"key");
+            assert_eq!(hmac.hash_output_len(), key.tag_len());
+            assert_eq!(key.sign(&[b"message"]).as_ref().len(), key.tag_len());
+        }
+    }
+}

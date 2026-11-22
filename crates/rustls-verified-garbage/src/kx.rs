@@ -162,7 +162,12 @@ macro_rules! nist_group {
                     let k = ec::PrivateKey::<$curve>::from_bytes(&*random::<$len>()?);
                     if let Ok(pub_key) = k.public_key() {
                         break (k, *pub_key.as_bytes());
+                        // NO-COVERAGE-START
+                        // A candidate is at least n with probability below
+                        // 2^-32 (P-256) or 2^-190 (P-384): no test draws one,
+                        // which would repeat the loop.
                     }
+                    // NO-COVERAGE-END
                 };
                 Ok(StartedKeyExchange::Single(Box::new(KeyExchange {
                     group: $group,

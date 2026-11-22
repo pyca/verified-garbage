@@ -41,10 +41,20 @@ pub(crate) struct RsaPrivateKey<'a> {
 }
 
 /// `RSAPublicKey` (RFC 8017 §A.1.1).
-#[derive(asn1::Asn1Read, asn1::Asn1Write)]
+#[derive(asn1::Asn1Read)]
 pub(crate) struct RsaPublicKey<'a> {
     pub(crate) n: asn1::BigUint<'a>,
     pub(crate) e: asn1::BigUint<'a>,
+}
+
+impl RsaPublicKey<'_> {
+    /// Its DER.
+    pub(crate) fn to_der(&self) -> Vec<u8> {
+        sequence(&|w| {
+            w.write_element(&self.n)?;
+            w.write_element(&self.e)
+        })
+    }
 }
 
 /// `ECPrivateKey` (RFC 5915 §3).
@@ -59,7 +69,7 @@ pub(crate) struct EcPrivateKey<'a> {
 }
 
 /// `Ecdsa-Sig-Value` (RFC 3279 §2.2.3).
-#[derive(asn1::Asn1Read, asn1::Asn1Write)]
+#[derive(asn1::Asn1Read)]
 pub(crate) struct EcdsaSigValue<'a> {
     pub(crate) r: asn1::BigUint<'a>,
     pub(crate) s: asn1::BigUint<'a>,
@@ -90,6 +100,11 @@ pub(crate) const ED25519: asn1::ObjectIdentifier = asn1::oid!(1, 3, 101, 112);
 pub(crate) const ML_DSA_44: asn1::ObjectIdentifier = asn1::oid!(2, 16, 840, 1, 101, 3, 4, 3, 17);
 pub(crate) const ML_DSA_65: asn1::ObjectIdentifier = asn1::oid!(2, 16, 840, 1, 101, 3, 4, 3, 18);
 pub(crate) const ML_DSA_87: asn1::ObjectIdentifier = asn1::oid!(2, 16, 840, 1, 101, 3, 4, 3, 19);
+
+/// The DER `SEQUENCE` of the elements that `write` writes.
+pub(crate) fn sequence(write: &dyn Fn(&mut asn1::Writer<'_>) -> asn1::WriteResult) -> Vec<u8> {
+    asn1::write_single(&asn1::SequenceWriter::new(write)).unwrap()
+}
 
 /// The bit string `b` as bytes, if it has no unused bits.
 pub(crate) fn bit_string_bytes<'a>(b: &asn1::BitString<'a>) -> Option<&'a [u8]> {
@@ -127,11 +142,14 @@ pub(crate) fn der_uint(x: &[u8]) -> Vec<u8> {
 pub(crate) fn ecdsa_sig_to_der(rs: &[u8]) -> Vec<u8> {
     let (r, s) = rs.split_at(rs.len() / 2);
     let (r, s) = (der_uint(r), der_uint(s));
-    asn1::write_single(&EcdsaSigValue {
-        r: asn1::BigUint::new(&r).unwrap(),
-        s: asn1::BigUint::new(&s).unwrap(),
+    let (r, s) = (
+        asn1::BigUint::new(&r).unwrap(),
+        asn1::BigUint::new(&s).unwrap(),
+    );
+    sequence(&|w| {
+        w.write_element(&r)?;
+        w.write_element(&s)
     })
-    .unwrap()
 }
 
 /// The fixed-width signature `r ‖ s` of a DER `Ecdsa-Sig-Value`, each

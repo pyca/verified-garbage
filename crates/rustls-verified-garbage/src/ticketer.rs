@@ -129,3 +129,36 @@ impl Debug for AeadTicketer {
         f.debug_struct("AeadTicketer").finish_non_exhaustive()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use alloc::format;
+    use core::time::Duration;
+
+    use super::AeadTicketer;
+
+    /// A ticketer opens the tickets it made, but not one longer than any it
+    /// made, nor one too short to hold a tag, nor one changed, nor another
+    /// ticketer's. Its lifetime is its rotator's to set, and its debug form
+    /// leaves out its key.
+    #[test]
+    fn tickets() {
+        let ticketer = AeadTicketer::new().unwrap();
+        let ticket = ticketer.encrypt(b"session").unwrap();
+        assert_eq!(ticketer.decrypt(&ticket).unwrap(), b"session");
+        assert!(
+            ticketer
+                .decrypt(&[ticket.as_slice(), &[0]].concat())
+                .is_none()
+        );
+        assert!(ticketer.decrypt(&ticket[..16 + 12 + 15]).is_none());
+        let mut changed = ticket.clone();
+        *changed.last_mut().unwrap() ^= 1;
+        assert!(ticketer.decrypt(&changed).is_none());
+        let other = AeadTicketer::new().unwrap();
+        other.encrypt(&[0; 64]).unwrap();
+        assert!(other.decrypt(&ticket).is_none());
+        assert_eq!(ticketer.lifetime(), Duration::ZERO);
+        assert_eq!(format!("{ticketer:?}"), "AeadTicketer { .. }");
+    }
+}

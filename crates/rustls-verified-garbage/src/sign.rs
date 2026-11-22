@@ -32,7 +32,10 @@ pub(crate) fn load_private_key(key_der: &PrivateKeyDer<'_>) -> Result<Box<dyn Si
             None,
         )?)),
         PrivateKeyDer::Pkcs8(pkcs8) => load_pkcs8(pkcs8),
+        // NO-COVERAGE-START
+        // `PrivateKeyDer` is non-exhaustive, but has no other form.
         _ => Err(Error::General("unsupported private key format".into())),
+        // NO-COVERAGE-END
     }
 }
 
@@ -115,13 +118,15 @@ pub(crate) struct RsaSigningKey {
 }
 
 impl RsaSigningKey {
-    const SCHEMES: &[SignatureScheme] = &[
-        SignatureScheme::RSA_PSS_SHA512,
-        SignatureScheme::RSA_PSS_SHA384,
-        SignatureScheme::RSA_PSS_SHA256,
-        SignatureScheme::RSA_PKCS1_SHA512,
-        SignatureScheme::RSA_PKCS1_SHA384,
-        SignatureScheme::RSA_PKCS1_SHA256,
+    /// The schemes it signs with, best first, each with whether it is PSS
+    /// (or else PKCS #1 v1.5) and its hash.
+    const SCHEMES: &[(SignatureScheme, bool, Hash)] = &[
+        (SignatureScheme::RSA_PSS_SHA512, true, Hash::Sha512),
+        (SignatureScheme::RSA_PSS_SHA384, true, Hash::Sha384),
+        (SignatureScheme::RSA_PSS_SHA256, true, Hash::Sha256),
+        (SignatureScheme::RSA_PKCS1_SHA512, false, Hash::Sha512),
+        (SignatureScheme::RSA_PKCS1_SHA384, false, Hash::Sha384),
+        (SignatureScheme::RSA_PKCS1_SHA256, false, Hash::Sha256),
     ];
 
     /// The key of a DER `RSAPrivateKey` (PKCS #1).
@@ -150,7 +155,7 @@ impl RsaSigningKey {
             b(&k.qinv),
         )
         .map_err(|e| Error::General(alloc::format!("failed to load RSA private key: {e}")))?;
-        let public_key = asn1::write_single(&der::RsaPublicKey { n: k.n, e: k.e }).unwrap();
+        let public_key = der::RsaPublicKey { n: k.n, e: k.e }.to_der();
         Ok(Self {
             key: Arc::new(key),
             public_key,
@@ -162,11 +167,13 @@ impl SigningKey for RsaSigningKey {
     fn choose_scheme(&self, offered: &[SignatureScheme]) -> Option<Box<dyn Signer>> {
         Self::SCHEMES
             .iter()
-            .find(|scheme| offered.contains(scheme))
-            .map(|&scheme| {
+            .find(|(scheme, ..)| offered.contains(scheme))
+            .map(|&(scheme, pss, hash)| {
                 Box::new(RsaSigner {
                     key: self.key.clone(),
                     scheme,
+                    pss,
+                    hash,
                 }) as Box<dyn Signer>
             })
     }
@@ -188,22 +195,18 @@ impl Debug for RsaSigningKey {
 struct RsaSigner {
     key: Arc<rsa::PrivateKey>,
     scheme: SignatureScheme,
+    /// Whether `scheme` is PSS, or else PKCS #1 v1.5.
+    pss: bool,
+    /// The hash of `scheme`.
+    hash: Hash,
 }
 
 impl Signer for RsaSigner {
     fn sign(self: Box<Self>, message: &[u8]) -> Result<Vec<u8>, Error> {
-        let (pss, hash) = match self.scheme {
-            SignatureScheme::RSA_PKCS1_SHA256 => (false, Hash::Sha256),
-            SignatureScheme::RSA_PKCS1_SHA384 => (false, Hash::Sha384),
-            SignatureScheme::RSA_PKCS1_SHA512 => (false, Hash::Sha512),
-            SignatureScheme::RSA_PSS_SHA256 => (true, Hash::Sha256),
-            SignatureScheme::RSA_PSS_SHA384 => (true, Hash::Sha384),
-            SignatureScheme::RSA_PSS_SHA512 => (true, Hash::Sha512),
-            _ => unreachable!(),
-        };
+        let hash = self.hash;
         let digest = hash.digest(message);
         let digest = &digest[..hash.len()];
-        let sig = match pss {
+        match self.pss {
             // RFC 8446 §4.2.3: "The length of the Salt MUST be equal to the
             // length of the output of the digest algorithm."
             true => self
@@ -214,8 +217,7 @@ impl Signer for RsaSigner {
                 .key
                 .sign_pkcs1v15(digest, hash.pkcs1())
                 .map_err(|e| Error::General(alloc::format!("signing failed: {e}"))),
-        }?;
-        Ok(sig)
+        }
     }
 
     fn scheme(&self) -> SignatureScheme {
@@ -479,9 +481,14 @@ impl SigningKey for MlDsaSigner {
 
 impl Signer for MlDsaSigner {
     fn sign(self: Box<Self>, message: &[u8]) -> Result<Vec<u8>, Error> {
+        // Signing with an empty context fails only if the operating system's
+        // random number generator does, or if a loop reaches its bound (with
+        // probability about 2^-256): in no test.
+        // NO-COVERAGE-START
         fn failed<E>(_: E) -> Error {
             Error::General("signing failed".into())
         }
+        // NO-COVERAGE-END
         Ok(match &*self.0 {
             MlDsaKey::MlDsa44(k) => k.sign(message, &[]).map_err(failed)?.to_vec(),
             MlDsaKey::MlDsa65(k) => k.sign(message, &[]).map_err(failed)?.to_vec(),
@@ -499,5 +506,392 @@ impl Debug for MlDsaSigner {
         f.debug_struct("MlDsaSigner")
             .field("scheme", &self.0.scheme())
             .finish_non_exhaustive()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use alloc::format;
+    use alloc::vec::Vec;
+    use std::sync::LazyLock;
+
+    use pki_types::{
+        PrivateKeyDer, PrivatePkcs1KeyDer, PrivatePkcs8KeyDer, PrivateSec1KeyDer,
+        SignatureVerificationAlgorithm,
+    };
+    use rustls::crypto::{SignatureScheme, SigningKey, public_key_to_spki};
+    use rustls::error::Error;
+    use verified_garbage::ec::{self, P256, P384, P521};
+    use verified_garbage::rsa::{self, BigUint};
+    use verified_garbage::{ed25519, mldsa44, mldsa65, mldsa87};
+
+    use super::load_private_key;
+    use crate::der;
+    use crate::verify::{
+        RSA_PKCS1_2048_8192_SHA384, RSA_PKCS1_3072_8192_SHA384, SUPPORTED_SIG_ALGS,
+    };
+
+    const MESSAGE: &[u8] = b"signed";
+
+    /// The provider's verifier of `scheme` (the first it maps it to).
+    fn verifier(scheme: SignatureScheme) -> &'static dyn SignatureVerificationAlgorithm {
+        let (_, algs) = SUPPORTED_SIG_ALGS
+            .mapping()
+            .iter()
+            .find(|(s, _)| *s == scheme)
+            .unwrap();
+        algs[0]
+    }
+
+    /// `key` signs with each of `schemes`, as the signer it chooses for that
+    /// scheme alone, and the provider's verifier of the scheme accepts the
+    /// signature with `public_key` (as the verifier takes it, which is what
+    /// the key's SPKI holds), but not with the key or signature truncated, nor
+    /// of another message. A key offered none of its schemes chooses none.
+    fn signs(key: &dyn SigningKey, public_key: &[u8], schemes: &[SignatureScheme]) {
+        for &scheme in schemes {
+            let signer = key.choose_scheme(&[scheme]).unwrap();
+            assert_eq!(signer.scheme(), scheme);
+            assert!(format!("{signer:?}").contains(&format!("{scheme:?}")));
+            let verifier = verifier(scheme);
+            let spki = public_key_to_spki(&verifier.public_key_alg_id(), public_key);
+            assert_eq!(key.public_key().unwrap(), spki);
+            let sig = signer.sign(MESSAGE).unwrap();
+            assert!(verifier.verify_signature(public_key, MESSAGE, &sig).is_ok());
+            assert!(
+                verifier
+                    .verify_signature(public_key, b"other", &sig)
+                    .is_err()
+            );
+            let (pk, sig_len) = (&public_key[1..], sig.len() - 1);
+            assert!(verifier.verify_signature(pk, MESSAGE, &sig).is_err());
+            assert!(
+                verifier
+                    .verify_signature(public_key, MESSAGE, &sig[..sig_len])
+                    .is_err()
+            );
+        }
+        let none = [SignatureScheme::ECDSA_SHA1_Legacy];
+        assert!(key.choose_scheme(&none).is_none());
+    }
+
+    /// The error of a key that does not load.
+    fn fails(key: PrivateKeyDer<'_>) -> Error {
+        load_private_key(&key).err().unwrap()
+    }
+
+    /// A bit string of the bytes `b`.
+    fn bits(b: &[u8]) -> asn1::BitString<'_> {
+        asn1::BitString::new(b, 0).unwrap()
+    }
+
+    /// A `OneAsymmetricKey` (PKCS #8, or with a public key RFC 5958's) of
+    /// `version`, for the algorithm `oid` with the DER parameters `params`:
+    /// its `AlgorithmIdentifier`, private key and, if any, `[1] IMPLICIT`
+    /// public key.
+    fn pkcs8(
+        version: u8,
+        oid: asn1::ObjectIdentifier,
+        params: Option<&[u8]>,
+        private_key: &[u8],
+        public_key: Option<&[u8]>,
+    ) -> PrivateKeyDer<'static> {
+        let params = params.map(|p| asn1::parse_single::<asn1::Tlv<'_>>(p).unwrap());
+        let public_key = public_key.map(|pk| asn1::Implicit::<_, 1>::new(bits(pk)));
+        let der = der::sequence(&|w| {
+            w.write_element(&version)?;
+            w.write_element(&asn1::SequenceWriter::new(&|w| {
+                w.write_element(&oid)?;
+                w.write_element(&params)
+            }))?;
+            w.write_element(&private_key)?;
+            w.write_element(&public_key)
+        });
+        PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(der))
+    }
+
+    /// An `ECPrivateKey` (SEC 1) of `version`, the private key `d`, and, if
+    /// any, the `[0] EXPLICIT` curve and `[1] EXPLICIT` public key.
+    fn sec1(
+        version: u8,
+        d: &[u8],
+        curve: Option<asn1::ObjectIdentifier>,
+        public_key: Option<&[u8]>,
+    ) -> Vec<u8> {
+        let curve = curve.map(asn1::Explicit::<_, 0>::new);
+        let public_key = public_key.map(|q| asn1::Explicit::<_, 1>::new(bits(q)));
+        der::sequence(&|w| {
+            w.write_element(&version)?;
+            w.write_element(&d)?;
+            w.write_element(&curve)?;
+            w.write_element(&public_key)
+        })
+    }
+
+    /// The DER of a NULL, RSA keys' parameters.
+    fn null() -> Vec<u8> {
+        asn1::write_single(&()).unwrap()
+    }
+
+    /// The DER of the OID `oid`, EC keys' parameters.
+    fn oid(oid: &asn1::ObjectIdentifier) -> Vec<u8> {
+        asn1::write_single(oid).unwrap()
+    }
+
+    /// A 2048-bit RSA key from the library's key generation, made once.
+    static RSA_KEY: LazyLock<rsa::PrivateKey> =
+        LazyLock::new(|| rsa::keygen::generate(2048, BigUint::from_be_bytes(&[1, 0, 1])).unwrap());
+
+    /// `RSA_KEY`'s `RSAPrivateKey`, after `edit`, and its `RSAPublicKey`.
+    fn rsa_key(edit: impl FnOnce(&mut der::RsaPrivateKey<'_>)) -> (Vec<u8>, Vec<u8>) {
+        let ints = RSA_KEY.components().map(|x| der::der_uint(x.as_be_bytes()));
+        let [n, e, d, p, q, dp, dq, qinv] = ints.each_ref().map(|x| asn1::BigUint::new(x).unwrap());
+        let mut key = der::RsaPrivateKey {
+            version: 0,
+            n,
+            e,
+            d,
+            p,
+            q,
+            dp,
+            dq,
+            qinv,
+        };
+        edit(&mut key);
+        let private_key = der::sequence(&|w| {
+            w.write_element(&key.version)?;
+            let k = &key;
+            for x in [k.n, k.e, k.d, k.p, k.q, k.dp, k.dq, k.qinv] {
+                w.write_element(&x)?;
+            }
+            Ok(())
+        });
+        let public_key = der::RsaPublicKey { n: key.n, e: key.e }.to_der();
+        (private_key, public_key)
+    }
+
+    /// An RSA key loads as PKCS #1, and as PKCS #8 with its parameters NULL
+    /// or absent, and signs with every RSA scheme; a PKCS #1 v1.5 signature
+    /// with SHA-384 does not verify where the modulus must be 3072 bits.
+    #[test]
+    fn rsa_signs() {
+        let (pkcs1, public_key) = rsa_key(|_| {});
+        let schemes = [
+            SignatureScheme::RSA_PSS_SHA256,
+            SignatureScheme::RSA_PSS_SHA384,
+            SignatureScheme::RSA_PSS_SHA512,
+            SignatureScheme::RSA_PKCS1_SHA256,
+            SignatureScheme::RSA_PKCS1_SHA384,
+            SignatureScheme::RSA_PKCS1_SHA512,
+        ];
+        let null: &[u8] = &null();
+        for der in [
+            PrivateKeyDer::Pkcs1(PrivatePkcs1KeyDer::from(pkcs1.clone())),
+            pkcs8(0, der::RSA_ENCRYPTION, Some(null), &pkcs1, None),
+            pkcs8(0, der::RSA_ENCRYPTION, None, &pkcs1, None),
+        ] {
+            signs(&*load_private_key(&der).unwrap(), &public_key, &schemes);
+        }
+        let key = load_private_key(&PrivateKeyDer::Pkcs1(pkcs1.into())).unwrap();
+        let sig = key
+            .choose_scheme(&[SignatureScheme::RSA_PKCS1_SHA384])
+            .unwrap()
+            .sign(MESSAGE)
+            .unwrap();
+        assert!(
+            RSA_PKCS1_2048_8192_SHA384
+                .verify_signature(&public_key, MESSAGE, &sig)
+                .is_ok()
+        );
+        assert!(
+            RSA_PKCS1_3072_8192_SHA384
+                .verify_signature(&public_key, MESSAGE, &sig)
+                .is_err()
+        );
+    }
+
+    /// An RSA key does not load if it is no `RSAPrivateKey`, has more than
+    /// two primes (version 1), a modulus shorter than 2048 bits, or, in
+    /// PKCS #8, parameters other than NULL or a version above 1.
+    #[test]
+    fn rsa_rejects() {
+        let pkcs1 = |der: Vec<u8>| PrivateKeyDer::Pkcs1(PrivatePkcs1KeyDer::from(der));
+        let (key, _) = rsa_key(|_| {});
+        let (multi_prime, _) = rsa_key(|k| k.version = 1);
+        let (short, _) = rsa_key(|k| k.n = k.e);
+        fails(pkcs1(key[..key.len() - 1].to_vec()));
+        fails(pkcs1(multi_prime));
+        fails(pkcs1(short));
+        let curve: &[u8] = &oid(&der::SECP256R1);
+        fails(pkcs8(0, der::RSA_ENCRYPTION, Some(curve), &key, None));
+        fails(pkcs8(2, der::RSA_ENCRYPTION, None, &key, None));
+    }
+
+    /// An ECDSA key of each curve loads as SEC 1 with its curve (and its
+    /// public key or not), and as PKCS #8 with the curve in either or both,
+    /// and signs with its curve's scheme; it does not load with another
+    /// version than 1, another curve in PKCS #8 than in SEC 1, no curve, a
+    /// public key that is not its own, a private key of another length or
+    /// out of range, or a curve the provider does not have, and not if it
+    /// is no `ECPrivateKey`.
+    #[test]
+    fn ecdsa() {
+        macro_rules! check {
+            ($curve:ty, $n:literal, $oid:expr, $other:expr, $scheme:expr) => {{
+                // A scalar below each curve's order: its top byte zero.
+                let mut d = [7u8; $n];
+                d[0] = 0;
+                let q = *ec::PrivateKey::<$curve>::from_bytes(&d)
+                    .public_key()
+                    .unwrap()
+                    .as_bytes();
+                let sec1_der = |der: Vec<u8>| PrivateKeyDer::Sec1(PrivateSec1KeyDer::from(der));
+                let ec = |curve: Option<&[u8]>, sec1: &[u8]| {
+                    pkcs8(0, der::EC_PUBLIC_KEY, curve, sec1, None)
+                };
+                let curve: &[u8] = &oid(&$oid);
+                for der in [
+                    sec1_der(sec1(1, &d, Some($oid), Some(&q[..]))),
+                    sec1_der(sec1(1, &d, Some($oid), None)),
+                    ec(Some(curve), &sec1(1, &d, None, Some(&q[..]))),
+                    ec(Some(curve), &sec1(1, &d, Some($oid), None)),
+                ] {
+                    signs(&*load_private_key(&der).unwrap(), &q, &[$scheme]);
+                }
+                let other: &[u8] = &oid(&$other);
+                let mut other_q = q;
+                other_q[$n] ^= 1;
+                let too_large = [0xff; $n];
+                fails(sec1_der(sec1(0, &d, Some($oid), None)));
+                fails(ec(Some(other), &sec1(1, &d, Some($oid), None)));
+                fails(sec1_der(sec1(1, &d, None, None)));
+                fails(sec1_der(sec1(1, &d, Some($oid), Some(&other_q[..]))));
+                fails(sec1_der(sec1(1, &d[1..], Some($oid), None)));
+                fails(sec1_der(sec1(1, &too_large, Some($oid), None)));
+                fails(ec(Some(curve), &sec1(1, &d, Some($oid), None)[1..]));
+                fails(ec(None, &sec1(1, &d, None, None)));
+                // Ed25519's OID, which names no curve of ECDSA.
+                fails(sec1_der(sec1(1, &d, Some(der::ED25519), None)));
+            }};
+        }
+        check!(
+            P256,
+            32,
+            der::SECP256R1,
+            der::SECP384R1,
+            SignatureScheme::ECDSA_NISTP256_SHA256
+        );
+        check!(
+            P384,
+            48,
+            der::SECP384R1,
+            der::SECP521R1,
+            SignatureScheme::ECDSA_NISTP384_SHA384
+        );
+        check!(
+            P521,
+            66,
+            der::SECP521R1,
+            der::SECP256R1,
+            SignatureScheme::ECDSA_NISTP521_SHA512
+        );
+    }
+
+    /// An Ed25519 seed loads as PKCS #8, with its public key or none, and
+    /// signs; it does not load with another public key, parameters, or a
+    /// seed of another length.
+    #[test]
+    fn ed25519() {
+        let seed = [7u8; 32];
+        let public_key = *ed25519::SigningKey::from_seed(&seed)
+            .verifying_key()
+            .as_bytes();
+        let private_key = |seed: &[u8]| asn1::write_single(&seed).unwrap();
+        for pk in [Some(&public_key[..]), None] {
+            let der = pkcs8(1, der::ED25519, None, &private_key(&seed), pk);
+            signs(
+                &*load_private_key(&der).unwrap(),
+                &public_key,
+                &[SignatureScheme::ED25519],
+            );
+        }
+        let mut other = public_key;
+        other[0] ^= 1;
+        let null: &[u8] = &null();
+        let (sk, short) = (private_key(&seed), private_key(&seed[1..]));
+        fails(pkcs8(1, der::ED25519, None, &sk, Some(&other[..])));
+        fails(pkcs8(0, der::ED25519, Some(null), &sk, None));
+        fails(pkcs8(0, der::ED25519, None, &short, None));
+    }
+
+    /// The ML-DSA private key that is the seed `seed`, `[0] IMPLICIT`.
+    fn mldsa_seed(seed: &[u8]) -> Vec<u8> {
+        asn1::write_single(&asn1::Implicit::<_, 0>::new(seed)).unwrap()
+    }
+
+    /// The ML-DSA private key of both the seed `seed` and the expanded key
+    /// `expanded`.
+    fn mldsa_both(seed: &[u8], expanded: &[u8]) -> Vec<u8> {
+        der::sequence(&|w| {
+            w.write_element(&seed)?;
+            w.write_element(&expanded)
+        })
+    }
+
+    /// An ML-DSA seed of each parameter set loads as PKCS #8, alone or with
+    /// its expanded key (which the provider does not read), with its public
+    /// key or none, and signs; it does not load as the expanded key alone,
+    /// with a seed of another length, another public key, or parameters.
+    #[test]
+    fn mldsa() {
+        macro_rules! check {
+            ($key:ty, $oid:expr, $scheme:expr) => {{
+                let seed = [7u8; 32];
+                let public_key = *<$key>::from_seed(&seed).unwrap().verifying_key().as_bytes();
+                let mut other = public_key;
+                other[0] ^= 1;
+                let both = mldsa_both(&seed, &[1, 2, 3]);
+                for der in [
+                    pkcs8(0, $oid, None, &mldsa_seed(&seed), None),
+                    pkcs8(1, $oid, None, &both, Some(&public_key[..])),
+                ] {
+                    signs(&*load_private_key(&der).unwrap(), &public_key, &[$scheme]);
+                }
+                let null: &[u8] = &null();
+                let expanded = asn1::write_single(&&[1u8, 2, 3][..]).unwrap();
+                let short = mldsa_seed(&seed[1..]);
+                let seed = mldsa_seed(&seed);
+                fails(pkcs8(0, $oid, None, &expanded, None));
+                fails(pkcs8(0, $oid, None, &short, None));
+                fails(pkcs8(1, $oid, None, &seed, Some(&other[..])));
+                fails(pkcs8(0, $oid, Some(null), &seed, None));
+            }};
+        }
+        check!(
+            mldsa44::SigningKey44,
+            der::ML_DSA_44,
+            SignatureScheme::ML_DSA_44
+        );
+        check!(
+            mldsa65::SigningKey65,
+            der::ML_DSA_65,
+            SignatureScheme::ML_DSA_65
+        );
+        check!(
+            mldsa87::SigningKey87,
+            der::ML_DSA_87,
+            SignatureScheme::ML_DSA_87
+        );
+    }
+
+    /// A PKCS #8 key does not load if it is not DER of one, or of an
+    /// algorithm the provider does not sign with (P-256's OID, which names a
+    /// curve, not a key's algorithm).
+    #[test]
+    fn pkcs8_rejects() {
+        let seed = asn1::write_single(&&[7u8; 32][..]).unwrap();
+        let err = fails(pkcs8(0, der::SECP256R1, None, &seed, None));
+        assert!(format!("{err}").contains("failed to parse private key as"));
+        fails(PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(seed)));
     }
 }

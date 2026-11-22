@@ -198,3 +198,91 @@ impl quic::Algorithm for KeyBuilder {
         self.packet_alg.key_len()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rustls::crypto::cipher::{AeadKey, Iv};
+    use rustls::error::Error;
+    use rustls::quic::Algorithm;
+
+    use super::KeyBuilder;
+    use crate::aead::{self, TAG_LEN};
+
+    const ALGORITHMS: [aead::Algorithm; 3] = [
+        aead::Algorithm::Aes128Gcm,
+        aead::Algorithm::Aes256Gcm,
+        aead::Algorithm::ChaCha20Poly1305,
+    ];
+
+    fn builder(packet_alg: aead::Algorithm) -> KeyBuilder {
+        KeyBuilder {
+            packet_alg,
+            confidentiality_limit: 5,
+            integrity_limit: 6,
+        }
+    }
+
+    fn key(len: usize) -> AeadKey {
+        match len {
+            16 => AeadKey::from([0x22; 16]),
+            _ => AeadKey::from([0x22; 32]),
+        }
+    }
+
+    /// Header protection of each algorithm masks the low bits of the first
+    /// byte (four of a long header, five of a short one) and as many bytes
+    /// of the packet number as the first byte says, and unmasks what it
+    /// masked. It refuses a sample of another length than its own, or a
+    /// packet number longer than four bytes, and changes nothing then.
+    #[test]
+    fn header_protection() {
+        for alg in ALGORITHMS {
+            let builder = builder(alg);
+            let hp = builder.header_protection_key(key(builder.aead_key_len()));
+            let sample = [0x5a; 16];
+            assert_eq!(hp.sample_len(), sample.len());
+            // A long header with a 4-byte packet number, a short one with a
+            // 1-byte packet number.
+            for (first, bits, pn_len) in [(0xc3u8, 0x0f, 4), (0x40, 0x1f, 1)] {
+                let plain = [1u8, 2, 3, 4];
+                let (mut f, mut pn) = (first, plain);
+                hp.encrypt_in_place(&sample, &mut f, &mut pn).unwrap();
+                assert_eq!(f & !bits, first & !bits, "{alg:?}");
+                assert_ne!(f, first, "{alg:?}");
+                assert_eq!(pn[pn_len..], plain[pn_len..], "{alg:?}");
+                assert_ne!(pn[..pn_len], plain[..pn_len], "{alg:?}");
+                hp.decrypt_in_place(&sample, &mut f, &mut pn).unwrap();
+                assert_eq!((f, pn), (first, plain), "{alg:?}");
+            }
+            let (mut f, mut pn) = (0xc3, [0u8; 5]);
+            let too_long = hp.encrypt_in_place(&sample, &mut f, &mut pn);
+            let short_sample = hp.encrypt_in_place(&sample[1..], &mut f, &mut pn[..4]);
+            assert!(too_long.is_err() && short_sample.is_err(), "{alg:?}");
+            assert_eq!((f, pn), (0xc3, [0; 5]), "{alg:?}");
+        }
+    }
+
+    /// A packet key of each algorithm opens what it sealed, but not a payload
+    /// shorter than a tag, and has its suite's limits.
+    #[test]
+    fn packet_key() {
+        for alg in ALGORITHMS {
+            let builder = builder(alg);
+            let iv = Iv::new(&[0x55; 12]).unwrap();
+            let pk = builder.packet_key(key(builder.aead_key_len()), iv);
+            assert_eq!(pk.tag_len(), TAG_LEN);
+            assert_eq!(pk.confidentiality_limit(), 5);
+            assert_eq!(pk.integrity_limit(), 6);
+            let mut sealed = *b"payload";
+            let tag = pk
+                .encrypt_in_place(9, b"header", &mut sealed, None)
+                .unwrap();
+            let mut sealed = [&sealed[..], tag.as_ref()].concat();
+            let opened = pk.decrypt_in_place(9, b"header", &mut sealed, None);
+            assert_eq!(opened.unwrap(), b"payload", "{alg:?}");
+            let mut short = [0; TAG_LEN - 1];
+            let short = pk.decrypt_in_place(9, b"header", &mut short, None);
+            assert_eq!(short.err(), Some(Error::DecryptError), "{alg:?}");
+        }
+    }
+}

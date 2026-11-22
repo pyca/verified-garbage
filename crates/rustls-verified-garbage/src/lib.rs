@@ -125,10 +125,8 @@ impl TicketerFactory for VerifiedGarbage {
     fn ticketer(&self) -> Result<Arc<dyn TicketProducer>, Error> {
         #[cfg(feature = "std")]
         {
-            Ok(Arc::new(TicketRotator::new(
-                SIX_HOURS,
-                ticketer::AeadTicketer::new,
-            )?))
+            let rotator = TicketRotator::new(SIX_HOURS, ticketer::AeadTicketer::new)?;
+            Ok(Arc::new(rotator))
         }
         #[cfg(not(feature = "std"))]
         {
