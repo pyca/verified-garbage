@@ -953,12 +953,12 @@ theorem frameSat : ∃ s, (Spec.Sm4.cbcEncryptChainedContract Arm.abi 1520).pre 
     Arm.Loc.val, State.addr] [frameState, satState] using frameState
 
 theorem framed : Verified Arm.target
-    (Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 SerialCbc.encrypt)
+    (Impl.StackScratch.Arm.withStackScratch 1520 0 SerialCbc.encrypt)
     (Spec.Sm4.cbcEncryptChainedContract Arm.abi 1520) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Sm4.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 189)
+  Arm.Verified.stackScratch (sig := Spec.Sm4.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 189)
     (post := Proof.Sm4.cbcEncChainedPost Arm.abi.ptrBits) (wa := true) (stack := 0) (m := 0) (bytes := 1520)
-    verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm4.cbcEncChainedPost_local _)
-    (Proof.Sm4.cbcEncChainedPostOut_local _) frameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.Sm4.cbcEncChainedPostOut_local _ vs mm m₁ m₂ r hl) frameSat
 
 end VG.Proof.Sm4.Arm.SerialCbcVerified

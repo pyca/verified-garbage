@@ -552,4 +552,62 @@ theorem crypt_correct (s : State) (hs : cryptPPC64LE.pre s) :
       · rw [VG.Offset.sub_toNat' _ (by rw [savedSlot_eq]; omega_using []) (by omega_using [fitW, hi]), savedSlot_eq] at hc
         split at hc <;> omega_arith
 
+/-! ## For the callers -/
+
+/-- The table's offsets: in the functions' slots, outside the tail buffer. -/
+theorem table_off {r : Nat × Nat} (hr : r ∈ layout.table) {i : Nat} (hi : i < r.2) :
+    r.1 + i + 1 ≤ 8 * slots ∧ (r.1 + i + 1 ≤ 8 * tailSlot ∨ 8 * tailSlot + 256 ≤ r.1 + i) := by
+  rw [layout_table] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rw [slots_eq, tailSlot_eq]
+  rcases hr with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi]
+
+/-- The table survives what a batch keeps. -/
+theorem holds_of_keeps {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {sd : Spec.Sm4.Direction}
+    (h : Proof.Sm4.Prepared.Holds layout m B k sd)
+    (hk : Proof.Sm4.Prepared.Keeps B slots layout.cryptScratch m m') :
+    Proof.Sm4.Prepared.Holds layout m' B k sd := fun r hr i hi => by
+  have hr' := hr
+  rw [layout_table] at hr'
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+  rw [hk (r.1 + i) (by rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi]) (by
+    simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+    rw [evenSlot_eq, grpSlot_eq, tableSlot_eq, savedSlot_eq, slots_eq]
+    rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi])]
+  exact h r hr i hi
+
+
+/-- `vg_sm4_prepare_keys` writes neither `r5` nor `r7`. -/
+theorem prep_keeps : ∀ i ∈ instrs prepareKeys, dstOf i ≠ some .r5 ∧ dstOf i ≠ some .r7 := by
+  have h : (instrs prepareKeys).all (fun i => dstOf i != some .r5 && dstOf i != some .r7) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  intro i hi
+  have := List.all_eq_true.mp h i hi
+  simpa using this
+
+/-- `vg_sm4_crypt_prepared` writes neither `r5` nor `r7`. -/
+theorem crypt_keeps : ∀ i ∈ instrs cryptPrepared, dstOf i ≠ some .r5 ∧ dstOf i ≠ some .r7 := by
+  have h : (instrs cryptPrepared).all (fun i => dstOf i != some .r5 && dstOf i != some .r7) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  intro i hi
+  have := List.all_eq_true.mp h i hi
+  simpa using this
+
+theorem slots_lt : slots < 2 ^ 15 := by rw [slots_eq]; decide
+
+theorem toNat_slots : (BitVec.ofNat 64 slots).toNat = slots := by rw [BitVec.toNat_ofNat, slots_eq]
+
+theorem directionOf_dirBit (d : Dir) : Proof.Sm4.directionOf (BitVec.ofNat 64 (dirBit d)).toNat = specDirPPC64LE d := by
+  cases d <;> rfl
+
+
+/-- Block `j` of blocks transformed by ECB. -/
+theorem blockAt_of_ecb {K : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction} {m m' : Mem} {D : Addr} {n : Nat}
+    (h : Spec.Sm4.blocksAt m' D n = Spec.Sm4.ecb K d (Spec.Sm4.blocksAt m D n)) {j : Nat} (hj : j < n) :
+    Spec.Sm4.blockAt m' (D + BitVec.ofNat 64 (16 * j)) =
+      Proof.Sm4.blockFn K d (Spec.Sm4.blockAt m (D + BitVec.ofNat 64 (16 * j))) := by
+  have := congrArg (fun l => l[j]?) h
+  rw [Proof.Sm4.ecb_eq] at this
+  simpa [Spec.Sm4.blocksAt, hj] using this
+
 end VG.Proof.Sm4.PPC64LE

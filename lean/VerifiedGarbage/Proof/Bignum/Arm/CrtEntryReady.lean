@@ -590,9 +590,15 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
   rw [flagS] at modY oddY r2Y
   change numAt _ _ _ 0 = safePrime _ (Spec.Rsa.os2ip (bs 2)) at modY
   rw [crt_safeFactor] at modY oddY r2Y
-  obtain sharedY := sharedY1.after_narrow (frameY.mono (by simp)) restY
+  obtain sharedY := sharedY1.after_narrowB (frameY.mono (by simp)) restY
   obtain eqY := sharedY1.eq_of_frame (sharedY1.child kind).2.1 memberP
-    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frameY.mono (by simp)) sepN
+    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA y1.sp 48])
+    (frameY.mono (by simp)) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact sepN _ (by simp)
+      · exact sharedY1.stack.below.symm.sub_left
+          (crt_region_sub_workspace sharedY1.buffers.workspace sharedY1.buffers.storageFits memberP))
   -- The coefficient.
   obtain input : CrtCoefficientInput g bs v (crtFactor bs 2) v1 v2 (Spec.Rsa.os2ip (bs 6)) y := by
     refine ⟨sharedY.copyCtx kind readyY le, modY, oddY, r2Y, half, ?_, bound, ?_, ?_, ?_⟩
@@ -629,6 +635,7 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
   obtain rsY : y.sp = s.sp := restY.sp.trans rsY1
   obtain rsZ : z.sp = s.sp := restZ.sp.trans rsY
   rw [rs3] at frameY1
+  rw [rsY1] at frameY
   rw [rsZ] at frameT
   rw [rsY] at frameZ
   obtain frameAll : Frame [⟨State.addr s.sp, 4⟩, ⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩,
@@ -1835,10 +1842,15 @@ theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
     rw [h.1.2.2] at modulus odd r2
     change numAt _ _ _ 0 = safePrime _ (Spec.Rsa.os2ip (bs 2)) at modulus
     rw [crt_safeFactor] at modulus odd r2
-    obtain sharedT := shared.after_narrow (frame.mono (by simp)) rest
+    obtain sharedT := shared.after_narrowB (frame.mono (by simp)) rest
     obtain eq := shared.eq_of_frame shared.buffers.context.p memberP
-      (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frame.mono (by simp))
-      (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact shared.buffers.context.sepPN)
+      (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA s.sp 48])
+      (frame.mono (by simp)) (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact shared.buffers.context.sepPN
+        · exact shared.stack.below.symm.sub_left
+            (crt_region_sub_workspace shared.buffers.workspace shared.buffers.storageFits memberP))
     exact ⟨crtFactor bs 2, ⟨sharedT.copyCtx kind ready le, modulus, odd, r2, half⟩,
       by rw [eq.number shared.buffers.context.arraysFit (by decide)]; exact h.1.2.1⟩
   obtain tail := crt_seq_ct enter (fun s h => enterWP s h) (fun s h => enterWP s h)

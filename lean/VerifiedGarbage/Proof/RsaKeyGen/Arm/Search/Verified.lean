@@ -1134,9 +1134,10 @@ open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 /-- The candidate's frame, 56 bytes, above the round's 56. -/
 theorem cand_stack (v : RoundImpl) :
-    FrameStack.armStack (Impl.RsaKeyGen.Arm.Candidate.code v.name v.code v.mont.callOp.op) ≤ 160 := by
+    FrameStack.armStack (Impl.RsaKeyGen.Arm.Candidate.code v.name v.code v.mont.callOp.op v.mont.dbl) ≤ 160 := by
   have h1 := v.stack
   have h2 := v.mont.stackOk
+  have h3 := v.mont.dblOk.1
   simp only [Impl.RsaKeyGen.Arm.Candidate.foL, Impl.RsaKeyGen.Arm.Candidate.foUsed, Impl.RsaKeyGen.Arm.Candidate.foE,
     Impl.RsaKeyGen.Arm.Candidate.foOut, Impl.RsaKeyGen.Arm.Candidate.aoEl, Impl.RsaKeyGen.Arm.Candidate.aoP,
     Impl.RsaKeyGen.Arm.Candidate.aoPl, Impl.RsaKeyGen.Arm.Candidate.aoR, Impl.RsaKeyGen.Arm.Candidate.aoRl,
@@ -1184,19 +1185,20 @@ theorem cand_stack (v : RoundImpl) :
     Impl.RsaKeyGen.Arm.Candidate.mrPart, Impl.RsaKeyGen.Arm.Candidate.main, Impl.RsaKeyGen.Arm.Candidate.body,
     Impl.RsaKeyGen.Arm.Candidate.code, Impl.Bignum.Arm.TrialDivision16.newton, Impl.Bignum.Arm.TrialDivision16.redc,
     Impl.Bignum.Arm.TwoPower.code, Proof.Bignum.Arm.MontBackend.callOp, Impl.Bignum.Arm.MontCall.op,
-    Impl.Bignum.Arm.MontCall.opArgs, Impl.Bignum.Arm.r2With, Impl.Bignum.Arm.r2SquaresWith,
-    Impl.Bignum.Arm.r2SquareStepWith, Impl.Bignum.Arm.precomputeInverse, Impl.Bignum.Arm.setup,
-    Impl.Bignum.Arm.store64, Impl.Bignum.Arm.zero, Impl.Rsa.Arm.CrtValues.load, Impl.Rsa.Arm.CrtValues.store,
-    Impl.Rsa.Arm.Keys.aM, Impl.Rsa.Arm.Keys.aNM, Impl.Rsa.Arm.Keys.aZero, Impl.Rsa.Arm.Keys.bitOf,
-    Impl.Rsa.Arm.Keys.copy, Impl.Rsa.Arm.Keys.eqS, Impl.Rsa.Arm.Keys.half, Impl.Rsa.Arm.Keys.hdr,
-    Impl.Rsa.Arm.Keys.inverse, Impl.Rsa.Arm.Keys.orOne, Impl.Rsa.Arm.Keys.ptr, Impl.Rsa.Arm.Keys.sel,
-    Impl.Rsa.Arm.Keys.seqs, Impl.Rsa.Arm.Keys.stride, Impl.Rsa.Arm.Keys.sub3, Impl.Rsa.Arm.Keys.subN,
-    Impl.Rsa.Arm.Keys.selN, Impl.Rsa.Arm.Keys.copyN, Impl.Rsa.Arm.Recover.clrTop, Impl.RsaKeyGen.Arm.Key.andNotS,
-    Impl.RsaKeyGen.Arm.Key.isOne, Impl.RsaKeyGen.Arm.Key.notS, Impl.RsaKeyGen.Arm.Key.setHi,
-    Impl.RsaKeyGen.Arm.Key.setWd, Impl.RsaKeyGen.Arm.Key.zeroOut, Impl.RsaKeyGen.tabEntry,
-    Impl.Bignum.Arm.TwoPower.step, Impl.Bignum.Arm.compareWords, Impl.Bignum.Arm.copyWords, Impl.Bignum.Arm.loadBE,
-    Impl.Bignum.Arm.maskBytes, Impl.Bignum.Arm.selectRow, Impl.Bignum.Arm.subRow, Impl.Rsa.Arm.Keys.Inv.batch,
-    Impl.Rsa.Arm.Keys.Inv.finish, Impl.Rsa.Arm.Keys.Inv.init, Impl.Rsa.Arm.Keys.eqNormalize, Impl.Rsa.Arm.shiftRight,
+    Impl.Bignum.Arm.MontCall.opArgs, Impl.Bignum.Arm.r2WithDbl, Impl.Bignum.Arm.DoubleCall.loop,
+    Proof.Bignum.Arm.MontBackend.dbl, Impl.Bignum.Arm.r2SquaresWith, Impl.Bignum.Arm.r2SquareStepWith,
+    Impl.Bignum.Arm.precomputeInverse, Impl.Bignum.Arm.setup, Impl.Bignum.Arm.store64, Impl.Bignum.Arm.zero,
+    Impl.Rsa.Arm.CrtValues.load, Impl.Rsa.Arm.CrtValues.store, Impl.Rsa.Arm.Keys.aM, Impl.Rsa.Arm.Keys.aNM,
+    Impl.Rsa.Arm.Keys.aZero, Impl.Rsa.Arm.Keys.bitOf, Impl.Rsa.Arm.Keys.copy, Impl.Rsa.Arm.Keys.eqS,
+    Impl.Rsa.Arm.Keys.half, Impl.Rsa.Arm.Keys.hdr, Impl.Rsa.Arm.Keys.inverse, Impl.Rsa.Arm.Keys.orOne,
+    Impl.Rsa.Arm.Keys.ptr, Impl.Rsa.Arm.Keys.sel, Impl.Rsa.Arm.Keys.seqs, Impl.Rsa.Arm.Keys.stride,
+    Impl.Rsa.Arm.Keys.sub3, Impl.Rsa.Arm.Keys.subN, Impl.Rsa.Arm.Keys.selN, Impl.Rsa.Arm.Keys.copyN,
+    Impl.Rsa.Arm.Recover.clrTop, Impl.RsaKeyGen.Arm.Key.andNotS, Impl.RsaKeyGen.Arm.Key.isOne,
+    Impl.RsaKeyGen.Arm.Key.notS, Impl.RsaKeyGen.Arm.Key.setHi, Impl.RsaKeyGen.Arm.Key.setWd,
+    Impl.RsaKeyGen.Arm.Key.zeroOut, Impl.RsaKeyGen.tabEntry, Impl.Bignum.Arm.TwoPower.step,
+    Impl.Bignum.Arm.compareWords, Impl.Bignum.Arm.copyWords, Impl.Bignum.Arm.loadBE, Impl.Bignum.Arm.maskBytes,
+    Impl.Bignum.Arm.selectRow, Impl.Bignum.Arm.subRow, Impl.Rsa.Arm.Keys.Inv.batch, Impl.Rsa.Arm.Keys.Inv.finish,
+    Impl.Rsa.Arm.Keys.Inv.init, Impl.Rsa.Arm.Keys.eqNormalize, Impl.Rsa.Arm.shiftRight,
     Impl.Bignum.Arm.TrialDivision16.redcAt, Impl.Bignum.Arm.compareWordStep, Impl.Bignum.Arm.copyWordBody,
     Impl.Bignum.Arm.loadBEreverseArgs, Impl.Bignum.Arm.maskByteStep, Impl.Bignum.Arm.reverseBytes,
     Impl.Bignum.Arm.selectBody, Impl.Bignum.Arm.selectMask, Impl.Bignum.Arm.subBody, Impl.Bignum.Arm.zeroStep,
@@ -1214,18 +1216,12 @@ theorem cand_stack (v : RoundImpl) :
     Impl.Rsa.Arm.Keys.Inv.signTop, Impl.Rsa.Arm.Keys.Inv.zero1, Impl.Rsa.Arm.Keys.Inv.zeroW,
     Impl.Rsa.Arm.Keys.setOne, Impl.Rsa.Arm.shiftRightStep, Impl.Bignum.Arm.copyWord, Impl.Bignum.Arm.reverseByteStep,
     Impl.Bignum.Arm.selectStep, Impl.Bignum.Arm.subAdvance, Impl.Bignum.Arm.subStep, Impl.Rsa.Arm.Keys.Inv.cnt1,
-    Impl.Bignum.Arm.rowAdvance, Impl.Bignum.Arm.selectWord, Impl.Bignum.Arm.subBorrow, Impl.Bignum.Arm.doubleLoop,
-    Impl.Bignum.Arm.initInverse, Impl.Bignum.Arm.r2Init, Impl.Bignum.Arm.setBases, Impl.Rsa.Arm.Keys.Inv.bA2,
-    Impl.Bignum.Arm.doubleLoopBody, Impl.Bignum.Arm.r2Constants, Impl.Bignum.Arm.doubleLoopMultiply,
-    Impl.Bignum.Arm.montInit, Impl.Bignum.Arm.smallConst, Impl.Bignum.Arm.doubleFnRestore,
-    Impl.Bignum.Arm.montFinish, Impl.Bignum.Arm.setSmallFn, Impl.Bignum.Arm.csub, Impl.Bignum.Arm.doubleFnBody,
-    Impl.Bignum.Arm.setSmallFnBody, Impl.Bignum.Arm.doubleBody, Impl.Bignum.Arm.productStage,
-    Impl.Bignum.Arm.reduceChoice, Impl.Bignum.Arm.setSmall, Impl.Bignum.Arm.doubleCore, Impl.Bignum.Arm.row,
-    Impl.Bignum.Arm.rowFull, Impl.Bignum.Arm.doubleProduct, Impl.Bignum.Arm.rowBody, Impl.Bignum.Arm.rowCarry,
-    Impl.Bignum.Arm.rowLoop2, Impl.Bignum.Arm.rowBody2, Impl.Bignum.Arm.rowStep, Impl.Bignum.Arm.rowStepAt,
+    Impl.Bignum.Arm.rowAdvance, Impl.Bignum.Arm.selectWord, Impl.Bignum.Arm.subBorrow, Impl.Bignum.Arm.initInverse,
+    Impl.Bignum.Arm.r2Init, Impl.Bignum.Arm.setBases, Impl.Rsa.Arm.Keys.Inv.bA2, Impl.Bignum.Arm.r2Constants,
+    Impl.Bignum.Arm.smallConst, Impl.Bignum.Arm.setSmallFn, Impl.Bignum.Arm.setSmallFnBody, Impl.Bignum.Arm.setSmall,
     FrameStack.armStack, List.cons_append, List.nil_append, Nat.max_zero, Nat.zero_max, Nat.max_self,
-    List.length_cons, List.length_nil]
-  omega_using [h1, h2]
+    List.length_cons, List.length_nil] at h3 ⊢
+  omega_using [h1, h2, h3]
 
 theorem search_verified_of (c : Cand) :
     Verified target (Impl.RsaKeyGen.Arm.Search.code c.call)
@@ -1236,8 +1232,8 @@ theorem search_verified_of (c : Cand) :
 calls it. -/
 def Cand.ofRound [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) : Cand where
   name := "vg_rsa_keygen_candidate" ++ v.suffix
-  code := Impl.RsaKeyGen.Arm.Candidate.code v.name v.code v.mont.callOp.op
-  verified := Proof.RsaKeyGen.Arm.Cand.cand_verified v v.mont.callOp
+  code := Impl.RsaKeyGen.Arm.Candidate.code v.name v.code v.mont.callOp.op v.mont.dbl
+  verified := Proof.RsaKeyGen.Arm.Cand.cand_verified v v.mont.callOp v.mont.callDbl
   stack := cand_stack v
 
 /-- The search calling it. -/

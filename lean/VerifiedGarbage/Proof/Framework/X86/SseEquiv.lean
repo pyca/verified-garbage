@@ -47,9 +47,12 @@ of the pair as in `Q`'s; each state is the one they start in but for the
 XMM registers and memory. `equiv_wp`: so a postcondition of `P` that only
 reads those is one of `Q`.
 
-The kernel evaluates `equiv` (`lit_decide`): a node is a number (its
-operation and its operands' numbers packed, `mk`), found in the table by a
-walk that compares numbers (`find`).
+The kernel evaluates `equiv` (`lit_decide`), about half a millisecond an
+instruction: a node is a number (its operation and its operands' numbers
+packed, `mk`), found through a hash table that is one number (`probe`), as
+are the registers' nodes (`rget`); the arithmetic on its path is `Nat`'s
+functions themselves, which the kernel computes without unfolding an
+instance.
 -/
 
 @[expose] public section
@@ -63,12 +66,17 @@ open VG VG.X86
 /-- The node of a value the program starts with: its kind (0 a register, 1
 and 2 the buffer's 16 or 8 bytes at an offset, 3 and 4 the keys', 5 a
 constant) and which. -/
-def leaf (t x : Nat) : Nat := t + 16 * x
+def leaf (t x : Nat) : Nat := Nat.add t (Nat.mul 16 x)
+
+theorem leaf_eq (t x : Nat) : leaf t x = t + 16 * x := rfl
 
 /-- The node of an instruction: its kind (6 an instruction of two
 registers, 7 a shift, 8 to 10 the shuffles, 11 `palignr`), the operation or
 its immediate, and its operands' numbers (or a shift's count). -/
-def mk (t x a b : Nat) : Nat := t + 16 * (x + 256 * (a + 65536 * b))
+def mk (t x a b : Nat) : Nat :=
+  Nat.add t (Nat.mul 16 (Nat.add x (Nat.mul 256 (Nat.add a (Nat.mul 65536 b)))))
+
+theorem mk_eq (t x a b : Nat) : mk t x a b = leaf t (x + 256 * (a + 65536 * b)) := rfl
 
 def binOf (n : Nat) : XBinOp :=
   ([.movdqa, .paddd, .pxor, .por, .pand, .pandn, .punpckldq, .punpckhdq, .punpcklqdq, .punpckhqdq, .pshufb,
@@ -118,12 +126,12 @@ def evalK (E : Env) (v : Nat → BitVec 128) (k : Nat) : BitVec 128 := sel E v (
 
 theorem evalK_leaf (E : Env) (v : Nat → BitVec 128) {t : Nat} (ht : t < 16) (x : Nat) :
     evalK E v (leaf t x) = sel E v t x := by
-  unfold evalK leaf
+  rw [evalK, leaf_eq]
   rw [show (t + 16 * x) % 16 = t by omega_using [ht], show (t + 16 * x) / 16 = x by omega_using [ht]]
 
 theorem evalK_mk (E : Env) (v : Nat → BitVec 128) {t : Nat} (ht : t < 16) (x a b : Nat) :
-    evalK E v (mk t x a b) = sel E v t (x + 256 * (a + 65536 * b)) :=
-  evalK_leaf E v ht _
+    evalK E v (mk t x a b) = sel E v t (x + 256 * (a + 65536 * b)) := by
+  rw [mk_eq]; exact evalK_leaf E v ht _
 
 theorem y_x {x a b : Nat} (hx : x < 256) : (x + 256 * (a + 65536 * b)) % 256 = x := by omega_using [hx]
 theorem y_a {x a b : Nat} (hx : x < 256) (ha : a < 65536) : (x + 256 * (a + 65536 * b)) / 256 % 65536 = a := by
@@ -134,9 +142,6 @@ theorem y_b {x a b : Nat} (hx : x < 256) (ha : a < 65536) : (x + 256 * (a + 6553
 /-- A node's value depends on those of the nodes before number `n` only. -/
 def Local (k n : Nat) : Prop :=
   ∀ (E : Env) (v v' : Nat → BitVec 128), (∀ i < n, v i = v' i) → evalK E v k = evalK E v' k
-
-theorem Local.mono {k n m : Nat} (h : Local k n) (hn : n ≤ m) : Local k m :=
-  fun E v v' hv => h E v v' fun i hi => hv i (Nat.lt_of_lt_of_le hi hn)
 
 theorem local_leaf {t : Nat} (ht : t < 6) (x n : Nat) : Local (leaf t x) n := fun E v v' _ => by
   rw [evalK_leaf E v (by omega_using [ht]), evalK_leaf E v' (by omega_using [ht])]
@@ -260,9 +265,11 @@ theorem Has.val (E : Env) {k : Nat} {t : List Nat} {i : Nat} (hw : Wf t) (h : Ha
 
 The kernel walks a list at tens of microseconds an element, so the table is
 not searched: the nodes' numbers are also in a hash table that is one
-number, 8192 slots of 160 bits, a slot `1 + 2 (i + 65536 k)` for the node
-`k` of number `i` and 0 when empty. Only what a slot says is used
-(`HOk`): where a node is put does not matter to what the check proves. -/
+number, slots of 160 bits (`Params.hs` of them: an operation on the number
+costs the kernel about half a microsecond a kilobyte), a slot
+`1 + 2 (i + 65536 k)` for the node `k` of number `i` and 0 when empty. Only
+what a slot says is used (`HOk`): where a node is put does not matter to
+what the check proves. -/
 
 /-- `k n`, with the number `n` evaluated. -/
 def forceNat {α : Type} (n : Nat) (k : Nat → α) : α :=
@@ -275,14 +282,23 @@ def W2 : Nat := 1461501637330902918203684832716283019655932542976
 
 theorem W2_eq : W2 = 2 ^ 160 := by decide
 
+/-- `2 ^ 160 - 1`. -/
+def W1 : Nat := 1461501637330902918203684832716283019655932542975
+
+theorem W1_eq : W1 = 2 ^ 160 - 1 := by decide
+
 /-- Slot `j` of the hash table `H`. -/
-def slot (H j : Nat) : Nat := (H >>> (160 * j)) % W2
+def slot (H j : Nat) : Nat := Nat.land (Nat.shiftRight H (Nat.mul 160 j)) W1
+
+theorem slot_eq (H j : Nat) : slot H j = (H >>> (160 * j)) &&& W1 := rfl
 
 /-- `H` with `e` in slot `j`, which was empty. -/
-def setSlot (H j e : Nat) : Nat := H ||| (e <<< (160 * j))
+def setSlot (H j e : Nat) : Nat := Nat.lor H (Nat.shiftLeft e (Nat.mul 160 j))
+
+theorem setSlot_eq (H j e : Nat) : setSlot H j e = H ||| (e <<< (160 * j)) := rfl
 
 theorem slot_testBit (H j b : Nat) : (slot H j).testBit b = (decide (b < 160) && H.testBit (160 * j + b)) := by
-  rw [slot, W2_eq, Nat.testBit_mod_two_pow, Nat.testBit_shiftRight]
+  rw [slot_eq, W1_eq, Nat.testBit_and, Nat.testBit_shiftRight, Nat.testBit_two_pow_sub_one, Bool.and_comm]
 
 theorem testBit_of_lt {e c : Nat} (he : e < W2) (hc : 160 ≤ c) : e.testBit c = false := by
   cases h : e.testBit c
@@ -293,11 +309,11 @@ theorem testBit_of_lt {e c : Nat} (he : e < W2) (hc : 160 ≤ c) : e.testBit c =
     omega_using [this, h2, he]
 
 theorem slot_zero (j : Nat) : slot 0 j = 0 := by
-  rw [slot, Nat.zero_shiftRight, Nat.zero_mod]
+  rw [slot_eq, Nat.zero_shiftRight, Nat.zero_and]
 
 theorem slot_set_self {H j e : Nat} (he : e < W2) (h0 : slot H j = 0) : slot (setSlot H j e) j = e := by
   refine Nat.eq_of_testBit_eq fun b => ?_
-  rw [slot_testBit, setSlot, Nat.testBit_or, Nat.testBit_shiftLeft]
+  rw [slot_testBit, setSlot_eq, Nat.testBit_or, Nat.testBit_shiftLeft]
   by_cases hb : b < 160
   · have z : H.testBit (160 * j + b) = false := by
       have := slot_testBit H j b
@@ -309,7 +325,7 @@ theorem slot_set_self {H j e : Nat} (he : e < W2) (h0 : slot H j = 0) : slot (se
 
 theorem slot_set_other {H j j' e : Nat} (he : e < W2) (hj : j' ≠ j) : slot (setSlot H j e) j' = slot H j' := by
   refine Nat.eq_of_testBit_eq fun b => ?_
-  rw [slot_testBit, slot_testBit, setSlot, Nat.testBit_or, Nat.testBit_shiftLeft]
+  rw [slot_testBit, slot_testBit, setSlot_eq, Nat.testBit_or, Nat.testBit_shiftLeft]
   by_cases hb : b < 160
   · rw [decide_eq_true hb, Bool.true_and, Bool.true_and]
     by_cases hl : 160 * j ≤ 160 * j' + b
@@ -318,31 +334,36 @@ theorem slot_set_other {H j j' e : Nat} (he : e < W2) (hj : j' ≠ j) : slot (se
   · rw [decide_eq_false hb, Bool.false_and, Bool.false_and]
 
 /-- The slot of the node `k` of number `i`. -/
-def pack (k i : Nat) : Nat := 1 + 2 * (i + 65536 * k)
-def eKey (e : Nat) : Nat := e / 131072
-def eId (e : Nat) : Nat := e / 2 % 65536
+def pack (k i : Nat) : Nat := Nat.add 1 (Nat.mul 2 (Nat.add i (Nat.mul 65536 k)))
+def eKey (e : Nat) : Nat := Nat.div e 131072
+def eId (e : Nat) : Nat := Nat.mod (Nat.div e 2) 65536
 
-theorem eKey_pack {k i : Nat} (hi : i < 65536) : eKey (pack k i) = k := by unfold eKey pack; omega_using [hi]
-theorem eId_pack {k i : Nat} (hi : i < 65536) : eId (pack k i) = i := by unfold eId pack; omega_using [hi]
-theorem pack_ne (k i : Nat) : pack k i ≠ 0 := by unfold pack; omega_arith
+theorem pack_eq (k i : Nat) : pack k i = 1 + 2 * (i + 65536 * k) := rfl
+theorem eKey_eq (e : Nat) : eKey e = e / 131072 := rfl
+theorem eId_eq (e : Nat) : eId e = e / 2 % 65536 := rfl
+
+theorem eKey_pack {k i : Nat} (hi : i < 65536) : eKey (pack k i) = k := by
+  rw [eKey_eq, pack_eq]; omega_using [hi]
+theorem eId_pack {k i : Nat} (hi : i < 65536) : eId (pack k i) = i := by
+  rw [eId_eq, pack_eq]; omega_using [hi]
 
 /-- Every slot that is not empty is of a node of the table and its number. -/
 def HOk (H : Nat) (t : List Nat) : Prop := ∀ j, slot H j ≠ 0 → Has t (eId (slot H j)) (eKey (slot H j))
 
 theorem HOk.zero (t : List Nat) : HOk 0 t := fun j h => absurd (slot_zero j) h
 
-/-- From slot `j`, in at most `fuel` slots: the number of the node `k`
-(`inl`), or the first empty slot (`inr`). -/
-def probe (H k : Nat) : Nat → Nat → Option (Nat ⊕ Nat)
+/-- From slot `j` of `hs`, in at most `fuel` slots: the number of the node
+`k` (`inl`), or the first empty slot (`inr`). -/
+def probe (hs H k : Nat) : Nat → Nat → Option (Nat ⊕ Nat)
   | 0, _ => none
   | fuel + 1, j =>
     forceNat (slot H j) fun e =>
       bif Nat.beq e 0 then some (.inr j)
       else bif Nat.beq (eKey e) k then some (.inl (eId e))
-      else forceNat ((j + 1) % 8192) fun j' => probe H k fuel j'
+      else forceNat (Nat.mod (Nat.succ j) hs) fun j' => probe hs H k fuel j'
 
-theorem probe_found {H k : Nat} {t : List Nat} (hH : HOk H t) : ∀ {fuel j i : Nat},
-    probe H k fuel j = some (.inl i) → Has t i k
+theorem probe_found {hs H k : Nat} {t : List Nat} (hH : HOk H t) : ∀ {fuel j i : Nat},
+    probe hs H k fuel j = some (.inl i) → Has t i k
   | 0, _, _, h => by cases h
   | fuel + 1, j, i, h => by
     rw [probe, forceNat_eq] at h
@@ -358,7 +379,7 @@ theorem probe_found {H k : Nat} {t : List Nat} (hH : HOk H t) : ∀ {fuel j i : 
     · rw [e0, Bool.cond_true] at h
       cases h
 
-theorem probe_empty {H k : Nat} : ∀ {fuel j j' : Nat}, probe H k fuel j = some (.inr j') → slot H j' = 0
+theorem probe_empty {hs H k : Nat} : ∀ {fuel j j' : Nat}, probe hs H k fuel j = some (.inr j') → slot H j' = 0
   | 0, _, _, h => by cases h
   | fuel + 1, j, j', h => by
     rw [probe, forceNat_eq] at h
@@ -385,43 +406,21 @@ theorem HOk.insert {H j k : Nat} {t : List Nat} (hH : HOk H t) (h0 : slot H j = 
 
 /-! ## The program's state -/
 
-/-- The numbers of the nodes the eight registers hold. -/
-structure Regs where
-  x0 : Nat
-  x1 : Nat
-  x2 : Nat
-  x3 : Nat
-  x4 : Nat
-  x5 : Nat
-  x6 : Nat
-  x7 : Nat
+/-- The number of the node the register `r` holds: the registers' numbers
+are one number, 16 bits each (a match on a register costs the kernel a
+quarter of a millisecond, two shifts a few microseconds). -/
+def rget (R : Nat) (r : XReg) : Nat := Nat.land (Nat.shiftRight R (Nat.mul 16 r.ctorIdx)) 65535
 
-def Regs.get : Regs → XReg → Nat
-  | ⟨a, _, _, _, _, _, _, _⟩, .xmm0 => a
-  | ⟨_, a, _, _, _, _, _, _⟩, .xmm1 => a
-  | ⟨_, _, a, _, _, _, _, _⟩, .xmm2 => a
-  | ⟨_, _, _, a, _, _, _, _⟩, .xmm3 => a
-  | ⟨_, _, _, _, a, _, _, _⟩, .xmm4 => a
-  | ⟨_, _, _, _, _, a, _, _⟩, .xmm5 => a
-  | ⟨_, _, _, _, _, _, a, _⟩, .xmm6 => a
-  | ⟨_, _, _, _, _, _, _, a⟩, .xmm7 => a
+theorem rget_eq (R : Nat) (r : XReg) : rget R r = (R >>> (16 * r.ctorIdx)) &&& 65535 := rfl
 
-def Regs.set : Regs → XReg → Nat → Regs
-  | ⟨_, b, c, d, e, f, g, h⟩, .xmm0, v => ⟨v, b, c, d, e, f, g, h⟩
-  | ⟨a, _, c, d, e, f, g, h⟩, .xmm1, v => ⟨a, v, c, d, e, f, g, h⟩
-  | ⟨a, b, _, d, e, f, g, h⟩, .xmm2, v => ⟨a, b, v, d, e, f, g, h⟩
-  | ⟨a, b, c, _, e, f, g, h⟩, .xmm3, v => ⟨a, b, c, v, e, f, g, h⟩
-  | ⟨a, b, c, d, _, f, g, h⟩, .xmm4, v => ⟨a, b, c, d, v, f, g, h⟩
-  | ⟨a, b, c, d, e, _, g, h⟩, .xmm5, v => ⟨a, b, c, d, e, v, g, h⟩
-  | ⟨a, b, c, d, e, f, _, h⟩, .xmm6, v => ⟨a, b, c, d, e, f, v, h⟩
-  | ⟨a, b, c, d, e, f, g, _⟩, .xmm7, v => ⟨a, b, c, d, e, f, g, v⟩
+/-- The registers with `r` holding the node of number `v`. -/
+def rset (R : Nat) (r : XReg) (v : Nat) : Nat :=
+  Nat.xor R (Nat.shiftLeft (Nat.xor (rget R r) v) (Nat.mul 16 r.ctorIdx))
 
-theorem Regs.get_set (ρ : Regs) (r r' : XReg) (v : Nat) :
-    (ρ.set r v).get r' = if r' = r then v else ρ.get r' := by
-  cases ρ; cases r <;> cases r' <;> rfl
+theorem rset_eq (R : Nat) (r : XReg) (v : Nat) : rset R r v = R ^^^ ((rget R r ^^^ v) <<< (16 * r.ctorIdx)) := rfl
 
 /-- The registers at the start: register `k` holds node `k`. -/
-def Regs.init : Regs := ⟨0, 1, 2, 3, 4, 5, 6, 7⟩
+def rinit : Nat := 0x00070006000500040003000200010000
 
 /-- Register `k`. -/
 def xr : Nat → XReg
@@ -434,28 +433,36 @@ structure St where
   n : Nat
   tab : List Nat
   h : Nat
-  regs : Regs
+  regs : Nat
   cells : List (Nat × Nat)
 
 /-- The start: the registers' nodes. -/
 def St.init : St :=
-  ⟨8, [leaf 0 7, leaf 0 6, leaf 0 5, leaf 0 4, leaf 0 3, leaf 0 2, leaf 0 1, leaf 0 0], 0, .init, []⟩
+  ⟨8, [leaf 0 7, leaf 0 6, leaf 0 5, leaf 0 4, leaf 0 3, leaf 0 2, leaf 0 1, leaf 0 0], 0, rinit, []⟩
 
 /-- `d` holds the node `k`: its number in the table, where it goes if it is
-not there (`none` if the hash table has no slot for it within 64 of its
-own). The hash table stays the term that made it: the kernel's hash of a
-numeral is of its low 64 bits, which are the same for every table. -/
-def St.put (σ : St) (d : XReg) (k : Nat) : Option St :=
+not there (`none` if the hash table of `hs` slots has no slot for it within
+64 of its own, or the table has 65536 nodes). The hash table stays the term
+that made it: the kernel's hash of a numeral is of its low 64 bits, which
+are the same for every table. -/
+def St.put (hs : Nat) (σ : St) (d : XReg) (k : Nat) : Option St :=
   match σ with
   | ⟨n, tab, H, regs, cells⟩ =>
     forceNat k fun k =>
-      match probe H k 64 (k % 8191) with
-      | some (.inl i) => some ⟨n, tab, H, regs.set d i, cells⟩
+      match probe hs H k 64 (Nat.mod k hs) with
+      | some (.inl i) => forceNat (rset regs d i) fun regs' => some ⟨n, tab, H, regs', cells⟩
       | some (.inr j) =>
         forceNat (pack k n) fun e =>
-          bif Nat.blt e W2 then forceNat (n + 1) fun n' => some ⟨n', k :: tab, setSlot H j e, regs.set d n, cells⟩
+          bif Nat.blt e W2 && Nat.blt n 65536 then
+            forceNat (Nat.succ n) fun n' => forceNat (rset regs d n) fun regs' =>
+              some ⟨n', k :: tab, setSlot H j e, regs', cells⟩
           else none
       | none => none
+
+/-- `d` holds the node of number `i`. -/
+def St.alias (σ : St) (d : XReg) (i : Nat) : St :=
+  match σ with
+  | ⟨n, tab, H, regs, cells⟩ => forceNat (rset regs d i) fun regs' => ⟨n, tab, H, regs', cells⟩
 
 /-- What was stored at offset `o`. -/
 def lookup : List (Nat × Nat) → Nat → Option Nat
@@ -507,53 +514,56 @@ structure Params where
   klen : Nat
   slo : Nat
   shi : Nat
+  /-- The hash table's slots: enough for the nodes of both programs (a
+  node that finds no slot within 64 of its own fails the check). -/
+  hs : Nat := 2039
 
 /-- What an instruction does to the nodes; `none` for an instruction, or
 operands, this does not follow. -/
 def step (p : Params) (σ : St) : Instr → Option St
   | .movdquTbl d m n ws =>
     if m.base = p.tb ∧ n = p.name ∧ m.disp % 8 = 0 ∧ m.disp / 8 + 2 ≤ ws.length then
-      σ.put d (leaf 5 ((ws.getD (m.disp / 8 + 1) 0).toNat * 18446744073709551616 +
+      σ.put p.hs d (leaf 5 (Nat.add (Nat.mul (ws.getD (m.disp / 8 + 1) 0).toNat 18446744073709551616)
         (ws.getD (m.disp / 8) 0).toNat))
     else none
   | .movdquLoad d m =>
     if m.base = p.mreg then
       if m.disp % 16 = 0 ∧ m.disp + 16 ≤ p.mlen then
         match lookup σ.cells m.disp with
-        | some i => some { σ with regs := σ.regs.set d i }
-        | none => σ.put d (leaf 1 m.disp)
+        | some i => some (σ.alias d i)
+        | none => σ.put p.hs d (leaf 1 m.disp)
       else none
-    else if m.base = p.kreg ∧ m.disp + 16 ≤ p.klen then σ.put d (leaf 3 m.disp)
+    else if m.base = p.kreg ∧ m.disp + 16 ≤ p.klen then σ.put p.hs d (leaf 3 m.disp)
     else none
   | .movqLoad d m =>
     if m.base = p.mreg then
       if m.disp % 8 = 0 ∧ m.disp + 8 ≤ p.mlen ∧ lookup σ.cells (m.disp - m.disp % 16) = none then
-        σ.put d (leaf 2 m.disp)
+        σ.put p.hs d (leaf 2 m.disp)
       else none
-    else if m.base = p.kreg ∧ m.disp + 8 ≤ p.klen then σ.put d (leaf 4 m.disp)
+    else if m.base = p.kreg ∧ m.disp + 8 ≤ p.klen then σ.put p.hs d (leaf 4 m.disp)
     else none
   | .movdquStore m r =>
     if m.base = p.mreg ∧ m.disp % 16 = 0 ∧ p.slo ≤ m.disp ∧ m.disp + 16 ≤ p.shi then
-      some { σ with cells := setCell σ.cells m.disp (σ.regs.get r) }
+      match σ with
+      | ⟨n, tab, H, regs, cells⟩ => some ⟨n, tab, H, regs, setCell cells m.disp (rget regs r)⟩
     else none
-  | .xop (.bin .movdqa d r) => some { σ with regs := σ.regs.set d (σ.regs.get r) }
-  | .xop (.bin op d r) => σ.put d (mk 6 op.ctorIdx (σ.regs.get d) (σ.regs.get r))
-  | .xop (.shift op d n) => σ.put d (mk 7 op.ctorIdx (σ.regs.get d) n.toNat)
-  | .xop (.pshufd d r o) => σ.put d (mk 8 o.toNat (σ.regs.get r) 0)
-  | .xop (.pshuflw d r o) => σ.put d (mk 9 o.toNat (σ.regs.get r) 0)
-  | .xop (.pshufhw d r o) => σ.put d (mk 10 o.toNat (σ.regs.get r) 0)
-  | .xop (.palignr d r n) => σ.put d (mk 11 n.toNat (σ.regs.get d) (σ.regs.get r))
+  | .xop (.bin op d r) =>
+    bif Nat.beq op.ctorIdx 0 then some (σ.alias d (rget σ.regs r))
+    else σ.put p.hs d (mk 6 op.ctorIdx (rget σ.regs d) (rget σ.regs r))
+  | .xop (.shift op d n) => σ.put p.hs d (mk 7 op.ctorIdx (rget σ.regs d) n.toNat)
+  | .xop (.pshufd d r o) => σ.put p.hs d (mk 8 o.toNat (rget σ.regs r) 0)
+  | .xop (.pshuflw d r o) => σ.put p.hs d (mk 9 o.toNat (rget σ.regs r) 0)
+  | .xop (.pshufhw d r o) => σ.put p.hs d (mk 10 o.toNat (rget σ.regs r) 0)
+  | .xop (.palignr d r n) => σ.put p.hs d (mk 11 n.toNat (rget σ.regs d) (rget σ.regs r))
   | _ => none
 
-/-- The nodes after a block: at most 65536. -/
+/-- The nodes after a block. -/
 def run (p : Params) : St → List Instr → Option St
   | σ, [] => some σ
   | σ, i :: is =>
-    if Nat.blt σ.n 65536 = true then
-      match step p σ i with
-      | some σ' => run p σ' is
-      | none => none
-    else none
+    match step p σ i with
+    | some σ' => run p σ' is
+    | none => none
 
 /-- `P` and `Q` are followed, and from the same registers and memory they
 leave the same node in `P`'s register and in `Q`'s of each pair of `outs`,
@@ -562,10 +572,533 @@ def equiv (p : Params) (P Q : List Instr) (outs : List (XReg × XReg)) : Bool :=
   match run p .init P with
   | none => false
   | some σ =>
-    match run p ⟨σ.n, σ.tab, σ.h, .init, []⟩ Q with
+    match run p ⟨σ.n, σ.tab, σ.h, rinit, []⟩ Q with
     | none => false
     | some τ =>
-      outs.all (fun ab => Nat.beq (σ.regs.get ab.1) (τ.regs.get ab.2)) && cellsLe σ.cells τ.cells &&
+      outs.all (fun ab => Nat.beq (rget σ.regs ab.1) (rget τ.regs ab.2)) && cellsLe σ.cells τ.cells &&
         cellsLe τ.cells σ.cells
+
+/-! ## The registers' numbers -/
+
+theorem rget_testBit (R : Nat) (r : XReg) (b : Nat) :
+    (rget R r).testBit b = (decide (b < 16) && R.testBit (16 * r.ctorIdx + b)) := by
+  rw [rget_eq, show (65535 : Nat) = 2 ^ 16 - 1 from rfl, Nat.testBit_and, Nat.testBit_shiftRight,
+    Nat.testBit_two_pow_sub_one, Bool.and_comm]
+
+theorem rget_lt (R : Nat) (r : XReg) : rget R r < 65536 := by
+  rw [rget_eq]
+  exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
+
+theorem testBit_of_lt16 {v c : Nat} (hv : v < 65536) (hc : 16 ≤ c) : v.testBit c = false := by
+  cases h : v.testBit c
+  · rfl
+  · have := Nat.ge_two_pow_of_testBit h
+    have h2 : 2 ^ 16 ≤ 2 ^ c := Nat.pow_le_pow_right (by decide) hc
+    omega_using [this, h2, hv]
+
+theorem ctorIdx_inj {r r' : XReg} (h : r'.ctorIdx = r.ctorIdx) : r' = r := by
+  cases r <;> cases r' <;> first | rfl | cases h
+
+theorem ctorIdx_lt (r : XReg) : r.ctorIdx < 8 := by cases r <;> decide
+
+/-- A register holds what was put there, and the others what they held. -/
+theorem rget_rset (R : Nat) (r r' : XReg) {v : Nat} (hv : v < 65536) :
+    rget (rset R r v) r' = if r' = r then v else rget R r' := by
+  refine Nat.eq_of_testBit_eq fun b => ?_
+  rw [rget_testBit, rset_eq, Nat.testBit_xor, Nat.testBit_shiftLeft, Nat.testBit_xor]
+  by_cases hb : b < 16
+  · rw [decide_eq_true hb, Bool.true_and]
+    by_cases e : r' = r
+    · subst e
+      rw [ite_eq_left rfl, decide_eq_true (show 16 * r'.ctorIdx + b ≥ 16 * r'.ctorIdx by omega_arith), Bool.true_and,
+        Nat.add_sub_cancel_left, rget_testBit, decide_eq_true hb, Bool.true_and]
+      cases R.testBit (16 * r'.ctorIdx + b) <;> cases v.testBit b <;> rfl
+    · rw [ite_eq_right e, rget_testBit R r' b, decide_eq_true hb, Bool.true_and]
+      have hne : r'.ctorIdx ≠ r.ctorIdx := fun h => e (ctorIdx_inj h)
+      by_cases hl : 16 * r.ctorIdx ≤ 16 * r'.ctorIdx + b
+      · rw [decide_eq_true hl, Bool.true_and, testBit_of_lt16 (rget_lt R r) (by omega_using [hl, hne, hb]),
+          testBit_of_lt16 hv (by omega_using [hl, hne, hb])]
+        cases R.testBit (16 * r'.ctorIdx + b) <;> rfl
+      · rw [decide_eq_false hl, Bool.false_and, Bool.xor_false]
+  · rw [decide_eq_false hb, Bool.false_and]
+    by_cases e : r' = r
+    · rw [ite_eq_left e, testBit_of_lt16 hv (by omega_using [hb])]
+    · rw [ite_eq_right e, testBit_of_lt16 (rget_lt R r') (by omega_using [hb])]
+
+theorem rinit_get (r : XReg) : rget rinit r = r.ctorIdx := by cases r <;> rfl
+
+/-! ## A node in a register -/
+
+/-- What `put` gives: a table with at most one more node, in which `k` has
+the number that `d` gets, and the value it has of the table's nodes. -/
+theorem put_ok {hs : Nat} {σ σ' : St} {d : XReg} {k : Nat} (h : σ.put hs d k = some σ') (hlen : σ.n = σ.tab.length)
+    (hw : Wf σ.tab) (hH : HOk σ.h σ.tab) (hk : Local k σ.n) (E : Env) :
+    ∃ i l, σ'.tab = l ++ σ.tab ∧ σ'.n = σ'.tab.length ∧ Wf σ'.tab ∧ HOk σ'.h σ'.tab ∧ σ'.regs = rset σ.regs d i ∧
+      σ'.cells = σ.cells ∧ i < σ'.n ∧ (σ.n ≤ 65536 → σ'.n ≤ 65536) ∧
+      val E σ'.tab i = evalK E (val E σ.tab) k := by
+  obtain ⟨n, tab, H, regs, cells⟩ := σ
+  have hlen : n = tab.length := hlen
+  have hw : Wf tab := hw
+  have hH : HOk H tab := hH
+  have hk : Local k n := hk
+  subst hlen
+  unfold St.put at h
+  simp only [forceNat_eq] at h
+  split at h
+  · rename_i i hp
+    cases h
+    obtain ⟨hi, hv⟩ := (probe_found hH hp).val E hw
+    exact ⟨i, [], rfl, rfl, hw, hH, rfl, rfl, hi, fun h => h, hv⟩
+  · rename_i j hp
+    cases hb : (Nat.blt (pack k tab.length) W2 && Nat.blt tab.length 65536)
+    · rw [hb, Bool.cond_false] at h; cases h
+    · rw [hb, Bool.cond_true] at h
+      cases h
+      rw [Bool.and_eq_true] at hb
+      have he : pack k tab.length < W2 := Nat.blt_eq.mp hb.1
+      have hn : tab.length < 65536 := Nat.blt_eq.mp hb.2
+      exact ⟨tab.length, [k], rfl, rfl, ⟨hk, hw⟩, hH.insert (probe_empty hp) he hn, rfl, rfl, Nat.lt_succ_self _,
+        fun _ => hn, val_new E k tab⟩
+  · cases h
+
+/-! ## What the nodes say of a state -/
+
+/-- The values a state starts with. -/
+def envOf (p : Params) (s : State) : Env where
+  reg k := s.xmm (xr k)
+  mem o := s.mem.readW ((s.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 o) 128
+  memq o := (0 : BitVec 64) ++ s.mem.readW ((s.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 o) 64
+  key o := s.mem.readW ((s.gpr p.kreg).setWidth 64 + BitVec.ofNat 64 o) 128
+  keyq o := (0 : BitVec 64) ++ s.mem.readW ((s.gpr p.kreg).setWidth 64 + BitVec.ofNat 64 o) 64
+
+/-- What the code needs of the state it starts in: the table's register
+holds its address; the buffer and the keys do not wrap around and are
+readable, the buffer writable where the stores go, and the keys apart from
+there. -/
+structure Pre (p : Params) (s : State) : Prop where
+  tb : s.gpr p.tb = s.syms p.name
+  mfit : (s.gpr p.mreg).toNat + p.mlen ≤ 2 ^ 32
+  kfit : (s.gpr p.kreg).toNat + p.klen ≤ 2 ^ 32
+  shi : p.shi ≤ p.mlen
+  mrd : ∀ o n, o + n ≤ p.mlen → InRegions (s.rd ++ s.wr) (addr (s.gpr p.mreg) o) n
+  mwr : ∀ o, p.slo ≤ o → o + 16 ≤ p.shi → InRegions s.wr (addr (s.gpr p.mreg) o) 16
+  krd : ∀ o n, o + n ≤ p.klen → InRegions (s.rd ++ s.wr) (addr (s.gpr p.kreg) o) n
+  sep : Region.Disjoint ⟨(s.gpr p.kreg).setWidth 64, p.klen⟩
+    ⟨(s.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 p.slo, p.shi - p.slo⟩
+
+/-- The 16 bytes of a store. -/
+def cellR (p : Params) (s₀ : State) (c : Nat × Nat) : Region :=
+  ⟨(s₀.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 c.1, 16⟩
+
+/-- The state `s` the nodes `σ` describe, from the state `s₀` the program
+starts in: `s₀` but for the XMM registers and memory; every register holds
+its node's value; memory is as it was outside the stores, and holds in each
+its node's value. -/
+structure Inv (p : Params) (s₀ : State) (σ : St) (s : State) : Prop where
+  same : ∃ f m, s = { s₀ with xmm := f, mem := m }
+  len : σ.n = σ.tab.length
+  nle : σ.n ≤ 65536
+  wf : Wf σ.tab
+  hok : HOk σ.h σ.tab
+  regs : ∀ r, rget σ.regs r < σ.n ∧ s.xmm r = val (envOf p s₀) σ.tab (rget σ.regs r)
+  frame : Frame (σ.cells.map (cellR p s₀)) s₀.mem s.mem
+  cells : ∀ c ∈ σ.cells, c.1 % 16 = 0 ∧ p.slo ≤ c.1 ∧ c.1 + 16 ≤ p.shi ∧ c.2 < σ.n ∧
+    s.mem.readW ((s₀.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 c.1) 128 = val (envOf p s₀) σ.tab c.2
+
+section
+variable {p : Params} {s₀ s : State} {σ σ' : St}
+
+theorem Inv.gpr (h : Inv p s₀ σ s) : s.gpr = s₀.gpr := by obtain ⟨f, m, rfl⟩ := h.same; rfl
+theorem Inv.rd (h : Inv p s₀ σ s) : s.rd = s₀.rd := by obtain ⟨f, m, rfl⟩ := h.same; rfl
+theorem Inv.wr (h : Inv p s₀ σ s) : s.wr = s₀.wr := by obtain ⟨f, m, rfl⟩ := h.same; rfl
+theorem Inv.syms (h : Inv p s₀ σ s) : s.syms = s₀.syms := by obtain ⟨f, m, rfl⟩ := h.same; rfl
+
+/-- The table of `σ'` is that of `σ` with more nodes. -/
+def Ext (σ σ' : St) : Prop := ∃ l, σ'.tab = l ++ σ.tab
+
+theorem Ext.refl (σ : St) : Ext σ σ := ⟨[], rfl⟩
+
+theorem Ext.trans {a b c : St} (h₁ : Ext a b) (h₂ : Ext b c) : Ext a c := by
+  obtain ⟨l₁, e₁⟩ := h₁
+  obtain ⟨l₂, e₂⟩ := h₂
+  exact ⟨l₂ ++ l₁, by rw [e₂, e₁, List.append_assoc]⟩
+
+/-- A register that gets the value of the node `k`. -/
+theorem Inv.put (hI : Inv p s₀ σ s) {d : XReg} {k : Nat} (h : σ.put p.hs d k = some σ') (hk : Local k σ.n)
+    {v : BitVec 128} (hv : evalK (envOf p s₀) (val (envOf p s₀) σ.tab) k = v) :
+    Inv p s₀ σ' (s.setXmm d v) ∧ Ext σ σ' := by
+  obtain ⟨i, l, ht, hl, hw, hh, hr, hc, hi, hn, hval⟩ := put_ok h hI.len hI.wf hI.hok hk (envOf p s₀)
+  have hlen : σ.n ≤ σ'.n := by rw [hI.len, hl, ht, List.length_append]; omega_arith
+  have i16 : i < 65536 := Nat.lt_of_lt_of_le hi (hn hI.nle)
+  have stab : ∀ {j : Nat}, j < σ.n → val (envOf p s₀) σ'.tab j = val (envOf p s₀) σ.tab j := fun hj => by
+    rw [ht]; exact val_append _ l (by rw [← hI.len]; exact hj)
+  refine ⟨⟨?_, hl, hn hI.nle, hw, hh, fun r => ?_, ?_, fun c hc' => ?_⟩, l, ht⟩
+  · obtain ⟨f, m, rfl⟩ := hI.same; exact ⟨_, _, rfl⟩
+  · rw [hr, rget_rset _ _ _ i16]
+    show _ ∧ (if r = d then v else s.xmm r) = _
+    by_cases e : r = d
+    · rw [ite_eq_left e, ite_eq_left e, hval, hv]; exact ⟨hi, rfl⟩
+    · rw [ite_eq_right e, ite_eq_right e, stab (hI.regs r).1]
+      exact ⟨Nat.lt_of_lt_of_le (hI.regs r).1 hlen, (hI.regs r).2⟩
+  · rw [hc]; exact hI.frame
+  · rw [hc] at hc'
+    obtain ⟨a, b, c', e, f⟩ := hI.cells c hc'
+    exact ⟨a, b, c', Nat.lt_of_lt_of_le e hlen, by rw [stab e]; exact f⟩
+
+/-- A register that gets the value of a node of the table. -/
+theorem Inv.alias (hI : Inv p s₀ σ s) (d : XReg) {i : Nat} (hi : i < σ.n) {v : BitVec 128}
+    (hv : val (envOf p s₀) σ.tab i = v) : Inv p s₀ (σ.alias d i) (s.setXmm d v) ∧ Ext σ (σ.alias d i) := by
+  obtain ⟨n, tab, H, regs, cells⟩ := σ
+  have i16 : i < 65536 := Nat.lt_of_lt_of_le hi hI.nle
+  refine ⟨⟨?_, hI.len, hI.nle, hI.wf, hI.hok, fun r => ?_, hI.frame, hI.cells⟩, [], rfl⟩
+  · obtain ⟨f, m, rfl⟩ := hI.same; exact ⟨_, _, rfl⟩
+  · show rget (rset regs d i) r < n ∧ (if r = d then v else s.xmm r) = val _ tab (rget (rset regs d i) r)
+    rw [rget_rset _ _ _ i16]
+    by_cases e : r = d
+    · rw [ite_eq_left e, ite_eq_left e]; exact ⟨hi, hv.symm⟩
+    · rw [ite_eq_right e, ite_eq_right e]; exact hI.regs r
+
+end
+
+/-! ## The instructions' nodes -/
+
+section
+variable (E : Env) (v : Nat → BitVec 128) {a : Nat} (ha : a < 65536)
+include ha
+
+theorem evalK_bin (op : XBinOp) (b : Nat) : evalK E v (mk 6 op.ctorIdx a b) = op.eval (v a) (v b) := by
+  rw [evalK_mk E v (by decide)]
+  show (binOf _).eval (v _) (v _) = _
+  rw [y_x (bin_lt op), y_a (bin_lt op) ha, y_b (bin_lt op) ha, binOf_idx]
+
+theorem evalK_shift (op : XShiftOp) (n : BitVec 8) : evalK E v (mk 7 op.ctorIdx a n.toNat) = op.eval (v a) n := by
+  rw [evalK_mk E v (by decide)]
+  show (shiftOf _).eval (v _) (BitVec.ofNat 8 _) = _
+  rw [y_x (shift_lt op), y_a (shift_lt op) ha, y_b (shift_lt op) ha, shiftOf_idx, BitVec.ofNat_toNat,
+    BitVec.setWidth_eq]
+
+theorem evalK_pshufd (o : BitVec 8) : evalK E v (mk 8 o.toNat a 0) = shufDwords (v a) o := by
+  rw [evalK_mk E v (by decide)]
+  show shufDwords (v _) (BitVec.ofNat 8 _) = _
+  rw [y_x o.isLt, y_a o.isLt ha, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+theorem evalK_pshuflw (o : BitVec 8) : evalK E v (mk 9 o.toNat a 0) = shufLowWords (v a) o := by
+  rw [evalK_mk E v (by decide)]
+  show shufLowWords (v _) (BitVec.ofNat 8 _) = _
+  rw [y_x o.isLt, y_a o.isLt ha, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+theorem evalK_pshufhw (o : BitVec 8) : evalK E v (mk 10 o.toNat a 0) = shufHighWords (v a) o := by
+  rw [evalK_mk E v (by decide)]
+  show shufHighWords (v _) (BitVec.ofNat 8 _) = _
+  rw [y_x o.isLt, y_a o.isLt ha, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+theorem evalK_palignr (n : BitVec 8) (b : Nat) :
+    evalK E v (mk 11 n.toNat a b) = alignRight (v a) (v b) n := by
+  rw [evalK_mk E v (by decide)]
+  show alignRight (v _) (v _) (BitVec.ofNat 8 _) = _
+  rw [y_x n.isLt, y_a n.isLt ha, y_b n.isLt ha, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+end
+
+/-- The 16 bytes of a table an instruction loads, by their value. -/
+theorem cst_eq (hi lo : BitVec 64) :
+    BitVec.ofNat 128 (Nat.add (Nat.mul hi.toNat 18446744073709551616) lo.toNat) = hi ++ lo := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ofNat, BitVec.toNat_append_eq_mul_add]
+  have h₁ := hi.isLt
+  have h₂ := lo.isLt
+  show (hi.toNat * 18446744073709551616 + lo.toNat) % 2 ^ 128 = hi.toNat * 2 ^ 64 + lo.toNat
+  omega_using [h₁, h₂]
+
+/-! ## Soundness -/
+
+section
+variable {p : Params} {s₀ s : State} {σ σ' : St}
+
+/-- An instruction `step` follows runs, and leaves what the nodes say. -/
+theorem step_ok (hp : Pre p s₀) {i : Instr} (hI : Inv p s₀ σ s) (hs : step p σ i = some σ') :
+    ∃ s', exec i s = some s' ∧ Inv p s₀ σ' s' ∧ Ext σ σ' := by
+  have hg := hI.gpr
+  have hrd := hI.rd
+  have hwr := hI.wr
+  have hsy := hI.syms
+  have mf := hp.mfit
+  have kf := hp.kfit
+  have hsh := hp.shi
+  have lt16 : ∀ {j : Nat}, j < σ.n → j < 65536 := fun hj => Nat.lt_of_lt_of_le hj hI.nle
+  -- what was not stored is what it was
+  have apart : ∀ {o n : Nat}, o + n ≤ p.mlen → n ≤ 16 → (∀ c ∈ σ.cells, c.1 % 16 = 0 → o + n ≤ c.1 ∨ c.1 + 16 ≤ o) →
+      ∀ r' ∈ σ.cells.map (cellR p s₀),
+        Region.Disjoint ⟨(s₀.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 o, n⟩ r' := fun {o n} ho hn h r' hr' => by
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr'
+    obtain ⟨c16, -, cshi, -, -⟩ := hI.cells c hc
+    exact Offset.disjoint _ (h c hc c16) (by omega_using [mf, ho]) (by omega_using [mf, cshi, hsh])
+  have keys : ∀ {o n : Nat}, o + n ≤ p.klen → ∀ r' ∈ σ.cells.map (cellR p s₀),
+      Region.Disjoint ⟨(s₀.gpr p.kreg).setWidth 64, p.klen⟩ r' := fun {o n} _ r' hr' => by
+    obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr'
+    obtain ⟨-, cslo, cshi, -, -⟩ := hI.cells c hc
+    exact hp.sep.sub_right (Offset.sub _ cslo (by omega_using [cslo, cshi]))
+  unfold step at hs
+  split at hs
+  · -- a table's 16 bytes
+    rename_i d m n ws
+    split at hs <;> [rename_i hc; cases hs]
+    obtain ⟨hb, hn, h8, hl⟩ := hc
+    refine ⟨s.setXmm d (ws.getD (m.disp / 8 + 1) 0 ++ ws.getD (m.disp / 8) 0), ?_,
+      hI.put hs (local_leaf (by decide) _ _) ?_⟩
+    · show (if s.gpr m.base = s.syms n ∧ m.disp % 8 = 0 ∧ m.disp / 8 + 2 ≤ ws.length then _ else none) = _
+      rw [ite_eq_left ⟨by rw [hb, hn, hg, hsy]; exact hp.tb, h8, hl⟩]
+    · rw [evalK_leaf _ _ (by decide)]
+      exact cst_eq _ _
+  · -- a load of 16 bytes
+    rename_i d m
+    split at hs
+    · rename_i hb
+      split at hs <;> [rename_i hc; cases hs]
+      obtain ⟨h16, hl⟩ := hc
+      have ha : s.ea m = (s₀.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 m.disp := by
+        show addr (s.gpr m.base) m.disp = _
+        rw [hb, hg, addr_eq (by omega_using [mf, hl])]
+      have hex : exec (.movdquLoad d m) s = some (s.setXmm d (s.mem.readW (s.ea m) 128)) := by
+        show (s.load128 (s.ea m)).map _ = _
+        rw [State.load128, ite_eq_left (by
+          show InRegions _ (addr (s.gpr m.base) m.disp) 16
+          rw [hb, hg, hrd, hwr]; exact hp.mrd _ _ hl)]
+        rfl
+      split at hs
+      · rename_i i hi
+        cases hs
+        obtain ⟨-, -, -, hin, hval⟩ := hI.cells _ (lookup_some hi)
+        exact ⟨_, hex, hI.alias d hin (by rw [ha]; exact hval.symm)⟩
+      · rename_i hnone
+        refine ⟨_, hex, hI.put hs (local_leaf (by decide) _ _) ?_⟩
+        rw [evalK_leaf _ _ (by decide), ha]
+        exact (hI.frame.readW (r := ⟨_, 16⟩) (Region.contains_self _ 16) (apart hl (Nat.le_refl _)
+          fun c hc c16 => by have := lookup_none hnone c hc; omega_using [c16, h16, this]) (by decide)).symm
+    · split at hs <;> [rename_i hc; cases hs]
+      obtain ⟨hb, hl⟩ := hc
+      have ha : s.ea m = (s₀.gpr p.kreg).setWidth 64 + BitVec.ofNat 64 m.disp := by
+        show addr (s.gpr m.base) m.disp = _
+        rw [hb, hg, addr_eq (by omega_using [kf, hl])]
+      refine ⟨s.setXmm d (s.mem.readW (s.ea m) 128), ?_, hI.put hs (local_leaf (by decide) _ _) ?_⟩
+      · show (s.load128 (s.ea m)).map _ = _
+        rw [State.load128, ite_eq_left (by
+          show InRegions _ (addr (s.gpr m.base) m.disp) 16
+          rw [hb, hg, hrd, hwr]; exact hp.krd _ _ hl)]
+        rfl
+      · rw [evalK_leaf _ _ (by decide), ha]
+        exact (hI.frame.readW (r := ⟨_, p.klen⟩) (Offset.contains_base _ hl (by omega_using [kf, hl])) (keys hl)
+          (by decide)).symm
+  · -- a load of 8 bytes
+    rename_i d m
+    split at hs
+    · rename_i hb
+      split at hs <;> [rename_i hc; cases hs]
+      obtain ⟨h8, hl, hnone⟩ := hc
+      have ha : s.ea m = (s₀.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 m.disp := by
+        show addr (s.gpr m.base) m.disp = _
+        rw [hb, hg, addr_eq (by omega_using [mf, hl])]
+      refine ⟨s.setXmm d ((0 : BitVec 64) ++ s.mem.readW (s.ea m) 64), ?_,
+        hI.put hs (local_leaf (by decide) _ _) ?_⟩
+      · show (s.load64 (s.ea m)).map _ = _
+        rw [State.load64, ite_eq_left (by
+          show InRegions _ (addr (s.gpr m.base) m.disp) 8
+          rw [hb, hg, hrd, hwr]; exact hp.mrd _ _ hl)]
+        rfl
+      · rw [evalK_leaf _ _ (by decide), ha]
+        exact congrArg (fun x => (0 : BitVec 64) ++ x) (hI.frame.readW (r := ⟨_, 8⟩) (Region.contains_self _ 8)
+          (apart hl (by decide) fun c hc c16 => by have := lookup_none hnone c hc; omega_using [c16, h8, this])
+          (by decide)).symm
+    · split at hs <;> [rename_i hc; cases hs]
+      obtain ⟨hb, hl⟩ := hc
+      have ha : s.ea m = (s₀.gpr p.kreg).setWidth 64 + BitVec.ofNat 64 m.disp := by
+        show addr (s.gpr m.base) m.disp = _
+        rw [hb, hg, addr_eq (by omega_using [kf, hl])]
+      refine ⟨s.setXmm d ((0 : BitVec 64) ++ s.mem.readW (s.ea m) 64), ?_,
+        hI.put hs (local_leaf (by decide) _ _) ?_⟩
+      · show (s.load64 (s.ea m)).map _ = _
+        rw [State.load64, ite_eq_left (by
+          show InRegions _ (addr (s.gpr m.base) m.disp) 8
+          rw [hb, hg, hrd, hwr]; exact hp.krd _ _ hl)]
+        rfl
+      · rw [evalK_leaf _ _ (by decide), ha]
+        exact congrArg (fun x => (0 : BitVec 64) ++ x) (hI.frame.readW (r := ⟨_, p.klen⟩)
+          (Offset.contains_base _ hl (by omega_using [kf, hl])) (keys hl) (by decide)).symm
+  · -- a store
+    rename_i m r
+    split at hs <;> [rename_i hc; cases hs]
+    obtain ⟨hb, h16, hlo, hhi⟩ := hc
+    obtain ⟨n, tab, H, regs, cells⟩ := σ
+    cases hs
+    have ha : s.ea m = (s₀.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 m.disp := by
+      show addr (s.gpr m.base) m.disp = _
+      rw [hb, hg, addr_eq (by omega_using [mf, hhi, hsh])]
+    have f1 : Frame [cellR p s₀ (m.disp, rget regs r)] s.mem (s.mem.writeW (s.ea m) (s.xmm r)) := by
+      rw [ha]
+      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ 16)
+    refine ⟨{ s with mem := s.mem.writeW (s.ea m) (s.xmm r) }, ?_, ⟨?_, hI.len, hI.nle, hI.wf, hI.hok, hI.regs, ?_,
+      fun c hc => ?_⟩, Ext.refl _⟩
+    · show s.store128 (s.ea m) (s.xmm r) = _
+      rw [State.store128, ite_eq_left (by
+        show InRegions _ (addr (s.gpr m.base) m.disp) 16
+        rw [hb, hg, hwr]; exact hp.mwr _ hlo hhi)]
+    · obtain ⟨f, m', rfl⟩ := hI.same; exact ⟨_, _, rfl⟩
+    · show Frame (cellR p s₀ (m.disp, rget regs r) :: _) s₀.mem (s.mem.writeW (s.ea m) (s.xmm r))
+      rw [ha]
+      refine (hI.frame.sub fun r' hr' => ?_).writeW List.mem_cons_self _ (Region.contains_self _ 16)
+      obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr'
+      by_cases e : c.1 = m.disp
+      · exact ⟨_, List.mem_cons_self, by show Region.Sub ⟨_ + BitVec.ofNat 64 c.1, 16⟩ _; rw [e]; exact fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_map.mpr ⟨c, List.mem_filter.mpr ⟨hc, by
+          show (!Nat.beq c.1 m.disp) = true
+          cases hq : Nat.beq c.1 m.disp
+          · rfl
+          · exact absurd (Nat.eq_of_beq_eq_true hq) e⟩, rfl⟩), fun _ h => h⟩
+    · rcases List.mem_cons.mp hc with rfl | hc
+      · refine ⟨h16, hlo, hhi, (hI.regs r).1, ?_⟩
+        show (s.mem.writeW (s.ea m) (s.xmm r)).readW _ 128 = _
+        rw [← ha, Mem.readW_writeW_self _ _ 16 _ (by decide)]
+        exact (hI.regs r).2
+      · obtain ⟨hc, hne⟩ := List.mem_filter.mp hc
+        have hne : c.1 ≠ m.disp := by
+          intro e; rw [e, Nat.beq_refl] at hne; cases hne
+        obtain ⟨c16, cslo, cshi, cn, cv⟩ := hI.cells c hc
+        refine ⟨c16, cslo, cshi, cn, ?_⟩
+        show (s.mem.writeW (s.ea m) (s.xmm r)).readW _ 128 = _
+        rw [f1.readW (r := ⟨_, 16⟩) (Region.contains_self _ 16) (fun r' hr' => by
+          rw [List.mem_singleton.mp hr']
+          exact Offset.disjoint _ (by omega_using [c16, h16, hne]) (by omega_using [mf, cshi, hsh])
+            (by omega_using [mf, hhi, hsh])) (by decide)]
+        exact cv
+  · -- an instruction of two registers
+    rename_i op d r
+    cases hz : Nat.beq op.ctorIdx 0
+    · rw [hz, Bool.cond_false] at hs
+      have ha := (hI.regs d).1
+      refine ⟨s.setXmm d (op.eval (s.xmm d) (s.xmm r)), rfl,
+        hI.put hs (local_mk (by decide) (bin_lt op) (lt16 ha) ha (.inl (hI.regs r).1)) ?_⟩
+      rw [evalK_bin _ _ (lt16 ha), ← (hI.regs d).2, ← (hI.regs r).2]
+    · rw [hz, Bool.cond_true] at hs
+      cases hs
+      have e : op = .movdqa := by cases op <;> first | rfl | cases hz
+      subst e
+      exact ⟨s.setXmm d (s.xmm r), rfl, hI.alias d (hI.regs r).1 (hI.regs r).2.symm⟩
+  · rename_i op d n
+    have ha := (hI.regs d).1
+    refine ⟨s.setXmm d (op.eval (s.xmm d) n), rfl,
+      hI.put hs (local_mk (by decide) (shift_lt op) (lt16 ha) ha (.inr (.inl rfl))) ?_⟩
+    rw [evalK_shift _ _ (lt16 ha), ← (hI.regs d).2]
+  · rename_i d r o
+    have ha := (hI.regs r).1
+    refine ⟨s.setXmm d (shufDwords (s.xmm r) o), rfl,
+      hI.put hs (local_mk (by decide) o.isLt (lt16 ha) ha (.inr (.inr (.inl rfl)))) ?_⟩
+    rw [evalK_pshufd _ _ (lt16 ha), ← (hI.regs r).2]
+  · rename_i d r o
+    have ha := (hI.regs r).1
+    refine ⟨s.setXmm d (shufLowWords (s.xmm r) o), rfl,
+      hI.put hs (local_mk (by decide) o.isLt (lt16 ha) ha (.inr (.inr (.inr (.inl rfl))))) ?_⟩
+    rw [evalK_pshuflw _ _ (lt16 ha), ← (hI.regs r).2]
+  · rename_i d r o
+    have ha := (hI.regs r).1
+    refine ⟨s.setXmm d (shufHighWords (s.xmm r) o), rfl,
+      hI.put hs (local_mk (by decide) o.isLt (lt16 ha) ha (.inr (.inr (.inr (.inr rfl))))) ?_⟩
+    rw [evalK_pshufhw _ _ (lt16 ha), ← (hI.regs r).2]
+  · rename_i d r n
+    have ha := (hI.regs d).1
+    refine ⟨s.setXmm d (alignRight (s.xmm d) (s.xmm r) n), rfl,
+      hI.put hs (local_mk (by decide) n.isLt (lt16 ha) ha (.inl (hI.regs r).1)) ?_⟩
+    rw [evalK_palignr _ _ (lt16 ha), ← (hI.regs d).2, ← (hI.regs r).2]
+  · cases hs
+
+/-- A block `run` follows runs, and leaves what the nodes say. -/
+theorem run_ok (hp : Pre p s₀) : ∀ {is : List Instr} {σ σ' : St} {s : State}, Inv p s₀ σ s → run p σ is = some σ' →
+    ∃ s', runBlock isa is s = some s' ∧ Inv p s₀ σ' s' ∧ Ext σ σ'
+  | [], σ, σ', s, hI, h => by cases h; exact ⟨s, rfl, hI, Ext.refl _⟩
+  | i :: is, σ, σ', s, hI, h => by
+    unfold run at h
+    split at h <;> [rename_i τ hτ; cases h]
+    obtain ⟨s₁, he, hI₁, x₁⟩ := step_ok hp hI hτ
+    obtain ⟨s', hr, hI', x'⟩ := run_ok hp hI₁ h
+    exact ⟨s', by show (exec i s).bind (runBlock isa is) = _; rw [he]; exact hr, hI', x₁.trans x'⟩
+
+end
+
+theorem inv_init (p : Params) (s : State) : Inv p s St.init s := by
+  refine ⟨⟨s.xmm, s.mem, rfl⟩, rfl, by decide, ?_, HOk.zero _, fun r => ?_, Frame.refl _ _, fun c hc => by cases hc⟩
+  · exact ⟨local_leaf (by decide) _ _, local_leaf (by decide) _ _, local_leaf (by decide) _ _,
+      local_leaf (by decide) _ _, local_leaf (by decide) _ _, local_leaf (by decide) _ _, local_leaf (by decide) _ _,
+      local_leaf (by decide) _ _, trivial⟩
+  · show rget rinit r < 8 ∧ s.xmm r = val (envOf p s) St.init.tab (rget rinit r)
+    rw [rinit_get]
+    exact ⟨ctorIdx_lt r, by cases r <;> rfl⟩
+
+/-- From a state of `Pre p`, two blocks that `equiv` equates both run, to
+states with the same memory and the same values in the registers `outs`
+pairs; each is the state they start in but for the XMM registers and
+memory. -/
+theorem equiv_run {p : Params} {s : State} {P Q : List Instr} {outs : List (XReg × XReg)}
+    (h : equiv p P Q outs = true) (hp : Pre p s) :
+    ∃ sP sQ, runBlock isa P s = some sP ∧ runBlock isa Q s = some sQ ∧ sQ.mem = sP.mem ∧
+      (∀ ab ∈ outs, sQ.xmm ab.2 = sP.xmm ab.1) ∧ (∃ f m, sP = { s with xmm := f, mem := m }) ∧
+      ∃ f m, sQ = { s with xmm := f, mem := m } := by
+  unfold equiv at h
+  split at h <;> [cases h; rename_i σ hσ]
+  split at h <;> [cases h; rename_i τ hτ]
+  rw [Bool.and_eq_true, Bool.and_eq_true] at h
+  obtain ⟨⟨ho, hc₁⟩, hc₂⟩ := h
+  obtain ⟨sP, rP, iP, xP⟩ := run_ok hp (inv_init p s) hσ
+  have i0 : Inv p s ⟨σ.n, σ.tab, σ.h, rinit, []⟩ s := by
+    obtain ⟨l, hl⟩ := xP
+    refine ⟨⟨s.xmm, s.mem, rfl⟩, iP.len, iP.nle, iP.wf, iP.hok, fun r => ?_, Frame.refl _ _,
+      fun c hc => by cases hc⟩
+    have h8 : rget rinit r < St.init.tab.length := by rw [rinit_get]; exact ctorIdx_lt r
+    refine ⟨?_, ?_⟩
+    · show rget rinit r < σ.n
+      rw [iP.len, hl, List.length_append]; omega_using [h8]
+    · show s.xmm r = val _ σ.tab (rget rinit r)
+      rw [hl, val_append _ l h8]
+      exact ((inv_init p s).regs r).2
+  obtain ⟨sQ, rQ, iQ, xQ⟩ := run_ok hp i0 hτ
+  have stab : ∀ {j : Nat}, j < σ.n → val (envOf p s) τ.tab j = val (envOf p s) σ.tab j := fun hj => by
+    obtain ⟨l, hl⟩ := xQ
+    rw [hl]; exact val_append _ l (by rw [← iP.len]; exact hj)
+  refine ⟨sP, sQ, rP, rQ, ?_, fun ab hab => ?_, iP.same, iQ.same⟩
+  · funext x
+    by_cases hx : ∃ c ∈ σ.cells, (cellR p s c).Contains x 1
+    · obtain ⟨c, hc, hcx⟩ := hx
+      obtain ⟨-, -, -, cn, vP⟩ := iP.cells c hc
+      obtain ⟨-, -, -, -, vQ⟩ := iQ.cells c (cellsLe_mem hc₁ hc)
+      have e : sQ.mem.readW ((s.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 c.1) 128 =
+          sP.mem.readW ((s.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 c.1) 128 := by rw [vQ, vP, stab cn]
+      have hk : (x - ((s.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 c.1)).toNat < 16 := by
+        have : (x - ((s.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 c.1)).toNat + 1 ≤ 16 := hcx
+        omega_using [this]
+      have hx' : x = (s.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 c.1 +
+          BitVec.ofNat 64 (x - ((s.gpr p.mreg).setWidth 64 + BitVec.ofNat 64 c.1)).toNat := by
+        rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+      rw [hx', ← byte_readW sQ.mem _ (w := 128) (by omega_using [hk]),
+        ← byte_readW sP.mem _ (w := 128) (by omega_using [hk]), e]
+    · have nP : ∀ r ∈ σ.cells.map (cellR p s), ¬ r.Contains x 1 := fun r hr hc => by
+        obtain ⟨c, hc', rfl⟩ := List.mem_map.mp hr
+        exact hx ⟨c, hc', hc⟩
+      have nQ : ∀ r ∈ τ.cells.map (cellR p s), ¬ r.Contains x 1 := fun r hr hc => by
+        obtain ⟨c, hc', rfl⟩ := List.mem_map.mp hr
+        exact hx ⟨c, cellsLe_mem hc₂ hc', hc⟩
+      rw [iQ.frame x nQ, iP.frame x nP]
+  · have e := Nat.eq_of_beq_eq_true (List.all_eq_true.mp ho ab hab)
+    rw [(iQ.regs ab.2).2, (iP.regs ab.1).2, ← e, stab (iP.regs ab.1).1]
+
+/-- What holds of the state `P` ends in, and of every state with its memory
+and its values in the registers `outs` pairs, holds of the state `Q` ends
+in. -/
+theorem equiv_wp {p : Params} {s : State} {P Q : List Instr} {outs : List (XReg × XReg)}
+    (h : equiv p P Q outs = true) (hp : Pre p s) {R : State → Prop}
+    (hP : WP isa (.block P) s fun sP => ∀ sQ : State, sQ.mem = sP.mem → (∀ ab ∈ outs, sQ.xmm ab.2 = sP.xmm ab.1) →
+      (∃ f m, sQ = { s with xmm := f, mem := m }) → R sQ) : WP isa (.block Q) s R := by
+  obtain ⟨sP, sQ, rP, rQ, hm, hx, -, hQ⟩ := equiv_run h hp
+  obtain ⟨sP', rP', hR⟩ := Interleave.runBlock_of_WP hP
+  rw [rP] at rP'
+  cases rP'
+  exact WP.of_runBlock ⟨sQ, rQ, hR sQ hm hx hQ⟩
 
 end VG.X86.SseEquiv

@@ -1160,704 +1160,7 @@ vg_ecdsa_p256_verify:
 	li %r5, 1024
 	li %r6, 384
 	bl {vg_p256_mul_mod_n}
-	ld %r4, 1248(%r3)
-	std %r4, 608(%r3)
-	ld %r4, 1256(%r3)
-	std %r4, 616(%r3)
-	ld %r4, 1264(%r3)
-	std %r4, 624(%r3)
-	ld %r4, 1272(%r3)
-	std %r4, 632(%r3)
-	li %r4, 864
-	li %r5, 1248
-	li %r6, 1248
-	bl {vg_p256_mul_mod_n}
-	li %r4, 640
-	li %r5, 608
-	li %r6, 864
-	bl {vg_p256_mul_mod_n}
-	li %r4, 672
-	li %r5, 640
-	li %r6, 864
-	bl {vg_p256_mul_mod_n}
-	li %r4, 704
-	li %r5, 672
-	li %r6, 864
-	bl {vg_p256_mul_mod_n}
-	li %r4, 736
-	li %r5, 704
-	li %r6, 864
-	bl {vg_p256_mul_mod_n}
-	li %r4, 768
-	li %r5, 736
-	li %r6, 864
-	bl {vg_p256_mul_mod_n}
-	li %r4, 800
-	li %r5, 768
-	li %r6, 864
-	bl {vg_p256_mul_mod_n}
-	li %r4, 832
-	li %r5, 800
-	li %r6, 864
-	bl {vg_p256_mul_mod_n}
-	ld %r4, 832(%r3)
-	std %r4, 992(%r3)
-	ld %r4, 840(%r3)
-	std %r4, 1000(%r3)
-	ld %r4, 848(%r3)
-	std %r4, 1008(%r3)
-	ld %r4, 856(%r3)
-	std %r4, 1016(%r3)
-	li %r31, 4
-28:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 28b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-29:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 29b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-210:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 210b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-211:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 211b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-212:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 212b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-213:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 213b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-214:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 214b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 36
-215:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 215b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-216:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 216b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-217:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 217b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-218:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 218b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-219:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 219b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-220:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 220b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-221:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 221b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-222:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 222b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-223:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 223b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-224:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 224b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-225:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 225b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-226:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 226b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-227:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 227b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-228:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 228b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-229:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 229b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-230:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 230b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-231:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 231b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 768
-	bl {vg_p256_mul_mod_n}
-	li %r31, 2
-232:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 232b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 640
-	bl {vg_p256_mul_mod_n}
-	li %r31, 5
-233:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 233b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 704
-	bl {vg_p256_mul_mod_n}
-	li %r31, 6
-234:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 234b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 800
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-235:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 235b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-236:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 236b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 672
-	bl {vg_p256_mul_mod_n}
-	li %r31, 5
-237:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 237b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 768
-	bl {vg_p256_mul_mod_n}
-	li %r31, 5
-238:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 238b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 800
-	bl {vg_p256_mul_mod_n}
-	li %r31, 5
-239:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 239b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 704
-	bl {vg_p256_mul_mod_n}
-	li %r31, 7
-240:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 240b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 768
-	bl {vg_p256_mul_mod_n}
-	li %r31, 2
-241:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 241b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 640
-	bl {vg_p256_mul_mod_n}
-	li %r31, 6
-242:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 242b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 2
-243:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 243b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 608
-	bl {vg_p256_mul_mod_n}
-	li %r31, 8
-244:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 244b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 736
-	bl {vg_p256_mul_mod_n}
-	li %r31, 3
-245:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 245b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 704
-	bl {vg_p256_mul_mod_n}
-	li %r31, 5
-246:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 246b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 704
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-247:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 247b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 704
-	bl {vg_p256_mul_mod_n}
-	li %r31, 5
-248:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 248b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 704
-	bl {vg_p256_mul_mod_n}
-	li %r31, 5
-249:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 249b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 672
-	bl {vg_p256_mul_mod_n}
-	li %r31, 3
-250:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 250b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 640
-	bl {vg_p256_mul_mod_n}
-	li %r31, 8
-251:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 251b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 768
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-252:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 252b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
-	li %r31, 5
-253:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 253b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 640
-	bl {vg_p256_mul_mod_n}
-	li %r31, 5
-254:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 254b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 640
-	bl {vg_p256_mul_mod_n}
-	li %r31, 6
-255:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 255b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 736
-	bl {vg_p256_mul_mod_n}
-	li %r31, 4
-256:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 256b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 672
-	bl {vg_p256_mul_mod_n}
-	li %r31, 6
-257:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_n}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 257b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_n}
+	bl {vg_p256_inv_mod_n}
 	li %r4, 1344
 	li %r5, 1088
 	li %r6, 384
@@ -1883,7 +1186,7 @@ vg_ecdsa_p256_verify:
 	li %r6, 192
 	bl {vg_p256_mul_mod_n}
 	li %r31, 32
-258:
+28:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 1152(%r4)
@@ -1914,7 +1217,7 @@ vg_ecdsa_p256_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 258b
+	bne %cr0, 28b
 	lis %r11, 10692
 	ori %r11, %r11, 48607
 	stw %r11, 1344(%r3)
@@ -1985,7 +1288,7 @@ vg_ecdsa_p256_verify:
 	add %r4, %r3, %r4
 	addi %r6, %r31, -36
 	cmpldi %cr0, %r6, 0
-	beq %cr0, 259f
+	beq %cr0, 29f
 	li %r9, 0
 	add %r9, %r9, %r9
 	lbz %r5, 4102(%r4)
@@ -2009,8 +1312,8 @@ vg_ecdsa_p256_verify:
 	lbz %r5, 4096(%r4)
 	add %r9, %r9, %r5
 	lbz %r7, 4102(%r4)
-	b 260f
-259:
+	b 210f
+29:
 	li %r9, 0
 	add %r9, %r9, %r9
 	lbz %r5, 4099(%r4)
@@ -2025,7 +1328,7 @@ vg_ecdsa_p256_verify:
 	lbz %r5, 4096(%r4)
 	add %r9, %r9, %r5
 	li %r7, 0
-260:
+210:
 	li %r5, 0
 	subf %r5, %r7, %r5
 	li %r6, 128
@@ -2046,7 +1349,7 @@ vg_ecdsa_p256_verify:
 	vxor %v2, %v2, %v2
 	vxor %v3, %v3, %v3
 	li %r7, 1
-261:
+211:
 	xor %r10, %r9, %r7
 	addi %r10, %r10, -1
 	rldicl %r10, %r10, 1, 63
@@ -2069,7 +1372,7 @@ vg_ecdsa_p256_verify:
 	addi %r7, %r7, 1
 	addi %r6, %r7, -65
 	cmpldi %cr0, %r6, 0
-	bne %cr0, 261b
+	bne %cr0, 211b
 	li %r4, 3424
 	stxvd2x 32, %r3, %r4
 	li %r4, 3440
@@ -2162,17 +1465,17 @@ vg_ecdsa_p256_verify:
 	bl {vg_p256_sub_mod_p}
 	addi %r6, %r31, -36
 	cmpldi %cr0, %r6, 0
-	beq %cr0, 262f
+	beq %cr0, 212f
 	li %r4, 7
 	mulld %r4, %r4, %r31
 	add %r4, %r3, %r4
 	lbz %r4, 4102(%r4)
 	li %r10, 0
 	subf %r10, %r4, %r10
-	b 263f
-262:
+	b 213f
+212:
 	li %r10, 0
-263:
+213:
 	ld %r4, 3456(%r3)
 	ld %r5, 704(%r3)
 	xor %r5, %r5, %r4
@@ -2221,14 +1524,14 @@ vg_ecdsa_p256_verify:
 	std %r4, 592(%r3)
 	ld %r4, 3512(%r3)
 	std %r4, 600(%r3)
-264:
+214:
 	addi %r31, %r31, 1
 	li %r4, 7
 	mulld %r4, %r4, %r31
 	add %r4, %r3, %r4
 	addi %r6, %r31, -36
 	cmpldi %cr0, %r6, 0
-	beq %cr0, 265f
+	beq %cr0, 215f
 	li %r9, 0
 	add %r9, %r9, %r9
 	lbz %r5, 4102(%r4)
@@ -2252,8 +1555,8 @@ vg_ecdsa_p256_verify:
 	lbz %r5, 4096(%r4)
 	add %r9, %r9, %r5
 	lbz %r7, 4102(%r4)
-	b 266f
-265:
+	b 216f
+215:
 	li %r9, 0
 	add %r9, %r9, %r9
 	lbz %r5, 4099(%r4)
@@ -2268,7 +1571,7 @@ vg_ecdsa_p256_verify:
 	lbz %r5, 4096(%r4)
 	add %r9, %r9, %r5
 	li %r7, 0
-266:
+216:
 	lbz %r5, 4095(%r4)
 	add %r9, %r9, %r5
 	li %r5, 0
@@ -2291,7 +1594,7 @@ vg_ecdsa_p256_verify:
 	vxor %v2, %v2, %v2
 	vxor %v3, %v3, %v3
 	li %r7, 1
-267:
+217:
 	xor %r10, %r9, %r7
 	addi %r10, %r10, -1
 	rldicl %r10, %r10, 1, 63
@@ -2314,7 +1617,7 @@ vg_ecdsa_p256_verify:
 	addi %r7, %r7, 1
 	addi %r6, %r7, -65
 	cmpldi %cr0, %r6, 0
-	bne %cr0, 267b
+	bne %cr0, 217b
 	li %r4, 3424
 	stxvd2x 32, %r3, %r4
 	li %r4, 3440
@@ -2407,17 +1710,17 @@ vg_ecdsa_p256_verify:
 	bl {vg_p256_sub_mod_p}
 	addi %r6, %r31, -36
 	cmpldi %cr0, %r6, 0
-	beq %cr0, 268f
+	beq %cr0, 218f
 	li %r4, 7
 	mulld %r4, %r4, %r31
 	add %r4, %r3, %r4
 	lbz %r4, 4102(%r4)
 	li %r10, 0
 	subf %r10, %r4, %r10
-	b 269f
-268:
+	b 219f
+218:
 	li %r10, 0
-269:
+219:
 	ld %r4, 3456(%r3)
 	ld %r5, 704(%r3)
 	xor %r5, %r5, %r4
@@ -2554,7 +1857,7 @@ vg_ecdsa_p256_verify:
 	add %r4, %r3, %r4
 	addi %r6, %r31, -36
 	cmpldi %cr0, %r6, 0
-	beq %cr0, 270f
+	beq %cr0, 220f
 	li %r9, 0
 	add %r9, %r9, %r9
 	lbz %r5, 4102(%r4)
@@ -2578,8 +1881,8 @@ vg_ecdsa_p256_verify:
 	lbz %r5, 4096(%r4)
 	add %r9, %r9, %r5
 	lbz %r7, 4102(%r4)
-	b 271f
-270:
+	b 221f
+220:
 	li %r9, 0
 	add %r9, %r9, %r9
 	lbz %r5, 4099(%r4)
@@ -2594,7 +1897,7 @@ vg_ecdsa_p256_verify:
 	lbz %r5, 4096(%r4)
 	add %r9, %r9, %r5
 	li %r7, 0
-271:
+221:
 	lbz %r5, 4095(%r4)
 	add %r9, %r9, %r5
 	li %r5, 0
@@ -2681,7 +1984,7 @@ vg_ecdsa_p256_verify:
 	std %r4, 600(%r3)
 	addi %r6, %r31, -36
 	cmpldi %cr0, %r6, 0
-	bne %cr0, 264b
+	bne %cr0, 214b
 	ld %r4, 576(%r3)
 	ld %r5, 584(%r3)
 	or %r4, %r4, %r5
@@ -2853,7 +2156,7 @@ vg_ecdsa_p256_verify:
 	ori %r11, %r11, 0
 	stw %r11, 604(%r3)
 	li %r31, 32
-272:
+222:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 1184(%r4)
@@ -2884,7 +2187,7 @@ vg_ecdsa_p256_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 272b
+	bne %cr0, 222b
 	ld %r4, 160(%r3)
 	std %r4, 4864(%r3)
 	ld %r4, 168(%r3)
@@ -6062,7 +5365,7 @@ vg_ecdsa_p256_verify:
 	ld %r4, 184(%r3)
 	std %r4, 600(%r3)
 	li %r31, 64
-273:
+223:
 	addi %r31, %r31, -1
 	li %r4, 608
 	li %r5, 512
@@ -7975,7 +7278,7 @@ vg_ecdsa_p256_verify:
 	ld %r4, 792(%r3)
 	std %r4, 600(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 273b
+	bne %cr0, 223b
 	li %r4, 800
 	li %r5, 1376
 	li %r6, 512
@@ -8160,470 +7463,7 @@ vg_ecdsa_p256_verify:
 	std %r4, 592(%r3)
 	ld %r4, 696(%r3)
 	std %r4, 600(%r3)
-	ld %r4, 576(%r3)
-	std %r4, 608(%r3)
-	ld %r4, 584(%r3)
-	std %r4, 616(%r3)
-	ld %r4, 592(%r3)
-	std %r4, 624(%r3)
-	ld %r4, 600(%r3)
-	std %r4, 632(%r3)
-	li %r4, 864
-	li %r5, 576
-	li %r6, 576
-	bl {vg_p256_mul_mod_p}
-	li %r4, 640
-	li %r5, 608
-	li %r6, 864
-	bl {vg_p256_mul_mod_p}
-	li %r4, 672
-	li %r5, 640
-	li %r6, 864
-	bl {vg_p256_mul_mod_p}
-	li %r4, 704
-	li %r5, 672
-	li %r6, 864
-	bl {vg_p256_mul_mod_p}
-	li %r4, 736
-	li %r5, 704
-	li %r6, 864
-	bl {vg_p256_mul_mod_p}
-	li %r4, 768
-	li %r5, 736
-	li %r6, 864
-	bl {vg_p256_mul_mod_p}
-	li %r4, 800
-	li %r5, 768
-	li %r6, 864
-	bl {vg_p256_mul_mod_p}
-	li %r4, 832
-	li %r5, 800
-	li %r6, 864
-	bl {vg_p256_mul_mod_p}
-	ld %r4, 832(%r3)
-	std %r4, 992(%r3)
-	ld %r4, 840(%r3)
-	std %r4, 1000(%r3)
-	ld %r4, 848(%r3)
-	std %r4, 1008(%r3)
-	ld %r4, 856(%r3)
-	std %r4, 1016(%r3)
-	li %r31, 4
-274:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 274b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-275:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 275b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-276:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 276b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-277:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 277b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-278:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 278b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-279:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 279b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-280:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 280b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 32
-281:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 281b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 608
-	bl {vg_p256_mul_mod_p}
-	li %r31, 100
-282:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 282b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-283:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 283b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-284:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 284b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-285:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 285b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-286:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 286b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-287:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 287b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-288:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 288b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-289:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 289b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-290:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 290b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-291:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 291b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-292:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 292b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-293:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 293b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-294:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 294b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-295:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 295b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-296:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 296b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-297:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 297b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-298:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 298b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-299:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 299b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-2100:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 2100b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-2101:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 2101b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-2102:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 2102b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-2103:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 2103b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-2104:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 2104b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 832
-	bl {vg_p256_mul_mod_p}
-	li %r31, 4
-2105:
-	addi %r31, %r31, -1
-	li %r4, 992
-	li %r5, 992
-	li %r6, 992
-	bl {vg_p256_mul_mod_p}
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 2105b
-	li %r4, 992
-	li %r5, 992
-	li %r6, 800
-	bl {vg_p256_mul_mod_p}
+	bl {vg_p256_inv_mod_p}
 	li %r4, 1152
 	li %r5, 512
 	li %r6, 992

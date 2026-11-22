@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
@@ -329,8 +330,8 @@ theorem compv_pub {σ : State} (pre : In P σ) :
 theorem b2n_eq0' (b : Bool) : decide (b2n b = 0) = !b := by cases b <;> rfl
 
 /-- The body: the status and the octets read of the test. -/
-theorem body_vp (v : RoundImpl) (M : CallOp) {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
-    VP (fun σ s => E σ ∧ Bk P σ s) (Impl.Dsa.Arm.ProbablePrime.body v.name v.code M.op)
+theorem body_vp (v : RoundImpl) (M : CallOp) (D : CallDbl) {E : State → Prop} (hE : ∀ σ, E σ → In P σ) :
+    VP (fun σ s => E σ ∧ Bk P σ s) (Impl.Dsa.Arm.ProbablePrime.body v.name v.code M.op D.dbl)
       (RF P E (statD P) (usedD P)) := by
   unfold Impl.Dsa.Arm.ProbablePrime.body
   rw [List.append_assoc]
@@ -344,7 +345,7 @@ theorem body_vp (v : RoundImpl) (M : CallOp) {E : State → Prop} (hE : ∀ σ, 
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [isa_eq, isa_eq, h₁.2, h₂.2, k2 σ₁ h₁.1.1, k2 σ₂ h₂.1.1]) ?_ ?_
   · refine VP.ofImp (p := Spec.RsaKeyGen.obviouslyComposite P.bits P.cand = false) (fun σ s h => by
       have t := h.2; rw [isa_eq, h.1.2, k2 σ h.1.1.1, b2n_eq0'] at t; simpa using t) fun hc => ?_
-    exact (mrPart_vp v M (E := E) fun σ e => ⟨hE σ e, by rw [EM, compv_pub (hE σ e), hc]⟩).mono
+    exact (mrPart_vp v M D (E := E) fun σ e => ⟨hE σ e, by rw [EM, compv_pub (hE σ e), hc]⟩).mono
       (fun σ s h => h.1.1) fun _ _ h => h
   · refine VP.ofImp (p := Spec.RsaKeyGen.obviouslyComposite P.bits P.cand = true) (fun σ s h => by
       have t := h.2; rw [isa_eq, h.1.2, k2 σ h.1.1.1, b2n_eq0'] at t; simpa using t) fun hc => ?_
@@ -993,13 +994,13 @@ theorem allCovers (hb : Bits bits) (h : CIn bits s) (o : PreOut bits s t) :
     show 0 + Impl.Dsa.Arm.ProbablePrime.len bits ≤ (s.gpr .r1).toNat * 8; omega_using [this, hl]
 
 /-- The body's run, widened to the caller's regions. -/
-theorem body_wide (v : RoundImpl) (M : CallOp) (hb : Bits bits) (h : CIn bits s) (o : PreOut bits s t) :
-    ∃ tr w, Exec isa (Impl.Dsa.Arm.ProbablePrime.body v.name v.code M.op) (sx bits s t) tr w ∧
-      Exec isa (Impl.Dsa.Arm.ProbablePrime.body v.name v.code M.op) (pcPushed t) tr
+theorem body_wide (v : RoundImpl) (M : CallOp) (D : CallDbl) (hb : Bits bits) (h : CIn bits s) (o : PreOut bits s t) :
+    ∃ tr w, Exec isa (Impl.Dsa.Arm.ProbablePrime.body v.name v.code M.op D.dbl) (sx bits s t) tr w ∧
+      Exec isa (Impl.Dsa.Arm.ProbablePrime.body v.name v.code M.op D.dbl) (pcPushed t) tr
         (w.withRegions s.rd (pcPushed t).wr) ∧
       RF (mkP bits s) (In (mkP bits s)) (statD (mkP bits s)) (usedD (mkP bits s)) (sx bits s t) w := by
   have pre := in_c hb h o
-  obtain ⟨tr, w, e, rf⟩ := (body_vp v M (P := mkP bits s) (E := In (mkP bits s)) fun _ e => e).wp _ _
+  obtain ⟨tr, w, e, rf⟩ := (body_vp v M D (P := mkP bits s) (E := In (mkP bits s)) fun _ e => e).wp _ _
     ⟨pre, ⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩⟩
   have run := Exec.widen (rd := s.rd) (wr := (pcPushed t).wr) e (allCovers hb h o) (xCovers h o)
   rw [State.withRegions_withRegions, ← rdT o, State.withRegions_self] at run
@@ -1060,8 +1061,8 @@ section
 variable {bits : Nat} {s : State}
 
 /-- A call's result. -/
-theorem prime_ok (v : RoundImpl) (M : CallOp) (h : CIn bits s) :
-    WP isa (Impl.Dsa.Arm.ProbablePrime.code v.name v.code M.op) s fun t => abiPreserved s t ∧ CPost bits s t := by
+theorem prime_ok (v : RoundImpl) (M : CallOp) (D : CallDbl) (h : CIn bits s) :
+    WP isa (Impl.Dsa.Arm.ProbablePrime.code v.name v.code M.op D.dbl) s fun t => abiPreserved s t ∧ CPost bits s t := by
   have hb := h.sized
   have spLo := h.spLo; have spHi := h.spHi
   unfold Impl.Dsa.Arm.ProbablePrime.code
@@ -1073,7 +1074,7 @@ theorem prime_ok (v : RoundImpl) (M : CallOp) (h : CIn bits s) :
     rw [rest.sp]; exact sub_toNat' (by omega_using [spLo])
   refine WP.frame (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [spLo, tspN]) (by decide) ?_
   rw [WP.seq_iff]
-  obtain ⟨tr, w, -, run', ⟨-, bk, r0, used⟩⟩ := body_wide v M hb h o
+  obtain ⟨tr, w, -, run', ⟨-, bk, r0, used⟩⟩ := body_wide v M D hb h o
   refine WP.mono (Q := fun x => x = w.withRegions s.rd (pcPushed t).wr) ⟨tr, _, run', rfl⟩ ?_
   rintro _ rfl
   have pre := bk.pre
@@ -1203,11 +1204,11 @@ theorem pre_out {s u : State} {tr : List Leak} (h : CIn bits s)
   exact ⟨rest, fr, vals, r1, r2⟩
 
 /-- The frame's body, for two calls. -/
-theorem inner_ct (v : RoundImpl) (M : CallOp) :
+theorem inner_ct (v : RoundImpl) (M : CallOp) (D : CallDbl) :
     RelCT isa (fun a' b' => ∃ a b, AfterPre bits a b ∧
         isa.push (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) a = some a' ∧
         isa.push (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) b = some b')
-      (.seq (Impl.Dsa.Arm.ProbablePrime.body v.name v.code M.op) (.block VG.Impl.Bignum.Arm.PcFn.restore)) (fun _ _ => True) := by
+      (.seq (Impl.Dsa.Arm.ProbablePrime.body v.name v.code M.op D.dbl) (.block VG.Impl.Bignum.Arm.PcFn.restore)) (fun _ _ => True) := by
   intro a' b' tr1 tr2 u w hp e1 e2
   obtain ⟨a, b, ⟨s, t, ⟨hs, ht, sp, hP⟩, o1, o2⟩, pa, pb⟩ := hp
   have f1 : 56 ≤ a.sp.toNat := by rw [o1.rest.sp]; show 56 ≤ (s.sp - BitVec.ofNat 32 32).toNat
@@ -1221,8 +1222,8 @@ theorem inner_ct (v : RoundImpl) (M : CallOp) :
   | seq body1 rest1 =>
     cases e2 with
     | seq body2 rest2 =>
-      obtain ⟨n1, w1, en1, run1, ⟨-, bk1, -⟩⟩ := body_wide v M hs.sized hs o1
-      obtain ⟨n2, w2, en2, run2, ⟨-, bk2, -⟩⟩ := body_wide v M hs.sized ht o2
+      obtain ⟨n1, w1, en1, run1, ⟨-, bk1, -⟩⟩ := body_wide v M D hs.sized hs o1
+      obtain ⟨n2, w2, en2, run2, ⟨-, bk2, -⟩⟩ := body_wide v M D hs.sized ht o2
       obtain ⟨rfl, rfl⟩ := Exec.det body1 run1
       obtain ⟨rfl, rfl⟩ := Exec.det body2 run2
       have pre1 := in_c hs.sized hs o1
@@ -1232,7 +1233,7 @@ theorem inner_ct (v : RoundImpl) (M : CallOp) :
       have sp1 := bk1.sp.trans pre1.sp
       have sp2 := bk2.sp.trans pre2.sp
       rw [← hP] at pre2 bx2 sp2
-      have trB := ((body_vp v M (P := mkP bits s) (E := In (mkP bits s)) fun _ e => e).ct _ _ _ _ _ _
+      have trB := ((body_vp v M D (P := mkP bits s) (E := In (mkP bits s)) fun _ e => e).ct _ _ _ _ _ _
         ⟨_, _, ⟨pre1, bx1⟩, ⟨pre2, bx2⟩⟩ en1 en2).1
       have trR := ((stackLoads_ct pcCalleeSaved : RelCT isa (fun s t => s.sp = t.sp)
         (.block VG.Impl.Bignum.Arm.PcFn.restore) (fun s t => s.sp = t.sp)) _ _ _ _ _ _
@@ -1240,9 +1241,9 @@ theorem inner_ct (v : RoundImpl) (M : CallOp) :
       exact ⟨by rw [trB, trR], trivial⟩
 
 /-- Two calls with the same public parameters. -/
-theorem prime_ct (v : RoundImpl) (M : CallOp) :
+theorem prime_ct (v : RoundImpl) (M : CallOp) (D : CallDbl) :
     RelCT isa (fun s t => CIn bits s ∧ CIn bits t ∧ s.sp = t.sp ∧ mkP bits s = mkP bits t)
-      (Impl.Dsa.Arm.ProbablePrime.code v.name v.code M.op) (fun _ _ => True) := by
+      (Impl.Dsa.Arm.ProbablePrime.code v.name v.code M.op D.dbl) (fun _ _ => True) := by
   unfold Impl.Dsa.Arm.ProbablePrime.code
   apply VG.Proof.Rsa.Arm.allocation_ct
   intro a b tr1 tr2 u w hp e1 e2
@@ -1260,7 +1261,7 @@ theorem prime_ct (v : RoundImpl) (M : CallOp) :
       have o2 := pre_out ht pre2
       have trF := (RelCT.frame (P := AfterPre bits) (fun x y ⟨s, t, ⟨_, _, sp, _⟩, o1, o2⟩ => by
           rw [o1.rest.sp, o2.rest.sp]; show s.sp - _ = t.sp - _; rw [sp])
-        (fun a' b' tr1 tr2 u w ⟨x, y, hxy, px, py⟩ e1 e2 => inner_ct v M a' b' tr1 tr2 u w ⟨x, y, hxy, px, py⟩ e1 e2)
+        (fun a' b' tr1 tr2 u w ⟨x, y, hxy, px, py⟩ e1 e2 => inner_ct v M D a' b' tr1 tr2 u w ⟨x, y, hxy, px, py⟩ e1 e2)
         _ _ _ _ u w ⟨s, t, ⟨hs, ht, sp, hP⟩, o1, o2⟩ fr1 fr2).1
       exact ⟨by rw [trP, trF], trivial⟩
 
@@ -1285,12 +1286,12 @@ namespace VG.Proof.Dsa.Arm.Prime
 open VG VG.Arm
 open VG.Impl.Dsa.Arm.ProbablePrime (code layout keyOff keyWords)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
-open VG.Proof.Bignum.Arm (CallOp)
+open VG.Proof.Bignum.Arm (CallOp CallDbl)
 
-theorem prime_contract_correct (v : RoundImpl) (M : CallOp) (s : State) (h : primeK.pre s) :
-    ∃ tr t, Exec isa (code v.name v.code M.op) s tr t ∧ abiPreserved s t ∧ primeK.post s t := by
+theorem prime_contract_correct (v : RoundImpl) (M : CallOp) (D : CallDbl) (s : State) (h : primeK.pre s) :
+    ∃ tr t, Exec isa (code v.name v.code M.op D.dbl) s tr t ∧ abiPreserved s t ∧ primeK.post s t := by
   have hc := cin_of_pre s h
-  obtain ⟨tr, t, run, preserved, r0, keeps, used⟩ := prime_ok v M hc
+  obtain ⟨tr, t, run, preserved, r0, keeps, used⟩ := prime_ok v M D hc
   refine ⟨tr, t, run, preserved, ?_⟩
   sig_post [Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig, abi, argRegs, reduceClassify,
     Loc.val, State.addr]
@@ -1312,7 +1313,7 @@ theorem mkP_eq {s t : State} (sp : s.sp = t.sp) (p0 : s.gpr .r0 = t.gpr .r0) (p2
 
 end
 
-theorem prime_contract_ct (v : RoundImpl) (M : CallOp) : ConstantTime isa primeK.pre primeK.pub (code v.name v.code M.op) := by
+theorem prime_contract_ct (v : RoundImpl) (M : CallOp) (D : CallDbl) : ConstantTime isa primeK.pre primeK.pub (code v.name v.code M.op D.dbl) := by
   intro s t tr1 tr2 u w hs ht hp e1 e2
   have is := cin_of_pre s hs
   have it := cin_of_pre t ht
@@ -1324,7 +1325,7 @@ theorem prime_contract_ct (v : RoundImpl) (M : CallOp) : ConstantTime isa primeK
   obtain ⟨hc, hl⟩ := List.cons.inj leak
   have hr := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl
   rw [← a1] at it
-  exact (prime_ct v M s t tr1 tr2 u w ⟨is, it, sp, mkP_eq sp p0 p2 p3 a0 hc hr⟩ e1 e2).1
+  exact (prime_ct v M D s t tr1 tr2 u w ⟨is, it, sp, mkP_eq sp p0 p2 p3 a0 hc hr⟩ e1 e2).1
 
 /-- A state satisfying the contract: the candidate of 160 ones at `0x1000`, in a working space of
 6224 words, no `rand`, `used` at 0, and the stack at `0x80000`, its second word the size 160. -/
@@ -1351,7 +1352,7 @@ theorem prime_contract_sat : ∃ s, primeK.pre s := by
     | exact Region.disjoint_of_sep (by decide)
     | decide
 
-theorem prime_verified (v : RoundImpl) (M : CallOp) : Verified target (code v.name v.code M.op) primeK :=
-  ⟨prime_contract_correct v M, prime_contract_ct v M, prime_contract_sat⟩
+theorem prime_verified (v : RoundImpl) (M : CallOp) (D : CallDbl) : Verified target (code v.name v.code M.op D.dbl) primeK :=
+  ⟨prime_contract_correct v M D, prime_contract_ct v M D, prime_contract_sat⟩
 
 end VG.Proof.Dsa.Arm.Prime

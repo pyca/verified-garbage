@@ -57,8 +57,10 @@ The inversion `z2^(p-2)` is an addition chain (446 squarings and 15
 multiplications, in the ladder's temporaries), its runs of squarings counted
 by `r12` (`invertW`, of any multiplication; `invert`, of `mul`).
 
-The inversion is a function of its own, `vg_x448_invert` (`invertCall`),
-which Ed448's base-point encoding calls too. `vg_x448` saves `r15`–`r31`,
+The inversion's products are calls of one function, `vg_x448_mul_core`
+(`mulC`, `invertCall`), which Ed448's base-point encoding's inversion calls
+too: the caller passes its `r12` and `r0` in `r4` and `r5`, which the core
+moves back, so the chain's counter survives. `vg_x448` saves `r15`–`r31`,
 which `mul` uses, and its return address, which the call changes, at `NV`
 before the ladder, and restores them before the final reduction. The only branches are on the loop
 counters, and every address is a pointer plus a constant or a counter, so
@@ -277,6 +279,19 @@ def mulX (o a b : Nat) : List Instr :=
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`): `mulX`, as a program. -/
 def mul (o a b : Nat) : Prog isa := .block (mulX o a b)
 
+/-- `mulX`'s product and reduction, in registers: `vg_x448_mul_core`'s code.
+A call changes `r0` and `r12`, which it does not write, so its caller passes
+them in `r5` and `r4` (which it writes only after), and it moves them back
+first. -/
+def mulCore : List Instr :=
+  [.addi .r12 .r4 0, .addi .r0 .r5 0, .li (pw 0) 0, .li (pw 1) 0] ++ (List.range 13).flatMap colR ++ reduceR
+
+/-- `mul`, with the product a call of `vg_x448_mul_core`: the operands' words
+loaded, `r12` and `r0` into `r4` and `r5` (`mr`), the call, and the result stored. -/
+def mulC (o a b : Nat) : Prog isa :=
+  .seq (.block (ldsAt a (slotsOf opA 7) ++ ldsAt b (slotsOf opB 7) ++ [.addi .r4 .r12 0, .logic .or .r5 .r0 .r0]))
+    (.seq (.call "vg_x448_mul_core" (.block mulCore)) (.block (stdsAt o (slotsOf pw 7))))
+
 /-- The nonvolatile registers `r15`–`r31`, which `mulX` uses. -/
 def nvR (i : Nat) : Reg :=
   [.r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30,
@@ -383,9 +398,10 @@ abbrev chain223 (z : Nat) : Prog isa := chain223W mul z
 abbrev invTail : Prog isa := invTailW mul
 abbrev invert : Prog isa := invertW mul
 
-/-- The inversion, a function: `vg_x448` and Ed448's base-point encoding
-call it. -/
-def invertCall : Prog isa := .call "vg_x448_invert" invert
+/-- The inversion as `vg_x448` and Ed448's base-point encoding run it: its
+products calls of `vg_x448_mul_core` (`mulC`), around which they keep their
+link registers already. -/
+def invertCall : Prog isa := invertW mulC
 
 /-! ## Encoding and decoding -/
 

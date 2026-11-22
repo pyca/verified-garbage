@@ -1222,22 +1222,24 @@ theorem decFrameSat_pre : ∃ s, (decryptFinalRoundsContract Arm.abi 72).pre s :
   implies_sat [decryptFinalRoundsContract, Spec.Cfb.aesFinalSig, finalPre, decryptFinalPost, Arm.abi,
     Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [finalFrameSat, finalSat] using finalFrameSat
 
-/-- `encryptFinal`, with `save` on the stack (zeroed on return). -/
+/-- `encryptFinal`, with `save` on the stack, which its function's cleanup
+(`scrubAll`) zeroes. -/
 theorem encryptFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 encryptFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 56 2 encryptFinal)
       (encryptFinalRoundsContract Arm.abi 72) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 5)
+  Arm.Verified.stackScratch (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 5)
     (pre := finalPre Arm.abi.ptrBits) (post := encryptFinalPost Arm.abi.ptrBits) (wa := false) (stack := 16)
-    (m := 2) (bytes := 56) encryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (finalPre_local _) (encryptFinalPost_local _) (encryptFinalPost_localOut _) encFrameSat_pre
+    (m := 2) (bytes := 56) encryptFinal_verified (by decide) (by decide) (by decide) (by decide)
+    (finalPre_local _) (encryptFinalPost_local _) (fun vs mm m₁ m₂ r hl _ => encryptFinalPost_localOut _ vs mm m₁ m₂ r hl) encFrameSat_pre
 
-/-- `decryptFinal`, with `save` on the stack (zeroed on return). -/
+/-- `decryptFinal`, with `save` on the stack, which its function's cleanup
+(`scrubAll`) zeroes. -/
 theorem decryptFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 decryptFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 56 2 decryptFinal)
       (decryptFinalRoundsContract Arm.abi 72) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 5)
+  Arm.Verified.stackScratch (sig := Spec.Cfb.aesFinalSig) (nm := "save") (e := .u64) (n := 5)
     (pre := finalPre Arm.abi.ptrBits) (post := decryptFinalPost Arm.abi.ptrBits) (wa := false) (stack := 16)
-    (m := 2) (bytes := 56) decryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (finalPre_local _) (decryptFinalPost_local _) (decryptFinalPost_localOut _) decFrameSat_pre
+    (m := 2) (bytes := 56) decryptFinal_verified (by decide) (by decide) (by decide) (by decide)
+    (finalPre_local _) (decryptFinalPost_local _) (fun vs mm m₁ m₂ r hl _ => decryptFinalPost_localOut _ vs mm m₁ m₂ r hl) decFrameSat_pre
 
 end VG.Proof.AesCfb.Arm

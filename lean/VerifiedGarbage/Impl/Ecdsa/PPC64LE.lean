@@ -172,19 +172,24 @@ def ladderCfg : LadderCfg where
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
 
+/-- Where `vg_<curve>_mul` keeps `r31` and `lr`: past the numbered slots
+(`vg_<curve>_inv_mod_p` and `_n` keep `lr` there too, `invP`). -/
+def mulAt31 : Nat := c.sl nslots
+def mulAtLr : Nat := c.sl nslots + 8
+
 /-- `Z^(p-2)` by the sliding windows of `p - 2` (`Impl/Weierstrass/Chain.lean`),
 into `ACC`, its table of odd powers in the nine slots from `DX` (the ladder's,
 free after it). -/
 def chainP : Impl.Weierstrass.ChainCfg := .ofExp c.MP' (c.sl ACC) (c.sl RZ) (c.sl DX) (c.C.p - 2)
 
-/-- `[ACC] = [RZ]^(p-2)`. -/
-def invP : Prog isa := Impl.Weierstrass.PPC64LE.ChainCfg.pow c.chainP c.SP
+/-- `[ACC] = [RZ]^(p-2)`, by a call of `vg_<curve>_inv_mod_p`. -/
+def invP : Prog isa := Impl.Weierstrass.PPC64LE.ChainCfg.call c.chainP c.SP c.mulAtLr
 
 /-- `k^(n-2)`, likewise: into `ACC`, its table from `DX`. -/
 def chainN : Impl.Weierstrass.ChainCfg := .ofExp c.MN' (c.sl ACC) (c.sl KM) (c.sl DX) (c.C.n - 2)
 
-/-- `[ACC] = [KM]^(n-2)`. -/
-def invN : Prog isa := Impl.Weierstrass.PPC64LE.ChainCfg.pow c.chainN c.SN
+/-- `[ACC] = [KM]^(n-2)`, by a call of `vg_<curve>_inv_mod_n`. -/
+def invN : Prog isa := Impl.Weierstrass.PPC64LE.ChainCfg.call c.chainN c.SN c.mulAtLr
 
 /-- The callee-saved registers the function writes, and where they are saved
 (`lr` is saved after them, at byte 16). -/
@@ -312,10 +317,6 @@ returns with `r3` the working space. -/
 /-- The ladder of `vg_<curve>_mul`: the signature's, from the point at `ACC`,
 `PT`, `ONEP`. -/
 def mulLadder : LadderCfg := { c.ladderCfg with G := c.pt ACC PT ONEP }
-
-/-- Where `vg_<curve>_mul` keeps `r31` and `lr`: past the numbered slots. -/
-def mulAt31 : Nat := c.sl nslots
-def mulAtLr : Nat := c.sl nslots + 8
 
 /-- `vg_<curve>_mul`'s body: the table of `k`'s bits, `Q` (in `R`'s first
 two slots) copied to `ACC` and `PT`, `R = O = (0 : 1 : 0)` (from zero and

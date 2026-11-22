@@ -20,11 +20,11 @@ key the working state (at `stWO`) and its digest (at `hkO`). `r11` is always
 `scratch`, `r5` and `r6` the states. The only branch is on `key_len`, which
 is public.
 
-The digest stays in `scratch`, which the function that allocates it wipes
-(`withStackScratchWiped`). `vg_hmac_<hash>_init` runs that only for a key
-longer than a block (`initEntry`, which compares `key_len` on entry): a key
-of at most a block goes to `init` in a frame of its own as before, smaller
-and not wiped.
+The digest stays in `scratch`, in the frame of the function that allocates
+it, which `vg_hmac_<hash>_init`'s cleanup (`scrubAll`) zeroes with the rest
+of its stack. `vg_hmac_<hash>_init` runs that only for a key longer than a
+block (`initEntry`, which compares `key_len` on entry): a key of at most a
+block goes to `init` in a frame of its own as before, smaller.
 -/
 
 @[expose] public section

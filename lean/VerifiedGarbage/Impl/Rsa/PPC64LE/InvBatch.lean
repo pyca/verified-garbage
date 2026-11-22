@@ -353,6 +353,10 @@ def gcd : Prog isa := seqs [init, .loop batchG (.nonzero .d .r3), finishG]
 /-- The inverse, `n` in `r11`. -/
 def inverse : Prog isa := seqs [init, .loop batch (.nonzero .d .r3), normalize, doublings, finish]
 
+/-- `inverse` as the code of a function of its own, `vg_rsa_inv_batch`: `n`
+in `r10`, since a call changes `r11`, and copied to `r11`. -/
+def inverseFn : Prog isa := .seq (.block [.addi .r11 .r10 0]) inverse
+
 /-- The inverse without its doublings: `[3] = y` with
 `y 2^(5 (3 ν + 2)) x ≡ gcd(x, m) (mod m)`, for a caller that scales `y` itself. -/
 def inverseS : Prog isa := seqs [init, .loop batch (.nonzero .d .r3), normalize, finish]

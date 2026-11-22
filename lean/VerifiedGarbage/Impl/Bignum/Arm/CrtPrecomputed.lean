@@ -46,12 +46,13 @@ def r2Copy (primeSlot : Nat) : Prog isa :=
   .seq (.block (r2Source primeSlot ++ lowArgs 4)) (.seq copyBytes (.seq (.block [.mov .r0 (.reg .r5)])
     (.seq (smallConst 7 1) (.seq (.block [.ldrSp .r11 48]) (selectArray 4 7 4)))))
 
-/-- `R² mod X`: given, or computed from 1. -/
-def r2Given (primeSlot : Nat) : Prog isa :=
-  .seq (.block (r2WidthTest (primeSlot + 4))) (.ite .eq (r2Copy primeSlot) r2)
+/-- `R² mod X`: given, or computed from 1 by the product `op` and the doubling `dbl`. -/
+def r2Given (primeSlot : Nat) (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq (.block (r2WidthTest (primeSlot + 4))) (.ite .eq (r2Copy primeSlot) (r2WithDbl op dbl))
 
 /-- `narrowPrime` with `r2Given`. -/
-def narrowPrimeGiven (primeSlot : Nat) : Prog isa := .seq (narrowPrimeInv primeSlot) (r2Given primeSlot)
+def narrowPrimeGiven (primeSlot : Nat) (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq (narrowPrimeInv primeSlot) (r2Given primeSlot op dbl)
 
 end VG.Impl.Bignum.Arm.Crt
 
@@ -61,7 +62,7 @@ open VG VG.Arm
 /-- `validate` but for `p q = n`. -/
 def validateGiven : Prog isa := .seq acceptInput (.seq loadP loadQ)
 
-def codeGiven (phase : Prog isa) (op : Nat → Nat → Nat → Prog isa := montOp) : Prog isa :=
-  codeOf validateGiven Crt.narrowPrimeGiven phase op
+def codeGiven (phase : Prog isa) (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  codeOf validateGiven (fun primeSlot => Crt.narrowPrimeGiven primeSlot op dbl) phase op
 
 end VG.Impl.Bignum.Arm.CrtFn

@@ -24,7 +24,7 @@ apart. The table's sixteen entries (`Impl/Ed448/Comb.lean`) are built once
 at `CTAB`, past the field slots (`tabBuild`), and every row reads all of them
 (`combSelect`). The scalar's bits are expanded into bytes at X448's `BITS`
 (byte `t` is bit `t`), as X448 expands its scalar. Finally `R` is encoded
-(§5.2.2): `Z` inverted (a call of X448's `vg_x448_invert`, `Z` being in its slot `Z2`),
+(§5.2.2): `Z` inverted (X448's inversion, `invertCall`, its products calls of `vg_x448_mul_core`, `Z` being in its slot `Z2`),
 `x = X/Z` fully reduced into `out` for its low bit, then `y = Y/Z`, and the
 bit as the top bit of the 57th byte.
 

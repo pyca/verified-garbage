@@ -578,6 +578,75 @@ theorem tbl_apart_chainW (h7 : c.n < 10) (j t : Nat) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl <;> (dsimp only; omega_arith)
 
+/-- Where the chains' functions keep the link register (`Cfg.invP`): past the
+numbered slots, below the field arithmetic's own working space. -/
+theorem mulAtLr_eq : c.mulAtLr = c.sl 45 + 8 := rfl
+
+theorem lrSave_le_own (h7 : c.n < 10) : c.mulAtLr + 8 ≤ own c.n := by
+  rw [mulAtLr_eq, sl_eq, own_eq]; omega_arith
+
+/-- What a call of a chain's function writes: the word it keeps the link
+register in, and the chain's slots. -/
+abbrev chainWS (c : Cfg) : List (Nat × Nat) :=
+  (c.mulAtLr, 8) :: [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)]
+
+theorem apart_chainWS (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hr : i ≠ ACC) (ht : i < DX ∨ T2 < i) :
+    ∀ w ∈ chainWS c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  intro w hw
+  rcases List.mem_cons.mp hw with rfl | hw
+  · exact Or.inl (by have := sl_lt c hi; dsimp only; rw [mulAtLr_eq]; omega_arith)
+  · exact apart_chainW h7 hi hr ht w hw
+
+theorem fixedOk_chainWS (h7 : c.n < 10) : FixedOk c (chainWS c) := by
+  intro w hw
+  rcases List.mem_cons.mp hw with rfl | hw
+  · exact Or.inr (by dsimp only; rw [mulAtLr_eq, sl_eq, sl_eq]; omega_arith)
+  · exact fixedOk_chainW h7 w hw
+
+theorem chainWS_le (h7 : c.n < 10) : ∀ w ∈ chainWS c, w.1 + w.2 ≤ size := by
+  intro w hw
+  rcases List.mem_cons.mp hw with rfl | hw
+  · have := lrSave_le_own (c := c) h7; have := own_eq c.n; have hsz : size = 8192 := rfl
+    dsimp only; omega_arith
+  · exact chainW_le h7 w hw
+
+theorem tbl_apart_chainWS (h7 : c.n < 10) (j t : Nat) :
+    ∀ w ∈ chainWS c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+  intro w hw
+  rcases List.mem_cons.mp hw with rfl | hw
+  · have := lrSave_le_own (c := c) h7; have := own_below_bits c h7 j
+    exact Or.inr (by dsimp only; omega_arith)
+  · exact tbl_apart_chainW h7 j t w hw
+
+/-- `chainCall_ok` for a chain of this layout (`chainP` or `chainN`), whose
+function keeps the link register at `c.mulAtLr`. -/
+theorem chainCallC_ok (h7 : c.n < 10) {P : Impl.Weierstrass.ChainCfg} {S : Impl.Weierstrass.Mont.Modulus}
+    {m : Nat} [NeZero m]
+    (hW : chainW P c.n = [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)])
+    {i : Nat} (hbi : P.base = c.sl i) (hi : i < 45)
+    (hkS : S.k = c.n) (hmS : S.m = m) (hM : ModOk c.n m) (hL : ChainLay P c.n)
+    (hm : UnitMod m (2 ^ (64 * c.n))) {base : Addr} {e : Nat} {s : State} (hs : WsReg s base)
+    (hB : wordsVal s.mem base P.base c.n < m) (hC : ChainOk P e) :
+    WP isa (Impl.Weierstrass.PPC64LE.ChainCfg.call P S c.mulAtLr) s fun s' => Rk powClob s s' ∧
+      Unch base (chainWS c) s.mem s'.mem ∧
+      wordsVal s'.mem base P.acc c.n < m ∧
+      toM m (2 ^ (64 * c.n)) (wordsVal s'.mem base P.acc c.n) =
+        toM m (2 ^ (64 * c.n)) (wordsVal s.mem base P.base c.n) ^ e := by
+  have hlo := lrSave_le_own (c := c) h7
+  have ho := own_eq c.n
+  have := mulAtLr_eq (c := c)
+  refine WP.mono (chainCall_ok hkS hmS hM hL hm hs hB hC (sv := c.mulAtLr)
+    (by rw [mulAtLr_eq]; have := sl_al c 45; omega_arith) (by omega_arith) ?_ ?_) fun s' ⟨K, U, lt, v⟩ =>
+      ⟨K, by rw [hW] at U; exact U, lt, v⟩
+  · rw [hW]
+    intro w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl | rfl
+    · exact Or.inr (by have := sl_lt c (i := ACC) (j := 45) (by decide); dsimp only; omega_arith)
+    · exact Or.inr (by dsimp only; rw [mulAtLr_eq, sl_eq, sl_eq]; simp only [DX]; omega_arith)
+    · exact Or.inl (by dsimp only; omega_arith)
+  · exact Or.inr (by rw [hbi]; have := sl_lt c hi; omega_arith)
+
 theorem modP (hc : CfgOk c) : ModOk c.n c.C.p := by
   have h := hc.fp; rw [hc.fpk, hc.fpm] at h; exact h
 

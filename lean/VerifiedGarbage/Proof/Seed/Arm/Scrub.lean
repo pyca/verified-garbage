@@ -98,6 +98,12 @@ theorem ofbOut (stack : Nat) : PostOut (ofbContract Arm.abi stack) (ofbSig.retBi
 theorem ofbFinalOut (stack : Nat) : PostOut (ofbFinalContract Arm.abi stack) (ofbFinalSig.retBits 32) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Modes.ofbFinalPost_local _)
 
+/-! ## The stack the functions zeroed in a loop use (`scrubAll`, `Arm.Scrub.CodeOk`) -/
+
+theorem expandKey_code :
+    CodeOk (Impl.StackScratch.Arm.withRegScratch 752 .r2 Impl.Seed.Arm.expandKey) 752 := by
+  lit_decide
+
 end VG.Proof.Seed.Arm.Scrub
 
 namespace VG.Proof.Seed.Arm.Fn
@@ -107,12 +113,11 @@ open VG VG.Spec.Seed VG.Arm VG.Arm.Scrub
 /-- `vg_seed_expand_key`. -/
 theorem expandKey :
     VerifiedScrubbed target Impl.Seed.Arm.Fn.expandKey (expandKeyContract Arm.abi 752) 0 :=
-  verifiedScrubbedSel (api := expandKeyApi) (W := 752)
-    { code := Impl.StackScratch.Arm.withRegScratchWiped 752 .r2 188 Impl.Seed.Arm.expandKey
+  verifiedScrubbedAll (api := expandKeyApi)
+    { code := Impl.StackScratch.Arm.withRegScratch 752 .r2 Impl.Seed.Arm.expandKey
       verified := Proof.Seed.Arm.expandKey_framed }
-    Impl.Seed.Arm.Fn.noWords []
     (Scrub.expandKeyOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.expandKey_code (by decide) _)
 
 /-- `vg_seed_cbc_encrypt_chained`. -/
 theorem cbcEncrypt :

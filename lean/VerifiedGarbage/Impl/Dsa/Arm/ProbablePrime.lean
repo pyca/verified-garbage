@@ -171,19 +171,19 @@ def mrResult : Prog isa :=
         (.ite .eq (.block (done 1)) (.block (done 2)))))
 
 /-- Once `c` passed trial division. -/
-def mrPart (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs ([sub3 aCm1 aC aOne] ++ expSetup ++ [montA op, montB op, millerRabin name round op, mrResult])
+def mrPart (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  seqs ([sub3 aCm1 aC aOne] ++ expSetup ++ [montA op dbl, montB op, millerRabin name round op, mrResult])
 
-def body (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs (loadC ++ trial ++ [.ite .eq (mrPart name round op) (.block ([.mov .r3 (.imm 0)] ++ done 2))])
+def body (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  seqs (loadC ++ trial ++ [.ite .eq (mrPart name round op dbl) (.block ([.mov .r3 (.imm 0)] ++ done 2))])
 
 /-- `vg_dsa_probable_prime`, calling the round `round` named `name`, and
-multiplying modulo `c` by `op`. -/
-def code (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+multiplying modulo `c` by `op` and doubling by `dbl`. -/
+def code (name : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
   .frame (.alloc 32)
     (.seq (.block pre)
       (.frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-        (.seq (body name round op) (.block PcFn.restore)) (.pop .r12 56)))
+        (.seq (body name round op dbl) (.block PcFn.restore)) (.pop .r12 56)))
     (.free 32)
 
 end VG.Impl.Dsa.Arm.ProbablePrime

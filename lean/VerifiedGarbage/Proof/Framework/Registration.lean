@@ -32,6 +32,10 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   calling convention of the `Sig.contract` it unfolds to (as `of_sig`
   unfolds it), whose head is unfolded until it is an application of
   `Abi.withConsts`; and none if there is no such application.
+* `fns_of` gives `fns`, the functions of public address in the contract
+  `verified` proves (the goal `FnsOf contract`): those of the first
+  `Abi.withFns A fns` in it, found as `consts_of` finds the tables of
+  constants, and none if there is no such application.
 * `stack_of` gives `stack`, the stack that the contract `verified` proves
   is for (the goal `StackOf contract`): the `stack` of the `Sig.contract` it
   unfolds to (as `of_sig` unfolds it), as that contract states it, so that
@@ -200,6 +204,48 @@ elab_rules : tactic
       unless ← isDefEq (← inferType cs) (← g.getType) do
         throwError "consts_of: {cs} is not a list of tables of constants"
       g.assign cs
+    | none => evalTactic (← `(tactic| exact []))
+
+/-- The functions `fns` of the first application `Abi.withFns A fns` in `e`
+that has neither loose bound variables nor metavariables. -/
+def findFns? (e : Expr) : Option Expr :=
+  (e.find? fun e => e.isAppOfArity ``Abi.withFns 3 && !e.hasLooseBVars && !e.hasMVar).map
+    (·.appArg!)
+
+/-- The functions of public address of the calling convention `A`: those of
+the first application of `Abi.withFns` in it, with its head unfolded until
+there is one, or none. -/
+partial def abiFns? (A : Expr) : MetaM (Option Expr) := do
+  if let some fs := findFns? A then return some fs
+  match ← unfoldDefinition? A with
+  | some A' => abiFns? (← whnfCore A')
+  | none => return none
+
+elab_rules : tactic
+  | `(tactic| fns_of) => do
+    let g ← getMainGoal
+    let ty := (← instantiateMVars (← g.getType)).cleanupAnnotations
+    unless ty.isAppOfArity ``FnsOf 2 do
+      throwError "fns_of: the goal is not `FnsOf contract`: {ty}"
+    let c := ty.appArg!
+    if c.hasMVar then
+      throwError "fns_of: the contract is not known; give `contract`: {c}"
+    let fs? ← match findFns? c with
+      | some fs => pure (some fs)
+      | none =>
+        let s ← saveState
+        try
+          let c' ← toSigContract c
+          -- `Sig.contract A sig pre post writeArgs stack leak`, implicit `M` first.
+          abiFns? (c'.getArg! 1)
+        catch _ =>
+          s.restore
+          pure none
+    match fs? with
+    | some fs =>
+      unless ← isDefEq (← inferType fs) (← g.getType) do
+        throwError "fns_of: {fs} is not a list of functions"
+      g.assign fs
     | none => evalTactic (← `(tactic| exact []))
 
 elab_rules : tactic

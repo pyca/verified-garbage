@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 
 public import VerifiedGarbage.Proof.Rsa.Arm.InvLaw
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
@@ -29,17 +30,17 @@ section
 variable {s : State}
 
 /-- The body's run from its start, in its two parts. -/
-theorem body_parts [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (h : CIn s) :
+theorem body_parts [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (D : CallDbl) (h : CIn s) :
     ∃ tr1 tr2 t w, Exec isa (.block entry) (sx s) tr1 t ∧
-      Exec isa (seqs [.block lenCheck, .ite .eq finNone (main v.name v.code M.op)]) t tr2 w ∧
+      Exec isa (seqs [.block lenCheck, .ite .eq finNone (main v.name v.code M.op D.dbl)]) t tr2 w ∧
       In (mkP s) t ∧ Bk (mkP s) t t ∧ Bk (mkP s) t w := by
   obtain ⟨tr1, t, e1, pre, -, -, -, -⟩ := entry_ok h
-  obtain ⟨tr2, w, e2, rf⟩ := (candBody_vp v M).wp t t ⟨pre, ⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩⟩
+  obtain ⟨tr2, w, e2, rf⟩ := (candBody_vp v M D).wp t t ⟨pre, ⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩⟩
   exact ⟨tr1, tr2, t, w, e1, e2, pre, ⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩, rf.2.1⟩
 
 /-- Two calls with the same public parameters. -/
-theorem cand_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) :
-    RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t) (code v.name v.code M.op) (fun _ _ => True) := by
+theorem cand_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (D : CallDbl) :
+    RelCT isa (fun s t => CIn s ∧ CIn t ∧ s.sp = t.sp ∧ mkP s = mkP t) (code v.name v.code M.op D.dbl) (fun _ _ => True) := by
   unfold Impl.RsaKeyGen.Arm.Candidate.code
   apply RelCT.frame (fun _ _ h => h.2.2.1)
   intro s t tr1 tr2 u w hp e1 e2
@@ -57,12 +58,12 @@ theorem cand_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) :
   | seq body1 rest1 =>
     cases e2 with
     | seq body2 rest2 =>
-      obtain ⟨trW1, w1, t1, run1, -, -, -, -, -⟩ := body_wide v M hs
-      obtain ⟨trW2, w2, t2, run2, -, -, -, -, -⟩ := body_wide v M ht
+      obtain ⟨trW1, w1, t1, run1, -, -, -, -, -⟩ := body_wide v M D hs
+      obtain ⟨trW2, w2, t2, run2, -, -, -, -, -⟩ := body_wide v M D ht
       obtain ⟨rfl, rfl⟩ := Exec.det body1 run1
       obtain ⟨rfl, rfl⟩ := Exec.det body2 run2
-      obtain ⟨a1, b1, x1, y1, ea1, eb1, pre1, bx1, by1⟩ := body_parts v M hs
-      obtain ⟨a2, b2, x2, y2, ea2, eb2, pre2, bx2, by2⟩ := body_parts v M ht
+      obtain ⟨a1, b1, x1, y1, ea1, eb1, pre1, bx1, by1⟩ := body_parts v M D hs
+      obtain ⟨a2, b2, x2, y2, ea2, eb2, pre2, bx2, by2⟩ := body_parts v M D ht
       have cov1 := hs.xCovers pre1
       have cov2 := ht.xCovers pre2
       have run1' := Exec.widen (rd := s0.rd) (wr := (pcPushed s0).wr) (Exec.seq ea1 eb1)
@@ -75,7 +76,7 @@ theorem cand_ct [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) :
       have trE := (VG.Proof.Rsa.Arm.setupChecked_ct [.str .r0 .r12 foOut] (by decide) (by decide)) _ _ _ _ _ _
         (show (sx s0).sp = (sx t0).sp by show s0.sp - _ = t0.sp - _; rw [sp]) ea1 ea2
       rw [← hP] at pre2 bx2 by2
-      have trB := ((candBody_vp v M (P := mkP s0)).ct _ _ _ _ _ _
+      have trB := ((candBody_vp v M D (P := mkP s0)).ct _ _ _ _ _ _
         ⟨_, _, ⟨pre1, bx1⟩, ⟨pre2, bx2⟩⟩ eb1 eb2).1
       have trR := ((stackLoads_ct pcCalleeSaved : RelCT isa (fun s t => s.sp = t.sp)
         (.block VG.Impl.Bignum.Arm.PcFn.restore) (fun s t => s.sp = t.sp)) _ _ _ _ _ _

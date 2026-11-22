@@ -112,14 +112,14 @@ theorem cbcEncryptChainedFrameSat : ∃ s, (Proof.Camellia.cbcEncryptChainedCont
 
 /-- `cbcEncryptChained`, with its scratch buffer on the stack (zeroed on return). -/
 theorem cbcEncryptChained_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 cbcEncryptChained)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2816 1 cbcEncryptChained)
       (Spec.Camellia.cbcEncryptChainedContract Arm.abi 2824) :=
   Proof.Camellia.cbcEncryptChained_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 349)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 349)
     (pre := Proof.Camellia.cbcChainedPre Arm.abi.ptrBits) (post := Proof.Camellia.cbcEncChainedPost Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 2816)
-    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.cbcChainedPre_local _) (Proof.Camellia.cbcEncChainedPost_local _) (Proof.Camellia.cbcEncChainedPostOut_local _) cbcEncryptChainedFrameSat
+    cbcEncryptChained_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.cbcChainedPre_local _) (Proof.Camellia.cbcEncChainedPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.cbcEncChainedPostOut_local _ vs mm m₁ m₂ r hl) cbcEncryptChainedFrameSat
 
 theorem cbcDecryptChainedTaint : SeqTaint (ecbCore .decrypt) cbcDecChained :=
   ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩

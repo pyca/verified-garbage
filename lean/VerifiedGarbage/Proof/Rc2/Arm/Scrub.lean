@@ -63,6 +63,16 @@ theorem cbcDecryptChainedOut :
     PostOut (Spec.Rc2.cbcDecryptChainedContract Arm.abi 528) (Spec.Rc2.cbcChainedSig.retBits 32) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Rc2.cbcDecChainedPostOut_local (pb := 32))
 
+/-! ## The stack the functions zeroed in a loop use (`scrubAll`, `Arm.Scrub.CodeOk`) -/
+
+theorem cbcEncryptChained_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 528 0 Impl.Rc2.Arm.Cbc.encrypt) 528 := by
+  lit_decide
+
+theorem cbcDecryptChained_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 528 0 Impl.Rc2.Arm.Cbc.decrypt) 528 := by
+  lit_decide
+
 end VG.Proof.Rc2.Arm.Scrub
 
 namespace VG.Proof.Rc2.Arm.Fn
@@ -83,21 +93,19 @@ theorem cbcInit :
 /-- `vg_rc2_cbc_encrypt_chained`. -/
 theorem cbcEncryptChained :
     VerifiedScrubbed target Impl.Rc2.Arm.Fn.cbcEncryptChained (Spec.Rc2.cbcEncryptChainedContract Arm.abi 528) 0 :=
-  verifiedScrubbedSel (api := Spec.Rc2.cbcEncryptChainedApi) (W := 528)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 528 0 128 Impl.Rc2.Arm.Cbc.encrypt
+  verifiedScrubbedAll (api := Spec.Rc2.cbcEncryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 528 0 Impl.Rc2.Arm.Cbc.encrypt
       verified := Proof.Rc2.Arm.Cbc.encryptChained_framed }
-    Impl.Rc2.Arm.Fn.cbcWords []
     Scrub.cbcEncryptChainedOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cbcEncryptChained_code (by decide) _)
 
 /-- `vg_rc2_cbc_decrypt_chained`. -/
 theorem cbcDecryptChained :
     VerifiedScrubbed target Impl.Rc2.Arm.Fn.cbcDecryptChained (Spec.Rc2.cbcDecryptChainedContract Arm.abi 528) 0 :=
-  verifiedScrubbedSel (api := Spec.Rc2.cbcDecryptChainedApi) (W := 528)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 528 0 128 Impl.Rc2.Arm.Cbc.decrypt
+  verifiedScrubbedAll (api := Spec.Rc2.cbcDecryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 528 0 Impl.Rc2.Arm.Cbc.decrypt
       verified := Proof.Rc2.Arm.Cbc.decryptChained_framed }
-    Impl.Rc2.Arm.Fn.cbcWords []
     Scrub.cbcDecryptChainedOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cbcDecryptChained_code (by decide) _)
 
 end VG.Proof.Rc2.Arm.Fn

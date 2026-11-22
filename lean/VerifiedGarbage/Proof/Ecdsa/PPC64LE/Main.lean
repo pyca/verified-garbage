@@ -181,13 +181,12 @@ theorem stage₃ (hc : CfgOk c) {A : Args} {s₀ : State} {base : Addr} {F : Bit
     rw [tbl_unch O₇.unch h7 hj ht (tbl_apart_flag h7 h0 _ t), tbl_unch O₆.unch h7 hj ht (tbl_apart_flag h7 h0 _ t),
       tbl_unch O₅.unch h7 hj ht (tbl_apart_flag h7 h0 _ t)]
   -- `k^(n-2)`.
-  refine WP.seq (WP.mono (chainPow_ok (P := c.chainN) (S := c.SN) (e := c.C.n - 2) hc.fnk hc.fnm (modN hc)
+  refine WP.seq (WP.mono (chainCallC_ok h7 chainWN_eq (i := KM) rfl (by decide) (P := c.chainN) (S := c.SN) (e := c.C.n - 2) hc.fnk hc.fnm (modN hc)
     (chainLayN hc) hnR K₇.ws (show sv c base s₇ KM < c.C.n by rw [e₇ (i := KM) (by decide) (by decide)]; exact Mp.km_lt)
     hc.chainN) fun s₈ ⟨k₈, U₈, lt₈, v₈⟩ => h s₈ ?_)
-  rw [chainWN_eq] at U₈
-  obtain K₈ := K₇.step h7 k₈ (hU := U₈) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  obtain K₈ := K₇.step h7 k₈ (hU := U₈) (hW := fixedOk_chainWS h7) (hWs := chainWS_le h7)
   obtain e₈ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv c base s₈ i = sv c base s₇ i := fun hi hr ht =>
-    sv_unch U₈ h7 hn hi (apart_chainW h7 hi hr ht)
+    sv_unch U₈ h7 hn hi (apart_chainWS h7 hi hr ht)
   -- What reaches `s₈` from before the middle.
   obtain b₈ : ∀ {i}, i < 45 → i ∉ [ACC, PT, XM, X, RR, KM, FLAG] → (i < DX ∨ T2 < i) →
       sv c base s₈ i = sv c base s i := fun hi hl ht => by
@@ -218,9 +217,9 @@ theorem stage₃ (hc : CfgOk c) {A : Args} {s₀ : State} {base : Addr} {F : Bit
     by rw [m₈ (by simp), Mp.x, tR RZ (by simp), tR RX (by simp), S.acc],
     by rw [m₈ (by simp), m₈ (by simp)]; exact Mp.rr, ?_, ?_⟩
   · have fl₈ : flagW c base s₈ = flagW c base s₇ := by
-      obtain apF : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)],
+      obtain apF : ∀ w ∈ chainWS c,
           c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
-        rcases apart_chainW h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
+        rcases apart_chainWS h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
         · exact Or.inl (by omega_arith)
         · exact Or.inr h
       simp only [flagW]; exact U₈.word apF (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)

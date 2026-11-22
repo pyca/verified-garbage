@@ -8,9 +8,10 @@ public import VerifiedGarbage.TCB.Print
 
 **Trusted.** A registration file makes each function's `Artifact` from its
 `Api` with `Api.artifact`, stating only what the implementation chooses: the
-target, the code and its proof, the stack it uses and the constant tables it
-reads (which `stack_of` and `consts_of` find in the contract the proof is
-of), the tables of functions it takes, how much
+target, the code and its proof, the stack it uses, the constant tables it
+reads and the functions whose addresses its contract makes public
+(`Abi.withFns`) (which `stack_of`, `consts_of` and `fns_of` find in the
+contract the proof is of), the tables of functions it takes, how much
 of its writable arrays it writes (`written`, with its proof), and the suffix
 of its name. The proof is also that the code returns without secret residue
 (`VerifiedScrubbed`): the cleanup is part of the code it is of, like
@@ -174,6 +175,14 @@ structure VerifiedScrubbed (T : Target) (c : Prog T.isa) (k : Contract T.isa) (r
   verified : Verified T c k
   noResidue : T.noResidue.elim False fun R => R c k retBits
 
+/-- The calling convention with the addresses of the functions `fns` public
+(`ISA.fnAddr`), which an indirect call observes (`Exec.icall`): where each
+function is does not depend on the data a function works on. -/
+def Abi.withFns {M : ISA} (A : Abi M) (fns : List String) : Abi M :=
+  match fns with
+  | [] => A
+  | fns => { A with pub s₁ s₂ := A.pub s₁ s₂ ∧ ∀ f ∈ fns, M.fnAddr s₁ f = M.fnAddr s₂ f }
+
 /-- A verified function, ready to be emitted into the Rust crate. -/
 structure Artifact where
   target : EmitTarget
@@ -216,13 +225,17 @@ structure Artifact where
   `u64` of the tables' length, and that it lists every table of their
   interface on the target, of which the Rust caller may pass any
   (`Rust.checkFnTables`). So `contract` is one for the calling convention
-  `(target.abi.withConsts consts).withTables sig tables`. -/
+  `((target.abi.withConsts consts).withFns fns).withTables sig tables`. -/
   tables : List (String × List FnTable) := []
+  /-- The functions whose addresses the contract makes public
+  (`Abi.withFns`), each an artifact or an internal function of the target
+  (`Rust.checkFns`). -/
+  fns : List String := []
   code : Prog target.isa
   contract : Contract target.isa
   /-- The proof, for a result of `sig.retBits` bits at the target's pointer
-  width (which `Abi.withConsts` and `Abi.withTables` leave as it is: they
-  change only what the calling convention reads and requires). -/
+  width (which `Abi.withConsts`, `Abi.withFns` and `Abi.withTables` leave as
+  it is: they change only what the calling convention reads and requires). -/
   verified : VerifiedScrubbed target.toTarget code contract (sig.retBits target.abi.ptrBits)
   /-- `Sig.contract`'s `writeArgs` and `stack` for `contract` (see `ofSig`). -/
   writeArgs : Bool := false
@@ -233,7 +246,7 @@ structure Artifact where
   them for `sig`, and requires what `Sig.layoutDoc` documents of where the
   buffers are. -/
   ofSig : ∃ pre post leak,
-      contract = sig.contract ((target.abi.withConsts consts).withTables sig tables)
+      contract = sig.contract (((target.abi.withConsts consts).withFns fns).withTables sig tables)
         pre post writeArgs stack leak := by
     exact ⟨_, _, _, rfl⟩
   /-- The contract of the function on every target, which an artifact made
@@ -245,7 +258,7 @@ structure Artifact where
   from an `Api` is proven against the contract `Spec/` gives the function,
   not one chosen where the artifact is built. -/
   ofApi : contracts.elim True fun f =>
-      contract = f ((target.abi.withConsts consts).withTables sig tables) stack := by
+      contract = f (((target.abi.withConsts consts).withFns fns).withTables sig tables) stack := by
     first | exact True.intro | exact rfl
   /-- The code changes the stack pointer only by calls and returns and by
   the pushes and pops of frames, which are nested: no other instruction of
@@ -255,7 +268,7 @@ structure Artifact where
   spSafe : code.all (fun i => !target.isa.writesSp i) = true := by decide +kernel
   /-- The CPU features beyond the target's baseline ISA that the code needs,
   by their Rust `target_feature` names: exactly those its instructions, and
-  those of the functions it calls, require (`ISA.requires`). The emitter
+  those of the functions it calls, require (`Code.requiresDedup`). The emitter
   checks this (`Rust.checkFeatures`) and adds their presence to the
   function's `# Safety` section, which `doc` must end with when this is not
   empty. -/
@@ -273,7 +286,8 @@ structure Artifact where
   those buffers beyond their bounds (`Sig.writtenWithin`), which are where
   the target's calling convention places the arguments: `Sig.writtenWithin`
   reads only its `args`, `ptrBits` and `mem`, which the tables of constants
-  (`Abi.withConsts`) and of functions (`Abi.withTables`) leave as they are. -/
+  (`Abi.withConsts`) and of functions (`Abi.withTables`), and the functions
+  of public addresses (`Abi.withFns`), leave as they are. -/
   writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
       Sig.writtenWithin target.abi sig written s s' := by
     exact fun _ _ _ _ _ => True.intro
@@ -318,6 +332,14 @@ syntax (name := constsOf) "consts_of" : tactic
 (`Registration.consts`): a list of them, whose type names the contract so
 that `consts_of` can find them in it. -/
 abbrev ConstsOf {M : ISA} (_contract : Contract M) : Type := List (String × List (BitVec 64))
+
+/-- Gives `Registration.fns`, by default: those of the `Abi.withFns` in the
+contract `verified` proves. `Proof/Framework/Registration.lean` implements
+it; what it gives is not trusted (`Registration.ofApi`, `Rust.checkFns`). -/
+syntax (name := pubFnsOf) "fns_of" : tactic
+
+/-- `Registration.fns`, of a type naming the contract for `fns_of`. -/
+abbrev FnsOf {M : ISA} (_contract : Contract M) : Type := List String
 
 /-- Gives `Registration.stack`, by default: the `stack` of the `Sig.contract`
 that the contract `verified` proves is (`StackOf`).
@@ -372,29 +394,29 @@ where
     fs.foldl (fun acc f => if acc.contains f then acc else acc ++ [f]) acc
 
 /-- The calls in `c`, and in the functions it calls, as `Code.calls`, but
-not those of an indirect call (`Code.icall`), nor any in the functions it
-may reach: the calls whose code's features `Code.requires` counts. -/
-def Code.reqCalls {I C : Type} : Code I C → List (String × Code I C)
+not an indirect call's candidates that `tabled` holds, nor the calls in them. -/
+def Code.reqCalls {I C : Type} (tabled : String → Bool) : Code I C → List (String × Code I C)
   | .block _ => []
-  | .seq a b => reqCalls a ++ reqCalls b
-  | .ite _ t e => reqCalls t ++ reqCalls e
-  | .loop b _ => reqCalls b
-  | .call n b => (n, b) :: reqCalls b
-  | .frame _ b _ => reqCalls b
-  | .icall _ _ _ nx => reqCalls nx
+  | .seq a b => reqCalls tabled a ++ reqCalls tabled b
+  | .ite _ t e => reqCalls tabled t ++ reqCalls tabled e
+  | .loop b _ => reqCalls tabled b
+  | .call n b => (n, b) :: reqCalls tabled b
+  | .frame _ b _ => reqCalls tabled b
+  | .icall _ n b nx =>
+    (if tabled n then [] else (n, b) :: reqCalls tabled b) ++ reqCalls tabled nx
 
 /-- The features that the instructions of `c`, and of the functions it
-calls, require (`Code.requires`), each once: those of the instructions of
-`c` outside its calls (`ownRequires`), then those of the code of each call
-(`reqCalls`, which has every call, those in the code of a call too, but not
-the functions an indirect call may reach),
-skipping a call whose code requires what the first call of the same
-function's does (`distinctCalls`). These are the features of
-`dedup (c.requires M.requires)`, without building the list with repetitions
-or going through the code of a function once per call of it. -/
-def Code.requiresDedup (M : ISA) (c : Prog M) : List String :=
-  (distinctCalls (ownRequires M.requires []) (reqCalls c)).foldl ownRequires.add
+calls or may call indirectly, require, each once, but those of the functions
+of its tables of functions (`tabled`): of those it runs only the one its
+table names, and the Rust caller chooses the table by its features
+(`Rust.fnTableFeatures`). -/
+def Code.requiresDedup (M : ISA) (c : Prog M) (tabled : String → Bool) : List String :=
+  (distinctCalls (ownRequires M.requires []) (reqCalls tabled c)).foldl ownRequires.add
     (ownRequires M.requires [] c)
+
+/-- The functions of the tables `ts`. -/
+def FnTable.tablesFns (ts : List (String × List FnTable)) : List String :=
+  ts.flatMap fun t => t.2.flatMap (·.fns)
 
 /-- `api`'s contract under the calling convention `A`, for an implementation
 whose calls and frames use `stack` bytes of stack (`Api.contracts`), or, if
@@ -422,6 +444,8 @@ structure Registration (api : Api) (target : Target) where
   /-- `Artifact.consts`: by default, those `contract` names (`consts_of`),
   so that a registration states them only where it does not. -/
   consts : ConstsOf contract := by consts_of
+  /-- `Artifact.fns`. -/
+  fns : FnsOf contract := by fns_of
   /-- The proof: that the code meets `contract` in constant time and returns
   without secret residue. Its result's bits are `api.sig.retBits` at the
   target's pointer width, as `Artifact.verified`'s. -/
@@ -429,12 +453,13 @@ structure Registration (api : Api) (target : Target) where
   /-- `Artifact.stack`: by default, that of `contract` (`stack_of`), so that
   a registration never states it. -/
   stack : StackOf contract := by stack_of
-  ofApi : contract = api.contract ((target.abi.withConsts consts).withTables api.sig tables) stack := by
+  ofApi : contract =
+      api.contract (((target.abi.withConsts consts).withFns fns).withTables api.sig tables) stack := by
     exact rfl
   /-- `Artifact.ofSig`. -/
   ofSig : ∃ pre post leak,
       contract = api.sig.contract
-        ((target.abi.withConsts consts).withTables api.sig tables) pre post
+        (((target.abi.withConsts consts).withFns fns).withTables api.sig tables) pre post
         api.writeArgs stack leak := by
     of_sig
   /-- `Artifact.spSafe`. -/
@@ -455,8 +480,8 @@ structure Registration (api : Api) (target : Target) where
 /-- The artifact of the implementation `r` of `api` on `target`: its module,
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
 `r.suffix` (its `base` `api`'s), its documentation `api`'s (`Api.doc`), and its
-contract `api`'s on `target`, for `r.consts`, `r.tables` and `r.stack`
-(`Api.contract`); its CPU
+contract `api`'s on `target`, for `r.consts`, `r.fns`, `r.tables` and
+`r.stack` (`Api.contract`); its CPU
 features those its code requires (`Code.requiresDedup`); its code is
 printed and documented with `target`'s ISA's `Emitter` (`EmitTarget.of`). -/
 def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registration api target) :
@@ -469,6 +494,7 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
   doc := api.doc
   consts := r.consts
   tables := r.tables
+  fns := r.fns
   code := r.code
   contract := r.contract
   verified := r.verified
@@ -481,7 +507,7 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
     unfold Api.contract
     cases api.contracts <;> exact (by trivial)
   spSafe := r.spSafe
-  features := Code.requiresDedup target.isa r.code
+  features := Code.requiresDedup target.isa r.code (FnTable.tablesFns r.tables).contains
   written := r.written
   writtenOk := r.writtenOk
   extra := r.extra

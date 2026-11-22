@@ -111,14 +111,14 @@ theorem ofbFrameSat : ∃ s, (Proof.Camellia.ofbContractSk Arm.abi 2824).pre s :
 
 /-- `ofb`, with its scratch buffer on the stack (zeroed on return). -/
 theorem ofb_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 ofb)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2816 1 ofb)
       (Spec.Camellia.ofbContract Arm.abi 2824) :=
   Proof.Camellia.ofb_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64) (n := 349)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64) (n := 349)
     (pre := Spec.Camellia.ofbPre Arm.abi.ptrBits) (post := Proof.Camellia.ofbPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 2816)
-    ofb_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.ofbPre_local _) (Proof.Camellia.ofbPost_local _) (Proof.Camellia.ofbPostOut_local _) ofbFrameSat
+    ofb_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.ofbPre_local _) (Proof.Camellia.ofbPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.ofbPostOut_local _ vs mm m₁ m₂ r hl) ofbFrameSat
 
 theorem cfbEncryptTaint : SeqTaintK (scrCore .encrypt) cfbEnc :=
   ⟨⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩,
@@ -158,14 +158,14 @@ theorem cfbEncryptFrameSat : ∃ s, (Proof.Camellia.cfbEncryptContractSk Arm.abi
 
 /-- `cfbEncrypt`, with its scratch buffer on the stack (zeroed on return). -/
 theorem cfbEncrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 cfbEncrypt)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2816 1 cfbEncrypt)
       (Spec.Camellia.cfbEncryptContract Arm.abi 2824) :=
   Proof.Camellia.cfbEncrypt_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64) (n := 349)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64) (n := 349)
     (pre := Spec.Camellia.cfbPre Arm.abi.ptrBits) (post := Proof.Camellia.cfbEncryptPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 8) (m := 1) (bytes := 2816)
-    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.cfbPre_local _) (Proof.Camellia.cfbEncryptPost_local _) (Proof.Camellia.cfbEncryptPostOut_local _) cfbEncryptFrameSat
+    cfbEncrypt_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.cfbPre_local _) (Proof.Camellia.cfbEncryptPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.cfbEncryptPostOut_local _ vs mm m₁ m₂ r hl) cfbEncryptFrameSat
 
 theorem cfbDecryptTaint : SeqTaint (ecbCore .encrypt) cfbDec :=
   ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩

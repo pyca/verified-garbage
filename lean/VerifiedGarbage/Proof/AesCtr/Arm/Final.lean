@@ -1202,13 +1202,15 @@ theorem frameSat_pre : ∃ s, (finalRoundsContract Arm.abi 88).pre s := by
   implies_sat [finalRoundsContract, Spec.Ctr.aesFinalSig, finalPre, finalPost, finalLeak, Arm.abi,
     Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [ctrFrameSat, finalSat] using ctrFrameSat
 
-/-- `cryptFinal`, with `save` on the stack (zeroed on return). -/
+/-- `cryptFinal`, with `save` on the stack, which its function's cleanup
+(`scrubAll`) zeroes. -/
 theorem cryptFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 72 2 14 cryptFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 72 2 cryptFinal)
       (finalRoundsContract Arm.abi 88) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Ctr.aesFinalSig) (nm := "save") (e := .u64) (n := 7)
+  Arm.Verified.stackScratch (sig := Spec.Ctr.aesFinalSig) (nm := "save") (e := .u64) (n := 7)
     (pre := finalPre Arm.abi.ptrBits) (post := finalPost Arm.abi.ptrBits) (wa := false) (stack := 16)
-    (m := 2) (bytes := 72) cryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (finalPre_local _) (finalPost_local _) (finalPost_localOut _) frameSat_pre (hleak := (finalLeak_local _).toL)
+    (m := 2) (bytes := 72) cryptFinal_verified (by decide) (by decide) (by decide) (by decide)
+    (finalPre_local _) (finalPost_local _) (fun vs mm m₁ m₂ r hl _ => finalPost_localOut _ vs mm m₁ m₂ r hl)
+    frameSat_pre (hleak := finalLeak_local _)
 
 end VG.Proof.AesCtr.Arm

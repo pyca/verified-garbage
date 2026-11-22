@@ -53,6 +53,16 @@ def steps : List (Nat × Nat) → Prog isa
 def pow : Prog isa :=
   .seq (table P S) (.seq (.block (copy P.M.n P.acc (P.slot ((P.first - 1) / 2)))) (steps P S P.steps))
 
+/-- `pow` as the code of a function of its own: its calls of `S`'s functions
+write the link register, so it keeps it at `sv` in the working space around
+them (through `r0`, which they may write). -/
+def fn (sv : Nat) : Prog isa :=
+  .seq (.block [.mflr .r0, .store .d .r0 wb sv]) (.seq (pow P S) (.block [.load .d .r0 wb sv, .mtlr .r0]))
+
+/-- A call of the function `S.fn "inv"`, whose code is `fn P S sv`: one copy
+of the chain for all of its callers. -/
+def call (sv : Nat) : Prog isa := .call (S.fn "inv") (fn P S sv)
+
 end ChainCfg
 
 end VG.Impl.Weierstrass.PPC64LE

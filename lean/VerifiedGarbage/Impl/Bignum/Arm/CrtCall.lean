@@ -17,7 +17,7 @@ open VG VG.Arm
 
 def phase (name : String) (mul : Prog isa) : Prog isa := SharedWindow.phase (MontCall.op name mul)
 def code (name : String) (mul : Prog isa) : Prog isa := CrtFn.codeWith (phase name mul) (MontCall.op name mul)
-def codeGiven (name : String) (mul : Prog isa) : Prog isa :=
-  CrtFn.codeGiven (phase name mul) (MontCall.op name mul)
+def codeGiven (name : String) (mul : Prog isa) (dbl : Prog isa) : Prog isa :=
+  CrtFn.codeGiven (phase name mul) (MontCall.op name mul) dbl
 
 end VG.Impl.Bignum.Arm.CrtCall
