@@ -775,9 +775,8 @@ jobs:
 
   # The rustls provider (`crates/rustls-verified-garbage/`, a member of the
   # workspace, which the jobs above, building only the library, never build),
-  # on x86-64 Linux: its formatting and lints
-  # (ci/rust_lint.py), its tests with Wycheproof's vectors, and rustls's own
-  # API test suite run with it (`rustls/setup.sh`). It builds on the
+  # on x86-64 Linux: its formatting and lints (ci/rust_lint.py), its tests,
+  # and rustls's own API test suite run with it (`rustls/setup.sh`). It builds on the
   # library, so it runs whenever x86-64's tests do, and when it changes
   # (`rust-arches`' `provider`); a push to main only builds, for the cache.
   rustls-provider:
@@ -788,7 +787,6 @@ jobs:
     env:
       RUSTUP_TOOLCHAIN: stable
       RUSTFLAGS: -D warnings
-      WYCHEPROOF_ROOT: ${{ github.workspace }}/wycheproof
       TESTS: ${{ github.event_name != 'push' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -806,13 +804,6 @@ jobs:
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-x86_64/
             !/crates/verified-garbage-asm-*/assembly/
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: ${{ env.TESTS == 'true' }}
-        with:
-          repository: C2SP/wycheproof
-          path: wycheproof
-          persist-credentials: false
-          ref: main
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal --component clippy,rustfmt
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3

@@ -258,14 +258,26 @@ pub(crate) fn rsa_public_key(der: &[u8], min_len: usize) -> Option<rsa::PublicKe
     .ok()
 }
 
+/// Verifies an ECDSA signature `sig` (DER) of `message` with `public_key`, a
+/// SEC 1 point in either form (§2.3.3): uncompressed, or compressed, which the
+/// library decompresses (`decompress_public_key`, validating it).
 fn verify_ecdsa(curve: Curve, hash: Hash, public_key: &[u8], message: &[u8], sig: &[u8]) -> bool {
     macro_rules! verify {
         ($curve:ty, $n:literal) => {{
-            let (Ok(q), Some((r, s))) = (public_key.try_into(), der::ecdsa_sig_from_der::<$n>(sig))
-            else {
+            let q: [u8; 2 * $n + 1] = if let Ok(q) = public_key.try_into() {
+                q
+            } else if let Ok(c) = <&[u8; $n + 1]>::try_from(public_key) {
+                match <$curve>::decompress_public_key(c) {
+                    Some(q) => q,
+                    None => return false,
+                }
+            } else {
                 return false;
             };
-            let key = PublicKey::<$curve>::from_bytes(q);
+            let Some((r, s)) = der::ecdsa_sig_from_der::<$n>(sig) else {
+                return false;
+            };
+            let key = PublicKey::<$curve>::from_bytes(&q);
             let sig = concat(&r, &s);
             match hash {
                 Hash::Sha256 => key.verify::<Sha256>(message, &sig),
@@ -516,3 +528,55 @@ pub static ML_DSA_87: &dyn SignatureVerificationAlgorithm = &VerificationAlgorit
     signature_alg_id: alg_id::ML_DSA_87,
     kind: Kind::MlDsa87,
 };
+
+#[cfg(test)]
+mod tests {
+    use verified_garbage::ec::{P256, P384, P521, PrivateKey};
+    use verified_garbage::hashes::sha256::Sha256;
+
+    use super::{ECDSA_P256_SHA256, ECDSA_P384_SHA256, ECDSA_P521_SHA256};
+    use crate::der;
+
+    /// A signature made with the library verifies with the signer's public
+    /// key in either SEC 1 form, and not with another key or an encoding that
+    /// is no point (a compressed form whose x is no curve point's, or of
+    /// neither form's length).
+    #[test]
+    fn ecdsa_either_point_form() {
+        macro_rules! check {
+            ($curve:ty, $n:literal, $alg:expr) => {{
+                let msg = b"signed";
+                // A scalar below each curve's order: its top byte zero.
+                let key = |b: u8| {
+                    let mut d = [b; $n];
+                    d[0] = 0;
+                    PrivateKey::<$curve>::from_bytes(&d)
+                };
+                let sig = der::ecdsa_sig_to_der(&key(7).sign::<Sha256>(msg).unwrap());
+                let public = *key(7).public_key().unwrap().as_bytes();
+                let compressed = <$curve>::compress_public_key(&public).unwrap();
+                let other = *key(9).public_key().unwrap().as_bytes();
+                let other_compressed = <$curve>::compress_public_key(&other).unwrap();
+                assert!($alg.verify_signature(&public, msg, &sig).is_ok());
+                assert!($alg.verify_signature(&compressed, msg, &sig).is_ok());
+                assert!($alg.verify_signature(&other, msg, &sig).is_err());
+                assert!($alg.verify_signature(&other_compressed, msg, &sig).is_err());
+                let mut x_off_curve = compressed;
+                let mut found = false;
+                for b in 0..=255u8 {
+                    x_off_curve[$n] = b;
+                    if <$curve>::decompress_public_key(&x_off_curve).is_none() {
+                        found = true;
+                        break;
+                    }
+                }
+                assert!(found);
+                assert!($alg.verify_signature(&x_off_curve, msg, &sig).is_err());
+                assert!($alg.verify_signature(&public[..$n], msg, &sig).is_err());
+            }};
+        }
+        check!(P256, 32, ECDSA_P256_SHA256);
+        check!(P384, 48, ECDSA_P384_SHA256);
+        check!(P521, 66, ECDSA_P521_SHA256);
+    }
+}

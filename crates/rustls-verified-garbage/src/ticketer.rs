@@ -7,7 +7,6 @@ use core::time::Duration;
 
 use rustls::crypto::{GetRandomFailed, TicketProducer};
 use rustls::error::Error;
-use subtle::ConstantTimeEq;
 use verified_garbage::aead::aes_gcm::AesGcm;
 use zeroize::Zeroizing;
 
@@ -105,7 +104,8 @@ impl TicketProducer for AeadTicketer {
         // [^1]: https://eprint.iacr.org/2020/1491.pdf
         // [^2]: "Authenticated Encryption with Key Identification", fig 6
         //       <https://eprint.iacr.org/2022/1680.pdf>
-        if ConstantTimeEq::ct_ne(&self.key_name[..], alleged_key_name).into() {
+        // The key name is not secret: every ticket carries it in the clear.
+        if self.key_name[..] != *alleged_key_name {
             return None;
         }
 
