@@ -61,7 +61,10 @@ fn cases() -> Vec<Case> {
                 case.0
                     .push((name.trim().to_string(), value.trim().to_string()));
             }
-        } else if let Some((_, v)) = case.0.last_mut().filter(|_| indent > 3) {
+        } else {
+            // Any other line (the vectors indent them further) continues the
+            // last field's value.
+            let (_, v) = case.0.last_mut().expect("a continuation follows a field");
             v.push(' ');
             v.push_str(l.trim());
         }
