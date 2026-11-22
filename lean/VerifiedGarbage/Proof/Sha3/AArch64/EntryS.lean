@@ -273,4 +273,143 @@ theorem sRestore_d8 (k : Nat) (g : State) :
   refine (extract_setLane64 _ _ (i := 0) (j := 0) (by decide) (by decide)).trans (ite_eq_left rfl) |>.trans ?_
   simp only [RegUpd.gpr_write_self, BitVec.setWidth_eq]
 
+/-! ## The function's contract at its entry -/
+
+section
+variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
+  {wa : Bool} {stack : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+
+/-- The state the function runs from, with the permissions of its contract:
+after the call, with the caller's buffers and the copies of its stack words
+in place of its argument area. -/
+def eEntryS (sig : Sig) (n : String) (s : State) : State :=
+  ((sSave n (nStack sig) s).callEntry).withRegions
+    (((allRegions sig (sSave n (nStack sig) s).callEntry).filter (!·.2)).map (·.1))
+    (((allRegions sig (sSave n (nStack sig) s).callEntry).filter (·.2)).map (·.1))
+
+@[simp] theorem eEntryS_sp (sig : Sig) (n : String) (s : State) :
+    (eEntryS sig n s).sp = s.sp - BitVec.ofNat 64 (frameS (nStack sig)) := sSave_sp n _ s
+@[simp] theorem eEntryS_mem (sig : Sig) (n : String) (s : State) :
+    (eEntryS sig n s).mem = (sSave n (nStack sig) s).mem := rfl
+@[simp] theorem eEntryS_syms (sig : Sig) (n : String) (s : State) : (eEntryS sig n s).syms = s.syms :=
+  sSave_syms n _ s
+@[simp] theorem eEntryS_dit (sig : Sig) (n : String) (s : State) : (eEntryS sig n s).dit = s.dit :=
+  sSave_dit n _ s
+
+theorem eEntryS_gpr (sig : Sig) (n : String) (s : State) {q : Reg} (h : q ∉ linkRegs) :
+    (eEntryS sig n s).gpr q = s.gpr q := by
+  rw [eEntryS, State.withRegions_gpr, State.callEntry_gpr _ h]
+  exact sSave_gpr n _ s (fun e => h (by rw [e]; decide)) (fun e => h (by rw [e]; decide))
+
+theorem eEntryS_d8 (sig : Sig) (n : String) (s : State) : D8 n (eEntryS sig n s) := sSave_d8 n _ s
+
+theorem allRegions_eEntryS (sig : Sig) (n : String) (s : State) :
+    allRegions sig (eEntryS sig n s) = allRegions sig (sSave n (nStack sig) s).callEntry := rfl
+
+/-- The function's arguments at its entry are the caller's. -/
+theorem allArgs_eEntryS (n : String) (s : State) (hE : frameS (nStack sig) ≤ 32768) :
+    allArgs sig (eEntryS sig n s) = allArgs sig s := by
+  have h1 : (argRegs.take (sig.words abi.ptrBits).length).map (eEntryS sig n s).gpr =
+      (argRegs.take (sig.words abi.ptrBits).length).map s.gpr :=
+    List.map_congr_left fun q hq => eEntryS_gpr sig n s (argRegs_not_link q (List.mem_of_mem_take hq))
+  have h2 : (List.range (nStack sig)).map (stackArg (eEntryS sig n s)) =
+      (List.range (nStack sig)).map (stackArg s) := List.map_congr_left fun j hj => by
+    have hj' := List.mem_range.mp hj
+    show (eEntryS sig n s).mem.readW ((eEntryS sig n s).sp + BitVec.ofNat 64 (8 * j)) 64 = _
+    rw [eEntryS_mem, eEntryS_sp]
+    exact sSave_args n _ s hE hj'
+  rw [allArgs, allArgs, h1, h2]
+
+theorem frameS_pos (k : Nat) : 0 < frameS k := by unfold frameS; omega
+
+/-- What the caller's precondition gives the entry. -/
+theorem s_facts (hA : ArgsOk sig) (hl : Sig.noLists sig.params = true) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s) :
+    stack + frameS (nStack sig) ≤ s.sp.toNat ∧ s.sp.toNat + 8 * nStack sig ≤ 2 ^ 64 ∧
+      (∀ j < nStack sig, InRegions s.rd (stackArgAddr s j) 8) ∧
+      ∀ a ∈ allRegions sig s, (below s.sp (stack + frameS (nStack sig))).Disjoint a.1 := by
+  have hE := frameS_pos (nStack sig)
+  rw [pre_args hA hl] at hs
+  obtain ⟨⟨hst, hfit⟩, hrd, -, -, hres, -, -⟩ := hs
+  have hsb : stack + frameS (nStack sig) ≤ s.sp.toNat := by rcases hst with h | h <;> omega
+  refine ⟨hsb, hfit, fun j hj => ?_, fun a ha =>
+    hres _ (by rw [stackBelow_pos _ (by omega)]; exact List.mem_singleton_self _) a ha⟩
+  have h0 : nStack sig ≠ 0 := by omega
+  have hmem : (⟨stackArgAddr s 0, 8 * nStack sig⟩, false) ∈ allRegions sig s := by
+    simp [allRegions, argArea, h0]
+  refine ⟨⟨stackArgAddr s 0, 8 * nStack sig⟩, ?_, ?_⟩
+  · rw [hrd]; exact List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨hmem, rfl⟩, rfl⟩
+  · simp only [stackArgAddr]
+    exact Offset.contains _ (d := 8 * j) (n := 8) (e := 8 * 0) (k := 8 * nStack sig)
+      (by omega) (by omega) (by omega)
+
+/-- The function's regions at its entry: the caller's buffers, and the
+copies. -/
+theorem allRegions_eEntryS' (n : String) (s : State) (hE : frameS (nStack sig) ≤ 32768) :
+    allRegions sig (eEntryS sig n s) = Sig.bufs sig.params (allArgs sig s) ++ argArea sig (eEntryS sig n s) := by
+  rw [allRegions, allArgs_eEntryS n s hE]
+
+/-- The copies lie in the stack below the caller's `sp` its contract reserves. -/
+theorem argArea_eEntryS_sub (n : String) (s : State) :
+    ∀ b ∈ argArea sig (eEntryS sig n s), Region.Sub b.1 (below s.sp (stack + frameS (nStack sig))) := by
+  intro b hb
+  unfold argArea at hb
+  split at hb
+  · cases hb
+  · simp only [List.mem_singleton] at hb; subst hb
+    have hsk := saveOff_ge (nStack sig)
+    have hfs : saveOff (nStack sig) + 16 = frameS (nStack sig) := rfl
+    show Region.Sub ⟨stackArgAddr (eEntryS sig n s) 0, 8 * nStack sig⟩ _
+    rw [stackArgAddr, eEntryS_sp, Nat.mul_zero, BitVec.add_zero]
+    exact Offset.sub_below _ (by omega) (by omega)
+
+/-- The caller's precondition gives the function's at its entry. -/
+theorem s_bodyPre (hA : ArgsOk sig) (hl : Sig.noLists sig.params = true) {n : String}
+    (hE : frameS (nStack sig) ≤ 32768)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    {s : State} (hs : (sig.contract abi pre post wa (stack + frameS (nStack sig)) leak).pre s) :
+    (sig.contract abi pre post wa stack leak).pre (eEntryS sig n s) := by
+  obtain ⟨hsb, hfit, -, hout⟩ := s_facts hA hl hs
+  have hF := frameS_pos (nStack sig)
+  have hsk := saveOff_ge (nStack sig)
+  have hfs : saveOff (nStack sig) + 16 = frameS (nStack sig) := rfl
+  rw [pre_args hA hl] at hs
+  obtain ⟨-, -, -, hpw, -, hnw, hpr⟩ := hs
+  have hbufs : ∀ a ∈ Sig.bufs sig.params (allArgs sig s), (below s.sp (stack + frameS (nStack sig))).Disjoint a.1 :=
+    fun a ha => hout a (List.mem_append_left _ ha)
+  refine (pre_args hA hl).mpr ⟨⟨.inr ?_, ?_⟩, rfl, rfl, ?_, ?_, ?_, ?_⟩
+  · rw [eEntryS_sp, toNat_sub_ofNat' (by omega)]; omega
+  · rw [eEntryS_sp, toNat_sub_ofNat' (by omega)]; omega
+  · rw [allRegions_eEntryS' n s hE]
+    refine List.pairwise_append.mpr ⟨(List.pairwise_append.mp hpw).1, ?_, fun a ha b hb _ => ?_⟩
+    · unfold argArea; split <;> simp
+    · exact ((hbufs a ha).sub_left (argArea_eEntryS_sub (stack := stack) n s b hb)).symm
+  · intro r hr a ha
+    rcases Nat.eq_zero_or_pos stack with h0 | h0
+    · subst h0; simp [stackBelow] at hr
+    rw [stackBelow_pos _ h0, List.mem_singleton] at hr; subst hr
+    rw [allRegions_eEntryS' n s hE] at ha
+    rcases List.mem_append.mp ha with ha | ha
+    · rw [eEntryS_sp]
+      exact (hbufs a ha).sub_left (by
+        have := below_below s.sp (frameS (nStack sig)) stack
+        exact this)
+    · unfold argArea at ha
+      split at ha
+      · cases ha
+      · simp only [List.mem_singleton] at ha; subst ha
+        show (below (eEntryS sig n s).sp stack).Disjoint ⟨stackArgAddr (eEntryS sig n s) 0, 8 * nStack sig⟩
+        rw [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
+        exact (Offset.base_disjoint_below _ (by omega)).symm
+  · rw [allArgs_eEntryS n s hE]; exact hnw
+  · rw [allArgs_eEntryS n s hE, eEntryS_mem]
+    refine hpre _ _ _ (allArgs_length sig s) (fun b hb x hx => ?_) hpr
+    refine (sSave_frame n _ s hE x fun R hR hc => ?_).symm
+    simp only [List.mem_singleton] at hR; subst hR
+    exact hbufs b hb x (below_sub (by omega) (by omega) x hc) hx
+
+end
+
 end VG.Proof.Sha3.AArch64
