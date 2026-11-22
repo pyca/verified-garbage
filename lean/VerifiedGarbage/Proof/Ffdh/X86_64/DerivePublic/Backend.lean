@@ -1095,7 +1095,7 @@ private theorem template_ctl (mul : Nat → Nat → Nat → Prog isa) (ex : Nat 
 
 /-- The function as proven: `mont.mm` inline. -/
 def deriveInline (v : RoundImpl) (e : ExpImpl) : Prog isa :=
-  VG.Impl.Ffdh.X86_64.Domain.DerivePublic.code v.mont.mm (e.code v.mont.mm)
+  VG.Impl.Ffdh.X86_64.Domain.DerivePublic.code v.mont.mm (e.codeI v.mont.mm)
     (.seq (.block r2Head) (R2Words.choice v.mont.mm))
 
 /-- The function as emitted: `mm`, which inlines to `deriveInline`. -/
@@ -1103,7 +1103,7 @@ def deriveCode (v : RoundImpl) (e : ExpImpl) : Prog isa :=
   VG.Impl.Ffdh.X86_64.Domain.DerivePublic.code v.mm (e.code v.mm) (.seq (.block r2Head) (R2Words.choice v.mm))
 
 theorem deriveCode_inline (v : RoundImpl) (e : ExpImpl) : (deriveCode v e).inline = deriveInline v e := by
-  have h := template_inline v.mm (e.code v.mm) (e.code fun o a b => (v.mm o a b).inline)
+  have h := template_inline v.mm (e.code v.mm) (e.codeI fun o a b => (v.mm o a b).inline)
     (e.inline v.mm _ _ (Or.inl ⟨rfl, rfl⟩))
   simp only [v.mmInline] at h
   exact h
