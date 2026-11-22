@@ -294,7 +294,7 @@ buffer, are the same code whether the data is accessed a word at a time or
 not. -/
 theorem opsCode_copy_buf (c : Core) (w : Bool) :
     c.opsCode w (copyBlk c.bw .buf .chn) = c.opsCode false (copyBlk c.bw .buf .chn) := by
-  simp only [Core.opsCode, copyBlk, List.flatMap_map, Core.opCode, Core.loadW, Core.storeW, Core.wordAt]
+  simp only [Core.opsCode, opsCodeAt, copyBlk, List.flatMap_map, opCodeAt, loadWAt, storeWAt, Core.wordAt]
 
 theorem copyBlk_ok' {bw : Nat} {dst src : Loc} {ws : List Loc} (hd : dst ∈ ws) {len : Loc → Nat}
     (h1 : 4 * bw ≤ len dst) (h2 : 4 * bw ≤ len src) : ∀ o ∈ copyBlk bw dst src, o.InBounds len ∧ o.dst ∈ ws := by
@@ -304,8 +304,8 @@ theorem copyBlk_ok' {bw : Nat} {dst src : Loc} {ws : List Loc} (hd : dst ∈ ws)
   refine ⟨⟨?_, ?_, fun _ _ h => by cases h⟩, hd⟩ <;>
     simp only [Op.width, Bool.false_eq_true, ite_false, ite_true] <;> omega_using [hw, h1, h2]
 
-theorem AreasOk.only {s : State} {len : Loc → Nat} {A : Loc → Addr} (h : AreasOk c s len A allLocs)
-    (ws : List Loc) : AreasOk c s len A ws :=
+theorem AreasOk.only {s : State} {len : Loc → Nat} {A : Loc → Addr} (h : AreasOk c.loc s len A allLocs)
+    (ws : List Loc) : AreasOk c.loc s len A ws :=
   ⟨h.ea, h.disp, h.rd, fun l _ => h.wr l (mem_allLocs l), h.apart, h.fit⟩
 
 /-- `Mid` survives a write of `t0` (that the key stays ready needs the
@@ -484,7 +484,7 @@ theorem tail_seg (hM : FinalOk c M)
   unfold Core.tail
   apply WP.seq
   -- The buffer to the chaining value.
-  obtain hA : AreasOk c s₄ (lens c (rF c s₀) (4 * c.bw)) (areas c (Fb s₀ c) (tailA c s₀) (rF c s₀) 0) [.chn] :=
+  obtain hA : AreasOk c.loc s₄ (lens c (rF c s₀) (4 * c.bw)) (areas c (Fb s₀ c) (tailA c s₀) (rF c s₀) 0) [.chn] :=
     (areasOk hT Nat.zero_lt_one h₄.b (by rw [kp₄ _ (by simp)]; exact hIT.dp) h₄.wr).only _
   refine opsCode_wp c false (areas_al hwT 0) (copyBlk_ok' (List.mem_singleton_self _) (by simp [lens])
     (by simp [lens])) (copyBlk_wordAl _ _ _) hA fun s₅ a₅ f₅ g₅ rd₅ wr₅ => ?_
