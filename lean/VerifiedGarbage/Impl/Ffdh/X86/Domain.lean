@@ -120,8 +120,17 @@ local notation "n1" => one Ctx.wide
 def pSetup : Prog isa :=
   .seq (load (sl 9) n1 2 3) (.seq (setSmall (sl 14) n1 1) (chain .sbb (sl 15) (sl 9) (sl 14) n1))
 
+/-- Synthetic argument `i`, copied from the caller's frame: above this frame of 76 bytes and the return
+address. -/
+def copyArg (i : Nat) : List Instr := [.mov .eax (.mem (at_ .esp (84 + 4 * i))), .store (slotOp i) .eax]
+
+/-- `prepare .wide`, called: a frame of the synthetic arguments, copied from the caller's, for it to read. -/
+def prepCall : Prog isa :=
+  .call "vg_ffdh_prepare_wide"
+    (.frame (.alloc argsFrame) (.seq (.block ((List.range 18).flatMap copyArg)) (prepare .wide)) (.free argsFrame))
+
 /-- The context of p: p in slot 0, one in slot 3, `R² mod p` in slot 4 and the inverse. -/
-def ctxP : Prog isa := .seq (copy (sl 9) (sl 0) n1) (prepare .wide)
+def ctxP : Prog isa := .seq (copy (sl 9) (sl 0) n1) prepCall
 
 /-- Slot 6 the number in slot `b` to the power of the number in slot `e`, modulo p. -/
 def powP (b e : Nat) : Prog isa :=
@@ -170,7 +179,7 @@ def subgroup : Prog isa := .seq (powP 10 11) (eqStatus 6 3)
 
 /-- q divides `p − 1`: `(p − 1) R⁻¹ mod q` is zero, in the context of q. -/
 def divides : Prog isa :=
-  .seq (copy (sl 11) (sl 0) n1) <| .seq (prepare .wide) <| .seq (copy (sl 15) (sl 5) n1) <|
+  .seq (copy (sl 11) (sl 0) n1) <| .seq prepCall <| .seq (copy (sl 15) (sl 5) n1) <|
   .seq (mul .wide 6 5 3) <| .seq (zero (sl 17) n1) <| .seq (equal (sl 6) (sl 17) n1) <|
   .seq testMask (.ite .e (ret 0) subgroup)
 
