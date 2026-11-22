@@ -29,7 +29,7 @@ functions of its table) is proven once, for any curve's configuration
 `Proof/Rsa/Arm/ScrubTab.lean`), from what the curve's core states of its own
 code (`CodeOk`, by `lit_decide` where the curve is proven), and from what each
 HMAC implementation of the table states of its own (`HVar.scrub`): no HMAC
-function's code is evaluated. `CodeOkT.icallsK` is `CodeOkT.icalls` for
+function's code is evaluated. `CodeOkT.icallsK` (`Proof/HmacTable/Arm.lean`) is `CodeOkT.icalls` for
 called functions whose frames use some stack (HMAC's `finalize` pushes 8
 bytes, its `init` for a key of any length 16), and `sign_okT_tac` walks the code as `code_okT` does, splitting the
 choices the configuration makes (`Cfg.prepH`) and taking the core's code
@@ -75,19 +75,7 @@ theorem signOut (T : Spec.Ecdsa.Rfc6979.TableInstance) (cs : List (String × Lis
 open VG.Proof.Rsa.Arm.Scrub (CodeOkT CodeOkT.block CodeOkT.seq CodeOkT.ite CodeOkT.loop CodeOkT.call
   CodeOkT.alloc CodeOkT.push CodeOkT.ofOk scrubSideF_ofT)
 open VG.Impl.Ecdsa.Rfc6979.Arm (Cfg Fns)
-
-/-- The indirect call by `i` of the functions `ts`, each of which makes no
-indirect call, uses at most `k ≤ n` bytes of stack, and is named in `T`. -/
-theorem CodeOkT.icallsK {i : Instr} {k n : Nat} {T : List String} (hk : k ≤ n) :
-    ∀ {ts : List (String × Prog isa)}, (∀ p ∈ ts, CodeOk p.2 k ∧ p.1 ∈ T) → CodeOkT (Code.icalls i ts) n T
-  | [], _ => CodeOkT.block
-  | (f, b) :: ts, h => by
-    obtain ⟨hb, hf⟩ := h (f, b) List.mem_cons_self
-    obtain ⟨h1, h2⟩ := CodeOkT.icallsK (i := i) hk fun p hp => h p (List.mem_cons_of_mem _ hp)
-    refine ⟨Nat.max_le.mpr ⟨Nat.le_trans hb.1 hk, h1⟩, ?_⟩
-    show ((f :: inames b ++ inames (Code.icalls i ts)).all _) = true
-    rw [inames_of_noIcall hb.2]
-    simp only [List.cons_append, List.nil_append, List.all_cons, h2, decide_eq_true hf, Bool.and_self]
+open VG.Proof.HmacTable.Arm (CodeOkT.icallsK fnsOf_init fnsOf_upd fnsOf_fin)
 
 open Lean Meta in
 /-- `codeHead` (`Proof/Rsa/Arm/ScrubTab.lean`), stopping also at a choice
@@ -155,34 +143,6 @@ theorem sign_okT (c : Cfg) {T : List String}
     (hi : ∀ p ∈ c.f.init, CodeOk p.2 16 ∧ p.1 ∈ T) (hu : ∀ p ∈ c.f.upd, CodeOk p.2 16 ∧ p.1 ∈ T)
     (hf : ∀ p ∈ c.f.fin, CodeOk p.2 16 ∧ p.1 ∈ T) (hc : CodeOk c.coreC 16) : CodeOkT c.sign 544 T := by
   sign_okT_tac
-
-/-- A function of `tables vs` is in the names of its functions. -/
-theorem mem_tableFns {vs : List HVar} {x : String} (h : x ∈ HmacTable.Arm.names vs) :
-    x ∈ tableFns [("hmac", tables vs)] := by
-  simp only [tableFns, List.flatMap_cons, List.flatMap_nil, List.append_nil, List.mem_flatMap]
-  obtain ⟨l, hl, hx⟩ := List.mem_flatten.mp h
-  obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hl
-  exact ⟨t, ht, hx⟩
-
-/-- What `sign_okT` needs of the functions of the tables `tables vs`, from
-what each of `vs` states of its own (`HVar.scrub`). -/
-theorem fnsOf_init (vs : List HVar) :
-    ∀ p ∈ (HmacTable.Arm.fnsOf vs).init, CodeOk p.2 16 ∧ p.1 ∈ tableFns [("hmac", tables vs)] := by
-  intro p hp
-  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hp
-  exact ⟨w.scrub.1, mem_tableFns (HmacTable.Arm.mem_names hw).1⟩
-
-theorem fnsOf_upd (vs : List HVar) :
-    ∀ p ∈ (HmacTable.Arm.fnsOf vs).upd, CodeOk p.2 16 ∧ p.1 ∈ tableFns [("hmac", tables vs)] := by
-  intro p hp
-  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hp
-  exact ⟨w.scrub.2.1.mono (by decide), mem_tableFns (HmacTable.Arm.mem_names hw).2.1⟩
-
-theorem fnsOf_fin (vs : List HVar) :
-    ∀ p ∈ (HmacTable.Arm.fnsOf vs).fin, CodeOk p.2 16 ∧ p.1 ∈ tableFns [("hmac", tables vs)] := by
-  intro p hp
-  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hp
-  exact ⟨w.scrub.2.2.mono (by decide), mem_tableFns (HmacTable.Arm.mem_names hw).2.2⟩
 
 /-- `scrubSideF` of signing's code, for any curve's configuration with the
 functions of `tables vs`, from what its core states of its own code. -/

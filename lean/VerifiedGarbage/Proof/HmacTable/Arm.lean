@@ -10,11 +10,16 @@ public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeySha256
 public import VerifiedGarbage.Spec.HmacTable
 public import VerifiedGarbage.Proof.HashTable.Basic
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
+public import VerifiedGarbage.Proof.Rsa.Arm.ScrubTab
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Sha256.Md
+import VerifiedGarbage.Proof.Md5.Md
+import VerifiedGarbage.Proof.Sha1.Md
+import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 
@@ -379,6 +384,64 @@ theorem any_rel {S : Spec.Hmac.StreamingHash} {W : Nat} {n : String} {c : Prog i
 
 end
 
+/-! ## The hash functions -/
+
+theorem sha512_len (iv : Spec.Sha512.HashValue) (n : Nat) (hn : n ≤ 64) (x : List Byte) :
+    ((Spec.Sha512.finalHash iv x).take n).length = n := by
+  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; omega_using [hn]
+
+/-- Which of `vars` have a function's name in common: none HMAC's `init` or `finalize`, and
+`update` only SHA-224 with SHA-256 and the four of SHA-512. One evaluation, in which the kernel
+reads each name once. -/
+private theorem vars_names : ∀ (i : Nat) (hi : i < 8) (j : Nat) (hj : j < 8),
+    ((vars[i]'hi).F.hiAnyN = (vars[j]'hj).F.hiAnyN → i = j) ∧
+    ((vars[i]'hi).F.H.updN = (vars[j]'hj).F.H.updN →
+      i = j ∨ (2 ≤ i ∧ i < 4 ∧ 2 ≤ j ∧ j < 4) ∨ (4 ≤ i ∧ 4 ≤ j)) ∧
+    ((vars[i]'hi).F.hfN = (vars[j]'hj).F.hfN → i = j) := by
+  decide +kernel
+
+/-- The functions of the same name of the hash functions with HMAC on ARMv7 have the same code. -/
+theorem vars_coh : Coh vars := by
+  intro w hw w' hw'
+  obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hw
+  obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hw'
+  obtain ⟨n₁, n₂, n₃⟩ := vars_names i hi j hj
+  refine ⟨fun h => ?_, fun h => ?_, fun h => ?_⟩
+  · obtain rfl := n₁ h; rfl
+  · rcases n₂ h with rfl | ⟨a, b, c, d⟩ | ⟨a, b⟩
+    · rfl
+    · obtain rfl | rfl : i = 2 ∨ i = 3 := by omega
+      all_goals obtain rfl | rfl : j = 2 ∨ j = 3 := by omega
+      all_goals rfl
+    · have hi' : i < 8 := hi
+      have hj' : j < 8 := hj
+      obtain rfl | rfl | rfl | rfl : i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
+      all_goals obtain rfl | rfl | rfl | rfl : j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega
+      all_goals rfl
+  · obtain rfl := n₃ h; rfl
+
+/-- The digests of each hash function with HMAC on ARMv7 have its digest length. -/
+theorem vars_macLen : ∀ w ∈ vars, ∀ x, (w.ok.hH.SH.H.hash x).length = w.F.H.D := by
+  intro w hw
+  simp only [vars, List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · intro x; show (Spec.Md5.hash x).length = 16
+    rw [Proof.Md5.hash_eq]; exact Proof.Md5.md.digest_length _
+  · intro x; show (Spec.Sha1.hash x).length = 20
+    rw [Proof.Sha1.hash_eq]; exact Proof.Sha1.md.digest_length _
+  · intro x; show (Spec.Sha256.sha224 x).length = 28
+    simp [Spec.Sha256.sha224, Spec.Sha256.finalHash, Spec.Sha256.wordBytes, List.length_flatMap, List.map_const']
+  · intro x; show (Spec.Sha256.hash x).length = 32
+    rw [Proof.Sha256.hash_eq]; exact Proof.Sha256.md.digest_length _
+  · intro x; show ((Spec.Sha512.finalHash Spec.Sha512.H0_384 x).take 48).length = 48
+    exact sha512_len _ 48 (by decide) x
+  · intro x; show (Spec.Sha512.finalHash Spec.Sha512.H0_512 x).length = 64
+    exact Proof.Hmac.Generic.Common.finalHash_length _ _
+  · intro x; show ((Spec.Sha512.finalHash Spec.Sha512.H0_512_224 x).take 28).length = 28
+    exact sha512_len _ 28 (by decide) x
+  · intro x; show ((Spec.Sha512.finalHash Spec.Sha512.H0_512_256 x).take 32).length = 32
+    exact sha512_len _ 32 (by decide) x
+
 /-! ## A table in memory, for states meeting the contracts -/
 
 open VG.Proof.HashTable (symsOf32 symsOf32_distinct)
@@ -449,5 +512,55 @@ theorem symT_distinct {vs : List HVar} (hl : (names vs).length < 2 ^ 24) :
     (names vs).Pairwise fun f g => f ≠ g → (symT vs f).setWidth 64 ≠ (symT vs g).setWidth 64 :=
   (symsOf32_distinct hl).imp_of_mem fun {f g} hf hg h hne => by
     simp only [symT, hf, hg, ite_true]; exact h hne
+
+/-! ## What the cleanup of a function that calls the tables needs of them -/
+
+section
+open VG.Arm.Scrub
+open VG.Proof.Rsa.Arm.Scrub (CodeOkT CodeOkT.block)
+
+/-- The indirect call by `i` of the functions `ts`, each of which makes no
+indirect call, uses at most `k ≤ n` bytes of stack, and is named in `T`. -/
+theorem CodeOkT.icallsK {i : Instr} {k n : Nat} {T : List String} (hk : k ≤ n) :
+    ∀ {ts : List (String × Prog isa)}, (∀ p ∈ ts, CodeOk p.2 k ∧ p.1 ∈ T) → CodeOkT (Code.icalls i ts) n T
+  | [], _ => CodeOkT.block
+  | (f, b) :: ts, h => by
+    obtain ⟨hb, hf⟩ := h (f, b) List.mem_cons_self
+    obtain ⟨h1, h2⟩ := CodeOkT.icallsK (i := i) hk fun p hp => h p (List.mem_cons_of_mem _ hp)
+    refine ⟨Nat.max_le.mpr ⟨Nat.le_trans hb.1 hk, h1⟩, ?_⟩
+    show ((f :: inames b ++ inames (Code.icalls i ts)).all _) = true
+    rw [inames_of_noIcall hb.2]
+    simp only [List.cons_append, List.nil_append, List.all_cons, h2, decide_eq_true hf, Bool.and_self]
+
+/-- A function of `tables vs` is in the names of its functions. -/
+theorem mem_tableFns {vs : List HVar} {x : String} (h : x ∈ names vs) :
+    x ∈ tableFns [("hmac", tables vs)] := by
+  simp only [tableFns, List.flatMap_cons, List.flatMap_nil, List.append_nil, List.mem_flatMap]
+  obtain ⟨l, hl, hx⟩ := List.mem_flatten.mp h
+  obtain ⟨t, ht, rfl⟩ := List.mem_map.mp hl
+  exact ⟨t, ht, hx⟩
+
+/-- What the cleanup needs of the functions of the tables `tables vs`, from
+what each of `vs` states of its own (`HVar.scrub`): each uses at most 16
+bytes of stack, makes no indirect call, and is named in the tables. -/
+theorem fnsOf_init (vs : List HVar) :
+    ∀ p ∈ (fnsOf vs).init, CodeOk p.2 16 ∧ p.1 ∈ tableFns [("hmac", tables vs)] := by
+  intro p hp
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hp
+  exact ⟨w.scrub.1, mem_tableFns (mem_names hw).1⟩
+
+theorem fnsOf_upd (vs : List HVar) :
+    ∀ p ∈ (fnsOf vs).upd, CodeOk p.2 16 ∧ p.1 ∈ tableFns [("hmac", tables vs)] := by
+  intro p hp
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hp
+  exact ⟨w.scrub.2.1.mono (by decide), mem_tableFns (mem_names hw).2.1⟩
+
+theorem fnsOf_fin (vs : List HVar) :
+    ∀ p ∈ (fnsOf vs).fin, CodeOk p.2 16 ∧ p.1 ∈ tableFns [("hmac", tables vs)] := by
+  intro p hp
+  obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hp
+  exact ⟨w.scrub.2.2.mono (by decide), mem_tableFns (mem_names hw).2.2⟩
+
+end
 
 end VG.Proof.HmacTable.Arm

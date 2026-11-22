@@ -77,10 +77,10 @@ def callFin (t : Reg) (f : Fns) : Prog isa := tcall t 2 f.fin [.r10, .r12] .r12 
 
 /-- Our caller's registers `l` saved at the frame's start, through `r12`,
 the frame's base. -/
-def saveRegs (l : List (Reg × Nat)) : List Instr := .addSp .r12 0 :: l.map fun (r, d) => .str r .r12 d
+def saveRegs (l : List (Reg × Nat)) : List Instr := .addSp .r12 0 :: l.map fun p => .str p.1 .r12 p.2
 
 /-- Our caller's registers `l` restored from the frame's start, through `r12`. -/
-def restoreRegs (l : List (Reg × Nat)) : List Instr := .addSp .r12 0 :: l.map fun (r, d) => .ldr r .r12 d
+def restoreRegs (l : List (Reg × Nat)) : List Instr := .addSp .r12 0 :: l.map fun p => .ldr p.1 .r12 p.2
 
 /-! ## Keying HMAC -/
 
