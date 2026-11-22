@@ -342,6 +342,10 @@ pub(crate) mod vg_sm4_crypt_prepared;
 pub(crate) mod vg_sm4_ctr32;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sm4_ctr32_aesni.rs"]
+pub(crate) mod vg_sm4_ctr32_aesni;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sm4_expand_key_core.rs"]
 pub(crate) mod vg_sm4_expand_key_core;
 
