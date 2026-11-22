@@ -140,7 +140,7 @@ pub unsafe fn vg_sm4_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4048 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 4080 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {

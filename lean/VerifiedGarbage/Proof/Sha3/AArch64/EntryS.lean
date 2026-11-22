@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Entry
 public import VerifiedGarbage.Impl.Sha3.AArch64.ViaD8
 public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.Sha3.AArch64.ViaD8At
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -143,7 +144,7 @@ theorem enterS_run (n : String) (k : Nat) (s : State) (hb : frameS k + 8 * k ≤
     (hr : ∀ j < k, InRegions s.rd (stackArgAddr s j) 8) :
     execBlock isa (enterD8S n k) (allocated (frameS k) s) =
       some (sSave n k s, copyTrace (frameS k) (s.sp - BitVec.ofNat 64 (frameS k)) k ++
-        [.addr (sslot k s (saveOff k)), .addr (sslot k s (saveOff k + 8))]) := by
+        ([.addr (sslot k s (saveOff k)), .addr (sslot k s (saveOff k + 8))] : List Leak)) := by
   have e_add : exec (.addSp .x16 0) (allocated (frameS k) s) = some (baseState (allocated (frameS k) s)) :=
     exec_addSp (by decide)
   have hsk := saveOff_ge k
@@ -729,5 +730,50 @@ theorem Verified.entryD8S {n name : String} {body : Prog isa}
       exact ⟨hbody σ₁ h₁', hbody σ₂ h₂'⟩
 
 end
+
+/-! ## The cleanup -/
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- `scrubSide` of a function with `k` stack words that calls `F`, made to
+call `n` by `d8`, by `entryD8S n`, with the cleanup `clearD8` over `frameS k`
+more bytes, from `F`'s with the cleanup that leaves `v8`: with `n` the
+function of a table. -/
+theorem scrubSide_entryD8S {n core : String} {k : Nat} {F : Prog isa} {W rb : Nat}
+    (hs : scrubSide F W rb ⟨allGprs, allVecs, []⟩ [] = true) (hW : 0 < W) (hW' : W + frameS k < 4096) :
+    scrubSide (entryD8S n core k (Code.viaD8At n F)) (W + frameS k) rb clearD8
+      [("", [⟨"", "", [n], []⟩])] = true := by
+  obtain ⟨hc, -⟩ := of_side hs hW
+  have hF := frameS_pos k
+  have hWF : W + frameS k ≠ 0 := Nat.pos_iff_ne_zero.mp (Nat.add_pos_left hW _)
+  have h16 := frameS_mod16 k
+  simp only [scrubSide, Nat.pos_iff_ne_zero.mp hW, hWF, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq,
+    beq_iff_eq] at hs ⊢
+  obtain ⟨⟨⟨⟨⟨⟨⟨-, h2⟩, h3⟩, -⟩, h5⟩, -⟩, h7⟩, -⟩ := hs
+  refine ⟨⟨⟨⟨⟨⟨⟨hW', by rw [Nat.add_mod, h2, h16]⟩, ?_⟩, ?_⟩, h5⟩, by decide⟩, ?_⟩, ?_⟩
+  · simp only [entryD8S, Code.aarch64Depth, depth_viaD8At, Instr.frameUnits, Nat.zero_max, Nat.max_zero]
+    rw [Nat.mul_add, Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h16)]
+    exact Nat.add_le_add_right h3 _
+  · unfold tablesCall
+    rw [List.all_eq_true]
+    intro f hf
+    simp only [entryD8S, inames, List.nil_append, List.append_nil] at hf
+    rw [inames_viaD8At hc f hf]
+    simp [tableFns]
+  · rw [Code.allInstrs_eq, List.all_eq_true] at h7 ⊢
+    intro i hi
+    simp only [entryD8S, enterD8S, leaveD8S, instrs, List.mem_cons, List.mem_append, List.not_mem_nil,
+      or_false, List.cons_append, or_assoc] at hi
+    rcases hi with rfl | rfl | hi | rfl | rfl | rfl | rfl | rfl | hi | rfl | rfl | rfl | rfl
+    · rfl
+    · rfl
+    · obtain ⟨j, -, hj⟩ := List.mem_flatMap.mp hi
+      simp only [copyArg, List.mem_cons, List.not_mem_nil, or_false] at hj
+      rcases hj with rfl | rfl <;> rfl
+    any_goals rfl
+    rcases instrs_viaD8At n F hi with h | rfl | rfl
+    · exact sideI_mono (fun q hq => hq)
+        (by decide : ∀ w ∈ keptV clearD8, w ∈ keptV ⟨allGprs, allVecs, []⟩) (h7 i h)
+    all_goals rfl
+  · rfl
 
 end VG.Proof.Sha3.AArch64

@@ -1291,6 +1291,18 @@ theorem openFrameSat_pre1008 : ∃ s, (Spec.Sm4.Gcm.openContract AArch64.abi 100
     List.getD, List.range, List.range.loop, stackBelow] [openFrameSat, openSat, stackArg, stackArgAddr,
     Mem.readW, Mem.read] using openFrameSat
 
+theorem openFrameSat_pre1040 : ∃ s, (Spec.Sm4.Gcm.openContract AArch64.abi 1040).pre s := by
+  implies_sat [Spec.Sm4.Gcm.openContract, Spec.Sm4.Gcm.openSig, Spec.Sm4.Gcm.openPost,
+    Spec.Sm4.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+    List.getD, List.range, List.range.loop, stackBelow] [openFrameSat, openSat, stackArg, stackArgAddr,
+    Mem.readW, Mem.read] using openFrameSat
+
+theorem openFrameSat_pre4080 : ∃ s, (Spec.Sm4.Gcm.openContract AArch64.abi 4080).pre s := by
+  implies_sat [Spec.Sm4.Gcm.openContract, Spec.Sm4.Gcm.openSig, Spec.Sm4.Gcm.openPost,
+    Spec.Sm4.Gcm.openLeak, AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr,
+    List.getD, List.range, List.range.loop, stackBelow] [openFrameSat, openSat, stackArg, stackArgAddr,
+    Mem.readW, Mem.read] using openFrameSat
+
 theorem open_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 784 1 («open» v.callees))

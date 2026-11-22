@@ -24,7 +24,7 @@ def artifactsOf (v : GcmVariant) : List Artifact := [
     verified := Proof.Sm4Gcm.AArch64.seal_scrubbed v },
   Spec.Sm4.Gcm.openApi.artifact AArch64.target {
     suffix := v.impl.suffix
-    code := Impl.Sm4Gcm.AArch64.Fn.«open» v.calls
+    code := Impl.Sm4Gcm.AArch64.Fn.«open» v.calls v.impl.ctrSuffix
     verified := Proof.Sm4Gcm.AArch64.open_scrubbed v },
   Spec.Sm4.Gcm.streamEncryptApi.artifact AArch64.target {
     suffix := v.impl.suffix
