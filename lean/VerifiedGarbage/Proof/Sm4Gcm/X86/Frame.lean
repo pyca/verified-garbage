@@ -1400,9 +1400,10 @@ section
 # SM4-GCM on x86: `vg_sm4_gcm_init`
 
 Untrusted: everything here is checked by Lean. The key schedule
-(`vg_sm4_expand_key`), then the hash subkey `CIPH_K(0¹²⁸)` (`vg_sm4_ctr32`
-on a zero block, with a zero counter block at `T`), as one `Pc`
-(`init_pc`): correct (`init_correct`) and constant time (`init_ct`).
+(`vg_sm4_expand_key`, any implementation `ki` of it: `KeyImpl`), then the
+hash subkey `CIPH_K(0¹²⁸)` (`vg_sm4_ctr32` on a zero block, with a zero
+counter block at `T`), as one `Pc` (`init_pc`): correct (`init_correct`)
+and constant time (`init_ct`).
 -/
 
 @[expose] public section
@@ -1462,9 +1463,9 @@ abbrev initMid : List Instr :=
       ([.mov .eax (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm tO),
         .mov .ebx (.reg .esi), .alu .add .ebx (imm 240), .mov .edi (imm 1)] : List Instr)
 
-theorem init_eq : init = .seq (entry 2 (([.mov .esi (argOp 1)] : List Instr) ++
+theorem init_eq (k : Fn) : init k = .seq (entry 2 (([.mov .esi (argOp 1)] : List Instr) ++
     (([] : List (Nat × Nat)).flatMap (fun p => keep p.1 p.2) ++ initTail)))
-    (.seq keyCall (.seq (.block initMid) (.seq ctrCall (.block restore)))) := rfl
+    (.seq (keyCall k) (.seq (.block initMid) (.seq ctrCall (.block restore)))) := rfl
 
 /-- After the entry: the arguments of `vg_sm4_expand_key`. -/
 structure IEnt (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop where
@@ -1669,8 +1670,8 @@ theorem iMid_ok {p : BitVec 32 × (Nat → BitVec 32)} (hc : InitPure p) {s₀ s
       simp only [List.mem_singleton] at hr; subst hr; exact cd, ← hZ₁, blockAt, zero4_bytes', ofBytes_zeros]
   · simp only [mem_setMem, mem_setReg, mem_arithFlags]; exact hsv
 
-theorem init_pc (p : BitVec 32 × (Nat → BitVec 32)) :
-    Pc (fun (s₀ : State) s => initPre s₀ ∧ pubOf 3 s₀ = p ∧ s = s₀) (init)
+theorem init_pc (ki : KeyImpl) (p : BitVec 32 × (Nat → BitVec 32)) :
+    Pc (fun (s₀ : State) s => initPre s₀ ∧ pubOf 3 s₀ = p ∧ s = s₀) (init ki.fn)
       (fun s₀ s' => abiPreserved s₀ s' ∧ initX86.post s₀ s') := by
   by_cases hex : ∃ s₀, initPre s₀ ∧ pubOf 3 s₀ = p
   swap
@@ -1679,8 +1680,8 @@ theorem init_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   obtain hc := initPure_of hz hzp
   rw [init_eq]
   refine Pc.seq (iEntry_pc p) ?_
-  refine Pc.seq (Pc.of (I := fun s => KeyCall s (p.2 0) (p.2 1) ∧ s.gpr .esp = p.1) (fun s h => key_call h.1)
-    (key_ct fun s h => h) _ fun _ _ h => ⟨h.call, h.esp⟩) ?_
+  refine Pc.seq (Pc.of (I := fun s => KeyCall s (p.2 0) (p.2 1) ∧ s.gpr .esp = p.1) (fun s h => key_call ki h.1)
+    (key_ct ki fun s h => h) _ fun _ _ h => ⟨h.call, h.esp⟩) ?_
   refine Pc.seq (Q := IMid p) (Pc.taint [.esi, .ebp] (fun s₀ s ⟨s₁, h, g⟩ => iMid_ok hc h g)
     (fun _ _ s₁ s₂ ⟨t₁, h₁, g₁⟩ ⟨t₂, h₂, g₂⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1761,12 +1762,12 @@ theorem init_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   simp only [Spec.Sm4.gcmCipherOfKey, hkey]
   exact BitVec.zero_xor
 
-theorem init_correct (s : State) (hs : initX86.pre s) :
-    ∃ t s', Exec isa (init) s t s' ∧ abiPreserved s s' ∧ initX86.post s s' :=
-  (init_pc (pubOf 3 s)).wp s s ⟨hs, rfl, rfl⟩
+theorem init_correct (ki : KeyImpl) (s : State) (hs : initX86.pre s) :
+    ∃ t s', Exec isa (init ki.fn) s t s' ∧ abiPreserved s s' ∧ initX86.post s s' :=
+  (init_pc ki (pubOf 3 s)).wp s s ⟨hs, rfl, rfl⟩
 
-theorem init_ct : ConstantTime isa initX86.pre initX86.pub (init) :=
-  Pc.constantTime (pubOf 3) (fun _ _ _ _ h => pubOf_eq h) init_pc fun _ hs => ⟨hs, rfl, rfl⟩
+theorem init_ct (ki : KeyImpl) : ConstantTime isa initX86.pre initX86.pub (init ki.fn) :=
+  Pc.constantTime (pubOf 3) (fun _ _ _ _ h => pubOf_eq h) (init_pc ki) fun _ hs => ⟨hs, rfl, rfl⟩
 
 end VG.Proof.Sm4Gcm.X86
 
@@ -2027,8 +2028,9 @@ def initSat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 256⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 12⟩]
 
-theorem init_verified : Verified X86.target init (Proof.Sm4Gcm.initScratchContract X86.abi 1536) :=
-  Verified.of_correct init_correct init_ct (by
+theorem init_verified (ki : KeyImpl) :
+    Verified X86.target (init ki.fn) (Proof.Sm4Gcm.initScratchContract X86.abi 1536) :=
+  Verified.of_correct (init_correct ki) (init_ct ki) (by
     have a0 : arg initSat 0 = 0x1000 := by decide
     have a1 : arg initSat 1 = 0x2000 := by decide
     have a2 : arg initSat 2 = 0x4000 := by decide
@@ -2042,8 +2044,8 @@ theorem init_verified : Verified X86.target init (Proof.Sm4Gcm.initScratchContra
 section
 variable (vg : GcmImpl)
 
-theorem init_spSafe : init.all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [init, keyCall, ctrCall, entry, Code.all, ctr_spSafe, key_spSafe,
+theorem init_spSafe (ki : KeyImpl) : (init ki.fn).all (fun i => !X86.isa.writesSp i) = true := by
+  simp only [init, keyCall, ctrCall, entry, Code.all, ctr_spSafe, ki.spSafe,
     Bool.true_and, Bool.and_true]
   lit_decide
 
@@ -2120,15 +2122,16 @@ private theorem noEsp_of {c : Prog isa} (h : NoSp c) :
 
 variable (vg : GcmImpl)
 
-theorem init_noEsp : init.allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+theorem init_noEsp (ki : KeyImpl) : (init ki.fn).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
   simp only [init, keyCall, ctrCall, entry, Code.allInstrs, noEsp_of ctr_nosp,
-    noEsp_of key_nosp, Bool.true_and, Bool.and_true]
+    noEsp_of ki.nosp, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem init_stackUse : stackUse init ≤ 1536 := by
-  simp only [init, keyCall, ctrCall, entry, stackUse, ctrFn, keyFn, ctr_stack', key_stack',
-    Nat.max_le]
-  decide +kernel
+theorem init_stackUse (ki : KeyImpl) : stackUse (init ki.fn) ≤ 1536 := by
+  have hk := ki.stack
+  simp only [init, keyCall, ctrCall, entry, stackUse, ctrFn, ctr_stack', Nat.max_le, X86.frameBytes,
+    List.length_cons, List.length_nil]
+  omega_using [hk]
 
 theorem streamEncrypt_noEsp :
     (streamEncrypt vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
@@ -2211,12 +2214,12 @@ theorem initFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.initContract X86.abi 4112).pre s
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [initFrameSat, initSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using initFrameSat
 
-theorem init_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2576 2 init)
+theorem init_framed (ki : KeyImpl) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2576 2 (init ki.fn))
       (Spec.Sm4.Gcm.initContract X86.abi 4112) :=
   X86.Verified.stackScratch (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 320)
     (post := Spec.Sm4.Gcm.initPost X86.abi.ptrBits) (wa := true) (stack := 1536) (bytes := 2576)
-    init_verified (by decide) init_noEsp init_stackUse
+    (init_verified ki) (by decide) (init_noEsp ki) (init_stackUse ki)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (initPost_local _) (fun vs m m₁ m₂ r hl _ => initPostOut_local _ vs m m₁ m₂ r hl) initFrameSat_pre
 
 /-- A state satisfying the preconditions of `vg_sm4_gcm_stream_encrypt` and
