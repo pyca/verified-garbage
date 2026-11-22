@@ -56,7 +56,8 @@ variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {
 stage. -/
 theorem readArg_step {m : MemOp} (hm : m.base = .esp) {v : BitVec 32} (hr : readSrc s (.mem m) = some v)
     {t : State} (S : Step Ex base bytes len args s t) (dws : Region.Disjoint ⟨s.ea m, 4⟩ ⟨base, bytes⟩)
-    (d40 : Region.Disjoint ⟨s.ea m, 4⟩ (below (s.gpr .esp) 176)) : readSrc t (.mem m) = some v := by
+    (d40 : Region.Disjoint ⟨s.ea m, 4⟩ (below (s.gpr .esp) 96))
+    (d176 : Region.Disjoint ⟨s.ea m, 4⟩ (below (s.gpr .esp) 176)) : readSrc t (.mem m) = some v := by
   have h := S.inp
   have fit := fR_fit h
   have bl := h.bytes_lt
@@ -67,8 +68,9 @@ theorem readArg_step {m : MemOp} (hm : m.base = .esp) {v : BitVec 32} (hr : read
   · rw [ite_eq_left_of_eq_true _ _ (eq_true ‹_›)]
     rw [← hr]
     refine congrArg some (S.frame.readW (r := ⟨s.ea m, 4⟩) (Region.contains_self _ _) (fun r hr' => ?_) (by decide))
-    rw [frameR, List.mem_cons, List.mem_map] at hr'
-    rcases hr' with rfl | ⟨q, hq, rfl⟩
+    rw [frameF, frameR, List.mem_cons, List.mem_cons, List.mem_map] at hr'
+    rcases hr' with rfl | rfl | ⟨q, hq, rfl⟩
+    · exact d176
     · exact d40
     · have := fit q hq
       exact dws.sub_right (Offset.sub_base _ (by omega_using [this]))
@@ -82,6 +84,7 @@ theorem bodyHead_ok (h : In Ex base bytes len args s) {n : Nat} (Gl : args 12 = 
     (ru : readSrc s (.mem (argAt 19 2)) = some up)
     (dws : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ ⟨base, bytes⟩)
     (d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ (below (s.gpr .esp) 96))
+    (d176 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ (below (s.gpr .esp) 176))
     (hb2 : bits ≤ 8192) (hg25 : g = 2 ∨ g = 5) :
     WP isa (.block (entryWords ++ ([.mov .eax (.mem (argAt 0 12)), .alu .cmp .eax (.mem (argAt 0 3))] : List Instr))) s fun t =>
       Step Ex base bytes len args s t ∧ w32 t.mem base bitsOff = bits ∧ w32 t.mem base genOff = g ∧
@@ -91,7 +94,7 @@ theorem bodyHead_ok (h : In Ex base bytes len args s) {n : Nat} (Gl : args 12 = 
   have ul : up.toNat < 2 ^ 32 := up.isLt
   have ra : ∀ {t : State} {j : Nat} {v : BitVec 32}, j ∈ [2, 3, 4] → readSrc s (.mem (argAt 19 j)) = some v →
       Step Ex base bytes len args s t → readSrc t (.mem (argAt 19 j)) = some v :=
-    fun hj hr S => readArg_step rfl hr S (dws _ hj) (d40 _ hj)
+    fun hj hr S => readArg_step rfl hr S (dws _ hj) (d40 _ hj) (d176 _ hj)
   unfold entryWords
   simp only [List.cons_append, List.nil_append]
   refine wp_movS rb fun t₁ U₁ _ => ?_
@@ -135,6 +138,7 @@ theorem body_ok (h : In Ex base bytes len args s) {T : List Byte}
     (ru : readSrc s (.mem (argAt 19 2)) = some up)
     (dws : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ ⟨base, bytes⟩)
     (d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ (below (s.gpr .esp) 96))
+    (d176 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨s.ea (argAt 19 j), 4⟩ (below (s.gpr .esp) 176))
     (hbl : len = (bits + 7) / 8) (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (hg25 : g = 2 ∨ g = 5)
     {Tb : BitVec 32} (TT : Table Tb (s.gpr .esp) s)
     (TA : Region.Disjoint ⟨Tb.setWidth 64, 8192⟩ ⟨base, bytes⟩) :
@@ -143,7 +147,7 @@ theorem body_ok (h : In Ex base bytes len args s) {T : List Byte}
       (candUsed T (Spec.Ffdh.sievedParameterCandidate bits g T))
       (candOut len (Spec.Ffdh.sievedParameterCandidate bits g T))) := by
   unfold Impl.Ffdh.X86.Candidate.body
-  refine WP.seq (WP.mono_syms (bodyHead_ok h G.len G.small h3 rb rg ru dws d40 hb2 hg25)
+  refine WP.seq (WP.mono_syms (bodyHead_ok h G.len G.small h3 rb rg ru dws d40 d176 hb2 hg25)
     fun u ⟨S, B, Gn, Us, k, c⟩ sy => ?_)
   have Ox' : OutAt args base bytes len 0 (u.gpr .esp) u.wr := by rw [S.esp]; exact Ox.keep rfl S.keeps
   have U' : UsedAt base bytes up (u.gpr .esp) ⟨byteAddr (args 0), len⟩ u.wr := by
@@ -263,7 +267,8 @@ theorem wrapABI {s : State} (A : CandABI s) : WrapABI Impl.Ffdh.X86.Candidate.ar
 /-- The 40 bytes below the frame, and the frame, below the caller's stack pointer. -/
 theorem frame_subs {s : State} (A : CandABI s) {sp : BitVec 32}
     (espf : sp = s.gpr .esp - BitVec.ofNat 32 argsFrame) :
-    Region.Sub (below sp 96) (belowR s) ∧ Region.Sub ⟨sp.setWidth 64, 76⟩ (belowR s) := by
+    Region.Sub (below sp 96) (belowR s) ∧ Region.Sub ⟨sp.setWidth 64, 76⟩ (belowR s) ∧
+      Region.Sub (below sp 176) (belowR s) := by
   have fb : argsFrame = 76 := rfl
   have hE := (s.gpr .esp).isLt
   have low := A.stackLow
@@ -271,14 +276,15 @@ theorem frame_subs {s : State} (A : CandABI s) {sp : BitVec 32}
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by omega_using [fb, low, st'])
   have espN : sp.toNat = (s.gpr .esp).toNat - 76 := by rw [espf]; exact VG.X86.sub_toNat (by omega_using [fb, low, st'])
-  refine ⟨?_, ?_⟩
-  · simp only [below]
+  obtain s176 : Region.Sub (below sp 176) (belowR s) := by
+    simp only [below]
     rw [VG.X86.Taint.sub_setWidth (by rw [espN]; omega_using [low, st']), espf,
       show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA,
-      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 96#64 = BitVec.ofNat 64 252 from rfl]
+      ← VG.Offset.sub_add_eq, show BitVec.ofNat 64 argsFrame + 176#64 = BitVec.ofNat 64 252 from rfl]
     exact Region.sub_prefix (by decide)
-  · rw [espf, show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA]
-    exact Offset.sub_below _ (by decide) (by decide)
+  refine ⟨fun x hx => s176 x (VG.X86.below_sub (by decide) (by rw [espN]; omega_using [low, st']) x hx), ?_, s176⟩
+  rw [espf, show (s.gpr .esp - BitVec.ofNat 32 argsFrame).setWidth 64 = frameAt s from rfl, FA]
+  exact Offset.sub_below _ (by decide) (by decide)
 
 /-- What the body may read: the tape, the arguments and the table; and write: `out` and `used`. -/
 abbrev Rd (s : State) : List Region → List Region → Prop :=
@@ -337,6 +343,7 @@ structure Facts (Ex : List Region → List Region → Prop) (base : Addr) (bytes
   ru : readSrc f (.mem (argAt 19 2)) = some up
   dws : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩ ⟨base, bytes⟩
   d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩ (below sp 96)
+  d176 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩ (below sp 176)
   TT : Table Tb sp f
   TA : Region.Disjoint ⟨Tb.setWidth 64, 8192⟩ ⟨base, bytes⟩
 
@@ -351,7 +358,7 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
       (pLenOf Impl.Ffdh.X86.Candidate.args s) (synth Impl.Ffdh.X86.Candidate.args (arg s))
       (s.gpr .esp - BitVec.ofNat 32 argsFrame) (entryRand s) (arg s 2)
       (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol) (arg s 3).toNat (arg s 4).toNat f := by
-  obtain ⟨sub40, subF⟩ := frame_subs A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl
+  obtain ⟨sub40, subF, sub176⟩ := frame_subs A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl
   have fb : argsFrame = 76 := rfl
   have st' : stack = 252 := rfl
   have hE := (s.gpr .esp).isLt
@@ -374,8 +381,8 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
   have G : TapeGeo (Rd s) (synth Impl.Ffdh.X86.Candidate.args (arg s)) (wsBase Impl.Ffdh.X86.Candidate.args s)
       (wsSize Impl.Ffdh.X86.Candidate.args s) (s.gpr .esp - BitVec.ofNat 32 argsFrame) (entryRand s).length := by
     rw [Tlen]
-    exact ⟨(ofn _).symm, (arg s 6).isLt, A.randBound, fun _ _ h => h.1, A.randWs,
-      (A.belowRand.sub_left sub40).symm⟩
+    exact ⟨(ofn _).symm, (arg s 6).isLt, A.randBound, fun _ _ h => h.1, A.randWs, (wrapABI A).room,
+      (A.belowRand.sub_left sub176).symm⟩
   have hT : Spec.Rsa.bytesAt f.mem (byteAddr (synth Impl.Ffdh.X86.Candidate.args (arg s) 2)) (entryRand s).length =
       entryRand s := by
     rw [Tlen]
@@ -385,7 +392,8 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
     exact h
   have Ox : OutAt (synth Impl.Ffdh.X86.Candidate.args (arg s)) (wsBase Impl.Ffdh.X86.Candidate.args s)
       (wsSize Impl.Ffdh.X86.Candidate.args s) (pLenOf Impl.Ffdh.X86.Candidate.args s) 0 (s.gpr .esp - BitVec.ofNat 32 argsFrame) f.wr :=
-    ⟨A.outBound, ex.2.1, A.outWs.symm, (A.belowOut.sub_left subF), (A.belowOut.sub_left sub40).symm⟩
+    ⟨A.outBound, ex.2.1, A.outWs.symm, (A.belowOut.sub_left subF), (wrapABI A).room,
+      (A.belowOut.sub_left sub176).symm⟩
   have U : UsedAt (wsBase Impl.Ffdh.X86.Candidate.args s) (wsSize Impl.Ffdh.X86.Candidate.args s) (arg s 2)
       (s.gpr .esp - BitVec.ofNat 32 argsFrame) ⟨byteAddr (synth Impl.Ffdh.X86.Candidate.args (arg s) 0),
         pLenOf Impl.Ffdh.X86.Candidate.args s⟩ f.wr :=
@@ -422,6 +430,10 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
   have d40 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩ (below (s.gpr .esp - BitVec.ofNat 32 argsFrame) 96) := fun j hj => by
     have : j < 9 := by simp at hj; omega_arith
     rw [ea j this]; exact (A.belowArgs.symm.sub_left (sub j this)).sub_right sub40
+  have d176 : ∀ j ∈ [2, 3, 4], Region.Disjoint ⟨f.ea (argAt 19 j), 4⟩
+      (below (s.gpr .esp - BitVec.ofNat 32 argsFrame) 176) := fun j hj => by
+    have : j < 9 := by simp at hj; omega_arith
+    rw [ea j this]; exact (A.belowArgs.symm.sub_left (sub j this)).sub_right sub176
   -- RSA's table.
   have tf := A.tableFar (tableR s) (by rw [table_eq]; exact List.mem_singleton_self _)
   have tw : wsR s ∈ s.wr := by rw [A.wr]; simp
@@ -433,7 +445,8 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
     have : ((s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64).toNat + 8192 ≤ 2 ^ 32 := tf.1
     omega_arith
   have TT : Table (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol) (s.gpr .esp - BitVec.ofNat 32 argsFrame) f := by
-    refine ⟨by rw [syf], fun i hi d hd => ?_, fun i hi => ?_, tfit, tf.2.2.2.sub_right sub40⟩
+    refine ⟨by rw [syf], fun i hi d hd => ?_, fun i hi => ?_, tfit, tf.2.2.2.sub_right sub40,
+      tf.2.2.2.sub_right sub176⟩
     · have hd4 : d ≤ 4 := by simp at hd; omega_arith
       have e : addr (s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol + BitVec.ofNat 32 (8 * i)) d =
           (tableR s).base + BitVec.ofNat 64 (8 * i + d) := by
@@ -452,7 +465,7 @@ theorem frame_facts {s : State} (A : CandABI s) (f : State)
   have TA : Region.Disjoint ⟨(s.syms VG.Impl.RsaKeyGen.TrialTable32.symbol).setWidth 64, 8192⟩
       ⟨wsBase Impl.Ffdh.X86.Candidate.args s, wsSize Impl.Ffdh.X86.Candidate.args s⟩ := tf.2.1 _ tw
   refine ⟨espf, G, hT, Ox, U, (ofn _).symm, by rw [ofn]; exact rd 3 (by decide), by rw [ofn]; exact rd 4 (by decide),
-    rd 2 (by decide), dws, d40, TT, TA⟩
+    rd 2 (by decide), dws, d40, d176, TT, TA⟩
 
 /-- The body, from the frame's state. -/
 theorem frame_ok {s : State} (A : CandABI s) (f : State)
@@ -473,7 +486,7 @@ theorem frame_ok {s : State} (A : CandABI s) (f : State)
     intro x
     have : Proof.Ffdh.candidateStatus x ≤ 2 := by unfold Proof.Ffdh.candidateStatus; split <;> omega_using []
     omega_using [this]
-  refine WP.mono (body_ok I F.G F.hT F.Ox F.U F.h3 F.rb F.rg F.ru F.dws F.d40
+  refine WP.mono (body_ok I F.G F.hT F.Ox F.U F.h3 F.rb F.rg F.ru F.dws F.d40 F.d176
     A.outLen A.bitsLow A.bitsHigh A.gen F.TT F.TA) fun t R => ⟨⟨?_, ?_, ?_⟩, R.frame, R.keeps⟩
   · rw [R.eax, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (hst _)]
   · refine R.bytes.trans ?_
@@ -511,7 +524,7 @@ theorem operation_ok {s : State} (A : CandABI s) :
       obtain hw := VG.Proof.Rsa.wordsAt_frame F (p := argumentPointer s 2) (n := 1) (by decide)
         (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact A.belowUsed.symm)
       simpa only [spec, hb, hw] using h)
-    fun f I espf Ft syf => frame_ok A f I espf Ft syf
+    fun f I espf _ Ft syf => frame_ok A f I espf Ft syf
 
 theorem correct (s : State) (h : contract.pre s) :
     ∃ trace t, Exec isa Impl.Ffdh.X86.Candidate.code s trace t ∧ abiPreserved s t ∧ contract.post s t := by

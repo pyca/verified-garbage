@@ -966,7 +966,7 @@ theorem operation_ok {s : State} (A : CachedABI s) :
         (by have := (arg s 6).isLt; omega_arith) (fun r hr => by
           obtain rfl := List.mem_singleton.mp hr; rw [← A.yLen]; exact A.belowY.symm)
       simpa only [spec, hx, hy] using h)
-    fun f I espf Ft => frame_ok A f I espf Ft
+    fun f I espf _ Ft => frame_ok A f I espf Ft
 
 theorem correct (s : State) (h : (Proof.Ffdh.cachedGenerateKeyContract abi stack).pre s) :
     ∃ trace t, Exec isa Impl.Ffdh.X86.Cached.Generate.code s trace t ∧ abiPreserved s t ∧

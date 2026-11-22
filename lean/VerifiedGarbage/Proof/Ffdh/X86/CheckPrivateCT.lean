@@ -283,7 +283,7 @@ abbrev RX (Ex : List Region → List Region → Prop) (base : Addr) (bytes len x
 /-- x's power: p's context by `ctxP_relCT`, the copy and x's load by the taint analysis, and the power
 over x's `xl` bytes by private CRT's windowed power. -/
 theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024)
-    (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)) :
+    (RF : RoomF sp base bytes) (hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)) :
     RelCT isa (Both (RX Ex base bytes len xl args sp)) (Impl.Ffdh.X86.powTop 10)
       (Both (Run Ex base bytes len args sp)) := by
   rw [powTop_eq]
@@ -291,7 +291,7 @@ theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 10
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WSt Ex base bytes len args sp .wide [3, 4] 0)
     ((VG.RelCT.seq (ctxP_relCT.mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h)
       (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) topLoads_check))) fun x ⟨R, X⟩ => ?_) ?_
-  · refine WP.mono (topFront_ok R.1 X (by rw [R.2.2]; exact hx40) (b := 10) (by decide) (by decide) rfl)
+  · refine WP.mono (topFront_ok R.1 X (by rw [R.2.2]; exact RF) (by rw [R.2.2]; exact hx40) (b := 10) (by decide) (by decide) rfl)
       fun u ⟨C, one, R4, _, _, _, _, K⟩ =>
       ⟨_, C, fun j hj => ?_, fun j hj => absurd hj (Nat.not_lt_zero _), R.2.1.keep K, (K.1 _ (by decide)).trans R.2.2⟩
     have hM := safeM_gt (sv x.mem base len .wide 9)
@@ -303,10 +303,10 @@ theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 10
       fun _ W => lenCount_wst (by decide) hx.1 W).mono (fun _ _ h => h) fun _ _ h => ⟨WSt.run h.1, WSt.run h.2⟩
 
 theorem pair_trace {P : State → Prop}
-    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)) :
+    (hP : ∀ x, P x → RX Ex base bytes len xl args sp x ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) :
     RelCT isa (Both P) Impl.Ffdh.X86.CheckPrivate.pair fun _ _ => True := by
   by_cases hx : (args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 1024) ∧
-    Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)
+    (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))
   swap
   · refine VG.RelCT.of_false fun s₁ _ h => hx ?_
     obtain ⟨⟨R, X⟩, d⟩ := hP _ h.1
@@ -322,7 +322,7 @@ theorem pair_trace {P : State → Prop}
   refine VG.RelCT.seq (aRel (F := RX Ex base bytes len xl args sp) (fun _ h => h.1.1) store_check
     fun x ⟨⟨R, X⟩, c, e⟩ => WP.mono (storeMask_ok R.1 (d := accOff) (by omega_using [ao, nb]) e) fun v ⟨_, O, _, _, K⟩ =>
       ⟨run_step R (Step.word R.1 (by omega_using [ao]) O K), X.keep ⟨rfl, rfl⟩ K⟩) ?_
-  exact VG.RelCT.seq (powTop_trace hx.1 hx.2) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
+  exact VG.RelCT.seq (powTop_trace hx.1 hx.2.1 hx.2.2) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) tail_check)
 
 /-- A run, with the domain's geometry. -/
 def RG (Ex : List Region → List Region → Prop) (base : Addr) (bytes len dlen : Nat) (args : Nat → BitVec 32)
@@ -382,12 +382,13 @@ theorem body_relCT :
   rw [body_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both
-    (F := fun u => (RX Ex base bytes len xl args sp u ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)) ∧
+    (F := fun u => (RX Ex base bytes len xl args sp u ∧ (RoomF sp base bytes ∧ Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176))) ∧
       Gate u (St = 2)) front_trace fun x A => ?_) ?_
   · refine WP.mono (front_ok A.pub.dom.run.1 A.pub.dom.geo A.pub.geo A.geo
+      (by rw [A.pub.dom.run.2.2]; exact A.pub.dom.room)
       (by rw [A.pub.dom.run.2.2]; exact A.pub.dom.hb40) (by rw [A.pub.dom.run.2.2]; exact A.pub.hy40)
       (by rw [A.pub.dom.run.2.2]; exact A.hx40)) fun u ⟨S, G, _⟩ =>
-      ⟨⟨⟨run_step A.pub.dom.run S, A.geo.keep ⟨rfl, rfl⟩ S.keeps⟩, A.hx40⟩, G.congr ?_⟩
+      ⟨⟨⟨run_step A.pub.dom.run S, A.geo.keep ⟨rfl, rfl⟩ S.keeps⟩, A.pub.dom.room, A.hx40⟩, G.congr ?_⟩
     rw [← A.st, status_two, params, A.pub.dom.dom]
   · exact gate_relCT (fun _ h => h.2) (aEnd (fun _ h => h.1.1.1.1) ret2_check) (pair_trace fun _ h => h.1.1)
 
@@ -432,7 +433,7 @@ theorem privAt_of {s f : State} (A : CheckPrivateABI s)
   have hx := narrowRd Bf.1.extra ⟨wsBase Impl.Ffdh.X86.CheckPrivate.args s, wsSize Impl.Ffdh.X86.CheckPrivate.args s⟩
   obtain ⟨G, Y, X, hb, hy, hxx⟩ := frame_geo A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl hx
   have yR : (arg s 4).toNat = pLenOf Impl.Ffdh.X86.CheckPrivate.args s := A.yLen
-  refine ⟨⟨⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A), Bf.2.1⟩, G, hb,
+  refine ⟨⟨⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A), Bf.2.1⟩, G, (wrapABI A).room, hb,
     frame_keep A Bf.2.2.2.2 A.domScratch A.belowDom (by have := A.domBound; omega_using [])⟩, Y, hy, ?_⟩, X, hxx, ?_⟩
   · show Spec.Rsa.bytesAt f.mem (argumentPointer s 3) _ = Spec.Rsa.bytesAt s.mem (argumentPointer s 3) (arg s 4).toNat
     rw [← yR]
@@ -480,6 +481,7 @@ theorem constantTime : ConstantTime isa (Spec.Ffdh.checkPrivateContract abi stac
         (narrowed (wsBase Impl.Ffdh.X86.CheckPrivate.args x) (wsSize Impl.Ffdh.X86.CheckPrivate.args x) f) F :=
     fun X Bf => ⟨_, body_ok (privAt_of X Bf).pub.dom.run.1 (privAt_of X Bf).pub.dom.geo (privAt_of X Bf).pub.geo
       (privAt_of X Bf).geo
+      (by rw [(privAt_of X Bf).pub.dom.run.2.2]; exact (privAt_of X Bf).pub.dom.room)
       (by rw [(privAt_of X Bf).pub.dom.run.2.2]; exact (privAt_of X Bf).pub.dom.hb40)
       (by rw [(privAt_of X Bf).pub.dom.run.2.2]; exact (privAt_of X Bf).pub.hy40)
       (by rw [(privAt_of X Bf).pub.dom.run.2.2]; exact (privAt_of X Bf).hx40)⟩
