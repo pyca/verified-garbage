@@ -1,32 +1,20 @@
-diff --git a/Cargo.toml b/Cargo.toml
-index efbf1ef6..6710c589 100644
---- a/Cargo.toml
-+++ b/Cargo.toml
-@@ -144,3 +144,7 @@ unused_qualifications = "warn"
- # against the latest _published_ copy.
- [patch.crates-io]
- rustls = { path = "rustls" }
-+
-+# The verified-garbage provider depends on rustls from git: use this checkout.
-+[patch."https://github.com/rustls/rustls"]
-+rustls = { path = "rustls" }
 diff --git a/rustls-test/Cargo.toml b/rustls-test/Cargo.toml
-index b8ac36ca..f4e675b8 100644
+index e5ff4836..9a4ecf86 100644
 --- a/rustls-test/Cargo.toml
 +++ b/rustls-test/Cargo.toml
-@@ -21,6 +21,7 @@ num-bigint = { workspace = true }
+@@ -23,6 +23,7 @@ macro_rules_attribute = { workspace = true }
+ num-bigint = { workspace = true }
  pki-types = { workspace = true }
  rustls-aws-lc-rs = { path = "../rustls-aws-lc-rs", features = ["std"] }
- rustls-ring = { path = "../rustls-ring" }
 +rustls-verified-garbage = { path = "@VG_PROVIDER@" }
  rustls-util = { path = "../rustls-util", default-features = false }
  x509-parser = { workspace = true }
  webpki = { workspace = true }
 diff --git a/rustls-test/src/lib.rs b/rustls-test/src/lib.rs
-index e10df504..7db12ad2 100644
+index 748c8105..60a91606 100644
 --- a/rustls-test/src/lib.rs
 +++ b/rustls-test/src/lib.rs
-@@ -2250,6 +2250,27 @@ pub mod macros {
+@@ -2225,6 +2225,27 @@ pub mod macros {
          };
      }
  
@@ -55,10 +43,10 @@ index e10df504..7db12ad2 100644
      macro_rules! provider_aws_lc_rs {
          () => {
 diff --git a/rustls-test/tests/api.rs b/rustls-test/tests/api.rs
-index 60c83273..f8106a5c 100644
+index 3b8aa8a2..f545ed28 100644
 --- a/rustls-test/tests/api.rs
 +++ b/rustls-test/tests/api.rs
-@@ -67,3 +67,37 @@ mod tests_with_aws_lc_rs {
+@@ -68,3 +68,37 @@ mod tests_with_aws_lc_rs {
      #[path = "api/api.rs"]
      mod tests;
  }

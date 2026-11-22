@@ -825,7 +825,7 @@ jobs:
       - name: Test
         run: cargo test -p rustls-verified-garbage --release --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
       # rustls's API tests, which a patch (`rustls/tests.patch`) runs with
-      # the provider too, at the revision the provider builds against. Its
+      # the provider too, at the release the provider builds against. Its
       # warnings are rustls's, not this repository's.
       - name: rustls's API tests
         env:

@@ -1,4 +1,5 @@
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 use rustls::crypto::cipher::{
     AeadKey, InboundOpaque, Iv, KeyBlockShape, NONCE_LEN, Nonce, OutboundPlain, Record,
@@ -266,14 +267,14 @@ impl RecordDecrypter for GcmRecordDecrypter {
 }
 
 impl RecordEncrypter for GcmRecordEncrypter {
-    fn encrypt<'a>(
+    fn encrypt(
         &mut self,
         record: Record<OutboundPlain<'_>>,
         seq: u64,
-        out: &'a mut [u8],
-    ) -> Result<Record<&'a [u8]>, Error> {
+        out: &mut Vec<u8>,
+    ) -> Result<(), Error> {
         let total_len = self.encrypted_payload_len(record.payload.len());
-        let out = aead::record_region(out, total_len)?;
+        let out = aead::append_record(out, record.typ, record.version, total_len)?;
 
         let nonce: [u8; NONCE_LEN] = Nonce::new(&self.iv, seq).to_array()?;
         let aad = make_tls12_aad(
@@ -292,12 +293,7 @@ impl RecordEncrypter for GcmRecordEncrypter {
             .seal_to(&nonce, &aad, &record.payload, &[], ciphertext)
             .map_err(|_| Error::EncryptError)?;
         tag_out.copy_from_slice(&tag);
-
-        Ok(Record {
-            typ: record.typ,
-            version: record.version,
-            payload: &*out,
-        })
+        Ok(())
     }
 
     fn encrypted_payload_len(&self, payload_len: usize) -> usize {
@@ -353,14 +349,14 @@ impl RecordDecrypter for ChaCha20Poly1305RecordDecrypter {
 }
 
 impl RecordEncrypter for ChaCha20Poly1305RecordEncrypter {
-    fn encrypt<'a>(
+    fn encrypt(
         &mut self,
         record: Record<OutboundPlain<'_>>,
         seq: u64,
-        out: &'a mut [u8],
-    ) -> Result<Record<&'a [u8]>, Error> {
+        out: &mut Vec<u8>,
+    ) -> Result<(), Error> {
         let total_len = self.encrypted_payload_len(record.payload.len());
-        let out = aead::record_region(out, total_len)?;
+        let out = aead::append_record(out, record.typ, record.version, total_len)?;
 
         let nonce = Nonce::new(&self.offset, seq).to_array()?;
         let aad = make_tls12_aad(
@@ -375,12 +371,7 @@ impl RecordEncrypter for ChaCha20Poly1305RecordEncrypter {
             .seal_to(&nonce, &aad, &record.payload, &[], ciphertext)
             .map_err(|_| Error::EncryptError)?;
         tag_out.copy_from_slice(&tag);
-
-        Ok(Record {
-            typ: record.typ,
-            version: record.version,
-            payload: &*out,
-        })
+        Ok(())
     }
 
     fn encrypted_payload_len(&self, payload_len: usize) -> usize {

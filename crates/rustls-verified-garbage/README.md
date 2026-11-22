@@ -3,8 +3,9 @@
 A [rustls](https://github.com/rustls/rustls) `CryptoProvider` whose
 cryptography is verified-garbage's. It is a member of the library's
 workspace, which the library's own tests, lints and coverage do not build
-(they build only `verified-garbage`), and it builds against rustls from git
-(the revision in `Cargo.toml`).
+(they build only `verified-garbage`). It builds against rustls's 0.24
+prerelease (the version in `Cargo.toml`), whose `CryptoProvider` API it
+implements.
 
 It aims to match rustls' aws-lc-rs provider:
 
@@ -55,7 +56,7 @@ library's API, but some of it is cryptography of its own:
 ## Testing
 
 The provider runs rustls's own API test suite. `rustls/setup.sh` checks
-out rustls at the pinned revision, by default into the workspace's
+out rustls at that release's tag, by default into the workspace's
 `target/rustls`, and applies `rustls/tests.patch`. The patch adds a
 `tests_with_verified_garbage` module, which runs the suite with this
 provider:

@@ -1,6 +1,7 @@
 //! Every cipher suite seals a record the same from contiguous and from
 //! fragmented plaintext (in more pieces than `AesGcm::encrypt` takes, too),
-//! writing every byte of the record, and opens what it sealed.
+//! appending the whole record (its header too) after what the output
+//! already holds, and opens what it sealed.
 
 use rustls::crypto::cipher::{
     AeadKey, EncodableVersion, InboundOpaque, Iv, OutboundPlain, Record, RecordDecrypter,
@@ -35,8 +36,22 @@ fn seal(
         EncodableVersion::Legacy(version),
         plain,
     );
-    let mut out = vec![fill; enc.encrypted_payload_len(record.payload.len()) + 3];
-    enc.encrypt(record, SEQ, &mut out).unwrap().payload.to_vec()
+    let len = enc.encrypted_payload_len(record.payload.len());
+    // What the output already holds, which the record goes after.
+    let mut out = vec![fill; 3];
+    enc.encrypt(record, SEQ, &mut out).unwrap();
+    assert_eq!(out.len(), 3 + 5 + len);
+    assert_eq!(out[..3], [fill; 3]);
+    // The header: the record's type (application data, the plaintext's
+    // in TLS 1.2 and every record's in TLS 1.3), its version and the
+    // payload's length.
+    let [hi, lo] = u16::try_from(len).unwrap().to_be_bytes();
+    let [vhi, vlo] = EncodableVersion::Legacy(version).encode().to_array();
+    assert_eq!(
+        out[3..8],
+        [u8::from(ContentType::ApplicationData), vhi, vlo, hi, lo]
+    );
+    out[8..].to_vec()
 }
 
 fn check(

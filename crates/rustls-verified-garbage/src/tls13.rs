@@ -1,4 +1,5 @@
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 use rustls::crypto::CipherSuite;
 use rustls::crypto::cipher::{
@@ -122,16 +123,16 @@ struct Tls13RecordEncrypter {
 }
 
 impl RecordEncrypter for Tls13RecordEncrypter {
-    fn encrypt<'a>(
+    fn encrypt(
         &mut self,
         msg: Record<OutboundPlain<'_>>,
         seq: u64,
-        out: &'a mut [u8],
-    ) -> Result<Record<&'a [u8]>, Error> {
+        out: &mut Vec<u8>,
+    ) -> Result<(), Error> {
         let total_len = self.encrypted_payload_len(msg.payload.len());
-        let record = aead::record_region(out, total_len)?;
-
         let typ = ContentType::ApplicationData;
+        let record = aead::append_record(out, typ, msg.version, total_len)?;
+
         let nonce = Nonce::new(&self.iv, seq).to_array()?;
         let aad = make_tls13_aad(typ, msg.version.encode(), total_len);
         // The plaintext is the payload followed by its content type, each
@@ -142,12 +143,7 @@ impl RecordEncrypter for Tls13RecordEncrypter {
             .seal_to(&nonce, &aad, &msg.payload, &msg.typ.to_array(), ciphertext)
             .map_err(|_| Error::EncryptError)?;
         tag_out.copy_from_slice(&tag);
-
-        Ok(Record {
-            typ,
-            version: msg.version,
-            payload: &*record,
-        })
+        Ok(())
     }
 
     fn encrypted_payload_len(&self, payload_len: usize) -> usize {

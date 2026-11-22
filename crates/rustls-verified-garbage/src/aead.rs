@@ -1,7 +1,10 @@
 //! The AEADs of the cipher suites, with 12-byte nonces and 16-byte tags.
 
-use rustls::crypto::cipher::OutboundPlain;
-use rustls::error::{ApiMisuse, Error};
+use alloc::vec::Vec;
+
+use rustls::crypto::cipher::{EncodableVersion, OutboundPlain, encode_record_header};
+use rustls::enums::ContentType;
+use rustls::error::Error;
 use verified_garbage::aead::aes_gcm::AesGcm;
 use verified_garbage::aead::chacha20poly1305::ChaCha20Poly1305;
 
@@ -128,14 +131,17 @@ impl Key {
     }
 }
 
-/// The first `len` bytes of `out`, where a record of that length is written.
-pub(crate) fn record_region(out: &mut [u8], len: usize) -> Result<&mut [u8], Error> {
-    let provided = out.len();
-    out.get_mut(..len).ok_or_else(|| {
-        ApiMisuse::EncryptBufferTooSmall {
-            required: len,
-            provided,
-        }
-        .into()
-    })
+/// Appends to `out` the header of a record of type `typ`, `version` and a
+/// payload of `len` bytes, then room for the payload, which it returns.
+pub(crate) fn append_record(
+    out: &mut Vec<u8>,
+    typ: ContentType,
+    version: EncodableVersion,
+    len: usize,
+) -> Result<&mut [u8], Error> {
+    let header_len = u16::try_from(len).map_err(|_| Error::EncryptError)?;
+    out.extend_from_slice(&encode_record_header(typ, version, header_len));
+    let start = out.len();
+    out.resize(start + len, 0);
+    Ok(&mut out[start..])
 }

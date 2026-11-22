@@ -90,8 +90,9 @@ checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
 name = "rustls"
-version = "0.24.0-dev.1"
-source = "git+https://github.com/rustls/rustls?rev=91aebe5d6d8220f156bd837eb2c269eb87e9f4a0#91aebe5d6d8220f156bd837eb2c269eb87e9f4a0"
+version = "0.24.0-dev.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7378b5d914866a2f4314e852d1d54293aea3f5781f1191841821c63f7ef6af7"
 dependencies = [
  "rustls-pki-types",
  "rustls-webpki",
@@ -126,9 +127,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.104.0-alpha.7"
+version = "0.104.0-alpha.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bea702cca24d344fc70973022bf7eb920c224e318466eb49784272337dd24b1a"
+checksum = "e4f05eb03bb89c8b88908947d1add6fbe564e58db7b686dbda59691aaec0e450"
 dependencies = [
  "rustls-pki-types",
  "untrusted",
