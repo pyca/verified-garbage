@@ -232,30 +232,12 @@ theorem callee_args_apart {sp : BitVec 32} (low : 176 ≤ sp.toNat) (top : sp.to
   exact ⟨Offset.disjoint _ (by omega_using []) (by omega_using [hj]) (by decide),
     Offset.disjoint _ (by omega_using []) (by omega_using [hj]) (by decide)⟩
 
-theorem prepCall_ok {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
-    WP isa prepCall s (PrepPost Ex base bytes len args s) := by
-  have low := RF.low
-  have top := h.top
-  have hE := (s.gpr .esp).isLt
-  have nw := h.scratch.nowrap
-  obtain ⟨r4, r76, r96, d76, d96⟩ := callee_regions low
-  obtain sN : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := by
-    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl]; exact VG.X86.sub_toNat (by omega_using [low])
-  obtain retWs : Region.Disjoint ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ ⟨base, bytes⟩ := RF.apart.sub_left r4
-  unfold prepCall
-  refine WP.callBody ?_
-  refine WP.frameAllocLocal (bytes := argsFrame) (by decide) (by decide) (by decide)
-    (by rw [State.callEntry_esp, sN]; show 76 ≤ _; omega_using [low]) prepBody_noSp ?_ ?_
-  · intro t m un ⟨e, rt, P⟩ F
-    rw [State.callEntry_esp] at F
-    refine ⟨e, ?_, ?_⟩
-    · show m.readW _ 32 = _
-      rw [F.readW (r := ⟨(s.gpr .esp - 4).setWidth 64, 4⟩) (Region.contains_self _ _)
-        (fun r hr => by rw [List.mem_singleton.mp hr]; exact d76) (by decide)]
-      exact rt
-    · exact P.below RF F (fun r hr => by rw [List.mem_singleton.mp hr]; exact r76) un
-  -- The frame's state.
-  generalize ht0 : allocFrame argsFrame s.callEntry = t0
+/-- The callee's state after the call and the allocation of its frame. -/
+theorem callee_entry {s t0 : State} (ht0 : allocFrame argsFrame s.callEntry = t0) (low : 176 ≤ (s.gpr .esp).toNat) :
+    t0.gpr .esp = s.gpr .esp - 4 - BitVec.ofNat 32 76 ∧ t0.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80 ∧
+      (t0.gpr .esp).toNat = (s.gpr .esp).toNat - 80 ∧ t0.wr = ⟨(t0.gpr .esp).setWidth 64, 76⟩ :: s.wr ∧
+      t0.rd = s.rd ∧ t0.mem = s.mem.writeW ((s.gpr .esp - 4).setWidth 64) (s.unknowns 0) ∧
+      (∀ r, r ≠ .esp → t0.gpr r = s.gpr r) := by
   obtain t0esp : t0.gpr .esp = s.gpr .esp - 4 - BitVec.ofNat 32 76 := by
     rw [← ht0, allocFrame_esp, State.callEntry_esp]; rfl
   obtain t0esp80 : t0.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80 := by
@@ -269,8 +251,17 @@ theorem prepCall_ok {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s
     rw [← ht0, allocFrame_mem]; rfl
   obtain t0gpr : ∀ r, r ≠ .esp → t0.gpr r = s.gpr r := fun r hr => by
     rw [← ht0, allocFrame_gpr _ _ hr, State.callEntry_gpr _ hr]
-  obtain frameEq : below (s.gpr .esp - 4) 76 = ⟨(t0.gpr .esp).setWidth 64, 76⟩ := by simp only [below]; rw [t0esp]
-  rw [frameEq] at r76 d76
+  exact ⟨t0esp, t0esp80, t0N, t0wr, t0rd, t0mem, t0gpr⟩
+
+/-- The copy of the caller's arguments into the callee's frame. -/
+theorem callee_copy {s t0 : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes)
+    (ht0 : allocFrame argsFrame s.callEntry = t0) {Q : State → Prop}
+    (k : ∀ u, Keeps [.eax] t0 u → Frame [⟨(t0.gpr .esp).setWidth 64, 76⟩] t0.mem u.mem →
+      (∀ i < 18, u.mem.readW (slotAddr ((t0.gpr .esp).setWidth 64) i) 32 = args i) → Q u) :
+    WP isa (.block ((List.range 18).flatMap copyArg)) t0 Q := by
+  have low := RF.low
+  have top := h.top
+  obtain ⟨t0esp, -, t0N, t0wr, t0rd, t0mem, -⟩ := callee_entry ht0 low
   obtain Fret : Frame [⟨(s.gpr .esp - 4).setWidth 64, 4⟩] s.mem t0.mem := by
     rw [t0mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   -- The caller's arguments, read from the frame's state.
@@ -303,8 +294,69 @@ theorem prepCall_ok {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s
         omega_arith
       rw [ea, t0esp]; exact af
   rw [show (List.range 18).flatMap copyArg = (List.range 18).flatMap copyArg ++ [] from (List.append_nil _).symm]
-  refine WP.seq (copyArgs_ok rfl (by rw [t0N]; omega_using [low, top]) (by rw [t0wr]; exact List.mem_cons_self ..)
-    hr hargs 18 (Nat.le_refl _) fun u K Fc S => WP.block_nil ?_)
+  exact copyArgs_ok rfl (by rw [t0N]; omega_using [low, top]) (by rw [t0wr]; exact List.mem_cons_self ..)
+    hr hargs 18 (Nat.le_refl _) fun u K Fc S => WP.block_nil (k u K Fc S)
+
+/-- The callee's frame, 80 bytes below `sp`, lies apart from the working space. -/
+theorem callee_frame_apart {sp e : BitVec 32} (RF : RoomF sp base bytes) (ef : e = sp - BitVec.ofNat 32 80) :
+    Region.Disjoint ⟨e.setWidth 64, 76⟩ ⟨base, bytes⟩ := by
+  obtain ⟨e1, -⟩ := below176_parts RF.low
+  generalize hX : (sp - BitVec.ofNat 32 176).setWidth 64 = X at e1
+  obtain b176 : below sp 176 = ⟨X, 176⟩ := by rw [← hX]
+  obtain fP : e.setWidth 64 = X + BitVec.ofNat 64 96 := by rw [ef, e1]
+  refine RF.apart.sub_left ?_
+  rw [fP, b176]
+  have := Offset.sub X (d := 96) (n := 76) (e := 0) (k := 176) (by decide) (by decide)
+  simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
+
+/-- The callee's state after the copy of the arguments: its inputs, its `esp` 80 bytes below the caller's
+`sp`, and its frame apart from the working space. -/
+def CalleeAt (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (u : State) : Prop :=
+  In (fun _ _ => True) base bytes len args u ∧ u.gpr .esp = sp - BitVec.ofNat 32 80 ∧
+    Region.Disjoint ⟨(u.gpr .esp).setWidth 64, 76⟩ ⟨base, bytes⟩
+
+/-- The copy of the arguments reaches the callee's state. -/
+theorem callee_at {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
+    WP isa (.block ((List.range 18).flatMap copyArg)) (allocFrame argsFrame s.callEntry)
+      (CalleeAt base bytes len args (s.gpr .esp)) := by
+  obtain ⟨-, t0esp80, -, t0wr, t0rd, -, t0gpr⟩ := callee_entry rfl RF.low
+  refine callee_copy h RF rfl fun u K _ S => ?_
+  obtain uesp : u.gpr .esp = (allocFrame argsFrame s.callEntry).gpr .esp := K.1 _ (by decide)
+  obtain ue : u.gpr .esp = s.gpr .esp - BitVec.ofNat 32 80 := by rw [uesp, t0esp80]
+  exact ⟨in_callee h RF (f := u) ue (by rw [K.1 _ (by decide), t0gpr _ (by decide)])
+    (by rw [K.2.1, t0rd]) (by rw [K.2.2, t0wr, uesp]) (by rw [uesp]; exact S), ue, callee_frame_apart RF ue⟩
+
+
+theorem prepCall_ok {s : State} (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) :
+    WP isa prepCall s (PrepPost Ex base bytes len args s) := by
+  have low := RF.low
+  have top := h.top
+  have hE := (s.gpr .esp).isLt
+  have nw := h.scratch.nowrap
+  obtain ⟨r4, r76, r96, d76, d96⟩ := callee_regions low
+  obtain sN : (s.gpr .esp - 4).toNat = (s.gpr .esp).toNat - 4 := by
+    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl]; exact VG.X86.sub_toNat (by omega_using [low])
+  obtain retWs : Region.Disjoint ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ ⟨base, bytes⟩ := RF.apart.sub_left r4
+  unfold prepCall
+  refine WP.callBody ?_
+  refine WP.frameAllocLocal (bytes := argsFrame) (by decide) (by decide) (by decide)
+    (by rw [State.callEntry_esp, sN]; show 76 ≤ _; omega_using [low]) prepBody_noSp ?_ ?_
+  · intro t m un ⟨e, rt, P⟩ F
+    rw [State.callEntry_esp] at F
+    refine ⟨e, ?_, ?_⟩
+    · show m.readW _ 32 = _
+      rw [F.readW (r := ⟨(s.gpr .esp - 4).setWidth 64, 4⟩) (Region.contains_self _ _)
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact d76) (by decide)]
+      exact rt
+    · exact P.below RF F (fun r hr => by rw [List.mem_singleton.mp hr]; exact r76) un
+  -- The frame's state.
+  generalize ht0 : allocFrame argsFrame s.callEntry = t0
+  obtain ⟨t0esp, t0esp80, -, t0wr, t0rd, t0mem, t0gpr⟩ := callee_entry ht0 low
+  obtain frameEq : below (s.gpr .esp - 4) 76 = ⟨(t0.gpr .esp).setWidth 64, 76⟩ := by simp only [below]; rw [t0esp]
+  rw [frameEq] at r76 d76
+  obtain Fret : Frame [⟨(s.gpr .esp - 4).setWidth 64, 4⟩] s.mem t0.mem := by
+    rw [t0mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  refine WP.seq (callee_copy h RF ht0 fun u K Fc S => ?_)
   obtain uesp : u.gpr .esp = t0.gpr .esp := K.1 _ (by decide)
   obtain h' := in_callee h RF (f := u) (by rw [uesp, t0esp80]) (by rw [K.1 _ (by decide), t0gpr _ (by decide)])
     (by rw [K.2.1, t0rd]) (by rw [K.2.2, t0wr, uesp]) (by rw [uesp]; exact S)
