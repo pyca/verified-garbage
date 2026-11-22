@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
@@ -10,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # ML-DSA signing on x86-64: a variant's entry to the shared body
@@ -166,6 +168,28 @@ abbrev viaRd (p : Params) (ns : List String) (σ : State) : List Region :=
   [⟨σ.gpr .rdi, skL p σ⟩, ⟨σ.gpr .rsi, 64⟩, ⟨σ.gpr .rdx, 32⟩,
     ⟨σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns), 8 * ns.length⟩]
 
+/-- The body is entered with memory that differs from `σ`'s only below `rsp`. -/
+theorem via_frame (hB : viaBytes ns < 4096) (hsp : D + viaBytes ns + 8 ≤ (σ.gpr .rsp).toNat) {s1 : State}
+    (hm1 : s1.mem = fillMem σ.mem (σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns)) 0 (ns.map σ.syms))
+    (k1 : Keep [.rax] (allocState (viaBytes ns) σ) s1) (rd wr : List Region) :
+    Frame [below (σ.gpr .rsp) (D + viaBytes ns + 8)] σ.mem (s1.callEntry.withRegions rd wr).mem := by
+  have hlen : 8 * ns.length + 8 = viaBytes ns := rfl
+  have hs1 : s1.gpr .rsp = σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns) := by rw [k1.gpr (by decide), allocState_rsp']
+  have hslot : Region.Sub ⟨σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns), 8 * ns.length⟩
+      (below (σ.gpr .rsp) (D + viaBytes ns + 8)) :=
+    sub_below (by omega_using [hlen]) (by omega_using []) hsp
+  have f1 := fillMem_frame (σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns)) (ns.map σ.syms) σ.mem 0
+    (by simp only [List.length_map]; omega_using [hB, hlen])
+  rw [BitVec.add_zero, List.length_map] at f1
+  have f2 : Frame [below (σ.gpr .rsp) (D + viaBytes ns + 8)] σ.mem s1.mem := by
+    rw [hm1]; exact Frame.sub f1 fun r hr => by
+      rw [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, hslot⟩
+  have hc : (below (σ.gpr .rsp) (D + viaBytes ns + 8)).Contains (s1.gpr .rsp - 8) 8 := by
+    rw [hs1, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, sub_sub_ofNat]
+    exact contains_below (by omega_using []) (by omega_using []) hsp
+  rw [State.withRegions_mem, State.callEntry_mem]
+  exact f2.writeW (List.mem_singleton_self _) _ hc
+
 /-- The state after the stores is entered in the body's contract. -/
 theorem via_pre (hns : ns ≠ []) (hB : viaBytes ns < 4096) (hp : (signK p (D + viaBytes ns + 8)).pre σ) {s1 : State}
     (hm1 : s1.mem = fillMem σ.mem (σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns)) 0 (ns.map σ.syms))
@@ -279,6 +303,121 @@ theorem via_pre (hns : ns ≠ []) (hB : viaBytes ns < 4096) (hp : (signK p (D + 
     rw [hmt, hs1, ha, readW_writeW_base _ _ _ (by omega_using []) (by omega_using [hi, hB, hlen]), hb, hm1,
       fillMem_read _ _ _ 0 i (by simpa using hi) (by simp only [List.length_map]; omega_using [hB, hlen]),
       hsy, List.getElem_map]
+
+end
+
+/-- The return address is apart from bytes below `rsp`. -/
+theorem ret_disj {sp : Addr} {x l : Nat} (hl : l ≤ x) (hx : x < 2 ^ 63) :
+    Region.Disjoint ⟨sp, 8⟩ ⟨sp - BitVec.ofNat 64 x, l⟩ := by
+  intro y h1 h2
+  simp only [Region.Contains] at h1 h2
+  bv_omega_using [h1, h2, hl, hx]
+
+theorem freeState_gpr {bytes : Nat} {t : State} {r : Reg} (h : r ≠ .rsp) : (freeState bytes t).gpr r = t.gpr r := by
+  simp [freeState, State.setReg, h]
+
+section
+variable {p : Params} {D : Nat} {ns : List String} {σ : State}
+
+/-- `signVia` from a state of `signK` with room for its frame and the call:
+the body, run by the words of the frame, does what `signK` says. -/
+theorem signVia_ok (hns : ns ≠ []) (hB : viaBytes ns < 4096) {n : String} {c : Prog isa}
+    (hv : ∀ s, (signKS p D ns).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (signKS p D ns).post s s')
+    (hsp : NoSp c) (hd : 8 * (c.depth + 1) ≤ D) (hD : D < 2 ^ 32)
+    (hp : (signK p (D + viaBytes ns + 8)).pre σ) :
+    WP isa (signVia ns n c) σ fun s' => abiPreserved σ s' ∧ (signK p (D + viaBytes ns + 8)).post σ s' := by
+  have hp' := hp
+  obtain ⟨hrd, hwr, _, _, _, _, _, _, _, _, _, _, r4, r5, k1', k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp0, -⟩ := hp'
+  have hlen : 8 * ns.length + 8 = viaBytes ns := rfl
+  have hw0 : ∀ i < ns.length, InRegions (allocState (viaBytes ns) σ).wr
+      ((allocState (viaBytes ns) σ).gpr .rsp + BitVec.ofNat 64 (0 + 8 * i)) 8 := fun i hi =>
+    ⟨⟨σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns), viaBytes ns⟩, List.mem_cons_self .., by
+      rw [allocState_rsp']; exact contains_offset' (by omega_using [hi, hlen]) (by omega_using [hB])⟩
+  unfold signVia
+  refine alloc_frame_ok ⟨by omega_using [hlen], hB, by omega_using [hlen]⟩ (by omega_using [hsp0]) ?_
+  refine WP.seq (WP.mono_syms (fillSlots_ok ns 0 _ hw0) fun s1 ⟨⟨hm1, hx1⟩, k1⟩ hy1 => ?_)
+  have hm1' : s1.mem = fillMem σ.mem (σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns)) 0 (ns.map σ.syms) := by
+    rw [hm1, allocState_rsp']; rfl
+  have hs1 : s1.gpr .rsp = σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns) := by rw [k1.gpr (by decide), allocState_rsp']
+  have hrd1 : s1.rd = σ.rd := k1.2.1
+  have hwr1 : s1.wr = ⟨σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns), viaBytes ns⟩ :: σ.wr := k1.2.2
+  have hc : Covers (viaRd p ns σ ++ σ.wr) (s1.rd ++ s1.wr) := by
+    rw [hrd1, hwr1, hrd]
+    refine Covers.append_left (Covers.cons ?_ (Covers.cons ?_ (Covers.cons ?_ (Covers.cons ?_ Covers.nil))))
+      (Covers.of_mem fun r hr => List.mem_append_right _ (List.mem_cons_of_mem _ hr))
+    · exact Covers.of_mem fun r hr => by simp at hr; subst hr; simp
+    · exact Covers.of_mem fun r hr => by simp at hr; subst hr; simp
+    · exact Covers.of_mem fun r hr => by simp at hr; subst hr; simp
+    · have hc0 : (⟨σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns), viaBytes ns⟩ : Region).Contains
+          (σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns)) (8 * ns.length) := by
+        have := contains_offset' (base := σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns)) (off := 0)
+          (len := 8 * ns.length) (n := viaBytes ns) (by omega_using [hlen]) (by omega_using [hB])
+        rwa [BitVec.add_zero] at this
+      exact Covers.one ⟨_, by simp, hc0⟩
+  have hw : Covers σ.wr s1.wr := Covers.of_mem fun r hr => by rw [hwr1]; exact List.mem_cons_of_mem _ hr
+  refine WP.call_mx hv hsp (by omega_using [hd, hD]) (via_pre hns hB hp hm1' k1 hy1) hc hw
+    fun s' hrd' hwr' hcs hf _ hpost hmx => ⟨by rw [hcs .rsp (by decide), k1.gpr (by decide)], hwr'.trans k1.2.2,
+      fun m u hm => ?_⟩
+  have hsp' : s'.gpr .rsp = (allocState (viaBytes ns) σ).gpr .rsp := by rw [hcs .rsp (by decide), k1.gpr (by decide)]
+  have eg : ∀ r, r ≠ .rsp → r ≠ .rax → s1.gpr r = σ.gpr r := fun r h1 h2 => by
+    rw [k1.gpr (by simpa using h2), allocState_gpr' _ _ h1]
+  have fg : ∀ r, r ≠ .rsp → (freeState (viaBytes ns) s').gpr r = s'.gpr r := fun r h => freeState_gpr h
+  have fsp : (freeState (viaBytes ns) s').gpr .rsp = σ.gpr .rsp := freeState_rsp hsp'
+  have hsub : 8 * (c.depth + 1) ≤ D := hd
+  -- the return address
+  have hr1 : s1.mem.readW (σ.gpr .rsp) 64 = σ.mem.readW (σ.gpr .rsp) 64 := by
+    have f1 := fillMem_frame (σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns)) (ns.map σ.syms) σ.mem 0
+      (by simp only [List.length_map]; omega_using [hB, hlen])
+    rw [BitVec.add_zero, List.length_map, ← hm1'] at f1
+    refine f1.readW (r := ⟨σ.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    rw [List.mem_singleton] at hr; subst hr
+    exact ret_disj (by omega_using [hlen]) (by omega_using [hB])
+  have hr2 : s'.mem.readW (σ.gpr .rsp) 64 = s1.mem.readW (σ.gpr .rsp) 64 := by
+    refine hf.readW (r := ⟨σ.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    rcases List.mem_append.mp hr with hr | hr
+    · rw [hwr] at hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      exacts [r4, r5]
+    · rw [List.mem_singleton] at hr; subst hr
+      rw [hs1]
+      show Region.Disjoint _ ⟨σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns) - BitVec.ofNat 64 (8 * (c.depth + 1)),
+        8 * (c.depth + 1)⟩
+      rw [sub_sub_ofNat]
+      exact ret_disj (by omega_using []) (by omega_using [hB, hD, hsub])
+  have hr3 : m.readW (σ.gpr .rsp) 64 = s'.mem.readW (σ.gpr .rsp) 64 := by
+    refine hm.readW (r := ⟨σ.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    rw [List.mem_singleton] at hr; subst hr
+    exact ret_disj (Nat.le_refl _) (by omega_using [hB])
+  have hfrm : Region.Sub ⟨σ.gpr .rsp - BitVec.ofNat 64 (viaBytes ns), viaBytes ns⟩
+      (below (σ.gpr .rsp) (D + viaBytes ns + 8)) := sub_below (Nat.le_refl _) (by omega_using []) hsp0
+  refine ⟨⟨fun r hr => ?_, hr3.trans (hr2.trans hr1), ?_⟩, ?_⟩
+  · by_cases h : r = .rsp
+    · subst h; exact fsp
+    · have hax : r ≠ .rax := fun e => by subst e; exact absurd hr (by decide)
+      show (freeState (viaBytes ns) s').gpr r = σ.gpr r
+      rw [fg r h, hcs r hr, eg r h hax]
+  · show s'.mxcsr.extractLsb' 6 10 = σ.mxcsr.extractLsb' 6 10
+    rw [hmx, hx1]; rfl
+  · obtain ⟨s₂, hm₂, hg₂, hq⟩ := hpost
+    have hfr := via_frame (D := D) hB hsp0 hm1' k1 (viaRd p ns σ) σ.wr
+    have hby : ∀ {a : Addr} {l : Nat}, (below (σ.gpr .rsp) (D + viaBytes ns + 8)).Disjoint ⟨a, l⟩ → l ≤ 2 ^ 64 →
+        bytesAt (s1.callEntry.withRegions (viaRd p ns σ) σ.wr).mem a l = bytesAt σ.mem a l := fun hd hl =>
+      VG.Proof.MlKem.bytesAt_frame hfr (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hd.symm) hl
+    have tg : ∀ r, r ≠ .rsp → r ≠ .rax → (s1.callEntry.withRegions (viaRd p ns σ) σ.wr).gpr r = σ.gpr r :=
+      fun r h1 h2 => by rw [State.withRegions_gpr, State.callEntry_gpr _ h1, eg r h1 h2]
+    have hsk := skLen_le_skL p σ
+    show Outcome _ _ _
+    have h' : Outcome _ _ _ := hq
+    rw [tg .rdi (by decide) (by decide), tg .rsi (by decide) (by decide), tg .rdx (by decide) (by decide),
+      tg .rcx (by decide) (by decide), hby (k1'.sub_right (Region.sub_prefix hsk)) (by omega_using [n1, hsk]),
+      hby k2 (by omega_using []), hby k3 (by omega_using []), hm₂, hg₂ .rax (by decide)] at h'
+    have hsig : bytesAt m (σ.gpr .rcx) p.sigLen = bytesAt s'.mem (σ.gpr .rcx) p.sigLen :=
+      VG.Proof.MlKem.bytesAt_frame hm (fun r hr => by
+        rw [List.mem_singleton] at hr; subst hr; exact (k4.sub_left hfrm).symm) (by omega_using [n4])
+    show Outcome _ (((freeState (viaBytes ns) s').gpr .rax).setWidth 32) (bytesAt m (σ.gpr .rcx) p.sigLen)
+    rw [fg .rax (by decide), hsig]
+    exact h'
 
 end
 
