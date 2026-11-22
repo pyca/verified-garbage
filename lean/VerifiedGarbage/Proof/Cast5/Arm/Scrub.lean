@@ -7,7 +7,6 @@ public import VerifiedGarbage.Spec.Cast5.Ofb
 public import VerifiedGarbage.Spec.Cast5.CfbFinal
 public import VerifiedGarbage.Spec.Cast5.OfbFinal
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 public import VerifiedGarbage.Impl.Cast5.Arm.Fn
 public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.CfbFinal
@@ -27,7 +26,6 @@ meta import VerifiedGarbage.Spec.Cast5.Ofb
 meta import VerifiedGarbage.Spec.Cast5.CfbFinal
 meta import VerifiedGarbage.Spec.Cast5.OfbFinal
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Impl.Cast5.Arm.Fn
 meta import VerifiedGarbage.Proof.Cast5.Rounds
 meta import VerifiedGarbage.Proof.Cast5.CfbFinal
@@ -51,11 +49,11 @@ have no frames (`Arm.Scrub.verifiedScrubbed`, `Code.noFrames` evaluated by
 `lit_decide`). The modes keep theirs in a frame of 328 bytes and call ECB's
 code, in a frame of 8 more, under a name of its own
 (`vg_cast5_ecb_encrypt_entry`, `Impl.Cast5.Arm.ecbCore`), which the emitter
-writes as an internal function. They wipe their frame, and their cleanup
-zeroes only the words of the 336 bytes their contracts reserve that the
-residue analysis (`Arm.rtaint`) finds may differ between two runs
-(`Arm.Scrub.verifiedScrubbedSel`, whose analysis the kernel evaluates here:
-`taint_decide_ct`), and their postconditions read the memory on return only within the buffers
+writes as an internal function. They leave their frame as it is, and their
+cleanup zeroes the 336 bytes their contracts reserve in a loop
+(`Arm.Scrub.verifiedScrubbedAll`, from their frames' size and that they make
+no indirect call, `CodeOk`, which the kernel evaluates here: `lit_decide`),
+and their postconditions read the memory on return only within the buffers
 (`Arm.Scrub.PostOut`): the schedule, the data and the chaining block, as on
 x86 (`Proof/Cast5/X86/Scrub.lean`); a length is the low 32 bits of its
 argument word.
@@ -190,6 +188,25 @@ theorem expandKey_noFrames : Impl.Cast5.Arm.expandKey.noFrames = true := by lit_
 theorem ecbEncrypt_noFrames : Impl.Cast5.Arm.ecbEncrypt.noFrames = true := by lit_decide
 theorem ecbDecrypt_noFrames : Impl.Cast5.Arm.ecbDecrypt.noFrames = true := by lit_decide
 
+/-! ## The stack the modes zeroed in a loop use (`scrubAll`, `Arm.Scrub.CodeOk`) -/
+
+theorem cbcEncryptChained_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cbcEncryptChained) 336 := by
+  lit_decide
+theorem cbcDecryptChained_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cbcDecryptChained) 336 := by
+  lit_decide
+theorem cfbEncrypt_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cfbEncrypt) 336 := by
+  lit_decide
+theorem cfbDecrypt_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cfbDecrypt) 336 := by
+  lit_decide
+theorem cfbEncryptFinal_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cfbEncryptFinal) 336 := by
+  lit_decide
+theorem cfbDecryptFinal_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cfbDecryptFinal) 336 := by
+  lit_decide
+theorem ofb_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.ofb) 336 := by
+  lit_decide
+theorem ofbFinal_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.ofbFinal) 336 := by
+  lit_decide
+
 end VG.Proof.Cast5.Arm.Scrub
 
 namespace VG.Proof.Cast5.Arm.Fn
@@ -226,88 +243,80 @@ theorem ecbDecrypt :
 theorem cbcEncryptChained :
     VerifiedScrubbed target Impl.Cast5.Arm.Fn.cbcEncryptChained
       (Spec.Cast5.cbcEncryptChainedContract (abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
-  verifiedScrubbedSel (api := Spec.Cast5.cbcEncryptChainedApi) (W := 336)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cbcEncryptChained
+  verifiedScrubbedAll (api := Spec.Cast5.cbcEncryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cbcEncryptChained
       verified := Proof.Cast5.cbcEncryptChained_keyed Proof.Cast5.Arm.cbcEncryptChained_framed }
-    Impl.Cast5.Arm.Fn.modeWords []
     Scrub.cbcEncryptOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cbcEncryptChained_code (by decide) _)
 
 /-- `vg_cast5_cbc_decrypt_chained`. -/
 theorem cbcDecryptChained :
     VerifiedScrubbed target Impl.Cast5.Arm.Fn.cbcDecryptChained
       (Spec.Cast5.cbcDecryptChainedContract (abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
-  verifiedScrubbedSel (api := Spec.Cast5.cbcDecryptChainedApi) (W := 336)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cbcDecryptChained
+  verifiedScrubbedAll (api := Spec.Cast5.cbcDecryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cbcDecryptChained
       verified := Proof.Cast5.cbcDecryptChained_keyed Proof.Cast5.Arm.cbcDecryptChained_framed }
-    Impl.Cast5.Arm.Fn.modeWords []
     Scrub.cbcDecryptOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cbcDecryptChained_code (by decide) _)
 
 /-- `vg_cast5_cfb64_encrypt`. -/
 theorem cfbEncrypt :
     VerifiedScrubbed target Impl.Cast5.Arm.Fn.cfbEncrypt
       (Spec.Cast5.cfbEncryptContract (abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
-  verifiedScrubbedSel (api := Spec.Cast5.cfbEncryptApi) (W := 336)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbEncrypt
+  verifiedScrubbedAll (api := Spec.Cast5.cfbEncryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cfbEncrypt
       verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.Arm.cfbEncrypt_framed }
-    Impl.Cast5.Arm.Fn.modeWords []
     Scrub.cfbEncryptOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbEncrypt_code (by decide) _)
 
 /-- `vg_cast5_cfb64_decrypt`. -/
 theorem cfbDecrypt :
     VerifiedScrubbed target Impl.Cast5.Arm.Fn.cfbDecrypt
       (Spec.Cast5.cfbDecryptContract (abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
-  verifiedScrubbedSel (api := Spec.Cast5.cfbDecryptApi) (W := 336)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbDecrypt
+  verifiedScrubbedAll (api := Spec.Cast5.cfbDecryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cfbDecrypt
       verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.Arm.cfbDecrypt_framed }
-    Impl.Cast5.Arm.Fn.modeWords []
     Scrub.cfbDecryptOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbDecrypt_code (by decide) _)
 
 /-- `vg_cast5_cfb64_encrypt_final`. -/
 theorem cfbEncryptFinal :
     VerifiedScrubbed target Impl.Cast5.Arm.Fn.cfbEncryptFinal
       (Spec.Cast5.cfbEncryptFinalContract (abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
-  verifiedScrubbedSel (api := Spec.Cast5.cfbEncryptFinalApi) (W := 336)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbEncryptFinal
+  verifiedScrubbedAll (api := Spec.Cast5.cfbEncryptFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cfbEncryptFinal
       verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.Arm.cfbEncryptFinal_framed }
-    Impl.Cast5.Arm.Fn.modeWords []
     Scrub.cfbEncryptFinalOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbEncryptFinal_code (by decide) _)
 
 /-- `vg_cast5_cfb64_decrypt_final`. -/
 theorem cfbDecryptFinal :
     VerifiedScrubbed target Impl.Cast5.Arm.Fn.cfbDecryptFinal
       (Spec.Cast5.cfbDecryptFinalContract (abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
-  verifiedScrubbedSel (api := Spec.Cast5.cfbDecryptFinalApi) (W := 336)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbDecryptFinal
+  verifiedScrubbedAll (api := Spec.Cast5.cfbDecryptFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.cfbDecryptFinal
       verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.Arm.cfbDecryptFinal_framed }
-    Impl.Cast5.Arm.Fn.modeWords []
     Scrub.cfbDecryptFinalOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbDecryptFinal_code (by decide) _)
 
 /-- `vg_cast5_ofb`. -/
 theorem ofb :
     VerifiedScrubbed target Impl.Cast5.Arm.Fn.ofb
       (Spec.Cast5.ofbContract (abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
-  verifiedScrubbedSel (api := Spec.Cast5.ofbApi) (W := 336)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.ofb
+  verifiedScrubbedAll (api := Spec.Cast5.ofbApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.ofb
       verified := Proof.Cast5.ofb_keyed Proof.Cast5.Arm.ofb_framed }
-    Impl.Cast5.Arm.Fn.modeWords []
     Scrub.ofbOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.ofb_code (by decide) _)
 
 /-- `vg_cast5_ofb_final`. -/
 theorem ofbFinal :
     VerifiedScrubbed target Impl.Cast5.Arm.Fn.ofbFinal
       (Spec.Cast5.ofbFinalContract (abi.withConsts Impl.Cast5.ecbConsts) 336) 0 :=
-  verifiedScrubbedSel (api := Spec.Cast5.ofbFinalApi) (W := 336)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.ofbFinal
+  verifiedScrubbedAll (api := Spec.Cast5.ofbFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 328 1 Impl.Cast5.Arm.ofbFinal
       verified := Proof.Cast5.ofbFinal_keyed Proof.Cast5.Arm.ofbFinal_framed }
-    Impl.Cast5.Arm.Fn.modeWords []
     Scrub.ofbFinalOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.ofbFinal_code (by decide) _)
 
 end VG.Proof.Cast5.Arm.Fn

@@ -35,7 +35,8 @@ rounds and its working space as a stack argument, and reading the table
 whole-block functions do (`ModesVerified.lean`), with the specification's
 results (`Proof.Modes.Arm.cfbEncFinal_post`, …,
 `Proof.Modes.Arm.ofbFinal_post`); the `_framed` theorems keep
-the buffer on the stack, zeroed on return: 328 bytes more.
+the buffer on the stack, which the functions' cleanup (`scrubAll`) zeroes:
+328 bytes more.
 -/
 
 @[expose] public section
@@ -123,14 +124,15 @@ theorem cfbEncryptFinal_verified : Verified Arm.target cfbEncryptFinal
   seqFinal_verified (ecbSpec true) (cfbEnc_finalOk _ (by decide) (by decide) (by decide)) cfbEncryptFinalTaint
     cfbEncryptFinal_implies
 
-/-- `cfbEncryptFinal`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbEncryptFinal`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem cfbEncryptFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 cfbEncryptFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 328 1 cfbEncryptFinal)
       (Proof.Cast5.cfbEncryptFinalRoundsContract (Arm.abi.withConsts ecbConsts) 336) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
+  Arm.Verified.stackScratchC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
     (nm := "scratch") (e := .u64) (n := 39) (pre := Spec.Cast5.cfbFinalPre Arm.abi.ptrBits)
     (post := Proof.Cast5.cfbEncFinalPost Arm.abi.ptrBits) (wa := true) (stack := 8) (m := 1) (bytes := 328)
-    cfbEncryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbEncryptFinal_verified (by decide) (by decide) (by decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.cfbFinalPre_local _ vs m₁ m₂ hl h) (Proof.Cast5.cfbEncFinalPost_local _)
     (Proof.Cast5.cfbEncFinalPostOut_local _) (cfbFinalFrame_sat _)
 
@@ -172,14 +174,15 @@ theorem cfbDecryptFinal_verified : Verified Arm.target cfbDecryptFinal
   seqFinal_verified (ecbSpec true) (cfbDecF_finalOk _ (by decide) (by decide) (by decide)) cfbDecryptFinalTaint
     cfbDecryptFinal_implies
 
-/-- `cfbDecryptFinal`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `cfbDecryptFinal`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem cfbDecryptFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 cfbDecryptFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 328 1 cfbDecryptFinal)
       (Proof.Cast5.cfbDecryptFinalRoundsContract (Arm.abi.withConsts ecbConsts) 336) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
+  Arm.Verified.stackScratchC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
     (nm := "scratch") (e := .u64) (n := 39) (pre := Spec.Cast5.cfbFinalPre Arm.abi.ptrBits)
     (post := Proof.Cast5.cfbDecFinalPost Arm.abi.ptrBits) (wa := true) (stack := 8) (m := 1) (bytes := 328)
-    cfbDecryptFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbDecryptFinal_verified (by decide) (by decide) (by decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.cfbFinalPre_local _ vs m₁ m₂ hl h) (Proof.Cast5.cfbDecFinalPost_local _)
     (Proof.Cast5.cfbDecFinalPostOut_local _) (cfbFinalFrame_sat _)
 
@@ -265,14 +268,15 @@ theorem ofbFinal_verified : Verified Arm.target ofbFinal
   seqFinal_verified (ecbSpec true) (ofb_finalOk _ (by decide) (by decide) (by decide)) ofbFinalTaint
     ofbFinal_implies
 
-/-- `ofbFinal`, with its scratch buffer on the stack (zeroed on return). -/
+/-- `ofbFinal`, with its scratch buffer on the stack, which its function's
+cleanup (`scrubAll`) zeroes. -/
 theorem ofbFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 ofbFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 328 1 ofbFinal)
       (Proof.Cast5.ofbFinalRoundsContract (Arm.abi.withConsts ecbConsts) 336) :=
-  Arm.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbFinalSig)
+  Arm.Verified.stackScratchC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbFinalSig)
     (nm := "scratch") (e := .u64) (n := 39) (pre := Spec.Cast5.ofbFinalPre Arm.abi.ptrBits)
     (post := Proof.Cast5.ofbFinalPost Arm.abi.ptrBits) (wa := true) (stack := 8) (m := 1) (bytes := 328)
-    ofbFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    ofbFinal_verified (by decide) (by decide) (by decide) (by decide)
     (fun vs m₁ m₂ hl _ h => Proof.Cast5.ofbFinalPre_local _ vs m₁ m₂ hl h) (Proof.Cast5.ofbFinalPost_local _)
     (Proof.Cast5.ofbFinalPostOut_local _) (ofbFinalFrame_sat _)
 
