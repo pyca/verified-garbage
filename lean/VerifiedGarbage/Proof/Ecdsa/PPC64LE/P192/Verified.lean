@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Main
 public import VerifiedGarbage.Impl.Ecdsa.P192.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
+public import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 public import VerifiedGarbage.Spec.Ecdsa.P192
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192.Lit
@@ -11,6 +15,10 @@ import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Main
 meta import VerifiedGarbage.Impl.Ecdsa.P192.PPC64LE
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 meta import VerifiedGarbage.Spec.Ecdsa.P192
 meta import VerifiedGarbage.Proof.Ecdsa.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P192.Lit
@@ -85,9 +93,16 @@ namespace VG.Proof.Ecdsa.PPC64LE.P192
 
 open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE Spec.Weierstrass
 
-theorem pre_of {s : State} (h : signPPC.pre s) : Pre p192 s := by
+/-- The contract with the table of constants (`Cfg.constsK`), as the proof states it. -/
+abbrev signPC : Contract isa := signPPC.withTables p192.constsK
+
+theorem pre_of {s : State} (h : signPPC.pre (stripConsts p192.constsK s)) (hk : ConstsOk p192.constsK 0 s) :
+    Pre p192 s (constRegs p192.constsK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, fun h => absurd h (by decide)⟩
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, fun _ =>
+    tbl_of_consts hk (List.mem_singleton_self _) (hk.disjoint_wr (List.mem_singleton_self _) (by
+      show (⟨s.gpr .r7, size⟩ : Region) ∈ (stripConsts p192.constsK s).wr
+      rw [h2]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
 
 theorem post_of {s s' : State} (h : SignPost p192 s s') : signPPC.post s s' := by
   unfold SignPost at h
@@ -102,21 +117,25 @@ theorem post_of {s s' : State} (h : SignPost p192 s s') : signPPC.post s s' := b
     from rfl, hq]
   rcases q with _ | rs <;> exact id
 
-theorem sign_ppc (hL : Weierstrass.Law Spec.P192.curve) (s : State) (hs : signPPC.pre s) :
-    ∃ t s', Exec isa signP192 s t s' ∧ abiPreserved s s' ∧ signPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p192_ok (by decide) hL (pre_of hs)
+
+theorem sign_ppc (hL : Weierstrass.Law Spec.P192.curve) (s : State) (hs : signPC.pre s) :
+    ∃ t s', Exec isa signP192 s t s' ∧ abiPreserved s s' ∧ signPC.post s s' := by
+  obtain ⟨hp, hk⟩ := hs
+  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p192_ok (by decide) hL (pre_of hp hk)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
-theorem sign_ct : ConstantTime isa signPPC.pre signPPC.pub signP192 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
-    (fun _ _ _ _ ⟨hsp, h3, h4, h5, h6, h7⟩ => ⟨hsp, fun r hr => by
+theorem sign_ct : ConstantTime isa signPC.pre signPC.pub signP192 :=
+  VG.Taint.constantTime (A := taintSym [p192.constSym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+    (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5, h6, h7⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact h3
       · exact h4
       · exact h5
       · exact h6
-      · exact h7⟩) (by taint_decide)
+      · exact h7⟩, fun n hn => by
+        simp only [List.mem_singleton] at hn; subst hn; exact sy _ (List.mem_singleton_self _)⟩)
+    (by taint_decide)
 
 /-- A state satisfying the precondition. -/
 def satState : State where
@@ -128,9 +147,9 @@ def satState : State where
   rd := [⟨0x2000, 24⟩, ⟨0x3000, 24⟩, ⟨0x4000, 24⟩]
   wr := [⟨0x1000, 48⟩, ⟨0x8000, 8192⟩]
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P192.curve) :
-    Verified PPC64LE.target signP192 (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst PPC64LE.abi) :=
-  Verified.of_correct (sign_ppc hL) sign_ct
+/-- `signPPC` states `signContract`'s facts by name. -/
+theorem signPPC_implies :
+    signPPC.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst PPC64LE.abi) :=
     { pre := by
         sig_implies_pre [Spec.Ecdsa.P192.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
           Spec.P192.curve, Spec.Ecdsa.scratchWords, signPPC, sig, PPC64LE.abi, PPC64LE.argRegs]
@@ -149,5 +168,48 @@ theorem sign_verified (hL : Weierstrass.Law Spec.P192.curve) :
         sig_implies_sat [Spec.Ecdsa.P192.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
           Spec.P192.curve, Spec.Ecdsa.scratchWords, signPPC, sig, PPC64LE.abi, PPC64LE.argRegs]
           [satState] using satState }
+
+/-- The memory of the witness with the table: the table at `0x100000`
+(irreducible: unfolding it in a definitional check would evaluate the table). -/
+@[irreducible] def tSatMem : Mem := constMem 0x100000 p192.constTbl
+
+theorem tSatMem_held : ∀ i < p192.constTbl.length,
+    tSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p192.constTbl.getD i 0 := by
+  unfold tSatMem
+  exact constMem_held _ _ (by rw [constTbl_length]; decide)
+
+theorem constsK_eq : p192.constsK = [(p192.constSym, p192.constTbl)] := rfl
+
+/-- A state satisfying the precondition with the table. -/
+def sSatC : State :=
+  { satState with mem := tSatMem, rd := satState.rd ++ [⟨0x100000, 8 * (17 * 3)⟩], syms := fun _ => 0x100000 }
+
+theorem sSat : (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst (abi.withConsts p192.constsK)).pre sSatC := by
+  have hl := constTbl_length p192
+  have held := tSatMem_held
+  rw [constsK_eq]
+  obtain ⟨W, eW⟩ : ∃ W, p192.constTbl = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
+  generalize e : sSatC = s
+  sig_pre [Spec.Ecdsa.P192.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
+    Spec.P192.curve, Spec.Ecdsa.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
+    stackBelow]
+  subst e
+  rw [hl]
+  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, ?_⟩
+  · change r ∈ [⟨0x1000, 48⟩, ⟨0x8000, 8192⟩] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
+
+theorem signPC_implies :
+    signPC.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst (abi.withConsts p192.constsK)) :=
+  withTables_implies signPPC_implies ⟨sSatC, sSat⟩
+
+theorem sign_verified (hL : Weierstrass.Law Spec.P192.curve) :
+    Verified PPC64LE.target signP192
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P192.inst (PPC64LE.abi.withConsts p192.constsK)) :=
+  Verified.of_correct (sign_ppc hL) sign_ct signPC_implies
 
 end VG.Proof.Ecdsa.PPC64LE.P192

@@ -101,15 +101,15 @@ theorem signOut (T : Spec.Ecdsa.Rfc6979.TableInstance) (cs : List (String × Lis
 /-- `vg_ecdsa_p192_sign` as emitted (`Impl.Ecdsa.Rfc6979.PPC64LE.Fn.p192`), with the
 HMAC implementations of `HmacTable.PPC64LE.vars`, meets its contract in constant
 time and returns without secret residue. -/
-theorem p192Sign_scrubbed (hL : Law Spec.P192.curve) (hv : OK vars) :
+theorem p192Sign_scrubbed (hL : Law Spec.P192.curve) (hv : OK vars ∧ "VG_P192_FRAME_CONSTS" ∉ names vars) :
     VerifiedScrubbed PPC64LE.target (Impl.Ecdsa.Rfc6979.PPC64LE.Fn.p192 (fnsOf vars))
-      (specK Spec.Ecdsa.Rfc6979.Curves.p192 [] vars) 32 :=
+      (specK Spec.Ecdsa.Rfc6979.Curves.p192 (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192) vars) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.p192SignApi) {
       tables := [("hmac", tables vars)]
       code := signCodeT (p192R hL) Spec.Ecdsa.Rfc6979.Curves.p192.tries vars
       verified := p192T_verified hL vars hv }
     784 .all
-    (signOut Spec.Ecdsa.Rfc6979.Curves.p192 [] vars)
+    (signOut Spec.Ecdsa.Rfc6979.Curves.p192 (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192) vars)
     (by dsimp only [signCodeT, cfgT, p192R, p192Core, RfcCurve.Q]; lit_decide)
 
 /-- `vg_ecdsa_p224_sign` as emitted (`Impl.Ecdsa.Rfc6979.PPC64LE.Fn.p224`), with the

@@ -82,13 +82,15 @@ open VG.Proof.Weierstrass (Law)
 time and returns without secret residue. -/
 theorem p192Verify_scrubbed (hL : Law Spec.P192.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.p192Verify
-      (Spec.Ecdsa.P192.inst.verifyHashContract PPC64LE.abi 112) 32 :=
+      (Spec.Ecdsa.P192.inst.verifyHashContract
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192)) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P192.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
         Impl.Ecdsa.Verify.PPC64LE.verifyP192
       verified := Proof.Ecdsa.Verify.PPC64LE.P192.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ [] Spec.Ecdsa.P192.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192)
+      Spec.Ecdsa.P192.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.P224.verifyHashApi`'s function as emitted
