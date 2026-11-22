@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Framework.X86.CallBody
+import VerifiedGarbage.Proof.Ecdsa.X86.CallWs
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
@@ -201,28 +202,8 @@ theorem combBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {d : CombDat
     exact cover U₁ (U'.mono fun w hw => List.mem_append_left _ hw)
 
 
-/-- The return address a call stores, apart from the stack its callee's
-calls use. -/
-theorem ret_below_disjoint {sp : BitVec 32} (h : 24 ≤ sp.toNat) :
-    Region.Disjoint (below sp 4) (below (sp - BitVec.ofNat 32 4) 20) := by
-  intro a h₁ h₂
-  simp only [Region.Contains] at h₁ h₂
-  have hb := sp.isLt
-  have e₁ : ((sp - BitVec.ofNat 32 4).setWidth 64).toNat = sp.toNat - 4 := by
-    rw [BitVec.toNat_setWidth, X86.sub_toNat (by omega_using [h])]
-    exact Nat.mod_eq_of_lt (by omega_using [hb])
-  have e₂ : ((sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 20).setWidth 64).toNat = sp.toNat - 24 := by
-    have e : (sp - BitVec.ofNat 32 4).toNat = sp.toNat - 4 := X86.sub_toNat (by omega_using [h])
-    rw [BitVec.toNat_setWidth, X86.sub_toNat (by omega_using [h, e]), e]
-    exact Nat.mod_eq_of_lt (by omega_using [hb])
-  rw [BitVec.toNat_sub, e₁] at h₁
-  rw [BitVec.toNat_sub, e₂] at h₂
-  have ha := a.isLt
-  omega_using [h₁, h₂, h, hb, ha]
-
-/-- What the comb reads, in the state a call of it leaves (`State.callEntry`),
-whose return address is apart from the working space and the tables: and the
-working space as it was. -/
+/-- What the comb reads, in the state a call of it leaves (`State.callEntry`,
+`callEntry_ws`), whose return address is apart from the tables. -/
 theorem combEntry (hc : CfgOk c) {d : CombData} {base : Addr} {g : Reg → BitVec 32}
     {s : State} (hs : Scr s base size) (F : Fixed c base g s.mem) {k : Nat}
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
@@ -239,33 +220,9 @@ theorem combEntry (hc : CfgOk c) {d : CombData} {base : Addr} {g : Reg → BitVe
       20 ≤ (s.callEntry.gpr .esp).toNat ∧ Unch base (wkW c) s.mem s.callEntry.mem := by
   have h7 := hc.n10
   have hn := hs.nowrap
-  obtain e4 : (s.gpr .esp - 4 : BitVec 32) = s.gpr .esp - BitVec.ofNat 32 4 := rfl
-  obtain hesp : (s.callEntry.gpr .esp).toNat = (s.gpr .esp).toNat - 4 := by
-    rw [State.callEntry_esp, e4, sub_toNat (by omega_using [hsp24])]
-  -- What the call stores: the return address, below `esp`.
-  obtain fr : Frame [below (s.gpr .esp) 4] s.mem s.callEntry.mem :=
-    Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
-      (by rw [e4]; exact below_top (k := 4) (Nat.le_refl _) (by omega_using [hsp24]) (Nat.le_refl _))
-  obtain s4 : Region.Sub (below (s.gpr .esp) 4) (below (s.gpr .esp) 24) :=
-    below_le_sub (by decide) hsp24
-  obtain s20 : Region.Sub (below (s.callEntry.gpr .esp) 20) (below (s.gpr .esp) 24) := by
-    rw [State.callEntry_esp, e4]; exact below_inner (by decide) hsp24
-  obtain hws : Region.Disjoint (below (s.gpr .esp) 24) ⟨base, size⟩ := hst _ hs.wr
-  obtain U₀ : Unch base (wkW c) s.mem s.callEntry.mem := fun x hx => fr x fun r hr hcx => by
-    rw [List.mem_singleton.mp hr] at hcx
-    have hx' := hx Mont.outW (by simp [wkW])
-    have hlt : ofs base x < size := by
-      have := (x - base).isLt
-      have e : size = 8192 := rfl
-      simp only [ofs] at hx' ⊢; omega_using [hx', this, e]
-    exact hws x (s4 x hcx) (by simp only [Region.Contains]; simp only [ofs] at hlt; omega_using [hlt])
-  -- The comb's view of the state the call leaves.
-  obtain hs' : Scr s.callEntry base size :=
-    ⟨by rw [State.callEntry_gpr _ (by decide)]; exact hs.edi, hs.wr, hn,
-      stkOk_of (z := 20) (Nat.le_refl _) (by omega_using [hesp, hsp24]) hn (by decide) (by
-        have := hws.sub_left s20
-        simp only [below] at this
-        rwa [VG.X86.Taint.sub_setWidth (by omega_using [hesp, hsp24])] at this)⟩
+  obtain ⟨hs', h20, fr, U₁, s20, s4⟩ := callEntry_ws hs hst hsp24
+  obtain U₀ : Unch base (wkW c) s.mem s.callEntry.mem :=
+    U₁.mono fun w hw => by rw [List.mem_singleton.mp hw]; simp [wkW]
   obtain F' : Fixed c base g s.callEntry.mem := F.unch h7 hn fixedOk_wk U₀
   obtain ht' : ∀ t < 64 * c.n, s.callEntry.mem (off base (bitsAt c.n 0 + t)) =
       if k.testBit t then 1 else 0 := fun t ht => by
@@ -281,11 +238,10 @@ theorem combEntry (hc : CfgOk c) {d : CombData} {base : Addr} {g : Reg → BitVe
     · exact hap r (List.mem_append_left _ hr)
     · rw [List.mem_singleton.mp hr]
       exact (hap _ (List.mem_append_right _ (List.mem_singleton_self _))).sub_right s20
-  exact ⟨hs', F', ht', hTM', hap', by omega_using [hesp, hsp24], U₀⟩
+  exact ⟨hs', F', ht', hTM', hap', h20, U₀⟩
 
 /-- A call of the comb (`vg_<curve>_comb`, `Cfg.gMul`): `combBody_ok`, from the
-state the call leaves, whose return address is apart from the working space
-and the tables, and which the comb leaves where it is. -/
+state the call leaves (`combEntry`), and back (`WP.callWs`). -/
 theorem combCall_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {d : CombData}
     (hcd : c.comb = some d) (hd : CombOk c d) {base : Addr} {g : Reg → BitVec 32}
     {s : State} (hs : Scr s base size) (F : Fixed c base g s.mem) {k : Nat} (hkl : k < 2 ^ (64 * c.n))
@@ -304,37 +260,16 @@ theorem combCall_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {d : CombDat
       Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
         (tmv c.C c.n base s' (c.sl RZ)) (mul k (G c.C)) := by
   obtain ⟨hs', F', ht', hTM', hap', h20, U₀⟩ := combEntry hc hs F ht₀ hTM hap hst hsp24
-  obtain e4 : (s.gpr .esp - 4 : BitVec 32) = s.gpr .esp - BitVec.ofNat 32 4 := rfl
-  obtain s4 : Region.Sub (below (s.gpr .esp) 4) (below (s.gpr .esp) 24) :=
-    below_le_sub (by decide) hsp24
   obtain hspB : SpOk (c.combBody d) 20 := ⟨fun i hi => hsp.1 i hi,
     Nat.le_of_add_le_add_right (show stackUse (c.combBody d) + 4 ≤ 20 + 4 from hsp.2)⟩
-  refine WP.callBody (WP.mono (WP.withFrame hspB.1 hspB.2 h20
-    (combBody_ok hc hC hT hcd hd hs' F' hkl ht' hTM' hout hap' h20 hspB))
-    fun u ⟨⟨K, U, M, L, R⟩, fu⟩ => ?_)
-  obtain huesp : u.gpr .esp = s.gpr .esp - 4 := by
-    rw [K.1 .esp (by decide), State.callEntry_esp]
-  refine ⟨huesp, ?_, ?_⟩
-  · -- The return address is where the call stored it.
-    obtain hc4 : (below (s.gpr .esp) 4).Contains ((s.gpr .esp - 4).setWidth 64) (32 / 8) := by
-      rw [e4]; exact below_top (k := 4) (Nat.le_refl _) (by omega_using [hsp24]) (by decide)
-    obtain hd4 : ∀ r ∈ s.callEntry.wr ++ [below (s.callEntry.gpr .esp) 20],
-        (below (s.gpr .esp) 4).Disjoint r := fun r hr => by
-      rw [State.callEntry_wr] at hr
-      rcases List.mem_append.mp hr with hr | hr
-      · exact (hst r hr).sub_left s4
-      · rw [List.mem_singleton.mp hr, State.callEntry_esp, e4]; exact ret_below_disjoint hsp24
-    rw [fu.readW hc4 hd4 (by decide), State.callEntry_mem, Mem.readW_writeW_self32]
-  · refine ⟨⟨fun r hr => ?_, by rw [RegUpd.rd_setReg, K.2.1]; rfl, by rw [RegUpd.wr_setReg, K.2.2]; rfl⟩,
-      ?_, M, L, R⟩
-    · by_cases he : r = .esp
-      · subst he; exact RegUpd.gpr_setReg_self _ _ _
-      · rw [RegUpd.gpr_setReg_of_ne _ _ he, K.1 r hr, State.callEntry_gpr _ he]
-    · rw [RegUpd.mem_setReg]
-      refine Unch.cover (U₀.trans U) fun w hw => ⟨w, ?_, Nat.le_refl _, Nat.le_refl _⟩
-      rcases List.mem_append.mp hw with hw | hw
-      · exact List.mem_append_right _ (List.mem_append_left _ hw)
-      · exact hw
+  refine WP.callWs hs hst hsp24 hspB (WP.mono
+    (combBody_ok hc hC hT hcd hd hs' F' hkl ht' hTM' hout hap' h20 hspB)
+    fun u ⟨K, U, M, L, R⟩ => ⟨K, ?_, M, L, R⟩)
+  rw [RegUpd.mem_setReg]
+  refine Unch.cover (U₀.trans U) fun w hw => ⟨w, ?_, Nat.le_refl _, Nat.le_refl _⟩
+  rcases List.mem_append.mp hw with hw | hw
+  · exact List.mem_append_right _ (List.mem_append_left _ hw)
+  · exact hw
 
 /-- `R = [k]G`, by a call of the comb or by the ladder, from the table of `k`'s
 bits, with `R = O` (for the ladder) and the comb's tables (`hTb`) where the

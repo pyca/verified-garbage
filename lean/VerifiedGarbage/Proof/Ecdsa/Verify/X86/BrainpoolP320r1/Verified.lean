@@ -80,7 +80,7 @@ def vBitsCode : Prog isa :=
 def vLadderCode : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save brainpoolp320r1Comb))
     (.seq (Impl.Weierstrass.X86.bits (brainpoolp320r1Comb.sl V) (bitsAt brainpoolp320r1Comb.n 0) (8 * brainpoolp320r1Comb.n))
-      (.seq (brainpoolp320r1Comb.winMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
+      (.seq (brainpoolp320r1Comb.ecdhMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY)
         (Impl.Ecdsa.Verify.X86.Cfg.sum brainpoolp320r1Comb)))
 materialize_code vFrontCode
 materialize_code vMidCode
@@ -103,11 +103,21 @@ theorem stagesCT : VerifyStagesCT brainpoolp320r1Comb where
 /-! The field functions modulo `p`, analysed once from what is public on
 entry to their calls from the windows (`τWin`), in place of each call. -/
 
-taint_summary mulSum : sseTaint τWin
+taint_summary mulSum : sseTaint { τWin with room := 24 }
   (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp320r1p.k Impl.Weierstrass.Mont.brainpoolp320r1p.m)
-taint_summary addSum : sseTaint τWin
+taint_summary addSum : sseTaint { τWin with room := 24 }
   (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.brainpoolp320r1p.k Impl.Weierstrass.Mont.brainpoolp320r1p.m)
-taint_summary subSum : sseTaint τWin
+taint_summary subSum : sseTaint { τWin with room := 24 }
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.brainpoolp320r1p.k Impl.Weierstrass.Mont.brainpoolp320r1p.m)
+
+/-! The same functions, from their calls within the windows' function
+(`vg_<curve>_window`), one return address deeper. -/
+
+taint_summary mulSumW : sseTaint { τWin with room := 24, stk := [none, some 16, none] }
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.brainpoolp320r1p.k Impl.Weierstrass.Mont.brainpoolp320r1p.m)
+taint_summary addSumW : sseTaint { τWin with room := 24, stk := [none, some 16, none] }
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.brainpoolp320r1p.k Impl.Weierstrass.Mont.brainpoolp320r1p.m)
+taint_summary subSumW : sseTaint { τWin with room := 24, stk := [none, some 16, none] }
   (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.brainpoolp320r1p.k Impl.Weierstrass.Mont.brainpoolp320r1p.m)
 
 /-- The taint checks of `[u]G + [v]Q` around the comb. -/
@@ -117,10 +127,9 @@ theorem ladderCT : VerifyLadderCT brainpoolp320r1Comb where
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   ladder := by
     change RelCT isa _ vLadderCode _
-    obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false) vLadderCode h).isSome = true := by
-      taint_decide_sum [mulSum, addSum, subSum]
-    exact (RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc).mono
-      (fun _ _ h => scratchArgAgree_room h (Cfg.stk_ge _)) (fun _ _ _ => trivial)
+    obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false brainpoolp320r1Comb.stk) vLadderCode h).isSome = true := by
+      taint_decide_sum [mulSum, addSum, subSum, mulSumW, addSumW, subSumW]
+    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
 
 /-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
 theorem verify_sp : SpOk verifyBrainpoolP320r1 brainpoolp320r1Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩

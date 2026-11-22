@@ -27,7 +27,7 @@ open VG.X86 VG.X86.Scrub VG.Proof.EcKey.X86.Scrub
 
 /-- `vg_ecdh_brainpoolp512r1`. -/
 theorem exchange_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
-    VerifiedScrubbed target Impl.Ecdh.X86.Fn.exchangeBrainpoolP512r1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst X86.abi 20) 32 :=
+    VerifiedScrubbed target Impl.Ecdh.X86.Fn.exchangeBrainpoolP512r1 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst X86.abi 24) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.BrainpoolP512r1.exchangeApi)
     { code := Impl.Ecdh.X86.exchangeBrainpoolP512r1
       verified := Proof.Ecdh.X86.BrainpoolP512r1.ecdh_verified hL }

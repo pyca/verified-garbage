@@ -29,7 +29,9 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 
       ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk],
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
     (hPc : onCurve c.C P = true)
-    (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P) (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r) (hspG : SpOk c.gMul c.stk)
+    (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P)
+    (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r) (h24 : c.stk = 24)
+    (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder c) c.stk) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C)))
       (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' → WP isa rest s' Q) :
@@ -91,6 +93,14 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 
     rw [v₄ (by decide), v₄ (by decide), W₃ (by decide) (by decide), W₃ (by decide) (by decide)]
     exact hQ
   have hlen := hc.len_hi
+  obtain hspW : SpOk (c.ecdhMul PX PY) 24 := by
+    have := (show SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder c) c.stk from hsp)
+    unfold Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder at this
+    rw [h24] at this
+    exact this.right.right.right.right.left
+  obtain e₄ : s₄.gpr .esp = s₀.gpr .esp := by
+    rw [k₄.1 _ (by decide), k₃.1 _ (by decide), K₂.1 _ (by decide), k₁.1 _ (by decide), hM.esp]
+  obtain w₄ : s₄.wr = s₀.wr := by rw [k₄.2.2, k₃.2.2, K₂.2.2, k₁.2.2, hM.wr]
   refine WP.seq (WP.mono (ecdhMul_ok hc hC (px := PX) (py := PY) (by decide) (by decide) hs₄ F₄.mp F₄.ap
     F₄.b3p F₄.zero F₄.onep
     (by rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.px_lt)
@@ -99,7 +109,9 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 
     (fun t ht => by
       show s₄.mem (off base (bitsAt c.n 0 + t)) = _
       rw [b₄ t (Nat.lt_of_lt_of_le ht (by omega_using [hlen])),
-        show wordsVal s₃.mem base (c.sl V) c.n = sv c base s V from W₃ (by decide) (by decide)]))
+        show wordsVal s₃.mem base (c.sl V) c.n = sv c base s V from W₃ (by decide) (by decide)])
+    (fun r hr => by rw [w₄] at hr; rw [e₄, ← h24]; exact hst r hr)
+    (by rw [e₄, ← h24]; exact hM.sp_lo) hspW)
     fun s₅ ⟨K₅, U₅, L₅, q₅⟩ => ?_)
   obtain hs₅ := hs₄.of_keeps K₅ (by decide)
   obtain F₅ := F₄.unch h7 hn ((winW_winTW h7).fixedOk h7) U₅

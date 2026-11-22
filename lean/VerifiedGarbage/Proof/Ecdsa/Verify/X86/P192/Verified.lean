@@ -92,11 +92,21 @@ theorem stagesCT : VerifyStagesCT p192Comb where
 /-! The field functions modulo `p`, analysed once from what is public on
 entry to their calls from the windows (`τWin`), in place of each call. -/
 
-taint_summary mulSum : sseTaint τWin
+taint_summary mulSum : sseTaint { τWin with room := 24 }
   (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p192p.k Impl.Weierstrass.Mont.p192p.m)
-taint_summary addSum : sseTaint τWin
+taint_summary addSum : sseTaint { τWin with room := 24 }
   (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p192p.k Impl.Weierstrass.Mont.p192p.m)
-taint_summary subSum : sseTaint τWin
+taint_summary subSum : sseTaint { τWin with room := 24 }
+  (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p192p.k Impl.Weierstrass.Mont.p192p.m)
+
+/-! The same functions, from their calls within the windows' function
+(`vg_<curve>_window`), one return address deeper. -/
+
+taint_summary mulSumW : sseTaint { τWin with room := 24, stk := [none, some 16, none] }
+  (Impl.Weierstrass.X86.Mont.mulFn Impl.Weierstrass.Mont.p192p.k Impl.Weierstrass.Mont.p192p.m)
+taint_summary addSumW : sseTaint { τWin with room := 24, stk := [none, some 16, none] }
+  (Impl.Weierstrass.X86.Mont.addFn Impl.Weierstrass.Mont.p192p.k Impl.Weierstrass.Mont.p192p.m)
+taint_summary subSumW : sseTaint { τWin with room := 24, stk := [none, some 16, none] }
   (Impl.Weierstrass.X86.Mont.subFn Impl.Weierstrass.Mont.p192p.k Impl.Weierstrass.Mont.p192p.m)
 
 /-- The taint checks of `[u]G + [v]Q` around the comb. -/
@@ -106,10 +116,9 @@ theorem ladderCT : VerifyLadderCT p192Comb where
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   ladder := by
     change RelCT isa _ vLadderCode _
-    obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false) vLadderCode h).isSome = true := by
-      taint_decide_sum [mulSum, addSum, subSum]
-    exact (RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc).mono
-      (fun _ _ h => scratchArgAgree_room h (Cfg.stk_ge _)) (fun _ _ _ => trivial)
+    obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false p192Comb.stk) vLadderCode h).isSome = true := by
+      taint_decide_sum [mulSum, addSum, subSum, mulSumW, addSumW, subSumW]
+    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
 
 /-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
 theorem verify_sp : SpOk verifyP192 p192Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩

@@ -75,22 +75,25 @@ structure CfgOk (c : Cfg) : Prop where
 /-- Where the field arithmetic's functions keep their own working space. -/
 abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.wk (c : Cfg) : Nat := Mont.own c.n
 
-/-- The bytes of stack below the return address that the code uses: the
-calls' 20 (the arguments and the return address; a fixed-base comb's
-four-byte frame, which reads the table's address, holds no call), or 24
-with a comb, whose call (`vg_<curve>_comb`) adds its return address to its
-own calls' 20, or 28 where the ladder calls the point functions
-(coordinates of at most 6 words, without a comb), or the code calls
-`vg_<curve>_mul` (`Cfg.mul`): their argument and return address, and their
-own calls' 20. -/
+/-- The bytes of stack below the return address that the code uses: 24, for
+the calls of the comb (`vg_<curve>_comb`) and of the windows
+(`vg_<curve>_window`), which add their return address to their own calls'
+20 (the arguments and the return address; a fixed-base comb's four-byte
+frame, which reads the table's address, holds no call), or 28 where the
+ladder calls the point functions (coordinates of at most 6 words, without a
+comb), or the code calls `vg_<curve>_mul` (`Cfg.mul`): their argument and
+return address, and their own calls' 20. -/
 abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.stk (c : Cfg) : Nat :=
-  if c.comb.isNone ∧ (c.n ≤ 6 ∨ c.mul.isSome) then 28 else if c.comb.isSome then 24 else 20
+  if c.comb.isNone ∧ (c.n ≤ 6 ∨ c.mul.isSome) then 28 else 24
 
 theorem Cfg.stk_ge (c : Cfg) : 20 ≤ c.stk := by
-  unfold Cfg.stk; split <;> (try split) <;> omega_arith
+  unfold Cfg.stk; split <;> omega_arith
+
+theorem Cfg.stk_ge24 (c : Cfg) : 24 ≤ c.stk := by
+  unfold Cfg.stk; split <;> omega_arith
 
 theorem Cfg.stk_le (c : Cfg) : c.stk ≤ 28 := by
-  unfold Cfg.stk; split <;> (try split) <;> omega_arith
+  unfold Cfg.stk; split <;> omega_arith
 
 /-- A curve with a comb uses 24 bytes of stack: the call of its comb. -/
 theorem Cfg.stk_comb {c : Cfg} {d : CombData} (hcd : c.comb = some d) : c.stk = 24 := by

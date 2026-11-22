@@ -233,7 +233,8 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
     (hPc : onCurve c.C P = true)
     (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
-      (tmv c.C c.n base s (c.sl ONEP)) P) (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r) (hspG : SpOk c.gMul c.stk)
+      (tmv c.C c.n base s (c.sl ONEP)) P) (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
+    (h24 : c.stk = 24) (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) c.stk) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C)))
       (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' → WP isa rest s' Q) :
@@ -248,6 +249,6 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.
         change toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = _
         rw [hM.fixed.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)
       rw [← h1]; exact hQ
-    exact pointsCombLadder_ok hc hC hne hT hCo hM hTb hPc hQ' hst hspG hsp h
+    exact pointsCombLadder_ok hc hC hne hT hCo hM hTb hPc hQ' hst h24 hspG hsp h
 
 end VG.Proof.Ecdsa.Verify.X86

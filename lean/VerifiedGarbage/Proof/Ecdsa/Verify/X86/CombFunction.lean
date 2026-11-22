@@ -59,7 +59,8 @@ theorem vComb_ok (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.In
   have ht := vPrefixTables (d := p256d) rfl hp P
   refine WP.mono (verifyCombBody_ok (p256Comb_ok hI) hC p256Comb_nEnc (p256Comb_tables hC) hCo
     (fun _ => p256Comb_am3) hp₁
-    (fun d hd => by have e : p256d = d := Option.some.inj hd; subst d; exact ht) signComb_spG vCombBody_sp)
+    (fun d hd => by have e : p256d = d := Option.some.inj hd; subst d; exact ht)
+    (Cfg.stk_comb (d := p256d) rfl) signComb_spG vCombBody_sp)
     fun s₂ ⟨K, post⟩ => ?_
   have ha := K.abi hp₁
   have he := P.gpr .esp (by decide)
