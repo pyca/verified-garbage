@@ -198,6 +198,11 @@ structure Cfg where
   complete addition its comb and windows call, and its callers run it inline
   (`mulRun`) rather than calling it, so that it calls only that function. -/
   mulAdd : Bool := false
+  /-- Whether `x = X Z⁻¹` out of Montgomery form, the first two products of
+  the public key's, ECDH's and the signature's tails, is a call of one
+  function, `vg_<curve>_affine_x` (`affineX`, named after `inverse`'s curve),
+  which they share: for a curve whose products are inline (`affineOn`). -/
+  affine : Bool := false
 
 /-- The bits of `e < 2^k`: the least `j ≤ k` with `e < 2^j`. -/
 def bitLen (e : Nat) : Nat → Nat
@@ -476,8 +481,28 @@ signature and public key measured slower with the calls. -/
 def mulPF (o a b : Nat) : Prog isa :=
   if c.n = 9 then .block (Mont.X86_64.mul c.MP' o a b) else opProg c.MP' (.mul o a b)
 
-/-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
+/-- Whether `affineX` is a call: `affine`, for a curve with `inverse` (whose
+name the function takes) and products inline (`Mont.callOf`), so that the
+function calls nothing. -/
+def affineOn : Bool := c.affine && c.inverse.isSome && c.n != 9 && (Mont.callOf c.MP').isNone
+
+/-- `vg_<curve>_affine_x`'s name. -/
+def affineName : String := s!"vg_{(c.inverse.map (·.curve)).getD ""}_affine_x"
+
+/-- `x = X Z⁻¹` out of Montgomery form, with `Z⁻¹ R` in `ACC`: `XM = X · ACC`
+and `X = XM · 1`, a call of `vg_<curve>_affine_x` (`affineOn`). -/
+def affineX : Prog isa :=
+  .call c.affineName (.seq (c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC)) (c.mulPF (c.sl X) (c.sl XM) (c.sl ONE)))
+
+/-- `x = X Z⁻¹` (a call of `vg_<curve>_affine_x` if `affineOn`), `r = x mod n`,
+`k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
+  if c.affineOn then
+    progs [c.affineX,
+      .block (Mont.X86_64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)),
+      opProg c.MN' (.mul (c.sl KM) (c.sl K) (c.sl R2N)),
+      .block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))]
+  else
   progs [c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC),
     c.mulPF (c.sl X) (c.sl XM) (c.sl ONE),
     .block (Mont.X86_64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)),

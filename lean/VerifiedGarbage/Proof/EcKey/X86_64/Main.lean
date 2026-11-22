@@ -205,12 +205,16 @@ open VG.Impl.EcKey.X86_64 (YM Y)
 
 variable {c : Cfg}
 
-theorem middle_eq (c : Cfg) : (Impl.EcKey.X86_64.Cfg.middle c).inline =
-    .seq ((c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC)).inline)
+theorem middle_eq (c : Cfg) {s : State} {Q : State → Prop} : WP isa (Impl.EcKey.X86_64.Cfg.middle c).inline s Q ↔
+    WP isa (.seq ((c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC)).inline)
     (.seq ((c.mulPF (c.sl X) (c.sl XM) (c.sl ONE)).inline)
     (.seq ((c.mulPF (c.sl YM) (c.sl RY) (c.sl ACC)).inline)
     (.seq ((c.mulPF (c.sl Y) (c.sl YM) (c.sl ONE)).inline)
-    (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.EcKey.X86_64.Cfg.finish c))))) := rfl
+    (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.EcKey.X86_64.Cfg.finish c)))))) s Q := by
+  unfold Impl.EcKey.X86_64.Cfg.middle
+  split
+  · next h => exact affineX_wp h
+  · exact Iff.rfl
 
 /-- What `middle`'s field operations leave. -/
 structure OpsPost (c : Cfg) (base : Addr) (s s' : State) : Prop where

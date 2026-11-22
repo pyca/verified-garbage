@@ -180,6 +180,9 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks
 of `d` and `Z`, and the result. -/
 def middle : Prog isa :=
+  if c.affineOn then
+    progs [c.affineX, .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
+  else
   progs [opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC)),
     opProg c.MP' (.mul (c.sl X) (c.sl XM) (c.sl ONE)),
     .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]

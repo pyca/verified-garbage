@@ -20,6 +20,7 @@ def p224 : Cfg where
   fastN := true
   mulBase := some Impl.Weierstrass.MulBase.p224
   inverse := some Impl.Weierstrass.Inverse.p224
+  affine := true
   checkPoint := some Impl.Weierstrass.CheckPoint.p224
 
 /-- `vg_ecdsa_p224_sign`. -/

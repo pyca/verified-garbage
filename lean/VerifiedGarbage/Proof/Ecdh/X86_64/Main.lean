@@ -94,10 +94,20 @@ theorem ecFinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s bas
   · have hra : Reg.rax ∉ Cfg.saved.map Prod.fst := by decide
     rw [r₄ _ hra, e₃, hrcx₂, mask_bit]
 
-theorem middle_eq (c : Cfg) : (Impl.Ecdh.X86_64.Cfg.middle c).inline =
-    .seq ((opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC))).inline)
+theorem middle_eq (c : Cfg) {s : State} {Q : State → Prop} : WP isa (Impl.Ecdh.X86_64.Cfg.middle c).inline s Q ↔
+    WP isa (.seq ((opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC))).inline)
     (.seq ((opProg c.MP' (.mul (c.sl X) (c.sl XM) (c.sl ONE))).inline)
-    (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.finish c))) := rfl
+    (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.finish c)))) s Q := by
+  unfold Impl.Ecdh.X86_64.Cfg.middle
+  split
+  · next h =>
+    have h9 : c.n ≠ 9 := by
+      simp only [Cfg.affineOn, Bool.and_eq_true, bne_iff_ne, ne_eq] at h; exact h.1.2
+    have e : ∀ o a b, opProg c.MP' (.mul o a b) = c.mulPF o a b := fun o a b => by
+      simp only [Cfg.mulPF, h9, ite_false]
+    rw [e, e]
+    exact affineX_wp h
+  · exact Iff.rfl
 
 /-- Whether the result is a shared secret: the peer's key (`V`), `d` in
 `[1, n-1]`, and `Z ≠ 0`. -/
