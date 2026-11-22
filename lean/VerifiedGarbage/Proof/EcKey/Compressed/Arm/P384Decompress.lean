@@ -77,13 +77,13 @@ theorem sat : ∃ s, (Spec.EcKey.P384.inst.decompressPublicKeyContract abi 0).pr
 
 theorem verified (hL : Proof.Weierstrass.Law Spec.P384.curve) :
     Verified target code (Spec.EcKey.P384.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct p384 p384_ok _ (candidateThree_correct p384_ok (by decide +kernel))) ct
+  Verified.of_correct (decompress_correct p384 p384_ok rfl _ (candidateThree_correct p384_ok (by decide +kernel))) ct
     (decompress_implies Spec.EcKey.P384.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 
 theorem verifiedU (hL : Proof.Weierstrass.Law Spec.P384.curve) :
     Verified target codeU (Spec.EcKey.P384.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct (p384With true) p384u_ok _
+  Verified.of_correct (decompress_correct (p384With true) p384u_ok rfl _
       (candidateThree_correct p384u_ok (by decide +kernel))) ctU
     (decompress_implies Spec.EcKey.P384.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)

@@ -233,8 +233,8 @@ variable {c : Cfg}
 /-- The arguments: `out` (`8 n` bytes), `d` (`8 n` bytes), `peer`
 (`1 + 16 n` bytes) and `scratch`, readable and writable as the contract says
 and apart from each other as it says. -/
-structure EPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨ptr s .r1, c.C.len⟩, ⟨ptr s .r2, 1 + 2 * c.C.len⟩]
+structure EPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [⟨ptr s .r1, c.C.len⟩, ⟨ptr s .r2, 1 + 2 * c.C.len⟩] ++ extra
   wr : s.wr = [⟨ptr s .r0, c.C.len⟩, ⟨ptr s .r3, 8192⟩]
   out_sc : Region.Disjoint ⟨ptr s .r0, c.C.len⟩ ⟨ptr s .r3, 8192⟩
   d_sc : Region.Disjoint ⟨ptr s .r1, c.C.len⟩ ⟨ptr s .r3, 8192⟩
@@ -243,8 +243,10 @@ structure EPre (c : Cfg) (s : State) : Prop where
   d_fit : (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32
   peer_fit : (s.gpr .r2).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32
   sc_fit : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32
+  /-- The table of constants the setup copies, if it copies one (`Cfg.tbl`). -/
+  tbl : c.tbl = true → ConstTblOk c (ptr s .r3) s
 
-theorem EPre.setup {s : State} (hp : EPre c s) : SetupPre c Args.ecdh s where
+theorem EPre.setup {s : State} {extra : List Region} (hp : EPre c s extra) : SetupPre c Args.ecdh s where
   shift := .inl rfl
   args := by unfold argsOk; decide
   sc_in := fun h => nomatch h
@@ -259,6 +261,7 @@ theorem EPre.setup {s : State} (hp : EPre c s) : SetupPre c Args.ecdh s where
   d_fit := hp.d_fit
   e_fit := hp.d_fit
   sc_fit := hp.sc_fit
+  tbl := hp.tbl
 
 /-- The private key. -/
 abbrev dk (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ .r1) c.C.len)
@@ -316,7 +319,7 @@ theorem peer_bytes (m : Mem) (p : Addr) (L : Nat) :
   rfl
 
 theorem exchange_eq' (c : Cfg) : Impl.Ecdh.Arm.Cfg.exchange c =
-    .seq (.seq (.block (c.setupWith Args.ecdh))
+    .seq (.seq (c.setupWith Args.ecdh)
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r2)) (.seq (Impl.Ecdh.Arm.Cfg.validate c)
@@ -325,7 +328,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.Arm.Cfg.exchange c =
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers. -/
-theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Region} (hp : EPre c s₀ extra) :
     WP isa (Impl.Ecdh.Arm.Cfg.exchange c) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' := by
   have h0 := hc.n0
   have h7 := hc.n10

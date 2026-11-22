@@ -226,7 +226,7 @@ theorem secp256k1With_ok (u : Bool) : CfgOk (secp256k1With u) := by
 
 theorem pre_of {s : State} (h : signArm.pre s) : Pre secp256k1 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, noTbl rfl⟩
 
 theorem sign_arm (hL : Weierstrass.Law Spec.Secp256k1.curve) (s : State) (hs : signArm.pre s) :
     ∃ t s', Exec isa signSecp256k1 s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by

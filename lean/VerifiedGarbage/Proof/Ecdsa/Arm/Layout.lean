@@ -86,6 +86,21 @@ abbrev scR : Region := ⟨scPtr s, 8192⟩
 abbrev argsR : Region := ⟨State.addr s.sp, 4⟩
 end
 
+/-- The table of constants (`Cfg.constTbl`), as the setup copies it into the
+working space at `sc`: within the 32-bit address space, readable, holding its
+words, and apart from the working space's first `size` bytes, which the setup
+writes. -/
+structure ConstTblOk (c : Cfg) (sc : Addr) (s : State) : Prop where
+  fit : (s.syms c.constSym).toNat + 8 * c.constTbl.length ≤ 2 ^ 32
+  rd : InRegions (s.rd ++ s.wr) (State.addr (s.syms c.constSym)) (8 * c.constTbl.length)
+  words : ∀ i < c.constTbl.length,
+    s.mem.readW (State.addr (s.syms c.constSym) + BitVec.ofNat 64 (8 * i)) 64 = c.constTbl.getD i 0
+  sep : Region.Disjoint ⟨State.addr (s.syms c.constSym), 8 * c.constTbl.length⟩ ⟨sc, size⟩
+
+/-- A curve that copies no table (`Cfg.tbl`): its proofs need none. -/
+theorem noTbl {c : Cfg} (h : c.tblSym = none) {P : Prop} : c.tbl = true → P := fun e => by
+  rw [Cfg.tbl, h] at e; exact absurd e (by decide)
+
 /-- The arguments, readable and writable as the contract says and apart from
 each other as it says. -/
 structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
@@ -103,6 +118,8 @@ structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   k_fit : (s.gpr .r3).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (stackArg s 0).toNat + 8192 ≤ 2 ^ 32
   sp_fit : s.sp.toNat + 4 ≤ 2 ^ 32
+  /-- The table of constants the setup copies, if it copies one (`Cfg.tbl`). -/
+  tbl : c.tbl = true → ConstTblOk c (scPtr s) s
 
 /-- The working space's base, from where `A` says. -/
 def scVal (A : Args) (s : State) : BitVec 32 :=
@@ -139,6 +156,8 @@ structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
   d_fit : (s.gpr A.d).toNat + c.C.len ≤ 2 ^ 32
   e_fit : (s.gpr A.e).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (scVal A s).toNat + 8192 ≤ 2 ^ 32
+  /-- The table of constants the setup copies, if it copies one (`Cfg.tbl`). -/
+  tbl : c.tbl = true → ConstTblOk c (scBase A s) s
 
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
@@ -166,6 +185,7 @@ theorem Pre.setup {c : Cfg} {s : State} {extra : List Region} (hp : Pre c s extr
   d_fit := hp.d_fit
   e_fit := hp.digest_fit
   sc_fit := hp.sc_fit
+  tbl := hp.tbl
 
 /-- The number in slot `i`. -/
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
@@ -183,12 +203,12 @@ theorem shAt_D_E (c : Cfg) : shAt c (some D) E = 0 := rfl
 /-- What `setupWith A` leaves, from the state `s₀` at entry, with the working
 space at `base`: `r12 = base`, `r4`–`r11` and `lr` in `[0, 36)`, `lr = out`,
 `k`, `d` and the hash in their slots (the slot `A.hs` shifted, `shAt`), the
-constants in theirs, and the flag all ones; only `r4`, `r5`, `r12`, `lr` and
-the working space changed. -/
+constants in theirs, and the flag all ones; only `r4`, `r5`, `r9`–`r12`, `lr`
+and the working space changed. -/
 structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
   far : Far s base 8192
-  keep : VG.Proof.X25519.Arm.Rest [.r4, .r5, .r12, .lr] s₀ s
+  keep : VG.Proof.X25519.Arm.Rest [.r4, .r5, .r9, .r10, .r11, .r12, .lr] s₀ s
   unch : Unch base [(0, size)] s₀.mem s.mem
   saved : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = s₀.gpr rd.1
   lr : s.gpr .lr = s₀.gpr .r0

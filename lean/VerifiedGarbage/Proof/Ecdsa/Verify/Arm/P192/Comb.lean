@@ -32,6 +32,9 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
@@ -130,26 +133,25 @@ open VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.P192 VG.Proof.Ecdsa.Verify.Arm
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass.Arm.TComb
 open VG.Proof.Mont VG.Proof.Mont.Arm
 
-abbrev combVerifySpec : Contract isa :=
-  Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst (abi.withConsts p192CombConsts)
+/-- The tables verification reads: the comb's, and the setup's constants. -/
+abbrev combVerifyK (um : Bool) : List (String × List (BitVec 64)) := p192CombConsts ++ (p192With um).constsK
+
+abbrev combVerifySpec (um : Bool) : Contract isa :=
+  Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst (abi.withConsts (combVerifyK um))
 
 def combVerifyPre (um : Bool) (s : State) : Prop :=
-  VPre (p192With um) s (constRegs p192CombConsts s) ∧ ConstsOk p192CombConsts 0 s
+  VPre (p192With um) s (constRegs (combVerifyK um) s) ∧ ConstsOk (combVerifyK um) 0 s
 
-theorem verify_spec_pre {um : Bool} {s : State}
-    (h : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst abi).pre s) : VPre (p192With um) s := by
+theorem combVerify_pre {um : Bool} {s : State} (h : (combVerifySpec um).pre s) : combVerifyPre um s := by
+  have hp : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst abi).pre (stripConsts (combVerifyK um) s) ∧
+      ConstsOk (combVerifyK um) 0 s := pre_consts.mp h
+  obtain ⟨h₁, hk⟩ := hp
   sig_pre [Spec.Ecdsa.P192.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
-    Spec.P192.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h
-  obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h
-  exact ⟨rd,wr,ps,ds,ss,fp,fd,fs,fc⟩
-
-theorem combVerify_pre {um : Bool} {s : State} (h : combVerifySpec.pre s) : combVerifyPre um s := by
-  have hp : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P192.inst abi).pre (stripConsts p192CombConsts s) ∧
-      ConstsOk p192CombConsts 0 s := pre_consts.mp h
-  have p := verify_spec_pre (um := um) hp.1
-  refine ⟨⟨?_,p.wr,p.pk_sc,p.dg_sc,p.sig_sc,p.pk_fit,p.dg_fit,p.sig_fit,p.sc_fit⟩,hp.2⟩
-  rw [← List.take_append_drop (s.rd.length-p192CombConsts.length) s.rd,hp.2.1]
-  exact congrArg (fun rs => rs++constRegs p192CombConsts s) p.rd
+    Spec.P192.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h₁
+  obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h₁
+  refine ⟨⟨hk.rd_strip rd,wr,ps,ds,ss,fp,fd,fs,fc,fun _ => tbl_of_consts hk
+    (List.mem_append_right _ (List.mem_singleton_self _)) ?_⟩,hk⟩
+  rw [wr]; exact List.mem_singleton_self _
 
 /-- Verification's `[u]G` by the comb, as `verifyWith_ok` and `verifyHead_ok` ask. -/
 theorem comb_generatorWP (hC : Law Spec.P192.curve) {um : Bool} {s₀ : State} (hp : combVerifyPre um s₀) :
@@ -159,7 +161,7 @@ theorem comb_generatorWP (hC : Law Spec.P192.curve) {um : Bool} {s₀ : State} (
         (fun j X Y Z => Rep (p192With um).C X Y Z
           (Spec.Weierstrass.mul (sv (p192With um) (ptr s₀ .r3) s U >>> j) (Spec.Weierstrass.G (p192With um).C)))
         s.syms false := by
-  have member : (p192Comb.tsym,p192CombWords)∈p192CombConsts := List.mem_singleton_self _
+  have member : (p192Comb.tsym,p192CombWords)∈combVerifyK um := List.mem_cons_self
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show (⟨ptr s₀ .r3,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)
@@ -201,7 +203,8 @@ theorem combVerify_ok (hC : Law Spec.P192.curve) {um : Bool} {s₀ : State} (hp 
 /-- What timing may depend on: the pointers and the table's address, and
 the key and the signature (`VPub`), which the contract lets it depend on. -/
 def combVerifyPub (um : Bool) (s t : State) : Prop :=
-  (verifyArm.pub s t ∧ s.syms p192Comb.tsym = t.syms p192Comb.tsym) ∧ VPub (p192With um) s t
+  (verifyArm.pub s t ∧ s.syms p192Comb.tsym = t.syms p192Comb.tsym ∧
+    s.syms (p192With um).constSym = t.syms (p192With um).constSym) ∧ VPub (p192With um) s t
 
 /-- `vg_p192_mul_public`'s pieces and the two parts of verification around
 its call, in sequence: what the taint analysis checks. -/
@@ -240,55 +243,76 @@ theorem combVerifyWith_ct (hC : Law Spec.P192.curve) (um : Bool) (L : PubLeaves 
 theorem combVerify_ct (hC : Law Spec.P192.curve) :
     ConstantTime isa (combVerifyPre false) (combVerifyPub false) verifyP192Comb :=
   combVerifyWith_ct hC false pubLeaves
-    (RelCT.taint (A := taintSym [p192Comb.tsym]) (c := piece ctPieces 26) (Taint.ofRegs [.r0, .r1, .r2, .r3])
+    (RelCT.taint (A := taintSym [p192Comb.tsym, (p192With false).constSym]) (c := piece ctPieces 26)
+      (Taint.ofRegs [.r0, .r1, .r2, .r3])
       (fun _ _ h => ⟨Taint.agree_ofRegs (by
         obtain ⟨⟨⟨_, h0, h1, h2, h3⟩, _⟩, _⟩ := h.2.2
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         exacts [h0, h1, h2, h3]), fun n hn => by
-        obtain rfl := List.mem_singleton.mp hn
-        exact h.2.2.1.2⟩) (by native_taint_decide))
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+        rcases hn with rfl | rfl
+        exacts [h.2.2.1.2.1, h.2.2.1.2.2]⟩) (by native_taint_decide))
     (LeafCT.check (p := piece ctPieces 27) (by native_taint_decide))
 
 theorem combVerifyU_ct (hC : Law Spec.P192.curve) :
     ConstantTime isa (combVerifyPre true) (combVerifyPub true) verifyP192CombU :=
   combVerifyWith_ct hC true pubLeavesU
-    (RelCT.taint (A := taintSymU [p192Comb.tsym]) (c := piece ctPiecesU 26) (Taint.ofRegs [.r0, .r1, .r2, .r3])
+    (RelCT.taint (A := taintSymU [p192Comb.tsym, (p192With true).constSym]) (c := piece ctPiecesU 26)
+      (Taint.ofRegs [.r0, .r1, .r2, .r3])
       (fun _ _ h => ⟨Taint.agree_ofRegs (by
         obtain ⟨⟨⟨_, h0, h1, h2, h3⟩, _⟩, _⟩ := h.2.2
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         exacts [h0, h1, h2, h3]), fun n hn => by
-        obtain rfl := List.mem_singleton.mp hn
-        exact h.2.2.1.2⟩) (by taint_decide))
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+        rcases hn with rfl | rfl
+        exacts [h.2.2.1.2.1, h.2.2.1.2.2]⟩) (by taint_decide))
     (LeafCT.checkU (p := piece ctPiecesU 27) (by taint_decide))
 
-open VG.Proof.P192.Arm in
-def combVerifySat : State := {combSatState with
-  gpr := fun r => match r with | .r0 => 0x10000 | .r1 => 0x12000 | .r2 => 0x14000 | _ => 0
-  rd := [⟨0x10000,49⟩,⟨0x12000,24⟩,⟨0x14000,48⟩,⟨0x100000,86016⟩]
-  wr := [⟨0,8192⟩] }
+/-- The comb's table at `0x100000`, then the setup's constants. -/
+@[irreducible] def combVerifyMem (um : Bool) : Mem := constMem 0x100000 (p192CombWords ++ (p192With um).constTbl)
 
 open VG.Proof.P192.Arm in
-theorem combVerify_sat : combVerifySpec.pre combVerifySat := by
-  have held := combSat_held
-  generalize eqs : combVerifySat=s
+def combVerifySat (um : Bool) : State := {combSatState with
+  gpr := fun r => match r with | .r0 => 0x10000 | .r1 => 0x12000 | .r2 => 0x14000 | _ => 0
+  mem := combVerifyMem um
+  rd := [⟨0x10000,49⟩,⟨0x12000,24⟩,⟨0x14000,48⟩,⟨0x100000,86016⟩,⟨0x115000,408⟩]
+  wr := [⟨0,8192⟩]
+  syms := fun n => if n = (p192With um).constSym then 0x115000 else 0x100000 }
+
+open VG.Proof.P192.Arm in
+theorem combVerify_sat (um : Bool) : (combVerifySpec um).pre (combVerifySat um) := by
+  obtain ⟨held₁, held₂⟩ := constMem_held₂ 0x100000 p192CombWords (p192With um).constTbl
+    (by rw [comb_words_length, constTbl_length]; cases um <;> decide)
+  have hl := constTbl_length (p192With um)
+  obtain ⟨W, eW⟩ : ∃ W, (p192With um).constTbl = W := ⟨_, rfl⟩
+  have hk : combVerifyK um = [(p192Comb.tsym,p192CombWords),((p192With um).constSym, W)] := by rw [← eW]; rfl
+  have hs₁ : (combVerifySat um).syms "VG_P192_COMB" = 0x100000 := by cases um <;> decide
+  have hs₂ : (combVerifySat um).syms (p192With um).constSym = 0x115000 := by cases um <;> decide
+  rw [comb_words_length, show (0x100000 : Addr) + BitVec.ofNat 64 (8 * 10752) = 0x115000 by decide] at held₂
+  have hmem : (combVerifySat um).mem = constMem 0x100000 (p192CombWords ++ (p192With um).constTbl) := by
+    show combVerifyMem um = _; unfold combVerifyMem; rfl
+  show (combVerifySpec um).pre _
+  unfold combVerifySpec
+  rw [hk]
+  rw [eW] at hl held₁ held₂ hmem
+  generalize eqs : combVerifySat um = s
   sig_pre [combVerifySpec,Spec.Ecdsa.P192.inst,Proof.Ecdsa.verifyContract,
     Proof.Ecdsa.verifySig,Spec.P192.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
-    Loc.val,State.addr,p192CombConsts,Abi.withConsts,Abi.constRegions_cons,Abi.constRegions_nil,
+    Loc.val,State.addr,Abi.withConsts,Abi.constRegions_cons,Abi.constRegions_nil,
     Abi.constsHeld,stackBelow]
   subst s
-  rw [comb_words_length]
-  rw [comb_words_length] at held
-  refine ⟨by decide,by decide,held,by decide,?_,by decide,by decide,?_⟩
-  · intro r hr
-    change r∈[⟨0,8192⟩] at hr
-    obtain rfl := List.mem_singleton.mp hr
-    exact Region.disjoint_of_sep (by decide)
-  · repeat' apply And.intro
-    all_goals first | exact Region.disjoint_of_sep (by decide) | decide
+  simp only [hmem, comb_words_length, hl]
+  sig_and_intros
+  all_goals try exact Region.disjoint_of_sep (by cases um <;> decide)
+  all_goals try (intro r hr; change r∈[⟨0,8192⟩] at hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl|rfl <;> exact Region.disjoint_of_sep (by cases um <;> decide))
+  all_goals try (intro i hi; rw [hs₁, show BitVec.setWidth 64 (1048576 : BitVec 32) = (1048576 : Addr) by decide]; exact held₁ i (by rw [comb_words_length]; exact hi))
+  all_goals try (intro i hi; rw [hs₂, show BitVec.setWidth 64 (1134592 : BitVec 32) = (1134592 : Addr) by decide]; exact held₂ i (by rw [hl]; exact hi))
+  all_goals try (cases um <;> decide)
+  all_goals rfl
 
 def combVerifyLocal (um : Bool) : Contract isa where
   pre := combVerifyPre um
@@ -297,9 +321,9 @@ def combVerifyLocal (um : Bool) : Contract isa where
 
 theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.P192.curve) (um : Bool)
     (hct : ConstantTime isa (combVerifyPre um) (combVerifyPub um) (verifyP192CombWith um)) :
-    Verified Arm.target (verifyP192CombWith um) combVerifySpec := by
+    Verified Arm.target (verifyP192CombWith um) (combVerifySpec um) := by
   refine Verified.of_correct (k := combVerifyLocal um) (fun s hs => ?_) hct
-    ⟨fun _ h => combVerify_pre h,?_,?_,⟨combVerifySat,combVerify_sat⟩⟩
+    ⟨fun _ h => combVerify_pre h,?_,?_,⟨combVerifySat um,combVerify_sat um⟩⟩
   · obtain ⟨tr,t,exec,keep,post⟩ := combVerify_ok hC hs
     exact ⟨tr,t,exec,VG.Proof.Ecdsa.Arm.abi_of_saved keep.saved keep.sp,post⟩
   · intro s t _ post
@@ -309,40 +333,44 @@ theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.P192.curve) (um : Boo
     rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
     exact post
   · intro s t _ _ pub
-    sig_pub [combVerifySpec,Spec.Ecdsa.P192.inst,Proof.Ecdsa.verifyContract,
+    obtain ⟨pub, sy⟩ := pub_consts.mp pub
+    sig_pub [Spec.Ecdsa.P192.inst,Proof.Ecdsa.verifyContract,
       Proof.Ecdsa.verifySig,Spec.P192.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,
-      Loc.val,State.addr,p192CombConsts,Abi.withConsts] at pub
-    obtain ⟨sp,sy,inputs,h0,h1,h2,h3⟩ := pub
-    exact ⟨⟨⟨sp,h0,h1,h2,h3⟩,sy⟩,VPub.of_leak h3 rfl rfl inputs⟩
+      Loc.val,State.addr] at pub
+    obtain ⟨sp,inputs,h0,h1,h2,h3⟩ := pub
+    exact ⟨⟨⟨sp,h0,h1,h2,h3⟩,symAddr_eq_iff.mp (sy (p192Comb.tsym, p192CombWords) List.mem_cons_self),
+      symAddr_eq_iff.mp (sy ((p192With um).constSym, (p192With um).constTbl) (List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩,VPub.of_leak h3 rfl rfl inputs⟩
 
 theorem combVerify_verified (hC : Weierstrass.Law Spec.P192.curve) :
-    Verified Arm.target verifyP192Comb combVerifySpec :=
+    Verified Arm.target verifyP192Comb (combVerifySpec false) :=
   combVerifyWith_verified hC false (combVerify_ct hC)
 
 theorem combVerifyU_verified (hC : Weierstrass.Law Spec.P192.curve) :
-    Verified Arm.target verifyP192CombU combVerifySpec :=
+    Verified Arm.target verifyP192CombU (combVerifySpec true) :=
   combVerifyWith_verified hC true (combVerifyU_ct hC)
 
 /-- `combVerifySat`'s 100 bytes below `sp + 4` are free. -/
-theorem hash_sat : ∃ s, (Spec.Ecdsa.P192.inst.verifyHashContract (Arm.abi.withConsts p192CombConsts) 96).pre s :=
-  VG.Proof.Ecdsa.Verify.Arm.Hash.hashSat_cons (by decide) combVerify_sat (by decide) (by decide) fun r hr => by
+theorem hash_sat (um : Bool) :
+    ∃ s, (Spec.Ecdsa.P192.inst.verifyHashContract (Arm.abi.withConsts (combVerifyK um)) 96).pre s := by
+  cases um <;>
+  exact VG.Proof.Ecdsa.Verify.Arm.Hash.hashSat_cons (by decide) (combVerify_sat _) (by decide) (by decide) fun r hr => by
     simp only [combVerifySat, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
 
 /-- `vg_ecdsa_p192_verify`, taking the hash function's output: the
 verification above, run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
 theorem verifyHash_verified (hC : Weierstrass.Law Spec.P192.curve) :
     Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false verifyP192Comb)
-      (Spec.Ecdsa.P192.inst.verifyHashContract (Arm.abi.withConsts p192CombConsts) 96) :=
+      (Spec.Ecdsa.P192.inst.verifyHashContract (Arm.abi.withConsts (combVerifyK false)) 96) :=
   VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p192_len (by decide) (combVerify_verified hC)
-    ⟨_, by taint_decide⟩ hash_sat
+    ⟨_, by taint_decide⟩ (hash_sat false)
 
 /-- `vg_ecdsa_p192_verify_umaal`, taking the hash function's output: the
 verification above, run on the `len` bytes of the hash (`verifyHash_verified_cons`). -/
 theorem verifyHashU_verified (hC : Weierstrass.Law Spec.P192.curve) :
     Verified Arm.target (Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false verifyP192CombU)
-      (Spec.Ecdsa.P192.inst.verifyHashContract (Arm.abi.withConsts p192CombConsts) 96) :=
+      (Spec.Ecdsa.P192.inst.verifyHashContract (Arm.abi.withConsts (combVerifyK true)) 96) :=
   VG.Proof.Ecdsa.Verify.Arm.Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p192_len (by decide) (combVerifyU_verified hC)
-    ⟨_, by taint_decide⟩ hash_sat
+    ⟨_, by taint_decide⟩ (hash_sat true)
 
 end VG.Proof.Ecdsa.Verify.Arm.P192

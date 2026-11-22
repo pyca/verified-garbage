@@ -90,13 +90,13 @@ theorem verify_spec_pre {um : Bool} {s : State}
   sig_pre [Spec.Ecdsa.P521.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.P521.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h
   obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h
-  exact ⟨rd,wr,ps,ds,ss,fp,fd,fs,fc⟩
+  exact ⟨rd,wr,ps,ds,ss,fp,fd,fs,fc,noTbl rfl⟩
 
 theorem combVerify_pre {um : Bool} {s : State} (h : combVerifySpec.pre s) : combVerifyPre um s := by
   have hp : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P521.inst abi).pre (stripConsts p521CombConsts s) ∧
       ConstsOk p521CombConsts 0 s := pre_consts.mp h
   have p := verify_spec_pre (um := um) hp.1
-  refine ⟨⟨?_,p.wr,p.pk_sc,p.dg_sc,p.sig_sc,p.pk_fit,p.dg_fit,p.sig_fit,p.sc_fit⟩,hp.2⟩
+  refine ⟨⟨?_,p.wr,p.pk_sc,p.dg_sc,p.sig_sc,p.pk_fit,p.dg_fit,p.sig_fit,p.sc_fit,noTbl rfl⟩,hp.2⟩
   rw [← List.take_append_drop (s.rd.length-p521CombConsts.length) s.rd,hp.2.1]
   exact congrArg (fun rs => rs++constRegs p521CombConsts s) p.rd
 

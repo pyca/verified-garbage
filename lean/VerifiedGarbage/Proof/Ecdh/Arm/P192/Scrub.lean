@@ -45,7 +45,8 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ecdh_p192`, given the group law. -/
 theorem exchangeP192 (hC : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeP192
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.p192With false).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.P192.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeP192
       verified := VG.Proof.Ecdh.Arm.P192.ecdh_verified hC }
@@ -54,7 +55,8 @@ theorem exchangeP192 (hC : Weierstrass.Law Spec.P192.curve) :
 /-- `vg_ecdh_p192_umaal`, given the group law. -/
 theorem exchangeP192U (hC : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeP192U
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.p192With true).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.P192.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeP192U
       verified := VG.Proof.Ecdh.Arm.P192.ecdhU_verified hC }

@@ -224,7 +224,7 @@ theorem brainpoolp384r1With_ok (u : Bool) : CfgOk (brainpoolp384r1With u) := by
   · exact brainpoolp384r1u_ok
 theorem pre_of {s : State} (h : signArm.pre s) : Pre brainpoolp384r1 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, noTbl rfl⟩
 
 theorem sign_arm (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (s : State) (hs : signArm.pre s) :
     ∃ t s', Exec isa signBrainpoolP384r1 s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by

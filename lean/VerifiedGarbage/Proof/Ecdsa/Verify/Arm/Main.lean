@@ -72,6 +72,8 @@ structure VPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   dg_fit : (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32
   sig_fit : (s.gpr .r2).toNat + 2 * c.C.len ≤ 2 ^ 32
   sc_fit : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32
+  /-- The table of constants the setup copies, if it copies one (`Cfg.tbl`). -/
+  tbl : c.tbl = true → ConstTblOk c (ptr s .r3) s
 
 /-- The key's `x` and `y`, the hash, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=
@@ -129,6 +131,7 @@ theorem VPre.setup {s : State} {extra : List Region} (hp : VPre c s extra) : Set
   d_fit := hp.dg_fit
   e_fit := hp.dg_fit
   sc_fit := hp.sc_fit
+  tbl := hp.tbl
 
 theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
   intro w hw

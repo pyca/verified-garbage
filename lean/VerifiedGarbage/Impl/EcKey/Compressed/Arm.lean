@@ -22,7 +22,7 @@ def compressFinish (c : Cfg) : List Instr :=
   [.dp .and .r0 .r10 (.imm 1)] ++ Cfg.restore
 
 def compress (c : Cfg) : Prog isa :=
-  .seq (.block (c.setupWith args)) <|
+  .seq (c.setupWith args) <|
   .seq (.block (Ecdh.Arm.Cfg.peerAt c .r1)) <|
   .seq (Ecdh.Arm.Cfg.validate c) (.block (compressFinish c))
 

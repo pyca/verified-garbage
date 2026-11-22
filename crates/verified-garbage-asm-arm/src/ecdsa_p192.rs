@@ -243,299 +243,27 @@ str r4, [r12, #872]
 ldr r4, [r1, #0]
 rev r4, r4
 str r4, [r12, #876]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #64]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #68]
-movw r4, #65534
-movt r4, #65535
-str r4, [r12, #72]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #76]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #80]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #84]
-movw r4, #10289
-movt r4, #46290
-str r4, [r12, #88]
-movw r4, #51633
-movt r4, #5227
-str r4, [r12, #92]
-movw r4, #63542
-movt r4, #39390
-str r4, [r12, #96]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #100]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #104]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #108]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #136]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #140]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #144]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #148]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #152]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #156]
-movw r4, #1
-movt r4, #0
-str r4, [r12, #160]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #164]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #168]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #172]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #176]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #180]
-movw r4, #1
-movt r4, #0
-str r4, [r12, #184]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #188]
-movw r4, #1
-movt r4, #0
-str r4, [r12, #192]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #196]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #200]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #204]
-movw r4, #65532
-movt r4, #65535
-str r4, [r12, #208]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #212]
-movw r4, #65531
-movt r4, #65535
-str r4, [r12, #216]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #220]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #224]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #228]
-movw r4, #45001
-movt r4, #62633
-str r4, [r12, #232]
-movw r4, #44051
-movt r4, #10381
-str r4, [r12, #236]
-movw r4, #16552
-movt r4, #19222
-str r4, [r12, #240]
-movw r4, #26902
-movt r4, #22405
-str r4, [r12, #244]
-movw r4, #5012
-movt r4, #1858
-str r4, [r12, #248]
-movw r4, #52304
-movt r4, #23386
-str r4, [r12, #252]
-movw r4, #41224
-movt r4, #13103
-str r4, [r12, #256]
-movw r4, #45836
-movt r4, #3468
-str r4, [r12, #260]
-movw r4, #10505
-movt r4, #30417
-str r4, [r12, #264]
-movw r4, #54263
-movt r4, #35403
-str r4, [r12, #268]
-movw r4, #6391
-movt r4, #62418
-str r4, [r12, #272]
-movw r4, #51449
-movt r4, #38220
-str r4, [r12, #276]
-movw r4, #8841
-movt r4, #7746
-str r4, [r12, #280]
-movw r4, #41783
-movt r4, #31506
-str r4, [r12, #284]
-movw r4, #61534
-movt r4, #35174
-str r4, [r12, #288]
-movw r4, #46372
-movt r4, #56866
-str r4, [r12, #292]
-movw r4, #43085
-movt r4, #27373
-str r4, [r12, #296]
-movw r4, #15747
-movt r4, #27177
-str r4, [r12, #300]
-movw r4, #22881
-movt r4, #57011
-str r4, [r12, #304]
-movw r4, #47820
-movt r4, #52838
-str r4, [r12, #308]
-movw r4, #27630
-movt r4, #47930
-str r4, [r12, #312]
-movw r4, #59995
-movt r4, #18070
-str r4, [r12, #316]
-movw r4, #33186
-movt r4, #59909
-str r4, [r12, #320]
-movw r4, #22135
-movt r4, #10430
-str r4, [r12, #324]
-movw r4, #55247
-movt r4, #19245
-str r4, [r12, #328]
-movw r4, #13902
-movt r4, #60308
-str r4, [r12, #332]
-movw r4, #1993
-movt r4, #26145
-str r4, [r12, #336]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #340]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #344]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #348]
-movw r4, #65533
-movt r4, #65535
-str r4, [r12, #352]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #356]
-movw r4, #65534
-movt r4, #65535
-str r4, [r12, #360]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #364]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #368]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #372]
-movw r4, #10287
-movt r4, #46290
-str r4, [r12, #376]
-movw r4, #51633
-movt r4, #5227
-str r4, [r12, #380]
-movw r4, #63542
-movt r4, #39390
-str r4, [r12, #384]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #388]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #392]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #396]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #400]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #404]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #408]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #412]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #416]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #420]
-movw r4, #1
-movt r4, #0
-str r4, [r12, #424]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #428]
-movw r4, #1
-movt r4, #0
-str r4, [r12, #432]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #436]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #440]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #444]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #448]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #452]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #456]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #460]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #464]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #468]
+movw r10, #:lower16:({VG_P192_FRAME_CONSTS} - (2f + 2 * (3f - 2f)))
+movt r10, #:upper16:({VG_P192_FRAME_CONSTS} - (2f + 2 * (3f - 2f)))
+2:
+add r10, pc
+3:
+mov r11, #51
+25:
+sub r11, r11, #1
+add r5, r10, r11, lsl #3
+ldr r4, [r5, #0]
+ldr r5, [r5, #4]
+add r9, r12, r11, lsl #3
+str r4, [r9, #64]
+str r5, [r9, #68]
+cmp r11, #0
+bne 25b
 mov r4, #0
 sub r4, r4, #1
 str r4, [r12, #1120]
 mov r11, #24
-25:
+26:
 sub r11, r11, #1
 add r4, r12, r11
 ldrb r4, [r4, #808]
@@ -565,9 +293,9 @@ lsr r7, r4, #7
 and r7, r7, #1
 strb r7, [r5, #7]
 cmp r11, #0
-bne 25b
+bne 26b
 mov r11, #24
-26:
+27:
 sub r11, r11, #1
 add r4, r12, r11
 ldrb r4, [r4, #352]
@@ -597,9 +325,9 @@ lsr r7, r4, #7
 and r7, r7, #1
 strb r7, [r5, #199]
 cmp r11, #0
-bne 26b
+bne 27b
 mov r11, #24
-27:
+28:
 sub r11, r11, #1
 add r4, r12, r11
 ldrb r4, [r4, #376]
@@ -629,7 +357,7 @@ lsr r7, r4, #7
 and r7, r7, #1
 strb r7, [r5, #391]
 cmp r11, #0
-bne 27b
+bne 28b
 add r6, r2, #24
 ldr r4, [r6, #20]
 rev r4, r4
@@ -1309,7 +1037,7 @@ str r4, [r12, #776]
 ldr r4, [r12, #348]
 str r4, [r12, #780]
 mov r11, #192
-28:
+29:
 sub r11, r11, #1
 mov r10, lr
 mov r0, r12
@@ -1367,7 +1095,7 @@ and r5, r5, r10
 eor r4, r4, r5
 str r4, [r12, #780]
 cmp r11, #0
-bne 28b
+bne 29b
 mov r10, lr
 mov r0, r12
 movw r1, #1024
@@ -1423,7 +1151,7 @@ str r4, [r12, #824]
 ldr r4, [r12, #900]
 str r4, [r12, #828]
 mov r11, #24
-29:
+210:
 sub r11, r11, #1
 add r4, r12, r11
 ldrb r4, [r4, #808]
@@ -1453,7 +1181,7 @@ lsr r7, r4, #7
 and r7, r7, #1
 strb r7, [r5, #7]
 cmp r11, #0
-bne 29b
+bne 210b
 ldr r4, [r12, #256]
 str r4, [r12, #3576]
 ldr r4, [r12, #260]
@@ -1569,14 +1297,14 @@ movw r4, #0
 movt r4, #0
 str r4, [r12, #468]
 mov r11, #28
-210:
+211:
 sub r11, r11, #1
 mov r4, #7
 mul r4, r4, r11
 add r4, r12, r4
 add r4, r4, #4096
 cmp r11, #27
-beq 211f
+beq 212f
 mov r9, #0
 add r9, r9, r9
 ldrb r5, [r4, #6]
@@ -1599,8 +1327,8 @@ add r9, r9, r5
 add r9, r9, r9
 ldrb r5, [r4, #0]
 add r9, r9, r5
-b 212f
-211:
+b 213f
+212:
 mov r9, #0
 add r9, r9, r9
 ldrb r5, [r4, #2]
@@ -1611,7 +1339,7 @@ add r9, r9, r5
 add r9, r9, r9
 ldrb r5, [r4, #0]
 add r9, r9, r5
-212:
+213:
 sub r9, r9, #64
 lsr r4, r9, #31
 mov r5, #0
@@ -1663,7 +1391,7 @@ movw r4, #0
 movt r4, #0
 str r4, [r12, #3620]
 mov r7, #1
-213:
+214:
 eor r10, r9, r7
 sub r10, r10, #1
 lsr r10, r10, #31
@@ -1744,7 +1472,7 @@ str r4, [r12, #3620]
 add r8, r8, #48
 add r7, r7, #1
 cmp r7, #65
-bne 213b
+bne 214b
 movw r4, #1
 movt r4, #0
 str r4, [r12, #3624]
@@ -1848,18 +1576,18 @@ movw r3, #3600
 bl {vg_p192_sub_mod_p}
 mov lr, r10
 cmp r11, #27
-beq 214f
+beq 215f
 mov r4, #7
 mul r4, r4, r11
 add r4, r12, r4
 add r4, r4, #4096
 ldrb r4, [r4, #6]
 sub r10, r4, #1
-b 215f
-214:
+b 216f
+215:
 movw r10, #65535
 movt r10, #65535
-215:
+216:
 ldr r4, [r12, #3600]
 ldr r5, [r12, #544]
 eor r5, r5, r4
@@ -1973,7 +1701,7 @@ str r4, [r12, #464]
 ldr r4, [r12, #3500]
 str r4, [r12, #468]
 cmp r11, #0
-bne 210b
+bne 211b
 ldr r4, [r12, #400]
 str r4, [r12, #1048]
 ldr r4, [r12, #404]
@@ -2433,7 +2161,7 @@ str r4, [r12, #776]
 ldr r4, [r12, #204]
 str r4, [r12, #780]
 mov r11, #192
-216:
+217:
 sub r11, r11, #1
 mov r10, lr
 mov r0, r12
@@ -2491,7 +2219,7 @@ and r5, r5, r10
 eor r4, r4, r5
 str r4, [r12, #780]
 cmp r11, #0
-bne 216b
+bne 217b
 mov r10, lr
 mov r0, r12
 movw r1, #880
@@ -2579,7 +2307,7 @@ sub sp, sp, #96
 add r12, sp, #0
 mov r2, #0
 mov r3, #3
-217:
+218:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -2590,7 +2318,7 @@ str r2, [r12, #24]
 str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
-bne 217b
+bne 218b
 add sp, sp, #96
 mov r1, #0
 mov r2, #0
@@ -2605,6 +2333,7 @@ bx lr",
         vg_p192_point_add = sym super::ec_p192::vg_p192_point_add::vg_p192_point_add,
         vg_p192_mul_public = sym super::ecdsa_p192::vg_p192_mul_public::vg_p192_mul_public,
         vg_p192_sub_mod_n = sym super::ecdsa_p192::vg_p192_sub_mod_n::vg_p192_sub_mod_n,
+        VG_P192_FRAME_CONSTS = sym super::consts::VG_P192_FRAME_CONSTS,
         VG_P192_COMB = sym super::consts::VG_P192_COMB,
     )
 }
@@ -2855,299 +2584,27 @@ str r4, [r12, #872]
 ldr r4, [r1, #0]
 rev r4, r4
 str r4, [r12, #876]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #64]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #68]
-movw r4, #65534
-movt r4, #65535
-str r4, [r12, #72]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #76]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #80]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #84]
-movw r4, #10289
-movt r4, #46290
-str r4, [r12, #88]
-movw r4, #51633
-movt r4, #5227
-str r4, [r12, #92]
-movw r4, #63542
-movt r4, #39390
-str r4, [r12, #96]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #100]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #104]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #108]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #136]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #140]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #144]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #148]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #152]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #156]
-movw r4, #1
-movt r4, #0
-str r4, [r12, #160]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #164]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #168]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #172]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #176]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #180]
-movw r4, #1
-movt r4, #0
-str r4, [r12, #184]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #188]
-movw r4, #1
-movt r4, #0
-str r4, [r12, #192]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #196]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #200]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #204]
-movw r4, #65532
-movt r4, #65535
-str r4, [r12, #208]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #212]
-movw r4, #65531
-movt r4, #65535
-str r4, [r12, #216]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #220]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #224]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #228]
-movw r4, #45001
-movt r4, #62633
-str r4, [r12, #232]
-movw r4, #44051
-movt r4, #10381
-str r4, [r12, #236]
-movw r4, #16552
-movt r4, #19222
-str r4, [r12, #240]
-movw r4, #26902
-movt r4, #22405
-str r4, [r12, #244]
-movw r4, #5012
-movt r4, #1858
-str r4, [r12, #248]
-movw r4, #52304
-movt r4, #23386
-str r4, [r12, #252]
-movw r4, #41224
-movt r4, #13103
-str r4, [r12, #256]
-movw r4, #45836
-movt r4, #3468
-str r4, [r12, #260]
-movw r4, #10505
-movt r4, #30417
-str r4, [r12, #264]
-movw r4, #54263
-movt r4, #35403
-str r4, [r12, #268]
-movw r4, #6391
-movt r4, #62418
-str r4, [r12, #272]
-movw r4, #51449
-movt r4, #38220
-str r4, [r12, #276]
-movw r4, #8841
-movt r4, #7746
-str r4, [r12, #280]
-movw r4, #41783
-movt r4, #31506
-str r4, [r12, #284]
-movw r4, #61534
-movt r4, #35174
-str r4, [r12, #288]
-movw r4, #46372
-movt r4, #56866
-str r4, [r12, #292]
-movw r4, #43085
-movt r4, #27373
-str r4, [r12, #296]
-movw r4, #15747
-movt r4, #27177
-str r4, [r12, #300]
-movw r4, #22881
-movt r4, #57011
-str r4, [r12, #304]
-movw r4, #47820
-movt r4, #52838
-str r4, [r12, #308]
-movw r4, #27630
-movt r4, #47930
-str r4, [r12, #312]
-movw r4, #59995
-movt r4, #18070
-str r4, [r12, #316]
-movw r4, #33186
-movt r4, #59909
-str r4, [r12, #320]
-movw r4, #22135
-movt r4, #10430
-str r4, [r12, #324]
-movw r4, #55247
-movt r4, #19245
-str r4, [r12, #328]
-movw r4, #13902
-movt r4, #60308
-str r4, [r12, #332]
-movw r4, #1993
-movt r4, #26145
-str r4, [r12, #336]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #340]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #344]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #348]
-movw r4, #65533
-movt r4, #65535
-str r4, [r12, #352]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #356]
-movw r4, #65534
-movt r4, #65535
-str r4, [r12, #360]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #364]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #368]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #372]
-movw r4, #10287
-movt r4, #46290
-str r4, [r12, #376]
-movw r4, #51633
-movt r4, #5227
-str r4, [r12, #380]
-movw r4, #63542
-movt r4, #39390
-str r4, [r12, #384]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #388]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #392]
-movw r4, #65535
-movt r4, #65535
-str r4, [r12, #396]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #400]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #404]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #408]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #412]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #416]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #420]
-movw r4, #1
-movt r4, #0
-str r4, [r12, #424]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #428]
-movw r4, #1
-movt r4, #0
-str r4, [r12, #432]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #436]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #440]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #444]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #448]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #452]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #456]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #460]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #464]
-movw r4, #0
-movt r4, #0
-str r4, [r12, #468]
+movw r10, #:lower16:({VG_P192_FRAME_CONSTS} - (2f + 2 * (3f - 2f)))
+movt r10, #:upper16:({VG_P192_FRAME_CONSTS} - (2f + 2 * (3f - 2f)))
+2:
+add r10, pc
+3:
+mov r11, #51
+25:
+sub r11, r11, #1
+add r5, r10, r11, lsl #3
+ldr r4, [r5, #0]
+ldr r5, [r5, #4]
+add r9, r12, r11, lsl #3
+str r4, [r9, #64]
+str r5, [r9, #68]
+cmp r11, #0
+bne 25b
 mov r4, #0
 sub r4, r4, #1
 str r4, [r12, #1120]
 mov r11, #24
-25:
+26:
 sub r11, r11, #1
 add r4, r12, r11
 ldrb r4, [r4, #808]
@@ -3177,9 +2634,9 @@ lsr r7, r4, #7
 and r7, r7, #1
 strb r7, [r5, #7]
 cmp r11, #0
-bne 25b
+bne 26b
 mov r11, #24
-26:
+27:
 sub r11, r11, #1
 add r4, r12, r11
 ldrb r4, [r4, #352]
@@ -3209,9 +2666,9 @@ lsr r7, r4, #7
 and r7, r7, #1
 strb r7, [r5, #199]
 cmp r11, #0
-bne 26b
+bne 27b
 mov r11, #24
-27:
+28:
 sub r11, r11, #1
 add r4, r12, r11
 ldrb r4, [r4, #376]
@@ -3241,7 +2698,7 @@ lsr r7, r4, #7
 and r7, r7, #1
 strb r7, [r5, #391]
 cmp r11, #0
-bne 27b
+bne 28b
 add r6, r2, #24
 ldr r4, [r6, #20]
 rev r4, r4
@@ -3921,7 +3378,7 @@ str r4, [r12, #776]
 ldr r4, [r12, #348]
 str r4, [r12, #780]
 mov r11, #192
-28:
+29:
 sub r11, r11, #1
 mov r10, lr
 mov r0, r12
@@ -3979,7 +3436,7 @@ and r5, r5, r10
 eor r4, r4, r5
 str r4, [r12, #780]
 cmp r11, #0
-bne 28b
+bne 29b
 mov r10, lr
 mov r0, r12
 movw r1, #1024
@@ -4035,7 +3492,7 @@ str r4, [r12, #824]
 ldr r4, [r12, #900]
 str r4, [r12, #828]
 mov r11, #24
-29:
+210:
 sub r11, r11, #1
 add r4, r12, r11
 ldrb r4, [r4, #808]
@@ -4065,7 +3522,7 @@ lsr r7, r4, #7
 and r7, r7, #1
 strb r7, [r5, #7]
 cmp r11, #0
-bne 29b
+bne 210b
 ldr r4, [r12, #256]
 str r4, [r12, #3576]
 ldr r4, [r12, #260]
@@ -4181,14 +3638,14 @@ movw r4, #0
 movt r4, #0
 str r4, [r12, #468]
 mov r11, #28
-210:
+211:
 sub r11, r11, #1
 mov r4, #7
 mul r4, r4, r11
 add r4, r12, r4
 add r4, r4, #4096
 cmp r11, #27
-beq 211f
+beq 212f
 mov r9, #0
 add r9, r9, r9
 ldrb r5, [r4, #6]
@@ -4211,8 +3668,8 @@ add r9, r9, r5
 add r9, r9, r9
 ldrb r5, [r4, #0]
 add r9, r9, r5
-b 212f
-211:
+b 213f
+212:
 mov r9, #0
 add r9, r9, r9
 ldrb r5, [r4, #2]
@@ -4223,7 +3680,7 @@ add r9, r9, r5
 add r9, r9, r9
 ldrb r5, [r4, #0]
 add r9, r9, r5
-212:
+213:
 sub r9, r9, #64
 lsr r4, r9, #31
 mov r5, #0
@@ -4275,7 +3732,7 @@ movw r4, #0
 movt r4, #0
 str r4, [r12, #3620]
 mov r7, #1
-213:
+214:
 eor r10, r9, r7
 sub r10, r10, #1
 lsr r10, r10, #31
@@ -4356,7 +3813,7 @@ str r4, [r12, #3620]
 add r8, r8, #48
 add r7, r7, #1
 cmp r7, #65
-bne 213b
+bne 214b
 movw r4, #1
 movt r4, #0
 str r4, [r12, #3624]
@@ -4460,18 +3917,18 @@ movw r3, #3600
 bl {vg_p192_sub_mod_p_umaal}
 mov lr, r10
 cmp r11, #27
-beq 214f
+beq 215f
 mov r4, #7
 mul r4, r4, r11
 add r4, r12, r4
 add r4, r4, #4096
 ldrb r4, [r4, #6]
 sub r10, r4, #1
-b 215f
-214:
+b 216f
+215:
 movw r10, #65535
 movt r10, #65535
-215:
+216:
 ldr r4, [r12, #3600]
 ldr r5, [r12, #544]
 eor r5, r5, r4
@@ -4585,7 +4042,7 @@ str r4, [r12, #464]
 ldr r4, [r12, #3500]
 str r4, [r12, #468]
 cmp r11, #0
-bne 210b
+bne 211b
 ldr r4, [r12, #400]
 str r4, [r12, #1048]
 ldr r4, [r12, #404]
@@ -5045,7 +4502,7 @@ str r4, [r12, #776]
 ldr r4, [r12, #204]
 str r4, [r12, #780]
 mov r11, #192
-216:
+217:
 sub r11, r11, #1
 mov r10, lr
 mov r0, r12
@@ -5103,7 +4560,7 @@ and r5, r5, r10
 eor r4, r4, r5
 str r4, [r12, #780]
 cmp r11, #0
-bne 216b
+bne 217b
 mov r10, lr
 mov r0, r12
 movw r1, #880
@@ -5191,7 +4648,7 @@ sub sp, sp, #96
 add r12, sp, #0
 mov r2, #0
 mov r3, #3
-217:
+218:
 str r2, [r12, #0]
 str r2, [r12, #4]
 str r2, [r12, #8]
@@ -5202,7 +4659,7 @@ str r2, [r12, #24]
 str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
-bne 217b
+bne 218b
 add sp, sp, #96
 mov r1, #0
 mov r2, #0
@@ -5217,6 +4674,7 @@ bx lr",
         vg_p192_point_add_umaal = sym super::ec_p192::vg_p192_point_add_umaal::vg_p192_point_add_umaal,
         vg_p192_mul_public_umaal = sym super::ecdsa_p192::vg_p192_mul_public_umaal::vg_p192_mul_public_umaal,
         vg_p192_sub_mod_n_umaal = sym super::ecdsa_p192::vg_p192_sub_mod_n_umaal::vg_p192_sub_mod_n_umaal,
+        VG_P192_FRAME_CONSTS = sym super::consts::VG_P192_FRAME_CONSTS,
         VG_P192_COMB = sym super::consts::VG_P192_COMB,
     )
 }

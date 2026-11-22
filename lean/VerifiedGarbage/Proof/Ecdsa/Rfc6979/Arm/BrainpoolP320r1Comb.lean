@@ -106,7 +106,7 @@ theorem brainpoolp320r1_comb_core_pre {u : Bool} {s : State}
     (h : (coreK Impl.Ecdsa.Arm.brainpoolp320r1 brainpoolp320r1CombConsts).pre s) : combSignPre u s := by
   obtain ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,tables⟩ := h
   have hp : Pre (Impl.Ecdsa.Arm.brainpoolp320r1With u) s (constRegs brainpoolp320r1CombConsts s) :=
-    ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp⟩
+    ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,noTbl rfl⟩
   refine ⟨hp,?_,?_,?_,?_⟩
   · rw [rd]
     rfl

@@ -104,7 +104,7 @@ theorem p384_comb_core_pre {u : Bool} {s : State}
     (h : (coreK Impl.Ecdsa.Arm.p384 p384CombConsts).pre s) : combSignPre u s := by
   obtain ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,tables⟩ := h
   have hp : Pre (Impl.Ecdsa.Arm.p384With u) s (constRegs p384CombConsts s) :=
-    ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp⟩
+    ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,noTbl rfl⟩
   refine ⟨hp,?_,?_,?_,?_⟩
   · rw [rd]
     rfl

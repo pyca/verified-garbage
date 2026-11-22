@@ -13,7 +13,7 @@ open VG.Arm
 /-- P-521 as the code has it, its field multiplications by
 `vg_p521_mul_mod_<p|n>_umaal` if `u`. -/
 def p521With (u : Bool) : Cfg :=
-  ⟨9, Spec.P521.curve, Impl.Weierstrass.Mont.p521p, Impl.Weierstrass.Mont.p521n, some Impl.Weierstrass.Mul.p521, u⟩
+  ⟨9, Spec.P521.curve, Impl.Weierstrass.Mont.p521p, Impl.Weierstrass.Mont.p521n, some Impl.Weierstrass.Mul.p521, u, none⟩
 
 /-- P-521 as the code has it. -/
 def p521 : Cfg := p521With false

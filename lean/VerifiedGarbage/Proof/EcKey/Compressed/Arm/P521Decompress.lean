@@ -72,13 +72,13 @@ theorem sat : ∃ s, (Spec.EcKey.P521.inst.decompressPublicKeyContract abi 0).pr
 
 theorem verified (hL : Proof.Weierstrass.Law Spec.P521.curve) :
     Verified target code (Spec.EcKey.P521.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct p521 p521_ok _ (candidateThree_correct p521_ok (by decide +kernel))) ct
+  Verified.of_correct (decompress_correct p521 p521_ok rfl _ (candidateThree_correct p521_ok (by decide +kernel))) ct
     (decompress_implies Spec.EcKey.P521.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 
 theorem verifiedU (hL : Proof.Weierstrass.Law Spec.P521.curve) :
     Verified target codeU (Spec.EcKey.P521.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct (p521With true) p521u_ok _ (candidateThree_correct p521u_ok (by decide +kernel))) ctU
+  Verified.of_correct (decompress_correct (p521With true) p521u_ok rfl _ (candidateThree_correct p521u_ok (by decide +kernel))) ctU
     (decompress_implies Spec.EcKey.P521.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 

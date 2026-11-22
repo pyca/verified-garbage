@@ -78,14 +78,14 @@ theorem sat : ∃ s, (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContrac
 
 theorem verified (hL : Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     Verified target code (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct brainpoolp512r1 brainpoolp512r1_ok _ (candidateThree_correct brainpoolp512r1_ok (by decide +kernel))) ct
+  Verified.of_correct (decompress_correct brainpoolp512r1 brainpoolp512r1_ok rfl _ (candidateThree_correct brainpoolp512r1_ok (by decide +kernel))) ct
     (decompress_implies Spec.EcKey.BrainpoolP512r1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 
 
 theorem verifiedU (hL : Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     Verified target codeU (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct (brainpoolp512r1With true) brainpoolp512r1u_ok _ (candidateThree_correct brainpoolp512r1u_ok (by decide +kernel))) ctU
+  Verified.of_correct (decompress_correct (brainpoolp512r1With true) brainpoolp512r1u_ok rfl _ (candidateThree_correct brainpoolp512r1u_ok (by decide +kernel))) ctU
     (decompress_implies Spec.EcKey.BrainpoolP512r1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 

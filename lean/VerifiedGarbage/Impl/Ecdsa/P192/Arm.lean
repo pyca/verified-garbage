@@ -14,7 +14,7 @@ open VG.Arm
 `vg_p192_mul_mod_<p|n>_umaal` if `u`. -/
 def p192With (u : Bool) : Cfg :=
   ⟨3, Spec.P192.curve, Impl.Weierstrass.Mont.p192p, Impl.Weierstrass.Mont.p192n,
-    some Impl.Weierstrass.Mul.p192, u⟩
+    some Impl.Weierstrass.Mul.p192, u, some "VG_P192_FRAME_CONSTS"⟩
 
 /-- P-192 as the code has it. -/
 def p192 : Cfg := p192With false

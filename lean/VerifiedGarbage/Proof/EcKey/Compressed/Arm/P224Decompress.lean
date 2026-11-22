@@ -1188,7 +1188,7 @@ theorem rootCandidate_rel {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 ≠ 3)
   · exact fun _ _ h => h
 
 def conversionFront (c : Cfg) : Prog isa :=
-  .seq (.seq (.block (c.setupWith Impl.EcKey.Compressed.Arm.args))
+  .seq (.seq (c.setupWith Impl.EcKey.Compressed.Arm.args)
     (.block (Impl.EcKey.Compressed.Arm.decompressPeer c)))
     (fprog c.SP (Impl.EcKey.Compressed.Arm.rhsOps c) c.umaal)
 
@@ -1216,7 +1216,7 @@ theorem rel_assoc_left {a b c : Prog isa} {P Q : State → State → Prop}
           obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq a₁ (.seq b₁ c₁)) (.seq a₂ (.seq b₂ c₂))
           exact ⟨by simpa only [List.append_assoc] using ht, hq⟩
 
-theorem decompress_tonelli_ct {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 ≠ 3)
+theorem decompress_tonelli_ct {c : Cfg} (hc : CfgOk c) (hn : c.tblSym = none) (hp : c.C.p % 4 ≠ 3)
     {root : Spec.Weierstrass.Fe c.C → Spec.Weierstrass.Fe c.C}
     (hfront : ConstantTime isa (fun _ => True) (decompressContract c.C root).pub (conversionFront c))
     (hprepare : ConstantTime isa (fun _ => True) RootPublic (prepareRoot c))
@@ -1236,7 +1236,7 @@ theorem decompress_tonelli_ct {c : Cfg} (hc : CfgOk c) (hp : c.C.p % 4 ≠ 3)
       have pre {u : State} (h : (decompressContract c.C root).pre u) : InputPre c (1 + c.C.len) u := by
         obtain ⟨hrd, hwr, _, hd, _, _, hpk, hws⟩ := h
         exact ⟨by rw [hrd]; simp [Nat.add_comm], by rw [hwr]; simp,
-          by simpa only [Nat.add_comm] using hd, by omega_using [hpk], hws⟩
+          by simpa only [Nat.add_comm] using hd, by omega_using [hpk], hws, noTbl hn⟩
       exact ⟨conversionFront_ok hc (pre hs), conversionFront_ok hc (pre ht)⟩)
   have Hroot := rootCandidate_rel hc hp hprepare hprefix hsquare hrest
   have Hfront' : RelCT isa P (conversionFront c) (RootPair c) := Hfront.mono
@@ -1311,7 +1311,7 @@ taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
 
 theorem ct : ConstantTime isa (decompressContract Spec.P224.curve root).pre
     (decompressContract Spec.P224.curve root).pub code := by
-  apply decompress_tonelli_ct p224_ok (by decide +kernel)
+  apply decompress_tonelli_ct p224_ok rfl (by decide +kernel)
   · apply VG.Taint.constantTime_of_exists (A := taintS) (Taint.ofRegs [.r0, .r1, .r2])
     · intro s t _ _ ⟨_, h0, h1, h2⟩
       apply Taint.agree_ofRegs
@@ -1371,7 +1371,7 @@ theorem ct : ConstantTime isa (decompressContract Spec.P224.curve root).pre
 
 theorem ctU : ConstantTime isa (decompressContract Spec.P224.curve root).pre
     (decompressContract Spec.P224.curve root).pub codeU := by
-  apply decompress_tonelli_ct p224u_ok (by decide +kernel)
+  apply decompress_tonelli_ct p224u_ok rfl (by decide +kernel)
   · apply VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0, .r1, .r2])
     · intro s t _ _ ⟨_, h0, h1, h2⟩
       apply Taint.agree_ofRegs
@@ -1437,13 +1437,13 @@ theorem sat : ∃ s, (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0).pr
 
 theorem verified (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     Verified target code (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct p224 p224_ok _ (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel))) ct
+  Verified.of_correct (decompress_correct p224 p224_ok rfl _ (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel))) ct
     (decompress_implies Spec.EcKey.P224.inst _
       (Proof.P224.rootFacts hL) sat)
 
 theorem verifiedU (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     Verified target codeU (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct (p224With true) p224u_ok _
+  Verified.of_correct (decompress_correct (p224With true) p224u_ok rfl _
       (candidateTonelli_correct p224u_ok (by decide +kernel) (by decide +kernel))) ctU
     (decompress_implies Spec.EcKey.P224.inst _
       (Proof.P224.rootFacts hL) sat)

@@ -26,7 +26,8 @@ words; `n = 4` for the 256-bit curves), from the code of
    and the hash are read big-endian into slots, and the constants (the
    moduli, `a`, `3b`, `G` and Montgomery's ones in Montgomery form,
    `R² mod n`, and the exponents `p - 2` and `n - 2`) are stored as
-   immediates;
+   immediates, or, for a curve with a table of them (`Cfg.tblSym`), copied
+   from it by a loop (`constsCode`, `copyTbl`);
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
 3. `R = [k]G` (`gen`: by `vg_<curve>_mul`'s windows for a curve that has the
    function, else by the ladder from `R = O = (0 : 1 : 0)`, `ladderP`: by calls
@@ -154,6 +155,10 @@ structure Cfg where
   of `vg_<curve>_{mul,add,sub}_mod_<p|n>` (`Impl/Weierstrass/Arm/Mont.lean`),
   and so the point functions and `vg_<curve>_mul` called too. -/
   umaal : Bool := false
+  /-- The name of the table of constants the setup copies (`constTbl`,
+  `copyTbl`), which the functions' contracts then list, if any; else the setup
+  stores each word as an immediate (`setConst`). -/
+  tblSym : Option String := none
 
 namespace Cfg
 
@@ -204,6 +209,29 @@ def consts : List (Nat × Nat) :=
     (B3P, c.mont (3 * c.C.b)), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
     (ONEN, c.R % c.C.n), (EXPP, c.C.p - 2), (EXPN, c.C.n - 2), (RX, 0), (RY, c.mont 1), (RZ, 0)]
 
+/-- The value `consts` gives slot `i`, or zero (`TMP`'s, which none gives). -/
+def slotVal (i : Nat) : Nat := ((c.consts.find? fun ix => ix.1 == i).map Prod.snd).getD 0
+
+/-- The words of slots `0` to `16`, `consts`' values (and `TMP`, zero), word
+`k` the `k % n`th of slot `k / n`: the table the setup copies into the
+working space (`copyTbl`). -/
+def constTbl : List (BitVec 64) :=
+  (List.range (17 * c.n)).map fun k => BitVec.ofNat 64 (c.slotVal (k / c.n) >>> (64 * (k % c.n)))
+
+/-- The name of the table `constTbl`. -/
+def constSym : String := c.tblSym.getD ""
+
+/-- The table of constants every function that runs the setup reads. -/
+def constsK : List (String × List (BitVec 64)) := [(c.constSym, c.constTbl)]
+
+/-- Whether the setup copies its constants from their table (`tblSym`). -/
+def tbl : Bool := c.tblSym.isSome
+
+/-- The constants into their slots: from their table, or as immediates (`tbl`). -/
+def constsCode : Prog isa :=
+  if c.tbl then copyTbl c.constSym (17 * c.n) (c.sl 0)
+  else .block (c.consts.flatMap fun (i, x) => setConst c.n (c.sl i) x)
+
 /-- Saves them at `[r12]`. -/
 def saveCode : List Instr := saved.map fun (r, d) => .str r wb d
 
@@ -225,15 +253,14 @@ registers there and moves `out` to `lr`; reads `k`, `d` and the hash (`len`
 bytes each) from the registers `A` names, and shifts the slot `A.hs` holding
 a hash; stores the constants; and sets `R = (0 : 1 : 0)` and the flag (a
 word) to all ones. -/
-def setupWith (A : Args) : List Instr :=
-  [scStart A] ++ saveCode ++ ([.mov .lr (.reg .r0)] : List Instr) ++
-  loadBytes c.C.len c.n (c.sl K) A.k ++ loadBytes c.C.len c.n (c.sl D) A.d ++
-  loadBytes c.C.len c.n (c.sl E) A.e ++ c.shiftCode A.hs ++
-  c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  ([.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.imm 1), .str .r4 wb (c.sl FLAG)] : List Instr)
+def setupWith (A : Args) : Prog isa :=
+  .seq (.block ([scStart A] ++ saveCode ++ ([.mov .lr (.reg .r0)] : List Instr) ++
+    loadBytes c.C.len c.n (c.sl K) A.k ++ loadBytes c.C.len c.n (c.sl D) A.d ++
+    loadBytes c.C.len c.n (c.sl E) A.e ++ c.shiftCode A.hs)) <|
+  .seq c.constsCode (.block [.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.imm 1), .str .r4 wb (c.sl FLAG)])
 
 /-- The setup of `sign`. -/
-def setup : List Instr := c.setupWith .sign
+def setup : Prog isa := c.setupWith .sign
 
 /-- The mask `r5` of `[a] ≠ 0` (all ones if it is not zero), through `r4`:
 the words or'ed, then the top bit of `x | -x`, negated. -/
@@ -302,7 +329,7 @@ def scalar : Prog isa :=
 
 /-- `vg_ecdsa_<curve>_sign`. -/
 def signWith (generator : Prog isa) : Prog isa :=
-  .seq (.block c.setup) <|
+  .seq c.setup <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|

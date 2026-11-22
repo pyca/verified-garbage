@@ -77,9 +77,9 @@ theorem sat : ∃ s, (Spec.EcKey.P256.inst.compressPublicKeyContract abi 0).pre 
     abi, argRegs, reduceClassify, Loc.val, State.addr, satState] [satState] using (satState 32)
 
 theorem verified : Verified target code (Spec.EcKey.P256.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct p256 p256_ok) ct (compress_implies _ sat)
+  Verified.of_correct (compress_correct p256 p256_ok rfl) ct (compress_implies _ sat)
 
 theorem verifiedU : Verified target codeU (Spec.EcKey.P256.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct (p256With true) P256.p256u_ok) ctU (compress_implies _ sat)
+  Verified.of_correct (compress_correct (p256With true) P256.p256u_ok rfl) ctU (compress_implies _ sat)
 
 end VG.Proof.EcKey.Compressed.Arm.P256

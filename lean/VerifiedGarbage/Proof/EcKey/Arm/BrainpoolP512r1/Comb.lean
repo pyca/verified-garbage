@@ -160,13 +160,13 @@ theorem pk_spec_pre {u : Bool} {s : State}
   sig_pre [Spec.EcKey.BrainpoolP512r1.inst,Spec.EcKey.Instance.publicKeyContract,Spec.EcKey.Instance.publicKeySig,
     Spec.BrainpoolP512r1.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h
   obtain ⟨_sp,rd,wr,_od,os,ds,fo,fd,fs⟩ := h
-  exact ⟨rd,wr,os,ds,fo,fd,fs⟩
+  exact ⟨rd,wr,os,ds,fo,fd,fs,noTbl rfl⟩
 
 theorem combPk_pre {u : Bool} {s : State} (h : combPkSpec.pre s) : combPkPre u s := by
   have hp : (Spec.EcKey.BrainpoolP512r1.inst.publicKeyContract abi).pre (stripConsts brainpoolp512r1CombConsts s) ∧
       ConstsOk brainpoolp512r1CombConsts 0 s := pre_consts.mp h
   have p := pk_spec_pre (u := u) hp.1
-  refine ⟨⟨?_,p.wr,p.out_sc,p.d_sc,p.out_fit,p.d_fit,p.sc_fit⟩,hp.2⟩
+  refine ⟨⟨?_,p.wr,p.out_sc,p.d_sc,p.out_fit,p.d_fit,p.sc_fit,noTbl rfl⟩,hp.2⟩
   rw [← List.take_append_drop (s.rd.length-brainpoolp512r1CombConsts.length) s.rd,hp.2.1]
   exact congrArg (fun rs => rs++constRegs brainpoolp512r1CombConsts s) p.rd
 

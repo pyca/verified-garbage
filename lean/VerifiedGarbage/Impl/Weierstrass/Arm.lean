@@ -124,6 +124,20 @@ def bits (src dst nbytes : Nat) : Prog isa :=
     [decCounter, .dp .add .r4 wb (.reg .r11), .ldrb .r4 .r4 src, .dp .add .r5 wb (.shifted .r11 .lsl 3)] ++
     far .r5 dst ++ (List.range 8).flatMap (bitJ dst) ++ [testCounter])) .ne)
 
+/-- One 64-bit word of `copyTbl`'s loop, at `r11 = i + 1`: `[r12 + dst + 8 i] =`
+word `i` of the table at `r10`, its two halves through `r4` and `r5`, addressed
+from `r5` and `r9`. -/
+def copyTblBody (dst : Nat) : List Instr :=
+  [decCounter, .dp .add .r5 .r10 (.shifted .r11 .lsl 3), .ldr .r4 .r5 0, .ldr .r5 .r5 4,
+    .dp .add .r9 wb (.shifted .r11 .lsl 3), .str .r4 .r9 dst, .str .r5 .r9 (dst + 4), testCounter]
+
+/-- `[r12 + dst]`, `k` 64-bit words, from the table of constants `sym`
+(`0 < k`): its address to `r10` (`adrSym`), and a loop over its words, from
+the last down (`r11`). In place of a run of immediates per word, as
+`setConst` writes them. -/
+def copyTbl (sym : String) (k dst : Nat) : Prog isa :=
+  .seq (.block [.adrSym .r10 sym, .mov .r11 (.imm (BitVec.ofNat 32 k))]) (.loop (.block (copyTblBody dst)) .ne)
+
 /-! ## Numbers as bytes -/
 
 /-- `[r12 + o] = ` the `len`-byte big-endian number at `[src]`, in the `2 n`

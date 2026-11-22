@@ -47,6 +47,10 @@ mod vg_p192_comb;
 pub use vg_p192_comb::VG_P192_COMB;
 
 #[rustfmt::skip]
+mod vg_p192_frame_consts;
+pub use vg_p192_frame_consts::VG_P192_FRAME_CONSTS;
+
+#[rustfmt::skip]
 mod vg_p224_comb;
 pub use vg_p224_comb::VG_P224_COMB;
 

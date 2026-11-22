@@ -167,7 +167,7 @@ theorem p224_ok : CfgOk p224 where
 
 theorem pre_of {s : State} (h : signArm.pre s) : Pre p224 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, noTbl rfl⟩
 
 theorem sign_arm (hL : Weierstrass.Law Spec.P224.curve) (s : State) (hs : signArm.pre s) :
     ∃ t s', Exec isa signP224 s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by

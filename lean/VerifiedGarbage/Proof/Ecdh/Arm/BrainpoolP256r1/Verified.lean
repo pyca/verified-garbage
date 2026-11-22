@@ -112,7 +112,7 @@ open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Ecdh.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ec
 
 theorem pre_of {u : Bool} {s : State} (h : ecdhArm.pre s) : EPre (brainpoolp256r1With u) s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, noTbl rfl⟩
 
 theorem post_of {u : Bool} {s s' : State} (h : EPost (brainpoolp256r1With u) s s') : ecdhArm.post s s' := by
   unfold EPost at h

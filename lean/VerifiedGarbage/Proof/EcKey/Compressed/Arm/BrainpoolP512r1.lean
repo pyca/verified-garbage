@@ -78,10 +78,10 @@ theorem sat : ∃ s, (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract 
     abi, argRegs, reduceClassify, Loc.val, State.addr, satState] [satState] using (satState 64)
 
 theorem verified : Verified target code (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct brainpoolp512r1 brainpoolp512r1_ok) ct (compress_implies _ sat)
+  Verified.of_correct (compress_correct brainpoolp512r1 brainpoolp512r1_ok rfl) ct (compress_implies _ sat)
 
 
 theorem verifiedU : Verified target codeU (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct (brainpoolp512r1With true) brainpoolp512r1u_ok) ctU (compress_implies _ sat)
+  Verified.of_correct (compress_correct (brainpoolp512r1With true) brainpoolp512r1u_ok rfl) ctU (compress_implies _ sat)
 
 end VG.Proof.EcKey.Compressed.Arm.BrainpoolP512r1

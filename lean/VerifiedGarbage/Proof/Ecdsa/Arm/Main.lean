@@ -142,7 +142,7 @@ structure St₁ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
 /-- The setup, then the three tables. -/
 theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s, St₁ c A s₀ (scBase A s₀) s → WP isa rest s Q) :
-    WP isa (.seq (.block (c.setupWith A)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+    WP isa (.seq (c.setupWith A) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q := by
   have h0 := hc.n0

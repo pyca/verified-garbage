@@ -101,7 +101,7 @@ theorem p256_comb_core_pre {u : Bool} {s : State}
     (h : (coreK Impl.Ecdsa.Arm.p256 p256CombConsts).pre s) : combSignPre u s := by
   obtain ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,tables⟩ := h
   have hp : Pre (Impl.Ecdsa.Arm.p256With u) s (constRegs p256CombConsts s) :=
-    ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp⟩
+    ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,noTbl rfl⟩
   refine ⟨hp,?_,?_,?_,?_⟩
   · rw [rd]
     rfl

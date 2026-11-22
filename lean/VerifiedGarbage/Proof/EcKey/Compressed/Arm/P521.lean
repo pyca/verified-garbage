@@ -72,9 +72,9 @@ theorem sat : ∃ s, (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0).pre 
     abi, argRegs, reduceClassify, Loc.val, State.addr, satState] [satState] using (satState 66)
 
 theorem verified : Verified target code (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct p521 p521_ok) ct (compress_implies Spec.EcKey.P521.inst sat)
+  Verified.of_correct (compress_correct p521 p521_ok rfl) ct (compress_implies Spec.EcKey.P521.inst sat)
 
 theorem verifiedU : Verified target codeU (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct (p521With true) p521u_ok) ctU (compress_implies Spec.EcKey.P521.inst sat)
+  Verified.of_correct (compress_correct (p521With true) p521u_ok rfl) ctU (compress_implies Spec.EcKey.P521.inst sat)
 
 end VG.Proof.EcKey.Compressed.Arm.P521
