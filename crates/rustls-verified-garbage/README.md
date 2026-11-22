@@ -1,9 +1,9 @@
 # rustls-verified-garbage
 
 A [rustls](https://github.com/rustls/rustls) `CryptoProvider` whose
-cryptography is verified-garbage's. It is a package of its own (like
-`bench/`), so the library's tests, lints and coverage never build rustls, and
-it builds against rustls from git (the revision in `Cargo.toml`).
+cryptography is verified-garbage's. It is a workspace of its own, which the
+library's excludes, so the library's tests, lints and coverage never build
+rustls, and it builds against rustls from git (the revision in `Cargo.toml`).
 
 It aims to match rustls' aws-lc-rs provider:
 

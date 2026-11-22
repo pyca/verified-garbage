@@ -75,7 +75,7 @@ class Arches(unittest.TestCase):
                 [
                     "lean/VerifiedGarbage/Proof/Md5/X86_64/Compress.lean",
                     "bench/benches/primitives/md5.rs",
-                    "rustls-provider/src/kx.rs",
+                    "crates/rustls-verified-garbage/src/kx.rs",
                     "docs/algorithms/md5.toml",
                     "README.md",
                     "CLAUDE.md",
@@ -154,7 +154,7 @@ class Output(unittest.TestCase):
         self.assertIs(run("pull_request", "crates/verified-garbage-asm-arm/src/md5.rs\n")["provider"], False)
         self.assertIs(run("pull_request", "crates/verified-garbage-asm-x86_64/src/md5.rs\n")["provider"], True)
         self.assertIs(run("pull_request", "src/lib.rs\n")["provider"], True)
-        out = run("pull_request", "rustls-provider/src/kx.rs\n")
+        out = run("pull_request", "crates/rustls-verified-garbage/src/kx.rs\n")
         self.assertEqual((out["arches"], out["rust"], out["lint"], out["provider"]), ([], [], [], True))
         self.assertIs(run("merge_group")["provider"], True)
         self.assertIs(run("push")["provider"], True)

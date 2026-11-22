@@ -69,7 +69,7 @@ ARCHES = {
 NOT_RUST_PREFIXES = (
     "lean/",
     "bench/",
-    "rustls-provider/",
+    "crates/rustls-verified-garbage/",
     "docs/",
     ".agents/",
     ".claude/",
@@ -189,7 +189,7 @@ def main(argv):
     if argv == ["pull_request"]:
         paths = [line.strip() for line in sys.stdin if line.strip()]
         out = output(matrix, arches(paths), bench=any(p.startswith("bench/") for p in paths),
-                     provider=any(p.startswith("rustls-provider/") for p in paths))
+                     provider=any(p.startswith("crates/rustls-verified-garbage/") for p in paths))
     elif argv == ["merge_group"]:
         out = output(matrix, everything)
     elif argv == ["push"]:

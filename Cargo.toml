@@ -70,6 +70,9 @@ verified-garbage-asm-x86_64 = { path = "crates/verified-garbage-asm-x86_64" }
 
 [workspace]
 members = ["crates/*"]
+# The rustls provider, a workspace of its own, so that the library's builds,
+# tests, lints and coverage never build rustls.
+exclude = ["crates/rustls-verified-garbage"]
 
 # What every crate of the workspace shares, which each inherits
 # (`<key>.workspace = true`).

@@ -10,7 +10,7 @@ C cross compiler and OpenSSL the image has for the build scripts of AWS-LC
 and OpenSSL's bindings, one target at a time: in one run, Cargo would enable
 the features of a dependency for one target (aws-lc-sys's `all-bindings`, on
 x86-64 and AArch64) on every target it builds. The rustls provider
-(`rustls-provider/`, a package of its own) for x86-64 Linux, in the
+(`crates/rustls-verified-garbage/`, a package of its own) for x86-64 Linux, in the
 `rustls-provider` job, which tests it there.
 
 The library is also built in release for every target, in one run of Cargo:
@@ -56,8 +56,8 @@ def cargo(args, cwd):
 
 def run(crate):
     if crate == "provider":
-        cargo(["fmt", "--check"], ROOT / "rustls-provider")
-        cargo(["clippy", "--all-targets", "--locked"], ROOT / "rustls-provider")
+        cargo(["fmt", "--check"], ROOT / "crates" / "rustls-verified-garbage")
+        cargo(["clippy", "--all-targets", "--locked"], ROOT / "crates" / "rustls-verified-garbage")
         return
     if crate == "library":
         targets = [arg for e in entries(crate) for arg in ("--target", e["target"])]
