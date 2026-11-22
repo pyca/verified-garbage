@@ -34,7 +34,7 @@ theorem pk_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c.C
     ∃ t s', Exec isa (Impl.EcKey.PPC64LE.Cfg.publicKeyWith c generator) s t s' ∧ abiPreserved s s' ∧
       PkPost c (stripConsts [(tsym, words)] s) s' := by
   have hpre : PkPre c s (constRegs [(tsym, words)] s) := by
-    refine ⟨?_, hp.wr, hp.out_sc, hp.d_sc, hp.out_fit, hp.d_fit, hp.sc_fit⟩
+    refine ⟨?_, hp.wr, hp.out_sc, hp.d_sc, hp.out_fit, hp.d_fit, hp.sc_fit, fun h => (hp.tbl h).of_strip⟩
     rw [← List.take_append_drop (s.rd.length - [(tsym, words)].length) s.rd, hk.1]
     exact congrArg (fun rs => rs ++ constRegs [(tsym, words)] s) hp.rd
   have ht := Proof.Ecdsa.PPC64LE.Tab.tableMem hk

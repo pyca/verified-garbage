@@ -782,7 +782,7 @@ theorem compress_sat : ∃ s, (Spec.EcKey.P224.inst.compressPublicKeyContract ab
 
 theorem compress_verified :
     Verified target Impl.EcKey.Compressed.PPC64LE.compressP224 (Spec.EcKey.P224.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct p224 p224_ok) compress_ct (compress_implies _ compress_sat)
+  Verified.of_correct (fun s hs => compress_correct p224 p224_ok s hs (fun h => absurd h (by decide))) compress_ct (compress_implies _ compress_sat)
 
 /-- P-224's square root: Tonelli and Shanks's, for `p - 1 = q 2⁹⁶` and the
 nonresidue 11. -/
@@ -808,8 +808,8 @@ theorem decompress_sat : ∃ s, (Spec.EcKey.P224.inst.decompressPublicKeyContrac
 theorem decompress_verified (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     Verified target Impl.EcKey.Compressed.PPC64LE.decompressP224
       (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct p224 p224_ok root
-      (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel)))
+  Verified.of_correct (fun s hs => decompress_correct p224 p224_ok root
+      (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel)) s hs (fun h => absurd h (by decide)))
     decompress_ct (decompress_implies _ _ (Proof.P224.rootFacts hL) decompress_sat)
 
 end VG.Proof.EcKey.Compressed.PPC64LE.P224

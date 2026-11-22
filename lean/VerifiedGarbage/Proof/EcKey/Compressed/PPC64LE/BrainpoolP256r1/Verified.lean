@@ -49,7 +49,7 @@ theorem compress_sat : ∃ s, (Spec.EcKey.BrainpoolP256r1.inst.compressPublicKey
 
 theorem compress_verified :
     Verified target Impl.EcKey.Compressed.PPC64LE.compressBrainpoolP256r1 (Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct brainpoolp256r1 brainpoolp256r1_ok) compress_ct (compress_implies _ compress_sat)
+  Verified.of_correct (fun s hs => compress_correct brainpoolp256r1 brainpoolp256r1_ok s hs (fun h => absurd h (by decide))) compress_ct (compress_implies _ compress_sat)
 
 theorem decompress_ct : ConstantTime isa
     (decompressContract Spec.BrainpoolP256r1.curve Impl.EcKey.Compressed.rootThreeModFour).pre
@@ -72,7 +72,7 @@ theorem decompress_sat : ∃ s, (Spec.EcKey.BrainpoolP256r1.inst.decompressPubli
 theorem decompress_verified (hL : Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve) :
     Verified target Impl.EcKey.Compressed.PPC64LE.decompressBrainpoolP256r1
       (Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct brainpoolp256r1 brainpoolp256r1_ok _ (candidateThree_correct brainpoolp256r1_ok (by decide +kernel)))
+  Verified.of_correct (fun s hs => decompress_correct brainpoolp256r1 brainpoolp256r1_ok _ (candidateThree_correct brainpoolp256r1_ok (by decide +kernel)) s hs (fun h => absurd h (by decide)))
     decompress_ct (decompress_implies _ _ (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel))
       decompress_sat)
 

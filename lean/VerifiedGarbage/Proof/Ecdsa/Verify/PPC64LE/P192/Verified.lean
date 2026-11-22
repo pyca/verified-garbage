@@ -92,7 +92,7 @@ open VG VG.PPC64LE VG.Proof.Ecdsa.Verify.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Impl.E
 
 theorem pre_of {s : State} (h : verifyPPC.pre s) : VPre p192 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, fun h => absurd h (by decide)⟩
 
 theorem verify_ppc (hL : Weierstrass.Law Spec.P192.curve) (s : State) (hs : verifyPPC.pre s) :
     ∃ t s', Exec isa verifyP192 s t s' ∧ abiPreserved s s' ∧ verifyPPC.post s s' := by

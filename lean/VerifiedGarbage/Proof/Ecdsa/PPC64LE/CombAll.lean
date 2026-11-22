@@ -97,6 +97,14 @@ theorem tableMem {tsym : String} {words : List (BitVec 64)} {s : State}
     ⟨_, List.mem_append_left _ (hk.mem_rd (List.mem_singleton_self _)), Region.contains_self _ _⟩,
     fun _ hi => hk.readW (List.mem_singleton_self _) hi⟩
 
+/-- The table's facts of a state without some tables' regions hold of the state. -/
+theorem _root_.VG.Proof.Ecdsa.PPC64LE.TblOk.of_strip {c : Cfg} {K : List (String × List (BitVec 64))} {s : State} {sc : Addr}
+    (h : TblOk c sc (stripConsts K s)) : TblOk c sc s :=
+  ⟨fun i hi => by
+    obtain ⟨r, hr, hc⟩ := h.rd i hi
+    exact ⟨r, (List.mem_append.mp hr).elim (fun h => List.mem_append_left _ (List.mem_of_mem_take h))
+      (fun h => List.mem_append_right _ h), hc⟩, h.val⟩
+
 /-- The signature with a generator that reads a table. -/
 theorem sign_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c.C) {tsym : String}
     {words : List (BitVec 64)} {generator : Prog isa}
@@ -109,7 +117,7 @@ theorem sign_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c
       SignPost c (stripConsts [(tsym, words)] s) s' := by
   have hpre : Pre c s (constRegs [(tsym, words)] s) := by
     refine ⟨?_, hp.wr, hp.out_sc, hp.d_sc, hp.digest_sc, hp.k_sc, hp.out_fit, hp.d_fit, hp.digest_fit, hp.k_fit,
-      hp.sc_fit⟩
+      hp.sc_fit, fun h => (hp.tbl h).of_strip⟩
     rw [← List.take_append_drop (s.rd.length - [(tsym, words)].length) s.rd, hk.1]
     exact congrArg (fun rs => rs ++ constRegs [(tsym, words)] s) hp.rd
   have ht := tableMem hk

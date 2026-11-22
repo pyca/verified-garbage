@@ -631,16 +631,17 @@ theorem compress_key (c : Cfg) (s : State) :
   change Spec.EcKey.compressPublicKey c.C (Spec.Ecdsa.bytesAt s.mem (s.gpr .r4) (2 * c.C.len + 1)) = _
   rw [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith, compress_eq hlen hhead hx hy]
 
-theorem compress_correct (c : Cfg) (hc : CfgOk c) (s : State) (hs : (compressContract c.C).pre s) :
+theorem compress_correct (c : Cfg) (hc : CfgOk c) (s : State) (hs : (compressContract c.C).pre s)
+    (ht : c.tbl = true → TblOk c (s.gpr .r5) s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.compress c) s t s' ∧
       abiPreserved s s' ∧ (compressContract c.C).post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
   obtain hp : CPre c s :=
-    ⟨by rw [hrd, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith],
+    ⟨by rw [hrd, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith, List.append_nil],
       by rw [hwr, show c.C.len + 1 = 1 + c.C.len by omega_arith],
       by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using hpw,
       by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using how,
-      by omega_arith, by omega_arith, hwfit⟩
+      by omega_arith, by omega_arith, hwfit, ht⟩
   obtain ⟨t, s', he, K, bytes, ret⟩ := compress_ok hc hp
   refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
   show (match Spec.EcKey.compressPublicKey c.C (Spec.EcKey.bytesAt s.mem (s.gpr .r4) (2 * c.C.len + 1)) with
@@ -1625,16 +1626,16 @@ theorem decompress_key (c : Cfg) (root : Fe c.C → Fe c.C) (s : State) :
     (by change ofBytes ((Spec.Ecdsa.bytesAt _ _ _).drop 1) = _; rw [hb]; rfl)
 
 theorem decompress_correct (c : Cfg) (hc : CfgOk c) (root : Fe c.C → Fe c.C) (hroot : CandidateCorrect c root)
-    (s : State) (hs : (decompressContract c.C root).pre s) :
+    (s : State) (hs : (decompressContract c.C root).pre s) (ht : c.tbl = true → TblOk c (s.gpr .r5) s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.decompress c) s t s' ∧
       abiPreserved s s' ∧ (decompressContract c.C root).post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
   obtain hp : DPre c s :=
-    ⟨by rw [hrd, show c.C.len + 1 = 1 + c.C.len by omega_arith],
+    ⟨by rw [hrd, show c.C.len + 1 = 1 + c.C.len by omega_arith, List.append_nil],
       by rw [hwr, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith],
       by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using hpw,
       by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using how,
-      by omega_arith, by omega_arith, hwfit⟩
+      by omega_arith, by omega_arith, hwfit, ht⟩
   obtain ⟨t, s', he, K, bytes, ret⟩ := decompress_ok hc hroot hp
   refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
   dsimp only [decompressContract]

@@ -268,7 +268,8 @@ theorem verify_ok (hc : CfgOk c) (hL : Law c.C) {tsym : String} {words : List (B
     ∃ t s', Exec isa (Impl.Ecdsa.Verify.PPC64LE.Cfg.verifyWith c points) s t s' ∧ abiPreserved s s' ∧
       VPost c s s' := by
   obtain hpre : VPre c s (constRegs [(tsym, words)] s) := by
-    refine ⟨?_, hp.wr, hp.pk_sc, hp.dg_sc, hp.sig_sc, hp.pk_fit, hp.dg_fit, hp.sig_fit, hp.sc_fit⟩
+    refine ⟨?_, hp.wr, hp.pk_sc, hp.dg_sc, hp.sig_sc, hp.pk_fit, hp.dg_fit, hp.sig_fit, hp.sc_fit,
+      fun h => (hp.tbl h).of_strip⟩
     rw [← List.take_append_drop (s.rd.length - [(tsym, words)].length) s.rd, hk.1]
     have e := hp.rd
     simp only [List.append_nil] at e

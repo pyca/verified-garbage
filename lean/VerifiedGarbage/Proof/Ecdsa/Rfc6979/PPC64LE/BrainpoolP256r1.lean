@@ -110,7 +110,7 @@ open VG.Proof.Weierstrass.PPC64LE.TComb
 
 theorem pre_of {s : State} (h : signPPC.pre s) : Pre brainpoolp256r1 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, fun h => absurd h (by decide)⟩
 
 theorem post_of {s s' : State} (h : SignPost brainpoolp256r1 s s') : signPPC.post s s' := by
   unfold SignPost at h

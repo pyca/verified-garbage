@@ -49,7 +49,7 @@ theorem compress_sat : ∃ s, (Spec.EcKey.P521.inst.compressPublicKeyContract ab
 
 theorem compress_verified :
     Verified target Impl.EcKey.Compressed.PPC64LE.compressP521 (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct p521 p521_ok) compress_ct (compress_implies Spec.EcKey.P521.inst compress_sat)
+  Verified.of_correct (fun s hs => compress_correct p521 p521_ok s hs (fun h => absurd h (by decide))) compress_ct (compress_implies Spec.EcKey.P521.inst compress_sat)
 
 theorem decompress_ct : ConstantTime isa
     (decompressContract Spec.P521.curve Impl.EcKey.Compressed.rootThreeModFour).pre
@@ -72,7 +72,7 @@ theorem decompress_sat : ∃ s, (Spec.EcKey.P521.inst.decompressPublicKeyContrac
 theorem decompress_verified (hL : Proof.Weierstrass.Law Spec.P521.curve) :
     Verified target Impl.EcKey.Compressed.PPC64LE.decompressP521
       (Spec.EcKey.P521.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct p521 p521_ok _ (candidateThree_correct p521_ok (by decide +kernel)))
+  Verified.of_correct (fun s hs => decompress_correct p521 p521_ok _ (candidateThree_correct p521_ok (by decide +kernel)) s hs (fun h => absurd h (by decide)))
     decompress_ct (decompress_implies Spec.EcKey.P521.inst _ (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel))
       decompress_sat)
 

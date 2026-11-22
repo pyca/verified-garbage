@@ -175,7 +175,7 @@ open VG.Impl.Weierstrass.PPC64LE (p256Comb p256CombWords p256CombConsts)
 
 theorem pre_of {s : State} (h : verifyPPC.pre s) : VPre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨by rw [h1]; rfl, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  exact ⟨by rw [h1]; rfl, h2, h3, h4, h5, h6, h7, h8, h9, fun h => absurd h (by decide)⟩
 
 /-- A state satisfying the precondition. -/
 def satState : State where

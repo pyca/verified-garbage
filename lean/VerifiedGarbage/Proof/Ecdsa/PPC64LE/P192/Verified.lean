@@ -87,7 +87,7 @@ open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE Spec.Weierstrass
 
 theorem pre_of {s : State} (h : signPPC.pre s) : Pre p192 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, fun h => absurd h (by decide)⟩
 
 theorem post_of {s s' : State} (h : SignPost p192 s s') : signPPC.post s s' := by
   unfold SignPost at h

@@ -100,7 +100,7 @@ open VG.Proof.Weierstrass.PPC64LE.TComb
 
 theorem pre_of {s : State} (h : pkPPC.pre s) : PkPre p224 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, fun h => absurd h (by decide)⟩
 
 theorem post_of {s s' : State} (h : PkPost p224 s s') : pkPPC.post s s' := by
   unfold PkPost at h

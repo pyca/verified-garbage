@@ -49,7 +49,7 @@ theorem compress_sat : ∃ s, (Spec.EcKey.Secp256k1.inst.compressPublicKeyContra
 
 theorem compress_verified :
     Verified target Impl.EcKey.Compressed.PPC64LE.compressSecp256k1 (Spec.EcKey.Secp256k1.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct secp256k1 secp256k1_ok) compress_ct (compress_implies _ compress_sat)
+  Verified.of_correct (fun s hs => compress_correct secp256k1 secp256k1_ok s hs (fun h => absurd h (by decide))) compress_ct (compress_implies _ compress_sat)
 
 theorem decompress_ct : ConstantTime isa
     (decompressContract Spec.Secp256k1.curve Impl.EcKey.Compressed.rootThreeModFour).pre
@@ -72,7 +72,7 @@ theorem decompress_sat : ∃ s, (Spec.EcKey.Secp256k1.inst.decompressPublicKeyCo
 theorem decompress_verified (hL : Proof.Weierstrass.Law Spec.Secp256k1.curve) :
     Verified target Impl.EcKey.Compressed.PPC64LE.decompressSecp256k1
       (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct secp256k1 secp256k1_ok _ (candidateThree_correct secp256k1_ok (by decide +kernel)))
+  Verified.of_correct (fun s hs => decompress_correct secp256k1 secp256k1_ok _ (candidateThree_correct secp256k1_ok (by decide +kernel)) s hs (fun h => absurd h (by decide)))
     decompress_ct (decompress_implies _ _ (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel))
       decompress_sat)
 

@@ -88,7 +88,7 @@ open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Impl.Ecdh.PPC64LE VG.Proof.Ecdsa.PPC
 
 theorem pre_of {s : State} (h : ecdhPPC.pre s) : EPre p192 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, fun h => absurd h (by decide)⟩
 
 theorem post_of {s s' : State} (h : EPost p192 s s') : ecdhPPC.post s s' := by
   unfold EPost at h

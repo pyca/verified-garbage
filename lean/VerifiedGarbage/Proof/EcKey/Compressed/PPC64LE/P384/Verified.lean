@@ -49,7 +49,7 @@ theorem compress_sat : ∃ s, (Spec.EcKey.P384.inst.compressPublicKeyContract ab
 
 theorem compress_verified :
     Verified target Impl.EcKey.Compressed.PPC64LE.compressP384 (Spec.EcKey.P384.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct p384 p384_ok) compress_ct (compress_implies _ compress_sat)
+  Verified.of_correct (fun s hs => compress_correct p384 p384_ok s hs (fun h => absurd h (by decide))) compress_ct (compress_implies _ compress_sat)
 
 theorem decompress_ct : ConstantTime isa
     (decompressContract Spec.P384.curve Impl.EcKey.Compressed.rootThreeModFour).pre
@@ -72,7 +72,7 @@ theorem decompress_sat : ∃ s, (Spec.EcKey.P384.inst.decompressPublicKeyContrac
 theorem decompress_verified (hL : Proof.Weierstrass.Law Spec.P384.curve) :
     Verified target Impl.EcKey.Compressed.PPC64LE.decompressP384
       (Spec.EcKey.P384.inst.decompressPublicKeyContract abi 0) :=
-  Verified.of_correct (decompress_correct p384 p384_ok _ (candidateThree_correct p384_ok (by decide +kernel)))
+  Verified.of_correct (fun s hs => decompress_correct p384 p384_ok _ (candidateThree_correct p384_ok (by decide +kernel)) s hs (fun h => absurd h (by decide)))
     decompress_ct (decompress_implies _ _ (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel))
       decompress_sat)
 
