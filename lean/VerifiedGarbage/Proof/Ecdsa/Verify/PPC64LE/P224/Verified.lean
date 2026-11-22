@@ -118,7 +118,7 @@ theorem pointsP224_eq : pointsP224 =
     .seq (bits (p224.sl U) (bitsAt p224.n 0) (8 * p224.n)) (.seq
       (.block (VG.Impl.Mont.PPC64LE.setConst p224.n (p224.sl EM) (p224.mont p224.C.b)))
       (.seq mulGeneratorP224 (.seq (.block (Cfg.save p224)) (.seq (bits (p224.sl V) (bitsAt p224.n 0) (8 * p224.n))
-        (.seq (Window.Cfg.mul p224 PX PY EM) (Cfg.sum p224)))))) := rfl
+        (.seq (p224.winCall (Window.Cfg.mul p224 PX PY EM)) (Cfg.sum p224)))))) := rfl
 
 /-- `[u]G + [v]Q` by the comb and windows, with the comb's table at `T`. -/
 theorem combPts_ok (hC : Law Spec.P224.curve) {s₀ : State} {T : Addr}

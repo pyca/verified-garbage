@@ -87,7 +87,7 @@ theorem pointsP256_eq : pointsP256 =
     .seq (bits (p256.sl U) (bitsAt p256.n 0) (8 * p256.n)) (.seq
       (.block (VG.Impl.Mont.PPC64LE.setConst p256.n (p256.sl EM) (p256.mont p256.C.b)))
       (.seq mulGeneratorP256 (.seq (.block (Cfg.save p256)) (.seq (bits (p256.sl V) (bitsAt p256.n 0) (8 * p256.n))
-        (.seq (Window.Cfg.mul p256 PX PY EM) (Cfg.sum p256)))))) := rfl
+        (.seq (p256.winCall (Window.Cfg.mul p256 PX PY EM)) (Cfg.sum p256)))))) := rfl
 
 /-- `[u]G + [v]Q` by the comb and windows, with the comb's table at `T`. -/
 theorem combPts_ok (hC : Law Spec.P256.curve) {s₀ : State} {T : Addr}

@@ -114,15 +114,29 @@ open VG.Impl.Mont VG.Impl.Weierstrass.PPC64LE VG.Proof.Mont VG.Proof.Mont.PPC64L
   VG.Proof.Weierstrass.PPC64LE in
 /-- The windows, then the addition chain, meet `MulPowOk`. -/
 theorem win_mulPowOk (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s₀ : State) :
-    MulPowOk brainpoolp512r1 s₀ (WindowA.Cfg.mul3top brainpoolp512r1 PX PY B3P) := by
+    MulPowOk brainpoolp512r1 s₀ (brainpoolp512r1.winCall (WindowA.Cfg.mul3top brainpoolp512r1 PX PY B3P)) := by
   intro base s K hrx hry hrz _ ht₀ _ _ P hP hG hlx hly rest Q h
   have F' := K.fixed
   have hpre : Proof.Ecdsa.PPC64LE.Window.BrainpoolP512r1.MPre base s P (dk brainpoolp512r1 s₀) :=
     ⟨K.ws, ⟨F'.ap, F'.b3p, F'.zero, F'.onep⟩,
       ⟨hG, hlx, hly, lt_of_eq_of_lt F'.onep (Nat.mod_lt _ (by decide))⟩, hP,
       fun t ht => ht₀ t ht, Nat.lt_of_lt_of_le (ofBytes_bytesAt_lt _ _ _) (Nat.le_refl _)⟩
+  obtain h7 : brainpoolp512r1.n < 10 := by decide
   exact Win.pow_ok brainpoolp512r1_ok (E := 8) (by decide) K
-    (WP.mono (Proof.Ecdsa.PPC64LE.Window.BrainpoolP512r1.mul_ok hL hpre) fun _ ⟨hk, hu, hr⟩ =>
+    (WP.mono (Win.winCall_of h7 K.ws (W := Proof.Ecdsa.PPC64LE.Window.BrainpoolP512r1.mulW)
+      (fun w hw => by
+        simp only [Proof.Ecdsa.PPC64LE.Window.BrainpoolP512r1.mulW, List.mem_cons, List.not_mem_nil,
+          or_false] at hw
+        rcases hw with rfl | rfl | rfl <;> rw [sl_eq, show brainpoolp512r1.n = 8 from rfl] <;> omega)
+      (P := fun t => Proof.Ecdsa.PPC64LE.Window.BrainpoolP512r1.PtOk base t (Impl.Ecdsa.PPC64LE.Window.Cfg.rPt brainpoolp512r1)
+        (Spec.Weierstrass.mul (dk brainpoolp512r1 s₀) P))
+      (fun t t' hm R => R.of_eq (by rw [hm]) (by rw [hm]) (by rw [hm]))
+      fun t ht hU => by
+        obtain k' := Win.KC.saved h7 (bs := B3P) (bK := 3 * brainpoolp512r1.C.b) (by decide) K.ws.nowrap hU
+          ⟨hpre.kc.ap, hpre.kc.bp, hpre.kc.zero, hpre.kc.onep⟩
+        obtain g' := Win.PtOk.saved h7 K.ws.nowrap hU (Q := P) ⟨hpre.g.rep, hpre.g.x, hpre.g.y, hpre.g.z⟩
+        exact Proof.Ecdsa.PPC64LE.Window.BrainpoolP512r1.mul_ok hL ⟨ht, ⟨k'.ap, k'.bp, k'.zero, k'.onep⟩,
+          ⟨g'.rep, g'.x, g'.y, g'.z⟩, hpre.on, Win.Bits.saved h7 hU hpre.bits, hpre.lt⟩) fun _ ⟨hk, hu, hr⟩ =>
       ⟨hk, hu, ⟨hr.rep, hr.x, hr.y, hr.z⟩⟩) h
 
 theorem ecdh_ppc (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State) (hs : ecdhPPC.pre s) :

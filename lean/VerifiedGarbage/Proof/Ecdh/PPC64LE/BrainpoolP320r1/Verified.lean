@@ -110,7 +110,7 @@ theorem post_of {s s' : State} (h : EPost brainpoolp320r1 s s') : ecdhPPC.post s
 
 /-- The windows, then the addition chain, meet `MulPowOk`. -/
 theorem win_mulPowOk (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (s₀ : State) :
-    MulPowOk brainpoolp320r1 s₀ (WindowA.Cfg.mul brainpoolp320r1 PX PY B3P) :=
+    MulPowOk brainpoolp320r1 s₀ (brainpoolp320r1.winCall (WindowA.Cfg.mul brainpoolp320r1 PX PY B3P)) :=
   Win.mulPowOk Proof.Ecdsa.PPC64LE.Window.BrainpoolP320r1.kit (.inr ⟨rfl, rfl⟩) (by decide) hL s₀
 
 theorem ecdh_ppc (hL : Weierstrass.Law Spec.BrainpoolP320r1.curve) (s : State) (hs : ecdhPPC.pre s) :

@@ -118,7 +118,7 @@ theorem pointsSecp256k1_eq : pointsSecp256k1 =
     .seq (bits (secp256k1.sl U) (bitsAt secp256k1.n 0) (8 * secp256k1.n)) (.seq
       (.block (VG.Impl.Mont.PPC64LE.setConst secp256k1.n (secp256k1.sl EM) (secp256k1.mont secp256k1.C.b)))
       (.seq mulGeneratorSecp256k1 (.seq (.block (Cfg.save secp256k1)) (.seq (bits (secp256k1.sl V) (bitsAt secp256k1.n 0) (8 * secp256k1.n))
-        (.seq (WindowA.Cfg.mul secp256k1 PX PY B3P) (Cfg.sum secp256k1)))))) := rfl
+        (.seq (secp256k1.winCall (WindowA.Cfg.mul secp256k1 PX PY B3P)) (Cfg.sum secp256k1)))))) := rfl
 
 /-- `[u]G + [v]Q` by the comb and windows, with the comb's table at `T`. -/
 theorem combPts_ok (hC : Law Spec.Secp256k1.curve) {s₀ : State} {T : Addr}

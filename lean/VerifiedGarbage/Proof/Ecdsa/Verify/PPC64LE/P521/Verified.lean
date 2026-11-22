@@ -119,7 +119,7 @@ theorem pointsP521_eq : pointsP521 =
     .seq (bits (p521.sl U) (bitsAt p521.n 0) (8 * p521.n)) (.seq
       (.block (VG.Impl.Mont.PPC64LE.setConst p521.n (p521.sl EM) (p521.mont p521.C.b)))
       (.seq mulGeneratorP521 (.seq (.block (Cfg.save p521)) (.seq (bits (p521.sl V) (bitsAt p521.n 0) (8 * p521.n))
-        (.seq (Window.Cfg.mul3 p521 PX PY EM) (Cfg.sum p521)))))) := rfl
+        (.seq (p521.winCall (Window.Cfg.mul3 p521 PX PY EM)) (Cfg.sum p521)))))) := rfl
 
 set_option exponentiation.threshold 1024 in
 /-- `[u]G + [v]Q` by the comb and windows, with the comb's table at `T`. -/

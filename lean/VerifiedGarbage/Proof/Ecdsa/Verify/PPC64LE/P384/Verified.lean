@@ -118,7 +118,7 @@ theorem pointsP384_eq : pointsP384 =
     .seq (bits (p384.sl U) (bitsAt p384.n 0) (8 * p384.n)) (.seq
       (.block (VG.Impl.Mont.PPC64LE.setConst p384.n (p384.sl EM) (p384.mont p384.C.b)))
       (.seq mulGeneratorP384 (.seq (.block (Cfg.save p384)) (.seq (bits (p384.sl V) (bitsAt p384.n 0) (8 * p384.n))
-        (.seq (Window.Cfg.mul p384 PX PY EM) (Cfg.sum p384)))))) := rfl
+        (.seq (p384.winCall (Window.Cfg.mul p384 PX PY EM)) (Cfg.sum p384)))))) := rfl
 
 set_option exponentiation.threshold 512 in
 /-- `[u]G + [v]Q` by the comb and windows, with the comb's table at `T`. -/

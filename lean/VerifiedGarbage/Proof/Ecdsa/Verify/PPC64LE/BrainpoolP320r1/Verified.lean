@@ -118,7 +118,7 @@ theorem pointsBrainpoolP320r1_eq : pointsBrainpoolP320r1 =
     .seq (bits (brainpoolp320r1.sl U) (bitsAt brainpoolp320r1.n 0) (8 * brainpoolp320r1.n)) (.seq
       (.block (VG.Impl.Mont.PPC64LE.setConst brainpoolp320r1.n (brainpoolp320r1.sl EM) (brainpoolp320r1.mont brainpoolp320r1.C.b)))
       (.seq mulGeneratorBrainpoolP320r1 (.seq (.block (Cfg.save brainpoolp320r1)) (.seq (bits (brainpoolp320r1.sl V) (bitsAt brainpoolp320r1.n 0) (8 * brainpoolp320r1.n))
-        (.seq (WindowA.Cfg.mul brainpoolp320r1 PX PY B3P) (Cfg.sum brainpoolp320r1)))))) := rfl
+        (.seq (brainpoolp320r1.winCall (WindowA.Cfg.mul brainpoolp320r1 PX PY B3P)) (Cfg.sum brainpoolp320r1)))))) := rfl
 
 set_option exponentiation.threshold 512 in
 /-- `[u]G + [v]Q` by the comb and windows, with the comb's table at `T`. -/

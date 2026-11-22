@@ -119,7 +119,7 @@ theorem pointsBrainpoolP512r1_eq : pointsBrainpoolP512r1 =
     .seq (bits (brainpoolp512r1.sl U) (bitsAt brainpoolp512r1.n 0) (8 * brainpoolp512r1.n)) (.seq
       (.block (VG.Impl.Mont.PPC64LE.setConst brainpoolp512r1.n (brainpoolp512r1.sl EM) (brainpoolp512r1.mont brainpoolp512r1.C.b)))
       (.seq mulGeneratorBrainpoolP512r1 (.seq (.block (Cfg.save brainpoolp512r1)) (.seq (bits (brainpoolp512r1.sl V) (bitsAt brainpoolp512r1.n 0) (8 * brainpoolp512r1.n))
-        (.seq (WindowA.Cfg.mul3top brainpoolp512r1 PX PY B3P) (Cfg.sum brainpoolp512r1)))))) := rfl
+        (.seq (brainpoolp512r1.winCall (WindowA.Cfg.mul3top brainpoolp512r1 PX PY B3P)) (Cfg.sum brainpoolp512r1)))))) := rfl
 
 set_option exponentiation.threshold 1024 in
 /-- `[u]G + [v]Q` by the comb and windows, with the comb's table at `T`. -/
@@ -130,9 +130,21 @@ theorem combPts_ok (hC : Law Spec.BrainpoolP512r1.curve) {s₀ : State} {T : Add
   rw [pointsBrainpoolP512r1_eq]
   refine CombWin.pts_ok brainpoolp512r1_ok (by decide) hC (E := Window.BrainpoolP512r1.kit.E) (by decide)
     (fun {s k} K sy hk bits => ?_)
-    fun {s k P} K _ g hP bits hk => WP.mono (Window.BrainpoolP512r1.mul_ok hC ⟨K.ws,
-      ⟨K.fixed.ap, K.fixed.b3p, K.fixed.zero, K.fixed.onep⟩, ⟨g.rep, g.x, g.y, g.z⟩, hP, bits,
-      Nat.lt_trans hk (by decide)⟩) fun s₆ ⟨k₆, U₆, R₆⟩ => ⟨k₆, U₆, ⟨R₆.rep, R₆.x, R₆.y, R₆.z⟩⟩
+    fun {s k P} K _ g hP bits hk => WP.mono (Proof.Ecdh.PPC64LE.Win.winCall_of (by decide) K.ws
+      (W := Window.BrainpoolP512r1.mulW)
+      (fun w hw => by
+        simp only [Window.BrainpoolP512r1.mulW, List.mem_cons, List.not_mem_nil, or_false] at hw
+        rcases hw with rfl | rfl | rfl <;> rw [sl_eq, show brainpoolp512r1.n = 8 from rfl] <;> omega)
+      (P := fun t => Window.BrainpoolP512r1.PtOk (s₀.gpr .r6) t (Impl.Ecdsa.PPC64LE.Window.Cfg.rPt brainpoolp512r1) (mul k P))
+      (fun t t' hm R => R.of_eq (by rw [hm]) (by rw [hm]) (by rw [hm]))
+      fun t ht hU => by
+        obtain k' := Proof.Ecdh.PPC64LE.Win.KC.saved (by decide) (bs := B3P) (bK := 3 * brainpoolp512r1.C.b)
+          (by decide) K.ws.nowrap hU ⟨K.fixed.ap, K.fixed.b3p, K.fixed.zero, K.fixed.onep⟩
+        obtain g' := Proof.Ecdh.PPC64LE.Win.PtOk.saved (by decide) K.ws.nowrap hU ⟨g.rep, g.x, g.y, g.z⟩
+        exact Window.BrainpoolP512r1.mul_ok hC ⟨ht, ⟨k'.ap, k'.bp, k'.zero, k'.onep⟩,
+          ⟨g'.rep, g'.x, g'.y, g'.z⟩, hP, Proof.Ecdh.PPC64LE.Win.Bits.saved (by decide) hU bits,
+          Nat.lt_trans hk (by decide)⟩)
+      fun s₆ ⟨k₆, U₆, R₆⟩ => ⟨k₆, U₆, ⟨R₆.rep, R₆.x, R₆.y, R₆.z⟩⟩
   obtain ht₂ : TableMem s T brainpoolp512r1CombWords :=
     ht.unch (by rw [K.rk.rd, K.rk.wr]) K.whole (by decide) hd
   obtain ht' : TableMem s T (TComb.tableWords brainpoolp512r1Comb Spec.BrainpoolP512r1.curve VG.Impl.BrainpoolP512r1.comb7) := by

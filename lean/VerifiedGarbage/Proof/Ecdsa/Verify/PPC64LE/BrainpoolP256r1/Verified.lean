@@ -118,7 +118,7 @@ theorem pointsBrainpoolP256r1_eq : pointsBrainpoolP256r1 =
     .seq (bits (brainpoolp256r1.sl U) (bitsAt brainpoolp256r1.n 0) (8 * brainpoolp256r1.n)) (.seq
       (.block (VG.Impl.Mont.PPC64LE.setConst brainpoolp256r1.n (brainpoolp256r1.sl EM) (brainpoolp256r1.mont brainpoolp256r1.C.b)))
       (.seq mulGeneratorBrainpoolP256r1 (.seq (.block (Cfg.save brainpoolp256r1)) (.seq (bits (brainpoolp256r1.sl V) (bitsAt brainpoolp256r1.n 0) (8 * brainpoolp256r1.n))
-        (.seq (WindowA.Cfg.mul brainpoolp256r1 PX PY B3P) (Cfg.sum brainpoolp256r1)))))) := rfl
+        (.seq (brainpoolp256r1.winCall (WindowA.Cfg.mul brainpoolp256r1 PX PY B3P)) (Cfg.sum brainpoolp256r1)))))) := rfl
 
 /-- `[u]G + [v]Q` by the comb and windows, with the comb's table at `T`. -/
 theorem combPts_ok (hC : Law Spec.BrainpoolP256r1.curve) {s₀ : State} {T : Addr}

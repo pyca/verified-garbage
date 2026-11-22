@@ -110,7 +110,7 @@ theorem post_of {s s' : State} (h : EPost p521 s s') : ecdhPPC.post s s' := by
 
 /-- The windows, then the addition chain, meet `MulPowOk`. -/
 theorem win_mulPowOk (hL : Weierstrass.Law Spec.P521.curve) (s₀ : State) :
-    MulPowOk p521 s₀ (Window.Cfg.mul3 p521 PX PY BP) :=
+    MulPowOk p521 s₀ (p521.winCall (Window.Cfg.mul3 p521 PX PY BP)) :=
   Win.mulPowOk Proof.Ecdsa.PPC64LE.Window.P521.kit (.inl ⟨rfl, rfl⟩) (by decide) hL s₀
 
 theorem ecdh_ppc (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : ecdhPPC.pre s) :

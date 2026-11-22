@@ -110,7 +110,7 @@ theorem post_of {s s' : State} (h : EPost p224 s s') : ecdhPPC.post s s' := by
 
 /-- The windows, then the addition chain, meet `MulPowOk`. -/
 theorem win_mulPowOk (hL : Weierstrass.Law Spec.P224.curve) (s₀ : State) :
-    MulPowOk p224 s₀ (Window.Cfg.mul p224 PX PY BP) :=
+    MulPowOk p224 s₀ (p224.winCall (Window.Cfg.mul p224 PX PY BP)) :=
   Win.mulPowOk Proof.Ecdsa.PPC64LE.Window.P224.kit (.inl ⟨rfl, rfl⟩) (by decide) hL s₀
 
 theorem ecdh_ppc (hL : Weierstrass.Law Spec.P224.curve) (s : State) (hs : ecdhPPC.pre s) :

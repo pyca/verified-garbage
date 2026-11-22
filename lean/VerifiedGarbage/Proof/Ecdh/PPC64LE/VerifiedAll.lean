@@ -63,19 +63,24 @@ theorem apart_mulW (h7 : c.n < 10) (E : Nat) {i : Nat} (hi : i < 45) (hr : i ∉
     rw [sl_eq c 29] at this
     rcases hw with rfl | rfl | rfl <;> simp only <;> omega_using [this, ho]
 
-/-- The windows of a kit as a function (`Cfg.winCall`): `mul_ok`, with `r31`
-and `lr` kept at `c.sl 45` around them. -/
-theorem mulCall_ok (K : WAll.Kit c) (hL : Law c.C) {base : Addr} {s : State} {Q : Point c.C} {k : Nat}
-    (hp : WAll.MPre K base s Q k) :
-    WP isa (c.winCall K.mulP) s fun s' => Rk powClob s s' ∧ Unch base (mulWS c K.E) s.mem s'.mem ∧
-      WAll.PtOk c base s' (Window.Cfg.rPt c) (mul k Q) := by
-  have h7 := K.ok.n10
+/-- A multiplication `m` as a function (`Cfg.winCall`), with `r31` and `lr`
+kept at `c.sl 45` around it: from `m`'s run on the state after the saves,
+which keeps `powClob`, changes only `W` (apart from the saved words) and
+ends with `P`, of the memory alone. -/
+theorem winCall_of (h7 : c.n < 10) {m : Prog isa} {W : List (Nat × Nat)} {base : Addr} {s : State}
+    {P : State → Prop} (hs : WsReg s base)
+    (hW : ∀ w ∈ W, c.sl 45 + 16 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl 45)
+    (hP : ∀ t t' : State, t'.mem = t.mem → P t → P t')
+    (hm : ∀ t : State, WsReg t base → Unch base [(c.sl 45, 16)] s.mem t.mem →
+      WP isa m t fun t' => Rk powClob t t' ∧ Unch base W t.mem t'.mem ∧ P t') :
+    WP isa (c.winCall m) s fun s' => Rk powClob s s' ∧ Unch base ((c.sl nslots, 16) :: W) s.mem s'.mem ∧
+      P s' := by
   obtain hown := save_le_own (c := c) h7
   obtain h45 := sl_eq c 45
   obtain hO8 := own_eq c.n
-  have hn := hp.ws.nowrap
+  have hn := hs.nowrap
   obtain hu : WsReg s.callEntry base :=
-    ⟨by rw [State.callEntry_gpr _ (by decide)]; exact hp.ws.r3, by rw [State.callEntry_wr]; exact hp.ws.wr, hn⟩
+    ⟨by rw [State.callEntry_gpr _ (by decide)]; exact hs.r3, by rw [State.callEntry_wr]; exact hs.wr, hn⟩
   refine WP.callOf ?_
   rw [Cfg.winFn]
   -- `r31` and `lr` saved.
@@ -88,30 +93,11 @@ theorem mulCall_ok (K : WAll.Kit c) (hL : Law c.C) {base : Addr} {s : State} {Q 
     refine ⟨(c.sl 45, 16), List.mem_singleton_self _, ?_⟩
     simp only [List.mem_append, List.mem_singleton] at hw
     rcases hw with rfl | rfl <;> exact ⟨by dsimp only; omega_arith, by dsimp only; omega_arith⟩
-  obtain e₂ : ∀ {i}, i < 45 → wordsVal s₂.mem base (c.sl i) c.n = wordsVal s.mem base (c.sl i) c.n := fun hi =>
-    O₂.wordsVal (fun w hw => by
-      rw [List.mem_singleton.mp hw]; exact .inl (sl_lt c hi)) (by have := sl_le c h7 hi; omega_arith)
-  obtain hp₂ : WAll.MPre K base s₂ Q k := by
-    refine ⟨hw₂, hp.kc.of_eq fun d hd => ?_, hp.g.of_eq ?_ ?_ ?_, hp.on, WAll.Bits.of_unch (WAll.n_le K.ok) hp.bits O₂ ?_, hp.lt⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-      have hbs : K.bs < 45 := by rcases K.bs_cases with h | h <;> rw [h] <;> decide
-      rcases hd with rfl | rfl | rfl | rfl
-      · exact e₂ (i := 6) (by decide)
-      · exact e₂ hbs
-      · exact e₂ (i := 3) (by decide)
-      · exact e₂ (i := 5) (by decide)
-    · exact e₂ (i := Impl.Ecdh.PPC64LE.PX) (by decide)
-    · exact e₂ (i := Impl.Ecdh.PPC64LE.PY) (by decide)
-    · exact e₂ (i := ONEP) (by decide)
-    · intro w hw; rw [List.mem_singleton.mp hw]; exact .inl (by dsimp only; omega_arith)
-  -- The windows.
-  refine WP.seq (WP.mono (WAll.mul_ok K hL hp₂) fun s₃ ⟨K₃, U₃, R₃⟩ => ?_)
+  -- The body.
+  refine WP.seq (WP.mono (hm s₂ hw₂ O₂) fun s₃ ⟨K₃, U₃, R₃⟩ => ?_)
   obtain hw₃ := hw₂.of_rk K₃
-  obtain apS : ∀ {d : Nat}, c.sl 45 ≤ d → d + 8 ≤ c.sl 45 + 16 → ∀ w ∈ WAll.mulW c K.E, d + 8 ≤ w.1 ∨ w.1 + w.2 ≤ d := by
-    intro d h1 h2 w hw
-    have tf := K.tf
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases hw with rfl | rfl | rfl <;> simp only <;> omega_arith
+  obtain apS : ∀ {d : Nat}, c.sl 45 ≤ d → d + 8 ≤ c.sl 45 + 16 → ∀ w ∈ W, d + 8 ≤ w.1 ∨ w.1 + w.2 ≤ d :=
+    fun h1 h2 w hw => (hW w hw).imp (fun h => by omega_arith) (fun h => by omega_arith)
   obtain w31 : word s₃.mem base (c.sl 45) = s.gpr .r31 := by
     rw [U₃.word (apS (Nat.le_refl _) (by omega_arith)) (by omega_arith), m₂,
       word_writeW_ne _ (by omega_arith) (by omega_arith) (by omega_arith), word_writeW_self,
@@ -119,7 +105,7 @@ theorem mulCall_ok (K : WAll.Kit c) (hL : Law c.C) {base : Addr} {s : State} {Q 
   obtain wlr : word s₃.mem base (c.sl 45 + 8) = s.callEntry.lr := by
     rw [U₃.word (apS (by omega_arith) (by omega_arith)) (by omega_arith), m₂, word_writeW_self]
   -- `lr` and `r31` restored.
-  refine WP.mono (loads_ok h7 hw₃) fun s₄ ⟨m₄, lr₄, r31₄, K₄⟩ => ⟨by rw [lr₄, wlr], ?_, ?_, ?_⟩
+  refine WP.mono (loads_ok h7 hw₃) fun s₄ ⟨m₄, lr₄, r31₄, K₄⟩ => ⟨by rw [lr₄, wlr], ?_, ?_, hP _ _ m₄ R₃⟩
   · refine ⟨fun r hr => ?_, by rw [K₄.rd, K₃.rd, K₂.rd]; rfl, by rw [K₄.wr, K₃.wr, K₂.wr]; rfl,
       by rw [K₄.sp, K₃.sp, K₂.sp]; rfl⟩
     have h0 : r ∉ [Reg.r0, .r31] := fun h => hr (by
@@ -130,10 +116,68 @@ theorem mulCall_ok (K : WAll.Kit c) (hL : Law c.C) {base : Addr} {s : State} {Q 
     rw [K₄.gpr r h0, K₃.gpr r hr, K₂.gpr r (fun h => h0 (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; exact .inl h)), State.callEntry_gpr _ hl]
   · rw [m₄]
-    exact ((show Unch base [(c.sl 45, 16)] s.mem s₂.mem from O₂).trans U₃).mono fun w hw => by
-      simp only [mulWS, nslots, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+    exact (O₂.trans U₃).mono fun w hw => by
+      simp only [nslots, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
       exact hw
-  · exact R₃.of_eq (by rw [m₄]) (by rw [m₄]) (by rw [m₄])
+
+/-- A slot's number, after `r31` and `lr` are saved. -/
+theorem sv_saved (h7 : c.n < 10) {base : Addr} {s t : State} (_hn : base.toNat + size ≤ 2 ^ 64)
+    (hU : Unch base [(c.sl 45, 16)] s.mem t.mem) {i : Nat} (hi : i < 45) :
+    wordsVal t.mem base (c.sl i) c.n = wordsVal s.mem base (c.sl i) c.n :=
+  hU.wordsVal (fun w hw => by
+    rw [List.mem_singleton.mp hw]; exact .inl (sl_lt c hi)) (by have := sl_le c h7 hi; omega_arith)
+
+/-- What the windows read of the constants, after `r31` and `lr` are saved. -/
+theorem KC.saved (h7 : c.n < 10) {bs bK : Nat} (hbs : bs < 45) {base : Addr} {s t : State}
+    (hn : base.toNat + size ≤ 2 ^ 64) (hU : Unch base [(c.sl 45, 16)] s.mem t.mem)
+    (h : WAll.KC c bs bK base s) : WAll.KC c bs bK base t :=
+  h.of_eq fun d hd => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl | rfl | rfl
+    · exact sv_saved h7 hn hU (i := 6) (by decide)
+    · exact sv_saved h7 hn hU hbs
+    · exact sv_saved h7 hn hU (i := 3) (by decide)
+    · exact sv_saved h7 hn hU (i := 5) (by decide)
+
+/-- The windows' point, after `r31` and `lr` are saved. -/
+theorem PtOk.saved (h7 : c.n < 10) {base : Addr} {s t : State} {Q : Point c.C}
+    (hn : base.toNat + size ≤ 2 ^ 64) (hU : Unch base [(c.sl 45, 16)] s.mem t.mem)
+    (h : WAll.PtOk c base s (WAll.gPt c) Q) : WAll.PtOk c base t (WAll.gPt c) Q :=
+  h.of_eq (sv_saved h7 hn hU (i := Impl.Ecdh.PPC64LE.PX) (by decide))
+    (sv_saved h7 hn hU (i := Impl.Ecdh.PPC64LE.PY) (by decide)) (sv_saved h7 hn hU (i := ONEP) (by decide))
+
+/-- The table of the scalar's bits, after `r31` and `lr` are saved. -/
+theorem Bits.saved (h7 : c.n < 10) {base : Addr} {s t : State} {k : Nat}
+    (hU : Unch base [(c.sl 45, 16)] s.mem t.mem) (h : WAll.Bits c base s k) : WAll.Bits c base t k := by
+  obtain hown := save_le_own (c := c) h7
+  obtain hO8 := own_eq c.n
+  exact WAll.Bits.of_unch (by omega_arith) h hU fun w hw => by
+    rw [List.mem_singleton.mp hw]; exact .inl (by dsimp only; omega_arith)
+
+/-- A kit's precondition, after `r31` and `lr` are saved. -/
+theorem MPre.transfer {K : WAll.Kit c} {base : Addr} {s t : State} {Q : Point c.C} {k : Nat}
+    (hp : WAll.MPre K base s Q k) (ht : WsReg t base) (hU : Unch base [(c.sl 45, 16)] s.mem t.mem) :
+    WAll.MPre K base t Q k := by
+  have h7 := K.ok.n10
+  have hn := hp.ws.nowrap
+  have hbs : K.bs < 45 := by rcases K.bs_cases with h | h <;> rw [h] <;> decide
+  exact ⟨ht, KC.saved h7 hbs hn hU hp.kc, PtOk.saved h7 hn hU hp.g, hp.on, Bits.saved h7 hU hp.bits, hp.lt⟩
+
+/-- The windows of a kit as a function (`Cfg.winCall`): `mul_ok`, with `r31`
+and `lr` kept at `c.sl 45` around them. -/
+theorem mulCall_ok (K : WAll.Kit c) (hL : Law c.C) {base : Addr} {s : State} {Q : Point c.C} {k : Nat}
+    (hp : WAll.MPre K base s Q k) :
+    WP isa (c.winCall K.mulP) s fun s' => Rk powClob s s' ∧ Unch base (mulWS c K.E) s.mem s'.mem ∧
+      WAll.PtOk c base s' (Window.Cfg.rPt c) (mul k Q) := by
+  have h7 := K.ok.n10
+  have tf := K.tf
+  refine WP.mono (winCall_of h7 hp.ws (W := WAll.mulW c K.E) (fun w hw => ?_)
+    (fun t t' hm R => R.of_eq (by rw [hm]) (by rw [hm]) (by rw [hm]))
+    fun t ht hU => WAll.mul_ok K hL (MPre.transfer hp ht hU)) fun s' ⟨h1, h2, h3⟩ => ⟨h1, h2, h3⟩
+  obtain hown := save_le_own (c := c) h7
+  obtain hO8 := own_eq c.n
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl <;> simp only [sl_eq] <;> omega_arith
 
 /-- A multiplication on the windows' ranges that leaves `R` reduced and
 representing `[k]P`, then `Z^(p-2)`. -/
