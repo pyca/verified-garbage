@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PPC64LE.ZeroRegion
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Artifact
@@ -55,26 +56,49 @@ theorem wipeStores_run (R : Region) (u : State) (hR : R ∈ u.wr) : ∀ words, 8
       Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, wipeTrace, List.range_succ,
       List.map_append]
 
-/-- `wipe words` from `u`, with the `words` doublewords at `r1 + 32` in the
-region `R`, which `u` may write: it sets `r12` to `r1 + 32` and `r11` to
-zero, and changes memory only in `R`, with a trace of the addresses alone. -/
-theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr) (hwb : 8 * words ≤ 4096)
-    (hc : ∀ k < words, R.Contains (u.sp + 32 + BitVec.ofNat 64 (8 * k)) 8) :
-    ∃ m', execBlock isa (wipe words) u =
-        some ({ ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0)) with
-          mem := m' }, wipeTrace (u.sp + 32) words) ∧
-      Frame [R] u.mem m' := by
-  have h12 : ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0)).gpr .r12 =
+/-- The trace of `wipe words` from a state whose stack pointer is `p - 32`. -/
+def wipeTr (p : Addr) (words : Nat) : List Leak := Scrub.zeroTr p (8 * words)
+
+/-- The registers `wipe words` leaves, from `u`: `r0` zero and `r12` where
+`zeroRegion` leaves it. -/
+def wipeRegs (u : State) (words : Nat) : State :=
+  ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r0 (BitVec.ofNat 64 0)).write .r12
+    (Scrub.zeroEnd (u.sp + 32) (8 * words))
+
+/-- `wipe words` from `u`, which may write the region `⟨r1 + 32, B⟩` that
+holds the `words` doublewords: it zeroes them, with a trace of the addresses
+alone. -/
+theorem wipe_exec (B : Nat) (u : State) (words : Nat) (hR : ⟨u.sp + 32, B⟩ ∈ u.wr) (hwb : 8 * words ≤ B)
+    (hB : B < 4096) (hqB : (u.sp + 32).toNat + B ≤ 2 ^ 64) :
+    execBlock isa (wipe words) u =
+      some ({ wipeRegs u words with mem := Scrub.zeroOn (u.sp + 32) 0 (8 * words) u.mem },
+        wipeTr (u.sp + 32) words) := by
+  have h12 : ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r0 (BitVec.ofNat 64 0)).gpr .r12 =
       u.sp + 32 := by
     simp [State.write]
-  obtain ⟨m', he, hf⟩ := wipeStores_run R ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11
-      (BitVec.ofNat 64 0)) (by simpa [State.write]) words hwb (by rw [h12]; exact hc)
-  refine ⟨m', ?_, by simpa [State.write] using hf⟩
+  have h0 : ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r0 (BitVec.ofNat 64 0)).gpr .r0 = 0 := by
+    simp [State.write]
+  have he := Scrub.zeroRegion_runIn (u.sp + 32) (8 * words) B hwb hB (by omega_using []) hqB _ h0 h12
+    (by simpa [State.write] using hR)
   simp only [wipe, execBlock, isa, exec, show (32 : Nat) < 2 ^ 15 by decide,
     show (0 : Nat) < 2 ^ 15 by decide, ↓reduceIte]
-  rw [show ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0 : BitVec 64)) =
-      ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0)) from rfl]
-  simp only [Option.map_some, he, h12, addrs, List.map_nil, List.nil_append]
+  rw [show ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r0 (BitVec.ofNat 64 0 : BitVec 64)) =
+      ((u.write .r12 (u.sp + BitVec.ofNat 64 32)).write .r0 (BitVec.ofNat 64 0)) from rfl]
+  simp only [Option.map_some, he, addrs, List.map_nil, List.nil_append]
+  rfl
+
+/-- `wipe words` from `u`, which may write the region `⟨r1 + 32, B⟩` that
+holds the `words` doublewords: it changes memory only in that region, with a
+trace of the addresses alone. -/
+theorem wipe_run (B : Nat) (u : State) (words : Nat) (hR : ⟨u.sp + 32, B⟩ ∈ u.wr) (hwb : 8 * words ≤ B)
+    (hB : B < 4096) (hqB : (u.sp + 32).toNat + B ≤ 2 ^ 64) :
+    ∃ m', execBlock isa (wipe words) u = some ({ wipeRegs u words with mem := m' }, wipeTr (u.sp + 32) words) ∧
+      Frame [⟨u.sp + 32, B⟩] u.mem m' := by
+  refine ⟨_, wipe_exec B u words hR hwb hB hqB, fun x hx => ?_⟩
+  have hc := hx _ List.mem_cons_self
+  simp only [Region.Contains] at hc
+  simp only [Scrub.zeroOn]
+  exact ite_eq_right_iff.mpr fun h => absurd h (by omega_using [hc, hwb])
 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
@@ -142,29 +166,36 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       Frame [⟨s.sp - BitVec.ofNat 64 bytes + 32, n * e.size⟩] s₃.mem s₄.mem ∧
       s₃.sp = s.sp - BitVec.ofNat 64 bytes ∧
       Exec isa (withStackScratchWiped bytes (argRegs.getD (sig.words abi.ptrBits).length .r3) words c) s
-        (.addr (s.sp - BitVec.ofNat 64 bytes) :: (t ++ wipeTrace (s₃.sp + 32) words))
+        (.addr (s.sp - BitVec.ofNat 64 bytes) :: (t ++ wipeTr (s₃.sp + 32) words))
         (popState bytes s s₄) ∧
       abiPreserved s (popState bytes s s₄) ∧ Frame [⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩] s₄.mem (popState bytes s s₄).mem ∧
       (popState bytes s s₄).gpr .r3 = s₃.gpr .r3 := by
     intro s hs
+    have hspb : bytes ≤ s.sp.toNat := by
+      have hwf := ((pre_regs (by omega_using [hk]) hl).mp hs).1
+      rcases hwf with h | h <;> omega_using [h]
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hk hb hpre hs hl)
     have hsp₃ : s₃.sp = s.sp - BitVec.ofNat 64 bytes := ha.2.1.trans (narrow_sp s)
     have hwr₃ : s₃.wr = (narrow sig e n bytes s).wr := (Exec.rdwr he).2.1
-    obtain ⟨m', hblk, hfr⟩ := wipe_run ⟨s.sp - BitVec.ofNat 64 bytes + 32, n * e.size⟩ s₃ words
-      (by rw [hwr₃, narrow_wr]; simp) (by omega_using [hb, hw])
-      (fun k hk' => by
-        rw [hsp₃]; exact Offset.contains_base _ (by omega_using [hw, hk']) (by omega_using [hb, hw, hk']))
+    obtain ⟨m', hblk, hfr⟩ := wipe_run (n * e.size) s₃ words
+      (by rw [hwr₃, narrow_wr, hsp₃]; simp) (by omega_using [hb, hw]) (by omega_using [hb]) (by
+        have hlt := s.sp.isLt
+        rw [hsp₃, show (32 : Addr) = BitVec.ofNat 64 32 from rfl, Scrub.toNat_add_ofNat _ _ (by
+          rw [Scrub.toNat_sub_ofNat _ _ (by omega_using [hspb])]; omega_using [hspb, hb, hlt]),
+          Scrub.toNat_sub_ofNat _ _ (by omega_using [hspb])]
+        omega_using [hspb, hb, hlt])
+    rw [hsp₃] at hfr
     have he' := Exec.seq he (Exec.block hblk)
     have ha' : abiPreserved (narrow sig e n bytes s)
-        { ((s₃.write .r12 (s₃.sp + BitVec.ofNat 64 32)).write .r11 (BitVec.ofNat 64 0)) with mem := m' } := by
+        { wipeRegs s₃ words with mem := m' } := by
       refine ⟨fun q hq => ?_, ha.2.1, ha.2.2⟩
       have h12 : q ≠ .r12 := by rintro rfl; simp [preserved] at hq
-      have h11 : q ≠ .r11 := by rintro rfl; simp [preserved] at hq
-      simp only [State.write, h12, h11, ↓reduceIte]
+      have h0 : q ≠ .r0 := by rintro rfl; simp [preserved] at hq
+      simp only [wipeRegs, State.write, h12, h0, ↓reduceIte]
       exact ha.1 q hq
     obtain ⟨hex, habi, hm, hg⟩ := withStackScratch_run hk hb hs he' ha' hl
     refine ⟨t, s₃, _, he, hq, hfr, hsp₃, hex, habi, hm, ?_⟩
-    rw [hg]; simp [State.write]
+    rw [hg]; simp [wipeRegs, State.write]
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, s₄, -, hq, hfr, -, hex, ha, hm, hr3⟩ := hrun s hs
     refine ⟨_, _, hex, ha, ?_⟩
