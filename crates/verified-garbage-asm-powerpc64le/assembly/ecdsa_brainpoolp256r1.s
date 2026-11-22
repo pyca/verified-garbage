@@ -214,396 +214,29 @@ vg_ecdsa_brainpoolp256r1_verify:
 	li %r9, 0
 	ldbrx %r8, %r4, %r9
 	std %r8, 1144(%r3)
-	lis %r11, 8046
-	ori %r11, %r11, 21367
-	stw %r11, 64(%r3)
-	lis %r11, 8211
-	ori %r11, %r11, 18461
-	stw %r11, 68(%r3)
-	lis %r11, -10970
-	ori %r11, %r11, 8232
-	stw %r11, 72(%r3)
-	lis %r11, 28219
-	ori %r11, %r11, 63011
-	stw %r11, 76(%r3)
-	lis %r11, -25213
-	ori %r11, %r11, 36210
-	stw %r11, 80(%r3)
-	lis %r11, 15974
-	ori %r11, %r11, 2704
-	stw %r11, 84(%r3)
-	lis %r11, -24082
-	ori %r11, %r11, 43452
-	stw %r11, 88(%r3)
-	lis %r11, -22021
-	ori %r11, %r11, 22491
-	stw %r11, 92(%r3)
-	lis %r11, -26808
-	ori %r11, %r11, 22183
-	stw %r11, 96(%r3)
-	lis %r11, -28642
-	ori %r11, %r11, 3714
-	stw %r11, 100(%r3)
-	lis %r11, -19103
-	ori %r11, %r11, 42743
-	stw %r11, 104(%r3)
-	lis %r11, -29639
-	ori %r11, %r11, 31395
-	stw %r11, 108(%r3)
-	lis %r11, -25213
-	ori %r11, %r11, 36209
-	stw %r11, 112(%r3)
-	lis %r11, 15974
-	ori %r11, %r11, 2704
-	stw %r11, 116(%r3)
-	lis %r11, -24082
-	ori %r11, %r11, 43452
-	stw %r11, 120(%r3)
-	lis %r11, -22021
-	ori %r11, %r11, 22491
-	stw %r11, 124(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 160(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 164(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 168(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 172(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 176(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 180(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 184(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 188(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 1
-	stw %r11, 192(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 196(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 200(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 204(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 208(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 212(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 216(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 220(%r3)
-	lis %r11, -8047
-	ori %r11, %r11, 44169
-	stw %r11, 224(%r3)
-	lis %r11, -8212
-	ori %r11, %r11, 47074
-	stw %r11, 228(%r3)
-	lis %r11, 10969
-	ori %r11, %r11, 57303
-	stw %r11, 232(%r3)
-	lis %r11, -28220
-	ori %r11, %r11, 2524
-	stw %r11, 236(%r3)
-	lis %r11, 25212
-	ori %r11, %r11, 29325
-	stw %r11, 240(%r3)
-	lis %r11, -15975
-	ori %r11, %r11, 62831
-	stw %r11, 244(%r3)
-	lis %r11, 24081
-	ori %r11, %r11, 22083
-	stw %r11, 248(%r3)
-	lis %r11, 22020
-	ori %r11, %r11, 43044
-	stw %r11, 252(%r3)
-	lis %r11, 26985
-	ori %r11, %r11, 25185
-	stw %r11, 256(%r3)
-	lis %r11, -10799
-	ori %r11, %r11, 36575
-	stw %r11, 260(%r3)
-	lis %r11, -15918
-	ori %r11, %r11, 3172
-	stw %r11, 264(%r3)
-	lis %r11, -22911
-	ori %r11, %r11, 9201
-	stw %r11, 268(%r3)
-	lis %r11, 25496
-	ori %r11, %r11, 21870
-	stw %r11, 272(%r3)
-	lis %r11, -27156
-	ori %r11, %r11, 7774
-	stw %r11, 276(%r3)
-	lis %r11, -10650
-	ori %r11, %r11, 48151
-	stw %r11, 280(%r3)
-	lis %r11, 7750
-	ori %r11, %r11, 30379
-	stw %r11, 284(%r3)
-	lis %r11, 16962
-	ori %r11, %r11, 55885
-	stw %r11, 288(%r3)
-	lis %r11, 4470
-	ori %r11, %r11, 59480
-	stw %r11, 292(%r3)
-	lis %r11, 25845
-	ori %r11, %r11, 15883
-	stw %r11, 296(%r3)
-	lis %r11, 8265
-	ori %r11, %r11, 57053
-	stw %r11, 300(%r3)
-	lis %r11, 2008
-	ori %r11, %r11, 48523
-	stw %r11, 304(%r3)
-	lis %r11, 11871
-	ori %r11, %r11, 51642
-	stw %r11, 308(%r3)
-	lis %r11, -11285
-	ori %r11, %r11, 23483
-	stw %r11, 312(%r3)
-	lis %r11, 17054
-	ori %r11, %r11, 57442
-	stw %r11, 316(%r3)
-	lis %r11, 13599
-	ori %r11, %r11, 53516
-	stw %r11, 320(%r3)
-	lis %r11, 10176
-	ori %r11, %r11, 55597
-	stw %r11, 324(%r3)
-	lis %r11, -18052
-	ori %r11, %r11, 62218
-	stw %r11, 328(%r3)
-	lis %r11, -32546
-	ori %r11, %r11, 19866
-	stw %r11, 332(%r3)
-	lis %r11, 27529
-	ori %r11, %r11, 10963
-	stw %r11, 336(%r3)
-	lis %r11, 28748
-	ori %r11, %r11, 12573
-	stw %r11, 340(%r3)
-	lis %r11, -25071
-	ori %r11, %r11, 39903
-	stw %r11, 344(%r3)
-	lis %r11, -29153
-	ori %r11, %r11, 30330
-	stw %r11, 348(%r3)
-	lis %r11, -24431
-	ori %r11, %r11, 31255
-	stw %r11, 352(%r3)
-	lis %r11, -26033
-	ori %r11, %r11, 59720
-	stw %r11, 356(%r3)
-	lis %r11, -12907
-	ori %r11, %r11, 354
-	stw %r11, 360(%r3)
-	lis %r11, -23016
-	ori %r11, %r11, 62041
-	stw %r11, 364(%r3)
-	lis %r11, -8259
-	ori %r11, %r11, 35587
-	stw %r11, 368(%r3)
-	lis %r11, 5885
-	ori %r11, %r11, 63208
-	stw %r11, 372(%r3)
-	lis %r11, 622
-	ori %r11, %r11, 45218
-	stw %r11, 376(%r3)
-	lis %r11, 5355
-	ori %r11, %r11, 30918
-	stw %r11, 380(%r3)
-	lis %r11, 13074
-	ori %r11, %r11, 64678
-	stw %r11, 384(%r3)
-	lis %r11, -7720
-	ori %r11, %r11, 55518
-	stw %r11, 388(%r3)
-	lis %r11, 4404
-	ori %r11, %r11, 58528
-	stw %r11, 392(%r3)
-	lis %r11, -3235
-	ori %r11, %r11, 5994
-	stw %r11, 396(%r3)
-	lis %r11, 27777
-	ori %r11, %r11, 23728
-	stw %r11, 400(%r3)
-	lis %r11, -25729
-	ori %r11, %r11, 9703
-	stw %r11, 404(%r3)
-	lis %r11, -15581
-	ori %r11, %r11, 26466
-	stw %r11, 408(%r3)
-	lis %r11, 2853
-	ori %r11, %r11, 61881
-	stw %r11, 412(%r3)
-	lis %r11, 26807
-	ori %r11, %r11, 43353
-	stw %r11, 416(%r3)
-	lis %r11, 28641
-	ori %r11, %r11, 61821
-	stw %r11, 420(%r3)
-	lis %r11, 19102
-	ori %r11, %r11, 22792
-	stw %r11, 424(%r3)
-	lis %r11, 29638
-	ori %r11, %r11, 34140
-	stw %r11, 428(%r3)
-	lis %r11, 25212
-	ori %r11, %r11, 29326
-	stw %r11, 432(%r3)
-	lis %r11, -15975
-	ori %r11, %r11, 62831
-	stw %r11, 436(%r3)
-	lis %r11, 24081
-	ori %r11, %r11, 22083
-	stw %r11, 440(%r3)
-	lis %r11, 22020
-	ori %r11, %r11, 43044
-	stw %r11, 444(%r3)
-	lis %r11, 8046
-	ori %r11, %r11, 21365
-	stw %r11, 448(%r3)
-	lis %r11, 8211
-	ori %r11, %r11, 18461
-	stw %r11, 452(%r3)
-	lis %r11, -10970
-	ori %r11, %r11, 8232
-	stw %r11, 456(%r3)
-	lis %r11, 28219
-	ori %r11, %r11, 63011
-	stw %r11, 460(%r3)
-	lis %r11, -25213
-	ori %r11, %r11, 36210
-	stw %r11, 464(%r3)
-	lis %r11, 15974
-	ori %r11, %r11, 2704
-	stw %r11, 468(%r3)
-	lis %r11, -24082
-	ori %r11, %r11, 43452
-	stw %r11, 472(%r3)
-	lis %r11, -22021
-	ori %r11, %r11, 22491
-	stw %r11, 476(%r3)
-	lis %r11, -26808
-	ori %r11, %r11, 22181
-	stw %r11, 480(%r3)
-	lis %r11, -28642
-	ori %r11, %r11, 3714
-	stw %r11, 484(%r3)
-	lis %r11, -19103
-	ori %r11, %r11, 42743
-	stw %r11, 488(%r3)
-	lis %r11, -29639
-	ori %r11, %r11, 31395
-	stw %r11, 492(%r3)
-	lis %r11, -25213
-	ori %r11, %r11, 36209
-	stw %r11, 496(%r3)
-	lis %r11, 15974
-	ori %r11, %r11, 2704
-	stw %r11, 500(%r3)
-	lis %r11, -24082
-	ori %r11, %r11, 43452
-	stw %r11, 504(%r3)
-	lis %r11, -22021
-	ori %r11, %r11, 22491
-	stw %r11, 508(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 512(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 516(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 520(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 524(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 528(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 532(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 536(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 540(%r3)
-	lis %r11, -8047
-	ori %r11, %r11, 44169
-	stw %r11, 544(%r3)
-	lis %r11, -8212
-	ori %r11, %r11, 47074
-	stw %r11, 548(%r3)
-	lis %r11, 10969
-	ori %r11, %r11, 57303
-	stw %r11, 552(%r3)
-	lis %r11, -28220
-	ori %r11, %r11, 2524
-	stw %r11, 556(%r3)
-	lis %r11, 25212
-	ori %r11, %r11, 29325
-	stw %r11, 560(%r3)
-	lis %r11, -15975
-	ori %r11, %r11, 62831
-	stw %r11, 564(%r3)
-	lis %r11, 24081
-	ori %r11, %r11, 22083
-	stw %r11, 568(%r3)
-	lis %r11, 22020
-	ori %r11, %r11, 43044
-	stw %r11, 572(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 576(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 580(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 584(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 588(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 592(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 596(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 600(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 604(%r3)
+	mflr %r11
+	bcl 20, 31, 2f
+2:
+	mflr %r4
+	addis %r4, %r4, ({VG_BRAINPOOLP256R1_FRAME_CONSTS}
+	addi %r4, %r4, ({VG_BRAINPOOLP256R1_FRAME_CONSTS}
+	mtlr %r11
+	li %r31, 68
+25:
+	addi %r31, %r31, -1
+	rldicr %r8, %r31, 3, 60
+	add %r9, %r4, %r8
+	ld %r11, 0(%r9)
+	add %r9, %r3, %r8
+	std %r11, 64(%r9)
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 25b
 	li %r4, 0
 	addi %r4, %r4, -1
 	std %r4, 1472(%r3)
 	or %r12, %r5, %r5
 	li %r31, 32
-25:
+26:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 1056(%r4)
@@ -634,9 +267,9 @@ vg_ecdsa_brainpoolp256r1_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 25b
+	bne %cr0, 26b
 	li %r31, 32
-26:
+27:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 448(%r4)
@@ -667,9 +300,9 @@ vg_ecdsa_brainpoolp256r1_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4359(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 26b
+	bne %cr0, 27b
 	li %r31, 32
-27:
+28:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 480(%r4)
@@ -700,7 +333,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4615(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 27b
+	bne %cr0, 28b
 	addi %r6, %r12, 32
 	li %r9, 24
 	ldbrx %r8, %r6, %r9
@@ -1083,7 +716,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	li %r6, 192
 	bl {vg_brainpoolp256r1_mul_mod_n}
 	li %r31, 32
-28:
+29:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 1152(%r4)
@@ -1114,7 +747,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 28b
+	bne %cr0, 29b
 	lis %r11, -16192
 	ori %r11, %r11, 62319
 	stw %r11, 1344(%r3)
@@ -1252,14 +885,14 @@ vg_ecdsa_brainpoolp256r1_verify:
 	ori %r11, %r11, 43044
 	stw %r11, 604(%r3)
 	li %r31, 37
-29:
+210:
 	addi %r31, %r31, -1
 	li %r4, 7
 	mulld %r4, %r4, %r31
 	add %r4, %r3, %r4
 	addi %r6, %r31, -36
 	cmpldi %cr0, %r6, 0
-	beq %cr0, 210f
+	beq %cr0, 211f
 	li %r9, 0
 	add %r9, %r9, %r9
 	lbz %r5, 4102(%r4)
@@ -1282,8 +915,8 @@ vg_ecdsa_brainpoolp256r1_verify:
 	add %r9, %r9, %r9
 	lbz %r5, 4096(%r4)
 	add %r9, %r9, %r5
-	b 211f
-210:
+	b 212f
+211:
 	li %r9, 0
 	add %r9, %r9, %r9
 	lbz %r5, 4099(%r4)
@@ -1297,7 +930,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	add %r9, %r9, %r9
 	lbz %r5, 4096(%r4)
 	add %r9, %r9, %r5
-211:
+212:
 	addi %r9, %r9, -64
 	rldicl %r4, %r9, 1, 63
 	li %r5, 0
@@ -1317,7 +950,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	vxor %v2, %v2, %v2
 	vxor %v3, %v3, %v3
 	li %r7, 1
-212:
+213:
 	xor %r10, %r9, %r7
 	addi %r10, %r10, -1
 	rldicl %r10, %r10, 1, 63
@@ -1340,7 +973,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	addi %r7, %r7, 1
 	addi %r6, %r7, -65
 	cmpldi %cr0, %r6, 0
-	bne %cr0, 212b
+	bne %cr0, 213b
 	li %r4, 3424
 	stxvd2x 32, %r3, %r4
 	li %r4, 3440
@@ -1433,17 +1066,17 @@ vg_ecdsa_brainpoolp256r1_verify:
 	bl {vg_brainpoolp256r1_sub_mod_p}
 	addi %r6, %r31, -36
 	cmpldi %cr0, %r6, 0
-	beq %cr0, 213f
+	beq %cr0, 214f
 	li %r4, 7
 	mulld %r4, %r4, %r31
 	add %r4, %r3, %r4
 	lbz %r4, 4102(%r4)
 	addi %r10, %r4, -1
-	b 214f
-213:
+	b 215f
+214:
 	li %r10, 0
 	addi %r10, %r10, -1
-214:
+215:
 	ld %r4, 3456(%r3)
 	ld %r5, 704(%r3)
 	xor %r5, %r5, %r4
@@ -1518,7 +1151,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	ld %r4, 3320(%r3)
 	std %r4, 600(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 29b
+	bne %cr0, 210b
 	ld %r4, 512(%r3)
 	std %r4, 1376(%r3)
 	ld %r4, 520(%r3)
@@ -1616,7 +1249,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	ori %r11, %r11, 0
 	stw %r11, 604(%r3)
 	li %r31, 32
-215:
+216:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 1184(%r4)
@@ -1647,7 +1280,7 @@ vg_ecdsa_brainpoolp256r1_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 215b
+	bne %cr0, 216b
 	bl {vg_brainpoolp256r1_windows}
 	li %r4, 800
 	li %r5, 1376

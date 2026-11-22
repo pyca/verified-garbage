@@ -51,390 +51,23 @@ vg_ec_p224_compress_public_key:
 	ldbrx %r8, %r12, %r9
 	rldicl %r8, %r8, 32, 32
 	std %r8, 1144(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 1
-	stw %r11, 64(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 68(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 72(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 76(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 80(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 84(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 88(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 92(%r3)
-	lis %r11, 23644
-	ori %r11, %r11, 10813
-	stw %r11, 96(%r3)
-	lis %r11, 5085
-	ori %r11, %r11, 10565
-	stw %r11, 100(%r3)
-	lis %r11, -8008
-	ori %r11, %r11, 61502
-	stw %r11, 104(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 5794
-	stw %r11, 108(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 112(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 116(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 120(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 124(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 160(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 164(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 168(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 172(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 176(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 180(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 184(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 188(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 1
-	stw %r11, 192(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 196(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 200(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 204(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 208(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 212(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 216(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 220(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 224(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 228(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 232(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 236(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 240(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 244(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 248(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 252(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 1
-	stw %r11, 256(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 3
-	stw %r11, 260(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 264(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 268(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65532
-	stw %r11, 272(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 276(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 280(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 284(%r3)
-	lis %r11, 11073
-	ori %r11, %r11, 3430
-	stw %r11, 288(%r3)
-	lis %r11, -18886
-	ori %r11, %r11, 27107
-	stw %r11, 292(%r3)
-	lis %r11, 26320
-	ori %r11, %r11, 14642
-	stw %r11, 296(%r3)
-	lis %r11, 12656
-	ori %r11, %r11, 18652
-	stw %r11, 300(%r3)
-	lis %r11, 22775
-	ori %r11, %r11, 33779
-	stw %r11, 304(%r3)
-	lis %r11, -18068
-	ori %r11, %r11, 12234
-	stw %r11, 308(%r3)
-	lis %r11, 32576
-	ori %r11, %r11, 36537
-	stw %r11, 312(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 316(%r3)
-	lis %r11, 27914
-	ori %r11, %r11, 19178
-	stw %r11, 320(%r3)
-	lis %r11, -17264
-	ori %r11, %r11, 21030
-	stw %r11, 324(%r3)
-	lis %r11, 24600
-	ori %r11, %r11, 49066
-	stw %r11, 328(%r3)
-	lis %r11, -31451
-	ori %r11, %r11, 38710
-	stw %r11, 332(%r3)
-	lis %r11, -1685
-	ori %r11, %r11, 60421
-	stw %r11, 336(%r3)
-	lis %r11, 28115
-	ori %r11, %r11, 44955
-	stw %r11, 340(%r3)
-	lis %r11, -24037
-	ori %r11, %r11, 24160
-	stw %r11, 344(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 348(%r3)
-	lis %r11, -4109
-	ori %r11, %r11, 60904
-	stw %r11, 352(%r3)
-	lis %r11, 11996
-	ori %r11, %r11, 41445
-	stw %r11, 356(%r3)
-	lis %r11, 1331
-	ori %r11, %r11, 23147
-	stw %r11, 360(%r3)
-	lis %r11, -1843
-	ori %r11, %r11, 26411
-	stw %r11, 364(%r3)
-	lis %r11, 991
-	ori %r11, %r11, 59512
-	stw %r11, 368(%r3)
-	lis %r11, -20823
-	ori %r11, %r11, 50606
-	stw %r11, 372(%r3)
-	lis %r11, 24903
-	ori %r11, %r11, 34545
-	stw %r11, 376(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 380(%r3)
-	lis %r11, 24401
-	ori %r11, %r11, 32021
-	stw %r11, 384(%r3)
-	lis %r11, 10644
-	ori %r11, %r11, 31337
-	stw %r11, 388(%r3)
-	lis %r11, 12758
-	ori %r11, %r11, 16203
-	stw %r11, 392(%r3)
-	lis %r11, -21560
-	ori %r11, %r11, 65369
-	stw %r11, 396(%r3)
-	lis %r11, -9871
-	ori %r11, %r11, 18518
-	stw %r11, 400(%r3)
-	lis %r11, 27345
-	ori %r11, %r11, 24444
-	stw %r11, 404(%r3)
-	lis %r11, -19991
-	ori %r11, %r11, 31073
-	stw %r11, 408(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 412(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 416(%r3)
-	lis %r11, -23645
-	ori %r11, %r11, 54723
-	stw %r11, 420(%r3)
-	lis %r11, -5086
-	ori %r11, %r11, 54970
-	stw %r11, 424(%r3)
-	lis %r11, 8007
-	ori %r11, %r11, 4033
-	stw %r11, 428(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 59741
-	stw %r11, 432(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 436(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 440(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 444(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 448(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 452(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 456(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65534
-	stw %r11, 460(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 464(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 468(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 472(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 476(%r3)
-	lis %r11, 23644
-	ori %r11, %r11, 10811
-	stw %r11, 480(%r3)
-	lis %r11, 5085
-	ori %r11, %r11, 10565
-	stw %r11, 484(%r3)
-	lis %r11, -8008
-	ori %r11, %r11, 61502
-	stw %r11, 488(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 5794
-	stw %r11, 492(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 496(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 500(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 504(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 508(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 512(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 516(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 520(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 524(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 528(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 532(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 536(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 540(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 544(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 548(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 552(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 556(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 560(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 564(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 568(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 572(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 576(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 580(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 584(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 588(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 592(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 596(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 600(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 604(%r3)
+	mflr %r11
+	bcl 20, 31, 2f
+2:
+	mflr %r4
+	addis %r4, %r4, ({VG_P224_FRAME_CONSTS}
+	addi %r4, %r4, ({VG_P224_FRAME_CONSTS}
+	mtlr %r11
+	li %r31, 68
+20:
+	addi %r31, %r31, -1
+	rldicr %r8, %r31, 3, 60
+	add %r9, %r4, %r8
+	ld %r11, 0(%r9)
+	add %r9, %r3, %r8
+	std %r11, 64(%r9)
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 20b
 	li %r4, 0
 	addi %r4, %r4, -1
 	std %r4, 1472(%r3)
@@ -734,390 +367,23 @@ vg_ec_p224_decompress_public_key:
 	ldbrx %r8, %r12, %r9
 	rldicl %r8, %r8, 32, 32
 	std %r8, 1144(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 1
-	stw %r11, 64(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 68(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 72(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 76(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 80(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 84(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 88(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 92(%r3)
-	lis %r11, 23644
-	ori %r11, %r11, 10813
-	stw %r11, 96(%r3)
-	lis %r11, 5085
-	ori %r11, %r11, 10565
-	stw %r11, 100(%r3)
-	lis %r11, -8008
-	ori %r11, %r11, 61502
-	stw %r11, 104(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 5794
-	stw %r11, 108(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 112(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 116(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 120(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 124(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 160(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 164(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 168(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 172(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 176(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 180(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 184(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 188(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 1
-	stw %r11, 192(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 196(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 200(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 204(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 208(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 212(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 216(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 220(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 224(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 228(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 232(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 236(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 240(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 244(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 248(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 252(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 1
-	stw %r11, 256(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 3
-	stw %r11, 260(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 264(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 268(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65532
-	stw %r11, 272(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 276(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 280(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 284(%r3)
-	lis %r11, 11073
-	ori %r11, %r11, 3430
-	stw %r11, 288(%r3)
-	lis %r11, -18886
-	ori %r11, %r11, 27107
-	stw %r11, 292(%r3)
-	lis %r11, 26320
-	ori %r11, %r11, 14642
-	stw %r11, 296(%r3)
-	lis %r11, 12656
-	ori %r11, %r11, 18652
-	stw %r11, 300(%r3)
-	lis %r11, 22775
-	ori %r11, %r11, 33779
-	stw %r11, 304(%r3)
-	lis %r11, -18068
-	ori %r11, %r11, 12234
-	stw %r11, 308(%r3)
-	lis %r11, 32576
-	ori %r11, %r11, 36537
-	stw %r11, 312(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 316(%r3)
-	lis %r11, 27914
-	ori %r11, %r11, 19178
-	stw %r11, 320(%r3)
-	lis %r11, -17264
-	ori %r11, %r11, 21030
-	stw %r11, 324(%r3)
-	lis %r11, 24600
-	ori %r11, %r11, 49066
-	stw %r11, 328(%r3)
-	lis %r11, -31451
-	ori %r11, %r11, 38710
-	stw %r11, 332(%r3)
-	lis %r11, -1685
-	ori %r11, %r11, 60421
-	stw %r11, 336(%r3)
-	lis %r11, 28115
-	ori %r11, %r11, 44955
-	stw %r11, 340(%r3)
-	lis %r11, -24037
-	ori %r11, %r11, 24160
-	stw %r11, 344(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 348(%r3)
-	lis %r11, -4109
-	ori %r11, %r11, 60904
-	stw %r11, 352(%r3)
-	lis %r11, 11996
-	ori %r11, %r11, 41445
-	stw %r11, 356(%r3)
-	lis %r11, 1331
-	ori %r11, %r11, 23147
-	stw %r11, 360(%r3)
-	lis %r11, -1843
-	ori %r11, %r11, 26411
-	stw %r11, 364(%r3)
-	lis %r11, 991
-	ori %r11, %r11, 59512
-	stw %r11, 368(%r3)
-	lis %r11, -20823
-	ori %r11, %r11, 50606
-	stw %r11, 372(%r3)
-	lis %r11, 24903
-	ori %r11, %r11, 34545
-	stw %r11, 376(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 380(%r3)
-	lis %r11, 24401
-	ori %r11, %r11, 32021
-	stw %r11, 384(%r3)
-	lis %r11, 10644
-	ori %r11, %r11, 31337
-	stw %r11, 388(%r3)
-	lis %r11, 12758
-	ori %r11, %r11, 16203
-	stw %r11, 392(%r3)
-	lis %r11, -21560
-	ori %r11, %r11, 65369
-	stw %r11, 396(%r3)
-	lis %r11, -9871
-	ori %r11, %r11, 18518
-	stw %r11, 400(%r3)
-	lis %r11, 27345
-	ori %r11, %r11, 24444
-	stw %r11, 404(%r3)
-	lis %r11, -19991
-	ori %r11, %r11, 31073
-	stw %r11, 408(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 412(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 416(%r3)
-	lis %r11, -23645
-	ori %r11, %r11, 54723
-	stw %r11, 420(%r3)
-	lis %r11, -5086
-	ori %r11, %r11, 54970
-	stw %r11, 424(%r3)
-	lis %r11, 8007
-	ori %r11, %r11, 4033
-	stw %r11, 428(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 59741
-	stw %r11, 432(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 436(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 440(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 444(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 448(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 452(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 456(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65534
-	stw %r11, 460(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 464(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 468(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 472(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 476(%r3)
-	lis %r11, 23644
-	ori %r11, %r11, 10811
-	stw %r11, 480(%r3)
-	lis %r11, 5085
-	ori %r11, %r11, 10565
-	stw %r11, 484(%r3)
-	lis %r11, -8008
-	ori %r11, %r11, 61502
-	stw %r11, 488(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 5794
-	stw %r11, 492(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 496(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 500(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 504(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 508(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 512(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 516(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 520(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 524(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 528(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 532(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 536(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 540(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 544(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 548(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 552(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 556(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 560(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 564(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 568(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 572(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 576(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 580(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 584(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 588(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 592(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 596(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 600(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 604(%r3)
+	mflr %r11
+	bcl 20, 31, 2f
+2:
+	mflr %r4
+	addis %r4, %r4, ({VG_P224_FRAME_CONSTS}
+	addi %r4, %r4, ({VG_P224_FRAME_CONSTS}
+	mtlr %r11
+	li %r31, 68
+20:
+	addi %r31, %r31, -1
+	rldicr %r8, %r31, 3, 60
+	add %r9, %r4, %r8
+	ld %r11, 0(%r9)
+	add %r9, %r3, %r8
+	std %r11, 64(%r9)
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 20b
 	li %r4, 0
 	addi %r4, %r4, -1
 	std %r4, 1472(%r3)
@@ -1301,7 +567,7 @@ vg_ec_p224_decompress_public_key:
 	ori %r11, %r11, 0
 	stw %r11, 476(%r3)
 	li %r31, 32
-20:
+21:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 448(%r4)
@@ -1332,7 +598,7 @@ vg_ec_p224_decompress_public_key:
 	and %r6, %r6, %r7
 	stb %r6, 4359(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 20b
+	bne %cr0, 21b
 	ld %r4, 224(%r3)
 	std %r4, 992(%r3)
 	ld %r4, 232(%r3)
@@ -1342,7 +608,7 @@ vg_ec_p224_decompress_public_key:
 	ld %r4, 248(%r3)
 	std %r4, 1016(%r3)
 	li %r31, 256
-21:
+22:
 	addi %r31, %r31, -1
 	li %r4, 992
 	li %r5, 992
@@ -1381,7 +647,7 @@ vg_ec_p224_decompress_public_key:
 	xor %r4, %r4, %r5
 	std %r4, 1016(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 21b
+	bne %cr0, 22b
 	ld %r4, 992(%r3)
 	std %r4, 960(%r3)
 	ld %r4, 1000(%r3)
@@ -1415,7 +681,7 @@ vg_ec_p224_decompress_public_key:
 	ori %r11, %r11, 0
 	stw %r11, 476(%r3)
 	li %r31, 32
-22:
+23:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 448(%r4)
@@ -1446,7 +712,7 @@ vg_ec_p224_decompress_public_key:
 	and %r6, %r6, %r7
 	stb %r6, 4615(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 22b
+	bne %cr0, 23b
 	ld %r4, 224(%r3)
 	std %r4, 992(%r3)
 	ld %r4, 232(%r3)
@@ -1456,7 +722,7 @@ vg_ec_p224_decompress_public_key:
 	ld %r4, 248(%r3)
 	std %r4, 1016(%r3)
 	li %r31, 256
-23:
+24:
 	addi %r31, %r31, -1
 	li %r4, 992
 	li %r5, 992
@@ -1495,7 +761,7 @@ vg_ec_p224_decompress_public_key:
 	xor %r4, %r4, %r5
 	std %r4, 1016(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 23b
+	bne %cr0, 24b
 	ld %r4, 992(%r3)
 	std %r4, 800(%r3)
 	ld %r4, 1000(%r3)
@@ -1538,7 +804,7 @@ vg_ec_p224_decompress_public_key:
 	stw %r11, 860(%r3)
 	li %r31, 95
 	rldicr %r31, %r31, 32, 31
-24:
+25:
 	ld %r4, 800(%r3)
 	std %r4, 896(%r3)
 	ld %r4, 808(%r3)
@@ -1551,18 +817,18 @@ vg_ec_p224_decompress_public_key:
 	addi %r4, %r4, -1
 	or %r31, %r31, %r4
 	cmplwi %cr0, %r31, 0
-	beq %cr0, 25f
-27:
+	beq %cr0, 26f
+28:
 	li %r4, 896
 	li %r5, 896
 	li %r6, 896
 	bl {vg_p224_mul_mod_p}
 	addi %r31, %r31, -1
 	cmplwi %cr0, %r31, 0
-	bne %cr0, 27b
-	b 26f
-25:
+	bne %cr0, 28b
+	b 27f
 26:
+27:
 	li %r4, 1248
 	li %r5, 896
 	li %r6, 224
@@ -1628,7 +894,7 @@ vg_ec_p224_decompress_public_key:
 	rldicr %r4, %r4, 32, 31
 	subf %r31, %r4, %r31
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 24b
+	bne %cr0, 25b
 	li %r4, 1216
 	li %r5, 992
 	li %r6, 192
