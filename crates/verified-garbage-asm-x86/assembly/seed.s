@@ -1383,6 +1383,9 @@ vg_seed_ecb_encrypt:
 	mov eax, esp
 	add eax, 20
 	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+16]
+	mov ecx, 0
+	mov DWORD PTR [eax+816], ecx
 	push ebx
 	mov eax, DWORD PTR [esp+8]
 	mov ecx, DWORD PTR [esp+12]
@@ -1392,7 +1395,7 @@ vg_seed_ecb_encrypt:
 	push edx
 	push ecx
 	push eax
-	call {vg_seed_encrypt_blocks}
+	call {vg_seed_blocks}
 	pop eax
 	pop eax
 	pop eax
@@ -1508,6 +1511,9 @@ vg_seed_ecb_decrypt:
 	mov eax, esp
 	add eax, 20
 	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+16]
+	mov ecx, 1
+	mov DWORD PTR [eax+816], ecx
 	push ebx
 	mov eax, DWORD PTR [esp+8]
 	mov ecx, DWORD PTR [esp+12]
@@ -1517,7 +1523,7 @@ vg_seed_ecb_decrypt:
 	push edx
 	push ecx
 	push eax
-	call {vg_seed_decrypt_blocks}
+	call {vg_seed_blocks}
 	pop eax
 	pop eax
 	pop eax

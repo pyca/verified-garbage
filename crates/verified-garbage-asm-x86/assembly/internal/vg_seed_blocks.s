@@ -1,16 +1,86 @@
-// The functions of `src/internal/vg_seed_encrypt_blocks.rs` of `verified-garbage-asm-x86`, as text: generated from
+// The functions of `src/internal/vg_seed_blocks.rs` of `verified-garbage-asm-x86`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_seed_encrypt_blocks:
+vg_seed_blocks:
 	mov eax, DWORD PTR [esp+16]
 	mov DWORD PTR [eax+800], ebx
 	mov DWORD PTR [eax+804], esi
 	mov DWORD PTR [eax+808], edi
 	mov DWORD PTR [eax+812], ebp
 	mov edi, eax
+	mov eax, DWORD PTR [edi+816]
+	test eax, eax
+	je 20f
+	mov ecx, DWORD PTR [esp+4]
+	mov eax, DWORD PTR [ecx+120]
+	mov DWORD PTR [edi+672], eax
+	mov eax, DWORD PTR [ecx+124]
+	mov DWORD PTR [edi+676], eax
+	mov eax, DWORD PTR [ecx+112]
+	mov DWORD PTR [edi+680], eax
+	mov eax, DWORD PTR [ecx+116]
+	mov DWORD PTR [edi+684], eax
+	mov eax, DWORD PTR [ecx+104]
+	mov DWORD PTR [edi+688], eax
+	mov eax, DWORD PTR [ecx+108]
+	mov DWORD PTR [edi+692], eax
+	mov eax, DWORD PTR [ecx+96]
+	mov DWORD PTR [edi+696], eax
+	mov eax, DWORD PTR [ecx+100]
+	mov DWORD PTR [edi+700], eax
+	mov eax, DWORD PTR [ecx+88]
+	mov DWORD PTR [edi+704], eax
+	mov eax, DWORD PTR [ecx+92]
+	mov DWORD PTR [edi+708], eax
+	mov eax, DWORD PTR [ecx+80]
+	mov DWORD PTR [edi+712], eax
+	mov eax, DWORD PTR [ecx+84]
+	mov DWORD PTR [edi+716], eax
+	mov eax, DWORD PTR [ecx+72]
+	mov DWORD PTR [edi+720], eax
+	mov eax, DWORD PTR [ecx+76]
+	mov DWORD PTR [edi+724], eax
+	mov eax, DWORD PTR [ecx+64]
+	mov DWORD PTR [edi+728], eax
+	mov eax, DWORD PTR [ecx+68]
+	mov DWORD PTR [edi+732], eax
+	mov eax, DWORD PTR [ecx+56]
+	mov DWORD PTR [edi+736], eax
+	mov eax, DWORD PTR [ecx+60]
+	mov DWORD PTR [edi+740], eax
+	mov eax, DWORD PTR [ecx+48]
+	mov DWORD PTR [edi+744], eax
+	mov eax, DWORD PTR [ecx+52]
+	mov DWORD PTR [edi+748], eax
+	mov eax, DWORD PTR [ecx+40]
+	mov DWORD PTR [edi+752], eax
+	mov eax, DWORD PTR [ecx+44]
+	mov DWORD PTR [edi+756], eax
+	mov eax, DWORD PTR [ecx+32]
+	mov DWORD PTR [edi+760], eax
+	mov eax, DWORD PTR [ecx+36]
+	mov DWORD PTR [edi+764], eax
+	mov eax, DWORD PTR [ecx+24]
+	mov DWORD PTR [edi+768], eax
+	mov eax, DWORD PTR [ecx+28]
+	mov DWORD PTR [edi+772], eax
+	mov eax, DWORD PTR [ecx+16]
+	mov DWORD PTR [edi+776], eax
+	mov eax, DWORD PTR [ecx+20]
+	mov DWORD PTR [edi+780], eax
+	mov eax, DWORD PTR [ecx+8]
+	mov DWORD PTR [edi+784], eax
+	mov eax, DWORD PTR [ecx+12]
+	mov DWORD PTR [edi+788], eax
+	mov eax, DWORD PTR [ecx]
+	mov DWORD PTR [edi+792], eax
+	mov eax, DWORD PTR [ecx+4]
+	mov DWORD PTR [edi+796], eax
+	jmp 21f
+20:
 	mov ecx, DWORD PTR [esp+4]
 	mov eax, DWORD PTR [ecx]
 	mov DWORD PTR [edi+672], eax
@@ -76,20 +146,21 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [edi+792], eax
 	mov eax, DWORD PTR [ecx+124]
 	mov DWORD PTR [edi+796], eax
+21:
 	mov ebx, DWORD PTR [esp+8]
 	mov edx, DWORD PTR [esp+12]
 	test edx, edx
-	je 20f
-22:
+	je 22f
+24:
 	mov ecx, edx
 	cmp edx, 8
-	jb 23f
-	mov ecx, 8
-	jmp 24f
-23:
-24:
-	cmp ecx, 1
 	jb 25f
+	mov ecx, 8
+	jmp 26f
+25:
+26:
+	cmp ecx, 1
+	jb 27f
 	mov eax, DWORD PTR [ebx]
 	mov DWORD PTR [edi+544], eax
 	mov eax, DWORD PTR [ebx+4]
@@ -98,11 +169,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [edi+552], eax
 	mov eax, DWORD PTR [ebx+12]
 	mov DWORD PTR [edi+556], eax
-	jmp 26f
-25:
-26:
+	jmp 28f
+27:
+28:
 	cmp ecx, 2
-	jb 27f
+	jb 29f
 	mov eax, DWORD PTR [ebx+16]
 	mov DWORD PTR [edi+560], eax
 	mov eax, DWORD PTR [ebx+20]
@@ -111,11 +182,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [edi+568], eax
 	mov eax, DWORD PTR [ebx+28]
 	mov DWORD PTR [edi+572], eax
-	jmp 28f
-27:
-28:
+	jmp 210f
+29:
+210:
 	cmp ecx, 3
-	jb 29f
+	jb 211f
 	mov eax, DWORD PTR [ebx+32]
 	mov DWORD PTR [edi+576], eax
 	mov eax, DWORD PTR [ebx+36]
@@ -124,11 +195,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [edi+584], eax
 	mov eax, DWORD PTR [ebx+44]
 	mov DWORD PTR [edi+588], eax
-	jmp 210f
-29:
-210:
+	jmp 212f
+211:
+212:
 	cmp ecx, 4
-	jb 211f
+	jb 213f
 	mov eax, DWORD PTR [ebx+48]
 	mov DWORD PTR [edi+592], eax
 	mov eax, DWORD PTR [ebx+52]
@@ -137,11 +208,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [edi+600], eax
 	mov eax, DWORD PTR [ebx+60]
 	mov DWORD PTR [edi+604], eax
-	jmp 212f
-211:
-212:
+	jmp 214f
+213:
+214:
 	cmp ecx, 5
-	jb 213f
+	jb 215f
 	mov eax, DWORD PTR [ebx+64]
 	mov DWORD PTR [edi+608], eax
 	mov eax, DWORD PTR [ebx+68]
@@ -150,11 +221,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [edi+616], eax
 	mov eax, DWORD PTR [ebx+76]
 	mov DWORD PTR [edi+620], eax
-	jmp 214f
-213:
-214:
+	jmp 216f
+215:
+216:
 	cmp ecx, 6
-	jb 215f
+	jb 217f
 	mov eax, DWORD PTR [ebx+80]
 	mov DWORD PTR [edi+624], eax
 	mov eax, DWORD PTR [ebx+84]
@@ -163,11 +234,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [edi+632], eax
 	mov eax, DWORD PTR [ebx+92]
 	mov DWORD PTR [edi+636], eax
-	jmp 216f
-215:
-216:
+	jmp 218f
+217:
+218:
 	cmp ecx, 7
-	jb 217f
+	jb 219f
 	mov eax, DWORD PTR [ebx+96]
 	mov DWORD PTR [edi+640], eax
 	mov eax, DWORD PTR [ebx+100]
@@ -176,11 +247,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [edi+648], eax
 	mov eax, DWORD PTR [ebx+108]
 	mov DWORD PTR [edi+652], eax
-	jmp 218f
-217:
-218:
+	jmp 220f
+219:
+220:
 	cmp ecx, 8
-	jb 219f
+	jb 221f
 	mov eax, DWORD PTR [ebx+112]
 	mov DWORD PTR [edi+656], eax
 	mov eax, DWORD PTR [ebx+116]
@@ -189,9 +260,9 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [edi+664], eax
 	mov eax, DWORD PTR [ebx+124]
 	mov DWORD PTR [edi+668], eax
-	jmp 220f
-219:
-220:
+	jmp 222f
+221:
+222:
 	mov DWORD PTR [edi+804], esi
 	mov DWORD PTR [edi+812], ebp
 	mov DWORD PTR [edi+816], ebx
@@ -294,7 +365,7 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [edi+540], eax
 	mov esi, edi
 	add esi, 672
-221:
+223:
 	mov ecx, DWORD PTR [esi]
 	mov edx, DWORD PTR [esi+4]
 	mov eax, DWORD PTR [edi+480]
@@ -5794,7 +5865,7 @@ vg_seed_encrypt_blocks:
 	mov eax, esi
 	sub eax, edi
 	cmp eax, 800
-	jne 221b
+	jne 223b
 	mov eax, DWORD PTR [edi+480]
 	bswap eax
 	mov DWORD PTR [edi+544], eax
@@ -5897,13 +5968,13 @@ vg_seed_encrypt_blocks:
 	mov edx, DWORD PTR [edi+820]
 	mov ecx, edx
 	cmp edx, 8
-	jb 222f
-	mov ecx, 8
-	jmp 223f
-222:
-223:
-	cmp ecx, 1
 	jb 224f
+	mov ecx, 8
+	jmp 225f
+224:
+225:
+	cmp ecx, 1
+	jb 226f
 	mov eax, DWORD PTR [edi+544]
 	mov DWORD PTR [ebx], eax
 	mov eax, DWORD PTR [edi+548]
@@ -5912,11 +5983,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [ebx+8], eax
 	mov eax, DWORD PTR [edi+556]
 	mov DWORD PTR [ebx+12], eax
-	jmp 225f
-224:
-225:
+	jmp 227f
+226:
+227:
 	cmp ecx, 2
-	jb 226f
+	jb 228f
 	mov eax, DWORD PTR [edi+560]
 	mov DWORD PTR [ebx+16], eax
 	mov eax, DWORD PTR [edi+564]
@@ -5925,11 +5996,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [ebx+24], eax
 	mov eax, DWORD PTR [edi+572]
 	mov DWORD PTR [ebx+28], eax
-	jmp 227f
-226:
-227:
+	jmp 229f
+228:
+229:
 	cmp ecx, 3
-	jb 228f
+	jb 230f
 	mov eax, DWORD PTR [edi+576]
 	mov DWORD PTR [ebx+32], eax
 	mov eax, DWORD PTR [edi+580]
@@ -5938,11 +6009,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [ebx+40], eax
 	mov eax, DWORD PTR [edi+588]
 	mov DWORD PTR [ebx+44], eax
-	jmp 229f
-228:
-229:
+	jmp 231f
+230:
+231:
 	cmp ecx, 4
-	jb 230f
+	jb 232f
 	mov eax, DWORD PTR [edi+592]
 	mov DWORD PTR [ebx+48], eax
 	mov eax, DWORD PTR [edi+596]
@@ -5951,11 +6022,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [ebx+56], eax
 	mov eax, DWORD PTR [edi+604]
 	mov DWORD PTR [ebx+60], eax
-	jmp 231f
-230:
-231:
+	jmp 233f
+232:
+233:
 	cmp ecx, 5
-	jb 232f
+	jb 234f
 	mov eax, DWORD PTR [edi+608]
 	mov DWORD PTR [ebx+64], eax
 	mov eax, DWORD PTR [edi+612]
@@ -5964,11 +6035,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [ebx+72], eax
 	mov eax, DWORD PTR [edi+620]
 	mov DWORD PTR [ebx+76], eax
-	jmp 233f
-232:
-233:
+	jmp 235f
+234:
+235:
 	cmp ecx, 6
-	jb 234f
+	jb 236f
 	mov eax, DWORD PTR [edi+624]
 	mov DWORD PTR [ebx+80], eax
 	mov eax, DWORD PTR [edi+628]
@@ -5977,11 +6048,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [ebx+88], eax
 	mov eax, DWORD PTR [edi+636]
 	mov DWORD PTR [ebx+92], eax
-	jmp 235f
-234:
-235:
+	jmp 237f
+236:
+237:
 	cmp ecx, 7
-	jb 236f
+	jb 238f
 	mov eax, DWORD PTR [edi+640]
 	mov DWORD PTR [ebx+96], eax
 	mov eax, DWORD PTR [edi+644]
@@ -5990,11 +6061,11 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [ebx+104], eax
 	mov eax, DWORD PTR [edi+652]
 	mov DWORD PTR [ebx+108], eax
-	jmp 237f
-236:
-237:
+	jmp 239f
+238:
+239:
 	cmp ecx, 8
-	jb 238f
+	jb 240f
 	mov eax, DWORD PTR [edi+656]
 	mov DWORD PTR [ebx+112], eax
 	mov eax, DWORD PTR [edi+660]
@@ -6003,15 +6074,15 @@ vg_seed_encrypt_blocks:
 	mov DWORD PTR [ebx+120], eax
 	mov eax, DWORD PTR [edi+668]
 	mov DWORD PTR [ebx+124], eax
-	jmp 239f
-238:
-239:
+	jmp 241f
+240:
+241:
 	add ebx, 128
 	sub edx, ecx
-	jne 22b
-	jmp 21f
-20:
-21:
+	jne 24b
+	jmp 23f
+22:
+23:
 	mov ebx, DWORD PTR [edi+800]
 	mov edi, DWORD PTR [edi+808]
 	ret

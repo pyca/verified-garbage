@@ -513,6 +513,8 @@ vg_seed_ofb:
 	mov DWORD PTR [edi+984], eax
 	mov eax, DWORD PTR [edi+1140]
 	mov DWORD PTR [edi+988], eax
+	mov eax, 0
+	mov DWORD PTR [edi+816], eax
 	mov esi, DWORD PTR [edi+1120]
 	mov ebp, DWORD PTR [edi+1124]
 	mov eax, DWORD PTR [esp+4]
@@ -523,7 +525,7 @@ vg_seed_ofb:
 	push edx
 	push ecx
 	push eax
-	call {vg_seed_encrypt_blocks}
+	call {vg_seed_blocks}
 	pop eax
 	pop eax
 	pop eax
@@ -1213,6 +1215,8 @@ vg_seed_ofb_final:
 	mov DWORD PTR [edi+984], eax
 	mov eax, DWORD PTR [edi+1140]
 	mov DWORD PTR [edi+988], eax
+	mov eax, 0
+	mov DWORD PTR [edi+816], eax
 	mov esi, DWORD PTR [edi+1120]
 	mov ebp, DWORD PTR [edi+1124]
 	mov eax, DWORD PTR [esp+4]
@@ -1223,7 +1227,7 @@ vg_seed_ofb_final:
 	push edx
 	push ecx
 	push eax
-	call {vg_seed_encrypt_blocks}
+	call {vg_seed_blocks}
 	pop eax
 	pop eax
 	pop eax

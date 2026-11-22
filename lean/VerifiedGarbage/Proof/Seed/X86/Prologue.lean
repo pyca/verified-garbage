@@ -1674,7 +1674,8 @@ theorem save_ok {s : State} {b : BitVec 32} {k : Nat} (hw : ScrIn s.wr b)
     ∃ s', runBlock isa (saveRegs k) s = some s' ∧ s'.gpr .edi = b ∧
       (∀ r, r ≠ .eax → r ≠ .edi → s'.gpr r = s.gpr r) ∧ Saved s b s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [⟨b.setWidth 64, 4 * slots⟩] s.mem s'.mem ∧
-      ∀ k, k < savedSlot → s'.mem.readW (wordAddr b k) 32 = s.mem.readW (wordAddr b k) 32 := by
+      ∀ k, (k < savedSlot ∨ savedSlot + 4 ≤ k) → k < slots →
+        s'.mem.readW (wordAddr b k) 32 = s.mem.readW (wordAddr b k) 32 := by
   obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ldArg_ok s .eax k ha
   rw [hb] at v₁
   let L : List (Nat × Reg) := (List.range 4).map fun i => (savedSlot + i, sreg i)
@@ -1691,14 +1692,14 @@ theorem save_ok {s : State} {b : BitVec 32} {k : Nat} (hw : ScrIn s.wr b)
       rw [savedSlot_eq, slots_eq]; omega_arith)
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃, -, -⟩ := movR_ok s₂ .edi .eax
   refine ⟨s₃, ?_, by rw [r₃, g₂, v₁], fun r h0 h7 => by rw [o₃ r h7, g₂, o₁ r h0], fun i hi => ?_,
-    by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], by rw [m₃, ← m₁]; exact f₂, fun j hj => ?_⟩
+    by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], by rw [m₃, ← m₁]; exact f₂, fun j hj hjs => ?_⟩
   · rw [saveRegs, runBlock_append, runBlock_append, e₁, Option.bind_some, hL, e₂, Option.bind_some, e₃]
   · rw [m₃, v₂ (savedSlot + i, sreg i) (by simp only [L, List.mem_map, List.mem_range]; exact ⟨i, hi, rfl⟩),
       o₁ _ (by revert i; decide)]
-  · rw [m₃, o₂ j ?_ (by rw [savedSlot_eq] at hj; rw [slots_eq]; omega_arith), m₁]
+  · rw [m₃, o₂ j ?_ hjs, m₁]
     rw [hslots]
     simp only [List.mem_map, List.mem_range, not_exists, not_and]
-    intro i hi h; omega_arith
+    intro i hi h; rcases hj with hj | hj <;> omega_arith
 
 theorem restore_ok {s₀ s : State} {b : BitVec 32} (hw : ScrIn s.wr b) (hb : s.gpr .edi = b)
     (hs : Saved s₀ b s.mem) :
