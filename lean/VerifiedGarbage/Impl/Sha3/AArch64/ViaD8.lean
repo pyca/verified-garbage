@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 public import VerifiedGarbage.Impl.ICall
 public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # Calling a Keccak permutation by the address in `d8`
@@ -40,6 +41,33 @@ def leaveD8 : List Instr := [.ldrSp .x16 8, .vop (.ins .d2 .v8 0 .x16), .ldrSp .
 /-- A call of `name`, whose code is `body`, with `n`'s address in `d8`. -/
 def entryD8 (n name : String) (body : Prog isa) : Prog isa :=
   .frame (.alloc 16) (.seq (.block (enterD8 n)) (.seq (.call name body) (.block leaveD8))) (.free 16)
+
+/-- Where `entryD8S` saves the return address and `d8`, above the copies of
+`k` stack words, rounded up to 16 bytes. -/
+def saveOff (k : Nat) : Nat := 8 * (k + k % 2)
+
+/-- The frame of `entryD8S` for `k` stack words. -/
+def frameS (k : Nat) : Nat := saveOff k + 16
+
+/-- `enterD8` after copying the caller's `k` stack words into the bottom of
+the frame (`copyArg`, as `withStackArgScratch` does): save the return address and
+`d8` above them, and put `n`'s address in `d8`. -/
+def enterD8S (n : String) (k : Nat) : List Instr :=
+  .addSp .x16 0 :: (List.range k).flatMap (Impl.StackScratch.AArch64.copyArg (frameS k)) ++
+    [.umov .x .x16 .v8 0, .strSp .x30 (saveOff k), .strSp .x16 (saveOff k + 8), .adrSym .x16 n,
+      .vop (.ins .d2 .v8 0 .x16)]
+
+/-- `leaveD8`, from above the copies of `k` stack words. -/
+def leaveD8S (k : Nat) : List Instr :=
+  [.ldrSp .x16 (saveOff k + 8), .vop (.ins .d2 .v8 0 .x16), .ldrSp .x30 (saveOff k)]
+
+/-- `entryD8` for a function with `k` stack words: the call of `name`, whose
+code is `body`, with `n`'s address in `d8`, from a frame that holds a copy of
+the caller's stack words at its bottom, where `body` finds its own, then the
+return address and the caller's `d8`. -/
+def entryD8S (n name : String) (k : Nat) (body : Prog isa) : Prog isa :=
+  .frame (.alloc (frameS k))
+    (.seq (.block (enterD8S n k)) (.seq (.call name body) (.block (leaveD8S k)))) (.free (frameS k))
 
 /-- `umov x16, v8.d[0]; blr x16`: the call of `n`, whose code is `b`, by the
 address in `d8`. -/
