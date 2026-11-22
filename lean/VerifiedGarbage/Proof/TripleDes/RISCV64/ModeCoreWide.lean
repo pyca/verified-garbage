@@ -25,7 +25,7 @@ import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 namespace VG.Proof.TripleDes.RISCV64.Mode
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.TripleDes.RISCV64
-open VG.Impl.TripleDes.RISCV64.Bitslice (transpose passes)
+open VG.Impl.TripleDes.RISCV64.Bitslice (transpose transposeCall passes)
 open VG.Proof.Modes.RISCV64 (coreRegion blkRegion blkAddr slotA CoreSpec Layout ScrIn kept KeptBut OneOk)
 open VG.Spec.TripleDes (Direction Schedule scheduleAt blockAt)
 open VG.Proof.TripleDes (dirCipher bytesAt_eq scheduleAt_eq_of_frame)
@@ -40,10 +40,9 @@ theorem words_wp (d : Direction) {s : State} (h : Room s) (hm : MasksAt s) {rest
         blockOut (scheduleAt s.mem (schedA s)) d (blockAt s.mem (wAt (s.gpr .s0) b))) →
       (∀ r ∈ Bitsliced.passKept, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
       Frame [stR s] s.mem s'.mem → WP isa rest s' Q) :
-    WP isa (.seq (.block transpose) (.seq (passes d) (.seq (.block transpose) rest))) s Q := by
+    WP isa (.seq transposeCall (.seq (passes d) (.seq transposeCall rest))) s Q := by
   apply WP.seq
-  obtain ⟨s₃, run₃, w₃, rd₃, wr₃, -, s0₃, a1₃, a2₃, s11₃, ra₃, f₃⟩ := transpose_ok h hm
-  refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
+  refine WP.mono (transposeCall_ok h hm) fun s₃ ⟨w₃, rd₃, wr₃, _, s0₃, a1₃, a2₃, s11₃, f₃⟩ => ?_
   obtain h₃ : Room s₃ := h.congr s0₃ wr₃
   apply WP.seq
   refine WP.mono (passes_ok d h₃) fun s₄ ⟨w₄, k₄, rd₄, wr₄, _, f₄⟩ => ?_
@@ -53,9 +52,8 @@ theorem words_wp (d : Direction) {s : State} (h : Room s) (hm : MasksAt s) {rest
   obtain K₃ : scheduleAt s₃.mem (schedA s₃) = scheduleAt s.mem (schedA s) := by
     rw [show schedA s₃ = schedA s by simp only [schedA, s0₃]]; exact sched_frame h f₃
   apply WP.seq
-  obtain ⟨s₅, run₅, w₅, rd₅, wr₅, -, s0₅, a1₅, a2₅, s11₅, ra₅, f₅⟩ :=
-    transpose_ok h₄ (masksAt_frame s0₄ h fs₄ hm)
-  refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
+  refine WP.mono (transposeCall_ok h₄ (masksAt_frame s0₄ h fs₄ hm))
+    fun s₅ ⟨w₅, rd₅, wr₅, _, s0₅, a1₅, a2₅, s11₅, f₅⟩ => ?_
   obtain fs₅ : Frame [stR s] s.mem s₅.mem := fs₄.trans (by rw [← stR_congr s0₄]; exact f₅)
   refine k s₅ (fun b hb => ?_) (fun r hr => ?_) (rd₅.trans (rd₄.trans rd₃)) (wr₅.trans (wr₄.trans wr₃)) fs₅
   · have lane₃ : VG.Proof.TripleDes.Bitslice.ipLane (words s₃) b =
@@ -73,12 +71,11 @@ theorem words_wp (d : Direction) {s : State} (h : Room s) (hm : MasksAt s) {rest
       VG.Proof.TripleDes.Bitslice.ipLane_congr w₄ b, VG.Proof.TripleDes.Bitslice.tdeaW_lane _ _ _ hb,
       lane₃, K₃]
   · simp only [Bitsliced.passKept, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl
     · rw [s0₅, s0₄]
     · rw [a1₅, k₄ _ (by decide), a1₃]
     · rw [a2₅, k₄ _ (by decide), a2₃]
     · rw [s11₅, k₄ _ (by decide), s11₃]
-    · rw [ra₅, k₄ _ (by decide), ra₃]
 
 /-! ## The core -/
 
@@ -98,11 +95,11 @@ theorem layoutW (d : Direction) : Layout (wideInline d) :=
     by cases d <;> decide, by cases d <;> decide, by cases d <;> decide⟩
 
 theorem wideSaved_fits : Spill.Fits wideSaved := by decide
-theorem wideSaved_in : ∀ p ∈ wideSaved, 976 ≤ p.2 ∧ p.2 + 8 ≤ 976 + 72 := by decide
+theorem wideSaved_in : ∀ p ∈ wideSaved, 968 ≤ p.2 ∧ p.2 + 8 ≤ 968 + 80 := by decide
 theorem wideSaved_ne : ∀ p ∈ wideSaved, p.1 ≠ .t0 := by decide
 
 /-- The registers the core keeps that it does not save. -/
-theorem kept_cases : ∀ r ∈ kept, r ∈ wideSaved.map Prod.fst ∨ r = .ra ∨ r = .s1 ∨ r = .s2 ∨ r = .s3 ∨ r = .s4 := by
+theorem kept_cases : ∀ r ∈ kept, r ∈ wideSaved.map Prod.fst ∨ r = .s1 ∨ r = .s2 ∨ r = .s3 ∨ r = .s4 := by
   decide
 
 theorem kept_not_tmp : ∀ r ∈ kept, r ≠ .t0 ∧ r ≠ .t1 ∧ r ≠ .t2 ∧ r ≠ .t4 ∧ r ≠ .t5 := by decide
@@ -164,7 +161,7 @@ theorem crypt_wpW (d : Direction) {s : State} {B : Addr} {ws : List Region} {k :
     rw [t0₁, h₁.mem]
   obtain wr₅ : u₅.wr = s.wr := by rw [h₅.wr, h₄.wr, h₃.wr, h₂.wr]; exact h₁.wr
   obtain rd₅ : u₅.rd = s.rd := by rw [h₅.rd, h₄.rd, h₃.rd, h₂.rd]; exact h₁.rd
-  obtain fsave : Frame [⟨W + BitVec.ofNat 64 976, 72⟩] s.mem u₅.mem := by
+  obtain fsave : Frame [⟨W + BitVec.ofNat 64 968, 80⟩] s.mem u₅.mem := by
     rw [m₅]; exact Spill.saveMem_frame wideSaved_in (by decide) _ _ _
   obtain sv₅ : Spill.Saved W u₁.gpr wideSaved u₅.mem := by
     rw [m₅]; exact Spill.saveMem_saved wideSaved_fits _ _ _
@@ -183,7 +180,7 @@ theorem crypt_wpW (d : Direction) {s : State} {B : Addr} {ws : List Region} {k :
       rw [Offset.add_add]; rfl
     rw [e, scheduleAt_eq_of_frame _ fsave fun r hr => ?_, hk]
     simp only [List.mem_singleton] at hr; subst hr
-    show Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨B + BitVec.ofNat 64 wideOff + BitVec.ofNat 64 976, 72⟩
+    show Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨B + BitVec.ofNat 64 wideOff + BitVec.ofNat 64 968, 80⟩
     rw [Offset.add_add]
     exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
   -- the buffer through ECB
@@ -207,9 +204,6 @@ theorem crypt_wpW (d : Direction) {s : State} {B : Addr} {ws : List Region} {k :
     rw [g₄.other _ (by decide), g₃.other _ (by decide), g₂.gpr, g₁.other _ (by decide), k₆ _ (by decide), a2₅]
   obtain s3₄ : v₄.gpr .s3 = s.gpr .s3 := by
     rw [g₄.other _ (by decide), g₃.gpr, g₂.other _ (by decide), g₁.other _ (by decide), k₆ _ (by decide), s11₅]
-  obtain ra₄ : v₄.gpr .ra = s.gpr .ra := by
-    rw [g₄.other _ (by decide), g₃.other _ (by decide), g₂.other _ (by decide), g₁.other _ (by decide),
-      k₆ _ (by decide), ra₅]
   obtain stW : stR u₅ = ⟨W, 512⟩ := by simp only [stR, s0₅]
   obtain sv₄ : Spill.Saved W u₁.gpr wideSaved v₄.mem := by
     rw [mem₄]
@@ -221,16 +215,15 @@ theorem crypt_wpW (d : Direction) {s : State} {B : Addr} {ws : List Region} {k :
       obtain ⟨r, hr, hc⟩ := inW p.2 8 (by have := wideSaved_in p hp; omega_using [this])
       exact ⟨r, List.mem_append_right _ (wr₄ ▸ hr), hc⟩) sv₄) fun s' hres => ?_
   obtain mem' : s'.mem = s₆.mem := hres.mem.trans mem₄
-  obtain fall : Frame [(⟨W, 512⟩ : Region), ⟨W + BitVec.ofNat 64 976, 72⟩] s.mem s'.mem := by
+  obtain fall : Frame [(⟨W, 512⟩ : Region), ⟨W + BitVec.ofNat 64 968, 80⟩] s.mem s'.mem := by
     rw [mem']
     exact (fsave.mono fun r hr => List.mem_cons_of_mem _ hr).trans
       ((stW ▸ f₆).mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self)
   refine ⟨by rw [hres.other _ (by decide)]; exact sb₄, fun r hr => ?_, ⟨?_, fun j hj => ?_, hfit⟩, ?_,
     fun j hj => ?_, hres.rd.trans rd₄, hres.wr.trans wr₄⟩
-  · rcases kept_cases r hr with hm | rfl | rfl | rfl | rfl | rfl
+  · rcases kept_cases r hr with hm | rfl | rfl | rfl | rfl
     · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hm
       rw [hres.gpr p hp]; exact h₁.other _ (wideSaved_ne p hp)
-    · rw [hres.other _ (by decide)]; exact ra₄
     · rw [hres.other _ (by decide)]; exact s1₄
     · rw [hres.other _ (by decide)]; exact s2₄
     · rw [hres.other _ (by decide)]; exact s3₄
@@ -240,7 +233,7 @@ theorem crypt_wpW (d : Direction) {s : State} {B : Addr} {ws : List Region} {k :
     rcases hr with rfl | rfl
     · show Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨B + BitVec.ofNat 64 wideOff, 512⟩
       exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
-    · show Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨B + BitVec.ofNat 64 wideOff + BitVec.ofNat 64 976, 72⟩
+    · show Region.Disjoint ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨B + BitVec.ofNat 64 wideOff + BitVec.ofNat 64 968, 80⟩
       rw [Offset.add_add]
       exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
   · rw [← hmask j hj]
