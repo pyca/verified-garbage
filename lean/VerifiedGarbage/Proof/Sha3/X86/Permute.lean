@@ -12,6 +12,12 @@ public import VerifiedGarbage.Impl.Sha3.X86.Stream
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha512.X86.Compress
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Sha512.X86.Compress
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Spill
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Sha3.Lanes
@@ -183,141 +189,23 @@ section
 section
 
 /-!
-# SHA-3 on x86 (32-bit): lanes as pairs of words
+# SHA-3 on x86 (32-bit): single instructions
 
-The halves of the lanes (`half`), their rotations as the code computes them
-(each half rotated, and their top bits exchanged), and weakest-precondition
-rules for the macros of `VG.Impl.Sha3.X86` that load, combine, rotate and
-store a lane in `(eax, edx)`, each proved once for any registers and offsets,
-in continuation-passing style. The halves and the 64-bit words in memory are
-those of the SHA-512 proofs (`Proof/Sha512/X86/Rounds.lean`).
+Weakest-precondition rules for the general registers' loads, stores and
+operations with a memory operand, each proved once for any registers and
+offsets, in continuation-passing style: the prologue, the epilogue and the
+streaming functions use them. The 64-bit words in memory are those of the
+SHA-512 proofs (`Proof/Sha512/X86/Rounds.lean`).
 -/
 
 namespace VG.Proof.Sha3.X86
 
 open VG VG.X86
 open VG.Impl.Sha512.X86 (at_)
-open VG.Impl.Sha3.X86 (sLo sHi ld2 xor2 st2 rot topMask)
-open VG.Proof.Sha512.Word64 (lo hi lo_xor hi_xor lo_and hi_and lo_rotr hi_rotr)
-open VG.Proof.Sha512.X86 (Only Pair rd64 write64 lo_rd64 hi_rd64 readSrc_mem wp_movS wp_xorS wp_andS
-  wp_ror ea_of)
-open VG.Proof.Sha256.X86.Stream (Upd Mupd wp_store wp_mov)
+open VG.Proof.Sha512.X86 (readSrc_mem wp_movS wp_xorS ea_of)
+open VG.Proof.Sha256.X86.Stream (Upd Mupd wp_store)
 
 abbrev Lane := Spec.Sha3.Lane
-
-/-! ## Halves -/
-
-/-- Half `h` of a lane: the low one for `h = 0`, else the high one. -/
-def half (h : Nat) (v : Lane) : BitVec 32 := if h = 0 then lo v else hi v
-
-theorem half_xor (h : Nat) (a b : Lane) : half h (a ^^^ b) = half h a ^^^ half h b := by
-  unfold half; split
-  · exact lo_xor a b
-  · exact hi_xor a b
-
-theorem half_and (h : Nat) (a b : Lane) : half h (a &&& b) = half h a &&& half h b := by
-  unfold half; split
-  · exact lo_and a b
-  · exact hi_and a b
-
-theorem half_ones (h : Nat) : half h (0xffffffffffffffff : Lane) = BitVec.allOnes 32 := by
-  unfold half; split <;> rfl
-
-theorem half_rd64 {h : Nat} (hh : h = 0 ∨ h = 4) (m : Mem) (b : BitVec 32) (o : Nat) :
-    half h (rd64 m b o) = m.readW (addr b (o + h)) 32 := by
-  rcases hh with rfl | rfl
-  · exact lo_rd64 m b o
-  · exact hi_rd64 m b o
-
-theorem half_lo (v : Lane) : half 0 v = lo v := rfl
-
-theorem half_hi (v : Lane) : half 4 v = hi v := rfl
-
-/-! ## Rotations -/
-
-/-- A rotation right by `0 < m < 32` of the halves `a` (low) and `b`: its low
-half, as the code computes it. -/
-theorem rot_half (a b : BitVec 32) {m : Nat} (h0 : 0 < m) (h : m < 32) :
-    a >>> m ^^^ b <<< (32 - m) =
-      a.rotateRight m ^^^ ((a.rotateRight m ^^^ b.rotateRight m) &&& topMask m) := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [topMask, BitVec.getLsbD_xor, BitVec.getLsbD_and, BitVec.getLsbD_rotateRight,
-    BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_allOnes, Nat.mod_eq_of_lt h]
-  by_cases hc : i < 32 - m
-  · simp [hc, hi, show m + i < 32 by omega_arith]
-  · simp only [hc, hi, BitVec.getLsbD_of_ge a (m + i) (by omega_arith), ite_false, decide_true,
-      Bool.true_and, decide_false, Bool.not_false, show i - (32 - m) < 32 by omega_arith]
-    cases a.getLsbD (i - (32 - m)) <;> cases b.getLsbD (i - (32 - m)) <;> rfl
-
-theorem lo_rotm (v : Lane) {m : Nat} (h0 : 0 < m) (h : m < 32) :
-    lo (v.rotateRight m) = (lo v).rotateRight m ^^^
-      (((lo v).rotateRight m ^^^ (hi v).rotateRight m) &&& topMask m) := by
-  rw [lo_rotr _ h0 h, rot_half _ _ h0 h]
-
-theorem hi_rotm (v : Lane) {m : Nat} (h0 : 0 < m) (h : m < 32) :
-    hi (v.rotateRight m) = (hi v).rotateRight m ^^^
-      (((lo v).rotateRight m ^^^ (hi v).rotateRight m) &&& topMask m) := by
-  rw [hi_rotr _ h0 h, rot_half _ _ h0 h, BitVec.xor_comm ((hi v).rotateRight m) ((lo v).rotateRight m)]
-
-theorem lo_rot32 (v : Lane) : lo (v.rotateRight 32) = hi v := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi'
-  simp only [lo, hi, BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateRight]
-  simp [hi']
-
-theorem hi_rot32 (v : Lane) : hi (v.rotateRight 32) = lo v := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi'
-  simp only [lo, hi, BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateRight]
-  simp [hi', show 32 + i < 64 by omega_arith, show ¬ 32 + i < 32 by omega_arith]
-
-theorem rotateRight_zero' (v : Lane) : v.rotateRight 0 = v := by
-  ext i hi
-  simp only [BitVec.getElem_rotateRight]
-  split <;> first | (exfalso; omega_arith) | exact getElem_congr rfl (by omega_arith) _
-
-theorem rotateRight_add (v : Lane) {a b : Nat} (h : a + b < 64) :
-    (v.rotateRight a).rotateRight b = v.rotateRight (a + b) := by
-  ext i hi
-  simp only [BitVec.getElem_rotateRight, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (show a < 64 by omega_arith),
-    Nat.mod_eq_of_lt (show b < 64 by omega_arith)]
-  split <;> split <;> split <;> first | (exfalso; omega_arith) | exact getElem_congr rfl (by omega_arith) _
-
-/-- The lane `v`, its halves swapped if `sw`. -/
-def swapIf (sw : Bool) (v : Lane) : Lane := if sw then v.rotateRight 32 else v
-
-theorem swapIf_true (v : Lane) : swapIf true v = v.rotateRight 32 := rfl
-
-theorem swapIf_false (v : Lane) : swapIf false v = v := rfl
-
-theorem lo_swapIf (sw : Bool) (v : Lane) : lo (swapIf sw v) = half (sLo sw) v := by
-  cases sw
-  · rfl
-  · exact lo_rot32 v
-
-theorem hi_swapIf (sw : Bool) (v : Lane) : hi (swapIf sw v) = half (sHi sw) v := by
-  cases sw
-  · rfl
-  · exact hi_rot32 v
-
-theorem swapIf_xor (sw : Bool) (a b : Lane) : swapIf sw (a ^^^ b) = swapIf sw a ^^^ swapIf sw b := by
-  cases sw
-  · rfl
-  · apply VG.Proof.Sha512.Word64.eq_of_lo_hi
-    · simp only [swapIf, ite_true, lo_rot32, lo_xor, hi_xor]
-    · simp only [swapIf, ite_true, hi_rot32, lo_xor, hi_xor]
-
-theorem sLo_cases (sw : Bool) : sLo sw = 0 ∨ sLo sw = 4 := by cases sw <;> simp [sLo]
-
-theorem sHi_cases (sw : Bool) : sHi sw = 0 ∨ sHi sw = 4 := by cases sw <;> simp [sHi]
-
-/-! ## Single instructions -/
-
-theorem Upd.trans {s₁ s₂ s₃ : State} {d : Reg} {v w : BitVec 32} (h₁ : Upd s₁ s₂ d v)
-    (h₂ : Upd s₂ s₃ d w) : Upd s₁ s₃ d w :=
-  ⟨h₂.gpr, fun r h => (h₂.other r h).trans (h₁.other r h), h₂.mem.trans h₁.mem, h₂.rd.trans h₁.rd,
-    h₂.wr.trans h₁.wr⟩
 
 section
 variable {rest : List Instr} {s : State} {Q : State → Prop}
@@ -336,98 +224,15 @@ theorem wp_xorm {d b : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
     WP isa (.block (.alu .xor d (.mem (at_ b o)) :: rest)) s Q :=
   wp_xorS (readSrc_mem hb hin) k
 
-/-- `and d, [b + o]` -/
-theorem wp_andm {d b : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
-    (hin : InRegions (s.rd ++ s.wr) (addr B o) 4)
-    (k : ∀ s', Upd s s' d (s.gpr d &&& s.mem.readW (addr B o) 32) → WP isa (.block rest) s' Q) :
-    WP isa (.block (.alu .and d (.mem (at_ b o)) :: rest)) s Q :=
-  wp_andS (readSrc_mem hb hin) k
-
 /-- `mov [b + o], r` -/
 theorem wp_stm {b r : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B) (hout : InRegions s.wr (addr B o) 4)
     (k : ∀ s', Mupd s s' (s.mem.writeW (addr B o) (s.gpr r)) → WP isa (.block rest) s' Q) :
     WP isa (.block (.store (at_ b o) r :: rest)) s Q :=
   wp_store (ea_of hb o) hout k
 
-end
-
-/-! ## Lanes in `(eax, edx)` -/
-
-section
-variable {rest : List Instr} {s : State} {Q : State → Prop}
-
-/-- Both words of the lane at `[B + o]` may be read. -/
-def Rd2 (s : State) (B : BitVec 32) (o : Nat) : Prop :=
-  ∀ h, h = 0 ∨ h = 4 → InRegions (s.rd ++ s.wr) (addr B (o + h)) 4
-
-theorem wp_ld2 {sw : Bool} {b : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B) (hbe : b ≠ .eax)
-    (hin : Rd2 s B o)
-    (k : ∀ s', Only [.eax, .edx] s s' → Pair s' .eax .edx (swapIf sw (rd64 s.mem B o)) →
-      WP isa (.block rest) s' Q) :
-    WP isa (.block (ld2 sw b o ++ rest)) s Q := by
-  simp only [ld2, List.cons_append, List.nil_append]
-  refine wp_ldm hb (hin _ (sLo_cases sw)) fun s₁ u₁ => ?_
-  refine wp_ldm (by rw [u₁.other _ hbe, hb]) (by rw [u₁.rd, u₁.wr]; exact hin _ (sHi_cases sw))
-    fun s₂ u₂ => k s₂ ((Only.of_upd u₁).trans (Only.of_upd u₂)) ⟨?_, ?_⟩
-  · rw [u₂.other _ (by decide), u₁.gpr, lo_swapIf, half_rd64 (sLo_cases sw)]
-  · rw [u₂.gpr, u₁.mem, hi_swapIf, half_rd64 (sHi_cases sw)]
-
-theorem wp_xor2 {sw : Bool} {b : Reg} {B : BitVec 32} {o : Nat} {v : Lane} (hb : s.gpr b = B)
-    (hbe : b ≠ .eax) (hin : Rd2 s B o) (hp : Pair s .eax .edx v)
-    (k : ∀ s', Only [.eax, .edx] s s' → Pair s' .eax .edx (v ^^^ swapIf sw (rd64 s.mem B o)) →
-      WP isa (.block rest) s' Q) :
-    WP isa (.block (xor2 sw b o ++ rest)) s Q := by
-  simp only [xor2, List.cons_append, List.nil_append]
-  refine wp_xorm hb (hin _ (sLo_cases sw)) fun s₁ u₁ => ?_
-  refine wp_xorm (by rw [u₁.other _ hbe, hb]) (by rw [u₁.rd, u₁.wr]; exact hin _ (sHi_cases sw))
-    fun s₂ u₂ => k s₂ ((Only.of_upd u₁).trans (Only.of_upd u₂)) ⟨?_, ?_⟩
-  · rw [u₂.other _ (by decide), u₁.gpr, lo_xor, lo_swapIf, half_rd64 (sLo_cases sw), hp.1]
-  · rw [u₂.gpr, u₁.mem, u₁.other _ (by decide), hi_xor, hi_swapIf, half_rd64 (sHi_cases sw), hp.2]
-
-theorem wp_rot {m : Nat} (hm : m < 32) {v : Lane} (hp : Pair s .eax .edx v)
-    (k : ∀ s', Only [.eax, .edx, .ecx] s s' → Pair s' .eax .edx (v.rotateRight m) →
-      WP isa (.block rest) s' Q) :
-    WP isa (.block (rot m ++ rest)) s Q := by
-  unfold rot
-  split
-  · rename_i h0
-    subst h0
-    simp only [List.nil_append]
-    exact k s (Only.refl _ _) (by rw [rotateRight_zero']; exact hp)
-  · rename_i h0
-    simp only [List.cons_append, List.nil_append]
-    refine wp_ror ⟨by omega_arith, by omega_arith⟩ fun s₁ u₁ => wp_ror ⟨by omega_arith, by omega_arith⟩ fun s₂ u₂ =>
-      wp_mov fun s₃ u₃ => wp_xorS rfl fun s₄ u₄ => wp_andS rfl fun s₅ u₅ =>
-      wp_xorS rfl fun s₆ u₆ => wp_xorS rfl fun s₇ u₇ => k s₇ ?_ ⟨?_, ?_⟩
-    · exact ((((((Only.of_upd u₁).trans (Only.of_upd u₂)).trans (Only.of_upd u₃)).trans
-        (Only.of_upd u₄)).trans (Only.of_upd u₅)).trans (Only.of_upd u₆)).trans (Only.of_upd u₇)
-        |>.mono (by simp)
-    all_goals
-      obtain hA : s₂.gpr .eax = (lo v).rotateRight m := by
-        rw [u₂.other .eax (by decide), u₁.gpr, hp.1]
-      obtain hB : s₂.gpr .edx = (hi v).rotateRight m := by
-        rw [u₂.gpr, u₁.other .edx (by decide), hp.2]
-      obtain e5a : s₅.gpr .eax = (lo v).rotateRight m := by
-        rw [u₅.other .eax (by decide), u₄.other .eax (by decide), u₃.other .eax (by decide), hA]
-      obtain e5c : s₅.gpr .ecx = ((lo v).rotateRight m ^^^ (hi v).rotateRight m) &&& topMask m := by
-        rw [u₅.gpr, u₄.gpr, u₃.gpr, u₃.other .edx (by decide), hA, hB]
-    · rw [u₇.other .eax (by decide), u₆.gpr, e5a, e5c, lo_rotm _ (by omega_arith) hm]
-    · rw [u₇.gpr, u₆.other .edx (by decide), u₆.other .ecx (by decide), e5c, u₅.other .edx (by decide),
-        u₄.other .edx (by decide), u₃.other .edx (by decide), hB, hi_rotm _ (by omega_arith) hm]
-
-/-- Both words of the lane at `[B + o]` may be written. -/
+/-- The two words of a 64-bit word at `[B + o]` are writable. -/
 def Wr2 (s : State) (B : BitVec 32) (o : Nat) : Prop :=
   InRegions s.wr (addr B o) 4 ∧ InRegions s.wr (addr B (o + 4)) 4
-
-theorem wp_st2 {b : Reg} {B : BitVec 32} {o : Nat} {v : Lane} (hb : s.gpr b = B)
-    (hout : Wr2 s B o) (hp : Pair s .eax .edx v)
-    (k : ∀ s', Mupd s s' (write64 s.mem B o v) → WP isa (.block rest) s' Q) :
-    WP isa (.block (st2 b o ++ rest)) s Q := by
-  simp only [st2, List.cons_append, List.nil_append]
-  refine wp_stm hb hout.1 fun s₁ u₁ => ?_
-  refine wp_stm (by rw [u₁.gpr, hb]) (by rw [u₁.wr]; exact hout.2)
-    fun s₂ u₂ => k s₂ ⟨u₂.gpr.trans u₁.gpr, ?_, u₂.rd.trans u₁.rd, u₂.wr.trans u₁.wr⟩
-  rw [u₂.mem, u₁.mem, u₁.gpr, hp.1, hp.2]; rfl
 
 end
 
@@ -438,37 +243,41 @@ end
 /-!
 # Keccak-f[1600] on x86 (32-bit): one round
 
-One round (`round src dst`) from the state at `src` to the state at `dst`,
-lane by lane (`Proof.Sha3.out`), each lane a pair of 32-bit words, through the
-work area of the scratch space (`C`, then `B`, and `D`), proved once for both
-of the rounds of an iteration (`src`, `dst` being `esi`, `edi` or `edi`,
-`esi`).
+One round (`round p src dst`) from the state at `src` to the state at `dst`
+(`src`, `dst` being `esi`, `edi` or `edi`, `esi`), with the registers of the
+plan `p`.
+
+A round's lanes are straight-line code on the XMM registers' low quadwords
+and on words of memory: the lanes of the two states, the five `D` and the
+round constant. Which register holds what, and when, is the plan's, so the
+proof does not follow the code by hand: it runs it on *expressions*
+(`Run.Ex`) in the lanes of the state at `src`, the round constant and what
+the registers held. `Run.step` is what an instruction does to the
+expressions of the registers and of the words written so far (`Run.Sym`); it
+refuses an instruction or an address the rounds do not use, and it is sound
+for the model (`Run.step_ok`): if it accepts an instruction, the instruction
+runs, and the registers and those words then hold the values of their new
+expressions (`Run.Rel`). So a run of a round's code (`Run.run`,
+`Run.run_ok`) says what the state at `dst` holds. `Run.check p src dst`,
+which the kernel evaluates for each round of an iteration (`planA_ok`,
+`planB_ok`, below), is that the code runs and leaves each lane of the state
+at `dst` holding the expression `Run.refOut` of it, the same whatever the
+plan: the round of the specification, lane by lane (`Run.refOut_eval`,
+`Proof.Sha3.out`). A plan that took a register still in use, or any other
+code, would leave another expression somewhere and fail the check.
 -/
 
 namespace VG.Proof.Sha3.X86
 
 open VG VG.X86 VG.Impl.Sha3.X86
 open VG.Impl.Sha512.X86 (at_)
-open VG.Proof.Sha512.Word64 (lo hi)
 open VG.Impl.Sha3 (piSrc rhoOff)
-open VG.Proof.Sha512.X86 (Only Pair Wrote rd64 write64 mem_rd Acc rd64_write64_self rd64_write64_ne
-  rd64_frame wp_xorS)
-open VG.Proof.Sha256.X86.Stream (Upd Mupd wp_addi contains_addr)
-open VG.Proof.Sha3 (C D B out outState)
+open VG.Proof.Sha512.X86 (rd64 write64 mem_rd qword_append_0 q_pxor q_psllq q_psrlq rd64_eq_readW
+  readW64_write_ne)
+open VG.Proof.Sha256.X86.Stream (Upd wp_addi contains_addr)
+open VG.Proof.Sha3 (C D B out outState rotl rotl_eq rhoOff_lt rotateLeft_zero)
 
 abbrev KState := Spec.Sha3.State
-
-/-! ## Registers -/
-
-/-- The pointer registers of the rounds: `esi` (`state`) and `edi` (`scratch`). -/
-def Ptr (r : Reg) : Prop := r = .esi ∨ r = .edi
-
-theorem Ptr.ne {r : Reg} (h : Ptr r) : r ≠ .eax ∧ r ≠ .edx ∧ r ≠ .ecx ∧ r ≠ .ebp := by
-  rcases h with rfl | rfl <;> decide
-
-theorem nm1 {r a : Reg} (h : r ≠ a) : r ∉ [a] := by simp [h]
-theorem nm3 {r a b c : Reg} (h₁ : r ≠ a) (h₂ : r ≠ b) (h₃ : r ≠ c) : r ∉ [a, b, c] := by
-  simp [h₁, h₂, h₃]
 
 /-! ## Regions -/
 
@@ -493,481 +302,529 @@ theorem sub_disj {b : BitVec 32} {N a n c k : Nat} (hfit : b.toNat + N ≤ 2 ^ 3
 /-- The region of `n` bytes at a 32-bit pointer. -/
 abbrev reg32 (b : BitVec 32) (n : Nat) : Region := ⟨b.setWidth 64, n⟩
 
-/-- The work area of the scratch space at `W`: `C` and then `B`, and `D`. -/
+/-- The part of the scratch space at `W` that a round writes besides a
+state: within it, the five `D`. -/
 abbrev workR (W : BitVec 32) : Region := ⟨addr W 408, 80⟩
-
-theorem work_contains {W : BitVec 32} (hfit : W.toNat + 512 ≤ 2 ^ 32) {o : Nat} (h1 : 408 ≤ o)
-    (h2 : o + 4 ≤ 488) : (workR W).Contains (addr W o) 4 :=
-  sub_contains (N := 512) hfit (by omega_arith) h1 (by omega_arith) (by omega_arith)
-
-theorem reg_contains {b : BitVec 32} {N : Nat} (hfit : b.toNat + N ≤ 2 ^ 32) {o : Nat} (h : o + 4 ≤ N) :
-    (reg32 b N).Contains (addr b o) 4 :=
-  contains_addr h (by omega_arith) hfit
 
 theorem Frame.write64' {rs : List Region} {m m' : Mem} (h : Frame rs m m') {R : Region} (hr : R ∈ rs)
     {b : BitVec 32} {o : Nat} (hc0 : R.Contains (addr b o) 4) (hc4 : R.Contains (addr b (o + 4)) 4)
     (v : Lane) : Frame rs m (write64 m' b o v) :=
   (h.writeW hr _ hc0).writeW hr _ hc4
 
-theorem rd64_frame' {rs : List Region} {m m' : Mem} (h : Frame rs m m') {R : Region} {b : BitVec 32}
-    {o : Nat} (hc0 : R.Contains (addr b o) 4) (hc4 : R.Contains (addr b (o + 4)) 4)
-    (hd : ∀ r ∈ rs, R.Disjoint r) : rd64 m' b o = rd64 m b o := by
-  simp only [rd64]
-  rw [h.readW hc4 hd (by decide), h.readW hc0 hd (by decide)]
-
-/-- A word of the work area is unchanged by writes outside it. -/
-theorem work_frame {rs : List Region} {m m' : Mem} (h : Frame rs m m') {W : BitVec 32}
-    (hfit : W.toNat + 512 ≤ 2 ^ 32) {o : Nat} (h1 : 408 ≤ o) (h2 : o + 8 ≤ 488)
-    (hd : ∀ r ∈ rs, (workR W).Disjoint r) : rd64 m' W o = rd64 m W o :=
-  rd64_frame' h (work_contains hfit h1 (by omega_arith)) (work_contains hfit (by omega_arith) (by omega_arith)) hd
+/-- A 64-bit word in a region, after one is written in another. -/
+theorem readW_writeW_regions (m : Mem) {R R' : Region} {a a' : Addr} (v : BitVec 64)
+    (hc : R.Contains a 8) (hc' : R'.Contains a' 8) (hd : R'.Disjoint R) :
+    (m.writeW a v).readW a' 64 = m.readW a' 64 :=
+  ((Frame.refl [R] m).writeW (List.mem_singleton_self R) v hc).readW hc'
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) (by decide)
 
 /-! ## States in memory -/
 
-/-- The state at `b` holds `K`, lane `i` as the pair of words at `b + 8i`. -/
+/-- The state at `b` holds `K`, lane `i` as the 64-bit word at `b + 8i`. -/
 def Lanes32 (m : Mem) (b : BitVec 32) (K : KState) : Prop := ∀ i < 25, rd64 m b (8 * i) = K[i]!
 
-theorem Lanes32.frame {m m' : Mem} {b : BitVec 32} {K : KState} (hK : Lanes32 m b K) {rs : List Region}
-    (hf : Frame rs m m') (hd : ∀ r ∈ rs, (reg32 b 200).Disjoint r) (hfit : b.toNat + 200 ≤ 2 ^ 32) :
-    Lanes32 m' b K := fun i hi => by
-  rw [rd64_frame hf hd hfit (by omega_arith)]; exact hK i hi
+/-- Every 8 bytes `[B + o, B + o + 8)` with `o + 8 ≤ N` are writable. -/
+def Acc8 (wr : List Region) (B : BitVec 32) (N : Nat) : Prop :=
+  ∀ o, o + 8 ≤ N → InRegions wr (addr B o) 8
+
+theorem Acc8.of_mem {wr : List Region} {B : BitVec 32} {N : Nat} (h : ⟨B.setWidth 64, N⟩ ∈ wr)
+    (hfit : B.toNat + N ≤ 2 ^ 32) : Acc8 wr B N :=
+  fun _ ho => ⟨_, h, contains_addr ho (by omega_arith) hfit⟩
 
 /-- Where a round reads and writes: the state at `S`, the scratch space at
-`W` (its work area), the round constant at `P`, and the state at `Dd`,
-which overlaps none of the others. -/
+`W` (its `D`), the round constant at `P`, and the state at `Dd`, which
+overlaps none of the others. -/
 structure Env (wr : List Region) (S Dd W P : BitVec 32) : Prop where
   fitS : S.toNat + 200 ≤ 2 ^ 32
   fitD : Dd.toNat + 200 ≤ 2 ^ 32
   fitW : W.toNat + 512 ≤ 2 ^ 32
   fitP : P.toNat + 8 ≤ 2 ^ 32
-  accS : Acc wr S 200
-  accD : Acc wr Dd 200
-  accW : Acc wr W 512
-  accP : Acc wr P 8
+  accS : Acc8 wr S 200
+  accD : Acc8 wr Dd 200
+  accW : Acc8 wr W 512
+  accP : Acc8 wr P 8
   sd : (reg32 S 200).Disjoint (reg32 Dd 200)
   sw : (reg32 S 200).Disjoint (workR W)
   dw : (reg32 Dd 200).Disjoint (workR W)
   pd : (reg32 P 8).Disjoint (reg32 Dd 200)
   pw : (reg32 P 8).Disjoint (workR W)
 
-theorem Env.rd2W {wr : List Region} {S Dd W P : BitVec 32} (E : Env wr S Dd W P) {o : Nat} (ho : o + 8 ≤ 512)
-    {s : State} (hw : s.wr = wr) : Rd2 s W o := fun h hh =>
-  mem_rd (by rw [hw]; exact E.accW _ (by rcases hh with rfl | rfl <;> omega_arith))
+/-! ## Expressions -/
 
-theorem Env.wr2W {wr : List Region} {S Dd W P : BitVec 32} (E : Env wr S Dd W P) {o : Nat} (ho : o + 8 ≤ 512)
-    {s : State} (hw : s.wr = wr) : Wr2 s W o :=
-  ⟨by rw [hw]; exact E.accW _ (by omega_arith), by rw [hw]; exact E.accW _ (by omega_arith)⟩
+namespace Run
 
-theorem cOff_lt (x : Nat) (hx : x < 5) : 408 ≤ cOff x ∧ cOff x + 8 ≤ 448 := by simp only [cOff]; omega_arith
+/-- What a register's low quadword or a word of memory holds in a round, from
+what the round starts with. -/
+inductive Ex
+  /-- Lane `i` of the state at `src`. -/
+  | lane (i : Nat)
+  /-- The round constant. -/
+  | rc
+  /-- What the register held. -/
+  | junk (r : XReg)
+  | xor (a b : Ex)
+  /-- `¬a ∧ b` -/
+  | andn (a b : Ex)
+  | or (a b : Ex)
+  | shl (a : Ex) (n : Nat)
+  | shr (a : Ex) (n : Nat)
+  deriving DecidableEq
 
-theorem dOff_lt (x : Nat) (hx : x < 5) : 448 ≤ dOff x ∧ dOff x + 8 ≤ 488 := by simp only [dOff]; omega_arith
+/-- An expression's value, with the state `K` at `src`, the round constant
+`rc`, and the registers holding `J`. -/
+def Ex.eval (K : KState) (rc : Lane) (J : XReg → Lane) : Ex → Lane
+  | .lane i => K[i]!
+  | .rc => rc
+  | .junk r => J r
+  | .xor a b => a.eval K rc J ^^^ b.eval K rc J
+  | .andn a b => ~~~(a.eval K rc J) &&& b.eval K rc J
+  | .or a b => a.eval K rc J ||| b.eval K rc J
+  | .shl a n => a.eval K rc J <<< n
+  | .shr a n => a.eval K rc J >>> n
 
-/-! ## θ -/
+/-- The expressions of the eight registers. -/
+structure Regs where
+  x0 : Ex
+  x1 : Ex
+  x2 : Ex
+  x3 : Ex
+  x4 : Ex
+  x5 : Ex
+  x6 : Ex
+  x7 : Ex
 
-theorem colHalf_ok {src : Reg} (hsrc : Ptr src) {x h : Nat} (hx : x < 5) (hh : h = 0 ∨ h = 4)
-    {S W : BitVec 32} {K : KState} (s : State) (hS : s.gpr src = S) (hW : s.gpr .edi = W)
-    (aS : Acc s.wr S 200) (aW : Acc s.wr W 512) (hK : Lanes32 s.mem S K) :
-    WP isa (.block (colHalf src x h)) s fun s' =>
-      Wrote [.eax] s s' (s.mem.writeW (addr W (cOff x + h)) (half h (C K x))) := by
-  obtain rS : ∀ i < 25, InRegions (s.rd ++ s.wr) (addr S (8 * i + h)) 4 := fun i hi =>
-    mem_rd (aS _ (by rcases hh with rfl | rfl <;> omega_arith))
-  obtain ve : ∀ i < 25, s.mem.readW (addr S (8 * i + h)) 32 = half h K[i]! := fun i hi => by
-    rw [← hK i hi, half_rd64 hh]
-  have se := hsrc.ne.1
-  unfold colHalf
-  refine wp_ldm hS (rS x (by omega_arith)) fun s₁ u₁ => ?_
-  refine wp_xorm (by rw [u₁.other _ se, hS]) (by rw [u₁.rd, u₁.wr]; exact rS (x + 5) (by omega_arith))
-    fun s₂ u₂ => ?_
-  obtain U₂ := Upd.trans u₁ u₂
-  refine wp_xorm (by rw [U₂.other _ se, hS]) (by rw [U₂.rd, U₂.wr]; exact rS (x + 10) (by omega_arith))
-    fun s₃ u₃ => ?_
-  obtain U₃ := Upd.trans U₂ u₃
-  refine wp_xorm (by rw [U₃.other _ se, hS]) (by rw [U₃.rd, U₃.wr]; exact rS (x + 15) (by omega_arith))
-    fun s₄ u₄ => ?_
-  obtain U₄ := Upd.trans U₃ u₄
-  refine wp_xorm (by rw [U₄.other _ se, hS]) (by rw [U₄.rd, U₄.wr]; exact rS (x + 20) (by omega_arith))
-    fun s₅ u₅ => ?_
-  obtain U₅ := Upd.trans U₄ u₅
-  refine wp_stm (by rw [U₅.other _ (by decide), hW])
-    (by rw [U₅.wr]; exact aW _ (by simp only [cOff]; rcases hh with rfl | rfl <;> omega_arith))
-    fun s₆ u₆ => WP.block_nil ⟨fun r hr => ?_, ?_, by rw [u₆.rd, U₅.rd], by rw [u₆.wr, U₅.wr]⟩
-  · rw [u₆.gpr, U₅.other r (by simpa using hr)]
-  · rw [u₆.mem, U₅.mem, u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr, U₄.mem, U₃.mem, U₂.mem, u₁.mem,
-      ve x (by omega_arith), ve (x + 5) (by omega_arith), ve (x + 10) (by omega_arith), ve (x + 15) (by omega_arith),
-      ve (x + 20) (by omega_arith), C, half_xor, half_xor, half_xor, half_xor]
+def Regs.get : Regs → XReg → Ex
+  | ⟨a, _, _, _, _, _, _, _⟩, .xmm0 => a
+  | ⟨_, a, _, _, _, _, _, _⟩, .xmm1 => a
+  | ⟨_, _, a, _, _, _, _, _⟩, .xmm2 => a
+  | ⟨_, _, _, a, _, _, _, _⟩, .xmm3 => a
+  | ⟨_, _, _, _, a, _, _, _⟩, .xmm4 => a
+  | ⟨_, _, _, _, _, a, _, _⟩, .xmm5 => a
+  | ⟨_, _, _, _, _, _, a, _⟩, .xmm6 => a
+  | ⟨_, _, _, _, _, _, _, a⟩, .xmm7 => a
 
-theorem column_ok {src : Reg} (hsrc : Ptr src) {x : Nat} (hx : x < 5) {S Dd W P : BitVec 32}
-    {K : KState} (s : State) (E : Env s.wr S Dd W P) (hS : s.gpr src = S) (hW : s.gpr .edi = W)
-    (hK : Lanes32 s.mem S K) :
-    WP isa (.block (column src x)) s fun s' => Wrote [.eax] s s' (write64 s.mem W (cOff x) (C K x)) := by
-  obtain hc := cOff_lt x hx
-  unfold column
-  rw [WP.block_append_iff]
-  refine WP.mono (colHalf_ok hsrc hx (.inl rfl) s hS hW E.accS E.accW hK) fun s₁ w₁ => ?_
-  obtain hf : Frame [workR W] s.mem s₁.mem := by
-    rw [w₁.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (work_contains E.fitW hc.1 (by omega_arith))
-  refine WP.mono (colHalf_ok hsrc hx (.inr rfl) s₁ (by rw [w₁.gpr _ (nm1 hsrc.ne.1), hS])
-    (by rw [w₁.gpr _ (nm1 (by decide)), hW]) (by rw [w₁.wr]; exact E.accS) (by rw [w₁.wr]; exact E.accW)
-    (hK.frame hf (by simpa using E.sw) E.fitS)) fun s₂ w₂ =>
-      ⟨fun r hr => by rw [w₂.gpr r hr, w₁.gpr r hr], ?_, w₂.rd.trans w₁.rd, w₂.wr.trans w₁.wr⟩
-  rw [w₂.mem, w₁.mem, half_lo, half_hi]; rfl
+def Regs.set : Regs → XReg → Ex → Regs
+  | ⟨_, b, c, d, e, f, g, h⟩, .xmm0, v => ⟨v, b, c, d, e, f, g, h⟩
+  | ⟨a, _, c, d, e, f, g, h⟩, .xmm1, v => ⟨a, v, c, d, e, f, g, h⟩
+  | ⟨a, b, _, d, e, f, g, h⟩, .xmm2, v => ⟨a, b, v, d, e, f, g, h⟩
+  | ⟨a, b, c, _, e, f, g, h⟩, .xmm3, v => ⟨a, b, c, v, e, f, g, h⟩
+  | ⟨a, b, c, d, _, f, g, h⟩, .xmm4, v => ⟨a, b, c, d, v, f, g, h⟩
+  | ⟨a, b, c, d, e, _, g, h⟩, .xmm5, v => ⟨a, b, c, d, e, v, g, h⟩
+  | ⟨a, b, c, d, e, f, _, h⟩, .xmm6, v => ⟨a, b, c, d, e, f, v, h⟩
+  | ⟨a, b, c, d, e, f, g, _⟩, .xmm7, v => ⟨a, b, c, d, e, f, g, v⟩
 
-/-- After the first `k` columns. -/
-structure ColInv (s₀ : State) (K : KState) (W : BitVec 32) (k : Nat) (s : State) : Prop where
-  gpr : ∀ r, r ∉ [Reg.eax] → s.gpr r = s₀.gpr r
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  frame : Frame [workR W] s₀.mem s.mem
-  cs : ∀ x < k, rd64 s.mem W (cOff x) = C K x
+theorem Regs.get_set (ρ : Regs) (r r' : XReg) (v : Ex) :
+    (ρ.set r v).get r' = if r' = r then v else ρ.get r' := by
+  cases ρ; cases r <;> cases r' <;> rfl
 
-theorem columns_ok {src : Reg} (hsrc : Ptr src) {S Dd W P : BitVec 32} {K : KState} (s₀ : State)
-    (E : Env s₀.wr S Dd W P) (hS : s₀.gpr src = S) (hW : s₀.gpr .edi = W) (hK : Lanes32 s₀.mem S K) :
-    WP isa (.block ((List.range 5).flatMap (column src))) s₀ (ColInv s₀ K W 5) := by
-  refine wp_range_flatMap (M := isa) (ColInv s₀ K W) (fun x s hx hI => ?_) 5 (Nat.le_refl _) s₀
-    ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (by omega_arith)⟩
-  obtain hc := cOff_lt x hx
-  refine WP.mono (column_ok hsrc hx s (hI.wr ▸ E) (by rw [hI.gpr _ (nm1 hsrc.ne.1), hS])
-    (by rw [hI.gpr _ (nm1 (by decide)), hW]) (hK.frame hI.frame (by simpa using E.sw) E.fitS))
-    fun s' w => ⟨fun r hr => by rw [w.gpr r hr, hI.gpr r hr], w.rd.trans hI.rd, w.wr.trans hI.wr, ?_,
-      fun x' hx' => ?_⟩
-  · rw [w.mem]
-    exact Frame.write64' hI.frame (List.mem_singleton_self _) (work_contains E.fitW hc.1 (by omega_arith))
-      (work_contains E.fitW (by omega_arith) (by omega_arith)) _
-  · rw [w.mem]
-    by_cases e : x' = x
-    · subst e; exact rd64_write64_self _ _ (by have := E.fitW; omega_arith)
-    · have := cOff_lt x' (by omega_arith)
-      rw [rd64_write64_ne _ _ (by have := E.fitW; omega_arith) (by have := E.fitW; omega_arith)
-        (by simp only [cOff]; omega_arith)]
-      exact hI.cs x' (by omega_arith)
+/-- The registers' expressions, and those of the words written so far, by
+their offsets (the latest first): a lane of the state at `dst` (an offset
+under 200), or a `D` (an offset in the scratch space). -/
+structure Sym where
+  regs : Regs
+  mem : List (Nat × Ex)
 
-/-! ## D -/
+/-- The expression of the word at offset `o`, if it was written. -/
+def look (o : Nat) : List (Nat × Ex) → Option Ex
+  | [] => none
+  | (k, e) :: l => if k = o then some e else look o l
 
-theorem dcol_ok (x : Nat) (hx : x < 5) {S Dd W P : BitVec 32} {K : KState} (s : State)
-    (E : Env s.wr S Dd W P) (hW : s.gpr .edi = W) (hc : ∀ x' < 5, rd64 s.mem W (cOff x') = C K x') :
-    WP isa (.block (dcol x)) s fun s' =>
-      Wrote [.eax, .edx, .ecx] s s' (write64 s.mem W (dOff x) (D K x)) := by
-  obtain h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega_arith)
-  obtain h4 : (x + 4) % 5 < 5 := Nat.mod_lt _ (by omega_arith)
-  obtain c1 := cOff_lt _ h1
-  obtain c4 := cOff_lt _ h4
-  obtain d := dOff_lt x hx
-  unfold dcol
-  refine wp_ld2 hW (by decide) (E.rd2W (by omega_arith) rfl) fun s₁ o₁ p₁ => ?_
-  refine wp_rot (by decide) p₁ fun s₂ o₂ p₂ => ?_
-  obtain O₂ : Only [.eax, .edx, .ecx] s s₂ := (o₁.trans o₂).mono (by simp)
-  refine wp_xor2 (sw := false) (by rw [O₂.gpr _ (by decide), hW]) (by decide)
-    (E.rd2W (by omega_arith) O₂.wr) p₂ fun s₃ o₃ p₃ => ?_
-  obtain O₃ : Only [.eax, .edx, .ecx] s s₃ := (O₂.trans o₃).mono (by simp)
-  rw [← List.append_nil (st2 _ _)]
-  refine wp_st2 (by rw [O₃.gpr _ (by decide), hW]) (E.wr2W (by omega_arith) O₃.wr) p₃ fun s₄ u₄ =>
-    WP.block_nil ⟨fun r hr => by rw [u₄.gpr, O₃.gpr r hr], ?_, by rw [u₄.rd, O₃.rd],
-      by rw [u₄.wr, O₃.wr]⟩
-  rw [u₄.mem, O₃.mem, O₂.mem, hc _ h1, hc _ h4, swapIf_true, swapIf_false,
-    rotateRight_add _ (show 32 + 31 < 64 by decide)]
+/-- The offset of a lane of a state. -/
+def isLane (o : Nat) : Bool := decide (o < 200) && decide (o % 8 = 0)
+
+/-- The offset in the scratch space of a `D`. -/
+def isD (o : Nat) : Bool := decide (448 ≤ o) && decide (o < 488) && decide (o % 8 = 0)
+
+theorem isLane_iff {o : Nat} : isLane o = true ↔ o < 200 ∧ o % 8 = 0 := by simp [isLane]
+
+theorem isD_iff {o : Nat} : isD o = true ↔ 448 ≤ o ∧ o < 488 ∧ o % 8 = 0 := by simp [isD, and_assoc]
+
+/-- What a load from `m` gives: the round constant (`[ebp]`), a `D` that was
+stored, or a lane of the state at `src`. -/
+def ldEx (src : Reg) (σ : Sym) (m : MemOp) : Option Ex :=
+  if m.base = .ebp ∧ m.disp = 0 then some .rc
+  else if m.base = .edi ∧ isD m.disp = true then look m.disp σ.mem
+  else if m.base = src ∧ isLane m.disp = true then some (.lane (m.disp / 8))
+  else none
+
+/-- A store to `m` is of a lane of the state at `dst` or of a `D`. -/
+def stOk (dst : Reg) (m : MemOp) : Bool :=
+  decide (m.base = dst) && isLane m.disp || decide (m.base = .edi) && isD m.disp
+
+/-- What an instruction of a round's lanes does to the expressions; `none`
+for any other instruction or address. -/
+def step (src dst : Reg) (σ : Sym) : Instr → Option Sym
+  | .movqLoad d m => (ldEx src σ m).map fun e => ⟨σ.regs.set d e, σ.mem⟩
+  | .movqStore m r => if stOk dst m = true then some ⟨σ.regs, (m.disp, σ.regs.get r) :: σ.mem⟩ else none
+  | .xop (.bin .movdqa a b) => some ⟨σ.regs.set a (σ.regs.get b), σ.mem⟩
+  | .xop (.bin .pxor a b) => some ⟨σ.regs.set a (.xor (σ.regs.get a) (σ.regs.get b)), σ.mem⟩
+  | .xop (.bin .por a b) => some ⟨σ.regs.set a (.or (σ.regs.get a) (σ.regs.get b)), σ.mem⟩
+  | .xop (.bin .pandn a b) => some ⟨σ.regs.set a (.andn (σ.regs.get a) (σ.regs.get b)), σ.mem⟩
+  | .xop (.shift .psllq r n) =>
+    if n.toNat ≤ 63 then some ⟨σ.regs.set r (.shl (σ.regs.get r) n.toNat), σ.mem⟩ else none
+  | .xop (.shift .psrlq r n) =>
+    if n.toNat ≤ 63 then some ⟨σ.regs.set r (.shr (σ.regs.get r) n.toNat), σ.mem⟩ else none
+  | _ => none
+
+/-- The expressions after a block. -/
+def run (src dst : Reg) : Sym → List Instr → Option Sym
+  | σ, [] => some σ
+  | σ, i :: is =>
+    match step src dst σ i with
+    | some σ' => run src dst σ' is
+    | none => none
+
+/-- Before a round: the registers hold what they hold, and nothing is written. -/
+def sym₀ : Sym :=
+  ⟨⟨.junk .xmm0, .junk .xmm1, .junk .xmm2, .junk .xmm3, .junk .xmm4, .junk .xmm5, .junk .xmm6, .junk .xmm7⟩, []⟩
+
+/-! ## The round's expressions -/
+
+/-- `C[x]`, as the code computes it. -/
+def refC (x : Nat) : Ex :=
+  .xor (.xor (.xor (.xor (.lane x) (.lane (x + 5))) (.lane (x + 10))) (.lane (x + 15))) (.lane (x + 20))
+
+/-- A rotation left by `n`, as `rol` computes it. -/
+def refRol (e : Ex) (n : Nat) : Ex := if n = 0 then e else .or (.shl e n) (.shr e (64 - n))
+
+def refD (x : Nat) : Ex := .xor (refRol (refC ((x + 1) % 5)) 1) (refC ((x + 4) % 5))
+
+def refB (x y : Nat) : Ex :=
+  refRol (.xor (.lane (piSrc x y)) (refD ((x + 3 * y) % 5))) (rhoOff (piSrc x y))
+
+/-- Lane `(x, y)` of the round's output. -/
+def refOut (x y : Nat) : Ex :=
+  if x = 0 ∧ y = 0 then .xor (.xor (.andn (refB ((x + 1) % 5) y) (refB ((x + 2) % 5) y)) (refB x y)) .rc
+  else .xor (.andn (refB ((x + 1) % 5) y) (refB ((x + 2) % 5) y)) (refB x y)
+
+section
+variable (K : KState) (rc : Lane) (J : XReg → Lane)
+
+theorem refC_eval (x : Nat) : (refC x).eval K rc J = C K x := rfl
+
+theorem refRol_eval (e : Ex) {n : Nat} (hn : n < 64) :
+    (refRol e n).eval K rc J = rotl (e.eval K rc J) n := by
+  rw [rotl_eq _ hn]
+  unfold refRol
+  split
+  · subst_vars; rw [rotateLeft_zero]
+  · show e.eval K rc J <<< n ||| e.eval K rc J >>> (64 - n) = _
+    rw [BitVec.rotateLeft_def, Nat.mod_eq_of_lt hn]
+
+theorem refD_eval (x : Nat) : (refD x).eval K rc J = D K x := by
+  show (refRol (refC ((x + 1) % 5)) 1).eval K rc J ^^^ (refC ((x + 4) % 5)).eval K rc J = _
+  rw [refRol_eval K rc J _ (by decide), refC_eval, refC_eval]
   rfl
 
-/-- After the first `k` of the `D[x]`. -/
-structure DInv (s₀ : State) (K : KState) (W : BitVec 32) (k : Nat) (s : State) : Prop where
-  gpr : ∀ r, r ∉ [Reg.eax, .edx, .ecx] → s.gpr r = s₀.gpr r
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  frame : Frame [workR W] s₀.mem s.mem
-  cs : ∀ x < 5, rd64 s.mem W (cOff x) = C K x
-  ds : ∀ x < k, rd64 s.mem W (dOff x) = D K x
+theorem refB_eval {x y : Nat} (hx : x < 5) (hy : y < 5) : (refB x y).eval K rc J = B K x y := by
+  unfold refB
+  rw [refRol_eval K rc J _ (rhoOff_lt _ (by simp only [piSrc]; omega_using [hx, hy]))]
+  show rotl (K[piSrc x y]! ^^^ (refD ((x + 3 * y) % 5)).eval K rc J) _ = _
+  rw [refD_eval]
+  rfl
 
-theorem dcols_ok {S Dd W P : BitVec 32} {K : KState} (s₀ : State) (E : Env s₀.wr S Dd W P)
-    (hW : s₀.gpr .edi = W) (hc : ∀ x < 5, rd64 s₀.mem W (cOff x) = C K x) :
-    WP isa (.block ((List.range 5).flatMap dcol)) s₀ (DInv s₀ K W 5) := by
-  have fW := E.fitW
-  refine wp_range_flatMap (M := isa) (DInv s₀ K W) (fun x s hx hI => ?_) 5 (Nat.le_refl _) s₀
-    ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _, hc, fun _ h => absurd h (by omega_arith)⟩
-  obtain d := dOff_lt x hx
-  refine WP.mono (dcol_ok x hx s (hI.wr ▸ E) (by rw [hI.gpr _ (by decide), hW]) hI.cs)
-    fun s' w => ⟨fun r hr => by rw [w.gpr r hr, hI.gpr r hr], w.rd.trans hI.rd, w.wr.trans hI.wr, ?_,
-      fun x' hx' => ?_, fun x' hx' => ?_⟩
-  · rw [w.mem]
-    exact Frame.write64' hI.frame (List.mem_singleton_self _) (work_contains fW (by omega_arith) (by omega_arith))
-      (work_contains fW (by omega_arith) (by omega_arith)) _
-  · have := cOff_lt x' hx'
-    rw [w.mem, rd64_write64_ne _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
-    exact hI.cs x' hx'
-  · rw [w.mem]
-    by_cases e : x' = x
-    · subst e; exact rd64_write64_self _ _ (by omega_arith)
-    · rw [rd64_write64_ne _ _ (by omega_arith) (by have := dOff_lt x' (by omega_arith); omega_arith)
-        (by simp only [dOff]; omega_arith)]
-      exact hI.ds x' (by omega_arith)
+theorem refOut_eval {x y : Nat} (hx : x < 5) (hy : y < 5) : (refOut x y).eval K rc J = out K rc x y := by
+  obtain e : ∀ b : Lane, b ^^^ 0xffffffffffffffff = ~~~b := fun b => by
+    rw [show (0xffffffffffffffff : Lane) = BitVec.allOnes 64 from rfl, BitVec.xor_allOnes]
+  rw [show out K rc x y = if x = 0 ∧ y = 0 then
+      ((B K ((x + 1) % 5) y ^^^ 0xffffffffffffffff) &&& B K ((x + 2) % 5) y ^^^ B K x y) ^^^ rc
+    else (B K ((x + 1) % 5) y ^^^ 0xffffffffffffffff) &&& B K ((x + 2) % 5) y ^^^ B K x y from rfl]
+  unfold refOut
+  by_cases hc : x = 0 ∧ y = 0
+  · rw [ite_eq_left hc, ite_eq_left hc]
+    show (~~~((refB ((x + 1) % 5) y).eval K rc J) &&& (refB ((x + 2) % 5) y).eval K rc J ^^^
+      (refB x y).eval K rc J) ^^^ rc = _
+    rw [refB_eval K rc J (Nat.mod_lt _ (by decide)) hy, refB_eval K rc J (Nat.mod_lt _ (by decide)) hy,
+      refB_eval K rc J hx hy, e]
+  · rw [ite_eq_right hc, ite_eq_right hc]
+    show ~~~((refB ((x + 1) % 5) y).eval K rc J) &&& (refB ((x + 2) % 5) y).eval K rc J ^^^
+      (refB x y).eval K rc J = _
+    rw [refB_eval K rc J (Nat.mod_lt _ (by decide)) hy, refB_eval K rc J (Nat.mod_lt _ (by decide)) hy,
+      refB_eval K rc J hx hy, e]
 
-/-! ## A plane -/
+end
 
-theorem rhoOff_ne32 : ∀ j < 25, rhoOff j ≠ 32 := by decide
+/-- Every lane of the state at `dst` was written, with the round's expression. -/
+def outsOk (σ : Sym) : Bool :=
+  (List.range 25).all fun i => decide (look (8 * i) σ.mem = some (refOut (i % 5) (i / 5)))
 
-/-- ρ's rotation, as the code does it: the halves swapped (`swp`), then a
-rotation by less than 32 (`rotAmt`). -/
-theorem rho_rot (v : Lane) {j : Nat} (hj : j < 25) :
-    (swapIf (swp j) v).rotateRight (rotAmt j) = Proof.Sha3.rotl v (rhoOff j) := by
-  obtain h64 := Proof.Sha3.rhoOff_lt j hj
-  obtain h32 := rhoOff_ne32 j hj
-  simp only [swp, rotAmt, Proof.Sha3.rotl]
-  generalize rhoOff j = r at *
-  by_cases h0 : r = 0
-  · subst h0; simp [swapIf, rotateRight_zero']
-  · by_cases hl : r < 32
-    · simp only [h0, hl, ite_false, ite_true, decide_true, Bool.and_true, swapIf,
-        show (0 < r) = True from eq_true (by omega_arith), decide_true]
-      rw [rotateRight_add _ (by omega_arith), show 32 + (32 - r) = 64 - r by omega_arith]
-    · simp only [h0, hl, ite_false, swapIf, show decide (0 < r) = true from decide_eq_true (by omega_arith),
-        Bool.true_and, decide_false, Bool.false_eq_true]
+/-- The lanes of a round with the plan `p` run, and leave the round's output
+in the state at `dst`. -/
+def check (p : List XReg) (src dst : Reg) : Bool :=
+  match run src dst sym₀ (lanes p src dst) with
+  | some σ => outsOk σ
+  | none => false
 
-theorem rotAmt_lt {j : Nat} (hj : j < 25) : rotAmt j < 32 := by
-  have := rhoOff_ne32 j hj
-  have := Proof.Sha3.rhoOff_lt j hj
-  unfold rotAmt
-  split
-  · omega_arith
-  · split <;> omega_arith
+/-! ## The expressions and the model -/
 
-theorem laneB_ok (x y : Nat) (hx : x < 5) (_hy : y < 5) {src : Reg} (hsrc : Ptr src)
-    {S Dd W P : BitVec 32} {K : KState} (s : State) (E : Env s.wr S Dd W P) (hS : s.gpr src = S)
-    (hW : s.gpr .edi = W) (hK : Lanes32 s.mem S K) (hD : ∀ x' < 5, rd64 s.mem W (dOff x') = D K x') :
-    WP isa (.block (laneB src x y)) s fun s' =>
-      Wrote [.eax, .edx, .ecx] s s' (write64 s.mem W (cOff x) (B K x y)) := by
-  obtain hj : piSrc x y < 25 := by simp only [piSrc]; omega_arith
-  obtain hk : (x + 3 * y) % 5 < 5 := Nat.mod_lt _ (by omega_arith)
-  obtain d := dOff_lt _ hk
-  obtain c := cOff_lt x hx
-  unfold laneB
-  refine wp_ld2 hS hsrc.ne.1 (fun h hh => mem_rd (E.accS _ (by rcases hh with rfl | rfl <;> omega_arith)))
-    fun s₁ o₁ p₁ => ?_
-  refine wp_xor2 (by rw [o₁.gpr _ (by decide), hW]) (by decide) (E.rd2W (by omega_arith) o₁.wr) p₁
-    fun s₂ o₂ p₂ => ?_
-  obtain O₂ : Only [.eax, .edx] s s₂ := (o₁.trans o₂).mono (by simp)
-  refine wp_rot (rotAmt_lt hj) p₂ fun s₃ o₃ p₃ => ?_
-  obtain O₃ : Only [.eax, .edx, .ecx] s s₃ := (O₂.trans o₃).mono (by simp)
-  rw [← List.append_nil (st2 _ _)]
-  refine wp_st2 (by rw [O₃.gpr _ (by decide), hW]) (E.wr2W (by omega_arith) O₃.wr) p₃ fun s₄ u₄ =>
-    WP.block_nil ⟨fun r hr => by rw [u₄.gpr, O₃.gpr r hr], ?_, by rw [u₄.rd, O₃.rd],
-      by rw [u₄.wr, O₃.wr]⟩
-  rw [u₄.mem, O₃.mem, o₁.mem, hK _ hj, hD _ hk, ← swapIf_xor, rho_rot _ hj, B]
+/-- The registers' low quadwords. -/
+abbrev low (s : State) : XReg → Lane := fun r => qword (s.xmm r) 0
 
-/-- After the first `k` lanes `B[x]` of plane `y`. -/
-structure BInv (s₀ : State) (K : KState) (W : BitVec 32) (y k : Nat) (s : State) : Prop where
-  gpr : ∀ r, r ∉ [Reg.eax, .edx, .ecx] → s.gpr r = s₀.gpr r
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  frame : Frame [workR W] s₀.mem s.mem
-  ds : ∀ x < 5, rd64 s.mem W (dOff x) = D K x
-  bs : ∀ x < k, rd64 s.mem W (cOff x) = B K x y
+/-- Where the word of offset `o` is: in the state at `Dd`, or in the scratch
+space at `W`. -/
+def cad (Dd W : BitVec 32) (o : Nat) : Addr := if o < 200 then addr Dd o else addr W o
 
-theorem laneBs_ok (y : Nat) (hy : y < 5) {src : Reg} (hsrc : Ptr src) {S Dd W P : BitVec 32}
-    {K : KState} (s₀ : State) (E : Env s₀.wr S Dd W P) (hS : s₀.gpr src = S) (hW : s₀.gpr .edi = W)
-    (hK : Lanes32 s₀.mem S K) (hD : ∀ x < 5, rd64 s₀.mem W (dOff x) = D K x) :
-    WP isa (.block ((List.range 5).flatMap fun x => laneB src x y)) s₀ (BInv s₀ K W y 5) := by
-  have fW := E.fitW
-  refine wp_range_flatMap (M := isa) (BInv s₀ K W y) (fun x s hx hI => ?_) 5 (Nat.le_refl _) s₀
-    ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _, hD, fun _ h => absurd h (by omega_arith)⟩
-  obtain c := cOff_lt x hx
-  obtain ⟨se, sd, sc, -⟩ := hsrc.ne
-  refine WP.mono (laneB_ok x y hx hy hsrc s (hI.wr ▸ E) (by rw [hI.gpr _ (nm3 se sd sc), hS])
-    (by rw [hI.gpr _ (by decide), hW]) (hK.frame hI.frame (by simpa using E.sw) E.fitS) hI.ds)
-    fun s' w => ⟨fun r hr => by rw [w.gpr r hr, hI.gpr r hr], w.rd.trans hI.rd, w.wr.trans hI.wr, ?_,
-      fun x' hx' => ?_, fun x' hx' => ?_⟩
-  · rw [w.mem]
-    exact Frame.write64' hI.frame (List.mem_singleton_self _) (work_contains fW c.1 (by omega_arith))
-      (work_contains fW (by omega_arith) (by omega_arith)) _
-  · have := dOff_lt x' hx'
-    rw [w.mem, rd64_write64_ne _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
-    exact hI.ds x' hx'
-  · rw [w.mem]
-    by_cases e : x' = x
-    · subst e; exact rd64_write64_self _ _ (by omega_arith)
-    · rw [rd64_write64_ne _ _ (by omega_arith) (by have := cOff_lt x' (by omega_arith); omega_arith)
-        (by simp only [cOff]; omega_arith)]
-      exact hI.bs x' (by omega_arith)
+/-- The state `s`, in a round that started in `s₁` with `K` at `src` and
+the round constant `rc`, holds what `σ` says. -/
+structure Rel (Dd W : BitVec 32) (K : KState) (rc : Lane) (s₁ : State) (σ : Sym) (s : State) : Prop where
+  regs : ∀ r, qword (s.xmm r) 0 = (σ.regs.get r).eval K rc (low s₁)
+  mem : ∀ o e, look o σ.mem = some e →
+    (isLane o = true ∨ isD o = true) ∧ s.mem.readW (cad Dd W o) 64 = e.eval K rc (low s₁)
+  frame : Frame [reg32 Dd 200, workR W] s₁.mem s.mem
+  gpr : s.gpr = s₁.gpr
+  rd : s.rd = s₁.rd
+  wr : s.wr = s₁.wr
 
-/-- Half `h` of lane `(x, y)` of the output. -/
-theorem chiHalf_ok (x y h : Nat) (hx : x < 5) (hy : y < 5) (hh : h = 0 ∨ h = 4) {dst : Reg}
-    (hdst : Ptr dst) {S Dd W P : BitVec 32} {K : KState} {rc : Lane} (s : State)
-    (E : Env s.wr S Dd W P) (hd : s.gpr dst = Dd) (hW : s.gpr .edi = W) (hP : s.gpr .ebp = P)
-    (hb : ∀ x' < 5, rd64 s.mem W (cOff x') = B K x' y) (hrc : rd64 s.mem P 0 = rc) :
-    WP isa (.block (chiHalf dst x y h)) s fun s' =>
-      Wrote [.eax] s s' (s.mem.writeW (addr Dd (8 * (x + 5 * y) + h)) (half h (out K rc x y))) := by
-  obtain h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega_arith)
-  obtain h2 : (x + 2) % 5 < 5 := Nat.mod_lt _ (by omega_arith)
-  obtain c0 := cOff_lt x hx
-  obtain c1 := cOff_lt _ h1
-  obtain c2 := cOff_lt _ h2
-  obtain hB : ∀ x' < 5, s.mem.readW (addr W (cOff x' + h)) 32 = half h (B K x' y) := fun x' hx' => by
-    rw [← hb x' hx', half_rd64 hh]
-  obtain rW : ∀ x' < 5, InRegions (s.rd ++ s.wr) (addr W (cOff x' + h)) 4 := fun x' hx' =>
-    mem_rd (E.accW _ (by have := cOff_lt x' hx'; rcases hh with rfl | rfl <;> omega_arith))
-  unfold chiHalf
-  simp only [List.cons_append, List.nil_append]
-  refine wp_ldm hW (rW _ h1) fun s₁ u₁ => ?_
-  refine wp_xorS rfl fun s₂ u₂ => ?_
-  obtain U₂ := Upd.trans u₁ u₂
-  refine wp_andm (by rw [U₂.other _ (by decide), hW]) (by rw [U₂.rd, U₂.wr]; exact rW _ h2)
-    fun s₃ u₃ => ?_
-  obtain U₃ := Upd.trans U₂ u₃
-  refine wp_xorm (by rw [U₃.other _ (by decide), hW]) (by rw [U₃.rd, U₃.wr]; exact rW _ hx)
-    fun s₄ u₄ => ?_
-  obtain U₄ := Upd.trans U₃ u₄
-  obtain v₄ : s₄.gpr .eax = half h ((B K ((x + 1) % 5) y ^^^ 0xffffffffffffffff) &&& B K ((x + 2) % 5) y ^^^
-      B K x y) := by
-    rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr, U₃.mem, U₂.mem, hB _ h1, hB _ h2, hB _ hx, half_xor,
-      half_and, half_xor, half_ones]
-  obtain fin : ∀ s₅ : State, Upd s s₅ .eax (half h (out K rc x y)) →
-      WP isa (.block [.store (at_ dst (8 * (x + 5 * y) + h)) .eax]) s₅ fun s' =>
-        Wrote [.eax] s s' (s.mem.writeW (addr Dd (8 * (x + 5 * y) + h)) (half h (out K rc x y))) :=
-    fun s₅ U₅ => wp_stm (by rw [U₅.other _ hdst.ne.1, hd])
-      (by rw [U₅.wr]; exact E.accD _ (by rcases hh with rfl | rfl <;> omega_arith))
-      fun s₆ u₆ => WP.block_nil ⟨fun r hr => by rw [u₆.gpr, U₅.other r (by simpa using hr)],
-        by rw [u₆.mem, U₅.mem, U₅.gpr], by rw [u₆.rd, U₅.rd], by rw [u₆.wr, U₅.wr]⟩
-  by_cases h0 : x = 0 ∧ y = 0
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h0)]
-    simp only [List.cons_append, List.nil_append]
-    obtain hr : s.mem.readW (addr P h) 32 = half h rc := by rw [← hrc, half_rd64 hh, Nat.zero_add]
-    refine wp_xorm (by rw [U₄.other _ (by decide), hP]) (by
-      rw [U₄.rd, U₄.wr]; exact mem_rd (E.accP _ (by rcases hh with rfl | rfl <;> omega_arith))) fun s₅ u₅ => ?_
-    refine fin s₅ ⟨?_, (Upd.trans U₄ u₅).other, (Upd.trans U₄ u₅).mem, (Upd.trans U₄ u₅).rd, (Upd.trans U₄ u₅).wr⟩
-    rw [u₅.gpr, v₄, U₄.mem, hr, ← half_xor, out]
-    simp only [h0, and_self, ite_true]
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false h0)]
-    simp only [List.nil_append]
-    refine fin s₄ ⟨?_, U₄.other, U₄.mem, U₄.rd, U₄.wr⟩
-    rw [v₄, out]
-    simp only [h0, ite_false]
+theorem q_por (a b : BitVec 128) : qword (XBinOp.eval .por a b) 0 = qword a 0 ||| qword b 0 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [XBinOp.eval, qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_or, hi, decide_true,
+    Bool.true_and]
 
-theorem chi_ok (x y : Nat) (hx : x < 5) (hy : y < 5) {dst : Reg} (hdst : Ptr dst)
-    {S Dd W P : BitVec 32} {K : KState} {rc : Lane} (s : State) (E : Env s.wr S Dd W P)
-    (hd : s.gpr dst = Dd) (hW : s.gpr .edi = W) (hP : s.gpr .ebp = P)
-    (hb : ∀ x' < 5, rd64 s.mem W (cOff x') = B K x' y) (hrc : rd64 s.mem P 0 = rc) :
-    WP isa (.block (chi dst x y)) s fun s' =>
-      Wrote [.eax] s s' (write64 s.mem Dd (8 * (x + 5 * y)) (out K rc x y)) := by
-  obtain ho : 8 * (x + 5 * y) + 8 ≤ 200 := by omega_arith
-  unfold chi
-  rw [WP.block_append_iff]
-  refine WP.mono (chiHalf_ok x y 0 hx hy (.inl rfl) hdst s E hd hW hP hb hrc) fun s₁ w₁ => ?_
-  obtain hf : Frame [reg32 Dd 200] s.mem s₁.mem := by
-    rw [w₁.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (reg_contains E.fitD (by omega_arith))
-  obtain g : ∀ r, r ≠ .eax → s₁.gpr r = s.gpr r := fun r hr => w₁.gpr r (nm1 hr)
-  refine WP.mono (chiHalf_ok x y 4 hx hy (.inr rfl) hdst (rc := rc) s₁ (w₁.wr ▸ E) (by rw [g _ hdst.ne.1, hd])
-    (by rw [g _ (by decide), hW]) (by rw [g _ (by decide), hP])
-    (fun x' hx' => by
-      have := cOff_lt x' hx'
-      rw [work_frame hf E.fitW this.1 (by omega_arith) (by simpa using E.dw.symm)]; exact hb x' hx')
-    (by rw [rd64_frame hf (by simpa using E.pd) E.fitP (by omega_arith)]; exact hrc)) fun s₂ w₂ =>
-      ⟨fun r hr => by rw [w₂.gpr r hr, w₁.gpr r hr], ?_, w₂.rd.trans w₁.rd, w₂.wr.trans w₁.wr⟩
-  rw [w₂.mem, w₁.mem, half_lo, half_hi]; rfl
+theorem q_pandn (a b : BitVec 128) : qword (XBinOp.eval .pandn a b) 0 = ~~~qword a 0 &&& qword b 0 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [XBinOp.eval, qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_and, BitVec.getLsbD_not, hi,
+    decide_true, Bool.true_and, show 64 * 0 + i < 128 by omega_using [hi]]
 
-/-- After `k` lanes of plane `y` of the output. -/
-structure ChiInv (s₀ : State) (K : KState) (rc : Lane) (Dd W : BitVec 32) (y k : Nat) (s : State) :
-    Prop where
-  gpr : ∀ r, r ∉ [Reg.eax] → s.gpr r = s₀.gpr r
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  frame : Frame [reg32 Dd 200] s₀.mem s.mem
-  lanes : ∀ j < 5 * y + k, rd64 s.mem Dd (8 * j) = out K rc (j % 5) (j / 5)
+section
+variable {src dst : Reg} {S Dd W P : BitVec 32} {K : KState} {rc : Lane} {s₁ : State}
 
-theorem chis_ok (y : Nat) (hy : y < 5) {dst : Reg} (hdst : Ptr dst) {S Dd W P : BitVec 32}
-    {K : KState} {rc : Lane} (s₀ : State) (E : Env s₀.wr S Dd W P) (hd : s₀.gpr dst = Dd)
-    (hW : s₀.gpr .edi = W) (hP : s₀.gpr .ebp = P) (hb : ∀ x < 5, rd64 s₀.mem W (cOff x) = B K x y)
-    (hrc : rd64 s₀.mem P 0 = rc) (hl : ∀ j < 5 * y, rd64 s₀.mem Dd (8 * j) = out K rc (j % 5) (j / 5)) :
-    WP isa (.block ((List.range 5).flatMap fun x => chi dst x y)) s₀ (ChiInv s₀ K rc Dd W y 5) := by
+theorem Rel.init : Rel Dd W K rc s₁ sym₀ s₁ :=
+  ⟨fun r => by cases r <;> rfl, fun _ _ h => by simp [sym₀, look] at h, Frame.refl _ _, rfl, rfl, rfl⟩
+
+/-- A register written. -/
+theorem Rel.setX {σ : Sym} {s : State} (h : Rel Dd W K rc s₁ σ s) (d : XReg) {v : BitVec 128} {e : Ex}
+    (hv : qword v 0 = e.eval K rc (low s₁)) :
+    Rel Dd W K rc s₁ ⟨σ.regs.set d e, σ.mem⟩ (s.setXmm d v) where
+  regs r := by
+    rw [VG.X86.RegUpd.xmm_setXmm, Regs.get_set]
+    split
+    · exact hv
+    · exact h.regs r
+  mem := h.mem
+  frame := h.frame
+  gpr := h.gpr
+  rd := h.rd
+  wr := h.wr
+
+/-- A register loaded from memory. -/
+theorem Rel.load {σ : Sym} {s : State} (h : Rel Dd W K rc s₁ σ s) (d : XReg) {m : MemOp} {e : Ex}
+    (hin : InRegions s.wr (s.ea m) 8) (hv : s.mem.readW (s.ea m) 64 = e.eval K rc (low s₁)) :
+    ∃ s', isa.exec (.movqLoad d m) s = some s' ∧ Rel Dd W K rc s₁ ⟨σ.regs.set d e, σ.mem⟩ s' := by
+  refine ⟨s.setXmm d ((0 : BitVec 64) ++ s.mem.readW (s.ea m) 64), ?_, h.setX d (by rw [qword_append_0, hv])⟩
+  show (s.load64 (s.ea m)).map _ = _
+  rw [State.load64, ite_eq_left (mem_rd hin)]
+  rfl
+
+theorem cad_lane {o : Nat} (h : isLane o = true) : cad Dd W o = addr Dd o :=
+  ite_eq_left (isLane_iff.mp h).1
+
+theorem cad_d {o : Nat} (h : isD o = true) : cad Dd W o = addr W o :=
+  ite_eq_right (by have := (isD_iff.mp h).1; omega_using [this])
+
+section
+variable (E : Env s₁.wr S Dd W P)
+include E
+
+theorem cad_in {o : Nat} (ho : isLane o = true ∨ isD o = true) :
+    ∃ R ∈ [reg32 Dd 200, workR W], R.Contains (cad Dd W o) 8 := by
+  rcases ho with ho | ho
+  · obtain ⟨h1, h2⟩ := isLane_iff.mp ho
+    refine ⟨_, List.mem_cons_self, ?_⟩
+    rw [cad_lane ho]
+    exact contains_addr (by omega_using [h1, h2]) (by decide) E.fitD
+  · obtain ⟨h1, h2, h3⟩ := isD_iff.mp ho
+    refine ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩
+    rw [cad_d ho]
+    exact sub_contains E.fitW (by decide) (by omega_using [h1]) (by omega_using [h2, h3]) (by decide)
+
+theorem cad_acc {o : Nat} (ho : isLane o = true ∨ isD o = true) : InRegions s₁.wr (cad Dd W o) 8 := by
+  rcases ho with ho | ho
+  · obtain ⟨h1, h2⟩ := isLane_iff.mp ho
+    rw [cad_lane ho]
+    exact E.accD _ (by omega_using [h1, h2])
+  · obtain ⟨h1, h2, h3⟩ := isD_iff.mp ho
+    rw [cad_d ho]
+    exact E.accW _ (by omega_using [h2, h3])
+
+/-- A word of a round, after another is written. -/
+theorem cad_sep {o o₀ : Nat} (ho : isLane o = true ∨ isD o = true) (ho₀ : isLane o₀ = true ∨ isD o₀ = true)
+    (hne : o₀ ≠ o) (m : Mem) (v : BitVec 64) :
+    (m.writeW (cad Dd W o₀) v).readW (cad Dd W o) 64 = m.readW (cad Dd W o) 64 := by
   have fD := E.fitD
-  refine wp_range_flatMap (M := isa) (ChiInv s₀ K rc Dd W y) (fun x s hx hI => ?_) 5 (Nat.le_refl _) s₀
-    ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _, fun j hj => hl j (by omega_arith)⟩
-  obtain ho : 8 * (x + 5 * y) + 8 ≤ 200 := by omega_arith
-  refine WP.mono (chi_ok x y hx hy hdst (rc := rc) s (hI.wr ▸ E) (by rw [hI.gpr _ (nm1 hdst.ne.1), hd])
-    (by rw [hI.gpr _ (by decide), hW]) (by rw [hI.gpr _ (by decide), hP])
-    (fun x' hx' => by
-      have := cOff_lt x' hx'
-      rw [work_frame hI.frame E.fitW this.1 (by omega_arith) (by simpa using E.dw.symm)]; exact hb x' hx')
-    (by rw [rd64_frame hI.frame (by simpa using E.pd) E.fitP (by omega_arith)]; exact hrc))
-    fun s' w => ⟨fun r hr => by rw [w.gpr r hr, hI.gpr r hr], w.rd.trans hI.rd, w.wr.trans hI.wr, ?_,
-      fun j hj => ?_⟩
-  · rw [w.mem]
-    exact Frame.write64' hI.frame (List.mem_singleton_self _) (reg_contains fD (by omega_arith))
-      (reg_contains fD (by omega_arith)) _
-  · rw [w.mem]
-    by_cases e : j = x + 5 * y
-    · subst e
-      rw [rd64_write64_self _ _ (by omega_arith), show (x + 5 * y) % 5 = x by omega_arith,
-        show (x + 5 * y) / 5 = y by omega_arith]
-    · rw [rd64_write64_ne _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
-      exact hI.lanes j (by omega_arith)
+  have fW := E.fitW
+  rcases ho with ho | ho <;> rcases ho₀ with ho₀ | ho₀
+  · obtain ⟨h1, h2⟩ := isLane_iff.mp ho
+    obtain ⟨k1, k2⟩ := isLane_iff.mp ho₀
+    rw [cad_lane ho, cad_lane ho₀]
+    exact readW64_write_ne _ _ (by omega_using [fD, k1, k2]) (by omega_using [fD, h1, h2])
+      (by omega_using [h2, k2, hne])
+  · obtain ⟨h1, h2⟩ := isLane_iff.mp ho
+    obtain ⟨k1, k2, k3⟩ := isD_iff.mp ho₀
+    rw [cad_lane ho, cad_d ho₀]
+    exact readW_writeW_regions _ _
+      (sub_contains fW (by decide) (by omega_using [k1]) (by omega_using [k2, k3]) (by decide))
+      (contains_addr (by omega_using [h1, h2]) (by decide) fD) E.dw
+  · obtain ⟨h1, h2, h3⟩ := isD_iff.mp ho
+    obtain ⟨k1, k2⟩ := isLane_iff.mp ho₀
+    rw [cad_d ho, cad_lane ho₀]
+    exact readW_writeW_regions _ _ (contains_addr (by omega_using [k1, k2]) (by decide) fD)
+      (sub_contains fW (by decide) (by omega_using [h1]) (by omega_using [h2, h3]) (by decide)) E.dw.symm
+  · obtain ⟨h1, h2, h3⟩ := isD_iff.mp ho
+    obtain ⟨k1, k2, k3⟩ := isD_iff.mp ho₀
+    rw [cad_d ho, cad_d ho₀]
+    exact readW64_write_ne _ _ (by omega_using [fW, k2, k3]) (by omega_using [fW, h2, h3])
+      (by omega_using [h3, k3, hne])
 
-/-- After the first `y` planes of the output. -/
-structure PInv (s₀ : State) (K : KState) (rc : Lane) (Dd W : BitVec 32) (y : Nat) (s : State) :
-    Prop where
-  gpr : ∀ r, r ∉ [Reg.eax, .edx, .ecx] → s.gpr r = s₀.gpr r
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  frame : Frame [reg32 Dd 200, workR W] s₀.mem s.mem
-  ds : ∀ x < 5, rd64 s.mem W (dOff x) = D K x
-  lanes : ∀ j < 5 * y, rd64 s.mem Dd (8 * j) = out K rc (j % 5) (j / 5)
+/-- A register stored. -/
+theorem Rel.store {σ : Sym} {s : State} (h : Rel Dd W K rc s₁ σ s) (r : XReg) {m : MemOp}
+    (ho : isLane m.disp = true ∨ isD m.disp = true) (hea : s.ea m = cad Dd W m.disp) :
+    ∃ s', isa.exec (.movqStore m r) s = some s' ∧
+      Rel Dd W K rc s₁ ⟨σ.regs, (m.disp, σ.regs.get r) :: σ.mem⟩ s' := by
+  obtain ⟨R, hR, hc⟩ := cad_in E ho
+  refine ⟨{ s with mem := s.mem.writeW (cad Dd W m.disp) (qword (s.xmm r) 0) }, ?_, fun x => h.regs x,
+    fun o e he => ?_, h.frame.writeW hR _ hc, h.gpr, h.rd, h.wr⟩
+  · show s.store64 (s.ea m) ((s.xmm r).extractLsb' 0 64) = _
+    rw [State.store64, hea, ite_eq_left (h.wr ▸ cad_acc E ho)]
+    rfl
+  · show _ ∧ (s.mem.writeW (cad Dd W m.disp) (qword (s.xmm r) 0)).readW (cad Dd W o) 64 = _
+    change look o ((m.disp, σ.regs.get r) :: σ.mem) = some e at he
+    rw [look] at he
+    split at he
+    · rename_i hk
+      cases he
+      subst hk
+      exact ⟨ho, by rw [Mem.readW_writeW_self64, h.regs r]⟩
+    · rename_i hk
+      obtain ⟨hv, hr⟩ := h.mem o e he
+      exact ⟨hv, by rw [cad_sep E hv ho hk, hr]⟩
 
-theorem planes_ok {src dst : Reg} (hsrc : Ptr src) (hdst : Ptr dst) {S Dd W P : BitVec 32}
-    {K : KState} {rc : Lane} (s₀ : State) (E : Env s₀.wr S Dd W P) (hS : s₀.gpr src = S)
-    (hd : s₀.gpr dst = Dd) (hW : s₀.gpr .edi = W) (hP : s₀.gpr .ebp = P) (hK : Lanes32 s₀.mem S K)
-    (hrc : rd64 s₀.mem P 0 = rc) (s : State) (hs : PInv s₀ K rc Dd W 0 s) :
-    WP isa (.block ((List.range 5).flatMap (plane src dst))) s (PInv s₀ K rc Dd W 5) := by
-  have fD := E.fitD
-  refine wp_range_flatMap (M := isa) (PInv s₀ K rc Dd W) (fun y s hy hI => ?_) 5 (Nat.le_refl _) s hs
-  unfold plane
-  rw [WP.block_append_iff]
-  obtain ⟨se, sd, sc, -⟩ := hsrc.ne
-  obtain ⟨de, dd, dc, -⟩ := hdst.ne
-  obtain E' : Env s.wr S Dd W P := hI.wr ▸ E
-  refine WP.mono (laneBs_ok y hy hsrc s E' (by rw [hI.gpr _ (nm3 se sd sc), hS])
-    (by rw [hI.gpr _ (by decide), hW]) (hK.frame hI.frame (by simpa using ⟨E.sd, E.sw⟩) E.fitS) hI.ds)
-    fun s₁ b₁ => ?_
-  obtain E₁ : Env s₁.wr S Dd W P := b₁.wr ▸ E'
-  obtain f₁ : Frame [reg32 Dd 200, workR W] s₀.mem s₁.mem :=
-    hI.frame.trans (b₁.frame.mono (by simp))
-  refine WP.mono (chis_ok y hy hdst (rc := rc) s₁ E₁ (by rw [b₁.gpr _ (nm3 de dd dc), hI.gpr _ (nm3 de dd dc), hd])
-    (by rw [b₁.gpr _ (by decide), hI.gpr _ (by decide), hW])
-    (by rw [b₁.gpr _ (by decide), hI.gpr _ (by decide), hP]) b₁.bs
-    (by rw [rd64_frame f₁ (by simpa using ⟨E.pd, E.pw⟩) E.fitP (by omega_arith)]; exact hrc)
-    (fun j hj => by
-      rw [rd64_frame b₁.frame (by simpa using E.dw) fD (by omega_arith)]; exact hI.lanes j hj))
-    fun s₂ c₂ => ⟨fun r hr => ?_, by rw [c₂.rd, b₁.rd, hI.rd], by rw [c₂.wr, b₁.wr, hI.wr],
-      f₁.trans (c₂.frame.mono (by simp)), fun x hx => ?_, fun j hj => c₂.lanes j (by omega_arith)⟩
-  · have ⟨a, b, c⟩ : r ≠ .eax ∧ r ≠ .edx ∧ r ≠ .ecx := by simpa using hr
-    rw [c₂.gpr r (nm1 a), b₁.gpr r hr, hI.gpr r hr]
-  · have := dOff_lt x hx
-    rw [work_frame c₂.frame E.fitW (by omega_arith) this.2 (by simpa using E.dw.symm)]; exact b₁.ds x hx
+end
+
+section
+variable (E : Env s₁.wr S Dd W P) (hS : s₁.gpr src = S) (hD : s₁.gpr dst = Dd) (hW : s₁.gpr .edi = W)
+  (hP : s₁.gpr .ebp = P) (hK : Lanes32 s₁.mem S K) (hrc : rd64 s₁.mem P 0 = rc)
+include E hS hW hP hK hrc
+
+/-- What a load reads. -/
+theorem ldEx_ok {σ : Sym} {s : State} (h : Rel Dd W K rc s₁ σ s) {m : MemOp} {e : Ex}
+    (he : ldEx src σ m = some e) :
+    InRegions s.wr (s.ea m) 8 ∧ s.mem.readW (s.ea m) 64 = e.eval K rc (low s₁) := by
+  obtain hea : s.ea m = addr (s₁.gpr m.base) m.disp := by rw [← h.gpr]; rfl
+  unfold ldEx at he
+  split at he
+  · rename_i hm
+    cases he
+    rw [hea, hm.1, hm.2, hP, h.wr]
+    refine ⟨E.accP 0 (by decide), ?_⟩
+    rw [h.frame.readW (r := reg32 P 8) (contains_addr (by decide) (by decide) E.fitP) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> [exact E.pd; exact E.pw]) (by decide),
+      ← rd64_eq_readW _ (by omega_using [E.fitP]), hrc]
+    rfl
+  · split at he
+    · rename_i hm
+      obtain ⟨h1, h2, h3⟩ := isD_iff.mp hm.2
+      obtain ⟨_, hr⟩ := h.mem _ _ he
+      rw [cad_d hm.2] at hr
+      rw [hea, hm.1, hW, h.wr]
+      exact ⟨E.accW _ (by omega_using [h2, h3]), hr⟩
+    · split at he <;> [skip; cases he]
+      rename_i hm
+      cases he
+      obtain ⟨h1, h2⟩ := isLane_iff.mp hm.2
+      have fS := E.fitS
+      rw [hea, hm.1, hS, h.wr]
+      refine ⟨E.accS _ (by omega_using [h1, h2]), ?_⟩
+      rw [h.frame.readW (r := reg32 S 200) (contains_addr (by omega_using [h1, h2]) (by decide) fS)
+        (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl <;> [exact E.sd; exact E.sw]) (by decide),
+        ← rd64_eq_readW _ (by omega_using [fS, h1, h2])]
+      have hk := hK (m.disp / 8) (by omega_using [h1])
+      rw [Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h2)] at hk
+      exact hk
+
+include hD
+
+/-- `step` is sound: an instruction it accepts runs, and what it says of
+the registers and of the words written holds after it. -/
+theorem step_ok {σ σ' : Sym} {i : Instr} {s : State} (hs : step src dst σ i = some σ')
+    (h : Rel Dd W K rc s₁ σ s) : ∃ s', isa.exec i s = some s' ∧ Rel Dd W K rc s₁ σ' s' := by
+  unfold step at hs
+  split at hs
+  · obtain ⟨e, he, rfl⟩ := Option.map_eq_some_iff.mp hs
+    obtain ⟨hin, hv⟩ := ldEx_ok E hS hW hP hK hrc h he
+    exact h.load _ hin hv
+  · split at hs <;> [skip; cases hs]
+    rename_i m r hok
+    cases hs
+    obtain hea : s.ea m = addr (s₁.gpr m.base) m.disp := by rw [← h.gpr]; rfl
+    simp only [stOk, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at hok
+    rcases hok with ⟨hb, ho⟩ | ⟨hb, ho⟩
+    · exact h.store E r (.inl ho) (by rw [hea, hb, hD, cad_lane ho])
+    · exact h.store E r (.inr ho) (by rw [hea, hb, hW, cad_d ho])
+  · cases hs
+    exact ⟨_, rfl, h.setX _ (h.regs _)⟩
+  · cases hs
+    exact ⟨_, rfl, h.setX _ (by rw [q_pxor, h.regs, h.regs]; rfl)⟩
+  · cases hs
+    exact ⟨_, rfl, h.setX _ (by rw [q_por, h.regs, h.regs]; rfl)⟩
+  · cases hs
+    exact ⟨_, rfl, h.setX _ (by rw [q_pandn, h.regs, h.regs]; rfl)⟩
+  · split at hs <;> [skip; cases hs]
+    rename_i hn
+    cases hs
+    exact ⟨_, rfl, h.setX _ (by rw [q_psllq, ite_eq_right (Nat.not_lt.mpr hn), h.regs]; rfl)⟩
+  · split at hs <;> [skip; cases hs]
+    rename_i hn
+    cases hs
+    exact ⟨_, rfl, h.setX _ (by rw [q_psrlq, ite_eq_right (Nat.not_lt.mpr hn), h.regs]; rfl)⟩
+  · cases hs
+
+/-- A block that `run` accepts runs, to a state that holds what it says. -/
+theorem run_ok : ∀ (is : List Instr) {σ σ' : Sym} {s : State}, run src dst σ is = some σ' →
+    Rel Dd W K rc s₁ σ s → WP isa (.block is) s (Rel Dd W K rc s₁ σ')
+  | [], _, _, _, hr, h => by cases hr; exact WP.block_nil h
+  | i :: is, σ, σ', s, hr, h => by
+    unfold run at hr
+    split at hr <;> [skip; cases hr]
+    rename_i σ₂ hs
+    obtain ⟨s', he, h'⟩ := step_ok E hS hD hW hP hK hrc hs h
+    exact WP.block_cons_iff.mpr ⟨s', he, run_ok is hr h'⟩
+
+end
+
+end
+
+end Run
 
 /-! ## The round -/
 
-theorem round_ok {src dst : Reg} (hsrc : Ptr src) (hdst : Ptr dst) {S Dd W P : BitVec 32}
+theorem round_ok {p : List XReg} {src dst : Reg} (hck : Run.check p src dst = true) {S Dd W P : BitVec 32}
     {K : KState} {rc : Lane} (s : State) (E : Env s.wr S Dd W P) (hS : s.gpr src = S)
     (hd : s.gpr dst = Dd) (hW : s.gpr .edi = W) (hP : s.gpr .ebp = P) (hK : Lanes32 s.mem S K)
     (hrc : rd64 s.mem P 0 = rc) :
-    WP isa (.block (round src dst)) s fun s' =>
+    WP isa (.block (round p src dst)) s fun s' =>
       Lanes32 s'.mem Dd (outState K rc) ∧ Frame [reg32 Dd 200, workR W] s.mem s'.mem ∧
       s'.gpr .ebp = P + 8 ∧ (∀ r, r ∉ [Reg.eax, .edx, .ecx, .ebp] → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
+  unfold Run.check at hck
+  split at hck <;> [skip; cases hck]
+  rename_i σ hrun
   unfold round
   rw [WP.block_append_iff]
-  refine WP.mono (columns_ok hsrc s E hS hW hK) fun s₁ c₁ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (dcols_ok s₁ (c₁.wr ▸ E) (by rw [c₁.gpr _ (by decide), hW]) c₁.cs) fun s₂ d₂ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (planes_ok hsrc hdst s E hS hd hW hP hK hrc s₂ ⟨fun r hr => ?_,
-    by rw [d₂.rd, c₁.rd], by rw [d₂.wr, c₁.wr], (c₁.frame.trans d₂.frame).mono (by simp), d₂.ds,
-    fun j hj => absurd hj (by omega_arith)⟩) fun s₃ p₃ => ?_
-  · have a : r ≠ .eax := by rintro rfl; simp at hr
-    rw [d₂.gpr r hr, c₁.gpr r (nm1 a)]
-  refine wp_addi fun s₄ u₄ => WP.block_nil ⟨fun i hi => ?_, by rw [u₄.mem]; exact p₃.frame,
-    by rw [u₄.gpr, p₃.gpr _ (by decide), hP], fun r hr => ?_, by rw [u₄.rd, p₃.rd],
-    by rw [u₄.wr, p₃.wr]⟩
-  · rw [u₄.mem, p₃.lanes i (by omega_arith)]
+  refine WP.mono (Run.run_ok E hS hd hW hP hK hrc _ hrun Run.Rel.init) fun s₁ h₁ => ?_
+  refine wp_addi fun s₂ u₂ => WP.block_nil ⟨fun i hi => ?_, by rw [u₂.mem]; exact h₁.frame,
+    by rw [u₂.gpr, h₁.gpr, hP], fun r hr => ?_, by rw [u₂.rd, h₁.rd], by rw [u₂.wr, h₁.wr]⟩
+  · have fD := E.fitD
+    obtain ho := of_decide_eq_true (List.all_eq_true.mp hck i (List.mem_range.mpr hi))
+    obtain ⟨_, hv⟩ := h₁.mem _ _ ho
+    rw [Run.cad_lane (Run.isLane_iff.mpr ⟨by omega_using [hi], by omega_using []⟩)] at hv
+    rw [u₂.mem, rd64_eq_readW _ (by omega_using [fD, hi]), hv,
+      Run.refOut_eval K rc _ (Nat.mod_lt _ (by decide)) (by omega_using [hi])]
     simp [outState, hi]
-  · have ⟨a, b, c, e⟩ : r ≠ .eax ∧ r ≠ .edx ∧ r ≠ .ecx ∧ r ≠ .ebp := by simpa using hr
-    rw [u₄.other r e, p₃.gpr r (nm3 a b c)]
+  · have e : r ≠ .ebp := by rintro rfl; simp at hr
+    rw [u₂.other r e, h₁.gpr]
 
 end VG.Proof.Sha3.X86
 
@@ -1088,6 +945,12 @@ theorem accC : Acc s₀.wr (scp s₀) 512 :=
 
 theorem accC200 : Acc s₀.wr (scp s₀) 200 := fun o ho => h.accC o (by omega_arith)
 
+theorem accS8 : Acc8 s₀.wr (stp s₀) 200 := Acc8.of_mem (by rw [h.wr]; simp) h.fitS
+
+theorem accC8 : Acc8 s₀.wr (scp s₀) 512 := Acc8.of_mem (by rw [h.wr]; simp) h.fitC
+
+theorem accC2008 : Acc8 s₀.wr (scp s₀) 200 := fun o ho => h.accC8 o (by omega_arith)
+
 /-- A part of the scratch space beyond the second state, and the state being written. -/
 theorem sc_dst {Dd : BitVec 32} (hD : Dd = stp s₀ ∨ Dd = scp s₀) {d n : Nat} (hd₀ : 200 ≤ d)
     (hd : d + n ≤ 512) (hn : 0 < n) : Region.Disjoint ⟨addr (scp s₀) d, n⟩ (reg32 Dd 200) := by
@@ -1120,17 +983,17 @@ theorem env_of {S Dd : BitVec 32} (hS : S = stp s₀ ∨ S = scp s₀) (hD : Dd 
   obtain hP : (rcp s₀ r).toNat = (scp s₀).toNat + (200 + 8 * r) := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 200 + 8 * r) (by omega_arith),
       Nat.mod_eq_of_lt (by omega_arith)]
-  refine ⟨?_, ?_, fC, by omega_arith, ?_, ?_, h.accC, fun o ho => ?_, hSD, h.state_work hS,
+  refine ⟨?_, ?_, fC, by omega_arith, ?_, ?_, h.accC8, fun o ho => ?_, hSD, h.state_work hS,
     h.state_work hD, ?_, ?_⟩
   · rcases hS with rfl | rfl <;> omega_arith
   · rcases hD with rfl | rfl <;> omega_arith
   · rcases hS with rfl | rfl
-    · exact h.accS
-    · exact h.accC200
+    · exact h.accS8
+    · exact h.accC2008
   · rcases hD with rfl | rfl
-    · exact h.accS
-    · exact h.accC200
-  · rw [addr_add]; exact h.accC _ (by omega_arith)
+    · exact h.accS8
+    · exact h.accC2008
+  · rw [addr_add]; exact h.accC8 _ (by omega_arith)
   · show Region.Disjoint ⟨addr (scp s₀) (200 + 8 * r), 8⟩ _
     exact h.sc_dst hD (by omega_arith) (by omega_arith) (by omega_arith)
   · show Region.Disjoint ⟨addr (scp s₀) (200 + 8 * r), 8⟩ _
@@ -1208,12 +1071,12 @@ structure LInv (s₀ : State) (r : Nat) (s : State) : Prop where
   saved : Saved s₀ s.mem
   frame : Frame [stR s₀, scR s₀] s₀.mem s.mem
 
-theorem round_step {s₀ : State} (hp : Pre s₀) {r : Nat} (hr : r < 24) {src dst : Reg} (hsrc : Ptr src)
-    (hdst : Ptr dst) {s : State} (hL : LInv s₀ r s) (h0 : s.gpr src = cur s₀ r)
-    (hd : s.gpr dst = oth s₀ r) : WP isa (.block (round src dst)) s (LInv s₀ (r + 1)) := by
+theorem round_step {s₀ : State} (hp : Pre s₀) {r : Nat} (hr : r < 24) {p : List XReg} {src dst : Reg}
+    (hck : Run.check p src dst = true) {s : State} (hL : LInv s₀ r s) (h0 : s.gpr src = cur s₀ r)
+    (hd : s.gpr dst = oth s₀ r) : WP isa (.block (round p src dst)) s (LInv s₀ (r + 1)) := by
   obtain hD : oth s₀ r = stp s₀ ∨ oth s₀ r = scp s₀ := (cur_cases s₀ r).symm.imp (·.2) (·.2)
   obtain E : Env s.wr (cur s₀ r) (oth s₀ r) (scp s₀) (rcp s₀ r) := hL.wr ▸ hp.env hr
-  refine WP.mono (round_ok hsrc hdst (rc := RC r) s E h0 hd hL.edi hL.ebp hL.state
+  refine WP.mono (round_ok hck (rc := RC r) s E h0 hd hL.edi hL.ebp hL.state
     (by rw [rd64_rcp]; exact hL.aux r hr)) fun s' ⟨hl, hf, hbp, hq, hrd, hwr⟩ => ?_
   obtain g : ∀ q ∈ [Reg.esi, .edi], s'.gpr q = s.gpr q := fun q hq' => hq q (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq'
@@ -1234,18 +1097,25 @@ theorem round_step {s₀ : State} (hp : Pre s₀) {r : Nat} (hr : r < 24) {src d
       · exact ⟨scR s₀, by simp, Region.sub_prefix (by omega_arith)⟩
     · exact ⟨scR s₀, by simp, sub32 hp.fitC (by omega_arith) (by omega_arith)⟩
 
+/-- The first round of an iteration, with its plan, runs to the round's
+output: the kernel evaluates it. -/
+theorem planA_ok : Run.check planA .esi .edi = true := by lit_decide
+
+/-- The second round, with its plan. -/
+theorem planB_ok : Run.check planB .edi .esi = true := by lit_decide
+
 theorem body_ok {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 12) {s : State} (hL : LInv s₀ (2 * t) s) :
     WP isa (.block body) s fun s' =>
       (eval .ne s' = some false ∧ LInv s₀ 24 s') ∨
       (eval .ne s' = some true ∧ t + 1 < 12 ∧ LInv s₀ (2 * (t + 1)) s') := by
   unfold body
   rw [WP.block_append_iff]
-  refine WP.mono (round_step hp (r := 2 * t) (by omega_arith) (src := .esi) (dst := .edi) (.inl rfl)
-    (.inr rfl) hL (by rw [hL.esi, (cur_even s₀ t).1]) (by rw [hL.edi, (cur_even s₀ t).2]))
+  refine WP.mono (round_step hp (r := 2 * t) (by omega_arith) planA_ok (src := .esi) (dst := .edi) hL
+    (by rw [hL.esi, (cur_even s₀ t).1]) (by rw [hL.edi, (cur_even s₀ t).2]))
     fun s₁ h₁ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (round_step hp (r := 2 * t + 1) (by omega_arith) (src := .edi) (dst := .esi) (.inr rfl)
-    (.inl rfl) h₁ (by rw [h₁.edi, (cur_odd s₀ t).1]) (by rw [h₁.esi, (cur_odd s₀ t).2]))
+  refine WP.mono (round_step hp (r := 2 * t + 1) (by omega_arith) planB_ok (src := .edi) (dst := .esi) h₁
+    (by rw [h₁.edi, (cur_odd s₀ t).1]) (by rw [h₁.esi, (cur_odd s₀ t).2]))
     fun s₂ h₂ => ?_
   obtain h₂' : LInv s₀ (2 * (t + 1)) s₂ := by rw [show 2 * (t + 1) = 2 * t + 1 + 1 by omega_arith]; exact h₂
   refine wp_mov fun s₃ u₃ => wp_sub fun s₄ u₄ _ => wp_cmpi fun s₅ u₅ _ hz => WP.block_nil ?_
@@ -1518,7 +1388,7 @@ theorem sat_pre : Proof.Sha3.permuteX86.pre satState := by
 
 theorem permute_verified : Verified X86.target permute Proof.Sha3.permuteX86 :=
   ⟨fun s hs => correct (pre_of s hs),
-    VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub)
+    VG.Taint.constantTime (A := VG.X86.sseTaint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub)
       (by taint_decide_weak dropRC),
     ⟨satState, sat_pre⟩⟩
 
