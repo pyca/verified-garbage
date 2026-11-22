@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
 /-! ### `Sha3.X86.Stream.Squeeze`, which the modules that import this one used -/
 
@@ -701,7 +703,7 @@ theorem sat_pre : Proof.Sha3.squeezeX86.pre sat := by
 
 theorem squeeze_verified : Verified X86.target squeeze Proof.Sha3.squeezeX86 := by
   refine ⟨fun s hs => correct (pre_of hs), ?_, ⟨sat, sat_pre⟩⟩
-  exact VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide_weak VG.Proof.Sha3.X86.dropRC)
+  exact VG.Taint.constantTime (A := VG.X86.sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide_weak VG.Proof.Sha3.X86.dropRC)
 
 end VG.Proof.Sha3.X86.Stream.Squeeze
 
@@ -1131,7 +1133,7 @@ theorem sat_pre : Proof.Sha3.padX86.pre sat := by
 
 theorem pad_verified : Verified X86.target pad Proof.Sha3.padX86 := by
   refine ⟨fun s hs => correct (pre_of hs), ?_, ⟨sat, sat_pre⟩⟩
-  exact VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide_weak VG.Proof.Sha3.X86.dropRC)
+  exact VG.Taint.constantTime (A := VG.X86.sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide_weak VG.Proof.Sha3.X86.dropRC)
 
 end VG.Proof.Sha3.X86.Stream.Pad
 
@@ -1850,6 +1852,6 @@ theorem sat_pre : Proof.Sha3.absorbX86.pre sat := by
 
 theorem absorb_verified : Verified X86.target absorb Proof.Sha3.absorbX86 := by
   refine ⟨fun s hs => correct (pre_of hs), ?_, ⟨sat, sat_pre⟩⟩
-  exact VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide_weak VG.Proof.Sha3.X86.dropRC)
+  exact VG.Taint.constantTime (A := VG.X86.sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide_weak VG.Proof.Sha3.X86.dropRC)
 
 end VG.Proof.Sha3.X86.Stream.Absorb
