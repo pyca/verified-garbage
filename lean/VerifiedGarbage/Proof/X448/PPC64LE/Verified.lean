@@ -50,15 +50,6 @@ theorem x448_ct {Pre : State → Prop} {Pub : State → State → Prop}
       obtain ⟨hsp, hr⟩ := hpub s₁ s₂ h₁ h₂ hp
       exact ⟨hsp, fun r h => hr r (by simpa using h)⟩) (by taint_decide)
 
-theorem x448Base_ct {Pre : State → Prop} {Pub : State → State → Prop}
-    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ →
-      s₁.sp = s₂.sp ∧ ∀ r ∈ [Reg.r3, .r4, .r5], s₁.gpr r = s₂.gpr r) :
-    ConstantTime isa Pre Pub Impl.X448.PPC64LE.x448Base :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5])
-    (fun s₁ s₂ h₁ h₂ hp => by
-      obtain ⟨hsp, hr⟩ := hpub s₁ s₂ h₁ h₂ hp
-      exact ⟨hsp, fun r h => hr r (by simpa using h)⟩) (by taint_decide)
-
 end VG.Proof.X448.PPC64LE
 
 end
@@ -326,18 +317,6 @@ def x448PPC64LE : Contract PPC64LE.isa where
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
 
-/-- `vg_x448_base(out = r3, scalar = r4, scratch = r5)`. -/
-def x448BasePPC64LE : Contract PPC64LE.isa where
-  pre s :=
-    let out : Region := ⟨s.gpr .r3, 56⟩
-    let sc : Region := ⟨s.gpr .r4, 56⟩
-    let ws : Region := ⟨s.gpr .r5, 8192⟩
-    s.rd = [sc] ∧ s.wr = [out, ws] ∧ out.Disjoint sc ∧ out.Disjoint ws ∧ sc.Disjoint ws
-  post s s' := bytesAt s'.mem (s.gpr .r3) 56 =
-    VG.Spec.X448.x448 (bytesAt s.mem (s.gpr .r4) 56) VG.Spec.X448.basePoint
-  pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
-    s₁.sp = s₂.sp
-
 theorem XPre.of {s : State} (h : x448PPC64LE.pre s) : XPre s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
@@ -485,34 +464,6 @@ theorem x448_correct {s : State} (hp : XPre s) :
     WP.mono (afterSetup_correct (by rw [hp.rd]; simp) (by rw [hp.wr]; simp) hp.sc_ws hp.out_ws hc1 hf1 hS1 hr1)
       fun s' ⟨h1, h2⟩ => ⟨h1, fun i hi => by rw [h2 i hi, hr1.gpr _ (by revert i; decide)]⟩)
 
-/-- `vg_x448_base`'s precondition, by field. -/
-structure BPre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .r4, 56⟩]
-  wr : s.wr = [⟨s.gpr .r3, 56⟩, ⟨s.gpr .r5, 8192⟩]
-  out_sc : Region.Disjoint ⟨s.gpr .r3, 56⟩ ⟨s.gpr .r4, 56⟩
-  out_ws : Region.Disjoint ⟨s.gpr .r3, 56⟩ ⟨s.gpr .r5, 8192⟩
-  sc_ws : Region.Disjoint ⟨s.gpr .r4, 56⟩ ⟨s.gpr .r5, 8192⟩
-
-theorem BPre.of {s : State} (h : x448BasePPC64LE.pre s) : BPre s := by
-  obtain ⟨h1, h2, h3, h4, h5⟩ := h
-  exact ⟨h1, h2, h3, h4, h5⟩
-
-theorem x448Base_correct {s : State} (hp : BPre s) :
-    WP isa x448Base s fun s' => x448BasePPC64LE.post s s' ∧ ∀ i < 17, s'.gpr (nvR i) = s.gpr (nvR i) := by
-  unfold x448Base
-  refine WP.seq ?_
-  rw [List.singleton_append]
-  refine wp_addi (imm := 0) (by decide) (by decide) fun s0 u0 => ?_
-  obtain e0 : s0.gpr .r6 = s.gpr .r5 := by rw [u0.gpr]; exact BitVec.add_zero _
-  obtain a3 : s0.gpr .r3 = s.gpr .r3 := u0.other _ (by decide)
-  obtain a4 : s0.gpr .r4 = s.gpr .r4 := u0.other _ (by decide)
-  refine WP.mono (setupBase_ok (by rw [e0, u0.wr, hp.wr]; simp)) fun s1 ⟨hc1, hf1, hS1, hr1⟩ => ?_
-  refine WP.mono (afterSetup_correct (s := s0) (by rw [a4, u0.rd, hp.rd]; simp) (by rw [a3, u0.wr, hp.wr]; simp)
-    (by rw [a4, e0]; exact hp.sc_ws) (by rw [a3, e0]; exact hp.out_ws) hc1 hf1 hS1 hr1) fun s' ⟨h, hnv⟩ =>
-      ⟨?_, fun i hi => by rw [hnv i hi, hr1.gpr _ (by revert i; decide), u0.other _ (by revert i; decide)]⟩
-  show bytesAt s'.mem (s.gpr .r3) 56 = _
-  rw [← a3, h, a4, u0.mem]
-
 end VG.Proof.X448.PPC64LE
 
 end
@@ -568,40 +519,5 @@ theorem x448_verified :
   Verified.of_correct x448_ok x448_ct' (by
     contract_implies [Proof.X448.x448Contract, Proof.X448.x448Sig, Proof.X448.PPC64LE.x448PPC64LE,
       PPC64LE.abi, PPC64LE.argRegs] [Proof.X448.PPC64LE.x448Sat] using Proof.X448.PPC64LE.x448Sat)
-
-theorem x448Base_ok (s : State) (hs : x448BasePPC64LE.pre s) :
-    ∃ t s', Exec isa Impl.X448.PPC64LE.x448Base s t s' ∧ abiPreserved s s' ∧
-      x448BasePPC64LE.post s s' := by
-  obtain ⟨t, s', he, h, hnv⟩ := x448Base_correct (BPre.of hs)
-  obtain hd : ∀ r ∈ [Reg.r2, .r14], ∀ i ∈ instrs Impl.X448.PPC64LE.x448Base, dstOf i ≠ some r :=
-    nv_of_avoids (by decide +kernel)
-  obtain hpre : ∀ r ∈ preserved, r ∈ [Reg.r2, .r14] ∨ ∃ i < 17, Impl.X448.PPC64LE.nvR i = r := by decide
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he,
-    Exec.lr he (by decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
-  rcases hpre r hr with h2 | ⟨i, hi, rfl⟩
-  · exact Exec.gpr (hd _ h2) he (.inl (by decide +kernel))
-  · exact hnv i hi
-
-theorem x448Base_ct' : ConstantTime isa x448BasePPC64LE.pre x448BasePPC64LE.pub
-    Impl.X448.PPC64LE.x448Base :=
-  x448Base_ct fun _ _ _ _ ⟨h3, h4, h5, hsp⟩ => ⟨hsp, fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> with_reducible assumption⟩
-
-/-- A state satisfying `vg_x448_base`'s precondition. -/
-def x448BaseSat : State where
-  gpr r := match r with
-    | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x4000 | _ => 0
-  lr := 0
-  sp := 0x10000
-  mem _ := 0
-  rd := [⟨0x2000, 56⟩]
-  wr := [⟨0x1000, 56⟩, ⟨0x4000, 8192⟩]
-
-theorem x448Base_verified :
-    Verified PPC64LE.target Impl.X448.PPC64LE.x448Base (Spec.X448.x448BaseContract PPC64LE.abi) :=
-  Verified.of_correct x448Base_ok x448Base_ct' (by
-    contract_implies [Spec.X448.x448BaseContract, Spec.X448.x448BaseSig, Proof.X448.PPC64LE.x448BasePPC64LE,
-      PPC64LE.abi, PPC64LE.argRegs] [Proof.X448.PPC64LE.x448BaseSat] using Proof.X448.PPC64LE.x448BaseSat)
 
 end VG.Proof.X448.PPC64LE

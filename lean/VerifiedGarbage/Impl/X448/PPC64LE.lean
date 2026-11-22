@@ -408,15 +408,6 @@ def consts : List Instr :=
 /-- The u-coordinate into `X1` and `X3`, and the constants. -/
 def setup : List Instr := (List.range 14).flatMap decodeStep ++ consts
 
-/-- The base point's u-coordinate, 5, into `X1` and `X3`. -/
-def five : List Instr :=
-  [.li .r7 5, .li .r8 0, .store .w .r7 .r6 X1, .store .w .r7 .r6 X3] ++ storeN .r8 (X1 + 4) 13 ++
-    storeN .r8 (X3 + 4) 13
-
-/-- `setup` for the base point: its u-coordinate, 5, into `X1` and `X3`, and
-the constants. -/
-def setupBase : List Instr := five ++ consts
-
 /-- The bits of the byte at `r4` into `BITS` at `r9`, advancing both. -/
 def bitsBody : List Instr :=
   [.lbz .r7 .r4 0] ++
@@ -438,9 +429,26 @@ def afterSetup : Prog isa :=
 
 def x448 : Prog isa := .seq (.block setup) afterSetup
 
-/-- `vg_x448_base(out = r3, scalar = r4, scratch = r5)`: the working space into
-`r6`, as `vg_x448` has it, and `vg_x448` with the base point's u-coordinate, 5,
-written instead of read (`setupBase`). -/
-def x448Base : Prog isa := .seq (.block ([.addi .r6 .r5 0] ++ setupBase)) afterSetup
+/-! ## `vg_x448_base`
+
+`vg_x448_base(out = r3, scalar = r4, scratch = r5)` calls `vg_x448` with
+the base point's u-coordinate, 5, as its point. A frame of 96 bytes holds,
+in its 64 bytes of local variables (at `r1 + 32`, which `r12` points to
+before each access, since the call may change `r12`), the link register and
+then the point's 56 bytes (`5` and six zero doublewords). -/
+
+/-- The link register saved, the point written, and `vg_x448`'s arguments:
+`point` (`r5`) the frame's copy, `scratch` (`r6`) the caller's. -/
+def baseEnter : List Instr :=
+  [.mflr .r0, .addSp .r12 32, .store .d .r0 .r12 0, .li .r7 5, .store .d .r7 .r12 8, .li .r7 0,
+    .store .d .r7 .r12 16, .store .d .r7 .r12 24, .store .d .r7 .r12 32, .store .d .r7 .r12 40,
+    .store .d .r7 .r12 48, .store .d .r7 .r12 56, .addi .r6 .r5 0, .addi .r5 .r12 8]
+
+/-- The link register restored. -/
+def baseLeave : List Instr := [.addSp .r12 32, .load .d .r0 .r12 0, .mtlr .r0]
+
+/-- `vg_x448_base`: `vg_x448` of the scalar and the base point. -/
+def x448Base : Prog isa :=
+  .frame (.alloc 96) (.seq (.block baseEnter) (.seq (.call "vg_x448" x448) (.block baseLeave))) (.free 96)
 
 end VG.Impl.X448.PPC64LE
