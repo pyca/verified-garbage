@@ -1,5 +1,5 @@
 diff --git a/rustls-bench/Cargo.toml b/rustls-bench/Cargo.toml
-index f21627e3..2f9876d6 100644
+index f21627e3..22d9ca97 100644
 --- a/rustls-bench/Cargo.toml
 +++ b/rustls-bench/Cargo.toml
 @@ -9,6 +9,7 @@ clap = { workspace = true }
@@ -28,10 +28,10 @@ index f21627e3..2f9876d6 100644
 +required-features = ["aws-lc-rs", "verified-garbage"]
 diff --git a/rustls-bench/src/bin/provider_primitives.rs b/rustls-bench/src/bin/provider_primitives.rs
 new file mode 100644
-index 00000000..1e42f72c
+index 00000000..0801978d
 --- /dev/null
 +++ b/rustls-bench/src/bin/provider_primitives.rs
-@@ -0,0 +1,288 @@
+@@ -0,0 +1,294 @@
 +//! Times each provider's primitives as a handshake uses them, through the
 +//! rustls traits: key exchange, signing, signature verification, the record
 +//! layer, the key schedule and tickets.
@@ -228,7 +228,9 @@ index 00000000..1e42f72c
 +                let mut enc = s.aead_alg.encrypter(key(), iv.clone());
 +                let mut dec = s.aead_alg.decrypter(key(), iv);
 +                let plain = vec![0x41u8; len];
-+                let mut out = vec![0u8; enc.encrypted_payload_len(len)];
++                // Each record is appended to `out`, emptied first, as rustls
++                // reuses its output buffer.
++                let mut out = Vec::with_capacity(5 + enc.encrypted_payload_len(len));
 +                // aws-lc-rs' TLS sealing keys want the sequence numbers in
 +                // order, from 0.
 +                let mut seq = 0u64;
@@ -238,6 +240,7 @@ index 00000000..1e42f72c
 +                        EncodableVersion::Legacy(ProtocolVersion::TLSv1_2),
 +                        OutboundPlain::from(&plain[..]),
 +                    );
++                    out.clear();
 +                    black_box(enc.encrypt(r, seq, &mut out).unwrap());
 +                    seq += 1;
 +                }));
@@ -248,7 +251,10 @@ index 00000000..1e42f72c
 +                        EncodableVersion::Legacy(ProtocolVersion::TLSv1_2),
 +                        OutboundPlain::from(&plain[..]),
 +                    );
-+                    enc2.encrypt(r, 0, &mut out).unwrap().payload.to_vec()
++                    let mut record = Vec::new();
++                    enc2.encrypt(r, 0, &mut record).unwrap();
++                    // The payload, after the record's 5-byte header.
++                    record[5..].to_vec()
 +                };
 +                let mut buf = ct.clone();
 +                open.push(time(|| {
@@ -321,7 +327,7 @@ index 00000000..1e42f72c
 +    report("ticket decrypt 200 B", &dec);
 +}
 diff --git a/rustls-bench/src/main.rs b/rustls-bench/src/main.rs
-index 0a3df37b..41298d9e 100644
+index 6d8d64f4..61f6733c 100644
 --- a/rustls-bench/src/main.rs
 +++ b/rustls-bench/src/main.rs
 @@ -881,6 +881,8 @@ enum Provider {
