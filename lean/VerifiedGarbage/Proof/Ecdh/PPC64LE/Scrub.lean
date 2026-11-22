@@ -101,12 +101,13 @@ theorem p224Exchange_scrubbed (hL : Law Spec.P224.curve) :
 returns without secret residue. -/
 theorem p256Exchange_scrubbed (hL : Law Spec.P256.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.p256Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p256))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.P256.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeP256
       verified := Proof.Ecdh.PPC64LE.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p256))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.P384.exchangeApi`'s function as emitted
