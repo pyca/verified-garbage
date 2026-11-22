@@ -24,6 +24,7 @@ def brainpoolp384r1 : Cfg where
   fastN := true
   windows := false
   mul := some Impl.Weierstrass.Mul.brainpoolp384r1
+  mulAdd := true
   inverse := some Impl.Weierstrass.Inverse.brainpoolp384r1
   checkPoint := some Impl.Weierstrass.CheckPoint.brainpoolp384r1
 

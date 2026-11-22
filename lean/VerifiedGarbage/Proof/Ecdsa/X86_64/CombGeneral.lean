@@ -95,21 +95,6 @@ theorem TEntryPost.setNeg {K : TCombCfg} {C : Curve} {base : Addr} {size k i : N
   · rw [ht _ (by simp), ht _ (by simp), ht _ (by simp)]; exact E.rep
   · rw [ht _ (by simp)]; exact E.z
 
-/-- Field operations call nothing where the products are not calls
-(`Mont.callOf M = none`): so a call of them, such as the complete addition's
-function (`vg_<curve>_add_complete`), runs as they do inlined. -/
-theorem fprogB_noCalls {M : Mod} (h : Mont.callOf M = none) (ops : List FOp) :
-    (fprogB M ops).noCalls = true := by
-  obtain hop : ∀ op, (opProg M op).noCalls = true := fun op => by
-    cases op <;> simp [opProg, opCall?, h, Code.noCalls]
-  unfold fprogB
-  induction ops with
-  | nil => rfl
-  | cons a l ih =>
-    cases l with
-    | nil => exact hop a
-    | cons b l => simp only [List.map_cons, progs, Code.noCalls, Bool.and_eq_true] at ih ⊢; exact ⟨hop a, ih⟩
-
 theorem generalStep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hC : Law C)
     (b3 : Nat) (hb : b3 < C.p) (hbm : toM C.p (2 ^ (64 * K.M.n)) b3 = Fin.ofNat C.p (3 * C.b))
@@ -135,7 +120,7 @@ theorem generalStep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {
   refine WP.of_syms ?_
   unfold TCombCfg.generalStep
   simp only [Code.inline]
-  rw [← Code.inline_of_noCalls (fprogB_noCalls hnc (rcb K.generalS K.A K.E K.D))]
+  rw [← Code.inline_of_noCalls (VG.Proof.Ecdsa.X86_64.fprogB_noCalls hnc (rcb K.generalS K.A K.E K.D))]
   refine WP.seq ?_
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono_syms (decRbx_ok s hj (by omega_using [hjn, hJ]) hI.rbx) fun s₁ ⟨b₁, k₁⟩ sy₁ => ?_

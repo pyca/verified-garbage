@@ -158,7 +158,7 @@ theorem verify_inlineOk : verifyP192.InlineOk = true :=
 
 theorem verify_x86 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyP192.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL p192_tbls (pre_of hs) p192_mulBase.2
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL p192_tbls (pre_of hs) fun h => ⟨(p192_mulBase.2 h).1, (p192_mulBase.2 h).2.1 rfl⟩
   obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := verifyP192)
     (Code.rspMxcsr_of_erase (show verifyP192Erased.allInstrs _ = true by lit_decide))
   have F := (Exec.regions he (Code.noCalls_inline verify_inlineOk)).2.2

@@ -193,6 +193,11 @@ structure Cfg where
   the window method (`Impl.Ecdh.X86_64.Cfg.maskK`); a `d` it changes is out
   of range, and its result is discarded. -/
   nbits : Nat := 8 * C.len
+  /-- For a curve with `vg_<curve>_mul` (`mul`), whether its ladder's
+  additions are calls of `vg_<curve>_add_complete` (`addCompleteFn`), the
+  complete addition its comb and windows call, and its callers run it inline
+  (`mulRun`) rather than calling it, so that it calls only that function. -/
+  mulAdd : Bool := false
 
 /-- The bits of `e < 2^k`: the least `j ≤ k` with `e < 2^j`. -/
 def bitLen (e : Nat) : Nat → Nat
@@ -537,6 +542,52 @@ def mulBody : Prog isa :=
 copying the callee-saved registers to `xmm0`–`xmm5` and back (`invFnX`). -/
 def mulFn : Prog isa := Cfg.invFnX c.mulBody
 
+/-- The name of the complete addition's function, `vg_<curve>_add_complete`:
+`D = R + T` by `rcb` with `a R mod p` at `AP` and `3 b R mod p` at `PT`
+(`rcbSlots` but for `b3`), which the comb, the windows (`Cfg.gMulG`,
+`Cfg.mulVA`) and the ladder of `mulAdd` (`ladderBodyA`) call. -/
+def addCompleteFn : String :=
+  match c.mul with
+  | some C => s!"vg_{C.curve}_add_complete"
+  | none => "vg_add_complete"
+
+/-- The complete addition's code: `D = R + T`, `3 b R mod p` at `PT`. -/
+def addComplete : Prog isa := fprogB c.MP' (rcb { c.rcbSlots with b3 := c.sl PT } (c.pt RX RY RZ) (c.pt TX TY TZ) (c.pt DX DY DZ))
+
+/-- The ladder of `mulAdd`: `mulLadder`, but `3 b R mod p` at `PT` (where
+`addComplete` reads it) and so `G`'s `y` at `EM`. -/
+def mulLadderA : LadderCfg := { c.ladderCfg with S := { c.rcbSlots with b3 := c.sl PT }, G := c.pt ACC EM ONEP }
+
+/-- An iteration of `mulLadderA`, for the bit `t = rbx - 1`: `T = R` and
+`D = R + T` (a call of `addComplete`), then `R = D`, `T = G` and `D = R + T`
+(another), and `R = D` if bit `t` is set (else it stays the double). -/
+def ladderBodyA : Prog isa :=
+  let L := c.mulLadderA
+  .seq (.block ([.alu .sub .rbx (.imm 1)] ++ copyPt L.M.n L.T L.R)) <|
+  .seq (.call c.addCompleteFn c.addComplete) <|
+  .seq (.block (copyPt L.M.n L.R L.D ++ copyPt L.M.n L.T L.G)) <|
+  .seq (.call c.addCompleteFn c.addComplete) <|
+  .block (bitMask L.bits ++ selPt L.M.n L.R L.R L.D ++ [.alu .test .rbx (.reg .rbx)])
+
+/-- `vg_<curve>_mul`'s body for `mulAdd`: as `mulBody`, but `Q`'s `y` to `EM`,
+`3 b R mod p` to `PT`, and the ladder by `ladderBodyA`. -/
+def mulBodyA : Prog isa :=
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl EM) (c.sl RY) ++
+    copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO) ++
+    setConst c.n (c.sl PT) (c.mont (3 * c.C.b)) ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (64 * c.n)))]))
+    (.loop c.ladderBodyA .ne)
+
+/-- `mulBodyA` between copying the callee-saved registers to `xmm0`–`xmm5`
+and back, as `mulFn`. -/
+def mulFnA : Prog isa := Cfg.invFnX c.mulBodyA
+
+/-- `R = [k]Q` for `k` at `K` and `Q` in `R`'s first two slots, as the callers
+of `vg_<curve>_mul` run it: a call of it, or, for `mulAdd`, its code
+(`mulFnA`) inline. -/
+def mulRun (C : Impl.Weierstrass.Mul.Curve) : Prog isa :=
+  if c.mulAdd then c.mulFnA else .call s!"vg_{C.curve}_mul" c.mulFn
+
 /-- The signature and the public key call a function that makes the table of
 `k`'s bits: `vg_<curve>_mul_base` or `vg_<curve>_mul`. -/
 def callsMul : Bool := c.mulBase.isSome || c.mul.isSome
@@ -557,7 +608,7 @@ def gMulKC : Prog isa :=
   match c.mulBase, c.mul with
   | some C, _ => .call (s!"vg_{C.curve}_mul_base" ++ if c.adx then "_adx" else "") c.mulBaseFn
   | none, some C => .seq (.block (copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY)))
-      (.call s!"vg_{C.curve}_mul" c.mulFn)
+      (c.mulRun C)
   | none, none => c.gMulK
 
 /-- `vg_ecdsa_<curve>_sign`. -/

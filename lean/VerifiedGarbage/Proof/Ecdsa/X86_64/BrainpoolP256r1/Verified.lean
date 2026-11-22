@@ -160,7 +160,7 @@ theorem brainpoolp256r1_tbls : CombTbls brainpoolp256r1 := fun _ h => by cases h
 /-- ECDH's, verification's and the public key's `[k]G` is a call of
 `vg_brainpoolp256r1_mul`, which calls no other function. -/
 theorem brainpoolp256r1_mulBase : MulBaseOk brainpoolp256r1 :=
-  ⟨fun h => absurd h (by decide), fun _ => ⟨.inl rfl, by lit_decide⟩⟩
+  ⟨fun h => absurd h (by decide), fun _ => ⟨.inl rfl, fun h => absurd h (by decide), fun _ => rfl⟩⟩
 
 theorem brainpoolp256r1S_sh : brainpoolp256r1S.sh = 0 := brainpoolp256r1_sh
 

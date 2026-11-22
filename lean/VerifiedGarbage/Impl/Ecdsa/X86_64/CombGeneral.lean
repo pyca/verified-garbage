@@ -12,11 +12,9 @@ ones for any `a` (`TCombCfg.generalComb`), for a curve whose `a` is not `-3`
 
 * `combCfgG d`: `Cfg.combCfg d`, but with `a R mod p` (`AP`, a constant of the
   setup) in its addition's `a`; `b R mod p` stays in `EM`.
-* `addCompleteFn`: `vg_<curve>_add_complete`, the function of the complete
-  addition `D = R + T` (`rcb`, with `a R mod p` at `AP` and `3 b R mod p`
-  at `PT`), which the comb and verification's window method call.
 * `gMulG d`: `b R mod p` to `EM`, as `Cfg.gMul` does before its comb, then the
-  comb, with `3 b R mod p` for each addition.
+  comb, with `3 b R mod p` for each addition, calls of
+  `vg_<curve>_add_complete` (`Cfg.addCompleteFn`).
 * `signG d`: `Cfg.sign` with the table of `k`'s bits made inline and `[k]G`
   by `gMulG d`.
 
@@ -36,12 +34,6 @@ variable (c : Cfg)
 `a R mod p`. -/
 def combCfgG (d : CombData) : TCombCfg :=
   { c.combCfg d with S := { c.rcbSlots with b3 := c.sl EM } }
-
-/-- The name of the complete addition's function, `vg_<curve>_add_complete`. -/
-def addCompleteFn : String :=
-  match c.mul with
-  | some C => s!"vg_{C.curve}_add_complete"
-  | none => "vg_add_complete"
 
 /-- `R = [k]G`, from the table of `k`'s bits, by the comb of `combCfgG d`. -/
 def gMulG (d : CombData) : Prog isa :=

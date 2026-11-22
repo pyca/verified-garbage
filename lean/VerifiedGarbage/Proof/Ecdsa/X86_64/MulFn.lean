@@ -2,6 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
@@ -528,14 +531,22 @@ theorem mulBaseFn_ok (hc : BaseCfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (hT : Co
 
 /-! ## `R = [k]G` in the signature and the public key: `gMulKC` -/
 
+/-- What `mulRun` needs of a curve: four, five, six or eight words, and, as
+it runs, `vg_<curve>_mul` calling nothing, or `mulAdd`'s additions' products
+written out. -/
+def MulFnOk (c : Cfg) : Prop :=
+  (c.n = 4 ∨ c.n = 6 ∨ c.n = 8 ∨ c.n = 5) ∧ (c.mulAdd = false → c.mulFn.noCalls = true) ∧
+    (c.mulAdd = true → Mont.callOf c.MP' = none)
+
 /-- What a call of `vg_<curve>_mul_base` or `vg_<curve>_mul` needs of the
 curve: for the first, a comb and at least three words (so that its slots
 hold the six callee-saved registers); for the second, four words (which it
 keeps the six registers in `xmm` registers for, as the inversions); and
-products written out (the functions call no other). -/
+products written out (the functions call no other, but `mulAdd`'s ladder,
+inline, its additions, whose products are written out: `MulFnOk`). -/
 def MulBaseOk (c : Cfg) : Prop :=
   (c.mulBase.isSome = true → ∃ d, c.comb = some d ∧ 3 ≤ c.n ∧ c.mulBaseFn.noCalls = true) ∧
-    (c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8 ∨ c.n = 5) ∧ c.mulFn.noCalls = true)
+    (c.mul.isSome = true → MulFnOk c)
 
 theorem apart_gWA {i : Nat} (hi : i < 45)
     (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM]) (ha : i ∉ [ACC, TT]) :
@@ -837,6 +848,686 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8 ∨ c.
       show toM _ _ _ = toM _ _ _; rw [m']
     rw [e, e, e]; exact R₂
 
+/-! ## The ladder of `mulAdd`, whose additions are calls
+
+`Cfg.ladderBodyA` runs the iteration of `ladderBody` with the additions as
+calls of `vg_<curve>_add_complete` (`Cfg.addComplete`, `D = R + T`): `T = R`
+and `D = R + T`, then `R = D`, `T = G` and `D = R + T`, and `R = D` if the
+bit is set. Its proof is `ladderBody_ok`'s, its steps on the field values in
+the slots (`Inv`): the copies' by `copyPointFields_ok`, the additions' by
+`rcb_ok`, and the selection's (`selPtSelf_ok`). -/
+
+/-- Field operations call nothing where the products are not calls
+(`Mont.callOf M = none`): so a call of them, such as the complete addition's
+function (`vg_<curve>_add_complete`), runs as they do inlined. -/
+theorem fprogB_noCalls {M : Mod} (h : Mont.callOf M = none) (ops : List FOp) :
+    (fprogB M ops).noCalls = true := by
+  obtain hop : ∀ op, (opProg M op).noCalls = true := fun op => by
+    cases op <;> simp [opProg, opCall?, h, Code.noCalls]
+  unfold fprogB
+  induction ops with
+  | nil => rfl
+  | cons a l ih =>
+    cases l with
+    | nil => exact hop a
+    | cons b l => simp only [List.map_cons, progs, Code.noCalls, Bool.and_eq_true] at ih ⊢; exact ⟨hop a, ih⟩
+
+/-- `[o] = [b]` by the mask `rcx` if it is all ones, else unchanged. -/
+theorem selPtSelf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (c : Bool)
+    (hc : s.gpr .rcx = (if c then BitVec.allOnes 64 else 0)) {n : Nat} {o b : Pt}
+    (hin : ∀ d ∈ [o.x, o.y, o.z, b.x, b.y, b.z], d + 8 * n ≤ size)
+    (hoo : (o.x + 8 * n ≤ o.y ∨ o.y + 8 * n ≤ o.x) ∧ (o.x + 8 * n ≤ o.z ∨ o.z + 8 * n ≤ o.x) ∧
+      (o.y + 8 * n ≤ o.z ∨ o.z + 8 * n ≤ o.y))
+    (hab : ∀ d ∈ [o.x, o.y, o.z], ∀ e ∈ [b.x, b.y, b.z], d + 8 * n ≤ e ∨ e + 8 * n ≤ d) :
+    WP isa (.block (selPt n o o b)) s fun s' =>
+      wordsVal s'.mem base o.x n = (if c then wordsVal s.mem base b.x n else wordsVal s.mem base o.x n) ∧
+      wordsVal s'.mem base o.y n = (if c then wordsVal s.mem base b.y n else wordsVal s.mem base o.y n) ∧
+      wordsVal s'.mem base o.z n = (if c then wordsVal s.mem base b.z n else wordsVal s.mem base o.z n) ∧
+      KeepRegs [.rax, .rdx] s s' ∧
+      ∀ x, (ofs base x < o.x ∨ o.x + 8 * n ≤ ofs base x) → (ofs base x < o.y ∨ o.y + 8 * n ≤ ofs base x) →
+        (ofs base x < o.z ∨ o.z + 8 * n ≤ ofs base x) → s'.mem x = s.mem x := by
+  have hn := hs.nowrap
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hin hab
+  obtain ⟨iox, ioy, ioz, ibx, iby, ibz⟩ := hin
+  obtain ⟨⟨xbx, xby, xbz⟩, ⟨ybx, yby, ybz⟩, ⟨zbx, zby, zbz⟩⟩ := hab
+  obtain ⟨xy, xz, yz⟩ := hoo
+  rw [selPt, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (sel_ok c n hs hc iox iox ibx (Or.inl (Nat.le_refl _)) (by omega_using [xbx]))
+    fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (sel_ok c n hs₁ (by rw [k₁.gpr _ (by decide), hc]) ioy ioy iby (Or.inl (Nat.le_refl _))
+    (by omega_using [yby])) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  refine WP.mono (sel_ok c n hs₂ (by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), hc]) ioz ioz ibz
+    (Or.inl (Nat.le_refl _)) (by omega_using [zbz])) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+  refine ⟨?_, ?_, ?_, (k₁.trans k₂).trans k₃, fun x h₁ h₂ h₃ => by rw [O₃ x h₃, O₂ x h₂, O₁ x h₁]⟩
+  · rw [O₃.wordsVal (d := o.x) (by omega_using [xz]) (by omega_using [iox, hn]),
+      O₂.wordsVal (d := o.x) (by omega_using [xy]) (by omega_using [iox, hn]), e₁]
+  · rw [O₃.wordsVal (d := o.y) (by omega_using [yz]) (by omega_using [ioy, hn]), e₂,
+      O₁.wordsVal (d := o.y) (by omega_using [xy]) (by omega_using [ioy, hn]),
+      O₁.wordsVal (d := b.y) (by omega_using [xby]) (by omega_using [iby, hn])]
+  · rw [e₃, O₂.wordsVal (d := o.z) (by omega_using [yz]) (by omega_using [ioz, hn]),
+      O₂.wordsVal (d := b.z) (by omega_using [ybz]) (by omega_using [ibz, hn]),
+      O₁.wordsVal (d := o.z) (by omega_using [xz]) (by omega_using [ioz, hn]),
+      O₁.wordsVal (d := b.z) (by omega_using [xbz]) (by omega_using [ibz, hn])]
+
+theorem ladLayMA (hc : BaseCfgOk c) : LadLay c.mulLadderA size := by
+  have hn := hc.n0
+  have h7 := hc.n10
+  refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
+      (lr := [AP, PT, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
+    rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
+      (lr := [AP, PT, DX, DY, DZ, ACC, EM, ONEP]) rfl rfl (by decide) (by decide), ?_,
+    ⟨fun h => by have := sl_inj c hn (i := RX) (j := RY) h; exact absurd this (by decide),
+      fun h => by have := sl_inj c hn (i := RX) (j := RZ) h; exact absurd this (by decide),
+      fun h => by have := sl_inj c hn (i := RY) (j := RZ) h; exact absurd this (by decide)⟩, ?_,
+    ⟨show 1 ≤ 64 * c.n by omega_arith, show 64 * c.n < 2 ^ 16 by omega_arith⟩, bitsAt_le c h7 (by decide), ?_⟩
+  · exact lay_map hc rfl rfl rfl (l := [AP, PT, ACC, EM, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
+      DX, DY, DZ, TX, TY, TZ]) (by decide)
+  · exact map_sl_disj hn (l₁ := [AP, PT, ACC, EM, ONEP])
+      (l₂ := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ])
+      (by decide)
+  · exact map_sl_disj hn (l₁ := [RX, RY, RZ]) (l₂ := [DX, DY, DZ, TX, TY, TZ]) (by decide)
+  · intro w hw
+    simp only [ladW, List.mem_append, List.mem_map, List.mem_singleton] at hw
+    rcases hw with ⟨y, hy, rfl⟩ | rfl
+    · have hy' : y ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
+          TY, TZ].map c.sl := hy
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy'
+      obtain hl : ∀ i ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
+          TY, TZ], i < 45 := by decide
+      exact Or.inr (sl_below_bits c (hl i hi) 0 0 (.inl fun h => by subst h; exact absurd hi (by decide)))
+    · rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n) (by omega_arith) with h | h
+      · exact Or.inr (by show c.sl TMP + 8 * c.n ≤ bitsAt c.n 0; exact h)
+      · exact Or.inl (by show bitsAt c.n 0 + 64 * c.n ≤ c.sl TMP; exact h)
+
+theorem ladWMA_eq (c : Cfg) : ladW c.mulLadderA = slW c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ,
+    T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] := rfl
+
+/-- The calls' addition `D = R + T` writes apart from what it reads. -/
+theorem rcbApartRT (hc : BaseCfgOk c) :
+    RcbApart c.mulLadderA.S c.mulLadderA.R c.mulLadderA.T c.mulLadderA.D :=
+  rcbApart_of hc.n0 (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
+    (lr := [AP, PT, RX, RY, RZ, TX, TY, TZ]) rfl rfl (by decide) (by decide)
+
+/-- An iteration of the ladder of `mulAdd`, as `ladderBody_ok`. -/
+theorem ladderBodyA_ok (hc : BaseCfgOk c) {C : Curve} {base : Addr} {k : Nat}
+    {Q : Nat → Fe C → Fe C → Fe C → Prop} (hp : UnitMod C.p (2 ^ (64 * c.mulLadderA.M.n)))
+    (hnc : Mont.callOf c.MP' = none) {s₀ : State}
+    (hlt₀ : ∀ x ∈ ladRo c.mulLadderA, wordsVal s₀.mem base x c.mulLadderA.M.n < C.p)
+    (hstep : Step c.mulLadderA C base s₀ k Q false)
+    (hbits : ∀ t < c.mulLadderA.nbits, s₀.mem (off base (c.mulLadderA.bits + t)) =
+      if k.testBit t then 1 else 0)
+    {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ c.mulLadderA.nbits)
+    (hI : LadInv c.mulLadderA C base size Q s₀ s j) :
+    WP isa c.ladderBodyA.inline s fun s' =>
+      LadInv c.mulLadderA C base size Q s₀ s' (j - 1) ∧ s'.zf = some (decide (j - 1 = 0)) := by
+  have hL : LadLay c.mulLadderA size := ladLayMA hc
+  have hn := hI.scr.nowrap
+  have hnb := hL.nbits
+  have hro : ∀ x ∈ ladRo c.mulLadderA, wordsVal s.mem base x c.mulLadderA.M.n =
+      wordsVal s₀.mem base x c.mulLadderA.M.n :=
+    fun x hx => hI.unch.wordsVal
+      (hL.apart_w (ladR_slots _ x (mem_ladRo_ladR hx)) (hL.ro x hx))
+      (by have := hL.lay.le x (ladR_slots _ x (mem_ladRo_ladR hx)); omega_using [hn, this])
+  have hE : ∀ x ∈ ladRo c.mulLadderA, tmv C c.mulLadderA.M.n base s x = tmv C c.mulLadderA.M.n base s₀ x :=
+    fun x hx => by rw [tmv, hro x hx]
+  have hadd : c.addComplete.noCalls = true := fprogB_noCalls hnc _
+  have hSl : ∀ x ∈ [c.mulLadderA.R.x, c.mulLadderA.R.y, c.mulLadderA.R.z, c.mulLadderA.D.x,
+      c.mulLadderA.D.y, c.mulLadderA.D.z, c.mulLadderA.T.x, c.mulLadderA.T.y, c.mulLadderA.T.z],
+      x ∈ ladSlots c.mulLadderA := ladPts_slots _
+  have hap : ∀ x ∈ [c.mulLadderA.R.x, c.mulLadderA.R.y, c.mulLadderA.R.z, c.mulLadderA.D.x,
+      c.mulLadderA.D.y, c.mulLadderA.D.z, c.mulLadderA.T.x, c.mulLadderA.T.y, c.mulLadderA.T.z],
+      ∀ y ∈ [c.mulLadderA.R.x, c.mulLadderA.R.y, c.mulLadderA.R.z, c.mulLadderA.D.x,
+      c.mulLadderA.D.y, c.mulLadderA.D.z, c.mulLadderA.T.x, c.mulLadderA.T.y, c.mulLadderA.T.z],
+      x ≠ y → x + 8 * c.mulLadderA.M.n ≤ y ∨ y + 8 * c.mulLadderA.M.n ≤ x :=
+    fun x hx y hy hxy => hL.lay.apart x y (hSl x hx) (hSl y hy) hxy
+  obtain ⟨rxy, rxz, ryz⟩ := hL.rne
+  have hrdt := hL.rdt
+  rw [Cfg.ladderBodyA]
+  simp only [Code.inline]
+  rw [← Code.inline_of_noCalls hadd]
+  -- `sub rbx, 1` and `T = R`.
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (decRbx_ok s hj (by omega_using [hjn, hnb]) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_
+  have hm₁ : s₁.mem = s.mem := k₁.2.1
+  have I₁ : Inv c.mulLadderA.M base size C.p (· ∈ ladSlots c.mulLadderA) (ladR c.mulLadderA)
+      (tmv C c.mulLadderA.M.n base s₁) s₁ := by
+    refine ⟨hI.scr.of_keeps k₁ (by decide), by rw [hm₁]; exact hI.mod, ladR_slots _, fun x hx => ?_,
+      fun x _ => by rw [tmv, hm₁]⟩
+    rw [hm₁]
+    simp only [ladR, List.mem_append] at hx
+    rcases hx with hx | hx
+    · rw [hro x hx]; exact hlt₀ x hx
+    · exact hI.lt x hx
+  -- The slots of the points.
+  have j3 : ∀ {p : Pt} {x : Nat}, x ∈ jacCoords p → x = p.x ∨ x = p.y ∨ x = p.z := fun {p x} hx => by
+    simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx; exact hx
+  have slR : ∀ x ∈ jacCoords c.mulLadderA.R, x ∈ ladSlots c.mulLadderA := fun x hx => by
+    rcases j3 hx with rfl | rfl | rfl <;> exact hSl _ (by simp)
+  have slD : ∀ x ∈ jacCoords c.mulLadderA.D, x ∈ ladSlots c.mulLadderA := fun x hx => by
+    rcases j3 hx with rfl | rfl | rfl <;> exact hSl _ (by simp)
+  have slT : ∀ x ∈ jacCoords c.mulLadderA.T, x ∈ ladSlots c.mulLadderA := fun x hx => by
+    rcases j3 hx with rfl | rfl | rfl <;> exact hSl _ (by simp)
+  have slRo : ∀ x ∈ ladRo c.mulLadderA, x ∈ ladSlots c.mulLadderA := fun x hx =>
+    ladR_slots _ x (mem_ladRo_ladR hx)
+  have slDW : ∀ x ∈ rcbW c.mulLadderA.S c.mulLadderA.D, x ∈ ladSlots c.mulLadderA := fun x hx =>
+    ladWs_slots _ x (by simp only [ladWs, List.mem_append]; exact Or.inl (Or.inr hx))
+  have wT : ∀ x ∈ jacCoords c.mulLadderA.T, x ∈ ladWs c.mulLadderA := fun x hx => by
+    rcases j3 hx with rfl | rfl | rfl <;> simp [ladWs, rcbW]
+  have wR : ∀ x ∈ jacCoords c.mulLadderA.R, x ∈ ladWs c.mulLadderA := fun x hx => by
+    rcases j3 hx with rfl | rfl | rfl <;> simp [ladWs]
+  have wD : ∀ x ∈ rcbW c.mulLadderA.S c.mulLadderA.D, x ∈ ladWs c.mulLadderA := fun x hx => by
+    simp only [ladWs, List.mem_append]; exact Or.inl (Or.inr hx)
+  have roW : ∀ x ∈ ladRo c.mulLadderA, ∀ {W : List Nat}, (∀ y ∈ W, y ∈ ladWs c.mulLadderA) → x ∉ W :=
+    fun x hx W hW h => hL.ro x hx (hW x h)
+  have RnT : ∀ x ∈ jacCoords c.mulLadderA.R, x ∉ jacCoords c.mulLadderA.T := fun x hx h =>
+    hrdt x (by rcases j3 hx with rfl | rfl | rfl <;> simp) (by rcases j3 h with h | h | h <;> simp [h])
+  have RnD : ∀ x ∈ jacCoords c.mulLadderA.R, x ∉ rcbW c.mulLadderA.S c.mulLadderA.D := fun x hx h =>
+    hL.a1.apart x (by rcases j3 hx with rfl | rfl | rfl <;> simp [rcbR]) h
+  -- A slot apart from what a step writes keeps its value.
+  have tk : ∀ {W : List Nat} {x y : State}, ProgKeep c.mulLadderA.M base W x y → Scr x base size →
+      (∀ w ∈ W, w ∈ ladSlots c.mulLadderA) → ∀ {z : Nat}, z ∈ ladSlots c.mulLadderA → z ∉ W →
+      tmv C c.mulLadderA.M.n base y z = tmv C c.mulLadderA.M.n base x z := fun hk hs hW _ hz hn => by
+    unfold tmv; rw [hk.slot hL.lay hs hW hz hn]
+  -- `T = R`.
+  refine WP.mono (copyPointFields_ok hL.lay (q := c.mulLadderA.R) (o := c.mulLadderA.T)
+    (List.Nodup.sublist (List.sublist_append_right [c.mulLadderA.S.t0, c.mulLadderA.S.t1, c.mulLadderA.S.t2,
+      c.mulLadderA.S.t3, c.mulLadderA.S.t4, c.mulLadderA.S.t5] (jacCoords c.mulLadderA.T)) hL.a2.nodup)
+    (fun x hx y hy e => RnT x hx (e ▸ hy)) slT I₁
+    (fun x hx => List.mem_append_right _ hx)) fun s₂ ⟨E₂, kp₂, I₂, e₂⟩ => ?_
+  have hs₂ := kp₂.scr I₁.scr
+  simp only [Prod.mk.injEq] at e₂
+  obtain tT₂ : ∀ x ∈ [(c.mulLadderA.T.x, c.mulLadderA.R.x), (c.mulLadderA.T.y, c.mulLadderA.R.y),
+      (c.mulLadderA.T.z, c.mulLadderA.R.z)],
+      tmv C c.mulLadderA.M.n base s₂ x.1 = tmv C c.mulLadderA.M.n base s₁ x.2 := by
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl
+    · exact (I₂.val _ (by simp [jacCoords])).trans e₂.1
+    · exact (I₂.val _ (by simp [jacCoords])).trans e₂.2.1
+    · exact (I₂.val _ (by simp [jacCoords])).trans e₂.2.2
+  -- `D = R + T`.
+  refine WP.seq (WP.mono (rcb_ok hL.lay hp (rcbApartRT hc) (fun x hx => by
+      rcases List.mem_append.mp hx with hx | hx
+      · exact slDW x hx
+      · simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+        · exact slRo _ (by simp [ladRo])
+        · exact slRo _ (by simp [ladRo])
+        · exact slR _ (by simp [jacCoords])
+        · exact slR _ (by simp [jacCoords])
+        · exact slR _ (by simp [jacCoords])
+        · exact slT _ (by simp [jacCoords])
+        · exact slT _ (by simp [jacCoords])
+        · exact slT _ (by simp [jacCoords]))
+    I₂.to_tmv (fun x hx => by
+      simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp [jacCoords, ladR, ladRo])) fun s₃ ⟨k₃, I₃, v₃, _⟩ => ?_)
+  have hs₃ := k₃.scr hs₂
+  have I₃' := I₃.to_tmv
+  have hRnd : (jacCoords c.mulLadderA.R).Nodup := by
+    simp only [jacCoords, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
+      List.nodup_nil, and_true, not_false_eq_true]
+    exact ⟨⟨rxy, rxz⟩, ryz⟩
+  have hTnd : (jacCoords c.mulLadderA.T).Nodup :=
+    List.Nodup.sublist (List.sublist_append_right [c.mulLadderA.S.t0, c.mulLadderA.S.t1, c.mulLadderA.S.t2,
+      c.mulLadderA.S.t3, c.mulLadderA.S.t4, c.mulLadderA.S.t5] (jacCoords c.mulLadderA.T)) hL.a2.nodup
+  have DinW : ∀ x ∈ jacCoords c.mulLadderA.D, x ∈ rcbW c.mulLadderA.S c.mulLadderA.D := fun x hx => by
+    rcases j3 hx with rfl | rfl | rfl <;> simp [rcbW]
+  -- `R = D` and `T = G`.
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (copyPointFields_ok hL.lay (q := c.mulLadderA.D) (o := c.mulLadderA.R) hRnd
+    (fun x hx y hy e => RnD y hy (e ▸ DinW x hx)) slR I₃'
+    (fun x hx => List.mem_append_left _ (DinW x hx))) fun s₄ ⟨E₄, kp₄, I₄, e₄⟩ => ?_
+  have hs₄ := kp₄.scr hs₃
+  simp only [Prod.mk.injEq] at e₄
+  refine WP.mono (copyPointFields_ok hL.lay (q := c.mulLadderA.G) (o := c.mulLadderA.T) hTnd
+    (fun x hx y hy e => roW x (by rcases j3 hx with rfl | rfl | rfl <;> simp [ladRo]) wT (e ▸ hy)) slT
+    I₄.to_tmv (fun x hx => by
+      rcases j3 hx with rfl | rfl | rfl <;> simp [jacCoords, ladR, ladRo])) fun s₅ ⟨E₅, kp₅, I₅, e₅⟩ => ?_
+  have hs₅ := kp₅.scr hs₄
+  simp only [Prod.mk.injEq] at e₅
+  -- `D = R + T` again.
+  refine WP.seq (WP.mono (rcb_ok hL.lay hp (rcbApartRT hc) (fun x hx => by
+      rcases List.mem_append.mp hx with hx | hx
+      · exact slDW x hx
+      · simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+        · exact slRo _ (by simp [ladRo])
+        · exact slRo _ (by simp [ladRo])
+        · exact slR _ (by simp [jacCoords])
+        · exact slR _ (by simp [jacCoords])
+        · exact slR _ (by simp [jacCoords])
+        · exact slT _ (by simp [jacCoords])
+        · exact slT _ (by simp [jacCoords])
+        · exact slT _ (by simp [jacCoords]))
+    I₅.to_tmv (fun x hx => by
+      simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp [jacCoords, ladR, ladRo])) fun s₆ ⟨k₆, I₆, v₆, _⟩ => ?_)
+  have hs₆ := k₆.scr hs₅
+  -- What is written is in `ladW`.
+  have toW : ∀ {W : List Nat}, (∀ x ∈ W, x ∈ ladWs c.mulLadderA) →
+      ∀ w ∈ W.map (·, 8 * c.mulLadderA.M.n) ++ [(c.mulLadderA.M.tmp, 8 * c.mulLadderA.M.n)],
+        w ∈ ladW c.mulLadderA := fun {W} hW w hw => by
+    rcases List.mem_append.mp hw with h | h
+    · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp h
+      exact List.mem_append_left _ (List.mem_map_of_mem (hW y hy))
+    · exact List.mem_append_right _ h
+  have U₀₆ : Unch base (ladW c.mulLadderA) s₀.mem s₆.mem := by
+    have u₁ : Unch base (ladW c.mulLadderA) s₀.mem s₁.mem := by rw [hm₁]; exact hI.unch
+    refine (u₁.trans ((kp₂.unch.trans (k₃.unch.trans (kp₄.unch.trans (kp₅.unch.trans k₆.unch)))))).mono
+      fun w hw => ?_
+    rcases List.mem_append.mp hw with h | h
+    · exact h
+    rcases List.mem_append.mp h with h | h
+    · exact toW wT w h
+    rcases List.mem_append.mp h with h | h
+    · exact toW wD w h
+    rcases List.mem_append.mp h with h | h
+    · exact toW wR w h
+    rcases List.mem_append.mp h with h | h
+    · exact toW wT w h
+    · exact toW wD w h
+  have hrbx₆ : s₆.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
+    rw [k₆.gpr _ (rbx_not_clob _), kp₅.gpr _ (rbx_not_clob _), kp₄.gpr _ (rbx_not_clob _),
+      k₃.gpr _ (rbx_not_clob _), kp₂.gpr _ (rbx_not_clob _), b₁]
+  have hbyte : s₆.mem (off base (c.mulLadderA.bits + (j - 1))) = if k.testBit (j - 1) then 1 else 0 := by
+    have hbl := hL.bits
+    rw [U₀₆.byte (fun w hw => by have := hL.bits_w w hw; omega_using [hj, hjn, this])
+      (by omega_using [hj, hjn, hn, hbl]), hbits _ (by omega_using [hj, hjn])]
+  -- The selection.
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (bitMask_bool_ok hs₆ hrbx₆ (by have := hL.bits; omega_using [hj, hjn, this]) hbyte)
+    fun s₇ ⟨c₇, k₇⟩ => ?_
+  have hs₇ := hs₆.of_keeps k₇ (by decide)
+  have hm₇ : s₇.mem = s₆.mem := k₇.2.1
+  have hinS : ∀ d ∈ [c.mulLadderA.R.x, c.mulLadderA.R.y, c.mulLadderA.R.z, c.mulLadderA.D.x,
+      c.mulLadderA.D.y, c.mulLadderA.D.z], d + 8 * c.mulLadderA.M.n ≤ size := by
+    intro d hd
+    refine hL.lay.le d (hSl d ?_)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hd ⊢
+    rcases hd with h | h | h | h | h | h <;> simp [h]
+  have habS : ∀ d ∈ [c.mulLadderA.R.x, c.mulLadderA.R.y, c.mulLadderA.R.z],
+      ∀ e ∈ [c.mulLadderA.D.x, c.mulLadderA.D.y, c.mulLadderA.D.z],
+      d + 8 * c.mulLadderA.M.n ≤ e ∨ e + 8 * c.mulLadderA.M.n ≤ d := by
+    intro d hd e he
+    have hd' : d ∈ [c.mulLadderA.R.x, c.mulLadderA.R.y, c.mulLadderA.R.z, c.mulLadderA.D.x,
+        c.mulLadderA.D.y, c.mulLadderA.D.z, c.mulLadderA.T.x, c.mulLadderA.T.y, c.mulLadderA.T.z] := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd ⊢
+      rcases hd with h | h | h <;> simp [h]
+    have he' : e ∈ [c.mulLadderA.R.x, c.mulLadderA.R.y, c.mulLadderA.R.z, c.mulLadderA.D.x,
+        c.mulLadderA.D.y, c.mulLadderA.D.z, c.mulLadderA.T.x, c.mulLadderA.T.y, c.mulLadderA.T.z] := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he ⊢
+      rcases he with h | h | h <;> simp [h]
+    have he'' : e ∈ [c.mulLadderA.D.x, c.mulLadderA.D.y, c.mulLadderA.D.z, c.mulLadderA.T.x,
+        c.mulLadderA.T.y, c.mulLadderA.T.z] := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he ⊢
+      rcases he with h | h | h <;> simp [h]
+    exact hap d hd' e he' fun h => hrdt d hd (h ▸ he'')
+  refine WP.mono (selPtSelf_ok hs₇ (k.testBit (j - 1)) c₇ (n := c.mulLadderA.M.n) (o := c.mulLadderA.R)
+    (b := c.mulLadderA.D) hinS
+    ⟨hap _ (by simp) _ (by simp) rxy, hap _ (by simp) _ (by simp) rxz, hap _ (by simp) _ (by simp) ryz⟩
+    habS)
+    fun s₈ ⟨ex₈, ey₈, ez₈, k₈, O₈⟩ => ?_
+  have hs₈ := hs₇.of_keepRegs k₈ (by decide)
+  have hrbx₈ : s₈.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
+    rw [k₈.gpr _ (by decide), k₇.1 _ (by decide), hrbx₆]
+  refine WP.mono (testRbx_ok s₈ (by omega_using [hjn, hnb]) hrbx₈) fun s₉ ⟨z₉, k₉⟩ => ⟨?_, z₉⟩
+  have hm₉ : s₉.mem = s₈.mem := k₉.2.1
+  -- The values.
+  have ro₁ : ∀ x ∈ ladRo c.mulLadderA, tmv C c.mulLadderA.M.n base s₁ x = tmv C c.mulLadderA.M.n base s₀ x :=
+    fun x hx => by rw [show tmv C c.mulLadderA.M.n base s₁ x = tmv C c.mulLadderA.M.n base s x by
+      rw [tmv, tmv, hm₁], hE x hx]
+  have ro₂ : ∀ x ∈ ladRo c.mulLadderA, tmv C c.mulLadderA.M.n base s₂ x = tmv C c.mulLadderA.M.n base s₀ x :=
+    fun x hx => (tk kp₂ I₁.scr slT (slRo x hx) (roW x hx wT)).trans (ro₁ x hx)
+  have ro₃ : ∀ x ∈ ladRo c.mulLadderA, tmv C c.mulLadderA.M.n base s₃ x = tmv C c.mulLadderA.M.n base s₀ x :=
+    fun x hx => (tk k₃ hs₂ slDW (slRo x hx) (roW x hx wD)).trans (ro₂ x hx)
+  have ro₄ : ∀ x ∈ ladRo c.mulLadderA, tmv C c.mulLadderA.M.n base s₄ x = tmv C c.mulLadderA.M.n base s₀ x :=
+    fun x hx => (tk kp₄ hs₃ slR (slRo x hx) (roW x hx wR)).trans (ro₃ x hx)
+  have ro₅ : ∀ x ∈ ladRo c.mulLadderA, tmv C c.mulLadderA.M.n base s₅ x = tmv C c.mulLadderA.M.n base s₀ x :=
+    fun x hx => (tk kp₅ hs₄ slT (slRo x hx) (roW x hx wT)).trans (ro₄ x hx)
+  have r₂ : ∀ x ∈ jacCoords c.mulLadderA.R, tmv C c.mulLadderA.M.n base s₂ x = tmv C c.mulLadderA.M.n base s x :=
+    fun x hx => (tk kp₂ I₁.scr slT (slR x hx) (RnT x hx)).trans (by rw [tmv, tmv, hm₁])
+  have t₂ : ∀ x ∈ [(c.mulLadderA.T.x, c.mulLadderA.R.x), (c.mulLadderA.T.y, c.mulLadderA.R.y),
+      (c.mulLadderA.T.z, c.mulLadderA.R.z)],
+      tmv C c.mulLadderA.M.n base s₂ x.1 = tmv C c.mulLadderA.M.n base s x.2 :=
+    fun x hx => (tT₂ x hx).trans (by rw [tmv, tmv, hm₁])
+  have d₃ : ∀ x ∈ jacCoords c.mulLadderA.D, tmv C c.mulLadderA.M.n base s₃ x =
+      runOps (rcb c.mulLadderA.S c.mulLadderA.R c.mulLadderA.T c.mulLadderA.D)
+        (tmv C c.mulLadderA.M.n base s₂) x :=
+    fun x hx => I₃.val x (List.mem_append_left _ (DinW x hx))
+  have r₅ : ∀ x ∈ [(c.mulLadderA.R.x, c.mulLadderA.D.x), (c.mulLadderA.R.y, c.mulLadderA.D.y),
+      (c.mulLadderA.R.z, c.mulLadderA.D.z)],
+      tmv C c.mulLadderA.M.n base s₅ x.1 = tmv C c.mulLadderA.M.n base s₃ x.2 := by
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl
+    · exact (tk kp₅ hs₄ slT (slR _ (by simp [jacCoords])) (RnT _ (by simp [jacCoords]))).trans
+        ((I₄.val _ (by simp [jacCoords])).trans e₄.1)
+    · exact (tk kp₅ hs₄ slT (slR _ (by simp [jacCoords])) (RnT _ (by simp [jacCoords]))).trans
+        ((I₄.val _ (by simp [jacCoords])).trans e₄.2.1)
+    · exact (tk kp₅ hs₄ slT (slR _ (by simp [jacCoords])) (RnT _ (by simp [jacCoords]))).trans
+        ((I₄.val _ (by simp [jacCoords])).trans e₄.2.2)
+  have t₅ : ∀ x ∈ [(c.mulLadderA.T.x, c.mulLadderA.G.x), (c.mulLadderA.T.y, c.mulLadderA.G.y),
+      (c.mulLadderA.T.z, c.mulLadderA.G.z)],
+      tmv C c.mulLadderA.M.n base s₅ x.1 = tmv C c.mulLadderA.M.n base s₀ x.2 := by
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl
+    · exact (I₅.val _ (by simp [jacCoords])).trans (e₅.1.trans (ro₄ _ (by simp [ladRo])))
+    · exact (I₅.val _ (by simp [jacCoords])).trans (e₅.2.1.trans (ro₄ _ (by simp [ladRo])))
+    · exact (I₅.val _ (by simp [jacCoords])).trans (e₅.2.2.trans (ro₄ _ (by simp [ladRo])))
+  have d₆ : ∀ x ∈ jacCoords c.mulLadderA.D, tmv C c.mulLadderA.M.n base s₆ x =
+      runOps (rcb c.mulLadderA.S c.mulLadderA.R c.mulLadderA.T c.mulLadderA.D)
+        (tmv C c.mulLadderA.M.n base s₅) x :=
+    fun x hx => I₆.val x (List.mem_append_left _ (DinW x hx))
+  have r₆ : ∀ x ∈ jacCoords c.mulLadderA.R, tmv C c.mulLadderA.M.n base s₆ x = tmv C c.mulLadderA.M.n base s₅ x :=
+    fun x hx => tk k₆ hs₅ slDW (slR x hx) (RnD x hx)
+  have hstep' := hstep (j - 1) (by omega_using [hj, hjn])
+    (tmv C c.mulLadderA.M.n base s c.mulLadderA.R.x) (tmv C c.mulLadderA.M.n base s c.mulLadderA.R.y)
+    (tmv C c.mulLadderA.M.n base s c.mulLadderA.R.z)
+    (tmv C c.mulLadderA.M.n base s₃ c.mulLadderA.D.x) (tmv C c.mulLadderA.M.n base s₃ c.mulLadderA.D.y)
+    (tmv C c.mulLadderA.M.n base s₃ c.mulLadderA.D.z)
+    (tmv C c.mulLadderA.M.n base s₆ c.mulLadderA.D.x) (tmv C c.mulLadderA.M.n base s₆ c.mulLadderA.D.y)
+    (tmv C c.mulLadderA.M.n base s₆ c.mulLadderA.D.z) (by rw [Nat.sub_add_cancel hj]; exact hI.q)
+    (by
+      simp only [ladDbl, Bool.false_eq_true, ↓reduceIte]
+      rw [d₃ _ (by simp [jacCoords]), d₃ _ (by simp [jacCoords]), d₃ _ (by simp [jacCoords]), v₃,
+        ro₂ _ (by simp [ladRo]), ro₂ _ (by simp [ladRo]), r₂ _ (by simp [jacCoords]),
+        r₂ _ (by simp [jacCoords]), r₂ _ (by simp [jacCoords]), t₂ (c.mulLadderA.T.x, c.mulLadderA.R.x) (by simp), t₂ (c.mulLadderA.T.y, c.mulLadderA.R.y) (by simp),
+        t₂ (c.mulLadderA.T.z, c.mulLadderA.R.z) (by simp)])
+    (by
+      simp only [ladAdd, Bool.false_eq_true, ↓reduceIte]
+      rw [d₆ _ (by simp [jacCoords]), d₆ _ (by simp [jacCoords]), d₆ _ (by simp [jacCoords]), v₆,
+        ro₅ _ (by simp [ladRo]), ro₅ _ (by simp [ladRo]), r₅ (c.mulLadderA.R.x, c.mulLadderA.D.x) (by simp),
+        r₅ (c.mulLadderA.R.y, c.mulLadderA.D.y) (by simp), r₅ (c.mulLadderA.R.z, c.mulLadderA.D.z) (by simp), t₅ (c.mulLadderA.T.x, c.mulLadderA.G.x) (by simp),
+        t₅ (c.mulLadderA.T.y, c.mulLadderA.G.y) (by simp), t₅ (c.mulLadderA.T.z, c.mulLadderA.G.z) (by simp)])
+  have U₈ : Unch base [(c.mulLadderA.R.x, 8 * c.mulLadderA.M.n), (c.mulLadderA.R.y, 8 * c.mulLadderA.M.n),
+      (c.mulLadderA.R.z, 8 * c.mulLadderA.M.n)] s₆.mem s₉.mem := fun x hx => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
+    rw [hm₉, O₈ x hx.1 hx.2.1 hx.2.2, hm₇]
+  have sel : ∀ {x d : Nat}, wordsVal s₈.mem base x c.mulLadderA.M.n = (if k.testBit (j - 1) then
+      wordsVal s₆.mem base d c.mulLadderA.M.n else wordsVal s₆.mem base x c.mulLadderA.M.n) →
+      tmv C c.mulLadderA.M.n base s₉ x = if k.testBit (j - 1) then tmv C c.mulLadderA.M.n base s₆ d
+        else tmv C c.mulLadderA.M.n base s₆ x := fun {x d} h => by
+    show toM _ _ _ = _
+    rw [hm₉, h]; split <;> rfl
+  rw [hm₇] at ex₈ ey₈ ez₈
+  refine ⟨hs₈.of_keeps k₉ (by decide), by rw [k₉.1 _ (by simp), hrbx₈], ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
+  · have hr' : r ∉ clob c.mulLadderA.M.n := fun h => hr (mem_powClob_of_clob h)
+    have hrb : r ≠ .rbx := fun h => hr (h ▸ List.mem_cons_self ..)
+    have hra : r ≠ .rax := fun h => hr' (h ▸ by simp [clob])
+    have hrc : r ≠ .rcx := fun h => hr' (h ▸ by simp [clob])
+    have hrd : r ≠ .rdx := fun h => hr' (h ▸ by simp [clob])
+    rw [k₉.1 r (by simp), k₈.gpr r (by simp [hra, hrd]), k₇.1 r (by simp [hra, hrc]), k₆.gpr r hr',
+      kp₅.gpr r hr', kp₄.gpr r hr', k₃.gpr r hr', kp₂.gpr r hr', k₁.1 r (by simp [hrb]), hI.keep.gpr r hr]
+  · rw [k₉.2.2.1, k₈.rd, k₇.2.2.1, k₆.rd, kp₅.rd, kp₄.rd, k₃.rd, kp₂.rd, k₁.2.2.1, hI.keep.rd]
+  · rw [k₉.2.2.2, k₈.wr, k₇.2.2.2, k₆.wr, kp₅.wr, kp₄.wr, k₃.wr, kp₂.wr, k₁.2.2.2, hI.keep.wr]
+  · exact (U₀₆.trans U₈).mono fun w hw => by
+      rcases List.mem_append.mp hw with hw | hw
+      · exact hw
+      · exact mem_ladW_R w hw
+  · have hM := I₆.mod
+    have hmo := hL.lay.mo
+    refine ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩
+    rw [U₈.wordsVal (fun w hw => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact (hmo c.mulLadderA.R.x (hSl _ (by simp))).symm
+      · exact (hmo c.mulLadderA.R.y (hSl _ (by simp))).symm
+      · exact (hmo c.mulLadderA.R.z (hSl _ (by simp))).symm) (by have := hs₆.nowrap; have := hM.mo; omega_using [hn, this])]
+    exact hM.val
+  · have lD : ∀ x ∈ jacCoords c.mulLadderA.D, wordsVal s₆.mem base x c.mulLadderA.M.n < C.p :=
+      fun x hx => I₆.lt x (List.mem_append_left _ (DinW x hx))
+    have lR : ∀ x ∈ jacCoords c.mulLadderA.R, wordsVal s₆.mem base x c.mulLadderA.M.n < C.p :=
+      fun x hx => I₆.lt x (by simp only [List.mem_append]; exact Or.inr (Or.inr (Or.inl hx)))
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+    refine ⟨?_, ?_, ?_⟩
+    · rw [hm₉, ex₈]; split
+      · exact lD _ (by simp [jacCoords])
+      · exact lR _ (by simp [jacCoords])
+    · rw [hm₉, ey₈]; split
+      · exact lD _ (by simp [jacCoords])
+      · exact lR _ (by simp [jacCoords])
+    · rw [hm₉, ez₈]; split
+      · exact lD _ (by simp [jacCoords])
+      · exact lR _ (by simp [jacCoords])
+  · rw [sel ex₈, sel ey₈, sel ez₈, r₆ c.mulLadderA.R.x (by simp [jacCoords]), r₆ c.mulLadderA.R.y (by simp [jacCoords]),
+      r₆ c.mulLadderA.R.z (by simp [jacCoords]), r₅ (c.mulLadderA.R.x, c.mulLadderA.D.x) (by simp), r₅ (c.mulLadderA.R.y, c.mulLadderA.D.y) (by simp),
+      r₅ (c.mulLadderA.R.z, c.mulLadderA.D.z) (by simp)]
+    exact hstep'
+
+/-- What `mulBodyA` writes: `mulW`'s slots and `EM` (its copy of `Q`'s `y`). -/
+abbrev mulWA (c : Cfg) : List (Nat × Nat) :=
+  slW c [RX, RY, RZ, ACC, PT, EM, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] ++
+    [(bitsAt c.n 0, 64 * c.n + 8)]
+
+/-- `mulBodyA`: `R = [k]Q`, as `mulBody_ok`, from `p`, zero, one and `a R`
+in their slots (it writes `3 b R` itself). -/
+theorem mulBodyA_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnc : Mont.callOf c.MP' = none) {base : Addr}
+    {s : State} (hs : Scr s base size)
+    (hmp : sv c base s MP = c.C.p) (hz : sv c base s ZERO = 0)
+    (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
+    (hap : sv c base s AP = c.mont c.C.a)
+    (hqx : sv c base s RX < c.C.p) (hqy : sv c base s RY < c.C.p)
+    (hQ : onCurve c.C (ptQ c base s) = true) :
+    WP isa c.mulBodyA.inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (mulWA c) s.mem s'.mem ∧
+      ModOkW c.MP' size c.C.p s'.mem base ∧
+      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
+      Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
+        (tmv c.C c.n base s' (c.sl RZ)) (mul (sv c base s K) (ptQ c base s)) := by
+  have h0 := hc.n0
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  have hp3 := hc.p_ge
+  have hplt := hc.p_lt
+  obtain hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
+  obtain hsz : bitsAt c.n 0 + 64 * c.n ≤ size := bitsAt_le c h7 (j := 0) (by decide)
+  obtain sz : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ size := fun hi => sl_le c h7 hi
+  obtain ap : ∀ {i j}, i ≠ j → c.sl i ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := fun h => by
+    rcases sl_apart c h with h | h <;> omega_arith
+  show WP isa (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+    (.seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl EM) (c.sl RY) ++
+      copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO) ++
+      setConst c.n (c.sl PT) (c.mont (3 * c.C.b)) ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (64 * c.n)))]))
+      (.loop c.ladderBodyA.inline .ne))) s _
+  -- The table of `k`'s bits.
+  refine WP.seq (WP.mono (bits_ok hs h0 (by omega_arith) (sz (i := K) (by decide)) hsz
+    (Or.inl (by have := sl_below_bits c (i := K) (by decide) 0 0 (.inl (by decide)); omega_arith)))
+    fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
+  obtain hs₁ := hs.of_keepRegs k₁ (by decide)
+  obtain U₁ : Unch base [(bitsAt c.n 0, 64 * c.n + 8)] s.mem s₁.mem := fun x hx =>
+    O₁ x (by have := hx _ (List.mem_singleton_self _); dsimp only at this; omega_arith)
+  -- `Q` to `ACC` and `EM`, `R` the point at infinity, `3 b R` to `PT`.
+  refine WP.seq ?_
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff,
+    WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (copy_ok (size := size) c.n hs₁ (o := c.sl ACC) (a := c.sl RX)
+    (sz (by decide)) (sz (by decide)) (ap (by decide))) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  refine WP.mono (copy_ok (size := size) c.n hs₂ (o := c.sl EM) (a := c.sl RY)
+    (sz (by decide)) (sz (by decide)) (ap (by decide))) fun s₃ ⟨v₃, k₃, O₃⟩ => ?_
+  obtain hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  refine WP.mono (copy_ok (size := size) c.n hs₃ (o := c.sl RX) (a := c.sl ZERO)
+    (sz (by decide)) (sz (by decide)) (ap (by decide))) fun s₄ ⟨v₄, k₄, O₄⟩ => ?_
+  obtain hs₄ := hs₃.of_keepRegs k₄ (by decide)
+  refine WP.mono (copy_ok (size := size) c.n hs₄ (o := c.sl RY) (a := c.sl ONEP)
+    (sz (by decide)) (sz (by decide)) (ap (by decide))) fun s₅ ⟨v₅, k₅, O₅⟩ => ?_
+  obtain hs₅ := hs₄.of_keepRegs k₅ (by decide)
+  refine WP.mono (copy_ok (size := size) c.n hs₅ (o := c.sl RZ) (a := c.sl ZERO)
+    (sz (by decide)) (sz (by decide)) (ap (by decide))) fun s₆ ⟨v₆, k₆, O₆⟩ => ?_
+  obtain hs₆ := hs₅.of_keepRegs k₆ (by decide)
+  refine WP.mono (setConst_ok hs₆ (n := c.n) (o := c.sl PT) (x := c.mont (3 * c.C.b)) (sz (by decide))
+    (by have := hmont (3 * c.C.b); omega_arith)) fun s₇ ⟨v₇, k₇, O₇⟩ => ?_
+  obtain hs₇ := hs₆.of_keepRegs k₇ (by decide)
+  refine WP.mono (mov32Rbx_ok s₇ (j := 64 * c.n) (by omega_arith)) fun s₈ ⟨b₈, k₈⟩ => ?_
+  have hm₈ : s₈.mem = s₇.mem := k₈.2.1
+  obtain hs₈ : Scr s₈ base size := hs₇.of_keeps k₈ (by decide)
+  -- What each step leaves.
+  obtain U₂ : Unch base ([(bitsAt c.n 0, 64 * c.n + 8)] ++ slW c [ACC]) s.mem s₂.mem := U₁.trans O₂.unch
+  obtain U₃ : Unch base ([(bitsAt c.n 0, 64 * c.n + 8)] ++ slW c [ACC, EM]) s.mem s₃.mem := U₂.trans O₃.unch
+  obtain U₄ : Unch base ([(bitsAt c.n 0, 64 * c.n + 8)] ++ slW c [ACC, EM, RX]) s.mem s₄.mem :=
+    U₃.trans O₄.unch
+  obtain U₅ : Unch base ([(bitsAt c.n 0, 64 * c.n + 8)] ++ slW c [ACC, EM, RX, RY]) s.mem s₅.mem :=
+    U₄.trans O₅.unch
+  obtain U₆ : Unch base ([(bitsAt c.n 0, 64 * c.n + 8)] ++ slW c [ACC, EM, RX, RY, RZ]) s.mem s₆.mem :=
+    U₅.trans O₆.unch
+  obtain U₇ : Unch base ([(bitsAt c.n 0, 64 * c.n + 8)] ++ slW c [ACC, EM, RX, RY, RZ, PT]) s.mem s₈.mem := by
+    rw [hm₈]; exact U₆.trans O₇.unch
+  obtain U₂₇ : Unch base (slW c [EM, RX, RY, RZ, PT]) s₂.mem s₈.mem := by
+    rw [hm₈]; exact (((O₃.unch.trans O₄.unch).trans O₅.unch).trans O₆.unch).trans O₇.unch
+  obtain U₃₇ : Unch base (slW c [RX, RY, RZ, PT]) s₃.mem s₈.mem := by
+    rw [hm₈]; exact ((O₄.unch.trans O₅.unch).trans O₆.unch).trans O₇.unch
+  obtain U₄₇ : Unch base (slW c [RY, RZ, PT]) s₄.mem s₈.mem := by
+    rw [hm₈]; exact (O₅.unch.trans O₆.unch).trans O₇.unch
+  obtain U₅₇ : Unch base (slW c [RZ, PT]) s₅.mem s₈.mem := by rw [hm₈]; exact O₆.unch.trans O₇.unch
+  obtain U₆₇ : Unch base (slW c [PT]) s₆.mem s₈.mem := by rw [hm₈]; exact O₇.unch
+  obtain e₁ := fun {i} (hi : i < 45) => sv_unch U₁ h7 hn hi (apart_pad hi)
+  obtain acc₈ : sv c base s₈ ACC = sv c base s RX :=
+    (sv_unch U₂₇ h7 hn (i := ACC) (by decide) (apart_slW (by decide))).trans (v₂.trans (e₁ (by decide)))
+  obtain em₈ : sv c base s₈ EM = sv c base s RY :=
+    (sv_unch U₃₇ h7 hn (i := EM) (by decide) (apart_slW (by decide))).trans
+      (v₃.trans (sv_unch U₂ h7 hn (i := RY) (by decide) (apart_bits_slW (by decide) (by decide))))
+  obtain rx₈ : sv c base s₈ RX = 0 :=
+    (sv_unch U₄₇ h7 hn (i := RX) (by decide) (apart_slW (by decide))).trans
+      (v₄.trans ((sv_unch U₃ h7 hn (i := ZERO) (by decide) (apart_bits_slW (by decide) (by decide))).trans hz))
+  obtain one₄ : sv c base s₄ ONEP = 2 ^ (64 * c.n) % c.C.p :=
+    (sv_unch U₄ h7 hn (i := ONEP) (by decide) (apart_bits_slW (by decide) (by decide))).trans hone
+  obtain ry₈ : sv c base s₈ RY = c.mont 1 := by
+    obtain h := (sv_unch U₅₇ h7 hn (i := RY) (by decide) (apart_slW (by decide))).trans (v₅.trans one₄)
+    rw [show c.mont 1 = 2 ^ (64 * c.n) % c.C.p by show 1 * c.R % c.C.p = _; rw [Nat.one_mul]; rfl]
+    exact h
+  obtain rz₈ : sv c base s₈ RZ = 0 :=
+    (sv_unch U₆₇ h7 hn (i := RZ) (by decide) (apart_slW (by decide))).trans
+      (v₆.trans ((sv_unch U₅ h7 hn (i := ZERO) (by decide) (apart_bits_slW (by decide) (by decide))).trans hz))
+  obtain pt₈ : sv c base s₈ PT = c.mont (3 * c.C.b) := by
+    show wordsVal s₈.mem _ _ _ = _; rw [hm₈]; exact v₇
+  obtain e₈ := fun {i} (hi : i < 45) (hl : i ∉ [ACC, EM, RX, RY, RZ, PT]) =>
+    sv_unch U₇ h7 hn hi (apart_bits_slW hi hl)
+  obtain mp₈ : sv c base s₈ MP = c.C.p := (e₈ (i := MP) (by decide) (by decide)).trans hmp
+  obtain ap₈ : sv c base s₈ AP = c.mont c.C.a := (e₈ (i := AP) (by decide) (by decide)).trans hap
+  obtain one₈ : sv c base s₈ ONEP = 2 ^ (64 * c.n) % c.C.p :=
+    (e₈ (i := ONEP) (by decide) (by decide)).trans hone
+  obtain U₂₇' : Unch base (slW c [ACC, EM, RX, RY, RZ, PT]) s₁.mem s₈.mem := by
+    rw [hm₈]; exact ((((O₂.unch.trans O₃.unch).trans O₄.unch).trans O₅.unch).trans O₆.unch).trans O₇.unch
+  obtain k₈' : ∀ t < 64 * c.n, s₈.mem (off base (bitsAt c.n 0 + t)) =
+      if (sv c base s K).testBit t then 1 else 0 := fun t ht => by
+    rw [tbl_unch U₂₇' h7 hn (j := 0) (by decide) ht (tbl_apart_slW (by decide) 0 t ht)]
+    exact b₁ t ht
+  -- The ladder.
+  obtain hlt : ∀ x ∈ ladR c.mulLadderA, wordsVal s₈.mem base x c.MP'.n < c.C.p := by
+    intro x hx
+    have hx' : x ∈ [AP, PT, ACC, EM, ONEP, RX, RY, RZ].map c.sl := hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    show sv c base s₈ i < c.C.p
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact lt_of_eq_of_lt ap₈ (hmont _)
+    · exact lt_of_eq_of_lt pt₈ (hmont _)
+    · rw [acc₈]; exact hqx
+    · rw [em₈]; exact hqy
+    · exact lt_of_eq_of_lt one₈ (Nat.mod_lt _ (by omega_arith))
+    · exact lt_of_eq_of_lt rx₈ (by omega_arith)
+    · exact lt_of_eq_of_lt ry₈ (hmont _)
+    · exact lt_of_eq_of_lt rz₈ (by omega_arith)
+  obtain hG : Rep c.C (tmv c.C c.n base s₈ (c.sl ACC)) (tmv c.C c.n base s₈ (c.sl EM))
+      (tmv c.C c.n base s₈ (c.sl ONEP)) (ptQ c base s) := by
+    show Rep c.C (toM _ _ (sv c base s₈ ACC)) (toM _ _ (sv c base s₈ EM)) (toM _ _ (sv c base s₈ ONEP))
+      (Point.affine (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)))
+    rw [acc₈, em₈, one₈, toM_one hpR]
+    exact rep_affine' hC _ _
+  obtain hstep := step_rep' (L := c.mulLadderA) (k := sv c base s K) (a0 := false) hC hQ
+    (by show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₈ AP) = _; rw [ap₈]; exact toM_cmont hc _)
+    (by show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₈ PT) = _; rw [pt₈]; exact toM_cmont hc _) hG
+    fun h => absurd h Bool.false_ne_true
+  obtain hR : Rep c.C (tmv c.C c.n base s₈ (c.sl RX)) (tmv c.C c.n base s₈ (c.sl RY))
+      (tmv c.C c.n base s₈ (c.sl RZ)) (mul (sv c base s K >>> (64 * c.n)) (ptQ c base s)) := by
+    show Rep c.C (toM _ _ (sv c base s₈ RX)) (toM _ _ (sv c base s₈ RY)) (toM _ _ (sv c base s₈ RZ)) _
+    rw [rx₈, ry₈, rz₈, toM_cmont hc, toM_zero, shiftRight_eq_zero (wordsVal_lt _ _ _ _), mul_zero_pt]
+    exact rep_infinity' hC
+  have hL := ladLayMA hc
+  have hnb := hL.nbits
+  refine countLoop_ok (Inv := fun j s' => LadInv c.mulLadderA c.C base size
+      (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s K >>> j) (ptQ c base s))) s₈ s' j)
+    (n := c.mulLadderA.nbits)
+    (fun j s' h1 h2 hi => ladderBodyA_ok hc hpR hnc (fun x hx => hlt x (mem_ladRo_ladR hx))
+      hstep k₈' h1 h2 hi)
+    (fun s' hi => ⟨?_, ?_, hi.mod, hi.lt, ?_⟩) hnb.1
+    ⟨hs₈, b₈, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, modP_of hc mp₈,
+      fun x hx => hlt x (List.mem_append_right _ hx), hR⟩
+  · obtain hk1 : ∀ r ∈ [Reg.rax, .rdx, .rbx], r ∈ powClob c.n := by
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]
+    obtain hk2 : ∀ r ∈ [Reg.rax], r ∈ powClob c.n := fun r hr => hk1 r (by
+      simp only [List.mem_singleton] at hr; simp [hr])
+    obtain k₈'' : KeepRegs (powClob c.n) s₇ s₈ :=
+      ⟨fun r hr => k₈.1 r fun h => hr (hk1 r (by simp only [List.mem_singleton] at h; simp [h])),
+        k₈.2.2.1, k₈.2.2.2⟩
+    exact (((((((k₁.mono hk1).trans (k₂.mono hk2)).trans (k₃.mono hk2)).trans (k₄.mono hk2)).trans
+      (k₅.mono hk2)).trans (k₆.mono hk2)).trans (k₇.mono hk2)).trans (k₈''.trans hi.keep)
+  · have U' := hi.unch
+    rw [ladWMA_eq] at U'
+    obtain hsub : ∀ w ∈ ([(bitsAt c.n 0, 64 * c.n + 8)] ++ slW c [ACC, EM, RX, RY, RZ, PT]) ++
+        slW c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP],
+        w ∈ mulWA c := by
+      intro w hw
+      rcases List.mem_append.mp hw with hw | hw
+      · rcases List.mem_append.mp hw with hw | hw
+        · exact List.mem_append_right _ hw
+        · exact List.mem_append_left _ (List.map_subset _ (by decide) hw)
+      · exact List.mem_append_left _ (List.map_subset _ (by decide) hw)
+    exact Unch.cover (U₇.trans U') fun w hw => ⟨w, hsub w hw, Nat.le_refl _, Nat.le_refl _⟩
+  · have R' := hi.q
+    rw [Nat.shiftRight_zero] at R'
+    exact R'
+
+/-- `mulFnA`: what its body gives (`mulBodyA_ok`), as `mulFn_ok`. -/
+theorem mulFnA_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8 ∨ c.n = 5) (hC : Law c.C)
+    (hnc : Mont.callOf c.MP' = none) {base : Addr} {s : State}
+    (hs : Scr s base size)
+    (hmp : sv c base s MP = c.C.p) (hz : sv c base s ZERO = 0)
+    (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
+    (hap : sv c base s AP = c.mont c.C.a)
+    (hqx : sv c base s RX < c.C.p) (hqy : sv c base s RY < c.C.p)
+    (hQ : onCurve c.C (ptQ c base s) = true) :
+    WP isa c.mulFnA.inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (mulWA c) s.mem s'.mem ∧
+      ModOkW c.MP' size c.C.p s'.mem base ∧
+      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
+      Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
+        (tmv c.C c.n base s' (c.sl RZ)) (mul (sv c base s K) (ptQ c base s)) := by
+  obtain hkept : ∀ r ∈ Cfg.invKeptX.map Prod.fst, r ∈ powClob c.n := by
+    rcases h4 with h | h | h | h <;> rw [h] <;> decide
+  show WP isa (.seq (.block _) (.seq c.mulBodyA.inline (.block _))) s _
+  refine WP.seq (WP.mono (savesX_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁⟩ => ?_)
+  obtain hs₁ : Scr s₁ base size := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+  obtain ev : ∀ i, sv c base s₁ i = sv c base s i := fun i => by
+    show wordsVal s₁.mem _ _ _ = wordsVal s.mem _ _ _; rw [m₁]
+  obtain eQ : ptQ c base s₁ = ptQ c base s := by
+    show Point.affine (toM _ _ (sv c base s₁ RX)) (toM _ _ (sv c base s₁ RY)) = _
+    rw [ev, ev]
+  refine WP.seq (WP.mono (mulBodyA_ok hc hC hnc hs₁ ((ev _).trans hmp) ((ev _).trans hz)
+    ((ev _).trans hone) ((ev _).trans hap) (by rw [ev]; exact hqx)
+    (by rw [ev]; exact hqy) (by rw [eQ]; exact hQ)) fun s₂ ⟨K₂, U₂, M₂, L₂, R₂⟩ => ?_)
+  rw [ev, eQ] at R₂
+  refine WP.mono (restoresX_ok s₂) fun s' ⟨g', m', rd', wr'⟩ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩
+  · rw [g' r (fun h => hr (hkept r h)), K₂.gpr r hr, g₁]
+  · rw [rd', K₂.rd, rd₁]
+  · rw [wr', K₂.wr, wr₁]
+  · rw [m', ← m₁]; exact U₂
+  · rw [m']; exact M₂
+  · rw [m']; exact L₂
+  · have e : ∀ x, tmv c.C c.n base s' x = tmv c.C c.n base s₂ x := fun x => by
+      show toM _ _ _ = toM _ _ _; rw [m']
+    rw [e, e, e]; exact R₂
+
 /-- What the copies of `G` and `vg_<curve>_mul` write is in what `gMulKC` may
 write. -/
 theorem mulW_sub :
@@ -849,6 +1540,24 @@ theorem mulW_sub :
   · rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       obtain key : ∀ i ∈ [RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP],
+          i = ACC ∨ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] := by
+        decide
+      rcases key i hi with rfl | h
+      · exact List.mem_append_right _ (List.mem_map_of_mem hA)
+      · exact List.mem_append_left _ (List.mem_append_left _ (List.mem_map_of_mem h))
+    · exact List.mem_append_left _ (List.mem_append_right _ hw)
+
+/-- The same of `mulAdd`'s (`mulWA`). -/
+theorem mulWA_sub :
+    ∀ w ∈ slW c [RX, RY] ++ mulWA c, ∃ w' ∈ gWA c, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
+  obtain hA : ACC ∈ c.mulBaseSlots := by unfold Cfg.mulBaseSlots; split <;> simp
+  intro w hw
+  refine ⟨w, ?_, Nat.le_refl _, Nat.le_refl _⟩
+  rcases List.mem_append.mp hw with hw | hw
+  · exact List.mem_append_left _ (List.mem_append_left _ (List.map_subset _ (by decide) hw))
+  · rcases List.mem_append.mp hw with hw | hw
+    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+      obtain key : ∀ i ∈ [RX, RY, RZ, ACC, PT, EM, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP],
           i = ACC ∨ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] := by
         decide
       rcases key i hi with rfl | h
@@ -884,7 +1593,7 @@ theorem gMulKC_ok (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : Co
       exact WP.mono (gMulK_ok hc hC hT hp hS) fun s' ⟨K', U', M', L', R'⟩ =>
         ⟨K', U'.mono fun w hw => List.mem_append_left _ hw, M', L', R'⟩
     | some C =>
-      obtain ⟨h4, hnc⟩ := hmb.2 (by rw [hm₂]; rfl)
+      obtain ⟨h4, hnc, hnca⟩ := hmb.2 (by rw [hm₂]; rfl)
       have F := hS.fixed
       have hs := hS.scr
       have h7 := hc.n10
@@ -892,8 +1601,8 @@ theorem gMulKC_ok (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : Co
       have hp3 := hc.p_ge
       obtain hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
       obtain sz : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ size := fun hi => sl_le c h7 hi
-      show WP isa (.seq (.block (copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY))) c.mulFn) s _
-      rw [← Code.inline_of_noCalls hnc]
+      show WP isa (.seq (.block (copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY)))
+        (c.mulRun C).inline) s _
       refine WP.seq ?_
       rw [WP.block_append_iff]
       refine WP.mono (copy_ok (size := size) c.n hs (o := c.sl RX) (a := c.sl GX)
@@ -915,15 +1624,25 @@ theorem gMulKC_ok (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : Co
       obtain eG : ptQ c (s₀.gpr .r8) s₂ = G c.C := by
         show Point.affine (toM _ _ (sv c _ s₂ RX)) (toM _ _ (sv c _ s₂ RY)) = Point.affine _ _
         rw [rx₂, ry₂, toM_cmont hc, toM_cmont hc]
-      refine WP.mono (mulFn_ok hc h4 hC hs₂ ((e₂ (by decide) (by decide)).trans F.mp)
-        ((e₂ (by decide) (by decide)).trans F.zero) ((e₂ (by decide) (by decide)).trans F.onep)
-        ((e₂ (by decide) (by decide)).trans F.ap) ((e₂ (by decide) (by decide)).trans F.b3p)
-        (lt_of_eq_of_lt rx₂ (hmont _)) (lt_of_eq_of_lt ry₂ (hmont _)) (by rw [eG]; exact hc.onG))
-        fun s' ⟨K', U', M', L', R'⟩ => ⟨?_, Unch.cover (U₂.trans U') mulW_sub, M', L', ?_⟩
-      · have hk : ∀ r ∈ [Reg.rax], r ∈ powClob c.n := fun r hr => by
-          simp only [List.mem_singleton] at hr; simp [hr, powClob, clob]
-        exact ((k₁.mono hk).trans (k₂.mono hk)).trans K'
-      · have k₂ : sv c (s₀.gpr .r8) s₂ K = sv c (s₀.gpr .r8) s K := e₂ (by decide) (by decide)
-        rw [eG, k₂, hS.k] at R'; exact R'
+      have hk : ∀ r ∈ [Reg.rax], r ∈ powClob c.n := fun r hr => by
+        simp only [List.mem_singleton] at hr; simp [hr, powClob, clob]
+      have k₂' : sv c (s₀.gpr .r8) s₂ K = sv c (s₀.gpr .r8) s K := e₂ (by decide) (by decide)
+      unfold Cfg.mulRun
+      cases hma : c.mulAdd
+      · show WP isa c.mulFn s₂ _
+        rw [← Code.inline_of_noCalls (hnc hma)]
+        refine WP.mono (mulFn_ok hc h4 hC hs₂ ((e₂ (by decide) (by decide)).trans F.mp)
+          ((e₂ (by decide) (by decide)).trans F.zero) ((e₂ (by decide) (by decide)).trans F.onep)
+          ((e₂ (by decide) (by decide)).trans F.ap) ((e₂ (by decide) (by decide)).trans F.b3p)
+          (lt_of_eq_of_lt rx₂ (hmont _)) (lt_of_eq_of_lt ry₂ (hmont _)) (by rw [eG]; exact hc.onG))
+          fun s' ⟨K', U', M', L', R'⟩ => ⟨((k₁.mono hk).trans (k₂.mono hk)).trans K',
+            Unch.cover (U₂.trans U') mulW_sub, M', L', by rw [eG, k₂', hS.k] at R'; exact R'⟩
+      · show WP isa c.mulFnA.inline s₂ _
+        refine WP.mono (mulFnA_ok hc h4 hC (hnca hma) hs₂ ((e₂ (by decide) (by decide)).trans F.mp)
+          ((e₂ (by decide) (by decide)).trans F.zero) ((e₂ (by decide) (by decide)).trans F.onep)
+          ((e₂ (by decide) (by decide)).trans F.ap)
+          (lt_of_eq_of_lt rx₂ (hmont _)) (lt_of_eq_of_lt ry₂ (hmont _)) (by rw [eG]; exact hc.onG))
+          fun s' ⟨K', U', M', L', R'⟩ => ⟨((k₁.mono hk).trans (k₂.mono hk)).trans K',
+            Unch.cover (U₂.trans U') mulWA_sub, M', L', by rw [eG, k₂', hS.k] at R'; exact R'⟩
 
 end VG.Proof.Ecdsa.X86_64
