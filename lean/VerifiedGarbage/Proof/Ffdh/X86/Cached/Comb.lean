@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Ffdh.X86.Stages
-import VerifiedGarbage.Proof.Ffdh.X86.Ops
+public import VerifiedGarbage.Proof.Ffdh.X86.Ops
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
 import VerifiedGarbage.Proof.Framework.Offset
@@ -152,6 +152,21 @@ theorem ctx_val (C : CtxRd base bytes len args s) {sp : BitVec 32}
   obtain sub : Region.Sub ⟨off (ctxAddr args) d, 4 * N⟩ ⟨ctxAddr args, ctxBytes len⟩ := Offset.sub_base _ hd
   simp only [frameR, List.mem_cons, List.mem_map] at hr
   rcases hr with rfl | ⟨p, hp, rfl⟩
+  · exact hstk.sub_left sub
+  · exact (C.apart.sub_left sub).sub_right (Offset.sub_base _ (hws p hp))
+
+/-- The context through a stage's changes. -/
+theorem ctxF_val (C : CtxRd base bytes len args s) {sp : BitVec 32}
+    (hstk : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below sp 96))
+    (hwide : Region.Disjoint ⟨ctxAddr args, ctxBytes len⟩ (below sp 176)) {ws : List (Nat × Nat)} {m m' : Mem}
+    (F : Frame (frameF base sp ws) m m') (hws : ∀ p ∈ ws, p.1 + p.2 ≤ bytes)
+    {d N : Nat} (hd : d + 4 * N ≤ ctxBytes len) :
+    val32 m' (ctxAddr args) d N = val32 m (ctxAddr args) d N := by
+  refine val32_far F (fun r hr => ?_) (by have := C.span.fit; omega_using [hd, this])
+  obtain sub : Region.Sub ⟨off (ctxAddr args) d, 4 * N⟩ ⟨ctxAddr args, ctxBytes len⟩ := Offset.sub_base _ hd
+  simp only [frameF, frameR, List.mem_cons, List.mem_map] at hr
+  rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
+  · exact hwide.sub_left sub
   · exact hstk.sub_left sub
   · exact (C.apart.sub_left sub).sub_right (Offset.sub_base _ (hws p hp))
 

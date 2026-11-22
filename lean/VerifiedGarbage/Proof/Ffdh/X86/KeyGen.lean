@@ -390,7 +390,8 @@ structure OutAt (args : Nat → BitVec 32) (base : Addr) (bytes len p : Nat) (sp
   wr : InRegions wr (byteAddr (args p)) len
   apart : Region.Disjoint ⟨base, bytes⟩ ⟨byteAddr (args p), len⟩
   frame : Region.Disjoint ⟨sp.setWidth 64, 76⟩ ⟨byteAddr (args p), len⟩
-  below : Region.Disjoint ⟨byteAddr (args p), len⟩ (below sp 96)
+  room : RoomF sp base bytes
+  below : Region.Disjoint ⟨byteAddr (args p), len⟩ (below sp 176)
 
 theorem OutAt.keep {p : Nat} {sp : BitVec 32} {wr : List Region} (O : OutAt args base bytes len p sp wr) {t : State}
     {rs : List Reg} (e : s.wr = wr) (K : Keeps rs s t) : OutAt args base bytes len p sp t.wr := by
@@ -513,9 +514,10 @@ theorem outputs_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes
     refine frame_bytes ((F₃.mono fun r hr => List.mem_cons_of_mem _ hr).trans F₄) (fun r hr => ?_) (by omega_arith)
     rcases List.mem_cons.mp hr with rfl | hr
     · exact xy
-    · rw [frameR, List.mem_cons, List.mem_map] at hr
-      rcases hr with rfl | ⟨q, hq, rfl⟩
+    · rw [frameF, frameR, List.mem_cons, List.mem_cons, List.mem_map] at hr
+      rcases hr with rfl | rfl | ⟨q, hq, rfl⟩
       · exact Ox.below
+      · exact Ox.below.sub_right (VG.X86.below_sub (by decide) Ox.room.low)
       · have := fR_fit h q hq
         exact Ox.apart.symm.sub_right (Offset.sub_base _ (by omega_arith))
   · have F₁ := S₁.frame

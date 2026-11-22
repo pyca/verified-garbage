@@ -36,6 +36,13 @@ abbrev fR (len : Nat) : List (Nat × Nat) := [(0, 32), (48, CrtRt.need len - 48)
 abbrev InF (len : Nat) (p : Nat × Nat) : Prop :=
   p.1 + p.2 ≤ 32 ∨ (48 ≤ p.1 ∧ p.1 + p.2 ≤ CrtRt.need len)
 
+theorem fR_widenR {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem} (F : Frame (frameR base sp ws) m m')
+    (hw : ∀ p ∈ ws, InF len p) : Frame (frameR base sp (fR len)) m m' :=
+  frameR_widen F fun p hp => by
+    rcases hw p hp with e | e
+    · exact ⟨(0, 32), by simp, by omega_using [], by omega_using [e]⟩
+    · exact ⟨(48, CrtRt.need len - 48), by simp, by dsimp only; omega_using [e], by dsimp only; omega_using [e]⟩
+
 /-- The regions a stage may change: those of the operations (`frameR`), and the 176 bytes below `sp`,
 room for a call of a callee that copies the 76 bytes of arguments below its return address and
 calls the operations. -/
@@ -100,6 +107,42 @@ theorem frameF_val32 {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem} (F :
     have := hfit p hp
     exact Offset.disjoint base (by omega_arith) (by omega_using [nw, hd]) (by omega_using [nw, this])
 
+/-- The inputs hold after a stage that changes registers but `edi` and `esp`, and memory in its ranges. -/
+theorem in_keepFF (h : In Ex base bytes len args s) {t : State} {regs : List Reg} (K : Keeps regs s t)
+    (di : .edi ∉ regs) (sp : .esp ∉ regs) (RF : RoomF (s.gpr .esp) base bytes) {ws : List (Nat × Nat)}
+    (F : Frame (frameF base (s.gpr .esp) ws) s.mem t.mem) (hfit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes) :
+    In Ex base bytes len args t := by
+  have low := RF.low
+  have top := h.top
+  have esp : t.gpr .esp = s.gpr .esp := K.1 _ sp
+  refine ⟨h.scratch.of_keeps K di sp, h.lower, h.upper, fun i hi => ⟨(h.stack i hi).stack.keep K sp, ?_⟩,
+    h.outLen, by rw [esp]; exact h.room, by rw [esp]; exact h.top, h.need, h.hbase, h.hbytes,
+    by rw [K.2.1, K.2.2]; exact h.extra⟩
+  have A := h.stack i hi
+  rw [← A.value]
+  unfold VG.Proof.Dsa.X86.stackValue
+  rw [show VG.Proof.Dsa.X86.stackAddress t i = VG.Proof.Dsa.X86.stackAddress s i by
+    simp only [VG.Proof.Dsa.X86.stackAddress, esp]]
+  have ea : (VG.Proof.Dsa.X86.stackAddress s i).toNat = (s.gpr .esp).toNat + (4 + 4 * i) := by
+    simp only [VG.Proof.Dsa.X86.stackAddress, addr, VG.Proof.Bignum.X86.PublicRt.setWidth_toNat,
+      BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega_using [top, hi]
+  refine F.readW (r := ⟨VG.Proof.Dsa.X86.stackAddress s i, 4⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  simp only [frameF, frameR, List.mem_cons, List.mem_map] at hr
+  rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
+  · have eb : ((s.gpr .esp - BitVec.ofNat 32 176).setWidth 64).toNat = (s.gpr .esp).toNat - 176 := by
+      rw [VG.Proof.Bignum.X86.PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega_using [low])]
+    exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 176) (.inl (by dsimp only; rw [eb, ea]; omega_using [low]))
+      (by dsimp only; rw [eb]; omega_using []) (by dsimp only; rw [ea]; omega_using [hi])).symm
+  · have eb : ((s.gpr .esp - BitVec.ofNat 32 96).setWidth 64).toNat = (s.gpr .esp).toNat - 96 := by
+      rw [VG.Proof.Bignum.X86.PublicRt.setWidth_toNat, VG.X86.sub_toNat (by omega_using [low])]
+    exact (Region.disjoint_of_le (r₁ := below (s.gpr .esp) 96) (.inl (by dsimp only; rw [eb, ea]; omega_using [low]))
+      (by dsimp only; rw [eb]; omega_using []) (by dsimp only; rw [ea]; omega_using [hi])).symm
+  · refine A.stack.apart.sub_right ?_
+    have := hfit p hp
+    have := Offset.sub base (d := p.1) (n := p.2) (e := 0) (k := bytes) (Nat.zero_le _) (by omega_using [this])
+    simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
+
 theorem fR_fit (h : In Ex base bytes len args s) : ∀ p ∈ fR len, p.1 + p.2 ≤ bytes := by
   have := h.need
   have : 48 ≤ CrtRt.need len := by simp only [CrtRt.need, numBase]; omega_using []
@@ -116,6 +159,17 @@ theorem fR_of_outside (h : In Ex base bytes len args s) {sp : BitVec 32} {a n : 
     · have := this (0, 32) (by simp); dsimp only at *; omega_using [e, this]
     · have := this (48, CrtRt.need len - 48) (by simp); dsimp only at *; omega_using [e, this]
   exact fR_widen (frameR_of_outside O (by omega_using [bl, this]) (List.mem_singleton_self _))
+    fun p hp => by rw [List.mem_singleton.mp hp]; exact hw
+
+theorem fR_of_outsideR (h : In Ex base bytes len args s) {sp : BitVec 32} {a n : Nat} {m m' : Mem}
+    (O : Outside base a n m m') (hw : InF len (a, n)) : Frame (frameR base sp (fR len)) m m' := by
+  have := fR_fit h
+  have bl := h.bytes_lt
+  have : a + n ≤ bytes := by
+    rcases hw with e | e
+    · have := this (0, 32) (by simp); dsimp only at *; omega_using [e, this]
+    · have := this (48, CrtRt.need len - 48) (by simp); dsimp only at *; omega_using [e, this]
+  exact fR_widenR (frameR_of_outside O (by omega_using [bl, this]) (List.mem_singleton_self _))
     fun p hp => by rw [List.mem_singleton.mp hp]; exact hw
 
 /-- The ranges of the operations of a context, within `fR`. -/

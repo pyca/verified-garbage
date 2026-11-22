@@ -1471,7 +1471,7 @@ theorem MAt.regs {up Tb : BitVec 32} {T : List Byte} {bits g : Nat} {x u : State
   obtain ⟨C, b, gg, TT⟩ := A
   refine ⟨C.regs m K, by rw [m, b], by rw [m, gg], ?_⟩
   refine ⟨by rw [sy]; exact TT.sym, fun i hi d hd => by rw [K.2.1, K.2.2]; exact TT.read i hi d hd,
-    fun i hi => by rw [m]; exact TT.words i hi, TT.fit, TT.far⟩
+    fun i hi => by rw [m]; exact TT.words i hi, TT.fit, TT.far, TT.wide⟩
 
 /-- p in wide slot 9 and the cursor past its octets. -/
 abbrev PAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)

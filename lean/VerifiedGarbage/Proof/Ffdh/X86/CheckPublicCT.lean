@@ -261,7 +261,7 @@ theorem body_relCT :
   apply VG.RelCT.chain
   refine VG.RelCT.seq (aRel (F := F1 Ex base bytes len dlen args sp D Yb) (fun _ A => A.dom.run) front_check
     fun x A => ?_) ?_
-  · refine WP.mono (front_ok A.dom.run.1 A.dom.geo A.geo (by rw [A.dom.run.2.2]; exact A.hy40))
+  · refine WP.mono (front_ok A.dom.run.1 A.dom.geo A.geo (by rw [A.dom.run.2.2]; exact A.dom.room) (by rw [A.dom.run.2.2]; exact A.hy40))
       fun u ⟨S, G, _, _⟩ => ⟨A.dom.step S, ?_⟩
     rw [A.dom.comp0, A.yv] at G
     exact G
@@ -308,7 +308,7 @@ theorem pubAt_of {s f : State} (A : CheckPublicABI s) (Bf : BodyAt (Rd s) Impl.F
   have hx := narrowRd Bf.1.extra ⟨wsBase Impl.Ffdh.X86.CheckPublic.args s, wsSize Impl.Ffdh.X86.CheckPublic.args s⟩
   obtain ⟨G, Y, hb, hy⟩ := frame_geo A (sp := s.gpr .esp - BitVec.ofNat 32 argsFrame) rfl hx
   have yR : (arg s 4).toNat = pLenOf Impl.Ffdh.X86.CheckPublic.args s := A.yLen
-  refine ⟨⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A), Bf.2.1⟩, G, hb,
+  refine ⟨⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A), Bf.2.1⟩, G, (wrapABI A).room, hb,
     frame_keep A Bf.2.2.2.2 A.domScratch A.belowDom (by have := A.domBound; omega_using [])⟩, Y, hy, ?_⟩
   show Spec.Rsa.bytesAt f.mem (argumentPointer s 3) _ = Spec.Rsa.bytesAt s.mem (argumentPointer s 3) (arg s 4).toNat
   rw [← yR]
@@ -347,6 +347,7 @@ theorem constantTime : ConstantTime isa (Spec.Ffdh.checkPublicContract abi stack
       ∃ F, WP isa Impl.Ffdh.X86.CheckPublic.body
         (narrowed (wsBase Impl.Ffdh.X86.CheckPublic.args x) (wsSize Impl.Ffdh.X86.CheckPublic.args x) f) F :=
     fun X Bf => ⟨_, body_ok (pubAt_of X Bf).dom.run.1 (pubAt_of X Bf).dom.geo (pubAt_of X Bf).geo
+      (by rw [(pubAt_of X Bf).dom.run.2.2]; exact (pubAt_of X Bf).dom.room)
       (by rw [(pubAt_of X Bf).dom.run.2.2]; exact (pubAt_of X Bf).dom.hb40)
       (by rw [(pubAt_of X Bf).dom.run.2.2]; exact (pubAt_of X Bf).hy40)⟩
   refine wrap_trace (wrapABI A) (wrapABI B) args SP (hx A) (hx B) fill_check
