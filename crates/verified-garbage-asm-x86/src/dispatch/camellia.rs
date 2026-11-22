@@ -29,7 +29,7 @@ pub unsafe fn vg_camellia_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, k
 ///
 /// Contract: `VG.Spec.Camellia.ecbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
 ///
-/// It runs `vg_camellia_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_camellia_ecb_encrypt_aesni` if the CPU supports its features (`VG_CAMELLIA_ECB_ENCRYPT_AESNI_FEATURES`); or else `vg_camellia_ecb_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -43,15 +43,44 @@ pub unsafe fn vg_camellia_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, k
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_camellia_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::camellia::vg_camellia_ecb_encrypt(schedule, rounds, data, n) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::camellia::VG_CAMELLIA_ECB_ENCRYPT_AESNI_FEATURES) }
+            || cpu.contains(crate::camellia::VG_CAMELLIA_ECB_ENCRYPT_AESNI_FEATURES)
+        {
+            return crate::camellia::vg_camellia_ecb_encrypt_aesni;
+        }
+        crate::camellia::vg_camellia_ecb_encrypt
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, rounds, data, n) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, rounds, data, n) }
 }
 
 /// Camellia ECB decryption (RFC 3713 §2.3.3, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption by Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them (in the order encryption uses them, which decryption reverses). No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Camellia.ecbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
 ///
-/// It runs `vg_camellia_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_camellia_ecb_decrypt_aesni` if the CPU supports its features (`VG_CAMELLIA_ECB_DECRYPT_AESNI_FEATURES`); or else `vg_camellia_ecb_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -65,6 +94,35 @@ pub unsafe fn vg_camellia_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_camellia_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::camellia::vg_camellia_ecb_decrypt(schedule, rounds, data, n) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::camellia::VG_CAMELLIA_ECB_DECRYPT_AESNI_FEATURES) }
+            || cpu.contains(crate::camellia::VG_CAMELLIA_ECB_DECRYPT_AESNI_FEATURES)
+        {
+            return crate::camellia::vg_camellia_ecb_decrypt_aesni;
+        }
+        crate::camellia::vg_camellia_ecb_decrypt
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, rounds, data, n) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, rounds, data, n) }
 }
