@@ -628,6 +628,9 @@ theorem transfer {P Q : List Instr} (he : SseEquiv.equiv eparams P Q [(m0, m0)] 
 
 end
 
+/-- The scratch buffer of the core's 214 slots. -/
+abbrev Scr (s : State) (B : BitVec 32) : Prop := VG.Proof.Modes.X86.ScrIn s B 214
+
 /-- A state of `crypt` at group `i`, from the state `s₀` it starts in: the
 keys' pointer at the group's keys, the table's address, and memory as it
 was but in the places and the blocks. -/
@@ -659,7 +662,7 @@ theorem WAt.adr (h : WAt s₀ B i s) (hf : B.toNat + 856 ≤ 2 ^ 32) (hi : i < 4
   have := h.krNat hf hi
   rw [addr_eq (by omega_arith), h.kr64 hf hi, Offset.add_ofNat_add_ofNat, Nat.add_assoc]
 
-theorem WAt.env (h : WAt s₀ B i s) (hs : ScrIn s₀ B 214) (hi : i < 4) (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) :
+theorem WAt.env (h : WAt s₀ B i s) (hs : Scr s₀ B) (hi : i < 4) (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) :
     Env s := by
   have hf := hs.fit
   have hn := h.krNat hf hi
@@ -680,10 +683,10 @@ theorem WAt.word (h : WAt s₀ B i s) (hf : B.toNat + 856 ≤ 2 ^ 32) (hi : i < 
   exact pw_frame h.frame (.inl (by omega_arith)) (by decide) (by omega_arith)
 
 /-- The doublewords of a quadword of the keys, in both quadwords. -/
-theorem WAt.kq (h : WAt s₀ B i s) (hf : B.toNat + 856 ≤ 2 ^ 32) (hi : i < 4) {o k : Nat} (ho : o + 16 ≤ 136)
+theorem WAt.dword_kq (h : WAt s₀ B i s) (hf : B.toNat + 856 ≤ 2 ^ 32) (hi : i < 4) {o k : Nat} (ho : o + 16 ≤ 136)
     (hk : k < 2) {a c : Nat} (ha : a < 2) (hc : c < 2) :
     dword (kq s (o + 8 * k)) (2 * a + c) = dword (wAt s₀.mem B (112 * i + o)) (2 * k + c) := by
-  rw [← h.word hf hi ho, kq, h.adr hf hi (by omega_arith), h.adr hf hi (by omega_arith),
+  rw [← h.word hf hi ho, AesNiWide.kq, h.adr hf hi (by omega_arith), h.adr hf hi (by omega_arith),
     show 24 + (112 * i + (o + 8 * k)) = 24 + (112 * i + o) + 8 * k by omega_arith, ← Offset.add_ofNat_add_ofNat,
     dword_dupq_readW _ _ hk ha hc]
 
@@ -700,7 +703,7 @@ theorem WAt.upd {s' : State} {d : Reg} {v : BitVec 32} (h : WAt s₀ B i s) (u :
     by rw [u.mem]; exact h.frame, u.rd.trans h.rd, u.wr.trans h.wr, u.syms.trans h.syms,
     by rw [u.other _ (Ne.symm hd.2.2.1)]; exact h.tb, by rw [u.other _ (Ne.symm hd.2.2.2)]; exact h.kp⟩
 
-theorem WAt.gk {g : Nat} {E : Nat → BitVec 64} (h : WAt s₀ B i s) (hs : ScrIn s₀ B 214)
+theorem WAt.gk {g : Nat} {E : Nat → BitVec 64} (h : WAt s₀ B i s) (hs : Scr s₀ B)
     (hk : Keys s₀.mem B g E) (hi : i < g) (hg : g ≤ 4) : AesNi.GroupKeys s (fun r => E (2 + 8 * i + r)) :=
   have hf := hs.fit
   have hi4 : i < 4 := by omega_arith
@@ -709,7 +712,7 @@ theorem WAt.gk {g : Nat} {E : Nat → BitVec 64} (h : WAt s₀ B i s) (hs : ScrI
     fun j hj => by have := slot_lt j; rw [h.key hf hi4 (by omega_arith)]; exact hk.rk5 i hi j hj⟩
 
 /-- What the parts as they run need of the state. -/
-theorem WAt.pre (h : WAt s₀ B i s) (hs : ScrIn s₀ B 214) (hi : i < 4) : SseEquiv.Pre eparams s := by
+theorem WAt.pre (h : WAt s₀ B i s) (hs : Scr s₀ B) (hi : i < 4) : SseEquiv.Pre eparams s := by
   have hf := hs.fit
   have hn := h.krNat hf hi
   have hb : (s.gpr sb).toNat = B.toNat := by rw [h.base]
@@ -736,6 +739,108 @@ theorem WAt.pre (h : WAt s₀ B i s) (hs : ScrIn s₀ B 214) (hi : i < 4) : SseE
   · show Region.Disjoint ⟨(s.gpr kr).setWidth 64, 128⟩ ⟨(s.gpr sb).setWidth 64 + BitVec.ofNat 64 512, 640 - 512⟩
     rw [h.kr64 hf hi, h.base]
     exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by decide)
+
+end
+
+/-! ### The rounds of a group -/
+
+section
+variable {s₀ s : State} {B : BitVec 32} {g i : Nat} {E : Nat → BitVec 64}
+
+/-- The halves `d b` of the four blocks, in the rounds' form with the first
+two subkeys of group `i`, in the places: block `2 p + L` in quadword `L` of
+pair `p`'s. -/
+def HalvesAt (m : Mem) (B : BitVec 32) (E : Nat → BitVec 64) (i : Nat) (d : Nat → BitVec 64 × BitVec 64) : Prop :=
+  ∀ p < 2, Lanes (pw m B (plc p 0)) (fun L j => dq (d (2 * p + L)).1 j ^^^ dq (E (2 + 8 * i)) j ^^^ c5) ∧
+    Lanes (pw m B (plc p 1)) (fun L j => dq (d (2 * p + L)).2 j ^^^ dq (E (2 + 8 * i + 1)) j ^^^ c5 ^^^ gc j)
+
+/-- The halves `P b` in the rounds' form, in the places, the second with
+the key `K` of the group's last round. -/
+def TriAt (m : Mem) (B : BitVec 32) (K : BitVec 64) (P : Nat → BitVec 64 × BitVec 64) : Prop :=
+  ∀ p < 2, Lanes (pw m B (plc p 0)) (fun L => dq (P (2 * p + L)).1) ∧
+    Lanes (pw m B (plc p 1)) (fun L j => dq (P (2 * p + L)).2 j ^^^ dq K j ^^^ c5)
+
+theorem plc_le {p h : Nat} (hp : p < 2) (hh : h < 2) : plc p h + 16 ≤ 576 ∧ 512 ≤ plc p h := by
+  unfold plc; omega_arith
+
+/-- The six rounds of group `i` on pair `p`. -/
+theorem pairGroup_wp {p : Nat} (hp : p < 2) (hs : Scr s₀ B) (hk : Keys s₀.mem B g E) (hi : i < g) (hg : g ≤ 4)
+    (h : WAt s₀ B i s) (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) {a b : Nat → BitVec 64}
+    (h0 : Lanes (pw s.mem B (plc p 0)) fun L j => dq (a L) j ^^^ dq (E (2 + 8 * i)) j ^^^ c5)
+    (h1 : Lanes (pw s.mem B (plc p 1)) fun L j => dq (b L) j ^^^ dq (E (2 + 8 * i + 1)) j ^^^ c5 ^^^ gc j) :
+    WP isa (.block (pairGroup p)) s (Part s fun m =>
+      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 (plc p 0), 32⟩] s.mem m ∧
+      Lanes (pw m B (plc p 0)) (fun L => dq (AesNi.tri E i (a L, b L)).1) ∧
+      Lanes (pw m B (plc p 1)) (fun L j => dq (AesNi.tri E i (a L, b L)).2 j ^^^ dq (E (2 + 8 * i + 5)) j ^^^ c5)) := by
+  have hf := hs.fit
+  have hi4 : i < 4 := by omega_arith
+  have he := h.env hs hi4 hm
+  have hK := h.gk hs hk hi hg
+  have l0 := plc_le hp (show 0 < 2 by decide)
+  have l1 := plc_le hp (show 1 < 2 by decide)
+  refine WP.mono (ld2_st2 (r₁ := .xmm0) (r₂ := .xmm1) (X := rounds6) (P := fun f =>
+      (∀ q < 16, byte (f m0) q = 0x0f#8) ∧ Lanes (f .xmm0) (fun L => dq (AesNi.tri E i (a L, b L)).1) ∧
+      Lanes (f .xmm1) (fun L j => dq (AesNi.tri E i (a L, b L)).2 j ^^^ dq (E (2 + 8 * i + 5)) j ^^^ c5))
+    h.base (by rw [h.wr]; exact hs.wr) hf (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) ?_) ?_
+  · refine WP.mono (rounds6_wp (s := (s.setXmm .xmm0 (pw s.mem B (plc p 0))).setXmm .xmm1 (pw s.mem B (plc p 1)))
+      (k := fun r => E (2 + 8 * i + r)) (a := a) (b := b)
+      ⟨he.tb, he.fit, he.acc, hm⟩ ⟨hK.d, hK.d4, hK.d5⟩ h0 h1) fun s' ⟨⟨f, e⟩, he', x, y⟩ => ⟨f, e, ?_⟩
+    subst e
+    exact ⟨he'.msk, x, y⟩
+  · rintro s' ⟨f, ⟨hm', x, y⟩, rfl⟩
+    obtain ⟨r1, r2, fr⟩ := st2_mem s.mem B (f .xmm0) (f .xmm1) (show plc p 0 + 16 = plc p 1 from rfl)
+      (by omega_arith)
+    exact ⟨⟨f, _, rfl⟩, hm', fr, by rw [r1]; exact x, by rw [r2]; exact y⟩
+
+theorem two {p : Nat} (hp : p < 2) : p = 0 ∨ p = 1 := by omega_arith
+
+/-- The 32 bytes of a pair's places are among the places and the blocks. -/
+theorem sub_places {p : Nat} (hp : p < 2) {m m' : Mem}
+    (h : Frame [⟨B.setWidth 64 + BitVec.ofNat 64 (plc p 0), 32⟩] m m') :
+    Frame [⟨B.setWidth 64 + BitVec.ofNat 64 512, 128⟩] m m' :=
+  h.sub fun r hr => by
+    rw [List.mem_singleton] at hr; subst hr
+    have := plc_le hp (show 0 < 2 by decide)
+    exact ⟨_, List.mem_singleton_self _, Offset.sub _ this.2 (by unfold plc at this ⊢; omega_arith)⟩
+
+/-- The six rounds of group `i`, a pair at a time. -/
+theorem refGroup_wp (hs : Scr s₀ B) (hk : Keys s₀.mem B g E) (hi : i < g) (hg : g ≤ 4) (h : WAt s₀ B i s)
+    (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) {d : Nat → BitVec 64 × BitVec 64}
+    (hh : HalvesAt s.mem B E i d) :
+    WP isa (.block refGroup) s (Part s fun m =>
+      Frame [⟨B.setWidth 64 + BitVec.ofNat 64 512, 128⟩] s.mem m ∧
+      TriAt m B (E (2 + 8 * i + 5)) (fun b => AesNi.tri E i (d b))) := by
+  refine WP.block_append_iff.mpr (WP.mono (pairGroup_wp (p := 0) (by decide) hs hk hi hg h hm
+    (a := fun L => (d (2 * 0 + L)).1) (b := fun L => (d (2 * 0 + L)).2) (hh 0 (by decide)).1 (hh 0 (by decide)).2)
+    fun s₁ ⟨e₁, m₁, F₁, x₁, y₁⟩ => ?_)
+  have a₁ := h.part e₁ (sub_places (by decide) F₁)
+  have q0 : pw s₁.mem B (plc 1 0) = pw s.mem B (plc 1 0) := pw_frame F₁ (.inr (by decide)) (by decide) (by decide)
+  have q1 : pw s₁.mem B (plc 1 1) = pw s.mem B (plc 1 1) := pw_frame F₁ (.inr (by decide)) (by decide) (by decide)
+  refine WP.mono (pairGroup_wp (p := 1) (by decide) hs hk hi hg a₁ m₁
+    (a := fun L => (d (2 * 1 + L)).1) (b := fun L => (d (2 * 1 + L)).2) (by rw [q0]; exact (hh 1 (by decide)).1)
+    (by rw [q1]; exact (hh 1 (by decide)).2)) fun s₂ ⟨e₂, m₂, F₂, x₂, y₂⟩ => ?_
+  refine ⟨xm_trans e₁ e₂, m₂, (sub_places (by decide) F₁).trans (sub_places (by decide) F₂), fun p hp => ?_⟩
+  rcases two hp with rfl | rfl
+  · rw [pw_frame F₂ (.inl (by decide)) (by decide) (by decide),
+      pw_frame F₂ (.inl (by decide)) (by decide) (by decide)]
+    exact ⟨x₁, y₁⟩
+  · exact ⟨x₂, y₂⟩
+
+/-- The six rounds of group `i` and the count of the groups left. -/
+theorem rounds_wp (hs : Scr s₀ B) (hk : Keys s₀.mem B g E) (hi : i < g) (hg : g ≤ 4) (h : WAt s₀ B i s)
+    (hm : ∀ q < 16, byte (s.xmm m0) q = 0x0f#8) {d : Nat → BitVec 64 × BitVec 64}
+    (hh : HalvesAt s.mem B E i d) {n : Nat} (hc : s.gpr .ecx = BitVec.ofNat 32 n) (hn : 1 ≤ n) (hn4 : n ≤ 4) :
+    WP isa (.block rounds) s fun s' => WAt s₀ B i s' ∧ (∀ q < 16, byte (s'.xmm m0) q = 0x0f#8) ∧
+      s'.gpr .ecx = BitVec.ofNat 32 (n - 1) ∧ s'.zf = some (decide (n = 1)) ∧
+      TriAt s'.mem B (E (2 + 8 * i + 5)) (fun b => AesNi.tri E i (d b)) := by
+  refine WP.block_append_iff.mpr (WP.mono (transfer group_equiv (h.pre hs (by omega_arith))
+    (refGroup_wp hs hk hi hg h hm hh)) fun s₁ ⟨e₁, m₁, F₁, t₁⟩ => ?_)
+  have a₁ := h.part e₁ F₁
+  have c₁ : s₁.gpr .ecx = BitVec.ofNat 32 n := by obtain ⟨f, m, rfl⟩ := e₁; exact hc
+  refine AesNi.wp_subi_x fun s₂ u₂ xe z₂ => WP.block_nil ?_
+  refine ⟨a₁.upd u₂ (by decide), by rw [xe]; exact m₁, ?_, ?_, by rw [u₂.mem]; exact t₁⟩
+  · rw [u₂.gpr, c₁]; exact Wp.ofNat_pred hn
+  · rw [z₂, c₁, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, Wp.sub_beq (by omega_arith) (by decide)]
 
 end
 
