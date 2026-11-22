@@ -2001,11 +2001,10 @@ vg_blowfish_expand_key:
 222:
 	sub rsi, 1
 	jne 215b
+	pxor xmm0, xmm0
 	mov r11d, 0
-	mov QWORD PTR [rsp+8], r11
-	mov QWORD PTR [rsp+16], r11
-	mov QWORD PTR [rsp+24], r11
-	mov QWORD PTR [rsp+32], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
 	lea rsp, [rsp+40]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
@@ -2501,9 +2500,9 @@ vg_blowfish_ecb_encrypt:
 	jmp 21f
 20:
 21:
+	pxor xmm0, xmm0
 	mov r11d, 0
-	mov QWORD PTR [rsp+8], r11
-	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+264]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
@@ -3015,9 +3014,9 @@ vg_blowfish_ecb_decrypt:
 	jmp 21f
 20:
 21:
+	pxor xmm0, xmm0
 	mov r11d, 0
-	mov QWORD PTR [rsp+8], r11
-	mov QWORD PTR [rsp+16], r11
+	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+264]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1

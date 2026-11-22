@@ -572,6 +572,7 @@ vg_cast5_cbc_encrypt_chained:
 	mov r13, QWORD PTR [r9+192]
 	mov r14, QWORD PTR [r9+200]
 	mov r15, QWORD PTR [r9+208]
+	pxor xmm0, xmm0
 	mov r11d, 0
 	lea rsp, [rsp+240]
 	pxor xmm0, xmm0
@@ -1222,6 +1223,7 @@ vg_cast5_cbc_decrypt_chained:
 	mov r13, QWORD PTR [r9+192]
 	mov r14, QWORD PTR [r9+200]
 	mov r15, QWORD PTR [r9+208]
+	pxor xmm0, xmm0
 	mov r11d, 0
 	lea rsp, [rsp+240]
 	pxor xmm0, xmm0
