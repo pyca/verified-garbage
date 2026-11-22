@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Rsa.PPC64LE.KcMath
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.InvLaw
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyOps
+import VerifiedGarbage.Proof.Rsa.PPC64LE.InvCall
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyDiv
 import VerifiedGarbage.Proof.Rsa.PPC64LE.MontKey
 import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFios
@@ -393,7 +394,7 @@ theorem shape_ok {s : State} {w pL qL : Nat} (hw : s.gpr .r29 = BitVec.ofNat 64 
 
 
 /-- The inverse of `x` modulo `m`: without its doublings (`inverseS`) for a
-balanced key, else `inverse`. -/
+balanced key, else by a call of `vg_rsa_inv_batch` (`invCall`). -/
 theorem invB_ok [InvLaw] {s : State} {B : Addr} {Z w pL qL : Nat} (h : Ws s B Z w nArr) (hw : 10 ≤ w)
     (hwe : w % 2 = 0) (h11 : s.gpr .r11 = BitVec.ofNat 64 ((max pL qL + 3) / 4))
     (h20 : s.gpr .r20 = BitVec.ofNat 64 pL) (h22 : s.gpr .r22 = BitVec.ofNat 64 qL) (hpL : 1 ≤ pL)
@@ -401,8 +402,9 @@ theorem invB_ok [InvLaw] {s : State} {B : Addr} {Z w pL qL : Nat} (h : Ws s B Z 
     (hx : num s.mem B w 0 = x) (hxn : x < 2 ^ (32 * ((max pL qL + 3) / 4))) (hm : num s.mem B w 8 = m)
     (hmn : m < 2 ^ (32 * ((max pL qL + 3) / 4))) (hodd : m % 2 = 1) :
     WP isa (seqs [.block shape, .ite (.zero .d .r0) VG.Impl.Rsa.PPC64LE.InvBatch.inverseS
-      VG.Impl.Rsa.PPC64LE.InvBatch.inverse]) s fun t => Ws t B Z w nArr ∧
-      KeyWorkspace.Keep B w invBatchArrs [] s.mem t.mem ∧ Keep (.r10 :: InvBatch.kRegs) s t ∧
+      VG.Impl.Rsa.PPC64LE.CrtValues.invCall]) s fun t => Ws t B Z w nArr ∧
+      KeyWorkspace.Keep B w (VG.Impl.Rsa.PPC64LE.Keys.aNM :: invBatchArrs) [] s.mem t.mem ∧
+      Keep (.r10 :: InvBatch.kRegs) s t ∧
       (1 < m → num t.mem B w 1 = Nat.gcd x m ∧
         (KeyCheck.Shape w pL qL → (m : Int) ∣ ((num t.mem B w 3 * 2 ^ (5 * (3 * (w / 4) + 2)) % m : Nat) : Int) *
           x - num t.mem B w 1 ∧ num t.mem B w 3 < m) ∧
@@ -428,12 +430,12 @@ theorem invB_ok [InvLaw] {s : State} {B : Addr} {Z w pL qL : Nat} (h : Ws s B Z 
       fun t ⟨ht, Kt, kt, vt⟩ => ?_
     rw [hν] at vt
     rw [m1] at Kt
-    refine ⟨ht, Kt, (k1.trans kt).mono (by decide), fun hm1 => ?_⟩
+    refine ⟨ht, Kt.mono (by decide), (k1.trans kt).mono (by decide), fun hm1 => ?_⟩
     obtain ⟨g, d, l⟩ := vt hm1
     exact ⟨g, fun _ => ⟨d, l⟩, fun hn => absurd ⟨p8, hpw2, hpq, p32⟩ hn⟩
-  · -- Otherwise: `inverse`.
+  · -- Otherwise: a call of the inverse.
     obtain hs : ¬ KeyCheck.Shape w pL qL := fun hs => by simp [z1.2 hs] at hz
-    refine WP.mono (InvLaw.inverse_ok h1 (by decide) (by decide) hw e11 hn1 hnw hfit x1 hxn m1' hmn hodd)
+    refine WP.mono (invCall_ok h1 (by decide) (by decide) hw e11 hn1 hnw hfit x1 hxn m1' hmn hodd)
       fun t ⟨ht, Kt, kt, vt⟩ => ?_
     rw [m1] at Kt
     refine ⟨ht, Kt, (k1.trans kt).mono (by decide), fun hm1 => ?_⟩

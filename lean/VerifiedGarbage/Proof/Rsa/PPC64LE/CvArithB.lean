@@ -55,7 +55,7 @@ theorem nCalc_ok {s : State} {pL qL : Nat} (h20 : s.gpr .r20 = BitVec.ofNat 64 p
 /-- The second part of `arith`. -/
 def partB : List (Prog isa) :=
   invSetup ++ [.block shape, .ite (.zero .d .r0) VG.Impl.Rsa.PPC64LE.InvBatch.inverseS
-    VG.Impl.Rsa.PPC64LE.InvBatch.inverse, eqS sE3 1 aOne,
+    VG.Impl.Rsa.PPC64LE.CrtValues.invCall, eqS sE3 1 aOne,
     .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3)]
 
 /-- The arrays and slots `partB` writes. -/
