@@ -525,7 +525,7 @@ theorem core_held (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t
     apply ht.2.2.2.sub_right
     apply sub_trans (below_sub (b := 76) (by decide) (by rw [hc.esp, hL.FN]; have := hL.e588; omega_arith))
     rw [hc.esp, hL.below_F]
-    exact Region.sub_prefix (by omega_arith)) (by decide)]
+    exact Lay.sub_STK' (by omega_arith)) (by decide)]
   rw [hc.frame.readW inT (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -559,7 +559,7 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
   · rw [Offset.add_ofNat_sub _ (by omega_arith)]; exact hL.stk_SCR (by omega_arith)
   · change L.D.Disjoint (below (((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .esp) 4)
     rw [core_below hL hc]
-    exact hL.kd.symm.sub_right (Offset.sub_base _ (by omega_arith))
+    exact hL.kd.symm.sub_right (Lay.sub_STK (by omega_arith))
   · change (⟨dgAddr P L, P.Q⟩ : Region).Disjoint (below (((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .esp) 4)
     rw [core_below hL hc]
     exact (coreArg_ok (P := P) hL (.inl ⟨rfl, rfl⟩)).2.2.2.1.sub_right (Offset.sub_base _ (by decide))
@@ -577,7 +577,7 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     rw [core_belowK hL hc (by omega_using [hst])] at hr
     simp only [coreWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ht.2.2.2.sub_right (Offset.sub_base _ (by omega_arith))
+    · exact ht.2.2.2.sub_right (Lay.sub_STK (by omega_arith))
     · simpa only [Lay.OUT, hk.1] using ht.2.1
     · exact ht.2.2.1
 
@@ -654,7 +654,7 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     rcases hq' with rfl | rfl | rfl
     · exact .inl (sub_refl _)
     · exact .inr (.inl (sub_refl _))
-    · exact .inr (.inr (.inl (Region.sub_prefix (by omega_arith))))
+    · exact .inr (.inr (.inl (Lay.sub_LOW' (by omega_arith))))
   · obtain ⟨a0, a1, a2, a3, a4⟩ := core_argv hL hc hr (rd := coreRd P L) (wr := coreWr P L)
     obtain ⟨-, -, -, gB, -⟩ := coreArg_ok (P := P) hL (.inl ⟨rfl, rfl⟩)
     obtain ⟨-, -, -, kB, -⟩ := coreArg_ok (P := P) hL (.inr ⟨rfl, rfl⟩)
@@ -664,14 +664,14 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
         (dgAddr P L) (kAddr L) = coreSig P L t.mem := by
       simp only [coreSigOf, coreSig, ecdsa_bytesAt]
       obtain h₁ : Region.Disjoint ⟨L.d, P.R.E.C.len⟩ ⟨L.B, 76⟩ :=
-        (hL.kd.sub_left (Region.sub_prefix (by omega_arith))).symm.sub_left (Region.sub_prefix (by omega_arith))
+        (hL.kd.sub_left (Lay.sub_STK' (by omega_arith))).symm.sub_left (Region.sub_prefix (by omega_arith))
       rw [ce_bytesAt hL hc h₁ (by omega_arith), ce_bytesAt hL hc gB (by omega_arith), ce_bytesAt hL hc kB (by omega_arith)]
     obtain kO : Spec.Sha256.bytesAt t'.mem L.out (2 * P.Q) = Spec.Sha256.bytesAt s₂.mem L.out (2 * P.Q) := by
       refine bytesAt_frame hm (fun q hq' => ?_) (by omega_arith)
       simp only [List.mem_singleton] at hq'; subst hq'
       rw [← hq]
       exact (hL.ko.sub_left (sub_trans (sub_trans (below_sub (by omega_arith) hd) hsp)
-        (Region.sub_prefix (by omega_arith)))).symm
+        (Lay.sub_STK' (by omega_arith)))).symm
     have hp := hpost
     simp only [coreK, a0, a1, a2, a3, dgArg_w hL, kArg_w hL, hs, hg₂ .eax (by decide) (by decide),
       BitVec.setWidth_append_eq_right] at hp
@@ -779,7 +779,7 @@ theorem kvw_cnt (hL : L.Ok) : ∀ r ∈ KVW L, Region.Disjoint ⟨L.B + BitVec.o
   simp only [KVW, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
   · exact hL.stk_SCR (by omega_arith)
-  · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+  · exact Lay.LOW_disj (by omega_arith) (by omega_arith)
 
 theorem cw_cnt (hL : L.Ok) : ∀ r ∈ CW L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 232, 4⟩ r := by
   have := hL.nB
@@ -788,7 +788,7 @@ theorem cw_cnt (hL : L.Ok) : ∀ r ∈ CW L, Region.Disjoint ⟨L.B + BitVec.ofN
   simp only [CW, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
   · exact hL.stk_SCR (by omega_arith)
-  · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+  · exact Lay.LOW_disj (by omega_arith) (by omega_arith)
   · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   · exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
 
@@ -806,7 +806,7 @@ theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 76 ≤ d) (h₂ : d + n ≤ 5
 
 /-- The regions the loop writes, which are apart from `core`'s digest. -/
 def DgApart {dn : Nat} (L : Lay dn) (r : Region) : Prop :=
-  r = L.SCR ∨ r = L.OUT ∨ r = ⟨L.B, 204⟩ ∨ r = ⟨L.B, 76⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 (76 + fTlen), 4⟩ ∨
+  r = L.SCR ∨ r = L.OUT ∨ r = L.LOW ∨ r = ⟨L.B, 76⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 (76 + fTlen), 4⟩ ∨
     r = ⟨L.B + BitVec.ofNat 64 232, 4⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 (76 + fT), 136⟩ ∨
     r = ⟨L.B + BitVec.ofNat 64 76, 128⟩
 
@@ -820,7 +820,7 @@ theorem dg_apart (hL : L.Ok) {r : Region} (h : DgApart L r) : Region.Disjoint �
     rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hL.stk_SCR (by omega_arith)
     · exact hL.stk_OUT (by omega_arith)
-    · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+    · exact Lay.LOW_disj (by omega_arith) (by omega_arith)
     · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
@@ -1044,7 +1044,7 @@ theorem stk_sep (B : Addr) (m : Mem) {x y : Nat} (v : BitVec 32)
 
 /-- Our caller's registers, `hmac`'s address, and its `D` and `B` in the
 frame: `Ctx` holds. -/
-theorem entry_ok (h : (rfcX86 cs I 588 (tabFacts H f) ns).pre s) :
+theorem entry_ok (h : (rfcX86 cs I 612 (tabFacts H f) ns).pre s) :
     WP isa (.block Cfg.entry) (entered s) fun t₁ => t₁.gpr .eax = arg s 5 ∧
       t₁.gpr .esp = (lay I.hashLen I.ecdsa.curve.len cs H f s).F ∧
       WP isa (.block Cfg.tabDB) t₁ (Ctx (lay I.hashLen I.ecdsa.curve.len cs H f s) s.gpr s.mem) := by
@@ -1052,7 +1052,8 @@ theorem entry_ok (h : (rfcX86 cs I 588 (tabFacts H f) ns).pre s) :
   have nB := hL.nB
   have nt : (arg s 5).toNat + 24 ≤ 2 ^ 32 := hL.nt
   have hh := h
-  obtain ⟨e588, e28, hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hTb, -, -, -, -, -, -, hF⟩ := hh
+  obtain ⟨e612, e28, hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hTb, -, -, -, -, -, -, hF⟩ := hh
+  have e588 : 588 ≤ (s.gpr .esp).toNat := by omega_arith
   obtain ⟨tOk, tMem, tD, tB⟩ := hF
   obtain hesp : (entered s).gpr .esp = (lay I.hashLen I.ecdsa.curve.len cs H f s).F :=
     entered_esp _ _ cs H f s
@@ -1098,7 +1099,7 @@ theorem entry_ok (h : (rfcX86 cs I 588 (tabFacts H f) ns).pre s) :
   obtain tabD : ∀ r ∈ [(⟨(lay I.hashLen I.ecdsa.curve.len cs H f s).B + BitVec.ofNat 64 204, 24⟩ : Region)],
       Region.Disjoint (lay I.hashLen I.ecdsa.curve.len cs H f s).TAB r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact hL.tk.sub_right (Offset.sub_base _ (by omega_arith))
+    exact hL.tk.sub_right (Lay.sub_STK (by omega_arith))
   -- `eax = hmac`.
   refine wp_ldm (B := (lay I.hashLen I.ecdsa.curve.len cs H f s).F) (o := 512 + 4 + 4 * 5) esp₄
     ⟨(lay I.hashLen I.ecdsa.curve.len cs H f s).ARGS, by
@@ -1157,7 +1158,7 @@ theorem entry_ok (h : (rfcX86 cs I 588 (tabFacts H f) ns).pre s) :
       frame := hf₉.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨(lay I.hashLen I.ecdsa.curve.len cs H f s).STK, by simp,
-          Offset.sub_base (d := 204) (n := 24) (k := 588) _ (by omega_arith)⟩
+          Lay.sub_STK (d := 204) (n := 24) (by omega_arith)⟩
       sy := fun c hc => by rw [sy₉]; exact (lay_sy s hc).symm
       held := fun c hc => by
         change c ∈ cs at hc
@@ -1356,7 +1357,7 @@ theorem stageH_ok (hL : L.Ok) (hT : TabL P L) {u₁ : State} (hc₁ : Ctx L g m�
 
 /-- `h` in the message, kept by the steps on `K` and `V`. -/
 theorem hOf_frame (hL : L.Ok) {ws : List Region} {m m' : Mem} (hf : Frame ws m m')
-    (hd : ∀ r ∈ ws, r = L.SCR ∨ r = ⟨L.B, 204⟩ ∨ ∃ o n, r = ⟨L.B + BitVec.ofNat 64 o, n⟩ ∧ o + n ≤ 76 + fH) :
+    (hd : ∀ r ∈ ws, r = L.SCR ∨ r = L.LOW ∨ ∃ o n, r = ⟨L.B + BitVec.ofNat 64 o, n⟩ ∧ o + n ≤ 76 + fH) :
     hOf P L m' = hOf P L m := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hQ66, -, -⟩ := P.sizes
   have := hL.nB
@@ -1365,7 +1366,7 @@ theorem hOf_frame (hL : L.Ok) {ws : List Region} {m m' : Mem} (hf : Frame ws m m
   refine bytesAt_frame hf (fun r hr => ?_) (by omega_using [hQ66])
   rcases hd r hr with rfl | rfl | ⟨o, n, rfl, hon⟩
   · exact hL.stk_SCR (by simp only [fXc] at hho; omega_using [hho])
-  · exact Offset.disjoint_base _ (by simp only [fH] at hho; omega_using [hho]) (by simp only [fXc] at hho; omega_using [hho])
+  · exact Lay.LOW_disj (by simp only [fH] at hho; omega_using [hho]) (by simp only [fXc] at hho; omega_using [hho])
   · exact Offset.disjoint _ (.inr (by omega_using [hho, hon])) (by simp only [fXc] at hho; omega_using [hho]) (by simp only [fH] at hon; omega_using [hon])
 
 theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' = hOf P L m :=
@@ -1542,7 +1543,7 @@ theorem released_esp (s₂ : State) : (released s₂).gpr .esp = s₂.gpr .esp +
 /-- The contract the code for `P`'s hash function is proven against, with
 `P`'s table and the functions `ns`' addresses public. -/
 abbrev rfcP (P : RfcHash) (ns : List String) : Contract isa :=
-  rfcX86 P.R.E.combConsts P.I 588 (tabFacts P.F P.f) ns
+  rfcX86 P.R.E.combConsts P.I 612 (tabFacts P.F P.f) ns
 
 /-- The layout of a call from `s`. -/
 abbrev layOf (P : RfcHash) (s : State) : Lay P.I.hashLen :=
@@ -1568,7 +1569,7 @@ theorem sign_ok {ns : List String} (hsp : NoSp (cfgOf P).body) {s : State} (h : 
     have := entered_wr h
     simp only [entered, allocState_wr] at this
     exact (List.cons.inj this).1
-  obtain hFS : Region.Sub (layOf P s).FR (layOf P s).STK := Offset.sub_base _ (by decide)
+  obtain hFS : Region.Sub (layOf P s).FR (layOf P s).STK := Lay.sub_STK (by decide)
   rw [hFR] at fl
   obtain hdO : ∀ r ∈ [(layOf P s).FR], Region.Disjoint ⟨(arg s 0).setWidth 64, 2 * P.Q⟩ r := by
     intro r hr
@@ -1595,14 +1596,14 @@ theorem sign_ok {ns : List String} (hsp : NoSp (cfgOf P).body) {s : State} (h : 
     show m.readW _ 32 = _
     rw [hret, fl.readW (r := (layOf P s).RET) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).sub_right hFS) (by decide)]
+      exact (Lay.disj24 _ (by omega_arith) (by omega_arith)).symm.sub_right hFS) (by decide)]
     refine hu.frame.readW (r := (layOf P s).RET) (Region.contains_self _ _) ?_ (by decide)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hL.ro
     · exact hL.rc
-    · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+    · exact (Lay.disj24 _ (by omega_arith) (by omega_arith)).symm
   · show match (result P.I s.mem (layOf P s).d (layOf P s).dg).1 with
       | some rs => _ | none => _
     rw [result_eq hx]

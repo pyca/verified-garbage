@@ -104,5 +104,9 @@ call {vg_md5_compress}
 pub(crate) mod vg_hmac_md5_finalize_scratch;
 
 #[rustfmt::skip]
+#[path = "internal/vg_hmac_md5_init_any_scratch.rs"]
+pub(crate) mod vg_hmac_md5_init_any_scratch;
+
+#[rustfmt::skip]
 #[path = "internal/vg_hmac_md5_init_scratch.rs"]
 pub(crate) mod vg_hmac_md5_init_scratch;

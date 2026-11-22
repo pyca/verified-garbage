@@ -61,7 +61,7 @@ blocks address only the stack and the buffers, from registers that agree
 both runs set alike; an indirect call reaches, through the table, whose
 address our arguments hold, the same function in both runs (`tcall_piece`);
 each call, in a frame of its arguments, is of constant-time code whose public
-data agree (`hi_rel`, `upd_rel`, `hf_rel`, `callWithR_ct`); and the loop's
+data agree (`any_rel`, `upd_rel`, `hf_rel`, `callWithR_ct`); and the loop's
 branch agrees, since in both runs it goes on after candidate `i` iff `i` is
 before the candidate it stops at (`go_iff`). The frame's allocation and
 release access no memory (`alloc_ct`), and its entry, from `esp` and then
@@ -73,7 +73,8 @@ the table's address, which agree, gives `Two` (`start_ct`).
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 
 open VG VG.X86 VG.Impl.Ecdsa.Rfc6979.X86
-open VG.Proof.Pbkdf2.Whole.X86 (hi_rel hf_rel hi_frame hf_frame)
+open VG.Proof.Pbkdf2.Whole.X86 (hf_rel hf_frame)
+open VG.Proof.Pbkdf2.Whole.X86.Any (any_rel any_frame)
 open VG.Proof.Pbkdf2.Stream.X86 (upd_rel upd_frame)
 open VG.X86.Wp
 
@@ -266,7 +267,7 @@ def TabFn (P : RfcHash) (j : Nat) (n : String) (c : Prog isa) (ts : List (String
     m₀.readW (addr L.tb (4 * j)) 32 = t.syms n ∧
       ts.find? (fun q => (t.syms q.1).setWidth 64 == (t.syms n).setWidth 64) = some (n, c) ∧ t.syms n = L.fa n
 
-theorem tfn_init : TabFn P 0 P.F.hiN P.F.hiC P.f.init := fun L _ _ _ _ hk hc => by
+theorem tfn_init : TabFn P 0 P.F.hiAnyN P.F.hmacInitAny P.f.init := fun L _ _ _ _ hk hc => by
   have hok := hc.tabOk; have htm := hc.tabMem; have hf := hc.fsy
   rw [hk.2.1, hk.2.2] at hok; rw [hk.2.1] at htm hf
   exact ⟨htm.1, hok.i, hf _ (by simp)⟩
@@ -337,7 +338,7 @@ theorem tcall_piece {Φ Ψ : Pr P} {j : Nat} (hj : 4 * j + 4 ≤ 24)
 
 /-! ## HMAC's calls -/
 
-/-- HMAC's `init`'s arguments. -/
+/-- The arguments of HMAC's `init` for a key of any length. -/
 def IA (P : RfcHash) : Pr P := fun L _ u =>
   u.gpr .edi = L.sc + BitVec.ofNat 32 0 ∧ u.gpr .esi = L.sc + BitVec.ofNat 32 192 ∧
     u.gpr .edx = L.F + BitVec.ofNat 32 0 ∧ u.gpr .ecx = BitVec.ofNat 32 P.F.H.D ∧
@@ -356,23 +357,26 @@ def FA (P : RfcHash) (cnt dst : Nat) : Pr P := fun L _ u =>
     u.gpr .eax = BitVec.ofNat 32 cnt ∧ u.gpr .ecx = 0 ∧ u.gpr .edi = L.F + BitVec.ofNat 32 dst ∧
     u.gpr .ebp = L.sc + BitVec.ofNat 32 384
 
-theorem hinit_piece : Piece P (IA P) (.frame (.push init5) (.call P.F.hiN P.F.hiC) (.pop .eax init5.length)) (Tt P) := by
-  refine Piece.of (two_exists fun e => hi_rel P.ok.hi (sp := e.1.F) fun _ _ ⟨hL, _, _, c₁, c₂, a₁, a₂⟩ =>
-    ⟨initA (P := P) hL c₁ a₁.1 a₁.2.1 a₁.2.2.1 a₁.2.2.2.1 a₁.2.2.2.2,
-      initA (P := P) hL c₂ a₂.1 a₂.2.1 a₂.2.2.1 a₂.2.2.2.1 a₂.2.2.2.2, c₁.esp, c₂.esp⟩)
+theorem hinit_piece :
+    Piece P (IA P) (.frame (.push init5) (.call P.F.hiAnyN P.F.hmacInitAny) (.pop .eax init5.length)) (Tt P) := by
+  refine Piece.of (two_exists fun e => any_rel P.any (sp := e.1.F) fun _ _ ⟨hL, _, _, c₁, c₂, a₁, a₂⟩ =>
+    ⟨anyA (P := P) hL c₁ a₁.1 a₁.2.1 a₁.2.2.1 a₁.2.2.2.1 a₁.2.2.2.2,
+      anyA (P := P) hL c₂ a₂.1 a₂.2.1 a₂.2.2.1 a₂.2.2.2.1 a₂.2.2.2.2, c₁.esp, c₂.esp⟩)
     fun L g m₀ u hL _ hc a => ?_
   have hS := P.ok.hH.hS
-  refine WP.of_syms (hi_frame (fun m m' p q msg hb => P.ok.hH.repr m m' p q msg (fun i hi => hb i (by rw [P.ok.hH.hS]; exact hi)))
-    P.ok.hi P.ok.hiSp P.ok.hiSU
-    (initA (P := P) hL hc a.1 a.2.1 a.2.2.1 a.2.2.2.1 a.2.2.2.2) fun v af _ _ hsy => ?_)
+  refine WP.of_syms (any_frame P.reprOK P.any P.anySp P.anySU
+    (anyA (P := P) hL hc a.1 a.2.1 a.2.2.1 a.2.2.2.1 a.2.2.2.2) fun v hrd hwr hcs hf _ _ hsy => ?_)
   have hsafe : ∀ r ∈ [(⟨(L.sc + BitVec.ofNat 32 0).setWidth 64, P.ok.hH.SH.stateBytes⟩ : Region),
       ⟨(L.sc + BitVec.ofNat 32 192).setWidth 64, P.ok.hH.SH.stateBytes⟩,
-      ⟨(L.sc + BitVec.ofNat 32 384).setWidth 64, P.ok.Wi * 8⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
+      ⟨(L.sc + BitVec.ofNat 32 384).setWidth 64, (P.F.W + P.F.H.S) * 8⟩], Region.Sub r ⟨L.scr, 3792⟩ := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) <;> exact scr_work' hL (by omega_arith) (by first | nums | (rw [hS]; nums))
-  exact ⟨hc.keep (hsy := hsy) hL af.rd af.wr (af.cs .esp (by decide)) af.frame
-    (safe_call hL hc (fun r hr => .inr (.inl (sub_trans (hsafe r hr) (Region.sub_prefix (by omega_arith)))))
-      (Nat.le_refl _)), trivial⟩
+  refine ⟨hc.keep (hsy := hsy) hL hrd hwr (hcs .esp (by decide)) hf fun r hr => ?_, trivial⟩
+  rcases List.mem_append.mp hr with hr | hr
+  · exact .inr (.inl (sub_trans (hsafe r hr) (Region.sub_prefix (by omega_arith))))
+  · simp only [List.mem_singleton] at hr; subst hr
+    rw [show Proof.Pbkdf2.Whole.X86.Any.stk100 u = below (u.gpr .esp) 100 from rfl, hc.esp, hL.below_F100]
+    exact safe_calls L (sub_refl _)
 
 theorem upd_piece {cnt : Nat} {dv : Lay P.I.hashLen → BitVec 32} {len : Nat}
     (hd : ∀ L : Lay P.I.hashLen, L.Ok → DataOk L (dv L) len) (hlen : len ≤ 256) :
@@ -387,7 +391,7 @@ theorem upd_piece {cnt : Nat} {dv : Lay P.I.hashLen → BitVec 32} {len : Nat}
   refine WP.of_syms (upd_frame P.ok.hH (updA (P := P) hL hcw (hd _ hL) hlen a.1 a.2.1 a.2.2.1 a.2.2.2.1
     a.2.2.2.2.1 a.2.2.2.2.2) fun w' af _ hsy => ?_)
   have hws : ∀ r ∈ [(⟨(L.sc + BitVec.ofNat 32 0).setWidth 64, P.F.H.S⟩ : Region),
-      ⟨(L.sc + BitVec.ofNat 32 384).setWidth 64, P.ok.hH.Wb⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
+      ⟨(L.sc + BitVec.ofNat 32 384).setWidth 64, P.ok.hH.Wb⟩], Region.Sub r ⟨L.scr, 3792⟩ := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> exact scr_work' hL (by omega_arith) (by nums)
   have h76 : Region.Sub (below L.F 76) ⟨L.B, 76⟩ := by rw [hL.below_F]; exact sub_refl _
@@ -395,7 +399,7 @@ theorem upd_piece {cnt : Nat} {dv : Lay P.I.hashLen → BitVec 32} {len : Nat}
   rcases List.mem_append.mp hr with hr | hr
   · exact .inr (.inl (sub_trans (hws r hr) (Region.sub_prefix (by omega_arith))))
   · simp only [List.mem_singleton] at hr; subst hr
-    exact .inr (.inr (.inl (sub_trans hsp (sub_trans h76 (Region.sub_prefix (by omega_arith))))))
+    exact .inr (.inr (.inl (sub_trans hsp (sub_trans h76 (Lay.sub_LOW' (by omega_arith))))))
 
 theorem hfin_piece {cnt dst : Nat} (hdst : dst + P.F.H.D ≤ 128) :
     Piece P (FA P cnt dst) (.frame (.push fin6) (.call P.F.hfN P.F.hfC) (.pop .eax fin6.length)) (Tt P) := by
@@ -415,7 +419,7 @@ theorem hfin_piece {cnt dst : Nat} (hdst : dst + P.F.H.D ≤ 128) :
   · rw [hO, hD]; exact safe_low L (by nums)
   · exact .inr (.inl (sub_trans (scr_work' hL (by omega_arith) (by nums)) (Region.sub_prefix (by omega_arith))))
   · rw [show Proof.Pbkdf2.Whole.X86.stk w = below (w.gpr .esp) 76 from rfl, hcw.esp, hL.below_F]
-    exact .inr (.inr (.inl (Region.sub_prefix (by omega_arith))))
+    exact .inr (.inr (.inl (Lay.sub_LOW' (by omega_arith))))
 
 theorem keepsB_ia : KeepsB (IA P) := fun _ _ _ _ ⟨d, s, x, k, r⟩ hr _ _ => ⟨(hr _ (by decide)).trans d,
   (hr _ (by decide)).trans s, (hr _ (by decide)).trans x, (hr _ (by decide)).trans k, (hr _ (by decide)).trans r⟩
@@ -584,7 +588,7 @@ theorem candStep_trace {j : Nat} (hj : j < P.nV) :
       simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hL.stk_SCR (by omega_using [hfTl])
-      · exact Offset.disjoint_base _ (by omega_using [hfTl]) (by omega_using [hfTl])) (by decide)
+      · exact Lay.LOW_disj (by omega_using [hfTl]) (by omega_using [hfTl])) (by decide)
   · have hnb := hL.nB
     have hfV : fV = 64 := rfl
     have hfT : fT = 376 := rfl
@@ -782,7 +786,7 @@ theorem xcCopy_ok {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem} (
     rw [hL.frv (by simp only [fXc]; omega_using [hQ66]), Nat.add_assoc]
   have sepD : Region.Disjoint ⟨L.a2.setWidth 64, P.F.H.D⟩
       ⟨L.B + BitVec.ofNat 64 (76 + fXc + (P.Q - 1 - P.F.H.D)), P.F.H.D⟩ :=
-    ((hL.kg.sub_left (Offset.sub_base _ (by simp only [fXc]; omega_using [hQ66, hQD]))).symm.sub_left (Region.sub_prefix hdn))
+    ((hL.kg.sub_left (Lay.sub_STK (by simp only [fXc]; omega_using [hQ66, hQD]))).symm.sub_left (Region.sub_prefix hdn))
   exact WP.mono (cpLoop_ok hL hc₁ (S := L.a2) (D := L.F + BitVec.ofNat 32 (fXc + (P.Q - 1 - P.F.H.D)))
       (n := P.F.H.D) (by omega_using [hD16]) (by omega_using [hD64]) (by have := hL.ng; omega_using [hdn, this])
       (by rw [hL.frN (by simp only [fXc]; omega_using [hQ66])]; have := hL.e28; have := hL.e588; simp only [fXc]; omega_using [hQ66, hQD])
@@ -838,7 +842,7 @@ theorem entry_taint : TaintOk [.esp] Cfg.entry := ⟨_, by taint_decide⟩
 theorem tabDB_taint : TaintOk [.esp, .eax] Cfg.tabDB := ⟨_, by taint_decide⟩
 
 /-- The layouts of two calls whose public data agree. -/
-theorem layOf_eq {ns : List String} (hns : ∀ n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN], n ∈ ns) {s₁ s₂ : State}
+theorem layOf_eq {ns : List String} (hns : ∀ n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN], n ∈ ns) {s₁ s₂ : State}
     (hpub : (rfcP P ns).pub s₁ s₂) : layOf P s₂ = layOf P s₁ := by
   obtain ⟨hsp, ha, -, hsy, hns'⟩ := hpub
   have hs : (fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₂.syms n else 0) =
@@ -846,8 +850,8 @@ theorem layOf_eq {ns : List String} (hns : ∀ n ∈ [P.F.hiN, P.F.H.updN, P.F.h
     split
     · next h => obtain ⟨c, hc, rfl⟩ := List.mem_map.mp h; exact (hsy c hc).symm
     · rfl
-  have hfa : (fun n => if n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN] then s₂.syms n else 0) =
-      fun n => if n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN] then s₁.syms n else 0 := funext fun n => by
+  have hfa : (fun n => if n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN] then s₂.syms n else 0) =
+      fun n => if n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN] then s₁.syms n else 0 := funext fun n => by
     split
     · next h => exact (hns' n (hns n h)).symm
     · rfl
@@ -857,7 +861,7 @@ theorem layOf_eq {ns : List String} (hns : ∀ n ∈ [P.F.hiN, P.F.H.updN, P.F.h
 /-- Our caller's registers saved, and the table's `D` and `B` in the frame:
 the runs are related by `Two`, with the layout of the arguments, which agree,
 and the same number of candidates. -/
-theorem start_at {ns : List String} (hns : ∀ n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN], n ∈ ns) {s₁ s₂ : State}
+theorem start_at {ns : List String} (hns : ∀ n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN], n ∈ ns) {s₁ s₂ : State}
     (p₁ : (rfcP P ns).pre s₁) (p₂ : (rfcP P ns).pre s₂) (hpub : (rfcP P ns).pub s₁ s₂) :
     RelCT isa (fun a b => a = allocState 512 s₁ ∧ b = allocState 512 s₂)
       (.seq (.block Cfg.entry) (.block Cfg.tabDB)) (Two P (Tt P)) := by
@@ -895,7 +899,7 @@ theorem start_at {ns : List String} (hns : ∀ n ∈ [P.F.hiN, P.F.H.updN, P.F.h
 runs whose public data agree (with the addresses of the hash function's
 HMAC functions among `ns`) have the same layout, and stop at the same
 candidate. -/
-theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.F.hiN, P.F.H.updN, P.F.hfN], n ∈ ns) :
+theorem sign_ct {ns : List String} (hns : ∀ n ∈ [P.F.hiAnyN, P.F.H.updN, P.F.hfN], n ∈ ns) :
     ConstantTime isa (rfcP P ns).pre (rfcP P ns).pub (cfgOf P).sign := by
   rw [show (cfgOf P).sign = .frame (.alloc 512) (cfgOf P).body (.free 512) from rfl]
   refine VG.RelCT.constantTime (Q := fun _ _ => True)
@@ -955,7 +959,7 @@ def cfgT (R : RfcCurve) (tries : Nat) (vs : List HVar) : Cfg where
 def signCodeT (R : RfcCurve) (tries : Nat) (vs : List HVar) : Prog isa := signCode (cfgT R tries vs)
 
 /-- The stack it uses. -/
-def stackT : Nat := 588
+def stackT : Nat := 612
 
 /-! ## The variants -/
 
@@ -967,7 +971,8 @@ def WOk (w : HVar) : Prop :=
   (match Spec.HmacTable.hmacOf w.G with
     | some F => F.blockSize = w.F.H.B
     | none => False) ∧
-  (w.F.H.D, w.F.H.B) ∈ shapes ∧ w.F.H.S ≤ 192 ∧ w.ok.Wi * 8 ≤ 1872 ∧ w.ok.Wf * 8 ≤ 1872 ∧ w.ok.hH.Wb ≤ 1872
+  (w.F.H.D, w.F.H.B) ∈ shapes ∧ w.F.H.S ≤ 192 ∧ (w.F.W + w.F.H.S) * 8 ≤ 3408 ∧ w.ok.Wf * 8 ≤ 1872 ∧
+    w.ok.hH.Wb ≤ 1872
 
 instance (w : HVar) : Decidable (WOk w) := by
   unfold WOk; cases Spec.HmacTable.hmacOf w.G <;> infer_instance
@@ -1029,9 +1034,12 @@ def hashOf {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R 
   tries_lt := hC.tries_lt
   hDB := hw.2.1
   hS := hw.2.2.1
-  hWi := hw.2.2.2.1
   hWf := hw.2.2.2.2.1
   hWb := hw.2.2.2.2.2
+  any := w.any
+  anySp := w.anySp
+  anySU := w.anySU
+  hWA := hw.2.2.2.1
 
 /-- The body for `w`'s hash function is the same as for every other. -/
 theorem cfgT_eq {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} (hC : CurveT R T) (vs : List HVar)
@@ -1093,7 +1101,7 @@ theorem okP_of_noSp {c : Prog isa} (h : NoSp c) : OkP c := by
 
 theorem fnsOk_of (vs : List HVar) : FnsOk (fnsOf vs).init ∧ FnsOk (fnsOf vs).upd ∧ FnsOk (fnsOf vs).fin := by
   refine ⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩ <;> obtain ⟨w, -, rfl⟩ := List.mem_map.mp hq
-  · exact okP_of_noSp w.ok.hiSp
+  · exact okP_of_noSp w.anySp
   · exact okP_of_noSp w.ok.hH.updSp
   · exact okP_of_noSp w.ok.hfSp
 
@@ -1141,7 +1149,7 @@ theorem signT_ct (hC : CurveT R T) :
   intro s₁ s₂ t₁ t₂ s₁' s₂' _ _ ⟨w, hv, hw, p₁, p₂, hpub⟩ e₁ e₂
   unfold signCodeT signCode at e₁ e₂
   rw [cfgT_eq hC vs hw] at e₁ e₂
-  have hns : ∀ n ∈ [(hashOf hC vs w hw).F.hiN, (hashOf hC vs w hw).F.H.updN, (hashOf hC vs w hw).F.hfN],
+  have hns : ∀ n ∈ [(hashOf hC vs w hw).F.hiAnyN, (hashOf hC vs w hw).F.H.updN, (hashOf hC vs w hw).F.hfN],
       n ∈ names vs := by
     have := mem_names hv
     intro n hn
@@ -1189,7 +1197,7 @@ theorem names_eq (vs : List HVar) : (List.map (fun x => x.fns) (tables vs)).flat
 
 /-- The facts of the contract with the table of `w`. -/
 theorem preW_of {w : HVar} (hv : w ∈ vs) (hc : Coh vs) (hw : WOk w) {s : State}
-    (e588 : 588 ≤ (s.gpr .esp).toNat) (e28 : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32)
+    (e612 : 612 ≤ (s.gpr .esp).toNat) (e28 : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32)
     (hrd : s.rd = [⟨(arg s 1).setWidth 64, T.ecdsa.curve.len⟩, ⟨(arg s 2).setWidth 64, w.F.H.D⟩,
       ⟨(arg s 5).setWidth 64, 24⟩] ++ Abi.constRegions (fun n => (s.syms n).setWidth 64) R.E.combConsts)
     (hwr : s.wr = [⟨(arg s 0).setWidth 64, 2 * T.ecdsa.curve.len⟩, ⟨(arg s 4).setWidth 64, 8192⟩,
@@ -1207,24 +1215,24 @@ theorem preW_of {w : HVar} (hv : w ∈ vs) (hc : Coh vs) (hw : WOk w) {s : State
     (ro : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 0).setWidth 64, 2 * T.ecdsa.curve.len⟩)
     (rc : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 4).setWidth 64, 8192⟩)
     (rt : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 5).setWidth 64, 24⟩)
-    (ko : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩
+    (ko : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩
       ⟨(arg s 0).setWidth 64, 2 * T.ecdsa.curve.len⟩)
-    (kd : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩
+    (kd : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩
       ⟨(arg s 1).setWidth 64, T.ecdsa.curve.len⟩)
-    (kg : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩ ⟨(arg s 2).setWidth 64, w.F.H.D⟩)
-    (kc : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩ ⟨(arg s 4).setWidth 64, 8192⟩)
-    (kt : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩ ⟨(arg s 5).setWidth 64, 24⟩)
+    (kg : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩ ⟨(arg s 2).setWidth 64, w.F.H.D⟩)
+    (kc : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩ ⟨(arg s 4).setWidth 64, 8192⟩)
+    (kt : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩ ⟨(arg s 5).setWidth 64, 24⟩)
     (no : (arg s 0).toNat + 2 * T.ecdsa.curve.len ≤ 2 ^ 32) (nd : (arg s 1).toNat + T.ecdsa.curve.len ≤ 2 ^ 32)
     (ng : (arg s 2).toNat + w.F.H.D ≤ 2 ^ 32) (nc : (arg s 4).toNat + 8192 ≤ 2 ^ 32)
     (nt : (arg s 5).toNat + 24 ≤ 2 ^ 32)
     (ht : TblsOk R.E.combConsts s [⟨(arg s 0).setWidth 64, 2 * T.ecdsa.curve.len⟩, ⟨(arg s 4).setWidth 64, 8192⟩,
-      ⟨(s.gpr .esp).setWidth 64, 4⟩, ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩])
+      ⟨(s.gpr .esp).setWidth 64, 4⟩, ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩])
     (hheld : HeldW w s)
     (hpw : (names vs).Pairwise fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) :
     PreW R T vs w s := by
   have hh := held_tableOf nt hheld
   rw [hw.blockSize] at hh
-  exact ⟨⟨e588, e28, hrd, hwr, od, og, oc, dc, gc, oa.symm, ca.symm, ro, rc, ko, kd, kg, kc, no, nd, ng, nc, ht,
+  exact ⟨⟨e612, e28, hrd, hwr, od, og, oc, dc, gc, oa.symm, ca.symm, ro, rc, ko, kd, kg, kc, no, nd, ng, nc, ht,
     nt, ot.symm, ct.symm, ta, rt.symm, kt.symm, tabOK_of hc hpw hv, hh.1, hh.2.2.1, hh.2.2.2⟩, hh.2.1⟩
 
 /-- The contract on the arguments, with the tables of `vs`. -/
@@ -1255,11 +1263,11 @@ macro "spec_pre_goal" : tactic => `(tactic| (
 
 /-- The facts the precondition gives, whichever the tables of constants. -/
 theorem facts_of (hsw : T.scratchWords = 1024) (hO : OK vs) {s : State} {w : HVar} (hv : w ∈ vs)
-    (hheld : HeldW w s) (e588 : 588 ≤ (s.gpr .esp).toNat) (e28 : (s.gpr .esp).toNat + 4 + 24 ≤ 2 ^ 32)
+    (hheld : HeldW w s) (e612 : 612 ≤ (s.gpr .esp).toNat) (e28 : (s.gpr .esp).toNat + 4 + 24 ≤ 2 ^ 32)
     (held : Abi.constsHeld s.mem (fun n => (s.syms n).setWidth 64) R.E.combConsts)
     (hfit : ∀ t ∈ Abi.constRegions (fun n => (s.syms n).setWidth 64) R.E.combConsts,
       t.base.toNat + t.len ≤ 2 ^ 32 ∧ (∀ r ∈ s.wr, t.Disjoint r) ∧ t.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ∧
-        t.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩)
+        t.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩)
     (hpw : (names vs).Pairwise fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64)
     (hrd : s.rd = [⟨(arg s 1).setWidth 64, T.ecdsa.curve.len⟩, ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩,
       ⟨(arg s 5).setWidth 64, 24⟩] ++ Abi.constRegions (fun n => (s.syms n).setWidth 64) R.E.combConsts)
@@ -1279,15 +1287,15 @@ theorem facts_of (hsw : T.scratchWords = 1024) (hO : OK vs) {s : State} {w : HVa
     (ro : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 0).setWidth 64, 2 * T.ecdsa.curve.len⟩)
     (rc : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 4).setWidth 64, T.scratchWords * 8⟩)
     (rt : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 5).setWidth 64, 24⟩)
-    (ko : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩
+    (ko : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩
       ⟨(arg s 0).setWidth 64, 2 * T.ecdsa.curve.len⟩)
-    (kd : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩
+    (kd : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩
       ⟨(arg s 1).setWidth 64, T.ecdsa.curve.len⟩)
-    (kg : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩
+    (kg : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩
       ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩)
-    (kc : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩
+    (kc : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩
       ⟨(arg s 4).setWidth 64, T.scratchWords * 8⟩)
-    (kt : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩ ⟨(arg s 5).setWidth 64, 24⟩)
+    (kt : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩ ⟨(arg s 5).setWidth 64, 24⟩)
     (no : (arg s 0).toNat + 2 * T.ecdsa.curve.len ≤ 2 ^ 32) (nd : (arg s 1).toNat + T.ecdsa.curve.len ≤ 2 ^ 32)
     (ng : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32) (nc : (arg s 4).toNat + T.scratchWords * 8 ≤ 2 ^ 32)
     (nt : (arg s 5).toNat + 24 ≤ 2 ^ 32)
@@ -1298,7 +1306,7 @@ theorem facts_of (hsw : T.scratchWords = 1024) (hO : OK vs) {s : State} {w : HVa
   have hlen : (arg s 3).toNat = w.F.H.D := (hH _ (hashAt_tableOf nt hh.2.1)).1.trans w.glen
   rw [hlen] at og gc kg ng hrd
   rw [hsw] at hwr oc dc gc rc kc nc ct ca
-  refine preW_of hv hO.1 (hO.2.2.2 w hv) e588 (by omega_using [e28]) hrd hwr od og oc ot dc gc ct oa ca ta ro rc rt
+  refine preW_of hv hO.1 (hO.2.2.2 w hv) e612 (by omega_using [e28]) hrd hwr od og oc ot dc gc ct oa ca ta ro rc rt
     ko kd kg kc kt no nd ng nc nt ⟨held, fun t htm => ⟨(hfit t htm).1, fun r hr => ?_⟩⟩ hheld hpw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -1312,12 +1320,12 @@ theorem pre_cons (hsw : T.scratchWords = 1024) (hO : OK vs) {c : String × List 
     {cs : List (String × List (BitVec 64))} (hcs : R.E.combConsts = c :: cs) {s : State}
     (h : (specK T (c :: cs) vs).pre s) : PreFacts R T vs s := by
   spec_pre at h
-  obtain ⟨e588, e28, hdrop, held, hfit, -, ⟨Tb, hTb, hheld⟩, hpw, htake, hwr, od, og, oc, ot, oa, dc, -, gc, -,
+  obtain ⟨e612, e28, hdrop, held, hfit, -, ⟨Tb, hTb, hheld⟩, hpw, htake, hwr, od, og, oc, ot, oa, dc, -, gc, -,
     ct, ca, ta, ro, -, -, rc, rt, -, ko, kd, kg, kc, kt, -, no, nd, ng, nc, nt, hH⟩ := h
   obtain ⟨w₀, hv₀, rfl⟩ := List.mem_map.mp hTb
   refine ⟨⟨w₀, hv₀, hheld⟩, fun w hv hheld => ?_⟩
   rw [List.append_eq, List.append_nil] at hpw
-  refine facts_of (R := R) hsw hO hv hheld e588 e28 (by rw [hcs]; exact held) (by rw [hcs]; exact hfit) hpw ?_ hwr
+  refine facts_of (R := R) hsw hO hv hheld e612 e28 (by rw [hcs]; exact held) (by rw [hcs]; exact hfit) hpw ?_ hwr
     od og oc ot oa dc gc ct ca ta ro rc rt ko kd kg kc kt no nd ng nc nt hH
   rw [hcs, ← List.take_append_drop (s.rd.length - (cs.length + 1)) s.rd, htake, hdrop]
 
@@ -1325,12 +1333,12 @@ theorem pre_cons (hsw : T.scratchWords = 1024) (hO : OK vs) {c : String × List 
 theorem pre_nil (hsw : T.scratchWords = 1024) (hO : OK vs) (hcs : R.E.combConsts = []) {s : State}
     (h : (specK T [] vs).pre s) : PreFacts R T vs s := by
   spec_pre at h
-  obtain ⟨e588, e28, ⟨Tb, hTb, hheld⟩, hpw, hrd, hwr, od, og, oc, ot, oa, dc, -, gc, -,
+  obtain ⟨e612, e28, ⟨Tb, hTb, hheld⟩, hpw, hrd, hwr, od, og, oc, ot, oa, dc, -, gc, -,
     ct, ca, ta, ro, -, -, rc, rt, -, ko, kd, kg, kc, kt, -, no, nd, ng, nc, nt, hH⟩ := h
   obtain ⟨w₀, hv₀, rfl⟩ := List.mem_map.mp hTb
   refine ⟨⟨w₀, hv₀, hheld⟩, fun w hv hheld => ?_⟩
   rw [List.append_eq, List.append_nil] at hpw
-  refine facts_of (R := R) hsw hO hv hheld e588 e28 (by rw [hcs]; exact fun _ h => absurd h (by simp))
+  refine facts_of (R := R) hsw hO hv hheld e612 e28 (by rw [hcs]; exact fun _ h => absurd h (by simp))
     (by rw [hcs]; exact fun _ h => absurd h (by simp [Abi.constRegions])) hpw (by rw [hcs, hrd]; rfl) hwr
     od og oc ot oa dc gc ct ca ta ro rc rt ko kd kg kc kt no nd ng nc nt hH
 
@@ -1544,7 +1552,7 @@ def satT (vs : List HVar) (w : HVar) (m₀ : Mem) (Q : Nat) (Tr : List Region) :
   zf := none
   sf := none
   of := none
-  mem := put6w (argsMem m₀ w.F.H.D) 0x300000 (((symT vs w.F.hiN).setWidth 64).setWidth 32)
+  mem := put6w (argsMem m₀ w.F.H.D) 0x300000 (((symT vs w.F.hiAnyN).setWidth 64).setWidth 32)
     (((symT vs w.F.H.updN).setWidth 64).setWidth 32) (((symT vs w.F.hfN).setWidth 64).setWidth 32)
     ((BitVec.ofNat 64 (Spec.HashTable.index w.G)).setWidth 32) ((BitVec.ofNat 64 w.G.len).setWidth 32)
     ((BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G)).setWidth 32)

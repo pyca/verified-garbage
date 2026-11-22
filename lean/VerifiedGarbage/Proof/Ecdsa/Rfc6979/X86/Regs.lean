@@ -22,8 +22,9 @@ as on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Reduce.lean`): the curve
 candidate calls), the instance of the contract it implements (the curve's,
 the hash function's HMAC, its output length, the bound on candidates), the
 functions PBKDF2's code calls, verified (`FnsOK`: the streaming `update`, and
-HMAC's `init` and `finalize`, which take their working space as an argument,
-and which the table holds), the functions an indirect call of a table's
+HMAC's `finalize`, which take their working space as an argument, and which
+the table holds), HMAC's `init` for a key of any length, which the table
+holds too, verified (`any`), the functions an indirect call of a table's
 functions may reach (`f`), and the sizes the frame and `scratch` hold: the
 output and block sizes of one of the hash functions of `shapes` (MD5's,
 SHA-1's or the SHA-2 family's), and states and working space no larger than
@@ -40,7 +41,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.X86
 
 open VG VG.X86 VG.Impl.Ecdsa.Rfc6979.X86
 
-open VG.Proof.Pbkdf2.Whole.X86 (FnsOK ReprOK)
+open VG.Proof.Pbkdf2.Whole.X86 (FnsOK ReprOK Sound)
 
 /-- The digest lengths and block sizes of the hash functions with HMAC on
 x86: MD5, SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224 and
@@ -71,9 +72,14 @@ structure RfcHash where
   /-- The sizes the frame and `scratch` hold. -/
   hDB : (F.H.D, F.H.B) ∈ shapes
   hS : F.H.S ≤ 192
-  hWi : ok.Wi * 8 ≤ 1872
   hWf : ok.Wf * 8 ≤ 1872
   hWb : ok.hH.Wb ≤ 1872
+  /-- HMAC's `init` for a key of any length (`hmacInitAny`), which the table
+  holds, verified with `W + S` words of working space, which `scratch` holds. -/
+  any : Sound F.hmacInitAny (Proof.Pbkdf2.Whole.X86.Any.anyScratchContract ok.hH.SH (F.W + F.H.S))
+  anySp : NoSp F.hmacInitAny
+  anySU : stackUse F.hmacInitAny ≤ 76
+  hWA : (F.W + F.H.S) * 8 ≤ 3408
 
 namespace RfcHash
 
@@ -100,7 +106,7 @@ theorem shape (h : (P.F.H.D, P.F.H.B) ∈ shapes) :
   rcases h with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> omega_using [h, h']
 
 /-- The sizes, as the proofs use them. -/
-theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 1872 ∧ P.ok.hH.Wb ≤ 1872 ∧
+theorem sizes : P.F.H.S ≤ 192 ∧ (P.F.W + P.F.H.S) * 8 ≤ 3408 ∧ P.ok.Wf * 8 ≤ 1872 ∧ P.ok.hH.Wb ≤ 1872 ∧
     16 ≤ P.F.H.D ∧ P.F.H.D ≤ 64 ∧ P.F.H.D % 4 = 0 ∧ P.F.H.D < P.F.H.B ∧ P.F.H.B ≤ 128 ∧ 64 ≤ P.F.H.B ∧
     0 < P.F.H.S ∧ 3 ≤ P.w ∧ P.w ≤ 9 ∧ 6 ≤ P.k ∧ P.k ≤ 2 * P.w ∧ 8 ≤ P.Q ∧ P.Q ≤ 66 ∧ P.Q ≤ 8 * P.w ∧
     8 * P.w < P.Q + 8 := by
@@ -113,7 +119,7 @@ theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 187
     cases hb : P.R.big
     · have := P.R.sizesA hb; simp only [Q]; omega_using [this]
     · have := P.R.sizesW hb; simp only [Q]; omega_using [this]
-  refine ⟨P.hS, P.hWi, P.hWf, P.hWb, hs.1, hs.2.1, hs.2.2.1, hs.2.2.2.1, hs.2.2.2.2.1, hs.2.2.2.2.2, hS0, hn3, hn9,
+  refine ⟨P.hS, P.hWA, P.hWf, P.hWb, hs.1, hs.2.1, hs.2.2.1, hs.2.2.2.1, hs.2.2.2.2.1, hs.2.2.2.2.2, hS0, hn3, hn9,
     (by simp only [k]; split <;> omega_arith), (by simp only [k, w]; omega_using []), hw.1, hc.2, hw.2.2, hw.2.1⟩
 
 /-- Unless `big`, the scalars are `Q = 4 k` bytes, in at most sixteen 32-bit words. -/
@@ -184,7 +190,7 @@ theorem sub_trans {a b c : Region} (h₁ : Region.Sub a b) (h₂ : Region.Sub b 
 
 theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, 76⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-  (h.kc.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Offset.sub_base _ h₂)
+  (h.kc.sub_left (Lay.sub_STK' (by omega_using []))).sub_right (Offset.sub_base _ h₂)
 
 variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 

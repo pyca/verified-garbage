@@ -62,7 +62,7 @@ reduces each side to it field by field rather than comparing the backends'
 functions. -/
 def sha256Shape : Fns :=
   ⟨⟨64, 96, 32, 32, 20, "", .block [], "", .block [], "", .block []⟩, Spec.Hmac.sha256I.scratch, "", .block [], "",
-    .block [], "", .block []⟩
+    .block [], "", .block [], ""⟩
 
 theorem sha256Shape_checks : Checks sha256Shape := by
   refine {
