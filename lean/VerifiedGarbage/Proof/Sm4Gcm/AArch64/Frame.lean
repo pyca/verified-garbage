@@ -1103,6 +1103,14 @@ theorem streamEncryptFrameSat_pre992 : ∃ s, (Spec.Sm4.Gcm.streamEncryptContrac
   implies_sat [Spec.Sm4.Gcm.streamEncryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamEncryptPost, AArch64.abi,
     AArch64.argRegs, stackBelow] [streamEncryptFrameSat, streamCryptSat] using streamEncryptFrameSat
 
+theorem streamEncryptFrameSat_pre4048 : ∃ s, (Spec.Sm4.Gcm.streamEncryptContract AArch64.abi 4048).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamEncryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamEncryptPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamEncryptFrameSat, streamCryptSat] using streamEncryptFrameSat
+
+theorem streamEncryptFrameSat_pre1008 : ∃ s, (Spec.Sm4.Gcm.streamEncryptContract AArch64.abi 1008).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamEncryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamEncryptPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamEncryptFrameSat, streamCryptSat] using streamEncryptFrameSat
+
 theorem streamEncrypt_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 768 .x6 (streamEncrypt v.callees))
       (Spec.Sm4.Gcm.streamEncryptContract AArch64.abi (v.ctr.stack + 768)) := by
@@ -1126,6 +1134,14 @@ theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract A
     AArch64.argRegs, stackBelow] [streamDecryptFrameSat, streamCryptSat] using streamDecryptFrameSat
 
 theorem streamDecryptFrameSat_pre992 : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract AArch64.abi 992).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamDecryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamDecryptFrameSat, streamCryptSat] using streamDecryptFrameSat
+
+theorem streamDecryptFrameSat_pre4048 : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract AArch64.abi 4048).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamDecryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamDecryptFrameSat, streamCryptSat] using streamDecryptFrameSat
+
+theorem streamDecryptFrameSat_pre1008 : ∃ s, (Spec.Sm4.Gcm.streamDecryptContract AArch64.abi 1008).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamDecryptContract, Spec.Sm4.Gcm.streamCryptSig, Spec.Sm4.Gcm.streamDecryptPost, AArch64.abi,
     AArch64.argRegs, stackBelow] [streamDecryptFrameSat, streamCryptSat] using streamDecryptFrameSat
 
@@ -1155,6 +1171,14 @@ theorem streamFinishFrameSat_pre992 : ∃ s, (Spec.Sm4.Gcm.streamFinishContract 
   implies_sat [Spec.Sm4.Gcm.streamFinishContract, Spec.Sm4.Gcm.streamFinishSig, Spec.Sm4.Gcm.streamFinishPost, AArch64.abi,
     AArch64.argRegs, stackBelow] [streamFinishFrameSat, finSat] using streamFinishFrameSat
 
+theorem streamFinishFrameSat_pre4048 : ∃ s, (Spec.Sm4.Gcm.streamFinishContract AArch64.abi 4048).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamFinishContract, Spec.Sm4.Gcm.streamFinishSig, Spec.Sm4.Gcm.streamFinishPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamFinishFrameSat, finSat] using streamFinishFrameSat
+
+theorem streamFinishFrameSat_pre1008 : ∃ s, (Spec.Sm4.Gcm.streamFinishContract AArch64.abi 1008).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamFinishContract, Spec.Sm4.Gcm.streamFinishSig, Spec.Sm4.Gcm.streamFinishPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamFinishFrameSat, finSat] using streamFinishFrameSat
+
 theorem streamFinish_framed (v : GcmImpl) (h : v.ctr.stack = 3264 ∨ v.ctr.stack = 224) :
     Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 768 .x5 (streamFinish v.callees))
       (Spec.Sm4.Gcm.streamFinishContract AArch64.abi (v.ctr.stack + 768)) := by
@@ -1178,6 +1202,14 @@ theorem streamVerifyFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract AAr
     AArch64.argRegs, stackBelow] [streamVerifyFrameSat, verSat] using streamVerifyFrameSat
 
 theorem streamVerifyFrameSat_pre992 : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract AArch64.abi 992).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamVerifyContract, Spec.Sm4.Gcm.streamVerifySig, Spec.Sm4.Gcm.streamVerifyPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamVerifyFrameSat, verSat] using streamVerifyFrameSat
+
+theorem streamVerifyFrameSat_pre4048 : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract AArch64.abi 4048).pre s := by
+  implies_sat [Spec.Sm4.Gcm.streamVerifyContract, Spec.Sm4.Gcm.streamVerifySig, Spec.Sm4.Gcm.streamVerifyPost, AArch64.abi,
+    AArch64.argRegs, stackBelow] [streamVerifyFrameSat, verSat] using streamVerifyFrameSat
+
+theorem streamVerifyFrameSat_pre1008 : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract AArch64.abi 1008).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamVerifyContract, Spec.Sm4.Gcm.streamVerifySig, Spec.Sm4.Gcm.streamVerifyPost, AArch64.abi,
     AArch64.argRegs, stackBelow] [streamVerifyFrameSat, verSat] using streamVerifyFrameSat
 

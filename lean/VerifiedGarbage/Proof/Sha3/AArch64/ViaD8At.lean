@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.CallD8
+public import VerifiedGarbage.Impl.Sha3.AArch64.ViaD8
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
@@ -8,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.Sha3.AArch64.Entry
 
 /-!
 # Calls of a function made calls by its address in `d8`
@@ -31,23 +34,7 @@ leak the same, since what code leaks tells where each part of it ends
 
 namespace VG.Proof.Sha3.AArch64
 
-open VG VG.AArch64
-
-/-- `umov x16, v8.d[0]; blr x16`: the call of `n`, whose code is `b`, by the
-address in `d8`. -/
-def callD8 (n : String) (b : Prog isa) : Prog isa :=
-  .seq (.block [.umov .x .x16 .v8 0]) (.icall (.blr .x16) n b (.block []))
-
-/-- `c` with each call of `n` made a call by the address in `d8`, in the
-bodies of the functions it calls too. -/
-def Code.viaD8At (n : String) : Prog isa → Prog isa
-  | .block is => .block is
-  | .seq a b => .seq (viaD8At n a) (viaD8At n b)
-  | .ite cd a b => .ite cd (viaD8At n a) (viaD8At n b)
-  | .loop b cd => .loop (viaD8At n b) cd
-  | .call m b => if m = n then callD8 n (viaD8At n b) else .call m (viaD8At n b)
-  | .frame i b j => .frame i (viaD8At n b) j
-  | .icall i m b nx => .icall i m b nx
+open VG VG.AArch64 VG.Impl.Sha3.AArch64
 
 /-! ## `d8` along a run -/
 
@@ -553,5 +540,200 @@ theorem Verified.viaD8At {n : String} {c : Prog isa} {k : Contract isa}
   · obtain ⟨t₁, o₁⟩ := Exec.ofD8₁ c hc hv e₁ hd₁
     obtain ⟨t₂, o₂⟩ := Exec.ofD8₁ c hc hv e₂ hd₂
     exact Exec.ofD8₂ c hc hv e₁ e₂ hd₁ hd₂ hy o₁ o₂ (hct _ _ _ _ _ _ hp₁ hp₂ hpub o₁ o₂)
+
+/-! ## The cleanup
+
+What the cleanup needs of code made to call `n` by `d8` (`scrubSide`) is
+what it needs of the code, and of `umov x16, v8.d[0]` and `blr x16`; the
+function it calls indirectly is `n`, whose address the contract makes public
+(`verifiedScrubbed_viaD8At`). -/
+
+theorem instrs_viaD8At (n : String) (c : Prog isa) {i : Instr} (h : i ∈ instrs (Code.viaD8At n c)) :
+    i ∈ instrs c ∨ i = .umov .x .x16 .v8 0 ∨ i = .blr .x16 := by
+  induction c with
+  | block is => exact .inl h
+  | seq a b iha ihb =>
+    simp only [Code.viaD8At, instrs, List.mem_append] at h ⊢
+    rcases h with h | h
+    · rcases iha h with h | h
+      exacts [.inl (.inl h), .inr h]
+    · rcases ihb h with h | h
+      exacts [.inl (.inr h), .inr h]
+  | ite cd a b iha ihb =>
+    simp only [Code.viaD8At, instrs, List.mem_append] at h ⊢
+    rcases h with h | h
+    · rcases iha h with h | h
+      exacts [.inl (.inl h), .inr h]
+    · rcases ihb h with h | h
+      exacts [.inl (.inr h), .inr h]
+  | loop b cd ih => exact ih h
+  | call m b ih =>
+    simp only [Code.viaD8At] at h
+    split at h
+    · simp only [callD8, instrs, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+      rcases h with h | h | h
+      exacts [.inr (.inl h), .inr (.inr h), ih h]
+    · exact ih h
+  | frame i' b j ih =>
+    simp only [Code.viaD8At, instrs, List.mem_cons, List.mem_append, List.not_mem_nil, or_false,
+      or_assoc] at h ⊢
+    rcases h with h | h | h
+    · exact .inl h
+    · rcases ih h with h | h
+      exacts [.inr (.inl h), .inr (.inr (.inr h))]
+    · exact .inr (.inr (.inl h))
+  | icall _ _ _ _ _ _ => exact .inl h
+
+theorem depth_viaD8At (n : String) (c : Prog isa) : (Code.viaD8At n c).aarch64Depth = c.aarch64Depth := by
+  induction c with
+  | call m b ih =>
+    simp only [Code.viaD8At]
+    split
+    · simp only [callD8, Code.aarch64Depth, ih, Nat.zero_max, Nat.max_zero]
+    · simp only [Code.aarch64Depth, ih]
+  | _ => simp only [Code.viaD8At, Code.aarch64Depth, *]
+
+theorem noCalls_viaD8At (n : String) (c : Prog isa) : (Code.viaD8At n c).noCalls = c.noCalls := by
+  induction c with
+  | call m b ih =>
+    simp only [Code.viaD8At]
+    split <;> rfl
+  | _ => simp only [Code.viaD8At, Code.noCalls, *]
+
+theorem inames_viaD8At {n : String} {c : Prog isa} (hc : Code.icallFree c = true) :
+    ∀ m ∈ AArch64.Scrub.inames (Code.viaD8At n c), m = n := by
+  induction c with
+  | block is => intro m hm; cases hm
+  | seq a b iha ihb | ite _ a b iha ihb =>
+    simp only [Code.icallFree, Bool.and_eq_true] at hc
+    intro m hm
+    simp only [Code.viaD8At, AArch64.Scrub.inames, List.mem_append] at hm
+    exact hm.elim (iha hc.1 m) (ihb hc.2 m)
+  | loop b _ ih | frame _ b _ ih => exact ih hc
+  | call m' b ih =>
+    intro m hm
+    simp only [Code.viaD8At] at hm
+    split at hm
+    · simp only [callD8, AArch64.Scrub.inames, List.nil_append, List.append_nil, List.mem_cons] at hm
+      exact hm.elim id (ih hc m)
+    · exact ih hc m hm
+  | icall _ _ _ _ _ _ => simp only [Code.icallFree, Bool.false_eq_true] at hc
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- Code with its cleanup meets its contract in constant time and returns
+without secret residue, from what the cleanup needs of it (`scrubSide`), for
+any tables: the functions it calls indirectly have the same addresses in two
+runs that agree on what is public (`hsy`). -/
+theorem verifiedScrubbed_ofSide {c : Prog isa} {k : Contract isa} {W rb : Nat} {cl : Clear}
+    {ts : List (String × List FnTable)} (hv : Verified target c k) (hok : ScrubAllOk k W rb)
+    (hs : scrubSide c W rb cl ts = true) (hW : 0 < W)
+    (hsy : ∀ s₁ s₂, k.pub s₁ s₂ → ∀ m ∈ inames c, s₁.syms m = s₂.syms m) :
+    VerifiedScrubbed target (scrubAll W rb cl c) k rb := by
+  refine ⟨Verified.scrubAllOfV hv hok hs, ?_⟩
+  obtain ⟨hwf, hkp, hdit, hrb⟩ := keeps_of_side hs
+  have h := hs
+  simp only [scrubSide, Nat.pos_iff_ne_zero.mp hW, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq,
+    beq_iff_eq] at h
+  exact noResidue_scrubAll hwf hkp hv ⟨hW, h.1.1.1.1.1.1.1, h.1.1.1.1.1.1.2⟩ hok.sp h.1.1.1.1.1.2 hdit hsy hrb
+
+theorem icallFree_of_inames {c : Prog isa} (h : AArch64.Scrub.inames c = []) : Code.icallFree c = true := by
+  induction c with
+  | block is => rfl
+  | seq a b iha ihb | ite _ a b iha ihb =>
+    simp only [AArch64.Scrub.inames, List.append_eq_nil_iff] at h
+    simp only [Code.icallFree, iha h.1, ihb h.2, Bool.and_self]
+  | loop b _ ih | call _ b ih | frame _ b _ ih => exact ih h
+  | icall _ _ _ _ _ _ => simp only [AArch64.Scrub.inames, List.cons_append, reduceCtorEq] at h
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- Code the cleanup clearing `⟨allGprs, allVecs, []⟩` is for calls nothing
+indirectly and writes no `v8`, which that cleanup leaves. -/
+theorem of_side {F : Prog isa} {W rb : Nat} (hs : scrubSide F W rb ⟨allGprs, allVecs, []⟩ [] = true)
+    (hW : 0 < W) : Code.icallFree F = true ∧ ∀ i ∈ instrs F, vdstOf i ≠ some .v8 := by
+  simp only [scrubSide, Nat.pos_iff_ne_zero.mp hW, ↓reduceIte, Bool.and_eq_true] at hs
+  obtain ⟨⟨⟨⟨⟨⟨⟨-, -⟩, -⟩, ht⟩, -⟩, -⟩, hi⟩, -⟩ := hs
+  refine ⟨icallFree_of_inames ?_, fun i hi' hv => ?_⟩
+  · unfold tablesCall at ht
+    cases hn : inames F with
+    | nil => rfl
+    | cons m ms => rw [hn, List.all_cons] at ht; simp [tableFns] at ht
+  · rw [Code.allInstrs_eq, List.all_eq_true] at hi
+    have := hi i hi'
+    simp only [sideI, vkeeps, hv, Bool.and_eq_true] at this
+    exact absurd this.2 (by decide)
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- `scrubSide` of a function that calls `F`, made to call `n` by `d8`, by
+`entryD8 n`, with the cleanup `clearD8` over 16 more bytes, from `F`'s with
+the cleanup that leaves `v8`: with `n` the function of a table. -/
+theorem scrubSide_entryD8 {n core : String} {F : Prog isa} {W rb : Nat}
+    (hs : scrubSide F W rb ⟨allGprs, allVecs, []⟩ [] = true) (hW : 0 < W) (hW' : W + 16 < 4096) :
+    scrubSide (entryD8 n core (Code.viaD8At n F)) (W + 16) rb clearD8 [("", [⟨"", "", [n], []⟩])] = true := by
+  obtain ⟨hc, -⟩ := of_side hs hW
+  have hW16 : W + 16 ≠ 0 := by omega
+  simp only [scrubSide, Nat.pos_iff_ne_zero.mp hW, hW16, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq,
+    beq_iff_eq] at hs ⊢
+  obtain ⟨⟨⟨⟨⟨⟨⟨-, h2⟩, h3⟩, -⟩, h5⟩, -⟩, h7⟩, -⟩ := hs
+  refine ⟨⟨⟨⟨⟨⟨⟨hW', by omega⟩, ?_⟩, ?_⟩, h5⟩, by decide⟩, ?_⟩, ?_⟩
+  · simp only [entryD8, Code.aarch64Depth, depth_viaD8At, Instr.frameUnits, Nat.zero_max, Nat.max_zero]
+    omega
+  · unfold tablesCall
+    rw [List.all_eq_true]
+    intro f hf
+    simp only [entryD8, inames, List.nil_append, List.append_nil] at hf
+    rw [inames_viaD8At hc f hf]
+    simp [tableFns]
+  · rw [Code.allInstrs_eq, List.all_eq_true] at h7 ⊢
+    intro i hi
+    simp only [entryD8, enterD8, leaveD8, instrs, List.mem_cons, List.mem_append, List.not_mem_nil,
+      or_false, List.cons_append, List.nil_append, or_assoc] at hi
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | hi | rfl | rfl | rfl | rfl
+    any_goals rfl
+    rcases instrs_viaD8At n F hi with h | rfl | rfl
+    · exact sideI_mono (fun q hq => hq)
+        (by decide : ∀ w ∈ keptV clearD8, w ∈ keptV ⟨allGprs, allVecs, []⟩) (h7 i h)
+    all_goals rfl
+  · rfl
+
+theorem args_setV {ws : List Nat} {vals : State → List (BitVec 64)} (h : abi.args ws = some vals)
+    (s : State) (r : VReg) (x : BitVec 128) : vals (s.setV r x) = vals s := by
+  simp only [abi] at h
+  repeat' split at h
+  all_goals first | (cases h; rfl) | cases h
+
+/-- `Contract.d8` of a contract under `abi` is satisfiable where the contract
+is: its precondition does not read `v8`. -/
+theorem Contract.d8_sat_of {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {st : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {n : String}
+    (h : ∃ s, (sig.contract abi pre post wa st leak).pre s) :
+    ∃ s, (Contract.d8 n (sig.contract abi pre post wa st leak)).pre s := by
+  obtain ⟨s, hs⟩ := h
+  refine Contract.d8_sat (s := s) ?_
+  simp only [Sig.contract] at hs ⊢
+  revert hs
+  split
+  · exact id
+  · rename_i vals heq
+    rw [args_setV heq]
+    exact id
+
+/-- A contract under `abi.withFns [n]` is satisfiable where that under `abi`
+is: `withFns` adds only to the public data. -/
+theorem sat_withFns {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {st : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {n : String}
+    (h : ∃ s, (sig.contract abi pre post wa st leak).pre s) :
+    ∃ s, (sig.contract (abi.withFns [n]) pre post wa st leak).pre s := h
+
+open VG.AArch64.Scrub in
+/-- `ScrubAllOk` of a contract under `abi.withFns [n]`, from that under
+`abi`. -/
+theorem scrubAllOk_withFns {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {st : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {W rb : Nat} {n : String}
+    (h : ScrubAllOk (sig.contract abi pre post wa st leak) W rb) :
+    ScrubAllOk (sig.contract (abi.withFns [n]) pre post wa st leak) W rb :=
+  ⟨h.sp, h.post, fun _ _ hp => h.pub _ _ (pub_fns hp).1⟩
 
 end VG.Proof.Sha3.AArch64

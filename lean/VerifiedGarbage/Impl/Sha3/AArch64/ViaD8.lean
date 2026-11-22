@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 public import VerifiedGarbage.Impl.ICall
+public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
 
 /-!
 # Calling a Keccak permutation by the address in `d8`
@@ -39,5 +40,29 @@ def leaveD8 : List Instr := [.ldrSp .x16 8, .vop (.ins .d2 .v8 0 .x16), .ldrSp .
 /-- A call of `name`, whose code is `body`, with `n`'s address in `d8`. -/
 def entryD8 (n name : String) (body : Prog isa) : Prog isa :=
   .frame (.alloc 16) (.seq (.block (enterD8 n)) (.seq (.call name body) (.block leaveD8))) (.free 16)
+
+/-- `umov x16, v8.d[0]; blr x16`: the call of `n`, whose code is `b`, by the
+address in `d8`. -/
+def callD8 (n : String) (b : Prog isa) : Prog isa :=
+  .seq (.block [.umov .x .x16 .v8 0]) (.icall (.blr .x16) n b (.block []))
+
+/-- `c` with each call of `n` made a call by the address in `d8`, in the
+bodies of the functions it calls too: code that is the same for every
+implementation of `n` it calls. -/
+def Code.viaD8At (n : String) : Prog isa → Prog isa
+  | .block is => .block is
+  | .seq a b => .seq (viaD8At n a) (viaD8At n b)
+  | .ite cd a b => .ite cd (viaD8At n a) (viaD8At n b)
+  | .loop b cd => .loop (viaD8At n b) cd
+  | .call m b => if m = n then callD8 n (viaD8At n b) else .call m (viaD8At n b)
+  | .frame i b j => .frame i (viaD8At n b) j
+  | .icall i m b nx => .icall i m b nx
+
+/-- What the cleanup of a function that calls code made so by `entryD8`
+clears: every general-purpose and vector register the calling convention
+does not preserve, and the high half of `v8`, which `entryD8` writes the low
+half of. -/
+def clearD8 : Impl.Scrub.AArch64.Clear :=
+  ⟨Impl.Scrub.AArch64.allGprs, Impl.Scrub.AArch64.allVecs, [.v8]⟩
 
 end VG.Impl.Sha3.AArch64
