@@ -92,7 +92,7 @@ oddness, `p mod q = 1` and `1 < g < p`, but not `g^q mod p = 1`; then
 `rest`, or `fail`. In the P space after it, with p in array 0 and
 `R² mod p` in array 24. -/
 def checkDomain (rest fail : Prog isa) : Prog isa :=
-  sizes (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG) rangeElem) rest fail)) fail) fail) fail
+  sizes (odds (andThen pModQ (.seq setupPCall (andThen (.seq (.block ptrG) rangeElem) rest fail)) fail) fail) fail
 
 /-- Key derivation for a domain that has passed `vg_dsa_check_parameters`:
 `derive` with `checkDomain` for `checkParams`. -/

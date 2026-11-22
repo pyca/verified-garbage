@@ -221,6 +221,12 @@ p). -/
 def setupP : Prog isa :=
   .seq setupPre (.ite (.zero .d .r3) (.seq Precompute.r2Prime (copy 24 1)) (.seq Precompute.r2Hi (copy 24 1)))
 
+/-- `setupP`, as the function `vg_dsa_setup_p`: the return address waits in
+`r25`, which `setupP` does not write, and the call's `r0`, `r11` and `r12`
+are among what `setupP` sets. -/
+def setupPCall : Prog isa :=
+  .seq (.block [.mflr .r25]) (.seq (.call "vg_dsa_setup_p" setupP) (.block [.mtlr .r25]))
+
 /-- `r20 &= ¬r19`. -/
 def clear19 : List Instr := [.logic .or .r20 .r20 .r19, .logic .xor .r20 .r20 .r19]
 
@@ -248,7 +254,7 @@ def checkElem : Prog isa := .seq (loadArr 4) (andThen elemRange elemOrder (.bloc
 and g; then `rest`, or `fail`. In the P space after it, with p in array 0 and
 `R² mod p` in array 24. -/
 def checkParams (rest fail : Prog isa) : Prog isa :=
-  sizes (odds (andThen pModQ (.seq setupP (andThen (.seq (.block ptrG) checkElem) rest fail)) fail) fail) fail
+  sizes (odds (andThen pModQ (.seq setupPCall (andThen (.seq (.block ptrG) checkElem) rest fail)) fail) fail) fail
 
 /-- The check of the key's public part: the domain's (`checkParams`), then y;
 then `rest`, or `fail`. In the P space after it, with p in array 0 and

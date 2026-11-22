@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Prime
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreR2Fast
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubSan
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMinv
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMont
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubPower
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.PPC64LE.Range
@@ -320,6 +321,42 @@ theorem setupP_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : S
       (WP.mono (Pre.r2Hi_ok hin.env.hs a8 a9 hin.env.h10 a5 hin.env.h11 (by omega_arith) (by omega_arith)
         (by omega_arith) r12lt r12inv v0 (top_gt (by omega_arith) v0 hpo hne) hpo)
         fun t ⟨h1, h2, h3⟩ => ⟨h1, h2, h3⟩)) fin
+
+/-- `setupPCall`: `setupP_ok`, for the call of `setupP`, which writes `r25` too. -/
+theorem setupPCall_ok {s : State} {L : Lay} {key sig dig : Addr} (hL : L.Ok) (hs : ScrL s L)
+    (hr : Regs s L key sig dig) (hk : Src s L key (2 * L.pl + L.ql))
+    (hp : 2 ≤ pOf s.mem L key) (hpo : pOf s.mem L key % 2 = 1) :
+    WP isa setupPCall s fun t =>
+      (InP t L ∧ arrP t.mem L 0 = pOf s.mem L key ∧ word t.mem L.S (slot L.wp 0 + 8 * L.wp) = 0 ∧
+        arrP t.mem L 24 = 2 ^ (128 * L.wp) % pOf s.mem L key ∧ PBody L s.mem t.mem) ∧
+        Keep (setupPRegs ++ ([.r25] : List Reg)) s t := by
+  unfold setupPCall
+  refine WP.seq (WP.mono (WP.keep [.r25] (Q := fun t => t.gpr .r25 = s.lr ∧ t.mem = s.mem)
+    (by prun [exec_mflr]) (by decide)) fun s₁ ⟨⟨a25, m1⟩, k1⟩ => ?_)
+  obtain ce : ∀ r, r ∉ ([.r0, .r11, .r12, .r25] : List Reg) → s₁.callEntry.gpr r = s.gpr r := fun r hr => by
+    rw [State.callEntry_gpr s₁ (by
+        simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false]
+        intro h; apply hr; rcases h with h | h | h <;> simp [h]),
+      k1.gpr r fun h => hr (by simp only [List.mem_singleton] at h; simp [h])]
+  obtain me : s₁.callEntry.mem = s.mem := (State.callEntry_mem s₁).trans m1
+  obtain hr₁ : Regs s₁.callEntry L key sig dig :=
+    ⟨(ce _ (by decide)).trans hr.r21, (ce _ (by decide)).trans hr.r27, (ce _ (by decide)).trans hr.r28,
+      (ce _ (by decide)).trans hr.r26, by rw [ce _ (by decide)]; exact hr.pl, by rw [ce _ (by decide)]; exact hr.ql⟩
+  refine WP.seq (Pub.WP.callRaw (WP.mono (setupP_ok hL (hs.congr ((State.callEntry_wr s₁).trans k1.wr)) hr₁
+    (hk.keep ((State.callEntry_rd s₁).trans k1.rd) ((State.callEntry_wr s₁).trans k1.wr))
+    (by rw [me]; exact hp) (by rw [me]; exact hpo)) fun t ⟨post, kt⟩ => ⟨kt.lr, ?_⟩))
+  rw [me] at post
+  apply WP.of_runBlock
+  simp only [runBlock_cons, exec_mtlr, runStep_some, runBlock_nil]
+  obtain ⟨⟨e, h21, h23⟩, post'⟩ := post
+  refine ⟨_, rfl, ⟨⟨⟨e.hs.congr rfl, e.h10, e.h29, e.h11, e.h31, e.hw, e.hw', e.hZ⟩, h21, h23⟩, post'⟩,
+    ⟨fun r hr => ?_, kt.rd.trans k1.rd, kt.wr.trans k1.wr, kt.sp.trans k1.sp, ?_⟩⟩
+  · show t.gpr r = s.gpr r
+    rw [kt.gpr r fun h => hr (List.mem_append_left _ h), ce r fun h => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+      rcases h with h | h | h | h <;> exact hr (by rw [h]; decide)]
+  · show t.gpr .r25 = s.lr
+    rw [kt.gpr .r25 (by decide), State.callEntry_gpr s₁ (by decide), a25]
 
 /-- The registers `checkElem` writes. -/
 def elemRegs : List Reg :=
