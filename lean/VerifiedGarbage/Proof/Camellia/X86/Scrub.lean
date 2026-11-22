@@ -76,8 +76,11 @@ working space's frame and the frames of the calls of
 `vg_camellia_crypt_prepared` below it. It clears the registers a callee may
 change, and returns without secret residue (`X86.Scrub.verifiedScrubbedSel`,
 the kernel evaluating the analysis of the code with its cleanup:
-`taint_decide_ct`). `vg_camellia_ctr_final` calls `vg_camellia_ctr`'s code
-as an internal function of its own, `vg_camellia_ctr_core`. Their
+`taint_decide_ct`). `vg_camellia_ctr_final` calls an implementation of
+`vg_camellia_ctr`'s code (`CtrFinal.CtrImpl`), which states the doublewords
+it zeroes with it; the baseline's (`CtrFinal.CtrImpl.scalar`) is an internal
+function of its own, `vg_camellia_ctr_core` (`Impl.Camellia.X86.ctrFramed`).
+Their
 postconditions read the memory on return only within their buffers, as on
 the other targets (`Proof/Camellia/ScrubLocal.lean`); a length is the low 32
 bits of its argument word.
@@ -332,14 +335,45 @@ theorem ctr_scrubbed :
       verified := Proof.Camellia.X86.Ctr.ctr_framed }
     Impl.Camellia.X86.Fn.modeWords (ctrOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
-/-- `Spec.Camellia.ctrFinalApi` as emitted (`Impl.Camellia.X86.Fn.ctrFinal`) meets its contract
-in constant time and returns without secret residue. -/
-theorem ctrFinal_scrubbed :
-    VerifiedScrubbed X86.target Impl.Camellia.X86.Fn.ctrFinal (Spec.Camellia.ctrFinalContract X86.abi 2856) 0 :=
+/-- `Spec.Camellia.ctrFinalApi` as emitted (`Impl.Camellia.X86.Fn.ctrFinal`), calling the
+implementation `c` of `vg_camellia_ctr`'s code, meets its contract in constant time and returns
+without secret residue. -/
+theorem ctrFinal_scrubbed (c : CtrFinal.CtrImpl) :
+    VerifiedScrubbed X86.target (Impl.Camellia.X86.Fn.ctrFinal c.name c.code c.words)
+      (Spec.Camellia.ctrFinalContract X86.abi 2856) 0 :=
   verifiedScrubbedSel (api := Spec.Camellia.ctrFinalApi) (W := 2856)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 60 5 8 Impl.Camellia.X86.ctrFinal
-      verified := Proof.Camellia.X86.CtrFinal.ctrFinal_framed
-      spSafe := Proof.Camellia.X86.CtrFinal.ctrFinal_framed_spSafe }
-    Impl.Camellia.X86.Fn.ctrFinalWords (ctrFinalOut _) (by decide) ⟨_, by taint_decide_ct⟩
+    { code := Impl.StackScratch.X86.withStackScratchWiped 60 5 8 (Impl.Camellia.X86.ctrFinal c.name c.code)
+      verified := Proof.Camellia.X86.CtrFinal.ctrFinal_framed c
+      spSafe := Proof.Camellia.X86.CtrFinal.ctrFinal_framed_spSafe c }
+    c.words (ctrFinalOut _) c.wordsOk c.residue
+
+/-- `spSafe` of the function as emitted, which its registration states. -/
+theorem ctrFinal_spSafeF (c : CtrFinal.CtrImpl) :
+    (Impl.Camellia.X86.Fn.ctrFinal c.name c.code c.words).all (fun i => !isa.writesSp i) = true :=
+  scrubSel_spSafe (Proof.Camellia.X86.CtrFinal.ctrFinal_framed_spSafe c)
 
 end VG.Proof.Camellia.X86.Scrub
+
+namespace VG.Proof.Camellia.X86.CtrFinal.CtrImpl
+
+open VG.X86 VG.X86.Scrub
+
+/-- `vg_camellia_ctr`'s code in the baseline ISA, its working space in a
+frame of its own: `vg_camellia_ctr_core`, with the doublewords
+`vg_camellia_ctr_final` zeroes calling it
+(`Impl.Camellia.X86.Fn.ctrFinalWords`). -/
+def scalar : CtrImpl where
+  name := "vg_camellia_ctr_core"
+  code := Impl.Camellia.X86.ctrFramed
+  ok := ctrFramed_sk.1
+  ct := ctrFramed_sk.2.1
+  nosp := ctr_nosp
+  stack := Nat.le_of_eq ctr_stack
+  spSafe := Code.all_of_spTest (by unfold Impl.Camellia.X86.ctrFramed; lit_decide)
+  suffix := ""
+  features := []
+  words := Impl.Camellia.X86.Fn.ctrFinalWords
+  wordsOk := by decide
+  residue := by exact ⟨_, by taint_decide_ct⟩
+
+end VG.Proof.Camellia.X86.CtrFinal.CtrImpl
