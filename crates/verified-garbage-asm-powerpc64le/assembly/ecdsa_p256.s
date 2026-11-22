@@ -9370,7 +9370,7 @@ vg_ecdsa_p256_sign:
 	addi %r1, %r1, 48
 	mtlr %r0
 	li %r0, 0
-	stdu %r1, -736(%r1)
+	stdu %r1, -784(%r1)
 	addi %r12, %r1, 32
 	std %r0, 0(%r12)
 	std %r0, 8(%r12)
@@ -9420,7 +9420,13 @@ vg_ecdsa_p256_sign:
 	std %r0, 168(%r12)
 	std %r0, 176(%r12)
 	std %r0, 184(%r12)
-	addi %r1, %r1, 736
+	std %r0, 192(%r12)
+	std %r0, 200(%r12)
+	std %r0, 208(%r12)
+	std %r0, 216(%r12)
+	std %r0, 224(%r12)
+	std %r0, 232(%r12)
+	addi %r1, %r1, 784
 	rldicr %r3, %r3, 32, 31
 	rldicl %r3, %r3, 32, 32
 	li %r4, 0
