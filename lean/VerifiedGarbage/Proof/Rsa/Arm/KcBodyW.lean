@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcOps
 public import VerifiedGarbage.Proof.Rsa.Arm.KdDiv
+public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCall
 public import VerifiedGarbage.Proof.Rsa.Arm.KdMul
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rsa.Arm.KcFnBase
@@ -418,7 +419,7 @@ theorem Stg.mulLo_ok' {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
   rw [Nat.mul_comm (A y) (A x)]
   exact h.mulLo_ok ho hx hy hz hA0 hox hoy ho0 hoV hw hw2 hX hY hn
 
-/-- `divW a r m t nm u`: `[r] := [a] mod M` for `M = [m]` of `w / 2` words, its top word not zero. -/
+/-- `divWC divName a r m t nm u`: `[r] := [a] mod M` for `M = [m]` of `w / 2` words, its top word not zero. -/
 theorem Stg.divW_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {a r m t nm u : Nat} (ha : a ∈ live) (hm : m ∈ live) (hz : aZ ∈ live)
     (hA0 : A aZ = 0) (hr : r < nArr) (ht : t < nArr) (hnm : nm < nArr) (hu : u < nArr) (hra : r ≠ a)
@@ -427,13 +428,13 @@ theorem Stg.divW_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (hV : aVD ∉ [r, t, u, nm]) (hw6 : 6 ≤ g.w) (hMl : A m < 2 ^ (32 * (g.w / 2)))
     (hMg : 2 ^ (32 * (g.w / 2 - 1)) ≤ A m) (hlive : ∀ j ∈ live, j = r ∨ j ∉ [r, t, u, nm]) {top : Option Nat}
     (htop : KeyDiv.TopOk top g.w (A a) := by trivial) :
-    WP isa (KeyDiv.divW a r m t nm u top) s (Stg g s0 (upd A r (A a % A m)) (r :: live) c) := by
+    WP isa (KeyDiv.divWC divName a r m t nm u top) s (Stg g s0 (upd A r (A a % A m)) (r :: live) c) := by
   obtain c16 : slot s.mem g.B 16 = g.w := by
     simp only [slot, w32]; rw [h.cnt, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := h.ws.wle; omega_using [this])]
   obtain hT0 : 0 < w32 s.mem (State.addr g.B) (arr g.w m + 4 * (g.w / 2 - 1)) :=
     top_word_pos (k := g.w / 2 - 1) (n := g.w) (by omega_using [hw6]) (h.arrs.get hm)
       (by rw [show g.w / 2 - 1 + 1 = g.w / 2 by omega_using [hw6]]; exact hMl) hMg
-  refine WP.mono (KeyDiv.divW_ok h.ws (h.live_lt a ha) hr (h.live_lt m hm) ht hnm hu (by decide) hra hrt hru htu hmr
+  refine WP.mono (KeyDiv.divWC_ok divName h.ws (h.live_lt a ha) hr (h.live_lt m hm) ht hnm hu (by decide) hra hrt hru htu hmr
     hmt hmu hnr htn hnu hnm' hr0 ht0 hu0 hn0 hw6 c16 (h.arrs.get hm) hMl hT0
     (by have := h.arrs.get hz; rw [hA0] at this; exact this) (by rw [h.arrs.get ha]; exact htop))
     fun v ⟨hv, e, _, k, rr⟩ => ?_
