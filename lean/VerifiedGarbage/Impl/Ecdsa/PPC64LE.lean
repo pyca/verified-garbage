@@ -339,6 +339,16 @@ def mulAt (C : Impl.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
   .seq (.block (copy c.n (c.sl RX) (c.sl px) ++ copy c.n (c.sl RY) (c.sl py)))
     (.call s!"vg_{C.curve}_mul" c.mulFn)
 
+/-- A multiplication `m` as a function: `r31` and `lr` kept around it, through
+`r0`, where `vg_<curve>_mul` keeps them (`mulFn`). -/
+def winFn (m : Prog isa) : Prog isa :=
+  .seq (.block [.store .d .r31 wb c.mulAt31, .mflr .r0, .store .d .r0 wb c.mulAtLr]) <|
+  .seq m (.block [.load .d .r0 wb c.mulAtLr, .mtlr .r0, .load .d .r31 wb c.mulAt31])
+
+/-- A call of the windows `m` of `[k]P`, the function `vg_<curve>_windows`
+(`winFn m`): one copy for ECDH and verification, which both run them. -/
+def winCall (m : Prog isa) : Prog isa := .call s!"vg_{c.SP.curve}_windows" (c.winFn m)
+
 /-- Whether `qMul`'s inline ladder doubles and adds by the point functions
 for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`):
 for a curve without `vg_<curve>_mul` whose `a` is zero and whose

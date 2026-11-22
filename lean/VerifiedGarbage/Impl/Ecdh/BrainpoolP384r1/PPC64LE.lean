@@ -14,6 +14,6 @@ open VG.PPC64LE
 
 /-- `vg_ecdh_brainpoolp384r1`: `[d]P` by four-bit windows for any `a`, with `3 b R mod p` at `B3P`. -/
 def exchangeBrainpoolP384r1 : Prog isa :=
-  Cfg.exchangeWith Impl.Ecdsa.PPC64LE.brainpoolp384r1 (Impl.Ecdsa.PPC64LE.WindowA.Cfg.mul Impl.Ecdsa.PPC64LE.brainpoolp384r1 PX PY Impl.Ecdsa.PPC64LE.B3P)
+  Cfg.exchangeWith Impl.Ecdsa.PPC64LE.brainpoolp384r1 (Impl.Ecdsa.PPC64LE.Cfg.winCall Impl.Ecdsa.PPC64LE.brainpoolp384r1 <| Impl.Ecdsa.PPC64LE.WindowA.Cfg.mul Impl.Ecdsa.PPC64LE.brainpoolp384r1 PX PY Impl.Ecdsa.PPC64LE.B3P)
 
 end VG.Impl.Ecdh.PPC64LE

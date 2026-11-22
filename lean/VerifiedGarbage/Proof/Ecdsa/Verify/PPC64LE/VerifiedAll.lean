@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.WindowAll
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TComb
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.CombAll
-import VerifiedGarbage.Proof.Ecdh.PPC64LE.VerifiedAll
+public import VerifiedGarbage.Proof.Ecdh.PPC64LE.VerifiedAll
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
@@ -27,7 +27,8 @@ table and whose `[v]Q` is by windows, once for every configuration:
   `[u]G`, `U = R` and `R = O` (`save_ok`), `v`'s bits, `[v]Q`, and the sum
   (`sum_ok`), with the slots, the flag and the table of `p - 2` that `Pts`
   keeps apart from what each step writes;
-* `CombWin.kit_mul`: the windows of a kit (`WAll.Kit.mulP`) are such a
+* `CombWin.kit_mul`: the windows of a kit (`WAll.Kit.mulP`), called as the
+  function ECDH calls too (`Cfg.winCall`), are such a
   multiplication, and `CombWin.kit_pts_ok` is `pts_ok` with them;
 * `CombWin.verify_ok`: `verifyWith` with points that read a table runs and
   leaves `VPost`, from `VPre` without the table's region and `ConstsOk`.
@@ -56,30 +57,30 @@ def pts (c : Cfg) (gen mulP : Prog isa) : Prog isa :=
     (.seq gen (.seq (.block (Cfg.save c)) (.seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n))
       (.seq mulP (Cfg.sum c))))))
 
-theorem fixedOk_mulW (h7 : c.n < 10) (E : Nat) : FixedOk c (WAll.mulW c E) := fun w hw => by
+theorem fixedOk_mulW (h7 : c.n < 10) (E : Nat) : FixedOk c (Proof.Ecdh.PPC64LE.Win.mulWS c E) := fun w hw => by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rw [sl_eq c 12]
-  rcases hw with rfl | rfl | rfl <;> exact Or.inr (by simp only; omega_using [h7])
+  rcases hw with rfl | rfl | rfl | rfl <;> exact Or.inr (by simp only [sl_eq, nslots]; omega_using [h7])
 
 /-- The table of `p - 2` is apart from what the windows write. -/
 theorem tbl_apart_mulW (h7 : c.n < 10) (E : Nat) {t : Nat} (ht : t < 64 * c.n) :
-    ∀ w ∈ WAll.mulW c E, bitsAt c.n 1 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n 1 + t := by
+    ∀ w ∈ Proof.Ecdh.PPC64LE.Win.mulWS c E, bitsAt c.n 1 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n 1 + t := by
   intro w hw
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rw [bitsAt_eq]
-  rcases hw with rfl | rfl | rfl <;> simp only <;> omega_using [ht, h7]
+  rcases hw with rfl | rfl | rfl | rfl <;> simp only [sl_eq, nslots] <;> omega_using [ht, h7]
 
 /-- `[u]G + [v]Q`, into `R`, by a generator from the table of `u`'s bits and
 a multiplication on the windows' ranges. -/
 theorem pts_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {E : Nat}
-    (hWs : ∀ w ∈ WAll.mulW c E, w.1 + w.2 ≤ size) {gen mulP : Prog isa} {s₀ : State}
+    (hWs : ∀ w ∈ Proof.Ecdh.PPC64LE.Win.mulWS c E, w.1 + w.2 ≤ size) {gen mulP : Prog isa} {s₀ : State}
     (hgen : ∀ {s : State} {k : Nat}, Keep c s₀ (s₀.gpr .r6) s → s.syms = s₀.syms → k < 2 ^ (8 * c.C.len) →
       (∀ i < 64 * c.n, s.mem (off (s₀.gpr .r6) (bitsAt c.n 0 + i)) = if k.testBit i then 1 else 0) →
       WP isa gen s (GeneratorPost c (s₀.gpr .r6) k (G c.C) s))
     (hmul : ∀ {s : State} {k : Nat} {P : Point c.C}, Keep c s₀ (s₀.gpr .r6) s →
       sv c (s₀.gpr .r6) s EM = c.mont c.C.b → WAll.PtOk c (s₀.gpr .r6) s (WAll.gPt c) P →
       onCurve c.C P = true → WAll.Bits c (s₀.gpr .r6) s k → k < c.C.n →
-      WP isa mulP s fun s' => Rk powClob s s' ∧ Unch (s₀.gpr .r6) (WAll.mulW c E) s.mem s'.mem ∧
+      WP isa mulP s fun s' => Rk powClob s s' ∧ Unch (s₀.gpr .r6) (Proof.Ecdh.PPC64LE.Win.mulWS c E) s.mem s'.mem ∧
         WAll.PtOk c (s₀.gpr .r6) s' (Window.Cfg.rPt c) (mul k P)) :
     PtsOk c s₀ (pts c gen mulP) := by
   intro s hM syms P hP hQ rest Q h
@@ -158,7 +159,7 @@ theorem pts_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {E : Nat}
   -- `[v]Q` by the windows.
   refine WP.seq (WP.mono (hmul K₅ bp₅ gQ hP bv hM.v_lt) fun s₆ ⟨k₆, U₆, R₆⟩ => ?_)
   obtain K₆ := K₅.step h7 k₆ (hU := U₆) (hW := fixedOk_mulW h7 E) (hWs := hWs)
-  obtain apM : ∀ {i : Nat}, i < 45 → i ∉ ACC :: PT :: ladIx → ∀ w ∈ WAll.mulW c E,
+  obtain apM : ∀ {i : Nat}, i < 45 → i ∉ ACC :: PT :: ladIx → ∀ w ∈ Proof.Ecdh.PPC64LE.Win.mulWS c E,
       c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := fun hi hl => Proof.Ecdh.PPC64LE.Win.apart_mulW h7 E hi hl
   -- `U`, `[u]G`, through the save and the windows.
   obtain uS : ∀ {i j : Nat}, i ∈ [UX, UY, UZ] → sv c (s₀.gpr .r6) s₄ i = sv c (s₀.gpr .r6) s₃ j →
@@ -237,7 +238,7 @@ theorem kit_mul (K : WAll.Kit c) (hb : (K.bs = EM ∧ K.bK = c.C.b) ∨ (K.bs = 
     (S : Keep c s₀ (s₀.gpr .r6) s) (hbm : sv c (s₀.gpr .r6) s EM = c.mont c.C.b)
     (g : WAll.PtOk c (s₀.gpr .r6) s (WAll.gPt c) P) (hP : onCurve c.C P = true)
     (bits : WAll.Bits c (s₀.gpr .r6) s k) (hk : k < c.C.n) :
-    WP isa K.mulP s fun s' => Rk powClob s s' ∧ Unch (s₀.gpr .r6) (WAll.mulW c K.E) s.mem s'.mem ∧
+    WP isa (c.winCall K.mulP) s fun s' => Rk powClob s s' ∧ Unch (s₀.gpr .r6) (Proof.Ecdh.PPC64LE.Win.mulWS c K.E) s.mem s'.mem ∧
       WAll.PtOk c (s₀.gpr .r6) s' (Window.Cfg.rPt c) (mul k P) := by
   have F := S.fixed
   have hkc : WAll.KC c K.bs K.bK (s₀.gpr .r6) s := by
@@ -245,7 +246,7 @@ theorem kit_mul (K : WAll.Kit c) (hb : (K.bs = EM ∧ K.bK = c.C.b) ∨ (K.bs = 
     rcases hb with ⟨e, e'⟩ | ⟨e, e'⟩
     · rw [e, e']; exact hbm
     · rw [e, e']; exact F.b3p
-  exact WAll.mul_ok K hC ⟨S.ws, hkc, g, hP, bits,
+  exact Proof.Ecdh.PPC64LE.Win.mulCall_ok K hC ⟨S.ws, hkc, g, hP, bits,
     Nat.lt_of_lt_of_le (Nat.lt_trans hk K.ok.n_enc) (Nat.pow_le_pow_right (by decide) hnw)⟩
 
 /-- `[u]G + [v]Q`, into `R`, by a generator from the table of `u`'s bits and
@@ -256,7 +257,7 @@ theorem kit_pts_ok (K : WAll.Kit c) (h3 : 3 ≤ c.n)
     (hgen : ∀ {s : State} {k : Nat}, Keep c s₀ (s₀.gpr .r6) s → s.syms = s₀.syms → k < 2 ^ (8 * c.C.len) →
       (∀ i < 64 * c.n, s.mem (off (s₀.gpr .r6) (bitsAt c.n 0 + i)) = if k.testBit i then 1 else 0) →
       WP isa gen s (GeneratorPost c (s₀.gpr .r6) k (G c.C) s)) :
-    PtsOk c s₀ (pts c gen K.mulP) :=
+    PtsOk c s₀ (pts c gen (c.winCall K.mulP)) :=
   pts_ok K.ok h3 hC (Proof.Ecdh.PPC64LE.Win.mulW_le K) hgen (kit_mul K hb hnw hC)
 
 /-- The verification with points that read a table. -/

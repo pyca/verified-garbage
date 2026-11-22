@@ -20,7 +20,7 @@ open VG.PPC64LE
 /-- `[u]G + [v]Q` for P-224. -/
 def pointsP224 : Prog isa :=
   Cfg.pointsWith Impl.Ecdsa.PPC64LE.p224 Impl.Weierstrass.PPC64LE.mulGeneratorP224
-    (Impl.Ecdsa.PPC64LE.Window.Cfg.mul Impl.Ecdsa.PPC64LE.p224 Impl.Ecdh.PPC64LE.PX Impl.Ecdh.PPC64LE.PY
+    (Impl.Ecdsa.PPC64LE.Cfg.winCall Impl.Ecdsa.PPC64LE.p224 <| Impl.Ecdsa.PPC64LE.Window.Cfg.mul Impl.Ecdsa.PPC64LE.p224 Impl.Ecdh.PPC64LE.PX Impl.Ecdh.PPC64LE.PY
       Impl.Ecdsa.PPC64LE.EM)
 
 /-- `vg_ecdsa_p224_verify`. -/

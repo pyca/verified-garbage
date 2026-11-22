@@ -20,7 +20,7 @@ open VG.PPC64LE
 /-- `[u]G + [v]Q` for brainpoolP512r1. -/
 def pointsBrainpoolP512r1 : Prog isa :=
   Cfg.pointsWith Impl.Ecdsa.PPC64LE.brainpoolp512r1 Impl.Weierstrass.PPC64LE.mulGeneratorBrainpoolP512r1
-    (Impl.Ecdsa.PPC64LE.WindowA.Cfg.mul3top Impl.Ecdsa.PPC64LE.brainpoolp512r1 Impl.Ecdh.PPC64LE.PX
+    (Impl.Ecdsa.PPC64LE.Cfg.winCall Impl.Ecdsa.PPC64LE.brainpoolp512r1 <| Impl.Ecdsa.PPC64LE.WindowA.Cfg.mul3top Impl.Ecdsa.PPC64LE.brainpoolp512r1 Impl.Ecdh.PPC64LE.PX
       Impl.Ecdh.PPC64LE.PY Impl.Ecdsa.PPC64LE.B3P)
 
 /-- `vg_ecdsa_brainpoolp512r1_verify`. -/

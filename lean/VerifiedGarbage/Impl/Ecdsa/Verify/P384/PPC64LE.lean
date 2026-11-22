@@ -20,7 +20,7 @@ open VG.PPC64LE
 /-- `[u]G + [v]Q` for P-384. -/
 def pointsP384 : Prog isa :=
   Cfg.pointsWith Impl.Ecdsa.PPC64LE.p384 Impl.Weierstrass.PPC64LE.mulGeneratorP384
-    (Impl.Ecdsa.PPC64LE.Window.Cfg.mul Impl.Ecdsa.PPC64LE.p384 Impl.Ecdh.PPC64LE.PX Impl.Ecdh.PPC64LE.PY
+    (Impl.Ecdsa.PPC64LE.Cfg.winCall Impl.Ecdsa.PPC64LE.p384 <| Impl.Ecdsa.PPC64LE.Window.Cfg.mul Impl.Ecdsa.PPC64LE.p384 Impl.Ecdh.PPC64LE.PX Impl.Ecdh.PPC64LE.PY
       Impl.Ecdsa.PPC64LE.EM)
 
 /-- `vg_ecdsa_p384_verify`. -/

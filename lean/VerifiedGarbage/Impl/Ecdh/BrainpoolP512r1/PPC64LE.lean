@@ -16,6 +16,6 @@ open VG.PPC64LE
 scalar's top two bits, with `3 b R mod p` at `B3P`. -/
 def exchangeBrainpoolP512r1 : Prog isa :=
   Cfg.exchangeWith Impl.Ecdsa.PPC64LE.brainpoolp512r1
-    (Impl.Ecdsa.PPC64LE.WindowA.Cfg.mul3top Impl.Ecdsa.PPC64LE.brainpoolp512r1 PX PY Impl.Ecdsa.PPC64LE.B3P)
+    (Impl.Ecdsa.PPC64LE.Cfg.winCall Impl.Ecdsa.PPC64LE.brainpoolp512r1 <| Impl.Ecdsa.PPC64LE.WindowA.Cfg.mul3top Impl.Ecdsa.PPC64LE.brainpoolp512r1 PX PY Impl.Ecdsa.PPC64LE.B3P)
 
 end VG.Impl.Ecdh.PPC64LE
