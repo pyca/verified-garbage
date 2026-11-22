@@ -96,15 +96,15 @@ theorem lin16_all : ((List.range 16).all fun x => (List.range 16).all fun y =>
 
 /-! ## A round -/
 
-/-- A round's code: the table at `ebx`, the entries at `esi`, of which it
-reads the 128 bytes of four, and its word's place at `ecx`. -/
-def params : Params := { tb := tbr, name := tableName, kreg := kr, klen := 128 }
-def oparams : OParams := { oreg := kw, olen := 48 }
+/-- A round's code but its key's load and its word's store, and the code
+that takes the last four words: the table at `ebx`, and the scratch buffer
+at `edi`, of which they read the ring's four places. -/
+def params : Params := { tb := tbr, name := tableName, kreg := Impl.Modes.X86.sb, klen := 96 }
 
 /-- The registers on entry to a part of the code: the mask in `xmm7`. -/
 def regs₀ : Regs := Regs.init.set m0 ⟨false, bytes fun _ => .cst 0x0f#8⟩
 
-/-- The input byte `q` of register `r`, and the input byte at `o` of the entries. -/
+/-- The input byte `q` of register `r`, and the input byte at `o` of the keys' region. -/
 def var (r : XReg) (q : Nat) : Nat := 2 ^ (16 * r.ctorIdx + q)
 def kv (o : Nat) : Nat := 2 ^ (128 + o)
 
@@ -123,22 +123,26 @@ def sigma (a : XReg) (q : Nat) : List Term :=
 def maskOk (ρ : Regs) : Bool :=
   !(ρ.get m0).sh && (List.range 16).all fun q => (get (ρ.get m0).bs q).same (.cst 0x0f#8)
 
-/-- Round `r` of a turn leaves, in `c`, its word and sum with the next
-round's key and the two words after its own that it read or had; in `e`
-and at its word's place, its word and sum; and the mask. -/
-def roundOk (a c n e : XReg) (r : Nat) : Bool :=
-  match runS params oparams (regs₀, []) (round a c n e r) with
+/-- A round but its key's load and its word's store, with the next round's
+key in `e`, its oldest word at `s0` of the scratch buffer and its third at
+`s2`, leaves, in `c`, its word and sum with that key and the two words
+after its own that it read or had; in `e`, its word and sum; and the mask. -/
+def roundOk (a c n e : XReg) (s0 s2 : Nat) : Bool :=
+  match run params regs₀ (roundX a c n e s0 s2) with
   | none => false
-  | some σ =>
-    !(σ.1.get c).sh && !(σ.1.get e).sh &&
-    ((List.range 16).all fun q => (get (σ.1.get c).bs q).same
-      ⟨kv (32 * r + 16 + q) ^^^ kv (32 * r + 32 + q) ^^^ kv (32 * r + 80 + q) ^^^ var n q, sigma a q, 0#8⟩) &&
-    ((List.range 16).all fun q => (get (σ.1.get e).bs q).same ⟨kv (32 * r + 16 + q), sigma a q, 0#8⟩) &&
-    outOk σ.2 (32 * r) (fun q => ⟨kv (32 * r + 16 + q), sigma a q, 0#8⟩) && outsIn σ.2 (32 * r) (32 * r + 16) &&
-    maskOk σ.1
+  | some ρ =>
+    !(ρ.get c).sh && !(ρ.get e).sh &&
+    ((List.range 16).all fun q => (get (ρ.get c).bs q).same
+      ⟨kv (s0 + q) ^^^ var e q ^^^ kv (s2 + q) ^^^ var n q, sigma a q, 0#8⟩) &&
+    ((List.range 16).all fun q => (get (ρ.get e).bs q).same ⟨kv (s0 + q), sigma a q, 0#8⟩) &&
+    maskOk ρ
 
-theorem round_all : roundOk .xmm0 .xmm4 .xmm1 .xmm2 0 = true ∧ roundOk .xmm4 .xmm0 .xmm2 .xmm1 1 = true := by
-  constructor <;> lit_decide
+/-- The four rounds of a turn: the registers of its first and third, and of
+its second and fourth, with each round's places in the ring. -/
+theorem round_all : ∀ j < 4, roundOk (if j % 2 = 0 then .xmm0 else .xmm4) (if j % 2 = 0 then .xmm4 else .xmm0)
+    (if j % 2 = 0 then .xmm1 else .xmm2) (if j % 2 = 0 then .xmm2 else .xmm1) (oR + 16 * j)
+    (oR + 16 * ((j + 2) % 4)) = true := by
+  lit_decide
 
 /-! ## The conversions -/
 
@@ -147,9 +151,9 @@ def cterms (t v : Nat) : List Term :=
   [⟨[.look (tblAt t), .and 0x0f#8], v⟩, ⟨[.look (tblAt (t + 16)), .hi4], v⟩]
 
 /-- `headX` reads nothing but the table, and stores the block's four words
-at `esi`. -/
+in the ring. -/
 def hparams : Params := { tb := tbr, name := tableName, kreg := kr, klen := 0 }
-def hoparams : OParams := { oreg := kr, olen := 128 }
+def hoparams : OParams := { oreg := Impl.Modes.X86.sb, olen := 96 }
 
 /-- Byte `q` of word `w` of the block in `xmm0`, in the rounds' form. -/
 def hw (w q : Nat) : BV := ⟨0, cterms oCV (var .xmm0 (4 * w + q % 4)), 0#8⟩
@@ -158,19 +162,19 @@ def headOk : Bool :=
   match runS hparams hoparams (Regs.init, []) headX with
   | none => false
   | some σ =>
-    outOk σ.2 16 (hw 0) && outOk σ.2 48 (hw 1) && outOk σ.2 80 (hw 2) && outOk σ.2 112 (hw 3) &&
-    (σ.2.map fun e => e.1) == [112, 80, 48, 16] &&
+    outOk σ.2 32 (hw 0) && outOk σ.2 48 (hw 1) && outOk σ.2 64 (hw 2) && outOk σ.2 80 (hw 3) &&
+    (σ.2.map fun e => e.1) == [80, 64, 48, 32] &&
     !(σ.1.get .xmm0).sh && !(σ.1.get .xmm1).sh &&
     ((List.range 16).all fun q => (get (σ.1.get .xmm0).bs q).same (((hw 1 q).xor (hw 2 q)).xor (hw 3 q)) &&
       (get (σ.1.get .xmm1).bs q).same (hw 3 q)) && maskOk σ.1
 
-/-- The block's byte `q` from the last four entries: word `35 - q / 4`, out
+/-- The block's byte `q` from the ring: the word in place `3 - q / 4`, out
 of the rounds' form. -/
 def tailOk : Bool :=
   match run params regs₀ tailX with
   | none => false
   | some ρ => !(ρ.get .xmm2).sh && (List.range 16).all fun q =>
-    (get (ρ.get .xmm2).bs q).same ⟨0, cterms oIV (kv (32 * (3 - q / 4) + 16 + q % 4)), 0#8⟩
+    (get (ρ.get .xmm2).bs q).same ⟨0, cterms oIV (kv (oR + 16 * (3 - q / 4) + q % 4)), 0#8⟩
 
 theorem conv_all : headOk = true ∧ tailOk = true := by
   constructor <;> lit_decide
@@ -178,9 +182,9 @@ theorem conv_all : headOk = true ∧ tailOk = true := by
 /-! ## `prepare`'s code -/
 
 /-- `prepare` reads the schedule at `eax`, 16 bytes at a time, and stores
-four round keys in the entries at `esi`. -/
+four round keys in their places at `esi`. -/
 def pparams : Params := { tb := tbr, name := tableName, kreg := .eax, klen := 16 }
-def poparams : OParams := { oreg := kr, olen := 112 }
+def poparams : OParams := { oreg := kr, olen := 64 }
 
 /-- Byte `q` of round key `w` of the four: the schedule's words are
 little-endian. -/
@@ -190,8 +194,8 @@ def prepGroupOk : Bool :=
   match runS pparams poparams (regs₀, []) prepGroupX with
   | none => false
   | some σ =>
-    outOk σ.2 0 (pw 0) && outOk σ.2 32 (pw 1) && outOk σ.2 64 (pw 2) && outOk σ.2 96 (pw 3) &&
-    outsIn σ.2 0 112 && maskOk σ.1
+    outOk σ.2 0 (pw 0) && outOk σ.2 16 (pw 1) && outOk σ.2 32 (pw 2) && outOk σ.2 48 (pw 3) &&
+    outsIn σ.2 0 64 && maskOk σ.1
 
 /-- The mask's load. -/
 def prepMaskOk : Bool :=

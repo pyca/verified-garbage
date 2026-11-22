@@ -49,7 +49,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 `ofb_wp_x86`, `cfbEncrypt_wp`, `cbcEncryptChained_wp`: the modes' OFB, CFB128
 encryption and CBC encryption (`Proof.Modes.X86.ofb_wp`, `cfbEnc_wp`,
 `cbcEncChained_wp`) over the core that enciphers a block with the AES S-box
-(`coreSpec`), with the working space, 153 64-bit words, as a fifth argument
+(`coreSpec`), with the working space, 83 64-bit words, as a fifth argument
 (`fbX86`). The four bytes below `esp`, where the core gets its table's
 address, are apart from the schedule as from the other buffers. Each is
 constant time by the taint analysis of its code (`X86.sseTaint`); the
@@ -65,7 +65,7 @@ open VG VG.X86 VG.Impl.Sm4.X86.AesNi VG.Impl.Modes
 open VG.Proof.Modes.X86 (SeqPre stkRegion ofb_wp cfbEnc_wp cbcEncChained_wp)
 open VG.Proof.Sm4.X86.AesNi (KeyArgs coreSpec)
 
-theorem scr_eq (s : State) : Modes.X86.scrR s core = ⟨(arg s 4).setWidth 64, 8 * 153⟩ := by
+theorem scr_eq (s : State) : Modes.X86.scrR s core = ⟨(arg s 4).setWidth 64, 8 * 83⟩ := by
   simp [Modes.X86.scrR, core, Impl.Sm4.X86.AesNi.slots]
 
 /-- The four bytes of stack below `esp` are apart from the arguments and the return address. -/
@@ -108,7 +108,7 @@ def fbX86 (post : State → State → Prop) : Contract X86.isa where
     let sched : Region := ⟨(arg s 0).setWidth 64, 128⟩
     let iv : Region := ⟨(arg s 1).setWidth 64, 16⟩
     let data : Region := ⟨(arg s 2).setWidth 64, 16 * (arg s 3).toNat⟩
-    let scratch : Region := ⟨(arg s 4).setWidth 64, 8 * 153⟩
+    let scratch : Region := ⟨(arg s 4).setWidth 64, 8 * 83⟩
     let args : Region := ⟨argAddr s 0, 20⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
     let stack := below (s.gpr .esp) 4
@@ -118,7 +118,7 @@ def fbX86 (post : State → State → Prop) : Contract X86.isa where
     ret.Disjoint data ∧ ret.Disjoint iv ∧ ret.Disjoint scratch ∧
     stack.Disjoint sched ∧ stack.Disjoint data ∧ stack.Disjoint iv ∧ stack.Disjoint scratch ∧
     (arg s 0).toNat + 128 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 16 ≤ 2 ^ 32 ∧
-    (arg s 2).toNat + 16 * (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8 * 153 ≤ 2 ^ 32 ∧
+    (arg s 2).toNat + 16 * (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8 * 83 ≤ 2 ^ 32 ∧
     (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧ 4 ≤ (s.gpr .esp).toNat
   post := post
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
@@ -194,7 +194,7 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : (fbX86 cbcEncPost).pre s₀) :
 /-- The initial taint: `esp` public, and the words holding `data`, `iv` and
 `scratch` known to be the base addresses of the writable regions. -/
 def fbTaint : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [0, 16, 8 * 153], argLen := 24,
+  { regs := .ofList [.esp], flags := false, lens := [0, 16, 8 * 83], argLen := 24,
     argBases := [(12, 0), (8, 1), (20, 2)], room := 4 }
 
 theorem fbTaint_wf {post : State → State → Prop} {s : State} (hp : (fbX86 post).pre s) :
@@ -271,7 +271,7 @@ def wideContract (post : State → State → Prop) : Contract isa :=
       let sched : Region := ⟨(arg s 0).setWidth 64, 128⟩
       let iv : Region := ⟨(arg s 1).setWidth 64, 16⟩
       let data : Region := ⟨(arg s 2).setWidth 64, 16 * (arg s 3).toNat⟩
-      let scratch : Region := ⟨(arg s 4).setWidth 64, 8 * 153⟩
+      let scratch : Region := ⟨(arg s 4).setWidth 64, 8 * 83⟩
       let args : Region := ⟨argAddr s 0, 20⟩
       let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
       let stack := below (s.gpr .esp) 4
@@ -281,12 +281,12 @@ def wideContract (post : State → State → Prop) : Contract isa :=
       ret.Disjoint data ∧ ret.Disjoint iv ∧ ret.Disjoint scratch ∧
       stack.Disjoint sched ∧ stack.Disjoint data ∧ stack.Disjoint iv ∧ stack.Disjoint scratch ∧
       (arg s 0).toNat + 128 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 16 ≤ 2 ^ 32 ∧
-      (arg s 2).toNat + 16 * (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8 * 153 ≤ 2 ^ 32 ∧
+      (arg s 2).toNat + 16 * (arg s 3).toNat ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8 * 83 ≤ 2 ^ 32 ∧
       (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧ 4 ≤ (s.gpr .esp).toNat }
 
 def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 128⟩, ⟨argAddr s 0, 20⟩]
 def narrowWr (s : State) : List Region :=
-  [⟨(arg s 2).setWidth 64, 16 * (arg s 3).toNat⟩, ⟨(arg s 1).setWidth 64, 16⟩, ⟨(arg s 4).setWidth 64, 8 * 153⟩]
+  [⟨(arg s 2).setWidth 64, 16 * (arg s 3).toNat⟩, ⟨(arg s 1).setWidth 64, 16⟩, ⟨(arg s 4).setWidth 64, 8 * 83⟩]
 
 tactic_template "sm4_aesni_fb_narrow" : tactic =>
   `(tactic| simp only [VG.Proof.Sm4.X86.AesNi.Fb.fbX86, VG.Proof.Sm4.X86.AesNi.Fb.wideContract,
@@ -310,10 +310,10 @@ def satState : State where
   mem a := if a = 0x8005 then 0x10 else if a = 0x8009 then 0x20 else if a = 0x800D then 0x30
     else if a = 0x8015 then 0x40 else 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x4000, 1224⟩, ⟨0x8004, 20⟩]
+  wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x4000, 664⟩, ⟨0x8004, 20⟩]
 
 theorem wide_implies_ofb :
-    (wideContract ofbPost).Implies (Proof.Sm4.fbScratchContract X86.abi 153 Proof.Sm4.ofbPost 4) := by
+    (wideContract ofbPost).Implies (Proof.Sm4.fbScratchContract X86.abi 83 Proof.Sm4.ofbPost 4) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig, Proof.Sm4.ofbPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, ofbPost] at h
@@ -334,7 +334,7 @@ theorem wide_implies_ofb :
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem wide_implies_cfbEnc :
-    (wideContract cfbEncPost).Implies (Proof.Sm4.fbScratchContract X86.abi 153 Proof.Sm4.cfbEncPost 4) := by
+    (wideContract cfbEncPost).Implies (Proof.Sm4.fbScratchContract X86.abi 83 Proof.Sm4.cfbEncPost 4) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig, Proof.Sm4.cfbEncPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, cfbEncPost] at h
@@ -355,7 +355,7 @@ theorem wide_implies_cfbEnc :
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem wide_implies_cbcEnc :
-    (wideContract cbcEncPost).Implies (Proof.Sm4.cbcEncChainedScratchContract X86.abi 153 4) := by
+    (wideContract cbcEncPost).Implies (Proof.Sm4.cbcEncChainedScratchContract X86.abi 83 4) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Sm4.cbcEncChainedScratchContract, Proof.Sm4.cbcChainedScratchSig, Spec.Sm4.cbcChainedSig, Proof.Sm4.cbcEncChainedPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, below, cbcEncPost] at h
@@ -389,12 +389,12 @@ def frameSat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x8004, 16⟩]
 
 theorem frameSat_fb (post : Spec.Sm4.ofbSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Sm4.ofbSig.contract X86.abi (post := post) (writeArgs := true) (stack := 1252)).pre s := by
+    ∃ s, (Spec.Sm4.ofbSig.contract X86.abi (post := post) (writeArgs := true) (stack := 692)).pre s := by
   implies_sat [Spec.Sm4.ofbSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem frameSat_cbc (post : Spec.Sm4.cbcChainedSig.Post X86.abi.ptrBits) :
-    ∃ s, (Spec.Sm4.cbcChainedSig.contract X86.abi (post := post) (writeArgs := true) (stack := 1252)).pre s := by
+    ∃ s, (Spec.Sm4.cbcChainedSig.contract X86.abi (post := post) (writeArgs := true) (stack := 692)).pre s := by
   implies_sat [Spec.Sm4.cbcChainedSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
@@ -431,44 +431,44 @@ theorem fb_verified {post : State → State → Prop} {c : Prog isa}
     sm4_aesni_fb_narrow
     exact h
 
-theorem ofb_verified : Verified X86.target ofb (Proof.Sm4.fbScratchContract X86.abi 153 Proof.Sm4.ofbPost 4) :=
+theorem ofb_verified : Verified X86.target ofb (Proof.Sm4.fbScratchContract X86.abi 83 Proof.Sm4.ofbPost 4) :=
   fb_verified (fun _ hs => ofb_wp_x86 hs) ofb_ct (fun _ _ _ _ _ _ h => h) wide_implies_ofb
 
 theorem cfbEncrypt_verified :
-    Verified X86.target cfbEncrypt (Proof.Sm4.fbScratchContract X86.abi 153 Proof.Sm4.cfbEncPost 4) :=
+    Verified X86.target cfbEncrypt (Proof.Sm4.fbScratchContract X86.abi 83 Proof.Sm4.cfbEncPost 4) :=
   fb_verified (fun _ hs => cfbEncrypt_wp hs) cfbEncrypt_ct (fun _ _ _ _ _ _ h => h) wide_implies_cfbEnc
 
 theorem cbcEncryptChained_verified :
-    Verified X86.target cbcEncryptChained (Proof.Sm4.cbcEncChainedScratchContract X86.abi 153 4) :=
+    Verified X86.target cbcEncryptChained (Proof.Sm4.cbcEncChainedScratchContract X86.abi 83 4) :=
   fb_verified (fun _ hs => cbcEncryptChained_wp hs) cbcEncryptChained_ct (fun _ _ _ _ _ _ h => h) wide_implies_cbcEnc
 
 /-- `ofb` with its working space on the stack. -/
 theorem ofb_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 1248 4 306 ofb)
-      (Spec.Sm4.ofbContract X86.abi 1252) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 ofb)
+      (Spec.Sm4.ofbContract X86.abi 692) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.ofbSig) (nm := "scratch") (e := .u64)
-    (n := 153) (post := Proof.Sm4.ofbPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 1248) ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (n := 83) (post := Proof.Sm4.ofbPost X86.abi.ptrBits) (wa := true) (stack := 4)
+    (bytes := 688) ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.ofbPost_local _) (Proof.Sm4.ofbPostOut_local _) (frameSat_fb _)
 
 /-- `cfbEncrypt` with its working space on the stack. -/
 theorem cfbEncrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 1248 4 306 cfbEncrypt)
-      (Spec.Sm4.cfbEncryptContract X86.abi 1252) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 cfbEncrypt)
+      (Spec.Sm4.cfbEncryptContract X86.abi 692) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 153) (post := Proof.Sm4.cfbEncPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 1248) cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (n := 83) (post := Proof.Sm4.cfbEncPost X86.abi.ptrBits) (wa := true) (stack := 4)
+    (bytes := 688) cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.cfbEncPost_local _) (Proof.Sm4.cfbEncPostOut_local _) (frameSat_fb _)
 
 /-- `cbcEncryptChained` with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 1248 4 306 cbcEncryptChained)
-      (Spec.Sm4.cbcEncryptChainedContract X86.abi 1252) :=
+    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 cbcEncryptChained)
+      (Spec.Sm4.cbcEncryptChainedContract X86.abi 692) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 153) (post := Proof.Sm4.cbcEncChainedPost X86.abi.ptrBits) (wa := true) (stack := 4)
-    (bytes := 1248) cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
+    (n := 83) (post := Proof.Sm4.cbcEncChainedPost X86.abi.ptrBits) (wa := true) (stack := 4)
+    (bytes := 688) cbcEncryptChained_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.cbcEncChainedPost_local _) (Proof.Sm4.cbcEncChainedPostOut_local _) (frameSat_cbc _)
 

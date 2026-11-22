@@ -29,15 +29,16 @@ rotations of a word by bytes (three shuffles).
 `Impl.Modes.X86.Core`) for one block at a time. With the modes' scratch
 buffer at `sb`: its first slot holds the address of the table of constants
 `VG_SM4_AESNI` (taken once, by `prepare`, with `symPush`), the block is at
-byte 8, and from byte 32 on are 36 entries of 32 bytes: entry `i` holds
-`PK rkᵢ` (`prepare` makes the 32 from the schedule `vg_sm4_expand_key`
-stores), then `PL Xᵢ`, the block's words `X₀ … X₃` and the 32 that the
-rounds add, each stored as it is made. A round reads its words and the next
-round's key through `kr`, the pointer of its entry, and stores its word
-through `kw`; it has `aesenclast`'s input and the newest word in two
-registers, and leaves the next round's in two others, so that no register
-is copied on the way from one `aesenclast` to the next: two rounds are a
-turn of the loop.
+byte 8, the four words of the state, `PL Xᵢ … PL Xᵢ₊₃`, are in a ring of
+four places of 16 bytes from byte 32 on (`Xᵢ` in place `i mod 4`), and
+from byte 96 on are the round keys, 16 bytes each: `PK rkᵢ`, which
+`prepare` makes from the schedule `vg_sm4_expand_key` stores. A round reads
+the next round's key through `kr`, the pointer of the keys of its turn, and
+its words in their places, and stores its new word where its oldest was;
+it has `aesenclast`'s input and the newest word in two registers, and
+leaves the next round's in two others, so that no register is copied on
+the way from one `aesenclast` to the next: four rounds are a turn of the
+loop.
 
 The code is `aes` and `ssse3` code: its dispatcher runs it only where the
 CPU has both.
@@ -86,10 +87,12 @@ def oBSW : Nat := 224
 
 /-- The table's base register in `prepare` and `crypt`. -/
 def tbr : Reg := .ebx
-/-- The entries' pointer: the entry of the round at hand. -/
+/-- The round keys' pointer: the keys of the turn at hand. -/
 def kr : Reg := .esi
-/-- Where a round's new word goes: the fifth entry's from `kr`. -/
-def kw : Reg := .ecx
+/-- The ring of the state's four words in the scratch buffer. -/
+def oR : Nat := 32
+/-- The round keys in the scratch buffer. -/
+def oKs : Nat := 96
 /-- The mask `0x0f` of every byte, in both. -/
 def m0 : XReg := .xmm7
 
@@ -105,15 +108,16 @@ def conv (v a b c : XReg) (t : Nat) : List Instr :=
   [x .movdqa a v, .xop (.shift .psrld a 4), x .pand a m0, x .pand v m0,
    tb b t, x .pshufb b v, tb c (t + 16), x .pshufb c a, x .pxor b c]
 
-/-- Round `r` of a turn (0 or 1), of the entry at `kr + 32 r`:
-`aesenclast`'s input is in `a` and the newest word in `n`; the next
-round's are left in `c` and `e`, and the new word in the fifth entry from
-this one, at `kw + 32 r`. `e` first holds the next round's key and the two
+/-- A round but its first instruction, which loads the next round's key to
+`e`, and its last, which stores the new word: `aesenclast`'s input is in
+`a` and the newest word in `n`, the round's oldest word at `s0` of the
+scratch buffer and its third at `s2`; the next round's input is left in `c`
+and the new word in `e`. `e` first holds the next round's key and the two
 words it has of that round's three; `xmm3` this round's word and them, then
 the round's sum. -/
-def round (a c n e : XReg) (r : Nat) : List Instr :=
-  [ld e kr (32 * r + 32), ld .xmm6 kr (32 * r + 80), x .pxor e .xmm6, x .pxor e n,
-   ld .xmm3 kr (32 * r + 16), x .pxor .xmm3 e,
+def roundX (a c n e : XReg) (s0 s2 : Nat) : List Instr :=
+  [ld .xmm6 sb s2, x .pxor e .xmm6, x .pxor e n,
+   ld .xmm3 sb s0, x .pxor .xmm3 e,
    x .aesenclast a m0,
    x .movdqa n a, x .pand n m0, .xop (.shift .psrld a 4), x .pand a m0,
    tb c oE, x .pshufb c n, tb .xmm5 oH, x .pshufb .xmm5 n, x .movdqa n c,
@@ -123,43 +127,45 @@ def round (a c n e : XReg) (r : Nat) : List Instr :=
    tb .xmm6 oBR, x .pshufb c .xmm6, tb a (oBR + 16), x .pshufb n a, x .pxor c n,
    tb .xmm6 (oBR + 32), x .pshufb .xmm5 .xmm6, x .pxor .xmm3 .xmm5,
    x .pxor c .xmm3,
-   x .pxor e c, stx kw (32 * r) e]
+   x .pxor e c]
 
-/-- A turn's first round: from `xmm0` and `xmm1` to `xmm4` and `xmm2`. -/
-def roundA : List Instr := round .xmm0 .xmm4 .xmm1 .xmm2 0
-/-- Its second: back to `xmm0` and `xmm1`. -/
-def roundB : List Instr := round .xmm4 .xmm0 .xmm2 .xmm1 1
+/-- Round `j` of a turn (0 to 3): its oldest word is in the ring's place
+`j`, where its new word goes, and its third in place `(j + 2) mod 4`; the
+next round's key is the one after its own, at `kr + 16 j + 16`. -/
+def round (a c n e : XReg) (j : Nat) : List Instr :=
+  [ld e kr (16 * j + 16)] ++ roundX a c n e (oR + 16 * j) (oR + 16 * ((j + 2) % 4)) ++ [stx sb (oR + 16 * j) e]
 
-/-- On by two entries; a turn fewer. -/
-def step : List Instr := [.alu .add kr (.imm 64), .alu .add kw (.imm 64), .alu .sub .eax (.imm 1)]
+/-- On by four keys; a turn fewer. -/
+def step : List Instr := [.alu .add kr (.imm 64), .alu .sub .eax (.imm 1)]
 
-/-- A turn of the loop: two rounds. -/
-def turn : List Instr := roundA ++ roundB ++ step
+/-- A turn of the loop, four rounds: from `xmm0` and `xmm1` to `xmm4` and
+`xmm2`, and back, twice. -/
+def turn : List Instr :=
+  round .xmm0 .xmm4 .xmm1 .xmm2 0 ++ round .xmm4 .xmm0 .xmm2 .xmm1 1 ++ round .xmm0 .xmm4 .xmm1 .xmm2 2 ++
+    round .xmm4 .xmm0 .xmm2 .xmm1 3 ++ step
 
-/-- The block in `xmm0` to its four words in the rounds' form, in the first
-four entries; the last of them left in `xmm1`, and the exclusive-or of the
-last three in `xmm0`. -/
+/-- The block in `xmm0` to its four words in the rounds' form, in the ring;
+the last of them left in `xmm1`, and the exclusive-or of the last three in
+`xmm0`. -/
 def headX : List Instr :=
   [tb m0 oM0] ++ conv .xmm0 .xmm1 .xmm2 .xmm3 oCV ++
-    [.xop (.pshufd .xmm3 .xmm2 0x00), stx kr 16 .xmm3, .xop (.pshufd .xmm0 .xmm2 0x55), stx kr 48 .xmm0,
-     .xop (.pshufd .xmm3 .xmm2 0xaa), stx kr 80 .xmm3, .xop (.pshufd .xmm1 .xmm2 0xff), stx kr 112 .xmm1,
+    [.xop (.pshufd .xmm3 .xmm2 0x00), stx sb oR .xmm3, .xop (.pshufd .xmm0 .xmm2 0x55), stx sb (oR + 16) .xmm0,
+     .xop (.pshufd .xmm3 .xmm2 0xaa), stx sb (oR + 32) .xmm3, .xop (.pshufd .xmm1 .xmm2 0xff), stx sb (oR + 48) .xmm1,
      x .pxor .xmm0 .xmm3, x .pxor .xmm0 .xmm1]
 
-/-- The table's address, the entries' pointer, the pointer of the words'
-places, the 16 turns, and the block at byte 8 of the scratch buffer to the
-first four entries. -/
+/-- The table's address, the keys' pointer, the eight turns, and the block
+at byte 8 of the scratch buffer to the ring. -/
 def cryptHead : List Instr :=
-  [.mov tbr (.mem (at_ sb 0)), .mov kr (.reg sb), .alu .add kr (.imm 32), .mov kw (.reg kr),
-   .alu .add kw (.imm 144), .mov .eax (.imm 16), ld .xmm0 sb 8] ++ headX
+  [.mov tbr (.mem (at_ sb 0)), .mov kr (.reg sb), .alu .add kr (.imm 96), .mov .eax (.imm 8), ld .xmm0 sb 8] ++ headX
 
 /-- The first round's key. -/
 def cryptKey : List Instr := [ld .xmm3 kr 0, x .pxor .xmm0 .xmm3]
 
-/-- The last four words (the entries at `kr`), the last first, to the
-block's bytes, in `xmm2`. -/
+/-- The last four words (the ring's), the last first, to the block's
+bytes, in `xmm2`. -/
 def tailX : List Instr :=
-  [ld .xmm0 kr 112, ld .xmm1 kr 80, x .punpcklqdq .xmm0 .xmm1, .xop (.pshufd .xmm0 .xmm0 0x88),
-   ld .xmm1 kr 48, ld .xmm2 kr 16, x .punpcklqdq .xmm1 .xmm2, .xop (.pshufd .xmm1 .xmm1 0x88),
+  [ld .xmm0 sb (oR + 48), ld .xmm1 sb (oR + 32), x .punpcklqdq .xmm0 .xmm1, .xop (.pshufd .xmm0 .xmm0 0x88),
+   ld .xmm1 sb (oR + 16), ld .xmm2 sb oR, x .punpcklqdq .xmm1 .xmm2, .xop (.pshufd .xmm1 .xmm1 0x88),
    x .punpcklqdq .xmm0 .xmm1] ++
     conv .xmm0 .xmm1 .xmm2 .xmm3 oIV
 
@@ -170,23 +176,23 @@ def cryptTail : List Instr := tailX ++ [stx sb 8 .xmm2]
 def crypt : Prog isa :=
   .seq (.block (cryptHead ++ cryptKey)) (.seq (.loop (.block turn) .ne) (.block cryptTail))
 
-/-- Four round keys of the schedule (at `eax`), in the rounds' form, to the
-entries at `kr`. -/
+/-- Four round keys of the schedule (at `eax`), in the rounds' form, to
+their places at `kr`. -/
 def prepGroupX : List Instr :=
   [ld .xmm0 .eax 0, tb .xmm1 oBSW, x .pshufb .xmm0 .xmm1] ++ conv .xmm0 .xmm1 .xmm2 .xmm3 oK ++
-    [.xop (.pshufd .xmm3 .xmm2 0x00), stx kr 0 .xmm3, .xop (.pshufd .xmm3 .xmm2 0x55), stx kr 32 .xmm3,
-     .xop (.pshufd .xmm3 .xmm2 0xaa), stx kr 64 .xmm3, .xop (.pshufd .xmm3 .xmm2 0xff), stx kr 96 .xmm3]
+    [.xop (.pshufd .xmm3 .xmm2 0x00), stx kr 0 .xmm3, .xop (.pshufd .xmm3 .xmm2 0x55), stx kr 16 .xmm3,
+     .xop (.pshufd .xmm3 .xmm2 0xaa), stx kr 32 .xmm3, .xop (.pshufd .xmm3 .xmm2 0xff), stx kr 48 .xmm3]
 
 /-- Four round keys, and on to the next four. -/
 def prepGroup : List Instr :=
-  prepGroupX ++ [.alu .add .eax (.imm 16), .alu .add kr (.imm 128), .alu .sub .ecx (.imm 1)]
+  prepGroupX ++ [.alu .add .eax (.imm 16), .alu .add kr (.imm 64), .alu .sub .ecx (.imm 1)]
 
 /-- The table's address to the scratch buffer's first slot, the schedule
-(the first stack argument), the entries' pointer, the eight groups, and the
+(the first stack argument), the keys' pointer, the eight groups, and the
 mask. -/
 def prepHead : List Instr :=
   [.store (at_ sb 0) .eax, .mov tbr (.reg .eax), .mov .eax (.mem (argOp 0)), .mov kr (.reg sb),
-   .alu .add kr (.imm 32), .mov .ecx (.imm 8), tb m0 oM0]
+   .alu .add kr (.imm 96), .mov .ecx (.imm 8), tb m0 oM0]
 
 /-- The round keys the rounds read, from the schedule in the first stack
 argument. -/
@@ -195,8 +201,10 @@ def prepare : Prog isa :=
     (.loop (.block prepGroup) .ne))
 
 /-- The slots of the scratch buffer the core uses: the table's address and
-a spare slot, the block, two spare slots, and the 36 entries. -/
-def slots : Nat := 296
+a spare slot, the block, two spare slots, the ring's four places, and the
+places of 33 round keys (the last round reads the key after its own, which
+`prepare` does not write, and does not use it). -/
+def slots : Nat := 156
 
 /-- The modes' core: one block at a time. -/
 def core : Core :=

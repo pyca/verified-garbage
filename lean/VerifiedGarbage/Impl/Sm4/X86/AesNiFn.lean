@@ -20,39 +20,39 @@ namespace VG.Impl.Sm4.X86.AesNi.Fn
 
 open VG.X86
 
-/-- The doublewords of the 1252 bytes of stack below `esp` that the residue
+/-- The doublewords of the 692 bytes of stack below `esp` that the residue
 analysis finds each function may leave different in two runs: the header
 of its working space's frame. -/
 def modeWords : List Nat := [1, 2, 3, 4, 5, 6]
 
 /-- `Spec.Sm4.cbcEncryptChainedApi`'s function as emitted. -/
 def cbcEncryptChained : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 1252 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 1248 4 306 Impl.Sm4.X86.AesNi.cbcEncryptChained)
+  Impl.Scrub.X86.scrubSel 0 692 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 Impl.Sm4.X86.AesNi.cbcEncryptChained)
 
 /-- `Spec.Sm4.ofbApi`'s function as emitted. -/
 def ofb : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 1252 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 1248 4 306 Impl.Sm4.X86.AesNi.ofb)
+  Impl.Scrub.X86.scrubSel 0 692 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 Impl.Sm4.X86.AesNi.ofb)
 
 /-- `Spec.Sm4.ofbFinalApi`'s function as emitted. -/
 def ofbFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 1252 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 1248 4 306 Impl.Sm4.X86.AesNi.ofbFinal)
+  Impl.Scrub.X86.scrubSel 0 692 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 Impl.Sm4.X86.AesNi.ofbFinal)
 
 /-- `Spec.Sm4.cfbEncryptApi`'s function as emitted. -/
 def cfbEncrypt : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 1252 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 1248 4 306 Impl.Sm4.X86.AesNi.cfbEncrypt)
+  Impl.Scrub.X86.scrubSel 0 692 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 Impl.Sm4.X86.AesNi.cfbEncrypt)
 
 /-- `Spec.Sm4.cfbEncryptFinalApi`'s function as emitted. -/
 def cfbEncryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 1252 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 1248 4 306 Impl.Sm4.X86.AesNi.cfbEncryptFinal)
+  Impl.Scrub.X86.scrubSel 0 692 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 Impl.Sm4.X86.AesNi.cfbEncryptFinal)
 
 /-- `Spec.Sm4.cfbDecryptFinalApi`'s function as emitted. -/
 def cfbDecryptFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 1252 modeWords
-    (Impl.StackScratch.X86.withStackScratchWiped 1248 4 306 Impl.Sm4.X86.AesNi.cfbDecryptFinal)
+  Impl.Scrub.X86.scrubSel 0 692 modeWords
+    (Impl.StackScratch.X86.withStackScratchWiped 688 4 166 Impl.Sm4.X86.AesNi.cfbDecryptFinal)
 
 end VG.Impl.Sm4.X86.AesNi.Fn
