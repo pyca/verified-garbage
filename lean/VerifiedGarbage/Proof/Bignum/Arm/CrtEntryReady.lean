@@ -2212,7 +2212,7 @@ theorem crt_valid_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
   refine ⟨written, (frameU.mono (fun _ hr => List.mem_append_left _ hr)).trans (frameT.mono ?_), restU.trans restT⟩
   intro r hr
   simp only [crtLiveMutable, crtMutable, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-  rcases hr with (rfl | rfl | rfl) | rfl <;> simp
+  rcases hr with (rfl | rfl | rfl | rfl) | rfl <;> simp
 
 end VG.Proof.Bignum.Arm
 end
@@ -2393,6 +2393,12 @@ theorem crtExpanded_write {s : State} {base : BitVec 32} {w n : Nat} {a : Addr}
   obtain ⟨r, hr, hc⟩ := h
   exact ⟨r, List.mem_append_right _ hr, hc⟩
 
+/-- The 48 bytes below the CRT's frame, of the calls it makes, are in the 104
+its callers reserve. -/
+theorem crt_push_below {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtFnInput g bs s) :
+    Region.Sub (FrameStack.belowA (pcPushed s).sp 48) (FrameStack.belowA s.sp 104) :=
+  FrameStack.belowA_inner (k := 56) (by decide) h.reserve.fit
+
 theorem crt_entry_buffers {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {rs : List Reg}
     (h : CrtFnInput g bs s) (frame : Frame [FrameStack.belowA s.sp 56] s.mem t.mem)
     (rest : Rest rs (pcPushed s) t) : CrtBuffers g bs (crtExpanded t g.base g.words) := by
@@ -2408,7 +2414,7 @@ theorem crt_entry_buffers {s t : State} {g : CrtGeometry} {bs : Fin 7 → List B
   refine ⟨⟨ws.nowrap, List.mem_append_right _ ws.writable⟩,
     crt_expanded_context ws h.storageFits width.1 (by have := width.2.1; change Spec.Rsa.modulusWords g.length < _; omega_using [width]), h.lengthValid,
     h.storageFits, h.pPositive, h.pShort, h.qPositive, h.qShort, source, h.sourceSeparate,
-    ?_, h.outputFits, crtExpanded_write ?_, h.outputSeparate, ?_, ?_⟩
+    ?_, h.outputFits, crtExpanded_write ?_, h.outputSeparate, ?_, ?_, ?_, ?_⟩
   · intro i
     change Region.Disjoint _ ⟨State.addr t.sp, 56⟩
     rw [rest.sp]; exact (h.stackSource i).symm
@@ -2426,7 +2432,7 @@ theorem crt_entry_buffers {s t : State} {g : CrtGeometry} {bs : Fin 7 → List B
       rw [spT, e, public_push_argAddr h.stackFit]
     obtain spNat : t.sp.toNat = s.sp.toNat - 56 := by rw [spT]; exact FrameStack.sub_toNat' h.stackFit
     obtain below : FrameStack.belowA s.sp 56 = ⟨State.addr t.sp, 56⟩ := by rw [spT]; rfl
-    refine ⟨?_, ?_, ?_, ?_, ?_, r.fit, ?_, r.separate, ?_, r.output, ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, r.fit, ?_, r.separate, ?_, r.output, ?_, ?_, ?_⟩
     · change t.sp.toNat + 116 ≤ _; rw [spNat]; have := r.slotFit; have := h.stackFit; omega_arith
     · change InRegions _ (off (State.addr t.sp) 112) 4
       rw [slotAddr]; refine crtExpanded_read ?_; rw [rest.rd, rest.wr]
@@ -2444,6 +2450,16 @@ theorem crt_entry_buffers {s t : State} {g : CrtGeometry} {bs : Fin 7 → List B
       rw [Proof.Rsa.wordsAt_frame frame (by have := r.fit; omega_using [this])
         (fun x hx => by simp only [List.mem_singleton] at hx; subst x; exact r.stack.symm)]
       exact r.words
+    · change Region.Disjoint _ (FrameStack.belowA t.sp 48); rw [spT]
+      exact ((h.reserve.r2 a ha).1.sub_left (crt_push_below h)).symm
+    · change Region.Disjoint ⟨off (State.addr t.sp) 112, 4⟩ (FrameStack.belowA t.sp 48)
+      rw [slotAddr, spT]
+      exact ((h.reserve.r2 a ha).2.sub_left (crt_push_below h)).symm
+  · intro i
+    change Region.Disjoint _ (FrameStack.belowA t.sp 48)
+    rw [rest.sp]; exact ((h.reserve.source i).sub_left (crt_push_below h)).symm
+  · change Region.Disjoint _ (FrameStack.belowA t.sp 48)
+    rw [rest.sp]; exact (h.reserve.output.sub_left (crt_push_below h)).symm
 
 end VG.Proof.Bignum.Arm
 end
@@ -2524,7 +2540,7 @@ theorem crt_entry_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
   obtain savedAll := pc_push_saved s h.stackFit
   obtain savedCallee := pcEntry_callee_saved (pc_push_callee_saved s h.stackFit) mem
   obtain stack : CrtCallStack g (crtExpanded t g.base g.words) := by
-    refine ⟨?_, crtExpanded_read ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨?_, crtExpanded_read ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · change t.sp.toNat + 112 ≤ _
       rw [rest.sp, spNat]; have := h.argFit; omega_using [this]
     · change InRegions (t.rd ++ t.wr) (VG.Proof.Mont.off (State.addr t.sp) 56) 56
@@ -2550,6 +2566,10 @@ theorem crt_entry_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
         show 60 + 8 * i.val = 56 + (4 + 8 * i.val) by omega_using [],
         argOffset (4 + 8 * i.val), argEq.word (d := 4 + 8 * i.val) (bits := 32) (by have := i.isLt; omega_using [])]
       exact h.length i
+    · change 48 ≤ t.sp.toNat
+      rw [rest.sp, spNat]; have := h.reserve.fit; omega_using [this]
+    · change (FrameStack.belowA t.sp 48).Disjoint _
+      rw [rest.sp]; exact h.reserve.workspace.sub_left (crt_push_below h)
   refine ⟨⟨⟨h.workspace.nowrap, by rw [rest.wr]; exact List.mem_cons_of_mem _ h.workspace.writable⟩,
     ⟨crt_entry_buffers h frame rest, stack, ptr, source.trans h.modulus, count.trans h.count, ?_, ?_⟩⟩,
     frame, ?_, rest.mono (by decide)⟩

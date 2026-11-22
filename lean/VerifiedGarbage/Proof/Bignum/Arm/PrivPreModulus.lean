@@ -347,7 +347,8 @@ theorem CrtCallStack.after_outside {g : CrtGeometry} {s t : State} {rs : List Re
     frame.readW (r := ⟨off (State.addr s.sp) d, 4⟩) (Region.contains_self _ _)
       (fun r hr => (stack r hr).sub_left (Offset.sub_base _ fit)) (by decide)
   refine ⟨by rw [rest.sp]; exact h.nowrap, by rw [rest.rd, rest.wr, rest.sp]; exact h.readable,
-    by rw [rest.wr, rest.sp]; exact h.writable, by rw [rest.sp]; exact h.separate, ?_, ?_, ?_, ?_⟩
+    by rw [rest.wr, rest.sp]; exact h.writable, by rw [rest.sp]; exact h.separate, ?_, ?_, ?_, ?_,
+    by rw [rest.sp]; exact h.belowFit, by rw [rest.sp]; exact h.below⟩
   · rw [rest.sp, kept (d := 4) (by decide)]; exact h.output
   · rw [rest.sp, kept (d := 12) (by decide)]; exact h.count
   · intro i
@@ -1199,7 +1200,7 @@ theorem pp_valid_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h 
     have f2 : Frame T u.mem v.mem := frameV.sub fun r hr => by
       rw [restU.sp] at hr
       simp only [crtLiveMutable, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> exact inT _ (by simp [crtMutable])
+      rcases hr with rfl | rfl | rfl | rfl <;> exact inT _ (by simp [crtMutable])
     have fW : Frame T v.mem w.mem := frameW.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl

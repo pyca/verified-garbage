@@ -1213,7 +1213,8 @@ theorem crt_callee_saved {s t : State} {g : CrtGeometry} {regs : Reg → BitVec 
     (saved : Spill.Saved s.mem (State.addr s.sp) regs pcCalleeSaved)
     (frame : Frame (crtMutable g s.sp ++ [⟨State.addr g.output, g.length⟩]) s.mem t.mem)
     (workspace : (⟨State.addr s.sp, 56⟩ : Region).Disjoint ⟨State.addr g.base, g.size⟩)
-    (output : (⟨State.addr s.sp, 56⟩ : Region).Disjoint ⟨State.addr g.output, g.length⟩) :
+    (output : (⟨State.addr s.sp, 56⟩ : Region).Disjoint ⟨State.addr g.output, g.length⟩)
+    (belowFit : 48 ≤ s.sp.toNat) :
     Spill.Saved t.mem (State.addr s.sp) regs pcCalleeSaved := by
   intro p hp
   have fit : p.2 + 4 ≤ 56 := by
@@ -1231,11 +1232,12 @@ theorem crt_callee_saved {s t : State} {g : CrtGeometry} {regs : Reg → BitVec 
     (by
       intro r hr
       simp only [crtMutable, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with (rfl | rfl | rfl | rfl) | rfl
+      rcases hr with (rfl | rfl | rfl | rfl | rfl) | rfl
       · exact workspace.sub_left sub
       · exact Offset.disjoint_base _ (by omega_using [low]) (by omega_using [fit])
       · exact Offset.disjoint _ (Or.inr (by omega_using [low])) (by omega_using [fit]) (by decide)
       · exact Offset.disjoint _ gap (by omega_using [fit]) (by decide)
+      · exact ((belowA_disjoint_from (n := 56) belowFit (by decide)).sub_right sub).symm
       · exact output.sub_left sub) (by decide : 32 / 8 < 2 ^ 64)
   exact keep.trans (saved p hp)
 
@@ -1274,6 +1276,8 @@ theorem crtFn_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : C
     apply crt_callee_saved savedU frameV
     · rw [restU.sp]; exact h.stackWorkspace
     · rw [restU.sp]; exact h.stackOutput
+    · rw [restU.sp]; change 48 ≤ (s.sp - BitVec.ofNat 32 56).toNat
+      rw [FrameStack.sub_toNat' h.stackFit]; have := h.reserve.fit; omega_using [this]
   have fit : v.sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [spV, FrameStack.sub_toNat' h.stackFit]
     have := s.sp.isLt

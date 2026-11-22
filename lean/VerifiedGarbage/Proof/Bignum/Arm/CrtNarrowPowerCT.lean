@@ -474,7 +474,8 @@ theorem crt_narrowReducedHalf_ready (s : State) {g : CrtGeometry} {bs : Fin 7 �
     sharedT.stack.read (by omega_using []), sharedT.stack.read (by omega_using []), sharedT.stack.pointer i, ?_,
     sharedT.buffers.source i.succ, (sharedT.buffers.sourceSeparate i.succ).sub_right
       (crt_region_sub_workspace sharedT.buffers.workspace sharedT.buffers.storageFits sharedT.narrow_member), ?_, ?_,
-      table_fits ctx.le⟩
+      table_fits ctx.le, sharedT.stack.belowFit, sharedT.stack.below.sub_right
+        (crt_region_sub_workspace sharedT.buffers.workspace sharedT.buffers.storageFits sharedT.narrow_member)⟩
   · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega_using []] using sharedT.stack.length i
   · rcases expI with rfl | rfl
     · exact ctx.shared.buffers.pPositive
@@ -492,7 +493,7 @@ theorem crt_narrowPowered_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
   obtain ⟨_, le, _, _, _, _, _⟩ := shared.narrow_fits j prime
   refine WP.mono ((crt_narrowExp_ok (kernel := kernel)) s input) ?_
   rintro t ⟨ready, _, frame, rest⟩
-  exact (shared.after_narrow (frame.mono (by simp)) rest).copyCtx kind ready le
+  exact (shared.after_narrowB (frame.mono (by simp)) rest).copyCtx kind ready le
 
 theorem crt_factorInput_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {child : BitVec 32} {i : Fin 6} :
     RelCT isa (fun s t =>

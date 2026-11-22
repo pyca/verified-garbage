@@ -177,7 +177,8 @@ theorem pp_callee_saved {s t : State} {g : CrtGeometry} {regs : Reg → BitVec 3
     (saved : Spill.Saved s.mem (State.addr s.sp) regs pcCalleeSaved)
     (frame : Frame (crtMutable g s.sp ++ [⟨State.addr g.output, 8 * ppPreWords g⟩]) s.mem t.mem)
     (workspace : (⟨State.addr s.sp, 56⟩ : Region).Disjoint ⟨State.addr g.base, g.size⟩)
-    (output : (⟨State.addr s.sp, 56⟩ : Region).Disjoint ⟨State.addr g.output, 8 * ppPreWords g⟩) :
+    (output : (⟨State.addr s.sp, 56⟩ : Region).Disjoint ⟨State.addr g.output, 8 * ppPreWords g⟩)
+    (belowFit : 48 ≤ s.sp.toNat) :
     Spill.Saved t.mem (State.addr s.sp) regs pcCalleeSaved := by
   intro p hp
   have fit : p.2 + 4 ≤ 56 := by
@@ -196,11 +197,12 @@ theorem pp_callee_saved {s t : State} {g : CrtGeometry} {regs : Reg → BitVec 3
     (by
       intro r hr
       simp only [crtMutable, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with (rfl | rfl | rfl | rfl) | rfl
+      rcases hr with (rfl | rfl | rfl | rfl | rfl) | rfl
       · exact workspace.sub_left sub
       · exact Offset.disjoint_base _ (by omega_using [low]) (by omega_using [fit])
       · exact Offset.disjoint _ (Or.inr (by omega_using [low])) (by omega_using [fit]) (by decide)
       · exact Offset.disjoint _ gap (by omega_using [fit]) (by decide)
+      · exact ((belowA_disjoint_from (n := 56) belowFit (by decide)).sub_right sub).symm
       · exact output.sub_left sub) (by decide : 32 / 8 < 2 ^ 64)
   exact keep.trans (saved p hp)
 
@@ -211,8 +213,8 @@ theorem pp_crtFrame_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
       Spec.Rsa.wordsAt t.mem (State.addr g.output) (ppPreWords g) =
         (if ppGood g bs then ppValues g bs else List.replicate (ppPreWords g) 0) ∧
       t.sp = s.sp ∧ t.wr = s.wr ∧ t.rd = s.rd ∧
-      Frame [FrameStack.belowA s.sp 56, ⟨State.addr g.base, g.size⟩,
-        ⟨State.addr g.output, 8 * ppPreWords g⟩] s.mem t.mem := by
+      Frame [FrameStack.belowA s.sp 56, FrameStack.belowA (s.sp - BitVec.ofNat 32 56) 48,
+        ⟨State.addr g.base, g.size⟩, ⟨State.addr g.output, 8 * ppPreWords g⟩] s.mem t.mem := by
   unfold crtFrame
   refine WP.frame (by decide) h.stackFit (by decide) ?_
   rw [WP.seq_iff]
@@ -242,6 +244,8 @@ theorem pp_crtFrame_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
     apply pp_callee_saved savedU frameV
     · rw [← below]; exact h.stackWorkspace
     · rw [← below]; exact pre.below
+    · rw [spU]; change 48 ≤ (s.sp - BitVec.ofNat 32 56).toNat
+      rw [FrameStack.sub_toNat' h.stackFit]; have := h.reserve.fit; omega_using [this]
   have fit : v.sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [spV, FrameStack.sub_toNat' h.stackFit]
     have := s.sp.isLt
@@ -263,14 +267,15 @@ theorem pp_crtFrame_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
   · rw [popped_rd, restT.rd, restV.rd, restU.rd]; rfl
   · dsimp only
     rw [memT] at hfl
-    have f2 : Frame [FrameStack.belowA s.sp 56, ⟨State.addr g.base, g.size⟩,
-        ⟨State.addr g.output, 8 * ppPreWords g⟩] u.mem v.mem := frameV.sub fun r hr => by
+    have f2 : Frame [FrameStack.belowA s.sp 56, FrameStack.belowA (s.sp - BitVec.ofNat 32 56) 48,
+        ⟨State.addr g.base, g.size⟩, ⟨State.addr g.output, 8 * ppPreWords g⟩] u.mem v.mem := frameV.sub fun r hr => by
       simp only [crtMutable, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with (rfl | rfl | rfl | rfl) | rfl
+      rcases hr with (rfl | rfl | rfl | rfl | rfl) | rfl
       · exact ⟨⟨State.addr g.base, g.size⟩, by simp, fun _ h => h⟩
       · exact ⟨FrameStack.belowA s.sp 56, by simp, by rw [below]; exact Region.sub_prefix (by decide)⟩
       · exact ⟨FrameStack.belowA s.sp 56, by simp, by rw [below]; exact Offset.sub_base _ (by decide)⟩
       · exact ⟨FrameStack.belowA s.sp 56, by simp, by rw [below]; exact Offset.sub_base _ (by decide)⟩
+      · exact ⟨FrameStack.belowA (s.sp - BitVec.ofNat 32 56) 48, by simp, by rw [spU]; exact fun _ h => h⟩
       · exact ⟨⟨State.addr g.output, 8 * ppPreWords g⟩, by simp, fun _ h => h⟩
     exact ((frameU.mono (by simp)).trans f2).trans
       (hfl.mono fun r hr => by simp only [List.mem_singleton] at hr; subst r; exact List.mem_cons_self)
@@ -1675,16 +1680,20 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
     obtain outer : (⟨State.addr (s.sp - 56) + BitVec.ofNat 64 0, 56 - 0⟩ : Region) = ⟨B + BitVec.ofNat 64 112, 56⟩ := by
       rw [BitVec.add_zero]; exact congrArg (Region.mk · 56) L.a1
     obtain f1 : Frame [⟨State.addr (s.gpr .r0), 8 * P⟩, ⟨B + BitVec.ofNat 64 56, 56⟩, ⟨B, 56⟩,
-        ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩] (pcPushed s).mem m₁ := by
+        ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩, FrameStack.belowA (y.sp - BitVec.ofNat 32 56) 48]
+        (pcPushed s).mem m₁ := by
       obtain g1 : Frame [⟨State.addr (s.gpr .r0), 8 * P⟩, ⟨B + BitVec.ofNat 64 56, 56⟩, ⟨B, 56⟩,
-          ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩] (pcPushed s).mem y.mem := hy.frame.mono (by simp)
+          ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩, FrameStack.belowA (y.sp - BitVec.ofNat 32 56) 48]
+          (pcPushed s).mem y.mem := hy.frame.mono (by simp)
       obtain g3 : Frame [⟨State.addr (s.gpr .r0), 8 * P⟩, ⟨B + BitVec.ofNat 64 56, 56⟩, ⟨B, 56⟩,
-          ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩] y.mem z.mem := by
+          ⟨State.addr (stackArg s 4), (stackArg s 5).toNat * 8⟩, FrameStack.belowA (y.sp - BitVec.ofNat 32 56) 48]
+          y.mem z.mem := by
         rw [belowY] at frameZ
         refine frameZ.mono ?_
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-        rcases hr with rfl | rfl | rfl
+        rcases hr with rfl | rfl | rfl | rfl
+        · simp
         · simp
         · simp [ppGeometry]
         · simp [ppGeometry]
@@ -1694,11 +1703,21 @@ theorem ppFn_ok (s : State) (h : PpFnInput s) :
     rw [outer]
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact preD.sub_left (stackSub 112 (by decide))
     · exact Offset.disjoint _ (Or.inr (by omega_using [])) (by omega_using []) (by omega_using [])
     · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])
     · exact wsD.sub_left (stackSub 112 (by decide))
+    · obtain a1 : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 :=
+        FrameStack.sub_toNat' (by omega_using [stackFit])
+      obtain a2 : (s.sp - BitVec.ofNat 32 56 - BitVec.ofNat 32 56).toNat = s.sp.toNat - 112 := by
+        rw [FrameStack.sub_toNat' (by rw [a1]; omega_using [stackFit]), a1]; omega_using [stackFit]
+      obtain fit : 48 ≤ (y.sp - BitVec.ofNat 32 56).toNat := by
+        rw [hy.sp, FrameStack.sub_toNat' (by rw [a2]; omega_using [stackFit]), a2]; omega_using [h.stackFit216]
+      obtain base : State.addr (y.sp - BitVec.ofNat 32 56) = B := congrArg Region.base belowY
+      obtain d := belowA_disjoint_from (n := 168) fit (by decide)
+      rw [base] at d
+      exact (d.sub_right (Offset.sub_base _ (by decide))).symm
   obtain fitR : ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [zsp, FrameStack.sub_toNat' (by omega_using [stackFit])]; omega_using []
   obtain readR : InRegions (({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).rd ++ ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).wr) (State.addr ({ popped .r12 56 z with mem := m₁, unknowns := u₁ } : State).sp) 56 := by
