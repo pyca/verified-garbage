@@ -1,5 +1,45 @@
 # rustls benchmarks: verified-garbage vs aws-lc-rs
 
+## Refresh at b63f4d31
+
+Measured on main b63f4d31 with the provider at b8a01d76 (PR 991's head
+then; its later commits change only tests, error helpers and the
+README), rustls 0.24.0-dev.3 and aws-lc-rs 1.18.2 (aws-lc-sys 0.46.0), on
+the same class of host as the runs below: a 2.1 GHz Intel Xeon with
+AVX-512 IFMA, VAES and VPCLMULQDQ, pinned to one core. `bench/run.sh 3`,
+so each value is the median of three rounds.
+
+Geometric means of verified-garbage / aws-lc-rs − 1 (positive: faster):
+
+| Group | Scenarios | Speed |
+|---|---:|---:|
+| Full handshakes, client RSA-2048 | 12 | +53% |
+| Full handshakes, server RSA-2048 | 12 | +38% |
+| Full handshakes, client / server P-256 | 8 / 8 | +70% / +53% |
+| Full handshakes, client / server P-384 | 2 / 2 | +41% / +61% |
+| Full handshakes, client / server Ed25519 | 6 / 6 | +44% / +42% |
+| Full handshakes, all | 56 | +50% |
+| Resumed handshakes | 112 | +36% |
+| Bulk ChaCha20-Poly1305 | 12 | +55% |
+| Bulk AES-128-GCM | 8 | +5% |
+| Bulk AES-256-GCM | 12 | −3% |
+| All | 200 | +37% |
+
+verified-garbage is faster in 193 of the 200 scenarios. The seven that
+are not are all AES-GCM bulk sending (0.81–0.98), five of them AES-256
+and four at `max_fragment_size` 10000, while receiving AES-GCM is
+1.04–1.20×. The seal itself does not account for it: the provider seals
+a 16 KiB TLS 1.3 record at 1.08× (AES-128) and 1.02× (AES-256), and the
+library seals 16 KiB in place at 1.07× and 0.98×.
+
+Weak spots this run shows:
+
+* AES-GCM sealing short messages through the library's own API: 0.80–0.96×
+  in place below 512 bytes, and out of place 0.66–0.82× below 512 bytes
+  and 0.91–0.97× up to 4 KiB.
+* secp384r1 key exchange, the client's `complete`: 0.99×.
+* RSA-4096 signing: 1.06–1.08×.
+
 ## Refresh at e12ee485
 
 Measured on main e12ee485 (after this round's ML-KEM decapsulation, x86
