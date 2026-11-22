@@ -69,6 +69,51 @@ def entryD8S (n name : String) (k : Nat) (body : Prog isa) : Prog isa :=
   .frame (.alloc (frameS k))
     (.seq (.block (enterD8S n k)) (.seq (.call name body) (.block (leaveD8S k)))) (.free (frameS k))
 
+/-- For each function `n` and register `v` that `L` lists, the `i`-th from
+`i`: save `v`'s low 64 bits at `sp + o + 8 + 8i` and put `n`'s address there. -/
+def saveRegs (o : Nat) : Nat → List (String × VReg) → List Instr
+  | _, [] => []
+  | i, (n, v) :: L =>
+    [.umov .x .x16 v 0, .strSp .x16 (o + 8 + 8 * i), .adrSym .x16 n, .vop (.ins .d2 v 0 .x16)] ++
+      saveRegs o (i + 1) L
+
+/-- Restore the low 64 bits of each register `L` lists, saved by `saveRegs`. -/
+def restoreRegs (o : Nat) : Nat → List (String × VReg) → List Instr
+  | _, [] => []
+  | i, (_, v) :: L => [.ldrSp .x16 (o + 8 + 8 * i), .vop (.ins .d2 v 0 .x16)] ++ restoreRegs o (i + 1) L
+
+/-- The frame of `entryDS` for `k` stack words and `j` registers: the copies
+of the stack words, then the return address and the registers' low halves,
+in 16-byte units. -/
+def frameDS (k j : Nat) : Nat := saveOff k + 8 * ((j + 1) + (j + 1) % 2)
+
+/-- Copy the caller's `k` stack words into the bottom of the frame (as
+`withStackArgScratch` does), save the return address above them, then each
+register `L` lists, putting in it the address of the function `L` pairs it
+with. -/
+def enterDS (L : List (String × VReg)) (k : Nat) : List Instr :=
+  .addSp .x16 0 :: (List.range k).flatMap (Impl.StackScratch.AArch64.copyArg (frameDS k L.length)) ++
+    .strSp .x30 (saveOff k) :: saveRegs (saveOff k) 0 L
+
+/-- Restore the registers and the return address. -/
+def leaveDS (L : List (String × VReg)) (k : Nat) : List Instr :=
+  restoreRegs (saveOff k) 0 L ++ [.ldrSp .x30 (saveOff k)]
+
+/-- The call of `name`, whose code is `body`, with the address of each
+function `L` lists in the register it pairs it with, from a frame that holds
+a copy of the caller's `k` stack words at its bottom, where `body` finds its
+own, then the return address and the caller's registers. -/
+def entryDS (L : List (String × VReg)) (name : String) (k : Nat) (body : Prog isa) : Prog isa :=
+  .frame (.alloc (frameDS k L.length))
+    (.seq (.block (enterDS L k)) (.seq (.call name body) (.block (leaveDS L k)))) (.free (frameDS k L.length))
+
+/-- What the cleanup of a function that calls code made so by `entryDS L`
+clears: every general-purpose and vector register the calling convention
+does not preserve, and the high halves of the registers `L` gives, which
+`entryDS` writes the low halves of. -/
+def clearDL (L : List (String × VReg)) : Impl.Scrub.AArch64.Clear :=
+  ⟨Impl.Scrub.AArch64.allGprs, Impl.Scrub.AArch64.allVecs, L.map (·.2)⟩
+
 /-- `umov x16, v.d[0]; blr x16`: the call of `n`, whose code is `b`, by the
 address in the low 64 bits of `v`. -/
 def callDV (v : VReg) (n : String) (b : Prog isa) : Prog isa :=
