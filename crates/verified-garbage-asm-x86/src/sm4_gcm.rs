@@ -3,6 +3,38 @@
 //! `assembly/sm4_gcm.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_sm4_gcm_init_aesni` requires (`Artifact.features`).
+pub const VG_SM4_GCM_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.
+///
+/// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 16 bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 4112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_gcm_init_aesni(key: *const [u8; 16], ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk8PX//4uEJBQKAACJRCQEi4QkGAoAAIlEJAiJ4IPAEIlEJAyLRCQMiZiAAAAAibCEAAAAibiIAAAAiaiMAAAAicWLdCQIi0QkBInyUlA="
+call {vg_sm4_expand_key_core_aesni}
+.base64 "WFi4AAAAAImG8AAAAImG9AAAAImG+AAAAImG/AAAALgAAAAAiUVgiUVkiUVoiUVsifCJ6oPCYInzgcPwAAAAvwEAAABXU1JQ"
+call {vg_sm4_ctr32}
+.base64 "WFhYWIudgAAAAIu1hAAAAIu9iAAAAIutjAAAAI2kJBAKAABmD+/AjaQkEPD///MPfwQk8w9/RCQQ8w9/RCQg8w9/RCQw8w9/RCRA8w9/RCRQ8w9/RCRg8w9/RCRw8w9/hCSAAAAA8w9/hCSQAAAA8w9/hCSgAAAA8w9/hCSwAAAA8w9/hCTAAAAA8w9/hCTQAAAA8w9/hCTgAAAA8w9/hCTwAAAA8w9/hCQAAQAA8w9/hCQQAQAA8w9/hCQgAQAA8w9/hCQwAQAA8w9/hCRAAQAA8w9/hCRQAQAA8w9/hCRgAQAA8w9/hCRwAQAA8w9/hCSAAQAA8w9/hCSQAQAA8w9/hCSgAQAA8w9/hCSwAQAA8w9/hCTAAQAA8w9/hCTQAQAA8w9/hCTgAQAA8w9/hCTwAQAA8w9/hCQAAgAA8w9/hCQQAgAA8w9/hCQgAgAA8w9/hCQwAgAA8w9/hCRAAgAA8w9/hCRQAgAA8w9/hCRgAgAA8w9/hCRwAgAA8w9/hCSAAgAA8w9/hCSQAgAA8w9/hCSgAgAA8w9/hCSwAgAA8w9/hCTAAgAA8w9/hCTQAgAA8w9/hCTgAgAA8w9/hCTwAgAA8w9/hCQAAwAA8w9/hCQQAwAA8w9/hCQgAwAA8w9/hCQwAwAA8w9/hCRAAwAA8w9/hCRQAwAA8w9/hCRgAwAA8w9/hCRwAwAA8w9/hCSAAwAA8w9/hCSQAwAA8w9/hCSgAwAA8w9/hCSwAwAA8w9/hCTAAwAA8w9/hCTQAwAA8w9/hCTgAwAA8w9/hCTwAwAA8w9/hCQABAAA8w9/hCQQBAAA8w9/hCQgBAAA8w9/hCQwBAAA8w9/hCRABAAA8w9/hCRQBAAA8w9/hCRgBAAA8w9/hCRwBAAA8w9/hCSABAAA8w9/hCSQBAAA8w9/hCSgBAAA8w9/hCSwBAAA8w9/hCTABAAA8w9/hCTQBAAA8w9/hCTgBAAA8w9/hCTwBAAA8w9/hCQABQAA8w9/hCQQBQAA8w9/hCQgBQAA8w9/hCQwBQAA8w9/hCRABQAA8w9/hCRQBQAA8w9/hCRgBQAA8w9/hCRwBQAA8w9/hCSABQAA8w9/hCSQBQAA8w9/hCSgBQAA8w9/hCSwBQAA8w9/hCTABQAA8w9/hCTQBQAA8w9/hCTgBQAA8w9/hCTwBQAA8w9/hCQABgAA8w9/hCQQBgAA8w9/hCQgBgAA8w9/hCQwBgAA8w9/hCRABgAA8w9/hCRQBgAA8w9/hCRgBgAA8w9/hCRwBgAA8w9/hCSABgAA8w9/hCSQBgAA8w9/hCSgBgAA8w9/hCSwBgAA8w9/hCTABgAA8w9/hCTQBgAA8w9/hCTgBgAA8w9/hCTwBgAA8w9/hCQABwAA8w9/hCQQBwAA8w9/hCQgBwAA8w9/hCQwBwAA8w9/hCRABwAA8w9/hCRQBwAA8w9/hCRgBwAA8w9/hCRwBwAA8w9/hCSABwAA8w9/hCSQBwAA8w9/hCSgBwAA8w9/hCSwBwAA8w9/hCTABwAA8w9/hCTQBwAA8w9/hCTgBwAA8w9/hCTwBwAA8w9/hCQACAAA8w9/hCQQCAAA8w9/hCQgCAAA8w9/hCQwCAAA8w9/hCRACAAA8w9/hCRQCAAA8w9/hCRgCAAA8w9/hCRwCAAA8w9/hCSACAAA8w9/hCSQCAAA8w9/hCSgCAAA8w9/hCSwCAAA8w9/hCTACAAA8w9/hCTQCAAA8w9/hCTgCAAA8w9/hCTwCAAA8w9/hCQACQAA8w9/hCQQCQAA8w9/hCQgCQAA8w9/hCQwCQAA8w9/hCRACQAA8w9/hCRQCQAA8w9/hCRgCQAA8w9/hCRwCQAA8w9/hCSACQAA8w9/hCSQCQAA8w9/hCSgCQAA8w9/hCSwCQAA8w9/hCTACQAA8w9/hCTQCQAA8w9/hCTgCQAA8w9/hCTwCQAA8w9/hCQACgAA8w9/hCQQCgAA8w9/hCQgCgAA8w9/hCQwCgAA8w9/hCRACgAA8w9/hCRQCgAA8w9/hCRgCgAA8w9/hCRwCgAA8w9/hCSACgAA8w9/hCSQCgAA8w9/hCSgCgAA8w9/hCSwCgAA8w9/hCTACgAA8w9/hCTQCgAA8w9/hCTgCgAA8w9/hCTwCgAA8w9/hCQACwAA8w9/hCQQCwAA8w9/hCQgCwAA8w9/hCQwCwAA8w9/hCRACwAA8w9/hCRQCwAA8w9/hCRgCwAA8w9/hCRwCwAA8w9/hCSACwAA8w9/hCSQCwAA8w9/hCSgCwAA8w9/hCSwCwAA8w9/hCTACwAA8w9/hCTQCwAA8w9/hCTgCwAA8w9/hCTwCwAA8w9/hCQADAAA8w9/hCQQDAAA8w9/hCQgDAAA8w9/hCQwDAAA8w9/hCRADAAA8w9/hCRQDAAA8w9/hCRgDAAA8w9/hCRwDAAA8w9/hCSADAAA8w9/hCSQDAAA8w9/hCSgDAAA8w9/hCSwDAAA8w9/hCTADAAA8w9/hCTQDAAA8w9/hCTgDAAA8w9/hCTwDAAA8w9/hCQADQAA8w9/hCQQDQAA8w9/hCQgDQAA8w9/hCQwDQAA8w9/hCRADQAA8w9/hCRQDQAA8w9/hCRgDQAA8w9/hCRwDQAA8w9/hCSADQAA8w9/hCSQDQAA8w9/hCSgDQAA8w9/hCSwDQAA8w9/hCTADQAA8w9/hCTQDQAA8w9/hCTgDQAA8w9/hCTwDQAA8w9/hCQADgAA8w9/hCQQDgAA8w9/hCQgDgAA8w9/hCQwDgAA8w9/hCRADgAA8w9/hCRQDgAA8w9/hCRgDgAA8w9/hCRwDgAA8w9/hCSADgAA8w9/hCSQDgAA8w9/hCSgDgAA8w9/hCSwDgAA8w9/hCTADgAA8w9/hCTQDgAA8w9/hCTgDgAA8w9/hCTwDgAA8w9/hCQADwAA8w9/hCQQDwAA8w9/hCQgDwAA8w9/hCQwDwAA8w9/hCRADwAA8w9/hCRQDwAA8w9/hCRgDwAA8w9/hCRwDwAA8w9/hCSADwAA8w9/hCSQDwAA8w9/hCSgDwAA8w9/hCSwDwAA8w9/hCTADwAA8w9/hCTQDwAA8w9/hCTgDwAAjWQk4PMPfwQk8w9/RCQQjWQkII2kJPAPAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        vg_sm4_expand_key_core_aesni = sym super::sm4::vg_sm4_expand_key_core_aesni::vg_sm4_expand_key_core_aesni,
+        vg_sm4_ctr32 = sym super::sm4::vg_sm4_ctr32::vg_sm4_ctr32,
+    )
+}
+
 /// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
