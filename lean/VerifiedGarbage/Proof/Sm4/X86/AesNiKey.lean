@@ -56,7 +56,13 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 
 `expandKey_wp`: `Impl.Sm4.X86.AesNiKey.expandKey` leaves at `schedule` the
 round keys of `Spec.Sm4.expandKey`, as the rounds in place of
-`Proof/Sm4/Rounds.lean` (`quads .key`), a turn of the loop four of them.
+`Proof/Sm4/Rounds.lean` (`quads .key`), a turn of the loop four of them,
+with any `n ≥ 4` bytes of stack below `esp` (`keyX n`); `expandKey_ct`: in
+constant time. So it meets `Spec.Sm4.expandKeyContract` with the 4 bytes it
+uses (`expandKey_verified`), and with the 1448 that a caller of the key
+schedule's implementations leaves each (`expandKey_verifiedK`,
+`Proof.Sm4Gcm.X86.KeyImpl`); and as emitted, with its cleanup, it returns
+without secret residue (`expandKey_scrubbed`).
 -/
 
 @[expose] public section

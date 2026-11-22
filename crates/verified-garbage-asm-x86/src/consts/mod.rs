@@ -77,3 +77,7 @@ pub use vg_secp256k1_comb::VG_SECP256K1_COMB;
 #[rustfmt::skip]
 mod vg_sm4_aesni;
 pub use vg_sm4_aesni::VG_SM4_AESNI;
+
+#[rustfmt::skip]
+mod vg_sm4_key_aesni;
+pub use vg_sm4_key_aesni::VG_SM4_KEY_AESNI;
