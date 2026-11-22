@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.SseLanes
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-!
 # Byte maps in XMM registers on x86 (32-bit): what straight-line code computes of each byte
@@ -75,8 +76,8 @@ theorem byte_ofDwords (f : Nat → BitVec 32) {i : Nat} (hi : i < 16) :
 
 theorem byte_pshufb (a b : BitVec 128) {i : Nat} (hi : i < 16) :
     byte (XBinOp.eval .pshufb a b) i =
-      if (byte b i).msb then 0 else byte a ((byte b i).extractLsb' 0 4).toNat := by
-  show byte (ofBytes fun i => if (byte b i).msb then 0 else byte a ((byte b i).extractLsb' 0 4).toNat) i = _
+      if (byte b i).msb then 0#8 else byte a ((byte b i).extractLsb' 0 4).toNat := by
+  show byte (ofBytes fun i => if (byte b i).msb then 0#8 else byte a ((byte b i).extractLsb' 0 4).toNat) i = _
   rw [byte_ofBytes _ hi]
 
 /-- `aesenclast`: `SubBytes` of the byte `ShiftRows` moves here, and the key's. -/
@@ -510,5 +511,317 @@ def run (p : Params) : Regs → List Instr → Option Regs
     match step p ρ i with
     | some ρ' => run p ρ' is
     | none => none
+
+/-! ## What the registers hold -/
+
+/-- What a register holds is what its expression says. -/
+def Holds (env : Nat → BitVec 8) (rv : RV) (x : BitVec 128) : Prop :=
+  if rv.sh = true then ∃ a, x = XShiftOp.eval .psrld a 4 ∧ ∀ i < 16, byte a i = (get rv.bs i).eval env
+  else ∀ i < 16, byte x i = (get rv.bs i).eval env
+
+/-- The state the expressions `ρ` describe, with the input bytes `env`: the
+table's register holds its address, the keys are readable and hold their
+input bytes, and every register what its expression says. -/
+structure Rel (p : Params) (env : Nat → BitVec 8) (ρ : Regs) (s : State) : Prop where
+  tb : s.gpr p.tb = s.syms p.name
+  key : ∀ o i, o + 16 ≤ p.klen → i < 16 →
+    s.mem (addr (s.gpr p.kreg) o + BitVec.ofNat 64 i) = env (128 + o + i)
+  acc : ∀ o, o + 16 ≤ p.klen → InRegions (s.rd ++ s.wr) (addr (s.gpr p.kreg) o) 16
+  regs : ∀ r, Holds env (ρ.get r) (s.xmm r)
+
+/-- `s'` is `s` but for its XMM registers. -/
+def Same (s s' : State) : Prop := ∃ f, s' = { s with xmm := f }
+
+theorem Same.trans {a b c : State} (h₁ : Same a b) (h₂ : Same b c) : Same a c := by
+  obtain ⟨f, rfl⟩ := h₁
+  obtain ⟨g, rfl⟩ := h₂
+  exact ⟨g, rfl⟩
+
+section
+variable {p : Params} {env : Nat → BitVec 8} {ρ : Regs} {s : State}
+
+theorem holds_plain {bs : List BV} {x : BitVec 128} :
+    Holds env ⟨false, bs⟩ x ↔ ∀ i < 16, byte x i = (get bs i).eval env := by
+  simp only [Holds, Bool.false_eq_true, ↓reduceIte]
+
+theorem Rel.plain (hr : Rel p env ρ s) {r : XReg} {y : List BV} (h : plain ρ r = some y) :
+    ∀ i < 16, byte (s.xmm r) i = (get y i).eval env := by
+  unfold ByteMap.plain at h
+  split at h <;> [cases h; rename_i hs]
+  cases h
+  have := hr.regs r
+  rw [Holds, ite_eq_right hs] at this
+  exact this
+
+theorem Rel.setH (hr : Rel p env ρ s) (d : XReg) {rv : RV} {v : BitVec 128} (h : Holds env rv v) :
+    Rel p env (ρ.set d rv) (s.setXmm d v) := by
+  refine ⟨hr.tb, hr.key, hr.acc, fun r => ?_⟩
+  rw [Regs.get_set]
+  show Holds env _ (if r = d then v else s.xmm r)
+  by_cases e : r = d
+  · rw [ite_eq_left e, ite_eq_left e]; exact h
+  · rw [ite_eq_right e, ite_eq_right e]; exact hr.regs r
+
+theorem Rel.set (hr : Rel p env ρ s) (d : XReg) {bs : List BV} {v : BitVec 128}
+    (h : ∀ i < 16, byte v i = (get bs i).eval env) : Rel p env (ρ.set d ⟨false, bs⟩) (s.setXmm d v) :=
+  hr.setH d (holds_plain.mpr h)
+
+theorem srow_lt (i : Nat) : srow i < 16 := by unfold srow; omega_arith
+
+/-- A byte of two words. -/
+theorem byte_append (hi lo : BitVec 64) {i : Nat} (h : i < 16) :
+    byte (hi ++ lo) i = (if i < 8 then lo else hi).extractLsb' (8 * (i % 8)) 8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro r hr
+  simp only [byte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hr, decide_true, Bool.true_and]
+  by_cases h8 : i < 8
+  · rw [ite_eq_left h8, ite_eq_left (show 8 * i + r < 64 by omega_arith), show i % 8 = i by omega_arith]
+  · rw [ite_eq_right h8, ite_eq_right (show ¬ 8 * i + r < 64 by omega_arith)]
+    exact congrArg _ (by omega_arith)
+
+theorem contains_8 {rs : List Region} {a : Addr} (h : InRegions rs a 16) : InRegions rs a 8 := by
+  obtain ⟨r, hr, hc⟩ := h
+  exact ⟨r, hr, by simp only [Region.Contains] at hc ⊢; omega_arith⟩
+
+/-- An instruction `step` follows runs, writes one XMM register, and leaves
+what the expressions say. -/
+theorem step_ok {i : Instr} {ρ' : Regs} (hr : Rel p env ρ s) (hs : step p ρ i = some ρ') :
+    ∃ d v, exec i s = some (s.setXmm d v) ∧ Rel p env ρ' (s.setXmm d v) := by
+  unfold step at hs
+  split at hs
+  · -- movdquTbl
+    rename_i d m n ws
+    split at hs <;> [rename_i hc; cases hs]
+    cases hs
+    obtain ⟨hb, hn, h8, hl⟩ := hc
+    refine ⟨d, ws.getD (m.disp / 8 + 1) 0 ++ ws.getD (m.disp / 8) 0, ?_, hr.set d fun i hi => ?_⟩
+    · show (if s.gpr m.base = s.syms n ∧ m.disp % 8 = 0 ∧ m.disp / 8 + 2 ≤ ws.length then _ else none) = _
+      rw [ite_eq_left ⟨by rw [hb, hn]; exact hr.tb, h8, hl⟩]
+    · rw [get_bytes _ hi, BV.cst_eval, byte_append _ _ hi]
+      by_cases h : i < 8
+      · rw [ite_eq_left h, show i / 8 = 0 by omega_arith]; rfl
+      · rw [ite_eq_right h, show i / 8 = 1 by omega_arith]
+  · -- movdquLoad
+    rename_i d m
+    split at hs <;> [rename_i hc; cases hs]
+    cases hs
+    obtain ⟨hb, hl, hn⟩ := hc
+    have ha := hr.acc m.disp hl
+    refine ⟨d, s.mem.readW (addr (s.gpr p.kreg) m.disp) 128, ?_, hr.set d fun i hi => ?_⟩
+    · show (s.load128 (addr (s.gpr m.base) m.disp)).map _ = _
+      rw [hb, State.load128, ite_eq_left ha]; rfl
+    · rw [get_bytes _ hi, BV.var_eval env (by omega_using [hn, hl, hi]), ← hr.key m.disp i hl hi]
+      exact byte_readW _ _ (by omega_arith)
+  · -- movqLoad
+    rename_i d m
+    split at hs <;> [rename_i hc; cases hs]
+    cases hs
+    obtain ⟨hb, hl, hn⟩ := hc
+    have ha := contains_8 (hr.acc m.disp hl)
+    refine ⟨d, (0 : BitVec 64) ++ s.mem.readW (addr (s.gpr p.kreg) m.disp) 64, ?_, hr.set d fun i hi => ?_⟩
+    · show (s.load64 (addr (s.gpr m.base) m.disp)).map _ = _
+      rw [hb, State.load64, ite_eq_left ha]; rfl
+    · rw [get_bytes _ hi, byte_append _ _ hi]
+      by_cases h : i < 8
+      · rw [ite_eq_left h, ite_eq_left h, BV.var_eval env (by omega_using [hn, hl, hi]), ← hr.key m.disp i hl hi,
+          show i % 8 = i by omega_arith]
+        exact byte_readW _ _ (by omega_arith)
+      · rw [ite_eq_right h, ite_eq_right h, BV.zero_eval]
+        apply BitVec.eq_of_getLsbD_eq; intro r _
+        simp
+  · -- movdqa
+    rename_i a b
+    obtain ⟨y, hy, rfl⟩ := Option.map_eq_some_iff.mp hs
+    exact ⟨a, _, rfl, hr.set a (hr.plain hy)⟩
+  · -- pxor
+    rename_i a b
+    obtain ⟨x, hx, hs⟩ := Option.bind_eq_some_iff.mp hs
+    obtain ⟨y, hy, rfl⟩ := Option.map_eq_some_iff.mp hs
+    refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+    rw [get_bytes _ hi, BV.xor_eval, ← hr.plain hx i hi, ← hr.plain hy i hi]
+    exact byte_xor _ _ _
+  · -- pand
+    rename_i a b
+    obtain ⟨y, hy, hs⟩ := Option.bind_eq_some_iff.mp hs
+    have hY := hr.plain hy
+    split at hs
+    · rename_i hsh
+      split at hs <;> [rename_i hc; cases hs]
+      cases hs
+      have hA := hr.regs a
+      rw [Holds, ite_eq_left hsh] at hA
+      obtain ⟨A, hA, hb⟩ := hA
+      refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+      have hci := List.all_eq_true.mp hc i (List.mem_range.mpr hi)
+      simp only [Bool.and_eq_true, beq_iff_eq] at hci
+      rw [get_bytes _ hi, BV.lin_eval env rfl, ← hb i hi]
+      show byte (s.xmm a &&& s.xmm b) i = _
+      rw [hA]
+      exact byte_hi4 A _ hi (by rw [hY i hi, BV.isConst_eval env hci.1, hci.2]; rfl)
+    · rename_i hsh
+      have hX : ∀ i < 16, byte (s.xmm a) i = (get (ρ.get a).bs i).eval env := by
+        have := hr.regs a
+        rw [Holds, ite_eq_right hsh] at this
+        exact this
+      split at hs
+      · rename_i hc
+        cases hs
+        refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+        rw [get_bytes _ hi, BV.lin_eval env rfl, ← hX i hi, ← allConst_eval env hc hi, ← hY i hi]
+        exact byte_and _ _ _
+      · split at hs <;> [rename_i hc; cases hs]
+        cases hs
+        refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+        rw [get_bytes _ hi, BV.lin_eval env rfl, ← hY i hi, ← allConst_eval env hc hi, ← hX i hi]
+        exact (byte_and _ _ _).trans (BitVec.and_comm _ _)
+  · -- psrld
+    rename_i a n
+    split at hs <;> [rename_i hn; cases hs]
+    obtain ⟨x, hx, rfl⟩ := Option.map_eq_some_iff.mp hs
+    subst hn
+    refine ⟨a, _, rfl, hr.setH a ?_⟩
+    rw [Holds, ite_eq_left rfl]
+    exact ⟨s.xmm a, rfl, hr.plain hx⟩
+  · -- pshufb
+    rename_i a b
+    obtain ⟨x, hx, hs⟩ := Option.bind_eq_some_iff.mp hs
+    obtain ⟨y, hy, hs⟩ := Option.bind_eq_some_iff.mp hs
+    have hX := hr.plain hx
+    have hY := hr.plain hy
+    split at hs
+    · rename_i hc
+      cases hs
+      refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+      rw [get_bytes _ hi]
+      show byte (XBinOp.eval .pshufb (s.xmm a) (s.xmm b)) i = _
+      rw [byte_pshufb _ _ hi, hY i hi, allConst_eval env hc hi]
+      by_cases hm : (get y i).const.msb = true
+      · rw [ite_eq_left hm, ite_eq_left hm, BV.zero_eval]
+      · rw [ite_eq_right hm, ite_eq_right hm]
+        exact hX _ (BitVec.isLt _)
+    · split at hs <;> [rename_i hc; cases hs]
+      obtain ⟨l, hl, rfl⟩ := Option.map_eq_some_iff.mp hs
+      refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+      rw [BV.app_eval env (bytes?_some hl hi)]
+      show byte (XBinOp.eval .pshufb (s.xmm a) (s.xmm b)) i = _
+      rw [byte_pshufb _ _ hi, hY i hi]
+      show _ = if ((get y i).eval env).msb then 0#8 else byte (tableOf x) (((get y i).eval env).extractLsb' 0 4).toNat
+      by_cases hm : ((get y i).eval env).msb = true
+      · rw [ite_eq_left hm, ite_eq_left hm]
+      · rw [ite_eq_right hm, ite_eq_right hm, tableOf, byte_ofBytes _ (BitVec.isLt _), hX _ (BitVec.isLt _),
+          allConst_eval env hc (BitVec.isLt _)]
+  · -- aesenclast
+    rename_i a b
+    obtain ⟨x, hx, hs⟩ := Option.bind_eq_some_iff.mp hs
+    obtain ⟨y, hy, hs⟩ := Option.bind_eq_some_iff.mp hs
+    obtain ⟨l, hl, rfl⟩ := Option.map_eq_some_iff.mp hs
+    refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+    obtain ⟨v, hv, e⟩ := Option.map_eq_some_iff.mp (bytes?_some hl hi)
+    rw [← e, BV.xor_eval, BV.app_eval env hv, ← hr.plain hx _ (srow_lt i), ← hr.plain hy i hi]
+    exact byte_aesenclast _ _ hi
+  · -- pshufd
+    rename_i d r o
+    obtain ⟨y, hy, rfl⟩ := Option.map_eq_some_iff.mp hs
+    refine ⟨d, _, rfl, hr.set d fun i hi => ?_⟩
+    have hk : (o.extractLsb' (2 * (i / 4)) 2).toNat < 4 := (o.extractLsb' (2 * (i / 4)) 2).isLt
+    rw [get_bytes _ hi, ← hr.plain hy _ (by omega_using [hk] : 4 * (o.extractLsb' (2 * (i / 4)) 2).toNat + i % 4 < 16)]
+    exact byte_pshufd _ _ hi
+  · -- punpcklqdq
+    rename_i a b
+    obtain ⟨x, hx, hs⟩ := Option.bind_eq_some_iff.mp hs
+    obtain ⟨y, hy, rfl⟩ := Option.map_eq_some_iff.mp hs
+    refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+    rw [get_bytes _ hi]
+    show byte (XBinOp.eval .punpcklqdq (s.xmm a) (s.xmm b)) i = _
+    rw [byte_punpcklqdq _ _ hi]
+    by_cases h : i < 8
+    · rw [ite_eq_left h, ite_eq_left h]; exact hr.plain hx i hi
+    · rw [ite_eq_right h, ite_eq_right h]; exact hr.plain hy _ (by omega_arith)
+  · -- punpckhqdq
+    rename_i a b
+    obtain ⟨x, hx, hs⟩ := Option.bind_eq_some_iff.mp hs
+    obtain ⟨y, hy, rfl⟩ := Option.map_eq_some_iff.mp hs
+    refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+    rw [get_bytes _ hi]
+    show byte (XBinOp.eval .punpckhqdq (s.xmm a) (s.xmm b)) i = _
+    rw [byte_punpckhqdq _ _ hi]
+    by_cases h : i < 8
+    · rw [ite_eq_left h, ite_eq_left h]; exact hr.plain hx _ (by omega_arith)
+    · rw [ite_eq_right h, ite_eq_right h]; exact hr.plain hy i hi
+  · cases hs
+
+/-- Code `run` follows runs, changes only the XMM registers, and leaves what
+the expressions say. -/
+theorem run_wp {is : List Instr} {ρ' : Regs} (hr : Rel p env ρ s) (hs : run p ρ is = some ρ')
+    {Q : State → Prop} (hQ : ∀ s', Rel p env ρ' s' → Same s s' → Q s') : WP isa (.block is) s Q := by
+  induction is generalizing ρ s with
+  | nil => cases hs; exact WP.block_nil (hQ s hr ⟨s.xmm, rfl⟩)
+  | cons i is ih =>
+    unfold run at hs
+    split at hs <;> [rename_i σ hσ; cases hs]
+    obtain ⟨d, v, he, hr'⟩ := step_ok hr hσ
+    exact Wp.cons he (ih hr' hs fun s' h₁ h₂ => hQ s' h₁ (Same.trans ⟨_, rfl⟩ h₂))
+
+/-! ## The entry state -/
+
+/-- Register `k`. -/
+def xreg : Nat → XReg
+  | 0 => .xmm0 | 1 => .xmm1 | 2 => .xmm2 | 3 => .xmm3 | 4 => .xmm4 | 5 => .xmm5 | 6 => .xmm6 | _ => .xmm7
+
+/-- The input bytes of a state: byte `i` of register `k` is input byte
+`16 k + i`, and byte `o` of the keys `128 + o`. -/
+def envOf (p : Params) (s : State) (n : Nat) : BitVec 8 :=
+  if n < 128 then byte (s.xmm (xreg (n / 16))) (n % 16)
+  else s.mem ((s.gpr p.kreg).setWidth 64 + BitVec.ofNat 64 (n - 128))
+
+theorem envOf_reg (p : Params) (s : State) (r : XReg) {i : Nat} (hi : i < 16) :
+    envOf p s (16 * r.ctorIdx + i) = byte (s.xmm r) i := by
+  have hr : r.ctorIdx < 8 := by cases r <;> decide
+  rw [envOf, ite_eq_left (by omega_using [hr, hi]), show (16 * r.ctorIdx + i) / 16 = r.ctorIdx by omega_arith,
+    show (16 * r.ctorIdx + i) % 16 = i by omega_arith]
+  cases r <;> rfl
+
+theorem envOf_key (p : Params) (s : State) (o : Nat) :
+    envOf p s (128 + o) = s.mem ((s.gpr p.kreg).setWidth 64 + BitVec.ofNat 64 o) := by
+  rw [envOf, ite_eq_right (by omega_arith), Nat.add_sub_cancel_left]
+
+theorem init_get (r : XReg) : Regs.init.get r = ⟨false, bytes fun i => .var (16 * r.ctorIdx + i)⟩ := by
+  cases r <;> rfl
+
+/-- A state whose table register holds the table's address and whose keys
+are readable is what the registers on entry describe. -/
+theorem rel_init (htb : s.gpr p.tb = s.syms p.name) (hfit : (s.gpr p.kreg).toNat + p.klen ≤ 2 ^ 32)
+    (hacc : ∀ o, o + 16 ≤ p.klen → InRegions (s.rd ++ s.wr) (addr (s.gpr p.kreg) o) 16) :
+    Rel p (envOf p s) Regs.init s := by
+  refine ⟨htb, fun o i ho hi => ?_, hacc, fun r => ?_⟩
+  · rw [show 128 + o + i = 128 + (o + i) by omega_arith, envOf_key, addr_eq (by omega_using [hfit, ho]),
+      BitVec.add_assoc]
+    exact congrArg (fun a => s.mem ((s.gpr p.kreg).setWidth 64 + a)) (by
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+      omega_using [hfit, ho, hi])
+  · rw [init_get, holds_plain]
+    intro i hi
+    have hr : r.ctorIdx < 8 := by cases r <;> decide
+    rw [get_bytes _ hi, BV.var_eval _ (by show 16 * r.ctorIdx + i < 1024; omega_using [hr, hi]), envOf_reg p s r hi]
+
+/-- A register known to hold constants. -/
+theorem Rel.const (hr : Rel p env ρ s) (r : XReg) {c : Nat → BitVec 8} (h : ∀ i < 16, byte (s.xmm r) i = c i) :
+    Rel p env (ρ.set r ⟨false, bytes fun i => .cst (c i)⟩) s := by
+  refine ⟨hr.tb, hr.key, hr.acc, fun r' => ?_⟩
+  rw [Regs.get_set]
+  by_cases e : r' = r
+  · rw [ite_eq_left e, e, holds_plain]
+    intro i hi
+    rw [get_bytes _ hi, BV.cst_eval, h i hi]
+  · rw [ite_eq_right e]; exact hr.regs r'
+
+/-- The bytes of a register the expressions leave plain. -/
+theorem Rel.bytes (hr : Rel p env ρ s) {r : XReg} (h : (ρ.get r).sh = false) :
+    ∀ i < 16, byte (s.xmm r) i = (get (ρ.get r).bs i).eval env := by
+  have := hr.regs r
+  rw [Holds, ite_eq_right (by rw [h]; exact Bool.false_ne_true)] at this
+  exact this
+
+end
 
 end VG.X86.ByteMap
