@@ -113,9 +113,7 @@ fn bad_key(what: &str) -> Error {
 // Signing, and an ML-DSA key's generation from its seed, fail only if the
 // operating system's random number generator does, with negligible
 // probability (a loop of the library's reaching its bound), or, for RSA,
-// with a modulus too short for the hash, which no key that loads has: in
-// no test.
-// NO-COVERAGE-START
+// with a modulus too short for the hash, which no key that loads has.
 fn signing_failed<E>(_: E) -> Error {
     Error::General("signing failed".into())
 }
@@ -127,7 +125,6 @@ fn rsa_signing_failed(e: impl fmt::Display) -> Error {
 fn mldsa_keygen_failed() -> Error {
     Error::General("ML-DSA key generation failed".into())
 }
-// NO-COVERAGE-END
 
 /// A `SigningKey` for RSA-PKCS1 or RSA-PSS.
 pub(crate) struct RsaSigningKey {
@@ -520,6 +517,20 @@ impl Debug for MlDsaSigner {
 
 #[cfg(test)]
 mod tests {
+    /// The errors signing's and ML-DSA key generation's failures, which no
+    /// test can cause, give.
+    #[test]
+    fn failures() {
+        use rustls::error::Error;
+        let is = |e, msg: &str| matches!(e, Error::General(m) if m == msg);
+        assert!(is(super::signing_failed(()), "signing failed"));
+        assert!(is(super::rsa_signing_failed("x"), "signing failed: x"));
+        assert!(is(
+            super::mldsa_keygen_failed(),
+            "ML-DSA key generation failed"
+        ));
+    }
+
     use alloc::format;
     use alloc::vec::Vec;
     use std::sync::LazyLock;
