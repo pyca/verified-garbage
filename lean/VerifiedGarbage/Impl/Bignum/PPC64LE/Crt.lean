@@ -290,7 +290,7 @@ def r2Step : Bool → Prog isa
 `-p⁻¹ mod 2³²` in `r12`, `R² mod p` in array 1 (`Precompute.r2Prime`, or
 with `pc` the cached one of `q` if `q`, whose address the first block loads),
 `c mod p` in array 4 (`reduceIn`), then `c^d mod p` in array 4 for `d` at
-`oD` of the prime's length at `oLen` (`ModExp.powWinFn`, the function `vg_bignum_pow_win`, with its table in
+`oD` of the prime's length at `oLen` (`ModExp.powWin`, with its table in
 arrays 8 to 23). `k` is loaded into `r25` first, which nothing before
 `reduceIn` writes. -/
 def powerG (pc q : Bool) (xj oD oLen : Nat) : Prog isa :=
@@ -298,7 +298,7 @@ def powerG (pc q : Bool) (xj oD oLen : Nat) : Prog isa :=
   (.seq (.block (PublicChecked.minv ++ PublicChecked.base .r5 1 ++ PublicChecked.base .r8 2 ++
       PublicChecked.base .r9 3))
   (.seq (r2Step pc) (.seq reduceIn
-  (.seq (.block [.load .d .r30 .r23 oD, .load .d .r31 .r23 oLen]) ModExp.powWinFn)))))
+  (.seq (.block [.load .d .r30 .r23 oD, .load .d .r31 .r23 oLen]) ModExp.powWin)))))
 
 /-- `powerG` computing `R² mod p`. -/
 abbrev power (xj oD oLen : Nat) : Prog isa := powerG false false xj oD oLen

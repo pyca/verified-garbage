@@ -108,7 +108,8 @@ def subFront : Prog isa :=
   .seq (.block (base .r5 1 ++ base .r8 2 ++ base .r9 3 ++ PublicChecked.minv)) (.seq Precompute.r2Hi
     (.block [.lsl .r30 .r28 1, .add .r30 .r30 .r21, .addi .r31 .r28 0]))
 
-/-- The power by the octets at `r30` (`r31` of them, `ModExp.powWin`), and
+/-- The power by the octets at `r30` (`r31` of them, `ModExp.powWinFn`, the
+function `vg_bignum_pow_win`), and
 `r3 := 1` if it is 1, else 0. -/
 def subBack : Prog isa :=
   .seq ModExp.powWinFn (.seq (.block [.addi .r31 .r23 0]) (.seq PublicChecked.one (.seq (eqMask .r3 4 7)
