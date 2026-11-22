@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPrivate
 public import VerifiedGarbage.Proof.Ffdh.Arm.DomainCallMemory
@@ -354,7 +355,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (valueStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩)
     (scalarStack : Region.Disjoint ⟨State.addr p.privateValue, xb.length⟩ ⟨State.addr s.sp, 72⟩) :
     WP isa (VG.Impl.Ffdh.Arm.SharedCheckPrivate.main
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) s fun t =>
       t.gpr .r0 = privateMainFlag p yb xb ∧ Frame (domainPrepareWrites p s) s.mem t.mem := by
   have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
@@ -435,7 +436,7 @@ theorem body_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (scalarStack : Region.Disjoint ⟨State.addr p.privateValue, xb.length⟩ ⟨State.addr s.sp, 72⟩)
     (valueStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩) :
     WP isa (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPrivate.main
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))) s fun t =>
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl)) s fun t =>
       t.gpr .r0 = checkedPrivateFlag p yb xb ∧ Frame (sharedPublicBodyWrites p s) s.mem t.mem := by
   unfold VG.Impl.Ffdh.Arm.Domain.head
   apply WP.assoc
@@ -498,7 +499,7 @@ theorem entered_ok (backend : MontBackend) (s : State) {p : Inputs} {yb xb : Lis
     (valueStack : Region.Disjoint ⟨State.addr p.publicValue, yb.length⟩ ⟨State.addr s.sp, 72⟩) :
     WP isa (.seq (.block VG.Impl.Ffdh.Arm.Domain.CheckPrivate.entry)
       (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPrivate.main
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)))) s fun t =>
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl))) s fun t =>
       t.gpr .r0 = checkedPrivateFlag p yb xb ∧ Frame (sharedPublicBodyWrites p s) s.mem t.mem := by
   rw [WP.seq_iff]
   refine WP.mono (withAllRest (entry_ok s h incoming domain domainLength count publicValue)) ?_
@@ -548,7 +549,7 @@ structure FnInput (p : Inputs) (yb xb : List Byte) (s : State) : Prop where
 
 theorem fn_ok (backend : MontBackend) (s : State) {p : Inputs} {yb xb : List Byte} (h : FnInput p yb xb s) :
     WP isa (VG.Impl.Ffdh.Arm.SharedCheckPrivate.code
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) s fun t =>
       abiPreserved s t ∧ t.gpr .r0 = checkedPrivateFlag p yb xb := by
   unfold VG.Impl.Ffdh.Arm.SharedCheckPrivate.code
   refine framed_of_separate _ s h.input.stackFits (sharedPublicBodyWrites p (entered s))
@@ -740,7 +741,7 @@ theorem data (s : State) (pre : (Spec.Ffdh.checkPrivateContract abi 176).pre s) 
 
 /-- One imported-private-key check for every shared Montgomery product. -/
 def code (b : MontBackend) : Prog isa :=
-  VG.Impl.Ffdh.Arm.SharedCheckPrivate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul)
+  VG.Impl.Ffdh.Arm.SharedCheckPrivate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) b.dbl
 
 theorem correct (backend : MontBackend) (s : State) (pre : (Spec.Ffdh.checkPrivateContract abi 176).pre s) :
     ∃ tr t, Exec isa (code backend) s tr t ∧
@@ -1032,7 +1033,7 @@ theorem prepare_ready (backend : MontBackend) (s : State) {p : Inputs} {slots : 
     (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots) (peerLength : yb.length = p.k)
     (large : 1 < p.P) (odd : p.P % 2 = 1) :
     WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) 24) s (Ready p slots yb xb) := by
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl 24) s (Ready p slots yb xb) := by
   refine WP.mono (domainSharedPrepareAt24_ok backend s h.context h.calls.toDomainCallMemory stable
     h0 h24 h32 large odd) ?_
   rintro u ⟨context, ready, modulus, r2, frame, rest⟩
@@ -1085,7 +1086,7 @@ theorem main_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb xb1 
     (large : 1 < p.P) (odd : p.P % 2 = 1) :
     RelCT isa (fun s t => MainInput p slots yb xb1 s ∧ MainInput p slots yb xb2 t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.SharedCheckPrivate.main
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (fun _ _ => True) := by
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) (fun _ _ => True) := by
   have prepare := (domainSharedPrepareAt24_ct backend stable h0 h24 h32 large odd).mono
     (P' := fun (s t : State) => MainInput p slots yb xb1 s ∧ MainInput p slots yb xb2 t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.context, h.1.calls.toDomainCallMemory⟩,
@@ -1136,7 +1137,7 @@ theorem body_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb xb1 
       (0 < Spec.Rsa.os2ip xb2 ∧ Spec.Rsa.os2ip xb2 < scalarBound p)) :
     RelCT isa (fun s t => MainInput p slots yb xb1 s ∧ MainInput p slots yb xb2 t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckPrivate.main
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))) (fun _ _ => True) := by
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl)) (fun _ _ => True) := by
   let Q := fun (xb : List Byte) (s : State) => MainInput p (60 :: 56 :: slots) yb xb s ∧
     s.z = Spec.Rsa.modulusValid p.P p.k
   have head := (head_ct stable h0 h24 h32).mono
@@ -1159,7 +1160,7 @@ theorem body_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb xb1 
     rw [Bool.true_and, Bool.true_and, stable]
   have branches : RelCT isa (fun s t => Q xb1 s ∧ Q xb2 t ∧ s.sp = t.sp)
       (.ite .eq (VG.Impl.Ffdh.Arm.SharedCheckPrivate.main
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (VG.Impl.Ffdh.Arm.Domain.ret 0))
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) (VG.Impl.Ffdh.Arm.Domain.ret 0))
       (fun _ _ => True) := by
     apply RelCT.ite (fun s t h => by change some s.z = some t.z; rw [h.1.2, h.2.1.2])
     · intro s t tr1 tr2 u v h e1 e2
@@ -1183,7 +1184,7 @@ theorem fn_ct (backend : MontBackend) {p : Inputs} {yb xb1 xb2 : List Byte} (len
       (0 < Spec.Rsa.os2ip xb2 ∧ Spec.Rsa.os2ip xb2 < scalarBound p)) :
     RelCT isa (fun s t => FnInput p yb xb1 s ∧ FnInput p yb xb2 t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.SharedCheckPrivate.code
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (fun _ _ => True) := by
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) (fun _ _ => True) := by
   let P := fun (xb : List Byte) (a : State) => ∃ s, FnInput p yb xb s ∧ a = entered s
   have entry := entry_ct.mono
     (P' := fun (s t : State) => P xb1 s ∧ P xb2 t ∧ s.sp = t.sp)

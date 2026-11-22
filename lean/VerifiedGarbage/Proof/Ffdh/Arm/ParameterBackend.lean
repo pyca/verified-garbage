@@ -2246,7 +2246,7 @@ private theorem phasePrepared_stack (b : VG.Proof.Bignum.Arm.MontBackend) :
   have inverseZero : FrameStack.armStack VG.Impl.Bignum.Arm.precomputeInverse = 0 := rfl
   have initZero : FrameStack.armStack VG.Impl.Bignum.Arm.r2Init = 0 := rfl
   have normalizedZero : FrameStack.armStack VG.Impl.Bignum.Arm.NormalizedR2.init = 0 := rfl
-  have doubleZero : FrameStack.armStack VG.Impl.Bignum.Arm.doubleLoop = 0 := rfl
+  have doubleZero : FrameStack.armStack (VG.Impl.Bignum.Arm.DoubleCall.loop VG.Impl.Bignum.Arm.doubleLoopMultiply) = 0 := rfl
   have oneZero : FrameStack.armStack (VG.Impl.Bignum.Arm.smallConst 1 1) = 0 := rfl
   have keyZero : FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.montKeySetup = 0 := rfl
   have expZero : FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.expSetup = 0 := rfl

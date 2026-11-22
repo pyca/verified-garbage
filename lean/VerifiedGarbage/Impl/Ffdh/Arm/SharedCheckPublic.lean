@@ -27,11 +27,11 @@ def subgroup (op : Nat → Nat → Nat → Prog isa) (bs : Nat) : Prog isa :=
 def tail (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   withQ (.seq (subgroup op 36) finishFlag) (ret 1)
 
-def main (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt op 24)
+def main (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt op dbl 24)
     (.seq (importAt 1 36 32) (.seq (inRange 1) (ifFlag (tail op) (ret 0))))
 
-def code (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  VG.Impl.Ffdh.Arm.framed (.seq (.block CheckPublic.entry) (head (main op)))
+def code (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  VG.Impl.Ffdh.Arm.framed (.seq (.block CheckPublic.entry) (head (main op dbl)))
 
 end VG.Impl.Ffdh.Arm.SharedCheckPublic

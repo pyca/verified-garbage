@@ -5,6 +5,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckDomain
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
@@ -184,7 +185,7 @@ theorem prepareQ_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : Li
     (h : Context p slots s) (calls : DomainCallMemory p s)
     (stable : stableSlots slots = true) (h0 : 0 ∈ slots) (h32 : 32 ∈ slots) (h60 : 60 ∈ slots)
     (hasQ : p.hasQ = true) (large : 1 < p.Q) (odd : p.Q % 2 = 1) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) 60) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) backend.dbl 60) s fun t =>
       Context p slots t ∧ ArithmeticReady p.base p.len p.w t ∧
       numAt t.mem (State.addr p.base) p.w 0 = p.Q ∧
       numAt t.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.Q ∧
@@ -205,7 +206,7 @@ theorem prepareQ_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : Li
   let K := TwoExp.sharedMontgomery p.base s.sp p.len p.w backend.name backend.mul
     (fun _ _ _ ho ha hb v input => backend.correct v input ho ha hb) backend.stackOk
   have hp : TwoExp.CallReady p.base s.sp p.len u := ⟨(calls.after restU).stack, restU.sp⟩
-  refine WP.mono (sharedPrepare_ok u K input hp) ?_
+  refine WP.mono (sharedPrepare_ok u K (backend.doubling p.base s.sp p.len p.w) input hp) ?_
   rintro t ⟨ready, modulus, r2, _, frameT, restT⟩
   rw [bytes] at modulus r2
   have localFrame : Frame [⟨State.addr p.base, 8 * p.len⟩, FrameStack.belowA u.sp 48]
@@ -222,17 +223,19 @@ theorem prepareQ_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     (hasQ : p.hasQ = true) (large : 1 < p.Q) (odd : p.Q % 2 = 1) :
     RelCT isa (fun s t => (Context p slots s ∧ DomainCallMemory p s) ∧
       (Context p slots t ∧ DomainCallMemory p t) ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) 60) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) backend.dbl 60) (fun _ _ => True) := by
   have family (sp0 : BitVec 32) :
       RelCT isa (fun s t => (Context p slots s ∧ DomainCallMemory p s ∧ s.sp = sp0) ∧
         (Context p slots t ∧ DomainCallMemory p t ∧ t.sp = sp0) ∧ s.sp = t.sp)
-        (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) 60) (fun _ _ => True) := by
+        (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) backend.dbl 60) (fun _ _ => True) := by
     let correct := fun o a b ho ha hb v input => backend.correct v (base := p.base) (len := p.len)
       (w := p.w) (o := o) (a := a) (b := b) input ho ha hb
     let K := TwoExp.sharedMontgomery p.base sp0 p.len p.w backend.name backend.mul correct backend.stackOk
     have timing : TwoExp.MontgomeryTiming K :=
       TwoExp.sharedMontgomeryTiming p.base sp0 p.len p.w backend.name backend.mul correct backend.stackOk
         (fun _ _ _ ho ha hb => backend.rawCT ho ha hb)
+    let D := backend.doubling p.base sp0 p.len p.w
+    have dtiming : TwoExp.DoublingTiming D := backend.doublingTiming p.base sp0 p.len p.w
     have argsInput (s : State) (h : Context p slots s ∧ DomainCallMemory p s ∧ s.sp = sp0) :
         WP isa (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs 60)) s fun u =>
           PrepareInput p.base p.q p.len p.k u ∧ TwoExp.CallReady p.base sp0 p.len u := by
@@ -250,7 +253,7 @@ theorem prepareQ_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
         by rw [bytes]; exact large, by rw [bytes]; exact odd⟩
     unfold VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt
     exact relCT_chain ((prepareArgs_ct 60).mono (fun _ _ h => h.2.2) (fun _ _ h => h))
-      argsInput argsInput (sharedPrepare_ct K timing p.width.2.2.2.2)
+      argsInput argsInput (sharedPrepare_ct K timing D dtiming p.width.2.2.2.2)
   intro s t tr1 tr2 u v h e1 e2
   exact family s.sp s t tr1 tr2 u v
     ⟨⟨h.1.1, h.1.2, rfl⟩, ⟨h.2.1.1, h.2.1.2, h.2.2.symm⟩, h.2.2⟩ e1 e2
@@ -261,7 +264,7 @@ theorem divides_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : Lis
     (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
     (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots) (h60 : 60 ∈ slots)
     (hasQ : p.hasQ = true) (large : 1 < p.Q) (odd : p.Q % 2 = 1) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend)) s fun t => Context p slots t ∧
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend) backend.dbl) s fun t => Context p slots t ∧
       t.gpr .r11 = (if p.P % p.Q = 1 then 1 else 0) ∧
       Frame (domainPrepareWrites p s) s.mem t.mem ∧ Rest roundClobbers s t := by
   have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
@@ -311,7 +314,7 @@ theorem generator_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : L
     (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
     (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h32 : 32 ∈ slots) (h56 : 56 ∈ slots) (h60 : 60 ∈ slots)
     (hasQ : p.hasQ = true) (large : 1 < p.P) (odd : p.P % 2 = 1) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.generator (mop backend)) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.generator (mop backend) backend.dbl) s fun t =>
       t.gpr .r0 = (if Spec.Rsa.powMod p.G p.Q p.P = 1 then 1 else 0) ∧
       Frame (domainPrepareWrites p s) s.mem t.mem := by
   rw [VG.Impl.Ffdh.Arm.SharedCheckDomain.generator, WP.seq_iff]
@@ -334,7 +337,7 @@ theorem qChecks_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : Lis
     (hasQ : p.hasQ = true) (ready : ArithmeticReady p.base p.len p.w s)
     (modulus : numAt s.mem (State.addr p.base) p.w 0 = p.P) (large : 1 < p.P) (odd : p.P % 2 = 1)
     (r2 : numAt s.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend)) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend) backend.dbl) s fun t =>
       t.gpr .r0 = domainQFlag p ∧ Frame (domainPrepareWrites p s) s.mem t.mem := by
   rw [VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks, WP.seq_iff]
   refine WP.mono (qRange_ok s h stable h60 h32 hasQ ready modulus odd r2) ?_
@@ -391,7 +394,7 @@ theorem tail_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (ready : ArithmeticReady p.base p.len p.w s)
     (modulus : numAt s.mem (State.addr p.base) p.w 0 = p.P) (large : 1 < p.P) (odd : p.P % 2 = 1)
     (r2 : numAt s.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P) :
-    WP isa (VG.Impl.Ffdh.Arm.Domain.withQ (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend))
+    WP isa (VG.Impl.Ffdh.Arm.Domain.withQ (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend) backend.dbl)
       (VG.Impl.Ffdh.Arm.Domain.ret 1)) s fun t =>
         t.gpr .r0 = domainTailFlag p ∧ Frame (domainPrepareWrites p s) s.mem t.mem := by
   rw [VG.Impl.Ffdh.Arm.Domain.withQ, WP.seq_iff]
@@ -422,7 +425,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (value : Octets p.base p.g p.len yb s) (length : yb.length = p.k)
     (valueStack : Region.Disjoint ⟨State.addr p.g, yb.length⟩ ⟨State.addr s.sp, 72⟩)
     (valueBelow : Region.Disjoint ⟨State.addr p.g, yb.length⟩ (belowA s.sp 48)) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend)) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend) backend.dbl) s fun t =>
       t.gpr .r0 = domainMainFlag p (Spec.Rsa.os2ip yb) ∧ Frame (domainPrepareWrites p s) s.mem t.mem := by
   have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
@@ -487,7 +490,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
 theorem head_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List Nat}
     (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
     (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots) (h32 : 32 ∈ slots) :
-    WP isa (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend))) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend) backend.dbl)) s fun t =>
       t.gpr .r0 = checkedDomainFlag p ∧ Frame (sharedPublicBodyWrites p s) s.mem t.mem := by
   unfold VG.Impl.Ffdh.Arm.Domain.head
   apply WP.assoc
@@ -542,7 +545,7 @@ theorem body_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (h : Context p slots s) (calls : DomainCallMemory p s) (stable : stableSlots slots = true)
     (h0 : 0 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots) (h32 : 32 ∈ slots)
     (table : VettedGroups.TableAt (s.syms tableSym) groups s) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.body (mop backend)) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.body (mop backend) backend.dbl) s fun t =>
       t.gpr .r0 = checkedDomainFlag p ∧ Frame (sharedPublicBodyWrites p s) s.mem t.mem := by
   rw [VG.Impl.Ffdh.Arm.SharedCheckDomain.body, WP.seq_iff]
   refine WP.mono (VettedGroups.code_ok s h h24 h28 h32 table) ?_
@@ -596,7 +599,7 @@ theorem entered_ok (backend : MontBackend) (s : State) {p : Inputs}
     (table : VettedGroups.TableAt (s.syms tableSym) groups s)
     (safe : VettedGroups.TableSafe (s.syms tableSym) groups [⟨State.addr s.sp, 72⟩]) :
     WP isa (.seq (.block VG.Impl.Ffdh.Arm.Domain.CheckDomain.entry)
-      (VG.Impl.Ffdh.Arm.SharedCheckDomain.body (mop backend))) s fun t =>
+      (VG.Impl.Ffdh.Arm.SharedCheckDomain.body (mop backend) backend.dbl)) s fun t =>
       t.gpr .r0 = checkedDomainFlag p ∧ Frame (sharedPublicBodyWrites p s) s.mem t.mem := by
   rw [WP.seq_iff]
   refine WP.mono_syms (withAllRest (domainEntry_ok s h domain domainLength count scratch)) ?_
@@ -613,7 +616,7 @@ theorem entered_ok (backend : MontBackend) (s : State) {p : Inputs}
   exact ⟨result, entryFrame.trans frameT⟩
 
 theorem fn_ok (backend : MontBackend) (s : State) {p : Inputs} (h : Input p s) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.code (mop backend)) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.code (mop backend) backend.dbl) s fun t =>
       abiPreserved s t ∧ t.gpr .r0 = checkedDomainFlag p := by
   unfold VG.Impl.Ffdh.Arm.SharedCheckDomain.code
   refine framed_of_separate _ s h.stackFits (sharedPublicBodyWrites p (entered s))
@@ -792,7 +795,7 @@ theorem data (s : State) (pre : contract.pre s) :
 
 /-- One imported-domain check for every shared Montgomery product. -/
 def code (b : MontBackend) : Prog isa :=
-  VG.Impl.Ffdh.Arm.SharedCheckDomain.code (mop b)
+  VG.Impl.Ffdh.Arm.SharedCheckDomain.code (mop b) b.dbl
 
 theorem correct (backend : MontBackend) (s : State) (pre : contract.pre s) :
     ∃ tr t, Exec isa (code backend) s tr t ∧ abiPreserved s t ∧ contract.post s t := by
@@ -858,14 +861,14 @@ theorem divides_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     (h60 : 60 ∈ slots) (hasQ : p.hasQ = true) (large : 1 < p.Q) (odd : p.Q % 2 = 1) :
     RelCT isa (fun s t => (Context p slots s ∧ DomainCallMemory p s) ∧
       (Context p slots t ∧ DomainCallMemory p t) ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend)) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend) backend.dbl) (fun _ _ => True) := by
   have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op1 : Operand 1 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   have family (sp0 : BitVec 32) :
       RelCT isa (fun s t => ((Context p slots s ∧ DomainCallMemory p s) ∧ s.sp = sp0) ∧
         ((Context p slots t ∧ DomainCallMemory p t) ∧ t.sp = sp0) ∧ s.sp = t.sp)
-        (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend)) (fun _ _ => True) := by
+        (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend) backend.dbl) (fun _ _ => True) := by
     let correct := fun o a b ho ha hb v input => backend.correct v (base := p.base) (len := p.len)
       (w := p.w) (o := o) (a := a) (b := b) input ho ha hb
     let K := TwoExp.sharedMontgomery p.base sp0 p.len p.w backend.name backend.mul correct backend.stackOk
@@ -877,7 +880,7 @@ theorem divides_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
         ((Context p slots t ∧ DomainCallMemory p t) ∧ t.sp = sp0) ∧ s.sp = t.sp)
       (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h)
     have wpPrep (s : State) (h : (Context p slots s ∧ DomainCallMemory p s) ∧ s.sp = sp0) :
-        WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) 60) s (Prepared p slots p.Q sp0) :=
+        WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) backend.dbl 60) s (Prepared p slots p.Q sp0) :=
       WP.mono (prepareQ_ok backend s h.1.1 h.1.2 stable h0 h32 h60 hasQ large odd) fun _ j =>
         ⟨j.1, j.2.1, j.2.2.1, j.2.2.2.1, h.1.2.after j.2.2.2.2.2, j.2.2.2.2.2.sp.trans h.2⟩
     have imported := (importAt_ct (p := p) (a := 1) (slot := 24) (k := p.k)
@@ -926,9 +929,9 @@ theorem generator_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     (h56 : 56 ∈ slots) (h60 : 60 ∈ slots) (hasQ : p.hasQ = true) (large : 1 < p.P) (odd : p.P % 2 = 1) :
     RelCT isa (fun s t => (Context p slots s ∧ DomainCallMemory p s) ∧
       (Context p slots t ∧ DomainCallMemory p t) ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedCheckDomain.generator (mop backend)) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedCheckDomain.generator (mop backend) backend.dbl) (fun _ _ => True) := by
   have wp (s : State) (h : Context p slots s ∧ DomainCallMemory p s) :
-      WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) 24) s fun u =>
+      WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) backend.dbl 24) s fun u =>
         SubgroupInput p slots 56 ((p.dom.drop p.k).take p.k) u ∧ DomainCallMemory p u := by
     refine WP.mono (domainSharedPrepareAt24_ok backend s h.1 h.2 stable h0 h24 h32 large odd) ?_
     rintro u ⟨context, ready, modulus, r2, _, rest⟩
@@ -954,16 +957,16 @@ theorem dividesThen_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     (large : 1 < p.P) (odd : p.P % 2 = 1) (qLarge : 1 < p.Q) (qOdd : p.Q % 2 = 1) :
     RelCT isa (fun s t => (Context p slots s ∧ DomainCallMemory p s) ∧
       (Context p slots t ∧ DomainCallMemory p t) ∧ s.sp = t.sp)
-      (.seq (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend)) (VG.Impl.Ffdh.Arm.Domain.ifFlag
-        (VG.Impl.Ffdh.Arm.SharedCheckDomain.generator (mop backend))
+      (.seq (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend) backend.dbl) (VG.Impl.Ffdh.Arm.Domain.ifFlag
+        (VG.Impl.Ffdh.Arm.SharedCheckDomain.generator (mop backend) backend.dbl)
         (VG.Impl.Ffdh.Arm.Domain.ret 0))) (fun _ _ => True) := by
   let P := Flagged p slots (if p.P % p.Q = 1 then 1 else 0)
   have wp (s : State) (h : Context p slots s ∧ DomainCallMemory p s) :
-      WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend)) s P :=
+      WP isa (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend) backend.dbl) s P :=
     WP.mono (divides_ok backend s h.1 h.2 stable h0 h24 h32 h60 hasQ qLarge qOdd) fun _ j =>
       ⟨j.1, h.2.after j.2.2.2, j.2.1⟩
   have branches : RelCT isa (fun s t => P s ∧ P t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.Domain.ifFlag (VG.Impl.Ffdh.Arm.SharedCheckDomain.generator (mop backend))
+      (VG.Impl.Ffdh.Arm.Domain.ifFlag (VG.Impl.Ffdh.Arm.SharedCheckDomain.generator (mop backend) backend.dbl)
         (VG.Impl.Ffdh.Arm.Domain.ret 0)) (fun _ _ => True) := by
     apply ifFlag_known_ct (decide (p.P % p.Q = 1))
       (fun _ h => by simpa only [decide_eq_true_eq] using h.result)
@@ -980,7 +983,7 @@ theorem qChecks_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     (h56 : 56 ∈ slots) (h60 : 60 ∈ slots) (hasQ : p.hasQ = true) (large : 1 < p.P) (odd : p.P % 2 = 1) :
     RelCT isa (fun s t => SharedSubgroupInput p slots 56 ((p.dom.drop p.k).take p.k) s ∧
       SharedSubgroupInput p slots 56 ((p.dom.drop p.k).take p.k) t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend)) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend) backend.dbl) (fun _ _ => True) := by
   let P := SharedSubgroupInput p slots 56 ((p.dom.drop p.k).take p.k)
   let Q := Flagged p slots (qRangeFlag p)
   have ranges := (qRange_ct stable h60 h32 hasQ).mono
@@ -991,8 +994,8 @@ theorem qChecks_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
       ⟨j.1, h.calls.after j.2.2.2.2.2.2, j.2.2.1⟩
   have branches : RelCT isa (fun s t => Q s ∧ Q t ∧ s.sp = t.sp)
       (VG.Impl.Ffdh.Arm.Domain.ifFlag
-        (.seq (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend)) (VG.Impl.Ffdh.Arm.Domain.ifFlag
-          (VG.Impl.Ffdh.Arm.SharedCheckDomain.generator (mop backend))
+        (.seq (VG.Impl.Ffdh.Arm.SharedCheckDomain.divides (mop backend) backend.dbl) (VG.Impl.Ffdh.Arm.Domain.ifFlag
+          (VG.Impl.Ffdh.Arm.SharedCheckDomain.generator (mop backend) backend.dbl)
           (VG.Impl.Ffdh.Arm.Domain.ret 0))) (VG.Impl.Ffdh.Arm.Domain.ret 0)) (fun _ _ => True) := by
     apply ifFlag_known_ct (decide (2 < p.Q ∧ p.Q < p.P - 1 ∧ p.Q % 2 = 1))
       (fun _ h => by simpa only [qRangeFlag, decide_eq_true_eq] using h.result)
@@ -1011,7 +1014,7 @@ theorem tail_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     (h32 : 32 ∈ slots) (h56 : 56 ∈ slots) (h60 : 60 ∈ slots) (large : 1 < p.P) (odd : p.P % 2 = 1) :
     RelCT isa (fun s t => SharedSubgroupInput p slots 56 ((p.dom.drop p.k).take p.k) s ∧
       SharedSubgroupInput p slots 56 ((p.dom.drop p.k).take p.k) t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.Domain.withQ (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend))
+      (VG.Impl.Ffdh.Arm.Domain.withQ (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend) backend.dbl)
         (VG.Impl.Ffdh.Arm.Domain.ret 1)) (fun _ _ => True) := by
   let P := SharedSubgroupInput p slots 56 ((p.dom.drop p.k).take p.k)
   let Q := fun s : State => P s ∧ s.z = !p.hasQ
@@ -1023,7 +1026,7 @@ theorem tail_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     exact ⟨⟨h.toSubgroupInput.after_mem stable mem rest ((rest.gpr .r0 (by simp)).trans h.context.ptr),
       h.calls.after rest⟩, zero⟩
   have branches : RelCT isa (fun s t => Q s ∧ Q t ∧ s.sp = t.sp)
-      (.ite .ne (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend))
+      (.ite .ne (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend) backend.dbl)
         (VG.Impl.Ffdh.Arm.Domain.ret 1)) (fun _ _ => True) := by
     apply iteKnown_ct p.hasQ (fun s h => by simp only [eval, h.2, Bool.not_not])
     · intro hasQ
@@ -1055,7 +1058,7 @@ theorem main_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     (large : 1 < p.P) (odd : p.P % 2 = 1) :
     RelCT isa (fun s t => MainInput p slots ((p.dom.drop p.k).take p.k) s ∧
       MainInput p slots ((p.dom.drop p.k).take p.k) t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend)) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend) backend.dbl) (fun _ _ => True) := by
   let yb := (p.dom.drop p.k).take p.k
   have length : yb.length = p.k := p.gLength
   have op0 : Operand 0 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
@@ -1065,7 +1068,7 @@ theorem main_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     (P' := fun (s t : State) => MainInput p slots yb s ∧ MainInput p slots yb t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.context, h.1.calls⟩, ⟨h.2.1.context, h.2.1.calls⟩, h.2.2⟩) (fun _ _ h => h)
   have wpPrep (s : State) (h : MainInput p slots yb s) :
-      WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) 24) s
+      WP isa (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt (mop backend) backend.dbl 24) s
         (SharedSubgroupInput p slots 56 yb) := by
     refine WP.mono (domainSharedPrepareAt24_ok backend s h.context h.calls stable h0 h24 h32 large odd) ?_
     rintro u ⟨context, ready, modulus, r2, frame, rest⟩
@@ -1121,7 +1124,7 @@ theorem main_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     · rw [ite_eq_right hv, decide_eq_false hv]; rfl
   have branches : RelCT isa (fun s t => Q s ∧ Q t ∧ s.sp = t.sp)
       (.ite .ne (VG.Impl.Ffdh.Arm.Domain.withQ
-        (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend))
+        (VG.Impl.Ffdh.Arm.SharedCheckDomain.qChecks (mop backend) backend.dbl)
         (VG.Impl.Ffdh.Arm.Domain.ret 1)) (VG.Impl.Ffdh.Arm.Domain.ret 0)) (fun _ _ => True) := by
     apply iteKnown_ct (decide valid) (fun s h => by simp only [eval, h.2, Bool.not_not])
     · intro _
@@ -1138,7 +1141,7 @@ theorem head_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
     (h32 : 32 ∈ slots) :
     RelCT isa (fun s t => (Context p slots s ∧ DomainCallMemory p s) ∧
       (Context p slots t ∧ DomainCallMemory p t) ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend)))
+      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend) backend.dbl))
       (fun _ _ => True) := by
   let Q := fun s : State => (Context p (60 :: 56 :: slots) s ∧ DomainCallMemory p s) ∧
     s.z = Spec.Rsa.modulusValid p.P p.k
@@ -1163,7 +1166,7 @@ theorem head_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
       exact h.2.domainSlice h.1 (by have := p.minLength; omega_using [this])
         (by rw [p.domainLength]; split <;> omega_using [])
   have branches : RelCT isa (fun s t => Q s ∧ Q t ∧ s.sp = t.sp)
-      (.ite .eq (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend)) (VG.Impl.Ffdh.Arm.Domain.ret 0))
+      (.ite .eq (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend) backend.dbl) (VG.Impl.Ffdh.Arm.Domain.ret 0))
       (fun _ _ => True) := by
     apply iteKnown_ct (Spec.Rsa.modulusValid p.P p.k) (fun s h => by change some s.z = _; rw [h.2])
     · intro valid
@@ -1184,7 +1187,7 @@ theorem body_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
       ((Context p slots s ∧ DomainCallMemory p s) ∧ VettedGroups.TableAt (s.syms tableSym) groups s) ∧
       ((Context p slots t ∧ DomainCallMemory p t) ∧ VettedGroups.TableAt (t.syms tableSym) groups t) ∧
       s.sp = t.sp ∧ s.syms tableSym = t.syms tableSym)
-      (VG.Impl.Ffdh.Arm.SharedCheckDomain.body (mop backend)) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedCheckDomain.body (mop backend) backend.dbl) (fun _ _ => True) := by
   let Q := fun s : State => (Context p slots s ∧ DomainCallMemory p s) ∧
     s.gpr .r11 = BitVec.ofNat 32 (recognize groups p.k p.dom)
   let R := fun s : State => (Context p slots s ∧ DomainCallMemory p s) ∧
@@ -1209,7 +1212,7 @@ theorem body_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
       by rw [zero, h.2]⟩
   have branches : RelCT isa (fun s t => R s ∧ R t ∧ s.sp = t.sp)
       (.ite .ne (VG.Impl.Ffdh.Arm.Domain.ret 1)
-        (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend))))
+        (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedCheckDomain.main (mop backend) backend.dbl)))
       (fun _ _ => True) := by
     apply iteKnown_ct (!(BitVec.ofNat 32 (recognize groups p.k p.dom) == 0))
       (fun s h => by change some (!s.z) = _; rw [h.2])
@@ -1226,7 +1229,7 @@ theorem body_ct (backend : MontBackend) {p : Inputs} {slots : List Nat}
 theorem fn_ct (backend : MontBackend) {p : Inputs} :
     RelCT isa (fun s t => Input p s ∧ Input p t ∧ s.sp = t.sp ∧
       s.syms tableSym = t.syms tableSym)
-      (VG.Impl.Ffdh.Arm.SharedCheckDomain.code (mop backend)) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedCheckDomain.code (mop backend) backend.dbl) (fun _ _ => True) := by
   let P := fun a : State => ∃ s, Input p s ∧ a = entered s
   let Q := fun a : State => (Context p [0, 32, 28, 24] a ∧ DomainCallMemory p a) ∧
     VettedGroups.TableAt (a.syms tableSym) groups a

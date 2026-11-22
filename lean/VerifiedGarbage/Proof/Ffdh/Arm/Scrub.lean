@@ -275,45 +275,46 @@ theorem sievedParameterSearchOut :
 
 open VG.Arm.FrameStack VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
-theorem checkPublicStub : CodeOk (Impl.Ffdh.Arm.SharedCheckPublic.code (MontCall.op "" (holeStub 40))) 176 := by
+theorem checkPublicStub : CodeOk (Impl.Ffdh.Arm.SharedCheckPublic.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)) 176 := by
   lit_decide
 
 theorem checkPublicOk (b : MontBackend) : CodeOk (SharedCheckPublic.calledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (SharedCheckPublic.code b) by have := b.mulOk; fill_holes).codeOk checkPublicStub)
+  b.callerOk _ _ ((show FillB _ (SharedCheckPublic.code b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk checkPublicStub)
 
 theorem checkDomainStub :
-    CodeOk (Impl.Ffdh.Arm.SharedCheckDomain.code (MontCall.op "" (holeStub 40))) 176 := by
+    CodeOk (Impl.Ffdh.Arm.SharedCheckDomain.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)) 176 := by
   lit_decide
 
 theorem checkDomainOk (b : MontBackend) : CodeOk (SharedCheckDomain.calledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (SharedCheckDomain.code b) by have := b.mulOk; fill_holes).codeOk checkDomainStub)
+  b.callerOk _ _ ((show FillB _ (SharedCheckDomain.code b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk checkDomainStub)
 
 theorem checkPrivateStub :
-    CodeOk (Impl.Ffdh.Arm.SharedCheckPrivate.code (MontCall.op "" (holeStub 40))) 176 := by
+    CodeOk (Impl.Ffdh.Arm.SharedCheckPrivate.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)) 176 := by
   lit_decide
 
 theorem checkPrivateOk (b : MontBackend) : CodeOk (SharedCheckPrivate.calledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (SharedCheckPrivate.code b) by have := b.mulOk; fill_holes).codeOk checkPrivateStub)
+  b.callerOk _ _ ((show FillB _ (SharedCheckPrivate.code b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk checkPrivateStub)
 
-theorem deriveStub : CodeOk (Impl.Ffdh.Arm.SharedDerive.code (MontCall.op "" (holeStub 40))) 176 := by
+theorem deriveStub : CodeOk (Impl.Ffdh.Arm.SharedDerive.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)) 176 := by
   lit_decide
 
 theorem deriveOk (b : MontBackend) : CodeOk (SharedDerive.calledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (SharedDerive.code b) by have := b.mulOk; fill_holes).codeOk deriveStub)
+  b.callerOk _ _ ((show FillB _ (SharedDerive.code b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk deriveStub)
 
-theorem exchangeStub : CodeOk (Impl.Ffdh.Arm.SharedExchange.code (MontCall.op "" (holeStub 40))) 176 := by
+theorem exchangeStub : CodeOk (Impl.Ffdh.Arm.SharedExchange.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)) 176 := by
   lit_decide
 
 theorem exchangeOk (b : MontBackend) : CodeOk (SharedExchange.calledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (SharedExchange.code b) by have := b.mulOk; fill_holes).codeOk exchangeStub)
+  b.callerOk _ _ ((show FillB _ (SharedExchange.code b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk exchangeStub)
 
 theorem precomputeStub :
-    CodeOk (Impl.Ffdh.Arm.CombPrecompute.code (MontCall.op "" (holeStub 40)) VettedBound.code) 176 := by
+    CodeOk (Impl.Ffdh.Arm.CombPrecompute.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)
+      VettedBound.code) 176 := by
   lit_decide
 
 theorem precomputeOk (b : MontBackend) : CodeOk (combPrecomputeCalledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (Impl.Ffdh.Arm.CombPrecompute.code (MontCall.op b.name b.mul) VettedBound.code)
-    by have := b.mulOk; fill_holes).codeOk precomputeStub)
+  b.callerOk _ _ ((show FillB _ (Impl.Ffdh.Arm.CombPrecompute.code (MontCall.op b.name b.mul) b.dbl VettedBound.code)
+    by have := b.mulOk; have := b.dblOk; fill_holes).codeOk precomputeStub)
 
 theorem cachedAttemptStub : CodeOk (Impl.Ffdh.Arm.CachedKeyGenerate.code CachedKeyGenerate.prepare
     CachedKeyGenerate.sample

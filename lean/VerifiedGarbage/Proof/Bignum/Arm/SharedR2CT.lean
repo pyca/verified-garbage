@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 public import VerifiedGarbage.Impl.Bignum.Arm.SharedR2
 public import VerifiedGarbage.Proof.Bignum.Arm.R2
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpDoubling
 
 /-! Shared R-squared setup retains RSA's public-width timing discipline. -/
 
@@ -53,10 +54,11 @@ abbrev LoopReady (base : BitVec 32) (len w : Nat) (P : State → Prop) (s : Stat
 
 theorem r2_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
     (K : TwoExp.Montgomery base len w P regions) (ct : TwoExp.MontgomeryTiming K)
+    (D : TwoExp.Doubling base len w P regions) (dct : TwoExp.DoublingTiming D)
     (countFits : 128 * w < 2 ^ 32) :
     RelCT isa (fun s t => (ArithmeticReady base len w s ∧ P s) ∧
       (ArithmeticReady base len w t ∧ P t) ∧ s.sp = t.sp)
-      (VG.Impl.Bignum.Arm.SharedR2.r2 K.op) (fun _ _ => True) := by
+      (VG.Impl.Bignum.Arm.SharedR2.r2 K.op D.dbl) (fun _ _ => True) := by
   have initPost (s : State) (h : ArithmeticReady base len w s ∧ P s) :
       WP isa r2Init s (LoopReady base len w P) := by
     refine WP.mono (r2Init_ok s h.1) ?_
@@ -68,15 +70,16 @@ theorem r2_ct {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : L
     (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h))
     (fun _ _ h => h.2.2)).wp (fun s t h => ⟨initPost s h.1, initPost t h.2.1⟩)
   have loopPost (s : State) (h : LoopReady base len w P s) :
-      WP isa doubleLoop s (SqReady base len w P w) := by
-    refine WP.mono (r2Loop_ok s h.1.1 h.1.2.1 h.1.2.2 countFits) ?_
-    rintro t ⟨sq, frame, rest⟩
-    exact ⟨⟨_, sq⟩, K.stable frame rest h.2⟩
+      WP isa (DoubleCall.loop D.dbl) s (SqReady base len w P w) := by
+    refine WP.mono (sharedR2Loop_ok D s h.1.1 h.1.2.1 h.1.2.2 h.2 countFits) ?_
+    rintro t ⟨sq, pt, _, _⟩
+    exact ⟨⟨_, sq⟩, pt⟩
   have loop : RelCT isa (fun s t => s.sp = t.sp ∧ LoopReady base len w P s ∧ LoopReady base len w P t)
-      doubleLoop (fun _ _ => True) := by
+      (DoubleCall.loop D.dbl) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     have hw : 2 ≤ w := h.2.1.1.1.width ▸ h.2.1.1.1.layout.1
-    exact doubleLoop_ct (by omega_using [hw]) (by omega_using [countFits]) s t tr1 tr2 u v ⟨h.2.1.1.1, h.2.2.1.1, h.1⟩ e1 e2
+    exact D.loop_ct dct (by omega_using [hw]) (by omega_using [countFits]) s t tr1 tr2 u v
+      ⟨⟨h.2.1.1.1, h.2.1.1.2.2, h.2.1.2⟩, ⟨h.2.2.1.1, h.2.2.1.2.2, h.2.2.2⟩, h.1⟩ e1 e2
   have loopCT := (relCT_keep_sp loop (fun _ _ h => h.1)).wp
     (fun s t h => ⟨loopPost s h.2.1, loopPost t h.2.2⟩)
   unfold VG.Impl.Bignum.Arm.SharedR2.r2

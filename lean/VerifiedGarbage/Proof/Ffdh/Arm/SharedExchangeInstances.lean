@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import Init.Data.BitVec.Basic
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedExchange
@@ -98,7 +99,7 @@ theorem main_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (output : OutputBuffer p.output p.k s)
     (workspaceSep : Region.Disjoint ⟨State.addr p.base, 8 * p.len⟩ ⟨State.addr p.output, p.k⟩)
     (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.output, p.k⟩) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) s fun t =>
       t.gpr .r0 = (if sharedAccepted p yb xb then 1 else 0) ∧
       Spec.Rsa.bytesAt t.mem (State.addr p.output) p.k =
         (if sharedAccepted p yb xb then Spec.Rsa.i2osp (sharedValue p yb xb) p.k else List.replicate p.k 0) ∧
@@ -197,7 +198,7 @@ theorem body_ok (backend : MontBackend) (s : State) {p : Inputs} {slots : List N
     (output : OutputBuffer p.output p.k s)
     (workspaceSep : Region.Disjoint ⟨State.addr p.base, 8 * p.len⟩ ⟨State.addr p.output, p.k⟩)
     (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.output, p.k⟩) :
-    WP isa (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl)) s fun t =>
       (Spec.Rsa.modulusValid p.P p.k = true → exchangeResult p yb xb t) ∧
       Frame (writes p s) s.mem t.mem := by
   unfold VG.Impl.Ffdh.Arm.Domain.head
@@ -261,7 +262,7 @@ theorem entered_ok (backend : MontBackend) (s : State) {p : Inputs} {yb xb : Lis
     (workspaceSep : Region.Disjoint ⟨State.addr p.base, 8 * p.len⟩ ⟨State.addr p.output, p.k⟩)
     (stackSep : Region.Disjoint ⟨State.addr s.sp, 72⟩ ⟨State.addr p.output, p.k⟩) :
     WP isa (.seq (.block VG.Impl.Ffdh.Arm.Domain.Exchange.entry)
-      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)))) s fun t =>
+      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl))) s fun t =>
         (Spec.Rsa.modulusValid p.P p.k = true → exchangeResult p yb xb t) ∧
         Frame (writes p s) s.mem t.mem := by
   rw [WP.seq_iff]
@@ -287,7 +288,7 @@ structure FnInput (p : Inputs) (yb xb : List Byte) (s : State) : Prop where
   saved : ∀ r ∈ writes p (entered s), (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Disjoint r
 
 theorem fn_ok (backend : MontBackend) (s : State) {p : Inputs} {yb xb : List Byte} (h : FnInput p yb xb s) :
-    WP isa (VG.Impl.Ffdh.Arm.SharedExchange.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t => abiPreserved s t ∧
+    WP isa (VG.Impl.Ffdh.Arm.SharedExchange.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) s fun t => abiPreserved s t ∧
       (Spec.Rsa.modulusValid p.P p.k = true → exchangeResult p yb xb t) := by
   unfold VG.Impl.Ffdh.Arm.SharedExchange.code
   refine framed_of_separate _ s h.input.stackFits (writes p (entered s))
@@ -394,7 +395,7 @@ namespace VG.Proof.Ffdh.Arm.SharedExchange
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
 def code (b : MontBackend) : Prog isa :=
-  VG.Impl.Ffdh.Arm.SharedExchange.code (MontCall.op b.name b.mul)
+  VG.Impl.Ffdh.Arm.SharedExchange.code (MontCall.op b.name b.mul) b.dbl
 
 end VG.Proof.Ffdh.Arm.SharedExchange
 
@@ -507,7 +508,7 @@ theorem prepare_power (backend : MontBackend) (s : State) {p : Inputs} {slots : 
     (peerLength : yb.length = p.k) (large : 1 < p.P) (odd : p.P % 2 = 1)
     (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) :
     WP isa (VG.Impl.Ffdh.Arm.NormalizedPrepare.prepareAt
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) 24) s (PowerInput p slots yb xb) := by
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl 24) s (PowerInput p slots yb xb) := by
   refine WP.mono (domainNormalizedPrepareAt24_ok backend s h.context h.calls.toDomainCallMemory stable h0 h24 h32 large odd normalized) ?_
   rintro u ⟨context, ready, modulus, r2, frame, rest⟩
   have sourceSep {src : BitVec 32} {bs : List Byte} (source : Octets p.base src p.len bs s)
@@ -581,7 +582,7 @@ theorem main_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb xb1 
     (large : 1 < p.P) (odd : p.P % 2 = 1)
     (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) :
     RelCT isa (fun s t => MainInput p slots yb xb1 s ∧ MainInput p slots yb xb2 t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) (fun _ _ => True) := by
   have prepare := (domainNormalizedPrepareAt24_ct backend stable h0 h24 h32 large odd normalized).mono
     (P' := fun (s t : State) => MainInput p slots yb xb1 s ∧ MainInput p slots yb xb2 t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.context,h.1.calls.toDomainCallMemory⟩,
@@ -622,7 +623,7 @@ theorem body_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb xb1 
     (peerLength : yb.length = p.k) (positive : 0 < xb1.length) (fits : xb1.length < 2 ^ 32)
     (count : p.slotValue 44 = BitVec.ofNat 32 xb1.length) (length : xb1.length = xb2.length) :
     RelCT isa (fun s t => MainInput p slots yb xb1 s ∧ MainInput p slots yb xb2 t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul))) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl)) (fun _ _ => True) := by
   let Q := fun (xb : List Byte) (s : State) => MainInput p (60 :: 56 :: slots) yb xb s ∧
     s.z = Spec.Rsa.modulusValid p.P p.k
   have head := (head_ct stable h0 h24 h32).mono
@@ -652,7 +653,7 @@ theorem body_ct (backend : MontBackend) {p : Inputs} {slots : List Nat} {yb xb1 
     · exact Or.inl (by decide)
     · exact saved d hd
   have branches : RelCT isa (fun s t => Q xb1 s ∧ Q xb2 t ∧ s.sp = t.sp)
-      (.ite .eq (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (VG.Impl.Ffdh.Arm.Domain.ret 0)) (fun _ _ => True) := by
+      (.ite .eq (VG.Impl.Ffdh.Arm.SharedExchange.main (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) (VG.Impl.Ffdh.Arm.Domain.ret 0)) (fun _ _ => True) := by
     apply RelCT.ite (fun s t h => by change some s.z = some t.z; rw [h.1.2, h.2.1.2])
     · intro s t tr1 tr2 u v h e1 e2
       have valid : Spec.Rsa.modulusValid p.P p.k = true := by
@@ -686,7 +687,7 @@ open VG VG.Arm VG.Proof.Bignum.Arm
 
 theorem fn_ct (backend : MontBackend) {p : Inputs} {yb xb1 xb2 : List Byte} (length : xb1.length = xb2.length) :
     RelCT isa (fun s t => FnInput p yb xb1 s ∧ FnInput p yb xb2 t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.SharedExchange.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) (fun _ _ => True) := by
+      (VG.Impl.Ffdh.Arm.SharedExchange.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) (fun _ _ => True) := by
   let P := fun (xb : List Byte) (a : State) => ∃ s, FnInput p yb xb s ∧ a = entered s
   have entry := exchangeEntry_ct.mono
     (P' := fun (s t : State) => P xb1 s ∧ P xb2 t ∧ s.sp = t.sp)
@@ -725,7 +726,7 @@ namespace VG.Proof.Ffdh.Arm.SharedExchange
 open VG VG.Arm
 
 theorem contract_ct (backend : Bignum.Arm.MontBackend) : ConstantTime isa (Spec.Ffdh.exchangeContract abi 176).pre
-    (Spec.Ffdh.exchangeContract abi 176).pub (VG.Impl.Ffdh.Arm.SharedExchange.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) := by
+    (Spec.Ffdh.exchangeContract abi 176).pub (VG.Impl.Ffdh.Arm.SharedExchange.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   obtain ⟨p, yb, xb, base, out, domain, peer, scalar, count, capacity, privateCount,
     domainBytes, peerBytes, scalarBytes, inputS⟩ := data s hs

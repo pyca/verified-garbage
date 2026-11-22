@@ -25,11 +25,11 @@ def tail (op : Nat → Nat → Nat → Prog isa) : Prog isa := withQ
 def publicCheck (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (importAt 1 36 32)
   (.seq (VG.Impl.Ffdh.Arm.inRange 1) (ifFlag (tail op) (ret 0)))
 
-def main (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt op 24) (.seq (importAt 1 40 44)
+def main (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq (VG.Impl.Ffdh.Arm.SharedPrepare.prepareAt op dbl 24) (.seq (importAt 1 40 44)
     (.seq CheckPrivate.scalarRange (ifFlag (publicCheck op) (ret 2))))
 
-def code (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  VG.Impl.Ffdh.Arm.framed (.seq (.block CheckPrivate.entry) (head (main op)))
+def code (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  VG.Impl.Ffdh.Arm.framed (.seq (.block CheckPrivate.entry) (head (main op dbl)))
 
 end VG.Impl.Ffdh.Arm.SharedCheckPrivate

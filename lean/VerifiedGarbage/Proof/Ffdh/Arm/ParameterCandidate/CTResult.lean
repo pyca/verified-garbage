@@ -48,6 +48,7 @@ import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.NormalizedPrepareCT
+import VerifiedGarbage.Proof.Bignum.Arm.TwoExpDoubling
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 meta import VerifiedGarbage.Impl.Ffdh.Arm.CandidatePrepare
@@ -512,19 +513,19 @@ theorem candidatePrepare_ct {base src : BitVec 32} {len k : Nat}
     dsimp only [Spec.Rsa.modulusWords]
     omega_using [this]
   have branch : RelCT isa (fun s t => C s ∧ C t ∧ s.sp = t.sp)
-      (.ite .eq (VG.Impl.Ffdh.Arm.SharedPrepare.code K.op)
-        (VG.Impl.Ffdh.Arm.NormalizedPrepare.code K.op))
+      (.ite .eq (VG.Impl.Ffdh.Arm.SharedPrepare.code K.op VG.Impl.Bignum.Arm.doubleLoopMultiply)
+        (VG.Impl.Ffdh.Arm.NormalizedPrepare.code K.op VG.Impl.Bignum.Arm.doubleLoopMultiply))
       (fun _ _ => True) := by
     refine RelCT.ite (fun s t h => by change some s.z = some t.z;rw [h.1.2,h.2.1.2]) ?_ ?_
     · intro s t trS trT u v h eS eT
-      exact sharedPrepare_ct K ct (countFits s h.1.1.1) _ _ _ _ _ _
+      exact sharedPrepare_ct K ct _ (TwoExp.inlineDoublingTiming _ _ _ P regions K.workspace K.stable) (countFits s h.1.1.1) _ _ _ _ _ _
         ⟨⟨h.1.1.1.1.1,h.1.1.1.2⟩,⟨h.1.2.1.1.1.1,h.1.2.1.1.2⟩,h.1.2.2⟩ eS eT
     · intro s t trS trT u v h eS eT
       have notBoundary : k % 8 ≠ 1 := by
         have hz : s.z = false := Option.some.inj h.2
         rw [h.1.1.2] at hz
         exact of_decide_eq_false hz
-      exact normalizedPrepare_ct K ct (countFits s h.1.1.1) _ _ _ _ _ _
+      exact normalizedPrepare_ct K ct _ (TwoExp.inlineDoublingTiming _ _ _ P regions K.workspace K.stable) (countFits s h.1.1.1) _ _ _ _ _ _
         ⟨⟨h.1.1.1.1.1,h.1.1.1.2,h.1.1.1.1.2.resolve_left notBoundary⟩,
           ⟨h.1.2.1.1.1.1,h.1.2.1.1.2,h.1.2.1.1.1.2.resolve_left notBoundary⟩,h.1.2.2⟩ eS eT
   unfold VG.Impl.Ffdh.Arm.CandidatePrepare.code

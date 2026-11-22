@@ -30,6 +30,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 public import VerifiedGarbage.Impl.Ffdh.Arm.CandidatePrepare
 public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
 import VerifiedGarbage.Proof.Ffdh.Arm.NormalizedPrepare
+import VerifiedGarbage.Proof.Bignum.Arm.TwoExpDoubling
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
 import VerifiedGarbage.Proof.Rc2.PairMem
@@ -228,7 +229,7 @@ theorem candidatePrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
       (And.intro (by simpa only [memory] using frame) ((rest.mono (by simp [roundClobbers])).trans rt)))))
   refine WP.ite v.z rfl ?_ ?_
   · intro _
-    refine WP.mono (sharedPrepare_ok v K input hv) ?_
+    refine WP.mono (sharedPrepare_ok v K (TwoExp.inlineDoubling _ _ _ P regions K.workspace K.stable) input hv) ?_
     rintro t ⟨ready,n,r2,pt,frame,rt⟩
     exact finish t ready n r2 pt frame rt
   · intro selected
@@ -236,7 +237,7 @@ theorem candidatePrepare_ok (s : State) {base src : BitVec 32} {len k : Nat}
       rw [branch] at selected
       simpa only [decide_eq_false_iff_not] using selected
     have bound := normalized.resolve_left notBoundary
-    refine WP.mono (normalizedPrepare_ok v K input hv (by rw [memory];exact bound)) ?_
+    refine WP.mono (normalizedPrepare_ok v K (TwoExp.inlineDoubling _ _ _ P regions K.workspace K.stable) input hv (by rw [memory];exact bound)) ?_
     rintro t ⟨ready,n,r2,pt,frame,rt⟩
     exact finish t ready n r2 pt frame rt
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.Arm.CombPrecompute
 public import VerifiedGarbage.Proof.Ffdh.Arm.VettedBoundInstance
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeMainCT
@@ -771,7 +772,7 @@ theorem combPrecomputeEntered_ok (backend : MontBackend) (s : State) {p : Inputs
     (h : CombPrecomputeFnInput p s) :
     WP isa (.seq (.block VG.Impl.Ffdh.Arm.CombPrecompute.entry)
       (VG.Impl.Ffdh.Arm.CombPrecompute.main
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VG.Proof.Ffdh.Arm.VettedBound.code))
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VG.Proof.Ffdh.Arm.VettedBound.code))
       (entered s) fun t =>
       Frame (combPrecomputeWrites p (entered s)) (entered s).mem t.mem ∧ t.gpr .r0=1 ∧
       Spec.Ffdh.generationPrecompute p.k p.dom=
@@ -847,7 +848,7 @@ theorem combPrecomputeEntered_ok (backend : MontBackend) (s : State) {p : Inputs
 theorem combPrecomputeFn_ok (backend : MontBackend) (s : State) {p : Inputs}
     (h : CombPrecomputeFnInput p s) :
     WP isa (VG.Impl.Ffdh.Arm.CombPrecompute.code
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VG.Proof.Ffdh.Arm.VettedBound.code) s fun t =>
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VG.Proof.Ffdh.Arm.VettedBound.code) s fun t =>
       abiPreserved s t ∧ t.gpr .r0=1 ∧ Spec.Ffdh.generationPrecompute p.k p.dom=
         some (Spec.Rsa.wordsAt t.mem (State.addr p.output) (Spec.Ffdh.generationPrecomputedWords p.k)) := by
   unfold VG.Impl.Ffdh.Arm.CombPrecompute.code
@@ -883,7 +884,7 @@ open VG.Impl.Ffdh.Arm.VettedGroups (tableConsts)
 theorem combPrecompute_correct (backend : MontBackend) (s : State)
     (pre : (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.CombPrecompute.code
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code) s tr t ∧
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code) s tr t ∧
       abiPreserved s t ∧
       (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).post s t := by
   obtain ⟨p,_base,output,domain,count,_capacity,domainBytes,ctxLen,_private,_public,_entropy,input⟩ :=
@@ -911,11 +912,11 @@ theorem combPrecomputeFn_ct (backend : MontBackend) {p : Inputs}
       RelCT isa (fun s t=>CombBuilder.EnterInput p sp s ∧ CombBuilder.EnterInput p sp t ∧
         VettedGroups.environment.publicRel s t ∧ s.sp=t.sp)
         (VG.Impl.Ffdh.Arm.CombPrecompute.main
-          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code) (fun _ _=>True)) :
+          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code) (fun _ _=>True)) :
     RelCT isa (fun s t => CombPrecomputeFnInput p s ∧ CombPrecomputeFnInput p t ∧
       VettedGroups.environment.publicRel s t ∧ s.sp=t.sp)
       (VG.Impl.Ffdh.Arm.CombPrecompute.code
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code) (fun _ _=>True) := by
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code) (fun _ _=>True) := by
   let P := fun a : State => ∃s,CombPrecomputeFnInput p s ∧ a=entered s
   let Q := fun a : State => ∃sp,CombBuilder.EnterInput p sp a
   have wp (a : State) (h : P a) : WP isa (.block VG.Impl.Ffdh.Arm.CombPrecompute.entry) a Q := by
@@ -943,7 +944,7 @@ theorem combPrecomputeFn_ct (backend : MontBackend) {p : Inputs}
   have body : RelCT isa (fun s t=>P s ∧ P t ∧ VettedGroups.environment.publicRel s t ∧ s.sp=t.sp)
       (.seq (.block VG.Impl.Ffdh.Arm.CombPrecompute.entry)
         (VG.Impl.Ffdh.Arm.CombPrecompute.main
-          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code)) (fun _ _=>True) := by
+          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code)) (fun _ _=>True) := by
     refine (entry.wp (fun s t h=>⟨wp s h.1,wp t h.2.1⟩)).seq ?_
     intro s t tr1 tr2 u v ⟨⟨pubEq,sp⟩,⟨sp1,h1⟩,⟨sp2,h2⟩⟩ e1 e2
     have eq : sp1=sp2 := h1.fixed.symm.trans (sp.trans h2.fixed)
@@ -977,11 +978,11 @@ theorem combPrecompute_contract_ct (backend : MontBackend)
       RelCT isa (fun s t=>CombBuilder.EnterInput p sp s ∧ CombBuilder.EnterInput p sp t ∧
         VettedGroups.environment.publicRel s t ∧ s.sp=t.sp)
         (VG.Impl.Ffdh.Arm.CombPrecompute.main
-          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code) (fun _ _=>True)) :
+          (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code) (fun _ _=>True)) :
     ConstantTime isa (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).pre
       (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176).pub
       (VG.Impl.Ffdh.Arm.CombPrecompute.code
-        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code) := by
+        (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   obtain ⟨p,base,output,domain,count,capacity,domainBytes,_words,privateAlias,publicAlias,entropyAlias,inputS⟩ :=
     combPrecompute_data s hs
@@ -1016,7 +1017,7 @@ open VG.Impl.Ffdh.Arm.VettedGroups (tableConsts)
 
 theorem combPrecompute_verified (backend : MontBackend) :
     Verified target (VG.Impl.Ffdh.Arm.CombPrecompute.code
-      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code)
+      (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code)
       (Spec.Ffdh.generationPrecomputeContract (abi.withConsts tableConsts) 176) :=
   ⟨combPrecompute_correct backend,
     combPrecompute_contract_ct backend (CombBuilder.main_ct backend),combPrecompute_sat⟩
@@ -1024,7 +1025,7 @@ theorem combPrecompute_verified (backend : MontBackend) :
 /-- The caller transform is part of the registered initializer. -/
 def combPrecomputeCalledCode (backend : MontBackend) : Prog isa :=
   backend.caller.code (VG.Impl.Ffdh.Arm.CombPrecompute.code
-    (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) VettedBound.code)
+    (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul) backend.dbl VettedBound.code)
 
 theorem combPrecomputeCalled_verified (backend : MontBackend) :
     Verified target (combPrecomputeCalledCode backend)

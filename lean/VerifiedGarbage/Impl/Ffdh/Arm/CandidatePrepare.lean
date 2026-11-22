@@ -12,8 +12,9 @@ open VG VG.Arm
 
 def choose : List Instr := [.dp .and .r1 .r6 (.imm 7), .cmp .r1 (.imm 1)]
 
-/-- Both preparations' Montgomery products are `op`. -/
+/-- Both preparations' Montgomery products are `op`; their doublings are inline. -/
 def code (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (.block choose)
-  (.ite .eq (SharedPrepare.code op) (NormalizedPrepare.code op))
+  (.ite .eq (SharedPrepare.code op VG.Impl.Bignum.Arm.doubleLoopMultiply)
+    (NormalizedPrepare.code op VG.Impl.Bignum.Arm.doubleLoopMultiply))
 
 end VG.Impl.Ffdh.Arm.CandidatePrepare

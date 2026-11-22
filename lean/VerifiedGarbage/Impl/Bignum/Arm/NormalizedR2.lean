@@ -24,7 +24,7 @@ def seed : List Instr := top ++ count
 
 def init : Prog isa := .seq constants (.block seed)
 
-def r2 (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq init (.seq doubleLoop (SharedR2.squares op))
+def r2 (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq init (.seq (DoubleCall.loop dbl) (SharedR2.squares op))
 
 end VG.Impl.Bignum.Arm.NormalizedR2

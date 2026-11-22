@@ -50944,6 +50944,14 @@ bx lr",
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_mont_double.rs"]
+pub(crate) mod vg_rsa_mont_double;
+
+#[rustfmt::skip]
+#[path = "internal/vg_rsa_mont_double_umaal.rs"]
+pub(crate) mod vg_rsa_mont_double_umaal;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_mont_mul.rs"]
 pub(crate) mod vg_rsa_mont_mul;
 
