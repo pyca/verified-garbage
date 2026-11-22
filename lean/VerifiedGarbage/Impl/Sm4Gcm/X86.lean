@@ -33,9 +33,10 @@ What differs:
   arguments at other positions (`cryptEntry`, `finEntry`, `oneEntry`), and
   the working space `W + 512` on goes only to `vg_ghash`.
 
-`init` takes the implementation of the key schedule it calls (`keyCall`),
-so that it is emitted with each
-(`Proof/Variants/Sm4ExpandKey/X86.lean`).
+The functions that encrypt take the implementation of `vg_sm4_ctr32` they
+call (`ctrCall`), and `init` that of the key schedule too (`keyCall`), so
+that each is emitted with each (`Proof/Variants/Sm4Ctr32/X86.lean`,
+`Proof/Variants/Sm4ExpandKey/X86.lean`).
 
 Only the pointers, the lengths, `tag_len` and (for `open`) whether the tag
 is right can affect timing, as for AES-GCM.
@@ -50,8 +51,8 @@ open VG.Impl.AesGcm.X86 (Fn Callees at_ imm slot argOp keep zero4 restore entry 
   cryptHead lens absorb flush recv cmp tagLenOk tagOut setText textAbsorb oneAad setData
   tO uO ctxO alO ahO xlO xhO dataO lenO aadO nlO zO tpO tglO auxO stO dO nO bO)
 
-/-- `vg_sm4_ctr32`, as registered (`Artifacts/Sm4Gcm/X86.lean`): its
-working space in a frame of its own. -/
+/-- `vg_sm4_ctr32`'s code in the baseline ISA, as registered
+(`Artifacts/Sm4Gcm/X86.lean`): its working space in a frame of its own. -/
 def ctrFn : Fn :=
   ⟨"vg_sm4_ctr32", Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ctr32⟩
 
@@ -64,9 +65,9 @@ def keyFn : Fn :=
 
 /-! ## Calls -/
 
-/-- `vg_sm4_ctr32(eax, edx, ebx, edi)`. -/
-def ctrCall : Prog isa :=
-  .frame (.push [.edi, .ebx, .edx, .eax]) (.call ctrFn.name ctrFn.code) (.pop .eax 4)
+/-- `vg_sm4_ctr32(eax, edx, ebx, edi)`, by its implementation `t`. -/
+def ctrCall (t : Fn) : Prog isa :=
+  .frame (.push [.edi, .ebx, .edx, .eax]) (.call t.name t.code) (.pop .eax 4)
 
 /-- `vg_sm4_expand_key(eax, edx)`, by its implementation `k`. -/
 def keyCall (k : Fn) : Prog isa :=
@@ -80,29 +81,29 @@ def ctrArgs : List Instr :=
   [.mov .eax (slot ctxO), .mov .edx (.reg .esi), .alu .add .edx (imm 48)]
 
 /-- Whole blocks at `dO`, by `vg_sm4_ctr32`. -/
-def cryptWhole : Prog isa :=
+def cryptWhole (t : Fn) : Prog isa :=
   .seq (.block splitWhole)
-    (.ite .e (.block []) (.seq (.block ctrArgs) ctrCall))
+    (.ite .e (.block []) (.seq (.block ctrArgs) (ctrCall t)))
 
 /-- The last `nO` bytes at `dO`, with a new keystream block. -/
-def cryptTail : Prog isa :=
+def cryptTail (t : Fn) : Prog isa :=
   .seq (.block [.mov .eax (slot nO), .alu .test .eax (.reg .eax)])
     (.ite .e (.block [])
       (.seq (.block (([.mov .eax (imm 0), .store (at_ .esi 64) .eax, .store (at_ .esi 68) .eax,
           .store (at_ .esi 72) .eax, .store (at_ .esi 76) .eax, .mov .ebx (.reg .esi), .alu .add .ebx (imm 64),
           .mov .edi (imm 1)] : List Instr) ++ ctrArgs))
-      (.seq ctrCall
+      (.seq (ctrCall t)
       (.seq (.block [.mov .edi (slot dO), .mov .edx (.reg .esi), .alu .add .edx (imm 64), .mov .ecx (slot nO)])
         xorLoop))))
 
 /-- The `nO` bytes at `dO` XORed with the keystream, `bO` bytes into the
 current keystream block (AES-GCM's `crypt`). -/
-def crypt : Prog isa :=
+def crypt (t : Fn) : Prog isa :=
   .seq (.block [.mov .eax (slot nO), .alu .test .eax (.reg .eax)])
     (.ite .e (.block [])
       (.seq (.block [.mov .eax (slot bO), .alu .test .eax (.reg .eax)])
       (.seq (.ite .e (.block []) cryptHead)
-      (.seq cryptWhole cryptTail))))
+      (.seq (cryptWhole t) (cryptTail t)))))
 
 section
 variable (c : Callees)
@@ -112,13 +113,13 @@ variable (c : Callees)
 /-- The tag into `W + o`, for the lengths kept at `W + al`, …: the lengths
 block absorbed, and `GHASH ⊕ CIPH_K(J₀)`, with `vg_sm4_ctr32` on it with the
 counter block `J₀` (at `esi`). -/
-def tag (o al ah tl th : Nat) : Prog isa :=
+def tag (t : Fn) (o al ah tl th : Nat) : Prog isa :=
   .seq (lens c 16 al ah tl th)
   (.seq (.block [.mov .eax (.mem (at_ .esi 16)), .mov .ecx (.mem (at_ .esi 20)), .mov .edx (.mem (at_ .esi 24)),
       .mov .ebx (.mem (at_ .esi 28)), .store (at_ .ebp o) .eax, .store (at_ .ebp (o + 4)) .ecx,
       .store (at_ .ebp (o + 8)) .edx, .store (at_ .ebp (o + 12)) .ebx, .mov .ebx (.reg .ebp),
       .alu .add .ebx (imm o), .mov .edi (imm 1), .mov .eax (slot ctxO), .mov .edx (.reg .esi)])
-    ctrCall)
+    (ctrCall t))
 
 /-! ## The functions -/
 
@@ -126,14 +127,14 @@ def tag (o al ah tl th : Nat) : Prog isa :=
 context's first 128 bytes, by its implementation `k`, then
 `H = CIPH_K(0¹²⁸)` into its last 16, the encryption of a zero block at
 `ctx + 240` from a zero counter block at `W + 96`. -/
-def init (k : Fn) : Prog isa :=
+def init (k t : Fn) : Prog isa :=
   .seq (entry 2 [.mov .esi (argOp 1), .mov .eax (argOp 0), .mov .edx (.reg .esi)])
   (.seq (keyCall k)
   (.seq (.block (([.mov .eax (imm 0), .store (at_ .esi 240) .eax, .store (at_ .esi 244) .eax,
       .store (at_ .esi 248) .eax, .store (at_ .esi 252) .eax] : List Instr) ++ zero4 tO ++
       ([.mov .eax (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm tO),
         .mov .ebx (.reg .esi), .alu .add .ebx (imm 240), .mov .edi (imm 1)] : List Instr)))
-  (.seq ctrCall
+  (.seq (ctrCall t)
     (.block restore))))
 
 /-- The entry of `encrypt` and `decrypt`: `(ctx, state, aad_len (2 words),
@@ -143,12 +144,12 @@ def cryptEntry : Prog isa :=
     keep 4 xlO ++ keep 5 xhO ++ keep 6 dataO ++ keep 7 lenO)
 
 /-- `vg_sm4_gcm_stream_encrypt`. -/
-def streamEncrypt : Prog isa :=
-  .seq cryptEntry (.seq (.block setText) (.seq crypt (.seq (textAbsorb c) (.block restore))))
+def streamEncrypt (t : Fn) : Prog isa :=
+  .seq cryptEntry (.seq (.block setText) (.seq (crypt t) (.seq (textAbsorb c) (.block restore))))
 
 /-- `vg_sm4_gcm_stream_decrypt`. -/
-def streamDecrypt : Prog isa :=
-  .seq cryptEntry (.seq (textAbsorb c) (.seq (.block setText) (.seq crypt (.block restore))))
+def streamDecrypt (t : Fn) : Prog isa :=
+  .seq cryptEntry (.seq (textAbsorb c) (.seq (.block setText) (.seq (crypt t) (.block restore))))
 
 /-- The entry of `finish` and `verify`: `(ctx, state, aad_len (2 words),
 text_len (2 words), tag, …)`, with `W` the stack argument `w`, and `rest`. -/
@@ -158,22 +159,22 @@ def finEntry (w : Nat) (rest : List Instr) : Prog isa :=
 
 /-- The buffered bytes padded and absorbed, and the tag into `W + o`
 (AES-GCM's `finTag`, with `tag`). -/
-def finTag (o : Nat) : Prog isa :=
+def finTag (t : Fn) (o : Nat) : Prog isa :=
   .seq (.block [.mov .eax (slot xlO), .mov .ecx (slot alO), .mov .edx (slot xlO), .alu .or .edx (slot xhO)])
   (.seq (.ite .e (.block [.mov .eax (.reg .ecx)]) (.block []))
   (.seq (.block [.alu .and .eax (imm 15), .store (at_ .ebp bO) .eax])
-  (.seq (flush c 16) (tag c o alO ahO xlO xhO))))
+  (.seq (flush c 16) (tag c t o alO ahO xlO xhO))))
 
 /-- `vg_sm4_gcm_stream_finish(ctx, state, aad_len, text_len, tag, work)`. -/
-def streamFinish : Prog isa :=
-  .seq (finEntry 7 (keep 6 tpO)) (.seq (finTag c 0) (.seq (tagOut 0) (.block restore)))
+def streamFinish (t : Fn) : Prog isa :=
+  .seq (finEntry 7 (keep 6 tpO)) (.seq (finTag c t 0) (.seq (tagOut 0) (.block restore)))
 
 /-- `vg_sm4_gcm_stream_verify(ctx, state, aad_len, text_len, tag, tag_len, work)`. -/
-def streamVerify : Prog isa :=
+def streamVerify (t : Fn) : Prog isa :=
   .seq (finEntry 8 (keep 6 tpO ++ keep 7 tglO))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov .eax (imm 0)])
-      (.seq recv (.seq (finTag c 0) (cmp 0))))
+      (.seq recv (.seq (finTag c t 0) (cmp 0))))
     (.block restore)))
 
 /-- The entry of `seal` and `open`: `(ctx, nonce, nonce_len, aad, aad_len,
@@ -186,31 +187,31 @@ def oneEntry (w : Nat) (rest : List Instr) : Prog isa :=
 
 /-- The data (as ciphertext) absorbed and padded, and the tag into `W + o`
 (AES-GCM's `oneTag`, with `tag`). -/
-def oneTag (o : Nat) : Prog isa :=
+def oneTag (t : Fn) (o : Nat) : Prog isa :=
   .seq (.block setData)
   (.seq (absorb c 16)
   (.seq (.block [.mov .eax (slot lenO), .alu .and .eax (imm 15), .store (at_ .ebp bO) .eax])
-  (.seq (flush c 16) (tag c o alO zO lenO zO))))
+  (.seq (flush c 16) (tag c t o alO zO lenO zO))))
 
 /-- The data encrypted or decrypted, from the first counter block. -/
-def oneCrypt : Prog isa := .seq (.block setData) crypt
+def oneCrypt (t : Fn) : Prog isa := .seq (.block setData) (crypt t)
 
 /-- `vg_sm4_gcm_seal(ctx, nonce, nonce_len, aad, aad_len, data, len, tag, work)`. -/
-def «seal» : Prog isa :=
+def «seal» (t : Fn) : Prog isa :=
   .seq (oneEntry 8 (keep 7 tpO))
-    (.seq (oneAad c) (.seq oneCrypt (.seq (oneTag c 0) (.seq (tagOut 0) (.block restore)))))
+    (.seq (oneAad c) (.seq (oneCrypt t) (.seq (oneTag c t 0) (.seq (tagOut 0) (.block restore)))))
 
 /-- `vg_sm4_gcm_open(ctx, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, work)`. -/
-def «open» : Prog isa :=
+def «open» (t : Fn) : Prog isa :=
   .seq (oneEntry 9 (keep 7 tpO ++ keep 8 tglO))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov .eax (imm 0)])
       (.seq (oneAad c)
-      (.seq (oneTag c uO)
+      (.seq (oneTag c t uO)
       (.seq recv
       (.seq (cmp uO)
       (.seq (.block [.store (at_ .ebp auxO) .eax, .alu .test .eax (.reg .eax)])
-      (.seq (.ite .e (.block []) oneCrypt)
+      (.seq (.ite .e (.block []) (oneCrypt t))
         (.block [.mov .eax (slot auxO)]))))))))
     (.block restore)))
 
