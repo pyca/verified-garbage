@@ -38,6 +38,8 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
+public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
@@ -687,7 +689,7 @@ def NarrowPrimePost (base : BitVec 32) (len v : Nat) (pb : List Byte) (s t : Sta
     numAt t.mem (State.addr base) v 4 =
       2 ^ (128 * v) % safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (Spec.Rsa.os2ip pb) ∧
     t.mem.readW (off (State.addr t.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 ∧
-    Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
+    Frame [⟨State.addr base, 8 * len⟩, FrameStack.belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t
 
 /-- The factor `j.succ` (p or q), to be prepared in the narrow workspace. -/
 def CrtPrimeIn (g : CrtGeometry) (bs : Fin 7 → List Byte) (j : Fin 6) (s : State) : Prop :=
@@ -703,6 +705,9 @@ def CrtCheckPost (g : CrtGeometry) (bs : Fin 7 → List Byte) (s t : State) : Pr
     Frame (crtLiveMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t
 
 structure CrtStages where
+  /-- The Montgomery product the stages' products outside the window call
+  (`MontCall.op`): the factors' reductions, the coefficient's, and `prime`'s. -/
+  mont : MontBackend
   check : Prog isa
   prime : Nat → Prog isa
   /-- The keys the stages are for. -/
@@ -1110,7 +1115,8 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
       (g.sourceLength i.succ) (56 + 8 * i.val) (bs 1) (bs i.succ) s)
     (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ))
     (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa ((narrowPowerOf st.prime kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
+    WP isa ((narrowPowerOf (MontCall.op st.mont.name st.mont.mul) st.prime kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val))
+      s fun t =>
       let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr child) g.words 0)
       CrtShared g bs t ∧
       CrtPoweredState child (workspaceWords g.words) g.words M
@@ -1166,9 +1172,18 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     NarrowPrimePost (crtN g.base g.words) (workspaceWords g.words) v (bs j.succ) z y := hy
   rw [flagSZ, ← prime] at modY oddY r2Y
   obtain positive : 1 < M := by have := readyY.modulus; rw [modY] at this; exact this
-  obtain sharedY := sharedZ.after_narrow (frameY.mono (by simp)) restY
+  obtain sepNB : ∀ (x : State), x.sp = s.sp → ∀ r ∈ [(⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩ : Region),
+      FrameStack.belowA x.sp 48], (⟨State.addr child, 8 * workspaceWords g.words⟩ : Region).Disjoint r := by
+    intro x hx r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact sepCN
+    · rw [hx]; exact h.below_member member
+  obtain spZ : z.sp = s.sp := (restU.trans restZ).sp
+  obtain sharedY := sharedZ.after_narrowB (frameY.mono (by simp)) restY
   obtain memY := memZ.congr (sharedZ.eq_of_frame (sharedZ.child kind).2.1 member
-    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frameY.mono (by simp)) sepN)
+    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA z.sp 48])
+    (frameY.mono (by simp)) (sepNB z spZ))
   have flagNY := flagY
   -- The safe factor back to the full-width array 0.
   obtain ctxY : CrtCopyCtx g bs child slot v y :=
@@ -1207,13 +1222,15 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     ⟨sharedX, readyX, (sharedX.child kind).2.1, member, layoutX, sepCN, slotFit, hs,
       (sharedX.child kind).2.2.2.2.2.2, le⟩
   rw [WP.seq_iff]
-  refine WP.mono (crt_reduceHalf_ok x ctxX (j := 1) (by decide) half modX oddY r2X) ?_
+  refine WP.mono (crt_reduceHalf_ok st.mont x ctxX (j := 1) (by decide) half modX oddY r2X) ?_
   rintro e ⟨readyE, modE, r2E, _, inputE, frameE, restE⟩
   rw [inputX] at inputE
-  obtain sharedE := sharedX.after_narrow (frameE.mono (by simp)) restE
-  obtain flagNE := sharedX.acceptance_after_workspace sharedX.narrow_member frameE restE
+  obtain spX : x.sp = s.sp := (restU.trans (restZ.trans (restY.trans restX))).sp
+  obtain sharedE := sharedX.after_narrowB (frameE.mono (by simp)) restE
+  obtain flagNE := sharedX.acceptance_after_workspaceB sharedX.narrow_member frameE restE
   obtain eqCE := sharedX.eq_of_frame (sharedX.child kind).2.1 member
-    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frameE.mono (by simp)) sepN
+    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA x.sp 48])
+    (frameE.mono (by simp)) (sepNB x spX)
   -- The exponentiation.
   obtain expIn : NarrowExpInput (crtN g.base g.words) (g.source i.succ) (workspaceWords g.words)
       v M (Spec.Rsa.os2ip (bs 1) % M) (g.sourceLength i.succ) (56 + 8 * i.val) (bs i.succ) e := by
@@ -1288,6 +1305,8 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   rw [restSU.sp] at frameZ
   obtain spE : e.sp = s.sp := (restSU.trans (restZ.trans (restY.trans (restX.trans restE)))).sp
   rw [spE] at frameR
+  rw [spZ] at frameY
+  rw [spX] at frameE
   exact (frameU.mono (by simp)).trans ((frameZ.mono (by simp)).trans ((frameY.mono (by simp)).trans
     ((frameXC.mono (by simp)).trans ((frameE.mono (by simp)).trans ((frameR.mono (by simp)).trans
       (frameTC.mono (by simp)))))))

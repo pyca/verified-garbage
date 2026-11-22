@@ -45,6 +45,9 @@ import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayCT
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Bignum.Arm.R2CT
+import VerifiedGarbage.Proof.Bignum.Arm.SharedR2
+import VerifiedGarbage.Proof.Bignum.Arm.SharedR2CT
+import VerifiedGarbage.Proof.Bignum.Arm.MontBackendOp
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
@@ -472,7 +475,7 @@ theorem two_pow_mod_three (v : Nat) : 2 ^ (128 * v) % 3 = 1 := by
   rw [show 128 * v = 2 * (64 * v) by omega_using [], Nat.pow_mul, Nat.pow_mod]
   simp
 
-theorem r2Given_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a : BitVec 32} {j : Fin 6}
+theorem r2Given_ok (B : MontBackend) (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a : BitVec 32} {j : Fin 6}
     (hj : j = 1 ∨ j = 2) (ha : g.r2 = some a) {v M : Nat} (shared : CrtShared g bs s)
     (ready : ArithmeticReady (crtN g.base g.words) (workspaceWords g.words) v s)
     (narrow : v = narrowWords (g.sourceLength j.succ) g.words)
@@ -480,11 +483,11 @@ theorem r2Given_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a :
     (valid : (s.mem.readW (off (State.addr s.sp) 48) 32).toNat ≠ 0 → 1 < Spec.Rsa.os2ip (bs j.succ))
     (modulus : numAt s.mem (State.addr (crtN g.base g.words)) v 0 = M)
     (safe : M = safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (Spec.Rsa.os2ip (bs j.succ))) :
-    WP isa (r2Given (56 + 8 * j.val)) s fun t =>
+    WP isa (r2Given (MontCall.op B.name B.mul) (56 + 8 * j.val)) s fun t =>
       ArithmeticReady (crtN g.base g.words) (workspaceWords g.words) v t ∧
       numAt t.mem (State.addr (crtN g.base g.words)) v 0 = M ∧
       numAt t.mem (State.addr (crtN g.base g.words)) v 4 = 2 ^ (128 * v) % M ∧
-      Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s.mem t.mem ∧
+      Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA s.sp 48] s.mem t.mem ∧
       Rest roundClobbers s t := by
   obtain hv : 2 ≤ v := ready.width ▸ ready.layout.1
   obtain ⟨_, le, _, _, _, _, _⟩ := shared.narrow_fits j hj
@@ -502,7 +505,7 @@ theorem r2Given_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a :
       unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega_using [hv, same]
     refine WP.mono (r2Copy_ok u hj ha ⟨sharedU, readyU, width, by rw [flagU]; exact bit⟩) ?_
     rintro t ⟨readyT, modT, valueT, frameT, restT⟩
-    refine ⟨readyT, by rw [modT, memU]; exact modulus, ?_, by rw [← memU]; exact frameT,
+    refine ⟨readyT, by rw [modT, memU]; exact modulus, ?_, by rw [← memU]; exact frameT.mono (by simp),
       (restU.mono (by decide)).trans restT⟩
     rw [valueT, flagU, safe, memU]
     by_cases b0 : (s.mem.readW (off (State.addr s.sp) 48) 32).toNat = 0
@@ -522,17 +525,23 @@ theorem r2Given_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a :
       have := Nat.mod_lt (2 ^ (128 * v)) (by omega_using [large] : 0 < Spec.Rsa.os2ip (bs j.succ))
       omega_arith
   · refine WP.ite false (by rw [VG.Proof.X25519.Arm.eval_eq, z, decide_eq_false same]) (by simp) (fun _ => ?_)
-    refine WP.mono (r2_ok u readyU (by omega_using [narrow, le, words])) ?_
-    rintro t ⟨done, valueT, modT, frameT, restT⟩
+    obtain cs : CallStack (crtN g.base g.words) (workspaceWords g.words) u :=
+      ⟨sharedU.stack.belowFit, sharedU.stack.below.sub_right
+        (crt_region_sub_workspace sharedU.buffers.workspace sharedU.buffers.storageFits sharedU.narrow_member)⟩
+    refine WP.mono (sharedR2_ok (TwoExp.sharedMontgomery (crtN g.base g.words) u.sp (workspaceWords g.words) v B.name B.mul
+      (fun _ _ _ ho ha hb z input => B.correct z input ho ha hb) B.stackOk) u readyU ⟨cs, rfl⟩
+      (by omega_using [narrow, le, words])) ?_
+    rintro t ⟨done, valueT, modT, _, frameT, restT⟩
     obtain modU : numAt u.mem (State.addr (crtN g.base g.words)) v 0 = M := by rw [memU]; exact modulus
     rw [modU] at valueT modT
+    rw [restU.sp] at frameT
     refine ⟨done.toReady (by rw [modT]; rw [← modU]; exact readyU.modulus), modT, valueT,
       by rw [← memU]; exact frameT, (restU.mono (by decide)).trans restT⟩
 
 /-- `narrowPrime` with the given `R² mod X`. -/
-theorem crt_narrowPrimeGiven_ok {g : CrtGeometry} {bs : Fin 7 → List Byte} {a : BitVec 32} (j : Fin 6)
-    (s : State) (hj : j = 1 ∨ j = 2) (ha : g.r2 = some a) (h : CrtPrimeIn g bs j s) :
-    WP isa (narrowPrimeGiven (56 + 8 * j.val)) s (NarrowPrimePost (crtN g.base g.words) (workspaceWords g.words)
+theorem crt_narrowPrimeGiven_ok (B : MontBackend) {g : CrtGeometry} {bs : Fin 7 → List Byte} {a : BitVec 32}
+    (j : Fin 6) (s : State) (hj : j = 1 ∨ j = 2) (ha : g.r2 = some a) (h : CrtPrimeIn g bs j s) :
+    WP isa (narrowPrimeGiven (MontCall.op B.name B.mul) (56 + 8 * j.val)) s (NarrowPrimePost (crtN g.base g.words) (workspaceWords g.words)
       (narrowWords (g.sourceLength j.succ) g.words) (bs j.succ) s) := by
   obtain ⟨shared, input⟩ := h
   rw [narrowPrimeGiven, WP.seq_iff]
@@ -540,17 +549,23 @@ theorem crt_narrowPrimeGiven_ok {g : CrtGeometry} {bs : Fin 7 → List Byte} {a 
   rintro u ⟨readyU, modU, odd, flagU, frameU, restU⟩
   obtain sharedU := shared.after_narrow (frameU.mono (by simp)) restU
   obtain narrowSub := crt_region_sub_workspace shared.buffers.workspace shared.buffers.storageFits shared.narrow_member
-  refine WP.mono (r2Given_ok u (j := j) hj ha sharedU readyU rfl (by rw [flagU]; exact input.bit)
+  refine WP.mono (r2Given_ok B u (j := j) hj ha sharedU readyU rfl (by rw [flagU]; exact input.bit)
     (by rw [flagU]; exact fun ne => (input.valid ne).1) modU (by rw [flagU])) ?_
   rintro t ⟨readyT, modT, r2T, frameT, restT⟩
   obtain restST := restU.trans restT
-  refine ⟨readyT, modT, odd, r2T, ?_, frameU.trans frameT, restST⟩
+  rw [restU.sp] at frameT
+  obtain frameST : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩,
+      FrameStack.belowA s.sp 48] s.mem t.mem := (frameU.mono (by simp)).trans frameT
+  refine ⟨readyT, modT, odd, r2T, ?_, frameST, restST⟩
   rw [restST.sp]
-  obtain keep := (frameU.trans frameT).readW (a := off (State.addr s.sp) 48) (w := 32)
+  obtain keep := frameST.readW (a := off (State.addr s.sp) 48) (w := 32)
     (r := ⟨off (State.addr s.sp) 48, 4⟩) (Region.contains_self _ _)
     (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst r
-      exact (shared.stack.separate.sub_left (Offset.sub_base _ (by decide))).sub_right narrowSub) (by decide)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (shared.stack.separate.sub_left (Offset.sub_base _ (by decide))).sub_right narrowSub
+      · exact ((belowA_disjoint_from (n := 112) shared.stack.belowFit (by decide)).sub_right
+          (Offset.sub_base _ (by decide))).symm) (by decide)
   exact keep
 
 end VG.Proof.Bignum.Arm
@@ -696,9 +711,9 @@ def GivenIn (g : CrtGeometry) (bs : Fin 7 → List Byte) (j : Fin 6) (s : State)
     ArithmeticReady (crtN g.base g.words) (workspaceWords g.words) (narrowWords (g.sourceLength j.succ) g.words) s ∧
     (s.mem.readW (off (State.addr s.sp) 48) 32).toNat ≤ 1
 
-theorem r2Given_ct {bs1 bs2 : Fin 7 → List Byte} (hj : j = 1 ∨ j = 2) (ha : g.r2 = some a) :
+theorem r2Given_ct (B : MontBackend) {bs1 bs2 : Fin 7 → List Byte} (hj : j = 1 ∨ j = 2) (ha : g.r2 = some a) :
     RelCT isa (fun s t => GivenIn g bs1 j s ∧ GivenIn g bs2 j t ∧ s.sp = t.sp)
-      (r2Given (56 + 8 * j.val)) (fun _ _ => True) := by
+      (r2Given (MontCall.op B.name B.mul) (56 + 8 * j.val)) (fun _ _ => True) := by
   let v := narrowWords (g.sourceLength j.succ) g.words
   let T := fun (bs : Fin 7 → List Byte) (u : State) =>
     GivenIn g bs j u ∧ u.z = decide (v = (g.sourceLength j.succ + 7) / 8)
@@ -724,14 +739,23 @@ theorem r2Given_ct {bs1 bs2 : Fin 7 → List Byte} (hj : j = 1 ∨ j = 2) (ha : 
       refine ⟨h.1.1, h.1.2.1, ?_, h.1.2.2⟩
       unfold Spec.Rsa.primeWords Spec.Rsa.modulusWords; omega_using [same, hv]
     exact (r2Copy_ct hj ha).mono (fun _ _ h => ⟨copyIn _ h.1, copyIn _ h.2.1, h.2.2⟩) (fun _ _ _ => trivial)
-  · exact relCT_of_pre fun s _ h => (r2_ct (by
-      obtain ⟨_, le, _, _, _, _, _⟩ := h.1.1.1.narrow_fits j hj
-      have : g.words ≤ 128 := (crt_width_valid h.1.1.1.buffers.lengthValid).2.1
-      omega_using [le, this])).mono (fun _ _ h => ⟨h.1.1.2.1, h.2.1.1.2.1, h.2.2⟩) (fun _ _ _ => trivial)
+  · intro s t tr1 tr2 u w h e1 e2
+    have csOf (x : State) {bs : Fin 7 → List Byte} (hx : CrtShared g bs x) :
+        CallStack (crtN g.base g.words) (workspaceWords g.words) x :=
+      ⟨hx.stack.belowFit, hx.stack.below.sub_right
+        (crt_region_sub_workspace hx.buffers.workspace hx.buffers.storageFits hx.narrow_member)⟩
+    obtain ⟨_, le, _, _, _, _, _⟩ := h.1.1.1.narrow_fits j hj
+    have words : g.words ≤ 128 := (crt_width_valid h.1.1.1.buffers.lengthValid).2.1
+    exact SharedR2.r2_ct (TwoExp.sharedMontgomery (crtN g.base g.words) s.sp (workspaceWords g.words) v B.name B.mul
+      (fun _ _ _ ho ha hb z input => B.correct z input ho ha hb) B.stackOk)
+      (TwoExp.sharedMontgomeryTiming _ _ _ _ _ _ _ _ (fun _ _ _ ho ha hb => B.rawCT ho ha hb))
+      (by omega_using [le, words]) s t tr1 tr2 u w
+      ⟨⟨h.1.1.2.1, csOf s h.1.1.1, rfl⟩, ⟨h.2.1.1.2.1, csOf t h.2.1.1.1, h.2.2.symm⟩, h.2.2⟩ e1 e2
 
-theorem crt_narrowPrimeGiven_ct {bs1 bs2 : Fin 7 → List Byte} (hj : j = 1 ∨ j = 2) (ha : g.r2 = some a) :
+theorem crt_narrowPrimeGiven_ct (B : MontBackend) {bs1 bs2 : Fin 7 → List Byte} (hj : j = 1 ∨ j = 2)
+    (ha : g.r2 = some a) :
     RelCT isa (fun s t => CrtPrimeIn g bs1 j s ∧ CrtPrimeIn g bs2 j t ∧ s.sp = t.sp)
-      (narrowPrimeGiven (56 + 8 * j.val)) (fun _ _ => True) := by
+      (narrowPrimeGiven (MontCall.op B.name B.mul) (56 + 8 * j.val)) (fun _ _ => True) := by
   have invWP (s : State) {bs : Fin 7 → List Byte} (h : CrtPrimeIn g bs j s) :
       WP isa (narrowPrimeInv (56 + 8 * j.val)) s (GivenIn g bs j) := by
     refine (crt_narrowPrimeInv_ok s h.2).mono ?_
@@ -739,7 +763,7 @@ theorem crt_narrowPrimeGiven_ct {bs1 bs2 : Fin 7 → List Byte} (hj : j = 1 ∨ 
     exact ⟨h.1.after_narrow (frameU.mono (by simp)) restU, readyU, by rw [flagU]; exact h.2.bit⟩
   rw [narrowPrimeGiven]
   exact crt_seq_ct (crt_narrowPrimeInv_ct.mono (fun _ _ h => ⟨h.1.2, h.2.1.2, h.2.2⟩) (fun _ _ _ => trivial))
-    (fun s h => invWP s h) (fun s h => invWP s h) (r2Given_ct hj ha)
+    (fun s h => invWP s h) (fun s h => invWP s h) (r2Given_ct B hj ha)
 
 end
 
@@ -1132,8 +1156,9 @@ public section
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
 
-/-- `vg_rsa_private_crt`'s key check and factor preparation. -/
-def baselineStages : CrtStages where
+/-- `vg_rsa_private_crt`'s key check and factor preparation, its products `B`'s. -/
+def baselineStages (B : MontBackend) : CrtStages where
+  mont := B
   check := CrtFn.validate
   prime := narrowPrime
   ok _ _ := True
@@ -1142,7 +1167,8 @@ def baselineStages : CrtStages where
   primeOk := fun {g} {_} j s hj _ h => by
     obtain ⟨_, le, _, _, _, _, _⟩ := h.1.narrow_fits j hj
     have words : g.words ≤ 128 := (crt_width_valid h.1.buffers.lengthValid).2.1
-    exact crt_narrowPrime_ok s h.2 (by omega_using [le, words])
+    exact (crt_narrowPrime_ok s h.2 (by omega_using [le, words])).mono
+      fun _ ⟨r, m, o, r2, f, frame, rest⟩ => ⟨r, m, o, r2, f, frame.mono (by simp), rest⟩
   primeCt := fun {g} {_} {_} j hj _ _ => by
     intro s t tr1 tr2 u w h e1 e2
     obtain ⟨_, le, _, _, _, _, _⟩ := h.1.1.narrow_fits j hj
@@ -1165,7 +1191,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 theorem crtFn_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0)
     (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtFnInput g bs1 s ∧ CrtFnInput g bs2 t ∧ s.sp = t.sp)
-      (CrtFn.codeOf st.check st.prime kernel.code) (fun _ _ => True) := by
+      (CrtFn.codeOf (MontCall.op st.mont.name st.mont.mul) st.check st.prime kernel.code) (fun _ _ => True) := by
   unfold CrtFn.codeOf
   apply RelCT.frame (fun _ _ h => h.2.2)
   intro s t tr1 tr2 u v hp e1 e2
@@ -1258,7 +1284,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 
 theorem crtFn_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtFnInput g bs s)
     (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (CrtFn.codeOf st.check st.prime kernel.code) s fun t => abiPreserved s t ∧
+    WP isa (CrtFn.codeOf (MontCall.op st.mont.name st.mont.mul) st.check st.prime kernel.code) s fun t => abiPreserved s t ∧
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) := by
   unfold CrtFn.codeOf
@@ -1346,28 +1372,30 @@ theorem given_check_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
       CrtFn.validateGiven (fun _ _ => True) :=
   crt_validateGivenStage_ct
 
-theorem given_prime_ok {g : CrtGeometry} {bs : Fin 7 → List Byte} (j : Fin 6) (s : State) (hj : j = 1 ∨ j = 2)
-    (hok : GivenOk g bs) (h : CrtPrimeIn g bs j s) :
-    WP isa (narrowPrimeGiven (56 + 8 * j.val)) s (NarrowPrimePost (crtN g.base g.words) (workspaceWords g.words)
+theorem given_prime_ok (B : MontBackend) {g : CrtGeometry} {bs : Fin 7 → List Byte} (j : Fin 6) (s : State)
+    (hj : j = 1 ∨ j = 2) (hok : GivenOk g bs) (h : CrtPrimeIn g bs j s) :
+    WP isa (narrowPrimeGiven (MontCall.op B.name B.mul) (56 + 8 * j.val)) s (NarrowPrimePost (crtN g.base g.words) (workspaceWords g.words)
       (narrowWords (g.sourceLength j.succ) g.words) (bs j.succ) s) := by
   obtain ⟨a, ha⟩ := Option.isSome_iff_exists.mp hok.1
-  exact crt_narrowPrimeGiven_ok j s hj ha h
+  exact crt_narrowPrimeGiven_ok B j s hj ha h
 
-theorem given_prime_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (j : Fin 6) (hj : j = 1 ∨ j = 2)
-    (hok : GivenOk g bs1) :
+theorem given_prime_ct (B : MontBackend) {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (j : Fin 6)
+    (hj : j = 1 ∨ j = 2) (hok : GivenOk g bs1) :
     RelCT isa (fun s t => CrtPrimeIn g bs1 j s ∧ CrtPrimeIn g bs2 j t ∧ s.sp = t.sp)
-      (narrowPrimeGiven (56 + 8 * j.val)) (fun _ _ => True) := by
+      (narrowPrimeGiven (MontCall.op B.name B.mul) (56 + 8 * j.val)) (fun _ _ => True) := by
   obtain ⟨a, ha⟩ := Option.isSome_iff_exists.mp hok.1
-  exact crt_narrowPrimeGiven_ct hj ha
+  exact crt_narrowPrimeGiven_ct B hj ha
 
-def givenStages : CrtStages where
+/-- `vg_rsa_private_crt_precomputed`'s key check and factor preparation, its products `B`'s. -/
+def givenStages (B : MontBackend) : CrtStages where
+  mont := B
   check := CrtFn.validateGiven
-  prime := narrowPrimeGiven
+  prime := narrowPrimeGiven (MontCall.op B.name B.mul)
   ok := GivenOk
   checkOk s hok h ready := given_check_ok s hok h ready
   checkCt _ _ := given_check_ct
-  primeOk j s hj hok h := given_prime_ok j s hj hok h
-  primeCt j hj hok _ := given_prime_ct j hj hok
+  primeOk j s hj hok h := given_prime_ok B j s hj hok h
+  primeCt j hj hok _ := given_prime_ct B j hj hok
 
 end VG.Proof.Bignum.Arm
 end
@@ -1377,17 +1405,19 @@ end
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem crt_contract_correct (s : State) (h : (Proof.Rsa.privateCrtContract abi 104).pre s) (kernel : WindowKernel := baselineWindowKernel) :
-    ∃ tr t, Exec isa (CrtFn.codeWith kernel.code) s tr t ∧ abiPreserved s t ∧
+theorem crt_contract_correct (B : MontBackend) (s : State) (h : (Proof.Rsa.privateCrtContract abi 104).pre s)
+    (kernel : WindowKernel := baselineWindowKernel) :
+    ∃ tr t, Exec isa (CrtFn.codeWith (MontCall.op B.name B.mul) kernel.code) s tr t ∧ abiPreserved s t ∧
       (Proof.Rsa.privateCrtContract abi 104).post s t := by
-  obtain ⟨tr, t, run, preserved, post⟩ := (crtFn_ok (kernel := kernel)) s (crt_contract_pre s h) baselineStages trivial
+  obtain ⟨tr, t, run, preserved, post⟩ := (crtFn_ok (kernel := kernel)) s (crt_contract_pre s h) (baselineStages B) trivial
   refine ⟨tr, t, run, preserved, ?_⟩
   sig_post [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   rw [BitVec.setWidth_append_eq_right]
   exact post
 
-theorem crt_contract_ct (kernel : WindowKernel := baselineWindowKernel) : ConstantTime isa (Proof.Rsa.privateCrtContract abi 104).pre
-    (Proof.Rsa.privateCrtContract abi 104).pub (CrtFn.codeWith kernel.code) := by
+theorem crt_contract_ct (B : MontBackend) (kernel : WindowKernel := baselineWindowKernel) :
+    ConstantTime isa (Proof.Rsa.privateCrtContract abi 104).pre
+    (Proof.Rsa.privateCrtContract abi 104).pub (CrtFn.codeWith (MontCall.op B.name B.mul) kernel.code) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := crt_contract_pre s hs
   have it := crt_contract_pre t ht
@@ -1399,15 +1429,15 @@ theorem crt_contract_ct (kernel : WindowKernel := baselineWindowKernel) : Consta
     simp only [crtCallGeometry, p0, p2, p3, a0, a2, a3, a4, a5, a6, a8, a10, a12, a13]
   rw [← geometry] at it
   have modulus : crtCallBytes s 0 = crtCallBytes t 0 := byteEq
-  exact ((crtFn_ct (kernel := kernel)) modulus baselineStages trivial trivial s t tr1 tr2 u v ⟨is, it, sp⟩ e1 e2).1
+  exact ((crtFn_ct (kernel := kernel)) modulus (baselineStages B) trivial trivial s t tr1 tr2 u v ⟨is, it, sp⟩ e1 e2).1
 
 /-! ## `vg_rsa_private_crt_precomputed` -/
 
-theorem crt_contract_correctP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre s)
+theorem crt_contract_correctP (B : MontBackend) (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre s)
     (kernel : WindowKernel := baselineWindowKernel) :
-    ∃ tr t, Exec isa (CrtFn.codeGiven kernel.code) s tr t ∧ abiPreserved s t ∧
+    ∃ tr t, Exec isa (CrtFn.codeGiven (MontCall.op B.name B.mul) kernel.code) s tr t ∧ abiPreserved s t ∧
       (Proof.Rsa.privateCrtPrecomputedContract abi 104).post s t := by
-  obtain ⟨tr, t, run, preserved, post⟩ := (crtFn_ok (kernel := kernel)) s (crt_contract_preP s h) givenStages
+  obtain ⟨tr, t, run, preserved, post⟩ := (crtFn_ok (kernel := kernel)) s (crt_contract_preP s h) (givenStages B)
     (show GivenOk _ _ from ⟨rfl, crt_contract_pqP s h⟩)
   refine ⟨tr, t, run, preserved, ?_⟩
   sig_post [Proof.Rsa.privateCrtPrecomputedContract, Proof.Rsa.privateCrtPrecomputedSig, Proof.Rsa.privateCrtSig,
@@ -1415,9 +1445,9 @@ theorem crt_contract_correctP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedC
   rw [BitVec.setWidth_append_eq_right]
   exact post
 
-theorem crt_contract_ctP (kernel : WindowKernel := baselineWindowKernel) :
+theorem crt_contract_ctP (B : MontBackend) (kernel : WindowKernel := baselineWindowKernel) :
     ConstantTime isa (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre
-      (Proof.Rsa.privateCrtPrecomputedContract abi 104).pub (CrtFn.codeGiven kernel.code) := by
+      (Proof.Rsa.privateCrtPrecomputedContract abi 104).pub (CrtFn.codeGiven (MontCall.op B.name B.mul) kernel.code) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := crt_contract_preP s hs
   have it := crt_contract_preP t ht
@@ -1432,7 +1462,7 @@ theorem crt_contract_ctP (kernel : WindowKernel := baselineWindowKernel) :
     simp only [crtCallGeometryP, crtCallGeometry, p0, p2, p3, a0, a2, a3, a4, a5, a6, a8, a10, a12, a13, a14]
   rw [← geometry] at it okt
   have modulus : crtCallBytes s 0 = crtCallBytes t 0 := byteEq
-  exact ((crtFn_ct (kernel := kernel)) modulus givenStages oks okt s t tr1 tr2 u v ⟨is, it, sp⟩ e1 e2).1
+  exact ((crtFn_ct (kernel := kernel)) modulus (givenStages B) oks okt s t tr1 tr2 u v ⟨is, it, sp⟩ e1 e2).1
 
 end VG.Proof.Bignum.Arm
 
@@ -1482,8 +1512,9 @@ theorem crt_contract_sat : ∃ s, (Proof.Rsa.privateCrtContract abi 104).pre s :
     [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.scratchWords] using crtSatState
 
-theorem crt_verified (kernel : WindowKernel := baselineWindowKernel) : Verified target (CrtFn.codeWith kernel.code) (Proof.Rsa.privateCrtContract abi 104) :=
-  ⟨(crt_contract_correct (kernel := kernel)), (crt_contract_ct (kernel := kernel)), crt_contract_sat⟩
+theorem crt_verified (B : MontBackend) (kernel : WindowKernel := baselineWindowKernel) :
+    Verified target (CrtFn.codeWith (MontCall.op B.name B.mul) kernel.code) (Proof.Rsa.privateCrtContract abi 104) :=
+  ⟨(crt_contract_correct B (kernel := kernel)), (crt_contract_ct B (kernel := kernel)), crt_contract_sat⟩
 
 theorem os2ip_replicate_zero' (n : Nat) : Spec.Rsa.os2ip (List.replicate n 0) = 0 := by
   unfold Spec.Rsa.os2ip
@@ -1524,8 +1555,8 @@ theorem crt_contract_satP : ∃ s, (Proof.Rsa.privateCrtPrecomputedContract abi 
          at h₁ h₂
        bv_omega)
 
-theorem crt_verifiedP (kernel : WindowKernel := baselineWindowKernel) :
-    Verified target (CrtFn.codeGiven kernel.code) (Proof.Rsa.privateCrtPrecomputedContract abi 104) :=
-  ⟨(crt_contract_correctP (kernel := kernel)), (crt_contract_ctP (kernel := kernel)), crt_contract_satP⟩
+theorem crt_verifiedP (B : MontBackend) (kernel : WindowKernel := baselineWindowKernel) :
+    Verified target (CrtFn.codeGiven (MontCall.op B.name B.mul) kernel.code) (Proof.Rsa.privateCrtPrecomputedContract abi 104) :=
+  ⟨(crt_contract_correctP B (kernel := kernel)), (crt_contract_ctP B (kernel := kernel)), crt_contract_satP⟩
 
 end VG.Proof.Bignum.Arm

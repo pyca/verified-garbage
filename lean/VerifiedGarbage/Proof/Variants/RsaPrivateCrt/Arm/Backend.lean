@@ -91,11 +91,11 @@ def callKernel (b : MontBackend) : WindowKernel where
 
 theorem crtCall_verified (b : MontBackend) :
     Verified target (CrtCall.code b.name b.mul) (Proof.Rsa.privateCrtContract abi 104) :=
-  crt_verified (kernel := callKernel b)
+  crt_verified b (kernel := callKernel b)
 
 theorem crtCall_verifiedP (b : MontBackend) :
     Verified target (CrtCall.codeGiven b.name b.mul) (Proof.Rsa.privateCrtPrecomputedContract abi 104) :=
-  crt_verifiedP (kernel := callKernel b)
+  crt_verifiedP b (kernel := callKernel b)
 
 end VG.Proof.Bignum.Arm
 

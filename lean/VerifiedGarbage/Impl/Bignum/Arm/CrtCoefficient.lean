@@ -16,11 +16,14 @@ namespace VG.Impl.Bignum.Arm.Crt
 open VG VG.Arm
 
 /-- `qInv mod p` into the narrow array 1 and back to the full array 4. -/
-def inverseHalf : Prog isa := .seq (reduceHalf 224 4) (copyOut 224 4 1)
+def inverseHalf (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (reduceHalf op 224 4) (copyOut 224 4 1)
 /-- `m_p - (m_q mod p) mod p` into the narrow array 6. -/
-def differenceHalf : Prog isa := .seq (reduceHalf 224 1) (.seq (copyLow 224 6 5) (subModArray 6 5 1))
+def differenceHalf (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (reduceHalf op 224 1) (.seq (copyLow 224 6 5) (subModArray 6 5 1))
 /-- `qInv mod p` again, in Montgomery form, times the difference, into the full array 5. -/
-def productHalf : Prog isa := .seq (copyLow 224 4 1) (.seq (montOp 1 1 4) (.seq (montOp 5 6 1) (copyOut 224 5 5)))
-def coefficient : Prog isa := .seq inverseHalf (.seq differenceHalf productHalf)
+def productHalf (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (copyLow 224 4 1) (.seq (op 1 1 4) (.seq (op 5 6 1) (copyOut 224 5 5)))
+def coefficient (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (inverseHalf op) (.seq (differenceHalf op) (productHalf op))
 
 end VG.Impl.Bignum.Arm.Crt

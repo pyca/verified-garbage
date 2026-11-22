@@ -8,15 +8,17 @@ public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 /-! # The private CRT, its window's products calls to a shared Montgomery product
 
 `mul` is the product's code and `name` its symbol (`vg_rsa_mont_mul` and its
-variants): the window's multiplications and squares are each a call
-(`MontCall.op`), not a copy of the product. -/
+variants): the window's multiplications and squares, and those of the factors'
+reductions, of the coefficient and of `R² mod p` where it is not given, are
+each a call (`MontCall.op`), not a copy of the product. -/
 
 @[expose] public section
 namespace VG.Impl.Bignum.Arm.CrtCall
 open VG VG.Arm
 
 def phase (name : String) (mul : Prog isa) : Prog isa := SharedWindow.phase (MontCall.op name mul)
-def code (name : String) (mul : Prog isa) : Prog isa := CrtFn.codeWith (phase name mul)
-def codeGiven (name : String) (mul : Prog isa) : Prog isa := CrtFn.codeGiven (phase name mul)
+def code (name : String) (mul : Prog isa) : Prog isa := CrtFn.codeWith (MontCall.op name mul) (phase name mul)
+def codeGiven (name : String) (mul : Prog isa) : Prog isa :=
+  CrtFn.codeGiven (MontCall.op name mul) (phase name mul)
 
 end VG.Impl.Bignum.Arm.CrtCall

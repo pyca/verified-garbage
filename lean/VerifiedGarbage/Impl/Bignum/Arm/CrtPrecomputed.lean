@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Impl.Bignum.Arm.PrimeR2From
+public import VerifiedGarbage.Impl.Bignum.Arm.SharedR2
 
 /-! # ARMv7 private RSA CRT given the factors' `R² mod p` and `R² mod q`
 
@@ -46,12 +47,13 @@ def r2Copy (primeSlot : Nat) : Prog isa :=
   .seq (.block (r2Source primeSlot ++ lowArgs 4)) (.seq copyBytes (.seq (.block [.mov .r0 (.reg .r5)])
     (.seq (smallConst 7 1) (.seq (.block [.ldrSp .r11 48]) (selectArray 4 7 4)))))
 
-/-- `R² mod X`: given, or computed from 1. -/
-def r2Given (primeSlot : Nat) : Prog isa :=
-  .seq (.block (r2WidthTest (primeSlot + 4))) (.ite .eq (r2Copy primeSlot) r2)
+/-- `R² mod X`: given, or computed from 1, its squarings `op`'s. -/
+def r2Given (op : Nat → Nat → Nat → Prog isa) (primeSlot : Nat) : Prog isa :=
+  .seq (.block (r2WidthTest (primeSlot + 4))) (.ite .eq (r2Copy primeSlot) (SharedR2.r2 op))
 
 /-- `narrowPrime` with `r2Given`. -/
-def narrowPrimeGiven (primeSlot : Nat) : Prog isa := .seq (narrowPrimeInv primeSlot) (r2Given primeSlot)
+def narrowPrimeGiven (op : Nat → Nat → Nat → Prog isa) (primeSlot : Nat) : Prog isa :=
+  .seq (narrowPrimeInv primeSlot) (r2Given op primeSlot)
 
 end VG.Impl.Bignum.Arm.Crt
 
@@ -61,6 +63,7 @@ open VG VG.Arm
 /-- `validate` but for `p q = n`. -/
 def validateGiven : Prog isa := .seq acceptInput (.seq loadP loadQ)
 
-def codeGiven (phase : Prog isa) : Prog isa := codeOf validateGiven Crt.narrowPrimeGiven phase
+def codeGiven (op : Nat → Nat → Nat → Prog isa) (phase : Prog isa) : Prog isa :=
+  codeOf op validateGiven (Crt.narrowPrimeGiven op) phase
 
 end VG.Impl.Bignum.Arm.CrtFn
