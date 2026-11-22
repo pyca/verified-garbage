@@ -623,6 +623,6 @@ bnez t5, 2177b
 bnez t5, 2178b
 .base64 "BUUzdZUBAzQLB4M0iwcDOQsIgzmLCAM6CwmDOosJgzsLCgM8iwqDPAsLAz2LC4M9CwyDMIsMAzsLDYKA"
 .option pop"#,
-        vg_bignum_pow_win = sym crate::rsa_oaep::vg_bignum_pow_win::vg_bignum_pow_win,
+        vg_bignum_pow_win = sym crate::dsa::vg_bignum_pow_win::vg_bignum_pow_win,
     )
 }

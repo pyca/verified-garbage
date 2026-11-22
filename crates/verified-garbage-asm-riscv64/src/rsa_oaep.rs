@@ -824,7 +824,3 @@ bnez t5, 2105b
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_bignum_pow_win.rs"]
-pub(crate) mod vg_bignum_pow_win;
