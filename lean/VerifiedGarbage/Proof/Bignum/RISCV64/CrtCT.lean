@@ -203,7 +203,7 @@ theorem nq0_ok {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : S
     (by have := hP.k1024; have := hP.qk; omega_arith)
     fun u Xu R' c6 h2 m => hc s u hP F hd Xu (by rw [m]; exact v6') R' c6 h2
 
-theorem pins177 : Pins (At (C0 pc) (crtF pc) (ix pc 177 149)) (rsPG pc) := by
+theorem pins177 : Pins (At (C0 pc) (crtF pc) (ix pc 138 110)) (rsPG pc) := by
   refine pins_at_list (fun s₀ => valsPG pc s₀ (oQa s₀) (cqL s₀) (s₀.gpr .s1 + BitVec.ofNat 64 (8 * cwP s₀)))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NQ0 pc (.block [])) (by cases pc <;> kernel_rfl)
       (nq0_ok h fun s t hP F hd X _ R c6 h2 => wp_nil (valsPG_map X R (fun hp => by
@@ -218,7 +218,7 @@ theorem oQa_al (s₀ : State) : oQa s₀ % 8 = 0 := by
   have := slot_al (cwX s₀) 8; have := slot_al (cwP s₀) 24; show (slot (cwX s₀) 8 + slot (cwP s₀) 24) % 8 = 0
   omega_arith
 
-theorem pins205 : Pins (At (C0 pc) (crtF pc) (ix pc 205 172)) rsC := by
+theorem pins205 : Pins (At (C0 pc) (crtF pc) (ix pc 166 133)) rsC := by
   refine pins_at_list (fun s₀ => valsC s₀ (oQa s₀) (cqL s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NQ0 pc (Win.powerPG pc 5 (Win.reduceInP (.block []))))
       (by cases pc <;> kernel_rfl) (nq0_ok h fun s t hP F hd X v6 R c6 _ => ?_))) fun _ _ _ h h' => ?_
@@ -231,7 +231,7 @@ theorem pins205 : Pins (At (C0 pc) (crtF pc) (ix pc 205 172)) rsC := by
   · obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
     simp only [valsC, oQa, cwP, cwX, eS, ek, ep, eq]
 
-theorem pins207 : Pins (At (C0 pc) (crtF pc) (ix pc 207 174)) rsC := by
+theorem pins207 : Pins (At (C0 pc) (crtF pc) (ix pc 168 135)) rsC := by
   refine pins_at_list (fun s₀ => valsE s₀ (oQa s₀) (cqL s₀) (stackArg s₀ 4))
     (fun _ s₀ h => WP.of_flat (c := NQ0 pc (Win.powerPG pc 5 (.seq Crt.reduceIn
       (.block [.load .d .s9 .s6 oDQ, .load .d .s10 .s6 oQLen])))) (by cases pc <;> kernel_rfl)
@@ -260,7 +260,7 @@ theorem nm_ok {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : St
 abbrev NR (pc : Bool) (c : Prog isa) : Prog isa :=
   NM pc (.seq (widen oBQ oQLen 6) (.seq (.block (setupP oBP oPLen)) c))
 
-theorem pins254 : Pins (At (C0 pc) (crtF pc) (ix pc 254 221)) rsP := by
+theorem pins254 : Pins (At (C0 pc) (crtF pc) (ix pc 176 143)) rsP := by
   refine pins_at_list (fun s₀ => valsP s₀ (oPa s₀) (cpL s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NR pc (.block [])) (by cases pc <;> kernel_rfl)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y h2 => wp_nil ?_)))
@@ -269,7 +269,7 @@ theorem pins254 : Pins (At (C0 pc) (crtF pc) (ix pc 254 221)) rsP := by
   · obtain ⟨eS, ek, ep, -⟩ := data_vals h h'
     simp only [valsP, oPa, cwX, eS, ek, ep]
 
-theorem pins275 : Pins (At (C0 pc) (crtF pc) (ix pc 275 242)) rsC := by
+theorem pins275 : Pins (At (C0 pc) (crtF pc) (ix pc 197 164)) rsC := by
   refine pins_at_list (fun s₀ => valsC s₀ (oPa s₀) (cpL s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NR pc (recPA (Win.reduceInP (.block [])))) (by cases pc <;> kernel_rfl)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => ?_))) fun _ _ _ h h' => ?_
@@ -334,7 +334,7 @@ theorem valsW_eq {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s
   obtain ⟨eS, ek, -⟩ := data_vals h h'
   simp only [valsW, cwX, eS, ek, ho, hl]
 
-theorem pins248 : Pins (At (C0 pc) (crtF pc) (ix pc 248 215)) rsW := by
+theorem pins248 : Pins (At (C0 pc) (crtF pc) (ix pc 170 137)) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oQa s₀) (cqL s₀) 6)
     (fun _ s₀ h => WP.of_flat (c := NM pc (.block (WD1 oBQ oQLen 6))) (by cases pc <;> kernel_rfl)
       (nm_ok h fun s t hP F M => ?_)) fun _ _ _ h h' => ?_
@@ -347,7 +347,7 @@ theorem pins248 : Pins (At (C0 pc) (crtF pc) (ix pc 248 215)) rsW := by
   · obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
     exact valsW_eq h h' 6 (by simp only [oQa, cwP, cwX, ek, ep]) eq
 
-theorem pins305 : Pins (At (C0 pc) (crtF pc) (ix pc 305 272)) rsW := by
+theorem pins305 : Pins (At (C0 pc) (crtF pc) (ix pc 227 194)) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oPa s₀) (cpL s₀) 7)
     (fun _ s₀ h => WP.of_flat (c := NR pc (.seq recombineP
       (.block (WD1 oBP oPLen 7)))) (by cases pc <;> kernel_rfl)
@@ -362,7 +362,7 @@ theorem pins305 : Pins (At (C0 pc) (crtF pc) (ix pc 305 272)) rsW := by
   · obtain ⟨eS, ek, ep, -⟩ := data_vals h h'
     exact valsW_eq h h' 7 (by simp only [oPa, cwX, ek]) ep
 
-theorem pins311 : Pins (At (C0 pc) (crtF pc) (ix pc 311 278)) rsW := by
+theorem pins311 : Pins (At (C0 pc) (crtF pc) (ix pc 233 200)) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oQa s₀) (cqL s₀) 6)
     (fun _ s₀ h => WP.of_flat (c := NR pc (.seq recombineP
       (.seq (widen oBP oPLen 7) (.block (WD1 oBQ oQLen 6))))) (by cases pc <;> kernel_rfl)
@@ -395,7 +395,7 @@ theorem pins311 : Pins (At (C0 pc) (crtF pc) (ix pc 311 278)) rsW := by
   · obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
     exact valsW_eq h h' 6 (by simp only [oQa, cwP, cwX, ek, ep]) eq
 
-theorem pins330 : Pins (At (C0 pc) (crtF pc) (ix pc 330 297)) [.a7, .s5, .s6, .s10, .s11] := by
+theorem pins330 : Pins (At (C0 pc) (crtF pc) (ix pc 252 219)) [.a7, .s5, .s6, .s10, .s11] := by
   refine pins_at_list (fun s₀ => [Mont.off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2)), cS s₀,
       Mont.off (s₀.gpr .a0) 0, BitVec.ofNat 64 (ck s₀)])
     (fun _ s₀ h => WP.of_flat (c := NR pc (.seq recombineP
@@ -461,23 +461,23 @@ theorem fn_rel : RelCT isa (Two (C0 false)) crt fun _ _ => True := by
   rotate_left 2
   refine chain_cons (crt_run false) (m := 136) (by decide) (two_taint (hc := ?_) _ pins134 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run false) (m := 177) (by decide) (two_taint (hc := ?_) _ pins136 ?_) ?_
+  refine chain_cons (crt_run false) (m := 138) (by decide) (two_taint (hc := ?_) _ pins136 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run false) (m := 205) (by decide) (two_taint (hc := ?_) _ pins177 ?_) ?_
+  refine chain_cons (crt_run false) (m := 166) (by decide) (two_taint (hc := ?_) _ pins177 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run false) (m := 207) (by decide) (two_taint (hc := ?_) _ pins205 ?_) ?_
+  refine chain_cons (crt_run false) (m := 168) (by decide) (two_taint (hc := ?_) _ pins205 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run false) (m := 248) (by decide) (two_taint (hc := ?_) _ pins207 ?_) ?_
+  refine chain_cons (crt_run false) (m := 170) (by decide) (two_taint (hc := ?_) _ pins207 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run false) (m := 254) (by decide) (two_taint (hc := ?_) _ pins248 ?_) ?_
+  refine chain_cons (crt_run false) (m := 176) (by decide) (two_taint (hc := ?_) _ pins248 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run false) (m := 275) (by decide) (two_taint (hc := ?_) _ pins254 ?_) ?_
+  refine chain_cons (crt_run false) (m := 197) (by decide) (two_taint (hc := ?_) _ pins254 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run false) (m := 305) (by decide) (two_taint (hc := ?_) _ pins275 ?_) ?_
+  refine chain_cons (crt_run false) (m := 227) (by decide) (two_taint (hc := ?_) _ pins275 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run false) (m := 311) (by decide) (two_taint (hc := ?_) _ pins305 ?_) ?_
+  refine chain_cons (crt_run false) (m := 233) (by decide) (two_taint (hc := ?_) _ pins305 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run false) (m := 330) (by decide) (two_taint (hc := ?_) _ pins311 ?_) ?_
+  refine chain_cons (crt_run false) (m := 252) (by decide) (two_taint (hc := ?_) _ pins311 ?_) ?_
   rotate_left 2
   refine two_taint (hc := ?_) _ pins330 ?_
   -- Every cut's check in one kernel evaluation, which flattens the code once.
@@ -510,23 +510,23 @@ theorem fn_relP : RelCT isa (Two (C0 true)) crtP fun _ _ => True := by
   rotate_left 2
   refine chain_cons (crt_run true) (m := 108) (by decide) (two_taint (hc := ?_) _ pins134 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run true) (m := 149) (by decide) (two_taint (hc := ?_) _ pins136 ?_) ?_
+  refine chain_cons (crt_run true) (m := 110) (by decide) (two_taint (hc := ?_) _ pins136 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run true) (m := 172) (by decide) (two_taint (hc := ?_) _ pins177 ?_) ?_
+  refine chain_cons (crt_run true) (m := 133) (by decide) (two_taint (hc := ?_) _ pins177 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run true) (m := 174) (by decide) (two_taint (hc := ?_) _ pins205 ?_) ?_
+  refine chain_cons (crt_run true) (m := 135) (by decide) (two_taint (hc := ?_) _ pins205 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run true) (m := 215) (by decide) (two_taint (hc := ?_) _ pins207 ?_) ?_
+  refine chain_cons (crt_run true) (m := 137) (by decide) (two_taint (hc := ?_) _ pins207 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run true) (m := 221) (by decide) (two_taint (hc := ?_) _ pins248 ?_) ?_
+  refine chain_cons (crt_run true) (m := 143) (by decide) (two_taint (hc := ?_) _ pins248 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run true) (m := 242) (by decide) (two_taint (hc := ?_) _ pins254 ?_) ?_
+  refine chain_cons (crt_run true) (m := 164) (by decide) (two_taint (hc := ?_) _ pins254 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run true) (m := 272) (by decide) (two_taint (hc := ?_) _ pins275 ?_) ?_
+  refine chain_cons (crt_run true) (m := 194) (by decide) (two_taint (hc := ?_) _ pins275 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run true) (m := 278) (by decide) (two_taint (hc := ?_) _ pins305 ?_) ?_
+  refine chain_cons (crt_run true) (m := 200) (by decide) (two_taint (hc := ?_) _ pins305 ?_) ?_
   rotate_left 2
-  refine chain_cons (crt_run true) (m := 297) (by decide) (two_taint (hc := ?_) _ pins311 ?_) ?_
+  refine chain_cons (crt_run true) (m := 219) (by decide) (two_taint (hc := ?_) _ pins311 ?_) ?_
   rotate_left 2
   refine two_taint (hc := ?_) _ pins330 ?_
   -- Every cut's check in one kernel evaluation, which flattens the code once.

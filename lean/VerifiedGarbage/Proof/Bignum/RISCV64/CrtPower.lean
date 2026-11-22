@@ -167,7 +167,7 @@ prime from `X`'s array, `-p⁻¹ mod 2⁶⁴` (`minv_ok`), `R² mod p`
 (`r2Prime_ok`), `c mod p` (`reduceIn_ok`: a chunk `C_i` of `w` words of `c`
 at a time from the bottom, by Montgomery multiplications: with
 `q ≡ -R^(i+1)` and `T = C_i q R⁻¹ ≡ -C_i R^i`, `S - T` adds `C_i R^i` to `S`),
-then `c^d mod p` (`powWin_ok`).
+then `c^d mod p` (`powWinCall_ok`: the call of `vg_bignum_pow_win`).
 -/
 
 @[expose] public section
@@ -1207,12 +1207,12 @@ theorem powerG_ok {pc : Bool} {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLe
       (wordsVal t.mem B (slot w 4) w = Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
         wordsVal t.mem B (slot w 0) w = Pv ∧ PFr B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0) ∧
         wordsVal t.mem B (slot w 1) w = 2 ^ (128 * w) % Pv) ∧
-      Keep powerRegs s t := by
+      Keep (powerRegs ++ ([.ra] : List Reg)) s t := by
   obtain hn : B.toNat + slot w 24 ≤ 2 ^ 64 := by have := hs.nowrap; omega_arith
   have hxn := hx.nowrap
   obtain e24 := slot24' w
   rw [show Crt.powerG pc xj oD oLen = powerPG pc xj (.seq Crt.reduceIn (.seq (.block [.load .d .s9 .s6 oD,
-    .load .d .s10 .s6 oLen]) ModExp.powWin)) from rfl]
+    .load .d .s10 .s6 oLen]) ModExp.powWinFn)) from rfl]
   refine powerAG_ok hs hw2 hw' hZ h7 h5 ht0 hx hsep h6 h11 hxj hP hP2 hodd hR2 fun s₈ c8 r8 F8 k18 => ?_
   -- `c mod p`.
   refine WP.seq (WP.mono (reduceIn_ok (k := k) (Cv := Cv) c8 ((k18.gpr (by decide)).trans hra) (hx.congr k18.2.2) hsep
@@ -1236,7 +1236,7 @@ theorem powerG_ok {pc : Bool} {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLe
   have n10 : wordsVal s₁₀.mem B (slot w 0) w = Pv := c10.n
   obtain hR2 : A s₁₀.mem B w 1 = 2 ^ (64 * w) * 2 ^ (64 * w) % Pv := by
     rw [m10, p9, r8, ← Nat.pow_add]; congr 2; omega_arith
-  refine WP.mono (powWin1_ok c10.scr hw2 hw' hZ c10.a7 c10.s5 c10.t0 c10.inv
+  refine WP.mono (powWinCall_ok c10.scr hw2 hw' hZ c10.a7 c10.s5 c10.t0 c10.inv
     (by rw [n10]; exact hP2) (by rw [n10]; exact hodd)
     (by rw [n10, show wordsVal s₁₀.mem B (slot w 1) w = _ from hR2]; exact Nat.mod_lt _ (by omega_arith)) a9 a10 hL hL'
     (by rw [k110.2.1, k110.2.2]; exact hrd) hDsep) fun t ⟨⟨ht, ot, t1⟩, kt⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
@@ -1248,7 +1248,8 @@ theorem powerG_ok {pc : Bool} {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLe
     exact F9.trans (PFr.of_win ot)
   · exact (kt.gpr (by decide)).trans c10.a7
   · rw [t1, show wordsVal s₁₀.mem B (slot w 1) w = A s₁₀.mem B w 1 from rfl, m10, p9, r8]
-  · exact Keep.within (Keep.within (Keep.within k18 k9 (by decide)) k10 (by decide)) kt (by decide)
+  · exact Keep.within (Keep.within (Keep.within (k18.mono fun r h => List.mem_append_left _ h) k9 (by decide)) k10
+      (by decide)) kt (by decide)
 
 /-- `powerG_ok` computing `R² mod p`. -/
 theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : Nat}
@@ -1269,7 +1270,7 @@ theorem power_ok {s : State} {B BX D : Addr} {Z ZX w wX k xj oD oLen L Pv Cv : N
       (wordsVal t.mem B (slot w 4) w = Cv ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) % Pv ∧
         wordsVal t.mem B (slot w 0) w = Pv ∧ PFr B w s.mem t.mem ∧ t.gpr .a7 = off B (slot w 0) ∧
         wordsVal t.mem B (slot w 1) w = 2 ^ (128 * w) % Pv) ∧
-      Keep powerRegs s t :=
+      Keep (powerRegs ++ ([.ra] : List Reg)) s t :=
   powerG_ok (pc := false) hs hw2 hw' hZ h7 hra h5 ht0 hx hsep h6 h11 hxj hP hP2 hodd hkw hk hk' hXZ hC hoD hoD8 hoD' hoL hoL8 hoL' hDw hLw hL hL' hrd hDsep nofun
 
 end VG.Proof.Bignum.RISCV64.Win

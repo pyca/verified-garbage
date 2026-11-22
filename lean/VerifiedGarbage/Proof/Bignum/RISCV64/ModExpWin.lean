@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.PreR2
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubE
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.RISCV64.Call
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
@@ -894,5 +896,94 @@ theorem powWin_ok {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 :
         WinO B w s.mem t.mem) ∧ Keep powWRegs s t :=
   WP.mono (powWin1_ok hs hw2 hw' hZ h7 h5 ht0 hinv hN hodd hRRlt h9 h10 hL hL' hrd hsep)
     fun _ ⟨⟨hp, o, _⟩, k⟩ => ⟨⟨hp, o⟩, k⟩
+
+/-! ## `powWin` as a function -/
+
+/-- A call's code run from the call's entry state, which leaves `ra` as it
+found it, returns. -/
+private theorem callBody_wp {name : String} {body : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa body s.callEntry fun u => u.gpr .ra = s.callEntry.gpr .ra ∧ Q u) :
+    WP isa (.call name body) s Q := by
+  obtain ⟨t, u, he, hra, hq⟩ := h
+  have hret : isa.ret s.callEntry u = some u := by
+    simp only [isa, ret]; exact ite_eq_left_of_eq_true _ _ (eq_true hra)
+  exact ⟨_, u, Exec.call (call_callEntry s) he hret, hq⟩
+
+/-- `wOfSize`: `t0 := w`, from `s5 = 8 (w + 2)`. -/
+theorem wOfSize_ok {s : State} {w : Nat} (hw' : w < 2 ^ 31) (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) :
+    WP isa (.block ModExp.wOfSize) s fun t => (t.gpr .t0 = BitVec.ofNat 64 w ∧ t.mem = s.mem) ∧ Keep [.t0] s t := by
+  unfold ModExp.wOfSize
+  refine WP.keep [.t0] (Q := fun t => t.gpr .t0 = BitVec.ofNat 64 w ∧ t.mem = s.mem)
+    (by
+      brun [h5]
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+      rw [Nat.mod_eq_of_lt (by omega_using [hw'] : 8 * (w + 2) < 2 ^ 64), Nat.shiftRight_eq_div_pow]
+      simp only [BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
+      omega_using [hw']) (by rfl) (by rfl)
+
+/-- `powWinCall`: `powWin1_ok` for the call of `powWin`, which computes `t0`
+and `t1` again: the same, and `ra` written. -/
+theorem powWinCall_ok {name : String} {s : State} {B D : Addr} {Z w L : Nat} (hs : Scr s B Z) (hw2 : 2 ≤ w)
+    (hw' : w < 2 ^ 31) (hZ : slot w 24 ≤ Z) (h7 : s.gpr .a7 = off B (slot w 0))
+    (h5 : s.gpr .s5 = BitVec.ofNat 64 (8 * (w + 2))) (ht0 : s.gpr .t0 = BitVec.ofNat 64 w)
+    (hinv : ((Mont.word s.mem B (slot w 0)).toNat * (s.gpr .t1).toNat + 1) % 2 ^ 64 = 0)
+    (hN : 2 ≤ wordsVal s.mem B (slot w 0) w) (hodd : wordsVal s.mem B (slot w 0) w % 2 = 1)
+    (hRRlt : wordsVal s.mem B (slot w 1) w < wordsVal s.mem B (slot w 0) w)
+    (h9 : s.gpr .s9 = off D 0) (h10 : s.gpr .s10 = BitVec.ofNat 64 L) (hL : 1 ≤ L) (hL' : L < 2 ^ 63)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (off D i) 1)
+    (hsep : ∀ i < L, ∀ x, VG.Proof.Bignum.ofs B x < Z → off D i ≠ x) :
+    WP isa (ModExp.powWinCall name) s fun t =>
+      ((wordsVal s.mem B (slot w 1) w = 2 ^ (64 * w) * 2 ^ (64 * w) % wordsVal s.mem B (slot w 0) w →
+          wordsVal t.mem B (slot w 4) w =
+            wordsVal s.mem B (slot w 4) w ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) %
+              wordsVal s.mem B (slot w 0) w) ∧
+        WinO B w s.mem t.mem ∧ wordsVal t.mem B (slot w 1) w = wordsVal s.mem B (slot w 1) w) ∧
+      Keep (powWRegs ++ ([.ra] : List Reg)) s t := by
+  unfold ModExp.powWinCall
+  refine callBody_wp ?_
+  obtain ce : ∀ r, r ∉ linkRegs → s.callEntry.gpr r = s.gpr r := fun r hr => State.callEntry_gpr s hr
+  obtain hs₀ : Scr s.callEntry B Z := hs.congr (State.callEntry_wr s)
+  obtain hlow : (Mont.word s.mem B (slot w 0)).toNat % 2 = 1 := by
+    obtain ⟨w', rfl⟩ : ∃ w', w = w' + 1 := ⟨w - 1, by omega_using [hw2]⟩
+    simp only [wordsVal] at hodd
+    omega_arith
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (wOfSize_ok hw' ((ce _ (by decide)).trans h5)) fun s₁ ⟨⟨a0₁, m₁⟩, k₁⟩ => ?_
+  obtain hs₁ : Scr s₁ B Z := hs₀.congr k₁.2.2
+  refine WP.mono (minv_ok hs₁ (d := slot w 0) ((k₁.gpr (by decide)).trans ((ce _ (by decide)).trans h7))
+    (slot_al w 0) (by unfold slot at hZ ⊢; omega_using [hZ, hw2])
+    (by rw [m₁, State.callEntry_mem]; exact hlow)) fun s₂ ⟨⟨inv₂, m₂⟩, k₂⟩ => ?_
+  rw [m₁, State.callEntry_mem] at inv₂
+  obtain e1 : s₂.gpr .t1 = s.gpr .t1 := VG.Proof.Bignum.minv_unique hlow inv₂ hinv
+  obtain e0 : s₂.gpr .t0 = s.gpr .t0 := by rw [k₂.gpr (by decide), a0₁, ht0]
+  obtain k12 := k₁.trans k₂
+  obtain hm₂ : s₂.mem = s.mem := by rw [m₂, m₁, State.callEntry_mem]
+  obtain g : ∀ r, r ∉ [Reg.t0, .s0, .s1, .s2, .s3, .t1] → r ∉ linkRegs → s₂.gpr r = s.gpr r := fun r hr hl => by
+    rw [k12.gpr (by simpa using hr), ce r hl]
+  refine WP.mono (powWin1_ok (hs₁.congr k₂.2.2) hw2 hw' hZ (by rw [g _ (by decide) (by decide)]; exact h7)
+    (by rw [g _ (by decide) (by decide)]; exact h5) (e0.trans ht0) (by rw [e1, hm₂]; exact hinv)
+    (by rw [hm₂]; exact hN) (by rw [hm₂]; exact hodd) (by rw [hm₂]; exact hRRlt)
+    (by rw [g _ (by decide) (by decide)]; exact h9) (by rw [g _ (by decide) (by decide)]; exact h10) hL hL'
+    (fun i hi => by rw [k12.2.1, k12.2.2, State.callEntry_rd, State.callEntry_wr]; exact hrd i hi) hsep)
+    fun t ⟨⟨hpow, hout, h1⟩, kt⟩ => ⟨?_, ?_, ?_⟩
+  · rw [kt.gpr (by decide), k12.gpr (by decide)]
+  · rw [hm₂] at hpow hout h1; exact ⟨hpow, hout, h1⟩
+  · refine ⟨fun r hr => ?_, kt.2.1.trans (k12.2.1.trans (State.callEntry_rd s)),
+      kt.2.2.trans (k12.2.2.trans (State.callEntry_wr s))⟩
+    simp only [List.mem_append, List.mem_singleton, not_or] at hr
+    rw [kt.gpr hr.1]
+    by_cases h0 : r = .t0
+    · subst h0; exact e0
+    by_cases h1 : r = .t1
+    · subst h1; exact e1
+    have hl : r ∉ linkRegs := by
+      simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false]
+      rintro (h | h | h | h | h | h | h | h) <;> subst h <;> first | exact hr.2 rfl | exact h0 rfl | exact h1 rfl |
+        exact hr.1 (by decide)
+    exact g r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      rintro (h | h | h | h | h | h) <;> subst h <;> first | exact h0 rfl | exact h1 rfl | exact hr.1 (by decide)) hl
 
 end VG.Proof.Bignum.RISCV64.Win
