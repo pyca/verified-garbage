@@ -277,9 +277,11 @@ theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   have argSub : (⟨State.addr g.stack, 24⟩ : Region).Sub g.innerRegion := Region.sub_prefix (by decide)
   have argStack : (⟨State.addr g.stack, 24⟩ : Region).Sub g.wholeStack :=
     fun x hx => h.valid.innerSub x (argSub x hx)
-  have callee : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region) = g.calleeRegion := by
-    unfold PrivGeometry.calleeRegion FrameStack.belowA
-    rw [FrameStack.addr_sub' h.valid.stackLow]; rfl
+  have callee : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region).Sub g.calleeRegion := by
+    have e : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region) = FrameStack.belowA g.stack 56 := by
+      unfold FrameStack.belowA
+      rw [FrameStack.addr_sub' h.valid.stackLow]; rfl
+    rw [e]; exact FrameStack.belowA_sub (by decide) h.valid.stackLow104
   refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega_using [this], rfl, rfl,
     (h.valid.stackOutput.sub_left preStack).symm, h.valid.outputSources 1,
     (h.valid.stackOutput.sub_left tempStack).symm, h.valid.outputWorkspace,
@@ -289,12 +291,12 @@ theorem pdCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     ?_, ?_, ?_, ?_, ?_, ?_, h.valid.outputFit, h.valid.precomputationFit, h.valid.sourceFits 1,
     h.valid.temporaryFit, h.valid.workspaceFit, ⟨h.valid.minLength, h.valid.maxLength⟩, rfl,
     trivial, h.valid.exponentPositive, h.valid.exponentFits, publicScratch_le ⟨h.valid.minLength, h.valid.maxLength⟩ h.valid.space⟩
-  · rw [callee]; exact h.valid.stackOutput.sub_left h.valid.calleeSub
-  · rw [callee]; exact h.valid.calleeInner.sub_right preSub
-  · rw [callee]; exact (h.valid.stackSources 1).sub_left h.valid.calleeSub
-  · rw [callee]; exact h.valid.calleeInner.sub_right tempSub
-  · rw [callee]; exact h.valid.stackWorkspace.sub_left h.valid.calleeSub
-  · rw [callee]; exact h.valid.calleeInner.sub_right argSub
+  · exact (h.valid.stackOutput.sub_left h.valid.calleeSub).sub_left callee
+  · exact (h.valid.calleeInner.sub_right preSub).sub_left callee
+  · exact ((h.valid.stackSources 1).sub_left h.valid.calleeSub).sub_left callee
+  · exact (h.valid.calleeInner.sub_right tempSub).sub_left callee
+  · exact (h.valid.stackWorkspace.sub_left h.valid.calleeSub).sub_left callee
+  · exact (h.valid.calleeInner.sub_right argSub).sub_left callee
 end VG.Proof.Rsa.Arm
 
 end
@@ -409,9 +411,11 @@ theorem pcCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
   have preStack : (⟨State.addr g.precomputation, 16 * Spec.Rsa.modulusWords g.length⟩ : Region).Sub g.wholeStack :=
     fun x hx => h.valid.innerSub x (preSub x hx)
   have argSub : (⟨State.addr g.stack, 8⟩ : Region).Sub g.innerRegion := Region.sub_prefix (by decide)
-  have callee : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region) = g.calleeRegion := by
-    unfold PrivGeometry.calleeRegion FrameStack.belowA
-    rw [FrameStack.addr_sub' h.valid.stackLow]; rfl
+  have callee : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region).Sub g.calleeRegion := by
+    have e : (⟨g.stack.setWidth 64 - BitVec.ofNat 64 56, 56⟩ : Region) = FrameStack.belowA g.stack 56 := by
+      unfold FrameStack.belowA
+      rw [FrameStack.addr_sub' h.valid.stackLow]; rfl
+    rw [e]; exact FrameStack.belowA_sub (by decide) h.valid.stackLow104
   refine ⟨h.valid.stackLow, by have := h.valid.stackHigh; omega_using [this], rfl, rfl,
     (h.valid.stackSources 0).sub_left preStack, h.valid.stackWorkspace.sub_left preStack, ?_,
     h.valid.sourcesWorkspace 0, ?_, ?_, ?_, ?_, ?_, h.valid.precomputationFit,
@@ -421,8 +425,8 @@ theorem pcCall_pre {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     exact Offset.disjoint_base _ (by decide : 8 ≤ oPre)
       (by have := h.valid.maxLength; simp only [oPre, Spec.Rsa.modulusWords]; omega_using [kfit])
   · exact (h.valid.stackWorkspace.sub_left (fun x hx => h.valid.innerSub x (argSub x hx))).symm
-  · rw [callee]; exact h.valid.calleeInner.sub_right preSub
-  · rw [callee]; exact (h.valid.stackSources 0).sub_left h.valid.calleeSub
-  · rw [callee]; exact h.valid.stackWorkspace.sub_left h.valid.calleeSub
-  · rw [callee]; exact h.valid.calleeInner.sub_right argSub
+  · exact (h.valid.calleeInner.sub_right preSub).sub_left callee
+  · exact ((h.valid.stackSources 0).sub_left h.valid.calleeSub).sub_left callee
+  · exact (h.valid.stackWorkspace.sub_left h.valid.calleeSub).sub_left callee
+  · exact (h.valid.calleeInner.sub_right argSub).sub_left callee
 end VG.Proof.Rsa.Arm

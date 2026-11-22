@@ -10,7 +10,8 @@ public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
 
 /-! # Verified callees for the ARMv7 checked private operation
 
-Each callee uses at most 56 stack bytes, and the codes its callers call
+The private CRT uses at most 104 stack bytes, its frame and the Montgomery
+product it calls, and every other callee at most 56; the codes its callers call
 make no indirect call (`crtPNoIcall`, `pcNoIcall`, `pdNoIcall`): with their
 stacks, what each variant gives of its own code for its callers' cleanup
 (`Arm.Scrub.CodeOk`). Callers are generic over the CRT and its associated
@@ -25,12 +26,12 @@ structure CrtImpl where
   name : String
   code : Prog isa
   verified : Verified target code (Proof.Rsa.privateCrtContract abi 104)
-  stack : FrameStack.armStack code ≤ 56
+  stack : FrameStack.armStack code ≤ 104
   /-- `vg_rsa_private_crt_precomputed`, of the same arithmetic. -/
   crtPName : String
   crtP : Prog isa
   crtPVerified : Verified target crtP (Proof.Rsa.privateCrtPrecomputedContract abi 104)
-  crtPStack : FrameStack.armStack crtP ≤ 56
+  crtPStack : FrameStack.armStack crtP ≤ 104
   crtPNoIcall : noIcall crtP = true
   pcName : String
   pc : Prog isa
@@ -46,7 +47,7 @@ structure CrtImpl where
   features : List String
 
 /-- What `vg_rsa_private_crt_precomputed`'s code gives its callers' cleanup. -/
-theorem CrtImpl.crtPOk (v : CrtImpl) : Arm.Scrub.CodeOk v.crtP 56 := ⟨v.crtPStack, v.crtPNoIcall⟩
+theorem CrtImpl.crtPOk (v : CrtImpl) : Arm.Scrub.CodeOk v.crtP 104 := ⟨v.crtPStack, v.crtPNoIcall⟩
 
 /-- What `vg_rsa_public_precompute`'s code gives its callers' cleanup. -/
 theorem CrtImpl.pcOk (v : CrtImpl) : Arm.Scrub.CodeOk v.pc 56 := ⟨v.pcStack, v.pcNoIcall⟩
