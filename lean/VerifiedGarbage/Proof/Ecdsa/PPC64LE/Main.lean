@@ -610,13 +610,13 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Regi
     refine ⟨by rw [r3, hdc]; rfl, ?_⟩
     rw [bytes, hdc]; rfl
 
-theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith Args.sign))
+theorem sign_eq (c : Cfg) : c.sign = .seq (c.setupWith Args.sign)
     (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
     (.seq (c.qMul GX GY) (.seq c.invP (.seq c.middle
       (.seq c.invN c.scalar))))))) := rfl
 
-theorem signWith_eq (c : Cfg) (generator : Prog isa) : c.signWith generator = .seq (.block (c.setupWith Args.sign))
+theorem signWith_eq (c : Cfg) (generator : Prog isa) : c.signWith generator = .seq (c.setupWith Args.sign)
     (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
     (.seq generator (.seq c.invP (.seq c.middle

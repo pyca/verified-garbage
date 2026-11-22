@@ -13,6 +13,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ECDSA on PPC64LE: the setup
@@ -371,6 +374,33 @@ theorem wordsVal_of_tbl {c : Cfg} {m : Mem} {base : Addr} {i x : Nat} (hi : i < 
     show (c.n * i + j) / c.n = i by rw [Nat.mul_comm, Nat.add_comm, Nat.add_mul_div_right _ _ h0, Nat.div_eq_of_lt hj,
       Nat.zero_add],
     show (c.n * i + j) % c.n = j by rw [Nat.mul_comm, Nat.add_comm, Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hj], hx]
+
+/-- The table of constants, under a contract that lists it
+(`Abi.withConsts`, `ConstsOk`), as `SetupPre` takes it: readable word by word,
+and apart from a working space at `sc`, so that its words survive the
+setup's writes there. -/
+theorem tbl_of_consts {c : Cfg} {K : List (String × List (BitVec 64))} {st : Nat} {s : State} {sc : Addr}
+    (hk : ConstsOk K st s) (hc : (c.constSym, c.constTbl) ∈ K)
+    (hd : Region.Disjoint ⟨s.syms c.constSym, 8 * c.constTbl.length⟩ ⟨sc, size⟩) :
+    (∀ i < 17 * c.n, InRegions (s.rd ++ s.wr) (s.syms c.constSym + BitVec.ofNat 64 (8 * i)) 8) ∧
+    ∀ m : Mem, Outside sc 0 4096 s.mem m →
+      ∀ i < 17 * c.n, m.readW (s.syms c.constSym + BitVec.ofNat 64 (8 * i)) 64 = c.constTbl.getD i 0 := by
+  obtain hL := constTbl_length c
+  obtain hfit := hk.fit hc
+  refine ⟨fun i hi => hk.inRegions hc (by rw [hL]; omega_arith) (by decide) s.wr, fun m hm i hi => ?_⟩
+  rw [← hk.readW hc (by rw [hL]; exact hi)]
+  refine Mem.readW_congr fun j hj => hm _ (Or.inr ?_)
+  -- The byte is in the table, so not in the working space.
+  obtain hin : ((s.syms c.constSym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j) - s.syms c.constSym).toNat + 1 ≤
+      8 * c.constTbl.length := by
+    rw [VG.Offset.add_add, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by rw [hL] at hfit; omega_using [hfit, hi, hj])]
+    rw [hL]; omega_using [hi, hj]
+  obtain hn := hd _ hin
+  simp only [Region.Contains, Nat.not_le] at hn
+  simp only [ofs]
+  have : size = 8192 := rfl
+  omega_using [hn, this]
 
 theorem setup_eq (c : Cfg) (A : Args) : c.setupWith A = .seq (.block (Cfg.saveCode A.sc ++
     (loadBytes c.C.len c.n (c.sl K) A.k ++ (loadBytes c.C.len c.n (c.sl D) A.d ++
