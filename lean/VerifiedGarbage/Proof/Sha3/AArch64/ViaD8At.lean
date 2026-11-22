@@ -30,6 +30,9 @@ leak the same, since what code leaks tells where each part of it ends
 (`Exec.prefix`).
 -/
 
+-- separate module: the framework for any caller of a function by `d8`, which SM4-GCM's and AES-GCM's
+-- functions build on, apart from their proofs, which are slow to rebuild.
+
 @[expose] public section
 
 namespace VG.Proof.Sha3.AArch64
@@ -670,13 +673,14 @@ theorem scrubSide_entryD8 {n core : String} {F : Prog isa} {W rb : Nat}
     (hs : scrubSide F W rb ⟨allGprs, allVecs, []⟩ [] = true) (hW : 0 < W) (hW' : W + 16 < 4096) :
     scrubSide (entryD8 n core (Code.viaD8At n F)) (W + 16) rb clearD8 [("", [⟨"", "", [n], []⟩])] = true := by
   obtain ⟨hc, -⟩ := of_side hs hW
-  have hW16 : W + 16 ≠ 0 := by omega
+  have hW16 : W + 16 ≠ 0 := Nat.succ_ne_zero _
   simp only [scrubSide, Nat.pos_iff_ne_zero.mp hW, hW16, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq,
     beq_iff_eq] at hs ⊢
   obtain ⟨⟨⟨⟨⟨⟨⟨-, h2⟩, h3⟩, -⟩, h5⟩, -⟩, h7⟩, -⟩ := hs
-  refine ⟨⟨⟨⟨⟨⟨⟨hW', by omega⟩, ?_⟩, ?_⟩, h5⟩, by decide⟩, ?_⟩, ?_⟩
+  refine ⟨⟨⟨⟨⟨⟨⟨hW', by rw [Nat.add_mod_right]; exact h2⟩, ?_⟩, ?_⟩, h5⟩, by decide⟩, ?_⟩, ?_⟩
   · simp only [entryD8, Code.aarch64Depth, depth_viaD8At, Instr.frameUnits, Nat.zero_max, Nat.max_zero]
-    omega
+    rw [Nat.mul_add]
+    exact Nat.add_le_add_right h3 16
   · unfold tablesCall
     rw [List.all_eq_true]
     intro f hf
