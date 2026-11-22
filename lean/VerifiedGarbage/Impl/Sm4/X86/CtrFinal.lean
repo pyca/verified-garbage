@@ -12,8 +12,10 @@ stack): the code of `vg_sm4_ctr_final`, whose registration frames it with a
 buffer of its own on the stack, `save`, the fifth argument, of 32 bytes: the
 caller's callee-saved registers, then a block of the code's own. It is
 AES-CTR's final function's (`Impl/AesCtr/X86/Final.lean`) with SM4's
-arguments, around calls of `vg_sm4_ctr`, framed by its own working space on
-the stack (`ctrFramed`), its four arguments pushed in a frame of their own
+arguments, around calls of an implementation of `vg_sm4_ctr`'s code, an
+internal function `name` with the code `core` (the baseline's:
+`vg_sm4_ctr_core`, `ctrFramed`, `vg_sm4_ctr`'s framed by its own working
+space on the stack), its four arguments pushed in a frame of their own
 (`ctrCall`):
 
 1. our caller's `ebx`, `esi`, `edi` and `ebp` saved in `save`;
@@ -55,10 +57,10 @@ of whole blocks, `len >> 4`, for `len`. -/
 def ctrFinalArgs : List Instr :=
   [.mov .eax (argOp 0), .mov .edx (argOp 1), .mov .ebx (argOp 2), .mov .esi (argOp 3), .shift .shr .esi 4]
 
-/-- The call of `vg_sm4_ctr(eax, edx, ebx, esi)`'s code, as `vg_sm4_ctr_core`,
-its arguments pushed last to first. -/
-def ctrCall : Prog isa :=
-  .frame (.push [.esi, .ebx, .edx, .eax]) (.call "vg_sm4_ctr_core" ctrFramed) (.pop .eax 4)
+/-- The call of `vg_sm4_ctr(eax, edx, ebx, esi)`'s code, as the internal
+function `name` with the code `core`, its arguments pushed last to first. -/
+def ctrCall (name : String) (core : Prog isa) : Prog isa :=
+  .frame (.push [.esi, .ebx, .edx, .eax]) (.call name core) (.pop .eax 4)
 
 /-- ZF set if no bytes are left after the whole blocks. -/
 def ctrFinalTest : List Instr := [.mov .eax (argOp 3), .alu .and .eax (.imm 15), .alu .test .eax (.reg .eax)]
@@ -82,12 +84,14 @@ def ctrFinalRestore : List Instr := .mov .eax (argOp 4) :: finalSaved.map fun p 
 
 /-- The partial last block: the output block `CIPH_K(Tₙ₊₁)` in the block of
 `save`, and its first `u` bytes XORed into the data. -/
-def ctrFinalTail : Prog isa :=
-  .seq (.block ctrFinalTailArgs) (.seq ctrCall (.seq (.block ctrFinalXorArgs) (.loop (.block tailByte) .ne)))
+def ctrFinalTail (name : String) (core : Prog isa) : Prog isa :=
+  .seq (.block ctrFinalTailArgs)
+    (.seq (ctrCall name core) (.seq (.block ctrFinalXorArgs) (.loop (.block tailByte) .ne)))
 
-/-- `vg_sm4_ctr_final`. -/
-def ctrFinal : Prog isa :=
-  .seq (.block (ctrFinalSave ++ ctrFinalArgs)) (.seq ctrCall
-    (.seq (.block ctrFinalTest) (.seq (.ite .e (.block []) ctrFinalTail) (.block ctrFinalRestore))))
+/-- `vg_sm4_ctr_final`, calling `core` as `name`. -/
+def ctrFinal (name : String) (core : Prog isa) : Prog isa :=
+  .seq (.block (ctrFinalSave ++ ctrFinalArgs)) (.seq (ctrCall name core)
+    (.seq (.block ctrFinalTest)
+      (.seq (.ite .e (.block []) (ctrFinalTail name core)) (.block ctrFinalRestore))))
 
 end VG.Impl.Sm4.X86

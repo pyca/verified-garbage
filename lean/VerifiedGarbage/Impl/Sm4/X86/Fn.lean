@@ -40,8 +40,8 @@ def ecbWords : List Nat := [0, 1, 2, 3, 4]
 /-- … of the 1516 bytes the CBC, CFB128, OFB and CTR functions reserve, … -/
 def modeWords : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-/-- … and of the 1592 bytes of `vg_sm4_ctr_final`, whose call of
-`vg_sm4_ctr_core` leaves its frames too. -/
+/-- … and of the 1592 bytes of `vg_sm4_ctr_final` calling the baseline's
+`vg_sm4_ctr_core`, whose call leaves its frames too. -/
 def ctrFinalWords : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 389]
 
 /-- `Spec.Sm4.expandKeyApi`'s function as emitted. -/
@@ -103,9 +103,11 @@ def ctr : Prog isa :=
   Impl.Scrub.X86.scrubSel 0 1516 modeWords
     (Impl.StackScratch.X86.withStackScratchWiped 1496 4 368 Impl.Sm4.X86.ctr)
 
-/-- `Spec.Sm4.ctrFinalApi`'s function as emitted. -/
-def ctrFinal : Prog isa :=
-  Impl.Scrub.X86.scrubSel 0 1592 ctrFinalWords
-    (Impl.StackScratch.X86.withStackScratchWiped 56 4 8 Impl.Sm4.X86.ctrFinal)
+/-- `Spec.Sm4.ctrFinalApi`'s function as emitted, calling the implementation
+`core` of `vg_sm4_ctr`'s code as `name`, and zeroing the doublewords `ws`
+that the residue analysis finds it may leave different with it. -/
+def ctrFinal (name : String) (core : Prog isa) (ws : List Nat) : Prog isa :=
+  Impl.Scrub.X86.scrubSel 0 1592 ws
+    (Impl.StackScratch.X86.withStackScratchWiped 56 4 8 (Impl.Sm4.X86.ctrFinal name core))
 
 end VG.Impl.Sm4.X86.Fn
