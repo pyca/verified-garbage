@@ -71,7 +71,7 @@ def ivUnstash : List Instr := [.ldr .r8 base ivOff]
 direction `d` and the transposition back, with the batch's registers in the
 working space meanwhile. -/
 def kernel (d : VG.Spec.TripleDes.Direction) : Prog isa :=
-  .seq (.block stash) (.seq (.block ivStash) (.seq (.block transpose) (.seq (passes d)
+  .seq (.block stash) (.seq (.block ivStash) (.seq (.block transpose) (.seq (passesCall d)
     (.seq (.block transpose) (.seq (.block unstash) (.block ivUnstash))))))
 
 /-! ## CBC decryption -/
