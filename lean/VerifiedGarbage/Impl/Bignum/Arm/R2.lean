@@ -42,4 +42,12 @@ def r2Squares : Prog isa := .seq (.block r2SquareCount) (.loop r2SquareStep .ne)
 
 def r2 : Prog isa := .seq r2Init (.seq doubleLoop r2Squares)
 
+/-! The same with the squarings `op 4 4 4`, any Montgomery product's (a call
+of a shared one, `MontCall.op`). -/
+
+def r2SquareStepWith (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (op 4 4 4) (.block doubleCount)
+def r2SquaresWith (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block r2SquareCount) (.loop (r2SquareStepWith op) .ne)
+def r2With (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq r2Init (.seq doubleLoop (r2SquaresWith op))
+
 end VG.Impl.Bignum.Arm
