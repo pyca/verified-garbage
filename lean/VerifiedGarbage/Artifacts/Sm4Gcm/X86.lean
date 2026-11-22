@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Sm4.X86.Lit
 public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
 public import VerifiedGarbage.Proof.Variants.Ghash.X86
+public import VerifiedGarbage.Proof.Variants.Sm4ExpandKey.X86
 
 /-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on x86 -/
 
@@ -18,11 +19,14 @@ public import VerifiedGarbage.Proof.Variants.Ghash.X86
 
 namespace VG.Artifacts.Sm4Gcm.X86
 
-def direct : List Artifact := [
-  Spec.Sm4.Gcm.initApi.artifact X86.target {
-    code := Impl.Sm4Gcm.X86.Fn.init
-    verified := Proof.Sm4Gcm.X86.Scrub.init_scrubbed
-    spSafe := Proof.Sm4Gcm.X86.Scrub.init_spSafeF }]
+/-- `vg_sm4_gcm_init`, with each implementation of the key schedule. -/
+def keyed : List Artifact :=
+  VG.Proof.Variants.Sm4ExpandKey.X86.variants.flatMap fun (k : Proof.Sm4Gcm.X86.KeyImpl) => [
+    Spec.Sm4.Gcm.initApi.artifact X86.target {
+      suffix := k.suffix
+      code := Impl.Sm4Gcm.X86.Fn.init k.fn
+      verified := Proof.Sm4Gcm.X86.Scrub.init_scrubbed k
+      spSafe := Proof.Sm4Gcm.X86.Scrub.init_spSafeF k }]
 
 end VG.Artifacts.Sm4Gcm.X86
 
@@ -84,7 +88,7 @@ end VG.Artifacts.Sm4Gcm.X86.Ghash
 namespace VG.Artifacts.Sm4Gcm.X86
 
 def artifacts : List Artifact :=
-  direct ++
+  keyed ++
   (VG.Proof.Variants.Ghash.X86.variants.flatMap fun v => Ghash.artifacts v)
 
 end VG.Artifacts.Sm4Gcm.X86
