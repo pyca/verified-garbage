@@ -197,6 +197,19 @@ macro_rules! nist_group {
 nist_group!(Secp256r1, P256, NamedGroup::secp256r1, 32, 65);
 nist_group!(Secp384r1, P384, NamedGroup::secp384r1, 48, 97);
 
+// ML-KEM's key generation and encapsulation fail only if the operating
+// system's random number generator does, or with negligible probability (a
+// loop of the library's reaching its bound): in no test.
+// NO-COVERAGE-START
+fn mlkem_keygen_failed<E>(_: E) -> Error {
+    Error::General("ML-KEM key generation failed".into())
+}
+
+fn encapsulation_failed<E>(_: E) -> PeerMisbehaved {
+    PeerMisbehaved::InvalidKeyShare
+}
+// NO-COVERAGE-END
+
 /// ML-KEM as a key exchange (draft-ietf-tls-mlkem): the client's share is
 /// an encapsulation key, and the server's a ciphertext to it.
 macro_rules! ml_kem_group {
@@ -206,8 +219,7 @@ macro_rules! ml_kem_group {
 
         impl SupportedKxGroup for $name {
             fn start(&self) -> Result<StartedKeyExchange, Error> {
-                let decaps_key = $dk::from_seed(&*random::<64>()?)
-                    .map_err(|_| Error::General("ML-KEM key generation failed".into()))?;
+                let decaps_key = $dk::from_seed(&*random::<64>()?).map_err(mlkem_keygen_failed)?;
                 Ok(StartedKeyExchange::Single(Box::new(KeyExchange {
                     group: $group,
                     pub_key: *decaps_key.encapsulation_key().as_bytes(),
@@ -228,9 +240,8 @@ macro_rules! ml_kem_group {
                     .map_err(|_| PeerMisbehaved::InvalidKeyShare)?;
                 let encaps_key =
                     $ek::from_bytes(client_share).map_err(|_| PeerMisbehaved::InvalidKeyShare)?;
-                let (shared, ciphertext) = encaps_key
-                    .encapsulate()
-                    .map_err(|_| PeerMisbehaved::InvalidKeyShare)?;
+                let (shared, ciphertext) =
+                    encaps_key.encapsulate().map_err(encapsulation_failed)?;
                 let shared = Zeroizing::new(shared);
                 Ok(CompletedKeyExchange {
                     group: $group,

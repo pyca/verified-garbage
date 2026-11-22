@@ -111,6 +111,14 @@ impl quic::HeaderProtectionKey for HeaderProtectionKey {
     }
 }
 
+// Sealing fails only for a payload longer than AES-GCM's 2^36 - 32 bytes
+// (ChaCha20-Poly1305's limit is larger), which no test has in memory.
+// NO-COVERAGE-START
+fn seal_failed(_: ()) -> Error {
+    Error::EncryptError
+}
+// NO-COVERAGE-END
+
 struct PacketKey {
     /// Encrypts or decrypts a packet's payload
     key: aead::Key,
@@ -134,7 +142,7 @@ impl quic::PacketKey for PacketKey {
         let tag = self
             .key
             .seal(&nonce, header, payload)
-            .map_err(|_| Error::EncryptError)?;
+            .map_err(seal_failed)?;
         Ok(quic::Tag::from(&tag[..]))
     }
 

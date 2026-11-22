@@ -1,6 +1,7 @@
 //! Every cipher suite seals a record the same from contiguous and from
 //! fragmented plaintext, appending the whole record (its header too) after
-//! what the output already holds, and opens what it sealed.
+//! what the output already holds, and opens what it sealed, but not once it
+//! is changed.
 
 use rustls::ConnectionTrafficSecrets;
 use rustls::crypto::cipher::{
@@ -80,6 +81,16 @@ fn check(
         let opened = dec().decrypt(record, SEQ).unwrap();
         assert_eq!(opened.typ, ContentType::ApplicationData, "{name}");
         assert_eq!(opened.payload, plain, "{name}: {len} bytes");
+        // With a byte of its tag changed, it does not open.
+        let mut changed = whole.clone();
+        *changed.last_mut().unwrap() ^= 1;
+        let record = Record::new(
+            ContentType::ApplicationData,
+            EncodableVersion::Legacy(ProtocolVersion::TLSv1_2),
+            InboundOpaque(&mut changed),
+        );
+        let err = dec().decrypt(record, SEQ).err();
+        assert_eq!(err, Some(Error::DecryptError), "{name}: {len} bytes");
     }
 }
 

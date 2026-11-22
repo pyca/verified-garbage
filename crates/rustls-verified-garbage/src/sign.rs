@@ -93,8 +93,8 @@ fn load_pkcs8(pkcs8: &PrivatePkcs8KeyDer<'_>) -> Result<Box<dyn SigningKey>, Err
                 der::ML_DSA_44 => MlDsaKey::MlDsa44(mldsa44::SigningKey44::from_seed(seed).ok()),
                 der::ML_DSA_65 => MlDsaKey::MlDsa65(mldsa65::SigningKey65::from_seed(seed).ok()),
                 _ => MlDsaKey::MlDsa87(mldsa87::SigningKey87::from_seed(seed).ok()),
-            }
-            .check()?;
+            };
+            let key = key.check()?;
             if public_key.is_some_and(|pk| pk != key.public_key()) {
                 return Err(bad_key("ML-DSA key (public key mismatch)"));
             }
@@ -109,6 +109,25 @@ fn load_pkcs8(pkcs8: &PrivatePkcs8KeyDer<'_>) -> Result<Box<dyn SigningKey>, Err
 fn bad_key(what: &str) -> Error {
     Error::General(alloc::format!("invalid {what}"))
 }
+
+// Signing, and an ML-DSA key's generation from its seed, fail only if the
+// operating system's random number generator does, with negligible
+// probability (a loop of the library's reaching its bound), or, for RSA,
+// with a modulus too short for the hash, which no key that loads has: in
+// no test.
+// NO-COVERAGE-START
+fn signing_failed<E>(_: E) -> Error {
+    Error::General("signing failed".into())
+}
+
+fn rsa_signing_failed(e: impl fmt::Display) -> Error {
+    Error::General(alloc::format!("signing failed: {e}"))
+}
+
+fn mldsa_keygen_failed() -> Error {
+    Error::General("ML-DSA key generation failed".into())
+}
+// NO-COVERAGE-END
 
 /// A `SigningKey` for RSA-PKCS1 or RSA-PSS.
 pub(crate) struct RsaSigningKey {
@@ -212,11 +231,11 @@ impl Signer for RsaSigner {
             true => self
                 .key
                 .sign_pss(digest, hash.pss(), hash.pss(), hash.len())
-                .map_err(|e| Error::General(alloc::format!("signing failed: {e}"))),
+                .map_err(rsa_signing_failed),
             false => self
                 .key
                 .sign_pkcs1v15(digest, hash.pkcs1())
-                .map_err(|e| Error::General(alloc::format!("signing failed: {e}"))),
+                .map_err(rsa_signing_failed),
         }
     }
 
@@ -342,16 +361,15 @@ impl SigningKey for EcdsaSigner {
 
 impl Signer for EcdsaSigner {
     fn sign(self: Box<Self>, message: &[u8]) -> Result<Vec<u8>, Error> {
-        let failed = |_| Error::General("signing failed".into());
         Ok(match &*self.key {
             EcdsaKey::P256(k, _) => {
-                der::ecdsa_sig_to_der(&k.sign::<Sha256>(message).map_err(failed)?)
+                der::ecdsa_sig_to_der(&k.sign::<Sha256>(message).map_err(signing_failed)?)
             }
             EcdsaKey::P384(k, _) => {
-                der::ecdsa_sig_to_der(&k.sign::<Sha384>(message).map_err(failed)?)
+                der::ecdsa_sig_to_der(&k.sign::<Sha384>(message).map_err(signing_failed)?)
             }
             EcdsaKey::P521(k, _) => {
-                der::ecdsa_sig_to_der(&k.sign::<Sha512>(message).map_err(failed)?)
+                der::ecdsa_sig_to_der(&k.sign::<Sha512>(message).map_err(signing_failed)?)
             }
         })
     }
@@ -426,11 +444,10 @@ impl
     >
 {
     fn check(self) -> Result<MlDsaLoaded, Error> {
-        let failed = || Error::General("ML-DSA key generation failed".into());
         Ok(match self {
-            Self::MlDsa44(k) => MlDsaKey::MlDsa44(k.ok_or_else(failed)?),
-            Self::MlDsa65(k) => MlDsaKey::MlDsa65(k.ok_or_else(failed)?),
-            Self::MlDsa87(k) => MlDsaKey::MlDsa87(k.ok_or_else(failed)?),
+            Self::MlDsa44(k) => MlDsaKey::MlDsa44(k.ok_or_else(mldsa_keygen_failed)?),
+            Self::MlDsa65(k) => MlDsaKey::MlDsa65(k.ok_or_else(mldsa_keygen_failed)?),
+            Self::MlDsa87(k) => MlDsaKey::MlDsa87(k.ok_or_else(mldsa_keygen_failed)?),
         })
     }
 }
@@ -481,18 +498,10 @@ impl SigningKey for MlDsaSigner {
 
 impl Signer for MlDsaSigner {
     fn sign(self: Box<Self>, message: &[u8]) -> Result<Vec<u8>, Error> {
-        // Signing with an empty context fails only if the operating system's
-        // random number generator does, or if a loop reaches its bound (with
-        // probability about 2^-256): in no test.
-        // NO-COVERAGE-START
-        fn failed<E>(_: E) -> Error {
-            Error::General("signing failed".into())
-        }
-        // NO-COVERAGE-END
         Ok(match &*self.0 {
-            MlDsaKey::MlDsa44(k) => k.sign(message, &[]).map_err(failed)?.to_vec(),
-            MlDsaKey::MlDsa65(k) => k.sign(message, &[]).map_err(failed)?.to_vec(),
-            MlDsaKey::MlDsa87(k) => k.sign(message, &[]).map_err(failed)?.to_vec(),
+            MlDsaKey::MlDsa44(k) => k.sign(message, &[]).map_err(signing_failed)?.to_vec(),
+            MlDsaKey::MlDsa65(k) => k.sign(message, &[]).map_err(signing_failed)?.to_vec(),
+            MlDsaKey::MlDsa87(k) => k.sign(message, &[]).map_err(signing_failed)?.to_vec(),
         })
     }
 
@@ -587,6 +596,12 @@ mod tests {
         asn1::BitString::new(b, 0).unwrap()
     }
 
+    /// A bit string whose last byte has an unused bit, which no public key
+    /// is.
+    fn unused_bit() -> asn1::BitString<'static> {
+        asn1::BitString::new(&[0, 0], 1).unwrap()
+    }
+
     /// A `OneAsymmetricKey` (PKCS #8, or with a public key RFC 5958's) of
     /// `version`, for the algorithm `oid` with the DER parameters `params`:
     /// its `AlgorithmIdentifier`, private key and, if any, `[1] IMPLICIT`
@@ -596,10 +611,10 @@ mod tests {
         oid: asn1::ObjectIdentifier,
         params: Option<&[u8]>,
         private_key: &[u8],
-        public_key: Option<&[u8]>,
+        public_key: Option<asn1::BitString<'_>>,
     ) -> PrivateKeyDer<'static> {
         let params = params.map(|p| asn1::parse_single::<asn1::Tlv<'_>>(p).unwrap());
-        let public_key = public_key.map(|pk| asn1::Implicit::<_, 1>::new(bits(pk)));
+        let public_key = public_key.map(asn1::Implicit::<_, 1>::new);
         let der = der::sequence(&|w| {
             w.write_element(&version)?;
             w.write_element(&asn1::SequenceWriter::new(&|w| {
@@ -618,10 +633,10 @@ mod tests {
         version: u8,
         d: &[u8],
         curve: Option<asn1::ObjectIdentifier>,
-        public_key: Option<&[u8]>,
+        public_key: Option<asn1::BitString<'_>>,
     ) -> Vec<u8> {
         let curve = curve.map(asn1::Explicit::<_, 0>::new);
-        let public_key = public_key.map(|q| asn1::Explicit::<_, 1>::new(bits(q)));
+        let public_key = public_key.map(asn1::Explicit::<_, 1>::new);
         der::sequence(&|w| {
             w.write_element(&version)?;
             w.write_element(&d)?;
@@ -713,17 +728,20 @@ mod tests {
     }
 
     /// An RSA key does not load if it is no `RSAPrivateKey`, has more than
-    /// two primes (version 1), a modulus shorter than 2048 bits, or, in
-    /// PKCS #8, parameters other than NULL or a version above 1.
+    /// two primes (version 1), a modulus shorter than 2048 bits, values that
+    /// are not one key's (a CRT coefficient that is not q's inverse modulo
+    /// p), or, in PKCS #8, parameters other than NULL or a version above 1.
     #[test]
     fn rsa_rejects() {
         let pkcs1 = |der: Vec<u8>| PrivateKeyDer::Pkcs1(PrivatePkcs1KeyDer::from(der));
         let (key, _) = rsa_key(|_| {});
         let (multi_prime, _) = rsa_key(|k| k.version = 1);
         let (short, _) = rsa_key(|k| k.n = k.e);
+        let (inconsistent, _) = rsa_key(|k| k.qinv = k.dp);
         fails(pkcs1(key[..key.len() - 1].to_vec()));
         fails(pkcs1(multi_prime));
         fails(pkcs1(short));
+        fails(pkcs1(inconsistent));
         let curve: &[u8] = &oid(&der::SECP256R1);
         fails(pkcs8(0, der::RSA_ENCRYPTION, Some(curve), &key, None));
         fails(pkcs8(2, der::RSA_ENCRYPTION, None, &key, None));
@@ -733,7 +751,8 @@ mod tests {
     /// public key or not), and as PKCS #8 with the curve in either or both,
     /// and signs with its curve's scheme; it does not load with another
     /// version than 1, another curve in PKCS #8 than in SEC 1, no curve, a
-    /// public key that is not its own, a private key of another length or
+    /// public key that is not its own (or a bit string with unused bits), a
+    /// private key of another length or
     /// out of range, or a curve the provider does not have, and not if it
     /// is no `ECPrivateKey`.
     #[test]
@@ -753,9 +772,9 @@ mod tests {
                 };
                 let curve: &[u8] = &oid(&$oid);
                 for der in [
-                    sec1_der(sec1(1, &d, Some($oid), Some(&q[..]))),
+                    sec1_der(sec1(1, &d, Some($oid), Some(bits(&q)))),
                     sec1_der(sec1(1, &d, Some($oid), None)),
-                    ec(Some(curve), &sec1(1, &d, None, Some(&q[..]))),
+                    ec(Some(curve), &sec1(1, &d, None, Some(bits(&q)))),
                     ec(Some(curve), &sec1(1, &d, Some($oid), None)),
                 ] {
                     signs(&*load_private_key(&der).unwrap(), &q, &[$scheme]);
@@ -767,7 +786,8 @@ mod tests {
                 fails(sec1_der(sec1(0, &d, Some($oid), None)));
                 fails(ec(Some(other), &sec1(1, &d, Some($oid), None)));
                 fails(sec1_der(sec1(1, &d, None, None)));
-                fails(sec1_der(sec1(1, &d, Some($oid), Some(&other_q[..]))));
+                fails(sec1_der(sec1(1, &d, Some($oid), Some(bits(&other_q)))));
+                fails(sec1_der(sec1(1, &d, Some($oid), Some(unused_bit()))));
                 fails(sec1_der(sec1(1, &d[1..], Some($oid), None)));
                 fails(sec1_der(sec1(1, &too_large, Some($oid), None)));
                 fails(ec(Some(curve), &sec1(1, &d, Some($oid), None)[1..]));
@@ -800,8 +820,9 @@ mod tests {
     }
 
     /// An Ed25519 seed loads as PKCS #8 (through the provider's key
-    /// provider), with its public key or none, and signs; it does not load with another public key, parameters, or a
-    /// seed of another length.
+    /// provider), with its public key or none, and signs; it does not load
+    /// with another public key (or a bit string with unused bits),
+    /// parameters, or a seed of another length.
     #[test]
     fn ed25519() {
         let seed = [7u8; 32];
@@ -809,7 +830,7 @@ mod tests {
             .verifying_key()
             .as_bytes();
         let private_key = |seed: &[u8]| asn1::write_single(&seed).unwrap();
-        for pk in [Some(&public_key[..]), None] {
+        for pk in [Some(bits(&public_key)), None] {
             let der = pkcs8(1, der::ED25519, None, &private_key(&seed), pk);
             let key = DEFAULT_KEY_PROVIDER.load_private_key(der).unwrap();
             signs(&*key, &public_key, &[SignatureScheme::ED25519]);
@@ -818,7 +839,8 @@ mod tests {
         other[0] ^= 1;
         let null: &[u8] = &null();
         let (sk, short) = (private_key(&seed), private_key(&seed[1..]));
-        fails(pkcs8(1, der::ED25519, None, &sk, Some(&other[..])));
+        fails(pkcs8(1, der::ED25519, None, &sk, Some(bits(&other))));
+        fails(pkcs8(1, der::ED25519, None, &sk, Some(unused_bit())));
         fails(pkcs8(0, der::ED25519, Some(null), &sk, None));
         fails(pkcs8(0, der::ED25519, None, &short, None));
     }
@@ -852,7 +874,7 @@ mod tests {
                 let both = mldsa_both(&seed, &[1, 2, 3]);
                 for der in [
                     pkcs8(0, $oid, None, &mldsa_seed(&seed), None),
-                    pkcs8(1, $oid, None, &both, Some(&public_key[..])),
+                    pkcs8(1, $oid, None, &both, Some(bits(&public_key))),
                 ] {
                     signs(&*load_private_key(&der).unwrap(), &public_key, &[$scheme]);
                 }
@@ -862,7 +884,7 @@ mod tests {
                 let seed = mldsa_seed(&seed);
                 fails(pkcs8(0, $oid, None, &expanded, None));
                 fails(pkcs8(0, $oid, None, &short, None));
-                fails(pkcs8(1, $oid, None, &seed, Some(&other[..])));
+                fails(pkcs8(1, $oid, None, &seed, Some(bits(&other))));
                 fails(pkcs8(0, $oid, Some(null), &seed, None));
             }};
         }
