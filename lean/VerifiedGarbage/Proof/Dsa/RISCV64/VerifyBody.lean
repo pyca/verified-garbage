@@ -261,6 +261,7 @@ theorem bodyQ_ok {s : State} {L : Lay} {key sig dig : Addr} {q qb d : Nat} {Q : 
     (hL : L.Ok) (hs : ScrL s L)
     (hr : Regs s L key sig) (hq0 : arrQ s.mem L 0 = q) (hq2 : 2 ≤ q) (hqo : q % 2 = 1)
     (hql : q < 2 ^ (8 * L.ql)) (hsg : Src s L sig (2 * L.ql)) (hdg8 : word s.mem L.S hDigest = dig)
+    (hsw : word s.mem L.S hSig = sig)
     (hlen : word s.mem L.S hLens = pack L.pl L.ql qb d) (hqb : qb ≤ L.ql) (hd : d < 2 ^ 16)
     (hdg : Src s L dig (min d qb))
     (hrest : ∀ t, (QS t L key sig ∧
@@ -301,7 +302,8 @@ theorem bodyQ_ok {s : State} {L : Lay} {key sig dig : Addr} {q qb d : Nat} {Q : 
   have K₄ : BKept L s.mem s₄.mem := K₂.trans (BKept.ofBody hL ((qa₃.body hL).trans (qb₄.body hL)))
   -- `w = s^(q − 2) mod q`.
   have k₁₄ := ((k₁.trans k₂).trans k₃).trans k₄
-  refine WP.seq (WP.mono (inverse_ok hL Q₄ I₄ (hsg.keep k₁₄.2.1 k₁₄.2.2) (by rw [q0₄]; exact hq2)
+  refine WP.seq (WP.mono (inverse_ok hL Q₄ I₄ (hsg.keep k₁₄.2.1 k₁₄.2.2)
+      (by rw [K₄.word (by decide) (by decide)]; exact hsw) (by rw [q0₄]; exact hq2)
       (by rw [q0₄]; exact hqo) (by rw [q0₄, kj₄ 24 (by decide) (by decide)]; exact h24₃))
     fun s₅ ⟨⟨Q₅, I₅, w4₅, k24₅, qa₅⟩, k₅⟩ => ?_)
   rw [q0₄, bq₄, (sig_kept hsg hdg K₄.out (Nat.le_refl _)).2.1] at w4₅
@@ -331,7 +333,8 @@ def bodyRegs : List Reg := bodyQRegs ++ combRegs ++ cmpRegs
 theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
     (hL : L.Ok) (hK : KeyOk s₀.mem L key) (hc : Checked s₀ s L key sig d)
     (hkp : Kept L s₀.mem s.mem) (hk : Src s L key (3 * L.pl + L.ql)) (hsg : Src s L sig (2 * L.ql))
-    (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hdg8 : word s.mem L.S hDigest = dig) :
+    (hd : d < 2 ^ 16) (hdg : Src s L dig d) (hdg8 : word s.mem L.S hDigest = dig)
+    (hsw : word s.mem L.S hSig = sig) :
     WP isa Verify.body s fun t =>
       (t.gpr .a0 = BitVec.ofNat 64 (if ((0 < rOf s.mem L sig ∧ rOf s.mem L sig < qOf s₀.mem L key) ∧
           (0 < sOf s.mem L sig ∧ sOf s.mem L sig < qOf s₀.mem L key)) ∧
@@ -362,7 +365,7 @@ theorem body_ok {s₀ s : State} {L : Lay} {key sig dig : Addr} {d : Nat}
   have hnq : Spec.Dsa.bitLength q / 8 ≤ L.ql := q_bits (by omega_using [B]) hqlt
   generalize hn : Spec.Dsa.bitLength q / 8 = n at lens hnq ⊢
   unfold Verify.body
-  refine bodyQ_ok (q := q) (qb := n) hL scr regs q0 (by omega_using [B]) hqo hqlt hsg hdg8 lens hnq hd
+  refine bodyQ_ok (q := q) (qb := n) hL scr regs q0 (by omega_using [B]) hqo hqlt hsg hdg8 hsw lens hnq hd
     (hdg.take (Nat.min_le_left d n)) fun t₁ ⟨Q₁, u1, u2, m₁, K₁, pw₁, q0₁⟩ k₁ => ?_
   have sk := sig_kept hsg hdg K₁.out (Nat.le_refl d)
   -- `g^u1 y^u2 mod p`.

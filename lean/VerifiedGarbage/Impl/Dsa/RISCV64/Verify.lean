@@ -43,13 +43,13 @@ def capD : List Instr :=
     .li .t3 64, .logic .xor .t3 .a7 .t3, .logic .and .t3 .t3 .a1, .logic .xor .a1 .a7 .t3]
 
 /-- The working space from the stack, the registers saved there, the key and
-the signature into `s11` and `ra`, the digest's address and the lengths into
-the header. -/
+the signature into `s11` and `ra`, the digest's address, the lengths and the
+signature's address into the header. -/
 def entry : List Instr :=
   [.addSp .t2 0, .load .d .t2 .t2 0] ++ save .t2 ++
     [.addi .s11 .a0 0, .addi .ra .a4 0, .store .d .a6 .s6 hDigest] ++ capD ++
     [.shift .sll .d .a1 .a1 48, .shift .sll .d .t3 .a3 16, .add .t3 .a2 .t3, .add .t3 .t3 .a1,
-      .store .d .t3 .s6 hLens]
+      .store .d .t3 .s6 hLens, .store .d .a4 .s6 hSig]
 
 /-- r's octets: the signature, `q_len`. -/
 def ptrR : List Instr := [.addi .s7 .ra 0] ++ getQ .s8
@@ -89,10 +89,13 @@ def minus2 : Prog isa :=
 def qMinus2 : Prog isa := .seq minus2 (.seq (.block ptrBuf) (storeBE 6))
 
 /-- `w = s^(q − 2) mod q` into array 4: s again into array 4, `R² mod q` into
-array 1, the power over the buffer's `q_len` octets. -/
+array 1, the power over the buffer's `q_len` octets by a call of
+`vg_bignum_pow_win`, which writes `ra`, so the signature's address back
+into `ra` from the header's `hSig`. -/
 def inverse : Prog isa :=
   .seq (.block ptrS) (.seq (loadArr 4) (.seq (copy 1 24)
-    (.seq (.block (ptrBuf ++ [.addi .s9 .s7 0, .addi .s10 .s8 0])) ModExp.powWin)))
+    (.seq (.block (ptrBuf ++ [.addi .s9 .s7 0, .addi .s10 .s8 0]))
+      (.seq ModExp.powWinFn (.block [.load .d .ra .s6 hSig])))))
 
 /-- `s8 := min(digest_len, qb)`: `min(digest_len, 64)` unless above `qb`
 (both at most 64). -/

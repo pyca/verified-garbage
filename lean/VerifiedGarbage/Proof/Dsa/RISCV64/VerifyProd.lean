@@ -585,10 +585,18 @@ theorem qMinus2_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s 
 /-- The registers `inverse` writes. -/
 def invRegs : List Reg := [.s7, .s8] ++ loadRegs ++ copyRegs ++ [.s7, .t2, .s8, .s9, .s10] ++ Win.powWRegs
 
+/-- A register written and then restored is kept. -/
+theorem keep_restored {rs rs' : List Reg} {s t : State} (h : Keep rs s t) {r : Reg} (hr : t.gpr r = s.gpr r)
+    (hs : ∀ x ∈ rs, x ≠ r → x ∈ rs') : Keep rs' s t :=
+  ⟨fun x hx => if e : x = r then e ▸ hr else h.1 x fun hm => hx (hs x hm e), h.2⟩
+
 /-- `inverse`: s into array 4, then `s^e mod q` into array 4, for the `q_len`
-octets `e` of the buffer. Arrays 24–27 and `t1` are kept. -/
+octets `e` of the buffer, by a call (`powWinCall_ok`), after which the
+signature's address is loaded into `ra` again from the header's `hSig`.
+Arrays 24–27 and `t1` are kept. -/
 theorem inverse_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s L key sig) (hi : QInv s L)
-    (hsg : Src s L sig (2 * L.ql)) (hq2 : 2 ≤ arrQ s.mem L 0) (hqo : arrQ s.mem L 0 % 2 = 1)
+    (hsg : Src s L sig (2 * L.ql)) (hsw : word s.mem L.S hSig = sig) (hq2 : 2 ≤ arrQ s.mem L 0)
+    (hqo : arrQ s.mem L 0 % 2 = 1)
     (h24 : arrQ s.mem L 24 = 2 ^ (128 * L.wq) % arrQ s.mem L 0) :
     WP isa inverse s fun t =>
       (QS t L key sig ∧ QInv t L ∧
@@ -636,7 +644,7 @@ theorem inverse_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s 
   obtain m53 : s₅.mem = s₃.mem := by rw [m5, m4]
   obtain e5 := Q3.inq.env.keep k35
   obtain k15 := (((k1.trans k2).trans k3).trans k35)
-  refine WP.mono (Win.powWin_ok (D := L.Buf) (L := L.ql) e5.hs (by omega_using [hwq]) (by omega_using [hwq])
+  refine WP.seq (WP.mono (Win.powWinCall_ok (name := "vg_bignum_pow_win") (D := L.Buf) (L := L.ql) e5.hs (by omega_using [hwq]) (by omega_using [hwq])
     (by omega_using [hwq, e24]) e5.a7 e5.s5 e5.t0
     (by rw [m53, W0, k15.gpr (by decide)]; exact hi)
     (by rw [m53]; show 2 ≤ arrQ s₃.mem L 0; rw [A0]; exact hq2)
@@ -647,8 +655,21 @@ theorem inverse_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s 
       rw [k35.2.1, k35.2.2]
       exact (ScrL.bufN (s := s₃) Q3.scr hL (n := L.ql) (by rcases hL.pl with e | e | e <;> omega_using [hwq, e])).ld
         (show i + 1 ≤ L.ql by omega_using [hi]))
-    (buf_apartQ L (by omega_using [hwq]))) fun t ⟨⟨r4, o4'⟩, k6⟩ => ?_
-  obtain o4 : Outside L.Q (slot L.wq 1) (23 * (8 * (L.wq + 2))) s₃.mem t.mem := by rw [← m53]; exact o4'
+    (buf_apartQ L (by omega_using [hwq]))) fun s₆ ⟨⟨r4, o4', _⟩, k6⟩ => ?_)
+  obtain o6 : Outside L.Q (slot L.wq 1) (23 * (8 * (L.wq + 2))) s₃.mem s₆.mem := by rw [← m53]; exact o4'
+  -- The signature's address into `ra` again.
+  obtain qa6 : QArr L s.mem s₆.mem :=
+    ((QArr.of o2 (by omega_using [e1, e4]) (by omega_using [e4, e28])).trans (QArr.of o3 (by omega_using []) (by omega_using [e1, e28]))).trans
+      (QArr.of o6 (by omega_using []) (by omega_using [e1, e28]))
+  obtain k36 := k35.trans k6
+  obtain ⟨hin, hal⟩ := ScrL.hdr (Q3.scr.congr k36.2.2) hL (d := 32) (by decide) (by decide)
+  obtain sw6 : word s₆.mem L.S hSig = sig := ((qa6.body hL).word (by decide)).trans hsw
+  refine WP.mono (WP.keep [.ra] (Q := fun u => u.gpr .ra = sig ∧ u.mem = s₆.mem)
+    (by brun [hSig, (k36.gpr (r := .s6) (by decide)).trans Q3.regs.s6, hin, hal]; exact sw6) (by rfl) (by rfl))
+    fun t ⟨⟨tra, mt⟩, k7⟩ => ?_
+  obtain k3t : Keep ([.s7, .t2, .s8, .s9, .s10] ++ Win.powWRegs) s₃ t := keep_restored (k36.trans k7) (r := .ra) (by rw [tra, Q3.regs.ra]) (by decide)
+  obtain o4 : Outside L.Q (slot L.wq 1) (23 * (8 * (L.wq + 2))) s₃.mem t.mem := by rw [mt]; exact o6
+  rw [← mt] at r4
   rw [m53] at r4
   obtain r4 := r4 (by
     show arrQ s₃.mem L 1 = 2 ^ (64 * L.wq) * 2 ^ (64 * L.wq) % arrQ s₃.mem L 0
@@ -657,10 +678,10 @@ theorem inverse_ok {s : State} {L : Lay} {key sig : Addr} (hL : L.Ok) (h : QS s 
   obtain qa : QArr L s.mem t.mem :=
     ((QArr.of o2 (by omega_using [e1, e4]) (by omega_using [e4, e28])).trans (QArr.of o3 (by omega_using []) (by omega_using [e1, e28]))).trans
       (QArr.of o4 (by omega_using []) (by omega_using [e1, e28]))
-  refine ⟨⟨Q3.step (k35.trans k6) (Body.ofQ hL o4 (by omega_using [hwq, e1])), ?_, ?_, fun j hj hj24 => ?_, qa⟩,
-    (k15.trans k6).mono (by decide)⟩
+  obtain k1t : Keep invRegs s t := (((k1.trans k2).trans k3).trans k3t).mono (by decide)
+  refine ⟨⟨Q3.step k3t (Body.ofQ hL o4 (by omega_using [hwq, e1])), ?_, ?_, fun j hj hj24 => ?_, qa⟩, k1t⟩
   · show ((word t.mem L.Q (slot L.wq 0)).toNat * (t.gpr .t1).toNat + 1) % 2 ^ 64 = 0
-    rw [o4.word (by omega_using [e0, e1]) (by omega_arith), W0, (k15.trans k6).gpr (by decide)]; exact hi
+    rw [o4.word (by omega_using [e0, e1]) (by omega_arith), W0, k1t.gpr (by decide)]; exact hi
   · show wordsVal t.mem L.Q (slot L.wq 4) L.wq = _
     rw [r4]
     show arrQ s₃.mem L 4 ^ _ % arrQ s₃.mem L 0 = _
