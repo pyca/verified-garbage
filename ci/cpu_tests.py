@@ -161,6 +161,10 @@ GROUPS = {
         "lib": [],
         "tests": ["cavp::camellia_cfb"],
     },
+    "camellia_ctr": {
+        "lib": [],
+        "tests": ["rfc5528"],
+    },
     "camellia_ofb": {
         "lib": [],
         "tests": ["cavp::camellia_ofb"],
