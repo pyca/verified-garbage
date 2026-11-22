@@ -3,6 +3,56 @@
 //! `assembly/sm4_cfb.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_sm4_cfb128_encrypt_aesni` requires (`Artifact.features`).
+pub const VG_SM4_CFB128_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// SM4-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 692 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_cfb128_encrypt_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkUP3//4uEJLQCAACJRCQEi4QkuAIAAIlEJAiLhCS8AgAAiUQkDIuEJMACAACJRCQQieCDwBiJRCQUi0QkFImYcAIAAImwdAIAAIm4eAIAAImofAIAAInHi3QkCIsGiYeIAgAAi0YEiYeMAgAAi0YIiYeQAgAAi0YMiYeUAgAA"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_SM4_AESNI} - 2b
+.base64 "WYkHicOLRCQEif6DxmC5CAAAAPMPbzs="
+20:
+.base64 "8w9vAPMPb4vgAAAAZg84AMFmD2/IZg9y0QRmD9vPZg/bx/MPb5PAAAAAZg84ANDzD2+b0AAAAGYPOADZZg/v02YPcNoA8w9/HmYPcNpV8w9/XhBmD3DaqvMPf14gZg9w2v/zD39eMIPAEIPGQIPpAQ=="
+jne 20b
+.base64 "i0QkDImHgAIAAItEJBCJh4QCAACFwA=="
+je 21f
+23:
+.base64 "i7eAAgAAi6+EAgAAi4eIAgAAiUcIi4eMAgAAiUcMi4eQAgAAiUcQi4eUAgAAiUcUix+J/oPGYLgIAAAA8w9vRwjzD287Zg9vyGYPctEEZg/bz2YP28fzD2+TgAAAAGYPOADQ8w9vm5AAAABmDzgA2WYP79NmD3DaAPMPf18gZg9wwlXzD39HMGYPcNqq8w9/X0BmD3DK//MPf09QZg/vw2YP78HzD28eZg/vww=="
+24:
+.base64 "8w9vVhDzD293QGYP79ZmD+/R8w9vXyBmD+/aZg843cdmD2/IZg/bz2YPctAEZg/bx/MPb2MQZg84AOHzD29rMGYPOADpZg9vzPMPb3MgZg84APBmD+/mZg/vzvMPb3NAZg84APBmD+/uZg/v3GYP793zD29zUGYPOADm8w9vQ2BmDzgAyGYP7+HzD29zcGYPOADuZg/v3WYP7+NmD+/U8w9/VyDzD29OIPMPb3dQZg/vzmYP78rzD29fMGYP79lmDzjd52YPb9RmD9vXZg9y1ARmD9vn8w9vQxBmDzgAwvMPb2swZg84AOpmD2/Q8w9vcyBmDzgA9GYP78ZmD+/W8w9vc0BmDzgA9GYP7+5mD+/YZg/v3fMPb3NQZg84AMbzD29jYGYPOADUZg/vwvMPb3NwZg84AO5mD+/dZg/vw2YP78jzD39PMPMPb1Yw8w9vdyBmD+/WZg/v0fMPb19AZg/v2mYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1dA8w9vTkDzD293MGYP785mD+/K8w9vX1BmD+/ZZg843edmD2/UZg/b12YPctQEZg/b5/MPb0MQZg84AMLzD29rMGYPOADqZg9v0PMPb3MgZg84APRmD+/GZg/v1vMPb3NAZg84APRmD+/uZg/v2GYP793zD29zUGYPOADG8w9vY2BmDzgA1GYP78LzD29zcGYPOADuZg/v3WYP78NmD+/I8w9/T1CDxkCD6AE="
+jne 24b
+.base64 "8w9vR1DzD29PQGYPbMFmD3DAiPMPb08w8w9vVyBmD2zKZg9wyYhmD2zBZg9vyGYPctEEZg/bz2YP28fzD2+ToAAAAGYPOADQ8w9vm7AAAABmDzgA2WYP79PzD39XCIu3gAIAAIuvhAIAAIsGM0cIiQaLRgQzRwyJRgSLRggzRxCJRgiLRgwzRxSJRgyLBomHiAIAAItGBImHjAIAAItGCImHkAIAAItGDImHlAIAAIPGEIPtAYm3gAIAAImvhAIAAA=="
+jne 23b
+jmp 22f
+21:
+22:
+.base64 "i3QkCIuHiAIAAIkGi4eMAgAAiUYEi4eQAgAAiUYIi4eUAgAAiUYMi59wAgAAi7d0AgAAi698AgAAi794AgAAuQAAAACJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACJjCREAQAAiYwkSAEAAImMJEwBAACJjCRQAQAAiYwkVAEAAImMJFgBAACJjCRcAQAAiYwkYAEAAImMJGQBAACJjCRoAQAAiYwkbAEAAImMJHABAACJjCR0AQAAiYwkeAEAAImMJHwBAACJjCSAAQAAiYwkhAEAAImMJIgBAACJjCSMAQAAiYwkkAEAAImMJJQBAACJjCSYAQAAiYwknAEAAImMJKABAACJjCSkAQAAiYwkqAEAAImMJKwBAACJjCSwAQAAiYwktAEAAImMJLgBAACJjCS8AQAAiYwkwAEAAImMJMQBAACJjCTIAQAAiYwkzAEAAImMJNABAACJjCTUAQAAiYwk2AEAAImMJNwBAACJjCTgAQAAiYwk5AEAAImMJOgBAACJjCTsAQAAiYwk8AEAAImMJPQBAACJjCT4AQAAiYwk/AEAAImMJAACAACJjCQEAgAAiYwkCAIAAImMJAwCAACJjCQQAgAAiYwkFAIAAImMJBgCAACJjCQcAgAAiYwkIAIAAImMJCQCAACJjCQoAgAAiYwkLAIAAImMJDACAACJjCQ0AgAAiYwkOAIAAImMJDwCAACJjCRAAgAAiYwkRAIAAImMJEgCAACJjCRMAgAAiYwkUAIAAImMJFQCAACJjCRYAgAAiYwkXAIAAImMJGACAACJjCRkAgAAiYwkaAIAAImMJGwCAACJjCRwAgAAiYwkdAIAAImMJHgCAACJjCR8AgAAiYwkgAIAAImMJIQCAACJjCSIAgAAiYwkjAIAAImMJJACAACJjCSUAgAAiYwkmAIAAImMJJwCAACJjCSgAgAAiYwkpAIAAImMJKgCAACJjCSsAgAAjaQksAIAAI2kJEz9//+5AAAAAIlMJASJTCQIiUwkDIlMJBCJTCQUiUwkGI2kJLQCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        VG_SM4_AESNI = sym super::consts::VG_SM4_AESNI,
+    )
+}
+
 /// SM4-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
@@ -107,6 +157,66 @@ jmp 210f
     )
 }
 
+/// The CPU features `vg_sm4_cfb128_encrypt_final_aesni` requires (`Artifact.features`).
+pub const VG_SM4_CFB128_ENCRYPT_FINAL_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// SM4-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 692 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_cfb128_encrypt_final_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkUP3//4uEJLQCAACJRCQEi4QkuAIAAIlEJAiLhCS8AgAAiUQkDIuEJMACAACJRCQQieCDwBiJRCQUi0QkFImYcAIAAImwdAIAAIm4eAIAAImofAIAAInHi3QkCIsGiYeIAgAAi0YEiYeMAgAAi0YIiYeQAgAAi0YMiYeUAgAA"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_SM4_AESNI} - 2b
+.base64 "WYkHicOLRCQEif6DxmC5CAAAAPMPbzs="
+20:
+.base64 "8w9vAPMPb4vgAAAAZg84AMFmD2/IZg9y0QRmD9vPZg/bx/MPb5PAAAAAZg84ANDzD2+b0AAAAGYPOADZZg/v02YPcNoA8w9/HmYPcNpV8w9/XhBmD3DaqvMPf14gZg9w2v/zD39eMIPAEIPGQIPpAQ=="
+jne 20b
+.base64 "i0QkDImHgAIAAItEJBCJh4QCAACFwA=="
+je 21f
+23:
+.base64 "i7eAAgAAi6+EAgAAi4eIAgAAiUcIi4eMAgAAiUcMi4eQAgAAiUcQi4eUAgAAiUcUix+J/oPGYLgIAAAA8w9vRwjzD287Zg9vyGYPctEEZg/bz2YP28fzD2+TgAAAAGYPOADQ8w9vm5AAAABmDzgA2WYP79NmD3DaAPMPf18gZg9wwlXzD39HMGYPcNqq8w9/X0BmD3DK//MPf09QZg/vw2YP78HzD28eZg/vww=="
+24:
+.base64 "8w9vVhDzD293QGYP79ZmD+/R8w9vXyBmD+/aZg843cdmD2/IZg/bz2YPctAEZg/bx/MPb2MQZg84AOHzD29rMGYPOADpZg9vzPMPb3MgZg84APBmD+/mZg/vzvMPb3NAZg84APBmD+/uZg/v3GYP793zD29zUGYPOADm8w9vQ2BmDzgAyGYP7+HzD29zcGYPOADuZg/v3WYP7+NmD+/U8w9/VyDzD29OIPMPb3dQZg/vzmYP78rzD29fMGYP79lmDzjd52YPb9RmD9vXZg9y1ARmD9vn8w9vQxBmDzgAwvMPb2swZg84AOpmD2/Q8w9vcyBmDzgA9GYP78ZmD+/W8w9vc0BmDzgA9GYP7+5mD+/YZg/v3fMPb3NQZg84AMbzD29jYGYPOADUZg/vwvMPb3NwZg84AO5mD+/dZg/vw2YP78jzD39PMPMPb1Yw8w9vdyBmD+/WZg/v0fMPb19AZg/v2mYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1dA8w9vTkDzD293MGYP785mD+/K8w9vX1BmD+/ZZg843edmD2/UZg/b12YPctQEZg/b5/MPb0MQZg84AMLzD29rMGYPOADqZg9v0PMPb3MgZg84APRmD+/GZg/v1vMPb3NAZg84APRmD+/uZg/v2GYP793zD29zUGYPOADG8w9vY2BmDzgA1GYP78LzD29zcGYPOADuZg/v3WYP78NmD+/I8w9/T1CDxkCD6AE="
+jne 24b
+.base64 "8w9vR1DzD29PQGYPbMFmD3DAiPMPb08w8w9vVyBmD2zKZg9wyYhmD2zBZg9vyGYPctEEZg/bz2YP28fzD2+ToAAAAGYPOADQ8w9vm7AAAABmDzgA2WYP79PzD39XCIu3gAIAAIuvhAIAAIP9EA=="
+jb 25f
+.base64 "iwYzRwiJBotGBDNHDIlGBItGCDNHEIlGCItGDDNHFIlGDIsGiYeIAgAAi0YEiYeMAgAAi0YIiYeQAgAAi0YMiYeUAgAAg8YQg+0QibeAAgAAia+EAgAA"
+jmp 26f
+25:
+.base64 "i0cIiYeIAgAAi0cMiYeMAgAAi0cQiYeQAgAAi0cUiYeUAgAAifuDwwg="
+27:
+.base64 "D7YDD7YOMcGIDoPDAYPGAYPtAQ=="
+jne 27b
+.base64 "ibeAAgAAia+EAgAA"
+26:
+jne 23b
+jmp 22f
+21:
+22:
+.base64 "i3QkCIuHiAIAAIkGi4eMAgAAiUYEi4eQAgAAiUYIi4eUAgAAiUYMi59wAgAAi7d0AgAAi698AgAAi794AgAAuQAAAACJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACJjCREAQAAiYwkSAEAAImMJEwBAACJjCRQAQAAiYwkVAEAAImMJFgBAACJjCRcAQAAiYwkYAEAAImMJGQBAACJjCRoAQAAiYwkbAEAAImMJHABAACJjCR0AQAAiYwkeAEAAImMJHwBAACJjCSAAQAAiYwkhAEAAImMJIgBAACJjCSMAQAAiYwkkAEAAImMJJQBAACJjCSYAQAAiYwknAEAAImMJKABAACJjCSkAQAAiYwkqAEAAImMJKwBAACJjCSwAQAAiYwktAEAAImMJLgBAACJjCS8AQAAiYwkwAEAAImMJMQBAACJjCTIAQAAiYwkzAEAAImMJNABAACJjCTUAQAAiYwk2AEAAImMJNwBAACJjCTgAQAAiYwk5AEAAImMJOgBAACJjCTsAQAAiYwk8AEAAImMJPQBAACJjCT4AQAAiYwk/AEAAImMJAACAACJjCQEAgAAiYwkCAIAAImMJAwCAACJjCQQAgAAiYwkFAIAAImMJBgCAACJjCQcAgAAiYwkIAIAAImMJCQCAACJjCQoAgAAiYwkLAIAAImMJDACAACJjCQ0AgAAiYwkOAIAAImMJDwCAACJjCRAAgAAiYwkRAIAAImMJEgCAACJjCRMAgAAiYwkUAIAAImMJFQCAACJjCRYAgAAiYwkXAIAAImMJGACAACJjCRkAgAAiYwkaAIAAImMJGwCAACJjCRwAgAAiYwkdAIAAImMJHgCAACJjCR8AgAAiYwkgAIAAImMJIQCAACJjCSIAgAAiYwkjAIAAImMJJACAACJjCSUAgAAiYwkmAIAAImMJJwCAACJjCSgAgAAiYwkpAIAAImMJKgCAACJjCSsAgAAjaQksAIAAI2kJEz9//+5AAAAAIlMJASJTCQIiUwkDIlMJBCJTCQUiUwkGI2kJLQCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        VG_SM4_AESNI = sym super::consts::VG_SM4_AESNI,
+    )
+}
+
 /// SM4-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
@@ -151,6 +261,66 @@ jmp 21f
 .p2align 6"#,
         vg_sm4_prepare_keys = sym super::sm4::vg_sm4_prepare_keys::vg_sm4_prepare_keys,
         vg_sm4_crypt_prepared = sym super::sm4::vg_sm4_crypt_prepared::vg_sm4_crypt_prepared,
+    )
+}
+
+/// The CPU features `vg_sm4_cfb128_decrypt_final_aesni` requires (`Artifact.features`).
+pub const VG_SM4_CFB128_DECRYPT_FINAL_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// SM4-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 692 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_cfb128_decrypt_final_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkUP3//4uEJLQCAACJRCQEi4QkuAIAAIlEJAiLhCS8AgAAiUQkDIuEJMACAACJRCQQieCDwBiJRCQUi0QkFImYcAIAAImwdAIAAIm4eAIAAImofAIAAInHi3QkCIsGiYeIAgAAi0YEiYeMAgAAi0YIiYeQAgAAi0YMiYeUAgAA"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_SM4_AESNI} - 2b
+.base64 "WYkHicOLRCQEif6DxmC5CAAAAPMPbzs="
+20:
+.base64 "8w9vAPMPb4vgAAAAZg84AMFmD2/IZg9y0QRmD9vPZg/bx/MPb5PAAAAAZg84ANDzD2+b0AAAAGYPOADZZg/v02YPcNoA8w9/HmYPcNpV8w9/XhBmD3DaqvMPf14gZg9w2v/zD39eMIPAEIPGQIPpAQ=="
+jne 20b
+.base64 "i0QkDImHgAIAAItEJBCJh4QCAACFwA=="
+je 21f
+23:
+.base64 "i7eAAgAAi6+EAgAAi4eIAgAAiUcIi4eMAgAAiUcMi4eQAgAAiUcQi4eUAgAAiUcUix+J/oPGYLgIAAAA8w9vRwjzD287Zg9vyGYPctEEZg/bz2YP28fzD2+TgAAAAGYPOADQ8w9vm5AAAABmDzgA2WYP79NmD3DaAPMPf18gZg9wwlXzD39HMGYPcNqq8w9/X0BmD3DK//MPf09QZg/vw2YP78HzD28eZg/vww=="
+24:
+.base64 "8w9vVhDzD293QGYP79ZmD+/R8w9vXyBmD+/aZg843cdmD2/IZg/bz2YPctAEZg/bx/MPb2MQZg84AOHzD29rMGYPOADpZg9vzPMPb3MgZg84APBmD+/mZg/vzvMPb3NAZg84APBmD+/uZg/v3GYP793zD29zUGYPOADm8w9vQ2BmDzgAyGYP7+HzD29zcGYPOADuZg/v3WYP7+NmD+/U8w9/VyDzD29OIPMPb3dQZg/vzmYP78rzD29fMGYP79lmDzjd52YPb9RmD9vXZg9y1ARmD9vn8w9vQxBmDzgAwvMPb2swZg84AOpmD2/Q8w9vcyBmDzgA9GYP78ZmD+/W8w9vc0BmDzgA9GYP7+5mD+/YZg/v3fMPb3NQZg84AMbzD29jYGYPOADUZg/vwvMPb3NwZg84AO5mD+/dZg/vw2YP78jzD39PMPMPb1Yw8w9vdyBmD+/WZg/v0fMPb19AZg/v2mYPON3HZg9vyGYP289mD3LQBGYP28fzD29jEGYPOADh8w9vazBmDzgA6WYPb8zzD29zIGYPOADwZg/v5mYP787zD29zQGYPOADwZg/v7mYP79xmD+/d8w9vc1BmDzgA5vMPb0NgZg84AMhmD+/h8w9vc3BmDzgA7mYP791mD+/jZg/v1PMPf1dA8w9vTkDzD293MGYP785mD+/K8w9vX1BmD+/ZZg843edmD2/UZg/b12YPctQEZg/b5/MPb0MQZg84AMLzD29rMGYPOADqZg9v0PMPb3MgZg84APRmD+/GZg/v1vMPb3NAZg84APRmD+/uZg/v2GYP793zD29zUGYPOADG8w9vY2BmDzgA1GYP78LzD29zcGYPOADuZg/v3WYP78NmD+/I8w9/T1CDxkCD6AE="
+jne 24b
+.base64 "8w9vR1DzD29PQGYPbMFmD3DAiPMPb08w8w9vVyBmD2zKZg9wyYhmD2zBZg9vyGYPctEEZg/bz2YP28fzD2+ToAAAAGYPOADQ8w9vm7AAAABmDzgA2WYP79PzD39XCIu3gAIAAIuvhAIAAIP9EA=="
+jb 25f
+.base64 "iwaJh4gCAACLRgSJh4wCAACLRgiJh5ACAACLRgyJh5QCAACLBjNHCIkGi0YEM0cMiUYEi0YIM0cQiUYIi0YMM0cUiUYMg8YQg+0QibeAAgAAia+EAgAA"
+jmp 26f
+25:
+.base64 "i0cIiYeIAgAAi0cMiYeMAgAAi0cQiYeQAgAAi0cUiYeUAgAAifuDwwg="
+27:
+.base64 "D7YDD7YOMcGIDoPDAYPGAYPtAQ=="
+jne 27b
+.base64 "ibeAAgAAia+EAgAA"
+26:
+jne 23b
+jmp 22f
+21:
+22:
+.base64 "i3QkCIuHiAIAAIkGi4eMAgAAiUYEi4eQAgAAiUYIi4eUAgAAiUYMi59wAgAAi7d0AgAAi698AgAAi794AgAAuQAAAACJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACJjCREAQAAiYwkSAEAAImMJEwBAACJjCRQAQAAiYwkVAEAAImMJFgBAACJjCRcAQAAiYwkYAEAAImMJGQBAACJjCRoAQAAiYwkbAEAAImMJHABAACJjCR0AQAAiYwkeAEAAImMJHwBAACJjCSAAQAAiYwkhAEAAImMJIgBAACJjCSMAQAAiYwkkAEAAImMJJQBAACJjCSYAQAAiYwknAEAAImMJKABAACJjCSkAQAAiYwkqAEAAImMJKwBAACJjCSwAQAAiYwktAEAAImMJLgBAACJjCS8AQAAiYwkwAEAAImMJMQBAACJjCTIAQAAiYwkzAEAAImMJNABAACJjCTUAQAAiYwk2AEAAImMJNwBAACJjCTgAQAAiYwk5AEAAImMJOgBAACJjCTsAQAAiYwk8AEAAImMJPQBAACJjCT4AQAAiYwk/AEAAImMJAACAACJjCQEAgAAiYwkCAIAAImMJAwCAACJjCQQAgAAiYwkFAIAAImMJBgCAACJjCQcAgAAiYwkIAIAAImMJCQCAACJjCQoAgAAiYwkLAIAAImMJDACAACJjCQ0AgAAiYwkOAIAAImMJDwCAACJjCRAAgAAiYwkRAIAAImMJEgCAACJjCRMAgAAiYwkUAIAAImMJFQCAACJjCRYAgAAiYwkXAIAAImMJGACAACJjCRkAgAAiYwkaAIAAImMJGwCAACJjCRwAgAAiYwkdAIAAImMJHgCAACJjCR8AgAAiYwkgAIAAImMJIQCAACJjCSIAgAAiYwkjAIAAImMJJACAACJjCSUAgAAiYwkmAIAAImMJJwCAACJjCSgAgAAiYwkpAIAAImMJKgCAACJjCSsAgAAjaQksAIAAI2kJEz9//+5AAAAAIlMJASJTCQIiUwkDIlMJBCJTCQUiUwkGI2kJLQCAAC4AAAAALoAAAAAMclmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/8M="
+.p2align 6"#,
+        VG_SM4_AESNI = sym super::consts::VG_SM4_AESNI,
     )
 }
 
