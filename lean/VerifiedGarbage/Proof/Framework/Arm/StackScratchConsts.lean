@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (ARMv7)
@@ -131,6 +131,55 @@ theorem pub_consts {s₁ s₂ : State} :
       · rintro ⟨⟨⟨hp, hs⟩, hl⟩, ha, hd⟩; exact ⟨⟨⟨hp, hl⟩, ha, hd⟩, hs⟩
       · rintro ⟨⟨⟨hp, hl⟩, ha, hd⟩, hs⟩; exact ⟨⟨⟨hp, hs⟩, hl⟩, ha, hd⟩
 
+/-- A postcondition under `abi` does not depend on the readable regions. -/
+theorem post_strip {K : List (String × List (BitVec 64))} {s s' : State} :
+    (sig.contract abi pre post wa st leak).post (stripConsts K s) s' ↔
+      (sig.contract abi pre post wa st leak).post s s' := by
+  dsimp only [Sig.contract]
+  cases h : abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
+  | none => exact Iff.rfl
+  | some vals =>
+    dsimp only
+    rw [args_stripConsts h]
+    exact Iff.rfl
+
+/-- The public data under `abi` do not depend on the readable regions. -/
+theorem pub_strip {K : List (String × List (BitVec 64))} {s₁ s₂ : State} :
+    (sig.contract abi pre post wa st leak).pub (stripConsts K s₁) (stripConsts K s₂) ↔
+      (sig.contract abi pre post wa st leak).pub s₁ s₂ := by
+  dsimp only [Sig.contract]
+  cases h : abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
+  | none => exact Iff.rfl
+  | some vals =>
+    dsimp only
+    rw [args_stripConsts h, args_stripConsts h]
+    exact Iff.rfl
+
+/-- A contract with the tables `consts` at the end of the readable regions,
+from the contract `K` without them: `K` of the state without their regions
+(`stripConsts`), what they add (`ConstsOk`), and their addresses public. As
+`abi.withConsts` has them, for a function that reads tables of constants,
+such as a curve's constants that the elliptic-curve functions copy into
+their working space. -/
+def _root_.VG.Contract.withTablesArm (K : Contract isa) (consts : List (String × List (BitVec 64))) :
+    Contract isa where
+  pre s := K.pre (stripConsts consts s) ∧ ConstsOk consts 0 s
+  post s s' := K.post (stripConsts consts s) s'
+  pub s₁ s₂ := K.pub (stripConsts consts s₁) (stripConsts consts s₂) ∧ ∀ c ∈ consts, s₁.syms c.1 = s₂.syms c.1
+
+/-- A contract with tables implies the one under `abi.withConsts`, if the
+contract without them implies the one under `abi`. -/
+theorem withTables_implies {K : Contract isa} (h : K.Implies (sig.contract abi pre post wa 0 leak))
+    (sat : ∃ s, (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa 0 leak).pre s) :
+    (K.withTablesArm (c₀ :: cs)).Implies (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa 0 leak) :=
+  { pre := fun _ hs => ⟨h.pre _ (pre_consts.mp hs).1, (pre_consts.mp hs).2⟩
+    post := fun s s' hs hp => post_consts.mpr (post_strip.mp (h.post (stripConsts (c₀ :: cs) s) s'
+      (pre_consts.mp hs).1 hp))
+    pub := fun s₁ s₂ h₁ h₂ hp => ⟨h.pub (stripConsts (c₀ :: cs) s₁) (stripConsts (c₀ :: cs) s₂)
+        (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_strip.mpr (pub_consts.mp hp).1),
+      fun c hc => by simpa using congrArg (BitVec.setWidth 32) ((pub_consts.mp hp).2 c hc)⟩
+    sat := sat }
+
 end
 
 /-! ## Reading a table
@@ -147,6 +196,12 @@ says (`pub_consts`), exactly when their 32-bit addresses do, as
 `Taint.AgreeS` states it. -/
 theorem symAddr_eq_iff {s₁ s₂ : State} : symAddr s₁ name = symAddr s₂ name ↔ s₁.syms name = s₂.syms name :=
   ⟨fun h => by simpa using congrArg (BitVec.setWidth 32) h, fun h => by rw [symAddr, symAddr, h]⟩
+
+/-- The readable regions are those without the tables, then the tables'. -/
+theorem ConstsOk.rd_strip (h : ConstsOk K st s) {L : List Region} (hL : (stripConsts K s).rd = L) :
+    s.rd = L ++ constRegs K s := by
+  rw [← List.take_append_drop (s.rd.length - K.length) s.rd, h.1]
+  exact congrArg (· ++ constRegs K s) hL
 
 /-- The table does not wrap around the 32-bit address space. -/
 theorem ConstsOk.fit (h : ConstsOk K st s) (hc : (name, ws) ∈ K) :
@@ -204,6 +259,12 @@ end
     (stripConsts K s).syms = s.syms := rfl
 theorem armArgs_stripConsts (sig : Sig) (K : List (String × List (BitVec 64))) (s : State) :
     armArgs sig (stripConsts K s) = armArgs sig s := rfl
+
+/-- Without tables, nothing is stripped. -/
+theorem stripConsts_nil (s : State) : stripConsts [] s = s := by
+  unfold stripConsts
+  rw [List.length_nil, Nat.sub_zero, List.take_length]
+  rfl
 
 theorem stripConsts_rd_mem {K : List (String × List (BitVec 64))} {s : State} {r : Region}
     (h : r ∈ (stripConsts K s).rd) : r ∈ s.rd := List.mem_of_mem_take h
