@@ -2645,173 +2645,17 @@ ldr r1, [r0, #48]
 add r1, r1, r1, lsl #6
 str r1, [r0, #208]
 235:
+sub sp, sp, #8
 mov r2, #4
 mov r3, #7
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r5, #0]
-str r9, [r5, #4]
-str r11, [r5, #8]
-str r12, [r5, #12]
-str r8, [r5, #16]
-str r7, [r5, #20]
-str r10, [r5, #24]
-str r6, [r5, #28]
-mov r0, r6
-mov lr, r7
-add lr, lr, #2
-mov r3, #0
-236:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 236b
-mov r0, r5
-ldr r1, [r0, #16]
-ldr r1, [r1, #0]
-ldr lr, [r0, #0]
-ldr r12, [r0, #4]
-ldr r0, [r0, #28]
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 237f
-b 238f
-237:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-238:
-cmp lr, #0
-bne 239f
-b 240f
-239:
-241:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #4]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 241b
-240:
-orr r1, r1, r10, lsl #16
-ldr r3, [r0, #0]
-ldr r4, [r0, #4]
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-str r4, [r0, #4]
-add r0, r0, #16
-ldr r7, [r0, #0]
-ldr r9, [r0, #24]
-ldr r10, [r0, #28]
-ldr r12, [r0, #8]
-mov lr, r7
-mov r11, #0
-242:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #1
-adc r4, r4, #0
-subs r3, r3, r11
-adc r4, r4, #0
-eor r11, r4, #3
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 242b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-243:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 243b
+mov lr, #4
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_double_umaal}
+add sp, sp, #8
 ldr r0, [sp, #0]
 ldr r1, [r0, #208]
 subs r1, r1, #1
@@ -2819,7 +2663,7 @@ str r1, [r0, #208]
 bne 235b
 mov r1, #6
 str r1, [r0, #208]
-244:
+236:
 sub sp, sp, #8
 mov r2, #4
 mov r3, #4
@@ -2835,7 +2679,7 @@ ldr r0, [sp, #0]
 ldr r1, [r0, #208]
 subs r1, r1, #1
 str r1, [r0, #208]
-bne 244b
+bne 236b
 ldr r8, [sp, #76]
 ldr r9, [r8, #16]
 add r7, r9, #2
@@ -2865,14 +2709,14 @@ mov lr, r9
 mov r11, #0
 mov r4, #0
 sub r4, r4, r11
-245:
+237:
 ldr r1, [r10, #0]
 str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 245b
+bne 237b
 ldr r0, [sp, #0]
 sub sp, sp, #8
 mov r2, #1
@@ -2911,14 +2755,14 @@ mov lr, r9
 mov r11, #0
 mov r4, #0
 sub r4, r4, r11
-246:
+238:
 ldr r1, [r10, #0]
 str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 246b
+bne 238b
 mov r0, #31
 mla r0, r0, r7, r8
 add r0, r0, #160
@@ -2930,7 +2774,7 @@ mla r12, r12, r7, r8
 add r12, r12, #160
 mov lr, r9
 mov r11, #0
-247:
+239:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -2944,14 +2788,14 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 247b
+bne 239b
 mov r1, #1
 str r1, [r8, #48]
 mov r1, #0
 str r1, [r8, #52]
 ldr r1, [sp, #84]
 str r1, [r8, #124]
-248:
+240:
 ldr r1, [sp, #72]
 ldr r2, [r8, #20]
 sub r1, r1, r2
@@ -2960,7 +2804,7 @@ subs r3, r1, r2
 mov r3, #0
 adc r3, r3, #0
 cmp r3, #0
-beq 249f
+beq 241f
 ldr r4, [sp, #68]
 ldr r1, [r8, #20]
 add r4, r4, r1
@@ -2976,22 +2820,22 @@ add r0, r0, #160
 mov r5, r0
 add lr, r9, #2
 mov r3, #0
-251:
+243:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 251b
+bne 243b
 mov r0, r5
 add r1, r4, r6
 sub r1, r1, #1
 mov lr, r6
-252:
+244:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 sub r1, r1, #1
 subs lr, lr, #1
-bne 252b
+bne 244b
 mov r0, #55
 mla r0, r0, r7, r8
 add r0, r0, #160
@@ -3003,7 +2847,7 @@ mla r12, r12, r7, r8
 add r12, r12, #160
 mov lr, r9
 mov r11, #0
-253:
+245:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -3017,7 +2861,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 253b
+bne 245b
 str r11, [r8, #60]
 mov r0, #55
 mla r0, r0, r7, r8
@@ -3030,7 +2874,7 @@ mla r12, r12, r7, r8
 add r12, r12, #160
 mov lr, r9
 mov r11, #0
-254:
+246:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -3044,7 +2888,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 254b
+bne 246b
 str r11, [r8, #64]
 ldr r1, [r8, #60]
 eor r1, r1, #1
@@ -3064,14 +2908,14 @@ mov lr, r9
 mov r11, #0
 mov r4, #0
 sub r4, r4, r11
-255:
+247:
 ldr r1, [r10, #0]
 str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 255b
+bne 247b
 mov r0, #60
 mla r0, r0, r7, r8
 add r0, r0, #160
@@ -3101,7 +2945,7 @@ mov lr, r9
 ldr r11, [r8, #56]
 mov r4, #0
 sub r4, r4, r11
-256:
+248:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -3112,7 +2956,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 256b
+bne 248b
 mov r0, #22
 mla r0, r0, r7, r8
 add r0, r0, #160
@@ -3126,14 +2970,14 @@ mov lr, r9
 mov r11, #0
 mov r4, #0
 sub r4, r4, r11
-257:
+249:
 ldr r1, [r10, #0]
 str r1, [r0, #0]
 add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 257b
+bne 249b
 ldr r0, [sp, #0]
 sub sp, sp, #8
 mov r2, #5
@@ -3163,11 +3007,11 @@ lsl r7, r7, #2
 str r0, [r8, #116]
 ldr r1, [r8, #116]
 cmp r1, #1
-beq 258f
+beq 250f
 mov r1, #3
 str r1, [r8, #120]
-b 259f
-258:
+b 251f
+250:
 ldr r1, [r8, #48]
 add r1, r1, #1
 str r1, [r8, #48]
@@ -3186,44 +3030,44 @@ orr r1, r1, r2
 add r1, r1, r1, lsl #1
 add r1, r1, #1
 str r1, [r8, #120]
-259:
-b 250f
-249:
+251:
+b 242f
+241:
 mov r1, #0
 str r1, [r8, #120]
-250:
+242:
 ldr r1, [r8, #120]
 cmp r1, #4
-beq 248b
+beq 240b
 ldr r1, [r8, #120]
 cmp r1, #0
-beq 260f
+beq 252f
 ldr r3, [r8, #20]
 ldr r1, [r8, #120]
 cmp r1, #1
-beq 262f
+beq 254f
 ldr r2, [sp, #8]
 str r3, [r2, #0]
 mov r1, #0
 str r1, [r2, #4]
 mov r0, #2
-b 263f
-262:
+b 255f
+254:
 ldr r2, [sp, #8]
 str r3, [r2, #0]
 mov r1, #0
 str r1, [r2, #4]
 mov r0, #1
-263:
-b 261f
-260:
+255:
+b 253f
+252:
 mov r3, #0
 ldr r2, [sp, #8]
 str r3, [r2, #0]
 mov r1, #0
 str r1, [r2, #4]
 mov r0, #0
-261:
+253:
 29:
 ldr r4, [sp, #16]
 ldr r5, [sp, #20]
@@ -3237,6 +3081,7 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 add sp, sp, #32
 bx lr",
+        vg_rsa_mont_double_umaal = sym crate::rsa::vg_rsa_mont_double_umaal::vg_rsa_mont_double_umaal,
         vg_rsa_mont_mul_umaal = sym crate::rsa::vg_rsa_mont_mul_umaal::vg_rsa_mont_mul_umaal,
         vg_miller_rabin_round_umaal = sym crate::dsa::vg_miller_rabin_round_umaal::vg_miller_rabin_round_umaal,
     )
