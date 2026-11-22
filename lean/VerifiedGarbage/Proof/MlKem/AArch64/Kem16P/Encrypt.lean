@@ -380,7 +380,7 @@ theorem v_restE {prf : Nat→Nat→Prog isa} {s₀ s : State} (hp : Pre P L s₀
       rw [List.mem_singleton.mp hr]; exact papart hp (po_EP hw) (po_TP hw) (by lom)) e2t
   exact v_tailE hp hc A vu tru pu e2u
 
-theorem v_restP {prf : Nat→Nat→Prog isa} (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L s₀)
+theorem v_restP {prf : Nat→Nat→Prog isa} {n : String} (valid : PrfValidW P L prf n) {s₀ s : State} (hp : Pre P L s₀)
     (hc : Calls P) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co) (e2 : Bool)
     {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte} {T : Nat → Poly}
     (hT : ∀j<P.k, decode12 (bytesAt s₀.mem (kA s₀ (L.slot kE)+BitVec.ofNat 64 (eo+384*j)) 384)=T j)
@@ -389,13 +389,13 @@ theorem v_restP {prf : Nat→Nat→Prog isa} (valid : PrfValidW P L prf) {s₀ s
     (ht : Dot.GammaArtifact s.mem (s.syms "VG_MLKEM_GAMMA"))
     (hcT : Covers [⟨s.syms "VG_MLKEM_GAMMA",512⟩] (s.rd++s.wr))
     (ha : ∀r∈encW P L s₀ kC co, (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint r)
-    (he : e2 = true → PolyIsW 16 s.mem (sA L s₀ (EP P)) (cbd rv (2 * P.k))) :
+    (he : e2 = true → PolyIsW 16 s.mem (sA L s₀ (EP P)) (cbd rv (2 * P.k))) (hd : Proof.Sha3.AArch64.D8 n s) :
     WP isa (Impl.MlKem.AArch64.Kem16P.vRestP prf P e2 (slotReg kE) eo .x28 MB (slotReg kC) co) s
       (fun t => VInvW P L s₀ kC co mE mB v rv mv P.k P.k t ∧
         bytesAt t.mem (kA s₀ (L.slot kC)+BitVec.ofNat 64 (co+32*P.du*P.k)) (32*P.dv)=
           compressEncode P.dv (vPoly P T rv mv)) := by
   cases e2
-  · exact v_restW valid hp hc A hT htr h ht hcT ha
+  · exact v_restW valid hp hc A hT htr h ht hcT ha hd
   · exact v_restE hp hc A hT htr h ht hcT ha (he rfl)
 
 end VG.Proof.MlKem.AArch64.Kem
@@ -547,7 +547,7 @@ variable {P : KemLay} {L : Layout}
 variable {prf : Nat→Nat→Prog isa}
 
 /-- The rows of `u` and `v`, `e₂` at `EP` already if `e2`. -/
-theorem after_noiseP (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P)
+theorem after_noiseP {n : String} (valid : PrfValidW P L prf n) {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P)
     (hc : Calls P) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co) (e2 : Bool)
     {mB : Mem} {v : BitVec 64} {rv mv : List Byte} {T : Nat → Poly}
     (hT : ∀j<P.k, decode12 (bytesAt s₀.mem (kA s₀ (L.slot kE)+BitVec.ofNat 64 (eo+384*j)) 384)=T j)
@@ -556,7 +556,7 @@ theorem after_noiseP (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L 
     (ht : Dot.GammaArtifact s.mem (s.syms "VG_MLKEM_GAMMA"))
     (hcT : Covers [⟨s.syms "VG_MLKEM_GAMMA",512⟩] (s.rd++s.wr))
     (ha : ∀r∈encW P L s₀ kC co, (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint r)
-    (hE : e2 = true → PolyIsW 16 s.mem (sA L s₀ (EP P)) (cbd rv (2 * P.k))) :
+    (hE : e2 = true → PolyIsW 16 s.mem (sA L s₀ (EP P)) (cbd rv (2 * P.k))) (hd : Proof.Sha3.AArch64.D8 n s) :
     WP isa (seqs (((List.range P.k).map (Kem16.uRow P (slotReg kC) co)) ++
       [Impl.MlKem.AArch64.Kem16P.vRestP prf P e2 (slotReg kE) eo .x28 MB (slotReg kC) co])) s
       (fun t => VInvW P L s₀ kC co s.mem mB v rv mv P.k P.k t ∧
@@ -571,14 +571,16 @@ theorem after_noiseP (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L 
     obtain ct : Covers [⟨t.syms "VG_MLKEM_GAMMA",512⟩] (t.rd++t.wr) := by
       simpa only [hs,et.kb.rd,et.kb.wr,←h.kb.rd,←h.kb.wr] using hcT
     exact WPs.single (v_restP valid hp hc A false hT (transform_enc_frame hp A h.kb et.kb htr hs et.fr)
-      et.vinv gt ct (by simpa only [hs] using ha) (fun h => absurd h (by decide)))
+      et.vinv gt ct (by simpa only [hs] using ha) (fun h => absurd h (by decide))
+      (hd.of (fun r hr => (et.kb.vcs r hr).trans (h.kb.vcs r hr).symm) hs))
   · refine WPs.mono (u_rowsE hp hr hc A htr h he ht hcT ha (hE rfl)) fun t ⟨et,hs,qt⟩ => ?_
     obtain gt : Dot.GammaArtifact t.mem (t.syms "VG_MLKEM_GAMMA") := by
       rw [hs]; exact gamma_frame ht et.fr ha
     obtain ct : Covers [⟨t.syms "VG_MLKEM_GAMMA",512⟩] (t.rd++t.wr) := by
       simpa only [hs,et.kb.rd,et.kb.wr,←h.kb.rd,←h.kb.wr] using hcT
     exact WPs.single (v_restP valid hp hc A true hT (transform_enc_frame hp A h.kb et.kb htr hs et.fr)
-      et.vinv gt ct (by simpa only [hs] using ha) (fun _ => qt))
+      et.vinv gt ct (by simpa only [hs] using ha) (fun _ => qt)
+      (hd.of (fun r hr => (et.kb.vcs r hr).trans (h.kb.vcs r hr).symm) hs))
 
 /-- What the noise writes, `scratch` may be written. -/
 theorem noiseW_cov {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h : KB P L s₀ s) :
@@ -590,7 +592,7 @@ theorem noiseW_cov {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (h :
   simp only [Impl.MlKem.AArch64.Noise.noiseOff] at this ⊢; have := hw.facts; omega_arith
 
 /-- **The noise, `u` and `v`**, the first `n ≥ 2k` PRF outputs in their buffers. -/
-theorem encrypt_restP (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P)
+theorem encrypt_restP {nm : String} (valid : PrfValidW P L prf nm) {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P)
     (hc : Calls P) {kE eo kC co : Nat} (A : EncArgs P L kE eo kC co) {n : Nat} (hn : 2 * P.k ≤ n)
     {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte} {T : Nat → Poly}
     (hT : ∀j<P.k, decode12 (bytesAt s₀.mem (kA s₀ (L.slot kE)+BitVec.ofNat 64 (eo+384*j)) 384)=T j)
@@ -600,7 +602,8 @@ theorem encrypt_restP (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L
     (hcT : Covers [⟨s.syms "VG_MLKEM_GAMMA",512⟩] (s.rd++s.wr))
     (ha : ∀r∈encW P L s₀ kC co, (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint r)
     (hn' : ∀r∈noiseW P L s₀, (⟨s.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint r)
-    (hprf : ∀ N < min n (Impl.MlKem.AArch64.Kem16P.prfs P), PrfAt P L s₀ s.mem s.mem N) :
+    (hprf : ∀ N < min n (Impl.MlKem.AArch64.Kem16P.prfs P), PrfAt P L s₀ s.mem s.mem N)
+    (hd : Proof.Sha3.AArch64.D8 nm s) :
     WP isa (Impl.MlKem.AArch64.Kem16P.encryptRestP prf P n (slotReg kE) eo .x28 MB (slotReg kC) co) s
       (fun t => ∃mN, Frame (noiseW P L s₀) s.mem mN ∧
         VInvW P L s₀ kC co mN mB v rv mv P.k P.k t ∧
@@ -645,7 +648,8 @@ theorem encrypt_restP (valid : PrfValidW P L prf) {s₀ s : State} (hp : Pre P L
     simpa only [nt.syms, nt.kb.rd, nt.kb.wr, ← h.kb.rd, ← h.kb.wr] using hcT
   obtain tt := htr.frame nt.syms (nt.kb.rd.trans h.kb.rd.symm) (nt.kb.wr.trans h.kb.wr.symm)
     (nt.kb.sp.trans h.kb.sp.symm) nt.fr (noiseW_cov hp hr h.kb)
-  exact WP.mono (after_noiseP valid hp hr hc A _ hT tt e0 er gt ct (by simpa only [nt.syms] using ha) hE)
+  exact WP.mono (after_noiseP valid hp hr hc A _ hT tt e0 er gt ct (by simpa only [nt.syms] using ha) hE
+    (hd.of (fun r hr => (nt.kb.vcs r hr).trans (h.kb.vcs r hr).symm) nt.syms))
     fun u ⟨eu, vu⟩ => ⟨t.mem, nt.fr, eu, vu⟩
 
 end VG.Proof.MlKem.AArch64.Kem16P
