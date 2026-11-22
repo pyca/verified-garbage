@@ -194,6 +194,46 @@ theorem context_argumentWindow {s : State} {B : Addr} {Z : Nat} {p : BitVec 32} 
       rw [nat16]
       omega_using []
 
+/-- The 20 bytes below the entry's stack pointer, the four saved words and a call's return
+address, lie outside the working space. -/
+theorem context_roomWindow {s : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args : Nat → BitVec 32}
+    (C : Context B Z p args s) (large : 160 ≤ Z) :
+    (⟨VG.X86.Taint.argByte s 16 - BitVec.ofNat 64 20, 20⟩ : Region).Disjoint ⟨B, Z⟩ := by
+  have fit := C.fit
+  have nowrap := C.scratch.nowrap
+  have nat20 : (argsRegion p).base.toNat = p.toNat + 20 := by
+    simp only [argsRegion, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega_using [fit]
+  have nat16 : (VG.X86.Taint.argByte s 16).toNat = p.toNat + 16 := by
+    simp only [VG.X86.Taint.argByte, C.sp, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    have bound := p.isLt
+    omega_using []
+  have bounds := VG.Proof.RsaKeyGen.X86.Key.disjoint_bounds (by decide : 0 < 72) (by omega_using [large]) C.separate
+  change (argsRegion p).base.toNat + 72 ≤ B.toNat ∨ B.toNat + Z ≤ (argsRegion p).base.toNat at bounds
+  rw [nat20] at bounds
+  have stack := C.scratch.stk
+  rw [C.sp] at stack
+  have nat4 : (VG.X86.Taint.argByte s 16 - BitVec.ofNat 64 20).toNat = p.toNat - 4 := by
+    rw [BitVec.toNat_sub, nat16, BitVec.toNat_ofNat]
+    have bound := p.isLt
+    omega_using [stack.1]
+  rcases stack.2 with before | after
+  · have above : p.toNat + 92 ≤ B.toNat := by omega_using [large, bounds, before]
+    apply Offset.disjoint_of_le
+    · change (VG.X86.Taint.argByte s 16 - BitVec.ofNat 64 20).toNat + 20 ≤ B.toNat
+      rw [nat4]
+      omega_using [above, stack.1]
+    · change B.toNat + Z ≤ 2 ^ 64
+      omega_using [nowrap]
+  · apply Region.Disjoint.symm
+    apply Offset.disjoint_of_le
+    · change B.toNat + Z ≤ (VG.X86.Taint.argByte s 16 - BitVec.ofNat 64 20).toNat
+      rw [nat4]
+      omega_using [after]
+    · change (VG.X86.Taint.argByte s 16 - BitVec.ofNat 64 20).toNat + 20 ≤ 2 ^ 64
+      rw [nat4]
+      omega_using [fit]
+
 theorem readonly_wf {s : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args : Nat → BitVec 32}
     (C : Context B Z p args s) (large : 160 ≤ Z) : VG.X86.Taint.Wf runtimeTaint (readonly s B Z) := by
   have fit := C.fit
@@ -205,7 +245,7 @@ theorem readonly_wf {s : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args : Nat
     argBases := by intro p hp; cases hp
     stk := ?_
     frames := by intro p hp; cases hp
-    room := by intro h; cases h }
+    room := fun _ => ⟨?_, ?_⟩ }
   · intro _
     refine ⟨?_, ?_⟩
     · change (s.gpr .esp).toNat + 16 + 76 ≤ 2 ^ 32
@@ -218,6 +258,13 @@ theorem readonly_wf {s : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args : Nat
   · change (s.gpr .esp).toNat + 16 < 2 ^ 32
     rw [C.sp]
     omega_using [fit]
+  · change 20 ≤ (s.gpr .esp).toNat + 16
+    have low := C.scratch.stk.1
+    omega_using [low]
+  · intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    change (⟨VG.X86.Taint.argByte s 16 - BitVec.ofNat 64 20, 20⟩ : Region).Disjoint ⟨B, Z⟩
+    exact context_roomWindow C large
 
 theorem readonly_agree {s t : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args : Nat → BitVec 32}
     (S : Context B Z p args s) (T : Context B Z p args t) (large : 160 ≤ Z)
@@ -946,7 +993,7 @@ open VG.Proof.RsaKeyGen.X86.Key (stageRanges stage_keep stage_preserves_num crtA
 theorem crtPart_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
     (one : num s.mem B n aOne = 1) :
     WP isa crtPart s fun t =>
-      Ws t B Z n 32 ∧ Outs B (stageRanges n crtArrays) s.mem t.mem ∧
+      Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (stageRanges n crtArrays) s.mem t.mem ∧
       num t.mem B n aDp = num s.mem B n aD % crtDivisor (num s.mem B n aPm) ∧
       num t.mem B n aDq = num s.mem B n aD % crtDivisor (num s.mem B n aQm) ∧
       slot t.mem B kOk = slot s.mem B kOk ∧
@@ -967,14 +1014,17 @@ theorem crtPart_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
     (by decide) (by decide) (by decide) (by decide) (by decide) divP)
     fun v ⟨hv, Ov, _, P, Kv⟩ => ?_)
   rw [Du, divisorP] at P
-  obtain frameV : Outs B (stageRanges n crtArrays) u.mem v.mem := stage_division (by decide) (by decide) Ov
-  obtain prefixFrame := frameU.trans frameV
+  obtain spU : u.gpr .esp = s.gpr .esp := Ku.1 .esp (by decide)
+  obtain frameV : OutsS B (s.gpr .esp) (stageRanges n crtArrays) u.mem v.mem := by
+    rw [← spU]
+    exact Ov.lift fun _ _ O => stage_division (by decide) (by decide) O
+  obtain prefixFrame := (OutsS.of_outs frameU).trans frameV
   obtain Qv : num v.mem B n aQm = num s.mem B n aQm :=
-    stage_preserves_num (by decide) (by decide) fq prefixFrame
+    h.read_num (by decide) prefixFrame fun O => stage_preserves_num (by decide) (by decide) fq O
   obtain Dv : num v.mem B n aD = num s.mem B n aD :=
-    stage_preserves_num (by decide) (by decide) fd prefixFrame
+    h.read_num (by decide) prefixFrame fun O => stage_preserves_num (by decide) (by decide) fd O
   obtain oneV : num v.mem B n aOne = 1 :=
-    (stage_preserves_num (by decide) (by decide) fo prefixFrame).trans one
+    (h.read_num (by decide) prefixFrame fun O => stage_preserves_num (by decide) (by decide) fo O).trans one
   refine WP.seq (WP.mono (divisorOf_ok hv (by decide) (by decide) oneV)
     fun w ⟨hw, Ow, divisorQ, Kw⟩ => ?_)
   rw [Qv] at divisorQ
@@ -988,11 +1038,14 @@ theorem crtPart_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
     (by decide) (by decide) (by decide) (by decide) (by decide) divQ)
     fun t ⟨ht, Ot, _, Q, Kt⟩ => ?_
   rw [Dw, divisorQ] at Q
-  obtain frameT : Outs B (stageRanges n crtArrays) w.mem t.mem := stage_division (by decide) (by decide) Ot
-  exact ⟨ht, (prefixFrame.trans frameW).trans frameT,
-    ((arrayDivision_preserves_num (by decide) (by decide) (by decide) fp Ot).trans Pw).trans P,
-    Q, (arrayDivision_preserves_slot (by decide) Ot).trans ((Ow.slot (by decide) (by decide)).trans
-      ((arrayDivision_preserves_slot (by decide) Ov).trans (Ou.slot (by decide) (by decide)))),
+  obtain spW : w.gpr .esp = s.gpr .esp := by rw [Kw.1 .esp (by decide), Kv.1 .esp (by decide), spU]
+  obtain frameT : OutsS B (s.gpr .esp) (stageRanges n crtArrays) w.mem t.mem := by
+    rw [← spW]
+    exact Ot.lift fun _ _ O => stage_division (by decide) (by decide) O
+  exact ⟨ht, (prefixFrame.trans (OutsS.of_outs frameW)).trans frameT,
+    ((hw.div_num (by decide) (by decide) (by decide) (by decide) fp Ot).trans Pw).trans P,
+    Q, (hw.div_slot (by decide) Ot).trans ((Ow.slot (by decide) (by decide)).trans
+      ((hu.div_slot (by decide) Ov).trans (Ou.slot (by decide) (by decide)))),
     (Ku.mono (by decide)).trans (Kv.trans ((Kw.mono (by decide)).trans Kt))⟩
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime
@@ -1035,9 +1088,12 @@ theorem keyPart_ok {s : State} {B : Addr} {Z n k : Nat}
   rw [Du, Qmu] at Dq
   rw [Mu] at Mv
   obtain qiV : num v.mem B n aQi = num u.mem B n aQi :=
-    stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) Ov
-  obtain frameV : Outs B (stageRanges n keyPartArrays) u.mem v.mem := stage_mono (by decide) Ov
-  obtain prefixFrame := frameU.trans (OutsS.of_outs frameV)
+    hu.read_num (by decide) Ov (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))
+  obtain spU : u.gpr .esp = s.gpr .esp := Ku.1 .esp (by decide)
+  obtain frameV : OutsS B (s.gpr .esp) (stageRanges n keyPartArrays) u.mem v.mem := by
+    rw [← spU]
+    exact Ov.lift fun _ _ => stage_mono (by decide)
+  obtain prefixFrame := frameU.trans frameV
   obtain Pv : num v.mem B n aPa = num s.mem B n aPa :=
     h.read_num (by decide) prefixFrame (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))
   obtain Qv : num v.mem B n aQa = num s.mem B n aQa :=

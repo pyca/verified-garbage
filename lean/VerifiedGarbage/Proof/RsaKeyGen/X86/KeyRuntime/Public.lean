@@ -14,10 +14,12 @@ namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
 open VG VG.X86
 open VG.Impl.RsaKeyGen.X86.KeyRuntime
 
-/-- Four private saved words precede the original return address and arguments. -/
+/-- Four private saved words precede the original return address and arguments; the 20 bytes
+below the entry's stack pointer, the saved words and a call's return address, lie outside the
+working space. -/
 def runtimeTaint : VG.X86.Taint.T := {
   regs := .ofList [.edi, .esi, .esp], flags := false
-  argLen := 76, stk := [none, none, none, none] }
+  argLen := 76, stk := [none, none, none, none], room := 20 }
 
 def Public (c : Prog isa) : Prop := ∃ hint out,
   VG.Taint.check sseTaint runtimeTaint c hint = some out ∧ sseTaint.le runtimeTaint out = true
