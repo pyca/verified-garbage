@@ -24,7 +24,8 @@ stack its contract reserves (`Arm.Scrub.verifiedScrubbedAll`), for any
 implementation of the Miller–Rabin round: what the cleanup needs of its code
 (`CodeOk`) is proven once by `code_okT` (`Proof/Rsa/Arm/ScrubTab.lean`), for
 code whose round is a variable, from what each round states of its own code
-(`RoundImpl.stack`, `RoundImpl.icallFree`). Its postcondition reads the
+(`RoundImpl.stack`, `RoundImpl.icallFree`) and of the product it calls
+(`MontBackend.mulOk`). Its postcondition reads the
 memory on return only within `key`, `used` and `state`, as on PPC64LE
 (`Proof/RsaKeyGen/PPC64LE/Scrub.lean`).
 -/
@@ -67,9 +68,10 @@ theorem keySearchOut (stack : Nat) :
 theorem generateInit_noFrames : Impl.RsaKeyGen.Arm.KeyInit.init.noFrames = true := by lit_decide
 
 /-- Key generation's code, for any round, the code of each call by its name. -/
-theorem generate_okT {N₁ N₂ N₃ : String} {R : Prog isa} (h : CodeOk R 56) :
+theorem generate_okT {N₁ N₂ N₃ N₄ : String} {R Mm : Prog isa} (h : CodeOk R 56) (hm : CodeOk Mm 40) :
     CodeOkT (Impl.RsaKeyGen.Arm.Generate.code
-      (.call N₁ (Impl.RsaKeyGen.Arm.Search.code (.call N₂ (Impl.RsaKeyGen.Arm.Candidate.code N₃ R))))
+      (.call N₁ (Impl.RsaKeyGen.Arm.Search.code
+        (.call N₂ (Impl.RsaKeyGen.Arm.Candidate.code N₃ R (Impl.Bignum.Arm.MontCall.op N₄ Mm)))))
       (.call "vg_rsa_keygen_key" Impl.RsaKeyGen.Arm.Key.code)) 256 [] := by
   code_okT
 
@@ -97,6 +99,6 @@ theorem generate [Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
       (Spec.RsaKeyGen.keySearchContract abi 256) 32 :=
   verifiedScrubbedAll (api := Spec.RsaKeyGen.keySearchApi)
     { code := Proof.RsaKeyGen.Arm.Generate.genCode v, verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v }
-    (keySearchOut _) (scrubSideF_of (generate_okT ⟨v.stack, v.icallFree⟩).toOk frameOk_256 _)
+    (keySearchOut _) (scrubSideF_of (generate_okT ⟨v.stack, v.icallFree⟩ v.mont.mulOk).toOk frameOk_256 _)
 
 end VG.Proof.RsaKeyGen.Arm.Fn

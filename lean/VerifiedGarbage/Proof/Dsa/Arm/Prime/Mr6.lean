@@ -58,32 +58,6 @@ theorem wJs_ne4 : ∀ j ∈ VG.Proof.MillerRabin.Arm.wJs, j ≠ 4 := by decide
 section
 variable {P : CP} {σ s t : State} {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat}
 
-/-- Memory that changed only in the arrays `js` and outside the working space keeps a stage. -/
-theorem KS.of_outJ (h : KS P σ A live V ls s) {js : List Nat}
-    (o : Outs (State.addr P.B) (ranges P.W js [] ++ [(P.Z, 2 ^ 64)]) s.mem t.mem)
-    (hjl : ∀ j ∈ live, j ∉ js) (fr : Frame P.chg σ.mem t.mem)
-    (sp : t.sp = s.sp) (rd : t.rd = s.rd) (wr : t.wr = s.wr) : KS P σ A live V ls t := by
-  have pre := h.pre
-  have hz := pre.hdr_Z
-  have zl := pre.Z_le
-  have sl : ∀ d, d + 4 ≤ hdr → slot t.mem P.B d = slot s.mem P.B d := fun d hd => by
-    have := Outs.val32 (k := 1) (d := d) o (fun r hr => ?_) (by omega_arith)
-    · simpa only [val32, Nat.mul_zero, Nat.add_zero] using this
-    simp only [ranges, List.map_nil, List.append_nil, List.mem_append, List.mem_map, List.mem_singleton] at hr
-    rcases hr with ⟨k, -, rfl⟩ | rfl
-    · have : hdr ≤ arr P.W k := Nat.le_add_right _ _; dsimp only; omega_arith
-    · dsimp only; omega_arith
-  refine ⟨pre, sp.trans h.sp, rd.trans h.rd, wr.trans h.wr, fr, (sl 16 (by decide)).trans h.cnt,
-    fun j hj => ?_, fun d hd => (sl d (h.ls_ok d hd).1).trans (h.sl d hd), h.live_lt, h.ls_ok⟩
-  have := pre.fitZ (h.live_lt j hj)
-  have : S P.W = 4 * (P.W + 2) := rfl
-  rw [← h.arrs j hj]
-  refine Outs.val32 o (fun r hr => ?_) (by omega_arith)
-  simp only [ranges, List.map_nil, List.append_nil, List.mem_append, List.mem_map, List.mem_singleton] at hr
-  rcases hr with ⟨k, hk, rfl⟩ | rfl
-  · have := arr_disj (w := P.W) (fun e : k = j => hjl j hj (e ▸ hk)); dsimp only; omega_arith
-  · dsimp only; omega_arith
-
 /-- An offset in Montgomery multiplication's header is in one of the key arrays 15–20. -/
 theorem In.inHdr (pre : In P σ) {X : Nat} (h1 : P.oM ≤ X) (h2 : X < P.oM + 256)
     (hx : ∀ r ∈ ranges P.W rJs [], X < r.1 ∨ r.1 + r.2 ≤ X) : False := by

@@ -3,8 +3,10 @@ public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Vals
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Proof.Rsa.MontContract
+public import VerifiedGarbage.Proof.Bignum.Arm.CallStack
 
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
@@ -226,6 +228,105 @@ theorem keep_of_mont (pre : In P σ) {o : Nat} {m m' : Mem}
     have hc' : (x - (State.addr P.B + BitVec.ofNat 64 P.oM)).toNat < 8 * P.lenM := by
       simp only [off] at hc; omega_arith
     exact (Offset.lt_iff x (State.addr P.B) (d := P.oM) (n := 8 * P.lenM) hlt).mp hc'
+
+
+/-! ## Frames with the stack below the candidate's frame
+
+A call of the shared product writes Montgomery multiplication's working
+space and the stack below the candidate's frame, `P.rC`. `mixC P m m'` is
+`m'` but in `P.rC`, where it is `m`: the lemmas about steps within the
+working space give what such a call keeps, as `Outs` of the key working
+space (`outs_of_mixC`), which `KS.of_outJ` takes. -/
+
+/-- `m'`, but `m` in `P.rC`. -/
+def mixC (P : CP) (m m' : Mem) : Mem := fun x => if P.rC.Contains x 1 then m x else m' x
+
+theorem mixC_out {m m' : Mem} {x : Addr} (h : ¬ P.rC.Contains x 1) : mixC P m m' x = m' x := ite_eq_right_iff.2 fun h' => absurd h' h
+
+theorem frame_mixC {m m' : Mem} (f : Frame [P.rM, P.rC] m m') : Frame [P.rM] m (mixC P m m') := by
+  intro x hx
+  by_cases hc : P.rC.Contains x 1
+  · exact ite_eq_left_iff.2 fun h' => absurd hc h'
+  · rw [mixC_out hc]
+    refine f x fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hx _ (List.mem_singleton_self _)
+    · exact hc
+
+theorem In.rM_contains (pre : In P σ) {i : Nat} (hi : i < 8 * P.lenM) :
+    P.rM.Contains (State.addr P.M0 + BitVec.ofNat 64 i) 1 := by
+  have hfit := Nat.le_trans (arr_mono (w := P.W) (show mBase + 8 ≤ nArr by decide)) pre.fits
+  have e := pre.endM
+  have hlt : P.oM + 8 * P.lenM ≤ 2 ^ 64 :=
+    Nat.le_trans (by rw [e]; exact hfit) (Nat.le_trans pre.Z_le (by decide))
+  show ((State.addr P.M0 + BitVec.ofNat 64 i) - State.addr P.M0).toNat + 1 ≤ 8 * P.lenM
+  rw [BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
+
+theorem keeps_mixC (pre : In P σ) {o : Nat} {m m' : Mem} (k : Keeps (State.addr P.M0) P.lenM P.w o m m') :
+    Keeps (State.addr P.M0) P.lenM P.w o m (mixC P m m') := fun i hi hj => by
+  rw [mixC_out fun hc => pre.sC _ (pre.rM_sub _ (pre.rM_contains hi)) hc]
+  exact k i hi hj
+
+/-- What changed in `mixC P m m'` within the key arrays `js` changed in `m'`
+within them or outside the key working space. -/
+theorem outs_of_mixC (pre : In P σ) {js : List Nat} {m m' : Mem} (k : Keep P.B P.W js [] m (mixC P m m')) :
+    Outs (State.addr P.B) (ranges P.W js [] ++ [(P.Z, 2 ^ 64)]) m m' := by
+  intro x hx
+  have hz : ofs (State.addr P.B) x < P.Z := by
+    have := hx (P.Z, 2 ^ 64) (by simp)
+    have := (x - State.addr P.B).isLt
+    simp only [ofs] at *; omega_arith
+  rw [← mixC_out (P := P) (m := m) (m' := m') (x := x) fun hc =>
+    pre.sC x (by simp only [Region.Contains]; simp only [ofs] at hz; omega_arith) hc]
+  exact k x fun r hr => hx r (List.mem_append_left _ hr)
+
+/-- The stack a call of the shared product needs, below the candidate's frame. -/
+theorem In.callStack (pre : In P σ) {s : State} (sp : s.sp = P.sp) : CallStack P.M0 P.lenM s := by
+  have lo := pre.spLo
+  refine ⟨by rw [sp]; omega_arith, ?_⟩
+  rw [sp]
+  exact (pre.sC.sub_right (FrameStack.belowA_sub (sp := P.sp) (a := 48) (b := 56) (by decide) lo)).symm.sub_right
+    pre.rM_sub
+
+/-- The stack below the candidate's frame that the shared product writes is `P.rC`'s. -/
+theorem In.below48 (pre : In P σ) : Region.Sub (FrameStack.belowA P.sp 48) P.rC :=
+  FrameStack.belowA_sub (sp := P.sp) (a := 48) (b := 56) (by decide) pre.spLo
+
+/-- A stage of fewer live arrays. -/
+theorem KS.restrict {A : Nat → Nat} {live live' : List Nat} {V : Nat → Nat} {ls : List Nat} {s : State}
+    (h : KS P σ A live V ls s) (hl : ∀ j ∈ live', j ∈ live) : KS P σ A live' V ls s :=
+  ⟨h.pre, h.sp, h.rd, h.wr, h.frame, h.cnt, fun j hj => h.arrs j (hl j hj), h.sl, fun j hj => h.live_lt j (hl j hj),
+    h.ls_ok⟩
+
+/-- Memory that changed only in the arrays `js` and outside the working space keeps a stage. -/
+theorem KS.of_outJ {A : Nat → Nat} {live : List Nat} {V : Nat → Nat} {ls : List Nat} {s t : State}
+    (h : KS P σ A live V ls s) {js : List Nat}
+    (o : Outs (State.addr P.B) (ranges P.W js [] ++ [(P.Z, 2 ^ 64)]) s.mem t.mem)
+    (hjl : ∀ j ∈ live, j ∉ js) (fr : Frame P.chg σ.mem t.mem)
+    (sp : t.sp = s.sp) (rd : t.rd = s.rd) (wr : t.wr = s.wr) : KS P σ A live V ls t := by
+  have pre := h.pre
+  have hz := pre.hdr_Z
+  have zl := pre.Z_le
+  have sl : ∀ d, d + 4 ≤ hdr → slot t.mem P.B d = slot s.mem P.B d := fun d hd => by
+    have := Outs.val32 (k := 1) (d := d) o (fun r hr => ?_) (by omega_arith)
+    · simpa only [val32, Nat.mul_zero, Nat.add_zero] using this
+    simp only [ranges, List.map_nil, List.append_nil, List.mem_append, List.mem_map, List.mem_singleton] at hr
+    rcases hr with ⟨k, -, rfl⟩ | rfl
+    · have : hdr ≤ arr P.W k := Nat.le_add_right _ _; dsimp only; omega_arith
+    · dsimp only; omega_arith
+  refine ⟨pre, sp.trans h.sp, rd.trans h.rd, wr.trans h.wr, fr, (sl 16 (by decide)).trans h.cnt,
+    fun j hj => ?_, fun d hd => (sl d (h.ls_ok d hd).1).trans (h.sl d hd), h.live_lt, h.ls_ok⟩
+  have := pre.fitZ (h.live_lt j hj)
+  have : S P.W = 4 * (P.W + 2) := rfl
+  rw [← h.arrs j hj]
+  refine Outs.val32 o (fun r hr => ?_) (by omega_arith)
+  simp only [ranges, List.map_nil, List.append_nil, List.mem_append, List.mem_map, List.mem_singleton] at hr
+  rcases hr with ⟨k, hk, rfl⟩ | rfl
+  · have := arr_disj (w := P.W) (fun e : k = j => hjl j hj (e ▸ hk)); dsimp only; omega_arith
+  · dsimp only; omega_arith
+
 
 end
 

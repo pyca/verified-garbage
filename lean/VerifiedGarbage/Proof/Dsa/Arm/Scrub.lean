@@ -235,13 +235,17 @@ macro "fill_round" : tactic => `(tactic| repeat' (first
   | refine Fill.icall _ _ ?_ ?_
   | exact Fill.refl _))
 
-theorem search_fill (umaal : Bool) (suffix : String) {round : Prog isa} (h : CodeOk round 56) :
-    Fill (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 56)) (Impl.Dsa.Arm.Fn.search umaal suffix round) := by
+theorem search_fill (umaal : Bool) (suffix name : String) {round mul : Prog isa} (h : CodeOk round 56)
+    (hm : CodeOk mul 40) :
+    Fill (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 56) (Impl.Bignum.Arm.MontCall.op "" (holeStub 40)))
+      (Impl.Dsa.Arm.Fn.search umaal suffix round (Impl.Bignum.Arm.MontCall.op name mul)) := by
   fill_round
 
-/-- The search's code with the stub, with either multiplication, uses at most
-304 bytes of stack and makes no indirect call. -/
-theorem search_stubOk (umaal : Bool) : CodeOk (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 56)) 304 := by
+/-- The search's code with the stubs (the round, and the shared product its
+probable-prime test calls), with either multiplication, uses at most 304
+bytes of stack and makes no indirect call. -/
+theorem search_stubOk (umaal : Bool) :
+    CodeOk (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 56) (Impl.Bignum.Arm.MontCall.op "" (holeStub 40))) 304 := by
   cases umaal
   · exact ⟨by lit_decide, by lit_decide⟩
   · exact ⟨by lit_decide, by lit_decide⟩
@@ -308,12 +312,13 @@ theorem generateKey (umaal : Bool) :
 
 /-- `vg_dsa_parameter_search`, over the Miller–Rabin round `v`. -/
 theorem parameterSearch (umaal : Bool) (v : Proof.MillerRabin.Arm.RoundImpl) :
-    VerifiedScrubbed target (Impl.Dsa.Arm.Fn.parameterSearch umaal v.suffix v.code)
+    VerifiedScrubbed target (Impl.Dsa.Arm.Fn.parameterSearch umaal v.suffix v.code v.mont.callOp.op)
       (Spec.Dsa.parameterSearchContract abi 304) 32 :=
   verifiedScrubbedAll (api := Spec.Dsa.parameterSearchApi)
-    { code := Impl.Dsa.Arm.Fn.search umaal v.suffix v.code, verified := Gen.search_params v }
+    { code := Impl.Dsa.Arm.Fn.search umaal v.suffix v.code v.mont.callOp.op, verified := Gen.search_params v }
     (Scrub.parameterSearchOut _)
-    (scrubSideF_of ((Scrub.search_fill umaal v.suffix ⟨v.stack, v.icallFree⟩).codeOk (Scrub.search_stubOk umaal))
+    (scrubSideF_of ((Scrub.search_fill umaal v.suffix v.mont.name ⟨v.stack, v.icallFree⟩ v.mont.mulOk).codeOk
+        (Scrub.search_stubOk umaal))
       Scrub.frameOk_304 _)
 
 end VG.Proof.Dsa.Arm.Fn

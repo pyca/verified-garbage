@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Front
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top3
@@ -78,15 +79,15 @@ theorem CIn.xCovers (h : CIn s) {σ : State} (pre : In (mkP s) σ) : Covers (xRe
       rw [pre.endM]; exact Nat.le_trans (arr_mono (show mBase + 8 ≤ nArr by decide)) pre.fits
 
 /-- The body's run, widened to the caller's regions. -/
-theorem body_wide [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
-    ∃ tr w t, Exec isa (body v.name v.code) (pcPushed s) tr (w.withRegions s.rd (pcPushed s).wr) ∧
-      Exec isa (body v.name v.code) (sx s) tr w ∧
+theorem body_wide [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (h : CIn s) :
+    ∃ tr w t, Exec isa (body v.name v.code M.op) (pcPushed s) tr (w.withRegions s.rd (pcPushed s).wr) ∧
+      Exec isa (body v.name v.code M.op) (sx s) tr w ∧
       In (mkP s) t ∧ t.sp = (mkP s).sp ∧
       t.mem = (pcPushed s).mem.writeW (off (State.addr (mkP s).sp) 48) (s.gpr .r0) ∧
       RF (mkP s) (In (mkP s)) (stR (mkP s)) (outR (mkP s)) (usedR (mkP s)) t w := by
   obtain ⟨tr1, t, e1, pre, st, rt, wt, mt⟩ := entry_ok h
-  obtain ⟨tr2, w, e2, rf⟩ := (candBody_vp v).wp t t ⟨pre, ⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩⟩
-  have run : Exec isa (body v.name v.code) (sx s) (tr1 ++ tr2) w := Exec.seq e1 e2
+  obtain ⟨tr2, w, e2, rf⟩ := (candBody_vp v M).wp t t ⟨pre, ⟨pre, rfl, rfl, rfl, Frame.refl _ _⟩⟩
+  have run : Exec isa (body v.name v.code M.op) (sx s) (tr1 ++ tr2) w := Exec.seq e1 e2
   have cov := h.xCovers pre
   have run' := Exec.widen (rd := s.rd) (wr := (pcPushed s).wr) run (Covers.append (Covers.refl _) cov) cov
   simp only [State.withRegions_withRegions] at run'
@@ -105,14 +106,14 @@ theorem slot_disj {σ : State} (pre : In (mkP s) σ) {lo n : Nat} (h1 : 4 ≤ lo
   · exact Offset.disjoint_base _ (by omega_using [h1]) (by omega_using [h2])
 
 /-- A call's result. -/
-theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (h : CIn s) :
-    WP isa (code v.name v.code) s fun t => abiPreserved s t ∧ CPost s t := by
+theorem cand_ok [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (h : CIn s) :
+    WP isa (code v.name v.code M.op) s fun t => abiPreserved s t ∧ CPost s t := by
   have spLo := h.spLo; have spHi := h.spHi
   have spN : (s.sp - BitVec.ofNat 32 56).toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' (by omega_using [spLo])
   unfold Impl.RsaKeyGen.Arm.Candidate.code
   refine WP.frame (by decide) (by simp only [List.length_cons, List.length_nil]; omega_using [spLo]) (by decide) ?_
   rw [WP.seq_iff]
-  obtain ⟨tr, w, t, run', -, pre, st, mt, ⟨_, bk, r0, outs, used⟩⟩ := body_wide v h
+  obtain ⟨tr, w, t, run', -, pre, st, mt, ⟨_, bk, r0, outs, used⟩⟩ := body_wide v M h
   refine WP.mono (Q := fun x => x = w.withRegions s.rd (pcPushed s).wr) ⟨tr, _, run', rfl⟩ ?_
   rintro _ rfl
   have wsp : w.sp = s.sp - BitVec.ofNat 32 56 := bk.sp.trans st

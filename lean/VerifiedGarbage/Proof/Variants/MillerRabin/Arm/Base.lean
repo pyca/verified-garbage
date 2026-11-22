@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
+public import VerifiedGarbage.Proof.Variants.RsaMont.Arm.Base
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Verified
 
 import VerifiedGarbage.Proof.Framework.Lit
@@ -24,6 +25,7 @@ def variant : RoundImpl where
   verified := round_verified_lite
   stack := by decide +kernel
   icallFree := by lit_decide
+  mont := Proof.Variants.RsaMont.Arm.Base.variant
   suffix := ""
   features := []
 

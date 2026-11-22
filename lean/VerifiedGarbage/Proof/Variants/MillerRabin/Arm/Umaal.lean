@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
+public import VerifiedGarbage.Proof.Variants.RsaMont.Arm.Umaal
 public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm.Base
 public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic -- shake: keep (exposed backend proof fields reference these lemmas)
@@ -158,6 +159,7 @@ def variant : RoundImpl where
   verified := round_verified
   stack := Nat.le_trans (armStack_umaalArithmetic _) (by decide +kernel)
   icallFree := by lit_decide
+  mont := Proof.Variants.RsaMont.Arm.Umaal.variant
   suffix := "_umaal"
   features := ["umaal"]
 
