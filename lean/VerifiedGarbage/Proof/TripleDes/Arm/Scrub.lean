@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
-public import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 public import VerifiedGarbage.Impl.TripleDes.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
@@ -20,7 +19,6 @@ import VerifiedGarbage.Proof.Modes.CfbFinalScratch
 import VerifiedGarbage.Proof.TripleDes.Arm.FunctionsLit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
-meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Impl.TripleDes.Arm.Fn
 meta import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.TripleDes.Arm.Frame
@@ -44,25 +42,21 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 # Triple DES on ARMv7, without secret residue
 
 Every public function of Triple DES on ARMv7 keeps its working space in a
-frame: key expansion's 512 bytes and ECB's 1024 (`withRegScratchWiped`),
-the batched CBC and CFB64 decryption's 1040, and the modes one block at a
-time 64 bytes of their own around ECB's 1024 (`withStackScratchWiped`).
-None makes an indirect call, and their postconditions read the memory on
-return only within their buffers (`Arm.Scrub.PostOut`, from the lemmas of
+frame, left as it is: key expansion's 512 bytes (`withRegScratch`), the
+batched CBC and CFB64 decryption's 1040, and the modes one block at a time
+64 bytes of their own (`withStackScratch`) around the 1024 of the ECB core
+they call (`Impl.TripleDes.Arm.ecbCore`, `ModeCore.lean`); the ECB functions
+call the core in a frame of 8 bytes (`Core.wrap`), within 1040. None makes
+an indirect call, and their postconditions read the memory on return only
+within their buffers (`Arm.Scrub.PostOut`, from the lemmas of
 `Proof/TripleDes/Scratch.lean`, `CbcScratch.lean`, `FbScratch.lean` and
-`Proof/Modes/CfbFinalScratch.lean` that x86-64 uses too). Each wipes its own working space, and is
-emitted followed by a wipe of only the words of the stack its contract
-reserves that the residue analysis finds may differ between two runs
-(`Impl.Scrub.Arm.scrubSel`), and by instructions that set the
-registers a callee may change, but the result, and the flags to constants
-(`Impl.TripleDes.Arm.Fn`). `Fn` below states that each returns without
-secret residue (`Arm.Scrub.verifiedScrubbedSel`, whose analysis,
-`Arm.rtaint`, the kernel evaluates here: `taint_decide_ct`), which is what
-its registration binds.
-
-The modes call the ECB artifacts as they are emitted, cleanup included
-(`Impl.TripleDes.Arm.ecbCore`), whose theorems are in `ModeCore.lean`: the
-analysis of each mode covers the frame of that call.
+`Proof/Modes/CfbFinalScratch.lean` that x86-64 uses too). Each is emitted
+followed by `scrubAll` (`Impl.TripleDes.Arm.Fn`), which zeroes the stack its
+contract reserves in a loop and sets the registers a callee may change, but
+the result, and the flags to constants. `Fn` below states that each returns
+without secret residue (`Arm.Scrub.verifiedScrubbedAll`, given that its
+frames are within that stack: `CodeOk`), which is what its registration
+binds.
 -/
 
 @[expose] public section
@@ -124,6 +118,36 @@ theorem cfbDecrypt_code :
     CodeOk (Impl.StackScratch.Arm.withStackScratch 1040 0 Impl.TripleDes.Arm.Wide.cfbDecrypt) 1040 := by
   lit_decide
 
+private theorem stackScratch_code {b m n : Nat} {c : Prog isa} (h : CodeOk c n) :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch b m c) (n + b) :=
+  CodeOk.alloc (CodeOk.seq ((CodeOk.block _).mono (Nat.zero_le _)) h)
+
+private theorem core_code :
+    armStack (Impl.TripleDes.Arm.ecbCore .encrypt).code + callExtraArm (Impl.TripleDes.Arm.ecbCore .encrypt)
+      ≤ 1024 ∧ noIcall (Impl.TripleDes.Arm.ecbCore .encrypt).code = true :=
+  ⟨by rw [show callExtraArm (Impl.TripleDes.Arm.ecbCore .encrypt) = 0 from rfl, Nat.add_zero]; exact ecb_stack _,
+    by lit_decide⟩
+
+theorem cbcEncrypt_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cbcEncryptChained) 1088 :=
+  stackScratch_code (seq_scrubArm core_code _)
+theorem cfbEncrypt_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cfbEncrypt) 1088 :=
+  stackScratch_code (seq_scrubArm core_code _)
+theorem cfb8Encrypt_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cfb8Encrypt) 1088 :=
+  stackScratch_code (seq_scrubArm core_code _)
+theorem cfb8Decrypt_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cfb8Decrypt) 1088 :=
+  stackScratch_code (seq_scrubArm core_code _)
+theorem ofb_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.ofb) 1088 :=
+  stackScratch_code (seq_scrubArm core_code _)
+theorem cfbEncryptFinal_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cfbEncryptFinal) 1088 :=
+  stackScratch_code (seqFinal_scrubArm core_code _)
+theorem cfbDecryptFinal_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cfbDecryptFinal) 1088 :=
+  stackScratch_code (seqFinal_scrubArm core_code _)
+theorem ofbFinal_code : CodeOk (Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.ofbFinal) 1088 :=
+  stackScratch_code (seqFinal_scrubArm core_code _)
+
 end VG.Proof.TripleDes.Arm.Scrub
 
 namespace VG.Proof.TripleDes.Arm.Fn
@@ -142,12 +166,11 @@ theorem expandKey :
 /-- `vg_triple_des_cbc_encrypt_chained`. -/
 theorem cbcEncrypt :
     VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cbcEncrypt (Spec.TripleDes.cbcEncryptChainedContract Arm.abi 1088) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.cbcEncryptChainedApi) (W := 1088)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcEncryptChained
+  verifiedScrubbedAll (api := Spec.TripleDes.cbcEncryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cbcEncryptChained
       verified := Proof.TripleDes.Arm.cbcEncryptChained_framed }
-    Impl.TripleDes.Arm.Fn.modeWords []
     Scrub.cbcEncryptOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cbcEncrypt_code (by decide) _)
 
 /-- `vg_triple_des_cbc_decrypt_chained`. -/
 theorem cbcDecrypt :
@@ -161,12 +184,11 @@ theorem cbcDecrypt :
 /-- `vg_triple_des_cfb64_encrypt`. -/
 theorem cfbEncrypt :
     VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfbEncrypt (Spec.TripleDes.cfbEncryptContract Arm.abi 1088) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.cfbEncryptApi) (W := 1088)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncrypt
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbEncryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cfbEncrypt
       verified := Proof.TripleDes.Arm.cfbEncrypt_framed }
-    Impl.TripleDes.Arm.Fn.modeWords []
     Scrub.cfbEncryptOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbEncrypt_code (by decide) _)
 
 /-- `vg_triple_des_cfb64_decrypt`. -/
 theorem cfbDecrypt :
@@ -180,60 +202,54 @@ theorem cfbDecrypt :
 /-- `vg_triple_des_cfb64_encrypt_final`. -/
 theorem cfbEncryptFinal :
     VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfbEncryptFinal (Spec.TripleDes.cfbEncryptFinalContract Arm.abi 1088) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.cfbEncryptFinalApi) (W := 1088)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbEncryptFinal
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbEncryptFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cfbEncryptFinal
       verified := Proof.TripleDes.Arm.cfbEncryptFinal_framed }
-    Impl.TripleDes.Arm.Fn.modeWords []
     Scrub.cfbEncryptFinalOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbEncryptFinal_code (by decide) _)
 
 /-- `vg_triple_des_cfb64_decrypt_final`. -/
 theorem cfbDecryptFinal :
     VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfbDecryptFinal (Spec.TripleDes.cfbDecryptFinalContract Arm.abi 1088) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.cfbDecryptFinalApi) (W := 1088)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfbDecryptFinal
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbDecryptFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cfbDecryptFinal
       verified := Proof.TripleDes.Arm.cfbDecryptFinal_framed }
-    Impl.TripleDes.Arm.Fn.modeWords []
     Scrub.cfbDecryptFinalOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbDecryptFinal_code (by decide) _)
 
 /-- `vg_triple_des_cfb8_encrypt`. -/
 theorem cfb8Encrypt :
     VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfb8Encrypt (Spec.TripleDes.cfb8EncryptContract Arm.abi 1088) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.cfb8EncryptApi) (W := 1088)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Encrypt
+  verifiedScrubbedAll (api := Spec.TripleDes.cfb8EncryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cfb8Encrypt
       verified := Proof.TripleDes.Arm.cfb8Encrypt_framed }
-    Impl.TripleDes.Arm.Fn.modeWords []
     Scrub.cfb8EncryptOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfb8Encrypt_code (by decide) _)
 
 /-- `vg_triple_des_cfb8_decrypt`. -/
 theorem cfb8Decrypt :
     VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfb8Decrypt (Spec.TripleDes.cfb8DecryptContract Arm.abi 1088) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.cfb8DecryptApi) (W := 1088)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cfb8Decrypt
+  verifiedScrubbedAll (api := Spec.TripleDes.cfb8DecryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.cfb8Decrypt
       verified := Proof.TripleDes.Arm.cfb8Decrypt_framed }
-    Impl.TripleDes.Arm.Fn.modeWords []
     Scrub.cfb8DecryptOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfb8Decrypt_code (by decide) _)
 
 /-- `vg_triple_des_ofb`. -/
 theorem ofb : VerifiedScrubbed target Impl.TripleDes.Arm.Fn.ofb (Spec.TripleDes.ofbContract Arm.abi 1088) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.ofbApi) (W := 1088)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofb
+  verifiedScrubbedAll (api := Spec.TripleDes.ofbApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.ofb
       verified := Proof.TripleDes.Arm.ofb_framed }
-    Impl.TripleDes.Arm.Fn.modeWords []
     Scrub.ofbOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.ofb_code (by decide) _)
 
 /-- `vg_triple_des_ofb_final`. -/
 theorem ofbFinal :
     VerifiedScrubbed target Impl.TripleDes.Arm.Fn.ofbFinal (Spec.TripleDes.ofbFinalContract Arm.abi 1088) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.ofbFinalApi) (W := 1088)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofbFinal
+  verifiedScrubbedAll (api := Spec.TripleDes.ofbFinalApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 64 0 Impl.TripleDes.Arm.ofbFinal
       verified := Proof.TripleDes.Arm.ofbFinal_framed }
-    Impl.TripleDes.Arm.Fn.modeWords []
     Scrub.ofbFinalOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.ofbFinal_code (by decide) _)
 
 end VG.Proof.TripleDes.Arm.Fn

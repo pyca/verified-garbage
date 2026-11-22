@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.Scratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -17,9 +17,9 @@ import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 Key expansion's and ECB's working space is their fourth argument, in `r3`:
 they run their code, proved with it as an argument, in a frame that is the
-working space and which they zero after the code, since it may hold the key
-schedule and the data (`Verified.regScratchWiped`): 512 bytes for key
-expansion and 1024 for ECB.
+working space (`Verified.regScratch`), which the cleanup of the functions
+that run them zeroes, since it may hold the key schedule and the data: 512
+bytes for key expansion and 1024 for ECB.
 -/
 
 @[expose] public section
@@ -79,11 +79,12 @@ theorem expandKey_framed :
 
 theorem ecb_framed {c : Prog isa} {d : Spec.TripleDes.Direction}
     (h : Verified Arm.target c (Proof.TripleDes.ecbScratchContract Arm.abi d 0)) :
-    Verified Arm.target (Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 c)
+    Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 1024 .r3 c)
       (Spec.TripleDes.ecbContract Arm.abi d 1024) :=
-  Arm.Verified.regScratchWiped (sig := Spec.TripleDes.ecbSig) (nm := "scratch") (e := .u64)
+  Arm.Verified.regScratch (sig := Spec.TripleDes.ecbSig) (nm := "scratch") (e := .u64)
     (n := 128) (post := Spec.TripleDes.ecbPost d Arm.abi.ptrBits) (wa := true) (stack := 0)
-    h (by decide) (by decide) (by decide) (by decide) (Proof.TripleDes.ecbPostOut_local _ d)
+    h (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.TripleDes.ecbPostOut_local _ d vs mm m₁ m₂ r hl)
     (ecbFrameSat_pre d)
 
 end VG.Proof.TripleDes.Arm
