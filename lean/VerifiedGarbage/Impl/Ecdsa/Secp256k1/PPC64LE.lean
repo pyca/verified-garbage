@@ -11,6 +11,6 @@ namespace VG.Impl.Ecdsa.PPC64LE
 open VG.PPC64LE
 
 /-- secp256k1 as the code has it. -/
-def secp256k1 : Cfg := ⟨4, Spec.Secp256k1.curve, Impl.Weierstrass.Mont.secp256k1p, Impl.Weierstrass.Mont.secp256k1n, none, false⟩
+def secp256k1 : Cfg := ⟨4, Spec.Secp256k1.curve, Impl.Weierstrass.Mont.secp256k1p, Impl.Weierstrass.Mont.secp256k1n, none, none⟩
 
 end VG.Impl.Ecdsa.PPC64LE

@@ -11,7 +11,7 @@ namespace VG.Impl.Ecdsa.PPC64LE
 open VG.PPC64LE
 
 /-- brainpoolP320r1 as the code has it. -/
-def brainpoolp320r1 : Cfg := ⟨5, Spec.BrainpoolP320r1.curve, Impl.Weierstrass.Mont.brainpoolp320r1p, Impl.Weierstrass.Mont.brainpoolp320r1n, none, false⟩
+def brainpoolp320r1 : Cfg := ⟨5, Spec.BrainpoolP320r1.curve, Impl.Weierstrass.Mont.brainpoolp320r1p, Impl.Weierstrass.Mont.brainpoolp320r1n, none, none⟩
 
 
 end VG.Impl.Ecdsa.PPC64LE

@@ -134,10 +134,10 @@ structure Cfg where
   `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
   verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
   mul : Option Impl.Weierstrass.Mul.Curve
-  /-- Whether the setup copies its constants from their table (`constTbl`,
-  `copyTbl`), which the functions' contracts then list, or stores each word
-  as an immediate (`setConst`). -/
-  tbl : Bool
+  /-- The name of the table of constants the setup copies (`constTbl`,
+  `copyTbl`), which the functions' contracts then list, if any; else the setup
+  stores each word as an immediate (`setConst`). -/
+  tblSym : Option String
 
 namespace Cfg
 
@@ -218,10 +218,13 @@ def constTbl : List (BitVec 64) :=
   (List.range (17 * c.n)).map fun k => BitVec.ofNat 64 (c.slotVal (k / c.n) >>> (64 * (k % c.n)))
 
 /-- The name of the table `constTbl`. -/
-def constSym : String := s!"vg_{c.SP.curve}_frame_consts"
+def constSym : String := c.tblSym.getD ""
 
 /-- The table of constants every function that runs the setup reads. -/
 def constsK : List (String × List (BitVec 64)) := [(c.constSym, c.constTbl)]
+
+/-- Whether the setup copies its constants from their table (`tblSym`). -/
+def tbl : Bool := c.tblSym.isSome
 
 /-- The constants into their slots: from their table, or as immediates (`tbl`). -/
 def constsCode : Prog isa :=

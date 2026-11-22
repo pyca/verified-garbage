@@ -73,12 +73,13 @@ open VG.Proof.Weierstrass (Law)
 returns without secret residue. -/
 theorem p192Exchange_scrubbed (hL : Law Spec.P192.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdh.PPC64LE.Fn.p192Exchange
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst PPC64LE.abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst
+        (PPC64LE.abi.withConsts (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192))) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdh.P192.exchangeApi) {
       code := Impl.Ecdh.PPC64LE.exchangeP192
       verified := Proof.Ecdh.PPC64LE.P192.ecdh_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ [])
+    (Proof.EcKey.PPC64LE.Scrub.exchangeOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p192))
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdh.P224.exchangeApi`'s function as emitted

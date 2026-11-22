@@ -49,30 +49,6 @@ variable {sig : Sig} {c₀ : String × List (BitVec 64)} {cs : List (String × L
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
   {st : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
 
-/-- A postcondition under `abi` does not depend on the readable regions. -/
-theorem post_strip {K : List (String × List (BitVec 64))} {s s' : State} :
-    (sig.contract abi pre post wa st leak).post (stripConsts K s) s' ↔
-      (sig.contract abi pre post wa st leak).post s s' := by
-  dsimp only [Sig.contract]
-  cases h : abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
-  | none => exact Iff.rfl
-  | some vals =>
-    dsimp only
-    rw [args_stripConsts h]
-    exact Iff.rfl
-
-/-- The public data under `abi` do not depend on the readable regions. -/
-theorem pub_strip {K : List (String × List (BitVec 64))} {s₁ s₂ : State} :
-    (sig.contract abi pre post wa st leak).pub (stripConsts K s₁) (stripConsts K s₂) ↔
-      (sig.contract abi pre post wa st leak).pub s₁ s₂ := by
-  dsimp only [Sig.contract]
-  cases h : abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) with
-  | none => exact Iff.rfl
-  | some vals =>
-    dsimp only
-    rw [args_stripConsts h, args_stripConsts h]
-    exact Iff.rfl
-
 /-- A contract with a table implies the one under `abi.withConsts`, if the
 contract without it implies the one under `abi`. -/
 theorem implies {K : Contract isa} (h : K.Implies (sig.contract abi pre post wa 0 leak))
