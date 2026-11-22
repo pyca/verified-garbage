@@ -211,19 +211,60 @@ theorem tailW_keep (c : Cfg) (h9 : c.n ≤ 9) : ∀ i ∈ [ZERO, ONE, K, DD, EE,
       (all_cons (.inl (sl_le c h45)) (chainN_keep h9 h45 h6)))
     (all_cons (sl_sep c h7) (all_cons (.inl hown) (all_cons (sl_sep c h8) (all_one (.inl hown)))))
 
+/-! The power's call (`invN`) also writes the word where it keeps `ra`
+(`invSave`, slot 45's place). -/
+
+theorem invSave_eq (c : Cfg) : VG.Impl.Ecdh.RISCV64.Cfg.invSave c = c.sl 45 := rfl
+
+theorem invN_keep {c : Cfg} (h9 : c.n ≤ 9) {i : Nat} (hi : i < 45) (ha : i ≠ ACC) :
+    ∀ w ∈ (VG.Impl.Ecdh.RISCV64.Cfg.invSave c, 8) :: chainWx (Cfg.chainN c) c.n,
+      c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
+  all_cons (.inl (sl_le c hi)) (chainN_keep h9 hi ha)
+
+theorem invN_flag {c : Cfg} (h1 : 1 ≤ c.n) (h9 : c.n ≤ 9) :
+    ∀ w ∈ (VG.Impl.Ecdh.RISCV64.Cfg.invSave c, 8) :: chainWx (Cfg.chainN c) c.n,
+      c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
+  refine all_cons (.inl ?_) (chainN_flag h1 h9)
+  have := sl_le c (by decide : FLAG < 45)
+  show _ ≤ c.sl 45
+  omega
+
+theorem invSave_lt {c : Cfg} (h9 : c.n ≤ 9) : VG.Impl.Ecdh.RISCV64.Cfg.invSave c < 4095 := by
+  rw [invSave_eq]; simp only [Cfg.sl, slot]; omega_using [h9]
+
+theorem invSave8 (c : Cfg) : VG.Impl.Ecdh.RISCV64.Cfg.invSave c % 8 = 0 := sl8 c 45
+
+/-- The word apart from a chain's slots (at `ACC`, from `TB` and the field's own). -/
+theorem invSave_chain {c : Cfg} (h1 : 1 ≤ c.n) (h9 : c.n ≤ 9) :
+    ∀ w ∈ chainWx (Cfg.chainN c) c.n,
+      VG.Impl.Ecdh.RISCV64.Cfg.invSave c + 8 ≤ w.1 ∨ w.1 + w.2 ≤ VG.Impl.Ecdh.RISCV64.Cfg.invSave c := by
+  rw [chainN_wx, invSave_eq]
+  refine all_cons (.inr (sl_le c (by decide))) (all_cons (.inl ?_) (all_one (.inl (VG.Proof.Ecdh.RISCV64.Kit.own_ge h9))))
+  have := sl_le c (by decide : 45 < TB)
+  omega
+
+/-- The word apart from a slot below it. -/
+theorem invSave_below (c : Cfg) {i : Nat} (hi : i < 45) :
+    VG.Impl.Ecdh.RISCV64.Cfg.invSave c + 8 ≤ c.sl i ∨ c.sl i + 8 * c.n ≤ VG.Impl.Ecdh.RISCV64.Cfg.invSave c :=
+  .inr (sl_le c hi)
+
+theorem invN_lo {c : Cfg} (h9 : c.n ≤ 9) :
+    ∀ w ∈ (VG.Impl.Ecdh.RISCV64.Cfg.invSave c, 8) :: chainWx (Cfg.chainN c) c.n, 40 ≤ w.1 :=
+  all_cons (Nat.le_trans (by decide) (sl_lo c 45)) (chainN_lo h9)
+
 /-- What the values modulo `n` write. -/
 abbrev backW (c : Cfg) : List (Nat × Nat) :=
-  cw c RR ++ cw c KM ++ chainWx (Cfg.chainN c) c.n ++ cw c EM ++ cw c RM ++ cw c DM ++ cw c TT ++ cw c SU ++
+  cw c RR ++ cw c KM ++ ((VG.Impl.Ecdh.RISCV64.Cfg.invSave c, 8) :: chainWx (Cfg.chainN c) c.n) ++ cw c EM ++ cw c RM ++ cw c DM ++ cw c TT ++ cw c SU ++
     cw c SMM ++ cw c SS
 
 theorem backW_lo (c : Cfg) (h9 : c.n ≤ 9) : ∀ w ∈ backW c, 40 ≤ w.1 := by
   repeat' with_reducible apply all_app
-  all_goals first | exact cw_lo h9 _ | exact chainN_lo h9
+  all_goals first | exact cw_lo h9 _ | exact invN_lo h9 | exact chainN_lo h9
 
 theorem backW_flag (c : Cfg) (h1 : 1 ≤ c.n) (h9 : c.n ≤ 9) :
     ∀ w ∈ backW c, c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
   repeat' with_reducible apply all_app
-  all_goals first | exact cw_flag h9 (by decide) | exact chainN_flag h1 h9
+  all_goals first | exact cw_flag h9 (by decide) | exact invN_flag h1 h9 | exact chainN_flag h1 h9
 
 /-! ## The flag's checks -/
 
@@ -576,8 +617,9 @@ theorem nback_ok {base : Addr} {s : State} {k d e x : Nat} (hb : Kt.BackPre base
     show wordsVal _ _ _ _ = _
     rw [sv_unch h9 U₂ ONEN (kp (by decide) (by decide)), sv_unch h9 U₁ ONEN (kp (by decide) (by decide))]
     exact hb.onen
-  refine WP.seq (WP.mono (TKit.chainPow_kit (P := Cfg.chainN Kt.c) hF hk hm (chainNLay Kt.c Kt.n1 h9) hU hw₂
-    (one := Kt.c.sl ONEN) (hl (by decide)) (hs (by decide)) on₂ Kt.chainN_ok)
+  refine WP.seq (WP.mono (TKit.chainCall_kit (P := Cfg.chainN Kt.c) hF hk hm (chainNLay Kt.c Kt.n1 h9) hU hw₂
+    (one := Kt.c.sl ONEN) (hl (by decide)) (hs (by decide)) on₂ Kt.chainN_ok (invSave_lt h9) (invSave8 _)
+    (invSave_chain Kt.n1 h9) (invSave_below _ (by decide)) (invSave_below _ (by decide)))
     fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
   obtain hw₃ := hw₂.of_kc K₃
   obtain acc₃ : toM Kt.c.C.n (2 ^ (64 * Kt.c.n)) (sv Kt.c base s₃ ACC) = Fin.ofNat Kt.c.C.n k ^ (Kt.c.C.n - 2) := by
@@ -588,7 +630,7 @@ theorem nback_ok {base : Addr} {s : State} {k d e x : Nat} (hb : Kt.BackPre base
   -- A slot the steps so far keep.
   obtain k13 : ∀ i ∈ [EE, DD, R2N, ONE, RR], sv Kt.c base s₃ i = sv Kt.c base s₁ i := fun i hi => by
     obtain ⟨h1, h2, h3⟩ := (by decide : ∀ i ∈ [EE, DD, R2N, ONE, RR], i < 45 ∧ i ≠ ACC ∧ i ≠ KM) i hi
-    exact (sv_unch h9 U₃ i (chainN_keep h9 h1 h2) (le55 h1)).trans (sv_unch h9 U₂ i (kp h3 h1) (le55 h1))
+    exact (sv_unch h9 U₃ i (invN_keep h9 h1 h2) (le55 h1)).trans (sv_unch h9 U₂ i (kp h3 h1) (le55 h1))
   obtain r2₃ : sv Kt.c base s₃ R2N = 2 ^ (64 * Kt.c.n) * 2 ^ (64 * Kt.c.n) % Kt.c.C.n :=
     (k13 R2N (by decide)).trans r2₁
   -- `e R`.

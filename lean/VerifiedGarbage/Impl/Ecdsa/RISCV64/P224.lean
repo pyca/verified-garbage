@@ -60,7 +60,7 @@ def verifyP224 : Prog isa :=
   .seq (.block ((Sign.Cfg.nConsts p224).flatMap (fun (i, x) => setConst 4 (p224.sl i) x))) <|
   .seq (Verify.Cfg.uv p224 p224Order) <|
   .seq (VerifyComb.Cfg.joint p224 "vg_p224_mul" mulP224 Comb.mulGP224Name Comb.mulGP224) <|
-  .seq (chainPow (Cfg.chainP p224) (p224.sl ONEP) p224.FP) <|
+  .seq (Ecdh.RISCV64.Cfg.invP p224) <|
   .seq (Cfg.affineCoord p224 XM XO RX) <|
   .seq (Verify.Cfg.compare p224 p224Order) (.block (Verify.Cfg.finish p224))
 

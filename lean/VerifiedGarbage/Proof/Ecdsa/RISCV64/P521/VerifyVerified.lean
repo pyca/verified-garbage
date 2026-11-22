@@ -319,7 +319,7 @@ structure UvPre (base : Addr) (s : State) (r sg e : Nat) : Prop where
 /-- `w = (s R)^(n-2)`, `u = e w` and `v = r w` modulo `n`. -/
 theorem uv_ok {base : Addr} {s : State} {r sg e : Nat} (hb : UvPre base s r sg e) :
     WP isa (Verify.Cfg.uv p521 p521Order) s fun s' => Kc s s' ∧
-      Unch base (cw KM ++ chainWx (Cfg.chainN p521) 9 ++ cw EM ++ cw UM ++ cw UU ++ cw RM ++ cw VM ++ cw VV)
+      Unch base (cw KM ++ ((VG.Impl.Ecdh.RISCV64.Cfg.invSave p521, 8) :: chainWx (Cfg.chainN p521) 9) ++ cw EM ++ cw UM ++ cw UU ++ cw RM ++ cw VM ++ cw VV)
         s.mem s'.mem ∧
       sv base s' UU < W.n ∧ Fin.ofNat W.n (sv base s' UU) = Fin.ofNat W.n e * Fin.ofNat W.n sg ^ (W.n - 2) ∧
       sv base s' VV < W.n ∧ Fin.ofNat W.n (sv base s' VV) = Fin.ofNat W.n r * Fin.ofNat W.n sg ^ (W.n - 2) := by
@@ -346,8 +346,8 @@ theorem uv_ok {base : Addr} {s : State} {r sg e : Nat} (hb : UvPre base s r sg e
   -- `w`.
   obtain on₂ : sv base s₂ ONEN = 2 ^ 576 % W.n := by
     show wordsVal _ _ _ _ = _; rw [sv_unch U₂ ONEN (by decide)]; exact hb.onen
-  refine WP.seq (WP.mono (chainPow_ok (P := Cfg.chainN p521) (F := p521Order) order_ok chainNLay unitN hw₂
-    (one := p521.sl ONEN) (by decide) (by decide) (by show sv base s₂ ONEN = _; rw [on₂]; rfl) chainN_ok)
+  refine WP.seq (WP.mono (chainCall_ok (P := Cfg.chainN p521) (F := p521Order) order_ok chainNLay unitN hw₂
+    (one := p521.sl ONEN) (by decide) (by decide) (by show sv base s₂ ONEN = _; rw [on₂]; rfl) chainN_ok (by decide) (by decide) (by decide) (by decide) (by decide))
     fun s₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
   obtain hw₃ := hw₂.of_kc K₃
   obtain acc₃ : toM W.n (2 ^ 576) (sv base s₃ ACC) = Fin.ofNat W.n sg ^ (W.n - 2) := by
@@ -722,9 +722,10 @@ theorem verify_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : verifyRVC.
     rcases hx with rfl | rfl | rfl
     exacts [pR₆.x, pR₆.y, pR₆.z]
   -- `Z^(p-2)` and `x`.
-  refine WP.seq (WP.mono (chainPow_ok (P := chainP p521) (F := p521Field) field_ok chainLay unit hw₆
+  refine WP.seq (WP.mono (chainCall_ok (P := chainP p521) (F := p521Field) field_ok chainLay unit hw₆
     (one := p521.sl ONEP) (by decide) (by decide)
-    (by show sv base s₆ ONEP = _; rw [c₆ ONEP (by simp), tc₄.onep]; rfl) chainP_ok) fun s₇ ⟨K₇, U₇, lt₇, v₇⟩ => ?_)
+    (by show sv base s₆ ONEP = _; rw [c₆ ONEP (by simp), tc₄.onep]; rfl) chainP_ok
+    (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₇ ⟨K₇, U₇, lt₇, v₇⟩ => ?_)
   obtain hw₇ := hw₆.of_kc K₇
   obtain c₇ : ∀ i ∈ [ZERO, ONE], sv base s₇ i = sv base s₄ i := fun i hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
