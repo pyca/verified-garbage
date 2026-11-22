@@ -730,13 +730,14 @@ theorem ret_eq {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp - 
 
 /-- The stack below the call. -/
 theorem below_eq {o t : State} (A : PSearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
-    below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Candidate.code + 4) = ⟨low o, 176⟩ := by
+    below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Candidate.code + 4) = ⟨low o + BitVec.ofNat 64 80, 176⟩ := by
   have h1 : 292 ≤ (o.gpr .esp).toNat := A.stackLow
   obtain hl := low_toNat A
   have := (o.gpr .esp).isLt
-  obtain e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (252 + 4)).setWidth 64 = low o := by
+  obtain e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (172 + 4)).setWidth 64 =
+      low o + BitVec.ofNat 64 80 := by
     apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, hl, argsBytes]
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, hl, argsBytes]
     omega_arith
   rw [callee_stack, below, he, e]
 
@@ -805,7 +806,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used n : Nat}
   have hS := A.sBound
   obtain hA : Aligned liveDs := by decide
   obtain Fs : Region.Sub (frR o) (lowR o) := low_sub (by decide)
-  obtain Bs : Region.Sub ⟨low o, 176⟩ (lowR o) := Region.sub_prefix (by decide)
+  obtain Bs : Region.Sub ⟨low o + BitVec.ofNat 64 80, 176⟩ (lowR o) := low_sub (by decide)
   obtain fr : Frame (frameR o) t.mem u.mem := hf.sub fun r hr => by
     rw [below_eq A h.esp] at hr
     simp only [callWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr

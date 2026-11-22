@@ -587,6 +587,7 @@ structure ExAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes 
   y : YGeo args base bytes len u.rd u.wr
   x : XGeo args base bytes len xl u.rd u.wr
   out : OutGeo args base bytes len u.wr
+  room : RoomF sp base bytes
   hy40 : Region.Disjoint ⟨byteAddr (args 8), len⟩ (below sp 176)
   hx40 : Region.Disjoint ⟨byteAddr (args 10), xl⟩ (below sp 176)
 
@@ -618,7 +619,7 @@ theorem body_relCT :
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WSt Ex base bytes len args sp .wide [3, 4] 0)
     front_trace fun x A => ?_) ?_
-  · refine WP.mono (front_ok A.run.1 A.dom A.y A.x (by rw [A.run.2.2]; exact A.hy40)
+  · refine WP.mono (front_ok A.run.1 A.dom A.y A.x (by rw [A.run.2.2]; exact A.room) (by rw [A.run.2.2]; exact A.hy40)
       (by rw [A.run.2.2]; exact A.hx40)) fun u ⟨S, C, one, R2, _⟩ =>
       ⟨_, C, fun j hj => ?_, fun j hj => absurd hj (Nat.not_lt_zero _), A.run.2.1.keep S.keeps,
         S.esp.trans A.run.2.2⟩
@@ -675,7 +676,7 @@ theorem exAt_of {s f : State} (A : ExchangeABI s) (Bf : BodyAt (Rd s) Impl.Ffdh.
   exact ⟨⟨VG.Proof.Ffdh.X86.In.narrow Bf.1 hx, Bf.argsOk (wrapABI A) (Out := [outR s]) fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact A.belowOut.sub_left (by rw [FA]; exact Offset.sub_below _ (by decide) (by decide)), Bf.2.1⟩,
-    G, Y, X, O, hy, hxx⟩
+    G, Y, X, O, (wrapABI A).room, hy, hxx⟩
 
 theorem constantTime : ConstantTime isa (Spec.Ffdh.exchangeContract abi stack).pre
     (Spec.Ffdh.exchangeContract abi stack).pub Impl.Ffdh.X86.Exchange.code := by
@@ -721,7 +722,8 @@ theorem constantTime : ConstantTime isa (Spec.Ffdh.exchangeContract abi stack).p
       ∃ F, WP isa Impl.Ffdh.X86.Exchange.body
         (narrowed (wsBase Impl.Ffdh.X86.Exchange.args x) (wsSize Impl.Ffdh.X86.Exchange.args x) f [outR x]) F :=
     fun X Bf => ⟨_, body_ok (exAt_of X Bf).run.1 (exAt_of X Bf).dom (exAt_of X Bf).y (exAt_of X Bf).x
-      (exAt_of X Bf).out (by rw [(exAt_of X Bf).run.2.2]; exact (exAt_of X Bf).hy40)
+      (exAt_of X Bf).out (by rw [(exAt_of X Bf).run.2.2]; exact (exAt_of X Bf).room)
+      (by rw [(exAt_of X Bf).run.2.2]; exact (exAt_of X Bf).hy40)
       (by rw [(exAt_of X Bf).run.2.2]; exact (exAt_of X Bf).hx40)⟩
   have ho : ∀ {x f : State}, ExchangeABI x → BodyAt (Rd x) Impl.Ffdh.X86.Exchange.args x f → outR x ∈ f.wr :=
     fun X Bf => by rw [Bf.2.2.2.1, X.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_self ..)

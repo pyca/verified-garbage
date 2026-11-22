@@ -319,13 +319,14 @@ theorem ret_eq {o t : State} (A : KeySearchABI o) (he : t.gpr .esp = o.gpr .esp 
 
 /-- The stack below the call. -/
 theorem below_eq {o t : State} (A : KeySearchABI o) (he : t.gpr .esp = o.gpr .esp - BitVec.ofNat 32 argsBytes) :
-    below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Cached.Generate.code + 4) = ⟨low o, 176⟩ := by
+    below (t.gpr .esp) (stackUse Impl.Ffdh.X86.Cached.Generate.code + 4) = ⟨low o + BitVec.ofNat 64 80, 176⟩ := by
   have h1 : 308 ≤ (o.gpr .esp).toNat := A.stackLow
   obtain hl := low_toNat A
   have := (o.gpr .esp).isLt
-  obtain e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (252 + 4)).setWidth 64 = low o := by
+  obtain e : (o.gpr .esp - BitVec.ofNat 32 argsBytes - BitVec.ofNat 32 (172 + 4)).setWidth 64 =
+      low o + BitVec.ofNat 64 80 := by
     apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat, hl, argsBytes]
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, hl, argsBytes]
     omega_using [h1]
   rw [callee_stack, below, he, e]
 
@@ -404,7 +405,7 @@ theorem call_ok {o t : State} {e : BitVec 32} {used keys scalars : Nat}
     · exact ⟨yR o, List.mem_append_left _ (by rw [A.wr]; simp), by rw [yr]; exact fun _ h => h⟩
     · exact ⟨bR o, List.mem_append_left _ (by rw [A.wr]; simp), fun _ h => h⟩
     · exact ⟨lowR o, List.mem_append_right _ (List.mem_singleton_self _), Fs⟩
-    · exact ⟨lowR o, List.mem_append_right _ (List.mem_singleton_self _), Region.sub_prefix (by decide)⟩
+    · exact ⟨lowR o, List.mem_append_right _ (List.mem_singleton_self _), low_sub (by decide)⟩
   refine ⟨⟨A, hrd.trans h.rd, hwr.trans h.wr, by rw [hcs .esp (by decide), h.esp],
     by rw [hcs .esi (by decide), h.esi], fun r hr hne hsp => by rw [hcs r hr, h.saved r hr hne hsp],
     h.frame.trans fr, h.words.frame hS hA hf fun r hr => ?_⟩, ?_, ?_⟩
