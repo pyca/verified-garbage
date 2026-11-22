@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
 public import VerifiedGarbage.Proof.Bignum.Arm.Precompute
 public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Impl.Bignum.Arm.R2Normalized
 import VerifiedGarbage.Proof.Bignum.Arm.R2With
 import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
@@ -101,7 +102,8 @@ def baselinePublicPrecomputeKernel : PublicPrecomputeKernel where
     exact (precompute_ct fits).mono (fun _ _ h => ⟨h.1.1.1, h.2.1.1.1, h.2.2⟩) (fun _ _ h => h)
 
 /-- `precompute_ok`'s steps, with the stack below the callers' kept apart. -/
-theorem precomputeCall_ok (A : CallOp) : PrecomputeLawS (precomputeWith (r2PublicWith A.op)) := by
+theorem precomputeCall_ok (A : CallOp) (D : CallDbl) :
+    PrecomputeLawS (precomputeWith (r2PublicWith A.op D.dbl)) := by
   intro s base src len w k ws layout width hk fit srcFit read sep ptr source count
     stackRead stackSep saved large odd countFits cs
   rw [precomputeWith, WP.seq_iff]
@@ -115,8 +117,9 @@ theorem precomputeCall_ok (A : CallOp) : PrecomputeLawS (precomputeWith (r2Publi
     (by rw [restU.sp]; exact stackSep) (saved_base_kept frameU stackSep saved restU.sp)) ?_
   rintro v ⟨ready, modV, frameV, restV⟩
   have rv := restU.trans restV
-  rw [← A.mont_op base s.sp len w]
-  refine WP.mono (r2PublicWith_ok (A.mont base s.sp len w) v ready ⟨cs.of_rest rv, rv.sp⟩ countFits) ?_
+  rw [← A.mont_op base s.sp len w, ← D.doubling_dbl base s.sp len w]
+  refine WP.mono (r2PublicWith_ok (A.mont base s.sp len w) (D.doubling base s.sp len w) v ready
+    ⟨cs.of_rest rv, rv.sp⟩ countFits) ?_
   rintro t ⟨done, value, modT, _, frameT, restT⟩
   rw [modV, modulus] at value
   exact ⟨done, modT.trans (modV.trans modulus), value,
@@ -148,16 +151,16 @@ theorem precomputeInverse_ready_call (s : State) {base : BitVec 32} {len w : Nat
   WP.mono (precomputeInverse_ok s h.workspace h.layout h.width h.ptr h.odd h.large
     h.stackRead h.stackSep h.saved) (fun _ j => ⟨⟨j.1, j.2.1⟩, q.1.of_rest j.2.2.2, j.2.2.2.sp.trans q.2⟩)
 
-theorem precomputeCall_ct (A : CallOp) {base src : BitVec 32} {len w k : Nat} {nb : List Byte}
+theorem precomputeCall_ct (A : CallOp) (D : CallDbl) {base src : BitVec 32} {len w k : Nat} {nb : List Byte}
     (countFits : 128 * w < 2 ^ 32) (fitM : Proof.Rsa.Mont.arrAt w 3 + 32 ≤ 8 * len) :
     RelCT isa (fun s t =>
       ((PrecomputeInput base src len w k s ∧ Spec.Rsa.bytesAt s.mem (State.addr src) k = nb) ∧
         CallStack base len s) ∧
       ((PrecomputeInput base src len w k t ∧ Spec.Rsa.bytesAt t.mem (State.addr src) k = nb) ∧
         CallStack base len t) ∧ s.sp = t.sp)
-      (precomputeWith (r2PublicWith A.op)) (fun _ _ => True) := by
+      (precomputeWith (r2PublicWith A.op D.dbl)) (fun _ _ => True) := by
   intro s₀ t₀ tr1 tr2 u₀ v₀ h e1 e2
-  rw [← A.mont_op base s₀.sp len w] at e1 e2
+  rw [← A.mont_op base s₀.sp len w, ← D.doubling_dbl base s₀.sp len w] at e1 e2
   let sp := s₀.sp
   let N := Spec.Rsa.os2ip nb
   let P := fun s : State => (PrecomputeInput base src len w k s ∧ Spec.Rsa.bytesAt s.mem (State.addr src) k = nb) ∧
@@ -181,15 +184,15 @@ theorem precomputeCall_ct (A : CallOp) {base src : BitVec 32} {len w k : Nat} {n
         (fun u j => (⟨⟨j.1.1, j.1.2.trans h.2.1.1.2⟩, j.2⟩ : R u)),
        WP.mono (precomputeInverse_ready_call t h.2.2.1.1 h.2.2.2)
         (fun u j => (⟨⟨j.1.1, j.1.2.trans h.2.2.1.2⟩, j.2⟩ : R u))⟩)
-  have tail := inverse.seq ((r2PublicWith_ct (A.timing base sp len w fitM) (M := N) countFits).mono
+  have tail := inverse.seq ((r2PublicWith_ct (A.timing base sp len w fitM) (D.timing base sp len w) (M := N) countFits).mono
     (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ h => h))
   exact (imported.seq tail) s₀ t₀ tr1 tr2 u₀ v₀ ⟨⟨h.1.1, h.1.2, rfl⟩, ⟨h.2.1.1, h.2.1.2, h.2.2.symm⟩, h.2.2⟩ e1 e2
 
-/-- The kernel whose squarings call `A`'s product. -/
-def callPublicPrecomputeKernel (A : CallOp) : PublicPrecomputeKernel where
-  code := precomputeWith (r2PublicWith A.op)
-  correct := precomputeCall_ok A
-  ct := fun fits fitM => precomputeCall_ct A fits fitM
+/-- The kernel whose squarings call `A`'s product and whose doublings call `D`'s. -/
+def callPublicPrecomputeKernel (A : CallOp) (D : CallDbl) : PublicPrecomputeKernel where
+  code := precomputeWith (r2PublicWith A.op D.dbl)
+  correct := precomputeCall_ok A D
+  ct := fun fits fitM => precomputeCall_ct A D fits fitM
 
 end VG.Proof.Bignum.Arm
 

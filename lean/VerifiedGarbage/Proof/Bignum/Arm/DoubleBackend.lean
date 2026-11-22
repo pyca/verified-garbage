@@ -579,4 +579,17 @@ theorem MontBackend.doublingTiming (b : MontBackend) (base sp : BitVec 32) (len 
 theorem MontBackend.doubling_dbl (b : MontBackend) (base sp : BitVec 32) (len w : Nat) :
     (b.doubling base sp len w).dbl = b.dbl := rfl
 
+/-- A doubling for every workspace whose caller leaves it the 48 bytes below
+the stack, as `CallOp` is a product: one code `dbl`, with its proofs. -/
+structure CallDbl where
+  dbl : Prog isa
+  doubling : ∀ (base sp : BitVec 32) (len w : Nat),
+    TwoExp.Doubling base len w (TwoExp.CallReady base sp len) [⟨State.addr base, 8 * len⟩, belowA sp 48]
+  doubling_dbl : ∀ base sp len w, (doubling base sp len w).dbl = dbl
+  timing : ∀ (base sp : BitVec 32) (len w : Nat), TwoExp.DoublingTiming (doubling base sp len w)
+
+/-- A call to `b`'s doubling. -/
+def MontBackend.callDbl (b : MontBackend) : CallDbl :=
+  ⟨b.dbl, b.doubling, b.doubling_dbl, b.doublingTiming⟩
+
 end VG.Proof.Bignum.Arm

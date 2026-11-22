@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.RdTop
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 public import VerifiedGarbage.Proof.Bignum.Arm.PrivPreVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubFill
 public import VerifiedGarbage.Spec.Rsa.RecoverDet
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
@@ -36,10 +37,10 @@ at `pre`, or the octets at `p` and `q`, as on x86 (`Proof/Rsa/X86/Scrub.lean`).
 namespace VG.Proof.Rsa.Arm
 
 open VG VG.Arm VG.Proof.Bignum.Arm in
-/-- `vg_rsa_private_precompute` with `b`'s product: its products call it, and
+/-- `vg_rsa_private_precompute` with `b`'s product: its products and doublings call `b`'s, and
 `b`'s caller transform applies to the rest (`MontBackend.caller`). -/
 def privatePrecomputeCode (b : MontBackend) : Prog isa :=
-  b.caller.code (Impl.Bignum.Arm.PrivPreFn.code (Impl.Bignum.Arm.MontCall.op b.name b.mul))
+  b.caller.code (Impl.Bignum.Arm.PrivPreFn.code (Impl.Bignum.Arm.MontCall.op b.name b.mul) b.dbl)
 
 end VG.Proof.Rsa.Arm
 
@@ -117,13 +118,14 @@ theorem recoverPrimesDet_ok (um : Bool) : CodeOk (Impl.Rsa.Arm.RecoverDet.codeFo
 
 open VG.Arm.ScrubFill in
 theorem privatePrecomputeStub :
-    CodeOk (Impl.Bignum.Arm.PrivPreFn.code (Impl.Bignum.Arm.MontCall.op "" (holeStub 40))) 216 :=
+    CodeOk (Impl.Bignum.Arm.PrivPreFn.code (Impl.Bignum.Arm.MontCall.op "" (holeStub 40))
+      (Impl.Bignum.Arm.MontCall.op "" (holeStub 40) 4 7 4)) 216 :=
   ⟨by lit_decide, by lit_decide⟩
 
 open VG.Proof.Bignum.Arm VG.Arm.ScrubFill in
 theorem privatePrecomputeOk (b : MontBackend) : CodeOk (privatePrecomputeCode b) 216 :=
-  b.callerOk _ _ ((show FillB _ (Impl.Bignum.Arm.PrivPreFn.code (Impl.Bignum.Arm.MontCall.op b.name b.mul)) by
-    have := b.mulOk; fill_holes).codeOk privatePrecomputeStub)
+  b.callerOk _ _ ((show FillB _ (Impl.Bignum.Arm.PrivPreFn.code (Impl.Bignum.Arm.MontCall.op b.name b.mul) b.dbl) by
+    have := b.mulOk; have := b.dblOk; fill_holes).codeOk privatePrecomputeStub)
 
 end VG.Proof.Rsa.Arm.Scrub
 
@@ -166,7 +168,7 @@ theorem privatePrecompute (b : MontBackend) :
     VerifiedScrubbed target (Impl.Rsa.Arm.Fn.privatePrecompute (privatePrecomputeCode b))
       (Spec.Rsa.privatePrecomputeContract abi 216) 32 :=
   verifiedScrubbedAll (api := Spec.Rsa.privatePrecomputeApi)
-    { code := privatePrecomputeCode b, verified := b.caller.verified (privPre_verified b.callOp) }
+    { code := privatePrecomputeCode b, verified := b.caller.verified (privPre_verified b.callOp b.callDbl) }
     (privatePrecomputeOut _) (scrubSideF_of (Scrub.privatePrecomputeOk b) frameOk_216 _)
 
 /-- `vg_rsa_public_precompute`, of the implementation `v`. -/

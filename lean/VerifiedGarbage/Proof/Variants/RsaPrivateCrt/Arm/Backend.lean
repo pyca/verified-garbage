@@ -109,13 +109,14 @@ theorem crtPOk (b : MontBackend) : CodeOk (b.caller.code (CrtCall.codeGiven b.na
   b.callerOk _ _ ((show FillB _ (CrtCall.codeGiven b.name b.mul) by have := b.mulOk; fill_holes).codeOk crtPStub)
 
 /-- The public precomputation, its squarings calling `b`'s product. -/
-def pc (b : MontBackend) : Prog isa := PcFn.codeWith (callPublicPrecomputeKernel b.callOp).code
+def pc (b : MontBackend) : Prog isa := PcFn.codeWith (callPublicPrecomputeKernel b.callOp b.callDbl).code
 
-theorem pcStub : CodeOk (PcFn.codeWith (precomputeWith (r2PublicWith (MontCall.op "" (holeStub 40))))) 104 := by
+theorem pcStub : CodeOk (PcFn.codeWith (precomputeWith (r2PublicWith (MontCall.op "" (holeStub 40))
+    (MontCall.op "" (holeStub 40) 4 7 4)))) 104 := by
   lit_decide
 
 theorem pcOk (b : MontBackend) : CodeOk (pc b) 104 :=
-  (show FillB _ (pc b) by have := b.mulOk; fill_holes).codeOk pcStub
+  (show FillB _ (pc b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk pcStub
 
 /-- The public operation on precomputed values, its products calling `b`'s. -/
 def pd (b : MontBackend) : Prog isa := PdFn.code b.callOp.op
@@ -137,7 +138,7 @@ def variant (b : MontBackend) : Proof.Rsa.Arm.CrtImpl where
   crtPNoIcall := (crtPOk b).2
   pcName := Spec.Rsa.publicPrecomputeApi.name ++ b.suffix
   pc := b.caller.code (pc b)
-  pcVerified := b.caller.verified (precompute_verified (kernel := callPublicPrecomputeKernel b.callOp))
+  pcVerified := b.caller.verified (precompute_verified (kernel := callPublicPrecomputeKernel b.callOp b.callDbl))
   pcStack := (b.callerOk _ _ (pcOk b)).1
   pcNoIcall := (b.callerOk _ _ (pcOk b)).2
   pdName := "vg_rsa_public_precomputed_checked" ++ b.suffix

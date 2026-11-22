@@ -3,9 +3,12 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.R2Normalized
 public import VerifiedGarbage.Proof.Bignum.Arm.R2
 public import VerifiedGarbage.Proof.Bignum.Arm.R2CT
-import VerifiedGarbage.Proof.Bignum.Arm.R2PublicCT
+public import VerifiedGarbage.Proof.Bignum.Arm.R2PublicCT
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpDoubling
+import VerifiedGarbage.Proof.Bignum.Arm.SharedR2
+import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Bignum.Arm.R2Init
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
@@ -19,6 +22,9 @@ meta import VerifiedGarbage.Proof.Bignum.Arm.R2CT
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2PublicCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomery
 meta import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.TwoExpDoubling
+meta import VerifiedGarbage.Proof.Bignum.Arm.SharedR2
+meta import VerifiedGarbage.Proof.Mont.Words32
 meta import VerifiedGarbage.Proof.Bignum.Arm.R2Init
 meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
 meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
@@ -44,7 +50,7 @@ open VG.Proof.X25519.Arm (Rest)
 
 section
 variable {base : BitVec 32} {len w : Nat} {Q : State → Prop} {regions : List Region}
-  (K : TwoExp.Montgomery base len w Q regions)
+  (K : TwoExp.Montgomery base len w Q regions) (D : TwoExp.Doubling base len w Q regions)
 
 /-- `sqC_square_ok`, by `K`'s product. -/
 theorem sqC_squareWith_ok (s : State) {m k c : Nat} {P : Prop} (h : SqC base len w m P k c s) (q : Q s) :
@@ -163,9 +169,49 @@ theorem r2With_ok (s : State) (h : ArithmeticReady base len w s) (q : Q s) (coun
     ((frame.trans frameV).mono fun r hr => by have er := List.mem_singleton.mp hr; subst r; exact K.workspace).trans
       frameT, rest.trans (restV.trans restT)⟩
 
-/-- `r2Public_ok`, by `K`'s product. -/
+/-- `r2_ok`, by `K`'s product and `D`'s doubling. -/
+theorem r2WithDbl_ok (s : State) (h : ArithmeticReady base len w s) (q : Q s) (countFits : 128 * w < 2 ^ 32) :
+    WP isa (r2WithDbl K.op D.dbl) s fun t => DoubleLoopReady base len w 0 t ∧
+      numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % numAt s.mem (State.addr base) w 0 ∧
+      numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 ∧
+      Q t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [r2WithDbl, WP.seq_iff]
+  refine WP.mono (r2Init_ok s h) ?_
+  rintro u ⟨ready, one, modulus, frame, rest⟩
+  rw [WP.seq_iff]
+  refine WP.mono (sharedR2Loop_ok D u ready one (by rw [modulus]; exact h.modulus) (K.stable frame rest q)
+    countFits) ?_
+  rintro v ⟨sq, qV, frameV, restV⟩
+  rw [modulus] at sq
+  refine WP.mono (r2SquaresWith_done K v sq qV) ?_
+  rintro t ⟨done, value, mod, qt, frameT, restT⟩
+  exact ⟨done, value, mod, qt,
+    ((frame.mono fun r hr => by have er := List.mem_singleton.mp hr; subst r; exact K.workspace).trans
+      frameV).trans frameT, rest.trans (restV.trans restT)⟩
+
+/-- `r2PublicLoop_ok`, by `D`'s doubling. -/
+theorem r2PublicLoopDbl_ok (s : State) {M : Nat} (h : R2PublicInitialized base len w M s) (q : Q s)
+    (countFits : 128 * w < 2 ^ 32) :
+    WP isa (DoubleCall.loop D.dbl) s fun t => R2Sq base len w M w t ∧ Q t ∧
+      Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
+  obtain hw : 2 ≤ w := h.ready.width ▸ h.ready.layout.1
+  obtain ⟨cpos, cle⟩ := r2PublicCount_le (w := w) (M := M) (by omega_using [hw])
+  obtain hM : M < 2 ^ (64 * w) := by
+    rw [← h.modulus, numAt_native, show 64 * w = 32 * (2 * w) by omega_using []]
+    exact val32_lt _ _ _ _
+  refine WP.mono (D.loop_ok s h.ready (by rw [h.modulus]; exact h.large) q cpos
+    (by omega_using [countFits, cle])) ?_
+  rintro v ⟨done, value, modV, qV, frameV, restV⟩
+  rw [h.value, h.modulus, r2PublicStart_mul (by omega_using [hw]) hM] at value
+  rw [h.modulus] at modV
+  exact ⟨⟨⟨done.workspace, done.layout, done.width, done.ptr, done.inverse,
+      by rw [modV]; exact h.large, done.stackRead, done.stackSep, done.saved⟩,
+    modV, modV ▸ done.operand, by rw [value, Nat.mod_mod], done.two, done.counter⟩,
+    qV, frameV, restV⟩
+
+/-- `r2Public_ok`, by `K`'s product and `D`'s doubling. -/
 theorem r2PublicWith_ok (s : State) (h : ArithmeticReady base len w s) (q : Q s) (countFits : 128 * w < 2 ^ 32) :
-    WP isa (r2PublicWith K.op) s fun t => DoubleLoopReady base len w 0 t ∧
+    WP isa (r2PublicWith K.op D.dbl) s fun t => DoubleLoopReady base len w 0 t ∧
       numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % numAt s.mem (State.addr base) w 0 ∧
       numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 ∧
       Q t ∧ Frame regions s.mem t.mem ∧ Rest roundClobbers s t := by
@@ -173,13 +219,13 @@ theorem r2PublicWith_ok (s : State) (h : ArithmeticReady base len w s) (q : Q s)
   refine WP.mono (r2PublicInit_ok s h rfl) ?_
   rintro u ⟨ready, frame, rest⟩
   rw [WP.seq_iff]
-  refine WP.mono (r2PublicLoop_ok u ready countFits) ?_
-  rintro v ⟨sq, frameV, restV⟩
-  refine WP.mono (r2SquaresWith_done K v sq (K.stable frameV restV (K.stable frame rest q))) ?_
+  refine WP.mono (r2PublicLoopDbl_ok D u ready (K.stable frame rest q) countFits) ?_
+  rintro v ⟨sq, qV, frameV, restV⟩
+  refine WP.mono (r2SquaresWith_done K v sq qV) ?_
   rintro t ⟨done, value, mod, qt, frameT, restT⟩
   exact ⟨done, value, mod, qt,
-    ((frame.trans frameV).mono fun r hr => by have er := List.mem_singleton.mp hr; subst r; exact K.workspace).trans
-      frameT, rest.trans (restV.trans restT)⟩
+    ((frame.mono fun r hr => by have er := List.mem_singleton.mp hr; subst r; exact K.workspace).trans
+      frameV).trans frameT, rest.trans (restV.trans restT)⟩
 
 /-! ## Timing -/
 
@@ -299,13 +345,41 @@ theorem r2With_ct (ct : TwoExp.MontgomeryTiming K) (countFits : 128 * w < 2 ^ 32
     (fun s t h => ⟨loopPost s h.2.1, loopPost t h.2.2⟩)
   exact loopCT.seq ((r2SquaresWith_ct ct).mono (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ h => h))
 
-variable {K} in
-/-- `r2Public_ct`, by `K`'s product. -/
-theorem r2PublicWith_ct (ct : TwoExp.MontgomeryTiming K) {M : Nat} (countFits : 128 * w < 2 ^ 32) :
+variable {K} {D} in
+/-- `r2_ct`, by `K`'s product and `D`'s doubling. -/
+theorem r2WithDbl_ct (ct : TwoExp.MontgomeryTiming K) (dct : TwoExp.DoublingTiming D) (countFits : 128 * w < 2 ^ 32) :
+    RelCT isa (fun s t => (ArithmeticReady base len w s ∧ Q s) ∧ (ArithmeticReady base len w t ∧ Q t) ∧
+      s.sp = t.sp) (r2WithDbl K.op D.dbl) (fun _ _ => True) := by
+  have initPost (s : State) (h : ArithmeticReady base len w s ∧ Q s) :
+      WP isa r2Init s fun t => R2LoopReady base len w t ∧ Q t :=
+    WP.mono (r2Init_ok s h.1) fun _ x => ⟨⟨x.1, x.2.1, by rw [x.2.2.1]; exact h.1.modulus⟩,
+      K.stable x.2.2.2.1 x.2.2.2.2 h.2⟩
+  have init := (relCT_keep_sp ((r2Init_ct (base := base) (len := len) (w := w)).mono
+    (P' := fun (s t : State) => (ArithmeticReady base len w s ∧ Q s) ∧ (ArithmeticReady base len w t ∧ Q t) ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h))
+    (fun _ _ h => h.2.2)).wp (fun s t h => ⟨initPost s h.1, initPost t h.2.1⟩)
+  refine init.seq ?_
+  have loopPost (s : State) (h : R2LoopReady base len w s ∧ Q s) :
+      WP isa (DoubleCall.loop D.dbl) s fun v => (∃ m, R2Sq base len w m w v) ∧ Q v :=
+    WP.mono (sharedR2Loop_ok D s h.1.1 h.1.2.1 h.1.2.2 h.2 countFits) fun v x => ⟨⟨_, x.1⟩, x.2.1⟩
+  have loop : RelCT isa (fun s t => s.sp = t.sp ∧ (R2LoopReady base len w s ∧ Q s) ∧ (R2LoopReady base len w t ∧ Q t))
+      (DoubleCall.loop D.dbl) (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    have hw : 2 ≤ w := h.2.1.1.1.width ▸ h.2.1.1.1.layout.1
+    exact D.loop_ct dct (by omega_using [hw]) (by omega_using [countFits]) s t tr1 tr2 u v
+      ⟨⟨h.2.1.1.1, h.2.1.1.2.2, h.2.1.2⟩, ⟨h.2.2.1.1, h.2.2.1.2.2, h.2.2.2⟩, h.1⟩ e1 e2
+  have loopCT := (relCT_keep_sp loop (fun _ _ h => h.1)).wp
+    (fun s t h => ⟨loopPost s h.2.1, loopPost t h.2.2⟩)
+  exact loopCT.seq ((r2SquaresWith_ct ct).mono (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ h => h))
+
+variable {K} {D} in
+/-- `r2Public_ct`, by `K`'s product and `D`'s doubling. -/
+theorem r2PublicWith_ct (ct : TwoExp.MontgomeryTiming K) (dct : TwoExp.DoublingTiming D) {M : Nat}
+    (countFits : 128 * w < 2 ^ 32) :
     RelCT isa (fun s t =>
       ((ArithmeticReady base len w s ∧ numAt s.mem (State.addr base) w 0 = M) ∧ Q s) ∧
       ((ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w 0 = M) ∧ Q t) ∧ s.sp = t.sp)
-      (r2PublicWith K.op) (fun _ _ => True) := by
+      (r2PublicWith K.op D.dbl) (fun _ _ => True) := by
   let P := fun (s : State) => R2PublicInitialized base len w M s ∧ Q s
   have initPost (s : State) (h : (ArithmeticReady base len w s ∧ numAt s.mem (State.addr base) w 0 = M) ∧ Q s) :
       WP isa r2PublicInit s P :=
@@ -315,14 +389,15 @@ theorem r2PublicWith_ct (ct : TwoExp.MontgomeryTiming K) {M : Nat} (countFits : 
       ((ArithmeticReady base len w t ∧ numAt t.mem (State.addr base) w 0 = M) ∧ Q t) ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ h => h))
     (fun _ _ h => h.2.2)).wp (fun s t h => ⟨initPost s h.1, initPost t h.2.1⟩)
-  have loop : RelCT isa (fun s t => s.sp = t.sp ∧ P s ∧ P t) doubleLoop (fun _ _ => True) := by
+  have loop : RelCT isa (fun s t => s.sp = t.sp ∧ P s ∧ P t) (DoubleCall.loop D.dbl) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     have hw : 2 ≤ w := h.2.1.1.ready.width ▸ h.2.1.1.ready.layout.1
     obtain ⟨cpos, cle⟩ := r2PublicCount_le (w := w) (M := M) (by omega_using [hw])
-    exact doubleLoop_ct cpos (by omega_using [countFits, cle]) s t tr1 tr2 u v
-      ⟨h.2.1.1.ready, h.2.2.1.ready, h.1⟩ e1 e2
-  have post (s : State) (h : P s) : WP isa doubleLoop s fun t => (∃ m, R2Sq base len w m w t) ∧ Q t :=
-    WP.mono (r2PublicLoop_ok s h.1 countFits) (fun _ j => ⟨⟨M, j.1⟩, K.stable j.2.1 j.2.2 h.2⟩)
+    exact D.loop_ct dct cpos (by omega_using [countFits, cle]) s t tr1 tr2 u v
+      ⟨⟨h.2.1.1.ready, by rw [h.2.1.1.modulus]; exact h.2.1.1.large, h.2.1.2⟩,
+       ⟨h.2.2.1.ready, by rw [h.2.2.1.modulus]; exact h.2.2.1.large, h.2.2.2⟩, h.1⟩ e1 e2
+  have post (s : State) (h : P s) : WP isa (DoubleCall.loop D.dbl) s fun t => (∃ m, R2Sq base len w m w t) ∧ Q t :=
+    WP.mono (r2PublicLoopDbl_ok D s h.1 h.2 countFits) (fun _ j => ⟨⟨M, j.1⟩, j.2.1⟩)
   have powered := (relCT_keep_sp loop (fun _ _ h => h.1)).wp (fun s t h => ⟨post s h.2.1, post t h.2.2⟩)
   exact initialized.seq ((powered.mono (fun _ _ h => h) (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩)).seq
     ((r2SquaresWith_ct ct).mono (fun _ _ h => h) (fun _ _ h => h)))

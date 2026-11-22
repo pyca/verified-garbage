@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.R2
+public import VerifiedGarbage.Impl.Bignum.Arm.DoubleCall
 
 /-! # `R² mod n` for a public modulus, from its top bit
 
@@ -60,7 +61,13 @@ def r2PublicInit : Prog isa :=
 
 def r2Public : Prog isa := .seq r2PublicInit (.seq doubleLoop r2Squares)
 
-/-- `r2Public`, its squarings `op`'s (`r2SquaresWith`). -/
-def r2PublicWith (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq r2PublicInit (.seq doubleLoop (r2SquaresWith op))
+/-- `r2Public`, its squarings `op`'s (`r2SquaresWith`) and its doublings
+`dbl`'s (`doubleLoopMultiply`, or a call of a shared doubling). -/
+def r2PublicWith (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq r2PublicInit (.seq (DoubleCall.loop dbl) (r2SquaresWith op))
+
+/-- `r2With`, its doublings `dbl`'s. -/
+def r2WithDbl (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq r2Init (.seq (DoubleCall.loop dbl) (r2SquaresWith op))
 
 end VG.Impl.Bignum.Arm

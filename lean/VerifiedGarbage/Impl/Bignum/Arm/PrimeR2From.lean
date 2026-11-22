@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
-public import VerifiedGarbage.Impl.Bignum.Arm.R2
+public import VerifiedGarbage.Impl.Bignum.Arm.R2Normalized
 
 /-! # A factor's `R² mod p` from `R² mod n`
 
@@ -54,17 +54,19 @@ def foldCountHigh : List Instr :=
 def foldCounts : Prog isa := .seq (.block foldCountArgs) (.ite .eq (.block foldCountLow) (.block foldCountHigh))
 
 /-- The doublings, if any. -/
-def foldDoubles : Prog isa := .seq (.block [.ldr .r1 .r0 208, .cmp .r1 (.imm 0)]) (.ite .eq (.block []) doubleLoop)
+def foldDoubles (dbl : Prog isa) : Prog isa :=
+  .seq (.block [.ldr .r1 .r0 208, .cmp .r1 (.imm 0)]) (.ite .eq (.block []) (DoubleCall.loop dbl))
 
 /-- The squarings, if `e ≤ v` (tested again from the widths). -/
 def foldSquares (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block foldCountArgs) (.ite .eq (r2SquaresWith op) (.block []))
 
-def r2Fold (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (foldReduce op) (.seq (smallConst 7 2) (.seq foldCounts (.seq foldDoubles (foldSquares op))))
+def r2Fold (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq (foldReduce op) (.seq (smallConst 7 2) (.seq foldCounts (.seq (foldDoubles dbl) (foldSquares op))))
 
 /-- `R² mod X`: from `R² mod n` when `w ≤ 2 v`, else from 1. -/
-def r2FromN (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (.block foldTest) (.ite .eq (r2Fold op) (r2With op))
+def r2FromN (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq (.block foldTest) (.ite .eq (r2Fold op dbl) (r2WithDbl op dbl))
 
 /-- The factor imported at the narrow width, accepted or replaced by 3,
 and its inverse: `narrowPrime` but its `R² mod X`. -/
@@ -73,7 +75,7 @@ def narrowPrimeInv (primeSlot : Nat) : Prog isa :=
     (.seq sanitizeModulus precomputeInverse))
 
 /-- `narrowPrime` with `r2FromN`. -/
-def narrowPrimeFrom (primeSlot : Nat) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (narrowPrimeInv primeSlot) (r2FromN op)
+def narrowPrimeFrom (primeSlot : Nat) (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq (narrowPrimeInv primeSlot) (r2FromN op dbl)
 
 end VG.Impl.Bignum.Arm.Crt
