@@ -862,7 +862,7 @@ theorem powWinCall_ok {name : String} {s : State} {B D : Addr} {Z w L : Nat} (hs
           val32 t.mem B (slot w 4) (2 * w) =
             val32 s.mem B (slot w 4) (2 * w) ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem D L) %
               val32 s.mem B (slot w 0) (2 * w)) ∧
-        Outs B (win w) s.mem t.mem) ∧ Keep (powWRegs ++ [.r12, .r25]) s t := by
+        Outs B (win w) s.mem t.mem) ∧ Keep (powWRegs ++ ([.r12, .r25] : List Reg)) s t := by
   unfold powWinCall
   refine WP.seq (WP.mono (WP.keep [.r25] (Q := fun t => t.gpr .r25 = s.lr ∧ t.mem = s.mem)
     (by prun [exec_mflr]) (by decide)) fun s₁ ⟨⟨a25, m1⟩, k1⟩ => ?_)
