@@ -777,7 +777,7 @@ jobs:
   # workspace, which the jobs above, building only the library, never build),
   # on x86-64 Linux: its formatting and lints
   # (ci/rust_lint.py), its tests with Wycheproof's vectors, and rustls's own
-  # API test suite run with it (`bench/setup-rustls.sh`). It builds on the
+  # API test suite run with it (`rustls/setup.sh`). It builds on the
   # library, so it runs whenever x86-64's tests do, and when it changes
   # (`rust-arches`' `provider`); a push to main only builds, for the cache.
   rustls-provider:
@@ -824,7 +824,7 @@ jobs:
         run: python3 ci/rust_lint.py run provider
       - name: Test
         run: cargo test -p rustls-verified-garbage --release --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
-      # rustls's API tests, which a patch (`bench/rustls.patch`) runs with
+      # rustls's API tests, which a patch (`rustls/tests.patch`) runs with
       # the provider too, at the revision the provider builds against. Its
       # warnings are rustls's, not this repository's.
       - name: rustls's API tests
@@ -834,7 +834,7 @@ jobs:
           # builds the same dependencies.
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
         run: |
-          sh crates/rustls-verified-garbage/bench/setup-rustls.sh "$RUNNER_TEMP/rustls"
+          sh crates/rustls-verified-garbage/rustls/setup.sh "$RUNNER_TEMP/rustls"
           cd "$RUNNER_TEMP/rustls"
           cargo test -p rustls-test --test api ${{ case(env.TESTS == 'true', '', '--no-run') }} tests_with_verified_garbage
 

@@ -54,44 +54,25 @@ library's API, but some of it is cryptography of its own:
 
 ## Testing
 
-The provider runs rustls' own API test suite: `bench/setup-rustls.sh`
-checks out rustls at the pinned revision and patches it (`bench/rustls.patch`)
-to add a `tests_with_verified_garbage` module and a `verified-garbage`
-provider to `rustls-bench`:
+The provider runs rustls's own API test suite. `rustls/setup.sh` checks
+out rustls at the pinned revision, by default into the workspace's
+`target/rustls`, and applies `rustls/tests.patch`. The patch adds a
+`tests_with_verified_garbage` module, which runs the suite with this
+provider:
 
 ```sh
-bench/setup-rustls.sh target/rustls
+crates/rustls-verified-garbage/rustls/setup.sh
 (cd target/rustls && cargo test -p rustls-test --test api tests_with_verified_garbage)
 ```
 
 Every test passes, QUIC's included.
 
-The signature verification algorithms are tested against Wycheproof:
+The signature verification algorithms and HKDF are tested against
+Wycheproof, and every suite's record encryption against itself
+(`tests/records.rs`):
 
 ```sh
-WYCHEPROOF_ROOT=/path/to/wycheproof cargo test --release
+WYCHEPROOF_ROOT=/path/to/wycheproof cargo test -p rustls-verified-garbage --release
 ```
 
-## Benchmarks
-
-`bench/run.sh [rounds]` (Linux) runs everything
-[`bench/RESULTS.md`](bench/RESULTS.md) reports, verified-garbage against
-aws-lc-rs, each pinned to one CPU (`BENCH_CPU`, default 2), into
-`target/bench-results`, and summarizes it with `bench/summarize.py`:
-
-* rustls-bench's whole suite, `rounds` times (default 5) per provider, from
-  the rustls checkout `bench/setup-rustls.sh` makes in `target/rustls` (if
-  there is none yet), whose patch adds the `verified-garbage` provider;
-* `provider-primitives`, a binary the patch adds to rustls-bench, which
-  times both providers' primitives through the rustls traits (key exchange,
-  signing, verification, records, HKDF, tickets);
-* `bench/aws-lc-compare`, which times both libraries' primitives through
-  their own APIs (with RSA keys it generates with `openssl`), to tell the
-  library's costs from the provider's, and the AEADs at sizes up to 2 KiB.
-
-To compare the providers on one thing, e.g. a cipher suite's bulk throughput:
-
-```sh
-target/rustls/target/release/rustls-bench --provider verified-garbage bulk TLS13_AES_128_GCM_SHA256
-target/rustls/target/release/rustls-bench --provider aws-lc-rs bulk TLS13_AES_128_GCM_SHA256
-```
+CI runs all of them (`rustls-provider` in `.github/workflows/ci.yml`).
