@@ -72,7 +72,7 @@ theorem exec_rsp {i : Instr} {s s' : State} (hw : isa.writesSp i = false) (h : e
     simp only [Bool.or_eq_false_iff, beq_eq_false_iff_ne, ne_eq] at hw
     simp only [Taint.clobbers, Bool.or_eq_false_iff, beq_eq_false_iff_ne, ne_eq]
     exact ⟨fun h => hw.1 h.symm, fun h => hw.2 h.symm⟩
-  case push | pop | alloc | free | callr => simp only [exec, reduceCtorEq] at h
+  case push | pop | alloc | free | callr | callm => simp only [exec, reduceCtorEq] at h
   all_goals first | exact hw | decide
 
 /-- A frame restores `rsp`. -/

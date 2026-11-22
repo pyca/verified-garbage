@@ -67,7 +67,7 @@ def dstOf : Instr → Option Reg
   | .stmxcsr _ | .ldmxcsr _
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 .. | .lfence
   | .e5op _ | .evBroadcastLoad .. | .e5InsertLoad .. | .e5ExtractStore ..
-  | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => none
+  | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .callm _ => none
 
 /-- Whether an instruction may write the general-purpose register `r`. -/
 def clobbers (i : Instr) (r : Reg) : Bool :=
