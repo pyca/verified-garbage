@@ -88,19 +88,28 @@ structure Front (Wn : Nat) (Ctx St W SP : Addr) (H : Block) (iv a : List Byte) (
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-/-- `j0`, `oneAad` and `encPrep`. -/
-theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {nl al n : Nat}
+/-- The shared nonce and AAD prefix, before a caller chooses its text layout. -/
+structure AadFront (Wn : Nat) (Ctx St W SP : Addr) (H : Block) (iv a : List Byte) (s₀ s : State) : Prop where
+  env : Env Wn Ctx St W SP s
+  x22 : s.gpr .x22 = s₀.gpr .x22
+  j0 : blockAt s.mem St = Spec.Gcm.j0 H iv
+  hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
+  cb : blockAt s.mem (St + BitVec.ofNat 64 48) = inc32 (Spec.Gcm.j0 H iv)
+  abs : Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H a
+  frame : Frame (frontFrame St W) s₀.mem s.mem
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+
+theorem aadFront_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block} {Np A : Addr} {nl al : Nat}
     (he : Env Wn Ctx St W SP s₀) (hk : Kept k s₀) (h23 : s₀.gpr .x23 = Np) (h24 : s₀.gpr .x24 = BitVec.ofNat 64 nl)
     (h26 : s₀.gpr .x26 = BitVec.ofNat 64 nl) (h27 : s₀.gpr .x27 = 0)
     (hnon : DataOk Wn St W s₀ Np nl) (haad : DataOk Wn St W s₀ A al)
     (hH : blockAt s₀.mem (Ctx + BitVec.ofNat 64 240) = H)
     (sA : s₀.mem.readW (W + BitVec.ofNat 64 216) 64 = A)
     (sL : s₀.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al)
-    (sD : s₀.mem.readW (W + BitVec.ofNat 64 232) 64 = D)
-    (sN : s₀.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n)
     {rest : Prog isa} {Q : State → Prop}
-    (hr : ∀ s', Front Wn Ctx St W SP H (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) D n s₀ s' → WP isa rest s' Q) :
-    WP isa (.seq (j0 v.callees) (.seq (oneAad v.callees) (.seq (.block encPrep) rest))) s₀ Q := by
+    (hr : ∀ s', AadFront Wn Ctx St W SP H (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) s₀ s' → WP isa rest s' Q) :
+    WP isa (.seq (j0 v.callees) (.seq (oneAad v.callees) rest)) s₀ Q := by
   obtain hWn := he.perm.hWn
   have hlt := haad.lt
   refine WP.seq (WP.mono (WP.with_rdwr (j0_ok L v ⟨he, hk, h23, h24, h26, h27, hnon, hH⟩))
@@ -129,6 +138,42 @@ theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block
   have f₃ : Frame (frontFrame St W) s₀.mem s₃.mem :=
     (h₁.frame.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩).trans
       (by rw [← r₂.mem]; exact h₃.frame.sub fun r hr => ⟨r, List.mem_append_right _ hr, fun _ h => h⟩)
+  refine hr _ ⟨h₃.env, (h₃.kept .x22 (by decide)).trans (hk .x22 (by decide)).symm,
+    ?_, ?_, ?_, ?_, f₃, rd₃.trans (r₂.rd.trans rd₁), wr₃.trans (r₂.wr.trans wr₁)⟩
+  · rw [blockAt_frame h₃.frame (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact st0_disj L (by decide) (by decide)
+      · exact st0_disj L (by decide) (by decide)
+      · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩), r₂.mem, h₁.j0]
+  · rw [blockAt_frame h₃.frame (ctx_absFrame L (.inr rfl)), r₂.mem, h₁.hH]
+  · rw [blockAt_frame h₃.frame (fun r hr => (ctr_absFrame L r hr).sub_left
+      (Region.sub_prefix (by decide))), r₂.mem, h₁.cb]
+  · have := h₃.abs (Proof.Gcm.absorbed_nil H (by rw [r₂.mem]; exact h₁.y))
+    rw [List.nil_append, r₂.mem, bytesAt_frame h₁.frame (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact haad.st
+      · exact haad.w.sub_right (Lay.wSub (by have := he.perm.hWn; omega))
+      · exact haad.w.sub_right (Lay.wSub (by have := he.perm.hWn; omega))) (by omega_using [hlt])] at this
+    exact this
+
+/-- `j0`, `oneAad` and `encPrep`. -/
+theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {nl al n : Nat}
+    (he : Env Wn Ctx St W SP s₀) (hk : Kept k s₀) (h23 : s₀.gpr .x23 = Np) (h24 : s₀.gpr .x24 = BitVec.ofNat 64 nl)
+    (h26 : s₀.gpr .x26 = BitVec.ofNat 64 nl) (h27 : s₀.gpr .x27 = 0)
+    (hnon : DataOk Wn St W s₀ Np nl) (haad : DataOk Wn St W s₀ A al)
+    (hH : blockAt s₀.mem (Ctx + BitVec.ofNat 64 240) = H)
+    (sA : s₀.mem.readW (W + BitVec.ofNat 64 216) 64 = A)
+    (sL : s₀.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al)
+    (sD : s₀.mem.readW (W + BitVec.ofNat 64 232) 64 = D)
+    (sN : s₀.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n)
+    {rest : Prog isa} {Q : State → Prop}
+    (hr : ∀ s', Front Wn Ctx St W SP H (bytesAt s₀.mem Np nl) (bytesAt s₀.mem A al) D n s₀ s' → WP isa rest s' Q) :
+    WP isa (.seq (j0 v.callees) (.seq (oneAad v.callees) (.seq (.block encPrep) rest))) s₀ Q := by
+  refine aadFront_ok L v he hk h23 h24 h26 h27 hnon haad hH sA sL fun s₃ h₃ => ?_
+  have hlt := haad.lt
+  have f₃ := h₃.frame
   have q (d : Nat) (h : d + 8 ≤ Wn) := h₃.env.perm.wRn h
   obtain ⟨s₄, run₄, x25₄, x26₄, x27₄, x28₄, r₄⟩ : ∃ s₄, runBlock isa encPrep s₃ = some s₄ ∧
       s₄.gpr .x25 = BitVec.ofNat 64 (al % 16) ∧ s₄.gpr .x26 = BitVec.ofNat 64 n ∧ s₄.gpr .x27 = 0 ∧
@@ -151,30 +196,9 @@ theorem front_ok (v : GcmImpl) {s₀ : State} {k : Reg → BitVec 64} {H : Block
       rw [show s₃.mem.read (W + 240#64) 8 = s₃.mem.readW (W + BitVec.ofNat 64 240) 64 from rfl, e₄]
     · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq]
       rw [show s₃.mem.read (W + 232#64) 8 = s₃.mem.readW (W + BitVec.ofNat 64 232) 64 from rfl, e₃]
-  refine WP.seq (WP.of_runBlock ⟨s₄, run₄, hr s₄ ⟨h₃.env.of_regs r₄, ?_, ?_, x26₄, x27₄, x28₄, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩⟩)
-  · rw [r₄.others _ (by decide), h₃.kept .x22 (by decide), ← hk .x22 (by decide)]
-  · rw [x25₄, length_bytesAt]
-  · rw [r₄.mem, blockAt_frame h₃.frame (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact st0_disj L (by decide) (by decide)
-      · exact st0_disj L (by decide) (by decide)
-      · exact st0_w L ⟨by decide, by have := L.hWn; omega⟩), r₂.mem, h₁.j0]
-  · rw [r₄.mem, blockAt_frame h₃.frame (ctx_absFrame L (.inr rfl)), r₂.mem, h₁.hH]
-  · rw [r₄.mem, blockAt_frame h₃.frame (fun r hr => (ctr_absFrame L r hr).sub_left
-      (Region.sub_prefix (by decide))), r₂.mem, h₁.cb]
-  · rw [r₄.mem]
-    have := h₃.abs (Proof.Gcm.absorbed_nil H (by rw [r₂.mem]; exact h₁.y))
-    rw [List.nil_append, r₂.mem, bytesAt_frame h₁.frame (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact haad.st
-      · exact haad.w.sub_right (Lay.wSub (by have := he.perm.hWn; omega))
-      · exact haad.w.sub_right (Lay.wSub (by have := he.perm.hWn; omega))) (by omega_using [hlt])] at this
-    exact this
-  · rw [r₄.mem]; exact f₃
-  · rw [r₄.rd, rd₃, r₂.rd, rd₁]
-  · rw [r₄.wr, wr₃, r₂.wr, wr₁]
+  refine WP.seq (WP.of_runBlock ⟨s₄, run₄, hr s₄ ⟨h₃.env.of_regs r₄, (r₄.others _ (by decide)).trans h₃.x22,
+    by rw [x25₄, length_bytesAt], x26₄, x27₄, x28₄, r₄.mem ▸ h₃.j0, r₄.mem ▸ h₃.hH,
+    r₄.mem ▸ h₃.cb, r₄.mem ▸ h₃.abs, r₄.mem ▸ h₃.frame, r₄.rd.trans h₃.rd, r₄.wr.trans h₃.wr⟩⟩)
 
 end
 

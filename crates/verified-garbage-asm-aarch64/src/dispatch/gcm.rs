@@ -412,7 +412,7 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_gather_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AES_FEATURES`); `vg_aes_gcm_seal_gather_neon` if detection reports some CPU feature; or else `vg_aes_gcm_seal_gather`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_gather_aes_sha3` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES`); `vg_aes_gcm_seal_gather_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AES_FEATURES`); `vg_aes_gcm_seal_gather_neon` if detection reports some CPU feature; or else `vg_aes_gcm_seal_gather`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -438,6 +438,11 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, c
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES) }
+            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES)
+        {
+            return crate::gcm::vg_aes_gcm_seal_gather_aes_sha3;
+        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_AES_FEATURES)
         {
