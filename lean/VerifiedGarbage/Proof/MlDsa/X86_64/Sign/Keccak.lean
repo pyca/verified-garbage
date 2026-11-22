@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import VerifiedGarbage.Proof.Framework.Range
@@ -36,6 +37,8 @@ state of their concatenation (`shake_ok`), leaking only the addresses
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep WP.keep AbsorbArgs PadArgs SqueezeArgs absorb_pre pad_pre squeeze_pre absorb_call
   pad_call squeeze_call)
@@ -69,6 +72,14 @@ theorem kChk_spec {bs wbs : List (Reg × Nat)} (h : kChk bs wbs = true) :
   simp only [kChk, Bool.and_eq_true] at h
   exact ⟨h.1.1.1.1, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
+theorem kChk_w {bs wbs : List (Reg × Nat)} (h : kChk bs wbs = true) :
+    ∀ w ∈ [((sc 0 : Ptr), 200), ((sc 200 : Ptr), 640)], inB wbs w.1 w.2 = true := by
+  obtain ⟨w0, w1, -⟩ := kChk_spec h; simp [w0, w1]
+
+theorem kChk_w0 {bs wbs : List (Reg × Nat)} (h : kChk bs wbs = true) :
+    ∀ w ∈ [((sc 0 : Ptr), 200)], inB wbs w.1 w.2 = true := by
+  obtain ⟨w0, -⟩ := kChk_spec h; simp [w0]
+
 theorem kabsChk_spec {bs : List (Reg × Nat)} {src : Ptr} {len : Nat} (h : kabsChk bs src len = true) :
     inB bs src len = true ∧ src.1 ∈ bases ∧ src.2 < 2 ^ 31 ∧ len < 2 ^ 31 ∧ sepB bs src len (sc 0) 200 = true ∧
       sepB bs src len (sc 200) 640 = true := by
@@ -80,6 +91,11 @@ theorem ksqzChk_spec {bs wbs : List (Reg × Nat)} {dst : Ptr} {len : Nat} (h : k
       sepB bs (sc 0) 200 dst len = true ∧ sepB bs dst len (sc 200) 640 = true := by
   simp only [ksqzChk, Bool.and_eq_true, decide_eq_true_eq] at h
   exact ⟨h.1.1.1.1.1.1, h.1.1.1.1.1.2, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
+
+theorem ksqzChk_w {bs wbs : List (Reg × Nat)} {dst : Ptr} {len : Nat} (hk : kChk bs wbs = true)
+    (h : ksqzChk bs wbs dst len = true) :
+    ∀ w ∈ [((sc 0 : Ptr), 200), (dst, len), ((sc 200 : Ptr), 640)], inB wbs w.1 w.2 = true := by
+  obtain ⟨w0, w1, -⟩ := kChk_spec hk; obtain ⟨wd, -⟩ := ksqzChk_spec h; simp [w0, w1, wd]
 
 /-- The 16 bytes of stack of a call of a sponge function, from the layout. -/
 theorem k16 {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) {p : Ptr} {l : Nat} (h : inB (rbs ++ wbs) p l = true)
@@ -136,6 +152,7 @@ theorem kzero_ok {s : State} (L : Lay D SL rbs wbs s) (hk : kChk (rbs ++ wbs) wb
     WP isa (.block kzero) s fun s' => PPostB D s s' [(sc 0, 200)] ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
       stateAt s'.mem (pa s (sc 0)) = Spec.Sha3.zero := by
   obtain ⟨w0, _, _, _, _⟩ := kChk_spec hk
+  refine VG.X86_64.WP.of_syms ?_
   rw [kzero, ← List.singleton_append, WP.block_append_iff]
   refine WP.mono (WP.keep [.rax] (Q := fun s1 => s1.mem = s.mem ∧ s1.gpr .rax = 0) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
     fun s1 ⟨⟨hm, hax⟩, k1⟩ => ?_
@@ -148,7 +165,8 @@ theorem kzero_ok {s : State} (L : Lay D SL rbs wbs s) (hk : kChk (rbs ++ wbs) wb
     rw [hbx] at hz hf
     have hcs : ∀ r ∈ calleeSaved, s2.gpr r = s.gpr r := fun r hr => k.gpr fun h => by
       simp only [List.mem_singleton] at h; subst h; exact absurd hr (by decide)
-    refine ⟨⟨k.2.1, k.2.2, fun r hr => hcs r (bases_cs r hr), hcs .rsp (by decide), ?_⟩, hcs, hz⟩
+    intro hsy
+    refine ⟨⟨k.2.1, k.2.2, fun r hr => hcs r (bases_cs r hr), hcs .rsp (by decide), ?_, hsy⟩, hcs, hz⟩
     rw [hm] at hf
     exact hf.mono fun r hr => List.mem_append_left _ hr
 
@@ -188,15 +206,16 @@ theorem kabs_ok {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk 
         Repr s'.mem (pa s (sc 0)) rate (msg ++ bytesAt s.mem (pa s src) len) := by
   obtain ⟨w0, w1, _, _, _⟩ := kChk_spec hk
   obtain ⟨is, _, _, _, _, _⟩ := kabsChk_spec hc
+  refine VG.X86_64.WP.of_syms ?_
   refine WP.seq (WP.mono (setArgs_ok _ (kabsOk hc hrate hpos) s) fun s1 ⟨⟨hA, hm⟩, k⟩ => ?_)
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
   have cW : Covers [⟨pa s (sc 0), 200⟩, ⟨pa s (sc 200), 640⟩] s1.wr := by
     rw [k.2.2]; exact Covers.cons (L.cW w0) (L.cW w1)
   refine absorb_call (kabsArgs L hD hk hc hrate hpos hA hsp)
     (Covers.append_left (by rw [k.2.1, k.2.2]; exact L.cR is) (Covers.right cW)) cW
-    fun s' hrd hwr hcs hf hR _ => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
+    fun s' hrd hwr hcs hf hR _ => fun hsy => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
       fun r hr => by rw [hcs r (bases_cs r hr), k.gpr (argRegs_cs r (bases_cs r hr))],
-      by rw [hcs .rsp (by decide), hsp], ?_⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
+      by rw [hcs .rsp (by decide), hsp], ?_, hsy⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
   · rw [← hm, ← hsp]
     have := Frame.below_mono (wr := [⟨pa s (sc 0), 200⟩, ⟨pa s (sc 200), 640⟩]) (by simpa using hf)
       (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)
@@ -259,15 +278,16 @@ theorem kpad_ok {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk 
       ∀ msg, Repr s.mem (pa s (sc 0)) rate msg → pos = msg.length % rate →
         stateAt s'.mem (pa s (sc 0)) = absorb rate (pad rate (BitVec.ofNat 8 suffix) msg) := by
   obtain ⟨w0, w1, _, _, _⟩ := kChk_spec hk
+  refine VG.X86_64.WP.of_syms ?_
   refine WP.seq (WP.mono (setArgs_ok _ (kpadOk hrate hpos hs) s) fun s1 ⟨⟨hA, hm⟩, k⟩ => ?_)
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
   have cW : Covers [⟨pa s (sc 0), 200⟩, ⟨pa s (sc 200), 640⟩] s1.wr := by
     rw [k.2.2]; exact Covers.cons (L.cW w0) (L.cW w1)
   have hcx : s1.gpr .rcx = BitVec.ofNat 64 suffix := (argsIn5 hA).2.2.2.1
   refine pad_call (kpadArgs L hD hk hrate hpos hA hsp) (Covers.append_left Covers.nil (Covers.right cW)) cW
-    fun s' hrd hwr hcs hf hR => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
+    fun s' hrd hwr hcs hf hR => fun hsy => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
       fun r hr => by rw [hcs r (bases_cs r hr), k.gpr (argRegs_cs r (bases_cs r hr))],
-      by rw [hcs .rsp (by decide), hsp], ?_⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
+      by rw [hcs .rsp (by decide), hsp], ?_, hsy⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
   · rw [← hm, ← hsp]
     exact Frame.below_mono (wr := [⟨pa s (sc 0), 200⟩, ⟨pa s (sc 200), 640⟩]) (by simpa using hf)
       (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)
@@ -323,14 +343,15 @@ theorem ksqz_ok {s : State} (L : Lay D SL rbs wbs s) (hD : 24 ≤ D) (hk : kChk 
       bytesAt s'.mem (pa s dst) len = squeezeFrom rate (stateAt s.mem (pa s (sc 0))) 0 len := by
   obtain ⟨w0, w1, _, _, _⟩ := kChk_spec hk
   obtain ⟨wd, _, _, _, _, _, _⟩ := ksqzChk_spec hc
+  refine VG.X86_64.WP.of_syms ?_
   refine WP.seq (WP.mono (setArgs_ok _ (ksqzOk hc hrate) s) fun s1 ⟨⟨hA, hm⟩, k⟩ => ?_)
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
   have cW : Covers [⟨pa s (sc 0), 200⟩, ⟨pa s dst, len⟩, ⟨pa s (sc 200), 640⟩] s1.wr := by
     rw [k.2.2]; exact Covers.cons (L.cW w0) (Covers.cons (L.cW wd) (L.cW w1))
   refine squeeze_call (ksqzArgs L hD hk hc hrate hA hsp) (Covers.append_left Covers.nil (Covers.right cW)) cW
-    fun s' hrd hwr hcs hf ho => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
+    fun s' hrd hwr hcs hf ho => fun hsy => ⟨⟨hrd.trans k.2.1, hwr.trans k.2.2,
       fun r hr => by rw [hcs r (bases_cs r hr), k.gpr (argRegs_cs r (bases_cs r hr))],
-      by rw [hcs .rsp (by decide), hsp], ?_⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
+      by rw [hcs .rsp (by decide), hsp], ?_, hsy⟩, fun r hr => by rw [hcs r hr, k.gpr (argRegs_cs r hr)], ?_⟩
   · rw [← hm, ← hsp]
     exact Frame.below_mono (wr := [⟨pa s (sc 0), 200⟩, ⟨pa s dst, len⟩, ⟨pa s (sc 200), 640⟩]) (by simpa using hf)
       (show 16 ≤ D by omega_arith) (by have := L.dsm; omega_arith)

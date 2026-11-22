@@ -21,6 +21,8 @@ consecutive slots (`Fam`), kept by pieces that write apart from them
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlDsa.Sign
 open VG.Spec.MlDsa
@@ -71,7 +73,7 @@ def Ok3 (p : Params) : Prop := p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
 /-! ## Every state -/
 
 /-- What holds of every state of the function entered in `σ`. -/
-structure St (p : Params) (D : Nat) (σ s : State) : Prop where
+structure St (p : Params) (D : Nat) (SL : List String) (SL : List String) (σ s : State) : Prop where
   top : Top σ s
   lay : Lay D SL (sgR p) (sgW p) s
   sk : bytesAt s.mem (pa s (.rbp, 0)) p.skLen = skOf p σ
@@ -79,6 +81,7 @@ structure St (p : Params) (D : Nat) (σ s : State) : Prop where
   rnd : bytesAt s.mem (pa s (.r13, 0)) 32 = rndOf σ
   /-- Memory changed only where the function may write: its writable buffers and its stack. -/
   fr : Frame (σ.wr ++ [below (σ.gpr .rsp) D]) σ.mem s.mem
+  syms : s.syms = σ.syms
 
 /-- A piece that writes `ws` keeps `St`. -/
 def stChk (p : Params) (ws : List (Ptr × Nat)) : Bool :=
@@ -111,13 +114,13 @@ theorem frame_ws {D : Nat} {SL : List String} {rbs wbs : List (Reg × Nat)} {σ 
   · rw [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), by rw [hsp]; exact fun _ h => h⟩
 
-theorem St.step {p : Params} {D : Nat} {σ s s' : State} (h : St p D σ s) {ws : List (Ptr × Nat)}
-    (hP : PPostB D s s' ws) (hc : stChk p ws = true) : St p D σ s' := by
+theorem St.step {p : Params} {D : Nat} {SL : List String} {σ s s' : State} (h : St p D SL σ s) {ws : List (Ptr × Nat)}
+    (hP : PPostB D s s' ws) (hc : stChk p ws = true) : St p D SL σ s' := by
   simp only [stChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hc
-  exact ⟨h.top.step h.lay hP h1, h.lay.post hP (sgB_bases p), (h.lay.keepBytes hP h2).trans h.sk,
-    (h.lay.keepBytes hP h3).trans h.mu, (h.lay.keepBytes hP h4).trans h.rnd,
-    h.fr.trans (frame_ws h.lay h.top.wr h.top.rsp h5 hP.frame)⟩
+  exact ⟨h.top.step h.lay hP h1, h.lay.post hP (sgB_bases p) (h.lay.slotWs (fun _ hb => List.mem_append_right _ hb) h5),
+    (h.lay.keepBytes hP h2).trans h.sk, (h.lay.keepBytes hP h3).trans h.mu, (h.lay.keepBytes hP h4).trans h.rnd,
+    h.fr.trans (frame_ws h.lay h.top.wr h.top.rsp h5 hP.frame), hP.syms.trans h.syms⟩
 
 /-! ## Polynomials in slots -/
 

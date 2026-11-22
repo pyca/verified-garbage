@@ -31,6 +31,8 @@ rejected; with `r15 = 0` when `signLoop` returns nothing within `minBounds`
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
 open VG.Proof.MlDsa.Sign
@@ -87,8 +89,8 @@ end
 
 /-- The loop ended: in `r15`, whether an iteration passed (and its signature), or `signLoop` returns
 nothing within `minBounds`. -/
-structure XS (p : Params) (D : Nat) (σ : State) (s : State) : Prop where
-  k : IK p D σ s
+structure XS (p : Params) (D : Nat) (SL : List String) (σ : State) (s : State) : Prop where
+  k : IK p D SL σ s
   r01 : s.gpr .r15 = 0 ∨ s.gpr .r15 = 1
   pass : s.gpr .r15 = 1 → ∃ t < 814, RejT p σ t ∧
     (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ * t))).isSome ∧ PassV p σ (p.ℓ * t) ∧
@@ -97,8 +99,8 @@ structure XS (p : Params) (D : Nat) (σ : State) (s : State) : Prop where
   fail : s.gpr .r15 = 0 → loopF p σ minBounds minBounds.sign 0 = none
 
 /-- `SampleInBall` did not finish within `minBounds`: `r15 = 0`, `CNT = 1`. -/
-structure EB (p : Params) (D : Nat) (σ : State) (t : Nat) (s : State) : Prop where
-  k : IK p D σ s
+structure EB (p : Params) (D : Nat) (SL : List String) (σ : State) (t : Nat) (s : State) : Prop where
+  k : IK p D SL σ s
   none : sampleInBall p.τ minBounds.ball (CTv p σ (p.ℓ * t)) = none
   r15 : s.gpr .r15 = 0
   cnt : s.mem.readW (pa s (sc oCNT)) 64 = 1
@@ -115,8 +117,8 @@ theorem loop_none_exh {p : Params} {σ : State} (h : RejT p σ 814) : loopF p σ
 /-! ## An iteration -/
 
 /-- After iteration `t`: the loop continues with iteration `t + 1`, or ends. -/
-def LP (p : Params) (D : Nat) (σ : State) (t : Nat) (s : State) : Prop :=
-  (s.zf = some false ∧ IL p D σ (t + 1) s) ∨ (s.zf = some true ∧ XS p D σ s)
+def LP (p : Params) (D : Nat) (SL : List String) (σ : State) (t : Nat) (s : State) : Prop :=
+  (s.zf = some false ∧ IL p D SL σ (t + 1) s) ∨ (s.zf = some true ∧ XS p D SL σ s)
 
 /-- What the end of an iteration needs of the layout. -/
 def lChk (p : Params) : Bool :=
@@ -133,12 +135,12 @@ theorem ofNat64_sub_one {k : Nat} (h : 1 ≤ k) (hk : k < 2 ^ 64) : BitVec.ofNat
   VG.Proof.MlKem.X86_64.ofNat64_pred h hk
 
 theorem dec_end {D : Nat} {p : Params} (hp : ParamsOk p) (hc : lChk p = true) {σ : State} {t : Nat} {s : State}
-    (h : EP p D σ t s ∨ EF p D σ t s ∨ EB p D σ t s) :
+    (h : EP p D SL σ t s ∨ EF p D SL σ t s ∨ EB p D SL σ t s) :
     WP isa (.block [.mov .rax (.mem (VG.Impl.MlKem.X86_64.at_ .rbx oCNT)), .alu .sub .rax (.imm 1),
-      .store (VG.Impl.MlKem.X86_64.at_ .rbx oCNT) .rax]) s (LP p D σ t) := by
+      .store (VG.Impl.MlKem.X86_64.at_ .rbx oCNT) .rax]) s (LP p D SL σ t) := by
   simp only [lChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨w1, r1⟩, k1⟩, k2⟩, k3⟩, f1⟩, f2⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩ := hc
-  have hk : IK p D σ s := by rcases h with h | h | h <;> exact h.k
+  have hk : IK p D SL σ s := by rcases h with h | h | h <;> exact h.k
   have L := hk.d.im.st.lay
   refine WP.mono (decQ_ok (sc oCNT) (by decide) s (L.iW w1) (L.iR r1)) fun s' ⟨⟨hm, hz⟩, k⟩ => ?_
   have hf : Frame [⟨pa s (sc oCNT), 8⟩] s.mem s'.mem := by
@@ -175,8 +177,8 @@ theorem testRax_ok (s : State) : WP isa (.block [.alu32 .test .rax (.reg .rax)])
       s₁.zf = some (((s.gpr .rax).setWidth 32 &&& (s.gpr .rax).setWidth 32) == 0)) ∧ Keep [.rax] s s₁ :=
   WP.keep [.rax] (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide))
 
-theorem IB.step0 {p : Params} {D : Nat} {σ s s' : State} {t : Nat} (h : IB p D σ t s) (hc : lChk p = true)
-    (hP : PPostB D s s' []) (hax : s'.gpr .rax = s.gpr .rax) : IB p D σ t s' := by
+theorem IB.step0 {p : Params} {D : Nat} {σ s s' : State} {t : Nat} (h : IB p D SL σ t s) (hc : lChk p = true)
+    (hP : PPostB D s s' []) (hax : s'.gpr .rax = s.gpr .rax) : IB p D SL σ t s' := by
   simp only [lChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨-, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, c1⟩, c2⟩, c3⟩, -⟩, -⟩, -⟩, -⟩ := hc
   have L := h.c.l.st.lay
@@ -184,9 +186,9 @@ theorem IB.step0 {p : Params} {D : Nat} {σ s s' : State} {t : Nat} (h : IB p D 
   obtain ⟨hc', hs⟩ := h.ok (hax ▸ h1)
   exact ⟨L.keepPoly hP c3 hc', hs⟩
 
-theorem test_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {t : Nat} {s : State} (h : IB p D σ t s) :
+theorem test_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {t : Nat} {s : State} (h : IB p D SL σ t s) :
     WP isa (.block [.alu32 .test .rax (.reg .rax)]) s fun s' =>
-      (IB p D σ t s' ∧ s'.zf = some ((s'.gpr .rax).setWidth 32 == 0)) ∧
+      (IB p D SL σ t s' ∧ s'.zf = some ((s'.gpr .rax).setWidth 32 == 0)) ∧
         (s'.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32 := by
   refine WP.mono (testRax_ok s) fun s3 ⟨⟨hm3, hax3, hz3⟩, k3⟩ => ?_
   have hf3 : Frame [] s.mem s3.mem := by rw [hm3]; exact Frame.refl _ _
@@ -195,13 +197,13 @@ theorem test_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {t : N
   rw [BitVec.and_self] at hz3
   exact ⟨⟨h.step0 hc4 hP3 hax3, by rw [hz3, hax3]⟩, by rw [hax3]⟩
 
-theorem IB.ka {D : Nat} {p : Params} {σ : State} {t : Nat} {s : State} (h : IB p D σ t s)
-    (h1 : (s.gpr .rax).setWidth 32 = 1) : KA p D σ t s :=
+theorem IB.ka {D : Nat} {p : Params} {σ : State} {t : Nat} {s : State} (h : IB p D SL σ t s)
+    (h1 : (s.gpr .rax).setWidth 32 = 1) : KA p D SL σ t s :=
   ⟨h.c, h.ct, (h.ok h1).1, (h.ok h1).2⟩
 
-theorem else_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {t : Nat} {s : State} (h : IB p D σ t s)
+theorem else_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {t : Nat} {s : State} (h : IB p D SL σ t s)
     (h0 : (s.gpr .rax).setWidth 32 = 0) :
-    WP isa (.block (([.mov32 .r15 (.imm 0)] : List Instr) ++ setQ (sc oCNT) 1)) s (EB p D σ t) := by
+    WP isa (.block (([.mov32 .r15 (.imm 0)] : List Instr) ++ setQ (sc oCNT) 1)) s (EB p D SL σ t) := by
   have hc4' := hc4
   simp only [lChk, Bool.and_eq_true] at hc4'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨w1, -⟩, k1⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, k0⟩, -⟩, -⟩, -⟩ := hc4'
@@ -216,7 +218,7 @@ theorem else_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {t : N
     by rw [hP5.pa (by decide), hm5, Mem.readW_writeW_self64]; rfl, h.c.l.t_lt, h.c.l.rej⟩
 
 /-- What the end of an iteration keeps, for the proof that two runs leak the same. -/
-theorem decF {D : Nat} {p : Params} (hc : lChk p = true) {σ : State} {s : State} (hk : IK p D σ s) :
+theorem decF {D : Nat} {p : Params} (hc : lChk p = true) {σ : State} {s : State} (hk : IK p D SL σ s) :
     WP isa (.block [.mov .rax (.mem (VG.Impl.MlKem.X86_64.at_ .rbx oCNT)), .alu .sub .rax (.imm 1),
       .store (VG.Impl.MlKem.X86_64.at_ .rbx oCNT) .rax]) s fun s' =>
       s'.zf = some (s.mem.readW (pa s (sc oCNT)) 64 - 1 == 0) ∧ s'.gpr .r15 = s.gpr .r15 ∧
@@ -232,9 +234,9 @@ theorem decF {D : Nat} {p : Params} (hc : lChk p = true) {σ : State} {s : State
   have hP : PPostB D s s' [(sc oCNT, 8)] := hP'
   exact ⟨hz, hcs _ (by decide), L.keepBytes hP k3, fun f h => HFam.keep L hP f2 h⟩
 
-theorem iter_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hp : ParamsOk p) (hc1 : cChk p = true)
+theorem iter_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hp : ParamsOk p) (hc1 : cChk p = true)
     (hc2 : bChk p = true) (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) {σ : State} {t : Nat} {s : State}
-    (h : IL p D σ t s) : WP isa (iter P p) s (LP p D σ t) := by
+    (h : IL p D SL σ t s) : WP isa (iter P p) s (LP p D SL σ t) := by
   unfold iter
   refine WP.seq (WP.mono (commit_ok hP hc1 h) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (ball_ok hP hc2 h1) fun s2 h2 => ?_)
@@ -250,8 +252,8 @@ theorem iter_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hp : Para
 
 /-! ## The loop -/
 
-theorem loopInit_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {s : State} (h : IK p D σ s) :
-    WP isa (.block (setQ (sc oKAP) 0 ++ setQ (sc oCNT) 814)) s (IL p D σ 0) := by
+theorem loopInit_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {s : State} (h : IK p D SL σ s) :
+    WP isa (.block (setQ (sc oKAP) 0 ++ setQ (sc oCNT) 814)) s (IL p D SL σ 0) := by
   have hc4' := hc4
   simp only [lChk, Bool.and_eq_true] at hc4'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨w1, -⟩, k1⟩, kk'⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, wk⟩, ik⟩ := hc4'
@@ -264,12 +266,12 @@ theorem loopInit_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {s
       rw [K1.d.im.st.lay.keepW hP2 kk', hP1.pa (by decide), hm1, Mem.readW_writeW_self64]; rfl,
     by rw [hP2.pa (by decide), hm2, Mem.readW_writeW_self64], by decide, fun _ h => absurd h (Nat.not_lt_zero _)⟩
 
-theorem signLoop_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hp : ParamsOk p) (hc1 : cChk p = true)
+theorem signLoop_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (hp : ParamsOk p) (hc1 : cChk p = true)
     (hc2 : bChk p = true) (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) {σ : State} {s : State}
-    (h : IK p D σ s) : WP isa (Impl.MlDsa.X86_64.Sign.signLoop P p) s (XS p D σ) := by
+    (h : IK p D SL σ s) : WP isa (Impl.MlDsa.X86_64.Sign.signLoop P p) s (XS p D SL σ) := by
   unfold Impl.MlDsa.X86_64.Sign.signLoop
   refine WP.seq (WP.mono (loopInit_ok hc4 h) fun s2 I0 => ?_)
-  refine WP.loop (M := isa) (fun n s => ∃ t, n = 814 - t ∧ IL p D σ t s) (fun n s ⟨t, hn, hs⟩ => ?_) 814 s2
+  refine WP.loop (M := isa) (fun n s => ∃ t, n = 814 - t ∧ IL p D SL σ t s) (fun n s ⟨t, hn, hs⟩ => ?_) 814 s2
     ⟨0, rfl, I0⟩
   refine WP.mono (iter_ok hP hp hc1 hc2 hc3 hc3' hc4 hs) fun s' h' => ?_
   have hev : ∀ s : State, isa.eval .ne s = s.zf.map (!·) := fun _ => rfl
@@ -300,6 +302,8 @@ same (`iter_tr`, `signLoop_tr`).
 @[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
+
+variable {SL : List String}
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
@@ -462,13 +466,13 @@ section
 variable {p : Params} {D : Nat} {SL : List String}
 
 /-- A piece that takes each run from `I` to `J` (and `s` to `s'` with `F s s'`), and leaks the same from runs
-related by `RS p D E I` and `G`, with `Q₀` of the final states. -/
+related by `RS p D SL E I` and `G`, with `Q₀` of the final states. -/
 theorem liftQ {E I J G Q₀ Q F : State → State → Prop} {c : Prog isa}
-    (hw : ∀ σ s, (signK p D).pre σ → I σ s → WP isa c s fun s' => J σ s' ∧ F s s')
-    (ht : RelCT isa (fun x y => RS p D E I x y ∧ G x y) c Q₀)
-    (hQ : ∀ σ₁ σ₂ x y x' y', (signK p D).pre σ₁ → (signK p D).pre σ₂ → (signK p D).pub σ₁ σ₂ → E σ₁ σ₂ →
+    (hw : ∀ σ s, (signKS p D SL).pre σ → I σ s → WP isa c s fun s' => J σ s' ∧ F s s')
+    (ht : RelCT isa (fun x y => RS p D SL E I x y ∧ G x y) c Q₀)
+    (hQ : ∀ σ₁ σ₂ x y x' y', (signKS p D SL).pre σ₁ → (signKS p D SL).pre σ₂ → (signKS p D SL).pub σ₁ σ₂ → E σ₁ σ₂ →
       I σ₁ x → I σ₂ y → G x y → J σ₁ x' → J σ₂ y' → F x x' → F y y' → Q₀ x' y' → Q x' y') :
-    RelCT isa (fun x y => RS p D E I x y ∧ G x y) c Q := by
+    RelCT isa (fun x y => RS p D SL E I x y ∧ G x y) c Q := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hr e₁ e₂
   obtain ⟨ht', hq⟩ := ht _ _ _ _ _ _ hr e₁ e₂
   obtain ⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, i₁, i₂⟩, hg⟩ := hr
@@ -491,14 +495,14 @@ theorem zf_of_eval {s : State} {b : Bool} (h : s.zf.map (!·) = some b) : s.zf =
   | none => rw [hz] at h; cases h
   | some c => rw [hz] at h; cases c <;> cases b <;> simp_all
 
-theorem LP.il {p : Params} {D : Nat} {σ : State} {t : Nat} {s : State} (h : LP p D σ t s) (hz : s.zf = some false) :
-    IL p D σ (t + 1) s := by
+theorem LP.il {p : Params} {D : Nat} {σ : State} {t : Nat} {s : State} (h : LP p D SL σ t s) (hz : s.zf = some false) :
+    IL p D SL σ (t + 1) s := by
   rcases h with ⟨_, h⟩ | ⟨h, _⟩
   · exact h
   · rw [hz] at h; cases h
 
-theorem LP.xs {p : Params} {D : Nat} {σ : State} {t : Nat} {s : State} (h : LP p D σ t s) (hz : s.zf = some true) :
-    XS p D σ s := by
+theorem LP.xs {p : Params} {D : Nat} {σ : State} {t : Nat} {s : State} (h : LP p D SL σ t s) (hz : s.zf = some true) :
+    XS p D SL σ s := by
   rcases h with ⟨h, _⟩ | ⟨_, h⟩
   · rw [hz] at h; cases h
   · exact h
@@ -506,24 +510,24 @@ theorem LP.xs {p : Params} {D : Nat} {σ : State} {t : Nat} {s : State} (h : LP 
 /-! ## An iteration -/
 
 /-- The loop ended in both runs: they agree on whether it succeeded, and if it did, on `c̃` and `h`. -/
-abbrev OX (p : Params) (D : Nat) (x y : State) : Prop :=
-  RS p D (fun _ _ => True) (XS p D) x y ∧ x.gpr .r15 = y.gpr .r15 ∧
+abbrev OX (p : Params) (D : Nat) (SL : List String) (x y : State) : Prop :=
+  RS p D SL (fun _ _ => True) (XS p D SL) x y ∧ x.gpr .r15 = y.gpr .r15 ∧
     (x.gpr .r15 = 1 → bytesAt x.mem (pa x (sc oCT)) (cLen p) = bytesAt y.mem (pa y (sc oCT)) (cLen p) ∧
       ∃ f, HFam x 5 p.k f ∧ HFam y 5 p.k f)
 
 /-- After iteration `t` of two runs: both continue, leaking the same from then on, or both end. -/
-abbrev IX (p : Params) (D : Nat) (t : Nat) (x y : State) : Prop :=
-  x.zf = y.zf ∧ (x.zf = some false → RS p D (LeakEq p (t + 1)) (fun σ s => IL p D σ (t + 1) s) x y) ∧
-    (x.zf = some true → OX p D x y)
+abbrev IX (p : Params) (D : Nat) (SL : List String) (t : Nat) (x y : State) : Prop :=
+  x.zf = y.zf ∧ (x.zf = some false → RS p D SL (LeakEq p (t + 1)) (fun σ s => IL p D SL σ (t + 1) s) x y) ∧
+    (x.zf = some true → OX p D SL x y)
 
 section
 variable {p : Params} {D : Nat} {SL : List String}
 
 theorem endPF_tr (hp : ParamsOk p) (hc : lChk p = true) {t : Nat} :
-    RelCT isa (fun x y => RS p D (LeakEq p t) (fun σ s => EP p D σ t s ∨ EF p D σ t s) x y ∧ True)
+    RelCT isa (fun x y => RS p D SL (LeakEq p t) (fun σ s => EP p D SL σ t s ∨ EF p D SL σ t s) x y ∧ True)
       (.block [.mov .rax (.mem (VG.Impl.MlKem.X86_64.at_ .rbx oCNT)), .alu .sub .rax (.imm 1),
-        .store (VG.Impl.MlKem.X86_64.at_ .rbx oCNT) .rax]) (IX p D t) := by
-  refine liftQ (J := fun σ s => LP p D σ t s) (fun σ s _ h => WP.conj (dec_end hp hc (h.elim .inl (.inr ∘ .inl)))
+        .store (VG.Impl.MlKem.X86_64.at_ .rbx oCNT) .rax]) (IX p D SL t) := by
+  refine liftQ (J := fun σ s => LP p D SL σ t s) (fun σ s _ h => WP.conj (dec_end hp hc (h.elim .inl (.inr ∘ .inl)))
       (decF hc (h.elim (·.k) (·.k))))
     (RelCT.mono (block_tr (rs := [.rbx]) rfl (P := fun x y => LRel D SL (sgR p) (sgW p) x y) fun x y h => lrel_rbx h)
       (fun x y h => h.1.lrel fun σ s h => h.elim (·.k.d.im.st) (·.k.d.im.st)) fun _ _ h => h) ?_
@@ -544,10 +548,10 @@ theorem endPF_tr (hp : ParamsOk p) (hc : lChk p = true) {t : Nat} :
       by rw [r₁, r₂, f₁.r15, f₂.r15], fun h1 => absurd (h1.symm.trans (r₁.trans f₁.r15)) (by decide)⟩⟩
 
 theorem endB_tr (hp : ParamsOk p) (hc : lChk p = true) {t : Nat} :
-    RelCT isa (fun x y => RS p D (LeakEq p t) (fun σ s => EB p D σ t s) x y ∧ True)
+    RelCT isa (fun x y => RS p D SL (LeakEq p t) (fun σ s => EB p D SL σ t s) x y ∧ True)
       (.block [.mov .rax (.mem (VG.Impl.MlKem.X86_64.at_ .rbx oCNT)), .alu .sub .rax (.imm 1),
-        .store (VG.Impl.MlKem.X86_64.at_ .rbx oCNT) .rax]) (IX p D t) := by
-  refine liftQ (J := fun σ s => LP p D σ t s) (fun σ s _ h => WP.conj (dec_end hp hc (.inr (.inr h))) (decF hc h.k))
+        .store (VG.Impl.MlKem.X86_64.at_ .rbx oCNT) .rax]) (IX p D SL t) := by
+  refine liftQ (J := fun σ s => LP p D SL σ t s) (fun σ s _ h => WP.conj (dec_end hp hc (.inr (.inr h))) (decF hc h.k))
     (RelCT.mono (block_tr (rs := [.rbx]) rfl (P := fun x y => LRel D SL (sgR p) (sgW p) x y) fun x y h => lrel_rbx h)
       (fun x y h => h.1.lrel fun σ s h => h.k.d.im.st) fun _ _ h => h) ?_
   intro σ₁ σ₂ x y x' y' p₁ p₂ hpub _ e₁ e₂ _ j₁ j₂ ⟨z₁, r₁, _⟩ ⟨z₂, r₂, _⟩ _
@@ -571,25 +575,25 @@ theorem ax_zero {s : State} (hz : s.zf = some ((s.gpr .rax).setWidth 32 == 0)) (
   rw [hz] at e
   simpa using e
 
-theorem iter_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk p = true) (hc2 : bChk p = true)
+theorem iter_tr {P : Prims} (hP : PrimsOk P D SL) (hp : ParamsOk p) (hc1 : cChk p = true) (hc2 : bChk p = true)
     (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) {t : Nat} (ht : t < 814) :
-    RelCT isa (RS p D (LeakEq p t) fun σ s => IL p D σ t s) (iter P p) (IX p D t) := by
+    RelCT isa (RS p D SL (LeakEq p t) fun σ s => IL p D SL σ t s) (iter P p) (IX p D SL t) := by
   have hc2' := hc2
   simp only [bChk, Bool.and_eq_true, decide_eq_true_eq] at hc2'
   obtain ⟨⟨⟨c1, -⟩, -⟩, hbp⟩ := hc2'
   unfold iter
   refine RelCT.seq (commit_tr hP hc1) ?_
-  refine RelCT.seq (R := fun x y => RS p D (LeakEq p t) (fun σ s => IB p D σ t s) x y ∧
+  refine RelCT.seq (R := fun x y => RS p D SL (LeakEq p t) (fun σ s => IB p D SL σ t s) x y ∧
       (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32)
-    (RelCT.mono (liftQ (G := fun _ _ => True) (J := fun σ s => IB p D σ t s) (F := fun _ _ => True)
+    (RelCT.mono (liftQ (G := fun _ _ => True) (J := fun σ s => IB p D SL σ t s) (F := fun _ _ => True)
       (fun _ _ _ h => WP.mono (ball_ok hP hc2 h) fun _ h => ⟨h, trivial⟩)
       (RelCT.mono (ballCall_tr hP hbp c1) (fun x y ⟨h, _⟩ => ⟨h.lrel (fun _ _ h => h.c.l.st), by
         obtain ⟨σ₁, σ₂, _, _, _, he, i₁, i₂⟩ := h
         rw [i₁.ct, i₂.ct]; exact leq_ct he ht⟩) fun _ _ h => h)
       fun σ₁ σ₂ x y x' y' p₁ p₂ hpub he _ _ _ j₁ j₂ _ _ hq => ⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, j₁, j₂⟩, hq⟩)
       (fun x y h => ⟨h, trivial⟩) fun _ _ h => h) ?_
-  refine RelCT.seq (R := fun x y => RS p D (LeakEq p t)
-      (fun σ s => IB p D σ t s ∧ s.zf = some ((s.gpr .rax).setWidth 32 == 0)) x y ∧
+  refine RelCT.seq (R := fun x y => RS p D SL (LeakEq p t)
+      (fun σ s => IB p D SL σ t s ∧ s.zf = some ((s.gpr .rax).setWidth 32 == 0)) x y ∧
       (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32)
     (liftQ (F := fun s s' => (s'.gpr .rax).setWidth 32 = (s.gpr .rax).setWidth 32)
       (fun _ _ _ h => test_ok hc4 h)
@@ -597,8 +601,8 @@ theorem iter_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk p =
       fun σ₁ σ₂ x y x' y' p₁ p₂ hpub he _ _ hg j₁ j₂ f₁ f₂ _ =>
         ⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, j₁, j₂⟩, by rw [f₁, f₂, hg]⟩) ?_
   have hev : ∀ s : State, isa.eval .ne s = s.zf.map (!·) := fun _ => rfl
-  refine RelCT.seq (R := fun x y => (RS p D (LeakEq p t) (fun σ s => EP p D σ t s ∨ EF p D σ t s) x y ∧ True) ∨
-      (RS p D (LeakEq p t) (fun σ s => EB p D σ t s) x y ∧ True)) (RelCT.ite ?_ ?_ ?_)
+  refine RelCT.seq (R := fun x y => (RS p D SL (LeakEq p t) (fun σ s => EP p D SL σ t s ∨ EF p D SL σ t s) x y ∧ True) ∨
+      (RS p D SL (LeakEq p t) (fun σ s => EB p D SL σ t s) x y ∧ True)) (RelCT.ite ?_ ?_ ?_)
     (relOr (endPF_tr hp hc4) (endB_tr hp hc4))
   · rintro x y ⟨⟨σ₁, σ₂, _, _, _, _, ⟨_, z₁⟩, ⟨_, z₂⟩⟩, hg⟩
     rw [hev, hev, z₁, z₂, hg]
@@ -606,8 +610,8 @@ theorem iter_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk p =
       (fun x y ⟨⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, ⟨i₁, z₁⟩, ⟨i₂, z₂⟩⟩, hg⟩, hb⟩ => ?_) fun _ _ h => .inl ⟨h, trivial⟩
     have h1 := ax_one z₁ i₁.r01 hb
     exact ⟨σ₁, σ₂, p₁, p₂, hpub, he, i₁.ka h1, i₂.ka (hg.symm.trans h1)⟩
-  · refine RelCT.mono (liftT (I := fun σ s => IB p D σ t s ∧ (s.gpr .rax).setWidth 32 = 0)
-      (J := fun σ s => EB p D σ t s) (fun _ _ h => h.1.c.l.st) (fun _ _ _ h => else_ok hc4 h.1 h.2)
+  · refine RelCT.mono (liftT (I := fun σ s => IB p D SL σ t s ∧ (s.gpr .rax).setWidth 32 = 0)
+      (J := fun σ s => EB p D SL σ t s) (fun _ _ h => h.1.c.l.st) (fun _ _ _ h => else_ok hc4 h.1 h.2)
       (block_tr rfl fun x y h => lrel_rbx h))
       (fun x y ⟨⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, ⟨i₁, z₁⟩, ⟨i₂, z₂⟩⟩, hg⟩, hb⟩ => ?_) fun _ _ h => .inr ⟨h, trivial⟩
     have h0 := ax_zero z₁ hb
@@ -615,15 +619,15 @@ theorem iter_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk p =
 
 /-! ## The loop -/
 
-theorem signLoop_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk p = true) (hc2 : bChk p = true)
+theorem signLoop_tr {P : Prims} (hP : PrimsOk P D SL) (hp : ParamsOk p) (hc1 : cChk p = true) (hc2 : bChk p = true)
     (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) :
-    RelCT isa (RS p D (LeakEq p 0) fun σ s => IK p D σ s) (Impl.MlDsa.X86_64.Sign.signLoop P p) (OX p D) := by
+    RelCT isa (RS p D SL (LeakEq p 0) fun σ s => IK p D SL σ s) (Impl.MlDsa.X86_64.Sign.signLoop P p) (OX p D SL) := by
   unfold Impl.MlDsa.X86_64.Sign.signLoop
-  refine RelCT.seq (liftT (J := fun σ s => IL p D σ 0 s) (fun _ _ h => h.d.im.st) (fun _ _ _ h => loopInit_ok hc4 h)
+  refine RelCT.seq (liftT (J := fun σ s => IL p D SL σ 0 s) (fun _ _ h => h.d.im.st) (fun _ _ _ h => loopInit_ok hc4 h)
     (block_tr rfl fun x y h => lrel_rbx h)) ?_
   have hev : ∀ s : State, isa.eval .ne s = s.zf.map (!·) := fun _ => rfl
   refine RelCT.mono (RelCT.loop (M := isa)
-    (fun n x y => ∃ t, n = 814 - t ∧ RS p D (LeakEq p t) (fun σ s => IL p D σ t s) x y) (fun n => ?_) 814)
+    (fun n x y => ∃ t, n = 814 - t ∧ RS p D SL (LeakEq p t) (fun σ s => IL p D SL σ t s) x y) (fun n => ?_) 814)
     (fun x y h => ⟨0, rfl, h⟩) fun _ _ h => h
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨t, hn, hr⟩ e₁ e₂
   have ht : t < 814 := by obtain ⟨_, _, _, _, _, _, i₁, _⟩ := hr; exact i₁.t_lt
@@ -659,6 +663,8 @@ Once an iteration passed: `c̃`, then `BitPack(z[r], γ₁ - 1, γ₁)` for each
 @[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
+
+variable {SL : List String}
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
@@ -722,8 +728,8 @@ abbrev zEnc (p : Params) (σ : State) (κ r : Nat) : List Byte :=
   (List.range r).flatMap fun j => bitPack ((Zv p σ κ j).map fun c => modPm c.val q) (p.γ₁ - 1) p.γ₁
 
 /-- `c̃` and the first `r` polynomials of `z` in `sig`. -/
-structure OS (p : Params) (D : Nat) (σ : State) (κ r : Nat) (s : State) : Prop where
-  k : IK p D σ s
+structure OS (p : Params) (D : Nat) (SL : List String) (σ : State) (κ r : Nat) (s : State) : Prop where
+  k : IK p D SL σ s
   z : Fam s (yBase p) p.ℓ (Zv p σ κ)
   h : HFam s 5 p.k (Hv p σ κ)
   sig : bytesAt s.mem (pa s (.r14, 0)) (cLen p + zLen p * r) = CTv p σ κ ++ zEnc p σ κ r
@@ -732,10 +738,10 @@ structure OS (p : Params) (D : Nat) (σ : State) (κ r : Nat) (s : State) : Prop
 def ofam (p : Params) (ws : List (Ptr × Nat)) : Bool :=
   ikChk p ws && famChk (sgB p) ws (yBase p) p.ℓ && famChk (sgB p) ws 5 p.k
 
-theorem OS.step {p : Params} {D : Nat} {σ s s' : State} {κ r : Nat} (h : OS p D σ κ r s)
+theorem OS.step {p : Params} {D : Nat} {σ s s' : State} {κ r : Nat} (h : OS p D SL σ κ r s)
     {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) (hc : ofam p ws = true)
     (hs : keepB (sgB p) ws (.r14, 0) (cLen p + zLen p * r) = true) (h15 : s'.gpr .r15 = s.gpr .r15) :
-    OS p D σ κ r s' := by
+    OS p D SL σ κ r s' := by
   simp only [ofam, Bool.and_eq_true] at hc
   have L := h.k.d.im.st.lay
   exact ⟨h.k.step hP hc.1.1, Fam.keep L hP hc.1.2 h.z, HFam.keep L hP hc.2 h.h, (L.keepBytes hP hs).trans h.sig,
@@ -760,14 +766,14 @@ abbrev sigV (p : Params) (σ : State) (κ : Nat) : List Byte :=
   sigOf p (CTv p σ κ, (List.range p.ℓ).map (Zv p σ κ), (List.range p.k).map (Hv p σ κ))
 
 section
-variable {P : Prims} {D : Nat} {SL : List String} (hPO : PrimsOk P D) {p : Params} (hc : oChk p = true) {σ : State} {κ : Nat}
+variable {P : Prims} {D : Nat} {SL : List String} (hPO : PrimsOk P D SL) {p : Params} (hc : oChk p = true) {σ : State} {κ : Nat}
 include hc
 
 omit hPO in
-theorem outCopy_ok {s : State} (hk : IK p D σ s) (hct : bytesAt s.mem (pa s (sc oCT)) (cLen p) = CTv p σ κ)
+theorem outCopy_ok {s : State} (hk : IK p D SL σ s) (hct : bytesAt s.mem (pa s (sc oCT)) (cLen p) = CTv p σ κ)
     (hz : Fam s (yBase p) p.ℓ (Zv p σ κ)) (hh : HFam s 5 p.k (Hv p σ κ)) (h15 : s.gpr .r15 = 1) :
     WP isa (copy (.r14, 0) (sc oCT) (cLen p)) s fun s1 =>
-      OS p D σ κ 0 s1 ∧ ∀ f, HFam s 5 p.k f → HFam s1 5 p.k f := by
+      OS p D SL σ κ 0 s1 ∧ ∀ f, HFam s 5 p.k f → HFam s1 5 p.k f := by
   simp only [oChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨cc, c0⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩ := hc
   have L := hk.d.im.st.lay
@@ -779,8 +785,8 @@ theorem outCopy_ok {s : State} (hk : IK p D σ s) (hct : bytesAt s.mem (pa s (sc
   simp [zEnc]
 
 include hPO in
-theorem packZ_ok {r : Nat} (hr : r < p.ℓ) {s : State} (h : OS p D σ κ r s) (hpass : PassV p σ κ) :
-    WP isa (packZ P p r) s fun s' => OS p D σ κ (r + 1) s' ∧ ∀ f, HFam s 5 p.k f → HFam s' 5 p.k f := by
+theorem packZ_ok {r : Nat} (hr : r < p.ℓ) {s : State} (h : OS p D SL σ κ r s) (hpass : PassV p σ κ) :
+    WP isa (packZ P p r) s fun s' => OS p D SL σ κ (r + 1) s' ∧ ∀ f, HFam s 5 p.k f → HFam s' 5 p.k f := by
   simp only [oChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨-, -⟩, cz⟩, -⟩, -⟩, hbp⟩, hzl⟩, -⟩, -⟩, -⟩ := hc
   obtain ⟨⟨c1, c2⟩, c3⟩ := cz r hr
@@ -797,7 +803,7 @@ theorem packZ_ok {r : Nat} (hr : r < p.ℓ) {s : State} (h : OS p D σ κ r s) (
     List.append_assoc]
 
 omit hc in
-theorem hones_ok {s : State} (h : OS p D σ κ p.ℓ s) (hpass : PassV p σ κ) :
+theorem hones_ok {s : State} (h : OS p D SL σ κ p.ℓ s) (hpass : PassV p σ κ) :
     hintOnes (hintAt s.mem (pa s (Impl.MlDsa.X86_64.Sign.hP 0)) p.k) ≤ p.ω := by
   rw [hintAt_of (f := Hv p σ κ) fun i hi => by
       have := h.h i hi; rwa [pS_hint] at this,
@@ -805,9 +811,9 @@ theorem hones_ok {s : State} (h : OS p D σ κ p.ℓ s) (hpass : PassV p σ κ) 
   exact hpass.2.2.2
 
 include hPO in
-theorem hpack_ok {s : State} (h2 : OS p D σ κ p.ℓ s) (hpass : PassV p σ κ) :
+theorem hpack_ok {s : State} (h2 : OS p D SL σ κ p.ℓ s) (hpass : PassV p σ κ) :
     WP isa (hintBitPackAt P (Impl.MlDsa.X86_64.Sign.hP 0) (256 * p.k) p.ω (.r14, sigH p) (p.ω + p.k)) s fun s' =>
-      IK p D σ s' ∧ bytesAt s'.mem (pa s' (.r14, 0)) p.sigLen = sigV p σ κ ∧ s'.gpr .r15 = 1 := by
+      IK p D SL σ s' ∧ bytesAt s'.mem (pa s' (.r14, 0)) p.sigLen = sigV p σ κ ∧ s'.gpr .r15 = 1 := by
   simp only [oChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨-, -⟩, -⟩, ch⟩, hhp⟩, -⟩, -⟩, hsl⟩, ci⟩, ck⟩ := hc
   have L2 := h2.k.d.im.st.lay
@@ -820,14 +826,14 @@ theorem hpack_ok {s : State} (h2 : OS p D σ κ p.ℓ s) (hpass : PassV p σ κ)
   rfl
 
 include hPO in
-theorem output_ok {s : State} (hk : IK p D σ s) (hct : bytesAt s.mem (pa s (sc oCT)) (cLen p) = CTv p σ κ)
+theorem output_ok {s : State} (hk : IK p D SL σ s) (hct : bytesAt s.mem (pa s (sc oCT)) (cLen p) = CTv p σ κ)
     (hz : Fam s (yBase p) p.ℓ (Zv p σ κ)) (hh : HFam s 5 p.k (Hv p σ κ)) (hpass : PassV p σ κ)
     (h15 : s.gpr .r15 = 1) :
-    WP isa (output P p) s fun s' => IK p D σ s' ∧ bytesAt s'.mem (pa s' (.r14, 0)) p.sigLen = sigV p σ κ ∧
+    WP isa (output P p) s fun s' => IK p D SL σ s' ∧ bytesAt s'.mem (pa s' (.r14, 0)) p.sigLen = sigV p σ κ ∧
       s'.gpr .r15 = 1 := by
   unfold output
   refine WP.seq (WP.mono (outCopy_ok hc hk hct hz hh h15) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (seqR_ok (I := fun r => OS p D σ κ r) p.ℓ 0
+  refine WP.seq (WP.mono (seqR_ok (I := fun r => OS p D SL σ κ r) p.ℓ 0
     (fun r _ hr s h => WP.mono (packZ_ok hPO hc (by omega_using [hr]) h hpass) fun _ h => h.1) s1 h1.1) fun s2 h2 => ?_)
   rw [Nat.zero_add] at h2
   exact hpack_ok hPO hc h2 hpass
@@ -853,6 +859,8 @@ in `sig`, or 0 when `Sign_internal` returns nothing within `minBounds`
 @[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
+
+variable {SL : List String}
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
@@ -910,8 +918,8 @@ end
 /-! ## After the loop -/
 
 /-- Before the return: `r15`, and the signature in `sig` if it is 1. -/
-structure FS (p : Params) (D : Nat) (σ s : State) : Prop where
-  st : St p D σ s
+structure FS (p : Params) (D : Nat) (SL : List String) (σ s : State) : Prop where
+  st : St p D SL σ s
   r01 : s.gpr .r15 = 0 ∨ s.gpr .r15 = 1
   ok : s.gpr .r15 = 1 →
     signMu p maxBounds (skOf p σ) (muOf σ) (rndOf σ) = some (bytesAt s.mem (pa s (.r14, 0)) p.sigLen)
@@ -947,9 +955,9 @@ theorem r15_zero {s : State} (h : s.gpr .r15 = 0 ∨ s.gpr .r15 = 1) (he : (s.gp
   · exact e
   · rw [e] at he; exact absurd he (by decide)
 
-theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) {σ s : State}
-    (hpre : (signK p D).pre σ) (h : IM p D σ s) :
-    WP isa (rest P p) s (FS p D σ) := by
+theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h3 : Ok3 p) {σ s : State}
+    (hpre : (signKS p D SL).pre σ) (h : IM p D SL σ s) :
+    WP isa (rest P p) s (FS p D SL σ) := by
   have hc := allChk_ok h3
   simp only [allChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨⟨⟨-, hd⟩, hc1⟩, hb⟩, hks⟩, hl⟩, ho⟩, hf⟩ := hc
@@ -983,8 +991,8 @@ theorem entry_bytes {σ s : State} {r : Reg} {len : Nat} {R : Region} (hf : Fram
   rw [pa, hb, VG.Proof.MlKem.X86_64.add_ofNat_zero]
   exact VG.Proof.MlKem.bytesAt_frame hf (fun R' hR => by rw [List.mem_singleton] at hR; subst hR; exact hd) hl
 
-theorem entry_st {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p) {σ s : State}
-    (hpre : (signK p D).pre σ) (ht : Top σ s) (hf : Frame [⟨σ.gpr .r8, scrLen p⟩] σ.mem s.mem) : St p D σ s := by
+theorem entry_st {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h3 : Ok3 p) {σ s : State}
+    (hpre : (signKS p D SL).pre σ) (ht : Top σ s) (hf : Frame [⟨σ.gpr .r8, scrLen p⟩] σ.mem s.mem) : St p D SL σ s := by
   have hc := fChk_ok h3
   simp only [fChk, Bool.and_eq_true, decide_eq_true_eq] at hc
   have hsz := hc.2
@@ -999,9 +1007,9 @@ theorem entry_st {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3
       rw [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_append_left _ (by rw [hwr]; simp), fun _ h => h⟩⟩
 
-theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 p)
+theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D SL) {p : Params} (h3 : Ok3 p)
     (hmx : ctlOk (Impl.MlDsa.X86_64.Sign.sign P p) = true) (σ : State)
-    (hpre : (signK p D).pre σ) :
+    (hpre : (signKS p D SL).pre σ) :
     ∃ t s', Exec isa (Impl.MlDsa.X86_64.Sign.sign P p) σ t s' ∧ abiPreserved σ s' ∧ (signK p D).post σ s' := by
   have hc := allChk_ok h3
   simp only [allChk, Bool.and_eq_true] at hc
@@ -1010,12 +1018,12 @@ theorem sign_correct {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 :
   simp only [fChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hf'
   obtain ⟨⟨⟨⟨⟨⟨⟨st0, fa0⟩, -⟩, -⟩, -⟩, -⟩, hsv⟩, hsz⟩ := hf'
   have main : WP isa (Impl.MlDsa.X86_64.Sign.sign P p) σ fun s₅ => gprPreserved σ s₅ ∧
-      ∃ s₄, FS p D σ s₄ ∧ (s₅.gpr .rax).setWidth 32 = (s₄.gpr .r15).setWidth 32 ∧ s₅.mem = s₄.mem := by
+      ∃ s₄, FS p D SL σ s₄ ∧ (s₅.gpr .rax).setWidth 32 = (s₄.gpr .r15).setWidth 32 ∧ s₅.mem = s₄.mem := by
     unfold Impl.MlDsa.X86_64.Sign.sign
     refine WP.seq (WP.mono (pro_ok hpre hsz.1) fun s₁ ⟨h₁, _, hf₁, h15⟩ => ?_)
     have S1 := entry_st hP h3 hpre h₁ hf₁
     refine WP.seq (WP.mono (expandA_ok hP ha S1 h15) fun s₂ h₂ => ?_)
-    refine WP.seq (WP.mono (show WP isa (ifOk (rest P p)) s₂ (FS p D σ) from ?_) fun s₄ h₄ => ?_)
+    refine WP.seq (WP.mono (show WP isa (ifOk (rest P p)) s₂ (FS p D SL σ) from ?_) fun s₄ h₄ => ?_)
     · unfold ifOk
       refine ifOkElse_ok (D := D) (fun s₃ hP₃ hcs₃ hm₃ hne => ?_) fun s₃ hP₃ hcs₃ hm₃ he => ?_
       · have h1 := r15_one h₂.r01 hne
@@ -1055,6 +1063,8 @@ two runs whose loops leaked the same agree (`OX`); so all but `Â` leaks what
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
 open VG.Proof.MlDsa.Sign
@@ -1079,12 +1089,12 @@ theorem hint_coeffs {x y : State} {k : Nat} {f : Nat → Vector Bool n} (hx : HF
   rw [e x, e y, ex, ey]
 
 /-- Before the signature: an iteration passed, with `c̃`, `z` and `h`. -/
-def IOi (p : Params) (D : Nat) (σ s : State) : Prop :=
-  ∃ κ, IK p D σ s ∧ bytesAt s.mem (pa s (sc oCT)) (cLen p) = CTv p σ κ ∧ Fam s (yBase p) p.ℓ (Zv p σ κ) ∧
+def IOi (p : Params) (D : Nat) (SL : List String) (σ s : State) : Prop :=
+  ∃ κ, IK p D SL σ s ∧ bytesAt s.mem (pa s (sc oCT)) (cLen p) = CTv p σ κ ∧ Fam s (yBase p) p.ℓ (Zv p σ κ) ∧
     HFam s 5 p.k (Hv p σ κ) ∧ PassV p σ κ ∧ s.gpr .r15 = 1
 
 /-- `c̃` and the first `r` polynomials of `z` in `sig`, of an iteration that passed. -/
-def IOr (p : Params) (D : Nat) (r : Nat) (σ s : State) : Prop := ∃ κ, OS p D σ κ r s ∧ PassV p σ κ
+def IOr (p : Params) (D : Nat) (SL : List String) (r : Nat) (σ s : State) : Prop := ∃ κ, OS p D SL σ κ r s ∧ PassV p σ κ
 
 /-- Two runs agree on their hints. -/
 abbrev HJ (p : Params) (x y : State) : Prop := ∃ f, HFam x 5 p.k f ∧ HFam y 5 p.k f
@@ -1092,20 +1102,20 @@ abbrev HJ (p : Params) (x y : State) : Prop := ∃ f, HFam x 5 p.k f ∧ HFam y 
 section
 variable {p : Params} {D : Nat} {SL : List String}
 
-theorem IOr.zr {r' : Nat} {σ s : State} (h : IOr p D r' σ s) {r : Nat} (hr : r < p.ℓ) :
+theorem IOr.zr {r' : Nat} {σ s : State} (h : IOr p D SL r' σ s) {r : Nat} (hr : r < p.ℓ) :
     Reduced s.mem (pa s (yP p r)) ∧ InRange s.mem (pa s (yP p r)) (p.γ₁ - 1) p.γ₁ := by
   obtain ⟨κ, h, hpass⟩ := h
   have hzr := h.z r hr
   exact ⟨hzr.1, inRange_of_norm hzr (hpass.1 r hr) (Nat.sub_le _ _)⟩
 
-theorem output_tr {P : Prims} (hP : PrimsOk P D) (hc : oChk p = true) {E : State → State → Prop} :
-    RelCT isa (fun x y => RS p D E (IOi p D) x y ∧ HJ p x y) (output P p) fun _ _ => True := by
+theorem output_tr {P : Prims} (hP : PrimsOk P D SL) (hc : oChk p = true) {E : State → State → Prop} :
+    RelCT isa (fun x y => RS p D SL E (IOi p D SL) x y ∧ HJ p x y) (output P p) fun _ _ => True := by
   have hc' := hc
   simp only [oChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hc'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨cc, -⟩, cz⟩, ch⟩, hhp⟩, hbp⟩, hzl⟩, -⟩, -⟩, -⟩ := hc'
   have hcc := copyChk_spec cc
   unfold output
-  refine RelCT.seq (R := fun x y => RS p D E (IOr p D 0) x y ∧ HJ p x y) (liftQ
+  refine RelCT.seq (R := fun x y => RS p D SL E (IOr p D SL 0) x y ∧ HJ p x y) (liftQ
     (F := fun s s' => ∀ f, HFam s 5 p.k f → HFam s' 5 p.k f)
     (fun σ s _ ⟨κ, hk, hct, hz, hh, hpass, h15⟩ =>
       WP.mono (outCopy_ok hc hk hct hz hh h15) fun _ h => ⟨⟨κ, h.1, hpass⟩, h.2⟩)
@@ -1115,8 +1125,8 @@ theorem output_tr {P : Prims} (hP : PrimsOk P D) (hc : oChk p = true) {E : State
       (fun x y h => h.1.lrel fun σ s ⟨_, hk, _⟩ => hk.d.im.st) fun _ _ h => h)
     fun σ₁ σ₂ x y x' y' p₁ p₂ hpub he _ _ ⟨f, hx, hy⟩ j₁ j₂ g₁ g₂ _ =>
       ⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, j₁, j₂⟩, f, g₁ f hx, g₂ f hy⟩) ?_
-  refine RelCT.seq (R := fun x y => RS p D E (IOr p D p.ℓ) x y ∧ HJ p x y) (RelCT.mono (seqR_tr
-    (R := fun r x y => RS p D E (IOr p D r) x y ∧ HJ p x y) p.ℓ 0 fun r _ hr => liftQ
+  refine RelCT.seq (R := fun x y => RS p D SL E (IOr p D SL p.ℓ) x y ∧ HJ p x y) (RelCT.mono (seqR_tr
+    (R := fun r x y => RS p D SL E (IOr p D SL r) x y ∧ HJ p x y) p.ℓ 0 fun r _ hr => liftQ
       (F := fun s s' => ∀ f, HFam s 5 p.k f → HFam s' 5 p.k f)
       (fun σ s _ ⟨κ, h, hpass⟩ => WP.mono (packZ_ok hP hc (by omega_using [hr]) h hpass) fun _ h => ⟨⟨κ, h.1, hpass⟩, h.2⟩)
       (RelCT.mono (bpAt_tr hP hbp hzl (cz r (by omega_using [hr])).1.1) (fun x y ⟨h, _⟩ =>
@@ -1131,8 +1141,8 @@ theorem output_tr {P : Prims} (hP : PrimsOk P D) (hc : oChk p = true) {E : State
   obtain ⟨_, _, _, _, _, _, ⟨_, o₁, a₁⟩, ⟨_, o₂, a₂⟩⟩ := h
   exact ⟨hones_ok o₁ a₁, hones_ok o₂ a₂, hint_coeffs hx hy⟩
 
-theorem XS.io (hf : fChk p = true) {σ x₀ x : State} (h : XS p D σ x₀) (h15 : x₀.gpr .r15 = 1)
-    (hP : PPostB D x₀ x []) (hcs : ∀ r ∈ calleeSaved, x.gpr r = x₀.gpr r) : IOi p D σ x := by
+theorem XS.io (hf : fChk p = true) {σ x₀ x : State} (h : XS p D SL σ x₀) (h15 : x₀.gpr .r15 = 1)
+    (hP : PPostB D x₀ x []) (hcs : ∀ r ∈ calleeSaved, x.gpr r = x₀.gpr r) : IOi p D SL σ x := by
   simp only [fChk, Bool.and_eq_true] at hf
   obtain ⟨⟨⟨⟨⟨⟨⟨-, -⟩, ik⟩, fy⟩, f5⟩, kct⟩, -⟩, -⟩ := hf
   have L := h.k.d.im.st.lay
@@ -1140,8 +1150,8 @@ theorem XS.io (hf : fChk p = true) {σ x₀ x : State} (h : XS p D σ x₀) (h15
   exact ⟨p.ℓ * t, h.k.step hP ik, by rw [L.keepBytes hP kct, hct], Fam.keep L hP fy hz, HFam.keep L hP f5 hh, hpass,
     by rw [hcs _ (by decide), h15]⟩
 
-theorem rest_tr {P : Prims} (hP : PrimsOk P D) (h3 : Ok3 p) :
-    RelCT isa (RS p D (LeakEq p 0) (IM p D)) (rest P p) (RS p D (LeakEq p 0) (FS p D)) := by
+theorem rest_tr {P : Prims} (hP : PrimsOk P D SL) (h3 : Ok3 p) :
+    RelCT isa (RS p D SL (LeakEq p 0) (IM p D SL)) (rest P p) (RS p D SL (LeakEq p 0) (FS p D SL)) := by
   refine liftR (fun σ s hpre h => rest_ok hP h3 hpre h) ?_
   have hc := allChk_ok h3
   simp only [allChk, Bool.and_eq_true] at hc

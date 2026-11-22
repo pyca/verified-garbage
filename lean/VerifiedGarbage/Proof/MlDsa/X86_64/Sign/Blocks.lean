@@ -27,6 +27,8 @@ of the hint (`onesAdd_ok`) and its check (`onesOk_ok`).
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+variable {SL : List String}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
 open VG.Spec.MlDsa (integerToBytes)
