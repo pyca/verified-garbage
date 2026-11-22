@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
+public import VerifiedGarbage.Impl.Rsa.Arm.InverseCall
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
 public import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
@@ -170,9 +171,9 @@ def ltS (d a b : Nat) : List (Prog isa) := [sub3 aTmp a b, .block [.str .r11 .r8
 /-- The slot `d` := `v`. -/
 def setS (d v : Nat) : List Instr := [.mov .r1 (.imm (BitVec.ofNat 32 v)), .str .r1 .r8 d]
 
-/-- `[o] := [a]⁻¹ mod [m]`'s start and `inverse`: `(u, v, x₁, x₂) = (a, m, 1, 0)`. -/
+/-- `[o] := [a]⁻¹ mod [m]`'s start and a call of `inverse` (`vg_rsa_inverse`): `(u, v, x₁, x₂) = (a, m, 1, 0)`. -/
 def invOf (a m : Nat) : Prog isa :=
-  seqs [copy aM m, copy 0 a, copy 1 aM, copy 2 aOne, copy 3 aZero, sub3 aNM aZero aM, inverse]
+  seqs [copy aM m, copy 0 a, copy 1 aM, copy 2 aOne, copy 3 aZero, sub3 aNM aZero aM, inverseCall]
 
 /-- `used` (frame word 2) := `r3`, and the status `r` returned. -/
 def finish (r : Nat) : List Instr :=

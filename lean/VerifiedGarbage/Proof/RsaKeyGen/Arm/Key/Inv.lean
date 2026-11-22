@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Rsa.Sub32
 /-! # An RSA key on ARMv7: inverses
 
 `invOf a m`: from `(a, m, 1, 0)`, a call of `inverse` modulo the odd `m > 1` leaves
-`ivr W a m` in arrays 0–3 (`inverse_ok'`): `gcd(a, m)` in array 1 and
+`ivr W a m` in arrays 0–3 (`inverseCall_ok'`): `gcd(a, m)` in array 1 and
 `x < m` with `x a ≡ gcd(a, m) (mod m)` in array 3 (`ivr_spec`).
 -/
 
@@ -36,23 +36,6 @@ end VG.Proof.RsaKeyGen.Arm.Key
 namespace VG.Proof.Rsa.Arm.Keys
 open VG VG.Arm VG.Proof.Mont VG.Impl.Rsa.Arm VG.Impl.Rsa.Arm.Keys VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm
-
-/-- `inverse`, with the values it leaves. -/
-theorem inverse_ok' [InvLaw] {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256)
-    (hW8 : 8 ≤ w) :
-    WP isa VG.Impl.Rsa.Arm.Keys.inverse s fun t => Ws t B Z w N ∧ Keep B w invArrs invSlots s.mem t.mem ∧
-      Rest (.r6 :: opRegs) s t ∧
-      (num s.mem B w aNM + num s.mem B w aM = 2 ^ (32 * w) → num s.mem B w aZero = 0 →
-        num s.mem B w aM % 2 = 1 → 1 < num s.mem B w aM →
-        bank s.mem B w 0 = (num s.mem B w 0, num s.mem B w aM, 1, 0) →
-        num t.mem B w 1 = (VG.Proof.RsaKeyGen.Arm.Key.ivr w (num s.mem B w 0) (num s.mem B w aM)).2.1 ∧
-        num t.mem B w 3 = (VG.Proof.RsaKeyGen.Arm.Key.ivr w (num s.mem B w 0) (num s.mem B w aM)).2.2.2) := by
-  have g : VG.Proof.Rsa.Arm.Inv.Gk s B Z w w N :=
-    ⟨h.nowrap, h.writable, h.fits, h.wpos, le_refl _, h.wle, h.r7, h.r8, h.r9⟩
-  exact WP.mono (InvLaw.inverseK_ok g hN15 hN hW8) fun t ⟨gt, kt, rt, v⟩ =>
-    ⟨⟨gt.nowrap, gt.writable, gt.fits, gt.kpos, gt.wle, gt.r7, gt.r8, gt.r9⟩, kt, rt,
-      fun _ _ hmo hm1 _ => by simp only [VG.Proof.RsaKeyGen.Arm.Key.ivr]; exact v hmo hm1⟩
-
 
 /-- A call of `inverse`, with the values it leaves. -/
 theorem inverseCall_ok' [InvLaw] {s : State} {B : BitVec 32} {Z w N : Nat} (h : Ws s B Z w N) (hN15 : 15 ≤ N) (hN : N ≤ 256)
