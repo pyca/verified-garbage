@@ -39,6 +39,22 @@ vg_keccak_squeeze_scratch:
 24:
 	mov ecx, DWORD PTR [ebp+528]
 	mov edx, DWORD PTR [ebp+532]
+	mov eax, ecx
+	sub eax, ebx
+	add eax, 8
+	cmp edx, eax
+	jb 25f
+	cmp edi, 8
+	jb 27f
+	movq xmm0, QWORD PTR [ecx]
+	movq QWORD PTR [esi], xmm0
+	add ecx, 8
+	mov DWORD PTR [ebp+528], ecx
+	mov DWORD PTR [ebp+532], edx
+	add esi, 8
+	sub edi, 8
+	jmp 28f
+27:
 	movzx eax, BYTE PTR [ecx]
 	mov BYTE PTR [esi], al
 	add ecx, 1
@@ -46,6 +62,17 @@ vg_keccak_squeeze_scratch:
 	mov DWORD PTR [ebp+532], edx
 	add esi, 1
 	sub edi, 1
+28:
+	jmp 26f
+25:
+	movzx eax, BYTE PTR [ecx]
+	mov BYTE PTR [esi], al
+	add ecx, 1
+	mov DWORD PTR [ebp+528], ecx
+	mov DWORD PTR [ebp+532], edx
+	add esi, 1
+	sub edi, 1
+26:
 	jne 22b
 	jmp 21f
 20:
