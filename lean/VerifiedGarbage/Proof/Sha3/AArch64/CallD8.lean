@@ -24,8 +24,18 @@ namespace VG.Proof.Sha3.AArch64
 open VG VG.AArch64 VG.Impl.Sha3.AArch64
 open VG.Spec.Sha3 (stateAt keccakF)
 
+/-- `d8` holds the address of the function `n`. -/
+def D8 (n : String) (s : State) : Prop := (s.v .v8).extractLsb' 0 64 = s.syms n
+
+/-- `d8` holds `n`'s address in a later state that keeps the low halves of
+the preserved vector registers and the addresses of statics. -/
+theorem D8.of {n : String} {s t : State} (h : D8 n s)
+    (hv : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64)
+    (hy : t.syms = s.syms) : D8 n t := by
+  unfold D8 at h ⊢; rw [hv .v8 (by decide), hy]; exact h
+
 theorem callD8_ok (v : Permutation) {s : State} {st scr : Addr} (h0 : s.gpr .x0 = st)
-    (h1 : s.gpr .x1 = scr) (hd : (s.v .v8).extractLsb' 0 64 = s.syms v.callee.name)
+    (h1 : s.gpr .x1 = scr) (hd : D8 v.callee.name s)
     (d₁ : Region.Disjoint ⟨st, 200⟩ ⟨scr, 512⟩)
     (hw : Covers [⟨st, 200⟩, ⟨scr, 512⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →

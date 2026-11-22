@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 public import VerifiedGarbage.Impl.Sha3.AArch64.ViaD8
+public import VerifiedGarbage.Proof.Sha3.AArch64.CallD8
 import VerifiedGarbage.Proof.Sha3.AArch64.Call
-import VerifiedGarbage.Proof.Sha3.AArch64.CallD8
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 
@@ -17,7 +17,7 @@ open VG.Spec.Sha3 (stateAt keccakF)
 theorem permute_ok (v : Proof.Sha3.AArch64.Permutation)
     {sc : Reg} {st wk rate : Nat} {s₀ s : State}
     (hS : HSetup sc st wk rate s₀) (hg : Rg s₀ s)
-    (hd : (s.v .v8).extractLsb' 0 64 = s.syms v.callee.name) :
+    (hd : Proof.Sha3.AArch64.D8 v.callee.name s) :
     WP isa (.seq (.block (ptrTo .x0 sc st ++ ptrTo .x1 sc wk)) v.callee.viaD8) s fun t =>
       Kept [STr sc st s₀, ⟨s₀.gpr sc + BitVec.ofNat 64 wk,512⟩] s t ∧
       stateAt t.mem (s₀.gpr sc + BitVec.ofNat 64 st) =
@@ -27,8 +27,8 @@ theorem permute_ok (v : Proof.Sha3.AArch64.Permutation)
     wp_ptrTo' ns.2.symm hS.hwk fun s₂ h₂ e₂ =>
       (show ∃ s₁, Only [.x0] s s₁ ∧ s₁.gpr .x0 = _ ∧ Only [.x1] s₁ s₂ ∧ s₂.gpr .x1 = _ from
         ⟨s₁, h₁, e₁, h₂, e₂⟩)) fun s₂ ⟨s₁, h₁, e₁, h₂, e₂⟩ sy => ?_)
-  have hd₂ : (s₂.v .v8).extractLsb' 0 64 = s₂.syms v.callee.name := by
-    rw [h₂.vcs .v8 (by decide), h₁.vcs .v8 (by decide), sy]; exact hd
+  have hd₂ : Proof.Sha3.AArch64.D8 v.callee.name s₂ :=
+    hd.of (fun r hr => by rw [h₂.vcs r hr, h₁.vcs r hr]) sy
   have mm : s₂.mem = s.mem := h₂.mem.trans h₁.mem
   have kk : Kept [] s s₂ := Kept.of_keep (h₁.trans h₂).keep mm (by decide)
   have ds : (STr sc st s₀).Disjoint ⟨s₀.gpr sc + BitVec.ofNat 64 wk,512⟩ :=

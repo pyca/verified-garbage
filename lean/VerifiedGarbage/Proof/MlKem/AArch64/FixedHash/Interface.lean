@@ -1,13 +1,16 @@
 module
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashCallers
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Sha3.AArch64.CallD8
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Spec.Sha3
 abbrev HashFn := Impl.MlKem.AArch64.FixedHashCallers.HashFn
 
-def HashCorrect (hash : HashFn) (sc : Reg) (st wk rate sfx : Nat) (ins outs : List Piece) : Prop :=
- ∀{s₀ : AArch64.State},HSetup sc st wk rate s₀ → sfx<256 → ins≠[] →
+/-- `hash` is correct from a state where `d8` holds the address of the
+permutation `n` it calls (`Callee.viaD8`). -/
+def HashCorrect (hash : HashFn) (n : String) (sc : Reg) (st wk rate sfx : Nat) (ins outs : List Piece) : Prop :=
+ ∀{s₀ : AArch64.State},HSetup sc st wk rate s₀ → Proof.Sha3.AArch64.D8 n s₀ → sfx<256 → ins≠[] →
  (∀p∈ins,PieceOk sc st wk s₀ false p) → (∀p∈outs,PieceOk sc st wk s₀ true p) →
  outs.Pairwise (fun p q=>(preg s₀ p).Disjoint (preg s₀ q)) →
  WP isa (hash sc st wk rate sfx ins outs) s₀ fun s'=>
