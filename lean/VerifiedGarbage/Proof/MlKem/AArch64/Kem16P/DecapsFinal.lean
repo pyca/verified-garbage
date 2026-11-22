@@ -125,15 +125,31 @@ open VG.Proof.MlKem
 theorem startJ768_taint (c : Impl.Sha3.AArch64.Callee)
     (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
-      (.seq (FixedHashDecaps.deStartUsing (fixedHash c) lay768) (.block (Kem16.startJ lay768))) h).isSome=true := by
+      (Code.eraseI (.seq (FixedHashDecaps.deStartUsing (fixedHash c) lay768) (.block (Kem16.startJ lay768)))) h).isSome=true := by
   taint_decide_generic c := hole using hS
 
 theorem startJ1024_taint (c : Impl.Sha3.AArch64.Callee)
     (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
-      (.seq (FixedHashDecaps.deStartUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024)
-        (.block (Kem16.startJ Impl.MlKem1024.AArch64.lay1024))) h).isSome=true := by
+      (Code.eraseI (.seq (FixedHashDecaps.deStartUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024)
+        (.block (Kem16.startJ Impl.MlKem1024.AArch64.lay1024)))) h).isSome=true := by
   taint_decide_generic c := hole using hS
+
+theorem startJ768_icalls (c : Impl.Sha3.AArch64.Callee) : Code.IcallsP (· = c.name)
+    (.seq (FixedHashDecaps.deStartUsing (fixedHash c) lay768) (.block (Kem16.startJ lay768))) := by
+  rw [show (Code.seq (FixedHashDecaps.deStartUsing (fixedHash c) lay768) (.block (Kem16.startJ lay768)) : Prog isa) =
+    Code.fillHoles c.name c.code (.seq (FixedHashDecaps.deStartUsing (fixedHash hole) lay768)
+      (.block (Kem16.startJ lay768))) by kernel_rfl]
+  exact Code.icallsP_fillHoles (by decide +kernel)
+
+theorem startJ1024_icalls (c : Impl.Sha3.AArch64.Callee) : Code.IcallsP (· = c.name)
+    (.seq (FixedHashDecaps.deStartUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024)
+      (.block (Kem16.startJ Impl.MlKem1024.AArch64.lay1024))) := by
+  rw [show (Code.seq (FixedHashDecaps.deStartUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024)
+      (.block (Kem16.startJ Impl.MlKem1024.AArch64.lay1024)) : Prog isa) =
+    Code.fillHoles c.name c.code (.seq (FixedHashDecaps.deStartUsing (fixedHash hole) Impl.MlKem1024.AArch64.lay1024)
+      (.block (Kem16.startJ Impl.MlKem1024.AArch64.lay1024))) by kernel_rfl]
+  exact Code.icallsP_fillHoles (by decide +kernel)
 
 theorem habsJ768 : ∀ blk, 136 * blk < (Kem16.jSrc lay768).len → ∃ h,
     (taint.check (Taint.ofRegs [(Kem16.jSrc lay768).r, .x28])
@@ -159,31 +175,34 @@ theorem decapsS768_base : (decapsAArch64S lay768).Implies (Proof.MlKem.Scrubbed.
       KemLay.params, Spec.MlKem.mlKem768, KemLay.dkLen, KemLay.ctLen, AArch64.abi, AArch64.argRegs]
       [VG.Proof.MlKem.AArch64.Decaps.sat] using VG.Proof.MlKem.AArch64.Decaps.sat
 
-def decapsH768Contract := Proof.MlKem.Scrubbed.decapsBodyContract (abi.withConsts constants) 128
+def decapsH768Base := Proof.MlKem.Scrubbed.decapsBodyContract (abi.withConsts constants) 128
 
-theorem decapsH768_entry {s : State} (h : decapsH768Contract.pre s) :
+/-- The contract of the body over the permutation `n` it calls by the address
+in `d8`. -/
+def decapsH768Contract (n : String) := Proof.Sha3.AArch64.Contract.d8 n decapsH768Base
+
+theorem decapsH768_entry {s : State} (h : decapsH768Base.pre s) :
     (entryContractS (decapsAArch64S lay768)).pre s := by
-  unfold decapsH768Contract Proof.MlKem.Scrubbed.decapsBodyContract constants at h
+  unfold decapsH768Base Proof.MlKem.Scrubbed.decapsBodyContract constants at h
   have hp := (pre_consts.mp h)
   exact ⟨decapsS768_base.pre _ hp.1,hp.2⟩
 
-theorem decapsH768_post {s t : State} (h : decapsH768Contract.pre s)
-    (hp : (decapsAArch64S lay768).post s t) : decapsH768Contract.post s t := by
-  unfold decapsH768Contract Proof.MlKem.Scrubbed.decapsBodyContract constants at h ⊢
+theorem decapsH768_post {s t : State} (h : decapsH768Base.pre s)
+    (hp : (decapsAArch64S lay768).post s t) : decapsH768Base.post s t := by
+  unfold decapsH768Base Proof.MlKem.Scrubbed.decapsBodyContract constants at h ⊢
   have hh := pre_consts.mp h
   exact decapsS768_base.post (stripConsts constants s) t hh.1 hp
 
-theorem decapsH768_pub {s t : State} (hs : decapsH768Contract.pre s) (ht : decapsH768Contract.pre t)
-    (hp : decapsH768Contract.pub s t) : (entryContractS (decapsAArch64S lay768)).pub s t := by
-  unfold decapsH768Contract Proof.MlKem.Scrubbed.decapsBodyContract constants at hs ht hp
+theorem decapsH768_pub {s t : State} (hs : decapsH768Base.pre s) (ht : decapsH768Base.pre t)
+    (hp : decapsH768Base.pub s t) : (entryContractS (decapsAArch64S lay768)).pub s t := by
+  unfold decapsH768Base Proof.MlKem.Scrubbed.decapsBodyContract constants at hs ht hp
   have hsp := pre_consts.mp hs
   have htp := pre_consts.mp ht
   have hpp := pub_consts.mp hp
   exact ⟨decapsS768_base.pub (stripConsts constants s) (stripConsts constants t) hsp.1 htp.1 hpp.1,hpp.2⟩
 
-theorem decapsH768_sat : ∃s,decapsH768Contract.pre s := by
-  refine ⟨addTables VG.Proof.MlKem.AArch64.Decaps.sat,?_⟩
-  unfold decapsH768Contract Proof.MlKem.Scrubbed.decapsBodyContract constants
+theorem decapsH768_baseSat : decapsH768Base.pre (addTables VG.Proof.MlKem.AArch64.Decaps.sat) := by
+  unfold decapsH768Base Proof.MlKem.Scrubbed.decapsBodyContract constants
   apply pre_consts.mpr
   constructor
   · change (Proof.MlKem.Scrubbed.decapsBodyContract abi 128).pre (stripConsts constants (addTables VG.Proof.MlKem.AArch64.Decaps.sat))
@@ -225,32 +244,35 @@ theorem decapsS1024_base :
       AArch64.abi, AArch64.argRegs] [VG.Proof.MlKem1024.AArch64.Decaps.sat]
       using VG.Proof.MlKem1024.AArch64.Decaps.sat
 
-def decapsH1024Contract := Proof.MlKem.Scrubbed.decaps1024BodyContract (abi.withConsts constants) 128
+def decapsH1024Base := Proof.MlKem.Scrubbed.decaps1024BodyContract (abi.withConsts constants) 128
 
-theorem decapsH1024_entry {s : State} (h : decapsH1024Contract.pre s) :
+/-- The contract of the body over the permutation `n` it calls by the address
+in `d8`. -/
+def decapsH1024Contract (n : String) := Proof.Sha3.AArch64.Contract.d8 n decapsH1024Base
+
+theorem decapsH1024_entry {s : State} (h : decapsH1024Base.pre s) :
     (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pre s := by
-  unfold decapsH1024Contract Proof.MlKem.Scrubbed.decaps1024BodyContract constants at h
+  unfold decapsH1024Base Proof.MlKem.Scrubbed.decaps1024BodyContract constants at h
   have hp := (pre_consts.mp h)
   exact ⟨decapsS1024_base.pre _ hp.1,hp.2⟩
 
-theorem decapsH1024_post {s t : State} (h : decapsH1024Contract.pre s)
-    (hp : (decapsAArch64S Impl.MlKem1024.AArch64.lay1024).post s t) : decapsH1024Contract.post s t := by
-  unfold decapsH1024Contract Proof.MlKem.Scrubbed.decaps1024BodyContract constants at h ⊢
+theorem decapsH1024_post {s t : State} (h : decapsH1024Base.pre s)
+    (hp : (decapsAArch64S Impl.MlKem1024.AArch64.lay1024).post s t) : decapsH1024Base.post s t := by
+  unfold decapsH1024Base Proof.MlKem.Scrubbed.decaps1024BodyContract constants at h ⊢
   have hh := pre_consts.mp h
   exact decapsS1024_base.post (stripConsts constants s) t hh.1 hp
 
-theorem decapsH1024_pub {s t : State} (hs : decapsH1024Contract.pre s) (ht : decapsH1024Contract.pre t)
-    (hp : decapsH1024Contract.pub s t) :
+theorem decapsH1024_pub {s t : State} (hs : decapsH1024Base.pre s) (ht : decapsH1024Base.pre t)
+    (hp : decapsH1024Base.pub s t) :
     (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pub s t := by
-  unfold decapsH1024Contract Proof.MlKem.Scrubbed.decaps1024BodyContract constants at hs ht hp
+  unfold decapsH1024Base Proof.MlKem.Scrubbed.decaps1024BodyContract constants at hs ht hp
   have hsp := pre_consts.mp hs
   have htp := pre_consts.mp ht
   have hpp := pub_consts.mp hp
   exact ⟨decapsS1024_base.pub (stripConsts constants s) (stripConsts constants t) hsp.1 htp.1 hpp.1,hpp.2⟩
 
-theorem decapsH1024_sat : ∃s,decapsH1024Contract.pre s := by
-  refine ⟨addTables VG.Proof.MlKem1024.AArch64.Decaps.sat,?_⟩
-  unfold decapsH1024Contract Proof.MlKem.Scrubbed.decaps1024BodyContract constants
+theorem decapsH1024_baseSat : decapsH1024Base.pre (addTables VG.Proof.MlKem1024.AArch64.Decaps.sat) := by
+  unfold decapsH1024Base Proof.MlKem.Scrubbed.decaps1024BodyContract constants
   apply pre_consts.mpr
   constructor
   · change (Proof.MlKem.Scrubbed.decaps1024BodyContract abi 128).pre
@@ -408,7 +430,7 @@ theorem tailJP_ok {s₀ u : State} (hp : Pre P (deL P) s₀) (hk : Stk128 P (deL
 
 /-- After the matrix: the re-encryption of `Kem16P.deRestP` from the first `n`
 PRF outputs in their buffers (`encrypt_restP`), the comparison and the selection. -/
-theorem fused_c_P_ok (valid : PrfValidW P (deL P) prf)
+theorem fused_c_P_ok {nm : String} (valid : PrfValidW P (deL P) prf nm)
     {s₀ : State} (hp : Pre P (deL P) s₀) (hr : Noise.Room P) (hc : Calls P) {sB : State} {n : Nat}
     (hn : 2 * P.k ≤ n) (htr : Optimized.TransformTables sB)
     (hB : BInvW true P (deL P) s₀ sB.mem (rhoD P s₀) (P.k * P.k) sB) (hd : DOk P s₀ sB.mem)
@@ -416,7 +438,8 @@ theorem fused_c_P_ok (valid : PrfValidW P (deL P) prf)
     (hcT : Covers [⟨sB.syms "VG_MLKEM_GAMMA",512⟩] (sB.rd++sB.wr))
     (ha : ∀r∈encW P (deL P) s₀ 3 (CB P), (⟨sB.syms "VG_MLKEM_GAMMA",512⟩ : Region).Disjoint r)
     (hn' : ∀ r ∈ noiseW P (deL P) s₀, (⟨sB.syms "VG_MLKEM_GAMMA", 512⟩ : Region).Disjoint r)
-    (hprf : ∀ N < min n (Impl.MlKem.AArch64.Kem16P.prfs P), PrfAt P (deL P) s₀ sB.mem sB.mem N) :
+    (hprf : ∀ N < min n (Impl.MlKem.AArch64.Kem16P.prfs P), PrfAt P (deL P) s₀ sB.mem sB.mem N)
+    (h8d : Proof.Sha3.AArch64.D8 nm sB) :
     WP isa (Impl.MlKem.AArch64.Kem16P.deRestP prf P n) sB (DoneW P s₀ sB.mem (sB.gpr .x24)) := by
   have hw := hp.wf
   have e0 : EInvW true P (deL P) s₀ 3 (CB P) sB.mem sB.mem (sB.gpr .x24) (gD P s₀).2 (mD P s₀) 0 0 sB :=
@@ -424,7 +447,7 @@ theorem fused_c_P_ok (valid : PrfValidW P (deL P) prf)
       fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _⟩
   -- `c'`
   refine WP.seq (WP.mono (encrypt_restP valid hp hr hc (encArgs hw) hn (T := ekT (KPke.dkEk P.params (dkD P s₀)))
-    (ekT_eq s₀) htr e0 ht hcT ha hn' hprf) fun s₁ ⟨mN, fN, e₁, v₁⟩ => ?_)
+    (ekT_eq s₀) htr e0 ht hcT ha hn' hprf h8d) fun s₁ ⟨mN, fN, e₁, v₁⟩ => ?_)
   have kb₁ := e₁.kb
   have c₁ : bytesAt s₁.mem (sA (deL P) s₀ (CB P)) P.ctLen = cprW P s₀ sB.mem :=
     ct_at (U := fun i => compressEncode P.du (KPke.encU P.params (aMW true P (deL P) s₀ sB.mem) (gD P s₀).2 i))
@@ -455,8 +478,8 @@ theorem fused_c_P_ok (valid : PrfValidW P (deL P) prf)
     by_cases h : cD P s₀ = cprW P s₀ sB.mem <;> simp [h]
 
 /-- **The decapsulation computing PRF outputs in the matrix is correct.** -/
-theorem using_correctDP (hash : FixedHash.HashFn) (valid : PrfValidW P (deL P) prf)
-    (hG : FixedHash.HashCorrect hash .x28 KEM.ST KEM.WK 72 6
+theorem using_correctDP (hash : FixedHash.HashFn) {nm : String} (valid : PrfValidW P (deL P) prf nm)
+    (hG : FixedHash.HashCorrect hash nm .x28 KEM.ST KEM.WK 72 6
       [⟨.x28,KEM.MB,32⟩,⟨.x25,768*P.k+32,32⟩] [⟨.x28,KEM.KP,32⟩,⟨.x28,KEM.RB,32⟩])
     {s₀ : State} (hp : Pre P (deL P) s₀) (hk : Stk128 P (deL P) s₀)
     (hs : SrcOk (Impl.MlKem.AArch64.Kem16.jSrc P))
@@ -469,7 +492,7 @@ theorem using_correctDP (hash : FixedHash.HashFn) (valid : PrfValidW P (deL P) p
         (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc P)))
     (depthA : (Impl.MlKem.AArch64.FixedHashDecaps.deStartUsing hash P).aarch64Depth≤1)
     (depthM : (Impl.MlKem.AArch64.Kem16P.matrixP sha3 P (Impl.MlKem.AArch64.Kem16.jSrc P)
-      (.block Impl.MlKem.AArch64.Kem16.tailJ)).aarch64Depth ≤ 8) :
+      (.block Impl.MlKem.AArch64.Kem16.tailJ)).aarch64Depth ≤ 8) (h8d : Proof.Sha3.AArch64.D8 nm s₀) :
     WP isa (Impl.MlKem.AArch64.Kem16P.decaps sha3 hash prf P) s₀ fun t =>
       abiPreserved s₀ t ∧ (decapsAArch64 P).post s₀ t := by
   have hw := hp.wf
@@ -478,7 +501,7 @@ theorem using_correctDP (hash : FixedHash.HashFn) (valid : PrfValidW P (deL P) p
       (by rw [hp.scl]; omega_using [])
     simpa only [R,ptr_zero] using hh
   refine WP.seq (WP.mono_syms (Optimized.WP.tablesDepth (start_using_ok hash hG hp hc tables.transforms tables.gamma
-    tables.gammaRead (Optimized.apart_of_covers tables.gammaApart scratch0)) tables depthA) fun uA ⟨hA,ta⟩ syA=>?_)
+    tables.gammaRead (Optimized.apart_of_covers tables.gammaApart scratch0) h8d) tables depthA) fun uA ⟨hA,ta⟩ syA=>?_)
   have tsA : TStk uA := ts.of syA (by rw [hA.kb.sp])
   refine WP.seq (WP.mono_syms (Optimized.WP.tablesDepth (Hybrid.startJ_ok hp h8 hA) ta (Nat.zero_le _))
     fun sJ ⟨hJ,tj⟩ syJ=>?_)
@@ -490,7 +513,7 @@ theorem using_correctDP (hash : FixedHash.HashFn) (valid : PrfValidW P (deL P) p
   -- The matrix, with `J(z ‖ c)` to `JB` after the pairs absorbing `z ‖ c`.
   refine WP.seq (WP.mono_syms (WP.tables128 (matrixP_ok (sha3 := sha3) (M := jM P) hp hk (jM_ok hp hk hs) ho h0 mt
     fun u hu mu _ => tailJP_ok hp hk ho hJ.a.kp hJ.a.r hJ.a.m hu mu) tj tsJ depthM)
-    fun uB ⟨⟨mG, gG, hB, _⟩, tb⟩ _ => ?_)
+    fun uB ⟨⟨mG, gG, hB, _⟩, tb⟩ syB => ?_)
   -- The re-encryption from the buffers, the comparison and the selection.
   have gB : DOk P s₀ uB.mem := dok_frame hp hk gG hB.fr
   have hprf : ∀ N < min (Impl.MlKem.AArch64.Kem16P.placed P
@@ -504,7 +527,8 @@ theorem using_correctDP (hash : FixedHash.HashFn) (valid : PrfValidW P (deL P) p
     fun r hr' => Optimized.apart_of_covers tb.gammaApart fun a n ⟨q, hq, hc⟩ =>
       noiseW_cov hp hr hB.b.kb a n ⟨q, by rw [List.mem_singleton.mp hq]; exact hr', hc⟩
   exact WP.mono (fused_c_P_ok valid hp hr hc hpl tb.transforms hB.b gB tb.gamma tb.gammaRead
-    (readonly_enc hp hB.b.kb (encArgs hw) tb.gammaApart tb.gammaStack) hn' hprf)
+    (readonly_enc hp hB.b.kb (encArgs hw) tb.gammaApart tb.gammaStack) hn' hprf
+    (h8d.of hB.b.kb.vcs (syB.trans (syJ.trans syA))))
     fun t ht => ⟨ht.abi, post_ofW hB.b ht⟩
 
 end VG.Proof.MlKem.AArch64.Kem16P
@@ -537,12 +561,13 @@ open VG.Spec.Sha3 (bytesAt)
 variable {P : KemLay}
 
 /-- The first phase and `z ‖ c` copied to `scratch`, with what the matrix and `J` need. -/
-theorem prefixJP (hash : FixedHash.HashFn)
-    (hG : FixedHash.HashCorrect hash .x28 KEM.ST KEM.WK 72 6
+theorem prefixJP (hash : FixedHash.HashFn) {nm : String}
+    (hG : FixedHash.HashCorrect hash nm .x28 KEM.ST KEM.WK 72 6
       [⟨.x28,KEM.MB,32⟩,⟨.x25,768*P.k+32,32⟩] [⟨.x28,KEM.KP,32⟩,⟨.x28,KEM.RB,32⟩])
     {s₀ : State} (hp : Pre P (deL P) s₀) (hc : Calls P) (h8 : 8 * (P.ctLen / 8) = P.ctLen)
     (tables : Tables s₀) (ts : TStk s₀)
-    (depthA : (Impl.MlKem.AArch64.FixedHashDecaps.deStartUsing hash P).aarch64Depth ≤ 1) :
+    (depthA : (Impl.MlKem.AArch64.FixedHashDecaps.deStartUsing hash P).aarch64Depth ≤ 1)
+    (h8d : Proof.Sha3.AArch64.D8 nm s₀) :
     WP isa (.seq (Impl.MlKem.AArch64.FixedHashDecaps.deStartUsing hash P)
       (.block (Impl.MlKem.AArch64.Kem16.startJ P))) s₀ fun t =>
       HInvW true P (deL P) (jM P) s₀ t.mem (rhoD P s₀) (jE P s₀) 0 0 t ∧ MT3 P (deL P) s₀ t ∧
@@ -554,7 +579,7 @@ theorem prefixJP (hash : FixedHash.HashFn)
       (by rw [hp.scl]; omega_using [])
     simpa only [R,ptr_zero] using hh
   refine WP.seq (WP.mono_syms (WP.tablesDepth (Decaps.start_using_ok hash hG hp hc tables.transforms tables.gamma
-    tables.gammaRead (Optimized.apart_of_covers tables.gammaApart scratch0)) tables depthA) fun uA ⟨hA,ta⟩ syA=>?_)
+    tables.gammaRead (Optimized.apart_of_covers tables.gammaApart scratch0) h8d) tables depthA) fun uA ⟨hA,ta⟩ syA=>?_)
   have tsA : TStk uA := ts.of syA (by rw [hA.kb.sp])
   refine WP.mono_syms (WP.tablesDepth (Hybrid.startJ_ok hp h8 hA) ta (Nat.zero_le _))
     fun sJ ⟨hJ,tj⟩ syJ=>?_
@@ -564,8 +589,8 @@ theorem prefixJP (hash : FixedHash.HashFn)
     hJ.a.kp, hJ.a.r, hJ.a.m⟩
 
 /-- **The decapsulation computing PRF outputs in the matrix is constant time.** -/
-theorem decapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (hw : P.Wf)
-    (hG : FixedHash.HashCorrect hash .x28 KEM.ST KEM.WK 72 6
+theorem decapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (hw : P.Wf) {nm : String}
+    (hG : FixedHash.HashCorrect hash nm .x28 KEM.ST KEM.WK 72 6
       [⟨.x28,KEM.MB,32⟩,⟨.x25,768*P.k+32,32⟩] [⟨.x28,KEM.KP,32⟩,⟨.x28,KEM.RB,32⟩])
     (hc : Calls P) (h8 : 8 * (P.ctLen / 8) = P.ctLen)
     (hsrc : SrcOk (Impl.MlKem.AArch64.Kem16.jSrc P)) (ho : HashOk P (Impl.MlKem.AArch64.Kem16.jSrc P))
@@ -573,17 +598,22 @@ theorem decapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (h
     (habs : ∀ blk, 136 * blk < (Impl.MlKem.AArch64.Kem16.jSrc P).len → ∃ h,
       (taint.check (Taint.ofRegs [(Impl.MlKem.AArch64.Kem16.jSrc P).r, .x28])
         (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock (Impl.MlKem.AArch64.Kem16.jSrc P) blk)) h).isSome = true)
+    (qa : Code.IcallsP (· = nm) (.seq (Impl.MlKem.AArch64.FixedHashDecaps.deStartUsing hash P)
+        (.block (Impl.MlKem.AArch64.Kem16.startJ P))))
+    (qr : Code.IcallsP (· = nm) (Impl.MlKem.AArch64.Kem16P.deRestP prf P (Impl.MlKem.AArch64.Kem16P.placed P
+        (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc P)))))
     (ha : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
-      (.seq (Impl.MlKem.AArch64.FixedHashDecaps.deStartUsing hash P)
-        (.block (Impl.MlKem.AArch64.Kem16.startJ P))) h).isSome = true)
+      (Code.eraseI (.seq (Impl.MlKem.AArch64.FixedHashDecaps.deStartUsing hash P)
+        (.block (Impl.MlKem.AArch64.Kem16.startJ P)))) h).isSome = true)
     (hj : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
       (.block Impl.MlKem.AArch64.Kem16.tailJ) h).isSome = true)
     (hr : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Impl.MlKem.AArch64.Kem16P.deRestP prf P (Impl.MlKem.AArch64.Kem16P.placed P
-        (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc P)))) h).isSome = true) :
-    ConstantTime isa (entryContractS (decapsAArch64S P)).pre (entryContractS (decapsAArch64S P)).pub
+      (Code.eraseI (Impl.MlKem.AArch64.Kem16P.deRestP prf P (Impl.MlKem.AArch64.Kem16P.placed P
+        (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc P))))) h).isSome = true) :
+    ConstantTime isa (Proof.Sha3.AArch64.Contract.d8 nm (entryContractS (decapsAArch64S P))).pre
+      (Proof.Sha3.AArch64.Contract.d8 nm (entryContractS (decapsAArch64S P))).pub
       (Impl.MlKem.AArch64.Kem16P.decaps sha3 hash prf P) := by
-  intro s u tr ur t v hs hu hpub et eu
+  intro s u tr ur t v ⟨hs, ds⟩ ⟨hu, du⟩ ⟨hpub, called⟩ et eu
   have ss := preSD hs.1
   have su := preSD hu.1
   have ps := kem_unstrip (Decaps.pre_of hw ss.1)
@@ -621,9 +651,10 @@ theorem decapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (h
   obtain ⟨uQ, ua, ub, rfl, fa, fb⟩ := Paired.seq_parts eu
   obtain ⟨sA, tc, td, rfl, ec, ed⟩ := Paired.seq_parts eb
   obtain ⟨uA, uc, ud, rfl, fc, fd⟩ := Paired.seq_parts fb
-  have aeq := symbol_taint [.x0,.x1,.x2,.x3] sp rs sym.2 ha (Exec.seq ea ec) (Exec.seq fa fc)
-  have hsA := Paired.exec_post (prefixJP hash hG ps hc h8 ts.1 ts.2 depthA) (Exec.seq ea ec)
-  have huA := Paired.exec_post (prefixJP hash hG pu hc h8 tu.1 tu.2 depthA) (Exec.seq fa fc)
+  have aeq := symbol_taintI [.x0,.x1,.x2,.x3] (Q := (· = nm)) sp rs sym.2 (fun n hn => hn ▸ called) qa ha
+    (Exec.seq ea ec) (Exec.seq fa fc)
+  have hsA := Paired.exec_post (prefixJP hash hG ps hc h8 ts.1 ts.2 depthA ds) (Exec.seq ea ec)
+  have huA := Paired.exec_post (prefixJP hash hG pu hc h8 tu.1 tu.2 depthA du) (Exec.seq fa fc)
   rw [← rho] at huA
   have syA : sA.syms = s.syms := Exec.syms (Exec.seq ea ec)
   have uyA : uA.syms = u.syms := Exec.syms (Exec.seq fa fc)
@@ -648,8 +679,10 @@ theorem decapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (h
     _ _ _ _ _ _ ⟨⟨hsA.1, huA.1, hsA.2.1, huA.2.1, by rw [syA, uyA]; exact sym.1⟩, rfl, rfl⟩ ee fe
   obtain ⟨⟨_, bs⟩, ⟨_, bu⟩, _⟩ := bm.2
   -- The rest.
-  have ceq := symbol_taint [.x25,.x26,.x27,.x28] (by rw [bs.b.kb.sp, bu.b.kb.sp, sm.sp]) (regs bs.b.kb bu.b.kb)
-    (fun name hn => by rw [Exec.syms ee, Exec.syms fe, syA, uyA]; exact sym.2 name hn) hr ef ff
+  have ceq := symbol_taintI [.x25,.x26,.x27,.x28] (Q := (· = nm)) (by rw [bs.b.kb.sp, bu.b.kb.sp, sm.sp])
+    (regs bs.b.kb bu.b.kb)
+    (fun name hn => by rw [Exec.syms ee, Exec.syms fe, syA, uyA]; exact sym.2 name hn)
+    (fun n hn => by subst hn; rw [Exec.syms ee, Exec.syms fe, syA, uyA]; exact called) qr hr ef ff
   rw [← List.append_assoc ta, ← List.append_assoc ua, aeq, bm.1, ceq]
 
 end VG.Proof.MlKem.AArch64.Kem16P
@@ -674,9 +707,9 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
 open VG.Proof.MlKem.AArch64.Optimized
 open VG.Proof.MlKem.AArch64.Hybrid (decapsAArch64S entryContractS preSD entryS_tables srcOkJ768 srcOkJ1024
-  hashOkJ768 hashOkJ1024 habsJ768 habsJ1024 startJ768_taint startJ1024_taint decapsH768Contract
-  decapsH1024Contract decapsH768_entry decapsH768_post decapsH768_pub decapsH768_sat decapsH1024_entry
-  decapsH1024_post decapsH1024_pub decapsH1024_sat)
+  hashOkJ768 hashOkJ1024 habsJ768 habsJ1024 startJ768_taint startJ1024_taint startJ768_icalls startJ1024_icalls decapsH768Contract
+  decapsH1024Contract decapsH768_entry decapsH768_post decapsH768_pub decapsH768_baseSat decapsH1024_entry
+  decapsH1024_post decapsH1024_pub decapsH1024_baseSat decapsH768Base decapsH1024Base)
 open VG.Proof.MlKem.AArch64.FixedHash (fixedHash hole prfW prfW_valid deG768_correct deG1024_correct symSums
   deStart768_depth deStart1024_depth)
 open VG.Proof.MlKem
@@ -688,18 +721,41 @@ theorem tailJ_taint : ∃ h, ((VectorSymbols.analysis restSymbols).check (Vector
 theorem deRestP768_taint (c : Impl.Sha3.AArch64.Callee)
     (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Impl.MlKem.AArch64.Kem16P.deRestP (prfW c) lay768 (Impl.MlKem.AArch64.Kem16P.placed lay768
-        (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc lay768)))) h).isSome = true := by
+      (Code.eraseI (Impl.MlKem.AArch64.Kem16P.deRestP (prfW c) lay768 (Impl.MlKem.AArch64.Kem16P.placed lay768
+        (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc lay768))))) h).isSome = true := by
   taint_decide_generic c := hole using hS
 
 theorem deRestP1024_taint (c : Impl.Sha3.AArch64.Callee)
     (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
     ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Impl.MlKem.AArch64.Kem16P.deRestP (prfW c) Impl.MlKem1024.AArch64.lay1024
+      (Code.eraseI (Impl.MlKem.AArch64.Kem16P.deRestP (prfW c) Impl.MlKem1024.AArch64.lay1024
         (Impl.MlKem.AArch64.Kem16P.placed Impl.MlKem1024.AArch64.lay1024
-          (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc Impl.MlKem1024.AArch64.lay1024))))
+          (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc Impl.MlKem1024.AArch64.lay1024)))))
       h).isSome = true := by
   taint_decide_generic c := hole using hS
+
+theorem deRestP768_icalls (c : Impl.Sha3.AArch64.Callee) : Code.IcallsP (· = c.name)
+    (Impl.MlKem.AArch64.Kem16P.deRestP (prfW c) lay768 (Impl.MlKem.AArch64.Kem16P.placed lay768
+      (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc lay768)))) := by
+  rw [show Impl.MlKem.AArch64.Kem16P.deRestP (prfW c) lay768 (Impl.MlKem.AArch64.Kem16P.placed lay768
+      (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc lay768))) =
+    Code.fillHoles c.name c.code (Impl.MlKem.AArch64.Kem16P.deRestP (prfW hole) lay768
+      (Impl.MlKem.AArch64.Kem16P.placed lay768
+        (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc lay768)))) by kernel_rfl]
+  exact Code.icallsP_fillHoles (by decide +kernel)
+
+theorem deRestP1024_icalls (c : Impl.Sha3.AArch64.Callee) : Code.IcallsP (· = c.name)
+    (Impl.MlKem.AArch64.Kem16P.deRestP (prfW c) Impl.MlKem1024.AArch64.lay1024
+      (Impl.MlKem.AArch64.Kem16P.placed Impl.MlKem1024.AArch64.lay1024
+        (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc Impl.MlKem1024.AArch64.lay1024)))) := by
+  rw [show Impl.MlKem.AArch64.Kem16P.deRestP (prfW c) Impl.MlKem1024.AArch64.lay1024
+      (Impl.MlKem.AArch64.Kem16P.placed Impl.MlKem1024.AArch64.lay1024
+        (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc Impl.MlKem1024.AArch64.lay1024))) =
+    Code.fillHoles c.name c.code (Impl.MlKem.AArch64.Kem16P.deRestP (prfW hole) Impl.MlKem1024.AArch64.lay1024
+      (Impl.MlKem.AArch64.Kem16P.placed Impl.MlKem1024.AArch64.lay1024
+        (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc Impl.MlKem1024.AArch64.lay1024))))
+    by kernel_rfl]
+  exact Code.icallsP_fillHoles (by decide +kernel)
 
 theorem matrixPJ768_depth :
     (Impl.MlKem.AArch64.Kem16P.matrixP sha3 lay768 (Impl.MlKem.AArch64.Kem16.jSrc lay768)
@@ -719,49 +775,61 @@ theorem matrixPJ1024_depth :
 /-! ## ML-KEM-768 -/
 
 theorem decapsP768_ct (v : Proof.Sha3.AArch64.Permutation) :
-    ConstantTime isa (entryContractS (decapsAArch64S lay768)).pre (entryContractS (decapsAArch64S lay768)).pub
+    ConstantTime isa (Proof.Sha3.AArch64.Contract.d8 v.callee.name (entryContractS (decapsAArch64S lay768))).pre
+      (Proof.Sha3.AArch64.Contract.d8 v.callee.name (entryContractS (decapsAArch64S lay768))).pub
       (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) lay768) :=
   decapsP_ct (sha3 := sha3) (fixedHash v.callee) (prfW v.callee) VG.Proof.MlKem.AArch64.KeyGen.wf768 (deG768_correct v)
     VG.Proof.MlKem.AArch64.Encaps.calls768 (by decide) srcOkJ768 hashOkJ768 (deStart768_depth v) habsJ768
+    (startJ768_icalls v.callee) (deRestP768_icalls v.callee)
     (startJ768_taint v.callee (symSums v)) tailJ_taint (deRestP768_taint v.callee (symSums v))
 
 theorem decapsP768_verified (v : Proof.Sha3.AArch64.Permutation) : Verified AArch64.target
-    (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) lay768) decapsH768Contract := by
-  refine Verified.of_correct (T := AArch64.target) (k := entryContractS (decapsAArch64S lay768)) ?_
+    (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) lay768)
+    (decapsH768Contract v.callee.name) := by
+  refine Verified.of_correct (T := AArch64.target)
+    (k := Proof.Sha3.AArch64.Contract.d8 v.callee.name (entryContractS (decapsAArch64S lay768))) ?_
     (decapsP768_ct (sha3 := sha3) v) ?_
-  · intro s h
+  · intro s ⟨h, d⟩
     have ss := preSD h.1
     have ts := entryS_tables h
     exact using_correctDP (sha3 := sha3) (fixedHash v.callee) (prfW_valid v) (deG768_correct v)
       (kem_unstrip (Decaps.pre_of VG.Proof.MlKem.AArch64.KeyGen.wf768 ss.1)) ⟨ss.2.sp, ss.2.args⟩
       srcOkJ768 hashOkJ768 (by decide) Noise.room768 VG.Proof.MlKem.AArch64.Encaps.calls768 ts.1 ts.2
-      (by decide) (by decide) (deStart768_depth v) (matrixPJ768_depth (sha3 := sha3))
-  · exact ⟨fun _ h => decapsH768_entry h, fun _ _ h hp => decapsH768_post h hp,
-      fun _ _ hs ht hp => decapsH768_pub hs ht hp, decapsH768_sat⟩
+      (by decide) (by decide) (deStart768_depth v) (matrixPJ768_depth (sha3 := sha3)) d
+  · exact ⟨fun _ h => ⟨decapsH768_entry h.1, h.2⟩, fun _ _ h hp => decapsH768_post h.1 hp,
+      fun _ _ hs ht hp => ⟨decapsH768_pub hs.1 ht.1 hp.1, hp.2⟩,
+      Proof.Sha3.AArch64.Contract.d8_sat (s := addTables VG.Proof.MlKem.AArch64.Decaps.sat)
+        (show decapsH768Base.pre ((addTables VG.Proof.MlKem.AArch64.Decaps.sat).setV .v8 _) from decapsH768_baseSat)⟩
 
 /-! ## ML-KEM-1024 -/
 
 theorem decapsP1024_ct (v : Proof.Sha3.AArch64.Permutation) :
-    ConstantTime isa (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pre
-      (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pub
+    ConstantTime isa
+      (Proof.Sha3.AArch64.Contract.d8 v.callee.name (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024))).pre
+      (Proof.Sha3.AArch64.Contract.d8 v.callee.name (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024))).pub
       (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024) :=
   decapsP_ct (sha3 := sha3) (fixedHash v.callee) (prfW v.callee) VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 (deG1024_correct v)
     VG.Proof.MlKem1024.AArch64.Encaps.calls1024 (by decide) srcOkJ1024 hashOkJ1024 (deStart1024_depth v) habsJ1024
+    (startJ1024_icalls v.callee) (deRestP1024_icalls v.callee)
     (startJ1024_taint v.callee (symSums v)) tailJ_taint (deRestP1024_taint v.callee (symSums v))
 
 theorem decapsP1024_verified (v : Proof.Sha3.AArch64.Permutation) : Verified AArch64.target
     (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
-    decapsH1024Contract := by
+    (decapsH1024Contract v.callee.name) := by
   refine Verified.of_correct (T := AArch64.target)
-    (k := entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)) ?_ (decapsP1024_ct (sha3 := sha3) v) ?_
-  · intro s h
+    (k := Proof.Sha3.AArch64.Contract.d8 v.callee.name (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)))
+    ?_ (decapsP1024_ct (sha3 := sha3) v) ?_
+  · intro s ⟨h, d⟩
     have ss := preSD h.1
     have ts := entryS_tables h
     exact using_correctDP (sha3 := sha3) (fixedHash v.callee) (prfW_valid v) (deG1024_correct v)
       (kem_unstrip (Decaps.pre_of VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 ss.1)) ⟨ss.2.sp, ss.2.args⟩
       srcOkJ1024 hashOkJ1024 (by decide) Noise.room1024 VG.Proof.MlKem1024.AArch64.Encaps.calls1024 ts.1 ts.2
-      (by decide) (by decide) (deStart1024_depth v) (matrixPJ1024_depth (sha3 := sha3))
-  · exact ⟨fun _ h => decapsH1024_entry h, fun _ _ h hp => decapsH1024_post h hp,
-      fun _ _ hs ht hp => decapsH1024_pub hs ht hp, decapsH1024_sat⟩
+      (by decide) (by decide) (deStart1024_depth v) (matrixPJ1024_depth (sha3 := sha3)) d
+  · exact ⟨fun _ h => ⟨decapsH1024_entry h.1, h.2⟩, fun _ _ h hp => decapsH1024_post h.1 hp,
+      fun _ _ hs ht hp => ⟨decapsH1024_pub hs.1 ht.1 hp.1, hp.2⟩,
+      Proof.Sha3.AArch64.Contract.d8_sat (s := addTables VG.Proof.MlKem1024.AArch64.Decaps.sat)
+        (show decapsH1024Base.pre ((addTables VG.Proof.MlKem1024.AArch64.Decaps.sat).setV .v8 _)
+          from decapsH1024_baseSat)⟩
 
 end VG.Proof.MlKem.AArch64.Kem16P
