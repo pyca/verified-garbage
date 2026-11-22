@@ -103,9 +103,10 @@ theorem joint_mul_checks : JointMulChecks p224v publicJoint :=
     joint_infinity_ct,joint_counter_ct,fastGenerator_checks,fastPeer_checks⟩
 
 theorem joint_doubler (hc : CfgOk p224v) (hC : Weierstrass.Law p224v.C) :
-    JointDoubler publicJoint p224v.C size (Joint.jacDouble publicJoint.K) :=
-  jacDouble_doubler joint_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
-    jointDouble_ct joint_cached_checks.copy
+    JointDoubler publicJoint p224v.C size (jointDouble publicJoint.K) :=
+  call_doubler (doubleBody_doubler joint_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _)
+    (jdblOk_dblJMul hC hc.am3) jointDouble_ct joint_cached_checks.copy) (by decide +kernel)
+    (by decide) _
 
 /-- `jointPrefix p224v` without its displacements, as a literal of shared blocks
 (`materialize_shared`): what its constant-time check analyses

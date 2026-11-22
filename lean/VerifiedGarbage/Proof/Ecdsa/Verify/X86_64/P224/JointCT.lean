@@ -236,7 +236,7 @@ include hL hT hI
 
 theorem jointVerify_p224_public_ct :
     ConstantTime isa (VPre p224v) (JointPublic p224v p224Table)
-      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p224v publicJoint (Joint.jacDouble publicJoint.K)).inline := by
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p224v publicJoint (jointDouble publicJoint.K)).inline := by
   have hc := p224v_ok hI
   refine jointVerify_ct_of_points hc joint_before_ct ?_ joint_after_ct
   intro s₀ t₀ ps pt pub
