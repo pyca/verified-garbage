@@ -142,8 +142,10 @@ theorem doubleHalfEnv_run (S : RcbSlots) (p : Pt) (E : Nat → Fin Spec.P256.p)
   simp only [doubleHalfEnv,DoubleHalf.before,DoubleHalf.after,runOps,List.foldl,FOp.run,
     Function.update_apply,halfFe,dblJF,Prod.mk.injEq, *,ite_true,ite_false]
   constructor
-  · grind
-  constructor <;> grind
+  -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+  -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+  · grind -lia
+  constructor <;> grind -lia
 
 end VG.Proof.P256.X86_64
 

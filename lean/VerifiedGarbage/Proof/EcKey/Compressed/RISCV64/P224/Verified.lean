@@ -679,7 +679,9 @@ def DPostC (s s' : State) : Prop :=
 `grind` reads. -/
 private theorem neg_mul_neg_self (r : Fe W) : -r * -r = r * r := by grind
 private theorem sub_eq_zero_iff_eq (a b : Fe W) : a - b = 0 ↔ a = b := by
-  constructor <;> intro h <;> grind
+  -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+  -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+  constructor <;> intro h <;> grind -lia
 
 /-- The root, the checks and the output, after the digits. -/
 theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s s₆ s₇ : State} (hs : DPre s) (F : FPost s s₆)

@@ -619,7 +619,9 @@ theorem toM_car {E : Env} {k : Nat} {v : F5 T} {x : Fin pN} (cc : Nat)
   obtain hu := mul_rinv (unitMod_pow_two (m := pN) (by decide) 256)
   unfold toM
   rw [ofNat_mod, ← e', e]
-  grind
+  -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+  -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+  grind -lia
 
 theorem pk_regs {n : Nat} (hn : n = 4) :
     ∀ r ∈ [Reg.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12], r ∈ clob n := by

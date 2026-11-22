@@ -251,7 +251,9 @@ theorem fieldEqual_ok {s : State} {base : Addr} (hs : Scratch s base) (a b : Slo
   · rw [tz, vu]
     change some (decide (env s.mem base a - env s.mem base b = 0)) = _
     have e : env s.mem base a - env s.mem base b = 0 ↔ env s.mem base a = env s.mem base b :=
-      ⟨fun h => by grind, fun h => by grind⟩
+      -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+      -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+      ⟨fun h => by grind -lia, fun h => by grind -lia⟩
     simp only [e]
   · intro i hi
     rw [tm, vu]

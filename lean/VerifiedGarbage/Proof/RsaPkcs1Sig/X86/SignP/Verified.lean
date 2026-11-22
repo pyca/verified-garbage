@@ -180,7 +180,7 @@ theorem signFnP_relCT (v : CrtImpl) (w : CrtPImpl) {bs1 bs2 : Fin 8 → List Byt
     RelCT isa (fun s t => (FnInput g bs1 s ∧ SPreCtx g bs1 P L (entered s)) ∧
       (FnInput g bs2 t ∧ SPreCtx g bs2 P L (entered t)))
       (code (privNameP v) (privCodeP v w) callArgsP) (fun _ _ => True) := by
-  unfold code
+  unfold Impl.RsaPkcs1Sig.X86.Sign.code
   refine RelCT.frame (R := fun _ _ => True) ?_ ?_
   · intro s t h
     have eq := h.1.1.savedSp.trans h.2.1.savedSp.symm

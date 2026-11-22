@@ -128,9 +128,38 @@ on when it writes the module's constants from it. -/
 def Ctx.findConst? (ctx : Ctx) (c : Name) : Option ConstantInfo :=
   ctx.env.find? c <|> ctx.env.toKernelEnv.find? c
 
-/-- Whether code may run something other than what the kernel checked for `c`. -/
-def overridden (env : Environment) (c : Name) : Bool :=
+/-- Whether `c` carries `implemented_by`, `extern` or `export`. -/
+def carriesOverride (env : Environment) (c : Name) : Bool :=
   (Compiler.getImplementedBy? env c).isSome || isExtern env c || (getExportNameFor? env c).isSome
+
+/-- Whether `c` is the `ctorIdx` of an inductive `I` (its constructor's index, by
+`I.casesOn`) whose compiled code is the one Lean generates for it (since 4.36,
+`Lean.Meta.Constructions.CtorIdx`): `implemented_by` the `I.ctorIdx._impl` it
+generates, which reads the index from the value's constructor tag
+(`getObjTagNat`) and carries no override of its own. Lean's compiler is trusted
+to give each constructor its index as its tag, as it is trusted to compile
+`I.casesOn` by it. -/
+def isCoreCtorIdx (env : Environment) (c : Name) : Bool := Id.run do
+  let .str ind "ctorIdx" := c | return false
+  unless env.find? ind matches some (.inductInfo _) do return false
+  let impl := Name.str c "_impl"
+  unless Compiler.getImplementedBy? env c == some impl do return false
+  if isExtern env c || (getExportNameFor? env c).isSome || carriesOverride env impl then
+    return false
+  let some (.defnInfo v) := env.find? impl | return false
+  -- `fun … x => getObjTagNat x`
+  let rec body : Expr → Expr
+    | .lam _ _ b _ => body b
+    | e => e
+  return match body v.value with
+    | .app (.app (.const ``getObjTagNat _) _) (.bvar 0) => true
+    | _ => false
+
+/-- Whether code may run something other than what the kernel checked for `c`: it
+carries `implemented_by`, `extern` or `export`, but for Lean's own compiled code of
+an inductive's `ctorIdx` (`isCoreCtorIdx`). -/
+def overridden (env : Environment) (c : Name) : Bool :=
+  carriesOverride env c && !isCoreCtorIdx env c
 
 /-- The sentinel axiom a constant depends on when its record is missing: no standard
 axiom, so the audit fails, naming it. -/

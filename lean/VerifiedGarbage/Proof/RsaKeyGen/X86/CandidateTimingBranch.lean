@@ -1227,7 +1227,7 @@ theorem finish_trace {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 3
 prepared header. -/
 theorem code_trace {g : Geometry} (v : g.Valid) {capacity : Nat} {p : BitVec 32} :
     RelCT isa (fun s t => Prepared g capacity p s ∧ Prepared g capacity p t) code (fun _ _ => True) := by
-  unfold code
+  unfold Impl.RsaKeyGen.X86.MrExponentRt.code
   exact RelCT.seq (marker_trace v) (RelCT.seq (copyTops_trace v) (RelCT.seq (half_trace v)
     (RelCT.seq (halfIf_trace v 1) (RelCT.seq (halfIf_trace v 2) (RelCT.seq (halfIf_trace v 3) (finish_trace v))))))
 

@@ -420,11 +420,15 @@ def mcdtMnemonics : List String :=
     "pmuludq", "vplzcntd", "vplzcntq", "vpmadd52huq", "vpmadd52luq", "vpmaddubsw", "vpmaddwd",
     "vpmuldq", "vpmulhrsw", "vpmulhuw", "vpmulhw", "vpmulld", "vpmullq", "vpmullw", "vpmuludq"]
 
+/-- The first characters of `mcdtMnemonics`. -/
+def mcdtInitials : List Char := (mcdtMnemonics.map (·.front)).eraseDups
+
 /-- Whether the text of `i` (`asm`) has an instruction of Intel's list: one
 whose mnemonic, its first word, is among `mcdtMnemonics`. Only a line that
-starts with one of them can be one, and few do: the others are not split. -/
+starts with the first character of one of them (`mcdtInitials`) can be one,
+and few do: the others are not split. -/
 def Instr.mcdt (i : Instr) : Bool :=
-  i.asm.any fun t => mcdtMnemonics.any (t.startsWith ·) &&
+  i.asm.any fun t => mcdtInitials.contains t.front &&
     mcdtMnemonics.contains ((t.splitOn " ").headD "")
 
 /-- `test eax, eax` and a branch on `e` (`je`), after a call of `vg_mcdt_enter`:

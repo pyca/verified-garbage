@@ -61,6 +61,10 @@ weak.linter.fast_instance_existing = false
 weak.linter.trailingWhitespace = false
 weak.linter.unicodeLinter = false
 weak.linter.whitespaceBeforeSemicolon = false
+# Mathlib's `concreteInstances` (new in v4.36), which rejects an instance
+# argument with no free variables, such as `[DivstepInv]`: here a deliberate
+# assumption, a `Prop` class proven in a module the proof does not import.
+weak.linter.concreteInstances = false
 # Batteries' `unreachableTactic` and `unnecessarySeqFocus` linters, on in
 # every module that imports them (through Mathlib), also run in the
 # interpreter: summed over the CI build cache's `.trace` files, about 200 s of
@@ -72,7 +76,7 @@ weak.linter.unnecessarySeqFocus = false
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4"
-rev = "v4.35.0"
+rev = "v4.36.0"
 
 [[lean_lib]]
 name = "VerifiedGarbage"

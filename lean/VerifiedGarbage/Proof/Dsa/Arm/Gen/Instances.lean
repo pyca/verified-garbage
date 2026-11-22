@@ -181,7 +181,7 @@ theorem body_stack (name : String) (round : Prog isa) : armStack (body name roun
 theorem code_stack (name : String) (round : Prog isa) :
     armStack (code name round) ≤ 88 + armStack round := by
   have := body_stack name round
-  simp only [code, armStack, List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero]
+  simp only [Impl.Dsa.Arm.ProbablePrime.code, armStack, List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero]
   omega_using [this]
 
 end VG.Proof.Dsa.Arm.Prime

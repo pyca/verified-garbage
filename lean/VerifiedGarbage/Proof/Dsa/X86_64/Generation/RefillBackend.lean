@@ -490,7 +490,7 @@ theorem code_noMx (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !touchesMxcsr i) = true)
     (hr : round.allInstrs (fun i => !touchesMxcsr i) = true) :
     (code mul round).allInstrs (fun i => !touchesMxcsr i) = true := by
-  simp only [code, Impl.Bignum.X86_64.seqs, Code.allInstrs,
+  simp only [Impl.Dsa.X86_64.ProbablePrime.code, Impl.Bignum.X86_64.seqs, Code.allInstrs,
     VG.Proof.Dsa.X86_64.Generation.primeBytes_noMx mul round hm hr, Bool.true_and]
   lit_decide
 
@@ -499,7 +499,7 @@ theorem code_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (code mul round).x86_64Depth ≤ 184 := by
   have hp := VG.Proof.Dsa.X86_64.Generation.primeBytes_depth mul round hm hr
   unfold generationDepth at hp
-  simp only [code, setup, Impl.Bignum.X86_64.seqs, sizedWorkspace, Code.x86_64Depth, Instr.frameBytes,
+  simp only [Impl.Dsa.X86_64.ProbablePrime.code, setup, Impl.Bignum.X86_64.seqs, sizedWorkspace, Code.x86_64Depth, Instr.frameBytes,
     Nat.zero_max, Nat.max_zero]
   exact Nat.add_le_add_right hp 56
 

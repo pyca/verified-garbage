@@ -118,7 +118,9 @@ theorem mixedResult_eq (p q : Spec.Ed25519.Point) (hz : q.Z = 1) :
     mixedResult p.X p.Y p.Z p.T (q.Y - q.X) (q.Y + q.X) (q.T * 2 * Spec.Ed25519.d) =
       Spec.Ed25519.pointAdd p q := by
   simp only [mixedResult, Spec.Ed25519.pointAdd, hz]
-  congr 1 <;> grind
+  -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+  -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+  congr 1 <;> grind -lia
 
 end VG.Proof.Ed25519.AArch64.Point64
 

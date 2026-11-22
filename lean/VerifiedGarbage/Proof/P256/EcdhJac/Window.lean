@@ -502,7 +502,9 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
       change wordsVal s₁.mem base 768 4=0 at e2
       change wordsVal s₁.mem base 5400 4=0 at e3
       change toM _ _ (wordsVal s₁.mem base 5400 4)=toM _ _ (wordsVal s₁.mem base 768 4)*toM _ _ (wordsVal s₁.mem base 768 4)
-      rw [e2,e3,toM_zero]; grind
+      -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+      -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+      rw [e2,e3,toM_zero]; grind -lia
     · exact (p₁ (by omega_arith)).z2
   obtain hc3 : tmv C 4 base s₁ 5432=tmv C 4 base s₁ 5400*tmv C 4 base s₁ K.E.z := by
     by_cases hz : magH 16 (Window5.nib (k+offset) j)=0
@@ -511,7 +513,9 @@ theorem signedBlock_ok {base : Addr} {P : Point C} {k j : Nat} {s : State}
       change wordsVal s₁.mem base 5432 4=0 at e4
       change wordsVal s₁.mem base 5400 4=0 at e3
       unfold tmv
-      rw [e4,e3,toM_zero]; grind
+      -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+      -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+      rw [e4,e3,toM_zero]; grind -lia
     · exact (p₁ (by omega_arith)).z3
   refine ⟨fr₁.trans fr₂,(kp₂.gpr _ (x19_not_clob _)).trans c₁,iv.to_tmv,fun hz=>?_,?_,?_,?_,fun hnz=>?_⟩
   · rw [hez]; unfold tmv; rw [show wordsVal s₁.mem base K.E.z 4=0 from z₁ hz 2 (by decide),toM_zero]

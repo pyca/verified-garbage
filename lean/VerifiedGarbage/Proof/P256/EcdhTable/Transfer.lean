@@ -29,8 +29,10 @@ theorem zaddu_x (hC : Law C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P
   intro hx
   obtain ⟨ne1, ne2⟩ := Window5.tbl_noexc hC hO hP hP0 hn17 h2 h15
   have hx' : X1 * (Z * Z) - X2 * (Z * Z) = 0 := by
-    have e : X1 * (Z * Z) - X2 * (Z * Z) = (X1 - X2) * (Z * Z) := by grind
-    rw [e, hx]; grind
+    -- `-lia`: Lean 4.36's `grind` builds a proof the kernel rejects from `lia`
+    -- over `Fin` of a non-literal modulus (lean4#15857, fixed in 4.37).
+    have e : X1 * (Z * Z) - X2 * (Z * Z) = (X1 - X2) * (Z * Z) := by grind -lia
+    rw [e, hx]; grind -lia
   by_cases hy : Y1 * Z * (Z * Z) - Y2 * Z * (Z * Z) = 0
   · exact ne1 (hm.same hC h1 hz hz hx' hy)
   · exact ne2 (hm.opposite hC (hC.onCurve_mul hP m) hP h1 hz hz hx' hy)

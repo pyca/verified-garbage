@@ -141,7 +141,7 @@ theorem code_stores {M : Mod} (hn : M.n=4) (op : FOp) :
     ∃ is,code M op=is++stores (outputRegs M op) op.out := by
   cases op with
   | mul o a b =>
-    simp only [code,opCode,mul,hn,show 4<7 from by decide,↓reduceIte,mulR,mulG,outputRegs,FOp.out]
+    simp only [ForwardField.code,opCode,mul,hn,show 4<7 from by decide,↓reduceIte,mulR,mulG,outputRegs,FOp.out]
     rcases prodK? M with _ | k
     · simp only [Nat.reduceEqDiff, false_and, and_false, ↓reduceIte]
       exact ⟨_,rfl⟩
@@ -151,13 +151,13 @@ theorem code_stores {M : Mod} (hn : M.n=4) (op : FOp) :
       · exact ⟨_, by rw [sqrRX, hX, ← List.append_assoc]⟩
       · exact ⟨_, by rw [mulRX, hX, ← List.append_assoc]⟩
   | add o a b =>
-    simp only [code,outputRegs,FOp.out]
+    simp only [ForwardField.code,outputRegs,FOp.out]
     split
     · exact ⟨_,rfl⟩
     · simp only [opCode,add,hn,show 4<7 from by decide,↓reduceIte,addR]
       exact ⟨_,rfl⟩
   | sub o a b =>
-    simp only [code,opCode,sub,outputRegs,FOp.out]
+    simp only [ForwardField.code,opCode,sub,outputRegs,FOp.out]
     split
     · exact ⟨_,rfl⟩
     · simp only [hn,show 4<7 from by decide,Nat.reduceEqDiff,and_false,↓reduceIte,subR]
@@ -193,7 +193,7 @@ theorem code_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
   | mul o a b => exact fop_ok hL hm hI hS hR
   | sub o a b => exact fop_ok hL hm hI hS hR
   | add o a b =>
-    simp only [code]
+    simp only [ForwardField.code]
     split
     · rename_i hab
       obtain ⟨rfl,hn⟩ := hab

@@ -756,7 +756,7 @@ theorem rdCode_correct [GcdLaw gcdB] (s : State) (h : rdA.pre s) :
   suffices hwp : WP isa code s fun s' => abiPreserved s s' ∧ rdA.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, hg, hp⟩
-  unfold code
+  unfold RecoverDet.code
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (rpHead_ok' c) fun t₁ h₁ => ?_
@@ -1344,7 +1344,7 @@ theorem failR_ct : RelCT isa (Two GFr) fail fun _ _ => True := by
 
 /-- `vg_rsa_recover_primes_det` leaks the same in runs with the same public data. -/
 theorem rdCode_ct [GcdLaw gcdB] : RelCT isa (Two RDRel) code fun _ _ => True := by
-  unfold code
+  unfold RecoverDet.code
   refine RelCT.seq (R := Two RD3) (RelCT.block_append (RelCT.seq rdEntry_ct ?_)) ?_
   -- The modulus' check.
   · refine two_piece [.x2, .x3] (fun p s₁ s₂ ⟨σ₁, c₁, h₁⟩ ⟨σ₂, c₂, h₂⟩ r hr => by

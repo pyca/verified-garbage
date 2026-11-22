@@ -1159,7 +1159,7 @@ theorem ct (sha3 : Bool) : ConstantTime isa K.pre K.pub (code sha3) := by
   · -- Unfolded as far as the rounds, whose code has a literal (`.block Scalar.Lazy.permutationCore`)
     -- that `taint_decide` finds only where the goal names it.
     refine VectorTaint.constantTime (AArch64.Taint.ofRegs [.x0,.x1,.x2]) ?_ (by
-      unfold code Impl.Sha3.AArch64.Hybrid.X3.scalar
+      unfold Impl.Sha3.AArch64.Hybrid.X3.code Impl.Sha3.AArch64.Hybrid.X3.scalar
       taint_decide)
     intro s₁ s₂ _ _ ⟨h0,h1,h2,hsp⟩
     refine ⟨hsp,fun r hr => ?_⟩

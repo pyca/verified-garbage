@@ -1000,13 +1000,13 @@ def searchCode (v : RoundImpl) : Prog isa := code (candidateCode v)
 
 private theorem controller_all (p : Instr → Bool) (c : Prog isa)
     (hp : (code (.block [])).all p = true) (hc : c.all p = true) : (code c).all p = true := by
-  unfold code iteration candidateRun at hp ⊢
+  unfold Impl.Ffdh.X86_64.Generation.Search.code iteration candidateRun at hp ⊢
   simp only [seqs, Code.all, List.all_nil, hc, Bool.and_true] at hp ⊢
   exact hp
 
 private theorem controller_ctlC (c : Prog isa) (hp : ctlC (code (.block [])) = true) (hc : ctlC c = true) :
     ctlC (code c) = true := by
-  unfold code iteration candidateRun at hp ⊢
+  unfold Impl.Ffdh.X86_64.Generation.Search.code iteration candidateRun at hp ⊢
   simp only [seqs, ctlC, hc, Bool.and_true] at hp ⊢
   exact hp
 
@@ -1020,7 +1020,7 @@ theorem searchCode_ctlC (v : RoundImpl) : ctlC (searchCode v) = true :=
 theorem searchCode_depth (v : RoundImpl) : (searchCode v).x86_64Depth ≤ 160 := by
   have he : exhausted.x86_64Depth = 0 := rfl
   have hc : classify.x86_64Depth = 0 := rfl
-  unfold searchCode code iteration candidateRun
+  unfold searchCode Impl.Ffdh.X86_64.Generation.Search.code iteration candidateRun
   simp only [seqs, Code.x86_64Depth, Instr.frameBytes, he, hc, Nat.zero_max, Nat.max_zero]
   exact Nat.add_le_add_right (candidateCode_depth v) 32
 
@@ -1172,7 +1172,7 @@ private theorem loop_done (v : RoundImpl) (p : SearchPublic) (s : State) (h : Se
 
 theorem search_code_ct (v : RoundImpl) :
     RelCT isa (Two SearchInput) (searchCode v) (fun _ _ => True) := by
-  unfold searchCode code
+  unfold searchCode Impl.Ffdh.X86_64.Generation.Search.code
   change RelCT isa _ (.seq _ (.seq _ _)) _
   exact RelCT.seq (two_post search_entry_ct entry_started)
     (RelCT.seq (two_post (two_map initialPoint (fun _ _ h => h) (search_loop_ct v)) (loop_done v))
@@ -1421,7 +1421,7 @@ theorem search_correct_ok (v : RoundImpl) {s : State} (h : searchPre s) :
       (∀ reg ∈ calleeSaved, t.gpr reg = s.gpr reg) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   let p := searchOfState s
   have hp : SearchInput p s := ⟨h, rfl⟩
-  unfold code
+  unfold Impl.Ffdh.X86_64.Generation.Search.code
   change WP isa (.seq _ (.seq _ _)) s _
   refine WP.seq (WP.mono (search_start hp) fun u hu => ?_)
   have hinv : SearchInvariant p s (searchResult s) (p.remaining + 1) u :=

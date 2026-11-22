@@ -3686,7 +3686,7 @@ theorem gen_correct_ok (sname : String) (c : Search.Cand) (name : String) {kc : 
   obtain hp : GenInput p s := ⟨hpre, rfl⟩
   have f := hp.facts
   have room : 256 ≤ s.sp.toNat := hpre.1
-  unfold code body
+  unfold Impl.RsaKeyGen.Arm.Generate.code body
   rw [show pushBytes = 4 * pushRegs.length from rfl]
   refine WP.frame (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_
   refine WP.seq (WP.mono (entry_ok hp) fun s1 ⟨g1, h11, hm1⟩ => ?_)

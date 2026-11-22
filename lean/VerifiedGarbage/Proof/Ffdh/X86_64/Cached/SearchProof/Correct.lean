@@ -471,7 +471,7 @@ theorem key_correct_ok (v : RoundImpl) {s : State} (h : keyPre s) :
       (∀ reg ∈ calleeSaved, t.gpr reg = s.gpr reg) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   let p := keyOfState s
   have hp : KeyInput p s := ⟨h, rfl⟩
-  unfold code
+  unfold Impl.Ffdh.X86_64.Cached.Search.code
   change WP isa (.seq _ (.seq _ _)) s _
   refine WP.seq (WP.mono (key_start hp) fun u hu => ?_)
   have hinv : KeyInvariant p s (keyResult s) (128 * p.keys + p.scalars + 1) u :=
