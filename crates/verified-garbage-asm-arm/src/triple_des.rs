@@ -15921,7 +15921,3 @@ cmp r2, r2
 bx lr",
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_triple_des_ecb_encrypt_entry.rs"]
-pub(crate) mod vg_triple_des_ecb_encrypt_entry;

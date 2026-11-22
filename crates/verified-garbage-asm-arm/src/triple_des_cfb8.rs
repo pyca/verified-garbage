@@ -54,7 +54,7 @@ str r9, [r8, #52]
 mov r0, r4
 add r1, r8, #48
 mov r2, #1
-bl {vg_triple_des_ecb_encrypt_entry}
+bl {vg_triple_des_ecb_encrypt}
 ldrb r9, [r6, #0]
 ldrb r10, [r8, #48]
 eor r9, r9, r10
@@ -124,7 +124,7 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_triple_des_ecb_encrypt_entry = sym super::triple_des::vg_triple_des_ecb_encrypt_entry::vg_triple_des_ecb_encrypt_entry,
+        vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
     )
 }
 
@@ -179,7 +179,7 @@ str r9, [r8, #52]
 mov r0, r4
 add r1, r8, #48
 mov r2, #1
-bl {vg_triple_des_ecb_encrypt_entry}
+bl {vg_triple_des_ecb_encrypt}
 ldrb r9, [r8, #41]
 strb r9, [r8, #40]
 ldrb r9, [r8, #42]
@@ -249,6 +249,6 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_triple_des_ecb_encrypt_entry = sym super::triple_des::vg_triple_des_ecb_encrypt_entry::vg_triple_des_ecb_encrypt_entry,
+        vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
     )
 }

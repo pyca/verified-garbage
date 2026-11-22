@@ -44,7 +44,7 @@ vg_triple_des_cbc_encrypt_chained:
 	mov r0, r4
 	add r1, r8, #40
 	mov r2, #1
-	bl {vg_triple_des_ecb_encrypt_entry}
+	bl {vg_triple_des_ecb_encrypt}
 	ldr r9, [r8, #40]
 	str r9, [r6, #0]
 	ldr r9, [r8, #44]
