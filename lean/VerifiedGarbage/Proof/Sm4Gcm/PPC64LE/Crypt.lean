@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Verified
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.KeyVerified
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
@@ -32,17 +33,17 @@ public import VerifiedGarbage.Impl.Sm4.PPC64LE.ExpandKey
 section
 
 /-!
-# SM4-GCM on PPC64LE: SM4's code, inlined
+# SM4-GCM on PPC64LE: SM4's code
 
 Untrusted: everything here is checked by Lean. SM4-GCM runs SM4's counter
-mode (`Impl.Sm4.PPC64LE.ctr32`) and key expansion (`Impl.Sm4.PPC64LE.expandKey`)
-inline, from their proofs against their own contracts, as AES-GCM calls
-AES's (`Proof/AesGcm/PPC64LE/Callee.lean`): what the arguments in `r3`–`r7`
-must be (`CtrCall`, `KeyCall`), and what the code leaves (`CtrPost`,
-`KeyPost`): its postcondition, memory changed only in the buffers it writes,
-and the nonvolatile registers and the link register kept. `CT.ctr` and
-`CT.key`: such code, with the same public arguments in both runs, is
-constant time.
+mode (`Impl.Sm4.PPC64LE.ctr32`) inline and calls its key expansion
+(`keyCall`, `vg_sm4_expand_key_core`), from their proofs against their own
+contracts, as AES-GCM calls AES's (`Proof/AesGcm/PPC64LE/Callee.lean`): what
+the arguments in `r3`–`r7` must be (`CtrCall`, `KeyCall`), and what the code
+leaves (`CtrPost`, `KeyPost`): its postcondition, memory changed only in the
+buffers it writes, and the nonvolatile registers kept (and the link register,
+which the counter mode saves and restores itself). `CT.ctr` and `CT.key`:
+such code, with the same public arguments in both runs, is constant time.
 
 `wp_inline` and `relCT_inline` run verified code that may call functions
 but has no frames, narrowed to regions of its own (`WP.narrow`,
@@ -206,41 +207,48 @@ structure KeyPost (s : State) (K C S : Addr) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
-  lr : s'.lr = s.lr
   saved : ∀ r ∈ preserved, s'.gpr r = s.gpr r
   frame : Frame [⟨C, 128⟩, ⟨S, kBytes⟩] s.mem s'.mem
   out : Spec.Sm4.scheduleAt s'.mem C = Spec.Sm4.expandKey (Spec.Sm4.blockAt s.mem K)
 
+/-- The call of SM4's key expansion, `vg_sm4_expand_key_core`. -/
+abbrev keyCall : Prog isa := .call "vg_sm4_expand_key_core" Impl.Sm4.PPC64LE.expandKey
+
 theorem KeyCall.pre {s : State} {K C S : Addr} (h : KeyCall s K C S) :
-    Proof.Sm4.expandKeyPPC64LE.pre (s.withRegions [⟨K, 16⟩] [⟨C, 128⟩, ⟨S, kBytes⟩]) := by
+    Proof.Sm4.expandKeyPPC64LE.pre (s.callEntry.withRegions [⟨K, 16⟩] [⟨C, 128⟩, ⟨S, kBytes⟩]) := by
   simp only [Proof.Sm4.expandKeyPPC64LE, State.withRegions_gpr, State.withRegions_rd,
-    State.withRegions_wr, h.r3, h.r4, h.r5, key_bytes]
+    State.withRegions_wr, State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.r5 ∉ linkRegs by decide), h.r3, h.r4, h.r5, key_bytes]
   exact ⟨trivial, trivial, h.kc, h.ks, h.cs, h.fK, h.fC, h.fS⟩
 
 theorem key_wp {s : State} {K C S : Addr} (h : KeyCall s K C S) :
-    WP isa Impl.Sm4.PPC64LE.expandKey s (KeyPost s K C S) := by
-  refine wp_inline (k := Proof.Sm4.expandKeyPPC64LE) Proof.Sm4.PPC64LE.expandKey_correct h.pre h.reads
-    h.writes ?_ expandKey_noFrames
-  intro s' hrd hwr hf ⟨hcs, hsp, hlr⟩ hpost
-  simp only [State.withRegions_gpr, State.withRegions_sp] at hcs hsp
-  refine ⟨hrd, hwr, hsp, hlr, hcs, hf, ?_⟩
-  simp only [Proof.Sm4.expandKeyPPC64LE, State.withRegions_gpr, State.withRegions_mem, h.r3, h.r4] at hpost
+    WP isa keyCall s (KeyPost s K C S) := by
+  refine WP.call (k := Proof.Sm4.expandKeyPPC64LE) Proof.Sm4.PPC64LE.expandKey_correct h.pre h.reads
+    h.writes (fun s' hrd hwr hsp hf hcs _ hpost => ?_) expandKey_noFrames
+  refine ⟨hrd, hwr, hsp, hcs, hf, ?_⟩
+  simp only [Proof.Sm4.expandKeyPPC64LE, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
+    State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide), h.r3, h.r4] at hpost
   exact hpost
 
 /-- SM4's key expansion with the same arguments in both runs is constant time. -/
 theorem CT.key {I : State → Prop}
     (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K C S : Addr, KeyCall s₁ K C S ∧ KeyCall s₂ K C S ∧ s₁.sp = s₂.sp) :
-    CT I Impl.Sm4.PPC64LE.expandKey := by
+    CT I keyCall := by
   refine RelCT.exists_ (P := fun (x : Addr × Addr × Addr) (s₁ s₂ : State) =>
       KeyCall s₁ x.1 x.2.1 x.2.2 ∧ KeyCall s₂ x.1 x.2.1 x.2.2 ∧ s₁.sp = s₂.sp)
       (fun x => ?_) |>.mono (fun s₁ s₂ hp => by
       obtain ⟨K, C, S, h₁, h₂, hsp⟩ := h s₁ s₂ hp.1 hp.2
       exact ⟨(K, C, S), h₁, h₂, hsp⟩) fun _ _ h => h
   obtain ⟨K, C, S⟩ := x
-  refine relCT_inline Proof.Sm4.PPC64LE.expandKey_correct Proof.Sm4.PPC64LE.expandKey_ct [⟨K, 16⟩]
+  refine RelCT.call Proof.Sm4.PPC64LE.expandKey_correct Proof.Sm4.PPC64LE.expandKey_ct [⟨K, 16⟩]
     [⟨C, 128⟩, ⟨S, kBytes⟩] fun s₁ s₂ ⟨h₁, h₂, hsp⟩ => ?_
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
-  simp only [Proof.Sm4.expandKeyPPC64LE, State.withRegions_gpr, State.withRegions_sp, h₁.r3, h₁.r4, h₁.r5,
+  simp only [Proof.Sm4.expandKeyPPC64LE, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
+    State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
+    State.callEntry_gpr _ (show Reg.r5 ∉ linkRegs by decide), h₁.r3, h₁.r4, h₁.r5,
     h₂.r3, h₂.r4, h₂.r5, hsp]
   exact ⟨trivial, trivial, trivial, trivial⟩
 

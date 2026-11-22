@@ -17,13 +17,14 @@ only the hash subkey, are AES-GCM's functions themselves.
   hash subkey: `H` is at `ctx + 240`, where AES-GCM's GHASH pieces read it.
 * SM4's counter mode (`Impl.Sm4.PPC64LE.ctr32`, `vg_sm4_ctr32`'s code
   before its frame: `schedule = r3, counter = r4, data = r5, n = r6,
-  scratch = r7`) and key expansion (`Impl.Sm4.PPC64LE.expandKey`:
-  `key = r3, schedule = r4, scratch = r5`) are inlined, with their working
-  space `X` of 3264 bytes, the argument after `W` (in a frame of its own: a
-  frame is less than a page, too small for both), kept in `r28`. They
-  preserve the nonvolatile registers and the link register, as calls would,
-  and need no stack, so the functions use none but the frames holding `W`
-  and `X`.
+  scratch = r7`) is inlined, and key expansion is a call of
+  `vg_sm4_expand_key_core` (`Impl.Sm4.PPC64LE.expandKey`: `key = r3,
+  schedule = r4, scratch = r5`), which `vg_sm4_expand_key` calls too, after
+  which `restore` brings back the link register from `W`. Both have their
+  working space `X` of 3264 bytes, the argument after `W` (in a frame of its
+  own: a frame is less than a page, too small for both), kept in `r28`. They
+  preserve the nonvolatile registers and need no stack, so the functions use
+  none but the frames holding `W` and `X`.
 * There is no number of rounds: the arguments of every function but
   `stream_init` and `stream_aad` are one register earlier than AES-GCM's.
 -/
@@ -101,7 +102,7 @@ def initArgs : List Instr :=
 
 def init : Prog isa :=
   .seq (.block initPre)
-  (.seq Impl.Sm4.PPC64LE.expandKey
+  (.seq (.call "vg_sm4_expand_key_core" Impl.Sm4.PPC64LE.expandKey)
   (.seq (.block initArgs) (.seq Impl.Sm4.PPC64LE.ctr32 (.block restore))))
 
 /-- The entry of `encrypt` and `decrypt`: `(ctx = r3, state = r4, aad_len = r5,

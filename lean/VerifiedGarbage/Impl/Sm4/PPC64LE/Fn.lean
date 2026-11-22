@@ -29,7 +29,7 @@ open VG.Impl.Scrub.PPC64LE (scrubAll)
 /-- `vg_sm4_expand_key`, as emitted. -/
 def expandKey : Prog isa :=
   scrubAll 0 0 ⟨true, false, [.r4, .r5, .r8, .r9, .r10, .r11, .r12], false, []⟩
-    (Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r5 402 Impl.Sm4.PPC64LE.expandKey)
+    (Impl.StackScratch.PPC64LE.withStackScratchWiped 3264 .r5 404 Impl.Sm4.PPC64LE.expandKeyCall)
 
 /-- `vg_sm4_ecb_encrypt`, as emitted. -/
 def ecbEncrypt : Prog isa :=

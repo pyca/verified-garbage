@@ -96,11 +96,11 @@ theorem ctrFinalOut (stack : Nat) : PostOut (Spec.Sm4.ctrFinalContract PPC64LE.a
 contract in constant time and returns without secret residue. -/
 theorem expandKey_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sm4.PPC64LE.Fn.expandKey
-      (Spec.Sm4.expandKeyContract PPC64LE.abi 3248) 0 :=
+      (Spec.Sm4.expandKeyContract PPC64LE.abi 3264) 0 :=
   verifiedScrubbedWiped (api := Spec.Sm4.expandKeyApi) {
-      code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r5 402 Impl.Sm4.PPC64LE.expandKey
+      code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3264 .r5 404 Impl.Sm4.PPC64LE.expandKeyCall
       verified := Proof.Sm4.PPC64LE.expandKey_framed }
-    3248 .r5 402 Impl.Sm4.PPC64LE.expandKey
+    3264 .r5 404 Impl.Sm4.PPC64LE.expandKeyCall
     ⟨true, false, [.r4, .r5, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (expandKeyOut _) (by dsimp only; lit_decide)
 
 /-- `vg_sm4_ecb_encrypt` as emitted (`Impl.Sm4.PPC64LE.Fn.ecbEncrypt`) meets its
