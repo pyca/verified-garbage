@@ -365,6 +365,10 @@ pub mod gcm;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
 #[rustfmt::skip]
+pub mod hkdf;
+
+#[cfg(all(target_arch = "x86", target_feature = "sse2"))]
+#[rustfmt::skip]
 pub mod hmac_md5;
 
 #[cfg(all(target_arch = "x86", target_feature = "sse2"))]
