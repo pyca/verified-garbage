@@ -365,6 +365,10 @@ pub mod gcm;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
 #[rustfmt::skip]
+pub mod hkdf;
+
+#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
+#[rustfmt::skip]
 pub mod hmac_md5;
 
 #[cfg(all(target_arch = "powerpc64", target_endian = "little"))]
