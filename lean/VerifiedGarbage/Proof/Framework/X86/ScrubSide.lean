@@ -30,7 +30,7 @@ namespace VG.X86
 
 /-- An MMX instruction, or the push or pop of an MMX frame. -/
 def Instr.isMmx : Instr → Bool
-  | .mop _ | .mmxStore .. | .mmxEnter | .emms => true
+  | .mop _ | .mmxStore .. | .mmxMovd .. | .mmxEnter | .emms => true
   | _ => false
 
 /-- `c`, and the functions it calls, make no indirect call. -/

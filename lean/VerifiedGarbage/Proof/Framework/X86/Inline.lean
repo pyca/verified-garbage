@@ -163,6 +163,13 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [State.withRegions_wr, State.withRegions_ea, hw _ _ hi, ite_true]
     rfl
   | mop op => exact MOp.exec_widen hc h
+  | mmxMovd d r =>
+    simp only [exec] at h ⊢
+    split at h <;> [rename_i hm; cases h]
+    simp only [Option.some.injEq] at h
+    subst h
+    simp only [State.withRegions_mmx, hm, ite_true]
+    rfl
   | mmxStore m r =>
     simp only [exec, State.store64] at h ⊢
     split at h <;> [rename_i hm; cases h]
@@ -241,6 +248,11 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
   | mop op =>
     simp only [exec] at h
     rw [MOp.exec_eq h]; exact ⟨rfl, rfl, Frame.refl _ _⟩
+  | mmxMovd d r =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, Frame.refl _ _⟩
   | mmxStore m r =>
     simp only [exec, State.store64] at h
     split at h <;> [skip; cases h]

@@ -135,6 +135,7 @@ def Instr.asm : Instr → List String
   | .xop op => [op.asm]
   | .mop op => [op.asm]
   | .mmxStore m r => [s!"movq {m.str64}, {r.name}"]
+  | .mmxMovd d r => [s!"movd {d.name}, {r.name}"]
   -- The push of an MMX frame is no instruction.
   | .mmxEnter => []
   | .emms => ["emms"]

@@ -369,7 +369,7 @@ def step (τ : T) : Instr → Option T
   | .mul r => some (mulStep τ r)
   -- A frame's push and pop are analysed by the `push` and `pop` hooks
   -- (`pushStep`, `popStep`), not here; the SSE instructions are not analysed.
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxMovd .. | .mmxEnter | .emms
   | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => none
 
 def meet (τ₁ τ₂ : T) : T where
@@ -907,7 +907,7 @@ theorem alu_sound {τ : T} {op : AluOp} {d : Reg} {src : Src} {s₁ s₂ : State
 stores, and for `mul`, which writes two). -/
 def dst : Instr → Option Reg
   | .symPush d _ | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _
-  | .mcdtEnter d => some d
+  | .mcdtEnter d | .mmxMovd d _ => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave | .callr _ => none
 
@@ -916,7 +916,7 @@ def dst : Instr → Option Reg
 the kernel (`SpTest`, `Proof/Framework/SpTest.lean`). -/
 def keepsSp : Instr → Bool
   | .symPush d _ | .mcdtEnter d | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _
-  | .pop d _ => !Nat.beq d.ctorIdx Reg.esp.ctorIdx
+  | .pop d _ | .mmxMovd d _ => !Nat.beq d.ctorIdx Reg.esp.ctorIdx
   | _ => true
 
 theorem ctorIdx_beq (a b : Reg) : Nat.beq a.ctorIdx b.ctorIdx = (a == b) := by
@@ -969,6 +969,12 @@ theorem exec_dst {i : Instr} {d : Reg} (hd : dst i = some d) {s s' : State}
     exact ⟨rfl, rfl, fun r h => setReg_ne h⟩
   | store m r => simp [dst] at hd
   | store8 m r => simp [dst] at hd
+  | mmxMovd d' r =>
+    simp only [dst, Option.some.injEq] at hd; subst hd
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [Option.some.injEq] at h; subst h
+    exact ⟨rfl, rfl, fun r h => setReg_ne h⟩
   | mul r | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms
   | pmuludq | mcdtLeave => simp [dst] at hd
 
@@ -1097,7 +1103,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms
+  | symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxMovd | mmxEnter | emms
   | pmuludq | mcdtEnter | mcdtLeave => simp only [step, reduceCtorEq] at hs
   | mov d src =>
     simp only [step] at hs
@@ -2562,7 +2568,7 @@ def stepK (τ : T) : Instr → Option T
     else none
   | .store8 m r => storeStepK τ m 1 (pub τ r.reg) []
   | .mul r => some (mulStep τ r)
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxMovd .. | .mmxEnter | .emms
   | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => none
 
 /-- `l.contains a`, for a known base address. -/
@@ -2766,7 +2772,7 @@ def stepKDFn : Instr → Step
     else none⟩
   | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r.reg) []⟩
   | .mul r => ⟨fun τ => some (mulStepKD τ r)⟩
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxMovd .. | .mmxEnter | .emms
   | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => ⟨fun _ => none⟩
 
 /-- Apply the preclassified instruction to the incoming taint. -/

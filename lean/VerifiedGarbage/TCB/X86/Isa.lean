@@ -243,6 +243,9 @@ inductive Instr
   /-- `movq QWORD PTR [m], mm` (NP 0F 7F /r): a 64-bit store; it faults
   outside an MMX frame. -/
   | mmxStore (dst : MemOp) (src : MReg)
+  /-- `movd r32, mm` (NP 0F 7E /r, register form): the low 32 bits of an
+  MMX register into a general-purpose one; it faults outside an MMX frame. -/
+  | mmxMovd (dst : Reg) (src : MReg)
   /-- The push of an MMX frame: no instruction; enters the frame (see
   `push`). -/
   | mmxEnter
@@ -406,6 +409,9 @@ def exec : Instr → State → Option State
   | .xop op, s => some (op.exec s)
   | .mop op, s => op.exec s
   | .mmxStore m r, s => if s.mmx then s.store64 (s.ea m) (s.mm r) else none
+  -- SDM Vol. 2, "MOVD/MOVQ", `MOVD r/m32, mm` (NP 0F 7E /r): `DEST[31:0] :=
+  -- SRC[31:0]`; no flags are affected.
+  | .mmxMovd d r, s => if s.mmx then some (s.setReg d ((s.mm r).extractLsb' 0 32)) else none
   | .pmuludq d r, s => if 0 < s.mcdt then some (s.setXmm d (pmuludq (s.xmm d) (s.xmm r))) else none
   -- Only the push and pop of a frame (`push`, `pop`), and the instruction
   -- of an indirect call (`icall`).
@@ -426,7 +432,7 @@ def addrs : Instr → State → List Addr
   | .callr _, _ => []
   | .mop op, s => op.addrs s
   | .mmxStore m _, s => [s.ea m]
-  | .mmxEnter, _ | .emms, _ | .pmuludq .., _ => []
+  | .mmxMovd .., _ | .mmxEnter, _ | .emms, _ | .pmuludq .., _ => []
   -- `stmxcsr`, then the store and `ldmxcsr` of `0x1FBF`, below `esp`.
   | .mcdtEnter _, s =>
     [(s.gpr .esp - 8).setWidth 64, (s.gpr .esp - 12).setWidth 64, (s.gpr .esp - 12).setWidth 64]
@@ -650,7 +656,7 @@ a frame also moves `esp`, as the push does): `mul` writes two, `eax` and
 `edx`, and stores none. -/
 def Instr.dst : Instr → Option Reg
   | .symPush d _ | .mcdtEnter d => some d
-  | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ => some d
+  | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ | .mmxMovd d _ => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .xop _
   | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave | .callr _ => none

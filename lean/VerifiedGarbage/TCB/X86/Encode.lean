@@ -220,6 +220,8 @@ def Instr.encode : Instr → Option (List (List Nat))
   | .mop op => op.encode.map ([·])
   -- "MOVQ" (`NP 0F 7F /r`, a store from an MMX register).
   | .mmxStore m r => (mem (mreg r) m).map fun b => [[0x0F, 0x7F] ++ b]
+  -- "MOVD" (`NP 0F 7E /r`, `MOVD r/m32, mm`: the MMX register in the reg field).
+  | .mmxMovd d r => some [[0x0F, 0x7E] ++ rr (mreg r) (reg d)]
   | .mmxEnter => some []
   -- "EMMS" (`NP 0F 77`), "PMULUDQ" (`66 0F F4 /r`).
   | .emms => some [[0x0F, 0x77]]

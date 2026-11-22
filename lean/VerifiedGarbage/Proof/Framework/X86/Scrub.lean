@@ -139,6 +139,10 @@ theorem exec_keep {i : Instr} {s s' : State} (h : exec i s = some s') :
     split at h <;> [skip; cases h]
     split at h <;> [skip; cases h]
     cases h; exact ⟨rfl, rfl, rfl, rfl, fun _ => rfl⟩
+  | mmxMovd d r =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    cases h; exact ⟨rfl, rfl, rfl, rfl, fun _ => rfl⟩
   | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | callr _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
     simp only [reduceExec, reduceCtorEq] at h
 
