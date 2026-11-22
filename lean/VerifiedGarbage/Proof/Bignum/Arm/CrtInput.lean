@@ -27,14 +27,6 @@ structure CrtR2In (g : CrtGeometry) (bs : Fin 7 → List Byte) (a : BitVec 32) (
   output : Region.Disjoint ⟨State.addr a, 8 * g.r2Words⟩ ⟨State.addr g.output, g.length⟩
   words : Spec.Rsa.wordsAt s.mem (State.addr a) g.r2Words = Spec.Rsa.primeR2 (bs 2) ++ Spec.Rsa.primeR2 (bs 3)
 
-/-- The bytes below the stack are apart from those from it. -/
-theorem belowA_disjoint_from {sp : BitVec 32} {a n : Nat} (h : a ≤ sp.toNat) (hn : a + n ≤ 2 ^ 64) :
-    (FrameStack.belowA sp a).Disjoint ⟨State.addr sp, n⟩ := by
-  unfold FrameStack.belowA
-  rw [FrameStack.addr_sub' h, show (⟨State.addr sp, n⟩ : Region) =
-    ⟨State.addr sp - BitVec.ofNat 64 a + BitVec.ofNat 64 a, n⟩ by rw [BitVec.sub_add_cancel]]
-  exact (Offset.disjoint_base _ (Nat.le_refl a) hn).symm
-
 /-- At entry: the 104 bytes below the stack, the function's own 56 and the 48
 of a call it makes from there (`MontCall.op`), are apart from every buffer. -/
 structure CrtReserve (g : CrtGeometry) (s : State) : Prop where
