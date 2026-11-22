@@ -195,13 +195,14 @@ fn ml_dsa() {
 #[test]
 fn hkdf() {
     use provider::cipher_suite::{TLS13_AES_128_GCM_SHA256, TLS13_AES_256_GCM_SHA384};
+    use rustls::crypto::tls13::OkmBlock;
     for (file, suite) in [
         ("hkdf_sha256_test.json", TLS13_AES_128_GCM_SHA256),
         ("hkdf_sha384_test.json", TLS13_AES_256_GCM_SHA384),
     ] {
         let data = std::fs::read(root().join(file)).unwrap();
         let json: Value = serde_json::from_slice(&data).unwrap();
-        let mut n = 0;
+        let (mut n, mut m) = (0, 0);
         for group in json["testGroups"].as_array().unwrap() {
             for test in group["tests"].as_array().unwrap() {
                 let ikm = hex(test["ikm"].as_str().unwrap());
@@ -216,6 +217,19 @@ fn hkdf() {
                     "valid" => {
                         assert!(ok, "{file} test {id}: rejected");
                         assert_eq!(okm, hex(test["okm"].as_str().unwrap()), "{file} test {id}");
+                        // The same from the pseudorandom key, HMAC(salt, IKM)
+                        // (RFC 5869 §2.2), as rustls's key schedule expands
+                        // its secrets: for each salt an `OkmBlock` holds.
+                        if salt.len() <= 64 {
+                            let prk = suite.hkdf_provider.hmac_sign(&OkmBlock::new(&salt), &ikm);
+                            let expander = suite
+                                .hkdf_provider
+                                .expander_for_okm(&OkmBlock::new(prk.as_ref()));
+                            let mut again = vec![0u8; size];
+                            expander.expand_slice(&[&info], &mut again).unwrap();
+                            assert_eq!(again, okm, "{file} test {id}: from the PRK");
+                            m += 1;
+                        }
                     }
                     "invalid" => assert!(!ok, "{file} test {id}: accepted"),
                     _ => {}
@@ -224,5 +238,6 @@ fn hkdf() {
             }
         }
         assert!(n > 0, "{file}: no tests");
+        assert!(m > 0, "{file}: no tests from the PRK");
     }
 }

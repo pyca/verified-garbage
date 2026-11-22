@@ -2,22 +2,31 @@
 //! verified HKDF ([`verified_garbage::kdf::hkdf`]). An expander holds the
 //! pseudorandom key as HMAC keyed with it, so each expansion starts from the
 //! keyed states rather than keying HMAC again.
+//!
+//! A pseudorandom key shorter than a digest, which RFC 5869 does not allow
+//! and the library refuses, but which rustls's trait takes (its key schedule
+//! never gives one), is expanded by rustls's own HKDF over the verified HMAC
+//! (`HkdfUsingHmac`), as aws-lc-rs's provider and rustls's generic HKDF
+//! accept one.
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 
+use rustls::crypto::hmac;
 use rustls::crypto::hmac::Tag;
-use rustls::crypto::tls13::{self, HkdfExpander, OkmBlock, OutputLengthError};
+use rustls::crypto::tls13::{self, HkdfExpander, HkdfUsingHmac, OkmBlock, OutputLengthError};
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
 use verified_garbage::hmac::{Hmac, HmacHash};
 use verified_garbage::kdf::hkdf::{Hkdf as VgHkdf, HkdfHash};
 
-pub(crate) static HKDF_SHA256: Hkdf<Sha256> = Hkdf(PhantomData);
-pub(crate) static HKDF_SHA384: Hkdf<Sha384> = Hkdf(PhantomData);
+pub(crate) static HKDF_SHA256: Hkdf<Sha256> = Hkdf(PhantomData, &crate::hmac::HMAC_SHA256);
+pub(crate) static HKDF_SHA384: Hkdf<Sha384> = Hkdf(PhantomData, &crate::hmac::HMAC_SHA384);
 
-pub(crate) struct Hkdf<H>(PhantomData<fn() -> H>);
+/// HKDF over `H`, with the verified HMAC over `H` for a pseudorandom key
+/// shorter than a digest.
+pub(crate) struct Hkdf<H>(PhantomData<fn() -> H>, &'static dyn hmac::Hmac);
 
 impl<H: HkdfHash + HmacHash + Send + Sync + 'static> tls13::Hkdf for Hkdf<H> {
     fn extract_from_zero_ikm(&self, salt: Option<&[u8]>) -> Box<dyn HkdfExpander> {
@@ -30,10 +39,11 @@ impl<H: HkdfHash + HmacHash + Send + Sync + 'static> tls13::Hkdf for Hkdf<H> {
     }
 
     fn expander_for_okm(&self, okm: &OkmBlock) -> Box<dyn HkdfExpander> {
-        // rustls's `OkmBlock`s for this hash are a digest long, which
-        // `from_prk` takes.
-        let prk = VgHkdf::<H>::from_prk(okm.as_ref()).expect("an OkmBlock is a digest long");
-        Box::new(Expander(prk))
+        match VgHkdf::<H>::from_prk(okm.as_ref()) {
+            Ok(prk) => Box::new(Expander(prk)),
+            // Shorter than a digest (see the module's documentation).
+            Err(_) => HkdfUsingHmac(self.1).expander_for_okm(okm),
+        }
     }
 
     fn hmac_sign(&self, key: &OkmBlock, message: &[u8]) -> Tag {

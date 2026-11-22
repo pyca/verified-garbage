@@ -47,6 +47,10 @@ library's API, but some of it is cryptography of its own:
   the first byte's low bits and the packet number with the mask from the
   verified AES-ECB or ChaCha20, as rustls's own providers do.
 * **TLS 1.2's PRF** is rustls's `PrfUsingHmac` over the verified HMAC.
+* **HKDF-Expand from a pseudorandom key shorter than a digest** is rustls's
+  `HkdfUsingHmac` over the verified HMAC. RFC 5869 does not allow such a key
+  and the library refuses one, but rustls's trait takes it (its own key
+  schedule never gives one).
 * **Session tickets** (`src/ticketer.rs`) are sealed with the verified
   AES-256-GCM. The provider lays out
   the ticket (key name, random nonce, ciphertext, tag), authenticates the
