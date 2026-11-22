@@ -88,7 +88,7 @@ theorem p192_stub (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_6
 /-- `vg_ecdsa_p192_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
 cleanup included, meets its contract in constant time and returns without secret residue. -/
 theorem p192T_scrubbed (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs)
-    (hu : ∀ w ∈ vs, HmacUp w) :
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
     VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (p192 hL hI) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs))
       (specK Spec.Ecdsa.Rfc6979.Curves.p192 Impl.Ecdsa.X86_64.p192.combConsts vs) 32 :=
   sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.p192SignApi)

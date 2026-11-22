@@ -2527,7 +2527,7 @@ the instructions that set up its arguments. -/
 def coreBoth : Prog isa := .call "" (.block [])
 
 /-- `H` without the functions it calls: its own code. -/
-def core (H : Hash) : Hash := ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", "", "", "", "", coreBoth⟩
+def core (H : Hash) : Hash := ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", "", "", "", "", coreBoth, ""⟩
 
 /-! ## Every instruction, from the own code and the callees' -/
 

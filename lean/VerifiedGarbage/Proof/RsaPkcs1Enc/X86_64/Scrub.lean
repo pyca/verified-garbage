@@ -68,7 +68,8 @@ theorem dec_fill (h : Proof.Sha256.X86_64.Compress) (c : CrtImpl) {k so : Nat} (
         initC := Impl.Sha256.X86_64.Stream.init, updN := "vg_sha256_update_scratch" ++ h.suffix,
         finN := "vg_sha256_finalize_scratch" ++ h.suffix, hmacInitN := "vg_hmac_sha256_init_scratch" ++ h.suffix,
         hmacFinN := "vg_hmac_sha256_finalize_scratch" ++ h.suffix,
-        iterN := "vg_pbkdf2_hmac_sha256_iterate" ++ h.suffix } := by
+        iterN := "vg_pbkdf2_hmac_sha256_iterate" ++ h.suffix,
+        hmacInitAnyN := "vg_hmac_sha256_init_any_scratch" ++ h.suffix } := by
     simp only [Proof.Pbkdf2.Md.X86_64.Sha256.hash, hso]
   rw [this]
   fill_calls

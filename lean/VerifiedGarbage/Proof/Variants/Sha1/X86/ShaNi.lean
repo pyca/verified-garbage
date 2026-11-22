@@ -65,6 +65,8 @@ meta import VerifiedGarbage.Proof.Sha256.X86.Compress
 meta import VerifiedGarbage.Proof.Sha512.Spec
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 /-!
 # SHA-1 on x86 with the SHA extensions: the variant's code and proofs
 
@@ -134,6 +136,15 @@ materialize_code sha1HFinalize := (sha1M stream cmpN cmpC).hmacFin
 materialize_code sha1HIterate := (sha1M stream cmpN cmpC).iterate
 materialize_code sha1HPbkdf2 := (pbkdf2Fns stream cmpN cmpC).pbkdf2
 
+materialize_code digestCode := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha1H stream)
+
+/-- What the cleanup of `vg_sha1_digest` with this implementation needs of its
+code: the residue analysis, evaluated here once. -/
+theorem digest_sel : VG.X86.Scrub.SelScrub (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha1H stream)) 0
+    (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha1H stream)) Impl.MdStream.X86.Digest.selWords
+    (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha1H stream)) :=
+  ⟨by decide, _, by taint_decide_ct⟩
+
 /-- The backend. Its checks of the code (`spSafe`, `NoSp`, the stack) are one kernel
 evaluation (`taint_decide_all`), which evaluates the compression function they all
 contain once. -/
@@ -169,7 +180,8 @@ def variant : Proof.Sha1.X86.Variants.Backend := by
     finalizeNoSp := NoSp.of_all ?_,
     finalizeStack := ?_,
     iterNoSp := NoSp.of_all ?_,
-    iterStack := ?_ }
+    iterStack := ?_,
+    digestSel := digest_sel }
   taint_decide_all
 
 end VG.Proof.Variants.Sha1.X86.ShaNi

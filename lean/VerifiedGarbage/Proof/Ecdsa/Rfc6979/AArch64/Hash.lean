@@ -237,9 +237,10 @@ section
 # Tables of the interface `Hmac` on AArch64
 
 The table of a hash function's variant (`tableOf`, `VG_HMAC_<HASH><SUFFIX>`):
-the addresses of HMAC's `init` and `finalize` and of the streaming `update`,
-in the forms that take their working space as an argument (`_scratch`, in
-`x4`: `Hash.hmacInit`, `Hash.updC`, `Hash.hmacFin`), then its data
+the addresses of HMAC's `init` for a key of any length and `finalize` and
+of the streaming `update`, in the forms that take their working space as an
+argument (`_scratch`, in `x4`: `Hash.hmacInitAny`, with `W + S` words, and
+`Hash.updC` and `Hash.hmacFin`, with `W`), then its data
 (`Spec.HmacTable.dataOf`: the hash function's index in `Mgf1.hashes`, its
 digest length and HMAC's block size); the tables of a list of variants
 (`tables`, one for each), which a function taking a table of `Hmac` lists
@@ -270,7 +271,7 @@ open VG.Proof.HashTable (pw_ne find_name)
 def tableOf (w : MdHash) : FnTable where
   name := s!"VG_HMAC_{w.mgf.G.rust.toUpper}{w.suffix.toUpper}"
   iface := Spec.HmacTable.iface
-  fns := [w.H.hmacInitN, w.H.updN, w.H.hmacFinN]
+  fns := [w.H.hmacInitAnyN, w.H.updN, w.H.hmacFinN]
   data := Spec.HmacTable.dataOf w.mgf.G
 
 /-- The tables of the variants `vs`. -/
@@ -278,7 +279,7 @@ def tables (vs : List MdHash) : List FnTable := vs.map tableOf
 
 /-- For each of a table's functions, that function of each of `vs`. -/
 def fnsOf (vs : List MdHash) : Fns :=
-  ⟨vs.map fun w => (w.H.hmacInitN, w.H.hmacInit), vs.map fun w => (w.H.updN, w.H.updC),
+  ⟨vs.map fun w => (w.H.hmacInitAnyN, w.H.hmacInitAny), vs.map fun w => (w.H.updN, w.H.updC),
     vs.map fun w => (w.H.hmacFinN, w.H.hmacFin)⟩
 
 /-- The functions of `tables vs`. -/
@@ -286,7 +287,7 @@ def names (vs : List MdHash) : List String := ((tables vs).map (·.fns)).flatten
 
 /-- The variants' functions of the same name have the same code. -/
 def Coh (vs : List MdHash) : Prop :=
-  ∀ w ∈ vs, ∀ w' ∈ vs, (w.H.hmacInitN = w'.H.hmacInitN → w.H.hmacInit = w'.H.hmacInit) ∧
+  ∀ w ∈ vs, ∀ w' ∈ vs, (w.H.hmacInitAnyN = w'.H.hmacInitAnyN → w.H.hmacInitAny = w'.H.hmacInitAny) ∧
     (w.H.updN = w'.H.updN → w.H.updC = w'.H.updC) ∧ (w.H.hmacFinN = w'.H.hmacFinN → w.H.hmacFin = w'.H.hmacFin)
 
 instance (vs : List MdHash) : Decidable (Coh vs) := by unfold Coh; infer_instance
@@ -294,18 +295,18 @@ instance (vs : List MdHash) : Decidable (Coh vs) := by unfold Coh; infer_instanc
 /-- An indirect call of `f`'s functions, at the addresses `sy` gives, to the
 address of one of `H`'s HMAC functions reaches it. -/
 structure TabOK (H : Hash) (f : Fns) (sy : String → Addr) : Prop where
-  i : f.init.find? (fun q => sy q.1 == sy H.hmacInitN) = some (H.hmacInitN, H.hmacInit)
+  i : f.init.find? (fun q => sy q.1 == sy H.hmacInitAnyN) = some (H.hmacInitAnyN, H.hmacInitAny)
   u : f.upd.find? (fun q => sy q.1 == sy H.updN) = some (H.updN, H.updC)
   f : f.fin.find? (fun q => sy q.1 == sy H.hmacFinN) = some (H.hmacFinN, H.hmacFin)
 
 /-- At `p` in `m`, the addresses `sy` gives `H`'s HMAC `init`, the streaming
 `update` and HMAC's `finalize`. -/
 def TabMem (H : Hash) (sy : String → Addr) (p : Addr) (m : Mem) : Prop :=
-  m.readW (p + BitVec.ofNat 64 0) 64 = sy H.hmacInitN ∧ m.readW (p + BitVec.ofNat 64 8) 64 = sy H.updN ∧
+  m.readW (p + BitVec.ofNat 64 0) 64 = sy H.hmacInitAnyN ∧ m.readW (p + BitVec.ofNat 64 8) 64 = sy H.updN ∧
     m.readW (p + BitVec.ofNat 64 16) 64 = sy H.hmacFinN
 
 theorem mem_names {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) :
-    w.H.hmacInitN ∈ names vs ∧ w.H.updN ∈ names vs ∧ w.H.hmacFinN ∈ names vs := by
+    w.H.hmacInitAnyN ∈ names vs ∧ w.H.updN ∈ names vs ∧ w.H.hmacFinN ∈ names vs := by
   have : (tableOf w).fns ∈ (tables vs).map (·.fns) := List.mem_map_of_mem (List.mem_map_of_mem hw)
   refine ⟨?_, ?_, ?_⟩ <;> exact List.mem_flatten.mpr ⟨_, this, by simp [tableOf]⟩
 
@@ -327,7 +328,7 @@ theorem tabOK_of {vs : List MdHash} (hc : Coh vs) {sy : String → Addr}
 
 /-- The words of the table of `w`. -/
 theorem words_tableOf (s : State) (w : MdHash) :
-    FnTable.words isa s (tableOf w) = [s.syms w.H.hmacInitN, s.syms w.H.updN, s.syms w.H.hmacFinN,
+    FnTable.words isa s (tableOf w) = [s.syms w.H.hmacInitAnyN, s.syms w.H.updN, s.syms w.H.hmacFinN,
       BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G), BitVec.ofNat 64 w.mgf.G.len,
       BitVec.ofNat 64 (Spec.HmacTable.blockSize w.mgf.G)] := rfl
 
@@ -575,7 +576,7 @@ structure Ctx {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (g : Reg �
     m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = E.combWords.getD i 0
   tabOk : TabOK L.H L.f t.syms
   tabMem : TabMem L.H t.syms L.tab m₀
-  fsy : ∀ n ∈ [L.H.hmacInitN, L.H.updN, L.H.hmacFinN], t.syms n = L.fa n
+  fsy : ∀ n ∈ [L.H.hmacInitAnyN, L.H.updN, L.H.hmacFinN], t.syms n = L.fa n
 
 theorem Safe.sub_frame {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
@@ -713,7 +714,7 @@ the table, whose functions an indirect call reaches among `f`'s. -/
 def lay (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (e : Nat) (he : e = 48) (H : Hash) (f : Fns) (s : State) :
     Lay dn E :=
   ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x4, s.gpr .x5, s.sp - BitVec.ofNat 64 (256 + 8 * e), q,
-    tableAddr E s.syms, e, he, H, f, fun n => if n ∈ [H.hmacInitN, H.updN, H.hmacFinN] then s.syms n else 0⟩
+    tableAddr E s.syms, e, he, H, f, fun n => if n ∈ [H.hmacInitAnyN, H.updN, H.hmacFinN] then s.syms n else 0⟩
 
 /-- What the contract says of the table at `x5`, after the entry: it holds
 `H`'s HMAC functions, which an indirect call of `f`'s reaches, and `x6` and
@@ -874,8 +875,8 @@ theorem save_ctx {E : Impl.Ecdsa.AArch64.Cfg} {I : Proof.Ecdsa.Rfc6979.Instance}
     rcases hr with rfl | rfl <;>
       exact ⟨(lay I.hashLen I.ecdsa.curve.len E 48 rfl H f s).STK, by simp, Offset.sub_base _ (by omega_arith)⟩
   · intro n hn
-    show s.syms n = (if n ∈ [H.hmacInitN, H.updN, H.hmacFinN] then s.syms n else 0)
-    simp only [show n ∈ [H.hmacInitN, H.updN, H.hmacFinN] from hn, ite_true]
+    show s.syms n = (if n ∈ [H.hmacInitAnyN, H.updN, H.hmacFinN] then s.syms n else 0)
+    simp only [show n ∈ [H.hmacInitAnyN, H.updN, H.hmacFinN] from hn, ite_true]
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64
 
@@ -1050,7 +1051,7 @@ the values the frame holds.
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 
 open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
-open VG.Proof.Pbkdf2.Md.AArch64 (HashOK CoreOK core hmacInit_ok hmacFin_ok hmacInit_fdepth hmacFin_fdepth)
+open VG.Proof.Pbkdf2.Md.AArch64 (HashOK CoreOK core hmacFin_ok hmacFin_fdepth)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (initG finG)
 open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)
 
@@ -1069,7 +1070,6 @@ structure RfcHash where
   H : Impl.Pbkdf2.Md.AArch64.Hash
   ok : HashOK H
   C : CoreOK (core H)
-  satI : ∃ s, (Proof.Hmac.initScratchContract ok.SH H.W AArch64.abi 16).pre s
   satF : ∃ s, (Proof.Hmac.finalizeScratchContract ok.SH H.W AArch64.abi 16).pre s
   /-- The functions an indirect call of a table's functions may reach. -/
   f : Fns
@@ -1086,6 +1086,11 @@ structure RfcHash where
   hS : H.S ≤ 192
   hW : 8 * H.W ≤ 1872
   hWb : ok.stream.Wb ≤ 1872
+  /-- HMAC's `init` for a key of any length (`initAny`), which the tables
+  hold, with `W + S` words of working space, which `scratch` holds. -/
+  A : Verified AArch64.target H.hmacInitAny (Proof.Pbkdf2.Md.AArch64.Any.anyG ok.SH (H.W + H.S))
+  Ad : H.hmacInitAny.aarch64Depth ≤ 1
+  hWA : 8 * (H.W + H.S) ≤ 3408
 
 namespace RfcHash
 
@@ -1093,10 +1098,6 @@ variable (P : RfcHash)
 
 /-- HMAC with the hash function. -/
 abbrev mac (K text : List Byte) : List Byte := Spec.Hmac.hmac P.ok.SH.H K text
-
-theorem hI : Verified AArch64.target P.H.hmacInit (initG P.ok.SH P.H.W) := hmacInit_ok P.ok P.C P.satI
-
-theorem hId : P.H.hmacInit.aarch64Depth ≤ 1 := hmacInit_fdepth P.ok.stream.initDepth P.ok.comp.noFrames
 
 theorem hF : Verified AArch64.target P.H.hmacFin (finG P.ok.SH P.H.W) := hmacFin_ok P.ok P.C P.satF
 

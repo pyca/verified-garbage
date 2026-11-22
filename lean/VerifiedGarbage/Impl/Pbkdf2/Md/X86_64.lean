@@ -177,6 +177,9 @@ structure Hash where
   /-- HMAC's `init` compressing the blocks of its two states (`compTwice`,
   or `compPair` with a function that compresses both at once). -/
   compBoth : Prog isa := compTwice P.N compN compC
+  /-- The name of HMAC's `init` for a key of any length with its working
+  space as an argument (`hmacInitAny`), which the tables of `Hmac` hold. -/
+  hmacInitAnyN : String := ""
 
 namespace Hash
 

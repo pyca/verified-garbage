@@ -53,12 +53,13 @@ def hash : Hash where
   updN := "vg_md5_update_scratch"
   finN := "vg_md5_finalize_scratch"
   hmacInitN := "vg_hmac_md5_init_scratch"
+  hmacInitAnyN := "vg_hmac_md5_init_any_scratch"
   hmacFinN := "vg_hmac_md5_finalize_scratch"
   iterN := "vg_pbkdf2_hmac_md5_iterate"
 
 /-- `hash` without the functions it calls. -/
 def coreH : Hash := ⟨Impl.Md5.X86_64.Stream.params, 16, Hash.wOf Impl.Md5.X86_64.Stream.params, "", .block [], "", .block [], "", "", "", "",
-  "", Proof.Pbkdf2.Md.X86_64.coreBoth⟩
+  "", Proof.Pbkdf2.Md.X86_64.coreBoth, ""⟩
 
 theorem coreOK : CoreOK coreH := by
   refine {
@@ -103,7 +104,7 @@ theorem coreOK : CoreOK coreH := by
   taint_decide_all
 
 theorem anyOK : Any.AnyOK coreH := by
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_, ?_⟩
   taint_decide_all
 
 theorem callees : Callees hash :=

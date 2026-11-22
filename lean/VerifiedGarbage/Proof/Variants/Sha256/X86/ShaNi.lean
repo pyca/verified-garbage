@@ -55,6 +55,8 @@ meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
+public import VerifiedGarbage.Proof.Framework.X86.ScrubSel
+meta import VerifiedGarbage.Proof.Framework.X86.ScrubSel
 /-!
 # SHA-256 on x86 with the SHA extensions: the variant's code and proofs
 
@@ -147,6 +149,24 @@ theorem finalize224_ct : ConstantTime isa
     (fun _ _ h₁ h₂ hp => Proof.MdStream.X86.Finalize.agree₀D Proof.Sha256.X86.Stream.dims224 (by decide) h₁ h₂ hp)
     (by taint_decide)
 
+materialize_code digestCode := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H stream)
+
+/-- What the cleanup of `vg_sha256_digest` with this implementation needs of its
+code: the residue analysis, evaluated here once. -/
+theorem digest_sel : VG.X86.Scrub.SelScrub (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha256H stream)) 0
+    (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha256H stream)) Impl.MdStream.X86.Digest.selWords
+    (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H stream)) :=
+  ⟨by decide, _, by taint_decide_ct⟩
+
+materialize_code digest224Code := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H stream)
+
+/-- What the cleanup of `vg_sha224_digest` with this implementation needs of its
+code: the residue analysis, evaluated here once. -/
+theorem digest224_sel : VG.X86.Scrub.SelScrub (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha224H stream)) 0
+    (48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha224H stream)) Impl.MdStream.X86.Digest.selWords
+    (Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H stream)) :=
+  ⟨by decide, _, by taint_decide_ct⟩
+
 /-- The backend. Its checks of the code (`spSafe`, `NoSp`, the stack) are one kernel
 evaluation (`taint_decide_all`), which evaluates the compression function they all
 contain once. -/
@@ -200,7 +220,9 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
     finalize224NoSp := NoSp.of_all ?_,
     finalize224Stack := ?_,
     iter224NoSp := NoSp.of_all ?_,
-    iter224Stack := ?_ }
+    iter224Stack := ?_,
+    digestSel := digest_sel,
+    digest224Sel := digest224_sel }
   taint_decide_all
 
 end VG.Proof.Variants.Sha256.X86.ShaNi

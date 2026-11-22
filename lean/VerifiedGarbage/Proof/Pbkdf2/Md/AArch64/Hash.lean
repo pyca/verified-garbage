@@ -223,7 +223,7 @@ end HashOK
 every implementation of the compression function (so its facts are decided
 once, for one of them). -/
 def _root_.VG.Impl.Pbkdf2.Md.AArch64.Hash.core (H : Hash) : Hash :=
-  ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
+  ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", .block [], "", .block [], "", "", "", ""⟩
 
 /-- A fact of every instruction of PBKDF2's code, from that of the functions it
 calls and of its own code (`Hash.core`). -/

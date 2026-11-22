@@ -123,7 +123,7 @@ theorem brainpoolp384r1_stub (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (
 /-- `vg_ecdsa_brainpoolp384r1_sign`, with the tables of `vs`, as emitted (`Impl.Ecdsa.Rfc6979.X86_64.Fn.sign`), its
 cleanup included, meets its contract in constant time and returns without secret residue. -/
 theorem brainpoolp384r1T_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weierstrass.X86_64.InvSounds) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) (h : OK vs ∧ "VG_BRAINPOOLP384R1_COMB" ∉ Proof.HmacTable.X86_64.names vs)
-    (hu : ∀ w ∈ vs, HmacUp w) :
+    (hu : ∀ w ∈ vs, Proof.HmacTable.X86_64.HmacUp w) :
     VerifiedScrubbed X86_64.target (Impl.Ecdsa.Rfc6979.X86_64.Fn.sign (cfgT (brainpoolp384r1 hL hI) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vs))
       (specK Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1 Impl.Ecdsa.X86_64.brainpoolp384r1S.combConsts vs) 32 :=
   sign_scrubbed (api := Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi)

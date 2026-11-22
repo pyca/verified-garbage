@@ -292,4 +292,41 @@ theorem verifiedScrubbedSel {api : Api} (r : Unscrubbed api target) {n W rb : Na
   exact ⟨hv', RTaint.noResidue_of_verified hv' (sel_pre hA (fun _ _ _ hn h => wf_top hn h) h0)
     (fun _ _ _ _ _ _ _ hj => absurd hj (Nat.not_lt_zero _)) hres⟩
 
+/-- The stores of `wipeWords ws` write `esp` in none of them. -/
+theorem wipeWords_all : ∀ ws : List Nat, (wipeWords ws).all (fun i => !isa.writesSp i) = true
+  | [] => rfl
+  | _ :: ws => by simp only [wipeWords, List.map_cons, List.all_cons] at *; exact wipeWords_all ws
+
+/-- The code as emitted, `c` and then its cleanup (`scrubSel`), writes `esp`
+only in its frames and calls, as `c` does: `Registration.spSafe` of a
+function's `Fn` from its body's, for code generic over a variant. -/
+theorem scrubSel_spSafe {rb n : Nat} {ws : List Nat} {c : Prog isa}
+    (h : c.all (fun i => !isa.writesSp i) = true) :
+    (scrubSel rb n ws c).all (fun i => !isa.writesSp i) = true := by
+  cases ws with
+  | nil => simp only [scrubSel, wipeSel, Code.all, h, tail_all, List.all_nil, Bool.true_and]
+  | cons w ws =>
+    have hw := wipeWords_all (w :: ws)
+    simp only [scrubSel, wipeSel, Code.all, h, tail_all, List.all_cons, hw, Bool.true_and, Bool.and_true]
+    rfl
+
+/-- What `scrubSel rb n ws` needs of `code`, for code generic over an
+implementation it calls (a variant), proved where the implementation is
+defined, once, as x86-64's `SelScrub` is: that the frame holds the
+doublewords (`selSide`, by `decide`) and that the residue analysis of the
+code with its cleanup, from `RTaint.init W 0`, ends in `done`
+(`⟨_, by taint_decide_ct⟩`). -/
+def SelScrub (W rb n : Nat) (ws : List Nat) (code : Prog isa) : Prop :=
+  selSide n ws W = true ∧
+    ∃ hc, (rtaint.check (RTaint.init W 0) (scrubSel rb n ws code) hc).any (RTaint.done rb) = true
+
+/-- `r`'s code followed by `scrubSel rb n ws`, from what the implementation
+it calls proves of it (`a`): `verifiedScrubbedSel`, with nothing of the code
+evaluated here. -/
+theorem SelScrub.scrubbed {api : Api} (r : Unscrubbed api target) {n W rb : Nat} {ws : List Nat}
+    {code : Prog isa} (a : SelScrub W rb n ws code) (hpost : PostOut r.contract (retBitsOf r))
+    (hc : r.code = code := by rfl) (hW : r.stack = W := by rfl) (hb : retBitsOf r = rb := by rfl) :
+    VerifiedScrubbed target (scrubSel rb n ws code) r.contract rb :=
+  verifiedScrubbedSel r ws hpost a.1 a.2 hc hW hb
+
 end VG.X86.Scrub

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
+public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.AArch64
 public import VerifiedGarbage.Impl.P256.Booth
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64.Comb
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP320r1.AArch64.Comb
@@ -33,7 +34,7 @@ open VG.Impl.RsaOaep.AArch64.Mgf1.Table (Fns)
 function of each of the hash functions `hs`: what an indirect call may
 reach. -/
 def fnsOf (hs : List Hash) : Fns :=
-  ⟨hs.map fun h => (h.hmacInitN, h.hmacInit), hs.map fun h => (h.updN, h.updC),
+  ⟨hs.map fun h => (h.hmacInitAnyN, h.hmacInitAny), hs.map fun h => (h.updN, h.updC),
     hs.map fun h => (h.hmacFinN, h.hmacFin)⟩
 
 /-- The code's parameters on the curve `E`: whether its scalars are longer
