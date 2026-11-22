@@ -24,6 +24,14 @@ from its table of constants, and what they are of Camellia's S-boxes
   to a position where `a` is `ai`, `qT ai (s_j b) = nmap k (AES (qT a_j b ⊕ c5))
   ⊕ mc ai j`, with `k` the map after the S-box for the two positions, and
   `mc` a constant.
+
+And what the straight-line parts of the code leave in the registers and
+store, as expressions of the bytes they start with
+(`Proof/Framework/X86/ByteMap.lean`), each compared by the kernel with the
+expression the proofs use: the six rounds of a group (`round_all`), the
+conversions at the two ends and around the FL layer (`conv_all`), and the
+blocks of `prepare` (`prep_all`), with the constants the keys take
+(`pconst_all`, `pmask_all`).
 -/
 
 @[expose] public section

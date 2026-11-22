@@ -31,7 +31,7 @@ loads from):
   other function (the S-box, a look-up) is taken only of a single term or of
   input bytes, and gives one term.
 
-`run_ok`: code that `run` follows runs, changes only the XMM registers, and
+`run_wp`: code that `run` follows runs, changes only the XMM registers, and
 leaves in each byte the value of its expression. A proof about such code is
 then a comparison of expressions, which the kernel evaluates (`BV.same`: up
 to the order of the terms), and what the expressions mean is proven of them,

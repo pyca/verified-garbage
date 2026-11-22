@@ -163,12 +163,6 @@ theorem qI_qT (a : Bool) (b : Byte) : qI a (qT a b) = b := by
   rw [byte_ofNat, Bool.and_eq_true, beq_iff_eq, beq_iff_eq] at h
   exact h.1
 
-theorem qT_qI (a : Bool) (b : Byte) : qT a (qI a b) = b := by
-  have h := List.all_eq_true.mp inv_all b.toNat (List.mem_range.mpr b.isLt)
-  have h := List.all_eq_true.mp h a (by cases a <;> simp)
-  rw [byte_ofNat, Bool.and_eq_true, beq_iff_eq, beq_iff_eq] at h
-  exact h.2
-
 /-- A nibble table of the byte maps, of nibbles. -/
 theorem lk_xor {t : Nat} (ht : t ∈ [oT, oT + 16, oT + 32, oT + 48, oI, oI + 16, oI + 32, oI + 48]) {x y : Byte}
     (hx : x.toNat < 16) (hy : y.toNat < 16) : lk t (x ^^^ y) = lk t x ^^^ lk t y := by
@@ -2148,7 +2142,6 @@ theorem Keys.eqOn {m m' : Mem} {B : BitVec 32} {g : Nat} {E : Nat → BitVec 64}
     rw [wAt_congr fun q hq => e _ (by omega_arith)]; exact (h.fl i hi).c
   · rw [e _ (by omega_arith), e _ (by omega_arith)]; exact h.out j hj
 
-theorem core_total : core.total = 136 := rfl
 theorem core_slots : core.slots = 126 := rfl
 
 /-- The key stays ready through what a mode writes outside the core's slots

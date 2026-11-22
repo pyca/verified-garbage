@@ -270,8 +270,8 @@ def prepare : Prog isa :=
     (.loop (.seq (.block prepGroup) (.ite .e (.block []) (.block prepMasks))) .ne) (.block prepTail)))
 
 /-- The slots of the scratch buffer the core uses: the table's address and
-a spare slot, the block, and 24 bytes more than the keys of four groups
-(16 + 4 · 112 bytes) need. -/
+a spare slot, the block, and 480 bytes for the keys, of which four groups
+(16 + 4 · 112 bytes) take 464. -/
 def slots : Nat := 126
 
 /-- The modes' core: one block at a time. -/
