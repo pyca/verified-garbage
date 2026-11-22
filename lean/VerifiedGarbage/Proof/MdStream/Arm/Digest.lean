@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Spec.Sha256.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 import VerifiedGarbage.Proof.MdStream.DigestScratch
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
@@ -742,19 +741,18 @@ theorem verified (hH : HashOK H) (hc : Checks H) (hsat : ∃ s, (digestScratch H
     fun _ _ _ _ _ _ h₁ h₂ hpub e₁ e₂ =>
       (ct (pre_of h₁) (pre_of h₂) (lay hH) hH (pub_of hpub) hc _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1, hsat⟩
 
-/-! ## In a frame of its own, wiped -/
+/-! ## In a frame of its own -/
 
-/-- `digest`: `digestMain` in a frame holding its working space, which it
-wipes before returning, verified against `Spec.Sha256.digestContract`, from
+/-- `digest`: `digestMain` in a frame holding its working space, verified against `Spec.Sha256.digestContract`, from
 the locality of its postcondition (`Proof/MdStream/DigestScratch.lean`). -/
 theorem framed (hH : HashOK H) (h : Verified Arm.target (digestMain H) (digestScratch H.D hH.SH.H.hash (nw H)))
     (hsat : ∃ s, (Spec.Sha256.digestContract Arm.abi H.D hH.SH.H.hash (16 + dbytes H)).pre s)
     (hb : FitsR (dbytes H) .u64 (nw H) := by decide) :
     Verified Arm.target (digest H) (Spec.Sha256.digestContract Arm.abi H.D hH.SH.H.hash (16 + dbytes H)) :=
-  Arm.Verified.regScratchWiped (sig := digestSig H.D) (nm := "scratch") (e := .u64) (n := nw H)
-    (post := digestPost H.D hH.SH.H.hash Arm.abi.ptrBits) (wa := false) (stack := 16) (words := dbytes H / 4)
-    h ⟨by decide, rfl, rfl⟩ rfl hb (by simp only [nw, dbytes, Elem.size]; omega_using [])
-    (MdStream.Digest.digestPostOut_local _ _ _) hsat rfl
+  Arm.Verified.regScratch (sig := digestSig H.D) (nm := "scratch") (e := .u64) (n := nw H)
+    (post := digestPost H.D hH.SH.H.hash Arm.abi.ptrBits) (wa := false) (stack := 16)
+    h ⟨by decide, rfl, rfl⟩ rfl hb
+    (fun vs mm m₁ m₂ r hl _ hb h => MdStream.Digest.digestPostOut_local _ _ _ vs mm m₁ m₂ r hl hb h) hsat rfl
 
 /-- A state satisfying `digestMain`'s precondition, with a digest of `D`
 bytes, `L` bytes of `scratch` and an empty message. -/

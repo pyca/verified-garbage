@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Sha512.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm.Digest
 public import VerifiedGarbage.Impl.Scrub.Arm
-public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
 # Streaming SHA-512: 32-bit ARM implementation
@@ -99,11 +98,9 @@ end VG.Impl.Sha512.Arm.Stream
 Each is its code, then its cleanup (`Impl/Scrub/Arm.lean`): the registers
 a callee may change set to constants, and first, for `update` and
 `finalize`, the 288 bytes of the stack of their contract, their frame
-(`withStackScratch`), zeroed. `digest` wipes its own working space
-(`withRegScratchWiped`), and its cleanup zeroes only the words of its stack
-that the residue analysis (`Arm.rtaint`) finds may differ between two runs
-(`Impl/Scrub/Arm/Sel.lean`, `scrubSel`, `digestWords`, offsets in words from
-the lowest address of that stack). None returns a value. -/
+(`withStackScratch`), zeroed, and for `digest` the whole stack of its
+contract, its working space (`withRegScratch`) and what it pushes around
+`update`. None returns a value. -/
 
 namespace VG.Impl.Sha512.Arm.Fn
 
@@ -139,20 +136,16 @@ def finalize512_256 : Prog isa :=
 def finalize512_224 : Prog isa :=
   scrubAll 0 288 (Impl.StackScratch.Arm.withStackScratch 288 1 (Stream.finalizeDigest Stream.params512_224))
 
-/-- The words `digest` leaves secret, which the residue analysis (`Arm.rtaint`)
-finds may differ between two runs. -/
-def digestWords : List Nat := List.range' 0 4
-
 /-- `vg_sha384_digest`. -/
-def digest384 : Prog isa := scrubSel 0 584 digestWords (Impl.MdStream.Arm.Digest.digest Stream.streamFns384)
+def digest384 : Prog isa := scrubAll 0 584 (Impl.MdStream.Arm.Digest.digest Stream.streamFns384)
 
 /-- `vg_sha512_digest`. -/
-def digest512 : Prog isa := scrubSel 0 584 digestWords (Impl.MdStream.Arm.Digest.digest Stream.streamFns512)
+def digest512 : Prog isa := scrubAll 0 584 (Impl.MdStream.Arm.Digest.digest Stream.streamFns512)
 
 /-- `vg_sha512_224_digest`. -/
-def digest512_224 : Prog isa := scrubSel 0 584 digestWords (Impl.MdStream.Arm.Digest.digest Stream.streamFns512_224)
+def digest512_224 : Prog isa := scrubAll 0 584 (Impl.MdStream.Arm.Digest.digest Stream.streamFns512_224)
 
 /-- `vg_sha512_256_digest`. -/
-def digest512_256 : Prog isa := scrubSel 0 584 digestWords (Impl.MdStream.Arm.Digest.digest Stream.streamFns512_256)
+def digest512_256 : Prog isa := scrubAll 0 584 (Impl.MdStream.Arm.Digest.digest Stream.streamFns512_256)
 
 end VG.Impl.Sha512.Arm.Fn

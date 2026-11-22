@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Sha1.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm
 public import VerifiedGarbage.Impl.MdStream.Arm.Digest
 public import VerifiedGarbage.Impl.Scrub.Arm
-public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
 # Streaming SHA-1: 32-bit ARM implementation
@@ -61,11 +60,9 @@ end VG.Impl.Sha1.Arm.Stream
 Each is its code, then its cleanup (`Impl/Scrub/Arm.lean`): the registers
 a callee may change set to constants, and first, for `update` and
 `finalize`, the 176 bytes of the stack of their contract, their frame
-(`withStackScratch`), zeroed. `digest` wipes its own working space
-(`withRegScratchWiped`), and its cleanup zeroes only the words of its stack
-that the residue analysis (`Arm.rtaint`) finds may differ between two runs
-(`Impl/Scrub/Arm/Sel.lean`, `scrubSel`, `digestWords`, offsets in words from
-the lowest address of that stack). None returns a value. -/
+(`withStackScratch`), zeroed, and for `digest` the whole stack of its
+contract, its working space (`withRegScratch`) and what it pushes around
+`update`. None returns a value. -/
 
 namespace VG.Impl.Sha1.Arm.Fn
 
@@ -80,11 +77,7 @@ def update : Prog isa := scrubAll 0 176 (Impl.StackScratch.Arm.withStackScratch 
 /-- `vg_sha1_finalize`. -/
 def finalize : Prog isa := scrubAll 0 176 (Impl.StackScratch.Arm.withStackScratch 176 1 Stream.finalize)
 
-/-- The words `digest` leaves secret, which the residue analysis (`Arm.rtaint`)
-finds may differ between two runs. -/
-def digestWords : List Nat := List.range' 0 4
-
 /-- `vg_sha1_digest`. -/
-def digest : Prog isa := scrubSel 0 320 digestWords (Impl.MdStream.Arm.Digest.digest Stream.streamFns)
+def digest : Prog isa := scrubAll 0 320 (Impl.MdStream.Arm.Digest.digest Stream.streamFns)
 
 end VG.Impl.Sha1.Arm.Fn
