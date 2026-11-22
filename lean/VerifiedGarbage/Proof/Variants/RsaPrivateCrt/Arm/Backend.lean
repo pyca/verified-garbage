@@ -59,6 +59,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 /-- The window exponentiation whose products call `b`'s. -/
 def callKernel (b : MontBackend) : WindowKernel where
   code := CrtCall.phase b.name b.mul
+  mul := b.callOp
   correct := by
     intro s base ep len w M x eb h fits stack
     refine WP.mono (sharedWindowExpPhase_ok (TwoExp.sharedMontgomery base s.sp len w b.name b.mul

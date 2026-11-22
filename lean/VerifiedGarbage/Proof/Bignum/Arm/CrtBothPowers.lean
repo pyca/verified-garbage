@@ -100,7 +100,7 @@ theorem crt_powerStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
       1 < numAt s.mem (State.addr child) g.words 0 ∧ numAt s.mem (State.addr child) g.words 0 % 2 = 1)
     (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ))
     (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa ((CrtFn.powerOf st.prime kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
+    WP isa (CrtFn.powerOf st.prime kernel.code slot (56 + 8 * j.val) (56 + 8 * i.val) kernel.mul.op) s fun t =>
       let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr child) g.words 0)
       CrtShared g bs t ∧ LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       CrtPoweredState child (workspaceWords g.words) g.words M
@@ -203,7 +203,7 @@ theorem crt_bothPowers_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
     (q : numAt s.mem (State.addr (crtQ g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 3))
     (flag : s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0))
     (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (.seq ((CrtFn.powerOf st.prime kernel.code) 224 64 80) ((CrtFn.powerOf st.prime kernel.code) 228 72 88)) s fun t =>
+    WP isa (.seq (CrtFn.powerOf st.prime kernel.code 224 64 80 kernel.mul.op) (CrtFn.powerOf st.prime kernel.code 228 72 88 kernel.mul.op)) s fun t =>
       CrtShared g bs t ∧ LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       CrtPoweredState (crtP g.base g.words) (workspaceWords g.words) g.words (crtFactor bs 2)
         (Spec.Rsa.powMod (Spec.Rsa.os2ip (bs 1)) (Spec.Rsa.os2ip (bs 4)) (crtFactor bs 2)) t.mem ∧

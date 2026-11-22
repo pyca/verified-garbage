@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.MontEncode
@@ -349,6 +350,76 @@ theorem CrtCopyCtx.child_eq {s t : State} {g : CrtGeometry} {bs : Fin 7 → List
     intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.sep
   exact h.shared.eq_of_frame h.childWs h.member (frame.mono (by simp)) sepN
 
+/-- `CrtCopyCtx.after_narrow`, with writes below the stack too. -/
+theorem CrtCopyCtx.after_narrowW {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
+    {slot v : Nat} {rs : List Reg} {sp : BitVec 32} (h : CrtCopyCtx g bs child slot v s)
+    (ready : ArithmeticReady (crtN g.base g.words) (workspaceWords g.words) v t) (hsp : s.sp = sp)
+    (frame : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA sp 48]
+      s.mem t.mem)
+    (rest : Rest rs s t) : CrtCopyCtx g bs child slot v t := by
+  subst hsp
+  obtain sepN : ∀ r ∈ [(⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩ : Region),
+      FrameStack.belowA s.sp 48], (⟨State.addr child, 8 * workspaceWords g.words⟩ : Region).Disjoint r := by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.sep
+    · exact h.shared.stack.below.symm.sub_left
+        (crt_region_sub_workspace h.shared.buffers.workspace h.shared.buffers.storageFits h.member)
+  obtain sepM : ∀ r ∈ [(⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩ : Region),
+      FrameStack.belowA s.sp 48], (⟨State.addr g.base, 8 * workspaceWords g.words⟩ : Region).Disjoint r := by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.shared.buffers.context.sepMN
+    · exact h.shared.stack.below.symm.sub_left
+        (crt_region_sub_workspace h.shared.buffers.workspace h.shared.buffers.storageFits (by simp [crtRegions]))
+  obtain frame' : Frame (⟨State.addr s.sp, 4⟩ :: [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩,
+      FrameStack.belowA s.sp 48]) s.mem t.mem := frame.mono (by simp)
+  obtain eqC := h.shared.eq_of_frame h.childWs h.member frame' sepN
+  obtain eqM := h.shared.eq_of_frame h.shared.buffers.context.main (by simp [crtRegions]) frame' sepM
+  exact ⟨h.shared.after_narrowB (frame.mono (by simp)) rest, ready, h.childWs.congr rest.wr, h.member,
+    h.layout.congr eqC, h.sep, h.slotFit, h.slotSmall,
+    by rw [eqM.word (d := slot) (bits := 32) (by have := h.slotFit; omega_using [this])]; exact h.link, h.le⟩
+
+/-- `CrtCopyCtx.child_num`, with writes below the stack too. -/
+theorem CrtCopyCtx.child_numW {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
+    {slot v j : Nat} {sp : BitVec 32} (h : CrtCopyCtx g bs child slot v s) (hj : j < 8) (hsp : s.sp = sp)
+    (frame : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA sp 48]
+      s.mem t.mem) :
+    numAt t.mem (State.addr child) g.words j = numAt s.mem (State.addr child) g.words j := by
+  subst hsp
+  obtain sepN : ∀ r ∈ [(⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩ : Region),
+      FrameStack.belowA s.sp 48], (⟨State.addr child, 8 * workspaceWords g.words⟩ : Region).Disjoint r := by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.sep
+    · exact h.shared.stack.below.symm.sub_left
+        (crt_region_sub_workspace h.shared.buffers.workspace h.shared.buffers.storageFits h.member)
+  obtain eqC := h.shared.eq_of_frame h.childWs h.member (frame.mono (by simp)) sepN
+  exact eqC.number (h.layout.width ▸ h.layout.layout.2.2.1) hj
+
+/-- `CrtCopyCtx.child_eq`, with writes below the stack too. -/
+theorem CrtCopyCtx.child_eqW {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
+    {slot v : Nat} {sp : BitVec 32} (h : CrtCopyCtx g bs child slot v s) (hsp : s.sp = sp)
+    (frame : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA sp 48]
+      s.mem t.mem) :
+    WorkspaceEq (State.addr child) (8 * workspaceWords g.words) s.mem t.mem := by
+  subst hsp
+  apply h.shared.eq_of_frame h.childWs h.member
+    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA s.sp 48])
+    (frame.mono (by simp))
+  intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h.sep
+  · exact h.shared.stack.below.symm.sub_left
+      (crt_region_sub_workspace h.shared.buffers.workspace h.shared.buffers.storageFits h.member)
+
+/-- The 48 bytes below the stack are left to the narrow workspace's products. -/
+theorem CrtCopyCtx.callStack {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
+    {slot v : Nat} (h : CrtCopyCtx g bs child slot v s) :
+    CallStack (crtN g.base g.words) (workspaceWords g.words) s :=
+  ⟨h.shared.stack.belowFit, h.shared.stack.below.sub_right
+    (crt_region_sub_workspace h.shared.buffers.workspace h.shared.buffers.storageFits h.shared.narrow_member)⟩
+
 /-- After a copy into the low limbs of the full array `j`: the context holds, the
 narrow workspace is unchanged and the full one keeps its other arrays. -/
 theorem CrtCopyCtx.after_copyOut {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
@@ -386,22 +457,24 @@ theorem CrtCopyCtx.after_copyOut {s t : State} {g : CrtGeometry} {bs : Fin 7 →
 theorem crt_reduceHalf_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {child : BitVec 32}
     {slot v j M : Nat} (h : CrtCopyCtx g bs child slot v s) (hj : j < 8) (half : g.words ≤ 2 * v)
     (modulus : numAt s.mem (State.addr (crtN g.base g.words)) v 0 = M) (odd : M % 2 = 1)
-    (r2 : numAt s.mem (State.addr (crtN g.base g.words)) v 4 = 2 ^ (128 * v) % M) :
-    WP isa (reduceHalf slot j) s fun t =>
+    (r2 : numAt s.mem (State.addr (crtN g.base g.words)) v 4 = 2 ^ (128 * v) % M) (A : CallOp := inlineCallOp) :
+    WP isa (reduceHalf slot j A.op) s fun t =>
       ArithmeticReady (crtN g.base g.words) (workspaceWords g.words) v t ∧
       numAt t.mem (State.addr (crtN g.base g.words)) v 0 = M ∧
       numAt t.mem (State.addr (crtN g.base g.words)) v 4 = 2 ^ (128 * v) % M ∧
       numAt t.mem (State.addr (crtN g.base g.words)) v 7 = 1 ∧
       numAt t.mem (State.addr (crtN g.base g.words)) v 1 = numAt s.mem (State.addr child) g.words j % M ∧
-      Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s.mem t.mem ∧
+      Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA s.sp 48] s.mem t.mem ∧
       Rest roundClobbers s t := by
+  let K := A.mont (crtN g.base g.words) s.sp (workspaceWords g.words) v
+  obtain cs := h.callStack
   obtain fits : arrAt v 8 ≤ 8 * workspaceWords g.words := h.ready.width ▸ h.ready.layout.2.2.1
   obtain op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 → Operand q := by
     intro q hq
     rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   obtain positive : 0 < M := by have := h.ready.modulus; omega_using [odd]
   -- `h`, the high limbs, into array 1.
-  rw [reduceHalf, WP.seq_iff]
+  rw [reduceHalf, ← A.mont_op (crtN g.base g.words) s.sp (workspaceWords g.words) v, WP.seq_iff]
   refine WP.mono (clearArrayWide_ok s h.ready (o := 1) (by decide) (by decide)) ?_
   rintro s1 ⟨ready1, cleared1, keeps1, frame1, rest1⟩
   obtain ctx1 := h.after_narrow ready1 frame1 rest1
@@ -422,8 +495,10 @@ theorem crt_reduceHalf_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
   obtain r23 := (keeps_array_num keeps3 fits (op 4 (by simp)) (by decide)).trans r22
   obtain high3 := (keeps_array_num keeps3 fits (op 1 (by simp)) (by decide)).trans high2
   rw [WP.seq_iff]
-  refine WP.mono (montEncode_ok s3 ready3 (op 1 (by simp)) (op 1 (by simp)) (by decide) mod3 odd r23) ?_
-  rintro s4 ⟨ready4, mod4, enc4, keeps4, frame4, rest4⟩
+  obtain rest13 : Rest roundClobbers s s3 := rest1.trans (rest2.trans rest3)
+  refine WP.mono (montEncodeWith_ok K s3 ready3 ⟨cs.of_rest rest13, rest13.sp⟩ (op 1 (by simp)) (op 1 (by simp))
+    (by decide) mod3 odd r23) ?_
+  rintro s4 ⟨ready4, mod4, enc4, keeps4, _, frame4, rest4⟩
   rw [high3] at enc4
   obtain r24 := (keeps_array_num keeps4 fits (op 4 (by simp)) (by decide)).trans r23
   obtain one4 := (keeps_array_num keeps4 fits (op 7 (by simp)) (by decide)).trans one3
@@ -446,21 +521,25 @@ theorem crt_reduceHalf_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
   obtain r26 := (keeps_array_num keeps6 fits (op 4 (by simp)) (by decide)).trans r25
   obtain one6 := (keeps_array_num keeps6 fits (op 7 (by simp)) (by decide)).trans one5
   -- `l mod M`, from the low limbs into array 5.
-  obtain frame16 : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s1.mem s6.mem :=
-    frame2.trans (frame3.trans (frame4.trans (frame5.trans frame6)))
+  obtain frame16 : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩,
+      FrameStack.belowA s.sp 48] s1.mem s6.mem :=
+    (frame2.mono (by simp)).trans ((frame3.mono (by simp)).trans (frame4.trans
+      ((frame5.mono (by simp)).trans (frame6.mono (by simp)))))
   obtain rest16 : Rest roundClobbers s1 s6 := rest2.trans (rest3.trans (rest4.trans (rest5.trans rest6)))
-  obtain ctx6 := ctx1.after_narrow ready6 frame16 rest16
+  obtain ctx6 := ctx1.after_narrowW ready6 rest1.sp frame16 rest16
   rw [WP.seq_iff]
   refine WP.mono (crt_copyLow_ok s6 ctx6 hj (by decide) (by decide)) ?_
   rintro s7 ⟨ready7, low7, keeps7, frame7, rest7⟩
-  rw [ctx1.child_num hj frame16, h.child_num hj frame1] at low7
+  rw [ctx1.child_numW hj rest1.sp frame16, h.child_num hj frame1] at low7
   obtain mod7 := (keeps_array_num keeps7 fits (op 0 (by simp)) (by decide)).trans mod6
   obtain r27 := (keeps_array_num keeps7 fits (op 4 (by simp)) (by decide)).trans r26
   obtain one7 := (keeps_array_num keeps7 fits (op 7 (by simp)) (by decide)).trans one6
   obtain neg7 := (keeps_array_num keeps7 fits (op 6 (by simp)) (by decide)).trans neg6
   rw [WP.seq_iff]
-  refine WP.mono (reduceOperand_ok s7 ready7 (op 5 (by simp)) (by decide) (by decide) mod7 odd r27 one7) ?_
-  rintro s8 ⟨ready8, mod8, low8, keeps8, frame8, rest8⟩
+  obtain rest17 : Rest roundClobbers s s7 := rest1.trans (rest16.trans rest7)
+  refine WP.mono (reduceOperandWith_ok K s7 ready7 ⟨cs.of_rest rest17, rest17.sp⟩ (op 5 (by simp)) (by decide)
+    (by decide) mod7 odd r27 one7) ?_
+  rintro s8 ⟨ready8, mod8, low8, keeps8, _, frame8, rest8⟩
   rw [low7] at low8
   obtain r28 := (keeps_array_num keeps8 fits (op 4 (by simp)) (by decide)).trans r27
   obtain one8 := (keeps_array_num keeps8 fits (op 7 (by simp)) (by decide)).trans one7
@@ -473,7 +552,8 @@ theorem crt_reduceHalf_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byt
   refine ⟨readyT, (keeps_array_num keepsT fits (op 0 (by simp)) (by decide)).trans mod8,
     (keeps_array_num keepsT fits (op 4 (by simp)) (by decide)).trans r28,
     (keeps_array_num keepsT fits (op 7 (by simp)) (by decide)).trans one8, ?_,
-    frame1.trans (frame16.trans (frame7.trans (frame8.trans frameT))),
+    (frame1.mono (by simp)).trans (frame16.trans ((frame7.mono (by simp)).trans (frame8.trans
+      (frameT.mono (by simp))))),
     rest1.trans (rest16.trans (rest7.trans (rest8.trans restT)))⟩
   rw [valueT, low8, mod8, neg8, half_combine positive, Nat.mod_add_div']
 

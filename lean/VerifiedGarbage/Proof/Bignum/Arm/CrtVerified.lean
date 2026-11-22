@@ -1165,7 +1165,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 theorem crtFn_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus : bs1 0 = bs2 0)
     (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtFnInput g bs1 s ∧ CrtFnInput g bs2 t ∧ s.sp = t.sp)
-      (CrtFn.codeOf st.check st.prime kernel.code) (fun _ _ => True) := by
+      (CrtFn.codeOf st.check st.prime kernel.code kernel.mul.op) (fun _ _ => True) := by
   unfold CrtFn.codeOf
   apply RelCT.frame (fun _ _ h => h.2.2)
   intro s t tr1 tr2 u v hp e1 e2
@@ -1258,7 +1258,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 
 theorem crtFn_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h : CrtFnInput g bs s)
     (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa (CrtFn.codeOf st.check st.prime kernel.code) s fun t => abiPreserved s t ∧
+    WP isa (CrtFn.codeOf st.check st.prime kernel.code kernel.mul.op) s fun t => abiPreserved s t ∧
       Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
         (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) := by
   unfold CrtFn.codeOf
@@ -1378,7 +1378,7 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
 theorem crt_contract_correct (s : State) (h : (Proof.Rsa.privateCrtContract abi 104).pre s) (kernel : WindowKernel := baselineWindowKernel) :
-    ∃ tr t, Exec isa (CrtFn.codeWith kernel.code) s tr t ∧ abiPreserved s t ∧
+    ∃ tr t, Exec isa (CrtFn.codeWith kernel.code kernel.mul.op) s tr t ∧ abiPreserved s t ∧
       (Proof.Rsa.privateCrtContract abi 104).post s t := by
   obtain ⟨tr, t, run, preserved, post⟩ := (crtFn_ok (kernel := kernel)) s (crt_contract_pre s h) baselineStages trivial
   refine ⟨tr, t, run, preserved, ?_⟩
@@ -1387,7 +1387,7 @@ theorem crt_contract_correct (s : State) (h : (Proof.Rsa.privateCrtContract abi 
   exact post
 
 theorem crt_contract_ct (kernel : WindowKernel := baselineWindowKernel) : ConstantTime isa (Proof.Rsa.privateCrtContract abi 104).pre
-    (Proof.Rsa.privateCrtContract abi 104).pub (CrtFn.codeWith kernel.code) := by
+    (Proof.Rsa.privateCrtContract abi 104).pub (CrtFn.codeWith kernel.code kernel.mul.op) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := crt_contract_pre s hs
   have it := crt_contract_pre t ht
@@ -1405,7 +1405,7 @@ theorem crt_contract_ct (kernel : WindowKernel := baselineWindowKernel) : Consta
 
 theorem crt_contract_correctP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre s)
     (kernel : WindowKernel := baselineWindowKernel) :
-    ∃ tr t, Exec isa (CrtFn.codeGiven kernel.code) s tr t ∧ abiPreserved s t ∧
+    ∃ tr t, Exec isa (CrtFn.codeGiven kernel.code kernel.mul.op) s tr t ∧ abiPreserved s t ∧
       (Proof.Rsa.privateCrtPrecomputedContract abi 104).post s t := by
   obtain ⟨tr, t, run, preserved, post⟩ := (crtFn_ok (kernel := kernel)) s (crt_contract_preP s h) givenStages
     (show GivenOk _ _ from ⟨rfl, crt_contract_pqP s h⟩)
@@ -1417,7 +1417,7 @@ theorem crt_contract_correctP (s : State) (h : (Proof.Rsa.privateCrtPrecomputedC
 
 theorem crt_contract_ctP (kernel : WindowKernel := baselineWindowKernel) :
     ConstantTime isa (Proof.Rsa.privateCrtPrecomputedContract abi 104).pre
-      (Proof.Rsa.privateCrtPrecomputedContract abi 104).pub (CrtFn.codeGiven kernel.code) := by
+      (Proof.Rsa.privateCrtPrecomputedContract abi 104).pub (CrtFn.codeGiven kernel.code kernel.mul.op) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := crt_contract_preP s hs
   have it := crt_contract_preP t ht
@@ -1482,7 +1482,7 @@ theorem crt_contract_sat : ∃ s, (Proof.Rsa.privateCrtContract abi 104).pre s :
     [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.scratchWords] using crtSatState
 
-theorem crt_verified (kernel : WindowKernel := baselineWindowKernel) : Verified target (CrtFn.codeWith kernel.code) (Proof.Rsa.privateCrtContract abi 104) :=
+theorem crt_verified (kernel : WindowKernel := baselineWindowKernel) : Verified target (CrtFn.codeWith kernel.code kernel.mul.op) (Proof.Rsa.privateCrtContract abi 104) :=
   ⟨(crt_contract_correct (kernel := kernel)), (crt_contract_ct (kernel := kernel)), crt_contract_sat⟩
 
 theorem os2ip_replicate_zero' (n : Nat) : Spec.Rsa.os2ip (List.replicate n 0) = 0 := by
@@ -1525,7 +1525,7 @@ theorem crt_contract_satP : ∃ s, (Proof.Rsa.privateCrtPrecomputedContract abi 
        bv_omega)
 
 theorem crt_verifiedP (kernel : WindowKernel := baselineWindowKernel) :
-    Verified target (CrtFn.codeGiven kernel.code) (Proof.Rsa.privateCrtPrecomputedContract abi 104) :=
+    Verified target (CrtFn.codeGiven kernel.code kernel.mul.op) (Proof.Rsa.privateCrtPrecomputedContract abi 104) :=
   ⟨(crt_contract_correctP (kernel := kernel)), (crt_contract_ctP (kernel := kernel)), crt_contract_satP⟩
 
 end VG.Proof.Bignum.Arm

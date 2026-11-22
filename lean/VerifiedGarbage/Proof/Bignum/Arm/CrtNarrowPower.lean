@@ -40,6 +40,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
@@ -832,10 +833,12 @@ structure KernelStack (base ep : BitVec 32) (len eLen : Nat) (s : State) : Prop 
   separate : (FrameStack.belowA s.sp 48).Disjoint ⟨State.addr base, 8 * len⟩
   exponent : (FrameStack.belowA s.sp 48).Disjoint ⟨State.addr ep, eLen⟩
 
-/-- A windowed exponentiation. It may write the 48 bytes below the stack, for
-the calls of a shared Montgomery product (`MontCall.op`). -/
+/-- A windowed exponentiation, and the Montgomery product (`mul`) of the
+CRT's other arithmetic. Both may write the 48 bytes below the stack, for the
+calls of a shared Montgomery product (`MontCall.op`). -/
 structure WindowKernel where
   code : Prog isa
+  mul : CallOp
   correct : ∀ (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte},
     ExpPhaseInput base ep len w M x eb s → arrAt w 16 ≤ 8 * len →
     KernelStack base ep len eb.length s →
@@ -854,6 +857,7 @@ structure WindowKernel where
 
 def baselineWindowKernel : WindowKernel where
   code := windowExpPhase
+  mul := inlineCallOp
   correct s _ _ _ _ _ _ _ h fits _ := WP.mono (windowExpPhase_ok s h fits)
     fun _ ⟨ready, value, modulus, r2, one, frame, rest⟩ =>
       ⟨ready, value, modulus, r2, one, frame.mono (by simp), rest⟩
@@ -1110,7 +1114,7 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
       (g.sourceLength i.succ) (56 + 8 * i.val) (bs 1) (bs i.succ) s)
     (prime : numAt s.mem (State.addr child) g.words 0 = Spec.Rsa.os2ip (bs j.succ))
     (st : CrtStages) (hst : st.ok g bs) (kernel : WindowKernel := baselineWindowKernel) :
-    WP isa ((narrowPowerOf st.prime kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) s fun t =>
+    WP isa (narrowPowerOf st.prime kernel.code slot (56 + 8 * j.val) (56 + 8 * i.val) kernel.mul.op) s fun t =>
       let M := safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (numAt s.mem (State.addr child) g.words 0)
       CrtShared g bs t ∧
       CrtPoweredState child (workspaceWords g.words) g.words M
@@ -1207,13 +1211,20 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     ⟨sharedX, readyX, (sharedX.child kind).2.1, member, layoutX, sepCN, slotFit, hs,
       (sharedX.child kind).2.2.2.2.2.2, le⟩
   rw [WP.seq_iff]
-  refine WP.mono (crt_reduceHalf_ok x ctxX (j := 1) (by decide) half modX oddY r2X) ?_
+  refine WP.mono (crt_reduceHalf_ok x ctxX (j := 1) (by decide) half modX oddY r2X kernel.mul) ?_
   rintro e ⟨readyE, modE, r2E, _, inputE, frameE, restE⟩
   rw [inputX] at inputE
-  obtain sharedE := sharedX.after_narrow (frameE.mono (by simp)) restE
-  obtain flagNE := sharedX.acceptance_after_workspace sharedX.narrow_member frameE restE
+  obtain sharedE := sharedX.after_narrowB (frameE.mono (by simp)) restE
+  obtain flagNE := sharedX.acceptance_after_workspaceB sharedX.narrow_member frameE restE
   obtain eqCE := sharedX.eq_of_frame (sharedX.child kind).2.1 member
-    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frameE.mono (by simp)) sepN
+    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA x.sp 48])
+    (frameE.mono (by simp)) (by
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact sepN _ (by simp)
+      · exact sharedX.stack.below.symm.sub_left
+          (crt_region_sub_workspace sharedX.buffers.workspace sharedX.buffers.storageFits member))
   -- The exponentiation.
   obtain expIn : NarrowExpInput (crtN g.base g.words) (g.source i.succ) (workspaceWords g.words)
       v M (Spec.Rsa.os2ip (bs 1) % M) (g.sourceLength i.succ) (56 + 8 * i.val) (bs i.succ) e := by
@@ -1288,6 +1299,8 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   rw [restSU.sp] at frameZ
   obtain spE : e.sp = s.sp := (restSU.trans (restZ.trans (restY.trans (restX.trans restE)))).sp
   rw [spE] at frameR
+  obtain spX : x.sp = s.sp := (restSU.trans (restZ.trans (restY.trans restX))).sp
+  rw [spX] at frameE
   exact (frameU.mono (by simp)).trans ((frameZ.mono (by simp)).trans ((frameY.mono (by simp)).trans
     ((frameXC.mono (by simp)).trans ((frameE.mono (by simp)).trans ((frameR.mono (by simp)).trans
       (frameTC.mono (by simp)))))))
