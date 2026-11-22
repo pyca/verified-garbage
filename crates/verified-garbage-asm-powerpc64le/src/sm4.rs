@@ -143,3 +143,11 @@ pub(crate) mod vg_sm4_crypt_prepared;
 #[rustfmt::skip]
 #[path = "internal/vg_sm4_prepare_keys.rs"]
 pub(crate) mod vg_sm4_prepare_keys;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_serial_decrypt.rs"]
+pub(crate) mod vg_sm4_serial_decrypt;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm4_serial_encrypt.rs"]
+pub(crate) mod vg_sm4_serial_encrypt;
