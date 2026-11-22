@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
 public import Batteries.Logic
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -22,11 +23,11 @@ public import VerifiedGarbage.Proof.Rsa.Contract
 namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 
-theorem pd_contract_correct (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre s) :
-    ∃ tr t, Exec isa PdFn.code s tr t ∧ abiPreserved s t ∧
+theorem pd_contract_correct (A : CallOp) (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre s) :
+    ∃ tr t, Exec isa (PdFn.code A.op) s tr t ∧ abiPreserved s t ∧
       (Proof.Rsa.publicPrecomputedCheckedContract abi 104).post s t := by
   have input := pd_contract_pre s h
-  obtain ⟨tr, t, run, preserved, post⟩ := pdFn_ok s input
+  obtain ⟨tr, t, run, preserved, post⟩ := pdFn_ok A s input
   refine ⟨tr, t, run, preserved, ?_⟩
   sig_post [Proof.Rsa.publicPrecomputedCheckedContract, Proof.Rsa.publicPrecomputedSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   rw [BitVec.setWidth_append_eq_right]
@@ -34,8 +35,8 @@ theorem pd_contract_correct (s : State) (h : (Proof.Rsa.publicPrecomputedChecked
   rw [pd_contract_length s h] at pre
   exact pdOutput_written input.minLength length pre post
 
-theorem pd_contract_ct : ConstantTime isa (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre
-    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pub PdFn.code := by
+theorem pd_contract_ct (A : CallOp) : ConstantTime isa (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre
+    (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pub (PdFn.code A.op) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   have is := pd_contract_pre s hs
   have it := pd_contract_pre t ht
@@ -56,5 +57,5 @@ theorem pd_contract_ct : ConstantTime isa (Proof.Rsa.publicPrecomputedCheckedCon
   simp only [Nat.mul_zero, BitVec.add_zero] at first
   simp only [State.addr] at it
   rw [← first, ← second, ← eEq] at it
-  exact (pdFn_ct s t tr1 tr2 u v ⟨is, it, sp⟩ e1 e2).1
+  exact (pdFn_ct A s t tr1 tr2 u v ⟨is, it, sp⟩ e1 e2).1
 end VG.Proof.Bignum.Arm

@@ -47,7 +47,7 @@ theorem pd_contract_pre (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedCont
   simp only [State.addr] at sub
   refine ⟨⟨?_, ?_⟩, valid.1, valid.2, space, ePositive, eLen,
     nFit, ?_, rfl, rfl, ⟨eFit, ?_, rfl⟩, ⟨xFit, ?_, rfl⟩, outFit, ?_, ?_, ?_, ?_, ?_,
-    rfl, rfl, ?_, fit56, argFit, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    rfl, rfl, ?_, fit56, argFit, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, stackFit, ?_, ?_, ?_⟩
   · simpa only [Nat.mul_comm] using wsFit
   · rw [wr]; simp [State.addr, Nat.mul_comm]
   · exact ⟨_, List.mem_append_left _ (by rw [rd]; simp [State.addr]), Region.contains_self _ _⟩
@@ -75,6 +75,9 @@ theorem pd_contract_pre (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedCont
   · rw [frame]; simpa only [State.addr] using stackX.sub_left sub
   · rw [frame]; simpa only [State.addr] using stackOut.sub_left sub
   · rw [frame]; simpa only [State.addr] using stackArgs.sub_left sub
+  · rw [frame104]; simpa only [State.addr, Nat.mul_comm] using stackWs
+  · rw [frame104]; simpa only [State.addr] using stackE
+  · rw [frame104]; simpa only [State.addr] using stackX
 
 theorem pd_contract_length (s : State) (h : (Proof.Rsa.publicPrecomputedCheckedContract abi 104).pre s) :
     (s.gpr .r3).toNat = 2 * Spec.Rsa.modulusWords (s.gpr .r1).toNat := by

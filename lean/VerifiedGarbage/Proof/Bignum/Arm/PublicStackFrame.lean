@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 
 /-! # Saved public arguments survive workspace and acceptance-slot writes -/
 
@@ -35,4 +36,42 @@ theorem PublicStack.after_checks {s t : State} {base dst np ep xp : BitVec 32} {
   · rw [rest.sp, word 56 (by decide) (by decide)]; exact h.exponent
   · rw [rest.sp, word 60 (by decide) (by decide)]; exact h.exponentCount
   · rw [rest.sp, word 64 (by decide) (by decide)]; exact h.input
+
+/-- The saved arguments survive a call of the shared Montgomery product,
+which writes the workspace and the 48 bytes below the stack. -/
+theorem PublicStack.after_call {s t : State} {base dst np ep xp : BitVec 32} {len k eLen : Nat} {rs : List Reg}
+    (h : PublicStack base dst np ep xp len k eLen s) (fit : 48 ≤ s.sp.toNat)
+    (frame : Frame [⟨State.addr base, 8 * len⟩, FrameStack.belowA s.sp 48] s.mem t.mem)
+    (rest : Rest rs s t) : PublicStack base dst np ep xp len k eLen t := by
+  have eq : WorkspaceEq (State.addr s.sp) 80 s.mem t.mem := WorkspaceEq.of_frame (by decide) frame
+    (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact h.separate
+        · exact below48_apart fit (by decide))
+  refine ⟨by rw [rest.sp]; exact h.nowrap, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [rest.wr, rest.sp]; exact h.frameWritable
+  · rw [rest.rd, rest.wr, rest.sp]; exact h.argumentsRead
+  · rw [rest.sp]; exact h.separate
+  · rw [rest.sp]
+    have word := eq.word (d := 0) (bits := 32) (by decide)
+    simp only [off, BitVec.add_zero] at word
+    exact word.trans h.savedBase
+  · rw [rest.sp, eq.word (d := 4) (bits := 32) (by decide)]; exact h.savedOutput
+  · rw [rest.sp, eq.word (d := 8) (bits := 32) (by decide)]; exact h.savedModulus
+  · rw [rest.sp, eq.word (d := 12) (bits := 32) (by decide)]; exact h.savedCount
+  · rw [rest.sp, eq.word (d := 56) (bits := 32) (by decide)]; exact h.exponent
+  · rw [rest.sp, eq.word (d := 60) (bits := 32) (by decide)]; exact h.exponentCount
+  · rw [rest.sp, eq.word (d := 64) (bits := 32) (by decide)]; exact h.input
+
+theorem PublicStack.keep_acceptance_call {s t : State} {base dst np ep xp : BitVec 32} {len k eLen : Nat}
+    {rs : List Reg} (h : PublicStack base dst np ep xp len k eLen s) (fit : 48 ≤ s.sp.toNat)
+    (frame : Frame [⟨State.addr base, 8 * len⟩, FrameStack.belowA s.sp 48] s.mem t.mem) (rest : Rest rs s t) :
+    t.mem.readW (off (State.addr t.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 := by
+  have eq : WorkspaceEq (State.addr s.sp) 80 s.mem t.mem := WorkspaceEq.of_frame (by decide) frame
+    (by intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact h.separate
+        · exact below48_apart fit (by decide))
+  rw [rest.sp]
+  exact eq.word (d := 48) (bits := 32) (by decide)
 end VG.Proof.Bignum.Arm

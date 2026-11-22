@@ -117,7 +117,13 @@ theorem pcStub : CodeOk (PcFn.codeWith (precomputeWith (r2PublicWith (MontCall.o
 theorem pcOk (b : MontBackend) : CodeOk (pc b) 104 :=
   (show FillB _ (pc b) by have := b.mulOk; fill_holes).codeOk pcStub
 
-theorem pdOk : CodeOk PdFn.code 104 := ⟨by decide +kernel, by lit_decide⟩
+/-- The public operation on precomputed values, its products calling `b`'s. -/
+def pd (b : MontBackend) : Prog isa := PdFn.code b.callOp.op
+
+theorem pdStub : CodeOk (PdFn.code (MontCall.op "" (holeStub 40))) 104 := by lit_decide
+
+theorem pdOk (b : MontBackend) : CodeOk (pd b) 104 :=
+  (show FillB _ (pd b) by have := b.mulOk; fill_holes).codeOk pdStub
 
 def variant (b : MontBackend) : Proof.Rsa.Arm.CrtImpl where
   name := "vg_rsa_private_crt" ++ b.suffix
@@ -135,10 +141,10 @@ def variant (b : MontBackend) : Proof.Rsa.Arm.CrtImpl where
   pcStack := (b.callerOk _ _ (pcOk b)).1
   pcNoIcall := (b.callerOk _ _ (pcOk b)).2
   pdName := "vg_rsa_public_precomputed_checked" ++ b.suffix
-  pd := b.caller.code PdFn.code
-  pdVerified := b.caller.verified pd_verified
-  pdStack := (b.callerOk _ _ pdOk).1
-  pdNoIcall := (b.callerOk _ _ pdOk).2
+  pd := b.caller.code (pd b)
+  pdVerified := b.caller.verified (pd_verified b.callOp)
+  pdStack := (b.callerOk _ _ (pdOk b)).1
+  pdNoIcall := (b.callerOk _ _ (pdOk b)).2
   suffix := b.suffix
   features := b.features
 

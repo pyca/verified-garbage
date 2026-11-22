@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 
 import VerifiedGarbage.Proof.Bignum.Arm.PdContract
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -42,7 +43,8 @@ theorem pd_contract_sat : ∃ s, (Proof.Rsa.publicPrecomputedCheckedContract abi
     [pdSatState, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.lenValid,
       Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using pdSatState
 
-theorem pd_verified : Verified target PdFn.code (Proof.Rsa.publicPrecomputedCheckedContract abi 104) :=
-  ⟨pd_contract_correct, pd_contract_ct, pd_contract_sat⟩
+theorem pd_verified (A : CallOp) :
+    Verified target (PdFn.code A.op) (Proof.Rsa.publicPrecomputedCheckedContract abi 104) :=
+  ⟨pd_contract_correct A, pd_contract_ct A, pd_contract_sat⟩
 
 end VG.Proof.Bignum.Arm

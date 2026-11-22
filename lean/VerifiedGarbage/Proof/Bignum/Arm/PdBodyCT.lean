@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
@@ -74,10 +75,10 @@ theorem pdExponentFlag_ready (s : State) {base dst np ep xp : BitVec 32} {len k 
   rintro t ⟨flag, mem, rest⟩
   exact ⟨h.toPdBodyInput.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ptr), flag⟩
 
-theorem pdBody_ct {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1 xb2 : List Byte} :
+theorem pdBody_ct (A : CallOp) {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1 xb2 : List Byte} :
     RelCT isa (fun s t => PdBodyInput base dst np ep xp len k eLen N R eb xb1 s ∧
       PdBodyInput base dst np ep xp len k eLen N R eb xb2 t ∧ s.sp = t.sp)
-      PdFn.body (fun _ _ => True) := by
+      (PdFn.body A.op) (fun _ _ => True) := by
   intro s t tr1 tr2 u v h e1 e2
   have positive : 0 < eb.length := by rw [h.1.buffers.exponent.length]; exact h.1.buffers.exponentPositive
   let P := fun (s t : State) => PdBodyInput base dst np ep xp len k eLen N R eb xb1 s ∧
@@ -100,7 +101,7 @@ theorem pdBody_ct {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1
   have branch : RelCT isa (fun s t => s.sp = t.sp ∧
       PdExponentChecked base dst np ep xp len k eLen N R eb xb1 s ∧
       PdExponentChecked base dst np ep xp len k eLen N R eb xb2 t)
-      (.ite .eq PublicFn.fail PdFn.imported) (fun _ _ => True) := by
+      (.ite .eq PublicFn.fail (PdFn.imported A.op)) (fun _ _ => True) := by
     apply RelCT.ite
     · intro s t h
       change some s.z = some t.z
@@ -108,7 +109,7 @@ theorem pdBody_ct {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1
     · apply (pdFail_ct (base := base) (dst := dst) (np := np) (ep := ep) (xp := xp)
         (len := len) (k := k) (eLen := eLen) (N := N) (R := R) (eb := eb) (xb1 := xb1) (xb2 := xb2)).mono
         (fun _ _ h => ⟨h.1.2.1.toPdBodyInput, h.1.2.2.toPdBodyInput, h.1.1⟩) (fun _ _ h => h)
-    · apply (pdImported_ct (base := base) (dst := dst) (pp := np) (ep := ep) (xp := xp)
+    · apply (pdImported_ct A (base := base) (dst := dst) (pp := np) (ep := ep) (xp := xp)
         (len := len) (k := k) (eLen := eLen) (N := N) (R := R) (eb := eb) (xb1 := xb1) (xb2 := xb2)).mono
         (fun _ _ h => ⟨h.1.2.1.toPdBodyInput, h.1.2.2.toPdBodyInput, h.1.1⟩) (fun _ _ h => h)
   exact (args.seq (check.seq (ready.seq branch))) s t tr1 tr2 u v h e1 e2
