@@ -100,7 +100,7 @@ abbrev ecdhPC : Contract isa := ecdhPPC.withTables p192.constsK
 theorem pre_of {s : State} (h : ecdhPPC.pre (stripConsts p192.constsK s)) (hk : ConstsOk p192.constsK 0 s) :
     EPre p192 s (constRegs p192.constsK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, fun _ => tbl_of_consts hk (List.mem_singleton_self _)
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, tbl_of_consts hk (List.mem_singleton_self _)
     (hk.disjoint_wr (List.mem_singleton_self _) (by
       show (⟨s.gpr .r6, size⟩ : Region) ∈ (stripConsts p192.constsK s).wr
       rw [h2]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩

@@ -118,7 +118,7 @@ theorem sK_eq : sK = [(brainpoolp256r1Comb.tsym, brainpoolp256r1CombWords), (bra
 theorem pre_of {s : State} (h : signPPC.pre (stripConsts sK s)) (hk : ConstsOk sK 0 s) :
     Pre brainpoolp256r1 s (constRegs sK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
-  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, fun _ =>
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, 
     tbl_of_consts hk (List.mem_append_right _ (List.mem_singleton_self _)) (hk.disjoint_wr
       (List.mem_append_right _ (List.mem_singleton_self _)) (by
         show (⟨s.gpr .r7, size⟩ : Region) ∈ (stripConsts sK s).wr

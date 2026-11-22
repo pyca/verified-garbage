@@ -118,7 +118,7 @@ theorem sK_eq : sK = [(p521Comb.tsym, p521CombWords), (p521.constSym, p521.const
 theorem pre_of {s : State} (h : signPPC.pre (stripConsts sK s)) (hk : ConstsOk sK 0 s) :
     Pre p521 s (constRegs sK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
-  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, fun _ =>
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, 
     tbl_of_consts hk (List.mem_append_right _ (List.mem_singleton_self _)) (hk.disjoint_wr
       (List.mem_append_right _ (List.mem_singleton_self _)) (by
         show (⟨s.gpr .r7, size⟩ : Region) ∈ (stripConsts sK s).wr

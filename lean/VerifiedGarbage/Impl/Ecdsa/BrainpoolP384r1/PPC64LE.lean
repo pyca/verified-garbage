@@ -11,7 +11,7 @@ namespace VG.Impl.Ecdsa.PPC64LE
 open VG.PPC64LE
 
 /-- brainpoolP384r1 as the code has it. -/
-def brainpoolp384r1 : Cfg := ⟨6, Spec.BrainpoolP384r1.curve, Impl.Weierstrass.Mont.brainpoolp384r1p, Impl.Weierstrass.Mont.brainpoolp384r1n, none, some "VG_BRAINPOOLP384R1_FRAME_CONSTS"⟩
+def brainpoolp384r1 : Cfg := ⟨6, Spec.BrainpoolP384r1.curve, Impl.Weierstrass.Mont.brainpoolp384r1p, Impl.Weierstrass.Mont.brainpoolp384r1n, none, "VG_BRAINPOOLP384R1_FRAME_CONSTS"⟩
 
 
 end VG.Impl.Ecdsa.PPC64LE

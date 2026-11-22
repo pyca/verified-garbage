@@ -78,7 +78,7 @@ structure VPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   sig_fit : (s.gpr .r5).toNat + 2 * c.C.len ≤ 2 ^ 64
   sc_fit : (s.gpr .r6).toNat + size ≤ 2 ^ 64
   /-- The table of constants the setup copies (`tbl_of_consts`). -/
-  tbl : c.tbl = true → TblOk c (s.gpr .r6) s
+  tbl : TblOk c (s.gpr .r6) s
 
 /-- The key's `x` and `y`, the hash, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=

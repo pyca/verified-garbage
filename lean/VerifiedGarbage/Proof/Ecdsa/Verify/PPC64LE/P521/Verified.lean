@@ -153,7 +153,7 @@ theorem vK_eq : vK = [(p521Comb.tsym, p521CombWords), (p521.constSym, p521.const
 theorem pre_of {s : State} (h : verifyPPC.pre (stripConsts vK s)) (hk : ConstsOk vK 0 s) :
     VPre p521 s (constRegs vK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, fun _ =>
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, 
     tbl_of_consts hk (List.mem_append_right _ (List.mem_singleton_self _)) (hk.disjoint_wr
       (List.mem_append_right _ (List.mem_singleton_self _)) (by
         show (⟨s.gpr .r6, size⟩ : Region) ∈ (stripConsts vK s).wr

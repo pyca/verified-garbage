@@ -112,7 +112,7 @@ structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
   k_fit : (s.gpr A.k).toNat + c.C.len ≤ 2 ^ 64
   d_fit : (s.gpr A.d).toNat + c.C.len ≤ 2 ^ 64
   e_fit : (s.gpr A.e).toNat + c.C.len ≤ 2 ^ 64
-  tbl : c.tbl = true → TblOk c (s.gpr A.sc) s
+  tbl : TblOk c (s.gpr A.sc) s
 
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)

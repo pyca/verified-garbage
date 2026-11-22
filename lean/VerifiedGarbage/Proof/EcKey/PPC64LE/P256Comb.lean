@@ -108,7 +108,7 @@ theorem pkK_eq : pkK = [(p256Comb.tsym, p256CombWords), (p256.constSym, p256.con
 theorem pre_of {s : State} (h : pkPPC.pre (stripConsts pkK s)) (hk : ConstsOk pkK 0 s) :
     PkPre p256 s (constRegs pkK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, fun _ =>
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, 
     tbl_of_consts hk (List.mem_append_right _ (List.mem_singleton_self _)) (hk.disjoint_wr
       (List.mem_append_right _ (List.mem_singleton_self _)) (by
         show (⟨s.gpr .r5, size⟩ : Region) ∈ (stripConsts pkK s).wr

@@ -54,6 +54,6 @@ theorem pk_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c.C
     ∃ t s', Exec isa (Impl.EcKey.PPC64LE.Cfg.publicKeyWith c generator) s t s' ∧ abiPreserved s s' ∧
       PkPost c (stripConsts [(tsym, words)] s) s' :=
   pk_okK hc h3 hL hgen (hpre := ⟨hk.rd_strip (by rw [hp.rd, List.append_nil]; rfl), hp.wr, hp.out_sc, hp.d_sc,
-    hp.out_fit, hp.d_fit, hp.sc_fit, fun h => (hp.tbl h).of_strip⟩) hk (List.mem_singleton_self _)
+    hp.out_fit, hp.d_fit, hp.sc_fit, hp.tbl.of_strip⟩) hk (List.mem_singleton_self _)
 
 end VG.Proof.EcKey.PPC64LE.Tab

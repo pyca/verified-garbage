@@ -11,7 +11,7 @@ namespace VG.Impl.Ecdsa.PPC64LE
 open VG.PPC64LE
 
 /-- P-384 as the code has it. -/
-def p384 : Cfg := ⟨6, Spec.P384.curve, Impl.Weierstrass.Mont.p384p, Impl.Weierstrass.Mont.p384n, some Impl.Weierstrass.Mul.p384, some "VG_P384_FRAME_CONSTS"⟩
+def p384 : Cfg := ⟨6, Spec.P384.curve, Impl.Weierstrass.Mont.p384p, Impl.Weierstrass.Mont.p384n, some Impl.Weierstrass.Mul.p384, "VG_P384_FRAME_CONSTS"⟩
 
 /-- `vg_p384_mul`. -/
 def mulP384 : Prog isa := p384.mulFn

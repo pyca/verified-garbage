@@ -489,7 +489,7 @@ structure CPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   pk_fit : (s.gpr .r4).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64
   sc_fit : (s.gpr .r5).toNat + size ≤ 2 ^ 64
   /-- The table of constants the setup copies (`tbl_of_consts`). -/
-  tbl : c.tbl = true → TblOk c (s.gpr .r5) s
+  tbl : TblOk c (s.gpr .r5) s
 
 theorem CPre.setup {s : State} {extra : List Region} (hp : CPre c s extra) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
   obtain hr12 : (s.write .r12 (s.gpr .r4)).gpr .r12 = s.gpr .r4 := by simp only [write_gpr, ite_true]
@@ -509,7 +509,7 @@ theorem CPre.setup {s : State} {extra : List Region} (hp : CPre c s extra) : Set
     rw [hr5, write_wr, hp.wr]; simp
   obtain hsf : ((s.write .r12 (s.gpr .r4)).gpr .r5).toNat + size ≤ 2 ^ 64 := by rw [hr5]; exact hp.sc_fit
   exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf,
-    fun h => by rw [hr5]; exact ⟨(hp.tbl h).rd, (hp.tbl h).val⟩⟩
+    by rw [hr5]; exact ⟨hp.tbl.rd, hp.tbl.val⟩⟩
 
 /-- The key's `x` and `y`. -/
 abbrev keyX (c : Cfg) (s : State) : Nat :=
@@ -633,7 +633,7 @@ theorem compress_key (c : Cfg) (s : State) :
   rw [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith, compress_eq hlen hhead hx hy]
 
 theorem compress_correct (c : Cfg) (hc : CfgOk c) (s : State) (hs : (compressContract c.C).pre s)
-    (ht : c.tbl = true → TblOk c (s.gpr .r5) s) :
+    (ht : TblOk c (s.gpr .r5) s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.compress c) s t s' ∧
       abiPreserved s s' ∧ (compressContract c.C).post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
@@ -669,7 +669,7 @@ theorem compress_correctT (c : Cfg) (hc : CfgOk c) {K : List (String × List (Bi
       by rw [hwr, show c.C.len + 1 = 1 + c.C.len by omega_arith],
       by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using hpw,
       by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using how,
-      by omega_arith, by omega_arith, hwfit, fun _ => tbl_of_consts hk hK (hk.disjoint_wr hK (by
+      by omega_arith, by omega_arith, hwfit, tbl_of_consts hk hK (hk.disjoint_wr hK (by
         rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
   obtain ⟨t, s', he, K, bytes, ret⟩ := compress_ok hc hp
   refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩
@@ -1466,7 +1466,7 @@ structure DPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   pk_fit : (s.gpr .r4).toNat + (1 + c.C.len) ≤ 2 ^ 64
   sc_fit : (s.gpr .r5).toNat + size ≤ 2 ^ 64
   /-- The table of constants the setup copies (`tbl_of_consts`). -/
-  tbl : c.tbl = true → TblOk c (s.gpr .r5) s
+  tbl : TblOk c (s.gpr .r5) s
 
 theorem DPre.setup {s : State} {extra : List Region} (hp : DPre c s extra) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
   obtain hr12 : (s.write .r12 (s.gpr .r4)).gpr .r12 = s.gpr .r4 := by simp only [write_gpr, ite_true]
@@ -1486,7 +1486,7 @@ theorem DPre.setup {s : State} {extra : List Region} (hp : DPre c s extra) : Set
     rw [hr5, write_wr, hp.wr]; simp
   obtain hsf : ((s.write .r12 (s.gpr .r4)).gpr .r5).toNat + size ≤ 2 ^ 64 := by rw [hr5]; exact hp.sc_fit
   exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf,
-    fun h => by rw [hr5]; exact ⟨(hp.tbl h).rd, (hp.tbl h).val⟩⟩
+    by rw [hr5]; exact ⟨hp.tbl.rd, hp.tbl.val⟩⟩
 
 theorem decompress_eq' (c : Cfg) : Impl.EcKey.Compressed.PPC64LE.decompress c =
     .seq (.seq (.block [mov .r12 .r4]) (c.setupWith args))
@@ -1655,7 +1655,7 @@ theorem decompress_key (c : Cfg) (root : Fe c.C → Fe c.C) (s : State) :
     (by change ofBytes ((Spec.Ecdsa.bytesAt _ _ _).drop 1) = _; rw [hb]; rfl)
 
 theorem decompress_correct (c : Cfg) (hc : CfgOk c) (root : Fe c.C → Fe c.C) (hroot : CandidateCorrect c root)
-    (s : State) (hs : (decompressContract c.C root).pre s) (ht : c.tbl = true → TblOk c (s.gpr .r5) s) :
+    (s : State) (hs : (decompressContract c.C root).pre s) (ht : TblOk c (s.gpr .r5) s) :
     ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.decompress c) s t s' ∧
       abiPreserved s s' ∧ (decompressContract c.C root).post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
@@ -1693,7 +1693,7 @@ theorem decompress_correctT (c : Cfg) (hc : CfgOk c) (root : Fe c.C → Fe c.C) 
       by rw [hwr, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith],
       by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using hpw,
       by simpa only [show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith] using how,
-      by omega_arith, by omega_arith, hwfit, fun _ => tbl_of_consts hk hK (hk.disjoint_wr hK (by
+      by omega_arith, by omega_arith, hwfit, tbl_of_consts hk hK (hk.disjoint_wr hK (by
         rw [hwr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
   obtain ⟨t, s', he, K, bytes, ret⟩ := decompress_ok hc hroot hp
   refine ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, ?_⟩

@@ -283,7 +283,7 @@ theorem verify_ok (hc : CfgOk c) (hL : Law c.C) {tsym : String} {words : List (B
     ∃ t s', Exec isa (Impl.Ecdsa.Verify.PPC64LE.Cfg.verifyWith c points) s t s' ∧ abiPreserved s s' ∧
       VPost c s s' :=
   verify_okK hc hL hpts (hpre := ⟨hk.rd_strip (by rw [hp.rd, List.append_nil]; rfl), hp.wr, hp.pk_sc, hp.dg_sc,
-    hp.sig_sc, hp.pk_fit, hp.dg_fit, hp.sig_fit, hp.sc_fit, fun h => (hp.tbl h).of_strip⟩) hk
+    hp.sig_sc, hp.pk_fit, hp.dg_fit, hp.sig_fit, hp.sc_fit, hp.tbl.of_strip⟩) hk
     (List.mem_singleton_self _)
 
 end VG.Proof.Ecdsa.Verify.PPC64LE.CombWin

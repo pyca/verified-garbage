@@ -114,6 +114,6 @@ theorem sign_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c
       SignPost c (stripConsts [(tsym, words)] s) s' :=
   sign_okK hc h3 hL hgen (hpre := ⟨hk.rd_strip (by rw [hp.rd, List.append_nil]; rfl), hp.wr, hp.out_sc, hp.d_sc,
     hp.digest_sc, hp.k_sc, hp.out_fit, hp.d_fit, hp.digest_fit, hp.k_fit, hp.sc_fit,
-    fun h => (hp.tbl h).of_strip⟩) hk (List.mem_singleton_self _)
+    hp.tbl.of_strip⟩) hk (List.mem_singleton_self _)
 
 end VG.Proof.Ecdsa.PPC64LE.Tab

@@ -501,7 +501,7 @@ structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   k_fit : (s.gpr .r6).toNat + c.C.len ≤ 2 ^ 64
   sc_fit : (s.gpr .r7).toNat + size ≤ 2 ^ 64
   /-- The table of constants the setup copies (`tbl_of_consts`). -/
-  tbl : c.tbl = true → TblOk c (s.gpr .r7) s
+  tbl : TblOk c (s.gpr .r7) s
 
 theorem Pre.setup {s : State} {extra : List Region} (hp : Pre c s extra) : SetupPre c Args.sign s where
   shift := .inr (.inr rfl)
