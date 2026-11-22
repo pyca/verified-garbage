@@ -18,7 +18,7 @@ ALL = ["aarch64", "arm", "powerpc64", "riscv64", "x86", "x86_64"]
 
 # The jobs that run or check the Rust tests.
 RUST_JOBS = ("rust-arches", "rust", "rust-thumb", "rust-lint", "cpu-features-times", "rust-cpu-features",
-             "coverage")
+             "coverage", "rustls-provider")
 
 
 def job(name):
@@ -75,6 +75,7 @@ class Arches(unittest.TestCase):
                 [
                     "lean/VerifiedGarbage/Proof/Md5/X86_64/Compress.lean",
                     "bench/benches/primitives/md5.rs",
+                    "rustls-provider/src/kx.rs",
                     "docs/algorithms/md5.toml",
                     "README.md",
                     "CLAUDE.md",
@@ -147,6 +148,16 @@ class Output(unittest.TestCase):
         self.assertTrue(all("shards" not in e for e in full["cpu"]))
         matrix = tomllib.loads((CI / "rust_matrix.toml").read_text())
         self.assertEqual(full["lint"], matrix["lint"])
+
+    def test_provider_runs_with_x86_64s_tests_or_its_own_changes(self):
+        self.assertIs(run("pull_request", "lean/A.lean\n")["provider"], False)
+        self.assertIs(run("pull_request", "crates/verified-garbage-asm-arm/src/md5.rs\n")["provider"], False)
+        self.assertIs(run("pull_request", "crates/verified-garbage-asm-x86_64/src/md5.rs\n")["provider"], True)
+        self.assertIs(run("pull_request", "src/lib.rs\n")["provider"], True)
+        out = run("pull_request", "rustls-provider/src/kx.rs\n")
+        self.assertEqual((out["arches"], out["rust"], out["lint"], out["provider"]), ([], [], [], True))
+        self.assertIs(run("merge_group")["provider"], True)
+        self.assertIs(run("push")["provider"], True)
 
     def test_bench_is_whether_the_benchmarks_measure_the_arch(self):
         for event in ("merge_group", "push"):
@@ -234,6 +245,12 @@ class Workflow(unittest.TestCase):
     def test_only_benchmarked_arches_cache_the_benchmarks_dependencies(self):
         self.assertIn("if: ${{ matrix.bench && (matrix.rust == 'stable' || matrix.rust == 'host') "
                       "&& runner.os == 'Linux' && github.event_name == 'push' }}", job("rust"))
+
+    def test_provider_job_runs_when_rust_arches_says(self):
+        self.assertIn("if: ${{ needs.rust-arches.outputs.provider == 'true' }}", job("rustls-provider"))
+        self.assertIn("python3 ci/rust_lint.py run provider", job("rustls-provider"))
+        self.assertIn("rustls-provider", job("all-green"))
+        self.assertIn("needs: rustls-provider", job("cancel-rustls-provider"))
 
     def test_jobs_read_their_matrices(self):
         for name, output in (("rust", "rust"), ("rust-thumb", "thumb"), ("rust-cpu-features", "cpu")):

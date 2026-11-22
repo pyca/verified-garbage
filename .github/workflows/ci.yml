@@ -392,6 +392,7 @@ jobs:
       thumb: ${{ steps.arches.outputs.thumb }}
       lint: ${{ steps.arches.outputs.lint }}
       cpu: ${{ steps.arches.outputs.cpu }}
+      provider: ${{ steps.arches.outputs.provider }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -771,6 +772,72 @@ jobs:
       - name: Lint
         if: ${{ steps.cached.outputs.cache-hit != 'true' }}
         run: python3 ci/rust_lint.py run "$CRATE"
+
+  # The rustls provider (`rustls-provider/`, a package of its own, which the
+  # jobs above never build), on x86-64 Linux: its formatting and lints
+  # (ci/rust_lint.py), its tests with Wycheproof's vectors, and rustls's own
+  # API test suite run with it (`bench/setup-rustls.sh`). It builds on the
+  # library, so it runs whenever x86-64's tests do, and when it changes
+  # (`rust-arches`' `provider`); a push to main only builds, for the cache.
+  rustls-provider:
+    name: "Rust: rustls provider"
+    needs: rust-arches
+    if: ${{ needs.rust-arches.outputs.provider == 'true' }}
+    runs-on: ubuntu-26.04
+    env:
+      RUSTUP_TOOLCHAIN: stable
+      RUSTFLAGS: -D warnings
+      WYCHEPROOF_ROOT: ${{ github.workspace }}/wycheproof
+      # One target directory for the provider and the rustls checkout, which
+      # build the same dependencies, and which the cache keeps.
+      CARGO_TARGET_DIR: ${{ github.workspace }}/rustls-provider/target
+      TESTS: ${{ github.event_name != 'push' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # As `rust-thumb`'s: x86-64's verified functions and every crate's
+          # manifest, not the proofs or the other targets' functions.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/bench/
+            !/crates/verified-garbage-asm-*/
+            /crates/verified-garbage-asm-*/Cargo.toml
+            /crates/verified-garbage-asm-x86_64/
+            !/crates/verified-garbage-asm-*/assembly/
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ env.TESTS == 'true' }}
+        with:
+          repository: C2SP/wycheproof
+          path: wycheproof
+          persist-credentials: false
+          ref: main
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --component clippy,rustfmt
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: rustls-provider
+          workspaces: rustls-provider -> target
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: rustc -vV
+      - name: Lint
+        run: python3 ci/rust_lint.py run provider
+      - name: Test
+        working-directory: rustls-provider
+        run: cargo test --release --locked ${{ case(env.TESTS == 'true', '', '--no-run') }}
+      # rustls's API tests, which a patch (`bench/rustls.patch`) runs with
+      # the provider too, at the revision the provider builds against. Its
+      # warnings are rustls's, not this repository's.
+      - name: rustls's API tests
+        env:
+          RUSTFLAGS: ""
+        run: |
+          sh rustls-provider/bench/setup-rustls.sh "$RUNNER_TEMP/rustls"
+          cd "$RUNNER_TEMP/rustls"
+          cargo test -p rustls-test --test api ${{ case(env.TESTS == 'true', '', '--no-run') }} tests_with_verified_garbage
 
   # The latest CPU time of each line of `rust-cpu-features`' runs on `main`,
   # per class of host, which its shards deal out their lines by
@@ -1233,6 +1300,15 @@ jobs:
       actions: write
     steps: *cancel
 
+  cancel-rustls-provider:
+    name: "Merge queue: cancel after Rust: rustls provider"
+    needs: rustls-provider
+    if: ${{ failure() && github.event_name == 'merge_group' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: write
+    steps: *cancel
+
   cancel-rust-cpu-features:
     name: "Merge queue: cancel after Rust CPU features"
     needs: rust-cpu-features
@@ -1248,7 +1324,8 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-shard, lean-imports, rust-arches, rust, rust-thumb, rust-lint, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, rust-arches, rust, rust-thumb, rust-lint, rust-cpu-features, coverage,
+      rustls-provider]
     runs-on: ubuntu-26.04
     # To list the run's artifacts.
     permissions:
@@ -1267,6 +1344,7 @@ jobs:
           THUMB: ${{ needs.rust-thumb.result }} ${{ needs.rust-arches.outputs.thumb == '[]' }}
           LINT: ${{ needs.rust-lint.result }} ${{ needs.rust-arches.outputs.lint == '[]' }}
           CPU: ${{ needs.rust-cpu-features.result }} ${{ needs.rust-arches.outputs.cpu == '[]' }}
+          PROVIDER: ${{ needs.rustls-provider.result }} ${{ needs.rust-arches.outputs.provider != 'true' }}
           # Skipped exactly when no architecture ran its tests (`rust-arches`).
           COVERAGE: ${{ needs.coverage.result }} ${{ needs.rust-arches.outputs.arches == '[]' }}
           # Skipped when `lean` built the proofs itself.
@@ -1274,11 +1352,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          echo "$RESULTS | $RUST | $THUMB | $LINT | $CPU | $COVERAGE | $SHARDS"
+          echo "$RESULTS | $RUST | $THUMB | $LINT | $CPU | $PROVIDER | $COVERAGE | $SHARDS"
           for r in $RESULTS; do
             [ "$r" = success ] || exit 1
           done
-          for r in "$RUST" "$THUMB" "$LINT" "$CPU"; do
+          for r in "$RUST" "$THUMB" "$LINT" "$CPU" "$PROVIDER"; do
             [ "$r" = "success false" ] || [ "$r" = "skipped true" ] || exit 1
           done
           [ "$COVERAGE" = "success false" ] || [ "$COVERAGE" = "skipped true" ] || exit 1

@@ -32,7 +32,9 @@ architecture (ci/bench_arches.py's `PLATFORMS`), for which a push to main
 caches the benchmarks' dependencies. `lint=` is the JSON list of the targets
 `rust-lint` lints (ci/rust_lint.py): those of the architectures tested, or
 every one when the benchmarks changed, or on a push to main (for its
-caches).
+caches). `provider=` is whether the `rustls-provider` job runs: when the
+provider changes, or x86-64's tests run (the library it builds on
+changed), in the merge queue, and on a push to main (for its cache).
 """
 
 import json
@@ -60,12 +62,14 @@ ARCHES = {
 
 # Paths that no Rust test reads or runs: the Lean sources (whose output is
 # the crates of generated code), the benchmarks (a crate of their own, which only `rust-lint`
-# builds, for every target: see `output`), documentation (agents' skills
+# builds, for every target: see `output`), the rustls provider (a package of
+# its own, which only `rustls-provider` builds), documentation (agents' skills
 # too), the workflows and actions of the Lean build and the benchmarks, and
 # the workflow that comments on conflicting pull requests.
 NOT_RUST_PREFIXES = (
     "lean/",
     "bench/",
+    "rustls-provider/",
     "docs/",
     ".agents/",
     ".claude/",
@@ -153,10 +157,10 @@ def cache_of(entry):
     return (runner.endswith("-arm"), json.dumps(entry.get("container"), sort_keys=True))
 
 
-def output(matrix, selected, tests=True, bench=False):
+def output(matrix, selected, tests=True, bench=False, provider=False):
     """The outputs of a run testing the architectures `selected` (or, without
     `tests`, building one job per cache), whose changes reach the benchmarks
-    if `bench`."""
+    if `bench` and the rustls provider if `provider`."""
     everything = sorted(set(ARCHES.values()))
     lines = [
         f"arches={json.dumps(selected if tests else [])}",
@@ -175,6 +179,7 @@ def output(matrix, selected, tests=True, bench=False):
         lines.append(f"{job}={json.dumps(keep, separators=(',', ':'))}")
     lint = [e for e in matrix["lint"] if bench or not tests or e["arch"] in selected]
     lines.append(f"lint={json.dumps(lint, separators=(',', ':'))}")
+    lines.append(f"provider={str(provider or not tests or 'x86_64' in selected).lower()}")
     return "".join(line + "\n" for line in lines)
 
 
@@ -183,7 +188,8 @@ def main(argv):
     everything = sorted(set(ARCHES.values()))
     if argv == ["pull_request"]:
         paths = [line.strip() for line in sys.stdin if line.strip()]
-        out = output(matrix, arches(paths), bench=any(p.startswith("bench/") for p in paths))
+        out = output(matrix, arches(paths), bench=any(p.startswith("bench/") for p in paths),
+                     provider=any(p.startswith("rustls-provider/") for p in paths))
     elif argv == ["merge_group"]:
         out = output(matrix, everything)
     elif argv == ["push"]:
