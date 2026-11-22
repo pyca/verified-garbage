@@ -304,7 +304,7 @@ vg_camellia_ctr_entry:
 	mov r1, r11
 	mov r2, r12
 	mov r3, #8
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_core}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -587,7 +587,7 @@ vg_camellia_ctr_entry:
 	mov r1, r11
 	mov r2, r12
 	mov r3, #4
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_core}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -742,7 +742,7 @@ vg_camellia_ctr_entry:
 	mov r1, r11
 	mov r2, r12
 	mov r3, #2
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_core}
 	add r12, sp, #0
 	ldr r9, [r6, #0]
 	ldr r10, [r12, #0]
@@ -842,7 +842,7 @@ vg_camellia_ctr_entry:
 	mov r1, r11
 	add r2, r8, #56
 	mov r3, #1
-	bl {vg_camellia_ecb_encrypt}
+	bl {vg_camellia_ecb_encrypt_core}
 	ldr r9, [r6, #0]
 	ldr r10, [r8, #56]
 	eor r9, r9, r10
@@ -906,25 +906,5 @@ vg_camellia_ctr_entry:
 	ldr r11, [r8, #28]
 	ldr lr, [r8, #32]
 	ldr r8, [r8, #16]
-	add r12, sp, #12
-	mov r2, #0
-	str r2, [r12, #0]
-	str r2, [r12, #4]
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #16]
-	str r2, [r12, #20]
-	str r2, [r12, #24]
-	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
 	add sp, sp, #88
 	bx lr

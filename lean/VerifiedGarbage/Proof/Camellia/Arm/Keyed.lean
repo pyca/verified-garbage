@@ -41,7 +41,6 @@ public import VerifiedGarbage.Spec.Camellia.Cbc
 import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Camellia.Scratch
 import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 public import VerifiedGarbage.Proof.Framework.Arm.Scrub
 import VerifiedGarbage.Proof.Camellia.ScrubLocal
 meta import VerifiedGarbage.Proof.Modes.Arm.Core
@@ -51,7 +50,6 @@ meta import VerifiedGarbage.Spec.Camellia.Cbc
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Camellia.Scratch
 meta import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.Arm.ScrubSel
 meta import VerifiedGarbage.Proof.Framework.Arm.Scrub
 meta import VerifiedGarbage.Proof.Camellia.ScrubLocal
 
@@ -62,8 +60,9 @@ section
 /-!
 # Camellia's ECB functions on ARMv7 as the modes' core
 
-`ecbSpec dir`: what the modes need of `vg_camellia_ecb_encrypt` and
-`vg_camellia_ecb_decrypt` (`Proof.Modes.Arm.CoreSpec`), from their shared
+`ecbSpec dir`: what the modes need of the ECB cores,
+`vg_camellia_ecb_encrypt_core` and `vg_camellia_ecb_decrypt_core`
+(`Proof.Modes.Arm.CoreSpec`), from their shared
 contract (`Proof.Camellia.ecbContractSk`, with 2816 bytes of stack) and its
 proof (`ecb_framedSk`): the schedule is Camellia's 272-byte schedule, the
 number of rounds is 18 or 24, and the cipher on a block is
@@ -113,29 +112,10 @@ theorem ecb_dir (dir : Dir) (k : Spec.Camellia.Subkeys) (xs : List Spec.Camellia
 theorem ecb_stack (dir : Dir) : VG.Arm.FrameStack.armStack (ecbCore dir).code ≤ 2816 := by
   cases dir <;> decide +kernel
 
-/-- The postcondition on the subkeys reads the memory on return only within
-the data. -/
-theorem ecbOutSk (d : Spec.Camellia.Direction) (stack : Nat) :
-    VG.Arm.Scrub.PostOut (Proof.Camellia.ecbContractSk Arm.abi d stack) (Spec.Camellia.ecbSig.retBits 32) :=
-  VG.Arm.Scrub.postOut_of_local (leak := none) VG.Arm.Scrub.ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
-    match vs, hlen with
-    | [sch, rd, dt, ln], _ =>
-      simp only [Spec.Camellia.ecbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-        forall_eq] at hb
-      show _ → Spec.Camellia.blocksAt m₂ dt _ = _
-      intro hr
-      rw [Proof.Camellia.ScrubLocal.blocksAt_of hb.2 (Nat.mul_le_mul_right _ (by
-        simp only [ArgWord.ofRaw, BitVec.toNat_setWidth]; exact Nat.mod_le _ _))]
-      exact h hr
-
-/-- The ECB functions as emitted, cleanup included, by their contract on
-the subkeys. -/
-theorem ecbVerifiedSk : ∀ dir : Dir,
-    Verified Arm.target (ecbCore dir).code (Proof.Camellia.ecbContractSk Arm.abi (specDir dir) 2816)
-  | .encrypt => VG.Arm.Scrub.Verified.scrubSel VG.Arm.Scrub.ScrubAbi.plain (ecb_framedSk .encrypt)
-      (by decide) (by decide) (by decide) rfl (ecbOutSk _ _)
-  | .decrypt => VG.Arm.Scrub.Verified.scrubSel VG.Arm.Scrub.ScrubAbi.plain (ecb_framedSk .decrypt)
-      (by decide) (by decide) (by decide) rfl (ecbOutSk _ _)
+/-- The ECB cores, by their contract on the subkeys. -/
+theorem ecbVerifiedSk (dir : Dir) :
+    Verified Arm.target (ecbCore dir).code (Proof.Camellia.ecbContractSk Arm.abi (specDir dir) 2816) :=
+  ecb_framedSk dir
 
 theorem dReg_eq (dir : Dir) : (ecbCore dir).dReg = .r2 := rfl
 theorem nReg_eq (dir : Dir) : (ecbCore dir).nReg = .r3 := rfl
