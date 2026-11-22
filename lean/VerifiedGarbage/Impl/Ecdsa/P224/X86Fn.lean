@@ -27,7 +27,7 @@ open VG.X86
 
 /-- `vg_ecdsa_p224_verify`, as emitted. -/
 def verifyP224 : Prog isa :=
-  Impl.Scrub.X86.scrubAll 32 128
+  Impl.Scrub.X86.scrubAll 32 132
     (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false (Impl.Ecdsa.Verify.X86.verifyP224))
 
 /-- `vg_ecdsa_p224_sign`, as emitted, with `f` the functions its table's calls may reach. -/

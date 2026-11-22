@@ -613,7 +613,7 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * 
         size ≤ ofs (ptr s₀ 3) ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) ∧
       ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk],
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
-    (hspG : SpOk c.gMul 20) (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) c.stk) :
+    (hspG : SpOk c.gMul c.stk) (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) c.stk) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) s₀ fun s' => VKeep c s₀ s' ∧ VPost c s₀ s' := by
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   obtain H := VCSp.of hsp
@@ -634,7 +634,7 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * 
     (fun d hd => by
       obtain ⟨ht, ho, hap⟩ := hTb d hd
       exact ⟨ht.of_frame (by rw [hM.rd, hM.wr]) hM.whole hap, ho, hap⟩)
-    hPc hQ hspG H.points
+    hPc hQ hp.stk_wr hspG H.points
     fun s₃ hP => ?_
   refine WP.mono (tail_dispatch_ok hc hC hP H.tail) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
     ⟨⟨saved, esp, frame⟩, ?_⟩

@@ -32,7 +32,7 @@ namespace VG.Impl.EcKey.X86.Fn
 open VG.X86
 
 /-- `vg_ec_p256_public_key`, as emitted. -/
-def publicKeyP256 : Prog isa := Impl.Scrub.X86.scrubAll 32 20 (Impl.EcKey.X86.Cfg.publicKeyComb Impl.Ecdsa.X86.p256Comb)
+def publicKeyP256 : Prog isa := Impl.Scrub.X86.scrubAll 32 24 (Impl.EcKey.X86.Cfg.publicKeyComb Impl.Ecdsa.X86.p256Comb)
 
 /-- `vg_ec_p256_compress_public_key`, as emitted. -/
 def compressP256 : Prog isa := Impl.Scrub.X86.scrubAll 32 28 (Impl.EcKey.Compressed.X86.compress Impl.Ecdsa.X86.p256)

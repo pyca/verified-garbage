@@ -201,7 +201,7 @@ theorem gMul_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
     (hg : g₁ .eax = g₂ .eax)
     (wf₁ : VG.X86.Taint.Wf (combτAt scratchSecond) s₀) (wf₂ : VG.X86.Taint.Wf (combτAt scratchSecond) t₀)
     (hw : s₀.wr = t₀.wr) (he : s₀.gpr .esp = t₀.gpr .esp) :
-    RelCT isa (fun s t => s = s₀ ∧ t = t₀) p256Comb.gMul (fun _ _ => True) := by
+    RelCT isa (fun s t => s = s₀ ∧ t = t₀) (p256Comb.combBody p256d) (fun _ _ => True) := by
   have ham3 := ((hT p256d rfl).2 rfl).2
   have hout₂ : ∀ i < (p256Comb.combWords p256d).length, ∀ b < 8,
       size ≤ ofs base ((g₂ .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by

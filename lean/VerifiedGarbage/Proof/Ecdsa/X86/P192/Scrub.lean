@@ -54,7 +54,7 @@ abbrev vs : List HmacTable.X86.HVar :=
 theorem verify_scrubbed (hL : Weierstrass.Law Spec.P192.curve) :
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifyP192
       (Spec.Ecdsa.P192.inst.verifyHashContract (X86.abi.withConsts Impl.Ecdsa.X86.p192Comb.combConsts)
-        (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
+        (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P192.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
         Impl.Ecdsa.Verify.X86.verifyP192

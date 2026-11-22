@@ -242,15 +242,23 @@ def tableAddr : Prog isa :=
   | none => .block []
   | some d => .frame (.symPush .eax d.tsym) (.block []) (.pop .ecx 1)
 
+/-- The curve's comb, with what its addition reads in `EM` (`b`, or `3b` for
+the complete addition): the code of `vg_<curve>_comb`. -/
+def combBody (d : CombData) : Prog isa :=
+  if d.jac then .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (c.combCfg d).combJ
+  else .seq (.block (setConst c.n (c.sl EM) (c.mont (3 * c.C.b)))) (c.combCfg d).comb
+
+/-- The name of the internal function of the curve's comb. -/
+def combName : String := s!"vg_{c.SP.curve}_comb"
+
 /-- The fixed-base multiplication, after setup saved the table pointer: the
-ladder, or the curve's comb, with what its addition reads in `EM` (`b`, or
-`3b` for the complete addition). -/
+ladder, or a call of the curve's comb (`combBody`), an internal function that
+the public key, the signature and verification share. It keeps the working
+space in `edi`, as its caller has it, and takes no argument. -/
 def gMul : Prog isa :=
   match c.comb with
   | none => ladder c.ladderCfg c.SP
-  | some d =>
-    if d.jac then .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (c.combCfg d).combJ
-    else .seq (.block (setConst c.n (c.sl EM) (c.mont (3 * c.C.b)))) (c.combCfg d).comb
+  | some d => .call c.combName (c.combBody d)
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩

@@ -28,14 +28,10 @@ theorem Keep.gMul {s₀ s t : State} {base : Addr} (hc : CfgOk c)
 theorem Keep.tbls {s₀ s : State} {base : Addr} (hs : Keep c s₀ base s) {T : Addr} {ws : List (BitVec 64)}
     (ht : TblMem s₀ T ws)
     (hap : ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk], Region.Disjoint ⟨T, 8 * ws.length⟩ r) :
-    TblMem s T ws ∧ ∀ r ∈ s.wr ++ [below (s.gpr .esp) 20], Region.Disjoint ⟨T, 8 * ws.length⟩ r := by
+    TblMem s T ws ∧ ∀ r ∈ s.wr ++ [below (s.gpr .esp) c.stk], Region.Disjoint ⟨T, 8 * ws.length⟩ r := by
   refine ⟨ht.of_frame (by rw [hs.rd, hs.wr]) hs.whole hap, fun r hr => ?_⟩
   rw [hs.wr, hs.esp] at hr
-  rcases List.mem_append.mp hr with hr | hr
-  · exact hap r (List.mem_append_left _ hr)
-  · rw [List.mem_singleton.mp hr]
-    exact (hap _ (List.mem_append_right _ (List.mem_singleton_self _))).sub_right
-      (below_le_sub (Cfg.stk_ge c) hs.sp_lo)
+  exact hap r hr
 
 /-- `[k]G`, then `Z^(p-2)`. -/
 theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
@@ -45,7 +41,8 @@ theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
         size ≤ ofs base ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) ∧
       ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk],
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
-    (hsp₁ : SpOk c.gMul 20) (hsp₂ : SpOk c.pPow c.stk)
+    (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r)
+    (hsp₁ : SpOk c.gMul c.stk) (hsp₂ : SpOk c.pPow c.stk)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq c.gMul (.seq c.pPow rest)) s Q := by
   have h0 := hc.n0
@@ -54,12 +51,13 @@ theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hS.fixed
-  refine WP.seq (hS.withSp ⟨hsp₁.1, Nat.le_trans hsp₁.2 (Cfg.stk_ge c)⟩ (WP.mono (gMul_ok' hc hC hT hCo
+  refine WP.seq (hS.withSp hsp₁ (WP.mono (gMul_ok' hc hC hT hCo
     hS.scr F (hS.k ▸ wordsVal_lt _ _ _ _) hS.rx hS.ry hS.rz hS.t₀ (fun d hd => by
       obtain ⟨ht, ho, hap⟩ := hTb d hd
       obtain ⟨ht', hap'⟩ := hS.toKeep.tbls ht hap
       exact ⟨ht', ho, hap'⟩)
-    (by rw [hS.esp]; exact Nat.le_trans (Cfg.stk_ge c) hS.sp_lo) hsp₁)
+    (fun r hr => by rw [hS.wr] at hr; rw [hS.esp]; exact hst r hr)
+    (by rw [hS.esp]; exact hS.sp_lo) hsp₁)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ f₅ => ?_))
   have hs₅ := hS.scr.of_keeps K₅ (by decide)
   have F₅ := F.unch h7 hn (fixedOk_gW) U₅
@@ -108,7 +106,7 @@ theorem signCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
         size ≤ ofs (ptr s₀ 4) ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) ∧
       ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk],
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
-    (hsp₁ : SpOk c.gMul 20) (hsp : SpOk c.signTail c.stk) :
+    (hsp₁ : SpOk c.gMul c.stk) (hsp : SpOk c.signTail c.stk) :
     WP isa (c.signWithMul c.gMul) s₀ fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' :=
   have h₂ := hsp.right
   have h₃ := h₂.right
@@ -118,7 +116,7 @@ theorem signCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     exact (SpOk.split _ _ _ h).1
   WP.seq (WP.mono (stage₁ hc hp.setup (rest := .block [])
     (Q := St₁ c .sign s₀ (ptr s₀ 4)) (fun _ h => WP.block_nil h))
-    fun _ S₁ => stage₂Comb hc hC hT hCo S₁ hTb hsp₁ hsp.left fun _ S₂ =>
+    fun _ S₁ => stage₂Comb hc hC hT hCo S₁ hTb hp.stk_wr hsp₁ hsp.left fun _ S₂ =>
       stage₃ hc S₂ h₂.left h₃.left fun _ S₃ => stage₄ hc hC hp rfl S₃ h₄)
 
 

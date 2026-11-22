@@ -106,17 +106,18 @@ theorem ladderCT : VerifyLadderCT p224Comb where
     exact RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
   ladder := by
     change RelCT isa _ vLadderCode _
-    obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false p224Comb.stk) vLadderCode h).isSome = true := by
+    obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check (scratchArgτ 4 false) vLadderCode h).isSome = true := by
       taint_decide_sum [mulSum, addSum, subSum]
-    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc
+    exact (RelCT.taint (A := sseTaint) _ (fun _ _ h => h) hc).mono
+      (fun _ _ h => scratchArgAgree_room h (Cfg.stk_ge _)) (fun _ _ _ => trivial)
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 24 bytes of stack. -/
 theorem verify_sp : SpOk verifyP224 p224Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem verifyBody_sp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody p224Comb) p224Comb.stk :=
   SpOk.right (a := p224Comb.tableAddr) verify_sp
 
-theorem gMul_sp : SpOk p224Comb.gMul 20 :=
+theorem gMul_sp : SpOk p224Comb.gMul p224Comb.stk :=
   SpOk.left (SpOk.right (a := p224Comb.signPrep) (SpOk.right (a := p224Comb.tableAddr) signComb_sp))
 
 /-- The order of the base point is below `2^(8 len)`. -/
@@ -134,7 +135,7 @@ theorem verify_ct (hC : Weierstrass.Law Spec.P224.curve) :
     (p224Comb_gMul hC) stagesCT ladderCT gMul_sp verifyBody_sp
 
 abbrev vSpec : Contract isa :=
-  Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86.abi.withConsts p224Comb.combConsts) 20
+  Proof.Ecdsa.verifyContract Spec.Ecdsa.P224.inst (X86.abi.withConsts p224Comb.combConsts) 24
 
 def vLocal : Contract isa where
   pre := VCombPre p224Comb
@@ -155,21 +156,21 @@ theorem v_pre {s : State} (h : vSpec.pre s) :
   obtain ⟨lo, sp, _drop, held, fit, dw, _ret, st, -, _take, wr,
     ps, _pa, ds, _da, ss, _sia, sa, _rp, _rd, _rsi, rs, _ra,
     spk, sdg, ssi, _ss, _sa, fp, fd, fsi, fs⟩ := h
-  have hb : below (s.gpr .esp) 20 = ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩ := by
+  have hb : below (s.gpr .esp) 24 = ⟨(s.gpr .esp).setWidth 64 - 24#64, 24⟩ := by
     unfold below
     rw [VG.X86.Taint.sub_setWidth lo]
   rw [← hb] at st spk sdg ssi
-  have h4 := VG.Proof.Weierstrass.X86.below_le_sub (sp := s.gpr .esp) (a := 4) (b := 20) (by decide) lo
+  have h4 := VG.Proof.Weierstrass.X86.below_le_sub (sp := s.gpr .esp) (a := 4) (b := 24) (by decide) lo
   refine ⟨⟨rfl, rfl, ps, ds, ss, sa.symm, rs, fp, fd, fsi, fs, sp, lo, _ss⟩, ?_, ?_, ?_, ?_⟩
   · change TblsHeld p224Comb (s.withRegions (vRd s) (vWr s))
-      (below (s.gpr .esp) 20 :: vWr s)
+      (below (s.gpr .esp) 24 :: vWr s)
     simp only [TblsHeld, p224Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil,
       Sig.forall_mem_const_single]
     simp only [Abi.constsHeld, List.mem_singleton, forall_eq, State.withRegions_mem]
     change (∀ i < p224W.length, s.mem.readW ((s.syms "VG_P224_COMB").setWidth 64 +
       BitVec.ofNat 64 (8 * i)) 64 = p224W.getD i 0) ∧
       ((s.syms "VG_P224_COMB").setWidth 64).toNat + 8 * p224W.length ≤ 2 ^ 32 ∧
-      ∀ r ∈ below (s.gpr .esp) 20 :: vWr s,
+      ∀ r ∈ below (s.gpr .esp) 24 :: vWr s,
         Region.Disjoint ⟨(s.syms "VG_P224_COMB").setWidth 64, 8 * p224W.length⟩ r
     refine ⟨held, ?_, ?_⟩
     · simp only [BitVec.toNat_setWidth]; omega_using [fit]
@@ -320,7 +321,7 @@ def vHashSatState : State := { vSatTbl with
 
 theorem vHashSat_pre :
     (Spec.Ecdsa.P224.inst.verifyHashContract (X86.abi.withConsts p224Comb.combConsts)
-      (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre vHashSatState := by
+      (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)).pre vHashSatState := by
   have a0 : arg vHashSatState 0 = 0x1000 := (vSat_arg 0 (by decide)).trans (by decide)
   have a1 : arg vHashSatState 1 = 0x2000 := (vSat_arg 1 (by decide)).trans (by decide)
   have a2 : arg vHashSatState 2 = 0x3000 := (vSat_arg 2 (by decide)).trans (by decide)
@@ -358,7 +359,7 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.P224.curve) :
     Verified X86.target
       (Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false verifyP224)
       (Spec.Ecdsa.P224.inst.verifyHashContract (X86.abi.withConsts p224Comb.combConsts)
-        (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
+        (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) :=
   Hash.verifyHash_verifiedC Proof.Ecdsa.Verify.p224_len (by decide) (verify_verified hL)
     verify_sp.1 verify_sp.2 (by taint_decide) ⟨_, vHashSat_pre⟩
 

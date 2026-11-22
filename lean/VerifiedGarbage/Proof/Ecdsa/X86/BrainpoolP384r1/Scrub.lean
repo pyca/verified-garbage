@@ -54,7 +54,7 @@ abbrev vs : List HmacTable.X86.HVar :=
 theorem verify_scrubbed (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) :
     VerifiedScrubbed target Impl.Ecdsa.X86.Fn.verifyBrainpoolP384r1
       (Spec.Ecdsa.BrainpoolP384r1.inst.verifyHashContract (X86.abi.withConsts Impl.Ecdsa.X86.brainpoolp384r1Comb.combConsts)
-        (20 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
+        (24 + Impl.Ecdsa.X86.VerifyHash.frameBytes)) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.BrainpoolP384r1.verifyHashApi)
     { code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
         Impl.Ecdsa.Verify.X86.verifyBrainpoolP384r1

@@ -45,13 +45,15 @@ theorem vPointTail_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C) (ham3 : AM3 p
       vPointTailCode (fun _ _ => True) := by
   have save := vSave_rel.mono
     (P':=fun s t => VPointInput s₀ (ptr s₀ 3) s ∧ VPointInput t₀ (ptr t₀ 3) t)
-    (fun _ _ ⟨hs,ht⟩ => vKeepScratchAgree hp hq hs.1 ht.1 he ha) (fun _ _ h => h)
+    (fun _ _ ⟨hs,ht⟩ => scratchArgAgree_room (vKeepScratchAgree hp hq hs.1 ht.1 he ha) (Cfg.stk_ge _))
+    (fun _ _ h => h)
   have save' := save.wp (fun _ _ ⟨hs,ht⟩ => ⟨vSave_input hc hs,vSave_input hc ht⟩)
   have mult := (vNaf_rel hc hC ham3 hp hq he ha hv).mono
     (P':=fun s t => True ∧ VPointInput s₀ (ptr s₀ 3) s ∧ VPointInput t₀ (ptr t₀ 3) t)
     (fun _ _ h => h.2) (fun _ _ h => h)
   have mult' := mult.wp (fun _ _ ⟨_,hs,ht⟩ => ⟨vNaf_keep hc hC ham3 hs,vNaf_keep hc hC ham3 ht⟩)
   exact save'.seq (mult'.seq (vSum_rel.mono
-    (fun _ _ h => vKeepScratchAgree hp hq h.2.1 h.2.2 he ha) (fun _ _ _ => trivial)))
+    (fun _ _ h => scratchArgAgree_room (vKeepScratchAgree hp hq h.2.1 h.2.2 he ha) (Cfg.stk_ge _))
+    (fun _ _ _ => trivial)))
 
 end VG.Proof.Ecdsa.Verify.X86

@@ -77,18 +77,24 @@ abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.wk (c : Cfg) : Nat := Mont.own c.n
 
 /-- The bytes of stack below the return address that the code uses: the
 calls' 20 (the arguments and the return address; a fixed-base comb's
-four-byte frame, which reads the table's address, holds no call), or 28
-where the ladder calls the point functions (coordinates of at most 6
-words, without a comb), or the code calls `vg_<curve>_mul` (`Cfg.mul`):
-their argument and return address, and their own calls' 20. -/
+four-byte frame, which reads the table's address, holds no call), or 24
+with a comb, whose call (`vg_<curve>_comb`) adds its return address to its
+own calls' 20, or 28 where the ladder calls the point functions
+(coordinates of at most 6 words, without a comb), or the code calls
+`vg_<curve>_mul` (`Cfg.mul`): their argument and return address, and their
+own calls' 20. -/
 abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.stk (c : Cfg) : Nat :=
-  if c.comb.isNone ∧ (c.n ≤ 6 ∨ c.mul.isSome) then 28 else 20
+  if c.comb.isNone ∧ (c.n ≤ 6 ∨ c.mul.isSome) then 28 else if c.comb.isSome then 24 else 20
 
 theorem Cfg.stk_ge (c : Cfg) : 20 ≤ c.stk := by
-  unfold Cfg.stk; split <;> omega_arith
+  unfold Cfg.stk; split <;> (try split) <;> omega_arith
 
 theorem Cfg.stk_le (c : Cfg) : c.stk ≤ 28 := by
-  unfold Cfg.stk; split <;> omega_arith
+  unfold Cfg.stk; split <;> (try split) <;> omega_arith
+
+/-- A curve with a comb uses 24 bytes of stack: the call of its comb. -/
+theorem Cfg.stk_comb {c : Cfg} {d : CombData} (hcd : c.comb = some d) : c.stk = 24 := by
+  simp [Cfg.stk, hcd]
 
 theorem Cfg.stk_28 {c : Cfg} (hc : c.comb = none) (h6 : c.n ≤ 6 ∨ c.mul.isSome) : 28 ≤ c.stk := by
   have h : c.comb.isNone ∧ (c.n ≤ 6 ∨ c.mul.isSome) := ⟨by rw [hc]; rfl, h6⟩
@@ -141,6 +147,20 @@ structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   sp_lo : c.stk ≤ (s.gpr .esp).toNat
   stk_out : (stkR c s).Disjoint (outR c s)
   stk_sc : (stkR c s).Disjoint (scR s)
+
+/-- The stack below the return address, as `Cfg.gMul`'s lemmas have it. -/
+theorem stkR_eq_below {c : Cfg} {s : State} (h : c.stk ≤ (s.gpr .esp).toNat) :
+    stkR c s = below (s.gpr .esp) c.stk := by
+  simp only [stkR, below, VG.X86.Taint.sub_setWidth h]
+
+/-- The stack below the return address is apart from the writable regions. -/
+theorem Pre.stk_wr {c : Cfg} {s : State} {extra : List Region} (hp : Pre c s extra) :
+    ∀ r ∈ s.wr, Region.Disjoint (below (s.gpr .esp) c.stk) r := by
+  rw [hp.wr, ← stkR_eq_below hp.sp_lo]
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl)
+  · exact hp.stk_out
+  · exact hp.stk_sc
 
 theorem argAddr_eq (s : State) (i : Nat) : argAddr s i = addr (s.gpr .esp) (4 + 4 * i) := rfl
 

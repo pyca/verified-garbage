@@ -29,7 +29,7 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 
       ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk],
         Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
     (hPc : onCurve c.C P = true)
-    (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P) (hspG : SpOk c.gMul 20)
+    (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY)) 1 P) (hst : ∀ r ∈ s₀.wr, Region.Disjoint (below (s₀.gpr .esp) c.stk) r) (hspG : SpOk c.gMul c.stk)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder c) c.stk) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C)))
       (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s V >>> j) P)) s' → WP isa rest s' Q) :
@@ -62,13 +62,9 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 
       refine ⟨ht.of_unch (by rw [k₁.rd, k₁.wr]) U₁
         (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7) ho, ho, ?_⟩
       rw [k₁.wr, k₁.1 _ (by decide), hM.wr, hM.esp]
-      intro r hr
-      rcases List.mem_append.mp hr with hr | hr
-      · exact hap r (List.mem_append_left _ hr)
-      · rw [List.mem_singleton.mp hr]
-        exact (hap _ (List.mem_append_right _ (List.mem_singleton_self _))).sub_right
-          (below_sub (Cfg.stk_ge c) hM.sp_lo))
-    (by rw [k₁.1 _ (by decide), hM.esp]; exact Nat.le_trans (Cfg.stk_ge c) hM.sp_lo) hspG)
+      exact hap)
+    (by rw [k₁.wr, k₁.1 _ (by decide), hM.wr, hM.esp]; exact hst)
+    (by rw [k₁.1 _ (by decide), hM.esp]; exact hM.sp_lo) hspG)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
   obtain hs₂ := hs₁.of_keeps K₂ (by decide)
   obtain F₂ := F₁.unch h7 hn fixedOk_gW U₂

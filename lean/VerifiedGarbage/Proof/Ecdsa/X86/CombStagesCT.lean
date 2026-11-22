@@ -35,11 +35,11 @@ def signTailCode : Prog isa := p256Comb.signTail
 materialize_code signPrepCode
 materialize_code signTailCode
 
-theorem signPrep_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp]))
+theorem signPrep_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp] 5 24))
     signPrepCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
-theorem signTail_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 5))
+theorem signTail_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 5 true 24))
     signTailCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
