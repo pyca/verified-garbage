@@ -1119,8 +1119,10 @@ one the internal function's instructions carry: the artifact's contract
 says where the memory holds the tables it gives (`Abi.withConsts`), which is
 what its proof, which runs the internal function's code, assumes of them,
 and every artifact with a table of a name gives the same words
-(`checkConsts`). No artifact's module is `internal`, the directory of the
-internal functions' files. -/
+(`checkConsts`). Any other name is of a function whose address the
+artifact's contract makes public (`Artifact.fns`): its address, not memory,
+is all the code takes of it. No artifact's module is `internal`, the
+directory of the internal functions' files. -/
 def checkInternalTables (hs : List Internal) (p : Prepared) : Except String Unit := do
   let a := p.art
   let t := a.target.name
@@ -1130,9 +1132,10 @@ def checkInternalTables (hs : List Internal) (p : Prepared) : Except String Unit
   for (n, _) in p.calls do
     let some h := internal? hs t n | continue
     for s in h.syms do
-      unless own.contains s || (h.tables.map (·.1)).contains s do
+      unless own.contains s || (h.tables.map (·.1)).contains s || a.fns.contains s do
         throw s!"{t}: {a.name} calls the internal function {n}, which names the table {s}, \
-          which {a.name} does not have (`Artifact.consts`) or carry"
+          which {a.name} does not have (`Artifact.consts`) or carry, nor a function of public \
+          address (`Artifact.fns`)"
 
 /-- Every call in the code of `p`'s artifact, and in the code of the functions
 it calls, is of an artifact of `ps` of the same target, or of an internal
