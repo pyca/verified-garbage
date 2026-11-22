@@ -48,10 +48,7 @@ impl Algorithm {
 }
 
 impl Key {
-    /// Appends the plaintext `plain ‖ extra` to `out`, seals it there and
-    /// appends its tag: one copy of the plaintext, which a record's buffer
-    /// needs anyway, rather than writing every byte of it twice (zeroed,
-    /// then encrypted into from where the plaintext is).
+    /// Appends the ciphertext of `plain ‖ extra` and its tag to `out`.
     pub(crate) fn seal_append(
         &self,
         nonce: &[u8; 12],
@@ -62,6 +59,19 @@ impl Key {
     ) -> Result<(), ()> {
         let start = out.len();
         out.reserve(plain.len() + extra.len() + TAG_LEN);
+        // For bulk records the AArch64 gather loop encrypts straight from
+        // the caller into spare record capacity, including TLS 1.3's type byte.
+        #[cfg(target_arch = "aarch64")]
+        if let Self::AesGcm(key) = self
+            && plain.len() >= 4096
+            && let Some(piece) = plain.single_chunk()
+        {
+            let tag = key
+                .encrypt_append(nonce, aad, &[piece, extra], out)
+                .map_err(|_| ())?;
+            out.extend_from_slice(&tag);
+            return Ok(());
+        }
         for piece in plain.chunks() {
             out.extend_from_slice(piece);
         }
