@@ -44,9 +44,11 @@ Each runs in a frame (`alloc`) holding our caller's registers it uses and
 our return address, which the calls replace, and the working space of the
 functions it calls (`8 W` bytes for `update` and `finalize`, `8 (W + S)`
 for `init`); our variables live in callee-saved registers, which the
-functions we call keep. The calls use the 32 bytes below the frame. Every
-address depends only on the pointers and `D`, and every branch only on
-lengths.
+functions we call keep. The calls use the 32 bytes below the frame. Each
+block of straight-line code starts by putting the frame's base in `r12`
+(`add r12, sp, #0`), from which it forms every address in the frame and
+reads the stack arguments. Every address depends only on the pointers and
+`D`, and every branch only on lengths.
 -/
 
 @[expose] public section
@@ -73,7 +75,8 @@ def callUpd (t : Reg) (f : Fns) : Prog isa := tcall t 1 f.upd [.r1, .r7, .r10, .
 /-- The table's HMAC `finalize`, in the frame of its stack arguments. -/
 def callFin (t : Reg) (f : Fns) : Prog isa := tcall t 2 f.fin [.r10, .r12] .r12 8
 
-/-- Our caller's registers `l` saved at the frame's start, through `r12`. -/
+/-- Our caller's registers `l` saved at the frame's start, through `r12`,
+the frame's base. -/
 def saveRegs (l : List (Reg × Nat)) : List Instr := .addSp .r12 0 :: l.map fun (r, d) => .str r .r12 d
 
 /-- Our caller's registers `l` restored from the frame's start, through `r12`. -/
@@ -86,17 +89,20 @@ def kLr : Nat := work
 def kFr : Nat := 3424
 
 /-- Our return address saved; `init`'s arguments: the states at `key` and
-`key + 192`, `PRK` as the key, the working space; and its address, the
-table's word 0, in `lr`. -/
+`key + 192`, `PRK` as the key, the working space (the frame's base, `r12`);
+and its address, the table's word 0, in `lr`. -/
 def keyArgs : List Instr :=
-  [.addSp .r12 0, .str .lr .r12 kLr, .ldr .lr .r3 0, .mov .r3 (.reg .r1), .mov .r12 (.reg .r0), .mov .r0 (.reg .r2),
-    addI .r1 .r2 192, .mov .r2 (.reg .r12), .addSp .r12 0]
+  [.addSp .r12 0, .str .lr .r12 kLr, .ldr .lr .r3 0, .mov .r3 (.reg .r1), .mov .r1 (.reg .r0), .mov .r0 (.reg .r2),
+    .mov .r2 (.reg .r1), addI .r1 .r0 192]
+
+/-- Our return address restored. -/
+def keyEpi : List Instr := [.addSp .r12 0, .ldr .lr .r12 kLr]
 
 /-- The frame's body of `vg_hkdf_key`, whose table's `init` may be `f`'s. -/
 def keyMain (f : Fns) : Prog isa :=
   .seq (.block keyArgs)
   (.seq (.frame (.push [.r12, .lr]) (Code.icalls (.blx .lr) f.init) (.pop .r12 8))
-    (.block [.ldrSp .lr kLr]))
+    (.block keyEpi))
 
 /-- `vg_hkdf_key`. -/
 def key (f : Fns) : Prog isa := .frame (.alloc kFr) (keyMain f) (.free kFr)
@@ -116,25 +122,25 @@ def xWork : Nat := 416
 def xFr : Nat := xWork + work
 
 /-- `extract`'s prologue: our caller's registers saved; `ikm` and its length
-in `r4` and `r7`, `prk` (`[sp]` on entry) in `r6`, the table (`[sp + 8]`)
-in `r5`; then `init`'s arguments: the states, the salt as the key, the
+in `r4` and `r7`, `prk` (`[sp]` on entry, past the frame) in `r6`, the
+table (`[sp + 8]`) in `r5`; then `init`'s arguments: the states, the salt as the key, the
 working space. -/
 def extractPro : List Instr :=
   saveRegs xSaved ++
-    [.mov .r4 (.reg .r2), .mov .r7 (.reg .r3), .ldrSp .r6 xFr, .ldrSp .r5 (xFr + 8), .mov .r2 (.reg .r0),
-      .mov .r3 (.reg .r1), .addSp .r0 xIn, .addSp .r1 xOut, .addSp .r12 0, addI .r12 .r12 xWork]
+    [.mov .r4 (.reg .r2), .mov .r7 (.reg .r3), .ldr .r6 .r12 xFr, .ldr .r5 .r12 (xFr + 8), .mov .r2 (.reg .r0),
+      .mov .r3 (.reg .r1), addI .r0 .r12 xIn, addI .r1 .r12 xOut, addI .r12 .r12 xWork]
 
 /-- `update`'s arguments: the inner state, the input keying material (`r1`,
 `r7`), the `B` bytes the inner state holds (`r3:r2`), the working space
 (`r10`). -/
 def extractUpd : List Instr :=
-  [.addSp .r0 xIn, .mov .r1 (.reg .r4), .ldr .r2 .r5 tB, .mov .r3 (imm 0), .addSp .r10 0, addI .r10 .r10 xWork]
+  [.addSp .r12 0, addI .r0 .r12 xIn, .mov .r1 (.reg .r4), .ldr .r2 .r5 tB, .mov .r3 (imm 0), addI .r10 .r12 xWork]
 
 /-- `finalize`'s arguments: the states, the `B + ikm_len` bytes the inner one
 holds, `prk` (`r10`), the working space (`r12`). -/
 def extractFin : List Instr :=
-  [.addSp .r0 xIn, .addSp .r1 xOut, .ldr .r2 .r5 tB, .dp .add .r2 .r2 (.reg .r7), .mov .r3 (imm 0),
-    .mov .r10 (.reg .r6), .addSp .r12 0, addI .r12 .r12 xWork]
+  [.addSp .r12 0, addI .r0 .r12 xIn, addI .r1 .r12 xOut, .ldr .r2 .r5 tB, .dp .add .r2 .r2 (.reg .r7),
+    .mov .r3 (imm 0), .mov .r10 (.reg .r6), addI .r12 .r12 xWork]
 
 /-- Our caller's registers and our return address restored. -/
 def extractEpi : List Instr := restoreRegs xSaved
@@ -180,56 +186,54 @@ counter `i = 1` and the length of `T(i - 1)` (none yet) in the frame; `Z`
 set iff `out_len` is 0. -/
 def expandPro : List Instr :=
   saveRegs eSaved ++
-    [.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2), .mov .r8 (.reg .r3), .ldrSp .r9 eFr,
-      .ldrSp .r11 (eFr + 4), .mov .r0 (imm 1), .str .r0 .r12 eC, .mov .r0 (imm 0), .str .r0 .r12 eL,
+    [.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2), .mov .r8 (.reg .r3), .ldr .r9 .r12 eFr,
+      .ldr .r11 .r12 (eFr + 4), .mov .r0 (imm 1), .str .r0 .r12 eC, .mov .r0 (imm 0), .str .r0 .r12 eL,
       .cmp .r9 (imm 0)]
 
 /-- The copy of the inner state at `key`, its 192 bytes, to the working
 state: `copyLoop`'s arguments. -/
-def copyW : List Instr := [.mov .r1 (.reg .r4), .addSp .r2 eW, .mov .r3 (imm 192)]
-
-/-- The working space, for `update` (`r10`). -/
-def workU : List Instr := [.addSp .r10 0, addI .r10 .r10 eWork]
+def copyW : List Instr := [.addSp .r12 0, .mov .r1 (.reg .r4), addI .r2 .r12 eW, .mov .r3 (imm 192)]
 
 /-- `update`'s arguments for `T(i - 1)`: the working state, which holds `B`
 bytes, the bytes at `T` of the length the frame holds. -/
 def updT : List Instr :=
-  [.addSp .r0 eW, .addSp .r1 eT, .ldrSp .r7 eL, .ldr .r2 .r11 tB, .mov .r3 (imm 0)] ++ workU
+  [.addSp .r12 0, addI .r0 .r12 eW, addI .r1 .r12 eT, .ldr .r7 .r12 eL, .ldr .r2 .r11 tB, .mov .r3 (imm 0),
+    addI .r10 .r12 eWork]
 
 /-- `update`'s arguments for `info`: the working state, which holds
 `B + |T(i - 1)|` bytes. -/
 def updI : List Instr :=
-  [.addSp .r0 eW, .mov .r1 (.reg .r5), .mov .r7 (.reg .r6), .ldr .r2 .r11 tB, .ldrSp .r3 eL,
-    .dp .add .r2 .r2 (.reg .r3), .mov .r3 (imm 0)] ++ workU
+  [.addSp .r12 0, addI .r0 .r12 eW, .mov .r1 (.reg .r5), .mov .r7 (.reg .r6), .ldr .r2 .r11 tB, .ldr .r3 .r12 eL,
+    .dp .add .r2 .r2 (.reg .r3), .mov .r3 (imm 0), addI .r10 .r12 eWork]
 
 /-- `update`'s arguments for the counter's byte: the working state, which
 holds `B + |T(i - 1)| + info_len` bytes. -/
 def updC : List Instr :=
-  [.addSp .r0 eW, .addSp .r1 eC, .mov .r7 (imm 1), .ldr .r2 .r11 tB, .ldrSp .r3 eL, .dp .add .r2 .r2 (.reg .r3),
-    .dp .add .r2 .r2 (.reg .r6), .mov .r3 (imm 0)] ++ workU
+  [.addSp .r12 0, addI .r0 .r12 eW, addI .r1 .r12 eC, .mov .r7 (imm 1), .ldr .r2 .r11 tB, .ldr .r3 .r12 eL,
+    .dp .add .r2 .r2 (.reg .r3), .dp .add .r2 .r2 (.reg .r6), .mov .r3 (imm 0), addI .r10 .r12 eWork]
 
 /-- `finalize`'s arguments: the working state, which holds
 `B + |T(i - 1)| + info_len + 1` bytes, the outer state at `key + 192`, `T`
 (`r10`), the working space (`r12`). -/
 def finT : List Instr :=
-  [.addSp .r0 eW, addI .r1 .r4 192, .ldr .r2 .r11 tB, .ldrSp .r3 eL, .dp .add .r2 .r2 (.reg .r3),
-    .dp .add .r2 .r2 (.reg .r6), addI .r2 .r2 1, .mov .r3 (imm 0), .addSp .r10 eT, .addSp .r12 0,
-    addI .r12 .r12 eWork]
+  [.addSp .r12 0, addI .r0 .r12 eW, addI .r1 .r4 192, .ldr .r2 .r11 tB, .ldr .r3 .r12 eL,
+    .dp .add .r2 .r2 (.reg .r3), .dp .add .r2 .r2 (.reg .r6), addI .r2 .r2 1, .mov .r3 (imm 0),
+    addI .r10 .r12 eT, addI .r12 .r12 eWork]
 
 /-- The bytes of `T(i)` to copy, `min(D, rem)`, into `r3` (`copyLoop`'s
 count) and `r7`: `rem + ((D - rem) & mask)`, the mask all ones iff
 `D < rem` (`subs` clears C, borrowing, iff `D < rem`); `T` in `r1` and
 `out` in `r2`. -/
 def outArgs : List Instr :=
-  [.ldr .r3 .r11 tD, .subs .r12 .r3 (.reg .r9), .mov .r0 (imm 0), .adc .r0 .r0 (imm 0), .dp .sub .r0 .r0 (imm 1),
-    .dp .and .r12 .r12 (.reg .r0), .dp .add .r3 .r9 (.reg .r12), .mov .r7 (.reg .r3), .addSp .r1 eT,
-    .mov .r2 (.reg .r8)]
+  [.addSp .r12 0, .ldr .r3 .r11 tD, .subs .r0 .r3 (.reg .r9), .mov .r1 (imm 0), .adc .r1 .r1 (imm 0),
+    .dp .sub .r1 .r1 (imm 1), .dp .and .r0 .r0 (.reg .r1), .dp .add .r3 .r9 (.reg .r0), .mov .r7 (.reg .r3),
+    addI .r1 .r12 eT, .mov .r2 (.reg .r8)]
 
 /-- After the copy: `out` past the bytes written, `rem` less them, `T(i)`'s
 `D` bytes the next block's `T(i - 1)`, the next counter; `Z` set iff no
 bytes of `out` are left. -/
 def nextBlock : List Instr :=
-  [.dp .add .r8 .r8 (.reg .r7), .dp .sub .r9 .r9 (.reg .r7), .ldr .r0 .r11 tD, .addSp .r12 0, .str .r0 .r12 eL,
+  [.addSp .r12 0, .dp .add .r8 .r8 (.reg .r7), .dp .sub .r9 .r9 (.reg .r7), .ldr .r0 .r11 tD, .str .r0 .r12 eL,
     .ldr .r0 .r12 eC, addI .r0 .r0 1, .str .r0 .r12 eC, .cmp .r9 (imm 0)]
 
 /-- One block `T(i)`, whose table's functions may be `f`'s. -/
