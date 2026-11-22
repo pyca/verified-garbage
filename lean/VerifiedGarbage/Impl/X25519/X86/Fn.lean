@@ -8,10 +8,11 @@ public import VerifiedGarbage.Impl.X25519.X86.Field32
 `vg_x25519` (`Impl/X25519/X86.lean`): the setup, the ladder, the last swap,
 the inversion and the result. The inversion `z2^(p-2)`, `p - 2 = 2²⁵⁵ - 21`,
 is ref10's addition chain: `z2` is copied to byte 128 (`aAt`, among the
-scalar's bits, which the ladder no longer needs), a call of
-`vg_gf25519_r32_pow250` (`Field32.pow250Call`) leaves `z2^(2^250 - 1)` in
-`E1` and `z2^11` in `E0`, and five squarings and a product finish the chain
-in `E1`. The call uses the 8 bytes of stack below `esp`.
+scalar's bits, which the ladder no longer needs), the chain to
+`z2^(2^250 - 1)` (`Field32.pow250Call`, by calls of `vg_gf25519_r32_mul`
+and `vg_gf25519_r32_sqn`) leaves it in `E1` and `z2^11` in `E0`, and five
+squarings and a product finish the chain in `E1`. The calls use the 4 bytes
+of stack below `esp`.
 -/
 
 @[expose] public section

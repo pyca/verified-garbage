@@ -12,14 +12,15 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
-/-! `vg_gf25519_r32_pow250`'s code as a literal (`materialize_code`), which
-its checks, and those of the code that calls it, read rather than build each
-field multiplication again. -/
+/-! The code of `vg_gf25519_r32_mul` and `vg_gf25519_r32_sqn` as literals
+(`materialize_code`), which their checks, and those of the code that calls
+them, read rather than build the field multiplication again. -/
 
 @[expose] public section
 
 namespace VG.Impl.X25519.X86.Field32
 
-materialize_code pow250Fn
+materialize_code mulFn
+materialize_code sqnFn
 
 end VG.Impl.X25519.X86.Field32

@@ -183,7 +183,7 @@ theorem fieldCode_ok (ops : List FieldOp) {s : State} {x : BitVec 32} (hc : Ctx 
 
 /-! ## Code with calls
 
-A call of `vg_ed25519_r32_point_add` or `vg_gf25519_r32_pow250` also changes
+A call of `vg_ed25519_r32_point_add`, or the addition chain, also changes
 bytes 864 to 1023 of the working space (beyond the slots and `T`) and the 8
 bytes of stack below `esp` that the call uses (`CallKeep`). -/
 

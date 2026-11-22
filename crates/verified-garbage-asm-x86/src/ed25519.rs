@@ -167,5 +167,9 @@ pub(crate) mod vg_ed25519_scalar_reduce;
 pub(crate) mod vg_ed25519_verify_equation;
 
 #[rustfmt::skip]
-#[path = "internal/vg_gf25519_r32_pow250.rs"]
-pub(crate) mod vg_gf25519_r32_pow250;
+#[path = "internal/vg_gf25519_r32_mul.rs"]
+pub(crate) mod vg_gf25519_r32_mul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_gf25519_r32_sqn.rs"]
+pub(crate) mod vg_gf25519_r32_sqn;

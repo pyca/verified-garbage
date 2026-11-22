@@ -22,8 +22,8 @@ section
 
 section
 
-/-! The shared addition chain, a call of `vg_gf25519_r32_pow250`
-(`power250_ok`), computes the inversion and square-root powers with a few
+/-! The shared addition chain, by calls of `vg_gf25519_r32_mul` and
+`vg_gf25519_r32_sqn` (`power250_ok`), computes the inversion and square-root powers with a few
 squarings and a product each (`invert_ok`, `rootPower_ok`). -/
 
 @[expose] public section
