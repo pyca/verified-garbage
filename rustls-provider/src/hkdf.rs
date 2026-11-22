@@ -1,9 +1,10 @@
-//! HKDF (RFC 5869) with SHA-2, for TLS 1.3's key schedule, directly on the
-//! library's HMAC. rustls's generic `HkdfUsingHmac` boxes a keyed HMAC and
-//! allocates the PRK for every extract; here an extract computes the PRK in
-//! place and boxes only the expander, which keeps the PRK as a keyed HMAC.
+//! HKDF (RFC 5869) with SHA-2, for TLS 1.3's key schedule: the library's
+//! verified HKDF ([`verified_garbage::kdf::hkdf`]). An expander holds the
+//! pseudorandom key as HMAC keyed with it, so each expansion starts from the
+//! keyed states rather than keying HMAC again.
 
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 use core::marker::PhantomData;
 
 use rustls::crypto::hmac::Tag;
@@ -11,40 +12,28 @@ use rustls::crypto::tls13::{self, HkdfExpander, OkmBlock, OutputLengthError};
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
 use verified_garbage::hmac::{Hmac, HmacHash};
+use verified_garbage::kdf::hkdf::{Hkdf as VgHkdf, HkdfHash};
 
 pub(crate) static HKDF_SHA256: Hkdf<Sha256> = Hkdf(PhantomData);
 pub(crate) static HKDF_SHA384: Hkdf<Sha384> = Hkdf(PhantomData);
 
 pub(crate) struct Hkdf<H>(PhantomData<fn() -> H>);
 
-impl<H: HmacHash + 'static> Hkdf<H>
-where
-    H::State: Send + Sync,
-{
-    /// `HKDF-Extract(salt, secret)`, as an expander; no salt is `HashLen`
-    /// zero bytes.
-    fn extract(salt: Option<&[u8]>, secret: &[u8]) -> Box<dyn HkdfExpander> {
-        let zeroes = [0u8; Tag::MAX_LEN];
-        let mut h = Hmac::<H>::new(salt.unwrap_or(&zeroes[..H::OUTPUT_SIZE]));
-        h.update(secret);
-        Box::new(Expander(Hmac::<H>::new(h.finalize().as_ref())))
-    }
-}
-
-impl<H: HmacHash + 'static> tls13::Hkdf for Hkdf<H>
-where
-    H::State: Send + Sync,
-{
+impl<H: HkdfHash + HmacHash + Send + Sync + 'static> tls13::Hkdf for Hkdf<H> {
     fn extract_from_zero_ikm(&self, salt: Option<&[u8]>) -> Box<dyn HkdfExpander> {
-        Self::extract(salt, &[0u8; Tag::MAX_LEN][..H::OUTPUT_SIZE])
+        let zeroes = [0u8; Tag::MAX_LEN];
+        Box::new(Expander(VgHkdf::<H>::new(salt, &zeroes[..H::OUTPUT_SIZE])))
     }
 
     fn extract_from_secret(&self, salt: Option<&[u8]>, secret: &[u8]) -> Box<dyn HkdfExpander> {
-        Self::extract(salt, secret)
+        Box::new(Expander(VgHkdf::<H>::new(salt, secret)))
     }
 
     fn expander_for_okm(&self, okm: &OkmBlock) -> Box<dyn HkdfExpander> {
-        Box::new(Expander(Hmac::<H>::new(okm.as_ref())))
+        // rustls's `OkmBlock`s for this hash are a digest long, which
+        // `from_prk` takes.
+        let prk = VgHkdf::<H>::from_prk(okm.as_ref()).expect("an OkmBlock is a digest long");
+        Box::new(Expander(prk))
     }
 
     fn hmac_sign(&self, key: &OkmBlock, message: &[u8]) -> Tag {
@@ -52,36 +41,39 @@ where
     }
 }
 
-/// `HKDF-Expand` with the PRK absorbed as an HMAC key: each output block
-/// continues a copy of it.
-struct Expander<H: HmacHash>(Hmac<H>);
+/// The longest `info` TLS 1.3 asks for, an `HkdfLabel` (RFC 8446 §7.1): a
+/// length, a label of up to 255 bytes and a context of up to 255, each of
+/// the last two after its length byte.
+const MAX_LABEL: usize = 2 + 1 + 255 + 1 + 255;
 
-impl<H: HmacHash> Expander<H> {
-    /// `T(1) ‖ T(2) ‖ …` into `output`, where
-    /// `T(i) = HMAC(PRK, T(i - 1) ‖ info ‖ i)` and `T(0)` is empty.
+/// HKDF-Expand from a pseudorandom key.
+struct Expander<H: HkdfHash>(VgHkdf<H>);
+
+impl<H: HkdfHash> Expander<H> {
+    /// HKDF-Expand of `info`'s pieces, one after the other, into `output`,
+    /// at most 255 digests long.
     fn expand(&self, info: &[&[u8]], output: &mut [u8]) {
-        let mut prev: Option<H::Output> = None;
-        for (i, block) in output.chunks_mut(H::OUTPUT_SIZE).enumerate() {
-            let mut h = self.0.clone();
-            if let Some(t) = &prev {
-                h.update(t.as_ref());
-            }
-            for piece in info {
-                h.update(piece);
-            }
-            // At most 255 blocks (`expand_slice` checks it).
-            h.update(&[i as u8 + 1]);
-            let t = h.finalize();
-            block.copy_from_slice(&t.as_ref()[..block.len()]);
-            prev = Some(t);
+        let len: usize = info.iter().map(|p| p.len()).sum();
+        let mut stack = [0u8; MAX_LABEL];
+        let mut heap = Vec::new();
+        let buf = if len <= MAX_LABEL {
+            &mut stack[..len]
+        } else {
+            heap.resize(len, 0);
+            &mut heap[..]
+        };
+        let mut at = 0;
+        for piece in info {
+            buf[at..at + piece.len()].copy_from_slice(piece);
+            at += piece.len();
         }
+        self.0
+            .expand(buf, output)
+            .expect("the output is at most 255 digests long");
     }
 }
 
-impl<H: HmacHash> HkdfExpander for Expander<H>
-where
-    H::State: Send + Sync,
-{
+impl<H: HkdfHash + Send + Sync> HkdfExpander for Expander<H> {
     fn expand_slice(&self, info: &[&[u8]], output: &mut [u8]) -> Result<(), OutputLengthError> {
         if output.len() > 255 * H::OUTPUT_SIZE {
             return Err(OutputLengthError);
