@@ -48,7 +48,7 @@ call {vg_brainpoolp512r1_mul_mod_n}
 call {vg_brainpoolp512r1_mul_mod_n}
 .base64 "TInmSIuXAAsAAEgLlwgLAABIC5cQCwAASAuXGAsAAEgLlyALAABIC5coCwAASAuXMAsAAEgLlzgLAAC5AAAAAEgp0UgZ0kiLh0ALAABIIdBIiYdACwAASIuPQAsAAEiLh0AJAABIIchID8hIiUY4SIuHSAkAAEghyEgPyEiJRjBIi4dQCQAASCHISA/ISIlGKEiLh1gJAABIIchID8hIiUYgSIuHYAkAAEghyEgPyEiJRhhIi4doCQAASCHISA/ISIlGEEiLh3AJAABIIchID8hIiUYISIuHeAkAAEghyEgPyEiJBkiLhwALAABIIchID8hIiUZ4SIuHCAsAAEghyEgPyEiJRnBIi4cQCwAASCHISA/ISIlGaEiLhxgLAABIIchID8hIiUZgSIuHIAsAAEghyEgPyEiJRlhIi4coCwAASCHISA/ISIlGUEiLhzALAABIIchID8hIiUZISIuHOAsAAEghyEgPyEiJRkBIichIg+ABSIsfSItvCEyLZxBMi28YTIt3IEyLfyjD"
 .p2align 6"#,
-        vg_brainpoolp512r1_add_complete = sym crate::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_add_complete::vg_brainpoolp512r1_add_complete,
+        vg_brainpoolp512r1_add_complete = sym crate::ec_brainpoolp512r1::vg_brainpoolp512r1_add_complete::vg_brainpoolp512r1_add_complete,
         vg_brainpoolp512r1_inv_mod_p = sym crate::ec_brainpoolp512r1::vg_brainpoolp512r1_inv_mod_p::vg_brainpoolp512r1_inv_mod_p,
         vg_brainpoolp512r1_inv_mod_n = sym crate::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_inv_mod_n::vg_brainpoolp512r1_inv_mod_n,
         vg_brainpoolp512r1_mul_mod_n = sym crate::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_n::vg_brainpoolp512r1_mul_mod_n,

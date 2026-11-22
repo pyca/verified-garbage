@@ -363,7 +363,353 @@ vg_ec_brainpoolp384r1_public_key:
 	mov QWORD PTR [rdi+816], rax
 	mov rax, QWORD PTR [rdi+536]
 	mov QWORD PTR [rdi+824], rax
-	call {vg_brainpoolp384r1_mul}
+	movq xmm0, rbx
+	movq xmm1, rbp
+	movq xmm2, r12
+	movq xmm3, r13
+	movq xmm4, r14
+	movq xmm5, r15
+	mov ebx, 0
+22:
+	movzx eax, BYTE PTR [rdi+rbx*1+1552]
+	mov rdx, rax
+	and rdx, 1
+	mov BYTE PTR [rdi+rbx*8+2224], dl
+	mov rdx, rax
+	shr rdx, 1
+	and rdx, 1
+	mov BYTE PTR [rdi+rbx*8+2225], dl
+	mov rdx, rax
+	shr rdx, 2
+	and rdx, 1
+	mov BYTE PTR [rdi+rbx*8+2226], dl
+	mov rdx, rax
+	shr rdx, 3
+	and rdx, 1
+	mov BYTE PTR [rdi+rbx*8+2227], dl
+	mov rdx, rax
+	shr rdx, 4
+	and rdx, 1
+	mov BYTE PTR [rdi+rbx*8+2228], dl
+	mov rdx, rax
+	shr rdx, 5
+	and rdx, 1
+	mov BYTE PTR [rdi+rbx*8+2229], dl
+	mov rdx, rax
+	shr rdx, 6
+	and rdx, 1
+	mov BYTE PTR [rdi+rbx*8+2230], dl
+	mov rdx, rax
+	shr rdx, 7
+	and rdx, 1
+	mov BYTE PTR [rdi+rbx*8+2231], dl
+	add rbx, 1
+	cmp rbx, 48
+	jne 22b
+	mov rax, QWORD PTR [rdi+736]
+	mov QWORD PTR [rdi+1456], rax
+	mov rax, QWORD PTR [rdi+744]
+	mov QWORD PTR [rdi+1464], rax
+	mov rax, QWORD PTR [rdi+752]
+	mov QWORD PTR [rdi+1472], rax
+	mov rax, QWORD PTR [rdi+760]
+	mov QWORD PTR [rdi+1480], rax
+	mov rax, QWORD PTR [rdi+768]
+	mov QWORD PTR [rdi+1488], rax
+	mov rax, QWORD PTR [rdi+776]
+	mov QWORD PTR [rdi+1496], rax
+	mov rax, QWORD PTR [rdi+784]
+	mov QWORD PTR [rdi+1984], rax
+	mov rax, QWORD PTR [rdi+792]
+	mov QWORD PTR [rdi+1992], rax
+	mov rax, QWORD PTR [rdi+800]
+	mov QWORD PTR [rdi+2000], rax
+	mov rax, QWORD PTR [rdi+808]
+	mov QWORD PTR [rdi+2008], rax
+	mov rax, QWORD PTR [rdi+816]
+	mov QWORD PTR [rdi+2016], rax
+	mov rax, QWORD PTR [rdi+824]
+	mov QWORD PTR [rdi+2024], rax
+	mov rax, QWORD PTR [rdi+208]
+	mov QWORD PTR [rdi+736], rax
+	mov rax, QWORD PTR [rdi+216]
+	mov QWORD PTR [rdi+744], rax
+	mov rax, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+752], rax
+	mov rax, QWORD PTR [rdi+232]
+	mov QWORD PTR [rdi+760], rax
+	mov rax, QWORD PTR [rdi+240]
+	mov QWORD PTR [rdi+768], rax
+	mov rax, QWORD PTR [rdi+248]
+	mov QWORD PTR [rdi+776], rax
+	mov rax, QWORD PTR [rdi+304]
+	mov QWORD PTR [rdi+784], rax
+	mov rax, QWORD PTR [rdi+312]
+	mov QWORD PTR [rdi+792], rax
+	mov rax, QWORD PTR [rdi+320]
+	mov QWORD PTR [rdi+800], rax
+	mov rax, QWORD PTR [rdi+328]
+	mov QWORD PTR [rdi+808], rax
+	mov rax, QWORD PTR [rdi+336]
+	mov QWORD PTR [rdi+816], rax
+	mov rax, QWORD PTR [rdi+344]
+	mov QWORD PTR [rdi+824], rax
+	mov rax, QWORD PTR [rdi+208]
+	mov QWORD PTR [rdi+832], rax
+	mov rax, QWORD PTR [rdi+216]
+	mov QWORD PTR [rdi+840], rax
+	mov rax, QWORD PTR [rdi+224]
+	mov QWORD PTR [rdi+848], rax
+	mov rax, QWORD PTR [rdi+232]
+	mov QWORD PTR [rdi+856], rax
+	mov rax, QWORD PTR [rdi+240]
+	mov QWORD PTR [rdi+864], rax
+	mov rax, QWORD PTR [rdi+248]
+	mov QWORD PTR [rdi+872], rax
+	movabs rax, -3041344086283733004
+	mov QWORD PTR [rdi+1504], rax
+	movabs rax, -740490093907602121
+	mov QWORD PTR [rdi+1512], rax
+	movabs rax, 6227117305712425834
+	mov QWORD PTR [rdi+1520], rax
+	movabs rax, 3500483756195816918
+	mov QWORD PTR [rdi+1528], rax
+	movabs rax, 8231616977324551736
+	mov QWORD PTR [rdi+1536], rax
+	movabs rax, 4827945035257030358
+	mov QWORD PTR [rdi+1544], rax
+	mov ebx, 384
+23:
+	sub rbx, 1
+	mov rax, QWORD PTR [rdi+736]
+	mov QWORD PTR [rdi+1024], rax
+	mov rax, QWORD PTR [rdi+744]
+	mov QWORD PTR [rdi+1032], rax
+	mov rax, QWORD PTR [rdi+752]
+	mov QWORD PTR [rdi+1040], rax
+	mov rax, QWORD PTR [rdi+760]
+	mov QWORD PTR [rdi+1048], rax
+	mov rax, QWORD PTR [rdi+768]
+	mov QWORD PTR [rdi+1056], rax
+	mov rax, QWORD PTR [rdi+776]
+	mov QWORD PTR [rdi+1064], rax
+	mov rax, QWORD PTR [rdi+784]
+	mov QWORD PTR [rdi+1072], rax
+	mov rax, QWORD PTR [rdi+792]
+	mov QWORD PTR [rdi+1080], rax
+	mov rax, QWORD PTR [rdi+800]
+	mov QWORD PTR [rdi+1088], rax
+	mov rax, QWORD PTR [rdi+808]
+	mov QWORD PTR [rdi+1096], rax
+	mov rax, QWORD PTR [rdi+816]
+	mov QWORD PTR [rdi+1104], rax
+	mov rax, QWORD PTR [rdi+824]
+	mov QWORD PTR [rdi+1112], rax
+	mov rax, QWORD PTR [rdi+832]
+	mov QWORD PTR [rdi+1120], rax
+	mov rax, QWORD PTR [rdi+840]
+	mov QWORD PTR [rdi+1128], rax
+	mov rax, QWORD PTR [rdi+848]
+	mov QWORD PTR [rdi+1136], rax
+	mov rax, QWORD PTR [rdi+856]
+	mov QWORD PTR [rdi+1144], rax
+	mov rax, QWORD PTR [rdi+864]
+	mov QWORD PTR [rdi+1152], rax
+	mov rax, QWORD PTR [rdi+872]
+	mov QWORD PTR [rdi+1160], rax
+	call {vg_brainpoolp384r1_add_complete}
+	mov rax, QWORD PTR [rdi+880]
+	mov QWORD PTR [rdi+736], rax
+	mov rax, QWORD PTR [rdi+888]
+	mov QWORD PTR [rdi+744], rax
+	mov rax, QWORD PTR [rdi+896]
+	mov QWORD PTR [rdi+752], rax
+	mov rax, QWORD PTR [rdi+904]
+	mov QWORD PTR [rdi+760], rax
+	mov rax, QWORD PTR [rdi+912]
+	mov QWORD PTR [rdi+768], rax
+	mov rax, QWORD PTR [rdi+920]
+	mov QWORD PTR [rdi+776], rax
+	mov rax, QWORD PTR [rdi+928]
+	mov QWORD PTR [rdi+784], rax
+	mov rax, QWORD PTR [rdi+936]
+	mov QWORD PTR [rdi+792], rax
+	mov rax, QWORD PTR [rdi+944]
+	mov QWORD PTR [rdi+800], rax
+	mov rax, QWORD PTR [rdi+952]
+	mov QWORD PTR [rdi+808], rax
+	mov rax, QWORD PTR [rdi+960]
+	mov QWORD PTR [rdi+816], rax
+	mov rax, QWORD PTR [rdi+968]
+	mov QWORD PTR [rdi+824], rax
+	mov rax, QWORD PTR [rdi+976]
+	mov QWORD PTR [rdi+832], rax
+	mov rax, QWORD PTR [rdi+984]
+	mov QWORD PTR [rdi+840], rax
+	mov rax, QWORD PTR [rdi+992]
+	mov QWORD PTR [rdi+848], rax
+	mov rax, QWORD PTR [rdi+1000]
+	mov QWORD PTR [rdi+856], rax
+	mov rax, QWORD PTR [rdi+1008]
+	mov QWORD PTR [rdi+864], rax
+	mov rax, QWORD PTR [rdi+1016]
+	mov QWORD PTR [rdi+872], rax
+	mov rax, QWORD PTR [rdi+1456]
+	mov QWORD PTR [rdi+1024], rax
+	mov rax, QWORD PTR [rdi+1464]
+	mov QWORD PTR [rdi+1032], rax
+	mov rax, QWORD PTR [rdi+1472]
+	mov QWORD PTR [rdi+1040], rax
+	mov rax, QWORD PTR [rdi+1480]
+	mov QWORD PTR [rdi+1048], rax
+	mov rax, QWORD PTR [rdi+1488]
+	mov QWORD PTR [rdi+1056], rax
+	mov rax, QWORD PTR [rdi+1496]
+	mov QWORD PTR [rdi+1064], rax
+	mov rax, QWORD PTR [rdi+1984]
+	mov QWORD PTR [rdi+1072], rax
+	mov rax, QWORD PTR [rdi+1992]
+	mov QWORD PTR [rdi+1080], rax
+	mov rax, QWORD PTR [rdi+2000]
+	mov QWORD PTR [rdi+1088], rax
+	mov rax, QWORD PTR [rdi+2008]
+	mov QWORD PTR [rdi+1096], rax
+	mov rax, QWORD PTR [rdi+2016]
+	mov QWORD PTR [rdi+1104], rax
+	mov rax, QWORD PTR [rdi+2024]
+	mov QWORD PTR [rdi+1112], rax
+	mov rax, QWORD PTR [rdi+304]
+	mov QWORD PTR [rdi+1120], rax
+	mov rax, QWORD PTR [rdi+312]
+	mov QWORD PTR [rdi+1128], rax
+	mov rax, QWORD PTR [rdi+320]
+	mov QWORD PTR [rdi+1136], rax
+	mov rax, QWORD PTR [rdi+328]
+	mov QWORD PTR [rdi+1144], rax
+	mov rax, QWORD PTR [rdi+336]
+	mov QWORD PTR [rdi+1152], rax
+	mov rax, QWORD PTR [rdi+344]
+	mov QWORD PTR [rdi+1160], rax
+	call {vg_brainpoolp384r1_add_complete}
+	movzx eax, BYTE PTR [rdi+rbx*1+2224]
+	mov ecx, 0
+	sub rcx, rax
+	mov rax, QWORD PTR [rdi+736]
+	mov rdx, QWORD PTR [rdi+880]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+736], rax
+	mov rax, QWORD PTR [rdi+744]
+	mov rdx, QWORD PTR [rdi+888]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+744], rax
+	mov rax, QWORD PTR [rdi+752]
+	mov rdx, QWORD PTR [rdi+896]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+752], rax
+	mov rax, QWORD PTR [rdi+760]
+	mov rdx, QWORD PTR [rdi+904]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+760], rax
+	mov rax, QWORD PTR [rdi+768]
+	mov rdx, QWORD PTR [rdi+912]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+768], rax
+	mov rax, QWORD PTR [rdi+776]
+	mov rdx, QWORD PTR [rdi+920]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+776], rax
+	mov rax, QWORD PTR [rdi+784]
+	mov rdx, QWORD PTR [rdi+928]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+784], rax
+	mov rax, QWORD PTR [rdi+792]
+	mov rdx, QWORD PTR [rdi+936]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+792], rax
+	mov rax, QWORD PTR [rdi+800]
+	mov rdx, QWORD PTR [rdi+944]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+800], rax
+	mov rax, QWORD PTR [rdi+808]
+	mov rdx, QWORD PTR [rdi+952]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+808], rax
+	mov rax, QWORD PTR [rdi+816]
+	mov rdx, QWORD PTR [rdi+960]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+816], rax
+	mov rax, QWORD PTR [rdi+824]
+	mov rdx, QWORD PTR [rdi+968]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+824], rax
+	mov rax, QWORD PTR [rdi+832]
+	mov rdx, QWORD PTR [rdi+976]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+832], rax
+	mov rax, QWORD PTR [rdi+840]
+	mov rdx, QWORD PTR [rdi+984]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+840], rax
+	mov rax, QWORD PTR [rdi+848]
+	mov rdx, QWORD PTR [rdi+992]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+848], rax
+	mov rax, QWORD PTR [rdi+856]
+	mov rdx, QWORD PTR [rdi+1000]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+856], rax
+	mov rax, QWORD PTR [rdi+864]
+	mov rdx, QWORD PTR [rdi+1008]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+864], rax
+	mov rax, QWORD PTR [rdi+872]
+	mov rdx, QWORD PTR [rdi+1016]
+	xor rdx, rax
+	and rdx, rcx
+	xor rax, rdx
+	mov QWORD PTR [rdi+872], rax
+	test rbx, rbx
+	jne 23b
+	movq rbx, xmm0
+	movq rbp, xmm1
+	movq r12, xmm2
+	movq r13, xmm3
+	movq r14, xmm4
+	movq r15, xmm5
 	call {vg_brainpoolp384r1_inv_mod_p}
 	mov r8d, 0
 	mov r9d, 0
