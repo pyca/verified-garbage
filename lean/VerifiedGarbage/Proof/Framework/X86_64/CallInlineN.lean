@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
@@ -28,6 +29,15 @@ the return address of the `k`-th is in the `k`-th 8 bytes below the entry's
 write only the return addresses below its own (`RetsKept`), so its return
 address is where its call stored it when it returns (`Exec.uninlineN`).
 One level of calls is the case `d = 1` (`inlineOkN_of_inlineOk`).
+
+At its top level, `c` may also call a function indirectly, by `callm` of a
+slot `[rsp + disp]` (`Code.icall` of one function, `icallSlot`), where
+`(disp, n)` is one of `slots` (`Code.InlineOkNS`): inlined, that is the code of
+`n`. The run of `c` calls `n` if the slot holds its address, and no region
+`c` may write overlaps the slot (`SlotsOk`), which inlined code then keeps. The
+call's leakage adds the slot's address and `n`'s (`liftTN`'s `F`), so `c` is
+constant time if two runs agree on the addresses of the slots' functions
+(`ConstantTime.of_inlineAllS`). With no slots, the theorems are those above.
 -/
 
 @[expose] public section
@@ -42,7 +52,9 @@ def Code.inlineAll {I C : Type} : Code I C → Code I C
   | .loop b c => .loop b.inlineAll c
   | .call _ b => b.inlineAll
   | .frame i b j => .frame i b.inlineAll j
-  | .icall i n b nx => .icall i n b nx
+  | .icall i n b nx => match nx with
+    | .block [] => b.inlineAll
+    | nx => .icall i n b nx
 
 end VG
 
@@ -50,25 +62,59 @@ namespace VG.X86_64
 
 /-! ## The code that can be inlined -/
 
+/-- An indirect call by `i` of `n` is one through `[rsp + disp]` for a slot
+`(disp, n)` of `slots`. -/
+def icallSlot (slots : List (Int × String)) (i : Instr) (n : String) : Bool :=
+  match i with
+  | .callm m => m.base == .rsp && m.index.isNone && slots.contains (m.disp, n)
+  | _ => false
+
+theorem icallSlot_spec {slots : List (Int × String)} {i : Instr} {n : String} (h : icallSlot slots i n = true) :
+    ∃ m, i = .callm m ∧ m.base = .rsp ∧ m.index = none ∧ (m.disp, n) ∈ slots := by
+  unfold icallSlot at h
+  split at h
+  · rename_i m
+    simp only [Bool.and_eq_true, beq_iff_eq, Option.isNone_iff_eq_none, List.contains_iff_mem] at h
+    exact ⟨m, rfl, h.1.1, h.1.2, h.2⟩
+  · exact absurd h (by simp)
+
 /-- Code whose calls can be inlined, with calls nested at most `d` deep: no
 instruction writes `rsp` (and inside a call, `inner`, none reads it either),
 there are no frames, and the code each call runs calls at most `d - 1`
+deep. An indirect call of one function at the top level is one through a
+slot of `slots` (`icallSlot`), whose function's code calls at most `d - 1`
 deep. Only the kernel evaluates it. -/
-noncomputable def _root_.VG.Code.OkN : Nat → Bool → Prog isa → Bool
+noncomputable def _root_.VG.Code.OkN (slots : List (Int × String)) : Nat → Bool → Prog isa → Bool
   | _, inner, .block l => KList.all l fun i => if inner then i.rspFree else !Taint.clobbers i .rsp
-  | d, inner, .seq a b => a.OkN d inner && b.OkN d inner
-  | d, inner, .ite _ t e => t.OkN d inner && e.OkN d inner
-  | d, inner, .loop b _ => b.OkN d inner
+  | d, inner, .seq a b => a.OkN slots d inner && b.OkN slots d inner
+  | d, inner, .ite _ t e => t.OkN slots d inner && e.OkN slots d inner
+  | d, inner, .loop b _ => b.OkN slots d inner
   | 0, _, .call .. => false
-  | d + 1, _, .call _ b => b.OkN d true
+  | d + 1, _, .call _ b => b.OkN slots d true
   | _, _, .frame .. => false
+  | d + 1, false, .icall i n b (.block []) => icallSlot slots i n && b.OkN slots d true
   | _, _, .icall .. => false
 
 /-- Code whose calls can be inlined, nested at most `d` deep. -/
-noncomputable abbrev _root_.VG.Code.InlineOkN (d : Nat) (c : Prog isa) : Bool := c.OkN d false
+noncomputable abbrev _root_.VG.Code.InlineOkN (d : Nat) (c : Prog isa) : Bool := c.OkN [] d false
+
+/-- Code whose calls can be inlined, nested at most `d` deep, with
+indirect calls through the slots `slots` at its top level. -/
+noncomputable abbrev _root_.VG.Code.InlineOkNS (slots : List (Int × String)) (d : Nat) (c : Prog isa) : Bool :=
+  c.OkN slots d false
+
+theorem _root_.VG.Code.OkN_icall {slots : List (Int × String)} {d : Nat} {inner : Bool} {i : Instr} {n : String}
+    {b nx : Prog isa} (h : (Code.icall i n b nx : Prog isa).OkN slots d inner = true) :
+    ∃ d' m, d = d' + 1 ∧ inner = false ∧ nx = .block [] ∧ i = .callm m ∧ m.base = .rsp ∧ m.index = none ∧
+      (m.disp, n) ∈ slots ∧ b.OkN slots d' true = true := by
+  rcases d with _ | d' <;> cases inner <;> rcases nx with ⟨_ | ⟨_, _⟩⟩ | _ | _ | _ | _ | _ | _ <;>
+    simp [Code.OkN] at h
+  obtain ⟨m, rfl, hb, hx, hs⟩ := icallSlot_spec h.1
+  exact ⟨d', m, rfl, rfl, rfl, rfl, hb, hx, hs, h.2⟩
 
 /-- Inlined code calls nothing. -/
-theorem _root_.VG.Code.noCalls_inlineAll {c : Prog isa} {d : Nat} {inner : Bool} (h : c.OkN d inner = true) :
+theorem _root_.VG.Code.noCalls_inlineAll {slots : List (Int × String)} {c : Prog isa} {d : Nat} {inner : Bool}
+    (h : c.OkN slots d inner = true) :
     c.inlineAll.noCalls = true := by
   induction c generalizing d inner with
   | block _ => rfl
@@ -89,11 +135,14 @@ theorem _root_.VG.Code.noCalls_inlineAll {c : Prog isa} {d : Nat} {inner : Bool}
     | zero => simp only [Code.OkN, Bool.false_eq_true] at h
     | succ d => exact ih h
   | frame => cases d <;> simp only [Code.OkN, Bool.false_eq_true] at h
-  | icall => cases d <;> simp only [Code.OkN, Bool.false_eq_true] at h
+  | icall _ _ b _ ih =>
+    obtain ⟨_, _, rfl, rfl, rfl, rfl, -, -, -, hb⟩ := Code.OkN_icall h
+    exact ih hb
 
 /-- Every instruction of the code a call runs, inlined, neither reads nor
 writes `rsp`; and no instruction of any inlined code writes it. -/
-theorem _root_.VG.Code.rsp_inlineAll {c : Prog isa} {d : Nat} {inner : Bool} (h : c.OkN d inner = true) :
+theorem _root_.VG.Code.rsp_inlineAll {slots : List (Int × String)} {c : Prog isa} {d : Nat} {inner : Bool}
+    (h : c.OkN slots d inner = true) :
     ∀ i ∈ instrs c.inlineAll, (inner = true → i.rspFree = true) ∧ Taint.clobbers i .rsp = false := by
   induction c generalizing d inner with
   | block l =>
@@ -126,14 +175,18 @@ theorem _root_.VG.Code.rsp_inlineAll {c : Prog isa} {d : Nat} {inner : Bool} (h 
       obtain ⟨h1, h2⟩ := ih h i hi
       exact ⟨fun _ => h1 rfl, h2⟩
   | frame => cases d <;> simp only [Code.OkN, Bool.false_eq_true] at h
-  | icall => cases d <;> simp only [Code.OkN, Bool.false_eq_true] at h
+  | icall _ _ b _ ih =>
+    obtain ⟨_, _, rfl, rfl, rfl, rfl, -, -, -, hb⟩ := Code.OkN_icall h
+    intro i hi
+    obtain ⟨h1, h2⟩ := ih hb i hi
+    exact ⟨fun _ => h1 rfl, h2⟩
 
 /-- Code with only calls of functions that call nothing (`InlineOk`) can be
 inlined with calls one deep, and its two inlined forms are one. -/
 theorem _root_.VG.Code.inlineOkN_of_inlineOk {c : Prog isa} (h : c.InlineOk = true) :
     c.InlineOkN 1 = true ∧ c.inlineAll = c.inline := by
   have leaf : ∀ {b : Prog isa}, b.noCalls = true → b.allInstrs Instr.rspFree = true →
-      b.OkN 0 true = true ∧ b.inlineAll = b := by
+      b.OkN [] 0 true = true ∧ b.inlineAll = b := by
     intro b
     induction b with
     | block l =>
@@ -319,36 +372,47 @@ theorem RetsKept.succ {sp : Addr} {D k : Nat} {hv hv' : Mem} (h : RetsKept sp D 
 
 /-! ## The leakage -/
 
+/-- The address an indirect call by `i` reads its target from, inside `k`
+calls: for `callm [rsp + disp]`, `rsp + disp`. -/
+def icallLeak (sp : Addr) (k : Nat) (i : Instr) : List Leak :=
+  match i with
+  | .callm m => [.addr (retSlot sp k + BitVec.ofInt 64 m.disp)]
+  | _ => []
+
 /-- The leakage of a run of `c` inside `k` calls, from that of `c.inlineAll`
 (a prefix of `t`): each call adds the address of its return address
 (`retSlot sp (k + 1)`) before and after the leakage of the code it calls,
-inside `k + 1` calls. With `f` steps of fuel; with the remainder of `t`. -/
-def liftTN (sp : Addr) : Nat → Nat → Prog isa → List Leak → Option (List Leak × List Leak)
+inside `k + 1` calls; an indirect call of one function also the address it
+reads (`icallLeak`) and the function's, from `F`. With `f` steps of fuel;
+with the remainder of `t`. -/
+def liftTN (sp : Addr) (F : String → Addr) : Nat → Nat → Prog isa → List Leak → Option (List Leak × List Leak)
   | _, 0, _, _ => none
   | _, _ + 1, .block l, t => if blockLen l ≤ t.length then some (t.take (blockLen l), t.drop (blockLen l)) else none
-  | k, f + 1, .seq a b, t => (liftTN sp k f a t).bind fun (p : List Leak × List Leak) =>
-      (liftTN sp k f b p.2).map fun (q : List Leak × List Leak) => (p.1 ++ q.1, q.2)
+  | k, f + 1, .seq a b, t => (liftTN sp F k f a t).bind fun (p : List Leak × List Leak) =>
+      (liftTN sp F k f b p.2).map fun (q : List Leak × List Leak) => (p.1 ++ q.1, q.2)
   | k, f + 1, .ite _ th _, .branch true :: t =>
-      (liftTN sp k f th t).map fun (p : List Leak × List Leak) => (.branch true :: p.1, p.2)
+      (liftTN sp F k f th t).map fun (p : List Leak × List Leak) => (.branch true :: p.1, p.2)
   | k, f + 1, .ite _ _ el, .branch false :: t =>
-      (liftTN sp k f el t).map fun (p : List Leak × List Leak) => (.branch false :: p.1, p.2)
+      (liftTN sp F k f el t).map fun (p : List Leak × List Leak) => (.branch false :: p.1, p.2)
   | _, _ + 1, .ite .., _ => none
-  | k, f + 1, .loop b c, t => (liftTN sp k f b t).bind fun (p : List Leak × List Leak) => match p.2 with
+  | k, f + 1, .loop b c, t => (liftTN sp F k f b t).bind fun (p : List Leak × List Leak) => match p.2 with
       | .branch false :: r => some (p.1 ++ [.branch false], r)
-      | .branch true :: r => (liftTN sp k f (.loop b c) r).map fun (q : List Leak × List Leak) =>
+      | .branch true :: r => (liftTN sp F k f (.loop b c) r).map fun (q : List Leak × List Leak) =>
           (p.1 ++ .branch true :: q.1, q.2)
       | _ => none
-  | k, f + 1, .call _ b, t => (liftTN sp (k + 1) f b t).map fun (p : List Leak × List Leak) =>
+  | k, f + 1, .call _ b, t => (liftTN sp F (k + 1) f b t).map fun (p : List Leak × List Leak) =>
       (.addr (retSlot sp (k + 1)) :: (p.1 ++ [.addr (retSlot sp (k + 1))]), p.2)
   | _, _ + 1, .frame .., _ => none
+  | k, f + 1, .icall i n b (.block []), t => (liftTN sp F (k + 1) f b t).map fun (p : List Leak × List Leak) =>
+      (icallLeak sp k i ++ .addr (F n) :: .addr (retSlot sp (k + 1)) :: (p.1 ++ [.addr (retSlot sp (k + 1))]), p.2)
   | _, _ + 1, .icall .., _ => none
 
 /-- `ta` is the leakage `liftTN` gives for `t`, with enough fuel, whatever follows. -/
-def LiftsN (sp : Addr) (k : Nat) (c : Prog isa) (ta t : List Leak) : Prop :=
-  ∃ N, ∀ f, N ≤ f → ∀ r, liftTN sp k f c (t ++ r) = some (ta, r)
+def LiftsN (sp : Addr) (F : String → Addr) (k : Nat) (c : Prog isa) (ta t : List Leak) : Prop :=
+  ∃ N, ∀ f, N ≤ f → ∀ r, liftTN sp F k f c (t ++ r) = some (ta, r)
 
-theorem LiftsN.unique {sp : Addr} {k : Nat} {c : Prog isa} {ta₁ ta₂ t : List Leak} (h₁ : LiftsN sp k c ta₁ t)
-    (h₂ : LiftsN sp k c ta₂ t) : ta₁ = ta₂ := by
+theorem LiftsN.unique {sp : Addr} {F : String → Addr} {k : Nat} {c : Prog isa} {ta₁ ta₂ t : List Leak}
+    (h₁ : LiftsN sp F k c ta₁ t) (h₂ : LiftsN sp F k c ta₂ t) : ta₁ = ta₂ := by
   obtain ⟨N₁, l₁⟩ := h₁
   obtain ⟨N₂, l₂⟩ := h₂
   have := (l₁ (max N₁ N₂) (by omega_arith) []).symm.trans (l₂ (max N₁ N₂) (by omega_arith) [])
@@ -356,8 +420,8 @@ theorem LiftsN.unique {sp : Addr} {k : Nat} {c : Prog isa} {ta₁ ta₂ t : List
   exact this.1
 
 /-- The leakage of a block lifts to itself. -/
-theorem Exec.liftsN_block {sp : Addr} {k : Nat} {l : List Instr} {s s' : State} {t : List Leak}
-    (h : Exec isa (.block l) s t s') : LiftsN sp k (.block l) t t := by
+theorem Exec.liftsN_block {sp : Addr} {F : String → Addr} {k : Nat} {l : List Instr} {s s' : State}
+    {t : List Leak} (h : Exec isa (.block l) s t s') : LiftsN sp F k (.block l) t t := by
   generalize e : (Code.block l : Prog isa) = c at h
   induction h with
   | seq | iteT | iteF | loopExit | loopNext | call | frame | icall | icallNext => cases e
@@ -368,24 +432,51 @@ theorem Exec.liftsN_block {sp : Addr} {k : Nat} {l : List Instr} {s s' : State} 
     have hl := execBlock_length h
     simp only [liftTN, List.length_append, hl, Nat.le_add_right, ite_true, List.take_left', List.drop_left']
 
+/-! ## The slots of indirect calls -/
+
+/-- Each slot `(disp, n)` of `slots`: the 8 bytes at `sp + disp` hold the
+address of `n` and may be read, and no region `s` may write overlaps them. -/
+def SlotsOk (slots : List (Int × String)) (sp : Addr) (s : State) : Prop :=
+  ∀ p ∈ slots, s.load64 (sp + BitVec.ofInt 64 p.1) = some (s.syms p.2) ∧
+    ∀ r ∈ s.wr, (⟨sp + BitVec.ofInt 64 p.1, 8⟩ : Region).Disjoint r
+
+theorem SlotsOk.nil (sp : Addr) (s : State) : SlotsOk [] sp s := fun _ h => absurd h List.not_mem_nil
+
+/-- Code that calls nothing keeps the slots, which it may not write. -/
+theorem SlotsOk.of_exec {slots : List (Int × String)} {sp : Addr} {c : Prog isa} (hn : c.noCalls = true)
+    {s s' : State} {t : List Leak} (h : Exec isa c s t s') (hs : SlotsOk slots sp s) : SlotsOk slots sp s' := by
+  obtain ⟨hrd, hwr, hf⟩ := Exec.regions h hn
+  intro p hp
+  obtain ⟨hl, hd⟩ := hs p hp
+  refine ⟨?_, by rw [hwr]; exact hd⟩
+  simp only [State.load64] at hl ⊢
+  rw [hrd, hwr, Exec.syms h]
+  split at hl
+  · rename_i hin
+    simp only [hin, ite_true]
+    rw [hf.readW (w := 64) (Region.contains_self _ 8) hd (by decide)]
+    exact hl
+  · cases hl
+
 /-! ## Calls as inlined code -/
 
 /-- The run of a loop of inlined code, from its body's. -/
-theorem loop_uninlineN {body : Prog isa} {kc : Cond} {sp : Addr} {D k : Nat}
+theorem loop_uninlineN {slots : List (Int × String)} {body : Prog isa} {kc : Cond} {sp : Addr} {F : String → Addr}
+    {D k : Nat} (hn : body.inlineAll.noCalls = true)
     (ih : ∀ {b b' : State} {t : List Leak}, Exec isa body.inlineAll b t b' → Clear (holeN sp D) b →
-      b.gpr .rsp = sp → ∀ (hv : Mem) (u : Nat → BitVec 64), ∃ hv' u' ta,
+      b.gpr .rsp = sp → SlotsOk slots sp b → b.syms = F → ∀ (hv : Mem) (u : Nat → BitVec 64), ∃ hv' u' ta,
         Exec isa body (NestState sp D k hv u b) ta (NestState sp D k hv' u' b') ∧ b'.gpr .rsp = sp ∧
-          RetsKept sp D k hv hv' ∧ LiftsN sp k body ta t)
+          RetsKept sp D k hv hv' ∧ LiftsN sp F k body ta t)
     {b b' : State} {t : List Leak} (h : Exec isa (.loop body.inlineAll kc) b t b') (hb : Clear (holeN sp D) b)
-    (hsp : b.gpr .rsp = sp) (hv : Mem) (u : Nat → BitVec 64) :
+    (hsp : b.gpr .rsp = sp) (hslot : SlotsOk slots sp b) (hF : b.syms = F) (hv : Mem) (u : Nat → BitVec 64) :
     ∃ hv' u' ta, Exec isa (.loop body kc) (NestState sp D k hv u b) ta (NestState sp D k hv' u' b') ∧
-      b'.gpr .rsp = sp ∧ RetsKept sp D k hv hv' ∧ LiftsN sp k (.loop body kc) ta t := by
+      b'.gpr .rsp = sp ∧ RetsKept sp D k hv hv' ∧ LiftsN sp F k (.loop body kc) ta t := by
   generalize e : (Code.loop body.inlineAll kc : Prog isa) = L at h
   induction h generalizing hv u with
   | block | seq | iteT | iteF | call | frame | icall | icallNext => cases e
   | @loopExit body' k' s s' t h₁ hk _ =>
     cases e
-    obtain ⟨hv', u', ta, ha, hs', ag, ⟨N, hl⟩⟩ := ih h₁ hb hsp hv u
+    obtain ⟨hv', u', ta, ha, hs', ag, ⟨N, hl⟩⟩ := ih h₁ hb hsp hslot hF hv u
     refine ⟨hv', u', ta ++ [.branch false],
       .loopExit ha (by simp only [NestState]; rw [eval_setRsp, eval_patch]; exact hk), hs', ag, N + 1,
       fun f hf r => ?_⟩
@@ -393,8 +484,9 @@ theorem loop_uninlineN {body : Prog isa} {kc : Cond} {sp : Addr} {D k : Nat}
     simp only [liftTN, List.append_assoc, List.cons_append, List.nil_append, hl f (by omega_arith), Option.bind_some]
   | @loopNext body' k' s s₁ s' t t' h₁ hk _ _ ih₂ =>
     cases e
-    obtain ⟨hv₁, u₁, ta₁, ha₁, hs₁, ag₁, ⟨N₁, hl₁⟩⟩ := ih h₁ hb hsp hv u
-    obtain ⟨hv', u', ta₂, ha₂, hs', ag₂, ⟨N₂, hl₂⟩⟩ := ih₂ (hb.of_exec h₁) hs₁ hv₁ u₁ rfl
+    obtain ⟨hv₁, u₁, ta₁, ha₁, hs₁, ag₁, ⟨N₁, hl₁⟩⟩ := ih h₁ hb hsp hslot hF hv u
+    obtain ⟨hv', u', ta₂, ha₂, hs', ag₂, ⟨N₂, hl₂⟩⟩ :=
+      ih₂ (hb.of_exec h₁) hs₁ (hslot.of_exec hn h₁) ((Exec.syms h₁).trans hF) hv₁ u₁ rfl
     refine ⟨hv', u', ta₁ ++ .branch true :: ta₂,
       .loopNext ha₁ (by simp only [NestState]; rw [eval_setRsp, eval_patch]; exact hk) ha₂, hs', ag₁.trans ag₂,
       max N₁ N₂ + 1, fun f hf r => ?_⟩
@@ -406,14 +498,65 @@ theorem loop_uninlineN {body : Prog isa} {kc : Cond} {sp : Addr} {D k : Nat}
 for) gives one of `c` from the real state (`NestState`), to the real state of its
 end, which keeps the return addresses of the `k` calls (`RetsKept`), with the
 leakage `liftTN` gives. -/
-theorem Exec.uninlineN {c : Prog isa} {d : Nat} {inner : Bool} (hc : c.OkN d inner = true) {D k : Nat}
-    (hkD : k + d ≤ D) (hD : 8 * D < 2 ^ 64) (hin : inner = false → k = 0) {sp : Addr} {b b' : State}
-    {t : List Leak} (h : Exec isa c.inlineAll b t b') (hb : Clear (holeN sp D) b) (hsp : b.gpr .rsp = sp)
-    (hv : Mem) (u : Nat → BitVec 64) :
+theorem Exec.uninlineN {slots : List (Int × String)} {c : Prog isa} {d : Nat} {inner : Bool}
+    (hc : c.OkN slots d inner = true) {D k : Nat} (hkD : k + d ≤ D) (hD : 8 * D < 2 ^ 64)
+    (hin : inner = false → k = 0) {sp : Addr} {F : String → Addr} {b b' : State} {t : List Leak}
+    (h : Exec isa c.inlineAll b t b') (hb : Clear (holeN sp D) b) (hsp : b.gpr .rsp = sp)
+    (hslot : SlotsOk slots sp b) (hF : b.syms = F) (hv : Mem) (u : Nat → BitVec 64) :
     ∃ hv' u' ta, Exec isa c (NestState sp D k hv u b) ta (NestState sp D k hv' u' b') ∧ b'.gpr .rsp = sp ∧
-      RetsKept sp D k hv hv' ∧ LiftsN sp k c ta t := by
+      RetsKept sp D k hv hv' ∧ LiftsN sp F k c ta t := by
   induction c generalizing d inner k b b' t hv u with
-  | icall => cases d <;> simp only [Code.OkN, Bool.false_eq_true] at hc
+  | icall i n body nx ih =>
+    obtain ⟨d, m, rfl, rfl, rfl, rfl, hbase, hidx, hmem, hc⟩ := Code.OkN_icall hc
+    obtain rfl := hin rfl
+    simp only [Code.inlineAll] at h
+    -- The call reads the address of `n` from its slot, outside the hole.
+    obtain ⟨hl, -⟩ := hslot _ hmem
+    have hea : (NestState sp D 0 hv u b).ea m = sp + BitVec.ofInt 64 m.disp := by
+      simp only [State.ea, hidx, hbase, NestState_rsp, retSlot_zero]
+    have hi : isa.icall (.callm m) (NestState sp D 0 hv u b) = some (isa.fnAddr (NestState sp D 0 hv u b) n) := by
+      simp only [State.load64] at hl
+      split at hl
+      · rename_i hin'
+        have hin'' : InRegions ((NestState sp D 0 hv u b).rd ++ (NestState sp D 0 hv u b).wr)
+            (sp + BitVec.ofInt 64 m.disp) 8 := hin'
+        show (NestState sp D 0 hv u b).load64 _ = some ((NestState sp D 0 hv u b).syms n)
+        simp only [hea, State.load64, hin'', ite_true, NestState_mem]
+        rw [overlay_readW (w := 64) (by decide) fun x hx => Clear.miss hb (fun _ h => h) hin' (x := x) hx]
+        exact hl
+      · cases hl
+    let hv₁ : Mem := hv.writeW (retSlot sp 1) (u 0)
+    let u₁ : Nat → BitVec 64 := fun n => u (n + 1)
+    have hcall : isa.call (NestState sp D 0 hv u b) = some (NestState sp D 1 hv₁ u₁ b) := by
+      simp only [isa, call, NestState_rsp, retSlot_succ]
+      congr 1
+      simp only [NestState, State.patch, State.setReg, hv₁, u₁,
+        overlay_slot_writeW (k := 1) (by omega_arith) (by omega_arith) hD]
+      congr 1
+      funext r
+      split <;> rfl
+    obtain ⟨hv₂, u₂, ta, hbody, hrsp, ag, hl'⟩ :=
+      ih hc (k := 1) (by omega_arith) (fun h => absurd h (by decide)) h hb hsp hslot hF hv₁ u₁
+    have hret : isa.ret (NestState sp D 1 hv₁ u₁ b) (NestState sp D 1 hv₂ u₂ b') =
+        some (NestState sp D 0 hv₂ u₂ b') := by
+      have m' : (NestState sp D 1 hv₂ u₂ b').mem.readW (retSlot sp 1) 64 =
+          (NestState sp D 1 hv₁ u₁ b).mem.readW (retSlot sp 1) 64 := by
+        rw [NestState_mem, NestState_mem, overlay_slot_readW (by omega_arith) (by omega_arith) hD,
+          overlay_slot_readW (by omega_arith) (by omega_arith) hD,
+          ag.readW (by omega_arith) (by omega_arith) hD]
+      simp only [isa, ret, NestState_rsp, m', and_self, ite_true, Option.some.injEq, retSlot_succ_add]
+      simp only [NestState, setReg_setReg]
+    refine ⟨hv₂, u₂, _, .icall hi hcall hbody hret, hrsp,
+      (RetsKept.writeW (by omega_arith) hD hv (u 0)).trans ag.succ, ?_⟩
+    obtain ⟨N, hl''⟩ := hl'
+    refine ⟨N + 1, fun f hf r => ?_⟩
+    obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
+    have hsy : (NestState sp D 0 hv u b).syms = F := hF
+    show _ = some ((isa.addrs (.callm m) (NestState sp D 0 hv u b)).map Leak.addr ++
+      Leak.addr ((NestState sp D 0 hv u b).syms n) :: _, r)
+    have h1 : sp - 8 = retSlot sp 1 := by rw [← retSlot_succ, retSlot_zero]
+    simp only [liftTN, icallLeak, hl'' f (by omega_arith) r, Option.map_some, NestState_rsp, addrs, hea,
+      retSlot_zero, hsy, List.map_cons, List.map_nil, List.cons_append, List.nil_append, Nat.zero_add, h1]
   | frame => cases d <;> simp only [Code.OkN, Bool.false_eq_true] at hc
   | block l =>
     simp only [Code.inlineAll] at h
@@ -421,7 +564,7 @@ theorem Exec.uninlineN {c : Prog isa} {d : Nat} {inner : Bool} (hc : c.OkN d inn
     simp only [Code.inlineAll] at hr
     have hrsp : b'.gpr .rsp = sp := by
       rw [Exec.gpr (c := .block l) (fun i hi => (hr i hi).2) h, hsp]
-    have hlift : LiftsN sp k (.block l) t t := Exec.liftsN_block h
+    have hlift : LiftsN sp F k (.block l) t t := Exec.liftsN_block h
     cases inner with
     | false =>
       obtain rfl := hin rfl
@@ -439,8 +582,9 @@ theorem Exec.uninlineN {c : Prog isa} {d : Nat} {inner : Bool} (hc : c.OkN d inn
     simp only [Code.OkN, Bool.and_eq_true] at hc
     simp only [Code.inlineAll] at h
     obtain ⟨t₁, t₂, s₁, h₁, h₂, rfl⟩ := Exec.seq_inv h
-    obtain ⟨hv₁, u₁, ta₁, ha₁, hs₁, ag₁, ⟨N₁, hl₁⟩⟩ := ih₁ hc.1 hkD hin h₁ hb hsp hv u
-    obtain ⟨hv', u', ta₂, ha₂, hs', ag₂, ⟨N₂, hl₂⟩⟩ := ih₂ hc.2 hkD hin h₂ (hb.of_exec h₁) hs₁ hv₁ u₁
+    obtain ⟨hv₁, u₁, ta₁, ha₁, hs₁, ag₁, ⟨N₁, hl₁⟩⟩ := ih₁ hc.1 hkD hin h₁ hb hsp hslot hF hv u
+    obtain ⟨hv', u', ta₂, ha₂, hs', ag₂, ⟨N₂, hl₂⟩⟩ := ih₂ hc.2 hkD hin h₂ (hb.of_exec h₁) hs₁
+      (hslot.of_exec (Code.noCalls_inlineAll hc.1) h₁) ((Exec.syms h₁).trans hF) hv₁ u₁
     refine ⟨hv', u', ta₁ ++ ta₂, .seq ha₁ ha₂, hs', ag₁.trans ag₂, max N₁ N₂ + 1, fun f hf r => ?_⟩
     obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
     simp only [liftTN, List.append_assoc, hl₁ f (by omega_arith), Option.bind_some, hl₂ f (by omega_arith) r,
@@ -451,18 +595,19 @@ theorem Exec.uninlineN {c : Prog isa} {d : Nat} {inner : Bool} (hc : c.OkN d inn
     have hev : eval kc (NestState sp D k hv u b) = eval kc b := by
       simp only [NestState]; rw [eval_setRsp, eval_patch]
     rcases Exec.ite_inv h with ⟨t, rfl, hk, h₁⟩ | ⟨t, rfl, hk, h₁⟩
-    · obtain ⟨hv', u', ta, ha, hs', ag, ⟨N, hl⟩⟩ := ih₁ hc.1 hkD hin h₁ hb hsp hv u
+    · obtain ⟨hv', u', ta, ha, hs', ag, ⟨N, hl⟩⟩ := ih₁ hc.1 hkD hin h₁ hb hsp hslot hF hv u
       refine ⟨hv', u', .branch true :: ta, .iteT (hev.trans hk) ha, hs', ag, N + 1, fun f hf r => ?_⟩
       obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
       simp only [liftTN, List.cons_append, hl f (by omega_arith) r, Option.map_some]
-    · obtain ⟨hv', u', ta, ha, hs', ag, ⟨N, hl⟩⟩ := ih₂ hc.2 hkD hin h₁ hb hsp hv u
+    · obtain ⟨hv', u', ta, ha, hs', ag, ⟨N, hl⟩⟩ := ih₂ hc.2 hkD hin h₁ hb hsp hslot hF hv u
       refine ⟨hv', u', .branch false :: ta, .iteF (hev.trans hk) ha, hs', ag, N + 1, fun f hf r => ?_⟩
       obtain ⟨f, rfl⟩ : ∃ g, f = g + 1 := ⟨f - 1, by omega_arith⟩
       simp only [liftTN, List.cons_append, hl f (by omega_arith) r, Option.map_some]
   | loop body kc ih =>
     simp only [Code.OkN] at hc
     simp only [Code.inlineAll] at h
-    exact loop_uninlineN (fun h₁ hb₁ hsp₁ hv₁ u₁ => ih hc hkD hin h₁ hb₁ hsp₁ hv₁ u₁) h hb hsp hv u
+    exact loop_uninlineN (Code.noCalls_inlineAll hc)
+      (fun h₁ hb₁ hsp₁ hs₁ hF₁ hv₁ u₁ => ih hc hkD hin h₁ hb₁ hsp₁ hs₁ hF₁ hv₁ u₁) h hb hsp hslot hF hv u
   | call n body ih =>
     cases d with
     | zero => simp only [Code.OkN, Bool.false_eq_true] at hc
@@ -482,7 +627,7 @@ theorem Exec.uninlineN {c : Prog isa} {d : Nat} {inner : Bool} (hc : c.OkN d inn
       split <;> rfl
     -- The code it calls, inside `k + 1` calls.
     obtain ⟨hv₂, u₂, ta, hbody, hrsp, ag, hl⟩ :=
-      ih hc (k := k + 1) (by omega_arith) (fun h => absurd h (by decide)) h hb hsp hv₁ u₁
+      ih hc (k := k + 1) (by omega_arith) (fun h => absurd h (by decide)) h hb hsp hslot hF hv₁ u₁
     have hret : isa.ret (NestState sp D (k + 1) hv₁ u₁ b) (NestState sp D (k + 1) hv₂ u₂ b') =
         some (NestState sp D k hv₂ u₂ b') := by
       have m : (NestState sp D (k + 1) hv₂ u₂ b').mem.readW (retSlot sp (k + 1)) 64 =
@@ -500,16 +645,91 @@ theorem Exec.uninlineN {c : Prog isa} {d : Nat} {inner : Bool} (hc : c.OkN d inn
     simp only [liftTN, hl' f (by omega_arith) r, Option.map_some, NestState_rsp, retSlot_succ, List.map_cons,
       List.map_nil, List.cons_append, List.nil_append]
 
+/-- `liftTN` reads `F` only at the functions of the slots. -/
+theorem liftTN_congr {slots : List (Int × String)} {sp : Addr} {F₁ F₂ : String → Addr}
+    (hF : ∀ p ∈ slots, F₁ p.2 = F₂ p.2) :
+    ∀ {f k : Nat} {c : Prog isa} {d : Nat} {inner : Bool} {t : List Leak}, c.OkN slots d inner = true →
+      liftTN sp F₁ k f c t = liftTN sp F₂ k f c t := by
+  intro f
+  induction f with
+  | zero => intro k c d inner t _; rfl
+  | succ f ih =>
+    intro k c d inner t hc
+    cases c with
+    | block l => rfl
+    | seq a b =>
+      simp only [Code.OkN, Bool.and_eq_true] at hc
+      simp only [liftTN, ih hc.1]
+      congr 1
+      funext p
+      rw [ih hc.2]
+    | ite cd th el =>
+      simp only [Code.OkN, Bool.and_eq_true] at hc
+      rcases t with _ | ⟨_ | ⟨_ | _⟩, t⟩ <;> simp only [liftTN, ih hc.1, ih hc.2]
+    | loop b cd =>
+      have hb := hc
+      simp only [Code.OkN] at hb
+      simp only [liftTN, ih hb]
+      congr 1
+      funext p
+      split <;> simp only [ih hc]
+    | call n b =>
+      cases d with
+      | zero => simp only [Code.OkN, Bool.false_eq_true] at hc
+      | succ d => simp only [Code.OkN] at hc; simp only [liftTN, ih hc]
+    | frame => cases d <;> simp only [Code.OkN, Bool.false_eq_true] at hc
+    | icall i n b nx =>
+      obtain ⟨d, m, rfl, rfl, rfl, rfl, -, -, hmem, hb⟩ := Code.OkN_icall hc
+      simp only [liftTN, ih hb, hF _ hmem]
+
+theorem LiftsN.congr {slots : List (Int × String)} {sp : Addr} {F₁ F₂ : String → Addr}
+    (hF : ∀ p ∈ slots, F₁ p.2 = F₂ p.2) {k : Nat} {c : Prog isa} {d : Nat} {inner : Bool}
+    (hc : c.OkN slots d inner = true) {ta t : List Leak} (h : LiftsN sp F₂ k c ta t) : LiftsN sp F₁ k c ta t := by
+  obtain ⟨N, hl⟩ := h
+  exact ⟨N, fun f hf r => (liftTN_congr hF hc).trans (hl f hf r)⟩
+
+/-- A run of `c.inlineAll` from `s`, whose slots hold their functions'
+addresses, gives one of `c` from `s`, to the same state but for the `8 d`
+bytes below `rsp` and the unknowns. -/
+theorem Exec.of_inlineAllS {slots : List (Int × String)} {c : Prog isa} {d : Nat} (hc : c.InlineOkNS slots d = true)
+    (hD : 8 * d < 2 ^ 64) {s s' : State} {t : List Leak} (h : Exec isa c.inlineAll s t s')
+    (hs : Clear (holeN (s.gpr .rsp) d) s) (hslot : SlotsOk slots (s.gpr .rsp) s) :
+    ∃ hv u ta, Exec isa c s ta (s'.patch (holeN (s.gpr .rsp) d) hv u) ∧ s'.gpr .rsp = s.gpr .rsp ∧
+      LiftsN (s.gpr .rsp) s.syms 0 c ta t := by
+  obtain ⟨hv, u, ta, he, hr, -, hl⟩ :=
+    Exec.uninlineN hc (k := 0) (by omega_arith) hD (fun _ => rfl) h hs rfl hslot rfl s.mem s.unknowns
+  rw [NestState_zero rfl, State.patch_self, NestState_zero hr] at he
+  exact ⟨hv, u, ta, he, hr, hl⟩
+
 /-- A run of `c.inlineAll` from `s` gives one of `c` from `s`, to the same
 state but for the `8 d` bytes below `rsp` and the unknowns. -/
 theorem Exec.of_inlineAll {c : Prog isa} {d : Nat} (hc : c.InlineOkN d = true) (hD : 8 * d < 2 ^ 64)
     {s s' : State} {t : List Leak} (h : Exec isa c.inlineAll s t s') (hs : Clear (holeN (s.gpr .rsp) d) s) :
     ∃ hv u ta, Exec isa c s ta (s'.patch (holeN (s.gpr .rsp) d) hv u) ∧ s'.gpr .rsp = s.gpr .rsp ∧
-      LiftsN (s.gpr .rsp) 0 c ta t := by
-  obtain ⟨hv, u, ta, he, hr, -, hl⟩ :=
-    Exec.uninlineN hc (k := 0) (by omega_arith) hD (fun _ => rfl) h hs rfl s.mem s.unknowns
-  rw [NestState_zero rfl, State.patch_self, NestState_zero hr] at he
-  exact ⟨hv, u, ta, he, hr, hl⟩
+      LiftsN (s.gpr .rsp) s.syms 0 c ta t :=
+  Exec.of_inlineAllS hc hD h hs (SlotsOk.nil _ _)
+
+/-- `c` is constant time if `c.inlineAll` is, runs from every state its
+precondition allows, with its slots holding their functions' addresses, and
+two runs agree on those addresses. -/
+theorem ConstantTime.of_inlineAllS {slots : List (Int × String)} {c : Prog isa} {d : Nat}
+    (hc : c.InlineOkNS slots d = true) (hD : 8 * d < 2 ^ 64)
+    {P : State → Prop} {Pub : State → State → Prop} (hrun : ∀ s, P s → ∃ t s', Exec isa c.inlineAll s t s')
+    (hclear : ∀ s, P s → Clear (holeN (s.gpr .rsp) d) s) (hslot : ∀ s, P s → SlotsOk slots (s.gpr .rsp) s)
+    (hpub : ∀ s₁ s₂, P s₁ → P s₂ → Pub s₁ s₂ → s₁.gpr .rsp = s₂.gpr .rsp)
+    (hsyms : ∀ s₁ s₂, P s₁ → P s₂ → Pub s₁ s₂ → ∀ p ∈ slots, s₁.syms p.2 = s₂.syms p.2)
+    (hct : ConstantTime isa P Pub c.inlineAll) : ConstantTime isa P Pub c := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' p₁ p₂ hp e₁ e₂
+  obtain ⟨tb₁, b₁, f₁⟩ := hrun s₁ p₁
+  obtain ⟨tb₂, b₂, f₂⟩ := hrun s₂ p₂
+  obtain ⟨_, _, ta₁, a₁, _, l₁⟩ := Exec.of_inlineAllS hc hD f₁ (hclear s₁ p₁) (hslot s₁ p₁)
+  obtain ⟨_, _, ta₂, a₂, _, l₂⟩ := Exec.of_inlineAllS hc hD f₂ (hclear s₂ p₂) (hslot s₂ p₂)
+  obtain ⟨rfl, -⟩ := Exec.det e₁ a₁
+  obtain ⟨rfl, -⟩ := Exec.det e₂ a₂
+  have ht := hct s₁ s₂ tb₁ tb₂ b₁ b₂ p₁ p₂ hp f₁ f₂
+  subst ht
+  rw [hpub s₁ s₂ p₁ p₂ hp] at l₁
+  exact l₁.unique (l₂.congr (hsyms s₁ s₂ p₁ p₂ hp) hc)
 
 /-- `c` is constant time if `c.inlineAll` is, and runs from every state its
 precondition allows. -/
@@ -517,18 +737,9 @@ theorem ConstantTime.of_inlineAll {c : Prog isa} {d : Nat} (hc : c.InlineOkN d =
     {P : State → Prop} {Pub : State → State → Prop} (hrun : ∀ s, P s → ∃ t s', Exec isa c.inlineAll s t s')
     (hclear : ∀ s, P s → Clear (holeN (s.gpr .rsp) d) s)
     (hpub : ∀ s₁ s₂, P s₁ → P s₂ → Pub s₁ s₂ → s₁.gpr .rsp = s₂.gpr .rsp)
-    (hct : ConstantTime isa P Pub c.inlineAll) : ConstantTime isa P Pub c := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' p₁ p₂ hp e₁ e₂
-  obtain ⟨tb₁, b₁, f₁⟩ := hrun s₁ p₁
-  obtain ⟨tb₂, b₂, f₂⟩ := hrun s₂ p₂
-  obtain ⟨_, _, ta₁, a₁, _, l₁⟩ := Exec.of_inlineAll hc hD f₁ (hclear s₁ p₁)
-  obtain ⟨_, _, ta₂, a₂, _, l₂⟩ := Exec.of_inlineAll hc hD f₂ (hclear s₂ p₂)
-  obtain ⟨rfl, -⟩ := Exec.det e₁ a₁
-  obtain ⟨rfl, -⟩ := Exec.det e₂ a₂
-  have ht := hct s₁ s₂ tb₁ tb₂ b₁ b₂ p₁ p₂ hp f₁ f₂
-  subst ht
-  rw [hpub s₁ s₂ p₁ p₂ hp] at l₁
-  exact l₁.unique l₂
+    (hct : ConstantTime isa P Pub c.inlineAll) : ConstantTime isa P Pub c :=
+  ConstantTime.of_inlineAllS hc hD hrun hclear (fun s _ => SlotsOk.nil _ s) hpub
+    (fun _ _ _ _ _ _ h => absurd h List.not_mem_nil) hct
 
 /-- The calling convention's obligations hold of the run of `c` if they do
 of `c.inlineAll`'s: the return address above `rsp` is not in the hole. -/
@@ -599,6 +810,31 @@ theorem ct_of_inlineAll {c : Prog isa} {d : Nat} (hc : c.InlineOkN d = true) (hD
 
 /-- `c` is verified against `k` if `c.inlineAll` is correct and constant time
 against a contract `k₀` that `k` implies, `k₀`'s postcondition does not read
+the `8 d` bytes below `rsp`, `k` keeps every buffer away from them, and its
+precondition gives the slots their functions' addresses, on which two runs
+`k` relates agree. -/
+theorem Verified.of_inlineAllS {slots : List (Int × String)} {c : Prog isa} {d : Nat}
+    (hc : c.InlineOkNS slots d = true) (hD : 8 * d < 2 ^ 64) {k₀ k : Contract isa}
+    (hcor : ∀ s, k₀.pre s → ∃ t s', Exec isa c.inlineAll s t s' ∧ abiPreserved s s' ∧ k₀.post s s')
+    (hct : ConstantTime isa k₀.pre k₀.pub c.inlineAll) (himp : k₀.Implies k)
+    (hclear : ∀ s, k.pre s → Clear (holeN (s.gpr .rsp) d) s)
+    (hslot : ∀ s, k.pre s → SlotsOk slots (s.gpr .rsp) s)
+    (hpost : ∀ s b hv u, k.pre s → k₀.post s b → k₀.post s (b.patch (holeN (s.gpr .rsp) d) hv u))
+    (hrsp : ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → s₁.gpr .rsp = s₂.gpr .rsp)
+    (hsyms : ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → ∀ p ∈ slots, s₁.syms p.2 = s₂.syms p.2) :
+    Verified target c k := by
+  refine ⟨fun s hs => ?_, ?_, himp.sat⟩
+  · obtain ⟨t, b, he, ha, hp⟩ := hcor s (himp.pre s hs)
+    obtain ⟨hv, u, ta, ha', _, _⟩ := Exec.of_inlineAllS hc hD he (hclear s hs) (hslot s hs)
+    exact ⟨ta, _, ha', abiPreserved_patchN hD hv u ha, himp.post s _ hs (hpost s b hv u hs hp)⟩
+  · refine ConstantTime.of_inlineAllS hc hD (fun s hs => ?_) hclear hslot hrsp hsyms
+      fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
+        hct s₁ s₂ t₁ t₂ s₁' s₂' (himp.pre _ h₁) (himp.pre _ h₂) (himp.pub _ _ h₁ h₂ hp) e₁ e₂
+    obtain ⟨t, b, he, -, -⟩ := hcor s (himp.pre s hs)
+    exact ⟨t, b, he⟩
+
+/-- `c` is verified against `k` if `c.inlineAll` is correct and constant time
+against a contract `k₀` that `k` implies, `k₀`'s postcondition does not read
 the `8 d` bytes below `rsp`, and `k` keeps every buffer away from them. -/
 theorem Verified.of_inlineAll {c : Prog isa} {d : Nat} (hc : c.InlineOkN d = true) (hD : 8 * d < 2 ^ 64)
     {k₀ k : Contract isa}
@@ -606,15 +842,8 @@ theorem Verified.of_inlineAll {c : Prog isa} {d : Nat} (hc : c.InlineOkN d = tru
     (hct : ConstantTime isa k₀.pre k₀.pub c.inlineAll) (himp : k₀.Implies k)
     (hclear : ∀ s, k.pre s → Clear (holeN (s.gpr .rsp) d) s)
     (hpost : ∀ s b hv u, k.pre s → k₀.post s b → k₀.post s (b.patch (holeN (s.gpr .rsp) d) hv u))
-    (hrsp : ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → s₁.gpr .rsp = s₂.gpr .rsp) : Verified target c k := by
-  refine ⟨fun s hs => ?_, ?_, himp.sat⟩
-  · obtain ⟨t, b, he, ha, hp⟩ := hcor s (himp.pre s hs)
-    obtain ⟨hv, u, ta, ha', _, _⟩ := Exec.of_inlineAll hc hD he (hclear s hs)
-    exact ⟨ta, _, ha', abiPreserved_patchN hD hv u ha, himp.post s _ hs (hpost s b hv u hs hp)⟩
-  · refine ConstantTime.of_inlineAll hc hD (fun s hs => ?_) hclear hrsp
-      fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
-        hct s₁ s₂ t₁ t₂ s₁' s₂' (himp.pre _ h₁) (himp.pre _ h₂) (himp.pub _ _ h₁ h₂ hp) e₁ e₂
-    obtain ⟨t, b, he, -, -⟩ := hcor s (himp.pre s hs)
-    exact ⟨t, b, he⟩
+    (hrsp : ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → s₁.gpr .rsp = s₂.gpr .rsp) : Verified target c k :=
+  Verified.of_inlineAllS hc hD hcor hct himp hclear (fun s _ => SlotsOk.nil _ s) hpost hrsp
+    (fun _ _ _ _ _ _ h => absurd h List.not_mem_nil)
 
 end VG.X86_64
