@@ -542,12 +542,21 @@ private theorem calleeSaved_of_ne (r : Reg) (a : r ≠ .eax) (b : r ≠ .ebx) (c
     (e : r ≠ .ebp) : r ∈ calleeSaved := by
   cases r <;> simp_all [calleeSaved]
 
-theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+/-- `hashTo` with `dsts`, which points `eax` at `scratch + dst` from a
+state whose memory differs from the one on entry only where the hash's
+value, block and scratch are and on the stack. -/
+theorem hashTo_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     {dst : Nat} (hsz : sHScr + H.so ≤ size) (hsC : sHScr < size) (hdst : dst + H.N ≤ size)
     (hsepS : sState + H.N + 64 ≤ dst ∨ dst + H.N ≤ sState)
     (hsepC : dst + H.N ≤ sHScr ∨ sHScr + H.so ≤ dst)
-    (h48 : 48 ≤ (s.gpr .esp).toNat) (hstk : (stk s).Disjoint ⟨base, size⟩) :
-    WP isa (Impl.Dsa.X86.Generation.hash H iv H.N dst) s fun t =>
+    (h48 : 48 ≤ (s.gpr .esp).toNat) (hstk : (stk s).Disjoint ⟨base, size⟩) {dsts : List Instr}
+    (hDst : ∀ w : State, (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → r ≠ .ebp → w.gpr r = s.gpr r) →
+      Frame [⟨off base sState, H.N + 64⟩, ⟨off base sHScr, H.so⟩, stk s] s.mem w.mem →
+      w.rd = s.rd → w.wr = s.wr → ∀ (rest : List Instr) (Q : State → Prop),
+      (∀ w', w'.gpr .eax = s.gpr .edi + BitVec.ofNat 32 dst → (∀ r, r ≠ .eax → w'.gpr r = w.gpr r) →
+        w'.mem = w.mem → w'.rd = w.rd → w'.wr = w.wr → WP isa (.block rest) w' Q) →
+      WP isa (.block (dsts ++ rest)) w Q) :
+    WP isa (Impl.Dsa.X86.Generation.hashTo H iv H.N dsts) s fun t =>
       Spec.Sha256.bytesAt t.mem (off base dst) H.N =
         F.ok.hH.SH.H.hash (Spec.Sha256.bytesAt s.mem (off base (sState + H.N)) H.N) ∧
       Frame [⟨off base sState, H.N + 64⟩, ⟨off base sHScr, H.so⟩, ⟨off base dst, H.N⟩, stk s] s.mem t.mem ∧
@@ -563,7 +572,7 @@ theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   obtain yW := Scr.wide hs hsS
   obtain cNat := Scr.toNat_add hs hsC
   obtain cW := Scr.wide hs hsC
-  unfold Impl.Dsa.X86.Generation.hash
+  unfold Impl.Dsa.X86.Generation.hashTo
   simp only [seqs]
   refine WP.seq (prep_ok F hs (by omega_arith) fun t eb ea ep g rd wr m => ?_)
   obtain tsp : t.gpr .esp = s.gpr .esp := g _ (by decide) (by decide) (by decide) (by decide)
@@ -585,14 +594,30 @@ theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   rw [yW] at cu
   obtain udi : u.gpr .edi = s.gpr .edi := (au.cs .edi (by decide)).trans tdi
   obtain usp : u.gpr .esp = s.gpr .esp := (au.cs .esp (by decide)).trans tsp
+  obtain pl := padBytes_length (n := H.N) (by omega_arith)
+  have f₁ : Frame [⟨Y, H.N + 64⟩] s.mem t.mem := by
+    rw [m]
+    exact (writeBytes_frame _ _ _ (by rw [ivBytes_length]; exact contains_start _ (by omega_arith))).trans
+      (writeBytes_frame _ _ _ (by rw [pl]; exact Offset.contains_base Y (by omega_arith) (by omega_arith)))
+  have f₂ := au.frame
+  rw [yW, cW, stk, tsp] at f₂
+  obtain s₂ : Region.Sub ⟨off base sState, H.N⟩ ⟨off base sState, H.N + 64⟩ := Region.sub_prefix (by omega_arith)
+  obtain fu : Frame [⟨off base sState, H.N + 64⟩, ⟨off base sHScr, H.so⟩, stk s] s.mem u.mem :=
+    (f₁.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact .head _).trans
+      (f₂.sub fun r hr => by
+        simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact ⟨_, .head _, s₂⟩
+        · exact ⟨_, .tail _ (.head _), fun _ h => h⟩
+        · exact ⟨_, .tail _ (.tail _ (.head _)), fun _ h => h⟩)
   simp only [List.append_assoc]
-  refine scr_ok fun v ev gv mv rdv wrv _ => scr_ok fun w ew gw mw rdw wrw _ => ?_
+  refine scr_ok fun v ev gv mv rdv wrv _ => hDst v (fun r a b c d e => by
+      rw [gv r b, au.cs r (calleeSaved_of_ne r a b c d e), g r a b c e]) (by rw [mv]; exact fu)
+    (by rw [rdv, au.rd, rd]) (by rw [wrv, au.wr, wr]) _ _ fun w wax gw mw rdw wrw => ?_
   have npos := F.ok.sizes.N.1
   obtain hdN : dst < size := by omega_arith
   obtain wbx : w.gpr .ebx = s.gpr .edi + BitVec.ofNat 32 sState := by
     rw [gw _ (by decide), ev, udi]
-  obtain wax : w.gpr .eax = s.gpr .edi + BitVec.ofNat 32 dst := by
-    rw [ew, gv _ (by decide), udi]
   obtain dW := Scr.wide hs hdN
   obtain dNat := Scr.toNat_add hs hdN
   refine WP.mono (F.ok.out w (by rw [wbx, yNat]; omega_arith) (by rw [wax, dNat]; omega_arith) ?_ ?_ ?_)
@@ -606,7 +631,6 @@ theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   obtain msgEq : Spec.Sha256.bytesAt s.mem (off base (sState + H.N)) H.N =
       Spec.Sha256.bytesAt s.mem (Y + BitVec.ofNat 64 H.N) H.N := by
     simp only [Y, off, Offset.add_add]
-  obtain pl := padBytes_length (n := H.N) (by omega_arith)
   obtain ivAt : F.ok.md.stateAt t.mem Y = F.ok.iv := by
     apply F.ivVal
     rw [m, bytesAt_writeBytes_sep _ _ (Offset.sep_base Y (by omega_arith) (by omega_arith)) (by omega_arith),
@@ -634,15 +658,8 @@ theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [mx, VG.Proof.Hmac.Generic.Common.bytesAt_writeBytes_self' (F.ok.md.digest_length _) (by omega_arith), cu, ivAt, blk,
       msgEq, hashEq]
-  · have f₁ : Frame [⟨Y, H.N + 64⟩] s.mem t.mem := by
-      rw [m]
-      exact (writeBytes_frame _ _ _ (by rw [ivBytes_length]; exact contains_start _ (by omega_arith))).trans
-        (writeBytes_frame _ _ _ (by rw [pl]; exact Offset.contains_base Y (by omega_arith) (by omega_arith)))
-    have f₂ := au.frame
-    rw [yW, cW, stk, tsp] at f₂
-    obtain f₃ : Frame [⟨off base dst, H.N⟩] u.mem x.mem := by
+  · obtain f₃ : Frame [⟨off base dst, H.N⟩] u.mem x.mem := by
       rw [mx]; exact writeBytes_frame _ _ _ (by rw [F.ok.md.digest_length]; exact contains_start _ (by omega_arith))
-    obtain s₂ : Region.Sub ⟨off base sState, H.N⟩ ⟨off base sState, H.N + 64⟩ := Region.sub_prefix (by omega_arith)
     exact frame_join f₁ f₂ f₃ s₂
 
   · intro r a b c d e
@@ -650,6 +667,20 @@ theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     exact calleeSaved_of_ne r a b c d e
   · rw [rdx, rdw, rdv, au.rd, rd]
   · rw [wrx, wrw, wrv, au.wr, wr]
+
+theorem hash_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    {dst : Nat} (hsz : sHScr + H.so ≤ size) (hsC : sHScr < size) (hdst : dst + H.N ≤ size)
+    (hsepS : sState + H.N + 64 ≤ dst ∨ dst + H.N ≤ sState)
+    (hsepC : dst + H.N ≤ sHScr ∨ sHScr + H.so ≤ dst)
+    (h48 : 48 ≤ (s.gpr .esp).toNat) (hstk : (stk s).Disjoint ⟨base, size⟩) :
+    WP isa (Impl.Dsa.X86.Generation.hash H iv H.N dst) s fun t =>
+      Spec.Sha256.bytesAt t.mem (off base dst) H.N =
+        F.ok.hH.SH.H.hash (Spec.Sha256.bytesAt s.mem (off base (sState + H.N)) H.N) ∧
+      Frame [⟨off base sState, H.N + 64⟩, ⟨off base sHScr, H.so⟩, ⟨off base dst, H.N⟩, stk s] s.mem t.mem ∧
+      (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → r ≠ .ebp → t.gpr r = s.gpr r) ∧
+      t.rd = s.rd ∧ t.wr = s.wr :=
+  hashTo_ok F hs hsz hsC hdst hsepS hsepC h48 hstk fun w we _ _ _ _ _ k =>
+    scr_ok fun w' e' g' m' rd' wr' _ => k w' (by rw [e', we _ (by decide) (by decide) (by decide) (by decide) (by decide)]) g' m' rd' wr'
 
 end
 
@@ -1107,6 +1138,9 @@ structure GeoOk (g : Geo) where
       [.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 g.H.N))] ++ scr .ebp sHScr)) fun _ _ => True
   outCt : ∀ dst, RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi]))
     (.block (scr .ebx sState ++ scr .eax dst ++ g.H.out)) fun _ _ => True
+  /-- The same, with the digest's place in `esi`, which the compression keeps. -/
+  outCtS : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi, .esi]))
+    (.block (scr .ebx sState ++ ([.mov .eax (.reg .esi)] : List Instr) ++ g.H.out)) fun _ _ => True
   outNoSp : ∀ i ∈ g.H.out, Taint.clobbers i .esp = false
 
 theorem GeoOk.bounds {g : Geo} (G : GeoOk g) :

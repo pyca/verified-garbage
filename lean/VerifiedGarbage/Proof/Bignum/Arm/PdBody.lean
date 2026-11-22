@@ -16,12 +16,13 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-theorem pdBody_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb : List Byte}
+theorem pdBody_ok (A : CallOp) (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb : List Byte}
     (h : PdBodyInput base dst np ep xp len k eLen N R eb xb s) :
-    WP isa PdFn.body s fun t =>
+    WP isa (PdFn.body A.op) s fun t =>
       (if Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb) then PdOutput dst k N R eb xb t
        else t.gpr .r0 = 0 ∧ Spec.Rsa.bytesAt t.mem (State.addr dst) k = List.replicate k 0) ∧
-      Frame [⟨State.addr base, 8 * len⟩, ⟨off (State.addr s.sp) 48, 4⟩, ⟨State.addr dst, k⟩] s.mem t.mem ∧
+      Frame [⟨State.addr base, 8 * len⟩, ⟨off (State.addr s.sp) 48, 4⟩, ⟨State.addr dst, k⟩,
+        FrameStack.belowA s.sp 48] s.mem t.mem ∧
       Rest roundClobbers s t := by
   rw [PdFn.body, WP.seq_iff]
   refine WP.mono (publicExponentArgs_ok s h.stack) ?_
@@ -54,7 +55,7 @@ theorem pdBody_ok (s : State) {base dst np ep xp : BitVec 32} {len k eLen N R : 
     exact ⟨⟨status, bytes⟩, frame.mono (by simp), rest.trans restT⟩
   · intro valid
     have validE : Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb) = true := by simpa using valid
-    refine WP.mono (pdImported_ok z hz) ?_
+    refine WP.mono (pdImported_ok A z hz) ?_
     rintro t ⟨result, frame, restT⟩
     rw [mem, rest.sp] at frame
     simp only [validE, ite_true]

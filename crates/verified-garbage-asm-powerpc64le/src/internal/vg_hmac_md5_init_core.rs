@@ -65,7 +65,7 @@ bl {vg_md5_update_scratch}
 bl {vg_md5_finalize_scratch}
 .base64 "AAB2OAAAlzjwALU4EADAOAAA9TgAAZXqEAHV6hgB9eogARXrKAE16wgBteo="
 bl {vg_hmac_md5_init_scratch}
-.base64 "IAAB6DAAITimAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+UAAbPlIAGz5UABs+VgAbPlgAGz5aABs+XAAbPl4AGz5gABs+YgAbPmQAGz5mABs+aAAbPmoAGz5sABs+bgAbPnAAGz5yABs+dAAbPnYAGz54ABs+egAbPnwAGz5+ABs+QABbPkIAWz5EAFs+RgBbPkgAWz5KAFs+XABITg="
+.base64 "IAAB6DAAITimAwh8IACBOQAAADgAAAz4CAAM+BAADPgYAAz4IAAM+CgADPgwAAz4OAAM+EAADPhIAAz4UAAM+FgADPhgAAz4aAAM+HAADPh4AAz4gAAM+IgADPiQAAz4mAAM+KAADPioAAz4sAAM+LgADPjAAAz4yAAM+NAADPjYAAz44AAM+OgADPjwAAz4+AAM+AABDPgIAQz4EAEM+BgBDPggAQz4KAEM+HABITg="
 b 21b"#,
         vg_md5_init = sym crate::md5::vg_md5_init,
         vg_md5_update_scratch = sym crate::md5::vg_md5_update_scratch::vg_md5_update_scratch,

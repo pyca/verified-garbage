@@ -87,7 +87,7 @@ def changes (s : State) : List Region := inWrites s ++ [inStack s]
 
 /-- The precondition's facts of numbers, in terms of the public data. -/
 structure PreFacts (p : SearchPublic) : Prop where
-  room : 184 ≤ p.sp.toNat
+  room : 232 ≤ p.sp.toNat
   top : p.sp.toNat + 32 ≤ 2 ^ 32
   nO : p.op.toNat + p.len ≤ 2 ^ 32
   nU : p.up.toNat + 8 ≤ 2 ^ 32

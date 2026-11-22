@@ -2009,6 +2009,8 @@ def geoOk {pLen qLen : Nat} {H : Impl.Pbkdf2.Md.X86.Hash} {iv : List (BitVec 32)
         [.mov .eax (.reg .ebx), .alu .add .eax (.imm (BitVec.ofNat 32 H.N))] ++ scr .ebp sHScr)) fun _ _ => True)
     (outCt : ∀ dst, RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi]))
       (.block (scr .ebx sState ++ scr .eax dst ++ H.out)) fun _ _ => True)
+    (outCtS : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi, .esi]))
+      (.block (scr .ebx sState ++ ([.mov .eax (.reg .esi)] : List Instr) ++ H.out)) fun _ _ => True)
     (outNoSp : ∀ i ∈ H.out, Taint.clobbers i .esp = false) :
     GeoOk (geo pLen qLen H iv v) where
   lengths := lengths
@@ -2029,6 +2031,7 @@ def geoOk {pLen qLen : Nat} {H : Impl.Pbkdf2.Md.X86.Hash} {iv : List (BitVec 32)
   cStack := check_stack
   prepCt := prepCt
   outCt := outCt
+  outCtS := outCtS
   outNoSp := outNoSp
 
 /-- 1024/160, with SHA-1. -/
@@ -2063,20 +2066,32 @@ theorem sha256_outCt (dst : Nat) : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .ed
     (.block (scr .ebx sState ++ scr .eax 0 ++ Impl.Sha256.X86.Stream.params.out)) (.block []) rfl rfl
     rfl (τ := τr [.esp, .edi]) (σ := τr []) (by decide +kernel)).mono (fun _ _ h => h) fun _ _ _ => trivial
 
+theorem sha1_outCtS : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi, .esi]))
+    (.block (scr .ebx sState ++ ([.mov .eax (.reg .esi)] : List Instr) ++ Impl.Sha1.X86.Stream.params.out)) fun _ _ => True :=
+  (erased_relCT (.block (scr .ebx sState ++ ([.mov .eax (.reg .esi)] : List Instr) ++ Impl.Sha1.X86.Stream.params.out))
+    (.block (scr .ebx sState ++ ([.mov .eax (.reg .esi)] : List Instr) ++ Impl.Sha1.X86.Stream.params.out)) (.block []) rfl rfl rfl
+    (τ := τr [.esp, .edi, .esi]) (σ := τr []) (by decide +kernel)).mono (fun _ _ h => h) fun _ _ _ => trivial
+
+theorem sha256_outCtS : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi, .esi]))
+    (.block (scr .ebx sState ++ ([.mov .eax (.reg .esi)] : List Instr) ++ Impl.Sha256.X86.Stream.params.out)) fun _ _ => True :=
+  (erased_relCT (.block (scr .ebx sState ++ ([.mov .eax (.reg .esi)] : List Instr) ++ Impl.Sha256.X86.Stream.params.out))
+    (.block (scr .ebx sState ++ ([.mov .eax (.reg .esi)] : List Instr) ++ Impl.Sha256.X86.Stream.params.out)) (.block []) rfl rfl
+    rfl (τ := τr [.esp, .edi, .esi]) (σ := τr []) (by decide +kernel)).mono (fun _ _ h => h) fun _ _ _ => trivial
+
 theorem sha1_outNoSp : ∀ i ∈ Impl.Sha1.X86.Stream.params.out, Taint.clobbers i .esp = false := by decide
 
 theorem sha256_outNoSp : ∀ i ∈ Impl.Sha256.X86.Stream.params.out, Taint.clobbers i .esp = false := by decide
 
 def geo1Ok (v1 : Proof.Sha1.X86.Variants.Backend) (v : RoundImpl) : GeoOk (geo1 v1 v) :=
-  geoOk v (sha1_hashOk v1) (.inl ⟨rfl, rfl⟩) rfl (fun _ => rfl) (prepCt := sha1_prepCt) (outCt := sha1_outCt)
+  geoOk v (sha1_hashOk v1) (.inl ⟨rfl, rfl⟩) rfl (fun _ => rfl) (prepCt := sha1_prepCt) (outCt := sha1_outCt) (outCtS := sha1_outCtS)
     (outNoSp := sha1_outNoSp)
 
 def geo2Ok (v256 : Proof.Sha256.X86.Variants.Backend) (v : RoundImpl) : GeoOk (geo256 256 v256 v) :=
   geoOk v (sha256_hashOk v256) (.inr (.inl ⟨rfl, rfl⟩)) rfl (fun _ => rfl) (prepCt := sha256_prepCt)
-    (outCt := sha256_outCt) (outNoSp := sha256_outNoSp)
+    (outCt := sha256_outCt) (outCtS := sha256_outCtS) (outNoSp := sha256_outNoSp)
 
 def geo3Ok (v256 : Proof.Sha256.X86.Variants.Backend) (v : RoundImpl) : GeoOk (geo256 384 v256 v) :=
   geoOk v (sha256_hashOk v256) (.inr (.inr ⟨rfl, rfl⟩)) rfl (fun _ => rfl) (prepCt := sha256_prepCt)
-    (outCt := sha256_outCt) (outNoSp := sha256_outNoSp)
+    (outCt := sha256_outCt) (outCtS := sha256_outCtS) (outNoSp := sha256_outNoSp)
 
 end VG.Proof.Dsa.X86.Generation

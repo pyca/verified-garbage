@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.X448.Ladder
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.Framework.PPC64LE.CallOf
 import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ### `X448.PPC64LE.Ladder`, which this module and modules that import it used -/
@@ -822,6 +823,34 @@ theorem invert_ok {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     WP isa Impl.X448.PPC64LE.invert s fun s' => Stp b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b IQ (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
   invertW_ok (by decide) mulCur_mul hc hS h0
+
+theorem invert_lrSafe : lrSafe Impl.X448.PPC64LE.invert = true := by decide +kernel
+
+/-- A call changes only `r0`, `r11` and `r12`, all of `work`. -/
+theorem stp_callEntry (s : State) : Stp b s s.callEntry :=
+  StpW.of_rest (ws := [.r0, .r11, .r12]) ⟨fun r h => State.callEntry_gpr s h, rfl, rfl, rfl⟩ (by decide) rfl
+
+/-- The call of the inversion, from what its code does from the call's entry. -/
+theorem invertCall_of {s : State} {Q : State → Prop}
+    (h : WP isa Impl.X448.PPC64LE.invert s.callEntry Q) :
+    WP isa Impl.X448.PPC64LE.invertCall s Q :=
+  WP.callSafe invert_lrSafe h
+
+/-- `invertQ_ok`, for the call of the inversion. -/
+theorem invertQCall_ok {qs : List Nat} (hq : Sep1 R qs = true) (hR : R ∈ qs) (hZ : Z2 ∈ qs)
+    (hT : TempsOk qs = true) {v : Nat → Fe} {s : State} (hc : Ctx b s)
+    (hS : ∀ q ∈ qs, q ≠ R → FS s.mem b q = v q) :
+    WP isa Impl.X448.PPC64LE.invertCall s fun s' => Stp b s s' ∧ Ctx b s' ∧
+      SlotsOk s'.mem b qs (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
+  invertCall_of (WP.mono (invertQ_ok hq hR hZ hT (hc.of_rest (stp_callEntry (b := b) s).rest (by decide)) hS rfl)
+    fun _ ⟨h1, h2, h3⟩ => ⟨(stp_callEntry s).trans h1, h2, h3⟩)
+
+/-- `invert_ok`, for the call of the inversion. -/
+theorem invertCall_ok {v : Nat → Fe} {s : State} (hc : Ctx b s) (hS : SlotsOk s.mem b [Z2, X2] v) :
+    WP isa Impl.X448.PPC64LE.invertCall s fun s' => Stp b s s' ∧ Ctx b s' ∧
+      SlotsOk s'.mem b IQ (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
+  invertCall_of (WP.mono (invert_ok (hc.of_rest (stp_callEntry (b := b) s).rest (by decide)) hS rfl)
+    fun _ ⟨h1, h2, h3⟩ => ⟨(stp_callEntry s).trans h1, h2, h3⟩)
 
 end
 

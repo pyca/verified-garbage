@@ -133,11 +133,11 @@ def LimitedTestEnd (p : CandidateParams) (first : Bool) (used : Nat) (s t : Stat
     Spec.Rsa.bytesAt t.mem (State.addr p.out) p.length = Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length ∧
     Frame (phaseRegions (limitedPhase p first) s.sp) s.mem t.mem ∧ Rest roundClobbers s t
 
-theorem limitedTest_ok (v : RoundImpl) {s : State} {p : CandidateParams} {consumed : Nat} {first : Bool}
+theorem limitedTest_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams} {consumed : Nat} {first : Bool}
     (h : CandidateContext p consumed s)
     (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) = (limitedPhase p first).modulus)
     (odd : (limitedPhase p first).modulus % 2 = 1) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited first v.name v.code) s (LimitedTestEnd p first consumed s) := by
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited first (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s (LimitedTestEnd p first consumed s) := by
   rw [VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited, WP.seq_iff]
   refine WP.mono (limitedHead_ok h first) ?_
   rintro u ⟨context, saved, changed, rest⟩
@@ -145,7 +145,7 @@ theorem limitedTest_ok (v : RoundImpl) {s : State} {p : CandidateParams} {consum
   have bytes := h.phase_output phaseFrame
   have numberU : Spec.Rsa.os2ip (Spec.Rsa.bytesAt u.mem (State.addr p.out) p.length) =
       (limitedPhase p first).modulus := by rw [bytes]; exact number
-  refine WP.mono (phaseRun_ok v (candidatePhaseInputWithChecks context saved numberU (p.limited_bounds first).1 (p.limited_bounds first).2 odd)) ?_
+  refine WP.mono (phaseRun_ok b v (candidatePhaseInputWithChecks context saved numberU (p.limited_bounds first).1 (p.limited_bounds first).2 odd)) ?_
   rintro t ⟨next, passed, state, consumedT, status, suffix, changedT, restT⟩
   have bytesT := context.phase_output (q := false) changedT
   have contextT := context.after_frame state.usedBound (state.saved.saved 40 (by decide))
@@ -318,8 +318,8 @@ private theorem limitedPhaseStart_ok (first : Bool) (p : CandidatePoint) (s : St
   exact candidatePhaseInputWithChecks context saved (by rw [bytes]; exact h.2.1)
     (p.params.limited_bounds first).1 (p.params.limited_bounds first).2 h.2.2
 
-theorem limitedTest_ct (v : RoundImpl) (first : Bool) : RelCT isa (Two (CandidateTestStart false))
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited first v.name v.code) (fun _ _ => True) := by
+theorem limitedTest_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) (first : Bool) : RelCT isa (Two (CandidateTestStart false))
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited first (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have limitTrace : RelCT isa (fun s t => s.sp = t.sp)
       (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.phaseLimit first)) (fun s t => s.sp = t.sp) := by
     cases first <;> exact RelCT.block_append
@@ -327,7 +327,7 @@ theorem limitedTest_ct (v : RoundImpl) (first : Bool) : RelCT isa (Two (Candidat
   have headerTrace := RelCT.block_append ((phaseHead_ct false).seq limitTrace)
   have head := two_post (headerTrace.mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial))
     (limitedPhaseStart_ok first)
-  exact head.seq ((phaseRun_ct v).mono
+  exact head.seq ((phaseRun_ct b v).mono
     (fun _ _ ⟨p, left, right, sp⟩ => ⟨limitedPhasePoint first p, left, right, sp⟩) (fun _ _ h => h))
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -350,9 +350,9 @@ def CandidateAnswerResult (answer : CandidatePoint → Option (Bool × List Byte
 def limitedAnswer (first : Bool) (p : CandidatePoint) : Option (Bool × List Byte) :=
   witnessRemaining (limitedPhase p.params first) p.used 0
 
-theorem limitedTestResult_ct (v : RoundImpl) (first : Bool) : RelCT isa (Two (CandidateTestStart false))
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited first v.name v.code) (Two (CandidateAnswerResult (limitedAnswer first))) :=
-  two_post (limitedTest_ct v first) (fun _ _ h => WP.mono (limitedTest_ok v h.1 h.2.1 h.2.2)
+theorem limitedTestResult_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) (first : Bool) : RelCT isa (Two (CandidateTestStart false))
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited first (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (Two (CandidateAnswerResult (limitedAnswer first))) :=
+  two_post (limitedTest_ct b v first) (fun _ _ h => WP.mono (limitedTest_ok b v h.1 h.2.1 h.2.2)
     (fun _ ⟨next, ctx, _, status, _, _, _, _⟩ => ⟨⟨next, ctx⟩, status⟩))
 
 theorem candidateAnswerResult_ct (answer : CandidatePoint → Option (Bool × List Byte)) :

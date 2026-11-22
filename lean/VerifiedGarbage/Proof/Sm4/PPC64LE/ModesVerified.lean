@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.CbcScratch
 public import VerifiedGarbage.Proof.Sm4.FbScratch
-import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+public import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Modes.PPC64LE.Modes
 import VerifiedGarbage.Proof.Modes.PPC64LE.Wide
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Seq
@@ -49,7 +49,7 @@ import VerifiedGarbage.Proof.Framework.Bswap
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Spec.Sm4.Cbc
 import VerifiedGarbage.Proof.Sm4.Common
-import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -852,24 +852,19 @@ theorem loadT_run (s : State) (n : Nat) (hn : n ≤ 4) (h10 : s.gpr .r10 = s.sym
 theorem mask_eq : ((0x0f0f : BitVec 16) ++ (0 : BitVec 16)).signExtend 64 ||| (0x0f0f : BitVec 16).setWidth 64 =
     (0x0f0f0f0f : BitVec 64) := by decide
 
-theorem loadTables_run (s : State) :
+theorem loadTables_run (s : State) (h10 : s.gpr .r10 = s.syms tableSym) :
     ∃ t, runBlock isa loadTables s = some t ∧ Consts t ∧
       (∀ v, v ≠ .v12 → v ≠ .v13 → v ≠ .v14 → v ≠ .v15 → t.vpr v = s.vpr v) ∧
       (∀ r, r ≠ .r10 → r ≠ .r11 → r ≠ .r12 → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.syms = s.syms := by
-  let a : State := { s.write .r10 (s.syms tableSym) with lr := s.unknowns 0, unknowns := fun n => s.unknowns (n + 1) }
-  obtain a10 : a.gpr .r10 = a.syms tableSym := by
-    show (s.write .r10 (s.syms tableSym)).gpr .r10 = s.syms tableSym; exact gpr_write_self _ _ _
-  obtain ⟨b, be, bv, bvo, bg, bm, brd, bwr, bsp, bsy, _, _⟩ := loadT_run a 4 (by decide) a10
+  obtain ⟨b, be, bv, bvo, bg, bm, brd, bwr, bsp, bsy, _, _⟩ := loadT_run s 4 (by decide) h10
   let c := b.write .r12 (((0x0f0f : BitVec 16) ++ (0 : BitVec 16)).signExtend 64)
   let d := c.write .r12 (c.gpr .r12 ||| (0x0f0f : BitVec 16).setWidth 64)
   obtain dv : ∀ v, d.vpr v = b.vpr v := fun _ => rfl
   obtain dg : ∀ r, r ≠ .r12 → d.gpr r = b.gpr r := fun r h => (gpr_write_of_ne _ _ h).trans (gpr_write_of_ne _ _ h)
   have ok := tval_ok
-  refine ⟨d, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, fun v h12 h13 h14 h15 => ?_, fun r h10 h11 h12 => ?_, bm, brd, bwr, bsp, bsy⟩
-  · rw [loadTables, List.cons_append, runBlock_cons]
-    simp only [exec, ne_eq, show ¬(Reg.r10 = .r0) by decide, not_false_eq_true, ↓reduceIte]
-    rw [runStep_some, VG.Interleave.runBlock_append, be, Option.bind_some, runBlock_cons, exec_lis, runStep_some,
+  refine ⟨d, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, fun v h12 h13 h14 h15 => ?_, fun r _ h11 h12 => ?_, bm, brd, bwr, bsp, bsy⟩
+  · rw [loadTables, VG.Interleave.runBlock_append, be, Option.bind_some, runBlock_cons, exec_lis, runStep_some,
       runBlock_cons, exec_ori, runStep_some, runBlock_nil]
   · rw [dv, bv 0 (by decide)]; exact ok.1
   · rw [dv, bv 1 (by decide)]; exact ok.2.1
@@ -877,11 +872,9 @@ theorem loadTables_run (s : State) :
   · rw [dv, bv 3 (by decide)]; exact ok.2.2.2
   · rw [gpr_write_self, gpr_write_self, mask_eq]
   · rw [dv, bvo v fun k hk => ?_]
-    · rfl
-    · rcases k with _ | _ | _ | _ | k
-      all_goals first | omega | (intro e; subst e; contradiction)
+    rcases k with _ | _ | _ | _ | k
+    all_goals first | omega | (intro e; subst e; contradiction)
   · rw [dg r h12, bg r h11]
-    exact gpr_write_of_ne _ _ h10
 
 /-! ## The block -/
 
@@ -1070,9 +1063,9 @@ theorem dirCipher_bytes (dir : Dir) (k : Spec.Sm4.Schedule) (m : Mem) (p : Addr)
   · exact Proof.Sm4.cipher_bytes k m p
   · exact invCipher_bytes k m p
 
-theorem crypt_wp (dir : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
-    (hs : ScrIn s B (core dir).total) (hk : Ready s B ws k) :
-    WP isa (core dir).crypt s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready t B ws k ∧
+theorem cryptRest_wp (dir : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
+    (hs : ScrIn s B (core dir).total) (hk : Ready s B ws k) (h10 : s.gpr .r10 = s.syms tableSym) :
+    WP isa (.block (loadTables ++ loadBlock ++ rounds dir ++ storeBlock)) s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready t B ws k ∧
       Frame [coreRegion (core dir) B] s.mem t.mem ∧
       (∀ j < (core dir).G, bytesAt t.mem (blkAddr (core dir) B j) (4 * (core dir).bw) =
         Proof.Sm4.PPC64LE.dirCipher dir k (bytesAt s.mem (blkAddr (core dir) B j) (4 * (core dir).bw))) ∧
@@ -1081,9 +1074,8 @@ theorem crypt_wp (dir : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec
   have hwr : (⟨B, 8 * (slots + 6)⟩ : Region) ∈ s.wr := hs.wr
   have hk' := hk
   obtain ⟨p, hp, hsched, hin, hfit, _⟩ := hk'
-  change WP isa (.block (loadTables ++ loadBlock ++ rounds dir ++ storeBlock)) s _
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  obtain ⟨a, ae, ac, _, ag, am, ard, awr, _, _⟩ := loadTables_run s
+  obtain ⟨a, ae, ac, _, ag, am, ard, awr, _, _⟩ := loadTables_run s h10
   refine WP.of_runBlock ⟨a, ae, ?_⟩
   obtain ab : a.gpr sb = B := (ag _ (by decide) (by decide) (by decide)).trans hB
   obtain ar : ∀ i < 4, InRegions (a.rd ++ a.wr) (a.gpr sb + BitVec.ofNat 64 (woff i)) 4 := fun i hi => by
@@ -1149,6 +1141,72 @@ theorem crypt_wp (dir : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec
     rw [ha, output, dirCipher_bytes]
   · rw [erd, drd, brd, ard]
   · rw [ewr, dwr, bwr, awr]
+
+/-- A call of code that keeps the link register. -/
+theorem WP.callOf {name : String} {c : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa c s.callEntry fun s₂ => s₂.lr = s.callEntry.lr ∧ Q s₂) : WP isa (.call name c) s Q := by
+  obtain ⟨t, s₂, he, hlr, hq⟩ := h
+  refine ⟨_, _, Exec.call (call_callEntry s) he ?_, hq⟩
+  simp only [isa, ret]
+  exact ite_eq_left_of_eq_true _ _ (eq_true hlr)
+
+theorem body_lrSafe (dir : Dir) : lrSafe (body dir) = true := by cases dir <;> decide +kernel
+
+/-- The core's code, from any state: its tables' address, then the rest. -/
+theorem body_wp (dir : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
+    (hs : ScrIn s B (core dir).total) (hk : Ready s B ws k) :
+    WP isa (body dir) s fun t => t.lr = s.lr ∧ t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready t B ws k ∧
+      Frame [coreRegion (core dir) B] s.mem t.mem ∧
+      (∀ j < (core dir).G, bytesAt t.mem (blkAddr (core dir) B j) (4 * (core dir).bw) =
+        Proof.Sm4.PPC64LE.dirCipher dir k (bytesAt s.mem (blkAddr (core dir) B j) (4 * (core dir).bw))) ∧
+      t.rd = s.rd ∧ t.wr = s.wr := by
+  have hw : WP isa (body dir) s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready t B ws k ∧
+      Frame [coreRegion (core dir) B] s.mem t.mem ∧
+      (∀ j < (core dir).G, bytesAt t.mem (blkAddr (core dir) B j) (4 * (core dir).bw) =
+        Proof.Sm4.PPC64LE.dirCipher dir k (bytesAt s.mem (blkAddr (core dir) B j) (4 * (core dir).bw))) ∧
+      t.rd = s.rd ∧ t.wr = s.wr := by
+    unfold body
+    let a₁ := s.write .r0 s.lr
+    let a₂ : State := { a₁.write .r10 (a₁.syms tableSym) with lr := a₁.unknowns 0, unknowns := fun n => a₁.unknowns (n + 1) }
+    let a : State := { a₂ with lr := a₂.gpr .r0 }
+    refine WP.seq (WP.of_runBlock ⟨a, by
+      rw [tableAddr, runBlock_cons, exec_mflr, runStep_some, runBlock_cons]
+      simp only [exec, ne_eq, show ¬(Reg.r10 = .r0) by decide, not_false_eq_true, ↓reduceIte]
+      rw [runStep_some, runBlock_cons, exec_mtlr, runStep_some, runBlock_nil], ?_⟩)
+    obtain ag : ∀ r, r ≠ .r0 → r ≠ .r10 → a.gpr r = s.gpr r := fun r h0 h10 => by
+      show (a₁.write .r10 _).gpr r = _
+      rw [gpr_write_of_ne _ _ h10]; exact gpr_write_of_ne _ _ h0
+    obtain a10 : a.gpr .r10 = a.syms tableSym := by
+      show (a₁.write .r10 (a₁.syms tableSym)).gpr .r10 = s.syms tableSym; exact gpr_write_self _ _ _
+    obtain am : a.mem = s.mem := rfl
+    refine WP.mono (cryptRest_wp dir (by rw [ag _ (by decide) (by decide)]; exact hB) ⟨hs.wr, hs.fit⟩
+      (keyArgs_frame hk (ag _ (by decide) (by decide)) rfl (Frame.refl _ _) fun r hr => ⟨r, hr, fun _ h => h⟩) a10)
+      fun t ⟨tb, tk, tr, tf, to, trd, twr⟩ => ⟨tb, fun r hr => ?_, tr, by rw [← am]; exact tf, by rw [← am]; exact to,
+        trd, twr⟩
+    obtain h := kept_ne r hr
+    rw [tk r hr, ag r h.1 h.2.2.1]
+  obtain ⟨tr, t, he, hq⟩ := hw
+  exact ⟨tr, t, he, Exec.lr_safe he (body_lrSafe dir), hq⟩
+
+theorem crypt_wp (dir : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
+    (hs : ScrIn s B (core dir).total) (hk : Ready s B ws k) :
+    WP isa (core dir).crypt s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready t B ws k ∧
+      Frame [coreRegion (core dir) B] s.mem t.mem ∧
+      (∀ j < (core dir).G, bytesAt t.mem (blkAddr (core dir) B j) (4 * (core dir).bw) =
+        Proof.Sm4.PPC64LE.dirCipher dir k (bytesAt s.mem (blkAddr (core dir) B j) (4 * (core dir).bw))) ∧
+      t.rd = s.rd ∧ t.wr = s.wr := by
+  obtain g : ∀ r, r ∉ linkRegs → s.callEntry.gpr r = s.gpr r := fun r h => State.callEntry_gpr s h
+  have hw := body_wp dir (s := s.callEntry) (by rw [g _ (by decide)]; exact hB) ⟨hs.wr, hs.fit⟩
+    (keyArgs_frame hk (g _ (by decide)) rfl (Frame.refl _ _) fun r hr => ⟨r, hr, fun _ h => h⟩)
+  have hw' : WP isa (body dir) s.callEntry fun t => t.lr = s.callEntry.lr ∧ (t.gpr sb = B ∧
+      (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready t B ws k ∧ Frame [coreRegion (core dir) B] s.mem t.mem ∧
+      (∀ j < (core dir).G, bytesAt t.mem (blkAddr (core dir) B j) (4 * (core dir).bw) =
+        Proof.Sm4.PPC64LE.dirCipher dir k (bytesAt s.mem (blkAddr (core dir) B j) (4 * (core dir).bw))) ∧
+      t.rd = s.rd ∧ t.wr = s.wr) :=
+    WP.mono hw fun t ⟨tl, tb, tk, tr, tf, to, trd, twr⟩ =>
+      ⟨tl, tb, fun r hr => (tk r hr).trans (g r (by revert hr; decide +revert)), tr, tf, to, trd, twr⟩
+  show WP isa (cryptCall dir) s _
+  cases dir <;> exact WP.callOf hw'
 
 /-! ## The core -/
 

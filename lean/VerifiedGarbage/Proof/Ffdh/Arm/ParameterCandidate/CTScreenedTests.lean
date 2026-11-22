@@ -35,14 +35,14 @@ def ScreenedQStart (p : CandidatePoint) (s : State) : Prop :=
   Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.params.out) p.params.length) = p.params.candidate ∧
   ((p.params.candidate - 1) / 2) % 2 = 1
 
-theorem screenedQ_ct (v : RoundImpl) : RelCT isa (Two ScreenedQStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ v.name v.code) (fun _ _ => True) := by
+theorem screenedQ_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two ScreenedQStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have halfTrace : RelCT isa (Two ScreenedQStart) VG.Impl.Ffdh.Arm.ParameterCandidate.halveQ (fun _ _ => True) :=
     two_map (fun p => (p.params.out, p.params.length)) (fun _ _ h => h.1.read_context) halveQ_ct
   have half : RelCT isa (Two ScreenedQStart) VG.Impl.Ffdh.Arm.ParameterCandidate.halveQ (Two ScreenedAfterQStart) :=
     two_post halfTrace (fun _ _ h => WP.mono (candidateHalveValue_ok h.1 h.2.2.1)
       (fun _ ⟨ctx, number, _, _, _⟩ => ⟨⟨ctx, number, h.2.2.2⟩, h.2.1⟩))
-  exact half.seq (screenedAfterQ_ct v)
+  exact half.seq (screenedAfterQ_ct b v)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end
@@ -69,9 +69,9 @@ private structure CandidateFirstReady (p : CandidatePoint) (s : State) : Prop wh
   status : s.gpr .r3 = BitVec.ofNat 32 (witnessResultStatus (qAnswer p))
   number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.params.out) p.params.length) = p.params.candidate
 
-private theorem candidateFirstReady_ok (v : RoundImpl) (p : CandidatePoint) (s : State) (h : ScreenedFirstStart p s) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited true v.name v.code) s (CandidateFirstReady p) := by
-  refine WP.mono (limitedTest_ok v (first := true) h.1.1 h.1.2.1 h.1.2.2) ?_
+private theorem candidateFirstReady_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) (p : CandidatePoint) (s : State) (h : ScreenedFirstStart p s) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited true (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s (CandidateFirstReady p) := by
+  refine WP.mono (limitedTest_ok b v (first := true) h.1.1 h.1.2.1 h.1.2.2) ?_
   rintro t ⟨next, ctx, _, status, suffix, bytes, _, _⟩
   exact ⟨h.2.1, h.2.2, ⟨next, ctx, suffix⟩, status, by rw [bytes]; exact h.1.2.1⟩
 
@@ -112,24 +112,24 @@ private theorem acceptedContext (p : CandidatePoint) (s : State) (h : CandidateF
         omega_using [size, this]
   exact ⟨by rw [same]; exact ctx, h.ready.enough, h.ready.number, h.ready.odd⟩
 
-private theorem screenedFirst_ct (v : RoundImpl) : RelCT isa (Two ScreenedFirstStart)
+private theorem screenedFirst_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two ScreenedFirstStart)
     (VG.Impl.Ffdh.Arm.ParameterCandidate.seqs [
-      VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited true v.name v.code, .block [.cmp .r3 (.imm 1)],
-      .ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ v.name v.code) VG.Impl.Ffdh.Arm.ParameterCandidate.result]) (fun _ _ => True) := by
+      VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited true (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code, .block [.cmp .r3 (.imm 1)],
+      .ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) VG.Impl.Ffdh.Arm.ParameterCandidate.result]) (fun _ _ => True) := by
   have q : RelCT isa (Two ScreenedFirstStart)
-      (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited true v.name v.code) (Two CandidateFirstReady) :=
-    two_post ((limitedTest_ct v true).mono
-      (fun _ _ h => two_mono (fun _ _ h => h.1) h) (fun _ _ h => h)) (candidateFirstReady_ok v)
+      (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited true (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (Two CandidateFirstReady) :=
+    two_post ((limitedTest_ct b v true).mono
+      (fun _ _ h => two_mono (fun _ _ h => h.1) h) (fun _ _ h => h)) (candidateFirstReady_ok b v)
   have compare : RelCT isa (Two CandidateFirstReady) (.block [.cmp .r3 (.imm 1)]) (Two CandidateFirstCompared) :=
     two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) candidateFirstCompare_ok
   have choice : RelCT isa (Two CandidateFirstCompared)
-      (.ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ v.name v.code)
+      (.ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)
         VG.Impl.Ffdh.Arm.ParameterCandidate.result) (fun _ _ => True) := by
     refine two_ite (fun _ _ _ left right => ?_) ?_ ?_
     · change some _ = some _
       rw [left.zero, right.zero]
     · exact two_map (fun p => (⟨p.params, acceptedUsed p⟩ : CandidatePoint))
-        (fun p s h => acceptedContext p s h.1 h.2) (screenedQ_ct v)
+        (fun p s h => acceptedContext p s h.1 h.2) (screenedQ_ct b v)
     · refine two_map id ?_ (candidateAnswerResult_ct (limitedAnswer true))
       intro p s h
       obtain ⟨next, ctx, _⟩ := h.1.ready.context
@@ -140,14 +140,14 @@ def ScreenedTestsStart (p : CandidatePoint) (s : State) : Prop :=
   CandidateContext p.params p.used s ∧ p.params.length ≤ p.params.bytes.length ∧
     ((p.params.candidate - 1) / 2) % 2 = 1
 
-theorem screenedTests_ct (v : RoundImpl) : RelCT isa (Two ScreenedTestsStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedTests v.name v.code) (fun _ _ => True) := by
+theorem screenedTests_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two ScreenedTestsStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedTests (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have shapeTrace : RelCT isa (Two ScreenedTestsStart) VG.Impl.Ffdh.Arm.ParameterCandidate.shapeP (fun _ _ => True) :=
     two_map (fun p => (⟨p.params.out, p.params.tape, p.params.bytes.take p.params.length, p.params.bits⟩ : ShapeData))
       (fun _ _ h => h.1.shape_context h.2.1) shapeP_ct
   have shape : RelCT isa (Two ScreenedTestsStart) VG.Impl.Ffdh.Arm.ParameterCandidate.shapeP (Two ScreenedFirstStart) :=
     two_post shapeTrace (fun p _ h => WP.mono (candidateShape_ok h.1 h.2.1)
       (fun _ ⟨ctx, _, number, _, _⟩ => ⟨⟨ctx, number, p.params.candidate_odd⟩, h.2⟩))
-  exact shape.seq (screenedFirst_ct v)
+  exact shape.seq (screenedFirst_ct b v)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

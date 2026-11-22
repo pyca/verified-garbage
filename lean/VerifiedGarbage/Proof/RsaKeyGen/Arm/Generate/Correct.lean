@@ -114,7 +114,7 @@ def changes (s : State) : List Region := inWrites s ++ [inStack s]
 
 /-- The precondition's facts of numbers, in terms of the public data. -/
 structure PreFacts (p : GenPublic) : Prop where
-  room : 256 ≤ p.sp.toNat
+  room : 304 ≤ p.sp.toNat
   top : p.sp.toNat + 16 ≤ 2 ^ 32
   nK : p.kp.toNat + 9 * p.L ≤ 2 ^ 32
   nU : p.up.toNat + 8 ≤ 2 ^ 32
@@ -897,7 +897,7 @@ abbrev cS (p : GenPublic) : Region := ⟨State.addr p.B, p.Z * 8⟩
 abbrev cT (p : GenPublic) : Region := ⟨p.st, 56⟩
 abbrev cR (p : GenPublic) : Region := ⟨State.addr p.rp, p.randLen⟩
 abbrev cA (p : GenPublic) : Region := ⟨State.addr p.sp, 16⟩
-abbrev cStack (p : GenPublic) : Region := ⟨State.addr p.sp - BitVec.ofNat 64 256, 256⟩
+abbrev cStack (p : GenPublic) : Region := ⟨State.addr p.sp - BitVec.ofNat 64 304, 304⟩
 /-- The search's frame of arguments. -/
 abbrev rA' (p : GenPublic) : Region := ⟨State.addr (p.sp - BitVec.ofNat 32 72), 32⟩
 
@@ -989,13 +989,13 @@ theorem slotS2 (h : GenFrame p o used st s) {d : Nat} (hd : d < 32) :
 
 /-- Bytes below the controller's stack pointer, within its stack, are apart
 from its regions. -/
-theorem below_disjoint (h : GenFrame p o used st s) {a n : Nat} (h1 : n ≤ a) (h2 : a ≤ 256) {r : Region}
+theorem below_disjoint (h : GenFrame p o used st s) {a n : Nat} (h1 : n ≤ a) (h2 : a ≤ 304) {r : Region}
     (hr : r ∈ inWrites o ++ inReads o) :
     Region.Disjoint ⟨State.addr (p.sp - BitVec.ofNat 32 a), n⟩ r := by
   have room := h.facts.room
   refine (h.input.stack_disjoint hr).sub_left ?_
   rw [FrameStack.addr_sub' (by omega_using [h2, room]), h.input.sp_eq]
-  exact Offset.sub_below _ (by have : stackUse = 256 := rfl; omega_using [h2, this]) (by have : stackUse = 256 := rfl; omega_using [h1, h2, this])
+  exact Offset.sub_below _ (by have : stackUse = 304 := rfl; omega_using [h2, this]) (by have : stackUse = 304 := rfl; omega_using [h1, h2, this])
 
 theorem S2_state (h : GenFrame p o used st s) : Region.Disjoint ⟨State.addr p.S2, 32⟩ ⟨p.st, 56⟩ := by
   rw [← h.state_region]; exact h.below_disjoint (by decide) (by decide) (by simp [inWrites])
@@ -1347,7 +1347,7 @@ theorem tE (h : GenFrame p o used st s) : (rT p).Disjoint (rE p) := by
   rw [h.eE]; exact Offset.base_disjoint _ (by decide) (by decide)
 
 /-- The search's stack, below its frame of arguments. -/
-abbrev rLow (p : GenPublic) : Region := ⟨State.addr p.sp - BitVec.ofNat 64 256, 184⟩
+abbrev rLow (p : GenPublic) : Region := ⟨State.addr p.sp - BitVec.ofNat 64 304, 232⟩
 
 theorem low_eq (h : GenFrame p o used st s) (hr : SearchReady p o s used st u) :
     Search.inStack (callS p used st u) = rLow p := by
@@ -1357,7 +1357,7 @@ theorem low_eq (h : GenFrame p o used st s) (hr : SearchReady p o s used st u) :
 theorem low_sub : Region.Sub (rLow p) (cStack p) := Region.sub_prefix (by decide)
 
 theorem args_low (h : GenFrame p o used st s) : (rA p).Disjoint (rLow p) := by
-  obtain e : State.addr p.sp - BitVec.ofNat 64 256 = State.addr p.S2 - BitVec.ofNat 64 184 := by
+  obtain e : State.addr p.sp - BitVec.ofNat 64 304 = State.addr p.S2 - BitVec.ofNat 64 232 := by
     rw [h.S2_eq, BitVec.sub_sub, ← BitVec.ofNat_add]
   rw [rLow, e]
   exact Offset.base_disjoint_below _ (by decide)
@@ -1426,7 +1426,7 @@ theorem callS_pre (h : GenFrame p o used st s) (hr : SearchReady p o s used st u
       obtain rfl := List.mem_singleton.mp hr'
       exact (h.S2_state.sub_right (Offset.sub_base _ (by decide))).symm) (by decide)
   refine ⟨?_, ?_, hrd ▸ rfl, hwr ▸ rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hsp, hS2]; show 184 ≤ _; have := f.room; omega_using [this]
+  · rw [hsp, hS2]; show 232 ≤ _; have := f.room; omega_using [this]
   · rw [hsp, hS2]; have := f.top; omega_using []
   · rw [hwr]
     simp only [sWrites, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
@@ -1511,7 +1511,7 @@ open VG.Spec.RsaKeyGen
 open VG.Proof.RsaKeyGen.KeySearch (limitOf primeOf)
 
 /-- The stack the prime search uses. -/
-theorem search_stack (c : Search.Cand) : FrameStack.armStack (Impl.RsaKeyGen.Arm.Search.code c.call) ≤ 184 := by
+theorem search_stack (c : Search.Cand) : FrameStack.armStack (Impl.RsaKeyGen.Arm.Search.code c.call) ≤ 232 := by
   have := c.stack
   simp only [Impl.RsaKeyGen.Arm.Search.code, Impl.RsaKeyGen.Arm.Search.body, Impl.RsaKeyGen.Arm.Search.iteration,
     Impl.RsaKeyGen.Arm.Search.candidateStep, Impl.RsaKeyGen.Arm.Search.candidateRun,
@@ -1586,7 +1586,7 @@ theorem search_covers (h : GenFrame p o used st s) (hr : SearchReady p o s used 
   · exact ⟨cR p, by simp, usedPtr p used, by rw [h.eR], ptr_le⟩
   · exact ⟨rA p, by simp, 0, z _, by simp⟩
 
-theorem lowA (h : GenFrame p o used st s) {k : Nat} (hk : k ≤ 184) :
+theorem lowA (h : GenFrame p o used st s) {k : Nat} (hk : k ≤ 232) :
     Region.Sub (FrameStack.belowA p.S2 k) (rLow p) := by
   have room := h.facts.room
   have hS2 := h.S2_toNat
@@ -1742,7 +1742,7 @@ theorem search_run (name : String) (c : Search.Cand) (h : GenFrame p o used st s
   refine WP.alloc (by decide) hsp32 ?_
   refine WP.seq (WP.mono h.searchArgs_ok fun u ⟨hr, ku⟩ => ?_)
   obtain ⟨cov, covW⟩ := h.search_covers hr
-  obtain hS2 : 184 ≤ u.sp.toNat := by rw [hr.sp, h.S2_toNat]; omega_using [room]
+  obtain hS2 : 232 ≤ u.sp.toNat := by rw [hr.sp, h.S2_toNat]; omega_using [room]
   refine FrameStack.WP.callF (Search.search_correct c) (h.callS_pre hr) cov covW
     (Nat.le_trans (search_stack c) hS2) fun t htr htw htsp hfr hpres hpost ml ul hfl => ?_
   change Frame [⟨State.addr (allocated 32 s).sp, 32⟩] t.mem ml at hfl
@@ -3685,7 +3685,7 @@ theorem gen_correct_ok (sname : String) (c : Search.Cand) (name : String) {kc : 
   let p := genOfState s
   obtain hp : GenInput p s := ⟨hpre, rfl⟩
   have f := hp.facts
-  have room : 256 ≤ s.sp.toNat := hpre.1
+  have room : 304 ≤ s.sp.toNat := hpre.1
   unfold Impl.RsaKeyGen.Arm.Generate.code body
   rw [show pushBytes = 4 * pushRegs.length from rfl]
   refine WP.frame (rs := pushRegs) (r := .r4) (by decide) (by simp; omega_using [room]) (by decide) ?_

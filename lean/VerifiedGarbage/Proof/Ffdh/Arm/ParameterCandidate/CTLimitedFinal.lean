@@ -17,8 +17,8 @@ open VG.Proof.MillerRabin.Arm (RoundImpl)
 def LimitedFinalStart (p : CandidatePoint) (s : State) : Prop :=
   CandidateContext p.params p.used s ∧ p.params.length ≤ p.params.bytes.length
 
-theorem limitedFinal_ct (v : RoundImpl) : RelCT isa (Two LimitedFinalStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal v.name v.code)
+theorem limitedFinal_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two LimitedFinalStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)
     (fun _ _ => True) := by
   have shapeTrace : RelCT isa (Two LimitedFinalStart) VG.Impl.Ffdh.Arm.ParameterCandidate.shapeP (fun _ _ => True) :=
     two_map (fun p => (⟨p.params.out, p.params.tape, p.params.bytes.take p.params.length, p.params.bits⟩ : ShapeData))
@@ -27,7 +27,7 @@ theorem limitedFinal_ct (v : RoundImpl) : RelCT isa (Two LimitedFinalStart)
       (Two (CandidateTestStart false)) :=
     two_post shapeTrace (fun p _ h => WP.mono (candidateShape_ok h.1 h.2)
       (fun _ ⟨ctx, _, number, _, _⟩ => ⟨ctx, number, p.params.candidate_odd⟩))
-  exact shape.seq ((limitedTestResult_ct v false).seq
+  exact shape.seq ((limitedTestResult_ct b v false).seq
     ((candidateAnswerResult_ct (limitedAnswer false)).seq (RelCT.block_nil (fun _ _ _ => trivial))))
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

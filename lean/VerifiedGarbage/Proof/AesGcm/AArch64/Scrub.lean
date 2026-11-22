@@ -67,25 +67,6 @@ theorem initOk (stack : Nat) (hW : 0 < stack) :
           bytesAt_of hb.2 (d := 240) (n := 16) (by decide)]
         exact h₂
 
-theorem sealOk (stack : Nat) :
-    ScrubAllOk (Spec.Gcm.sealContract abi stack) stack (Spec.Gcm.sealSig.retBits abi.ptrBits) := by
-  refine scrubAllOk_args_any (sig := Spec.Gcm.sealSig) ?_
-  intro vs m m₁ m₂ r hlen hb h
-  match vs, hlen with
-  | [ctx, rounds, nonce, nonceLen, aad, aadLen, data, len, tag], _ =>
-    simp only [Spec.Gcm.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
-        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr]
-      (Spec.Gcm.sealPost 64) _ m m₁ r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
-        ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr]
-      (Spec.Gcm.sealPost 64) _ m m₂ r
-    dsimp only [Curry.apply, Spec.Gcm.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
-    simp only [BitVec.setWidth_eq] at h ⊢
-    rw [bytesAt_of0 hb.2.2.2.1 (Nat.le_refl _), bytesAt_of0 hb.2.2.2.2 (by omega)]
-    exact h
-
 theorem sealRoundsOk (stack : Nat) :
     ScrubAllOk (Proof.AesGcm.sealRoundsContract abi stack) stack (Spec.Gcm.sealSig.retBits abi.ptrBits) := by
   refine scrubAllOk_args_any (sig := Spec.Gcm.sealSig) ?_
@@ -188,51 +169,6 @@ theorem openToWithPowersOk (stack : Nat) :
         ArgWord.addr] (Spec.Gcm.openToWithPowersPost 64) _ m m₂ r
     dsimp only [Curry.apply, Spec.Gcm.openToWithPowersPre, Spec.Gcm.openToPre, Spec.Gcm.openToWithPowersPost,
       Spec.Gcm.openToPost, ArgWord.ofRaw, IntTy.bits] at hp h ⊢
-    simp only [BitVec.setWidth_eq] at hp h ⊢
-    intro key hk
-    rw [bytesAt_of0 hb.2.2.2.2.1 (by omega)]
-    exact h key hk
-
-theorem openOk (stack : Nat) :
-    ScrubAllOk (Spec.Gcm.openContract abi stack) stack (Spec.Gcm.openSig.retBits abi.ptrBits) := by
-  -- The postcondition is a `match` on a decryption: prove the locality by
-  -- intros, so that no expected type of a `fun` is reduced to it.
-  refine scrubAllOk_args_any (sig := Spec.Gcm.openSig) ?_
-  intro vs m m₁ m₂ r hlen hb h
-  match vs, hlen with
-  | [ctx, rounds, nonce, nonceLen, aad, aadLen, data, len, tag, tagLen], _ =>
-    simp only [Spec.Gcm.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
-      ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
-      (Spec.Gcm.openPost 64) _ m m₁ r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
-      ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
-      (Spec.Gcm.openPost 64) _ m m₂ r
-    dsimp only [Curry.apply, Spec.Gcm.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
-    simp only [BitVec.setWidth_eq] at h ⊢
-    intro key hk
-    rw [bytesAt_of0 hb.2.2.2.1 (Nat.le_refl _)]
-    exact h key hk
-
-theorem openToOk (stack : Nat) :
-    ScrubAllOk (Spec.Gcm.openToContract abi stack) stack (Spec.Gcm.openToSig.retBits abi.ptrBits) := by
-  refine scrubAllOk_args_pre_any (sig := Spec.Gcm.openToSig) ?_
-  intro vs m m₁ m₂ r hlen hp hb h
-  match vs, hlen with
-  | [ctx, rounds, nonce, nonceLen, aad, aadLen, src, len, dst, dstLen, tag, tagLen], _ =>
-    simp only [Spec.Gcm.openToSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
-      ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
-      (Spec.Gcm.openToPre 64) _ m at hp
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
-      ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
-      (Spec.Gcm.openToPost 64) _ m m₁ r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr,
-      ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int 64]
-      (Spec.Gcm.openToPost 64) _ m m₂ r
-    dsimp only [Curry.apply, Spec.Gcm.openToPre, Spec.Gcm.openToPost, ArgWord.ofRaw, IntTy.bits] at hp h ⊢
     simp only [BitVec.setWidth_eq] at hp h ⊢
     intro key hk
     rw [bytesAt_of0 hb.2.2.2.2.1 (by omega)]

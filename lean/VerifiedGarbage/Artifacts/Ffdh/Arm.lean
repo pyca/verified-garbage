@@ -134,12 +134,14 @@ def artifacts : List Artifact :=
   Domain.artifacts ++
   Exchange.artifacts ++
   direct ++
-  (VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun (v : Proof.MillerRabin.Arm.RoundImpl) =>
-    let b := Proof.Ffdh.Arm.parameterBackend v
+  (VG.Proof.Variants.RsaMont.Arm.variants.flatMap fun (b : Proof.Bignum.Arm.MontBackend) =>
+    (Proof.Ffdh.Arm.roundsFor b VG.Proof.Variants.MillerRabin.Arm.variants).flatMap
+      fun (v : Proof.MillerRabin.Arm.RoundImpl) =>
+    let c := Proof.Ffdh.Arm.parameterBackend v b
     [Spec.Ffdh.sievedParameterSearchApi.artifact VG.Arm.target {
-      suffix := b.suffix
+      suffix := c.suffix
       code := Impl.Ffdh.Arm.Fn.sievedParameterSearch
-        (Impl.Ffdh.Arm.ParameterSearch.code (.call b.candidateName b.candidate))
-      verified := Proof.Ffdh.Arm.Fn.sievedParameterSearch v }])
+        (Impl.Ffdh.Arm.ParameterSearch.code (.call c.candidateName c.candidate))
+      verified := Proof.Ffdh.Arm.Fn.sievedParameterSearch v b }])
 
 end VG.Artifacts.Ffdh.Arm

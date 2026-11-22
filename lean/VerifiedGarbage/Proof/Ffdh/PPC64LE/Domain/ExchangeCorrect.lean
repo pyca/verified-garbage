@@ -103,7 +103,7 @@ theorem zMask_ok {s : State} {B : Addr} {Z w : Nat} (h : Env s B Z w) (h23 : s.g
 
 /-- The registers `exPower` writes. -/
 def exPowRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12, .r14, .r15, .r16, .r17,
-  .r18, .r19, .r20, .r22, .r24, .r30, .r31]
+  .r18, .r19, .r20, .r22, .r24, .r25, .r30, .r31]
 
 /-- What `exPower` leaves from `s`: `y^x mod p` in array 4, p in array 0. -/
 def exPowPost (B Y X : Addr) (w k xl : Nat) (s t : State) : Prop :=
@@ -126,7 +126,7 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
       (s₆.gpr .r30 = off X 0 ∧ s₆.gpr .r31 = BitVec.ofNat 64 xl ∧ s₆.gpr .r10 = off B (slot w 0) ∧
         s₆.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) ∧ s₆.gpr .r11 = BitVec.ofNat 64 (2 * w) ∧ s₆.gpr .r23 = B ∧
         s₆.gpr .r28 = BitVec.ofNat 64 k) ∧
-      WP isa ModExp.powWin s₆ fun t => exPowPost B Y X w k xl s t ∧ Keep exPowRegs s t := by
+      WP isa ModExp.powWinFn s₆ fun t => exPowPost B Y X w k xl s t ∧ Keep exPowRegs s t := by
   unfold exPowPost
   have hs := h.hs
   have hnw := hs.nowrap
@@ -195,18 +195,10 @@ theorem exPower_split {s : State} {B Y X : Addr} {Z w k xl : Nat} (h : Env s B Z
     rw [m6]; exact y5
   rw [← m6] at hr2
   obtain b6 : Body B w s.mem s₆.mem := by rw [m6]; exact b5
-  obtain r12lt' : (s₆.gpr .r12).toNat < 2 ^ 32 := by
-    rw [k6.gpr .r12 (by decide), k5.gpr .r12 (by decide)]; exact r12lt
-  obtain r12inv' : (w32 s₆.mem B (slot w 0) * (s₆.gpr .r12).toNat + 1) % 2 ^ 32 = 0 := by
-    obtain w1 : w32 s₆.mem B (slot w 0) = w32 s₃.mem B (slot w 0) := by
-      rw [m6]
-      have := o5.val32 (d := slot w 0) (k := 1) (by omega_arith) (by omega_arith)
-      rw [← m4]; simpa [val32] using this
-    rw [w1, k6.gpr .r12 (by decide), k5.gpr .r12 (by decide)]; exact r12inv
   refine ⟨⟨a30, a31, g10, g29, g11, (k16.gpr .r23 (by decide)).trans h23, (k16.gpr .r28 (by decide)).trans h28⟩, ?_⟩
-  refine WP.mono (Win.powWin_ok (D := X) (L := xl) (hs.congr k16.wr) (by omega_arith)
+  refine WP.mono (Win.powWinCall_ok (D := X) (L := xl) (hs.congr k16.wr) (by omega_arith)
     (by omega_arith) (by omega_arith) g10 g29 g11
-    r12lt' r12inv' (by rw [p4]; exact hp2) (by rw [p4]; exact hodd)
+    (Win.word_odd (by omega_arith) p4 hodd) (by rw [p4]; exact hp2) (by rw [p4]; exact hodd)
     (by rw [hr2, p4]; exact Nat.mod_lt _ (by omega_arith)) a30 a31 hxl (by omega_arith)
     (fun i hi => by rw [k16.rd, k16.wr]; exact hrdX i hi) hsepX)
     fun t ⟨⟨hpow, o7⟩, k7⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, (k16.trans k7).mono (by decide)⟩

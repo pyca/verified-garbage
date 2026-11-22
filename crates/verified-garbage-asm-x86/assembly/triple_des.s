@@ -2098,6 +2098,7 @@ vg_triple_des_ecb_encrypt:
 	lea esp, [esp+1044]
 	lea esp, [esp-1060]
 	mov ecx, 0
+	mov DWORD PTR [esp], ecx
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
 	mov DWORD PTR [esp+12], ecx
@@ -2282,6 +2283,7 @@ vg_triple_des_ecb_decrypt:
 	lea esp, [esp+1044]
 	lea esp, [esp-1060]
 	mov ecx, 0
+	mov DWORD PTR [esp], ecx
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
 	mov DWORD PTR [esp+12], ecx

@@ -131,7 +131,7 @@ pub const VG_RSA_GENERATE_UMAAL_FEATURES: verified_garbage_cpu::Features = verif
 /// * `scratch_len` must be at least `32 * state[1] + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
 /// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -378,10 +378,10 @@ ldr r10, [sp, #24]
 ldr r11, [sp, #28]
 ldr lr, [sp, #36]
 ldr r4, [sp], #40
-sub sp, sp, #256
+sub sp, sp, #304
 add r12, sp, #0
 mov r2, #0
-mov r3, #8
+mov r3, #9
 220:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -394,7 +394,11 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 220b
-add sp, sp, #256
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #304
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -425,7 +429,7 @@ bx lr",
 /// * `scratch_len` must be at least `32 * state[1] + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets, and `rand` and `key` hold secrets; the caller must destroy them after use.
 /// * `key`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `key`, `used`, `rand`, `scratch` and `state` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_generate(key: *mut u8, key_len: usize, used: *mut [u64; 1], rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 7]) -> u32 {
     core::arch::naked_asm!(
@@ -670,10 +674,10 @@ ldr r10, [sp, #24]
 ldr r11, [sp, #28]
 ldr lr, [sp, #36]
 ldr r4, [sp], #40
-sub sp, sp, #256
+sub sp, sp, #304
 add r12, sp, #0
 mov r2, #0
-mov r3, #8
+mov r3, #9
 220:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -686,7 +690,11 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 220b
-add sp, sp, #256
+str r2, [r12, #0]
+str r2, [r12, #4]
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #304
 mov r1, #0
 mov r2, #0
 mov r3, #0

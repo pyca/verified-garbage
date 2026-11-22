@@ -20,10 +20,12 @@ by a table of `Impl/EcKey/Compressed/RootTable.lean` (`root224`, with
    the last row of the table, `g^e = c^(e 16^23)`, in the slots `GS e`;
 3. digit `j` of `k`, for `j` from 0 to 23 (`digit`): `y = s_(23-j)` times
    the table's entry `T (23 - j + i) dᵢ` for each digit `dᵢ` already found,
-   `i < j` (`muls`: each entry read from the table's address plus `512 m +
-   32 dᵢ`, `dᵢ` from `s4` for `i < 16`, else `s5`), then
-   `dⱼ = Σ_e (16 - e) mod 16` over the `e` with `y - g^e = 0` (`cmps`, by
-   masks, into `s6`), or'ed into `s4` or `s5` at `4 (j mod 16)`;
+   `i < j` (`muls`, a loop counting `i` in `s6`: each entry read from the
+   table's address plus `512 m + 32 dᵢ`, `dᵢ` from `s4` for `i < 16`, else
+   `s5`, shifted by `4 i`), then `dⱼ = Σ_e (16 - e) mod 16` over the `e`
+   with `y - g^e = 0` (`cmps`, a loop counting `e` in `s1`, `g^e` copied to
+   `XS` first, by masks, into `s6`), or'ed into `s4` or `s5` at
+   `4 (j mod 16)`;
 4. `k / 2` (the shift of `s5:s4`), and `y = r Π_i T i eᵢ` for its digits
    (`rootMul`);
 5. as P-256's: `y² - rhs`, `y` or `p - y`.
@@ -119,35 +121,45 @@ def gload : List Instr :=
 /-- The register of digit `i`: `s4` for `i < 16`, else `s5`. -/
 def dreg (i : Nat) : Reg := if i < 16 then .s4 else .s5
 
-/-- The entry of row `m` at digit `i` to `XS`. -/
-def lookup (m i : Nat) : List Instr :=
-  rowAddr m ++ [.shift .srl .d .t2 (dreg i) (4 * (i % 16)), .logicImm .and .t2 .t2 15, .shift .sll .d .t2 .t2 5,
-    .add .t0 .t0 .t2] ++ entCopy XS 0
+/-- The entry of row `o + i` at digit `i`, for `i` in `s6`, to `XS`: digit
+`i` is `s4`'s (`i < 16`) or `s5`'s, shifted right by `4 i`, of which the
+shift reads `4 i mod 64`. -/
+def lookup (o : Nat) : Prog isa :=
+  .seq (.block [.lla .t0 sqrtSym, .addi .t1 .s6 o, .shift .sll .d .t1 .t1 9, .add .t0 .t0 .t1,
+      .shift .sll .d .t2 .s6 2, .li .t3 16])
+    (.seq (.ite (.ltu .s6 .t3) (.block [.shiftReg .srl .d .t2 .s4 .t2]) (.block [.shiftReg .srl .d .t2 .s5 .t2]))
+      (.block ([.logicImm .and .t2 .t2 15, .shift .sll .d .t2 .t2 5, .add .t0 .t0 .t2] ++ entCopy XS 0)))
 
-/-- `[y] = [y] T (m) dᵢ`. -/
-def mulStep (y m i : Nat) : Prog isa :=
-  .seq (.block (lookup m i)) (mulCall p224Field (p224.sl y) (p224.sl y) (p224.sl XS))
+/-- `[y] = [y] T (o + i) dᵢ` for `i` in `s6`, then `s6 += 1` and `t0 = n`. -/
+def mulStep (y o n : Nat) : Prog isa :=
+  .seq (lookup o) (.seq (mulCall p224Field (p224.sl y) (p224.sl y) (p224.sl XS))
+    (.block [.addi .s6 .s6 1, .li .t0 n]))
 
-/-- `[y] = [y] Π_(i<n) T (o + i) dᵢ`. -/
+/-- `[y] = [y] Π_(i<n) T (o + i) dᵢ`, a product a step, counted in `s6`. -/
 def muls (y o : Nat) : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (muls y o n) (mulStep y (o + n) n)
+  | n + 1 => .seq (.block [.li .s6 0]) (.loop (mulStep y o (n + 1)) (.ne .s6 .t0))
 
-/-- `s6 += (16 - e) mod 16` if `y = g^e`. -/
-def cmpStep (e : Nat) : Prog isa :=
-  .seq (subCall p224Field (p224.sl TD) (p224.sl YS) (p224.sl (GS e)))
-    (.block (zeroMask 4 (p224.sl TD) ++ [.logicImm .and .a7 .a7 (((16 - e) % 16 : Nat) : Int), .add .s6 .s6 .a7]))
+/-- `g^e` (`e` in `s1`) to `XS`, through `t0` and `t3`. -/
+def gcopy : List Instr :=
+  [.shift .sll .d .t0 .s1 5, .add .t0 .t0 wb] ++ addAt .t0 .t0 (p224.sl (GS 0)) ++ entCopy XS 0
 
-/-- The comparisons with `g^e`, `e < n`. -/
-def cmps : Nat → Prog isa
-  | 0 => .block []
-  | e + 1 => .seq (cmps e) (cmpStep e)
+/-- `s6 += (16 - e) mod 16` if `y = g^e`, for `e` in `s1`; then `s1 += 1`
+and `t0 = 16`. -/
+def cmpStep : Prog isa :=
+  .seq (.block gcopy) (.seq (subCall p224Field (p224.sl TD) (p224.sl YS) (p224.sl XS))
+    (.block (zeroMask 4 (p224.sl TD) ++ [.li .t0 16, .sub .t0 .t0 .s1, .logicImm .and .t0 .t0 15,
+      .logic .and .a7 .a7 .t0, .add .s6 .s6 .a7, .addi .s1 .s1 1, .li .t0 16])))
+
+/-- The comparisons with `g^e`, `e < 16`, counted in `s1`. -/
+def cmps : Prog isa := .seq (.block [.li .s1 0]) (.loop cmpStep (.ne .s1 .t0))
 
 /-- Digit `j`: `y`, its products, its comparisons, and the digit into its register. -/
 def digit (j : Nat) : Prog isa :=
-  .seq (.block (copy 4 (p224.sl YS) (p224.sl (SS (23 - j))) ++ [.li .s6 0])) <|
+  .seq (.block (copy 4 (p224.sl YS) (p224.sl (SS (23 - j))))) <|
   .seq (muls YS (23 - j) j) <|
-  .seq (cmps 16) <|
+  .seq (.block [.li .s6 0]) <|
+  .seq cmps <|
   .block [.logicImm .and .s6 .s6 15, .shift .sll .d .s6 .s6 (4 * (j % 16)), .logic .or (dreg j) (dreg j) .s6]
 
 /-- Digits `0 … j - 1`. -/

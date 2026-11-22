@@ -178,7 +178,7 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
   rw [WP.seq_iff]
   refine WP.mono (pcBody_ok (kernel := kernel) u ready.workspace ready.stack ready.minLength ready.maxLength ready.space
     ready.sourceFits ready.readable ready.sourceSeparate ready.outputFits ready.writable ready.outputSeparate
-    ready.ptr ready.source ready.count) ?_
+    ready.ptr ready.source ready.count (h.callStack restU.sp)) ?_
   rintro v ⟨result, frameV, restV⟩
   have bytes := rsa_bytes_frame frameU (by have := h.maxLength; omega : k < 2 ^ 64)
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stackInput.symm)
@@ -193,9 +193,12 @@ theorem pcFn_ok (s : State) {base dst src : BitVec 32} {len k : Nat}
     rw [restU.sp]
     simp only [BitVec.add_zero, Nat.sub_zero]
     change (⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩ : Region).Disjoint r
-    rcases hr with rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · simpa only [FrameStack.belowA, BitVec.add_zero, Nat.sub_zero] using h.stackWorkspace
     · simpa only [FrameStack.belowA, BitVec.add_zero, Nat.sub_zero] using h.stackOutput
+    · have fit := (h.callStack (u := u) restU.sp).fit
+      rw [restU.sp] at fit ⊢
+      exact below48_apart (n := 56) fit (by decide)
   have fit : v.sp.toNat + 56 ≤ 2 ^ 32 := by
     rw [spV, FrameStack.sub_toNat' h.stackFit]
     have := s.sp.isLt
@@ -266,9 +269,13 @@ theorem pcComputed_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
   have countFit := (pc_dimensions h.buffers.minLength h.buffers.maxLength h.buffers.space).2.2.2.2
   refine WP.mono (kernel.correct s h.input.workspace h.input.layout h.input.width h.input.positive
     h.input.fits h.input.sourceFits h.input.readable h.input.separate h.input.ptr h.input.source h.input.count
-    h.input.stackRead h.input.stackSep h.input.saved h.input.large h.input.odd countFit) ?_
+    h.input.stackRead h.input.stackSep h.input.saved h.input.large h.input.odd countFit h.call) ?_
   rintro t ⟨ready, _, _, frame, rest⟩
-  exact ⟨h.buffers.congr rest, h.stack.after_workspace frame rest, ready.layout, ready.width, ready.ptr⟩
+  exact ⟨h.buffers.congr rest, h.stack.after_frame frame (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.stack.separate
+    · exact PcStack.below48 h.call.fit) rest, ready.layout, ready.width, ready.ptr⟩
 
 theorem pcExport_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
     (h : PcComputed base dst src len k s) :
@@ -303,17 +310,23 @@ theorem pcValid_ct {base dst src : BitVec 32} {len k : Nat} {nb : List Byte} (hk
       (PcFn.validWith kernel.code) (fun _ _ => True) := by
   have countFit : 128 * Spec.Rsa.modulusWords k < 2 ^ 32 := by
     simp only [Spec.Rsa.modulusWords]; omega
+  by_cases fitM : Proof.Rsa.Mont.arrAt (Spec.Rsa.modulusWords k) 3 + 32 ≤ 8 * len
+  swap
+  · intro s _ _ _ _ _ h
+    have := (pc_dimensions h.1.1.minLength h.1.1.maxLength h.1.1.space).2.2.1
+    simp only [Proof.Rsa.Mont.arrAt] at this fitM
+    omega
   have prepared := (relCT_keep_sp ((pcPrepare_ct (base := base) (dst := dst) (src := src) (len := len) (k := k)).mono
     (P' := fun (s t : State) =>
       (PcValidInput base dst src len k s ∧ Spec.Rsa.bytesAt s.mem (State.addr src) k = nb) ∧
       (PcValidInput base dst src len k t ∧ Spec.Rsa.bytesAt t.mem (State.addr src) k = nb) ∧ s.sp = t.sp)
     (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => True.intro)) (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨pcPrepare_public_ready s h.1.1 h.1.2, pcPrepare_public_ready t h.2.1.1 h.2.1.2⟩)
-  have arithmetic := (relCT_keep_sp ((kernel.ct (nb := nb) countFit).mono
+  have arithmetic := (relCT_keep_sp ((kernel.ct (nb := nb) countFit fitM).mono
     (P' := fun (s t : State) => s.sp = t.sp ∧
       (PcPrepared base dst src len k s ∧ Spec.Rsa.bytesAt s.mem (State.addr src) k = nb) ∧
       (PcPrepared base dst src len k t ∧ Spec.Rsa.bytesAt t.mem (State.addr src) k = nb))
-    (fun _ _ h => ⟨⟨h.2.1.1.input, h.2.1.2⟩, ⟨h.2.2.1.input, h.2.2.2⟩, h.1⟩)
+    (fun _ _ h => ⟨⟨⟨h.2.1.1.input, h.2.1.2⟩, h.2.1.1.call⟩, ⟨⟨h.2.2.1.input, h.2.2.2⟩, h.2.2.1.call⟩, h.1⟩)
     (fun _ _ h => h)) (fun _ _ h => h.1)).wp
     (fun s t h => ⟨pcComputed_ready s h.2.1.1 (kernel := kernel),
       pcComputed_ready t h.2.2.1 (kernel := kernel)⟩)
@@ -368,7 +381,8 @@ theorem pcChecked_ready (s : State) {base dst src : BitVec 32} {len k : Nat} {nb
   have frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
   exact ⟨⟨h.toPcBuffers.congr rest, h.stack.after_workspace frame rest,
     (rest.gpr .r0 (by simp)).trans h.ptr, (rest.gpr .r4 (by simp)).trans h.source,
-    (rest.gpr .r6 (by simp)).trans h.count⟩, by rw [mem]; exact bytes, by rw [bytes] at flag; exact flag⟩
+    (rest.gpr .r6 (by simp)).trans h.count, h.call.of_rest rest⟩, by rw [mem]; exact bytes,
+    by rw [bytes] at flag; exact flag⟩
 
 theorem pcBody_ct {base dst src : BitVec 32} {len k : Nat} {nb : List Byte} (hk : k ≤ 1024)
     (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : RelCT isa (fun s t =>
@@ -484,7 +498,7 @@ theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 
     rw [← frame, ← frame104]; exact FrameStack.belowA_sub (by decide) stackFit
   simp only [State.addr] at sub
   refine ⟨⟨⟨?_, ?_⟩, valid.1, valid.2, space, srcFit, ?_, ?_, outFit, ?_, ?_⟩,
-    rfl, rfl, ?_, fit56, argFit, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    rfl, rfl, ?_, fit56, argFit, ?_, ?_, ?_, ?_, ?_, ?_, stackFit, ?_⟩
   · simpa only [Nat.mul_comm] using wsFit
   · rw [wr]; simp [State.addr, Nat.mul_comm]
   · exact ⟨_, List.mem_append_left _ (by rw [rd]; exact List.mem_cons_self), Region.contains_self _ _⟩
@@ -498,6 +512,7 @@ theorem pc_contract_pre (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 
   · rw [frame]; simpa only [State.addr] using stackSrc.sub_left sub
   · rw [frame]; simpa only [State.addr] using stackOut.sub_left sub
   · rw [frame]; simpa only [State.addr] using stackArgs.sub_left sub
+  · rw [frame104]; simpa only [State.addr, Nat.mul_comm] using stackWs
 
 theorem pc_contract_correct (s : State) (h : (Spec.Rsa.publicPrecomputeContract abi 104).pre s)
     (kernel : PublicPrecomputeKernel := baselinePublicPrecomputeKernel) : ∃ tr t, Exec isa (PcFn.codeWith kernel.code) s tr t ∧ abiPreserved s t ∧

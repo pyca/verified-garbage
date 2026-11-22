@@ -13,7 +13,8 @@ import VerifiedGarbage.Spec.Camellia.Cfb
 import VerifiedGarbage.Spec.Camellia.Ofb
 import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+public import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesLit
@@ -1110,23 +1111,18 @@ theorem loadT_run (s : State) (n : Nat) (hn : n ≤ 14) (h10 : s.gpr .r10 = s.sy
       exact avo v fun k hk => hv k (by omega_using [hk])
     · exact (gpr_write_of_ne _ _ hr).trans (ag r hr)
 
-theorem loadTables_run (s : State) :
+theorem loadTables_run (s : State) (h10 : s.gpr .r10 = s.syms tableSym) :
     ∃ t, runBlock isa loadTables s = some t ∧ Consts t ∧
       (∀ r, r ≠ .r10 → r ≠ .r11 → r ≠ .r12 → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.syms = s.syms := by
-  let a : State := { s.write .r10 (s.syms tableSym) with lr := s.unknowns 0, unknowns := fun n => s.unknowns (n + 1) }
-  obtain a10 : a.gpr .r10 = a.syms tableSym := by
-    show (s.write .r10 (s.syms tableSym)).gpr .r10 = s.syms tableSym; exact gpr_write_self _ _ _
-  obtain ⟨b, be, bv, _, bg, bm, brd, bwr, bsp, bsy⟩ := loadT_run a 14 (by decide) a10
+  obtain ⟨b, be, bv, _, bg, bm, brd, bwr, bsp, bsy⟩ := loadT_run s 14 (by decide) h10
   let c := b.write .r12 (vdword (b.vpr .v0) 0)
-  refine ⟨c, ?_, ⟨fun k hk => ?_, ?_⟩, fun r h10 h11 h12 => ?_, bm, brd, bwr, bsp, bsy⟩
-  · rw [loadTables, List.cons_append, runBlock_cons]
-    simp only [exec, ne_eq, show ¬(Reg.r10 = .r0) by decide, not_false_eq_true, ↓reduceIte]
-    rw [runStep_some, VG.Interleave.runBlock_append, be, Option.bind_some, runBlock_cons, exec_mfvsrd, runStep_some,
+  refine ⟨c, ?_, ⟨fun k hk => ?_, ?_⟩, fun r _ h11 h12 => ?_, bm, brd, bwr, bsp, bsy⟩
+  · rw [loadTables, VG.Interleave.runBlock_append, be, Option.bind_some, runBlock_cons, exec_mfvsrd, runStep_some,
       runBlock_nil]
   · rw [show c.vpr (treg k) = b.vpr (treg k) from rfl, bv k (by omega_using [hk])]; exact tval_ok k hk
   · rw [gpr_write_self, show b.vpr .v0 = b.vpr (treg 13) from rfl, bv 13 (by decide), tval_mask]
-  · rw [gpr_write_of_ne _ _ h12, bg r h11]; exact gpr_write_of_ne _ _ h10
+  · rw [gpr_write_of_ne _ _ h12, bg r h11]
 
 theorem flPair_run {s : State} {w : Nat} (hw : w + 1 < 34) (hc : Consts s) (hk : KeyIn s) :
     ∃ t, runBlock isa (flPair w) s = some t ∧
@@ -1227,7 +1223,7 @@ def start (s : State) : BitVec 64 × BitVec 64 :=
   ((Spec.Camellia.decodeBlock (Spec.Camellia.blockAt s.mem (blkA s)) >>> 64).setWidth 64 ^^^ keyWord s 0,
     (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt s.mem (blkA s))).setWidth 64 ^^^ keyWord s 1)
 
-theorem prefix_run {s : State} (g : Nat) (hg : 2 < g) (hk : KeyIn s)
+theorem prefix_run {s : State} (g : Nat) (hg : 2 < g) (hk : KeyIn s) (h10 : s.gpr .r10 = s.syms tableSym)
     (hb : ∀ d, d = 0 ∨ d = 8 → InRegions (s.rd ++ s.wr) (blkA s + BitVec.ofNat 64 d) 8) :
     ∃ t, runBlock isa (loadTables ++ loadBlock ++ prefixRounds ++ ([.subi .r9 .r28 18] : List Instr)) s = some t ∧
       halves t = Proof.Camellia.group 3 (keyWord s)
@@ -1235,7 +1231,7 @@ theorem prefix_run {s : State} (g : Nat) (hg : 2 < g) (hk : KeyIn s)
       t.gpr .r9 = s.gpr .r28 - BitVec.ofNat 64 18 ∧
       (∀ r, r ∉ rWrites → r ≠ .r12 → t.gpr r = s.gpr r) ∧ Consts t ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.syms = s.syms := by
-  obtain ⟨a, ae, ac, ag, am, ard, awr, asp, asy⟩ := loadTables_run s
+  obtain ⟨a, ae, ac, ag, am, ard, awr, asp, asy⟩ := loadTables_run s h10
   obtain a3 : a.gpr .r3 = s.gpr .r3 := ag _ (by decide) (by decide) (by decide)
   obtain ab : blkA a = blkA s := by rw [blkA, blkA, ag _ (by decide) (by decide) (by decide)]
   obtain ⟨b, be, bh, bg, bv, bm, brd, bwr, bsp, bsy⟩ := loadBlock_run (hk.of_eq a3 ard awr)
@@ -1322,9 +1318,10 @@ theorem kept_cWrites : ∀ r ∈ kept, r ∉ cWrites := by decide
 
 /-- `crypt` with the schedule's words at `r3`, wherever they are: the block
 enciphered with them (`cryptWords`). -/
-theorem crypt_run {s : State} {B : Addr} {R : Nat} (hB : s.gpr sb = B) (hs : ScrIn s B core.total)
-    (keyIn : KeyIn s) (h28 : s.gpr .r28 = BitVec.ofNat 64 R) (hR : R = 18 ∨ R = 24) :
-    WP isa crypt s fun u => (∀ r, r ∉ cWrites → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
+theorem cryptRest_run {s : State} {B : Addr} {R : Nat} (hB : s.gpr sb = B) (hs : ScrIn s B core.total)
+    (keyIn : KeyIn s) (h28 : s.gpr .r28 = BitVec.ofNat 64 R) (hR : R = 18 ∨ R = 24)
+    (h10 : s.gpr .r10 = s.syms tableSym) :
+    WP isa cryptRest s fun u => (∀ r, r ∉ cWrites → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
       Frame [⟨blkA s, 16⟩] s.mem u.mem ∧
       Spec.Aes.bytesAt u.mem (blkA s) 16 =
         (Spec.Camellia.encodeBlock (Proof.Camellia.cryptWords (R / 6) (keyWord s)
@@ -1339,7 +1336,7 @@ theorem crypt_run {s : State} {B : Addr} {R : Nat} (hB : s.gpr sb = B) (hs : Scr
   obtain hbr : ∀ d, d = 0 ∨ d = 8 → InRegions (s.rd ++ s.wr) (blkA s + BitVec.ofNat 64 d) 8 := fun d hd => by
     obtain ⟨r, hr, hc⟩ := hbw d hd; exact ⟨r, List.mem_append_right _ hr, hc⟩
   obtain hg : 2 < R / 6 := by rcases hR with h | h <;> rw [h] <;> decide
-  obtain ⟨t, te, th, t9, tg, tc, tm, trd, twr, tsp, tsy⟩ := prefix_run (R / 6) hg keyIn hbr
+  obtain ⟨t, te, th, t9, tg, tc, tm, trd, twr, tsp, tsy⟩ := prefix_run (R / 6) hg keyIn h10 hbr
   obtain tsb : t.gpr sb = s.gpr sb := tg _ (by decide) (by decide)
   obtain t3 : t.gpr .r3 = s.gpr .r3 := tg _ (by decide) (by decide)
   obtain tk : KeyIn t := keyIn.of_eq t3 trd twr
@@ -1394,6 +1391,58 @@ theorem crypt_run {s : State} {B : Addr} {R : Nat} (hB : s.gpr sb = B) (hs : Scr
       rw [e24, show (24 : Nat) / 6 = 4 from rfl, cw, groups4, group4_2, ← hh, ← xh, ← yh,
         ← tb, ← yb, ub, ykey]
       rfl
+
+/-- A call of code that keeps the link register. -/
+theorem WP.callOf {name : String} {c : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa c s.callEntry fun s₂ => s₂.lr = s.callEntry.lr ∧ Q s₂) : WP isa (.call name c) s Q := by
+  obtain ⟨t, s₂, he, hlr, hq⟩ := h
+  refine ⟨_, _, Exec.call (call_callEntry s) he ?_, hq⟩
+  simp only [isa, ret]
+  exact ite_eq_left_of_eq_true _ _ (eq_true hlr)
+
+theorem cryptBody_lrSafe : lrSafe cryptBody = true := by decide +kernel
+
+/-- `crypt`: a call of its code, which runs `cryptRest` with the tables' address in `r10`. -/
+theorem crypt_run {s : State} {B : Addr} {R : Nat} (hB : s.gpr sb = B) (hs : ScrIn s B core.total)
+    (keyIn : KeyIn s) (h28 : s.gpr .r28 = BitVec.ofNat 64 R) (hR : R = 18 ∨ R = 24) :
+    WP isa crypt s fun u => (∀ r, r ∉ cWrites → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
+      Frame [⟨blkA s, 16⟩] s.mem u.mem ∧
+      Spec.Aes.bytesAt u.mem (blkA s) 16 =
+        (Spec.Camellia.encodeBlock (Proof.Camellia.cryptWords (R / 6) (keyWord s)
+          (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt s.mem (blkA s))))).toList := by
+  refine WP.callOf ?_
+  let e := s.callEntry
+  let a₁ := e.write .r0 e.lr
+  let a₂ : State := { a₁.write .r10 (a₁.syms tableSym) with lr := a₁.unknowns 0, unknowns := fun n => a₁.unknowns (n + 1) }
+  let a : State := { a₂ with lr := a₂.gpr .r0 }
+  obtain ag : ∀ r, r ∉ cWrites → a.gpr r = s.gpr r := fun r hr => by
+    have hl : r ∉ linkRegs ∧ r ≠ .r10 := by revert hr; cases r <;> decide
+    have h := cWrites_ne r hr
+    show (a₁.write .r10 _).gpr r = _
+    rw [gpr_write_of_ne _ _ hl.2, gpr_write_of_ne _ _ h.2.2.1, State.callEntry_gpr _ hl.1]
+  obtain a10 : a.gpr .r10 = a.syms tableSym := by
+    show (a₁.write .r10 (a₁.syms tableSym)).gpr .r10 = s.syms tableSym; exact gpr_write_self _ _ _
+  obtain am : a.mem = s.mem := rfl
+  obtain ab : a.gpr sb = B := (ag _ (by decide)).trans hB
+  obtain a3 : a.gpr .r3 = s.gpr .r3 := ag _ (by decide)
+  obtain bA : blkA a = blkA s := by rw [blkA, blkA, ab, hB]
+  obtain kA : keyWord a = keyWord s := funext (keyWord_eq a3 am)
+  have hw : WP isa cryptBody e fun u => (∀ r, r ∉ cWrites → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
+      Frame [⟨blkA s, 16⟩] s.mem u.mem ∧
+      Spec.Aes.bytesAt u.mem (blkA s) 16 =
+        (Spec.Camellia.encodeBlock (Proof.Camellia.cryptWords (R / 6) (keyWord s)
+          (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt s.mem (blkA s))))).toList := by
+    unfold cryptBody
+    refine VG.WP.seq (WP.of_runBlock ⟨a, by
+      rw [tableAddr, runBlock_cons, exec_mflr, runStep_some, runBlock_cons]
+      simp only [exec, ne_eq, show ¬(Reg.r10 = .r0) by decide, not_false_eq_true, ↓reduceIte]
+      rw [runStep_some, runBlock_cons, exec_mtlr, runStep_some, runBlock_nil], ?_⟩)
+    refine WP.mono (cryptRest_run ab ⟨hs.wr, hs.fit⟩ (keyIn.of_eq a3 rfl rfl) (by rw [ag _ (by decide)]; exact h28) hR a10)
+      fun u ⟨ug, urd, uwr, uf, ub⟩ => ⟨fun r hr => (ug r hr).trans (ag r hr), urd, uwr, ?_, ?_⟩
+    · rw [bA] at uf; exact uf
+    · rw [bA, kA] at ub; exact ub
+  obtain ⟨tr, t, he, hq⟩ := hw
+  exact ⟨tr, t, he, Exec.lr_safe he cryptBody_lrSafe, hq⟩
 
 theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Nat × List (BitVec 64)} (hB : s.gpr sb = B)
     (hs : ScrIn s B core.total) (hk : Ready s B ws k) :

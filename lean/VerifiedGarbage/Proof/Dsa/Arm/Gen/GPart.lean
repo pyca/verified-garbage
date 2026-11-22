@@ -416,7 +416,7 @@ structure PowOk (n e : Nat) (code : Prog isa) : Prop where
   correct : ∀ s, (Proof.Dsa.Arm.Pow.powArm n e).pre s →
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (Proof.Dsa.Arm.Pow.powArm n e).post s s'
   ct : ConstantTime isa (Proof.Dsa.Arm.Pow.powArm n e).pre (Proof.Dsa.Arm.Pow.powArm n e).pub code
-  stack : armStack code ≤ 176
+  stack : armStack code ≤ 224
 
 /-- The exponentiation's numbers in its working space at `sA`. -/
 abbrev PowIn (G : GP) (n e pv hv ev : Nat) (m : Mem) : Prop :=
@@ -518,11 +518,11 @@ theorem powCall_vp {L n e : Nat} {name : String} {code : Prog isa} (ok : PowOk n
   have bl : Region.Sub (belowA s.sp (armStack code)) G.rBelow := by
     have := gi.sp176; have := ok.stack
     refine fun a ha => ?_
-    have hs' := FrameStack.belowA_sub (sp := s.sp) (a := armStack code) (b := 176) (by omega_arith)
+    have hs' := FrameStack.belowA_sub (sp := s.sp) (a := armStack code) (b := 224) (by omega_arith)
       (by rw [gi.sp]; omega_arith) a ha
     rw [gi.sp] at hs'
-    show Region.Contains ⟨State.addr G.sp - 176#64, 176⟩ a 1
-    have e : State.addr (G.sp - BitVec.ofNat 32 176) = State.addr G.sp - 176#64 := FrameStack.addr_sub' (by omega_arith)
+    show Region.Contains ⟨State.addr G.sp - 224#64, 224⟩ a 1
+    have e : State.addr (G.sp - BitVec.ofNat 32 224) = State.addr G.sp - 224#64 := FrameStack.addr_sub' (by omega_arith)
     simpa only [FrameStack.belowA, e] using hs'
   refine ⟨⟨h.of_scr R (o := sA) (n := wa G.pLen) (by simp only [sK]; omega_arith)
     (f.sub fun r hr => ?_) fun y hy => .inl (hcl y hy), x⟩, ?_⟩

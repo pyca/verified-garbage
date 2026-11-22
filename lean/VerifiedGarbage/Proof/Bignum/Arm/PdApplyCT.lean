@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
+public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhaseInput
 import VerifiedGarbage.Proof.Bignum.Arm.PdInputImportCT
 import VerifiedGarbage.Proof.Bignum.Arm.PdAcceptCT
@@ -29,11 +30,11 @@ structure PdControlled (base dst np ep xp : BitVec 32) (len k eLen N R : Nat)
   state : PdAccepted base dst np ep xp len k eLen N R eb xb s
   phase : ConditionalExp.ExpPhaseInput (pdGood k N R) base ep len (Spec.Rsa.modulusWords k) N (Spec.Rsa.os2ip xb) eb s
 
-theorem pdApply_ct_of_dims {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1 xb2 : List Byte}
+theorem pdApply_ct_of_dims (A : CallOp) {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1 xb2 : List Byte}
     (hk : 0 < k) (he : 0 < eb.length) (fit : arrAt (Spec.Rsa.modulusWords k) 3 + 32 ≤ 8 * len) :
     RelCT isa (fun s t => PdArithmetic base dst np ep xp len k eLen N R eb xb1 s ∧
       PdArithmetic base dst np ep xp len k eLen N R eb xb2 t ∧ s.sp = t.sp)
-      PublicFn.applyInput (fun _ _ => True) := by
+      (PublicFn.applyInputWith A.op) (fun _ _ => True) := by
   have wpImport (s : State) {xb : List Byte} (h : PdArithmetic base dst np ep xp len k eLen N R eb xb s) :
       WP isa PublicFn.importInput s (PdOperand base dst np ep xp len k eLen N R eb xb) :=
     WP.mono (pdInputImport_ok s h) (fun _ h => h.1)
@@ -57,12 +58,26 @@ theorem pdApply_ct_of_dims {base dst np ep xp : BitVec 32} {len k eLen N R : Nat
     (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ h => h)) (fun _ _ h => h.1)).wp
     (fun s t h => ⟨wpControls s h.2.1, wpControls t h.2.2⟩)
   have wpPower (s : State) {xb : List Byte} (h : PdControlled base dst np ep xp len k eLen N R eb xb s) :
-      WP isa expPhase s (PdResult base dst np ep xp len k eLen N R eb xb) :=
-    WP.mono (pdExponentiate_ok s h.state h.phase) (fun _ h => h.1)
-  have powered := (relCT_keep_sp ((ConditionalExp.expPhase_ct (ok := pdGood k N R) fit he).mono
-    (P' := fun (s t : State) => s.sp = t.sp ∧ PdControlled base dst np ep xp len k eLen N R eb xb1 s ∧
-      PdControlled base dst np ep xp len k eLen N R eb xb2 t)
-    (fun _ _ h => ⟨h.2.1.phase, h.2.2.phase, h.1⟩) (fun _ _ h => h)) (fun _ _ h => h.1)).wp
+      WP isa (expPhaseWith A.op) s (PdResult base dst np ep xp len k eLen N R eb xb) :=
+    WP.mono (pdExponentiate_ok A s h.state h.phase) (fun _ h => h.1)
+  have poweredCT : RelCT isa (fun (s t : State) => s.sp = t.sp ∧
+      PdControlled base dst np ep xp len k eLen N R eb xb1 s ∧ PdControlled base dst np ep xp len k eLen N R eb xb2 t)
+      (expPhaseWith A.op) (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    rw [← A.mont_op base s.sp len (Spec.Rsa.modulusWords k)] at e1 e2
+    have b := h.2.1.state.buffers
+    have sepR : ∀ r ∈ [⟨State.addr base, 8 * len⟩, FrameStack.belowA s.sp 48],
+        Region.Disjoint ⟨State.addr ep, eb.length⟩ r := by
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rw [b.exponent.length]
+      rcases hr with rfl | rfl
+      · exact b.exponentSeparate
+      · exact b.callExponent
+    exact (ConditionalExp.expPhase_ct (ok := pdGood k N R) (A.mont base s.sp len _)
+      (A.timing base s.sp len _ fit) he sepR) s t tr1 tr2 u v
+      ⟨⟨h.2.1.phase, b.call, rfl⟩, ⟨h.2.2.phase, h.2.2.state.buffers.call, h.1.symm⟩, h.1⟩ e1 e2
+  have powered := (relCT_keep_sp poweredCT (fun _ _ h => h.1)).wp
     (fun s t h => ⟨wpPower s h.2.1, wpPower t h.2.2⟩)
   have finished := (pdFinish_ct hk).mono
     (P' := fun (s t : State) => s.sp = t.sp ∧ PdResult base dst np ep xp len k eLen N R eb xb1 s ∧
@@ -70,17 +85,17 @@ theorem pdApply_ct_of_dims {base dst np ep xp : BitVec 32} {len k eLen N R : Nat
     (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ h => h)
   exact imported.seq (accepted.seq (controlled.seq (powered.seq finished)))
 
-theorem pdApply_ct {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1 xb2 : List Byte} :
+theorem pdApply_ct (A : CallOp) {base dst np ep xp : BitVec 32} {len k eLen N R : Nat} {eb xb1 xb2 : List Byte} :
     RelCT isa (fun s t => PdArithmetic base dst np ep xp len k eLen N R eb xb1 s ∧
       PdArithmetic base dst np ep xp len k eLen N R eb xb2 t ∧ s.sp = t.sp)
-      PublicFn.applyInput (fun _ _ => True) := by
+      (PublicFn.applyInputWith A.op) (fun _ _ => True) := by
   intro s t tr1 tr2 u v h e1 e2
   have dims := pc_dimensions h.1.buffers.minLength h.1.buffers.maxLength h.1.buffers.space
   have fit : arrAt (Spec.Rsa.modulusWords k) 3 + 32 ≤ 8 * len := by
     have bound := array_end_le (w := Spec.Rsa.modulusWords k) (by decide : 3 < 8)
     have := dims.1
     omega_using [dims, bound]
-  exact pdApply_ct_of_dims (by have := h.1.buffers.minLength; omega_using [this])
+  exact pdApply_ct_of_dims A (by have := h.1.buffers.minLength; omega_using [this])
     (by rw [h.1.buffers.exponent.length]; exact h.1.buffers.exponentPositive) fit s t tr1 tr2 u v h e1 e2
 
 end VG.Proof.Bignum.Arm

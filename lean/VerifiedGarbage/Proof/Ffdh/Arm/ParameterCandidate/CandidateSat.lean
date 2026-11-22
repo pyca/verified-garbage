@@ -31,7 +31,7 @@ private def candidateSat : State where
   rd := [⟨0x2000, 0⟩, ⟨0x8000, 20⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1100, 8⟩, ⟨0x3000, 8448⟩]
 
-theorem candidate_sat : ∃ s, (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre s := by
+theorem candidate_sat : ∃ s, (Proof.Ffdh.sievedParameterCandidateContract abi 232).pre s := by
   sig_implies_sat [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
     [candidateSat, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.scratchWords] using candidateSat

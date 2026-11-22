@@ -21,9 +21,8 @@ keystream, returns with every register it may leave secret cleared and its
 whole stack zeroed (`Fn`, below). Their code wipes only the first
 768 bytes of its working space, and keeps keystream above them.
 
-`seal_gather` calls `seal`'s code as an internal function of its own,
-`vg_chacha20_poly1305_seal_core` (`sealFnCore`), so that its stack is zeroed
-once, by `seal_gather`'s scrubbing, as on RISC-V.
+`seal_gather` calls `seal` as it is exported (`sealFnWhole`), cleanup
+included, rather than a copy of its code without it.
 -/
 
 @[expose] public section
@@ -49,13 +48,6 @@ theorem openToOk (W : Nat) :
 theorem gatherOk (W : Nat) :
     ScrubAllOk (sealGatherContract abi W) W (sealGatherSig.retBits abi.ptrBits) :=
   scrubAllOk_args_any (sig := sealGatherSig) (Proof.ChaCha20Poly1305.sealGatherPost_out 64)
-
-/-- `vg_chacha20_poly1305_seal` over the backend `v`, as the internal
-function `vg_chacha20_poly1305_seal_core` (with `v`'s suffix) that
-`seal_gather` calls: the exported one zeroes its stack, which `seal_gather`'s
-own scrubbing zeroes again. -/
-def sealFnCore (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AArch64.Gather.SealFn :=
-  { sealFn v with name := "vg_chacha20_poly1305_seal_core" ++ v.callee.suffix }
 
 /-! ## What the cleanup needs of the code
 
@@ -90,22 +82,6 @@ private theorem gather_own :
     calleeSide (Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather "" (.block []))
       Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn = true := by
   kernel_rfl
-
-theorem gather_side (v : Proof.ChaCha20.AArch64.XorImpl) :
-    scrubSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody v.callee v.stitched) 1296 0
-      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union v.callee.clear) [] = true := by
-  have h := v.sealSide
-  rw [Bool.and_eq_true, decide_eq_true_eq] at h
-  have h0 := sideAll_union_left (b := v.callee.clear) gather_own
-  refine scrubSide_union (by decide) ?_ (by decide) ?_ (by decide)
-  · have hg : Impl.AesGcm.AArch64.SealGather.gather.aarch64Depth = 0 := by decide
-    simp only [Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody,
-      Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather, Code.aarch64Depth, Instr.frameUnits, hg,
-      Nat.zero_max, Nat.max_zero, Nat.reduceDiv]
-    exact Nat.le_trans (Nat.mul_add 16 _ 1 ▸ Nat.add_le_add_right h.2 16) (by decide)
-  · simp only [calleeSide, Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody,
-      Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather, sideAll, Bool.and_eq_true] at h0 h ⊢
-    simp only [h0, h.1, and_self]
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Scrub
 
@@ -144,12 +120,128 @@ theorem openTo (v : Proof.ChaCha20.AArch64.XorImpl) :
       verified := Proof.ChaCha20Poly1305.AArch64.openTo_framed v }
     _ (Scrub.openToOk 1328) (Scrub.openTo_side v)
 
+end VG.Proof.ChaCha20Poly1305.AArch64.Fn
+
+/-! ## `seal_gather`, calling `seal` as exported -/
+
+namespace VG.Proof.ChaCha20Poly1305.AArch64.Scrub
+
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.ChaCha20Poly1305 VG.Impl.Scrub.AArch64
+
+/-- A cleanup's clears of the registers of `cl` write no register `cl`
+leaves, and no PSTATE.DIT. -/
+theorem clears_side (cl : Clear) (hwf : wfB cl = true) :
+    calleeSide (.block (clearsOf cl)) cl = true := by
+  simp only [wfB, Bool.and_eq_true, List.all_eq_true] at hwf
+  obtain ⟨⟨hg, hv⟩, hh⟩ := hwf
+  simp only [calleeSide, sideAll, Code.allInstrs_eq, instrs, List.all_eq_true]
+  intro i hi
+  simp only [clearsOf, List.mem_append, List.mem_map, List.mem_singleton] at hi
+  rcases hi with ((⟨r, hr, rfl⟩ | ⟨w, hw, rfl⟩) | rfl) | ⟨w, hw, rfl⟩
+  · have hk : (RegSet.ofList (keptG cl)).mem r = false := Bool.eq_false_iff.mpr fun h => by
+      have := RegSet.mem_ofList.mp h
+      simp [keptG, List.mem_filter, hr] at this
+    have e1 : (Instr.movz .x r 0 0).writesDit = false := rfl
+    have e2 : dstOf (Instr.movz .x r 0 0) = some r := rfl
+    have e3 : vdstOf (Instr.movz .x r 0 0) = none := rfl
+    simp only [sideI, keeps, vkeeps, e1, e2, e3, hk]; rfl
+  · have hk : (RegSet.ofList (keptV cl)).mem w = false := Bool.eq_false_iff.mpr fun h => by
+      have := RegSet.mem_ofList.mp h
+      have ha := hv w hw
+      simp [keptV, List.mem_filter, hw] at this
+      have hx := this.1
+      revert ha hx; cases w <;> decide
+    have e1 : (Instr.vop (.movi0 w)).writesDit = false := rfl
+    have e2 : dstOf (Instr.vop (.movi0 w)) = none := rfl
+    have e3 : vdstOf (Instr.vop (.movi0 w)) = some w := rfl
+    simp only [sideI, keeps, vkeeps, e1, e2, e3, hk]; rfl
+  · rfl
+  · have hk : (RegSet.ofList (keptV cl)).mem w = false := Bool.eq_false_iff.mpr fun h => by
+      have := RegSet.mem_ofList.mp h
+      have ha := hh w hw
+      simp [keptV, List.mem_filter, hw] at this
+      have hx := this.1
+      revert ha hx; cases w <;> decide
+    have e1 : (Instr.vop (.ins .d2 w 1 .x1)).writesDit = false := rfl
+    have e2 : dstOf (Instr.vop (.ins .d2 w 1 .x1)) = none := rfl
+    have e3 : vdstOf (Instr.vop (.ins .d2 w 1 .x1)) = some w := rfl
+    simp only [sideI, keeps, vkeeps, e1, e2, e3, hk]; rfl
+
+/-- `seal` as exported: its code, its clears, the result's bits, then the
+stack zeroed. -/
+private theorem sealWhole_eq (c : Impl.ChaCha20.AArch64.XorCallee) (st : Bool) :
+    Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole c st =
+      .seq (.seq (.seq (Impl.ChaCha20Poly1305.AArch64.Fn.sealBody c st)
+        (.block (clearsOf (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union c.clear))))
+        (.block (retFix 0))) (scrubTailG 1280 (List.range (1280 / 16))) := rfl
+
+/-- `seal`'s cleanup but its clears: the result's bits, then the stack
+zeroed, which write only registers `seal` clears. -/
+private theorem tail_own :
+    calleeSide (.seq (.block (retFix 0)) (scrubTailG 1280 (List.range (1280 / 16))))
+      Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn = true := by
+  kernel_rfl
+
+/-- `seal` as exported, cleanup included, writes only the registers it
+clears. -/
+theorem sealWhole_side (v : Proof.ChaCha20.AArch64.XorImpl) :
+    calleeSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole v.callee v.stitched)
+      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union v.callee.clear) = true := by
+  have h := v.sealSide
+  rw [Bool.and_eq_true, decide_eq_true_eq] at h
+  have ht := sideAll_union_left (b := v.callee.clear) tail_own
+  have hc := clears_side (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union v.callee.clear) (wfB_union _ _)
+  rw [sealWhole_eq]
+  simp only [calleeSide, sideAll, Bool.and_eq_true] at ht hc h ⊢
+  exact ⟨⟨⟨h.1, hc⟩, ht.1⟩, ht.2⟩
+
+/-- The frames of `seal` as exported fit in its 1280 bytes. -/
+theorem sealWhole_depth (v : Proof.ChaCha20.AArch64.XorImpl) :
+    16 * (Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole v.callee v.stitched).aarch64Depth ≤ 1280 := by
+  have h := v.sealSide
+  rw [Bool.and_eq_true, decide_eq_true_eq] at h
+  rw [sealWhole_eq]
+  simp only [scrubTailG, Code.aarch64Depth, Instr.frameUnits, ← Nat.mul_max_mul_left, Nat.max_le, h.2,
+    true_and]
+  decide
+
+/-- `vg_chacha20_poly1305_seal` over the backend `v`, as it is exported,
+cleanup included: what `seal_gather` calls. -/
+def sealFnWhole (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AArch64.Gather.SealFn where
+  name := "vg_chacha20_poly1305_seal" ++ v.callee.suffix
+  code := Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole v.callee v.stitched
+  verified := (Proof.ChaCha20Poly1305.AArch64.Fn.sealWhole v).verified
+  depth := sealWhole_depth v
+
+theorem gather_side (v : Proof.ChaCha20.AArch64.XorImpl) :
+    scrubSide (Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody v.callee v.stitched) 1296 0
+      (Impl.ChaCha20Poly1305.AArch64.Fn.sealOwn.union v.callee.clear) [] = true := by
+  have hs := sealWhole_side v
+  have hd := sealWhole_depth v
+  have h0 := sideAll_union_left (b := v.callee.clear) gather_own
+  refine scrubSide_union (by decide) ?_ (by decide) ?_ (by decide)
+  · have hg : Impl.AesGcm.AArch64.SealGather.gather.aarch64Depth = 0 := by decide
+    simp only [Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody,
+      Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather, Code.aarch64Depth, Instr.frameUnits, hg,
+      Nat.zero_max, Nat.max_zero, Nat.reduceDiv]
+    generalize (Impl.ChaCha20Poly1305.AArch64.Fn.sealWhole v.callee v.stitched).aarch64Depth = d at hd ⊢
+    exact Nat.le_trans (Nat.mul_add 16 _ 1 ▸ Nat.add_le_add_right hd 16) (by decide)
+  · simp only [calleeSide, Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody,
+      Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather, sideAll, Bool.and_eq_true] at h0 hs ⊢
+    simp only [h0, hs, and_self]
+
+end VG.Proof.ChaCha20Poly1305.AArch64.Scrub
+
+namespace VG.Proof.ChaCha20Poly1305.AArch64.Fn
+
+open VG.AArch64 VG.AArch64.Scrub VG.Spec.ChaCha20Poly1305
+
 theorem sealGather (v : Proof.ChaCha20.AArch64.XorImpl) :
     VerifiedScrubbed target (Impl.ChaCha20Poly1305.AArch64.Fn.sealGather v.callee v.stitched)
       (sealGatherContract abi 1296) 0 :=
   verifiedScrubbedAll (api := sealGatherApi)
     { code := Impl.ChaCha20Poly1305.AArch64.Fn.sealGatherBody v.callee v.stitched,
-      verified := Proof.ChaCha20Poly1305.AArch64.Gather.sealGather_verified (Scrub.sealFnCore v) }
+      verified := Proof.ChaCha20Poly1305.AArch64.Gather.sealGather_verified (Scrub.sealFnWhole v) }
     _ (Scrub.gatherOk 1296) (Scrub.gather_side v)
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Fn

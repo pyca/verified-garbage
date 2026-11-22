@@ -1958,6 +1958,7 @@ vg_triple_des_cbc_decrypt_chained:
 	lea esp, [esp+1232]
 	lea esp, [esp-1248]
 	mov ecx, 0
+	mov DWORD PTR [esp], ecx
 	mov DWORD PTR [esp+4], ecx
 	mov DWORD PTR [esp+8], ecx
 	mov DWORD PTR [esp+12], ecx

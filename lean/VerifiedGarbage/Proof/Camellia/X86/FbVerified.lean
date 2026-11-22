@@ -128,7 +128,7 @@ def fbX86 (post : State → State → Prop) : Contract X86.isa where
     (arg s 0).toNat + 272 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
     (arg s 3).toNat + 16 * (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 8 * 341 ≤ 2 ^ 32 ∧
     (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧ ((arg s 1).toNat = 18 ∨ (arg s 1).toNat = 24) ∧
-    stk.Disjoint data ∧ stk.Disjoint iv ∧ stk.Disjoint scratch ∧ stk.Disjoint args ∧ 16 ≤ (s.gpr .esp).toNat
+    stk.Disjoint data ∧ stk.Disjoint iv ∧ stk.Disjoint scratch ∧ stk.Disjoint args ∧ 16 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint sched
   post := post
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 6, arg s₁ i = arg s₂ i
 
@@ -152,7 +152,7 @@ theorem modeSlots_sub (S : BitVec 32) (d : Dir := .encrypt) :
 /-- `fbX86`'s precondition gives the modes'. -/
 theorem seqPre_of {post : State → State → Prop} {M : Mode} (hstep : M.step = 16) {s : State}
     (h : (fbX86 post).pre s) : SeqPre (dirCore .encrypt) M s := by
-  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, hRn, sD, sV, sS, sA, sE⟩ := h
+  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, hRn, sD, sV, sS, sA, sE, sK⟩ := h
   have hL := (dirCoreSpec .encrypt).layout
   refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, slots_eq]),
       (by simp only [dirCore, slots_eq]; omega)⟩, (by rw [hwr]; simp [dirCore]),
@@ -175,7 +175,7 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (hstep : M.step =
 theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (fbX86 post).pre s) :
     KeyArgs s [Modes.X86.scrR s (dirCore .encrypt)]
       ((arg s 1).toNat, schedWords s.mem ((arg s 0).setWidth 64) (arg s 1).toNat) := by
-  obtain ⟨hrd, hwr, dKS, -, -, -, dAD, dAV, dAS, -, -, -, fK, -, -, -, fE, hRn, sD, sV, sS, sA, sE⟩ := h
+  obtain ⟨hrd, hwr, dKS, -, -, -, dAD, dAV, dAS, -, -, -, fK, -, -, -, fE, hRn, sD, sV, sS, sA, sE, sK⟩ := h
   have inA : ∀ i < 6, InRegions (s.rd ++ s.wr) (s.ea (VG.Impl.Aes.X86.argOp i)) 4 := fun i hi =>
     ⟨⟨argAddr s 0, 24⟩, by rw [hrd]; simp, by
       rw [show s.ea (VG.Impl.Aes.X86.argOp i) = argAddr s i from rfl, argAddr_eq s (n := 6) (by omega_using [fE]) hi]
@@ -184,7 +184,8 @@ theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (fbX86 pos
     rw [show s.ea (VG.Impl.Aes.X86.argOp i) = argAddr s i from rfl, argAddr_eq s (n := 6) (by omega_using [fE]) hi]
     exact VG.Offset.sub_base _ (by omega_using [hi])
   refine ⟨arg s 0, inA 0 (by decide), rfl, inA 1 (by decide), ?_, hRn, rfl, by rw [hrd]; simp, fK,
-    fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, ?_⟩
+    fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, ?_, ?_,
+    inA 5 (by decide), fun r hr => ?_, fun r hr => ?_, ?_⟩
   · show arg s 1 = BitVec.ofNat 32 (arg s 1).toNat
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]; exact dKS
@@ -202,6 +203,12 @@ theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (fbX86 pos
     rw [show Proof.Modes.X86.stkRegion (s.gpr .esp) 16 = _ from stk_eq sE .encrypt]; exact sS
   · rw [show Proof.Modes.X86.stkRegion (s.gpr .esp) 16 = _ from stk_eq sE .encrypt]
     exact sA.sub_right (subA 1 (by decide))
+  · rw [show Proof.Modes.X86.stkRegion (s.gpr .esp) 16 = _ from stk_eq sE .encrypt]; exact sK
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]
+    exact dAS.sub_left (subA 5 (by decide))
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]; rfl
+  · rw [show Proof.Modes.X86.stkRegion (s.gpr .esp) 16 = _ from stk_eq sE .encrypt]
+    exact sA.sub_right (subA 5 (by decide))
 
 theorem data_eq (m : Mem) (s : State) :
     Proof.Modes.chunksAt (4 * (dirCore .encrypt).bw) m ((arg s 3).setWidth 64) (arg s 4).toNat = dataAt m s := rfl
@@ -246,7 +253,7 @@ def fbTaint : VG.X86.Taint.T :=
 
 theorem fbTaint_wf {post : State → State → Prop} {s : State} (hp : (fbX86 post).pre s) :
     VG.X86.Taint.Wf fbTaint s := by
-  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, hRn, sD, sV, sS, sA, sE⟩ := hp
+  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, hRn, sD, sV, sS, sA, sE, sK⟩ := hp
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨by simp only [fbTaint]; omega_using [fE], ?_⟩, ?_⟩ fun _ => ⟨sE, ?_⟩
@@ -275,8 +282,8 @@ theorem fbTaint_wf {post : State → State → Prop} {s : State} (hp : (fbX86 po
 theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (fbX86 post).pre s₁)
     (h₂ : (fbX86 post).pre s₂) (hpub : (fbX86 post).pub s₁ s₂) : VG.X86.Taint.Agree fbTaint s₁ s₂ := by
   obtain ⟨hesp, ha⟩ := hpub
-  obtain ⟨-, hwr₁, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₁, -, -, -, -, -, -⟩ := id h₁
-  obtain ⟨-, hwr₂, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₂, -, -, -, -, -, -⟩ := id h₂
+  obtain ⟨-, hwr₁, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₁, -, -, -, -, -, -, -⟩ := id h₁
+  obtain ⟨-, hwr₂, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₂, -, -, -, -, -, -, -⟩ := id h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, fbTaint_wf h₁, fbTaint_wf h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
@@ -325,7 +332,7 @@ def wideContract (post : State → State → Prop) : Contract isa :=
       (arg s 0).toNat + 272 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 16 * (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 8 * 341 ≤ 2 ^ 32 ∧
       (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧ ((arg s 1).toNat = 18 ∨ (arg s 1).toNat = 24) ∧
-    stk.Disjoint data ∧ stk.Disjoint iv ∧ stk.Disjoint scratch ∧ stk.Disjoint args ∧ 16 ≤ (s.gpr .esp).toNat }
+    stk.Disjoint data ∧ stk.Disjoint iv ∧ stk.Disjoint scratch ∧ stk.Disjoint args ∧ 16 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint sched }
 
 def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 272⟩, ⟨argAddr s 0, 24⟩]
 def narrowWr (s : State) : List Region :=

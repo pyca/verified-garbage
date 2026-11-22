@@ -1,21 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.AArch64
-public import VerifiedGarbage.Impl.EcKey.Secp256k1.AArch64
 public import VerifiedGarbage.Impl.EcKey.P256.AArch64
-public import VerifiedGarbage.Impl.EcKey.P224.AArch64
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Impl.EcKey.P192.AArch64
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P192Decompress
 public meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P192Decompress
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P224Decompress
-public meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P224Decompress
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P256Decompress
 public meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P256Decompress
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1Decompress
-public meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1Decompress
-public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP256r1Decompress
-public meta import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP256r1Decompress
 public import VerifiedGarbage.Impl.Scrub.AArch64
 public meta import VerifiedGarbage.Impl.Scrub.AArch64
 public import VerifiedGarbage.TCB.AArch64.Residue
@@ -72,28 +63,6 @@ theorem scrubbed (hL : Proof.Weierstrass.Law Spec.P192.curve)
 
 end P192
 
-namespace P224
-
-theorem verified (hL : Proof.Weierstrass.Law Spec.P224.curve)
-    (hI : Proof.Weierstrass.AArch64.InvSounds) :
-    Verified target (cleared [.x16] [.v27] P224Decompress.code)
-      (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) :=
-  Clears.Verified.withClears (P224Decompress.verified hL hI) (by decide)
-
-theorem noResidue (hL : Proof.Weierstrass.Law Spec.P224.curve)
-    (hI : Proof.Weierstrass.AArch64.InvSounds) :
-    NoResidue (cleared [.x16] [.v27] P224Decompress.code)
-      (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) 32 :=
-  RTaintB.noResidue_of_verified (verified hL hI) ⟨_, by taint_decide_ct⟩
-
-/-- `vg_ec_p224_decompress_public_key` as it is emitted (`Impl.EcKey.AArch64.Fn.decompressP224`). -/
-theorem scrubbed (hL : Proof.Weierstrass.Law Spec.P224.curve)
-    (hI : Proof.Weierstrass.AArch64.InvSounds) :
-    VerifiedScrubbed target Impl.EcKey.AArch64.Fn.decompressP224
-      (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) 32 :=
-  ⟨verified hL hI, noResidue hL hI⟩
-
-end P224
 
 namespace P256
 
@@ -118,50 +87,6 @@ theorem scrubbed (hL : Proof.Weierstrass.Law Spec.P256.curve)
 
 end P256
 
-namespace Secp256k1
 
-theorem verified (hL : Proof.Weierstrass.Law Spec.Secp256k1.curve)
-    (hI : Proof.Weierstrass.AArch64.InvSounds) :
-    Verified target (cleared [.x16, .x17] [] Secp256k1Decompress.code)
-      (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract abi 0) :=
-  Clears.Verified.withClears (Secp256k1Decompress.verified hL hI) (by decide)
-
-theorem noResidue (hL : Proof.Weierstrass.Law Spec.Secp256k1.curve)
-    (hI : Proof.Weierstrass.AArch64.InvSounds) :
-    NoResidue (cleared [.x16, .x17] [] Secp256k1Decompress.code)
-      (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract abi 0) 32 :=
-  RTaintB.noResidue_of_verified (verified hL hI) ⟨_, by taint_decide_ct⟩
-
-/-- `vg_ec_secp256k1_decompress_public_key` as it is emitted (`Impl.EcKey.AArch64.Fn.decompressSecp256k1`). -/
-theorem scrubbed (hL : Proof.Weierstrass.Law Spec.Secp256k1.curve)
-    (hI : Proof.Weierstrass.AArch64.InvSounds) :
-    VerifiedScrubbed target Impl.EcKey.AArch64.Fn.decompressSecp256k1
-      (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract abi 0) 32 :=
-  ⟨verified hL hI, noResidue hL hI⟩
-
-end Secp256k1
-
-namespace BrainpoolP256r1
-
-theorem verified (hL : Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve)
-    (hI : Proof.Weierstrass.AArch64.InvSounds) :
-    Verified target (cleared [.x16, .x17] [] BrainpoolP256r1Decompress.code)
-      (Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyContract abi 0) :=
-  Clears.Verified.withClears (BrainpoolP256r1Decompress.verified hL hI) (by decide)
-
-theorem noResidue (hL : Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve)
-    (hI : Proof.Weierstrass.AArch64.InvSounds) :
-    NoResidue (cleared [.x16, .x17] [] BrainpoolP256r1Decompress.code)
-      (Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyContract abi 0) 32 :=
-  RTaintB.noResidue_of_verified (verified hL hI) ⟨_, by taint_decide_ct⟩
-
-/-- `vg_ec_brainpoolp256r1_decompress_public_key` as it is emitted (`Impl.EcKey.AArch64.Fn.decompressBrainpoolP256r1`). -/
-theorem scrubbed (hL : Proof.Weierstrass.Law Spec.BrainpoolP256r1.curve)
-    (hI : Proof.Weierstrass.AArch64.InvSounds) :
-    VerifiedScrubbed target Impl.EcKey.AArch64.Fn.decompressBrainpoolP256r1
-      (Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyContract abi 0) 32 :=
-  ⟨verified hL hI, noResidue hL hI⟩
-
-end BrainpoolP256r1
 
 end VG.Proof.EcKey.Compressed.AArch64.Residue

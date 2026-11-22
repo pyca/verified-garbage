@@ -23,6 +23,8 @@ import VerifiedGarbage.Proof.Weierstrass.Comb
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Ecdsa.X86.CallWs
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # `[k]P` by windows on x86 (32-bit): correctness
@@ -2414,8 +2416,9 @@ theorem swinMul_ok (hc : CfgOk c) (hC : Law c.C) (h3 : c.winW = 3) {px py : Nat}
       simp only [Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.lt_irrefl, false_and, ↓reduceIte, Nat.add_zero]
     rwa [h0] at this
 
-/-- ECDH's multiplication: `winMul_ok`'s statement. -/
-theorem ecdhMul_ok (hc : CfgOk c) (hC : Law c.C) {px py : Nat} (hpx : PtSlot px) (hpy : PtSlot py)
+/-- The windows' code (`Cfg.ecdhMulBody`, the body of `vg_<curve>_window`):
+`winMul_ok`'s statement. -/
+theorem ecdhMulBody_ok (hc : CfgOk c) (hC : Law c.C) {px py : Nat} (hpx : PtSlot px) (hpy : PtSlot py)
     {base : Addr} {s : State} (hs : Scr s base size)
     (hmp : sv c base s MP = c.C.p) (hap : sv c base s AP = c.mont c.C.a)
     (hb3 : sv c base s B3P = c.mont (3 * c.C.b)) (hzero : sv c base s ZERO = 0)
@@ -2423,10 +2426,10 @@ theorem ecdhMul_ok (hc : CfgOk c) (hC : Law c.C) {px py : Nat} (hpx : PtSlot px)
     (hqy : sv c base s py < c.C.p) {P : Point c.C} (hP : onCurve c.C P = true)
     (hG : Rep c.C (fv c base s px) (fv c base s py) 1 P) {k : Nat} (hk : k < 2 ^ (8 * c.C.len))
     (hbits : ∀ t < 8 * c.C.len, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0) :
-    WP isa (c.ecdhMul px py) s fun s' => Keeps powClob s s' ∧ Unch base (winTW c) s.mem s'.mem ∧
+    WP isa (c.ecdhMulBody px py) s fun s' => Keeps powClob s s' ∧ Unch base (winTW c) s.mem s'.mem ∧
       (∀ i ∈ [RX, RY, RZ], sv c base s' i < c.C.p) ∧
       Rep c.C (fv c base s' RX) (fv c base s' RY) (fv c base s' RZ) (mul k P) := by
-  unfold Cfg.ecdhMul
+  unfold Cfg.ecdhMulBody
   split
   next h6 =>
     have h3 : c.winW = 3 := by
@@ -2434,5 +2437,49 @@ theorem ecdhMul_ok (hc : CfgOk c) (hC : Law c.C) {px py : Nat} (hpx : PtSlot px)
       simp only [show ¬c.n ≤ 6 by omega_arith, ↓reduceIte]
     exact swinMul_ok hc hC h3 hpx hpy hs hmp hap hb3 hzero hone hqx hqy hP hG hk hbits
   next _ => exact winMul_ok hc hC hpx hpy hs hmp hap hb3 hzero hone hqx hqy hP hG hk hbits
+
+/-- ECDH's multiplication, a call of the windows (`vg_<curve>_window`):
+`ecdhMulBody_ok` from the state the call leaves (`callEntry_ws`), whose
+return address is below `esp`, apart from the working space, and back
+(`WP.callWs`). -/
+theorem ecdhMul_ok (hc : CfgOk c) (hC : Law c.C) {px py : Nat} (hpx : PtSlot px) (hpy : PtSlot py)
+    {base : Addr} {s : State} (hs : Scr s base size)
+    (hmp : sv c base s MP = c.C.p) (hap : sv c base s AP = c.mont c.C.a)
+    (hb3 : sv c base s B3P = c.mont (3 * c.C.b)) (hzero : sv c base s ZERO = 0)
+    (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p) (hqx : sv c base s px < c.C.p)
+    (hqy : sv c base s py < c.C.p) {P : Point c.C} (hP : onCurve c.C P = true)
+    (hG : Rep c.C (fv c base s px) (fv c base s py) 1 P) {k : Nat} (hk : k < 2 ^ (8 * c.C.len))
+    (hbits : ∀ t < 8 * c.C.len, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
+    (hst : ∀ r ∈ s.wr, Region.Disjoint (below (s.gpr .esp) 24) r)
+    (hsp24 : 24 ≤ (s.gpr .esp).toNat) (hsp : SpOk (c.ecdhMul px py) 24) :
+    WP isa (c.ecdhMul px py) s fun s' => Keeps powClob s s' ∧ Unch base (winTW c) s.mem s'.mem ∧
+      (∀ i ∈ [RX, RY, RZ], sv c base s' i < c.C.p) ∧
+      Rep c.C (fv c base s' RX) (fv c base s' RY) (fv c base s' RZ) (mul k P) := by
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  obtain ⟨hs', -, -, U₁, -, -⟩ := callEntry_ws hs hst hsp24
+  obtain U₀ : Unch base (wkW c) s.mem s.callEntry.mem :=
+    U₁.mono fun w hw => by rw [List.mem_singleton.mp hw]; simp [wkW]
+  obtain e : ∀ {i}, i < 45 → sv c base s.callEntry i = sv c base s i :=
+    fun hi => sv_unch U₀ h7 hn hi (apart_wk hi)
+  obtain hspB : SpOk (c.ecdhMulBody px py) 20 := ⟨fun i hi => hsp.1 i hi,
+    Nat.le_of_add_le_add_right (show stackUse (c.ecdhMulBody px py) + 4 ≤ 20 + 4 from hsp.2)⟩
+  have hlen := hc.len_hi
+  refine WP.callWs hs hst hsp24 hspB (WP.mono
+    (ecdhMulBody_ok hc hC hpx hpy hs' (by rw [e (by decide)]; exact hmp) (by rw [e (by decide)]; exact hap)
+      (by rw [e (by decide)]; exact hb3) (by rw [e (by decide)]; exact hzero)
+      (by rw [e (by decide)]; exact hone) (by rw [e hpx.1]; exact hqx) (by rw [e hpy.1]; exact hqy) hP
+      (by show Rep c.C (toM _ _ (sv c base _ px)) (toM _ _ (sv c base _ py)) 1 P
+          rw [e hpx.1, e hpy.1]; exact hG) hk
+      (fun t ht => by
+        rw [tbl_unch U₀ h7 (j := 0) (by decide) (by omega_using [ht, hlen]) (tbl_apart_wk (by decide)
+          (by omega_using [ht, hlen]))]
+        exact hbits t ht))
+    fun u ⟨K, U, L, R⟩ => ⟨K, ?_, L, R⟩)
+  rw [RegUpd.mem_setReg]
+  refine Unch.cover (U₀.trans U) fun w hw => ⟨w, ?_, Nat.le_refl _, Nat.le_refl _⟩
+  rcases List.mem_append.mp hw with hw | hw
+  · exact List.mem_append_left _ (List.mem_append_right _ hw)
+  · exact hw
 
 end VG.Proof.Ecdsa.X86

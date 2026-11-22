@@ -49,8 +49,8 @@ meta import VerifiedGarbage.Proof.Seed.Memory
 /-!
 # SEED ECB on x86 (32-bit): correctness, and the rounds' taint summary
 
-`ecb_correct`: `ecb dir`, `vg_seed_encrypt_blocks` and
-`vg_seed_decrypt_blocks`, meets `ecbX86 dir` (`ecb_wp`). `roundsSum`: the
+`ecb_correct`: `blocks`, `vg_seed_blocks`, meets `ecbX86 dir` for the
+flag of `dir` (`ecb_wp`). `roundsSum`: the
 taint analysis of the loop of rounds, which both directions run, once, as a
 summary. `wideContract` is `ecbX86` with the argument slots writable, which
 `narrowRd` and `narrowWr` narrow back.
@@ -77,14 +77,14 @@ def roundsTaint : VG.X86.Taint.T :=
 taint_summary roundsSum : VG.X86.taint roundsTaint (.block Impl.Seed.X86.roundPair)
 
 theorem ecb_correct (dir : Spec.Seed.Direction) (s : State) (hs : (ecbX86 dir).pre s) :
-    ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86 dir).post s s' :=
+    ∃ t s', Exec isa blocks s t s' ∧ abiPreserved s s' ∧ (ecbX86 dir).post s s' :=
   ecb_wp dir hs
 
 /-- `ecb_correct`, with a working space of any `w` slots that hold the
 code's. -/
 theorem ecb_correctW (dir : Spec.Seed.Direction) {w : Nat} (hw : Impl.Seed.X86.slots ≤ w) (s : State)
     (hs : (ecbX86W w dir).pre s) :
-    ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86W w dir).post s s' :=
+    ∃ t s', Exec isa blocks s t s' ∧ abiPreserved s s' ∧ (ecbX86W w dir).post s s' :=
   ecb_wpW dir hw hs
 
 /-- `ecbX86` with the argument slots writable, as the signature's contract has

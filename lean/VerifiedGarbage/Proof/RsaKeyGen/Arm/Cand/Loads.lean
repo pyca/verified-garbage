@@ -54,8 +54,8 @@ abbrev FwOk (o : Nat) : Prop := 4 ≤ o ∧ o + 4 ≤ 84 ∧ o % 4 = 0
 section
 variable {P : CP} {σ s t : State}
 
-theorem In.rC_eq (pre : In P σ) : P.rC = ⟨State.addr P.sp - BitVec.ofNat 64 56, 56⟩ := by
-  show (⟨State.addr (P.sp - BitVec.ofNat 32 56), 56⟩ : Region) = _
+theorem In.rC_eq (pre : In P σ) : P.rC = ⟨State.addr P.sp - BitVec.ofNat 64 104, 104⟩ := by
+  show (⟨State.addr (P.sp - BitVec.ofNat 32 104), 104⟩ : Region) = _
   rw [FrameStack.addr_sub' pre.spLo]
 
 /-- A frame word but 0 is apart from what the body changes. -/

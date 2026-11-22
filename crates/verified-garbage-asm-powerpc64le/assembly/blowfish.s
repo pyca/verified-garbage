@@ -3784,11 +3784,11 @@ vg_blowfish_expand_key:
 	ld %r16, 16(%r6)
 	ld %r17, 24(%r6)
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
 	addi %r1, %r1, 64
 	li %r0, 0
 	li %r3, 0
@@ -4122,11 +4122,11 @@ vg_blowfish_ecb_encrypt:
 	ld %r16, 16(%r6)
 	ld %r17, 24(%r6)
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
 	addi %r1, %r1, 288
 	li %r0, 0
 	stdu %r1, -288(%r1)
@@ -4494,11 +4494,11 @@ vg_blowfish_ecb_decrypt:
 	ld %r16, 16(%r6)
 	ld %r17, 24(%r6)
 	addi %r12, %r1, 32
-	li %r11, 0
-	std %r11, 0(%r12)
-	std %r11, 8(%r12)
-	std %r11, 16(%r12)
-	std %r11, 24(%r12)
+	li %r0, 0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
 	addi %r1, %r1, 288
 	li %r0, 0
 	stdu %r1, -288(%r1)

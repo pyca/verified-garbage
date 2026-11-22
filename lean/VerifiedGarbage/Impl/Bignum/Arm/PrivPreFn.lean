@@ -66,8 +66,8 @@ def qDest : List Instr :=
 
 /-- A factor, from its saved argument, prepared at its own width, and its
 `R² mod p` exported to `pre`. -/
-def phase (primeSlot : Nat) (dest : List Instr) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (enterFactor (primeSlot + 4)) (.seq (narrowPrimeFrom primeSlot op) (.seq (.block dest) exportArray))
+def phase (primeSlot : Nat) (dest : List Instr) (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq (enterFactor (primeSlot + 4)) (.seq (narrowPrimeFrom primeSlot op dbl) (.seq (.block dest) exportArray))
 
 /-- `pre` in r4 and its `16 w + 8 w_p + 8 w_q` bytes in r6. -/
 def maskArgs : List Instr :=
@@ -77,37 +77,37 @@ def maskArgs : List Instr :=
 
 /-- `R² mod n` for the main workspace's `n`: its inverse, then `r2Public`
 (`n` is public). -/
-def prepareModulus (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq precomputeInverse (r2PublicWith op)
+def prepareModulus (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa := .seq precomputeInverse (r2PublicWith op dbl)
 
 /-- p's full workspace, from the main one. -/
 def selectP : Prog isa := .seq selectMain (selectChild 224)
 
 /-- `R² mod n` into p's full workspace: `n` from the main workspace's array 0,
 then `prepareModulus`. -/
-def modulusR2 (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq selectP (.seq (.block [.ldrSp .r1 8]) (.seq (transferArray 0 0) (prepareModulus op)))
+def modulusR2 (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
+  .seq selectP (.seq (.block [.ldrSp .r1 8]) (.seq (transferArray 0 0) (prepareModulus op dbl)))
 
 /-- `n` and `R² mod n` exported from p's full workspace, and `pre` masked. -/
 def modulusPart : Prog isa :=
   .seq selectP (.seq (.block [.ldrSp .r4 4]) (.seq precomputeOut (.seq (.block maskArgs) maskOutput)))
 
-def valid (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+def valid (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
   .seq CrtFn.prepare (.seq (CrtFn.validateWith (validateProductWith lengthCount))
-    (.seq (modulusR2 op) (.seq (phase 64 pDest op) (.seq (phase 72 qDest op) modulusPart))))
-def body (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (.block modulusCheck) (.ite .eq (valid op) (.block [.mov .r0 (.imm 0)]))
-def crtFrame (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+    (.seq (modulusR2 op dbl) (.seq (phase 64 pDest op dbl) (.seq (phase 72 qDest op dbl) modulusPart))))
+def body (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa := .seq (.block modulusCheck) (.ite .eq (valid op dbl) (.block [.mov .r0 (.imm 0)]))
+def crtFrame (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (.seq (.block CrtFn.entry) (.seq (body op) (.block PcFn.restore))) (.pop .r12 56)
+    (.seq (.block CrtFn.entry) (.seq (body op dbl) (.block PcFn.restore))) (.pop .r12 56)
 
-def argsFrame (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+def argsFrame (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (.seq (.block callArgs) (crtFrame op)) (.pop .r12 56)
+    (.seq (.block callArgs) (crtFrame op dbl)) (.pop .r12 56)
 
 /-- The precomputation, its Montgomery products `op`'s (`MontCall.op`, a call
 of a shared product). -/
-def code (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
+def code (op : Nat → Nat → Nat → Prog isa) (dbl : Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
-    (.seq (.block zeroArgs) (.seq zero (.seq (.block loadArgs) (.seq (argsFrame op) (.block PcFn.restore)))))
+    (.seq (.block zeroArgs) (.seq zero (.seq (.block loadArgs) (.seq (argsFrame op dbl) (.block PcFn.restore)))))
     (.pop .r12 56)
 
 end VG.Impl.Bignum.Arm.PrivPreFn

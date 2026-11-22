@@ -253,7 +253,7 @@ theorem cachedKeySearchOut :
     exact h
 
 theorem sievedParameterSearchOut :
-    PostOut (Spec.Ffdh.sievedParameterSearchContract abi 232) (Spec.Ffdh.parameterSearchSig.retBits 32) :=
+    PostOut (Spec.Ffdh.sievedParameterSearchContract abi 280) (Spec.Ffdh.parameterSearchSig.retBits 32) :=
   postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
     obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
     replace hlen := Nat.succ.inj hlen
@@ -275,45 +275,46 @@ theorem sievedParameterSearchOut :
 
 open VG.Arm.FrameStack VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
-theorem checkPublicStub : CodeOk (Impl.Ffdh.Arm.SharedCheckPublic.code (MontCall.op "" (holeStub 40))) 176 := by
+theorem checkPublicStub : CodeOk (Impl.Ffdh.Arm.SharedCheckPublic.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)) 176 := by
   lit_decide
 
 theorem checkPublicOk (b : MontBackend) : CodeOk (SharedCheckPublic.calledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (SharedCheckPublic.code b) by have := b.mulOk; fill_holes).codeOk checkPublicStub)
+  b.callerOk _ _ ((show FillB _ (SharedCheckPublic.code b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk checkPublicStub)
 
 theorem checkDomainStub :
-    CodeOk (Impl.Ffdh.Arm.SharedCheckDomain.code (MontCall.op "" (holeStub 40))) 176 := by
+    CodeOk (Impl.Ffdh.Arm.SharedCheckDomain.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)) 176 := by
   lit_decide
 
 theorem checkDomainOk (b : MontBackend) : CodeOk (SharedCheckDomain.calledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (SharedCheckDomain.code b) by have := b.mulOk; fill_holes).codeOk checkDomainStub)
+  b.callerOk _ _ ((show FillB _ (SharedCheckDomain.code b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk checkDomainStub)
 
 theorem checkPrivateStub :
-    CodeOk (Impl.Ffdh.Arm.SharedCheckPrivate.code (MontCall.op "" (holeStub 40))) 176 := by
+    CodeOk (Impl.Ffdh.Arm.SharedCheckPrivate.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)) 176 := by
   lit_decide
 
 theorem checkPrivateOk (b : MontBackend) : CodeOk (SharedCheckPrivate.calledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (SharedCheckPrivate.code b) by have := b.mulOk; fill_holes).codeOk checkPrivateStub)
+  b.callerOk _ _ ((show FillB _ (SharedCheckPrivate.code b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk checkPrivateStub)
 
-theorem deriveStub : CodeOk (Impl.Ffdh.Arm.SharedDerive.code (MontCall.op "" (holeStub 40))) 176 := by
+theorem deriveStub : CodeOk (Impl.Ffdh.Arm.SharedDerive.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)) 176 := by
   lit_decide
 
 theorem deriveOk (b : MontBackend) : CodeOk (SharedDerive.calledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (SharedDerive.code b) by have := b.mulOk; fill_holes).codeOk deriveStub)
+  b.callerOk _ _ ((show FillB _ (SharedDerive.code b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk deriveStub)
 
-theorem exchangeStub : CodeOk (Impl.Ffdh.Arm.SharedExchange.code (MontCall.op "" (holeStub 40))) 176 := by
+theorem exchangeStub : CodeOk (Impl.Ffdh.Arm.SharedExchange.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)) 176 := by
   lit_decide
 
 theorem exchangeOk (b : MontBackend) : CodeOk (SharedExchange.calledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (SharedExchange.code b) by have := b.mulOk; fill_holes).codeOk exchangeStub)
+  b.callerOk _ _ ((show FillB _ (SharedExchange.code b) by have := b.mulOk; have := b.dblOk; fill_holes).codeOk exchangeStub)
 
 theorem precomputeStub :
-    CodeOk (Impl.Ffdh.Arm.CombPrecompute.code (MontCall.op "" (holeStub 40)) VettedBound.code) 176 := by
+    CodeOk (Impl.Ffdh.Arm.CombPrecompute.code (MontCall.op "" (holeStub 40)) (MontCall.op "" (holeStub 40) 4 7 4)
+      VettedBound.code) 176 := by
   lit_decide
 
 theorem precomputeOk (b : MontBackend) : CodeOk (combPrecomputeCalledCode b) 176 :=
-  b.callerOk _ _ ((show FillB _ (Impl.Ffdh.Arm.CombPrecompute.code (MontCall.op b.name b.mul) VettedBound.code)
-    by have := b.mulOk; fill_holes).codeOk precomputeStub)
+  b.callerOk _ _ ((show FillB _ (Impl.Ffdh.Arm.CombPrecompute.code (MontCall.op b.name b.mul) b.dbl VettedBound.code)
+    by have := b.mulOk; have := b.dblOk; fill_holes).codeOk precomputeStub)
 
 theorem cachedAttemptStub : CodeOk (Impl.Ffdh.Arm.CachedKeyGenerate.code CachedKeyGenerate.prepare
     CachedKeyGenerate.sample
@@ -338,93 +339,35 @@ theorem cachedSearchOk (b : MontBackend) : CodeOk (KeySearch.calledCode (CachedK
 open VG.Proof.MillerRabin.Arm in
 /-- What the cleanup needs of a round: its `stack` and `icallFree`, which
 each implementation states of its own code. -/
-theorem roundOk (v : RoundImpl) : CodeOk v.code 56 := ⟨v.stack, v.icallFree⟩
+theorem roundOk (v : RoundImpl) : CodeOk v.code 104 := ⟨v.stack, v.icallFree⟩
 
-theorem rowU_noIcall : noIcall Impl.Bignum.Arm.rowU = true := by lit_decide
-
-theorem downRowU_noIcall : noIcall Impl.Bignum.Arm.DownRow.codeU = true := by lit_decide
-
-/-- The UMAAL rows the candidate's own Montgomery conversions take
-(`callerRows`) keep what the cleanup needs of its code. -/
-theorem callerRows_codeOk {c : Prog isa} {n : Nat} (h : CodeOk c n) :
-    CodeOk (Impl.Ffdh.Arm.callerRows c) n := by
-  refine ⟨Nat.le_trans (CallerRows.stack c) h.1, ?_⟩
-  have h2 := h.2
-  clear h
-  induction c with
-  | block _ =>
-    simp only [Impl.Ffdh.Arm.callerRows]
-    split
-    · exact rowU_noIcall
-    · split
-      · exact downRowU_noIcall
-      · exact h2
-  | seq x y ihx ihy =>
-    simp only [noIcall, Bool.and_eq_true] at h2
-    simp only [Impl.Ffdh.Arm.callerRows]
-    split
-    · exact rowU_noIcall
-    · split
-      · exact downRowU_noIcall
-      · simp only [noIcall, ihx h2.1, ihy h2.2, Bool.and_self]
-  | ite _ t e iht ihe =>
-    simp only [noIcall, Bool.and_eq_true] at h2
-    simp only [Impl.Ffdh.Arm.callerRows]
-    split
-    · exact rowU_noIcall
-    · split
-      · exact downRowU_noIcall
-      · simp only [noIcall, iht h2.1, ihe h2.2, Bool.and_self]
-  | loop x _ ih =>
-    simp only [noIcall] at h2
-    simp only [Impl.Ffdh.Arm.callerRows]
-    split
-    · exact rowU_noIcall
-    · split
-      · exact downRowU_noIcall
-      · simp only [noIcall, ih h2]
-  | call _ _ _ => exact h2
-  | icall => exact h2
-  | frame _ x _ ih =>
-    simp only [noIcall] at h2
-    simp only [Impl.Ffdh.Arm.callerRows]
-    split
-    · exact rowU_noIcall
-    · split
-      · exact downRowU_noIcall
-      · simp only [noIcall, ih h2]
-
-theorem candidateStub : CodeOk (Impl.Ffdh.Arm.ParameterCandidate.code "" (holeStub 56)) 184 := by
+theorem candidateStub :
+    CodeOk (Impl.Ffdh.Arm.ParameterCandidate.code (MontCall.op "" (holeStub 40)) "" (holeStub 104)) 232 := by
   lit_decide
 
 open VG.Proof.MillerRabin.Arm in
-/-- The sieved candidate, which `vg_ffdh_generate_parameters` calls, with the round `v`. -/
-theorem candidateOk (v : RoundImpl) : CodeOk (parameterBackend v).candidate 184 := by
-  have hc : CodeOk (Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) 184 :=
-    (show FillB _ (Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) by
-      have := roundOk v; fill_holes).codeOk candidateStub
-  change CodeOk (Impl.Ffdh.Arm.ParameterCandidate.optimizedCode _ v.name v.code) 184
-  unfold Impl.Ffdh.Arm.ParameterCandidate.optimizedCode
-  split
-  · exact callerRows_codeOk hc
-  · exact hc
+/-- The sieved candidate, which `vg_ffdh_generate_parameters` calls, with the
+round `v` and the Montgomery product `b`. -/
+theorem candidateOk (v : RoundImpl) (b : MontBackend) : CodeOk (parameterBackend v b).candidate 232 :=
+  b.callerOk _ _ ((show FillB _ (Impl.Ffdh.Arm.ParameterCandidate.code (MontCall.op b.name b.mul) v.name v.code) by
+    have := roundOk v; have := b.mulOk; fill_holes).codeOk candidateStub)
 
-theorem parameterSearchStub : CodeOk (Impl.Ffdh.Arm.ParameterSearch.code (.call "" (holeStub 184))) 232 := by
+theorem parameterSearchStub : CodeOk (Impl.Ffdh.Arm.ParameterSearch.code (.call "" (holeStub 232))) 280 := by
   lit_decide
 
 open VG.Proof.MillerRabin.Arm in
-theorem parameterSearchOk (v : RoundImpl) :
+theorem parameterSearchOk (v : RoundImpl) (b : MontBackend) :
     CodeOk (Impl.Ffdh.Arm.ParameterSearch.code
-      (.call (parameterBackend v).candidateName (parameterBackend v).candidate)) 232 :=
+      (.call (parameterBackend v b).candidateName (parameterBackend v b).candidate)) 280 :=
   (show FillB _ (Impl.Ffdh.Arm.ParameterSearch.code
-      (.call (parameterBackend v).candidateName (parameterBackend v).candidate)) by
-    have := candidateOk v; fill_holes).codeOk parameterSearchStub
+      (.call (parameterBackend v b).candidateName (parameterBackend v b).candidate)) by
+    have := candidateOk v b; fill_holes).codeOk parameterSearchStub
 
 theorem frameOk_176 : FrameOk 176 := by decide
 
 theorem frameOk_240 : FrameOk 240 := by decide
 
-theorem frameOk_232 : FrameOk 232 := by decide
+theorem frameOk_280 : FrameOk 280 := by decide
 
 end VG.Proof.Ffdh.Arm.Scrub
 
@@ -507,17 +450,18 @@ theorem cachedKeySearch (b : MontBackend) :
       verified := KeySearch.verified (CachedKeyGenerate.backend b) }
     Scrub.cachedKeySearchOut (scrubSideF_of (Scrub.cachedSearchOk b) Scrub.frameOk_240 _)
 
-open VG.Proof.MillerRabin.Arm in
-/-- `vg_ffdh_generate_parameters`, with the Miller–Rabin round `v`. -/
-theorem sievedParameterSearch (v : RoundImpl) :
+open VG.Proof.MillerRabin.Arm VG.Proof.Bignum.Arm in
+/-- `vg_ffdh_generate_parameters`, with the Miller–Rabin round `v` and the
+Montgomery product `b`. -/
+theorem sievedParameterSearch (v : RoundImpl) (b : MontBackend) :
     VerifiedScrubbed target
       (Impl.Ffdh.Arm.Fn.sievedParameterSearch (Impl.Ffdh.Arm.ParameterSearch.code
-        (.call (parameterBackend v).candidateName (parameterBackend v).candidate)))
-      (Spec.Ffdh.sievedParameterSearchContract abi 232) 32 :=
+        (.call (parameterBackend v b).candidateName (parameterBackend v b).candidate)))
+      (Spec.Ffdh.sievedParameterSearchContract abi 280) 32 :=
   verifiedScrubbedAll (api := Spec.Ffdh.sievedParameterSearchApi)
     { code := Impl.Ffdh.Arm.ParameterSearch.code
-        (.call (parameterBackend v).candidateName (parameterBackend v).candidate)
-      verified := ParameterSearch.verified (parameterBackend v) }
-    Scrub.sievedParameterSearchOut (scrubSideF_of (Scrub.parameterSearchOk v) Scrub.frameOk_232 _)
+        (.call (parameterBackend v b).candidateName (parameterBackend v b).candidate)
+      verified := ParameterSearch.verified (parameterBackend v b) }
+    Scrub.sievedParameterSearchOut (scrubSideF_of (Scrub.parameterSearchOk v b) Scrub.frameOk_280 _)
 
 end VG.Proof.Ffdh.Arm.Fn

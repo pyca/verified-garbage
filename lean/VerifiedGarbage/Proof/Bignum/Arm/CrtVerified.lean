@@ -36,6 +36,7 @@ meta import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.PrimeR2FromCT
+import VerifiedGarbage.Proof.Bignum.Arm.R2PublicCT
 import VerifiedGarbage.Proof.Bignum.Arm.PrimeR2From
 import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
@@ -54,6 +55,7 @@ import VerifiedGarbage.Proof.X25519.Arm.Instr
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Bignum.Arm.PrimeR2FromCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.R2PublicCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.PrimeR2From
 meta import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT

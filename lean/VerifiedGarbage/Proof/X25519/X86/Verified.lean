@@ -624,8 +624,8 @@ section
 /-!
 # X25519 on x86 (32-bit): the inversion
 
-`z2` copied to byte 128, a call of `vg_gf25519_r32_pow250`
-(`pow250Call_ok'`), then five squarings and a product (`Field32`'s `sqnC` and
+`z2` copied to byte 128, the addition chain (`Field32.pow250Call`, through
+`pow250Call_ok'`), then five squarings and a product (`Field32`'s `sqnC` and
 `mulC`) leave `invert z2` in `E1` (`invert_ok`). The copy overwrites the
 scalar's bits and the call the 8 bytes of stack below `esp`: from then on,
 what holds is `After`.
@@ -1427,8 +1427,8 @@ end
 
 Correctness (`x25519_ok`) and constant time (`x25519_ct`, by taint tracking:
 the only branches are on the loop counters, and every address is a pointer
-plus a constant or the counter, through the inversion's call of
-`vg_gf25519_r32_pow250`) against the target's contract `x25519X86`, which
+plus a constant or the counter, through the inversion's calls of
+`vg_gf25519_r32_mul` and `vg_gf25519_r32_sqn`) against the target's contract `x25519X86`, which
 `vg_x25519_exchange`'s proof (`Exchange.lean`) composes, with a state
 satisfying it (`satState`).
 -/

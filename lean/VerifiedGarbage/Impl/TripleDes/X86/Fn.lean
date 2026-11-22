@@ -33,13 +33,13 @@ def expandKey : Prog isa :=
 each function may leave different in two runs: the frame header of its
 working space and the frames below it, of the 1060 bytes ECB's contract
 reserves, … -/
-def ecbWords : List Nat := [1, 2, 3, 4, 5, 6, 7, 8]
+def ecbWords : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 /-- … of the 984 bytes the modes one block at a time reserve, … -/
 def blockWords : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 /-- … and of the 1248 bytes of the batched CBC and CFB64 decryption. -/
-def batchWords : List Nat := [1, 2, 3, 4, 5, 6, 7, 8, 9]
+def batchWords : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 /-- `Spec.TripleDes.ecbEncryptApi`'s function as emitted. -/
 def ecbEncrypt : Prog isa :=

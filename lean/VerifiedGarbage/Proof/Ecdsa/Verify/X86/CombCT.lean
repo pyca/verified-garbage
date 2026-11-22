@@ -315,7 +315,7 @@ theorem vPoints_keep (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.l
       have e : d = d' := Option.some.inj (hcd.symm.trans hd)
       subst d'
       exact ⟨(vTables_keep ht h.keep).1, ht.2.1, ht.2.2⟩)
-    hPc hQ hst hspG hsp
+    hPc hQ hst (Cfg.stk_comb hcd) hspG hsp
     (rest := .block []) (fun _ P => WP.block_nil P.keep)
   exact WP.mono (WP.seq_iff.mp H) (fun _ q => WP.block_nil_iff.mp q)
 
@@ -525,7 +525,7 @@ theorem verifyComb_ok (hc : CfgOk c) (hC : Law c.C) (hne : c.C.n < 2 ^ (8 * c.C.
   refine WP.mono (verifyCombBody_ok hc hC hne hT hCo
     (fun h => absurd h.2 (by simp [Cfg.combJac, hcd, hj])) hp₁
     (fun d' hd' => by have e : d = d' := Option.some.inj (hcd.symm.trans hd'); subst d'; exact ht)
-    hspG hsp) fun s₂ ⟨K, post⟩ => ?_
+    (Cfg.stk_comb hcd) hspG hsp) fun s₂ ⟨K, post⟩ => ?_
   have ha := K.abi hp₁
   have he := P.gpr .esp (by decide)
   refine ⟨⟨fun r hr => (ha.1 r hr).trans (P.gpr r (by

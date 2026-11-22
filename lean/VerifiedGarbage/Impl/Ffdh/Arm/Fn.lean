@@ -56,8 +56,8 @@ stack its contract reserves. -/
 def cachedKeySearch (c : Prog isa) : Prog isa := scrubAll 32 240 c
 
 /-- `vg_ffdh_generate_parameters`, of its code `c`, whose frames, and those of
-the candidate it calls, use at most the 232 bytes of stack its contract
+the candidate it calls, use at most the 280 bytes of stack its contract
 reserves. -/
-def sievedParameterSearch (c : Prog isa) : Prog isa := scrubAll 32 232 c
+def sievedParameterSearch (c : Prog isa) : Prog isa := scrubAll 32 280 c
 
 end VG.Impl.Ffdh.Arm.Fn

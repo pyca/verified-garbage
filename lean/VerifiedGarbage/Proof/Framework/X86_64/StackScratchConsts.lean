@@ -308,11 +308,11 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
       Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes + 8, n * e.size⟩] s₃.mem m' ∧
       Exec isa (withStackScratchWiped bytes (argRegs.getD (sig.words abi.ptrBits).length .rax) words c) s
         (t ++ wipeTrace (s.gpr .rsp - BitVec.ofNat 64 bytes) words)
-        (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }) ∧
-      abiPreserved s (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }) ∧
+        (popState bytes s { wipedRegs s₃ with mem := m' }) ∧
+      abiPreserved s (popState bytes s { wipedRegs s₃ with mem := m' }) ∧
       Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩] m'
-        (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }).mem ∧
-      (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }).gpr .rax = s₃.gpr .rax := by
+        (popState bytes s { wipedRegs s₃ with mem := m' }).mem ∧
+      (popState bytes s { wipedRegs s₃ with mem := m' }).gpr .rax = s₃.gpr .rax := by
     intro s hs
     obtain ⟨hsb, hretW, -⟩ := hfacts s hs
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowK_pre hk hb hst hs hl)
@@ -323,19 +323,18 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
     have hb3 := hb.2.2.2
     obtain ⟨m', hblk, hfr⟩ := wipe_run ⟨s.gpr .rsp - BitVec.ofNat 64 bytes + 8, n * e.size⟩ s₃ words
       (by rw [hwr₃, narrow_wr]; simp)
-      (fun k hk' => by
-        have h8 := Offset.contains_base (s.gpr .rsp - BitVec.ofNat 64 bytes + 8) (d := 8 * k) (n := 8)
+      (fun d m hdm => by
+        have h8 := Offset.contains_base (s.gpr .rsp - BitVec.ofNat 64 bytes + 8) (d := d) (n := m)
           (k := n * e.size) (by omega_arith) (by omega_arith)
-        rwa [hrsp₃, show s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (8 + 8 * k) =
-            s.gpr .rsp - BitVec.ofNat 64 bytes + 8 + BitVec.ofNat 64 (8 * k) by
+        rwa [hrsp₃, show s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (8 + d) =
+            s.gpr .rsp - BitVec.ofNat 64 bytes + 8 + BitVec.ofNat 64 d by
           rw [BitVec.add_assoc]; congr 1; exact (BitVec.ofNat_add_ofNat ..).symm])
     have he' := Exec.seq he (Exec.block hblk)
     rw [hrsp₃] at he'
-    have ha' : abiPreserved (narrow sig e n bytes s) { s₃.setReg32 .r11 0 with mem := m' } := by
+    have ha' : abiPreserved (narrow sig e n bytes s) { wipedRegs s₃ with mem := m' } := by
       refine ⟨fun q hq => ?_, ?_, ha.2.2⟩
       · have hq' : q ≠ .r11 := by rintro rfl; simp [calleeSaved] at hq
-        simp only [State.setReg32, State.setReg, hq', ↓reduceIte]
-        exact ha.1 q hq
+        exact (wipedRegs_gpr s₃ hq').trans (ha.1 q hq)
       · rw [narrow_rsp hk]
         show m'.readW _ 64 = _
         rw [hfr.readW (r := ⟨s.gpr .rsp - BitVec.ofNat 64 bytes, 8⟩) (Region.contains_self _ _)
@@ -346,7 +345,7 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
         have h2 := ha.2.1
         rwa [narrow_rsp hk] at h2
     obtain ⟨hex, habi, hm, hrax⟩ := withStackScratchK_run hk hb hst hsafe hdep hsb hretW he' ha'
-    exact ⟨t, s₃, m', he, hq, hfr, hex, habi, hm, by rw [hrax]; simp [State.setReg32, State.setReg]⟩
+    exact ⟨t, s₃, m', he, hq, hfr, hex, habi, hm, by rw [hrax]; exact wipedRegs_gpr s₃ (r := .rax) (by decide)⟩
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, m', -, hq, hfr, hex, ha, hm, hrax⟩ := hrun s hs
     obtain ⟨-, -, hdisj, hdisjF⟩ := hfacts s hs

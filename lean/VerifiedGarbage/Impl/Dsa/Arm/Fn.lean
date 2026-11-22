@@ -19,7 +19,7 @@ constants, but the 32 bits of its result. The validations, the verification,
 the key derivation and the initialization of the parameter search have no
 frames (`scrub`); signing and key generation, which call the entropy function
 from a frame, first zero the 144 bytes of stack their contracts reserve
-(`scrubAll`), and the parameter search the 304 of its own.
+(`scrubAll`), and the parameter search the 352 of its own.
 
 The parameter search calls the Miller–Rabin round of a variant (its
 `suffix` and `round` code) through the probable-prime test: `geo` is its
@@ -91,6 +91,6 @@ def search (umaal : Bool) (suffix : String) (round : Prog isa) (op : Nat → Nat
 /-- `vg_dsa_parameter_search`, its working space in a frame that is then
 zeroed. -/
 def parameterSearch (umaal : Bool) (suffix : String) (round : Prog isa) (op : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  scrubAll 32 304 (search umaal suffix round op)
+  scrubAll 32 352 (search umaal suffix round op)
 
 end VG.Impl.Dsa.Arm.Fn

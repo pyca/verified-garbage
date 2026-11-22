@@ -252,7 +252,7 @@ def witnessValues (p : WitnessParams) (used passed : Nat) : Nat → BitVec 32
 def witnessSlots : List Nat := [0, 16, 20, 36, 40, 44, 48, 52, 56]
 
 def witnessRegions (p : WitnessParams) (sp : BitVec 32) : List Region :=
-  [⟨State.addr p.base, 8 * p.capacity⟩, FrameStack.belowA sp 56,
+  [⟨State.addr p.base, 8 * p.capacity⟩, FrameStack.belowA sp 104,
     ⟨State.addr (sp + 40#32), 4⟩, ⟨State.addr (sp + 56#32), 4⟩]
 
 structure WitnessState (p : WitnessParams) (used passed : Nat) (s : State) : Prop where
@@ -260,8 +260,8 @@ structure WitnessState (p : WitnessParams) (used passed : Nat) (s : State) : Pro
   workspace : Workspace s p.base (8 * p.capacity)
   saved : SavedFrame (witnessValues p used passed) witnessSlots s
   stackScratch : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
-  stackBelow : 56 ≤ s.sp.toNat
-  belowScratch : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
+  stackBelow : 104 ≤ s.sp.toNat
+  belowScratch : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
   bitsExact : p.bits = Spec.RsaKeyGen.bitLength (p.modulus - 1)
   bitsPositive : 0 < p.bits
   bitsBound : p.bits ≤ 8192
@@ -275,7 +275,7 @@ structure WitnessState (p : WitnessParams) (used passed : Nat) (s : State) : Pro
   tapeRead : InRegions (s.rd ++ s.wr) (State.addr p.tape) p.bytes.length
   tapeScratch : (⟨State.addr p.tape, p.bytes.length⟩ : Region).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
   tapeStack : (⟨State.addr p.tape, p.bytes.length⟩ : Region).Disjoint ⟨State.addr s.sp, 72⟩
-  tapeBelow : (⟨State.addr p.tape, p.bytes.length⟩ : Region).Disjoint (FrameStack.belowA s.sp 56)
+  tapeBelow : (⟨State.addr p.tape, p.bytes.length⟩ : Region).Disjoint (FrameStack.belowA s.sp 104)
   tapeBytes : Spec.Rsa.bytesAt s.mem (State.addr p.tape) p.bytes.length = p.bytes
 
 theorem witnessSlots_bound {d : Nat} (member : d ∈ witnessSlots) : d + 4 ≤ 72 := by

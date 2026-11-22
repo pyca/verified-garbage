@@ -33,8 +33,10 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.RelClasses
-import VerifiedGarbage.Proof.Bignum.Arm.MontEncode
-import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
+import VerifiedGarbage.Proof.Bignum.Arm.TwoExpShared
+import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ResultContext
@@ -46,7 +48,8 @@ import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.NormalizedPrepareCT
-import VerifiedGarbage.Proof.Ffdh.Arm.PrepareCT
+import VerifiedGarbage.Proof.Bignum.Arm.TwoExpDoubling
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 meta import VerifiedGarbage.Impl.Ffdh.Arm.CandidatePrepare
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -481,10 +484,14 @@ def CandidatePrepareInput (base src : BitVec 32) (len k : Nat) (s : State) : Pro
     (k % 8 = 1 ∨ 2 ^ (64 * (Spec.Rsa.modulusWords k - 1)) ≤
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr src) k))
 
-theorem candidatePrepare_ct {base src : BitVec 32} {len k : Nat} :
-    RelCT isa (fun s t => CandidatePrepareInput base src len k s ∧ CandidatePrepareInput base src len k t ∧ s.sp = t.sp)
-      VG.Impl.Ffdh.Arm.CandidatePrepare.code (fun _ _ => True) := by
-  let E := CandidatePrepareInput base src len k
+theorem candidatePrepare_ct {base src : BitVec 32} {len k : Nat}
+    {P : State → Prop} {regions : List Region}
+    (K : TwoExp.Montgomery base len (Spec.Rsa.modulusWords k) P regions)
+    (ct : TwoExp.MontgomeryTiming K) :
+    RelCT isa (fun s t => (CandidatePrepareInput base src len k s ∧ P s) ∧
+      (CandidatePrepareInput base src len k t ∧ P t) ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.CandidatePrepare.code K.op) (fun _ _ => True) := by
+  let E := fun s : State => CandidatePrepareInput base src len k s ∧ P s
   let C := fun s : State => E s ∧ s.z = decide (k % 8 = 1)
   have head : RelCT isa (fun s t => E s ∧ E t ∧ s.sp = t.sp)
       (.block VG.Impl.Ffdh.Arm.CandidatePrepare.choose) (fun _ _ => True) := by
@@ -494,42 +501,33 @@ theorem candidatePrepare_ct {base src : BitVec 32} {len k : Nat} :
     intro r hr
     simp only [List.mem_singleton] at hr
     subst r
-    exact h.1.1.count.trans h.2.1.1.count.symm
+    exact h.1.1.1.count.trans h.2.1.1.1.count.symm
   have post (s : State) (h : E s) :
       WP isa (.block VG.Impl.Ffdh.Arm.CandidatePrepare.choose) s C := by
-    refine WP.mono (candidatePrepareChoice_ok s h.1 h.2) ?_
-    rintro t ⟨input,norm,z,_,_⟩
-    exact ⟨⟨input,norm⟩,z⟩
+    refine WP.mono (candidatePrepareChoice_ok s h.1.1 h.1.2) ?_
+    rintro t ⟨input,norm,z,memory,rest⟩
+    exact ⟨⟨⟨input,norm⟩, K.stable (by rw [memory]; exact Frame.refl _ _)
+      (rest.mono (by simp [roundClobbers])) h.2⟩,z⟩
+  have countFits (s : State) (h : E s) : 128 * Spec.Rsa.modulusWords k < 2 ^ 32 := by
+    have := h.1.1.maxLength
+    dsimp only [Spec.Rsa.modulusWords]
+    omega_using [this]
   have branch : RelCT isa (fun s t => C s ∧ C t ∧ s.sp = t.sp)
-      (.ite .eq VG.Impl.Ffdh.Arm.prepare
-        (VG.Impl.Ffdh.Arm.NormalizedPrepare.code VG.Impl.Bignum.Arm.montOp))
+      (.ite .eq (VG.Impl.Ffdh.Arm.SharedPrepare.code K.op VG.Impl.Bignum.Arm.doubleLoopMultiply)
+        (VG.Impl.Ffdh.Arm.NormalizedPrepare.code K.op VG.Impl.Bignum.Arm.doubleLoopMultiply))
       (fun _ _ => True) := by
     refine RelCT.ite (fun s t h => by change some s.z = some t.z;rw [h.1.2,h.2.1.2]) ?_ ?_
     · intro s t trS trT u v h eS eT
-      have countFits : 128 * Spec.Rsa.modulusWords k < 2 ^ 32 := by
-        have := h.1.1.1.1.maxLength
-        dsimp only [Spec.Rsa.modulusWords]
-        omega_using [this]
-      exact prepare_ct countFits _ _ _ _ _ _
-        ⟨h.1.1.1.1,h.1.2.1.1.1,h.1.2.2⟩ eS eT
+      exact sharedPrepare_ct K ct _ (TwoExp.inlineDoublingTiming _ _ _ P regions K.workspace K.stable) (countFits s h.1.1.1) _ _ _ _ _ _
+        ⟨⟨h.1.1.1.1.1,h.1.1.1.2⟩,⟨h.1.2.1.1.1.1,h.1.2.1.1.2⟩,h.1.2.2⟩ eS eT
     · intro s t trS trT u v h eS eT
       have notBoundary : k % 8 ≠ 1 := by
         have hz : s.z = false := Option.some.inj h.2
         rw [h.1.1.2] at hz
         exact of_decide_eq_false hz
-      have fit : Proof.Rsa.Mont.arrAt (Spec.Rsa.modulusWords k) 3 + 32 ≤ 8 * len := by
-        have := h.1.1.1.1.space
-        simp only [Spec.Rsa.publicScratchWords] at this
-        simp only [Proof.Rsa.Mont.arrAt,Proof.Rsa.Mont.hdrBytes]
-        omega_using [this]
-      have countFits : 128 * Spec.Rsa.modulusWords k < 2 ^ 32 := by
-        have := h.1.1.1.1.maxLength
-        dsimp only [Spec.Rsa.modulusWords]
-        omega_using [this]
-      exact normalizedPrepare_ct (inlineMontgomery base len (Spec.Rsa.modulusWords k))
-        (inlineMontgomery_ct fit) countFits _ _ _ _ _ _
-        ⟨⟨h.1.1.1.1,trivial,h.1.1.1.2.resolve_left notBoundary⟩,
-          ⟨h.1.2.1.1.1,trivial,h.1.2.1.1.2.resolve_left notBoundary⟩,h.1.2.2⟩ eS eT
+      exact normalizedPrepare_ct K ct _ (TwoExp.inlineDoublingTiming _ _ _ P regions K.workspace K.stable) (countFits s h.1.1.1) _ _ _ _ _ _
+        ⟨⟨h.1.1.1.1.1,h.1.1.1.2,h.1.1.1.1.2.resolve_left notBoundary⟩,
+          ⟨h.1.2.1.1.1.1,h.1.2.1.1.2,h.1.2.1.1.1.2.resolve_left notBoundary⟩,h.1.2.2⟩ eS eT
   unfold VG.Impl.Ffdh.Arm.CandidatePrepare.code
   exact relCT_chain head post post branch
 
@@ -1175,8 +1173,8 @@ structure SharedRoundStart (p : MontMathData) (s : State) : Prop where
   width : wOf s.mem (State.addr p.base) = p.words
   layout : LayoutLite s.mem (State.addr p.base) p.capacity
   prepared : PreparedLite s.mem (State.addr p.base)
-  stackBelow : 56 ≤ s.sp.toNat
-  belowSep : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
+  stackBelow : 104 ≤ s.sp.toNat
+  belowSep : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.base, 8 * p.capacity⟩
 
 private theorem sharedRoundPre {p : MontMathData} {s : State} (h : SharedRoundStart p s) :
     roundPre (s.callEntry.withRegions [] [⟨State.addr p.base, 8 * p.capacity⟩]) := by
@@ -1242,28 +1240,33 @@ structure RoundKernelStart (p : RoundKernelData) (s : State) : Prop where
   stack : Workspace s s.sp 72
   stackSep : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.math.base, 8 * p.math.capacity⟩
   saved : s.mem.readW (State.addr (s.sp + 36#32)) 32 = BitVec.ofNat 32 p.math.capacity
-  below : 56 ≤ s.sp.toNat
-  belowSep : (FrameStack.belowA s.sp 56).Disjoint ⟨State.addr p.math.base, 8 * p.math.capacity⟩
+  below : 104 ≤ s.sp.toNat
+  belowSep : (FrameStack.belowA s.sp 104).Disjoint ⟨State.addr p.math.base, 8 * p.math.capacity⟩
 
 private structure RoundEncoded (p : RoundKernelData) (s : State) : Prop where
   start : RoundKernelStart p s
   encoded : numAt s.mem (State.addr p.math.base) p.math.words 5 < p.modulus
 
-private theorem encodeReady_ok (p : RoundKernelData) (s : State) (h : RoundKernelStart p s) :
-    WP isa (VG.Impl.Bignum.Arm.montOp 5 1 4) s (RoundEncoded p) := by
+private theorem encodeReady_ok (b : MontBackend) (p : RoundKernelData) (s : State) (h : RoundKernelStart p s) :
+    WP isa (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul 5 1 4) s (RoundEncoded p) := by
   have operand (j : Nat) (member : j = 1 ∨ j = 5) : Operand j := by
     rcases member with rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  refine WP.mono (montEncode_ok s h.ready (operand 5 (by simp)) (operand 1 (by simp)) (by decide)
-    h.data.modulus h.data.odd h.data.r2) ?_
-  rintro t ⟨ready, _, encoded, keeps, frame, rest⟩
+  refine WP.mono (montCallEncode_ok b s h.ready (callStack_of_below h.below h.belowSep)
+    (operand 5 (by simp)) (operand 1 (by simp)) (by decide) h.data.modulus h.data.odd h.data.r2) ?_
+  rintro t ⟨ready, _, _, encoded, keeps, frame, rest⟩
   have saved : t.mem.readW (State.addr (t.sp + 36#32)) 32 = BitVec.ofNat 32 p.math.capacity := by
     rw [rest.sp, frame.readW (r := ⟨State.addr (s.sp + 36#32), 4⟩) (Region.contains_self _ _) ?_ (by decide)]
     · exact h.saved
     · intro r hr
-      rw [List.mem_singleton] at hr
-      subst r
-      rw [VG.Arm.addr_add (by have := h.stack.nowrap; omega)]
-      exact h.stackSep.sub_left (Offset.sub_base _ (by decide : 36 + 4 ≤ 72))
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [VG.Arm.addr_add (by have := h.stack.nowrap; omega)]
+        exact h.stackSep.sub_left (Offset.sub_base _ (by decide : 36 + 4 ≤ 72))
+      · change (⟨State.addr (s.sp + BitVec.ofNat 32 36), 4⟩ : Region).Disjoint
+          ⟨State.addr (s.sp - BitVec.ofNat 32 48), 48⟩
+        rw [VG.Arm.addr_add (by have := h.stack.nowrap; omega),
+          FrameStack.addr_sub' (by have := h.below; omega)]
+        exact Offset.disjoint_below _ (by omega)
   refine ⟨⟨ready, h.data.after_operand (by decide) (by decide) (by decide) keeps,
     by rw [rest.sp]; exact h.stack.congr rest.wr,
     by rw [rest.sp]; exact h.stackSep, saved,
@@ -1272,25 +1275,23 @@ private theorem encodeReady_ok (p : RoundKernelData) (s : State) (h : RoundKerne
   rw [encoded]
   exact Nat.mod_lt _ (by have := h.data.large; omega)
 
-private theorem encodeReady_ct : RelCT isa (Two RoundKernelStart)
-    (VG.Impl.Bignum.Arm.montOp 5 1 4) (Two RoundEncoded) := by
-  refine two_post ?_ encodeReady_ok
+private theorem encodeReady_ct (b : MontBackend) : RelCT isa (Two RoundKernelStart)
+    (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul 5 1 4) (Two RoundEncoded) := by
+  refine two_post ?_ (encodeReady_ok b)
   intro s t trS trT u v h runS runT
   obtain ⟨p, left, right, sp⟩ := h
   have op (j : Nat) (member : j = 1 ∨ j = 4 ∨ j = 5) : Operand j := by
     rcases member with rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  have fit : arrAt p.math.words 3 + 32 ≤ 8 * p.math.capacity := by
-    have fits : arrAt p.math.words 8 ≤ 8 * p.math.capacity := left.ready.width ▸ left.ready.layout.2.2.1
-    simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits ⊢
-    omega
   have boundL : numAt s.mem (State.addr p.math.base) p.math.words 4 < numAt s.mem (State.addr p.math.base) p.math.words 0 := by
     rw [left.data.r2, left.data.modulus]
     exact Nat.mod_lt _ (by have := left.data.large; omega)
   have boundR : numAt t.mem (State.addr p.math.base) p.math.words 4 < numAt t.mem (State.addr p.math.base) p.math.words 0 := by
     rw [right.data.r2, right.data.modulus]
     exact Nat.mod_lt _ (by have := right.data.large; omega)
-  exact montOp_ct (op 5 (by simp)) (op 1 (by simp)) (op 4 (by simp)) fit
-    _ _ _ _ _ _ ⟨⟨left.ready, boundL⟩, ⟨right.ready, boundR⟩, sp⟩ runS runT
+  exact (montCallOp_ct b.name b.mul (b.rawCT (op 5 (by simp)) (op 1 (by simp)) (op 4 (by simp)))
+    (op 5 (by simp)) (op 1 (by simp)) (op 4 (by simp))).mono (fun _ _ h => h) (fun _ _ _ => trivial)
+    _ _ _ _ _ _ ⟨left.ready, right.ready, callStack_of_below left.below left.belowSep,
+      callStack_of_below right.below right.belowSep, boundL, boundR, sp⟩ runS runT
 
 private theorem callReady_ok (p : RoundKernelData) (s : State) (h : RoundEncoded p s) :
     WP isa (.block [.ldrSp .r0 0, .ldrSp .r1 36]) s (SharedRoundStart p.math) := by
@@ -1303,13 +1304,13 @@ private theorem callReady_ok (p : RoundKernelData) (s : State) (h : RoundEncoded
     by rw [rest.sp]; exact h.start.below,
     by rw [rest.sp]; exact h.start.belowSep⟩
 
-theorem roundPrepared_ct : RelCT isa (Two RoundKernelStart)
-    (.seq (VG.Impl.Bignum.Arm.montOp 5 1 4) (.block [.ldrSp .r0 0, .ldrSp .r1 36]))
+theorem roundPrepared_ct (b : MontBackend) : RelCT isa (Two RoundKernelStart)
+    (.seq (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul 5 1 4) (.block [.ldrSp .r0 0, .ldrSp .r1 36]))
     (Two SharedRoundStart) := by
   have args : RelCT isa (Two RoundEncoded) (.block [.ldrSp .r0 0, .ldrSp .r1 36]) (Two SharedRoundStart) :=
     (two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) callReady_ok).mono
       (fun _ _ h => h) (fun _ _ ⟨p, left, right, sp⟩ => ⟨p.math, left, right, sp⟩)
-  exact encodeReady_ct.seq args
+  exact (encodeReady_ct b).seq args
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end
@@ -1413,9 +1414,9 @@ open VG VG.Arm
 open VG.Proof.Ffdh.Arm.KeySearch (Two)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem roundKernel_ct (v : RoundImpl) : RelCT isa (Two RoundKernelStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel v.name v.code) (fun _ _ => True) :=
-  RelCT.assoc (roundPrepared_ct.seq ((sharedRoundCall_ct v).seq (RelCT.block_nil (fun _ _ _ => trivial))))
+theorem roundKernel_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two RoundKernelStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) :=
+  RelCT.assoc ((roundPrepared_ct b).seq ((sharedRoundCall_ct v).seq (RelCT.block_nil (fun _ _ _ => trivial))))
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end
@@ -1505,11 +1506,11 @@ private structure RoundReturned (p : RoundPoint) (s : State) : Prop where
   more : p.passed < p.params.checks
   result : (s.gpr .r0).toNat = if Proof.MillerRabin.Round.round p.params.modulus p.witness then 1 else 0
 
-private theorem roundReturned_ok (v : RoundImpl) (p : RoundPoint) (s : State) (h : RoundStart p s) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel v.name v.code) s (RoundReturned p) := by
+private theorem roundReturned_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) (p : RoundPoint) (s : State) (h : RoundStart p s) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s (RoundReturned p) := by
   have saved : s.mem.readW (State.addr (s.sp + 36#32)) 32 = BitVec.ofNat 32 p.params.capacity := by
     simpa only [witnessValues] using h.state.saved.saved 36 (by simp [witnessSlots])
-  refine WP.mono (roundKernel_ok v h.ready h.state.data h.state.saved.space h.state.stackScratch
+  refine WP.mono (roundKernel_ok b v h.ready h.state.data h.state.saved.space h.state.stackScratch
     saved h.state.stackBelow h.state.belowScratch h.input) ?_
   rintro t ⟨data, result, frame, rest⟩
   exact ⟨h.state.after_round data frame rest, h.more, result⟩
@@ -1525,11 +1526,11 @@ private theorem roundCompared_ok (p : RoundPoint) (s : State) (h : RoundReturned
   rintro t ⟨⟨zero, mem⟩, rest⟩
   exact ⟨h.state.after_memory mem rest, h.more, zero⟩
 
-theorem round_ct (v : RoundImpl) : RelCT isa (Two RoundStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.round v.name v.code) (fun _ _ => True) := by
+theorem round_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two RoundStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.round (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have kernel : RelCT isa (Two RoundStart)
-      (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel v.name v.code) (Two RoundReturned) :=
-    two_post (two_map roundKernelData roundStart_kernel (roundKernel_ct v)) (roundReturned_ok v)
+      (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (Two RoundReturned) :=
+    two_post (two_map roundKernelData roundStart_kernel (roundKernel_ct b v)) (roundReturned_ok b v)
   have compare : RelCT isa (Two RoundReturned) (.block [.cmp .r0 (.imm 0)]) (Two RoundCompared) :=
     two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) roundCompared_ok
   have choice : RelCT isa (Two RoundCompared)
@@ -1596,21 +1597,21 @@ private theorem drawCompared_ok (p : DrawPoint) (s : State) (h : RangeEnd p s) :
   exact ⟨h.state.after_memory mem rest, h.more,
     h.ready.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ready.ptr), by rw [mem]; exact h.input, zero⟩
 
-theorem draw_ct (v : RoundImpl) : RelCT isa (Two DrawMore)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.draw v.name v.code) (fun _ _ => True) := by
+theorem draw_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two DrawMore)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.draw (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have range : RelCT isa (Two DrawMore) VG.Impl.Ffdh.Arm.ParameterCandidate.drawRange (Two RangeEnd) :=
     two_post (drawRange_ct.mono (fun _ _ h => two_mono (fun _ _ h => h.1) h) (fun _ _ h => h)) rangeEnd_ok
   have compare : RelCT isa (Two RangeEnd) (.block [.cmp .r11 (.imm 0)]) (Two DrawCompared) :=
     two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) drawCompared_ok
   have choice : RelCT isa (Two DrawCompared)
       (.ite .eq (.block [.mov .r3 (.imm 4), .cmp .r3 (.imm 4)])
-        (VG.Impl.Ffdh.Arm.ParameterCandidate.round v.name v.code)) (fun _ _ => True) := by
+        (VG.Impl.Ffdh.Arm.ParameterCandidate.round (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)) (fun _ _ => True) := by
     refine two_ite (fun _ _ _ left right => ?_) ?_ ?_
     · change some _ = some _
       rw [left.zero, right.zero]
     · exact (stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)
     · exact two_map (fun p => (⟨p.params, p.used + (p.params.bits + 7) / 8, p.passed, witnessValue p.params p.used⟩ : RoundPoint))
-        (fun _ _ h => ⟨h.1.state, h.1.more, h.1.ready, h.1.input⟩) (round_ct v)
+        (fun _ _ h => ⟨h.1.state, h.1.more, h.1.ready, h.1.input⟩) (round_ct b v)
   exact range.seq (compare.seq (choice.seq (RelCT.block_nil (fun _ _ _ => trivial))))
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -1650,19 +1651,19 @@ private theorem witnessRoomEnd_ok (p : DrawPoint) (s : State) (h : WitnessLoopSt
   rintro t ⟨⟨zero, mem⟩, rest⟩
   exact ⟨h.1.after_memory mem rest, h.2, zero⟩
 
-theorem witnessStep_ct (v : RoundImpl) : RelCT isa (Two WitnessLoopStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep v.name v.code) (fun _ _ => True) := by
+theorem witnessStep_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two WitnessLoopStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have room : RelCT isa (Two WitnessLoopStart)
       (.block VG.Impl.Ffdh.Arm.ParameterCandidate.witnessRoom) (Two WitnessRoomEnd) :=
     two_post (witnessRoom_ct.mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) witnessRoomEnd_ok
   have choice : RelCT isa (Two WitnessRoomEnd)
       (.ite .eq (.block [.mov .r3 (.imm 0), .cmp .r3 (.imm 4)])
-        (VG.Impl.Ffdh.Arm.ParameterCandidate.draw v.name v.code)) (fun _ _ => True) := by
+        (VG.Impl.Ffdh.Arm.ParameterCandidate.draw (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)) (fun _ _ => True) := by
     refine two_ite (fun _ _ _ left right => ?_) ?_ ?_
     · change some _ = some _
       rw [left.zero, right.zero]
     · exact (stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)
-    · refine two_map id ?_ (draw_ct v)
+    · refine two_map id ?_ (draw_ct b v)
       intro p s h
       have enough : p.used + (p.params.bits + 7) / 8 ≤ p.params.bytes.length := by
         have notShort : ¬ p.params.bytes.length - p.used < (p.params.bits + 7) / 8 := by
@@ -1698,20 +1699,20 @@ private structure WitnessIterEnd (p : DrawPoint) (s : State) : Prop where
   state : WitnessState p.params (witnessNextUsed p.params p.used) (witnessNextPassed p.params p.used p.passed) s
   zero : s.z = decide (witnessNextStatus p.params p.used p.passed = 4)
 
-private theorem witnessIterEnd_ok (v : RoundImpl) (p : DrawPoint) (s : State) (h : WitnessLoopStart p s) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep v.name v.code) s (WitnessIterEnd p) := by
-  refine WP.mono (witnessStep_ok v h.1 h.2) ?_
+private theorem witnessIterEnd_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) (p : DrawPoint) (s : State) (h : WitnessLoopStart p s) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s (WitnessIterEnd p) := by
+  refine WP.mono (witnessStep_ok b v h.1 h.2) ?_
   rintro t ⟨state, _, zero, _, _⟩
   exact ⟨state, zero⟩
 
-private theorem witnessStep_fixed (v : RoundImpl) (p : DrawPoint) :
+private theorem witnessStep_fixed (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) (p : DrawPoint) :
     RelCT isa (fun s t => WitnessLoopStart p s ∧ WitnessLoopStart p t ∧ s.sp = t.sp)
-      (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep v.name v.code)
+      (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)
       (fun s t => WitnessIterEnd p s ∧ WitnessIterEnd p t ∧ s.sp = t.sp) := by
   intro s t trS trT u z h runS runT
-  have leak := ((witnessStep_ct v) _ _ _ _ _ _ ⟨p, h⟩ runS runT).1
-  obtain ⟨_, _, execS, postS⟩ := witnessIterEnd_ok v p s h.1
-  obtain ⟨_, _, execT, postT⟩ := witnessIterEnd_ok v p t h.2.1
+  have leak := ((witnessStep_ct b v) _ _ _ _ _ _ ⟨p, h⟩ runS runT).1
+  obtain ⟨_, _, execS, postS⟩ := witnessIterEnd_ok b v p s h.1
+  obtain ⟨_, _, execT, postT⟩ := witnessIterEnd_ok b v p t h.2.1
   obtain ⟨_, rfl⟩ := Exec.det runS execS
   obtain ⟨_, rfl⟩ := Exec.det runT execT
   exact ⟨leak, postS, postT, (Exec.rdwr runS).2.2.trans (h.2.2.trans (Exec.rdwr runT).2.2.symm)⟩
@@ -1743,16 +1744,16 @@ private theorem witnessContinue {p : DrawPoint} {s u : State} (h : WitnessLoopSt
   have := h.1.bitsPositive
   omega
 
-theorem millerRabin_ct (v : RoundImpl) : RelCT isa (Two WitnessLoopStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.millerRabin v.name v.code) (fun _ _ => True) := by
+theorem millerRabin_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two WitnessLoopStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.millerRabin (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have step : ∀ n, RelCT isa (WitnessLoopPair n)
-      (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep v.name v.code)
+      (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)
       (fun u z => isa.eval .eq u = isa.eval .eq z ∧
         (isa.eval .eq u = some false → True) ∧
         (isa.eval .eq u = some true → ∃ m, m < n ∧ WitnessLoopPair m u z)) := by
     intro n s t trS trT u z h runS runT
     obtain ⟨p, remaining, left, right, sp⟩ := h
-    obtain ⟨leak, postU, postZ, spUZ⟩ := witnessStep_fixed v p _ _ _ _ _ _ ⟨left, right, sp⟩ runS runT
+    obtain ⟨leak, postU, postZ, spUZ⟩ := witnessStep_fixed b v p _ _ _ _ _ _ ⟨left, right, sp⟩ runS runT
     refine ⟨leak, ?_, by intro _; trivial, ?_⟩
     · change some u.z = some z.z
       rw [postU.zero, postZ.zero]
@@ -1790,7 +1791,8 @@ theorem MontPrepInput.after_memory {s t : State} {base src : BitVec 32} {capacit
     MontPrepInput base src capacity k t := by
   refine ⟨h.workspace.congr rest.wr, ?_, h.minLength, h.maxLength, h.space, h.sourceFits,
     by rw [rest.rd, rest.wr]; exact h.readable, h.separate,
-    by rw [memory]; exact h.large, by rw [memory]; exact h.odd, by rw [memory]; exact h.normalized⟩
+    by rw [memory]; exact h.large, by rw [memory]; exact h.odd, by rw [memory]; exact h.normalized,
+    h.calls.of_rest rest⟩
   have frame : Frame [⟨State.addr base, 8 * capacity⟩] s.mem t.mem := by rw [memory]; exact Frame.refl _ _
   simpa only [memory, rest.sp] using h.stack.after_workspace frame rest
 
@@ -1824,7 +1826,8 @@ def MontStart (p : MontInputData) (s : State) : Prop := MontPrepInput p.base p.s
 def PreparedInput (p : MontInputData) (s : State) : Prop := CandidatePrepareInput p.base p.src p.capacity p.k s
 
 theorem prepareHeader_ok (p : MontInputData) (s : State) (h : MontStart p s) :
-    WP isa (.block [.ldrSp .r0 0, .ldrSp .r6 12]) s (PreparedInput p) := by
+    WP isa (.block [.ldrSp .r0 0, .ldrSp .r6 12]) s fun t =>
+      PreparedInput p t ∧ CallStack p.base p.capacity t := by
   have read0 : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4 := by
     simpa only [off, BitVec.add_zero] using h.stack.read (d := 0) (by decide)
   have addr12 : State.addr (s.sp + 12#32) = off (State.addr s.sp) 12 := VG.Arm.addr_add (by have := h.stack.nowrap; omega)
@@ -1833,9 +1836,9 @@ theorem prepareHeader_ok (p : MontInputData) (s : State) (h : MontStart p s) :
     (by rw [first.sp]; exact addr12) (by rw [first.rd, first.wr]; exact h.stack.read (by decide)) fun t second => WP.block_nil ?_
   have memory : t.mem = s.mem := second.mem.trans first.mem
   have rest : Rest [.r0, .r6] s t := (first.rest (by simp)).trans (second.rest (by simp))
-  refine ⟨(h.after_memory memory rest).prepare_input
+  refine ⟨⟨(h.after_memory memory rest).prepare_input
     ((second.other .r0 (by decide)).trans (first.gpr.trans h.stack.savedBase))
-    (by rw [second.gpr, first.mem]; exact h.stack.savedCount), ?_⟩
+    (by rw [second.gpr, first.mem]; exact h.stack.savedCount), ?_⟩, h.calls.of_rest rest⟩
   rw [memory];exact h.normalized
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -1858,36 +1861,55 @@ def montMath (p : MontInputData) : MontMathData := ⟨p.base, p.capacity, Spec.R
 
 def MontFullStart (p : MontInputData) (s : State) : Prop := MontStart p s ∧ Spec.Rsa.scratchWords p.k ≤ p.capacity
 
-private def MontHeaderStart (p : MontInputData) (s : State) : Prop := PreparedInput p s ∧ Spec.Rsa.scratchWords p.k ≤ p.capacity
+private def MontHeaderStart (p : MontInputData) (s : State) : Prop := (PreparedInput p s ∧
+  CallStack p.base p.capacity s) ∧ Spec.Rsa.scratchWords p.k ≤ p.capacity
 
 private def MontLayoutState (p : MontInputData) (s : State) : Prop := MontR2 (montMath p) s ∧
   64 ≤ p.k ∧ p.k ≤ 1024 ∧ Spec.Rsa.scratchWords p.k ≤ p.capacity
 
 private def MontKeyState (p : MontInputData) (s : State) : Prop := MontKeyStart (montMath p) s
 
-theorem montPrep_ct : RelCT isa (Two MontFullStart) VG.Impl.Ffdh.Arm.ParameterCandidate.montPrep (fun _ _ => True) := by
+theorem montPrep_ct (b : MontBackend) : RelCT isa (Two MontFullStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.montPrep (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul))
+      (fun _ _ => True) := by
   have head : RelCT isa (Two MontFullStart) (.block [.ldrSp .r0 0, .ldrSp .r6 12]) (Two MontHeaderStart) :=
     two_post ((stackOnly_ct _ rfl).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun p s h =>
       WP.mono (prepareHeader_ok p s h.1) (fun _ result => ⟨result, h.2⟩))
-  have prepareTrace : RelCT isa (Two MontHeaderStart) VG.Impl.Ffdh.Arm.CandidatePrepare.code (fun _ _ => True) := by
+  have prepareTrace : RelCT isa (Two MontHeaderStart)
+      (VG.Impl.Ffdh.Arm.CandidatePrepare.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul))
+      (fun _ _ => True) := by
     intro s t trS trT u v h runS runT
     obtain ⟨p, left, right, sp⟩ := h
-    exact candidatePrepare_ct _ _ _ _ _ _ ⟨left.1,right.1,sp⟩ runS runT
-  have prepare : RelCT isa (Two MontHeaderStart) VG.Impl.Ffdh.Arm.CandidatePrepare.code (Two MontLayoutState) :=
+    let correct := fun o a c ho ha hc v input => b.correct v (base := p.base) (len := p.capacity)
+      (w := Spec.Rsa.modulusWords p.k) (o := o) (a := a) (b := c) input ho ha hc
+    let K := TwoExp.sharedMontgomery p.base s.sp p.capacity (Spec.Rsa.modulusWords p.k) b.name b.mul
+      correct b.stackOk
+    have timing : TwoExp.MontgomeryTiming K :=
+      TwoExp.sharedMontgomeryTiming p.base s.sp p.capacity (Spec.Rsa.modulusWords p.k) b.name b.mul
+        correct b.stackOk (fun _ _ _ ho ha hc => b.rawCT ho ha hc)
+    exact candidatePrepare_ct K timing _ _ _ _ _ _
+      ⟨⟨left.1.1, left.1.2, rfl⟩, ⟨right.1.1, right.1.2, sp.symm⟩, sp⟩ runS runT
+  have prepare : RelCT isa (Two MontHeaderStart)
+      (VG.Impl.Ffdh.Arm.CandidatePrepare.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul))
+      (Two MontLayoutState) :=
     two_post prepareTrace (fun p s h => by
-      refine WP.mono (candidatePrepare_ok s h.1.1 h.1.2) ?_
-      rintro t ⟨ready, number, r2, _, _⟩
-      refine ⟨⟨ready, ?_⟩, h.1.1.minLength, h.1.1.maxLength, h.2⟩
+      let K := TwoExp.sharedMontgomery p.base s.sp p.capacity (Spec.Rsa.modulusWords p.k) b.name b.mul
+        (fun _ _ _ ho ha hc v input => b.correct v input ho ha hc) b.stackOk
+      refine WP.mono (candidatePrepare_ok s K h.1.1.1 ⟨h.1.2, rfl⟩ h.1.1.2) ?_
+      rintro t ⟨ready, number, r2, calls, _, _⟩
+      refine ⟨⟨ready, ?_, calls.1⟩, h.1.1.1.minLength, h.1.1.1.maxLength, h.2⟩
       change numAt t.mem (State.addr p.base) (Spec.Rsa.modulusWords p.k) 4 < numAt t.mem (State.addr p.base) (Spec.Rsa.modulusWords p.k) 0
       rw [r2, number]
-      exact Nat.mod_lt _ (by have := h.1.1.large; omega))
+      exact Nat.mod_lt _ (by have := h.1.1.1.large; omega))
   have oneTrace : RelCT isa (Two MontLayoutState)
-      (.seq (VG.Impl.Bignum.Arm.smallConst 1 1) (VG.Impl.Bignum.Arm.montOp 1 1 4)) (fun _ _ => True) :=
-    two_map montMath (fun _ _ h => h.1) montOne_ct
+      (.seq (VG.Impl.Bignum.Arm.smallConst 1 1) (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul 1 1 4))
+        (fun _ _ => True) :=
+    two_map montMath (fun _ _ h => h.1) (montOne_ct b)
   have one : RelCT isa (Two MontLayoutState)
-      (.seq (VG.Impl.Bignum.Arm.smallConst 1 1) (VG.Impl.Bignum.Arm.montOp 1 1 4)) (Two MontKeyState) :=
+      (.seq (VG.Impl.Bignum.Arm.smallConst 1 1) (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul 1 1 4))
+        (Two MontKeyState) :=
     two_post oneTrace (fun p s h => by
-      refine WP.mono (montOne_ready (montMath p) s h.1) ?_
+      refine WP.mono (montOne_ready b (montMath p) s h.1) ?_
       intro t ready
       exact ⟨ready.workspace, MontData.of_ready ready, ⟨p.k, rfl, h.2⟩, ready.stackRead, ready.saved⟩)
   have key := two_map montMath (fun _ _ h => h) montKeySetup_ct
@@ -2031,9 +2053,9 @@ structure PreparationStart (p : PreparationData) (s : State) : Prop where
   separate : (⟨State.addr s.sp, 72⟩ : Region).Disjoint ⟨State.addr p.input.base, 8 * p.input.capacity⟩
   modulus : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.input.src) p.input.k) = p.modulus
 
-private theorem montDecompose_ok (p : PreparationData) (s : State) (h : PreparationStart p s) :
-    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.montPrep s (DecomposeStart ⟨montMath p.input, p.modulus⟩) := by
-  refine WP.mono (montPrep_ok h.input.1 h.input.2) ?_
+private theorem montDecompose_ok (b : MontBackend) (p : PreparationData) (s : State) (h : PreparationStart p s) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.montPrep (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul)) s (DecomposeStart ⟨montMath p.input, p.modulus⟩) := by
+  refine WP.mono (montPrep_ok b h.input.1 h.input.2) ?_
   rintro t ⟨ready, data, full, _, _, _, _, _, _, rest⟩
   rw [h.modulus] at full
   exact ⟨h.input.1.workspace.congr rest.wr, ready, data,
@@ -2041,11 +2063,11 @@ private theorem montDecompose_ok (p : PreparationData) (s : State) (h : Preparat
     by rw [rest.sp]; exact h.separate, full,
     h.modulus ▸ h.input.1.large, h.modulus ▸ h.input.1.odd⟩
 
-theorem phasePrepared_ct : RelCT isa (Two PreparationStart)
-    VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared (fun _ _ => True) := by
-  have trace : RelCT isa (Two PreparationStart) VG.Impl.Ffdh.Arm.ParameterCandidate.montPrep (fun _ _ => True) :=
-    two_map PreparationData.input (fun _ _ h => h.input) montPrep_ct
-  exact (two_post trace montDecompose_ok).seq
+theorem phasePrepared_ct (b : MontBackend) : RelCT isa (Two PreparationStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul)) (fun _ _ => True) := by
+  have trace : RelCT isa (Two PreparationStart) (VG.Impl.Ffdh.Arm.ParameterCandidate.montPrep (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul)) (fun _ _ => True) :=
+    two_map PreparationData.input (fun _ _ h => h.input) (montPrep_ct b)
+  exact (two_post trace (montDecompose_ok b)).seq
     (expSetup_ct.mono
       (fun _ _ ⟨p, left, right, sp⟩ => ⟨⟨montMath p.input, p.modulus⟩, left, right, sp⟩)
       (fun _ _ h => h))
@@ -2076,18 +2098,18 @@ private theorem phasePreparation_start (p : PhasePoint) (s : State) (h : PhaseSt
     PreparationStart (preparationData p) s :=
   ⟨⟨h.preparation, h.space⟩, h.saved.space, h.stackScratch, h.modulus⟩
 
-theorem phaseRun_ct (v : RoundImpl) : RelCT isa (Two PhaseStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.phaseRun v.name v.code) (fun _ _ => True) := by
-  have prepare : RelCT isa (Two PhaseStart) VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared
+theorem phaseRun_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two PhaseStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.phaseRun (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
+  have prepare : RelCT isa (Two PhaseStart) (VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul))
       (Two WitnessLoopStart) := by
-    have trace := two_map preparationData phasePreparation_start phasePrepared_ct
+    have trace := two_map preparationData phasePreparation_start (phasePrepared_ct b)
     have post (p : PhasePoint) (s : State) (h : PhaseStart p s) :
-        WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared s
+        WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul)) s
           (WitnessLoopStart ⟨p.params, p.used, 0⟩) :=
-      WP.mono (preparedWitness_ok h) (fun _ result => ⟨result.1, h.checksPositive⟩)
+      WP.mono (preparedWitness_ok b h) (fun _ result => ⟨result.1, h.checksPositive⟩)
     exact (two_post trace post).mono (fun _ _ h => h)
       (fun _ _ ⟨p, left, right, sp⟩ => ⟨⟨p.params, p.used, 0⟩, left, right, sp⟩)
-  exact prepare.seq (millerRabin_ct v)
+  exact prepare.seq (millerRabin_ct b v)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 
@@ -2123,11 +2145,11 @@ private theorem candidatePhaseStart_ok (q : Bool) (p : CandidatePoint) (s : Stat
   have bytes := h.1.phase_output phaseFrame
   exact candidatePhaseInput context saved (by rw [bytes]; exact h.2.1) h.2.2
 
-theorem candidateTest_ct (v : RoundImpl) (q : Bool) : RelCT isa (Two (CandidateTestStart q))
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.test q v.name v.code) (fun _ _ => True) := by
+theorem candidateTest_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) (q : Bool) : RelCT isa (Two (CandidateTestStart q))
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.test q (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have head := two_post ((phaseHead_ct q).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial))
     (candidatePhaseStart_ok q)
-  exact head.seq ((phaseRun_ct v).mono
+  exact head.seq ((phaseRun_ct b v).mono
     (fun _ _ ⟨p, left, right, sp⟩ => ⟨candidatePhasePoint q p, left, right, sp⟩) (fun _ _ h => h))
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

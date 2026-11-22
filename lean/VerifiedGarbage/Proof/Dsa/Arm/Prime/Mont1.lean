@@ -287,12 +287,12 @@ theorem In.callStack (pre : In P σ) {s : State} (sp : s.sp = P.sp) : CallStack 
   have lo := pre.spLo
   refine ⟨by rw [sp]; omega_arith, ?_⟩
   rw [sp]
-  exact (pre.sC.sub_right (FrameStack.belowA_sub (sp := P.sp) (a := 48) (b := 56) (by decide) lo)).symm.sub_right
+  exact (pre.sC.sub_right (FrameStack.belowA_sub (sp := P.sp) (a := 48) (b := 104) (by decide) lo)).symm.sub_right
     pre.rM_sub
 
 /-- The stack below the candidate's frame that the shared product writes is `P.rC`'s. -/
 theorem In.below48 (pre : In P σ) : Region.Sub (FrameStack.belowA P.sp 48) P.rC :=
-  FrameStack.belowA_sub (sp := P.sp) (a := 48) (b := 56) (by decide) pre.spLo
+  FrameStack.belowA_sub (sp := P.sp) (a := 48) (b := 104) (by decide) pre.spLo
 
 /-- A stage of fewer live arrays. -/
 theorem KS.restrict {A : Nat → Nat} {live live' : List Nat} {V : Nat → Nat} {ls : List Nat} {s : State}

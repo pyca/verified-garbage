@@ -94,13 +94,13 @@ private theorem wordsAt_lost {m m' : Mem} {rs : List Region} (frame : Frame rs m
     hd (by decide)
 
 theorem code_ok (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384 32) {s : State}
-    (hs : (Spec.Dsa.parameterSearchContract abi 304).pre s) :
-    WP isa (code g1 g2 g3) s fun t => abiPreserved s t ∧ (Spec.Dsa.parameterSearchContract abi 304).post s t := by
+    (hs : (Spec.Dsa.parameterSearchContract abi 352).pre s) :
+    WP isa (code g1 g2 g3) s fun t => abiPreserved s t ∧ (Spec.Dsa.parameterSearchContract abi 352).post s t := by
   have hpre := cin_of_pre s hs
   have spLo := hpre.spLo
   refine WP.alloc ⟨by decide, by decide, by decide, by decide⟩ (by simp only [F]; omega_using [spLo])
     (WP.mono ((body_vp (G := mkG s) K1 K2 K3).wp s _ ⟨rfl, hpre, rfl⟩) fun u hu lm lu hfl => ?_)
-  have hfl' : Frame [⟨State.addr s.sp - 304#64, 304⟩] u.mem lm := by
+  have hfl' : Frame [⟨State.addr s.sp - 352#64, 352⟩] u.mem lm := by
     refine hfl.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     obtain rfl := List.mem_singleton.mp hr
     rw [FrameStack.addr_sub' (by simp only [F]; omega_using [spLo])]
@@ -218,7 +218,7 @@ theorem map_toNat_inj64 {a b : List (BitVec 64)} (h : a.map (·.toNat) = b.map (
   (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
 
 /-- Two calls with the same public data have the same public parameters. -/
-theorem mkG_eq {s₁ s₂ : State} (h : (Spec.Dsa.parameterSearchContract abi 304).pub s₁ s₂) : mkG s₁ = mkG s₂ := by
+theorem mkG_eq {s₁ s₂ : State} (h : (Spec.Dsa.parameterSearchContract abi 352).pub s₁ s₂) : mkG s₁ = mkG s₂ := by
   sig_pub [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs, reduceClassify,
     Loc.val, stackArgAddr, BitVec.add_zero] at h
   obtain ⟨hsp, hl, r0, r1, r2, r3, a0, a1, a2, a3⟩ := h
@@ -245,8 +245,8 @@ theorem alloc_push {s : State} (h : CIn s) : isa.push (.alloc F) s = some (alloc
 
 /-- The code leaks only what its contract makes public. -/
 theorem code_ct (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384 32) :
-    ConstantTime isa (Spec.Dsa.parameterSearchContract abi 304).pre
-      (Spec.Dsa.parameterSearchContract abi 304).pub (code g1 g2 g3) := by
+    ConstantTime isa (Spec.Dsa.parameterSearchContract abi 352).pre
+      (Spec.Dsa.parameterSearchContract abi 352).pub (code g1 g2 g3) := by
   intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp e₁ e₂
   have p₁ := cin_of_pre s₁ h₁
   have p₂ := cin_of_pre s₂ h₂
@@ -277,14 +277,14 @@ def searchSat : State where
   rd := [⟨0x5000, 0⟩, ⟨0x20000, 16⟩]
   wr := [⟨0x1000, 276⟩, ⟨0x2000, 8⟩, ⟨0x30000, 73728⟩, ⟨0x3000, 32⟩]
 
-theorem search_satisfiable : ∃ s, (Spec.Dsa.parameterSearchContract abi 304).pre s := by
+theorem search_satisfiable : ∃ s, (Spec.Dsa.parameterSearchContract abi 352).pre s := by
   sig_implies_sat [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs,
     reduceClassify, Loc.val, State.addr, stackArgAddr, BitVec.add_zero]
     [searchSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using searchSat
 
 /-- `vg_dsa_parameter_search` over the three geometries meets its contract. -/
 theorem search_verified (K1 : GeoOk g1 128 20) (K2 : GeoOk g2 256 32) (K3 : GeoOk g3 384 32) :
-    Verified target (code g1 g2 g3) (Spec.Dsa.parameterSearchContract abi 304) :=
+    Verified target (code g1 g2 g3) (Spec.Dsa.parameterSearchContract abi 352) :=
   ⟨fun _ hs => let ⟨t, s', he, hq⟩ := code_ok K1 K2 K3 hs; ⟨t, s', he, hq.1, hq.2⟩, code_ct K1 K2 K3,
     search_satisfiable⟩
 
@@ -408,7 +408,7 @@ abbrev cW (s : State) : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat *
 abbrev cR (s : State) : Region := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩
 abbrev cU (s : State) : Region := ⟨State.addr (stackArg s 0), 8⟩
 abbrev cA (s : State) : Region := ⟨stackArgAddr s 0, 8⟩
-abbrev cF (s : State) : Region := ⟨State.addr s.sp - 144#64, 144⟩
+abbrev cF (s : State) : Region := ⟨State.addr s.sp - 192#64, 192⟩
 
 /-- The sizes the test takes. -/
 abbrev Bits (bits : Nat) : Prop := bits = 160 ∨ bits = 256 ∨ bits = 1024 ∨ bits = 2048 ∨ bits = 3072
@@ -418,13 +418,13 @@ theorem bits_iff {bits : Nat} : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes ↔ Bi
 
 /-- The test's contract. -/
 abbrev primeK : Contract isa :=
-  Proof.Dsa.ProbablePrime.sizedContract layout Impl.Dsa.Arm.ProbablePrime.sizes abi 144
+  Proof.Dsa.ProbablePrime.sizedContract layout Impl.Dsa.Arm.ProbablePrime.sizes abi 192
 
 /-- The contract's precondition, for the size `bits`. -/
 structure CIn (bits : Nat) (s : State) : Prop where
   sized : Bits bits
   arg : stackArg s 1 = BitVec.ofNat 32 bits
-  spLo : 144 ≤ s.sp.toNat
+  spLo : 192 ≤ s.sp.toNat
   spHi : s.sp.toNat + 8 ≤ 2 ^ 32
   rd : s.rd = [cR s, cA s]
   wr : s.wr = [cW s, cU s]
@@ -516,7 +516,7 @@ theorem CIn.argsIn {bits : Nat} (h : CIn bits s) : (⟨stackArgAddr s 0, 8⟩ : 
   List.mem_append_left _ (by rw [h.rd]; exact List.mem_cons_of_mem _ List.mem_cons_self)
 
 /-- The allocation's arguments. -/
-theorem pre_ok {bits : Nat} (hb : Bits bits) (h1 : 144 ≤ s.sp.toNat) (h2 : s.sp.toNat + 8 ≤ 2 ^ 32)
+theorem pre_ok {bits : Nat} (hb : Bits bits) (h1 : 192 ≤ s.sp.toNat) (h2 : s.sp.toNat + 8 ≤ 2 ^ 32)
     (hA : (⟨stackArgAddr s 0, 8⟩ : Region) ∈ s.rd ++ s.wr) (harg : stackArg s 1 = BitVec.ofNat 32 bits) :
     WP isa (.block Impl.Dsa.Arm.ProbablePrime.pre) (allocated 32 s) fun t =>
       Rest [.r1, .r2, .r3, .r12] (allocated 32 s) t ∧ Frame [⟨aA s, 32⟩] s.mem t.mem ∧
@@ -678,7 +678,7 @@ end
 
 After the allocation, `pre` (`PreOut`) and the push, with the regions
 `xRegs` and the candidate readable, the body starts (`In`). The allocation,
-the frame and the round's frame below it are the 144 bytes below the
+the frame and the round's stack below it are the 192 bytes below the
 caller's stack pointer (`cF`), at offsets of its base (`fB`).
 -/
 
@@ -707,7 +707,7 @@ def xRegs (P : CP) : List Region := [P.rFr, P.rAl, P.rU, P.rS, P.rM]
 abbrev sx (bits : Nat) (s t : State) : State := (pcPushed t).withRegions (cCd bits s :: s.rd) (xRegs (mkP bits s))
 
 /-- `cF`'s base. -/
-abbrev fB (s : State) : Addr := State.addr s.sp - 144#64
+abbrev fB (s : State) : Addr := State.addr s.sp - 192#64
 
 section
 variable {bits : Nat} {s t : State}
@@ -719,21 +719,21 @@ theorem Bits.facts (hb : Bits bits) :
       Impl.Dsa.Arm.ProbablePrime.checks bits = Spec.Dsa.primeChecks bits := by
   rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
 
-theorem below_eq (h : 144 ≤ s.sp.toNat) {a : Nat} (ha : a ≤ 144) :
-    State.addr (s.sp - BitVec.ofNat 32 a) = fB s + BitVec.ofNat 64 (144 - a) := by
+theorem below_eq (h : 192 ≤ s.sp.toNat) {a : Nat} (ha : a ≤ 192) :
+    State.addr (s.sp - BitVec.ofNat 32 a) = fB s + BitVec.ofNat 64 (192 - a) := by
   rw [addr_sub' (by omega_using [h, ha])]; exact Offset.sub_ofNat_eq _ ha
 
-theorem spP (h : CIn bits s) : State.addr (mkP bits s).sp = fB s + BitVec.ofNat 64 56 :=
+theorem spP (h : CIn bits s) : State.addr (mkP bits s).sp = fB s + BitVec.ofNat 64 104 :=
   below_eq h.spLo (a := 88) (by decide)
 
-theorem aA_eq (h : CIn bits s) : aA s = fB s + BitVec.ofNat 64 112 := below_eq h.spLo (a := 32) (by decide)
+theorem aA_eq (h : CIn bits s) : aA s = fB s + BitVec.ofNat 64 160 := below_eq h.spLo (a := 32) (by decide)
 
 theorem pushed_sp (o : PreOut bits s t) : (pcPushed t).sp = (mkP bits s).sp := by
   show t.sp - BitVec.ofNat 32 56 = s.sp - BitVec.ofNat 32 88
   rw [o.rest.sp]; show s.sp - BitVec.ofNat 32 32 - BitVec.ofNat 32 56 = _
   rw [BitVec.sub_sub, ← BitVec.ofNat_add]
 
-theorem cF_sub {d n : Nat} (hd : d + n ≤ 144) :
+theorem cF_sub {d n : Nat} (hd : d + n ≤ 192) :
     Region.Sub ⟨fB s + BitVec.ofNat 64 d, n⟩ (cF s) := Offset.sub_base _ hd
 
 /-- Memory after `pre` and the push: changed only in `cF`. -/
@@ -742,7 +742,7 @@ theorem tFrame (h : CIn bits s) (o : PreOut bits s t) : Frame [cF s] s.mem (pcPu
     (s := t) (by
       rw [o.rest.sp]; show 56 ≤ (s.sp - BitVec.ofNat 32 32).toNat
       rw [sub_toNat' (by have := h.spLo; omega_using [this])]; have := h.spLo; omega_using [this])
-  have e : belowA t.sp (4 * 14) = ⟨fB s + BitVec.ofNat 64 56, 56⟩ := by
+  have e : belowA t.sp (4 * 14) = ⟨fB s + BitVec.ofNat 64 104, 56⟩ := by
     show (⟨State.addr (t.sp - BitVec.ofNat 32 56), 56⟩ : Region) = _
     rw [show t.sp - BitVec.ofNat 32 56 = (mkP bits s).sp from pushed_sp o, spP h]
   rw [show [Reg.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr].length = 14 from rfl, e] at f
@@ -766,13 +766,13 @@ theorem allocW (h : CIn bits s) (o : PreOut bits s t) {k : Nat} {v : BitVec 32} 
     rcases hk with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
   have ea : off (State.addr (mkP bits s).sp) (56 + k) = aA s + BitVec.ofNat 64 k := by
     show State.addr (mkP bits s).sp + BitVec.ofNat 64 (56 + k) = _
-    rw [spP h, aA_eq h, Offset.add_add, Offset.add_add, show 56 + (56 + k) = 112 + k by omega_using []]
+    rw [spP h, aA_eq h, Offset.add_add, Offset.add_add, show 104 + (56 + k) = 160 + k by omega_using []]
   have f := pushed_frameA (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
     (s := t) (by
       rw [o.rest.sp]; show 56 ≤ (s.sp - BitVec.ofNat 32 32).toNat
       rw [sub_toNat' (by have := h.spLo; omega_using [this])]; have := h.spLo; omega_using [this])
   have e : belowA t.sp (4 * [Reg.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr].length) =
-      ⟨fB s + BitVec.ofNat 64 56, 56⟩ := by
+      ⟨fB s + BitVec.ofNat 64 104, 56⟩ := by
     show (⟨State.addr (t.sp - BitVec.ofNat 32 56), 56⟩ : Region) = _
     rw [show t.sp - BitVec.ofNat 32 56 = (mkP bits s).sp from pushed_sp o, spP h]
   rw [e] at f
@@ -813,14 +813,14 @@ theorem rS_eq (h : CIn bits s) :
   show (⟨State.addr (s.gpr .r0 + BitVec.ofNat 32 keyOff), keyWords bits * 8⟩ : Region) = _
   rw [addr_add (by simp only [keyOff] at *; omega_arith)]
 
-theorem rC_eq (h : CIn bits s) : (mkP bits s).rC = ⟨fB s + BitVec.ofNat 64 0, 56⟩ := by
-  show (⟨State.addr (s.sp - BitVec.ofNat 32 88 - BitVec.ofNat 32 56), 56⟩ : Region) = _
-  rw [BitVec.sub_sub, ← BitVec.ofNat_add, below_eq h.spLo (a := 88 + 56) (by decide)]
+theorem rC_eq (h : CIn bits s) : (mkP bits s).rC = ⟨fB s + BitVec.ofNat 64 0, 104⟩ := by
+  show (⟨State.addr (s.sp - BitVec.ofNat 32 88 - BitVec.ofNat 32 104), 104⟩ : Region) = _
+  rw [BitVec.sub_sub, ← BitVec.ofNat_add, below_eq h.spLo (a := 88 + 104) (by decide)]
 
-theorem rF_eq (h : CIn bits s) : (mkP bits s).rF = ⟨fB s + BitVec.ofNat 64 56, 88⟩ := by
+theorem rF_eq (h : CIn bits s) : (mkP bits s).rF = ⟨fB s + BitVec.ofNat 64 104, 88⟩ := by
   show (⟨State.addr (mkP bits s).sp, 88⟩ : Region) = _; rw [spP h]
 
-theorem rFr_eq (h : CIn bits s) : (mkP bits s).rFr = ⟨fB s + BitVec.ofNat 64 56, 56⟩ := by
+theorem rFr_eq (h : CIn bits s) : (mkP bits s).rFr = ⟨fB s + BitVec.ofNat 64 104, 56⟩ := by
   show (⟨State.addr (mkP bits s).sp, 56⟩ : Region) = _; rw [spP h]
 
 /-- The body's start. -/
@@ -935,12 +935,12 @@ theorem xCovers (h : CIn bits s) (o : PreOut bits s t) :
     Covers (xRegs (mkP bits s)) (pcPushed t).wr := by
   have spLo := h.spLo; have fw := h.fw; have size := h.size
   have kpos : 0 < keyWords bits := by simp [keyWords, Spec.Rsa.scratchWords]
-  have wT : (pcPushed t).wr = (mkP bits s).rFr :: ⟨fB s + BitVec.ofNat 64 112, 32⟩ :: [cW s, cU s] := by
+  have wT : (pcPushed t).wr = (mkP bits s).rFr :: ⟨fB s + BitVec.ofNat 64 160, 32⟩ :: [cW s, cU s] := by
     show ⟨State.addr (t.sp - BitVec.ofNat 32 56), 56⟩ :: t.wr = _
     rw [show t.sp - BitVec.ofNat 32 56 = (mkP bits s).sp from pushed_sp o, o.rest.wr]
     show _ :: ⟨aA s, 32⟩ :: s.wr = _
     rw [aA_eq h, h.wr]
-  have eAl : (mkP bits s).rAl = ⟨fB s + BitVec.ofNat 64 112, 32⟩ := by
+  have eAl : (mkP bits s).rAl = ⟨fB s + BitVec.ofNat 64 160, 32⟩ := by
     show (⟨State.addr ((mkP bits s).sp + BitVec.ofNat 32 56), 32⟩ : Region) = _
     rw [addr_add (by show (s.sp - BitVec.ofNat 32 88).toNat + 56 < _; rw [sub_toNat' (by omega_using [spLo])]; have := h.spHi; omega_using []),
       spP h, Offset.add_add]

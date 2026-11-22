@@ -28,7 +28,7 @@ private theorem CandidateContext.saved_separate {s : State} {p : CandidateParams
   · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [fit, this])]
     exact h.stackScratch.sub_left (Offset.sub_base _ (by omega_using [fit]))
   · change (⟨State.addr (s.sp + BitVec.ofNat 32 d), 4⟩ : Region).Disjoint
-      ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩
+      ⟨State.addr (s.sp - BitVec.ofNat 32 104), 104⟩
     rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [fit, this]), FrameStack.addr_sub' h.stackBelow]
     exact Offset.disjoint_below _ (by omega_using [fit])
   · rw [VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [fit, this]), VG.Arm.addr_add (by have := h.saved.space.nowrap; omega_using [this])]

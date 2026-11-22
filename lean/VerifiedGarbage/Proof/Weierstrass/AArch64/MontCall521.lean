@@ -30,7 +30,7 @@ theorem sqrCall521Core_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s bas
       OpKeep M base o s s' ∧ wordsVal s'.mem base o M.n < fieldPrime ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % fieldPrime =
         wordsVal s.mem base a M.n * wordsVal s.mem base a M.n % fieldPrime := by
-  apply callProgV29_ok hs hM (.inr (.inr hn)) htmp ho ha ha rfl
+  apply callProgV29_ok hs hM (.inr (.inr (.inr (.inr hn)))) htmp ho ha ha rfl
     (fun A _ => A < fieldPrime) (fun A _ => A * A) hA
   intro W t hp hval
   rw [hn] at hp hval ⊢

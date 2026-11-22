@@ -16,7 +16,7 @@ with the schedule in `ebx`, the data pointer in `esi` and the blocks left in
 `edi`. Each group of up to 32 blocks is copied to the blocks of the
 bitsliced function's working space (`Bitsliced.lean`), the scratch buffer
 itself, encrypted or decrypted there by a call of
-`vg_triple_des_encrypt_batch` or `vg_triple_des_decrypt_batch` (with 12
+`vg_triple_des_encrypt_batch` or `vg_triple_des_decrypt_batch` (with 16
 bytes of stack), which works on all 32 whatever the group holds, and copied
 back. The count of a group, `min(edi, 32)`, is computed again wherever it
 is used, since the call keeps only the callee-saved registers.

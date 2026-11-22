@@ -169,4 +169,24 @@ pub static VG_TEST_TABLE: Table<16> = Table(*b\"\\
   !Rust.tableName "MOD" && !Rust.tableName "TABLE" && !Rust.tableName "VG_" && !Rust.tableName "VG_a" &&
   !Rust.tableName "" && !Rust.tableName "A-B"
 
+-- A symbol the code names is one of its tables, or a function its code runs (a call or a
+-- candidate of an indirect call), and nothing else (`checkConsts`).
+#guard Rust.symNamed ["VG_TEST_TABLE"] [] "VG_TEST_TABLE"
+#guard Rust.symNamed [] ["vg_test_callee"] "vg_test_callee"
+#guard !Rust.symNamed ["VG_TEST_TABLE"] ["vg_test_callee"] "vg_test_other"
+
+/-- A function's symbol (`adrSym` of a function its code runs) is bound at the
+function's path, as a call of it is; a table's at `consts`. -/
+def expectedSyms : String := "    core::arch::naked_asm!(
+        concat!(\"adrp x0, \", vg_sym_page!(\"{vg_test_callee}\")),
+        concat!(\"adrp x1, \", vg_sym_page!(\"{VG_TEST_TABLE}\")),
+        vg_test_callee = sym super::test::vg_test_callee,
+        VG_TEST_TABLE = sym super::consts::VG_TEST_TABLE,
+    )
+"
+
+#guard Rust.asmOf (.of (renderOnly target))
+  [.sym "adrp x0, " .page "vg_test_callee", .sym "adrp x1, " .page "VG_TEST_TABLE"]
+  (fun n => if n == "vg_test_callee" then "test" else "") "super" == expectedSyms
+
 end VG.Test.ConstTables

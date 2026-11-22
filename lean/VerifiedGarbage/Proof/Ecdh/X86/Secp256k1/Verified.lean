@@ -149,7 +149,7 @@ theorem post_of {s s' : State} (h : EPost secp256k1 s s') : ecdhX86.post s s' :=
   rcases q with _ | z <;> exact id
 
 /-- No instruction writes `esp`, and the calls use 28 bytes of stack. -/
-theorem ecdh_sp : SpOk exchangeSecp256k1 secp256k1.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
+theorem ecdh_sp : SpOk exchangeSecp256k1 24 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Inv.InvSounds) (s : State) (hs : ecdhX86.pre s) :
     ∃ t s', Exec isa exchangeSecp256k1 s t s' ∧ abiPreserved s s' ∧ ecdhX86.post s s' := by

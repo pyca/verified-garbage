@@ -86,11 +86,21 @@ theorem byte0 {m : Mem} {o : Addr} {x : Nat} (h : VG.Spec.X448.bytesAt m o 56 = 
   simp only [VG.Spec.X448.bytesAt, Proof.X25519.leBytes, List.range_succ, List.range_zero] at e
   simpa using e
 
+/-- The return address loaded back from `LRS`, after the call of the inversion. -/
+theorem wp_lrReload {s : State} {Q : State → Prop}
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr .r6 + BitVec.ofNat 64 LRS) 8)
+    (k : ∀ s', Rest [.r7] s s' → s'.mem = s.mem →
+      s'.lr = s.mem.readW (s.gpr .r6 + BitVec.ofNat 64 LRS) 64 → Q s') :
+    WP isa (.block [.load .d .r7 .r6 LRS, .mtlr .r7]) s Q := by
+  obtain u := Upd.write s .r7 (s.mem.readW (s.gpr .r6 + BitVec.ofNat 64 LRS) 64)
+  exact WP.cons (exec_load_d (by decide) ⟨by decide, by decide⟩ hin) (WP.cons exec_mtlr (WP.block_nil
+    (k _ ⟨fun r hr => u.other r fun e => hr (List.mem_singleton.mpr e), u.rd, u.wr, u.sp⟩ u.mem u.gpr)))
+
 theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
     (hout : (⟨o, 57⟩ : Region) ∈ s.wr) (hdisj : Region.Disjoint ⟨b, 4096⟩ ⟨o, 57⟩) {p : Point}
     (hS : SlotsOk s.mem b RQ (ptV p p)) :
     WP isa baseEncode s fun s' => Spec.Ed448.bytesAt s'.mem o 57 = Spec.Ed448.encodePoint p ∧
-      HiKept b s.mem s'.mem ∧ Ctx b s' := by
+      HiKept b s.mem s'.mem ∧ Ctx b s' ∧ s'.lr = s.mem.readW (b + BitVec.ofNat 64 LRS) 64 := by
   obtain hd56 : Region.Disjoint ⟨b, 4096⟩ ⟨o, 56⟩ := hdisj.sub_right (Region.sub_prefix (by decide))
   obtain hv : ∀ q ∈ EQ, q ≠ R → FS s.mem b q = ptV p p q := fun q hq hqR => hS q (by
     simp only [EQ, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -98,8 +108,19 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
     · exact absurd rfl hqR
     all_goals decide)
   unfold baseEncode
-  refine WP.seq (WP.mono (invertQ_ok (qs := EQ) (by decide) (by decide) (by decide) (by decide) hc hv rfl)
-    fun s1 ⟨hst1, hc1, hS1⟩ => ?_)
+  refine WP.seq (WP.mono (invertQCall_ok (qs := EQ) (by decide) (by decide) (by decide) (by decide) hc hv)
+    fun s0 ⟨hst0, hc0, hS0⟩ => ?_)
+  -- The return address back.
+  obtain hlrs : s0.mem.readW (b + BitVec.ofNat 64 LRS) 64 = s.mem.readW (b + BitVec.ofNat 64 LRS) 64 :=
+    HiKept.of_fa hst0.frame _ (by decide) (by decide)
+  refine WP.seq (wp_lrReload (by rw [hc0.r6]; exact hc0.inR (by decide)) fun s1 r1 m1 l1 => ?_)
+  rw [hc0.r6, hlrs] at l1
+  obtain hc1 : Ctx b s1 := hc0.of_rest r1 (by decide)
+  have hS1 := hS0
+  rw [← m1] at hS1
+  obtain hst1 : Stp b s s1 := hst0.trans ⟨r1.mono (by decide), by rw [m1]; exact Frame.refl _ _⟩
+  refine WP.mono (WP.keepLr (Q := fun t => Spec.Ed448.bytesAt t.mem o 57 = Spec.Ed448.encodePoint p ∧
+      HiKept b s.mem t.mem ∧ Ctx b t) (by decide +kernel) ?_) fun t ⟨lt, h1, h2, h3⟩ => ⟨h1, h2, h3, lt.trans l1⟩
   refine WP.seq (WP.mono (mulS (o := X2) (x := RX) (y := R) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) hc1 hS1) fun s2 ⟨hr2, hf2, hS2⟩ => ?_)
   obtain hr2' : Rest work s s2 := hst1.rest.trans (hr2.mono (by decide))

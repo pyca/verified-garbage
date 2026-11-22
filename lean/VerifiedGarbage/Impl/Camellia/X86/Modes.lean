@@ -36,12 +36,9 @@ namespace VG.Impl.Camellia.X86
 
 open VG.X86 VG.Impl.Aes.X86
 
-/-- The number of rounds, the second stack argument, compared with 18. -/
-def cmpRounds : List Instr := [.mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 18)]
-
 /-- Camellia's core for the direction `d`. -/
 def dirCore (d : Dir) : Modes.X86.Core where
-  prepare := .seq (.block cmpRounds) (.ite .e (keys d 3) (keys d 4))
+  prepare := prepareCall d 5
   crypt := cryptCall
   slots := slots
   total := slots + 10

@@ -9,9 +9,9 @@ public import VerifiedGarbage.TCB.Arm.Target
 
 `vg_rsa_generate(key = r0, key_len = r1, used = r2, rand = r3, rand_len,
 scratch, scratch_len, state)`: four arguments in registers and four on the
-stack. It uses 256 bytes of stack: the frame of 40 bytes saving the
+stack. It uses 304 bytes of stack: the frame of 40 bytes saving the
 callee-saved registers, and the prime search's call (a frame of 32 and the
-search's 184) or the key's (a frame of 56 and the key's 56).
+search's 232) or the key's (a frame of 56 and the key's 56).
 -/
 
 @[expose] public section
@@ -23,7 +23,7 @@ open VG.Spec.Rsa (bytesAt wordsAt)
 open VG.Spec.RsaKeyGen
 
 /-- The stack the controller uses below the stack pointer. -/
-abbrev stackUse : Nat := 256
+abbrev stackUse : Nat := 304
 
 def inKey (s : State) : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
 def inUsed (s : State) : Region := ⟨State.addr (s.gpr .r2), 8⟩

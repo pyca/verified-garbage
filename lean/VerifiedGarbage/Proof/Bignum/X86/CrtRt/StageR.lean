@@ -14,9 +14,11 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Copy
 `vg_rsa_private_crt_precomputed` sets a factor's context up from its
 `R_pre² mod p` in `pre`, for `R_pre = 2^(64 w)`, `w = max(2, ⌈l / 8⌉)` and
 the factor's length `l`: `primeBytes` computes `8 w` (`primeBytes_ok`);
-`loadR2` copies the value into slot 4 and counts the doublings to the
-context's radix (`loadR2_ok`); `preparePre` leaves what `prepare` does
-(`preparePre_ok`).
+the current factor is the one the header names (`PreHdr`): its length at
+`lenOff`, and the parity of the count of factors left at `leftOff`.
+`loadHead` points at its value from them (`loadHead_ok`), `loadTail` copies
+the value into slot 4 and counts the doublings to the context's radix
+(`loadTail_ok`); `preparePre` leaves what `prepare` does (`preparePre_ok`).
 -/
 
 @[expose] public section
@@ -163,14 +165,171 @@ theorem PreR2.keepF (P : PreR2 s base bytes len args i p)
   · exact (P.apart_sub (inW q hq)).1
   · exact P.apartSp
   · exact (P.apart_sub (inW q hq)).2
+/-- The cached value holds after a stage that changes only the working space. -/
+theorem PreR2.keepO (P : PreR2 s base bytes len args i p) {regs : List Reg} (K : Keeps regs s t)
+    (spn : .esp ∉ regs) (O : Outside base 0 bytes s.mem t.mem) (fit : bytes ≤ 2 ^ 64) :
+    PreR2 t base bytes len args i p := by
+  have F := VG.Proof.Bignum.outside_frame O (by omega_using [fit])
+  simp only [BitVec.add_zero] at F
+  exact P.keep K spn F (fun r hr => by rw [List.mem_singleton.mp hr]; exact (P.apart_sub fun _ h => h).1)
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact (P.apart_sub fun _ h => h).2)
 end
+
+/-- `prepBasePre`'s ranges lie apart from the header words naming the factor. -/
+theorem baseR_hdr (len : Nat) (c : Ctx) : ∀ q ∈ baseR len c, 28 ≤ q.1 ∨ q.1 + q.2 ≤ 16 := by
+  have nb : numBase = 3336 := rfl
+  intro q hq
+  simp only [baseR, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inr (by decide)
+  all_goals exact .inl (by simp only [lo]; omega_using [nb])
 
 variable {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
-/-- `loadR2`: factor `i`'s cached value in slot 4, and `esi` its doublings to the context's radix. -/
-theorem loadR2_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat} (P : PreR2 s base bytes len args i p)
-    (fits : 8 * preW args i ≤ bc len c) :
-    WP isa (loadR2 c i) s fun u => In Ex base bytes len args u ∧
+/-- The header words naming the current factor `i`: its length at `lenOff`, and the
+count of factors left at `leftOff`, odd for factor 1. -/
+structure PreHdr (s : State) (base : Addr) (args : Nat → BitVec 32) (i : Nat) : Prop where
+  len : w32 s.mem base lenOff = (args (7 + 2 * i)).toNat
+  left : w32 s.mem base leftOff % 2 = i
+
+/-- The header words hold after a stage that changes ranges apart from them. -/
+theorem PreHdr.keepF {t : State} {i : Nat} (H : PreHdr s base args i) (h : In Ex base bytes len args s)
+    {ws : List (Nat × Nat)} (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem)
+    (hfit : ∀ q ∈ ws, q.1 + q.2 ≤ bytes) (hh : ∀ q ∈ ws, 28 ≤ q.1 ∨ q.1 + q.2 ≤ 16) :
+    PreHdr t base args i := by
+  obtain f := h.slot_fit .wide (j := 0) (by decide)
+  obtain z : lo len (.slot .wide 0) = numBase := sl_zero len .wide
+  have nb : numBase = 3336 := rfl
+  obtain e : ∀ d, 16 ≤ d → d + 4 ≤ 28 → w32 t.mem base d = w32 s.mem base d := fun d h1 h2 => by
+    rw [← w32_val32_one, ← w32_val32_one]
+    exact frameR_val32 F h.room h.scratch.nowrap (by omega_using [f, z, nb, h2])
+      (fun q hq => by have := hh q hq; omega_using [this, h1, h2]) hfit
+  exact ⟨by rw [e lenOff (by decide) (by decide)]; exact H.len, by rw [e leftOff (by decide) (by decide)]; exact H.left⟩
+
+/-- The header words hold after a stage that changes only memory apart from them. -/
+theorem PreHdr.keepO {t : State} {i : Nat} (H : PreHdr s base args i) {o n : Nat}
+    (O : Outside base o n s.mem t.mem) (ho : 28 ≤ o) : PreHdr t base args i :=
+  ⟨by rw [O.w32 (.inl (by simp only [lenOff]; omega_using [ho])) (by decide)]; exact H.len,
+    by rw [O.w32 (.inl (by simp only [leftOff]; omega_using [ho])) (by decide)]; exact H.left⟩
+
+/-- `v & ~((x & 1) - 1)`: `v` for `x` odd, zero for `x` even. -/
+theorem and_oddMask (v x : BitVec 32) :
+    v &&& ((x &&& 1) - 1 ^^^ BitVec.allOnes 32) = if x.toNat % 2 = 0 then 0 else v := by
+  obtain e : x &&& 1 = BitVec.ofNat 32 (x.toNat % 2) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_and, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod]
+    exact (Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide))).symm
+  rw [e]
+  rcases Nat.mod_two_eq_zero_or_one x.toNat with h | h <;> rw [h]
+  · rw [ite_eq_left rfl, show (BitVec.ofNat 32 0 - 1 ^^^ BitVec.allOnes 32) = 0 by decide]
+    simp
+  · rw [ite_eq_right (by decide), show (BitVec.ofNat 32 1 - 1 ^^^ BitVec.allOnes 32) = BitVec.allOnes 32 by decide,
+      BitVec.and_allOnes]
+
+/-- `loadHead`: slot 4 zeroed, `edx` and `ecx` the bytes of the current factor `i`'s cached value, `esi`
+at it, and `ebp` at slot 4. -/
+theorem loadHead_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat}
+    (P : PreR2 s base bytes len args i p) (H : PreHdr s base args i) (fits : 8 * preW args i ≤ bc len c) :
+    WP isa (loadHead c) s fun u => In Ex base bytes len args u ∧
+      u.gpr .edx = BitVec.ofNat 32 (8 * preW args i) ∧ u.gpr .ecx = BitVec.ofNat 32 (8 * preW args i) ∧
+      PtrAt u (byteAddr (args preArg)) .esi (preOff args i) ∧ PtrAt u base .ebp (lo len (.slot c 4)) ∧
+      val32 u.mem base (lo len (.slot c 4)) (cwc len c) = 0 ∧
+      Outside base (lo len (.slot c 4)) (bc len c) s.mem u.mem ∧ Keeps [.eax, .ecx, .edx, .ebp, .esi] s u := by
+  have bl := h.bytes_lt
+  obtain f8 := h.slot_fit c (j := 8) (by decide)
+  obtain s48 : lo len (.slot c 4) + st len c ≤ lo len (.slot c 8) := sl_le (len := len) c (by decide)
+  have est : st len c = 2 * bc len c + 32 := rfl
+  obtain hb := bc_le h.upper' c
+  obtain cb1 : cb len (one c) = bc len c := by simp [cb, one]
+  obtain cw1 : cw len (one c) = cwc len c := by simp [cw, cwc, cb, one]
+  have hi := P.hi
+  have l7 := P.lt7
+  have li := P.lt
+  have nb : numBase = 3336 := rfl
+  obtain lo4 : numBase ≤ lo len (.slot c 4) := by simp [lo]
+  have fitsW : 8 * Spec.Rsa.primeWords (args (7 + 2 * i)).toNat ≤ bc len c := fits
+  unfold loadHead
+  refine WP.seq (WP.mono (zero_ok h (x := .slot c 4) (one_ok c) (by rw [cb1]; omega_using [f8, s48, est]))
+    fun u₁ ⟨O₁, Z₁, K₁⟩ => ?_)
+  rw [cb1] at O₁
+  rw [cw1] at Z₁
+  obtain h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_using [f8, s48, est]))
+  obtain A₁ := P.arg.keep K₁ (by decide) (O₁.mono (Nat.zero_le _) (by omega_using [f8, s48, est]))
+  obtain H₁ := H.keepO O₁ (by omega_using [lo4, nb])
+  -- `edx`: the first factor's bytes.
+  refine wp_movS (h₁.arg (i := 7) (by decide)) fun u₂ U₂ _ => ?_
+  refine primeBytes_ok (r := .edx) (t := .eax) (by decide) (l := (args 7).toNat)
+    (by rw [U₂.gpr, BitVec.ofNat_toNat, BitVec.setWidth_eq]) P.pos7 (by omega_using [l7]) fun u₃ K₃ m₃ e₃ => ?_
+  obtain K₃' : Keeps [.eax, .edx] u₁ u₃ := (U₂.keeps.mono (by decide)).trans (K₃.mono (by decide))
+  obtain m₃' : u₃.mem = u₁.mem := by rw [m₃, U₂.mem]
+  obtain h₃ := h₁.regs K₃' m₃'
+  -- `eax`: all ones for factor 1, zero for factor 0; `edx` masked by it.
+  refine wp_movS (readSrc_sc h₃.scratch (d := leftOff) (by simp only [leftOff]; omega_using [lo4, nb, f8, s48, est]))
+    fun u₄ U₄ _ => ?_
+  refine wp_logicS (.inl rfl) rfl fun u₅ U₅ => wp_subS rfl fun u₆ U₆ _ => wp_logicS (.inr rfl) rfl fun u₇ U₇ => ?_
+  refine wp_logicS (.inl rfl) rfl fun u₈ U₈ => ?_
+  obtain edx₈ : u₈.gpr .edx = BitVec.ofNat 32 (preOff args i) := by
+    rw [U₈.gpr, ite_eq_left rfl, U₇.gpr, ite_eq_right (by decide), U₇.other _ (by decide), U₆.gpr, U₆.other _ (by decide),
+      U₅.gpr, ite_eq_left rfl, U₅.other _ (by decide), U₄.gpr, U₄.other _ (by decide), e₃, and_oddMask]
+    obtain hL : (u₃.mem.readW (off base leftOff) 32).toNat % 2 = i := by
+      show w32 u₃.mem base leftOff % 2 = i
+      rw [m₃']; exact H₁.left
+    rw [hL]
+    rcases (show i = 0 ∨ i = 1 by omega_using [hi]) with rfl | rfl
+    · rfl
+    · simp only [preOff, show (1 : Nat) ≠ 0 from by decide, ite_false]
+  obtain K₈ : Keeps [.eax, .edx] u₃ u₈ := ((U₄.keeps.mono (by decide)).trans (U₅.keeps.mono (by decide))).trans
+    ((U₆.keeps.mono (by decide)).trans ((U₇.keeps.mono (by decide)).trans (U₈.keeps.mono (by decide))))
+  obtain m₈ : u₈.mem = u₁.mem := by rw [U₈.mem, U₇.mem, U₆.mem, U₅.mem, U₄.mem, m₃']
+  obtain A₈ := A₁.keep (K₃'.trans K₈) (by simp) (by rw [m₈]; exact Outside.refl _ _ _ _)
+  -- `esi` at factor `i`'s value.
+  refine wp_movS A₈.readSrc fun u₉ U₉ _ => wp_addS rfl fun u₁₀ U₁₀ _ => ?_
+  obtain bA : (byteAddr (args preArg)).toNat = (args preArg).toNat := by
+    simp [byteAddr, BitVec.toNat_setWidth]; omega_using []
+  obtain po : preOff args i < 2 ^ 32 := by
+    simp only [preOff]; split
+    · decide
+    · simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega_using [l7]
+  obtain esi₁₀ : PtrAt u₁₀ (byteAddr (args preArg)) .esi (preOff args i) := by
+    rw [PtrAt, U₁₀.gpr, BitVec.toNat_add, U₉.gpr, U₉.other _ (by decide), edx₈, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (a := preOff args i) po, bA]
+  obtain K₁₀ : Keeps [.eax, .edx, .esi] u₁ u₁₀ :=
+    ((K₃'.trans K₈).mono (by decide)).trans ((U₉.keeps.mono (by decide)).trans (U₁₀.keeps.mono (by decide)))
+  obtain m₁₀ : u₁₀.mem = u₁.mem := by rw [U₁₀.mem, U₉.mem, m₈]
+  obtain h₁₀ := h₁.regs K₁₀ m₁₀
+  -- `edx` and `ecx` the bytes of factor `i`'s value, from its length.
+  refine wp_movS (readSrc_sc h₁₀.scratch (d := lenOff) (by simp only [lenOff]; omega_using [lo4, nb, f8, s48, est]))
+    fun u₁₁ U₁₁ _ => ?_
+  refine primeBytes_ok (r := .edx) (t := .eax) (by decide) (l := (args (7 + 2 * i)).toNat) ?_ P.pos
+    (by omega_using [li]) fun u₁₂ K₁₂ m₁₂ e₁₂ => ?_
+  · apply BitVec.eq_of_toNat_eq
+    rw [U₁₁.gpr, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [li])]
+    show w32 u₁₀.mem base lenOff = _
+    rw [m₁₀]; exact H₁.len
+  refine wp_movS rfl fun u₁₃ U₁₃ _ => ?_
+  obtain K₁₃ : Keeps [.eax, .ecx, .edx, .esi] u₁ u₁₃ := (K₁₀.mono (by decide)).trans
+    (((U₁₁.keeps.mono (by decide)).trans (K₁₂.mono (by decide))).trans (U₁₃.keeps.mono (by decide)))
+  obtain m₁₃ : u₁₃.mem = u₁.mem := by rw [U₁₃.mem, m₁₂, U₁₁.mem, m₁₀]
+  obtain h₁₃ := h₁.regs K₁₃ m₁₃
+  rw [← List.append_nil (ptrTo (.slot c 4) .ebp .eax)]
+  refine ptrTo_ok (r := .ebp) (t := .eax) (by decide) (by decide) h₁₃.edi h₁₃.width h.upper'
+    (by omega_using [bl, f8, s48]) fun w Kw mw pw => WP.block_nil ?_
+  obtain mw₁ : w.mem = u₁.mem := by rw [mw, m₁₃]
+  obtain edx₁₃ : u₁₃.gpr .edx = BitVec.ofNat 32 (8 * preW args i) := by rw [U₁₃.other _ (by decide), e₁₂]
+  refine ⟨h₁₃.regs Kw mw, by rw [Kw.1 _ (by decide)]; exact edx₁₃, by rw [Kw.1 _ (by decide), U₁₃.gpr]; exact e₁₂,
+    ?_, pw, by rw [mw₁]; exact Z₁, by rw [mw₁]; exact O₁, ?_⟩
+  · rw [PtrAt, Kw.1 _ (by decide), U₁₃.other _ (by decide), K₁₂.1 _ (by decide), U₁₁.other _ (by decide)]
+    exact esi₁₀
+  · exact (K₁.mono (by decide)).trans ((K₁₃.mono (by decide)).trans (Kw.mono (by decide)))
+
+/-- `loadTail`: the current factor `i`'s cached value copied into slot 4 (zero above it), and `esi` its
+doublings to the context's radix. -/
+theorem loadTail_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat}
+    (P : PreR2 s base bytes len args i p) (fits : 8 * preW args i ≤ bc len c)
+    (edx : s.gpr .edx = BitVec.ofNat 32 (8 * preW args i)) (ecx : s.gpr .ecx = BitVec.ofNat 32 (8 * preW args i))
+    (esi : PtrAt s (byteAddr (args preArg)) .esi (preOff args i)) (ebp : PtrAt s base .ebp (lo len (.slot c 4)))
+    (Z : val32 s.mem base (lo len (.slot c 4)) (cwc len c) = 0) :
+    WP isa (loadTail c) s fun u => In Ex base bytes len args u ∧
       sv u.mem base len c 4 = 2 ^ (128 * preW args i) % p ∧
       (u.gpr .esi).toNat = 16 * (bc len c - 8 * preW args i) ∧
       u.zf = some (u.gpr .esi == 0) ∧
@@ -182,140 +341,55 @@ theorem loadR2_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx} {p : Nat
   have est : st len c = 2 * bc len c + 32 := rfl
   obtain bw := bc_eq_cwc len c
   obtain hb := bc_le h.upper' c
-  obtain cb1 : cb len (one c) = bc len c := by simp [cb, one]
-  obtain cw1 : cw len (one c) = cwc len c := by simp [cw, cwc, cb, one]
-  have hi := P.hi
   obtain pw2 : 2 ≤ preW args i := by simp only [preW, Spec.Rsa.primeWords]; omega_using []
   have fitsW : 8 * Spec.Rsa.primeWords (args (7 + 2 * i)).toNat ≤ bc len c := fits
-  have pw2' : 2 ≤ Spec.Rsa.primeWords (args (7 + 2 * i)).toNat := pw2
-  unfold loadR2
-  refine WP.seq (WP.mono (zero_ok h (x := .slot c 4) (one_ok c) (by rw [cb1]; omega_using [f8, s48, est])) fun u₁ ⟨O₁, Z₁, K₁⟩ => ?_)
-  rw [cb1] at O₁
-  rw [cw1] at Z₁
-  obtain h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_using [f8, s48, est]))
-  obtain A₁ := P.arg.keep K₁ (by decide) (O₁.mono (Nat.zero_le _) (by omega_using [f8, s48, est]))
-  have l7 := P.lt7
-  have li := P.lt
-  have pos := P.pos
-  -- The pointers and the count.
-  refine WP.seq (wp_movS (h₁.arg (i := 7 + 2 * i) (by omega_using [hi])) fun u₂ U₂ _ => ?_)
-  refine primeBytes_ok (r := .ecx) (t := .eax) (by decide) (l := (args (7 + 2 * i)).toNat)
-    (by rw [U₂.gpr, BitVec.ofNat_toNat, BitVec.setWidth_eq]) pos (by omega_using [li]) fun u₃ K₃ m₃ e₃ => ?_
-  obtain A₃ := A₁.keep ((U₂.keeps.mono (by decide)).trans K₃) (by simp) (by rw [m₃, U₂.mem]; exact Outside.refl _ _ _ _)
-  refine wp_movS A₃.readSrc fun u₄ U₄ _ => ?_
-  -- `esi` at factor `i`'s value, `ecx` its bytes.
-  obtain hpt : ∀ {is' : List Instr} {Q' : State → Prop},
-      (∀ v, Keeps [.eax, .ecx, .edx, .esi] u₄ v → v.mem = u₄.mem →
-        PtrAt v (byteAddr (args preArg)) .esi (preOff args i) →
-        v.gpr .ecx = BitVec.ofNat 32 (8 * preW args i) → WP isa (.block is') v Q') →
-      WP isa (.block ((if i = 0 then [] else [.mov .edx (.mem (argAt 0 7))] ++ primeBytes .edx .eax ++
-        [.alu .add .esi (.reg .edx)]) ++ is')) u₄ Q' := by
-    intro is' Q' kk
-    obtain esi₄ : (u₄.gpr .esi).toNat = (args preArg).toNat := by rw [U₄.gpr]
-    obtain ecx₄ : u₄.gpr .ecx = BitVec.ofNat 32 (8 * preW args i) := by rw [U₄.other _ (by decide), e₃]
-    obtain bA : (byteAddr (args preArg)).toNat = (args preArg).toNat := by
-      simp [byteAddr, BitVec.toNat_setWidth]; omega_using []
-    rcases (show i = 0 ∨ i = 1 by omega_using [hi]) with rfl | rfl
-    · refine kk u₄ (Keeps.refl _ _) rfl ?_ ecx₄
-      rw [PtrAt, esi₄, bA]; simp only [preOff, ite_true, Nat.add_zero]
-      exact (Nat.mod_eq_of_lt (by have := (args preArg).isLt; omega_using [])).symm
-    · simp only [show (1 : Nat) ≠ 0 from by decide, ite_false, List.append_assoc, List.cons_append,
-        List.nil_append]
-      obtain h₄ := h₁.regs ((U₂.keeps.mono (by decide)).trans ((K₃.mono (by decide)).trans (U₄.keeps.mono (by decide)))
-        : Keeps [.eax, .ecx, .esi] u₁ u₄) (by rw [U₄.mem, m₃, U₂.mem])
-      refine wp_movS (h₄.arg (i := 7) (by decide)) fun v₁ V₁ _ => ?_
-      refine primeBytes_ok (r := .edx) (t := .eax) (by decide) (l := (args 7).toNat)
-        (by rw [V₁.gpr, BitVec.ofNat_toNat, BitVec.setWidth_eq]) P.pos7 (by omega_using [l7]) fun v₂ K₂ m₂ e₂ => ?_
-      refine wp_addS rfl fun v₃ V₃ _ => kk v₃ ?_ (by rw [V₃.mem, m₂, V₁.mem]) ?_ ?_
-      · exact ((V₁.keeps.mono (by decide)).trans (K₂.mono (by decide))).trans (V₃.keeps.mono (by decide))
-      · rw [PtrAt, V₃.gpr, BitVec.toNat_add, e₂, K₂.1 _ (by decide), V₁.other _ (by decide), esi₄, bA,
-          BitVec.toNat_ofNat]
-        simp only [preOff, show (1 : Nat) ≠ 0 from by decide, ite_false]
-        have := (args preArg).isLt
-        have : 8 * Spec.Rsa.primeWords (args 7).toNat < 2 ^ 32 := by
-          simp only [Spec.Rsa.primeWords, Spec.Rsa.modulusWords]; omega_using [l7]
-        omega_using []
-      · rw [V₃.other _ (by decide), K₂.1 _ (by decide), V₁.other _ (by decide), ecx₄]
-  obtain K₄ : Keeps [.eax, .ecx, .esi] u₁ u₄ :=
-    (U₂.keeps.mono (by decide)).trans ((K₃.mono (by decide)).trans (U₄.keeps.mono (by decide)))
-  obtain m₄ : u₄.mem = u₁.mem := by rw [U₄.mem, m₃, U₂.mem]
-  refine hpt (is' := ptrTo (.slot c 4) .ebp .eax) fun v Kv mv pv cv => ?_
-  obtain hv := h₁.regs ((K₄.mono (by decide)).trans Kv : Keeps [.eax, .ecx, .edx, .esi] u₁ v) (by rw [mv, m₄])
-  rw [← List.append_nil (ptrTo (.slot c 4) .ebp .eax)]
-  refine ptrTo_ok (r := .ebp) (t := .eax) (by decide) (by decide) hv.edi hv.width h.upper' (by omega_using [bl, f8, s48])
-    fun w Kw mw pw => WP.block_nil ?_
-  obtain hw := hv.regs Kw mw
-  obtain Kw₁ : Keeps [.eax, .ecx, .edx, .esi, .ebp] u₁ w := ((K₄.mono (by decide)).trans (Kv.mono (by decide))).trans (Kw.mono (by decide))
-  -- The copy.
-  obtain hr : InRegions (w.rd ++ w.wr) (byteAddr (args preArg)) (preOff args i + 8 * preW args i) := by
-    rw [Kw₁.2.1, Kw₁.2.2, K₁.2.1, K₁.2.2]; exact P.read
+  obtain pwE : preW args i = Spec.Rsa.primeWords (args (7 + 2 * i)).toNat := rfl
   obtain bA : (byteAddr (args preArg)).toNat = (args preArg).toNat := by
     simp [byteAddr, BitVec.toNat_setWidth]; omega_using []
+  unfold loadTail
+  -- The copy.
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PrecomputedRt.copyLoop_ok (N := 2 * preW args i)
-    (x := lo len (.slot c 4)) (y := preOff args i) hw.ws hr
-    (by rw [bA]; exact P.fit) P.apart (by omega_using [pw2]) (by omega_using [fits, f8, s48, est]) (by omega_using []) pw
-    (by rw [PtrAt, Kw.1 _ (by decide)]; exact pv)
-    (by rw [Kw.1 _ (by decide), cv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [fits, hb])]; omega_using []))
+    (x := lo len (.slot c 4)) (y := preOff args i) h.ws P.read
+    (by rw [bA]; exact P.fit) P.apart (by omega_using [pw2, pwE]) (by omega_using [fits, fitsW, pwE, f8, s48, est]) (by omega_using [])
+    ebp esi (by rw [ecx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [fits, fitsW, pwE, hb])]; omega_using []))
     fun t₁ ⟨Ot, Vt, Kt⟩ => ?_)
-  obtain Ot₀ : Outside base 0 bytes w.mem t₁.mem := Ot.mono (Nat.zero_le _) (by omega_using [fits, f8, s48, est])
-  obtain ht₁ := hw.keep Kt (by decide) (by decide) Ot₀
-  refine wp_movS (ht₁.arg (i := 7 + 2 * i) (by omega_using [hi])) fun t₂ T₂ _ => ?_
-  refine primeBytes_ok (r := .edx) (t := .eax) (by decide) (l := (args (7 + 2 * i)).toNat)
-    (by rw [T₂.gpr, BitVec.ofNat_toNat, BitVec.setWidth_eq]) pos (by omega_using [li]) fun t₃ K₃' m₃' e₃' => ?_
-  obtain K₃'' : Keeps [.eax, .edx] t₁ t₃ := (T₂.keeps.mono (by decide)).trans (K₃'.mono (by decide))
-  obtain ht₃ := ht₁.regs K₃'' (by rw [m₃', T₂.mem])
-  refine widthC_ok ht₃.width h.upper' fun t₄ K₄' m₄' e₄' => ?_
+  obtain Ot₀ : Outside base 0 bytes s.mem t₁.mem := Ot.mono (Nat.zero_le _) (by omega_using [fits, fitsW, pwE, f8, s48, est])
+  obtain ht₁ := h.keep Kt (by decide) (by decide) Ot₀
+  refine widthC_ok ht₁.width h.upper' fun t₄ K₄' m₄' e₄' => ?_
   refine wp_subS rfl fun t₅ T₅ _ => wp_addS rfl fun t₆ T₆ _ => wp_addS rfl fun t₇ T₇ _ =>
     wp_addS rfl fun t₈ T₈ _ => wp_addZ rfl fun u U z => WP.block_nil ?_
-  obtain Ku : Keeps [.eax, .edx, .esi] t₃ u := (K₄'.mono (by decide)).trans ((((T₅.keeps.mono (by decide)).trans
+  obtain Ku : Keeps [.esi] t₁ u := (K₄'.mono (by decide)).trans ((((T₅.keeps.mono (by decide)).trans
     (T₆.keeps.mono (by decide))).trans ((T₇.keeps.mono (by decide)).trans (T₈.keeps.mono (by decide)))).trans
     (U.keeps.mono (by decide)))
-  obtain mu : u.mem = t₁.mem := by rw [U.mem, T₈.mem, T₇.mem, T₆.mem, T₅.mem, m₄', m₃', T₂.mem]
+  obtain mu : u.mem = t₁.mem := by rw [U.mem, T₈.mem, T₇.mem, T₆.mem, T₅.mem, m₄']
   -- The count.
   obtain hd : (t₄.gpr .edx).toNat = 8 * preW args i := by
-    rw [K₄'.1 _ (by decide), e₃', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb, fitsW])]
+    rw [K₄'.1 _ (by decide), Kt.1 _ (by decide), edx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb, fitsW, pwE])]
   obtain h5 : (t₅.gpr .esi).toNat = bc len c - 8 * preW args i := by
-    rw [T₅.gpr, BitVec.toNat_sub, hd, e₄', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := bc len c) (by omega_using [hb])]; omega_using [fits, hb]
+    rw [T₅.gpr, BitVec.toNat_sub, hd, e₄', BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := bc len c) (by omega_using [hb])]
+    omega_using [fits, fitsW, pwE, hb]
   obtain h8 : (t₈.gpr .esi).toNat = 8 * (bc len c - 8 * preW args i) := by
     rw [T₈.gpr, BitVec.toNat_add, T₇.gpr, BitVec.toNat_add, T₆.gpr, BitVec.toNat_add, h5]; omega_using [hb]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact ht₃.regs Ku (by rw [mu, m₃', T₂.mem])
+  refine ⟨ht₁.regs Ku mu, ?_, ?_, ?_, by rw [mu]; exact Ot.mono (Nat.le_refl _) (by omega_using [fits, fitsW, pwE]), (Kt.mono (by decide)).trans (Ku.mono (by decide))⟩
   · -- The value: the copy, and zero above it.
-    obtain mw₁ : w.mem = u₁.mem := by rw [mw, mv, m₄]
     obtain tail : val32 t₁.mem base (lo len (.slot c 4) + 4 * (2 * preW args i)) (cwc len c - 2 * preW args i) = 0 := by
-      rw [Ot.val32 (.inr (Nat.le_refl _)) (by omega_using [fits, nw', bl, f8, s48, est, bw, hb, pw2, fitsW, pw2', hd, h5, h8]), mw₁]
-      have Zs := Z₁
-      rw [show cwc len c = 2 * preW args i + (cwc len c - 2 * preW args i) by omega_using [fits, bw], val32_append] at Zs
+      rw [Ot.val32 (.inr (Nat.le_refl _)) (by omega_using [fits, nw', bl, f8, s48, est, bw, hb, pw2, fitsW, pwE])]
+      have Zs := Z
+      rw [show cwc len c = 2 * preW args i + (cwc len c - 2 * preW args i) by omega_using [fits, fitsW, pwE, bw], val32_append] at Zs
       simp only [Nat.add_eq_zero_iff, Nat.mul_eq_zero, Nat.pos_iff_ne_zero.mp (Nat.two_pow_pos _), false_or] at Zs
       exact Zs.2
-    obtain src : val32 w.mem (byteAddr (args preArg)) (preOff args i) (2 * preW args i) =
-        val32 s.mem (byteAddr (args preArg)) (preOff args i) (2 * preW args i) := by
-      rw [mw₁]
-      refine val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun k hk =>
-        VG.Proof.Bignum.X86.PrecomputedRt.outside_apart O₁ (L := bytes) (by omega_using [fits, nw', bl, f8, s48, est, bw, hb, pw2, fitsW, pw2', hd, h5, h8, hj]) ?_)
-      intro hc
-      refine P.apart _ ?_ hc
-      rw [Offset.add_add]
-      exact Region.contains_ofNat _ (by omega_using [hj, hk])
     simp only [sv]
-    rw [mu, show cwc len c = 2 * preW args i + (cwc len c - 2 * preW args i) by omega_using [fits, bw], val32_append, tail,
-      Nat.mul_zero, Nat.add_zero, Vt, src, P.val]
+    rw [mu, show cwc len c = 2 * preW args i + (cwc len c - 2 * preW args i) by omega_using [fits, fitsW, pwE, bw], val32_append, tail,
+      Nat.mul_zero, Nat.add_zero, Vt, P.val]
   · rw [U.gpr, BitVec.toNat_add, h8]; omega_using [hb]
   · rw [z, U.gpr]
-  · rw [mu]
-    obtain O' := Ot.mono (o' := lo len (.slot c 4)) (n' := bc len c) (Nat.le_refl _) (by omega_using [fits])
-    rw [mw, mv, m₄] at O'
-    exact O₁.trans O'
-  · exact (K₁.mono (by decide)).trans (((K₄.mono (by decide)).trans (Kv.mono (by decide))).trans
-      ((Kw.mono (by decide)).trans ((Kt.mono (by decide)).trans ((K₃''.mono (by decide)).trans (Ku.mono (by decide))))))
-
 
 /-- `preparePre`: what `prepare` leaves (`prepCtx_ok`), from factor `i`'s cached `R_pre² mod M`
 doubled to the context's radix. -/
 theorem preparePre_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx}
-    (P : PreR2 s base bytes len args i (safeM (sv s.mem base len c 0)))
+    (P : PreR2 s base bytes len args i (safeM (sv s.mem base len c 0))) (H : PreHdr s base args i)
     (fits : 8 * preW args i ≤ bc len c) :
-    WP isa (preparePre c i) s fun u =>
+    WP isa (preparePre c) s fun u =>
       CtxOk Ex base bytes len args c (safeM (sv s.mem base len c 0)) u ∧ sv u.mem base len c 3 = 1 ∧
       sv u.mem base len c 4 = 2 ^ (16 * bc len c) % safeM (sv s.mem base len c 0) ∧
       Frame (frameR base (s.gpr .esp) (prepR len c)) s.mem u.mem ∧
@@ -345,6 +419,7 @@ theorem preparePre_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx}
   unfold preparePre
   refine WP.seq (WP.mono (prepBasePre_ok h c) fun u₈ ⟨h₈, F₈, M₈, one₈, I₈, K₈⟩ => ?_)
   obtain P₈ := P.keepF h.room K₈ (by decide) F₈ fit.2
+  obtain H₈ := H.keepF h F₈ fit.2 (baseR_hdr len c)
   obtain sp₈ : u₈.gpr .esp = s.gpr .esp := K₈.1 _ (by decide)
   -- What `prepBasePre` leaves stays: the rest changes only slots 1 and 4.
   obtain rest : ∀ t : State, Frame (frameR base (s.gpr .esp) (powR len c)) u₈.mem t.mem →
@@ -386,7 +461,11 @@ theorem preparePre_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx}
       sv t.mem base len c 0 = safeM (sv s.mem base len c 0) := fun t Ft => by
     simp only [sv] at M₈ ⊢
     rw [frameR_val32 Ft h.room nw (by omega_arith) (hws (.inl (by omega_arith)) (.inl (by omega_arith))) fitW, M₈]
-  refine WP.seq (WP.mono (loadR2_ok h₈ P₈ fits) fun u₉ ⟨h₉, V₉, esi₉, z₉, O₉, K₉⟩ => ?_)
+  refine WP.seq (WP.mono (loadHead_ok h₈ P₈ H₈ fits) fun u₇ ⟨h₇, edx₇, ecx₇, esi₇, ebp₇, Z₇, O₇, K₇⟩ => ?_)
+  obtain P₇ := P₈.keepO K₇ (by decide) (O₇.mono (Nat.zero_le _) (by omega_arith)) (by omega_arith)
+  refine WP.seq (WP.mono (loadTail_ok h₇ P₇ fits edx₇ ecx₇ esi₇ ebp₇ Z₇) fun u₉ ⟨h₉, V₉, esi₉, z₉, O₉', K₉'⟩ => ?_)
+  obtain O₉ : Outside base (lo len (.slot c 4)) (bc len c) u₈.mem u₉.mem := O₇.trans O₉'
+  obtain K₉ : Keeps [.eax, .ecx, .edx, .ebp, .esi] u₈ u₉ := K₇.trans K₉'
   obtain sp₉ : u₉.gpr .esp = s.gpr .esp := by rw [K₉.1 _ (by decide), sp₈]
   obtain F₉ : Frame (frameR base (s.gpr .esp) (powR len c)) u₈.mem u₉.mem :=
     frameR_of_outside O₉ (by omega_arith) (by simp [powR])
@@ -419,35 +498,37 @@ theorem preparePre_ok (h : In Ex base bytes len args s) {i : Nat} {c : Ctx}
     · refine rest t (F₉.trans Ft) (K₉'.trans Kt) ?_
       rw [Vt, show 128 * preW args i + 16 * (bc len c - 8 * preW args i) = 16 * bc len c by omega_using [fits]]
 
-/-- With `some i`, factor `i`'s cached value (`PreR2`); with `none`, nothing. -/
+/-- With `some i`, factor `i`'s cached value (`PreR2`) and the header words naming it (`PreHdr`);
+with `none`, nothing. -/
 def PreG (s : State) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) : Option Nat → Nat → Prop
   | none, _ => True
-  | some i, p => PreR2 s base bytes len args i p
+  | some i, p => PreR2 s base bytes len args i p ∧ PreHdr s base args i
 
 /-- With `some i`, factor `i`'s cached value fits the context `c`. -/
 def FitG (len : Nat) (args : Nat → BitVec 32) : Option Nat → Ctx → Prop
   | none, _ => True
   | some i, c => 8 * preW args i ≤ bc len c
 
-theorem PreG.keepF {t : State} {p : Nat} {pc : Option Nat} (P : PreG s base bytes len args pc p) (room : CallRoom (s.gpr .esp) base bytes)
-    {regs : List Reg} (K : Keeps regs s t) (sp : .esp ∉ regs) {ws : List (Nat × Nat)}
-    (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem) (hfit : ∀ q ∈ ws, q.1 + q.2 ≤ bytes) :
+theorem PreG.keepF {t : State} {p : Nat} {pc : Option Nat} (P : PreG s base bytes len args pc p)
+    (h : In Ex base bytes len args s) {regs : List Reg} (K : Keeps regs s t) (sp : .esp ∉ regs) {ws : List (Nat × Nat)}
+    (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem) (hfit : ∀ q ∈ ws, q.1 + q.2 ≤ bytes)
+    (hh : ∀ q ∈ ws, 28 ≤ q.1 ∨ q.1 + q.2 ≤ 16) :
     PreG t base bytes len args pc p := by
   cases pc with
   | none => trivial
-  | some i => exact PreR2.keepF P room K sp F hfit
+  | some i => exact ⟨PreR2.keepF P.1 h.room K sp F hfit, P.2.keepF h F hfit hh⟩
 
 /-- `prepareG`: what `prepare` leaves (`prepCtx_ok`), either way. -/
 theorem prepareG_ok (h : In Ex base bytes len args s) (c : Ctx) {pc : Option Nat}
     (P : PreG s base bytes len args pc (safeM (sv s.mem base len c 0))) (fits : FitG len args pc c) :
-    WP isa (prepareG pc c) s fun u =>
+    WP isa (prepareG pc.isSome c) s fun u =>
       CtxOk Ex base bytes len args c (safeM (sv s.mem base len c 0)) u ∧ sv u.mem base len c 3 = 1 ∧
       sv u.mem base len c 4 = 2 ^ (16 * bc len c) % safeM (sv s.mem base len c 0) ∧
       Frame (frameR base (s.gpr .esp) (prepR len c)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   cases pc with
   | none => exact prepCtx_ok h c
-  | some i => exact preparePre_ok h P fits
+  | some i => exact preparePre_ok h P.1 P.2 fits
 
 /-- A factor's cached value fits a context its length fits. -/
 theorem fitG_of {i : Nat} {c : Ctx} (hl : 64 ≤ len) (h : (args (7 + 2 * i)).toNat ≤ bc len c) :
@@ -570,6 +651,18 @@ theorem pwR_in (h : In Ex base bytes len args s) (c : Ctx) (o : Nat) : InSt len 
   · exact ⟨_, by simp, slot_in h c (by decide)⟩
   · exact ⟨_, by simp, slot_in h c (by decide)⟩
   · exact ⟨_, by simp, table_in c len⟩
+
+/-- A power's ranges lie apart from the header words naming the factor. -/
+theorem stR_hdr (len o : Nat) : ∀ q ∈ stR len o, 28 ≤ q.1 ∨ q.1 + q.2 ≤ 16 := by
+  have nb : numBase = 3336 := rfl
+  obtain t0 : te len .wide 0 = lo len (.slot .wide 20) := by simp [te]
+  intro q hq
+  simp only [stR, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl
+  · exact .inr (by decide)
+  · exact .inl (by simp only [nb]; decide)
+  · exact .inl (by rw [t0]; simp only [lo]; omega_using [nb])
+  · exact .inl (by simp only [lo]; omega_using [nb])
 
 theorem stR_fit (h : In Ex base bytes len args s) {o : Nat} (ho : o ≤ 19) :
     ∀ q ∈ stR len o, q.1 + q.2 ≤ bytes := by

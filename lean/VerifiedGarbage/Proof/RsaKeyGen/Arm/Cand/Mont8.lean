@@ -78,7 +78,7 @@ theorem MS.of_keeps {σ s t : State} (pre : In P σ) (h : MS P σ s) {o : Nat} (
     · exact h.stackSep
     · have spf := pre.spFit
       rw [spw, pre.rC_eq]
-      have := Offset.disjoint_below (State.addr P.sp) (n := 56) (d := 0) (k := 4) (by omega_arith)
+      have := Offset.disjoint_below (State.addr P.sp) (n := 104) (d := 0) (k := 4) (by omega_arith)
       simpa using this
 
 /-- `mont0`: the base into `r0`. -/

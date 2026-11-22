@@ -128,4 +128,16 @@ windows of every byte, then out of Montgomery form. -/
 def powWin : Prog isa :=
   .seq table (.seq (.loop (.seq byteWin (.block [.subi .r31 .r31 1])) (.nonzero .d .r31)) (montOp 4 6 7))
 
+/-- `powWin` as the function `name`, which a call enters with `r11` and `r12`
+changed: it computes them again, `2 w` from the arrays' size `r29 = 8 (w + 2)`
+and `-m⁻¹ mod 2³²` (`minv`). The caller's return address waits in `r25`,
+which `powWin` does not write. -/
+def powWinCall (name : String) : Prog isa :=
+  .seq (.block [.mflr .r25]) (.seq (.call name
+    (.seq (.block (minv ++ [.lsr .d .r11 .r29 2, .subi .r11 .r11 4])) powWin)) (.block [.mtlr .r25]))
+
+/-- `powWin` as the function `vg_bignum_pow_win`, which DSA, FFDH and RSA's
+CRT call. -/
+def powWinFn : Prog isa := powWinCall "vg_bignum_pow_win"
+
 end VG.Impl.Bignum.PPC64LE.ModExp

@@ -217,8 +217,9 @@ end
 
 ## The encoding
 
-The point encoding's inversion calls `vg_gf25519_r32_pow250`, which the
-analysis follows (`callTaint₀`).
+The point encoding's inversion calls `vg_gf25519_r32_mul` and
+`vg_gf25519_r32_sqn`, which the analysis follows (`callTaint₀`) through
+their summaries.
 -/
 
 @[expose] public section
@@ -231,7 +232,7 @@ open VG VG.X86 VG.Impl.Ed25519.X86
 
 theorem pointEncode_ct {x : BitVec 32} : RelCT isa (CallCTPre x) pointEncode (fun _ _ => True) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ pointEncode h).isSome = true := by
-    native_taint_decide_sum [VG.Proof.X25519.X86.pow250Sum]
+    native_taint_decide_sum [VG.Proof.X25519.X86.gfMulSum, VG.Proof.X25519.X86.gfSqnSum]
   exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) hc
 
 /-- What is public at the loop of doublings of `double16`. -/

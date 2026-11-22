@@ -53,7 +53,7 @@ theorem pc_entry_ready (s : State) {base dst src : BitVec 32} {len k : Nat}
   refine ⟨?_, pushFrame.trans frameEntryFull, ?_, rest.mono (by decide)⟩
   · refine ⟨⟨⟨h.workspace.nowrap, ?_⟩, h.minLength, h.maxLength, h.space, h.sourceFits, ?_,
       h.sourceSeparate, h.outputFits, ?_, h.outputSeparate⟩, ?_, ptr,
-      source.trans h.source, count.trans h.count⟩
+      source.trans h.source, count.trans h.count, h.callStack rest.sp⟩
     · rw [rest.wr]; exact List.mem_cons_of_mem _ h.workspace.writable
     · rw [rest.rd, rest.wr]; exact InRegions_append_cons.mpr (Or.inr h.readable)
     · rw [rest.wr]

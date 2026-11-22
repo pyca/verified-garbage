@@ -29,6 +29,6 @@ namespace VG.Impl.Ecdh.X86.Fn
 open VG.X86
 
 /-- `vg_ecdh_brainpoolp512r1`, as emitted. -/
-def exchangeBrainpoolP512r1 : Prog isa := Impl.Scrub.X86.scrubAll 32 20 Impl.Ecdh.X86.exchangeBrainpoolP512r1
+def exchangeBrainpoolP512r1 : Prog isa := Impl.Scrub.X86.scrubAll 32 24 Impl.Ecdh.X86.exchangeBrainpoolP512r1
 
 end VG.Impl.Ecdh.X86.Fn

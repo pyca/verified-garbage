@@ -9,7 +9,7 @@ namespace VG.Impl.EcKey.Compressed.AArch64.Chain
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 
  def mul (P : ChainCfg) (o a b : Nat) : Prog isa :=
-  match Mont.callOf P.M with
+  match Mont.rootCallOf P.M with
   | some (f, m) => mulCall f P.M.n m o a b
   | none => .block (Mont.AArch64.mul P.M o a b)
 

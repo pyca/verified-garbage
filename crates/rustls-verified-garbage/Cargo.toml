@@ -1,0 +1,30 @@
+[package]
+name = "rustls-verified-garbage"
+description = "A rustls CryptoProvider backed by verified-garbage"
+readme = "README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["std"]
+# The ticketer rotates its keys behind rustls' std-only `TicketRotator`;
+# verified-garbage's `std` detects the CPU's features at run time on AArch64.
+std = ["verified-garbage/std"]
+
+[dependencies]
+asn1 = { version = "0.24", default-features = false }
+getrandom = "0.4"
+pki-types = { package = "rustls-pki-types", version = "1.15", features = ["alloc"] }
+rustls = { version = "=0.24.0-dev.3", default-features = false }
+verified-garbage = { path = "../.." }
+zeroize = "1.8"
+
+[dev-dependencies]
+rustls = { version = "=0.24.0-dev.3", features = ["webpki"] }

@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 `vg_x448_exchange` and `vg_x448_base`, each followed by
 `Impl.Scrub.PPC64LE.scrubTail` (`PPC64LE.Scrub.verifiedScrubbedAll`), which clears the
 volatile registers they write and the stack their frames use (the 48 bytes
-of the exchange's frame; the base has none). Their postconditions read the
+of the exchange's frame, the 96 of the base's). Their postconditions read the
 memory on return only within `out` (`PPC64LE.Scrub.PostOut`), whatever
 tables of constants their code takes, by RISC-V's proofs
 (`Proof/X448/RISCV64/Scrub.lean`). `verifiedScrubbedAll`'s side condition
@@ -89,11 +89,11 @@ theorem exchange_scrubbed :
 constant time and returns without secret residue. -/
 theorem base_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.X448.PPC64LE.Fn.base
-      (Spec.X448.x448BaseContract PPC64LE.abi) 0 :=
+      (Spec.X448.x448BaseContract PPC64LE.abi 96) 0 :=
   verifiedScrubbedAll (api := Spec.X448.x448BaseApi) {
       code := Impl.X448.PPC64LE.x448Base
-      verified := Proof.X448.PPC64LE.x448Base_verified }
-    0 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
+      verified := Proof.X448.PPC64LE.Base.verified }
+    96 ⟨true, false, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
     (baseOut [] _)
     (by dsimp only; lit_decide)
 

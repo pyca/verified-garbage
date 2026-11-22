@@ -59,7 +59,7 @@ def verifyP192 : Prog isa :=
   .seq (.block ((Sign.Cfg.nConsts p192).flatMap (fun (i, x) => setConst 4 (p192.sl i) x))) <|
   .seq (Verify.Cfg.uv p192 p192Order) <|
   .seq (VerifyJ.Cfg.joint p192 Impl.Weierstrass.dblJ) <|
-  .seq (chainPow (Cfg.chainP p192) (p192.sl ONEP) p192.FP) <|
+  .seq (Ecdh.RISCV64.Cfg.invP p192) <|
   .seq (Cfg.affineCoord p192 XM XO RX) <|
   .seq (Verify.Cfg.compare p192 p192Order) (.block (Verify.Cfg.finish p192))
 

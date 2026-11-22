@@ -222,31 +222,31 @@ end
 
 end
 
-/-! The candidate's 184 bytes and its 24 argument bytes lie below the search frame. -/
+/-! The candidate's 232 bytes and its 24 argument bytes lie below the search frame. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterSearch
 open VG VG.Arm
 
-theorem callStack_fits {sp : BitVec 32} (fit : 208 ≤ sp.toNat) : 184 ≤ (sp - 24#32).toNat := by
+theorem callStack_fits {sp : BitVec 32} (fit : 256 ≤ sp.toNat) : 232 ≤ (sp - 24#32).toNat := by
   rw [FrameStack.sub_toNat' (by omega_using [fit] : 24 ≤ sp.toNat)]
   omega_using [fit]
 
-theorem callArguments_fits {sp : BitVec 32} (fit : 208 ≤ sp.toNat) : (sp - 24#32).toNat + 24 ≤ 2 ^ 32 := by
+theorem callArguments_fits {sp : BitVec 32} (fit : 256 ≤ sp.toNat) : (sp - 24#32).toNat + 24 ≤ 2 ^ 32 := by
   rw [FrameStack.sub_toNat' (by omega_using [fit] : 24 ≤ sp.toNat)]
   have := sp.isLt
   omega_using []
 
-theorem callArguments_sub {sp : BitVec 32} (fit : 208 ≤ sp.toNat) :
-    (⟨State.addr (sp - 24#32), 24⟩ : Region).Sub (FrameStack.belowA sp 208) :=
+theorem callArguments_sub {sp : BitVec 32} (fit : 256 ≤ sp.toNat) :
+    (⟨State.addr (sp - 24#32), 24⟩ : Region).Sub (FrameStack.belowA sp 256) :=
   FrameStack.belowA_sub (by decide) fit
 
-theorem callStack_sub {sp : BitVec 32} (fit : 208 ≤ sp.toNat) :
-    (FrameStack.belowA (sp - 24#32) 184).Sub (FrameStack.belowA sp 208) :=
+theorem callStack_sub {sp : BitVec 32} (fit : 256 ≤ sp.toNat) :
+    (FrameStack.belowA (sp - 24#32) 232).Sub (FrameStack.belowA sp 256) :=
   FrameStack.belowA_inner (by decide) fit
 
-theorem callStack_arguments_separate {sp : BitVec 32} (fit : 208 ≤ sp.toNat) :
-    (FrameStack.belowA (sp - 24#32) 184).Disjoint ⟨State.addr (sp - 24#32), 20⟩ := by
+theorem callStack_arguments_separate {sp : BitVec 32} (fit : 256 ≤ sp.toNat) :
+    (FrameStack.belowA (sp - 24#32) 232).Disjoint ⟨State.addr (sp - 24#32), 20⟩ := by
   rw [FrameStack.belowA, FrameStack.addr_sub' (callStack_fits fit)]
   exact (VG.Offset.base_disjoint_below _ (by decide)).symm
 

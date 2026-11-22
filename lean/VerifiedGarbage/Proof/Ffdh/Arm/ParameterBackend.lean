@@ -45,9 +45,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateSat
-public import VerifiedGarbage.Impl.Ffdh.Arm.CallerRows
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Bignum.Arm.DownRowUmaal
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.Basic
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
@@ -724,14 +722,14 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem limitedFinal_ok (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
+theorem limitedFinal_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
     (h : CandidateContext p used s) (enough : p.length ≤ p.bytes.length) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal v.name v.code) s
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s
       (CandidateReturn p (witnessRemaining (limitedPhase p false) used 0) s) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
   refine WP.seq (WP.mono (candidateShape_ok h enough) ?_)
   rintro u ⟨ctx, _, number, changed, rest⟩
-  refine WP.seq (WP.mono (limitedTest_ok v ctx number p.candidate_odd) ?_)
+  refine WP.seq (WP.mono (limitedTest_ok b v ctx number p.candidate_odd) ?_)
   rintro w ⟨next, ctxW, _, status, suffix, bytes, changedW, restW⟩
   refine WP.seq (WP.mono (candidateResult_ok ctxW status suffix (by
     intro _ _
@@ -757,14 +755,14 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem screenedAfterQ_ok (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
+theorem screenedAfterQ_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
     (h : CandidateContext p used s) (enough : p.length ≤ p.bytes.length)
     (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) = (p.candidate - 1) / 2)
     (odd : ((p.candidate - 1) / 2) % 2 = 1) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.afterScreenedQ v.name v.code) s
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.afterScreenedQ (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s
       (CandidateReturn p (screenedQTests p used) s) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.afterScreenedQ VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
-  refine WP.seq (WP.mono (candidateTest_ok v (q := true) h number odd) ?_)
+  refine WP.seq (WP.mono (candidateTest_ok b v (q := true) h number odd) ?_)
   rintro u ⟨next, ctx, _, status, suffix, _, changed, rest⟩
   let answer := witnessRemaining (candidatePhase p true) used 0
   have bound : witnessResultStatus (witnessRemaining (candidatePhase p true) used 0) ≤ 2 :=
@@ -777,7 +775,7 @@ theorem screenedAfterQ_ok (v : RoundImpl) {s : State} {p : CandidateParams} {use
   by_cases go : witnessResultStatus answer = 1
   · refine WP.seq (WP.ite true (by change some w.z = some true; rw [zero, decide_eq_true go]) ?_ (by intro h; cases h))
     intro _
-    refine WP.mono (limitedFinal_ok v ctxW enough) ?_
+    refine WP.mono (limitedFinal_ok b v ctxW enough) ?_
     intro t returned
     refine WP.block_nil ?_
     rw [← screenedQTests_go p used next go suffix] at returned
@@ -810,16 +808,16 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem screenedQ_ok (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
+theorem screenedQ_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
     (h : CandidateContext p used s) (enough : p.length ≤ p.bytes.length)
     (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) = p.candidate)
     (odd : ((p.candidate - 1) / 2) % 2 = 1) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ v.name v.code) s
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s
       (CandidateReturn p (screenedQTests p used) s) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ
   refine WP.seq (WP.mono (candidateHalveValue_ok h number) ?_)
   rintro u ⟨context, value, _, changed, rest⟩
-  refine WP.mono (screenedAfterQ_ok v context enough value odd) ?_
+  refine WP.mono (screenedAfterQ_ok b v context enough value odd) ?_
   intro t returned
   exact returned.trans_pre (changed.mono (by simp [candidateRegions])) rest (fun _ h => h)
 
@@ -833,15 +831,15 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem screenedTests_ok (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
+theorem screenedTests_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
     (h : CandidateContext p used s) (enough : p.length ≤ p.bytes.length)
     (odd : ((p.candidate - 1) / 2) % 2 = 1) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedTests v.name v.code) s
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedTests (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s
       (CandidateReturn p (screenedTests p used) s) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.screenedTests VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
   refine WP.seq (WP.mono (candidateShape_ok h enough) ?_)
   rintro shaped ⟨shapeCtx, _, shapeNumber, shapeChanged, shapeRest⟩
-  refine WP.seq (WP.mono (limitedTest_ok v (first := true) shapeCtx shapeNumber p.candidate_odd) ?_)
+  refine WP.seq (WP.mono (limitedTest_ok b v (first := true) shapeCtx shapeNumber p.candidate_odd) ?_)
   rintro u ⟨next, ctx, _, status, suffix, sameBytes, changed, rest⟩
   let answer := witnessRemaining (limitedPhase p true) used 0
   have bound : witnessResultStatus (witnessRemaining (limitedPhase p true) used 0) ≤ 2 :=
@@ -854,7 +852,7 @@ theorem screenedTests_ok (v : RoundImpl) {s : State} {p : CandidateParams} {used
   by_cases go : witnessResultStatus answer = 1
   · refine WP.seq (WP.ite true (by change some w.z = some true; rw [zero, decide_eq_true go]) ?_ (by intro h; cases h))
     intro _
-    refine WP.mono (screenedQ_ok v ctxW enough (by rw [memory, sameBytes]; exact shapeNumber) odd) ?_
+    refine WP.mono (screenedQ_ok b v ctxW enough (by rw [memory, sameBytes]; exact shapeNumber) odd) ?_
     intro t returned
     refine WP.block_nil ?_
     rw [← screenedTests_go p used next go suffix] at returned
@@ -920,11 +918,11 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem candidateScreenPair_ok (v : RoundImpl) {s : State} {p : CandidateParams}
+theorem candidateScreenPair_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams}
     (h : CandidateContext p p.length s) (enough : p.length ≤ p.bytes.length)
     (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) = p.candidate)
     (oddQ : ((p.candidate-1)/2)%2=1) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair v.name v.code) s
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s
       (CandidateReturn p (candidateScreenP p) s) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
   refine WP.seq (WP.mono (candidateTable_ok h) ?_)
@@ -946,7 +944,7 @@ theorem candidateScreenPair_ok (v : RoundImpl) {s : State} {p : CandidateParams}
   by_cases prime : candidateShapes p = true
   · refine WP.seq (WP.ite true (by change some w.z = some true; rw [flag, prime]) ?_ (by intro h; cases h))
     intro _
-    refine WP.mono (screenedTests_ok v ctxW enough oddQ) ?_
+    refine WP.mono (screenedTests_ok b v ctxW enough oddQ) ?_
     intro t returned
     refine WP.block_nil ?_
     rw [candidateScreenP_shapes, prime]
@@ -977,10 +975,10 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem candidateScreenP_ok (v : RoundImpl) {s : State} {p : CandidateParams}
+theorem candidateScreenP_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams}
     (h : CandidateContext p p.length s) (enough : p.length≤p.bytes.length)
     (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length)=p.candidate) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP v.name v.code) s
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s
       (CandidateReturn p (candidateScreenP p) s) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.screenP VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
   refine WP.seq (WP.mono (candidateQOdd_ok h number) ?_)
@@ -991,7 +989,7 @@ theorem candidateScreenP_ok (v : RoundImpl) {s : State} {p : CandidateParams}
   by_cases oddQ : ((p.candidate-1)/2)%2=1
   · refine WP.seq (WP.ite true (by change some u.z=some true; rw [flag,decide_eq_true oddQ]) ?_ (by intro h; cases h))
     intro _
-    refine WP.mono (candidateScreenPair_ok v ctx enough numberU oddQ) ?_
+    refine WP.mono (candidateScreenPair_ok b v ctx enough numberU oddQ) ?_
     intro t returned
     refine WP.block_nil ?_
     exact returned.trans_pre (by rw [memory]; exact Frame.refl _ _) rest (fun _ h => h)
@@ -1018,9 +1016,9 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem candidateMain_ok (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
+theorem candidateMain_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
     (h : CandidateContext p used s) (enough : p.length ≤ p.bytes.length) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.main v.name v.code) s (CandidateReturn p (candidateScreen p) s) := by
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.main (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s (CandidateReturn p (candidateScreen p) s) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.main VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
   refine WP.seq (WP.mono (candidateCount_ok h enough) ?_)
   rintro u ⟨ctxU, changedU, restU⟩
@@ -1034,7 +1032,7 @@ theorem candidateMain_ok (v : RoundImpl) {s : State} {p : CandidateParams} {used
   by_cases shape : Spec.Ffdh.generationShape p.bits p.generator p.candidate = true
   · refine WP.seq (WP.ite true (by change some a.z = some true; rw [flag, shape]) ?_ (by intro h; cases h))
     intro _
-    refine WP.mono (candidateScreenP_ok v ctxA enough numberA) ?_
+    refine WP.mono (candidateScreenP_ok b v ctxA enough numberA) ?_
     intro t returned
     refine WP.block_nil ?_
     rw [candidateScreen, shape]
@@ -1067,11 +1065,11 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem candidateGuard_ok (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
+theorem candidateGuard_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
     (h : CandidateContext p used s) :
     WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.seqs [
       .block VG.Impl.Ffdh.Arm.ParameterCandidate.initialRoom,
-      .ite .eq VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (VG.Impl.Ffdh.Arm.ParameterCandidate.main v.name v.code)]) s
+      .ite .eq VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (VG.Impl.Ffdh.Arm.ParameterCandidate.main (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)]) s
       (CandidateReturn p (candidateAnswer p) s) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.seqs
   refine WP.seq (WP.mono (initialRoom_ok h.saved.space p.tapeCount
@@ -1081,7 +1079,7 @@ theorem candidateGuard_ok (v : RoundImpl) {s : State} {p : CandidateParams} {use
   by_cases enough : p.length ≤ p.bytes.length
   · refine WP.seq (WP.ite false (by change some u.z = some false; rw [zero, decide_eq_false (by omega)]) (by intro h; cases h) ?_)
     intro _
-    refine WP.mono (candidateMain_ok v ctx enough) ?_
+    refine WP.mono (candidateMain_ok b v ctx enough) ?_
     intro t returned
     refine WP.block_nil ?_
     rw [candidateAnswer, ite_eq_left enough]
@@ -1106,7 +1104,7 @@ open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 def candidateEnteredRegions (p : CandidateParams) (sp : BitVec 32) : List Region :=
   [⟨State.addr p.out, p.length⟩, ⟨State.addr p.usedPtr, 8⟩, ⟨State.addr p.base, 8 * p.capacity⟩,
-    ⟨State.addr sp, 72⟩, FrameStack.belowA sp 56]
+    ⟨State.addr sp, 72⟩, FrameStack.belowA sp 104]
 
 def candidatePost (p : CandidateParams) (m : Mem) (r : BitVec 32) : Prop :=
   r = BitVec.ofNat 32 (witnessResultStatus (candidateAnswer p)) ∧
@@ -1115,20 +1113,20 @@ def candidatePost (p : CandidateParams) (m : Mem) (r : BitVec 32) : Prop :=
   Spec.Rsa.bytesAt m (State.addr p.out) p.length =
     (match candidateAnswer p with | some (true, _) => Spec.Rsa.i2osp p.candidate p.length | _ => List.replicate p.length 0)
 
-theorem candidateEntered_ok (v : RoundImpl) {s : State} {p : CandidateParams}
+theorem candidateEntered_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams}
     (h : CandidateStart p s) (incoming : CandidateIncoming p s)
     (out : s.gpr .r0 = p.out) (width : s.gpr .r1 = BitVec.ofNat 32 p.length)
     (used : s.gpr .r2 = p.usedPtr) (bits : s.gpr .r3 = BitVec.ofNat 32 p.bits) :
     WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.seqs [
       .block VG.Impl.Ffdh.Arm.ParameterCandidate.entry,
       .block VG.Impl.Ffdh.Arm.ParameterCandidate.initialRoom,
-      .ite .eq VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (VG.Impl.Ffdh.Arm.ParameterCandidate.main v.name v.code)]) s
+      .ite .eq VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (VG.Impl.Ffdh.Arm.ParameterCandidate.main (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)]) s
       (fun t => Frame (candidateEnteredRegions p s.sp) s.mem t.mem ∧ candidatePost p t.mem (t.gpr .r0)) := by
   change WP isa (.seq (.block VG.Impl.Ffdh.Arm.ParameterCandidate.entry) _) s _
   rw [WP.seq_iff]
   refine WP.mono (candidateEntry_ok h.locals incoming out width used bits) ?_
   rintro u ⟨saved, changed, rest⟩
-  refine WP.mono (candidateGuard_ok v (h.after_entry saved changed rest)) ?_
+  refine WP.mono (candidateGuard_ok b v (h.after_entry saved changed rest)) ?_
   rintro t ⟨status, count, bytes, frame, _⟩
   rw [rest.sp] at frame
   have bodyFrame : Frame (candidateEnteredRegions p s.sp) u.mem t.mem := by
@@ -1163,7 +1161,7 @@ open VG VG.Arm VG.Proof.Ffdh.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
 structure CandidateFnInput (p : CandidateParams) (s : State) : Prop where
-  stackFits : 184 ≤ s.sp.toNat
+  stackFits : 232 ≤ s.sp.toNat
   start : CandidateStart p (entered s)
   incoming : CandidateIncoming p (entered s)
   out : (entered s).gpr .r0 = p.out
@@ -1173,13 +1171,13 @@ structure CandidateFnInput (p : CandidateParams) (s : State) : Prop where
   saved : ∀ r ∈ candidateEnteredRegions p (entered s).sp,
     (⟨State.addr (VG.Proof.Bignum.Arm.pcPushed s).sp, 56⟩ : Region).Disjoint r
 
-theorem candidateFn_ok (v : RoundImpl) {s : State} {p : CandidateParams} (h : CandidateFnInput p s) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) s fun t =>
+theorem candidateFn_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams} (h : CandidateFnInput p s) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s fun t =>
       abiPreserved s t ∧ candidatePost p t.mem (t.gpr .r0) := by
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.code
   refine framed_of_separate _ s (by have := h.stackFits; omega_using [this])
     (candidateEnteredRegions p (entered s).sp) (candidatePost p) h.saved
-    (candidateEntered_ok v h.start h.incoming h.out h.width h.used h.bits) (hQ := ?_)
+    (candidateEntered_ok b v h.start h.incoming h.out h.width h.used h.bits) (hQ := ?_)
   intro m₁ m₂ status hf ⟨st, used, out⟩
   have sep : ∀ R ∈ [(⟨State.addr p.out, p.length⟩ : Region), ⟨State.addr p.usedPtr, 8⟩], ∀ r ∈ released s,
       R.Disjoint r := by
@@ -1209,14 +1207,14 @@ end
 
 section
 
-/-! The public signature supplies all permissions, incoming words and 184 bytes of stack. -/
+/-! The public signature supplies all permissions, incoming words and 232 bytes of stack. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
 
 theorem candidateInput {s : State} {p : CandidateParams}
-    (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre s) (args : CandidateAbi p s) :
+    (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 232).pre s) (args : CandidateAbi p s) :
     CandidateFnInput p s := by
   sig_pre [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
     abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
@@ -1234,15 +1232,15 @@ theorem candidateInput {s : State} {p : CandidateParams}
   rw [args.used] at stackUsed
   rw [args.tape, tapeNat] at stackTape
   rw [args.base, capacityNat, Nat.mul_comm p.capacity 8] at stackScratch
-  have reserved : s.sp.setWidth 64 - 184#64 = State.addr (s.sp - 184#32) := (FrameStack.addr_sub' stackFit).symm
+  have reserved : s.sp.setWidth 64 - 232#64 = State.addr (s.sp - 232#32) := (FrameStack.addr_sub' stackFit).symm
   rw [reserved] at stackOut stackUsed stackTape stackScratch stackArgs
   have fit128 : 128 ≤ s.sp.toNat := by omega_using [stackFit]
-  have sub128 := FrameStack.belowA_sub (sp := s.sp) (a := 128) (b := 184) (by decide) stackFit
-  have localsSub : (⟨State.addr (entered s).sp, 72⟩ : Region).Sub (FrameStack.belowA s.sp 184) :=
+  have sub128 := FrameStack.belowA_sub (sp := s.sp) (a := 128) (b := 232) (by decide) stackFit
+  have localsSub : (⟨State.addr (entered s).sp, 72⟩ : Region).Sub (FrameStack.belowA s.sp 232) :=
     fun x hx => sub128 x (locals_sub_reserved s fit128 x hx)
-  have savedSub : (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Sub (FrameStack.belowA s.sp 184) :=
+  have savedSub : (⟨State.addr (pcPushed s).sp, 56⟩ : Region).Sub (FrameStack.belowA s.sp 232) :=
     fun x hx => sub128 x (saved_sub_reserved s fit128 x hx)
-  have belowSub : (FrameStack.belowA (entered s).sp 56).Sub (FrameStack.belowA s.sp 184) := by
+  have belowSub : (FrameStack.belowA (entered s).sp 104).Sub (FrameStack.belowA s.sp 232) := by
     rw [entered_sp]
     exact FrameStack.belowA_inner (by decide) stackFit
   have workspace : Workspace s p.base (8 * p.capacity) := ⟨p.scratchFits, by rw [wr]; simp [State.addr]⟩
@@ -1294,7 +1292,7 @@ theorem candidateInput {s : State} {p : CandidateParams}
   · have shift : (pcPushed s).sp = (entered s).sp + 72#32 := (BitVec.sub_add_cancel _ _).symm
     have room : (entered s).sp.toNat + 72 < 2 ^ 32 := by rw [entered_nat s fit128]; have := s.sp.isLt; omega_using []
     rw [shift, VG.Arm.addr_add room, FrameStack.belowA, FrameStack.addr_sub' start.stackBelow]
-    exact (Offset.disjoint_below_above _ (m := 56) (a := 72) (l := 56) (by decide)).symm
+    exact (Offset.disjoint_below_above _ (m := 104) (a := 72) (l := 56) (by decide)).symm
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 
@@ -1350,125 +1348,6 @@ theorem candidateNone_ct : RelCT isa (Two CandidateContextStart)
     (fun p _ h => ⟨p.used, h.result_context⟩) finNone_ct
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
-
-end
-
-end
-
-/-! ### `Ffdh.Arm.CallerRows`, which only this module used -/
-
-section
-
-/-! RSA's proven UMAAL row simulation also applies around a selected
-shared callee, preserving its call name, body, trace and stack bound. -/
-
-@[expose] public section
-namespace VG.Proof.Ffdh.Arm.CallerRows
-open VG VG.Arm VG.Impl.Ffdh.Arm VG.Impl.Bignum.Arm
-open VG.Proof.Bignum.Arm
-
-theorem exec {c : Prog isa} {s s' : State} {trace : List Leak}
-    (h : Exec isa c s trace s') : Exec isa (callerRows c) s trace s' := by
-  induction h with
-  | icall hi hc h hr _ => simp only [callerRows]; exact .icall hi hc h hr
-  | icallNext hi hne h _ => simp only [callerRows]; exact .icallNext hi hne h
-  | block h =>
-    simp only [callerRows]
-    split
-    · rename_i e; exact row_sim (e ▸ .block h)
-    · split
-      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .block h)
-      · exact .block h
-  | seq h1 h2 ih1 ih2 =>
-    simp only [callerRows]
-    split
-    · rename_i e; exact row_sim (e ▸ .seq h1 h2)
-    · split
-      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .seq h1 h2)
-      · exact .seq ih1 ih2
-  | iteT hc h ih =>
-    simp only [callerRows]
-    split
-    · rename_i e; exact row_sim (e ▸ .iteT hc h)
-    · split
-      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .iteT hc h)
-      · exact .iteT hc ih
-  | iteF hc h ih =>
-    simp only [callerRows]
-    split
-    · rename_i e; exact row_sim (e ▸ .iteF hc h)
-    · split
-      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .iteF hc h)
-      · exact .iteF hc ih
-  | loopExit h hc ih =>
-    simp only [callerRows]
-    split
-    · rename_i e; exact row_sim (e ▸ .loopExit h hc)
-    · split
-      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .loopExit h hc)
-      · exact .loopExit ih hc
-  | loopNext h hc h' ih ih' =>
-    simp only [callerRows]
-    split
-    · rename_i e; exact row_sim (e ▸ .loopNext h hc h')
-    · rename_i e
-      split
-      · rename_i d; exact DownRowUmaal.code_sim (d ▸ .loopNext h hc h')
-      · rename_i d
-        simp only [callerRows, e, d, ite_false] at ih'
-        exact .loopNext ih hc ih'
-  | call hc h hr _ => exact .call hc h hr
-  | frame hp h hq ih =>
-    simp only [callerRows]
-    split
-    · rename_i e; exact row_sim (e ▸ .frame hp h hq)
-    · split
-      · rename_i e; exact DownRowUmaal.code_sim (e ▸ .frame hp h hq)
-      · exact .frame hp ih hq
-
-theorem verified {c : Prog isa} {contract : Contract isa} (h : Verified target c contract) :
-    Verified target (callerRows c) contract := h.of_sim exec
-
-theorem stack (c : Prog isa) : FrameStack.armStack (callerRows c) ≤ FrameStack.armStack c := by
-  induction c with
-  | icall => exact Nat.le_refl _
-  | block _ =>
-    simp only [callerRows]; split
-    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
-    · split
-      · simp [DownRowUmaal.codeU_stack]
-      · rfl
-  | seq a b iha ihb =>
-    simp only [callerRows]
-    split
-    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
-    · split
-      · simp [DownRowUmaal.codeU_stack]
-      · simp only [FrameStack.armStack]; omega_using [iha, ihb]
-  | ite _ a b iha ihb =>
-    simp only [callerRows]
-    split
-    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
-    · split
-      · simp [DownRowUmaal.codeU_stack]
-      · simp only [FrameStack.armStack]; omega_using [iha, ihb]
-  | loop a _ ih =>
-    simp only [callerRows]
-    split
-    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
-    · split
-      · simp [DownRowUmaal.codeU_stack]
-      · exact ih
-  | call _ _ _ => rfl
-  | frame i a _ ih =>
-    simp only [callerRows]
-    split
-    · simp [FrameStack.armStack, rowU, rowLoopU, rowBody, rowStep, rowStepAt]
-    · split
-      · simp [DownRowUmaal.codeU_stack]
-      · cases i <;> simp only [FrameStack.armStack] <;> omega_using [ih]
-
-end VG.Proof.Ffdh.Arm.CallerRows
 
 end
 
@@ -1767,8 +1646,8 @@ private theorem pTable_ok (p : CandidateParams) (s : State) (h : ScreenPairStart
     exact p.outputScratch)
   exact ⟨⟨ctx, table, by rw [bytes]; exact h.number, h.oddQ⟩, h.enough⟩
 
-theorem candidateScreenPair_ct (v : RoundImpl) : RelCT isa (Two ScreenPairStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair v.name v.code) (fun _ _ => True) := by
+theorem candidateScreenPair_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two ScreenPairStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have table : RelCT isa (Two ScreenPairStart) (.block VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrite)
       (Two PSieveStart) :=
     two_post (two_map (fun p => (p, p.length)) (fun _ _ h => h.context) tableWrite_ct) pTable_ok
@@ -1777,13 +1656,13 @@ theorem candidateScreenPair_ct (v : RoundImpl) : RelCT isa (Two ScreenPairStart)
       (candidatePair_ct)).mono (fun _ _ h => h) (fun _ _ _ => trivial))
       (fun _ _ h => WP.mono (candidatePaired_ok _ _ h.1) (fun _ post => ⟨post, h.2⟩))
   have branch : RelCT isa (Two PSieveEnd)
-      (.ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.tests v.name v.code)
+      (.ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.tests (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)
         VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected) (fun _ _ => True) := by
     refine two_ite (fun _ _ _ left right => ?_) ?_ ?_
     · change some _ = some _
       rw [left.1.zero, right.1.zero]
     · exact two_map (fun p => (⟨p,p.length⟩ : CandidatePoint))
-        (fun _ _ h => ⟨h.1.1.start.context,h.1.2,h.1.1.start.oddQ⟩) (screenedTests_ct v)
+        (fun _ _ h => ⟨h.1.1.start.context,h.1.2,h.1.1.start.oddQ⟩) (screenedTests_ct b v)
     · exact two_map (fun p => (⟨p, p.length⟩ : CandidatePoint)) (fun _ _ h => h.1.1.start.context) candidateRejected_ct
   exact table.seq (sieve.seq (branch.seq (RelCT.block_nil (fun _ _ _ => trivial))))
 
@@ -1818,20 +1697,20 @@ private theorem qOdd_checked (p : CandidateParams) (s : State) (h : ScreenPStart
   rintro t ⟨ctx,zero,memory,_⟩
   exact ⟨⟨ctx,h.enough,by rw [memory]; exact h.number⟩,zero⟩
 
-theorem candidateScreenP_ct (v : RoundImpl) : RelCT isa (Two ScreenPStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP v.name v.code) (fun _ _ => True) := by
+theorem candidateScreenP_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two ScreenPStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have guard : RelCT isa (Two ScreenPStart)
       (.block VG.Impl.Ffdh.Arm.ParameterCandidate.qOdd) (Two QOddChecked) :=
     two_post ((two_map (fun p => (p.out,p.length)) (fun _ _ h => h.context.read_context) qOdd_ct).mono
       (fun _ _ h => h) (fun _ _ _ => trivial)) qOdd_checked
   have branch : RelCT isa (Two QOddChecked)
-      (.ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair v.name v.code)
+      (.ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)
         VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected) (fun _ _ => True) := by
     refine two_ite ?_ ?_ ?_
     · intro p s t a b
       change some s.z=some t.z
       rw [a.zero,b.zero]
-    · refine two_map id ?_ (candidateScreenPair_ct v)
+    · refine two_map id ?_ (candidateScreenPair_ct b v)
       intro p s h
       refine ⟨h.1.start.context,h.1.start.enough,?_,h.1.start.number⟩
       apply of_decide_eq_true
@@ -1889,12 +1768,12 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem candidate_correct (v : RoundImpl) (s : State)
-    (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre s) :
-    ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) s tr t ∧
-      abiPreserved s t ∧ (Proof.Ffdh.sievedParameterCandidateContract abi 184).post s t := by
+theorem candidate_correct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) (s : State)
+    (pre : (Proof.Ffdh.sievedParameterCandidateContract abi 232).pre s) :
+    ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.ParameterCandidate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s tr t ∧
+      abiPreserved s t ∧ (Proof.Ffdh.sievedParameterCandidateContract abi 232).post s t := by
   obtain ⟨p, args⟩ := candidatePublic s pre
-  obtain ⟨tr, t, run, preserved, post⟩ := candidateFn_ok v (candidateInput pre args)
+  obtain ⟨tr, t, run, preserved, post⟩ := candidateFn_ok b v (candidateInput pre args)
   refine ⟨tr, t, run, preserved, ?_⟩
   have result := candidatePost_spec post
   have widthNat : (s.gpr .r1).toNat = p.length := by
@@ -2076,8 +1955,8 @@ private theorem candidateResidueEnd_ok (p : CandidateParams) (s : State) (h : Sc
   rintro t ⟨ctx, zero, mem, _⟩
   exact ⟨⟨ctx, h.enough, by rw [mem]; exact h.number⟩, zero⟩
 
-theorem candidateMain_ct (v : RoundImpl) : RelCT isa (Two CandidateTestPStart)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.main v.name v.code) (fun _ _ => True) := by
+theorem candidateMain_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two CandidateTestPStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.main (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   have countTrace : RelCT isa (fun s t => s.sp = t.sp)
       (.block (([.ldrSp .r1 12] : List Instr) ++ VG.Impl.Ffdh.Arm.ParameterCandidate.save .r1 40))
       (fun s t => s.sp = t.sp) :=
@@ -2094,12 +1973,12 @@ theorem candidateMain_ct (v : RoundImpl) : RelCT isa (Two CandidateTestPStart)
   have residue : RelCT isa (Two ScreenPStart) VG.Impl.Ffdh.Arm.ParameterCandidate.residue (Two CandidateResidueEnd) :=
     two_post candidateResidue_ct candidateResidueEnd_ok
   have branch : RelCT isa (Two CandidateResidueEnd)
-      (.ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP v.name v.code)
+      (.ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)
         VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected) (fun _ _ => True) := by
     refine two_ite (fun _ _ _ left right => ?_) ?_ ?_
     · change some _ = some _
       rw [left.zero, right.zero]
-    · exact two_map id (fun _ _ h => h.1.start) (candidateScreenP_ct v)
+    · exact two_map id (fun _ _ h => h.1.start) (candidateScreenP_ct b v)
     · exact two_map (fun p => (⟨p, p.length⟩ : CandidatePoint)) (fun _ _ h => h.1.start.context) candidateRejected_ct
   exact count.seq (shape.seq (residue.seq (branch.seq (RelCT.block_nil (fun _ _ _ => trivial)))))
 
@@ -2129,22 +2008,22 @@ private theorem candidateRoomEnd_ok (p : CandidatePoint) (s : State) (h : Candid
   rintro t ⟨⟨zero, mem⟩, rest⟩
   exact ⟨h.after_memory mem rest, zero⟩
 
-theorem candidateGuard_ct (v : RoundImpl) : RelCT isa (Two CandidateContextStart)
+theorem candidateGuard_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two CandidateContextStart)
     (VG.Impl.Ffdh.Arm.ParameterCandidate.seqs [
       .block VG.Impl.Ffdh.Arm.ParameterCandidate.initialRoom,
-      .ite .eq VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (VG.Impl.Ffdh.Arm.ParameterCandidate.main v.name v.code)])
+      .ite .eq VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (VG.Impl.Ffdh.Arm.ParameterCandidate.main (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)])
     (fun _ _ => True) := by
   have room : RelCT isa (Two CandidateContextStart)
       (.block VG.Impl.Ffdh.Arm.ParameterCandidate.initialRoom) (Two CandidateRoomEnd) :=
     two_post (initialRoom_ct.mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) candidateRoomEnd_ok
   have branch : RelCT isa (Two CandidateRoomEnd)
-      (.ite .eq VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (VG.Impl.Ffdh.Arm.ParameterCandidate.main v.name v.code))
+      (.ite .eq VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (VG.Impl.Ffdh.Arm.ParameterCandidate.main (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code))
       (fun _ _ => True) := by
     refine two_ite (fun _ _ _ left right => ?_) ?_ ?_
     · change some _ = some _
       rw [left.2, right.2]
     · exact two_map id (fun _ _ h => h.1.1) candidateNone_ct
-    · refine two_map id ?_ (candidateMain_ct v)
+    · refine two_map id ?_ (candidateMain_ct b v)
       intro p s h
       have enough : p.params.length ≤ p.params.bytes.length := by
         have go := h.2
@@ -2214,14 +2093,14 @@ private theorem candidateEntryStart_ok (p : CandidateParams) (s : State) (h : Ca
   rintro t ⟨saved, changed, rest⟩
   exact h.start.after_entry saved changed rest
 
-theorem candidateEntered_ct (v : RoundImpl) : RelCT isa (Two CandidateEntryStart)
+theorem candidateEntered_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two CandidateEntryStart)
     (VG.Impl.Ffdh.Arm.ParameterCandidate.seqs [
       .block VG.Impl.Ffdh.Arm.ParameterCandidate.entry,
       .block VG.Impl.Ffdh.Arm.ParameterCandidate.initialRoom,
-      .ite .eq VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (VG.Impl.Ffdh.Arm.ParameterCandidate.main v.name v.code)])
+      .ite .eq VG.Impl.Ffdh.Arm.ParameterCandidate.finNone (VG.Impl.Ffdh.Arm.ParameterCandidate.main (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)])
     (fun _ _ => True) :=
   (two_post (candidateEntry_ct.mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) candidateEntryStart_ok).seq
-    ((candidateGuard_ct v).mono (fun _ _ ⟨p, left, right, sp⟩ => ⟨⟨p, 0⟩, left, right, sp⟩) (fun _ _ h => h))
+    ((candidateGuard_ct b v).mono (fun _ _ ⟨p, left, right, sp⟩ => ⟨⟨p, 0⟩, left, right, sp⟩) (fun _ _ h => h))
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end
@@ -2239,11 +2118,11 @@ open VG VG.Arm VG.Proof.Ffdh.Arm
 open VG.Proof.Ffdh.Arm.KeySearch (Two)
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem candidateFn_ct (v : RoundImpl) : RelCT isa (Two CandidateFnInput)
-    (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) (fun _ _ => True) := by
+theorem candidateFn_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : RelCT isa (Two CandidateFnInput)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) (fun _ _ => True) := by
   refine framed_ct (fun _ _ ⟨_, left, right, _⟩ => ⟨by have := left.stackFits; omega, by have := right.stackFits; omega⟩)
     (fun _ _ ⟨_, _, _, sp⟩ => sp) ?_
-  refine (candidateEntered_ct v).mono ?_ (fun _ _ h => h)
+  refine (candidateEntered_ct b v).mono ?_ (fun _ _ h => h)
   rintro a b ⟨s, t, ⟨p, left, right, sp⟩, rfl, rfl⟩
   exact ⟨p, ⟨left.start, left.incoming, left.out, left.width, left.used, left.bits⟩,
     ⟨right.start, right.incoming, right.out, right.width, right.used, right.bits⟩,
@@ -2264,8 +2143,8 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem candidate_contract_ct (v : RoundImpl) : ConstantTime isa (Proof.Ffdh.sievedParameterCandidateContract abi 184).pre
-    (Proof.Ffdh.sievedParameterCandidateContract abi 184).pub (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) := by
+theorem candidate_contract_ct (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) : ConstantTime isa (Proof.Ffdh.sievedParameterCandidateContract abi 232).pre
+    (Proof.Ffdh.sievedParameterCandidateContract abi 232).pub (VG.Impl.Ffdh.Arm.ParameterCandidate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) := by
   intro s t trS trT u z hs ht hp runS runT
   obtain ⟨p, args⟩ := candidatePublic s hs
   sig_pub [Proof.Ffdh.sievedParameterCandidateContract, Proof.Ffdh.parameterCandidateSig,
@@ -2287,7 +2166,7 @@ theorem candidate_contract_ct (v : RoundImpl) : ConstantTime isa (Proof.Ffdh.sie
       rw [← p5, ← p6, args.tape, args.tapeLength] at byteEq
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt p.tapeCount] at byteEq
       exact byteEq.symm.trans args.bytes }
-  exact ((candidateFn_ct v) _ _ _ _ _ _ ⟨p, candidateInput hs args, candidateInput ht argsT, sp⟩ runS runT).1
+  exact ((candidateFn_ct b v) _ _ _ _ _ _ ⟨p, candidateInput hs args, candidateInput ht argsT, sp⟩ runS runT).1
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end
@@ -2304,17 +2183,17 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem candidate_verified (v : RoundImpl) :
-    Verified target (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code)
-      (Proof.Ffdh.sievedParameterCandidateContract abi 184) :=
-  ⟨candidate_correct v, candidate_contract_ct v, candidate_sat⟩
+theorem candidate_verified (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
+    Verified target (VG.Impl.Ffdh.Arm.ParameterCandidate.code (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)
+      (Proof.Ffdh.sievedParameterCandidateContract abi 232) :=
+  ⟨candidate_correct b v, candidate_contract_ct b v, candidate_sat⟩
 
-theorem optimizedCandidate_verified (umaal : Bool) (v : RoundImpl) :
-    Verified target (VG.Impl.Ffdh.Arm.ParameterCandidate.optimizedCode umaal v.name v.code)
-      (Proof.Ffdh.sievedParameterCandidateContract abi 184) := by
-  cases umaal with
-  | false => exact candidate_verified v
-  | true => exact VG.Proof.Ffdh.Arm.CallerRows.verified (candidate_verified v)
+/-- The candidate with the product's rewriting of its callers. -/
+theorem called_verified (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
+    Verified target (b.caller.code (VG.Impl.Ffdh.Arm.ParameterCandidate.code
+      (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code))
+      (Proof.Ffdh.sievedParameterCandidateContract abi 232) :=
+  b.caller.verified (candidate_verified b v)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end
@@ -2337,9 +2216,7 @@ theorem halveQ_stack : FrameStack.armStack halveQ = 0 := by decide +kernel
 theorem finNone_stack : FrameStack.armStack finNone = 0 := by decide +kernel
 theorem finRejected_stack : FrameStack.armStack finRejected = 0 := by decide +kernel
 theorem result_stack : FrameStack.armStack result = 0 := by decide +kernel
-theorem phasePrepared_stack : FrameStack.armStack phasePrepared = 0 := by decide +kernel
 theorem drawRange_stack : FrameStack.armStack drawRange = 0 := by decide +kernel
-theorem montEncode_stack : FrameStack.armStack (VG.Impl.Bignum.Arm.montOp 5 1 4) = 0 := by decide +kernel
 theorem onPass_stack : FrameStack.armStack onPass = 0 := by decide +kernel
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
@@ -2350,99 +2227,68 @@ end
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/Stack.lean`, which only this module imported.
 section
 
-/-! The candidate frame and shared round require at most 184 bytes of stack. -/
+/-! The candidate frame and shared round require at most 232 bytes of stack. -/
 
 section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-private theorem candidate_code_stack (name : String) (body : Prog isa) :
-    FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.code name body) = FrameStack.armStack body + 128 := by
-  have roundKernelStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel name body) = FrameStack.armStack body := by
-    change max (FrameStack.armStack (VG.Impl.Bignum.Arm.montOp 5 1 4)) (max 0 (max (FrameStack.armStack body) 0)) = _
-    rw [montEncode_stack, Nat.max_zero, Nat.zero_max, Nat.zero_max]
-  have roundStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.round name body) = FrameStack.armStack body := by
-    change max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel name body)) (max 0 (max (max 0 (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.onPass)) 0)) = _
-    rw [roundKernelStack, onPass_stack]
-    simp only [Nat.max_self, Nat.max_zero]
-  have drawStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.draw name body) = FrameStack.armStack body := by
-    change max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.drawRange) (max 0 (max (max 0 (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.round name body))) 0)) = _
-    rw [drawRange_stack, roundStack]
-    simp only [Nat.zero_max, Nat.max_zero]
-  have stepStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep name body) = FrameStack.armStack body := by
-    change max 0 (max (max 0 (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.draw name body))) 0) = _
-    rw [drawStack]
-    simp only [Nat.zero_max, Nat.max_zero]
-  have testStack (q : Bool) : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.test q name body) = FrameStack.armStack body := by
-    change max 0 (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared)
-      (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep name body))) = _
-    rw [phasePrepared_stack, stepStack, Nat.zero_max, Nat.zero_max]
-  have limitedStack (first : Bool) : FrameStack.armStack
-      (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited first name body) = FrameStack.armStack body := by
-    change max 0 (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared)
-      (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep name body))) = _
-    rw [phasePrepared_stack, stepStack, Nat.zero_max, Nat.zero_max]
-  have finalStack : FrameStack.armStack
-      (VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal name body) = FrameStack.armStack body := by
-    change max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.shapeP)
-      (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited false name body))
-        (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.result) 0)) = _
-    rw [shapeP_stack, limitedStack false, result_stack]
-    simp only [Nat.zero_max, Nat.max_zero]
-  have afterQStack : FrameStack.armStack
-      (VG.Impl.Ffdh.Arm.ParameterCandidate.afterScreenedQ name body) = FrameStack.armStack body := by
-    change max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.test true name body))
-      (max 0 (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal name body))
-        (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.result)) 0)) = _
-    rw [testStack true, finalStack, result_stack]
-    simp only [Nat.zero_max, Nat.max_zero, Nat.max_self]
-  have qStack : FrameStack.armStack
-      (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ name body) = FrameStack.armStack body := by
-    change max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.halveQ)
-      (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.afterScreenedQ name body)) = _
-    rw [halveQ_stack, afterQStack, Nat.zero_max]
-  have testsStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.tests name body) = FrameStack.armStack body := by
-    change max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.shapeP)
-      (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited true name body))
-        (max 0 (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ name body))
-          (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.result)) 0))) = _
-    rw [shapeP_stack, limitedStack true, qStack, result_stack]
-    simp only [Nat.zero_max, Nat.max_zero, Nat.max_self]
-  have screenPairStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair name body) = FrameStack.armStack body := by
-    change max 0 (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.pairSieve)
-      (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.tests name body))
-        (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected)) 0)) = _
-    rw [pairSieve_stack,testsStack,finRejected_stack]
-    simp only [Nat.zero_max,Nat.max_zero]
-  have screenPStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP name body) = FrameStack.armStack body := by
-    change max 0 (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair name body))
-      (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected)) 0) = _
-    rw [screenPairStack,finRejected_stack]
-    simp only [Nat.zero_max,Nat.max_zero]
-  have mainStack : FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.main name body) = FrameStack.armStack body := by
-    change max 0 (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.shapeP)
-      (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.residue)
-        (max (max (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP name body))
-          (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected)) 0))) = _
-    rw [shapeP_stack, residue_stack, screenPStack, finRejected_stack]
-    simp only [Nat.zero_max, Nat.max_zero]
-  change max 0 (max 0 (max (max (FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.finNone)
-    (FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.main name body))) 0)) + 72 + 56 = _
-  rw [finNone_stack, mainStack]
-  simp only [Nat.zero_max, Nat.max_zero, Nat.add_assoc]
+private theorem op_stack (b : VG.Proof.Bignum.Arm.MontBackend) (o a c : Nat) :
+    FrameStack.armStack (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul o a c) = FrameStack.armStack b.mul + 8 := by
+  simp only [VG.Impl.Bignum.Arm.MontCall.op, FrameStack.armStack, Nat.max_zero, Nat.zero_max]
 
-theorem candidate_stack (v : RoundImpl) :
-    FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.code v.name v.code) ≤ 184 := by
-  rw [candidate_code_stack]
-  have := v.stack
+private theorem phasePrepared_stack (b : VG.Proof.Bignum.Arm.MontBackend) :
+    FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared
+      (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul)) = FrameStack.armStack b.mul + 8 := by
+  have prepareZero : FrameStack.armStack VG.Impl.Bignum.Arm.PublicFn.prepare = 0 := rfl
+  have importZero : FrameStack.armStack VG.Impl.Bignum.Arm.importModulus = 0 := rfl
+  have inverseZero : FrameStack.armStack VG.Impl.Bignum.Arm.precomputeInverse = 0 := rfl
+  have initZero : FrameStack.armStack VG.Impl.Bignum.Arm.r2Init = 0 := rfl
+  have normalizedZero : FrameStack.armStack VG.Impl.Bignum.Arm.NormalizedR2.init = 0 := rfl
+  have doubleZero : FrameStack.armStack (VG.Impl.Bignum.Arm.DoubleCall.loop VG.Impl.Bignum.Arm.doubleLoopMultiply) = 0 := rfl
+  have oneZero : FrameStack.armStack (VG.Impl.Bignum.Arm.smallConst 1 1) = 0 := rfl
+  have keyZero : FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.montKeySetup = 0 := rfl
+  have expZero : FrameStack.armStack VG.Impl.Ffdh.Arm.ParameterCandidate.expSetup = 0 := rfl
+  simp only [VG.Impl.Ffdh.Arm.ParameterCandidate.phasePrepared, VG.Impl.Ffdh.Arm.ParameterCandidate.montPrep,
+    VG.Impl.Ffdh.Arm.ParameterCandidate.seqs, VG.Impl.Ffdh.Arm.CandidatePrepare.code,
+    VG.Impl.Ffdh.Arm.SharedPrepare.code, VG.Impl.Ffdh.Arm.NormalizedPrepare.code,
+    VG.Impl.Bignum.Arm.SharedPrecompute.precompute, VG.Impl.Bignum.Arm.NormalizedPrecompute.precompute,
+    VG.Impl.Bignum.Arm.SharedR2.r2, VG.Impl.Bignum.Arm.NormalizedR2.r2, VG.Impl.Bignum.Arm.SharedR2.squares,
+    FrameStack.armStack, op_stack, prepareZero, importZero, inverseZero, initZero, normalizedZero,
+    doubleZero, oneZero, keyZero, expZero, Nat.max_self, Nat.max_zero, Nat.zero_max]
+
+private theorem candidate_code_stack (b : VG.Proof.Bignum.Arm.MontBackend) (name : String) (body : Prog isa) :
+    FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.code
+      (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) name body) =
+      max (FrameStack.armStack b.mul + 8) (FrameStack.armStack body) + 128 := by
+  simp only [VG.Impl.Ffdh.Arm.ParameterCandidate.code, VG.Impl.Ffdh.Arm.framed,
+    VG.Impl.Ffdh.Arm.ParameterCandidate.main, VG.Impl.Ffdh.Arm.ParameterCandidate.screenP,
+    VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair, VG.Impl.Ffdh.Arm.ParameterCandidate.tests,
+    VG.Impl.Ffdh.Arm.ParameterCandidate.screenedTests, VG.Impl.Ffdh.Arm.ParameterCandidate.screenedQ,
+    VG.Impl.Ffdh.Arm.ParameterCandidate.afterScreenedQ, VG.Impl.Ffdh.Arm.ParameterCandidate.limitedFinal,
+    VG.Impl.Ffdh.Arm.ParameterCandidate.test, VG.Impl.Ffdh.Arm.ParameterCandidate.testLimited,
+    VG.Impl.Ffdh.Arm.ParameterCandidate.phaseRun, VG.Impl.Ffdh.Arm.ParameterCandidate.millerRabin,
+    VG.Impl.Ffdh.Arm.ParameterCandidate.witnessStep, VG.Impl.Ffdh.Arm.ParameterCandidate.draw,
+    VG.Impl.Ffdh.Arm.ParameterCandidate.round, VG.Impl.Ffdh.Arm.ParameterCandidate.roundKernel,
+    VG.Impl.Ffdh.Arm.ParameterCandidate.seqs, FrameStack.armStack, List.length_cons, List.length_nil,
+    phasePrepared_stack, op_stack, shapeP_stack, residue_stack, pairSieve_stack, halveQ_stack,
+    finNone_stack, finRejected_stack, result_stack, drawRange_stack, onPass_stack,
+    Nat.max_self, Nat.max_zero, Nat.zero_max, Nat.reduceAdd, Nat.reduceMul]
   omega
 
-theorem optimizedCandidate_stack (umaal : Bool) (v : RoundImpl) :
-    FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.optimizedCode umaal v.name v.code) ≤ 184 := by
-  cases umaal with
-  | false => exact candidate_stack v
-  | true => exact (VG.Proof.Ffdh.Arm.CallerRows.stack _).trans (candidate_stack v)
+theorem candidate_stack (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
+    FrameStack.armStack (VG.Impl.Ffdh.Arm.ParameterCandidate.code
+      (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) ≤ 232 := by
+  rw [candidate_code_stack]
+  have := v.stack
+  have := b.stackOk
+  omega
+
+theorem called_stack (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) :
+    FrameStack.armStack (b.caller.code (VG.Impl.Ffdh.Arm.ParameterCandidate.code
+      (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)) ≤ 232 :=
+  (b.caller.stack_le _).trans (candidate_stack b v)
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate
 end
@@ -2455,20 +2301,30 @@ open VG VG.Arm
 
 structure ParameterBackend where
   candidate : Prog isa
-  candidate_verified : Verified target candidate (Proof.Ffdh.sievedParameterCandidateContract abi 184)
-  candidateStack : FrameStack.armStack candidate ≤ 184
+  candidate_verified : Verified target candidate (Proof.Ffdh.sievedParameterCandidateContract abi 232)
+  candidateStack : FrameStack.armStack candidate ≤ 232
   suffix : String
   features : List String
 
 def ParameterBackend.candidateName (b : ParameterBackend) : String :=
   "vg_ffdh_parameter_candidate_sieved" ++ b.suffix
 
-def parameterBackend (v : VG.Proof.MillerRabin.Arm.RoundImpl) : ParameterBackend := by
+/-- The candidate over the shared product `b`, which calls the round `v`. -/
+def parameterBackend (v : VG.Proof.MillerRabin.Arm.RoundImpl) (b : VG.Proof.Bignum.Arm.MontBackend) :
+    ParameterBackend := by
   exact {
-    candidate := VG.Impl.Ffdh.Arm.ParameterCandidate.optimizedCode (v.features.contains "umaal") v.name v.code
-    candidate_verified := by exact ParameterCandidate.optimizedCandidate_verified _ v
-    candidateStack := by exact ParameterCandidate.optimizedCandidate_stack _ v
-    suffix := v.suffix
-    features := v.features }
+    candidate := b.caller.code (VG.Impl.Ffdh.Arm.ParameterCandidate.code
+      (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code)
+    candidate_verified := by exact ParameterCandidate.called_verified b v
+    candidateStack := by exact ParameterCandidate.called_stack b v
+    suffix := b.suffix
+    features := b.features }
+
+/-- The rounds the candidate over `b` is emitted with: the first of `rounds`
+whose CPU features are all among `b`'s, so that the candidate needs no
+feature beyond those of its product. -/
+def roundsFor (b : VG.Proof.Bignum.Arm.MontBackend) (rounds : List VG.Proof.MillerRabin.Arm.RoundImpl) :
+    List VG.Proof.MillerRabin.Arm.RoundImpl :=
+  (rounds.filter fun v => v.features.all fun f => b.features.contains f).take 1
 
 end VG.Proof.Ffdh.Arm

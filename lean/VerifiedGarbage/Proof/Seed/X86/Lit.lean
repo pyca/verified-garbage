@@ -27,7 +27,6 @@ Not flattened (`materialize_flat_code`): its unfolding measured slower here.
 namespace VG.Proof.Seed.X86
 
 materialize_code expandKeyCode := Impl.Seed.X86.expandKey
-materialize_code ecbEncrypt := Impl.Seed.X86.ecb .encrypt
-materialize_code ecbDecrypt := Impl.Seed.X86.ecb .decrypt
+materialize_code blocksCode := Impl.Seed.X86.blocks
 
 end VG.Proof.Seed.X86
