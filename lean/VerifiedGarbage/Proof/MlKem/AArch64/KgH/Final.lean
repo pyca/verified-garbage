@@ -730,7 +730,8 @@ theorem keyGenP768_verified (v : Proof.Sha3.AArch64.Permutation) :
       ⟨ss.2.1, ss.2.2⟩ Noise.room768 (by decide) ts.1 ts.2 (FixedHash.kgA768_depth v) (kgPre768_depth (sha3 := sha3)) d
   · exact ⟨fun _ h => ⟨keyGenH768_entry h.1, h.2⟩, fun _ _ h hp => keyGenH768_post h.1 hp,
       fun _ _ hs ht hp => ⟨keyGenH768_pub hs.1 ht.1 hp.1, hp.2⟩,
-      Proof.Sha3.AArch64.Contract.d8_sat keyGenH768_baseSat⟩
+      Proof.Sha3.AArch64.Contract.d8_sat (s := addTables VG.Proof.MlKem.AArch64.KeyGen.sat)
+        (show keyGenH768Base.pre ((addTables VG.Proof.MlKem.AArch64.KeyGen.sat).setV .v8 _) from keyGenH768_baseSat)⟩
 
 /-! ## ML-KEM-1024 -/
 
@@ -815,6 +816,7 @@ theorem keyGenP1024_verified (v : Proof.Sha3.AArch64.Permutation) :
       ⟨ss.2.1, ss.2.2⟩ Noise.room1024 (by decide) ts.1 ts.2 (FixedHash.kgA1024_depth v) (kgPre1024_depth (sha3 := sha3)) d
   · exact ⟨fun _ h => ⟨keyGenH1024_entry h.1, h.2⟩, fun _ _ h hp => keyGenH1024_post h.1 hp,
       fun _ _ hs ht hp => ⟨keyGenH1024_pub hs.1 ht.1 hp.1, hp.2⟩,
-      Proof.Sha3.AArch64.Contract.d8_sat keyGenH1024_baseSat⟩
+      Proof.Sha3.AArch64.Contract.d8_sat (s := addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat)
+        (show keyGenH1024Base.pre ((addTables VG.Proof.MlKem1024.AArch64.KeyGen.sat).setV .v8 _) from keyGenH1024_baseSat)⟩
 
 end VG.Proof.MlKem.AArch64.KeyGen
