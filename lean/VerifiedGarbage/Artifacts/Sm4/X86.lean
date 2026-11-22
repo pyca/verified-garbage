@@ -4,10 +4,13 @@ public import VerifiedGarbage.Proof.Sm4.X86.Scrub
 public import VerifiedGarbage.Impl.Sm4.X86.Fn
 public import VerifiedGarbage.Proof.Sm4.X86.AesNiKey
 public import VerifiedGarbage.Impl.Sm4.X86.AesNiKey
+public import VerifiedGarbage.Proof.Sm4.X86.AesNiWideEcb
+public import VerifiedGarbage.Impl.Sm4.X86.AesNiWideEcb
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.Lit
 import VerifiedGarbage.Proof.Sm4.X86.AesNiKeyLit
+import VerifiedGarbage.Proof.Sm4.X86.AesNiWideLit
 
 /-! # SM4 on x86 -/
 
@@ -24,8 +27,16 @@ def artifacts : List Artifact := [
     code := Impl.Sm4.X86.Fn.expandKey
     verified := Proof.Sm4.X86.Scrub.expandKey_scrubbed },
   Spec.Sm4.ecbEncryptApi.artifact X86.target {
+    suffix := "_aesni"
+    code := Impl.Sm4.X86.AesNiWide.Fn.ecbEncrypt
+    verified := Proof.Sm4.X86.AesNiWide.Ecb.ecbEncrypt_scrubbed },
+  Spec.Sm4.ecbEncryptApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.ecbEncrypt
     verified := Proof.Sm4.X86.Scrub.ecbEncrypt_scrubbed },
+  Spec.Sm4.ecbDecryptApi.artifact X86.target {
+    suffix := "_aesni"
+    code := Impl.Sm4.X86.AesNiWide.Fn.ecbDecrypt
+    verified := Proof.Sm4.X86.AesNiWide.Ecb.ecbDecrypt_scrubbed },
   Spec.Sm4.ecbDecryptApi.artifact X86.target {
     code := Impl.Sm4.X86.Fn.ecbDecrypt
     verified := Proof.Sm4.X86.Scrub.ecbDecrypt_scrubbed }]
