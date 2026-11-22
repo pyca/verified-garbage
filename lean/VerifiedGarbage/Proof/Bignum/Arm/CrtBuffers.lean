@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupContext
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Rsa.BytesFrame
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
@@ -65,6 +67,17 @@ structure CrtR2 (g : CrtGeometry) (bs : Fin 7 → List Byte) (a : BitVec 32) (s 
   stack : Region.Disjoint ⟨State.addr a, 8 * g.r2Words⟩ ⟨State.addr s.sp, 56⟩
   output : Region.Disjoint ⟨State.addr a, 8 * g.r2Words⟩ ⟨State.addr g.output, g.length⟩
   words : Spec.Rsa.wordsAt s.mem (State.addr a) g.r2Words = Spec.Rsa.primeR2 (bs 2) ++ Spec.Rsa.primeR2 (bs 3)
+  /-- Apart from the 48 bytes below the stack, of the calls the CRT makes. -/
+  below : Region.Disjoint ⟨State.addr a, 8 * g.r2Words⟩ (FrameStack.belowA s.sp 48)
+  slotBelow : Region.Disjoint ⟨off (State.addr s.sp) 112, 4⟩ (FrameStack.belowA s.sp 48)
+
+/-- The bytes below the stack are apart from those from it. -/
+theorem belowA_disjoint_from {sp : BitVec 32} {a n : Nat} (h : a ≤ sp.toNat) (hn : a + n ≤ 2 ^ 64) :
+    (FrameStack.belowA sp a).Disjoint ⟨State.addr sp, n⟩ := by
+  unfold FrameStack.belowA
+  rw [FrameStack.addr_sub' h, show (⟨State.addr sp, n⟩ : Region) =
+    ⟨State.addr sp - BitVec.ofNat 64 a + BitVec.ofNat 64 a, n⟩ by rw [BitVec.sub_add_cancel]]
+  exact (Offset.disjoint_base _ (Nat.le_refl a) hn).symm
 
 /-- The regions of `R² mod p` and `R² mod q` and of frame slot 112. -/
 def CrtR2Separate (g : CrtGeometry) (sp : BitVec 32) (regions : List Region) : Prop :=
@@ -84,7 +97,8 @@ theorem CrtR2.after_frame {s t : State} {g : CrtGeometry} {bs : Fin 7 → List B
   have sp := rest.sp
   refine ⟨by rw [sp]; exact h.slotFit, by rw [rest.rd, rest.wr, sp]; exact h.slotRead, ?_,
     by rw [sp]; exact h.slotSeparate, by rw [sp]; exact h.slotOutput, h.fit,
-    by rw [rest.rd, rest.wr]; exact h.read, h.separate, by rw [sp]; exact h.stack, h.output, ?_⟩
+    by rw [rest.rd, rest.wr]; exact h.read, h.separate, by rw [sp]; exact h.stack, h.output, ?_,
+    by rw [sp]; exact h.below, by rw [sp]; exact h.slotBelow⟩
   · rw [sp, frame.readW (r := ⟨off (State.addr s.sp) 112, 4⟩) (Region.contains_self _ _)
       (fun r hr => (separate r hr).2) (by decide)]
     exact h.slot
@@ -108,6 +122,9 @@ structure CrtBuffers (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : 
   outputSeparate : Region.Disjoint ⟨State.addr g.base, g.size⟩ ⟨State.addr g.output, g.length⟩
   outputStack : Region.Disjoint ⟨State.addr g.output, g.length⟩ ⟨State.addr s.sp, 56⟩
   r2 : ∀ a, g.r2 = some a → CrtR2 g bs a s
+  /-- The sources and the output apart from the 48 bytes below the stack. -/
+  sourceBelow : ∀ i, Region.Disjoint ⟨State.addr (g.source i), g.sourceLength i⟩ (FrameStack.belowA s.sp 48)
+  outputBelow : Region.Disjoint ⟨State.addr g.output, g.length⟩ (FrameStack.belowA s.sp 48)
 
 theorem CrtBuffers.after_frame {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     {regions : List Region} {rs : List Reg} (h : CrtBuffers g bs s)
@@ -119,9 +136,11 @@ theorem CrtBuffers.after_frame {s t : State} {g : CrtGeometry} {bs : Fin 7 → L
     h.pPositive, h.pShort, h.qPositive, h.qShort,
     fun i => (h.source i).after_frame frame rest (separate i), h.sourceSeparate,
     ?_, h.outputFits, ?_, h.outputSeparate, ?_,
-    fun a ha => (h.r2 a ha).after_frame frame rest (r2 a ha)⟩
+    fun a ha => (h.r2 a ha).after_frame frame rest (r2 a ha), ?_, ?_⟩
   · intro i; rw [rest.sp]; exact h.sourceStack i
   · rw [rest.wr]; exact h.write
   · rw [rest.sp]; exact h.outputStack
+  · intro i; rw [rest.sp]; exact h.sourceBelow i
+  · rw [rest.sp]; exact h.outputBelow
 
 end VG.Proof.Bignum.Arm

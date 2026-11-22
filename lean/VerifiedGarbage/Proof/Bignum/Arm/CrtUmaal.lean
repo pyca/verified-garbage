@@ -66,14 +66,14 @@ theorem timing (ctLaw : MontPipeline.LoopCTLaw round) {base : BitVec 32} {len w 
 def kernel (ctLaw : MontPipeline.LoopCTLaw round) : WindowKernel where
   code := SharedWindow.phase (MontPipeline.op round)
   correct := by
-    intro s base ep len w M x eb h fits
+    intro s base ep len w M x eb h fits _ _
     refine WP.mono (sharedWindowExpPhase_ok (arithmetic round law base len w) s h trivial fits ?_) ?_
     · intro r hr
       have eq := List.mem_singleton.mp hr
       subst r
       exact h.separate
     · rintro t ⟨ready, value, modulus, r2, one, _, frame, rest⟩
-      exact ⟨ready, value, modulus, r2, one, frame, rest⟩
+      exact ⟨ready, value, modulus, r2, one, frame.mono (by simp), rest⟩
   ct := by
     intro base ep len w M1 M2 x1 x2 eb1 eb2 fit fits positive length
     intro s t tr1 tr2 u v h e1 e2
