@@ -290,7 +290,7 @@ index 00000000..0801978d
 +                let e = hkdf.extract_from_secret(Some(&[1u8; 32]), &[2u8; 32]);
 +                black_box(e.expand_block(&[b"\x00\x20", b"\x0dtls13 derived", &[0x20], &[9u8; 32]]));
 +            }));
-+            let okm = OkmBlock::new(&[5u8; 32]);
++            let okm = OkmBlock::new(&[5u8; 64][..s.common.hash_provider.output_len()]);
 +            let expander = hkdf.expander_for_okm(&okm);
 +            expand.push(time(|| {
 +                black_box(expander.expand_block(&[b"\x00\x20", b"\x0dtls13 c hs traffic", &[0x20], &[9u8; 32]]));
