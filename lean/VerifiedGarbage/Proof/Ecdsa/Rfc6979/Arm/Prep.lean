@@ -33,8 +33,10 @@ which `Ctx` says holds the function of `L.F`, whose call an indirect call of
 PBKDF2's code calls them (`VG.Proof.Pbkdf2.Whole.Arm`), with the lengths and
 counts the table's `D` and `B` give:
 
-* HMAC's `init` with the key `K` (`D` bytes, the frame's first): HMAC's
-  states for the block key `K₀` of `K` (`init_step`);
+* HMAC's `init` for a key of any length (`initAny`, called as `any_frame`
+  says), with the key `K` (`D` bytes, the frame's first) and `W + S` words
+  of working space: HMAC's states for the block key `K₀` of `K`
+  (`init_step`);
 * the streaming `update` of the inner state with `len` bytes of data in the
   frame or in `scratch` above HMAC's working space (`DataOk`), the inner
   state holding `K₀ ⊕ ipad ‖ text`, of `B + |text|` bytes: it then holds the
@@ -46,7 +48,7 @@ counts the table's `D` and `B` give:
 
 `St P L g m₀ t text` is what holds between them: `Ctx`, and HMAC's states
 for `K₀` with the inner one holding `text`. They change only HMAC's states
-and working space (the first 2256 bytes of `scratch`), the 24 bytes below
+and working space (the first 3792 bytes of `scratch`), the 24 bytes below
 the frame, and `dst`.
 -/
 
@@ -56,9 +58,162 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm
 
 open VG VG.Arm VG.Impl.Ecdsa.Rfc6979.Arm
 open VG.Impl.Pbkdf2.Stream.Arm (scrAt)
-open VG.Proof.Pbkdf2.Whole.Arm (After HiArgs HfArgs UpdL hi_frame hf_frame upd_frame stk fr1 fr2 upd4)
+open VG.Proof.Pbkdf2.Whole.Arm (After HiArgs HfArgs UpdL hf_frame upd_frame stk fr1 fr2 upd4)
 open VG.Proof.HmacTable.Arm (TabOK TabMem tA)
 open VG.Proof.X25519.Arm (op2_reg op2_imm dpVal)
+
+/-! ## HMAC's `init` for a key of any length, in a frame of `scratch`
+
+As `HiArgs`, `hi_frame` and `hi_rel` are `init`'s for a key of at most a
+block (`Proof/Pbkdf2/Whole/Arm/Calls.lean`), for the function the tables
+hold, `initAny` (`Impl/Pbkdf2/Md/AnyKey/Arm.lean`), verified against
+`anyScratchContract` with `W` words of working space: what the state before
+the frame's push needs (`AnyArgs`: a key of any length, and the 32 bytes
+below the stack pointer, the frame's 8 and the 24 that `initAny`'s contract
+takes, apart from the buffers), what holds when it returns (`any_frame`),
+and that two runs with the same arguments leak the same trace (`any_rel`).
+It writes only the 24 bytes below the stack pointer (`After`), as its code's
+frames use at most 16 (`armStack`). -/
+
+section
+open VG.Arm.FrameStack
+open VG.Proof.Pbkdf2.Whole.Arm (Sound ReprOK frame2_ok frame2_rel p2_sub p2_arg0 p2_argAddr p2_bytes stk_repr)
+open VG.Proof.Pbkdf2.Whole.Arm.Any (anyScratchContract)
+
+/-- What a framed call of `initAny` needs of the state before its push: the
+states at `inn` and `out` in `r0` and `r1`, the `kl` bytes of key at `k` in
+`r2` and `r3`, and `8 W` bytes of working space at `sc` in `r12`; the
+regions the callee may read and write; that they are disjoint as it needs,
+and from the 32 bytes below the stack pointer; and that none of them wraps
+around. -/
+structure AnyArgs (S : Spec.Hmac.StreamingHash) (W : Nat) (s : State) (inn out k sc : BitVec 32) (kl : Nat) : Prop where
+  r0 : s.gpr .r0 = inn
+  r1 : s.gpr .r1 = out
+  r2 : s.gpr .r2 = k
+  r3 : s.gpr .r3 = BitVec.ofNat 32 kl
+  r12 : s.gpr .r12 = sc
+  kl32 : kl < 2 ^ 32
+  sp : 32 ≤ s.sp.toNat
+  cr : Covers [⟨State.addr k, kl⟩] (s.rd ++ s.wr)
+  cw : Covers [⟨State.addr inn, S.stateBytes⟩, ⟨State.addr out, S.stateBytes⟩, ⟨State.addr sc, W * 8⟩] s.wr
+  i_o : Region.Disjoint ⟨State.addr inn, S.stateBytes⟩ ⟨State.addr out, S.stateBytes⟩
+  i_k : Region.Disjoint ⟨State.addr inn, S.stateBytes⟩ ⟨State.addr k, kl⟩
+  i_s : Region.Disjoint ⟨State.addr inn, S.stateBytes⟩ ⟨State.addr sc, W * 8⟩
+  o_k : Region.Disjoint ⟨State.addr out, S.stateBytes⟩ ⟨State.addr k, kl⟩
+  o_s : Region.Disjoint ⟨State.addr out, S.stateBytes⟩ ⟨State.addr sc, W * 8⟩
+  k_s : Region.Disjoint ⟨State.addr k, kl⟩ ⟨State.addr sc, W * 8⟩
+  b_i : Region.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ ⟨State.addr inn, S.stateBytes⟩
+  b_o : Region.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ ⟨State.addr out, S.stateBytes⟩
+  b_k : Region.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ ⟨State.addr k, kl⟩
+  b_s : Region.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ ⟨State.addr sc, W * 8⟩
+  ni : inn.toNat + S.stateBytes ≤ 2 ^ 32
+  no : out.toNat + S.stateBytes ≤ 2 ^ 32
+  nk : k.toNat + kl ≤ 2 ^ 32
+  nsc : sc.toNat + W * 8 ≤ 2 ^ 32
+
+/-- The 24 bytes below the stack pointer are among the 32. -/
+theorem stk_sub32 (s : State) : Region.Sub (stk s) ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ :=
+  Offset.sub_below _ (a := 24) (b := 32) (by decide) (by decide)
+
+namespace AnyArgs
+variable {S : Spec.Hmac.StreamingHash} {W : Nat} {s : State} {inn out k sc : BitVec 32} {kl : Nat}
+  (h : AnyArgs S W s inn out k sc kl)
+include h
+
+/-- `initAny`'s precondition on entry. -/
+theorem pre : (anyScratchContract S W).pre
+    ((pushed fr1 s).callEntry.withRegions (HiArgs.rd s.sp k kl) (HiArgs.wr S W inn out sc)) := by
+  have e := h.sp
+  have h8 : (s.sp - BitVec.ofNat 32 8).toNat = s.sp.toNat - 8 := sub_toNat' (by omega_using [e])
+  have a8 : State.addr (s.sp - BitVec.ofNat 32 8) = State.addr s.sp - BitVec.ofNat 64 8 := addr_sub' (by omega_using [e])
+  -- The frame's first word, the stack argument, and the 24 bytes below it, among the 32.
+  have sA4 : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8), 4⟩ ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ := by
+    rw [a8]; exact Offset.sub_below _ (a := 8) (b := 32) (by decide) (by decide)
+  have e24 : State.addr (s.sp - BitVec.ofNat 32 8) - 24 = State.addr s.sp - BitVec.ofNat 64 32 := by
+    rw [a8, BitVec.sub_sub]; rfl
+  have sR : Region.Sub ⟨State.addr (s.sp - BitVec.ofNat 32 8) - 24, 24⟩
+      ⟨State.addr s.sp - BitVec.ofNat 64 32, 32⟩ := by
+    rw [e24]; exact Region.sub_prefix (by decide)
+  have cA : Region.Disjoint ⟨State.addr (s.sp - BitVec.ofNat 32 8) - 24, 24⟩
+      ⟨State.addr (s.sp - BitVec.ofNat 32 8), 4⟩ := by
+    rw [e24, a8]
+    exact VG.Proof.Pbkdf2.Whole.Arm.bdisj _ 32 (a := 32) (b := 8) (by decide) (by decide) (by omega_using [])
+      (by decide) (by decide)
+  sig_pre [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
+    Arm.reduceClassify, Arm.Loc.val]
+  simp only [h.r0, h.r1, h.r2, h.r3, p2_arg0 (s := s) (by omega_using [e]), p2_argAddr, h.r12, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt h.kl32]
+  exact ⟨by rw [h8]; omega_using [e], by rw [h8]; have := s.sp.isLt; omega_using [], rfl, rfl, h.i_o, h.i_k, h.i_s,
+    (h.b_i.sub_left sA4).symm, h.o_k, h.o_s, (h.b_o.sub_left sA4).symm, h.k_s, (h.b_s.sub_left sA4).symm,
+    h.b_i.sub_left sR, h.b_o.sub_left sR, h.b_k.sub_left sR, h.b_s.sub_left sR, cA,
+    h.ni, h.no, h.nk, h.nsc⟩
+
+/-- The `HiArgs` of the same registers and regions, but the key's length. -/
+theorem cov : Covers (HiArgs.rd s.sp k kl ++ HiArgs.wr S W inn out sc) ((pushed fr1 s).rd ++ (pushed fr1 s).wr) := by
+  intro a n ⟨q, hq, hc⟩
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rw [pushed_rd, pushed_wr]
+  rcases hq with rfl | rfl | rfl | rfl | rfl
+  · obtain ⟨q', hq', hc'⟩ := h.cr a n ⟨_, List.mem_singleton_self _, hc⟩
+    rcases List.mem_append.mp hq' with hq' | hq'
+    · exact ⟨q', List.mem_append_left _ hq', hc'⟩
+    · exact ⟨q', List.mem_append_right _ (List.mem_cons_of_mem _ hq'), hc'⟩
+  · refine ⟨_, List.mem_append_right _ List.mem_cons_self, ?_⟩
+    show Region.Contains ⟨State.addr (s.sp - BitVec.ofNat 32 8), 8⟩ a n
+    simp only [Region.Contains] at hc ⊢; omega_using [hc]
+  all_goals
+    obtain ⟨q', hq', hc'⟩ := h.cw a n ⟨_, by simp, hc⟩
+    exact ⟨q', List.mem_append_right _ (List.mem_cons_of_mem _ hq'), hc'⟩
+
+theorem covW : Covers (HiArgs.wr S W inn out sc) (pushed fr1 s).wr := by
+  intro a n hi
+  obtain ⟨q', hq', hc'⟩ := h.cw a n hi
+  exact ⟨q', by rw [pushed_wr]; exact List.mem_cons_of_mem _ hq', hc'⟩
+
+end AnyArgs
+
+/-- A framed call of `initAny`: its states are those of the block key of
+the key, of any length. -/
+theorem any_frame {S : Spec.Hmac.StreamingHash} {W : Nat} {n : String} {c : Prog isa} (hR : ReprOK S)
+    (hSn : S.stateBytes ≤ 2 ^ 64) (hv : Sound c (anyScratchContract S W)) (hst : armStack c ≤ 16)
+    {s : State} {inn out k sc : BitVec 32} {kl : Nat} (h : AnyArgs S W s inn out k sc kl) {Q : State → Prop}
+    (hQ : ∀ s', After s (HiArgs.wr S W inn out sc) s' →
+      S.Repr s'.mem (State.addr inn) (Spec.Hmac.xorPad (Spec.Hmac.blockKey S.H (Spec.Sha256.bytesAt s.mem (State.addr k) kl)) Spec.Hmac.ipad) →
+      S.Repr s'.mem (State.addr out) (Spec.Hmac.xorPad (Spec.Hmac.blockKey S.H (Spec.Sha256.bytesAt s.mem (State.addr k) kl)) Spec.Hmac.opad) → Q s') :
+    WP isa (.frame (.push fr1) (.call n c) (.pop .r12 8)) s Q := by
+  have h24 : 24 ≤ s.sp.toNat := by have := h.sp; omega_using [this]
+  refine frame2_ok rfl (by decide) hv.ok hst h24 h.pre h.cov h.covW fun s₂ mL uL hfl a post => ?_
+  sig_post [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
+    Arm.reduceClassify, Arm.Loc.val] at post
+  simp only [h.r0, h.r1, h.r2, h.r3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h.kl32] at post
+  have ek : Spec.Sha256.bytesAt (storeWords s.mem (s.sp - BitVec.ofNat 32 8) [s.gpr .r12, s.gpr .lr]) (BitVec.setWidth 64 k) kl =
+      Spec.Sha256.bytesAt s.mem (State.addr k) kl :=
+    p2_bytes (ra := .r12) (rb := .lr) h24 (h.b_k.sub_left (stk_sub32 s)) (by have := h.kl32; omega_using [this])
+  rw [ek] at post
+  exact hQ _ a (stk_repr hR hSn hfl (h.b_i.sub_left (stk_sub32 s)) post.1)
+    (stk_repr hR hSn hfl (h.b_o.sub_left (stk_sub32 s)) post.2)
+
+/-- Two framed calls of `initAny` with the same arguments, from the same
+stack pointer, leak the same trace. -/
+theorem any_rel {S : Spec.Hmac.StreamingHash} {W : Nat} {n : String} {c : Prog isa}
+    (hv : Sound c (anyScratchContract S W)) {P : State → State → Prop}
+    {sp inn out k sc : BitVec 32} {kl : Nat}
+    (h : ∀ s s', P s s' → AnyArgs S W s inn out k sc kl ∧ AnyArgs S W s' inn out k sc kl ∧
+      s.sp = sp ∧ s'.sp = sp) :
+    RelCT isa P (.frame (.push fr1) (.call n c) (.pop .r12 8)) fun _ _ => True := by
+  refine frame2_rel rfl hv.ok hv.ct (HiArgs.rd sp k kl) (HiArgs.wr S W inn out sc) fun s s' hp => ?_
+  obtain ⟨a, a', e, e'⟩ := h s s' hp
+  have c := a.pre; have c' := a'.pre
+  rw [e] at c; rw [e'] at c'
+  have v := a.cov; have v' := a'.cov
+  rw [e] at v; rw [e'] at v'
+  refine ⟨e.trans e'.symm, c, c', ?_, v, a.covW, v', a'.covW⟩
+  sig_pub [anyScratchContract, Proof.Hmac.initScratchSig, Spec.Hmac.initPost, Arm.abi, Arm.argRegs,
+    Arm.reduceClassify, Arm.Loc.val]
+  simp only [a.r0, a'.r0, a.r1, a'.r1, a.r2, a'.r2, a.r3, a'.r3, p2_arg0 (s := s) (by have := a.sp; omega_using [this]),
+    p2_arg0 (s := s') (by have := a'.sp; omega_using [this]), a.r12, a'.r12, e, e', and_self]
+
+end
 
 variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 
@@ -130,12 +285,12 @@ theorem low_scr (hL : L.Ok) {n e k : Nat} (hn : n ≤ 536) (h : e + k ≤ 8192) 
   (hL.kc.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Offset.sub_base _ h)
 
 /-- The part of `scratch` HMAC's functions use: its states and working space. -/
-abbrev WK {dn : Nat} (L : Lay dn) : Region := ⟨State.addr L.scr, 2256⟩
+abbrev WK {dn : Nat} (L : Lay dn) : Region := ⟨State.addr L.scr, 3792⟩
 
 theorem wk_safe {r : Region} (h : Region.Sub r (WK L)) : Safe L r :=
   .inr (.inl (sub_trans h (Region.sub_prefix (by omega_arith))))
 
-theorem scr_wk (hL : L.Ok) {o n : Nat} (ho : o < 8192) (h : o + n ≤ 2256) :
+theorem scr_wk (hL : L.Ok) {o n : Nat} (ho : o < 8192) (h : o + n ≤ 3792) :
     Region.Sub ⟨State.addr (L.scr + BitVec.ofNat 32 o), n⟩ (WK L) := by
   rw [scrA hL ho]; exact Offset.sub_base _ h
 
@@ -228,24 +383,40 @@ theorem initArgs_ok (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t
   · rw [k₅ _ (by decide) (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide) (by decide),
       k₁ _ (by decide) (by decide)]
 
-/-- The arguments of HMAC's `init`, as its frame needs them. -/
-theorem initA (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h0 : u.gpr .r0 = L.scr + BitVec.ofNat 32 0)
+/-- The 32 bytes below the frame. -/
+theorem below32 (B : Addr) : B + BitVec.ofNat 64 24 - BitVec.ofNat 64 32 = B - BitVec.ofNat 64 8 := by
+  rw [show BitVec.ofNat 64 32 = BitVec.ofNat 64 24 + BitVec.ofNat 64 8 from rfl, ← BitVec.sub_sub,
+    BitVec.add_sub_cancel]
+
+/-- `K`'s place in the frame, above those 32 bytes. -/
+theorem k_above (B : Addr) : B + BitVec.ofNat 64 24 = B - BitVec.ofNat 64 8 + BitVec.ofNat 64 32 := by
+  rw [show BitVec.ofNat 64 32 = BitVec.ofNat 64 8 + BitVec.ofNat 64 24 from rfl, ← BitVec.add_assoc,
+    BitVec.sub_add_cancel]
+
+/-- The arguments of HMAC's `init` for a key of any length, which the table
+holds, as its frame needs them: the states, the key `K` of `D` bytes in the
+frame, and `W + S` words of working space in `scratch`. -/
+theorem anyA (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h0 : u.gpr .r0 = L.scr + BitVec.ofNat 32 0)
     (h1 : u.gpr .r1 = L.scr + BitVec.ofNat 32 192) (h2 : u.gpr .r2 = L.fp + BitVec.ofNat 32 0)
     (h3 : u.gpr .r3 = BitVec.ofNat 32 P.F.H.D) (h12 : u.gpr .r12 = L.scr + BitVec.ofNat 32 384) :
-    HiArgs P.ok.hH.SH P.ok.Wi u (L.scr + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 192)
+    AnyArgs P.ok.hH.SH (P.F.W + P.F.H.S) u (L.scr + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 192)
       (L.fp + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 384) P.F.H.D := by
   obtain e0 := scrA hL (o := 0) (by decide)
   obtain e1 := scrA hL (o := 192) (by decide)
   obtain e3 := scrA hL (o := 384) (by decide)
   obtain ek := hL.fpA (o := 0) (by omega_arith)
-  obtain hst := hc.stk_eq hL
-  have := hL.nc; have := hL.nB; have := L.sp.isLt
+  obtain hsp : (⟨State.addr u.sp - BitVec.ofNat 64 32, 32⟩ : Region) = ⟨L.B - BitVec.ofNat 64 8, 32⟩ := by
+    rw [hc.spA hL, below32]
+  obtain hka : L.B + BitVec.ofNat 64 (24 + 0) = L.B - BitVec.ofNat 64 8 + BitVec.ofNat 64 32 := k_above L.B
+  have := hL.nc; have := hL.nB; have := L.sp.isLt; have := P.hWA
   obtain ⟨_, _, _, _, _, _, _, _, _, _, hS, _, hB⟩ := P.sizes
   exact
     { r0 := h0, r1 := h1, r2 := h2, r3 := h3, r12 := h12
-      klB := by rw [hB]; anums
       kl32 := by anums
-      sp := hc.sp24 hL
+      sp := by
+        have h := fp_toNat hL (o := 0) (by omega_arith)
+        rw [BitVec.add_zero] at h
+        rw [hc.sp, h]; omega_arith
       cr := hc.covers fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         rw [ek]; exact ⟨L.FR, by simp, within_fr _ (by omega_arith) (by anums)⟩
@@ -261,10 +432,10 @@ theorem initA (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h0 : u.gpr .r0 = L.
       o_k := by rw [e1, ek]; exact (hL.stk_scr (by anums) (by anums)).symm
       o_s := by rw [e1, e3]; exact Offset.disjoint _ (by anums) (by anums) (by anums)
       k_s := by rw [ek, e3]; exact hL.stk_scr (by anums) (by anums)
-      b_i := by rw [hst, e0]; exact low_scr hL (by omega_arith) (by anums)
-      b_o := by rw [hst, e1]; exact low_scr hL (by omega_arith) (by anums)
-      b_k := by rw [hst, ek]; exact Offset.base_disjoint _ (by omega_arith) (by anums)
-      b_s := by rw [hst, e3]; exact low_scr hL (by omega_arith) (by anums)
+      b_i := by rw [hsp, e0]; exact hL.low32_SCR.sub_right (Offset.sub_base _ (by anums))
+      b_o := by rw [hsp, e1]; exact hL.low32_SCR.sub_right (Offset.sub_base _ (by anums))
+      b_k := by rw [hsp, ek, hka]; exact Offset.base_disjoint _ (by omega_arith) (by anums)
+      b_s := by rw [hsp, e3]; exact hL.low32_SCR.sub_right (Offset.sub_base _ (by anums))
       ni := by rw [scr_toNat hL (by decide)]; anums
       no := by rw [scr_toNat hL (by decide)]; anums
       nk := by rw [fp_toNat hL (by omega_arith)]; anums
@@ -278,17 +449,18 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
     WP isa (cfgOf P).initK t (St P L g m₀ t []) := by
   refine WP.seq (WP.mono (initArgs_ok hL hT hc) fun u ⟨hcu, hmu, h0, h1, h2, h3, h12, h9⟩ => ?_)
   obtain hok : TabOK P.F P.f u.syms := hT.1 ▸ hT.2 ▸ hcu.tabOk
-  refine tcall_ok hL hcu (j := 0) (by decide) (n := P.F.hiN) (c := P.F.hiC)
+  refine tcall_ok hL hcu (j := 0) (by decide) (n := P.F.hiAnyN) (c := P.F.hmacInitAny)
     (by rw [show 4 * 0 = 0 from rfl, ← hT.1]; exact hcu.tabMem.1) hok.i
     fun u₁ c₁ m₁ y₁ k₁ => ?_
   apply WP.of_syms
-  refine hi_frame reprOK (by anums) P.ok.hi P.ok.hiSt (initA hL c₁ (by rw [k₁ _ (by decide)]; exact h0)
+  refine any_frame reprOK (by anums) P.any P.anySt (anyA hL c₁ (by rw [k₁ _ (by decide)]; exact h0)
     (by rw [k₁ _ (by decide)]; exact h1) (by rw [k₁ _ (by decide)]; exact h2)
     (by rw [k₁ _ (by decide)]; exact h3) (by rw [k₁ _ (by decide)]; exact h12)) fun u' ha hi ho sy => ?_
   obtain ek : Spec.Sha256.bytesAt u₁.mem (State.addr (L.fp + BitVec.ofNat 32 0)) P.F.H.D = keyOf P L t.mem := by
     rw [hL.fpA (by omega_arith), m₁, hmu]
-  obtain hws : ∀ r ∈ HiArgs.wr P.ok.hH.SH P.ok.Wi (L.scr + BitVec.ofNat 32 0) (L.scr + BitVec.ofNat 32 192)
-      (L.scr + BitVec.ofNat 32 384), Region.Sub r (WK L) := by
+  obtain hws : ∀ r ∈ HiArgs.wr P.ok.hH.SH (P.F.W + P.F.H.S) (L.scr + BitVec.ofNat 32 0)
+      (L.scr + BitVec.ofNat 32 192) (L.scr + BitVec.ofNat 32 384), Region.Sub r (WK L) := by
+    have := P.hWA
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) <;> exact scr_wk hL (by decide) (by anums)
   refine ⟨c₁.after hL ha (fun r hr => wk_safe (hws r hr)) sy,
@@ -302,7 +474,7 @@ theorem init_step (hL : L.Ok) (hT : TabL P L) {t : State} (hc : Ctx L g m₀ t) 
 above HMAC's working space. -/
 def DataOk {dn : Nat} (L : Lay dn) (da : BitVec 32) (len : Nat) : Prop :=
   (∃ o, da = L.fp + BitVec.ofNat 32 o ∧ o + len ≤ 464) ∨
-    (∃ o, da = L.scr + BitVec.ofNat 32 o ∧ 2256 ≤ o ∧ o + len < 8192)
+    (∃ o, da = L.scr + BitVec.ofNat 32 o ∧ 3792 ≤ o ∧ o + len < 8192)
 
 namespace DataOk
 
@@ -310,7 +482,7 @@ variable {da : BitVec 32} {len : Nat}
 
 theorem addr (hd : DataOk L da len) (hL : L.Ok) :
     (∃ o, State.addr da = L.B + BitVec.ofNat 64 o ∧ 24 ≤ o ∧ o + len ≤ 488) ∨
-      (∃ o, State.addr da = State.addr L.scr + BitVec.ofNat 64 o ∧ 2256 ≤ o ∧ o + len ≤ 8192) := by
+      (∃ o, State.addr da = State.addr L.scr + BitVec.ofNat 64 o ∧ 3792 ≤ o ∧ o + len ≤ 8192) := by
   rcases hd with ⟨o, rfl, h⟩ | ⟨o, rfl, h₁, h₂⟩
   · exact .inl ⟨24 + o, hL.fpA (by omega_arith), by omega_arith, by omega_arith⟩
   · exact .inr ⟨o, scrA hL (by omega_arith), h₁, by omega_arith⟩
@@ -327,7 +499,7 @@ theorem low (hd : DataOk L da len) (hL : L.Ok) : Region.Disjoint ⟨L.B, 24⟩ �
   · exact low_scr hL (by omega_arith) h₂
 
 /-- The data is apart from HMAC's states and working space. -/
-theorem work (hd : DataOk L da len) (hL : L.Ok) {e k : Nat} (h : e + k ≤ 2256) :
+theorem work (hd : DataOk L da len) (hL : L.Ok) {e k : Nat} (h : e + k ≤ 3792) :
     Region.Disjoint ⟨State.addr da, len⟩ ⟨State.addr L.scr + BitVec.ofNat 64 e, k⟩ := by
   rcases hd.addr hL with ⟨o, e', h₁, h₂⟩ | ⟨o, e', h₁, h₂⟩ <;> rw [e']
   · exact hL.stk_scr (by omega_arith) (by omega_arith)
@@ -478,7 +650,7 @@ theorem updV_step (hL : L.Ok) (hT : TabL P L) {t u : State} (hu : St P L g m₀ 
   rw [e]; exact this
 
 /-- Where the messages are. -/
-abbrev msgA {dn : Nat} (L : Lay dn) : Addr := State.addr L.scr + BitVec.ofNat 64 2256
+abbrev msgA {dn : Nat} (L : Lay dn) : Addr := State.addr L.scr + BitVec.ofNat 64 3792
 
 /-- The inner state updated with the message's `len` bytes, after `V`. -/
 theorem updM_step (hL : L.Ok) (hT : TabL P L) {t u : State} {text : List Byte} (hu : St P L g m₀ t text u)
@@ -500,7 +672,7 @@ theorem updM_step (hL : L.Ok) (hT : TabL P L) {t u : State} {text : List Byte} (
   refine scrAt_ok c₇ (d := .r10) (by decide) (o := sWork) (by decide) fun t₈ c₈ m₈ v₈ k₈ => ?_
   refine WP.block_nil ?_
   obtain hm : t₈.mem = u.mem := by rw [m₈, m₇, m₆, u₅.mem, m₄, m₃, m₂, m₁]
-  obtain hmA : State.addr (L.scr + BitVec.ofNat 32 2256) = msgA L := scrA hL (by decide)
+  obtain hmA : State.addr (L.scr + BitVec.ofNat 32 3792) = msgA L := scrA hL (by decide)
   obtain hw : St P L g m₀ t text t₈ :=
     ⟨c₈, by rw [k₈ _ (by decide) (by decide), k₇ _ (by decide), k₆ _ (by decide), u₅.other _ (by decide),
         k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide) (by decide), k₁ _ (by decide) (by decide)]; exact hu.r9,
@@ -508,8 +680,8 @@ theorem updM_step (hL : L.Ok) (hT : TabL P L) {t u : State} {text : List Byte} (
   obtain h2 : t₈.gpr .r2 = BitVec.ofNat 32 (P.F.H.B + text.length) := by
     rw [k₈ _ (by decide) (by decide), k₇ _ (by decide), k₆ _ (by decide), u₅.gpr, dpVal,
       k₄ _ (by decide), v₃, v₄, hT.1, htl, BitVec.ofNat_add]
-  have := upd_call (P := P) hL hT hw (da := L.scr + BitVec.ofNat 32 2256) (len := len)
-    (.inr ⟨2256, rfl, by omega_arith, by omega_arith⟩) hlen
+  have := upd_call (P := P) hL hT hw (da := L.scr + BitVec.ofNat 32 3792) (len := len)
+    (.inr ⟨3792, rfl, by omega_arith, by omega_arith⟩) hlen
     (by rw [k₈ _ (by decide) (by decide), k₇ _ (by decide), k₆ _ (by decide), u₅.other _ (by decide),
       k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide) (by decide)]; exact v₁)
     (by rw [k₈ _ (by decide) (by decide), k₇ _ (by decide), k₆ _ (by decide), u₅.other _ (by decide),
@@ -658,7 +830,7 @@ section
 
 For a `big` curve (P-521, whose 66-byte scalars are longer than every
 digest): the `Q` bytes at an offset in the frame, shifted right in place
-through the words at `scratch + 2560` (`conv_ok`, by `loadBytes_ok`,
+through the words at `scratch + 3936` (`conv_ok`, by `loadBytes_ok`,
 `shrWords_ok` and `storeBytes_ok`, with `out` and `d` kept in `r2` and `r3`
 meanwhile, as those use `r4` and `r5`), for `core`'s digest and the
 candidate.
@@ -698,13 +870,13 @@ theorem allOnes_movt : ((0xffff : BitVec 16) ++ ((0xffff : BitVec 16).setWidth 3
     BitVec.allOnes 32 := by decide
 
 /-- `conv o s`: the `Q` bytes at `r8 + o`, in the frame, shifted
-right by `s` bits in place, through the words at `scratch + 2560`. -/
+right by `s` bits in place, through the words at `scratch + 3936`. -/
 theorem conv_ok (hL : L.Ok) (hW : P.R.big = true) {t : State} (hc : Ctx L g m₀ t)
     {o s : Nat} (ho₁ : 192 ≤ o) (ho₂ : o + 72 ≤ 468) (hoe : encodable (BitVec.ofNat 32 o) = true) (hs₁ : 1 ≤ s)
     (hs₂ : s < 32) :
     WP isa (.block ((cfgOf P).conv o s)) t fun t' => Ctx L g m₀ t' ∧
       (∀ r, r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r10 → r ≠ .r12 → t'.gpr r = t.gpr r) ∧
-      Frame [⟨State.addr L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (24 + o), P.Q⟩] t.mem t'.mem ∧
+      Frame [⟨State.addr L.scr + BitVec.ofNat 64 3936, 72⟩, ⟨L.B + BitVec.ofNat 64 (24 + o), P.Q⟩] t.mem t'.mem ∧
       Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 (24 + o)) P.Q =
         Spec.Weierstrass.toBytes P.Q
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 (24 + o)) P.Q) >>> s) := by
@@ -729,12 +901,12 @@ theorem conv_ok (hL : L.Ok) (hW : P.R.big = true) {t : State} (hc : Ctx L g m₀
     rw [v₄.other _ (by decide), v₃.gpr, dpVal, v₂.other _ (by decide), v₁.other _ (by decide), hc.r8]
   obtain ha₁ : State.addr (L.fp + BitVec.ofNat 32 o) = L.B + BitVec.ofNat 64 (24 + o) := hL.fpA (by omega_arith)
   rw [WP.block_append_iff]
-  refine WP.mono (loadBytes_ok hS₄ (len := P.Q) (n := P.w) (o := 2560) (src := .r1) (by decide) (by omega_arith)
+  refine WP.mono (loadBytes_ok hS₄ (len := P.Q) (n := P.w) (o := 3936) (src := .r1) (by decide) (by omega_arith)
     (by rw [hr1, fp_toNat hL (by omega_arith)]; omega_arith) (by omega_arith) (by omega_arith)
     (fun d hd => by rw [hr1, ha₁, Offset.add_add, K₄.rd, K₄.wr]; exact hc.inFr (by omega_arith) (by omega_arith))
     (by rw [hr1, ha₁]; exact (hL.stk_scr (by omega_arith) (by omega_arith)))) fun u₅ ⟨hv₅, k₅, O₅⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (shrWords_ok (scr_keep hS₄ (k₅.gpr _ (by decide)) k₅.wr) (n := P.w) (o := 2560) (sh := s)
+  refine WP.mono (shrWords_ok (scr_keep hS₄ (k₅.gpr _ (by decide)) k₅.wr) (n := P.w) (o := 3936) (sh := s)
     (by omega_arith) hs₁ hs₂) fun u₆ ⟨hv₆, k₆, O₆⟩ => ?_
   refine wp_movwS fun u₇ v₇ => wp_movt fun u₈ v₈ => ?_
   obtain h10 : u₈.gpr .r10 = BitVec.allOnes 32 := by rw [v₈.gpr, v₇.gpr]; exact allOnes_movt
@@ -746,7 +918,7 @@ theorem conv_ok (hL : L.Ok) (hW : P.R.big = true) {t : State} (hc : Ctx L g m₀
   obtain hdst : State.addr (u₈.gpr .r8) + BitVec.ofNat 64 o = L.B + BitVec.ofNat 64 (24 + o) := by
     rw [h8, hL.fpA0, Offset.add_add]
   rw [WP.block_append_iff]
-  refine WP.mono (storeBytes_ok hS₈ (len := P.Q) (n := P.w) (d := o) (a := 2560) (dst := .r8) (by decide)
+  refine WP.mono (storeBytes_ok hS₈ (len := P.Q) (n := P.w) (d := o) (a := 3936) (dst := .r8) (by decide)
     (by decide) true (by rw [h10]; rfl) (by omega_arith) (by omega_arith) (by omega_arith) (by rw [h8]; omega_arith) (by omega_arith)
     (fun e m hem => by
       rw [hdst, Offset.add_add, K₈.wr, k₅.wr, K₄.wr]; exact hc.inFrW (by omega_arith) (by omega_arith))
@@ -774,8 +946,8 @@ theorem conv_ok (hL : L.Ok) (hW : P.R.big = true) {t : State} (hc : Ctx L g m₀
   obtain m₄ : u₄.mem = t.mem := by rw [v₄.mem, v₃.mem, v₂.mem, v₁.mem]
   obtain m₈ : u₈.mem = u₆.mem := by rw [v₈.mem, v₇.mem]
   obtain hm : u₁₁.mem = u₉.mem := by rw [v₁₁.mem, v₁₀.mem]
-  -- What changed: the words at `scratch + 2560`, and the bytes converted.
-  obtain hf : Frame [⟨State.addr L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (24 + o), P.Q⟩]
+  -- What changed: the words at `scratch + 3936`, and the bytes converted.
+  obtain hf : Frame [⟨State.addr L.scr + BitVec.ofNat 64 3936, 72⟩, ⟨L.B + BitVec.ofNat 64 (24 + o), P.Q⟩]
       t.mem u₁₁.mem := by
     obtain f₅ := frame_of_outside (O₅.trans O₆) (by omega_arith)
     obtain f₉ := frame_of_outside O₉ (by omega_arith)
@@ -1053,7 +1225,7 @@ theorem shift_back (e sh : Nat) (hs : sh < 8) : (e * 2 ^ 8) >>> (8 - sh) = e * 2
 theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.F.H.D ≤ dn) {t : State}
     (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).prepC t fun u => Ctx L g m₀ u ∧
-      Frame [⟨State.addr L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 284, 68⟩] t.mem u.mem ∧
+      Frame [⟨State.addr L.scr + BitVec.ofNat 64 3936, 72⟩, ⟨L.B + BitVec.ofNat 64 284, 68⟩] t.mem u.mem ∧
       Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 284) P.Q =
         Spec.Weierstrass.toBytes P.Q
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem (State.addr L.dg) P.F.H.D) * 2 ^ P.R.sh) := by
@@ -1099,12 +1271,12 @@ theorem prepC_ok (hL : L.Ok) (hT : TabL P L) (hW : P.R.big = true) (hdn : P.F.H.
   refine WP.mono (conv_ok hL hW c₄ (o := fXc) (s := 8 - P.R.sh) (by omega_arith) (by omega_arith) (by decide)
     (by omega_arith) (by omega_arith)) fun u₆ ⟨c₆, _, f₆, b₆⟩ => ?_
   refine ⟨c₆, ?_, ?_⟩
-  · have g₁ : Frame [⟨State.addr L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 284, 68⟩] t.mem u₁.mem :=
+  · have g₁ : Frame [⟨State.addr L.scr + BitVec.ofNat 64 3936, 72⟩, ⟨L.B + BitVec.ofNat 64 284, 68⟩] t.mem u₁.mem :=
       f₁.sub fun r hr => ⟨r, by simp only [List.mem_singleton] at hr; subst hr; simp, sub_refl _⟩
-    obtain g₄ : Frame [⟨State.addr L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 284, 68⟩] u₃.mem u₄.mem :=
+    obtain g₄ : Frame [⟨State.addr L.scr + BitVec.ofNat 64 3936, 72⟩, ⟨L.B + BitVec.ofNat 64 284, 68⟩] u₃.mem u₄.mem :=
       f₄.sub fun r hr => ⟨⟨L.B + BitVec.ofNat 64 284, 68⟩, by simp, by
         simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub _ (by omega_arith) (by omega_arith)⟩
-    obtain g₆ : Frame [⟨State.addr L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 284, 68⟩] u₄.mem u₆.mem :=
+    obtain g₆ : Frame [⟨State.addr L.scr + BitVec.ofNat 64 3936, 72⟩, ⟨L.B + BitVec.ofNat 64 284, 68⟩] u₄.mem u₆.mem :=
       f₆.sub fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl

@@ -37,8 +37,9 @@ reserves `24 + anyFrame I` bytes, which is no frame size of the model
 
 ECDSA's table of HMAC functions (`Proof/Ecdsa/Rfc6979/Arm/Blocks.lean`,
 `tableOf`) names the forms that take their working space as an argument
-(`vg_hmac_<hash>_init_scratch`, `vg_hmac_<hash>_finalize_scratch`), which
-are internal functions and not these: it is unchanged.
+(`vg_hmac_<hash>_init_any_scratch`, `Fns.hmacInitAny`, and
+`vg_hmac_<hash>_finalize_scratch`), which are internal functions and not
+these: it is unchanged.
 -/
 
 @[expose] public section

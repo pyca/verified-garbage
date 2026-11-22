@@ -113,7 +113,8 @@ def sha512_256Md : Hash := sha512Md 32 "vg_sha512_256_init_core" Spec.Sha512.H0_
 
 /-- The functions `pbkdf2` calls for the hash function `M` of the instance
 `I` (`Impl/Pbkdf2/Md/Arm.lean`), with the working space of `I`'s functions,
-by the names they are registered with. -/
+by the names they are registered with, and the name of HMAC's `init` for a
+key of any length (`Fns.hmacInitAny`), which the tables of `Hmac` hold. -/
 def fnsOf (I : Spec.Hmac.Instance) (M : Hash) : Fns where
   H := M.st
   W := I.scratch
@@ -123,6 +124,7 @@ def fnsOf (I : Spec.Hmac.Instance) (M : Hash) : Fns where
   hfC := M.hmacFin
   itN := s!"vg_pbkdf2_hmac_{I.rust}_iterate"
   itC := M.iterate
+  hiAnyN := s!"vg_hmac_{I.rust}_init_any_scratch"
 
 def md5F : Fns := fnsOf Spec.Hmac.md5I md5Md
 def sha1F : Fns := fnsOf Spec.Hmac.sha1I sha1Md

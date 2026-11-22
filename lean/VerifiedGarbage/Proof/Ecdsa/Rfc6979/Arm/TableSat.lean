@@ -50,7 +50,7 @@ variable {R : RfcCurve} {T : Spec.Ecdsa.Rfc6979.TableInstance} {vs : List HVar}
 /-- The facts of the contract with the table of `w`, on entry. -/
 theorem preW_of {w : HVar} (hv : w ∈ vs) (hc : Coh vs) {cs : List (String × List (BitVec 64))} {s : State}
     (hcs : R.coreConsts = cs)
-    (hsp : 536 ≤ s.sp.toNat) (hsp8 : s.sp.toNat + 8 ≤ 2 ^ 32)
+    (hsp : 544 ≤ s.sp.toNat) (hsp8 : s.sp.toNat + 8 ≤ 2 ^ 32)
     (hrd : s.rd = [⟨State.addr (s.gpr .r1), T.ecdsa.curve.len⟩, ⟨State.addr (s.gpr .r2), w.F.H.D⟩,
       ⟨State.addr (stackArg s 1), 24⟩, ⟨State.addr s.sp, 8⟩] ++ Abi.constRegions (fun n => State.addr (s.syms n)) cs)
     (hwr : s.wr = [⟨State.addr (s.gpr .r0), 2 * T.ecdsa.curve.len⟩, ⟨State.addr (stackArg s 0), 8192⟩])
@@ -63,16 +63,16 @@ theorem preW_of {w : HVar} (hv : w ∈ vs) (hc : Coh vs) {cs : List (String × L
     (gc : Region.Disjoint ⟨State.addr (s.gpr .r2), w.F.H.D⟩ ⟨State.addr (stackArg s 0), 8192⟩)
     (ct : Region.Disjoint ⟨State.addr (stackArg s 0), 8192⟩ ⟨State.addr (stackArg s 1), 24⟩)
     (ca : Region.Disjoint ⟨State.addr (stackArg s 0), 8192⟩ ⟨State.addr s.sp, 8⟩)
-    (ko : Region.Disjoint (stkR s.sp 536) ⟨State.addr (s.gpr .r0), 2 * T.ecdsa.curve.len⟩)
-    (kd : Region.Disjoint (stkR s.sp 536) ⟨State.addr (s.gpr .r1), T.ecdsa.curve.len⟩)
-    (kg : Region.Disjoint (stkR s.sp 536) ⟨State.addr (s.gpr .r2), w.F.H.D⟩)
-    (kc : Region.Disjoint (stkR s.sp 536) ⟨State.addr (stackArg s 0), 8192⟩)
-    (kt : Region.Disjoint (stkR s.sp 536) ⟨State.addr (stackArg s 1), 24⟩)
+    (ko : Region.Disjoint (stkR s.sp 544) ⟨State.addr (s.gpr .r0), 2 * T.ecdsa.curve.len⟩)
+    (kd : Region.Disjoint (stkR s.sp 544) ⟨State.addr (s.gpr .r1), T.ecdsa.curve.len⟩)
+    (kg : Region.Disjoint (stkR s.sp 544) ⟨State.addr (s.gpr .r2), w.F.H.D⟩)
+    (kc : Region.Disjoint (stkR s.sp 544) ⟨State.addr (stackArg s 0), 8192⟩)
+    (kt : Region.Disjoint (stkR s.sp 544) ⟨State.addr (stackArg s 1), 24⟩)
     (no : (s.gpr .r0).toNat + 2 * T.ecdsa.curve.len ≤ 2 ^ 32) (nd : (s.gpr .r1).toNat + T.ecdsa.curve.len ≤ 2 ^ 32)
     (ng : (s.gpr .r2).toNat + w.F.H.D ≤ 2 ^ 32) (nc : (stackArg s 0).toNat + 8192 ≤ 2 ^ 32)
     (nt : (stackArg s 1).toNat + 24 ≤ 2 ^ 32)
     (htab : TablesOk cs s.syms s.mem [⟨State.addr (s.gpr .r0), 2 * T.ecdsa.curve.len⟩,
-      ⟨State.addr (stackArg s 0), 8192⟩, stkR s.sp 536])
+      ⟨State.addr (stackArg s 0), 8192⟩, stkR s.sp 544])
     (hheld : Abi.tableHeld 32 s.mem (State.addr (stackArg s 1)) (FnTable.words isa s (tableOf w)))
     (hpw : (names vs).Pairwise fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) :
     PreW R T vs w s := by
@@ -347,7 +347,7 @@ def symT (vs : List HVar) (n : String) : BitVec 32 :=
 
 /-- The words of `w`'s table. -/
 def tw6 (vs : List HVar) (w : HVar) : List (BitVec 64) :=
-  [(symT vs w.F.hiN).setWidth 64, (symT vs w.F.H.updN).setWidth 64, (symT vs w.F.hfN).setWidth 64,
+  [(symT vs w.F.hiAnyN).setWidth 64, (symT vs w.F.H.updN).setWidth 64, (symT vs w.F.hfN).setWidth 64,
     BitVec.ofNat 64 (Spec.HashTable.index w.G), BitVec.ofNat 64 w.G.len,
     BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G)]
 
