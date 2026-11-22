@@ -13,7 +13,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
 `vg_ecdsa_p256_verify` and `vg_ecdsa_p256_sign`, with their `_umaal`
 variants: each one's code, then the instructions that zero the stack its
 contract reserves (96 bytes for verification, whose frame keeps the hash's
-working values; 536 for signing, whose frames keep the nonce's HMAC states,
+working values; 544 for signing, whose frames keep the nonce's HMAC states,
 and those of the HMAC functions it calls through its table) and set the
 registers a callee may change, but the result, and the flags to constants
 (`Impl.Scrub.Arm.scrubAll`). Signing takes the HMAC functions of its table
@@ -50,9 +50,9 @@ def signCfgP256 (f : Impl.Ecdsa.Rfc6979.Arm.Fns) (u : Bool) : Impl.Ecdsa.Rfc6979
   coreC := bif u then Impl.Ecdsa.Arm.signP256CombU else Impl.Ecdsa.Arm.signP256Comb
 
 /-- `vg_ecdsa_p256_sign`, calling the HMAC functions `f` through its table. -/
-def signP256 (f : Impl.Ecdsa.Rfc6979.Arm.Fns) : Prog isa := scrubAll 32 536 (signCfgP256 f false).sign
+def signP256 (f : Impl.Ecdsa.Rfc6979.Arm.Fns) : Prog isa := scrubAll 32 544 (signCfgP256 f false).sign
 
 /-- `vg_ecdsa_p256_sign_umaal`, calling the HMAC functions `f` through its table. -/
-def signP256U (f : Impl.Ecdsa.Rfc6979.Arm.Fns) : Prog isa := scrubAll 32 536 (signCfgP256 f true).sign
+def signP256U (f : Impl.Ecdsa.Rfc6979.Arm.Fns) : Prog isa := scrubAll 32 544 (signCfgP256 f true).sign
 
 end VG.Impl.Ecdsa.Arm.Fn

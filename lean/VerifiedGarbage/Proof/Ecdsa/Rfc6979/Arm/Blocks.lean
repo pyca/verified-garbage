@@ -38,6 +38,8 @@ public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 public import VerifiedGarbage.Proof.Hmac.Stream.Arm.CodeOk
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha224
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyInstances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeySha256
 public import VerifiedGarbage.Spec.HmacTable
 public import VerifiedGarbage.Proof.HashTable.Basic
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Instance
@@ -143,8 +145,10 @@ has HMAC on ARMv7, each with one implementation (`vars`: MD5, SHA-1,
 SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224 and SHA-512/256, the
 functions PBKDF2's code calls, `Proof.Pbkdf2.Whole.Arm`): the table of a
 hash function (`tableOf`, `VG_HMAC_<HASH>`) holds the addresses of HMAC's
-`init` and `finalize` and of the streaming `update`, in the forms that take
-their working space as an argument (`_scratch`), then its data
+`init` for a key of any length (`Fns.hmacInitAny`, with `W + S` words of
+working space, `vg_hmac_<hash>_init_any_scratch`) and `finalize` and of the
+streaming `update`, in the forms that take their working space as an
+argument (`_scratch`), then its data
 (`Spec.HmacTable.dataOf`), each word 32 bits wide; an indirect call of the
 functions of every table (`fnsOf`) to one of them reaches it (`tabOK_of`),
 when the functions of distinct names are at distinct addresses and those of
@@ -163,10 +167,10 @@ open VG.Proof.HashTable (pw_ne find_name)
 /-- What `HVar.scrub` states of the functions of the hash function `M`, from
 what `M` states of its own code. -/
 theorem fnsScrub {I : Spec.Hmac.Instance} {M : Impl.Pbkdf2.Md.Arm.Hash} (h : Proof.Hmac.Stream.Arm.MdOk M) :
-    Arm.Scrub.CodeOk (Impl.Hmac.Stream.Arm.fnsOf I M).hiC 8 ∧
+    Arm.Scrub.CodeOk (Impl.Hmac.Stream.Arm.fnsOf I M).hmacInitAny 16 ∧
       Arm.Scrub.CodeOk (Impl.Hmac.Stream.Arm.fnsOf I M).H.updC 8 ∧
       Arm.Scrub.CodeOk (Impl.Hmac.Stream.Arm.fnsOf I M).hfC 8 :=
-  ⟨h.hmacInit_ok.mono (by decide), h.upd.mono (by decide), h.hmacFin_ok⟩
+  ⟨⟨Nat.le_of_eq (h.hmacInitAny_stack I), h.hmacInitAny_noIcall I⟩, h.upd.mono (by decide), h.hmacFin_ok⟩
 
 /-- A hash function with HMAC on ARMv7: the functions PBKDF2's code calls,
 what is proven of them, and its place in `Spec.Mgf1.hashes`, whose HMAC is
@@ -179,36 +183,48 @@ structure HVar where
   glen : G.len = F.H.D
   hmac : Spec.HmacTable.hmacOf G = some ok.hH.SH.H
   /-- What the cleanup of a function that calls them through the table needs
-  of HMAC's `init`, the streaming `update` and HMAC's `finalize`: their frames
-  use at most 8 bytes, and they make no indirect call (`Arm.Scrub.CodeOk`),
-  from what the hash function states of its own code
-  (`Proof.Hmac.Stream.Arm.MdOk`). -/
-  scrub : Arm.Scrub.CodeOk F.hiC 8 ∧ Arm.Scrub.CodeOk F.H.updC 8 ∧ Arm.Scrub.CodeOk F.hfC 8
+  of HMAC's `init` for a key of any length, the streaming `update` and HMAC's
+  `finalize`: their frames use at most 16, 8 and 8 bytes, and they make no
+  indirect call (`Arm.Scrub.CodeOk`), from what the hash function states of
+  its own code (`Proof.Hmac.Stream.Arm.MdOk`). -/
+  scrub : Arm.Scrub.CodeOk F.hmacInitAny 16 ∧ Arm.Scrub.CodeOk F.H.updC 8 ∧ Arm.Scrub.CodeOk F.hfC 8
+  /-- HMAC's `init` for a key of any length, which the table holds, meets
+  its contract with `W + S` words of working space (`Any.verified`). -/
+  any : Proof.Pbkdf2.Whole.Arm.Sound F.hmacInitAny
+    (Proof.Pbkdf2.Whole.Arm.Any.anyScratchContract ok.hH.SH (F.W + F.H.S))
 
 open Proof.Pbkdf2.Whole.Arm in
 def md5V : HVar :=
-  ⟨md5F, md5OKF, Spec.Mgf1.md5, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.md5_mdOk⟩
+  ⟨md5F, md5OKF, Spec.Mgf1.md5, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.md5_mdOk,
+    .of_verified (Any.verified md5OKF Any.md5_anyChecks rfl rfl Any.md5_anySat)⟩
 open Proof.Pbkdf2.Whole.Arm in
 def sha1V : HVar :=
-  ⟨sha1F, sha1OKF, Spec.Mgf1.sha1, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.sha1_mdOk⟩
+  ⟨sha1F, sha1OKF, Spec.Mgf1.sha1, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.sha1_mdOk,
+    .of_verified (Any.verified sha1OKF Any.sha1_anyChecks rfl rfl Any.sha1_anySat)⟩
 open Proof.Pbkdf2.Whole.Arm in
 def sha224V : HVar :=
-  ⟨sha224F, sha224OKF, Spec.Mgf1.sha224, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.sha224_mdOk⟩
+  ⟨sha224F, sha224OKF, Spec.Mgf1.sha224, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.sha224_mdOk,
+    .of_verified (Any.verified sha224OKF Any.sha224_anyChecks rfl rfl Any.sha224_anySat)⟩
 open Proof.Pbkdf2.Whole.Arm in
 def sha256V : HVar :=
-  ⟨sha256F, sha256OKF, Spec.Mgf1.sha256, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.sha256_mdOk⟩
+  ⟨sha256F, sha256OKF, Spec.Mgf1.sha256, rfl, rfl, rfl, fnsScrub Proof.Hmac.Stream.Arm.sha256_mdOk,
+    .of_verified (Any.verified sha256OKF Any.sha256_anyChecks rfl rfl Any.sha256_anySat)⟩
 open Proof.Pbkdf2.Whole.Arm in
 def sha384V : HVar :=
-  ⟨sha384F, sha384OKF, Spec.Mgf1.sha384, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _)⟩
+  ⟨sha384F, sha384OKF, Spec.Mgf1.sha384, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _),
+    .of_verified (Any.verified sha384OKF Any.sha384_anyChecks rfl rfl Any.sha384_anySat)⟩
 open Proof.Pbkdf2.Whole.Arm in
 def sha512V : HVar :=
-  ⟨sha512F, sha512OKF, Spec.Mgf1.sha512, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _)⟩
+  ⟨sha512F, sha512OKF, Spec.Mgf1.sha512, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _),
+    .of_verified (Any.verified sha512OKF Any.sha512_anyChecks rfl rfl Any.sha512_anySat)⟩
 open Proof.Pbkdf2.Whole.Arm in
 def sha512_224V : HVar :=
-  ⟨sha512_224F, sha512_224OKF, Spec.Mgf1.sha512_224, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _)⟩
+  ⟨sha512_224F, sha512_224OKF, Spec.Mgf1.sha512_224, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _),
+    .of_verified (Any.verified sha512_224OKF Any.sha512_224_anyChecks rfl rfl Any.sha512_224_anySat)⟩
 open Proof.Pbkdf2.Whole.Arm in
 def sha512_256V : HVar :=
-  ⟨sha512_256F, sha512_256OKF, Spec.Mgf1.sha512_256, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _)⟩
+  ⟨sha512_256F, sha512_256OKF, Spec.Mgf1.sha512_256, rfl, rfl, rfl, fnsScrub (Proof.Hmac.Stream.Arm.sha512_mdOk _ _ _),
+    .of_verified (Any.verified sha512_256OKF Any.sha512_256_anyChecks rfl rfl Any.sha512_256_anySat)⟩
 
 /-- Every hash function with HMAC on ARMv7. -/
 def vars : List HVar := [md5V, sha1V, sha224V, sha256V, sha384V, sha512V, sha512_224V, sha512_256V]
@@ -217,7 +233,7 @@ def vars : List HVar := [md5V, sha1V, sha224V, sha256V, sha384V, sha512V, sha512
 def tableOf (w : HVar) : FnTable where
   name := s!"VG_HMAC_{w.G.rust.toUpper}"
   iface := Spec.HmacTable.iface
-  fns := [w.F.hiN, w.F.H.updN, w.F.hfN]
+  fns := [w.F.hiAnyN, w.F.H.updN, w.F.hfN]
   data := Spec.HmacTable.dataOf w.G
 
 /-- The tables of `vs`. -/
@@ -225,7 +241,7 @@ def tables (vs : List HVar) : List FnTable := vs.map tableOf
 
 /-- For each of a table's functions, that function of each of `vs`. -/
 def fnsOf (vs : List HVar) : Fns :=
-  ⟨vs.map fun w => (w.F.hiN, w.F.hiC), vs.map fun w => (w.F.H.updN, w.F.H.updC),
+  ⟨vs.map fun w => (w.F.hiAnyN, w.F.hmacInitAny), vs.map fun w => (w.F.H.updN, w.F.H.updC),
     vs.map fun w => (w.F.hfN, w.F.hfC)⟩
 
 /-- The functions of `tables vs`. -/
@@ -233,7 +249,7 @@ def names (vs : List HVar) : List String := ((tables vs).map (·.fns)).flatten
 
 /-- The functions of the same name have the same code. -/
 def Coh (vs : List HVar) : Prop :=
-  ∀ w ∈ vs, ∀ w' ∈ vs, (w.F.hiN = w'.F.hiN → w.F.hiC = w'.F.hiC) ∧
+  ∀ w ∈ vs, ∀ w' ∈ vs, (w.F.hiAnyN = w'.F.hiAnyN → w.F.hmacInitAny = w'.F.hmacInitAny) ∧
     (w.F.H.updN = w'.F.H.updN → w.F.H.updC = w'.F.H.updC) ∧ (w.F.hfN = w'.F.hfN → w.F.hfC = w'.F.hfC)
 
 instance (vs : List HVar) : Decidable (Coh vs) := by unfold Coh; infer_instance
@@ -241,20 +257,20 @@ instance (vs : List HVar) : Decidable (Coh vs) := by unfold Coh; infer_instance
 /-- The table's word at `p + o`. -/
 abbrev tA (p : BitVec 32) (o : Nat) : Addr := State.addr (p + BitVec.ofNat 32 o)
 
-/-- At `p` in `m`, the addresses `sy` gives `F`'s HMAC `init`, the streaming
-`update` and HMAC's `finalize`. -/
+/-- At `p` in `m`, the addresses `sy` gives `F`'s HMAC `init` for a key of
+any length, the streaming `update` and HMAC's `finalize`. -/
 def TabMem (F : Impl.Pbkdf2.Whole.Arm.Fns) (sy : String → BitVec 32) (p : BitVec 32) (m : Mem) : Prop :=
-  m.readW (tA p 0) 32 = sy F.hiN ∧ m.readW (tA p 4) 32 = sy F.H.updN ∧ m.readW (tA p 8) 32 = sy F.hfN
+  m.readW (tA p 0) 32 = sy F.hiAnyN ∧ m.readW (tA p 4) 32 = sy F.H.updN ∧ m.readW (tA p 8) 32 = sy F.hfN
 
 /-- An indirect call of `f`'s functions, at the addresses `sy` gives, to the
 address of one of `F`'s HMAC functions reaches it. -/
 structure TabOK (F : Impl.Pbkdf2.Whole.Arm.Fns) (f : Fns) (sy : String → BitVec 32) : Prop where
-  i : f.init.find? (fun q => (sy q.1).setWidth 64 == (sy F.hiN).setWidth 64) = some (F.hiN, F.hiC)
+  i : f.init.find? (fun q => (sy q.1).setWidth 64 == (sy F.hiAnyN).setWidth 64) = some (F.hiAnyN, F.hmacInitAny)
   u : f.upd.find? (fun q => (sy q.1).setWidth 64 == (sy F.H.updN).setWidth 64) = some (F.H.updN, F.H.updC)
   f : f.fin.find? (fun q => (sy q.1).setWidth 64 == (sy F.hfN).setWidth 64) = some (F.hfN, F.hfC)
 
 theorem mem_names {vs : List HVar} {w : HVar} (hw : w ∈ vs) :
-    w.F.hiN ∈ names vs ∧ w.F.H.updN ∈ names vs ∧ w.F.hfN ∈ names vs := by
+    w.F.hiAnyN ∈ names vs ∧ w.F.H.updN ∈ names vs ∧ w.F.hfN ∈ names vs := by
   have : (tableOf w).fns ∈ (tables vs).map (·.fns) := List.mem_map_of_mem (List.mem_map_of_mem hw)
   refine ⟨?_, ?_, ?_⟩ <;> exact List.mem_flatten.mpr ⟨_, this, by simp [tableOf]⟩
 
@@ -282,7 +298,7 @@ theorem blockSize_eq (w : HVar) : Spec.HmacTable.blockSize w.G = w.F.H.B := by
 
 /-- The words of the table of `w`. -/
 theorem words_tableOf (s : State) (w : HVar) :
-    FnTable.words isa s (tableOf w) = [(s.syms w.F.hiN).setWidth 64, (s.syms w.F.H.updN).setWidth 64,
+    FnTable.words isa s (tableOf w) = [(s.syms w.F.hiAnyN).setWidth 64, (s.syms w.F.H.updN).setWidth 64,
       (s.syms w.F.hfN).setWidth 64, BitVec.ofNat 64 (Spec.HashTable.index w.G), BitVec.ofNat 64 w.G.len,
       BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G)] := rfl
 
@@ -402,11 +418,16 @@ end
 The function's buffers (`out` of `2 q` bytes, `d` of `q`, `digest` of `dn`,
 `scratch`, the table `hmac` of 24 bytes, the 8 bytes of stack arguments
 above the stack pointer) and the 536 bytes of stack below the stack
-pointer, from `B` up (`Lay dn`): the 24 bytes the calls use (their frames
-and the 16 bytes HMAC's functions use below theirs), then the frame of 512
+pointer that the code uses, from `B` up (`Lay dn`): the 24 bytes the calls
+use (their frames and the 16 bytes HMAC's functions use below theirs), then
+the frame of 512
 bytes, from `B + 24`: `K`, `V`, `h`, `X`, `core`'s digest, `T` and its
 length (`LOW`, with the calls' 24 bytes), then our caller's `r4`–`r11` and
-`lr` and the pointer `digest` (`TOP`). `Ctx` is what holds between the
+`lr` and the pointer `digest` (`TOP`). The contract gives 8 more bytes of
+stack, below `B`, which nothing writes: HMAC's `init` for a key of any
+length, which the table holds, takes the 24 bytes below its stack pointer
+to be apart from its buffers, though it writes only 16 of them
+(`Lay.Ok.x8`, `Lay.Ok.low32_SCR`). `Ctx` is what holds between the
 prologue and the frame's release: the permissions, `sp`, the registers that
 hold the pointers (`r4`–`r6`, `r8`, `r11`), our caller's registers and
 `digest` in the frame, that memory changed only in `out`, `scratch` and the
@@ -426,8 +447,9 @@ open VG.Proof.X25519.Arm (Upd Mupd)
 open VG.Impl.Ecdsa.Rfc6979.Arm (Fns)
 open VG.Proof.HmacTable.Arm (TabOK TabMem tA)
 
-/-- The stack the function uses: the frame and the calls' 24 bytes. -/
-def stackT : Nat := 536
+/-- The stack the contract reserves: the frame, the calls' 24 bytes, and 8
+bytes below them that nothing writes (`Lay.Ok.x8`). -/
+def stackT : Nat := 544
 
 /-- The buffers, as the registers and stack arguments hold them, and the
 stack pointer on entry, for a digest of `dn` bytes and scalars of `q`. -/
@@ -499,9 +521,14 @@ structure Ok : Prop where
   /-- The stack arguments are apart from what the code writes. -/
   ao : L.ARGS.Disjoint L.OUT
   ac : L.ARGS.Disjoint L.SCR
-  nB : 536 ≤ L.sp.toNat
+  nB : 544 ≤ L.sp.toNat
   na : L.sp.toNat + 8 ≤ 2 ^ 32
   tables : ∀ r∈L.TBLs,r.base.toNat+r.len≤2^32 ∧ (∀ w∈[L.OUT,L.SCR,L.STK],r.Disjoint w) ∧ r.base.toNat%64=0
+  /-- The 8 bytes below the stack used are apart from `scratch`: HMAC's
+  `init` for a key of any length, which the table holds, takes the 24 bytes
+  below its stack pointer to be apart from its buffers, though it writes
+  only 16. -/
+  x8 : Region.Disjoint ⟨L.B - BitVec.ofNat 64 8, 8⟩ L.SCR
 
 end Lay
 
@@ -544,6 +571,22 @@ theorem stk_scr {d n e k : Nat} (h₁ : d + n ≤ 536) (h₂ : e + k ≤ 8192) :
 
 theorem stk_SCR {d n : Nat} (h₁ : d + n ≤ 536) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.SCR := h.kc.sub_left (Offset.sub_base _ h₁)
+
+/-- The 32 bytes below the frame (`x8`, then the calls' 24) are apart from
+`scratch`. -/
+theorem low32_SCR : Region.Disjoint ⟨L.B - BitVec.ofNat 64 8, 32⟩ L.SCR := by
+  intro a ha hs
+  by_cases hlt : (a - (L.B - BitVec.ofNat 64 8)).toNat < 8
+  · exact h.x8 a (show (a - (L.B - BitVec.ofNat 64 8)).toNat + 1 ≤ 8 by omega_using [hlt]) hs
+  · have e : a - L.B = a - (L.B - BitVec.ofNat 64 8) - BitVec.ofNat 64 8 := by
+      rw [BitVec.sub_sub, BitVec.sub_add_cancel]
+    have hle : BitVec.ofNat 64 8 ≤ a - (L.B - BitVec.ofNat 64 8) := by
+      rw [BitVec.le_def, BitVec.toNat_ofNat]; omega_using [hlt]
+    refine h.stk_SCR (d := 0) (n := 24) (by omega_using []) a ?_ hs
+    show (a - (L.B + BitVec.ofNat 64 0)).toNat + 1 ≤ 24
+    have ha' : (a - (L.B - BitVec.ofNat 64 8)).toNat + 1 ≤ 32 := ha
+    rw [BitVec.add_zero, e, BitVec.toNat_sub_of_le hle, BitVec.toNat_ofNat]
+    omega_using [ha', hlt]
 
 theorem stk_OUT {d n : Nat} (h₁ : d + n ≤ 536) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.OUT := h.ko.sub_left (Offset.sub_base _ h₁)
@@ -629,7 +672,7 @@ structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (t : 
   tabMem : TabMem L.F t.syms L.tab m₀
   tabD : m₀.readW (tA L.tab Impl.Ecdsa.Rfc6979.Arm.tD) 32 = BitVec.ofNat 32 L.F.H.D
   tabB : m₀.readW (tA L.tab Impl.Ecdsa.Rfc6979.Arm.tB) 32 = BitVec.ofNat 32 L.F.H.B
-  fsy : ∀ n ∈ [L.F.hiN, L.F.H.updN, L.F.hfN], t.syms n = L.fa n
+  fsy : ∀ n ∈ [L.F.hiAnyN, L.F.H.updN, L.F.hfN], t.syms n = L.fa n
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
@@ -1152,6 +1195,13 @@ structure RfcHash where
   hWi : ok.Wi * 8 ≤ 1872
   hWf : ok.Wf * 8 ≤ 1872
   hWb : ok.hH.Wb ≤ 1872
+  /-- HMAC's `init` for a key of any length (`Fns.hmacInitAny`), which the
+  table holds, with `W + S` words of working space, which `scratch` holds
+  (3408 bytes for SHA-512), and a frame of at most 16 bytes. -/
+  any : Proof.Pbkdf2.Whole.Arm.Sound F.hmacInitAny
+    (Proof.Pbkdf2.Whole.Arm.Any.anyScratchContract ok.hH.SH (F.W + F.H.S))
+  anySt : VG.Arm.FrameStack.armStack F.hmacInitAny ≤ 16
+  hWA : (F.W + F.H.S) * 8 ≤ 3408
 
 namespace RfcHash
 

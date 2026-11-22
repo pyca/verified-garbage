@@ -6312,7 +6312,7 @@ bx lr",
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `d`, `digest`, `hmac` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 536 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 544 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p224_sign(out: *mut [u8; 56], d: *const [u8; 28], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
@@ -6607,35 +6607,35 @@ str r1, [r8, #56]
 str r0, [r8, #124]
 str r1, [r8, #60]
 mov r0, #0
-strb r0, [r11, #2256]
+strb r0, [r11, #3792]
 ldr r0, [r5, #0]
-str r0, [r11, #2257]
+str r0, [r11, #3793]
 ldr r0, [r5, #4]
-str r0, [r11, #2261]
+str r0, [r11, #3797]
 ldr r0, [r5, #8]
-str r0, [r11, #2265]
+str r0, [r11, #3801]
 ldr r0, [r5, #12]
-str r0, [r11, #2269]
+str r0, [r11, #3805]
 ldr r0, [r5, #16]
-str r0, [r11, #2273]
+str r0, [r11, #3809]
 ldr r0, [r5, #20]
-str r0, [r11, #2277]
+str r0, [r11, #3813]
 ldr r0, [r5, #24]
-str r0, [r11, #2281]
+str r0, [r11, #3817]
 ldr r0, [r8, #128]
-str r0, [r11, #2285]
+str r0, [r11, #3821]
 ldr r0, [r8, #132]
-str r0, [r11, #2289]
+str r0, [r11, #3825]
 ldr r0, [r8, #136]
-str r0, [r11, #2293]
+str r0, [r11, #3829]
 ldr r0, [r8, #140]
-str r0, [r11, #2297]
+str r0, [r11, #3833]
 ldr r0, [r8, #144]
-str r0, [r11, #2301]
+str r0, [r11, #3837]
 ldr r0, [r8, #148]
-str r0, [r11, #2305]
+str r0, [r11, #3841]
 ldr r0, [r8, #152]
-str r0, [r11, #2309]
+str r0, [r11, #3845]
 movw r12, #0
 add r0, r11, r12
 movw r12, #192
@@ -6662,7 +6662,7 @@ blx lr
 ldr r1, [sp], #16
 movw r12, #0
 add r0, r11, r12
-movw r12, #2256
+movw r12, #3792
 add r1, r11, r12
 ldr r2, [r6, #20]
 ldr r3, [r6, #16]
@@ -6732,35 +6732,35 @@ push {{r10, r12}}
 blx lr
 ldr r12, [sp], #8
 mov r0, #1
-strb r0, [r11, #2256]
+strb r0, [r11, #3792]
 ldr r0, [r5, #0]
-str r0, [r11, #2257]
+str r0, [r11, #3793]
 ldr r0, [r5, #4]
-str r0, [r11, #2261]
+str r0, [r11, #3797]
 ldr r0, [r5, #8]
-str r0, [r11, #2265]
+str r0, [r11, #3801]
 ldr r0, [r5, #12]
-str r0, [r11, #2269]
+str r0, [r11, #3805]
 ldr r0, [r5, #16]
-str r0, [r11, #2273]
+str r0, [r11, #3809]
 ldr r0, [r5, #20]
-str r0, [r11, #2277]
+str r0, [r11, #3813]
 ldr r0, [r5, #24]
-str r0, [r11, #2281]
+str r0, [r11, #3817]
 ldr r0, [r8, #128]
-str r0, [r11, #2285]
+str r0, [r11, #3821]
 ldr r0, [r8, #132]
-str r0, [r11, #2289]
+str r0, [r11, #3825]
 ldr r0, [r8, #136]
-str r0, [r11, #2293]
+str r0, [r11, #3829]
 ldr r0, [r8, #140]
-str r0, [r11, #2297]
+str r0, [r11, #3833]
 ldr r0, [r8, #144]
-str r0, [r11, #2301]
+str r0, [r11, #3837]
 ldr r0, [r8, #148]
-str r0, [r11, #2305]
+str r0, [r11, #3841]
 ldr r0, [r8, #152]
-str r0, [r11, #2309]
+str r0, [r11, #3845]
 movw r12, #0
 add r0, r11, r12
 movw r12, #192
@@ -6787,7 +6787,7 @@ blx lr
 ldr r1, [sp], #16
 movw r12, #0
 add r0, r11, r12
-movw r12, #2256
+movw r12, #3792
 add r1, r11, r12
 ldr r2, [r6, #20]
 ldr r3, [r6, #16]
@@ -6944,7 +6944,7 @@ cmp r7, #0
 b 25f
 24:
 mov r0, #0
-strb r0, [r11, #2256]
+strb r0, [r11, #3792]
 movw r12, #0
 add r0, r11, r12
 movw r12, #192
@@ -6971,7 +6971,7 @@ blx lr
 ldr r1, [sp], #16
 movw r12, #0
 add r0, r11, r12
-movw r12, #2256
+movw r12, #3792
 add r1, r11, r12
 ldr r2, [r6, #20]
 ldr r3, [r6, #16]
@@ -7063,10 +7063,10 @@ ldr r11, [r12, #492]
 ldr lr, [r12, #496]
 ldr r8, [r12, #500]
 add sp, sp, #512
-sub sp, sp, #536
+sub sp, sp, #544
 add r12, sp, #0
 mov r2, #0
-mov r3, #16
+mov r3, #17
 27:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -7079,13 +7079,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 27b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
-add sp, sp, #536
+add sp, sp, #544
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -7117,7 +7111,7 @@ pub const VG_ECDSA_P224_SIGN_UMAAL_FEATURES: verified_garbage_cpu::Features = ve
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `hmac` is a table of HMAC over the hash function of the digest, which RFC 6979 uses: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the HMAC tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `d`, `digest`, `hmac` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 536 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest`, `scratch` and `hmac` may overlap the 544 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hmac` must be the `as_ptr()` of one of the `Hmac` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
@@ -7414,35 +7408,35 @@ str r1, [r8, #56]
 str r0, [r8, #124]
 str r1, [r8, #60]
 mov r0, #0
-strb r0, [r11, #2256]
+strb r0, [r11, #3792]
 ldr r0, [r5, #0]
-str r0, [r11, #2257]
+str r0, [r11, #3793]
 ldr r0, [r5, #4]
-str r0, [r11, #2261]
+str r0, [r11, #3797]
 ldr r0, [r5, #8]
-str r0, [r11, #2265]
+str r0, [r11, #3801]
 ldr r0, [r5, #12]
-str r0, [r11, #2269]
+str r0, [r11, #3805]
 ldr r0, [r5, #16]
-str r0, [r11, #2273]
+str r0, [r11, #3809]
 ldr r0, [r5, #20]
-str r0, [r11, #2277]
+str r0, [r11, #3813]
 ldr r0, [r5, #24]
-str r0, [r11, #2281]
+str r0, [r11, #3817]
 ldr r0, [r8, #128]
-str r0, [r11, #2285]
+str r0, [r11, #3821]
 ldr r0, [r8, #132]
-str r0, [r11, #2289]
+str r0, [r11, #3825]
 ldr r0, [r8, #136]
-str r0, [r11, #2293]
+str r0, [r11, #3829]
 ldr r0, [r8, #140]
-str r0, [r11, #2297]
+str r0, [r11, #3833]
 ldr r0, [r8, #144]
-str r0, [r11, #2301]
+str r0, [r11, #3837]
 ldr r0, [r8, #148]
-str r0, [r11, #2305]
+str r0, [r11, #3841]
 ldr r0, [r8, #152]
-str r0, [r11, #2309]
+str r0, [r11, #3845]
 movw r12, #0
 add r0, r11, r12
 movw r12, #192
@@ -7469,7 +7463,7 @@ blx lr
 ldr r1, [sp], #16
 movw r12, #0
 add r0, r11, r12
-movw r12, #2256
+movw r12, #3792
 add r1, r11, r12
 ldr r2, [r6, #20]
 ldr r3, [r6, #16]
@@ -7539,35 +7533,35 @@ push {{r10, r12}}
 blx lr
 ldr r12, [sp], #8
 mov r0, #1
-strb r0, [r11, #2256]
+strb r0, [r11, #3792]
 ldr r0, [r5, #0]
-str r0, [r11, #2257]
+str r0, [r11, #3793]
 ldr r0, [r5, #4]
-str r0, [r11, #2261]
+str r0, [r11, #3797]
 ldr r0, [r5, #8]
-str r0, [r11, #2265]
+str r0, [r11, #3801]
 ldr r0, [r5, #12]
-str r0, [r11, #2269]
+str r0, [r11, #3805]
 ldr r0, [r5, #16]
-str r0, [r11, #2273]
+str r0, [r11, #3809]
 ldr r0, [r5, #20]
-str r0, [r11, #2277]
+str r0, [r11, #3813]
 ldr r0, [r5, #24]
-str r0, [r11, #2281]
+str r0, [r11, #3817]
 ldr r0, [r8, #128]
-str r0, [r11, #2285]
+str r0, [r11, #3821]
 ldr r0, [r8, #132]
-str r0, [r11, #2289]
+str r0, [r11, #3825]
 ldr r0, [r8, #136]
-str r0, [r11, #2293]
+str r0, [r11, #3829]
 ldr r0, [r8, #140]
-str r0, [r11, #2297]
+str r0, [r11, #3833]
 ldr r0, [r8, #144]
-str r0, [r11, #2301]
+str r0, [r11, #3837]
 ldr r0, [r8, #148]
-str r0, [r11, #2305]
+str r0, [r11, #3841]
 ldr r0, [r8, #152]
-str r0, [r11, #2309]
+str r0, [r11, #3845]
 movw r12, #0
 add r0, r11, r12
 movw r12, #192
@@ -7594,7 +7588,7 @@ blx lr
 ldr r1, [sp], #16
 movw r12, #0
 add r0, r11, r12
-movw r12, #2256
+movw r12, #3792
 add r1, r11, r12
 ldr r2, [r6, #20]
 ldr r3, [r6, #16]
@@ -7751,7 +7745,7 @@ cmp r7, #0
 b 25f
 24:
 mov r0, #0
-strb r0, [r11, #2256]
+strb r0, [r11, #3792]
 movw r12, #0
 add r0, r11, r12
 movw r12, #192
@@ -7778,7 +7772,7 @@ blx lr
 ldr r1, [sp], #16
 movw r12, #0
 add r0, r11, r12
-movw r12, #2256
+movw r12, #3792
 add r1, r11, r12
 ldr r2, [r6, #20]
 ldr r3, [r6, #16]
@@ -7870,10 +7864,10 @@ ldr r11, [r12, #492]
 ldr lr, [r12, #496]
 ldr r8, [r12, #500]
 add sp, sp, #512
-sub sp, sp, #536
+sub sp, sp, #544
 add r12, sp, #0
 mov r2, #0
-mov r3, #16
+mov r3, #17
 27:
 str r2, [r12, #0]
 str r2, [r12, #4]
@@ -7886,13 +7880,7 @@ str r2, [r12, #28]
 add r12, r12, #32
 subs r3, r3, #1
 bne 27b
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
-add sp, sp, #536
+add sp, sp, #544
 mov r1, #0
 mov r2, #0
 mov r3, #0

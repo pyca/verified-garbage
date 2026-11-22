@@ -55,6 +55,10 @@ structure Fns where
   hfC : Prog isa
   itN : String
   itC : Prog isa
+  /-- The name of HMAC's `init` for a key of any length with its working
+  space as an argument (`Fns.hmacInitAny`, `Impl/Pbkdf2/Md/AnyKey/Arm.lean`),
+  which the tables of `Hmac` hold. -/
+  hiAnyN : String := ""
 
 namespace Fns
 
