@@ -59,7 +59,7 @@ pub unsafe fn vg_seed_cfb128_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, s
 ///
 /// Contract: `VG.Spec.Seed.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// It runs `vg_seed_cfb128_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_seed_cfb128_decrypt_aesni` if the CPU supports its features (`VG_SEED_CFB128_DECRYPT_AESNI_FEATURES`); or else `vg_seed_cfb128_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
@@ -75,8 +75,37 @@ pub unsafe fn vg_seed_cfb128_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, s
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_seed_cfb128_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::seed_cfb::vg_seed_cfb128_decrypt(schedule, iv, data, n) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::seed_cfb::VG_SEED_CFB128_DECRYPT_AESNI_FEATURES) }
+            || cpu.contains(crate::seed_cfb::VG_SEED_CFB128_DECRYPT_AESNI_FEATURES)
+        {
+            return crate::seed_cfb::vg_seed_cfb128_decrypt_aesni;
+        }
+        crate::seed_cfb::vg_seed_cfb128_decrypt
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, iv, data, n) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, iv, data, n) }
 }
 
 /// SEED-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 4269 §2) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`.

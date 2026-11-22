@@ -79,6 +79,10 @@ mod vg_seed_aesni;
 pub use vg_seed_aesni::VG_SEED_AESNI;
 
 #[rustfmt::skip]
+mod vg_seed_aesni_wide;
+pub use vg_seed_aesni_wide::VG_SEED_AESNI_WIDE;
+
+#[rustfmt::skip]
 mod vg_sm4_aesni;
 pub use vg_sm4_aesni::VG_SM4_AESNI;
 
