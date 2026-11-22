@@ -32,13 +32,17 @@ jne 23b
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 24b
 .base64 "uAAAAACIg6AEAAC4AAAAAIiDoQQAALgBAAAAiIPCBAAAuAAAAACIg8MEAAC4AgAAAIiD5AQAALgAAAAAiIPlBAAAuAMAAACIgwYFAAC4AAAAAIiDBwUAAEiJ30iBx4AEAABIid5IgcYAmAAASInaSIHCANgAAA=="
-call {vg_mldsa_rej_ntt_poly4}
+lea r11, [rip + {vg_mldsa_rej_ntt_poly4}]
+call r11
 .base64 "QSHHuAAAAACIg6AEAAC4AQAAAIiDoQQAALgBAAAAiIPCBAAAuAEAAACIg8MEAAC4AgAAAIiD5AQAALgBAAAAiIPlBAAAuAMAAACIgwYFAAC4AQAAAIiDBwUAAEiJ30iBx4AEAABIid5IgcYAqAAASInaSIHCANgAAA=="
-call {vg_mldsa_rej_ntt_poly4}
+lea r11, [rip + {vg_mldsa_rej_ntt_poly4}]
+call r11
 .base64 "QSHHuAAAAACIg6AEAAC4AgAAAIiDoQQAALgBAAAAiIPCBAAAuAIAAACIg8MEAAC4AgAAAIiD5AQAALgCAAAAiIPlBAAAuAMAAACIgwYFAAC4AgAAAIiDBwUAAEiJ30iBx4AEAABIid5IgcYAuAAASInaSIHCANgAAA=="
-call {vg_mldsa_rej_ntt_poly4}
+lea r11, [rip + {vg_mldsa_rej_ntt_poly4}]
+call r11
 .base64 "QSHHuAAAAACIg6AEAAC4AwAAAIiDoQQAALgBAAAAiIPCBAAAuAMAAACIg8MEAAC4AgAAAIiD5AQAALgDAAAAiIPlBAAAuAMAAACIgwYFAAC4AwAAAIiDBwUAAEiJ30iBx4AEAABIid5IgcYAyAAASInaSIHCANgAAA=="
-call {vg_mldsa_rej_ntt_poly4}
+lea r11, [rip + {vg_mldsa_rej_ntt_poly4}]
+call r11
 .base64 "QSHHRYX/"
 jne 25f
 jmp 26f
@@ -48,51 +52,63 @@ jne 27f
 .base64 "SInvSIHHgAAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwABoAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAGgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHH4AAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwABsAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAGwAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHHQAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwABwAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAHAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHHoAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAB0AAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAHQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHHAAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAB4AAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAHgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHHYAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAB8AAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAHwAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHHwAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwACAAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAIAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHHIAMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwACEAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAIQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHHgAMAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwACIAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAIgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHHIAUAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwACMAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAIwAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHHwAYAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwACQAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAJAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInvSIHHYAgAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwACUAAA="
 call {vg_mldsa_bit_unpack}
 .base64 "SInfSIHHAJQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "uAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEiJ6UiDwSBBuCAAAABJidlJgcHIAAAA"
 call {vg_keccak_absorb_scratch}
 .base64 "SInfSIPHAL6IAAAAuiAAAABMielIg8EAQbggAAAASYnZSYHByAAAAA=="
@@ -139,53 +155,66 @@ jne 213b
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 214b
 .base64 "SIuDgAMAAEiDwAOIgxYGAABIwegIiIMXBgAASInfSIHHEAUAAL4AAAIASInaSIHCADgAAEiJ2UiBwQDYAAA="
-call {vg_mldsa_expand_mask_poly4}
+lea r11, [rip + {vg_mldsa_expand_mask_poly4}]
+call r11
 .base64 "SInfSIHHAEgAAEiJ3kiBxgA4AAC5gAAAAA=="
 215:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 215b
 .base64 "SInfSIHHAEgAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInfSIHHAEwAAEiJ3kiBxgA8AAC5gAAAAA=="
 216:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 216b
 .base64 "SInfSIHHAEwAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInfSIHHAFAAAEiJ3kiBxgBAAAC5gAAAAA=="
 217:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 217b
 .base64 "SInfSIHHAFAAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInfSIHHAFQAAEiJ3kiBxgBEAAC5gAAAAA=="
 218:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 218b
 .base64 "SInfSIHHAFQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "SInfSIHHAFgAAEiJ3kiBxgCYAABIidpIgcIASAAASInZSIHBAAwAAA=="
-call {vg_mldsa_dot_inverse4}
+lea r11, [rip + {vg_mldsa_dot_inverse4}]
+call r11
 .base64 "SInfSIHHAFwAAEiJ3kiBxgCoAABIidpIgcIASAAASInZSIHBAAwAAA=="
-call {vg_mldsa_dot_inverse4}
+lea r11, [rip + {vg_mldsa_dot_inverse4}]
+call r11
 .base64 "SInfSIHHAGAAAEiJ3kiBxgC4AABIidpIgcIASAAASInZSIHBAAwAAA=="
-call {vg_mldsa_dot_inverse4}
+lea r11, [rip + {vg_mldsa_dot_inverse4}]
+call r11
 .base64 "SInfSIHHAGQAAEiJ3kiBxgDIAABIidpIgcIASAAASInZSIHBAAwAAA=="
-call {vg_mldsa_dot_inverse4}
+lea r11, [rip + {vg_mldsa_dot_inverse4}]
+call r11
 .base64 "SInfSIHHAFgAAL4AdAEASInaSIHCABgAAA=="
-call {vg_mldsa_high_bits}
+lea r11, [rip + {vg_mldsa_high_bits}]
+call r11
 .base64 "SInfSIHHABgAAL4rAAAASInaSIHCAAgAALnAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAFwAAL4AdAEASInaSIHCABgAAA=="
-call {vg_mldsa_high_bits}
+lea r11, [rip + {vg_mldsa_high_bits}]
+call r11
 .base64 "SInfSIHHABgAAL4rAAAASInaSIHCwAgAALnAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGAAAL4AdAEASInaSIHCABgAAA=="
-call {vg_mldsa_high_bits}
+lea r11, [rip + {vg_mldsa_high_bits}]
+call r11
 .base64 "SInfSIHHABgAAL4rAAAASInaSIHCgAkAALnAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "SInfSIHHAGQAAL4AdAEASInaSIHCABgAAA=="
-call {vg_mldsa_high_bits}
+lea r11, [rip + {vg_mldsa_high_bits}]
+call r11
 .base64 "SInfSIHHABgAAL4rAAAASInaSIHCQAoAALnAAAAA"
 call {vg_mldsa_simple_bit_pack}
 .base64 "uAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuEAAAABJidlJgcHIAAAA"
@@ -204,15 +233,18 @@ jne 219f
 jmp 220f
 219:
 .base64 "SInfSIHHABQAAEiJ3kiBxgAMAAA="
-call {vg_mldsa_ntt}
+lea r11, [rip + {vg_mldsa_ntt}]
+call r11
 .base64 "Qb8BAAAAuAAAAABIiYOIAwAASInfSIHHABgAAEiJ3kiBxgAUAABIidpIgcIAaAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHADgAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_add}
+lea r11, [rip + {vg_mldsa_add}]
+call r11
 .base64 "SInfSIHHADgAAL6y/wEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHRYX/"
 jne 221f
 jmp 222f
@@ -222,9 +254,11 @@ call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHADwAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_add}
+lea r11, [rip + {vg_mldsa_add}]
+call r11
 .base64 "SInfSIHHADwAAL6y/wEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHRYX/"
 jne 223f
 jmp 224f
@@ -234,9 +268,11 @@ call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHAEAAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_add}
+lea r11, [rip + {vg_mldsa_add}]
+call r11
 .base64 "SInfSIHHAEAAAL6y/wEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHRYX/"
 jne 225f
 jmp 226f
@@ -246,9 +282,11 @@ call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHAEQAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_add}
+lea r11, [rip + {vg_mldsa_add}]
+call r11
 .base64 "SInfSIHHAEQAAL6y/wEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHRYX/"
 jne 227f
 jmp 228f
@@ -266,11 +304,14 @@ call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHAFgAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_sub}
+lea r11, [rip + {vg_mldsa_sub}]
+call r11
 .base64 "SInfSIHHAFgAAL4AdAEASInaSIHCABwAAA=="
-call {vg_mldsa_low_bits}
+lea r11, [rip + {vg_mldsa_low_bits}]
+call r11
 .base64 "SInfSIHHABwAAL6ycwEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHRYX/"
 jne 231f
 jmp 232f
@@ -280,11 +321,14 @@ call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHAFwAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_sub}
+lea r11, [rip + {vg_mldsa_sub}]
+call r11
 .base64 "SInfSIHHAFwAAL4AdAEASInaSIHCABwAAA=="
-call {vg_mldsa_low_bits}
+lea r11, [rip + {vg_mldsa_low_bits}]
+call r11
 .base64 "SInfSIHHABwAAL6ycwEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHRYX/"
 jne 233f
 jmp 234f
@@ -294,11 +338,14 @@ call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_sub}
+lea r11, [rip + {vg_mldsa_sub}]
+call r11
 .base64 "SInfSIHHAGAAAL4AdAEASInaSIHCABwAAA=="
-call {vg_mldsa_low_bits}
+lea r11, [rip + {vg_mldsa_low_bits}]
+call r11
 .base64 "SInfSIHHABwAAL6ycwEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHRYX/"
 jne 235f
 jmp 236f
@@ -308,11 +355,14 @@ call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHABgAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHAGQAAEiJ3kiBxgAYAAA="
-call {vg_mldsa_sub}
+lea r11, [rip + {vg_mldsa_sub}]
+call r11
 .base64 "SInfSIHHAGQAAL4AdAEASInaSIHCABwAAA=="
-call {vg_mldsa_low_bits}
+lea r11, [rip + {vg_mldsa_low_bits}]
+call r11
 .base64 "SInfSIHHABwAAL6ycwEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHRYX/"
 jne 237f
 jmp 238f
@@ -330,65 +380,81 @@ call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHACAAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHACAAAL4AdAEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHSInfSIHHACQAAEiJ3kiBxgBYAAC5gAAAAA=="
 241:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 241b
 .base64 "SInfSIHHAFgAAEiJ3kiBxgAgAAA="
-call {vg_mldsa_add}
+lea r11, [rip + {vg_mldsa_add}]
+call r11
 .base64 "SInfSIHHACQAAEiJ3kiBxgBYAAA="
-call {vg_mldsa_sub}
+lea r11, [rip + {vg_mldsa_sub}]
+call r11
 .base64 "SInfSIHHACQAAEiJ3kiBxgBYAAC6AHQBAEiJ2UiBwQAoAAA="
-call {vg_mldsa_make_hint}
+lea r11, [rip + {vg_mldsa_make_hint}]
+call r11
 .base64 "i4uIAwAAAcFIiYuIAwAASInfSIHHACAAAEiJ3kiBxgAUAABIidpIgcIAjAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHACAAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHACAAAL4AdAEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHSInfSIHHACQAAEiJ3kiBxgBcAAC5gAAAAA=="
 242:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 242b
 .base64 "SInfSIHHAFwAAEiJ3kiBxgAgAAA="
-call {vg_mldsa_add}
+lea r11, [rip + {vg_mldsa_add}]
+call r11
 .base64 "SInfSIHHACQAAEiJ3kiBxgBcAAA="
-call {vg_mldsa_sub}
+lea r11, [rip + {vg_mldsa_sub}]
+call r11
 .base64 "SInfSIHHACQAAEiJ3kiBxgBcAAC6AHQBAEiJ2UiBwQAsAAA="
-call {vg_mldsa_make_hint}
+lea r11, [rip + {vg_mldsa_make_hint}]
+call r11
 .base64 "i4uIAwAAAcFIiYuIAwAASInfSIHHACAAAEiJ3kiBxgAUAABIidpIgcIAkAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHACAAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHACAAAL4AdAEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHSInfSIHHACQAAEiJ3kiBxgBgAAC5gAAAAA=="
 243:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 243b
 .base64 "SInfSIHHAGAAAEiJ3kiBxgAgAAA="
-call {vg_mldsa_add}
+lea r11, [rip + {vg_mldsa_add}]
+call r11
 .base64 "SInfSIHHACQAAEiJ3kiBxgBgAAA="
-call {vg_mldsa_sub}
+lea r11, [rip + {vg_mldsa_sub}]
+call r11
 .base64 "SInfSIHHACQAAEiJ3kiBxgBgAAC6AHQBAEiJ2UiBwQAwAAA="
-call {vg_mldsa_make_hint}
+lea r11, [rip + {vg_mldsa_make_hint}]
+call r11
 .base64 "i4uIAwAAAcFIiYuIAwAASInfSIHHACAAAEiJ3kiBxgAUAABIidpIgcIAlAAA"
 call {vg_mldsa_multiply_ntt}
 .base64 "SInfSIHHACAAAEiJ3kiBxgAMAAA="
 call {vg_mldsa_inv_ntt}
 .base64 "SInfSIHHACAAAL4AdAEA"
-call {vg_mldsa_norm_lt}
+lea r11, [rip + {vg_mldsa_norm_lt}]
+call r11
 .base64 "QSHHSInfSIHHACQAAEiJ3kiBxgBkAAC5gAAAAA=="
 244:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 244b
 .base64 "SInfSIHHAGQAAEiJ3kiBxgAgAAA="
-call {vg_mldsa_add}
+lea r11, [rip + {vg_mldsa_add}]
+call r11
 .base64 "SInfSIHHACQAAEiJ3kiBxgBkAAA="
-call {vg_mldsa_sub}
+lea r11, [rip + {vg_mldsa_sub}]
+call r11
 .base64 "SInfSIHHACQAAEiJ3kiBxgBkAAC6AHQBAEiJ2UiBwQA0AAA="
-call {vg_mldsa_make_hint}
+lea r11, [rip + {vg_mldsa_make_hint}]
+call r11
 .base64 "i4uIAwAAAcFIiYuIAwAAi4OIAwAASIPoUUjB6D9BIcc="
 240:
 230:
