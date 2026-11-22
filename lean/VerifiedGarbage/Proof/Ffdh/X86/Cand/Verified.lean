@@ -1628,7 +1628,7 @@ theorem body_trace {T : List Byte} {up Tb : BitVec 32} {bits g : Nat} (hbl : len
   refine RelCT.seq (aRel (F := fun u => MAt Ex base bytes len args sp up T bits g Tb u ∧
       u.cf = some (decide (T.length < len))) (fun x h => h.1) bodyHead_check fun x ⟨R, F⟩ => ?_) ?_
   · have Gx : TapeGeo Ex args base bytes (x.gpr .esp) T.length := by rw [R.2.2]; exact G
-    exact VG.X86.WP.mono_syms (bodyHead_ok R.1 G.len G.small h3 F.rb F.rg F.ru F.dws (by rw [R.2.2]; exact F.d40)
+    exact VG.X86.WP.mono_syms (bodyHead_ok R.1 G.len G.small h3 F.rb F.rg F.ru F.dws (by rw [R.2.2]; exact F.d40) (by rw [R.2.2]; exact F.d176)
       hb2 hg25) fun u ⟨S, B, Gn, Us, _, c⟩ sy => by
         refine ⟨⟨⟨run_step R S, F.Ox.keep rfl S.keeps, Us, by rw [tape_keep Gx S, F.hT]⟩, B, Gn, ?_⟩, c⟩
         have := Table.step (by rw [R.2.2]; exact F.TT) S sy TA
