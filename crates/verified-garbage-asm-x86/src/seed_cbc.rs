@@ -3,6 +3,56 @@
 //! `assembly/seed_cbc.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_seed_cbc_encrypt_chained_aesni` requires (`Artifact.features`).
+pub const VG_SEED_CBC_ENCRYPT_CHAINED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// SEED-CBC encryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`. No padding is added.
+///
+/// Contract: `VG.Spec.Seed.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 676 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_seed_cbc_encrypt_chained_aesni(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkYP3//4uEJKQCAACJRCQEi4QkqAIAAIlEJAiLhCSsAgAAiUQkDIuEJLACAACJRCQQieCDwBiJRCQUi0QkFImYYAIAAImwZAIAAIm4aAIAAImobAIAAInHi3QkCIsGiYd4AgAAi0YEiYd8AgAAi0YIiYeAAgAAi0YMiYeEAgAA"
+call 2f
+2:
+mov eax, DWORD PTR [esp]
+.byte 0x81, 192
+.long {VG_SEED_AESNI} - 2b
+.base64 "WYkHicOLRCQEif6DxmC5CAAAAA=="
+20:
+.base64 "8w9vAGYPcOAA8w9/JmYPcOBV8w9/ZhBmD3DgqvMPf2YgZg9w4P/zD39mMIPAEIPGQIPpAQ=="
+jne 20b
+.base64 "i0QkDImHcAIAAItEJBCJh3QCAACFwA=="
+je 21f
+23:
+.base64 "i7dwAgAAi690AgAAiwYzh3gCAACJRwiLRgQzh3wCAACJRwyLRggzh4ACAACJRxCLRgwzh4QCAACJRxSLH4n+g8ZguAgAAADzD29HCPMPbzvzD2+joAAAAGYPOADEZg9wyADzD39PIGYPcMhV8w9/TzBmD3DoqmYPcMD/"
+24:
+.base64 "8w9/b0DzD39HUPMPbw5mD+/p8w9vThBmD+/BZg/vxWYPb8hmD3LRBGYP289mD9vH8w9vUxBmDzgA0PMPb1sgZg84ANlmD+/T8w9vm5AAAABmDzgA02YPON3XZg9vymYPctEEZg/bz2YP29fzD29DMGYPOADC8w9vW0BmDzgA2WYP78PzD29jUGYPOADi8w9vW2BmDzgA2WYP7+PzD29bcGYP28PzD2+bgAAAAGYP2+NmD+/EZg9wyDlmD3DQTmYPcNiTZg/vwWYP79NmD+/CZg9v8GYP/sVmD2/IZg9y0QRmD9vPZg/bx/MPb1MQZg84ANDzD29bIGYPOADZZg/v0/MPb5uQAAAAZg84ANNmDzjd12YPb8pmD3LRBGYP289mD9vX8w9vQzBmDzgAwvMPb1tAZg84ANlmD+/D8w9vY1BmDzgA4vMPb1tgZg84ANlmD+/j8w9vW3BmD9vD8w9vm4AAAABmD9vjZg/vxGYPcMg5Zg9w0E5mD3DYk2YP78FmD+/TZg/vwmYPb+hmD/7GZg9vyGYPctEEZg/bz2YP28fzD29TEGYPOADQ8w9vWyBmDzgA2WYP79PzD2+bkAAAAGYPOADTZg843ddmD2/KZg9y0QRmD9vPZg/b1/MPb0MwZg84AMLzD29bQGYPOADZZg/vw/MPb2NQZg84AOLzD29bYGYPOADZZg/v4/MPb1twZg/bw/MPb5uAAAAAZg/b42YP78RmD3DIOWYPcNBOZg9w2JNmD+/BZg/v02YP78JmD/7o8w9vTyBmD+/p8w9vTzBmD+/B8w9/byDzD39HMPMPb04gZg/v6fMPb04wZg/vwWYP78VmD2/IZg9y0QRmD9vPZg/bx/MPb1MQZg84ANDzD29bIGYPOADZZg/v0/MPb5uQAAAAZg84ANNmDzjd12YPb8pmD3LRBGYP289mD9vX8w9vQzBmDzgAwvMPb1tAZg84ANlmD+/D8w9vY1BmDzgA4vMPb1tgZg84ANlmD+/j8w9vW3BmD9vD8w9vm4AAAABmD9vjZg/vxGYPcMg5Zg9w0E5mD3DYk2YP78FmD+/TZg/vwmYPb/BmD/7FZg9vyGYPctEEZg/bz2YP28fzD29TEGYPOADQ8w9vWyBmDzgA2WYP79PzD2+bkAAAAGYPOADTZg843ddmD2/KZg9y0QRmD9vPZg/b1/MPb0MwZg84AMLzD29bQGYPOADZZg/vw/MPb2NQZg84AOLzD29bYGYPOADZZg/v4/MPb1twZg/bw/MPb5uAAAAAZg/b42YP78RmD3DIOWYPcNBOZg9w2JNmD+/BZg/v02YP78JmD2/oZg/+xmYPb8hmD3LRBGYP289mD9vH8w9vUxBmDzgA0PMPb1sgZg84ANlmD+/T8w9vm5AAAABmDzgA02YPON3XZg9vymYPctEEZg/bz2YP29fzD29DMGYPOADC8w9vW0BmDzgA2WYP78PzD29jUGYPOADi8w9vW2BmDzgA2WYP7+PzD29bcGYP28PzD2+bgAAAAGYP2+NmD+/EZg9wyDlmD3DQTmYPcNiTZg/vwWYP79NmD+/CZg/+6PMPb09AZg/v6fMPb09QZg/vwYPGQIPoAQ=="
+jne 24b
+.base64 "Zg9s6GYPcO2I8w9vTyDzD29XMGYPbMpmD3DJiGYPbOnzD2+joAAAAGYPOADs8w9/bwiLt3ACAACLr3QCAACLRwiJh3gCAACLRwyJh3wCAACLRxCJh4ACAACLRxSJh4QCAACLRwiJBotHDIlGBItHEIlGCItHFIlGDIPGEIPtAYm3cAIAAImvdAIAAA=="
+jne 23b
+jmp 22f
+21:
+22:
+.base64 "i3QkCIuHeAIAAIkGi4d8AgAAiUYEi4eAAgAAiUYIi4eEAgAAiUYMi59gAgAAi7dkAgAAi69sAgAAi79oAgAAuQAAAACJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACJjCQsAQAAiYwkMAEAAImMJDQBAACJjCQ4AQAAiYwkPAEAAImMJEABAACJjCREAQAAiYwkSAEAAImMJEwBAACJjCRQAQAAiYwkVAEAAImMJFgBAACJjCRcAQAAiYwkYAEAAImMJGQBAACJjCRoAQAAiYwkbAEAAImMJHABAACJjCR0AQAAiYwkeAEAAImMJHwBAACJjCSAAQAAiYwkhAEAAImMJIgBAACJjCSMAQAAiYwkkAEAAImMJJQBAACJjCSYAQAAiYwknAEAAImMJKABAACJjCSkAQAAiYwkqAEAAImMJKwBAACJjCSwAQAAiYwktAEAAImMJLgBAACJjCS8AQAAiYwkwAEAAImMJMQBAACJjCTIAQAAiYwkzAEAAImMJNABAACJjCTUAQAAiYwk2AEAAImMJNwBAACJjCTgAQAAiYwk5AEAAImMJOgBAACJjCTsAQAAiYwk8AEAAImMJPQBAACJjCT4AQAAiYwk/AEAAImMJAACAACJjCQEAgAAiYwkCAIAAImMJAwCAACJjCQQAgAAiYwkFAIAAImMJBgCAACJjCQcAgAAiYwkIAIAAImMJCQCAACJjCQoAgAAiYwkLAIAAImMJDACAACJjCQ0AgAAiYwkOAIAAImMJDwCAACJjCRAAgAAiYwkRAIAAImMJEgCAACJjCRMAgAAiYwkUAIAAImMJFQCAACJjCRYAgAAiYwkXAIAAImMJGACAACJjCRkAgAAiYwkaAIAAImMJGwCAACJjCRwAgAAiYwkdAIAAImMJHgCAACJjCR8AgAAiYwkgAIAAImMJIQCAACJjCSIAgAAiYwkjAIAAImMJJACAACJjCSUAgAAiYwkmAIAAImMJJwCAACNpCSgAgAAjaQkXP3//7kAAAAAiUwkBIlMJAiJTCQMiUwkEIlMJBSJTCQYjaQkpAIAALgAAAAAugAAAAAxyWYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ww=="
+.p2align 6"#,
+        VG_SEED_AESNI = sym super::consts::VG_SEED_AESNI,
+    )
+}
+
 /// SEED-CBC encryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SEED encryption under the schedule written by `vg_seed_expand_key`. No padding is added.
 ///
 /// Contract: `VG.Spec.Seed.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
