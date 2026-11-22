@@ -121,11 +121,11 @@ theorem initCode_ok {n : Nat} (hs : frame I ≤ n) (hl : 16 + anyFrame I ≤ n) 
     CodeOk (initCode I M.hmacInit (fnsOf I M)) n := by
   refine ⟨?_, ?_⟩
   · simp only [initCode, Impl.Pbkdf2.Whole.Arm.initEntry, Code.iteCold,
-      Impl.StackScratch.Arm.withStackScratch, Impl.StackScratch.Arm.withStackScratchWiped, armStack,
-      h.hmacInit_stack, h.hmacInitAny_stack I, Nat.max_self, Nat.zero_max, Nat.max_zero]
+      Impl.StackScratch.Arm.withStackScratch, armStack,
+      h.hmacInit_stack, h.hmacInitAny_stack I, Nat.max_self, Nat.zero_max]
     omega
   · simp only [initCode, Impl.Pbkdf2.Whole.Arm.initEntry, Code.iteCold,
-      Impl.StackScratch.Arm.withStackScratch, Impl.StackScratch.Arm.withStackScratchWiped, noIcall,
+      Impl.StackScratch.Arm.withStackScratch, noIcall,
       h.hmacInit_noIcall, h.hmacInitAny_noIcall I, Bool.and_self]
 
 /-- HMAC's `finalize`, in its frame, within `n` bytes. -/

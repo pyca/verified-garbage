@@ -19,8 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 # HMAC on ARMv7, as emitted
 
 Each hash's HMAC `init` and `finalize` keep their working space in frames
-(`init`'s for a key of any length wiped by its own code,
-`withStackScratchWiped`; `finalize`'s not), make no indirect call, and their
+(`withStackScratch`), make no indirect call, and their
 postconditions read the memory on return only within their buffers
 (`Arm.Scrub.PostOut`, from the lemmas of `Proof/Hmac/AnyKey.lean` and
 `Proof/Hmac/Scratch.lean` that the other targets use too: `initOutArm`,

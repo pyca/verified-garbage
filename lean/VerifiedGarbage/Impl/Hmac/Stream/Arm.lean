@@ -155,11 +155,11 @@ def pbkFrame (I : Spec.Hmac.Instance) : Nat := (12 + 8 + 8 * I.pbkdf2Scratch + 3
 /-- HMAC's `init` for a key of any length, `vg_hmac_<hash>_init`, of instance
 `I`: for a key of at most a block, `init_scratch` (`hmacInit`) in a frame
 holding its working space; for a longer key (cold), `F.hmacInitAny`, in a
-frame holding its larger working space, which it wipes. -/
+frame holding its larger working space (which `scrubAll` zeroes on return). -/
 def initCode (I : Spec.Hmac.Instance) (hmacInit : Prog isa) (F : Fns) : Prog isa :=
   Impl.Pbkdf2.Whole.Arm.initEntry I.S.H.blockSize
     (Impl.StackScratch.Arm.withStackScratch (frame I) 0 hmacInit)
-    (Impl.StackScratch.Arm.withStackScratchWiped (anyFrame I) 0 (2 * I.initAnyKeyScratch) F.hmacInitAny)
+    (Impl.StackScratch.Arm.withStackScratch (anyFrame I) 0 F.hmacInitAny)
 
 /-- HMAC's `finalize`, `vg_hmac_<hash>_finalize`: `finalize_scratch`
 (`hmacFin`) in a frame holding its working space. -/

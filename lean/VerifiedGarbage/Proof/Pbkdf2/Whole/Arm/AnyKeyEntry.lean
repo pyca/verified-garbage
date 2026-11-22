@@ -14,7 +14,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Proof.Hmac.Scratch
 import VerifiedGarbage.Proof.Hmac.AnyKey
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -62,7 +61,7 @@ open Spec.Hmac (StreamingHash blockKey xorPad ipad opad)
 /-- `VG.Spec.Hmac.initAnyKeyContract` with its working space (`W` words) as
 an argument (as `Proof.Hmac.initScratchContract` is `initContract`'s), and
 24 bytes of stack: the contract that the function allocating the working
-space follows from (`Verified.stackScratchWiped`). -/
+space follows from (`Verified.stackScratch`). -/
 def anyScratchContract (S : StreamingHash) (W : Nat) : Contract isa :=
   (Proof.Hmac.initScratchSig S W).contract Arm.abi
     (post := fun inner outer key keyLen _scratch => Spec.Hmac.initPost S Arm.abi.ptrBits inner outer key keyLen)
@@ -862,8 +861,8 @@ lengths public (`piece`); the calls are related by their contracts
 same in two runs with the same public arguments (`PubEq`). The only branch,
 whether the key is hashed, depends only on `key_len`.
 
-The function that allocates the working space in a frame of its own and
-wipes it (`withStackScratchWiped`) is verified against
+The function that allocates the working space in a frame of its own
+(`withStackScratch`; the function's cleanup, `scrubAll`, zeroes it) is verified against
 `VG.Spec.Hmac.initAnyKeyContract` (`anyFramed`).
 -/
 
@@ -1196,14 +1195,14 @@ theorem anyFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (hsat : ∃ s, (I.initAnyKeyContract Arm.abi (24 + anyFrame I)).pre s)
     (hb : Fits 0 (anyFrame I) .u64 I.initAnyKeyScratch := by decide) :
     Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped (anyFrame I) 0 (2 * I.initAnyKeyScratch) c)
+      (Impl.StackScratch.Arm.withStackScratch (anyFrame I) 0 c)
       (I.initAnyKeyContract Arm.abi (24 + anyFrame I)) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
+  Arm.Verified.stackScratch (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
     (n := I.initAnyKeyScratch) (post := Spec.Hmac.initPost I.S Arm.abi.ptrBits) (wa := true) (stack := 24)
-    (m := 0) (words := 2 * I.initAnyKeyScratch) h rfl rfl rfl hb
-    (by change 4 * (2 * I.initAnyKeyScratch) ≤ I.initAnyKeyScratch * 8; omega_arith)
+    (m := 0) h rfl rfl rfl hb
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Hmac.initPost_local I.S _) (Hmac.initPostOut_local I.S _ hR hS) hsat rfl
+    (Hmac.initPost_local I.S _)
+    (fun vs mm m₁ m₂ r hl _ hb h => Hmac.initPostOut_local I.S _ hR hS vs mm m₁ m₂ r hl hb h) hsat
 
 end VG.Proof.Pbkdf2.Whole.Arm.Any
 
@@ -1541,7 +1540,7 @@ theorem initCode_verified {I : Spec.Hmac.Instance} {c : Prog isa} {F : Impl.Pbkd
     (hS : Verified Arm.target (Impl.StackScratch.Arm.withStackScratch (Md.Arm.frame I) 0 c)
       (I.initContract Arm.abi (16 + Md.Arm.frame I)))
     (hL : Verified Arm.target
-      (Impl.StackScratch.Arm.withStackScratchWiped (Any.anyFrame I) 0 (2 * I.initAnyKeyScratch) F.hmacInitAny)
+      (Impl.StackScratch.Arm.withStackScratch (Any.anyFrame I) 0 F.hmacInitAny)
       (I.initAnyKeyContract Arm.abi (24 + Any.anyFrame I)))
     (hn : 16 + Md.Arm.frame I ≤ 24 + Any.anyFrame I) (hB : I.S.H.blockSize + 1 < 2 ^ 32)
     (hk : encodable (BitVec.ofNat 32 (I.S.H.blockSize + 1)) = true)
