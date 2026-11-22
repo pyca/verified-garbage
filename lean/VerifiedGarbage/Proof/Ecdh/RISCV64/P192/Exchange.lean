@@ -235,7 +235,7 @@ theorem affine_ok {s : State} {base : Addr} (hw : WsReg s base) {t o a : Nat} (h
 
 /-- What `tail` writes. -/
 abbrev tailW : List (Nat × Nat) :=
-  [(FL, 8)] ++ mulKW ++ chainWx (chainP p192) 4 ++
+  [(FL, 8)] ++ mulKW ++ ((invSave p192, 8) :: chainWx (chainP p192) 4) ++
     [(p192.sl XM, 32), (own 4, 256), (p192.sl XO, 32), (own 4, 256)]
 
 /-- A byte of a region apart from the working space. -/

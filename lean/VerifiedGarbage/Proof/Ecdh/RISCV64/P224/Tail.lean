@@ -656,7 +656,7 @@ theorem rep_of_represents {X Y Z : Fe W} {P : Point W} (h : Impl.Weierstrass.Mul
 
 /-- What `tail` writes. -/
 abbrev tailW : List (Nat × Nat) :=
-  [(FL, 8)] ++ mulKW ++ chainWx (chainP p224) 4 ++
+  [(FL, 8)] ++ mulKW ++ ((invSave p224, 8) :: chainWx (chainP p224) 4) ++
     [(p224.sl XM, 32), (own 4, 256), (p224.sl XO, 32), (own 4, 256)]
 
 /-- `tail` with a call of `mulName`, whose code is `mulCode`, that computes
