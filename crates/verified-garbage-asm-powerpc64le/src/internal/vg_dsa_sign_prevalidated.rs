@@ -113,7 +113,7 @@ bne %cr0, 228b
 .base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
 bne %cr0, 229b
 .base64 "AADYO8YHX3gghP97pgIofw=="
-bl {vg_dsa_pow_win}
+bl {vg_bignum_pow_win}
 .base64 "pgMofwAA9zvGg0x4IISMeRwAADjSAYx9wAKMORSqjH1ABow5xoNGeCCExngAAOo5FOrvfRTq730U6u99FOrvfRQy733//+85AAAMOgAAJjo="
 230:
 .base64 "AAAPiAAAEJgBABA6///vOf//MToAADEo"
@@ -449,7 +449,7 @@ bne %cr0, 2109b
 24:
 .base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4=""#,
         vg_dsa_setup_p = sym crate::dsa::vg_dsa_setup_p::vg_dsa_setup_p,
-        vg_dsa_pow_win = sym crate::dsa::vg_dsa_pow_win::vg_dsa_pow_win,
+        vg_bignum_pow_win = sym crate::dsa::vg_bignum_pow_win::vg_bignum_pow_win,
         vg_rsa_mont_kernel = sym crate::rsa::vg_rsa_mont_kernel::vg_rsa_mont_kernel,
     )
 }

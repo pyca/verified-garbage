@@ -369,7 +369,7 @@ vg_dsa_sign_prevalidated:
 	rldicr %r31, %r2, 32, 31
 	rldicl %r31, %r31, 16, 48
 	mflr %r25
-	bl {vg_dsa_pow_win}
+	bl {vg_bignum_pow_win}
 	mtlr %r25
 	addi %r31, %r23, 0
 	rldicr %r12, %r2, 48, 15

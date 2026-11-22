@@ -172,7 +172,7 @@ b 246f
 .base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
 bne %cr0, 247b
 .base64 "xoNAeCCEAHgUApt9xgdGeCCExngAAMw7AADmO6YCKH8="
-bl {vg_dsa_pow_win}
+bl {vg_bignum_pow_win}
 .base64 "pgMofwAA9zsAAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59FOrOfUL4cXkAAAA4"
 248:
 .base64 "AAAO+AgAzjn//zE6AAAxKA=="
@@ -198,6 +198,6 @@ b 251f
 24:
 .base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16iAAgE4=""#,
         vg_dsa_setup_p = sym crate::dsa::vg_dsa_setup_p::vg_dsa_setup_p,
-        vg_dsa_pow_win = sym crate::dsa::vg_dsa_pow_win::vg_dsa_pow_win,
+        vg_bignum_pow_win = sym crate::dsa::vg_bignum_pow_win::vg_bignum_pow_win,
     )
 }

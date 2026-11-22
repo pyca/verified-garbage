@@ -206,7 +206,7 @@ b 252f
 .base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
 bne %cr0, 253b
 .base64 "xoNAeCCEAHgUApt9xgdGeCCExngAAMw7AADmO6YCKH8="
-bl {vg_dsa_pow_win}
+bl {vg_bignum_pow_win}
 .base64 "pgMofwAA9zsAAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59FOrOfUL4cXkAAAA4"
 254:
 .base64 "AAAO+AgAzjn//zE6AAAxKA=="
@@ -239,7 +239,7 @@ bne %cr0, 260b
 .base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
 bne %cr0, 261b
 .base64 "AADYO8YHX3gghP97pgIofw=="
-bl {vg_dsa_pow_win}
+bl {vg_bignum_pow_win}
 .base64 "pgMofwAA9zsAAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59FOrOfUL4cXkAAAA4"
 262:
 .base64 "AAAO+AgAzjn//zE6AAAxKA=="
@@ -302,7 +302,7 @@ bne %cr0, 274b
 24:
 .base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16gAAADjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKESAAgE4=""#,
         vg_dsa_setup_p = sym super::dsa::vg_dsa_setup_p::vg_dsa_setup_p,
-        vg_dsa_pow_win = sym super::dsa::vg_dsa_pow_win::vg_dsa_pow_win,
+        vg_bignum_pow_win = sym super::dsa::vg_bignum_pow_win::vg_bignum_pow_win,
     )
 }
 
@@ -678,7 +678,7 @@ b 246f
 .base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
 bne %cr0, 247b
 .base64 "xoNAeCCEAHgUApt9xgdGeCCExngAAMw7AADmO6YCKH8="
-bl {vg_dsa_pow_win}
+bl {vg_bignum_pow_win}
 .base64 "pgMofwAA9zsAAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59FOrOfUL4cXkAAAA4"
 248:
 .base64 "AAAO+AgAzjn//zE6AAAxKA=="
@@ -731,7 +731,7 @@ b 260f
 .base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
 bne %cr0, 261b
 .base64 "xoNAeCCEAHgUApt9xgdGeCCExngAAMw7AADmO6YCKH8="
-bl {vg_dsa_pow_win}
+bl {vg_bignum_pow_win}
 .base64 "pgMofwAA9zsAAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59FOrOfUL4cXkAAAA4"
 262:
 .base64 "AAAO+AgAzjn//zE6AAAxKA=="
@@ -758,7 +758,7 @@ b 265f
 24:
 .base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16gAAADjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKESAAgE4=""#,
         vg_dsa_setup_p = sym super::dsa::vg_dsa_setup_p::vg_dsa_setup_p,
-        vg_dsa_pow_win = sym super::dsa::vg_dsa_pow_win::vg_dsa_pow_win,
+        vg_bignum_pow_win = sym super::dsa::vg_bignum_pow_win::vg_bignum_pow_win,
     )
 }
 
@@ -938,7 +938,7 @@ b 246f
 .base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
 bne %cr0, 247b
 .base64 "xoNAeCCEAHgUApt9xgdGeCCExngAAMw7AADmO6YCKH8="
-bl {vg_dsa_pow_win}
+bl {vg_bignum_pow_win}
 .base64 "pgMofwAA9zsAAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59FOrOfUL4cXkAAAA4"
 248:
 .base64 "AAAO+AgAzjn//zE6AAAxKA=="
@@ -991,7 +991,7 @@ b 260f
 .base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
 bne %cr0, 261b
 .base64 "xoNAeCCEAHgUApt9xgdGeCCExngAAMw7AADmO6YCKH8="
-bl {vg_dsa_pow_win}
+bl {vg_bignum_pow_win}
 .base64 "pgMofwAA9zsAAMo5FOrOfRTqzn0U6s59FOrOfRTqzn0U6s59FOrOfUL4cXkAAAA4"
 262:
 .base64 "AAAO+AgAzjn//zE6AAAxKA=="
@@ -1020,7 +1020,7 @@ bne %cr0, 267b
 .base64 "AAAP6AAAbuh4AmN8OKBjfHgCY3wAAHD4CADOOQgA7zkIABA6//8xOgAAMSg="
 bne %cr0, 268b
 .base64 "AADYO8YHX3gghP97pgIofw=="
-bl {vg_dsa_pow_win}
+bl {vg_bignum_pow_win}
 .base64 "pgMofwAA9zvGg0Z4IITGeMYHQHgghAB4FDKbfRQCjH0UMox9AABKORTqSn0U6kp9FOpKfRTqSn0U6kp9AADKOUL4cXkAAAA4"
 269:
 .base64 "AAAO+AgAzjn//zE6AAAxKA=="
@@ -1064,7 +1064,7 @@ bne %cr0, 276b
 24:
 .base64 "aADV6XAA9el4ABXqgAA16ogAVeqQAHXqmACV6qAA1eqoAPXqsAAV67gANevAAFXryAB169AAlevYALXr4ADV6+gA9evwAFXo+AC16gAAADjGB2N4IgBjeAAAgDgAAKA4AADAOAAA4DgAAAA5AAAgOQAAQDkAAGA5AACAORQAAHzEBAAQxAwhEMQUQhDEHGMQxCSEEMQspRDENMYQxDznEMRECBHETCkRxFRKESAAgE4=""#,
         vg_dsa_setup_p = sym super::dsa::vg_dsa_setup_p::vg_dsa_setup_p,
-        vg_dsa_pow_win = sym super::dsa::vg_dsa_pow_win::vg_dsa_pow_win,
+        vg_bignum_pow_win = sym super::dsa::vg_bignum_pow_win::vg_bignum_pow_win,
     )
 }
 
@@ -3463,16 +3463,16 @@ bne %cr0, 2492b
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_bignum_pow_win.rs"]
+pub(crate) mod vg_bignum_pow_win;
+
+#[rustfmt::skip]
 #[path = "internal/vg_dsa_check_parameters.rs"]
 pub(crate) mod vg_dsa_check_parameters;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_derive_key_checked.rs"]
 pub(crate) mod vg_dsa_derive_key_checked;
-
-#[rustfmt::skip]
-#[path = "internal/vg_dsa_pow_win.rs"]
-pub(crate) mod vg_dsa_pow_win;
 
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_probable_prime_1024.rs"]

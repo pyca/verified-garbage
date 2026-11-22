@@ -642,7 +642,7 @@ vg_dsa_check_parameters:
 	addi %r30, %r12, 0
 	addi %r31, %r6, 0
 	mflr %r25
-	bl {vg_dsa_pow_win}
+	bl {vg_bignum_pow_win}
 	mtlr %r25
 	addi %r31, %r23, 0
 	addi %r14, %r10, 0

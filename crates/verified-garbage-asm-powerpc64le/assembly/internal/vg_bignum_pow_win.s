@@ -1,10 +1,10 @@
-// The functions of `src/internal/vg_dsa_pow_win.rs` of `verified-garbage-asm-powerpc64le`, as text: generated from
+// The functions of `src/internal/vg_bignum_pow_win.rs` of `verified-garbage-asm-powerpc64le`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_dsa_pow_win:
+vg_bignum_pow_win:
 	ld %r0, 0(%r10)
 	ld %r12, 0(%r10)
 	mulld %r3, %r0, %r12
