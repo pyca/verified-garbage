@@ -265,6 +265,27 @@ theorem ctrFinalSat : ∃ s, (ctrFinalContract Arm.abi 3120).pre s := by
   implies_sat [ctrFinalContract, ctrFinalSig, ctrFinalPre, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr] [CtrFinal.ctrFinalFrameSat, CtrFinal.ctrFinalSat] using CtrFinal.ctrFinalFrameSat
 
+/-! ## The stack the functions zeroed in a loop use
+
+The frames of the key expansion and of the modes one block at a time, which
+`scrubAll` zeroes (`Arm.Scrub.CodeOk`). -/
+
+theorem expandKey_code :
+    CodeOk (Impl.StackScratch.Arm.withRegScratch 2720 .r3 Impl.Camellia.Arm.expandKey) 2720 := by
+  lit_decide
+
+theorem cbcEncrypt_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2816 1 Impl.Camellia.Arm.cbcEncryptChained) 2832 := by
+  lit_decide
+
+theorem cfbEncrypt_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2816 1 Impl.Camellia.Arm.cfbEncrypt) 2832 := by
+  lit_decide
+
+theorem ofb_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 2816 1 Impl.Camellia.Arm.ofb) 2832 := by
+  lit_decide
+
 end VG.Proof.Camellia.Arm.Scrub
 
 namespace VG.Proof.Camellia.Arm.Fn
@@ -275,11 +296,10 @@ open VG.Proof.Camellia.ScrubLocal
 /-- `vg_camellia_expand_key`. -/
 theorem expandKey :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.expandKey (expandKeyContract Arm.abi 2720) 0 :=
-  verifiedScrubbedSel (api := expandKeyApi) (W := 2720)
-    { code := Impl.StackScratch.Arm.withRegScratchWiped 2720 .r3 680 Impl.Camellia.Arm.expandKey
+  verifiedScrubbedAll (api := expandKeyApi)
+    { code := Impl.StackScratch.Arm.withRegScratch 2720 .r3 Impl.Camellia.Arm.expandKey
       verified := Proof.Camellia.Arm.expandKey_framed }
-    Impl.Camellia.Arm.Fn.expandKeyWords []
-    (Scrub.expandKeyOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (Scrub.expandKeyOut _) (scrubSideF_of Scrub.expandKey_code (by decide) _)
 
 /-- `vg_camellia_ecb_encrypt`. -/
 theorem ecbEncrypt :
@@ -302,11 +322,10 @@ theorem ecbDecrypt :
 /-- `vg_camellia_cbc_encrypt_chained`. -/
 theorem cbcEncrypt :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.cbcEncrypt (cbcEncryptChainedContract Arm.abi 2832) 0 :=
-  verifiedScrubbedSel (api := cbcEncryptChainedApi) (W := 2832)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cbcEncryptChained
+  verifiedScrubbedAll (api := cbcEncryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2816 1 Impl.Camellia.Arm.cbcEncryptChained
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.cbcEncryptChained_framed Scrub.cbcEncryptSat }
-    Impl.Camellia.Arm.Fn.seqWords []
-    (Scrub.cbcEncryptOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (Scrub.cbcEncryptOut _) (scrubSideF_of Scrub.cbcEncrypt_code (by decide) _)
 
 /-- `vg_camellia_cbc_decrypt_chained`. -/
 theorem cbcDecrypt :
@@ -320,11 +339,10 @@ theorem cbcDecrypt :
 /-- `vg_camellia_cfb128_encrypt`. -/
 theorem cfbEncrypt :
     VerifiedScrubbed target Impl.Camellia.Arm.Fn.cfbEncrypt (cfbEncryptContract Arm.abi 2832) 0 :=
-  verifiedScrubbedSel (api := cfbEncryptApi) (W := 2832)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.cfbEncrypt
+  verifiedScrubbedAll (api := cfbEncryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2816 1 Impl.Camellia.Arm.cfbEncrypt
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.cfbEncrypt_framed Scrub.cfbEncryptSat }
-    Impl.Camellia.Arm.Fn.seqWords []
-    (Scrub.cfbEncryptOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (Scrub.cfbEncryptOut _) (scrubSideF_of Scrub.cfbEncrypt_code (by decide) _)
 
 /-- `vg_camellia_cfb128_decrypt`. -/
 theorem cfbDecrypt :
@@ -371,11 +389,10 @@ theorem ctrFinal : VerifiedScrubbed target Impl.Camellia.Arm.Fn.ctrFinal (ctrFin
 
 /-- `vg_camellia_ofb`. -/
 theorem ofb : VerifiedScrubbed target Impl.Camellia.Arm.Fn.ofb (ofbContract Arm.abi 2832) 0 :=
-  verifiedScrubbedSel (api := ofbApi) (W := 2832)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 2816 1 698 Impl.Camellia.Arm.ofb
+  verifiedScrubbedAll (api := ofbApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 2816 1 Impl.Camellia.Arm.ofb
       verified := Verified.stack_le (by decide) Proof.Camellia.Arm.ofb_framed Scrub.ofbSat }
-    Impl.Camellia.Arm.Fn.seqWords []
-    (Scrub.ofbOut _) (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (Scrub.ofbOut _) (scrubSideF_of Scrub.ofb_code (by decide) _)
 
 /-- `vg_camellia_ofb_final`. -/
 theorem ofbFinal : VerifiedScrubbed target Impl.Camellia.Arm.Fn.ofbFinal (ofbFinalContract Arm.abi 2912) 0 :=

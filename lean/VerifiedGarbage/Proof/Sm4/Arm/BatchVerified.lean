@@ -168,4 +168,14 @@ theorem framed : Verified Arm.target
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm4.ctrPost_local _)
     (Proof.Sm4.ctrPostOut_local _) frameSat
 
+/-- `framed`, not wiping its working space, which its function's cleanup zeroes. -/
+theorem framedU : Verified Arm.target
+    (Impl.StackScratch.Arm.withStackScratch 1520 0 BatchCtr.ctr)
+    (Spec.Sm4.ctrContract Arm.abi 1520) :=
+  Arm.Verified.stackScratch (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64) (n := 189)
+    (post := Proof.Sm4.ctrPost Arm.abi.ptrBits) (wa := true) (stack := 0) (m := 0) (bytes := 1520)
+    verified (by decide) (by decide) (by decide) (by decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm4.ctrPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Sm4.ctrPostOut_local _ vs mm m₁ m₂ r hl) frameSat
+
 end VG.Proof.Sm4.Arm.BatchVerified

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Seed.Arm.ExpandKey
 public import VerifiedGarbage.Impl.Seed.Arm.Modes
 public import VerifiedGarbage.Impl.Seed.Arm.FbFinal
 public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 
 /-!
@@ -14,7 +15,10 @@ cleanup (`Impl/Scrub/Arm/Sel.lean`, `scrubSel`): of the stack its contract
 reserves, where its frames were, only the words that the residue analysis
 (`Arm.rtaint`) finds may differ between two runs zeroed (`…Words`, offsets in
 words from the lowest address of that stack), and the registers a callee may
-change set to constants. None returns a value. `Proof/Seed/Arm/Scrub.lean` states that each returns without secret
+change set to constants. Key expansion, whose working space is all the stack
+it reserves, instead leaves it as it is (`withRegScratch`) and is followed by
+`scrubAll` (`Impl/Scrub/Arm.lean`), which zeroes that stack in a loop. None
+returns a value. `Proof/Seed/Arm/Scrub.lean` states that each returns without secret
 residue.
 -/
 
@@ -24,9 +28,6 @@ namespace VG.Impl.Seed.Arm.Fn
 
 open VG.Arm VG.Impl.Scrub.Arm
 
-/-- The words key expansion and ECB leave secret: none. -/
-def noWords : List Nat := []
-
 /-- The words the modes over 832 bytes leave secret. -/
 def modeWords : List Nat := List.range' 188 2
 
@@ -35,7 +36,7 @@ def wideWords : List Nat := List.range' 220 2
 
 /-- `vg_seed_expand_key`. -/
 def expandKey : Prog isa :=
-  scrubSel 0 752 noWords (Impl.StackScratch.Arm.withRegScratchWiped 752 .r2 188 Impl.Seed.Arm.expandKey)
+  scrubAll 0 752 (Impl.StackScratch.Arm.withRegScratch 752 .r2 Impl.Seed.Arm.expandKey)
 
 -- `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt` (`ecbEncrypt`, `ecbDecrypt`,
 -- with no word) are in `Modes.lean`, as the modes call them.

@@ -882,4 +882,13 @@ theorem expandKey_framed :
     expandKey_verified (by decide) (by decide) (by decide) (by decide)
     (Proof.Sm4.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
+/-- `expandKey_framed`, its working space not wiped: its function's cleanup (`scrubAll`) zeroes it. -/
+theorem expandKey_framedU :
+    Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 1456 .r2 expandKey)
+      (Spec.Sm4.expandKeyContract Arm.abi 1456) :=
+  Arm.Verified.regScratch (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
+    (n := 182) (post := Proof.Sm4.expandKeyPost Arm.abi.ptrBits) (wa := false) (stack := 0)
+    expandKey_verified (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Sm4.expandKeyPostOut_local _ vs mm m₁ m₂ r hl) expandKeyFrameSat_pre
+
 end VG.Proof.Sm4.Arm

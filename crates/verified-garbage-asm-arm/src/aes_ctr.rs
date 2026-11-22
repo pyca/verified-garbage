@@ -211,22 +211,6 @@ ldr r9, [r12, #20]
 ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
-add r12, sp, #16
-mov r2, #0
-str r2, [r12, #0]
-str r2, [r12, #4]
-str r2, [r12, #8]
-str r2, [r12, #12]
-str r2, [r12, #16]
-str r2, [r12, #20]
-str r2, [r12, #24]
-str r2, [r12, #28]
-str r2, [r12, #32]
-str r2, [r12, #36]
-str r2, [r12, #40]
-str r2, [r12, #44]
-str r2, [r12, #48]
-str r2, [r12, #52]
 add sp, sp, #72
 sub sp, sp, #88
 add r12, sp, #0

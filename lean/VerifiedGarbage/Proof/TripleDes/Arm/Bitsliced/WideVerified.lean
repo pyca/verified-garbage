@@ -290,13 +290,13 @@ theorem cbcDecryptFrameSat : ∃ s, (Spec.TripleDes.cbcDecryptChainedContract Ar
 
 /-- `cbcDecrypt`, with its working space on the stack (zeroed on return). -/
 theorem cbcDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 cbcDecrypt)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 1040 0 cbcDecrypt)
       (Spec.TripleDes.cbcDecryptChainedContract Arm.abi 1040) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 128)
+  Arm.Verified.stackScratch (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64) (n := 128)
     (post := Proof.TripleDes.cbcDecChainedPost Arm.abi.ptrBits) (wa := true) (stack := 0) (m := 0) (bytes := 1040)
-    cbcDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cbcDecrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.cbcDecChainedPost_local _)
-    (Proof.TripleDes.cbcDecChainedPostOut_local _) cbcDecryptFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.TripleDes.cbcDecChainedPostOut_local _ vs mm m₁ m₂ r hl) cbcDecryptFrameSat
 
 theorem cfb_implies :
     (wideC cfbPost).Implies (Proof.TripleDes.fbScratchContract Arm.abi 128 Proof.TripleDes.cfbDecPost 0) where
@@ -332,12 +332,12 @@ theorem cfbDecryptFrameSat : ∃ s, (Spec.TripleDes.cfbDecryptContract Arm.abi 1
 
 /-- `cfbDecrypt`, with its working space on the stack (zeroed on return). -/
 theorem cfbDecrypt_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 cfbDecrypt)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 1040 0 cfbDecrypt)
       (Spec.TripleDes.cfbDecryptContract Arm.abi 1040) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64) (n := 128)
+  Arm.Verified.stackScratch (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64) (n := 128)
     (post := Proof.TripleDes.cfbDecPost Arm.abi.ptrBits) (wa := true) (stack := 0) (m := 0) (bytes := 1040)
-    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide) (by decide)
+    cfbDecrypt_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.TripleDes.cfbDecPost_local _)
-    (Proof.TripleDes.cfbDecPostOut_local _) cfbDecryptFrameSat
+    (fun vs mm m₁ m₂ r hl _ => Proof.TripleDes.cfbDecPostOut_local _ vs mm m₁ m₂ r hl) cfbDecryptFrameSat
 
 end VG.Proof.TripleDes.Arm.Bitsliced

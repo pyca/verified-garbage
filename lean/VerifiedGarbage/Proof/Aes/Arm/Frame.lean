@@ -46,12 +46,12 @@ theorem expandKeyFrameSat_pre : ∃ s, (Spec.Aes.expandKeyContract Arm.abi 512).
     [expandKeyFrameSat] using expandKeyFrameSat
 
 theorem expandKey_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.Aes.Arm.expandKey)
+    Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 512 .r3 Impl.Aes.Arm.expandKey)
       (Spec.Aes.expandKeyContract Arm.abi 512) :=
-  Arm.Verified.regScratchWiped (sig := Spec.Aes.expandKeySig) (nm := "scratch") (e := .u64)
+  Arm.Verified.regScratch (sig := Spec.Aes.expandKeySig) (nm := "scratch") (e := .u64)
     (n := 64) (pre := Spec.Aes.expandKeyPre Arm.abi.ptrBits)
     (post := Spec.Aes.expandKeyPost Arm.abi.ptrBits) (wa := false) (stack := 0)
     (Proof.Aes.expandKey_scratch expandKey_verified) (by decide) (by decide) (by decide)
-    (by decide) (Proof.Aes.expandKeyPostOut_local _) expandKeyFrameSat_pre
+    (fun vs mm m₁ m₂ r hl _ => Proof.Aes.expandKeyPostOut_local _ vs mm m₁ m₂ r hl) expandKeyFrameSat_pre
 
 end VG.Proof.Aes.Arm

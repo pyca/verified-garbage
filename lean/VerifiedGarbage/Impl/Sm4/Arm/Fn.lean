@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Scrub.Arm
 public import VerifiedGarbage.Impl.Scrub.Arm.Sel
 public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCbc
@@ -7,6 +8,7 @@ public import VerifiedGarbage.Impl.Sm4.Arm.BatchCbc
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialCfb
 public import VerifiedGarbage.Impl.Sm4.Arm.BatchCfb
 public import VerifiedGarbage.Impl.Sm4.Arm.SerialOfb
+public import VerifiedGarbage.Impl.Sm4.Arm.BatchCtr
 public import VerifiedGarbage.Impl.Sm4.Arm.CtrFinal
 public import VerifiedGarbage.Impl.Sm4.Arm.FbFinal
 
@@ -23,7 +25,11 @@ change set to constants. What is left is the stack arguments and buffer
 addresses the code copies into its frames and its innermost frames. That
 stack is a frame size of the model, a multiple of 8 that an ARM immediate
 encodes: ECB's 1480 bytes and the final CFB and OFB functions' 1560 are not,
-so their cleanup is within 1488 and 1568. `Proof/Sm4/Arm/Scrub.lean` states
+so their cleanup is within 1488 and 1568. The key expansion and the modes
+over whole blocks, whose working space is nearly all the stack they reserve,
+instead leave their working space as it is (`withStackScratch`,
+`withRegScratch`) and are followed by `scrubAll` (`Impl/Scrub/Arm.lean`),
+which zeroes all of that stack in a loop. `Proof/Sm4/Arm/Scrub.lean` states
 that each returns without secret residue.
 
 The modes over a message's last piece call ECB's and CTR's code as it is
@@ -38,14 +44,8 @@ namespace VG.Impl.Sm4.Arm.Fn
 
 open VG.Arm VG.Impl.Scrub.Arm VG.Impl.StackScratch.Arm
 
-/-- The words the key expansion leaves secret: none. -/
-def expandKeyWords : List Nat := []
-
 /-- The words ECB leaves secret. -/
 def ecbWords : List Nat := List.range' 2 2 ++ List.range' 368 4
-
-/-- The words the modes over whole blocks leave secret. -/
-def modeWords : List Nat := List.range' 0 2
 
 /-- The words CFB and OFB over a message's last piece leave secret. -/
 def finalWords : List Nat := List.range' 2 2 ++ List.range' 368 6
@@ -54,7 +54,7 @@ def finalWords : List Nat := List.range' 2 2 ++ List.range' 368 6
 def ctrFinalWords : List Nat := List.range' 0 2 ++ List.range' 380 2
 
 /-- `vg_sm4_expand_key`. -/
-def expandKey : Prog isa := scrubSel 0 1456 expandKeyWords (withRegScratchWiped 1456 .r2 364 Impl.Sm4.Arm.expandKey)
+def expandKey : Prog isa := scrubAll 0 1456 (withRegScratch 1456 .r2 Impl.Sm4.Arm.expandKey)
 
 /-- `vg_sm4_ecb_encrypt`. -/
 def ecbEncrypt : Prog isa := scrubSel 0 1488 ecbWords (ecbCall .encrypt)
@@ -63,16 +63,16 @@ def ecbEncrypt : Prog isa := scrubSel 0 1488 ecbWords (ecbCall .encrypt)
 def ecbDecrypt : Prog isa := scrubSel 0 1488 ecbWords (ecbCall .decrypt)
 
 /-- `vg_sm4_cbc_encrypt_chained`. -/
-def cbcEncryptChained : Prog isa := scrubSel 0 1520 modeWords (withStackScratchWiped 1520 0 378 SerialCbc.encrypt)
+def cbcEncryptChained : Prog isa := scrubAll 0 1520 (withStackScratch 1520 0 SerialCbc.encrypt)
 
 /-- `vg_sm4_cbc_decrypt_chained`. -/
-def cbcDecryptChained : Prog isa := scrubSel 0 1520 modeWords (withStackScratchWiped 1520 0 378 BatchCbc.decrypt)
+def cbcDecryptChained : Prog isa := scrubAll 0 1520 (withStackScratch 1520 0 BatchCbc.decrypt)
 
 /-- `vg_sm4_cfb128_encrypt`. -/
-def cfbEncrypt : Prog isa := scrubSel 0 1520 modeWords (withStackScratchWiped 1520 0 378 SerialCfb.encrypt)
+def cfbEncrypt : Prog isa := scrubAll 0 1520 (withStackScratch 1520 0 SerialCfb.encrypt)
 
 /-- `vg_sm4_cfb128_decrypt`. -/
-def cfbDecrypt : Prog isa := scrubSel 0 1520 modeWords (withStackScratchWiped 1520 0 378 BatchCfb.decrypt)
+def cfbDecrypt : Prog isa := scrubAll 0 1520 (withStackScratch 1520 0 BatchCfb.decrypt)
 
 /-- `vg_sm4_cfb128_encrypt_final`. -/
 def cfbEncryptFinal : Prog isa := scrubSel 0 1568 finalWords (withStackScratchWiped 80 0 18 Impl.Sm4.Arm.cfbEncryptFinal)
@@ -81,13 +81,13 @@ def cfbEncryptFinal : Prog isa := scrubSel 0 1568 finalWords (withStackScratchWi
 def cfbDecryptFinal : Prog isa := scrubSel 0 1568 finalWords (withStackScratchWiped 80 0 18 Impl.Sm4.Arm.cfbDecryptFinal)
 
 /-- `vg_sm4_ctr`. -/
-def ctr : Prog isa := scrubSel 0 1520 modeWords ctrFramed
+def ctr : Prog isa := scrubAll 0 1520 (withStackScratch 1520 0 BatchCtr.ctr)
 
 /-- `vg_sm4_ctr_final`. -/
 def ctrFinal : Prog isa := scrubSel 0 1584 ctrFinalWords (withStackScratchWiped 64 0 14 Impl.Sm4.Arm.ctrFinal)
 
 /-- `vg_sm4_ofb`. -/
-def ofb : Prog isa := scrubSel 0 1520 modeWords (withStackScratchWiped 1520 0 378 SerialOfb.crypt)
+def ofb : Prog isa := scrubAll 0 1520 (withStackScratch 1520 0 SerialOfb.crypt)
 
 /-- `vg_sm4_ofb_final`. -/
 def ofbFinal : Prog isa := scrubSel 0 1568 finalWords (withStackScratchWiped 80 0 18 Impl.Sm4.Arm.ofbFinal)

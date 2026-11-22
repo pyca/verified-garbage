@@ -90,6 +90,21 @@ theorem ofbFinalSat : ∃ s, (Spec.Sm4.ofbFinalContract Arm.abi 1568).pre s := b
   implies_sat [Spec.Sm4.ofbFinalContract, Spec.Sm4.ofbFinalSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr] [fbFrameSat, fbSat] using fbFrameSat 1
 
+/-! ## The stack the functions zeroed in a loop use
+
+The frames of the key expansion and of the modes over whole blocks, which
+`scrubAll` zeroes (`Arm.Scrub.CodeOk`). -/
+
+theorem expandKey_code : CodeOk (withRegScratch 1456 .r2 Impl.Sm4.Arm.expandKey) 1456 := by lit_decide
+theorem cbcEncryptChained_code : CodeOk (withStackScratch 1520 0 Impl.Sm4.Arm.SerialCbc.encrypt) 1520 := by
+  lit_decide
+theorem cbcDecryptChained_code : CodeOk (withStackScratch 1520 0 Impl.Sm4.Arm.BatchCbc.decrypt) 1520 := by
+  lit_decide
+theorem cfbEncrypt_code : CodeOk (withStackScratch 1520 0 Impl.Sm4.Arm.SerialCfb.encrypt) 1520 := by lit_decide
+theorem cfbDecrypt_code : CodeOk (withStackScratch 1520 0 Impl.Sm4.Arm.BatchCfb.decrypt) 1520 := by lit_decide
+theorem ctr_code : CodeOk (withStackScratch 1520 0 Impl.Sm4.Arm.BatchCtr.ctr) 1520 := by lit_decide
+theorem ofb_code : CodeOk (withStackScratch 1520 0 Impl.Sm4.Arm.SerialOfb.crypt) 1520 := by lit_decide
+
 end VG.Proof.Sm4.Arm.Scrub
 
 namespace VG.Proof.Sm4.Arm.Fn
@@ -99,12 +114,11 @@ open VG VG.Arm VG.Arm.Scrub VG.Impl.StackScratch.Arm
 /-- `vg_sm4_expand_key`. -/
 theorem expandKey :
     VerifiedScrubbed target Impl.Sm4.Arm.Fn.expandKey (Spec.Sm4.expandKeyContract abi 1456) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.expandKeyApi) (W := 1456)
-    { code := withRegScratchWiped 1456 .r2 364 Impl.Sm4.Arm.expandKey
-      verified := Proof.Sm4.Arm.expandKey_framed }
-    Impl.Sm4.Arm.Fn.expandKeyWords []
+  verifiedScrubbedAll (api := Spec.Sm4.expandKeyApi)
+    { code := withRegScratch 1456 .r2 Impl.Sm4.Arm.expandKey
+      verified := Proof.Sm4.Arm.expandKey_framedU }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.expandKeyPostOut_local _))
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.expandKey_code (by decide) _)
 
 /-- `vg_sm4_ecb_encrypt`. -/
 theorem ecbEncrypt :
@@ -128,43 +142,39 @@ theorem ecbDecrypt :
 theorem cbcEncryptChained :
     VerifiedScrubbed target Impl.Sm4.Arm.Fn.cbcEncryptChained
       (Spec.Sm4.cbcEncryptChainedContract abi 1520) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.cbcEncryptChainedApi) (W := 1520)
-    { code := withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.SerialCbc.encrypt
+  verifiedScrubbedAll (api := Spec.Sm4.cbcEncryptChainedApi)
+    { code := withStackScratch 1520 0 Impl.Sm4.Arm.SerialCbc.encrypt
       verified := Proof.Sm4.Arm.SerialCbcVerified.framed }
-    Impl.Sm4.Arm.Fn.modeWords []
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.cbcEncChainedPostOut_local _))
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cbcEncryptChained_code (by decide) _)
 
 /-- `vg_sm4_cbc_decrypt_chained`. -/
 theorem cbcDecryptChained :
     VerifiedScrubbed target Impl.Sm4.Arm.Fn.cbcDecryptChained
       (Spec.Sm4.cbcDecryptChainedContract abi 1520) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.cbcDecryptChainedApi) (W := 1520)
-    { code := withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.BatchCbc.decrypt
+  verifiedScrubbedAll (api := Spec.Sm4.cbcDecryptChainedApi)
+    { code := withStackScratch 1520 0 Impl.Sm4.Arm.BatchCbc.decrypt
       verified := Proof.Sm4.Arm.CbcBatchVerified.framed }
-    Impl.Sm4.Arm.Fn.modeWords []
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.cbcDecChainedPostOut_local _))
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cbcDecryptChained_code (by decide) _)
 
 /-- `vg_sm4_cfb128_encrypt`. -/
 theorem cfbEncrypt :
     VerifiedScrubbed target Impl.Sm4.Arm.Fn.cfbEncrypt (Spec.Sm4.cfbEncryptContract abi 1520) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.cfbEncryptApi) (W := 1520)
-    { code := withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.SerialCfb.encrypt
+  verifiedScrubbedAll (api := Spec.Sm4.cfbEncryptApi)
+    { code := withStackScratch 1520 0 Impl.Sm4.Arm.SerialCfb.encrypt
       verified := Proof.Sm4.Arm.SerialCfbVerified.framed }
-    Impl.Sm4.Arm.Fn.modeWords []
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.cfbEncPostOut_local _))
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbEncrypt_code (by decide) _)
 
 /-- `vg_sm4_cfb128_decrypt`. -/
 theorem cfbDecrypt :
     VerifiedScrubbed target Impl.Sm4.Arm.Fn.cfbDecrypt (Spec.Sm4.cfbDecryptContract abi 1520) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.cfbDecryptApi) (W := 1520)
-    { code := withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.BatchCfb.decrypt
+  verifiedScrubbedAll (api := Spec.Sm4.cfbDecryptApi)
+    { code := withStackScratch 1520 0 Impl.Sm4.Arm.BatchCfb.decrypt
       verified := Proof.Sm4.Arm.CfbBatchVerified.framed }
-    Impl.Sm4.Arm.Fn.modeWords []
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.cfbDecPostOut_local _))
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbDecrypt_code (by decide) _)
 
 /-- `vg_sm4_cfb128_encrypt_final`. -/
 theorem cfbEncryptFinal :
@@ -188,11 +198,11 @@ theorem cfbDecryptFinal :
 
 /-- `vg_sm4_ctr`. -/
 theorem ctr : VerifiedScrubbed target Impl.Sm4.Arm.Fn.ctr (Spec.Sm4.ctrContract abi 1520) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.ctrApi) (W := 1520)
-    { code := Impl.Sm4.Arm.ctrFramed, verified := Proof.Sm4.Arm.BatchVerified.framed }
-    Impl.Sm4.Arm.Fn.modeWords []
+  verifiedScrubbedAll (api := Spec.Sm4.ctrApi)
+    { code := withStackScratch 1520 0 Impl.Sm4.Arm.BatchCtr.ctr
+      verified := Proof.Sm4.Arm.BatchVerified.framedU }
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.ctrPostOut_local _))
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.ctr_code (by decide) _)
 
 /-- `vg_sm4_ctr_final`. -/
 theorem ctrFinal :
@@ -206,12 +216,11 @@ theorem ctrFinal :
 
 /-- `vg_sm4_ofb`. -/
 theorem ofb : VerifiedScrubbed target Impl.Sm4.Arm.Fn.ofb (Spec.Sm4.ofbContract abi 1520) 0 :=
-  verifiedScrubbedSel (api := Spec.Sm4.ofbApi) (W := 1520)
-    { code := withStackScratchWiped 1520 0 378 Impl.Sm4.Arm.SerialOfb.crypt
+  verifiedScrubbedAll (api := Spec.Sm4.ofbApi)
+    { code := withStackScratch 1520 0 Impl.Sm4.Arm.SerialOfb.crypt
       verified := Proof.Sm4.Arm.SerialOfbVerified.framed }
-    Impl.Sm4.Arm.Fn.modeWords []
     (postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sm4.ofbPostOut_local _))
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.ofb_code (by decide) _)
 
 /-- `vg_sm4_ofb_final`. -/
 theorem ofbFinal :

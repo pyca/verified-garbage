@@ -351,7 +351,7 @@ theorem ctr_code : CodeOk Impl.AesCtr.Arm.crypt 8 := by
   lit_decide
 
 theorem ctrFinal_code :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 72 2 14 Impl.AesCtr.Arm.cryptFinal) 88 := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 72 2 Impl.AesCtr.Arm.cryptFinal) 88 := by
   lit_decide
 
 theorem cfbEncrypt_code : CodeOk Impl.AesCfb.Arm.encrypt 8 := by
@@ -361,11 +361,11 @@ theorem cfbDecrypt_code : CodeOk Impl.AesCfb.Arm.decrypt 8 := by
   lit_decide
 
 theorem cfbEncryptFinal_code :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesCfb.Arm.encryptFinal) 72 := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 56 2 Impl.AesCfb.Arm.encryptFinal) 72 := by
   lit_decide
 
 theorem cfbDecryptFinal_code :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesCfb.Arm.decryptFinal) 72 := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 56 2 Impl.AesCfb.Arm.decryptFinal) 72 := by
   lit_decide
 
 theorem cfb8Encrypt_code : CodeOk Impl.AesCfb8.Arm.encrypt 8 := by
@@ -378,13 +378,19 @@ theorem ofb_code : CodeOk Impl.AesOfb.Arm.crypt 8 := by
   lit_decide
 
 theorem ofbFinal_code :
-    CodeOk (Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesOfb.Arm.cryptFinal) 72 := by
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 56 2 Impl.AesOfb.Arm.cryptFinal) 72 := by
   lit_decide
 
 theorem xtsEncrypt_code : CodeOk Impl.AesXts.ArmUnit.encrypt 16 := by
   lit_decide
 
 theorem xtsDecrypt_code : CodeOk Impl.AesXts.ArmUnit.decrypt 16 := by
+  lit_decide
+
+/-! ## The stack the functions zeroed in a loop use (`scrubAll`, `Arm.Scrub.CodeOk`) -/
+
+theorem expandKey_code :
+    CodeOk (Impl.StackScratch.Arm.withRegScratch 512 .r3 Impl.Aes.Arm.expandKey) 512 := by
   lit_decide
 
 end VG.Proof.Aes.Arm.Scrub
@@ -395,12 +401,11 @@ open VG VG.Arm VG.Arm.Scrub
 
 /-- `vg_aes_expand_key`. -/
 theorem expandKey : VerifiedScrubbed target Impl.Aes.Arm.Fn.expandKey (Spec.Aes.expandKeyContract abi 512) 0 :=
-  verifiedScrubbedSel (api := Spec.Aes.expandKeyApi) (W := 512)
-    { code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.Aes.Arm.expandKey
+  verifiedScrubbedAll (api := Spec.Aes.expandKeyApi)
+    { code := Impl.StackScratch.Arm.withRegScratch 512 .r3 Impl.Aes.Arm.expandKey
       verified := Proof.Aes.Arm.expandKey_framed }
-    Impl.Aes.Arm.Fn.expandKeyWords []
     (Scrub.expandKeyOut _)
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.expandKey_code (by decide) _)
 
 /-- `vg_aes_ecb_encrypt`. -/
 theorem ecbEncrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.ecbEncrypt (Spec.AesEcb.encryptContract abi 24) 0 :=
@@ -440,7 +445,7 @@ theorem ctr : VerifiedScrubbed target Impl.Aes.Arm.Fn.ctr (Spec.Ctr.aesContract 
 /-- `vg_aes_ctr_final`. -/
 theorem ctrFinal : VerifiedScrubbed target Impl.Aes.Arm.Fn.ctrFinal (Spec.Ctr.aesFinalContract abi 88) 0 :=
   verifiedScrubbedAll (api := Spec.Ctr.aesFinalApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 72 2 14 Impl.AesCtr.Arm.cryptFinal
+    { code := Impl.StackScratch.Arm.withStackScratch 72 2 Impl.AesCtr.Arm.cryptFinal
       verified := Proof.AesCtr.final_keyed Proof.AesCtr.Arm.cryptFinal_framed }
     (Scrub.ctrFinalOut _) (scrubSideF_of Scrub.ctrFinal_code Scrub.frameOk_88 _)
 
@@ -461,14 +466,14 @@ theorem cfbDecrypt : VerifiedScrubbed target Impl.Aes.Arm.Fn.cfbDecrypt (Spec.Cf
 /-- `vg_aes_cfb128_encrypt_final`. -/
 theorem cfbEncryptFinal : VerifiedScrubbed target Impl.Aes.Arm.Fn.cfbEncryptFinal (Spec.Cfb.aesEncryptFinalContract abi 72) 0 :=
   verifiedScrubbedAll (api := Spec.Cfb.aesEncryptFinalApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesCfb.Arm.encryptFinal
+    { code := Impl.StackScratch.Arm.withStackScratch 56 2 Impl.AesCfb.Arm.encryptFinal
       verified := Proof.AesCfb.encryptFinal_keyed Proof.AesCfb.Arm.encryptFinal_framed }
     (Scrub.cfbEncryptFinalOut _) (scrubSideF_of Scrub.cfbEncryptFinal_code Scrub.frameOk_72 _)
 
 /-- `vg_aes_cfb128_decrypt_final`. -/
 theorem cfbDecryptFinal : VerifiedScrubbed target Impl.Aes.Arm.Fn.cfbDecryptFinal (Spec.Cfb.aesDecryptFinalContract abi 72) 0 :=
   verifiedScrubbedAll (api := Spec.Cfb.aesDecryptFinalApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesCfb.Arm.decryptFinal
+    { code := Impl.StackScratch.Arm.withStackScratch 56 2 Impl.AesCfb.Arm.decryptFinal
       verified := Proof.AesCfb.decryptFinal_keyed Proof.AesCfb.Arm.decryptFinal_framed }
     (Scrub.cfbDecryptFinalOut _) (scrubSideF_of Scrub.cfbDecryptFinal_code Scrub.frameOk_72 _)
 
@@ -496,7 +501,7 @@ theorem ofb : VerifiedScrubbed target Impl.Aes.Arm.Fn.ofb (Spec.Ofb.aesContract 
 /-- `vg_aes_ofb_final`. -/
 theorem ofbFinal : VerifiedScrubbed target Impl.Aes.Arm.Fn.ofbFinal (Spec.Ofb.aesFinalContract abi 72) 0 :=
   verifiedScrubbedAll (api := Spec.Ofb.aesFinalApi)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 56 2 10 Impl.AesOfb.Arm.cryptFinal
+    { code := Impl.StackScratch.Arm.withStackScratch 56 2 Impl.AesOfb.Arm.cryptFinal
       verified := Proof.AesOfb.final_keyed Proof.AesOfb.Arm.cryptFinal_framed }
     (Scrub.ofbFinalOut _) (scrubSideF_of Scrub.ofbFinal_code Scrub.frameOk_72 _)
 

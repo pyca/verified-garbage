@@ -68,14 +68,14 @@ theorem ecbFrameSat_pre (d : Spec.TripleDes.Direction) :
     Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [ecbFrameSat] using ecbFrameSat
 
 theorem expandKey_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128
+    Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 512 .r3
       Impl.TripleDes.Arm.Key.expandKey)
       (Spec.TripleDes.expandKeyContract Arm.abi 512) :=
-  Arm.Verified.regScratchWiped (sig := Spec.TripleDes.expandKeySig) (nm := "scratch") (e := .u64)
+  Arm.Verified.regScratch (sig := Spec.TripleDes.expandKeySig) (nm := "scratch") (e := .u64)
     (n := 64) (pre := Spec.TripleDes.expandKeyPre Arm.abi.ptrBits)
     (post := Spec.TripleDes.expandKeyPost Arm.abi.ptrBits) (wa := false) (stack := 0)
-    Key.verified (by decide) (by decide) (by decide) (by decide)
-    (Proof.TripleDes.expandKeyPostOut_local _) expandKeyFrameSat_pre
+    Key.verified (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.TripleDes.expandKeyPostOut_local _ vs mm m₁ m₂ r hl) expandKeyFrameSat_pre
 
 theorem ecb_framed {c : Prog isa} {d : Spec.TripleDes.Direction}
     (h : Verified Arm.target c (Proof.TripleDes.ecbScratchContract Arm.abi d 0)) :

@@ -755,11 +755,11 @@ theorem expandKeyFrameSat_pre : ∃ s, (Spec.Seed.expandKeyContract Arm.abi 752)
 
 /-- Key expansion, with its working space on the stack. -/
 theorem expandKey_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withRegScratchWiped 752 .r2 188 expandKey)
+    Verified Arm.target (Impl.StackScratch.Arm.withRegScratch 752 .r2 expandKey)
       (Spec.Seed.expandKeyContract Arm.abi 752) :=
-  Arm.Verified.regScratchWiped (sig := Spec.Seed.expandKeySig) (nm := "scratch") (e := .u64)
+  Arm.Verified.regScratch (sig := Spec.Seed.expandKeySig) (nm := "scratch") (e := .u64)
     (n := 94) (post := Proof.Seed.expandKeyPost Arm.abi.ptrBits) (wa := false) (stack := 0)
-    expandKey_verified (by decide) (by decide) (by decide) (by decide)
-    (Proof.Seed.expandKeyPostOut_local _) expandKeyFrameSat_pre
+    expandKey_verified (by decide) (by decide) (by decide)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Seed.expandKeyPostOut_local _ vs mm m₁ m₂ r hl) expandKeyFrameSat_pre
 
 end VG.Proof.Seed.Arm

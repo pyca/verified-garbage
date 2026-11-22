@@ -110,6 +110,20 @@ theorem ofbOut : PostOut (Spec.TripleDes.ofbContract Arm.abi 1088) (Spec.TripleD
 theorem ofbFinalOut : PostOut (Spec.TripleDes.ofbFinalContract Arm.abi 1088) (Spec.TripleDes.ofbFinalSig.retBits 32) :=
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Modes.ofbFinalPost_local _)
 
+/-! ## The stack the functions zeroed in a loop use (`scrubAll`, `Arm.Scrub.CodeOk`) -/
+
+theorem expandKey_code :
+    CodeOk (Impl.StackScratch.Arm.withRegScratch 512 .r3 Impl.TripleDes.Arm.Key.expandKey) 512 := by
+  lit_decide
+
+theorem cbcDecrypt_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 1040 0 Impl.TripleDes.Arm.Wide.cbcDecrypt) 1040 := by
+  lit_decide
+
+theorem cfbDecrypt_code :
+    CodeOk (Impl.StackScratch.Arm.withStackScratch 1040 0 Impl.TripleDes.Arm.Wide.cfbDecrypt) 1040 := by
+  lit_decide
+
 end VG.Proof.TripleDes.Arm.Scrub
 
 namespace VG.Proof.TripleDes.Arm.Fn
@@ -119,12 +133,11 @@ open VG VG.Arm VG.Arm.Scrub VG.Arm.FrameStack VG.Proof.Modes.Arm
 /-- `vg_triple_des_expand_key`. -/
 theorem expandKey :
     VerifiedScrubbed target Impl.TripleDes.Arm.Fn.expandKey (Spec.TripleDes.expandKeyContract Arm.abi 512) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.expandKeyApi) (W := 512)
-    { code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.TripleDes.Arm.Key.expandKey
+  verifiedScrubbedAll (api := Spec.TripleDes.expandKeyApi)
+    { code := Impl.StackScratch.Arm.withRegScratch 512 .r3 Impl.TripleDes.Arm.Key.expandKey
       verified := Proof.TripleDes.Arm.expandKey_framed }
-    Impl.TripleDes.Arm.Fn.noWords []
     Scrub.expandKeyOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.expandKey_code (by decide) _)
 
 /-- `vg_triple_des_cbc_encrypt_chained`. -/
 theorem cbcEncrypt :
@@ -139,12 +152,11 @@ theorem cbcEncrypt :
 /-- `vg_triple_des_cbc_decrypt_chained`. -/
 theorem cbcDecrypt :
     VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cbcDecrypt (Spec.TripleDes.cbcDecryptChainedContract Arm.abi 1040) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.cbcDecryptChainedApi) (W := 1040)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 Impl.TripleDes.Arm.Wide.cbcDecrypt
+  verifiedScrubbedAll (api := Spec.TripleDes.cbcDecryptChainedApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 1040 0 Impl.TripleDes.Arm.Wide.cbcDecrypt
       verified := Proof.TripleDes.Arm.Bitsliced.cbcDecrypt_framed }
-    Impl.TripleDes.Arm.Fn.wideWords []
     Scrub.cbcDecryptOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cbcDecrypt_code (by decide) _)
 
 /-- `vg_triple_des_cfb64_encrypt`. -/
 theorem cfbEncrypt :
@@ -159,12 +171,11 @@ theorem cfbEncrypt :
 /-- `vg_triple_des_cfb64_decrypt`. -/
 theorem cfbDecrypt :
     VerifiedScrubbed target Impl.TripleDes.Arm.Fn.cfbDecrypt (Spec.TripleDes.cfbDecryptContract Arm.abi 1040) 0 :=
-  verifiedScrubbedSel (api := Spec.TripleDes.cfbDecryptApi) (W := 1040)
-    { code := Impl.StackScratch.Arm.withStackScratchWiped 1040 0 256 Impl.TripleDes.Arm.Wide.cfbDecrypt
+  verifiedScrubbedAll (api := Spec.TripleDes.cfbDecryptApi)
+    { code := Impl.StackScratch.Arm.withStackScratch 1040 0 Impl.TripleDes.Arm.Wide.cfbDecrypt
       verified := Proof.TripleDes.Arm.Bitsliced.cfbDecrypt_framed }
-    Impl.TripleDes.Arm.Fn.wideWords []
     Scrub.cfbDecryptOut
-    (by decide) hbp_nil ⟨_, by taint_decide_ct⟩
+    (scrubSideF_of Scrub.cfbDecrypt_code (by decide) _)
 
 /-- `vg_triple_des_cfb64_encrypt_final`. -/
 theorem cfbEncryptFinal :
