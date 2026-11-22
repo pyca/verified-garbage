@@ -526,10 +526,10 @@ mod tests {
     use verified_garbage::{ed25519, mldsa44, mldsa65, mldsa87};
 
     use super::load_private_key;
-    use crate::der;
     use crate::verify::{
         RSA_PKCS1_2048_8192_SHA384, RSA_PKCS1_3072_8192_SHA384, SUPPORTED_SIG_ALGS,
     };
+    use crate::{DEFAULT_KEY_PROVIDER, der};
 
     const MESSAGE: &[u8] = b"signed";
 
@@ -547,8 +547,10 @@ mod tests {
     /// scheme alone, and the provider's verifier of the scheme accepts the
     /// signature with `public_key` (as the verifier takes it, which is what
     /// the key's SPKI holds), but not with the key or signature truncated, nor
-    /// of another message. A key offered none of its schemes chooses none.
+    /// of another message. A key offered none of its schemes chooses none,
+    /// and its debug form leaves out the key.
     fn signs(key: &dyn SigningKey, public_key: &[u8], schemes: &[SignatureScheme]) {
+        assert!(format!("{key:?}").ends_with(".. }"));
         for &scheme in schemes {
             let signer = key.choose_scheme(&[scheme]).unwrap();
             assert_eq!(signer.scheme(), scheme);
@@ -797,8 +799,8 @@ mod tests {
         );
     }
 
-    /// An Ed25519 seed loads as PKCS #8, with its public key or none, and
-    /// signs; it does not load with another public key, parameters, or a
+    /// An Ed25519 seed loads as PKCS #8 (through the provider's key
+    /// provider), with its public key or none, and signs; it does not load with another public key, parameters, or a
     /// seed of another length.
     #[test]
     fn ed25519() {
@@ -809,11 +811,8 @@ mod tests {
         let private_key = |seed: &[u8]| asn1::write_single(&seed).unwrap();
         for pk in [Some(&public_key[..]), None] {
             let der = pkcs8(1, der::ED25519, None, &private_key(&seed), pk);
-            signs(
-                &*load_private_key(&der).unwrap(),
-                &public_key,
-                &[SignatureScheme::ED25519],
-            );
+            let key = DEFAULT_KEY_PROVIDER.load_private_key(der).unwrap();
+            signs(&*key, &public_key, &[SignatureScheme::ED25519]);
         }
         let mut other = public_key;
         other[0] ^= 1;

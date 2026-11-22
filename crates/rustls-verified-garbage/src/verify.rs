@@ -534,8 +534,59 @@ mod tests {
     use verified_garbage::ec::{P256, P384, P521, PrivateKey};
     use verified_garbage::hashes::sha256::Sha256;
 
-    use super::{ECDSA_P256_SHA256, ECDSA_P384_SHA256, ECDSA_P521_SHA256};
+    use alloc::vec::Vec;
+
+    use pki_types::AlgorithmIdentifier;
+
+    use super::{
+        ALL_VERIFICATION_ALGS, ECDSA_P256_SHA256, ECDSA_P384_SHA256, ECDSA_P521_SHA256,
+        RSA_PKCS1_2048_8192_SHA256, RSA_PKCS1_2048_8192_SHA256_ABSENT_PARAMS,
+        RSA_PKCS1_2048_8192_SHA384, RSA_PKCS1_2048_8192_SHA384_ABSENT_PARAMS,
+        RSA_PKCS1_2048_8192_SHA512, RSA_PKCS1_2048_8192_SHA512_ABSENT_PARAMS,
+    };
     use crate::der;
+
+    /// The OID and DER parameters (if any) of the contents of an
+    /// `AlgorithmIdentifier`.
+    #[allow(clippy::result_large_err)] // rust-asn1's `ParseError` is large.
+    fn parse(id: AlgorithmIdentifier) -> (asn1::ObjectIdentifier, Option<Vec<u8>>) {
+        asn1::parse(id.as_ref(), |p| {
+            let oid = p.read_element::<asn1::ObjectIdentifier>()?;
+            let params = p.read_element::<Option<asn1::Tlv<'_>>>()?;
+            Ok::<_, asn1::ParseError>((oid, params.map(|t| t.full_data().to_vec())))
+        })
+        .unwrap()
+    }
+
+    /// Each algorithm's identifiers are the contents of an
+    /// `AlgorithmIdentifier`: an OID, then parameters or none. An algorithm
+    /// for absent parameters has its counterpart's OID, without its NULL.
+    #[test]
+    fn alg_ids() {
+        for alg in ALL_VERIFICATION_ALGS {
+            parse(alg.public_key_alg_id());
+            parse(alg.signature_alg_id());
+        }
+        let null = asn1::write_single(&()).unwrap();
+        for (absent, present) in [
+            (
+                RSA_PKCS1_2048_8192_SHA256_ABSENT_PARAMS,
+                RSA_PKCS1_2048_8192_SHA256,
+            ),
+            (
+                RSA_PKCS1_2048_8192_SHA384_ABSENT_PARAMS,
+                RSA_PKCS1_2048_8192_SHA384,
+            ),
+            (
+                RSA_PKCS1_2048_8192_SHA512_ABSENT_PARAMS,
+                RSA_PKCS1_2048_8192_SHA512,
+            ),
+        ] {
+            let (oid, params) = parse(absent.signature_alg_id());
+            assert_eq!(params, None);
+            assert_eq!(parse(present.signature_alg_id()), (oid, Some(null.clone())));
+        }
+    }
 
     /// A signature made with the library verifies with the signer's public
     /// key in either SEC 1 form, and not with another key or an encoding that

@@ -2,6 +2,7 @@
 //! fragmented plaintext, appending the whole record (its header too) after
 //! what the output already holds, and opens what it sealed.
 
+use rustls::ConnectionTrafficSecrets;
 use rustls::crypto::cipher::{
     AeadKey, EncodableVersion, InboundOpaque, Iv, OutboundPlain, Record, RecordDecrypter,
     RecordEncrypter,
@@ -144,5 +145,61 @@ fn tls12_bad_records() {
         );
         let err = Some(Error::PeerSentOversizedRecord);
         assert_eq!(open(oversized), err, "{name}");
+    }
+}
+
+/// Whether `secrets` are of the AEAD the suite `suite` names, with the key
+/// `key` and the IV `iv`.
+fn holds(secrets: &ConnectionTrafficSecrets, suite: &str, key: &[u8], iv: &[u8]) -> bool {
+    use ConnectionTrafficSecrets as S;
+    let same = |k: &AeadKey, v: &Iv| k.as_ref() == key && v.as_ref() == iv;
+    matches!(secrets, S::Aes128Gcm { key, iv } if suite.contains("AES_128_GCM") && same(key, iv))
+        || matches!(secrets, S::Aes256Gcm { key, iv } if suite.contains("AES_256_GCM") && same(key, iv))
+        || matches!(secrets, S::Chacha20Poly1305 { key, iv } if suite.contains("CHACHA20") && same(key, iv))
+}
+
+/// Each TLS 1.3 suite gives its AEAD's traffic secrets with the key and IV
+/// it is given, and opens no record shorter than a tag.
+#[test]
+fn tls13_secrets() {
+    for suite in provider::ALL_TLS13_CIPHER_SUITES {
+        let alg = suite.aead_alg;
+        let name = format!("{:?}", suite.common.suite);
+        let iv = Iv::new(&[0x55; 12]).unwrap();
+        let secrets = alg.extract_keys(key(alg.key_len()), iv).unwrap();
+        let k = key(alg.key_len());
+        assert!(holds(&secrets, &name, k.as_ref(), &[0x55; 12]), "{name}");
+        let mut short = [0u8; 15];
+        let record = Record::new(
+            ContentType::ApplicationData,
+            EncodableVersion::Legacy(ProtocolVersion::TLSv1_2),
+            InboundOpaque(&mut short),
+        );
+        let mut dec = alg.decrypter(key(alg.key_len()), Iv::new(&[0x55; 12]).unwrap());
+        assert_eq!(
+            dec.decrypt(record, SEQ).err(),
+            Some(Error::DecryptError),
+            "{name}"
+        );
+    }
+}
+
+/// Each TLS 1.2 suite gives its AEAD's traffic secrets with the key it is
+/// given and the IV of its nonces: the fixed IV, followed by the explicit
+/// nonce if it has one.
+#[test]
+fn tls12_secrets() {
+    for suite in provider::ALL_TLS12_CIPHER_SUITES {
+        let alg = suite.aead_alg;
+        let name = format!("{:?}", suite.common.suite);
+        let shape = alg.key_block_shape();
+        let iv = vec![0x55; shape.fixed_iv_len];
+        let explicit = vec![0x66; shape.explicit_nonce_len];
+        let secrets = alg
+            .extract_keys(key(shape.enc_key_len), &iv, &explicit)
+            .unwrap();
+        let k = key(shape.enc_key_len);
+        let nonce_iv = [&iv[..], &explicit[..]].concat();
+        assert!(holds(&secrets, &name, k.as_ref(), &nonce_iv), "{name}");
     }
 }
