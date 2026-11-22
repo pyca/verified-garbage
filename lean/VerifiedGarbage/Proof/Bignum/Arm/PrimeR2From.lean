@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
 import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoop
-import VerifiedGarbage.Proof.Bignum.Arm.R2
+public import VerifiedGarbage.Proof.Bignum.Arm.R2
 import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 import VerifiedGarbage.Proof.Framework.Offset
@@ -458,42 +458,20 @@ theorem FoldSq.toDouble {s : State} {base : BitVec 32} {len w m k : Nat} {P : Pr
   ⟨h.ready.workspace, h.ready.layout, h.ready.width, h.ready.ptr, h.ready.inverse,
     by rw [h.modulus]; exact h.operand, h.two, h.counter, h.ready.stackRead, h.ready.stackSep, h.ready.saved⟩
 
-/-- `r2Square_ok` under `P`. -/
-theorem foldSquare_ok (s : State) {base : BitVec 32} {len w m k : Nat} {P : Prop} (h : FoldSq base len w m P k s) :
-    WP isa (squareOp 4 4) s fun t => FoldSq base len w m P (2 * k) t ∧
-      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  obtain hw : 2 ≤ w := h.ready.width ▸ h.ready.layout.1
-  obtain fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
-  obtain size : 256 ≤ 8 * len := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at fits; omega_using [fits]
-  obtain op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  obtain op7 : Operand 7 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  obtain odd : m % 2 = 1 := h.modulus ▸ numAt_odd_of_inverse s.mem _ (by omega_using [hw]) h.ready.inverse
-  refine WP.mono (squareOp_ok s h.ready op4 op4 (by decide) (by rw [h.modulus]; exact h.operand)) ?_
-  rintro t ⟨ready, modulus, bound, value, keeps, frame, rest⟩
-  rw [h.modulus] at modulus bound value
-  refine ⟨⟨ready, modulus, bound, fun p => r2_square_value odd (h.value p) value, ?_, ?_⟩, frame, rest⟩
-  · have := keeps_array_word (d := 0) (bits := 32) keeps fits op7 (by decide) (by omega_using [])
-    simp only [Nat.add_zero] at this
-    change (t.mem.readW (off (State.addr base) (arrAt w 7)) 32).toNat = 2
-    rw [this]; exact h.two
-  · rw [keeps_header_readW keeps size (d := 208) (bits := 32) (by decide)]; exact h.counter
+theorem FoldSq.toC {s : State} {base : BitVec 32} {len w m k : Nat} {P : Prop}
+    (h : FoldSq base len w m P k s) : SqC base len w m P k 0 s :=
+  ⟨h.ready, h.modulus, h.operand, h.value, h.two, h.counter⟩
+
+theorem SqC.toFold {s : State} {base : BitVec 32} {len w m k : Nat} {P : Prop}
+    (h : SqC base len w m P k 0 s) : FoldSq base len w m P k s :=
+  ⟨h.ready, h.modulus, h.operand, h.value, h.two, h.counter⟩
 
 /-- `r2Squares_ok` under `P`. -/
 theorem foldSquares6_ok (s : State) {base : BitVec 32} {len w m k : Nat} {P : Prop}
     (h : FoldSq base len w m P k s) :
     WP isa r2Squares s fun t => FoldSq base len w m P (64 * k) t ∧
-      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  unfold r2Squares
-  refine WP.seq (WP.mono (foldSquare_ok s h) fun s1 ⟨h1, f1, r1⟩ => ?_)
-  refine WP.seq (WP.mono (foldSquare_ok s1 h1) fun s2 ⟨h2, f2, r2⟩ => ?_)
-  refine WP.seq (WP.mono (foldSquare_ok s2 h2) fun s3 ⟨h3, f3, r3⟩ => ?_)
-  refine WP.seq (WP.mono (foldSquare_ok s3 h3) fun s4 ⟨h4, f4, r4⟩ => ?_)
-  refine WP.seq (WP.mono (foldSquare_ok s4 h4) fun s5 ⟨h5, f5, r5⟩ => ?_)
-  refine WP.mono (foldSquare_ok s5 h5) fun t ⟨h6, f6, r6⟩ => ?_
-  refine ⟨?_, f1.trans (f2.trans (f3.trans (f4.trans (f5.trans f6)))),
-    r1.trans (r2.trans (r3.trans (r4.trans (r5.trans r6))))⟩
-  rw [show 2 * (2 * (2 * (2 * (2 * (2 * k))))) = 64 * k by omega_using []] at h6
-  exact h6
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t :=
+  WP.mono (sqC_squares_ok s h.toC) fun _ ⟨ht, frame, rest⟩ => ⟨ht.toFold, frame, rest⟩
 
 /-- `foldSquares`: six squarings if `e ≤ v`, where the doublings stopped at
 `2^(64 v + v)`. -/

@@ -1213,7 +1213,7 @@ theorem cand_stack (v : RoundImpl) :
     Impl.Bignum.Arm.reverseByteStep, Impl.Bignum.Arm.selectStep, Impl.Bignum.Arm.subAdvance,
     Impl.Bignum.Arm.subStep, Impl.Rsa.Arm.Keys.Inv.cnt1, Impl.Bignum.Arm.rowAdvance, Impl.Bignum.Arm.selectWord,
     Impl.Bignum.Arm.subBorrow, Impl.Bignum.Arm.MontFn.body, Impl.Bignum.Arm.doubleLoop,
-    Impl.Bignum.Arm.initInverse, Impl.Bignum.Arm.r2Init, Impl.Bignum.Arm.r2Squares, Impl.Bignum.Arm.setBases,
+    Impl.Bignum.Arm.initInverse, Impl.Bignum.Arm.r2Init, Impl.Bignum.Arm.r2Squares, Impl.Bignum.Arm.r2SquareStep, Impl.Bignum.Arm.setBases,
     Impl.Rsa.Arm.Keys.Inv.bA2, Impl.Bignum.Arm.doubleLoopBody, Impl.Bignum.Arm.montBody, Impl.Bignum.Arm.r2Constants,
     Impl.Bignum.Arm.squareOp, Impl.Bignum.Arm.doubleLoopMultiply,
     Impl.Bignum.Arm.montCore, Impl.Bignum.Arm.montInit, Impl.Bignum.Arm.smallConst, Impl.Bignum.Arm.squareBody,

@@ -941,6 +941,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	subs r1, r1, #1
 	str r1, [r0, #208]
 	bne 231b
+	mov r1, #6
+	str r1, [r0, #208]
+240:
 	mov r2, #4
 	mov r3, #4
 	mov r12, #4
@@ -968,12 +971,12 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, r7, #1
 	add lr, lr, #2
 	mov r3, #0
-240:
+241:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 240b
-241:
+	bne 241b
+242:
 	ldr r0, [sp, #0]
 	ldr r0, [r0, #80]
 	ldr r2, [r0, #12]
@@ -991,9 +994,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 242f
-	b 243f
-242:
+	bne 243f
+	b 244f
+243:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -1014,13 +1017,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-243:
-	cmp lr, #0
-	bne 244f
-	b 245f
 244:
+	cmp lr, #0
+	bne 245f
+	b 246f
+245:
 	orr r9, r1, r10, lsl #16
-246:
+247:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -1033,7 +1036,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 246b
+	bne 247b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -1041,7 +1044,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-245:
+246:
 	orr r1, r1, r10, lsl #16
 	str r11, [r0, #0]
 	ldr r0, [sp, #0]
@@ -1049,28 +1052,28 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #16]
 	subs lr, lr, #1
 	str lr, [r0, #16]
-	bne 241b
+	bne 242b
 	ldr r0, [sp, #0]
 	ldr r0, [r0, #80]
 	ldr lr, [r0, #0]
 	lsl lr, lr, #1
 	add r0, r0, #24
 	mov r11, #0
-247:
+248:
 	ldr r4, [r0, #0]
 	orr r3, r11, r4, lsl #1
 	lsr r11, r4, #31
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 247b
+	bne 248b
 	ldr r0, [sp, #0]
 	ldr r0, [r0, #80]
 	ldr r12, [r0, #8]
 	ldr lr, [r0, #0]
 	add r0, r0, #24
 	mov r11, #0
-248:
+249:
 	ldr r1, [r12, #0]
 	mov r2, r1
 	ldr r10, [r0, #0]
@@ -1103,7 +1106,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 248b
+	bne 249b
 	ldr r0, [sp, #0]
 	ldr r0, [r0, #80]
 	ldr r1, [r0, #0]
@@ -1112,7 +1115,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	str r1, [r0, #20]
 	mov r1, #0
 	str r1, [r0, #12]
-249:
+250:
 	ldr r0, [sp, #0]
 	ldr r12, [r0, #64]
 	ldr r1, [r0, #56]
@@ -1130,9 +1133,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 250f
-	b 251f
-250:
+	bne 251f
+	b 252f
+251:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -1153,13 +1156,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-251:
-	cmp lr, #0
-	bne 252f
-	b 253f
 252:
+	cmp lr, #0
+	bne 253f
+	b 254f
+253:
 	orr r9, r1, r10, lsl #16
-254:
+255:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -1172,7 +1175,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 254b
+	bne 255b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -1180,7 +1183,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-253:
+254:
 	orr r1, r1, r10, lsl #16
 	ldr r2, [sp, #0]
 	ldr r2, [r2, #80]
@@ -1197,7 +1200,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #16]
 	subs lr, lr, #1
 	str lr, [r0, #16]
-	bne 249b
+	bne 250b
 	ldr r0, [sp, #0]
 	ldr r12, [r0, #64]
 	ldr r0, [r0, #80]
@@ -1210,7 +1213,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r10, r10, #24
 	mov lr, r7
 	mov r11, #0
-255:
+256:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -1219,1594 +1222,43 @@ vg_rsa_private_crt_precomputed_umaal:
 	subs r3, r3, r11
 	adc r4, r4, #0
 	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 255b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-256:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
 	str r3, [r0, #0]
 	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 256b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
+	ldr r1, [r10, #0]
+	mov r2, r11
+	subs r3, r1, r2
+	mov r11, #0
+	adc r11, r11, #0
+	eor r11, r11, #1
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
+	mov r4, #0
+	sub r4, r4, r11
 257:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
 	str r3, [r0, #0]
+	add r10, r10, #4
 	add r0, r0, #4
+	add r12, r12, #4
 	subs lr, lr, #1
 	bne 257b
-258:
 	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 259f
-	b 260f
-259:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-260:
-	cmp lr, #0
-	bne 261f
-	b 262f
-261:
-	orr r9, r1, r10, lsl #16
-263:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 263b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-262:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 258b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-264:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 264b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-265:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 265b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-266:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 267f
-	b 268f
-267:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-268:
-	cmp lr, #0
-	bne 269f
-	b 270f
-269:
-	orr r9, r1, r10, lsl #16
-271:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 271b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-270:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 266b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-272:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 272b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-273:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 273b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-274:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 274b
-275:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 276f
-	b 277f
-276:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-277:
-	cmp lr, #0
-	bne 278f
-	b 279f
-278:
-	orr r9, r1, r10, lsl #16
-280:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 280b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-279:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 275b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-281:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 281b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-282:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 282b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-283:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 284f
-	b 285f
-284:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-285:
-	cmp lr, #0
-	bne 286f
-	b 287f
-286:
-	orr r9, r1, r10, lsl #16
-288:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 288b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-287:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 283b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-289:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 289b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-290:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 290b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-291:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 291b
-292:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 293f
-	b 294f
-293:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-294:
-	cmp lr, #0
-	bne 295f
-	b 296f
-295:
-	orr r9, r1, r10, lsl #16
-297:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 297b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-296:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 292b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-298:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 298b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-299:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 299b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2100:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2101f
-	b 2102f
-2101:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2102:
-	cmp lr, #0
-	bne 2103f
-	b 2104f
-2103:
-	orr r9, r1, r10, lsl #16
-2105:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2105b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2104:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2100b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2106:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2106b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2107:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2107b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2108:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2108b
-2109:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2110f
-	b 2111f
-2110:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2111:
-	cmp lr, #0
-	bne 2112f
-	b 2113f
-2112:
-	orr r9, r1, r10, lsl #16
-2114:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2114b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2113:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2109b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2115:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2115b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2116:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2116b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2117:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2118f
-	b 2119f
-2118:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2119:
-	cmp lr, #0
-	bne 2120f
-	b 2121f
-2120:
-	orr r9, r1, r10, lsl #16
-2122:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2122b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2121:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2117b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2123:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2123b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2124:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2124b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2125:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2125b
-2126:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2127f
-	b 2128f
-2127:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2128:
-	cmp lr, #0
-	bne 2129f
-	b 2130f
-2129:
-	orr r9, r1, r10, lsl #16
-2131:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2131b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2130:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2126b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2132:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2132b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2133:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2133b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2134:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2135f
-	b 2136f
-2135:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2136:
-	cmp lr, #0
-	bne 2137f
-	b 2138f
-2137:
-	orr r9, r1, r10, lsl #16
-2139:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2139b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2138:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2134b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2140:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2140b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2141:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2141b
-	ldr r0, [sp, #0]
+	ldr r1, [r0, #208]
+	subs r1, r1, #1
+	str r1, [r0, #208]
+	bne 240b
 	b 228f
 227:
 	ldr r1, [sp, #112]
@@ -2815,13 +1267,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2142:
+258:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2142b
+	bne 258b
 	mov r0, r5
 	mov r2, #7
 	mov r5, #1
@@ -2831,11 +1283,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2143:
+259:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2143b
+	bne 259b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	ldr r11, [sp, #48]
@@ -2846,7 +1298,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r0, [r0, #96]
 	mov r4, #0
 	sub r4, r4, r11
-2144:
+260:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -2857,7 +1309,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2144b
+	bne 260b
 	ldr r0, [sp, #0]
 228:
 	ldr r1, [sp, #8]
@@ -2869,24 +1321,24 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2145:
+261:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2145b
+	bne 261b
 	mov r0, r5
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #72]
-2146:
+262:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2146b
+	bne 262b
 	ldr r0, [sp, #0]
 	ldr r1, [sp, #8]
 	ldr r1, [r1, #224]
@@ -2901,17 +1353,17 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r0, r4
 	lsl lr, r2, #3
 	cmp lr, #0
-	beq 2147f
-2149:
+	beq 263f
+265:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2149b
-	b 2148f
-2147:
-2148:
+	bne 265b
+	b 264f
+263:
+264:
 	mov r0, r5
 	mov r2, #7
 	mov r5, #1
@@ -2921,11 +1373,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2150:
+266:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2150b
+	bne 266b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	mov r2, #1
@@ -2955,13 +1407,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2151:
+267:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2151b
+	bne 267b
 	mov r0, r5
-2152:
+268:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -2973,9 +1425,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2153f
-	b 2154f
-2153:
+	bne 269f
+	b 270f
+269:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -2996,13 +1448,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2154:
+270:
 	cmp lr, #0
-	bne 2155f
-	b 2156f
-2155:
+	bne 271f
+	b 272f
+271:
 	orr r9, r1, r10, lsl #16
-2157:
+273:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -3015,7 +1467,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2157b
+	bne 273b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -3023,7 +1475,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2156:
+272:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -3067,7 +1519,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2158:
+274:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -3076,7 +1528,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2158b
+	bne 274b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -3101,14 +1553,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2152b
+	bne 268b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2159:
+275:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -3122,7 +1574,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2159b
+	bne 275b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -3137,7 +1589,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2160:
+276:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -3148,29 +1600,29 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2160b
+	bne 276b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #104]
-2161:
+277:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2161b
+	bne 277b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #112]
-2162:
+278:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2162b
+	bne 278b
 	ldr r0, [sp, #0]
 	ldr r9, [r0, #64]
 	ldr r10, [r0, #104]
@@ -3181,7 +1633,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r7, r0
 	mov r8, lr
 	mov r11, #0
-2163:
+279:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -3195,7 +1647,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2163b
+	bne 279b
 	mov r1, r11
 	mov r0, r7
 	mov r12, r9
@@ -3206,9 +1658,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2164f
-	b 2165f
-2164:
+	bne 280f
+	b 281f
+280:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -3229,13 +1681,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2165:
+281:
 	cmp lr, #0
-	bne 2166f
-	b 2167f
-2166:
+	bne 282f
+	b 283f
+282:
 	orr r9, r1, r10, lsl #16
-2168:
+284:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -3248,7 +1700,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2168b
+	bne 284b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -3256,7 +1708,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2167:
+283:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -3273,13 +1725,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2169:
+285:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2169b
+	bne 285b
 	mov r0, r5
 	mov r2, #5
 	mov r3, #5
@@ -3308,13 +1760,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2170:
+286:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2170b
+	bne 286b
 	mov r0, r5
-2171:
+287:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -3326,9 +1778,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2172f
-	b 2173f
-2172:
+	bne 288f
+	b 289f
+288:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -3349,13 +1801,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2173:
+289:
 	cmp lr, #0
-	bne 2174f
-	b 2175f
-2174:
+	bne 290f
+	b 291f
+290:
 	orr r9, r1, r10, lsl #16
-2176:
+292:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -3368,7 +1820,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2176b
+	bne 292b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -3376,7 +1828,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2175:
+291:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -3420,7 +1872,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2177:
+293:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -3429,7 +1881,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2177b
+	bne 293b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -3454,14 +1906,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2171b
+	bne 287b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2178:
+294:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -3475,7 +1927,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2178b
+	bne 294b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -3490,7 +1942,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2179:
+295:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -3501,7 +1953,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2179b
+	bne 295b
 	ldr r0, [sp, #0]
 	mov r2, #5
 	mov r3, #5
@@ -3530,13 +1982,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2180:
+296:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2180b
+	bne 296b
 	mov r0, r5
-2181:
+297:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -3548,9 +2000,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2182f
-	b 2183f
-2182:
+	bne 298f
+	b 299f
+298:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -3571,13 +2023,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2183:
+299:
 	cmp lr, #0
-	bne 2184f
-	b 2185f
-2184:
+	bne 2100f
+	b 2101f
+2100:
 	orr r9, r1, r10, lsl #16
-2186:
+2102:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -3590,7 +2042,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2186b
+	bne 2102b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -3598,7 +2050,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2185:
+2101:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -3642,7 +2094,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2187:
+2103:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -3651,7 +2103,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2187b
+	bne 2103b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -3676,14 +2128,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2181b
+	bne 297b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2188:
+2104:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -3697,7 +2149,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2188b
+	bne 2104b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -3712,7 +2164,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2189:
+2105:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -3723,18 +2175,18 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2189b
+	bne 2105b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #72]
-2190:
+2106:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2190b
+	bne 2106b
 	ldr r0, [sp, #0]
 	ldr r9, [r0, #64]
 	ldr r10, [r0, #104]
@@ -3745,7 +2197,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r7, r0
 	mov r8, lr
 	mov r11, #0
-2191:
+2107:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -3759,7 +2211,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2191b
+	bne 2107b
 	mov r1, r11
 	mov r0, r7
 	mov r12, r9
@@ -3770,9 +2222,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2192f
-	b 2193f
-2192:
+	bne 2108f
+	b 2109f
+2108:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -3793,13 +2245,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2193:
+2109:
 	cmp lr, #0
-	bne 2194f
-	b 2195f
-2194:
+	bne 2110f
+	b 2111f
+2110:
 	orr r9, r1, r10, lsl #16
-2196:
+2112:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -3812,7 +2264,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2196b
+	bne 2112b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -3820,7 +2272,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2195:
+2111:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -3841,11 +2293,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2197:
+2113:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2197b
+	bne 2113b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	mov r2, #6
@@ -3875,13 +2327,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2198:
+2114:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2198b
+	bne 2114b
 	mov r0, r5
-2199:
+2115:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -3910,7 +2362,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #4
 	add r4, r4, #4
 	subs lr, lr, #1
-2200:
+2116:
 	ldr r3, [r12, #0]
 	ldr r6, [r0, #4]
 	umaal r6, r7, r3, r1
@@ -3927,7 +2379,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #8
 	add r4, r4, #8
 	subs lr, lr, #2
-	bne 2200b
+	bne 2116b
 	ldr r3, [r0, #4]
 	ldr r4, [r0, #8]
 	adds r3, r3, r7
@@ -3946,14 +2398,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2199b
+	bne 2115b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2201:
+2117:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -3967,7 +2419,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2201b
+	bne 2117b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -3982,7 +2434,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2202:
+2118:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -3993,7 +2445,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2202b
+	bne 2118b
 	ldr r0, [sp, #0]
 	mov r2, #5
 	mov r3, #1
@@ -4022,13 +2474,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2203:
+2119:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2203b
+	bne 2119b
 	mov r0, r5
-2204:
+2120:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -4057,7 +2509,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #4
 	add r4, r4, #4
 	subs lr, lr, #1
-2205:
+2121:
 	ldr r3, [r12, #0]
 	ldr r6, [r0, #4]
 	umaal r6, r7, r3, r1
@@ -4074,7 +2526,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #8
 	add r4, r4, #8
 	subs lr, lr, #2
-	bne 2205b
+	bne 2121b
 	ldr r3, [r0, #4]
 	ldr r4, [r0, #8]
 	adds r3, r3, r7
@@ -4093,14 +2545,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2204b
+	bne 2120b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2206:
+2122:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -4114,7 +2566,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2206b
+	bne 2122b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -4129,7 +2581,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2207:
+2123:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4140,7 +2592,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2207b
+	bne 2123b
 	ldr r0, [sp, #0]
 	ldr r12, [r0, #120]
 	ldr r1, [r0, #48]
@@ -4158,7 +2610,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r10, r0
 	mov r4, #0
 	sub r4, r4, r11
-2208:
+2124:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4169,7 +2621,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2208b
+	bne 2124b
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #220]
 	ldr r2, [r0, #48]
@@ -4188,7 +2640,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r10, r0
 	mov r4, #0
 	sub r4, r4, r11
-2209:
+2125:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4199,7 +2651,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2209b
+	bne 2125b
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #220]
 	ldr r2, [r0, #48]
@@ -4218,7 +2670,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r0, [r0, #72]
 	mov r4, #0
 	sub r4, r4, r11
-2210:
+2126:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4229,9 +2681,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2210b
+	bne 2126b
 	ldr r0, [sp, #0]
-2211:
+2127:
 	mov r2, #1
 	mov r3, #1
 	mov r12, #5
@@ -4259,13 +2711,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2212:
+2128:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2212b
+	bne 2128b
 	mov r0, r5
-2213:
+2129:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -4294,7 +2746,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #4
 	add r4, r4, #4
 	subs lr, lr, #1
-2214:
+2130:
 	ldr r3, [r12, #0]
 	ldr r6, [r0, #4]
 	umaal r6, r7, r3, r1
@@ -4311,7 +2763,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #8
 	add r4, r4, #8
 	subs lr, lr, #2
-	bne 2214b
+	bne 2130b
 	ldr r3, [r0, #4]
 	ldr r4, [r0, #8]
 	adds r3, r3, r7
@@ -4330,14 +2782,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2213b
+	bne 2129b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2215:
+2131:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -4351,7 +2803,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2215b
+	bne 2131b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -4366,7 +2818,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2216:
+2132:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4377,7 +2829,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2216b
+	bne 2132b
 	ldr r0, [sp, #0]
 	mov r11, #1
 	ldr r12, [r0, #72]
@@ -4387,7 +2839,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r10, r0
 	mov r4, #0
 	sub r4, r4, r11
-2217:
+2133:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4398,7 +2850,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2217b
+	bne 2133b
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #220]
 	ldr r2, [r0, #48]
@@ -4409,17 +2861,17 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r1, r1, #1
 	str r1, [r0, #228]
 	cmp r1, #8
-	bne 2211b
+	bne 2127b
 	mov r1, #0
 	str r1, [r0, #196]
 	str r1, [r0, #204]
-2218:
+2134:
 	ldr r2, [r0, #128]
 	ldrb r1, [r2, #0]
 	str r1, [r0, #200]
 	mov r1, #8
 	str r1, [r0, #192]
-2219:
+2135:
 	mov r2, #6
 	mov r3, #6
 	mov r12, #6
@@ -4447,13 +2899,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2220:
+2136:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2220b
+	bne 2136b
 	mov r0, r5
-2221:
+2137:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -4482,7 +2934,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #4
 	add r4, r4, #4
 	subs lr, lr, #1
-2222:
+2138:
 	ldr r3, [r12, #0]
 	ldr r6, [r0, #4]
 	umaal r6, r7, r3, r1
@@ -4499,7 +2951,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #8
 	add r4, r4, #8
 	subs lr, lr, #2
-	bne 2222b
+	bne 2138b
 	ldr r3, [r0, #4]
 	ldr r4, [r0, #8]
 	adds r3, r3, r7
@@ -4518,14 +2970,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2221b
+	bne 2137b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2223:
+2139:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -4539,7 +2991,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2223b
+	bne 2139b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -4554,7 +3006,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2224:
+2140:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4565,7 +3017,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2224b
+	bne 2140b
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #200]
 	lsr r1, r1, #7
@@ -4577,9 +3029,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r1, r1, #1
 	str r1, [r0, #204]
 	cmp r1, #3
-	beq 2225f
-	b 2226f
-2225:
+	beq 2141f
+	b 2142f
+2141:
 	ldr r12, [r0, #120]
 	ldr r1, [r0, #48]
 	add r1, r1, #2
@@ -4588,7 +3040,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	str r12, [r0, #220]
 	mov r1, #0
 	str r1, [r0, #228]
-2227:
+2143:
 	ldr r1, [r0, #196]
 	ldr r2, [r0, #228]
 	eor r11, r1, r2
@@ -4601,7 +3053,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r0, [r0, #72]
 	mov r4, #0
 	sub r4, r4, r11
-2228:
+2144:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4612,7 +3064,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2228b
+	bne 2144b
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #220]
 	ldr r2, [r0, #48]
@@ -4623,7 +3075,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r1, r1, #1
 	str r1, [r0, #228]
 	cmp r1, #8
-	bne 2227b
+	bne 2143b
 	mov r2, #6
 	mov r3, #6
 	mov r12, #1
@@ -4651,13 +3103,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2229:
+2145:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2229b
+	bne 2145b
 	mov r0, r5
-2230:
+2146:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -4686,7 +3138,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #4
 	add r4, r4, #4
 	subs lr, lr, #1
-2231:
+2147:
 	ldr r3, [r12, #0]
 	ldr r6, [r0, #4]
 	umaal r6, r7, r3, r1
@@ -4703,7 +3155,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #8
 	add r4, r4, #8
 	subs lr, lr, #2
-	bne 2231b
+	bne 2147b
 	ldr r3, [r0, #4]
 	ldr r4, [r0, #8]
 	adds r3, r3, r7
@@ -4722,14 +3174,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2230b
+	bne 2146b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2232:
+2148:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -4743,7 +3195,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2232b
+	bne 2148b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -4758,7 +3210,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2233:
+2149:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4769,26 +3221,26 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2233b
+	bne 2149b
 	ldr r0, [sp, #0]
 	mov r1, #0
 	str r1, [r0, #196]
 	str r1, [r0, #204]
-2226:
+2142:
 	ldr r1, [r0, #200]
 	add r1, r1, r1
 	str r1, [r0, #200]
 	ldr r1, [r0, #192]
 	subs r1, r1, #1
 	str r1, [r0, #192]
-	bne 2219b
+	bne 2135b
 	ldr r1, [r0, #128]
 	add r1, r1, #1
 	str r1, [r0, #128]
 	ldr r1, [r0, #132]
 	subs r1, r1, #1
 	str r1, [r0, #132]
-	bne 2218b
+	bne 2134b
 	ldr r12, [r0, #120]
 	ldr r1, [r0, #48]
 	add r1, r1, #2
@@ -4797,7 +3249,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	str r12, [r0, #220]
 	mov r1, #0
 	str r1, [r0, #228]
-2234:
+2150:
 	ldr r1, [r0, #196]
 	ldr r2, [r0, #228]
 	eor r11, r1, r2
@@ -4810,7 +3262,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r0, [r0, #72]
 	mov r4, #0
 	sub r4, r4, r11
-2235:
+2151:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4821,7 +3273,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2235b
+	bne 2151b
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #220]
 	ldr r2, [r0, #48]
@@ -4832,7 +3284,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r1, r1, #1
 	str r1, [r0, #228]
 	cmp r1, #8
-	bne 2234b
+	bne 2150b
 	mov r2, #6
 	mov r3, #6
 	mov r12, #1
@@ -4860,13 +3312,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2236:
+2152:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2236b
+	bne 2152b
 	mov r0, r5
-2237:
+2153:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -4895,7 +3347,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #4
 	add r4, r4, #4
 	subs lr, lr, #1
-2238:
+2154:
 	ldr r3, [r12, #0]
 	ldr r6, [r0, #4]
 	umaal r6, r7, r3, r1
@@ -4912,7 +3364,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #8
 	add r4, r4, #8
 	subs lr, lr, #2
-	bne 2238b
+	bne 2154b
 	ldr r3, [r0, #4]
 	ldr r4, [r0, #8]
 	adds r3, r3, r7
@@ -4931,14 +3383,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2237b
+	bne 2153b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2239:
+2155:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -4952,7 +3404,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2239b
+	bne 2155b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -4967,7 +3419,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2240:
+2156:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -4978,7 +3430,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2240b
+	bne 2156b
 	ldr r0, [sp, #0]
 	mov r1, #0
 	str r1, [r0, #196]
@@ -5010,13 +3462,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2241:
+2157:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2241b
+	bne 2157b
 	mov r0, r5
-2242:
+2158:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -5045,7 +3497,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #4
 	add r4, r4, #4
 	subs lr, lr, #1
-2243:
+2159:
 	ldr r3, [r12, #0]
 	ldr r6, [r0, #4]
 	umaal r6, r7, r3, r1
@@ -5062,7 +3514,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #8
 	add r4, r4, #8
 	subs lr, lr, #2
-	bne 2243b
+	bne 2159b
 	ldr r3, [r0, #4]
 	ldr r4, [r0, #8]
 	adds r3, r3, r7
@@ -5081,14 +3533,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2242b
+	bne 2158b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2244:
+2160:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -5102,7 +3554,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2244b
+	bne 2160b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -5117,7 +3569,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2245:
+2161:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -5128,7 +3580,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2245b
+	bne 2161b
 	ldr r0, [sp, #0]
 	ldr r1, [sp, #8]
 	ldr r1, [r1, #224]
@@ -5139,13 +3591,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2246:
+2162:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2246b
+	bne 2162b
 	mov r0, r5
 	ldr r0, [sp, #8]
 	add r12, sp, #0
@@ -5162,44 +3614,44 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r5
-2247:
+2163:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2247b
+	bne 2163b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2248:
+2164:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2248b
+	bne 2164b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #64]
-2249:
+2165:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2249b
+	bne 2165b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #112]
-2250:
+2166:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2250b
+	bne 2166b
 	ldr r0, [sp, #0]
 	ldr r1, [sp, #8]
 	ldr r0, [r1, #240]
@@ -5227,13 +3679,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r4, r0, #256
 	add r0, r0, #64
 	mov lr, #8
-2251:
+2167:
 	str r4, [r0, #0]
 	str r3, [r0, #4]
 	add r0, r0, #8
 	add r4, r4, r5
 	subs lr, lr, #1
-	bne 2251b
+	bne 2167b
 	mov r0, r8
 	add r12, sp, #0
 	str r0, [r12, #0]
@@ -5246,22 +3698,22 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r5
-2252:
+2168:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2252b
+	bne 2168b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2253:
+2169:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2253b
+	bne 2169b
 	ldr r0, [sp, #0]
 	add r12, sp, #48
 	ldr r11, [r12, #0]
@@ -5274,11 +3726,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2254:
+2170:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2254b
+	bne 2170b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	ldr r11, [r0, #212]
@@ -5289,7 +3741,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r0, [r0, #64]
 	mov r4, #0
 	sub r4, r4, r11
-2255:
+2171:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -5300,7 +3752,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2255b
+	bne 2171b
 	ldr r0, [sp, #0]
 	mov r12, r0
 	ldr r0, [r0, #64]
@@ -5586,7 +4038,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r2, r2, #7
 	lsr r2, r2, #3
 	cmp r1, r2
-	beq 2256f
+	beq 2172f
 	mov r2, #4
 	mov r5, #1
 	add r2, r0, r2, lsl #3
@@ -5595,11 +4047,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2258:
+2174:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2258b
+	bne 2174b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	mov r2, #7
@@ -5610,17 +4062,17 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2259:
+2175:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2259b
+	bne 2175b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #48]
 	add r1, r1, r1, lsl #6
 	str r1, [r0, #208]
-2260:
+2176:
 	mov r2, #4
 	mov r3, #7
 	mov r12, #4
@@ -5648,11 +4100,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2261:
+2177:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2261b
+	bne 2177b
 	mov r0, r5
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
@@ -5665,9 +4117,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2262f
-	b 2263f
-2262:
+	bne 2178f
+	b 2179f
+2178:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -5688,13 +4140,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2263:
+2179:
 	cmp lr, #0
-	bne 2264f
-	b 2265f
-2264:
+	bne 2180f
+	b 2181f
+2180:
 	orr r9, r1, r10, lsl #16
-2266:
+2182:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -5707,7 +4159,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2266b
+	bne 2182b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -5715,7 +4167,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2265:
+2181:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -5724,6 +4176,1670 @@ vg_rsa_private_crt_precomputed_umaal:
 	str r3, [r0, #0]
 	str r4, [r0, #4]
 	add r0, r0, #16
+	ldr r7, [r0, #0]
+	ldr r9, [r0, #24]
+	ldr r10, [r0, #28]
+	ldr r12, [r0, #8]
+	mov lr, r7
+	mov r11, #0
+2183:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2183b
+	ldr r1, [r10, #0]
+	mov r2, r11
+	subs r3, r1, r2
+	mov r11, #0
+	adc r11, r11, #0
+	eor r11, r11, #1
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
+	mov r4, #0
+	sub r4, r4, r11
+2184:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2184b
+	ldr r0, [sp, #0]
+	ldr r1, [r0, #208]
+	subs r1, r1, #1
+	str r1, [r0, #208]
+	bne 2176b
+	mov r1, #6
+	str r1, [r0, #208]
+2185:
+	mov r2, #4
+	mov r3, #4
+	mov r12, #4
+	add r2, r0, r2, lsl #3
+	ldr r10, [r2, #64]
+	add r3, r0, r3, lsl #3
+	ldr r8, [r3, #64]
+	add r12, r0, r12, lsl #3
+	ldr r9, [r12, #64]
+	ldr r5, [r0, #88]
+	ldr r6, [r0, #80]
+	ldr r7, [r0, #48]
+	add r7, r7, r7
+	ldr r11, [r0, #64]
+	ldr r12, [r0, #56]
+	str r7, [r6, #0]
+	str r10, [r6, #4]
+	str r8, [r6, #8]
+	str r8, [r6, #12]
+	sub r1, r7, #1
+	str r1, [r6, #16]
+	add r1, r6, #28
+	str r1, [r6, #20]
+	add r0, r6, #24
+	lsl lr, r7, #1
+	add lr, lr, #2
+	mov r3, #0
+2186:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2186b
+2187:
+	ldr r0, [sp, #0]
+	ldr r0, [r0, #80]
+	ldr r2, [r0, #12]
+	ldr lr, [r0, #16]
+	ldr r3, [r0, #20]
+	add r4, r3, #8
+	str r4, [r0, #20]
+	add r12, r2, #4
+	str r12, [r0, #12]
+	mov r0, r3
+	mov r11, #0
+	ldr r1, [r2, #0]
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2188f
+	b 2189f
+2188:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2189:
+	cmp lr, #0
+	bne 2190f
+	b 2191f
+2190:
+	orr r9, r1, r10, lsl #16
+2192:
+	ldr r2, [r12, #0]
+	ldr r3, [r0, #0]
+	umaal r3, r11, r2, r9
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	ldr r3, [r0, #4]
+	mov r5, r3
+	umaal r3, r11, r2, r9
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2192b
+	mov r6, r5
+	mov r4, #0
+	umaal r6, r4, r2, r9
+	lsr r6, r2, #16
+	movw r9, #65535
+	and r2, r2, r9
+	mul r7, r1, r6
+2191:
+	orr r1, r1, r10, lsl #16
+	str r11, [r0, #0]
+	ldr r0, [sp, #0]
+	ldr r0, [r0, #80]
+	ldr lr, [r0, #16]
+	subs lr, lr, #1
+	str lr, [r0, #16]
+	bne 2187b
+	ldr r0, [sp, #0]
+	ldr r0, [r0, #80]
+	ldr lr, [r0, #0]
+	lsl lr, lr, #1
+	add r0, r0, #24
+	mov r11, #0
+2193:
+	ldr r4, [r0, #0]
+	orr r3, r11, r4, lsl #1
+	lsr r11, r4, #31
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2193b
+	ldr r0, [sp, #0]
+	ldr r0, [r0, #80]
+	ldr r12, [r0, #8]
+	ldr lr, [r0, #0]
+	add r0, r0, #24
+	mov r11, #0
+2194:
+	ldr r1, [r12, #0]
+	mov r2, r1
+	ldr r10, [r0, #0]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r10
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	ldr r10, [r0, #4]
+	adds r4, r4, r10
+	mov r11, #0
+	adc r11, r11, #0
+	str r4, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2194b
+	ldr r0, [sp, #0]
+	ldr r0, [r0, #80]
+	ldr r1, [r0, #0]
+	str r1, [r0, #16]
+	add r1, r0, #24
+	str r1, [r0, #20]
+	mov r1, #0
+	str r1, [r0, #12]
+2195:
+	ldr r0, [sp, #0]
+	ldr r12, [r0, #64]
+	ldr r1, [r0, #56]
+	ldr r0, [r0, #80]
+	ldr lr, [r0, #0]
+	ldr r2, [r0, #20]
+	add r3, r2, #4
+	str r3, [r0, #20]
+	mov r0, r2
+	ldr r2, [r0, #0]
+	mul r1, r1, r2
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2196f
+	b 2197f
+2196:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2197:
+	cmp lr, #0
+	bne 2198f
+	b 2199f
+2198:
+	orr r9, r1, r10, lsl #16
+2200:
+	ldr r2, [r12, #0]
+	ldr r3, [r0, #0]
+	umaal r3, r11, r2, r9
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	ldr r3, [r0, #4]
+	mov r5, r3
+	umaal r3, r11, r2, r9
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2200b
+	mov r6, r5
+	mov r4, #0
+	umaal r6, r4, r2, r9
+	lsr r6, r2, #16
+	movw r9, #65535
+	and r2, r2, r9
+	mul r7, r1, r6
+2199:
+	orr r1, r1, r10, lsl #16
+	ldr r2, [sp, #0]
+	ldr r2, [r2, #80]
+	ldr r3, [r0, #0]
+	ldr r4, [r2, #12]
+	adds r3, r3, r11
+	mov r5, #0
+	adc r5, r5, #0
+	adds r3, r3, r4
+	adc r5, r5, #0
+	str r3, [r0, #0]
+	str r5, [r2, #12]
+	mov r0, r2
+	ldr lr, [r0, #16]
+	subs lr, lr, #1
+	str lr, [r0, #16]
+	bne 2195b
+	ldr r0, [sp, #0]
+	ldr r12, [r0, #64]
+	ldr r0, [r0, #80]
+	ldr r7, [r0, #0]
+	ldr r9, [r0, #4]
+	ldr r3, [r0, #12]
+	add r10, r0, r7, lsl #3
+	str r3, [r10, #24]
+	add r10, r0, r7, lsl #2
+	add r10, r10, #24
+	mov lr, r7
+	mov r11, #0
+2201:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2201b
+	ldr r1, [r10, #0]
+	mov r2, r11
+	subs r3, r1, r2
+	mov r11, #0
+	adc r11, r11, #0
+	eor r11, r11, #1
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
+	mov r4, #0
+	sub r4, r4, r11
+2202:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2202b
+	ldr r0, [sp, #0]
+	ldr r1, [r0, #208]
+	subs r1, r1, #1
+	str r1, [r0, #208]
+	bne 2185b
+	b 2173f
+2172:
+	ldr r1, [sp, #112]
+	ldr r2, [sp, #68]
+	add r2, r2, #7
+	lsr r2, r2, #3
+	sub r3, r2, #2
+	lsr r3, r3, #31
+	add r2, r2, r3
+	add r1, r1, r2, lsl #3
+	ldr r4, [r0, #96]
+	ldr lr, [r0, #48]
+	lsl lr, lr, #3
+	mov r5, r0
+	mov r0, r4
+2203:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2203b
+	mov r0, r5
+	mov r2, #7
+	mov r5, #1
+	add r2, r0, r2, lsl #3
+	ldr r4, [r2, #64]
+	ldr lr, [r0, #48]
+	add lr, lr, lr
+	mov r3, #0
+	mov r0, r4
+2204:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2204b
+	str r5, [r4, #0]
+	ldr r0, [sp, #0]
+	ldr r11, [sp, #48]
+	ldr r10, [r0, #120]
+	ldr r12, [r0, #96]
+	ldr lr, [r0, #48]
+	add lr, lr, lr
+	ldr r0, [r0, #96]
+	mov r4, #0
+	sub r4, r4, r11
+2205:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2205b
+	ldr r0, [sp, #0]
+2173:
+	ldr r1, [sp, #8]
+	ldr r1, [r1, #228]
+	ldr r1, [r1, #64]
+	mov r4, r1
+	ldr r1, [r0, #64]
+	ldr lr, [r0, #48]
+	lsl lr, lr, #3
+	mov r5, r0
+	mov r0, r4
+2206:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2206b
+	mov r0, r5
+	ldr lr, [r0, #48]
+	lsl lr, lr, #1
+	add lr, lr, #2
+	mov r3, #0
+	ldr r0, [r0, #72]
+2207:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2207b
+	ldr r0, [sp, #0]
+	ldr r1, [sp, #8]
+	ldr r1, [r1, #228]
+	ldr r1, [r1, #72]
+	ldr r2, [sp, #8]
+	ldr r2, [r2, #48]
+	ldr r3, [r0, #48]
+	add r1, r1, r3, lsl #3
+	sub r2, r2, r3
+	ldr r4, [r0, #72]
+	mov r5, r0
+	mov r0, r4
+	lsl lr, r2, #3
+	cmp lr, #0
+	beq 2208f
+2210:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2210b
+	b 2209f
+2208:
+2209:
+	mov r0, r5
+	mov r2, #7
+	mov r5, #1
+	add r2, r0, r2, lsl #3
+	ldr r4, [r2, #64]
+	ldr lr, [r0, #48]
+	add lr, lr, lr
+	mov r3, #0
+	mov r0, r4
+2211:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2211b
+	str r5, [r4, #0]
+	ldr r0, [sp, #0]
+	mov r2, #1
+	mov r3, #1
+	mov r12, #4
+	add r2, r0, r2, lsl #3
+	ldr r10, [r2, #64]
+	add r3, r0, r3, lsl #3
+	ldr r8, [r3, #64]
+	add r12, r0, r12, lsl #3
+	ldr r9, [r12, #64]
+	ldr r5, [r0, #88]
+	ldr r6, [r0, #80]
+	ldr r7, [r0, #48]
+	add r7, r7, r7
+	ldr r11, [r0, #64]
+	ldr r12, [r0, #56]
+	str r7, [r5, #0]
+	str r9, [r5, #4]
+	str r11, [r5, #8]
+	str r12, [r5, #12]
+	str r8, [r5, #16]
+	str r7, [r5, #20]
+	str r10, [r5, #24]
+	str r6, [r5, #28]
+	mov r0, r6
+	mov lr, r7
+	add lr, lr, #2
+	mov r3, #0
+2212:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2212b
+	mov r0, r5
+2213:
+	ldr r1, [r0, #16]
+	ldr r1, [r1, #0]
+	ldr lr, [r0, #0]
+	ldr r12, [r0, #4]
+	ldr r0, [r0, #28]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2214f
+	b 2215f
+2214:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2215:
+	cmp lr, #0
+	bne 2216f
+	b 2217f
+2216:
+	orr r9, r1, r10, lsl #16
+2218:
+	ldr r2, [r12, #0]
+	ldr r3, [r0, #0]
+	umaal r3, r11, r2, r9
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	ldr r3, [r0, #4]
+	mov r5, r3
+	umaal r3, r11, r2, r9
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2218b
+	mov r6, r5
+	mov r4, #0
+	umaal r6, r4, r2, r9
+	lsr r6, r2, #16
+	movw r9, #65535
+	and r2, r2, r9
+	mul r7, r1, r6
+2217:
+	orr r1, r1, r10, lsl #16
+	ldr r3, [r0, #0]
+	ldr r4, [r0, #4]
+	adds r3, r3, r11
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	ldr lr, [r0, #16]
+	ldr r12, [r0, #24]
+	ldr r1, [r0, #28]
+	ldr r0, [r0, #44]
+	ldr r2, [r0, #0]
+	mul r1, r1, r2
+	mov r11, #0
+	ldr r2, [r12, #0]
+	ldr r10, [r0, #0]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r10
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r4, r4, #0
+	mov r11, r4
+	add r12, r12, #4
+	subs lr, lr, #1
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	orr r9, r1, r10, lsl #16
+2219:
+	ldr r2, [r12, #0]
+	ldr r3, [r0, #4]
+	mov r5, r3
+	umaal r3, r11, r2, r9
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2219b
+	mov r6, r5
+	mov r4, #0
+	umaal r6, r4, r2, r9
+	lsr r6, r2, #16
+	movw r9, #65535
+	and r2, r2, r9
+	mul r7, r1, r6
+	orr r1, r1, r10, lsl #16
+	ldr r3, [r0, #4]
+	ldr r4, [r0, #8]
+	adds r3, r3, r11
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	add r0, r0, #8
+	mov r3, #0
+	str r3, [r0, #0]
+	add r0, r0, #12
+	ldr r4, [r0, #16]
+	add r4, r4, #4
+	str r4, [r0, #16]
+	ldr lr, [r0, #20]
+	subs lr, lr, #1
+	str lr, [r0, #20]
+	bne 2213b
+	ldr r7, [r0, #0]
+	ldr r9, [r0, #24]
+	ldr r10, [r0, #28]
+	ldr r12, [r0, #8]
+	mov lr, r7
+	mov r11, #0
+2220:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2220b
+	ldr r1, [r10, #0]
+	mov r2, r11
+	subs r3, r1, r2
+	mov r11, #0
+	adc r11, r11, #0
+	eor r11, r11, #1
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
+	mov r4, #0
+	sub r4, r4, r11
+2221:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2221b
+	ldr r0, [sp, #0]
+	ldr lr, [r0, #48]
+	lsl lr, lr, #1
+	add lr, lr, #2
+	mov r3, #0
+	ldr r0, [r0, #104]
+2222:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2222b
+	ldr r0, [sp, #0]
+	ldr lr, [r0, #48]
+	lsl lr, lr, #1
+	add lr, lr, #2
+	mov r3, #0
+	ldr r0, [r0, #112]
+2223:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2223b
+	ldr r0, [sp, #0]
+	ldr r9, [r0, #64]
+	ldr r10, [r0, #104]
+	ldr r12, [r0, #72]
+	ldr lr, [r0, #48]
+	add lr, lr, lr
+	ldr r0, [r0, #112]
+	mov r7, r0
+	mov r8, lr
+	mov r11, #0
+2224:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2224b
+	mov r1, r11
+	mov r0, r7
+	mov r12, r9
+	mov lr, r8
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2225f
+	b 2226f
+2225:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2226:
+	cmp lr, #0
+	bne 2227f
+	b 2228f
+2227:
+	orr r9, r1, r10, lsl #16
+2229:
+	ldr r2, [r12, #0]
+	ldr r3, [r0, #0]
+	umaal r3, r11, r2, r9
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	ldr r3, [r0, #4]
+	mov r5, r3
+	umaal r3, r11, r2, r9
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2229b
+	mov r6, r5
+	mov r4, #0
+	umaal r6, r4, r2, r9
+	lsr r6, r2, #16
+	movw r9, #65535
+	and r2, r2, r9
+	mul r7, r1, r6
+2228:
+	orr r1, r1, r10, lsl #16
+	ldr r3, [r0, #0]
+	ldr r4, [r0, #4]
+	adds r3, r3, r11
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	ldr r0, [sp, #0]
+	ldr r1, [sp, #8]
+	ldr r1, [r1, #228]
+	ldr r1, [r1, #72]
+	ldr r4, [r0, #104]
+	ldr lr, [r0, #48]
+	lsl lr, lr, #3
+	mov r5, r0
+	mov r0, r4
+2230:
+	ldrb r2, [r1, #0]
+	strb r2, [r0, #0]
+	add r0, r0, #1
+	add r1, r1, #1
+	subs lr, lr, #1
+	bne 2230b
+	mov r0, r5
+	mov r2, #5
+	mov r3, #5
+	mov r12, #4
+	add r2, r0, r2, lsl #3
+	ldr r10, [r2, #64]
+	add r3, r0, r3, lsl #3
+	ldr r8, [r3, #64]
+	add r12, r0, r12, lsl #3
+	ldr r9, [r12, #64]
+	ldr r5, [r0, #88]
+	ldr r6, [r0, #80]
+	ldr r7, [r0, #48]
+	add r7, r7, r7
+	ldr r11, [r0, #64]
+	ldr r12, [r0, #56]
+	str r7, [r5, #0]
+	str r9, [r5, #4]
+	str r11, [r5, #8]
+	str r12, [r5, #12]
+	str r8, [r5, #16]
+	str r7, [r5, #20]
+	str r10, [r5, #24]
+	str r6, [r5, #28]
+	mov r0, r6
+	mov lr, r7
+	add lr, lr, #2
+	mov r3, #0
+2231:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2231b
+	mov r0, r5
+2232:
+	ldr r1, [r0, #16]
+	ldr r1, [r1, #0]
+	ldr lr, [r0, #0]
+	ldr r12, [r0, #4]
+	ldr r0, [r0, #28]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2233f
+	b 2234f
+2233:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2234:
+	cmp lr, #0
+	bne 2235f
+	b 2236f
+2235:
+	orr r9, r1, r10, lsl #16
+2237:
+	ldr r2, [r12, #0]
+	ldr r3, [r0, #0]
+	umaal r3, r11, r2, r9
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	ldr r3, [r0, #4]
+	mov r5, r3
+	umaal r3, r11, r2, r9
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2237b
+	mov r6, r5
+	mov r4, #0
+	umaal r6, r4, r2, r9
+	lsr r6, r2, #16
+	movw r9, #65535
+	and r2, r2, r9
+	mul r7, r1, r6
+2236:
+	orr r1, r1, r10, lsl #16
+	ldr r3, [r0, #0]
+	ldr r4, [r0, #4]
+	adds r3, r3, r11
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	ldr lr, [r0, #16]
+	ldr r12, [r0, #24]
+	ldr r1, [r0, #28]
+	ldr r0, [r0, #44]
+	ldr r2, [r0, #0]
+	mul r1, r1, r2
+	mov r11, #0
+	ldr r2, [r12, #0]
+	ldr r10, [r0, #0]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r10
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r4, r4, #0
+	mov r11, r4
+	add r12, r12, #4
+	subs lr, lr, #1
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	orr r9, r1, r10, lsl #16
+2238:
+	ldr r2, [r12, #0]
+	ldr r3, [r0, #4]
+	mov r5, r3
+	umaal r3, r11, r2, r9
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2238b
+	mov r6, r5
+	mov r4, #0
+	umaal r6, r4, r2, r9
+	lsr r6, r2, #16
+	movw r9, #65535
+	and r2, r2, r9
+	mul r7, r1, r6
+	orr r1, r1, r10, lsl #16
+	ldr r3, [r0, #4]
+	ldr r4, [r0, #8]
+	adds r3, r3, r11
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	add r0, r0, #8
+	mov r3, #0
+	str r3, [r0, #0]
+	add r0, r0, #12
+	ldr r4, [r0, #16]
+	add r4, r4, #4
+	str r4, [r0, #16]
+	ldr lr, [r0, #20]
+	subs lr, lr, #1
+	str lr, [r0, #20]
+	bne 2232b
+	ldr r7, [r0, #0]
+	ldr r9, [r0, #24]
+	ldr r10, [r0, #28]
+	ldr r12, [r0, #8]
+	mov lr, r7
+	mov r11, #0
+2239:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2239b
+	ldr r1, [r10, #0]
+	mov r2, r11
+	subs r3, r1, r2
+	mov r11, #0
+	adc r11, r11, #0
+	eor r11, r11, #1
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
+	mov r4, #0
+	sub r4, r4, r11
+2240:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2240b
+	ldr r0, [sp, #0]
+	mov r2, #5
+	mov r3, #5
+	mov r12, #7
+	add r2, r0, r2, lsl #3
+	ldr r10, [r2, #64]
+	add r3, r0, r3, lsl #3
+	ldr r8, [r3, #64]
+	add r12, r0, r12, lsl #3
+	ldr r9, [r12, #64]
+	ldr r5, [r0, #88]
+	ldr r6, [r0, #80]
+	ldr r7, [r0, #48]
+	add r7, r7, r7
+	ldr r11, [r0, #64]
+	ldr r12, [r0, #56]
+	str r7, [r5, #0]
+	str r9, [r5, #4]
+	str r11, [r5, #8]
+	str r12, [r5, #12]
+	str r8, [r5, #16]
+	str r7, [r5, #20]
+	str r10, [r5, #24]
+	str r6, [r5, #28]
+	mov r0, r6
+	mov lr, r7
+	add lr, lr, #2
+	mov r3, #0
+2241:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2241b
+	mov r0, r5
+2242:
+	ldr r1, [r0, #16]
+	ldr r1, [r1, #0]
+	ldr lr, [r0, #0]
+	ldr r12, [r0, #4]
+	ldr r0, [r0, #28]
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2243f
+	b 2244f
+2243:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2244:
+	cmp lr, #0
+	bne 2245f
+	b 2246f
+2245:
+	orr r9, r1, r10, lsl #16
+2247:
+	ldr r2, [r12, #0]
+	ldr r3, [r0, #0]
+	umaal r3, r11, r2, r9
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	ldr r3, [r0, #4]
+	mov r5, r3
+	umaal r3, r11, r2, r9
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2247b
+	mov r6, r5
+	mov r4, #0
+	umaal r6, r4, r2, r9
+	lsr r6, r2, #16
+	movw r9, #65535
+	and r2, r2, r9
+	mul r7, r1, r6
+2246:
+	orr r1, r1, r10, lsl #16
+	ldr r3, [r0, #0]
+	ldr r4, [r0, #4]
+	adds r3, r3, r11
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	ldr lr, [r0, #16]
+	ldr r12, [r0, #24]
+	ldr r1, [r0, #28]
+	ldr r0, [r0, #44]
+	ldr r2, [r0, #0]
+	mul r1, r1, r2
+	mov r11, #0
+	ldr r2, [r12, #0]
+	ldr r10, [r0, #0]
+	movw r9, #65535
+	and r3, r1, r9
+	lsr r4, r1, #16
+	and r5, r2, r9
+	lsr r6, r2, #16
+	mul r7, r3, r5
+	mul r8, r4, r5
+	add r8, r8, r7, lsr #16
+	and r5, r8, r9
+	mul r4, r4, r6
+	add r4, r4, r8, lsr #16
+	mul r3, r3, r6
+	add r3, r3, r5
+	add r4, r4, r3, lsr #16
+	and r7, r7, r9
+	add r3, r7, r3, lsl #16
+	adds r3, r3, r10
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r4, r4, #0
+	mov r11, r4
+	add r12, r12, #4
+	subs lr, lr, #1
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	orr r9, r1, r10, lsl #16
+2248:
+	ldr r2, [r12, #0]
+	ldr r3, [r0, #4]
+	mov r5, r3
+	umaal r3, r11, r2, r9
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2248b
+	mov r6, r5
+	mov r4, #0
+	umaal r6, r4, r2, r9
+	lsr r6, r2, #16
+	movw r9, #65535
+	and r2, r2, r9
+	mul r7, r1, r6
+	orr r1, r1, r10, lsl #16
+	ldr r3, [r0, #4]
+	ldr r4, [r0, #8]
+	adds r3, r3, r11
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	add r0, r0, #8
+	mov r3, #0
+	str r3, [r0, #0]
+	add r0, r0, #12
+	ldr r4, [r0, #16]
+	add r4, r4, #4
+	str r4, [r0, #16]
+	ldr lr, [r0, #20]
+	subs lr, lr, #1
+	str lr, [r0, #20]
+	bne 2242b
+	ldr r7, [r0, #0]
+	ldr r9, [r0, #24]
+	ldr r10, [r0, #28]
+	ldr r12, [r0, #8]
+	mov lr, r7
+	mov r11, #0
+2249:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2249b
+	ldr r1, [r10, #0]
+	mov r2, r11
+	subs r3, r1, r2
+	mov r11, #0
+	adc r11, r11, #0
+	eor r11, r11, #1
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
+	mov r4, #0
+	sub r4, r4, r11
+2250:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2250b
+	ldr r0, [sp, #0]
+	ldr lr, [r0, #48]
+	lsl lr, lr, #1
+	add lr, lr, #2
+	mov r3, #0
+	ldr r0, [r0, #72]
+2251:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2251b
+	ldr r0, [sp, #0]
+	ldr r9, [r0, #64]
+	ldr r10, [r0, #104]
+	ldr r12, [r0, #112]
+	ldr lr, [r0, #48]
+	add lr, lr, lr
+	ldr r0, [r0, #72]
+	mov r7, r0
+	mov r8, lr
+	mov r11, #0
+2252:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2252b
+	mov r1, r11
+	mov r0, r7
+	mov r12, r9
+	mov lr, r8
+	mov r11, #0
+	movw r9, #65535
+	lsr r10, r1, #16
+	and r1, r1, r9
+	and r2, lr, #1
+	cmp r2, #0
+	bne 2253f
+	b 2254f
+2253:
+	ldr r2, [r12, #0]
+	lsr r6, r2, #16
+	and r2, r2, r9
+	mul r3, r1, r2
+	mul r5, r10, r2
+	mul r7, r1, r6
+	mul r4, r10, r6
+	adds r3, r3, r5, lsl #16
+	adc r4, r4, r5, lsr #16
+	adds r3, r3, r7, lsl #16
+	adc r4, r4, r7, lsr #16
+	ldr r5, [r0, #0]
+	adds r3, r3, r5
+	adc r4, r4, #0
+	adds r3, r3, r11
+	adc r11, r4, #0
+	str r3, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+2254:
+	cmp lr, #0
+	bne 2255f
+	b 2256f
+2255:
+	orr r9, r1, r10, lsl #16
+2257:
+	ldr r2, [r12, #0]
+	ldr r3, [r0, #0]
+	umaal r3, r11, r2, r9
+	str r3, [r0, #0]
+	ldr r2, [r12, #4]
+	ldr r3, [r0, #4]
+	mov r5, r3
+	umaal r3, r11, r2, r9
+	str r3, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	subs lr, lr, #2
+	bne 2257b
+	mov r6, r5
+	mov r4, #0
+	umaal r6, r4, r2, r9
+	lsr r6, r2, #16
+	movw r9, #65535
+	and r2, r2, r9
+	mul r7, r1, r6
+2256:
+	orr r1, r1, r10, lsl #16
+	ldr r3, [r0, #0]
+	ldr r4, [r0, #4]
+	adds r3, r3, r11
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	ldr r0, [sp, #0]
+	ldr r1, [sp, #88]
+	ldr r2, [sp, #92]
+	str r1, [r0, #128]
+	str r2, [r0, #132]
+	mov r2, #7
+	mov r5, #1
+	add r2, r0, r2, lsl #3
+	ldr r4, [r2, #64]
+	ldr lr, [r0, #48]
+	add lr, lr, lr
+	mov r3, #0
+	mov r0, r4
+2258:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2258b
+	str r5, [r4, #0]
+	ldr r0, [sp, #0]
+	mov r2, #6
+	mov r3, #4
+	mov r12, #7
+	add r2, r0, r2, lsl #3
+	ldr r10, [r2, #64]
+	add r3, r0, r3, lsl #3
+	ldr r8, [r3, #64]
+	add r12, r0, r12, lsl #3
+	ldr r9, [r12, #64]
+	ldr r5, [r0, #88]
+	ldr r6, [r0, #80]
+	ldr r7, [r0, #48]
+	add r7, r7, r7
+	ldr r11, [r0, #64]
+	ldr r12, [r0, #56]
+	str r7, [r5, #0]
+	str r9, [r5, #4]
+	str r11, [r5, #8]
+	str r12, [r5, #12]
+	str r8, [r5, #16]
+	str r7, [r5, #20]
+	str r10, [r5, #24]
+	str r6, [r5, #28]
+	mov r0, r6
+	mov lr, r7
+	add lr, lr, #2
+	mov r3, #0
+2259:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2259b
+	mov r0, r5
+2260:
+	ldr r1, [r0, #16]
+	ldr r1, [r1, #0]
+	ldr lr, [r0, #0]
+	ldr r12, [r0, #4]
+	ldr r4, [r0, #8]
+	ldr r2, [r0, #12]
+	ldr r0, [r0, #28]
+	mov r7, #0
+	mov r8, #0
+	ldr r3, [r12, #0]
+	ldr r5, [r4, #0]
+	ldr r6, [r0, #0]
+	umaal r6, r7, r3, r1
+	mul r2, r2, r6
+	umaal r6, r8, r5, r2
+	add r12, r12, #4
+	add r4, r4, #4
+	subs lr, lr, #1
+	ldr r3, [r12, #0]
+	ldr r5, [r4, #0]
+	ldr r6, [r0, #4]
+	umaal r6, r7, r3, r1
+	umaal r6, r8, r5, r2
+	str r6, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	add r4, r4, #4
+	subs lr, lr, #1
+2261:
+	ldr r3, [r12, #0]
+	ldr r6, [r0, #4]
+	umaal r6, r7, r3, r1
+	ldr r3, [r12, #4]
+	ldr r10, [r0, #8]
+	umaal r10, r7, r3, r1
+	ldr r5, [r4, #0]
+	umaal r6, r8, r5, r2
+	str r6, [r0, #0]
+	ldr r5, [r4, #4]
+	umaal r10, r8, r5, r2
+	str r10, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	add r4, r4, #8
+	subs lr, lr, #2
+	bne 2261b
+	ldr r3, [r0, #4]
+	ldr r4, [r0, #8]
+	adds r3, r3, r7
+	adc r4, r4, #0
+	adds r3, r3, r8
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	add r0, r0, #8
+	mov r3, #0
+	str r3, [r0, #0]
+	add r0, r0, #12
+	ldr r4, [r0, #16]
+	add r4, r4, #4
+	str r4, [r0, #16]
+	ldr lr, [r0, #20]
+	subs lr, lr, #1
+	str lr, [r0, #20]
+	bne 2260b
+	ldr r7, [r0, #0]
+	ldr r9, [r0, #24]
+	ldr r10, [r0, #28]
+	ldr r12, [r0, #8]
+	mov lr, r7
+	mov r11, #0
+2262:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2262b
+	ldr r1, [r10, #0]
+	mov r2, r11
+	subs r3, r1, r2
+	mov r11, #0
+	adc r11, r11, #0
+	eor r11, r11, #1
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
+	mov r4, #0
+	sub r4, r4, r11
+2263:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2263b
+	ldr r0, [sp, #0]
+	mov r2, #5
+	mov r3, #1
+	mov r12, #4
+	add r2, r0, r2, lsl #3
+	ldr r10, [r2, #64]
+	add r3, r0, r3, lsl #3
+	ldr r8, [r3, #64]
+	add r12, r0, r12, lsl #3
+	ldr r9, [r12, #64]
+	ldr r5, [r0, #88]
+	ldr r6, [r0, #80]
+	ldr r7, [r0, #48]
+	add r7, r7, r7
+	ldr r11, [r0, #64]
+	ldr r12, [r0, #56]
+	str r7, [r5, #0]
+	str r9, [r5, #4]
+	str r11, [r5, #8]
+	str r12, [r5, #12]
+	str r8, [r5, #16]
+	str r7, [r5, #20]
+	str r10, [r5, #24]
+	str r6, [r5, #28]
+	mov r0, r6
+	mov lr, r7
+	add lr, lr, #2
+	mov r3, #0
+2264:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2264b
+	mov r0, r5
+2265:
+	ldr r1, [r0, #16]
+	ldr r1, [r1, #0]
+	ldr lr, [r0, #0]
+	ldr r12, [r0, #4]
+	ldr r4, [r0, #8]
+	ldr r2, [r0, #12]
+	ldr r0, [r0, #28]
+	mov r7, #0
+	mov r8, #0
+	ldr r3, [r12, #0]
+	ldr r5, [r4, #0]
+	ldr r6, [r0, #0]
+	umaal r6, r7, r3, r1
+	mul r2, r2, r6
+	umaal r6, r8, r5, r2
+	add r12, r12, #4
+	add r4, r4, #4
+	subs lr, lr, #1
+	ldr r3, [r12, #0]
+	ldr r5, [r4, #0]
+	ldr r6, [r0, #4]
+	umaal r6, r7, r3, r1
+	umaal r6, r8, r5, r2
+	str r6, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	add r4, r4, #4
+	subs lr, lr, #1
+2266:
+	ldr r3, [r12, #0]
+	ldr r6, [r0, #4]
+	umaal r6, r7, r3, r1
+	ldr r3, [r12, #4]
+	ldr r10, [r0, #8]
+	umaal r10, r7, r3, r1
+	ldr r5, [r4, #0]
+	umaal r6, r8, r5, r2
+	str r6, [r0, #0]
+	ldr r5, [r4, #4]
+	umaal r10, r8, r5, r2
+	str r10, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	add r4, r4, #8
+	subs lr, lr, #2
+	bne 2266b
+	ldr r3, [r0, #4]
+	ldr r4, [r0, #8]
+	adds r3, r3, r7
+	adc r4, r4, #0
+	adds r3, r3, r8
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	add r0, r0, #8
+	mov r3, #0
+	str r3, [r0, #0]
+	add r0, r0, #12
+	ldr r4, [r0, #16]
+	add r4, r4, #4
+	str r4, [r0, #16]
+	ldr lr, [r0, #20]
+	subs lr, lr, #1
+	str lr, [r0, #20]
+	bne 2265b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
@@ -5772,13 +5888,99 @@ vg_rsa_private_crt_precomputed_umaal:
 	subs lr, lr, #1
 	bne 2268b
 	ldr r0, [sp, #0]
-	ldr r1, [r0, #208]
-	subs r1, r1, #1
-	str r1, [r0, #208]
-	bne 2260b
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
+	ldr r12, [r0, #120]
+	ldr r1, [r0, #48]
+	add r1, r1, #2
+	lsl r1, r1, #3
+	add r12, r12, r1
+	str r12, [r0, #220]
+	mov r1, #0
+	str r1, [r0, #228]
+	mov r11, #1
+	ldr r12, [r0, #112]
+	ldr lr, [r0, #48]
+	add lr, lr, lr
+	ldr r0, [r0, #220]
+	mov r10, r0
+	mov r4, #0
+	sub r4, r4, r11
+2269:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2269b
+	ldr r0, [sp, #0]
+	ldr r1, [r0, #220]
+	ldr r2, [r0, #48]
+	add r2, r2, #2
+	add r1, r1, r2, lsl #3
+	str r1, [r0, #220]
+	ldr r1, [r0, #228]
+	add r1, r1, #1
+	str r1, [r0, #228]
+	cmp r1, #8
+	mov r11, #1
+	ldr r12, [r0, #104]
+	ldr lr, [r0, #48]
+	add lr, lr, lr
+	ldr r0, [r0, #220]
+	mov r10, r0
+	mov r4, #0
+	sub r4, r4, r11
+2270:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2270b
+	ldr r0, [sp, #0]
+	ldr r1, [r0, #220]
+	ldr r2, [r0, #48]
+	add r2, r2, #2
+	add r1, r1, r2, lsl #3
+	str r1, [r0, #220]
+	ldr r1, [r0, #228]
+	add r1, r1, #1
+	str r1, [r0, #228]
+	cmp r1, #8
+	mov r11, #1
+	ldr r10, [r0, #72]
+	ldr r12, [r0, #104]
+	ldr lr, [r0, #48]
+	add lr, lr, lr
+	ldr r0, [r0, #72]
+	mov r4, #0
+	sub r4, r4, r11
+2271:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
+	add r12, r12, #4
+	subs lr, lr, #1
+	bne 2271b
+	ldr r0, [sp, #0]
+2272:
+	mov r2, #1
+	mov r3, #1
+	mov r12, #5
 	add r2, r0, r2, lsl #3
 	ldr r10, [r2, #64]
 	add r3, r0, r3, lsl #3
@@ -5791,258 +5993,282 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r7, r7, r7
 	ldr r11, [r0, #64]
 	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
+	str r7, [r5, #0]
+	str r9, [r5, #4]
+	str r11, [r5, #8]
+	str r12, [r5, #12]
+	str r8, [r5, #16]
+	str r7, [r5, #20]
+	str r10, [r5, #24]
+	str r6, [r5, #28]
+	mov r0, r6
+	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2269:
+2273:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2269b
-2270:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
+	bne 2273b
+	mov r0, r5
+2274:
+	ldr r1, [r0, #16]
+	ldr r1, [r1, #0]
+	ldr lr, [r0, #0]
+	ldr r12, [r0, #4]
+	ldr r4, [r0, #8]
 	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2271f
-	b 2272f
-2271:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
+	ldr r0, [r0, #28]
+	mov r7, #0
+	mov r8, #0
+	ldr r3, [r12, #0]
+	ldr r5, [r4, #0]
+	ldr r6, [r0, #0]
+	umaal r6, r7, r3, r1
+	mul r2, r2, r6
+	umaal r6, r8, r5, r2
+	add r12, r12, #4
+	add r4, r4, #4
+	subs lr, lr, #1
+	ldr r3, [r12, #0]
+	ldr r5, [r4, #0]
+	ldr r6, [r0, #4]
+	umaal r6, r7, r3, r1
+	umaal r6, r8, r5, r2
+	str r6, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	add r4, r4, #4
+	subs lr, lr, #1
+2275:
+	ldr r3, [r12, #0]
+	ldr r6, [r0, #4]
+	umaal r6, r7, r3, r1
+	ldr r3, [r12, #4]
+	ldr r10, [r0, #8]
+	umaal r10, r7, r3, r1
+	ldr r5, [r4, #0]
+	umaal r6, r8, r5, r2
+	str r6, [r0, #0]
+	ldr r5, [r4, #4]
+	umaal r10, r8, r5, r2
+	str r10, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	add r4, r4, #8
+	subs lr, lr, #2
+	bne 2275b
+	ldr r3, [r0, #4]
+	ldr r4, [r0, #8]
+	adds r3, r3, r7
 	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
+	adds r3, r3, r8
+	adc r4, r4, #0
 	str r3, [r0, #0]
+	str r4, [r0, #4]
+	add r0, r0, #8
+	mov r3, #0
+	str r3, [r0, #0]
+	add r0, r0, #12
+	ldr r4, [r0, #16]
+	add r4, r4, #4
+	str r4, [r0, #16]
+	ldr lr, [r0, #20]
+	subs lr, lr, #1
+	str lr, [r0, #20]
+	bne 2274b
+	ldr r7, [r0, #0]
+	ldr r9, [r0, #24]
+	ldr r10, [r0, #28]
+	ldr r12, [r0, #8]
+	mov lr, r7
+	mov r11, #0
+2276:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	subs r3, r1, r2
+	mov r4, #1
+	adc r4, r4, #0
+	subs r3, r3, r11
+	adc r4, r4, #0
+	eor r11, r4, #3
+	str r3, [r0, #0]
+	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2272:
-	cmp lr, #0
-	bne 2273f
-	b 2274f
-2273:
-	orr r9, r1, r10, lsl #16
-2275:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2275b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2274:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2270b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2276:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
 	bne 2276b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2277:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
+	ldr r1, [r10, #0]
+	mov r2, r11
+	subs r3, r1, r2
 	mov r11, #0
 	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
+	eor r11, r11, #1
+	mov r12, r10
+	mov r10, r0
+	sub r12, r12, r7, lsl #2
+	sub r10, r10, r7, lsl #2
+	mov r0, r9
+	mov lr, r7
+	mov r4, #0
+	sub r4, r4, r11
+2277:
+	ldr r1, [r10, #0]
+	ldr r2, [r12, #0]
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
+	str r3, [r0, #0]
+	add r10, r10, #4
+	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
 	bne 2277b
 	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
+	mov r11, #1
+	ldr r12, [r0, #72]
+	ldr lr, [r0, #48]
+	add lr, lr, lr
+	ldr r0, [r0, #220]
+	mov r10, r0
+	mov r4, #0
+	sub r4, r4, r11
 2278:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2279f
-	b 2280f
-2279:
+	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
+	eor r3, r1, r2
+	and r3, r3, r4
+	eor r3, r3, r1
 	str r3, [r0, #0]
+	add r10, r10, #4
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2280:
-	cmp lr, #0
-	bne 2281f
-	b 2282f
-2281:
-	orr r9, r1, r10, lsl #16
-2283:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2283b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2282:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
 	bne 2278b
 	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
+	ldr r1, [r0, #220]
+	ldr r2, [r0, #48]
+	add r2, r2, #2
+	add r1, r1, r2, lsl #3
+	str r1, [r0, #220]
+	ldr r1, [r0, #228]
+	add r1, r1, #1
+	str r1, [r0, #228]
+	cmp r1, #8
+	bne 2272b
+	mov r1, #0
+	str r1, [r0, #196]
+	str r1, [r0, #204]
+2279:
+	ldr r2, [r0, #128]
+	ldrb r1, [r2, #0]
+	str r1, [r0, #200]
+	mov r1, #8
+	str r1, [r0, #192]
+2280:
+	mov r2, #6
+	mov r3, #6
+	mov r12, #6
+	add r2, r0, r2, lsl #3
+	ldr r10, [r2, #64]
+	add r3, r0, r3, lsl #3
+	ldr r8, [r3, #64]
+	add r12, r0, r12, lsl #3
+	ldr r9, [r12, #64]
+	ldr r5, [r0, #88]
+	ldr r6, [r0, #80]
+	ldr r7, [r0, #48]
+	add r7, r7, r7
+	ldr r11, [r0, #64]
+	ldr r12, [r0, #56]
+	str r7, [r5, #0]
+	str r9, [r5, #4]
+	str r11, [r5, #8]
+	str r12, [r5, #12]
+	str r8, [r5, #16]
+	str r7, [r5, #20]
+	str r10, [r5, #24]
+	str r6, [r5, #28]
+	mov r0, r6
+	mov lr, r7
+	add lr, lr, #2
+	mov r3, #0
+2281:
+	str r3, [r0, #0]
+	add r0, r0, #4
+	subs lr, lr, #1
+	bne 2281b
+	mov r0, r5
+2282:
+	ldr r1, [r0, #16]
+	ldr r1, [r1, #0]
+	ldr lr, [r0, #0]
+	ldr r12, [r0, #4]
+	ldr r4, [r0, #8]
+	ldr r2, [r0, #12]
+	ldr r0, [r0, #28]
+	mov r7, #0
+	mov r8, #0
+	ldr r3, [r12, #0]
+	ldr r5, [r4, #0]
+	ldr r6, [r0, #0]
+	umaal r6, r7, r3, r1
+	mul r2, r2, r6
+	umaal r6, r8, r5, r2
+	add r12, r12, #4
+	add r4, r4, #4
+	subs lr, lr, #1
+	ldr r3, [r12, #0]
+	ldr r5, [r4, #0]
+	ldr r6, [r0, #4]
+	umaal r6, r7, r3, r1
+	umaal r6, r8, r5, r2
+	str r6, [r0, #0]
+	add r0, r0, #4
+	add r12, r12, #4
+	add r4, r4, #4
+	subs lr, lr, #1
+2283:
+	ldr r3, [r12, #0]
+	ldr r6, [r0, #4]
+	umaal r6, r7, r3, r1
+	ldr r3, [r12, #4]
+	ldr r10, [r0, #8]
+	umaal r10, r7, r3, r1
+	ldr r5, [r4, #0]
+	umaal r6, r8, r5, r2
+	str r6, [r0, #0]
+	ldr r5, [r4, #4]
+	umaal r10, r8, r5, r2
+	str r10, [r0, #4]
+	add r0, r0, #8
+	add r12, r12, #8
+	add r4, r4, #8
+	subs lr, lr, #2
+	bne 2283b
+	ldr r3, [r0, #4]
+	ldr r4, [r0, #8]
+	adds r3, r3, r7
+	adc r4, r4, #0
+	adds r3, r3, r8
+	adc r4, r4, #0
+	str r3, [r0, #0]
+	str r4, [r0, #4]
+	add r0, r0, #8
+	mov r3, #0
+	str r3, [r0, #0]
+	add r0, r0, #12
+	ldr r4, [r0, #16]
+	add r4, r4, #4
+	str r4, [r0, #16]
+	ldr lr, [r0, #20]
+	subs lr, lr, #1
+	str lr, [r0, #20]
+	bne 2282b
 	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
+	ldr r9, [r0, #24]
+	ldr r10, [r0, #28]
+	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
 2284:
@@ -6087,3328 +6313,6 @@ vg_rsa_private_crt_precomputed_umaal:
 	subs lr, lr, #1
 	bne 2285b
 	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2286:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2286b
-2287:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2288f
-	b 2289f
-2288:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2289:
-	cmp lr, #0
-	bne 2290f
-	b 2291f
-2290:
-	orr r9, r1, r10, lsl #16
-2292:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2292b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2291:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2287b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2293:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2293b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2294:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2294b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2295:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2296f
-	b 2297f
-2296:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2297:
-	cmp lr, #0
-	bne 2298f
-	b 2299f
-2298:
-	orr r9, r1, r10, lsl #16
-2300:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2300b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2299:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2295b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2301:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2301b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2302:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2302b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2303:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2303b
-2304:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2305f
-	b 2306f
-2305:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2306:
-	cmp lr, #0
-	bne 2307f
-	b 2308f
-2307:
-	orr r9, r1, r10, lsl #16
-2309:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2309b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2308:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2304b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2310:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2310b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2311:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2311b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2312:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2313f
-	b 2314f
-2313:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2314:
-	cmp lr, #0
-	bne 2315f
-	b 2316f
-2315:
-	orr r9, r1, r10, lsl #16
-2317:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2317b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2316:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2312b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2318:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2318b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2319:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2319b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2320:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2320b
-2321:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2322f
-	b 2323f
-2322:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2323:
-	cmp lr, #0
-	bne 2324f
-	b 2325f
-2324:
-	orr r9, r1, r10, lsl #16
-2326:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2326b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2325:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2321b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2327:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2327b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2328:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2328b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2329:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2330f
-	b 2331f
-2330:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2331:
-	cmp lr, #0
-	bne 2332f
-	b 2333f
-2332:
-	orr r9, r1, r10, lsl #16
-2334:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2334b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2333:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2329b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2335:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2335b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2336:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2336b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2337:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2337b
-2338:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2339f
-	b 2340f
-2339:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2340:
-	cmp lr, #0
-	bne 2341f
-	b 2342f
-2341:
-	orr r9, r1, r10, lsl #16
-2343:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2343b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2342:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2338b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2344:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2344b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2345:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2345b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2346:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2347f
-	b 2348f
-2347:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2348:
-	cmp lr, #0
-	bne 2349f
-	b 2350f
-2349:
-	orr r9, r1, r10, lsl #16
-2351:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2351b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2350:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2346b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2352:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2352b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2353:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2353b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2354:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2354b
-2355:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2356f
-	b 2357f
-2356:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2357:
-	cmp lr, #0
-	bne 2358f
-	b 2359f
-2358:
-	orr r9, r1, r10, lsl #16
-2360:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2360b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2359:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2355b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2361:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2361b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2362:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2362b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2363:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2364f
-	b 2365f
-2364:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2365:
-	cmp lr, #0
-	bne 2366f
-	b 2367f
-2366:
-	orr r9, r1, r10, lsl #16
-2368:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2368b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2367:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2363b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2369:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2369b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2370:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2370b
-	ldr r0, [sp, #0]
-	b 2257f
-2256:
-	ldr r1, [sp, #112]
-	ldr r2, [sp, #68]
-	add r2, r2, #7
-	lsr r2, r2, #3
-	sub r3, r2, #2
-	lsr r3, r3, #31
-	add r2, r2, r3
-	add r1, r1, r2, lsl #3
-	ldr r4, [r0, #96]
-	ldr lr, [r0, #48]
-	lsl lr, lr, #3
-	mov r5, r0
-	mov r0, r4
-2371:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2371b
-	mov r0, r5
-	mov r2, #7
-	mov r5, #1
-	add r2, r0, r2, lsl #3
-	ldr r4, [r2, #64]
-	ldr lr, [r0, #48]
-	add lr, lr, lr
-	mov r3, #0
-	mov r0, r4
-2372:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2372b
-	str r5, [r4, #0]
-	ldr r0, [sp, #0]
-	ldr r11, [sp, #48]
-	ldr r10, [r0, #120]
-	ldr r12, [r0, #96]
-	ldr lr, [r0, #48]
-	add lr, lr, lr
-	ldr r0, [r0, #96]
-	mov r4, #0
-	sub r4, r4, r11
-2373:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2373b
-	ldr r0, [sp, #0]
-2257:
-	ldr r1, [sp, #8]
-	ldr r1, [r1, #228]
-	ldr r1, [r1, #64]
-	mov r4, r1
-	ldr r1, [r0, #64]
-	ldr lr, [r0, #48]
-	lsl lr, lr, #3
-	mov r5, r0
-	mov r0, r4
-2374:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2374b
-	mov r0, r5
-	ldr lr, [r0, #48]
-	lsl lr, lr, #1
-	add lr, lr, #2
-	mov r3, #0
-	ldr r0, [r0, #72]
-2375:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2375b
-	ldr r0, [sp, #0]
-	ldr r1, [sp, #8]
-	ldr r1, [r1, #228]
-	ldr r1, [r1, #72]
-	ldr r2, [sp, #8]
-	ldr r2, [r2, #48]
-	ldr r3, [r0, #48]
-	add r1, r1, r3, lsl #3
-	sub r2, r2, r3
-	ldr r4, [r0, #72]
-	mov r5, r0
-	mov r0, r4
-	lsl lr, r2, #3
-	cmp lr, #0
-	beq 2376f
-2378:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2378b
-	b 2377f
-2376:
-2377:
-	mov r0, r5
-	mov r2, #7
-	mov r5, #1
-	add r2, r0, r2, lsl #3
-	ldr r4, [r2, #64]
-	ldr lr, [r0, #48]
-	add lr, lr, lr
-	mov r3, #0
-	mov r0, r4
-2379:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2379b
-	str r5, [r4, #0]
-	ldr r0, [sp, #0]
-	mov r2, #1
-	mov r3, #1
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r5, #0]
-	str r9, [r5, #4]
-	str r11, [r5, #8]
-	str r12, [r5, #12]
-	str r8, [r5, #16]
-	str r7, [r5, #20]
-	str r10, [r5, #24]
-	str r6, [r5, #28]
-	mov r0, r6
-	mov lr, r7
-	add lr, lr, #2
-	mov r3, #0
-2380:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2380b
-	mov r0, r5
-2381:
-	ldr r1, [r0, #16]
-	ldr r1, [r1, #0]
-	ldr lr, [r0, #0]
-	ldr r12, [r0, #4]
-	ldr r0, [r0, #28]
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2382f
-	b 2383f
-2382:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2383:
-	cmp lr, #0
-	bne 2384f
-	b 2385f
-2384:
-	orr r9, r1, r10, lsl #16
-2386:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2386b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2385:
-	orr r1, r1, r10, lsl #16
-	ldr r3, [r0, #0]
-	ldr r4, [r0, #4]
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	ldr lr, [r0, #16]
-	ldr r12, [r0, #24]
-	ldr r1, [r0, #28]
-	ldr r0, [r0, #44]
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	ldr r2, [r12, #0]
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	mov r11, r4
-	add r12, r12, #4
-	subs lr, lr, #1
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	orr r9, r1, r10, lsl #16
-2387:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2387b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-	orr r1, r1, r10, lsl #16
-	ldr r3, [r0, #4]
-	ldr r4, [r0, #8]
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	add r0, r0, #8
-	mov r3, #0
-	str r3, [r0, #0]
-	add r0, r0, #12
-	ldr r4, [r0, #16]
-	add r4, r4, #4
-	str r4, [r0, #16]
-	ldr lr, [r0, #20]
-	subs lr, lr, #1
-	str lr, [r0, #20]
-	bne 2381b
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #24]
-	ldr r10, [r0, #28]
-	ldr r12, [r0, #8]
-	mov lr, r7
-	mov r11, #0
-2388:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2388b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2389:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2389b
-	ldr r0, [sp, #0]
-	ldr lr, [r0, #48]
-	lsl lr, lr, #1
-	add lr, lr, #2
-	mov r3, #0
-	ldr r0, [r0, #104]
-2390:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2390b
-	ldr r0, [sp, #0]
-	ldr lr, [r0, #48]
-	lsl lr, lr, #1
-	add lr, lr, #2
-	mov r3, #0
-	ldr r0, [r0, #112]
-2391:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2391b
-	ldr r0, [sp, #0]
-	ldr r9, [r0, #64]
-	ldr r10, [r0, #104]
-	ldr r12, [r0, #72]
-	ldr lr, [r0, #48]
-	add lr, lr, lr
-	ldr r0, [r0, #112]
-	mov r7, r0
-	mov r8, lr
-	mov r11, #0
-2392:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2392b
-	mov r1, r11
-	mov r0, r7
-	mov r12, r9
-	mov lr, r8
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2393f
-	b 2394f
-2393:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2394:
-	cmp lr, #0
-	bne 2395f
-	b 2396f
-2395:
-	orr r9, r1, r10, lsl #16
-2397:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2397b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2396:
-	orr r1, r1, r10, lsl #16
-	ldr r3, [r0, #0]
-	ldr r4, [r0, #4]
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	ldr r0, [sp, #0]
-	ldr r1, [sp, #8]
-	ldr r1, [r1, #228]
-	ldr r1, [r1, #72]
-	ldr r4, [r0, #104]
-	ldr lr, [r0, #48]
-	lsl lr, lr, #3
-	mov r5, r0
-	mov r0, r4
-2398:
-	ldrb r2, [r1, #0]
-	strb r2, [r0, #0]
-	add r0, r0, #1
-	add r1, r1, #1
-	subs lr, lr, #1
-	bne 2398b
-	mov r0, r5
-	mov r2, #5
-	mov r3, #5
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r5, #0]
-	str r9, [r5, #4]
-	str r11, [r5, #8]
-	str r12, [r5, #12]
-	str r8, [r5, #16]
-	str r7, [r5, #20]
-	str r10, [r5, #24]
-	str r6, [r5, #28]
-	mov r0, r6
-	mov lr, r7
-	add lr, lr, #2
-	mov r3, #0
-2399:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2399b
-	mov r0, r5
-2400:
-	ldr r1, [r0, #16]
-	ldr r1, [r1, #0]
-	ldr lr, [r0, #0]
-	ldr r12, [r0, #4]
-	ldr r0, [r0, #28]
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2401f
-	b 2402f
-2401:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2402:
-	cmp lr, #0
-	bne 2403f
-	b 2404f
-2403:
-	orr r9, r1, r10, lsl #16
-2405:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2405b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2404:
-	orr r1, r1, r10, lsl #16
-	ldr r3, [r0, #0]
-	ldr r4, [r0, #4]
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	ldr lr, [r0, #16]
-	ldr r12, [r0, #24]
-	ldr r1, [r0, #28]
-	ldr r0, [r0, #44]
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	ldr r2, [r12, #0]
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	mov r11, r4
-	add r12, r12, #4
-	subs lr, lr, #1
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	orr r9, r1, r10, lsl #16
-2406:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2406b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-	orr r1, r1, r10, lsl #16
-	ldr r3, [r0, #4]
-	ldr r4, [r0, #8]
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	add r0, r0, #8
-	mov r3, #0
-	str r3, [r0, #0]
-	add r0, r0, #12
-	ldr r4, [r0, #16]
-	add r4, r4, #4
-	str r4, [r0, #16]
-	ldr lr, [r0, #20]
-	subs lr, lr, #1
-	str lr, [r0, #20]
-	bne 2400b
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #24]
-	ldr r10, [r0, #28]
-	ldr r12, [r0, #8]
-	mov lr, r7
-	mov r11, #0
-2407:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2407b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2408:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2408b
-	ldr r0, [sp, #0]
-	mov r2, #5
-	mov r3, #5
-	mov r12, #7
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r5, #0]
-	str r9, [r5, #4]
-	str r11, [r5, #8]
-	str r12, [r5, #12]
-	str r8, [r5, #16]
-	str r7, [r5, #20]
-	str r10, [r5, #24]
-	str r6, [r5, #28]
-	mov r0, r6
-	mov lr, r7
-	add lr, lr, #2
-	mov r3, #0
-2409:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2409b
-	mov r0, r5
-2410:
-	ldr r1, [r0, #16]
-	ldr r1, [r1, #0]
-	ldr lr, [r0, #0]
-	ldr r12, [r0, #4]
-	ldr r0, [r0, #28]
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2411f
-	b 2412f
-2411:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2412:
-	cmp lr, #0
-	bne 2413f
-	b 2414f
-2413:
-	orr r9, r1, r10, lsl #16
-2415:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2415b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2414:
-	orr r1, r1, r10, lsl #16
-	ldr r3, [r0, #0]
-	ldr r4, [r0, #4]
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	ldr lr, [r0, #16]
-	ldr r12, [r0, #24]
-	ldr r1, [r0, #28]
-	ldr r0, [r0, #44]
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	ldr r2, [r12, #0]
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	mov r11, r4
-	add r12, r12, #4
-	subs lr, lr, #1
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	orr r9, r1, r10, lsl #16
-2416:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2416b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-	orr r1, r1, r10, lsl #16
-	ldr r3, [r0, #4]
-	ldr r4, [r0, #8]
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	add r0, r0, #8
-	mov r3, #0
-	str r3, [r0, #0]
-	add r0, r0, #12
-	ldr r4, [r0, #16]
-	add r4, r4, #4
-	str r4, [r0, #16]
-	ldr lr, [r0, #20]
-	subs lr, lr, #1
-	str lr, [r0, #20]
-	bne 2410b
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #24]
-	ldr r10, [r0, #28]
-	ldr r12, [r0, #8]
-	mov lr, r7
-	mov r11, #0
-2417:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2417b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2418:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2418b
-	ldr r0, [sp, #0]
-	ldr lr, [r0, #48]
-	lsl lr, lr, #1
-	add lr, lr, #2
-	mov r3, #0
-	ldr r0, [r0, #72]
-2419:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2419b
-	ldr r0, [sp, #0]
-	ldr r9, [r0, #64]
-	ldr r10, [r0, #104]
-	ldr r12, [r0, #112]
-	ldr lr, [r0, #48]
-	add lr, lr, lr
-	ldr r0, [r0, #72]
-	mov r7, r0
-	mov r8, lr
-	mov r11, #0
-2420:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2420b
-	mov r1, r11
-	mov r0, r7
-	mov r12, r9
-	mov lr, r8
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2421f
-	b 2422f
-2421:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2422:
-	cmp lr, #0
-	bne 2423f
-	b 2424f
-2423:
-	orr r9, r1, r10, lsl #16
-2425:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2425b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2424:
-	orr r1, r1, r10, lsl #16
-	ldr r3, [r0, #0]
-	ldr r4, [r0, #4]
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	ldr r0, [sp, #0]
-	ldr r1, [sp, #88]
-	ldr r2, [sp, #92]
-	str r1, [r0, #128]
-	str r2, [r0, #132]
-	mov r2, #7
-	mov r5, #1
-	add r2, r0, r2, lsl #3
-	ldr r4, [r2, #64]
-	ldr lr, [r0, #48]
-	add lr, lr, lr
-	mov r3, #0
-	mov r0, r4
-2426:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2426b
-	str r5, [r4, #0]
-	ldr r0, [sp, #0]
-	mov r2, #6
-	mov r3, #4
-	mov r12, #7
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r5, #0]
-	str r9, [r5, #4]
-	str r11, [r5, #8]
-	str r12, [r5, #12]
-	str r8, [r5, #16]
-	str r7, [r5, #20]
-	str r10, [r5, #24]
-	str r6, [r5, #28]
-	mov r0, r6
-	mov lr, r7
-	add lr, lr, #2
-	mov r3, #0
-2427:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2427b
-	mov r0, r5
-2428:
-	ldr r1, [r0, #16]
-	ldr r1, [r1, #0]
-	ldr lr, [r0, #0]
-	ldr r12, [r0, #4]
-	ldr r4, [r0, #8]
-	ldr r2, [r0, #12]
-	ldr r0, [r0, #28]
-	mov r7, #0
-	mov r8, #0
-	ldr r3, [r12, #0]
-	ldr r5, [r4, #0]
-	ldr r6, [r0, #0]
-	umaal r6, r7, r3, r1
-	mul r2, r2, r6
-	umaal r6, r8, r5, r2
-	add r12, r12, #4
-	add r4, r4, #4
-	subs lr, lr, #1
-	ldr r3, [r12, #0]
-	ldr r5, [r4, #0]
-	ldr r6, [r0, #4]
-	umaal r6, r7, r3, r1
-	umaal r6, r8, r5, r2
-	str r6, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	add r4, r4, #4
-	subs lr, lr, #1
-2429:
-	ldr r3, [r12, #0]
-	ldr r6, [r0, #4]
-	umaal r6, r7, r3, r1
-	ldr r3, [r12, #4]
-	ldr r10, [r0, #8]
-	umaal r10, r7, r3, r1
-	ldr r5, [r4, #0]
-	umaal r6, r8, r5, r2
-	str r6, [r0, #0]
-	ldr r5, [r4, #4]
-	umaal r10, r8, r5, r2
-	str r10, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	add r4, r4, #8
-	subs lr, lr, #2
-	bne 2429b
-	ldr r3, [r0, #4]
-	ldr r4, [r0, #8]
-	adds r3, r3, r7
-	adc r4, r4, #0
-	adds r3, r3, r8
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	add r0, r0, #8
-	mov r3, #0
-	str r3, [r0, #0]
-	add r0, r0, #12
-	ldr r4, [r0, #16]
-	add r4, r4, #4
-	str r4, [r0, #16]
-	ldr lr, [r0, #20]
-	subs lr, lr, #1
-	str lr, [r0, #20]
-	bne 2428b
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #24]
-	ldr r10, [r0, #28]
-	ldr r12, [r0, #8]
-	mov lr, r7
-	mov r11, #0
-2430:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2430b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2431:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2431b
-	ldr r0, [sp, #0]
-	mov r2, #5
-	mov r3, #1
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r5, #0]
-	str r9, [r5, #4]
-	str r11, [r5, #8]
-	str r12, [r5, #12]
-	str r8, [r5, #16]
-	str r7, [r5, #20]
-	str r10, [r5, #24]
-	str r6, [r5, #28]
-	mov r0, r6
-	mov lr, r7
-	add lr, lr, #2
-	mov r3, #0
-2432:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2432b
-	mov r0, r5
-2433:
-	ldr r1, [r0, #16]
-	ldr r1, [r1, #0]
-	ldr lr, [r0, #0]
-	ldr r12, [r0, #4]
-	ldr r4, [r0, #8]
-	ldr r2, [r0, #12]
-	ldr r0, [r0, #28]
-	mov r7, #0
-	mov r8, #0
-	ldr r3, [r12, #0]
-	ldr r5, [r4, #0]
-	ldr r6, [r0, #0]
-	umaal r6, r7, r3, r1
-	mul r2, r2, r6
-	umaal r6, r8, r5, r2
-	add r12, r12, #4
-	add r4, r4, #4
-	subs lr, lr, #1
-	ldr r3, [r12, #0]
-	ldr r5, [r4, #0]
-	ldr r6, [r0, #4]
-	umaal r6, r7, r3, r1
-	umaal r6, r8, r5, r2
-	str r6, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	add r4, r4, #4
-	subs lr, lr, #1
-2434:
-	ldr r3, [r12, #0]
-	ldr r6, [r0, #4]
-	umaal r6, r7, r3, r1
-	ldr r3, [r12, #4]
-	ldr r10, [r0, #8]
-	umaal r10, r7, r3, r1
-	ldr r5, [r4, #0]
-	umaal r6, r8, r5, r2
-	str r6, [r0, #0]
-	ldr r5, [r4, #4]
-	umaal r10, r8, r5, r2
-	str r10, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	add r4, r4, #8
-	subs lr, lr, #2
-	bne 2434b
-	ldr r3, [r0, #4]
-	ldr r4, [r0, #8]
-	adds r3, r3, r7
-	adc r4, r4, #0
-	adds r3, r3, r8
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	add r0, r0, #8
-	mov r3, #0
-	str r3, [r0, #0]
-	add r0, r0, #12
-	ldr r4, [r0, #16]
-	add r4, r4, #4
-	str r4, [r0, #16]
-	ldr lr, [r0, #20]
-	subs lr, lr, #1
-	str lr, [r0, #20]
-	bne 2433b
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #24]
-	ldr r10, [r0, #28]
-	ldr r12, [r0, #8]
-	mov lr, r7
-	mov r11, #0
-2435:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2435b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2436:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2436b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #120]
-	ldr r1, [r0, #48]
-	add r1, r1, #2
-	lsl r1, r1, #3
-	add r12, r12, r1
-	str r12, [r0, #220]
-	mov r1, #0
-	str r1, [r0, #228]
-	mov r11, #1
-	ldr r12, [r0, #112]
-	ldr lr, [r0, #48]
-	add lr, lr, lr
-	ldr r0, [r0, #220]
-	mov r10, r0
-	mov r4, #0
-	sub r4, r4, r11
-2437:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2437b
-	ldr r0, [sp, #0]
-	ldr r1, [r0, #220]
-	ldr r2, [r0, #48]
-	add r2, r2, #2
-	add r1, r1, r2, lsl #3
-	str r1, [r0, #220]
-	ldr r1, [r0, #228]
-	add r1, r1, #1
-	str r1, [r0, #228]
-	cmp r1, #8
-	mov r11, #1
-	ldr r12, [r0, #104]
-	ldr lr, [r0, #48]
-	add lr, lr, lr
-	ldr r0, [r0, #220]
-	mov r10, r0
-	mov r4, #0
-	sub r4, r4, r11
-2438:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2438b
-	ldr r0, [sp, #0]
-	ldr r1, [r0, #220]
-	ldr r2, [r0, #48]
-	add r2, r2, #2
-	add r1, r1, r2, lsl #3
-	str r1, [r0, #220]
-	ldr r1, [r0, #228]
-	add r1, r1, #1
-	str r1, [r0, #228]
-	cmp r1, #8
-	mov r11, #1
-	ldr r10, [r0, #72]
-	ldr r12, [r0, #104]
-	ldr lr, [r0, #48]
-	add lr, lr, lr
-	ldr r0, [r0, #72]
-	mov r4, #0
-	sub r4, r4, r11
-2439:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2439b
-	ldr r0, [sp, #0]
-2440:
-	mov r2, #1
-	mov r3, #1
-	mov r12, #5
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r5, #0]
-	str r9, [r5, #4]
-	str r11, [r5, #8]
-	str r12, [r5, #12]
-	str r8, [r5, #16]
-	str r7, [r5, #20]
-	str r10, [r5, #24]
-	str r6, [r5, #28]
-	mov r0, r6
-	mov lr, r7
-	add lr, lr, #2
-	mov r3, #0
-2441:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2441b
-	mov r0, r5
-2442:
-	ldr r1, [r0, #16]
-	ldr r1, [r1, #0]
-	ldr lr, [r0, #0]
-	ldr r12, [r0, #4]
-	ldr r4, [r0, #8]
-	ldr r2, [r0, #12]
-	ldr r0, [r0, #28]
-	mov r7, #0
-	mov r8, #0
-	ldr r3, [r12, #0]
-	ldr r5, [r4, #0]
-	ldr r6, [r0, #0]
-	umaal r6, r7, r3, r1
-	mul r2, r2, r6
-	umaal r6, r8, r5, r2
-	add r12, r12, #4
-	add r4, r4, #4
-	subs lr, lr, #1
-	ldr r3, [r12, #0]
-	ldr r5, [r4, #0]
-	ldr r6, [r0, #4]
-	umaal r6, r7, r3, r1
-	umaal r6, r8, r5, r2
-	str r6, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	add r4, r4, #4
-	subs lr, lr, #1
-2443:
-	ldr r3, [r12, #0]
-	ldr r6, [r0, #4]
-	umaal r6, r7, r3, r1
-	ldr r3, [r12, #4]
-	ldr r10, [r0, #8]
-	umaal r10, r7, r3, r1
-	ldr r5, [r4, #0]
-	umaal r6, r8, r5, r2
-	str r6, [r0, #0]
-	ldr r5, [r4, #4]
-	umaal r10, r8, r5, r2
-	str r10, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	add r4, r4, #8
-	subs lr, lr, #2
-	bne 2443b
-	ldr r3, [r0, #4]
-	ldr r4, [r0, #8]
-	adds r3, r3, r7
-	adc r4, r4, #0
-	adds r3, r3, r8
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	add r0, r0, #8
-	mov r3, #0
-	str r3, [r0, #0]
-	add r0, r0, #12
-	ldr r4, [r0, #16]
-	add r4, r4, #4
-	str r4, [r0, #16]
-	ldr lr, [r0, #20]
-	subs lr, lr, #1
-	str lr, [r0, #20]
-	bne 2442b
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #24]
-	ldr r10, [r0, #28]
-	ldr r12, [r0, #8]
-	mov lr, r7
-	mov r11, #0
-2444:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2444b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2445:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2445b
-	ldr r0, [sp, #0]
-	mov r11, #1
-	ldr r12, [r0, #72]
-	ldr lr, [r0, #48]
-	add lr, lr, lr
-	ldr r0, [r0, #220]
-	mov r10, r0
-	mov r4, #0
-	sub r4, r4, r11
-2446:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2446b
-	ldr r0, [sp, #0]
-	ldr r1, [r0, #220]
-	ldr r2, [r0, #48]
-	add r2, r2, #2
-	add r1, r1, r2, lsl #3
-	str r1, [r0, #220]
-	ldr r1, [r0, #228]
-	add r1, r1, #1
-	str r1, [r0, #228]
-	cmp r1, #8
-	bne 2440b
-	mov r1, #0
-	str r1, [r0, #196]
-	str r1, [r0, #204]
-2447:
-	ldr r2, [r0, #128]
-	ldrb r1, [r2, #0]
-	str r1, [r0, #200]
-	mov r1, #8
-	str r1, [r0, #192]
-2448:
-	mov r2, #6
-	mov r3, #6
-	mov r12, #6
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r5, #0]
-	str r9, [r5, #4]
-	str r11, [r5, #8]
-	str r12, [r5, #12]
-	str r8, [r5, #16]
-	str r7, [r5, #20]
-	str r10, [r5, #24]
-	str r6, [r5, #28]
-	mov r0, r6
-	mov lr, r7
-	add lr, lr, #2
-	mov r3, #0
-2449:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2449b
-	mov r0, r5
-2450:
-	ldr r1, [r0, #16]
-	ldr r1, [r1, #0]
-	ldr lr, [r0, #0]
-	ldr r12, [r0, #4]
-	ldr r4, [r0, #8]
-	ldr r2, [r0, #12]
-	ldr r0, [r0, #28]
-	mov r7, #0
-	mov r8, #0
-	ldr r3, [r12, #0]
-	ldr r5, [r4, #0]
-	ldr r6, [r0, #0]
-	umaal r6, r7, r3, r1
-	mul r2, r2, r6
-	umaal r6, r8, r5, r2
-	add r12, r12, #4
-	add r4, r4, #4
-	subs lr, lr, #1
-	ldr r3, [r12, #0]
-	ldr r5, [r4, #0]
-	ldr r6, [r0, #4]
-	umaal r6, r7, r3, r1
-	umaal r6, r8, r5, r2
-	str r6, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	add r4, r4, #4
-	subs lr, lr, #1
-2451:
-	ldr r3, [r12, #0]
-	ldr r6, [r0, #4]
-	umaal r6, r7, r3, r1
-	ldr r3, [r12, #4]
-	ldr r10, [r0, #8]
-	umaal r10, r7, r3, r1
-	ldr r5, [r4, #0]
-	umaal r6, r8, r5, r2
-	str r6, [r0, #0]
-	ldr r5, [r4, #4]
-	umaal r10, r8, r5, r2
-	str r10, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	add r4, r4, #8
-	subs lr, lr, #2
-	bne 2451b
-	ldr r3, [r0, #4]
-	ldr r4, [r0, #8]
-	adds r3, r3, r7
-	adc r4, r4, #0
-	adds r3, r3, r8
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	str r4, [r0, #4]
-	add r0, r0, #8
-	mov r3, #0
-	str r3, [r0, #0]
-	add r0, r0, #12
-	ldr r4, [r0, #16]
-	add r4, r4, #4
-	str r4, [r0, #16]
-	ldr lr, [r0, #20]
-	subs lr, lr, #1
-	str lr, [r0, #20]
-	bne 2450b
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #24]
-	ldr r10, [r0, #28]
-	ldr r12, [r0, #8]
-	mov lr, r7
-	mov r11, #0
-2452:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2452b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2453:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2453b
-	ldr r0, [sp, #0]
 	ldr r1, [r0, #200]
 	lsr r1, r1, #7
 	and r1, r1, #1
@@ -9419,9 +6323,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r1, r1, #1
 	str r1, [r0, #204]
 	cmp r1, #3
-	beq 2454f
-	b 2455f
-2454:
+	beq 2286f
+	b 2287f
+2286:
 	ldr r12, [r0, #120]
 	ldr r1, [r0, #48]
 	add r1, r1, #2
@@ -9430,7 +6334,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	str r12, [r0, #220]
 	mov r1, #0
 	str r1, [r0, #228]
-2456:
+2288:
 	ldr r1, [r0, #196]
 	ldr r2, [r0, #228]
 	eor r11, r1, r2
@@ -9443,7 +6347,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r0, [r0, #72]
 	mov r4, #0
 	sub r4, r4, r11
-2457:
+2289:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -9454,7 +6358,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2457b
+	bne 2289b
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #220]
 	ldr r2, [r0, #48]
@@ -9465,7 +6369,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r1, r1, #1
 	str r1, [r0, #228]
 	cmp r1, #8
-	bne 2456b
+	bne 2288b
 	mov r2, #6
 	mov r3, #6
 	mov r12, #1
@@ -9493,13 +6397,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2458:
+2290:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2458b
+	bne 2290b
 	mov r0, r5
-2459:
+2291:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -9528,7 +6432,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #4
 	add r4, r4, #4
 	subs lr, lr, #1
-2460:
+2292:
 	ldr r3, [r12, #0]
 	ldr r6, [r0, #4]
 	umaal r6, r7, r3, r1
@@ -9545,7 +6449,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #8
 	add r4, r4, #8
 	subs lr, lr, #2
-	bne 2460b
+	bne 2292b
 	ldr r3, [r0, #4]
 	ldr r4, [r0, #8]
 	adds r3, r3, r7
@@ -9564,14 +6468,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2459b
+	bne 2291b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2461:
+2293:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -9585,7 +6489,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2461b
+	bne 2293b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -9600,7 +6504,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2462:
+2294:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -9611,26 +6515,26 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2462b
+	bne 2294b
 	ldr r0, [sp, #0]
 	mov r1, #0
 	str r1, [r0, #196]
 	str r1, [r0, #204]
-2455:
+2287:
 	ldr r1, [r0, #200]
 	add r1, r1, r1
 	str r1, [r0, #200]
 	ldr r1, [r0, #192]
 	subs r1, r1, #1
 	str r1, [r0, #192]
-	bne 2448b
+	bne 2280b
 	ldr r1, [r0, #128]
 	add r1, r1, #1
 	str r1, [r0, #128]
 	ldr r1, [r0, #132]
 	subs r1, r1, #1
 	str r1, [r0, #132]
-	bne 2447b
+	bne 2279b
 	ldr r12, [r0, #120]
 	ldr r1, [r0, #48]
 	add r1, r1, #2
@@ -9639,7 +6543,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	str r12, [r0, #220]
 	mov r1, #0
 	str r1, [r0, #228]
-2463:
+2295:
 	ldr r1, [r0, #196]
 	ldr r2, [r0, #228]
 	eor r11, r1, r2
@@ -9652,7 +6556,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r0, [r0, #72]
 	mov r4, #0
 	sub r4, r4, r11
-2464:
+2296:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -9663,7 +6567,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2464b
+	bne 2296b
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #220]
 	ldr r2, [r0, #48]
@@ -9674,7 +6578,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r1, r1, #1
 	str r1, [r0, #228]
 	cmp r1, #8
-	bne 2463b
+	bne 2295b
 	mov r2, #6
 	mov r3, #6
 	mov r12, #1
@@ -9702,13 +6606,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2465:
+2297:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2465b
+	bne 2297b
 	mov r0, r5
-2466:
+2298:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -9737,7 +6641,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #4
 	add r4, r4, #4
 	subs lr, lr, #1
-2467:
+2299:
 	ldr r3, [r12, #0]
 	ldr r6, [r0, #4]
 	umaal r6, r7, r3, r1
@@ -9754,7 +6658,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #8
 	add r4, r4, #8
 	subs lr, lr, #2
-	bne 2467b
+	bne 2299b
 	ldr r3, [r0, #4]
 	ldr r4, [r0, #8]
 	adds r3, r3, r7
@@ -9773,14 +6677,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2466b
+	bne 2298b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2468:
+2300:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -9794,7 +6698,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2468b
+	bne 2300b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -9809,7 +6713,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2469:
+2301:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -9820,7 +6724,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2469b
+	bne 2301b
 	ldr r0, [sp, #0]
 	mov r1, #0
 	str r1, [r0, #196]
@@ -9852,13 +6756,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2470:
+2302:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2470b
+	bne 2302b
 	mov r0, r5
-2471:
+2303:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -9887,7 +6791,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #4
 	add r4, r4, #4
 	subs lr, lr, #1
-2472:
+2304:
 	ldr r3, [r12, #0]
 	ldr r6, [r0, #4]
 	umaal r6, r7, r3, r1
@@ -9904,7 +6808,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r12, r12, #8
 	add r4, r4, #8
 	subs lr, lr, #2
-	bne 2472b
+	bne 2304b
 	ldr r3, [r0, #4]
 	ldr r4, [r0, #8]
 	adds r3, r3, r7
@@ -9923,14 +6827,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2471b
+	bne 2303b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2473:
+2305:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -9944,7 +6848,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2473b
+	bne 2305b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -9959,7 +6863,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2474:
+2306:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -9970,7 +6874,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2474b
+	bne 2306b
 	ldr r0, [sp, #0]
 	ldr r1, [sp, #8]
 	ldr r1, [r1, #228]
@@ -9981,13 +6885,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2475:
+2307:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2475b
+	bne 2307b
 	mov r0, r5
 	ldr r0, [sp, #8]
 	add r12, sp, #0
@@ -10006,13 +6910,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #48]
 	lsl lr, lr, #3
 	mov r0, r4
-2476:
+2308:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2476b
+	bne 2308b
 	mov r0, r5
 	ldr r0, [sp, #0]
 	ldr r4, [sp, #96]
@@ -10024,33 +6928,33 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r5
-2477:
+2309:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2477b
+	bne 2309b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2478:
+2310:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2478b
+	bne 2310b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #104]
-2479:
+2311:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2479b
+	bne 2311b
 	ldr r0, [sp, #0]
 	ldr r1, [sp, #8]
 	ldr r0, [r1, #240]
@@ -10078,13 +6982,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r4, r0, #256
 	add r0, r0, #64
 	mov lr, #8
-2480:
+2312:
 	str r4, [r0, #0]
 	str r3, [r0, #4]
 	add r0, r0, #8
 	add r4, r4, r5
 	subs lr, lr, #1
-	bne 2480b
+	bne 2312b
 	mov r0, r8
 	add r12, sp, #0
 	str r0, [r12, #0]
@@ -10097,22 +7001,22 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r5
-2481:
+2313:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2481b
+	bne 2313b
 	mov r0, r5
 	add r1, r4, r6
 	sub r1, r1, #1
 	mov lr, r6
-2482:
+2314:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2482b
+	bne 2314b
 	ldr r0, [sp, #0]
 	add r12, sp, #48
 	ldr r11, [r12, #0]
@@ -10125,11 +7029,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2483:
+2315:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2483b
+	bne 2315b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	ldr r11, [r0, #212]
@@ -10140,7 +7044,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r0, [r0, #64]
 	mov r4, #0
 	sub r4, r4, r11
-2484:
+2316:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -10151,7 +7055,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2484b
+	bne 2316b
 	ldr r0, [sp, #0]
 	mov r12, r0
 	ldr r0, [r0, #64]
@@ -10437,7 +7341,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r2, r2, #7
 	lsr r2, r2, #3
 	cmp r1, r2
-	beq 2485f
+	beq 2317f
 	mov r2, #4
 	mov r5, #1
 	add r2, r0, r2, lsl #3
@@ -10446,11 +7350,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2487:
+2319:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2487b
+	bne 2319b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	mov r2, #7
@@ -10461,17 +7365,17 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2488:
+2320:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2488b
+	bne 2320b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #48]
 	add r1, r1, r1, lsl #6
 	str r1, [r0, #208]
-2489:
+2321:
 	mov r2, #4
 	mov r3, #7
 	mov r12, #4
@@ -10499,11 +7403,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2490:
+2322:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2490b
+	bne 2322b
 	mov r0, r5
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
@@ -10516,9 +7420,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2491f
-	b 2492f
-2491:
+	bne 2323f
+	b 2324f
+2323:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -10539,13 +7443,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2492:
+2324:
 	cmp lr, #0
-	bne 2493f
-	b 2494f
-2493:
+	bne 2325f
+	b 2326f
+2325:
 	orr r9, r1, r10, lsl #16
-2495:
+2327:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -10558,7 +7462,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2495b
+	bne 2327b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -10566,7 +7470,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2494:
+2326:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -10581,7 +7485,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2496:
+2328:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -10595,7 +7499,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2496b
+	bne 2328b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -10610,7 +7514,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2497:
+2329:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -10621,12 +7525,15 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2497b
+	bne 2329b
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #208]
 	subs r1, r1, #1
 	str r1, [r0, #208]
-	bne 2489b
+	bne 2321b
+	mov r1, #6
+	str r1, [r0, #208]
+2330:
 	mov r2, #4
 	mov r3, #4
 	mov r12, #4
@@ -10654,12 +7561,12 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, r7, #1
 	add lr, lr, #2
 	mov r3, #0
-2498:
+2331:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2498b
-2499:
+	bne 2331b
+2332:
 	ldr r0, [sp, #0]
 	ldr r0, [r0, #80]
 	ldr r2, [r0, #12]
@@ -10677,9 +7584,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2500f
-	b 2501f
-2500:
+	bne 2333f
+	b 2334f
+2333:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -10700,13 +7607,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2501:
+2334:
 	cmp lr, #0
-	bne 2502f
-	b 2503f
-2502:
+	bne 2335f
+	b 2336f
+2335:
 	orr r9, r1, r10, lsl #16
-2504:
+2337:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -10719,7 +7626,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2504b
+	bne 2337b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -10727,7 +7634,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2503:
+2336:
 	orr r1, r1, r10, lsl #16
 	str r11, [r0, #0]
 	ldr r0, [sp, #0]
@@ -10735,28 +7642,28 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #16]
 	subs lr, lr, #1
 	str lr, [r0, #16]
-	bne 2499b
+	bne 2332b
 	ldr r0, [sp, #0]
 	ldr r0, [r0, #80]
 	ldr lr, [r0, #0]
 	lsl lr, lr, #1
 	add r0, r0, #24
 	mov r11, #0
-2505:
+2338:
 	ldr r4, [r0, #0]
 	orr r3, r11, r4, lsl #1
 	lsr r11, r4, #31
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2505b
+	bne 2338b
 	ldr r0, [sp, #0]
 	ldr r0, [r0, #80]
 	ldr r12, [r0, #8]
 	ldr lr, [r0, #0]
 	add r0, r0, #24
 	mov r11, #0
-2506:
+2339:
 	ldr r1, [r12, #0]
 	mov r2, r1
 	ldr r10, [r0, #0]
@@ -10789,7 +7696,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2506b
+	bne 2339b
 	ldr r0, [sp, #0]
 	ldr r0, [r0, #80]
 	ldr r1, [r0, #0]
@@ -10798,7 +7705,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	str r1, [r0, #20]
 	mov r1, #0
 	str r1, [r0, #12]
-2507:
+2340:
 	ldr r0, [sp, #0]
 	ldr r12, [r0, #64]
 	ldr r1, [r0, #56]
@@ -10816,9 +7723,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2508f
-	b 2509f
-2508:
+	bne 2341f
+	b 2342f
+2341:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -10839,13 +7746,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2509:
+2342:
 	cmp lr, #0
-	bne 2510f
-	b 2511f
-2510:
+	bne 2343f
+	b 2344f
+2343:
 	orr r9, r1, r10, lsl #16
-2512:
+2345:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -10858,7 +7765,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2512b
+	bne 2345b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -10866,7 +7773,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2511:
+2344:
 	orr r1, r1, r10, lsl #16
 	ldr r2, [sp, #0]
 	ldr r2, [r2, #80]
@@ -10883,7 +7790,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #16]
 	subs lr, lr, #1
 	str lr, [r0, #16]
-	bne 2507b
+	bne 2340b
 	ldr r0, [sp, #0]
 	ldr r12, [r0, #64]
 	ldr r0, [r0, #80]
@@ -10896,7 +7803,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r10, r10, #24
 	mov lr, r7
 	mov r11, #0
-2513:
+2346:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -10910,7 +7817,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2513b
+	bne 2346b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -10925,7 +7832,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2514:
+2347:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -10936,1578 +7843,27 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2514b
+	bne 2347b
 	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2515:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2515b
-2516:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2517f
-	b 2518f
-2517:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2518:
-	cmp lr, #0
-	bne 2519f
-	b 2520f
-2519:
-	orr r9, r1, r10, lsl #16
-2521:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2521b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2520:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2516b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2522:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2522b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2523:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2523b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2524:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2525f
-	b 2526f
-2525:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2526:
-	cmp lr, #0
-	bne 2527f
-	b 2528f
-2527:
-	orr r9, r1, r10, lsl #16
-2529:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2529b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2528:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2524b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2530:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2530b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2531:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2531b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2532:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2532b
-2533:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2534f
-	b 2535f
-2534:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2535:
-	cmp lr, #0
-	bne 2536f
-	b 2537f
-2536:
-	orr r9, r1, r10, lsl #16
-2538:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2538b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2537:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2533b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2539:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2539b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2540:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2540b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2541:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2542f
-	b 2543f
-2542:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2543:
-	cmp lr, #0
-	bne 2544f
-	b 2545f
-2544:
-	orr r9, r1, r10, lsl #16
-2546:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2546b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2545:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2541b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2547:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2547b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2548:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2548b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2549:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2549b
-2550:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2551f
-	b 2552f
-2551:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2552:
-	cmp lr, #0
-	bne 2553f
-	b 2554f
-2553:
-	orr r9, r1, r10, lsl #16
-2555:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2555b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2554:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2550b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2556:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2556b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2557:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2557b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2558:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2559f
-	b 2560f
-2559:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2560:
-	cmp lr, #0
-	bne 2561f
-	b 2562f
-2561:
-	orr r9, r1, r10, lsl #16
-2563:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2563b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2562:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2558b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2564:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2564b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2565:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2565b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2566:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2566b
-2567:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2568f
-	b 2569f
-2568:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2569:
-	cmp lr, #0
-	bne 2570f
-	b 2571f
-2570:
-	orr r9, r1, r10, lsl #16
-2572:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2572b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2571:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2567b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2573:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2573b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2574:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2574b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2575:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2576f
-	b 2577f
-2576:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2577:
-	cmp lr, #0
-	bne 2578f
-	b 2579f
-2578:
-	orr r9, r1, r10, lsl #16
-2580:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2580b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2579:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2575b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2581:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2581b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2582:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2582b
-	ldr r0, [sp, #0]
-	mov r2, #4
-	mov r3, #4
-	mov r12, #4
-	add r2, r0, r2, lsl #3
-	ldr r10, [r2, #64]
-	add r3, r0, r3, lsl #3
-	ldr r8, [r3, #64]
-	add r12, r0, r12, lsl #3
-	ldr r9, [r12, #64]
-	ldr r5, [r0, #88]
-	ldr r6, [r0, #80]
-	ldr r7, [r0, #48]
-	add r7, r7, r7
-	ldr r11, [r0, #64]
-	ldr r12, [r0, #56]
-	str r7, [r6, #0]
-	str r10, [r6, #4]
-	str r8, [r6, #8]
-	str r8, [r6, #12]
-	sub r1, r7, #1
-	str r1, [r6, #16]
-	add r1, r6, #28
-	str r1, [r6, #20]
-	add r0, r6, #24
-	lsl lr, r7, #1
-	add lr, lr, #2
-	mov r3, #0
-2583:
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2583b
-2584:
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r2, [r0, #12]
-	ldr lr, [r0, #16]
-	ldr r3, [r0, #20]
-	add r4, r3, #8
-	str r4, [r0, #20]
-	add r12, r2, #4
-	str r12, [r0, #12]
-	mov r0, r3
-	mov r11, #0
-	ldr r1, [r2, #0]
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2585f
-	b 2586f
-2585:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2586:
-	cmp lr, #0
-	bne 2587f
-	b 2588f
-2587:
-	orr r9, r1, r10, lsl #16
-2589:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2589b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2588:
-	orr r1, r1, r10, lsl #16
-	str r11, [r0, #0]
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2584b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	lsl lr, lr, #1
-	add r0, r0, #24
-	mov r11, #0
-2590:
-	ldr r4, [r0, #0]
-	orr r3, r11, r4, lsl #1
-	lsr r11, r4, #31
-	str r3, [r0, #0]
-	add r0, r0, #4
-	subs lr, lr, #1
-	bne 2590b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r12, [r0, #8]
-	ldr lr, [r0, #0]
-	add r0, r0, #24
-	mov r11, #0
-2591:
-	ldr r1, [r12, #0]
-	mov r2, r1
-	ldr r10, [r0, #0]
-	movw r9, #65535
-	and r3, r1, r9
-	lsr r4, r1, #16
-	and r5, r2, r9
-	lsr r6, r2, #16
-	mul r7, r3, r5
-	mul r8, r4, r5
-	add r8, r8, r7, lsr #16
-	and r5, r8, r9
-	mul r4, r4, r6
-	add r4, r4, r8, lsr #16
-	mul r3, r3, r6
-	add r3, r3, r5
-	add r4, r4, r3, lsr #16
-	and r7, r7, r9
-	add r3, r7, r3, lsl #16
-	adds r3, r3, r10
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r4, r4, #0
-	str r3, [r0, #0]
-	ldr r10, [r0, #4]
-	adds r4, r4, r10
-	mov r11, #0
-	adc r11, r11, #0
-	str r4, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2591b
-	ldr r0, [sp, #0]
-	ldr r0, [r0, #80]
-	ldr r1, [r0, #0]
-	str r1, [r0, #16]
-	add r1, r0, #24
-	str r1, [r0, #20]
-	mov r1, #0
-	str r1, [r0, #12]
-2592:
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r1, [r0, #56]
-	ldr r0, [r0, #80]
-	ldr lr, [r0, #0]
-	ldr r2, [r0, #20]
-	add r3, r2, #4
-	str r3, [r0, #20]
-	mov r0, r2
-	ldr r2, [r0, #0]
-	mul r1, r1, r2
-	mov r11, #0
-	movw r9, #65535
-	lsr r10, r1, #16
-	and r1, r1, r9
-	and r2, lr, #1
-	cmp r2, #0
-	bne 2593f
-	b 2594f
-2593:
-	ldr r2, [r12, #0]
-	lsr r6, r2, #16
-	and r2, r2, r9
-	mul r3, r1, r2
-	mul r5, r10, r2
-	mul r7, r1, r6
-	mul r4, r10, r6
-	adds r3, r3, r5, lsl #16
-	adc r4, r4, r5, lsr #16
-	adds r3, r3, r7, lsl #16
-	adc r4, r4, r7, lsr #16
-	ldr r5, [r0, #0]
-	adds r3, r3, r5
-	adc r4, r4, #0
-	adds r3, r3, r11
-	adc r11, r4, #0
-	str r3, [r0, #0]
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-2594:
-	cmp lr, #0
-	bne 2595f
-	b 2596f
-2595:
-	orr r9, r1, r10, lsl #16
-2597:
-	ldr r2, [r12, #0]
-	ldr r3, [r0, #0]
-	umaal r3, r11, r2, r9
-	str r3, [r0, #0]
-	ldr r2, [r12, #4]
-	ldr r3, [r0, #4]
-	mov r5, r3
-	umaal r3, r11, r2, r9
-	str r3, [r0, #4]
-	add r0, r0, #8
-	add r12, r12, #8
-	subs lr, lr, #2
-	bne 2597b
-	mov r6, r5
-	mov r4, #0
-	umaal r6, r4, r2, r9
-	lsr r6, r2, #16
-	movw r9, #65535
-	and r2, r2, r9
-	mul r7, r1, r6
-2596:
-	orr r1, r1, r10, lsl #16
-	ldr r2, [sp, #0]
-	ldr r2, [r2, #80]
-	ldr r3, [r0, #0]
-	ldr r4, [r2, #12]
-	adds r3, r3, r11
-	mov r5, #0
-	adc r5, r5, #0
-	adds r3, r3, r4
-	adc r5, r5, #0
-	str r3, [r0, #0]
-	str r5, [r2, #12]
-	mov r0, r2
-	ldr lr, [r0, #16]
-	subs lr, lr, #1
-	str lr, [r0, #16]
-	bne 2592b
-	ldr r0, [sp, #0]
-	ldr r12, [r0, #64]
-	ldr r0, [r0, #80]
-	ldr r7, [r0, #0]
-	ldr r9, [r0, #4]
-	ldr r3, [r0, #12]
-	add r10, r0, r7, lsl #3
-	str r3, [r10, #24]
-	add r10, r0, r7, lsl #2
-	add r10, r10, #24
-	mov lr, r7
-	mov r11, #0
-2598:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	subs r3, r1, r2
-	mov r4, #1
-	adc r4, r4, #0
-	subs r3, r3, r11
-	adc r4, r4, #0
-	eor r11, r4, #3
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2598b
-	ldr r1, [r10, #0]
-	mov r2, r11
-	subs r3, r1, r2
-	mov r11, #0
-	adc r11, r11, #0
-	eor r11, r11, #1
-	mov r12, r10
-	mov r10, r0
-	sub r12, r12, r7, lsl #2
-	sub r10, r10, r7, lsl #2
-	mov r0, r9
-	mov lr, r7
-	mov r4, #0
-	sub r4, r4, r11
-2599:
-	ldr r1, [r10, #0]
-	ldr r2, [r12, #0]
-	eor r3, r1, r2
-	and r3, r3, r4
-	eor r3, r3, r1
-	str r3, [r0, #0]
-	add r10, r10, #4
-	add r0, r0, #4
-	add r12, r12, #4
-	subs lr, lr, #1
-	bne 2599b
-	ldr r0, [sp, #0]
-	b 2486f
-2485:
+	ldr r1, [r0, #208]
+	subs r1, r1, #1
+	str r1, [r0, #208]
+	bne 2330b
+	b 2318f
+2317:
 	ldr r1, [sp, #112]
 	ldr r4, [r0, #96]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2600:
+2348:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2600b
+	bne 2348b
 	mov r0, r5
 	mov r2, #7
 	mov r5, #1
@@ -12517,11 +7873,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2601:
+2349:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2601b
+	bne 2349b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	ldr r11, [sp, #48]
@@ -12532,7 +7888,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r0, [r0, #96]
 	mov r4, #0
 	sub r4, r4, r11
-2602:
+2350:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -12543,19 +7899,19 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2602b
+	bne 2350b
 	ldr r0, [sp, #0]
-2486:
+2318:
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #72]
-2603:
+2351:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2603b
+	bne 2351b
 	ldr r0, [sp, #0]
 	ldr r1, [sp, #8]
 	ldr r1, [r1, #224]
@@ -12570,17 +7926,17 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r0, r4
 	lsl lr, r2, #3
 	cmp lr, #0
-	beq 2604f
-2606:
+	beq 2352f
+2354:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2606b
-	b 2605f
-2604:
-2605:
+	bne 2354b
+	b 2353f
+2352:
+2353:
 	mov r0, r5
 	mov r2, #7
 	mov r5, #1
@@ -12590,11 +7946,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2607:
+2355:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2607b
+	bne 2355b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	mov r2, #1
@@ -12624,13 +7980,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2608:
+2356:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2608b
+	bne 2356b
 	mov r0, r5
-2609:
+2357:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -12642,9 +7998,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2610f
-	b 2611f
-2610:
+	bne 2358f
+	b 2359f
+2358:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -12665,13 +8021,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2611:
+2359:
 	cmp lr, #0
-	bne 2612f
-	b 2613f
-2612:
+	bne 2360f
+	b 2361f
+2360:
 	orr r9, r1, r10, lsl #16
-2614:
+2362:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -12684,7 +8040,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2614b
+	bne 2362b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -12692,7 +8048,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2613:
+2361:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -12736,7 +8092,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2615:
+2363:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -12745,7 +8101,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2615b
+	bne 2363b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -12770,14 +8126,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2609b
+	bne 2357b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2616:
+2364:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -12791,7 +8147,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2616b
+	bne 2364b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -12806,7 +8162,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2617:
+2365:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -12817,29 +8173,29 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2617b
+	bne 2365b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #104]
-2618:
+2366:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2618b
+	bne 2366b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #112]
-2619:
+2367:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2619b
+	bne 2367b
 	ldr r0, [sp, #0]
 	ldr r9, [r0, #64]
 	ldr r10, [r0, #104]
@@ -12850,7 +8206,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r7, r0
 	mov r8, lr
 	mov r11, #0
-2620:
+2368:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -12864,7 +8220,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2620b
+	bne 2368b
 	mov r1, r11
 	mov r0, r7
 	mov r12, r9
@@ -12875,9 +8231,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2621f
-	b 2622f
-2621:
+	bne 2369f
+	b 2370f
+2369:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -12898,13 +8254,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2622:
+2370:
 	cmp lr, #0
-	bne 2623f
-	b 2624f
-2623:
+	bne 2371f
+	b 2372f
+2371:
 	orr r9, r1, r10, lsl #16
-2625:
+2373:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -12917,7 +8273,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2625b
+	bne 2373b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -12925,7 +8281,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2624:
+2372:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -12942,13 +8298,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2626:
+2374:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2626b
+	bne 2374b
 	mov r0, r5
 	mov r2, #5
 	mov r3, #5
@@ -12977,13 +8333,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2627:
+2375:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2627b
+	bne 2375b
 	mov r0, r5
-2628:
+2376:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -12995,9 +8351,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2629f
-	b 2630f
-2629:
+	bne 2377f
+	b 2378f
+2377:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -13018,13 +8374,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2630:
+2378:
 	cmp lr, #0
-	bne 2631f
-	b 2632f
-2631:
+	bne 2379f
+	b 2380f
+2379:
 	orr r9, r1, r10, lsl #16
-2633:
+2381:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -13037,7 +8393,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2633b
+	bne 2381b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -13045,7 +8401,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2632:
+2380:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -13089,7 +8445,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2634:
+2382:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -13098,7 +8454,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2634b
+	bne 2382b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -13123,14 +8479,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2628b
+	bne 2376b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2635:
+2383:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -13144,7 +8500,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2635b
+	bne 2383b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -13159,7 +8515,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2636:
+2384:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -13170,7 +8526,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2636b
+	bne 2384b
 	ldr r0, [sp, #0]
 	mov r2, #5
 	mov r3, #5
@@ -13199,13 +8555,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2637:
+2385:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2637b
+	bne 2385b
 	mov r0, r5
-2638:
+2386:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -13217,9 +8573,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2639f
-	b 2640f
-2639:
+	bne 2387f
+	b 2388f
+2387:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -13240,13 +8596,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2640:
+2388:
 	cmp lr, #0
-	bne 2641f
-	b 2642f
-2641:
+	bne 2389f
+	b 2390f
+2389:
 	orr r9, r1, r10, lsl #16
-2643:
+2391:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -13259,7 +8615,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2643b
+	bne 2391b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -13267,7 +8623,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2642:
+2390:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -13311,7 +8667,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2644:
+2392:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -13320,7 +8676,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2644b
+	bne 2392b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -13345,14 +8701,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2638b
+	bne 2386b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2645:
+2393:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -13366,7 +8722,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2645b
+	bne 2393b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -13381,7 +8737,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2646:
+2394:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -13392,18 +8748,18 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2646b
+	bne 2394b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #72]
-2647:
+2395:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2647b
+	bne 2395b
 	ldr r0, [sp, #0]
 	ldr r9, [r0, #64]
 	ldr r10, [r0, #104]
@@ -13414,7 +8770,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r7, r0
 	mov r8, lr
 	mov r11, #0
-2648:
+2396:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -13428,7 +8784,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2648b
+	bne 2396b
 	mov r1, r11
 	mov r0, r7
 	mov r12, r9
@@ -13439,9 +8795,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2649f
-	b 2650f
-2649:
+	bne 2397f
+	b 2398f
+2397:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -13462,13 +8818,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2650:
+2398:
 	cmp lr, #0
-	bne 2651f
-	b 2652f
-2651:
+	bne 2399f
+	b 2400f
+2399:
 	orr r9, r1, r10, lsl #16
-2653:
+2401:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -13481,7 +8837,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2653b
+	bne 2401b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -13489,7 +8845,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2652:
+2400:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -13507,24 +8863,24 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2654:
+2402:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2654b
+	bne 2402b
 	mov r0, r5
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #72]
-2655:
+2403:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2655b
+	bne 2403b
 	ldr r0, [sp, #0]
 	ldr r1, [sp, #8]
 	ldr r1, [r1, #224]
@@ -13539,17 +8895,17 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r0, r4
 	lsl lr, r2, #3
 	cmp lr, #0
-	beq 2656f
-2658:
+	beq 2404f
+2406:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2658b
-	b 2657f
-2656:
-2657:
+	bne 2406b
+	b 2405f
+2404:
+2405:
 	mov r0, r5
 	mov r2, #7
 	mov r5, #1
@@ -13559,11 +8915,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, lr
 	mov r3, #0
 	mov r0, r4
-2659:
+2407:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2659b
+	bne 2407b
 	str r5, [r4, #0]
 	ldr r0, [sp, #0]
 	mov r2, #1
@@ -13593,13 +8949,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2660:
+2408:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2660b
+	bne 2408b
 	mov r0, r5
-2661:
+2409:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -13611,9 +8967,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2662f
-	b 2663f
-2662:
+	bne 2410f
+	b 2411f
+2410:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -13634,13 +8990,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2663:
+2411:
 	cmp lr, #0
-	bne 2664f
-	b 2665f
-2664:
+	bne 2412f
+	b 2413f
+2412:
 	orr r9, r1, r10, lsl #16
-2666:
+2414:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -13653,7 +9009,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2666b
+	bne 2414b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -13661,7 +9017,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2665:
+2413:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -13705,7 +9061,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2667:
+2415:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -13714,7 +9070,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2667b
+	bne 2415b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -13739,14 +9095,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2661b
+	bne 2409b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2668:
+2416:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -13760,7 +9116,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2668b
+	bne 2416b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -13775,7 +9131,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2669:
+2417:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -13786,29 +9142,29 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2669b
+	bne 2417b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #104]
-2670:
+2418:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2670b
+	bne 2418b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #112]
-2671:
+2419:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2671b
+	bne 2419b
 	ldr r0, [sp, #0]
 	ldr r9, [r0, #64]
 	ldr r10, [r0, #104]
@@ -13819,7 +9175,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r7, r0
 	mov r8, lr
 	mov r11, #0
-2672:
+2420:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -13833,7 +9189,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2672b
+	bne 2420b
 	mov r1, r11
 	mov r0, r7
 	mov r12, r9
@@ -13844,9 +9200,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2673f
-	b 2674f
-2673:
+	bne 2421f
+	b 2422f
+2421:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -13867,13 +9223,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2674:
+2422:
 	cmp lr, #0
-	bne 2675f
-	b 2676f
-2675:
+	bne 2423f
+	b 2424f
+2423:
 	orr r9, r1, r10, lsl #16
-2677:
+2425:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -13886,7 +9242,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2677b
+	bne 2425b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -13894,7 +9250,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2676:
+2424:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -13911,13 +9267,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2678:
+2426:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2678b
+	bne 2426b
 	mov r0, r5
 	mov r2, #5
 	mov r3, #5
@@ -13946,13 +9302,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2679:
+2427:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2679b
+	bne 2427b
 	mov r0, r5
-2680:
+2428:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -13964,9 +9320,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2681f
-	b 2682f
-2681:
+	bne 2429f
+	b 2430f
+2429:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -13987,13 +9343,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2682:
+2430:
 	cmp lr, #0
-	bne 2683f
-	b 2684f
-2683:
+	bne 2431f
+	b 2432f
+2431:
 	orr r9, r1, r10, lsl #16
-2685:
+2433:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -14006,7 +9362,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2685b
+	bne 2433b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -14014,7 +9370,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2684:
+2432:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -14058,7 +9414,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2686:
+2434:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -14067,7 +9423,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2686b
+	bne 2434b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -14092,14 +9448,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2680b
+	bne 2428b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2687:
+2435:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -14113,7 +9469,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2687b
+	bne 2435b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -14128,7 +9484,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2688:
+2436:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -14139,7 +9495,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2688b
+	bne 2436b
 	ldr r0, [sp, #0]
 	mov r2, #5
 	mov r3, #5
@@ -14168,13 +9524,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2689:
+2437:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2689b
+	bne 2437b
 	mov r0, r5
-2690:
+2438:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -14186,9 +9542,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2691f
-	b 2692f
-2691:
+	bne 2439f
+	b 2440f
+2439:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -14209,13 +9565,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2692:
+2440:
 	cmp lr, #0
-	bne 2693f
-	b 2694f
-2693:
+	bne 2441f
+	b 2442f
+2441:
 	orr r9, r1, r10, lsl #16
-2695:
+2443:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -14228,7 +9584,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2695b
+	bne 2443b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -14236,7 +9592,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2694:
+2442:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -14280,7 +9636,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2696:
+2444:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -14289,7 +9645,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2696b
+	bne 2444b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -14314,14 +9670,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2690b
+	bne 2438b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2697:
+2445:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -14335,7 +9691,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2697b
+	bne 2445b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -14350,7 +9706,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2698:
+2446:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -14361,18 +9717,18 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2698b
+	bne 2446b
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #72]
-2699:
+2447:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2699b
+	bne 2447b
 	ldr r0, [sp, #0]
 	ldr r9, [r0, #64]
 	ldr r10, [r0, #104]
@@ -14383,7 +9739,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r7, r0
 	mov r8, lr
 	mov r11, #0
-2700:
+2448:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -14397,7 +9753,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2700b
+	bne 2448b
 	mov r1, r11
 	mov r0, r7
 	mov r12, r9
@@ -14408,9 +9764,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2701f
-	b 2702f
-2701:
+	bne 2449f
+	b 2450f
+2449:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -14431,13 +9787,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2702:
+2450:
 	cmp lr, #0
-	bne 2703f
-	b 2704f
-2703:
+	bne 2451f
+	b 2452f
+2451:
 	orr r9, r1, r10, lsl #16
-2705:
+2453:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -14450,7 +9806,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2705b
+	bne 2453b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -14458,7 +9814,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2704:
+2452:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -14475,24 +9831,24 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2706:
+2454:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2706b
+	bne 2454b
 	mov r0, r5
 	ldr lr, [r0, #48]
 	lsl lr, lr, #1
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #112]
-2707:
+2455:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2707b
+	bne 2455b
 	ldr r0, [sp, #0]
 	ldr r9, [r0, #64]
 	ldr r10, [r0, #104]
@@ -14503,7 +9859,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov r7, r0
 	mov r8, lr
 	mov r11, #0
-2708:
+2456:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -14517,7 +9873,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2708b
+	bne 2456b
 	mov r1, r11
 	mov r0, r7
 	mov r12, r9
@@ -14528,9 +9884,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2709f
-	b 2710f
-2709:
+	bne 2457f
+	b 2458f
+2457:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -14551,13 +9907,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2710:
+2458:
 	cmp lr, #0
-	bne 2711f
-	b 2712f
-2711:
+	bne 2459f
+	b 2460f
+2459:
 	orr r9, r1, r10, lsl #16
-2713:
+2461:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -14570,7 +9926,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2713b
+	bne 2461b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -14578,7 +9934,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2712:
+2460:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -14595,13 +9951,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2714:
+2462:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2714b
+	bne 2462b
 	mov r0, r5
 	mov r2, #1
 	mov r3, #1
@@ -14630,13 +9986,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2715:
+2463:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2715b
+	bne 2463b
 	mov r0, r5
-2716:
+2464:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -14648,9 +10004,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2717f
-	b 2718f
-2717:
+	bne 2465f
+	b 2466f
+2465:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -14671,13 +10027,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2718:
+2466:
 	cmp lr, #0
-	bne 2719f
-	b 2720f
-2719:
+	bne 2467f
+	b 2468f
+2467:
 	orr r9, r1, r10, lsl #16
-2721:
+2469:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -14690,7 +10046,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2721b
+	bne 2469b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -14698,7 +10054,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2720:
+2468:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -14742,7 +10098,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2722:
+2470:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -14751,7 +10107,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2722b
+	bne 2470b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -14776,14 +10132,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2716b
+	bne 2464b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2723:
+2471:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -14797,7 +10153,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2723b
+	bne 2471b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -14812,7 +10168,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2724:
+2472:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -14823,7 +10179,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2724b
+	bne 2472b
 	ldr r0, [sp, #0]
 	mov r2, #5
 	mov r3, #6
@@ -14852,13 +10208,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	add lr, lr, #2
 	mov r3, #0
-2725:
+2473:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2725b
+	bne 2473b
 	mov r0, r5
-2726:
+2474:
 	ldr r1, [r0, #16]
 	ldr r1, [r1, #0]
 	ldr lr, [r0, #0]
@@ -14870,9 +10226,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2727f
-	b 2728f
-2727:
+	bne 2475f
+	b 2476f
+2475:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -14893,13 +10249,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2728:
+2476:
 	cmp lr, #0
-	bne 2729f
-	b 2730f
-2729:
+	bne 2477f
+	b 2478f
+2477:
 	orr r9, r1, r10, lsl #16
-2731:
+2479:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -14912,7 +10268,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2731b
+	bne 2479b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -14920,7 +10276,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2730:
+2478:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -14964,7 +10320,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsr r10, r1, #16
 	and r1, r1, r9
 	orr r9, r1, r10, lsl #16
-2732:
+2480:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #4]
 	mov r5, r3
@@ -14973,7 +10329,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2732b
+	bne 2480b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -14998,14 +10354,14 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #20]
 	subs lr, lr, #1
 	str lr, [r0, #20]
-	bne 2726b
+	bne 2474b
 	ldr r7, [r0, #0]
 	ldr r9, [r0, #24]
 	ldr r10, [r0, #28]
 	ldr r12, [r0, #8]
 	mov lr, r7
 	mov r11, #0
-2733:
+2481:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	subs r3, r1, r2
@@ -15019,7 +10375,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2733b
+	bne 2481b
 	ldr r1, [r10, #0]
 	mov r2, r11
 	subs r3, r1, r2
@@ -15034,7 +10390,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	mov lr, r7
 	mov r4, #0
 	sub r4, r4, r11
-2734:
+2482:
 	ldr r1, [r10, #0]
 	ldr r2, [r12, #0]
 	eor r3, r1, r2
@@ -15045,7 +10401,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-	bne 2734b
+	bne 2482b
 	ldr r0, [sp, #0]
 	ldr r1, [sp, #8]
 	ldr r1, [r1, #224]
@@ -15056,13 +10412,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	lsl lr, lr, #3
 	mov r5, r0
 	mov r0, r4
-2735:
+2483:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2735b
+	bne 2483b
 	mov r0, r5
 	ldr r0, [sp, #8]
 	add r12, sp, #0
@@ -15078,13 +10434,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #48]
 	lsl lr, lr, #3
 	mov r0, r4
-2736:
+2484:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2736b
+	bne 2484b
 	mov r0, r5
 	ldr r0, [sp, #0]
 	ldr lr, [r0, #48]
@@ -15092,11 +10448,11 @@ vg_rsa_private_crt_precomputed_umaal:
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #232]
-2737:
+2485:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2737b
+	bne 2485b
 	ldr r0, [sp, #0]
 	ldr r1, [r0, #224]
 	ldr r1, [r1, #104]
@@ -15110,7 +10466,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r1, r1, r1
 	str r1, [r0, #140]
 	str r1, [r0, #144]
-2738:
+2486:
 	ldr r12, [r0, #132]
 	ldr lr, [r0, #144]
 	ldr r1, [r0, #128]
@@ -15122,9 +10478,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2739f
-	b 2740f
-2739:
+	bne 2487f
+	b 2488f
+2487:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -15145,13 +10501,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2740:
+2488:
 	cmp lr, #0
-	bne 2741f
-	b 2742f
-2741:
+	bne 2489f
+	b 2490f
+2489:
 	orr r9, r1, r10, lsl #16
-2743:
+2491:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -15164,7 +10520,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2743b
+	bne 2491b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -15172,7 +10528,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2742:
+2490:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -15190,17 +10546,17 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr r1, [r0, #140]
 	subs r1, r1, #1
 	str r1, [r0, #140]
-	bne 2738b
+	bne 2486b
 	ldr lr, [r0, #48]
 	lsl lr, lr, #2
 	add lr, lr, #2
 	mov r3, #0
 	ldr r0, [r0, #240]
-2744:
+2492:
 	str r3, [r0, #0]
 	add r0, r0, #4
 	subs lr, lr, #1
-	bne 2744b
+	bne 2492b
 	ldr r0, [sp, #0]
 	ldr r4, [r0, #240]
 	mov r2, #1
@@ -15210,13 +10566,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	ldr lr, [r0, #48]
 	lsl lr, lr, #3
 	mov r0, r4
-2745:
+2493:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	add r1, r1, #1
 	subs lr, lr, #1
-	bne 2745b
+	bne 2493b
 	mov r0, r5
 	ldr r12, [r0, #240]
 	ldr lr, [r0, #48]
@@ -15232,9 +10588,9 @@ vg_rsa_private_crt_precomputed_umaal:
 	and r1, r1, r9
 	and r2, lr, #1
 	cmp r2, #0
-	bne 2746f
-	b 2747f
-2746:
+	bne 2494f
+	b 2495f
+2494:
 	ldr r2, [r12, #0]
 	lsr r6, r2, #16
 	and r2, r2, r9
@@ -15255,13 +10611,13 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #4
 	add r12, r12, #4
 	subs lr, lr, #1
-2747:
+2495:
 	cmp lr, #0
-	bne 2748f
-	b 2749f
-2748:
+	bne 2496f
+	b 2497f
+2496:
 	orr r9, r1, r10, lsl #16
-2750:
+2498:
 	ldr r2, [r12, #0]
 	ldr r3, [r0, #0]
 	umaal r3, r11, r2, r9
@@ -15274,7 +10630,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r0, r0, #8
 	add r12, r12, #8
 	subs lr, lr, #2
-	bne 2750b
+	bne 2498b
 	mov r6, r5
 	mov r4, #0
 	umaal r6, r4, r2, r9
@@ -15282,7 +10638,7 @@ vg_rsa_private_crt_precomputed_umaal:
 	movw r9, #65535
 	and r2, r2, r9
 	mul r7, r1, r6
-2749:
+2497:
 	orr r1, r1, r10, lsl #16
 	ldr r3, [r0, #0]
 	ldr r4, [r0, #4]
@@ -15299,25 +10655,25 @@ vg_rsa_private_crt_precomputed_umaal:
 	add r1, r1, r6
 	sub r1, r1, #1
 	mov r0, r4
-2751:
+2499:
 	ldrb r2, [r1, #0]
 	strb r2, [r0, #0]
 	add r0, r0, #1
 	sub r1, r1, #1
 	subs lr, lr, #1
-	bne 2751b
+	bne 2499b
 	mov r0, r4
 	mov lr, r6
 	ldr r4, [sp, #48]
 	mov r2, #0
 	sub r2, r2, r4
-2752:
+2500:
 	ldrb r1, [r0, #0]
 	and r1, r1, r2
 	strb r1, [r0, #0]
 	add r0, r0, #1
 	subs lr, lr, #1
-	bne 2752b
+	bne 2500b
 	mov r0, r4
 21:
 	ldr r4, [sp, #16]

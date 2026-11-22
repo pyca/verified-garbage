@@ -30,10 +30,15 @@ def r2CountInit : List Instr :=
 
 def r2Init : Prog isa := .seq r2Constants (.block r2CountInit)
 
-/-- Six squarings of array 4 in place. -/
-def r2Squares : Prog isa :=
-  .seq (squareOp 4 4) (.seq (squareOp 4 4) (.seq (squareOp 4 4)
-    (.seq (squareOp 4 4) (.seq (squareOp 4 4) (squareOp 4 4)))))
+/-- The count of squarings, six, at header byte 208, which the doublings
+leave zero. -/
+def r2SquareCount : List Instr := [.mov .r1 (.imm 6), .str .r1 .r0 208]
+
+/-- A squaring of array 4 in place, then the count down (`doubleCount`). -/
+def r2SquareStep : Prog isa := .seq (squareOp 4 4) (.block doubleCount)
+
+/-- Six squarings of array 4 in place, in a loop over the count. -/
+def r2Squares : Prog isa := .seq (.block r2SquareCount) (.loop r2SquareStep .ne)
 
 def r2 : Prog isa := .seq r2Init (.seq doubleLoop r2Squares)
 

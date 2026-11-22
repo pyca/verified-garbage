@@ -412,28 +412,11 @@ theorem foldDoubles_wp (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} 
 def FoldSqRel (base : BitVec 32) (len w k : Nat) (s t : State) : Prop :=
   (∃ m, FoldSq base len w m False k s) ∧ (∃ m, FoldSq base len w m False k t) ∧ s.sp = t.sp
 
-theorem foldSquare_ct {base : BitVec 32} {len w k : Nat} :
-    RelCT isa (FoldSqRel base len w k) (squareOp 4 4) (FoldSqRel base len w (2 * k)) := by
-  obtain op4 : Operand 4 := by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  obtain ct := relCT_keep_sp ((squareOp_ct (base := base) (len := len) (w := w) op4 op4).mono
-    (P' := FoldSqRel base len w k)
-    (fun _ _ h => by
-      obtain ⟨⟨m1, h1⟩, ⟨m2, h2⟩, sp⟩ := h
-      exact ⟨⟨h1.ready, by rw [h1.modulus]; exact h1.operand⟩,
-        ⟨h2.ready, by rw [h2.modulus]; exact h2.operand⟩, sp⟩)
-    (fun _ _ _ => trivial)) (fun _ _ h => h.2.2)
-  have post (s : State) (h : ∃ m, FoldSq base len w m False k s) :
-      WP isa (squareOp 4 4) s fun t => ∃ m, FoldSq base len w m False (2 * k) t := by
-    obtain ⟨m, hm⟩ := h
-    exact WP.mono (foldSquare_ok s hm) fun t ht => ⟨m, ht.1⟩
-  exact (ct.wp (fun s t h => ⟨post s h.1, post t h.2.1⟩)).mono (fun _ _ h => h)
-    (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩)
-
 theorem foldSquares6_ct {base : BitVec 32} {len w k : Nat} :
-    RelCT isa (FoldSqRel base len w k) r2Squares (fun _ _ => True) := by
-  unfold r2Squares
-  exact foldSquare_ct.seq (foldSquare_ct.seq (foldSquare_ct.seq (foldSquare_ct.seq (foldSquare_ct.seq
-    (foldSquare_ct.mono (fun _ _ h => h) (fun _ _ _ => trivial))))))
+    RelCT isa (FoldSqRel base len w k) r2Squares (fun _ _ => True) :=
+  (sqC_squares_ct (P := False)).mono
+    (fun _ _ h => ⟨h.1.elim fun m hm => ⟨m, hm.toC⟩, h.2.1.elim fun m hm => ⟨m, hm.toC⟩, h.2.2⟩)
+    (fun _ _ _ => trivial)
 
 theorem FoldCount.foldSq {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {v : Nat} (k : Nat)
     (h : FoldCount g bs v 0 s) :
