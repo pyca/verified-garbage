@@ -11,7 +11,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Sm4.Arm.BatchChain
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sm4.Scratch
@@ -159,16 +159,8 @@ theorem frameSat : ∃ s, (Spec.Sm4.ctrContract Arm.abi 1520).pre s := by
   implies_sat [Spec.Sm4.ctrContract, Spec.Sm4.ctrSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, State.addr] [frameState, satState] using frameState
 
-theorem framed : Verified Arm.target
-    (Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 BatchCtr.ctr)
-    (Spec.Sm4.ctrContract Arm.abi 1520) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64) (n := 189)
-    (post := Proof.Sm4.ctrPost Arm.abi.ptrBits) (wa := true) (stack := 0) (m := 0) (bytes := 1520)
-    verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sm4.ctrPost_local _)
-    (Proof.Sm4.ctrPostOut_local _) frameSat
-
-/-- `framed`, not wiping its working space, which its function's cleanup zeroes. -/
+/-- `BatchCtr.ctr` with its working space on the stack, which its function's
+cleanup zeroes. -/
 theorem framedU : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 1520 0 BatchCtr.ctr)
     (Spec.Sm4.ctrContract Arm.abi 1520) :=

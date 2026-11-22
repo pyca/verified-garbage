@@ -37,7 +37,7 @@ def dataLoop : Prog isa := .ite .eq (.block []) (.loop group .ne)
 def ctr32 : Prog isa := .seq BatchCtr.prologue (.seq dataLoop BatchCtr.finish)
 
 /-- `vg_sm4_ctr32`: `ctr32` with its 1512 bytes of working space on the stack,
-zeroed on return. -/
-def ctr32Framed : Prog isa := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 ctr32
+which the cleanup of SM4-GCM's functions, its callers, zeroes. -/
+def ctr32Framed : Prog isa := Impl.StackScratch.Arm.withStackScratch 1520 0 ctr32
 
 end VG.Impl.Sm4.Arm.BatchCtr32

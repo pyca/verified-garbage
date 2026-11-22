@@ -2237,8 +2237,12 @@ vg_sm4_ofb_final:
 	ldr r11, [r8, #28]
 	ldr lr, [r8, #32]
 	ldr r8, [r8, #16]
-	add r12, sp, #8
+	add sp, sp, #80
+	sub sp, sp, #1568
+	add r12, sp, #0
 	mov r2, #0
+	mov r3, #49
+26:
 	str r2, [r12, #0]
 	str r2, [r12, #4]
 	str r2, [r12, #8]
@@ -2247,28 +2251,9 @@ vg_sm4_ofb_final:
 	str r2, [r12, #20]
 	str r2, [r12, #24]
 	str r2, [r12, #28]
-	str r2, [r12, #32]
-	str r2, [r12, #36]
-	str r2, [r12, #40]
-	str r2, [r12, #44]
-	str r2, [r12, #48]
-	str r2, [r12, #52]
-	str r2, [r12, #56]
-	str r2, [r12, #60]
-	str r2, [r12, #64]
-	str r2, [r12, #68]
-	add sp, sp, #80
-	sub sp, sp, #1568
-	add r12, sp, #0
-	mov r2, #0
-	str r2, [r12, #8]
-	str r2, [r12, #12]
-	str r2, [r12, #1472]
-	str r2, [r12, #1476]
-	str r2, [r12, #1480]
-	str r2, [r12, #1484]
-	str r2, [r12, #1488]
-	str r2, [r12, #1492]
+	add r12, r12, #32
+	subs r3, r3, #1
+	bne 26b
 	add sp, sp, #1568
 	mov r0, #0
 	mov r1, #0

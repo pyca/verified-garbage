@@ -31,7 +31,8 @@ arguments are all in registers:
 4. the registers restored from `save`, whose address is reloaded from the
    stack.
 
-The registration's frame zeroes `save`, the block included, on return.
+The function's cleanup (`scrubAll`) zeroes `save`, the block included, and
+`vg_sm4_ctr`'s working space.
 Only the pointers and `len` can affect timing.
 -/
 
@@ -45,7 +46,7 @@ open VG.Impl.AesCfb.Arm (finalSave finalRestore)
 open VG.Impl.Modes.Arm (xorByte)
 
 /-- `vg_sm4_ctr`, with its working space on the stack. -/
-def ctrFramed : Prog isa := Impl.StackScratch.Arm.withStackScratchWiped 1520 0 378 BatchCtr.ctr
+def ctrFramed : Prog isa := Impl.StackScratch.Arm.withStackScratch 1520 0 BatchCtr.ctr
 
 /-- `save`, the stack argument, to `r12`. -/
 def ctrSave : List Instr := [.ldrSp .r12 0]

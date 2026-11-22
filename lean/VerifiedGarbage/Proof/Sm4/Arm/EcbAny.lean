@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Sm4.Arm.Lit
@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Impl.StackScratch.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Proof.MdStream.Arm.Common
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Sm4.Arm.Lit
@@ -227,12 +227,12 @@ theorem ecbDirFrameSat_pre : ∃ s, (Proof.Sm4.ecbDirContract Arm.abi 1472).pre 
 /-- `vg_sm4_ecb`: ECB in the direction `decrypt` selects, with its working
 space on the stack. -/
 theorem ecbAny_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 1472 0 364 ecbAny)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 1472 0 ecbAny)
       (Proof.Sm4.ecbDirContract Arm.abi 1472) :=
-  Arm.Verified.stackScratchWiped (sig := Proof.Sm4.ecbDirSig) (nm := "scratch") (e := .u64) (n := 182)
+  Arm.Verified.stackScratch (sig := Proof.Sm4.ecbDirSig) (nm := "scratch") (e := .u64) (n := 182)
     (pre := Proof.Sm4.ecbDirPre Arm.abi.ptrBits) (post := Proof.Sm4.ecbDirPost Arm.abi.ptrBits) (wa := true)
     (stack := 0) (m := 0) (bytes := 1472) ecbAny_verified (by decide) (by decide) (by decide) (by decide)
-    (by decide) (Proof.Sm4.ecbDirPre_local _) (Proof.Sm4.ecbDirPost_local _) (Proof.Sm4.ecbDirPostOut_local _)
-    ecbDirFrameSat_pre
+    (Proof.Sm4.ecbDirPre_local _) (Proof.Sm4.ecbDirPost_local _)
+    (fun vs mm m₁ m₂ r hl _ => Proof.Sm4.ecbDirPostOut_local _ vs mm m₁ m₂ r hl) ecbDirFrameSat_pre
 
 end VG.Proof.Sm4.Arm
