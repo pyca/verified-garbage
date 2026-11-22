@@ -49,6 +49,10 @@ structure Sh where
   NA : Nat
   ti : Nat
 
+/-- The stack used below the return address. -/
+abbrev Sh.N (S : Sh) : Nat := S.FB + S.cb
+theorem Sh.N_eq (S : Sh) : S.N = S.FB + S.cb := rfl
+
 /-- A call's public data, for a frame of the shape `S`: `esp` on entry, the
 arguments, the buffer the function writes, the regions on entry, and the
 addresses of the table's functions. -/
@@ -64,21 +68,18 @@ namespace Lay
 
 variable {S : Sh} (L : Lay S)
 
-/-- The stack used below the return address. -/
-abbrev N : Nat := S.FB + S.cb
-theorem N_eq : L.N = S.FB + S.cb := rfl
 /-- `esp` in the frame's body. -/
 abbrev F : BitVec 32 := L.E - BitVec.ofNat 32 S.FB
 /-- The lowest byte of the stack used. -/
-abbrev B : Addr := (L.E - BitVec.ofNat 32 L.N).setWidth 64
+abbrev B : Addr := (L.E - BitVec.ofNat 32 S.N).setWidth 64
 /-- The table. -/
 abbrev tb : BitVec 32 := L.a S.ti
 
 abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 S.cb, S.FB⟩
 abbrev CALLS : Region := ⟨L.B, S.cb⟩
-abbrev STK : Region := ⟨L.B, L.N⟩
-abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 L.N, 4⟩
-abbrev ARGS : Region := ⟨L.B + BitVec.ofNat 64 (L.N + 4), 4 * S.NA⟩
+abbrev STK : Region := ⟨L.B, S.N⟩
+abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 S.N, 4⟩
+abbrev ARGS : Region := ⟨L.B + BitVec.ofNat 64 (S.N + 4), 4 * S.NA⟩
 abbrev TAB : Region := ⟨L.tb.setWidth 64, 24⟩
 /-- The frame above the saved registers. -/
 abbrev HI : Region := ⟨L.B + BitVec.ofNat 64 (S.cb + 16), S.FB - 16⟩
@@ -88,7 +89,7 @@ abbrev SV : Region := ⟨L.B + BitVec.ofNat 64 S.cb, 16⟩
 /-- What the contracts say of where the buffers and the stack are, and what
 the frame's shape needs. -/
 structure Ok : Prop where
-  e0 : L.N ≤ L.E.toNat
+  e0 : S.N ≤ L.E.toNat
   e1 : L.E.toNat + 4 + 4 * S.NA ≤ 2 ^ 32
   s0 : 16 ≤ S.FB
   s1 : S.FB < 4096
@@ -113,44 +114,44 @@ namespace Lay.Ok
 variable {S : Sh} {L : Lay S} (h : L.Ok)
 include h
 
-theorem BN : L.B.toNat = L.E.toNat - L.N := by
-  have := h.e0; have := L.N_eq
+theorem BN : L.B.toNat = L.E.toNat - S.N := by
+  have := h.e0; have := S.N_eq
   simp only [Lay.B, BitVec.toNat_setWidth]
   rw [sub_toNat (by omega_arith)]; have := L.E.isLt; omega_arith
 
-theorem nB : L.B.toNat + L.N + 4 + 4 * S.NA ≤ 2 ^ 32 := by
-  have := L.N_eq; have := h.e0; have := h.e1; rw [h.BN]; omega_arith
+theorem nB : L.B.toNat + S.N + 4 + 4 * S.NA ≤ 2 ^ 32 := by
+  have := S.N_eq; have := h.e0; have := h.e1; rw [h.BN]; omega_arith
 
-theorem FN : L.F.toNat = L.E.toNat - S.FB := sub_toNat (by have := h.e0; have := L.N_eq; omega_arith)
+theorem FN : L.F.toNat = L.E.toNat - S.FB := sub_toNat (by have := h.e0; have := S.N_eq; omega_arith)
 
-theorem B_eq : L.B = L.E.setWidth 64 - BitVec.ofNat 64 L.N := Taint.sub_setWidth h.e0
+theorem B_eq : L.B = L.E.setWidth 64 - BitVec.ofNat 64 S.N := Taint.sub_setWidth h.e0
 
 /-- `[F + o]`, for `o` in the frame or the arguments above it. -/
 theorem addrF {o : Nat} (ho : o ≤ S.FB + 4 * S.NA) : addr L.F o = L.B + BitVec.ofNat 64 (S.cb + o) := by
-  have := h.e0; have := h.e1; have := L.N_eq
+  have := h.e0; have := h.e1; have := S.N_eq
   rw [addr_eq (by rw [h.FN]; omega_arith), Lay.F, Taint.sub_setWidth (by omega_arith), h.B_eq,
-    Offset.sub_ofNat_eq _ (show S.FB ≤ L.N by omega_arith), show L.N - S.FB = S.cb by omega_arith, Offset.add_add]
+    Offset.sub_ofNat_eq _ (show S.FB ≤ S.N by omega_arith), show S.N - S.FB = S.cb by omega_arith, Offset.add_add]
 
 theorem F64 : L.F.setWidth 64 = L.B + BitVec.ofNat 64 S.cb := by
   have e := h.addrF (o := 0) (by omega_arith)
   rwa [addr, BitVec.add_zero, Nat.add_zero] at e
 
 /-- The address of argument `i`. -/
-theorem addrE (i : Nat) (hi : i < S.NA) : addr L.E (4 + 4 * i) = L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i) := by
-  have := h.e0; have := h.e1; have := L.N_eq
-  rw [addr_eq (by omega_arith), h.B_eq, show L.N + 4 + 4 * i = L.N + (4 + 4 * i) by omega_arith,
-    ← Offset.add_add (L.E.setWidth 64 - BitVec.ofNat 64 L.N) L.N (4 + 4 * i), BitVec.sub_add_cancel]
+theorem addrE (i : Nat) (hi : i < S.NA) : addr L.E (4 + 4 * i) = L.B + BitVec.ofNat 64 (S.N + 4 + 4 * i) := by
+  have := h.e0; have := h.e1; have := S.N_eq
+  rw [addr_eq (by omega_arith), h.B_eq, show S.N + 4 + 4 * i = S.N + (4 + 4 * i) by omega_arith,
+    ← Offset.add_add (L.E.setWidth 64 - BitVec.ofNat 64 S.N) S.N (4 + 4 * i), BitVec.sub_add_cancel]
 
 /-- The `n` bytes below `F`, for `n` up to `cb`: among the calls'. -/
 theorem below_F {n : Nat} (hn : n ≤ S.cb) : Region.Sub (below L.F n) L.CALLS := by
-  have := h.e0; have := L.N_eq
+  have := h.e0; have := S.N_eq
   show Region.Sub ⟨(L.F - BitVec.ofNat 32 n).setWidth 64, n⟩ _
   rw [Taint.sub_setWidth (by rw [h.FN]; omega_arith), h.F64,
     Offset.sub_ofNat_eq (L.B + BitVec.ofNat 64 S.cb) hn, BitVec.add_sub_cancel]
   exact Offset.sub_base _ (by omega_arith)
 
 theorem below_F_eq : below L.F S.cb = L.CALLS := by
-  have := h.e0; have := L.N_eq
+  have := h.e0; have := S.N_eq
   show (⟨(L.F - BitVec.ofNat 32 S.cb).setWidth 64, S.cb⟩ : Region) = ⟨L.B, S.cb⟩
   rw [Taint.sub_setWidth (by rw [h.FN]; omega_arith), h.F64, BitVec.add_sub_cancel]
 
@@ -160,8 +161,8 @@ theorem FR_eq : below L.E S.FB = L.FR := by
   rw [h.F64]
 
 /-- Regions at offsets of `B`. -/
-theorem disj {d n e k : Nat} (hs : d + n ≤ e ∨ e + k ≤ d) (hd : d + n ≤ L.N + 4 + 4 * S.NA)
-    (he : e + k ≤ L.N + 4 + 4 * S.NA) :
+theorem disj {d n e k : Nat} (hs : d + n ≤ e ∨ e + k ≤ d) (hd : d + n ≤ S.N + 4 + 4 * S.NA)
+    (he : e + k ≤ S.N + 4 + 4 * S.NA) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.B + BitVec.ofNat 64 e, k⟩ := by
   have := h.nB
   exact Offset.disjoint _ hs (by omega_arith) (by omega_arith)
@@ -171,23 +172,23 @@ theorem sub {d n e k : Nat} (h₁ : e ≤ d) (h₂ : d + n ≤ e + k) :
     Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.B + BitVec.ofNat 64 e, k⟩ := Offset.sub _ h₁ h₂
 
 omit h in
-theorem subK {d n : Nat} (h₂ : d + n ≤ L.N) : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.STK :=
+theorem subK {d n : Nat} (h₂ : d + n ≤ S.N) : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.STK :=
   Offset.sub_base _ h₂
 
 omit h in
 /-- The calls' bytes, the frame, and the stack used. -/
-theorem calls_stk : Region.Sub L.CALLS L.STK := Region.sub_prefix (by have := L.N_eq; omega_arith)
+theorem calls_stk : Region.Sub L.CALLS L.STK := Region.sub_prefix (by have := S.N_eq; omega_arith)
 
 omit h in
-theorem fr_stk : Region.Sub L.FR L.STK := Offset.sub_base _ (by have := L.N_eq; omega_arith)
+theorem fr_stk : Region.Sub L.FR L.STK := Offset.sub_base _ (by have := S.N_eq; omega_arith)
 
-theorem hi_stk : Region.Sub L.HI L.STK := Offset.sub_base _ (by have := h.s0; have := L.N_eq; omega_arith)
+theorem hi_stk : Region.Sub L.HI L.STK := Offset.sub_base _ (by have := h.s0; have := S.N_eq; omega_arith)
 
 /-- A range of the stack used, and `W`. -/
-theorem kW' {d n : Nat} (h₂ : d + n ≤ L.N) : Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.W :=
+theorem kW' {d n : Nat} (h₂ : d + n ≤ S.N) : Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.W :=
   h.kW.sub_left (Offset.sub_base _ h₂)
 
-theorem calls_W : L.CALLS.Disjoint L.W := h.kW.sub_left (Region.sub_prefix (by have := L.N_eq; omega_arith))
+theorem calls_W : L.CALLS.Disjoint L.W := h.kW.sub_left (Region.sub_prefix (by have := S.N_eq; omega_arith))
 
 /-- The words of the table are readable. -/
 theorem inTab {t : State} (hrd : t.rd = L.rd) {o : Nat} (ho : o + 4 ≤ 24) :
@@ -216,7 +217,7 @@ structure Ctx {S : Sh} (K : Hk) (L : Lay S) (g : Reg → BitVec 32) (m₀ : Mem)
   saved : Spill.Saved t.mem (addr L.F) g Impl.Hkdf.X86.saved
   frame : Frame [L.W, L.STK] m₀ t.mem
   syms : t.syms = y
-  args : ∀ i < S.NA, m₀.readW (L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i)) 32 = L.a i
+  args : ∀ i < S.NA, m₀.readW (L.B + BitVec.ofNat 64 (S.N + 4 + 4 * i)) 32 = L.a i
   tabOk : TabOK K.w.F K.f y
   tabMem : TabMem K.w.F y L.tb m₀
   tabD : m₀.readW (addr L.tb 16) 32 = BitVec.ofNat 32 K.w.F.H.D
@@ -240,7 +241,7 @@ include hL
 
 /-- The saved registers are apart from every safe region. -/
 theorem Lay.Ok.sv_safe {r : Region} (hs : Safe L r) : Region.Disjoint L.SV r := by
-  have := hL.s0; have := hL.nB; have := L.N_eq
+  have := hL.s0; have := hL.nB; have := S.N_eq
   rcases hs with hs | hs | hs
   · exact (hL.kW' (by omega_arith)).sub_right hs
   · exact (hL.disj (.inl (Nat.le_refl _)) (by omega_arith) (by omega_arith)).sub_right hs
@@ -254,7 +255,7 @@ theorem Safe.sub_frame {r : Region} (hs : Safe L r) : ∃ R ∈ [L.W, L.STK], Re
 
 /-- The slot of a saved register. -/
 theorem sv_contains {p : Reg × Nat} (hp : p ∈ Impl.Hkdf.X86.saved) : L.SV.Contains (addr L.F p.2) 4 := by
-  have := saved_in p hp; have := hL.nB; have := hL.s0; have := L.N_eq
+  have := saved_in p hp; have := hL.nB; have := hL.s0; have := S.N_eq
   rw [hL.addrF (by omega_arith)]
   exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
 
@@ -299,11 +300,11 @@ theorem word (hc : Ctx K L g m₀ y t) {R : Region} (hW : R.Disjoint L.W) (hK : 
 
 /-- Argument `i`, as on entry. -/
 theorem arg (hL : L.Ok) (hc : Ctx K L g m₀ y t) {i : Nat} (hi : i < S.NA) :
-    t.mem.readW (L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i)) 32 = L.a i := by
-  have := hL.nB; have := L.N_eq
-  rw [hc.word (R := L.ARGS) hL.aW (Offset.disjoint_base L.B (k := L.N) (d := L.N + 4) (n := 4 * S.NA)
+    t.mem.readW (L.B + BitVec.ofNat 64 (S.N + 4 + 4 * i)) 32 = L.a i := by
+  have := hL.nB; have := S.N_eq
+  rw [hc.word (R := L.ARGS) hL.aW (Offset.disjoint_base L.B (k := S.N) (d := S.N + 4) (n := 4 * S.NA)
       (by omega_arith) (by omega_arith))
-    (Offset.contains L.B (e := L.N + 4) (k := 4 * S.NA) (by omega_arith) (by omega_arith) (by omega_arith))]
+    (Offset.contains L.B (e := S.N + 4) (k := 4 * S.NA) (by omega_arith) (by omega_arith) (by omega_arith))]
   exact hc.args i hi
 
 /-- The table's words, as on entry. -/
@@ -316,7 +317,7 @@ theorem tabWord (hL : L.Ok) (hc : Ctx K L g m₀ y t) {o : Nat} (ho : o + 4 ≤ 
 theorem inFrW (hL : L.Ok) (hc : Ctx K L g m₀ y t) {o n : Nat} (h : o + n ≤ S.FB) :
     InRegions t.wr (L.B + BitVec.ofNat 64 (S.cb + o)) n :=
   ⟨L.FR, by rw [hc.wr]; exact List.mem_cons_self, Offset.contains _ (by omega_arith) (by omega_arith)
-    (by have := hL.nB; have := L.N_eq; omega_arith)⟩
+    (by have := hL.nB; have := S.N_eq; omega_arith)⟩
 
 theorem inFr (hL : L.Ok) (hc : Ctx K L g m₀ y t) {o n : Nat} (h : o + n ≤ S.FB) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 (S.cb + o)) n :=
@@ -325,9 +326,9 @@ theorem inFr (hL : L.Ok) (hc : Ctx K L g m₀ y t) {o n : Nat} (h : o + n ≤ S.
 
 /-- An argument is readable. -/
 theorem inArg (hL : L.Ok) (hc : Ctx K L g m₀ y t) {i : Nat} (hi : i < S.NA) :
-    InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i)) 4 :=
+    InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 (S.N + 4 + 4 * i)) 4 :=
   ⟨L.ARGS, List.mem_append_right _ (by rw [hc.wr]; exact List.mem_cons_of_mem _ hL.aWr),
-    Offset.contains _ (by have := L.N_eq; omega_arith) (by omega_arith) (by have := hL.nB; have := L.N_eq; omega_arith)⟩
+    Offset.contains _ (by have := S.N_eq; omega_arith) (by omega_arith) (by have := hL.nB; have := S.N_eq; omega_arith)⟩
 
 end Ctx
 
@@ -399,9 +400,9 @@ theorem addI_ok (v : BitVec 32) : WP isa (.block [.alu .add d (.imm v)]) u (Upd 
 omit hd in
 /-- `argM` reads argument `i`. -/
 theorem readArg {i : Nat} (hi : i < S.NA) : readSrc u (Impl.Hkdf.X86.argM S.FB i) = some (L.a i) := by
-  have e : addr L.F (S.FB + 4 + 4 * i) = L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i) := by
-    have := L.N_eq
-    rw [hL.addrF (by omega_arith), show S.cb + (S.FB + 4 + 4 * i) = L.N + 4 + 4 * i by omega_arith]
+  have e : addr L.F (S.FB + 4 + 4 * i) = L.B + BitVec.ofNat 64 (S.N + 4 + 4 * i) := by
+    have := S.N_eq
+    rw [hL.addrF (by omega_arith), show S.cb + (S.FB + 4 + 4 * i) = S.N + 4 + 4 * i by omega_arith]
   rw [Impl.Hkdf.X86.argM, Impl.Hkdf.X86.sp, readSrc_mem hc.esp (by rw [e]; exact hc.inArg hL hi), e, hc.arg hL hi]
 
 /-- `d ← argument i`. -/
