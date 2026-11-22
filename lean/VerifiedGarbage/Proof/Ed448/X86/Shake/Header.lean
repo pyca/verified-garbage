@@ -83,7 +83,8 @@ theorem next_nosp : NoSp Impl.Sha3.X86.Stream.next :=
 
 theorem absorb_nosp : NoSp Impl.Sha3.X86.Stream.absorb :=
   nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq (nosp_ite (NoSp.of_all (by decide +kernel))
-    (nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq next_nosp (NoSp.of_all (by decide +kernel)))))
+    (nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq (NoSp.of_all (by decide +kernel))
+      (nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq next_nosp (NoSp.of_all (by decide +kernel)))))))
     (NoSp.of_all (by decide +kernel)))
 
 theorem pad_nosp : NoSp Impl.Sha3.X86.Stream.pad :=
@@ -91,7 +92,8 @@ theorem pad_nosp : NoSp Impl.Sha3.X86.Stream.pad :=
 
 theorem squeeze_nosp : NoSp Impl.Sha3.X86.Stream.squeeze :=
   nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq (nosp_ite (NoSp.of_all (by decide +kernel))
-    (nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq next_nosp (NoSp.of_all (by decide +kernel)))))
+    (nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq next_nosp
+      (nosp_seq (NoSp.of_all (by decide +kernel)) (NoSp.of_all (by decide +kernel))))))
     (NoSp.of_all (by decide +kernel)))
 
 theorem absorb_nosp' {args : List Instr} (h : NoSp (.block args)) : NoSp (absorb args) :=
