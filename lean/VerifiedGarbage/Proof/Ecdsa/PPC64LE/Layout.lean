@@ -76,7 +76,7 @@ structure CfgOk (c : Cfg) : Prop where
   chainN : ChainOk c.chainN (c.C.n - 2)
 
 /-- The registers `setupWith` writes. -/
-abbrev setupClob : List Reg := [.r0, .r3, .r4, .r8, .r9, .r11, .r14]
+abbrev setupClob : List Reg := [.r0, .r3, .r4, .r8, .r9, .r11, .r14, .r31]
 
 /-- Which slot `setupWith` may shift: none, `d`'s (verification reads the
 hash there) or the hash's. -/
@@ -103,6 +103,12 @@ structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
   k_fit : (s.gpr A.k).toNat + c.C.len ≤ 2 ^ 64
   d_fit : (s.gpr A.d).toNat + c.C.len ≤ 2 ^ 64
   e_fit : (s.gpr A.e).toNat + c.C.len ≤ 2 ^ 64
+  /-- The table of constants (`Cfg.constTbl`) is readable, -/
+  tbl_in : ∀ i < 17 * c.n, InRegions (s.rd ++ s.wr) (s.syms c.constSym + BitVec.ofNat 64 (8 * i)) 8
+  /-- and holds its words in any memory that agrees with this one outside the
+  working space's first `4096` bytes, which the setup writes. -/
+  tbl : ∀ m : Mem, Outside (s.gpr A.sc) 0 4096 s.mem m →
+    ∀ i < 17 * c.n, m.readW (s.syms c.constSym + BitVec.ofNat 64 (8 * i)) 64 = c.constTbl.getD i 0
 
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)

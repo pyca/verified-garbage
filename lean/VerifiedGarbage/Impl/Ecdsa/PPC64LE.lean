@@ -204,6 +204,21 @@ def consts : List (Nat × Nat) :=
     (B3P, c.mont (3 * c.C.b)), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
     (ONEN, c.R % c.C.n), (EXPP, c.C.p - 2), (EXPN, c.C.n - 2), (RX, 0), (RY, c.mont 1), (RZ, 0)]
 
+/-- The value `consts` gives slot `i`, or zero (`TMP`'s, which none gives). -/
+def slotVal (i : Nat) : Nat := ((c.consts.find? fun ix => ix.1 == i).map Prod.snd).getD 0
+
+/-- The words of slots `0` to `16`, `consts`' values (and `TMP`, zero), word
+`k` the `k % n`th of slot `k / n`: the table the setup copies into the
+working space (`copyTbl`). -/
+def constTbl : List (BitVec 64) :=
+  (List.range (17 * c.n)).map fun k => BitVec.ofNat 64 (c.slotVal (k / c.n) >>> (64 * (k % c.n)))
+
+/-- The name of the table `constTbl`. -/
+def constSym : String := s!"vg_{c.SP.curve}_frame_consts"
+
+/-- The table of constants every function that runs the setup reads. -/
+def constsK : List (String × List (BitVec 64)) := [(c.constSym, c.constTbl)]
+
 /-- The saves, at `[sc]`, and `out` (`r3`) to `r14`, the working space to `r3`. -/
 def saveCode (sc : Reg) : List Instr :=
   saved.map (fun (r, d) => .store .d r sc d) ++ [.mflr .r0, .store .d .r0 sc lrAt, mov .r14 .r3, mov .r3 sc]
@@ -218,15 +233,15 @@ def shiftCode : Option Nat → List Instr
 registers `A` names, and the slot `A.hs` holding a hash shifted; the
 constants stored; and `R = (0 : 1 : 0)` and the flag (a word) set to all
 ones. -/
-def setupWith (A : Args) : List Instr :=
-  saveCode A.sc ++
-  loadBytes c.C.len c.n (c.sl K) A.k ++ loadBytes c.C.len c.n (c.sl D) A.d ++
-  loadBytes c.C.len c.n (c.sl E) A.e ++ c.shiftCode A.hs ++
-  c.consts.flatMap (fun (i, x) => VG.Impl.Mont.PPC64LE.setConst c.n (c.sl i) x) ++
-  ([.li .r4 0, .subi .r4 .r4 1, .store .d .r4 wb (c.sl FLAG)] : List Instr)
+def setupWith (A : Args) : Prog isa :=
+  .seq (.block (saveCode A.sc ++
+    loadBytes c.C.len c.n (c.sl K) A.k ++ loadBytes c.C.len c.n (c.sl D) A.d ++
+    loadBytes c.C.len c.n (c.sl E) A.e ++ c.shiftCode A.hs)) <|
+  .seq (copyTbl c.constSym (17 * c.n) (c.sl 0))
+    (.block [.li .r4 0, .subi .r4 .r4 1, .store .d .r4 wb (c.sl FLAG)])
 
 /-- The setup of `sign`. -/
-def setup : List Instr := c.setupWith .sign
+def setup : Prog isa := c.setupWith .sign
 
 /-- The mask `r5` of `[a] ≠ 0` (all ones if it is not zero), through `r4`:
 the words or'ed, then the top bit of `x | -x`, negated. -/
@@ -293,7 +308,7 @@ def scalar : Prog isa :=
 
 /-- `vg_ecdsa_<curve>_sign`. -/
 def signWith (generator : Prog isa) : Prog isa :=
-  .seq (.block c.setup) <|
+  .seq c.setup <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|

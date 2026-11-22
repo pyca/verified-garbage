@@ -80,7 +80,7 @@ variable (c : Impl.Ecdsa.PPC64LE.Cfg)
 /-- The signature's setup, with verification's arguments, keeping `sig` in
 `r12`, and tables of bits. -/
 def prefix' : Prog isa :=
-  .seq (.block (c.setupWith Args.verify ++ [mov .r12 .r5])) <|
+  .seq (.seq (c.setupWith Args.verify) (.block [mov .r12 .r5])) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])

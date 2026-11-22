@@ -99,7 +99,7 @@ def peerAt (q : Reg) : List Instr :=
 
 /-- The setup, keeping the peer's key's pointer (`r5`) in `r12`, which the
 setup and the tables of bits keep. -/
-def setup : List Instr := c.setupWith Args.ecdh ++ [mov .r12 .r5]
+def setup : Prog isa := .seq (c.setupWith Args.ecdh) (.block [mov .r12 .r5])
 
 /-- `y² - (x³ + a x + b)`, from `x R` and `y R`, to `W1`. -/
 def curveOps : List FOp :=
@@ -141,7 +141,7 @@ def middle : Prog isa :=
 /-- `vg_ecdh_<curve>`, with `[d]P` by `mul` (from the point at `PX`, `PY`,
 `ONEP` and the table of `d`'s bits, into `R`). -/
 def exchangeWith (mul : Prog isa) : Prog isa :=
-  .seq (.block (setup c)) <|
+  .seq (setup c) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
