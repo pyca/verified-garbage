@@ -260,23 +260,30 @@ theorem kit_pts_ok (K : WAll.Kit c) (h3 : 3 ≤ c.n)
     PtsOk c s₀ (pts c gen (c.winCall K.mulP)) :=
   pts_ok K.ok h3 hC (Proof.Ecdh.PPC64LE.Win.mulW_le K) hgen (kit_mul K hb hnw hC)
 
+/-- The verification with points that read a table, one of the tables `K`
+the contract lists. -/
+theorem verify_okK (hc : CfgOk c) (hL : Law c.C) {tsym : String} {words : List (BitVec 64)} {points : Prog isa}
+    (hpts : ∀ {s₀ : State} {T : Addr}, TableMem s₀ T words → s₀.syms tsym = T →
+      Region.Disjoint ⟨T, 8 * words.length⟩ ⟨s₀.gpr .r6, 8192⟩ → PtsOk c s₀ points)
+    {K : List (String × List (BitVec 64))} {s : State} (hpre : VPre c s (constRegs K s)) (hk : ConstsOk K 0 s)
+    (hm : (tsym, words) ∈ K) :
+    ∃ t s', Exec isa (Impl.Ecdsa.Verify.PPC64LE.Cfg.verifyWith c points) s t s' ∧ abiPreserved s s' ∧
+      VPost c s s' := by
+  obtain hd : Region.Disjoint ⟨s.syms tsym, 8 * words.length⟩ ⟨s.gpr .r6, 8192⟩ :=
+    hk.disjoint_wr hm (by rw [hpre.wr]; simp)
+  obtain ⟨t, s', he, K, hpost⟩ := verifyWith_ok hc hL hpre
+    (hpts (Proof.Ecdsa.PPC64LE.Tab.tableMemK hk hm) rfl hd)
+  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
+
 /-- The verification with points that read a table. -/
 theorem verify_ok (hc : CfgOk c) (hL : Law c.C) {tsym : String} {words : List (BitVec 64)} {points : Prog isa}
     (hpts : ∀ {s₀ : State} {T : Addr}, TableMem s₀ T words → s₀.syms tsym = T →
       Region.Disjoint ⟨T, 8 * words.length⟩ ⟨s₀.gpr .r6, 8192⟩ → PtsOk c s₀ points)
     {s : State} (hp : VPre c (stripConsts [(tsym, words)] s)) (hk : ConstsOk [(tsym, words)] 0 s) :
     ∃ t s', Exec isa (Impl.Ecdsa.Verify.PPC64LE.Cfg.verifyWith c points) s t s' ∧ abiPreserved s s' ∧
-      VPost c s s' := by
-  obtain hpre : VPre c s (constRegs [(tsym, words)] s) := by
-    refine ⟨?_, hp.wr, hp.pk_sc, hp.dg_sc, hp.sig_sc, hp.pk_fit, hp.dg_fit, hp.sig_fit, hp.sc_fit,
-      fun h => (hp.tbl h).of_strip⟩
-    rw [← List.take_append_drop (s.rd.length - [(tsym, words)].length) s.rd, hk.1]
-    have e := hp.rd
-    simp only [List.append_nil] at e
-    exact congrArg (fun rs => rs ++ constRegs [(tsym, words)] s) e
-  obtain hd : Region.Disjoint ⟨s.syms tsym, 8 * words.length⟩ ⟨s.gpr .r6, 8192⟩ :=
-    hk.disjoint_wr (List.mem_singleton_self _) (by rw [hpre.wr]; simp)
-  obtain ⟨t, s', he, K, hpost⟩ := verifyWith_ok hc hL hpre (hpts (Proof.Ecdsa.PPC64LE.Tab.tableMem hk) rfl hd)
-  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
+      VPost c s s' :=
+  verify_okK hc hL hpts (hpre := ⟨hk.rd_strip (by rw [hp.rd, List.append_nil]; rfl), hp.wr, hp.pk_sc, hp.dg_sc,
+    hp.sig_sc, hp.pk_fit, hp.dg_fit, hp.sig_fit, hp.sc_fit, fun h => (hp.tbl h).of_strip⟩) hk
+    (List.mem_singleton_self _)
 
 end VG.Proof.Ecdsa.Verify.PPC64LE.CombWin

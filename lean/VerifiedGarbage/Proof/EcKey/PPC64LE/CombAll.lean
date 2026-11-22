@@ -23,6 +23,26 @@ open VG.Proof.Weierstrass.PPC64LE.TComb
 
 variable {c : Cfg}
 
+/-- The public key with a generator that reads a table, one of the tables `K`
+the contract lists. -/
+theorem pk_okK (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c.C) {tsym : String}
+    {words : List (BitVec 64)} {generator : Prog isa}
+    (hgen : ∀ {A : Args} {s₀ : State} {base : Addr} {F : BitVec 64} {s : State}, St₁ c A s₀ base F s →
+      ∀ {T : Addr}, TableMem s T words → s.syms tsym = T →
+      Region.Disjoint ⟨T, 8 * words.length⟩ ⟨base, 8192⟩ →
+      WP isa generator s (GeneratorPost c base (kv c A s₀) (G c.C) s))
+    {K : List (String × List (BitVec 64))} {s : State} (hpre : PkPre c s (constRegs K s)) (hk : ConstsOk K 0 s)
+    (hm : (tsym, words) ∈ K) :
+    ∃ t s', Exec isa (Impl.EcKey.PPC64LE.Cfg.publicKeyWith c generator) s t s' ∧ abiPreserved s s' ∧
+      PkPost c s s' := by
+  have ht := Proof.Ecdsa.PPC64LE.Tab.tableMemK hk hm
+  have hd : Region.Disjoint ⟨s.syms tsym, 8 * words.length⟩ ⟨s.gpr .r5, 8192⟩ :=
+    hk.disjoint_wr hm (by rw [hpre.wr]; simp)
+  obtain ⟨t, s', he, K, hpost⟩ := publicKeyWith_ok hc h3 hL hpre fun s₁ S₁ sy =>
+    hgen S₁ (ht.unch (by rw [S₁.rk.rd, S₁.rk.wr]) S₁.whole (fun w hw => by
+      rw [List.mem_singleton] at hw; subst hw; decide) hd) (by rw [sy]) hd
+  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
+
 /-- The public key with a generator that reads a table. -/
 theorem pk_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c.C) {tsym : String}
     {words : List (BitVec 64)} {generator : Prog isa}
@@ -32,17 +52,8 @@ theorem pk_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hL : VG.Proof.Weierstrass.Law c.C
       WP isa generator s (GeneratorPost c base (kv c A s₀) (G c.C) s))
     {s : State} (hp : PkPre c (stripConsts [(tsym, words)] s)) (hk : ConstsOk [(tsym, words)] 0 s) :
     ∃ t s', Exec isa (Impl.EcKey.PPC64LE.Cfg.publicKeyWith c generator) s t s' ∧ abiPreserved s s' ∧
-      PkPost c (stripConsts [(tsym, words)] s) s' := by
-  have hpre : PkPre c s (constRegs [(tsym, words)] s) := by
-    refine ⟨?_, hp.wr, hp.out_sc, hp.d_sc, hp.out_fit, hp.d_fit, hp.sc_fit, fun h => (hp.tbl h).of_strip⟩
-    rw [← List.take_append_drop (s.rd.length - [(tsym, words)].length) s.rd, hk.1]
-    exact congrArg (fun rs => rs ++ constRegs [(tsym, words)] s) hp.rd
-  have ht := Proof.Ecdsa.PPC64LE.Tab.tableMem hk
-  have hd : Region.Disjoint ⟨s.syms tsym, 8 * words.length⟩ ⟨s.gpr .r5, 8192⟩ :=
-    hk.disjoint_wr (List.mem_singleton_self _) (by rw [hpre.wr]; simp)
-  obtain ⟨t, s', he, K, hpost⟩ := publicKeyWith_ok hc h3 hL hpre fun s₁ S₁ sy =>
-    hgen S₁ (ht.unch (by rw [S₁.rk.rd, S₁.rk.wr]) S₁.whole (fun w hw => by
-      rw [List.mem_singleton] at hw; subst hw; decide) hd) (by rw [sy]) hd
-  exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
+      PkPost c (stripConsts [(tsym, words)] s) s' :=
+  pk_okK hc h3 hL hgen (hpre := ⟨hk.rd_strip (by rw [hp.rd, List.append_nil]; rfl), hp.wr, hp.out_sc, hp.d_sc,
+    hp.out_fit, hp.d_fit, hp.sc_fit, fun h => (hp.tbl h).of_strip⟩) hk (List.mem_singleton_self _)
 
 end VG.Proof.EcKey.PPC64LE.Tab
