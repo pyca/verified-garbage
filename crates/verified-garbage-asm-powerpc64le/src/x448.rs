@@ -57,5 +57,5 @@ bl {vg_x448}
 pub(crate) mod vg_x448;
 
 #[rustfmt::skip]
-#[path = "internal/vg_x448_invert.rs"]
-pub(crate) mod vg_x448_invert;
+#[path = "internal/vg_x448_mul_core.rs"]
+pub(crate) mod vg_x448_mul_core;
