@@ -244,3 +244,15 @@ pub(crate) mod vg_aes_expand_key_scratch;
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch_aes.rs"]
 pub(crate) mod vg_aes_expand_key_scratch_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal.rs"]
+pub(crate) mod vg_aes_gcm_seal;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_aes.rs"]
+pub(crate) mod vg_aes_gcm_seal_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_neon.rs"]
+pub(crate) mod vg_aes_gcm_seal_neon;
