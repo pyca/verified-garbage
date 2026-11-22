@@ -153,6 +153,18 @@ GROUPS = {
             "wycheproof::ecdsa_brainpoolp512r1",
         ],
     },
+    "camellia_cbc": {
+        "lib": [],
+        "tests": ["cavp::camellia_cbc"],
+    },
+    "camellia_cfb": {
+        "lib": [],
+        "tests": ["cavp::camellia_cfb"],
+    },
+    "camellia_ofb": {
+        "lib": [],
+        "tests": ["cavp::camellia_ofb"],
+    },
     "chacha20": {
         "lib": ["cipher::chacha20", "aead::chacha20poly1305"],
         "tests": [
