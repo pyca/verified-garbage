@@ -41,16 +41,19 @@ open VG VG.X86 VG.X86.Wp
 open VG.Impl.Ecdsa.Rfc6979.X86 (Fns)
 open VG.Proof.HmacTable.X86 (HVar TabOK TabMem)
 
-/-- A call's public data: `esp` on entry, the frame's size, the bytes below
-it the calls use, the number of arguments, which is the table, the
-arguments, the buffer the function writes, the regions on entry, and the
-addresses of the table's functions. -/
-structure Lay where
-  E : BitVec 32
+/-- A frame's shape: its size, the bytes below it the calls use, the number
+of arguments, and which is the table. -/
+structure Sh where
   FB : Nat
   cb : Nat
   NA : Nat
   ti : Nat
+
+/-- A call's public data, for a frame of the shape `S`: `esp` on entry, the
+arguments, the buffer the function writes, the regions on entry, and the
+addresses of the table's functions. -/
+structure Lay (S : Sh) where
+  E : BitVec 32
   a : Nat → BitVec 32
   W : Region
   rd : List Region
@@ -59,39 +62,39 @@ structure Lay where
 
 namespace Lay
 
-variable (L : Lay)
+variable {S : Sh} (L : Lay S)
 
 /-- The stack used below the return address. -/
-abbrev N : Nat := L.FB + L.cb
-theorem N_eq : L.N = L.FB + L.cb := rfl
+abbrev N : Nat := S.FB + S.cb
+theorem N_eq : L.N = S.FB + S.cb := rfl
 /-- `esp` in the frame's body. -/
-abbrev F : BitVec 32 := L.E - BitVec.ofNat 32 L.FB
+abbrev F : BitVec 32 := L.E - BitVec.ofNat 32 S.FB
 /-- The lowest byte of the stack used. -/
 abbrev B : Addr := (L.E - BitVec.ofNat 32 L.N).setWidth 64
 /-- The table. -/
-abbrev tb : BitVec 32 := L.a L.ti
+abbrev tb : BitVec 32 := L.a S.ti
 
-abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 L.cb, L.FB⟩
-abbrev CALLS : Region := ⟨L.B, L.cb⟩
+abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 S.cb, S.FB⟩
+abbrev CALLS : Region := ⟨L.B, S.cb⟩
 abbrev STK : Region := ⟨L.B, L.N⟩
 abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 L.N, 4⟩
-abbrev ARGS : Region := ⟨L.B + BitVec.ofNat 64 (L.N + 4), 4 * L.NA⟩
+abbrev ARGS : Region := ⟨L.B + BitVec.ofNat 64 (L.N + 4), 4 * S.NA⟩
 abbrev TAB : Region := ⟨L.tb.setWidth 64, 24⟩
 /-- The frame above the saved registers. -/
-abbrev HI : Region := ⟨L.B + BitVec.ofNat 64 (L.cb + 16), L.FB - 16⟩
+abbrev HI : Region := ⟨L.B + BitVec.ofNat 64 (S.cb + 16), S.FB - 16⟩
 /-- The saved registers. -/
-abbrev SV : Region := ⟨L.B + BitVec.ofNat 64 L.cb, 16⟩
+abbrev SV : Region := ⟨L.B + BitVec.ofNat 64 S.cb, 16⟩
 
 /-- What the contracts say of where the buffers and the stack are, and what
 the frame's shape needs. -/
 structure Ok : Prop where
   e0 : L.N ≤ L.E.toNat
-  e1 : L.E.toNat + 4 + 4 * L.NA ≤ 2 ^ 32
-  s0 : 16 ≤ L.FB
-  s1 : L.FB < 4096
-  s2 : L.FB % 4 = 0
-  ti : L.ti < L.NA
-  c76 : 76 ≤ L.cb
+  e1 : L.E.toNat + 4 + 4 * S.NA ≤ 2 ^ 32
+  s0 : 16 ≤ S.FB
+  s1 : S.FB < 4096
+  s2 : S.FB % 4 = 0
+  ti : S.ti < S.NA
+  c76 : 76 ≤ S.cb
   nW : L.W.base.toNat + L.W.len ≤ 2 ^ 32
   kW : L.STK.Disjoint L.W
   rW : L.RET.Disjoint L.W
@@ -107,7 +110,7 @@ end Lay
 
 namespace Lay.Ok
 
-variable {L : Lay} (h : L.Ok)
+variable {S : Sh} {L : Lay S} (h : L.Ok)
 include h
 
 theorem BN : L.B.toNat = L.E.toNat - L.N := by
@@ -115,50 +118,50 @@ theorem BN : L.B.toNat = L.E.toNat - L.N := by
   simp only [Lay.B, BitVec.toNat_setWidth]
   rw [sub_toNat (by omega_arith)]; have := L.E.isLt; omega_arith
 
-theorem nB : L.B.toNat + L.N + 4 + 4 * L.NA ≤ 2 ^ 32 := by
+theorem nB : L.B.toNat + L.N + 4 + 4 * S.NA ≤ 2 ^ 32 := by
   have := L.N_eq; have := h.e0; have := h.e1; rw [h.BN]; omega_arith
 
-theorem FN : L.F.toNat = L.E.toNat - L.FB := sub_toNat (by have := h.e0; have := L.N_eq; omega_arith)
+theorem FN : L.F.toNat = L.E.toNat - S.FB := sub_toNat (by have := h.e0; have := L.N_eq; omega_arith)
 
 theorem B_eq : L.B = L.E.setWidth 64 - BitVec.ofNat 64 L.N := Taint.sub_setWidth h.e0
 
 /-- `[F + o]`, for `o` in the frame or the arguments above it. -/
-theorem addrF {o : Nat} (ho : o ≤ L.FB + 4 * L.NA) : addr L.F o = L.B + BitVec.ofNat 64 (L.cb + o) := by
+theorem addrF {o : Nat} (ho : o ≤ S.FB + 4 * S.NA) : addr L.F o = L.B + BitVec.ofNat 64 (S.cb + o) := by
   have := h.e0; have := h.e1; have := L.N_eq
   rw [addr_eq (by rw [h.FN]; omega_arith), Lay.F, Taint.sub_setWidth (by omega_arith), h.B_eq,
-    Offset.sub_ofNat_eq _ (show L.FB ≤ L.N by omega_arith), show L.N - L.FB = L.cb by omega_arith, Offset.add_add]
+    Offset.sub_ofNat_eq _ (show S.FB ≤ L.N by omega_arith), show L.N - S.FB = S.cb by omega_arith, Offset.add_add]
 
-theorem F64 : L.F.setWidth 64 = L.B + BitVec.ofNat 64 L.cb := by
+theorem F64 : L.F.setWidth 64 = L.B + BitVec.ofNat 64 S.cb := by
   have e := h.addrF (o := 0) (by omega_arith)
   rwa [addr, BitVec.add_zero, Nat.add_zero] at e
 
 /-- The address of argument `i`. -/
-theorem addrE (i : Nat) (hi : i < L.NA) : addr L.E (4 + 4 * i) = L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i) := by
+theorem addrE (i : Nat) (hi : i < S.NA) : addr L.E (4 + 4 * i) = L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i) := by
   have := h.e0; have := h.e1; have := L.N_eq
   rw [addr_eq (by omega_arith), h.B_eq, show L.N + 4 + 4 * i = L.N + (4 + 4 * i) by omega_arith,
     ← Offset.add_add (L.E.setWidth 64 - BitVec.ofNat 64 L.N) L.N (4 + 4 * i), BitVec.sub_add_cancel]
 
 /-- The `n` bytes below `F`, for `n` up to `cb`: among the calls'. -/
-theorem below_F {n : Nat} (hn : n ≤ L.cb) : Region.Sub (below L.F n) L.CALLS := by
+theorem below_F {n : Nat} (hn : n ≤ S.cb) : Region.Sub (below L.F n) L.CALLS := by
   have := h.e0; have := L.N_eq
   show Region.Sub ⟨(L.F - BitVec.ofNat 32 n).setWidth 64, n⟩ _
   rw [Taint.sub_setWidth (by rw [h.FN]; omega_arith), h.F64,
-    Offset.sub_ofNat_eq (L.B + BitVec.ofNat 64 L.cb) hn, BitVec.add_sub_cancel]
+    Offset.sub_ofNat_eq (L.B + BitVec.ofNat 64 S.cb) hn, BitVec.add_sub_cancel]
   exact Offset.sub_base _ (by omega_arith)
 
-theorem below_F_eq : below L.F L.cb = L.CALLS := by
+theorem below_F_eq : below L.F S.cb = L.CALLS := by
   have := h.e0; have := L.N_eq
-  show (⟨(L.F - BitVec.ofNat 32 L.cb).setWidth 64, L.cb⟩ : Region) = ⟨L.B, L.cb⟩
+  show (⟨(L.F - BitVec.ofNat 32 S.cb).setWidth 64, S.cb⟩ : Region) = ⟨L.B, S.cb⟩
   rw [Taint.sub_setWidth (by rw [h.FN]; omega_arith), h.F64, BitVec.add_sub_cancel]
 
 /-- The frame. -/
-theorem FR_eq : below L.E L.FB = L.FR := by
-  show (⟨L.F.setWidth 64, L.FB⟩ : Region) = _
+theorem FR_eq : below L.E S.FB = L.FR := by
+  show (⟨L.F.setWidth 64, S.FB⟩ : Region) = _
   rw [h.F64]
 
 /-- Regions at offsets of `B`. -/
-theorem disj {d n e k : Nat} (hs : d + n ≤ e ∨ e + k ≤ d) (hd : d + n ≤ L.N + 4 + 4 * L.NA)
-    (he : e + k ≤ L.N + 4 + 4 * L.NA) :
+theorem disj {d n e k : Nat} (hs : d + n ≤ e ∨ e + k ≤ d) (hd : d + n ≤ L.N + 4 + 4 * S.NA)
+    (he : e + k ≤ L.N + 4 + 4 * S.NA) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.B + BitVec.ofNat 64 e, k⟩ := by
   have := h.nB
   exact Offset.disjoint _ hs (by omega_arith) (by omega_arith)
@@ -205,7 +208,7 @@ structure Hk where
 
 /-- The state between the frame's entry and release: `g` are the registers
 on entry, `m₀` the memory and `y` the symbols' addresses. -/
-structure Ctx (K : Hk) (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (y : String → BitVec 32) (t : State) :
+structure Ctx {S : Sh} (K : Hk) (L : Lay S) (g : Reg → BitVec 32) (m₀ : Mem) (y : String → BitVec 32) (t : State) :
     Prop where
   rd : t.rd = L.rd
   wr : t.wr = L.FR :: L.wr
@@ -213,7 +216,7 @@ structure Ctx (K : Hk) (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (y : Strin
   saved : Spill.Saved t.mem (addr L.F) g Impl.Hkdf.X86.saved
   frame : Frame [L.W, L.STK] m₀ t.mem
   syms : t.syms = y
-  args : ∀ i < L.NA, m₀.readW (L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i)) 32 = L.a i
+  args : ∀ i < S.NA, m₀.readW (L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i)) 32 = L.a i
   tabOk : TabOK K.w.F K.f y
   tabMem : TabMem K.w.F y L.tb m₀
   tabD : m₀.readW (addr L.tb 16) 32 = BitVec.ofNat 32 K.w.F.H.D
@@ -222,9 +225,9 @@ structure Ctx (K : Hk) (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (y : Strin
 
 /-- A region the code may write without disturbing `Ctx`: within `W`, the
 frame above the saved registers, or the calls' bytes. -/
-def Safe (L : Lay) (r : Region) : Prop := Region.Sub r L.W ∨ Region.Sub r L.HI ∨ Region.Sub r L.CALLS
+def Safe {S : Sh} (L : Lay S) (r : Region) : Prop := Region.Sub r L.W ∨ Region.Sub r L.HI ∨ Region.Sub r L.CALLS
 
-theorem Safe.of_sub {L : Lay} {r r' : Region} (hs : Safe L r') (h : Region.Sub r r') : Safe L r := by
+theorem Safe.of_sub {S : Sh} {L : Lay S} {r r' : Region} (hs : Safe L r') (h : Region.Sub r r') : Safe L r := by
   rcases hs with hs | hs | hs
   exacts [.inl fun x hx => hs x (h x hx), .inr (.inl fun x hx => hs x (h x hx)),
     .inr (.inr fun x hx => hs x (h x hx))]
@@ -232,7 +235,7 @@ theorem Safe.of_sub {L : Lay} {r r' : Region} (hs : Safe L r') (h : Region.Sub r
 theorem saved_in : ∀ p ∈ Impl.Hkdf.X86.saved, p.2 + 4 ≤ 16 := by decide
 
 section
-variable {L : Lay} (hL : L.Ok)
+variable {S : Sh} {L : Lay S} (hL : L.Ok)
 include hL
 
 /-- The saved registers are apart from every safe region. -/
@@ -259,7 +262,7 @@ end
 
 namespace Ctx
 
-variable {K : Hk} {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {y : String → BitVec 32} {t t' : State}
+variable {S : Sh} {K : Hk} {L : Lay S} {g : Reg → BitVec 32} {m₀ : Mem} {y : String → BitVec 32} {t t' : State}
 
 /-- Code that keeps the permissions and `esp`, and writes only safe regions. -/
 theorem keep (hL : L.Ok) (hc : Ctx K L g m₀ y t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
@@ -295,12 +298,12 @@ theorem word (hc : Ctx K L g m₀ y t) {R : Region} (hW : R.Disjoint L.W) (hK : 
     · exact hK) (by decide)
 
 /-- Argument `i`, as on entry. -/
-theorem arg (hL : L.Ok) (hc : Ctx K L g m₀ y t) {i : Nat} (hi : i < L.NA) :
+theorem arg (hL : L.Ok) (hc : Ctx K L g m₀ y t) {i : Nat} (hi : i < S.NA) :
     t.mem.readW (L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i)) 32 = L.a i := by
   have := hL.nB; have := L.N_eq
-  rw [hc.word (R := L.ARGS) hL.aW (Offset.disjoint_base L.B (k := L.N) (d := L.N + 4) (n := 4 * L.NA)
+  rw [hc.word (R := L.ARGS) hL.aW (Offset.disjoint_base L.B (k := L.N) (d := L.N + 4) (n := 4 * S.NA)
       (by omega_arith) (by omega_arith))
-    (Offset.contains L.B (e := L.N + 4) (k := 4 * L.NA) (by omega_arith) (by omega_arith) (by omega_arith))]
+    (Offset.contains L.B (e := L.N + 4) (k := 4 * S.NA) (by omega_arith) (by omega_arith) (by omega_arith))]
   exact hc.args i hi
 
 /-- The table's words, as on entry. -/
@@ -310,18 +313,18 @@ theorem tabWord (hL : L.Ok) (hc : Ctx K L g m₀ y t) {o : Nat} (ho : o + 4 ≤ 
   exact hc.word hL.tW hL.tK (Offset.contains_base _ ho (by have := hL.nt; omega_arith))
 
 /-- A part of the frame is readable and writable. -/
-theorem inFrW (hL : L.Ok) (hc : Ctx K L g m₀ y t) {o n : Nat} (h : o + n ≤ L.FB) :
-    InRegions t.wr (L.B + BitVec.ofNat 64 (L.cb + o)) n :=
+theorem inFrW (hL : L.Ok) (hc : Ctx K L g m₀ y t) {o n : Nat} (h : o + n ≤ S.FB) :
+    InRegions t.wr (L.B + BitVec.ofNat 64 (S.cb + o)) n :=
   ⟨L.FR, by rw [hc.wr]; exact List.mem_cons_self, Offset.contains _ (by omega_arith) (by omega_arith)
     (by have := hL.nB; have := L.N_eq; omega_arith)⟩
 
-theorem inFr (hL : L.Ok) (hc : Ctx K L g m₀ y t) {o n : Nat} (h : o + n ≤ L.FB) :
-    InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 (L.cb + o)) n :=
+theorem inFr (hL : L.Ok) (hc : Ctx K L g m₀ y t) {o n : Nat} (h : o + n ≤ S.FB) :
+    InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 (S.cb + o)) n :=
   let ⟨r, hr, hc'⟩ := hc.inFrW hL h
   ⟨r, List.mem_append_right _ hr, hc'⟩
 
 /-- An argument is readable. -/
-theorem inArg (hL : L.Ok) (hc : Ctx K L g m₀ y t) {i : Nat} (hi : i < L.NA) :
+theorem inArg (hL : L.Ok) (hc : Ctx K L g m₀ y t) {i : Nat} (hi : i < S.NA) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i)) 4 :=
   ⟨L.ARGS, List.mem_append_right _ (by rw [hc.wr]; exact List.mem_cons_of_mem _ hL.aWr),
     Offset.contains _ (by have := L.N_eq; omega_arith) (by omega_arith) (by have := hL.nB; have := L.N_eq; omega_arith)⟩
@@ -332,7 +335,7 @@ end Ctx
 
 /-- `u'` is `u` with only the register `d` (not `esp`, and the flags)
 changed, to `v`. -/
-structure Upd (K : Hk) (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (y : String → BitVec 32) (u : State) (d : Reg)
+structure Upd {S : Sh} (K : Hk) (L : Lay S) (g : Reg → BitVec 32) (m₀ : Mem) (y : String → BitVec 32) (u : State) (d : Reg)
     (v : BitVec 32) (u' : State) : Prop where
   ctx : Ctx K L g m₀ y u'
   mem : u'.mem = u.mem
@@ -340,7 +343,7 @@ structure Upd (K : Hk) (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (y : Strin
   keep : ∀ r, r ≠ d → u'.gpr r = u.gpr r
   syms : u'.syms = u.syms
 
-variable {K : Hk} {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {y : String → BitVec 32}
+variable {S : Sh} {K : Hk} {L : Lay S} {g : Reg → BitVec 32} {m₀ : Mem} {y : String → BitVec 32}
 
 theorem Upd.of_wp {u u' : State} {d : Reg} {v : BitVec 32} (hL : L.Ok) (hc : Ctx K L g m₀ y u) (hd : d ≠ .esp)
     (h : VG.X86.Wp.Upd u u' d v) : Upd K L g m₀ y u d v u' :=
@@ -395,35 +398,35 @@ theorem addI_ok (v : BitVec 32) : WP isa (.block [.alu .add d (.imm v)]) u (Upd 
 
 omit hd in
 /-- `argM` reads argument `i`. -/
-theorem readArg {i : Nat} (hi : i < L.NA) : readSrc u (Impl.Hkdf.X86.argM L.FB i) = some (L.a i) := by
-  have e : addr L.F (L.FB + 4 + 4 * i) = L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i) := by
+theorem readArg {i : Nat} (hi : i < S.NA) : readSrc u (Impl.Hkdf.X86.argM S.FB i) = some (L.a i) := by
+  have e : addr L.F (S.FB + 4 + 4 * i) = L.B + BitVec.ofNat 64 (L.N + 4 + 4 * i) := by
     have := L.N_eq
-    rw [hL.addrF (by omega_arith), show L.cb + (L.FB + 4 + 4 * i) = L.N + 4 + 4 * i by omega_arith]
+    rw [hL.addrF (by omega_arith), show S.cb + (S.FB + 4 + 4 * i) = L.N + 4 + 4 * i by omega_arith]
   rw [Impl.Hkdf.X86.argM, Impl.Hkdf.X86.sp, readSrc_mem hc.esp (by rw [e]; exact hc.inArg hL hi), e, hc.arg hL hi]
 
 /-- `d ← argument i`. -/
-theorem arg_ok {i : Nat} (hi : i < L.NA) :
-    WP isa (.block [.mov d (Impl.Hkdf.X86.argM L.FB i)]) u (Upd K L g m₀ y u d (L.a i)) :=
+theorem arg_ok {i : Nat} (hi : i < S.NA) :
+    WP isa (.block [.mov d (Impl.Hkdf.X86.argM S.FB i)]) u (Upd K L g m₀ y u d (L.a i)) :=
   wp_movS (readArg hL hc hi) fun _ v₁ => WP.block_nil (Upd.of_wp hL hc hd v₁)
 
 /-- `d ← d + argument i`. -/
-theorem addA_ok {i : Nat} (hi : i < L.NA) :
-    WP isa (.block [.alu .add d (Impl.Hkdf.X86.argM L.FB i)]) u (Upd K L g m₀ y u d (u.gpr d + L.a i)) :=
+theorem addA_ok {i : Nat} (hi : i < S.NA) :
+    WP isa (.block [.alu .add d (Impl.Hkdf.X86.argM S.FB i)]) u (Upd K L g m₀ y u d (u.gpr d + L.a i)) :=
   wp_addS (readArg hL hc hi) fun _ v₁ => WP.block_nil (Upd.of_wp hL hc hd v₁)
 
 /-- `d ← [esp + o]`, a word of the frame. -/
-theorem ldF_ok {o : Nat} (ho : o + 4 ≤ L.FB) :
+theorem ldF_ok {o : Nat} (ho : o + 4 ≤ S.FB) :
     WP isa (.block [.mov d (.mem (Impl.Hkdf.X86.sp o))]) u
-      (Upd K L g m₀ y u d (u.mem.readW (L.B + BitVec.ofNat 64 (L.cb + o)) 32)) := by
+      (Upd K L g m₀ y u d (u.mem.readW (L.B + BitVec.ofNat 64 (S.cb + o)) 32)) := by
   obtain e := hL.addrF (o := o) (by omega_arith)
   refine wp_ldm hc.esp (by rw [e]; exact hc.inFr hL ho) fun u' v => WP.block_nil ?_
   rw [e] at v
   exact Upd.of_wp hL hc hd v
 
 /-- `d ← d + [esp + o]`, a word of the frame. -/
-theorem addF_ok {o : Nat} (ho : o + 4 ≤ L.FB) :
+theorem addF_ok {o : Nat} (ho : o + 4 ≤ S.FB) :
     WP isa (.block [.alu .add d (.mem (Impl.Hkdf.X86.sp o))]) u
-      (Upd K L g m₀ y u d (u.gpr d + u.mem.readW (L.B + BitVec.ofNat 64 (L.cb + o)) 32)) := by
+      (Upd K L g m₀ y u d (u.gpr d + u.mem.readW (L.B + BitVec.ofNat 64 (S.cb + o)) 32)) := by
   obtain e := hL.addrF (o := o) (by omega_arith)
   refine wp_addm hc.esp (by rw [e]; exact hc.inFr hL ho) fun u' v => WP.block_nil ?_
   rw [e] at v
@@ -433,13 +436,13 @@ end
 
 /-- `[esp + o] ← r`, a word of the frame above the saved registers. -/
 theorem stF_ok (hL : L.Ok) {u : State} (hc : Ctx K L g m₀ y u) (r : Reg) {o : Nat} (h₁ : 16 ≤ o)
-    (ho : o + 4 ≤ L.FB) :
+    (ho : o + 4 ≤ S.FB) :
     WP isa (.block [.store (Impl.Hkdf.X86.sp o) r]) u fun u' => Ctx K L g m₀ y u' ∧
-      u'.mem = u.mem.writeW (L.B + BitVec.ofNat 64 (L.cb + o)) (u.gpr r) ∧ u'.gpr = u.gpr ∧ u'.syms = u.syms := by
+      u'.mem = u.mem.writeW (L.B + BitVec.ofNat 64 (S.cb + o)) (u.gpr r) ∧ u'.gpr = u.gpr ∧ u'.syms = u.syms := by
   obtain e := hL.addrF (o := o) (by omega_arith)
   refine wp_stm hc.esp (by rw [e]; exact hc.inFrW hL ho) fun u' v => WP.block_nil ?_
   rw [e] at v
-  refine ⟨hc.keep hL v.rd v.wr (by rw [v.gpr]) (ws := [⟨L.B + BitVec.ofNat 64 (L.cb + o), 4⟩]) ?_ ?_ v.syms,
+  refine ⟨hc.keep hL v.rd v.wr (by rw [v.gpr]) (ws := [⟨L.B + BitVec.ofNat 64 (S.cb + o), 4⟩]) ?_ ?_ v.syms,
     v.mem, v.gpr, v.syms⟩
   · rw [v.mem]
     exact (Frame.refl _ _).writeW List.mem_cons_self _ (Region.contains_self _ _)
