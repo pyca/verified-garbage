@@ -21,9 +21,9 @@ namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 open VG.Proof.MillerRabin.Arm (RoundImpl)
 
-theorem millerRabin_ok (v : RoundImpl) {s : State} {p : WitnessParams} {used passed : Nat}
+theorem millerRabin_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : WitnessParams} {used passed : Nat}
     (start : WitnessState p used passed s) (more : passed < p.checks) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.millerRabin v.name v.code) s (WitnessEnd p used passed s) := by
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.millerRabin (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s (WitnessEnd p used passed s) := by
   let inv := fun k t => ∃ current successes,
     k = p.bytes.length - current + 1 ∧ WitnessState p current successes t ∧ successes < p.checks ∧
     used ≤ current ∧ witnessRemaining p used passed = witnessRemaining p current successes ∧
@@ -33,7 +33,7 @@ theorem millerRabin_ok (v : RoundImpl) {s : State} {p : WitnessParams} {used pas
     ⟨used, passed, rfl, start, more, Nat.le_refl _, rfl, Frame.refl _ _, Rest.refl _ _⟩
   intro k a state
   obtain ⟨current, successes, measure, ctx, moreNow, consumed, result, changed, rest⟩ := state
-  refine WP.mono (witnessStep_ok v ctx moreNow) ?_
+  refine WP.mono (witnessStep_ok b v ctx moreNow) ?_
   rintro t ⟨nextState, status, zero, delta, restT⟩
   rw [rest.sp] at delta
   have totalFrame := changed.trans delta
@@ -109,13 +109,13 @@ def PhaseEnd (p : WitnessParams) (used : Nat) (s t : State) : Prop :=
     (∀ pass rest, witnessRemaining p used 0 = some (pass, rest) → rest = p.bytes.drop nextUsed) ∧
     Frame (phaseRegions p s.sp) s.mem t.mem ∧ Rest roundClobbers s t
 
-theorem phaseRun_ok (v : RoundImpl) {s : State} {p : WitnessParams} {src : BitVec 32} {k used : Nat}
+theorem phaseRun_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : WitnessParams} {src : BitVec 32} {k used : Nat}
     (h : PhaseInput p src k used s) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.phaseRun v.name v.code) s (PhaseEnd p used s) := by
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.phaseRun (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s (PhaseEnd p used s) := by
   rw [VG.Impl.Ffdh.Arm.ParameterCandidate.phaseRun, WP.seq_iff]
-  refine WP.mono (preparedWitness_ok h) ?_
+  refine WP.mono (preparedWitness_ok b h) ?_
   rintro u ⟨state, changed, rest⟩
-  refine WP.mono (millerRabin_ok v state h.checksPositive) ?_
+  refine WP.mono (millerRabin_ok b v state h.checksPositive) ?_
   rintro t ⟨nextUsed, nextPassed, stateT, consumed, status, suffix, changedT, restT⟩
   have phaseFrame := phase_witness_frame state.saved.space changedT
   rw [rest.sp] at phaseFrame

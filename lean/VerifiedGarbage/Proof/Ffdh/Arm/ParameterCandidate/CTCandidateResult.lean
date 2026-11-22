@@ -31,11 +31,11 @@ def CandidateTestEnd (p : CandidateParams) (q : Bool) (used : Nat) (s t : State)
     Spec.Rsa.bytesAt t.mem (State.addr p.out) p.length = Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length ∧
     Frame (phaseRegions (candidatePhase p q) s.sp) s.mem t.mem ∧ Rest roundClobbers s t
 
-theorem candidateTest_ok (v : RoundImpl) {s : State} {p : CandidateParams} {consumed : Nat} {q : Bool}
+theorem candidateTest_ok (b : VG.Proof.Bignum.Arm.MontBackend) (v : RoundImpl) {s : State} {p : CandidateParams} {consumed : Nat} {q : Bool}
     (h : CandidateContext p consumed s)
     (number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) = (candidatePhase p q).modulus)
     (odd : (candidatePhase p q).modulus % 2 = 1) :
-    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.test q v.name v.code) s (CandidateTestEnd p q consumed s) := by
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.test q (VG.Impl.Bignum.Arm.MontCall.op b.name b.mul) v.name v.code) s (CandidateTestEnd p q consumed s) := by
   rw [VG.Impl.Ffdh.Arm.ParameterCandidate.test, WP.seq_iff]
   refine WP.mono (candidatePhaseHead_ok h q) ?_
   rintro u ⟨context, saved, changed, rest⟩
@@ -43,7 +43,7 @@ theorem candidateTest_ok (v : RoundImpl) {s : State} {p : CandidateParams} {cons
   have bytes := h.phase_output phaseFrame
   have numberU : Spec.Rsa.os2ip (Spec.Rsa.bytesAt u.mem (State.addr p.out) p.length) =
       (candidatePhase p q).modulus := by rw [bytes]; exact number
-  refine WP.mono (phaseRun_ok v (candidatePhaseInput context saved numberU odd)) ?_
+  refine WP.mono (phaseRun_ok b v (candidatePhaseInput context saved numberU odd)) ?_
   rintro t ⟨next, passed, state, consumedT, status, suffix, changedT, restT⟩
   have bytesT := context.phase_output changedT
   have contextT := context.after_phase state changedT restT

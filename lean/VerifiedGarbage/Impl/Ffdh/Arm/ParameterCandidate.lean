@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
 public import VerifiedGarbage.Impl.Ffdh.Arm.CandidatePrepare
-public import VerifiedGarbage.Impl.Ffdh.Arm.CallerRows
 public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
 public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
-public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
 public import VerifiedGarbage.Impl.Bignum.Arm.R2
 public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
 public import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
@@ -20,8 +18,9 @@ keeps the arguments and public search state. The modulus is shaped in the
 output buffer, tested as q in place, and reloaded as p. Both phases use
 the workspace width of p, including when q occupies one fewer limb.
 
-The shared RSA Miller–Rabin round owns the expensive exponentiation. The
-candidate's random tape is public under the existing parameter contract,
+The shared RSA Miller–Rabin round owns the expensive exponentiation, and
+every Montgomery product of the candidate's own preparation is `op`, a call
+of the shared RSA product. The candidate's random tape is public under the existing parameter contract,
 so decomposition of n-1 may stop at its first odd quotient. -/
 
 @[expose] public section
@@ -236,9 +235,9 @@ def montKeyArrays : Prog isa := seqs [
 
 def montKeySetup : Prog isa := .seq (.block (keyContext ++ keyStride)) montKeyArrays
 
-def montPrep : Prog isa := seqs [
-  .block [.ldrSp .r0 0, .ldrSp .r6 12], VG.Impl.Ffdh.Arm.CandidatePrepare.code,
-  .seq (smallConst 1 1) (montOp 1 1 4), montKeySetup]
+def montPrep (op : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+  .block [.ldrSp .r0 0, .ldrSp .r6 12], VG.Impl.Ffdh.Arm.CandidatePrepare.code op,
+  .seq (smallConst 1 1) (op 1 1 4), montKeySetup]
 
 def phaseBitHead (q : Bool) : List Instr :=
   [.ldrSp .r3 24] ++ (if q then [.dp .sub .r3 .r3 (.imm 1)] else []) ++ save .r3 44
@@ -310,10 +309,10 @@ def onPass : Prog isa := seqs [.block onPassHead,
   .ite .eq (.block [.mov .r3 (.imm 1)]) (.block [.mov .r3 (.imm 4)]),
   .block onPassFinish]
 
-def roundKernel (name : String) (body : Prog isa) : Prog isa := seqs [
-  montOp 5 1 4, .block [.ldrSp .r0 0, .ldrSp .r1 36], .call name body]
+def roundKernel (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := seqs [
+  op 5 1 4, .block [.ldrSp .r0 0, .ldrSp .r1 36], .call name body]
 
-def round (name : String) (body : Prog isa) : Prog isa := seqs [roundKernel name body,
+def round (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := seqs [roundKernel op name body,
   .block [.cmp .r0 (.imm 0)],
   .ite .eq (.block [.mov .r3 (.imm 2), .cmp .r3 (.imm 4)]) onPass]
 
@@ -327,66 +326,61 @@ def drawSample : Prog isa := .seq drawHead sampleWitness
 
 def drawRange : Prog isa := .seq drawSample (VG.Impl.Ffdh.Arm.inRange 1)
 
-def draw (name : String) (body : Prog isa) : Prog isa := seqs [
+def draw (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := seqs [
   drawRange,
   .block [.cmp .r11 (.imm 0)],
-  .ite .eq (.block [.mov .r3 (.imm 4), .cmp .r3 (.imm 4)]) (round name body)]
+  .ite .eq (.block [.mov .r3 (.imm 4), .cmp .r3 (.imm 4)]) (round op name body)]
 
-def witnessStep (name : String) (body : Prog isa) : Prog isa :=
+def witnessStep (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa :=
   seqs [.block witnessRoom,
-    .ite .eq (.block [.mov .r3 (.imm 0), .cmp .r3 (.imm 4)]) (draw name body)]
+    .ite .eq (.block [.mov .r3 (.imm 0), .cmp .r3 (.imm 4)]) (draw op name body)]
 
-def millerRabin (name : String) (body : Prog isa) : Prog isa := .loop (witnessStep name body) .eq
+def millerRabin (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := .loop (witnessStep op name body) .eq
 
-def phasePrepared : Prog isa := .seq montPrep expSetup
+def phasePrepared (op : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (montPrep op) expSetup
 
-def phaseRun (name : String) (body : Prog isa) : Prog isa := .seq phasePrepared (millerRabin name body)
+def phaseRun (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := .seq (phasePrepared op) (millerRabin op name body)
 
-def test (q : Bool) (name : String) (body : Prog isa) : Prog isa := .seq (.block (phaseHead q)) (phaseRun name body)
+def test (q : Bool) (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := .seq (.block (phaseHead q)) (phaseRun op name body)
 
 /-- Limit p's first phase to one witness, or finish its remaining witnesses. -/
 def phaseLimit (first : Bool) : List Instr :=
   (if first then [.mov .r1 (.imm 1)] else [.ldrSp .r1 52, .dp .sub .r1 .r1 (.imm 1)]) ++ save .r1 52
 
-def testLimited (first : Bool) (name : String) (body : Prog isa) : Prog isa :=
-  .seq (.block (phaseHead false ++ phaseLimit first)) (phaseRun name body)
+def testLimited (first : Bool) (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa :=
+  .seq (.block (phaseHead false ++ phaseLimit first)) (phaseRun op name body)
 
 def result : Prog isa := seqs [
   .block [.cmp .r3 (.imm 0)], .ite .eq finNone
     (seqs [.block [.cmp .r3 (.imm 1)], .ite .eq finAccepted finRejected])]
 
-def limitedFinal (name : String) (body : Prog isa) : Prog isa :=
-  seqs [shapeP, testLimited false name body, result]
+def limitedFinal (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa :=
+  seqs [shapeP, testLimited false op name body, result]
 
-def afterScreenedQ (name : String) (body : Prog isa) : Prog isa := seqs [
-  test true name body, .block [.cmp .r3 (.imm 1)],
-  .ite .eq (limitedFinal name body) result]
+def afterScreenedQ (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := seqs [
+  test true op name body, .block [.cmp .r3 (.imm 1)],
+  .ite .eq (limitedFinal op name body) result]
 
-def screenedQ (name : String) (body : Prog isa) : Prog isa :=
-  .seq halveQ (afterScreenedQ name body)
+def screenedQ (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa :=
+  .seq halveQ (afterScreenedQ op name body)
 
-def screenedTests (name : String) (body : Prog isa) : Prog isa := seqs [
-  shapeP, testLimited true name body, .block [.cmp .r3 (.imm 1)],
-  .ite .eq (screenedQ name body) result]
+def screenedTests (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := seqs [
+  shapeP, testLimited true op name body, .block [.cmp .r3 (.imm 1)],
+  .ite .eq (screenedQ op name body) result]
 
-def tests (name : String) (body : Prog isa) : Prog isa := screenedTests name body
+def tests (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := screenedTests op name body
 
-def screenPair (name : String) (body : Prog isa) : Prog isa := seqs [.block tableWrite, pairSieve,
-  .ite .eq (tests name body) finRejected]
+def screenPair (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := seqs [.block tableWrite, pairSieve,
+  .ite .eq (tests op name body) finRejected]
 
-def screenP (name : String) (body : Prog isa) : Prog isa := seqs [.block qOdd,
-  .ite .eq (screenPair name body) finRejected]
+def screenP (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := seqs [.block qOdd,
+  .ite .eq (screenPair op name body) finRejected]
 
-def main (name : String) (body : Prog isa) : Prog isa := seqs [
+def main (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := seqs [
   .block ([.ldrSp .r1 12] ++ save .r1 40), shapeP, residue,
-  .ite .eq (screenP name body) finRejected]
+  .ite .eq (screenP op name body) finRejected]
 
-def code (name : String) (body : Prog isa) : Prog isa := VG.Impl.Ffdh.Arm.framed
-  (seqs [.block entry, .block initialRoom, .ite .eq finNone (main name body)])
-
-/-- A selected shared round keeps its exact call body. The caller's own
-Montgomery conversions follow the backend's UMAAL requirement as well. -/
-def optimizedCode (umaal : Bool) (name : String) (body : Prog isa) : Prog isa :=
-  if umaal then callerRows (code name body) else code name body
+def code (op : Nat → Nat → Nat → Prog isa) (name : String) (body : Prog isa) : Prog isa := VG.Impl.Ffdh.Arm.framed
+  (seqs [.block entry, .block initialRoom, .ite .eq finNone (main op name body)])
 
 end VG.Impl.Ffdh.Arm.ParameterCandidate
