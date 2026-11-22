@@ -198,7 +198,7 @@ pub unsafe fn vg_ffdh_derive_public_auto(_dit: verified_garbage_cpu::Dit<'_>, y:
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `domain` nor `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `domain` nor `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ffdh_check_domain_auto(_dit: verified_garbage_cpu::Dit<'_>, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {

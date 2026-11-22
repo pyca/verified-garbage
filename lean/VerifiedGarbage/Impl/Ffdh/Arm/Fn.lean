@@ -26,9 +26,10 @@ def keyInit : Prog isa := scrub 32 KeyGeneration.init
 /-- `vg_ffdh_parameter_generation_init`. -/
 def parameterInit : Prog isa := scrub 32 Generation.init
 
-/-- `vg_ffdh_check_domain`, of a variant's code `c`, whose frames use at
-most the 128 bytes of stack its contract reserves. -/
-def checkDomain (c : Prog isa) : Prog isa := scrubAll 32 128 c
+/-- `vg_ffdh_check_domain`, of the code `c` of a function generic over the
+RSA Montgomery product, whose frames use at most the 176 bytes of stack its
+contract reserves. -/
+def checkDomain (c : Prog isa) : Prog isa := scrubAll 32 176 c
 
 /-- `vg_ffdh_check_private`, of the code `c` of a function generic over the
 RSA Montgomery product, whose frames use at most the 176 bytes of stack its

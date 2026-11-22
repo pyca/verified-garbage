@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInitVerified
 public import VerifiedGarbage.Impl.Ffdh.Arm.Fn
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPrivateInstances
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckDomainInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedDeriveInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeVerified
@@ -35,14 +36,13 @@ within their buffers (`Arm.Scrub.PostOut`; `postOut_of_local_pre` where the
 length a postcondition reads is one the precondition equates with the
 buffer's).
 
-An FFDH `Backend` states `CodeOk` of its own code (`Backend.checkDomain_ok`,
-by `lit_decide` where it is defined). The functions generic over the RSA
-Montgomery product (`MontBackend`) prove it once for any implementation:
-their code with a stub in place of the product (`holeStub 40`) is evaluated
-once (`lit_decide`), `fill_holes` proves that the code with any
-implementation fills its holes (`FillB`), from the `CodeOk` the
-implementation states of its own code (`MontBackend.mulOk`), and the
-implementation's rewriting of its callers keeps it (`MontBackend.callerOk`).
+The functions generic over the RSA Montgomery product (`MontBackend`)
+prove it once for any implementation: their code with a stub in place of
+the product (`holeStub 40`) is evaluated once (`lit_decide`), `fill_holes`
+proves that the code with any implementation fills its holes (`FillB`),
+from the `CodeOk` the implementation states of its own code
+(`MontBackend.mulOk`), and the implementation's rewriting of its callers
+keeps it (`MontBackend.callerOk`).
 -/
 
 @[expose] public section
@@ -52,7 +52,7 @@ namespace VG.Proof.Ffdh.Arm.Scrub
 open VG VG.Arm VG.Arm.Scrub VG.Arm.ScrubFill VG.Arm.FrameStack
 
 theorem checkDomainOut :
-    PostOut (Spec.Ffdh.checkDomainContract (abi.withConsts Impl.Ffdh.Arm.VettedGroups.tableConsts) 128)
+    PostOut (Spec.Ffdh.checkDomainContract (abi.withConsts Impl.Ffdh.Arm.VettedGroups.tableConsts) 176)
       (Spec.Ffdh.checkDomainSig.retBits 32) :=
   postOut_of_local (ScrubAbi.consts _) fun vs m m₁ m₂ r hlen _ h => by
     iterate 5
@@ -281,6 +281,13 @@ theorem checkPublicStub : CodeOk (Impl.Ffdh.Arm.SharedCheckPublic.code (MontCall
 theorem checkPublicOk (b : MontBackend) : CodeOk (SharedCheckPublic.calledCode b) 176 :=
   b.callerOk _ _ ((show FillB _ (SharedCheckPublic.code b) by have := b.mulOk; fill_holes).codeOk checkPublicStub)
 
+theorem checkDomainStub :
+    CodeOk (Impl.Ffdh.Arm.SharedCheckDomain.code (MontCall.op "" (holeStub 40))) 176 := by
+  lit_decide
+
+theorem checkDomainOk (b : MontBackend) : CodeOk (SharedCheckDomain.calledCode b) 176 :=
+  b.callerOk _ _ ((show FillB _ (SharedCheckDomain.code b) by have := b.mulOk; fill_holes).codeOk checkDomainStub)
+
 theorem checkPrivateStub :
     CodeOk (Impl.Ffdh.Arm.SharedCheckPrivate.code (MontCall.op "" (holeStub 40))) 176 := by
   lit_decide
@@ -413,8 +420,6 @@ theorem parameterSearchOk (v : RoundImpl) :
       (.call (parameterBackend v).candidateName (parameterBackend v).candidate)) by
     have := candidateOk v; fill_holes).codeOk parameterSearchStub
 
-theorem frameOk_128 : FrameOk 128 := by decide
-
 theorem frameOk_176 : FrameOk 176 := by decide
 
 theorem frameOk_240 : FrameOk 240 := by decide
@@ -438,13 +443,14 @@ theorem parameterInit :
   verifiedScrubbed (api := Spec.Ffdh.parameterInitApi)
     { code := Impl.Ffdh.Arm.Generation.init, verified := Proof.Ffdh.Arm.parameterInit_verified } rfl
 
-/-- `vg_ffdh_check_domain`, with the implementation `v`. -/
-theorem checkDomain (v : Backend) :
-    VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.checkDomain v.checkDomain)
-      (Spec.Ffdh.checkDomainContract (abi.withConsts Impl.Ffdh.Arm.VettedGroups.tableConsts) 128) 32 :=
+open VG.Proof.Bignum.Arm in
+/-- `vg_ffdh_check_domain`, with the Montgomery product `b`. -/
+theorem checkDomain (b : MontBackend) :
+    VerifiedScrubbed target (Impl.Ffdh.Arm.Fn.checkDomain (SharedCheckDomain.calledCode b))
+      (Spec.Ffdh.checkDomainContract (abi.withConsts Impl.Ffdh.Arm.VettedGroups.tableConsts) 176) 32 :=
   verifiedScrubbedAll (api := Spec.Ffdh.checkDomainApi)
-    { code := v.checkDomain, verified := v.checkDomain_verified }
-    Scrub.checkDomainOut (scrubSideF_of v.checkDomain_ok Scrub.frameOk_128 _)
+    { code := SharedCheckDomain.calledCode b, verified := SharedCheckDomain.called_verified b }
+    Scrub.checkDomainOut (scrubSideF_of (Scrub.checkDomainOk b) Scrub.frameOk_176 _)
 
 open VG.Proof.Bignum.Arm in
 /-- `vg_ffdh_check_private`, with the Montgomery product `b`. -/

@@ -24,9 +24,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeVerified
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Verified
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedDeriveInstances
-public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
-public import VerifiedGarbage.Proof.Variants.Ffdh.Arm
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckDomainInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPrivateInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
 
@@ -69,24 +68,16 @@ def artifacts : List Artifact :=
 
 end VG.Artifacts.Ffdh.Arm.DerivePublic
 
--- Emit every native ARMv7 FFDH backend
-namespace VG.Artifacts.Ffdh.Arm.Domain.Ffdh
-open VG
-
-def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
-  [Spec.Ffdh.checkDomainApi.artifact VG.Arm.target {
-    suffix := v.suffix
-    code := Impl.Ffdh.Arm.Fn.checkDomain v.checkDomain
-    verified := Proof.Ffdh.Arm.Fn.checkDomain v }]
-
-end VG.Artifacts.Ffdh.Arm.Domain.Ffdh
-
--- Public- and private-key validation inherit every shared RSA Montgomery backend
+-- Domain, public- and private-key validation inherit every shared RSA Montgomery backend
 namespace VG.Artifacts.Ffdh.Arm.Domain.RsaMont
 open VG
 
 def artifacts (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
-  [Spec.Ffdh.checkPrivateApi.artifact VG.Arm.target {
+  [Spec.Ffdh.checkDomainApi.artifact VG.Arm.target {
+    suffix := b.suffix
+    code := Impl.Ffdh.Arm.Fn.checkDomain (Proof.Ffdh.Arm.SharedCheckDomain.calledCode b)
+    verified := Proof.Ffdh.Arm.Fn.checkDomain b },
+  Spec.Ffdh.checkPrivateApi.artifact VG.Arm.target {
     suffix := b.suffix
     code := Impl.Ffdh.Arm.Fn.checkPrivate (Proof.Ffdh.Arm.SharedCheckPrivate.calledCode b)
     verified := Proof.Ffdh.Arm.Fn.checkPrivate b },
@@ -100,8 +91,7 @@ end VG.Artifacts.Ffdh.Arm.Domain.RsaMont
 namespace VG.Artifacts.Ffdh.Arm.Domain
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.Ffdh.Arm.variants.flatMap fun v => Ffdh.artifacts v) ++
-  (VG.Proof.Variants.RsaMont.Arm.variants.flatMap fun v => RsaMont.artifacts v)
+  VG.Proof.Variants.RsaMont.Arm.variants.flatMap fun v => RsaMont.artifacts v
 
 end VG.Artifacts.Ffdh.Arm.Domain
 

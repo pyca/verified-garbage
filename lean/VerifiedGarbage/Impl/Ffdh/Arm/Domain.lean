@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
 public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
 public import VerifiedGarbage.Impl.Bignum.Arm.MaskBytes
 public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
-public import VerifiedGarbage.Impl.Bignum.Arm.ReduceOperand
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportBE
 public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
 public import VerifiedGarbage.Impl.Ffdh.Arm.PublicScan
@@ -86,19 +85,8 @@ namespace CheckDomain
 def entry : List Instr := [
   .addSp .r12 0, st .r0 24, st .r1 28, st .r2 32, .mov .r0 (.reg .r3), st .r0 0]
 
-/-- Since q>2, checking p mod q=1 is equivalent to q dividing p-1.
-RSA's encode/decode reduction accepts the full-width p as its input. -/
-def divides : Prog isa := .seq (prepareAt 60) (.seq (importAt 1 24 32)
-  (.seq (smallConst 7 1) (.seq (reduceOperand 1) (isOne 1))))
-
 def qRange : Prog isa := .seq (importAt 1 60 32)
   (.seq (inRange 1) (.seq (.block saveFlag) (.seq (odd 1) (.block andFlag))))
-
-def qChecks : Prog isa := .seq qRange (ifFlag
-  (.seq divides (ifFlag (.seq (prepareAt 24) (.seq (subgroup 56) finishFlag)) (ret 0))) (ret 0))
-
-def main : Prog isa := .seq (prepareAt 24) (.seq (importAt 1 56 32)
-  (.seq (inRange 1) (ifFlag (withQ qChecks (ret 1)) (ret 0))))
 
 end CheckDomain
 
