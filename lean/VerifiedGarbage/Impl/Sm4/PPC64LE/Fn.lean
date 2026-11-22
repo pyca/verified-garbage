@@ -34,12 +34,12 @@ def expandKey : Prog isa :=
 /-- `vg_sm4_ecb_encrypt`, as emitted. -/
 def ecbEncrypt : Prog isa :=
   scrubAll 0 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
-    (Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .encrypt))
+    (Impl.StackScratch.PPC64LE.withStackScratchWiped 3280 .r6 406 (Impl.Sm4.PPC64LE.ecb .encrypt))
 
 /-- `vg_sm4_ecb_decrypt`, as emitted. -/
 def ecbDecrypt : Prog isa :=
   scrubAll 0 0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩
-    (Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .decrypt))
+    (Impl.StackScratch.PPC64LE.withStackScratchWiped 3280 .r6 406 (Impl.Sm4.PPC64LE.ecb .decrypt))
 
 /-- `vg_sm4_cbc_encrypt_chained`, as emitted. -/
 def cbcEncrypt : Prog isa :=

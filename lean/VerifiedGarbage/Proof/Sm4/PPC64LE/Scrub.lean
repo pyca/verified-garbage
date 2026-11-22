@@ -107,22 +107,22 @@ theorem expandKey_scrubbed :
 contract in constant time and returns without secret residue. -/
 theorem ecbEncrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sm4.PPC64LE.Fn.ecbEncrypt
-      (Spec.Sm4.ecbContract PPC64LE.abi (Proof.Sm4.specDirPPC64LE Impl.Sm4.PPC64LE.Dir.encrypt) 3248) 0 :=
+      (Spec.Sm4.ecbContract PPC64LE.abi (Proof.Sm4.specDirPPC64LE Impl.Sm4.PPC64LE.Dir.encrypt) 3280) 0 :=
   verifiedScrubbedWiped (api := Spec.Sm4.ecbEncryptApi) {
-      code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .encrypt)
+      code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3280 .r6 406 (Impl.Sm4.PPC64LE.ecb .encrypt)
       verified := Proof.Sm4.PPC64LE.ecb_framed .encrypt }
-    3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .encrypt)
+    3280 .r6 406 (Impl.Sm4.PPC64LE.ecb .encrypt)
     ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (ecbEncryptOut _) (by dsimp only; lit_decide)
 
 /-- `vg_sm4_ecb_decrypt` as emitted (`Impl.Sm4.PPC64LE.Fn.ecbDecrypt`) meets its
 contract in constant time and returns without secret residue. -/
 theorem ecbDecrypt_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.Sm4.PPC64LE.Fn.ecbDecrypt
-      (Spec.Sm4.ecbContract PPC64LE.abi (Proof.Sm4.specDirPPC64LE Impl.Sm4.PPC64LE.Dir.decrypt) 3248) 0 :=
+      (Spec.Sm4.ecbContract PPC64LE.abi (Proof.Sm4.specDirPPC64LE Impl.Sm4.PPC64LE.Dir.decrypt) 3280) 0 :=
   verifiedScrubbedWiped (api := Spec.Sm4.ecbDecryptApi) {
-      code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .decrypt)
+      code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3280 .r6 406 (Impl.Sm4.PPC64LE.ecb .decrypt)
       verified := Proof.Sm4.PPC64LE.ecb_framed .decrypt }
-    3248 .r6 402 (Impl.Sm4.PPC64LE.ecb .decrypt)
+    3280 .r6 406 (Impl.Sm4.PPC64LE.ecb .decrypt)
     ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], false, []⟩ rfl (ecbDecryptOut _) (by dsimp only; lit_decide)
 
 /-- `vg_sm4_cbc_encrypt_chained` as emitted (`Impl.Sm4.PPC64LE.Fn.cbcEncrypt`)

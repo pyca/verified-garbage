@@ -115,14 +115,6 @@ theorem byte_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {a : Add
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨a, 1⟩ r) : m' a = m a :=
   hf a fun r hr hc => hd r hr a (Region.contains_self _ _) hc
 
-/-- The table's offsets: in the functions' slots, outside the tail buffer. -/
-theorem table_off {r : Nat × Nat} (hr : r ∈ layout.table) {i : Nat} (hi : i < r.2) :
-    r.1 + i + 1 ≤ 8 * slots ∧ (r.1 + i + 1 ≤ 8 * tailSlot ∨ 8 * tailSlot + 256 ≤ r.1 + i) := by
-  rw [layout_table] at hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rw [slots_eq, tailSlot_eq]
-  rcases hr with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi]
-
 /-- The table survives what a mode writes: outside the core's slots or within its buffer. -/
 theorem holds_frame {d : Dir} {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {sd : Spec.Sm4.Direction}
     {rs : List Region} (h : Proof.Sm4.Prepared.Holds layout m B k sd) (hf : Frame rs m m')
@@ -137,20 +129,6 @@ theorem holds_frame {d : Dir} {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {s
     show Region.Disjoint ⟨B + BitVec.ofNat 64 (r.1 + i), 1⟩ ⟨B + BitVec.ofNat 64 (8 * tailSlot), 4 * 4 * 16⟩
     exact VG.Offset.disjoint B (by rw [tailSlot_eq] at h2 ⊢; omega_using [h2]) (by rw [slots_eq] at h1; omega_using [h1])
       (by rw [tailSlot_eq]; omega_using [])
-
-/-- The table survives what a batch keeps. -/
-theorem holds_of_keeps {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {sd : Spec.Sm4.Direction}
-    (h : Proof.Sm4.Prepared.Holds layout m B k sd)
-    (hk : Proof.Sm4.Prepared.Keeps B slots layout.cryptScratch m m') :
-    Proof.Sm4.Prepared.Holds layout m' B k sd := fun r hr i hi => by
-  have hr' := hr
-  rw [layout_table] at hr'
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-  rw [hk (r.1 + i) (by rw [slots_eq]; rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi]) (by
-    simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    rw [evenSlot_eq, grpSlot_eq, tableSlot_eq, savedSlot_eq, slots_eq]
-    rcases hr' with rfl | rfl <;> dsimp only at hi ⊢ <;> omega_using [hi])]
-  exact h r hr i hi
 
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} (h : KeyArgs s rs k)
     (e : s'.gpr .r3 = s.gpr .r3) (hrd : s'.rd = s.rd) (_ : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem) :
@@ -170,29 +148,6 @@ theorem ws_covers {s : State} {B : Addr} {d : Dir} (hs : ScrIn s B (dirCore d).t
   exact ⟨_, hs.wr, 0, by rw [BitVec.add_zero], by
     show 0 + 8 * slots ≤ 8 * (slots + 6)
     omega_using []⟩
-
-/-- `vg_sm4_prepare_keys` writes neither `r5` nor `r7`. -/
-theorem prep_keeps : ∀ i ∈ instrs prepareKeys, dstOf i ≠ some .r5 ∧ dstOf i ≠ some .r7 := by
-  have h : (instrs prepareKeys).all (fun i => dstOf i != some .r5 && dstOf i != some .r7) = true := by
-    rw [← Code.allInstrs_eq]; lit_decide
-  intro i hi
-  have := List.all_eq_true.mp h i hi
-  simpa using this
-
-/-- `vg_sm4_crypt_prepared` writes neither `r5` nor `r7`. -/
-theorem crypt_keeps : ∀ i ∈ instrs cryptPrepared, dstOf i ≠ some .r5 ∧ dstOf i ≠ some .r7 := by
-  have h : (instrs cryptPrepared).all (fun i => dstOf i != some .r5 && dstOf i != some .r7) = true := by
-    rw [← Code.allInstrs_eq]; lit_decide
-  intro i hi
-  have := List.all_eq_true.mp h i hi
-  simpa using this
-
-theorem slots_lt : slots < 2 ^ 15 := by rw [slots_eq]; decide
-
-theorem toNat_slots : (BitVec.ofNat 64 slots).toNat = slots := by rw [BitVec.toNat_ofNat, slots_eq]
-
-theorem directionOf_dirBit (d : Dir) : Proof.Sm4.directionOf (BitVec.ofNat 64 (dirBit d)).toNat = specDirPPC64LE d := by
-  cases d <;> rfl
 
 /-- What the modes keep, kept through a head that writes `r4`, `r6` and `r7`
 (and `r3`, restored), a call that preserves the callee-saved registers, and
@@ -269,15 +224,6 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec
     refine wp_mr fun s₄ u₄ => wp_nil ⟨by rw [u₄.mem]; exact hH, by rw [u₄.other _ (by decide)]; exact r5',
       kept_of g₃ hpres (by rw [u₄.gpr, r7', hp]) fun r h => u₄.other r h,
       by rw [u₄.mem, ← m₃]; exact hf, by rw [u₄.rd, hrd, rd₃], by rw [u₄.wr, hwr, wr₃]⟩
-
-/-- Block `j` of blocks transformed by ECB. -/
-theorem blockAt_of_ecb {K : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction} {m m' : Mem} {D : Addr} {n : Nat}
-    (h : Spec.Sm4.blocksAt m' D n = Spec.Sm4.ecb K d (Spec.Sm4.blocksAt m D n)) {j : Nat} (hj : j < n) :
-    Spec.Sm4.blockAt m' (D + BitVec.ofNat 64 (16 * j)) =
-      Proof.Sm4.blockFn K d (Spec.Sm4.blockAt m (D + BitVec.ofNat 64 (16 * j))) := by
-  have := congrArg (fun l => l[j]?) h
-  rw [Proof.Sm4.ecb_eq] at this
-  simpa [Spec.Sm4.blocksAt, hj] using this
 
 theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
     (hs : ScrIn s B (dirCore d).total) (hr : Proof.Sm4.Prepared.Holds layout s.mem B k (specDirPPC64LE d)) :

@@ -3,16 +3,14 @@ module
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Layers
 
 /-!
-# SM4 ECB, bitsliced, on PPC64LE
+# SM4 ECB's pieces, bitsliced, on PPC64LE
 
-`ecb dir(schedule = r3, data = r4, n = r5, scratch = r6)`:
-`vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt` with their working space in
-the scratch buffer (`Layers.lean` has its layout), which the artifact
-allocates on the stack. As on x86-64 and AArch64
-(`Impl/Sm4/AArch64/Ecb.lean`):
+The code of `vg_sm4_prepare_keys` and `vg_sm4_crypt_prepared`
+(`Prepared.lean`), which `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt` call,
+and the copies between ECB's data and the tail buffer, with the working
+space in the scratch buffer (`Layers.lean` has its layout, at `r8`). As on
+x86-64 and AArch64 (`Impl/Sm4/AArch64/Ecb.lean`):
 
-* The scratch buffer moves to `r8`; the callee-saved registers are saved,
-  the masks set.
 * The round keys are bitsliced into the table at slot 128, in the order the
   rounds use them: `rk₀ … rk₃₁` for encryption, `rk₃₁ … rk₀` for decryption
   (§7.2). Decryption then runs the same rounds as encryption. The sixteen
@@ -21,17 +19,15 @@ allocates on the stack. As on x86-64 and AArch64
   a caller's analysis of constant time (`VG.PPC64LE.slotTaint`) then knows
   that the callee-saved registers the functions save there survive the
   table, and its own public values with them.
-* Each group of up to sixteen blocks is copied to the tail buffer,
-  bitsliced, run through the 32 rounds (eight times four, the state's words
-  taking the new words in turn), and copied back.
+* Sixteen blocks of the tail buffer are bitsliced, run through the 32 rounds
+  (eight times four, the state's words taking the new words in turn), and
+  bitsliced back (`crypt16`).
+* A group of up to sixteen blocks is copied to the tail buffer and back
+  (`copyIn`, `copyOut`), the data pointer in `r31`, through `r3`, `r6`, `r9`,
+  `r10` and `r12`.
 
-`r3` (the schedule, then the copies' count), `r4` (the data), `r5` (the
-blocks left), `r6` and `r7` (the copies' pointers), `r8`, `r10` (the round
-key's entry), `r11` (the table's end), `r12`
-(the group's blocks) and the loop test (`t0`) hold public values; no
-address and no branch depends on anything else. The rounds use only the
-state, the temporaries and the scratch buffer, so the public values stay in
-`r3`–`r12` (but `r9`) throughout.
+`r10` (the round key's entry), `r11` (the table's end) and the loop test
+(`t0`) hold public values; no address and no branch depends on anything else.
 -/
 
 @[expose] public section
@@ -81,36 +77,22 @@ def crypt16 : Prog isa := .seq (.block toBs) (.seq (rounds .enc) (.block fromBs)
 
 /-! ## The groups -/
 
-/-- Copy `r3` blocks from `r6` to `r7` (through `t0`). -/
+/-- Copy `r3` blocks from `r6` to `r10` (through `r9`). -/
 def copyBlocks : Prog isa :=
-  .loop (.block [.load .d t0 .r6 0, .store .d t0 .r7 0, .load .d t0 .r6 8, .store .d t0 .r7 8,
-      .addi .r6 .r6 16, .addi .r7 .r7 16, .subi .r3 .r3 1]) (.nonzero .d .r3)
+  .loop (.block [.load .d .r9 .r6 0, .store .d .r9 .r10 0, .load .d .r9 .r6 8, .store .d .r9 .r10 8,
+      .addi .r6 .r6 16, .addi .r10 .r10 16, .subi .r3 .r3 1]) (.nonzero .d .r3)
 
-/-- `r12 := min(r5, 16)`, the blocks of this group. -/
+/-- `r12 := min(r5, 16)`, the blocks of this group (through `r9`). -/
 def groupCount : Prog isa :=
-  .seq (.block [shrI t0 .r5 4])
-    (.ite (.nonzero .d t0) (.block [.li .r12 16]) (.block [movR .r12 .r5]))
+  .seq (.block [shrI .r9 .r5 4])
+    (.ite (.nonzero .d .r9) (.block [.li .r12 16]) (.block [movR .r12 .r5]))
 
-/-- The group's blocks to the tail buffer. -/
+/-- The group's blocks (at `r31`) to the tail buffer. -/
 def copyIn : Prog isa :=
-  .seq groupCount (.seq (.block ([movR .r6 .r4] ++ slotAddr .r7 tailSlot ++ [movR .r3 .r12])) copyBlocks)
+  .seq groupCount (.seq (.block ([movR .r6 .r31] ++ slotAddr .r10 tailSlot ++ [movR .r3 .r12])) copyBlocks)
 
-/-- The tail buffer back to the group's blocks. -/
+/-- The tail buffer back to the group's blocks (at `r31`). -/
 def copyOut : Prog isa :=
-  .seq groupCount (.seq (.block (slotAddr .r6 tailSlot ++ [movR .r7 .r4, movR .r3 .r12])) copyBlocks)
-
-/-- Sixteen blocks, or the last one to fifteen, and on to the next. -/
-def group : Prog isa :=
-  .seq copyIn (.seq crypt16 (.seq copyOut (.block [.sub .r5 .r5 .r12, .addi .r4 .r4 256])))
-
-/-- The code with its working space at `sr` and the table built by `k`:
-the table, then the groups. -/
-def ecbWith (sr : Reg) (k : Prog isa) : Prog isa :=
-  .seq (.block ([movR sb sr] ++ saveRegs ++ setSlots keyMasks))
-    (.seq k
-      (.seq (.ite (.zero .d .r5) (.block []) (.loop group (.nonzero .d .r5))) (.block restoreRegs)))
-
-/-- The whole function, with its working space at `r6`. -/
-def ecb (dir : Dir) : Prog isa := ecbWith .r6 (keys dir)
+  .seq groupCount (.seq (.block (slotAddr .r6 tailSlot ++ [movR .r10 .r31, movR .r3 .r12])) copyBlocks)
 
 end VG.Impl.Sm4.PPC64LE
