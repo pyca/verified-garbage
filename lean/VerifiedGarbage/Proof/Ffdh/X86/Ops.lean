@@ -70,6 +70,17 @@ theorem frameF_mono {sp : BitVec 32} {ws ws' : List (Nat × Nat)} {m m' : Mem} (
     · exact .inr (.inl rfl)
     · exact .inr (.inr ⟨p, h p hp, rfl⟩)
 
+theorem frameF_widen {sp : BitVec 32} {ws ws' : List (Nat × Nat)} {m m' : Mem} (F : Frame (frameF base sp ws) m m')
+    (hw : ∀ p ∈ ws, ∃ q ∈ ws', q.1 ≤ p.1 ∧ p.1 + p.2 ≤ q.1 + q.2) : Frame (frameF base sp ws') m m' :=
+  F.sub fun r hr => by
+    simp only [frameF, frameR, List.mem_cons, List.mem_map] at hr
+    rcases hr with rfl | rfl | ⟨p, hp, rfl⟩
+    · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
+    · obtain ⟨q, hq, h1, h2⟩ := hw p hp
+      exact ⟨⟨off base q.1, q.2⟩,
+        List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_map.mpr ⟨q, hq, rfl⟩)), VG.Offset.sub base h1 h2⟩
+
 theorem fF_widen {sp : BitVec 32} {ws : List (Nat × Nat)} {m m' : Mem} (F : Frame (frameF base sp ws) m m')
     (hw : ∀ p ∈ ws, InF len p) : Frame (frameF base sp (fR len)) m m' :=
   F.sub fun r hr => by
@@ -214,6 +225,23 @@ theorem opsKeep (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
   have nb : numBase = 3336 := rfl
   have t16 : te len .wide 16 = te len .wide 0 + 16 * bc len .wide := by simp only [te]; omega_using []
   refine frameR_val32 F R h.scratch.nowrap (by omega_using [hd, T, e20, t0, t16]) ?_ (stR_fit h (by decide))
+  intro q hq
+  simp only [stR, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
+
+theorem opsKeepF (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
+    (F : Frame (frameF base sp (stR len 0)) m m') (R : RoomF sp base bytes) {d k : Nat}
+    (hd : (lo len (.slot .wide 9) ≤ d ∧ d + 4 * k ≤ lo len (.slot .wide 20)) ∨ (8 ≤ d ∧ d + 4 * k ≤ numBase)) :
+    val32 m' base d k = val32 m base d k := by
+  have T := h.table_fit .wide
+  have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
+  have e20 : lo len (.slot .wide 20) = numBase + 20 * st len .wide := rfl
+  have t0 : te len .wide 0 = lo len (.slot .wide 20) := by simp [te]
+  have z0 : lo len (.slot .wide 0) = numBase := sl_zero len .wide
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  have nb : numBase = 3336 := rfl
+  have t16 : te len .wide 16 = te len .wide 0 + 16 * bc len .wide := by simp only [te]; omega_using []
+  refine frameF_val32 F R h.scratch.nowrap (by omega_using [hd, T, e20, t0, t16]) ?_ (stR_fit h (by decide))
   intro q hq
   simp only [stR, List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86.Ops
+public import VerifiedGarbage.Proof.Ffdh.X86.PrepCall
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 public import VerifiedGarbage.Proof.Framework.RelCTChain
 import VerifiedGarbage.Proof.Framework.Block
@@ -75,6 +76,18 @@ theorem kept_slot (h : In Ex base bytes len args s) {m m' : Mem} {a : Nat}
 theorem kept_ops (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
     (F : Frame (frameR base sp (stR len 0)) m m') (R : CallRoom sp base bytes) : Kept base len [] [] m m' :=
   ⟨fun _ a b _ => opsKeep_sv h F R a b, fun _ a b _ _ => opsKeep_w32 h F R a b⟩
+
+/-- The operations of a context, called, keep the FFDH slots and the header's words from 8 on. -/
+theorem keptF_ops (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
+    (F : Frame (frameF base sp (stR len 0)) m m') (R : RoomF sp base bytes) : Kept base len [] [] m m' := by
+  have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
+  have bw := bc_eq_cwc len .wide
+  have est : st len .wide = 2 * bc len .wide + 32 := rfl
+  refine ⟨fun j a b _ => ?_, fun d a b _ _ => ?_⟩
+  · have := hi_fit (len := len) a b
+    exact opsKeepF h F R (.inl ⟨this.1, by omega_using [this, bw, est]⟩)
+  · rw [← w32_val32_one, ← w32_val32_one]
+    exact opsKeepF h F R (.inr ⟨a, by omega_using [b]⟩)
 
 /-- One writes `ws` and keeps the others. -/
 theorem Kept.slot_eq {js ds : List Nat} {m m' : Mem} (k : Kept base len js ds m m') {j : Nat}
@@ -174,11 +187,12 @@ theorem copyIn_ok (h : In Ex base bytes len args s) {j d : Nat} (hj9 : 9 ≤ j) 
   · rw [cw1] at V; exact V
 
 /-- The context of p, in the wide slot 9: p in slot 0, one in 3, `R² mod p` in 4 and the inverse. -/
-theorem ctxP_ok (h : In Ex base bytes len args s) {P : Nat} (hP : safeM (sv s.mem base len .wide 9) = P) :
+theorem ctxP_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {P : Nat}
+    (hP : safeM (sv s.mem base len .wide 9) = P) :
     WP isa Impl.Ffdh.X86.ctxP s fun u =>
       CtxOk Ex base bytes len args .wide P u ∧ sv u.mem base len .wide 3 = 1 ∧
       sv u.mem base len .wide 4 = 2 ^ (16 * bc len .wide) % P ∧
-      Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
+      Frame (frameF base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have bl := h.bytes_lt
   obtain f0 := h.slot_fit .wide (j := 0) (by decide)
@@ -187,14 +201,14 @@ theorem ctxP_ok (h : In Ex base bytes len args s) {P : Nat} (hP : safeM (sv s.me
   refine WP.seq (WP.mono (copyIn_ok h (j := 9) (d := 0) (by decide) (by decide) (by decide))
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   obtain h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
-  refine WP.mono (prepCtx_ok h₁ .wide) fun u ⟨C, one, R2, F, K⟩ => ?_
-  rw [V₁, hP] at C R2
   obtain sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
+  refine WP.mono (prepCall_ok h₁ (by rw [sp₁]; exact RF)) fun u ⟨C, one, R2, F, K⟩ => ?_
+  rw [V₁, hP] at C R2
   rw [sp₁] at F
-  obtain F₁ : Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u₁.mem :=
-    stR_of_outside h (by decide) O₁ ⟨_, by simp, slot_in h .wide (j := 0) (by decide)⟩
-  obtain F₂ := stR_widen F (prepR_in h₁ .wide 0)
-  exact ⟨C, one, R2, F₁.trans F₂, (kept_ops h F₁ h.room).trans (kept_ops h F₂ h.room),
+  obtain F₁ : Frame (frameF base (s.gpr .esp) (stR len 0)) s.mem u₁.mem :=
+    frameF_of (stR_of_outside h (by decide) O₁ ⟨_, by simp, slot_in h .wide (j := 0) (by decide)⟩)
+  obtain F₂ := frameF_widen F (prepR_in h₁ .wide 0)
+  exact ⟨C, one, R2, F₁.trans F₂, (keptF_ops h F₁ RF).trans (keptF_ops h F₂ RF),
     (K₁.mono (by decide)).trans K⟩
 
 /-- A prepared context keeps one in its slot 3 through an exponentiation. -/
@@ -221,13 +235,13 @@ theorem pwR_sv3 (h : In Ex base bytes len args s) {sp : BitVec 32} {m m' : Mem}
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [winOff] <;> omega_arith
 
 /-- Slot 6 the wide slot `b` to the power of the wide slot `e`, modulo p (in the wide slot 9). -/
-theorem powP_ok (h : In Ex base bytes len args s) {P b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 19) (he9 : 9 ≤ e)
-    (he : e ≤ 19) (hP : safeM (sv s.mem base len .wide 9) = P) :
+theorem powP_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {P b e : Nat}
+    (hb9 : 9 ≤ b) (hb : b ≤ 19) (he9 : 9 ≤ e) (he : e ≤ 19) (hP : safeM (sv s.mem base len .wide 9) = P) :
     WP isa (Impl.Ffdh.X86.powP b e) s fun u =>
       CtxOk Ex base bytes len args .wide P u ∧
       sv u.mem base len .wide 6 = sv s.mem base len .wide b ^ sv s.mem base len .wide e % P ∧
       sv u.mem base len .wide 3 = 1 ∧
-      Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
+      Frame (frameF base (s.gpr .esp) (stR len 0)) s.mem u.mem ∧ Kept base len [] [] s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have bl := h.bytes_lt
   obtain f8 := h.slot_fit .wide (j := 8) (by decide)
@@ -239,7 +253,7 @@ theorem powP_ok (h : In Ex base bytes len args s) {P b e : Nat} (hb9 : 9 ≤ b) 
   obtain e8 := lo_wide len 8
   have nb : numBase = 3336 := rfl
   unfold Impl.Ffdh.X86.powP
-  refine WP.seq (WP.mono (ctxP_ok h hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
+  refine WP.seq (WP.mono (ctxP_ok h RF hP) fun u₁ ⟨C₁, one₁, R₁, F₁, k₁, K₁⟩ => ?_)
   have h₁ := C₁.inp
   refine WP.seq (WP.mono (copyIn_ok h₁ (j := b) (d := 5) hb9 hb (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   obtain h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
@@ -275,7 +289,7 @@ theorem powP_ok (h : In Ex base bytes len args s) {P b e : Nat} (hb9 : 9 ≤ b) 
   rw [B₃, E₃] at Y
   rw [sp₃] at F
   obtain G := stR_widen F (pwR_in C₃.inp .wide 0)
-  refine ⟨C, Y, ?_, ((F₁.trans G₂).trans G₃).trans G, ?_, ?_⟩
+  refine ⟨C, Y, ?_, ((F₁.trans (frameF_of G₂)).trans (frameF_of G₃)).trans (frameF_of G), ?_, ?_⟩
   · rw [pwR_sv3 C₃.inp F (by rw [← sp₃]; exact C₃.inp.room), one₃]
   · exact (((k₁.trans (kept_ops h G₂ h.room)).trans (kept_ops h G₃ h.room)).trans (kept_ops h G h.room))
   · exact ((K₁.trans (K₂.mono (by decide))).trans (K₃.mono (by decide))).trans K
@@ -526,6 +540,18 @@ theorem Step.ops (h : In Ex base bytes len args s) {u : State}
     Step Ex base bytes len args s u :=
   ⟨h.keepF K (by intro hm; have := hrs _ hm; simp at this) (by intro hm; have := hrs _ hm; simp at this) F
     (stR_fit h (by decide)), fR_widen F (stR_inF h), K.mono hrs⟩
+
+/-- A stage of the operations of a context, called. -/
+theorem Step.opsF (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {u : State}
+    (F : Frame (frameF base (s.gpr .esp) (stR len 0)) s.mem u.mem) {rs : List Reg} (K : Keeps rs s u)
+    (hrs : ∀ q ∈ rs, q ∈ [.eax, .ebx, .ecx, .edx, .ebp, .esi] := by decide) :
+    Step Ex base bytes len args s u :=
+  ⟨in_keepFF h K (by intro hm; have := hrs _ hm; simp at this) (by intro hm; have := hrs _ hm; simp at this) RF F
+    (stR_fit h (by decide)), frameF_widen F fun p hp => by
+      rcases stR_inF h p hp with e | e
+      · exact ⟨(0, 32), by simp, by omega_using [], by omega_using [e]⟩
+      · exact ⟨(48, CrtRt.need len - 48), by simp, by dsimp only; omega_using [e], by dsimp only; omega_using [e]⟩,
+    K.mono hrs⟩
 
 /-! ## Branches -/
 
