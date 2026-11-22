@@ -93,10 +93,19 @@ def eq (flag a b tmp : Nat) : Prog isa := VG.Impl.Rsa.X86.KeyRt.eqS full flag a 
 def cp (o a : Nat) : Prog isa := VG.Impl.Rsa.X86.KeyRt.copy full o a
 def cn (j : Nat) (x : BitVec 32) : Prog isa := small .modulus j x
 
+/-- The modulus's width as a callee finds it: the caller's arguments, one word further for the
+return address. -/
+def calleeLay : VG.Impl.Rsa.X86.KeyRt.Lay := { len := 8, ws := 21 }
+
+/-- The division of the modulus's width, as the internal function `vg_rsa_keygen_div`. -/
+def divCall : Prog isa :=
+  .call "vg_rsa_keygen_div" (VG.Impl.Rsa.X86.KeyRt.div calleeLay 0 1 2 3)
+
 /-- The correction bank has a constant four-word width. -/
 def divide (w : Width) : Prog isa :=
   match w with
   | .correction => VG.Impl.RsaKeyGen.X86.Key.divisionCompute 4
+  | .modulus => divCall
   | _ => VG.Impl.Rsa.X86.KeyRt.div w.lay 0 1 2 3
 
 def clearTop (w : Width) (j : Nat) : Prog isa :=
