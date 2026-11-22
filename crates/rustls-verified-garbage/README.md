@@ -1,8 +1,7 @@
 # rustls-verified-garbage
 
 A [rustls](https://github.com/rustls/rustls) `CryptoProvider` whose
-cryptography is verified-garbage's. It builds against rustls 0.24.0-dev.3,
-the prerelease whose `CryptoProvider` API it implements.
+cryptography is verified-garbage's. It builds against rustls 0.24.0-dev.3.
 
 | | |
 |---|---|
@@ -34,12 +33,10 @@ crates/rustls-verified-garbage/rustls/setup.sh
 
 Every test passes, QUIC's included.
 
-Its own tests check each suite's record encryption against itself
-(`tests/records.rs`), HKDF-Expand from a short key (`tests/hkdf.rs`), and
-ECDSA verification with either form of public key:
+Its own tests cover every line of it:
 
 ```sh
-cargo test -p rustls-verified-garbage --release
+cargo test -p rustls-verified-garbage
 ```
 
 CI runs all of them (`rustls-provider` in `.github/workflows/ci.yml`).
