@@ -6,7 +6,8 @@ public import VerifiedGarbage.TCB.Code
 # Code with its calls of a parameter erased
 
 Code built for a callee that is a parameter (e.g. the permutation of a Keccak
-backend) differs between callees only in the calls of it, `.call name body`.
+backend) differs between callees only in the calls of it, `.call name body`, or the
+indirect calls of it alone, `.icall i name body next` (`Callee.viaD8`).
 Built for a callee whose body is empty (`.block []`, a *hole*: the call with
 its target erased), it is closed, and checks of it are decided once; the code
 for any callee is that code with its holes filled (`Code.fillHoles name body`),
@@ -26,7 +27,8 @@ namespace VG
 variable {M : ISA}
 
 /-- `c` with each call whose body is empty (a hole) made a call of `n`, with
-body `b`. Other calls, and their bodies, are kept. -/
+body `b`, and each indirect call of a hole made one of `n`. Other calls, and
+their bodies, are kept. -/
 def Code.fillHoles (n : String) (b : Prog M) : Prog M → Prog M
   | .block is => .block is
   | .seq x y => .seq (fillHoles n b x) (fillHoles n b y)
@@ -36,6 +38,8 @@ def Code.fillHoles (n : String) (b : Prog M) : Prog M → Prog M
     | .block [] => .call n b
     | body => .call m body
   | .frame i x j => .frame i (fillHoles n b x) j
-  | .icall i m x y => .icall i m x y
+  | .icall i m x y => match x with
+    | .block [] => .icall i n b y
+    | x => .icall i m x y
 
 end VG
