@@ -39,7 +39,9 @@ def outputRegion (g : PrivGeometry) : Region := ⟨State.addr g.output, g.length
 def workspaceRegion (g : PrivGeometry) : Region := ⟨State.addr g.workspace, 8 * g.scratchLength⟩
 def innerRegion (g : PrivGeometry) : Region := ⟨State.addr g.stack, frameBytes⟩
 def savedRegion (g : PrivGeometry) : Region := ⟨State.addr g.stack + BitVec.ofNat 64 frameBytes, 56⟩
-def calleeRegion (g : PrivGeometry) : Region := FrameStack.belowA g.stack 56
+/-- The stack of a call: at most 104 bytes, the private CRT's frame and the
+Montgomery product it calls. -/
+def calleeRegion (g : PrivGeometry) : Region := FrameStack.belowA g.stack 104
 def argumentsRegion (g : PrivGeometry) : Region := ⟨State.addr g.stack + BitVec.ofNat 64 (frameBytes + 56), 64⟩
 def wholeStack (g : PrivGeometry) : Region := ⟨State.addr (g.stack - BitVec.ofNat 32 104), stackBytes⟩
 /-- The private CRT's frame and the stack of the calls it makes from it. -/

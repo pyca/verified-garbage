@@ -31,7 +31,7 @@ theorem call_rest {s t : State} (rd : t.rd = s.rd) (wr : t.wr = s.wr) (sp : t.sp
 theorem private_call_ok {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State}
     (h : PrivContext g bs s) (slots : PrivSlots g s.mem)
     {name : String} {code : Prog isa} {contract : Contract isa}
-    (verified : Verified target code contract) (stack : FrameStack.armStack code ≤ 56)
+    (verified : Verified target code contract) (stack : FrameStack.armStack code ≤ 104)
     {rd wr : List Region} (pre : contract.pre (s.callEntry.withRegions rd wr))
     (read : Covers (rd ++ wr) (s.rd ++ s.wr)) (write : Covers wr s.wr)
     (sub : ∀ r ∈ wr, ∃ R ∈ bodyWrites g, r.Sub R)
@@ -40,9 +40,9 @@ theorem private_call_ok {g : PrivGeometry} {bs : Fin 8 → List Byte} {s : State
       Frame (wr ++ [g.calleeRegion]) s.mem t.mem ∧ Rest callClobbers s t ∧
       contract.post (s.callEntry.withRegions rd wr) (t.withRegions rd wr) := by
   refine FrameStack.WP.callF verified.1 pre read write
-    (by rw [h.sp]; exact Nat.le_trans stack h.valid.stackLow) ?_
+    (by rw [h.sp]; exact Nat.le_trans stack h.valid.stackLow104) ?_
   intro t rdT wrT spT frame regs post
-  have frame56 := FrameStack.Frame.belowA_mono frame stack (by rw [h.sp]; exact h.valid.stackLow)
+  have frame56 := FrameStack.Frame.belowA_mono frame stack (by rw [h.sp]; exact h.valid.stackLow104)
   rw [h.sp] at frame56
   have rest := call_rest rdT wrT spT regs
   have frameBody : Frame (bodyWrites g) s.mem t.mem := frame56.sub (by

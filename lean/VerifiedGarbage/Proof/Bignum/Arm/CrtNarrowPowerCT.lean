@@ -322,15 +322,18 @@ theorem crt_narrowExp_ct {base ep : BitVec 32} {len v M1 M2 x1 x2 eLen es : Nat}
   have controls : RelCT isa (fun s t => Loaded M1 x1 eb1 s ∧ Loaded M2 x2 eb2 t ∧ s.sp = t.sp)
       (.block expControls) (fun _ _ => True) :=
     expControls_ct.mono (fun _ _ h => h.1.1.ready.ptr.trans h.2.1.1.ready.ptr.symm) (fun _ _ _ => trivial)
-  let Phase := fun (M x : Nat) (eb : List Byte) (s : State) => ExpPhaseInput base ep len v M x eb s ∧ eb.length = eLen
+  let Phase := fun (M x : Nat) (eb : List Byte) (s : State) =>
+    ExpPhaseInput base ep len v M x eb s ∧ eb.length = eLen ∧ KernelStack base ep len eb.length s
   have controlsWP (s : State) {M x : Nat} {eb : List Byte} (h : Loaded M x eb s) :
       WP isa (.block expControls) s (Phase M x eb) :=
-    (crt_narrowControls_ready s h.1 h.2.1 h.2.2).mono fun _ j => ⟨j.1, h.1.exponent.length⟩
+    (crt_narrowControls_ready s h.1 h.2.1 h.2.2).mono fun _ j => ⟨j.1, h.1.exponent.length,
+      by rw [j.2.2.sp]; exact h.1.belowFit, by rw [j.2.2.sp]; exact h.1.below,
+      by rw [j.2.2.sp, h.1.exponent.length]; exact h.1.exponentBelow⟩
   have phase : RelCT isa (fun s t => Phase M1 x1 eb1 s ∧ Phase M2 x2 eb2 t ∧ s.sp = t.sp)
       kernel.code (fun _ _ => True) := by
     intro s t tr1 tr2 u w h e1 e2
-    exact kernel.ct fit fits h.1.1.positive (h.1.2.trans h.2.1.2.symm) s t tr1 tr2 u w
-      ⟨h.1.1, h.2.1.1, h.2.2⟩ e1 e2
+    exact kernel.ct fit fits h.1.1.positive (h.1.2.1.trans h.2.1.2.1.symm) s t tr1 tr2 u w
+      ⟨⟨h.1.1, h.1.2.2⟩, ⟨h.2.1.1, h.2.1.2.2⟩, h.2.2⟩ e1 e2
   rw [narrowExpWith]
   exact crt_seq_ct args (fun s h => argsWP s h) (fun s h => argsWP s h)
     (crt_seq_ct controls (fun s h => controlsWP s h) (fun s h => controlsWP s h) phase)
@@ -475,7 +478,8 @@ theorem crt_narrowReducedHalf_ready (s : State) {g : CrtGeometry} {bs : Fin 7 �
     sharedT.buffers.source i.succ, (sharedT.buffers.sourceSeparate i.succ).sub_right
       (crt_region_sub_workspace sharedT.buffers.workspace sharedT.buffers.storageFits sharedT.narrow_member), ?_, ?_,
       table_fits ctx.le, sharedT.stack.belowFit, sharedT.stack.below.sub_right
-        (crt_region_sub_workspace sharedT.buffers.workspace sharedT.buffers.storageFits sharedT.narrow_member)⟩
+        (crt_region_sub_workspace sharedT.buffers.workspace sharedT.buffers.storageFits sharedT.narrow_member),
+      (sharedT.buffers.sourceBelow i.succ).symm⟩
   · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega_using []] using sharedT.stack.length i
   · rcases expI with rfl | rfl
     · exact ctx.shared.buffers.pPositive

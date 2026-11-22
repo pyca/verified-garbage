@@ -36,9 +36,7 @@ theorem savedRegion_separate {g : PrivGeometry} (h : g.Valid) :
   simp only [bodyWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact h.innerSaved.symm
-  · refine Region.Disjoint.sub_right (r₂ := g.crtCalleeRegion) ?_ (FrameStack.belowA_sub (a := 56) (b := 104) (by decide) h.stackLow104)
-    unfold PrivGeometry.crtCalleeRegion
-    unfold PrivGeometry.savedRegion FrameStack.belowA
+  · unfold PrivGeometry.calleeRegion PrivGeometry.savedRegion FrameStack.belowA
     rw [h.stackBase, Offset.add_add]
     exact Offset.disjoint_base _ (by decide : 104 ≤ 104 + frameBytes)
       (by decide : 104 + frameBytes + 56 ≤ 2 ^ 64)

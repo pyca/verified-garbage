@@ -825,14 +825,20 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Proof.Rsa.Mont (numAt arrAt)
 open VG.Proof.X25519.Arm (Rest)
 
+/-- The 48 bytes below the stack, for a kernel's calls, apart from the
+workspace and the exponent. -/
+structure KernelStack (base ep : BitVec 32) (len eLen : Nat) (s : State) : Prop where
+  fit : 48 ≤ s.sp.toNat
+  separate : (FrameStack.belowA s.sp 48).Disjoint ⟨State.addr base, 8 * len⟩
+  exponent : (FrameStack.belowA s.sp 48).Disjoint ⟨State.addr ep, eLen⟩
+
 /-- A windowed exponentiation. It may write the 48 bytes below the stack, for
-the calls of a shared Montgomery product (`MontCall.op`), apart from the
-workspace. -/
+the calls of a shared Montgomery product (`MontCall.op`). -/
 structure WindowKernel where
   code : Prog isa
   correct : ∀ (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte},
     ExpPhaseInput base ep len w M x eb s → arrAt w 16 ≤ 8 * len →
-    48 ≤ s.sp.toNat → (FrameStack.belowA s.sp 48).Disjoint ⟨State.addr base, 8 * len⟩ →
+    KernelStack base ep len eb.length s →
     WP isa code s fun t => ArithmeticReady base len w t ∧
       numAt t.mem (State.addr base) w 6 = Spec.Rsa.powMod x (Spec.Rsa.os2ip eb) M ∧
       numAt t.mem (State.addr base) w 0 = M ∧
@@ -842,15 +848,17 @@ structure WindowKernel where
   ct : ∀ {base ep : BitVec 32} {len w M1 M2 x1 x2 : Nat} {eb1 eb2 : List Byte},
     arrAt w 3 + 32 ≤ 8 * len → arrAt w 16 ≤ 8 * len → 0 < eb1.length →
     eb1.length = eb2.length →
-    RelCT isa (fun s t => ExpPhaseInput base ep len w M1 x1 eb1 s ∧
-      ExpPhaseInput base ep len w M2 x2 eb2 t ∧ s.sp = t.sp) code (fun _ _ => True)
+    RelCT isa (fun s t => (ExpPhaseInput base ep len w M1 x1 eb1 s ∧ KernelStack base ep len eb1.length s) ∧
+      (ExpPhaseInput base ep len w M2 x2 eb2 t ∧ KernelStack base ep len eb2.length t) ∧ s.sp = t.sp)
+      code (fun _ _ => True)
 
 def baselineWindowKernel : WindowKernel where
   code := windowExpPhase
-  correct s _ _ _ _ _ _ _ h fits _ _ := WP.mono (windowExpPhase_ok s h fits)
+  correct s _ _ _ _ _ _ _ h fits _ := WP.mono (windowExpPhase_ok s h fits)
     fun _ ⟨ready, value, modulus, r2, one, frame, rest⟩ =>
       ⟨ready, value, modulus, r2, one, frame.mono (by simp), rest⟩
-  ct := windowExpPhase_ct
+  ct fit fits positive length := (windowExpPhase_ct fit fits positive length).mono
+    (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
 
 end VG.Proof.Bignum.Arm
 
@@ -889,6 +897,7 @@ structure NarrowExpInput (base ep : BitVec 32) (len v M x eLen es : Nat) (eb : L
   /-- The 48 bytes below the stack, for the kernel's calls, apart from the workspace. -/
   belowFit : 48 ≤ s.sp.toNat
   below : (FrameStack.belowA s.sp 48).Disjoint ⟨State.addr base, 8 * len⟩
+  exponentBelow : (FrameStack.belowA s.sp 48).Disjoint ⟨State.addr ep, eLen⟩
 
 /-- A narrow workspace of a width at most the modulus's has room for the table. -/
 theorem table_fits {v W : Nat} (h : v ≤ W) : arrAt v 16 ≤ 8 * workspaceWords W := by
@@ -917,7 +926,8 @@ theorem NarrowExpInput.of_mem {s t : State} {base ep : BitVec 32} {len v M x eLe
     by rw [rest.rd, rest.wr, rest.sp]; exact h.pointerRead, by rw [rest.rd, rest.wr, rest.sp]; exact h.countRead,
     by rw [mem, rest.sp]; exact h.pointer, by rw [mem, rest.sp]; exact h.count,
     h.exponent.after_frame (regions := []) (by rw [mem]; exact Frame.refl _ _) rest (by simp),
-    h.separate, h.positive, h.fits, h.tableFits, by rw [rest.sp]; exact h.belowFit, by rw [rest.sp]; exact h.below⟩
+    h.separate, h.positive, h.fits, h.tableFits, by rw [rest.sp]; exact h.belowFit, by rw [rest.sp]; exact h.below,
+    by rw [rest.sp]; exact h.exponentBelow⟩
 
 theorem crt_narrowControls_ready (s : State) {base ep : BitVec 32} {len v M x eLen es : Nat} {eb : List Byte}
     (h : NarrowExpInput base ep len v M x eLen es eb s)
@@ -956,7 +966,8 @@ theorem crt_narrowExp_ok (s : State) {base ep : BitVec 32} {len v M x eLen es : 
   refine WP.mono (crt_narrowControls_ready u (h.of_mem memU restU) pointerU countU) ?_
   rintro z ⟨input, frameZ, restZ⟩
   obtain spZ : z.sp = s.sp := restZ.sp.trans restU.sp
-  refine WP.mono (kernel.correct z input h.tableFits (by rw [spZ]; exact h.belowFit) (by rw [spZ]; exact h.below)) ?_
+  refine WP.mono (kernel.correct z input h.tableFits ⟨by rw [spZ]; exact h.belowFit, by rw [spZ]; exact h.below,
+    by rw [spZ, h.exponent.length]; exact h.exponentBelow⟩) ?_
   rintro t ⟨ready, value, _, _, _, frameT, restT⟩
   rw [memU] at frameZ
   rw [spZ] at frameT
@@ -1212,7 +1223,8 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
       sharedE.buffers.source i.succ, (sharedE.buffers.sourceSeparate i.succ).sub_right
         (crt_region_sub_workspace sharedE.buffers.workspace sharedE.buffers.storageFits sharedE.narrow_member), ?_, ?_,
         ?_, sharedE.stack.belowFit, sharedE.stack.below.sub_right
-          (crt_region_sub_workspace sharedE.buffers.workspace sharedE.buffers.storageFits sharedE.narrow_member)⟩
+          (crt_region_sub_workspace sharedE.buffers.workspace sharedE.buffers.storageFits sharedE.narrow_member),
+        (sharedE.buffers.sourceBelow i.succ).symm⟩
     · simpa only [show 56 + 8 * i.val + 4 = 60 + 8 * i.val by omega_using []] using sharedE.stack.length i
     · rcases expI with rfl | rfl
       · exact h.buffers.pPositive
