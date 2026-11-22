@@ -40,7 +40,7 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.Sm4Gcm.X86
 
-variable {vg : VG.Proof.AesGcm.X86.GcmImpl}
+variable {vg : VG.Proof.AesGcm.X86.GcmImpl} {ci : CtrImpl}
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Sm4Gcm.X86 VG.WriteBytes VG.Proof.AesGcm.X86
 open VG.Impl.AesGcm.X86 hiding ctrCall keyCall ctrArgs cryptWhole cryptTail crypt tag init cryptEntry
@@ -180,7 +180,7 @@ theorem ctx_tFrame' : ∀ r ∈ tFrame St W SP 28 16, (⟨w64 Ctx, 256⟩ : Regi
 
 theorem tag_pc {o al ah tl th : Nat} (ho : o = 0 ∨ o = 112) (hc : LensAt 16 al ah tl th)
     {alo ahi tlo thi : BitVec 32} :
-    Pc (fun (m₀ : Mem) s => TagIn Ctx St W SP al ah tl th alo ahi tlo thi s ∧ s.mem = m₀) (tag vg.callees o al ah tl th)
+    Pc (fun (m₀ : Mem) s => TagIn Ctx St W SP al ah tl th alo ahi tlo thi s ∧ s.mem = m₀) (tag vg.callees ci.fn o al ah tl th)
       (TagOut Ctx St W SP o (val64 alo ahi) (val64 tlo thi) ·) := by
   refine Pc.seq (Pc.lift (lens_pc L.lay hc) (fun m₀ _ => m₀) fun m₀ s ⟨h, hm⟩ => ⟨⟨h.env, h.sl⟩, hm⟩) ?_
   have hw : ∀ (m₀ : Mem) s', (∃ s, (TagIn Ctx St W SP al ah tl th alo ahi tlo thi s ∧ s.mem = m₀) ∧

@@ -250,7 +250,7 @@ open VG.Spec.Gcm (Block blockAt blocksAt)
 open VG.Proof.Gcm (Ctr xorKs)
 
 section
-variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay4 Ctx St W SP K)
+variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay4 Ctx St W SP K) {ci : CtrImpl}
 include L
 
 /-- `ctrArgs`: the context and the counter block. -/
@@ -420,7 +420,7 @@ theorem cWhole3 (hK : K = 1536) {j nb : Nat} (hnb : nb ≠ 0) (hnbd : nb = (n - 
     have := h.nO; rw [slotv_eq] at this; rw [this]; congr 1; omega_using [hnbd]
 
 theorem cryptWhole_pc (hK : K = 1536) {j : Nat} :
-    Pc (CrMid Ctx St W SP K icb D n P · j) cryptWhole
+    Pc (CrMid Ctx St W SP K icb D n P · j) (cryptWhole ci.fn)
       (CrMid Ctx St W SP K icb D n P · (j + 16 * ((n - j) / 16))) := by
   generalize hnb : (n - j) / 16 = nb
   refine Pc.seq (Q := CWhole1 (Ctx := Ctx) (St := St) (W := W) (SP := SP) (K := K) (icb := icb) (D := D)
@@ -650,7 +650,7 @@ abbrev ksFrame (St SP : BitVec 32) : List Region :=
   [⟨w64 St + BitVec.ofNat 64 48, 16⟩, ⟨w64 St + BitVec.ofNat 64 64, 16 * 1⟩, below SP 1536]
 
 section
-variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay4 Ctx St W SP K)
+variable {Ctx St W SP : BitVec 32} {K : Nat} (L : Lay4 Ctx St W SP K) {ci : CtrImpl}
 include L
 
 theorem ksFrame_crFrame (hK : K = 1536) {D : BitVec 32} {n : Nat} {m m' : Mem} (h : Frame (ksFrame St SP) m m') :
@@ -847,7 +847,7 @@ theorem tail3 {j : Nat} {m₀ : Mem} {s : State}
     · rw [cm, e, xorBytes, h.rest]; exact t
 
 theorem cryptTail_pc (hK : K = 1536) {j : Nat} (hlt : n - j < 16) :
-    Pc (CrMid Ctx St W SP K icb D n P · j) cryptTail (CrOut Ctx St W SP K icb D n P ·) := by
+    Pc (CrMid Ctx St W SP K icb D n P · j) (cryptTail ci.fn) (CrOut Ctx St W SP K icb D n P ·) := by
   refine Pc.seq (Q := fun m₀ s => CrMid Ctx St W SP K icb D n P m₀ j s ∧ s.zf = some (decide (n - j = 0)))
     (Pc.taint [.ebp] (fun m₀ s h => WP.mono (test_ok L.lay h.at_.env .eax nO (by decide) h.nO
         (by have := h.at_.nlt; omega_arith))
@@ -942,7 +942,7 @@ theorem CrIn.keep {s s' : State} (h : CrIn Ctx St W SP K D n P s) (hbp : s'.gpr 
     by rw [hm]; exact h.bO, h.nlt, h.data.of_eq hrd hwr⟩
 
 theorem crypt_pc (hK : K = 1536) :
-    Pc (fun (m₀ : Mem) s => CrIn Ctx St W SP K D n P s ∧ s.mem = m₀) crypt
+    Pc (fun (m₀ : Mem) s => CrIn Ctx St W SP K D n P s ∧ s.mem = m₀) (crypt ci.fn)
       (CrOut Ctx St W SP K icb D n P ·) := by
   obtain hb16 : P % 16 < 16 := Nat.mod_lt _ (by decide)
   refine Pc.seq (Q := fun m₀ s => (CrIn Ctx St W SP K D n P s ∧ s.mem = m₀) ∧ s.zf = some (decide (n = 0)))
