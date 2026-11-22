@@ -158,15 +158,16 @@ theorem p384Sign_scrubbed (hL : Law Spec.P384.curve) (hv : OK vars ∧ "VG_P384_
 /-- `vg_ecdsa_p521_sign` as emitted (`Impl.Ecdsa.Rfc6979.PPC64LE.Fn.p521`), with the
 HMAC implementations of `HmacTable.PPC64LE.vars`, meets its contract in constant
 time and returns without secret residue. -/
-theorem p521Sign_scrubbed (hL : Law Spec.P521.curve) (hv : OK vars ∧ "VG_P521_COMB" ∉ names vars) :
+theorem p521Sign_scrubbed (hL : Law Spec.P521.curve) (hv : OK vars ∧ "VG_P521_COMB" ∉ names vars ∧
+    "VG_P521_FRAME_CONSTS" ∉ names vars) :
     VerifiedScrubbed PPC64LE.target (Impl.Ecdsa.Rfc6979.PPC64LE.Fn.p521 (fnsOf vars))
-      (specK Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Weierstrass.PPC64LE.p521CombConsts vars) 32 :=
+      (specK Spec.Ecdsa.Rfc6979.Curves.p521 Proof.Ecdsa.PPC64LE.P521.sK vars) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.Rfc6979.Curves.p521SignApi) {
       tables := [("hmac", tables vars)]
       code := signCodeT (p521R hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries vars
       verified := p521T_verified hL vars hv }
     784 .all
-    (signOut Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Weierstrass.PPC64LE.p521CombConsts vars)
+    (signOut Spec.Ecdsa.Rfc6979.Curves.p521 Proof.Ecdsa.PPC64LE.P521.sK vars)
     (by dsimp only [signCodeT, cfgT, p521R, p521Core, RfcCurve.Q]; lit_decide)
 
 /-- `vg_ecdsa_secp256k1_sign` as emitted (`Impl.Ecdsa.Rfc6979.PPC64LE.Fn.secp256k1`), with the

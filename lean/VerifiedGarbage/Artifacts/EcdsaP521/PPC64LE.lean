@@ -34,7 +34,7 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.P521.verifyHashApi.artifact PPC64LE.target {
     code := Impl.Ecdsa.Verify.PPC64LE.Fn.p521Verify
     verified := Proof.Ecdsa.Verify.PPC64LE.Scrub.p521Verify_scrubbed hasLaw.law }] ++
-  (if hv : OK vars ∧ "VG_P521_COMB" ∉ names vars then [
+  (if hv : OK vars ∧ "VG_P521_COMB" ∉ names vars ∧ "VG_P521_FRAME_CONSTS" ∉ names vars then [
     Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact PPC64LE.target {
       tables := [("hmac", tables vars)]
       code := Impl.Ecdsa.Rfc6979.PPC64LE.Fn.p521 (fnsOf vars)

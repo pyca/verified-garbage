@@ -143,14 +143,14 @@ theorem p384Verify_scrubbed (hL : Law Spec.P384.curve) :
 time and returns without secret residue. -/
 theorem p521Verify_scrubbed (hL : Law Spec.P521.curve) :
     VerifiedScrubbed PPC64LE.target Impl.Ecdsa.Verify.PPC64LE.Fn.p521Verify
-      (Spec.Ecdsa.P521.inst.verifyHashContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.p521CombConsts) 112) 32 :=
+      (Spec.Ecdsa.P521.inst.verifyHashContract (PPC64LE.abi.withConsts Proof.Ecdsa.Verify.PPC64LE.P521.vK) 112) 32 :=
   verifiedScrubbedAll (api := Spec.Ecdsa.P521.verifyHashApi) {
       code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
         Impl.Ecdsa.Verify.PPC64LE.verifyP521
       verified := Proof.Ecdsa.Verify.PPC64LE.P521.verifyHash_verified hL }
     112 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v18, .v19]⟩
-    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Impl.Weierstrass.PPC64LE.p521CombConsts Spec.Ecdsa.P521.inst)
+    (Proof.EcKey.PPC64LE.Scrub.verifyHashOut _ Proof.Ecdsa.Verify.PPC64LE.P521.vK Spec.Ecdsa.P521.inst)
     (by dsimp only; lit_decide)
 
 /-- `Spec.Ecdsa.Secp256k1.verifyHashApi`'s function as emitted
