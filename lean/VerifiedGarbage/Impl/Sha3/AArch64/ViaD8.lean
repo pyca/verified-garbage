@@ -69,22 +69,30 @@ def entryD8S (n name : String) (k : Nat) (body : Prog isa) : Prog isa :=
   .frame (.alloc (frameS k))
     (.seq (.block (enterD8S n k)) (.seq (.call name body) (.block (leaveD8S k)))) (.free (frameS k))
 
-/-- `umov x16, v8.d[0]; blr x16`: the call of `n`, whose code is `b`, by the
-address in `d8`. -/
-def callD8 (n : String) (b : Prog isa) : Prog isa :=
-  .seq (.block [.umov .x .x16 .v8 0]) (.icall (.blr .x16) n b (.block []))
+/-- `umov x16, v.d[0]; blr x16`: the call of `n`, whose code is `b`, by the
+address in the low 64 bits of `v`. -/
+def callDV (v : VReg) (n : String) (b : Prog isa) : Prog isa :=
+  .seq (.block [.umov .x .x16 v 0]) (.icall (.blr .x16) n b (.block []))
 
-/-- `c` with each call of `n` made a call by the address in `d8`, in the
-bodies of the functions it calls too: code that is the same for every
-implementation of `n` it calls. -/
-def Code.viaD8At (n : String) : Prog isa → Prog isa
+/-- `c` with each call of a function `L` names made a call by the address in
+the register `L` gives it, in the bodies of the functions it calls too: code
+that is the same for every implementation of those functions it calls. -/
+def Code.viaDAt (L : List (String × VReg)) : Prog isa → Prog isa
   | .block is => .block is
-  | .seq a b => .seq (viaD8At n a) (viaD8At n b)
-  | .ite cd a b => .ite cd (viaD8At n a) (viaD8At n b)
-  | .loop b cd => .loop (viaD8At n b) cd
-  | .call m b => if m = n then callD8 n (viaD8At n b) else .call m (viaD8At n b)
-  | .frame i b j => .frame i (viaD8At n b) j
+  | .seq a b => .seq (viaDAt L a) (viaDAt L b)
+  | .ite cd a b => .ite cd (viaDAt L a) (viaDAt L b)
+  | .loop b cd => .loop (viaDAt L b) cd
+  | .call m b => match L.lookup m with
+    | some v => callDV v m (viaDAt L b)
+    | none => .call m (viaDAt L b)
+  | .frame i b j => .frame i (viaDAt L b) j
   | .icall i m b nx => .icall i m b nx
+
+/-- `callDV` by `d8`. -/
+abbrev callD8 (n : String) (b : Prog isa) : Prog isa := callDV .v8 n b
+
+/-- `Code.viaDAt` of one function, by `d8`. -/
+abbrev Code.viaD8At (n : String) (c : Prog isa) : Prog isa := Code.viaDAt [(n, .v8)] c
 
 /-- What the cleanup of a function that calls code made so by `entryD8`
 clears: every general-purpose and vector register the calling convention

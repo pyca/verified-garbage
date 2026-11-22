@@ -39,7 +39,38 @@ namespace VG.Proof.Sha3.AArch64
 
 open VG VG.AArch64 VG.Impl.Sha3.AArch64
 
-/-! ## `d8` along a run -/
+/-! ## The registers along a run -/
+
+/-- Instruction `i` writes none of the registers `L` gives. -/
+def NoVW (L : List (String × VReg)) (i : Instr) : Prop := ∀ p ∈ L, vdstOf i ≠ some p.2
+
+/-- Each register `L` gives holds, in its low 64 bits, the address of the
+function `L` pairs it with. -/
+def DL (L : List (String × VReg)) (s : State) : Prop := ∀ p ∈ L, (s.v p.2).extractLsb' 0 64 = s.syms p.1
+
+/-- The contract `k` of code that calls the functions `L` names by the
+addresses in the registers `L` gives: from states where they hold them, and
+for runs that agree on them. -/
+def Contract.dL (L : List (String × VReg)) (k : Contract isa) : Contract isa :=
+  ⟨fun s => k.pre s ∧ DL L s, k.post, fun s t => k.pub s t ∧ ∀ p ∈ L, s.syms p.1 = t.syms p.1⟩
+
+theorem lookup_mem {L : List (String × VReg)} {m : String} {v : VReg} (h : L.lookup m = some v) :
+    (m, v) ∈ L := by
+  induction L with
+  | nil => cases h
+  | cons p L ih =>
+    obtain ⟨a, b⟩ := p
+    simp only [List.lookup] at h
+    split at h
+    · rename_i hm
+      cases h
+      simp only [beq_iff_eq] at hm
+      subst hm
+      exact List.mem_cons_self ..
+    · exact List.mem_cons_of_mem _ (ih h)
+
+theorem D8_iff (n : String) (s : State) : D8 n s ↔ DL [(n, .v8)] s := by
+  simp only [D8, DL, List.mem_singleton, forall_eq]
 
 theorem call_syms {s s' : State} (h : isa.call s = some s') : s'.syms = s.syms := by
   simp only [isa, call, Option.some.injEq] at h
@@ -50,17 +81,16 @@ theorem push_syms {i : Instr} {s s' : State} (h : isa.push i s = some s') : s'.s
   all_goals split at h <;> cases h
   all_goals rfl
 
-/-- `d8` keeps `n`'s address through code that writes no `v8`. -/
-theorem D8.exec {n : String} {c : Prog isa} {s s' : State} {t : List Leak} (e : Exec isa c s t s')
-    (hv : ∀ i ∈ instrs c, vdstOf i ≠ some .v8) (h : D8 n s) : D8 n s' := by
-  unfold D8 at h ⊢; rw [Exec.vec hv e, Exec.syms e]; exact h
+/-- The registers keep the addresses through code that writes none of them. -/
+theorem DL.exec {L : List (String × VReg)} {c : Prog isa} {s s' : State} {t : List Leak}
+    (e : Exec isa c s t s') (hv : ∀ i ∈ instrs c, NoVW L i) (h : DL L s) : DL L s' := fun p hp => by
+  rw [Exec.vec (fun i hi => hv i hi p hp) e, Exec.syms e]; exact h p hp
 
-theorem D8.call {n : String} {s s' : State} (hc : isa.call s = some s') (h : D8 n s) : D8 n s' := by
-  unfold D8 at h ⊢; rw [call_vec hc, call_syms hc]; exact h
+theorem DL.call {L : List (String × VReg)} {s s' : State} (hc : isa.call s = some s') (h : DL L s) :
+    DL L s' := fun p hp => by rw [call_vec hc, call_syms hc]; exact h p hp
 
-theorem D8.push {n : String} {i : Instr} {s s' : State} (hc : isa.push i s = some s') (h : D8 n s) :
-    D8 n s' := by
-  unfold D8 at h ⊢; rw [push_vec hc, push_syms hc]; exact h
+theorem DL.push {L : List (String × VReg)} {i : Instr} {s s' : State} (hc : isa.push i s = some s')
+    (h : DL L s) : DL L s' := fun p hp => by rw [push_vec hc, push_syms hc]; exact h p hp
 
 /-- A call enters its callee from the same state whatever `x16` held. -/
 theorem callEntry_write_x16 (s : State) (x : BitVec 64) : (s.write .x .x16 x).callEntry = s.callEntry := by
@@ -76,37 +106,42 @@ theorem callEntry_write_x16 (s : State) (x : BitVec 64) : (s.write .x .x16 x).ca
       · rfl
       · exact RegUpd.gpr_write_of_ne _ _ _ h16
 
-/-- The run of `callD8 n b` from a state where `d8` holds `n`'s address,
+theorem umov_run (v : VReg) (s : State) :
+    execBlock isa [.umov .x .x16 v 0] s = some (s.write .x .x16 (laneOf s v 0), []) := by
+  simp only [execBlock, isa, exec_umov (s := s) (r := .x16) (v := v) (l := 0) (by decide),
+    Option.map_some, addrs, List.map_nil, List.append_nil]
+
+/-- The run of `callDV v n b` from a state where `v` holds `n`'s address,
 from the run of the call of `n`. -/
-theorem Exec.callByD8 {n : String} {b : Prog isa} {s s₁ s₂ s' : State} {t : List Leak}
-    (hd : D8 n s) (hc : isa.call s = some s₁) (e : Exec isa b s₁ t s₂) (hr : isa.ret s₁ s₂ = some s') :
-    Exec isa (callD8 n b) s (.addr (s.syms n) :: t) s' := by
-  have hu : execBlock isa [.umov .x .x16 .v8 0] s = some (s.write .x .x16 (laneOf s .v8 0), []) := by
-    simp only [execBlock, isa, exec_umov (s := s) (r := .x16) (v := .v8) (l := 0) (by decide),
-      Option.map_some, addrs, List.map_nil, List.append_nil]
-  have hl : laneOf s .v8 0 = s.syms n := hd
-  have hi : isa.icall (.blr .x16) (s.write .x .x16 (laneOf s .v8 0)) =
-      some (isa.fnAddr (s.write .x .x16 (laneOf s .v8 0)) n) := by
-    show some ((s.write .x .x16 (laneOf s .v8 0)).gpr .x16) = some ((s.write .x .x16 (laneOf s .v8 0)).syms n)
+theorem Exec.callByD {v : VReg} {n : String} {b : Prog isa} {s s₁ s₂ s' : State} {t : List Leak}
+    (hd : (s.v v).extractLsb' 0 64 = s.syms n) (hc : isa.call s = some s₁) (e : Exec isa b s₁ t s₂)
+    (hr : isa.ret s₁ s₂ = some s') :
+    Exec isa (callDV v n b) s (.addr (s.syms n) :: t) s' := by
+  have hl : laneOf s v 0 = s.syms n := hd
+  have hi : isa.icall (.blr .x16) (s.write .x .x16 (laneOf s v 0)) =
+      some (isa.fnAddr (s.write .x .x16 (laneOf s v 0)) n) := by
+    show some ((s.write .x .x16 (laneOf s v 0)).gpr .x16) = some ((s.write .x .x16 (laneOf s v 0)).syms n)
     rw [RegUpd.gpr_write_self, hl]; rfl
-  have hc' : isa.call (s.write .x .x16 (laneOf s .v8 0)) = some s₁ := by
-    rw [show isa.call (s.write .x .x16 (laneOf s .v8 0)) = some (s.write .x .x16 (laneOf s .v8 0)).callEntry
+  have hc' : isa.call (s.write .x .x16 (laneOf s v 0)) = some s₁ := by
+    rw [show isa.call (s.write .x .x16 (laneOf s v 0)) = some (s.write .x .x16 (laneOf s v 0)).callEntry
       from rfl, callEntry_write_x16]
     exact hc
-  have e' := Exec.seq (Exec.block hu) (Exec.icall (next := .block []) hi hc' e hr)
+  have e' := Exec.seq (Exec.block (umov_run v s)) (Exec.icall (next := .block []) hi hc' e hr)
   simp only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] at e'
   exact e'
 
-/-- **The run of `c` made to call `n` by `d8`**, from a run of `c`. -/
-theorem Exec.toD8 {n : String} {c : Prog isa} {s s' : State} {t : List Leak} (e : Exec isa c s t s')
-    (hv : ∀ i ∈ instrs c, vdstOf i ≠ some .v8) (hd : D8 n s) : ∃ t', Exec isa (Code.viaD8At n c) s t' s' := by
+/-- **The run of `c` made to call the functions `L` names by their registers**,
+from a run of `c`. -/
+theorem Exec.toDL {L : List (String × VReg)} {c : Prog isa} {s s' : State} {t : List Leak}
+    (e : Exec isa c s t s') (hv : ∀ i ∈ instrs c, NoVW L i) (hd : DL L s) :
+    ∃ t', Exec isa (Code.viaDAt L c) s t' s' := by
   induction e with
   | block h => exact ⟨_, Exec.block h⟩
   | seq e₁ e₂ ih₁ ih₂ =>
-    have hv₁ : ∀ i ∈ instrs _, vdstOf i ≠ some .v8 := fun i hi => hv i (List.mem_append_left _ hi)
-    have hv₂ : ∀ i ∈ instrs _, vdstOf i ≠ some .v8 := fun i hi => hv i (List.mem_append_right _ hi)
+    have hv₁ : ∀ i ∈ instrs _, NoVW L i := fun i hi => hv i (List.mem_append_left _ hi)
+    have hv₂ : ∀ i ∈ instrs _, NoVW L i := fun i hi => hv i (List.mem_append_right _ hi)
     obtain ⟨_, e₁'⟩ := ih₁ hv₁ hd
-    obtain ⟨_, e₂'⟩ := ih₂ hv₂ (D8.exec e₁ hv₁ hd)
+    obtain ⟨_, e₂'⟩ := ih₂ hv₂ (DL.exec e₁ hv₁ hd)
     exact ⟨_, Exec.seq e₁' e₂'⟩
   | iteT hc _ ih =>
     obtain ⟨_, e'⟩ := ih (fun i hi => hv i (List.mem_append_left _ hi)) hd
@@ -119,16 +154,16 @@ theorem Exec.toD8 {n : String} {c : Prog isa} {s s' : State} {t : List Leak} (e 
     exact ⟨_, Exec.loopExit e' hc⟩
   | loopNext e₁ hc _ ih₁ ih₂ =>
     obtain ⟨_, e₁'⟩ := ih₁ hv hd
-    obtain ⟨_, e₂'⟩ := ih₂ hv (D8.exec e₁ hv hd)
+    obtain ⟨_, e₂'⟩ := ih₂ hv (DL.exec e₁ hv hd)
     exact ⟨_, Exec.loopNext e₁' hc e₂'⟩
   | @call m b _ _ _ _ _ hc _ hr ih =>
-    obtain ⟨_, e'⟩ := ih hv (D8.call hc hd)
-    by_cases hm : m = n
-    · subst hm
-      exact ⟨_, by simp only [Code.viaD8At, ↓reduceIte]; exact Exec.callByD8 hd hc e' hr⟩
-    · exact ⟨_, by simp only [Code.viaD8At, hm, ↓reduceIte]; exact Exec.call hc e' hr⟩
+    obtain ⟨_, e'⟩ := ih hv (DL.call hc hd)
+    cases hl : L.lookup m with
+    | some v =>
+      exact ⟨_, by simp only [Code.viaDAt, hl]; exact Exec.callByD (hd _ (lookup_mem hl)) hc e' hr⟩
+    | none => exact ⟨_, by simp only [Code.viaDAt, hl]; exact Exec.call hc e' hr⟩
   | frame hp _ hq ih =>
-    obtain ⟨_, e'⟩ := ih (fun i hi => hv i (by simp [instrs, hi])) (D8.push hp hd)
+    obtain ⟨_, e'⟩ := ih (fun i hi => hv i (by simp [instrs, hi])) (DL.push hp hd)
     exact ⟨_, Exec.frame hp e' hq⟩
   | icall h₁ h₂ e h₃ _ => exact ⟨_, Exec.icall h₁ h₂ e h₃⟩
   | icallNext h₁ h₂ e _ => exact ⟨_, Exec.icallNext h₁ h₂ e⟩
@@ -246,18 +281,13 @@ theorem Exec.prefix {c : Prog isa} (hc : Code.icallFree c = true) {s₁ s₂ s�
 
 /-! ## Runs of the code made so are runs of the code -/
 
-theorem umov_run (s : State) :
-    execBlock isa [.umov .x .x16 .v8 0] s = some (s.write .x .x16 (laneOf s .v8 0), []) := by
-  simp only [execBlock, isa, exec_umov (s := s) (r := .x16) (v := .v8) (l := 0) (by decide),
-    Option.map_some, addrs, List.map_nil, List.append_nil]
-
-/-- A run of `callD8 n b`: the call of `n` from the state it starts in, the
+/-- A run of `callDV v n b`: the call of `n` from the state it starts in, the
 address of `n` leaked first. -/
-theorem Exec.callD8_inv {n : String} {b : Prog isa} {s s' : State} {t : List Leak}
-    (e : Exec isa (callD8 n b) s t s') :
+theorem Exec.callDV_inv {v : VReg} {n : String} {b : Prog isa} {s s' : State} {t : List Leak}
+    (e : Exec isa (callDV v n b) s t s') :
     ∃ s₁ s₂ tb, isa.call s = some s₁ ∧ Exec isa b s₁ tb s₂ ∧ isa.ret s₁ s₂ = some s' ∧
       t = .addr (s.syms n) :: tb := by
-  unfold callD8 at e
+  unfold callDV at e
   cases e with
   | seq e₁ e₂ =>
     cases e₁ with
@@ -268,95 +298,103 @@ theorem Exec.callD8_inv {n : String} {b : Prog isa} {s s' : State} {t : List Lea
       | icall _ hc fb hr =>
         refine ⟨_, _, _, ?_, fb, hr, ?_⟩
         · show some s.callEntry = some _
-          rw [← callEntry_write_x16 s (laneOf s .v8 0)]; exact hc
+          rw [← callEntry_write_x16 s (laneOf s v 0)]; exact hc
         · simp only [addrs, List.map_nil, List.nil_append, List.append_nil]; rfl
 
-/-- **A run of `c` made to call `n` by `d8` is a run of `c`**, from and to the
-same states. -/
-theorem Exec.ofD8₁ {n : String} : ∀ (c : Prog isa), Code.icallFree c = true →
-    (∀ i ∈ instrs c, vdstOf i ≠ some .v8) → ∀ {s s' : State} {t' : List Leak},
-    Exec isa (Code.viaD8At n c) s t' s' → D8 n s → ∃ t, Exec isa c s t s'
+/-- **A run of `c` made to call the functions `L` names by their registers is
+a run of `c`**, from and to the same states. -/
+theorem Exec.ofDL₁ {L : List (String × VReg)} : ∀ (c : Prog isa), Code.icallFree c = true →
+    (∀ i ∈ instrs c, NoVW L i) → ∀ {s s' : State} {t' : List Leak},
+    Exec isa (Code.viaDAt L c) s t' s' → DL L s → ∃ t, Exec isa c s t s'
   | .block is, _, _, _, _, _, e, _ => ⟨_, e⟩
   | .seq a b, hc, hv, _, _, _, e, hd => by
     simp only [Code.icallFree, Bool.and_eq_true] at hc
     cases e with
     | seq e₁ e₂ =>
-      have hv₁ : ∀ i ∈ instrs a, vdstOf i ≠ some .v8 := fun i hi => hv i (List.mem_append_left _ hi)
-      obtain ⟨_, o₁⟩ := Exec.ofD8₁ a hc.1 hv₁ e₁ hd
-      obtain ⟨_, o₂⟩ := Exec.ofD8₁ b hc.2 (fun i hi => hv i (List.mem_append_right _ hi)) e₂ (D8.exec o₁ hv₁ hd)
+      have hv₁ : ∀ i ∈ instrs a, NoVW L i := fun i hi => hv i (List.mem_append_left _ hi)
+      obtain ⟨_, o₁⟩ := Exec.ofDL₁ a hc.1 hv₁ e₁ hd
+      obtain ⟨_, o₂⟩ := Exec.ofDL₁ b hc.2 (fun i hi => hv i (List.mem_append_right _ hi)) e₂ (DL.exec o₁ hv₁ hd)
       exact ⟨_, Exec.seq o₁ o₂⟩
   | .ite cd a b, hc, hv, _, _, _, e, hd => by
     simp only [Code.icallFree, Bool.and_eq_true] at hc
     cases e with
     | iteT h e =>
-      obtain ⟨_, o⟩ := Exec.ofD8₁ a hc.1 (fun i hi => hv i (List.mem_append_left _ hi)) e hd
+      obtain ⟨_, o⟩ := Exec.ofDL₁ a hc.1 (fun i hi => hv i (List.mem_append_left _ hi)) e hd
       exact ⟨_, Exec.iteT h o⟩
     | iteF h e =>
-      obtain ⟨_, o⟩ := Exec.ofD8₁ b hc.2 (fun i hi => hv i (List.mem_append_right _ hi)) e hd
+      obtain ⟨_, o⟩ := Exec.ofDL₁ b hc.2 (fun i hi => hv i (List.mem_append_right _ hi)) e hd
       exact ⟨_, Exec.iteF h o⟩
   | .loop b cd, hc, hv, s, s', t', e, hd => by
     simp only [Code.icallFree] at hc
-    change Exec isa (.loop (Code.viaD8At n b) cd) s t' s' at e
-    have ihb := fun {s s' : State} {t' : List Leak} (e : Exec isa (Code.viaD8At n b) s t' s') (hd : D8 n s) =>
-      Exec.ofD8₁ b hc hv e hd
-    generalize hL : (Code.loop (Code.viaD8At n b) cd : Prog isa) = L at e
+    change Exec isa (.loop (Code.viaDAt L b) cd) s t' s' at e
+    have ihb := fun {s s' : State} {t' : List Leak} (e : Exec isa (Code.viaDAt L b) s t' s') (hd : DL L s) =>
+      Exec.ofDL₁ b hc hv e hd
+    generalize hK : (Code.loop (Code.viaDAt L b) cd : Prog isa) = K at e
     induction e with
     | loopExit f h =>
-      cases hL
+      cases hK
       obtain ⟨_, o⟩ := ihb f hd
       exact ⟨_, Exec.loopExit o h⟩
     | loopNext f h _ _ ihr =>
-      cases hL
+      cases hK
       obtain ⟨_, o⟩ := ihb f hd
-      obtain ⟨_, r⟩ := ihr (D8.exec o hv hd) rfl
+      obtain ⟨_, r⟩ := ihr (DL.exec o hv hd) rfl
       exact ⟨_, Exec.loopNext o h r⟩
-    | _ => cases hL
+    | _ => cases hK
   | .call m b, hc, hv, s, s', t', e, hd => by
     simp only [Code.icallFree] at hc
-    by_cases hm : m = n
-    · subst hm
-      have e' : Exec isa (callD8 m (Code.viaD8At m b)) s t' s' := by
-        rw [Code.viaD8At, ite_eq_left rfl] at e; exact e
-      obtain ⟨s₁, _, _, hcall, fb, hr, -⟩ := Exec.callD8_inv e'
-      obtain ⟨_, o⟩ := Exec.ofD8₁ b hc hv fb (D8.call hcall hd)
+    cases hl : L.lookup m with
+    | some v =>
+      have e' : Exec isa (callDV v m (Code.viaDAt L b)) s t' s' := by
+        simp only [Code.viaDAt, hl] at e; exact e
+      obtain ⟨s₁, _, _, hcall, fb, hr, -⟩ := Exec.callDV_inv e'
+      obtain ⟨_, o⟩ := Exec.ofDL₁ b hc hv fb (DL.call hcall hd)
       exact ⟨_, Exec.call hcall o hr⟩
-    · have e' : Exec isa (.call m (Code.viaD8At n b)) s t' s' := by
-        rw [Code.viaD8At, ite_eq_right hm] at e; exact e
+    | none =>
+      have e' : Exec isa (.call m (Code.viaDAt L b)) s t' s' := by
+        simp only [Code.viaDAt, hl] at e; exact e
       cases e' with
       | call hcall fb hr =>
-        obtain ⟨_, o⟩ := Exec.ofD8₁ b hc hv fb (D8.call hcall hd)
+        obtain ⟨_, o⟩ := Exec.ofDL₁ b hc hv fb (DL.call hcall hd)
         exact ⟨_, Exec.call hcall o hr⟩
   | .frame i b j, hc, hv, _, _, _, e, hd => by
     simp only [Code.icallFree] at hc
     cases e with
     | frame hp fb hq =>
-      obtain ⟨_, o⟩ := Exec.ofD8₁ b hc (fun i hi => hv i (by simp [instrs, hi])) fb (D8.push hp hd)
+      obtain ⟨_, o⟩ := Exec.ofDL₁ b hc (fun i hi => hv i (by simp [instrs, hi])) fb (DL.push hp hd)
       exact ⟨_, Exec.frame hp o hq⟩
   | .icall .., hc, _, _, _, _, _, _ => by simp only [Code.icallFree, Bool.false_eq_true] at hc
 
 /-! ## Two runs leak the same if the runs of the code do -/
 
-/-- The run of the code that a run of it made to call `n` by `d8` is: from
-the same state, to the same state. -/
-theorem Exec.ofD8_det {n : String} {c : Prog isa} (hc : Code.icallFree c = true)
-    (hv : ∀ i ∈ instrs c, vdstOf i ≠ some .v8) {s s' s'' : State} {t' t : List Leak}
-    (e : Exec isa (Code.viaD8At n c) s t' s') (o : Exec isa c s t s'') (hd : D8 n s) : s'' = s' := by
-  obtain ⟨_, x⟩ := Exec.ofD8₁ c hc hv e hd
+/-- The run of the code that a run of it made so is: from the same state, to
+the same state. -/
+theorem Exec.ofDL_det {L : List (String × VReg)} {c : Prog isa} (hc : Code.icallFree c = true)
+    (hv : ∀ i ∈ instrs c, NoVW L i) {s s' s'' : State} {t' t : List Leak}
+    (e : Exec isa (Code.viaDAt L c) s t' s') (o : Exec isa c s t s'') (hd : DL L s) : s'' = s' := by
+  obtain ⟨_, x⟩ := Exec.ofDL₁ c hc hv e hd
   exact (Exec.det o x).2
 
-/-- **Two runs of `c` made to call `n` by `d8`, from states where `d8` holds
-`n`'s address, leak the same if the runs of `c` do**: each leaks what that
-run of `c` does, with `n`'s address at the same places. -/
-theorem Exec.ofD8₂ {n : String} : ∀ (c : Prog isa), Code.icallFree c = true →
-    (∀ i ∈ instrs c, vdstOf i ≠ some .v8) → ∀ {s₁ s₂ s₁' s₂' : State} {t₁' t₂' t₁ t₂ : List Leak},
-    Exec isa (Code.viaD8At n c) s₁ t₁' s₁' → Exec isa (Code.viaD8At n c) s₂ t₂' s₂' → D8 n s₁ → D8 n s₂ →
-    s₁.syms n = s₂.syms n → Exec isa c s₁ t₁ s₁' → Exec isa c s₂ t₂ s₂' → t₁ = t₂ → t₁' = t₂'
+/-- The runs agree on the functions' addresses through code. -/
+theorem syms_exec {L : List (String × VReg)} {c : Prog isa} {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : List Leak}
+    (p₁ : Exec isa c s₁ t₁ s₁') (p₂ : Exec isa c s₂ t₂ s₂') (hy : ∀ p ∈ L, s₁.syms p.1 = s₂.syms p.1) :
+    ∀ p ∈ L, s₁'.syms p.1 = s₂'.syms p.1 := by
+  rw [Exec.syms p₁, Exec.syms p₂]; exact hy
+
+/-- **Two runs of `c` made to call the functions `L` names by their
+registers, from states where they hold their addresses, leak the same if the
+runs of `c` do**: each leaks what that run of `c` does, with those addresses,
+which the runs agree on, at the same places. -/
+theorem Exec.ofDL₂ {L : List (String × VReg)} : ∀ (c : Prog isa), Code.icallFree c = true →
+    (∀ i ∈ instrs c, NoVW L i) → ∀ {s₁ s₂ s₁' s₂' : State} {t₁' t₂' t₁ t₂ : List Leak},
+    Exec isa (Code.viaDAt L c) s₁ t₁' s₁' → Exec isa (Code.viaDAt L c) s₂ t₂' s₂' → DL L s₁ → DL L s₂ →
+    (∀ p ∈ L, s₁.syms p.1 = s₂.syms p.1) → Exec isa c s₁ t₁ s₁' → Exec isa c s₂ t₂ s₂' → t₁ = t₂ → t₁' = t₂'
   | .block is, _, _, _, _, _, _, _, _, _, _, e₁, e₂, _, _, _, o₁, o₂, h => by
     rw [(Exec.det e₁ o₁).1, (Exec.det e₂ o₂).1]; exact h
   | .seq a b, hc, hv, _, _, _, _, _, _, _, _, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
     simp only [Code.icallFree, Bool.and_eq_true] at hc
-    have hva : ∀ i ∈ instrs a, vdstOf i ≠ some .v8 := fun i hi => hv i (List.mem_append_left _ hi)
-    have hvb : ∀ i ∈ instrs b, vdstOf i ≠ some .v8 := fun i hi => hv i (List.mem_append_right _ hi)
+    have hva : ∀ i ∈ instrs a, NoVW L i := fun i hi => hv i (List.mem_append_left _ hi)
+    have hvb : ∀ i ∈ instrs b, NoVW L i := fun i hi => hv i (List.mem_append_right _ hi)
     cases e₁ with
     | seq f₁ g₁ =>
     cases e₂ with
@@ -365,18 +403,17 @@ theorem Exec.ofD8₂ {n : String} : ∀ (c : Prog isa), Code.icallFree c = true 
     | seq p₁ q₁ =>
     cases o₂ with
     | seq p₂ q₂ =>
-    obtain rfl := Exec.ofD8_det hc.1 hva f₁ p₁ hd₁
-    obtain rfl := Exec.ofD8_det hc.1 hva f₂ p₂ hd₂
+    obtain rfl := Exec.ofDL_det hc.1 hva f₁ p₁ hd₁
+    obtain rfl := Exec.ofDL_det hc.1 hva f₂ p₂ hd₂
     have hA := Exec.prefix hc.1 p₁ p₂ h
     rw [hA] at h
     have hB := List.append_cancel_left h
-    rw [Exec.ofD8₂ a hc.1 hva f₁ f₂ hd₁ hd₂ hy p₁ p₂ hA,
-      Exec.ofD8₂ b hc.2 hvb g₁ g₂ (D8.exec p₁ hva hd₁) (D8.exec p₂ hva hd₂)
-        (by rw [Exec.syms p₁, Exec.syms p₂]; exact hy) q₁ q₂ hB]
+    rw [Exec.ofDL₂ a hc.1 hva f₁ f₂ hd₁ hd₂ hy p₁ p₂ hA,
+      Exec.ofDL₂ b hc.2 hvb g₁ g₂ (DL.exec p₁ hva hd₁) (DL.exec p₂ hva hd₂) (syms_exec p₁ p₂ hy) q₁ q₂ hB]
   | .ite cd a b, hc, hv, _, _, _, _, _, _, _, _, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
     simp only [Code.icallFree, Bool.and_eq_true] at hc
-    have hva : ∀ i ∈ instrs a, vdstOf i ≠ some .v8 := fun i hi => hv i (List.mem_append_left _ hi)
-    have hvb : ∀ i ∈ instrs b, vdstOf i ≠ some .v8 := fun i hi => hv i (List.mem_append_right _ hi)
+    have hva : ∀ i ∈ instrs a, NoVW L i := fun i hi => hv i (List.mem_append_left _ hi)
+    have hvb : ∀ i ∈ instrs b, NoVW L i := fun i hi => hv i (List.mem_append_right _ hi)
     cases e₁ with
     | iteT c₁ f₁ =>
       cases o₁ with
@@ -392,7 +429,7 @@ theorem Exec.ofD8₂ {n : String} : ∀ (c : Prog isa), Code.icallFree c = true 
           | iteF c₂' _ => rw [c₂] at c₂'; cases c₂'
           | iteT _ p₂ =>
             simp only [List.cons.injEq, true_and] at h ⊢
-            exact Exec.ofD8₂ a hc.1 hva f₁ f₂ hd₁ hd₂ hy p₁ p₂ h
+            exact Exec.ofDL₂ a hc.1 hva f₁ f₂ hd₁ hd₂ hy p₁ p₂ h
     | iteF c₁ f₁ =>
       cases o₁ with
       | iteT c₁' _ => rw [c₁] at c₁'; cases c₁'
@@ -407,64 +444,63 @@ theorem Exec.ofD8₂ {n : String} : ∀ (c : Prog isa), Code.icallFree c = true 
           | iteT c₂' _ => rw [c₂] at c₂'; cases c₂'
           | iteF _ p₂ =>
             simp only [List.cons.injEq, true_and] at h ⊢
-            exact Exec.ofD8₂ b hc.2 hvb f₁ f₂ hd₁ hd₂ hy p₁ p₂ h
+            exact Exec.ofDL₂ b hc.2 hvb f₁ f₂ hd₁ hd₂ hy p₁ p₂ h
   | .loop b cd, hc, hv, s₁, s₂, s₁', s₂', t₁', t₂', t₁, t₂, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
     simp only [Code.icallFree] at hc
     have ihb := fun {s₁ s₂ s₁' s₂' : State} {t₁' t₂' t₁ t₂ : List Leak}
-      (e₁ : Exec isa (Code.viaD8At n b) s₁ t₁' s₁') (e₂ : Exec isa (Code.viaD8At n b) s₂ t₂' s₂')
-      (hd₁ : D8 n s₁) (hd₂ : D8 n s₂) (hy : s₁.syms n = s₂.syms n) (o₁ : Exec isa b s₁ t₁ s₁')
-      (o₂ : Exec isa b s₂ t₂ s₂') (h : t₁ = t₂) => Exec.ofD8₂ b hc hv e₁ e₂ hd₁ hd₂ hy o₁ o₂ h
-    change Exec isa (.loop (Code.viaD8At n b) cd) s₁ t₁' s₁' at e₁
-    change Exec isa (.loop (Code.viaD8At n b) cd) s₂ t₂' s₂' at e₂
-    generalize hL : (Code.loop (Code.viaD8At n b) cd : Prog isa) = L at e₁ e₂
+      (e₁ : Exec isa (Code.viaDAt L b) s₁ t₁' s₁') (e₂ : Exec isa (Code.viaDAt L b) s₂ t₂' s₂')
+      (hd₁ : DL L s₁) (hd₂ : DL L s₂) (hy : ∀ p ∈ L, s₁.syms p.1 = s₂.syms p.1) (o₁ : Exec isa b s₁ t₁ s₁')
+      (o₂ : Exec isa b s₂ t₂ s₂') (h : t₁ = t₂) => Exec.ofDL₂ b hc hv e₁ e₂ hd₁ hd₂ hy o₁ o₂ h
+    change Exec isa (.loop (Code.viaDAt L b) cd) s₁ t₁' s₁' at e₁
+    change Exec isa (.loop (Code.viaDAt L b) cd) s₂ t₂' s₂' at e₂
+    generalize hK : (Code.loop (Code.viaDAt L b) cd : Prog isa) = K at e₁ e₂
     induction e₁ generalizing s₂ s₂' t₂' t₁ t₂ with
     | loopExit f₁ c₁ =>
-      cases hL
+      cases hK
       cases o₁ with
       | loopNext p₁ c₁' _ =>
-        rw [Exec.ofD8_det hc hv f₁ p₁ hd₁, c₁] at c₁'; cases c₁'
+        rw [Exec.ofDL_det hc hv f₁ p₁ hd₁, c₁] at c₁'; cases c₁'
       | loopExit p₁ _ =>
         cases e₂ with
         | loopExit f₂ c₂ =>
           cases o₂ with
-          | loopNext p₂ c₂' _ => rw [Exec.ofD8_det hc hv f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
+          | loopNext p₂ c₂' _ => rw [Exec.ofDL_det hc hv f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
           | loopExit p₂ _ =>
             have hb := Exec.prefix hc p₁ p₂ h
             rw [ihb f₁ f₂ hd₁ hd₂ hy p₁ p₂ hb]
         | loopNext f₂ c₂ _ =>
           cases o₂ with
-          | loopExit p₂ c₂' => rw [Exec.ofD8_det hc hv f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
+          | loopExit p₂ c₂' => rw [Exec.ofDL_det hc hv f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
           | loopNext p₂ _ _ =>
             have hb := Exec.prefix hc p₁ p₂ h
             rw [hb, List.append_cancel_left_eq] at h
             simp at h
       | _ => skip
     | loopNext f₁ c₁ r₁ _ ihr =>
-      cases hL
+      cases hK
       cases o₁ with
       | loopExit p₁ c₁' =>
-        rw [Exec.ofD8_det hc hv f₁ p₁ hd₁, c₁] at c₁'; cases c₁'
+        rw [Exec.ofDL_det hc hv f₁ p₁ hd₁, c₁] at c₁'; cases c₁'
       | loopNext p₁ _ q₁ =>
-        obtain rfl := Exec.ofD8_det hc hv f₁ p₁ hd₁
+        obtain rfl := Exec.ofDL_det hc hv f₁ p₁ hd₁
         cases e₂ with
         | loopExit f₂ c₂ =>
           cases o₂ with
-          | loopNext p₂ c₂' _ => rw [Exec.ofD8_det hc hv f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
+          | loopNext p₂ c₂' _ => rw [Exec.ofDL_det hc hv f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
           | loopExit p₂ _ =>
             have hb := Exec.prefix hc p₁ p₂ h
             rw [hb, List.append_cancel_left_eq] at h
             simp at h
         | loopNext f₂ c₂ r₂ =>
           cases o₂ with
-          | loopExit p₂ c₂' => rw [Exec.ofD8_det hc hv f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
+          | loopExit p₂ c₂' => rw [Exec.ofDL_det hc hv f₂ p₂ hd₂, c₂] at c₂'; cases c₂'
           | loopNext p₂ _ q₂ =>
-            obtain rfl := Exec.ofD8_det hc hv f₂ p₂ hd₂
+            obtain rfl := Exec.ofDL_det hc hv f₂ p₂ hd₂
             have hb := Exec.prefix hc p₁ p₂ h
             rw [hb, List.append_cancel_left_eq, List.cons.injEq] at h
             rw [ihb f₁ f₂ hd₁ hd₂ hy p₁ p₂ hb,
-              ihr _ _ _ _ _ (D8.exec p₁ hv hd₁) (D8.exec p₂ hv hd₂)
-                (by rw [Exec.syms p₁, Exec.syms p₂]; exact hy) q₁ q₂ h.2 rfl r₂]
-    | _ => cases hL
+              ihr _ _ _ _ _ (DL.exec p₁ hv hd₁) (DL.exec p₂ hv hd₂) (syms_exec p₁ p₂ hy) q₁ q₂ h.2 rfl r₂]
+    | _ => cases hK
   | .call m b, hc, hv, s₁, s₂, s₁', s₂', t₁', t₂', t₁, t₂, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
     simp only [Code.icallFree] at hc
     cases o₁ with
@@ -472,25 +508,29 @@ theorem Exec.ofD8₂ {n : String} : ∀ (c : Prog isa), Code.icallFree c = true 
     cases o₂ with
     | call hco₂ p₂ hro₂ =>
     simp only [List.map_nil, List.nil_append, List.append_nil] at h
-    by_cases hm : m = n
-    · subst hm
-      have e₁' : Exec isa (callD8 m (Code.viaD8At m b)) s₁ t₁' s₁' := by
-        rw [Code.viaD8At, ite_eq_left rfl] at e₁; exact e₁
-      have e₂' : Exec isa (callD8 m (Code.viaD8At m b)) s₂ t₂' s₂' := by
-        rw [Code.viaD8At, ite_eq_left rfl] at e₂; exact e₂
-      obtain ⟨r₁, q₁, _, hc₁, fb₁, hr₁, rfl⟩ := Exec.callD8_inv e₁'
-      obtain ⟨r₂, q₂, _, hc₂, fb₂, hr₂, rfl⟩ := Exec.callD8_inv e₂'
+    have hyc : ∀ {r₁ r₂ : State}, isa.call s₁ = some r₁ → isa.call s₂ = some r₂ →
+        ∀ p ∈ L, r₁.syms p.1 = r₂.syms p.1 := fun h₁ h₂ => by
+      rw [call_syms h₁, call_syms h₂]; exact hy
+    cases hl : L.lookup m with
+    | some v =>
+      have e₁' : Exec isa (callDV v m (Code.viaDAt L b)) s₁ t₁' s₁' := by
+        simp only [Code.viaDAt, hl] at e₁; exact e₁
+      have e₂' : Exec isa (callDV v m (Code.viaDAt L b)) s₂ t₂' s₂' := by
+        simp only [Code.viaDAt, hl] at e₂; exact e₂
+      obtain ⟨r₁, q₁, _, hc₁, fb₁, hr₁, rfl⟩ := Exec.callDV_inv e₁'
+      obtain ⟨r₂, q₂, _, hc₂, fb₂, hr₂, rfl⟩ := Exec.callDV_inv e₂'
       rw [hc₁, Option.some.injEq] at hco₁
       rw [hc₂, Option.some.injEq] at hco₂
       subst hco₁ hco₂
-      obtain rfl := Exec.ofD8_det hc hv fb₁ p₁ (D8.call hc₁ hd₁)
-      obtain rfl := Exec.ofD8_det hc hv fb₂ p₂ (D8.call hc₂ hd₂)
-      rw [hy, Exec.ofD8₂ b hc hv fb₁ fb₂ (D8.call hc₁ hd₁) (D8.call hc₂ hd₂)
-        (by rw [call_syms hc₁, call_syms hc₂]; exact hy) p₁ p₂ h]
-    · have e₁' : Exec isa (.call m (Code.viaD8At n b)) s₁ t₁' s₁' := by
-        rw [Code.viaD8At, ite_eq_right hm] at e₁; exact e₁
-      have e₂' : Exec isa (.call m (Code.viaD8At n b)) s₂ t₂' s₂' := by
-        rw [Code.viaD8At, ite_eq_right hm] at e₂; exact e₂
+      obtain rfl := Exec.ofDL_det hc hv fb₁ p₁ (DL.call hc₁ hd₁)
+      obtain rfl := Exec.ofDL_det hc hv fb₂ p₂ (DL.call hc₂ hd₂)
+      rw [hy _ (lookup_mem hl), Exec.ofDL₂ b hc hv fb₁ fb₂ (DL.call hc₁ hd₁) (DL.call hc₂ hd₂)
+        (hyc hc₁ hc₂) p₁ p₂ h]
+    | none =>
+      have e₁' : Exec isa (.call m (Code.viaDAt L b)) s₁ t₁' s₁' := by
+        simp only [Code.viaDAt, hl] at e₁; exact e₁
+      have e₂' : Exec isa (.call m (Code.viaDAt L b)) s₂ t₂' s₂' := by
+        simp only [Code.viaDAt, hl] at e₂; exact e₂
       cases e₁' with
       | call hc₁ fb₁ hr₁ =>
       cases e₂' with
@@ -498,14 +538,13 @@ theorem Exec.ofD8₂ {n : String} : ∀ (c : Prog isa), Code.icallFree c = true 
       rw [hc₁, Option.some.injEq] at hco₁
       rw [hc₂, Option.some.injEq] at hco₂
       subst hco₁ hco₂
-      obtain rfl := Exec.ofD8_det hc hv fb₁ p₁ (D8.call hc₁ hd₁)
-      obtain rfl := Exec.ofD8_det hc hv fb₂ p₂ (D8.call hc₂ hd₂)
+      obtain rfl := Exec.ofDL_det hc hv fb₁ p₁ (DL.call hc₁ hd₁)
+      obtain rfl := Exec.ofDL_det hc hv fb₂ p₂ (DL.call hc₂ hd₂)
       simp only [List.map_nil, List.nil_append, List.append_nil]
-      exact Exec.ofD8₂ b hc hv fb₁ fb₂ (D8.call hc₁ hd₁) (D8.call hc₂ hd₂)
-        (by rw [call_syms hc₁, call_syms hc₂]; exact hy) p₁ p₂ h
+      exact Exec.ofDL₂ b hc hv fb₁ fb₂ (DL.call hc₁ hd₁) (DL.call hc₂ hd₂) (hyc hc₁ hc₂) p₁ p₂ h
   | .frame i b j, hc, hv, s₁, s₂, s₁', s₂', t₁', t₂', t₁, t₂, e₁, e₂, hd₁, hd₂, hy, o₁, o₂, h => by
     simp only [Code.icallFree] at hc
-    have hvb : ∀ i ∈ instrs b, vdstOf i ≠ some .v8 := fun i' hi => hv i' (by simp [instrs, hi])
+    have hvb : ∀ i ∈ instrs b, NoVW L i := fun i' hi => hv i' (by simp [instrs, hi])
     cases e₁ with
     | frame hp₁ fb₁ hq₁ =>
     cases e₂ with
@@ -517,53 +556,69 @@ theorem Exec.ofD8₂ {n : String} : ∀ (c : Prog isa), Code.icallFree c = true 
     rw [hp₁, Option.some.injEq] at hpo₁
     rw [hp₂, Option.some.injEq] at hpo₂
     subst hpo₁ hpo₂
-    obtain rfl := Exec.ofD8_det hc hvb fb₁ p₁ (D8.push hp₁ hd₁)
-    obtain rfl := Exec.ofD8_det hc hvb fb₂ p₂ (D8.push hp₂ hd₂)
+    obtain rfl := Exec.ofDL_det hc hvb fb₁ p₁ (DL.push hp₁ hd₁)
+    obtain rfl := Exec.ofDL_det hc hvb fb₂ p₂ (DL.push hp₂ hd₂)
     simp only [List.append_assoc] at h ⊢
     have hA := List.append_inj h (by simp only [List.length_map]; exact addrs_length _ _ _)
     have hT := Exec.prefix hc p₁ p₂ hA.2
     rw [hT] at hA
-    rw [hA.1, Exec.ofD8₂ b hc hvb fb₁ fb₂ (D8.push hp₁ hd₁) (D8.push hp₂ hd₂)
+    rw [hA.1, Exec.ofDL₂ b hc hvb fb₁ fb₂ (DL.push hp₁ hd₁) (DL.push hp₂ hd₂)
       (by rw [push_syms hp₁, push_syms hp₂]; exact hy) p₁ p₂ hT, List.append_cancel_left hA.2]
   | .icall .., hc, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ => by
     simp only [Code.icallFree, Bool.false_eq_true] at hc
 
-/-- **Code verified against `k` that writes no `v8` and calls no function
-by its address is verified made to call `n` by the address in `d8`**, against
-`k` from states where `d8` holds `n`'s address, for runs that agree on it. -/
+/-- **Code verified against `k` that writes none of the registers `L` gives
+and calls no function by its address is verified made to call the functions
+`L` names by the addresses in those registers**, against `k` from states
+where they hold them, for runs that agree on them. -/
+theorem Verified.viaDAt {L : List (String × VReg)} {c : Prog isa} {k : Contract isa}
+    (h : Verified target c k) (hc : Code.icallFree c = true)
+    (hv : ∀ i ∈ instrs c, NoVW L i) (hsat : ∃ s, (Contract.dL L k).pre s) :
+    Verified target (Code.viaDAt L c) (Contract.dL L k) := by
+  obtain ⟨hok, hct, -⟩ := h
+  refine ⟨fun s ⟨hp, hd⟩ => ?_, fun s₁ s₂ t₁' t₂' s₁' s₂' ⟨hp₁, hd₁⟩ ⟨hp₂, hd₂⟩ ⟨hpub, hy⟩ e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, s', e, ha, hq⟩ := hok s hp
+    obtain ⟨t', e'⟩ := Exec.toDL e hv hd
+    exact ⟨t', s', e', ha, hq⟩
+  · obtain ⟨t₁, o₁⟩ := Exec.ofDL₁ c hc hv e₁ hd₁
+    obtain ⟨t₂, o₂⟩ := Exec.ofDL₁ c hc hv e₂ hd₂
+    exact Exec.ofDL₂ c hc hv e₁ e₂ hd₁ hd₂ hy o₁ o₂ (hct _ _ _ _ _ _ hp₁ hp₂ hpub o₁ o₂)
+
+/-- `Verified.viaDAt` of one function, by `d8`. -/
 theorem Verified.viaD8At {n : String} {c : Prog isa} {k : Contract isa}
     (h : Verified target c k) (hc : Code.icallFree c = true)
     (hv : ∀ i ∈ instrs c, vdstOf i ≠ some .v8) (hsat : ∃ s, (Contract.d8 n k).pre s) :
     Verified target (Code.viaD8At n c) (Contract.d8 n k) := by
-  obtain ⟨hok, hct, -⟩ := h
-  refine ⟨fun s ⟨hp, hd⟩ => ?_, fun s₁ s₂ t₁' t₂' s₁' s₂' ⟨hp₁, hd₁⟩ ⟨hp₂, hd₂⟩ ⟨hpub, hy⟩ e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s', e, ha, hq⟩ := hok s hp
-    obtain ⟨t', e'⟩ := Exec.toD8 e hv hd
-    exact ⟨t', s', e', ha, hq⟩
-  · obtain ⟨t₁, o₁⟩ := Exec.ofD8₁ c hc hv e₁ hd₁
-    obtain ⟨t₂, o₂⟩ := Exec.ofD8₁ c hc hv e₂ hd₂
-    exact Exec.ofD8₂ c hc hv e₁ e₂ hd₁ hd₂ hy o₁ o₂ (hct _ _ _ _ _ _ hp₁ hp₂ hpub o₁ o₂)
+  obtain ⟨hok, hct, hs⟩ := Verified.viaDAt (L := [(n, .v8)]) h hc
+    (fun i hi p hp => by rw [List.mem_singleton.mp hp]; exact hv i hi)
+    (let ⟨s, hp, hd⟩ := hsat; ⟨s, hp, (D8_iff n s).mp hd⟩)
+  refine ⟨fun s ⟨hp, hd⟩ => hok s ⟨hp, (D8_iff n s).mp hd⟩,
+    fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨hp₁, hd₁⟩ ⟨hp₂, hd₂⟩ ⟨hpub, hy⟩ e₁ e₂ =>
+      hct s₁ s₂ t₁ t₂ s₁' s₂' ⟨hp₁, (D8_iff n s₁).mp hd₁⟩ ⟨hp₂, (D8_iff n s₂).mp hd₂⟩
+        ⟨hpub, by simp only [List.mem_singleton, forall_eq]; exact hy⟩ e₁ e₂, hsat⟩
 
 /-! ## The cleanup
 
-What the cleanup needs of code made to call `n` by `d8` (`scrubSide`) is
-what it needs of the code, and of `umov x16, v8.d[0]` and `blr x16`; the
-function it calls indirectly is `n`, whose address the contract makes public
-(`verifiedScrubbed_viaD8At`). -/
+What the cleanup needs of code made to call the functions `L` names by their
+registers (`scrubSide`) is what it needs of the code, and of
+`umov x16, v.d[0]` for each register `v` and `blr x16`; the functions it
+calls indirectly are those `L` names, whose addresses the contract makes
+public. -/
 
-theorem instrs_viaD8At (n : String) (c : Prog isa) {i : Instr} (h : i ∈ instrs (Code.viaD8At n c)) :
-    i ∈ instrs c ∨ i = .umov .x .x16 .v8 0 ∨ i = .blr .x16 := by
+theorem instrs_viaDAt (L : List (String × VReg)) (c : Prog isa) {i : Instr}
+    (h : i ∈ instrs (Code.viaDAt L c)) :
+    i ∈ instrs c ∨ (∃ p ∈ L, i = .umov .x .x16 p.2 0) ∨ i = .blr .x16 := by
   induction c with
   | block is => exact .inl h
   | seq a b iha ihb =>
-    simp only [Code.viaD8At, instrs, List.mem_append] at h ⊢
+    simp only [Code.viaDAt, instrs, List.mem_append] at h ⊢
     rcases h with h | h
     · rcases iha h with h | h
       exacts [.inl (.inl h), .inr h]
     · rcases ihb h with h | h
       exacts [.inl (.inr h), .inr h]
   | ite cd a b iha ihb =>
-    simp only [Code.viaD8At, instrs, List.mem_append] at h ⊢
+    simp only [Code.viaDAt, instrs, List.mem_append] at h ⊢
     rcases h with h | h
     · rcases iha h with h | h
       exacts [.inl (.inl h), .inr h]
@@ -571,14 +626,15 @@ theorem instrs_viaD8At (n : String) (c : Prog isa) {i : Instr} (h : i ∈ instrs
       exacts [.inl (.inr h), .inr h]
   | loop b cd ih => exact ih h
   | call m b ih =>
-    simp only [Code.viaD8At] at h
+    simp only [Code.viaDAt] at h
     split at h
-    · simp only [callD8, instrs, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+    · rename_i v hl
+      simp only [callDV, instrs, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
       rcases h with h | h | h
-      exacts [.inr (.inl h), .inr (.inr h), ih h]
+      exacts [.inr (.inl ⟨(m, v), lookup_mem hl, h⟩), .inr (.inr h), ih h]
     · exact ih h
   | frame i' b j ih =>
-    simp only [Code.viaD8At, instrs, List.mem_cons, List.mem_append, List.not_mem_nil, or_false,
+    simp only [Code.viaDAt, instrs, List.mem_cons, List.mem_append, List.not_mem_nil, or_false,
       or_assoc] at h ⊢
     rcases h with h | h | h
     · exact .inl h
@@ -587,40 +643,59 @@ theorem instrs_viaD8At (n : String) (c : Prog isa) {i : Instr} (h : i ∈ instrs
     · exact .inr (.inr (.inl h))
   | icall _ _ _ _ _ _ => exact .inl h
 
-theorem depth_viaD8At (n : String) (c : Prog isa) : (Code.viaD8At n c).aarch64Depth = c.aarch64Depth := by
+theorem instrs_viaD8At (n : String) (c : Prog isa) {i : Instr} (h : i ∈ instrs (Code.viaD8At n c)) :
+    i ∈ instrs c ∨ i = .umov .x .x16 .v8 0 ∨ i = .blr .x16 := by
+  rcases instrs_viaDAt _ c h with h | ⟨p, hp, rfl⟩ | h
+  · exact .inl h
+  · rw [List.mem_singleton.mp hp]; exact .inr (.inl rfl)
+  · exact .inr (.inr h)
+
+theorem depth_viaDAt (L : List (String × VReg)) (c : Prog isa) :
+    (Code.viaDAt L c).aarch64Depth = c.aarch64Depth := by
   induction c with
   | call m b ih =>
-    simp only [Code.viaD8At]
+    simp only [Code.viaDAt]
     split
-    · simp only [callD8, Code.aarch64Depth, ih, Nat.zero_max, Nat.max_zero]
+    · simp only [callDV, Code.aarch64Depth, ih, Nat.zero_max, Nat.max_zero]
     · simp only [Code.aarch64Depth, ih]
-  | _ => simp only [Code.viaD8At, Code.aarch64Depth, *]
+  | _ => simp only [Code.viaDAt, Code.aarch64Depth, *]
 
-theorem noCalls_viaD8At (n : String) (c : Prog isa) : (Code.viaD8At n c).noCalls = c.noCalls := by
+theorem depth_viaD8At (n : String) (c : Prog isa) : (Code.viaD8At n c).aarch64Depth = c.aarch64Depth :=
+  depth_viaDAt _ c
+
+theorem noCalls_viaDAt (L : List (String × VReg)) (c : Prog isa) :
+    (Code.viaDAt L c).noCalls = c.noCalls := by
   induction c with
   | call m b ih =>
-    simp only [Code.viaD8At]
+    simp only [Code.viaDAt]
     split <;> rfl
-  | _ => simp only [Code.viaD8At, Code.noCalls, *]
+  | _ => simp only [Code.viaDAt, Code.noCalls, *]
 
-theorem inames_viaD8At {n : String} {c : Prog isa} (hc : Code.icallFree c = true) :
-    ∀ m ∈ AArch64.Scrub.inames (Code.viaD8At n c), m = n := by
+theorem inames_viaDAt {L : List (String × VReg)} {c : Prog isa} (hc : Code.icallFree c = true) :
+    ∀ m ∈ AArch64.Scrub.inames (Code.viaDAt L c), m ∈ L.map (·.1) := by
   induction c with
   | block is => intro m hm; cases hm
   | seq a b iha ihb | ite _ a b iha ihb =>
     simp only [Code.icallFree, Bool.and_eq_true] at hc
     intro m hm
-    simp only [Code.viaD8At, AArch64.Scrub.inames, List.mem_append] at hm
+    simp only [Code.viaDAt, AArch64.Scrub.inames, List.mem_append] at hm
     exact hm.elim (iha hc.1 m) (ihb hc.2 m)
   | loop b _ ih | frame _ b _ ih => exact ih hc
   | call m' b ih =>
     intro m hm
-    simp only [Code.viaD8At] at hm
+    simp only [Code.viaDAt] at hm
     split at hm
-    · simp only [callD8, AArch64.Scrub.inames, List.nil_append, List.append_nil, List.mem_cons] at hm
-      exact hm.elim id (ih hc m)
+    · rename_i v hl
+      simp only [callDV, AArch64.Scrub.inames, List.nil_append, List.append_nil, List.mem_cons] at hm
+      rcases hm with rfl | hm
+      · exact List.mem_map.mpr ⟨(m, v), lookup_mem hl, rfl⟩
+      · exact ih hc m hm
     · exact ih hc m hm
   | icall _ _ _ _ _ _ => simp only [Code.icallFree, Bool.false_eq_true] at hc
+
+theorem inames_viaD8At {n : String} {c : Prog isa} (hc : Code.icallFree c = true) :
+    ∀ m ∈ AArch64.Scrub.inames (Code.viaD8At n c), m = n := fun m hm => by
+  simpa using inames_viaDAt (L := [(n, .v8)]) hc m hm
 
 open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
 /-- Code with its cleanup meets its contract in constant time and returns
