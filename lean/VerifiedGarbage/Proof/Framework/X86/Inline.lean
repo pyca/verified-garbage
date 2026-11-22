@@ -171,6 +171,12 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     subst h
     simp only [State.withRegions_mmx, State.withRegions_wr, State.withRegions_ea, hm, hw _ _ hi, ite_true]
     rfl
+  | movdquTbl d m name ws | movqTbl d m name ws =>
+    simp only [exec] at h ⊢
+    split at h <;> [rename_i hi; cases h]
+    cases h
+    simp only [State.withRegions_gpr, State.withRegions_syms, hi, and_self, ite_true]
+    rfl
   | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | callr _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
     simp only [exec, reduceCtorEq] at h
 
@@ -243,6 +249,10 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     subst h
     obtain ⟨r, hr, hc⟩ := hi
     exact ⟨rfl, rfl, (Frame.refl _ _).writeW hr _ hc⟩
+  | movdquTbl d m name ws | movqTbl d m name ws =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    cases h; exact ⟨rfl, rfl, Frame.refl _ _⟩
   | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | callr _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
     simp only [exec, reduceCtorEq] at h
 
@@ -291,7 +301,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) (h : ex
       subst h; rfl
     | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | callr _ | mmxEnter | emms | mcdtEnter _ | mcdtLeave =>
       simp only [exec, reduceCtorEq] at h
-    | pmuludq d r =>
+    | pmuludq d r | movdquTbl d m name ws | movqTbl d m name ws =>
       simp only [exec] at h
       split at h <;> [skip; cases h]
       cases h; rfl

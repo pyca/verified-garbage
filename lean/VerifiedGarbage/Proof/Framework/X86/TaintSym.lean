@@ -7,7 +7,8 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 /-!
 # Constant-time analysis of x86 static-table frames
 
-A symbol address is public only when the contract lists it as public.
+A symbol address is public only when the contract lists it as public
+(otherwise the frame leaves a secret in its register, `Taint.pushStep`).
 The saved instruction pointer and the ADD flags are conservatively secret.
 The four-byte frame uses the existing checked push/pop analysis.
 -/
@@ -15,31 +16,6 @@ The four-byte frame uses the existing checked push/pop analysis.
 @[expose] public section
 
 namespace VG.X86.Taint
-
-/-- Forget a register's region-base identity and flags; set its publicity. -/
-def changed (τ : T) (d : Reg) (p : Bool) : T :=
-  { τ with regs := set τ d p, flags := false, bases := kill τ d }
-
-/-- Changing one non-stack register, flags, and untracked state. -/
-theorem Agree.changed {τ : T} {s₁ s₂ t₁ t₂ : State} (h : Agree τ s₁ s₂)
-    {d : Reg} (hd : d ≠ .esp) {p : Bool} (hv : p = true → t₁.gpr d = t₂.gpr d)
-    (g₁ : ∀ r, r ≠ d → t₁.gpr r = s₁.gpr r)
-    (g₂ : ∀ r, r ≠ d → t₂.gpr r = s₂.gpr r)
-    (m₁ : t₁.mem = s₁.mem) (m₂ : t₂.mem = s₂.mem)
-    (w₁ : t₁.wr = s₁.wr) (w₂ : t₂.wr = s₂.wr) : Agree (changed τ d p) t₁ t₂ := by
-  refine h.keep ⟨?_, fun hf => by cases hf⟩ rfl rfl rfl rfl rfl w₁ w₂ m₁ m₂
-    (g₁ _ hd.symm) (g₂ _ hd.symm) (kill_bases h.wf₁ w₁ g₁) (kill_bases h.wf₂ w₂ g₂)
-  intro r hr
-  change r ∈ set τ d p at hr
-  by_cases hp : p = true
-  · simp only [set, hp, ↓reduceIte, RegSet.mem_insert] at hr
-    rcases hr with rfl | hr
-    · exact hv hp
-    · by_cases he : r = d
-      · subst he; exact hv hp
-      · rw [g₁ r he, g₂ r he]; exact h.rf.1 r hr
-  · simp only [set, hp, Bool.false_eq_true, ↓reduceIte, RegSet.mem_erase] at hr
-    rw [g₁ r hr.1, g₂ r hr.1]; exact h.rf.1 r hr.2
 
 /-- Public symbol addresses supplement the scalar/SSE agreement relation. -/
 def AgreeS (L : List String) (τ : T) (s₁ s₂ : State) : Prop :=

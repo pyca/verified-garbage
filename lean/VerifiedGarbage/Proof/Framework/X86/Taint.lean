@@ -369,7 +369,7 @@ def step (τ : T) : Instr → Option T
   | .mul r => some (mulStep τ r)
   -- A frame's push and pop are analysed by the `push` and `pop` hooks
   -- (`pushStep`, `popStep`), not here; the SSE instructions are not analysed.
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => none
 
 def meet (τ₁ τ₂ : T) : T where
@@ -908,7 +908,7 @@ stores, and for `mul`, which writes two). -/
 def dst : Instr → Option Reg
   | .symPush d _ | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _
   | .mcdtEnter d => some d
-  | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave | .callr _ => none
 
 /-- Whether an instruction leaves `esp` as it is: `!isa.writesSp i`
@@ -969,7 +969,7 @@ theorem exec_dst {i : Instr} {d : Reg} (hd : dst i = some d) {s s' : State}
     exact ⟨rfl, rfl, fun r h => setReg_ne h⟩
   | store m r => simp [dst] at hd
   | store8 m r => simp [dst] at hd
-  | mul r | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms
+  | mul r | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms
   | pmuludq | mcdtLeave => simp [dst] at hd
 
 theorem Agree.write {τ τ' : T} {i : Instr} {d : Reg} (hd : dst i = some d) (hesp : d ≠ .esp)
@@ -1097,7 +1097,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms
+  | symPush | push | pop | alloc | free | callr | movdquLoad | movdquStore | movqLoad | movqStore | movdquTbl | movqTbl | xop | mop | mmxStore | mmxEnter | emms
   | pmuludq | mcdtEnter | mcdtLeave => simp only [step, reduceCtorEq] at hs
   | mov d src =>
     simp only [step] at hs
@@ -2126,12 +2126,46 @@ def pushed (τ : T) (rs : List Reg) : T :=
     wbases := pushWbases τ rs n ++ τ.wbases.map fun p => (p.1 + 1, p.2.1, p.2.2 + 1)
     argBases := τ.argBases.map fun p => (p.1, p.2 + 1) }
 
+/-- Forget a register's region-base identity and flags; set its publicity. -/
+def changed (τ : T) (d : Reg) (p : Bool) : T :=
+  { τ with regs := set τ d p, flags := false, bases := kill τ d }
+
+/-- Changing one non-stack register, flags, and untracked state. -/
+theorem Agree.changed {τ : T} {s₁ s₂ t₁ t₂ : State} (h : Agree τ s₁ s₂)
+    {d : Reg} (hd : d ≠ .esp) {p : Bool} (hv : p = true → t₁.gpr d = t₂.gpr d)
+    (g₁ : ∀ r, r ≠ d → t₁.gpr r = s₁.gpr r)
+    (g₂ : ∀ r, r ≠ d → t₂.gpr r = s₂.gpr r)
+    (m₁ : t₁.mem = s₁.mem) (m₂ : t₂.mem = s₂.mem)
+    (w₁ : t₁.wr = s₁.wr) (w₂ : t₂.wr = s₂.wr) : Agree (changed τ d p) t₁ t₂ := by
+  refine h.keep ⟨?_, fun hf => by cases hf⟩ rfl rfl rfl rfl rfl w₁ w₂ m₁ m₂
+    (g₁ _ hd.symm) (g₂ _ hd.symm) (kill_bases h.wf₁ w₁ g₁) (kill_bases h.wf₂ w₂ g₂)
+  intro r hr
+  change r ∈ set τ d p at hr
+  by_cases hp : p = true
+  · simp only [set, hp, ↓reduceIte, RegSet.mem_insert] at hr
+    rcases hr with rfl | hr
+    · exact hv hp
+    · by_cases he : r = d
+      · subst he; exact hv hp
+      · rw [g₁ r he, g₂ r he]; exact h.rf.1 r hr
+  · simp only [set, hp, Bool.false_eq_true, ↓reduceIte, RegSet.mem_erase] at hr
+    rw [g₁ r hr.1, g₂ r hr.1]; exact h.rf.1 r hr.2
+
 /-- A frame's push stores its registers below `esp`, within the bytes that the
 stack may use, which become a new writable region. -/
 def pushStep (τ : T) : Instr → Option T
   | .push rs =>
     if pub τ .esp && τ.lens != [] && decide (depth τ.stk + 4 * rs.length ≤ τ.room) then
       some (pushed τ rs)
+    else none
+  -- The push of a static's address frame: the push of a secret word (the
+  -- saved instruction pointer) and a secret register, with secret flags
+  -- (the ADD's). The address is the same in two runs only where a contract
+  -- says so (`taintSym`, `Proof/Framework/X86/TaintSym.lean`).
+  | .symPush d _ =>
+    if d != .esp && (pub (changed τ d false) .esp && (changed τ d false).lens != [] &&
+        decide (depth (changed τ d false).stk + 4 * [d].length ≤ (changed τ d false).room)) then
+      some (changed (pushed (changed τ d false) [d]) d false)
     else none
   | _ => none
 
@@ -2312,11 +2346,11 @@ theorem Wf.push (hl : τ.lens ≠ []) : Wf (pushed τ rs) (pushState s rs) := by
 
 end push
 
-theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
-    (hs : pushStep τ i = some τ') (e₁ : isa.push i s₁ = some s₁') (e₂ : isa.push i s₂ = some s₂') :
-    isa.addrs i s₁ = isa.addrs i s₂ ∧ Agree τ' s₁' s₂' := by
-  cases i <;> simp only [pushStep, reduceCtorEq] at hs
-  rename_i rs
+theorem pushRegs_sound {τ τ' : T} {rs : List Reg} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
+    (hs : pushStep τ (.push rs) = some τ') (e₁ : isa.push (.push rs) s₁ = some s₁')
+    (e₂ : isa.push (.push rs) s₂ = some s₂') :
+    isa.addrs (.push rs) s₁ = isa.addrs (.push rs) s₂ ∧ Agree τ' s₁' s₂' := by
+  simp only [pushStep] at hs
   split at hs <;> [rename_i hc; cases hs]
   cases hs
   simp only [Bool.and_eq_true, bne_iff_ne, ne_eq, decide_eq_true_eq] at hc
@@ -2386,6 +2420,58 @@ with the functions of `VG.KList`, which the kernel evaluates several times
 faster. -/
 
 open VG.KList (any all filter find? map append)
+
+theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
+    (hs : pushStep τ i = some τ') (e₁ : isa.push i s₁ = some s₁') (e₂ : isa.push i s₂ = some s₂') :
+    isa.addrs i s₁ = isa.addrs i s₂ ∧ Agree τ' s₁' s₂' := by
+  cases i with
+  | push rs => exact pushRegs_sound ha hs e₁ e₂
+  | symPush d name =>
+    -- A push of the register, holding a secret, and a secret written to it.
+    simp only [pushStep] at hs
+    split at hs <;> [rename_i hc; cases hs]
+    cases hs
+    obtain ⟨hd, hok⟩ := Bool.and_eq_true_iff.mp hc
+    have hd : d ≠ .esp := by simpa using hd
+    have ht : pushStep (changed τ d false) (.push [d]) = some (pushed (changed τ d false) [d]) := by
+      simp only [pushStep, hok, ↓reduceIte]
+    let a₁ := s₁.setReg d (s₁.unknowns 0)
+    let a₂ := s₂.setReg d (s₂.unknowns 0)
+    have ha' : Agree (changed τ d false) a₁ a₂ :=
+      ha.changed hd (fun h => by cases h) (fun _ h => setReg_ne h) (fun _ h => setReg_ne h)
+        rfl rfl rfl rfl
+    have ea₁ : a₁.gpr .esp = s₁.gpr .esp := setReg_ne hd.symm
+    have ea₂ : a₂.gpr .esp = s₂.gpr .esp := setReg_ne hd.symm
+    simp only [isa, X86.push] at e₁ e₂
+    split at e₁ <;> [rename_i hc₁; cases e₁]
+    split at e₂ <;> [rename_i hc₂; cases e₂]
+    cases e₁; cases e₂
+    have ep₁ : isa.push (.push [d]) a₁ = some (pushState a₁ [d]) := by
+      simp only [isa, X86.push, List.length_singleton, Nat.mul_one, ea₁]
+      rw [ite_eq_left (by simpa using And.intro hd.symm hc₁.2)]
+      simp only [pushState, belowSp, ea₁, List.length_singleton, Nat.mul_one]
+    have ep₂ : isa.push (.push [d]) a₂ = some (pushState a₂ [d]) := by
+      simp only [isa, X86.push, List.length_singleton, Nat.mul_one, ea₂]
+      rw [ite_eq_left (by simpa using And.intro hd.symm hc₂.2)]
+      simp only [pushState, belowSp, ea₂, List.length_singleton, Nat.mul_one]
+    obtain ⟨_, hp⟩ := pushRegs_sound ha' ht ep₁ ep₂
+    have hsp : s₁.gpr .esp = s₂.gpr .esp := by
+      simp only [Bool.and_eq_true] at hok
+      exact ea₁.symm.trans ((ha'.reg hok.1.1).trans ea₂)
+    refine ⟨by simp only [addrs, hsp], ?_⟩
+    apply hp.changed hd
+    · intro h; cases h
+    · intro r hr
+      simp only [pushRegs, a₁, RegUpd.gpr_setReg,
+        RegUpd.gpr_arithFlags, hr, hd.symm, ↓reduceIte]
+    · intro r hr
+      simp only [pushRegs, a₂, RegUpd.gpr_setReg,
+        RegUpd.gpr_arithFlags, hr, hd.symm, ↓reduceIte]
+    · simp only [pushRegs, a₁, State.setReg, hd.symm, ↓reduceIte]
+    · simp only [pushRegs, a₂, State.setReg, hd.symm, ↓reduceIte]
+    · simp only [List.length_singleton, Nat.mul_one, belowSp, ea₁]; rfl
+    · simp only [List.length_singleton, Nat.mul_one, belowSp, ea₂]; rfl
+  | _ => simp only [pushStep, reduceCtorEq] at hs
 
 /-- `a == b`, by the registers' indices. -/
 def regEq (a b : Reg) : Bool := Nat.beq a.ctorIdx b.ctorIdx
@@ -2476,7 +2562,7 @@ def stepK (τ : T) : Instr → Option T
     else none
   | .store8 m r => storeStepK τ m 1 (pub τ r.reg) []
   | .mul r => some (mulStep τ r)
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => none
 
 /-- `l.contains a`, for a known base address. -/
@@ -2680,7 +2766,7 @@ def stepKDFn : Instr → Step
     else none⟩
   | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r.reg) []⟩
   | .mul r => ⟨fun τ => some (mulStepKD τ r)⟩
-  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
+  | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => ⟨fun _ => none⟩
 
 /-- Apply the preclassified instruction to the incoming taint. -/

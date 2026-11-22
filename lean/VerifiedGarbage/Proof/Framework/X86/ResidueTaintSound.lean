@@ -920,6 +920,13 @@ theorem stepB_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     split at e₂ <;> [skip; cases e₂]
     cases e₁; cases e₂
     exact ha.setX d fun h => nomatch h
+  | movdquTbl d m name ws | movqTbl d m name ws =>
+    simp only [stepB, Option.some.injEq] at hs; subst hs
+    simp only [reduceExec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact ha.setX d fun _ => rfl
   | movdquStore m x =>
     simp only [stepB, Option.some.injEq] at hs; subst hs
     simp only [reduceExec, State.store128] at e₁ e₂
