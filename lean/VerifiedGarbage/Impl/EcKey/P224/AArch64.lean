@@ -51,7 +51,11 @@ def compressP224 : Prog VG.AArch64.isa :=
 /-- `vg_ec_p224_decompress_public_key`: its code, then the registers that held the
 field elements, and the flags, cleared. -/
 def decompressP224 : Prog VG.AArch64.isa :=
-  withClears [.x2, .x3, .x4, .x8, .x9, .x10, .x11, .x12, .x13, .x16] [.v27] (some .x2)
+  scrubAll 0 32
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16,
+      .x17],
+     [.v16, .v17, .v27, .v29],
+     []⟩
     (Compressed.AArch64.decompress Ecdsa.AArch64.p224)
 
 end Fn

@@ -74,7 +74,7 @@ theorem brainpoolp320r1p_ok : Proof.Weierstrass.AArch64.Mont.ModOk 5 Spec.Brainp
 
 theorem rootCall : RootCall brainpoolp320r1 := by
   intro f m h
-  have e : (Impl.Weierstrass.AArch64.Mont.callOf (Impl.EcKey.Compressed.AArch64.rootMod brainpoolp320r1)).map
+  have e : (Impl.Weierstrass.AArch64.Mont.rootCallOf (Impl.EcKey.Compressed.AArch64.rootMod brainpoolp320r1)).map
       Prod.snd = some Spec.BrainpoolP320r1.p := by decide +kernel
   rw [h] at e
   obtain rfl := Option.some.inj e

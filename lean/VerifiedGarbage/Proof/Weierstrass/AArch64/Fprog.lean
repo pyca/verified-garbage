@@ -430,15 +430,13 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 /-- Products of at most four words are never calls. -/
 theorem callOf_small {M : Mod} (h : M.n ≤ 4) : Mont.callOf M = none := by
   unfold Mont.callOf; split
-  · have h5 : (5 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega_arith
-    have h6 : (6 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega_arith
+  · have h6 : (6 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega_arith
     have h8 : (8 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega_arith
     have h9 : (9 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega_arith
     simp only [Mont.fns, List.find?_cons, List.find?_nil, Impl.Weierstrass.Mont.p384p,
       Impl.Weierstrass.Mont.p521p, Impl.Weierstrass.Mont.p384n, Impl.Weierstrass.Mont.p521n,
       Impl.Weierstrass.Mont.brainpoolp512r1p, Impl.Weierstrass.Mont.brainpoolp512r1n,
-      Impl.Weierstrass.Mont.brainpoolp384r1p, Impl.Weierstrass.Mont.brainpoolp384r1n,
-      Impl.Weierstrass.Mont.brainpoolp320r1p, h5, h6, h8, h9,
+      Impl.Weierstrass.Mont.brainpoolp384r1p, Impl.Weierstrass.Mont.brainpoolp384r1n, h6, h8, h9,
       Bool.false_and, Option.map_none]
   · rfl
 

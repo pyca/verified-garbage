@@ -102,7 +102,7 @@ theorem mulFn_noFrames (n m : Nat) : (mulFn n m).noFrames = true := by
 /-- `[o] = F [a] [b] R⁻¹ mod m` by a call of a function whose code `code`
 does that from operands with `pre`, as the inline product (`mul_ok`). -/
 theorem callProgV29_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOkA M size m s.mem base) (hn : M.n = 5 ∨ M.n = 6 ∨ M.n = 8 ∨ M.n = 9) (htmp : M.tmp = moAt M.n) {o a b : Nat}
+    (hM : ModOkA M size m s.mem base) (hn : M.n = 4 ∨ M.n = 5 ∨ M.n = 6 ∨ M.n = 8 ∨ M.n = 9) (htmp : M.tmp = moAt M.n) {o a b : Nat}
     (ho : o + 8 * M.n ≤ own M.n) (ha : a + 8 * M.n ≤ own M.n) (hb : b + 8 * M.n ≤ own M.n)
     {f : String} {code : Prog isa} (hnf : code.noFrames = true) (pre : Nat → Nat → Prop)
     (F : Nat → Nat → Nat) (hpre : pre (wordsVal s.mem base a M.n) (wordsVal s.mem base b M.n))
@@ -118,8 +118,8 @@ theorem callProgV29_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base s
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         F (wordsVal s.mem base a M.n) (wordsVal s.mem base b M.n) % m := by
-  have hn9 : M.n ≤ 9 := by rcases hn with h | h | h | h <;> omega_arith
-  have hn4 : 4 ≤ M.n := by rcases hn with h | h | h | h <;> omega_arith
+  have hn9 : M.n ≤ 9 := by rcases hn with h | h | h | h | h <;> omega_arith
+  have hn4 : 4 ≤ M.n := by rcases hn with h | h | h | h | h <;> omega_arith
   have hown := own_eq hn9
   obtain ⟨hmo1, hmo2, hmo8⟩ := moAt_facts hn9 hn4
   have htsz := hM.tmp
@@ -171,7 +171,7 @@ theorem callProgV29_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base s
       fun x hx hx' => ?_⟩, by rw [k₃.mem]; exact V, by rw [k₃.mem]; exact C⟩
     · by_cases h30 : r = .x30
       · subst h30; rw [l₃, Vv', L₁]
-      rcases not_clob (.inr hn) hr with rfl | rfl | hp
+      rcases not_clob hn hr with rfl | rfl | hp
       · rw [k₃.gpr _ (by decide), x0₂]
       · exact absurd rfl h30
       · rw [k₃.gpr r (by simpa using h30), hpres r hp h30, K₁.gpr r (by
@@ -181,7 +181,7 @@ theorem callProgV29_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base s
       exact K x hx (by rw [← htmp]; exact hx')
 
 theorem callProg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOkA M size m s.mem base) (hn : M.n = 5 ∨ M.n = 6 ∨ M.n = 8 ∨ M.n = 9) (htmp : M.tmp = moAt M.n) {o a b : Nat}
+    (hM : ModOkA M size m s.mem base) (hn : M.n = 4 ∨ M.n = 5 ∨ M.n = 6 ∨ M.n = 8 ∨ M.n = 9) (htmp : M.tmp = moAt M.n) {o a b : Nat}
     (ho : o + 8 * M.n ≤ own M.n) (ha : a + 8 * M.n ≤ own M.n) (hb : b + 8 * M.n ≤ own M.n)
     {f : String} {code : Prog isa} (hnf : code.noFrames = true) (pre : Nat → Nat → Prop)
     (F : Nat → Nat → Nat) (hpre : pre (wordsVal s.mem base a M.n) (wordsVal s.mem base b M.n))
@@ -214,8 +214,8 @@ theorem mulCall_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   callProg_ok hs hM (by
     rcases hH with h | h
     · rcases h.hn with hn | hn
-      · exact .inr (.inl hn)
-      · exact .inr (.inr (.inr hn))
+      · exact .inr (.inr (.inl hn))
+      · exact .inr (.inr (.inr (.inr hn)))
     · exact h.hn) htmp ho ha hb (mulFn_noFrames M.n m) (fun _ B => B < m) (· * ·) hB
     fun hp hb' => mulFn_ok hH hp hb'
 
@@ -228,7 +228,7 @@ theorem sqrCall_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       wordsVal s'.mem base o M.n < p384 ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % p384 =
         wordsVal s.mem base a M.n * wordsVal s.mem base a M.n % p384 := by
-  have := callProg_ok (f := Impl.Weierstrass.Mont.p384p.fn "sqr") hs hM (.inr (.inl hn)) htmp ho ha ha
+  have := callProg_ok (f := Impl.Weierstrass.Mont.p384p.fn "sqr") hs hM (.inr (.inr (.inl hn))) htmp ho ha ha
     (code := sqrFn384) rfl (fun A _ => A < p384) (fun A _ => A * A) hA
     (fun {W t} hp ha' => by rw [hn] at hp ha' ⊢; exact sqrFn384_ok hp ha')
   exact this

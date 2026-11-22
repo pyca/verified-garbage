@@ -195,13 +195,16 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono)
 
-structure Backend (P : ChainCfg) : Prop where
-  sound : ∀ f m, Mont.callOf P.M = some (f, m) → VG.Proof.Weierstrass.AArch64.Mont.ModOk P.M.n m
-  low : Mont.callOf P.M = none ∨
+/-- What the chain's products need of their function, if they are calls
+(`Mont.rootCallOf`): that it computes them modulo `m`, and that the chain's
+slots are below its working space. -/
+structure Backend (P : ChainCfg) (m : Nat) : Prop where
+  sound : ∀ f m', Mont.rootCallOf P.M = some (f, m') → m' = m ∧ VG.Proof.Weierstrass.AArch64.Mont.ModOk P.M.n m'
+  low : Mont.rootCallOf P.M = none ∨
     P.acc + 8 * P.M.n ≤ Mont.own P.M.n ∧ P.base + 8 * P.M.n ≤ Mont.own P.M.n ∧
       P.tbl + 9 * (8 * P.M.n) ≤ Mont.own P.M.n
 
- theorem mul_ok {P : ChainCfg} (B : Backend P) {base : Addr} {size m : Nat} {s : State}
+ theorem mul_ok {P : ChainCfg} {m : Nat} (B : Backend P m) {base : Addr} {size : Nat} {s : State}
     (hs : Scr s base size) (hM : ModOkA P.M size m s.mem base) (hA : ModA P.M)
     {o a b : Nat} (ho : o + 8 * P.M.n ≤ size) (ha : a + 8 * P.M.n ≤ size)
     (hb : b + 8 * P.M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0) (hb8 : b % 8 = 0)
@@ -213,16 +216,22 @@ structure Backend (P : ChainCfg) : Prop where
       wordsVal t.mem base o P.M.n * 2 ^ (64 * P.M.n) % m =
         wordsVal s.mem base a P.M.n * wordsVal s.mem base b P.M.n % m := by
   unfold VG.Impl.EcKey.Compressed.AArch64.Chain.mul
-  cases hc : Mont.callOf P.M with
+  cases hc : Mont.rootCallOf P.M with
   | none => exact VG.Proof.Mont.AArch64.mul_ok hs hM hA ho ha hb ho8 ha8 hb8 hB
   | some fm =>
     obtain ⟨f, m'⟩ := fm
-    obtain rfl := hM.call f m' hc
+    obtain ⟨rfl, hH⟩ := B.sound f m' hc
     have ht : P.M.tmp = Mont.moAt P.M.n := by
-      unfold Mont.callOf at hc
+      unfold Mont.rootCallOf at hc
       split at hc
-      · assumption
-      · cases hc
+      · rename_i h
+        unfold Mont.callOf at h
+        split at h
+        · assumption
+        · cases h
+      · split at hc
+        · assumption
+        · cases hc
     have hl := B.low.resolve_left (by rw [hc]; simp)
     have hx : ∀ x ∈ [o, a, b], x + 8 * P.M.n ≤ Mont.own P.M.n := by
       intro x h
@@ -230,7 +239,7 @@ structure Backend (P : ChainCfg) : Prop where
       · exact hl.1
       · exact hl.2.1
       · omega_arith
-    exact Mont.mulCall_ok hs hM (B.sound _ _ hc) ht (hx _ (by simp))
+    exact Mont.mulCall_ok hs hM hH ht (hx _ (by simp))
       (hx _ (by simp)) (hx _ (by simp)) hB
 
  theorem oddPowers_ok {P : ChainCfg} {N : Nat} (Inv : Nat → State → Prop)
@@ -244,7 +253,7 @@ structure Backend (P : ChainCfg) : Prop where
     intro s hs
     exact WP.seq (WP.mono (ih (by omega_arith) s hs) fun t ht => hstep n t (by omega_arith) ht)
 
-theorem table_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P)
+theorem table_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P m)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) {s₀ s : State} (h : ChainSt P base size m s₀ s)
     (hB : wordsVal s₀.mem base P.base P.M.n < m) :
     WP isa (VG.Impl.EcKey.Compressed.AArch64.Chain.table P) s fun s' =>
@@ -310,7 +319,7 @@ theorem table_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : Ch
     congr 1
 
 /-- `acc = acc^(2^s)`, from `B^v`. -/
-theorem squares_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P)
+theorem squares_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P m)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) {s₀ s : State} {v k : Nat} (hs1 : 1 ≤ k) (hs : k < 2 ^ 16)
     (h : ChainSt P base size m s₀ s) (hT : TblC P base m (bv P base m s₀) 8 s)
     (hlt : wordsVal s.mem base P.acc P.M.n < m)
@@ -356,7 +365,7 @@ theorem squares_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : 
   grind
 
 /-- A step: `B^v` to `B^(v 2^s + d)`. -/
-theorem step_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P)
+theorem step_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P m)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) {s₀ s : State} {v k d : Nat} (hs : k < 2 ^ 16)
     (hd : d = 0 ∨ (d % 2 = 1 ∧ d ≤ 15))
     (h : ChainSt P base size m s₀ s) (hT : TblC P base m (bv P base m s₀) 8 s)
@@ -397,7 +406,7 @@ theorem step_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : Cha
     congr 1
     omega_arith
 
-theorem steps_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P)
+theorem steps_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P m)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) {s₀ : State} :
     ∀ (sts : List (Nat × Nat)) {s : State} {v : Nat},
       (∀ st ∈ sts, st.1 < 2 ^ 16 ∧ (st.2 = 0 ∨ (st.2 % 2 = 1 ∧ st.2 ≤ 15))) →
@@ -416,7 +425,7 @@ theorem steps_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : Ch
 
 /-- `[acc] = [base]^e` in Montgomery form, for the exponent `e` of the chain;
 only `powClob` and `chainW` change. -/
-theorem chainPow_ok {P : ChainCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P)
+theorem chainPow_ok {P : ChainCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : ChainLay P size) (B : Backend P m)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
     (hM : ModOkA P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m) (hC : ChainOk P e) :
     WP isa (VG.Impl.EcKey.Compressed.AArch64.Chain.pow P) s fun s' => KeepRegs (powClob P.M.n) s s' ∧ Unch base (chainW P) s.mem s'.mem ∧
@@ -473,19 +482,37 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 /-- If the root's products are calls (`Mont.callOf`), of a function computing
 them modulo `p`. -/
  def RootCall (c : Cfg) : Prop :=
-  ∀ f m', VG.Impl.Weierstrass.AArch64.Mont.callOf (rootMod c) = some (f, m') →
+  ∀ f m', VG.Impl.Weierstrass.AArch64.Mont.rootCallOf (rootMod c) = some (f, m') →
     m' = c.C.p ∧ VG.Proof.Weierstrass.AArch64.Mont.ModOk c.n m'
 
-/-- `RootCall` of a curve of at most four words, whose products are never
-calls, or of six, eight or nine, whose `rootMod` is `MP'`. -/
- theorem rootCall_of {c : Cfg} (hc : BaseCfgOk c) (h : c.n ≤ 4 ∨ c.n = 6 ∨ c.n = 8 ∨ c.n = 9) :
+/-- `RootCall` of a curve whose root's products are not calls. -/
+ theorem rootCall_none {c : Cfg} (h : VG.Impl.Weierstrass.AArch64.Mont.rootCallOf (rootMod c) = none) :
+    RootCall c := by
+  intro f m hf; rw [h] at hf; cases hf
+
+/-- `RootCall` of a curve of six, eight or nine words, whose `rootMod` is
+`MP'` and whose products are calls exactly where `MP'`'s are. -/
+ theorem rootCall_of {c : Cfg} (hc : BaseCfgOk c) (h : c.n = 6 ∨ c.n = 8 ∨ c.n = 9) :
     RootCall c := by
   intro f m hf
-  rcases h with h | h
-  · rw [callOf_small (M := rootMod c) h] at hf; cases hf
-  · have e : rootMod c = c.MP' := by
-      unfold rootMod; rw [← sl_tmp c h]; rfl
-    rw [e] at hf; exact hc.call_p f m hf
+  have e : rootMod c = c.MP' := by
+    unfold rootMod; rw [← sl_tmp c h]; rfl
+  rw [e] at hf
+  unfold VG.Impl.Weierstrass.AArch64.Mont.rootCallOf at hf
+  split at hf
+  · rename_i h'
+    rw [Option.some.injEq] at hf
+    subst hf
+    exact hc.call_p f m h'
+  · split at hf
+    · have hn : (c.MP').n = c.n := rfl
+      have h6 : (4 == c.n) = false := by simp only [beq_eq_false_iff_ne]; omega_using [h]
+      have h5 : (5 == c.n) = false := by simp only [beq_eq_false_iff_ne]; omega_using [h]
+      simp only [VG.Impl.Weierstrass.AArch64.Mont.rootFns, List.find?_cons, List.find?_nil,
+        Impl.Weierstrass.Mont.brainpoolp320r1p, Impl.Weierstrass.Mont.brainpoolp256r1p,
+        Impl.Weierstrass.Mont.secp256k1p, Impl.Weierstrass.Mont.p224p, hn, h5, h6,
+        Bool.false_and, Option.map_none, reduceCtorEq] at hf
+    · cases hf
 
 /-- `rootMod` takes the modulus as `MP'` does, its temporary area apart. -/
  theorem rootMod_ok {c : Cfg} (hc : BaseCfgOk c) (hcall : RootCall c) {mem : Mem} {base : Addr}
@@ -501,7 +528,8 @@ calls, or of six, eight or nine, whose `rootMod` is `MP'`. -/
   val := hM.val
   inv := hM.inv
   red := hM.red
-  call := fun f m h => (hcall f m h).1
+  call := fun f m h => (hcall f m (by
+    unfold VG.Impl.Weierstrass.AArch64.Mont.rootCallOf; rw [h])).1
 
  theorem rootTable_end (c : Cfg) : c.sl RX + 9 * (8 * c.n) = c.sl T0 := by
   rw [sl_eq c RX (by decide), sl_eq c T0 (by decide)]
@@ -564,8 +592,8 @@ calls, or of six, eight or nine, whose `rootMod` is `MP'`. -/
     exact apart_rootWrites hc (i := MP) (by decide) (by decide) w hw
 
  theorem rootChain_backend {c : Cfg} (hc : BaseCfgOk c) (hcall : RootCall c) (e : Nat) :
-    Chain.Backend (rootChain c e) := by
-  refine ⟨fun f m h => (hcall f m h).2, .inr ⟨?_, ?_, ?_⟩⟩
+    Chain.Backend (rootChain c e) c.C.p := by
+  refine ⟨fun f m h => hcall f m h, .inr ⟨?_, ?_, ?_⟩⟩
   · exact sl_own_fn c hc.n10 (i := ACC) (by decide) (by decide)
   · exact sl_own_fn c hc.n10 (i := W2) (by decide) (by decide)
   · change c.sl RX + 9 * (8 * c.n) ≤ VG.Proof.Weierstrass.AArch64.Mont.own c.n

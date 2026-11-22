@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
+public import VerifiedGarbage.Impl.EcKey.P224.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
+public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import VerifiedGarbage.Impl.EcKey.Compressed.Root
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
@@ -24,6 +27,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.P224.Sqrt
@@ -976,14 +980,43 @@ materialize_shared baseline := code
   rw [he] at h'
   cases h'
 
+/-- P224's `p` takes the general form of the multiplication function,
+which the root's power calls (`rootMod`). -/
+theorem p224p_ok : Proof.Weierstrass.AArch64.Mont.ModOk 4 Spec.P224.p := .inr {
+  hn := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+  g := by decide +kernel
+  novec := by decide +kernel }
+
+theorem rootCall : RootCall p224 := by
+  intro f m h
+  have e : (Impl.Weierstrass.AArch64.Mont.rootCallOf (Impl.EcKey.Compressed.AArch64.rootMod p224)).map
+      Prod.snd = some Spec.P224.p := by decide +kernel
+  rw [h] at e
+  obtain rfl := Option.some.inj e
+  exact ⟨rfl, p224p_ok⟩
+
  theorem verified (hL : Proof.Weierstrass.Law Spec.P224.curve)
     (hI : Proof.Weierstrass.AArch64.InvSounds) :
     Verified target code (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) := by
   obtain hc := (p224_ok hI).toBaseCfgOk
   exact Verified.of_correct (decompress_correct p224 hc _
-    (candidateTonelli_correct hc (rootCall_of hc (by decide)) (by decide +kernel) (by decide +kernel) chain_r chain_q body_no_v27)
+    (candidateTonelli_correct hc rootCall (by decide +kernel) (by decide +kernel) chain_r chain_q body_no_v27)
     (by lit_decide) (by lit_decide) (by lit_decide)) ct
     (decompress_implies Spec.EcKey.P224.inst _
       (Proof.P224.rootFacts hL) sat)
+
+/-- `vg_ec_p224_decompress_public_key` as it is emitted, its cleanup included
+(`Impl.EcKey.AArch64.Fn.decompressP224`), meets its contract in constant time and
+returns without secret residue. -/
+theorem scrubbed (hL : Proof.Weierstrass.Law Spec.P224.curve)
+    (hI : Proof.Weierstrass.AArch64.InvSounds) :
+    VerifiedScrubbed AArch64.target Impl.EcKey.AArch64.Fn.decompressP224
+      (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) 32 :=
+  AArch64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P224.inst.decompressPublicKeyApi)
+    { code := code, verified := verified hL hI } _
+    (Proof.EcKey.AArch64.Scrub.decompressOk _) (by dsimp only; lit_decide)
 
 end VG.Proof.EcKey.Compressed.AArch64.P224Decompress

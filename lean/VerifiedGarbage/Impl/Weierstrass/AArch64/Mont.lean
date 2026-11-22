@@ -279,13 +279,9 @@ def mulFn (n m : Nat) : Prog isa :=
 open Impl.Weierstrass.Mont in
 /-- The moduli whose products are functions on AArch64: P-384's, P-521's,
 brainpoolP384r1's and brainpoolP512r1's `p` and `n`, whose inline products are
-long, and brainpoolP320r1's `p`, for the power of its public keys'
-decompression (`rootMod`, which alone takes it with its temporary area at
-`moAt`: its other code keeps its products inline). A product of four words is
-short enough inline that calls do not pay. -/
+long. A product of four words is short enough inline that calls do not pay. -/
 def fns : List Modulus :=
-  [p384p, p521p, p384n, p521n, brainpoolp512r1p, brainpoolp512r1n, brainpoolp384r1p, brainpoolp384r1n,
-    brainpoolp320r1p]
+  [p384p, p521p, p384n, p521n, brainpoolp512r1p, brainpoolp512r1n, brainpoolp384r1p, brainpoolp384r1n]
 
 /-- The function computing the products of the modulus `M` (its name and its
 modulus), if any: one of `fns` of `M.n` words and `M.minv`, if `M`'s
@@ -295,5 +291,23 @@ def callOf (M : Mod) : Option (String × Nat) :=
   if M.tmp = moAt M.n then
     (fns.find? fun S => S.k == M.n && BitVec.ofNat 64 (minv S.m) == M.minv).map fun S => (S.fn "mul", S.m)
   else none
+
+open Impl.Weierstrass.Mont in
+/-- The moduli whose products are functions for the square root of public-key
+decompression alone (`Impl.EcKey.Compressed.AArch64.rootMod`), which runs
+once a key: there a call costs little beside the product, while the curves'
+other code keeps their products inline. -/
+def rootFns : List Modulus := [brainpoolp320r1p, brainpoolp256r1p, secp256k1p, p224p]
+
+/-- The function computing the root's products of `M`: `callOf`'s, else one
+of `rootFns`, on the same terms. -/
+def rootCallOf (M : Mod) : Option (String × Nat) :=
+  match callOf M with
+  | some f => some f
+  | none =>
+    if M.tmp = moAt M.n then
+      (rootFns.find? fun S => S.k == M.n && BitVec.ofNat 64 (minv S.m) == M.minv).map
+        fun S => (S.fn "mul", S.m)
+    else none
 
 end VG.Impl.Weierstrass.AArch64.Mont

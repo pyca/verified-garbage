@@ -31,12 +31,12 @@ open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono)
 
-/-- What the general form needs of the modulus `m` of `n` words: five, six, eight or nine
+/-- What the general form needs of the modulus `m` of `n` words: four, five, six, eight or nine
 words, `m` below `2^(64 n)`, `minv m` its inverse's negation, what the
 inline product needs of it, the general form's reduction, and code that
 writes no vector register. -/
 structure ModOkG (n m : Nat) : Prop where
-  hn : n = 5 ∨ n = 6 ∨ n = 8 ∨ n = 9
+  hn : n = 4 ∨ n = 5 ∨ n = 6 ∨ n = 8 ∨ n = 9
   m_lt : m < 2 ^ (64 * n)
   inv : (m * minv m + 1) % 2 ^ 64 = 0
   red : (mod n m).ok m = true
@@ -58,9 +58,9 @@ structure RegsG (n : Nat) : Prop where
   pres : ∀ r ∈ preserved, r ∉ savedG n → r ∉ clob n ∧ r ∉ [raG, rbG, roG, .x1, .x2, .x3]
   keep0 : ∀ r ∈ [Reg.x0, .x19, .x20], r ∉ clob n ∧ r ∉ savedG n ∧ r ∉ [raG, rbG, roG, .x1, .x2, .x3]
 
-theorem regsG_ok : ∀ n, (n = 5 ∨ n = 6 ∨ n = 8 ∨ n = 9) → RegsG n := by
+theorem regsG_ok : ∀ n, (n = 4 ∨ n = 5 ∨ n = 6 ∨ n = 8 ∨ n = 9) → RegsG n := by
   intro n hn
-  rcases hn with rfl | rfl | rfl | rfl <;> exact ⟨by decide, ⟨by decide, by decide⟩, ⟨by decide, by decide⟩,
+  rcases hn with rfl | rfl | rfl | rfl | rfl <;> exact ⟨by decide, ⟨by decide, by decide⟩, ⟨by decide, by decide⟩,
     by decide, by decide, by decide, by decide, by decide, by decide⟩
 
 theorem ptrsG_ok (s : State) :
