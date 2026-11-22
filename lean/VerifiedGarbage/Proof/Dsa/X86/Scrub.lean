@@ -289,12 +289,12 @@ theorem forall₂_map_append {f f' : Nat → Prog isa} {x x' : Prog isa} (h : �
   | [] => .cons hx .nil
   | j :: L => .cons (h j) (forall₂_map_append h hx L)
 
-/-- `FillB` of the hashes of p's candidate (`Geo.pX`), from `FillB` of each. -/
-theorem pX_fill {g g' : Geo} (hc : g.count = g'.count) (hl : g.pLen = g'.pLen)
-    (hh : ∀ j, FillB (g.pHash j) (g'.pHash j)) : FillB g.pX g'.pX := by
-  unfold Impl.Dsa.X86.Generation.Geo.pX
-  rw [hc, hl]
-  exact fillB_seqs (forall₂_map_append hh (FillB.refl _) _)
+/-- `FillB` of the hashes of p's candidate (`Geo.pX`), from `FillB` of their loop's hash. -/
+theorem pX_fill {g g' : Geo} (hc : g.count = g'.count) (hl : g.pLen = g'.pLen) (hq : g.qLen = g'.qLen)
+    (hh : FillB g.pHash g'.pHash) : FillB g.pX g'.pX := by
+  unfold Impl.Dsa.X86.Generation.Geo.pX Impl.Dsa.X86.Generation.Geo.pNext
+  rw [hc, hl, hq]
+  exact FillB.seq (FillB.refl _) (FillB.seq (FillB.loop _ (FillB.seq hh (FillB.refl _))) (FillB.refl _))
 
 /-- `g` with the implementations it calls, and their names, replaced: the
 compression function, SHA's streaming functions (which the search does not
@@ -315,7 +315,7 @@ theorem generate_fill (g : Geo) {cN qN pN : String} {cC qC pC : Prog isa} {st : 
     | exact hc
     | exact hq
     | exact hp
-    | exact pX_fill rfl rfl fun j => by
+    | exact pX_fill rfl rfl rfl (by
         unfold Impl.Dsa.X86.Generation.Geo.pHash
         repeat' (first
           | with_reducible exact FillB.refl _
@@ -325,7 +325,7 @@ theorem generate_fill (g : Geo) {cN qN pN : String} {cC qC pC : Prog isa} {st : 
           | refine FillB.loop _ ?_
           | refine FillB.call _ _ ?_
           | refine FillB.frame _ _ ?_
-          | exact FillB.refl _)
+          | exact FillB.refl _))
     | refine FillB.seq ?_ ?_
     | refine FillB.ite _ ?_ ?_
     | refine FillB.loop _ ?_
