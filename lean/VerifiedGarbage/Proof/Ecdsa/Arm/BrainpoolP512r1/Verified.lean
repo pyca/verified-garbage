@@ -113,30 +113,6 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont VG.Impl.Weierstrass.Arm VG.Impl.Wei
 open VG.Impl.Ecdsa.Arm
 open VG.Proof.Mont.Arm VG.Proof.Mont VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass Spec.Weierstrass
 
-theorem pre_of {s : State} (h : signArm.pre s) : Pre brainpoolp512r1 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, noTbl rfl⟩
-
-theorem sign_arm (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State) (hs : signArm.pre s) :
-    ∃ t s', Exec isa signBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ signArm.post s s' := by
-  have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok brainpoolp512r1_ok hL hp
-  refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, ?_⟩
-  swap
-  · simp only [signArm, BitVec.setWidth_append_eq_right]
-    exact hpost
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact K.saved (.r4, 0) (by decide)
-  · exact K.saved (.r5, 4) (by decide)
-  · exact K.saved (.r6, 8) (by decide)
-  · exact K.saved (.r7, 12) (by decide)
-  · exact K.saved (.r8, 16) (by decide)
-  · exact K.saved (.r9, 20) (by decide)
-  · exact K.saved (.r10, 24) (by decide)
-  · exact K.saved (.r11, 28) (by decide)
-  · exact K.saved (.lr, 32) (by decide)
-
 /-- The taint analysis starts with the register arguments public, the stack
 argument too, and that word known to be the base address of `scratch`. -/
 def τ₀ : VG.Arm.Taint.T :=
@@ -195,9 +171,5 @@ theorem agree₁ {s t : State} (h : VG.Arm.Taint.Agree τ₀ s t) : VG.Arm.Taint
   VG.Arm.Taint.leS_sound (σ := τ₀) ⟨RegSet.subset_refl _, id, .inr ⟨rfl, rfl⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, .inl rfl,
     fun _ h => (List.not_mem_nil h).elim⟩ h
-
-theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP512r1 :=
-  VG.Taint.constantTime (A := taint) τ₁
-    (fun _ _ hs ht pub => agree₁ (agree₀ (pre_of hs) (pre_of ht) pub)) (by native_taint_decide)
 
 end VG.Proof.Ecdsa.Arm.BrainpoolP512r1

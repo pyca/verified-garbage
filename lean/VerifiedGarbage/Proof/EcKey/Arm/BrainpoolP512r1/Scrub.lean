@@ -56,7 +56,7 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ec_brainpoolp512r1_public_key`, given the group law. -/
 theorem publicKeyBrainpoolP512r1 (hL : Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyBrainpoolP512r1
-      Proof.EcKey.Arm.BrainpoolP512r1.combPkSpec 32 :=
+      (Proof.EcKey.Arm.BrainpoolP512r1.combPkSpec false) 32 :=
   verifiedScrubbed (api := Spec.EcKey.BrainpoolP512r1.publicKeyApi)
     { code := Impl.Ecdsa.Arm.publicKeyBrainpoolP512r1Comb
       verified := Proof.EcKey.Arm.BrainpoolP512r1.combPk_verified hL }
@@ -65,7 +65,7 @@ theorem publicKeyBrainpoolP512r1 (hL : Proof.Weierstrass.Law Spec.BrainpoolP512r
 /-- `vg_ec_brainpoolp512r1_public_key_umaal`, given the group law. -/
 theorem publicKeyBrainpoolP512r1U (hL : Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyBrainpoolP512r1U
-      Proof.EcKey.Arm.BrainpoolP512r1.combPkSpec 32 :=
+      (Proof.EcKey.Arm.BrainpoolP512r1.combPkSpec true) 32 :=
   verifiedScrubbed (api := Spec.EcKey.BrainpoolP512r1.publicKeyApi)
     { code := Impl.Ecdsa.Arm.publicKeyBrainpoolP512r1CombU
       verified := Proof.EcKey.Arm.BrainpoolP512r1.combPkU_verified hL }
@@ -74,7 +74,8 @@ theorem publicKeyBrainpoolP512r1U (hL : Proof.Weierstrass.Law Spec.BrainpoolP512
 /-- `vg_ec_brainpoolp512r1_compress_public_key`. -/
 theorem compressBrainpoolP512r1 :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressBrainpoolP512r1
-      (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.brainpoolp512r1With false).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.code
       verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.verified }
@@ -83,7 +84,8 @@ theorem compressBrainpoolP512r1 :
 /-- `vg_ec_brainpoolp512r1_compress_public_key_umaal`. -/
 theorem compressBrainpoolP512r1U :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressBrainpoolP512r1U
-      (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.brainpoolp512r1With true).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.codeU
       verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.verifiedU }
@@ -92,7 +94,8 @@ theorem compressBrainpoolP512r1U :
 /-- `vg_ec_brainpoolp512r1_decompress_public_key`, given the group law. -/
 theorem decompressBrainpoolP512r1 (hL : Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressBrainpoolP512r1
-      (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.brainpoolp512r1With false).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.code
       verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.verified hL }
@@ -101,7 +104,8 @@ theorem decompressBrainpoolP512r1 (hL : Proof.Weierstrass.Law Spec.BrainpoolP512
 /-- `vg_ec_brainpoolp512r1_decompress_public_key_umaal`, given the group law. -/
 theorem decompressBrainpoolP512r1U (hL : Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressBrainpoolP512r1U
-      (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.brainpoolp512r1With true).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.codeU
       verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.verifiedU hL }

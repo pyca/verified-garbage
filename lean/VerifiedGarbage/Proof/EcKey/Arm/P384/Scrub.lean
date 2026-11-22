@@ -56,7 +56,7 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ec_p384_public_key`, given the group law. -/
 theorem publicKeyP384 (hL : Proof.Weierstrass.Law Spec.P384.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyP384
-      Proof.EcKey.Arm.P384.combPkSpec 32 :=
+      (Proof.EcKey.Arm.P384.combPkSpec false) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P384.publicKeyApi)
     { code := Impl.Ecdsa.Arm.publicKeyP384Comb
       verified := Proof.EcKey.Arm.P384.combPk_verified hL }
@@ -65,7 +65,7 @@ theorem publicKeyP384 (hL : Proof.Weierstrass.Law Spec.P384.curve) :
 /-- `vg_ec_p384_public_key_umaal`, given the group law. -/
 theorem publicKeyP384U (hL : Proof.Weierstrass.Law Spec.P384.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyP384U
-      Proof.EcKey.Arm.P384.combPkSpec 32 :=
+      (Proof.EcKey.Arm.P384.combPkSpec true) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P384.publicKeyApi)
     { code := Impl.Ecdsa.Arm.publicKeyP384CombU
       verified := Proof.EcKey.Arm.P384.combPkU_verified hL }
@@ -74,7 +74,8 @@ theorem publicKeyP384U (hL : Proof.Weierstrass.Law Spec.P384.curve) :
 /-- `vg_ec_p384_compress_public_key`. -/
 theorem compressP384 :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressP384
-      (Spec.EcKey.P384.inst.compressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P384.inst.compressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p384With false).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P384.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P384.code
       verified := Proof.EcKey.Compressed.Arm.P384.verified }
@@ -83,7 +84,8 @@ theorem compressP384 :
 /-- `vg_ec_p384_compress_public_key_umaal`. -/
 theorem compressP384U :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressP384U
-      (Spec.EcKey.P384.inst.compressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P384.inst.compressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p384With true).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P384.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P384.codeU
       verified := Proof.EcKey.Compressed.Arm.P384.verifiedU }
@@ -92,7 +94,8 @@ theorem compressP384U :
 /-- `vg_ec_p384_decompress_public_key`, given the group law. -/
 theorem decompressP384 (hL : Proof.Weierstrass.Law Spec.P384.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressP384
-      (Spec.EcKey.P384.inst.decompressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P384.inst.decompressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p384With false).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P384.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P384Decompress.code
       verified := Proof.EcKey.Compressed.Arm.P384Decompress.verified hL }
@@ -101,7 +104,8 @@ theorem decompressP384 (hL : Proof.Weierstrass.Law Spec.P384.curve) :
 /-- `vg_ec_p384_decompress_public_key_umaal`, given the group law. -/
 theorem decompressP384U (hL : Proof.Weierstrass.Law Spec.P384.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressP384U
-      (Spec.EcKey.P384.inst.decompressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P384.inst.decompressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p384With true).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P384.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P384Decompress.codeU
       verified := Proof.EcKey.Compressed.Arm.P384Decompress.verifiedU hL }
