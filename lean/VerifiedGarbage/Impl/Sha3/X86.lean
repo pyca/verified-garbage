@@ -69,7 +69,7 @@ local infixr:65 " +++ " => HAppend.hAppend
 def dOff (x : Nat) : Nat := 448 + 8 * x
 
 /-- Entry `i` of a plan. -/
-def reg (p : List XReg) (i : Nat) : XReg := p.getD i .xmm0
+def planAt (p : List XReg) (i : Nat) : XReg := p.getD i .xmm0
 
 /-- `r ^= [b + o]`, loaded into `t`. -/
 def xorm (r : XReg) (b : Reg) (o : Nat) (t : XReg) : List Instr :=
@@ -85,51 +85,51 @@ def rol (r : XReg) (n : Nat) (t : XReg) : List Instr :=
 /-- `C[x]`, the XOR of column `x` of the state at `src`, in entry `5x` of
 the plan, through the four entries after it. -/
 def column (p : List XReg) (src : Reg) (x : Nat) : List Instr :=
-  .movqLoad (reg p (5 * x)) (at_ src (8 * x)) ::
-    (List.range 4).flatMap fun y => xorm (reg p (5 * x)) src (8 * (x + 5 * (y + 1))) (reg p (5 * x + y + 1))
+  .movqLoad (planAt p (5 * x)) (at_ src (8 * x)) ::
+    (List.range 4).flatMap fun y => xorm (planAt p (5 * x)) src (8 * (x + 5 * (y + 1))) (planAt p (5 * x + y + 1))
 
 /-- `D[x] = ROTL¹(C[x + 1]) ⊕ C[x - 1]` for `x = 2k mod 5`, to `scratch`,
 through entries `25 + 2k` and `26 + 2k` of the plan. In this order of `x`,
 each `C` is last used early, and its register is free for what follows. -/
 def dcol (p : List XReg) (k : Nat) : List Instr :=
   let x := 2 * k % 5
-  .xop (.bin .movdqa (reg p (25 + 2 * k)) (reg p (5 * ((x + 1) % 5)))) ::
-    (rol (reg p (25 + 2 * k)) 1 (reg p (26 + 2 * k)) +++
-      [.xop (.bin .pxor (reg p (25 + 2 * k)) (reg p (5 * ((x + 4) % 5)))),
-        .movqStore (at_ .edi (dOff x)) (reg p (25 + 2 * k))])
+  .xop (.bin .movdqa (planAt p (25 + 2 * k)) (planAt p (5 * ((x + 1) % 5)))) ::
+    (rol (planAt p (25 + 2 * k)) 1 (planAt p (26 + 2 * k)) +++
+      [.xop (.bin .pxor (planAt p (25 + 2 * k)) (planAt p (5 * ((x + 4) % 5)))),
+        .movqStore (at_ .edi (dOff x)) (planAt p (25 + 2 * k))])
 
 /-- Where plane `y`'s entries start in a plan: 19 for each plane, after the
 35 of θ. -/
-def pOff (y : Nat) : Nat := 35 + 19 * y
+def planeAt (y : Nat) : Nat := 35 + 19 * y
 
 /-- `B[x]` of plane `y`: lane `piSrc x y` of the state at `src`, XORed with
 its `D`, and rotated, in entry `3x` of the plane, through the two entries
 after it (the second unused for the lane that is not rotated). -/
 def laneB (p : List XReg) (src : Reg) (x y : Nat) : List Instr :=
-  .movqLoad (reg p (pOff y + 3 * x)) (at_ src (8 * piSrc x y)) ::
-    (xorm (reg p (pOff y + 3 * x)) .edi (dOff ((x + 3 * y) % 5)) (reg p (pOff y + 3 * x + 1)) +++
-      rol (reg p (pOff y + 3 * x)) (rhoOff (piSrc x y)) (reg p (pOff y + 3 * x + 2)))
+  .movqLoad (planAt p (planeAt y + 3 * x)) (at_ src (8 * piSrc x y)) ::
+    (xorm (planAt p (planeAt y + 3 * x)) .edi (dOff ((x + 3 * y) % 5)) (planAt p (planeAt y + 3 * x + 1)) +++
+      rol (planAt p (planeAt y + 3 * x)) (rhoOff (piSrc x y)) (planAt p (planeAt y + 3 * x + 2)))
 
 /-- Lane `x` of plane `y` of the output, which `t` holds but for the round
 constant, to `dst`: for lane `(0, 0)`, after the round constant (ι),
 through entry 18 of the plane. -/
 def outB (p : List XReg) (dst : Reg) (x y : Nat) (t : XReg) : List Instr :=
-  (if x = 0 ∧ y = 0 then xorm t .ebp 0 (reg p (pOff y + 18)) else []) +++
+  (if x = 0 ∧ y = 0 then xorm t .ebp 0 (planAt p (planeAt y + 18)) else []) +++
     [.movqStore (at_ dst (8 * (x + 5 * y))) t]
 
 /-- `¬B[x + 1] ∧ B[x + 2] ⊕ B[x]` of plane `y` in a copy of `B[x + 1]`,
 entry `15 + i` of the plane; then `outB`. -/
 def chiCopy (p : List XReg) (dst : Reg) (y i x : Nat) : List Instr :=
-  [.xop (.bin .movdqa (reg p (pOff y + 15 + i)) (reg p (pOff y + 3 * ((x + 1) % 5)))),
-    .xop (.bin .pandn (reg p (pOff y + 15 + i)) (reg p (pOff y + 3 * ((x + 2) % 5)))),
-    .xop (.bin .pxor (reg p (pOff y + 15 + i)) (reg p (pOff y + 3 * x)))] +++
-    outB p dst x y (reg p (pOff y + 15 + i))
+  [.xop (.bin .movdqa (planAt p (planeAt y + 15 + i)) (planAt p (planeAt y + 3 * ((x + 1) % 5)))),
+    .xop (.bin .pandn (planAt p (planeAt y + 15 + i)) (planAt p (planeAt y + 3 * ((x + 2) % 5)))),
+    .xop (.bin .pxor (planAt p (planeAt y + 15 + i)) (planAt p (planeAt y + 3 * x)))] +++
+    outB p dst x y (planAt p (planeAt y + 15 + i))
 
 /-- The same in `B[x + 1]` itself, which is not used after it. -/
 def chiLast (p : List XReg) (dst : Reg) (y x : Nat) : List Instr :=
-  [.xop (.bin .pandn (reg p (pOff y + 3 * (x + 1))) (reg p (pOff y + 3 * ((x + 2) % 5)))),
-    .xop (.bin .pxor (reg p (pOff y + 3 * (x + 1))) (reg p (pOff y + 3 * x)))] +++
-    outB p dst x y (reg p (pOff y + 3 * (x + 1)))
+  [.xop (.bin .pandn (planAt p (planeAt y + 3 * (x + 1))) (planAt p (planeAt y + 3 * ((x + 2) % 5)))),
+    .xop (.bin .pxor (planAt p (planeAt y + 3 * (x + 1))) (planAt p (planeAt y + 3 * x)))] +++
+    outB p dst x y (planAt p (planeAt y + 3 * (x + 1)))
 
 /-- Plane `y` of the output: its five `B`, then lanes 1, 4 and 3 through
 copies, and lanes 0 and 2 in `B[1]` and `B[3]`. -/
