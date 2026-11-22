@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont4
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont1
 public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 import VerifiedGarbage.Proof.Bignum.Arm.R2With
@@ -92,13 +93,13 @@ theorem pinv_vp {E : State → Prop} : VP (SC P E) VG.Impl.Bignum.Arm.precompute
 
 theorem countFits {σ : State} (pre : In P σ) : 128 * P.w < 2 ^ 32 := by have := pre.w4; omega_using [this]
 
-/-- `R² mod c` (`r2With`), its squarings by the product `A`. -/
-theorem r2_vp (A : CallOp) {E : State → Prop} : VP (SD P E) (VG.Impl.Bignum.Arm.r2With A.op) (SE P E) := by
+/-- `R² mod c` (`r2WithDbl`), its squarings by the product `A` and its doublings by `D`. -/
+theorem r2_vp (A : CallOp) (D : CallDbl) {E : State → Prop} : VP (SD P E) (VG.Impl.Bignum.Arm.r2WithDbl A.op D.dbl) (SE P E) := by
   refine VP.ofImp (p := 128 * P.w < 2 ^ 32) (fun σ s h => countFits h.1.2.pre) fun cf => ?_
   have fitM : arrAt P.w 3 + 32 ≤ 8 * P.lenM := by simp only [arrAt, Proof.Rsa.Mont.hdrBytes, CP.lenM]; omega_arith
-  rw [← A.mont_op P.M0 P.sp P.lenM P.w]
+  rw [← A.mont_op P.M0 P.sp P.lenM P.w, ← D.doubling_dbl P.M0 P.sp P.lenM P.w]
   have spOf : ∀ {σ s : State}, SD P E σ s → s.sp = P.sp := fun h => h.1.2.sp.trans h.1.2.pre.sp
-  refine VP.of_ct (fun σ₁ σ₂ => (r2With_ct (A.timing P.M0 P.sp P.lenM P.w fitM) cf).mono
+  refine VP.of_ct (fun σ₁ σ₂ => (r2WithDbl_ct (A.timing P.M0 P.sp P.lenM P.w fitM) (D.timing P.M0 P.sp P.lenM P.w) cf).mono
     (fun s t h => ⟨⟨h.1.2.1, h.1.1.2.pre.callStack (spOf h.1), spOf h.1⟩,
       ⟨h.2.2.1, h.2.1.2.pre.callStack (spOf h.2), spOf h.2⟩, ?_⟩) fun _ _ _ => trivial)
     fun σ s h => ?_
@@ -106,7 +107,7 @@ theorem r2_vp (A : CallOp) {E : State → Prop} : VP (SD P E) (VG.Impl.Bignum.Ar
   have sp := spOf h
   obtain ⟨⟨e, k⟩, ar, n0⟩ := h
   have pre := k.pre
-  refine WP.mono (r2With_ok (A.mont P.M0 P.sp P.lenM P.w) s ar ⟨pre.callStack sp, sp⟩ cf)
+  refine WP.mono (r2WithDbl_ok (A.mont P.M0 P.sp P.lenM P.w) (D.doubling P.M0 P.sp P.lenM P.w) s ar ⟨pre.callStack sp, sp⟩ cf)
     fun t ⟨dl, v4, n0', _, f, rest⟩ => ⟨⟨⟨e, ?_⟩, ?_, by rw [n0', n0]⟩, by rw [v4, n0]⟩
   · have fr : Frame [P.rM, P.rC] s.mem t.mem := f.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

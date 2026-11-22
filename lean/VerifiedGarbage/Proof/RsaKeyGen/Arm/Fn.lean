@@ -68,10 +68,12 @@ theorem keySearchOut (stack : Nat) :
 theorem generateInit_noFrames : Impl.RsaKeyGen.Arm.KeyInit.init.noFrames = true := by lit_decide
 
 /-- Key generation's code, for any round, the code of each call by its name. -/
-theorem generate_okT {N₁ N₂ N₃ N₄ : String} {R Mm : Prog isa} (h : CodeOk R 104) (hm : CodeOk Mm 40) :
+theorem generate_okT {N₁ N₂ N₃ N₄ N₅ : String} {R Mm Md : Prog isa} (h : CodeOk R 104) (hm : CodeOk Mm 40)
+    (hd : CodeOk Md 40) :
     CodeOkT (Impl.RsaKeyGen.Arm.Generate.code
       (.call N₁ (Impl.RsaKeyGen.Arm.Search.code
-        (.call N₂ (Impl.RsaKeyGen.Arm.Candidate.code N₃ R (Impl.Bignum.Arm.MontCall.op N₄ Mm)))))
+        (.call N₂ (Impl.RsaKeyGen.Arm.Candidate.code N₃ R (Impl.Bignum.Arm.MontCall.op N₄ Mm)
+          (Impl.Bignum.Arm.MontCall.op N₅ Md 4 7 4)))))
       (.call "vg_rsa_keygen_key" Impl.RsaKeyGen.Arm.Key.code)) 304 [] := by
   code_okT
 
@@ -99,6 +101,6 @@ theorem generate [Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) :
       (Spec.RsaKeyGen.keySearchContract abi 304) 32 :=
   verifiedScrubbedAll (api := Spec.RsaKeyGen.keySearchApi)
     { code := Proof.RsaKeyGen.Arm.Generate.genCode v, verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v }
-    (keySearchOut _) (scrubSideF_of (generate_okT ⟨v.stack, v.icallFree⟩ v.mont.mulOk).toOk frameOk_304 _)
+    (keySearchOut _) (scrubSideF_of (generate_okT ⟨v.stack, v.icallFree⟩ v.mont.mulOk v.mont.dblOk).toOk frameOk_304 _)
 
 end VG.Proof.RsaKeyGen.Arm.Fn

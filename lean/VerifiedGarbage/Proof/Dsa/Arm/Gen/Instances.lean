@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Prime.Verified
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.QPart
 public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
@@ -141,9 +142,11 @@ theorem z_wl : ∀ c ∈ witnessLoad ++ witnessFix, armStack c = 0 := by decide
 
 theorem z_le {c : Prog isa} {B : Nat} (h : armStack c = 0) : armStack c ≤ B := h ▸ Nat.zero_le _
 
-/-- `R² mod c` and the forms of 1 and −1, within the stack of the product `op`. -/
-theorem montA_stack {op : Nat → Nat → Nat → Prog isa} {B : Nat} (hop : ∀ o a b, armStack (op o a b) ≤ B) :
-    armStack (VG.Impl.RsaKeyGen.Arm.Candidate.montA op) ≤ B := by
+/-- `R² mod c` and the forms of 1 and −1, within the stacks of the product `op`
+and the doubling `dbl`. -/
+theorem montA_stack {op : Nat → Nat → Nat → Prog isa} {dbl : Prog isa} {B : Nat}
+    (hop : ∀ o a b, armStack (op o a b) ≤ B) (hdbl : armStack dbl ≤ B) :
+    armStack (VG.Impl.RsaKeyGen.Arm.Candidate.montA op dbl) ≤ B := by
   unfold VG.Impl.RsaKeyGen.Arm.Candidate.montA
   refine seqs_le _ fun c hc => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
@@ -152,13 +155,12 @@ theorem montA_stack {op : Nat → Nat → Nat → Prog isa} {B : Nat} (hop : ∀
   · exact z_le (by decide)
   · exact z_le (by decide)
   · have h1 : armStack VG.Impl.Bignum.Arm.r2Init = 0 := by decide
-    have h2 : armStack VG.Impl.Bignum.Arm.doubleLoop = 0 := by decide
     have h3 : armStack (.block VG.Impl.Bignum.Arm.r2SquareCount : Prog isa) = 0 := by decide
     have h4 : armStack (.block VG.Impl.Bignum.Arm.doubleCount : Prog isa) = 0 := by decide
     have := hop 4 4 4
-    simp only [VG.Impl.Bignum.Arm.r2With, VG.Impl.Bignum.Arm.r2SquaresWith, VG.Impl.Bignum.Arm.r2SquareStepWith,
-      armStack] at h3 h4 ⊢
-    omega_using [h1, h2, h3, h4, this]
+    simp only [VG.Impl.Bignum.Arm.r2WithDbl, VG.Impl.Bignum.Arm.DoubleCall.loop, VG.Impl.Bignum.Arm.r2SquaresWith,
+      VG.Impl.Bignum.Arm.r2SquareStepWith, armStack] at h3 h4 ⊢
+    omega_using [h1, h3, h4, this, hdbl]
   · exact z_le (by decide)
   · exact z_le (by decide)
   · exact z_le (by decide)
@@ -176,8 +178,9 @@ theorem montB_stack {op : Nat → Nat → Nat → Prog isa} {B : Nat} (hop : ∀
   · exact z_le (by decide)
   · exact z_le (by decide)
 
-theorem body_stack (name : String) (round : Prog isa) {op : Nat → Nat → Nat → Prog isa} {B : Nat}
-    (hop : ∀ o a b, armStack (op o a b) ≤ B) : armStack (body name round op) ≤ max (armStack round) B := by
+theorem body_stack (name : String) (round : Prog isa) {op : Nat → Nat → Nat → Prog isa} {dbl : Prog isa} {B : Nat}
+    (hop : ∀ o a b, armStack (op o a b) ≤ B) (hdbl : armStack dbl ≤ B) :
+    armStack (body name round op dbl) ≤ max (armStack round) B := by
   unfold body
   refine seqs_le _ fun c hc => ?_
   simp only [List.mem_append, List.mem_singleton] at hc
@@ -191,7 +194,7 @@ theorem body_stack (name : String) (round : Prog isa) {op : Nat → Nat → Nat 
   rcases hc with rfl | hc | rfl | rfl | rfl | rfl
   · exact z_le (by decide)
   · exact z_le (z_exp c hc)
-  · exact Nat.le_trans (montA_stack hop) (Nat.le_max_right _ _)
+  · exact Nat.le_trans (montA_stack hop hdbl) (Nat.le_max_right _ _)
   · exact Nat.le_trans (montB_stack hop) (Nat.le_max_right _ _)
   · unfold millerRabin mrBody
     simp only [armStack, seqs, Nat.zero_max, Nat.max_zero]
@@ -214,9 +217,10 @@ theorem body_stack (name : String) (round : Prog isa) {op : Nat → Nat → Nat 
       · exact z_le (by decide)
   · exact z_le (by decide)
 
-theorem code_stack (name : String) (round : Prog isa) {op : Nat → Nat → Nat → Prog isa} {B : Nat}
-    (hop : ∀ o a b, armStack (op o a b) ≤ B) : armStack (code name round op) ≤ 88 + max (armStack round) B := by
-  have := body_stack name round hop
+theorem code_stack (name : String) (round : Prog isa) {op : Nat → Nat → Nat → Prog isa} {dbl : Prog isa} {B : Nat}
+    (hop : ∀ o a b, armStack (op o a b) ≤ B) (hdbl : armStack dbl ≤ B) :
+    armStack (code name round op dbl) ≤ 88 + max (armStack round) B := by
+  have := body_stack name round hop hdbl
   simp only [Impl.Dsa.Arm.ProbablePrime.code, armStack, List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero]
   omega_using [this]
 
@@ -251,7 +255,7 @@ variable {umaal : Bool}
 /-- The geometry of `(pLen, qLen)`, hashing with `G`, testing with the round `v`
 (`Impl.Dsa.Arm.Fn.geo`). -/
 def geo (umaal : Bool) (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo :=
-  Impl.Dsa.Arm.Fn.geo umaal pLen qLen G v.suffix v.code v.mont.callOp.op
+  Impl.Dsa.Arm.Fn.geo umaal pLen qLen G v.suffix v.code v.mont.callOp.op v.mont.dbl
 
 /-- The stack of a call of the shared product: its eight-byte frame and the product's own. -/
 theorem callOp_stack (b : Proof.Bignum.Arm.MontBackend) (o a c : Nat) :
@@ -260,10 +264,16 @@ theorem callOp_stack (b : Proof.Bignum.Arm.MontBackend) (o a c : Nat) :
   simp only [Proof.Bignum.Arm.MontBackend.callOp, Impl.Bignum.Arm.MontCall.op, FrameStack.armStack]
   omega_using [this]
 
+/-- The stack of a call of the shared doubling: its eight-byte frame and the doubling's own. -/
+theorem dbl_stack (b : Proof.Bignum.Arm.MontBackend) : FrameStack.armStack b.dbl ≤ 48 := by
+  have := b.dblOk.1
+  simp only [Proof.Bignum.Arm.MontBackend.dbl, Impl.Bignum.Arm.MontCall.op, FrameStack.armStack]
+  omega_using [this]
+
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes := by decide) :
-    PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code v.mont.callOp.op) :=
-  ⟨VG.Proof.Dsa.Arm.Prime.prime_verified v v.mont.callOp,
-    (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code (callOp_stack v.mont)).trans
+    PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code v.mont.callOp.op v.mont.dbl) :=
+  ⟨VG.Proof.Dsa.Arm.Prime.prime_verified v v.mont.callOp v.mont.callDbl,
+    (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code (callOp_stack v.mont) (dbl_stack v.mont)).trans
       (by have := v.stack; omega_using [this]), hb⟩
 
 theorem powOk (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)

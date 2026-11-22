@@ -235,17 +235,20 @@ macro "fill_round" : tactic => `(tactic| repeat' (first
   | refine Fill.icall _ _ ?_ ?_
   | exact Fill.refl _))
 
-theorem search_fill (umaal : Bool) (suffix name : String) {round mul : Prog isa} (h : CodeOk round 104)
-    (hm : CodeOk mul 40) :
-    Fill (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 104) (Impl.Bignum.Arm.MontCall.op "" (holeStub 40)))
-      (Impl.Dsa.Arm.Fn.search umaal suffix round (Impl.Bignum.Arm.MontCall.op name mul)) := by
+theorem search_fill (umaal : Bool) (suffix name dname : String) {round mul dbl : Prog isa} (h : CodeOk round 104)
+    (hm : CodeOk mul 40) (hd : CodeOk dbl 40) :
+    Fill (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 104) (Impl.Bignum.Arm.MontCall.op "" (holeStub 40))
+        (Impl.Bignum.Arm.MontCall.op "" (holeStub 40) 4 7 4))
+      (Impl.Dsa.Arm.Fn.search umaal suffix round (Impl.Bignum.Arm.MontCall.op name mul)
+        (Impl.Bignum.Arm.MontCall.op dname dbl 4 7 4)) := by
   fill_round
 
-/-- The search's code with the stubs (the round, and the shared product its
-probable-prime test calls), with either multiplication, uses at most 352
-bytes of stack and makes no indirect call. -/
+/-- The search's code with the stubs (the round, and the shared product and
+doubling its probable-prime test calls), with either multiplication, uses at
+most 352 bytes of stack and makes no indirect call. -/
 theorem search_stubOk (umaal : Bool) :
-    CodeOk (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 104) (Impl.Bignum.Arm.MontCall.op "" (holeStub 40))) 352 := by
+    CodeOk (Impl.Dsa.Arm.Fn.search umaal "" (holeStub 104) (Impl.Bignum.Arm.MontCall.op "" (holeStub 40))
+      (Impl.Bignum.Arm.MontCall.op "" (holeStub 40) 4 7 4)) 352 := by
   cases umaal
   · exact ⟨by lit_decide, by lit_decide⟩
   · exact ⟨by lit_decide, by lit_decide⟩
@@ -312,12 +315,13 @@ theorem generateKey (umaal : Bool) :
 
 /-- `vg_dsa_parameter_search`, over the Miller–Rabin round `v`. -/
 theorem parameterSearch (umaal : Bool) (v : Proof.MillerRabin.Arm.RoundImpl) :
-    VerifiedScrubbed target (Impl.Dsa.Arm.Fn.parameterSearch umaal v.suffix v.code v.mont.callOp.op)
+    VerifiedScrubbed target (Impl.Dsa.Arm.Fn.parameterSearch umaal v.suffix v.code v.mont.callOp.op v.mont.dbl)
       (Spec.Dsa.parameterSearchContract abi 352) 32 :=
   verifiedScrubbedAll (api := Spec.Dsa.parameterSearchApi)
-    { code := Impl.Dsa.Arm.Fn.search umaal v.suffix v.code v.mont.callOp.op, verified := Gen.search_params v }
+    { code := Impl.Dsa.Arm.Fn.search umaal v.suffix v.code v.mont.callOp.op v.mont.dbl, verified := Gen.search_params v }
     (Scrub.parameterSearchOut _)
-    (scrubSideF_of ((Scrub.search_fill umaal v.suffix v.mont.name ⟨v.stack, v.icallFree⟩ v.mont.mulOk).codeOk
+    (scrubSideF_of ((Scrub.search_fill umaal v.suffix v.mont.name v.mont.dblName ⟨v.stack, v.icallFree⟩ v.mont.mulOk
+        v.mont.dblOk).codeOk
         (Scrub.search_stubOk umaal))
       Scrub.frameOk_352 _)
 

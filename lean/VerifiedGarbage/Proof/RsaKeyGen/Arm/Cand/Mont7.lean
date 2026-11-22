@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp7
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont1
 public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
 
@@ -126,10 +127,10 @@ theorem MSp.of_same {σ s t : State} (h : MSp P σ s) (mem : t.mem = s.mem) (sp 
   h.of_read (fun _ _ _ => by rw [mem]) (by rw [mem]) (by rw [mem, sp]) sp rd wr
 
 /-- Montgomery multiplication modulo `c`: ready, with `R² mod c` in its array 4. -/
-theorem montA_vp (A : CallOp) {E : State → Prop} :
-    VP (SX P E) (montA A.op) (fun σ s => SX P E σ s ∧ MS P σ s) := by
+theorem montA_vp (A : CallOp) (D : CallDbl) {E : State → Prop} :
+    VP (SX P E) (montA A.op D.dbl) (fun σ s => SX P E σ s ∧ MS P σ s) := by
   simp only [montA, seqs]
-  exact montSet_vp.seq (setup_vp.seq (pinv_vp.seq ((r2_vp A).seq (ctxClr_vp.seq
+  exact montSet_vp.seq (setup_vp.seq (pinv_vp.seq ((r2_vp A D).seq (ctxClr_vp.seq
     ((mont0_vp (X := MSp P) (fun _ _ h => h) fun _ _ _ h m sp rd wr => h.of_same m sp rd wr).seq strideW_vp)))))
 
 end

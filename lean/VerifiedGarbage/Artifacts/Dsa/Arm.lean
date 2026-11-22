@@ -54,7 +54,7 @@ def artifacts : List Artifact :=
   (searchPairs.map fun (p : Proof.Variants.DsaArithmetic.Arm.Variant × Proof.MillerRabin.Arm.RoundImpl) =>
     Spec.Dsa.parameterSearchApi.artifact Arm.target {
       suffix := p.1.suffix
-      code := Impl.Dsa.Arm.Fn.parameterSearch p.1.umaal p.2.suffix p.2.code p.2.mont.callOp.op
+      code := Impl.Dsa.Arm.Fn.parameterSearch p.1.umaal p.2.suffix p.2.code p.2.mont.callOp.op p.2.mont.dbl
       verified := Proof.Dsa.Arm.Fn.parameterSearch p.1.umaal p.2 })
 
 end VG.Artifacts.Dsa.Arm

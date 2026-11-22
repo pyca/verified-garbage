@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.Arm.CallOp
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBackend
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Front
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
@@ -49,8 +50,8 @@ theorem outR_rej {σ : State} (h : res P σ = some (.rejected, (rB P σ).drop P.
     outR P σ = List.replicate P.L 0 := by unfold outR; rw [h]
 
 /-- After the candidate's octets: the branches. -/
-theorem main_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.L ≤ P.rl) :
-    VP (fun σ s => E σ ∧ Bk P σ s) (main v.name v.code M.op) (RF P E (stR P) (outR P) (usedR P)) := by
+theorem main_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (D : CallDbl) {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.L ≤ P.rl) :
+    VP (fun σ s => E σ ∧ Bk P σ s) (main v.name v.code M.op D.dbl) (RF P E (stR P) (outR P) (usedR P)) := by
   unfold main
   rw [List.append_assoc]
   refine VP.seqs_app (List.cons_ne_nil _ _) (List.cons_ne_nil _ _) (loadC_vp hE)
@@ -95,7 +96,7 @@ theorem main_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) {E :
       have gd : ∀ σ, (E σ ∧ clv P σ = false) ∧ compv P σ = false → gv P σ = true := fun σ e => by
         have := sched_gbad (hE σ e.1.1).1 (hE σ e.1.1).2 e.1.2 e.2; rw [hg] at this
         revert this; cases gv P σ <;> decide
-      refine (mrPart_vp v M (E := fun σ => ((E σ ∧ clv P σ = false) ∧ compv P σ = false) ∧ gv P σ = true)
+      refine (mrPart_vp v M D (E := fun σ => ((E σ ∧ clv P σ = false) ∧ compv P σ = false) ∧ gv P σ = true)
         fun σ e => ⟨(hE σ e.1.1.1).1, (hE σ e.1.1.1).2, e.1.1.2, e.1.2, e.2⟩).mono
         (fun σ s ⟨⟨h, _⟩, _⟩ => h.weaken fun e => ⟨e, gd σ e⟩) fun σ s ⟨e, b, r0, o, u⟩ => ?_
       obtain ⟨hs, ho, hu⟩ := res_mr (hE σ e.1.1.1).1 ⟨(hE σ e.1.1.1).2, e.1.1.2, e.1.2, e.2⟩
@@ -124,8 +125,8 @@ theorem main_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) {E :
     simp (config := {decide := true}) only [V2, V1, V0, upd, ↓reduceIte]
 
 /-- The body after the entry. -/
-theorem candBody_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) :
-    VP (fun σ s => In P σ ∧ Bk P σ s) (seqs [.block lenCheck, .ite .eq finNone (main v.name v.code M.op)])
+theorem candBody_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) (D : CallDbl) :
+    VP (fun σ s => In P σ ∧ Bk P σ s) (seqs [.block lenCheck, .ite .eq finNone (main v.name v.code M.op D.dbl)])
       (RF P (In P) (stR P) (outR P) (usedR P)) := by
   simp only [seqs]
   refine VP.seq lenCheck_vp (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [isa_eq, isa_eq, h₁.2, h₂.2]) ?_ ?_)
@@ -137,7 +138,7 @@ theorem candBody_vp [VG.Proof.Rsa.Arm.Keys.InvLaw] (v : RoundImpl) (M : CallOp) 
       by rw [u]; unfold usedR; rw [hr]⟩
   · refine VP.ofImp (p := ¬ P.rl < P.L) (fun σ s h => by
       have t := h.2; rw [isa_eq, h.1.2] at t; simpa using t) fun hl => ?_
-    exact (main_vp v M (E := In P) fun σ e => ⟨e, by omega_using [hl]⟩).mono (fun σ s h => h.1.1) fun _ _ h => h
+    exact (main_vp v M D (E := In P) fun σ e => ⟨e, by omega_using [hl]⟩).mono (fun σ s h => h.1.1) fun _ _ h => h
 
 end
 
