@@ -207,20 +207,11 @@ impl quic::Algorithm for KeyBuilder {
 
 #[cfg(test)]
 mod tests {
-    /// The error sealing's failure, which no test can cause, gives.
-    #[test]
-    fn seal_failure() {
-        assert!(matches!(
-            super::seal_failed(()),
-            rustls::error::Error::EncryptError
-        ));
-    }
-
     use rustls::crypto::cipher::{AeadKey, Iv};
     use rustls::error::Error;
     use rustls::quic::Algorithm;
 
-    use super::KeyBuilder;
+    use super::{KeyBuilder, seal_failed};
     use crate::aead::{self, TAG_LEN};
 
     const ALGORITHMS: [aead::Algorithm; 3] = [
@@ -299,5 +290,11 @@ mod tests {
             let short = pk.decrypt_in_place(9, b"header", &mut short, None);
             assert_eq!(short.err(), Some(Error::DecryptError), "{alg:?}");
         }
+    }
+
+    /// The error sealing's failure, which no test can cause, gives.
+    #[test]
+    fn seal_failure() {
+        assert!(matches!(seal_failed(()), Error::EncryptError));
     }
 }

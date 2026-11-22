@@ -110,18 +110,19 @@ fn bad_key(what: &str) -> Error {
     Error::General(alloc::format!("invalid {what}"))
 }
 
-// Signing, and an ML-DSA key's generation from its seed, fail only if the
-// operating system's random number generator does, with negligible
-// probability (a loop of the library's reaching its bound), or, for RSA,
-// with a modulus too short for the hash, which no key that loads has.
+/// Signing failing, which only the operating system's random number
+/// generator failing, or a loop of the library's reaching its bound, causes.
 fn signing_failed<E>(_: E) -> Error {
     Error::General("signing failed".into())
 }
 
+/// RSA signing failing, which only a modulus too short for the hash causes:
+/// no key that loads has one.
 fn rsa_signing_failed(e: impl fmt::Display) -> Error {
     Error::General(alloc::format!("signing failed: {e}"))
 }
 
+/// An ML-DSA key's generation from its seed failing, as signing does.
 fn mldsa_keygen_failed() -> Error {
     Error::General("ML-DSA key generation failed".into())
 }
@@ -517,20 +518,6 @@ impl Debug for MlDsaSigner {
 
 #[cfg(test)]
 mod tests {
-    /// The errors signing's and ML-DSA key generation's failures, which no
-    /// test can cause, give.
-    #[test]
-    fn failures() {
-        use rustls::error::Error;
-        let is = |e, msg: &str| matches!(e, Error::General(m) if m == msg);
-        assert!(is(super::signing_failed(()), "signing failed"));
-        assert!(is(super::rsa_signing_failed("x"), "signing failed: x"));
-        assert!(is(
-            super::mldsa_keygen_failed(),
-            "ML-DSA key generation failed"
-        ));
-    }
-
     use alloc::format;
     use alloc::vec::Vec;
     use std::sync::LazyLock;
@@ -545,7 +532,7 @@ mod tests {
     use verified_garbage::rsa::{self, BigUint};
     use verified_garbage::{ed25519, mldsa44, mldsa65, mldsa87};
 
-    use super::load_private_key;
+    use super::{load_private_key, mldsa_keygen_failed, rsa_signing_failed, signing_failed};
     use crate::verify::{
         RSA_PKCS1_2048_8192_SHA384, RSA_PKCS1_3072_8192_SHA384, SUPPORTED_SIG_ALGS,
     };
@@ -925,5 +912,15 @@ mod tests {
         let err = fails(pkcs8(0, der::SECP256R1, None, &seed, None));
         assert!(format!("{err}").contains("failed to parse private key as"));
         fails(PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(seed)));
+    }
+
+    /// The errors signing's and ML-DSA key generation's failures, which no
+    /// test can cause, give.
+    #[test]
+    fn failures() {
+        let is = |e, msg: &str| matches!(e, Error::General(m) if m == msg);
+        assert!(is(signing_failed(()), "signing failed"));
+        assert!(is(rsa_signing_failed("x"), "signing failed: x"));
+        assert!(is(mldsa_keygen_failed(), "ML-DSA key generation failed"));
     }
 }

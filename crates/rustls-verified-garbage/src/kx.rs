@@ -92,6 +92,18 @@ fn random<const N: usize>() -> Result<Zeroizing<[u8; N]>, GetRandomFailed> {
     Ok(bytes)
 }
 
+/// ML-KEM's key generation failing, which only the operating system's random
+/// number generator failing, or a loop of the library's reaching its bound,
+/// causes.
+fn mlkem_keygen_failed<E>(_: E) -> Error {
+    Error::General("ML-KEM key generation failed".into())
+}
+
+/// ML-KEM's encapsulation failing, for the same reasons.
+fn encapsulation_failed<E>(_: E) -> PeerMisbehaved {
+    PeerMisbehaved::InvalidKeyShare
+}
+
 /// An in-progress key exchange: our private key and public key.
 /// The peer's share is `PEER` bytes long.
 struct KeyExchange<K, const PUB: usize, const PEER: usize> {
@@ -196,18 +208,6 @@ macro_rules! nist_group {
 
 nist_group!(Secp256r1, P256, NamedGroup::secp256r1, 32, 65);
 nist_group!(Secp384r1, P384, NamedGroup::secp384r1, 48, 97);
-
-/// ML-KEM's key generation failing, which only the operating system's random
-/// number generator failing, or a loop of the library's reaching its bound,
-/// causes.
-fn mlkem_keygen_failed<E>(_: E) -> Error {
-    Error::General("ML-KEM key generation failed".into())
-}
-
-/// ML-KEM's encapsulation failing, for the same reasons.
-fn encapsulation_failed<E>(_: E) -> PeerMisbehaved {
-    PeerMisbehaved::InvalidKeyShare
-}
 
 /// ML-KEM as a key exchange (draft-ietf-tls-mlkem): the client's share is
 /// an encapsulation key, and the server's a ciphertext to it.
