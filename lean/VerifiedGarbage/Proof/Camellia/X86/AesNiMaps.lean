@@ -144,4 +144,136 @@ theorem round_all : ([0, 2, 4].all fun i => roundOk .xmm0 .xmm1 i) = true ∧
     ([1, 3, 5].all fun i => roundOk .xmm1 .xmm0 i) = true := by
   constructor <;> lit_decide
 
+/-! ## The conversions -/
+
+/-- The byte of a block, or of a pair of subkeys, that `BSW` puts in slot `q`. -/
+def bswq (q : Nat) : Nat := if q < 4 then 3 - q else if q < 8 then 11 - q else if q < 12 then 19 - q else 27 - q
+
+/-- The slot `OUTC` puts in byte `q` of the block. -/
+def outq (q : Nat) : Nat := if q < 8 then 8 + bswq q else bswq (q - 8)
+
+/-- The four look-ups of the byte map at `t`, of the input bytes `v`, in slot `q`. -/
+def cterms (t q v : Nat) : List Term :=
+  let m := byte (tblAt oM4) q
+  [⟨[.look (tblAt t), .and 0x0f#8], v⟩, ⟨[.look (tblAt (t + 16)), .hi4], v⟩,
+   ⟨[.look (tblAt (t + 32)), .and m, .and 0x0f#8], v⟩, ⟨[.look (tblAt (t + 48)), .and m, .hi4], v⟩]
+
+/-- `xmm0` and `xmm1` hold the two quadwords `w`, each under a zero quadword. -/
+def unpackOk (ρ : Regs) (w : Nat → BV) : Bool :=
+  !(ρ.get .xmm0).sh && !(ρ.get .xmm1).sh &&
+  (List.range 16).all fun q =>
+    (get (ρ.get .xmm0).bs q).same (if q < 8 then w q else .zero) &&
+      (get (ρ.get .xmm1).bs q).same (if q < 8 then w (q + 8) else .zero)
+
+def maskOk (ρ : Regs) : Bool :=
+  !(ρ.get m0).sh && (List.range 16).all fun q => (get (ρ.get m0).bs q).same (.cst 0x0f#8)
+
+/-- The halves of the two registers, packed. -/
+def pk (q : Nat) : Nat := if q < 8 then fold .xmm0 q else fold .xmm1 (q - 8)
+
+def headOk : Bool :=
+  match run params Regs.init headX with
+  | none => false
+  | some ρ => unpackOk ρ (fun q => ⟨2 ^ (128 + q), cterms oT q (var .xmm0 (bswq q)), 0#8⟩) && maskOk ρ
+
+def layerInOk : Bool :=
+  match run params regs₀ layerIn with
+  | none => false
+  | some ρ => !(ρ.get .xmm4).sh &&
+    ((List.range 16).all fun q => (get (ρ.get .xmm4).bs q).same ⟨0, cterms oI q (pk q), 0#8⟩) && maskOk ρ
+
+def layerOutOk : Bool :=
+  match run params regs₀ layerOut with
+  | none => false
+  | some ρ => unpackOk ρ (fun q => ⟨2 ^ (128 + 112 + q), cterms oT q (var .xmm4 q), 0#8⟩) && maskOk ρ
+
+def tailOk : Bool :=
+  match run params regs₀ tailX with
+  | none => false
+  | some ρ => !(ρ.get .xmm6).sh && (List.range 16).all fun q =>
+    (get (ρ.get .xmm6).bs q).same ⟨2 ^ (128 + 64 + q), cterms oI (outq q) (pk (outq q)), 0#8⟩
+
+theorem conv_all : headOk = true ∧ layerInOk = true ∧ layerOutOk = true ∧ tailOk = true := by
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> lit_decide
+
+/-- The mask of the positions of s4, and the nibble tables at zero. -/
+theorem m4_all : ((List.range 16).all fun q =>
+    byte (tblAt oM4) q == (if isA (slot (q % 8)) = true then 0x0f#8 else 0#8)) = true := by
+  lit_decide
+
+/-! ## `prepare`'s code -/
+
+/-- The constant a round adds at byte `j`. -/
+def gc (j : Nat) : Byte := (sets j).foldr (fun i acc => mc (isA j) (kind i) ^^^ acc) 0#8
+
+/-- `prepare` reads the schedule at `eax`, 80 bytes at a time, and stores
+the keys of a group at `esi`. -/
+def pparams : Params := { tb := tbr, name := tableName, kreg := .eax, klen := 80 }
+def oparams : OParams := { oreg := kr, olen := 128 }
+
+/-- Byte `q` of the two subkeys at byte `off` of the schedule, in the rounds'
+form. -/
+def pT (off q : Nat) : BV := ⟨0, cterms oT q (2 ^ (128 + (off + bswq q))), 0#8⟩
+
+/-- Byte `q` of the constant at `t`. -/
+def cb (t q : Nat) : BV := .cst (byte (tblAt t) q)
+
+def prepHeadOk : Bool :=
+  match run pparams Regs.init prepHeadX with
+  | none => false
+  | some ρ => !(ρ.get .xmm6).sh && ((List.range 16).all fun q => (get (ρ.get .xmm6).bs q).same (pT 0 q)) && maskOk ρ
+
+def prepGroupOk : Bool :=
+  match runS pparams oparams (regs₀, []) prepGroupX with
+  | none => false
+  | some σ =>
+    outOk σ.2 0 (fun q => ((pT 16 q).xor (.var (16 * 6 + q))).xor (cb oCK q)) &&
+    outOk σ.2 16 (fun q => ((pT 16 q).xor (pT 32 q)).xor (cb oGG q)) &&
+    outOk σ.2 32 (fun q => ((pT 32 q).xor (pT 48 q)).xor (cb oGG q)) &&
+    outOk σ.2 48 (fun q => (pT 48 q).xor (cb oCW2 q)) &&
+    outsIn σ.2 0 64 &&
+    !(σ.1.get .xmm6).sh && ((List.range 16).all fun q => (get (σ.1.get .xmm6).bs q).same .zero) && maskOk σ.1
+
+/-- A mask of the FL layer: the subkeys' byte, with the constant at `n`,
+under the mask at `m`. -/
+def pM (n m q : Nat) : BV :=
+  ⟨0, [⟨[.and (byte (tblAt m) q)], 2 ^ (128 + (64 + bswq q))⟩], byte (tblAt n) q &&& byte (tblAt m) q⟩
+
+def prepMasksOk : Bool :=
+  match runS pparams oparams (regs₀, []) prepMasksX with
+  | none => false
+  | some σ =>
+    outOk σ.2 64 (pM oN1 oM1) && outOk σ.2 80 (pM oN2 oM2) &&
+    outOk σ.2 96 (fun q => if q % 8 < 4 then .var (128 + (64 + bswq (q + 4))) else .zero) &&
+    outsIn σ.2 64 112 &&
+    !(σ.1.get .xmm6).sh && ((List.range 16).all fun q => (get (σ.1.get .xmm6).bs q).same (.var (16 * 6 + q))) &&
+    maskOk σ.1
+
+def prepTailOk : Bool :=
+  match runS pparams oparams (regs₀, []) prepTail with
+  | none => false
+  | some σ => outOk σ.2 64 (fun q => .var (128 + (64 + q))) && outsIn σ.2 64 80 && maskOk σ.1
+
+theorem prep_all : prepHeadOk = true ∧ prepGroupOk = true ∧ prepMasksOk = true ∧ prepTailOk = true := by
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> lit_decide
+
+/-- The constants of the keys. -/
+theorem pconst_all : ((List.range 8).all fun j =>
+    byte (tblAt oCK) (slot j) == c5 && byte (tblAt oCK) (slot j + 8) == c5 ^^^ gc j &&
+    byte (tblAt oGG) (slot j) == gc j && byte (tblAt oGG) (slot j + 8) == gc j &&
+    byte (tblAt oCW2) (slot j) == gc j ^^^ c5 && byte (tblAt oCW2) (slot j + 8) == c5) = true := by
+  lit_decide
+
+/-- The constants of the FL layer's masks, by doublewords. -/
+theorem pmask_all :
+    (dword (tblAt oN1) 0 == 0#32 && dword (tblAt oN1) 1 == 0#32 && dword (tblAt oN1) 2 == 0#32 &&
+     dword (tblAt oN1) 3 == BitVec.allOnes 32 &&
+     dword (tblAt oM1) 0 == BitVec.allOnes 32 && dword (tblAt oM1) 1 == 0#32 && dword (tblAt oM1) 2 == 0#32 &&
+     dword (tblAt oM1) 3 == BitVec.allOnes 32 &&
+     dword (tblAt oN2) 0 == 0#32 && dword (tblAt oN2) 1 == BitVec.allOnes 32 && dword (tblAt oN2) 2 == 0#32 &&
+     dword (tblAt oN2) 3 == 0#32 &&
+     dword (tblAt oM2) 0 == 0#32 && dword (tblAt oM2) 1 == BitVec.allOnes 32 &&
+     dword (tblAt oM2) 2 == BitVec.allOnes 32 && dword (tblAt oM2) 3 == 0#32) = true := by
+  lit_decide
+
 end VG.Proof.Camellia.X86.AesNi

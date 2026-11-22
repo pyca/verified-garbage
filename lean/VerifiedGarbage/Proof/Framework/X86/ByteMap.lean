@@ -6,6 +6,9 @@ import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.SseLanes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-!
@@ -34,11 +37,13 @@ then a comparison of expressions, which the kernel evaluates (`BV.same`: up
 to the order of the terms), and what the expressions mean is proven of them,
 not of the code.
 
-The instructions followed: `movdqa`, `pxor`, `pand` with a register of
+The instructions followed: `movdqa`, `pxor` (of a register with itself, zero), `pand` with a register of
 constants, `pshufb` of constants (a look-up) or by constants (a shuffle),
 `aesenclast`, `psrld` by 4 (only to be masked next, the high nibbles),
-`pshufd`, `punpcklqdq`, `punpckhqdq`, and the loads of a table an
-instruction carries (constants), and of 16 or 8 bytes of the keys.
+`psrlq` by 32, `pshufd`, `punpcklqdq`, `punpckhqdq`, and the loads of a
+table an instruction carries (constants), and of 16 or 8 bytes of the keys.
+`runS` also follows stores of a register to a second region, apart from the
+keys (`runS_wp`): a block's stores, as expressions of what it starts with.
 -/
 
 @[expose] public section
@@ -137,6 +142,78 @@ theorem byte_hi4 (a m : BitVec 128) {i : Nat} (hi : i < 16) (hm : byte m i = 0x0
       rcases this with rfl | rfl | rfl | rfl <;> rfl
     have e2 : decide (4 + r < 8) = false := decide_eq_false (by omega_arith)
     rw [e1, Bool.and_false, e2, Bool.false_and]
+
+theorem getLsbD_qw (x : BitVec 128) (k i : Nat) :
+    (qword x k).getLsbD i = (decide (i < 64) && x.getLsbD (64 * k + i)) := by
+  simp only [qword, BitVec.getLsbD_extractLsb']
+
+theorem psllq32_eq (a : BitVec 128) :
+    XShiftOp.eval .psllq a 32 = (qword a 1 <<< 32) ++ (qword a 0 <<< 32) := by
+  change (if 63 < (32 : BitVec 8).toNat then 0 else
+    (qword a 1 <<< (32 : BitVec 8).toNat) ++ (qword a 0 <<< (32 : BitVec 8).toNat)) = _
+  rw [ite_eq_right (by decide)]; rfl
+
+theorem psrlq32_eq (a : BitVec 128) :
+    XShiftOp.eval .psrlq a 32 = (qword a 1 >>> 32) ++ (qword a 0 >>> 32) := by
+  change (if 63 < (32 : BitVec 8).toNat then 0 else
+    (qword a 1 >>> (32 : BitVec 8).toNat) ++ (qword a 0 >>> (32 : BitVec 8).toNat)) = _
+  rw [ite_eq_right (by decide)]; rfl
+
+/-- Bit `i` of quadword `q` of `psllq` by 32. -/
+theorem psllq32_bit (a : BitVec 128) {q i : Nat} (hq : q < 2) (hi : i < 64) :
+    (XShiftOp.eval .psllq a 32).getLsbD (64 * q + i) = (decide (32 ≤ i) && a.getLsbD (64 * q + (i - 32))) := by
+  rw [psllq32_eq, BitVec.getLsbD_append]
+  have hq' : q = 0 ∨ q = 1 := by omega_arith
+  rcases hq' with rfl | rfl
+  · rw [ite_eq_left (by omega_arith), BitVec.getLsbD_shiftLeft, getLsbD_qw, decide_eq_true (show 64 * 0 + i < 64 by omega_arith),
+      Bool.true_and]
+    by_cases h : 32 ≤ i
+    · rw [decide_eq_false (show ¬ 64 * 0 + i < 32 by omega_arith), decide_eq_true (show 64 * 0 + i - 32 < 64 by omega_arith),
+        decide_eq_true h, Bool.not_false, Bool.true_and, Bool.true_and, Bool.true_and,
+        show 64 * 0 + (64 * 0 + i - 32) = 64 * 0 + (i - 32) by omega_arith]
+    · rw [decide_eq_true (show 64 * 0 + i < 32 by omega_arith), decide_eq_false h, Bool.not_true, Bool.false_and,
+        Bool.false_and]
+  · rw [ite_eq_right (by omega_arith), BitVec.getLsbD_shiftLeft, getLsbD_qw, decide_eq_true (show 64 * 1 + i - 64 < 64 by omega_arith),
+      Bool.true_and]
+    by_cases h : 32 ≤ i
+    · rw [decide_eq_false (show ¬ 64 * 1 + i - 64 < 32 by omega_arith),
+        decide_eq_true (show 64 * 1 + i - 64 - 32 < 64 by omega_arith),
+        decide_eq_true h, Bool.not_false, Bool.true_and, Bool.true_and, Bool.true_and,
+        show 64 * 1 + (64 * 1 + i - 64 - 32) = 64 * 1 + (i - 32) by omega_arith]
+    · rw [decide_eq_true (show 64 * 1 + i - 64 < 32 by omega_arith), decide_eq_false h, Bool.not_true, Bool.false_and,
+        Bool.false_and]
+
+/-- Bit `i` of quadword `q` of `psrlq` by 32. -/
+theorem psrlq32_bit (a : BitVec 128) {q i : Nat} (hq : q < 2) (hi : i < 64) :
+    (XShiftOp.eval .psrlq a 32).getLsbD (64 * q + i) = (decide (i < 32) && a.getLsbD (64 * q + (i + 32))) := by
+  rw [psrlq32_eq, BitVec.getLsbD_append]
+  have hq' : q = 0 ∨ q = 1 := by omega_arith
+  rcases hq' with rfl | rfl
+  · rw [ite_eq_left (by omega_arith), BitVec.getLsbD_ushiftRight, getLsbD_qw,
+      show 64 * 0 + (32 + (64 * 0 + i)) = 64 * 0 + (i + 32) by omega_arith]
+    by_cases h : i < 32
+    · rw [decide_eq_true (show 32 + (64 * 0 + i) < 64 by omega_arith), decide_eq_true h]
+    · rw [decide_eq_false (show ¬ 32 + (64 * 0 + i) < 64 by omega_arith), decide_eq_false h]
+  · rw [ite_eq_right (by omega_arith), BitVec.getLsbD_ushiftRight, getLsbD_qw,
+      show 64 * 1 + (32 + (64 * 1 + i - 64)) = 64 * 1 + (i + 32) by omega_arith]
+    by_cases h : i < 32
+    · rw [decide_eq_true (show 32 + (64 * 1 + i - 64) < 64 by omega_arith), decide_eq_true h]
+    · rw [decide_eq_false (show ¬ 32 + (64 * 1 + i - 64) < 64 by omega_arith), decide_eq_false h]
+
+/-- `psrlq` by 32 moves the high four bytes of each quadword down. -/
+theorem byte_psrlq32 (a : BitVec 128) {i : Nat} (hi : i < 16) :
+    byte (XShiftOp.eval .psrlq a 32) i = if i % 8 < 4 then byte a (i + 4) else 0#8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro r hr
+  unfold byte
+  rw [BitVec.getLsbD_extractLsb', decide_eq_true hr, Bool.true_and,
+    show 8 * i + r = 64 * (i / 8) + (8 * (i % 8) + r) by omega_arith,
+    psrlq32_bit a (show i / 8 < 2 by omega_arith) (show 8 * (i % 8) + r < 64 by omega_arith)]
+  by_cases h : i % 8 < 4
+  · rw [ite_eq_left h, decide_eq_true (show 8 * (i % 8) + r < 32 by omega_arith), Bool.true_and,
+      BitVec.getLsbD_extractLsb', decide_eq_true hr, Bool.true_and]
+    exact congrArg _ (by omega_arith)
+  · rw [ite_eq_right h, decide_eq_false (show ¬ 8 * (i % 8) + r < 32 by omega_arith), Bool.false_and]
+    exact (BitVec.getLsbD_zero ..).symm
 
 /-! ## A byte's value -/
 
@@ -469,7 +546,8 @@ def step (p : Params) (ρ : Regs) : Instr → Option Regs
     else none
   | .xop (.bin .movdqa a b) => (plain ρ b).map fun y => ρ.set a ⟨false, y⟩
   | .xop (.bin .pxor a b) =>
-    (plain ρ a).bind fun x => (plain ρ b).map fun y => ρ.set a ⟨false, bytes fun i => (get x i).xor (get y i)⟩
+    if a = b then some (ρ.set a ⟨false, bytes fun _ => .zero⟩)
+    else (plain ρ a).bind fun x => (plain ρ b).map fun y => ρ.set a ⟨false, bytes fun i => (get x i).xor (get y i)⟩
   | .xop (.bin .pand a b) =>
     (plain ρ b).bind fun y =>
       if (ρ.get a).sh = true then
@@ -483,6 +561,9 @@ def step (p : Params) (ρ : Regs) : Instr → Option Regs
       else none
   | .xop (.shift .psrld a n) =>
     if n = 4 then (plain ρ a).map fun x => ρ.set a ⟨true, x⟩ else none
+  | .xop (.shift .psrlq a n) =>
+    if n = 32 then (plain ρ a).map fun x => ρ.set a ⟨false, bytes fun i => if i % 8 < 4 then get x (i + 4) else .zero⟩
+    else none
   | .xop (.bin .pshufb a b) =>
     (plain ρ a).bind fun x => (plain ρ b).bind fun y =>
       if allConst y = true then
@@ -634,11 +715,20 @@ theorem step_ok {i : Instr} {ρ' : Regs} (hr : Rel p env ρ s) (hs : step p ρ i
     exact ⟨a, _, rfl, hr.set a (hr.plain hy)⟩
   · -- pxor
     rename_i a b
-    obtain ⟨x, hx, hs⟩ := Option.bind_eq_some_iff.mp hs
-    obtain ⟨y, hy, rfl⟩ := Option.map_eq_some_iff.mp hs
-    refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
-    rw [get_bytes _ hi, BV.xor_eval, ← hr.plain hx i hi, ← hr.plain hy i hi]
-    exact byte_xor _ _ _
+    split at hs
+    · rename_i hab
+      cases hs
+      refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+      rw [get_bytes _ hi, BV.zero_eval]
+      show byte (s.xmm a ^^^ s.xmm b) i = _
+      rw [hab, BitVec.xor_self]
+      apply BitVec.eq_of_getLsbD_eq; intro r _
+      simp [byte]
+    · obtain ⟨x, hx, hs⟩ := Option.bind_eq_some_iff.mp hs
+      obtain ⟨y, hy, rfl⟩ := Option.map_eq_some_iff.mp hs
+      refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+      rw [get_bytes _ hi, BV.xor_eval, ← hr.plain hx i hi, ← hr.plain hy i hi]
+      exact byte_xor _ _ _
   · -- pand
     rename_i a b
     obtain ⟨y, hy, hs⟩ := Option.bind_eq_some_iff.mp hs
@@ -681,6 +771,18 @@ theorem step_ok {i : Instr} {ρ' : Regs} (hr : Rel p env ρ s) (hs : step p ρ i
     refine ⟨a, _, rfl, hr.setH a ?_⟩
     rw [Holds, ite_eq_left rfl]
     exact ⟨s.xmm a, rfl, hr.plain hx⟩
+  · -- psrlq
+    rename_i a n
+    split at hs <;> [rename_i hn; cases hs]
+    obtain ⟨x, hx, rfl⟩ := Option.map_eq_some_iff.mp hs
+    subst hn
+    refine ⟨a, _, rfl, hr.set a fun i hi => ?_⟩
+    rw [get_bytes _ hi]
+    show byte (XShiftOp.eval .psrlq (s.xmm a) 32) i = _
+    rw [byte_psrlq32 _ hi]
+    by_cases h : i % 8 < 4
+    · rw [ite_eq_left h, ite_eq_left h]; exact hr.plain hx _ (by omega_arith)
+    · rw [ite_eq_right h, ite_eq_right h, BV.zero_eval]
   · -- pshufb
     rename_i a b
     obtain ⟨x, hx, hs⟩ := Option.bind_eq_some_iff.mp hs
@@ -821,6 +923,171 @@ theorem Rel.bytes (hr : Rel p env ρ s) {r : XReg} (h : (ρ.get r).sh = false) :
   have := hr.regs r
   rw [Holds, ite_eq_right (by rw [h]; exact Bool.false_ne_true)] at this
   exact this
+
+end
+
+/-! ## Stores -/
+
+/-- The stores of a block: the offset in the output region, and the 16
+bytes stored there. -/
+abbrev Outs := List (Nat × List BV)
+
+/-- The output region: its base register and its length. -/
+structure OParams where
+  oreg : Reg
+  olen : Nat
+
+/-- `step`, or a store of a plain register to the output region, apart from
+the stores before it. -/
+def stepS (p : Params) (q : OParams) (σ : Regs × Outs) : Instr → Option (Regs × Outs)
+  | .movdquStore m r =>
+    if m.base = q.oreg ∧ m.disp + 16 ≤ q.olen ∧
+        σ.2.all (fun e => decide (e.1 + 16 ≤ m.disp ∨ m.disp + 16 ≤ e.1)) = true then
+      (plain σ.1 r).map fun bs => (σ.1, (m.disp, bs) :: σ.2)
+    else none
+  | i => (step p σ.1 i).map fun ρ => (ρ, σ.2)
+
+def runS (p : Params) (q : OParams) : Regs × Outs → List Instr → Option (Regs × Outs)
+  | σ, [] => some σ
+  | σ, i :: is =>
+    match stepS p q σ i with
+    | some σ' => runS p q σ' is
+    | none => none
+
+/-- The bytes stored at offset `o`. -/
+def outAt : Outs → Nat → Option (List BV)
+  | [], _ => none
+  | (o', bs) :: l, o => if o' = o then some bs else outAt l o
+
+theorem outAt_mem : ∀ {l : Outs} {o : Nat} {bs : List BV}, outAt l o = some bs → (o, bs) ∈ l
+  | [], _, _, h => by cases h
+  | (o', bs') :: l, o, bs, h => by
+    unfold outAt at h
+    by_cases e : o' = o
+    · rw [ite_eq_left e] at h; cases h; rw [e]; exact List.mem_cons_self
+    · rw [ite_eq_right e] at h; exact List.mem_cons_of_mem _ (outAt_mem h)
+
+/-- The bytes stored at offset `o` are `f`'s, up to the order of the terms. -/
+def outOk (l : Outs) (o : Nat) (f : Nat → BV) : Bool :=
+  match outAt l o with
+  | some bs => (List.range 16).all fun i => (get bs i).same (f i)
+  | none => false
+
+/-- What the stores need of the state the block starts in: the output
+region is writable, apart from the keys, and neither wraps around. -/
+structure OutOk (p : Params) (q : OParams) (s₀ : State) : Prop where
+  fit : (s₀.gpr q.oreg).toNat + q.olen ≤ 2 ^ 32
+  wr : ∀ o, o + 16 ≤ q.olen → InRegions s₀.wr (addr (s₀.gpr q.oreg) o) 16
+  sep : Region.Disjoint ⟨(s₀.gpr p.kreg).setWidth 64, p.klen⟩ ⟨(s₀.gpr q.oreg).setWidth 64, q.olen⟩
+  kfit : (s₀.gpr p.kreg).toNat + p.klen ≤ 2 ^ 32
+
+/-- The state the expressions and stores `σ` describe, from the state `s₀`
+the block starts in: `Rel`, the registers other than the XMM registers and
+the regions as they were, memory as it was outside the 16 bytes of each
+store, and in them what was stored. -/
+structure RelS (p : Params) (q : OParams) (env : Nat → BitVec 8) (σ : Regs × Outs) (s₀ s : State) : Prop where
+  rel : Rel p env σ.1 s
+  gpr : s.gpr = s₀.gpr
+  zf : s.zf = s₀.zf
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  syms : s.syms = s₀.syms
+  frame : Frame (σ.2.map fun e => ⟨(s₀.gpr q.oreg).setWidth 64 + BitVec.ofNat 64 e.1, 16⟩) s₀.mem s.mem
+  outs : ∀ e ∈ σ.2, e.1 + 16 ≤ q.olen ∧ ∀ i < 16,
+    s.mem ((s₀.gpr q.oreg).setWidth 64 + BitVec.ofNat 64 (e.1 + i)) = (get e.2 i).eval env
+
+section
+variable {p : Params} {q : OParams} {env : Nat → BitVec 8} {σ : Regs × Outs} {s₀ s : State}
+
+theorem RelS.init (h : Rel p env σ.1 s) (ho : σ.2 = []) : RelS p q env σ s s :=
+  ⟨h, rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun e he => by rw [ho] at he; cases he⟩
+
+/-- The offsets of the stores are within `[lo, hi)`. -/
+def outsIn (l : Outs) (lo hi : Nat) : Bool := l.all fun e => decide (lo ≤ e.1 ∧ e.1 + 16 ≤ hi)
+
+/-- Memory is as it was outside the bytes `[lo, hi)` of the output region,
+which hold every store. -/
+theorem RelS.frameIn (hr : RelS p q env σ s₀ s) {lo hi : Nat} (h : outsIn σ.2 lo hi = true) :
+    Frame [⟨(s₀.gpr q.oreg).setWidth 64 + BitVec.ofNat 64 lo, hi - lo⟩] s₀.mem s.mem :=
+  hr.frame.sub fun r hr' => by
+    obtain ⟨e, he, rfl⟩ := List.mem_map.mp hr'
+    have := of_decide_eq_true (List.all_eq_true.mp h e he)
+    exact ⟨_, List.mem_singleton_self _, Offset.sub _ this.1 (by omega_using [this])⟩
+
+/-- What was stored at offset `o`. -/
+theorem RelS.out (hr : RelS p q env σ s₀ s) {o : Nat} {f : Nat → BV} (h : outOk σ.2 o f = true) {i : Nat}
+    (hi : i < 16) : s.mem ((s₀.gpr q.oreg).setWidth 64 + BitVec.ofNat 64 (o + i)) = (f i).eval env := by
+  unfold outOk at h
+  split at h <;> [rename_i bs hb; cases h]
+  rw [← BV.same_eval env (List.all_eq_true.mp h i (List.mem_range.mpr hi))]
+  exact (hr.outs _ (outAt_mem hb)).2 i hi
+
+theorem stepS_ok (ok : OutOk p q s₀) {i : Instr} {σ' : Regs × Outs} (hr : RelS p q env σ s₀ s)
+    (hs : stepS p q σ i = some σ') : ∃ s', exec i s = some s' ∧ RelS p q env σ' s₀ s' := by
+  unfold stepS at hs
+  split at hs
+  · rename_i m r
+    split at hs <;> [rename_i hc; cases hs]
+    obtain ⟨bs, hb, rfl⟩ := Option.map_eq_some_iff.mp hs
+    obtain ⟨hbase, hlen, hall⟩ := hc
+    have hfit := ok.fit
+    have ha : addr (s₀.gpr q.oreg) m.disp = (s₀.gpr q.oreg).setWidth 64 + BitVec.ofNat 64 m.disp :=
+      addr_eq (by omega_using [hfit, hlen])
+    have hea : s.ea m = (s₀.gpr q.oreg).setWidth 64 + BitVec.ofNat 64 m.disp := by
+      show addr (s.gpr m.base) m.disp = _
+      rw [hbase, hr.gpr, ha]
+    have hf : Frame [⟨(s₀.gpr q.oreg).setWidth 64, q.olen⟩] s.mem (s.mem.writeW (s.ea m) (s.xmm r)) := by
+      rw [hea]
+      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+        (Offset.contains_base _ (show m.disp + 128 / 8 ≤ q.olen by omega_using [hlen]) (by omega_using [hfit, hlen]))
+    refine ⟨{ s with mem := s.mem.writeW (s.ea m) (s.xmm r) }, ?_, ⟨hr.rel.tb, fun o i ho hi => ?_, hr.rel.acc,
+      hr.rel.regs⟩, hr.gpr, hr.zf, hr.rd, hr.wr, hr.syms, ?_, fun e he => ?_⟩
+    · show s.store128 (s.ea m) (s.xmm r) = _
+      rw [State.store128, ite_eq_left (by rw [hea, ← ha, hr.wr]; exact ok.wr _ hlen)]
+    · show (s.mem.writeW (s.ea m) (s.xmm r)) (addr (s.gpr p.kreg) o + BitVec.ofNat 64 i) = _
+      rw [← hr.rel.key o i ho hi]
+      refine hf _ fun R hR hc => ?_
+      rw [List.mem_singleton] at hR; subst hR
+      refine ok.sep _ ?_ hc
+      have hk := ok.kfit
+      rw [hr.gpr, addr_eq (by omega_using [hk, ho]), Offset.add_ofNat_add_ofNat]
+      exact Offset.contains_base _ (by omega_using [ho, hi]) (by omega_using [hk, ho, hi])
+    · show Frame (_ :: _) s₀.mem (s.mem.writeW (s.ea m) (s.xmm r))
+      rw [hea]
+      exact (hr.frame.mono fun r hr => List.mem_cons_of_mem _ hr).writeW List.mem_cons_self _
+        (Region.contains_self _ 16)
+    · rcases List.mem_cons.mp he with rfl | he
+      · refine ⟨hlen, fun i hi => ?_⟩
+        show (s.mem.writeW (s.ea m) (s.xmm r)) _ = _
+        rw [← Offset.add_ofNat_add_ofNat, ← hea,
+          ← byte_readW (s.mem.writeW (s.ea m) (s.xmm r)) (s.ea m) (w := 128) (k := i) (by omega_using [hi]),
+          Mem.readW_writeW_self _ _ 16 _ (by decide)]
+        exact hr.rel.plain hb i hi
+      · obtain ⟨hb', ho⟩ := hr.outs e he
+        refine ⟨hb', fun i hi => ?_⟩
+        show (s.mem.writeW (s.ea m) (s.xmm r)) _ = _
+        rw [← ho i hi]
+        have hd := of_decide_eq_true (List.all_eq_true.mp hall e he)
+        refine Mem.write_apply ?_
+        rw [hea]
+        exact Offset.sep _ (d := e.1 + i) (n := 1) (e := m.disp) (k := 16) (by omega_using [hd, hi])
+          (by omega_using [hfit, hb', hi]) (by omega_using [hfit, hlen]) _ (by rw [BitVec.sub_self]; decide)
+  · obtain ⟨ρ, hρ, rfl⟩ := Option.map_eq_some_iff.mp hs
+    obtain ⟨d, v, he, hr'⟩ := step_ok hr.rel hρ
+    exact ⟨_, he, hr', hr.gpr, hr.zf, hr.rd, hr.wr, hr.syms, hr.frame, hr.outs⟩
+
+/-- Code `runS` follows runs, and leaves what the expressions and the
+stores say. -/
+theorem runS_wp (ok : OutOk p q s₀) {is : List Instr} {σ' : Regs × Outs} (hr : RelS p q env σ s₀ s)
+    (hs : runS p q σ is = some σ') {Q : State → Prop} (hQ : ∀ s', RelS p q env σ' s₀ s' → Q s') :
+    WP isa (.block is) s Q := by
+  induction is generalizing σ s with
+  | nil => cases hs; exact WP.block_nil (hQ s hr)
+  | cons i is ih =>
+    unfold runS at hs
+    split at hs <;> [rename_i τ hτ; cases hs]
+    obtain ⟨s', he, hr'⟩ := stepS_ok ok hr hτ
+    exact Wp.cons he (ih hr' hs)
 
 end
 

@@ -159,11 +159,14 @@ def round (xr y : XReg) (i : Nat) : List Instr :=
     flavor .xmm4 .xmm5 y 0 [0, 1] ++ flavor .xmm5 .xmm4 y 1 [2] ++ flavor .xmm4 .xmm5 y 2 [3] ++
     flavor .xmm5 .xmm4 y 3 [4]
 
+/-- The six rounds of a group. -/
+def rounds6 : List Instr :=
+  round .xmm0 .xmm1 0 ++ (round .xmm1 .xmm0 1 ++ (round .xmm0 .xmm1 2 ++ (round .xmm1 .xmm0 3 ++
+    (round .xmm0 .xmm1 4 ++ round .xmm1 .xmm0 5))))
+
 /-- The six rounds of a group, and one group fewer left (ZF set when none
 is). -/
-def rounds : List Instr :=
-  round .xmm0 .xmm1 0 ++ round .xmm1 .xmm0 1 ++ round .xmm0 .xmm1 2 ++ round .xmm1 .xmm0 3 ++
-    round .xmm0 .xmm1 4 ++ round .xmm1 .xmm0 5 ++ [.alu .sub .ecx (.imm 1)]
+def rounds : List Instr := rounds6 ++ [.alu .sub .ecx (.imm 1)]
 
 /-- `v ⊕= ((v ∧ e) rotated left by one in its 32 bits, moved up 32 bits) ⊕
 ((v ∧ e) moved down 32 bits)`, `e` the mask at `off`: the lanes that are not
@@ -172,13 +175,23 @@ def step (v t s u : XReg) (off : Nat) : List Instr :=
   [ld t kr off, x .pand t v, x .movdqa s t, x .movdqa u t, .xop (.shift .pslld u 1), .xop (.shift .psrld t 31),
    x .por u t, .xop (.shift .psllq u 32), .xop (.shift .psrlq s 32), x .pxor v u, x .pxor v s]
 
+/-- The spread halves as bytes, `[L | R]`, in `xmm4`. -/
+def layerIn : List Instr := pack ++ conv .xmm2 .xmm3 .xmm4 .xmm5 .xmm6 oI
+
+/-- FL of the low quadword of `xmm4` and FL⁻¹ of the high one, with the
+masks of the group at hand. -/
+def layerMid : List Instr :=
+  step .xmm4 .xmm2 .xmm3 .xmm5 64 ++ [ld .xmm2 kr 96, x .pxor .xmm4 .xmm2] ++ step .xmm4 .xmm2 .xmm3 .xmm5 80
+
+/-- The bytes of `xmm4` back to the rounds' form with the next group's
+first keys, as the halves in `xmm0` and `xmm1`. -/
+def layerOut : List Instr :=
+  conv .xmm4 .xmm2 .xmm3 .xmm5 .xmm6 oT ++ [ld .xmm5 kr 112, x .pxor .xmm3 .xmm5] ++ unpack .xmm3 .xmm2
+
 /-- The FL layer after a group (FL of the half in `xmm0`, FL⁻¹ of the one
 in `xmm1`), on to the next group's keys. -/
 def layer : List Instr :=
-  pack ++ conv .xmm2 .xmm3 .xmm4 .xmm5 .xmm6 oI ++
-    step .xmm4 .xmm2 .xmm3 .xmm5 64 ++ [ld .xmm2 kr 96, x .pxor .xmm4 .xmm2] ++ step .xmm4 .xmm2 .xmm3 .xmm5 80 ++
-    conv .xmm4 .xmm2 .xmm3 .xmm5 .xmm6 oT ++ [ld .xmm5 kr 112, x .pxor .xmm3 .xmm5] ++ unpack .xmm3 .xmm2 ++
-    [.alu .add kr (.imm 112), .alu .test .ecx (.reg .ecx)]
+  layerIn ++ layerMid ++ layerOut ++ [.alu .add kr (.imm 112), .alu .test .ecx (.reg .ecx)]
 
 /-- The groups left to `ecx` (3 for 18 rounds, 4 for 24), from the second
 key argument, and the keys' pointer. -/
@@ -186,15 +199,23 @@ def setup : List Instr :=
   [.mov .ecx (.mem (argOp 1)), .shift .shr .ecx 3, .alu .add .ecx (.imm 1), .mov kr (.reg sb),
    .alu .add kr (.imm 24)]
 
-/-- The block at byte 8 of the scratch buffer to the first round's halves. -/
-def cryptHead : List Instr :=
-  [.mov tbr (.mem (at_ sb 0))] ++ setup ++ [tb m0 oM0, ld .xmm0 sb 8, tb .xmm5 oBSW, x .pshufb .xmm0 .xmm5] ++
+/-- The block in `xmm0` to the first round's halves, in the rounds' form
+with the first keys; and the mask. -/
+def headX : List Instr :=
+  [tb m0 oM0, tb .xmm5 oBSW, x .pshufb .xmm0 .xmm5] ++
     conv .xmm0 .xmm2 .xmm3 .xmm4 .xmm5 oT ++ [ld .xmm5 kr 0, x .pxor .xmm3 .xmm5] ++ unpack .xmm3 .xmm2
 
-/-- The halves after the last round to the block. -/
-def cryptTail : List Instr :=
+/-- The block at byte 8 of the scratch buffer to the first round's halves. -/
+def cryptHead : List Instr :=
+  [.mov tbr (.mem (at_ sb 0))] ++ setup ++ [ld .xmm0 sb 8] ++ headX
+
+/-- The halves after the last round to the block's bytes, in `xmm6`. -/
+def tailX : List Instr :=
   pack ++ conv .xmm2 .xmm3 .xmm6 .xmm4 .xmm5 oI ++
-    [tb .xmm5 oOUTC, x .pshufb .xmm6 .xmm5, ld .xmm5 kr 64, x .pxor .xmm6 .xmm5, stx sb 8 .xmm6]
+    [tb .xmm5 oOUTC, x .pshufb .xmm6 .xmm5, ld .xmm5 kr 64, x .pxor .xmm6 .xmm5]
+
+/-- The halves after the last round to the block. -/
+def cryptTail : List Instr := tailX ++ [stx sb 8 .xmm6]
 
 /-- The block of the core's buffer, enciphered in place. -/
 def crypt : Prog isa :=
@@ -206,30 +227,38 @@ to `xmm2`. -/
 def pair (off : Nat) : List Instr :=
   [ld .xmm0 .eax off, tb .xmm1 oBSW, x .pshufb .xmm0 .xmm1] ++ conv .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 oT
 
+/-- The mask, and the first two subkeys in the rounds' form to `xmm6`. -/
+def prepHeadX : List Instr := [tb m0 oM0] ++ pair 0 ++ [x .movdqa .xmm6 .xmm2]
+
 /-- The table's address to the scratch buffer's first slot, and the first
 two subkeys in the rounds' form to `xmm6`. -/
 def prepHead : List Instr :=
-  [.store (at_ sb 0) .eax, .mov tbr (.reg .eax), .mov .eax (.mem (argOp 0))] ++ setup ++ [tb m0 oM0] ++ pair 0 ++
-    [x .movdqa .xmm6 .xmm2]
+  [.store (at_ sb 0) .eax, .mov tbr (.reg .eax), .mov .eax (.mem (argOp 0))] ++ setup ++ prepHeadX
 
 /-- A group's keys from its six subkeys (at `[eax + 16]`): its `KIN` (with
 the first two subkeys, in `xmm6`, for the first group), and the three pairs
 of differences. -/
-def prepGroup : List Instr :=
+def prepGroupX : List Instr :=
   pair 16 ++ [x .movdqa .xmm5 .xmm2, tb .xmm0 oCK, x .pxor .xmm0 .xmm5, x .pxor .xmm0 .xmm6, stx kr 0 .xmm0,
     x .pxor .xmm6 .xmm6] ++
   pair 32 ++ [x .pxor .xmm5 .xmm2, tb .xmm0 oGG, x .pxor .xmm5 .xmm0, stx kr 16 .xmm5, x .movdqa .xmm5 .xmm2] ++
   pair 48 ++ [x .pxor .xmm5 .xmm2, tb .xmm0 oGG, x .pxor .xmm5 .xmm0, stx kr 32 .xmm5,
-    tb .xmm0 oCW2, x .pxor .xmm2 .xmm0, stx kr 48 .xmm2, .alu .sub .ecx (.imm 1)]
+    tb .xmm0 oCW2, x .pxor .xmm2 .xmm0, stx kr 48 .xmm2]
+
+/-- A group's keys, and the count of the groups left. -/
+def prepGroup : List Instr := prepGroupX ++ [.alu .sub .ecx (.imm 1)]
 
 /-- The masks of the FL layer after a group, from its two subkeys (at
-`[eax + 64]`), and on to the next group. -/
-def prepMasks : List Instr :=
+`[eax + 64]`). -/
+def prepMasksX : List Instr :=
   [ld .xmm0 .eax 64, tb .xmm1 oBSW, x .pshufb .xmm0 .xmm1,
    x .movdqa .xmm1 .xmm0, tb .xmm2 oN1, x .pxor .xmm1 .xmm2, tb .xmm2 oM1, x .pand .xmm1 .xmm2, stx kr 64 .xmm1,
    x .movdqa .xmm1 .xmm0, tb .xmm2 oN2, x .pxor .xmm1 .xmm2, tb .xmm2 oM2, x .pand .xmm1 .xmm2, stx kr 80 .xmm1,
-   .xop (.shift .psrlq .xmm0 32), stx kr 96 .xmm0,
-   .alu .add .eax (.imm 64), .alu .add kr (.imm 112), .alu .test .ecx (.reg .ecx)]
+   .xop (.shift .psrlq .xmm0 32), stx kr 96 .xmm0]
+
+/-- The masks of the FL layer after a group, and on to the next group. -/
+def prepMasks : List Instr :=
+  prepMasksX ++ [.alu .add .eax (.imm 64), .alu .add kr (.imm 112), .alu .test .ecx (.reg .ecx)]
 
 /-- The last two subkeys, as stored. -/
 def prepTail : List Instr := [ld .xmm0 .eax 64, stx kr 64 .xmm0]
