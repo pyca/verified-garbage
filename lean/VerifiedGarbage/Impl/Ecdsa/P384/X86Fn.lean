@@ -32,7 +32,7 @@ def verifyP384 : Prog isa :=
 
 /-- `vg_ecdsa_p384_sign`, as emitted, with `f` the functions its table's calls may reach. -/
 def signP384 (f : Impl.Ecdsa.Rfc6979.X86.Fns) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 32 588 (Impl.Ecdsa.Rfc6979.X86.signCode {
+  Impl.Scrub.X86.scrubAll 32 612 (Impl.Ecdsa.Rfc6979.X86.signCode {
     f := f
     w := 2 * Impl.Ecdsa.X86.p384Comb.n - (if Impl.Ecdsa.X86.p384Comb.C.len = 28 then 1 else 0)
     len := Impl.Ecdsa.X86.p384Comb.C.len

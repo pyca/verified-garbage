@@ -6,10 +6,14 @@ public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Contract
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.OffsetBelow
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyInstances
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeySha1
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeySha256
 public import VerifiedGarbage.Spec.HmacTable
 public import VerifiedGarbage.Proof.HashTable.Basic
 import VerifiedGarbage.Proof.Framework.X86.Exec
@@ -30,9 +34,10 @@ PBKDF2 on x86 has them (`Proof.Pbkdf2.Whole.X86.FnsOK`), each with the
 suffix and the CPU features of its variant (`HVar`): MD5, SHA-1 with each of
 its backends, SHA-224 and SHA-256 with each of theirs, and the SHA-512
 family (`vars`). The table of a variant (`tableOf`,
-`VG_HMAC_<HASH><SUFFIX>`) holds the addresses of HMAC's `init` and
-`finalize` and of the streaming `update`, in the forms that take their
-working space as an argument (`_scratch`), then its data
+`VG_HMAC_<HASH><SUFFIX>`) holds the addresses of HMAC's `init` for a key of
+any length (`hmacInitAny`, `_init_any_scratch`, verified for each variant:
+`HVar.any`) and `finalize` and of the streaming `update`, in the forms that
+take their working space as an argument (`_scratch`), then its data
 (`Spec.HmacTable.dataOf`), each word 32 bits wide; an indirect call of the
 functions of every variant (`fnsOf`) to one of them reaches it (`tabOK_of`),
 when the functions of distinct names are at distinct addresses and the
@@ -47,12 +52,15 @@ namespace VG.Proof.HmacTable.X86
 
 open VG VG.X86
 open VG.Impl.Ecdsa.Rfc6979.X86 (Fns)
-open VG.Proof.Pbkdf2.Whole.X86 (FnsOK)
+open VG.Proof.Pbkdf2.Whole.X86 (FnsOK Sound)
 open VG.Proof.HashTable (pw_ne find_name)
 
 /-- A variant of a hash function with HMAC: the functions PBKDF2's code
-calls, verified, the hash function of `Spec.Mgf1.hashes` it computes, and
-the suffix of its functions' names and the CPU features it needs. -/
+calls, verified, the hash function of `Spec.Mgf1.hashes` it computes, the
+suffix of its functions' names and the CPU features it needs, and HMAC's
+`init` for a key of any length, which the table holds, verified with
+`W + S` words of working space, keeping `esp` and using at most 76 bytes of
+stack. -/
 structure HVar where
   F : Impl.Pbkdf2.Whole.X86.Fns
   ok : FnsOK F
@@ -64,42 +72,64 @@ structure HVar where
   suffix : String
   features : List String
   idx : Spec.Mgf1.hashes[Spec.HashTable.index G]? = some G
+  any : Sound F.hmacInitAny (Proof.Pbkdf2.Whole.X86.Any.anyScratchContract ok.hH.SH (F.W + F.H.S))
+  anySp : NoSp F.hmacInitAny
+  anySU : stackUse F.hmacInitAny ≤ 76
 
 open Proof.Pbkdf2.Whole.X86 in
 def md5V : HVar := ⟨md5F, md5OKF, Spec.Mgf1.md5, fun _ => rfl, rfl, fun x => by
-  show (Spec.Md5.hash x).length = 16; rw [Proof.Md5.hash_eq]; exact Proof.Md5.md.digest_length _, "", [], rfl⟩
+  show (Spec.Md5.hash x).length = 16; rw [Proof.Md5.hash_eq]; exact Proof.Md5.md.digest_length _, "", [], rfl,
+  Sound.of_verified (Any.verified md5OKF Any.md5_anyChecks rfl rfl Any.md5_anySat),
+  NoSp.of_all Any.md5_anyNoEsp, Any.hmacInitAny_stack md5OKF⟩
 open Proof.Pbkdf2.Whole.X86 in
 def sha1V (b : Proof.Sha1.X86.Variants.Backend) : HVar :=
   ⟨b.F, sha1OKF b, Spec.Mgf1.sha1, fun _ => rfl, rfl, fun x => by
     show (Spec.Sha1.hash x).length = 20; rw [Proof.Sha1.hash_eq]; exact Proof.Sha1.md.digest_length _,
-    b.stream.suffix, b.features, rfl⟩
+    b.stream.suffix, b.features, rfl,
+    Sound.of_verified (Any.verified (sha1OKF b) (Any.anyChecks_of_shape (F := b.F) Any.sha1Shape_anyChecks) rfl rfl
+      Any.sha1_anySat),
+    NoSp.of_all (Any.sha1_anyNoEsp b), Any.hmacInitAny_stack (sha1OKF b)⟩
 open Proof.Pbkdf2.Whole.X86 in
 def sha224V (b : Proof.Sha256.X86.Variants.Backend) : HVar :=
   ⟨b.F224, sha224OKF b, Spec.Mgf1.sha224, fun _ => rfl, rfl, fun x => by
     show (Spec.Sha256.sha224 x).length = 28
     simp [Spec.Sha256.sha224, Spec.Sha256.finalHash, Spec.Sha256.wordBytes, List.length_flatMap, List.map_const'],
-    b.stream.suffix, b.features, rfl⟩
+    b.stream.suffix, b.features, rfl,
+    Sound.of_verified (Any.verified (sha224OKF b) (Any.anyChecks_of_shape (F := b.F224) Any.sha224Shape_anyChecks) rfl rfl
+      Any.sha224_anySat),
+    NoSp.of_all (Any.sha224_anyNoEsp b), Any.hmacInitAny_stack (sha224OKF b)⟩
 open Proof.Pbkdf2.Whole.X86 in
 def sha256V (b : Proof.Sha256.X86.Variants.Backend) : HVar :=
   ⟨b.F, sha256OKF b, Spec.Mgf1.sha256, fun _ => rfl, rfl, fun x => by
     show (Spec.Sha256.hash x).length = 32; rw [Proof.Sha256.hash_eq]; exact Proof.Sha256.md.digest_length _,
-    b.stream.suffix, b.features, rfl⟩
+    b.stream.suffix, b.features, rfl,
+    Sound.of_verified (Any.verified (sha256OKF b) (Any.anyChecks_of_shape (F := b.F) Any.sha256Shape_anyChecks) rfl rfl
+      Any.sha256_anySat),
+    NoSp.of_all (Any.sha256_anyNoEsp b), Any.hmacInitAny_stack (sha256OKF b)⟩
 open Proof.Pbkdf2.Whole.X86 in
 def sha384V : HVar := ⟨sha384F, sha384OKF, Spec.Mgf1.sha384, fun _ => rfl, rfl, fun x => by
   show ((Spec.Sha512.finalHash Spec.Sha512.H0_384 x).take 48).length = 48
-  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl, "", [], rfl⟩
+  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl, "", [], rfl,
+  Sound.of_verified (Any.verified sha384OKF Any.sha384_anyChecks rfl rfl Any.sha384_anySat),
+  NoSp.of_all Any.sha384_anyNoEsp, Any.hmacInitAny_stack sha384OKF⟩
 open Proof.Pbkdf2.Whole.X86 in
 def sha512V : HVar := ⟨sha512F, sha512OKF, Spec.Mgf1.sha512, fun _ => rfl, rfl, fun x => by
   show (Spec.Sha512.finalHash Spec.Sha512.H0_512 x).length = 64
-  rw [Proof.Hmac.Generic.Common.finalHash_length], "", [], rfl⟩
+  rw [Proof.Hmac.Generic.Common.finalHash_length], "", [], rfl,
+  Sound.of_verified (Any.verified sha512OKF Any.sha512_anyChecks rfl rfl Any.sha512_anySat),
+  NoSp.of_all Any.sha512_anyNoEsp, Any.hmacInitAny_stack sha512OKF⟩
 open Proof.Pbkdf2.Whole.X86 in
 def sha512_224V : HVar := ⟨sha512_224F, sha512_224OKF, Spec.Mgf1.sha512_224, fun _ => rfl, rfl, fun x => by
   show ((Spec.Sha512.finalHash Spec.Sha512.H0_512_224 x).take 28).length = 28
-  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl, "", [], rfl⟩
+  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl, "", [], rfl,
+  Sound.of_verified (Any.verified sha512_224OKF Any.sha512_224_anyChecks rfl rfl Any.sha512_224_anySat),
+  NoSp.of_all Any.sha512_224_anyNoEsp, Any.hmacInitAny_stack sha512_224OKF⟩
 open Proof.Pbkdf2.Whole.X86 in
 def sha512_256V : HVar := ⟨sha512_256F, sha512_256OKF, Spec.Mgf1.sha512_256, fun _ => rfl, rfl, fun x => by
   show ((Spec.Sha512.finalHash Spec.Sha512.H0_512_256 x).take 32).length = 32
-  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl, "", [], rfl⟩
+  rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl, "", [], rfl,
+  Sound.of_verified (Any.verified sha512_256OKF Any.sha512_256_anyChecks rfl rfl Any.sha512_256_anySat),
+  NoSp.of_all Any.sha512_256_anyNoEsp, Any.hmacInitAny_stack sha512_256OKF⟩
 
 /-- Every variant: MD5's, SHA-1's with the backends `vs1`, SHA-224's and
 SHA-256's with `vs256`, and the SHA-512 family's. -/
@@ -112,7 +142,7 @@ def vars (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.Sha256
 def tableOf (w : HVar) : FnTable where
   name := s!"VG_HMAC_{w.G.rust.toUpper}{w.suffix.toUpper}"
   iface := Spec.HmacTable.iface
-  fns := [w.F.hiN, w.F.H.updN, w.F.hfN]
+  fns := [w.F.hiAnyN, w.F.H.updN, w.F.hfN]
   data := Spec.HmacTable.dataOf w.G
 
 /-- The tables of the variants `vs`. -/
@@ -120,7 +150,7 @@ def tables (vs : List HVar) : List FnTable := vs.map tableOf
 
 /-- For each of a table's functions, that function of each of `vs`. -/
 def fnsOf (vs : List HVar) : Fns :=
-  ⟨vs.map fun w => (w.F.hiN, w.F.hiC), vs.map fun w => (w.F.H.updN, w.F.H.updC),
+  ⟨vs.map fun w => (w.F.hiAnyN, w.F.hmacInitAny), vs.map fun w => (w.F.H.updN, w.F.H.updC),
     vs.map fun w => (w.F.hfN, w.F.hfC)⟩
 
 /-- The functions of `tables vs`. -/
@@ -128,7 +158,7 @@ def names (vs : List HVar) : List String := ((tables vs).map (·.fns)).flatten
 
 /-- The variants' functions of the same name have the same code. -/
 def Coh (vs : List HVar) : Prop :=
-  ∀ w ∈ vs, ∀ w' ∈ vs, (w.F.hiN = w'.F.hiN → w.F.hiC = w'.F.hiC) ∧
+  ∀ w ∈ vs, ∀ w' ∈ vs, (w.F.hiAnyN = w'.F.hiAnyN → w.F.hmacInitAny = w'.F.hmacInitAny) ∧
     (w.F.H.updN = w'.F.H.updN → w.F.H.updC = w'.F.H.updC) ∧ (w.F.hfN = w'.F.hfN → w.F.hfC = w'.F.hfC)
 
 instance (vs : List HVar) : Decidable (Coh vs) := by unfold Coh; infer_instance
@@ -136,18 +166,18 @@ instance (vs : List HVar) : Decidable (Coh vs) := by unfold Coh; infer_instance
 /-- An indirect call of `f`'s functions, at the addresses `sy` gives, to the
 address of one of `F`'s HMAC functions reaches it. -/
 structure TabOK (F : Impl.Pbkdf2.Whole.X86.Fns) (f : Fns) (sy : String → BitVec 32) : Prop where
-  i : f.init.find? (fun q => (sy q.1).setWidth 64 == (sy F.hiN).setWidth 64) = some (F.hiN, F.hiC)
+  i : f.init.find? (fun q => (sy q.1).setWidth 64 == (sy F.hiAnyN).setWidth 64) = some (F.hiAnyN, F.hmacInitAny)
   u : f.upd.find? (fun q => (sy q.1).setWidth 64 == (sy F.H.updN).setWidth 64) = some (F.H.updN, F.H.updC)
   f : f.fin.find? (fun q => (sy q.1).setWidth 64 == (sy F.hfN).setWidth 64) = some (F.hfN, F.hfC)
 
-/-- At `p` in `m`, the addresses `sy` gives `F`'s HMAC `init`, the streaming
+/-- At `p` in `m`, the addresses `sy` gives `F`'s HMAC `init` for a key of any length, the streaming
 `update` and HMAC's `finalize`. -/
 def TabMem (F : Impl.Pbkdf2.Whole.X86.Fns) (sy : String → BitVec 32) (p : BitVec 32) (m : Mem) : Prop :=
-  m.readW (VG.X86.addr p 0) 32 = sy F.hiN ∧ m.readW (VG.X86.addr p 4) 32 = sy F.H.updN ∧
+  m.readW (VG.X86.addr p 0) 32 = sy F.hiAnyN ∧ m.readW (VG.X86.addr p 4) 32 = sy F.H.updN ∧
     m.readW (VG.X86.addr p 8) 32 = sy F.hfN
 
 theorem mem_names {vs : List HVar} {w : HVar} (hw : w ∈ vs) :
-    w.F.hiN ∈ names vs ∧ w.F.H.updN ∈ names vs ∧ w.F.hfN ∈ names vs := by
+    w.F.hiAnyN ∈ names vs ∧ w.F.H.updN ∈ names vs ∧ w.F.hfN ∈ names vs := by
   have : (tableOf w).fns ∈ (tables vs).map (·.fns) := List.mem_map_of_mem (List.mem_map_of_mem hw)
   refine ⟨?_, ?_, ?_⟩ <;> exact List.mem_flatten.mpr ⟨_, this, by simp [tableOf]⟩
 
@@ -170,7 +200,7 @@ theorem tabOK_of {vs : List HVar} (hc : Coh vs) {sy : String → BitVec 32}
 
 /-- The words of the table of `w`. -/
 theorem words_tableOf (s : State) (w : HVar) :
-    FnTable.words isa s (tableOf w) = [(s.syms w.F.hiN).setWidth 64, (s.syms w.F.H.updN).setWidth 64,
+    FnTable.words isa s (tableOf w) = [(s.syms w.F.hiAnyN).setWidth 64, (s.syms w.F.H.updN).setWidth 64,
       (s.syms w.F.hfN).setWidth 64, BitVec.ofNat 64 (Spec.HashTable.index w.G), BitVec.ofNat 64 w.G.len,
       BitVec.ofNat 64 (Spec.HmacTable.blockSize w.G)] := rfl
 
@@ -217,11 +247,13 @@ end
 
 The function's arguments (`out` of `2 q` bytes, `d` of `q`, `digest` of `dn`,
 `digest_len`, `scratch`, the table `hmac` of 24 bytes, and `esp` on entry
-`E`) and the 588 bytes of stack below the return address, from
-`B = E - 588` up (`Lay dn`): the 76 bytes the calls use (a frame of at most
-six arguments, the return address, and the 48 bytes HMAC's functions use
-below it), then the frame of 512 bytes, from `B + 76` (`esp` in the body,
-`F`): `K` and `V` (64 bytes each), our caller's `ebx`, `esi`, `edi` and
+`E`) and the 612 bytes of stack below the return address, from
+`B - 24 = E - 612` up (`Lay dn`): the 100 bytes the calls use (`CALLS`: a
+frame of at most six arguments, the return address, and the 48 bytes HMAC's
+functions use below it, or the 76 that HMAC's `init` for a key of any length
+uses), then the frame of 512 bytes, from `B + 76` (`esp` in the body, `F`;
+every place in the stack is at an offset of `B`): `K` and `V` (64 bytes
+each), our caller's `ebx`, `esi`, `edi` and
 `ebp`, `D` and `B`, and above them (`HIGH`) the length of `T`, the number of
 candidates left, `h`, `X`, `core`'s digest and `T`. Above it, the return
 address and our arguments. `Ctx` is what holds between the frame's entry
@@ -282,7 +314,8 @@ abbrev scr : Addr := L.sc.setWidth 64
 abbrev tab : Addr := L.tb.setWidth 64
 /-- `esp` in the frame's body. -/
 abbrev F : BitVec 32 := L.E - BitVec.ofNat 32 512
-/-- The lowest byte of the stack used. -/
+/-- The base of the offsets in the stack, 24 bytes above the lowest byte of
+the stack used. -/
 abbrev B : Addr := (L.E - BitVec.ofNat 32 588).setWidth 64
 
 abbrev TBLs : List Region := Abi.constRegions (fun n => (L.sy n).setWidth 64) L.cs
@@ -294,14 +327,16 @@ abbrev SCR : Region := ⟨L.scr, 8192⟩
 /-- The table of HMAC. -/
 abbrev TAB : Region := ⟨L.tab, 24⟩
 /-- The stack used. -/
-abbrev STK : Region := ⟨L.B, 588⟩
+abbrev STK : Region := ⟨L.B - BitVec.ofNat 64 24, 612⟩
 /-- The frame. -/
 abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 76, 512⟩
 /-- The return address, and our arguments. -/
 abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 588, 4⟩
 abbrev ARGS : Region := ⟨L.B + BitVec.ofNat 64 592, 24⟩
 /-- The stack below the saved registers: the calls', and `K` and `V`. -/
-abbrev LOW : Region := ⟨L.B, 204⟩
+abbrev LOW : Region := ⟨L.B - BitVec.ofNat 64 24, 228⟩
+/-- The stack below the frame, which the calls use. -/
+abbrev CALLS : Region := ⟨L.B - BitVec.ofNat 64 24, 100⟩
 /-- The frame above `D` and `B`. -/
 abbrev HIGH : Region := ⟨L.B + BitVec.ofNat 64 228, 360⟩
 
@@ -325,7 +360,7 @@ structure Ok : Prop where
   nd : L.a1.toNat + L.q ≤ 2 ^ 32
   ng : L.a2.toNat + dn ≤ 2 ^ 32
   nc : L.sc.toNat + 8192 ≤ 2 ^ 32
-  e588 : 588 ≤ L.E.toNat
+  e612 : 612 ≤ L.E.toNat
   e28 : L.E.toNat + 28 ≤ 2 ^ 32
   tbl : ∀ T ∈ L.TBLs, T.base.toNat + T.len ≤ 2 ^ 32 ∧
     T.Disjoint L.OUT ∧ T.Disjoint L.SCR ∧ T.Disjoint L.STK
@@ -336,11 +371,61 @@ structure Ok : Prop where
   tk : L.TAB.Disjoint L.STK
   ta : L.TAB.Disjoint L.ARGS
 
+/-! ## Regions at offsets of `B`, and the 24 bytes below it -/
+
+/-- `B + d`, at an offset of the lowest byte of the stack used. -/
+theorem off24 (p : Addr) (d : Nat) : p + BitVec.ofNat 64 d = p - BitVec.ofNat 64 24 + BitVec.ofNat 64 (24 + d) := by
+  rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+
+/-- A range at an offset of `p` within one from 24 bytes below `p`. -/
+theorem sub24 (p : Addr) {d n k : Nat} (h : 24 + d + n ≤ k) :
+    Region.Sub ⟨p + BitVec.ofNat 64 d, n⟩ ⟨p - BitVec.ofNat 64 24, k⟩ := by
+  rw [off24 p d]; exact Offset.sub_base _ (by omega_arith)
+
+theorem sub24' (p : Addr) {n k : Nat} (h : 24 + n ≤ k) : Region.Sub ⟨p, n⟩ ⟨p - BitVec.ofNat 64 24, k⟩ := by
+  have := sub24 p (d := 0) (n := n) (k := k) (by omega_arith)
+  rwa [show p + BitVec.ofNat 64 0 = p from BitVec.add_zero p] at this
+
+/-- A range from 24 bytes below `p` and one at an offset of `p` above it. -/
+theorem disj24 (p : Addr) {k d n : Nat} (h₁ : k ≤ 24 + d) (h₂ : 24 + d + n ≤ 2 ^ 64) :
+    Region.Disjoint ⟨p - BitVec.ofNat 64 24, k⟩ ⟨p + BitVec.ofNat 64 d, n⟩ := by
+  rw [off24 p d]; exact Offset.base_disjoint _ h₁ h₂
+
+variable {L}
+
+theorem sub_STK {d n : Nat} (h : d + n ≤ 588) : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.STK :=
+  sub24 _ (by omega_arith)
+
+theorem sub_STK' {n : Nat} (h : n ≤ 588) : Region.Sub ⟨L.B, n⟩ L.STK := sub24' _ (by omega_arith)
+
+theorem sub_LOW {d n : Nat} (h : d + n ≤ 204) : Region.Sub ⟨L.B + BitVec.ofNat 64 d, n⟩ L.LOW :=
+  sub24 _ (by omega_arith)
+
+theorem sub_LOW' {n : Nat} (h : n ≤ 204) : Region.Sub ⟨L.B, n⟩ L.LOW := sub24' _ (by omega_arith)
+
+/-- A range of the stack above the saved registers' place is apart from `LOW`. -/
+theorem LOW_disj {d n : Nat} (h₁ : 204 ≤ d) (h₂ : 24 + d + n ≤ 2 ^ 64) :
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.LOW := (disj24 _ (by omega_arith) h₂).symm
+
+theorem CALLS_LOW : Region.Sub L.CALLS L.LOW := Region.sub_prefix (by omega_arith)
+
+theorem CALLS_STK : Region.Sub L.CALLS L.STK := Region.sub_prefix (by omega_arith)
+
+/-- The 76 bytes from `B`, which every call but that of HMAC's `init` for a
+key of any length uses, are among the calls'. -/
+theorem sub_CALLS {n : Nat} (h : n ≤ 76) : Region.Sub ⟨L.B, n⟩ L.CALLS := sub24' _ (by omega_arith)
+
+/-- The calls' stack is apart from the frame and what is above it. -/
+theorem CALLS_disj {d n : Nat} (h₁ : 76 ≤ d) (h₂ : d + n ≤ 616) :
+    Region.Disjoint L.CALLS ⟨L.B + BitVec.ofNat 64 d, n⟩ := disj24 _ (by omega_arith) (by omega_arith)
+
 end Lay
 
 namespace Lay.Ok
 
 variable {dn : Nat} {L : Lay dn}
+
+theorem e588 (h : L.Ok) : 588 ≤ L.E.toNat := by have := h.e612; omega_arith
 
 theorem B_eq (h : L.Ok) : L.B = L.E.setWidth 64 - BitVec.ofNat 64 588 := Taint.sub_setWidth h.e588
 
@@ -369,21 +454,37 @@ theorem below_F (_h : L.Ok) : below L.F 76 = ⟨L.B, 76⟩ := by
   rw [Lay.F, show L.E - BitVec.ofNat 32 512 - BitVec.ofNat 32 76 = L.E - BitVec.ofNat 32 588 by
     rw [BitVec.sub_sub, BitVec.ofNat_add_ofNat]]
 
+/-- The frame's 100 bytes below `F`, which HMAC's `init` for a key of any
+length uses: the calls'. -/
+theorem below_F100 (h : L.Ok) : below L.F 100 = L.CALLS := by
+  have := h.e612
+  show (⟨(L.F - BitVec.ofNat 32 100).setWidth 64, 100⟩ : Region) = ⟨L.B - BitVec.ofNat 64 24, 100⟩
+  rw [Lay.F, show L.E - BitVec.ofNat 32 512 - BitVec.ofNat 32 100 = L.E - BitVec.ofNat 32 612 by
+    rw [BitVec.sub_sub, BitVec.ofNat_add_ofNat], Taint.sub_setWidth (by omega_arith), h.B_eq, Offset.sub_sub_ofNat]
+
 theorem FN (h : L.Ok) : L.F.toNat = L.E.toNat - 512 := sub_toNat (by have := h.e588; omega_arith)
 
 theorem stk_scr (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 588) (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
-  (h.kc.sub_left (Offset.sub_base _ h₁)).sub_right (Offset.sub_base _ h₂)
+  (h.kc.sub_left (Lay.sub_STK h₁)).sub_right (Offset.sub_base _ h₂)
 
 theorem stk_scr0 (h : L.Ok) {d n k : Nat} (h₁ : d + n ≤ 588) (h₂ : k ≤ 8192) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.scr, k⟩ :=
-  (h.kc.sub_left (Offset.sub_base _ h₁)).sub_right (Region.sub_prefix h₂)
+  (h.kc.sub_left (Lay.sub_STK h₁)).sub_right (Region.sub_prefix h₂)
 
 theorem stk_SCR (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 588) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.SCR := h.kc.sub_left (Offset.sub_base _ h₁)
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.SCR := h.kc.sub_left (Lay.sub_STK h₁)
 
 theorem stk_OUT (h : L.Ok) {d n : Nat} (h₁ : d + n ≤ 588) :
-    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.OUT := h.ko.sub_left (Offset.sub_base _ h₁)
+    Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ L.OUT := h.ko.sub_left (Lay.sub_STK h₁)
+
+/-- The calls' stack, and a range of `scratch`. -/
+theorem calls_scr (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
+    Region.Disjoint L.CALLS ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
+  (h.kc.sub_left Lay.CALLS_STK).sub_right (Offset.sub_base _ h₂)
+
+theorem calls_scr0 (h : L.Ok) {k : Nat} (h₂ : k ≤ 8192) : Region.Disjoint L.CALLS ⟨L.scr, k⟩ :=
+  (h.kc.sub_left Lay.CALLS_STK).sub_right (Region.sub_prefix h₂)
 
 end Lay.Ok
 
@@ -414,7 +515,11 @@ def Safe {dn : Nat} (L : Lay dn) (r : Region) : Prop :=
   Region.Sub r L.OUT ∨ Region.Sub r L.SCR ∨ Region.Sub r L.LOW ∨ Region.Sub r L.HIGH
 
 theorem safe_low {dn : Nat} (L : Lay dn) {d n : Nat} (h : d + n ≤ 204) : Safe L ⟨L.B + BitVec.ofNat 64 d, n⟩ :=
-  .inr (.inr (.inl (Offset.sub_base _ h)))
+  .inr (.inr (.inl (Lay.sub_LOW h)))
+
+/-- The calls' stack. -/
+theorem safe_calls {dn : Nat} (L : Lay dn) {r : Region} (h : Region.Sub r L.CALLS) : Safe L r :=
+  .inr (.inr (.inl (fun x hx => Lay.CALLS_LOW x (h x hx))))
 
 theorem safe_scr {dn : Nat} (L : Lay dn) {d n : Nat} (h : d + n ≤ 8192) : Safe L ⟨L.scr + BitVec.ofNat 64 d, n⟩ :=
   .inr (.inl (Offset.sub_base _ h))
@@ -453,7 +558,7 @@ theorem saved_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
   rcases hs with hs | hs | hs | hs
   · exact (h.stk_OUT (by omega_arith)).sub_right hs
   · exact (h.stk_SCR (by omega_arith)).sub_right hs
-  · exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).sub_right hs
+  · exact (Lay.disj24 _ (by omega_arith) (by omega_arith)).symm.sub_right hs
   · exact (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)).sub_right hs
 
 /-- The return address and our arguments are apart from every safe region. -/
@@ -466,7 +571,7 @@ theorem top_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
   rcases hs with hs | hs | hs | hs
   · exact (j h.ro h.ao).sub_right hs
   · exact (j h.rc h.ac).sub_right hs
-  · exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).sub_right hs
+  · exact (Lay.disj24 _ (by omega_arith) (by omega_arith)).symm.sub_right hs
   · exact (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)).sub_right hs
 
 end Lay.Ok
@@ -489,15 +594,15 @@ structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (t : 
   held : Abi.constsHeld m₀ (fun n => (L.sy n).setWidth 64) L.cs
   tabOk : TabOK L.H L.f t.syms
   tabMem : TabMem L.H t.syms L.tb m₀
-  fsy : ∀ n ∈ [L.H.hiN, L.H.H.updN, L.H.hfN], t.syms n = L.fa n
+  fsy : ∀ n ∈ [L.H.hiAnyN, L.H.H.updN, L.H.hfN], t.syms n = L.fa n
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
   rcases h with h | h | h | h
   · exact ⟨_, by simp, h⟩
   · exact ⟨_, by simp, h⟩
-  · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B) (by omega_arith) a (h a ha)⟩
-  · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base (p := L.B) (d := 228) (n := 360) (by omega_arith) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B - BitVec.ofNat 64 24) (by omega_arith) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Lay.sub_STK (L := L) (d := 228) (n := 360) (by omega_arith) a (h a ha)⟩
 
 theorem saved_off : ∀ p ∈ Impl.Ecdsa.Rfc6979.X86.saved, 128 ≤ p.2 ∧ p.2 + 4 ≤ 144 := by decide
 
@@ -633,7 +738,7 @@ def lay (dn q : Nat) (cs : List (String × List (BitVec 64))) (H : Impl.Pbkdf2.W
     (s : State) : Lay dn :=
   ⟨arg s 0, arg s 1, arg s 2, arg s 3, arg s 4, arg s 5, s.gpr .esp, q, cs,
     fun n => if n ∈ cs.map Prod.fst then s.syms n else 0, H, f,
-    fun n => if n ∈ [H.hiN, H.H.updN, H.hfN] then s.syms n else 0⟩
+    fun n => if n ∈ [H.hiAnyN, H.H.updN, H.hfN] then s.syms n else 0⟩
 
 section
 variable {dn q : Nat} {cs : List (String × List (BitVec 64))} {H : Impl.Pbkdf2.Whole.X86.Fns} {f : Fns}
@@ -670,9 +775,10 @@ end
 
 theorem lay_ok {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance}
     {H : Impl.Pbkdf2.Whole.X86.Fns} {f : Fns} {ns : List String} {s : State}
-    (h : (rfcX86 cs I 588 (tabFacts H f) ns).pre s) : (lay I.hashLen I.ecdsa.curve.len cs H f s).Ok := by
-  obtain ⟨e588, e28, -, -, od, og, oc, dc, gc, ao, ac, ro, rc, ko, kd, kg, kc, no, nd, ng, nc, ht, nt, tout, tsc,
+    (h : (rfcX86 cs I 612 (tabFacts H f) ns).pre s) : (lay I.hashLen I.ecdsa.curve.len cs H f s).Ok := by
+  obtain ⟨e612, e28, -, -, od, og, oc, dc, gc, ao, ac, ro, rc, ko, kd, kg, kc, no, nd, ng, nc, ht, nt, tout, tsc,
     targ, -, tstk, -⟩ := h
+  have e588 : 588 ≤ (s.gpr .esp).toNat := by omega_arith
   have hB : (lay I.hashLen I.ecdsa.curve.len cs H f s).B = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588 :=
     Taint.sub_setWidth e588
   have eR : (lay I.hashLen I.ecdsa.curve.len cs H f s).RET = ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
@@ -680,11 +786,11 @@ theorem lay_ok {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979
     rw [hB, BitVec.sub_add_cancel]
   have eA := lay_ARGS (dn := I.hashLen) (q := I.ecdsa.curve.len) (cs := cs) (H := H) (f := f) e588 e28
   have eK : (lay I.hashLen I.ecdsa.curve.len cs H f s).STK =
-      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 588, 588⟩ := by
-    show (⟨(lay I.hashLen I.ecdsa.curve.len cs H f s).B, 588⟩ : Region) = _
-    rw [hB]
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 612, 612⟩ := by
+    show (⟨(lay I.hashLen I.ecdsa.curve.len cs H f s).B - BitVec.ofNat 64 24, 612⟩ : Region) = _
+    rw [hB, Offset.sub_sub_ofNat]
   refine ⟨od, og, oc, dc, gc, eA ▸ ao, eA ▸ ac, eR ▸ ro, eR ▸ rc, eK ▸ ko, eK ▸ kd, eK ▸ kg, eK ▸ kc,
-    no, nd, ng, nc, e588, e28, ?_, nt, tout, tsc, eK ▸ tstk, eA ▸ targ⟩
+    no, nd, ng, nc, e612, e28, ?_, nt, tout, tsc, eK ▸ tstk, eA ▸ targ⟩
   intro T hT
   rw [lay_tbls] at hT
   have hh := ht.2 T hT
@@ -700,7 +806,7 @@ theorem entered_esp (dn q : Nat) (cs : List (String × List (BitVec 64))) (H : I
 
 theorem entered_wr {cs : List (String × List (BitVec 64))} {I : Proof.Ecdsa.Rfc6979.Instance}
     {H : Impl.Pbkdf2.Whole.X86.Fns} {f : Fns} {ns : List String} {s : State}
-    (h : (rfcX86 cs I 588 (tabFacts H f) ns).pre s) :
+    (h : (rfcX86 cs I 612 (tabFacts H f) ns).pre s) :
     (entered s).wr = (lay I.hashLen I.ecdsa.curve.len cs H f s).FR :: s.wr := by
   simp only [entered, allocState_wr]
   congr 1

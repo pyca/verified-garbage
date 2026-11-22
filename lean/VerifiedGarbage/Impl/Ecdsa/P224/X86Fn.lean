@@ -32,7 +32,7 @@ def verifyP224 : Prog isa :=
 
 /-- `vg_ecdsa_p224_sign`, as emitted, with `f` the functions its table's calls may reach. -/
 def signP224 (f : Impl.Ecdsa.Rfc6979.X86.Fns) : Prog isa :=
-  Impl.Scrub.X86.scrubAll 32 588 (Impl.Ecdsa.Rfc6979.X86.signCode {
+  Impl.Scrub.X86.scrubAll 32 612 (Impl.Ecdsa.Rfc6979.X86.signCode {
     f := f
     w := 2 * Impl.Ecdsa.X86.p224Comb.n - (if Impl.Ecdsa.X86.p224Comb.C.len = 28 then 1 else 0)
     len := Impl.Ecdsa.X86.p224Comb.C.len

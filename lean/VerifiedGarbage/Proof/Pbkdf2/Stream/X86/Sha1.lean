@@ -60,6 +60,7 @@ def fns (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Whole.X
   H := hmacHash suffix updC finC
   W := Spec.Hmac.sha1I.scratch
   hiN := "vg_hmac_sha1_init_scratch" ++ suffix
+  hiAnyN := "vg_hmac_sha1_init_any_scratch" ++ suffix
   hiC := (mdHash suffix cmpN cmpC updC finC).hmacInit
   hfN := "vg_hmac_sha1_finalize_scratch" ++ suffix
   hfC := (mdHash suffix cmpN cmpC updC finC).hmacFin
