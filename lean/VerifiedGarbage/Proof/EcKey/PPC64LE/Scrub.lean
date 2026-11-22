@@ -143,13 +143,13 @@ theorem p192Decompress_scrubbed (hL : Law Spec.P192.curve) :
 and returns without secret residue. -/
 theorem p224PublicKey_scrubbed (hL : Law Spec.P224.curve) :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.p224PublicKey
-      (Spec.EcKey.P224.inst.publicKeyContract (PPC64LE.abi.withConsts Impl.Weierstrass.PPC64LE.p224CombConsts)) 32 :=
+      (Spec.EcKey.P224.inst.publicKeyContract (PPC64LE.abi.withConsts Proof.EcKey.PPC64LE.P224.pkK)) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.P224.publicKeyApi) {
       code := Impl.EcKey.PPC64LE.publicKeyP224Comb
       verified := Proof.EcKey.PPC64LE.P224.combPk_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true,
       [.v0, .v1, .v2, .v3, .v18, .v19]⟩
-    (publicKeyOut _ _ Impl.Weierstrass.PPC64LE.p224CombConsts)
+    (publicKeyOut _ _ Proof.EcKey.PPC64LE.P224.pkK)
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.P224.inst.compressPublicKeyApi`'s function as emitted
@@ -157,12 +157,13 @@ theorem p224PublicKey_scrubbed (hL : Law Spec.P224.curve) :
 returns without secret residue. -/
 theorem p224Compress_scrubbed :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.p224Compress
-      (Spec.EcKey.P224.inst.compressPublicKeyContract PPC64LE.abi) 32 :=
+      (Spec.EcKey.P224.inst.compressPublicKeyContract (PPC64LE.abi.withConsts
+        (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p224))) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.P224.inst.compressPublicKeyApi) {
       code := Impl.EcKey.Compressed.PPC64LE.compressP224
       verified := Proof.EcKey.Compressed.PPC64LE.P224.compress_verified }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (compressOut _ _ [])
+    (compressOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p224))
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.P224.inst.decompressPublicKeyApi`'s function as emitted
@@ -170,12 +171,13 @@ theorem p224Compress_scrubbed :
 and returns without secret residue. -/
 theorem p224Decompress_scrubbed (hL : Law Spec.P224.curve) :
     VerifiedScrubbed PPC64LE.target Impl.EcKey.PPC64LE.Fn.p224Decompress
-      (Spec.EcKey.P224.inst.decompressPublicKeyContract PPC64LE.abi) 32 :=
+      (Spec.EcKey.P224.inst.decompressPublicKeyContract (PPC64LE.abi.withConsts
+        (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p224))) 32 :=
   verifiedScrubbedAll (api := Spec.EcKey.P224.inst.decompressPublicKeyApi) {
       code := Impl.EcKey.Compressed.PPC64LE.decompressP224
       verified := Proof.EcKey.Compressed.PPC64LE.P224.decompress_verified hL }
     0 ⟨true, true, [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], true, []⟩
-    (decompressOut _ _ [])
+    (decompressOut _ _ (Impl.Ecdsa.PPC64LE.Cfg.constsK Impl.Ecdsa.PPC64LE.p224))
     (by dsimp only; lit_decide)
 
 /-- `Spec.EcKey.P256.publicKeyApi`'s function as emitted

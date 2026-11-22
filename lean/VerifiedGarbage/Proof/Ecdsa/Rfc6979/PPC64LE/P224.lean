@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Setup
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -108,9 +109,20 @@ namespace VG.Proof.Ecdsa.PPC64LE.P224
 open VG VG.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Impl.Weierstrass.PPC64LE Spec.Weierstrass
 open VG.Proof.Weierstrass.PPC64LE.TComb
 
-theorem pre_of {s : State} (h : signPPC.pre s) : Pre p224 s := by
+/-- The tables of constants the signature reads: the comb's, and the setup's
+(`Cfg.constsK`). -/
+abbrev sK : List (String × List (BitVec 64)) := p224CombConsts ++ p224.constsK
+
+theorem sK_eq : sK = [(p224Comb.tsym, p224CombWords), (p224.constSym, p224.constTbl)] := rfl
+
+theorem pre_of {s : State} (h : signPPC.pre (stripConsts sK s)) (hk : ConstsOk sK 0 s) :
+    Pre p224 s (constRegs sK s) := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, fun h => absurd h (by decide)⟩
+  exact ⟨hk.rd_strip h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, fun _ =>
+    tbl_of_consts hk (List.mem_append_right _ (List.mem_singleton_self _)) (hk.disjoint_wr
+      (List.mem_append_right _ (List.mem_singleton_self _)) (by
+        show (⟨s.gpr .r7, size⟩ : Region) ∈ (stripConsts sK s).wr
+        rw [h2]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
 
 theorem post_of {s s' : State} (h : SignPost p224 s s') : signPPC.post s s' := by
   unfold SignPost at h
@@ -157,18 +169,19 @@ theorem signPPC_implies : signPPC.Implies (Proof.Ecdsa.Instance.signContract Spe
           [satState] using satState }
 
 
-/-- The signature's contract with the table, as the proof states it. -/
-def signPC : Contract isa := Tab.withTable signPPC p224CombConsts p224Comb.tsym
+/-- The signature's contract with its tables, as the proof states it. -/
+abbrev signPC : Contract isa := signPPC.withTables sK
 
 theorem combSign_ok (hL : Weierstrass.Law Spec.P224.curve) (s : State) (hs : signPC.pre s) :
     ∃ t s', Exec isa signP224Comb s t s' ∧ abiPreserved s s' ∧ signPC.post s s' := by
   obtain ⟨hp, hk⟩ := hs
-  obtain ⟨t, s', he, K, hpost⟩ := Tab.sign_ok p224_ok (by decide) hL
-    (Proof.P224.PPC64LE.comb_generator_ok hL) (pre_of hp) hk
-  exact ⟨t, s', he, K, Tab.post_intro (post_of hpost)⟩
+  obtain ⟨t, s', he, K, hpost⟩ := Tab.sign_okK p224_ok (by decide) hL
+    (Proof.P224.PPC64LE.comb_generator_ok hL) (pre_of hp hk) hk (List.mem_append_left _ (List.mem_singleton_self _))
+  exact ⟨t, s', he, K, post_of hpost⟩
 
 theorem combSign_ct : ConstantTime isa signPC.pre signPC.pub signP224Comb :=
-  VG.Taint.constantTime (A := vectorTaintSym [p224Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaintSym [p224Comb.tsym, p224.constSym])
+    (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5, h6, h7⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -176,45 +189,80 @@ theorem combSign_ct : ConstantTime isa signPC.pre signPC.pub signP224Comb :=
       · exact h4
       · exact h5
       · exact h6
-      · exact h7⟩, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact sy⟩)
+      · exact h7⟩, fun n hn => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+        rcases hn with rfl | rfl
+        · exact sy _ (List.mem_append_left _ (List.mem_singleton_self _))
+        · exact sy _ (List.mem_append_right _ (List.mem_singleton_self _))⟩)
     (by taint_decide)
 
-theorem combConsts_eq : p224CombConsts = [(p224Comb.tsym, p224CombWords)] := rfl
+/-- The memory of the witnesses with the tables: the comb's at `0x100000`,
+the setup's at `0x200000` (irreducible: unfolding it in a definitional check
+would evaluate the tables). -/
+@[irreducible] def sSatMem2 : Mem := constMem2 0x100000 p224CombWords 0x200000 p224.constTbl
 
-/-- A state satisfying the precondition with the table. -/
-def combSatC : State :=
-  { satState with
-    mem := Proof.P224.PPC64LE.combSatMem
-    rd := [⟨0x2000, 28⟩, ⟨0x3000, 28⟩, ⟨0x4000, 28⟩, ⟨0x100000, 131072⟩]
-    syms := fun _ => 0x100000 }
+theorem sSatMem2_held₁ : ∀ i < p224CombWords.length,
+    sSatMem2.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p224CombWords.getD i 0 := by
+  unfold sSatMem2
+  exact constMem2_held₁ _ _ _ _ (by rw [Proof.P224.PPC64LE.comb_words_length]; decide) (by rw [constTbl_length]; decide)
+
+theorem sSatMem2_held₂ : ∀ i < p224.constTbl.length,
+    sSatMem2.readW (0x200000 + BitVec.ofNat 64 (8 * i)) 64 = p224.constTbl.getD i 0 := by
+  unfold sSatMem2
+  exact constMem2_held₂ _ _ _ _ (by rw [constTbl_length]; decide)
+
+/-- The addresses of the witness's tables. -/
+def sSyms (n : String) : Addr := if n = p224.constSym then 0x200000 else 0x100000
+
+/-- A state satisfying the precondition with the tables. -/
+def combSatC : State where
+  gpr := satState.gpr
+  lr := satState.lr
+  sp := satState.sp
+  mem := sSatMem2
+  rd := satState.rd ++ [⟨0x100000, 8 * 16384⟩, ⟨0x200000, 8 * (17 * 4)⟩]
+  wr := satState.wr
+  syms := sSyms
 
 theorem combSign_sat :
-    (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (abi.withConsts p224CombConsts)).pre combSatC := by
-  have hl := Proof.P224.PPC64LE.comb_words_length
-  have held := Proof.P224.PPC64LE.combSatMem_held
-  rw [combConsts_eq]
-  obtain ⟨W, eW⟩ : ∃ W, p224CombWords = W := ⟨_, rfl⟩
-  rw [eW] at hl held ⊢
+    (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (abi.withConsts sK)).pre combSatC := by
+  have hl₁ := Proof.P224.PPC64LE.comb_words_length
+  have hl₂ := constTbl_length p224
+  have held₁ := sSatMem2_held₁
+  have held₂ := sSatMem2_held₂
+  rw [sK_eq]
+  obtain ⟨W₁, eW₁⟩ : ∃ W, p224CombWords = W := ⟨_, rfl⟩
+  obtain ⟨W₂, eW₂⟩ : ∃ W, p224.constTbl = W := ⟨_, rfl⟩
+  rw [eW₁] at hl₁ held₁ ⊢
+  rw [eW₂] at hl₂ held₂ ⊢
   generalize e : combSatC = s
   sig_pre [Spec.Ecdsa.P224.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.P224.curve, Spec.Ecdsa.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
   subst e
-  rw [hl]
-  refine ⟨rfl, fun i hi => held i (by rw [hl]; exact hi), by decide, fun r hr => ?_, by decide, ?_⟩
-  · change r ∈ [⟨0x1000, 56⟩, ⟨0x8000, 8192⟩] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rw [hl₁, hl₂]
+  refine ⟨rfl, fun i hi => ?_, fun i hi => ?_, by decide, fun r hr => ?_, by decide, fun r hr => ?_, by decide,
+    by decide, ?_⟩
+  · show sSatMem2.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = _
+    exact held₁ i (by rw [hl₁]; exact hi)
+  · show sSatMem2.readW (0x200000 + BitVec.ofNat 64 (8 * i)) 64 = _
+    exact held₂ i (by rw [hl₂]; exact hi)
+  · change r ∈ satState.wr at hr
+    simp only [satState, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · change r ∈ satState.wr at hr
+    simp only [satState, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
 theorem signPC_implies :
-    signPC.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (abi.withConsts p224CombConsts)) :=
-  Tab.implies signPPC_implies ⟨combSatC, combSign_sat⟩
+    signPC.Implies (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (abi.withConsts sK)) :=
+  withTables_implies signPPC_implies ⟨combSatC, combSign_sat⟩
 
 theorem combSign_verified (hL : Weierstrass.Law Spec.P224.curve) :
     Verified PPC64LE.target signP224Comb
-      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (PPC64LE.abi.withConsts p224CombConsts)) :=
+      (Proof.Ecdsa.Instance.signContract Spec.Ecdsa.P224.inst (PPC64LE.abi.withConsts sK)) :=
   Verified.of_correct (combSign_ok hL) combSign_ct signPC_implies
 
 end VG.Proof.Ecdsa.PPC64LE.P224
@@ -238,7 +286,7 @@ open VG VG.PPC64LE
 /-- `vg_ecdsa_p224_sign`, with `[k]G` by the comb, and P-224's group law `hL`. -/
 def p224Core (hL : Weierstrass.Law Spec.P224.curve) : Core where
   E := Spec.Ecdsa.P224.inst
-  cs := Impl.Weierstrass.PPC64LE.p224CombConsts
+  cs := Proof.Ecdsa.PPC64LE.P224.sK
   C := Impl.Ecdsa.PPC64LE.signP224Comb
   N := "vg_ecdsa_p224_sign_k"
   V := (Proof.Ecdsa.PPC64LE.P224.combSign_verified hL).1
@@ -272,11 +320,14 @@ def p224R (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
 
 /-- `vg_ecdsa_p224_sign`, with the tables of `vs`, meets `TableInstance.signContract`. -/
 theorem p224T_verified (hL : Weierstrass.Law Spec.P224.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
-    (hv : OK vs ∧ "VG_P224_COMB" ∉ Proof.HmacTable.PPC64LE.names vs) :
+    (hv : OK vs ∧ "VG_P224_COMB" ∉ Proof.HmacTable.PPC64LE.names vs ∧
+      "VG_P224_FRAME_CONSTS" ∉ Proof.HmacTable.PPC64LE.names vs) :
     Verified PPC64LE.target (signCodeT (p224R hL) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p224 Impl.Weierstrass.PPC64LE.p224CombConsts vs) :=
+      (specK Spec.Ecdsa.Rfc6979.Curves.p224 Proof.Ecdsa.PPC64LE.P224.sK vs) :=
   signT_verified ⟨rfl, by decide, by decide⟩ p224_blk rfl hv.1
-    (sat_one hv.1 Proof.P224.PPC64LE.combSatMem hv.2
-      (by rw [Proof.P224.PPC64LE.comb_words_length]; decide) Proof.P224.PPC64LE.combSatMem_held (by decide) rfl)
+    (sat_two hv.1 Proof.Ecdsa.PPC64LE.P224.sSatMem2 hv.2.1 hv.2.2 (by decide)
+      (by rw [Proof.P224.PPC64LE.comb_words_length]; decide)
+      (by rw [Proof.Ecdsa.PPC64LE.constTbl_length]; decide)
+      Proof.Ecdsa.PPC64LE.P224.sSatMem2_held₁ Proof.Ecdsa.PPC64LE.P224.sSatMem2_held₂ (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
