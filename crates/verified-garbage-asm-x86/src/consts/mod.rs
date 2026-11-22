@@ -73,3 +73,7 @@ pub use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
 #[rustfmt::skip]
 mod vg_secp256k1_comb;
 pub use vg_secp256k1_comb::VG_SECP256K1_COMB;
+
+#[rustfmt::skip]
+mod vg_sm4_aesni;
+pub use vg_sm4_aesni::VG_SM4_AESNI;
