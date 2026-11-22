@@ -73,8 +73,8 @@ theorem crtCall_verified (b : MontBackend) :
   crt_verified (kernel := callKernel b)
 
 theorem crtCall_verifiedP (b : MontBackend) :
-    Verified target (CrtCall.codeGiven b.name b.mul) (Proof.Rsa.privateCrtPrecomputedContract abi 104) :=
-  crt_verifiedP (kernel := callKernel b)
+    Verified target (CrtCall.codeGiven b.name b.mul b.dbl) (Proof.Rsa.privateCrtPrecomputedContract abi 104) :=
+  crt_verifiedP (callKernel b) b.callDbl
 
 end VG.Proof.Bignum.Arm
 
@@ -100,13 +100,15 @@ open VG.Arm VG.Arm.Scrub VG.Arm.ScrubFill VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
 theorem crtStub : CodeOk (CrtCall.code "" (holeStub 40)) 104 := by lit_decide
 
-theorem crtPStub : CodeOk (CrtCall.codeGiven "" (holeStub 40)) 104 := by lit_decide
+theorem crtPStub : CodeOk (CrtCall.codeGiven "" (holeStub 40) (MontCall.op "" (holeStub 40) 4 7 4)) 104 := by
+  lit_decide
 
 theorem crtOk (b : MontBackend) : CodeOk (b.caller.code (CrtCall.code b.name b.mul)) 104 :=
   b.callerOk _ _ ((show FillB _ (CrtCall.code b.name b.mul) by have := b.mulOk; fill_holes).codeOk crtStub)
 
-theorem crtPOk (b : MontBackend) : CodeOk (b.caller.code (CrtCall.codeGiven b.name b.mul)) 104 :=
-  b.callerOk _ _ ((show FillB _ (CrtCall.codeGiven b.name b.mul) by have := b.mulOk; fill_holes).codeOk crtPStub)
+theorem crtPOk (b : MontBackend) : CodeOk (b.caller.code (CrtCall.codeGiven b.name b.mul b.dbl)) 104 :=
+  b.callerOk _ _ ((show FillB _ (CrtCall.codeGiven b.name b.mul b.dbl) by
+    have := b.mulOk; have := b.dblOk; fill_holes).codeOk crtPStub)
 
 /-- The public precomputation, its squarings calling `b`'s product. -/
 def pc (b : MontBackend) : Prog isa := PcFn.codeWith (callPublicPrecomputeKernel b.callOp b.callDbl).code
@@ -132,7 +134,7 @@ def variant (b : MontBackend) : Proof.Rsa.Arm.CrtImpl where
   verified := b.caller.verified (crtCall_verified b)
   stack := (crtOk b).1
   crtPName := "vg_rsa_private_crt_precomputed" ++ b.suffix
-  crtP := b.caller.code (CrtCall.codeGiven b.name b.mul)
+  crtP := b.caller.code (CrtCall.codeGiven b.name b.mul b.dbl)
   crtPVerified := b.caller.verified (crtCall_verifiedP b)
   crtPStack := (crtPOk b).1
   crtPNoIcall := (crtPOk b).2

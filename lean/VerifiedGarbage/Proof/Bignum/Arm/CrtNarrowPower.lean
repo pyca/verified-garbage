@@ -688,7 +688,7 @@ def NarrowPrimePost (base : BitVec 32) (len v : Nat) (pb : List Byte) (s t : Sta
     numAt t.mem (State.addr base) v 4 =
       2 ^ (128 * v) % safePrime (s.mem.readW (off (State.addr s.sp) 48) 32).toNat (Spec.Rsa.os2ip pb) ∧
     t.mem.readW (off (State.addr t.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 ∧
-    Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t
+    Frame [⟨State.addr base, 8 * len⟩, FrameStack.belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t
 
 /-- The factor `j.succ` (p or q), to be prepared in the narrow workspace. -/
 def CrtPrimeIn (g : CrtGeometry) (bs : Fin 7 → List Byte) (j : Fin 6) (s : State) : Prop :=
@@ -1170,9 +1170,15 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
     NarrowPrimePost (crtN g.base g.words) (workspaceWords g.words) v (bs j.succ) z y := hy
   rw [flagSZ, ← prime] at modY oddY r2Y
   obtain positive : 1 < M := by have := readyY.modulus; rw [modY] at this; exact this
-  obtain sharedY := sharedZ.after_narrow (frameY.mono (by simp)) restY
+  obtain sharedY := sharedZ.after_narrowB (frameY.mono (by simp)) restY
   obtain memY := memZ.congr (sharedZ.eq_of_frame (sharedZ.child kind).2.1 member
-    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frameY.mono (by simp)) sepN)
+    (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩, FrameStack.belowA z.sp 48])
+    (frameY.mono (by simp)) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact sepN _ (by simp)
+      · exact sharedZ.stack.below.symm.sub_left
+          (crt_region_sub_workspace sharedZ.buffers.workspace sharedZ.buffers.storageFits member)))
   have flagNY := flagY
   -- The safe factor back to the full-width array 0.
   obtain ctxY : CrtCopyCtx g bs child slot v y :=
@@ -1297,6 +1303,7 @@ theorem crt_narrowPower_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   refine ⟨sharedT, ⟨layoutT, positive, modCT, resultT⟩,
     flagNT.trans (flagNR.trans (flagNE.trans (flagNX.trans (flagNY.trans flagSZ)))), ?_, restAll⟩
   rw [restSU.sp] at frameZ
+  rw [(restSU.trans restZ).sp] at frameY
   obtain spE : e.sp = s.sp := (restSU.trans (restZ.trans (restY.trans (restX.trans restE)))).sp
   rw [spE] at frameR
   obtain spX : x.sp = s.sp := (restSU.trans (restZ.trans (restY.trans restX))).sp
