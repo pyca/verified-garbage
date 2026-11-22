@@ -27,8 +27,7 @@ stack pointer that its frame and its call use
 (`Spec.ChaCha20Poly1305.sealGatherContract`), implies the one the proof is
 written against (`gatherAArch64`, `gather_implies`), and so the code,
 calling an implementation of `vg_chacha20_poly1305_seal` by its shared
-contract, is `Verified` against it (`sealGather_verified`). The frames of
-`vg_chacha20_poly1305_seal` fit in its 1280 bytes (`seal_depth`).
+contract, is `Verified` against it (`sealGather_verified`).
 -/
 
 @[expose] public section
@@ -118,54 +117,6 @@ theorem sealGather_verified (F : SealFn) :
     Verified AArch64.target (sealGather F.name F.code) (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 1296) :=
   Verified.of_correct (k := gatherAArch64) (sealGather_correct F) (sealGather_ct F) gather_implies
 
-theorem depth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth = 0 := by
-  induction c <;> simp_all [Code.noFrames, Code.aarch64Depth]
-
-open VG.Impl.ChaCha20Poly1305.AArch64 in
-theorem sealCode_noFrames (v : Proof.ChaCha20.AArch64.XorImpl) : (sealCode v.callee v.stitched).noFrames = true := by
-  have hv := v.noFrames
-  generalize v.stitched = st
-  generalize v.callee = c at hv
-  have hs : (cryptStitched c.sve true false).noFrames = true := by cases c.sve <;> decide +kernel
-  have hpro : (Short.prologue c.sve).noFrames = true := by cases c.sve <;> decide +kernel
-  have hshort : Short.sealAfter.noFrames = true := by decide +kernel
-  have hxks : (Short.xorKs false).noFrames = true := by decide +kernel
-  have hxkf : ∀ k, (Short.xorKsFrom false k).noFrames = true := fun _ => rfl
-  have hfirst : (ShortRest.first false).noFrames = true := by decide +kernel
-  have hrest : (ShortRest.sealMain c).noFrames = true := by
-    simp only [ShortRest.sealMain, ShortRest.sealAfter, ShortRest.first, ShortRest.rest, macPad, absorbLengths,
-      Impl.ChaCha20.AArch64.XorCallee.inPlace, Impl.ChaCha20.AArch64.XorCallee.callWith,
-      padTail, Code.noFrames, hv, hpro, hshort, hxks, hfirst, Bool.and_true, Bool.true_and]
-    decide +kernel
-  have hpad : (Pad.sealRoute c).noFrames = true := by
-    simp only [Pad.sealRoute, Pad.sealMain, Pad.cryptPad, sealMainWith, prologue, macPad, absorbLengths,
-      Impl.ChaCha20.AArch64.XorCallee.inPlace, Impl.ChaCha20.AArch64.XorCallee.callWith,
-      padTail, Code.noFrames, hv, hrest, hxkf, Bool.and_true, Bool.true_and]
-    decide +kernel
-  have hkern : (TailO.kernel c.sve 3).noFrames = true := by cases c.sve <;> decide +kernel
-  have hsk : (SealKey.sealMain c).noFrames = true := by
-    simp only [SealKey.sealMain, OpenKey.xorFirst, macPad, absorbLengths, padTail, Code.noFrames, hv, hkern,
-      Impl.ChaCha20.AArch64.XorCallee.inPlace, Impl.ChaCha20.AArch64.XorCallee.callWith,
-      hxks, hxkf, Bool.and_true, Bool.true_and]
-    decide +kernel
-  cases st <;>
-  simp only [sealCode, sealMainCode, Code.iteCold, hsk, sealStitched, sealWith, sealMain, sealMainWith, sealStitchedMain, sealWideMain,
-    Impl.ChaCha20.AArch64.XorCallee.inPlace, Impl.ChaCha20.AArch64.XorCallee.callWith,
-    sealTail, hxkf, hfirst,
-    prologue, macPad,
-    cryptWith, absorbLengths, finalizeTag, padTail, Code.noFrames, hv, hs, hshort, hrest, Bool.and_true, Bool.true_and,
-    Bool.false_eq_true, ite_false, ite_true, hpad, hpro] <;>
-  decide +kernel
-
-open VG.Impl.ChaCha20Poly1305.AArch64 in
-/-- The frames of `vg_chacha20_poly1305_seal`, in its frame of 1280 bytes, use at most those. -/
-theorem seal_depth (v : Proof.ChaCha20.AArch64.XorImpl) :
-    16 * (Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96 (sealCode v.callee v.stitched)).aarch64Depth
-      ≤ 1280 := by
-  simp only [Impl.StackScratch.AArch64.withStackScratchWiped, Impl.StackScratch.AArch64.withStackScratch,
-    Code.aarch64Depth, Instr.frameUnits, depth_of_noFrames (sealCode_noFrames v)]
-  decide
-
 end VG.Proof.ChaCha20Poly1305.AArch64.Gather
 
 end
@@ -173,23 +124,3 @@ end
 end
 
 
-/-!
-# The instance of `seal` that `seal_gather` calls
-
-`sealFn`: the code of `seal` for a variant, with its proof and stack depth,
-for `Generic/ChaCha20Xor/AArch64/ChaCha20Poly1305.lean`.
--/
-
-@[expose] public section
-
-namespace VG.Proof.ChaCha20Poly1305.AArch64
-
-/-- The instance of `vg_chacha20_poly1305_seal` calling the backend `v`. -/
-def sealFn (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AArch64.Gather.SealFn where
-  name := Spec.ChaCha20Poly1305.sealApi.name ++ v.callee.suffix
-  code := Impl.StackScratch.AArch64.withStackScratchWiped 1280 .x7 96
-    (Impl.ChaCha20Poly1305.AArch64.sealCode v.callee v.stitched)
-  verified := Proof.ChaCha20Poly1305.AArch64.seal_framed v
-  depth := Proof.ChaCha20Poly1305.AArch64.Gather.seal_depth v
-
-end VG.Proof.ChaCha20Poly1305.AArch64
