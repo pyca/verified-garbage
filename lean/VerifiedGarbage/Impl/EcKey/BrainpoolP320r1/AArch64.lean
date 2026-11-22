@@ -50,9 +50,9 @@ def compressBrainpoolP320r1 : Prog VG.AArch64.isa :=
 result. -/
 def decompressBrainpoolP320r1 : Prog VG.AArch64.isa :=
   scrubAll 0 32
-    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x16,
+    ⟨[.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16,
       .x17],
-     [],
+     [.v16, .v17, .v29],
      []⟩
     (Compressed.AArch64.decompress Ecdsa.AArch64.brainpoolp320r1)
 

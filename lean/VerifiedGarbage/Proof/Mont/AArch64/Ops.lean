@@ -28,8 +28,11 @@ open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open VG.Proof.Ed25519 (Word64.addCarry Word64.carryOut Word64.addCarry_value Word64.borrow_mask)
 
 /-- The registers the operations change: for `n > 7`, `dRegs n`'s
-callee-saved registers too. -/
-def clob (n : Nat) : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] ++ acc n ++ (dRegs n).drop 7 ++ (if n = 4 then [.x14,.x15] else [])
+callee-saved registers too; for four words `x14` and `x15`, and for five
+`x15`, which a call of the product's function may change
+(`Proof/Weierstrass/AArch64/MontCall.lean`). -/
+def clob (n : Nat) : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] ++ acc n ++ (dRegs n).drop 7 ++
+  (if n = 4 then [.x14,.x15] else if n = 5 then [.x15] else [])
 
 /-- Every register the operations may change, for any number of words. -/
 abbrev clobAll : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x8, .x9, .x10, .x11,
@@ -46,7 +49,9 @@ theorem mem_clobAll {n : Nat} {r : Reg} (h : r ∈ clob n) : r ∈ clobAll := by
       (List.mem_of_mem_take (List.mem_of_mem_drop h))
   · split at h
     · exact (by decide : ∀ r ∈ [Reg.x14,.x15], r ∈ clobAll) r h
-    · simp only [List.not_mem_nil] at h
+    · split at h
+      · exact (by decide : ∀ r ∈ [Reg.x15], r ∈ clobAll) r h
+      · simp only [List.not_mem_nil] at h
 
 /-- The modulus and the temporary area at offsets that loads and stores can
 encode. -/

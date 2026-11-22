@@ -279,9 +279,13 @@ def mulFn (n m : Nat) : Prog isa :=
 open Impl.Weierstrass.Mont in
 /-- The moduli whose products are functions on AArch64: P-384's, P-521's,
 brainpoolP384r1's and brainpoolP512r1's `p` and `n`, whose inline products are
-long. A product of four words is short enough inline that calls do not pay. -/
+long, and brainpoolP320r1's `p`, for the power of its public keys'
+decompression (`rootMod`, which alone takes it with its temporary area at
+`moAt`: its other code keeps its products inline). A product of four words is
+short enough inline that calls do not pay. -/
 def fns : List Modulus :=
-  [p384p, p521p, p384n, p521n, brainpoolp512r1p, brainpoolp512r1n, brainpoolp384r1p, brainpoolp384r1n]
+  [p384p, p521p, p384n, p521n, brainpoolp512r1p, brainpoolp512r1n, brainpoolp384r1p, brainpoolp384r1n,
+    brainpoolp320r1p]
 
 /-- The function computing the products of the modulus `M` (its name and its
 modulus), if any: one of `fns` of `M.n` words and `M.minv`, if `M`'s

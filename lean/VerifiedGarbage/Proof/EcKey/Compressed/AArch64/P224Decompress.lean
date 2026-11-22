@@ -647,7 +647,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 
  abbrev tonelliPowerWrites (c : Cfg) := rootWrites c ++ slW c [T5] ++ rootWrites c
 
- theorem tonelliPowers_ok {c : Cfg} (hc : BaseCfgOk c)
+ theorem tonelliPowers_ok {c : Cfg} (hc : BaseCfgOk c) (hcall : RootCall c)
     (hR : ChainOk (rootChain c ((rootQ c + 1) / 2)) ((rootQ c + 1) / 2))
     (hQ : ChainOk (rootChain c (rootQ c)) (rootQ c))
     {base : Addr} {s : State} (hs : Scr s base size)
@@ -663,7 +663,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
   have hn := hs.nowrap
   change WP isa (.seq (rootPower c ((rootQ c + 1) / 2))
     (.seq (.block (copy c.n (c.sl T5) (c.sl ACC))) (rootPower c (rootQ c)))) s _
-  refine WP.seq (WP.mono (rootPower_ok hc hR hs hM hB)
+  refine WP.seq (WP.mono (rootPower_ok hc hcall hR hs hM hB)
     fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)
   obtain hs₁ := hs.of_keepRegs k₁ (x0_not_powClob _)
   have e₁ {i : Nat} (hi : i < 45) (hw : i ∉ rootSlots) :
@@ -677,7 +677,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
   obtain M₂ : ModOkA c.MP' size c.C.p s₂.mem base := modP_of hc (by
     change sv c base s₂ MP = _
     rw [e₂ (by decide) (by decide), e₁ (by decide) (by decide)]; exact hM.val)
-  refine WP.mono (rootPower_ok hc hQ hs₂ M₂
+  refine WP.mono (rootPower_ok hc hcall hQ hs₂ M₂
     (by rw [e₂ (by decide) (by decide), e₁ (by decide) (by decide)]; exact hB))
     fun t ⟨kt, Ut, ltt, vt⟩ => ?_
   obtain et : sv c base t T5 = sv c base s₂ T5 :=
@@ -850,7 +850,7 @@ open VG.Impl.EcKey.Compressed.AArch64 (rootQ rootChain)
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 
- theorem candidateTonelli_correct {c : Cfg} (hc : BaseCfgOk c) (hp : c.C.p % 4 ≠ 3)
+ theorem candidateTonelli_correct {c : Cfg} (hc : BaseCfgOk c) (hcall : RootCall c) (hp : c.C.p % 4 ≠ 3)
     (hq : 0 < rootQ c)
     (hR : ChainOk (rootChain c ((rootQ c + 1) / 2)) ((rootQ c + 1) / 2))
     (hQ : ChainOk (rootChain c (rootQ c)) (rootQ c))
@@ -863,7 +863,7 @@ open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
   change WP isa (.seq (Impl.EcKey.Compressed.AArch64.tonelliPowers c)
     (.seq (.block (Impl.EcKey.Compressed.AArch64.tonelliSetup c))
       (.loop (Impl.EcKey.Compressed.AArch64.descentRound c) (.nonzero .x .x19)))) s _
-  refine WP.seq (WP.mono (tonelliPowers_ok hc hR hQ hs hM hB)
+  refine WP.seq (WP.mono (tonelliPowers_ok hc hcall hR hQ hs hM hB)
     fun s₁ ⟨k₁, U₁, lt₁, ltR₁, t₁, r₁⟩ => ?_)
   obtain hs₁ := hs.of_keepRegs k₁ (x0_not_powClob _)
   refine WP.seq (WP.mono (tonelliSetup_ok hc hs₁ ltR₁ lt₁)
@@ -981,7 +981,7 @@ materialize_shared baseline := code
     Verified target code (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) := by
   obtain hc := (p224_ok hI).toBaseCfgOk
   exact Verified.of_correct (decompress_correct p224 hc _
-    (candidateTonelli_correct hc (by decide +kernel) (by decide +kernel) chain_r chain_q body_no_v27)
+    (candidateTonelli_correct hc (rootCall_of hc (by decide)) (by decide +kernel) (by decide +kernel) chain_r chain_q body_no_v27)
     (by lit_decide) (by lit_decide) (by lit_decide)) ct
     (decompress_implies Spec.EcKey.P224.inst _
       (Proof.P224.rootFacts hL) sat)

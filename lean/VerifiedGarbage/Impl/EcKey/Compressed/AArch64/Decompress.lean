@@ -39,9 +39,15 @@ def rhsOps (c : Cfg) : List FOp :=
     .add (c.sl W3) (c.sl W2) (c.sl W1),
     .add (c.sl W2) (c.sl W3) (c.sl BP)]
 
-/-- Reuse the inversion power's workspace, field backend and exponent chain. -/
+/-- The modulus `p` as the root's power takes it: with its temporary area
+in the multiplication function's working space (`Mont.moAt`), so that its
+products are calls of `vg_<curve>_mul_mod_p` where the curve has one
+(`Mont.callOf`), as on the other targets. -/
+def rootMod (c : Cfg) : Impl.Mont.Mod := { c.MP' with tmp := Impl.Weierstrass.AArch64.Mont.moAt c.n }
+
+/-- Reuse the inversion power's workspace and exponent chain, on `rootMod`. -/
 def rootChain (c : Cfg) (e : Nat) : ChainCfg :=
-  .ofExp c.MP' (c.sl ACC) (c.sl W2) (c.sl RX) e
+  .ofExp (rootMod c) (c.sl ACC) (c.sl W2) (c.sl RX) e
 
 def rootPower (c : Cfg) (e : Nat) : Prog isa := Chain.pow (rootChain c e)
 

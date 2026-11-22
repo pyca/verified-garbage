@@ -64,7 +64,7 @@ materialize_shared baseline := code
     Verified target code (Spec.EcKey.P192.inst.decompressPublicKeyContract abi 0) := by
   have hc := (p192_ok hI)
   exact Verified.of_correct (decompress_correct p192 hc _
-    (candidateThree_correct hc (by decide +kernel) chain_ok)
+    (candidateThree_correct hc (rootCall_of hc (by decide)) (by decide +kernel) chain_ok)
     (by lit_decide) (by lit_decide) (by lit_decide)) ct
     (decompress_implies Spec.EcKey.P192.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)

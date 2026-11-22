@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.Scrub
 public import VerifiedGarbage.Proof.Framework.AArch64.ScrubProved
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.DecompressMain
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP320r1
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP320r1.Config
 import VerifiedGarbage.Proof.Framework.LitShare
@@ -61,12 +62,30 @@ materialize_shared baseline := code
   apply Proof.Weierstrass.AArch64.ChainOk.of_check
   decide +kernel
 
+/-- brainpoolP320r1's `p` takes the general form of the multiplication
+function, which the root's power calls (`rootMod`). -/
+theorem brainpoolp320r1p_ok : Proof.Weierstrass.AArch64.Mont.ModOk 5 Spec.BrainpoolP320r1.p := .inr {
+  hn := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+  g := by decide +kernel
+  novec := by decide +kernel }
+
+theorem rootCall : RootCall brainpoolp320r1 := by
+  intro f m h
+  have e : (Impl.Weierstrass.AArch64.Mont.callOf (Impl.EcKey.Compressed.AArch64.rootMod brainpoolp320r1)).map
+      Prod.snd = some Spec.BrainpoolP320r1.p := by decide +kernel
+  rw [h] at e
+  obtain rfl := Option.some.inj e
+  exact ⟨rfl, brainpoolp320r1p_ok⟩
+
  theorem verified (hL : Proof.Weierstrass.Law Spec.BrainpoolP320r1.curve)
     (hI : Proof.Weierstrass.AArch64.InvSounds) :
     Verified target code (Spec.EcKey.BrainpoolP320r1.inst.decompressPublicKeyContract abi 0) := by
   have hc := (brainpoolp320r1_ok hI)
   exact Verified.of_correct (decompress_correct brainpoolp320r1 hc _
-    (candidateThree_correct hc (by decide +kernel) chain_ok)
+    (candidateThree_correct hc rootCall (by decide +kernel) chain_ok)
     (by lit_decide) (by lit_decide) (by lit_decide)) ct
     (decompress_implies Spec.EcKey.BrainpoolP320r1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
