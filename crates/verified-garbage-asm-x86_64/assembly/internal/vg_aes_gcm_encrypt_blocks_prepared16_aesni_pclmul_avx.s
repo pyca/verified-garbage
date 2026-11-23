@@ -3185,6 +3185,10 @@ vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx:
 	je 226f
 	add r11, 127
 	and r11, -64
+	mov r10, r8
+	mov QWORD PTR [r11+816], rbx
+	mov rbx, r8
+	mov r8, r10
 	movabs rax, 579005069656919567
 	vmovq xmm0, rax
 	movabs rax, 283686952306183
@@ -3642,7 +3646,7 @@ vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx:
 	vpxor xmm9, xmm9, xmm9
 	vpxor xmm10, xmm10, xmm10
 234:
-	vmovdqu xmm13, XMMWORD PTR [rdx+r10*1]
+	vmovdqu xmm13, XMMWORD PTR [rbx+r10*1]
 	vmovdqu xmm12, XMMWORD PTR [r11+r10*1+768]
 	vpxor xmm13, xmm13, xmm12
 	vmovdqu XMMWORD PTR [rdx+r10*1], xmm13
@@ -4017,7 +4021,7 @@ vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx:
 	vpxor xmm9, xmm9, xmm9
 	vpxor xmm10, xmm10, xmm10
 237:
-	vmovdqu xmm13, XMMWORD PTR [rdx+r10*1]
+	vmovdqu xmm13, XMMWORD PTR [rbx+r10*1]
 	vmovdqu xmm12, XMMWORD PTR [r11+r10*1+768]
 	vpxor xmm13, xmm13, xmm12
 	vmovdqu XMMWORD PTR [rdx+r10*1], xmm13
@@ -4357,7 +4361,7 @@ vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx:
 	vpxor xmm9, xmm9, xmm9
 	vpxor xmm10, xmm10, xmm10
 240:
-	vmovdqu xmm13, XMMWORD PTR [rdx+r10*1]
+	vmovdqu xmm13, XMMWORD PTR [rbx+r10*1]
 	vmovdqu xmm12, XMMWORD PTR [r11+r10*1+768]
 	vpxor xmm13, xmm13, xmm12
 	vmovdqu XMMWORD PTR [rdx+r10*1], xmm13
@@ -4399,6 +4403,7 @@ vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx:
 	mov r8, QWORD PTR [r11+808]
 	mov rsi, QWORD PTR [r11+800]
 229:
+	mov rbx, QWORD PTR [r11+816]
 	jmp 227f
 226:
 	mov r11, QWORD PTR [rsp+8]

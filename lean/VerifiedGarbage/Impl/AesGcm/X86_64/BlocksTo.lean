@@ -51,13 +51,20 @@ def takeAllTo : List Instr :=
     .alu .add .rax (.reg .rax), .alu .add .rax (.reg .r10), .store (at_ .r11 argDst) .rax,
     .mov32 .rax (imm 0), .store (at_ .r11 argN) .rax]
 
+/-- The AES-NI short kernel starts at five blocks. Multiples of four below a full
+pipeline group use the separate counter and hash calls, as in the in-place entry. -/
+def compareCount (minimum : Nat) : Prog isa :=
+  if minimum = 5 then
+    .seq (.block [.alu .test .r9 (imm 3)]) (.ite .e (.block [.alu .cmp .r9 (imm 16)]) (.block [.alu .cmp .r9 (imm 5)]))
+  else .block [.alu .cmp .r9 (imm minimum)]
+
 /-- If there are at least 16 blocks, the first `16 ⌊n / 16⌋` by `piece`,
 with `dst` still in `r10` and `r11` at its working space, `scratch + 64`,
 rounded up to 64 bytes when `aligned`; all of them if `full` (a `piece`
 that also takes the blocks after the last 16), with the arguments kept
 those of no rest. -/
 def stitchPart (piece : Prog isa) (aligned : Bool := false) (full : Bool := false) (minimum : Nat := 16) : Prog isa :=
-  .seq (.block [.alu .cmp .r9 (imm minimum)])
+  .seq (compareCount minimum)
     (.ite .b (.block [])
       (.seq (.block ((if full then takeAllTo else
         [.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax)]) ++

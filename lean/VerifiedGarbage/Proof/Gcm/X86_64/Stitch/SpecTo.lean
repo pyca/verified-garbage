@@ -34,7 +34,8 @@ abbrev oR : Region := ⟨op s₀, 16 * nb s₀⟩
 
 end
 
-structure SPreTo (M : CtxMode) (s₀ : State) (lo : Nat := 16) : Prop where
+structure SPreTo (M : CtxMode) (s₀ : State) (lo : Nat := 16)
+    (layout : Prop := (sR s₀).Disjoint (oR s₀)) : Prop where
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
   nb16 : lo ≤ nb s₀
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) M.len
@@ -50,7 +51,7 @@ structure SPreTo (M : CtxMode) (s₀ : State) (lo : Nat := 16) : Prop where
   k_p : (⟨kp s₀, M.len⟩ : Region).Disjoint (pR s₀)
   s_c : (sR s₀).Disjoint (cR s₀)
   s_y : (sR s₀).Disjoint (yR s₀)
-  s_o : (sR s₀).Disjoint (oR s₀)
+  s_o : layout
   s_p : (sR s₀).Disjoint (pR s₀)
   o_c : (oR s₀).Disjoint (cR s₀)
   o_y : (oR s₀).Disjoint (yR s₀)
@@ -64,6 +65,13 @@ structure SPreTo (M : CtxMode) (s₀ : State) (lo : Nat := 16) : Prop where
   wrap_p : (pp s₀).toNat + 1024 ≤ 2 ^ 64
   /-- What the key context holds, as its kind says. -/
   ok : M.ok s₀.mem (kp s₀)
+
+/-- A forward kernel can overwrite the input block it just read, or write a separate range. -/
+abbrev SPreBuffers (M : CtxMode) (s : State) (lo : Nat := 16) :=
+  SPreTo M s lo (sp s = op s ∨ (sR s).Disjoint (oR s))
+
+theorem SPreTo.buffers {M : CtxMode} {s : State} {lo : Nat} (h : SPreTo M s lo) :
+    SPreBuffers M s lo := { h with s_o := Or.inr h.s_o }
 
 /-- What the encryption leaves: the plaintext's encryption in the output,
 the counter advanced, `Y` continued over the ciphertext, nothing else
