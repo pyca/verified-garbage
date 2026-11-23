@@ -13,7 +13,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_prepared16_vae
     core::arch::naked_asm!(
         r#".base64 "SYP5Ag=="
 jb 20f
-.base64 "TItcJBhMi1QkCEmDw39Jg+PASYP5EA=="
+.base64 "TItcJAhJg8N/SYPjwEmD+RA="
 jb 22f
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
@@ -208,11 +208,11 @@ jmp 266f
 23:
 ret
 20:
-.base64 "TItcJBhMi1QkCEmJO0mJcwhJiVMQSYlLGE2JQyBNiUsoTYlTME2FyQ=="
+.base64 "TItcJAhJiTtJiXMISYlTEEmJSxhNiUMgTYlLKE2JUzBNhck="
 je 267f
-.base64 "TItcJBhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQE2LWzA="
+.base64 "TItcJAhJiztJi3MISYtTEEmLSyBNi0MoTYnZSYPBQE2LWzA="
 call {vg_aes_ctr32_to_vaes}
-.base64 "TItcJBhJiztIgcfwAAAASYtzGEmLUzBJi0soTYnYSYPAQA=="
+.base64 "TItcJAhJiztIgcfwAAAASYtzGEmLUzBJi0soTYnYSYPAQA=="
 call {vg_ghash_vpclmul}
 jmp 268f
 267:

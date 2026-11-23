@@ -1187,10 +1187,8 @@ jmp 2120f
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 2126f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-push r9
-push r8
+mov r10, r8
 call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
-add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 2127f
 2126:
@@ -1306,10 +1304,8 @@ jmp 2159f
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 2161f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-push r9
-push r8
+mov r10, r8
 call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
-add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 2162f
 2161:
@@ -2579,10 +2575,8 @@ jmp 267f
 .base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
 je 276f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-push r9
-push r8
+mov r10, r8
 call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
-add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 277f
 276:
@@ -3239,9 +3233,10 @@ jmp 246f
 je 248f
 .base64 "TYuXAAEAAEmLQghIwegISIXA"
 je 250f
-.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAAUEFSQVM="
+.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAAUA=="
+mov r10, r11
 call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
-.base64 "WFhY"
+.base64 "WA=="
 jmp 251f
 250:
 251:
@@ -3343,9 +3338,10 @@ jmp 269f
 269:
 .base64 "TItUJAhNiwJJi0IITItMJBhMi1wkIE2Jh+AAAABNiY/IAAAATYmfwAAAAEjB6ARIhcA="
 je 275f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABQQVJBUw=="
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABQ"
+mov r10, r11
 call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
-.base64 "WFhY"
+.base64 "WA=="
 jmp 276f
 275:
 276:
@@ -3615,10 +3611,8 @@ jmp 236f
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 238f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-push r9
-push r8
+mov r10, r8
 call {vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul}
-add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 239f
 238:
@@ -4517,10 +4511,8 @@ jmp 267f
 .base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
 je 276f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-push r9
-push r8
+mov r10, r8
 call {vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul}
-add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 277f
 276:
@@ -5177,9 +5169,10 @@ jmp 246f
 je 248f
 .base64 "TYuXAAEAAEmLQghIwegISIXA"
 je 250f
-.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAAUEFSQVM="
+.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAAUA=="
+mov r10, r11
 call {vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul}
-.base64 "WFhY"
+.base64 "WA=="
 jmp 251f
 250:
 251:
@@ -5281,9 +5274,10 @@ jmp 269f
 269:
 .base64 "TItUJAhNiwJJi0IITItMJBhMi1wkIE2Jh+AAAABNiY/IAAAATYmfwAAAAEjB6ARIhcA="
 je 275f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABQQVJBUw=="
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABQ"
+mov r10, r11
 call {vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul}
-.base64 "WFhY"
+.base64 "WA=="
 jmp 276f
 275:
 276:
@@ -5579,10 +5573,8 @@ jmp 244f
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 250f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-push r9
-push r8
+mov r10, r8
 call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
-add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 251f
 250:
@@ -5698,10 +5690,8 @@ jmp 283f
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 285f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-push r9
-push r8
+mov r10, r8
 call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
-add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 286f
 285:
@@ -6625,10 +6615,8 @@ jmp 267f
 .base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
 je 276f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-push r9
-push r8
+mov r10, r8
 call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
-add rsp, 16
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 277f
 276:
@@ -7285,9 +7273,10 @@ jmp 246f
 je 248f
 .base64 "TYuXAAEAAEmLQghIwegISIXA"
 je 250f
-.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAAUEFSQVM="
+.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAAUA=="
+mov r10, r11
 call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
-.base64 "WFhY"
+.base64 "WA=="
 jmp 251f
 250:
 251:
@@ -7389,9 +7378,10 @@ jmp 269f
 269:
 .base64 "TItUJAhNiwJJi0IITItMJBhMi1wkIE2Jh+AAAABNiY/IAAAATYmfwAAAAEjB6ARIhcA="
 je 275f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABQQVJBUw=="
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABQ"
+mov r10, r11
 call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
-.base64 "WFhY"
+.base64 "WA=="
 jmp 276f
 275:
 276:
