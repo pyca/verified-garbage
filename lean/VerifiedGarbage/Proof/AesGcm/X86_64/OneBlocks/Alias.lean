@@ -112,12 +112,12 @@ theorem place_verified {k : Contract isa} {bits : Nat} {p : Prog isa} (target : 
     intro a b t u x y ha hb hp outside unknown ea eb
     exact scrub _ _ _ _ _ _ ha hb hp outside unknown (old ha ea) (old hb eb)
 
-theorem place_instrs (target : String) (p : Prog isa) :
-    instrs (Impl.AesGcm.X86_64.placeSealArgs target p)=instrs p := by
+theorem place_all (target : String) (p : Prog isa) (test : Instr → Bool) :
+    (Impl.AesGcm.X86_64.placeSealArgs target p).all test = p.all test := by
   induction p with
   | block => rfl
-  | seq a b ha hb => simp only [Impl.AesGcm.X86_64.placeSealArgs,instrs,ha,hb]
-  | ite c a b ha hb => simp only [Impl.AesGcm.X86_64.placeSealArgs,instrs,ha,hb]
+  | seq a b ha hb => simp only [Impl.AesGcm.X86_64.placeSealArgs,Code.all,ha,hb]
+  | ite c a b ha hb => simp only [Impl.AesGcm.X86_64.placeSealArgs,Code.all,ha,hb]
   | loop b c h => exact h
   | call n b _ =>
     rw [Impl.AesGcm.X86_64.placeSealArgs]
@@ -127,11 +127,7 @@ theorem place_instrs (target : String) (p : Prog isa) :
       · rename_i body h; change b=_ at h; rw [h]; rfl
       · rfl
     · rfl
-  | frame i b j h => simp only [Impl.AesGcm.X86_64.placeSealArgs,instrs,h]
+  | frame i b j h => simp only [Impl.AesGcm.X86_64.placeSealArgs,Code.all,h]
   | icall => rfl
-
-theorem place_spSafe (target : String) {p : Prog isa} (h : SpSafe p) :
-    SpSafe (Impl.AesGcm.X86_64.placeSealArgs target p) :=
-  fun i hi => h i ((place_instrs target p) ▸ hi)
 
 end VG.Proof.AesGcm.X86_64.OneBlocks
