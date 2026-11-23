@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
@@ -50,7 +50,7 @@ the same trace (`exchange_ct`).
 
 namespace VG.Proof.Xdh.Arm
 
-open VG VG.Arm VG.Impl.Xdh.Arm
+open VG VG.Arm VG.Impl.Xdh.Arm VG.Arm.FrameStack
 open VG.Spec.X25519 (bytesAt)
 open VG.Proof.Xdh (Eq2 TT rel_seq ct_of)
 open VG.Proof.X25519.Arm (Upd wp_ldrb wp_dp wp_mov wp_movw op2_reg op2_imm op2_lsr dpVal)
@@ -77,9 +77,9 @@ def CallPre (n w : Nat) (s : State) : Prop :=
 
 /-- What the exchange function needs: the callee's needs, and room for the
 frames, apart from the arguments. -/
-def ExPre (n w : Nat) (s : State) : Prop :=
+def ExPre (n w d : Nat) (s : State) : Prop :=
   CallPre n w s ∧ (frR s).Disjoint (outR n s) ∧ (frR s).Disjoint (scR n s) ∧
-    (frR s).Disjoint (ptR n s) ∧ (frR s).Disjoint (wsR w s) ∧ 8 ≤ s.sp.toNat
+    (frR s).Disjoint (ptR n s) ∧ (frR s).Disjoint (wsR w s) ∧ 8 + d ≤ s.sp.toNat
 
 /-- What it leaves: `f` of the scalar and the point at `out`, and 0 in `r0`
 if that is all zero, 1 otherwise. -/
@@ -90,19 +90,22 @@ def ExPost (n : Nat) (f : List Byte → List Byte → List Byte) (s s' : State) 
       if f (bytesAt s.mem (State.addr (s.gpr .r1)) n) (bytesAt s.mem (State.addr (s.gpr .r2)) n) =
         List.replicate n 0 then 0 else 1
 
-/-- What two runs agree on: the pointers. -/
-def Pub (s₁ s₂ : State) : Prop :=
+/-- What two runs agree on: the pointers, and the addresses of the functions
+`fns`. -/
+def Pub (fns : List String) (s₁ s₂ : State) : Prop :=
   s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
-    s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.sp = s₂.sp
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.sp = s₂.sp ∧ ∀ f ∈ fns, isa.fnAddr s₁ f = isa.fnAddr s₂ f
 
 /-- The exchange function's contract on ARMv7. -/
-def exContract (n w : Nat) (f : List Byte → List Byte → List Byte) : Contract isa where
-  pre := ExPre n w
+def exContract (n w d : Nat) (fns : List String) (f : List Byte → List Byte → List Byte) : Contract isa where
+  pre := ExPre n w d
   post := ExPost n f
-  pub := Pub
+  pub := Pub fns
 
-/-- The callee, by its contract `k`. -/
-structure Callee (n w : Nat) (f : List Byte → List Byte → List Byte) (c : Prog isa) (k : Contract isa) :
+/-- The callee, by its contract `k`, with `d` bytes of stack, from states
+that agree on the addresses of `fns`. -/
+structure Callee (n w d : Nat) (fns : List String) (f : List Byte → List Byte → List Byte) (c : Prog isa)
+    (k : Contract isa) :
     Prop where
   hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s'
   hct : ConstantTime isa k.pre k.pub c
@@ -110,31 +113,43 @@ structure Callee (n w : Nat) (f : List Byte → List Byte → List Byte) (c : Pr
   post : ∀ s s', k.post s s' →
     bytesAt s'.mem (State.addr (s.gpr .r0)) n =
       f (bytesAt s.mem (State.addr (s.gpr .r1)) n) (bytesAt s.mem (State.addr (s.gpr .r2)) n)
-  pub : ∀ s₁ s₂, Pub s₁ s₂ → k.pub s₁ s₂
-  nf : c.noFrames = true
+  pub : ∀ s₁ s₂, Pub fns s₁ s₂ → k.pub s₁ s₂
+  st : armStack c ≤ d
+
+/-- Code without frames uses no stack. -/
+theorem armStack_of_noFrames : ∀ {c : Prog isa}, c.noFrames = true → armStack c = 0
+  | .block _, _ => rfl
+  | .seq a b, h | .ite _ a b, h => by
+    simp only [Code.noFrames, Bool.and_eq_true] at h
+    simp only [armStack, armStack_of_noFrames h.1, armStack_of_noFrames h.2, Nat.max_self]
+  | .loop b _, h | .call _ b, h => by simp only [Code.noFrames] at h; simp only [armStack, armStack_of_noFrames h]
+  | .icall _ _ b nx, h => by
+    simp only [Code.noFrames, Bool.and_eq_true] at h
+    simp only [armStack, armStack_of_noFrames h.1, armStack_of_noFrames h.2, Nat.max_self]
+  | .frame .., h => by simp only [Code.noFrames, Bool.false_eq_true] at h
 
 theorem covers_mem {rs rs' : List Region} (h : ∀ r ∈ rs, r ∈ rs') : Covers rs rs' := Covers.of_mem h
 
 /-! ## The frames -/
 
 section
-variable {n w : Nat} {s : State}
+variable {n w d : Nat} {s : State}
 
 /-- The base of the frames. -/
 abbrev B (s : State) : Addr := State.addr s.sp - BitVec.ofNat 64 8
 
-theorem addr4 (h : ExPre n w s) : State.addr (s.sp - BitVec.ofNat 32 4) = B s + BitVec.ofNat 64 4 := by
+theorem addr4 (h : ExPre n w d s) : State.addr (s.sp - BitVec.ofNat 32 4) = B s + BitVec.ofNat 64 4 := by
   have hsp := h.2.2.2.2.2
   rw [B, FrameStack.addr_sub' (by omega_using [hsp])]
   bv_omega
 
-theorem addr44 (h : ExPre n w s) :
+theorem addr44 (h : ExPre n w d s) :
     State.addr (s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 4) = B s := by
   have hsp := h.2.2.2.2.2
   rw [B, show s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 4 = s.sp - BitVec.ofNat 32 8 by bv_omega,
     FrameStack.addr_sub' (by omega_using [hsp])]
 
-theorem B_toNat (h : ExPre n w s) : (B s).toNat + 8 ≤ 2 ^ 32 := by
+theorem B_toNat (h : ExPre n w d s) : (B s).toNat + 8 ≤ 2 ^ 32 := by
   have hsp := h.2.2.2.2.2
   have e := VG.Proof.X25519.Arm.addr_toNat s.sp
   have := s.sp.isLt
@@ -146,7 +161,7 @@ theorem fr_part {r : Region} (hr : (frR s).Disjoint r) {d : Nat} (hd : d ≤ 4) 
     (⟨B s + BitVec.ofNat 64 d, 4⟩ : Region).Disjoint r :=
   hr.sub_left (Offset.sub_base _ (by omega_using [hd]))
 
-theorem slot_sep (h : ExPre n w s) : (⟨B s, 4⟩ : Region).Disjoint ⟨B s + BitVec.ofNat 64 4, 4⟩ := by
+theorem slot_sep (h : ExPre n w d s) : (⟨B s, 4⟩ : Region).Disjoint ⟨B s + BitVec.ofNat 64 4, 4⟩ := by
   have := B_toNat h
   exact Offset.base_disjoint _ (k := 4) (e := 4) (by omega_using []) (by omega_using [])
 
@@ -170,7 +185,7 @@ structure Pushed (n w : Nat) (s e : State) : Prop where
   rd : e.rd = s.rd
   wr : e.wr = ⟨B s, 4⟩ :: ⟨B s + BitVec.ofNat 64 4, 4⟩ :: s.wr
 
-theorem pushed_pushed {n w : Nat} {s : State} (h : ExPre n w s) :
+theorem pushed_pushed {n w d : Nat} {s : State} (h : ExPre n w d s) :
     Pushed n w s (pushed [.r0] (pushed [.lr] s)) := by
   refine ⟨?_, rfl, rfl, rfl, ?_⟩
   · simp only [pushed, storeWords, List.map_cons, List.map_nil, List.length_singleton, Nat.mul_one]
@@ -212,7 +227,7 @@ structure Called (n w : Nat) (f : List Byte → List Byte → List Byte) (s z : 
   wr : z.wr = ⟨B s, 4⟩ :: ⟨B s + BitVec.ofNat 64 4, 4⟩ :: s.wr
 
 /-- The callee's entry. -/
-theorem Pushed.callPre {n w : Nat} {s e : State} (h : ExPre n w s) (he : Pushed n w s e) :
+theorem Pushed.callPre {n w d : Nat} {s e : State} (h : ExPre n w d s) (he : Pushed n w s e) :
     CallPre n w (e.callEntry.withRegions s.rd s.wr) := by
   obtain ⟨⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩, -, -, -, -, -⟩ := h
   have g (r : Reg) (hr : r ∈ [Reg.r0, .r1, .r2, .r3]) :
@@ -232,15 +247,21 @@ theorem Pushed.covers {n w : Nat} {s e : State} (he : Pushed n w s e) :
     · exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)),
    covers_mem fun r hr => by rw [he.wr]; exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)⟩
 
-theorem called_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : Prog isa} {k : Contract isa}
-    (hk : Callee n w f c k) {name : String} {s e : State} (h : ExPre n w s) (he : Pushed n w s e) :
+theorem called_wp {n w d : Nat} {f : List Byte → List Byte → List Byte} {fns : List String} {c : Prog isa} {k : Contract isa}
+    (hk : Callee n w d fns f c k) {name : String} {s e : State} (h : ExPre n w d s) (he : Pushed n w s e) :
     WP isa (.call name c) e (Called n w f s) := by
   have hcp := he.callPre h
   have hs := slot_sep h
   have hB := B_toNat h
+  have hes : State.addr e.sp = B s := by rw [he.sp]; exact addr44 h
+  have hesp : 8 + d ≤ s.sp.toNat := h.2.2.2.2.2
+  have hen : e.sp.toNat = s.sp.toNat - 8 := by
+    rw [he.sp, show s.sp - BitVec.ofNat 32 4 - BitVec.ofNat 32 4 = s.sp - BitVec.ofNat 32 8 by bv_omega,
+      sub_toNat' (by omega_using [hesp])]
   obtain ⟨⟨rd, wr, d1, d2, d3, d4, d5, b0, b1, b2, b3⟩, f0, f1, f2, f3, hsp⟩ := h
   obtain ⟨hcov, hw⟩ := he.covers
-  refine WP.callCalls hk.hv (hk.pre _ hcp) hcov hw (fun z rd' wr' sp' fr' pres' _ post' => ?_) hk.nf
+  have hd : armStack c ≤ e.sp.toNat := by have := hk.st; rw [hen]; omega_using [hesp, this]
+  refine WP.callF hk.hv (hk.pre _ hcp) hcov hw (by simpa using hd) (fun z rd' wr' sp' fr' pres' post' => ?_)
   have hpost := hk.post _ _ post'
   have g (r : Reg) (hr : r ∈ [Reg.r0, .r1, .r2]) : (e.callEntry.withRegions s.rd s.wr).gpr r = s.gpr r := by
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by revert r; decide), he.gpr]
@@ -248,13 +269,19 @@ theorem called_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : P
     he.mem] at hpost
   rw [bytes_keep f1 (addr_bound _ b1), bytes_keep f2 (addr_bound _ b2)] at hpost
   -- The frames, which the callee does not write.
-  have hfr : ∀ {d : Nat}, d ≤ 4 → ∀ r ∈ s.wr, (⟨B s + BitVec.ofNat 64 d, 4⟩ : Region).Disjoint r := by
-    intro d hd r hr
-    rw [wr] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact fr_part f0 hd
-    · exact fr_part f3 hd
+  have hfr : ∀ {d' : Nat}, d' ≤ 4 → ∀ r ∈ s.wr ++ [belowA e.sp (armStack c)],
+      (⟨B s + BitVec.ofNat 64 d', 4⟩ : Region).Disjoint r := by
+    intro d' hd' r hr
+    rcases List.mem_append.mp hr with hr | hr
+    · rw [wr] at hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact fr_part f0 hd'
+      · exact fr_part f3 hd'
+    · simp only [List.mem_singleton] at hr; subst r
+      simp only [belowA]
+      rw [addr_sub' hd, hes]
+      exact Offset.disjoint_below _ (by have := hk.st; omega_using [hd', hesp, this])
   have em : e.mem.readW (B s + BitVec.ofNat 64 4) 32 = s.gpr .lr := by
     rw [he.mem, eMem, Mem.readW_writeW_sep (Region.Disjoint.sep hs.symm (Region.contains_self _ _)
       (Region.contains_self _ _)), Mem.readW_writeW_self32]
@@ -262,8 +289,8 @@ theorem called_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : P
   have es : e.mem.readW (B s) 32 = s.gpr .r0 := by
     rw [he.mem, eMem, Mem.readW_writeW_self32]
   refine ⟨hpost, ?_, ?_, fun r hr hlr => ?_, sp'.trans he.sp, rd'.trans he.rd, wr'.trans he.wr⟩
-  · have h0 : ∀ r ∈ s.wr, (⟨B s, 4⟩ : Region).Disjoint r := fun r hr => by
-      simpa using hfr (d := 0) (by decide) r hr
+  · have h0 : ∀ r ∈ s.wr ++ [belowA e.sp (armStack c)], (⟨B s, 4⟩ : Region).Disjoint r := fun r hr => by
+      simpa using hfr (d' := 0) (by decide) r hr
     rw [Frame.readW fr' (r := ⟨B s, 4⟩) (Region.contains_self _ _) h0 (by decide)]
     exact es
   · rw [Frame.readW fr' (r := ⟨B s + BitVec.ofNat 64 4, 4⟩) (Region.contains_self _ _) (hfr (by decide))
@@ -289,12 +316,12 @@ theorem bytes_lost {F : Region} {m m' : Mem} (hf : Frame [F] m m') {p : Addr} {k
   exact List.map_congr_left fun i hi => lost_byte hf hd (List.mem_range.mp hi)
 
 /-- The output is apart from the frames' two words. -/
-theorem out_apart {n w : Nat} {s : State} (h : ExPre n w s) :
+theorem out_apart {n w d : Nat} {s : State} (h : ExPre n w d s) :
     (outR n s).Disjoint ⟨B s, 4⟩ ∧ (outR n s).Disjoint ⟨B s + BitVec.ofNat 64 4, 4⟩ :=
   ⟨(h.2.1.sub_left (Region.sub_prefix (by decide))).symm,
     (h.2.1.sub_left (Offset.sub_base _ (by decide))).symm⟩
 
-theorem popped_of {n w : Nat} {f : List Byte → List Byte → List Byte} {s z : State} (h : ExPre n w s)
+theorem popped_of {n w d : Nat} {f : List Byte → List Byte → List Byte} {s z : State} (h : ExPre n w d s)
     (hz : Called n w f s z) {m : Mem} {u : Nat → BitVec 32} (hm : Frame [⟨B s, 4⟩] z.mem m) :
     Popped n w f s { popped .r1 4 z with mem := m, unknowns := u } := by
   have hread : z.mem.readW (State.addr z.sp) 32 = s.gpr .r0 := by
@@ -348,7 +375,7 @@ structure Checked (n w : Nat) (f : List Byte → List Byte → List Byte) (s v :
   popped : Popped n w f s v
   r0 : v.gpr .r0 = if orAll v.mem (State.addr (s.gpr .r0)) n = 0 then 0 else 1
 
-theorem checked_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {s u : State} (h : ExPre n w s)
+theorem checked_wp {n w d : Nat} {f : List Byte → List Byte → List Byte} {s u : State} (h : ExPre n w d s)
     (hn : n < 4096) (hu : Popped n w f s u) : WP isa (.block (check n)) u (Checked n w f s) := by
   obtain ⟨⟨rd, wr, -, -, -, -, -, b0, -, -, -⟩, -, -, -, -, -⟩ := h
   unfold check
@@ -375,7 +402,7 @@ theorem checked_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {s u 
 
 /-! ## The whole function -/
 
-theorem lr_ok {n w : Nat} {f : List Byte → List Byte → List Byte} {s v : State} (h : ExPre n w s)
+theorem lr_ok {n w d : Nat} {f : List Byte → List Byte → List Byte} {s v : State} (h : ExPre n w d s)
     (hv : Checked n w f s v) {m : Mem} {u : Nat → BitVec 32} (hm : Frame [⟨B s + BitVec.ofNat 64 4, 4⟩] v.mem m) :
     abiPreserved s { popped .lr 4 v with mem := m, unknowns := u } ∧
       ExPost n f s { popped .lr 4 v with mem := m, unknowns := u } := by
@@ -391,8 +418,8 @@ theorem lr_ok {n w : Nat} {f : List Byte → List Byte → List Byte} {s v : Sta
   · rw [popped_gpr (r := .lr) (q := .r0) (by decide), BitVec.setWidth_eq, hv.r0]
     exact result_spec _ _ _ _ hv.popped.out
 
-theorem exchange_wp {n w : Nat} {f : List Byte → List Byte → List Byte} {c : Prog isa} {k : Contract isa}
-    (hk : Callee n w f c k) {name : String} (hn : n < 4096) {s : State} (h : ExPre n w s) :
+theorem exchange_wp {n w d : Nat} {f : List Byte → List Byte → List Byte} {fns : List String} {c : Prog isa} {k : Contract isa}
+    (hk : Callee n w d fns f c k) {name : String} (hn : n < 4096) {s : State} (h : ExPre n w d s) :
     WP isa (exchange name c n) s fun z => abiPreserved s z ∧ ExPost n f s z := by
   have hsp := h.2.2.2.2.2
   refine WP.frame (rs := [.lr]) (by decide) (by simp only [List.length_singleton]; omega_using [hsp]) (by decide) ?_
@@ -419,13 +446,13 @@ theorem rel_taint {c : Prog isa} {σ₁ σ₂ : State} (rs : List Reg)
     obtain ⟨rfl, rfl⟩ := hab
     exact Taint.agree_ofRegs hr) h
 
-theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c : Prog isa} {k : Contract isa}
-    (hk : Callee n w f c k) {name : String}
+theorem exchange_ct {n w d : Nat} {f : List Byte → List Byte → List Byte} {fns : List String} {c : Prog isa} {k : Contract isa}
+    (hk : Callee n w d fns f c k) {name : String}
     (ht : ∃ hc, (taint.check (Taint.ofRegs [.r1]) (.block (check n)) hc).isSome = true) :
-    ConstantTime isa (ExPre n w) Pub (exchange name c n) := by
+    ConstantTime isa (ExPre n w d) (Pub fns) (exchange name c n) := by
   obtain ⟨_, ht⟩ := ht
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
-  obtain ⟨q0, q1, q2, q3, qsp⟩ := hq
+  obtain ⟨q0, q1, q2, q3, qsp, qf⟩ := hq
   have hrd : σ₂.rd = σ₁.rd := by rw [p₁.1.1, p₂.1.1]; simp only [scR, ptR, q1, q2]
   have hwr : σ₂.wr = σ₁.wr := by rw [p₁.1.2.1, p₂.1.2.1]; simp only [outR, wsR, q0, q3]
   refine (RelCT.frame (P := Eq2 σ₁ σ₂) (fun a b ⟨ha, hb⟩ => by subst ha hb; exact qsp) ?_).mono
@@ -490,12 +517,13 @@ theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
             ((pushed [.r0] (pushed [.lr] s)).callEntry.withRegions σ₁.rd σ₁.wr).gpr r = s.gpr r := by
           rw [State.withRegions_gpr, State.callEntry_gpr _ (by revert r; decide)]; rfl
         refine ⟨hk.pre _ (k₁.callPre p₁), hk.pre _ c₂, hk.pub _ _ ?_, k₁.covers.1, k₁.covers.2, v₂.1, v₂.2⟩
-        refine ⟨?_, ?_, ?_, ?_, ?_⟩
+        refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
         · rw [g _ (by simp), g _ (by simp), q0]
         · rw [g _ (by simp), g _ (by simp), q1]
         · rw [g _ (by simp), g _ (by simp), q2]
         · rw [g _ (by simp), g _ (by simp), q3]
         · simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp, qsp]
+        · exact qf
   -- The check.
   · intro u₁ u₂ t₁ t₂ u₁' u₂' ⟨hu₁, hu₂⟩ x₁ x₂
     exact rel_taint [.r1] (σ₁ := u₁) (σ₂ := u₂) (by simp [hu₁.r1, hu₂.r1, q0]) ht _ _ _ _ _ _ ⟨rfl, rfl⟩ x₁ x₂
@@ -505,10 +533,10 @@ theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
 /-- The low word of the pair of registers the ABI returns a value in. -/
 theorem ret32 (x y : BitVec 32) : (x ++ y).setWidth 32 = y := BitVec.setWidth_append_eq_right
 
-theorem exchange_correct {n w : Nat} {f : List Byte → List Byte → List Byte} {c : Prog isa} {k : Contract isa}
-    (hk : Callee n w f c k) {name : String} (hn : n < 4096) :
-    ∀ s, (exContract n w f).pre s →
-      ∃ t s', Exec isa (exchange name c n) s t s' ∧ abiPreserved s s' ∧ (exContract n w f).post s s' :=
+theorem exchange_correct {n w d : Nat} {f : List Byte → List Byte → List Byte} {fns : List String} {c : Prog isa} {k : Contract isa}
+    (hk : Callee n w d fns f c k) {name : String} (hn : n < 4096) :
+    ∀ s, (exContract n w d fns f).pre s →
+      ∃ t s', Exec isa (exchange name c n) s t s' ∧ abiPreserved s s' ∧ (exContract n w d fns f).post s s' :=
   fun _ h => by
     obtain ⟨t, s', he, ha, hp⟩ := exchange_wp hk (name := name) hn h
     exact ⟨t, s', he, ha, hp⟩

@@ -391,7 +391,7 @@ namespace VG.Proof.X448.Arm.Exchange
 open VG VG.Arm VG.Proof.Xdh.Arm
 
 theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X448.x448Contract Arm.abi))
-    (hn : c.noFrames = true) : Callee 56 8192 Spec.X448.x448 c (Proof.X448.x448Contract Arm.abi) where
+    (hn : c.noFrames = true) : Callee 56 8192 0 [] Spec.X448.x448 c (Proof.X448.x448Contract Arm.abi) where
   hv := hv.1
   hct := hv.2.1
   pre s h := by
@@ -411,21 +411,21 @@ theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X448.x448Contra
       Arm.State.addr] at h
     exact h
   pub s₁ s₂ h := by
-    obtain ⟨q0, q1, q2, q3, qsp⟩ := h
+    obtain ⟨q0, q1, q2, q3, qsp, -⟩ := h
     sig_pub [Proof.X448.x448Contract, Proof.X448.x448Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
     sig_reduce [Proof.X448.x448Contract, Proof.X448.x448Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
     sig_and_intros
     all_goals first | with_reducible assumption | trivial
-  nf := hn
+  st := Nat.le_of_eq (armStack_of_noFrames hn)
 
 /-- `vg_x448_exchange` calling `c`, an implementation of `vg_x448`, as `name`. -/
 theorem exchange_verified {c : Prog isa} (name : String)
     (hv : Verified Arm.target c (Proof.X448.x448Contract Arm.abi)) (hn : c.noFrames = true)
     (ht : ∃ hc, (taint.check (Taint.ofRegs [.r1]) (.block (Impl.Xdh.Arm.check 56)) hc).isSome = true) :
     Verified Arm.target (Impl.Xdh.Arm.exchange name c 56) (Spec.X448.exchangeContract Arm.abi 8) :=
-  Verified.of_correct (k := exContract 56 8192 Spec.X448.x448) (exchange_correct (callee hv hn) (by decide))
+  Verified.of_correct (k := exContract 56 8192 0 [] Spec.X448.x448) (exchange_correct (callee hv hn) (by decide))
     (exchange_ct (callee hv hn) ht) (by
       contract_implies [Spec.X448.exchangeContract, Spec.X448.exchangeSig, Proof.X448.x448Sig,
         exContract, ExPre, CallPre, ExPost, Pub, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
