@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -609,5 +610,57 @@ theorem Exec.ofSlots₂ {slots : List (Int × String)} {E : Addr} {D : Nat} (hfi
       (hy.of (push_syms hp₁) (push_syms hp₂)) p₁ p₂ hT]
   | .icall .., _, hc, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ => by
     simp only [Code.icallFree, Bool.false_eq_true] at hc
+
+/-! ## The slots' contract -/
+
+theorem slotsOf_mem {m : Nat} {fns : List String} {p : Int × String} (h : p ∈ slotsOf m fns) :
+    p.2 ∈ fns ∧ ∃ j < fns.length, p.1 = ((8 * (m + 1 + j) : Nat) : Int) := by
+  simp only [slotsOf, List.mem_map] at h
+  obtain ⟨q, hq, rfl⟩ := h
+  have hq' := List.mem_zipIdx hq
+  exact ⟨List.mem_iff_get.mpr ⟨⟨q.2, by omega⟩, by simp [hq'.2.2]⟩, q.2, by omega, rfl⟩
+
+theorem slotsOf_fit (m : Nat) (fns : List String) {D : Nat} (h : D + 8 * (m + 1 + fns.length) ≤ 2 ^ 64) :
+    SlotsFit (slotsOf m fns) D := by
+  intro p hp
+  obtain ⟨-, j, hj, he⟩ := slotsOf_mem hp
+  rw [he]
+  refine ⟨Int.natCast_nonneg _, ?_⟩
+  rw [Int.toNat_natCast]; omega
+
+/-- **Code verified against `K` is verified against `K` with its slots made
+calls through them**: `Code.viaSlots (slotsOf m fns) 0 c` is `SlotVerified`,
+for code that makes no indirect call and writes `rsp` only in its frames, if
+`K`'s public data pins `rsp`. -/
+theorem SlotVerified.of_verified {c : Prog isa} {K : Contract isa} {m : Nat} {fns : List String}
+    (hcor : ∀ s, K.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ K.post s s')
+    (hct : ConstantTime isa K.pre K.pub c)
+    (hc : Code.icallFree c = true) (hn : NoSp c) (hsp : SpSafe c)
+    (hD : c.x86_64Depth + 8 * (m + 1 + fns.length) + 16 ≤ 2 ^ 64)
+    (hrsp : ∀ s₁ s₂, K.pre s₁ → K.pre s₂ → K.pub s₁ s₂ → s₁.gpr .rsp = s₂.gpr .rsp) :
+    SlotVerified (Code.viaSlots (slotsOf m fns) 0 c) K m fns := by
+  have hfit := slotsOf_fit m fns (D := c.x86_64Depth) (by omega)
+  have hD' : c.x86_64Depth + 16 ≤ 2 ^ 64 := by omega
+  have hinv : ∀ s, (K.withSlots m fns).pre s → SlotInv (slotsOf m fns) (s.gpr .rsp) 0 s := fun s hs =>
+    ⟨by simp, hs.2.2⟩
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_⟩
+  · obtain ⟨t, b, e, habi, hpost⟩ := hcor _ hs.2.1
+    have e' := exec_of_dropSlot e
+    obtain ⟨t', e''⟩ := Exec.toSlots hfit hD' e' hn hsp (d := 0) (by omega) (hinv s hs)
+    obtain ⟨hrd, hwr⟩ := Exec.rdwr e
+    refine ⟨t', _, e'', habi, ?_⟩
+    show K.post (dropSlot s) (dropSlot (b.withRegions s.rd s.wr))
+    rw [dropSlot_withRegions hrd hwr]; exact hpost
+  · obtain ⟨_, o₁⟩ := Exec.ofSlots₁ hfit hD' c 0 hc hn hsp (by omega) e₁ (hinv s₁ h₁)
+    obtain ⟨_, o₂⟩ := Exec.ofSlots₁ hfit hD' c 0 hc hn hsp (by omega) e₂ (hinv s₂ h₂)
+    -- The runs from the states without the slots' region, widened, are these.
+    obtain ⟨tν₁, b₁, eν₁, -, -⟩ := hcor _ h₁.2.1
+    obtain ⟨tν₂, b₂, eν₂, -, -⟩ := hcor _ h₂.2.1
+    obtain ⟨rfl, -⟩ := Exec.det o₁ (exec_of_dropSlot eν₁)
+    obtain ⟨rfl, -⟩ := Exec.det o₂ (exec_of_dropSlot eν₂)
+    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := hrsp (dropSlot s₁) (dropSlot s₂) h₁.2.1 h₂.2.1 hp.1
+    have hinv₂ : SlotInv (slotsOf m fns) (s₁.gpr .rsp) 0 s₂ := by rw [hsp₁₂]; exact hinv s₂ h₂
+    exact Exec.ofSlots₂ hfit hD' c 0 hc hn hsp (by omega) e₁ e₂ (hinv s₁ h₁) hinv₂
+      (fun p hp' => hp.2 _ (slotsOf_mem hp').1) o₁ o₂ (hct _ _ _ _ _ _ h₁.2.1 h₂.2.1 hp.1 eν₁ eν₂)
 
 end VG.X86_64
