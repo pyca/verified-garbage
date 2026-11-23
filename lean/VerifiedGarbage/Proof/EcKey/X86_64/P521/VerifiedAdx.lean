@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 import VerifiedGarbage.Proof.Framework.X86_64.ScrubProved
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
@@ -72,29 +73,25 @@ def publicKeyP521AdxErased : Prog isa := Code.erase publicKeyP521Adx
 
 materialize_shared publicKeyP521AdxErased
 
-/-- `InlineOk`, checked once for every theorem that needs it. -/
-theorem pk_inlineOk_adx : publicKeyP521Adx.InlineOk = true := by
-  rw [← Code.InlineOk_erase]
-  show publicKeyP521AdxErased.InlineOk = true
-  lit_decide
+/-- `InlineOkN`, calls nested two deep, checked once for every theorem that
+needs it. -/
+theorem pk_inlineOk_adx : publicKeyP521Adx.InlineOkN 2 = true := by lit_decide
+
+theorem pk_inlineAll_adx : publicKeyP521Adx.inlineAll = publicKeyI p521x := by kernel_rfl
 
 theorem pk_x86_adx (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : pkX86_64.pre s) :
-    ∃ t s', Exec isa publicKeyP521Adx.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (c := p521x) (p521x_ok hI).toBaseCfgOk hL (p521x_tbls hT) (pre_of_x hs)
-  have hsp : ∀ i ∈ instrs publicKeyP521Adx.inline, Taint.clobbers i .rsp = false := by
-    have h : publicKeyP521Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
-      rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [Taint.clobbers_erase]]
-      show publicKeyP521AdxErased.allInstrs _ = true
-      lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline pk_inlineOk_adx)).2.2
+    ∃ t s', Exec isa publicKeyP521Adx.inlineAll s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_okI (c := p521x) (p521x_ok hI).toBaseCfgOk hL (p521x_tbls hT)
+    (pre_of_x hs) p521x_mulBase
+  rw [← pk_inlineAll_adx] at he
+  have hsp := Code.clobbers_rsp_of_inlineOkN pk_inlineOk_adx
+  have F := (Exec.regions he (Code.noCalls_inlineAll pk_inlineOk_adx)).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by
-    rw [Code.allInstrs_inline, ← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [loadsMxcsr_erase]]
+    refine Code.allInstrs_inlineAll ?_
+    rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [loadsMxcsr_erase]]
     show publicKeyP521AdxErased.allInstrs _ = true
     lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, post_of_x hpost⟩
@@ -131,9 +128,9 @@ theorem pk_verified_adx (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP521Adx
-      (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts p521.combConsts) 8) :=
-  Verified.of_inline_ct pk_inlineOk_adx (pk_x86_adx hL hT hI) pk_ct_adx implies8
-    (fun _ h => Sig.clear_of_pre_consts h) pk_patch
+      (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts p521.combConsts) 16) :=
+  Verified.of_inlineAll_ct pk_inlineOk_adx (by decide) (pk_x86_adx hL hT hI) pk_ct_adx implies16
+    (fun _ h => Sig.clearN_of_pre_consts (d := 1) h) pk_patch
 
 
 theorem publicKeyAdx_codeSp : (publicKeyP521Adx).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
@@ -145,12 +142,12 @@ theorem publicKeyAdx_scrubbed (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     VerifiedScrubbed X86_64.target Impl.EcKey.X86_64.Fn.publicKeyP521Adx
-      (Spec.EcKey.P521.publicKeyApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 8) 32 :=
+      (Spec.EcKey.P521.publicKeyApi.contract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 16) 32 :=
   X86_64.Scrub.verifiedScrubbedAll (api := Spec.EcKey.P521.publicKeyApi)
     { code := publicKeyP521Adx
-      stack := 8
+      stack := 16
       verified := pk_verified_adx hL hT hI
-      spSafe := publicKeyAdx_codeSp } .avx (EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P521.inst 8 Impl.Ecdsa.X86_64.p521.combConsts)
+      spSafe := publicKeyAdx_codeSp } .avx (EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P521.inst 16 Impl.Ecdsa.X86_64.p521.combConsts)
 
 theorem publicKeyAdx_spSafe : Impl.EcKey.X86_64.Fn.publicKeyP521Adx.all (fun i => !VG.X86_64.isa.writesSp i) = true :=
   X86_64.Scrub.scrubKs_spSafe publicKeyAdx_codeSp

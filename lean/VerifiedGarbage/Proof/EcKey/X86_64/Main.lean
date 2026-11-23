@@ -418,13 +418,27 @@ theorem publicKey_inline (c : Cfg) : (Impl.EcKey.X86_64.Cfg.publicKey c).inline 
   rw [Cfg.kBits, kBitsIf_inline]
   rfl
 
-/-- `vg_ec_<curve>_public_key` computes the specification's public key and
-restores the callee-saved registers. -/
-theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀)
-    (hmb : MulBaseOk c := by exact ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩) :
-    WP isa (Impl.EcKey.X86_64.Cfg.publicKey c).inline s₀ fun s' =>
+/-- The public key as the proofs run it: inlined, with `[k]G` as `gMulKCI`. -/
+def publicKeyI (c : Cfg) : Prog isa :=
+  .seq (.block Impl.EcKey.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
+    (.seq c.kBits (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
+    (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.seq (gMulKCI c) (.seq c.pPow.inline (.block [])))))))
+    (Impl.EcKey.X86_64.Cfg.middle c).inline)
+
+/-- Where `vg_<curve>_mul_base` calls nothing, the public key inlined is `publicKeyI`. -/
+theorem publicKey_inline_I {c : Cfg} (hmb : MulBaseOk c) :
+    (Impl.EcKey.X86_64.Cfg.publicKey c).inline = publicKeyI c := by
+  rw [publicKey_inline, gMulKC_inline hmb]; rfl
+
+/-- `publicKey_ok`, for the code as the proofs run it (`publicKeyI`). -/
+theorem publicKey_okI (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀)
+    (hmb : MulBaseOkI c) :
+    WP isa (publicKeyI c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
-  rw [publicKey_inline]
+  show WP isa (.seq (.block Impl.EcKey.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
+    (.seq c.kBits (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
+    (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.seq (gMulKCI c) (.seq c.pPow.inline (.block [])))))))
+    (Impl.EcKey.X86_64.Cfg.middle c).inline)) s₀ _
   have h0 := hc.n0
   obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   refine WP.seq (WP.mono_syms (args_ok s₀) fun s₁ ⟨r8₁, rcx₁, rdx₁, k₁⟩ sy₁ => ?_)
@@ -468,7 +482,7 @@ theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ :
       · exact f2 _ (by rw [hp.wr]; simp)
   obtain hb : sN.gpr .r8 = s₀.gpr .rdx := by rw [g, r8₁]
   obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hs := none) (Or.inl rfl) hpN.setup
-    (rest := .seq c.gMulKC.inline (.seq c.pPow.inline (.block [])))
+    (rest := .seq (gMulKCI c) (.seq c.pPow.inline (.block [])))
     (Q := St₂ c none sN (sN.gpr .r8)) fun _ S₁ => stage₂ hc hmb hC hT hpN rfl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.
@@ -545,5 +559,14 @@ theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ :
   · have hok : ok c (s₀.gpr .rdx) s₂ = false := decide_eq_false (by rw [hD]; omega_arith)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
+
+/-- `vg_ec_<curve>_public_key` computes the specification's public key and
+restores the callee-saved registers. -/
+theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀)
+    (hmb : MulBaseOk c := by exact ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩) :
+    WP isa (Impl.EcKey.X86_64.Cfg.publicKey c).inline s₀ fun s' =>
+      (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
+  rw [publicKey_inline_I hmb]
+  exact publicKey_okI hc hC hT hp hmb.toI
 
 end VG.Proof.EcKey.X86_64

@@ -86,7 +86,7 @@ def brainpoolp256r1 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve)
   sh_eq := Proof.Ecdsa.X86_64.BrainpoolP256r1.brainpoolp256r1_sh
   coreN := "vg_ecdsa_brainpoolp256r1_sign_k"
   coreC := Impl.Ecdsa.X86_64.signBrainpoolP256r1
-  coreX := by rw [coreK_brainpoolp256r1]; exact Proof.Ecdsa.X86_64.BrainpoolP256r1.sign_call_x86 hL hI
+  coreX := by rw [coreK_brainpoolp256r1]; exact fun s h hc => Proof.Ecdsa.X86_64.BrainpoolP256r1.sign_call_x86 hL hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_brainpoolp256r1]; exact Proof.Ecdsa.X86_64.BrainpoolP256r1.sign_ct
   coreNs := by lit_decide
   coreSp := by lit_decide

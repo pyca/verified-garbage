@@ -86,7 +86,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve)
   sh_eq := Proof.Ecdsa.X86_64.p256_sh
   coreN := "vg_ecdsa_p256_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP256
-  coreX := by rw [coreK_p256]; exact Proof.Ecdsa.X86_64.sign_call_x86 hL hT hI
+  coreX := by rw [coreK_p256]; exact fun s h hc => Proof.Ecdsa.X86_64.sign_call_x86 hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p256]; exact Proof.Ecdsa.X86_64.sign_ct
   coreNs := by lit_decide
   coreSp := by lit_decide
@@ -133,7 +133,7 @@ def p256x (hL : Weierstrass.Law Spec.P256.curve)
   sh_eq := Proof.Ecdsa.X86_64.p256_sh
   coreN := "vg_ecdsa_p256_sign_k" ++ "_adx"
   coreC := Impl.Ecdsa.X86_64.signP256Adx
-  coreX := by rw [coreK_p256x]; exact Proof.Ecdsa.X86_64.sign_call_x86_adx hL hT hI
+  coreX := by rw [coreK_p256x]; exact fun s h hc => Proof.Ecdsa.X86_64.sign_call_x86_adx hL hT hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p256x]; exact Proof.Ecdsa.X86_64.sign_ct_adx
   coreNs := by lit_decide
   coreSp := by lit_decide

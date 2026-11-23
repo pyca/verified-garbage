@@ -548,6 +548,34 @@ def MulBaseOk (c : Cfg) : Prop :=
   (c.mulBase.isSome = true → ∃ d, c.comb = some d ∧ 3 ≤ c.n ∧ c.mulBaseFn.noCalls = true) ∧
     (c.mul.isSome = true → MulFnOk c)
 
+/-- `MulBaseOk`, but `vg_<curve>_mul_base` may call functions (P-521's, its
+products), which the proofs run inlined (`gMulKCI`). -/
+def MulBaseOkI (c : Cfg) : Prop :=
+  (c.mulBase.isSome = true → ∃ d, c.comb = some d ∧ 3 ≤ c.n) ∧ (c.mul.isSome = true → MulFnOk c)
+
+theorem MulBaseOk.toI {c : Cfg} (h : MulBaseOk c) : MulBaseOkI c :=
+  ⟨fun hm => let ⟨d, h₁, h₂, _⟩ := h.1 hm; ⟨d, h₁, h₂⟩, h.2⟩
+
+/-- `R = [k]G` as the proofs run it: `gMulKC` inlined, but a call of
+`vg_<curve>_mul_base` its code with its own calls inlined. -/
+def gMulKCI (c : Cfg) : Prog isa :=
+  match c.mulBase with
+  | some _ => c.mulBaseFn.inline
+  | none => c.gMulKC.inline
+
+/-- Where `vg_<curve>_mul_base` calls nothing, `gMulKCI` is `gMulKC` inlined. -/
+theorem gMulKC_inline {c : Cfg} (h : MulBaseOk c) : c.gMulKC.inline = gMulKCI c := by
+  unfold gMulKCI
+  cases hm : c.mulBase with
+  | some C =>
+    obtain ⟨_, _, _, hnc⟩ := h.1 (by rw [hm]; rfl)
+    show (Cfg.gMulKC c).inline = _
+    unfold Cfg.gMulKC
+    simp only [hm]
+    show c.mulBaseFn = _
+    rw [Code.inline_of_noCalls hnc]
+  | none => rfl
+
 theorem apart_gWA {i : Nat} (hi : i < 45)
     (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM]) (ha : i ∉ [ACC, TT]) :
     ∀ w ∈ gWA c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
@@ -1568,25 +1596,27 @@ theorem mulWA_sub :
 /-- `R = [k]G` for a secret `k`, after the setup and the tables (but `k`'s
 if `vg_<curve>_mul_base` or `vg_<curve>_mul` makes it): by their calls, or
 inline (`gMulK_ok`). -/
-theorem gMulKC_ok (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat}
+theorem gMulKCI_ok (hc : BaseCfgOk c) (hmb : MulBaseOkI c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat}
     {s₀ : State} (hp : Pre c s₀) {s : State} (hS : St₁ c hs s₀ (s₀.gpr .r8) s c.callsMul) :
-    WP isa c.gMulKC.inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gWA c) s.mem s'.mem ∧
+    WP isa (gMulKCI c) s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gWA c) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem (s₀.gpr .r8) ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem (s₀.gpr .r8) x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RX)) (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RY))
         (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RZ)) (mul (kv c s₀) (G c.C)) := by
-  unfold Cfg.gMulKC
+  unfold gMulKCI
   cases hm : c.mulBase with
   | some C =>
-    obtain ⟨d, hcd, h3, hnc⟩ := hmb.1 (by rw [hm]; rfl)
+    obtain ⟨d, hcd, h3⟩ := hmb.1 (by rw [hm]; rfl)
     obtain ⟨hTM, hout⟩ := tbl_of hcd hp hS.rd hS.unch
     rw [← hS.syms] at hTM hout
-    show WP isa c.mulBaseFn s _
-    rw [← Code.inline_of_noCalls hnc]
+    show WP isa c.mulBaseFn.inline s _
     refine WP.mono (mulBaseFn_ok hc h3 hC hT hcd hS.scr hS.fixed.mp hS.fixed.zero hTM hout)
       fun s' ⟨g', _, rd', wr', _, U', M', L', R'⟩ => ⟨⟨g', rd', wr'⟩, U', M', L', ?_⟩
     rw [← hS.k]; exact R'
   | none =>
+    show WP isa (Cfg.gMulKC c).inline s _
+    unfold Cfg.gMulKC
+    simp only [hm]
     cases hm₂ : c.mul with
     | none =>
       rw [show c.callsMul = false by simp [Cfg.callsMul, hm, hm₂]] at hS

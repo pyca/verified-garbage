@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Calls at any depth, as inlined code (x86-64)
@@ -845,5 +846,141 @@ theorem Verified.of_inlineAll {c : Prog isa} {d : Nat} (hc : c.InlineOkN d = tru
     (hrsp : ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → s₁.gpr .rsp = s₂.gpr .rsp) : Verified target c k :=
   Verified.of_inlineAllS hc hD hcor hct himp hclear (fun s _ => SlotsOk.nil _ s) hpost hrsp
     (fun _ _ _ _ _ _ h => absurd h List.not_mem_nil)
+
+/-- `Verified.of_inlineAll`, with constant time checked on `c` itself (taint
+tracking follows the calls). -/
+theorem Verified.of_inlineAll_ct {c : Prog isa} {d : Nat} (hc : c.InlineOkN d = true) (hD : 8 * d < 2 ^ 64)
+    {k₀ k : Contract isa}
+    (hcor : ∀ s, k₀.pre s → ∃ t s', Exec isa c.inlineAll s t s' ∧ abiPreserved s s' ∧ k₀.post s s')
+    (hct : ConstantTime isa k₀.pre k₀.pub c) (himp : k₀.Implies k)
+    (hclear : ∀ s, k.pre s → Clear (holeN (s.gpr .rsp) d) s)
+    (hpost : ∀ s b hv u, k.pre s → k₀.post s b → k₀.post s (b.patch (holeN (s.gpr .rsp) d) hv u)) :
+    Verified target c k := by
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
+    hct s₁ s₂ t₁ t₂ s₁' s₂' (himp.pre _ h₁) (himp.pre _ h₂) (himp.pub _ _ h₁ h₂ hp) e₁ e₂, himp.sat⟩
+  obtain ⟨t, b, he, ha, hp⟩ := hcor s (himp.pre s hs)
+  obtain ⟨hv, u, ta, ha', _, _⟩ := Exec.of_inlineAll hc hD he (hclear s hs)
+  exact ⟨ta, _, ha', abiPreserved_patchN hD hv u ha, himp.post s _ hs (hpost s b hv u hs hp)⟩
+
+/-- `Sig.clearN_of_pre`, under the calling convention with static tables. -/
+theorem Sig.clearN_of_pre_consts {c : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
+    {sig : Sig} {pre : Curry (sig.words (abi.withConsts (c :: cs)).ptrBits) (Mem → Prop)}
+    {post : sig.Post (abi.withConsts (c :: cs)).ptrBits} {wa : Bool}
+    {leak : Option (Curry (sig.words (abi.withConsts (c :: cs)).ptrBits) (Mem → List Nat))} {s : State} {d : Nat}
+    (h : (sig.contract (abi.withConsts (c :: cs)) pre post wa (8 * (d + 1)) leak).pre s) :
+    Clear (holeN (s.gpr .rsp) (d + 1)) s := by
+  simp only [Sig.contract] at h
+  split at h
+  · exact h.elim
+  · obtain ⟨hwf, hrd, hwr, _, hres, _⟩ := h
+    have hh : holeN (s.gpr .rsp) (d + 1) ∈ (abi.withConsts (c :: cs)).reserved (8 * (d + 1)) s := by
+      show _ ∈ (⟨s.gpr .rsp, 8⟩ :: stackBelow (s.gpr .rsp) (8 * (d + 1)))
+      refine List.mem_cons_of_mem _ ?_
+      unfold holeN
+      rw [show 8 * (d + 1) = (8 * d + 7) + 1 from by omega_arith]
+      exact List.mem_singleton_self _
+    obtain ⟨-, hdrop, -, hct, -⟩ := hwf
+    intro r hr
+    rcases List.mem_append.mp hr with hr | hr
+    · rw [← List.take_append_drop (s.rd.length - (c :: cs).length) s.rd] at hr
+      rcases List.mem_append.mp hr with hr | hr
+      · rw [show s.rd.take (s.rd.length - (c :: cs).length) = (abi.withConsts (c :: cs)).rd s from rfl,
+          hrd] at hr
+        obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
+        exact (hres _ hh a (List.mem_filter.mp ha).1).symm
+      · rw [show s.rd = abi.rd s from rfl, hdrop] at hr
+        exact (hct r hr).2.2 _ hh
+    · rw [show s.wr = (abi.withConsts (c :: cs)).wr s from rfl, hwr] at hr
+      obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
+      exact (hres _ hh a (List.mem_filter.mp ha).1).symm
+
+theorem abi_wf0_16 (ws : List Nat) (s : State) (h : abi.wf ws 16 s) : abi.wf ws 0 s := by
+  simp only [abi] at h ⊢
+  split at h
+  · rename_i hl; simp only [hl, ite_true]
+  · rename_i hl; simp only [hl, ite_false]; exact ⟨trivial, h.2⟩
+
+/-- A contract with 16 bytes of stack asks more than the same with none. -/
+theorem Sig.pre_stack0_16 {c : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
+    {sig : Sig} {pre : Curry (sig.words (abi.withConsts (c :: cs)).ptrBits) (Mem → Prop)}
+    {post : sig.Post (abi.withConsts (c :: cs)).ptrBits} {wa : Bool}
+    {leak : Option (Curry (sig.words (abi.withConsts (c :: cs)).ptrBits) (Mem → List Nat))} {s : State}
+    (h : (sig.contract (abi.withConsts (c :: cs)) pre post wa 16 leak).pre s) :
+    (sig.contract (abi.withConsts (c :: cs)) pre post wa 0 leak).pre s := by
+  simp only [Sig.contract] at h ⊢
+  split at h
+  · exact h.elim
+  · obtain ⟨⟨hw, hdrop, hheld, hct, hal⟩, hrd, hwr, hpw, hres, hb, hp⟩ := h
+    have hsub : ∀ r ∈ (abi.withConsts (c :: cs)).reserved 0 s, r ∈ (abi.withConsts (c :: cs)).reserved 16 s := by
+      intro r hr; simp only [abi, Abi.withConsts, stackBelow, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      exact .inl hr
+    refine ⟨⟨?_, hdrop, hheld, fun t ht => ⟨(hct t ht).1, (hct t ht).2.1, fun r hr => (hct t ht).2.2 r (hsub r hr)⟩, hal⟩,
+      hrd, hwr, hpw, fun r hr => hres r (hsub r hr), hb, hp⟩
+    exact abi_wf0_16 _ s hw
+
+/-- A contract that implies the one with no stack implies the one with 16
+bytes of stack, if that one can be met. -/
+theorem _root_.VG.Contract.Implies.stack16 {c : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
+    {sig : Sig} {pre : Curry (sig.words (abi.withConsts (c :: cs)).ptrBits) (Mem → Prop)}
+    {post : sig.Post (abi.withConsts (c :: cs)).ptrBits} {wa : Bool}
+    {leak : Option (Curry (sig.words (abi.withConsts (c :: cs)).ptrBits) (Mem → List Nat))} {k₀ : Contract isa}
+    (h : k₀.Implies (sig.contract (abi.withConsts (c :: cs)) pre post wa 0 leak))
+    (hsat : ∃ s, (sig.contract (abi.withConsts (c :: cs)) pre post wa 16 leak).pre s) :
+    k₀.Implies (sig.contract (abi.withConsts (c :: cs)) pre post wa 16 leak) :=
+  ⟨fun s hs => h.pre s (Sig.pre_stack0_16 hs), fun s s' hs hp => h.post s s' (Sig.pre_stack0_16 hs) hp,
+    fun s₁ s₂ h₁ h₂ hp => h.pub s₁ s₂ (Sig.pre_stack0_16 h₁) (Sig.pre_stack0_16 h₂) hp, hsat⟩
+
+/-- The code each call of a function calls, inlined, and every instruction
+of it: no instruction of the inlined code writes `rsp`. -/
+theorem _root_.VG.Code.clobbers_rsp_of_inlineOkN {c : Prog isa} {d : Nat} (h : c.InlineOkN d = true) :
+    ∀ i ∈ instrs c.inlineAll, Taint.clobbers i .rsp = false :=
+  fun i hi => (Code.rsp_inlineAll h i hi).2
+
+/-- Inlining at every depth keeps only instructions of the code and the
+functions it calls: a check of every instruction of `c` holds of its
+inlined form. -/
+theorem _root_.VG.Code.allInstrs_inlineAll {I C : Type} {p : I → Bool} :
+    ∀ {c : Code I C}, c.allInstrs p = true → c.inlineAll.allInstrs p = true
+  | .block _, h => h
+  | .seq a b, h => by
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [Code.inlineAll, Code.allInstrs, Bool.and_eq_true]
+    exact ⟨Code.allInstrs_inlineAll h.1, Code.allInstrs_inlineAll h.2⟩
+  | .ite _ t e, h => by
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [Code.inlineAll, Code.allInstrs, Bool.and_eq_true]
+    exact ⟨Code.allInstrs_inlineAll h.1, Code.allInstrs_inlineAll h.2⟩
+  | .loop b _, h => by
+    simp only [Code.allInstrs] at h
+    simp only [Code.inlineAll, Code.allInstrs]
+    exact Code.allInstrs_inlineAll h
+  | .call _ b, h => by
+    simp only [Code.allInstrs] at h
+    simp only [Code.inlineAll]
+    exact Code.allInstrs_inlineAll h
+  | .frame _ b _, h => by
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [Code.inlineAll, Code.allInstrs, Bool.and_eq_true]
+    exact ⟨⟨h.1.1, Code.allInstrs_inlineAll h.1.2⟩, h.2⟩
+  | .icall _ _ b nx, h => by
+    simp only [Code.allInstrs, Bool.and_eq_true] at h
+    simp only [Code.inlineAll]
+    split
+    · exact Code.allInstrs_inlineAll h.1.2
+    · simp only [Code.allInstrs, Bool.and_eq_true]; exact h
+
+/-- The 8 bytes below `rsp` are among the 16 below it. -/
+theorem hole_sub_holeN2 (sp : Addr) : Region.Sub (hole sp) (holeN sp 2) := by
+  have e₁ : hole sp = ⟨(sp - BitVec.ofNat 64 16) + BitVec.ofNat 64 8, 8⟩ := by
+    show (⟨sp - 8, 8⟩ : Region) = _
+    congr 1; bv_omega
+  have e₂ : holeN sp 2 = ⟨sp - BitVec.ofNat 64 16, 16⟩ := rfl
+  rw [e₁, e₂]
+  exact Offset.sub_base _ (by omega_arith)
+
+/-- What keeps clear of the 16 bytes below `rsp` keeps clear of the 8 below
+it: a function whose calls nest one deep, for a caller that allows two. -/
+theorem Clear.hole_of_holeN2 {sp : Addr} {s : State} (h : Clear (holeN sp 2) s) : Clear (hole sp) s :=
+  fun r hr => (h r hr).sub_right (hole_sub_holeN2 sp)
 
 end VG.X86_64

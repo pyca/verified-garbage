@@ -21,6 +21,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineN
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OffsetBelow
@@ -185,20 +186,20 @@ structure RfcCurve where
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
   sh_eq : E.sh = sh
-  /-- `vg_ecdsa_<curve>_sign`, its name, and that it is correct (with the 8
+  /-- `vg_ecdsa_<curve>_sign`, its name, and that it is correct (with the 16
   bytes below `rsp` apart from its buffers, for the return addresses of its
-  own calls) and constant time. -/
+  own calls, nested two deep) and constant time. -/
   coreN : String
   coreC : Prog isa
-  coreX : ∀ s, (coreK E).pre s → Clear (hole (s.gpr .rsp)) s →
+  coreX : ∀ s, (coreK E).pre s → Clear (holeN (s.gpr .rsp) 2) s →
     ∃ t s', Exec isa coreC s t s' ∧ abiPreserved s s' ∧ (coreK E).post s s'
   coreCT : ConstantTime isa (coreK E).pre (coreK E).pub coreC
-  /-- Its instructions: none writes `rsp` (or loads MXCSR), and the functions
-  it calls call nothing. -/
+  /-- Its instructions: none writes `rsp` (or loads MXCSR), and its calls
+  nested at most two deep. -/
   coreNs : coreC.allInstrs (fun i => !Taint.clobbers i .rsp) = true
   coreSp : coreC.allInstrs (fun i => !isa.writesSp i) = true
   coreMx : coreC.allInstrs (fun i => !loadsMxcsr i) = true
-  coreD : coreC.depth ≤ 1
+  coreD : coreC.depth ≤ 2
   /-- The taint checks and instruction facts of the curve's blocks. -/
   blk : RfcT (cfgC E big sh)
 
