@@ -342,9 +342,9 @@ theorem Ready.regs {w : Nat} (R : Ready Ex base bytes len args w s) {t : State} 
     by rw [m]; exact R.one, by rw [m]; exact R.r2⟩
 
 /-- The context of the modulus in wide slot `j`, ready. -/
-theorem ready_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 19)
+theorem ready_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 19)
     (hw : sv s.mem base len .wide j = w) (hw1 : 1 < w) (hodd : w % 2 = 1) :
-    WP isa (.seq (copy (.slot .wide j) (.slot .wide 0) (one .wide)) (prepare .wide)) s fun t =>
+    WP isa (.seq (copy (.slot .wide j) (.slot .wide 0) (one .wide)) Impl.Ffdh.X86.prepCall) s fun t =>
       Step Ex base bytes len args s t ∧ Ready Ex base bytes len args w t ∧ Kept base len [] [] s.mem t.mem := by
   have bl := h.bytes_lt
   obtain f0 := h.slot_fit .wide (j := 0) (by decide)
@@ -353,12 +353,12 @@ theorem ready_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (
   obtain F₁ : Frame (frameR base (s.gpr .esp) (stR len 0)) s.mem u₁.mem :=
     stR_of_outside h (by decide) O₁ ⟨_, by simp, slot_in h .wide (j := 0) (by decide)⟩
   obtain S₁ : Step Ex base bytes len args s u₁ := Step.ops h F₁ K₁
-  refine WP.mono (prepCtx_ok S₁.inp .wide) fun u ⟨C, one, R2, F, K⟩ => ?_
+  obtain RF₁ := S₁.room RF
+  refine WP.mono (prepCall_ok S₁.inp RF₁) fun u ⟨C, one, R2, F, K⟩ => ?_
   rw [V₁, hw, safeM_of hw1 hodd] at C R2
-  obtain F₂ := stR_widen F (prepR_in S₁.inp .wide 0)
-  rw [S₁.esp] at F₂
-  exact ⟨S₁.trans (Step.ops S₁.inp (by rw [S₁.esp]; exact F₂) K), ⟨C, one, R2⟩,
-    (kept_ops h F₁ h.room).trans (kept_ops h F₂ h.room)⟩
+  obtain F₂ := frameF_widen F (prepR_in S₁.inp .wide 0)
+  exact ⟨S₁.trans (Step.opsF S₁.inp RF₁ F₂ K), ⟨C, one, R2⟩,
+    (kept_ops h F₁ h.room).trans (keptF_ops S₁.inp F₂ RF₁)⟩
 
 /-- What a phase's preparation leaves for the modulus `w`: its context ready, one in slot 14,
 `w − 1` in slot 15, and its split `w − 1 = 2^s d`: `d` in slot 11, `s` in the header. -/
@@ -443,13 +443,13 @@ theorem halveIter_ok {w k : Nat} {t : State} (H : Halving Ex base bytes len args
 
 
 /-- The context of `w`, one, `w − 1` and its copy, and the count of halvings zero. -/
-theorem prepHead_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10)
+theorem prepHead_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10)
     (hw : sv s.mem base len .wide j = w) (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
     WP isa (prepHead j) s (Halving Ex base bytes len args s w 0) := by
   have bl := h.bytes_lt
   obtain bw := bc_eq_cwc len .wide
   unfold prepHead
-  refine WP.assoc (WP.seq (WP.mono (ready_ok h hj9 (by omega_arith) hw (by omega_arith) hodd) fun u₁ ⟨S₁, R₁, k₁⟩ => ?_))
+  refine WP.assoc (WP.seq (WP.mono (ready_ok h RF hj9 (by omega_arith) hw (by omega_arith) hodd) fun u₁ ⟨S₁, R₁, k₁⟩ => ?_))
   have h₁ := S₁.inp
   refine WP.seq (WP.mono (setW_ok h₁ (a := 14) (v := 1) (by decide) (by decide)) fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   obtain S₂ : Step Ex base bytes len args s u₂ := S₁.trans (Step.slot h₁ (by decide) O₂ K₂)
@@ -500,13 +500,13 @@ theorem halveRound_ok {w x : Nat} {t : State} (hw3 : 3 ≤ w) (hodd : w % 2 = 1)
       Hu.kept⟩
 
 /-- The context of the modulus `w` in wide slot `j`, and the split `w − 1 = 2^s d`. -/
-theorem prepPhase_ok (h : In Ex base bytes len args s) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10)
+theorem prepPhase_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10)
     (hw : sv s.mem base len .wide j = w) (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
     WP isa (prepPhase j) s fun t => Step Ex base bytes len args s t ∧ Prepped Ex base bytes len args w t ∧
       Kept base len [11, 14, 15] [twoOff] s.mem t.mem := by
   obtain hwl : w < 2 ^ (32 * cwc len .wide) := by rw [← hw]; exact val32_lt _ _ _ _
   unfold prepPhase
-  refine WP.seq (WP.mono (prepHead_ok h hj9 hj hw hw3 hodd) fun u₆ H₀ => ?_)
+  refine WP.seq (WP.mono (prepHead_ok h RF hj9 hj hw hw3 hodd) fun u₆ H₀ => ?_)
   refine WP.loop (M := isa) (Halved Ex base bytes len args s w) ?_ (w - 1) u₆ ⟨0, by simp, by omega_arith, by omega_arith, H₀⟩
   intro x t H
   refine WP.mono (halveRound_ok hw3 hodd hwl H) fun u o => ?_
@@ -1493,7 +1493,7 @@ theorem phaseStart_ok {j w n c : Nat} {T : List Byte} (h : In Ex base bytes len 
     WP isa (.seq (prepPhase j) (.block [.mov .eax (.imm 0), .store (sc stOff) .eax])) s fun u =>
       Step Ex base bytes len args s u ∧ DrawAt Ex base bytes len args u w T n c u ∧
       Kept base len [11, 14, 15] [twoOff, stOff] s.mem u.mem := by
-  refine WP.seq (WP.mono (prepPhase_ok h hj9 hj hw hw3 hodd) fun u₁ ⟨S₁, P₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (prepPhase_ok h G.room hj9 hj hw hw3 hodd) fun u₁ ⟨S₁, P₁, k₁⟩ => ?_)
   refine wp_movi fun u₂ U₂ => hdr_store (S₁.inp.regs U₂.keeps U₂.mem) hdr_st
     fun u₃ S₃ W₃ k₃ O₃ _ _ _ => WP.block_nil ?_
   have S₂ : Step Ex base bytes len args u₁ u₂ := Step.regs S₁.inp U₂.mem U₂.keeps

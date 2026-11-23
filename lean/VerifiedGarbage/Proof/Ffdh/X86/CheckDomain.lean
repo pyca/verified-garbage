@@ -44,27 +44,27 @@ variable {Ex : List Region → List Region → Prop} {s : State} {base : Addr} {
   {args : Nat → BitVec 32}
 
 /-- `g^q mod p = 1`, for p, g and q in the wide slots 9, 10 and 11. -/
-theorem subgroup_ok (h : In Ex base bytes len args s) {p g q : Nat} (h9 : sv s.mem base len .wide 9 = p)
+theorem subgroup_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {p g q : Nat} (h9 : sv s.mem base len .wide 9 = p)
     (h10 : sv s.mem base len .wide 10 = g) (h11 : sv s.mem base len .wide 11 = q) (gt : 1 < p)
     (odd : p % 2 = 1) :
     WP isa subgroup s (Res base len s (if g ^ q % p = 1 then 1 else 0)) := by
   unfold subgroup
-  refine WP.seq (WP.mono (powP_ok h (P := p) (b := 10) (e := 11) (by decide) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (powP_ok h RF (P := p) (b := 10) (e := 11) (by decide) (by decide) (by decide) (by decide)
     (by rw [h9, safeM_of gt odd])) fun u ⟨C, V6, V3, F, _, K⟩ => ?_)
   refine WP.mono (eqStatus_res C.inp (a := 6) (b := 3) (by decide) (by decide)) fun t R => ?_
   rw [V6, V3, h10, h11] at R
-  exact (Step.ops h F K).res R
+  exact (Step.opsF h RF F K).res R
 
 /-- `divides` up to its branch. -/
 abbrev dividesFront : List (Prog isa) :=
-  [copy (.slot .wide 11) (.slot .wide 0) (one .wide), prepare .wide, copy (.slot .wide 15) (.slot .wide 5) (one .wide),
+  [copy (.slot .wide 11) (.slot .wide 0) (one .wide), Impl.Ffdh.X86.prepCall, copy (.slot .wide 15) (.slot .wide 5) (one .wide),
     CrtRt.mul .wide 6 5 3, zero (.slot .wide 17) (one .wide), equal (.slot .wide 6) (.slot .wide 17) (one .wide),
     Impl.Ffdh.X86.testMask]
 
 theorem divides_eq : divides = Prog.chain dividesFront (.ite .e (Impl.Ffdh.X86.ret 0) subgroup) := rfl
 
 /-- The context of q, and ZF telling whether q does not divide `p − 1`. -/
-theorem dividesFront_ok (h : In Ex base bytes len args s) {p q : Nat}
+theorem dividesFront_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {p q : Nat}
     (h11 : sv s.mem base len .wide 11 = q) (h15 : sv s.mem base len .wide 15 = p - 1) (qodd : q % 2 = 1)
     (q2 : 2 < q) :
     WP isa (Prog.chain dividesFront (.block [])) s fun u => Step Ex base bytes len args s u ∧
@@ -75,10 +75,12 @@ theorem dividesFront_ok (h : In Ex base bytes len args s) {p q : Nat}
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   obtain S₁ : Step Ex base bytes len args s u₁ := Step.slot h (by decide) O₁ K₁
   obtain k₁ := kept_slot h (a := 0) O₁
-  refine WP.seq (WP.mono (prepCtx_ok S₁.inp .wide) fun u₂ ⟨C₂, one₂, _, F₂, K₂⟩ => ?_)
+  obtain RF₁ := S₁.room RF
+  refine WP.seq (WP.mono (prepCall_ok S₁.inp RF₁) fun u₂ ⟨C₂, one₂, _, F₂, K₂⟩ => ?_)
   rw [V₁, h11, safeM_of (by omega_arith) qodd] at C₂
-  obtain S₂ : Step Ex base bytes len args u₁ u₂ := Step.ops S₁.inp (stR_widen F₂ (prepR_in S₁.inp .wide 0)) K₂
-  obtain k₂ := kept_ops S₁.inp (stR_widen F₂ (prepR_in S₁.inp .wide 0)) S₁.inp.room
+  obtain F₂' := frameF_widen F₂ (prepR_in S₁.inp .wide 0)
+  obtain S₂ : Step Ex base bytes len args u₁ u₂ := Step.opsF S₁.inp RF₁ F₂' K₂
+  obtain k₂ := keptF_ops S₁.inp F₂' RF₁
   -- `p − 1` in slot 5, and its Montgomery reduction modulo q in slot 6.
   refine WP.seq (WP.mono (copyIn_ok C₂.inp (j := 15) (d := 5) (by decide) (by decide) (by decide))
     fun u₃ ⟨O₃, V₃, K₃⟩ => ?_)
@@ -125,16 +127,16 @@ theorem dividesFront_ok (h : In Ex base bytes len args s) {p q : Nat}
     obtain hj17 : 9 ≤ j ∧ j ≤ 19 ∧ j ∉ [17] := ⟨h9, h19, by simp; omega_arith⟩
     rw [m₇, m₆, k₅.slot_eq hj17, k₄.slot_eq hj', k₃.slot_eq hj5, k₂.slot_eq hj', k₁.slot_eq hj0]
 
-theorem divides_ok (h : In Ex base bytes len args s) {p g q : Nat} (h9 : sv s.mem base len .wide 9 = p)
+theorem divides_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) {p g q : Nat} (h9 : sv s.mem base len .wide 9 = p)
     (h10 : sv s.mem base len .wide 10 = g) (h11 : sv s.mem base len .wide 11 = q)
     (h15 : sv s.mem base len .wide 15 = p - 1) (gt : 1 < p) (odd : p % 2 = 1) (q2 : 2 < q) (qodd : q % 2 = 1) :
     WP isa divides s (Res base len s (if (p - 1) % q = 0 ∧ g ^ q % p = 1 then 1 else 0)) := by
   rw [divides_eq]
-  refine WP.chain_split (dividesFront_ok h h11 h15 qodd q2) fun u ⟨S, G, kk⟩ => WP.gate G
+  refine WP.chain_split (dividesFront_ok h RF h11 h15 qodd q2) fun u ⟨S, G, kk⟩ => WP.gate G
     (fun nd => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun dv => ?_)
   · simp only [nd, false_and, ↓reduceIte]; exact R
   · have dv : (p - 1) % q = 0 := Classical.not_not.mp dv
-    refine WP.mono (subgroup_ok S.inp (p := p) (g := g) (q := q) (by rw [kk 9 (by decide) (by decide) (by decide), h9])
+    refine WP.mono (subgroup_ok S.inp (S.room RF) (p := p) (g := g) (q := q) (by rw [kk 9 (by decide) (by decide) (by decide), h9])
       (by rw [kk 10 (by decide) (by decide) (by decide), h10]) (by rw [kk 11 (by decide) (by decide) (by decide), h11])
       gt odd) fun t R => S.res ?_
     simp only [dv, true_and]; exact R
@@ -196,7 +198,7 @@ theorem withQFront_ok (h : In Ex base bytes len args s) (G : DomGeo args base by
     rw [m₈, m₇, m₆, m₅, k₄.slot_eq h0, m₃, k₂.slot_eq h16', k₁.slot_eq h11']
 
 /-- q (the domain's third component) odd with `2 < q < p − 1`, then `divides`. -/
-theorem withQ_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes len (3 * len) s.rd s.wr)
+theorem withQ_ok (h : In Ex base bytes len args s) (RF : RoomF (s.gpr .esp) base bytes) (G : DomGeo args base bytes len (3 * len) s.rd s.wr)
     {p g : Nat} (h9 : sv s.mem base len .wide 9 = p) (h10 : sv s.mem base len .wide 10 = g)
     (h15 : sv s.mem base len .wide 15 = p - 1) (gt : 1 < p) (odd : p % 2 = 1) :
     WP isa withQ s (Res base len s
@@ -208,7 +210,7 @@ theorem withQ_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes l
   refine WP.gate Gt (fun nc => WP.mono (ret_res (base := base) (len := len)) fun t R => S.res ?_) (fun c => ?_)
   · simp only [nc, false_and, ↓reduceIte]; exact R
   · have c := Classical.not_not.mp c
-    refine WP.mono (divides_ok S.inp (p := p) (g := g) (q := q)
+    refine WP.mono (divides_ok S.inp (S.room RF) (p := p) (g := g) (q := q)
       (by rw [kk 9 (by decide) (by decide) (by decide) (by decide), h9])
       (by rw [kk 10 (by decide) (by decide) (by decide) (by decide), h10]) q₈
       (by rw [kk 15 (by decide) (by decide) (by decide) (by decide), h15]) gt odd c.2.1 c.1) fun t R => S.res ?_
@@ -319,7 +321,7 @@ theorem checked_ok (h : In Ex base bytes len args s) (G : DomGeo args base bytes
       omega_arith
     subst e3
     obtain hq := comp_q (len := len) s.mem args
-    refine WP.mono (withQ_ok S₅.inp (G.keep ⟨rfl, rfl⟩ S'.keeps) (p := p) (g := g) (by rw [m₅, V9])
+    refine WP.mono (withQ_ok S₅.inp (S'.room RF) (G.keep ⟨rfl, rfl⟩ S'.keeps) (p := p) (g := g) (by rw [m₅, V9])
       (by rw [m₅, V10]) (by rw [m₅, V15]) pgt podd) fun t R => S'.res ?_
     rw [comp_keep h G RF hb40 S'.frame (by omega_arith)] at R
     generalize hQ : comp s.mem args len 2 = Q at R hq

@@ -491,6 +491,11 @@ structure Step (Ex : List Region → List Region → Prop) (base : Addr) (bytes 
   frame : Frame (frameF base (s.gpr .esp) (fR len)) s.mem u.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u
 
+/-- The room below `esp` through a stage, which keeps `esp`. -/
+theorem Step.room {u : State} (S : Step Ex base bytes len args s u) (RF : RoomF (s.gpr .esp) base bytes) :
+    RoomF (u.gpr .esp) base bytes := by
+  rw [S.keeps.1 _ (by decide)]; exact RF
+
 theorem Step.trans {u t : State} (A : Step Ex base bytes len args s u) (B : Step Ex base bytes len args u t) :
     Step Ex base bytes len args s t := by
   obtain ⟨I, F, K⟩ := B
