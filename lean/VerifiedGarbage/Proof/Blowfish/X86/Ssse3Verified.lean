@@ -34,7 +34,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 /-!
 # Blowfish's functions over its block function by `pshufb` on x86 (32-bit) meet their contracts
 
-`cbcEncryptChained_wp`, `ofb_wp`, `cfbEncrypt_wp`, `cfbDecrypt_wp`, and for
+`cbcEncryptChained_wp`, `ofb_wp`, `cfbEncrypt_wp`, and for
 a message's last piece `cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`,
 `ofbFinal_wp`: the modes' CBC encryption that updates the chaining value,
 OFB and CFB64 (the `_of` theorems of `CbcVerified.lean`, `FbVerified.lean`
@@ -283,59 +283,6 @@ theorem cfbEncrypt_scrubbed :
     { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbEncrypt
       verified := cfbEncrypt_framed }
     Fn.words (Scrub.cfbEncryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
-
-/-! ## `cfbDecrypt` -/
-
-theorem cfbDecrypt_wp {s₀ : State} (hp : (Fb.fbX86 53 8 Fb.cfbDecPost).pre s₀) :
-    WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (Fb.fbX86 53 8 Fb.cfbDecPost).post s₀ s' :=
-  Fb.cfbDecrypt_wp_of ssse3Fits (fun _ => rfl) hp
-
-theorem cfbDecrypt_ct : ConstantTime isa (Fb.fbX86 53 8 Fb.cfbDecPost).pre (Fb.fbX86 53 8 Fb.cfbDecPost).pub cfbDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.sseTaint) (Fb.fbTaint 53 8) (fun _ _ h₁ h₂ hp => Fb.fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
-
-theorem cfbDecrypt_implies :
-    (Fb.wideContract 53 8 Fb.cfbDecPost).Implies (Proof.Blowfish.fbScratchContract X86.abi 53 Proof.Blowfish.cfbDecPost 8) := by
-  refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
-  · intro s h
-    sig_pre [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, Fb.wideContract, Fb.fbX86, Fb.cfbDecPost] at h
-    sig_split h
-    sig_reduce [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, Fb.wideContract, Fb.fbX86, Fb.cfbDecPost]
-    sig_and_intros
-    sig_close
-    all_goals first
-      | with_reducible assumption
-      | with_reducible exact Region.Disjoint.symm ‹_›
-      | omega_arith
-      | (rw [below8 ‹8 ≤ (s.gpr Reg.esp).toNat›]; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-      | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-      | (simp only [Nat.mul_comm] at *; rw [below8 ‹8 ≤ (s.gpr Reg.esp).toNat›]; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-  · sig_implies_post [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, Fb.wideContract, Fb.fbX86, Fb.cfbDecPost, Fb.ciph, Fb.ivAt, Fb.dataAt]
-  · sig_implies_pub [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, Fb.wideContract, Fb.fbX86, Fb.cfbDecPost]
-  · sig_implies_sat [Proof.Blowfish.fbScratchContract, Proof.Blowfish.fbScratchSig, Spec.Blowfish.ofbSig, Proof.Blowfish.cfbDecPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, Fb.wideContract, Fb.fbX86, Fb.cfbDecPost]
-      [sat53, arg, argAddr, Mem.readW, Mem.read] using sat53
-
-theorem cfbDecrypt_verified : Verified X86.target cfbDecrypt (Proof.Blowfish.fbScratchContract X86.abi 53 Proof.Blowfish.cfbDecPost 8) :=
-  Fb.fb_verified (fun _ hs => cfbDecrypt_wp hs) cfbDecrypt_ct (fun _ _ _ _ _ _ h => h) cfbDecrypt_implies
-
-/-- `cfbDecrypt` with its working space on the stack. -/
-theorem cfbDecrypt_framed :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbDecrypt)
-      (Spec.Blowfish.cfbDecryptContract X86.abi 460) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Blowfish.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 53) (post := Proof.Blowfish.cfbDecPost X86.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 452) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
-    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Blowfish.cfbDecPost_local _) (Proof.Blowfish.cfbDecPostOut_local _) (frameSat_ofb _)
-
-/-- `Spec.Blowfish.cfbDecryptApi` as emitted (`Impl.Blowfish.X86.Ssse3.Fn.cfbDecrypt`) meets its contract in constant
-time and returns without secret residue. -/
-theorem cfbDecrypt_scrubbed :
-    VerifiedScrubbed X86.target Fn.cfbDecrypt (Spec.Blowfish.cfbDecryptContract X86.abi 460) 0 :=
-  verifiedScrubbedSel (api := Spec.Blowfish.cfbDecryptApi) (W := 460)
-    { code := Impl.StackScratch.X86.withStackScratchWiped 452 4 106 cfbDecrypt
-      verified := cfbDecrypt_framed }
-    Fn.words (Scrub.cfbDecryptOut _) (by decide) ⟨_, by taint_decide_ct⟩
 
 /-! ## `cfbEncryptFinal` -/
 

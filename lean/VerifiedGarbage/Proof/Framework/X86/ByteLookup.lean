@@ -30,6 +30,11 @@ row `x >> 4`. Nothing here is about a machine state: the code that computes
 `punpckldq`, a `punpcklqdq` and a `pshufb` with the bytes
 `0, 4, 8, 12, 1, 5, …` hold in byte `p` of doubleword `k` the byte `k` of
 register `p`: four byte planes' look-ups as entries of four bytes.
+
+For sixteen indices at once, the bytes of four registers of doublewords are
+gathered by their number, and the look-ups' bytes put back into
+doublewords, by that shuffle and a transposition of doublewords (`tr`,
+`dword_tr`): `byte_planes`, `byte_entries`.
 -/
 
 @[expose] public section
@@ -187,5 +192,57 @@ theorem byte_gather {a : Nat → BitVec 128} {T : BitVec 128}
       byte_at _ _ _ _ (by decide) hk]; rfl
   · rw [ite_eq_right (by omega_using [hk]), show 4 * 3 + k - 8 = 4 * 1 + k by omega_using [hk],
       byte_at _ _ _ _ (by decide) hk]; rfl
+
+/-! ## Sixteen indices at once -/
+
+/-- The bytes of a register moved by the shuffle `T` (the bytes 0, 4, 8, 12,
+then 1, 5, 9, 13, and so on): byte `k` of doubleword `b` is byte `b` of
+doubleword `k`. -/
+theorem byte_shufT {X T : BitVec 128} (hT : ∀ i < 16, byte T i = BitVec.ofNat 8 (4 * (i % 4) + i / 4)) {k b : Nat}
+    (hk : k < 4) (hb : b < 4) : byte (XBinOp.eval .pshufb X T) (4 * b + k) = byte X (4 * k + b) := by
+  have e : (BitVec.ofNat 8 (4 * k + b)).msb = false ∧
+      ((BitVec.ofNat 8 (4 * k + b)).extractLsb' 0 4).toNat = 4 * k + b :=
+    (by decide : ∀ b < 4, ∀ k < 4, (BitVec.ofNat 8 (4 * k + b)).msb = false ∧
+      ((BitVec.ofNat 8 (4 * k + b)).extractLsb' 0 4).toNat = 4 * k + b) b hb k hk
+  have hi : 4 * b + k < 16 := by omega_using [hk, hb]
+  rw [byte_pshufb _ _ hi, hT _ hi, show (4 * b + k) % 4 = k by omega_using [hk],
+    show (4 * b + k) / 4 = b by omega_using [hk], e.1, e.2, ite_eq_right Bool.false_ne_true]
+
+/-- Row `B` of the transposition of the doublewords of four registers, as
+`punpckldq`, `punpckhdq`, `punpcklqdq` and `punpckhqdq` make it. -/
+def tr (a0 a1 a2 a3 : BitVec 128) (B : Nat) : BitVec 128 :=
+  match B with
+  | 0 => XBinOp.eval .punpcklqdq (XBinOp.eval .punpckldq a0 a1) (XBinOp.eval .punpckldq a2 a3)
+  | 1 => XBinOp.eval .punpckhqdq (XBinOp.eval .punpckldq a0 a1) (XBinOp.eval .punpckldq a2 a3)
+  | 2 => XBinOp.eval .punpcklqdq (XBinOp.eval .punpckhdq a0 a1) (XBinOp.eval .punpckhdq a2 a3)
+  | _ => XBinOp.eval .punpckhqdq (XBinOp.eval .punpckhdq a0 a1) (XBinOp.eval .punpckhdq a2 a3)
+
+/-- Doubleword `k` of row `B` is doubleword `B` of register `k`. -/
+theorem dword_tr (a : Nat → BitVec 128) {B k : Nat} (hB : B < 4) (hk : k < 4) :
+    dword (tr (a 0) (a 1) (a 2) (a 3) B) k = dword (a k) B := by
+  rcases cases4 hB with rfl | rfl | rfl | rfl <;> rcases cases4 hk with rfl | rfl | rfl | rfl <;>
+    simp only [tr, punpckldq_eq, punpckhdq_eq, punpcklqdq_eq, punpckhqdq_eq, dword_ofDwords_0, dword_ofDwords_1,
+      dword_ofDwords_2, dword_ofDwords_3]
+
+/-- The bytes of four registers of doublewords gathered by their number:
+byte `4g + k` of register `b` is byte `b` of doubleword `k` of `X g`. -/
+theorem byte_planes {X : Nat → BitVec 128} {T : BitVec 128}
+    (hT : ∀ i < 16, byte T i = BitVec.ofNat 8 (4 * (i % 4) + i / 4)) {g k b : Nat} (hg : g < 4) (hk : k < 4)
+    (hb : b < 4) :
+    byte (tr (XBinOp.eval .pshufb (X 0) T) (XBinOp.eval .pshufb (X 1) T) (XBinOp.eval .pshufb (X 2) T)
+      (XBinOp.eval .pshufb (X 3) T) b) (4 * g + k) = (dword (X g) k).extractLsb' (8 * b) 8 := by
+  refine (byte_of_dword _ g hk).symm.trans ?_
+  refine (congrArg (·.extractLsb' (8 * k) 8) (dword_tr (fun g => XBinOp.eval .pshufb (X g) T) hb hg)).trans ?_
+  show (dword (XBinOp.eval .pshufb (X g) T) b).extractLsb' (8 * k) 8 = _
+  rw [byte_of_dword _ b hk, byte_shufT hT hk hb, byte_of_dword _ k hb]
+
+/-- Four registers of bytes (byte `i` of register `p` for index `i`) to the
+entries of four bytes: byte `p` of doubleword `k` of register `g` is byte
+`4g + k` of `a p`. -/
+theorem byte_entries {a : Nat → BitVec 128} {T : BitVec 128}
+    (hT : ∀ i < 16, byte T i = BitVec.ofNat 8 (4 * (i % 4) + i / 4)) {g k p : Nat} (hg : g < 4) (hk : k < 4)
+    (hp : p < 4) :
+    byte (XBinOp.eval .pshufb (tr (a 0) (a 1) (a 2) (a 3) g) T) (4 * k + p) = byte (a p) (4 * g + k) := by
+  rw [byte_shufT hT hp hk, ← byte_of_dword _ p hk, dword_tr a hg hp, byte_of_dword _ g hk]
 
 end VG.X86.ByteLookup
