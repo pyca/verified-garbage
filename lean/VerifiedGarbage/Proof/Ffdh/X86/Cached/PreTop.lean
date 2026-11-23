@@ -1646,11 +1646,11 @@ theorem pcBody_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo arg
   obtain K₁₈ := K₁₇.trans S₈.keeps
   -- p's context.
   obtain v9₈ : sv u₈.mem base len .wide 9 = (Spec.Ffdh.domainOf len dom).p := by rw [k₈.slot_eq]; exact v9
-  refine WP.seq (WP.mono (ctxP_ok S₈.inp (P := (Spec.Ffdh.domainOf len dom).p) (by rw [v9₈]; exact safeM_of h1p hodd))
+  refine WP.seq (WP.mono (ctxP_ok S₈.inp (by rw [K₁₈.1 _ (by decide)]; exact RF) (P := (Spec.Ffdh.domainOf len dom).p) (by rw [v9₈]; exact safeM_of h1p hodd))
     fun u₉ ⟨Cx₉, s3, s4, F₉, k₉, K₉⟩ => ?_)
   obtain sp₈ : u₈.gpr .esp = s.gpr .esp := K₁₈.1 _ (by decide)
   rw [sp₈] at F₉
-  obtain FA₉ := FA₈.trans (upB (fR_widen F₉ (stR_inF S₈.inp)))
+  obtain FA₉ := FA₈.trans (upB (fF_widen F₉ (stR_inF S₈.inp)))
   obtain K₁₉ := K₁₈.trans K₉
   -- Rows 0 and 1: p and `R² mod p`.
   refine WP.seq (WP.mono (storePre_ok Cx₉ (C.keep K₁₉) (j := 0) (a := 9) (by decide) (by decide))
@@ -1687,7 +1687,7 @@ theorem pcBody_ok (h : In Ex base bytes len args s) {dlen : Nat} (G : DomGeo arg
   have cbn : ctxBytes len = 24 + bc len .wide * 34 := rfl
   have cw := C.ws.nowrap
   obtain F69 : Frame (frameF base (s.gpr .esp) (fR len)) u₆.mem u₉.mem :=
-    (F₇.trans F₈).trans (fR_widen F₉ (stR_inF S₈.inp))
+    (F₇.trans F₈).trans (fF_widen F₉ (stR_inF S₈.inp))
   obtain hdr : ∀ i, i < 6 → w32 t.mem (ctxAddr args) (4 * i) = w32 u₆.mem (ctxAddr args) (4 * i) := fun i hi => by
     rw [mt, pre_word S₁₂'.pre hi, O₁₁.w32 (.inl (by omega_using [hi])) (by omega_using [hi]), O₁₀.w32 (.inl (by omega_using [hi])) (by omega_using [hi]),
       ← w32_val32_one, ← w32_val32_one, ctx_far C F69 (fR_fit h) (by omega_using [cbn, hi])]

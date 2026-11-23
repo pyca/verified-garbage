@@ -289,7 +289,7 @@ theorem powTop_trace (hx : args 11 = BitVec.ofNat 32 xl ∧ 0 < xl ∧ xl ≤ 10
   rw [powTop_eq]
   apply VG.RelCT.chain
   refine VG.RelCT.seq (VG.Proof.Bignum.X86.PublicRt.relCT_both (F := WSt Ex base bytes len args sp .wide [3, 4] 0)
-    ((VG.RelCT.seq (ctxP_relCT.mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h)
+    ((VG.RelCT.seq (ctxP_relCT.mono (fun _ _ h => ⟨⟨h.1.1, RF⟩, ⟨h.2.1, RF⟩⟩) fun _ _ h => h)
       (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) topLoads_check))) fun x ⟨R, X⟩ => ?_) ?_
   · refine WP.mono (topFront_ok R.1 X (by rw [R.2.2]; exact RF) (by rw [R.2.2]; exact hx40) (b := 10) (by decide) (by decide) rfl)
       fun u ⟨C, one, R4, _, _, _, _, K⟩ =>

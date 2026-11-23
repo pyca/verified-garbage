@@ -545,16 +545,16 @@ abbrev HalvRun (Ex : List Region → List Region → Prop) (base : Addr) (bytes 
 
 /-- Runs for the same modulus `w` prepare it alike. -/
 theorem prepPhase_trace {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hc : PrepHeadCk j) (hw3 : 3 ≤ w)
-    (hodd : w % 2 = 1) {P : State → Prop}
+    (hodd : w % 2 = 1) (RF : RoomF sp base bytes) {P : State → Prop}
     (hP : ∀ x, P x → Run Ex base bytes len args sp x ∧ sv x.mem base len .wide j = w) :
     RelCT isa (Both P) (prepPhase j) (Both (Run Ex base bytes len args sp)) := by
   unfold prepPhase
   have trace : RelCT isa (Both P) (prepHead j) fun _ _ => True :=
-    RelCT.seq (aRel (F := Run Ex base bytes len args sp) (fun x h => (hP x h).1) hc.1 fun x h =>
-      copyDown_run hj9 (by omega_using [hj]) (by decide) (hP x h).1)
-      (RelCT.seq (prepare_relCT .wide) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) hc.2))
+    RelCT.seq (aRel (F := fun x => Run Ex base bytes len args sp x ∧ RoomF sp base bytes) (fun x h => (hP x h).1)
+      hc.1 fun x h => WP.mono (copyDown_run hj9 (by omega_using [hj]) (by decide) (hP x h).1) fun _ r => ⟨r, RF⟩)
+      (RelCT.seq prepCall_relCT (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) hc.2))
   refine RelCT.seq (relCT_both (F := HalvRun Ex base bytes len args sp w 0) trace fun x h =>
-    WP.mono (prepHead_ok (hP x h).1.1 hj9 hj (hP x h).2 hw3 hodd) fun v H => ⟨x, (hP x h).1, H⟩) ?_
+    WP.mono (prepHead_ok (hP x h).1.1 (by rw [(hP x h).1.2.2]; exact RF) hj9 hj (hP x h).2 hw3 hodd) fun v H => ⟨x, (hP x h).1, H⟩) ?_
   refine (RelCT.loop (I := fun m x y => ∃ k, m = (w - 1) / 2 ^ k ∧ m % 2 = 0 ∧ 0 < m ∧
       HalvRun Ex base bytes len args sp w k x ∧ HalvRun Ex base bytes len args sp w k y) (fun m => ?_) (w - 1)).mono
     (fun x y h => ⟨0, by simp, by omega_using [hodd], by omega_using [hw3], h.1, h.2⟩) fun _ _ h => h
@@ -635,7 +635,7 @@ theorem phase_trace {j w n c : Nat} {T : List Byte} (hj9 : 9 ≤ j) (hj : j ≤ 
     omega_arith
   unfold phase
   refine RelCT.assoc (RelCT.seq (relCT_both (F := DrawRun Ex base bytes len args sp w T n c)
-    (RelCT.seq (prepPhase_trace hj9 hj hck hw3 hodd fun x h => ⟨(hP x h).1, (hP x h).2.2.1⟩)
+    (RelCT.seq (prepPhase_trace hj9 hj hck hw3 hodd G.room fun x h => ⟨(hP x h).1, (hP x h).2.2.1⟩)
       (aEnd (fun _ h => h) setSt0_check)) fun x h => ?_)
     (RelCT.seq (drawLoop_trace G hw3 hodd hwl hn1 hcT) (aEnd (fun _ h => h) readSt_check)))
   obtain ⟨R, hT, hw, ho, hk, hn, hc⟩ := hP x h
