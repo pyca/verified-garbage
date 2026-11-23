@@ -1591,8 +1591,10 @@ mod tests {
                 let (h, q) = (len / 2, (len / 2 + 16).min(len));
                 let one: [&[u8]; 1] = [m];
                 let two: [&[u8]; 2] = [&m[..h], &m[h..]];
+                let empty_first: [&[u8]; 2] = [&[], m];
+                let empty_last: [&[u8]; 2] = [m, &[]];
                 let five: [&[u8]; 5] = [&[], &m[..h], &m[h..h], &m[h..q], &m[q..]];
-                for pieces in [&one[..], &two, &five] {
+                for pieces in [&one[..], &two, &empty_first, &empty_last, &five] {
                     let mut out = [0u8; 300];
                     let tag = k.encrypt(&nonce, aad, pieces, &mut out[..len]);
                     assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
