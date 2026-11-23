@@ -24,15 +24,16 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# ML-DSA on x86 (32-bit): `vg_mldsa_ntt`
+# ML-DSA on x86 (32-bit): `vg_mldsa_ntt` and `vg_mldsa_inv_ntt`
 
-The vector code of `Impl/MlDsa/X86/Arith/Ntt.lean`, against the contract
+The vector code of `Impl/MlDsa/X86/Arith/Ntt.lean`, against the contracts
 the scalar code it replaces had.
 
 * The code of four butterflies (`BodyOk`: `fBody_ok`, `fBody2_ok`,
-  `fBody1_ok`) stores, at `[eax]` and `[eax + d]`, the vectors
-  `Lazy.lean` describes, from those it loads there and the zetas in `xmm5`
-  (run an instruction at a time, as in `Mul.lean`).
+  `fBody1_ok` for `NTT`, `iBody_ok`, `iBody2_ok`, `iBody1_ok` for `NTT⁻¹`)
+  stores, at `[eax]` and `[eax + d]`, the vectors `Lazy.lean` describes,
+  from those it loads there and the zetas in `xmm5` (run an instruction at
+  a time, as in `Mul.lean`).
 * In memory (`Base`, `Co`), the coefficients a layer has done stand for
   those of the layer's result `G`, and the others for those of its
   argument `f`; `body_step` is a step on two vectors of coefficients, none
@@ -44,12 +45,13 @@ the scalar code it replaces had.
   `fstep`), whose zetas are loaded for each step (`ZlOk`, `FlatOk`). Before
   each layer (`LS`) every coefficient stands for that of the layers so far.
 * `init_piece` sets the constants and the table (`table_spec`), and a pass
-  (`pass_piece`, `pstep`) reduces the coefficients (`finCore_ok`).
+  (`pass_piece`, `pstep`) reduces the coefficients (`finCore_ok`), or
+  multiplies them by `256⁻¹` and reduces them (`scaleCore_ok`).
 
-The function is its body inside the MCDT frame (`Piece.mcdt`), constant
-time by the analysis of general and XMM registers (`Piece.sse`) from `esp`
-and the pointers `eax` and `edx` (and the counter `ecx`), which each piece
-gets from the arguments.
+Each function (`NttFwd.verified`, `NttInvP.verified`) is its body inside
+the MCDT frame (`Piece.mcdt`), constant time by the analysis of general and
+XMM registers (`Piece.sse`) from `esp` and the pointers `eax` and `edx`
+(and the counter `ecx`), which each piece gets from the arguments.
 -/
 
 @[expose] public section
