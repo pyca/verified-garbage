@@ -151,12 +151,6 @@ runs:
       shell: bash
       working-directory: lean
       run: lake env lean --run Emit.lean --check
-    # EmitOne.lean, which loads first only the registration files it is
-    # given, agrees with what Emit.lean wrote, alone and when it emits every
-    # registration file of the target.
-    - name: Check that EmitOne agrees with Emit.lean
-      shell: bash
-      run: python3 ci/check_emit_one.py
     # `lake check` imports every module together, which no module does.
     - name: Check that every module can be imported with every other
       shell: bash

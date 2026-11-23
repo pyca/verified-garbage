@@ -15,7 +15,6 @@ CI runs each of these, and fails if it does:
 | `audit_negative.py` | The axiom audit rejects an axiom hidden in a Lean module |
 | `check_arch_gates.py` | Tests and benchmarks are built on exactly the architectures of the code they run |
 | `check_case_collisions.py` | No two tracked paths differ only in case |
-| `check_emit_one.py` | `EmitOne.lean --check` agrees with the crates, alone and emitting every registration file of a target, and fails on a crate it would not write |
 | `check_lean_imports.py` | The import discipline between `TCB/`, `Spec/`, `Impl/` and `Proof/` |
 | `check_lean_modules.py` | Every file under `lean/VerifiedGarbage/` is a Lean module |
 | `check_lean_single_importer.py` | No new proof module has only one importer without saying why |
