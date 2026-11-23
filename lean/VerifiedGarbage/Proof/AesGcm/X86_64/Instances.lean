@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Compact
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Alias
 public import VerifiedGarbage.Proof.AesGcm.X86_64.ScrubStub
 
 public import VerifiedGarbage.Proof.Gcm.PrecomputedContract
@@ -2071,9 +2071,16 @@ def GcmVariant.toLv (v : GcmVariant) : VecLevel :=
   | some p => (p.toPart.map (·.name.lv)).getD .sse
   | none => .sse
 
+/-- The out-of-place counter mode `vg_aes_gcm_open_to` of a variant decrypts
+with on the key context, in one pass and with no copy: that of its
+`vg_aes_ctr32` (`Ctr32Impl.ctrTo`). A variant with interleaved loops runs it
+only where its prepared key context holds fewer powers than they read,
+which the `vg_aes_gcm_prepare` its CPU runs never leaves. -/
+def GcmVariant.ctrTo (v : GcmVariant) : Proof.Aes.X86_64.Ctr32ToImpl := v.ctr.ctrTo
+
 /-- The level of the cleanup of `v`'s `seal_gather` on the key context:
 `lv`'s and its out-of-place loops'. -/
-def GcmVariant.lvG (v : GcmVariant) : VecLevel := (v.lv.join v.ctr.ctrTo.level).join v.toLv
+def GcmVariant.lvG (v : GcmVariant) : VecLevel := (v.lv.join v.ctrTo.level).join v.toLv
 
 abbrev WideSealOk (M : Proof.Gcm.X86_64.Stitch.CtxMode) :=
   ∀ t, Proof.Gcm.X86_64.Stitch.SPreTo M t 16 → WP VG.X86_64.isa
@@ -2362,13 +2369,6 @@ def openSplitFnR (v : GcmVariant) : OpenToSplit.OpenSplitFn Proof.Gcm.X86_64.Sti
   .of ("vg_aes_gcm_open_split_prepared" ++ v.impl.suffix) v.impl (blkR v) (blkToDecR v)
 
 /-! ## `vg_aes_gcm_open_to` in one pass -/
-
-/-- The out-of-place counter mode `vg_aes_gcm_open_to` of a variant decrypts
-with on the key context, in one pass and with no copy: that of its
-`vg_aes_ctr32` (`Ctr32Impl.ctrTo`). A variant with interleaved loops runs it
-only where its prepared key context holds fewer powers than they read,
-which the `vg_aes_gcm_prepare` its CPU runs never leaves. -/
-def GcmVariant.ctrTo (v : GcmVariant) : Proof.Aes.X86_64.Ctr32ToImpl := v.ctr.ctrTo
 
 /-- The instance of `vg_aes_gcm_decrypt_blocks_to` of a variant, for a key
 context of `vg_aes_gcm_init`: `vg_ghash` on the blocks at `src`, then `c`
