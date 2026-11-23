@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.ViaMm.X86
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 
 /-!
 # Calling a function with its stack arguments copied (x86, 32-bit)
@@ -225,7 +226,8 @@ theorem copies_facts {s : State}
         some (cCopied sig s, copyToTrace (cBytes sig) (s.gpr .esp - BitVec.ofNat 32 (cBytes sig)) (slots sig)) ∧
       Frame [below (s.gpr .esp) (cBytes sig + 4)] s.mem (cCopied sig s).callEntry.mem ∧
       (∀ j < slots sig, arg (cCopied sig s).callEntry j = arg s j) ∧
-      stack + cBytes sig + 4 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 + 4 * slots sig ≤ 2 ^ 32 := by
+      stack + cBytes sig + 4 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 + 4 * slots sig ≤ 2 ^ 32 ∧
+      Frame [below (s.gpr .esp) (cBytes sig + 4)] s.mem (cCopied sig s).mem := by
   rw [pre_stackL] at hs
   obtain ⟨⟨hst, hfit⟩, hrd, hwr, -, -, -, -⟩ := hs
   have hB : cBytes sig = 4 * slots sig := rfl
@@ -267,16 +269,16 @@ theorem copies_facts {s : State}
     (by omega_using [hB])
   have hc4 : 4 ≤ ((cCopied sig s).gpr .esp).toNat := by
     rw [cCopied_esp, sub_toNat (by omega_using [hst])]; omega_using [hst]
-  refine ⟨by rw [hrun, hesp], ?_, fun j hj => ?_, by omega_using [hst], hfit⟩
+  have f₁ : Frame [below (s.gpr .esp) (cBytes sig + 4)] s.mem (cCopied sig s).mem :=
+    f.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      refine ⟨_, List.mem_singleton_self _, ?_⟩
+      rw [hesp, below]
+      rw [Taint.sub_setWidth (by omega_using [hst]), Taint.sub_setWidth (by omega_using [hst])]
+      exact Offset.sub_below _ (by omega_using [hB]) (by omega_using [hB])
+  refine ⟨by rw [hrun, hesp], ?_, fun j hj => ?_, by omega_using [hst], hfit, f₁⟩
   · -- The copies and the return address are below `esp`.
     rw [State.callEntry_mem]
-    have f₁ : Frame [below (s.gpr .esp) (cBytes sig + 4)] s.mem (cCopied sig s).mem :=
-      f.sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        refine ⟨_, List.mem_singleton_self _, ?_⟩
-        rw [hesp, below]
-        rw [Taint.sub_setWidth (by omega_using [hst]), Taint.sub_setWidth (by omega_using [hst])]
-        exact Offset.sub_below _ (by omega_using [hB]) (by omega_using [hB])
     refine f₁.writeW (List.mem_singleton_self _) _ ?_
     rw [cCopied_esp, show s.gpr .esp - BitVec.ofNat 32 (cBytes sig) - 4 = s.gpr .esp - BitVec.ofNat 32 (cBytes sig + 4) by
       rw [BitVec.ofNat_add, BitVec.sub_sub]; rfl]
@@ -309,7 +311,7 @@ theorem c_out {s : State} (hs : (sig.contract abi pre post wa (stack + cBytes si
 /-- The function's memory is the caller's in its buffers and lists. -/
 theorem c_agree {s : State} (hs : (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).pre s) :
     ∀ a ∈ bufRegions sig s, ∀ x, a.1.Contains x 1 → (cCopied sig s).callEntry.mem x = s.mem x := by
-  obtain ⟨-, hf, -, hst, -⟩ := copies_facts hs
+  obtain ⟨-, hf, -, hst, -, -⟩ := copies_facts hs
   have hout := c_out hs
   intro a ha x hx
   refine hf x fun r hr hc => ?_
@@ -335,7 +337,7 @@ theorem c_bufRegions {s : State} (hs : (sig.contract abi pre post wa (stack + cB
 /-- The function's argument area: the copies, at the bottom of the frame. -/
 theorem c_argAddr0 {s : State} (hs : (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).pre s) :
     argAddr (cCopied sig s).callEntry 0 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (cBytes sig) := by
-  obtain ⟨-, -, -, hst, -⟩ := copies_facts hs
+  obtain ⟨-, -, -, hst, -, -⟩ := copies_facts hs
   rw [argAddr_callEntry, cCopied_esp, Nat.mul_zero, BitVec.add_zero, Taint.sub_setWidth (by omega_using [hst])]
 
 /-- The function's regions: the caller's buffers and lists, and the copies. -/
@@ -362,7 +364,7 @@ theorem c_bodyPre (h0 : 0 < slots sig)
   have hreg := c_regions h0 hs
   have hargs := c_args hs
   have hlists := c_lists hs
-  obtain ⟨-, -, -, hst, -⟩ := copies_facts hs
+  obtain ⟨-, -, -, hst, -, -⟩ := copies_facts hs
   have hs' := hs
   rw [pre_stackL] at hs'
   obtain ⟨⟨-, hfit⟩, -, -, hpw, -, hnw, hpr⟩ := hs'
@@ -415,6 +417,129 @@ theorem c_bodyPre (h0 : 0 < slots sig)
     rw [hargs]
     exact hpre _ _ _ (stackArgs_length sig s) (fun b hb x hx => (hag b (List.mem_append_left _ hb) x hx).symm)
       (fun r hr x hx => (hag (r, false) (List.mem_append_right _ (List.mem_map.mpr ⟨r, hr, rfl⟩)) x hx).symm) hpr
+
+/-- The function's regions are within the caller's and the frame. -/
+theorem c_covers (h0 : 0 < slots sig) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).pre s) :
+    Covers ((((allRegionsL sig wa (cCopied sig s).callEntry).filter (!·.2)).map (·.1)) ++
+        (((allRegionsL sig wa (cCopied sig s).callEntry).filter (·.2)).map (·.1)))
+        ((cCopied sig s).rd ++ (cCopied sig s).wr) ∧
+      Covers (((allRegionsL sig wa (cCopied sig s).callEntry).filter (·.2)).map (·.1)) (cCopied sig s).wr := by
+  have hreg := c_regions h0 hs
+  obtain ⟨-, -, -, hst, -, -⟩ := copies_facts hs
+  have hs' := hs
+  rw [pre_stackL] at hs'
+  obtain ⟨-, hrd, hwr, -, -, -, -⟩ := hs'
+  have hframe : (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (cBytes sig), cBytes sig⟩ : Region) ∈
+      (cCopied sig s).wr := by
+    rw [cCopied_wr, Taint.sub_setWidth (by omega_using [hst])]; exact List.mem_cons_self ..
+  have hbuf : ∀ a ∈ bufRegions sig s, (a.2 = false → a.1 ∈ s.rd) ∧ (a.2 = true → a.1 ∈ s.wr) := by
+    intro a ha
+    have ha' : a ∈ allRegionsL sig wa s := List.mem_append_left _ ha
+    refine ⟨fun hf => ?_, fun ht => ?_⟩
+    · rw [hrd]; exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨ha', by simp [hf]⟩, rfl⟩
+    · rw [hwr]; exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨ha', ht⟩, rfl⟩
+  rw [hreg]
+  refine ⟨Covers.of_mem fun r hr => ?_, Covers.of_mem fun r hr => ?_⟩
+  · rcases List.mem_append.mp hr with hr | hr <;> obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr <;>
+      obtain ⟨ha, hf⟩ := List.mem_filter.mp ha <;> rcases List.mem_append.mp ha with ha | ha
+    · simp only [Bool.not_eq_eq_eq_not, Bool.not_true] at hf
+      exact List.mem_append_left _ (by rw [cCopied_rd]; exact (hbuf a ha).1 hf)
+    · simp only [List.mem_singleton] at ha; subst ha; exact List.mem_append_right _ hframe
+    · exact List.mem_append_right _ (by rw [cCopied_wr]; exact List.mem_cons_of_mem _ ((hbuf a ha).2 hf))
+    · simp only [List.mem_singleton] at ha; subst ha; exact List.mem_append_right _ hframe
+  · obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
+    obtain ⟨ha, hf⟩ := List.mem_filter.mp ha
+    rcases List.mem_append.mp ha with ha | ha
+    · rw [cCopied_wr]; exact List.mem_cons_of_mem _ ((hbuf a ha).2 hf)
+    · simp only [List.mem_singleton] at ha; subst ha; exact hframe
+
+/-- What the run of `callCopy` leaves, from the caller's state `s`. -/
+def AfterC (sig : Sig) (wa : Bool) (stack : Nat) (kc : Contract isa) (s s' : State) : Prop :=
+  s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+    Frame (s.wr ++ [below (s.gpr .esp) (stack + cBytes sig + 4)]) s.mem s'.mem ∧
+    ∃ s₂ : State, (∀ x, ¬ (below (s.gpr .esp) (cBytes sig)).Contains x 1 → s₂.mem x = s'.mem x) ∧
+      (∀ r, r ≠ .esp → s₂.gpr r = s'.gpr r) ∧ kc.post (cEntry sig wa s) s₂
+
+/-- **The run of `callCopy`**, from a caller's state whose precondition holds,
+for code verified against a contract `kc` whose precondition holds at its
+entry (`hentry`). -/
+theorem c_run {name : String} {core : Prog isa} {kc : Contract isa}
+    (hv : ∀ s, kc.pre s → ∃ t s', Exec isa core s t s' ∧ abiPreserved s s' ∧ kc.post s s')
+    (hsp : NoSp core) (hd : stackUse core ≤ stack) (h0 : 0 < slots sig) (hB : cBytes sig < 4096)
+    {s : State} (hs : (sig.contract abi pre post wa (stack + cBytes sig + 4) leak).pre s)
+    (hentry : kc.pre (cEntry sig wa s)) :
+    WP isa (callCopy (slots sig) name core) s (AfterC sig wa stack kc s) := by
+  obtain ⟨hrun, -, -, hst, -, f₁⟩ := copies_facts hs
+  obtain ⟨hcov, hcovw⟩ := c_covers h0 hs
+  have hreg := c_regions h0 hs
+  have hs' := hs
+  rw [pre_stackL] at hs'
+  obtain ⟨-, hrd, hwr, -, hres, -, -⟩ := hs'
+  have hB4 : cBytes sig = 4 * slots sig := rfl
+  have hcE : ((cCopied sig s).gpr .esp).toNat = (s.gpr .esp).toNat - cBytes sig := by
+    rw [cCopied_esp, sub_toNat (by omega_using [hst, hB4])]
+  -- The frame's regions, as regions below `esp`.
+  have hsubB : ∀ {k : Nat}, k ≤ stack + cBytes sig + 4 → Region.Sub (below (s.gpr .esp) k)
+      (below (s.gpr .esp) (stack + cBytes sig + 4)) := fun hk => below_sub hk (by omega_using [hst, hB4])
+  have hsubC : Region.Sub (below ((cCopied sig s).gpr .esp) (stackUse core + 4))
+      (below (s.gpr .esp) (stack + cBytes sig + 4)) := by
+    rw [cCopied_esp]; exact below_inner (by omega_using [hd, hB4]) (by omega_using [hst, hB4])
+  have harea : Region.Sub ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (cBytes sig), cBytes sig⟩
+      (below (s.gpr .esp) (stack + cBytes sig + 4)) := by
+    have e : (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (cBytes sig), cBytes sig⟩ : Region) =
+        below (s.gpr .esp) (cBytes sig) := by
+      simp only [below]; rw [Taint.sub_setWidth (by omega_using [hst, hB4])]
+    rw [e]; exact hsubB (by omega_using [hB4])
+  have hwrL : ∀ r ∈ ((allRegionsL sig wa (cCopied sig s).callEntry).filter (·.2)).map (·.1),
+      r ∈ s.wr ∨ Region.Sub r (below (s.gpr .esp) (stack + cBytes sig + 4)) := by
+    intro r hr
+    obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
+    obtain ⟨ha, hf⟩ := List.mem_filter.mp ha
+    rw [hreg] at ha
+    rcases List.mem_append.mp ha with ha | ha
+    · refine .inl ?_
+      rw [hwr]; exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨List.mem_append_left _ ha, hf⟩, rfl⟩
+    · simp only [List.mem_singleton] at ha; subst ha; exact .inr harea
+  unfold callCopy
+  refine WP.frameAlloc (by omega_using [h0, hB4]) hB (by omega_using [hB4]) (by omega_using [hst, hB4])
+    (fun i hi => ?_) ?_
+  · simp only [instrs, List.mem_append, List.mem_flatMap, List.mem_range] at hi
+    rcases hi with ⟨j, -, hj⟩ | hi
+    · simp only [copyTo, List.mem_cons, List.not_mem_nil, or_false] at hj
+      rcases hj with rfl | rfl <;> rfl
+    · exact hsp i hi
+  refine WP.seq ⟨_, _, Exec.block hrun, ?_⟩
+  refine WP.call hv hsp (by rw [hcE]; omega_using [hst, hd, hB4]) hentry hcov hcovw ?_
+  intro s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, hg₂, hpost₂⟩ m u hfm
+  refine ⟨by show s'.rd = s.rd; rw [hrd', cCopied_rd], by show s'.wr.tail = s.wr; rw [hwr', cCopied_wr]; rfl,
+    fun r hr => ?_, ?_, ⟨s₂, ?_, ?_, hpost₂⟩⟩
+  · by_cases he : r = .esp
+    · subst he
+      show (freed (cBytes sig) s').gpr .esp = _
+      rw [freed_esp, hcs .esp hr, cCopied_esp, BitVec.sub_add_cancel]
+    · show (freed (cBytes sig) s').gpr r = _
+      rw [freed_gpr _ _ he, hcs r hr, cCopied_gpr sig s (by simp [calleeSaved] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide) he]
+  · intro x hx
+    have hnot : ∀ R, Region.Sub R (below (s.gpr .esp) (stack + cBytes sig + 4)) → ¬ R.Contains x 1 :=
+      fun R hR hc => hx _ (List.mem_append_right _ (List.mem_singleton_self _)) (hR x hc)
+    show m x = s.mem x
+    rw [hfm x (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hnot _ (hsubB (by omega_using [hB4])))]
+    rw [hfr x (fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · rcases hwrL r hr with hr | hr
+        · exact hx r (List.mem_append_left _ hr)
+        · exact hnot r hr
+      · simp only [List.mem_singleton] at hr; subst hr; exact hnot _ hsubC)]
+    exact f₁ x (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hnot _ (hsubB (by omega_using [hB4])))
+  · intro x hx
+    show s₂.mem x = m x
+    rw [hm₂, hfm x (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx)]
+  · intro r hr
+    show s₂.gpr r = (freed (cBytes sig) s').gpr r
+    rw [freed_gpr _ _ hr, hg₂ r hr]
 
 end
 
