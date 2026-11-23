@@ -2346,8 +2346,13 @@ private theorem fillBounded {k : Nat} {c : Callees} {ctr f : Fn} (hs : CalleesSi
   obtain ⟨a,b,g,e,d⟩ := hs
   have ac := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) a
   have gh := calleeSide_mono (Nat.le_refl k) (show 8≤24 by decide) g
-  repeat (any_goals (first | exact Fill.refl _ | refine Fill.seq ?_ ?_ | exact Fill.hole _ _ (by assumption)
-    | refine Fill.ite _ ?_ ?_ | refine Fill.loop _ ?_ | refine Fill.call _ _ ?_))
+  repeat (any_goals (first
+    | exact Fill.refl _
+    | refine Fill.seq ?_ ?_
+    | exact Fill.hole _ _ (by assumption)
+    | refine Fill.ite _ ?_ ?_
+    | refine Fill.loop _ ?_
+    | refine Fill.call _ _ ?_))
 
 private theorem boundedStub_ok : stubCallee boundedStub 2 (fun _=>24) 56 = true := by lit_decide
 private theorem boundedFlag_ok :
@@ -2355,7 +2360,7 @@ private theorem boundedFlag_ok :
 
 private theorem bounded_sp {p : Prog isa} (h : p.all (fun i => !isa.writesSp i)=true) :
     (withBounded p).all (fun i => !isa.writesSp i)=true := by
-  simp only [withBounded, Code.all, h, Bool.true_and, Bool.and_true]
+  simp only [withBounded, Code.all, h, Bool.true_and]
   decide +kernel
 
 theorem boundedSafe (v : GcmImpl) (ctr f : Fn) {k : Nat} (hk : 2≤k) (hc : CalleesSide k v.callees)
