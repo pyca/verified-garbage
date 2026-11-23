@@ -115,6 +115,22 @@ GROUPS = {
         "lib": ["hashes::blake2"],
         "tests": ["blake2_kat::blake2b", "blake2_kat::blake2s", "rfc7693::blake2b", "rfc7693::blake2s"],
     },
+    "blowfish_cbc": {
+        "lib": [],
+        "tests": ["cavp::blowfish_cbc"],
+    },
+    "blowfish_cfb": {
+        "lib": [],
+        "tests": ["cavp::blowfish_cfb"],
+    },
+    "blowfish_ecb": {
+        "lib": [],
+        "tests": ["schneier_blowfish"],
+    },
+    "blowfish_ofb": {
+        "lib": [],
+        "tests": ["cavp::blowfish_ofb"],
+    },
     "brainpoolp256r1": {
         "lib": ["ec::validate::tests::brainpoolp256r1", "ec::compressed::tests::brainpoolp256r1"],
         "tests": [
