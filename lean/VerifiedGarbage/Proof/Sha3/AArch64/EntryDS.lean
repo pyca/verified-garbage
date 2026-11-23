@@ -936,6 +936,7 @@ theorem Verified.entryDS {p₀ : String × VReg} {L' : List (String × VReg)} {n
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
     (hpostR : ∀ vs m m₁ m₂ x, vs.length = (sig.words abi.ptrBits).length →
       (Sig.bufs sig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m m₁ x →
         Curry.apply (sig.words abi.ptrBits) post vs m m₂ x)
@@ -952,8 +953,9 @@ theorem Verified.entryDS {p₀ : String × VReg} {L' : List (String × VReg)} {n
       Curry.apply (sig.words abi.ptrBits) post (allArgs sig s) s.mem m₁ x →
         Curry.apply (sig.words abi.ptrBits) post (allArgs sig s) s.mem m₂ x := by
     intro s hs m₁ m₂ x hag hq
-    have hpw := (List.pairwise_append.mp ((pre_args hA hl).mp hs).2.2.2.1).1
-    exact hpostR _ _ _ _ _ (allArgs_length sig s) hpw hag hq
+    have hp := (pre_args hA hl).mp hs
+    have hpw := (List.pairwise_append.mp hp.2.2.2.1).1
+    exact hpostR _ _ _ _ _ (allArgs_length sig s) hpw hp.2.2.2.2.2.2 hag hq
   have hbody : ∀ s, (sig.contract abi pre post wa (stack + frameDS (nStack sig) (p₀ :: L').length) leak).pre s →
       WP isa (.call name body) (dSave (p₀ :: L') (nStack sig) s) (AfterDS sig (p₀ :: L') post stack s) := fun s hs =>
     d_body_wpOf hn h.1 (fun _ _ h => h) hA hl hE hd hpost hs ⟨d_bodyPre hA hl hE hpre hs, eEntryDS_DL sig (p₀ :: L') s hn⟩
@@ -1124,6 +1126,138 @@ theorem scrubSide_entryDS {L : List (String × VReg)} {core : String} {k : Nat} 
     · exact sideI_clearDL_of L rfl rfl
     · rfl
   · rw [keptG_clearDL]; exact Bool.or_eq_true_iff.mpr (.inr (by decide))
+
+/-! ## A function made so, as emitted -/
+
+/-- `s` with each register `L` gives holding, in its low 64 bits, the address
+of the function `L` pairs it with. -/
+def setDL : List (String × VReg) → State → State
+  | [], s => s
+  | p :: L, s => let t := setDL L s; t.setV p.2 ((t.syms p.1).setWidth 128)
+
+theorem setDL_syms : ∀ (L : List (String × VReg)) (s : State), (setDL L s).syms = s.syms
+  | [], _ => rfl
+  | _ :: L, s => setDL_syms L s
+
+theorem setDL_DL : ∀ {L : List (String × VReg)} (_ : (L.map (·.2)).Nodup) (s : State), DL L (setDL L s)
+  | [], _, _ => fun _ h => by cases h
+  | p :: L, hn, s => by
+    rw [List.map_cons, List.nodup_cons] at hn
+    intro q hq
+    simp only [setDL]
+    rcases List.mem_cons.mp hq with rfl | hq
+    · rw [RegUpd.v_setV_self]
+      change ((((setDL L s).syms) q.1).setWidth 128).extractLsb' 0 64 = (setDL L s).syms q.1
+      apply BitVec.eq_of_toNat_eq
+      simp [BitVec.extractLsb', BitVec.toNat_setWidth]
+      omega
+    · have hne : q.2 ≠ p.2 := fun h => hn.1 (h ▸ List.mem_map_of_mem hq)
+      rw [RegUpd.v_setV_of_ne (s := setDL L s) _ hne]
+      exact setDL_DL hn.2 s q hq
+
+theorem sig_pre_setV {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {st : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s : State} (r : VReg) (x : BitVec 128)
+    (h : (sig.contract abi pre post wa st leak).pre s) :
+    (sig.contract abi pre post wa st leak).pre (s.setV r x) := by
+  simp only [Sig.contract] at h ⊢
+  revert h
+  split
+  · exact id
+  · rename_i vals heq
+    rw [args_setV heq]
+    exact id
+
+/-- `Contract.dL` of a contract under `abi` is satisfiable where the contract
+is, for distinct registers: its precondition reads no vector register. -/
+theorem Contract.dL_sat_of {L : List (String × VReg)} (hn : (L.map (·.2)).Nodup) {sig : Sig}
+    {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool} {st : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (h : ∃ s, (sig.contract abi pre post wa st leak).pre s) :
+    ∃ s, (Contract.dL L (sig.contract abi pre post wa st leak)).pre s := by
+  obtain ⟨s, hs⟩ := h
+  refine ⟨setDL L s, ?_, setDL_DL hn s⟩
+  clear hn
+  induction L with
+  | nil => exact hs
+  | cons p L ih => exact sig_pre_setV _ _ ih
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- Code the cleanup clearing `⟨allGprs, allVecs, []⟩` is for writes none of
+v8–v15, whose high halves that cleanup leaves. -/
+theorem noHi_of_side {F : Prog isa} {W rb : Nat} (hs : scrubSide F W rb ⟨allGprs, allVecs, []⟩ [] = true) :
+    ∀ i ∈ instrs F, ∀ w ∈ hiVecs, vdstOf i ≠ some w := by
+  simp only [scrubSide, Bool.and_eq_true] at hs
+  have hi := hs.1.2
+  intro i hi' w hw hv
+  rw [Code.allInstrs_eq, List.all_eq_true] at hi
+  have := hi i hi'
+  have hk : keptV ⟨allGprs, allVecs, []⟩ = hiVecs := by decide
+  simp only [sideI, vkeeps, hv, hk, Bool.and_eq_true, Bool.not_eq_true'] at this
+  rw [RegSet.mem_ofList.mpr hw] at this
+  exact absurd this.2 (by decide)
+
+open VG.AArch64.Scrub in
+/-- `ScrubAllOk` of a contract under `abi.withFns (f :: fs)`, from that under
+`abi`. -/
+theorem scrubAllOk_withFnsL {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {st : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {W rb : Nat} {f : String} {fs : List String}
+    (h : ScrubAllOk (sig.contract abi pre post wa st leak) W rb) :
+    ScrubAllOk (sig.contract (abi.withFns (f :: fs)) pre post wa st leak) W rb :=
+  ⟨h.sp, h.post, fun _ _ hp => h.pub _ _ (pub_fnsL hp).1⟩
+
+open VG.AArch64.Scrub VG.Impl.Scrub.AArch64 in
+/-- **A function as emitted that calls the functions `L` names by the
+registers it pairs them with**: its code `F`, in its frame of `W` bytes, made
+to call them so (`Code.viaDAt`), called by `entryDS` with their addresses
+there, then its cleanup (`clearDL`), from what `F` meets (`hF`) and what the
+cleanup needs of it (`hs`). The registers are distinct and among v8–v15, which
+`F` writes none of. -/
+theorem verifiedScrubbed_viaDS {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    {p₀ : String × VReg} {L' : List (String × VReg)} {core : String} {F : Prog isa} {W rb : Nat}
+    (hF : Verified target F (sig.contract abi pre post wa W leak))
+    (hs : scrubSide F W rb ⟨allGprs, allVecs, []⟩ [] = true)
+    (hok : ScrubAllOk (sig.contract abi pre post wa (W + frameDS (nStack sig) (p₀ :: L').length) leak)
+      (W + frameDS (nStack sig) (p₀ :: L').length) rb)
+    (hn : ((p₀ :: L').map (·.2)).Nodup) (hhi : ∀ p ∈ p₀ :: L', p.2 ∈ hiVecs)
+    (hW : 0 < W) (hE : W + frameDS (nStack sig) (p₀ :: L').length < 4096)
+    (hwf : wfB (clearDL (p₀ :: L')) = true) (hl : Sig.noLists sig.params = true)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' x, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
+    (hpostR : ∀ vs m m₁ m₂ x, vs.length = (sig.words abi.ptrBits).length →
+      (Sig.bufs sig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m m₁ x →
+        Curry.apply (sig.words abi.ptrBits) post vs m m₂ x)
+    (hsat : ∃ s, (sig.contract abi pre post wa W leak).pre s)
+    (hsat' : ∃ s, (sig.contract abi pre post wa (W + frameDS (nStack sig) (p₀ :: L').length) leak).pre s)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    VerifiedScrubbed target
+      (scrubAll (W + frameDS (nStack sig) (p₀ :: L').length) rb (clearDL (p₀ :: L'))
+        (entryDS (p₀ :: L') core (nStack sig) (Code.viaDAt (p₀ :: L') F)))
+      (sig.contract (abi.withFns ((p₀ :: L').map (·.1))) pre post wa
+        (W + frameDS (nStack sig) (p₀ :: L').length) leak) rb := by
+  obtain ⟨hic, -⟩ := of_side hs hW
+  have hd : 16 * F.aarch64Depth ≤ W := by
+    have h := hs
+    simp only [scrubSide, Nat.pos_iff_ne_zero.mp hW, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at h
+    exact h.1.1.1.1.1.2
+  have hD := Verified.viaDAt (L := p₀ :: L') hF hic
+    (fun i hi p hp => noHi_of_side hs i hi p.2 (hhi p hp)) (Contract.dL_sat_of hn hsat)
+  have hE' := Verified.entryDS (name := core) hD hn hl (by omega) (by rw [depth_viaDAt]; exact hd)
+    hpre hpost hpostR hsat' hleak
+  have hS := scrubSide_entryDS (L := p₀ :: L') (core := core) (k := nStack sig) hs hW hE hwf
+  exact verifiedScrubbed_ofSide hE' (scrubAllOk_withFnsL hok) hS (by omega) fun s₁ s₂ hp m hm => by
+    simp only [entryDS, AArch64.Scrub.inames, List.nil_append, List.append_nil] at hm
+    exact (pub_fnsL hp).2 m (inames_viaDAt hic m hm)
 
 end
 

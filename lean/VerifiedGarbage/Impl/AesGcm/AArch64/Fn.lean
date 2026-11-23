@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Impl.Gcm.AArch64
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Impl.Scrub.AArch64.Scrub
+public import VerifiedGarbage.Impl.Sha3.AArch64.ViaD8
 
 /-!
 # AES-GCM on AArch64: the functions as emitted
@@ -172,6 +173,88 @@ def openToWithPowersBase (v : Calls) : Prog isa :=
 with its working space in its frame. -/
 def storePowers : Prog isa :=
   scrubAll 80 0 own (withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers)
+
+/-! ## Calling the implementations by the addresses in d8, d9 and d10
+
+The functions of the implementations without PMULL are the same code for each
+of them but for the functions they call: `vg_ghash`'s implementation, whose
+address is in `d8`, `vg_aes_ctr32`'s, in `d9`, and its out-of-place form's,
+in `d10`. Each is then the code it was, made to call those by their addresses
+(`Code.viaDAt`), in a function named for it alone (`…_core`), called by an
+entry that puts the addresses there (`entryDS`); its cleanup also clears
+the high halves of the registers the entry writes the low halves of
+(`clearDL`). -/
+
+/-- The implementation of `vg_ghash` and the register of its address. -/
+def ghR (v : Calls) : String × VReg := (v.gh.name, .v8)
+
+/-- The implementation of `vg_aes_ctr32` and the register of its address. -/
+def ctrR (v : Calls) : String × VReg := (v.ctr.name, .v9)
+
+/-- The out-of-place form of `vg_aes_ctr32` and the register of its address. -/
+def toR (v : Calls) : String × VReg := (v.ctrTo.name, .v10)
+
+/-- The function named `core`, whose code is `F`, with `k` stack words, made
+to call the functions `L` names by the registers it pairs them with, called
+with their addresses there, then the cleanup over `W` bytes of stack and the
+entry's frame, for a result of `rb` bits. -/
+def viaDS (L : List (String × VReg)) (W : Nat) (core : String) (rb k : Nat) (F : Prog isa) : Prog isa :=
+  scrubAll (W + Impl.Sha3.AArch64.frameDS k L.length) rb (Impl.Sha3.AArch64.clearDL L)
+    (Impl.Sha3.AArch64.entryDS L core k (Impl.Sha3.AArch64.Code.viaDAt L F))
+
+/-- `vg_aes_gcm_init`, by `d9`. -/
+def initDS (v : Calls) : Prog isa :=
+  viaDS [ctrR v] v.initWn "vg_aes_gcm_init_core" 0 0
+    (withStackScratch v.initWn .x3 (AesGcm.AArch64.init v.callees))
+
+/-- `vg_aes_gcm_stream_init`, by `d8`. -/
+def streamInitDS (v : Calls) : Prog isa :=
+  viaDS [ghR v] v.wn "vg_aes_gcm_stream_init_core" 0 0
+    (withStackScratch v.wn .x4 (AesGcm.AArch64.streamInit v.callees))
+
+/-- `vg_aes_gcm_stream_aad`, by `d8`. -/
+def streamAadDS (v : Calls) : Prog isa :=
+  viaDS [ghR v] v.wn "vg_aes_gcm_stream_aad_core" 0 0
+    (withStackScratch v.wn .x5 (AesGcm.AArch64.streamAad v.callees))
+
+/-- `vg_aes_gcm_stream_encrypt`, by `d8` and `d9`. -/
+def streamEncryptDS (v : Calls) : Prog isa :=
+  viaDS [ghR v, ctrR v] v.wn "vg_aes_gcm_stream_encrypt_core" 0 0
+    (withStackScratch v.wn .x7 (AesGcm.AArch64.streamEncrypt v.callees))
+
+/-- `vg_aes_gcm_stream_decrypt`, by `d8` and `d9`. -/
+def streamDecryptDS (v : Calls) : Prog isa :=
+  viaDS [ghR v, ctrR v] v.wn "vg_aes_gcm_stream_decrypt_core" 0 0
+    (withStackScratch v.wn .x7 (AesGcm.AArch64.streamDecrypt v.callees))
+
+/-- `vg_aes_gcm_stream_finish`, by `d8` and `d9`. -/
+def streamFinishDS (v : Calls) : Prog isa :=
+  viaDS [ghR v, ctrR v] v.wn "vg_aes_gcm_stream_finish_core" 0 0
+    (withStackScratch v.wn .x6 (AesGcm.AArch64.streamFinish v.callees))
+
+/-- `vg_aes_gcm_stream_verify`, which returns 32 bits, by `d8` and `d9`. -/
+def streamVerifyDS (v : Calls) : Prog isa :=
+  viaDS [ghR v, ctrR v] v.wn "vg_aes_gcm_stream_verify_core" 32 0
+    (withStackScratch v.wn .x7 (AesGcm.AArch64.streamVerify v.callees))
+
+/-- `vg_aes_gcm_seal_with_powers` of implementations without code that reads
+the powers, by `d8` and `d9`: its one stack argument copied by the entry,
+then by `withStackArgScratch`. -/
+def sealWithPowersBaseDS (v : Calls) : Prog isa :=
+  viaDS [ghR v, ctrR v] 2576 "vg_aes_gcm_seal_with_powers_core" 0 1
+    (withStackArgScratch 2576 1 (sealCode v))
+
+/-- `vg_aes_gcm_open_with_powers` of those implementations, by `d8` and `d9`,
+as `sealWithPowersBaseDS`. -/
+def openWithPowersBaseDS (v : Calls) : Prog isa :=
+  viaDS [ghR v, ctrR v] 2592 "vg_aes_gcm_open_with_powers_core" 32 2
+    (withStackArgScratch 2592 2 (openCode v))
+
+/-- `vg_aes_gcm_open_to_with_powers` of those implementations, by `d8`, `d9`
+and `d10`, as `sealWithPowersBaseDS`. -/
+def openToWithPowersBaseDS (v : Calls) : Prog isa :=
+  viaDS [ghR v, ctrR v, toR v] 2608 "vg_aes_gcm_open_to_with_powers_core" 32 4
+    (withStackArgScratch 2608 4 (openToCode v))
 
 end Fn
 
