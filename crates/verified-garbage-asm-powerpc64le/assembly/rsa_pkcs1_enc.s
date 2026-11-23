@@ -538,6 +538,257 @@ vg_rsa_pkcs1_decrypt_precomputed:
 	vxor %v19, %v19, %v19
 	blr
 
+vg_rsa_pkcs1_decrypt_precomputed_front:
+	stdu %r1, -272(%r1)
+	addi %r12, %r1, 0
+	ld %r0, 368(%r12)
+	std %r0, 96(%r12)
+	ld %r0, 376(%r12)
+	std %r0, 104(%r12)
+	ld %r0, 384(%r12)
+	std %r0, 112(%r12)
+	ld %r0, 392(%r12)
+	std %r0, 120(%r12)
+	ld %r0, 400(%r12)
+	std %r0, 128(%r12)
+	ld %r0, 408(%r12)
+	std %r0, 136(%r12)
+	ld %r0, 416(%r12)
+	std %r0, 144(%r12)
+	ld %r0, 424(%r12)
+	std %r0, 152(%r12)
+	ld %r0, 432(%r12)
+	std %r0, 160(%r12)
+	ld %r0, 440(%r12)
+	std %r0, 168(%r12)
+	ld %r0, 448(%r12)
+	std %r0, 176(%r12)
+	ld %r0, 456(%r12)
+	std %r0, 184(%r12)
+	ld %r0, 464(%r12)
+	std %r0, 192(%r12)
+	ld %r0, 472(%r12)
+	std %r0, 200(%r12)
+	ld %r0, 480(%r12)
+	std %r0, 208(%r12)
+	ld %r0, 488(%r12)
+	std %r0, 216(%r12)
+	ld %r0, 496(%r12)
+	std %r0, 224(%r12)
+	std %r14, 232(%r12)
+	std %r15, 240(%r12)
+	std %r16, 248(%r12)
+	std %r17, 256(%r12)
+	mflr %r0
+	std %r0, 264(%r12)
+	or %r14, %r3, %r3
+	or %r15, %r4, %r4
+	or %r16, %r5, %r5
+	ld %r17, 472(%r12)
+	bl {vg_rsa_pkcs1_decrypt_precomputed_body}
+	addi %r12, %r1, 0
+	ld %r0, 264(%r12)
+	mtlr %r0
+	or %r4, %r17, %r17
+	li %r5, 2048
+	li %r6, 0
+20:
+	stb %r6, 0(%r4)
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 20b
+	or %r4, %r14, %r14
+	or %r5, %r17, %r17
+	or %r6, %r15, %r15
+21:
+	lbz %r7, 0(%r4)
+	stb %r7, 0(%r5)
+	addi %r4, %r4, 1
+	addi %r5, %r5, 1
+	addi %r6, %r6, -1
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 21b
+	ld %r8, 0(%r16)
+	subf %r8, %r8, %r15
+	li %r9, 1
+	li %r10, 11
+22:
+	or %r4, %r17, %r17
+	add %r5, %r4, %r9
+	li %r6, 1
+	and %r6, %r8, %r6
+	li %r7, 0
+	subf %r6, %r6, %r7
+	li %r7, 1024
+23:
+	lbz %r11, 0(%r4)
+	lbz %r12, 0(%r5)
+	xor %r12, %r12, %r11
+	and %r12, %r12, %r6
+	xor %r11, %r11, %r12
+	stb %r11, 0(%r4)
+	addi %r4, %r4, 1
+	addi %r5, %r5, 1
+	addi %r7, %r7, -1
+	cmpldi %cr0, %r7, 0
+	bne %cr0, 23b
+	rldicl %r8, %r8, 63, 1
+	add %r9, %r9, %r9
+	addi %r10, %r10, -1
+	cmpldi %cr0, %r10, 0
+	bne %cr0, 22b
+	or %r4, %r17, %r17
+	or %r5, %r14, %r14
+	or %r6, %r15, %r15
+24:
+	lbz %r7, 0(%r4)
+	stb %r7, 0(%r5)
+	addi %r4, %r4, 1
+	addi %r5, %r5, 1
+	addi %r6, %r6, -1
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 24b
+	addi %r12, %r1, 0
+	ld %r14, 232(%r12)
+	ld %r15, 240(%r12)
+	ld %r16, 248(%r12)
+	ld %r17, 256(%r12)
+	addi %r1, %r1, 272
+	li %r0, 0
+	stdu %r1, -3920(%r1)
+	addi %r12, %r1, 32
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	addi %r12, %r12, 128
+	dcbz %r12, %r0
+	std %r0, 0(%r12)
+	std %r0, 8(%r12)
+	std %r0, 16(%r12)
+	std %r0, 24(%r12)
+	std %r0, 32(%r12)
+	std %r0, 40(%r12)
+	std %r0, 48(%r12)
+	std %r0, 56(%r12)
+	std %r0, 64(%r12)
+	std %r0, 72(%r12)
+	std %r0, 80(%r12)
+	std %r0, 88(%r12)
+	std %r0, 96(%r12)
+	std %r0, 104(%r12)
+	std %r0, 112(%r12)
+	std %r0, 120(%r12)
+	std %r0, 128(%r12)
+	std %r0, 136(%r12)
+	std %r0, 144(%r12)
+	std %r0, 152(%r12)
+	std %r0, 160(%r12)
+	std %r0, 168(%r12)
+	addi %r1, %r1, 3920
+	rldicr %r3, %r3, 32, 31
+	rldicl %r3, %r3, 32, 32
+	li %r4, 0
+	li %r5, 0
+	li %r6, 0
+	li %r7, 0
+	li %r8, 0
+	li %r9, 0
+	li %r10, 0
+	li %r11, 0
+	li %r12, 0
+	addc %r0, %r0, %r0
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
+	vxor %v8, %v8, %v8
+	vxor %v9, %v9, %v9
+	vxor %v10, %v10, %v10
+	vxor %v11, %v11, %v11
+	vxor %v12, %v12, %v12
+	vxor %v13, %v13, %v13
+	vxor %v14, %v14, %v14
+	vxor %v15, %v15, %v15
+	vxor %v16, %v16, %v16
+	vxor %v17, %v17, %v17
+	vxor %v18, %v18, %v18
+	vxor %v19, %v19, %v19
+	blr
+
 vg_rsa_pkcs1_encrypt_random:
 	stdu %r1, -1216(%r1)
 	addi %r12, %r1, 0
