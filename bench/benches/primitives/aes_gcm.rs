@@ -452,21 +452,22 @@ pub fn bench(c: &mut Criterion) {
         });
         g.finish();
 
-        // Append the payload and content type to a reusable record buffer.
+        // Seal into the spare capacity of a reusable record buffer.
         let mut record = Vec::with_capacity(size + 1 + 16);
-        let mut g = c.benchmark_group("aes-128-gcm-encrypt-append-reused-key");
+        let mut g = c.benchmark_group("aes-128-gcm-encrypt-uninit-reused-key");
         g.throughput(Throughput::Bytes(size as u64 + 1));
         g.bench(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 record.clear();
                 vg_key
-                    .encrypt_append(
+                    .encrypt_uninit(
                         black_box(&nonce),
                         black_box(&aad),
                         &[black_box(&data), black_box(&ty)],
-                        black_box(&mut record),
+                        black_box(&mut record.spare_capacity_mut()[..size + 1]),
                     )
                     .unwrap()
+                    .1
             })
         });
         g.bench(BenchmarkId::new(OPENSSL, size), |b| {
