@@ -29,6 +29,8 @@ vg_aes_ctr32_to_aes:
 	ldr w10, [x2, #12]
 	rev w10, w10
 	lsr x13, x4, #3
+	movz x9, #7, lsl #0
+	and x4, x4, x9
 	cbz x13, 20f
 22:
 	add w12, w10, #0
@@ -321,8 +323,7 @@ vg_aes_ctr32_to_aes:
 	str q7, [x14, #112]
 	add w10, w10, #8
 	add x3, x3, #128
-	sub x4, x4, #8
-	lsr x13, x4, #3
+	sub x13, x13, #1
 	add x14, x14, #128
 	cbnz x13, 22b
 	b 21f
