@@ -202,6 +202,11 @@ structure ModOkW (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
   inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
   red : M.ok m = true
 
+/-- `ModOkW` does not depend on whether the products use BMI2 and ADX (`Mod.adx`). -/
+theorem ModOkW.adx {M : Mod} {size m : Nat} {mem : Mem} {base : Addr} (b : Bool)
+    (h : ModOkW M size m mem base) : ModOkW { M with adx := b } size m mem base :=
+  ⟨h.n0, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
+
 /-- `ModOkW` does not depend on whether the products are written out (`Mod.inl`). -/
 theorem ModOkW.inl {M : Mod} {size m : Nat} {mem : Mem} {base : Addr} (b : Bool)
     (h : ModOkW M size m mem base) : ModOkW { M with inl := b } size m mem base :=

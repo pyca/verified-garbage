@@ -69,9 +69,16 @@ own changes are rebuilt either way, on top of the restored build.
   verified code with a contract in `Spec/`. That includes padding, partial
   blocks and segments, the order of absorb, pad and squeeze, constants
   (rates, suffixes, lengths), rejection sampling, the retry and outer loops
-  of key generation, comparing tags, and wiping output on failure. When the
-  verified functions cannot do what the API needs, never fill the gap in
-  Rust, even "for now" or on only some targets: add the verified function
+  of key generation, comparing tags, and wiping output on failure. It
+  includes the layout of a secret result: the verified function writes it
+  where the Rust code returns it, a result shorter than its buffer first,
+  zeros after it, so that the Rust code at most truncates over zeros.
+  The Rust code never moves secret bytes (`drain`, `copy_within`, ...) or
+  grows a buffer that holds them, which leaves copies the caller cannot
+  wipe (#6301); `ci/check_secret_residue.py` makes every such call in
+  `src/` say why it leaves nothing behind (`// NO-SECRET-RESIDUE: <why>`).
+  When the verified functions cannot do what the API needs, never fill the
+  gap in Rust, even "for now" or on only some targets: add the verified function
   first, in its own spec PR, then the implementation PR. If you find
   cryptography in Rust, do not extend it or copy it to a new algorithm or
   target. Move it into verified code and delete the Rust. Nothing checks

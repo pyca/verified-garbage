@@ -252,6 +252,10 @@ def sl (i : Nat) : Nat :=
 def MP' : Mod :=
   { n := c.n, mo := c.sl MP, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.p), red := Red.ofModulus c.n c.C.p,
     adx := c.adx, sparse := sparseOk c.n c.C.p }
+/-- `MP'` for the inversion by divsteps: for nine words (P-521) its last
+product is without BMI2 and ADX, the one place their code differs, so that
+both configurations call one function (`pSuffix`). -/
+def MPI : Mod := { c.MP' with adx := c.adx && c.n != 9 }
 /-- `MP'`, but written out in the loops that run the most products (`hot`). -/
 def MH : Mod := { c.MP' with inl := c.hot }
 def MN' : Mod :=
@@ -347,7 +351,7 @@ def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, bitLen (c.C.n - 2) (64 * c.n)⟩
 
 /-- The inversions by divsteps, their working area past the tables of bits. -/
-def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
+def invP : InvCfg := .ofMod c.MPI (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
 def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (bitsAt c.n 3) c.C.n
 
 /-- The inversions that four-word curves share (`inv4`): their constants, the
@@ -439,6 +443,11 @@ words, whose products modulo `n` use neither BMI2 nor ADX (`Mont.X86_64.mul`),
 so that both configurations call the one function. -/
 def nSuffix : String := if c.n = 9 then "" else c.fnSuffix
 
+/-- The suffix of `vg_<curve>_inv_mod_p`'s name: `fnSuffix`, but none for nine
+words, whose inversion multiplies without BMI2 and ADX (`MPI`), so that both
+configurations call the one function. -/
+def pSuffix : String := if c.n = 9 then "" else c.fnSuffix
+
 /-- `Z^(p-2)` and `k^(n-2)` into `ACC`: calls of `vg_<curve>_inv_mod_p` and
 `_n` (`invFn`), else inline (`pPowI`, `nPowI`). -/
 def pPow : Prog isa :=
@@ -446,7 +455,7 @@ def pPow : Prog isa :=
   | some C =>
     if c.inv4 then
       .seq (.block (c.invConsts c.MP' (c.invPS.seedOf c.C.p))) (.call "vg_inv4_mod_p" (c.invFn (InvCfg.inv c.invPS)))
-    else .call (s!"vg_{C.curve}_inv_mod_p" ++ c.fnSuffix) (c.invFn c.pPowI)
+    else .call (s!"vg_{C.curve}_inv_mod_p" ++ c.pSuffix) (c.invFn c.pPowI)
   | none => c.pPowI
 def nPow : Prog isa :=
   match c.inverse with

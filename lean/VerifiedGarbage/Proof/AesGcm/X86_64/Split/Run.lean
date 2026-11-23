@@ -420,9 +420,9 @@ theorem PP.ofMid {M : CtxMode} {s₀ s₂ : State} {mE : Mem} {Ctx W SP Np A D S
     rcases hr with rfl | rfl
     · exact h₁
     · exact h₂.symm
-  exact ⟨M₂.env, C.lay, hR ▸ M₂.rounds, M₂.dat, M₂.len, hS, hsl, C.data.of_eq M₂.rd M₂.wr,
+  exact ⟨⟨M₂.env, C.lay, hR ▸ M₂.rounds, M₂.dat, hS, C.data.of_eq M₂.rd M₂.wr,
     by rw [M₂.rd, M₂.wr]; exact C.src, C.sW, C.sD, C.sWrap, C.sl_le, C.kw, C.kd, C.ks, kM, C.sp56,
-    X.keep M₂.rd M₂.wr M₂.frame (dM X.cw (X.ct.sub_left (below_sub (by decide) (by decide))))⟩
+    X.keep M₂.rd M₂.wr M₂.frame (dM X.cw (X.ct.sub_left (below_sub (by decide) (by decide))))⟩, M₂.len, hsl⟩
 
 /-- What `seal_split` leaves at the tag at `W`, after the entry: what
 `sealRun_ok` does, for the plaintext of `sl` bytes at `S` and the rest at
