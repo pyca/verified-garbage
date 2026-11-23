@@ -56,8 +56,8 @@ with `dst` still in `r10` and `r11` at its working space, `scratch + 64`,
 rounded up to 64 bytes when `aligned`; all of them if `full` (a `piece`
 that also takes the blocks after the last 16), with the arguments kept
 those of no rest. -/
-def stitchPart (piece : Prog isa) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
-  .seq (.block [.alu .cmp .r9 (imm 16)])
+def stitchPart (piece : Prog isa) (aligned : Bool := false) (full : Bool := false) (minimum : Nat := 16) : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (imm minimum)])
     (.ite .b (.block [])
       (.seq (.block ((if full then takeAllTo else
         [.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax)]) ++

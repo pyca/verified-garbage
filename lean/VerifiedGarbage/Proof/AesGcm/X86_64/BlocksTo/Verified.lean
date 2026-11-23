@@ -150,10 +150,10 @@ theorem split_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) (h11 : s₁.gpr 
 /-- What the out-of-place loops need, from the arguments in their
 registers, `r9 = 16 ⌊n / 16⌋`, the output in `r10` and the working space in
 `r11`. -/
-theorem spreTo_of {q : Nat} {s₃ : State} (hq16 : 16 ≤ q) (hqle : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
+theorem spreTo_of {q lo : Nat} {s₃ : State} (hq16 : lo ≤ q) (hqle : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
     (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (h10 : s₃.gpr .r10 = Dst s)
     (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))) (hrd : s₃.rd = s.rd)
-    (hwr : s₃.wr = s.wr) (hf₃ : Frame [kR' s] s.mem s₃.mem) : SPreTo M s₃ := by
+    (hwr : s₃.wr = s.wr) (hf₃ : Frame [kR' s] s.mem s₃.mem) : SPreTo M s₃ lo := by
   obtain hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   obtain hq : (s₃.gpr .r9).toNat = q := by rw [h9, toNat_ofNat_of_lt (by omega_using [hqle, hn])]
   obtain hqn : 16 * q ≤ n s * 16 := by omega_using [hqle]
@@ -269,6 +269,19 @@ theorem cmp16_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
   simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
     isa, e16, h9, Option.bind_some, Option.some.injEq, exists_eq_left']
   simp
+
+omit hp in
+theorem cmpMinimum_ok {minimum : Nat} (cut : minimum = 2 ∨ minimum = 16)
+    {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
+    WP isa (.block [.alu .cmp .r9 (imm minimum)]) s₁ fun s₂ => s₂.gpr = s₁.gpr ∧ s₂.mem = s₁.mem ∧
+      s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.cf = some (decide (n s < minimum)) := by
+  rcases cut with rfl | rfl
+  · have e : BitVec.signExtend 64 (BitVec.ofNat 32 2) = 2 := by decide
+    apply WP.of_runBlock
+    simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
+      isa, e, h9, Option.bind_some, Option.some.injEq, exists_eq_left']
+    simp
+  · exact cmp16_ok h9
 
 /-- The interleaved part, from the state after the entry. -/
 theorem stitch_ok {piece : Prog isa} (hpiece : StitchToOkM M piece)
@@ -839,7 +852,7 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode SPreTo EPostTo StitchToOkM)
 
 /-- The blocks a `piece` that takes them all is given: all of them if at
 least 16, else none. -/
-def qf (s : State) : Nat := if n s < 16 then 0 else n s
+def qf (s : State) (minimum : Nat := 16) : Nat := if n s < minimum then 0 else n s
 
 section
 variable {aligned : Bool} {M : CtxMode} {s : State} (hp : BT M s)
@@ -948,52 +961,69 @@ theorem restFullTo_ok {st : State} (h : Mid s (qf s) (qf s) st) :
     exact rest_ok hp (by omega_using [h16]) h
   · exact restZeroTo_ok hp (by simp [qf, h16]) h
 
-/-- With `full`, all the blocks by `piece` (if at least 16). -/
-theorem stitchFullTo_ok {piece : Prog isa} (hpiece : StitchToOkM M piece 1)
+/-- Frame and marshal an entire prefix before invoking an out-of-place piece. -/
+theorem allPiece_ok {lo : Nat} {piece : Prog isa} (hlo : lo ≤ n s)
+    (hpiece : ∀ t, SPreTo M t lo → Gcm.X86_64.Stitch.nb t = n s → WP isa piece t (EPostTo t))
     {s₁ : State} (h11 : s₁.gpr .r11 = S s) (h10 : s₁.gpr .r10 = Dst s)
     (hg : ∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
-    WP isa (stitchPart piece aligned true) s₁ (Mid s (qf s) (qf s)) := by
+    WP isa (.seq (.block (takeAllTo ++ Blocks.scratchSetup aligned)) piece) s₁ (Mid s (n s) (n s)) := by
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (takeAllTo_ok hp (by rw [h11]) (by rw [hg _ (by decide) (by decide)])
+    (by rw [hg _ (by decide) (by decide)]) (by rw [h10]) hk hf
+    (by rw [hwr])) fun s₃ ⟨k₃, f₃, g₃, rd₃, wr₃⟩ => ?_
+  refine WP.mono (Blocks.scratch_ok (aligned := aligned) s₃) fun s₄ ⟨h11₄, g₄, m₄, rd₄, wr₄⟩ => ?_
+  obtain keepR : ∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → s₄.gpr r = s.gpr r := fun r a b c => by
+    rw [g₄ r c, g₃ r a, hg r c b]
+  obtain ga : ∀ r ∈ argRegs, s₄.gpr r = s.gpr r := fun r hr => by
+    simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact keepR _ (by decide) (by decide) (by decide)
+  obtain gc : ∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r := fun r hr => by
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact keepR _ (by decide) (by decide) (by decide)
+  obtain h10₄ : s₄.gpr .r10 = Dst s := by rw [g₄ _ (by decide), g₃ _ (by decide), h10]
+  obtain g11 : s₄.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
+    rw [h11₄, g₃ _ (by decide), h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s
+  obtain h9 : s₄.gpr .r9 = BitVec.ofNat 64 (n s) := by
+    rw [keepR _ (by decide) (by decide) (by decide)]
+    exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm
+  obtain rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, hrd]
+  obtain wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, hwr]
+  obtain hk₄ : Kept s (n s) s₄.mem := by rw [m₄]; exact k₃
+  obtain hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄]; exact f₃
+  exact WP.mono (hpiece s₄ (spreTo_of hp hlo (Nat.le_refl _) h9 ga h10₄ g11 rd₄' wr₄' hf₄) (congrArg BitVec.toNat (keepR .r9 (by decide) (by decide) (by decide))))
+    fun s₅ hP => mid_of_postTo hp (Nat.le_refl _) h9 ga gc h10₄ g11 rd₄' wr₄' hk₄ hf₄ hP
+
+/-- With `full`, all the blocks by `piece` (if at least 16). -/
+theorem stitchFrom_ok {piece : Prog isa} {minimum : Nat} (cut : minimum = 2 ∨ minimum = 16)
+    (hpiece : ∀ t, SPreTo M t minimum → WP isa piece t (EPostTo t))
+    {s₁ : State} (h11 : s₁.gpr .r11 = S s) (h10 : s₁.gpr .r10 = Dst s)
+    (hg : ∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r)
+    (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
+    WP isa (stitchPart piece aligned true minimum) s₁ (Mid s (qf s minimum) (qf s minimum)) := by
   obtain hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
-  refine WP.seq (WP.mono (cmp16_ok (hg _ (by decide) (by decide))) fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
-  refine WP.ite (decide (n s < 16)) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
-  · have h16 : n s < 16 := by simpa using h
-    obtain hq : qf s = 0 := by simp [qf, h16]
+  refine WP.seq (WP.mono (cmpMinimum_ok cut (hg _ (by decide) (by decide))) fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
+  refine WP.ite (decide (n s < minimum)) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
+  · have h16 : n s < minimum := by simpa using h
+    obtain hq : qf s minimum = 0 := by simp [qf, h16]
     rw [hq]
     exact WP.block_nil (mid_entry hp (by rw [g₂]; exact hg _ (by decide) (by decide))
       (fun r hr => by rw [g₂]; exact hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr))
       (by rw [m₂]; exact hk) (by rw [m₂]; exact hf) (rd₂.trans hrd) (wr₂.trans hwr))
-  · have h16 : 16 ≤ n s := by simp at h; omega_using [h]
-    obtain hq : qf s = n s := by simp [qf, show ¬ n s < 16 by omega_using [h16]]
+  · have h16 : minimum ≤ n s := by simp at h; omega_using [h]
+    obtain hq : qf s minimum = n s := by simp [qf, show ¬ n s < minimum by omega_using [h16]]
     rw [hq]
-    refine WP.seq ?_
-    rw [show ((if true = true then takeAllTo else [.mov .rax (.reg .r9), .alu .and .rax (imm 15),
-      .alu .sub .r9 (.reg .rax)]) ++ Blocks.scratchSetup aligned : List Instr) =
-      takeAllTo ++ Blocks.scratchSetup aligned from rfl, WP.block_append_iff]
-    refine WP.mono (takeAllTo_ok hp (by rw [g₂, h11]) (by rw [g₂, hg _ (by decide) (by decide)])
-      (by rw [g₂, hg _ (by decide) (by decide)]) (by rw [g₂, h10]) (by rw [m₂]; exact hk) (by rw [m₂]; exact hf)
-      (by rw [wr₂, hwr])) fun s₃ ⟨k₃, f₃, g₃, rd₃, wr₃⟩ => ?_
-    refine WP.mono (Blocks.scratch_ok (aligned := aligned) s₃) fun s₄ ⟨h11₄, g₄, m₄, rd₄, wr₄⟩ => ?_
-    obtain keepR : ∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → s₄.gpr r = s.gpr r := fun r a b c => by
-      rw [g₄ r c, g₃ r a, g₂, hg r c b]
-    obtain ga : ∀ r ∈ argRegs, s₄.gpr r = s.gpr r := fun r hr => by
-      simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> exact keepR _ (by decide) (by decide) (by decide)
-    obtain gc : ∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r := fun r hr => by
-      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact keepR _ (by decide) (by decide) (by decide)
-    obtain h10₄ : s₄.gpr .r10 = Dst s := by rw [g₄ _ (by decide), g₃ _ (by decide), g₂, h10]
-    obtain g11 : s₄.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
-      rw [h11₄, g₃ _ (by decide), g₂, h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s
-    obtain h9 : s₄.gpr .r9 = BitVec.ofNat 64 (n s) := by
-      rw [keepR _ (by decide) (by decide) (by decide)]
-      exact (BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _) |>.symm
-    obtain rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, hrd]
-    obtain wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, hwr]
-    obtain hk₄ : Kept s (n s) s₄.mem := by rw [m₄]; exact k₃
-    obtain hf₄ : Frame [kR' s] s.mem s₄.mem := by rw [m₄]; exact f₃
-    exact WP.mono (hpiece s₄ (spreTo_of hp h16 (Nat.le_refl _) h9 ga h10₄ g11 rd₄' wr₄' hf₄) (Nat.mod_one _))
-      fun s₅ hP => mid_of_postTo hp (Nat.le_refl _) h9 ga gc h10₄ g11 rd₄' wr₄' hk₄ hf₄ hP
+    exact allPiece_ok (aligned := aligned) hp h16 (fun t h _ => hpiece t h)
+      (g₂ ▸ h11) (g₂ ▸ h10) (fun r a b => by rw [g₂]; exact hg r a b)
+      (m₂ ▸ hk) (m₂ ▸ hf) (rd₂.trans hrd) (wr₂.trans hwr)
+
+theorem stitchFullTo_ok {piece : Prog isa} (hpiece : StitchToOkM M piece 1)
+    {s₁ : State} (h11 : s₁.gpr .r11 = S s) (h10 : s₁.gpr .r10 = Dst s)
+    (hg : ∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r)
+    (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
+    WP isa (stitchPart piece aligned true) s₁ (Mid s (qf s) (qf s)) :=
+  stitchFrom_ok hp (Or.inr rfl) (fun t h => hpiece t h (Nat.mod_one _)) h11 h10 hg hk hf hrd hwr
 
 end
 

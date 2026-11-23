@@ -752,7 +752,7 @@ theorem ghArgsTo_ok {st : State} (h : MidD s 0 0 st) :
   obtain rs := ret_sub (s := s)
   apply WP.of_runBlock
   refine ⟨_, by
-    simp only [ghArgsTo, argCtx, argY, argSrc, argN]
+    simp only [ghArgsTo, Impl.AesGcm.X86_64.BlocksToDec.ghArgsAt, argCtx, argY, argSrc, argN]
     xrun [a₂, hS, r₁, r₄, r₅, r₆, kc0, h.kept.y, ks0, kn0], ?_⟩
   refine ⟨⟨by simp [gpr_setReg, gpr_arithFlags], by simp [gpr_setReg], by simp [gpr_setReg],
     by simp [gpr_setReg], by simp [gpr_setReg, gpr_arithFlags], by omega_arith,
@@ -773,6 +773,58 @@ theorem ghArgsTo_ok {st : State} (h : MidD s 0 0 st) :
     · exact ⟨yR s, by simp, 0, by simp, by simp⟩
     · exact ⟨sR s, by simp, 64, rfl, by exact (by decide : 64 + 256 ≤ 2112)⟩
   · simp only [wr_setReg, wr_arithFlags, h.wr, hp.wr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨yR s, by simp, 0, by simp, by simp⟩
+    · exact ⟨sR s, by simp, 64, rfl, by exact (by decide : 64 + 256 ≤ 2112)⟩
+  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
+
+/-- GHASH reads the encrypted blocks from the destination. -/
+theorem ghArgsOut_ok {st : State} (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr)
+    (hk : Kept s 0 st.mem) (ha : st.mem.readW (SP s + BitVec.ofNat 64 24) 64 = S s) :
+    WP isa (.block (Impl.AesGcm.X86_64.BlocksToDec.ghArgsAt argDst)) st fun st' =>
+      GhCall st' (K s + BitVec.ofNat 64 240) (Y s) (Dst s) (W5 s) (n s) ∧ st'.gpr .rsp = SP s ∧
+      (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.mem = st.mem ∧ st'.rd = st.rd ∧ st'.wr = st.wr := by
+  obtain h16 := n16_lt hp
+  obtain a₂ : InRegions (st.rd ++ st.wr) (st.gpr .rsp + BitVec.ofNat 64 24) 8 := by
+    rw [hrd, hwr, hsp]; exact a_in hp (i := 2) (by decide)
+  obtain hS : st.mem.readW (st.gpr .rsp + BitVec.ofNat 64 24) 64 = S s := by
+    rw [hsp, ha]
+  obtain r₁ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 0) 8 := by rw [hrd, hwr]; exact s_in' hp (by decide)
+  obtain kc0 : st.mem.readW (S s + BitVec.ofNat 64 0) 64 = K s := by simpa using hk.ctx
+  obtain r₄ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 24) 8 := by rw [hrd, hwr]; exact s_in' hp (by decide)
+  obtain r₅ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 48) 8 := by rw [hrd, hwr]; exact s_in' hp (by decide)
+  obtain r₆ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 40) 8 := by rw [hrd, hwr]; exact s_in' hp (by decide)
+  obtain ks0 : st.mem.readW (S s + BitVec.ofNat 64 48) 64 = Dst s := by simpa using hk.dst
+  obtain kn0 : st.mem.readW (S s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (n s) := by simpa using hk.n
+  obtain s16 : Region.Sub ⟨W5 s, 256⟩ (sR s) := w5_sub (by decide)
+  obtain pH := h_sub (s := s) (M := M)
+  obtain rs := ret_sub (s := s)
+  apply WP.of_runBlock
+  refine ⟨_, by
+    simp only [Impl.AesGcm.X86_64.BlocksToDec.ghArgsAt, argCtx, argY, argDst, argN]
+    xrun [a₂, hS, r₁, r₄, r₅, r₆, kc0, hk.y, ks0, kn0], ?_⟩
+  refine ⟨⟨by simp [gpr_setReg, gpr_arithFlags], by simp [gpr_setReg], by simp [gpr_setReg],
+    by simp [gpr_setReg], by simp [gpr_setReg, gpr_arithFlags], by omega_arith,
+    hp.k_y.sub_left pH, (hp.k_s.sub_left pH).sub_right s16, by rw [dst_eq]; exact hp.y_d,
+    hp.y_s.sub_right s16, by rw [dst_eq]; exact hp.d_s.sub_right s16, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    by simp [gpr_setReg, gpr_arithFlags, hsp], fun r hr => ?_, rfl, rfl, rfl⟩
+  all_goals try simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte, hsp]
+  · exact (hp.b_k.sub_left rs).sub_right pH
+  · exact hp.b_y.sub_left rs
+  · rw [dst_eq]; exact hp.b_d.sub_left rs
+  · exact (hp.b_s.sub_left rs).sub_right s16
+  · simp only [rd_setReg, wr_setReg, rd_arithFlags, wr_arithFlags, hrd, hwr, hp.rd, hp.wr]
+    refine Covers.of_sub fun r hr => ?_
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨kR M s, by simp, 240, rfl, by have := M.ge; omega_arith⟩
+    · exact ⟨dR s, by simp, 0, by simp, by simp [Nat.mul_comm]⟩
+    · exact ⟨yR s, by simp, 0, by simp, by simp⟩
+    · exact ⟨sR s, by simp, 64, rfl, by exact (by decide : 64 + 256 ≤ 2112)⟩
+  · simp only [wr_setReg, wr_arithFlags, hwr, hp.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -983,6 +1035,156 @@ theorem ctrStep_ok (v : Proof.Aes.X86_64.Ctr32ToImpl) {st : State} (G : GD s st)
     · exact hp.t_d
     · exact hp.t_s
     · exact Offset.base_disjoint_below (SP s) (by omega_arith)) (by decide)
+
+structure Encrypted (s b : State) : Prop where
+  rsp : b.gpr .rsp = SP s
+  saved : ∀ r ∈ calleeSaved, b.gpr r = s.gpr r
+  rd : b.rd = s.rd
+  wr : b.wr = s.wr
+  kept : Kept s 0 b.mem
+  arg : b.mem.readW (SP s + BitVec.ofNat 64 24) 64 = S s
+  frame : Frame (wR s ++ [tR s]) s.mem b.mem
+  hashKey : blockAt b.mem (K s + BitVec.ofNat 64 240) = hk s
+  y : blockAt b.mem (Y s) = y₀ s
+  out : blocksAt b.mem (Dst s) (n s) = ct s (n s)
+  ctr : blockAt b.mem (C s) = Nat.repeat inc32 (n s) (cb s)
+
+/-- Encrypt directly from the source and preserve the arguments for GHASH. -/
+theorem encryptCtr_ok (v : Proof.Aes.X86_64.Ctr32ToImpl) {st : State} (h : Mid s 0 0 st) :
+    WP isa (.seq (.block ctrArgsTo) (.call v.callee.name v.callee.code)) st (Encrypted s) := by
+  have hn := n16_lt hp
+  have hw := hp.w_d
+  have rs := ret_sub (s := s)
+  have ss : Region.Sub ⟨W5 s, 2048⟩ (sR s) := w5_sub (by decide)
+  have ha : st.mem.readW (SP s + BitVec.ofNat 64 24) 64 = S s := keep_a hp h.frame (i := 2) (by decide)
+  refine WP.seq (WP.mono (ctrArgsTo_ok hp h.rsp h.rd h.wr h.kept ha) fun a ⟨A, sp, cs, m, rd, wr⟩ => ?_)
+  refine WP.mono (ctrTo_call v A) fun b B => ?_
+  have bframe := B.frame
+  rw [sp, dst_eq] at bframe
+  have ks : (kR' s).Disjoint ⟨W5 s, 2048⟩ := Offset.disjoint_of_le
+    (by simp only [kR', W5]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hp.w_s; omega_arith)
+    (by simp only [W5]; rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := hp.w_s; omega_arith)
+  have kept : Kept s 0 b.mem := (m ▸ h.kept).frame bframe fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact (hp.c_s.sub_right kR'_sub).symm
+    · exact (hp.d_s.sub_right kR'_sub).symm
+    · exact ks
+    · exact (hp.b_s.sub_left rs).symm.sub_left kR'_sub
+  have frame : Frame (wR s ++ [tR s]) s.mem b.mem := by
+    refine (show Frame (wR s ++ [tR s]) s.mem a.mem by rw [m]; exact h.frame.mono fun _ hr => List.mem_append_left _ hr).trans (bframe.sub fun r hr => ?_)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨cR s, by simp, fun _ h => h⟩
+    · exact ⟨dR s, by simp, fun _ h => h⟩
+    · exact ⟨sR s, by simp, ss⟩
+    · exact ⟨tR s, by simp, rs⟩
+  obtain aS : Region.Disjoint (tR s) ⟨SP s + BitVec.ofNat 64 24, 8⟩ := by
+    have := hp.w_t; have := hp.w_sp
+    intro a h₁ h₂
+    simp only [Region.Contains, tR, below, SP] at h₁ h₂
+    bv_omega
+  obtain hsA : Region.Sub ⟨SP s + BitVec.ofNat 64 24, 8⟩ (aR s) := by
+    rw [show SP s + BitVec.ofNat 64 24 = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 16 by
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add]]
+    exact Offset.sub_base _ (by omega_arith)
+  obtain arg : b.mem.readW (SP s + BitVec.ofNat 64 24) 64 = S s := by
+    rw [frame.readW (r := ⟨SP s + BitVec.ofNat 64 24, 8⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact hp.c_a.symm.sub_left hsA
+      · exact hp.y_a.symm.sub_left hsA
+      · exact hp.d_a.symm.sub_left hsA
+      · exact hp.s_a.symm.sub_left hsA
+      · exact aS.symm) (by decide)]
+    rfl
+  have bsp : b.gpr .rsp = SP s := (B.saved _ (by decide)).trans sp
+  have out := B.out
+  have ctr := B.ctr
+  rw [m, keep_sch hp h.frame, h.ctr, blocksAt_frame h.frame (by rw [src_eq]; exact src_wR hp) (by omega_arith)] at out
+  rw [m, h.ctr] at ctr
+  have H := h_sub (s := s) (M := M)
+  have he : blockAt b.mem (K s + BitVec.ofNat 64 240) = hk s := by
+    rw [blockAt_frame bframe (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact hp.k_c.sub_left H
+      · exact hp.k_d.sub_left H
+      · exact (hp.k_s.sub_left H).sub_right ss
+      · exact (hp.b_k.sub_left rs).symm.sub_left H), m, keep_h hp h.frame]
+    rfl
+  have ye : blockAt b.mem (Y s) = y₀ s := by
+    rw [blockAt_frame bframe (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact hp.c_y.symm
+      · exact hp.y_d
+      · exact hp.y_s.sub_right ss
+      · exact (hp.b_y.sub_left rs).symm), m, h.y]
+    rfl
+  exact ⟨bsp, fun r hr => (B.saved r hr).trans ((cs r hr).trans (h.saved r hr)),
+    B.rd.trans (rd.trans h.rd), B.wr.trans (wr.trans h.wr), kept, arg, frame, he, ye, out, ctr⟩
+
+theorem encryptHash_ok (g : GhashImpl) {b : State} (h : Encrypted s b) :
+    WP isa (.seq (.block (Impl.AesGcm.X86_64.BlocksToDec.ghArgsAt argDst)) (.call g.fn.name g.fn.code)) b (Done s) := by
+  have hn := n16_lt hp
+  have rs := ret_sub (s := s)
+  refine WP.seq (WP.mono (ghArgsOut_ok hp h.rsp h.rd h.wr h.kept h.arg)
+    fun c ⟨C₁, csp, ccs, cm, _, _⟩ => ?_)
+  refine WP.mono (gh_call g C₁) fun d D => ?_
+  have dframe := D.frame
+  rw [csp] at dframe
+  have ws : Region.Sub ⟨W5 s, 256⟩ (sR s) := w5_sub (by decide)
+  have finalFrame : Frame (wR s ++ [tR s]) s.mem d.mem := h.frame.trans (by
+    rw [← cm]; refine dframe.sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨yR s, by simp, fun _ h => h⟩
+    · exact ⟨sR s, by simp, ws⟩
+    · exact ⟨tR s, by simp, rs⟩)
+  refine ⟨⟨fun r hr => by rw [D.saved r hr, ccs r hr, h.saved r hr], ?_⟩, ?_, ?_, ?_⟩
+  · show d.mem.readW (SP s) 64 = s.mem.readW (SP s) 64
+    exact finalFrame.readW (Region.contains_self _ _) (fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact hp.t_c
+      · exact hp.t_y
+      · exact hp.t_d
+      · exact hp.t_s
+      · exact Offset.base_disjoint_below (SP s) (by omega_arith)) (by decide)
+  · show blocksAt d.mem (Dst s) (n s) = _
+    rw [blocksAt_frame dframe (fun r hr => by
+      rw [dst_eq]; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hp.y_d.symm
+      · exact hp.d_s.sub_right ws
+      · exact (hp.b_d.sub_left rs).symm) (by omega_arith), cm]
+    exact h.out
+  · show blockAt d.mem (C s) = _
+    rw [blockAt_frame dframe (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hp.c_y
+      · exact hp.c_s.sub_right ws
+      · exact (hp.b_c.sub_left rs).symm), cm]
+    exact h.ctr
+  · have y := D.out
+    rw [cm, h.hashKey, h.y, h.out] at y
+    exact y
+
+theorem encryptPrepared_wp {aligned : Bool} {p : Prog isa} {minimum : Nat} (cut : minimum = 2 ∨ minimum = 16)
+    (hpce : ∀ t, Proof.Gcm.X86_64.Stitch.SPreTo M t minimum → WP isa p t (Proof.Gcm.X86_64.Stitch.EPostTo t))
+    (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
+    WP isa (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ⟨v.callee.name, v.callee.code⟩ g.fn p aligned minimum) s (Done s) := by
+  refine WP.seq (WP.mono (entry_ok hp) fun _ ⟨a,b,c,d,e,f,k⟩ => ?_)
+  refine WP.seq (WP.mono (stitchFrom_ok (aligned := aligned) hp cut hpce a b c d e f k) fun _ mid => ?_)
+  refine WP.seq (WP.mono (BlocksTo.tailHead_ok hp mid) fun _ ⟨mid', hz, _⟩ => ?_)
+  refine WP.ite (decide (n s - qf s minimum = 0)) (by simp only [eval, hz]) (fun he => ?_) (fun he => ?_)
+  · exact WP.block_nil (BlocksTo.done_of hp mid' (by simpa using he))
+  · have hq : qf s minimum = 0 := by
+      unfold qf at *; split at he <;> simp_all
+    rw [hq] at mid'
+    exact WP.seq (WP.mono (encryptCtr_ok hp v mid') fun _ h => encryptHash_ok hp g h)
 
 /-- The blocks, from `MidD s 0 0`: hashed at `src`, then decrypted from
 `src` to `dst`. -/
@@ -1273,7 +1475,82 @@ theorem tailTo_rel (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
   obtain ⟨⟨-, ⟨M₁, -⟩, ⟨M₂, -⟩⟩, -⟩ := hP
   exact (RelCT.seq gh (d.mono (fun _ _ h => h.2) fun _ _ h => h)) _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
 
+theorem encryptCalls_rel (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
+    RelCT isa (fun a b => Mid s₀ 0 0 a ∧ Mid s₀' 0 0 b)
+      (.seq (.seq (.block ctrArgsTo) (.call v.callee.name v.callee.code))
+        (.seq (.block (Impl.AesGcm.X86_64.BlocksToDec.ghArgsAt argDst)) (.call g.fn.name g.fn.code)))
+      fun _ _ => True := by
+  have c := rel_wp (rel_r11 (l₀ := ctrArgsTo) (l := ctrArgsTo.tail) rfl
+      (P := fun a b => Mid s₀ 0 0 a ∧ Mid s₀' 0 0 b) [.rsp] [.rsp] (by simp)
+      (fun _ _ h => BlocksTo.mid_rsp pb h.1 h.2)
+      (fun _ _ h => BlocksTo.mid_hS hp hp' pb h.1 h.2) ctrArgsTo_check)
+    (fun _ _ h => h)
+    (G₁ := fun st' => CtrToCall st' (K s₀) (C s₀) (Src s₀) (Dst s₀) (W5 s₀) (R s₀) (n s₀))
+    (G₂ := fun st' => CtrToCall st' (K s₀') (C s₀') (Src s₀') (Dst s₀') (W5 s₀') (R s₀') (n s₀'))
+    (fun _ h => WP.mono (ctrArgsTo_ok hp h.rsp h.rd h.wr h.kept (keep_a hp h.frame (i := 2) (by decide))) fun _ h => h.1)
+    (fun _ h => WP.mono (ctrArgsTo_ok hp' h.rsp h.rd h.wr h.kept (keep_a hp' h.frame (i := 2) (by decide))) fun _ h => h.1)
+  have e := rel_wp (RelCT.seq c (ctrTo_rel v fun _ _ h => by
+      obtain ⟨hr, c₁, c₂⟩ := h
+      rw [pb.k, pb.c, pb.src, pb.dst, pub_ew5 pb, pb.eR, pb.en] at c₂
+      exact ⟨_, _, _, _, _, _, _, c₁, c₂, hr _ (List.mem_singleton_self _)⟩)) (fun _ _ h => h)
+    (fun _ h => encryptCtr_ok hp v h) (fun _ h => encryptCtr_ok hp' v h)
+  let ga := Impl.AesGcm.X86_64.BlocksToDec.ghArgsAt argDst
+  have b := rel_wp (rel_r11 (l₀ := ga) (l := ga.tail) rfl
+      (P := fun s₁ s₂ => Encrypted s₀ s₁ ∧ Encrypted s₀' s₂) [.rsp] [.rsp] (by simp)
+      (fun _ _ h r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h.1.rsp, h.2.rsp, pb.sp])
+      (fun _ _ h => ⟨by rw [h.1.rsp, h.2.rsp, h.1.arg, h.2.arg, pb.sc],
+        by rw [h.1.rd, h.1.wr, h.1.rsp]; exact a_in hp (i := 2) (by decide),
+        by rw [h.2.rd, h.2.wr, h.2.rsp]; exact a_in hp' (i := 2) (by decide)⟩) (by dsimp only [ga]; exact ⟨_, by taint_decide⟩))
+    (fun _ _ h => h)
+    (G₁ := fun st' => GhCall st' (K s₀ + BitVec.ofNat 64 240) (Y s₀) (Dst s₀) (W5 s₀) (n s₀))
+    (G₂ := fun st' => GhCall st' (K s₀' + BitVec.ofNat 64 240) (Y s₀') (Dst s₀') (W5 s₀') (n s₀'))
+    (fun _ h => WP.mono (ghArgsOut_ok hp h.rsp h.rd h.wr h.kept h.arg) fun _ h => h.1)
+    (fun _ h => WP.mono (ghArgsOut_ok hp' h.rsp h.rd h.wr h.kept h.arg) fun _ h => h.1)
+  have gh := RelCT.seq b (gh_rel g fun _ _ h => by
+    obtain ⟨hr, c₁, c₂⟩ := h
+    rw [pb.k, pb.y, pb.dst, pub_ew5 pb, pb.en] at c₂
+    exact ⟨_, _, _, _, _, c₁, c₂, hr _ (List.mem_singleton_self _)⟩)
+  exact RelCT.seq e (gh.mono (fun _ _ h => h.2) fun _ _ h => h)
+
 end
+
+theorem encryptPrepared_ct {M : CtxMode} {aligned : Bool} {piece : Prog isa}
+    {minimum : Nat} (cut : minimum = 2 ∨ minimum = 16)
+    (ok : ∀ t, Proof.Gcm.X86_64.Stitch.SPreTo M t minimum → WP isa piece t (Proof.Gcm.X86_64.Stitch.EPostTo t))
+    (pc : PieceTo piece aligned true minimum)
+    (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
+    ConstantTime isa (Proof.AesGcm.encryptBlocksToX86_64M M).pre Proof.AesGcm.blocksToPub
+      (Impl.AesGcm.X86_64.BlocksToDec.encryptPrepared ⟨v.callee.name, v.callee.code⟩ g.fn piece aligned minimum) := by
+  refine ct_of_rel fun s₀ s₀' h h' hq => ?_
+  have hp := BT.ofM h
+  have hp' := BT.ofM h'
+  have pb := Pub.of hq
+  have ag : ∀ s₁ s₂, ((∀ r ∈ .r11 :: BlocksTo.args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂) →
+      ∀ r ∈ [Reg.r10, .r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₁.gpr r = s₂.gpr r := by
+    intro s₁ s₂ E r hr
+    rcases List.mem_cons.mp hr with rfl | hr
+    · rw [E.2.1.2.1, E.2.2.2.1, pb.dst]
+    · exact E.1 r hr
+  have pieceRel := rel_wp (rel_regs _ [.rsp] false ag pc.ct) (fun _ _ h => h.2)
+    (fun _ h => stitchFrom_ok hp cut ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
+    (fun _ h => stitchFrom_ok hp' cut ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
+  have a := rel_wp (rel_r11 (l₀ := headB) (l := headB.tail) rfl
+      (P := fun x y => Mid s₀ (qf s₀ minimum) (qf s₀ minimum) x ∧ Mid s₀' (qf s₀' minimum) (qf s₀' minimum) y) [.rsp] [.rsp] (by simp)
+      (fun _ _ h => BlocksTo.mid_rsp pb h.1 h.2) (fun _ _ h => BlocksTo.mid_hS hp hp' pb h.1 h.2) tailHead_check)
+    (fun _ _ h => h) (G₁ := BlocksTo.TH s₀ (qf s₀ minimum)) (G₂ := BlocksTo.TH s₀' (qf s₀' minimum))
+    (fun _ h => WP.mono (BlocksTo.tailHead_ok hp h) fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩)
+    (fun _ h => WP.mono (BlocksTo.tailHead_ok hp' h) fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩)
+  refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq pieceRel (RelCT.seq (a.mono (fun _ _ h => h.2) fun _ _ h => h)
+    (rel_ite_e (fun _ _ h => by rw [h.2.1.2.1, h.2.2.2.1]; simp only [qf, pb.en]; rfl) ?_ ?_)))
+  · exact (rel_taint [] (fun _ _ _ r hr => by cases hr) empty_check).mono (fun _ _ h => h) fun _ _ h => h
+  intro s₁ s₂ t₁ t₂ s₁' s₂' E e₁ e₂
+  obtain ⟨⟨-, ⟨m₁,z₁,_⟩, ⟨m₂,z₂,_⟩⟩, hz⟩ := E
+  have q : qf s₀ minimum = 0 := by
+    rw [hz] at z₁; unfold qf at *; split at z₁ <;> simp_all
+  have q' : qf s₀' minimum = 0 := by simpa only [qf, pb.en] using q
+  rw [q] at m₁
+  rw [q'] at m₂
+  exact encryptCalls_rel hp hp' pb g v _ _ _ _ _ _ ⟨m₁,m₂⟩ e₁ e₂
 
 theorem decryptTo_ct {M : CtxMode} (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
     ConstantTime isa (Proof.AesGcm.decryptBlocksToX86_64M M).pre Proof.AesGcm.blocksToPub
