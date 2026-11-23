@@ -83,6 +83,31 @@ meta import VerifiedGarbage.Proof.Modes.X86.Ops
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 
+/-!
+# RC4 with the table's rows in XMM registers on x86 (32-bit): the proofs
+
+`vg_rc4_init_ssse3` and `vg_rc4_apply_ssse3` (`Impl/Rc4/X86/Ssse3.lean`) meet
+the baseline's contracts with four more bytes of stack, which the address of
+their constants takes, in constant time and without secret residue.
+
+* Values: the vectors by their bytes. `IsX` and `byte_mask` (the selector of
+  a byte of the table, and the mask of a row), `byte_diff`, `byte_new` and
+  `writeW_row` (a row's exchange and its store), `byte_align1` (the column
+  that a pass over the rows collects) are about the rows only, whatever the
+  code around them.
+* The passes: `swapRows_wp` (the byte `j` takes a value, and a register what
+  it held) and `readRows_wp` (a column of the table), each by induction on
+  the pairs of rows; `exchange_wp` and `lookup_wp` around them.
+* The loops: an iteration by its memory (`apply_step`, `sch_step`), then as
+  the baseline's (`LoopI`, `SchI`), with the baseline's lemmas for the code
+  that is the baseline's (`entry`, `save`, `start`, `finish`, `restore`, the
+  end of a round of the key schedule).
+* The contracts (`initC4`, `applyC4`), constant time by the taint analysis
+  with the PRGA index `i` made public by hand as in the baseline
+  (`entry_ct`), and the functions as emitted (`init_scrubbed`,
+  `apply_scrubbed`).
+-/
+
 @[expose] public section
 
 namespace VG.Proof.Rc4.X86.Ssse3
