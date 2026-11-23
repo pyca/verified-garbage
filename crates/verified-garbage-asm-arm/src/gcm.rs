@@ -3526,9 +3526,9 @@ mov r3, #0
 mov r12, #0
 cmp r2, r2
 bx lr",
-        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
-        vg_aes_ctr32_to = sym super::gcm::vg_aes_ctr32_to::vg_aes_ctr32_to,
-        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
