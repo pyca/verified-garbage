@@ -334,6 +334,19 @@ def signKS (p : Params) (D : Nat) (SL : List String) : Contract isa where
   post := (signK p D).post
   pub s₁ s₂ := (signK p D).pub s₁ s₂ ∧ ∀ n ∈ SL, s₁.syms n = s₂.syms n
 
+/-- `signK`, with the addresses of the functions `N` public too. -/
+def signKN (p : Params) (D : Nat) (N : List String) : Contract isa :=
+  { signK p D with pub := fun s₁ s₂ => (signK p D).pub s₁ s₂ ∧ ∀ f ∈ N, s₁.syms f = s₂.syms f }
+
+/-- `signK` with more stack implies it with less. -/
+theorem signK_mono {p : Params} {D D' : Nat} (hD : D ≤ D') (hD' : D' < 2 ^ 64) {s : State}
+    (h : (signK p D').pre s) : (signK p D).pre s := by
+  obtain ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp,
+    hprep⟩ := h
+  have hb : Region.Sub (below (s.gpr .rsp) D) (below (s.gpr .rsp) D') := below_sub hD hD'
+  exact ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, r1, r2, r3, r4, r5, k1.sub_left hb, k2.sub_left hb, k3.sub_left hb,
+    k4.sub_left hb, k5.sub_left hb, n1, n2, n3, n4, n5, by omega_using [hD, hsp], hprep⟩
+
 /-- `signK`'s precondition is `signKS`'s, for a body with no callees in words. -/
 theorem signKS_nil_pre {p : Params} {D : Nat} {s : State} (h : (signK p D).pre s) : (signKS p D []).pre s :=
   ⟨⟨by rw [h.1]; simp [slotRs], h.2⟩,

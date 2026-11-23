@@ -24,7 +24,7 @@ section
 # ML-DSA on x86-64, `verify_message_cached`: correctness
 
 Untrusted: everything here is checked by Lean. From a state satisfying
-`verifyMessageCachedContract p X86_64.abi 112`, `verifyMessageCached n c p`
+`verifyMessageCachedContract p X86_64.abi 224`, `verifyMessageCached n c p`
 returns 2 if the context string is longer than 255 bytes; otherwise it
 computes `μ` of the formatted message from the `tr = H(pk, 64)` it is given,
 and calls the verification function on `μ` `c`, which gives
@@ -74,7 +74,7 @@ theorem verifyRegs_vals {p : Params} {prep : Bool} {s s2 : State} (hk : ∀ r, r
 /-- The facts `muHash` needs of `tr`, the slot of `rnd`. -/
 theorem trFacts {p : Params} {prep : Bool} {L : Lay} (hL : L.Ok) (F : VFacts p prep L) :
     (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.rnd, 64⟩ R) ∧ Region.Disjoint ⟨L.rnd, 64⟩ ⟨L.ST, 200⟩ ∧
-      Region.Disjoint ⟨L.rnd, 64⟩ ⟨L.KS, 640⟩ ∧ Region.Disjoint ⟨L.B, 40⟩ ⟨L.rnd, 64⟩ :=
+      Region.Disjoint ⟨L.rnd, 64⟩ ⟨L.KS, 640⟩ ∧ Region.Disjoint ⟨L.B, 152⟩ ⟨L.rnd, 64⟩ :=
   ⟨⟨_, List.mem_append_left _ F.inTr, within_self _⟩,
     by have := hL.x_r F.xTr (e := 0) (k := 200) (by decide); simpa only [x0] using this.symm,
     (hL.x_r F.xTr (e := 200) (k := 640) (by decide)).symm,
@@ -99,7 +99,7 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
     refine wp_ite_t hc1 (WP.seq (WP.mono (verifyMov_ok h hg1 hm1 hrd1) fun s2 ⟨⟨h11, h10, hax, hm2, hx2⟩, k2⟩ => ?_))
     have hL := vlay_ok (prep := prep) hp h h8
     have hg2 : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r := fun r hr => (k2.gpr hr).trans (by rw [hg1])
-    have hsp2 : s2.gpr .rsp = (vlay p prep s).B + BitVec.ofNat 64 112 := by
+    have hsp2 : s2.gpr .rsp = (vlay p prep s).B + BitVec.ofNat 64 224 := by
       rw [hg2 _ (by decide), vlay_B]
     have hn : 8 * verifyRegs.length ≤ (s2.gpr .rsp).toNat := by
       rw [hg2 _ (by decide)]; have := h.sp; simp only [verifyRegs, List.length_cons, List.length_nil]; omega_using [this]
@@ -124,10 +124,10 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
       refine ⟨fun r hr => ?_, ?_, ?_⟩
       · by_cases hr' : r = .rsp
         · subst hr'
-          rw [popped_rsp, hsp', hc₂.rsp, Lay.SP, add_add, show 40 + 8 * verifyRegs.length = 112 from rfl, vlay_B]
+          rw [popped_rsp, hsp', hc₂.rsp, Lay.SP, add_add, show 152 + 8 * verifyRegs.length = 224 from rfl, vlay_B]
         · rw [popped_gpr _ _ _ hr' (cs_r11 r hr), hcs' r hr, hc₂.cs r hr hr', hg2 r (cs_tmp r hr)]
-      · have eR : rRet s = ⟨(vlay p prep s).B + BitVec.ofNat 64 112, 8⟩ := by rw [vlay_B]
-        have dB : ∀ k, k ≤ 112 → (rRet s).Disjoint ⟨(vlay p prep s).B, k⟩ := fun k hk => by
+      · have eR : rRet s = ⟨(vlay p prep s).B + BitVec.ofNat 64 224, 8⟩ := by rw [vlay_B]
+        have dB : ∀ k, k ≤ 224 → (rRet s).Disjoint ⟨(vlay p prep s).B, k⟩ := fun k hk => by
           rw [eR]; exact Offset.disjoint_base _ hk (by have := hL.nB; omega_using [])
         rw [fm.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
             rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint_below (s.gpr .rsp) (by decide)) (by decide),
@@ -135,12 +135,12 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl
             · exact h.retScr.sub_right (scrV_sub p _)
-            · exact dB 40 (by decide)) (by decide),
+            · exact dB 152 (by decide)) (by decide),
           hc₂.frame.readW (r := rRet s) (Region.contains_self _ _) (fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl
             · exact h.retScr.sub_right (vlay_X p prep s).sub
-            · exact dB 112 (by decide)) (by decide), hm₀]
+            · exact dB 224 (by decide)) (by decide), hm₀]
       · rw [popped_mxcsr, hx', hc₂.mx, hx2, hx1]
     · unfold VPost
       rw [formatMessage_some (by rw [Proof.MlKem.bytesAt_length]; exact h8)]
@@ -170,13 +170,13 @@ theorem verifyMessage_wp {p : Params} {prep : Bool} {n : String} {c : Prog isa} 
       rfl
 
 theorem vPost_of {p : Params} {s s' : State} (h : VPost p s s') :
-    (verifyMessageCachedContract p X86_64.abi 112).post s s' := by
+    (verifyMessageCachedContract p X86_64.abi 224).post s s' := by
   sig_post [verifyMessageCachedContract, verifyMessageCachedSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop]
   exact h
 
 theorem vPostP_of {p : Params} {s s' : State} (h : VPost p s s') :
-    (preparedVerifyMessageContract p X86_64.abi 112).post s s' := by
+    (preparedVerifyMessageContract p X86_64.abi 224).post s s' := by
   sig_post [preparedVerifyMessageContract, preparedVerifyMessageSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop]
   exact h
@@ -263,12 +263,12 @@ theorem verifyCall_tr {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p �
       f₂.2.gpr (by decide : Reg.rsp ∉ argRegs), c₁.rsp, c₂.rsp, true_and, and_true]
     have hk := hL.nKey
     have ce : ∀ {g mx m₀} {a a1 : State} {q : Addr} {k : Nat}, Ctx L g mx m₀ a → Moved (verifyArgs p prep) a a1 →
-        Region.Disjoint ⟨L.B + BitVec.ofNat 64 32, 8⟩ ⟨q, k⟩ → k ≤ 2 ^ 64 →
+        Region.Disjoint ⟨L.B + BitVec.ofNat 64 144, 8⟩ ⟨q, k⟩ → k ≤ 2 ^ 64 →
         bytesAt a1.callEntry.mem q k = bytesAt a.mem q k := fun c f hd hn => by
       rw [(c.regs f.2.2.1 f.2.2.2 f.1.2.1 f.1.2.2 fun r hr => f.2.gpr (argRegs_cs r hr)).ce_bytesAt hd hn, f.1.2.1]
-    have dk := hL.stk_r kK (d := 32) (n := 8) (by decide)
-    have dμ := hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by decide) (by decide)
-    have ds := hL.stk_r F.kSig (d := 32) (n := 8) (by decide)
+    have dk := hL.stk_r kK (d := 144) (n := 8) (by decide)
+    have dμ := hL.stk_x (d := 144) (n := 8) (e := 840) (k := 64) (by decide) (by decide)
+    have ds := hL.stk_r F.kSig (d := 144) (n := 8) (by decide)
     have hsx : L.XS.Disjoint ⟨L.sig, p.sigLen⟩ := by
       have hX : Within L.XS ⟨L.scr, mScrLen p⟩ := ⟨L.E, rfl, by rw [mScr_eq, F.e]⟩
       exact F.sigScr.symm.sub_left hX.sub
@@ -308,14 +308,14 @@ structure VPub (p : Params) (s₁ s₂ : State) : Prop where
   a0 : stackArg s₁ 0 = stackArg s₂ 0
   a1 : stackArg s₁ 1 = stackArg s₂ 1
 
-theorem vPub_of {s₁ s₂ : State} (h : (verifyMessageCachedContract p X86_64.abi 112).pub s₁ s₂) :
+theorem vPub_of {s₁ s₂ : State} (h : (verifyMessageCachedContract p X86_64.abi 224).pub s₁ s₂) :
     VPub p s₁ s₂ := by
   sig_pub [verifyMessageCachedContract, verifyMessageCachedSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop] at h
   obtain ⟨a, b, c, d, e, f, g, h, i, j⟩ := h
   exact ⟨a, b, c, d, e, f, g, h, i, j⟩
 
-theorem vPubP_of {s₁ s₂ : State} (h : (preparedVerifyMessageContract p X86_64.abi 112).pub s₁ s₂) :
+theorem vPubP_of {s₁ s₂ : State} (h : (preparedVerifyMessageContract p X86_64.abi 224).pub s₁ s₂) :
     VPub p s₁ s₂ := by
   sig_pub [preparedVerifyMessageContract, preparedVerifyMessageSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop] at h
@@ -455,7 +455,7 @@ end
 Untrusted: everything here is checked by Lean. `verifyMessageCached n c p`,
 for any verification function on `μ` `c` that `verify_message_cached` can
 call (`VerifyFn`), is verified against
-`verifyMessageCachedContract p X86_64.abi 112`.
+`verifyMessageCachedContract p X86_64.abi 224`.
 -/
 
 @[expose] public section
@@ -532,7 +532,7 @@ def verifySat (p : Params) : State where
   wr := [⟨0x10000, mScrLen p⟩]
 
 theorem verifyMessage_sat {p : Params} (hp : p ∈ params) :
-    ∃ s, (verifyMessageCachedContract p X86_64.abi 112).pre s := by
+    ∃ s, (verifyMessageCachedContract p X86_64.abi 224).pre s := by
   refine ⟨verifySat p, ?_⟩
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
   have a0 : stackArg (verifySat p) 0 = 0x10000 := by
@@ -551,7 +551,7 @@ theorem verifyMessage_sat {p : Params} (hp : p ∈ params) :
     | exact Region.disjoint_of_sep (by decide)
 
 theorem verifyMessage_verified {p : Params} {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p ∈ params) :
-    Verified X86_64.target (verifyMessageCached n c p 0) (verifyMessageCachedContract p X86_64.abi 112) :=
+    Verified X86_64.target (verifyMessageCached n c p 0) (verifyMessageCachedContract p X86_64.abi 224) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verifyMessage_wp (prep := false) hV hp (vPre_of h)
       ⟨t, s', he, ha, vPost_of hq⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => verifyMessage_ct (prep := false) hV hp s₁ s₂ t₁ t₂ s₁' s₂'
@@ -560,8 +560,8 @@ theorem verifyMessage_verified {p : Params} {n : String} {c : Prog isa} (hV : Ve
 
 /-- `verify_message_prepared`, given a state satisfying its precondition (which holds a prepared key). -/
 theorem verifyMessagePrepared_verified {p : Params} {n : String} {c : Prog isa} (hV : VerifyFn p c)
-    (hp : p ∈ params) (hsat : ∃ s, (preparedVerifyMessageContract p X86_64.abi 112).pre s) :
-    Verified X86_64.target (verifyMessageCached n c p 1) (preparedVerifyMessageContract p X86_64.abi 112) :=
+    (hp : p ∈ params) (hsat : ∃ s, (preparedVerifyMessageContract p X86_64.abi 224).pre s) :
+    Verified X86_64.target (verifyMessageCached n c p 1) (preparedVerifyMessageContract p X86_64.abi 224) :=
   ⟨fun _ h => let ⟨t, s', he, ha, hq⟩ := verifyMessage_wp (prep := true) hV hp (vPreP_of h)
       ⟨t, s', he, ha, vPostP_of hq⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => verifyMessage_ct (prep := true) hV hp s₁ s₂ t₁ t₂ s₁' s₂'

@@ -68,10 +68,6 @@ def signK0 (p : Params) (D : Nat) : Contract isa where
 def signK0N (p : Params) (D : Nat) (N : List String) : Contract isa :=
   { signK0 p D with pub := fun s₁ s₂ => (signK0 p D).pub s₁ s₂ ∧ ∀ f ∈ N, s₁.syms f = s₂.syms f }
 
-/-- `signK`, with the addresses of the functions `N` public too. -/
-def signKN (p : Params) (D : Nat) (N : List String) : Contract isa :=
-  { signK p D with pub := fun s₁ s₂ => (signK p D).pub s₁ s₂ ∧ ∀ f ∈ N, s₁.syms f = s₂.syms f }
-
 /-- A state satisfying `signContract`'s precondition. -/
 def signSat (p : Params) : State where
   gpr r := match r with

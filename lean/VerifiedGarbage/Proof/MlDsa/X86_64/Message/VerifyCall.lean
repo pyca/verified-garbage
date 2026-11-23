@@ -24,7 +24,7 @@ section
 # ML-DSA on x86-64, `verify_message_cached`: the precondition and the layout
 
 Untrusted: everything here is checked by Lean. The precondition of
-`verifyMessageCachedContract p X86_64.abi 112`, spelled out (`VPre`), and
+`verifyMessageCachedContract p X86_64.abi 224`, spelled out (`VPre`), and
 the layout of a run from a state satisfying it (`vlay`): the key is `pk`,
 `scratch` and `tr` are the arguments on the stack, and the slot of `rnd`
 holds `tr`.
@@ -53,10 +53,10 @@ abbrev vTr : Region := ⟨stackArg s 1, 64⟩
 
 end
 
-/-- The precondition of `verifyMessageCachedContract p X86_64.abi 112` (`prep = false`) or of
-`preparedVerifyMessageContract p X86_64.abi 112` (`prep = true`). -/
+/-- The precondition of `verifyMessageCachedContract p X86_64.abi 224` (`prep = false`) or of
+`preparedVerifyMessageContract p X86_64.abi 224` (`prep = true`). -/
 structure VPre (p : Params) (prep : Bool) (s : State) : Prop where
-  sp : 112 ≤ (s.gpr .rsp).toNat
+  sp : 224 ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64
   rd : s.rd = [vPk p prep s, rMsg s, rCtx s, vSigR p s, vTr s, vArgs s]
   wr : s.wr = [vScr p s]
@@ -89,7 +89,7 @@ structure VPre (p : Params) (prep : Bool) (s : State) : Prop where
   tr : bytesAt s.mem (stackArg s 1) 64 = pkTr (bytesAt s.mem (s.gpr .rdi) p.pkLen)
   prepK : prep = true → PreparedPublicKey p s.mem (s.gpr .rdi)
 
-theorem vPre_of {p : Params} {s : State} (h : (verifyMessageCachedContract p X86_64.abi 112).pre s) :
+theorem vPre_of {p : Params} {s : State} (h : (verifyMessageCachedContract p X86_64.abi 224).pre s) :
     VPre p false s := by
   sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop] at h
@@ -100,7 +100,7 @@ theorem vPre_of {p : Params} {s : State} (h : (verifyMessageCachedContract p X86
     retScr, retTr, retArgs, stkPk, stkMsg, stkCtx, stkSig, stkScr, stkTr, stkArgs, nPk, nMsg, nCtx, nSig,
     nScr, nTr, tr, fun h => absurd h (by decide)⟩
 
-theorem vPreP_of {p : Params} {s : State} (h : (preparedVerifyMessageContract p X86_64.abi 112).pre s) :
+theorem vPreP_of {p : Params} {s : State} (h : (preparedVerifyMessageContract p X86_64.abi 224).pre s) :
     VPre p true s := by
   sig_pre [preparedVerifyMessageContract, preparedVerifyMessageSig, X86_64.abi, X86_64.argRegs, List.range,
     List.range.loop] at h
@@ -122,7 +122,7 @@ theorem pkLen_ge {p : Params} (hp : p ∈ params) : 128 ≤ p.pkLen ∧ p.pkLen 
 
 /-- The layout of a run of `verify_message` from `s`. -/
 def vlay (p : Params) (prep : Bool) (s : State) : Lay where
-  B := s.gpr .rsp - BitVec.ofNat 64 112
+  B := s.gpr .rsp - BitVec.ofNat 64 224
   key := s.gpr .rdi
   keyLen := keyLenV p prep
   msg := s.gpr .rsi
@@ -137,7 +137,7 @@ def vlay (p : Params) (prep : Bool) (s : State) : Lay where
   wr := s.wr
 
 theorem vlay_B (p : Params) (prep : Bool) (s : State) :
-    (vlay p prep s).B + BitVec.ofNat 64 112 = s.gpr .rsp := BitVec.sub_add_cancel _ _
+    (vlay p prep s).B + BitVec.ofNat 64 224 = s.gpr .rsp := BitVec.sub_add_cancel _ _
 
 theorem vlay_X (p : Params) (prep : Bool) (s : State) : Within (vlay p prep s).XS (vScr p s) :=
   ⟨oE p, rfl, by show oE p + 1024 ≤ mScrLen p; rw [mScr_eq]⟩
@@ -317,19 +317,19 @@ theorem verifyK_pre {p : Params} {prep : Bool} (hp : p ∈ params) {L : Lay} (hL
     ((within_off L.X (d := 840) (n := 64) (k := 1024) (by omega_using [])).trans hX).sub
   have hB := hL.nB
   have hE := oE_lt hp
-  have hrsp : t1.callEntry.gpr .rsp = L.B + BitVec.ofNat 64 32 := by
+  have hrsp : t1.callEntry.gpr .rsp = L.B + BitVec.ofNat 64 144 := by
     rw [State.callEntry_rsp, hc1.rsp, Lay.SP]; exact sp_sub8 _
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp only [hL8, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
-    hrsp, e1, e2, e3, e4, below32]
+    hrsp, e1, e2, e3, e4, below144_32]
   · rw [toNat_add_ofNat (by omega_using [hB])]; omega_using []
   · exact F.keyScr.sub_right hsub
   · exact mu_scrV hp F.e
   · exact F.sigScr.sub_right hsub
   · exact hL.stk_r hL.kKey (by omega_using [])
-  · exact hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using [])
+  · exact hL.stk_x (d := 144) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using [])
   · exact hL.stk_r F.kSig (by omega_using [])
   · exact hL.stk_r (F.kScr.sub_right hsub) (by omega_using [])
   · exact hL.kKey.sub_left (Region.sub_prefix (by omega_using []))
@@ -359,7 +359,7 @@ theorem verifyCall_ok {p : Params} {prep : Bool} {n : String} {c : Prog isa} (hV
     WP isa (callA n c (verifyArgs p prep)) t fun s' =>
       s'.rd = t.rd ∧ s'.wr = t.wr ∧ s'.gpr .rsp = t.gpr .rsp ∧ (∀ r ∈ calleeSaved, s'.gpr r = t.gpr r) ∧
       s'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 ∧
-      Frame [rScrV p L, ⟨L.B, 40⟩] t.mem s'.mem ∧
+      Frame [rScrV p L, ⟨L.B, 152⟩] t.mem s'.mem ∧
       (let v := fun b => verifyMu p b (bytesAt t.mem L.key p.pkLen) (bytesAt t.mem L.MU 64)
           (bytesAt t.mem L.sig p.sigLen);
         (Verify.res s' = 1 ∧ ∃ b, v b = some true) ∨ (Verify.res s' = 0 ∧ v minBounds ≠ some true)) := by
@@ -396,7 +396,7 @@ theorem verifyCall_ok {p : Params} {prep : Bool} {n : String} {c : Prog isa} (hV
       subst hr
       exact ⟨rScrV p L, List.mem_cons_self .., fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr
-      refine ⟨⟨L.B, 40⟩, List.mem_cons_of_mem _ (List.mem_singleton_self _), ?_⟩
+      refine ⟨⟨L.B, 152⟩, List.mem_cons_of_mem _ (List.mem_singleton_self _), ?_⟩
       rw [hrsp1]
       exact below_call_sub _ (by omega)
   · simp only [verifyK, Verify.vPk, Verify.vMu, Verify.vSig, State.withRegions_mem,
@@ -404,7 +404,7 @@ theorem verifyCall_ok {p : Params} {prep : Bool} {n : String} {c : Prog isa} (hV
       gpr_ce t1 _ _ (by decide : Reg.rdx ≠ .rsp), e1, e2, e3, Verify.res] at hq
     rw [hc1.ce_bytesAt (p := L.key) (n := p.pkLen) ((hL.stk_r hL.kKey (by omega_using [])).sub_right (Region.sub_prefix hkl))
       (by have := hL.nKey; omega_using [hK]),
-      hc1.ce_bytesAt (p := L.MU) (hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using [])) (by omega_using []),
+      hc1.ce_bytesAt (p := L.MU) (hL.stk_x (d := 144) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using [])) (by omega_using []),
       hc1.ce_bytesAt (p := L.sig) (hL.stk_r F.kSig (by omega_using [])) (by have := F.nSig; omega_using [this]), hm',
       hg₂ _ (by decide)] at hq
     exact hq

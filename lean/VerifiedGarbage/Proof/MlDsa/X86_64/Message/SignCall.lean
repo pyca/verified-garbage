@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the call of the signing function on `μ`
@@ -34,11 +36,11 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 /-- A signing function on `μ` that `sign_message` can call. -/
-structure SignFn (p : Params) (c : Prog isa) : Prop where
-  ok : ∀ s, (signK p 32).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (signK p 32).post s s'
-  ct : ConstantTime isa (signK p 32).pre (signK p 32).pub c
-  nosp : NoSp c
-  depth : c.depth ≤ 4
+structure SignFn (p : Params) (N : List String) (c : Prog isa) : Prop where
+  ok : ∀ s, (signK p 144).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (signK p 144).post s s'
+  ct : ConstantTime isa (signK p 144).pre (Sign.signKN p 144 N).pub c
+  sp : SpSafe c
+  depth : c.x86_64Depth ≤ 144
 
 /-- The arguments of the call of the signing function on `μ`. -/
 abbrev signArgs (p : Params) (prep : Bool) : List Arg :=
@@ -90,7 +92,7 @@ theorem signRegs_of {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t1 
 theorem signK_pre (hp : p ∈ params) (h : SPre p prep s) (h8 : (s.gpr .r8).toNat < 256) {g : Reg → BitVec 64}
     {mx : BitVec 32} {m₀ : Mem} {t t1 : State} (hc : Ctx (slay p prep s) g mx m₀ t) (hm₀ : s.mem = m₀)
     (hm : Moved (signArgs p prep) t t1) :
-    (signK p 32).pre (t1.callEntry.withRegions (signRd p prep s) (signWr p s)) := by
+    (signK p 144).pre (t1.callEntry.withRegions (signRd p prep s) (signWr p s)) := by
   have hL := slay_ok hp h h8
   have hc1 : Ctx (slay p prep s) g mx m₀ t1 :=
     hc.regs hm.2.2.1 hm.2.2.2 hm.1.2.1 hm.1.2.2 fun r hr => hm.2.gpr (argRegs_cs r hr)
@@ -113,7 +115,7 @@ theorem signK_pre (hp : p ∈ params) (h : SPre p prep s) (h8 : (s.gpr .r8).toNa
   simp only [signK, hL9, State.withRegions_rd, State.withRegions_wr, gpr_ce t1 _ _ (by decide : Reg.rdi ≠ .rsp),
     gpr_ce t1 _ _ (by decide : Reg.rsi ≠ .rsp), gpr_ce t1 _ _ (by decide : Reg.rdx ≠ .rsp),
     gpr_ce t1 _ _ (by decide : Reg.rcx ≠ .rsp), gpr_ce t1 _ _ (by decide : Reg.r8 ≠ .rsp), rsp_ce,
-    e1, e2, e3, e4, e5, Sign.retR, hc1.rsp, sp_sub8, below32]
+    e1, e2, e3, e4, e5, Sign.retR, hc1.rsp, sp_sub8, below144]
   have hsub := scrMu_sub p s
   have hmu := (mu_within p prep s).sub
   have hB := hL.nB
@@ -121,7 +123,7 @@ theorem signK_pre (hp : p ∈ params) (h : SPre p prep s) (h8 : (s.gpr .r8).toNa
   have hE := oE_lt hp
   refine ⟨trivial, trivial, h.skSig, h.skScr.sub_right hsub, h.sigScr.symm.sub_left hmu, mu_scrMu hp prep s, h.rndSig,
     h.rndScr.sub_right hsub, h.sigScr.sub_right hsub, hL.stk_r h.stkSk (by omega_using []),
-    hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using []), hL.stk_r h.stkRnd (by omega_using []),
+    hL.stk_x (d := 144) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using []), hL.stk_r h.stkRnd (by omega_using []),
     hL.stk_r h.stkSig (by omega_using []), hL.stk_r (h.stkScr.sub_right hsub) (by omega_using []), ?_, ?_, ?_, ?_, ?_, h.nSk, ?_,
     h.nRnd, h.nSig, by simp only [mScrLen, scrLen, messageScratchWords] at hn ⊢; omega_using [hn], ?_,
     fun h9' => hkey (h9 h9')⟩
@@ -135,13 +137,13 @@ theorem signK_pre (hp : p ∈ params) (h : SPre p prep s) (h8 : (s.gpr .r8).toNa
 
 
 /-- The call of the signing function on `μ`. -/
-theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ params) (h : SPre p prep s)
+theorem signCall_ok {N : List String} {n : String} {c : Prog isa} (hS : SignFn p N c) (hp : p ∈ params) (h : SPre p prep s)
     (h8 : (s.gpr .r8).toNat < 256) {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t : State}
     (hc : Ctx (slay p prep s) g mx m₀ t) (hm₀ : s.mem = m₀) :
     WP isa (callA n c (signArgs p prep)) t fun s' =>
       s'.rd = t.rd ∧ s'.wr = t.wr ∧ s'.gpr .rsp = t.gpr .rsp ∧ (∀ r ∈ calleeSaved, s'.gpr r = t.gpr r) ∧
       s'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 ∧
-      Frame [rSig p s, rScrMu p s, ⟨(slay p prep s).B, 40⟩] t.mem s'.mem ∧
+      Frame [rSig p s, rScrMu p s, ⟨(slay p prep s).B, 152⟩] t.mem s'.mem ∧
       Outcome (fun b => signMu p b (bytesAt t.mem (s.gpr .rdi) p.skLen) (bytesAt t.mem (slay p prep s).MU 64)
           (bytesAt t.mem (s.gpr .r9) 32)) ((s'.gpr .rax).setWidth 32)
         (bytesAt s'.mem (stackArg s 0) p.sigLen) := by
@@ -155,7 +157,7 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
   have hdep := hS.depth
   have hsub := scrMu_sub p s
   have hrsp1 : t1.gpr .rsp = (slay p prep s).SP := hc1.rsp
-  refine WP.call_mx hS.ok hS.nosp (by omega_using [hdep]) hpre ?_ ?_ fun s' hrd hwr hcs hf _ hpost hmx => ?_
+  refine WP.callF hS.ok hS.sp (by omega_using [hdep]) hpre ?_ ?_ fun s' hrd hwr hcs hf hpost hmx => ?_
   · rw [hc1.rd, hc1.wr]
     refine covers_of_within fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -182,7 +184,7 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
       · exact ⟨rSig p s, List.mem_cons_self .., fun _ h => h⟩
       · exact ⟨rScrMu p s, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr
-      refine ⟨⟨(slay p prep s).B, 40⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), ?_⟩
+      refine ⟨⟨(slay p prep s).B, 152⟩, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), ?_⟩
       rw [hrsp1]
       exact below_call_sub _ (by omega)
   · simp only [signK, State.withRegions_mem, gpr_ce t1 _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -192,7 +194,7 @@ theorem signCall_ok {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
     have hK := keyLen_ge hp prep
     rw [hc1.ce_bytesAt (p := s.gpr .rdi) (n := p.skLen)
         ((hL.stk_r h.stkSk (by omega_using [])).sub_right (Region.sub_prefix hK.2.2)) (by have := h.nSk; omega_using [hK]),
-      hc1.ce_bytesAt (p := (slay p prep s).MU) (hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by omega_using [])
+      hc1.ce_bytesAt (p := (slay p prep s).MU) (hL.stk_x (d := 144) (n := 8) (e := 840) (k := 64) (by omega_using [])
         (by omega_using [])) (by omega_using []),
       hc1.ce_bytesAt (p := s.gpr .r9) (hL.stk_r h.stkRnd (by omega_using [])) (by omega_using []), hm,
       hg₂ _ (by decide)] at hq
