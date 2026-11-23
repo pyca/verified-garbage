@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Dsa.X86.Fn
 public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86
