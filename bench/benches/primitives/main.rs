@@ -764,7 +764,15 @@ benches! {
 /// head alternately, setting up (generating keys, …) only that one. With
 /// `$VG_BENCH_NAMES` set, each benchmark's name is printed before it, as
 /// `<name>: bench`, so that `--list` tells which one has each group.
+///
+/// With `$VG_BENCH_VERSIONS` set, it runs nothing, and prints the version of
+/// the OpenSSL it is linked with, as `openssl: <version>`, which
+/// `ci/bench_copies.py` records with its results.
 fn all(c: &mut Criterion) {
+    if std::env::var_os("VG_BENCH_VERSIONS").is_some() {
+        println!("openssl: {}", openssl::version::version());
+        return;
+    }
     let modules = std::env::var("VG_BENCH_MODULES").unwrap_or_default();
     let modules: Vec<&str> = modules.split_whitespace().collect();
     let used = |m: &&str| BENCHES.iter().any(|(_, uses, _)| uses.contains(m));

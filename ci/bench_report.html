@@ -671,6 +671,8 @@ function renderRun() {
   if (ref || commit) parts.push([ref, commit].filter(Boolean).join(" @ "));
   const date = one("date");
   if (date) parts.push(date.slice(0, 10));
+  // The libraries compared with, where the run recorded them.
+  for (const k of ["openssl", "aws_lc"]) { const v = one(k); if (v) parts.push(v); }
   box.replaceChildren(parts.join(" · "));
   const run = one("run");
   if (run && /^https:\/\//.test(run)) box.append(parts.length ? " · " : "", el("a", { href: run }, "workflow run"));
