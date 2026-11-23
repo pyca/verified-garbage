@@ -113,7 +113,7 @@ namespace VG.Artifacts.AesGcm.X86_64.AesGcm
 
 open VG.Proof.AesGcm.X86_64
 
-private theorem boundedSelected (v : GcmVariant) (leaf : Option (BlocksTo.SealFn (VG.Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 48)))
+theorem boundedSelected (v : GcmVariant) (leaf : Option (BlocksTo.SealFn (VG.Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 48)))
     (side : ∀ b ∈ leaf, X86_64.Scrub.calleeSide b.fn.code v.lvG.level 24=true) :
     let code := Impl.AesGcm.X86_64.DirectGather.directSeal48 v.lvTW v.lvT v.impl.short v.impl.callees (DirectGather.ctrFn v) (leaf.map (·.fn))
     VerifiedScrubbed X86_64.target code DirectGather.publicContract 0 ∧ code.all (fun i => !X86_64.isa.writesSp i)=true := by
