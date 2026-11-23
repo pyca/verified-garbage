@@ -48,7 +48,7 @@ namespace VG.Proof.Sm4.Arm.SerialCbcTaint
 open VG VG.Arm VG.Impl.Sm4.Arm
 
 theorem groupHead_check : ∃ h, (taint.check (Taint.ofRegs [.r6, .r7, .r8])
-    (.seq SerialCbc.count SerialCbc.core) h).isSome = true := ⟨_, by taint_decide⟩
+    (.seq SerialCfb.count SerialCbc.core) h).isSome = true := ⟨_, by taint_decide⟩
 
 theorem groupTail_check : ∃ h, (taint.check (Taint.ofRegs [.r6, .r7, .r8, .r11])
     SerialCbc.tail h).isSome = true := ⟨_, by taint_decide⟩
@@ -85,13 +85,6 @@ open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchXor VG.Proof.Sm4.Arm.BatchChain
 open VG.Proof.Modes.Arm
 open VG.Spec.Aes (bytesAt)
-
-theorem count_wp (s : State) : WP isa SerialCbc.count s fun s' =>
-    s'.gpr .r11 = (1 : BitVec 32) ∧
-      (∀ r, r ≠ .r11 → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  refine WP.seq (WP.mono (SerialCfbHead.count_wp s) fun s' h => ?_)
-  exact WP.of_runBlock ⟨s', CfbFill.pad_run s', h⟩
 
 structure Post (s : State) (B D : BitVec 32) (s' : State) : Prop where
   regs : ∀ r, r ≠ .r9 → r ≠ .r10 → s'.gpr r = s.gpr r
@@ -231,7 +224,7 @@ theorem group_wp {s : State} {B D : BitVec 32} {K : Spec.Sm4.Schedule} {n : Nat}
     (sep : Region.Disjoint ⟨State.addr D, 16 * n⟩ ⟨State.addr B, 4 * BatchCtr.totalSlots⟩)
     (ht : Holds layout s.mem (State.addr B) K .encrypt) :
     WP isa SerialCbc.group s (GroupPost s B D K n) := by
-  refine WP.seq (WP.mono (SerialCbcFill.count_wp s) fun s₁ ⟨g₁, o₁, m₁, rd₁, wr₁, sp₁⟩ => ?_)
+  refine WP.seq (WP.mono (SerialCfbHead.count_wp s) fun s₁ ⟨g₁, o₁, m₁, rd₁, wr₁, sp₁⟩ => ?_)
   have b₁ : s₁.gpr sb = B := (o₁ _ (by decide) (by decide)).trans hB
   have d₁ : s₁.gpr .r6 = D := (o₁ _ (by decide) (by decide)).trans hD
   have wd₁ : Covers [⟨State.addr D, 16⟩] s₁.wr := by
@@ -606,13 +599,13 @@ open VG VG.Arm VG.Impl.Sm4.Arm VG.Proof.Sm4.Arm
 open VG.Impl.Aes.Arm (sb)
 open VG.Proof.Sm4.Arm.BatchFill VG.Proof.Sm4.Arm.BatchXor
 
-def groupHead : Prog isa := .seq SerialCbc.count SerialCbc.core
+def groupHead : Prog isa := .seq SerialCfb.count SerialCbc.core
 abbrev HeadPre := SerialCfbHead.HeadPre
 abbrev HeadPost := SerialCfbHead.HeadPost
 theorem head_wp {s : State} {B D : BitVec 32} {n : Nat} (hn : 1 ≤ n) (_hn32 : n < 2 ^ 32)
     (h : HeadPre B D n s) : WP isa groupHead s (HeadPost s n) := by
   obtain ⟨K, ht⟩ := h.table
-  refine WP.seq (WP.mono (SerialCbcFill.count_wp s) fun s₁ ⟨g₁, o₁, m₁, _, wr₁, _⟩ => ?_)
+  refine WP.seq (WP.mono (SerialCfbHead.count_wp s) fun s₁ ⟨g₁, o₁, m₁, _, wr₁, _⟩ => ?_)
   have wd₁ : Covers [⟨State.addr D, 16⟩] s₁.wr := by
     rw [wr₁]
     exact (Covers.of_sub fun r hr => by
