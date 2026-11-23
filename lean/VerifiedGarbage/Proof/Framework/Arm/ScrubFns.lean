@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.ScrubProved
+public import VerifiedGarbage.Proof.Framework.Arm.ViaReg
 
 /-!
 # Scrubbed code that calls functions of public address (ARMv7)
@@ -88,5 +89,26 @@ theorem verifiedScrubbedAllFns {A : Abi isa} (hA : ScrubAbi A) {fns : List Strin
       (sig.contract ((A.withFns fns).withTables sig ts) pre post wa stack leak) rb := by
   obtain ⟨h₁, h₂⟩ := Verified.scrubAllS ((hA.withFns fns).tables sig ts) hv hd (fnsCall_pub hc) hn e hpost
   exact ⟨h₁, h₂⟩
+
+/-- Code without indirect calls, made to call `n` by its address in a
+register, calls indirectly only `n`. -/
+theorem inames_viaRegAt {n : String} {r : Reg} {c : Prog isa} (hc : VG.Proof.Arm.Code.icallFree c = true) :
+    ∀ m ∈ inames (Impl.Arm.Code.viaRegAt n r c), m = n := by
+  induction c with
+  | block is => intro m hm; cases hm
+  | seq a b iha ihb | ite _ a b iha ihb =>
+    simp only [VG.Proof.Arm.Code.icallFree, Bool.and_eq_true] at hc
+    intro m hm
+    simp only [Impl.Arm.Code.viaRegAt, inames, List.mem_append] at hm
+    exact hm.elim (iha hc.1 m) (ihb hc.2 m)
+  | loop b _ ih | frame _ b _ ih => exact ih hc
+  | call m' b ih =>
+    intro m hm
+    simp only [Impl.Arm.Code.viaRegAt] at hm
+    split at hm
+    · simp only [Impl.Arm.callReg, Code.icalls, inames, List.append_nil, List.mem_cons] at hm
+      exact hm.elim id (ih hc m)
+    · exact ih hc m hm
+  | icall _ _ _ _ _ _ => simp only [VG.Proof.Arm.Code.icallFree, Bool.false_eq_true] at hc
 
 end VG.Arm.Scrub

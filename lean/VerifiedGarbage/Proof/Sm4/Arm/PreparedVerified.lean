@@ -242,16 +242,27 @@ theorem cryptBody_wp {s₀ : State} {b : BitVec 32} (hw : ScrIn s₀.wr b)
       slot₂ _ (by rw [tailSlot_eq, savedSlot_eq]; omega_using [hj, hi])]
   refine WP.seq (WP.of_runBlock ⟨s₂, ?_, ?_⟩)
   · rw [runBlock_app, e₁, Option.bind_some, e₂]
-  refine WP.seq (WP.mono (crypt8_wp key₂) fun s₃ ⟨c₃, out₃⟩ => ?_)
+  refine WP.seq (WP.mono (crypt8Call_wp key₂) fun s₃ ⟨c₃, out₃⟩ => ?_)
   have b₃ : s₃.gpr sb = b := c₃.base.trans b₂
-  have f₃ : Frame [⟨State.addr b, 4 * tableSlot⟩] s₂.mem s₃.mem := by rw [← b₂]; exact c₃.frame
+  have f₃ : Frame [⟨State.addr b, 4 * tableSlot⟩, ⟨wordAddr b lrSlot, 4⟩] s₂.mem s₃.mem := by
+    rw [← b₂]; exact c₃.frame
+  -- A slot from the table's start to `lrSlot` is outside the call's frame.
+  have keep₃ : ∀ w, tableSlot ≤ w → w < lrSlot → s₃.mem.readW (wordAddr b w) 32 = s₂.mem.readW (wordAddr b w) 32 :=
+    fun w h1 h2 => by
+      have := hw.fit
+      rw [slots_eq] at this
+      refine f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rw [slot_addr (by rw [lrSlot_eq] at h2; omega_using [h2, this])]
+      rcases hr with rfl | rfl
+      · exact VG.Offset.disjoint_base _ (by rw [tableSlot_eq] at h1 ⊢; omega_using [h1])
+          (by rw [lrSlot_eq] at h2; omega_using [h2])
+      · rw [slot_addr (by rw [lrSlot_eq]; omega_using [this])]
+        exact VG.Offset.disjoint _ (.inl (by rw [lrSlot_eq] at h2 ⊢; omega_using [h2])) (by rw [lrSlot_eq] at h2; omega_using [h2])
+          (by rw [lrSlot_eq]; omega_using [])
   have sv₃ : Saved s₀ b s₃.mem := fun i hi => by
     rw [← sv₁ i hi, ← m₂]
-    refine f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-    simp only [List.mem_singleton] at hr; subst hr
-    rw [slot_addr (by have := hw.fit; rw [savedSlot_eq, slots_eq] at *; omega_using [hi, this])]
-    exact VG.Offset.disjoint_base _ (by rw [savedSlot_eq, tableSlot_eq]; omega_using [])
-      (by rw [savedSlot_eq]; omega_using [hi])
+    exact keep₃ _ (by rw [savedSlot_eq, tableSlot_eq]; omega_using []) (by rw [savedSlot_eq, lrSlot_eq]; omega_using [hi])
   obtain ⟨s₄, e₄, r₄, -, m₄, rd₄, wr₄, sp₄⟩ := movR_ok s₃ .r12 sb
   obtain ⟨s₅, e₅, rg₅, -, m₅, rd₅, wr₅, sp₅⟩ := restore_ok
     (by rw [wr₄, c₃.wr, wr₂, wr₁]; exact hw) (by rw [r₄, b₃]) (by rw [m₄]; exact sv₃)
@@ -261,14 +272,14 @@ theorem cryptBody_wp {s₀ : State} {b : BitVec 32} (hw : ScrIn s₀.wr b)
   · rw [m₅, m₄]
     have f₂ : Frame [⟨State.addr b, 4 * slots⟩] s₀.mem s₂.mem := by rw [m₂]; exact f₁
     exact f₂.trans (f₃.sub fun r hr => ⟨⟨State.addr b, 4 * slots⟩, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega_using [])⟩)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega_using [])
+      · exact slot_sub hw.fit (by decide)⟩)
   · intro e he
     refine (hr e he).congr fun j hj => ?_
     rw [entryW, entryW, m₅, m₄, ← slot₂ (tableSlot + 8 * e + j) (by rw [tableSlot_eq, savedSlot_eq]; omega_using [he, hj])]
-    refine f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-    simp only [List.mem_singleton] at hr; subst hr
-    rw [slot_addr (by have := hw.fit; rw [tableSlot_eq, slots_eq] at *; omega_using [he, hj, this])]
-    exact VG.Offset.disjoint_base _ (by omega_using []) (by rw [tableSlot_eq]; omega_using [he, hj])
+    exact keep₃ _ (by omega_using []) (by rw [tableSlot_eq, lrSlot_eq]; omega_using [he, hj])
   · intro j hj
     have h := out₃ j hj
     simp only [tailBlock, b₃] at h

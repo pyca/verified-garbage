@@ -370,7 +370,7 @@ def step (τ : T) : Instr → Option T
   -- A frame's push and pop are analysed by the `push` and `pop` hooks
   -- (`pushStep`, `popStep`), not here; the SSE instructions are not analysed.
   | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => none
+  | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtEnter _ | .mcdtLeave => none
 
 def meet (τ₁ τ₂ : T) : T where
   regs := τ₁.regs.inter τ₂.regs
@@ -909,7 +909,7 @@ def dst : Instr → Option Reg
   | .symPush d _ | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _
   | .mcdtEnter d => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave | .callr _ => none
+  | .alloc _ | .free _ | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtLeave | .callr _ => none
 
 /-- Whether an instruction leaves `esp` as it is: `!isa.writesSp i`
 (`keepsSp_eq`), in one match and a comparison of the registers' indices, for
@@ -2563,7 +2563,7 @@ def stepK (τ : T) : Instr → Option T
   | .store8 m r => storeStepK τ m 1 (pub τ r.reg) []
   | .mul r => some (mulStep τ r)
   | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => none
+  | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtEnter _ | .mcdtLeave => none
 
 /-- `l.contains a`, for a known base address. -/
 def memB (a : Reg × Nat × Nat) (l : List (Reg × Nat × Nat)) : Bool :=
@@ -2767,7 +2767,7 @@ def stepKDFn : Instr → Step
   | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r.reg) []⟩
   | .mul r => ⟨fun τ => some (mulStepKD τ r)⟩
   | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .pmuludq .. | .mcdtEnter _ | .mcdtLeave => ⟨fun _ => none⟩
+  | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtEnter _ | .mcdtLeave => ⟨fun _ => none⟩
 
 /-- Apply the preclassified instruction to the incoming taint. -/
 def stepKD (τ : T) (i : Instr) : Option T := (stepKDFn i).run τ

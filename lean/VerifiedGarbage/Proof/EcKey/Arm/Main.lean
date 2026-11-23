@@ -194,8 +194,8 @@ structure PkPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   out_fit : (s.gpr .r0).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32
   d_fit : (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32
-  /-- The table of constants the setup copies, if it copies one (`Cfg.tbl`). -/
-  tbl : c.tbl = true → ConstTblOk c (ptr s .r2) s
+  /-- The table of constants the setup copies. -/
+  tbl : ConstTblOk c (ptr s .r2) s
 
 theorem PkPre.setup {s : State} {extra : List Region} (hp : PkPre c s extra) : SetupPre c Args.publicKey s where
   shift := .inl rfl

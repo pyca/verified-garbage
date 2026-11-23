@@ -119,8 +119,8 @@ theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m
 
 /-- What `setup` leaves, for the u-coordinate `u`. -/
 def SetupPost (s₀ : State) (base : Addr) (u : Spec.X448.Fe) (t : State) : Prop :=
-  Scr t base ∧ BoundedEnv t.mem base ∧ t.gpr .r8 = s₀.gpr .r0 ∧ t.gpr .r10 = s₀.gpr .lr ∧
-    Keeps setupRegs s₀ t ∧ Outside base 0 8192 s₀.mem t.mem ∧ Saved base s₀.gpr t.mem ∧
+  Scr t base ∧ BoundedEnv t.mem base ∧ t.gpr .r8 = s₀.gpr .r0 ∧
+    Keeps setupRegs s₀ t ∧ Outside base 0 8192 s₀.mem t.mem ∧ SavedL savedL base s₀.gpr t.mem ∧
     E t.mem base 0 = u ∧ E t.mem base 1 = 1 ∧ E t.mem base 2 = 0 ∧
     E t.mem base 3 = E t.mem base 0 ∧ E t.mem base 4 = 1 ∧ word t.mem base SWAP = 0
 
@@ -134,7 +134,7 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
     WP isa (afterSetup fv) s₁ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
       Spec.X448.bytesAt s'.mem (State.addr (s₀.gpr .r0)) 56 =
         Spec.X448.x448 (Spec.X448.bytesAt s₀.mem (State.addr (s₀.gpr .r1)) 56) pb := by
-  obtain ⟨hs₁, b₁, savedOut₁, savedLr₁, k₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ := h₁
+  obtain ⟨hs₁, b₁, savedOut₁, k₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ := h₁
   have kd : ∀ j < 56, 8192 ≤ ofs base (off (State.addr (s₀.gpr .r1)) j) :=
     fun j hj => far scalar_sc hj (by decide)
   unfold afterSetup
@@ -146,7 +146,7 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
   have k₂ : Keeps bitRegs s₁ s₂ := ⟨g₂, rd₂, wr₂⟩
   have k02 := k₁.then k₂
   have hs₂ := hs₁.of_keeps k₂ (by decide)
-  have sv₂ : Saved base s₀.gpr s₂.mem := by exact sv₁.outside o₂ (by decide)
+  have sv₂ : SavedL savedL base s₀.gpr s₂.mem := by exact SavedL.outside sv₁ o₂ (by decide)
   have e₂ : ∀ i : Index, E s₂.mem base i = E s₁.mem base i := by
     intro i; exact E_outside o₂ i (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega_using []))
   have b₂ : BoundedEnv s₂.mem base := by
@@ -176,18 +176,16 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
   have hs₅ := k₅.scr L.scr
   refine WP.seq (WP.mono (invert_ok hs₅ b₅) fun s₆ ⟨k₆, b₆, e₆⟩ => ?_)
   have k26 := L.regs.then (k₅.regs.then k₆.regs)
-  have sv₆ := ((sv₂.outside2 L.mem (by decide) (by decide)).outside2 k₅.mem (by decide)
+  have sv₆ := ((SavedL.outside2 sv₂ L.mem (by decide) (by decide)).outside2 k₅.mem (by decide)
     (by decide)).outside2 k₆.mem (by decide) (by decide)
   have out₆ : s₆.gpr .r8 = s₀.gpr .r0 :=
     (k26.1 _ (by decide)).trans ((g₂ _ (by decide)).trans savedOut₁)
-  have lr₆ : s₆.gpr .r10 = s₀.gpr .lr :=
-    (k26.1 _ (by decide)).trans ((g₂ _ (by decide)).trans savedLr₁)
   have k06 := k02.then k26
   have hw₆ : ∀ j < 56, InRegions s₆.wr (off (State.addr (s₀.gpr .r0)) j) 1 := fun j hj =>
     ⟨outR s₀, by rw [k06.2.2]; exact hwo, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
-  refine WP.mono (finish_ok (k₆.scr hs₅) b₆ (congrArg State.addr out₆)
+  refine WP.mono (finishL_ok (k₆.scr hs₅) b₆ (congrArg State.addr out₆)
     (by rw [out₆]; exact out_fit) hw₆
-    (fun j hj => far_output out_sc hj) sv₆) fun s' ⟨restored, lr', kf, fm, result⟩ => ?_
+    (fun j hj => far_output out_sc hj) sv₆) fun s' ⟨restored, kf, fm, result⟩ => ?_
   have kall := k06.then kf
   refine ⟨?_, ?_⟩
   · intro r hr
@@ -199,9 +197,9 @@ theorem afterSetup_ok {s₀ s₁ : State} {base : Addr} {pb : List Byte}
     · exact restored 3 (by decide)
     · exact restored 4 (by decide)
     · exact restored 5 (by decide)
-    · exact restored 6 (by decide)
+    · exact kall.1 _ (by decide)
     · exact restored 7 (by decide)
-    · exact lr'.trans lr₆
+    · exact restored 6 (by decide)
   · rw [result, x448_eq]
     apply congrArg Spec.X448.encodeUCoordinate
     rw [e₆, invEnv_x2, invEnv_eval, e₅]

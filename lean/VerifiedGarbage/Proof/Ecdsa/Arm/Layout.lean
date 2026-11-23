@@ -97,10 +97,6 @@ structure ConstTblOk (c : Cfg) (sc : Addr) (s : State) : Prop where
     s.mem.readW (State.addr (s.syms c.constSym) + BitVec.ofNat 64 (8 * i)) 64 = c.constTbl.getD i 0
   sep : Region.Disjoint ⟨State.addr (s.syms c.constSym), 8 * c.constTbl.length⟩ ⟨sc, size⟩
 
-/-- A curve that copies no table (`Cfg.tbl`): its proofs need none. -/
-theorem noTbl {c : Cfg} (h : c.tblSym = none) {P : Prop} : c.tbl = true → P := fun e => by
-  rw [Cfg.tbl, h] at e; exact absurd e (by decide)
-
 /-- The arguments, readable and writable as the contract says and apart from
 each other as it says. -/
 structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
@@ -118,8 +114,8 @@ structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   k_fit : (s.gpr .r3).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (stackArg s 0).toNat + 8192 ≤ 2 ^ 32
   sp_fit : s.sp.toNat + 4 ≤ 2 ^ 32
-  /-- The table of constants the setup copies, if it copies one (`Cfg.tbl`). -/
-  tbl : c.tbl = true → ConstTblOk c (scPtr s) s
+  /-- The table of constants the setup copies. -/
+  tbl : ConstTblOk c (scPtr s) s
 
 /-- The working space's base, from where `A` says. -/
 def scVal (A : Args) (s : State) : BitVec 32 :=
@@ -156,8 +152,8 @@ structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
   d_fit : (s.gpr A.d).toNat + c.C.len ≤ 2 ^ 32
   e_fit : (s.gpr A.e).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (scVal A s).toNat + 8192 ≤ 2 ^ 32
-  /-- The table of constants the setup copies, if it copies one (`Cfg.tbl`). -/
-  tbl : c.tbl = true → ConstTblOk c (scBase A s) s
+  /-- The table of constants the setup copies. -/
+  tbl : ConstTblOk c (scBase A s) s
 
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)

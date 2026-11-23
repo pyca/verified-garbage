@@ -171,6 +171,18 @@ call {vg_ed448_verify_equation}
 pub(crate) mod vg_ed448_decode_core;
 
 #[rustfmt::skip]
+#[path = "internal/vg_ed448_point_add.rs"]
+pub(crate) mod vg_ed448_point_add;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed448_point_add_affine.rs"]
+pub(crate) mod vg_ed448_point_add_affine;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ed448_point_double.rs"]
+pub(crate) mod vg_ed448_point_double;
+
+#[rustfmt::skip]
 #[path = "internal/vg_ed448_scalar_base.rs"]
 pub(crate) mod vg_ed448_scalar_base;
 

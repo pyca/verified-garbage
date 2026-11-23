@@ -13,7 +13,7 @@ pub(crate) unsafe extern "C" fn vg_dsa_sign_prevalidated() {
     core::arch::naked_asm!(
         r#".option push
 .option arch, +m, +c
-.base64 "kwOBAIOzAwAjsIMII7STCCO4IwkjvDMJI7BDCyO0UwsjuHMLI7yDCyOwkw0jtKMNI7izDSO8EwwjsGMPHouyjb6AIzQbASM8qwAKjoM4DgCT1WgAAU6zBb5A/ZGzBb5AEw4ABDPOyAEzfr4As8XIAcIVEx4IATqeLp4jOMsB7osDPAsBQhwTXAwDXo5ij4FOgUU="
+.base64 "kwOBAIOzAwAjsIMII7STCCO4IwkjvDMJI7BDCyO0UwsjuHMLI7yDCyOwkw0jtKMNI7izDSO8EwwjsGMPHouyjb6AIzQbASM8qwAKjoM4DgCT1WgAAU6zBb5A/ZGzBb5AEw4ABDPOyAEzfr4As8XIAcIVEx4IATqeLp4jOMsBIzAbAu6LAzwLAUIcE1wMA16OYo+BToFF"
 20:
 .base64 "A0QOALPujgABRTMF1UF9kaqVBQ59Hw=="
 bnez t5, 20b

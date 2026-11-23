@@ -199,8 +199,8 @@ structure CopyInv (b src : Addr) (o : Nat) (s0 : State) (k : Nat) (s : State) : 
   frame : Frame [⟨b + BitVec.ofNat 64 o, k⟩] s0.mem s.mem
   bytes : ∀ i < k, s.mem (b + BitVec.ofNat 64 (o + i)) = s0.mem (src + BitVec.ofNat 64 i)
 
-theorem copyB_ok {s0 : State} (hc : Ctx b s0) {rs : Reg} (hrs : rs ≠ .r0 ∧ rs ≠ .r7 ∧ rs ≠ .r6) {src : Addr}
-    (h : s0.gpr rs = src) {n o : Nat} (hin : (⟨src, n⟩ : Region) ∈ s0.rd ++ s0.wr)
+theorem copyB_ok' {s0 : State} (hc : Ctx b s0) {rs : Reg} (hrs : rs ≠ .r0 ∧ rs ≠ .r7 ∧ rs ≠ .r6) {src : Addr}
+    (h : s0.gpr rs = src) {n o : Nat} (hin : ∀ k < n, InRegions (s0.rd ++ s0.wr) (src + BitVec.ofNat 64 k) 1)
     (hd : Region.Disjoint ⟨src, n⟩ ⟨b + BitVec.ofNat 64 o, n⟩) (ho : o + n ≤ 4096) (hn : n < 2 ^ 15) :
     WP isa (.block (copyBytes rs o n)) s0 (CopyInv b src o s0 n) := by
   obtain ⟨h0, h7, h6⟩ := hrs
@@ -208,7 +208,7 @@ theorem copyB_ok {s0 : State} (hc : Ctx b s0) {rs : Reg} (hrs : rs ≠ .r0 ∧ r
     ⟨Rest.refl _ _, Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _)⟩
   obtain hcs : Ctx b s := hc.of_rest h'.rest (by decide)
   refine wp_lbz (a := src + BitVec.ofNat 64 k) h0 (by omega_arith) (by rw [h'.rest.gpr _ (by simpa using h7), h])
-    (by rw [h'.rest.rd, h'.rest.wr]; exact in_base hin (by omega_arith) (by omega_arith)) fun s1 u1 => ?_
+    (by rw [h'.rest.rd, h'.rest.wr]; exact hin k hk) fun s1 u1 => ?_
   refine wp_stb (a := b + BitVec.ofNat 64 (o + k)) (by decide) (by omega_arith)
     (by rw [u1.other _ (by decide), h'.rest.gpr _ (by decide), hc.r6])
     (by rw [u1.wr, h'.rest.wr]; exact hc.inW (by omega_arith)) fun s2 u2 => WP.block_nil ?_
@@ -230,6 +230,12 @@ theorem copyB_ok {s0 : State} (hc : Ctx b s0) {rs : Reg} (hrs : rs ≠ .r0 ∧ r
       rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
       have := (s.mem (src + BitVec.ofNat 64 i)).isLt
       omega_arith
+
+theorem copyB_ok {s0 : State} (hc : Ctx b s0) {rs : Reg} (hrs : rs ≠ .r0 ∧ rs ≠ .r7 ∧ rs ≠ .r6) {src : Addr}
+    (h : s0.gpr rs = src) {n o : Nat} (hin : (⟨src, n⟩ : Region) ∈ s0.rd ++ s0.wr)
+    (hd : Region.Disjoint ⟨src, n⟩ ⟨b + BitVec.ofNat 64 o, n⟩) (ho : o + n ≤ 4096) (hn : n < 2 ^ 15) :
+    WP isa (.block (copyBytes rs o n)) s0 (CopyInv b src o s0 n) :=
+  copyB_ok' hc hrs h (fun k hk => in_base hin (by omega_arith) (by omega_arith)) hd ho hn
 
 /-- The bytes of a region apart from a frame's regions stay. -/
 theorem bytes_keep {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : Addr} {n : Nat}
@@ -667,6 +673,131 @@ theorem vSetup_ok {s : State} (hp : VPre s) :
     rw [Offset.add_add] at h
     rw [dw_disj hf2 (dS (by omega_using [hV]) (by omega_using [hV, hi])), h, g _ (hn7 i hi)]
 
+/-! ## The decodings, by a call -/
+
+/-- What `decodeCall` writes: `decode`'s regions, and its slots at `DIN`. -/
+abbrev dcW (b : Addr) (xo yo : Nat) : List Region :=
+  decW b xo yo ++ [⟨b + BitVec.ofNat 64 DIN, 176⟩]
+
+theorem disj_dcW {d n xo yo : Nat} (h1 : 1240 ≤ d) (h2 : d + n ≤ 3520 ∨ 3529 ≤ d ∧ d + n ≤ 4096)
+    (hxo : d + n ≤ xo ∨ xo + 56 ≤ d) (hyo : d + n ≤ yo ∨ yo + 56 ≤ d) (hx : xo + 56 ≤ 4096)
+    (hy : yo + 56 ≤ 4096) :
+    ∀ r ∈ dcW b xo yo, Region.Disjoint ⟨b + BitVec.ofNat 64 d, n⟩ r := by
+  intro r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact disj_decW (by omega_arith) h2 hxo hyo hx hy r hr
+  · rw [List.mem_singleton.mp hr]
+    exact Offset.disjoint _ (by unfold DIN; omega_arith) (by omega_arith) (by unfold DIN; omega_arith)
+
+/-- `vg_ed448_decode` writes no link register. -/
+theorem decodeFn_lrSafe : lrSafe decodeFn = true := by lit_decide
+
+/-- `decodeCall p xo yo`: `decode_ok`, by a call of `vg_ed448_decode` on a
+copy of the bytes at `p`, the elements copied from `DOX` and `DOY`. -/
+theorem decodeCall_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hc : VCtx b s) {p : Nat} (hp : 1240 ≤ p)
+    (hp' : p + 57 ≤ 3520) {xo yo : Nat} (ho : NegOut xo yo) (hxo : 1240 ≤ xo) (hyo : 1240 ≤ yo)
+    (hx4 : xo % 4 = 0) (hy4 : yo % 4 = 0) (hd : FS s.mem b DK = Spec.Ed448.d) :
+    WP isa (decodeCall p xo yo) s fun t => VCtx b t ∧ Rest work s t ∧ Frame (dcW b xo yo) s.mem t.mem ∧
+      FS t.mem b DK = Spec.Ed448.d ∧
+      (bad t.mem b = 0 ↔ bad s.mem b = 0 ∧
+        (Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem (b + BitVec.ofNat 64 p) 57)).isSome) ∧
+      ∀ pt, Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem (b + BitVec.ofNat 64 p) 57) = some pt →
+        FS t.mem b xo = 0 - pt.X ∧ FS t.mem b yo = pt.Y ∧ pt.Z = 1 := by
+  obtain ⟨hxl, hxu, hyl, hyu, hxy⟩ := ho
+  have hPK : PK = 3288 := rfl
+  have hDIN : DIN = 1064 := rfl
+  have hDOX : DOX = 1128 := rfl
+  have hDOY : DOY = 1184 := rfl
+  have hDK : DK = 336 := rfl
+  have hBAD : BAD = 3520 := rfl
+  unfold decodeCall
+  -- The bytes to `DIN`.
+  refine WP.seq (WP.cons (s' := s.write .r4 (s.gpr .r6 + BitVec.ofNat 64 p))
+    (exec_addi (by decide) (by omega_arith)) ?_)
+  obtain u0 := Upd.write s .r4 (s.gpr .r6 + BitVec.ofNat 64 p)
+  generalize s.write .r4 (s.gpr .r6 + BitVec.ofNat 64 p) = s0 at u0
+  obtain r0 : Rest [.r4] s s0 := u0.rest (by decide)
+  obtain hc0 : VCtx b s0 := hc.of_rest r0 (by decide) (by decide)
+  obtain g4 : s0.gpr .r4 = b + BitVec.ofNat 64 p := by rw [u0.gpr, hc.ctx.r6]
+  refine WP.mono (copyB_ok' hc0.ctx ⟨by decide, by decide, by decide⟩ g4 (n := 57) (o := DIN)
+    (fun k hk => by rw [Offset.add_add]; exact hc0.inR (by omega_arith))
+    (Offset.disjoint _ (by unfold DIN; omega_arith) (by omega_arith) (by unfold DIN; omega_arith))
+    (by unfold DIN; omega_arith) (by decide)) fun s1 C1 => ?_
+  obtain hc1 : VCtx b s1 := hc0.of_rest C1.rest (by decide) (by decide)
+  obtain m0 : s0.mem = s.mem := u0.mem
+  obtain e1 : Spec.Ed448.bytesAt s1.mem (b + BitVec.ofNat 64 DIN) 57 =
+      Spec.Ed448.bytesAt s.mem (b + BitVec.ofNat 64 p) 57 := by rw [← m0]; exact bytes_copy C1.bytes
+  obtain fDIN : ∀ {q : Nat}, q + 56 ≤ 1064 ∨ 1121 ≤ q → q + 56 ≤ 8192 →
+      ∀ r ∈ [(⟨b + BitVec.ofNat 64 DIN, 57⟩ : Region)], Region.Disjoint ⟨b + BitVec.ofNat 64 q, 56⟩ r :=
+    fun h h' r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by unfold DIN; omega_arith) (by omega_arith)
+        (by unfold DIN; omega_arith)
+  obtain hd1 : FS s1.mem b DK = Spec.Ed448.d := by
+    rw [fs_disj C1.frame (fDIN (by unfold DK; omega_arith) (by decide)), m0, hd]
+  obtain hb1 : bad s1.mem b = bad s.mem b := by
+    rw [bad_keep C1.frame fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by unfold DIN BAD; omega_arith) (by decide) (by decide), m0]
+  -- The call.
+  obtain hcE : VCtx b s1.callEntry :=
+    ⟨⟨by rw [State.callEntry_gpr s1 (by decide)]; exact hc1.ctx.r6, by rw [State.callEntry_wr]; exact hc1.ctx.wr⟩,
+      by rw [State.callEntry_wr]; exact hc1.ws, by rw [State.callEntry_gpr s1 (by decide)]; exact hc1.r3⟩
+  refine WP.seq (WP.callSafe decodeFn_lrSafe (WP.mono (decode_ok hR hcE (p := DIN) (by decide) (by decide)
+    (xo := DOX) (yo := DOY) ⟨by decide, by decide, by decide, by decide, by decide⟩
+    (by rw [State.callEntry_mem]; exact hd1)) fun s2 ⟨hc2, hr2, hf2, hd2, hb2, hv2⟩ => ?_))
+  rw [State.callEntry_mem] at hf2 hb2 hv2
+  rw [e1] at hb2 hv2
+  obtain hr2' : Rest work s1 s2 := ⟨fun r hr => by
+      rw [hr2.gpr r hr, State.callEntry_gpr s1 fun hl => hr ((by decide : ∀ x ∈ linkRegs, x ∈ work) r hl)],
+    by rw [hr2.rd, State.callEntry_rd], by rw [hr2.wr, State.callEntry_wr], by rw [hr2.sp, State.callEntry_sp]⟩
+  -- The elements to `xo` and `yo`.
+  refine WP.append (cp7_ok hc2 (rs := .r6) (rd := .r6) (so := DOX) (d := xo) (ps := DOX) (pd := xo)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by omega_arith) hx4
+    (by rw [hc2.ctx.r6]) (by rw [hc2.ctx.r6]) (by decide) (by omega_arith) (by unfold DOX; omega_arith))
+    fun s3 ⟨hc3, hr3, hf3, hv3⟩ => ?_
+  refine WP.mono (cp7_ok hc3 (rs := .r6) (rd := .r6) (so := DOY) (d := yo) (ps := DOY) (pd := yo)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by omega_arith) hy4
+    (by rw [hc3.ctx.r6]) (by rw [hc3.ctx.r6]) (by decide) (by omega_arith) (by unfold DOY; omega_arith))
+    fun t ⟨hct, hrt, hft, hvt⟩ => ?_
+  obtain fX : ∀ {q : Nat}, q + 56 ≤ xo ∨ xo + 56 ≤ q → q + 56 ≤ 8192 →
+      ∀ r ∈ [(⟨b + BitVec.ofNat 64 xo, 56⟩ : Region)], Region.Disjoint ⟨b + BitVec.ofNat 64 q, 56⟩ r :=
+    fun h h' r hr => by rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ h (by omega_arith) (by omega_arith)
+  obtain fY : ∀ {q : Nat}, q + 56 ≤ yo ∨ yo + 56 ≤ q → q + 56 ≤ 8192 →
+      ∀ r ∈ [(⟨b + BitVec.ofNat 64 yo, 56⟩ : Region)], Region.Disjoint ⟨b + BitVec.ofNat 64 q, 56⟩ r :=
+    fun h h' r hr => by rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ h (by omega_arith) (by omega_arith)
+  obtain hb3 : bad t.mem b = bad s2.mem b := by
+    rw [bad_keep hft fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by unfold BAD; omega_arith) (by decide) (by omega_arith),
+      bad_keep hf3 fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by unfold BAD; omega_arith) (by decide) (by omega_arith)]
+  refine ⟨hct, ((Rest.mono r0 (by decide)).trans (Rest.mono C1.rest (by decide))).trans
+      (hr2'.trans ((Rest.mono hr3 (by decide)).trans (Rest.mono hrt (by decide)))), ?_, ?_, ?_, ?_⟩
+  · obtain F1 : Frame (dcW b xo yo) s.mem s1.mem := by
+      rw [← m0]
+      exact C1.frame.sub (rs' := dcW b xo yo) fun r hr => ⟨⟨b + BitVec.ofNat 64 DIN, 176⟩,
+        List.mem_append_right _ (List.mem_singleton_self _), by
+          rw [List.mem_singleton.mp hr]; exact Offset.sub _ (Nat.le_refl _) (by unfold DIN; omega_arith)⟩
+    obtain F2 : Frame (dcW b xo yo) s1.mem s2.mem :=
+      hf2.sub (rs' := dcW b xo yo) fun r hr => by
+        simp only [decW, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with (rfl | rfl | rfl | rfl) | rfl | rfl
+        iterate 4 exact ⟨_, by simp, fun _ h => h⟩
+        · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+            Offset.sub _ (by unfold DOX DIN; omega_arith) (by unfold DOX DIN; omega_arith)⟩
+        · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+            Offset.sub _ (by unfold DOY DIN; omega_arith) (by unfold DOY DIN; omega_arith)⟩
+    obtain F3 : Frame (dcW b xo yo) s2.mem s3.mem := hf3.mono fun r hr => by
+      rw [List.mem_singleton.mp hr]; simp
+    obtain F4 : Frame (dcW b xo yo) s3.mem t.mem := hft.mono fun r hr => by
+      rw [List.mem_singleton.mp hr]; simp
+    exact ((F1.trans F2).trans F3).trans F4
+  · rw [fs_disj hft (fY (by unfold DK; omega_arith) (by decide)), fs_disj hf3 (fX (by unfold DK; omega_arith) (by decide)), hd2]
+  · rw [hb3, hb2, hb1]
+  · intro pt hpt
+    obtain ⟨ex, ey, ez⟩ := hv2 pt hpt
+    refine ⟨?_, ?_, ez⟩
+    · rw [fs_disj hft (fY hxy (by omega_arith)), ← ex]; unfold FS; rw [cp7_V hv3]
+    · rw [← ey, ← fs_disj hf3 (fX (by unfold DOY; omega_arith) (by decide))]; unfold FS; rw [cp7_V hvt]
+
 /-! ## Before the joint loop -/
 
 /-- What the code before the joint loop leaves, for the inputs of `s`. -/
@@ -709,10 +840,12 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
   unfold vPrefix
   refine WP.seq (WP.mono (vSetup_ok hp) fun s1 ⟨hc1, sp1, ePK, eSG, eCH, hb1, hd1, hone, lr1, r141, nv1⟩ => ?_)
   rw [hb] at hc1 ePK eSG eCH hb1 hd1 hone lr1 r141 nv1
-  refine WP.seq (WP.mono (decode_ok hR hc1 (p := SG) (by decide) (by decide) (xo := NRX) (yo := NRY)
-    ⟨by decide, by decide, by decide, by decide, by decide⟩ hd1) fun s2 ⟨hc2, hr2, hf2, hd2, hb2, hv2⟩ => ?_)
-  refine WP.seq (WP.mono (decode_ok hR hc2 (p := PK) (by decide) (by decide) (xo := NAX) (yo := NAY)
-    ⟨by decide, by decide, by decide, by decide, by decide⟩ hd2) fun s3 ⟨hc3, hr3, hf3, hd3, hb3, hv3⟩ => ?_)
+  refine WP.seq (WP.mono (decodeCall_ok hR hc1 (p := SG) (by decide) (by decide) (xo := NRX) (yo := NRY)
+    ⟨by decide, by decide, by decide, by decide, by decide⟩ (by decide) (by decide) (by decide) (by decide) hd1)
+    fun s2 ⟨hc2, hr2, hf2, hd2, hb2, hv2⟩ => ?_)
+  refine WP.seq (WP.mono (decodeCall_ok hR hc2 (p := PK) (by decide) (by decide) (xo := NAX) (yo := NAY)
+    ⟨by decide, by decide, by decide, by decide, by decide⟩ (by decide) (by decide) (by decide) (by decide) hd2)
+    fun s3 ⟨hc3, hr3, hf3, hd3, hb3, hv3⟩ => ?_)
   refine WP.seq (WP.mono (checkS_ok hc3) fun s4 ⟨hc4, hr4, hf4, hk4, hb4⟩ => ?_)
   refine WP.seq (WP.mono (bitsZero_ok hc4) fun s5 ⟨hc5, hr5, hf5, ht5⟩ => ?_)
   refine WP.seq (WP.mono (bitsOf_ok hc5 (src := SG + 57) (e := 0) (by decide) (by decide) (by decide) ht5)
@@ -725,7 +858,7 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
     fun h h' => disj_one (by omega_using [hTB, h]) h' (by omega_using [hTB])
   -- The inputs, as the phases read them.
   obtain kA : Spec.Ed448.bytesAt s2.mem (b + BitVec.ofNat 64 PK) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .r3) 57 := by
-    rw [bytes_keep hf2 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide)
+    rw [bytes_keep hf2 (disj_dcW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide)
       (by decide)) (by decide), ePK]
   obtain kR : Spec.Ed448.bytesAt s1.mem (b + BitVec.ofNat 64 SG) 57 =
       (Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).take 57 := by rw [← eSG, bytes_take]
@@ -733,9 +866,9 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
       Spec.Ed448.bytesAt m (b + BitVec.ofNat 64 (SG + 57)) 57 := by intro m; rw [Offset.add_add]
   obtain kS3 : Spec.Ed448.bytesAt s3.mem (b + BitVec.ofNat 64 (SG + 57)) 57 =
       (Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).drop 57 := by
-    rw [bytes_keep hf3 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide)
+    rw [bytes_keep hf3 (disj_dcW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide)
         (by decide)) (by decide),
-      bytes_keep hf2 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide)
+      bytes_keep hf2 (disj_dcW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide)
         (by decide)) (by decide), ← eSG, bytes_drop, sS]
   obtain kS5 : Spec.Ed448.bytesAt s5.mem (b + BitVec.ofNat 64 (SG + 57)) 57 =
       (Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).drop 57 := by
@@ -744,9 +877,9 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
   obtain kK : Spec.Ed448.bytesAt s6.mem (b + BitVec.ofNat 64 CH) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .r5) 57 := by
     rw [bytes_keep hf6 (dTB (by omega_using [hCH]) (by omega_using [hCH])) (by decide), bytes_keep hf5 (dTB (by omega_using [hCH]) (by omega_using [hCH])) (by decide),
       bytes_keep hf4 (disj_FAB (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
-      bytes_keep hf3 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide))
+      bytes_keep hf3 (disj_dcW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide))
         (by decide),
-      bytes_keep hf2 (disj_decW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide))
+      bytes_keep hf2 (disj_dcW (by omega_arith) (by omega_arith) (by decide) (by decide) (by decide) (by decide))
         (by decide), eCH]
   rw [kS5] at ht6 ht7
   rw [kK] at ht7
@@ -771,24 +904,24 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
       fs_disj hf5 (dTB (by omega_using [h1]) (by omega_using [h2]))]
   obtain k34 : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 3520 → FS s4.mem b q = FS s3.mem b q := fun h1 h2 =>
     fs_disj hf4 (disj_FAB (by omega_using [h1]) (by omega_using [h2]) (by omega_using [h2]))
-  obtain kFS1 : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 3008 ∨ 3232 ≤ q → q + 56 ≤ 3520 → FS s3.mem b q = FS s1.mem b q :=
+  obtain kFS1 : ∀ {q : Nat}, 1240 ≤ q → q + 56 ≤ 3008 ∨ 3232 ≤ q → q + 56 ≤ 3520 → FS s3.mem b q = FS s1.mem b q :=
     fun h1 h2 h3 => by
-      rw [fs_disj hf3 (disj_decW (by omega_arith) (by omega_arith) (by unfold NAX; omega_arith)
+      rw [fs_disj hf3 (disj_dcW (by omega_arith) (by omega_arith) (by unfold NAX; omega_arith)
           (by unfold NAY; omega_arith) (by decide) (by decide)),
-        fs_disj hf2 (disj_decW (by omega_arith) (by omega_arith) (by unfold NRX; omega_arith)
+        fs_disj hf2 (disj_dcW (by omega_arith) (by omega_arith) (by unfold NRX; omega_arith)
           (by unfold NRY; omega_arith) (by decide) (by decide))]
   obtain kR3 : ∀ {q : Nat}, q = NRX ∨ q = NRY → FS s3.mem b q = FS s2.mem b q := fun h => by
     rcases h with rfl | rfl <;>
-      exact fs_disj hf3 (disj_decW (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
+      exact fs_disj hf3 (disj_dcW (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
   -- The saved doublewords, from the setup to the digits.
   obtain w19 : ∀ {o : Nat}, 3536 ≤ o → o + 8 ≤ 3688 →
       s9.mem.readW (b + BitVec.ofNat 64 o) 64 = s1.mem.readW (b + BitVec.ofNat 64 o) 64 := fun h1 h2 => by
     rw [dw_disj hf9 (dTB (by omega_using [h1]) (by omega_using [h2])), dw_disj hf8 (dTB (by omega_using [h1]) (by omega_using [h2])),
       dw_disj hf7 (dTB (by omega_using [h1]) (by omega_using [h2])), dw_disj hf6 (dTB (by omega_using [h1]) (by omega_using [h2])),
       dw_disj hf5 (dTB (by omega_using [h1]) (by omega_using [h2])), dw_disj hf4 (disj_FAB (by omega_using [h1]) (by omega_using [h2]) (by omega_using [h1])),
-      dw_disj hf3 (disj_decW (by omega_using [h1]) (by omega_using [h1, h2]) (by unfold NAX; omega_using [h1]) (by unfold NAY; omega_using [h1]) (by decide)
+      dw_disj hf3 (disj_dcW (by omega_using [h1]) (by omega_using [h1, h2]) (by unfold NAX; omega_using [h1]) (by unfold NAY; omega_using [h1]) (by decide)
         (by decide)),
-      dw_disj hf2 (disj_decW (by omega_using [h1]) (by omega_using [h1, h2]) (by unfold NRX; omega_using [h1]) (by unfold NRY; omega_using [h1]) (by decide)
+      dw_disj hf2 (disj_dcW (by omega_using [h1]) (by omega_using [h1, h2]) (by unfold NRX; omega_using [h1]) (by unfold NRY; omega_using [h1]) (by decide)
         (by decide))]
   -- `-A` and `d` before the tables.
   let A' : Point := ⟨FS s9.mem b NAX, FS s9.mem b NAY, FS s9.mem b ONE⟩

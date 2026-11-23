@@ -70,6 +70,15 @@ def rounds (l : Lin) : Prog isa := .seq (.block [kpAt tableSlot]) (.loop (.block
 /-- The eight blocks of the tail buffer, in place. -/
 def crypt8 : Prog isa := .seq (.block toBs) (.seq (rounds .enc) (.block fromBs))
 
+/-- `vg_sm4_crypt8`: `crypt8` as a function, which ECB and every mode call,
+so that its code is in the crate once. It uses every register but `sb` and
+`kp`, and keeps its return address in the slot `lrSlot` of the working
+space, above the table, which `crypt8` writes only below. -/
+def crypt8Fn : Prog isa := .seq (.block [stS lrSlot .lr]) (.seq crypt8 (.block [ldS .lr lrSlot]))
+
+/-- A call of `vg_sm4_crypt8`, with the working space at `sb`. -/
+def crypt8Call : Prog isa := .call "vg_sm4_crypt8" crypt8Fn
+
 /-! ## The groups -/
 
 /-- Copy `r3` blocks from `r0` to `r12` (through `t0`). -/
@@ -93,12 +102,12 @@ def copyIn : Prog isa := .seq groupCount (.seq (.block [movR .r0 .r1, tailAddr .
 def copyOut : Prog isa := .seq groupCount (.seq (.block [tailAddr .r0, movR .r12 .r1]) copyBlocks)
 
 /-- The eight blocks of the tail buffer, with the data pointer and the blocks
-left in their slots meanwhile: the rounds use every register, and store
+left in their slots meanwhile: `vg_sm4_crypt8` uses every register, and stores
 only through `sb`, which keeps the slots' values public for the analysis of
 constant time (a store through another pointer would forget them, so the
 copies keep these values in `r1` and `r2`). -/
 def cryptSaved : Prog isa :=
-  .seq (.block [stS dSlot .r1, stS nSlot .r2]) (.seq crypt8 (.block [ldS .r1 dSlot, ldS .r2 nSlot]))
+  .seq (.block [stS dSlot .r1, stS nSlot .r2]) (.seq crypt8Call (.block [ldS .r1 dSlot, ldS .r2 nSlot]))
 
 /-- On to the next group, or none left (Z set). -/
 def advance : Prog isa := .seq groupCount (.block [.dp .add .r1 .r1 (.imm 128), .subs .r2 .r2 (.reg .r3)])

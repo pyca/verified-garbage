@@ -117,14 +117,15 @@ Modelling choices:
   otherwise; the MMX registers are caller-saved (the x87 registers are
   scratch registers in the ABI), and their values on entry are unknown.
 * MXCSR-configuration-dependent timing (MCDT): on some Intel processors,
-  `pmuludq`, although on Intel's DOIT list, may take up to a cycle longer
-  to retire for specific data values unless MXCSR holds `0x1FBF` (Intel,
+  `pmuludq`, `pmullw` and `pmulhw`, although on Intel's DOIT list, may take
+  up to a cycle longer to retire for specific data values unless MXCSR
+  holds `0x1FBF` (Intel,
   "MXCSR Configuration Dependent Timing", and its list of the instructions
   affected, "MCDT Data Operand Independent Timing Instructions"; the
   processors that enumerate `MCDT_NO`, CPUID.(EAX=7H,ECX=2):EDX[5], are not
-  affected). The leakage model does not see this, so `pmuludq` runs only
-  inside an *MCDT frame*, `frame (mcdtEnter r) body mcdtLeave`, and faults
-  outside one. The frame is a stack frame of 12 bytes around Intel's
+  affected). The leakage model does not see this, so each of them runs
+  only inside an *MCDT frame*, `frame (mcdtEnter r) body mcdtLeave`, and
+  faults outside one. The frame is a stack frame of 12 bytes around Intel's
   mitigation: its push is `lea esp, [esp - 12]`, then the prologue,
   `stmxcsr DWORD PTR [esp + 4]` (SDM Vol. 2, "STMXCSR": `m32 := MXCSR`),
   `mov r, 0x1FBF`, `mov DWORD PTR [esp], r`, `ldmxcsr DWORD PTR [esp]`
@@ -136,8 +137,8 @@ Modelling choices:
   MXCSR is modelled by the number of open MCDT frames (`State.mcdt`) and
   its value outside them (`State.mxcsr`), which no instruction changes:
   inside one MXCSR holds `0x1FBF`, which no modelled instruction reads
-  (integer and `pmuludq` instructions raise no SIMD floating-point
-  exceptions). So the push saves `State.mxcsr` outside an MCDT frame and
+  (integer instructions, `pmuludq`, `pmullw` and `pmulhw` among them, raise
+  no SIMD floating-point exceptions). So the push saves `State.mxcsr` outside an MCDT frame and
   `0x1FBF` inside one (frames may nest, as a callee may open one inside its
   caller's), and the pop faults unless the word it loads into MXCSR is the
   value that leaves it as it was before the push. A frame's region is 9
@@ -147,7 +148,8 @@ Modelling choices:
   no other frame. Every execution that returns therefore leaves MXCSR as it
   was on entry (its control bits are callee-saved in the System V i386 ABI;
   `abiPreserved` need not mention it, as with the x87 state of MMX frames),
-  and every `pmuludq` runs between Intel's prologue and epilogue.
+  and every `pmuludq`, `pmullw` and `pmulhw` runs between Intel's prologue
+  and epilogue.
   `ci/check_mcdt.py` also checks this in the generated code.
 -/
 
@@ -249,6 +251,12 @@ inductive Instr
   /-- `pmuludq dst, src` (66 0F F4 /r, `pmuludq` in `TCB/X86/Sse.lean`); it
   faults outside an MCDT frame. -/
   | pmuludq (dst src : XReg)
+  /-- `pmullw dst, src` (66 0F D5 /r, `pmullw` in `TCB/X86/Sse.lean`); it
+  faults outside an MCDT frame. -/
+  | pmullw (dst src : XReg)
+  /-- `pmulhw dst, src` (66 0F E5 /r, `pmulhw` in `TCB/X86/Sse.lean`); it
+  faults outside an MCDT frame. -/
+  | pmulhw (dst src : XReg)
   /-- The push of an MCDT frame (see `push`): `lea esp, [esp - 12]`,
   `stmxcsr DWORD PTR [esp + 4]`, `mov r, 0x1FBF`, `mov DWORD PTR [esp], r`,
   `ldmxcsr DWORD PTR [esp]`, `lfence`. -/
@@ -407,6 +415,8 @@ def exec : Instr → State → Option State
   | .mop op, s => op.exec s
   | .mmxStore m r, s => if s.mmx then s.store64 (s.ea m) (s.mm r) else none
   | .pmuludq d r, s => if 0 < s.mcdt then some (s.setXmm d (pmuludq (s.xmm d) (s.xmm r))) else none
+  | .pmullw d r, s => if 0 < s.mcdt then some (s.setXmm d (pmullw (s.xmm d) (s.xmm r))) else none
+  | .pmulhw d r, s => if 0 < s.mcdt then some (s.setXmm d (pmulhw (s.xmm d) (s.xmm r))) else none
   -- Only the push and pop of a frame (`push`, `pop`), and the instruction
   -- of an indirect call (`icall`).
   | .symPush .., _ | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .mmxEnter, _ | .emms, _
@@ -426,7 +436,7 @@ def addrs : Instr → State → List Addr
   | .callr _, _ => []
   | .mop op, s => op.addrs s
   | .mmxStore m _, s => [s.ea m]
-  | .mmxEnter, _ | .emms, _ | .pmuludq .., _ => []
+  | .mmxEnter, _ | .emms, _ | .pmuludq .., _ | .pmullw .., _ | .pmulhw .., _ => []
   -- `stmxcsr`, then the store and `ldmxcsr` of `0x1FBF`, below `esp`.
   | .mcdtEnter _, s =>
     [(s.gpr .esp - 8).setWidth 64, (s.gpr .esp - 12).setWidth 64, (s.gpr .esp - 12).setWidth 64]
@@ -653,7 +663,7 @@ def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .xop _
   | .movqLoad .. | .movqStore .. | .movdquTbl .. | .movqTbl .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
-  | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave | .callr _ => none
+  | .alloc _ | .free _ | .pmuludq .. | .pmullw .. | .pmulhw .. | .mcdtLeave | .callr _ => none
 
 /-- The address an indirect call instruction calls: SDM Vol. 2, "CALL—Call
 Procedure", `FF /2`, "CALL r/m32": "Call near, absolute indirect, address
@@ -671,7 +681,8 @@ AESENC/AESENCLAST/AESDEC/AESDECLAST/AESIMC/AESKEYGENASSIST need AES
 (`66 0F 38 DC /r`, `66 0F 38 DD /r`, `66 0F 38 DE /r`, `66 0F 38 DF /r`,
 `66 0F 38 DB /r`, `66 0F 3A DF /r ib`), and PCLMULQDQ needs PCLMULQDQ.
 The remaining legacy instructions (among them PADDQ, PMULUDQ, PSHUFLW,
-PSHUFHW, MOVQ and LFENCE) are SSE2, STMXCSR and LDMXCSR are SSE, and the
+PSHUFHW, PADDW, PSUBW, PMULLW, PMULHW, PSRAW, PACKSSDW, PUNPCKLWD,
+PUNPCKHWD, MOVQ and LFENCE) are SSE2, STMXCSR and LDMXCSR are SSE, and the
 MMX instructions MMX or SSE2, all already in this target's i686
 baseline. -/
 def Instr.requires : Instr → List String

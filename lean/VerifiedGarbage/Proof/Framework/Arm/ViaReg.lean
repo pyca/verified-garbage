@@ -506,20 +506,45 @@ theorem Exec.ofReg₂ {n : String} {r : Reg} : ∀ (c : Prog isa), Code.icallFre
   | .icall .., hc, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _ => by
     simp only [Code.icallFree, Bool.false_eq_true] at hc
 
+/-- What runs of `c` from states where `k.pre` holds reach, runs of `c` made
+to call `n` by `r` reach, from states where `r` also holds `n`'s address. -/
+theorem Exec.viaRegAt_ok {n : String} {r : Reg} {c : Prog isa} {k : Contract isa}
+    (h : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s') (hv : KeepsReg r c) :
+    ∀ s, (Contract.reg n r k).pre s →
+      ∃ t s', Exec isa (Code.viaRegAt n r c) s t s' ∧ abiPreserved s s' ∧ (Contract.reg n r k).post s s' :=
+  fun s ⟨hp, hd⟩ => by
+    obtain ⟨_, s', e, ha, hq⟩ := h s hp
+    obtain ⟨t', e'⟩ := Exec.toReg e hv hd
+    exact ⟨t', s', e', ha, hq⟩
+
+/-- Code that leaks the same from states that `k` relates, made to call `n`
+by `r`, leaks the same from states that `Contract.reg n r k` relates. -/
+theorem ConstantTime.viaRegAt {n : String} {r : Reg} {c : Prog isa} {k : Contract isa}
+    (h : ConstantTime isa k.pre k.pub c) (hc : Code.icallFree c = true) (hv : KeepsReg r c) :
+    ConstantTime isa (Contract.reg n r k).pre (Contract.reg n r k).pub (Code.viaRegAt n r c) :=
+  fun s₁ s₂ _ _ _ _ ⟨hp₁, hd₁⟩ ⟨hp₂, hd₂⟩ ⟨hpub, hy⟩ e₁ e₂ => by
+    obtain ⟨t₁, o₁⟩ := Exec.ofReg₁ c hc hv e₁ hd₁
+    obtain ⟨t₂, o₂⟩ := Exec.ofReg₁ c hc hv e₂ hd₂
+    exact Exec.ofReg₂ c hc hv e₁ e₂ hd₁ hd₂ hy o₁ o₂ (h _ _ _ _ _ _ hp₁ hp₂ hpub o₁ o₂)
+
 /-- **Code verified against `k` that writes no `r` and calls no function
 by its address is verified made to call `n` by the address in `r`**, against
 `k` from states where `r` holds `n`'s address, for runs that agree on it. -/
 theorem Verified.viaRegAt {n : String} {r : Reg} {c : Prog isa} {k : Contract isa}
     (h : Verified target c k) (hc : Code.icallFree c = true)
     (hv : KeepsReg r c) (hsat : ∃ s, (Contract.reg n r k).pre s) :
-    Verified target (Code.viaRegAt n r c) (Contract.reg n r k) := by
-  obtain ⟨hok, hct, -⟩ := h
-  refine ⟨fun s ⟨hp, hd⟩ => ?_, fun s₁ s₂ t₁' t₂' s₁' s₂' ⟨hp₁, hd₁⟩ ⟨hp₂, hd₂⟩ ⟨hpub, hy⟩ e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s', e, ha, hq⟩ := hok s hp
-    obtain ⟨t', e'⟩ := Exec.toReg e hv hd
-    exact ⟨t', s', e', ha, hq⟩
-  · obtain ⟨t₁, o₁⟩ := Exec.ofReg₁ c hc hv e₁ hd₁
-    obtain ⟨t₂, o₂⟩ := Exec.ofReg₁ c hc hv e₂ hd₂
-    exact Exec.ofReg₂ c hc hv e₁ e₂ hd₁ hd₂ hy o₁ o₂ (hct _ _ _ _ _ _ hp₁ hp₂ hpub o₁ o₂)
+    Verified target (Code.viaRegAt n r c) (Contract.reg n r k) :=
+  ⟨Exec.viaRegAt_ok h.1 hv, ConstantTime.viaRegAt h.2.1 hc hv, hsat⟩
+
+/-- Code made to call a function by its address has the frames it had. -/
+theorem noFrames_viaRegAt (n : String) (r : Reg) (c : Prog isa) :
+    (Code.viaRegAt n r c).noFrames = c.noFrames := by
+  induction c with
+  | call m b ih =>
+    simp only [Code.viaRegAt]
+    split
+    · simp only [callReg, Code.icalls, Code.noFrames, ih, Bool.and_true]
+    · simp only [Code.noFrames, ih]
+  | _ => simp only [Code.viaRegAt, Code.noFrames, *]
 
 end VG.Proof.Arm

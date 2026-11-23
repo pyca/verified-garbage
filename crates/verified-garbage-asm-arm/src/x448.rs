@@ -21,7 +21,7 @@ pub const VG_X448_EXCHANGE_UMAAL_FEATURES: verified_garbage_cpu::Features = veri
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
-/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
@@ -148,12 +148,14 @@ sub r3, r3, #1
 lsr r0, r3, #31
 eor r0, r0, #1
 ldr lr, [sp], #4
-sub sp, sp, #8
+sub sp, sp, #16
 add r12, sp, #0
 mov r2, #0
 str r2, [r12, #0]
 str r2, [r12, #4]
-add sp, sp, #8
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #16
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -7037,7 +7039,7 @@ bx lr",
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
-/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `scalar`, `point` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
@@ -7162,12 +7164,14 @@ sub r3, r3, #1
 lsr r0, r3, #31
 eor r0, r0, #1
 ldr lr, [sp], #4
-sub sp, sp, #8
+sub sp, sp, #16
 add r12, sp, #0
 mov r2, #0
 str r2, [r12, #0]
 str r2, [r12, #4]
-add sp, sp, #8
+str r2, [r12, #8]
+str r2, [r12, #12]
+add sp, sp, #16
 mov r1, #0
 mov r2, #0
 mov r3, #0
@@ -14038,6 +14042,10 @@ pub(crate) mod vg_gf448_r16_mul_a24;
 #[rustfmt::skip]
 #[path = "internal/vg_x448.rs"]
 pub(crate) mod vg_x448;
+
+#[rustfmt::skip]
+#[path = "internal/vg_x448_core.rs"]
+pub(crate) mod vg_x448_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_x448_umaal.rs"]

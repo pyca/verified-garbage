@@ -103,7 +103,7 @@ theorem satC (u : Bool) :
 theorem verified (hL : Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     Verified target code
       (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract (abi.withConsts (brainpoolp512r1With false).constsK) 0) :=
-  Verified.of_correct (decompress_correctT brainpoolp512r1 brainpoolp512r1_ok _ (candidateThree_correct brainpoolp512r1_ok (by decide +kernel))
+  Verified.of_correct (decompress_correct brainpoolp512r1 brainpoolp512r1_ok _ (candidateThree_correct brainpoolp512r1_ok (by decide +kernel))
       (List.mem_singleton_self _)) ct
     (withTables_implies (decompress_implies Spec.EcKey.BrainpoolP512r1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat) (satC false))
@@ -112,7 +112,7 @@ theorem verified (hL : Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
 theorem verifiedU (hL : Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     Verified target codeU
       (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract (abi.withConsts (brainpoolp512r1With true).constsK) 0) :=
-  Verified.of_correct (decompress_correctT (brainpoolp512r1With true) brainpoolp512r1u_ok _
+  Verified.of_correct (decompress_correct (brainpoolp512r1With true) brainpoolp512r1u_ok _
       (candidateThree_correct brainpoolp512r1u_ok (by decide +kernel)) (List.mem_singleton_self _)) ctU
     (withTables_implies (decompress_implies Spec.EcKey.BrainpoolP512r1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat) (satC true))

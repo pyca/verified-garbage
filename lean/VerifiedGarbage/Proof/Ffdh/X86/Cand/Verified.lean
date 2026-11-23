@@ -166,15 +166,16 @@ theorem copyRP_ok {w : Nat} {x : State} (R : RP Ex base bytes len args sp w x) {
     ⟨by simp; omega_arith, by simp; omega_arith, by simp; omega_arith⟩
 
 /-- A power, with the modulus still prepared. -/
-theorem powerRP_ok {w : Nat} {x : State} (R : RP Ex base bytes len args sp w x) :
-    WP isa (windowPower .wide) x fun u => RP Ex base bytes len args sp w u ∧ sv u.mem base len .wide 6 < w := by
+theorem powerRP_ok {w : Nat} {x : State} (R : RP Ex base bytes len args sp w x) (RF : RoomF sp base bytes) :
+    WP isa Impl.Ffdh.X86.winCall x fun u => RP Ex base bytes len args sp w u ∧ sv u.mem base len .wide 6 < w := by
   have h := R.1.1
   have hM := R.2.ctx.gt
-  refine WP.mono (windowPower_ok R.2.ctx R.2.one R.2.r2) fun u ⟨C, F, K, Y⟩ => ?_
-  have G := stR_widen F (pwR_in h .wide 0)
+  have RF' : RoomF (x.gpr .esp) base bytes := by rw [R.1.2.2]; exact RF
+  refine WP.mono (winCall_ok R.2.ctx RF' R.2.one R.2.r2) fun u ⟨C, F, K, Y⟩ => ?_
+  have G := frameF_widen F (pwR_in h .wide 0)
   refine ⟨⟨⟨C.inp, R.1.2.1.keep K, (K.1 _ (by decide)).trans R.1.2.2⟩,
-    R.2.keep ⟨C, by rw [pwR_sv3 h F h.room, R.2.one], by rw [pwR_sv4 h F h.room, R.2.r2]⟩
-      (kept_ops h G h.room) (by decide)⟩, by rw [Y]; exact Nat.mod_lt _ (by omega_arith)⟩
+    R.2.keep ⟨C, by rw [pwR_sv3 h F RF', R.2.one], by rw [pwR_sv4 h F RF', R.2.r2]⟩
+      (keptF_ops h G RF') (by decide)⟩, by rw [Y]; exact Nat.mod_lt _ (by omega_arith)⟩
 
 /-- A multiplication into slot 6, with the modulus still prepared. -/
 theorem mulRP_ok {w : Nat} {x : State} (R : RP Ex base bytes len args sp w x) {a b : Nat} (ha3 : 3 ≤ a) (ha : a ≤ 8)
@@ -254,7 +255,7 @@ theorem squareStep_trace {w sn j : Nat} (hj : j < sn - 1) :
   refine ⟨⟨⟨run_step Q.1.1 S, P⟩, by rw [s6]; exact Q.2.1, ⟨_, H⟩, by rw [J]; omega_arith⟩, by rw [Z]; congr 1; exact decide_eq_decide.mpr ⟨fun _ => by omega_arith, fun _ => by omega_arith⟩⟩
 
 /-- A round's runs for the same prepared modulus. -/
-theorem round_trace {w : Nat} (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
+theorem round_trace {w : Nat} (hw3 : 3 ≤ w) (hodd : w % 2 = 1) (RF : RoomF sp base bytes) :
     RelCT isa (Both (RP Ex base bytes len args sp w)) round fun _ _ => True := by
   have s1 := splitTwos_pos hw3 hodd
   generalize hsn : (Spec.Rsa.splitTwos (w - 1)).1 = sn at s1
@@ -263,8 +264,10 @@ theorem round_trace {w : Nat} (hw3 : 3 ≤ w) (hodd : w % 2 = 1) :
     copyRP_ok R (j := 13) (d := 5) (by decide) (by decide) (by decide) (by decide)) ?_
   refine VG.RelCT.seq (aRel (fun _ R => R.1) copy118_check fun x R =>
     copyRP_ok R (j := 11) (d := 8) (by decide) (by decide) (by decide) (by decide)) ?_
-  refine VG.RelCT.seq (relCT_both ((windowPower_relCT (winChecks .wide)).mono (fun _ _ h => ⟨h.1.wst, h.2.wst⟩)
-    fun _ _ _ => trivial) fun x R => powerRP_ok R) ?_
+  refine VG.RelCT.seq (relCT_both (winCall_relCT.mono
+    (fun _ _ h => ⟨⟨⟨h.1.wst, RF⟩, h.1.2.one, by rw [h.1.2.ctx.mod]; exact h.1.2.r2⟩,
+      ⟨⟨h.2.wst, RF⟩, h.2.2.one, by rw [h.2.2.ctx.mod]; exact h.2.2.r2⟩⟩)
+    fun _ _ _ => trivial) fun x R => powerRP_ok R RF) ?_
   refine VG.RelCT.seq (aRel (F := fun u => (RP Ex base bytes len args sp w u ∧ sv u.mem base len .wide 6 < w) ∧
       ∃ c, u.gpr .ecx = cmask c) (fun _ R => R.1.1) eq63_check fun x R =>
     WP.mono (eqW_ok R.1.1.1 (a := 6) (b := 3) (by decide) (by decide)) fun u ⟨m, e, K⟩ =>
@@ -418,10 +421,10 @@ theorem drawRound_trace {w n c : Nat} {T : List Byte} (G : TapeGeo Ex args base 
     isa.eval .e v = some (!Spec.Ffdh.mrRound w (drawA w T c))
   refine RelCT.seq (relCT_both (F := fun v => Run Ex base bytes len args sp v ∧
       WP isa (.block [.mov .ecx (.mem (sc hitOff)), .alu .test .ecx (.reg .ecx)]) v Φ)
-    ((round_trace (Ex := Ex) (base := base) (bytes := bytes) (len := len) (args := args) (sp := sp) hw3 hodd).mono
+    ((round_trace (Ex := Ex) (base := base) (bytes := bytes) (len := len) (args := args) (sp := sp) hw3 hodd G.room).mono
       (fun x y ⟨⟨_, R₁, P₁⟩, _, R₂, P₂⟩ => ⟨⟨run_step R₁ P₁.step, P₁.prep⟩, run_step R₂ P₂.step, P₂.prep⟩)
       fun _ _ h => h) fun x ⟨s₀, R, Pk⟩ => ?_) ?_
-  · exact wp_and (WP.mono (round_ok Pk.prep Pk.wit hw3 hodd) fun u ⟨S, _⟩ => run_step (run_step R Pk.step) S)
+  · exact wp_and (WP.mono (round_ok Pk.prep (by rw [(run_step R Pk.step).2.2]; exact G.room) Pk.wit hw3 hodd) fun u ⟨S, _⟩ => run_step (run_step R Pk.step) S)
       (WP.mono (WP.seq_iff.mp (drawRound_ok (Gs R) hw3 hodd Pk)) fun u h =>
         WP.mono h fun v ⟨P, e⟩ => ⟨⟨s₀, R, P⟩, e⟩)
   refine RelCT.seq (aRel (F := Φ) (fun _ h => h.1) hitTest_check fun _ h => h.2) ?_

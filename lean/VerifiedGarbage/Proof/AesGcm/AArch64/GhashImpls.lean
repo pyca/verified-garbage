@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tbl
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Frame
 public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Instances
 public import VerifiedGarbage.Impl.Sm4Gcm.AArch64.Fn
+public import VerifiedGarbage.Proof.Sha3.AArch64.ViaD8At
+public import VerifiedGarbage.Proof.Sha3.AArch64.EntryDS
 public import VerifiedGarbage.Spec.Sm4.Gcm.Contract
 import VerifiedGarbage.Proof.Sm4Gcm.Scratch
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
@@ -2116,52 +2118,181 @@ theorem init_scrubbed (v : GcmVariant) :
     { code := _, verified := init_framed v.impl (CtrName.stack_cases v.ctr) } own
     (Scrub.initOk _ (Scrub.pos768 _)) (init_side v.callsOk)
 
+open VG.Proof.Sha3.AArch64 in
+/-- **A stream function as emitted** (`Fn.viaD8`): its code `F`, in its
+frame, made to call the implementation of `vg_ghash` by the address in `d8`,
+called by `entryD8` with that address there, then its cleanup, from what
+`F` meets (`hF`) and what the cleanup needs of it (`hs`, which the kernel
+evaluates on the code with holes). -/
+theorem viaD8_scrubbed {sig : Sig} {post : sig.Post AArch64.abi.ptrBits} {c : Calls} (hc : CallsOk c)
+    {core : String} {rb B W : Nat} {F : Prog isa} (hBW : B + 16 = W) (hB : 0 < B) (hBb : B ≤ 784)
+    (hF : Verified AArch64.target F (sig.contract AArch64.abi (Curry.const (fun _ => True) _) post true (c.stack + B)))
+    (hs : scrubSide F (c.stack + B) rb own [] = true)
+    (hok : ScrubAllOk (sig.contract AArch64.abi (Curry.const (fun _ => True) _) post true (c.stack + W))
+      (c.stack + W) rb)
+    (hk : (sig.words AArch64.abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    (hpost : ∀ vs m₁ m₂ m' x, vs.length = (sig.words AArch64.abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words AArch64.abi.ptrBits) post vs m₁ m' x →
+        Curry.apply (sig.words AArch64.abi.ptrBits) post vs m₂ m' x)
+    (hpostR : ∀ vs m m₁ m₂ x, vs.length = (sig.words AArch64.abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words AArch64.abi.ptrBits) post vs m m₁ x →
+        Curry.apply (sig.words AArch64.abi.ptrBits) post vs m m₂ x)
+    (hsat : ∃ s, (sig.contract AArch64.abi (Curry.const (fun _ => True) _) post true (c.stack + B)).pre s)
+    (hsat' : ∃ s, (sig.contract AArch64.abi (Curry.const (fun _ => True) _) post true (c.stack + W)).pre s) :
+    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.viaD8 c W core rb F)
+      (sig.contract (AArch64.abi.withFns [c.callees.gh.name]) (Curry.const (fun _ => True) _) post true
+        (c.stack + W)) rb := by
+  have hW : 0 < c.stack + B := Nat.add_pos_right _ hB
+  have hb : c.stack + B + 16 < 4096 := by
+    subst hBW; rcases hc.stack with h | h <;> rw [h] <;> omega
+  obtain ⟨hic, hv8⟩ := of_side hs hW
+  have hd : 16 * F.aarch64Depth ≤ c.stack + B := by
+    have h := hs
+    simp only [scrubSide, Nat.pos_iff_ne_zero.mp hW, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at h
+    exact h.1.1.1.1.1.2
+  have hD := Verified.viaD8At (n := c.callees.gh.name) hF hic hv8 (Contract.d8_sat_of hsat)
+  have hE := Verified.entryD8 (name := core) hD hk hl (by rw [depth_viaD8At]; exact hd)
+    (Proof.Sm4Gcm.pre_local _ _) hpost (fun vs m m₁ m₂ x hlen _ hbf h => hpostR vs m m₁ m₂ x hlen hbf h)
+    (sat_withFns (by rw [show c.stack + B + 16 = c.stack + W by omega]; exact hsat'))
+  have hS := scrubSide_entryD8 (n := c.callees.gh.name) (core := core) hs hW hb
+  rw [show c.stack + B + 16 = c.stack + W by omega] at hE hS
+  exact verifiedScrubbed_ofSide hE (scrubAllOk_withFns hok) hS (by omega) fun s₁ s₂ hp m hm => by
+    simp only [Impl.Sha3.AArch64.entryD8, AArch64.Scrub.inames, List.nil_append, List.append_nil] at hm
+    rw [inames_viaD8At hic m hm]
+    exact (pub_fns hp).2
+
+/-- The precondition of a contract of the stream functions is satisfiable on
+both depths of the stack the implementations of `vg_sm4_ctr32` use. -/
+theorem stack_sat {K : Nat → Contract isa} {c : Calls} (hc : CallsOk c) {d : Nat}
+    (h₁ : ∃ s, (K (3264 + d)).pre s) (h₂ : ∃ s, (K (224 + d)).pre s) : ∃ s, (K (c.stack + d)).pre s := by
+  rcases hc.stack with h | h <;> rw [h]
+  exacts [h₁, h₂]
+
 /-- `vg_sm4_gcm_seal` as emitted, cleanup included. -/
 theorem seal_scrubbed (v : GcmVariant) :
-    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.«seal» v.calls)
-      (Spec.Sm4.Gcm.sealContract AArch64.abi (v.calls.stack + 784)) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.Gcm.sealApi)
-    { code := _, verified := seal_framed v.impl (CtrName.stack_cases v.ctr) } own
-    (Scrub.sealOk _ (Nat.zero_lt_succ _)) (seal_side v.callsOk)
-
-/-- `vg_sm4_gcm_open` as emitted, cleanup included. -/
-theorem open_scrubbed (v : GcmVariant) :
-    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.«open» v.calls)
-      (Spec.Sm4.Gcm.openContract AArch64.abi (v.calls.stack + 784)) 32 :=
-  verifiedScrubbedAll (api := Spec.Sm4.Gcm.openApi)
-    { code := _, verified := open_framed v.impl (CtrName.stack_cases v.ctr) } own
-    (Scrub.openOk _) (open_side v.callsOk)
+    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.«seal» v.calls v.impl.ctrSuffix)
+      (Spec.Sm4.Gcm.sealContract (AArch64.abi.withFns [v.calls.callees.gh.name]) (v.calls.stack + 800)) 0 :=
+  viaD8_scrubbed (post := Spec.Sm4.Gcm.sealPost AArch64.abi.ptrBits) v.callsOk (B := 784) rfl (by decide) (by decide)
+    (seal_framed v.impl (CtrName.stack_cases v.ctr)) (seal_side v.callsOk)
+    (Scrub.sealOk _ (by omega)) (by decide) (by decide) (Proof.Sm4Gcm.sealPost_local (pb := AArch64.abi.ptrBits))
+    (Proof.Sm4Gcm.sealPostOut_local _)
+    (stack_sat (K := fun st => Spec.Sm4.Gcm.sealContract AArch64.abi st) v.callsOk
+      sealFrameSat_pre sealFrameSat_pre1008)
+    (stack_sat (K := fun st => Spec.Sm4.Gcm.sealContract AArch64.abi st) v.callsOk
+      sealFrameSat_pre4064 sealFrameSat_pre1024)
 
 /-- `vg_sm4_gcm_stream_encrypt` as emitted, cleanup included. -/
 theorem streamEncrypt_scrubbed (v : GcmVariant) :
-    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamEncrypt v.calls)
-      (Spec.Sm4.Gcm.streamEncryptContract AArch64.abi (v.calls.stack + 768)) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamEncryptApi)
-    { code := _, verified := streamEncrypt_framed v.impl (CtrName.stack_cases v.ctr) } own
-    (Scrub.streamEncryptOk _ (Scrub.pos768 _)) (streamEncrypt_side v.callsOk)
+    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamEncrypt v.calls v.impl.ctrSuffix)
+      (Spec.Sm4.Gcm.streamEncryptContract (AArch64.abi.withFns [v.calls.callees.gh.name]) (v.calls.stack + 784)) 0 :=
+  viaD8_scrubbed (post := Spec.Sm4.Gcm.streamEncryptPost AArch64.abi.ptrBits) v.callsOk (B := 768) rfl (by decide) (by decide)
+    (streamEncrypt_framed v.impl (CtrName.stack_cases v.ctr)) (streamEncrypt_side v.callsOk)
+    (Scrub.streamEncryptOk _ (by omega)) (by decide) (by decide) (Proof.Sm4Gcm.streamEncryptPost_local _)
+    (Proof.Sm4Gcm.streamEncryptPostOut_local _)
+    (stack_sat (K := fun st => Spec.Sm4.Gcm.streamEncryptContract AArch64.abi st) v.callsOk
+      streamEncryptFrameSat_pre streamEncryptFrameSat_pre992)
+    (stack_sat (K := fun st => Spec.Sm4.Gcm.streamEncryptContract AArch64.abi st) v.callsOk
+      streamEncryptFrameSat_pre4048 streamEncryptFrameSat_pre1008)
 
 /-- `vg_sm4_gcm_stream_decrypt` as emitted, cleanup included. -/
 theorem streamDecrypt_scrubbed (v : GcmVariant) :
-    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamDecrypt v.calls)
-      (Spec.Sm4.Gcm.streamDecryptContract AArch64.abi (v.calls.stack + 768)) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamDecryptApi)
-    { code := _, verified := streamDecrypt_framed v.impl (CtrName.stack_cases v.ctr) } own
-    (Scrub.streamDecryptOk _ (Scrub.pos768 _)) (streamDecrypt_side v.callsOk)
+    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamDecrypt v.calls v.impl.ctrSuffix)
+      (Spec.Sm4.Gcm.streamDecryptContract (AArch64.abi.withFns [v.calls.callees.gh.name]) (v.calls.stack + 784)) 0 :=
+  viaD8_scrubbed (post := Spec.Sm4.Gcm.streamDecryptPost AArch64.abi.ptrBits) v.callsOk (B := 768) rfl (by decide) (by decide)
+    (streamDecrypt_framed v.impl (CtrName.stack_cases v.ctr)) (streamDecrypt_side v.callsOk)
+    (Scrub.streamDecryptOk _ (by omega)) (by decide) (by decide) (Proof.Sm4Gcm.streamDecryptPost_local _)
+    (Proof.Sm4Gcm.streamDecryptPostOut_local _)
+    (stack_sat (K := fun st => Spec.Sm4.Gcm.streamDecryptContract AArch64.abi st) v.callsOk
+      streamDecryptFrameSat_pre streamDecryptFrameSat_pre992)
+    (stack_sat (K := fun st => Spec.Sm4.Gcm.streamDecryptContract AArch64.abi st) v.callsOk
+      streamDecryptFrameSat_pre4048 streamDecryptFrameSat_pre1008)
 
 /-- `vg_sm4_gcm_stream_finish` as emitted, cleanup included. -/
 theorem streamFinish_scrubbed (v : GcmVariant) :
-    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamFinish v.calls)
-      (Spec.Sm4.Gcm.streamFinishContract AArch64.abi (v.calls.stack + 768)) 0 :=
-  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamFinishApi)
-    { code := _, verified := streamFinish_framed v.impl (CtrName.stack_cases v.ctr) } own
-    (Scrub.streamFinishOk _ (Scrub.pos768 _)) (streamFinish_side v.callsOk)
+    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamFinish v.calls v.impl.ctrSuffix)
+      (Spec.Sm4.Gcm.streamFinishContract (AArch64.abi.withFns [v.calls.callees.gh.name]) (v.calls.stack + 784)) 0 :=
+  viaD8_scrubbed (post := Spec.Sm4.Gcm.streamFinishPost AArch64.abi.ptrBits) v.callsOk (B := 768) rfl (by decide) (by decide)
+    (streamFinish_framed v.impl (CtrName.stack_cases v.ctr)) (streamFinish_side v.callsOk)
+    (Scrub.streamFinishOk _ (by omega)) (by decide) (by decide) (Proof.Sm4Gcm.streamFinishPost_local _)
+    (Proof.Sm4Gcm.streamFinishPostOut_local _)
+    (stack_sat (K := fun st => Spec.Sm4.Gcm.streamFinishContract AArch64.abi st) v.callsOk
+      streamFinishFrameSat_pre streamFinishFrameSat_pre992)
+    (stack_sat (K := fun st => Spec.Sm4.Gcm.streamFinishContract AArch64.abi st) v.callsOk
+      streamFinishFrameSat_pre4048 streamFinishFrameSat_pre1008)
 
 /-- `vg_sm4_gcm_stream_verify` as emitted, cleanup included. -/
 theorem streamVerify_scrubbed (v : GcmVariant) :
-    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamVerify v.calls)
-      (Spec.Sm4.Gcm.streamVerifyContract AArch64.abi (v.calls.stack + 768)) 32 :=
-  verifiedScrubbedAll (api := Spec.Sm4.Gcm.streamVerifyApi)
-    { code := _, verified := streamVerify_framed v.impl (CtrName.stack_cases v.ctr) } own
-    (Scrub.streamVerifyOk _ (Scrub.pos768 _)) (streamVerify_side v.callsOk)
+    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.streamVerify v.calls v.impl.ctrSuffix)
+      (Spec.Sm4.Gcm.streamVerifyContract (AArch64.abi.withFns [v.calls.callees.gh.name]) (v.calls.stack + 784)) 32 :=
+  viaD8_scrubbed (post := Spec.Sm4.Gcm.streamVerifyPost AArch64.abi.ptrBits) v.callsOk (B := 768) rfl (by decide) (by decide)
+    (streamVerify_framed v.impl (CtrName.stack_cases v.ctr)) (streamVerify_side v.callsOk)
+    (Scrub.streamVerifyOk _ (by omega)) (by decide) (by decide) (Proof.Sm4Gcm.streamVerifyPost_local _)
+    (Proof.Sm4Gcm.streamVerifyPostOut_local _)
+    (stack_sat (K := fun st => Spec.Sm4.Gcm.streamVerifyContract AArch64.abi st) v.callsOk
+      streamVerifyFrameSat_pre streamVerifyFrameSat_pre992)
+    (stack_sat (K := fun st => Spec.Sm4.Gcm.streamVerifyContract AArch64.abi st) v.callsOk
+      streamVerifyFrameSat_pre4048 streamVerifyFrameSat_pre1008)
+
+open VG.Proof.Sha3.AArch64 in
+/-- `vg_sm4_gcm_open` as emitted, cleanup included: its framed code made to
+call the implementation of `vg_ghash` by `d8`, called by `entryDS`, which
+copies its one stack argument. -/
+theorem open_scrubbed (v : GcmVariant) :
+    VerifiedScrubbed AArch64.target (Impl.Sm4Gcm.AArch64.Fn.«open» v.calls v.impl.ctrSuffix)
+      (Spec.Sm4.Gcm.openContract (AArch64.abi.withFns [v.calls.callees.gh.name]) (v.calls.stack + 816)) 32 := by
+  have hc := v.callsOk
+  have hF := open_framed v.impl (CtrName.stack_cases v.ctr)
+  have hs := open_side hc
+  have hW : 0 < v.calls.stack + 784 := Nat.add_pos_right _ (by decide)
+  obtain ⟨hic, hv8⟩ := of_side hs hW
+  have hd : 16 * (withStackArgScratch 784 1 (Impl.Sm4Gcm.AArch64.«open» v.calls.callees)).aarch64Depth ≤
+      v.calls.stack + 784 := by
+    have h := hs
+    simp only [scrubSide, Nat.pos_iff_ne_zero.mp hW, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at h
+    exact h.1.1.1.1.1.2
+  have hsat := stack_sat (K := fun st => Spec.Sm4.Gcm.openContract AArch64.abi st) (d := 784) hc
+    openFrameSat_pre openFrameSat_pre1008
+  have hsat' := stack_sat (K := fun st => Spec.Sm4.Gcm.openContract AArch64.abi st) (d := 816) hc
+    openFrameSat_pre4080 openFrameSat_pre1040
+  have hD := Verified.viaDAt (L := [(v.calls.callees.gh.name, .v8)]) hF hic
+    (fun i hi p hp => by rw [List.mem_singleton.mp hp]; exact hv8 i hi)
+    (let ⟨s, hp, hd⟩ := Contract.d8_sat_of (n := v.calls.callees.gh.name) hsat
+     ⟨s, hp, (D8_iff _ s).mp hd⟩)
+  have hk : nStack Spec.Sm4.Gcm.openSig = 1 := by decide
+  have h32 : Impl.Sha3.AArch64.frameDS 1 [(v.calls.callees.gh.name, VReg.v8)].length = 32 := by
+    rw [List.length_singleton]; rfl
+  have hE := Verified.entryDS (name := "vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) hD
+    (by simp only [List.map_cons, List.map_nil]; exact List.nodup_singleton _) (by decide)
+    (by rw [hk, h32]; decide) (by rw [depth_viaDAt]; exact hd) (Proof.Sm4Gcm.pre_local _ _)
+    (Proof.Sm4Gcm.openPost_local (pb := AArch64.abi.ptrBits))
+    (fun vs m m₁ m₂ x hlen _ hbf h => Proof.Sm4Gcm.openPostOut_local _ vs m m₁ m₂ x hlen hbf h)
+    (by rw [hk, h32]; simp only [Nat.add_assoc, Nat.reduceAdd]; exact sat_withFns hsat') (hleak := Proof.Sm4Gcm.openLeak_local (pb := AArch64.abi.ptrBits))
+  have hb : v.calls.stack + 784 + Impl.Sha3.AArch64.frameDS 1 [(v.calls.callees.gh.name, VReg.v8)].length < 4096 := by
+    rw [h32]; rcases hc.stack with h | h <;> rw [h] <;> decide
+  have hS := scrubSide_entryDS (L := [(v.calls.callees.gh.name, .v8)])
+    (core := "vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) (k := 1) hs hW hb
+    (by simp only [AArch64.Scrub.wfB, Impl.Sha3.AArch64.clearDL, List.map_cons, List.map_nil]; decide)
+  rw [hk, h32] at hE
+  rw [h32] at hS
+  simp only [List.map_cons, List.map_nil, Nat.add_assoc, Nat.reduceAdd] at hE hS
+  have hE' : Verified AArch64.target
+      (Impl.Sha3.AArch64.entryDS [(v.calls.callees.gh.name, .v8)] ("vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) 1
+        (Impl.Sha3.AArch64.Code.viaDAt [(v.calls.callees.gh.name, .v8)]
+          (withStackArgScratch 784 1 (Impl.Sm4Gcm.AArch64.«open» v.calls.callees))))
+      (Spec.Sm4.Gcm.openContract (AArch64.abi.withFns [v.calls.callees.gh.name]) (v.calls.stack + 816)) := hE
+  have hS' : scrubSide (Impl.Sha3.AArch64.entryDS [(v.calls.callees.gh.name, .v8)]
+        ("vg_sm4_gcm_open_core" ++ v.impl.ctrSuffix) 1
+        (Impl.Sha3.AArch64.Code.viaDAt [(v.calls.callees.gh.name, .v8)]
+          (withStackArgScratch 784 1 (Impl.Sm4Gcm.AArch64.«open» v.calls.callees))))
+      (v.calls.stack + 816) 32 (Impl.Sha3.AArch64.clearDL [(v.calls.callees.gh.name, .v8)])
+      [("", [⟨"", "", [v.calls.callees.gh.name], []⟩])] = true := hS
+  exact verifiedScrubbed_ofSide hE' (scrubAllOk_withFns (Scrub.openOk _)) hS' (by omega) fun s₁ s₂ hp m hm => by
+    simp only [Impl.Sha3.AArch64.entryDS, AArch64.Scrub.inames, List.nil_append, List.append_nil] at hm
+    have := inames_viaDAt hic m hm
+    simp only [List.map_cons, List.map_nil, List.mem_singleton] at this
+    rw [this]
+    exact (pub_fns hp).2
 
 end VG.Proof.Sm4Gcm.AArch64

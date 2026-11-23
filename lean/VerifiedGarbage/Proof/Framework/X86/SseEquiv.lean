@@ -81,14 +81,14 @@ theorem mk_eq (t x a b : Nat) : mk t x a b = leaf t (x + 256 * (a + 65536 * b)) 
 def binOf (n : Nat) : XBinOp :=
   ([.movdqa, .paddd, .pxor, .por, .pand, .pandn, .punpckldq, .punpckhdq, .punpcklqdq, .punpckhqdq, .pshufb,
     .sha256msg1, .sha256msg2, .aesenc, .aesenclast, .paddq, .sha1msg1, .sha1msg2, .sha1nexte, .aesdec,
-    .aesdeclast, .aesimc] : List XBinOp).getD n .movdqa
+    .aesdeclast, .aesimc, .paddw, .psubw, .packssdw, .punpcklwd, .punpckhwd] : List XBinOp).getD n .movdqa
 
 theorem binOf_idx (op : XBinOp) : binOf op.ctorIdx = op := by cases op <;> rfl
 
 theorem bin_lt (op : XBinOp) : op.ctorIdx < 256 := by cases op <;> decide
 
 def shiftOf (n : Nat) : XShiftOp :=
-  ([.pslld, .psrld, .psllq, .psrlq, .pslldq, .psrldq] : List XShiftOp).getD n .pslld
+  ([.pslld, .psrld, .psllq, .psrlq, .pslldq, .psrldq, .psraw] : List XShiftOp).getD n .pslld
 
 theorem shiftOf_idx (op : XShiftOp) : shiftOf op.ctorIdx = op := by cases op <;> rfl
 

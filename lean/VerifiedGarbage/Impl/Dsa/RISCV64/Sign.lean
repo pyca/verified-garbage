@@ -40,14 +40,14 @@ def hOut : Nat := 24
 
 /-- The working space from the stack (its second argument), the registers
 saved there, the key and the nonce into `s11` and `ra`, the digest's
-address, `out` and the lengths into the header, `digest_len` (the stack's
+address, `out`, the lengths and the nonce's address into the header, `digest_len` (the stack's
 first argument) into `a7` for `capD`. -/
 def entry : List Instr :=
   [.addSp .t2 8, .load .d .t2 .t2 0] ++ save .t2 ++
     [.addi .s11 .a2 0, .addi .ra .a5 0, .store .d .a7 .s6 hDigest, .store .d .a0 .s6 hOut, .addSp .t3 0,
       .load .d .a7 .t3 0] ++ Verify.capD ++
     [.shift .sll .d .a1 .a1 48, .shift .sll .d .t3 .a6 16, .add .t3 .a4 .t3, .add .t3 .t3 .a1,
-      .store .d .t3 .s6 hLens]
+      .store .d .t3 .s6 hLens, .store .d .ra .s6 hSig]
 
 /-- x's octets: the key plus `3 p_len + q_len`, `q_len`. -/
 def ptrX : List Instr := ptrY ++ [.add .s7 .s7 .s8] ++ getQ .s8

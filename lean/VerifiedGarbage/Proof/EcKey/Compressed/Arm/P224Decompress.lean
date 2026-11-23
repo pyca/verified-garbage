@@ -1491,14 +1491,14 @@ theorem satC (u : Bool) :
 theorem verified (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     Verified target code
       (Spec.EcKey.P224.inst.decompressPublicKeyContract (abi.withConsts (p224With false).constsK) 0) :=
-  Verified.of_correct (decompress_correctT p224 p224_ok _
+  Verified.of_correct (decompress_correct p224 p224_ok _
       (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel)) (List.mem_singleton_self _)) ct
     (withTables_implies (decompress_implies Spec.EcKey.P224.inst _ (Proof.P224.rootFacts hL) sat) (satC false))
 
 theorem verifiedU (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     Verified target codeU
       (Spec.EcKey.P224.inst.decompressPublicKeyContract (abi.withConsts (p224With true).constsK) 0) :=
-  Verified.of_correct (decompress_correctT (p224With true) p224u_ok _
+  Verified.of_correct (decompress_correct (p224With true) p224u_ok _
       (candidateTonelli_correct p224u_ok (by decide +kernel) (by decide +kernel)) (List.mem_singleton_self _)) ctU
     (withTables_implies (decompress_implies Spec.EcKey.P224.inst _ (Proof.P224.rootFacts hL) sat) (satC true))
 

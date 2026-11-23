@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
 public import VerifiedGarbage.Impl.Sm4.Planes
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Spec.Sm4.Contract
 
 /-!
 # The SM4 key schedule on ARMv7
@@ -19,6 +21,12 @@ pointer is kept in slot `nSlot`.
 Only the pointers, `kp`, the loop test, and the slot of the schedule's
 pointer hold public values; no address and no branch depends on anything
 else.
+
+`vg_sm4_expand_key` (`expandKeyCall`) is a call of that code with its
+working space on the stack, the internal `vg_sm4_expand_key_core`
+(`keyCall`), which SM4-GCM's functions call too, in a frame saving `r4` and
+`lr` (8 bytes, keeping the stack 8-byte aligned), with `lr` kept in `r4`
+across the call, which preserves `r4`: so that the code is in the crate once.
 -/
 
 @[expose] public section
@@ -56,5 +64,15 @@ def keyBody : List Instr :=
 def expandKey : Prog isa :=
   .seq (.block (saveRegs .r2 ++ [movR sb .r2, stS nSlot .r1] ++ ckTable ++ loadKey ++ toBs ++ [kpAt tableSlot]))
     (.seq (.loop (.block keyBody) .ne) (.block ([movR .r12 sb] ++ restoreRegs .r12)))
+
+/-- `vg_sm4_expand_key_core`: `expandKey` with its working space on the stack. -/
+def keyCall : Prog isa :=
+  .call (Spec.Sm4.expandKeyApi.name ++ "_core") (Impl.StackScratch.Arm.withRegScratch 1456 .r2 expandKey)
+
+/-- `vg_sm4_expand_key`: a call of `vg_sm4_expand_key_core`, in a frame saving
+`r4` and `lr`. -/
+def expandKeyCall : Prog isa :=
+  .frame (.push [.r4, .lr]) (.seq (.block [.mov .r4 (.reg .lr)]) (.seq keyCall (.block [.mov .lr (.reg .r4)])))
+    (.pop .r4 8)
 
 end VG.Impl.Sm4.Arm

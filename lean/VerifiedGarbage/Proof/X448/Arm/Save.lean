@@ -21,29 +21,42 @@ namespace VG.Proof.X448.Arm
 open VG VG.Arm VG.Impl.X448.Arm
 open VG.Proof.X25519.Arm (wp_str wp_mov wp_movw op2_reg)
 
-def Saved (base : Addr) (g : Reg → BitVec 32) (m : Mem) : Prop :=
-  ∀ i < 8, word m base (4 * i) = g (saved[i]!)
+/-- The first eight words hold the values `g` of the registers `L`. -/
+def SavedL (L : List Reg) (base : Addr) (g : Reg → BitVec 32) (m : Mem) : Prop :=
+  ∀ i < 8, word m base (4 * i) = g (L[i]!)
 
-theorem Saved.outside {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
-    {o n : Nat} (ho : Outside base o n m m') (h32 : 32 ≤ o) : Saved base g m' := by
+theorem SavedL.outside {L : List Reg} {base : Addr} {g : Reg → BitVec 32} {m m' : Mem}
+    (h : SavedL L base g m) {o n : Nat} (ho : Outside base o n m m') (h32 : 32 ≤ o) : SavedL L base g m' := by
   intro i hi
   exact (ho.word (Or.inl (by omega_using [h32, hi])) (by omega_using [hi])).trans (h i hi)
 
-theorem Saved.outside2 {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
-    {x nx y ny : Nat} (ho : Outside2 base x nx y ny m m') (hx : 32 ≤ x) (hy : 32 ≤ y) :
-    Saved base g m' := by
+theorem SavedL.outside2 {L : List Reg} {base : Addr} {g : Reg → BitVec 32} {m m' : Mem}
+    (h : SavedL L base g m) {x nx y ny : Nat} (ho : Outside2 base x nx y ny m m') (hx : 32 ≤ x)
+    (hy : 32 ≤ y) : SavedL L base g m' := by
   intro i hi
   exact (ho.word (Or.inl (by omega_using [hx, hi])) (Or.inl (by omega_using [hy, hi])) (by omega_using [hi])).trans (h i hi)
 
-theorem save_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
+/-- The first eight words hold the values `g` of `saved`. -/
+def Saved (base : Addr) (g : Reg → BitVec 32) (m : Mem) : Prop := SavedL saved base g m
+
+theorem Saved.outside {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
+    {o n : Nat} (ho : Outside base o n m m') (h32 : 32 ≤ o) : Saved base g m' :=
+  SavedL.outside h ho h32
+
+theorem Saved.outside2 {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
+    {x nx y ny : Nat} (ho : Outside2 base x nx y ny m m') (hx : 32 ≤ x) (hy : 32 ≤ y) :
+    Saved base g m' :=
+  SavedL.outside2 h ho hx hy
+
+theorem saveL_ok (L : List Reg) {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
     (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32) :
-    WP isa (.block ((List.range 8).map (fun i => .str (saved[i]!) .r3 (4 * i)))) s fun t =>
-      Saved base s.gpr t.mem ∧ Outside base 0 32 s.mem t.mem ∧ Keeps [] s t := by
+    WP isa (.block ((List.range 8).map (fun i => .str (L[i]!) .r3 (4 * i)))) s fun t =>
+      SavedL L base s.gpr t.mem ∧ Outside base 0 32 s.mem t.mem ∧ Keeps [] s t := by
   let inv := fun n (t : State) =>
-    (∀ i < n, word t.mem base (4 * i) = s.gpr (saved[i]!)) ∧
+    (∀ i < n, word t.mem base (4 * i) = s.gpr (L[i]!)) ∧
       Outside base 0 32 s.mem t.mem ∧ Keeps [] s t
   have step : ∀ n t, n < 8 → inv n t →
-      WP isa (.block [.str (saved[n]!) .r3 (4 * n)]) t (inv (n + 1)) := by
+      WP isa (.block [.str (L[n]!) .r3 (4 * n)]) t (inv (n + 1)) := by
     intro n t hn' ⟨tv, tm, tk⟩
     have ea : State.addr (t.gpr .r3 + BitVec.ofNat 32 (4 * n)) = off base (4 * n) := by
       rw [tk.1 _ (by decide), addr_add (by omega_using [hn, hn']), hc]
@@ -53,7 +66,7 @@ theorem save_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
     refine ⟨?_, tm.trans ?_, tk.trans (rest_keeps (hu.rest _))⟩
     · intro i hi
       rw [hu.mem, tk.1 _ (by simp)]
-      have h := word_write (o := 0) (i := n) (j := i) t.mem base (by omega_using [hn']) (by omega_using [hn', hi]) (s.gpr (saved[n]!))
+      have h := word_write (o := 0) (i := n) (j := i) t.mem base (by omega_using [hn']) (by omega_using [hn', hi]) (s.gpr (L[n]!))
       simp only [Nat.zero_add] at h
       rw [h]
       by_cases he : i = n
@@ -64,6 +77,12 @@ theorem save_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
   rw [List.map_eq_flatMap]
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hi => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
+
+theorem save_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
+    (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32) :
+    WP isa (.block ((List.range 8).map (fun i => .str (saved[i]!) .r3 (4 * i)))) s fun t =>
+      Saved base s.gpr t.mem ∧ Outside base 0 32 s.mem t.mem ∧ Keeps [] s t :=
+  saveL_ok saved hc hw hn
 
 def setupHead : List Instr :=
   (List.range 8).map (fun i => .str (saved[i]!) .r3 (4 * i)) ++
@@ -94,5 +113,34 @@ theorem setupHead_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = ba
   · rw [hw'.other _ (by decide), hv.other _ (by decide), hu.gpr, hu₁.other _ (by decide), tk.1 _ (by decide)]
   · rw [hw'.mem, hv.mem, hu.mem, hu₁.mem]; exact tv
   · rw [hw'.mem, hv.mem, hu.mem, hu₁.mem]; exact tm
+
+/-- `x448`'s first instructions: `savedL` saved, the output pointer in
+`r8`, the working space in `r0` and the limb mask in `r6`. -/
+def setupHeadL : List Instr :=
+  (List.range 8).map (fun i => .str (savedL[i]!) .r3 (4 * i)) ++
+    [.mov .r8 (.reg .r0), .mov .r0 (.reg .r3), .movw .r6 65535]
+
+theorem setupHeadL_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
+    (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32) :
+    WP isa (.block setupHeadL) s fun t =>
+      Scr t base ∧ t.gpr .r8 = s.gpr .r0 ∧ SavedL savedL base s.gpr t.mem ∧
+      Outside base 0 32 s.mem t.mem ∧ Keeps [.r8, .r0, .r6] s t := by
+  unfold setupHeadL
+  rw [WP.block_append_iff]
+  refine WP.mono (saveL_ok savedL hc hw hn) fun t ⟨tv, tm, tk⟩ => ?_
+  refine wp_mov (op2_reg _ _) fun u hu => ?_
+  refine wp_mov (op2_reg _ _) fun v hv => ?_
+  refine wp_movw fun w hw' => WP.block_nil ?_
+  have kr : Keeps [.r8, .r0, .r6] t w := (rest_keeps (hu.rest (by decide))).trans
+    ((rest_keeps (hv.rest (by decide))).trans (rest_keeps (hw'.rest (by decide))))
+  refine ⟨⟨?_, hw'.gpr, ?_, ?_⟩, ?_, ?_, ?_, (tk.mono (by simp)).trans kr⟩
+  · rw [hw'.other _ (by decide), hv.gpr, hu.other _ (by decide), tk.1 _ (by decide)]
+    exact hc
+  · rw [hw'.wr, hv.wr, hu.wr, tk.2.2]; exact hw
+  · rw [hw'.other _ (by decide), hv.gpr, hu.other _ (by decide), tk.1 _ (by decide)]
+    exact hn
+  · rw [hw'.other _ (by decide), hv.other _ (by decide), hu.gpr, tk.1 _ (by decide)]
+  · rw [hw'.mem, hv.mem, hu.mem]; exact tv
+  · rw [hw'.mem, hv.mem, hu.mem]; exact tm
 
 end VG.Proof.X448.Arm

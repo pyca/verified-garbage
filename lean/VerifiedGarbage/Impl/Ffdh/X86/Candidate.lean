@@ -230,7 +230,7 @@ def squareStep : Prog isa :=
 /-- One round for the witness in slot 13: `z = a^d mod w`, the hit mask `z = 1 ∨ z = w − 1`,
 then the `s − 1` squarings, each or'ing `z = w − 1` in; the mask in the header. -/
 def round : Prog isa :=
-  .seq (copy (sl 13) (sl 5) n1) <| .seq (copy (sl 11) (sl 8) n1) <| .seq (windowPower .wide) <|
+  .seq (copy (sl 13) (sl 5) n1) <| .seq (copy (sl 11) (sl 8) n1) <| .seq winCall <|
   .seq (equal (sl 6) (sl 3) n1) <| .seq (.block [.store (sc hitOff) .ecx]) <|
   .seq (equal (sl 6) (sl 15) n1) <|
   .seq (.block [.alu .or .ecx (.mem (sc hitOff)), .store (sc hitOff) .ecx, .mov .eax (.mem (sc twoOff)),

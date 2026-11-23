@@ -20,27 +20,27 @@ open VG.Proof.Sm4Gcm.AArch64
 def artifactsOf (v : GcmVariant) : List Artifact := [
   Spec.Sm4.Gcm.sealApi.artifact AArch64.target {
     suffix := v.impl.suffix
-    code := Impl.Sm4Gcm.AArch64.Fn.«seal» v.calls
+    code := Impl.Sm4Gcm.AArch64.Fn.«seal» v.calls v.impl.ctrSuffix
     verified := Proof.Sm4Gcm.AArch64.seal_scrubbed v },
   Spec.Sm4.Gcm.openApi.artifact AArch64.target {
     suffix := v.impl.suffix
-    code := Impl.Sm4Gcm.AArch64.Fn.«open» v.calls
+    code := Impl.Sm4Gcm.AArch64.Fn.«open» v.calls v.impl.ctrSuffix
     verified := Proof.Sm4Gcm.AArch64.open_scrubbed v },
   Spec.Sm4.Gcm.streamEncryptApi.artifact AArch64.target {
     suffix := v.impl.suffix
-    code := Impl.Sm4Gcm.AArch64.Fn.streamEncrypt v.calls
+    code := Impl.Sm4Gcm.AArch64.Fn.streamEncrypt v.calls v.impl.ctrSuffix
     verified := Proof.Sm4Gcm.AArch64.streamEncrypt_scrubbed v },
   Spec.Sm4.Gcm.streamDecryptApi.artifact AArch64.target {
     suffix := v.impl.suffix
-    code := Impl.Sm4Gcm.AArch64.Fn.streamDecrypt v.calls
+    code := Impl.Sm4Gcm.AArch64.Fn.streamDecrypt v.calls v.impl.ctrSuffix
     verified := Proof.Sm4Gcm.AArch64.streamDecrypt_scrubbed v },
   Spec.Sm4.Gcm.streamFinishApi.artifact AArch64.target {
     suffix := v.impl.suffix
-    code := Impl.Sm4Gcm.AArch64.Fn.streamFinish v.calls
+    code := Impl.Sm4Gcm.AArch64.Fn.streamFinish v.calls v.impl.ctrSuffix
     verified := Proof.Sm4Gcm.AArch64.streamFinish_scrubbed v },
   Spec.Sm4.Gcm.streamVerifyApi.artifact AArch64.target {
     suffix := v.impl.suffix
-    code := Impl.Sm4Gcm.AArch64.Fn.streamVerify v.calls
+    code := Impl.Sm4Gcm.AArch64.Fn.streamVerify v.calls v.impl.ctrSuffix
     verified := Proof.Sm4Gcm.AArch64.streamVerify_scrubbed v }]
 
 /-- `vg_sm4_gcm_init`, which calls only the implementation of `vg_sm4_ctr32`. -/

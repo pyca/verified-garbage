@@ -113,7 +113,7 @@ abbrev topFront (b : Nat) : List (Prog isa) :=
   [Impl.Ffdh.X86.ctxP, copy (.slot .wide b) (.slot .wide 5) (one .wide), loadTop (.slot .wide 8) (one .wide) 10 11]
 
 theorem powTop_eq (b : Nat) :
-    Impl.Ffdh.X86.powTop b = Prog.chain (topFront b) (windowPowerWith .wide (lenCount 11)) := rfl
+    Impl.Ffdh.X86.powTop b = Prog.chain (topFront b) Impl.Ffdh.X86.winTopCall := rfl
 
 /-- p's context, the number in slot `b` in slot 5, and x at the top of slot 8. -/
 theorem topFront_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes len xl s.rd s.wr)
@@ -173,16 +173,14 @@ theorem powTop_ok (h : In Ex base bytes len args s) (X : XGeo args base bytes le
   obtain bw := bc_eq_cwc len .wide
   rw [powTop_eq]
   refine WP.chain_split (topFront_ok h X RF hx40 hb9 hb hP) fun u₃ ⟨C₃, one₃, R₃, B₃, V₃, F₃, k₃, K₃⟩ => ?_
-  refine WP.mono (windowPowerWith_ok C₃ one₃ R₃ (N := 2 * xl) (by omega_arith) (by omega_arith) fun t Ct =>
-    wp_movS (Ct.inp.arg (i := 11) (by decide)) fun t₁ a₁ _ => wp_addS rfl fun t₂ a₂ _ => WP.block_nil
-      ⟨a₁.keeps.trans (a₂.keeps.mono (by decide)), by rw [a₂.mem, a₁.mem], by
-        rw [a₂.gpr, a₁.gpr, X.e11, BitVec.ofNat_add_ofNat]; congr 1; omega_arith⟩) fun u ⟨C, F, K, Y⟩ => ?_
-  rw [V₃, show 32 * cwc len .wide = 8 * bc len .wide by omega_arith, top_windows (by omega_arith), B₃] at Y
   obtain sp₃ : u₃.gpr .esp = s.gpr .esp := K₃.1 _ (by decide)
+  refine WP.mono (winTopCall_ok C₃ (by rw [sp₃]; exact RF) one₃ R₃ X.e11 xp (by omega_arith))
+    fun u ⟨C, F, K, Y⟩ => ?_
+  rw [V₃, show 32 * cwc len .wide = 8 * bc len .wide by omega_arith, top_windows (by omega_arith), B₃] at Y
   rw [sp₃] at F
-  obtain G := stR_widen F (pwR_in C₃.inp .wide 0)
-  refine ⟨C, Y, ?_, F₃.trans (frameF_of G), k₃.trans (kept_ops h G h.room), K₃.trans K⟩
-  rw [pwR_sv3 C₃.inp F (by rw [← sp₃]; exact C₃.inp.room), one₃]
+  obtain G := frameF_widen F (pwR_in C₃.inp .wide 0)
+  refine ⟨C, Y, ?_, F₃.trans G, k₃.trans (keptF_ops h G RF), K₃.trans K⟩
+  rw [pwR_sv3 C₃.inp F RF, one₃]
 
 /-- A copy of the wide slot 15 into 16. -/
 theorem copy1516_ok (h : In Ex base bytes len args s) :

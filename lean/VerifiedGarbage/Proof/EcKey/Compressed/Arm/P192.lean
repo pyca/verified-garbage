@@ -117,12 +117,12 @@ theorem satC (u : Bool) :
 
 theorem verified :
     Verified target code (Spec.EcKey.P192.inst.compressPublicKeyContract (abi.withConsts (p192With false).constsK) 0) :=
-  Verified.of_correct (compress_correctT p192 p192_ok (List.mem_singleton_self _)) ct
+  Verified.of_correct (compress_correct p192 p192_ok (List.mem_singleton_self _)) ct
     (withTables_implies (compress_implies _ sat) (satC false))
 
 theorem verifiedU :
     Verified target codeU (Spec.EcKey.P192.inst.compressPublicKeyContract (abi.withConsts (p192With true).constsK) 0) :=
-  Verified.of_correct (compress_correctT (p192With true) p192u_ok (List.mem_singleton_self _)) ctU
+  Verified.of_correct (compress_correct (p192With true) p192u_ok (List.mem_singleton_self _)) ctU
     (withTables_implies (compress_implies _ sat) (satC true))
 
 end VG.Proof.EcKey.Compressed.Arm.P192

@@ -20,11 +20,12 @@ namespace VG.Impl.Dsa.RISCV64.Params
 open VG VG.RISCV64 VG.Impl.Dsa.RISCV64
 
 /-- The working space, the registers saved there, the domain into `s11`
-(`ra`, which names the signature elsewhere, 0), and the lengths into the
-header. -/
+(`ra`, which names the signature elsewhere, 0), and the lengths and `ra`
+into the header. -/
 def entry : List Instr :=
   [.addi .t2 .a4 0] ++ save .t2 ++
-    [.addi .s11 .a0 0, .li .ra 0, .shift .sll .d .t3 .a3 16, .add .t3 .a2 .t3, .store .d .t3 .s6 hLens]
+    [.addi .s11 .a0 0, .li .ra 0, .shift .sll .d .t3 .a3 16, .add .t3 .a2 .t3, .store .d .t3 .s6 hLens,
+      .store .d .ra .s6 hSig]
 
 /-- `vg_dsa_check_parameters`. -/
 def checkParameters : Prog isa :=

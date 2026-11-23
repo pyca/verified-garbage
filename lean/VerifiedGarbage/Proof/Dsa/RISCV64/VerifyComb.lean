@@ -82,6 +82,10 @@ theorem Kept.word {L : Lay} {m m' : Mem} (h : Kept L m m') {d : Nat}
   (Mem.readW_congr fun i hi =>
     (h _ (by rw [ofs_off L.S (by simp only [hLens] at hd; omega_using [hd, hi])]; simp only [hLens] at hd ⊢; omega_using [hd, hi])).symm).symm
 
+/-- The header's word `hSig`, kept. -/
+theorem kept_sig {L : Lay} {m m' : Mem} (h : Kept L m m') : word m' L.S hSig = word m L.S hSig :=
+  h.word (Or.inr ⟨by simp only [hSig, hLens]; omega_using [], by simp only [hSig]; omega_using []⟩)
+
 /-- The domain's values, kept. -/
 theorem params_kept {s : State} {L : Lay} {key : Addr} (hk : Src s L key (2 * L.pl + L.ql)) {m m' : Mem}
     (h : Kept L m m') :
@@ -194,7 +198,7 @@ theorem keyOk_iff {m : Mem} {L : Lay} {key : Addr} :
     exact ⟨sh, ⟨g, y⟩, d, gq, yq⟩
 
 theorem checkParams_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : State → Prop}
-    {rest fail : Prog isa} (hL : L.Ok) (hs : ScrL s L) (hr : Regs s L key sig)
+    {rest fail : Prog isa} (hL : L.Ok) (hs : ScrL s L) (hr : Regs s L key sig) (hsw : word s.mem L.S hSig = sig)
     (hlen : word s.mem L.S hLens = pack L.pl L.ql 0 d) (hd : d < 2 ^ 16) (hk : Src s L key (2 * L.pl + L.ql))
     (hrest : ∀ t, ParamsOk s.mem L key → Checked s t L key sig d → Kept L s.mem t.mem → Keep cpRegs s t →
       WP isa rest t Q)
@@ -274,7 +278,7 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : Sta
   obtain hk₅ := hk₄.keep k₅.2.1 k₅.2.2
   obtain C₅ : Checked s t₅ L key sig d := C₄.elem hL k₅ (by decide) (k₅.gpr (by decide)) (ip₄.keep k₅)
     (by rw [m₅]; exact Outside.refl _ _ _ _)
-  refine WP.mono (checkElem_ok hL C₅.scr C₅.regs C₅.inp hk₅
+  refine WP.mono (checkElem_ok hL C₅.scr C₅.regs ((kept_sig K₅).trans hsw) C₅.inp hk₅
       (hk₅.sub (o := L.pl + L.ql) (k := L.pl) (by omega_using [])) a7 a8 (C₅.p0.trans hP) (by omega_using [B]) hpo C₅.inv
       (by rw [C₅.p24, hP]))
     fun t₆ ⟨⟨ip₆, r0₆, o₆, t1₆⟩, k₆⟩ => ?_
@@ -294,7 +298,7 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : Sta
   exact hrest t₆ hok C₆ K₆ k₁₆
 
 theorem checkKey_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : State → Prop}
-    {rest fail : Prog isa} (hL : L.Ok) (hs : ScrL s L) (hr : Regs s L key sig)
+    {rest fail : Prog isa} (hL : L.Ok) (hs : ScrL s L) (hr : Regs s L key sig) (hsw : word s.mem L.S hSig = sig)
     (hlen : word s.mem L.S hLens = pack L.pl L.ql 0 d) (hd : d < 2 ^ 16) (hk : Src s L key (3 * L.pl + L.ql))
     (hrest : ∀ t, KeyOk s.mem L key → Checked s t L key sig d → Kept L s.mem t.mem → Keep ckRegs s t →
       WP isa rest t Q)
@@ -302,7 +306,7 @@ theorem checkKey_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : State 
       Keep ckRegs s t → WP isa fail t Q) :
     WP isa (checkKey rest fail) s Q := by
   unfold checkKey
-  refine checkParams_ok hL hs hr hlen hd (hk.take (by omega_using [])) (fun t hP hc hb kc => ?_)
+  refine checkParams_ok hL hs hr hsw hlen hd (hk.take (by omega_using [])) (fun t hP hc hb kc => ?_)
     (fun t hn hb hrt hst kc => hfail t (fun hK => hn (keyOk_iff.mp hK).1) hb hrt hst (keepPre (keepPre kc)))
   have hpo : pOf s.mem L key % 2 = 1 := hP.1.2.2
   obtain hp2 : 2 ≤ pOf s.mem L key := (VG.Proof.Dsa.supported_bounds hP.1.1).1
@@ -312,10 +316,10 @@ theorem checkKey_ok {s : State} {L : Lay} {key sig : Addr} {d : Nat} {Q : State 
   obtain hk₇ := hk.keep k₀₇.2.1 k₀₇.2.2
   obtain C₇ : Checked s t₇ L key sig d := hc.elem hL k₇ (by decide) (k₇.gpr (by decide)) (hc.inp.keep k₇)
     (by rw [m₇]; exact Outside.refl _ _ _ _)
-  refine WP.mono (checkElem_ok hL C₇.scr C₇.regs C₇.inp (hk₇.take (by omega_using []))
+  obtain K₇ : Kept L s.mem t₇.mem := by rw [m₇]; exact hb
+  refine WP.mono (checkElem_ok hL C₇.scr C₇.regs ((kept_sig K₇).trans hsw) C₇.inp (hk₇.take (by omega_using []))
       (hk₇.sub (o := 2 * L.pl + L.ql) (k := L.pl) (by omega_using [])) b7 b8 C₇.p0 hp2 hpo C₇.inv C₇.p24)
     fun t₈ ⟨⟨ip₈, r0₈, o₈, t1₈⟩, k₈⟩ => ?_
-  obtain K₇ : Kept L s.mem t₇.mem := by rw [m₇]; exact hb
   obtain eq₇ := (params_kept (hk.take (by omega_using [])) K₇).2.1
   obtain ey : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t₇.mem (off key (2 * L.pl + L.ql)) L.pl) = yOf s.mem L key :=
     y_kept hk K₇

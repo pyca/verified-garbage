@@ -45,26 +45,16 @@ structure Backend where
   signVerified : Verified target (SignVerify.sign sq mul) (Spec.Dsa.signContract abi stack)
   signSp : (SignVerify.sign sq mul).all (fun i => !isa.writesSp i) = true
   signMx : (SignVerify.sign sq mul).allInstrs (fun i => !touchesMxcsr i) = true
-  validateVerified : Verified target (Prevalidated.validate sq mul) (Spec.Dsa.validatePublicKeyContract abi stack)
-  prevalidatedVerified : Verified target (Prevalidated.verify sq mul) (Spec.Dsa.verifyPrevalidatedContract abi stack)
-  validateSp : (Prevalidated.validate sq mul).all (fun i => !isa.writesSp i) = true
-  prevalidatedSp : (Prevalidated.verify sq mul).all (fun i => !isa.writesSp i) = true
   signDepth : (SignVerify.sign sq mul).x86_64Depth ≤ stack
   parametersVerified : Verified target (Generate.checkParameters sq mul) (Proof.Dsa.checkParametersContract abi stack)
-  deriveVerified : Verified target (Generate.deriveKey sq mul) (Spec.Dsa.deriveKeyContract abi stack)
   parametersSp : (Generate.checkParameters sq mul).all (fun i => !isa.writesSp i) = true
   parametersMx : (Generate.checkParameters sq mul).allInstrs (fun i => !touchesMxcsr i) = true
-  deriveSp : (Generate.deriveKey sq mul).all (fun i => !isa.writesSp i) = true
   parametersDepth : (Generate.checkParameters sq mul).x86_64Depth ≤ stack
-  deriveDepth : (Generate.deriveKey sq mul).x86_64Depth ≤ stack
   prevalidatedSignVerified : Verified target (PrevalidatedSign.sign sq mul)
     (signContractWith Spec.Dsa.validatePrivateKeyBytes abi stack)
   prevalidatedSignSp : (PrevalidatedSign.sign sq mul).all (fun i => !isa.writesSp i) = true
   prevalidatedSignMx : (PrevalidatedSign.sign sq mul).allInstrs (fun i => !touchesMxcsr i) = true
   prevalidatedSignDepth : (PrevalidatedSign.sign sq mul).x86_64Depth ≤ stack
-  validatePrivateVerified : Verified target (PrevalidatedSign.validate sq mul)
-    (Spec.Dsa.validatePrivateKeyContract abi stack)
-  validatePrivateSp : (PrevalidatedSign.validate sq mul).all (fun i => !isa.writesSp i) = true
   deriveCheckedVerified : Verified target (Generate.deriveChecked sq mul)
     (Spec.Dsa.deriveKeyDomainCheckedContract abi stack)
   deriveCheckedSp : (Generate.deriveChecked sq mul).all (fun i => !isa.writesSp i) = true

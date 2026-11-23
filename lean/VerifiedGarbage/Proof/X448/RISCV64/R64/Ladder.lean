@@ -166,15 +166,15 @@ theorem sep8_get {o : Nat} {qs : List Nat} (h : Sep8 o qs = true) {q : Nat} (hq 
 section
 variable {b : Addr}
 
-theorem mulS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
+theorem mulSF {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
     (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b qs v) :
-    WP isa (mul o x y) s fun s' => Rest clob64 s s' ∧ Frame [FA b] s.mem s'.mem ∧
+    WP isa (mul o x y) s fun s' => Rest clob64 s s' ∧ Frame [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩] s.mem s'.mem ∧
       SlotsOk s'.mem b (o :: qs) (upd v o (v x * v y)) := by
   obtain hq1 := sep8_sep1 hq
   refine WP.mono (mul_ok ho (sep1_get hq1 hx).2.1 (sep1_get hq1 hy).2.1 (sep8_o hq)
     (sep8_get hq hx) (sep8_get hq hy) hc)
-    fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho hf, fun q hq' => ?_⟩
+    fun s' ⟨hr, hf, hv⟩ => ⟨hr, hf, fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
     rw [upd_self, ← hS x hx, ← hS y hy]
@@ -182,17 +182,17 @@ theorem mulS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = tr
   · rw [upd_of_ne _ _ hqo]
     exact slots_after hq1 ho hf hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
 
-theorem addS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
+theorem addSF {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
     (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b qs v) :
-    WP isa (.block (add o x y)) s fun s' => Rest clob64 s s' ∧ Frame [FA b] s.mem s'.mem ∧
+    WP isa (.block (add o x y)) s fun s' => Rest clob64 s s' ∧ Frame [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩] s.mem s'.mem ∧
       SlotsOk s'.mem b (o :: qs) (upd v o (v x + v y)) := by
   obtain hq1 := sep8_sep1 hq
   obtain hx' := sep1_get hq1 hx
   obtain hy' := sep1_get hq1 hy
   have hA := ACC_eq
   refine WP.mono (add_ok (by omega_using [ho, hA]) (by omega_using [hx', hA]) (by omega_using [hy', hA]) (sep8_o hq) (sep8_get hq hx)
-    (sep8_get hq hy) hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
+    (sep8_get hq hy) hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_o hf, fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
     rw [upd_self, ← hS x hx, ← hS y hy]
@@ -200,17 +200,17 @@ theorem addS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = tr
   · rw [upd_of_ne _ _ hqo]
     exact slots_after hq1 ho (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
 
-theorem subS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
+theorem subSF {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
     (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b qs v) :
-    WP isa (.block (sub o x y)) s fun s' => Rest clob64 s s' ∧ Frame [FA b] s.mem s'.mem ∧
+    WP isa (.block (sub o x y)) s fun s' => Rest clob64 s s' ∧ Frame [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩] s.mem s'.mem ∧
       SlotsOk s'.mem b (o :: qs) (upd v o (v x - v y)) := by
   obtain hq1 := sep8_sep1 hq
   obtain hx' := sep1_get hq1 hx
   obtain hy' := sep1_get hq1 hy
   have hA := ACC_eq
   refine WP.mono (sub_ok (by omega_using [ho, hA]) (by omega_using [hx', hA]) (by omega_using [hy', hA]) (sep8_o hq) (sep8_get hq hx)
-    (sep8_get hq hy) hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
+    (sep8_get hq hy) hc) fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_o hf, fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
     rw [upd_self, ← hS x hx, ← hS y hy]
@@ -333,6 +333,30 @@ theorem Cur.next {s s' : State} (h : Cur b s0 a c qs v s) (hr : Rest clob64 s s'
     (hS : SlotsOk s'.mem b qs' v') : Cur b s0 a c qs' v' s' :=
   ⟨h.ctx.of_rest hr (by decide), h.stp.trans ⟨hr.mono (by decide), hf⟩,
     by rw [hr.gpr _ (by decide), h.t2], by rw [hr.gpr _ (by decide), h.t1], hS⟩
+
+/-- `mulSF`, with the field area for its frame. -/
+theorem mulS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
+    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
+    (hS : SlotsOk s.mem b qs v) :
+    WP isa (mul o x y) s fun s' => Rest clob64 s s' ∧ Frame [FA b] s.mem s'.mem ∧
+      SlotsOk s'.mem b (o :: qs) (upd v o (v x * v y)) :=
+  WP.mono (mulSF hq ho hx hy hc hS) fun _ ⟨hr, hf, h⟩ => ⟨hr, frame_FA ho hf, h⟩
+
+/-- `addSF`, with the field area for its frame. -/
+theorem addS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
+    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
+    (hS : SlotsOk s.mem b qs v) :
+    WP isa (.block (add o x y)) s fun s' => Rest clob64 s s' ∧ Frame [FA b] s.mem s'.mem ∧
+      SlotsOk s'.mem b (o :: qs) (upd v o (v x + v y)) :=
+  WP.mono (addSF hq ho hx hy hc hS) fun _ ⟨hr, hf, h⟩ => ⟨hr, frame_FA ho hf, h⟩
+
+/-- `subSF`, with the field area for its frame. -/
+theorem subS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = true)
+    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
+    (hS : SlotsOk s.mem b qs v) :
+    WP isa (.block (sub o x y)) s fun s' => Rest clob64 s s' ∧ Frame [FA b] s.mem s'.mem ∧
+      SlotsOk s'.mem b (o :: qs) (upd v o (v x - v y)) :=
+  WP.mono (subSF hq ho hx hy hc hS) fun _ ⟨hr, hf, h⟩ => ⟨hr, frame_FA ho hf, h⟩
 
 theorem opMul {o x y : Nat} (hq : Sep8 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :

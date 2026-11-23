@@ -99,7 +99,7 @@ theorem combVerify_pre {um : Bool} {s : State} (h : (combVerifySpec um).pre s) :
   sig_pre [Spec.Ecdsa.P521.inst,Proof.Ecdsa.verifyContract,Proof.Ecdsa.verifySig,
     Spec.P521.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h₁
   obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h₁
-  refine ⟨⟨hk.rd_strip rd,wr,ps,ds,ss,fp,fd,fs,fc,fun _ => tbl_of_consts hk
+  refine ⟨⟨hk.rd_strip rd,wr,ps,ds,ss,fp,fd,fs,fc,tbl_of_consts hk
     (List.mem_append_right _ (List.mem_singleton_self _)) ?_⟩,hk⟩
   rw [wr]; exact List.mem_singleton_self _
 

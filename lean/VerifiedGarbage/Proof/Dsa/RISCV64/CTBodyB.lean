@@ -40,7 +40,7 @@ theorem Base.q_lt {v : VD} {s : State} (h : Base v s) : v.q < 2 ^ (8 * v.L.ql) :
   rwa [VG.Proof.Bignum.bytesAt_length] at this
 
 theorem Base.sg {v : VD} {s : State} (h : Base v s) (hv : VB v) : Src s v.L v.sig (2 * v.L.ql) :=
-  hv.2.1 ▸ h.hsg
+  hv.2 ▸ h.hsg
 
 /-- The values `body` needs of the key. -/
 theorem SB.vals {v : VD} {s : State} (h : SB v s) :
@@ -147,7 +147,7 @@ theorem inverse_QI {v : VD} {s : State} (h : QI v s) (hq : 2 ≤ v.q) (hqo : v.q
     WP isa inverse s fun t => (QI v t ∧ arrQ t.mem v.L 4 < v.q ∧ QBuf v.L s.mem t.mem) ∧ Keep invRegs s t := by
   obtain ⟨B, I, h24⟩ := h
   have hL := B.base.ok
-  refine WP.mono (inverse_ok hL B.qs I (B.base.sg B.vb) (B.base.hsig B.vb.2.2) (by rw [B.q0]; exact hq) (by rw [B.q0]; exact hqo)
+  refine WP.mono (inverse_ok hL B.qs I (B.base.sg B.vb) B.base.hsig (by rw [B.q0]; exact hq) (by rw [B.q0]; exact hqo)
     (by rw [B.q0]; exact h24)) fun t ⟨⟨Q', I', a4, kj, qa⟩, k⟩ =>
       ⟨⟨⟨B.stepQ Q' k.2.1 k.2.2 (qa.qbuf hL), I', by rw [kj 24 (by decide) (by decide)]; exact h24⟩,
         by rw [a4, B.q0]; exact Nat.mod_lt _ (by omega_using [hq]), qa.qbuf hL⟩, k⟩

@@ -14,7 +14,7 @@ open VG.Arm
 `vg_p224_mul_mod_<p|n>_umaal` if `u`. -/
 def p224With (u : Bool) : Cfg :=
   ⟨4, Spec.P224.curve, Impl.Weierstrass.Mont.p224p, Impl.Weierstrass.Mont.p224n, some Impl.Weierstrass.Mul.p224, u,
-    some "VG_P224_FRAME_CONSTS"⟩
+    "VG_P224_FRAME_CONSTS"⟩
 
 /-- P-224 as the code has it. -/
 def p224 : Cfg := p224With false
