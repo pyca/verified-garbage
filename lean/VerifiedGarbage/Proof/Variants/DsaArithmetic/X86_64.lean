@@ -9,11 +9,9 @@ public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64.Base
 
 namespace VG.Proof.Variants.DsaArithmetic.X86_64
 
-open VG VG.X86_64 VG.Proof.Dsa.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 in
-def adx : Backend := Proof.Variants.DsaArithmetic.X86_64.Adx.variant
+def adx : Proof.Dsa.X86_64.Slots.SlotBackend := Proof.Variants.DsaArithmetic.X86_64.Adx.slotVariant
 
-open VG VG.X86_64 VG.Proof.Dsa.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 in
-def base : Backend := Proof.Variants.DsaArithmetic.X86_64.Base.variant
+def base : Proof.Dsa.X86_64.Slots.SlotBackend := Proof.Variants.DsaArithmetic.X86_64.Base.slotVariant
 
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its

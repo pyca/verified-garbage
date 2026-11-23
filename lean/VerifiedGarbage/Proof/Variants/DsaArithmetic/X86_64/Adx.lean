@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64.Checks
+public import VerifiedGarbage.Proof.Dsa.X86_64.Slots
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignVerified
 public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCheckedVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
@@ -71,24 +72,15 @@ def variant : Backend where
   signVerified := signing_call_verified Mont.fnAdx MontS.fnLazyAdx checks.sign.inl rfl checks.sign.mx
   signSp := checks.sign.sp
   signMx := checks.sign.mxFree
-  validateVerified := validating_call_verified Mont.fnAdx MontS.fnLazyAdx checks.validate.inl rfl checks.validate.mx
-  prevalidatedVerified := prevalidated_call_verified Mont.fnAdx MontS.fnLazyAdx checks.verify.inl rfl checks.verify.mx
-  validateSp := checks.validate.sp
-  prevalidatedSp := checks.verify.sp
   signDepth := checks.sign.depth
   parametersVerified := parameters_call_verified Mont.fnAdx MontS.fnLazyAdx checks.parameters.inl rfl checks.parameters.mx
-  deriveVerified := derive_call_verified Mont.fnAdx MontS.fnLazyAdx checks.derive.inl rfl checks.derive.mx
   parametersSp := checks.parameters.sp
   parametersMx := checks.parameters.mxFree
-  deriveSp := checks.derive.sp
   parametersDepth := checks.parameters.depth
-  deriveDepth := checks.derive.depth
   prevalidatedSignVerified := prevalidated_sign_call_verified Mont.fnAdx MontS.fnLazyAdx checks.prevalidatedSign.inl rfl checks.prevalidatedSign.mx
   prevalidatedSignSp := checks.prevalidatedSign.sp
   prevalidatedSignMx := checks.prevalidatedSign.mxFree
   prevalidatedSignDepth := checks.prevalidatedSign.depth
-  validatePrivateVerified := validating_private_call_verified Mont.fnAdx MontS.fnLazyAdx checks.validatePrivate.inl rfl checks.validatePrivate.mx
-  validatePrivateSp := checks.validatePrivate.sp
   deriveCheckedVerified := derive_checked_call_verified Mont.fnAdx MontS.fnLazyAdx checks.deriveChecked.inl rfl checks.deriveChecked.mx
   deriveCheckedSp := checks.deriveChecked.sp
   deriveCheckedMx := checks.deriveChecked.mxFree
@@ -98,5 +90,29 @@ def variant : Backend where
   sqSide := by lit_decide
   mulSide := by intro o a b; rfl
   stack_eq := rfl
+
+/-- What the kernel evaluates of the functions that call the variant through
+slots, in one declaration. -/
+theorem slotChecks : Slots.entriesOk variant.level.level CallMont.adx.name "vg_rsa_lazy_mont_mul_adx" CallMont.adx.body Impl.Bignum.X86_64.MontFn.mulAdxLazy = true := by
+  decide +kernel
+
+/-- The variant, called through slots. -/
+def slotVariant : Slots.SlotBackend where
+  backend := variant
+  nm := CallMont.adx.name
+  ns := "vg_rsa_lazy_mont_mul_adx"
+  bm := CallMont.adx.body
+  bs := Impl.Bignum.X86_64.MontFn.mulAdxLazy
+  M := Mont.fnAdx
+  Sq := MontS.fnLazyAdx
+  checks := slotChecks
+  validateIn := rfl
+  verifyIn := rfl
+  validatePrivateIn := rfl
+  deriveIn := rfl
+  validateMx := checks.validate.mx
+  verifyMx := checks.verify.mx
+  validatePrivateMx := checks.validatePrivate.mx
+  deriveMx := checks.derive.mx
 
 end VG.Proof.Variants.DsaArithmetic.X86_64.Adx

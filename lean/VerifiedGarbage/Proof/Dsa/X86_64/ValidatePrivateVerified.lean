@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.ForwardSlots
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Proof.Dsa.X86_64.PrevalidatedSignVerified
@@ -693,8 +694,9 @@ end
 /-! # The x86-64 DSA private-key validator verified against its contract
 
 `validating_private_verified` is the program's proof;
-`validating_private_call_verified` that of the code that calls the
-Montgomery kernels, whose return addresses take eight bytes of stack. -/
+`validating_private_slot_verified` that of the code that calls the
+Montgomery kernels through slots (`Contract.withSlots`), whose return
+addresses take eight bytes of stack. -/
 
 @[expose] public section
 
@@ -873,11 +875,11 @@ theorem validatingPrivate_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     List.range, List.range.loop] at hp ⊢
   simpa only [State.patch_gpr] using hp
 
-theorem validating_private_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = PrevalidatedSign.validate Sq.mm M.mm)
+theorem validating_private_slot_verified (M : Mont) (Sq : MontS) {c : Prog isa} {fns : List String}
+    (hc : c.InlineOkNS (slotsOf 0 fns) 1 = true) (hm : 8 + 8 * (0 + 1) + 8 * fns.length ≤ 2 ^ 64) (hin : c.inlineAll = PrevalidatedSign.validate Sq.mm M.mm)
     (hmx : (PrevalidatedSign.validate Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target c (Spec.Dsa.validatePrivateKeyContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ validatingPrivateCorrect M Sq hmx) (hin ▸ validatingPrivateConstantTime M Sq)
+    SlotVerified c (Spec.Dsa.validatePrivateKeyContract abi 8) 0 fns :=
+  SlotVerified.of_inline hc hm (hin ▸ validatingPrivateCorrect M Sq hmx) (hin ▸ validatingPrivateConstantTime M Sq)
     validatingPrivate_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
     (fun s b hv u _ _ hp => validatingPrivate_patch s b hv u hp)
 
