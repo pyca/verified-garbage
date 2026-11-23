@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.BoundedReady
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.BoundedGuard
 public import VerifiedGarbage.Proof.AesGcm.X86_64.DirectGather.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Leaves
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 
 /-! Dispatch the verified gather entry to the bounded whole-record call or its existing bulk implementation. -/
@@ -44,39 +43,5 @@ theorem bounded_rounds (hf : ShortFacts) {c : Callees} {ctr : Fn} (T : BlocksTo.
     (fun p q pb => p.dispatch_rel q pb (fun _ _ e f g => p.withBounded_rel q hf pb e f
       (fun _ _ ex fx => p.quick_rel q hf T (by decide) pb ex fx g)) (fun _ _ e f =>
         p.withBounded_rel q hf pb e f (fun _ _ ex fx => h.rel p q pb ex fx))) safe
-
-theorem boundedSelected (v : GcmVariant) (leaf : Option (BlocksTo.SealFn (VG.Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 48)))
-    (side : ∀ b ∈ leaf, X86_64.Scrub.calleeSide b.fn.code v.lvG.level 24=true) :
-    let code := Impl.AesGcm.X86_64.DirectGather.directSeal48 v.lvTW v.lvT v.impl.short v.impl.callees (DirectGather.ctrFn v) (leaf.map (·.fn))
-    VerifiedScrubbed X86_64.target code DirectGather.publicContract 0 ∧ code.all (fun i => !X86_64.isa.writesSp i)=true := by
-  dsimp only
-  cases leaf with
-  | none => exact ⟨DirectGather.base_verified v,DirectGather.base_spSafe v⟩
-  | some b =>
-    have bt := side b (by simp)
-    simp only [Option.map_some, Impl.AesGcm.X86_64.DirectGather.directSeal48]
-    split
-    · next eligible =>
-      have level : 2≤v.lvT.level := by rw [eligible.2]; decide
-      have cs := X86_64.Scrub.calleeSide_mono v.lvTW_le_lvT (Nat.le_refl _) (DirectGather.ctr_side v)
-      have bs := X86_64.Scrub.calleeSide_mono (DirectGather.lvG_le_T v) (Nat.le_refl _) bt
-      have ws := DirectGather.plain_safe v
-      have rs := DirectGather.boundedSafe v.impl (DirectGather.ctrFn v) b.fn level (callees_sideT v) cs bs v.ctrTo.spSafe b.spAll
-      exact ⟨DirectGather.bounded_scrub v.lvT level (callees_sideT v) cs bs (DirectGather.prepared_public (.inr rfl)
-        (DirectGather.bounded_rounds Short.shortFacts b (DirectGather.readyProof v b) rs)
-        (DirectGather.plain_rounds (DirectGather.plainProof v) ws)) rs ws,
-        X86_64.Scrub.scrubKs_spSafe (X86_64.onFlag_spSafe (X86_64.withStackArgScratch_spSafe rs.sp)
-          (X86_64.withStackArgScratch_spSafe ws.sp))⟩
-    · exact ⟨DirectGather.prepared_verified v 48 (.inr rfl) b bt,DirectGather.prepared_spSafe v 48 b bt⟩
-
-theorem bounded_selected_verified (v : GcmVariant) (leaf : Option (BlocksTo.SealFn (CtxMode.flaggedT 48)))
-    (side : ∀ b ∈ leaf, X86_64.Scrub.calleeSide b.fn.code v.lvG.level 24=true) :
-    VerifiedScrubbed X86_64.target (directSeal48 v.lvTW v.lvT v.impl.short v.impl.callees (ctrFn v) (leaf.map (·.fn))) publicContract 0 :=
-  (boundedSelected v leaf side).1
-
-theorem bounded_selected_spSafe (v : GcmVariant) (leaf : Option (BlocksTo.SealFn (CtxMode.flaggedT 48)))
-    (side : ∀ b ∈ leaf, X86_64.Scrub.calleeSide b.fn.code v.lvG.level 24=true) :
-    (directSeal48 v.lvTW v.lvT v.impl.short v.impl.callees (ctrFn v) (leaf.map (·.fn))).all (fun i => !isa.writesSp i)=true :=
-  (boundedSelected v leaf side).2
 
 end VG.Proof.AesGcm.X86_64.DirectGather
