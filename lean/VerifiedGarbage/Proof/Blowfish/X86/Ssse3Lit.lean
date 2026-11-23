@@ -29,7 +29,6 @@ materialize_code Impl.Blowfish.X86.Ssse3.encryptBlock
 materialize_code Impl.Blowfish.X86.Ssse3.cbcEncryptChained
 materialize_code Impl.Blowfish.X86.Ssse3.ofb
 materialize_code Impl.Blowfish.X86.Ssse3.cfbEncrypt
-materialize_code Impl.Blowfish.X86.Ssse3.cfbDecrypt
 materialize_code Impl.Blowfish.X86.Ssse3.cfbEncryptFinal
 materialize_code Impl.Blowfish.X86.Ssse3.cfbDecryptFinal
 materialize_code Impl.Blowfish.X86.Ssse3.ofbFinal
