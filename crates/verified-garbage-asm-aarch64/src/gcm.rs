@@ -812,7 +812,7 @@ cbnz x10, 2143b
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_to_aes = sym super::aes::vg_aes_ctr32_to_aes::vg_aes_ctr32_to_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
-        vg_aes_gcm_seal_short_aes_sha3 = sym super::gcm::vg_aes_gcm_seal_short_aes_sha3::vg_aes_gcm_seal_short_aes_sha3,
+        vg_aes_gcm_seal_short_aes_sha3 = sym super::aes::vg_aes_gcm_seal_short_aes_sha3::vg_aes_gcm_seal_short_aes_sha3,
     )
 }
 
@@ -2364,7 +2364,7 @@ cbnz x10, 2363b
         vg_ghash_aes = sym super::aes_gcm_siv::vg_ghash_aes::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes::vg_aes_ctr32_aes,
         vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes::vg_ghash_with_powers_aes,
-        vg_aes_gcm_seal_short_aes_sha3 = sym super::gcm::vg_aes_gcm_seal_short_aes_sha3::vg_aes_gcm_seal_short_aes_sha3,
+        vg_aes_gcm_seal_short_aes_sha3 = sym super::aes::vg_aes_gcm_seal_short_aes_sha3::vg_aes_gcm_seal_short_aes_sha3,
         VG_GCM_TAIL_IDX = sym super::consts::VG_GCM_TAIL_IDX,
     )
 }
@@ -13071,7 +13071,5 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_store_powers_aes(ctx: *const [u64; 32
 }
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_seal_short_aes_sha3.rs"]
-pub(crate) mod vg_aes_gcm_seal_short_aes_sha3;
 #[path = "internal/vg_ghash_with_powers_aes.rs"]
 pub(crate) mod vg_ghash_with_powers_aes;
