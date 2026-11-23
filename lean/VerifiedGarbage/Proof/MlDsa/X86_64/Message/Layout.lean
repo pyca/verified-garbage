@@ -172,8 +172,8 @@ theorem below144 (B : Addr) : below (B + BitVec.ofNat 64 144) 144 = ⟨B, 144⟩
 /-- The 32 bytes of stack of a callee that needs only those. -/
 theorem below144_32 (B : Addr) : below (B + BitVec.ofNat 64 144) 32 = ⟨B + BitVec.ofNat 64 112, 32⟩ := by
   show (⟨B + BitVec.ofNat 64 144 - BitVec.ofNat 64 32, 32⟩ : Region) = _
-  congr 1
-  bv_omega
+  rw [show BitVec.ofNat 64 144 = BitVec.ofNat 64 112 + BitVec.ofNat 64 32 from rfl, ← BitVec.add_assoc,
+    BitVec.add_sub_cancel]
 
 /-! ## Between the frame's push and pop -/
 

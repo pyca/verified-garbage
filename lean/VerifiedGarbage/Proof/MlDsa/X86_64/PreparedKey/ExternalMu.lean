@@ -488,11 +488,7 @@ theorem signPreparedEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ para
     Verified X86_64.target (Impl.MlDsa.X86_64.Sign.entry n
       (Impl.MlDsa.X86_64.Sign.sign (Sign.primsWith v.code) p) 1)
       (preparedSignContract p X86_64.abi 40) :=
-  have hS := signFn v hp
-  have hK : Sign.KernelFn p 32 [] (Impl.MlDsa.X86_64.Sign.sign (Sign.primsWith v.code) p) :=
-    ⟨hS.ok, fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => hS.ct _ _ _ _ _ _ h₁ h₂ hp.1 e₁ e₂,
-      SpSafe.of_all (Proof.MlDsa.X86_64.Sign.sign_spSafe v (ok3_of hp)),
-      by rw [x86_64Depth_noSp hS.nosp]; have := hS.depth; omega_using [this], by decide⟩
+  have hK := signKernel v hp
   Verified.of_correct (Sign.Prepared.entryP_correct hK) (Sign.Prepared.entryP_ct hK)
     (Sign.Prepared.signKPN_nil_implies (Sign.Prepared.implies (Sign.Prepared.sat (Verify.prims_okWith v) hp)))
 

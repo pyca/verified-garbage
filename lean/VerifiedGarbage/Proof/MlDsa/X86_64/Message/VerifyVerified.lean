@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-! ### `MlDsa.X86_64.Message.VerifyCorrect`, which only this module used -/
 
@@ -374,9 +375,12 @@ theorem verifyMessage_ct {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p
     (block_rsp_tr (fun i hi => by
         simp only [List.mem_singleton] at hi; subst hi; exact spOnly_nomem (fun _ => rfl) rfl)
       fun a b ⟨x, y, hxy, e₁, e₂⟩ => by subst e₁ e₂; exact hxy.2.2.rsp)
-    fun x y a b _ e₁ e₂ => by subst e₁ e₂; exact ⟨cmp_ok _, cmp_ok _⟩
+    fun x y a b _ e₁ e₂ => by
+      subst e₁ e₂
+      exact ⟨WP.mono_syms (cmp_ok _) fun _ h hy => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2, hy⟩,
+        WP.mono_syms (cmp_ok _) fun _ h hy => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2, hy⟩⟩
   refine RelCT.seq hcmp (RelCT.ite (fun a b ⟨x, y, hxy, f₁, f₂⟩ => by
-    rw [f₁.2.2.2.2.2, f₂.2.2.2.2.2, hxy.2.2.r8]) ?_ ?_)
+    rw [f₁.2.2.2.2.2.1, f₂.2.2.2.2.2.1, hxy.2.2.r8]) ?_ ?_)
   · -- `ctx_len < 256`.
     have hmov := ghost_step (P := VP2 p prep) (A := fun x a => ACmp x a ∧ (x.gpr .r8).toNat < 256) (B := VMov)
       (c := .block [.mov .r11 (.mem (stk 8)), .mov .r10 (.mem (stk 16)), .mov32 .rax (.imm 0)])
@@ -398,9 +402,9 @@ theorem verifyMessage_ct {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p
         exact ⟨mv hxy.1 f₁.1 f₁.2, mv hxy.2.1 f₂.1 f₂.2⟩
     refine RelCT.seq (RelCT.mono hmov (fun a b ⟨⟨x, y, hxy, f₁, f₂⟩, hc⟩ => ⟨x, y, hxy, ⟨f₁, ?_⟩, ⟨f₂, ?_⟩⟩)
       fun _ _ h => h) ?_
-    · rw [f₁.2.2.2.2.2] at hc; simpa using hc
-    · rw [f₁.2.2.2.2.2, hxy.2.2.r8, ← f₂.2.2.2.2.2] at hc
-      rw [f₂.2.2.2.2.2] at hc; simpa using hc
+    · rw [f₁.2.2.2.2.2.1] at hc; simpa using hc
+    · rw [f₁.2.2.2.2.2.1, hxy.2.2.r8, ← f₂.2.2.2.2.2.1] at hc
+      rw [f₂.2.2.2.2.2.1] at hc; simpa using hc
     refine RelCT.frame (R := fun _ _ => True) (fun a b ⟨x, y, hxy, f₁, f₂⟩ => by
       rw [f₁.2.2.1 _ (by decide), f₂.2.2.1 _ (by decide)]; exact hxy.2.2.rsp) ?_
     -- The frame's body, from the push.

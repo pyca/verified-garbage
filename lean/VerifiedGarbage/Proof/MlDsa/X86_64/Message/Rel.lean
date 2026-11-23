@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Args
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.Registration
 
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
@@ -171,5 +172,29 @@ theorem call_tr {Φ : Lay → Mem → State → Prop} {as : List Arg} (hok : as.
     by rw [f₁.2.gpr (by decide), f₂.2.gpr (by decide), c₁.rsp, c₂.rsp]⟩
 
 end
+
+/-! ## The callees' addresses public -/
+
+/-- Code verified against a contract, constant time given also that two runs
+agree on the addresses of the functions `x :: xs`, is verified against the
+contract under `Abi.withFns (x :: xs)`. -/
+theorem verified_withFns {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {st : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {x : String} {xs : List String}
+    {c : Prog isa}
+    (hok : ∀ s, (sig.contract abi pre post wa st leak).pre s → ∃ t s', Exec isa c s t s' ∧
+      X86_64.target.abiPreserved s s' ∧ (sig.contract abi pre post wa st leak).post s s')
+    (hct : ConstantTime isa (sig.contract abi pre post wa st leak).pre
+      (fun s₁ s₂ => (sig.contract abi pre post wa st leak).pub s₁ s₂ ∧ ∀ f ∈ x :: xs, s₁.syms f = s₂.syms f) c)
+    (hsat : ∃ s, (sig.contract abi pre post wa st leak).pre s) :
+    Verified X86_64.target c (sig.contract (abi.withFns (x :: xs)) pre post wa st leak) := by
+  refine ⟨hok, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => hct s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ ?_ e₁ e₂, hsat⟩
+  revert hp
+  simp only [Sig.contract, Abi.withFns]
+  split
+  · exact False.elim
+  · cases leak with
+    | none => exact fun ⟨⟨a, fa⟩, b, c⟩ => ⟨⟨a, b, c⟩, fa⟩
+    | some f => exact fun ⟨⟨⟨a, fa⟩, l⟩, b, c⟩ => ⟨⟨⟨a, l⟩, b, c⟩, fa⟩
 
 end VG.Proof.MlDsa.X86_64.Message

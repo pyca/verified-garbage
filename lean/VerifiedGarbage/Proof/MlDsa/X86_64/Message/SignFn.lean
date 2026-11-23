@@ -68,8 +68,8 @@ theorem sign0_depth {p : Params} (h3 : Ok3 p) :
   · exact (by lit_decide : decide (Sign.sign87.depth ≤ 4) = true)
 
 /-- `vg_mldsa*_sign`, with the polynomial arithmetic of `v`. -/
-theorem signFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :
-    SignFn p (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) := by
+theorem signKernel (v : ArithImpl) {p : Params} (hp : p ∈ params) :
+    Sign.KernelFn p 32 [] (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) := by
   have h3 := ok3_of hp
   have dep : ∀ {c : Prog isa}, c.depth ≤ 3 → decide (c.depth ≤ 3) = true := fun h => decide_eq_true h
   have dep2 : ∀ {c : Prog isa}, c.depth ≤ 2 → decide (c.depth ≤ 3) = true := fun h => decide_eq_true (by omega_using [h])
@@ -78,18 +78,32 @@ theorem signFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :
       (Proof.MlDsa.X86_64.Sign.signKS_nil_pre h),
     fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => sign_ct (prims_okWith v) h3 hdot _ _ _ _ _ _
       (Proof.MlDsa.X86_64.Sign.signKS_nil_pre h₁) (Proof.MlDsa.X86_64.Sign.signKS_nil_pre h₂)
-      (Proof.MlDsa.X86_64.Sign.signKS_nil_pub hp) e₁ e₂,
-    noSp_of (Same.ok (sign_same (Comp.all _) (noSpB_of v.ok.ntt.nosp) (noSpB_of v.ok.invNtt.nosp)
+      (Proof.MlDsa.X86_64.Sign.signKS_nil_pub hp.1) e₁ e₂,
+    SpSafe.of_all (Proof.MlDsa.X86_64.Sign.sign_spSafe v h3), ?_, by decide⟩
+  have nosp : NoSp (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) := noSp_of (Same.ok (sign_same (Comp.all _) (noSpB_of v.ok.ntt.nosp) (noSpB_of v.ok.invNtt.nosp)
       (noSpB_of v.ok.mul.nosp) (noSpB_of v.ok.add.nosp) (noSpB_of v.ok.sub.nosp)
       (noSpB_of v.ok.rej4.nosp) (noSpB_of v.ok.expandMask4.nosp) (noSpB_of v.ok.highBits.nosp)
       (noSpB_of v.ok.lowBits.nosp) (noSpB_of v.ok.normLt.nosp) (noSpB_of v.ok.makeHint.nosp)
       (noSpB_of (v.ok.dotInv 4 (.inl rfl)).nosp) (noSpB_of (v.ok.dotInv 5 (.inr (.inl rfl))).nosp)
-      (noSpB_of (v.ok.dotInv 7 (.inr (.inr rfl))).nosp) p) (sign0_noSp h3)),
-    of_decide_eq_true (Same.ok (sign_same (depthCompN 3) (dep2 v.ok.ntt.depth) (dep2 v.ok.invNtt.depth)
+      (noSpB_of (v.ok.dotInv 7 (.inr (.inr rfl))).nosp) p) (sign0_noSp h3))
+  have depth := of_decide_eq_true (Same.ok (sign_same (depthCompN 3) (dep2 v.ok.ntt.depth) (dep2 v.ok.invNtt.depth)
       (dep2 v.ok.mul.depth) (dep2 v.ok.add.depth) (dep2 v.ok.sub.depth)
       (dep v.ok.rej4.depth) (dep v.ok.expandMask4.depth) (dep2 v.ok.highBits.depth) (dep2 v.ok.lowBits.depth)
       (dep2 v.ok.normLt.depth) (dep2 v.ok.makeHint.depth) (dep2 (v.ok.dotInv 4 (.inl rfl)).depth)
-      (dep2 (v.ok.dotInv 5 (.inr (.inl rfl))).depth) (dep2 (v.ok.dotInv 7 (.inr (.inr rfl))).depth) p) (sign0_depth h3))⟩
+      (dep2 (v.ok.dotInv 5 (.inr (.inl rfl))).depth) (dep2 (v.ok.dotInv 7 (.inr (.inr rfl))).depth) p) (sign0_depth h3))
+  rw [x86_64Depth_noSp nosp]
+  omega_using [depth]
+
+/-- `vg_mldsa*_sign`, with the polynomial arithmetic of `v`, as `sign_message` calls it. -/
+theorem signFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :
+    SignFn p [] (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) :=
+  have K := signKernel v hp
+  ⟨fun σ h => K.ok σ (Sign.signK_mono (by decide) (by decide) h),
+    fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => K.ct _ _ _ _ _ _ (Sign.signK_mono (by decide) (by decide) h₁)
+      (Sign.signK_mono (by decide) (by decide) h₂) hp e₁ e₂,
+    K.sp, Nat.le_trans K.depth (by decide)⟩
+
+
 
 theorem kabs_spSafe : Impl.Sha3.X86_64.Stream.absorb.all (fun i => !isa.writesSp i) = true := by lit_decide
 theorem kpad_spSafe : Impl.Sha3.X86_64.Stream.pad.all (fun i => !isa.writesSp i) = true := by lit_decide
@@ -126,11 +140,7 @@ theorem signMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all 
 theorem signEntry_verified (v : ArithImpl) {p : Params} (hp : p ∈ params) (n : String) :
     Verified X86_64.target (Impl.MlDsa.X86_64.Sign.entry n (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) 0)
       (signContract p X86_64.abi 40) :=
-  have hS := signFn v hp
-  have hK : Sign.KernelFn p 32 [] (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) :=
-    ⟨hS.ok, fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => hS.ct _ _ _ _ _ _ h₁ h₂ hp.1 e₁ e₂,
-      SpSafe.of_all (Proof.MlDsa.X86_64.Sign.sign_spSafe v (ok3_of hp)),
-      by rw [x86_64Depth_noSp hS.nosp]; have := hS.depth; omega_using [this], by decide⟩
+  have hK := signKernel v hp
   Verified.of_correct (Sign.entry0_correct hK) (Sign.entry0_ct hK) (Sign.signK0N_nil_implies (Sign.signK0_implies (ok3_of hp)))
 
 theorem signEntry_spSafe {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true)

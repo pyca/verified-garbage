@@ -332,10 +332,10 @@ theorem verifyK_pre {p : Params} {prep : Bool} (hp : p ∈ params) {L : Lay} (hL
   · exact hL.stk_x (d := 144) (n := 8) (e := 840) (k := 64) (by omega_using []) (by omega_using [])
   · exact hL.stk_r F.kSig (by omega_using [])
   · exact hL.stk_r (F.kScr.sub_right hsub) (by omega_using [])
-  · exact hL.kKey.sub_left (Region.sub_prefix (by omega_using []))
-  · exact (hL.kX.sub_left (Region.sub_prefix (by omega_using []))).sub_right (Offset.sub_base _ (by omega_using []))
-  · exact F.kSig.sub_left (Region.sub_prefix (by omega_using []))
-  · exact (F.kScr.sub_right hsub).sub_left (Region.sub_prefix (by omega_using []))
+  · exact hL.kKey.sub_left (Offset.sub_base _ (by omega_using []))
+  · exact (hL.kX.sub_left (Offset.sub_base _ (by omega_using []))).sub_right (Offset.sub_base _ (by omega_using []))
+  · exact F.kSig.sub_left (Offset.sub_base _ (by omega_using []))
+  · exact (F.kScr.sub_right hsub).sub_left (Offset.sub_base _ (by omega_using []))
   · exact hL.nKey
   · show L.MU.toNat + 64 ≤ 2 ^ 64
     have hn : L.scr.toNat + (L.E + 1024) ≤ 2 ^ 64 := by rw [← F.e, ← mScr_eq]; exact F.nScr

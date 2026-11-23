@@ -40,7 +40,7 @@ def signEntry (v : VecLevel) (n : String) (P : Sign.Prims) (p : Spec.MlDsa.Param
 
 /-- `vg_mldsa*_sign_message` or `vg_mldsa*_sign_message_prepared` as emitted. -/
 def signMessage (v : VecLevel) (n : String) (P : Sign.Prims) (p : Spec.MlDsa.Params) (flag : Nat) : Prog isa :=
-  scrubAll v 32 112 (Message.signMessage n (Sign.sign P p) p flag)
+  scrubAll v 32 224 (Message.signMessage n (Sign.sign P p) p flag)
 
 /-- `vg_mldsa*_verify` or `vg_mldsa*_verify_prepared` as emitted. -/
 def verifyEntry (v : VecLevel) (n : String) (P : Verify.Prims) (p : Spec.MlDsa.Params) (flag : Nat) : Prog isa :=
@@ -49,7 +49,7 @@ def verifyEntry (v : VecLevel) (n : String) (P : Verify.Prims) (p : Spec.MlDsa.P
 /-- `vg_mldsa*_verify_message_cached` or `vg_mldsa*_verify_message_prepared` as emitted. -/
 def verifyMessage (v : VecLevel) (n : String) (P : Verify.Prims) (p : Spec.MlDsa.Params) (flag : Nat) :
     Prog isa :=
-  scrubAll v 32 112 (Message.verifyMessageCached n (Verify.verify P p) p flag)
+  scrubAll v 32 224 (Message.verifyMessageCached n (Verify.verify P p) p flag)
 
 /-- `vg_mldsa*_prepare_verifying_key` as emitted. -/
 def preparePublic (v : VecLevel) (P : Verify.Prims) (p : Spec.MlDsa.Params) : Prog isa :=

@@ -199,13 +199,13 @@ theorem preparedSign87_scrubbed (v : ArithImpl) :
 theorem preparedSign87_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.signEntry v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa87 1).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (Proof.MlDsa.X86_64.Message.signEntry_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inr rfl))) 1)
 
-theorem signMessage44_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 0) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem signMessage44_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 0) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `Spec.MlDsa.signMessage44Api`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem signMessage44_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa44 0)
-      ((Spec.MlDsa.signMessage44Api).contract X86_64.abi 112) 32 :=
+      ((Spec.MlDsa.signMessage44Api).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := Spec.MlDsa.signMessage44Api)
     { code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 0
       verified := signMessage_verified (signFn v (List.mem_cons_self ..)) (List.mem_cons_self ..)
@@ -217,13 +217,13 @@ theorem signMessage44_scrubbed (v : ArithImpl) :
 theorem signMessage44_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa44 0).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inl rfl)) 0)
 
-theorem signMessage65_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 0) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem signMessage65_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 0) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `Spec.MlDsa.signMessage65Api`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem signMessage65_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa65 0)
-      ((Spec.MlDsa.signMessage65Api).contract X86_64.abi 112) 32 :=
+      ((Spec.MlDsa.signMessage65Api).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := Spec.MlDsa.signMessage65Api)
     { code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 0
       verified := signMessage_verified (signFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (List.mem_cons_of_mem _ (List.mem_cons_self ..))
@@ -235,13 +235,13 @@ theorem signMessage65_scrubbed (v : ArithImpl) :
 theorem signMessage65_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa65 0).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inl rfl))) 0)
 
-theorem signMessage87_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 0) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem signMessage87_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 0) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `Spec.MlDsa.signMessage87Api`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem signMessage87_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa87 0)
-      ((Spec.MlDsa.signMessage87Api).contract X86_64.abi 112) 32 :=
+      ((Spec.MlDsa.signMessage87Api).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := Spec.MlDsa.signMessage87Api)
     { code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 0
       verified := signMessage_verified (signFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
@@ -253,13 +253,13 @@ theorem signMessage87_scrubbed (v : ArithImpl) :
 theorem signMessage87_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa87 0).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inr rfl))) 0)
 
-theorem preparedSignMessage44_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 1) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem preparedSignMessage44_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 1) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `(Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem preparedSignMessage44_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa44 1)
-      (((Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")).contract X86_64.abi 112) 32 :=
+      (((Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44")).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44"))
     { code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 1
       verified := signMessagePrepared_verified (signFn v (List.mem_cons_self ..)) (List.mem_cons_self ..) (signPrepared_sat (Proof.MlDsa.X86_64.Verify.prims_okWith v) (List.mem_cons_self ..))
@@ -271,13 +271,13 @@ theorem preparedSignMessage44_scrubbed (v : ArithImpl) :
 theorem preparedSignMessage44_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa44 1).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inl rfl)) 1)
 
-theorem preparedSignMessage65_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 1) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem preparedSignMessage65_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 1) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `(Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem preparedSignMessage65_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa65 1)
-      (((Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")).contract X86_64.abi 112) 32 :=
+      (((Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65")).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65"))
     { code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 1
       verified := signMessagePrepared_verified (signFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (List.mem_cons_of_mem _ (List.mem_cons_self ..)) (signPrepared_sat (Proof.MlDsa.X86_64.Verify.prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
@@ -289,13 +289,13 @@ theorem preparedSignMessage65_scrubbed (v : ArithImpl) :
 theorem preparedSignMessage65_spSafe (v : ArithImpl) : (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa65 1).all (fun i => !isa.writesSp i) = true :=
   scrubKs_spSafe (signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inl rfl))) 1)
 
-theorem preparedSignMessage87_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 1) VecLevel.sse.level stubStack 112 [] = true := by decide +kernel
+theorem preparedSignMessage87_stub : stubSideG (Impl.MlDsa.X86_64.Message.signMessage "s" (Impl.MlDsa.X86_64.Sign.sign (Proof.MlDsa.X86_64.Sign.primsWith stub) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 1) VecLevel.sse.level stubStack 224 [] = true := by decide +kernel
 
 /-- `(Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")`'s function as emitted over `v` meets its contract in constant time
 and returns without secret residue. -/
 theorem preparedSignMessage87_scrubbed (v : ArithImpl) :
     VerifiedScrubbed target (Impl.MlDsa.X86_64.Fn.signMessage v.level (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Proof.MlDsa.X86_64.Sign.primsWith v.code) Spec.MlDsa.mlDsa87 1)
-      (((Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")).contract X86_64.abi 112) 32 :=
+      (((Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87")).contract X86_64.abi 224) 32 :=
   verifiedScrubbedAllFillG (api := (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87"))
     { code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx) (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 1
       verified := signMessagePrepared_verified (signFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (signPrepared_sat (Proof.MlDsa.X86_64.Verify.prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))))
