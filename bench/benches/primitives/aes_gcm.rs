@@ -32,6 +32,24 @@ pub fn bench(c: &mut Criterion) {
     use rustls_verified_garbage::cipher_suite as cs;
     use crate::{BenchDyn, VG};
     use std::hint::black_box;
+    for keylen in [16, 24, 32] {
+        let key = verified_garbage::aead::aes_gcm::AesGcm::new(&vec![11;keylen]).unwrap();
+        let data: Vec<u8> = (0..4099).map(|i| (i*13) as u8).collect();
+        for nlen in [8,12,19] {
+            let nonce = vec![7;nlen];
+            for len in [0,1,15,16,17,31,32,97,4099] {
+                let mut expected = data[..len].to_vec();
+                let tag = key.encrypt_in_place(&nonce,b"aad",&mut expected).unwrap();
+                for split in 0..=len.min(33) {
+                    let mid = (split+1).min(len);
+                    let parts = [&data[..split], &[], &data[split..mid], &data[mid..len]];
+                    let mut out = vec![0xee;len];
+                    assert_eq!(key.encrypt(&nonce,b"aad",&parts,&mut out).unwrap(),tag);
+                    assert_eq!(out,expected);
+                }
+            }
+        }
+    }
     for tls in [12,13] {
         for bits in [128,256] {
             let mut group = c.benchmark_group(format!("record-cutoff-{tls}-{bits}"));
