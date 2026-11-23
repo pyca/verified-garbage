@@ -56,26 +56,10 @@ results*.json -o report.html` builds them into one page to share; each
 starts with, of the groups (or `group/size`s) that its regular expressions
 match, e.g. `--chart 'ecdh_p(256|384|521) ecdsa_p(256_sha256|384_sha384|521_sha512)_sign/64'`.
 
-For numbers to publish, which compare the libraries rather than two
-commits of this one, use `ci/bench_copies.py`, not `bench_compare.py`: that
-keeps this library's fastest of several copies of the binary and runs
-OpenSSL and aws-lc-rs once, which favours this library. `bench_copies.py`
-runs every library's benchmarks from the same fresh copies, with the same
-Criterion settings, and reports each benchmark's median over the copies,
-with every copy's time and their spread:
-
-```sh
-OPENSSL_DIR=$HOME/openssl OPENSSL_STATIC=1 python3 ci/bench_copies.py --cpu 4 \
-  --features openssl-mldsa,openssl-mlkem --benches 'mlkem768 x25519 sha256' \
-  --json results.json --csv results.csv
-```
-
-Its results file records the versions measured: OpenSSL's (`OPENSSL_DIR`
-builds against one other than the system's) and aws-lc-rs's, which
-`bench/Cargo.lock` chooses (`cargo update -p aws-lc-rs -p aws-lc-sys`
-there, with `bench/Cargo.toml`'s two versions in step, or the lock file
-gets two aws-lc-sys and some benchmarks measure the older). Say which
-machine it ran on and that nothing else ran there.
+For numbers that compare this library with OpenSSL and aws-lc-rs (to
+publish, say), run the branch alone with `--reference-copies`, which runs
+theirs from the same copies as this library's rather than once:
+`python3 ci/bench_compare.py none . --reference-copies --json results.json`.
 
 For another architecture, or features this CPU lacks, run the Benchmarks
 workflow by hand: it never runs on its own (not on pull requests, not on

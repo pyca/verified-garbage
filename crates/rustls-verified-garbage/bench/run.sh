@@ -30,7 +30,7 @@ rounds=${1:-5}
 [ -d "$rustls" ] || "$here/rustls/setup.sh" "$rustls"
 (cd "$rustls" && cargo build --profile=bench -p rustls-bench --features aws-lc-rs,verified-garbage)
 
-python3 "$here/bench/results.py" --start --rustls "$rustls" "$out"
+python3 "$here/bench/results.py" --start "$out"
 for r in $(seq 1 "$rounds"); do
     for p in aws-lc-rs verified-garbage; do
         echo "rustls-bench $p, round $r" >&2

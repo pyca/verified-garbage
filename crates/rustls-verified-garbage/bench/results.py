@@ -5,10 +5,10 @@
     python3 bench/results.py DIR [-o FILE] [--meta KEY=VALUE ...]
 
 `--start` records a run's context in DIR/context.json: this machine, the
-checkout's commit, the time, the CPU features the libraries are
-restricted to, and the aws-lc-rs of the rustls checkout (`--rustls`).
-bench/run.sh records it before it runs rustls-bench, so that the results
-file describes what was measured, wherever and whenever it is written.
+checkout's commit, the time, and the CPU features the libraries are
+restricted to. bench/run.sh records it before it runs rustls-bench, so
+that the results file describes what was measured, wherever and whenever
+it is written.
 
 Without `--start`, it reads bench/run.sh's output in DIR
 (`rustls-bench-<provider>-<round>.tsv`) and that context, and writes, for
@@ -34,7 +34,6 @@ import re
 import statistics
 import sys
 import time
-import tomllib
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "ci"))
@@ -69,25 +68,9 @@ def read(out):
     return rates
 
 
-def aws_lc(rustls):
-    """aws-lc-rs's and aws-lc-sys's versions in the rustls checkout `rustls`'s
-    Cargo.lock (None without one)."""
-    try:
-        lock = tomllib.loads((rustls / "Cargo.lock").read_text())
-    except OSError:
-        return None
-    versions = {name: ", ".join(sorted(p["version"] for p in lock.get("package", []) if p["name"] == name))
-                for name in ("aws-lc-rs", "aws-lc-sys")}
-    if not all(versions.values()):
-        return None
-    return f"aws-lc-rs {versions['aws-lc-rs']} (aws-lc-sys {versions['aws-lc-sys']})"
-
-
-def context(rustls):
-    """The context of a run starting now, with the checkout's commit and
-    the aws-lc-rs that the rustls checkout `rustls` builds."""
+def context():
+    """The context of a run starting now, with the checkout's commit."""
     return {
-        "aws_lc": aws_lc(rustls),
         "arch": bench_report.arch_name(),
         "os": platform.system(),
         "cpu": cpu_model(),
@@ -104,8 +87,6 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("out", type=pathlib.Path, help="bench/run.sh's output directory")
     p.add_argument("--start", action="store_true", help="record the context of a run starting now")
-    p.add_argument("--rustls", type=pathlib.Path, default=ROOT / "target/rustls",
-                   help="the rustls checkout that is benchmarked (with --start)")
     p.add_argument("-o", "--output", type=pathlib.Path)
     p.add_argument("--meta", action="append", metavar="KEY=VALUE", help="a field of the run (repeatable)")
     args = p.parse_args(argv)
@@ -113,7 +94,7 @@ def main(argv=None):
     recorded = args.out / "context.json"
     if args.start:
         args.out.mkdir(parents=True, exist_ok=True)
-        recorded.write_text(json.dumps(context(args.rustls), indent=1) + "\n")
+        recorded.write_text(json.dumps(context(), indent=1) + "\n")
         return 0
     if not recorded.is_file():
         p.error(f"{recorded}: no context recorded (bench/run.sh records it with --start)")
