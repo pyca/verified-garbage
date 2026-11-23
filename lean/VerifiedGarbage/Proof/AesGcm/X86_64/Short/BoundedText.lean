@@ -153,7 +153,7 @@ theorem boundedText_ok {s : State} {P Q D K G : Addr} {m n : Nat}
         (hg : (⟨z,n-m⟩ : Region).Disjoint ⟨G,m⟩) :=
       bytesAt_frame framed (p := z) (n := n-m) (fun r hr => by
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-        rcases hr with rfl|rfl <;> assumption) (by omega_using [hn])
+        rcases hr with rfl|rfl <;> with_reducible assumption) (by omega_using [hn])
     have eq : xb w.mem Q (K + BitVec.ofNat 64 m) (n-m) = xb s.mem Q (K + BitVec.ofNat 64 m) (n-m) := by
       unfold xb
       rw [same Q dstPrefix ((hs.rightStage positive).sub_right (Region.sub_prefix hm)),

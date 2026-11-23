@@ -51,7 +51,7 @@ theorem SpanLayout.original {s t : State} {P Q D W SP : Addr} {m n : Nat} (h : S
       bytesAt t.mem r k = bytesAt s.mem r k := by
     refine bytesAt_frame frame (fun x hx => ?_) (by omega_using [hk,hn])
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
-    rcases hx with rfl|rfl|rfl <;> assumption
+    rcases hx with rfl|rfl|rfl <;> with_reducible assumption
   unfold spanBytes
   congr 1
   · rcases h.leftAlias with rfl|apart

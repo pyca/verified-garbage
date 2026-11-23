@@ -122,7 +122,7 @@ private theorem boundedStart_sj (C : OneCtx s₀ k Ctx W SP Np A D 12 al n)
     (E : OneEntry s₀ Ctx W SP A D n s) (args : SpanEntryArgs P Q m s) (hp : s₀.gpr .rdx = Np)
     (hl : (s₀.gpr .rcx).toNat = 12) (ha : (s₀.gpr .r9).toNat = al)
     (hal : al < 512) (hn : n < 512) :
-    WP isa (.block (j012 ++ sizes ++ [.mov .rbp (.reg .r10),.mov .r12 (.reg .r11)])) s fun t =>
+    WP isa (.block (j012 ++ sizes ++ ([.mov .rbp (.reg .r10),.mov .r12 (.reg .r11)] : List Instr))) s fun t =>
       ∃ tl, SM s₀ Ctx W SP A D (s₀.gpr .rsi).toNat al n
         (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np 12)) tl t ∧ SpanArgs P Q m t := by
   obtain ⟨tr,u,e,S,_,_⟩ := shortStart_ok C E hp hl rfl ha hal hn
