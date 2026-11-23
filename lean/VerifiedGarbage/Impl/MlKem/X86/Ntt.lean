@@ -44,17 +44,16 @@ product of `b - a` and the zeta (`wmont`, `wcadd`, `wcsub`).
 
 ## `multiplyNTTs(h, f, g, scratch)` (Algorithm 11)
 
-Products of two coefficients (less than `q² < 2³²`), and the sums of two of
-them (less than `2q²`), are reduced with a Barrett reduction whose quotient
-is the high half of a `mul` (`red`): `x - ⌊x · 1290167 / 2³²⌋ · q` is less
-than `2q` and congruent to `x`, and one conditional subtraction (`csub`)
-finishes it. The table of the `γᵢ` (`gammaTable`) is stored in `scratch`
-first, as 128 `u32`s (`table`), and read through a pointer in `ebp`. For
-each pair, with `ebx = h + 8i`, `esi = f + 8i`, `edi = g + 8i` and `ebp` at
-`γᵢ`: `h[2i] = f[2i] g[2i] + (f[2i+1] g[2i+1] mod q) γᵢ` and
-`h[2i+1] = f[2i] g[2i+1] + f[2i+1] g[2i]`, each reduced, accumulated in
-`ecx`; the loop compares its pointer with the end of `h`, which is stored
-in the argument slot of `scratch` once the table is written.
+Four pairs at a time (`mulCore`), in an MCDT frame that saves `ebx`
+(`bframe`), with `eax` at the pairs of `f`, `ecx` at those of `g`, `ebx` at
+those of `h`, and `edx` at their `γᵢ` in Montgomery form, which are stored
+in `scratch` first, as 128 words (`wtable montGammas`); `h + 1024` is stored
+in the argument slot of `scratch`, which the loop compares `ebx` with
+(`mulTable`, `mulEnd`). A register holds four pairs, a pair in a
+doubleword: with `mont(x, y) = x · y · 2⁻¹⁶ mod q` (`wmont`),
+`h₀ = mont(mont(a₀, b₀) + mont(mont(a₁, b₁), γ · 2¹⁶), 2³²)` and
+`h₁ = mont(mont(a₀, b₁) + mont(a₁, b₀), 2³²)`, each brought into `[0, q)`
+(`wcadd`), as on x86-64 (`Impl/MlKem/X86_64/Mul.lean`).
 
 Every address and branch depends only on the pointers.
 -/
@@ -91,16 +90,6 @@ def gammaTable : List Nat := [
   3010, 2773, 556, 757, 2572, 2099, 1230, 561, 2768, 2466, 863, 2594, 735, 2804, 525, 1092, 2237,
   403, 2926, 1026, 2303, 1143, 2186, 2150, 1179, 2775, 554, 886, 2443, 1722, 1607, 1212, 2117,
   1874, 1455, 1029, 2300, 2110, 1219, 2935, 394, 885, 2444, 2154, 1175]
-
-/-- The 128 entries of `T` as `u32`s at `[b]`, through `edx`. -/
-def table (T : List Nat) (b : Reg) : List Instr :=
-  (List.range 128).flatMap fun k => [.mov .edx (.imm (BitVec.ofNat 32 (T.getD k 0))), .store (at_ b (4 * k)) .edx]
-
-/-- `r ← (x mod q)` from `eax = r = x < 2³²`, with `edx` as a temporary:
-`x - ⌊x · 1290167 / 2³²⌋ · q`, then `csub`. -/
-def red (r : Reg) : List Instr :=
-  [.mov .edx (.imm 1290167), .mul .edx, .mov .eax (.imm 3329), .mul .edx, .alu .sub r (.reg .eax)] +++
-    csub r .edx
 
 /-! ## `ntt` and `nttInv` -/
 
@@ -272,29 +261,54 @@ def nttInv : Prog isa :=
 
 /-! ## `multiplyNTTs` -/
 
-/-- The pair `i`: `h[2i]` and `h[2i + 1]`. -/
-def mulBody : List Instr :=
-  [.mov .eax (.mem (at_ .esi 4)), .mov .edx (.mem (at_ .edi 4)), .mul .edx, .mov .ecx (.reg .eax)] +++
-  red .ecx +++
-  [.mov .eax (.reg .ecx), .mov .edx (.mem (at_ .ebp 0)), .mul .edx, .mov .ecx (.reg .eax),
-    .mov .eax (.mem (at_ .esi 0)), .mov .edx (.mem (at_ .edi 0)), .mul .edx, .alu .add .ecx (.reg .eax),
-    .mov .eax (.reg .ecx)] +++ red .ecx +++
-  [.store (at_ .ebx 0) .ecx, .mov .eax (.mem (at_ .esi 0)), .mov .edx (.mem (at_ .edi 4)), .mul .edx,
-    .mov .ecx (.reg .eax), .mov .eax (.mem (at_ .esi 4)), .mov .edx (.mem (at_ .edi 0)), .mul .edx,
-    .alu .add .ecx (.reg .eax), .mov .eax (.reg .ecx)] +++ red .ecx +++
-  [.store (at_ .ebx 4) .ecx, .alu .add .ebx (.imm 8), .alu .add .esi (.imm 8), .alu .add .edi (.imm 8),
-    .alu .add .ebp (.imm 4), .alu .cmp .ebx (.mem (at_ .esp 32))]
+/-- `γᵢ · 2¹⁶ mod q` for `i < 128`: the `γᵢ` in Montgomery form. -/
+def montGammas : List Nat := gammaTable.map fun z => z * 65536 % 3329
 
-/-- `eax = scratch`. -/
-def mulLd : List Instr := [.mov .eax (.mem (at_ .esp 32))]
+/-- A function that is `body` in an MCDT frame, with `ebx` saved in it: 16
+bytes of stack, and the arguments at `[esp + 20]`, `[esp + 24]`, … in
+`body`. -/
+def bframe (body : Prog isa) : Prog isa :=
+  .frame (.mcdtEnter .eax) (.frame (.push [.ebx]) body (.pop .ebx 1)) .mcdtLeave
 
-/-- The gamma table, `ebp = scratch`, `h + 1024` in the slot of `scratch`, and the pointers. -/
-def mulSetup : List Instr :=
-  table gammaTable .eax +++
-  [.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 20)), .mov .edx (.reg .ebx), .alu .add .edx (.imm 1024),
-    .store (at_ .esp 32) .edx, .mov .esi (.mem (at_ .esp 24)), .mov .edi (.mem (at_ .esp 28))]
+/-- `q`, `q⁻¹ mod 2¹⁶` and `2³² mod q = 1353` in the words of `xmm7`,
+`xmm6` and `xmm4`, and `eax ← scratch`. -/
+def mulConsts : List Instr :=
+  wconst .xmm7 0x0D010D01 +++ wconst .xmm6 0xF301F301 +++ wconst .xmm4 0x05490549 +++
+  ([.mov .eax (.mem (at_ .esp 32))] : List Instr)
+
+/-- The table of the `γᵢ` at `[eax]`, `edx` at it, `ebx ← h`, `h + 1024` in
+the slot of `scratch`, `eax ← f` and `ecx ← g`. -/
+def mulTable : List Instr :=
+  wtable montGammas +++
+  ([.mov .edx (.reg .eax), .mov .ebx (.mem (at_ .esp 20)), .mov .eax (.reg .ebx), .alu .add .eax (.imm 1024),
+    .store (at_ .esp 32) .eax, .mov .eax (.mem (at_ .esp 24)), .mov .ecx (.mem (at_ .esp 28))] : List Instr)
+
+/-- Four pairs of `f` (at `[eax]`) and of `g` (at `[ecx]`), with their
+`γᵢ` at `[edx]`, to four pairs of `h` (at `[ebx]`). In each doubleword, the
+even word is a pair's first coefficient and the odd word its second:
+`xmm0 = mont(a, b)` and `xmm3 = mont(a, b')`, for `b'` the pair `b` swapped,
+then `mont(a₁ b₁, γ)` from the odd words to the even ones, and the sums
+`mont(a₀, b₀) + mont(mont(a₁, b₁), γ)` and `mont(a₀, b₁) + mont(a₁, b₀)`
+as the two words of a doubleword, times `2³² mod q`. -/
+def mulCore : List Instr :=
+  ([.movdquLoad .xmm0 (at_ .eax 0), .movdquLoad .xmm2 (at_ .eax 16), wb .packssdw .xmm0 .xmm2,
+    .movdquLoad .xmm1 (at_ .ecx 0), .movdquLoad .xmm2 (at_ .ecx 16), wb .packssdw .xmm1 .xmm2,
+    .xop (.pshuflw .xmm5 .xmm1 0xB1), .xop (.pshufhw .xmm5 .xmm5 0xB1), wmov .xmm3 .xmm0] : List Instr) +++
+  wmont .xmm3 .xmm5 .xmm2 +++ wmont .xmm0 .xmm1 .xmm2 +++ zl2 +++
+  ([wmov .xmm1 .xmm0] : List Instr) +++ wmont .xmm1 .xmm5 .xmm2 +++
+  ([.xop (.shift .psrld .xmm1 16), wb .paddw .xmm0 .xmm1, wmov .xmm1 .xmm3, .xop (.shift .psrld .xmm1 16),
+    wb .paddw .xmm3 .xmm1, .xop (.shift .pslld .xmm0 16), .xop (.shift .psrld .xmm0 16),
+    .xop (.shift .pslld .xmm3 16), wb .por .xmm0 .xmm3] : List Instr) +++
+  wmont .xmm0 .xmm4 .xmm2 +++ wcadd .xmm0 .xmm2 +++
+  ([wmov .xmm1 .xmm0, wb .pxor .xmm2 .xmm2, wb .punpcklwd .xmm0 .xmm2, wb .punpckhwd .xmm1 .xmm2,
+    .movdquStore (at_ .ebx 0) .xmm0, .movdquStore (at_ .ebx 16) .xmm1] : List Instr)
+
+/-- The next four pairs. -/
+def mulEnd : List Instr :=
+  [.alu .add .eax (.imm 32), .alu .add .ecx (.imm 32), .alu .add .edx (.imm 8), .alu .add .ebx (.imm 32),
+    .alu .cmp .ebx (.mem (at_ .esp 32))]
 
 def multiplyNTTs : Prog isa :=
-  leaf (.seq (.block mulLd) (.seq (.block mulSetup) (.loop (.block mulBody) .ne)))
+  bframe (.seq (.block mulConsts) (.seq (.block mulTable) (.loop (.block (mulCore +++ mulEnd)) .ne)))
 
 end VG.Impl.MlKem.X86
