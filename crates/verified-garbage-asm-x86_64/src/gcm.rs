@@ -49,7 +49,7 @@ call {vg_aes_ctr32_vaes}
 .base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOAAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQkIP///8X+f4QkwAAAAMX+f4QkoAAAAMX+f4QkgAAAAMX+f0QkYMX+f0QkQMX+f0QkIMX+fwQkSI2kJOAAAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }
 
@@ -137,7 +137,7 @@ jmp 25f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgBAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQk2P7//8X+f4QkCAEAAMX+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkKAEAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }
 
@@ -186,8 +186,8 @@ call {vg_ghash_pclmul}
 call {vg_aes_ctr32_aesni}
 .base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOAAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkIP////MPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJOAAAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -274,8 +274,8 @@ jmp 25f
 25:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJCgBAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk2P7///MPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkKAEAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -324,8 +324,8 @@ call {vg_ghash}
 call {vg_aes_ctr32_aesni}
 .base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBADAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk8Pz///MPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJBADAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -412,8 +412,8 @@ jmp 25f
 25:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgDAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk6Pz///MPf4QkCAMAAPMPf4Qk+AIAAPMPf4Qk6AIAAPMPf4Qk2AIAAPMPf4QkyAIAAPMPf4QkuAIAAPMPf4QkqAIAAPMPf4QkmAIAAPMPf4QkiAIAAPMPf4QkeAIAAPMPf4QkaAIAAPMPf4QkWAIAAPMPf4QkSAIAAPMPf4QkOAIAAPMPf4QkKAIAAPMPf4QkGAIAAPMPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkGAMAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -462,8 +462,8 @@ call {vg_ghash_pclmul}
 call {vg_aes_ctr32}
 .base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk8PX///MPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJBAKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -550,8 +550,8 @@ jmp 25f
 25:
 .base64 "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"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -596,8 +596,8 @@ call {vg_ghash}
 call {vg_aes_ctr32}
 .base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk8PX///MPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJBAKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -680,8 +680,8 @@ jmp 25f
 25:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk6PX///MPf4QkCAoAAPMPf4Qk+AkAAPMPf4Qk6AkAAPMPf4Qk2AkAAPMPf4QkyAkAAPMPf4QkuAkAAPMPf4QkqAkAAPMPf4QkmAkAAPMPf4QkiAkAAPMPf4QkeAkAAPMPf4QkaAkAAPMPf4QkWAkAAPMPf4QkSAkAAPMPf4QkOAkAAPMPf4QkKAkAAPMPf4QkGAkAAPMPf4QkCAkAAPMPf4Qk+AgAAPMPf4Qk6AgAAPMPf4Qk2AgAAPMPf4QkyAgAAPMPf4QkuAgAAPMPf4QkqAgAAPMPf4QkmAgAAPMPf4QkiAgAAPMPf4QkeAgAAPMPf4QkaAgAAPMPf4QkWAgAAPMPf4QkSAgAAPMPf4QkOAgAAPMPf4QkKAgAAPMPf4QkGAgAAPMPf4QkCAgAAPMPf4Qk+AcAAPMPf4Qk6AcAAPMPf4Qk2AcAAPMPf4QkyAcAAPMPf4QkuAcAAPMPf4QkqAcAAPMPf4QkmAcAAPMPf4QkiAcAAPMPf4QkeAcAAPMPf4QkaAcAAPMPf4QkWAcAAPMPf4QkSAcAAPMPf4QkOAcAAPMPf4QkKAcAAPMPf4QkGAcAAPMPf4QkCAcAAPMPf4Qk+AYAAPMPf4Qk6AYAAPMPf4Qk2AYAAPMPf4QkyAYAAPMPf4QkuAYAAPMPf4QkqAYAAPMPf4QkmAYAAPMPf4QkiAYAAPMPf4QkeAYAAPMPf4QkaAYAAPMPf4QkWAYAAPMPf4QkSAYAAPMPf4QkOAYAAPMPf4QkKAYAAPMPf4QkGAYAAPMPf4QkCAYAAPMPf4Qk+AUAAPMPf4Qk6AUAAPMPf4Qk2AUAAPMPf4QkyAUAAPMPf4QkuAUAAPMPf4QkqAUAAPMPf4QkmAUAAPMPf4QkiAUAAPMPf4QkeAUAAPMPf4QkaAUAAPMPf4QkWAUAAPMPf4QkSAUAAPMPf4QkOAUAAPMPf4QkKAUAAPMPf4QkGAUAAPMPf4QkCAUAAPMPf4Qk+AQAAPMPf4Qk6AQAAPMPf4Qk2AQAAPMPf4QkyAQAAPMPf4QkuAQAAPMPf4QkqAQAAPMPf4QkmAQAAPMPf4QkiAQAAPMPf4QkeAQAAPMPf4QkaAQAAPMPf4QkWAQAAPMPf4QkSAQAAPMPf4QkOAQAAPMPf4QkKAQAAPMPf4QkGAQAAPMPf4QkCAQAAPMPf4Qk+AMAAPMPf4Qk6AMAAPMPf4Qk2AMAAPMPf4QkyAMAAPMPf4QkuAMAAPMPf4QkqAMAAPMPf4QkmAMAAPMPf4QkiAMAAPMPf4QkeAMAAPMPf4QkaAMAAPMPf4QkWAMAAPMPf4QkSAMAAPMPf4QkOAMAAPMPf4QkKAMAAPMPf4QkGAMAAPMPf4QkCAMAAPMPf4Qk+AIAAPMPf4Qk6AIAAPMPf4Qk2AIAAPMPf4QkyAIAAPMPf4QkuAIAAPMPf4QkqAIAAPMPf4QkmAIAAPMPf4QkiAIAAPMPf4QkeAIAAPMPf4QkaAIAAPMPf4QkWAIAAPMPf4QkSAIAAPMPf4QkOAIAAPMPf4QkKAIAAPMPf4QkGAIAAPMPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkGAoAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -711,8 +711,8 @@ call {vg_aes_expand_key_scratch_aesni}
 call {vg_aes_ctr32_vaes}
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjWQk+EyJHCRIjaQkSP///8X+f4QkmAAAAMX+f0QkeMX+f0QkWMX+f0QkOMX+f0QkGPMPf0QkCEyJHCRIjaQkuAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_expand_key_scratch_aesni = sym super::gcm::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }
 
@@ -742,8 +742,8 @@ call {vg_aes_expand_key_scratch_aesni}
 call {vg_aes_ctr32_aesni}
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkSP////MPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkuAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::gcm::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -769,8 +769,8 @@ call {vg_aes_expand_key_scratch}
 call {vg_aes_ctr32}
 .base64 "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"
 .p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::gcm::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -1186,8 +1186,8 @@ jmp 2120f
 2120:
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 2126f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFBNicI="
+call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 2127f
 2126:
@@ -1302,8 +1302,8 @@ jmp 2159f
 2159:
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 2161f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFBNicI="
+call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 2162f
 2161:
@@ -1378,8 +1378,8 @@ jmp 2168f
 jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
-        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
+        vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -2176,9 +2176,9 @@ jne 2136b
 jmp 2131b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -2313,9 +2313,9 @@ jmp 233f
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
 jmp 28b
 .p2align 6"#,
-        vg_aes_gcm_open_split_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_open_split_vaes_vpclmul_avx512::vg_aes_gcm_open_split_vaes_vpclmul_avx512,
-        vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core = sym super::aes::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core,
-        vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_open_split_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_open_split_vaes_vpclmul_avx512::vg_aes_gcm_open_split_vaes_vpclmul_avx512,
+        vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core = sym super::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core,
+        vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512,
     )
 }
 
@@ -2671,9 +2671,9 @@ jmp 254f
 jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
     )
 }
 
@@ -3031,9 +3031,9 @@ jmp 254f
 jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
     )
 }
 
@@ -3230,9 +3230,9 @@ jmp 246f
 je 248f
 .base64 "TYuXAAEAAEmLQghIwegISIXA"
 je 250f
-.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAAUEFSQVM="
-call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
-.base64 "WFhY"
+.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAATYnaUA=="
+call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WA=="
 jmp 251f
 250:
 251:
@@ -3334,9 +3334,9 @@ jmp 269f
 269:
 .base64 "TItUJAhNiwJJi0IITItMJBhMi1wkIE2Jh+AAAABNiY/IAAAATYmfwAAAAEjB6ARIhcA="
 je 275f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABQQVJBUw=="
-call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}
-.base64 "WFhY"
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABNidpQ"
+call {vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WA=="
 jmp 276f
 275:
 276:
@@ -3432,9 +3432,9 @@ jmp 282f
 jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_ctr32_to_vaes = sym super::aes::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
+        vg_aes_ctr32_to_vaes = sym super::gcm::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -3605,8 +3605,8 @@ jmp 236f
 236:
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 238f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul}
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFBNicI="
+call {vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul}
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 239f
 238:
@@ -3655,9 +3655,9 @@ call {vg_aes_ctr32_vaes}
 jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
+        vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul,
     )
 }
 
@@ -4108,9 +4108,9 @@ jmp 247f
 jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
+        vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::gcm::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -4245,9 +4245,9 @@ jmp 233f
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
 jmp 28b
 .p2align 6"#,
-        vg_aes_gcm_open_split_vaes_vpclmul = sym super::aes::vg_aes_gcm_open_split_vaes_vpclmul::vg_aes_gcm_open_split_vaes_vpclmul,
-        vg_aes_gcm_open_prepared_vaes_vpclmul_core = sym super::aes::vg_aes_gcm_open_prepared_vaes_vpclmul_core::vg_aes_gcm_open_prepared_vaes_vpclmul_core,
-        vg_aes_gcm_open_split_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_open_split_prepared16_vaes_vpclmul::vg_aes_gcm_open_split_prepared16_vaes_vpclmul,
+        vg_aes_gcm_open_split_vaes_vpclmul = sym super::gcm::vg_aes_gcm_open_split_vaes_vpclmul::vg_aes_gcm_open_split_vaes_vpclmul,
+        vg_aes_gcm_open_prepared_vaes_vpclmul_core = sym super::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul_core::vg_aes_gcm_open_prepared_vaes_vpclmul_core,
+        vg_aes_gcm_open_split_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_open_split_prepared16_vaes_vpclmul::vg_aes_gcm_open_split_prepared16_vaes_vpclmul,
     )
 }
 
@@ -4603,9 +4603,9 @@ jmp 254f
 jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
+        vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
     )
 }
 
@@ -4963,9 +4963,9 @@ jmp 254f
 jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
+        vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::gcm::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
     )
 }
 
@@ -5162,9 +5162,9 @@ jmp 246f
 je 248f
 .base64 "TYuXAAEAAEmLQghIwegISIXA"
 je 250f
-.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAAUEFSQVM="
-call {vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul}
-.base64 "WFhY"
+.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAATYnaUA=="
+call {vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul}
+.base64 "WA=="
 jmp 251f
 250:
 251:
@@ -5266,9 +5266,9 @@ jmp 269f
 269:
 .base64 "TItUJAhNiwJJi0IITItMJBhMi1wkIE2Jh+AAAABNiY/IAAAATYmfwAAAAEjB6ARIhcA="
 je 275f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABQQVJBUw=="
-call {vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul}
-.base64 "WFhY"
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABNidpQ"
+call {vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul}
+.base64 "WA=="
 jmp 276f
 275:
 276:
@@ -5364,9 +5364,9 @@ jmp 282f
 jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_ctr32_to_vaes = sym super::aes::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul,
+        vg_aes_ctr32_to_vaes = sym super::gcm::vg_aes_ctr32_to_vaes::vg_aes_ctr32_to_vaes,
+        vg_aes_ctr32_vaes = sym super::gcm::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -5563,8 +5563,8 @@ jmp 244f
 244:
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 250f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFBNicI="
+call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 251f
 250:
@@ -5679,8 +5679,8 @@ jmp 283f
 283:
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 285f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFBNicI="
+call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 286f
 285:
@@ -5753,9 +5753,9 @@ jmp 292f
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
 jmp 21b
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
-        vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
+        vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -6206,10 +6206,10 @@ jmp 247f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -6344,9 +6344,9 @@ jmp 233f
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
 jmp 28b
 .p2align 6"#,
-        vg_aes_gcm_open_split_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_open_split_aesni_pclmul_avx::vg_aes_gcm_open_split_aesni_pclmul_avx,
-        vg_aes_gcm_open_prepared_aesni_pclmul_avx_core = sym super::aes::vg_aes_gcm_open_prepared_aesni_pclmul_avx_core::vg_aes_gcm_open_prepared_aesni_pclmul_avx_core,
-        vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx::vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx,
+        vg_aes_gcm_open_split_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_open_split_aesni_pclmul_avx::vg_aes_gcm_open_split_aesni_pclmul_avx,
+        vg_aes_gcm_open_prepared_aesni_pclmul_avx_core = sym super::gcm::vg_aes_gcm_open_prepared_aesni_pclmul_avx_core::vg_aes_gcm_open_prepared_aesni_pclmul_avx_core,
+        vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx::vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx,
     )
 }
 
@@ -6701,10 +6701,10 @@ jmp 254f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
     )
 }
 
@@ -7061,10 +7061,10 @@ jmp 254f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 jmp 21b
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx,
     )
 }
 
@@ -7261,9 +7261,9 @@ jmp 246f
 je 248f
 .base64 "TYuXAAEAAEmLQghIwegISIXA"
 je 250f
-.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAAUEFSQVM="
-call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
-.base64 "WFhY"
+.base64 "SMHgCEmJhwgBAABNiwJNi5/IAAAATAHYSYmHyAAAAEmLh9AAAABJK4cIAQAASYmH0AAAAE2LjwgBAABJwekETYnKTInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTIn4SAXAAQAATYnaUA=="
+call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WA=="
 jmp 251f
 250:
 251:
@@ -7365,9 +7365,9 @@ jmp 269f
 269:
 .base64 "TItUJAhNiwJJi0IITItMJBhMi1wkIE2Jh+AAAABNiY/IAAAATYmfwAAAAEjB6ARIhcA="
 je 275f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABQQVJBUw=="
-call {vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx}
-.base64 "WFhY"
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuH4AAAAEmJwUmJwk2Ln8gAAABMifhIBcABAABNidpQ"
+call {vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WA=="
 jmp 276f
 275:
 276:
@@ -7462,10 +7462,10 @@ jmp 282f
 .base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAA"
 jmp 21b
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to_aesni = sym super::gcm::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -7586,9 +7586,9 @@ call {vg_ghash_pclmul}
 call {vg_aes_ctr32_aesni}
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJMj1///zD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_encrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul::vg_aes_gcm_encrypt_blocks_aesni_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_encrypt_blocks_aesni_pclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_aesni_pclmul::vg_aes_gcm_encrypt_blocks_aesni_pclmul,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -7758,9 +7758,9 @@ jmp 25f
 25:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwPX///MPf4QkMAoAAPMPf4QkIAoAAPMPf4QkEAoAAPMPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEAKAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_decrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul::vg_aes_gcm_decrypt_blocks_aesni_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_decrypt_blocks_aesni_pclmul = sym super::gcm::vg_aes_gcm_decrypt_blocks_aesni_pclmul::vg_aes_gcm_decrypt_blocks_aesni_pclmul,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -7805,7 +7805,7 @@ jmp 23f
 21:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJDD1///zD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_aes_gcm_open_split_aesni_pclmul = sym super::aes::vg_aes_gcm_open_split_aesni_pclmul::vg_aes_gcm_open_split_aesni_pclmul,
+        vg_aes_gcm_open_split_aesni_pclmul = sym super::gcm::vg_aes_gcm_open_split_aesni_pclmul::vg_aes_gcm_open_split_aesni_pclmul,
     )
 }
 
@@ -7992,9 +7992,9 @@ jmp 21f
 21:
 .base64 "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"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_encrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul::vg_aes_gcm_encrypt_blocks_aesni_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_encrypt_blocks_aesni_pclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_aesni_pclmul::vg_aes_gcm_encrypt_blocks_aesni_pclmul,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -8182,9 +8182,9 @@ jmp 21f
 21:
 .base64 "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"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_decrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul::vg_aes_gcm_decrypt_blocks_aesni_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_decrypt_blocks_aesni_pclmul = sym super::gcm::vg_aes_gcm_decrypt_blocks_aesni_pclmul::vg_aes_gcm_decrypt_blocks_aesni_pclmul,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -8321,9 +8321,9 @@ call {vg_ghash_pclmul}
 call {vg_aes_ctr32_aesni}
 .base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJBDw///zD3+EJOAPAADzD3+EJNAPAADzD3+EJMAPAADzD3+EJLAPAADzD3+EJKAPAADzD3+EJJAPAADzD3+EJIAPAADzD3+EJHAPAADzD3+EJGAPAADzD3+EJFAPAADzD3+EJEAPAADzD3+EJDAPAADzD3+EJCAPAADzD3+EJBAPAADzD3+EJAAPAADzD3+EJPAOAADzD3+EJOAOAADzD3+EJNAOAADzD3+EJMAOAADzD3+EJLAOAADzD3+EJKAOAADzD3+EJJAOAADzD3+EJIAOAADzD3+EJHAOAADzD3+EJGAOAADzD3+EJFAOAADzD3+EJEAOAADzD3+EJDAOAADzD3+EJCAOAADzD3+EJBAOAADzD3+EJAAOAADzD3+EJPANAADzD3+EJOANAADzD3+EJNANAADzD3+EJMANAADzD3+EJLANAADzD3+EJKANAADzD3+EJJANAADzD3+EJIANAADzD3+EJHANAADzD3+EJGANAADzD3+EJFANAADzD3+EJEANAADzD3+EJDANAADzD3+EJCANAADzD3+EJBANAADzD3+EJAANAADzD3+EJPAMAADzD3+EJOAMAADzD3+EJNAMAADzD3+EJMAMAADzD3+EJLAMAADzD3+EJKAMAADzD3+EJJAMAADzD3+EJIAMAADzD3+EJHAMAADzD3+EJGAMAADzD3+EJFAMAADzD3+EJEAMAADzD3+EJDAMAADzD3+EJCAMAADzD3+EJBAMAADzD3+EJAAMAADzD3+EJPALAADzD3+EJOALAADzD3+EJNALAADzD3+EJMALAADzD3+EJLALAADzD3+EJKALAADzD3+EJJALAADzD3+EJIALAADzD3+EJHALAADzD3+EJGALAADzD3+EJFALAADzD3+EJEALAADzD3+EJDALAADzD3+EJCALAADzD3+EJBALAADzD3+EJAALAADzD3+EJPAKAADzD3+EJOAKAADzD3+EJNAKAADzD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTw+///8w9/hCQABAAA8w9/hCTwAwAA8w9/hCTgAwAA8w9/hCTQAwAA8w9/hCTAAwAA8w9/hCSwAwAA8w9/hCSgAwAA8w9/hCSQAwAA8w9/hCSAAwAA8w9/hCRwAwAA8w9/hCRgAwAA8w9/hCRQAwAA8w9/hCRAAwAA8w9/hCQwAwAA8w9/hCQgAwAA8w9/hCQQAwAA8w9/hCQAAwAA8w9/hCTwAgAA8w9/hCTgAgAA8w9/hCTQAgAA8w9/hCTAAgAA8w9/hCSwAgAA8w9/hCSgAgAA8w9/hCSQAgAA8w9/hCSAAgAA8w9/hCRwAgAA8w9/hCRgAgAA8w9/hCRQAgAA8w9/hCRAAgAA8w9/hCQwAgAA8w9/hCQgAgAA8w9/hCQQAgAA8w9/hCQAAgAA8w9/hCTwAQAA8w9/hCTgAQAA8w9/hCTQAQAA8w9/hCTAAQAA8w9/hCSwAQAA8w9/hCSgAQAA8w9/hCSQAQAA8w9/hCSAAQAA8w9/hCRwAQAA8w9/hCRgAQAA8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkEAQAAEiNpCTwDwAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to_aesni = sym super::gcm::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -8443,9 +8443,9 @@ call {vg_ghash}
 call {vg_aes_ctr32_aesni}
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJMj1///zD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_encrypt_blocks_aesni = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni::vg_aes_gcm_encrypt_blocks_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_gcm_encrypt_blocks_aesni = sym super::gcm::vg_aes_gcm_encrypt_blocks_aesni::vg_aes_gcm_encrypt_blocks_aesni,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -8615,9 +8615,9 @@ jmp 25f
 25:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwPX///MPf4QkMAoAAPMPf4QkIAoAAPMPf4QkEAoAAPMPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEAKAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_decrypt_blocks_aesni = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni::vg_aes_gcm_decrypt_blocks_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_gcm_decrypt_blocks_aesni = sym super::gcm::vg_aes_gcm_decrypt_blocks_aesni::vg_aes_gcm_decrypt_blocks_aesni,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -8662,7 +8662,7 @@ jmp 23f
 21:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJDD1///zD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_aes_gcm_open_split_aesni = sym super::aes::vg_aes_gcm_open_split_aesni::vg_aes_gcm_open_split_aesni,
+        vg_aes_gcm_open_split_aesni = sym super::gcm::vg_aes_gcm_open_split_aesni::vg_aes_gcm_open_split_aesni,
     )
 }
 
@@ -8849,9 +8849,9 @@ jmp 21f
 21:
 .base64 "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"
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_encrypt_blocks_aesni = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni::vg_aes_gcm_encrypt_blocks_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_gcm_encrypt_blocks_aesni = sym super::gcm::vg_aes_gcm_encrypt_blocks_aesni::vg_aes_gcm_encrypt_blocks_aesni,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -9039,9 +9039,9 @@ jmp 21f
 21:
 .base64 "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"
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_decrypt_blocks_aesni = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni::vg_aes_gcm_decrypt_blocks_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_gcm_decrypt_blocks_aesni = sym super::gcm::vg_aes_gcm_decrypt_blocks_aesni::vg_aes_gcm_decrypt_blocks_aesni,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -9178,9 +9178,9 @@ call {vg_ghash}
 call {vg_aes_ctr32_aesni}
 .base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJBDw///zD3+EJOAPAADzD3+EJNAPAADzD3+EJMAPAADzD3+EJLAPAADzD3+EJKAPAADzD3+EJJAPAADzD3+EJIAPAADzD3+EJHAPAADzD3+EJGAPAADzD3+EJFAPAADzD3+EJEAPAADzD3+EJDAPAADzD3+EJCAPAADzD3+EJBAPAADzD3+EJAAPAADzD3+EJPAOAADzD3+EJOAOAADzD3+EJNAOAADzD3+EJMAOAADzD3+EJLAOAADzD3+EJKAOAADzD3+EJJAOAADzD3+EJIAOAADzD3+EJHAOAADzD3+EJGAOAADzD3+EJFAOAADzD3+EJEAOAADzD3+EJDAOAADzD3+EJCAOAADzD3+EJBAOAADzD3+EJAAOAADzD3+EJPANAADzD3+EJOANAADzD3+EJNANAADzD3+EJMANAADzD3+EJLANAADzD3+EJKANAADzD3+EJJANAADzD3+EJIANAADzD3+EJHANAADzD3+EJGANAADzD3+EJFANAADzD3+EJEANAADzD3+EJDANAADzD3+EJCANAADzD3+EJBANAADzD3+EJAANAADzD3+EJPAMAADzD3+EJOAMAADzD3+EJNAMAADzD3+EJMAMAADzD3+EJLAMAADzD3+EJKAMAADzD3+EJJAMAADzD3+EJIAMAADzD3+EJHAMAADzD3+EJGAMAADzD3+EJFAMAADzD3+EJEAMAADzD3+EJDAMAADzD3+EJCAMAADzD3+EJBAMAADzD3+EJAAMAADzD3+EJPALAADzD3+EJOALAADzD3+EJNALAADzD3+EJMALAADzD3+EJLALAADzD3+EJKALAADzD3+EJJALAADzD3+EJIALAADzD3+EJHALAADzD3+EJGALAADzD3+EJFALAADzD3+EJEALAADzD3+EJDALAADzD3+EJCALAADzD3+EJBALAADzD3+EJAALAADzD3+EJPAKAADzD3+EJOAKAADzD3+EJNAKAADzD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTw+///8w9/hCQABAAA8w9/hCTwAwAA8w9/hCTgAwAA8w9/hCTQAwAA8w9/hCTAAwAA8w9/hCSwAwAA8w9/hCSgAwAA8w9/hCSQAwAA8w9/hCSAAwAA8w9/hCRwAwAA8w9/hCRgAwAA8w9/hCRQAwAA8w9/hCRAAwAA8w9/hCQwAwAA8w9/hCQgAwAA8w9/hCQQAwAA8w9/hCQAAwAA8w9/hCTwAgAA8w9/hCTgAgAA8w9/hCTQAgAA8w9/hCTAAgAA8w9/hCSwAgAA8w9/hCSgAgAA8w9/hCSQAgAA8w9/hCSAAgAA8w9/hCRwAgAA8w9/hCRgAgAA8w9/hCRQAgAA8w9/hCRAAgAA8w9/hCQwAgAA8w9/hCQgAgAA8w9/hCQQAgAA8w9/hCQAAgAA8w9/hCTwAQAA8w9/hCTgAQAA8w9/hCTQAQAA8w9/hCTAAQAA8w9/hCSwAQAA8w9/hCSgAQAA8w9/hCSQAQAA8w9/hCSAAQAA8w9/hCRwAQAA8w9/hCRgAQAA8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkEAQAAEiNpCTwDwAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32_to_aesni = sym super::aes::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to_aesni = sym super::gcm::vg_aes_ctr32_to_aesni::vg_aes_ctr32_to_aesni,
+        vg_aes_ctr32_aesni = sym super::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -9300,9 +9300,9 @@ call {vg_ghash_pclmul}
 call {vg_aes_ctr32}
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJMj1///zD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_encrypt_blocks_pclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_pclmul::vg_aes_gcm_encrypt_blocks_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_encrypt_blocks_pclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_pclmul::vg_aes_gcm_encrypt_blocks_pclmul,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -9472,9 +9472,9 @@ jmp 25f
 25:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwPX///MPf4QkMAoAAPMPf4QkIAoAAPMPf4QkEAoAAPMPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEAKAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_decrypt_blocks_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_pclmul::vg_aes_gcm_decrypt_blocks_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_decrypt_blocks_pclmul = sym super::gcm::vg_aes_gcm_decrypt_blocks_pclmul::vg_aes_gcm_decrypt_blocks_pclmul,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -9519,7 +9519,7 @@ jmp 23f
 21:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJDD1///zD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_aes_gcm_open_split_pclmul = sym super::aes::vg_aes_gcm_open_split_pclmul::vg_aes_gcm_open_split_pclmul,
+        vg_aes_gcm_open_split_pclmul = sym super::gcm::vg_aes_gcm_open_split_pclmul::vg_aes_gcm_open_split_pclmul,
     )
 }
 
@@ -9706,9 +9706,9 @@ jmp 21f
 21:
 .base64 "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"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_encrypt_blocks_pclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_pclmul::vg_aes_gcm_encrypt_blocks_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_encrypt_blocks_pclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_pclmul::vg_aes_gcm_encrypt_blocks_pclmul,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -9896,9 +9896,9 @@ jmp 21f
 21:
 .base64 "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"
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_gcm_decrypt_blocks_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_pclmul::vg_aes_gcm_decrypt_blocks_pclmul,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_decrypt_blocks_pclmul = sym super::gcm::vg_aes_gcm_decrypt_blocks_pclmul::vg_aes_gcm_decrypt_blocks_pclmul,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -10035,9 +10035,9 @@ call {vg_ghash_pclmul}
 call {vg_aes_ctr32}
 .base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJBDw///zD3+EJOAPAADzD3+EJNAPAADzD3+EJMAPAADzD3+EJLAPAADzD3+EJKAPAADzD3+EJJAPAADzD3+EJIAPAADzD3+EJHAPAADzD3+EJGAPAADzD3+EJFAPAADzD3+EJEAPAADzD3+EJDAPAADzD3+EJCAPAADzD3+EJBAPAADzD3+EJAAPAADzD3+EJPAOAADzD3+EJOAOAADzD3+EJNAOAADzD3+EJMAOAADzD3+EJLAOAADzD3+EJKAOAADzD3+EJJAOAADzD3+EJIAOAADzD3+EJHAOAADzD3+EJGAOAADzD3+EJFAOAADzD3+EJEAOAADzD3+EJDAOAADzD3+EJCAOAADzD3+EJBAOAADzD3+EJAAOAADzD3+EJPANAADzD3+EJOANAADzD3+EJNANAADzD3+EJMANAADzD3+EJLANAADzD3+EJKANAADzD3+EJJANAADzD3+EJIANAADzD3+EJHANAADzD3+EJGANAADzD3+EJFANAADzD3+EJEANAADzD3+EJDANAADzD3+EJCANAADzD3+EJBANAADzD3+EJAANAADzD3+EJPAMAADzD3+EJOAMAADzD3+EJNAMAADzD3+EJMAMAADzD3+EJLAMAADzD3+EJKAMAADzD3+EJJAMAADzD3+EJIAMAADzD3+EJHAMAADzD3+EJGAMAADzD3+EJFAMAADzD3+EJEAMAADzD3+EJDAMAADzD3+EJCAMAADzD3+EJBAMAADzD3+EJAAMAADzD3+EJPALAADzD3+EJOALAADzD3+EJNALAADzD3+EJMALAADzD3+EJLALAADzD3+EJKALAADzD3+EJJALAADzD3+EJIALAADzD3+EJHALAADzD3+EJGALAADzD3+EJFALAADzD3+EJEALAADzD3+EJDALAADzD3+EJCALAADzD3+EJBALAADzD3+EJAALAADzD3+EJPAKAADzD3+EJOAKAADzD3+EJNAKAADzD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTw+///8w9/hCQABAAA8w9/hCTwAwAA8w9/hCTgAwAA8w9/hCTQAwAA8w9/hCTAAwAA8w9/hCSwAwAA8w9/hCSgAwAA8w9/hCSQAwAA8w9/hCSAAwAA8w9/hCRwAwAA8w9/hCRgAwAA8w9/hCRQAwAA8w9/hCRAAwAA8w9/hCQwAwAA8w9/hCQgAwAA8w9/hCQQAwAA8w9/hCQAAwAA8w9/hCTwAgAA8w9/hCTgAgAA8w9/hCTQAgAA8w9/hCTAAgAA8w9/hCSwAgAA8w9/hCSgAgAA8w9/hCSQAgAA8w9/hCSAAgAA8w9/hCRwAgAA8w9/hCRgAgAA8w9/hCRQAgAA8w9/hCRAAgAA8w9/hCQwAgAA8w9/hCQgAgAA8w9/hCQQAgAA8w9/hCQAAgAA8w9/hCTwAQAA8w9/hCTgAQAA8w9/hCTQAQAA8w9/hCTAAQAA8w9/hCSwAQAA8w9/hCSgAQAA8w9/hCSQAQAA8w9/hCSAAQAA8w9/hCRwAQAA8w9/hCRgAQAA8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkEAQAAEiNpCTwDwAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_to = sym super::gcm::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -10153,9 +10153,9 @@ call {vg_ghash}
 call {vg_aes_ctr32}
 .base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJMj1///zD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJDgKAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_encrypt_blocks = sym super::aes::vg_aes_gcm_encrypt_blocks::vg_aes_gcm_encrypt_blocks,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_gcm_encrypt_blocks = sym super::gcm::vg_aes_gcm_encrypt_blocks::vg_aes_gcm_encrypt_blocks,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -10321,9 +10321,9 @@ jmp 25f
 25:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkwPX///MPf4QkMAoAAPMPf4QkIAoAAPMPf4QkEAoAAPMPf4QkAAoAAPMPf4Qk8AkAAPMPf4Qk4AkAAPMPf4Qk0AkAAPMPf4QkwAkAAPMPf4QksAkAAPMPf4QkoAkAAPMPf4QkkAkAAPMPf4QkgAkAAPMPf4QkcAkAAPMPf4QkYAkAAPMPf4QkUAkAAPMPf4QkQAkAAPMPf4QkMAkAAPMPf4QkIAkAAPMPf4QkEAkAAPMPf4QkAAkAAPMPf4Qk8AgAAPMPf4Qk4AgAAPMPf4Qk0AgAAPMPf4QkwAgAAPMPf4QksAgAAPMPf4QkoAgAAPMPf4QkkAgAAPMPf4QkgAgAAPMPf4QkcAgAAPMPf4QkYAgAAPMPf4QkUAgAAPMPf4QkQAgAAPMPf4QkMAgAAPMPf4QkIAgAAPMPf4QkEAgAAPMPf4QkAAgAAPMPf4Qk8AcAAPMPf4Qk4AcAAPMPf4Qk0AcAAPMPf4QkwAcAAPMPf4QksAcAAPMPf4QkoAcAAPMPf4QkkAcAAPMPf4QkgAcAAPMPf4QkcAcAAPMPf4QkYAcAAPMPf4QkUAcAAPMPf4QkQAcAAPMPf4QkMAcAAPMPf4QkIAcAAPMPf4QkEAcAAPMPf4QkAAcAAPMPf4Qk8AYAAPMPf4Qk4AYAAPMPf4Qk0AYAAPMPf4QkwAYAAPMPf4QksAYAAPMPf4QkoAYAAPMPf4QkkAYAAPMPf4QkgAYAAPMPf4QkcAYAAPMPf4QkYAYAAPMPf4QkUAYAAPMPf4QkQAYAAPMPf4QkMAYAAPMPf4QkIAYAAPMPf4QkEAYAAPMPf4QkAAYAAPMPf4Qk8AUAAPMPf4Qk4AUAAPMPf4Qk0AUAAPMPf4QkwAUAAPMPf4QksAUAAPMPf4QkoAUAAPMPf4QkkAUAAPMPf4QkgAUAAPMPf4QkcAUAAPMPf4QkYAUAAPMPf4QkUAUAAPMPf4QkQAUAAPMPf4QkMAUAAPMPf4QkIAUAAPMPf4QkEAUAAPMPf4QkAAUAAPMPf4Qk8AQAAPMPf4Qk4AQAAPMPf4Qk0AQAAPMPf4QkwAQAAPMPf4QksAQAAPMPf4QkoAQAAPMPf4QkkAQAAPMPf4QkgAQAAPMPf4QkcAQAAPMPf4QkYAQAAPMPf4QkUAQAAPMPf4QkQAQAAPMPf4QkMAQAAPMPf4QkIAQAAPMPf4QkEAQAAPMPf4QkAAQAAPMPf4Qk8AMAAPMPf4Qk4AMAAPMPf4Qk0AMAAPMPf4QkwAMAAPMPf4QksAMAAPMPf4QkoAMAAPMPf4QkkAMAAPMPf4QkgAMAAPMPf4QkcAMAAPMPf4QkYAMAAPMPf4QkUAMAAPMPf4QkQAMAAPMPf4QkMAMAAPMPf4QkIAMAAPMPf4QkEAMAAPMPf4QkAAMAAPMPf4Qk8AIAAPMPf4Qk4AIAAPMPf4Qk0AIAAPMPf4QkwAIAAPMPf4QksAIAAPMPf4QkoAIAAPMPf4QkkAIAAPMPf4QkgAIAAPMPf4QkcAIAAPMPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJEAKAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdLD"
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_decrypt_blocks = sym super::aes::vg_aes_gcm_decrypt_blocks::vg_aes_gcm_decrypt_blocks,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_gcm_decrypt_blocks = sym super::gcm::vg_aes_gcm_decrypt_blocks::vg_aes_gcm_decrypt_blocks,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -10364,7 +10364,7 @@ jmp 23f
 21:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJDD1///zD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTQCgAASI1kJAiJwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_aes_gcm_open_split = sym super::aes::vg_aes_gcm_open_split::vg_aes_gcm_open_split,
+        vg_aes_gcm_open_split = sym super::gcm::vg_aes_gcm_open_split::vg_aes_gcm_open_split,
     )
 }
 
@@ -10547,9 +10547,9 @@ jmp 21f
 21:
 .base64 "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"
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_encrypt_blocks = sym super::aes::vg_aes_gcm_encrypt_blocks::vg_aes_gcm_encrypt_blocks,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_gcm_encrypt_blocks = sym super::gcm::vg_aes_gcm_encrypt_blocks::vg_aes_gcm_encrypt_blocks,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -10733,9 +10733,9 @@ jmp 21f
 21:
 .base64 "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"
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_decrypt_blocks = sym super::aes::vg_aes_gcm_decrypt_blocks::vg_aes_gcm_decrypt_blocks,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_gcm_decrypt_blocks = sym super::gcm::vg_aes_gcm_decrypt_blocks::vg_aes_gcm_decrypt_blocks,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -10868,9 +10868,9 @@ call {vg_ghash}
 call {vg_aes_ctr32}
 .base64 "SIt8JChJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQ4CgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJBDw///zD3+EJOAPAADzD3+EJNAPAADzD3+EJMAPAADzD3+EJLAPAADzD3+EJKAPAADzD3+EJJAPAADzD3+EJIAPAADzD3+EJHAPAADzD3+EJGAPAADzD3+EJFAPAADzD3+EJEAPAADzD3+EJDAPAADzD3+EJCAPAADzD3+EJBAPAADzD3+EJAAPAADzD3+EJPAOAADzD3+EJOAOAADzD3+EJNAOAADzD3+EJMAOAADzD3+EJLAOAADzD3+EJKAOAADzD3+EJJAOAADzD3+EJIAOAADzD3+EJHAOAADzD3+EJGAOAADzD3+EJFAOAADzD3+EJEAOAADzD3+EJDAOAADzD3+EJCAOAADzD3+EJBAOAADzD3+EJAAOAADzD3+EJPANAADzD3+EJOANAADzD3+EJNANAADzD3+EJMANAADzD3+EJLANAADzD3+EJKANAADzD3+EJJANAADzD3+EJIANAADzD3+EJHANAADzD3+EJGANAADzD3+EJFANAADzD3+EJEANAADzD3+EJDANAADzD3+EJCANAADzD3+EJBANAADzD3+EJAANAADzD3+EJPAMAADzD3+EJOAMAADzD3+EJNAMAADzD3+EJMAMAADzD3+EJLAMAADzD3+EJKAMAADzD3+EJJAMAADzD3+EJIAMAADzD3+EJHAMAADzD3+EJGAMAADzD3+EJFAMAADzD3+EJEAMAADzD3+EJDAMAADzD3+EJCAMAADzD3+EJBAMAADzD3+EJAAMAADzD3+EJPALAADzD3+EJOALAADzD3+EJNALAADzD3+EJMALAADzD3+EJLALAADzD3+EJKALAADzD3+EJJALAADzD3+EJIALAADzD3+EJHALAADzD3+EJGALAADzD3+EJFALAADzD3+EJEALAADzD3+EJDALAADzD3+EJCALAADzD3+EJBALAADzD3+EJAALAADzD3+EJPAKAADzD3+EJOAKAADzD3+EJNAKAADzD3+EJMAKAADzD3+EJLAKAADzD3+EJKAKAADzD3+EJJAKAADzD3+EJIAKAADzD3+EJHAKAADzD3+EJGAKAADzD3+EJFAKAADzD3+EJEAKAADzD3+EJDAKAADzD3+EJCAKAADzD3+EJBAKAADzD3+EJAAKAADzD3+EJPAJAADzD3+EJOAJAADzD3+EJNAJAADzD3+EJMAJAADzD3+EJLAJAADzD3+EJKAJAADzD3+EJJAJAADzD3+EJIAJAADzD3+EJHAJAADzD3+EJGAJAADzD3+EJFAJAADzD3+EJEAJAADzD3+EJDAJAADzD3+EJCAJAADzD3+EJBAJAADzD3+EJAAJAADzD3+EJPAIAADzD3+EJOAIAADzD3+EJNAIAADzD3+EJMAIAADzD3+EJLAIAADzD3+EJKAIAADzD3+EJJAIAADzD3+EJIAIAADzD3+EJHAIAADzD3+EJGAIAADzD3+EJFAIAADzD3+EJEAIAADzD3+EJDAIAADzD3+EJCAIAADzD3+EJBAIAADzD3+EJAAIAADzD3+EJPAHAADzD3+EJOAHAADzD3+EJNAHAADzD3+EJMAHAADzD3+EJLAHAADzD3+EJKAHAADzD3+EJJAHAADzD3+EJIAHAADzD3+EJHAHAADzD3+EJGAHAADzD3+EJFAHAADzD3+EJEAHAADzD3+EJDAHAADzD3+EJCAHAADzD3+EJBAHAADzD3+EJAAHAADzD3+EJPAGAADzD3+EJOAGAADzD3+EJNAGAADzD3+EJMAGAADzD3+EJLAGAADzD3+EJKAGAADzD3+EJJAGAADzD3+EJIAGAADzD3+EJHAGAADzD3+EJGAGAADzD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCTw+///8w9/hCQABAAA8w9/hCTwAwAA8w9/hCTgAwAA8w9/hCTQAwAA8w9/hCTAAwAA8w9/hCSwAwAA8w9/hCSgAwAA8w9/hCSQAwAA8w9/hCSAAwAA8w9/hCRwAwAA8w9/hCRgAwAA8w9/hCRQAwAA8w9/hCRAAwAA8w9/hCQwAwAA8w9/hCQgAwAA8w9/hCQQAwAA8w9/hCQAAwAA8w9/hCTwAgAA8w9/hCTgAgAA8w9/hCTQAgAA8w9/hCTAAgAA8w9/hCSwAgAA8w9/hCSgAgAA8w9/hCSQAgAA8w9/hCSAAgAA8w9/hCRwAgAA8w9/hCRgAgAA8w9/hCRQAgAA8w9/hCRAAgAA8w9/hCQwAgAA8w9/hCQgAgAA8w9/hCQQAgAA8w9/hCQAAgAA8w9/hCTwAQAA8w9/hCTgAQAA8w9/hCTQAQAA8w9/hCTAAQAA8w9/hCSwAQAA8w9/hCSgAQAA8w9/hCSQAQAA8w9/hCSAAQAA8w9/hCRwAQAA8w9/hCRgAQAA8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCQQAQAA8w9/hCQAAQAA8w9/hCTwAAAA8w9/hCTgAAAA8w9/hCTQAAAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCRA8w9/RCQw8w9/RCQg8w9/RCQQ8w9/BCRIjaQkEAQAAEiNpCTwDwAASI1kJAgxwDHJMdIx9jH/RTHARTHJRTHSww=="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_ctr32_to = sym super::aes::vg_aes_ctr32_to::vg_aes_ctr32_to,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
+        vg_aes_ctr32_to = sym super::gcm::vg_aes_ctr32_to::vg_aes_ctr32_to,
+        vg_aes_ctr32 = sym super::gcm::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -11047,7 +11047,7 @@ jmp 21f
 21:
 .base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJOgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkGP////MPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQk6AAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
 
@@ -11116,7 +11116,7 @@ jmp 21f
 21:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJLgAAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQkSP////MPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkuAAAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
 
@@ -11166,7 +11166,7 @@ jmp 21f
 21:
 .base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgDAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk+Pz///MPf4Qk+AIAAPMPf4Qk6AIAAPMPf4Qk2AIAAPMPf4QkyAIAAPMPf4QkuAIAAPMPf4QkqAIAAPMPf4QkmAIAAPMPf4QkiAIAAPMPf4QkeAIAAPMPf4QkaAIAAPMPf4QkWAIAAPMPf4QkSAIAAPMPf4QkOAIAAPMPf4QkKAIAAPMPf4QkGAIAAPMPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAMAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
     )
 }
 
@@ -11231,7 +11231,7 @@ jmp 21f
 21:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgDAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EyJHCRIjaQk+Pz///MPf4Qk+AIAAPMPf4Qk6AIAAPMPf4Qk2AIAAPMPf4QkyAIAAPMPf4QkuAIAAPMPf4QkqAIAAPMPf4QkmAIAAPMPf4QkiAIAAPMPf4QkeAIAAPMPf4QkaAIAAPMPf4QkWAIAAPMPf4QkSAIAAPMPf4QkOAIAAPMPf4QkKAIAAPMPf4QkGAIAAPMPf4QkCAIAAPMPf4Qk+AEAAPMPf4Qk6AEAAPMPf4Qk2AEAAPMPf4QkyAEAAPMPf4QkuAEAAPMPf4QkqAEAAPMPf4QkmAEAAPMPf4QkiAEAAPMPf4QkeAEAAPMPf4QkaAEAAPMPf4QkWAEAAPMPf4QkSAEAAPMPf4QkOAEAAPMPf4QkKAEAAPMPf4QkGAEAAPMPf4QkCAEAAPMPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAMAAEiNZCQIMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash = sym super::gcm::vg_ghash::vg_ghash,
     )
 }
 
@@ -11386,6 +11386,230 @@ jmp 21b
 .p2align 6"#,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32.rs"]
+pub(crate) mod vg_aes_ctr32;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_aesni.rs"]
+pub(crate) mod vg_aes_ctr32_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to.rs"]
+pub(crate) mod vg_aes_ctr32_to;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to_aesni.rs"]
+pub(crate) mod vg_aes_ctr32_to_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to_vaes.rs"]
+pub(crate) mod vg_aes_ctr32_to_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_vaes.rs"]
+pub(crate) mod vg_aes_ctr32_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch.rs"]
+pub(crate) mod vg_aes_expand_key_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch_aesni.rs"]
+pub(crate) mod vg_aes_expand_key_scratch_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_aesni.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_aesni.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_prepared16_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_aesni.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_prepared_aesni_pclmul_avx_core.rs"]
+pub(crate) mod vg_aes_gcm_open_prepared_aesni_pclmul_avx_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core.rs"]
+pub(crate) mod vg_aes_gcm_open_prepared_vaes_vpclmul_avx512_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_prepared_vaes_vpclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_open_prepared_vaes_vpclmul_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split.rs"]
+pub(crate) mod vg_aes_gcm_open_split;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_aesni.rs"]
+pub(crate) mod vg_aes_gcm_open_split_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_aesni_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_aesni_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_open_split_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_pclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_pclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_prepared16_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_split_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_open_split_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx.rs"]
+pub(crate) mod vg_aes_gcm_seal_blocks_prepared16_aesni_pclmul_avx;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_seal_blocks_prepared16_vaes_vpclmul;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512.rs"]
+pub(crate) mod vg_aes_gcm_seal_blocks_prepared_vaes_vpclmul_avx512;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ghash.rs"]
+pub(crate) mod vg_ghash;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ghash_pclmul.rs"]
+pub(crate) mod vg_ghash_pclmul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ghash_vpclmul.rs"]

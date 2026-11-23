@@ -61,7 +61,7 @@ jmp 212f
 212:
 .base64 "ww=="
 .p2align 6"#,
-        vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym crate::aes::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
+        vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym crate::gcm::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
         VG_GCM_CONSTS = sym crate::consts::VG_GCM_CONSTS,
     )
 }

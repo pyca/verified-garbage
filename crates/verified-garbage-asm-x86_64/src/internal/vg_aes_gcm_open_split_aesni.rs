@@ -141,8 +141,8 @@ jmp 25f
 25:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAAww=="
 .p2align 6"#,
-        vg_ghash = sym crate::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_gcm_decrypt_blocks_to_aesni = sym crate::aes::vg_aes_gcm_decrypt_blocks_to_aesni::vg_aes_gcm_decrypt_blocks_to_aesni,
-        vg_aes_ctr32_aesni = sym crate::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym crate::gcm::vg_ghash::vg_ghash,
+        vg_aes_gcm_decrypt_blocks_to_aesni = sym crate::gcm::vg_aes_gcm_decrypt_blocks_to_aesni::vg_aes_gcm_decrypt_blocks_to_aesni,
+        vg_aes_ctr32_aesni = sym crate::gcm::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
