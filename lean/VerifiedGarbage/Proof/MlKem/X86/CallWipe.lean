@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Mmx
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 public import VerifiedGarbage.Proof.MlKem.X86.Red
 public import VerifiedGarbage.Proof.MlKem.X86.Table
 public import VerifiedGarbage.Proof.MlKem.X86.TopCall

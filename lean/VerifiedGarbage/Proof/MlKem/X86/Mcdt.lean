@@ -7,11 +7,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
-# ML-DSA on x86 (32-bit): a function that is an MCDT frame around its body
+# ML-KEM and ML-DSA on x86 (32-bit): a function that is an MCDT frame around its body
 
-The vector arithmetic (`Impl/MlDsa/X86/Arith/Mul.lean`) uses only the
-registers a callee may change, so a function is its body inside the MCDT
-frame `pmuludq` needs, `frame (mcdtEnter eax) body mcdtLeave`, with no saved
+The vector arithmetic (`Impl/MlDsa/X86/Arith/Mul.lean`,
+`Impl/MlKem/X86/Vec.lean`) uses only the registers a callee may change, so
+a function is its body inside the MCDT frame that `pmuludq`, `pmullw` and
+`pmulhw` need, `frame (mcdtEnter eax) body mcdtLeave`, with no saved
 register. `Piece.mcdt` is `Piece.leaf` for such a function: from its body,
 run from the state after the push (`M0`), which keeps `esp`, the
 permissions, the MCDT depth and the callee-saved registers and writes
@@ -23,10 +24,9 @@ instructions (`sseTaint`).
 
 @[expose] public section
 
-namespace VG.Proof.MlDsa.X86.Arith
+namespace VG.Proof.MlKem.X86
 
 open VG VG.X86
-open VG.Proof.MlKem.X86 (Piece E0 retR)
 
 section
 variable (s₀ : State)
@@ -141,4 +141,4 @@ theorem mcdt {body : Prog isa} {B : State → State → Prop} (W : State → Lis
 
 end Piece
 
-end VG.Proof.MlDsa.X86.Arith
+end VG.Proof.MlKem.X86
