@@ -73,9 +73,9 @@ OPENSSL_DIR=$HOME/openssl OPENSSL_STATIC=1 python3 ci/bench_copies.py --cpu 4 \
 Its results file records the versions measured: OpenSSL's (`OPENSSL_DIR`
 builds against one other than the system's) and aws-lc-rs's, which
 `bench/Cargo.lock` chooses (`cargo update -p aws-lc-rs -p aws-lc-sys`
-there, with `bench/Cargo.toml`'s two versions in step:
-`ci/check_bench_lock.py`). Say which machine it ran on and that nothing
-else ran there.
+there, with `bench/Cargo.toml`'s two versions in step, or the lock file
+gets two aws-lc-sys and some benchmarks measure the older). Say which
+machine it ran on and that nothing else ran there.
 
 For another architecture, or features this CPU lacks, run the Benchmarks
 workflow by hand: it never runs on its own (not on pull requests, not on
