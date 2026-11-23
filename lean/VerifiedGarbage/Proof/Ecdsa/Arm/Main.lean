@@ -721,7 +721,7 @@ theorem callMulCall_ok (hc : CfgOk c) {body : Prog isa} (hB : MulBodyOk c body) 
         (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal t'.mem base x c.n < c.C.p) ∧
         Rep c.C (tmv c.C c.n base t' (c.sl RX)) (tmv c.C c.n base t' (c.sl RY))
           (tmv c.C c.n base t' (c.sl RZ)) (mul (sv c base s K) P),
-      fun _ _ => True⟩)
+      fun _ _ => True, none⟩)
     (fun t ⟨hw, h0, hm⟩ => by
       obtain hb := e0 t h0
       obtain sv_t : ∀ i, sv c base t i = sv c base s₄ i := fun i => by
