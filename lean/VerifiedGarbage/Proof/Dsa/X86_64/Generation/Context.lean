@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ViaSlot
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -32,7 +33,7 @@ structure GenerationContext where
   qLenSlot : saved 18 = BitVec.ofNat 64 geo.qLen
   hashLenSlot : saved 28 = BitVec.ofNat 64 geo.qLen
 
-def generationSlots : List Nat := [3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 15, 17, 18, 28]
+def generationSlots : List Nat := [3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 15, 17, 18, 28, 29, 30, 31]
 
 def GenerationContext.changed (p : GenerationContext) : List Region :=
   [⟨p.geo.B, usedBytes p.geo.pLen⟩, ⟨p.geo.F, frameBytes⟩, below p.geo.F 192]
@@ -49,6 +50,17 @@ structure GenerationMemory (p : GenerationContext) (W : Nat → BitVec 64) (s : 
   seeds : GenerationTapeMemory p.seeds s
   hs : GenerationTapeMemory p.hs s
   rand : GenerationTapeMemory p.rand s
+
+/-- The saved words 29, 30 and 31 are the addresses of the functions `n` in
+`s` (as in every state of a run: `Exec.syms`). -/
+structure FnSyms (n : FnNames) (p : GenerationContext) (s : State) : Prop where
+  upd : p.saved 29 = s.syms n.upd
+  fin : p.saved 30 = s.syms n.fin
+  prime : p.saved 31 = s.syms n.prime
+
+theorem FnSyms.congr {n : FnNames} {p : GenerationContext} {s t : State} (h : FnSyms n p s)
+    (hy : t.syms = s.syms) : FnSyms n p t :=
+  ⟨by rw [hy]; exact h.upd, by rw [hy]; exact h.fin, by rw [hy]; exact h.prime⟩
 
 theorem GenerationTapeMemory.source {p : GenerationGeometry} {tape : GenerationTape p} {s : State}
     (h : GenerationTapeMemory tape s) {d n : Nat} (hd : d + n ≤ usedBytes p.pLen) :
@@ -82,5 +94,12 @@ theorem GenerationMemory.frame {p : GenerationContext} {W W' : Nat → BitVec 64
     (hf : Frame p.changed s.mem t.mem) (hr : t.rd = s.rd) (hw : t.wr = s.wr) : GenerationMemory p W' t :=
   ⟨L, R, fun k hk => (hs k hk).trans (h.slots k hk), h.scratch.congr hw,
     h.seeds.frame hf hr hw, h.hs.frame hf hr hw, h.rand.frame hf hr hw⟩
+
+/-- The frame words the search calls its functions by. -/
+theorem GenerationMemory.fnSlots {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
+    {n : FnNames} (h : GenerationMemory p W s) (hy : FnSyms n p s) : FnSlots n W s :=
+  ⟨(h.slots 29 (by simp [generationSlots])).trans hy.upd,
+    (h.slots 30 (by simp [generationSlots])).trans hy.fin,
+    (h.slots 31 (by simp [generationSlots])).trans hy.prime⟩
 
 end VG.Proof.Dsa.X86_64.Generation

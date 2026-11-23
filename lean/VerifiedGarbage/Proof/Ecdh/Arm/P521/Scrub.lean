@@ -45,7 +45,8 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ecdh_p521`, given the group law. -/
 theorem exchangeP521 (hC : Weierstrass.Law Spec.P521.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeP521
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.p521With false).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.P521.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeP521
       verified := VG.Proof.Ecdh.Arm.P521.ecdh_verified hC }
@@ -54,7 +55,8 @@ theorem exchangeP521 (hC : Weierstrass.Law Spec.P521.curve) :
 /-- `vg_ecdh_p521_umaal`, given the group law. -/
 theorem exchangeP521U (hC : Weierstrass.Law Spec.P521.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeP521U
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.p521With true).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.P521.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeP521U
       verified := VG.Proof.Ecdh.Arm.P521.ecdhU_verified hC }

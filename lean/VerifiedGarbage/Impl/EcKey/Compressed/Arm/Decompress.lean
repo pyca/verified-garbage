@@ -108,7 +108,7 @@ def recoverCoordinate (c : Cfg) : Prog isa :=
   .seq (rootCandidate c) (.seq (selectRoot c) (checkRoot c))
 
 def decompress (c : Cfg) : Prog isa :=
-  progs [.block (c.setupWith args), .block (decompressPeer c), fprog c.SP (rhsOps c) c.umaal,
+  progs [c.setupWith args, .block (decompressPeer c), fprog c.SP (rhsOps c) c.umaal,
     recoverCoordinate c, .block (decompressFinish c)]
 
 end VG.Impl.EcKey.Compressed.Arm

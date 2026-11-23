@@ -214,16 +214,16 @@ def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
 `out`, `scratch` and the return address of a call from the frame. -/
 theorem coreArg_ok (hL : L.Ok) {x : Addr} (hx : x = dgArg P L ∨ x = kArg P L) :
     (∃ R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R) ∧ Region.Disjoint ⟨x, P.Q⟩ L.OUT ∧
-      Region.Disjoint ⟨x, P.Q⟩ L.SCR ∧ Region.Disjoint ⟨x, P.Q⟩ ⟨L.B + BitVec.ofNat 64 8, 16⟩ := by
+      Region.Disjoint ⟨x, P.Q⟩ L.SCR ∧ Region.Disjoint ⟨x, P.Q⟩ ⟨L.B, 24⟩ := by
   have hQ : P.Q ≤ 66 := P.sizes.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have he := L.he
   have key : ∀ o, 240 ≤ o → o + 66 ≤ 624 → (∃ R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR],
       Within ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ R) ∧ Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ L.OUT ∧
       Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ L.SCR ∧
-      Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ ⟨L.B + BitVec.ofNat 64 8, 16⟩ := fun o h₁ h₂ =>
+      Region.Disjoint ⟨L.B + BitVec.ofNat 64 o, P.Q⟩ ⟨L.B, 24⟩ := fun o h₁ h₂ =>
     ⟨⟨L.FR, by simp, within_fr _ (by omega_using [h₁]) (by omega_using [hQ, he, h₂])⟩,
       (hL.stk_OUT (by omega_using [hQ, he, h₂])), hL.stk_SCR (by omega_using [hQ, he, h₂]),
-      Offset.disjoint _ (by omega_using [h₁]) (by omega_using [hQ, h₂]) (by omega_using [])⟩
+      Offset.disjoint_base _ (by omega_using [h₁]) (by omega_using [hQ, h₂])⟩
   simp only [dgArg, kArg] at hx
   rcases hx with h | rfl
   · split at h <;> subst h
@@ -312,18 +312,18 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     hL.od, gO.symm, kO.symm, hL.dc, gS, kS, (hL.stk_OUT (by omega_using [])).symm.symm, hL.stk_SCR (by omega_using []), no, hL.nc,
     tbl_held hL hk hc, hT⟩
 
-/-- Nothing `core` reads or writes is in the 8 bytes below its `rsp`,
-where its own calls store their return addresses. -/
+/-- Nothing `core` reads or writes is in the 16 bytes below its `rsp`,
+where its own calls, nested two deep, store their return addresses. -/
 theorem core_clear (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
-    Clear (hole ((t.callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .rsp))
+    Clear (holeN ((t.callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .rsp) 2)
       (t.callEntry.withRegions (coreRd P L) (coreWr P L)) := by
   have hq : L.q = P.Q := hk.1
-  have hh : hole ((t.callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .rsp) =
-      ⟨L.B + BitVec.ofNat 64 8, 8⟩ := by
+  have hh : holeN ((t.callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .rsp) 2 =
+      ⟨L.B + BitVec.ofNat 64 0, 16⟩ := by
     rw [State.withRegions_gpr, State.callEntry_rsp, hc.rsp]
-    show (⟨L.B + BitVec.ofNat 64 24 - 8 - 8, 8⟩ : Region) = _
+    show (⟨L.B + BitVec.ofNat 64 24 - 8 - BitVec.ofNat 64 (8 * 2), 8 * 2⟩ : Region) = _
     congr 1; bv_omega
-  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 8, 8⟩ ⟨L.B + BitVec.ofNat 64 8, 16⟩ := Region.sub_prefix (by omega_using [])
+  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 0, 16⟩ ⟨L.B, 24⟩ := Offset.sub_base _ (by omega_using [])
   rw [hh]
   intro r hr
   simp only [State.withRegions_rd, State.withRegions_wr, coreRd, coreWr, List.cons_append, List.nil_append,
@@ -364,7 +364,7 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     (hdi : t.gpr .rdi = L.out) (hsi : t.gpr .rsi = L.d) (hdx : t.gpr .rdx = dgArg P L) (hcx : t.gpr .rcx = kArg P L)
     (h8 : t.gpr .r8 = L.scr) :
     WP isa (.call (cfgOf P).coreN (cfgOf P).coreC) t fun t' => Ctx L g m₀ t' ∧
-      Frame [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 8, 16⟩] t.mem t'.mem ∧
+      Frame [L.OUT, L.SCR, ⟨L.B, 24⟩] t.mem t'.mem ∧
       match coreSig P L t.mem with
       | some rs => (t'.gpr .rax).setWidth 32 = 1 ∧
           Spec.Sha256.bytesAt t'.mem L.out (2 * P.Q) = Spec.Ecdsa.encode P.R.E.C rs
@@ -372,24 +372,15 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
           Spec.Sha256.bytesAt t'.mem L.out (2 * P.Q) = List.replicate (2 * P.Q) 0 := by
   have hq : L.q = P.Q := hk.1
   have hD := P.R.coreD
-  have hsp : Region.Sub (below (t.gpr .rsp) (8 * (P.R.coreC.depth + 1))) ⟨L.B + BitVec.ofNat 64 8, 16⟩ := by
-    rw [hc.rsp]
-    rcases (show P.R.coreC.depth = 0 ∨ P.R.coreC.depth = 1 by omega_using [hD]) with h | h <;> rw [h]
-    · rw [show below (L.B + BitVec.ofNat 64 24) (8 * (0 + 1)) = ⟨L.B + BitVec.ofNat 64 16, 8⟩ by
-        show (⟨L.B + BitVec.ofNat 64 24 - BitVec.ofNat 64 8, 8⟩ : Region) = _
-        congr 1; bv_omega]
-      exact Offset.sub _ (by omega_using []) (by omega_using [])
-    · rw [show below (L.B + BitVec.ofNat 64 24) (8 * (1 + 1)) = ⟨L.B + BitVec.ofNat 64 8, 16⟩ by
-        show (⟨L.B + BitVec.ofNat 64 24 - BitVec.ofNat 64 16, 16⟩ : Region) = _
-        congr 1; bv_omega]
-      exact sub_refl _
+  have hsp : Region.Sub (below (t.gpr .rsp) (8 * (P.R.coreC.depth + 1))) ⟨L.B, 24⟩ :=
+    hc.below_sub (by omega_using [hD])
   have eW : coreWr P L = [L.OUT, L.SCR] := by
     simp only [coreWr, Lay.OUT, hq]
-  refine WP.of_syms (WP.call (k := (coreK P.R.E).clear) (fun s h => P.R.coreX s h.1 h.2) (core_nosp P)
+  refine WP.of_syms (WP.call (k := (coreK P.R.E).clearN 2) (fun s h => P.R.coreX s h.1 h.2) (core_nosp P)
     (by omega_using [hD]) ⟨core_pre hL hk hc hdi hsi hdx hcx h8, core_clear hL hk hc⟩
     (core_covers hk hL hc) (core_coversW hq hc) fun t' hrd hwr hcs hf _ ⟨s₂, hm, hg₂, hpost⟩ hsy => ?_)
   rw [eW] at hf
-  replace hf : Frame [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 8, 16⟩] t.mem t'.mem := hf.sub fun r hr => by
+  replace hf : Frame [L.OUT, L.SCR, ⟨L.B, 24⟩] t.mem t'.mem := hf.sub fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, by simp, sub_refl _⟩
@@ -401,7 +392,7 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     rcases hr with rfl | rfl | rfl
     · exact .inl (sub_refl _)
     · exact .inr (.inl (sub_refl _))
-    · exact safe_low L (by omega_using [])
+    · exact .inr (.inr (.inl (Region.sub_prefix (by omega_using []))))
   · obtain ⟨-, -, -, gR⟩ := coreArg_ok (P := P) hL (.inl rfl)
     obtain ⟨-, -, -, kR⟩ := coreArg_ok (P := P) hL (.inr rfl)
     have hQl : P.R.E.C.len ≤ 72 := by have := P.R.len_words; have := P.R.n9; omega_arith
@@ -410,8 +401,8 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
       simp only [coreSigOf, coreSig, ecdsa_bytesAt]
       rw [ce_bytesAt hc ((hL.stk_D (d := 16) (n := 8) (by omega_using [])).symm.sub_left
           (Region.sub_prefix (by rw [hq]))) (by omega_using [hQl]),
-        ce_bytesAt hc (gR.sub_right (Offset.sub _ (by omega_using []) (by omega_using []))) (by omega_using [hQl']),
-        ce_bytesAt hc (kR.sub_right (Offset.sub _ (by omega_using []) (by omega_using []))) (by omega_using [hQl'])]
+        ce_bytesAt hc (gR.sub_right (Offset.sub_base _ (by omega_using []))) (by omega_using [hQl']),
+        ce_bytesAt hc (kR.sub_right (Offset.sub_base _ (by omega_using []))) (by omega_using [hQl'])]
     have hp : (coreK P.R.E).post (t.callEntry.withRegions (coreRd P L) (coreWr P L)) s₂ := hpost
     simp only [coreK, ce_gpr _ _ _ (by decide : Reg.rdi ≠ .rsp),
       ce_gpr _ _ _ (by decide : Reg.rsi ≠ .rsp), ce_gpr _ _ _ (by decide : Reg.rdx ≠ .rsp),
@@ -530,7 +521,7 @@ theorem cw_cnt (hL : L.Ok) : ∀ r ∈ CW L, Region.Disjoint ⟨L.B + BitVec.ofN
   · exact Offset.disjoint _ (.inl (by simp only [fT]; omega_arith)) (by omega_arith) (by simp only [fT]; omega_arith)
 
 /-- What `core` changes: `out`, `scratch` and the return addresses of it and its calls. -/
-abbrev CoreW {dn : Nat} (L : Lay dn) : List Region := [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 8, 16⟩]
+abbrev CoreW {dn : Nat} (L : Lay dn) : List Region := [L.OUT, L.SCR, ⟨L.B, 24⟩]
 
 theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 248 + 8 * L.e) :
     ∀ r ∈ CoreW L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
@@ -539,13 +530,13 @@ theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 2
   rintro r (rfl | rfl | rfl)
   · exact hL.stk_OUT h₂
   · exact hL.stk_SCR h₂
-  · exact Offset.disjoint _ (by nums) (by nums) (by nums)
+  · exact Offset.disjoint_base _ (by nums) (by nums)
 
 /-- The regions the loop writes, which are apart from `core`'s digest. -/
 def DgApart {dn : Nat} (L : Lay dn) (r : Region) : Prop :=
   r = L.SCR ∨ r = L.OUT ∨ r = ⟨L.B, 152⟩ ∨ r = ⟨L.B, 160⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 16, 8⟩ ∨
     r = ⟨L.B + BitVec.ofNat 64 200, 8⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 (24 + fT), 136⟩ ∨
-    r = ⟨L.B + BitVec.ofNat 64 8, 16⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 24, 128⟩
+    r = ⟨L.B, 24⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 24, 128⟩
 
 theorem dg_apart (hL : L.Ok) {r : Region} (h : DgApart L r) : Region.Disjoint ⟨dgArg P L, P.Q⟩ r := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hQ66, -, -⟩ := P.sizes
@@ -561,7 +552,7 @@ theorem dg_apart (hL : L.Ok) {r : Region} (h : DgApart L r) : Region.Disjoint �
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (.inl (by simp only [fT]; omega_arith)) (by omega_arith) (by simp only [fT]; omega_arith)
-    · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
     · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   simp only [dgArg]
   split
@@ -1802,7 +1793,7 @@ theorem ce_two {t₁ t₂ : State} {r : Reg} (hr : r ≠ .rsp) {x : BitVec 64} (
 theorem core_ct {i : Nat} :
     RelCT isa (Two P fun L m₀ u => P₁ P L m₀ i u ∧ Args P L u) (.call (cfgOf P).coreN (cfgOf P).coreC)
       fun _ _ => True :=
-  RelCT.callEx (k := (coreK P.R.E).clear) (fun s h => P.R.coreX s h.1 h.2)
+  RelCT.callEx (k := (coreK P.R.E).clearN 2) (fun s h => P.R.coreX s h.1 h.2)
     (fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ => P.R.coreCT s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1)
     fun _ _ ⟨⟨L, _, _, _, _⟩, hL, hk, _, c₁, c₂, ⟨_, a₁⟩, ⟨_, a₂⟩⟩ =>
     ⟨coreRd P L, coreWr P L, coreRd P L, coreWr P L,

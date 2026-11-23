@@ -103,14 +103,30 @@ vg_ec_p521_compress_public_key:
 	addis %r4, %r4, ({VG_P521_FRAME_CONSTS}
 	addi %r4, %r4, ({VG_P521_FRAME_CONSTS}
 	mtlr %r11
-	li %r31, 153
+	li %r31, 17
+	addi %r9, %r3, 0
 20:
 	addi %r31, %r31, -1
-	rldicr %r8, %r31, 3, 60
-	add %r9, %r4, %r8
-	ld %r11, 0(%r9)
-	add %r9, %r3, %r8
+	ld %r11, 0(%r4)
 	std %r11, 64(%r9)
+	ld %r11, 8(%r4)
+	std %r11, 72(%r9)
+	ld %r11, 16(%r4)
+	std %r11, 80(%r9)
+	ld %r11, 24(%r4)
+	std %r11, 88(%r9)
+	ld %r11, 32(%r4)
+	std %r11, 96(%r9)
+	ld %r11, 40(%r4)
+	std %r11, 104(%r9)
+	ld %r11, 48(%r4)
+	std %r11, 112(%r9)
+	ld %r11, 56(%r4)
+	std %r11, 120(%r9)
+	ld %r11, 64(%r4)
+	std %r11, 128(%r9)
+	addi %r4, %r4, 72
+	addi %r9, %r9, 72
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 20b
 	li %r4, 0
@@ -690,14 +706,30 @@ vg_ec_p521_decompress_public_key:
 	addis %r4, %r4, ({VG_P521_FRAME_CONSTS}
 	addi %r4, %r4, ({VG_P521_FRAME_CONSTS}
 	mtlr %r11
-	li %r31, 153
+	li %r31, 17
+	addi %r9, %r3, 0
 20:
 	addi %r31, %r31, -1
-	rldicr %r8, %r31, 3, 60
-	add %r9, %r4, %r8
-	ld %r11, 0(%r9)
-	add %r9, %r3, %r8
+	ld %r11, 0(%r4)
 	std %r11, 64(%r9)
+	ld %r11, 8(%r4)
+	std %r11, 72(%r9)
+	ld %r11, 16(%r4)
+	std %r11, 80(%r9)
+	ld %r11, 24(%r4)
+	std %r11, 88(%r9)
+	ld %r11, 32(%r4)
+	std %r11, 96(%r9)
+	ld %r11, 40(%r4)
+	std %r11, 104(%r9)
+	ld %r11, 48(%r4)
+	std %r11, 112(%r9)
+	ld %r11, 56(%r4)
+	std %r11, 120(%r9)
+	ld %r11, 64(%r4)
+	std %r11, 128(%r9)
+	addi %r4, %r4, 72
+	addi %r9, %r9, 72
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 20b
 	li %r4, 0

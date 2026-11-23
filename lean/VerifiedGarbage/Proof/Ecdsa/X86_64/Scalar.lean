@@ -201,11 +201,34 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 
 variable {c : Cfg}
 
-theorem middle_eq (c : Cfg) : c.middle.inline = .seq ((c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC)).inline)
+/-- With `affineOn`, the products of `x = X Z⁻¹` are blocks, calling nothing. -/
+theorem mulPF_of_affineOn (h : c.affineOn = true) (o a b : Nat) :
+    c.mulPF o a b = .block (opCode c.MP' (.mul o a b)) := by
+  simp only [Cfg.affineOn, Bool.and_eq_true, bne_iff_ne, ne_eq, Option.isNone_iff_eq_none] at h
+  obtain ⟨⟨⟨-, -⟩, h9⟩, hcall⟩ := h
+  simp only [Cfg.mulPF, h9, ite_false, opProg, opCall?, hcall, Option.getD_none]
+
+/-- A call of `vg_<curve>_affine_x`, inlined, runs as its two products do. -/
+theorem affineX_wp (h : c.affineOn = true) {rest : Prog isa} {s : State} {Q : State → Prop} :
+    WP isa (.seq c.affineX.inline rest) s Q ↔
+      WP isa (.seq (c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC)).inline
+        (.seq (c.mulPF (c.sl X) (c.sl XM) (c.sl ONE)).inline rest)) s Q := by
+  simp only [Cfg.affineX, Code.inline, mulPF_of_affineOn h]
+  rw [WP.seq_iff, WP.seq_iff, WP.seq_iff]
+  exact ⟨fun h => WP.mono h fun _ h' => WP.seq_iff.mpr h', fun h => WP.mono h fun _ h' => WP.seq_iff.mp h'⟩
+
+/-- `middle`, inlined, runs as its operations one after the other, with or
+without the call of `vg_<curve>_affine_x`. -/
+theorem middle_eq (c : Cfg) {s : State} {Q : State → Prop} : WP isa c.middle.inline s Q ↔
+    WP isa (.seq ((c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC)).inline)
     (.seq ((c.mulPF (c.sl X) (c.sl XM) (c.sl ONE)).inline)
     (.seq (.block (add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)))
     (.seq (opProg c.MN' (.mul (c.sl KM) (c.sl K) (c.sl R2N))).inline
-    (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)))))) := rfl
+    (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))))))) s Q := by
+  unfold Cfg.middle
+  split
+  · next h => exact affineX_wp h
+  · exact Iff.rfl
 
 /-- What `middle`'s field operations leave. -/
 structure MidPost (c : Cfg) (base : Addr) (s s' : State) : Prop where

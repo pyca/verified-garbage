@@ -316,7 +316,7 @@ open VG.Proof.Bignum (slot)
 /-- A call's public data: the key's public octets. -/
 def vdV (s : State) : VD :=
   ⟨playOf s, s.gpr .a0, 0, 0, 0, Spec.Rsa.bytesAt s.mem (s.gpr .a0) (3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat),
-    3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat, 0, false, none⟩
+    3 * (s.gpr .a2).toNat + (s.gpr .a3).toNat, 0, false, none, false⟩
 
 /-- On entry. -/
 def C0v (v : VD) (s : State) : Prop := vpkContract.pre s ∧ vdV s = v
@@ -331,7 +331,7 @@ theorem frontV : ∀ v s, C0v v s → WP isa (.block Params.entry) s (P0 v) := b
     psrc_of hrd dKS (by omega_using [hkl]) k.2.1 k.2.2
   exact ⟨⟨hL, F.regs, F.scr, hK, src_nil rfl, src_nil (Nat.zero_min _),
     hK.bytes F.out (by simp only [playOf] at hZ ⊢; omega_using [hZ]), (by simp only [vdV, playOf]; omega_using []),
-    (fun h => nomatch h), fun _ h => nomatch h⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
+    (fun h => nomatch h), fun _ h => (nomatch h), fun h => nomatch h⟩, F.lens.trans (congrArg _ (Nat.zero_min _).symm)⟩
 
 theorem kyC0v : ∀ v s, C0v v s → KY v := by
   rintro _ s ⟨-, rfl⟩
@@ -530,6 +530,7 @@ theorem kpV {v : VD} {s : State} (h : ΦVR v s) : WP isa Sign.keyPair s (Base v)
     fun t ⟨⟨_, _, _, m, o, w⟩, k⟩ => ?_
   have K : BKept v.L s.mem t.mem := (BKept.ofBody hL (PLow.body hL o)).trans (BKept.ofMask hL w)
   exact B.step (B.regs.ofBKept k K) k.2.1 k.2.2 K.out (K.word (by decide) (by decide)) (K.word (by decide) (by decide))
+    (K.word (by decide) (by decide))
 
 theorem pinsV64 : Pins (At ΦVR FVR 64) [.s6, .s11, .ra] :=
   pins_at_fix fixB (fun _ => rfl) fun _ _ h =>

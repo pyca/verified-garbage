@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Cmac.Block32
 import VerifiedGarbage.Proof.AesCbc.Mem32
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Cmac.Frame
@@ -41,7 +41,7 @@ meta import VerifiedGarbage.Proof.Cmac.Block32
 meta import VerifiedGarbage.Proof.AesCbc.Mem32
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Cmac.Frame
@@ -156,11 +156,11 @@ theorem ctrFinal_implies : ctrFinalArm.Implies ctrFinalScratchContract := by
 
 /-- `vg_camellia_ctr` meets its contract on the subkeys. -/
 theorem ctrFramed_sk : Verified Arm.target ctrFramed (Proof.Camellia.ctrContractSk Arm.abi 3032) :=
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64) (n := 9)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.ctrSig) (nm := "scratch") (e := .u64) (n := 9)
     (pre := Spec.Camellia.ctrPre Arm.abi.ptrBits) (post := Proof.Camellia.ctrPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 2944) (m := 1) (bytes := 88)
-    Proof.Camellia.Arm.ctr_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (Proof.Camellia.ctrPre_local _) (Proof.Camellia.ctrPost_local _) (Proof.Camellia.ctrPostOut_local _)
+    Proof.Camellia.Arm.ctr_verified (by decide) (by decide) (by decide) (by decide)
+    (Proof.Camellia.ctrPre_local _) (Proof.Camellia.ctrPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.ctrPostOut_local _ vs mm m₁ m₂ r hl)
     Proof.Camellia.Arm.ctrFrameSat
 
 theorem ctr_stack : armStack ctrFramed ≤ 3032 := by decide +kernel
@@ -1168,10 +1168,10 @@ theorem ctrFinal_verified : Verified Arm.target ctrFinal ctrFinalScratchContract
 /-! ## With `save` on the stack
 
 The final function has one stack argument, so `save` is its second: it runs
-its code in a frame of 72 bytes (`withStackScratchWiped`): the copy of the
+its code in a frame of 72 bytes (`withStackScratch`): the copy of the
 stack argument, `save`'s address, the word holding `lr`, and `save`'s 56
-bytes, the block included, which it zeroes before returning (and 4 bytes of
-padding). The code's calls use 3040 bytes below it, so 3112 in all. -/
+bytes, the block included, which the function's cleanup zeroes (and 4 bytes
+of padding). The code's calls use 3040 bytes below it, so 3112 in all. -/
 
 /-- A state satisfying the precondition, without `save`. -/
 def ctrFinalFrameSat : State :=
@@ -1182,15 +1182,15 @@ theorem ctrFinalFrameSat_pre : ∃ s, (Proof.Camellia.ctrFinalContractSk Arm.abi
     Proof.Camellia.ctrFinalPostSk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
     [ctrFinalFrameSat, ctrFinalSat] using ctrFinalFrameSat
 
-/-- `ctrFinal`, with `save` on the stack (zeroed on return). -/
+/-- `ctrFinal`, with `save` on the stack (which its function's cleanup zeroes). -/
 theorem ctrFinal_framed :
-    Verified Arm.target (Impl.StackScratch.Arm.withStackScratchWiped 72 1 14 ctrFinal)
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 72 1 ctrFinal)
       (Spec.Camellia.ctrFinalContract Arm.abi 3112) :=
   Proof.Camellia.ctrFinal_of_sk <|
-  Arm.Verified.stackScratchWiped (sig := Spec.Camellia.ctrFinalSig) (nm := "save") (e := .u64) (n := 7)
+  Arm.Verified.stackScratch (sig := Spec.Camellia.ctrFinalSig) (nm := "save") (e := .u64) (n := 7)
     (pre := Spec.Camellia.ctrFinalPre Arm.abi.ptrBits) (post := Proof.Camellia.ctrFinalPostSk Arm.abi.ptrBits)
     (wa := true) (stack := 3040) (m := 1) (bytes := 72)
-    ctrFinal_verified (by decide) (by decide) (by decide) (by decide) (by decide)
-    (ctrFinalPre_local _) (ctrFinalPost_local _) (Proof.Camellia.ctrFinalPostOut_local _) ctrFinalFrameSat_pre
+    ctrFinal_verified (by decide) (by decide) (by decide) (by decide)
+    (ctrFinalPre_local _) (ctrFinalPost_local _) (fun vs mm m₁ m₂ r hl _ => Proof.Camellia.ctrFinalPostOut_local _ vs mm m₁ m₂ r hl) ctrFinalFrameSat_pre
 
 end VG.Proof.Camellia.Arm.CtrFinal

@@ -712,7 +712,7 @@ def isPlain : Instr → Bool
   | .alu .cmp _ (.reg _) => false
   | .xop (.bin .pxor _ _) => false
   | .cmov .. | .mul _ | .mulx .. => false
-  | .push _ | .pop .. | .alloc _ | .free _ | .callr _ => false
+  | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .callm _ => false
   | _ => true
 
 /-- `ubKill ub i`, for an `i` that writes the register `d` alone. -/
@@ -1054,7 +1054,7 @@ def stepFn1 (i : Instr) : RStep :=
     bif m.index.isNone then fastStore m 32 (fun _ => false) none else fastStoreI m 32
   | .stmxcsr m => bif m.index.isNone then fastStore m 4 (fun _ => false) none else fastStoreI m 4
   -- Not plain, and without a step of their own.
-  | .kStore .. | .kStore8 .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ =>
+  | .kStore .. | .kStore8 .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ | .callm _ =>
     bif isa.writesSp i then ⟨fun _ => none⟩ else slowFn i
   -- Plain or not by their operands.
   | .alu .xor d (.reg d') | .alu32 .xor d (.reg d') =>

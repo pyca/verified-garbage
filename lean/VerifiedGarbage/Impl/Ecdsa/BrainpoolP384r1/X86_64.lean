@@ -24,7 +24,9 @@ def brainpoolp384r1 : Cfg where
   fastN := true
   windows := false
   mul := some Impl.Weierstrass.Mul.brainpoolp384r1
+  mulAdd := true
   inverse := some Impl.Weierstrass.Inverse.brainpoolp384r1
+  affine := true
   checkPoint := some Impl.Weierstrass.CheckPoint.brainpoolp384r1
 
 /-- The comb's tables: `[m 2^(7j)]G` for `m = 1 … 64`, `j < 55`. -/

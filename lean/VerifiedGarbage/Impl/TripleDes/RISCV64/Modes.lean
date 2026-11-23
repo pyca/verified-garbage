@@ -97,8 +97,13 @@ def wideCore (d : Direction) : Modes.RISCV64.Core :=
   (wideInline d).shared "vg_triple_des_modes_prepare"
     ("vg_triple_des_modes_crypt_" ++ (if d = .encrypt then "encrypt" else "decrypt"))
 
-/-- The block function of the direction `d` on the wide core's first block. -/
-def wideOne (d : Direction) : Prog isa := block d sb bufOff
+/-- The block function of the direction `d` on the wide core's first block,
+called: `vg_triple_des_block_encrypt` or `_decrypt`, which the modes of one
+block at a time call too (`dirCore`), with the caller's return address in the
+slot where the wide core's batch call keeps it. -/
+def wideOne (d : Direction) : Prog isa :=
+  Modes.RISCV64.sharedCall ("vg_triple_des_block_" ++ (if d = .encrypt then "encrypt" else "decrypt"))
+    (block d sb bufOff) (wideInline d).total
 
 /-- The groups of the wide modes, `2 ^ lg` blocks for each `lg` in turn. -/
 def levels : List Nat := [6, 5, 4, 3, 2]

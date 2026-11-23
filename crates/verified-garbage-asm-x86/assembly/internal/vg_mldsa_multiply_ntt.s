@@ -5,51 +5,79 @@
 // gives.
 
 vg_mldsa_multiply_ntt:
-	push ebx
-	push esi
-	push edi
-	push ebp
-	mov ebp, DWORD PTR [esp+20]
-	mov esi, DWORD PTR [esp+24]
-	mov edi, DWORD PTR [esp+28]
-	mov ecx, 256
+	lea esp, [esp-12]
+	stmxcsr DWORD PTR [esp+4]
+	mov eax, 8127
+	mov DWORD PTR [esp], eax
+	ldmxcsr DWORD PTR [esp]
+	lfence
+	mov eax, 8380417
+	movd xmm7, eax
+	pshufd xmm7, xmm7, 0
+	mov eax, -58728449
+	movd xmm6, eax
+	pshufd xmm6, xmm6, 0
+	mov eax, 2365951
+	movd xmm5, eax
+	pshufd xmm5, xmm5, 0
+	mov eax, -1
+	movd xmm4, eax
+	pshufd xmm4, xmm4, 0
+	mov eax, -8380417
+	movd xmm3, eax
+	pshufd xmm3, xmm3, 0
+	mov eax, DWORD PTR [esp+16]
+	mov ecx, eax
+	add ecx, 1024
+	mov DWORD PTR [esp+16], ecx
+	mov ecx, DWORD PTR [esp+20]
+	mov edx, DWORD PTR [esp+24]
 20:
-	mov eax, DWORD PTR [esi]
-	mov edx, DWORD PTR [edi]
-	mul edx
-	mov ebx, edx
-	mov edx, -58728449
-	mul edx
-	mov edx, 8380417
-	mul edx
-	add eax, -1
-	adc ebx, edx
-	mov eax, ebx
-	mov edx, 2365951
-	mul edx
-	mov ebx, edx
-	mov edx, -58728449
-	mul edx
-	mov edx, 8380417
-	mul edx
-	add eax, -1
-	adc ebx, edx
-	sub ebx, 8380417
-	sbb edx, edx
-	and edx, 8380417
-	add ebx, edx
-	mov DWORD PTR [ebp], ebx
-	add esi, 4
-	add edi, 4
-	add ebp, 4
-	sub ecx, 1
+	movdqu xmm0, XMMWORD PTR [ecx]
+	movdqu xmm1, XMMWORD PTR [edx]
+	movdqa xmm2, xmm0
+	psrlq xmm2, 32
+	pmuludq xmm0, xmm1
+	psrlq xmm1, 32
+	pmuludq xmm2, xmm1
+	movdqa xmm1, xmm0
+	pmuludq xmm1, xmm6
+	pmuludq xmm1, xmm7
+	paddq xmm0, xmm1
+	psrlq xmm0, 32
+	movdqa xmm1, xmm2
+	pmuludq xmm1, xmm6
+	pmuludq xmm1, xmm7
+	paddq xmm2, xmm1
+	por xmm0, xmm2
+	movdqa xmm2, xmm0
+	psrlq xmm2, 32
+	pmuludq xmm0, xmm5
+	pmuludq xmm2, xmm5
+	movdqa xmm1, xmm0
+	pmuludq xmm1, xmm6
+	pmuludq xmm1, xmm7
+	paddq xmm0, xmm1
+	psrlq xmm0, 32
+	movdqa xmm1, xmm2
+	pmuludq xmm1, xmm6
+	pmuludq xmm1, xmm7
+	paddq xmm2, xmm1
+	por xmm0, xmm2
+	paddd xmm0, xmm3
+	movdqa xmm1, xmm0
+	psrld xmm1, 31
+	paddd xmm1, xmm4
+	pandn xmm1, xmm7
+	paddd xmm0, xmm1
+	movdqu XMMWORD PTR [eax], xmm0
+	add eax, 16
+	add ecx, 16
+	add edx, 16
+	cmp eax, DWORD PTR [esp+16]
 	jne 20b
-	mov esi, DWORD PTR [esp+8]
-	mov edi, DWORD PTR [esp+4]
-	mov ebp, DWORD PTR [esp]
-	pop ebx
-	pop ebx
-	pop ebx
-	pop ebx
+	lfence
+	ldmxcsr DWORD PTR [esp+4]
+	lea esp, [esp+12]
 	ret
 	.p2align 6

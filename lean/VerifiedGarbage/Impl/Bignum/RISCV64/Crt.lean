@@ -300,12 +300,13 @@ def r2Step : Bool → Prog isa
 /-- In a prime's working space, the prime from `X`'s array `xj`, `-p⁻¹ mod
 2⁶⁴` in `t1`, `R² mod p` in array 1 (`r2Prime`), `c mod p` in array 4
 (`reduceIn`), then `c^d mod p` in array 4 for `d` at `oD` of the prime's
-length at `oLen` (`ModExp.powWin`, with its table in arrays 8 to 23). -/
+length at `oLen` (`ModExp.powWinFn`, the function `vg_bignum_pow_win`, with its table in
+arrays 8 to 23). -/
 def powerG (pc : Bool) (xj oD oLen : Nat) : Prog isa :=
   .seq (.block ([.addi .t3 .a7 0] ++ xb .t4 xj)) (.seq copyN
   (.seq (.block (Precompute.minv ++ base .a2 1 ++ base .a5 2 ++ base .a6 3))
   (.seq (r2Step pc) (.seq reduceIn
-  (.seq (.block [.load .d .s9 .s6 oD, .load .d .s10 .s6 oLen]) ModExp.powWin)))))
+  (.seq (.block [.load .d .s9 .s6 oD, .load .d .s10 .s6 oLen]) ModExp.powWinFn)))))
 
 /-- `powerG` computing `R² mod p`. -/
 abbrev power (xj oD oLen : Nat) : Prog isa := powerG false xj oD oLen

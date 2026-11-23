@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.KcBodyW
 public import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
+public import VerifiedGarbage.Proof.Rsa.Arm.KdDivCall
+public import VerifiedGarbage.Proof.Framework.Subst
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Rsa.Arm.CvFail
@@ -23,6 +25,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.Arm.KdDivCT
+meta import VerifiedGarbage.Proof.Rsa.Arm.KdDivCall
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -621,7 +624,7 @@ theorem stw_divW {g : Geo} {σ s : State} {L : List Nat} {Mi : (Nat → Nat) →
     (hT : ∀ A, Mi A → VG.Proof.Rsa.Arm.KeyDiv.TopOk top g.w (A a))
     (hv : aVD ∈ L) (hz : aZ ∈ L) (hav : a ∉ [aVR, aVT, aY, aX]) (hw6 : 6 ≤ g.w)
     (hlive : ∀ j ∈ L, j = aVR ∨ j ∉ [aVR, aVT, aX, aY]) :
-    WP isa (VG.Impl.Rsa.Arm.KeyDiv.divW a aVR aVD aVT aY aX top) s (StW g σ (aVR :: L) (M1 g)) := by
+    WP isa (VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName a aVR aVD aVT aY aX top) s (StW g σ (aVR :: L) (M1 g)) := by
   obtain ⟨A, c, h0, hm'⟩ := h
   have hm := hMD A hm'
   have := h0.divW_ok (a := a) (r := aVR) (m := aVD) (t := aVT) (nm := aY) (u := aX) ha hv hz hm.1.1.1
@@ -640,16 +643,16 @@ theorem stw_divW {g : Geo} {σ s : State} {L : List Nat} {Mi : (Nat → Nat) →
 abbrev partsW : List (List (Prog isa)) :=
   [[startW], [VG.Impl.Rsa.Arm.KeyDiv.mulLo aVQ aP aQ], chunkA, [VG.Impl.Rsa.Arm.KeyDiv.mulLo aA aE aDP (some 2)],
     [copy aVD aM1, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
-    [VG.Impl.Rsa.Arm.KeyDiv.divW aA aVR aVD aVT aY aX (some 2)], chunkB,
+    [VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName aA aVR aVD aVT aY aX (some 2)], chunkB,
     [VG.Impl.Rsa.Arm.KeyDiv.mulLo aA aE aDQ (some 2)],
     [copy aVD aM2, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
-    [VG.Impl.Rsa.Arm.KeyDiv.divW aA aVR aVD aVT aY aX (some 2)], chunkC, [VG.Impl.Rsa.Arm.KeyDiv.mulLo aT aQI aQ],
+    [VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName aA aVR aVD aVT aY aX (some 2)], chunkC, [VG.Impl.Rsa.Arm.KeyDiv.mulLo aT aQI aQ],
     [copy aVD aP, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
-    [VG.Impl.Rsa.Arm.KeyDiv.divW aT aVR aVD aVT aY aX], eqA aVR aOne ++ ltA aD aN,
+    [VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName aT aVR aVD aVT aY aX], eqA aVR aOne ++ ltA aD aN,
     [copy aVD aM1, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
-    [VG.Impl.Rsa.Arm.KeyDiv.divW aD aVR aVD aVT aY aX], eqA aVR aDP,
+    [VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName aD aVR aVD aVT aY aX], eqA aVR aDP,
     [copy aVD aM2, .block (VG.Impl.Rsa.Arm.KeyDiv.fixTop aVD)],
-    [VG.Impl.Rsa.Arm.KeyDiv.divW aD aVR aVD aVT aY aX], eqA aVR aDQ]
+    [VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName aD aVR aVD aVT aY aX], eqA aVR aDQ]
 
 theorem keyBodyW_parts : keyBodyW = seqs partsW.flatten := by
   simp only [keyBodyW, crtChecksW, dChecksW, divK, partsW, chunkA, chunkB, chunkC, List.flatten_cons,
@@ -713,12 +716,12 @@ theorem divWPieceB {a : Nat} {top : Option Nat} {L : List Nat} {Mi : Geo → (Na
     (ha : a < nArr) (ha' : a ∈ L) (hv : aVD ∈ L) (hz : aZ ∈ L) (hav : a ∉ [aVR, aVT, aY, aX])
     (hlive : ∀ j ∈ L, j = aVR ∨ j ∉ [aVR, aVT, aX, aY]) (hMD : ∀ g A, Mi g A → MD g A)
     (hT : ∀ g A, 6 ≤ g.w → Mi g A → VG.Proof.Rsa.Arm.KeyDiv.TopOk top g.w (A a)) :
-    RelCT isa (LiftB Pub (FW (gf := gf) X L Mi)) (VG.Impl.Rsa.Arm.KeyDiv.divW a aVR aVD aVT aY aX top)
+    RelCT isa (LiftB Pub (FW (gf := gf) X L Mi)) (VG.Impl.Rsa.Arm.KeyDiv.divWC VG.Impl.Rsa.Arm.KeyCheck.divName a aVR aVD aVT aY aX top)
       (LiftB Pub (FW (gf := gf) X (aVR :: L) M1)) :=
   gPieceB hg (Pre := fun g s => 6 ≤ g.w ∧ VG.Proof.Rsa.Arm.KeyDiv.DivPre g.B g.Z g.w nArr aVD s a top)
     (fun g => by
       by_cases hw : 6 ≤ g.w
-      · exact (VG.Proof.Rsa.Arm.KeyDiv.divW_ct T ha (by decide) (by decide) (by decide) (by decide) (by decide)
+      · exact (VG.Proof.Rsa.Arm.KeyDiv.divWC_ct VG.Impl.Rsa.Arm.KeyCheck.divName T ha (by decide) (by decide) (by decide) (by decide) (by decide)
           (by decide) (fun e => hav (by simp [e])) (by decide) (by decide) (by decide) (by decide) (by decide)
           (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
           (by decide) hw).mono (fun _ _ h => ⟨h.1.2, h.2.2⟩) fun _ _ h => h
@@ -956,9 +959,17 @@ theorem check_key_verified :
     Verified target VG.Impl.Rsa.Arm.CheckKey.code (Spec.Rsa.checkKeyContract abi 0) :=
   ⟨ck_contract_correct, ck_contract_ct, ck_contract_sat⟩
 
-/-- `vg_rsa_check_key_umaal`. -/
+/-- A call runs as the call of the same code by another name. -/
+theorem call_rename_sim (n n' : String) (c : Prog isa) : Sim (M := isa) (.call n c) (.call n' c) := by
+  intro s t s' h
+  cases h with
+  | call p b q => exact .call p b q
+
+/-- `vg_rsa_check_key_umaal`: `code` with its rows by `umaal`, its divisions' steps called by
+their own name. -/
 theorem check_key_umaal_verified :
     Verified target VG.Impl.Rsa.Arm.CheckKey.codeU (Spec.Rsa.checkKeyContract abi 0) :=
-  VG.Proof.Bignum.Arm.umaalArithmetic_verified check_key_verified
+  (VG.Proof.Bignum.Arm.umaalArithmetic_verified check_key_verified).of_sim
+    fun h => Exec.subst (call_rename_sim _ _ _) h
 
 end VG.Proof.Rsa.Arm.CheckKey

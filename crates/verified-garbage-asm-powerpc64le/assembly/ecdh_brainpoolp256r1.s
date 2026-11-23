@@ -54,14 +54,20 @@ vg_ecdh_brainpoolp256r1:
 	addis %r4, %r4, ({VG_BRAINPOOLP256R1_FRAME_CONSTS}
 	addi %r4, %r4, ({VG_BRAINPOOLP256R1_FRAME_CONSTS}
 	mtlr %r11
-	li %r31, 68
+	li %r31, 17
+	addi %r9, %r3, 0
 20:
 	addi %r31, %r31, -1
-	rldicr %r8, %r31, 3, 60
-	add %r9, %r4, %r8
-	ld %r11, 0(%r9)
-	add %r9, %r3, %r8
+	ld %r11, 0(%r4)
 	std %r11, 64(%r9)
+	ld %r11, 8(%r4)
+	std %r11, 72(%r9)
+	ld %r11, 16(%r4)
+	std %r11, 80(%r9)
+	ld %r11, 24(%r4)
+	std %r11, 88(%r9)
+	addi %r4, %r4, 32
+	addi %r9, %r9, 32
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 20b
 	li %r4, 0

@@ -179,7 +179,7 @@ call {vg_brainpoolp512r1_mul_mod_n}
         vg_brainpoolp512r1_check_point = sym super::ec_brainpoolp512r1_compressed::vg_brainpoolp512r1_check_point::vg_brainpoolp512r1_check_point,
         vg_brainpoolp512r1_inv_mod_n = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_inv_mod_n::vg_brainpoolp512r1_inv_mod_n,
         vg_brainpoolp512r1_mul_mod_n = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_n::vg_brainpoolp512r1_mul_mod_n,
-        vg_brainpoolp512r1_add_complete = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_add_complete::vg_brainpoolp512r1_add_complete,
+        vg_brainpoolp512r1_add_complete = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_add_complete::vg_brainpoolp512r1_add_complete,
         vg_brainpoolp512r1_mul_mod_p = sym super::ecdsa_brainpoolp512r1::vg_brainpoolp512r1_mul_mod_p::vg_brainpoolp512r1_mul_mod_p,
         vg_brainpoolp512r1_inv_mod_p = sym super::ec_brainpoolp512r1::vg_brainpoolp512r1_inv_mod_p::vg_brainpoolp512r1_inv_mod_p,
         VG_BRAINPOOLP512R1_COMB = sym super::consts::VG_BRAINPOOLP512R1_COMB,
@@ -237,10 +237,6 @@ jne 21b
         vg_ecdsa_brainpoolp512r1_sign_k = sym super::ecdsa_brainpoolp512r1::vg_ecdsa_brainpoolp512r1_sign_k::vg_ecdsa_brainpoolp512r1_sign_k,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_brainpoolp512r1_add_complete.rs"]
-pub(crate) mod vg_brainpoolp512r1_add_complete;
 
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp512r1_inv_mod_n.rs"]

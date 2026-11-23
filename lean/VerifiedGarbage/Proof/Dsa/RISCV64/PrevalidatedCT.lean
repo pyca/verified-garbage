@@ -226,7 +226,7 @@ theorem pinsTp6 : Pins (At C0p FTp 6) [.s6] :=
     obtain ⟨_, _, u₁, -, e₁, e₂⟩ := exec_seqL_append.mp e
     have h₁ : u₁.gpr .s6 = v.L.S := (at_sem (Φ := C0p) (F := FTp) (n := 1) (M := P0)
       (fun _ _ h => WP.of_flat (c := .block Verify.entry) rfl (front_P0 h.c0)) ⟨s₀, _, h₀, e₁⟩).1.regs.s6
-    exact ⟨(Exec.gpr_callFree s6_keptp e₂ rfl).trans h₁, trivial⟩
+    exact ⟨(Exec.gpr s6_keptp e₂).trans h₁, trivial⟩
 
 theorem prevalidated_rel : RelCT isa (Two C0p) Prevalidated.verify fun _ _ => True := by
   refine chain_start (chain_cons runTp (m := 1) (by decide) ?_ ?_)

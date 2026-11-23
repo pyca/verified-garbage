@@ -62,8 +62,9 @@ def artifacts : List Artifact :=
     Spec.Dsa.parameterSearchApi.artifact X86_64.target {
       suffix := qualifiedName "" [("sha1", p.sha1.suffix), ("sha256", p.sha256.suffix), ("mr", v.suffix)]
       code := Impl.Dsa.X86_64.Fn.parameterSearch (Proof.Dsa.X86_64.Generation.SearchScrub.level p v)
-        (Generation.RefillBackend.name "sha1" p.sha1 v 128) (Generation.RefillBackend.name "sha256" p.sha256 v 256)
-        (Generation.RefillBackend.name "sha256" p.sha256 v 384) (Generation.RefillBackend.body p.sha1 v 128)
+        (Generation.RefillBackend.addrs p.sha1 v) (Generation.RefillBackend.addrs p.sha256 v)
+        (Generation.RefillBackend.addrs p.sha256 v) (Generation.RefillBackend.name 128)
+        (Generation.RefillBackend.name 256) (Generation.RefillBackend.name 384) (Generation.RefillBackend.body p.sha1 v 128)
         (Generation.RefillBackend.body p.sha256 v 256) (Generation.RefillBackend.body p.sha256 v 384)
       verified := Proof.Dsa.X86_64.Generation.SearchScrub.search_scrubbed p v
       spSafe := Proof.Dsa.X86_64.Generation.SearchScrub.search_spSafe p v })

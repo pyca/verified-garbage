@@ -639,7 +639,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
   | pop _ _ => simp only [step, reduceCtorEq] at hs
   | alloc _ => simp only [step, reduceCtorEq] at hs
   | free _ => simp only [step, reduceCtorEq] at hs
-  | callr _ => simp only [step, reduceCtorEq] at hs
+  | callr _ | callm _ => simp only [step, reduceCtorEq] at hs
 
 end
 
@@ -875,7 +875,7 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     split at hs <;> [skip; cases hs]
     rw [storeStep_regs hs]; exact hr
   case vmovdquStore l _ _ => cases l <;> (rw [storeStep_regs hs]; exact hr)
-  case push | pop | alloc | free | callr => simp only [step, reduceCtorEq] at hs
+  case push | pop | alloc | free | callr | callm => simp only [step, reduceCtorEq] at hs
   case xop op =>
     cases op <;> (simp only [step, Option.some.injEq] at hs; subst hs; first | exact hr | rw [noX_regs]; exact hr)
   case movqR d r =>

@@ -118,7 +118,7 @@ structure Fin (base : Addr) (len : Nat) (args : Nat → BitVec 32) (up : BitVec 
   eax : t.gpr .eax = BitVec.ofNat 32 r
   bytes : Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = out
   used : t.mem.readW (byteAddr up) 64 = BitVec.ofNat 64 used
-  frame : Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr up, 8⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem
+  frame : Frame (⟨byteAddr (args 0), len⟩ :: ⟨byteAddr up, 8⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem
   keeps : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t
 
 /-- A result after a stage. -/
@@ -152,7 +152,7 @@ theorem finish_ok (h : In Ex base bytes len args s) {up : BitVec 32}
 theorem zeroOut_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr) :
     WP isa zeroOut s fun t =>
       Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = List.replicate len 0 ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem t.mem ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t ∧ In Ex base bytes len args t ∧
       Kept base len [19] [accOff] s.mem t.mem := by
   have ao : accOff = 8 := rfl
@@ -233,7 +233,7 @@ theorem reject_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes 
 theorem acceptOut_ok (h : In Ex base bytes len args s) (Ox : OutAt args base bytes len 0 (s.gpr .esp) s.wr)
     {p : Nat} (hp : sv s.mem base len .wide 9 = p) (hpl : p < 2 ^ (8 * len)) :
     WP isa acceptOut s fun u => Spec.Rsa.bytesAt u.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp p len ∧
-      Frame (⟨byteAddr (args 0), len⟩ :: frameR base (s.gpr .esp) (fR len)) s.mem u.mem ∧
+      Frame (⟨byteAddr (args 0), len⟩ :: frameF base (s.gpr .esp) (fR len)) s.mem u.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u ∧ In Ex base bytes len args u ∧
       Kept base len [19] [accOff] s.mem u.mem := by
   have ao : accOff = 8 := rfl
@@ -1033,7 +1033,7 @@ theorem dividesS_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) 
       t.gpr .eax = BitVec.ofNat 32 (decide (sv s.mem base len .wide j % prime = 0)).toNat ∧
       Kept base len [] [] s.mem t.mem :=
   WP.mono (divides_ok h hj p3 p65 podd pinv invl) fun _ ⟨I, F, E, K⟩ =>
-    ⟨⟨I, frameR_mono F (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 96) F h.room.apart.symm⟩
+    ⟨⟨I, frameF_mono (frameF_of F) (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 96) F h.room.apart.symm⟩
 
 /-- p's congruences for its generator `g` (2 or 5): `eax` its `generationShape`. -/
 theorem congruences_ok (h : In Ex base bytes len args s) {p g bits : Nat} (hp : sv s.mem base len .wide 9 = p)
@@ -1151,12 +1151,13 @@ theorem Table.step {Tb : BitVec 32} (TT : Table Tb (s.gpr .esp) s) {t : State}
   have bl := h.bytes_lt
   have tf := TT.fit
   refine ⟨by rw [sy]; exact TT.sym, fun i hi d hd => by rw [S.keeps.2.1, S.keeps.2.2]; exact TT.read i hi d hd,
-    fun i hi => ?_, TT.fit, by rw [S.esp]; exact TT.far⟩
+    fun i hi => ?_, TT.fit, by rw [S.esp]; exact TT.far, by rw [S.esp]; exact TT.wide⟩
   rw [← TT.words i hi]
   refine S.frame.readW (r := ⟨Tb.setWidth 64, 8192⟩) (w := 64)
     (Offset.contains_base _ (by omega_arith : 8 * i + 8 ≤ 8192) (by omega_arith)) (fun r hr => ?_) (by decide)
-  rw [frameR, List.mem_cons, List.mem_map] at hr
-  rcases hr with rfl | ⟨q, hq, rfl⟩
+  rw [frameF, frameR, List.mem_cons, List.mem_cons, List.mem_map] at hr
+  rcases hr with rfl | rfl | ⟨q, hq, rfl⟩
+  · exact TT.wide
   · exact TT.far
   · have := fit q hq
     exact TA.sub_right (Offset.sub_base _ (by omega_arith))
@@ -1193,7 +1194,7 @@ theorem sieveS_ok (h : In Ex base bytes len args s) {j : Nat} (hj : j ≤ 27) {T
       t.gpr .eax = BitVec.ofNat 32 (VG.Proof.RsaKeyGen.trialPrefix (sv s.mem base len .wide j) (sieveCount bits)).toNat ∧
       Kept base len [] [] s.mem t.mem :=
   WP.mono (sieve_ok h hj TT hb) fun _ ⟨I, F, E, K⟩ =>
-    ⟨⟨I, frameR_mono F (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 96) F h.room.apart.symm⟩
+    ⟨⟨I, frameF_mono (frameF_of F) (fun _ hp => nomatch hp), K⟩, E, kept_out h (r := below (s.gpr .esp) 96) F h.room.apart.symm⟩
 
 /-- p's checks and tests: the result of `sievedParameterCandidate` for a tape of at least `L`
 octets. -/

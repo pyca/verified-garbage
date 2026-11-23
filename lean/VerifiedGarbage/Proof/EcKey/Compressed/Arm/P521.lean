@@ -1,10 +1,18 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Main
 public import VerifiedGarbage.Spec.EcKey.P521
 import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Umaal
-import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 import VerifiedGarbage.Proof.Framework.Arm.TaintMono
@@ -58,12 +66,16 @@ theorem agree_τ₀ {s t : State} (h : (compressContract Spec.P521.curve).pub s 
   · exact h1
   · exact h2
 
-theorem ct : ConstantTime isa (compressContract Spec.P521.curve).pre (compressContract Spec.P521.curve).pub code :=
-  VG.Taint.constantTime_of_exists (A := taintS) τ₀ (fun _ _ _ _ h => agree_τ₀ h)
+/-- The contract with the table of constants (`Cfg.constsK`), as the proof states it. -/
+abbrev AC (u : Bool) : Contract isa := (compressContract Spec.P521.curve).withTablesArm (p521With u).constsK
+
+theorem ct : ConstantTime isa (AC false).pre (AC false).pub code :=
+  VG.Taint.constantTime_of_exists (A := taintC) τ₀ (fun _ _ _ _ h => ⟨agree_τ₀ h.1, withTablesArm_syms h⟩)
     (by taint_decide_sum [mulPSum, addPSum, subPSum])
 
-theorem ctU : ConstantTime isa (compressContract Spec.P521.curve).pre (compressContract Spec.P521.curve).pub codeU :=
-  VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)
+theorem ctU : ConstantTime isa (AC true).pre (AC true).pub codeU :=
+  VG.Taint.constantTime (A := taintSymU [(p521With true).constSym]) τ₀
+    (fun _ _ _ _ h => ⟨agree_τ₀ h.1, withTablesArm_syms h⟩) (by taint_decide)
 
 theorem sat : ∃ s, (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0).pre s := by
   have hlen : Spec.P521.curve.len = 66 := rfl
@@ -71,10 +83,36 @@ theorem sat : ∃ s, (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0).pre 
     Spec.EcKey.Instance.compressPublicKeySig, hlen, Spec.EcKey.scratchWords,
     abi, argRegs, reduceClassify, Loc.val, State.addr, satState] [satState] using (satState 66)
 
-theorem verified : Verified target code (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct p521 p521_ok) ct (compress_implies Spec.EcKey.P521.inst sat)
+/-- `satState`, holding the table at `0x100000`. -/
+def satStateC (u : Bool) : State := { satState 66 with
+  mem := constMem ((0x100000 : BitVec 32).setWidth 64) (p521With u).constTbl
+  syms := fun _ => 0x100000 }
 
-theorem verifiedU : Verified target codeU (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0) :=
-  Verified.of_correct (compress_correct (p521With true) p521u_ok) ctU (compress_implies Spec.EcKey.P521.inst sat)
+theorem satC (u : Bool) :
+    ∃ s, (Spec.EcKey.P521.inst.compressPublicKeyContract (abi.withConsts (p521With u).constsK) 0).pre s :=
+  sat_consts (s := satStateC u)
+    (by
+      have hlen : Spec.P521.curve.len = 66 := rfl
+      cases u <;>
+      (sig_pre [Spec.EcKey.P521.inst, Spec.EcKey.Instance.compressPublicKeyContract,
+        Spec.EcKey.Instance.compressPublicKeySig, hlen, Spec.EcKey.scratchWords,
+        abi, argRegs, reduceClassify, Loc.val, State.addr, satState, satStateC]
+       sig_and_intros
+       all_goals first
+         | rfl
+         | decide
+         | exact Region.disjoint_of_sep (by decide)))
+    (constsOk_tbl _ (T := 0x100000) rfl rfl (by cases u <;> decide) (by decide) (by cases u <;> decide)
+      (by cases u <;> decide))
+
+theorem verified :
+    Verified target code (Spec.EcKey.P521.inst.compressPublicKeyContract (abi.withConsts (p521With false).constsK) 0) :=
+  Verified.of_correct (compress_correctT p521 p521_ok (List.mem_singleton_self _)) ct
+    (withTables_implies (compress_implies Spec.EcKey.P521.inst sat) (satC false))
+
+theorem verifiedU :
+    Verified target codeU (Spec.EcKey.P521.inst.compressPublicKeyContract (abi.withConsts (p521With true).constsK) 0) :=
+  Verified.of_correct (compress_correctT (p521With true) p521u_ok (List.mem_singleton_self _)) ctU
+    (withTables_implies (compress_implies Spec.EcKey.P521.inst sat) (satC true))
 
 end VG.Proof.EcKey.Compressed.Arm.P521

@@ -45,7 +45,8 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ecdh_p256`, given the group law. -/
 theorem exchangeP256 (hC : Weierstrass.Law Spec.P256.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeP256
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.p256With false).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.P256.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeP256
       verified := VG.Proof.Ecdh.Arm.ecdh_verified hC }
@@ -54,7 +55,8 @@ theorem exchangeP256 (hC : Weierstrass.Law Spec.P256.curve) :
 /-- `vg_ecdh_p256_umaal`, given the group law. -/
 theorem exchangeP256U (hC : Weierstrass.Law Spec.P256.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeP256U
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.p256With true).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.P256.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeP256U
       verified := VG.Proof.Ecdh.Arm.ecdhU_verified hC }

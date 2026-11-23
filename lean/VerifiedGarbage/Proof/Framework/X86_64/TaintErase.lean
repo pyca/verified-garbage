@@ -225,7 +225,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | adox d s => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | cmov _ d s => obtain ⟨-, rfl⟩ := some_cond hs; exact k d
   | push _ => cases hs
-  | callr _ => cases hs
+  | callr _ | callm _ => cases hs
   | pop _ _ => cases hs
   | alloc _ => cases hs
   | free _ => cases hs

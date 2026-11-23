@@ -220,7 +220,7 @@ def constTbl : List (BitVec 64) :=
 def constsK : List (String × List (BitVec 64)) := [(c.constSym, c.constTbl)]
 
 /-- The constants into their slots, copied from their table. -/
-def constsCode : Prog isa := copyTbl c.constSym (17 * c.n) (c.sl 0)
+def constsCode : Prog isa := copyTbl c.constSym 17 c.n (c.sl 0)
 
 /-- The saves, at `[sc]`, and `out` (`r3`) to `r14`, the working space to `r3`. -/
 def saveCode (sc : Reg) : List Instr :=

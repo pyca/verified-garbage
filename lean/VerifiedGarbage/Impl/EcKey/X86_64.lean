@@ -67,6 +67,12 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery
 form, the checks of `d` and `Z`, and the result. -/
 def middle : Prog isa :=
+  if c.affineOn then
+    progs [c.affineX,
+      c.mulPF (c.sl YM) (c.sl RY) (c.sl ACC),
+      c.mulPF (c.sl Y) (c.sl YM) (c.sl ONE),
+      .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
+  else
   progs [c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC),
     c.mulPF (c.sl X) (c.sl XM) (c.sl ONE),
     c.mulPF (c.sl YM) (c.sl RY) (c.sl ACC),

@@ -85,7 +85,8 @@ open VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.Secp256k1 VG.Proof.Weierstrass
 /-- What timing may depend on: the pointers and the table's address, and
 the key and the signature (`VPub`), which the contract lets it depend on. -/
 def combVerifyPub (um : Bool) (s t : State) : Prop :=
-  (verifyArm.pub s t ∧ s.syms secp256k1Comb.tsym = t.syms secp256k1Comb.tsym) ∧ VPub (secp256k1With um) s t
+  (verifyArm.pub s t ∧ s.syms secp256k1Comb.tsym = t.syms secp256k1Comb.tsym ∧
+    s.syms (secp256k1With um).constSym = t.syms (secp256k1With um).constSym) ∧ VPub (secp256k1With um) s t
 
 /-- `vg_secp256k1_mul_public`'s pieces and the two parts of verification around
 its call, in sequence: what the taint analysis checks. -/
@@ -124,29 +125,33 @@ theorem combVerifyWith_ct (hC : Law Spec.Secp256k1.curve) (um : Bool) (L : PubLe
 theorem combVerify_ct (hC : Law Spec.Secp256k1.curve) :
     ConstantTime isa (combVerifyPre false) (combVerifyPub false) verifySecp256k1Comb :=
   combVerifyWith_ct hC false pubLeaves
-    (RelCT.taint (A := taintSym [secp256k1Comb.tsym]) (c := piece ctPieces 26) (Taint.ofRegs [.r0, .r1, .r2, .r3])
+    (RelCT.taint (A := taintSym [secp256k1Comb.tsym, (secp256k1With false).constSym]) (c := piece ctPieces 26)
+      (Taint.ofRegs [.r0, .r1, .r2, .r3])
       (fun _ _ h => ⟨Taint.agree_ofRegs (by
         obtain ⟨⟨⟨_, h0, h1, h2, h3⟩, _⟩, _⟩ := h.2.2
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         exacts [h0, h1, h2, h3]), fun n hn => by
-        obtain rfl := List.mem_singleton.mp hn
-        exact h.2.2.1.2⟩) (by native_taint_decide))
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+        rcases hn with rfl | rfl
+        exacts [h.2.2.1.2.1, h.2.2.1.2.2]⟩) (by native_taint_decide))
     (LeafCT.check (p := piece ctPieces 27) (by native_taint_decide))
 
 theorem combVerifyU_ct (hC : Law Spec.Secp256k1.curve) :
     ConstantTime isa (combVerifyPre true) (combVerifyPub true) verifySecp256k1CombU :=
   combVerifyWith_ct hC true pubLeavesU
-    (RelCT.taint (A := taintSymU [secp256k1Comb.tsym]) (c := piece ctPiecesU 26) (Taint.ofRegs [.r0, .r1, .r2, .r3])
+    (RelCT.taint (A := taintSymU [secp256k1Comb.tsym, (secp256k1With true).constSym]) (c := piece ctPiecesU 26)
+      (Taint.ofRegs [.r0, .r1, .r2, .r3])
       (fun _ _ h => ⟨Taint.agree_ofRegs (by
         obtain ⟨⟨⟨_, h0, h1, h2, h3⟩, _⟩, _⟩ := h.2.2
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         exacts [h0, h1, h2, h3]), fun n hn => by
-        obtain rfl := List.mem_singleton.mp hn
-        exact h.2.2.1.2⟩) (by taint_decide))
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+        rcases hn with rfl | rfl
+        exacts [h.2.2.1.2.1, h.2.2.1.2.2]⟩) (by taint_decide))
     (LeafCT.checkU (p := piece ctPiecesU 27) (by taint_decide))
 
 end VG.Proof.Ecdsa.Verify.Arm.Secp256k1

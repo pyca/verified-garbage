@@ -58,10 +58,11 @@ structure RegionModel (M : ISA) where
   eval_with (c : M.Cond) (s : M.State) (r w : List Region) : M.eval c (withRegions s r w) = M.eval c s
   callAddrs_with (s : M.State) (r w : List Region) : M.callAddrs (withRegions s r w) = M.callAddrs s
   retAddrs_with (s : M.State) (r w : List Region) : M.retAddrs (withRegions s r w) = M.retAddrs s
-  /-- An indirect call calls the same address, and each function is at the
-  same address, with other permissions. -/
-  icall_with (i : M.Instr) (s : M.State) (r w : List Region) :
-    M.icall i (withRegions s r w) = M.icall i s := by intros; rfl
+  /-- An indirect call calls the same address with more permissions (it may
+  read the address from memory), and each function is at the same address
+  with other permissions. -/
+  icall_widen {i : M.Instr} {s : M.State} {r w : List Region} {a : Addr} :
+    Covers (rd s ++ wr s) (r ++ w) → M.icall i s = some a → M.icall i (withRegions s r w) = some a
   fnAddr_with (s : M.State) (r w : List Region) (n : String) :
     M.fnAddr (withRegions s r w) n = M.fnAddr s n := by intros; rfl
   call_widen {s s' : M.State} : M.call s = some s' →
@@ -284,11 +285,11 @@ theorem widen {c : Prog M} {s s' : M.State} {t : List Leak} {r w : List Region}
     obtain ⟨r₁, w₁, hc'⟩ := R.call_widen hc₁
     obtain ⟨-, -, hr'⟩ := R.ret_widen hr
     have hi' : M.icall i (R.withRegions s₀ r w) = some (M.fnAddr (R.withRegions s₀ r w) n) := by
-      rw [R.icall_with, R.fnAddr_with]; exact hi
+      rw [R.fnAddr_with]; exact R.icall_widen hc hi
     have := Exec.icall (next := nx) hi' (hc' r w) (ih (by rwa [r₁, w₁]) (by rwa [w₁])) (hr' r w)
     rwa [R.addrs_with, R.fnAddr_with, R.callAddrs_with, R.retAddrs_with] at this
   | icallNext hi hne _ ih =>
-    exact .icallNext (by rw [R.icall_with]; exact hi) (by rw [R.fnAddr_with]; exact hne) (ih hc hw)
+    exact .icallNext (R.icall_widen hc hi) (by rw [R.fnAddr_with]; exact hne) (ih hc hw)
 
 /-- Inlining: a run from `s` with its permissions narrowed to `r` and `w`,
 which those of `s` cover, is a run from `s`, to the same state with the

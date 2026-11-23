@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.St
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Inv
-import VerifiedGarbage.Proof.Rsa.Arm.InverseCT
+public import VerifiedGarbage.Proof.Rsa.Arm.InverseCall
 import VerifiedGarbage.Proof.Rsa.Arm.Stage.Loads
 
 /-! # A candidate on ARMv7: differences and inverses as pieces
@@ -37,28 +37,26 @@ theorem St.psub3 {o a b : Nat} (cert : Cert (sub3 o a b)) (ho : o < nArr) (ha : 
       exact ⟨e, h.write1 k ho (by simp) r.sp r.rd r.wr e1 (by simp), ht⟩
 
 theorem inverse_cert : ∀ σ₁ σ₂ : State, RelCT isa
-    (fun s₁ s₂ => St P E A L V LS σ₁ s₁ ∧ St P E A L V LS σ₂ s₂) VG.Impl.Rsa.Arm.Keys.inverse (fun _ _ => True) :=
-  fun _ _ s t tr1 tr2 u v h e1 e2 =>
-    ⟨inverse_ct s t tr1 tr2 u v trivial trivial
-      ⟨by rw [h.1.2.2.r7, h.2.2.2.r7], by rw [h.1.2.2.r8, h.2.2.2.r8], by rw [h.1.2.2.r9, h.2.2.2.r9]⟩ e1 e2,
-      trivial⟩
+    (fun s₁ s₂ => St P E A L V LS σ₁ s₁ ∧ St P E A L V LS σ₂ s₂) (inverseCall false) (fun _ _ => True) :=
+  fun _ _ => inverseCall_ct fun _ _ h =>
+    ⟨by rw [h.1.2.2.r7, h.2.2.2.r7], by rw [h.1.2.2.r8, h.2.2.2.r8], by rw [h.1.2.2.r9, h.2.2.2.r9]⟩
 
 /-- `inverse` from `(a, m, 1, 0)` in arrays 0–3. -/
-theorem St.pinverse [VG.Proof.Rsa.Arm.Keys.InvLaw] {L0 : List Nat} (hZ : aZero ∈ L0) (hL0 : ∀ j ∈ L0, j ∉ invArrs) (hLS : ∀ d ∈ LS, d ∉ invSlots)
+theorem St.pinverse [VG.Proof.Rsa.Arm.Keys.InvLaw] {L0 : List Nat} (hZ : aZero ∈ L0) (hL0 : ∀ j ∈ L0, j ∉ invArrs) (hLS : ∀ d ∈ LS, d ∉ invCallSlots)
     (hv : ∀ σ s, St P E A (aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0) V LS σ s → A σ aZero = 0 ∧
       A σ aNM + A σ aM = 2 ^ (32 * P.W) ∧ A σ aM % 2 = 1 ∧ 1 < A σ aM ∧ A σ 1 = A σ aM ∧ A σ 2 = 1 ∧ A σ 3 = 0) :
-    VP (St P E A (aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0) V LS) VG.Impl.Rsa.Arm.Keys.inverse
+    VP (St P E A (aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0) V LS) (inverseCall false)
       (St P E (fun σ => upd (upd (A σ) 1 (ivr P.W (A σ 0) (A σ aM)).2.1) 3 (ivr P.W (A σ 0) (A σ aM)).2.2.2)
         (1 :: 3 :: aNM :: aM :: L0) V LS) := by
   refine VP.of_ct (fun σ₁ σ₂ => inverse_cert σ₁ σ₂) fun σ s ⟨e, h, hw⟩ => ?_
   obtain ⟨vZ, vNM, vodd, v1, e1, e2, e3⟩ := hv σ s ⟨e, h, hw⟩
-  refine WP.mono (inverse_ok' hw (by decide) (by decide) (by have := h.pre.wge; omega_using [this])) fun t ⟨ht, k, r, v⟩ => ⟨e, ?_, ht⟩
+  refine WP.mono (inverseCall_ok' hw (by decide) (by decide) (by have := h.pre.wge; omega_using [this])) fun t ⟨ht, k, r, v⟩ => ⟨e, ?_, ht⟩
   have g : ∀ j ∈ aNM :: 3 :: 2 :: 1 :: 0 :: aM :: L0, num s.mem P.B P.W j = A σ j := fun j hj => h.arrs j hj
   have bk := v (by rw [g aNM (by simp), g aM (by simp)]; exact vNM) (by rw [g aZero (by simp [hZ])]; exact vZ)
     (by rw [g aM (by simp)]; exact vodd) (by rw [g aM (by simp)]; exact v1)
     (by simp only [bank]; rw [g 0 (by simp), g 1 (by simp), g 2 (by simp), g 3 (by simp), g aM (by simp), e1, e2, e3])
   rw [g 0 (by simp), g aM (by simp)] at bk
-  have hds : ∀ d ∈ invSlots, SlotOk d := by decide
+  have hds : ∀ d ∈ invCallSlots, SlotOk d := by decide
   refine h.core k (by decide) hds r.sp r.rd r.wr (fun j hj => ?_) (h.sl_keep k hds hLS) (fun j hj => ?_) h.ls_ok
   · dsimp only
     simp only [List.mem_cons] at hj
@@ -86,7 +84,7 @@ theorem St.pinverse [VG.Proof.Rsa.Arm.Keys.InvLaw] {L0 : List Nat} (hZ : aZero �
 
 /-- `invOf a m`: `inverse` of `[a]` modulo `[m]`, which is odd and above 1. -/
 theorem St.pinv [VG.Proof.Rsa.Arm.Keys.InvLaw] {a m : Nat} (cm : Cert (copy aM m)) (ca : Cert (copy 0 a)) (c2 : Cert (copy 2 aOne)) (ha : a ∈ L) (hm : m ∈ L)
-    (hZ : aZero ∈ L) (hO : aOne ∈ L) (hL : ∀ j ∈ L, j = aZero ∨ 15 ≤ j) (hLS : ∀ d ∈ LS, d ∉ invSlots)
+    (hZ : aZero ∈ L) (hO : aOne ∈ L) (hL : ∀ j ∈ L, j = aZero ∨ 15 ≤ j) (hLS : ∀ d ∈ LS, d ∉ invCallSlots)
     (hv : ∀ σ, E σ → A σ aZero = 0 ∧ A σ aOne = 1 ∧ A σ m % 2 = 1 ∧ 1 < A σ m) :
     VP (St P E A L V LS) (invOf a m)
       (St P E (fun σ => upd (upd (A σ) 1 (ivr P.W (A σ a) (A σ m)).2.1) 3 (ivr P.W (A σ a) (A σ m)).2.2.2)

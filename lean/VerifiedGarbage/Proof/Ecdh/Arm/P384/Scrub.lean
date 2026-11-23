@@ -45,7 +45,8 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ecdh_p384`, given the group law. -/
 theorem exchangeP384 (hC : Weierstrass.Law Spec.P384.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeP384
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.p384With false).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.P384.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeP384
       verified := VG.Proof.Ecdh.Arm.P384.ecdh_verified hC }
@@ -54,7 +55,8 @@ theorem exchangeP384 (hC : Weierstrass.Law Spec.P384.curve) :
 /-- `vg_ecdh_p384_umaal`, given the group law. -/
 theorem exchangeP384U (hC : Weierstrass.Law Spec.P384.curve) :
     VerifiedScrubbed target Impl.Ecdh.Arm.Fn.exchangeP384U
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst abi) 32 :=
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst
+        (abi.withConsts (Impl.Ecdsa.Arm.p384With true).constsK)) 32 :=
   verifiedScrubbed (api := Spec.Ecdh.P384.exchangeApi)
     { code := Impl.Ecdh.Arm.exchangeP384U
       verified := VG.Proof.Ecdh.Arm.P384.ecdhU_verified hC }

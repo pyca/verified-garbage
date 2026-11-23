@@ -414,6 +414,9 @@ def refillWords (pBytes : Nat) (s : State) : Nat → BitVec 64
   | 17 => BitVec.ofNat 64 pBytes
   | 18 => BitVec.ofNat 64 (Spec.Dsa.generationQLen pBytes)
   | 28 => BitVec.ofNat 64 (Spec.Dsa.generationQLen pBytes)
+  | 29 => s.gpr .rax
+  | 30 => s.gpr .r10
+  | 31 => s.gpr .r11
   | _ => 0
 
 def refillContext {pBytes : Nat} {s : State} (h : RefillABI pBytes s) : GenerationContext where
@@ -434,6 +437,25 @@ def refillContext {pBytes : Nat} {s : State} (h : RefillABI pBytes s) : Generati
   pLenSlot := rfl
   qLenSlot := rfl
   hashLenSlot := rfl
+
+/-- `rax`, `r10` and `r11` hold the addresses of the functions `N`, as the
+search's caller leaves them (`Impl.Dsa.X86_64.ParameterSearch.fnAddrs`). -/
+def FnRegs (N : FnNames) (s : State) : Prop :=
+  s.gpr .rax = s.syms N.upd ∧ s.gpr .r10 = s.syms N.fin ∧ s.gpr .r11 = s.syms N.prime
+
+/-- The contract of the search for one width that calls the functions `N`
+by the addresses its caller leaves in `rax`, `r10` and `r11`: the search's,
+with those registers holding them, for runs that agree on where they are. -/
+def contractF (N : FnNames) (pBytes : Nat) (A : Abi isa) (stack : Nat := 0) : Contract isa where
+  pre s := (contract pBytes A stack).pre s ∧ FnRegs N s
+  post := (contract pBytes A stack).post
+  pub s t := (contract pBytes A stack).pub s t ∧
+    s.syms N.upd = t.syms N.upd ∧ s.syms N.fin = t.syms N.fin ∧ s.syms N.prime = t.syms N.prime
+
+/-- On entry, the saved words 29, 30 and 31 are the functions' addresses. -/
+theorem fnSyms_entry {N : FnNames} {pBytes : Nat} {s : State} (h : RefillABI pBytes s) (hN : FnRegs N s) :
+    FnSyms N (refillContext h) s :=
+  ⟨hN.1, hN.2.1, hN.2.2⟩
 
 theorem refillOutputPlan {pBytes : Nat} {s : State} (h : RefillABI pBytes s) : OutputPlan (refillContext h) where
   lengthSlot := by

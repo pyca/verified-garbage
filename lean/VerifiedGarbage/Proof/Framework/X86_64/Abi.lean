@@ -93,7 +93,7 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
       obtain ⟨_, _, _, _, rfl⟩ := h; rfl
   | cmov =>
     obtain ⟨_, c, -, -, rfl⟩ := Taint.execCmov_some h; cases c <;> rfl
-  | push | pop | alloc | free | callr => simp only [reduceExec, reduceCtorEq] at h
+  | push | pop | alloc | free | callr | callm => simp only [reduceExec, reduceCtorEq] at h
 
 theorem pushRegs_mxcsr (s : State) (rs : List Reg) : (pushRegs s rs).mxcsr = s.mxcsr := by
   induction rs generalizing s with

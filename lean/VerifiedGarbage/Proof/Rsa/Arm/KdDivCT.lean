@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.KdMul
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Rsa.Arm.KdDiv
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyDivCall
 
 /-! # The key checks' division on ARMv7 (`KeyDiv.divW`) is constant time
 
@@ -361,41 +362,19 @@ theorem step_ct {B : BitVec 32} {Z w N a r m t nm u j : Nat} {top qo : Option Na
   -- The last block.
   exact piece [.r7, .r8, .r9] T.tail bnd_regs (fun s h => h.2.2.2) (fun s h => h.2.2.2)
 
-/-- What `divW a r m t nm u top` needs of each run. -/
-def DivPre (B : BitVec 32) (Z w N m : Nat) (s : State) (a : Nat := 0) (top : Option Nat := none) : Prop :=
-  Ws s B Z w N ∧ slot s.mem B 16 = w ∧ num s.mem B w m < 2 ^ (32 * (w / 2)) ∧
-    0 < w32 s.mem (State.addr B) (arr w m + 4 * (w / 2 - 1)) ∧ num s.mem B w 0 = 0 ∧ TopOk top w (num s.mem B w a)
-
-/-- `divW a r m t nm u top qo` is constant time. -/
-theorem divWG_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} {top qo : Option Nat}
-    (T : DivTaint a r m t nm u top qo) (hq : QArr N r m t nm u qo) (ha : a < N)
-    (hr : r < N) (hm : m < N) (ht : t < N) (hnm : nm < N) (hu : u < N) (hN : N ≤ 256) (hra : r ≠ a)
-    (hrt : r ≠ t) (hru : r ≠ u) (htu : t ≠ u) (hmr : m ≠ r) (hmt : m ≠ t) (hmu : m ≠ u) (hnr : nm ≠ r)
-    (htn : t ≠ nm) (hnu : nm ≠ u) (hnm' : nm ≠ m) (hr0 : r ≠ 0) (ht0 : t ≠ 0) (hu0 : u ≠ 0) (hn0 : nm ≠ 0)
-    (hw6 : 6 ≤ w) :
-    RelCT isa (fun s t' => (DivPre B Z w N m s a top ∧ QZ s.mem B w qo) ∧ (DivPre B Z w N m t' a top ∧
-      QZ t'.mem B w qo)) (divW a r m t nm u top qo) fun _ _ => True := by
-  have hdw : 3 ≤ w / 2 := by omega_using [hw6]
-  refine (RelCT.exists_ (P := fun (p : State × State) s t' => (s = p.1 ∧ DivPre B Z w N m p.1 a top ∧
-    QZ p.1.mem B w qo) ∧ (t' = p.2 ∧ DivPre B Z w N m p.2 a top ∧ QZ p.2.mem B w qo)) fun p => ?_).mono
-    (fun s t' h => ⟨(s, t'), ⟨rfl, h.1⟩, rfl, h.2⟩) fun _ _ h => h
-  obtain ⟨σ₁, σ₂⟩ := p
+/-- The steps (`tail`), from the invariant at `j ≥ 1` in each run, are constant time. -/
+theorem tail_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} {top qo : Option Nat}
+    (T : DivTaint a r m t nm u top qo) (hq : QArr N r m t nm u qo) (hr : r < N) (hm : m < N) (ht : t < N)
+    (hnm : nm < N) (hu : u < N) (hN : N ≤ 256) (hrt : r ≠ t) (hru : r ≠ u) (htu : t ≠ u) (hmr : m ≠ r)
+    (hmt : m ≠ t) (hmu : m ≠ u) (hnr : nm ≠ r) (htn : t ≠ nm) (hnu : nm ≠ u) (hr0 : r ≠ 0) (ht0 : t ≠ 0)
+    (hu0 : u ≠ 0) (hdw : 3 ≤ w / 2) (σ₁ σ₂ : State) {j : Nat} (hj1 : 1 ≤ j) :
+    RelCT isa (fun s t' =>
+      (∃ x0 z, DivSt x0 s B Z w N r m t nm u z (num σ₁.mem B w m) (num σ₁.mem B w a) j qo) ∧
+      (∃ x0 z, DivSt x0 t' B Z w N r m t nm u z (num σ₂.mem B w m) (num σ₂.mem B w a) j qo))
+      (VG.Impl.Rsa.Arm.KeyDiv.tail r m t nm u qo) fun _ _ => True := by
   let Inv (σ : State) (n : Nat) (y : State) : Prop :=
     ∃ x0 z, DivSt x0 y B Z w N r m t nm u z (num σ.mem B w m) (num σ.mem B w a) n qo
-  rw [divW]
-  simp only [VG.Impl.Rsa.Arm.Keys.seqs]
-  -- The preparation.
-  by_cases hT : TopOk top w (num σ₁.mem B w a)
-  swap
-  · exact RelCT.of_false fun s t' h => hT h.1.2.1.2.2.2.2.2
-  have hj1 := (hT.facts (by simp only [num]; exact val32_lt _ _ _ _) (by omega_using [hw6])).1
-  have fP : ∀ σ s, (s = σ ∧ DivPre B Z w N m σ a top ∧ QZ σ.mem B w qo) →
-      WP isa (prep a r m nm top) s (Inv σ (jStart top w)) := by
-    rintro σ s ⟨rfl, ⟨W, c16, hMl, hT0, z0, htop⟩, hq0⟩
-    exact WP.mono (prepQ_ok t u W ha hr hm hnm hN hra hmr hnm' hnr hr0 hn0 hw6 c16 rfl hMl hT0 z0 htop hq hq0)
-      fun x0 ⟨⟨z, I0⟩, _, _⟩ => ⟨x0, z, I0⟩
-  refine RelCT.seq (piece [.r7, .r8, .r9] T.prep (fun s t' h₁ h₂ => by rw [h₁.1, h₂.1]; exact ws_regs' h₁.2.1.1 h₂.2.1.1)
-    (fP σ₁) (fP σ₂)) ?_
+  rw [VG.Impl.Rsa.Arm.KeyDiv.tail]
   -- The step from the invariant, with any of its correctness `G`.
   have stepI : ∀ {n : Nat} {x0₁ x0₂ : State} {z₁ z₂ : Nat} {G₁ G₂ : State → Prop},
       n + w / 2 ≤ w →
@@ -449,7 +428,7 @@ theorem divWG_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} {top qo : Option Nat
     · rw [c₁] at e
       have : n ≠ 1 := fun hne => by simp [hne] at e
       exact ⟨n - 1, by omega_using [hn], by omega_using [hn, this], ⟨x0₁, z₁, I₁⟩, ⟨x0₂, z₂, I₂⟩⟩
-  refine RelCT.seq (RelCT.loop (Q := fun s t' => Inv σ₁ 0 s ∧ Inv σ₂ 0 t') I body (jStart top w) |>.mono
+  refine RelCT.seq (RelCT.loop (Q := fun s t' => Inv σ₁ 0 s ∧ Inv σ₂ 0 t') I body j |>.mono
     (fun s t' h => ⟨by omega_using [hj1], h.1, h.2⟩) fun _ _ h => h) ?_
   -- The last step.
   refine (RelCT.exists_ (P := fun (q : (State × Nat) × (State × Nat)) s t' =>
@@ -460,6 +439,43 @@ theorem divWG_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} {top qo : Option Nat
     (fun s t' h => ⟨⟨h.1, WP.mono (stepD_ok h.1 hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu hr0 ht0 hu0
       hdw hq) fun _ _ => trivial⟩, h.2, WP.mono (stepD_ok h.2 hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu
       hr0 ht0 hu0 hdw hq) fun _ _ => trivial⟩) fun _ _ _ => trivial
+
+/-- What `divW a r m t nm u top` needs of each run. -/
+def DivPre (B : BitVec 32) (Z w N m : Nat) (s : State) (a : Nat := 0) (top : Option Nat := none) : Prop :=
+  Ws s B Z w N ∧ slot s.mem B 16 = w ∧ num s.mem B w m < 2 ^ (32 * (w / 2)) ∧
+    0 < w32 s.mem (State.addr B) (arr w m + 4 * (w / 2 - 1)) ∧ num s.mem B w 0 = 0 ∧ TopOk top w (num s.mem B w a)
+
+/-- `divW a r m t nm u top qo` is constant time. -/
+theorem divWG_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} {top qo : Option Nat}
+    (T : DivTaint a r m t nm u top qo) (hq : QArr N r m t nm u qo) (ha : a < N)
+    (hr : r < N) (hm : m < N) (ht : t < N) (hnm : nm < N) (hu : u < N) (hN : N ≤ 256) (hra : r ≠ a)
+    (hrt : r ≠ t) (hru : r ≠ u) (htu : t ≠ u) (hmr : m ≠ r) (hmt : m ≠ t) (hmu : m ≠ u) (hnr : nm ≠ r)
+    (htn : t ≠ nm) (hnu : nm ≠ u) (hnm' : nm ≠ m) (hr0 : r ≠ 0) (ht0 : t ≠ 0) (hu0 : u ≠ 0) (hn0 : nm ≠ 0)
+    (hw6 : 6 ≤ w) :
+    RelCT isa (fun s t' => (DivPre B Z w N m s a top ∧ QZ s.mem B w qo) ∧ (DivPre B Z w N m t' a top ∧
+      QZ t'.mem B w qo)) (divW a r m t nm u top qo) fun _ _ => True := by
+  have hdw : 3 ≤ w / 2 := by omega_using [hw6]
+  refine (RelCT.exists_ (P := fun (p : State × State) s t' => (s = p.1 ∧ DivPre B Z w N m p.1 a top ∧
+    QZ p.1.mem B w qo) ∧ (t' = p.2 ∧ DivPre B Z w N m p.2 a top ∧ QZ p.2.mem B w qo)) fun p => ?_).mono
+    (fun s t' h => ⟨(s, t'), ⟨rfl, h.1⟩, rfl, h.2⟩) fun _ _ h => h
+  obtain ⟨σ₁, σ₂⟩ := p
+  let Inv (σ : State) (n : Nat) (y : State) : Prop :=
+    ∃ x0 z, DivSt x0 y B Z w N r m t nm u z (num σ.mem B w m) (num σ.mem B w a) n qo
+  rw [divW]
+  simp only [VG.Impl.Rsa.Arm.Keys.seqs]
+  -- The preparation.
+  by_cases hT : TopOk top w (num σ₁.mem B w a)
+  swap
+  · exact RelCT.of_false fun s t' h => hT h.1.2.1.2.2.2.2.2
+  have hj1 := (hT.facts (by simp only [num]; exact val32_lt _ _ _ _) (by omega_using [hw6])).1
+  have fP : ∀ σ s, (s = σ ∧ DivPre B Z w N m σ a top ∧ QZ σ.mem B w qo) →
+      WP isa (prep a r m nm top) s (Inv σ (jStart top w)) := by
+    rintro σ s ⟨rfl, ⟨W, c16, hMl, hT0, z0, htop⟩, hq0⟩
+    exact WP.mono (prepQ_ok t u W ha hr hm hnm hN hra hmr hnm' hnr hr0 hn0 hw6 c16 rfl hMl hT0 z0 htop hq hq0)
+      fun x0 ⟨⟨z, I0⟩, _, _⟩ => ⟨x0, z, I0⟩
+  refine RelCT.seq (piece [.r7, .r8, .r9] T.prep (fun s t' h₁ h₂ => by rw [h₁.1, h₂.1]; exact ws_regs' h₁.2.1.1 h₂.2.1.1)
+    (fP σ₁) (fP σ₂)) ?_
+  exact tail_ct T hq hr hm ht hnm hu hN hrt hru htu hmr hmt hmu hnr htn hnu hr0 ht0 hu0 hdw σ₁ σ₂ hj1
 
 /-- `divW a r m t nm u` is constant time. -/
 theorem divW_ct {B : BitVec 32} {Z w N a r m t nm u : Nat} {top : Option Nat} (T : DivTaint a r m t nm u top)

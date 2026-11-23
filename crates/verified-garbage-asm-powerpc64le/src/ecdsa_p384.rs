@@ -41,9 +41,9 @@ bcl 20, 31, 2f
 mflr %r4
 addis %r4, %r4, ({VG_P384_FRAME_CONSTS} - 2b)@ha
 addi %r4, %r4, ({VG_P384_FRAME_CONSTS} - 2b)@l
-.base64 "pgNofWYA4Ds="
+.base64 "pgNofREA4DsAACM5"
 25:
-.base64 "////OyQf6HsUQiR9AABp6RRCI31AAGn5AAA/KA=="
+.base64 "////OwAAZOlAAGn5CABk6UgAafkQAGTpUABp+RgAZOlYAGn5IABk6WAAafkoAGTpaABp+TAAhDgwACk5AAA/KA=="
 bne %cr0, 25b
 .base64 "AACAOP//hDiACIP4eCusfDAA4Ds="
 26:

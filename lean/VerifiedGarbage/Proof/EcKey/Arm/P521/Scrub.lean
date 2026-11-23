@@ -56,7 +56,7 @@ open VG VG.Arm VG.Arm.Scrub
 /-- `vg_ec_p521_public_key`, given the group law. -/
 theorem publicKeyP521 (hL : Proof.Weierstrass.Law Spec.P521.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyP521
-      Proof.EcKey.Arm.P521.combPkSpec 32 :=
+      (Proof.EcKey.Arm.P521.combPkSpec false) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P521.publicKeyApi)
     { code := Impl.Ecdsa.Arm.publicKeyP521Comb
       verified := Proof.EcKey.Arm.P521.combPk_verified hL }
@@ -65,7 +65,7 @@ theorem publicKeyP521 (hL : Proof.Weierstrass.Law Spec.P521.curve) :
 /-- `vg_ec_p521_public_key_umaal`, given the group law. -/
 theorem publicKeyP521U (hL : Proof.Weierstrass.Law Spec.P521.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.publicKeyP521U
-      Proof.EcKey.Arm.P521.combPkSpec 32 :=
+      (Proof.EcKey.Arm.P521.combPkSpec true) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P521.publicKeyApi)
     { code := Impl.Ecdsa.Arm.publicKeyP521CombU
       verified := Proof.EcKey.Arm.P521.combPkU_verified hL }
@@ -74,7 +74,8 @@ theorem publicKeyP521U (hL : Proof.Weierstrass.Law Spec.P521.curve) :
 /-- `vg_ec_p521_compress_public_key`. -/
 theorem compressP521 :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressP521
-      (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P521.inst.compressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p521With false).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P521.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P521.code
       verified := Proof.EcKey.Compressed.Arm.P521.verified }
@@ -83,7 +84,8 @@ theorem compressP521 :
 /-- `vg_ec_p521_compress_public_key_umaal`. -/
 theorem compressP521U :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.compressP521U
-      (Spec.EcKey.P521.inst.compressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P521.inst.compressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p521With true).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P521.inst.compressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P521.codeU
       verified := Proof.EcKey.Compressed.Arm.P521.verifiedU }
@@ -92,7 +94,8 @@ theorem compressP521U :
 /-- `vg_ec_p521_decompress_public_key`, given the group law. -/
 theorem decompressP521 (hL : Proof.Weierstrass.Law Spec.P521.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressP521
-      (Spec.EcKey.P521.inst.decompressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P521.inst.decompressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p521With false).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P521.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P521Decompress.code
       verified := Proof.EcKey.Compressed.Arm.P521Decompress.verified hL }
@@ -101,7 +104,8 @@ theorem decompressP521 (hL : Proof.Weierstrass.Law Spec.P521.curve) :
 /-- `vg_ec_p521_decompress_public_key_umaal`, given the group law. -/
 theorem decompressP521U (hL : Proof.Weierstrass.Law Spec.P521.curve) :
     VerifiedScrubbed target Impl.EcKey.Arm.Fn.decompressP521U
-      (Spec.EcKey.P521.inst.decompressPublicKeyContract abi 0) 32 :=
+      (Spec.EcKey.P521.inst.decompressPublicKeyContract
+        (abi.withConsts (Impl.Ecdsa.Arm.p521With true).constsK) 0) 32 :=
   verifiedScrubbed (api := Spec.EcKey.P521.inst.decompressPublicKeyApi)
     { code := Proof.EcKey.Compressed.Arm.P521Decompress.codeU
       verified := Proof.EcKey.Compressed.Arm.P521Decompress.verifiedU hL }

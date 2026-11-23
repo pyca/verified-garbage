@@ -127,7 +127,7 @@ open VG.Proof.Rsa.Arm.KeyDiv
 
 /-- `midW` after the product, to the first division. -/
 abbrev chunkW (um : Bool := false) : List (Prog isa) := [eqS sE1 aDR aDQ aT1, eqS sE2 aZero aZero aT1] ++ invSetup ++ [
-  .block primeWidth, inverse um, .block ctx, eqS sE3 1 aOne aT1,
+  .block primeWidth, inverseCall um, .block ctx, eqS sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ divHdr aDQ aDR2 aDD aDT),
   copy 0 aZero, copy aDD aP, .block (clrLow aDD ++ VG.Impl.Rsa.Arm.KeyDiv.fixTop aDD)]

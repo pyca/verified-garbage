@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
 public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
+public import VerifiedGarbage.Impl.Subst
 
 /-! # `vg_rsa_check_key` on ARMv7
 
@@ -24,7 +25,13 @@ def args : List (Nat × Nat) := [(0, aD), (8, aP), (16, aQ), (24, aDP), (32, aDQ
 /-- `vg_rsa_check_key`. -/
 def code : Prog isa := fn 48 args (keyBodyS 12 20 28 36)
 
-/-- `vg_rsa_check_key_umaal`: `code` with its rows by `umaal`. -/
-def codeU : Prog isa := VG.Impl.Bignum.Arm.umaalArithmetic code
+/-- The name of `divTail` with its rows by `umaal`. -/
+def divNameU : String := "vg_rsa_check_key_div_umaal"
+
+/-- `vg_rsa_check_key_umaal`: `code` with its rows by `umaal`, and so the steps of its
+divisions, which it calls by a name of their own (`divNameU`). -/
+def codeU : Prog isa :=
+  Code.subst (.call divName (VG.Impl.Bignum.Arm.umaalArithmetic divTail))
+    (.call divNameU (VG.Impl.Bignum.Arm.umaalArithmetic divTail)) (VG.Impl.Bignum.Arm.umaalArithmetic code)
 
 end VG.Impl.Rsa.Arm.CheckKey

@@ -418,7 +418,7 @@ def regionModel : RegionModel isa where
     exact ⟨rfl, rfl, fun _ _ => (ite_eq_left hc).trans rfl⟩
   push_widen := push_widen
   pop_widen h := ⟨(pop_eq h).1, (pop_eq h).2.1, (pop_eq h).2.2.1, fun _ _ hw => pop_widen h _ hw⟩
-  icall_with i _ _ _ := by cases i <;> rfl
+  icall_widen {i} _ _ _ _ _ h := by cases i <;> exact h
 /-- Calls change no memory, and returns nothing. -/
 theorem callsKeepMem : regionModel.CallsKeepMem := fun _ _ _ _ hc hr =>
   ⟨(call_eq hc).2.2.2.1, by rw [ret_eq hr]⟩

@@ -63,8 +63,8 @@ theorem dEven_trace (B : Addr) (Z n : Nat) :
     fun s ⟨h, M⟩ => WP.mono (arrayDivision_ok h (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by have := M.2; omega_using [this]))
       fun w ⟨hw, Ow, _, _, _⟩ => ?_) ?_
-  · have same := arrayDivision_preserves_num (j := aDen) (by decide) (by decide) (by decide)
-      (h.fit64 (by decide)) Ow
+  · have same := h.read_num (j := aDen) (by decide) Ow fun O =>
+      arrayDivision_preserves_num (j := aDen) (by decide) (by decide) (by decide) (h.fit64 (by decide)) O
     refine ⟨hw, ?_, ?_⟩
     · change num w.mem B n aDen % 2 = 1
       rw [same]

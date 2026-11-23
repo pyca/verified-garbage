@@ -35,8 +35,10 @@ of `subMod64`, which reads it, sees the whole number.
 
 The addresses stay in registers that no arithmetic writes: `s6` keeps `S`,
 `s11` the key and `ra` the signature (or the nonce), so they are public
-throughout. The lengths, and the digest's address, are in the P space's
-header (`hLens`, `hDigest`), which no arithmetic writes either; the
+throughout; verification also keeps the signature's address in the header
+(`hSig`), and loads it into `ra` again after it calls `vg_bignum_pow_win`.
+The lengths, and the digest's address, are in the P space's header
+(`hLens`, `hDigest`), which no arithmetic writes either; the
 callee-saved registers and `ra` are saved there too, in words 16–28.
 
 `checkKey` checks the public part of the key as PPC64LE's does, on public
@@ -65,6 +67,10 @@ def hDigest : Nat := 8
 
 /-- The header's byte offset of the lengths. -/
 def hLens : Nat := 16
+
+/-- The header's byte offset of the signature's address, which verification
+loads into `ra` again after each call. -/
+def hSig : Nat := 32
 
 /-- `rd := p_len`. -/
 def getP (rd : Reg) : List Instr := [.load .d rd .s6 hLens, .shift .sll .d rd rd 48, .shift .srl .d rd rd 48]

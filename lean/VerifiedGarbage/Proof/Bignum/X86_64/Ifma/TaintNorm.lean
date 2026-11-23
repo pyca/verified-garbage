@@ -111,7 +111,7 @@ theorem stepKD_slots_nil (h : Plain τ) {i : Instr} {τ' : T} (e : stepKD τ i =
     · cases e
     · exact st e
   | xop op => cases op <;> (cases e; exact hs)
-  | push _ | callr _ | pop _ _ | alloc _ | free _ => cases e
+  | push _ | callr _ | callm _ | pop _ _ | alloc _ | free _ => cases e
   | _ => first
     | (cases e; first | exact hs | exact nx)
     | (obtain ⟨-, rfl⟩ := some_cond e; first | exact hs | exact nx)

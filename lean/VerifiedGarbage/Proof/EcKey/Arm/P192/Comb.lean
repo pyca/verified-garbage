@@ -14,6 +14,9 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.P192.CombLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
@@ -148,94 +151,110 @@ open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Weierstrass.Arm
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm.TComb
 open VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.P192 VG.Proof.EcKey.Arm
 
-abbrev combPkSpec : Contract isa :=
-  Spec.EcKey.P192.inst.publicKeyContract (abi.withConsts p192CombConsts)
+/-- The tables the public key reads: the comb's, and the setup's constants. -/
+abbrev combPkK (u : Bool) : List (String × List (BitVec 64)) := p192CombConsts ++ (p192With u).constsK
+
+abbrev combPkSpec (u : Bool) : Contract isa :=
+  Spec.EcKey.P192.inst.publicKeyContract (abi.withConsts (combPkK u))
 
 def combPkPre (u : Bool) (s : State) : Prop :=
-  PkPre (p192With u) s (constRegs p192CombConsts s) ∧ ConstsOk p192CombConsts 0 s
+  PkPre (p192With u) s (constRegs (combPkK u) s) ∧ ConstsOk (combPkK u) 0 s
 
-theorem pk_spec_pre {u : Bool} {s : State}
-    (h : (Spec.EcKey.P192.inst.publicKeyContract abi).pre s) : PkPre (p192With u) s := by
+theorem combPk_pre {u : Bool} {s : State} (h : (combPkSpec u).pre s) : combPkPre u s := by
+  have hp : (Spec.EcKey.P192.inst.publicKeyContract abi).pre (stripConsts (combPkK u) s) ∧
+      ConstsOk (combPkK u) 0 s := pre_consts.mp h
+  obtain ⟨h₁, hk⟩ := hp
   sig_pre [Spec.EcKey.P192.inst,Spec.EcKey.Instance.publicKeyContract,Spec.EcKey.Instance.publicKeySig,
-    Spec.P192.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h
-  obtain ⟨_sp,rd,wr,_od,os,ds,fo,fd,fs⟩ := h
-  exact ⟨rd,wr,os,ds,fo,fd,fs⟩
-
-theorem combPk_pre {u : Bool} {s : State} (h : combPkSpec.pre s) : combPkPre u s := by
-  have hp : (Spec.EcKey.P192.inst.publicKeyContract abi).pre (stripConsts p192CombConsts s) ∧
-      ConstsOk p192CombConsts 0 s := pre_consts.mp h
-  have p := pk_spec_pre (u := u) hp.1
-  refine ⟨⟨?_,p.wr,p.out_sc,p.d_sc,p.out_fit,p.d_fit,p.sc_fit⟩,hp.2⟩
-  rw [← List.take_append_drop (s.rd.length-p192CombConsts.length) s.rd,hp.2.1]
-  exact congrArg (fun rs => rs++constRegs p192CombConsts s) p.rd
+    Spec.P192.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h₁
+  obtain ⟨_sp,rd,wr,_od,os,ds,fo,fd,fs⟩ := h₁
+  refine ⟨⟨hk.rd_strip rd,wr,os,ds,fo,fd,fs,fun _ => tbl_of_consts hk
+    (List.mem_append_right _ (List.mem_singleton_self _)) ?_⟩,hk⟩
+  rw [wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
 
 theorem combPk_ok (hC : Law Spec.P192.curve) {u : Bool} {s₀ : State} (hp : combPkPre u s₀) :
     WP isa (publicKeyP192CombWith u) s₀ fun t => PkKeep (p192With u) s₀ t ∧ PkPost (p192With u) s₀ t := by
-  have member : (p192Comb.tsym,p192CombWords)∈p192CombConsts := List.mem_singleton_self _
+  have member : (p192Comb.tsym,p192CombWords)∈combPkK u := List.mem_cons_self
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show (⟨ptr s₀ .r2,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)
   exact publicKeyWith_ok (p192With_ok u) hC hp.1 fun _ S sy => comb_generator_stage hC S sy ht rfl hd
 
-def combPkPub (s t : State) : Prop := pkArm.pub s t ∧ s.syms p192Comb.tsym=t.syms p192Comb.tsym
+def combPkPub (u : Bool) (s t : State) : Prop :=
+  pkArm.pub s t ∧ s.syms p192Comb.tsym=t.syms p192Comb.tsym ∧ s.syms (p192With u).constSym=t.syms (p192With u).constSym
 
-theorem combPk_ct : ConstantTime isa (combPkPre false) combPkPub publicKeyP192Comb := by
-  refine VG.Taint.constantTime (A := taintSym [p192Comb.tsym]) (Taint.ofRegs [.r0,.r1,.r2]) ?_
-    (by native_taint_decide)
-  intro s t _ _ ⟨⟨_,h0,h1,h2⟩,sy⟩
+/-- The taint analysis's start, and the tables' addresses, agree in the two states. -/
+theorem combPk_agree {u : Bool} {s t : State} (h : combPkPub u s t) :
+    VG.Arm.Taint.Agree (Taint.ofRegs [.r0,.r1,.r2]) s t ∧
+      ∀ n ∈ [p192Comb.tsym,(p192With u).constSym], s.syms n = t.syms n := by
+  obtain ⟨⟨_,h0,h1,h2⟩,sy,sy'⟩ := h
   refine ⟨Taint.agree_ofRegs (fun r hr => ?_),fun n hn => ?_⟩
   · simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl|rfl
     exacts [h0,h1,h2]
-  · obtain rfl := List.mem_singleton.mp hn
-    exact sy
+  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hn
+    rcases hn with rfl|rfl
+    exacts [sy,sy']
 
-theorem combPkU_ct : ConstantTime isa (combPkPre true) combPkPub publicKeyP192CombU := by
-  refine VG.Taint.constantTime (A := taintSymU [p192Comb.tsym]) (Taint.ofRegs [.r0,.r1,.r2]) ?_
-    (by taint_decide)
-  intro s t _ _ ⟨⟨_,h0,h1,h2⟩,sy⟩
-  refine ⟨Taint.agree_ofRegs (fun r hr => ?_),fun n hn => ?_⟩
-  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl|rfl
-    exacts [h0,h1,h2]
-  · obtain rfl := List.mem_singleton.mp hn
-    exact sy
+theorem combPk_ct : ConstantTime isa (combPkPre false) (combPkPub false) publicKeyP192Comb :=
+  VG.Taint.constantTime (A := taintSym [p192Comb.tsym,(p192With false).constSym]) (Taint.ofRegs [.r0,.r1,.r2])
+    (fun _ _ _ _ h => combPk_agree h) (by native_taint_decide)
+
+theorem combPkU_ct : ConstantTime isa (combPkPre true) (combPkPub true) publicKeyP192CombU :=
+  VG.Taint.constantTime (A := taintSymU [p192Comb.tsym,(p192With true).constSym]) (Taint.ofRegs [.r0,.r1,.r2])
+    (fun _ _ _ _ h => combPk_agree h) (by taint_decide)
+
+/-- The comb's table at `0x100000`, then the setup's constants. -/
+@[irreducible] def combPkMem (u : Bool) : Mem := constMem 0x100000 (p192CombWords ++ (p192With u).constTbl)
 
 open VG.Proof.P192.Arm in
-def combPkSat : State := {combSatState with
+def combPkSat (u : Bool) : State := {combSatState with
   gpr := fun r => match r with | .r0 => 0x10000 | .r1 => 0x12000 | _ => 0
-  rd := [⟨0x12000,24⟩,⟨0x100000,86016⟩]
-  wr := [⟨0x10000,49⟩,⟨0,8192⟩] }
+  mem := combPkMem u
+  rd := [⟨0x12000,24⟩,⟨0x100000,86016⟩,⟨0x115000,408⟩]
+  wr := [⟨0x10000,49⟩,⟨0,8192⟩]
+  syms := fun n => if n = (p192With u).constSym then 0x115000 else 0x100000 }
 
 open VG.Proof.P192.Arm in
-theorem combPk_sat : combPkSpec.pre combPkSat := by
-  have held := combSat_held
-  generalize eqs : combPkSat=s
+theorem combPk_sat (u : Bool) : (combPkSpec u).pre (combPkSat u) := by
+  obtain ⟨held₁, held₂⟩ := constMem_held₂ 0x100000 p192CombWords (p192With u).constTbl
+    (by rw [comb_words_length, constTbl_length]; cases u <;> decide)
+  have hl := constTbl_length (p192With u)
+  obtain ⟨W, eW⟩ : ∃ W, (p192With u).constTbl = W := ⟨_, rfl⟩
+  have hk : combPkK u = [(p192Comb.tsym,p192CombWords),((p192With u).constSym, W)] := by rw [← eW]; rfl
+  have hs₁ : (combPkSat u).syms "VG_P192_COMB" = 0x100000 := by cases u <;> decide
+  have hs₂ : (combPkSat u).syms (p192With u).constSym = 0x115000 := by cases u <;> decide
+  rw [comb_words_length, show (0x100000 : Addr) + BitVec.ofNat 64 (8 * 10752) = 0x115000 by decide] at held₂
+  have hmem : (combPkSat u).mem = constMem 0x100000 (p192CombWords ++ (p192With u).constTbl) := by
+    show combPkMem u = _; unfold combPkMem; rfl
+  show (combPkSpec u).pre _
+  unfold combPkSpec
+  rw [hk]
+  rw [eW] at hl held₁ held₂ hmem
+  generalize eqs : combPkSat u = s
   sig_pre [combPkSpec,Spec.EcKey.P192.inst,Spec.EcKey.Instance.publicKeyContract,
     Spec.EcKey.Instance.publicKeySig,Spec.P192.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,
-    Loc.val,State.addr,p192CombConsts,Abi.withConsts,Abi.constRegions_cons,Abi.constRegions_nil,
+    Loc.val,State.addr,Abi.withConsts,Abi.constRegions_cons,Abi.constRegions_nil,
     Abi.constsHeld,stackBelow]
   subst s
-  rw [comb_words_length]
-  rw [comb_words_length] at held
-  refine ⟨by decide,by decide,held,by decide,?_,by decide,by decide,?_⟩
-  · intro r hr
-    change r∈[⟨0x10000,49⟩,⟨0,8192⟩] at hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl <;> exact Region.disjoint_of_sep (by decide)
-  · repeat' apply And.intro
-    all_goals first | exact Region.disjoint_of_sep (by decide) | decide
+  simp only [hmem, comb_words_length, hl]
+  sig_and_intros
+  all_goals try exact Region.disjoint_of_sep (by cases u <;> decide)
+  all_goals try (intro r hr; change r∈[⟨0x10000,49⟩,⟨0,8192⟩] at hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr; rcases hr with rfl|rfl <;> exact Region.disjoint_of_sep (by cases u <;> decide))
+  all_goals try (intro i hi; rw [hs₁, show BitVec.setWidth 64 (1048576 : BitVec 32) = (1048576 : Addr) by decide]; exact held₁ i (by rw [comb_words_length]; exact hi))
+  all_goals try (intro i hi; rw [hs₂, show BitVec.setWidth 64 (1134592 : BitVec 32) = (1134592 : Addr) by decide]; exact held₂ i (by rw [hl]; exact hi))
+  all_goals try (cases u <;> decide)
+  all_goals rfl
 
 def combPkLocal (u : Bool) : Contract isa where
   pre := combPkPre u
   post := PkPost (p192With u)
-  pub := combPkPub
+  pub := combPkPub u
 
 theorem combPkWith_verified (hC : Weierstrass.Law Spec.P192.curve) (u : Bool)
-    (hct : ConstantTime isa (combPkPre u) combPkPub (publicKeyP192CombWith u)) :
-    Verified Arm.target (publicKeyP192CombWith u) combPkSpec := by
+    (hct : ConstantTime isa (combPkPre u) (combPkPub u) (publicKeyP192CombWith u)) :
+    Verified Arm.target (publicKeyP192CombWith u) (combPkSpec u) := by
   refine Verified.of_correct (k := combPkLocal u) (fun s hs => ?_) hct
-    ⟨fun _ h => combPk_pre h,?_,?_,⟨combPkSat,combPk_sat⟩⟩
+    ⟨fun _ h => combPk_pre h,?_,?_,⟨combPkSat u,combPk_sat u⟩⟩
   · obtain ⟨tr,t,exec,keep,post⟩ := combPk_ok hC hs
     exact ⟨tr,t,exec,VG.Proof.Ecdsa.Arm.abi_of_saved keep.saved keep.sp,post⟩
   · intro s t _ post
@@ -249,18 +268,20 @@ theorem combPkWith_verified (hC : Weierstrass.Law Spec.P192.curve) (u : Bool)
     generalize Spec.EcKey.publicKey _ _=q
     rcases q with _|_|⟨x,y⟩ <;> exact id
   · intro s t _ _ pub
-    sig_pub [combPkSpec,Spec.EcKey.P192.inst,Spec.EcKey.Instance.publicKeyContract,
+    obtain ⟨pub, sy⟩ := pub_consts.mp pub
+    sig_pub [Spec.EcKey.P192.inst,Spec.EcKey.Instance.publicKeyContract,
       Spec.EcKey.Instance.publicKeySig,Spec.P192.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,
-      Loc.val,State.addr,p192CombConsts,Abi.withConsts] at pub
-    obtain ⟨sp,sy,h0,h1,h2⟩ := pub
-    exact ⟨⟨sp,h0,h1,h2⟩,sy⟩
+      Loc.val,State.addr] at pub
+    obtain ⟨sp,h0,h1,h2⟩ := pub
+    exact ⟨⟨sp,h0,h1,h2⟩,symAddr_eq_iff.mp (sy (p192Comb.tsym, p192CombWords) List.mem_cons_self),
+      symAddr_eq_iff.mp (sy ((p192With u).constSym, (p192With u).constTbl) (List.mem_cons_of_mem _ (List.mem_singleton_self _)))⟩
 
 theorem combPk_verified (hC : Weierstrass.Law Spec.P192.curve) :
-    Verified Arm.target publicKeyP192Comb combPkSpec :=
+    Verified Arm.target publicKeyP192Comb (combPkSpec false) :=
   combPkWith_verified hC false combPk_ct
 
 theorem combPkU_verified (hC : Weierstrass.Law Spec.P192.curve) :
-    Verified Arm.target publicKeyP192CombU combPkSpec :=
+    Verified Arm.target publicKeyP192CombU (combPkSpec true) :=
   combPkWith_verified hC true combPkU_ct
 
 end VG.Proof.EcKey.Arm.P192

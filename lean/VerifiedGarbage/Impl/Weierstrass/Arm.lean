@@ -124,6 +124,26 @@ def bits (src dst nbytes : Nat) : Prog isa :=
     [decCounter, .dp .add .r4 wb (.reg .r11), .ldrb .r4 .r4 src, .dp .add .r5 wb (.shifted .r11 .lsl 3)] ++
     far .r5 dst ++ (List.range 8).flatMap (bitJ dst) ++ [testCounter])) .ne)
 
+/-- Word `j` of `copyTbl`'s slot: `[r9 + dst + 8 j] = [r10 + 8 j]`, its two
+halves through `r4` and `r5`. -/
+def copyWord (dst j : Nat) : List Instr :=
+  [.ldr .r4 .r10 (8 * j), .ldr .r5 .r10 (8 * j + 4), .str .r4 .r9 (dst + 8 * j), .str .r5 .r9 (dst + 8 * j + 4)]
+
+/-- One slot of `copyTbl`'s loop: its `n` 64-bit words, from `r10` to
+`r9 + dst`, straight-line, then both pointers on by the slot's `8 n` bytes. -/
+def copyTblBody (n dst : Nat) : List Instr :=
+  [decCounter] ++ (List.range n).flatMap (copyWord dst) ++
+    [.dp .add .r10 .r10 (.imm (BitVec.ofNat 32 (8 * n))), .dp .add .r9 .r9 (.imm (BitVec.ofNat 32 (8 * n))),
+      testCounter]
+
+/-- `[r12 + dst]`, `k` slots of `n` 64-bit words each, from the table of
+constants `sym` (`0 < k`): its address to `r10` (`adrSym`), `r9 = r12`, and
+a loop of `k` iterations (`r11`), each copying a slot, from the first up. In
+place of a run of immediates per word, as `setConst` writes them. -/
+def copyTbl (sym : String) (n k dst : Nat) : Prog isa :=
+  .seq (.block [.adrSym .r10 sym, .mov .r9 (.reg wb), .mov .r11 (.imm (BitVec.ofNat 32 k))])
+    (.loop (.block (copyTblBody n dst)) .ne)
+
 /-! ## Numbers as bytes -/
 
 /-- `[r12 + o] = ` the `len`-byte big-endian number at `[src]`, in the `2 n`

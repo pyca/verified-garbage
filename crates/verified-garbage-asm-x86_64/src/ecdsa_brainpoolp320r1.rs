@@ -126,7 +126,7 @@ call {vg_brainpoolp320r1_inv_mod_p}
 .p2align 6"#,
         vg_brainpoolp320r1_check_point = sym super::ec_brainpoolp320r1_compressed::vg_brainpoolp320r1_check_point::vg_brainpoolp320r1_check_point,
         vg_brainpoolp320r1_inv_mod_n = sym super::ecdsa_brainpoolp320r1::vg_brainpoolp320r1_inv_mod_n::vg_brainpoolp320r1_inv_mod_n,
-        vg_brainpoolp320r1_add_complete = sym super::ecdsa_brainpoolp320r1::vg_brainpoolp320r1_add_complete::vg_brainpoolp320r1_add_complete,
+        vg_brainpoolp320r1_add_complete = sym super::ec_brainpoolp320r1::vg_brainpoolp320r1_add_complete::vg_brainpoolp320r1_add_complete,
         vg_brainpoolp320r1_inv_mod_p = sym super::ec_brainpoolp320r1::vg_brainpoolp320r1_inv_mod_p::vg_brainpoolp320r1_inv_mod_p,
         VG_BRAINPOOLP320R1_COMB = sym super::consts::VG_BRAINPOOLP320R1_COMB,
     )
@@ -183,10 +183,6 @@ jne 21b
         vg_ecdsa_brainpoolp320r1_sign_k = sym super::ecdsa_brainpoolp320r1::vg_ecdsa_brainpoolp320r1_sign_k::vg_ecdsa_brainpoolp320r1_sign_k,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_brainpoolp320r1_add_complete.rs"]
-pub(crate) mod vg_brainpoolp320r1_add_complete;
 
 #[rustfmt::skip]
 #[path = "internal/vg_brainpoolp320r1_inv_mod_n.rs"]

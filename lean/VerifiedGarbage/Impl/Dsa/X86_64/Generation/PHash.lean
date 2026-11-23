@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedAdd
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
 public import VerifiedGarbage.Impl.RsaOaep.X86_64
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
 
 /-! # Native hash contributions for DSA parameter generation
 
@@ -32,7 +33,7 @@ def hashCopyArgs (len count j : Nat) : List Instr :=
    .mov32 .rcx (.imm len), .mov32 .rdx (.imm (8 * len))]
 
 def pSeedHash (H : Stream) (len j : Nat) : Prog isa :=
-  .seq (.block (seedInputArgs j)) (.seq (seedAdd len) (hashLabel H oDig))
+  .seq (.block (seedInputArgs j)) (.seq (seedAdd len) (hashLabelI H oDig))
 
 def pHashOne (H : Stream) (len count j : Nat) : Prog isa :=
   .seq (pSeedHash H len j)

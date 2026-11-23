@@ -231,7 +231,7 @@ theorem checkDomain_scrubbed :
     { code := Impl.Ffdh.X86.VettedValidation.code
       verified := Proof.Ffdh.X86.VettedValidation.verified
       spSafe := Proof.Ffdh.X86.VettedValidation.spSafe }
-    (checkDomainOut 172 Impl.Ffdh.X86.VettedValidation.tableConsts)
+    (checkDomainOut 252 Impl.Ffdh.X86.VettedValidation.tableConsts)
 
 /-- `vg_ffdh_check_public` as emitted. -/
 theorem checkPublic_scrubbed :

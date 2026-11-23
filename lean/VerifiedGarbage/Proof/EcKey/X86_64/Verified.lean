@@ -202,7 +202,7 @@ theorem pre_of {s : State} (h : pkX86_64.pre s) : PkPre p256 s := by
 /-- The postcondition, for any configuration of P-256 (either multiplication). -/
 theorem post_of {c : Cfg} (hC : c.C = Spec.P256.curve) {s s' : State} (h : PkPost c s s') :
     pkX86_64.post s s' := by
-  obtain ⟨n, C, comb, windows, fastN, adx, avx2, pubVerify, gtab, hot, mulBase, mul, inverse, checkPoint, nbits⟩ := c
+  obtain ⟨n, C, comb, windows, fastN, adx, avx2, pubVerify, gtab, hot, mulBase, mul, inverse, checkPoint, nbits, mulAdd, affine⟩ := c
   subst hC
   unfold PkPost at h
   show match pk s.mem (s.gpr .rsi) with
@@ -212,7 +212,7 @@ theorem post_of {c : Cfg} (hC : c.C = Spec.P256.curve) {s s' : State} (h : PkPos
         Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 65 = List.replicate 65 0
   revert h
   generalize hq : pk s.mem (s.gpr .rsi) = q
-  rw [show Spec.EcKey.publicKey Spec.P256.curve (dk ⟨n, Spec.P256.curve, comb, windows, fastN, adx, avx2, pubVerify, gtab, hot, mulBase, mul, inverse, checkPoint, nbits⟩ s) =
+  rw [show Spec.EcKey.publicKey Spec.P256.curve (dk ⟨n, Spec.P256.curve, comb, windows, fastN, adx, avx2, pubVerify, gtab, hot, mulBase, mul, inverse, checkPoint, nbits, mulAdd, affine⟩ s) =
     pk s.mem (s.gpr .rsi) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
@@ -270,7 +270,7 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP256.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' :=
-  pk_x86_of (p256_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by
+  pk_x86_of (p256_ok hI) hL (p256_tbls hL hT) p256_mulBase (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by
       rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [Taint.clobbers_erase]]
       show publicKeyP256Erased.allInstrs _ = true
       lit_decide)

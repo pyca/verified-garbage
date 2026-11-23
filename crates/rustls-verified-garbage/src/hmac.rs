@@ -37,13 +37,21 @@ where
     H::State: Send + Sync,
 {
     fn sign_concat(&self, first: &[u8], middle: &[&[u8]], last: &[u8]) -> crypto::hmac::Tag {
-        let mut h = self.0.clone();
-        h.update(first);
-        for m in middle {
-            h.update(m);
-        }
-        h.update(last);
-        crypto::hmac::Tag::new(h.finalize().as_ref())
+        // TLS 1.2's PRF repeatedly authenticates short lists of fragments.
+        // Hold DIT across the updates and finalization of each tag.
+        verified_garbage::dit::scope(|| {
+            let mut h = self.0.clone();
+            if !first.is_empty() {
+                h.update(first);
+            }
+            for m in middle {
+                h.update(m);
+            }
+            if !last.is_empty() {
+                h.update(last);
+            }
+            crypto::hmac::Tag::new(h.finalize().as_ref())
+        })
     }
 
     fn tag_len(&self) -> usize {
@@ -63,7 +71,10 @@ mod tests {
         for hmac in [&HMAC_SHA256 as &dyn Hmac, &HMAC_SHA384, &HMAC_SHA512] {
             let key = hmac.with_key(b"key");
             assert_eq!(hmac.hash_output_len(), key.tag_len());
-            assert_eq!(key.sign(&[b"message"]).as_ref().len(), key.tag_len());
+            let expected = key.sign(&[b"message"]);
+            assert_eq!(expected.as_ref().len(), key.tag_len());
+            let split = key.sign_concat(b"me", &[b"", b"ss"], b"age");
+            assert_eq!(split.as_ref(), expected.as_ref());
         }
     }
 }

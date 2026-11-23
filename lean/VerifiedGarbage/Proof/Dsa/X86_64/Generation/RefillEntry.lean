@@ -202,7 +202,9 @@ open VG.Impl.Bignum.X86_64 (at0)
 
 /-- The entry's stores of registers and constants. -/
 def headerA (pLen qLen : Nat) : List Instr :=
-  [.store (sp 48) .rdi, .store (sp 56) .rsi, .store (Impl.Dsa.X86_64.Generation.Refill.ctl 0) .rdx,
+  [.store (sp Impl.Dsa.X86_64.Generation.updSlot) .rax, .store (sp Impl.Dsa.X86_64.Generation.finSlot) .r10,
+   .store (sp Impl.Dsa.X86_64.Generation.primeSlot) .r11,
+   .store (sp 48) .rdi, .store (sp 56) .rsi, .store (Impl.Dsa.X86_64.Generation.Refill.ctl 0) .rdx,
    .store (sp 64) .rcx, .store (sp 72) .r8, .store (sp 104) .rcx, .store (sp 120) .r8,
    .store (sp 88) .rcx, .mov32 .rax (.imm 0), .store (sp 96) .rax, .store (sp 80) .rax,
    .store (sp 40) .r9,
@@ -220,7 +222,8 @@ theorem entryHeader_eq (pLen qLen : Nat) :
 
 /-- The memory after `headerA`. -/
 def chainA (m : Mem) (F : Addr) (g : Reg → BitVec 64) (pLen qLen : Nat) : Mem :=
-  ((((((((((((((m.writeW (off F 48) (g .rdi)).writeW (off F 56) (g .rsi)).writeW (off F 296) (g .rdx)).writeW
+  (((((((((((((((((m.writeW (off F 232) (g .rax)).writeW (off F 240) (g .r10)).writeW (off F 248) (g .r11)).writeW
+    (off F 48) (g .rdi)).writeW (off F 56) (g .rsi)).writeW (off F 296) (g .rdx)).writeW
     (off F 64) (g .rcx)).writeW (off F 72) (g .r8)).writeW (off F 104) (g .rcx)).writeW (off F 120) (g .r8)).writeW
     (off F 88) (g .rcx)).writeW (off F 96) (0 : BitVec 64)).writeW (off F 80) (0 : BitVec 64)).writeW
     (off F 40) (g .r9)).writeW (off F 136) (BitVec.ofNat 64 pLen)).writeW (off F 144) (BitVec.ofNat 64 qLen)).writeW
@@ -242,7 +245,9 @@ theorem headerA_ok {s : State} {F : Addr} (hsp : s.gpr .rsp = F)
   obtain c0 : InRegions s.wr (off F 296) 8 := by simpa [off_off] using cs.st (d := 0) (by decide)
   refine WP.keep [.rax] ?_ rfl
   xrun [headerA, chainA, Impl.Dsa.X86_64.Generation.Refill.ctl, Impl.Dsa.X86_64.Generation.Refill.frameBytes,
-    ea_sp, hsp, c0, fs.st (d := 48) (by decide), fs.st (d := 56) (by decide), fs.st (d := 64) (by decide),
+    Impl.Dsa.X86_64.Generation.updSlot, Impl.Dsa.X86_64.Generation.finSlot, Impl.Dsa.X86_64.Generation.primeSlot,
+    ea_sp, hsp, c0, fs.st (d := 232) (by decide), fs.st (d := 240) (by decide), fs.st (d := 248) (by decide),
+    fs.st (d := 48) (by decide), fs.st (d := 56) (by decide), fs.st (d := 64) (by decide),
     fs.st (d := 72) (by decide), fs.st (d := 104) (by decide), fs.st (d := 120) (by decide),
     fs.st (d := 88) (by decide), fs.st (d := 96) (by decide), fs.st (d := 80) (by decide),
     fs.st (d := 40) (by decide), fs.st (d := 136) (by decide), fs.st (d := 144) (by decide),
@@ -294,7 +299,8 @@ theorem rep_ctl {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64
 
 /-- The frame words after `headerA`. -/
 def wordsA (W : Nat → BitVec 64) (g : Reg → BitVec 64) (pLen qLen : Nat) : Nat → BitVec 64 :=
-  upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd W 6 (g .rdi)) 7 (g .rsi)) 8 (g .rcx)) 9 (g .r8))
+  upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd (upd W 29 (g .rax)) 30 (g .r10))
+    31 (g .r11)) 6 (g .rdi)) 7 (g .rsi)) 8 (g .rcx)) 9 (g .r8))
     13 (g .rcx)) 15 (g .r8)) 11 (g .rcx)) 12 0) 10 0) 5 (g .r9)) 17 (BitVec.ofNat 64 pLen))
     18 (BitVec.ofNat 64 qLen)) 28 (BitVec.ofNat 64 qLen)
 
@@ -302,7 +308,9 @@ theorem chainA_rep {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec
     (R : Rep m F S V W) (hS : (ctlRegion F).Disjoint ⟨S, oRsa⟩)
     (g : Reg → BitVec 64) (pLen qLen : Nat) :
     Rep (chainA m F g pLen qLen) F S V (wordsA W g pLen qLen) := by
-  obtain R2 := (R.wf G (k := 6) (by decide) (g .rdi)).wf G (k := 7) (by decide) (g .rsi)
+  obtain R1 := ((R.wf G (k := 29) (by decide) (g .rax)).wf G (k := 30) (by decide) (g .r10)).wf
+    G (k := 31) (by decide) (g .r11)
+  obtain R2 := (R1.wf G (k := 6) (by decide) (g .rdi)).wf G (k := 7) (by decide) (g .rsi)
   obtain R3 := rep_ctl R2 hS (k := 0) (by decide) (g .rdx)
   exact ((((((((((R3.wf G (k := 8) (by decide) _).wf
     G (k := 9) (by decide) _).wf G (k := 13) (by decide) _).wf G (k := 15) (by decide) _).wf G (k := 11) (by decide)
@@ -315,7 +323,10 @@ theorem chainA_frame (m : Mem) (F : Addr) (g : Reg → BitVec 64) (pLen qLen : N
     Offset.contains_base F hd (by unfold frameBytes at hd; omega_using [hd])
   unfold chainA
   refine Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW
-    (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.refl _ _)
+    (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW (Frame.writeW
+    (Frame.writeW (Frame.writeW (Frame.writeW (Frame.refl _ _)
+    (List.mem_cons_self ..) _ (fc 232 (by decide))) (List.mem_cons_self ..) _ (fc 240 (by decide)))
+    (List.mem_cons_self ..) _ (fc 248 (by decide)))
     (List.mem_cons_self ..) _ (fc 48 (by decide))) (List.mem_cons_self ..) _ (fc 56 (by decide)))
     (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (ctl_contains F (k := 0) (by decide)))
     (List.mem_cons_self ..) _ (fc 64 (by decide))) (List.mem_cons_self ..) _ (fc 72 (by decide)))
@@ -344,7 +355,8 @@ theorem headerB_ok {s : State} {F : Addr} (hsp : s.gpr .rsp = F) (hctl : ctlRegi
 
 /-- The memory after the first three stores, which the rest of `headerA` keeps outside the frame. -/
 def chainA₀ (m : Mem) (F : Addr) (g : Reg → BitVec 64) : Mem :=
-  ((m.writeW (off F 48) (g .rdi)).writeW (off F 56) (g .rsi)).writeW (off F 296) (g .rdx)
+  (((((m.writeW (off F 232) (g .rax)).writeW (off F 240) (g .r10)).writeW (off F 248) (g .r11)).writeW
+    (off F 48) (g .rdi)).writeW (off F 56) (g .rsi)).writeW (off F 296) (g .rdx)
 
 theorem chainA_ctl (m : Mem) (F : Addr) (g : Reg → BitVec 64) (pLen qLen : Nat) :
     ctlWord (chainA m F g pLen qLen) F 0 = g .rdx := by
@@ -509,9 +521,10 @@ theorem entry_ok {pBytes qBytes : Nat} {s₀ u : State} (h : RefillABI pBytes s�
             dFS := G.dFS, dRS := G.dRS }
   · intro k hk
     simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp only [workspaceWords, derivedWords, workspaceSlots, List.foldl, wordsA, upd, refillContext,
-      refillWords, r9, a.regs _ (by decide : Reg.rdi ≠ .rsp), a.regs _ (by decide : Reg.rsi ≠ .rsp),
+      refillWords, r9, a.regs _ (by decide : Reg.rax ≠ .rsp), a.regs _ (by decide : Reg.r10 ≠ .rsp),
+      a.regs _ (by decide : Reg.r11 ≠ .rsp), a.regs _ (by decide : Reg.rdi ≠ .rsp), a.regs _ (by decide : Reg.rsi ≠ .rsp),
       a.regs _ (by decide : Reg.rcx ≠ .rsp), a.regs _ (by decide : Reg.r8 ≠ .rsp), hq]
     all_goals first | rfl | simp [off]
   · exact GenerationTapeMemory.slice (a.randMemory fV kV.2.1) (Nat.zero_le _)

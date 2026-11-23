@@ -163,7 +163,7 @@ theorem brainpoolp384r1_tbls : CombTbls brainpoolp384r1 := fun _ h => by cases h
 /-- ECDH's, verification's and the public key's `[k]G` is a call of
 `vg_brainpoolp384r1_mul`, which calls no other function. -/
 theorem brainpoolp384r1_mulBase : MulBaseOk brainpoolp384r1 :=
-  ⟨fun h => absurd h (by decide), fun _ => ⟨.inr (.inl rfl), by lit_decide⟩⟩
+  ⟨fun h => absurd h (by decide), fun _ => ⟨.inr (.inl rfl), fun h => absurd h (by decide), fun _ => rfl⟩⟩
 
 theorem brainpoolp384r1S_sh : brainpoolp384r1S.sh = 0 := brainpoolp384r1_sh
 

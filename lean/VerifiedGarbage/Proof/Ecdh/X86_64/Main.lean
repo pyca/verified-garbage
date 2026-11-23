@@ -94,10 +94,20 @@ theorem ecFinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s bas
   · have hra : Reg.rax ∉ Cfg.saved.map Prod.fst := by decide
     rw [r₄ _ hra, e₃, hrcx₂, mask_bit]
 
-theorem middle_eq (c : Cfg) : (Impl.Ecdh.X86_64.Cfg.middle c).inline =
-    .seq ((opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC))).inline)
+theorem middle_eq (c : Cfg) {s : State} {Q : State → Prop} : WP isa (Impl.Ecdh.X86_64.Cfg.middle c).inline s Q ↔
+    WP isa (.seq ((opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC))).inline)
     (.seq ((opProg c.MP' (.mul (c.sl X) (c.sl XM) (c.sl ONE))).inline)
-    (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.finish c))) := rfl
+    (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.finish c)))) s Q := by
+  unfold Impl.Ecdh.X86_64.Cfg.middle
+  split
+  · next h =>
+    have h9 : c.n ≠ 9 := by
+      simp only [Cfg.affineOn, Bool.and_eq_true, bne_iff_ne, ne_eq] at h; exact h.1.2
+    have e : ∀ o a b, opProg c.MP' (.mul o a b) = c.mulPF o a b := fun o a b => by
+      simp only [Cfg.mulPF, h9, ite_false]
+    rw [e, e]
+    exact affineX_wp h
+  · exact Iff.rfl
 
 /-- Whether the result is a shared secret: the peer's key (`V`), `d` in
 `[1, n-1]`, and `Z ≠ 0`. -/
@@ -469,7 +479,8 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
 /-- `vg_ecdh_<curve>`, by the window method or the ladder (`mulQ_ok`), given
 that a curve calling `vg_<curve>_mul` has four words and that function no calls. -/
 theorem exchange_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀)
-    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8 ∨ c.n = 5) ∧ c.mulFn.noCalls = true := by exact fun h => absurd h (by decide)) :
+    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8 ∨ c.n = 5) ∧
+      (c.mulAdd = false → c.mulFn.noCalls = true) ∧ (c.mulAdd = true → Mont.callOf c.MP' = none) := by exact fun h => absurd h (by decide)) :
     WP isa (Impl.Ecdh.X86_64.Cfg.exchange c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' :=
   exchangeWith_ok hc hC (mulQ_ok hc hC hm) (mulQ_w hc) hp

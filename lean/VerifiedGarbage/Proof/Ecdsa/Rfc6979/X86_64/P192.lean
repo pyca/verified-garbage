@@ -61,7 +61,7 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve)
   sh_eq := Proof.Ecdsa.X86_64.P192.p192_sh
   coreN := "vg_ecdsa_p192_sign_k"
   coreC := Impl.Ecdsa.X86_64.signP192
-  coreX := by rw [coreK_p192]; exact Proof.Ecdsa.X86_64.P192.sign_call_x86 hL hI
+  coreX := by rw [coreK_p192]; exact fun s h hc => Proof.Ecdsa.X86_64.P192.sign_call_x86 hL hI s h hc.hole_of_holeN2
   coreCT := by rw [coreK_p192]; exact Proof.Ecdsa.X86_64.P192.sign_ct
   coreNs := by lit_decide
   coreSp := by lit_decide

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
+public import VerifiedGarbage.Impl.Rsa.Arm.InverseCall
 public import VerifiedGarbage.Impl.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Impl.Rsa.Arm.Div
 public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
@@ -152,7 +152,7 @@ def primeWidth : List Instr :=
 primes' width, and the division of `d` by `p - 1` set up. -/
 def checks (um : Bool := false) : Prog isa := seqs ([
   .block ctx, eqS sE1 aDQ aQ aT1, eqS sE2 aDR aZero aT1] ++ invSetup ++ [
-  .block primeWidth, inverse um, .block ctx, eqS sE3 1 aOne aT1,
+  .block primeWidth, inverseCall um, .block ctx, eqS sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ divHdr aDQ aDR2 aDD aDT)])
 
@@ -197,7 +197,7 @@ the remainder always passes), then `checks`' inverse and set-up as for any key, 
 def midW (um : Bool := false) : Prog isa := seqs ([
   .block (ctx ++ bitOf sPodd aP), KeyDiv.mulLo aDR aP aQ, eqS sE1 aDR aDQ aT1, eqS sE2 aZero aZero aT1] ++
   invSetup ++ [
-  .block primeWidth, inverse um, .block ctx, eqS sE3 1 aOne aT1,
+  .block primeWidth, inverseCall um, .block ctx, eqS sE3 1 aOne aT1,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
   copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ divHdr aDQ aDR2 aDD aDT),
   copy 0 aZero] ++ divKc aDR2 aP ++ divKc aDR3 aQ)

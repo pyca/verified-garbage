@@ -6,6 +6,12 @@ public import VerifiedGarbage.Impl.Ffdh.X86.Domain
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 meta import VerifiedGarbage.Impl.Ffdh.X86.Domain
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
+import VerifiedGarbage.Proof.Ffdh.X86.EntryCT
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
+import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+import VerifiedGarbage.Proof.Framework.X86.CallBody
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-!
 # FFDH on i686: the traces of the stages
@@ -72,18 +78,86 @@ theorem gate_relCT {P : State → Prop} {C : Prop} (hg : ∀ x, P x → Gate x C
 theorem ctxP_check : ACheck (copy (.slot .wide 9) (.slot .wide 0) (one .wide)) := by
   dsimp only [ACheck]; taint_decide
 
-/-- The context of p: the copy of p checked by the taint analysis, and its setup by `prepare_relCT`. -/
-theorem ctxP_relCT :
-    RelCT isa (Both (Run Ex base bytes len args sp)) Impl.Ffdh.X86.ctxP
+/-- The callee, from the copy of the arguments: `prepare_relCT`, on its states narrowed to the working space. -/
+theorem callee_relCT :
+    RelCT isa (Both (CalleeAt base bytes len args sp)) (prepare .wide) fun _ _ => True := by
+  have run : ∀ u, CalleeAt base bytes len args sp u →
+      Run (fun _ _ => True) base bytes len args (sp - BitVec.ofNat 32 80) (narrowed base bytes u) := fun u C =>
+    ⟨VG.Proof.Ffdh.X86.In.narrow C.1 trivial, ⟨C.1.top, fun r hr => by rw [List.mem_singleton.mp hr]; exact C.2.2⟩, C.2.1⟩
+  have cov : ∀ u, CalleeAt base bytes len args sp u →
+      Covers ((u.rd ++ u.wr) ++ [⟨base, bytes⟩]) (u.rd ++ u.wr) ∧ Covers [⟨base, bytes⟩] u.wr := fun u C => by
+    have c : Covers [⟨base, bytes⟩] u.wr :=
+      Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; exact C.1.scratch.wr
+    exact ⟨Covers.append_left (Covers.refl _) (Covers.right c), c⟩
+  refine VG.Proof.Bignum.X86.PublicRt.relCT_narrow (fun u => u.rd ++ u.wr) (fun _ => [⟨base, bytes⟩])
+    (fun f g ⟨C₁, C₂⟩ => ?_) ((prepare_relCT (Ex := fun _ _ => True) (base := base) (bytes := bytes) (len := len) (args := args)
+      (sp := sp - BitVec.ofNat 32 80) .wide).mono
+      (fun _ _ h => h) fun _ _ _ => trivial)
+  exact ⟨(cov f C₁).1, (cov f C₁).2, (cov g C₂).1, (cov g C₂).2, ⟨_, prepCtx_ok (run f C₁).1 .wide⟩,
+    ⟨_, prepCtx_ok (run g C₂).1 .wide⟩, run f C₁, run g C₂⟩
+
+/-- The call of `prepare .wide`: the copy of the arguments checked by the taint analysis from `esp`, and the
+callee by `callee_relCT`. -/
+theorem prepCall_trace :
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) Impl.Ffdh.X86.prepCall fun _ _ => True := by
+  unfold Impl.Ffdh.X86.prepCall
+  refine RelCT.callBody (R := fun a b => ∃ s₁ s₂,
+      (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) s₁ s₂ ∧
+        a = s₁.callEntry ∧ b = s₂.callEntry) ?_ (fun s t h => ⟨s, t, h, rfl, rfl⟩)
+    (fun _ _ h => h.1.1.2.2.trans h.2.1.2.2.symm)
+  refine RelCT.frameAlloc (R := fun _ _ => True) (VG.RelCT.seq ?_ (callee_relCT (base := base) (bytes := bytes) (len := len) (args := args) (sp := sp)))
+  refine ((RelCT.taint (A := taint) (τr [.esp]) (fun a b h => agree_regs fun r hr => ?_) (hc := .block [])
+    (by rfl)).wp (F₁ := CalleeAt base bytes len args sp) (F₂ := CalleeAt base bytes len args sp)
+      fun a b h => ?_).mono (fun _ _ h => h) fun _ _ h => h.2
+  · obtain rfl := List.mem_singleton.mp hr
+    obtain ⟨c₁, c₂, ⟨x₁, x₂, ⟨⟨R₁, -⟩, ⟨R₂, -⟩⟩, rfl, rfl⟩, rfl, rfl⟩ := h
+    rw [allocFrame_esp, allocFrame_esp, State.callEntry_esp, State.callEntry_esp, R₁.2.2, R₂.2.2]
+  · obtain ⟨c₁, c₂, ⟨x₁, x₂, ⟨⟨R₁, F₁⟩, ⟨R₂, F₂⟩⟩, rfl, rfl⟩, rfl, rfl⟩ := h
+    obtain w : ∀ {x : State}, Run Ex base bytes len args sp x → RoomF sp base bytes →
+        WP isa (.block ((List.range 18).flatMap Impl.Ffdh.X86.copyArg)) (allocFrame Impl.Ffdh.X86.argsFrame x.callEntry)
+          (CalleeAt base bytes len args sp) := fun {x} R F => by
+      have e := R.2.2
+      rw [← e] at F ⊢
+      exact callee_at R.1 F
+    exact ⟨w R₁ F₁, w R₂ F₂⟩
+
+/-- The call of `prepare .wide`, with what each run reaches. -/
+theorem prepCall_relCT :
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) Impl.Ffdh.X86.prepCall
+      (Both (WSt Ex base bytes len args sp .wide [3, 4] 0)) := by
+  refine relCT_both prepCall_trace fun x ⟨R, F⟩ => ?_
+  have e := R.2.2
+  rw [← e] at F
+  refine WP.mono (prepCall_ok R.1 F) fun u ⟨C, one, R2, _, K⟩ => ?_
+  obtain hM := safeM_gt (sv x.mem base len .wide 0)
+  refine ⟨_, C, fun j hj => ?_, fun _ h => absurd h (Nat.not_lt_zero _), R.2.1.keep K, (K.1 _ (by decide)).trans e⟩
+  rcases List.mem_cons.mp hj with rfl | hj
+  · rw [one]; exact hM
+  · rw [List.mem_singleton.mp hj, R2]; exact Nat.mod_lt _ (by omega_arith)
+
+/-- A copy into slot 0 checked by the taint analysis, then `prepCall`. -/
+theorem copyPrep_relCT {j : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 17)
+    (hc : ACheck (copy (.slot .wide j) (.slot .wide 0) (one .wide))) :
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+      (.seq (copy (.slot .wide j) (.slot .wide 0) (one .wide)) Impl.Ffdh.X86.prepCall)
       (Both (WSt Ex base bytes len args sp .wide [3, 4] 0)) :=
-  VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ ctxP_check fun _ R =>
-    copyDown_run (j := 9) (d := 0) (by decide) (by decide) (by decide) R) (prepare_relCT .wide)
+  VG.RelCT.seq (taint_both (P := fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+    (F := fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes)
+    (fun _ _ R₁ R₂ => R₁.1.agree R₂.1) _ hc fun _ R =>
+      WP.mono (copyDown_run (j := j) (d := 0) hj9 hj (by decide) R.1) fun _ h => ⟨h, R.2⟩) prepCall_relCT
+
+/-- The context of p: the copy of p checked by the taint analysis, and its setup by `prepCall`. -/
+theorem ctxP_relCT :
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) Impl.Ffdh.X86.ctxP
+      (Both (WSt Ex base bytes len args sp .wide [3, 4] 0)) :=
+  copyPrep_relCT (by decide) (by decide) ctxP_check
 
 /-- A power modulo p: the base in slot `b`, the exponent in slot `e`. -/
 theorem powP_trace {b e : Nat} (hb9 : 9 ≤ b) (hb : b ≤ 17) (he9 : 9 ≤ e) (he : e ≤ 17)
     (hcb : ACheck (copy (.slot .wide b) (.slot .wide 5) (one .wide)))
     (hce : ACheck (copy (.slot .wide e) (.slot .wide 8) (one .wide))) :
-    RelCT isa (Both (Run Ex base bytes len args sp)) (Impl.Ffdh.X86.powP b e) (Both (Run Ex base bytes len args sp)) := by
+    RelCT isa (Both fun s => Run Ex base bytes len args sp s ∧ RoomF sp base bytes) (Impl.Ffdh.X86.powP b e)
+      (Both (Run Ex base bytes len args sp)) := by
   unfold Impl.Ffdh.X86.powP
   refine VG.RelCT.seq ctxP_relCT ?_
   refine VG.RelCT.seq (taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hcb fun _ W =>

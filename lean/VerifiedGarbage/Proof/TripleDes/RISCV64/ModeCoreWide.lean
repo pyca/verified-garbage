@@ -396,10 +396,10 @@ theorem layoutS (d : Direction) : Layout (wideCore d) := (wideCoreSpec d).layout
 
 /-- The block function on the buffer's first block is the core on one
 block: it writes that block and the 63 after it, its working space. -/
-theorem wideOne_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : Schedule}
+theorem wideBlock_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : Schedule}
     (hB : s.gpr sb = B) (hS : ScrIn s B (wideCore d).total) (hR : SharedReady (wideInlineSpec d) s B ws k) :
-    WP isa (wideOne d) s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      SharedReady (wideInlineSpec d) s' B ws k ∧ Frame [coreRegion (wideCore d) B] s.mem s'.mem ∧
+    WP isa (block d sb bufOff) s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      SharedReady (wideInlineSpec d) s' B ws k ∧ Frame [coreRegion (wideInline d) B] s.mem s'.mem ∧
       Spec.Aes.bytesAt s'.mem (blkAddr (wideCore d) B 0) (4 * (wideCore d).bw) =
         dirCipher d k (Spec.Aes.bytesAt s.mem (blkAddr (wideCore d) B 0) (4 * (wideCore d).bw)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
@@ -417,7 +417,6 @@ theorem wideOne_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k 
     · rw [hB]; exact Offset.contains_base _ (by decide) (by omega_using [hbo])
     · simp only [workRegion, hB, bufOff, bufSlot]
       exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide)
-  show WP isa (block d sb bufOff) s _
   refine WP.mono (block_ok k d sb bufOff s hpre) fun t ht => ?_
   obtain hBt : t.gpr sb = B := (ht.regs sb (by decide)).trans hB
   obtain hblk : ∀ r ∈ [(⟨s.gpr sb + BitVec.ofNat 64 bufOff, 8⟩ : Region), workRegion s],
@@ -429,7 +428,7 @@ theorem wideOne_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k 
       show Region.Sub ⟨B + BitVec.ofNat 64 56, 504⟩ ⟨B + BitVec.ofNat 64 48, 4 * 2 * 64⟩
       rw [show (56 : Nat) = 48 + 8 from rfl, ← Offset.add_add]
       exact Offset.sub_base _ (by decide)
-  obtain hcore : Region.Sub (blkRegion (wideInline d) B) (coreRegion (wideCore d) B) :=
+  obtain hcore : Region.Sub (blkRegion (wideInline d) B) (coreRegion (wideInline d) B) :=
     Region.sub_prefix (by cases d <;> decide)
   refine ⟨hBt, fun r hr => ht.regs r (kept_sub r hr),
     ⟨rs, hrs, (ready_frameW d hR (s' := originalState (wideInline d) t B) (ht.frame : Frame _ s.mem t.mem)
@@ -441,6 +440,66 @@ theorem wideOne_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k 
     exact BitVec.add_zero _
   rw [show 4 * (wideCore d).bw = 8 from rfl, e, bytesAt_eq, ht.result]
   exact (dirCipher_bytes d k s.mem _).symm
+
+/-- `wideOne`: the block function called (`sharedCall`), its return address
+in the wide core's saved slot, which the block's region is apart from. -/
+theorem wideOne_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : Schedule}
+    (hB : s.gpr sb = B) (hS : ScrIn s B (wideCore d).total) (hR : SharedReady (wideInlineSpec d) s B ws k) :
+    WP isa (wideOne d) s fun s' => s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      SharedReady (wideInlineSpec d) s' B ws k ∧ Frame [coreRegion (wideCore d) B] s.mem s'.mem ∧
+      Spec.Aes.bytesAt s'.mem (blkAddr (wideCore d) B 0) (4 * (wideCore d).bw) =
+        dirCipher d k (Spec.Aes.bytesAt s.mem (blkAddr (wideCore d) B 0) (4 * (wideCore d).bw)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨rs, hrs, hr⟩ := hR
+  have hL := (wideInlineSpec d).layout
+  refine WP.mono (VG.Proof.Modes.RISCV64.sharedCall_wp hL (by cases d <;> decide) hB hS (P := fun t u =>
+    SharedReady (wideInlineSpec d) u B ws k ∧
+      Spec.Aes.bytesAt u.mem (blkAddr (wideCore d) B 0) (4 * (wideCore d).bw) =
+        dirCipher d k (Spec.Aes.bytesAt t.mem (blkAddr (wideCore d) B 0) (4 * (wideCore d).bw))) ?_) ?_
+  · intro t hi
+    have hsT : ScrIn t B (wideCore d).total := hS.congr hi.wr
+    have hrT : SharedReady (wideInlineSpec d) t B ws k := ⟨rs, hrs,
+      shared_readyW d hr (hi.regs _ (by decide) (by decide)) hi.rd
+        (by change VG.Proof.Modes.RISCV64.originalWr (wideInline d) B t.wr =
+            VG.Proof.Modes.RISCV64.originalWr (wideInline d) B s.wr; rw [hi.wr]) hi.frame
+        (fun r h => by
+          simp only [List.mem_singleton] at h; subst h
+          obtain ⟨r', hr', sub⟩ := hrs _ List.mem_cons_self
+          exact ⟨r', hr', fun x hx => sub x ((Offset.sub_base B (d := 8 * (wideInline d).total)
+            (n := 8) (k := 8 * ((wideInline d).total + 2)) (by omega_using [])) x hx)⟩)
+        (fun r h => by
+          simp only [List.mem_singleton] at h; subst h
+          exact .inl ((Offset.disjoint_base B (d := 8 * (wideInline d).total) (n := 8)
+            (k := 8 * (wideInline d).total) (by omega_using []) (by cases d <;> decide)).symm.sub_left
+            (Offset.sub_base B (by have := hL.buf_ge; have := hL.buf_le; omega_arith))))⟩
+    refine WP.mono (wideBlock_wp d ((hi.regs _ (by decide) (by decide)).trans hB) hsT hrT)
+      fun u ⟨_, ku, hu, fu, bl, rdu, wru⟩ => ⟨ku, fu, rdu, wru, hu, bl⟩
+  · intro v ⟨t, u, hi, ku, fu, rd, wr, ⟨hu, bl⟩, hv⟩
+    have kk := hv.kept hi ku
+    refine ⟨(kk _ (by decide)).trans hB, kk,
+      (wideInlineSpec d).output_ready (shared_readyW d) hu hv (hv.regs _ (by decide) (by decide))
+        (rd.trans hi.rd) (wr.trans hi.wr), ?_, ?_, hv.rd, hv.wr⟩
+    · rw [hv.mem]
+      exact (hi.frame.sub fun r h => by
+        simp only [List.mem_singleton] at h; subst h
+        exact ⟨_, List.mem_singleton_self _, VG.Proof.Modes.RISCV64.saved_sub _ hL B _ _⟩).trans
+        (fu.sub fun r h => by
+          simp only [List.mem_singleton] at h; subst h
+          exact ⟨_, List.mem_singleton_self _, VG.Proof.Modes.RISCV64.shared_core_sub B _ _⟩)
+    · rw [hv.mem, bl]
+      congr 1
+      apply List.ext_getElem
+      · simp only [Spec.Aes.bytesAt, List.length_map, List.length_range]
+      · intro i hil hir
+        have hi' : i < 4 * (wideCore d).bw := by
+          simpa only [Spec.Aes.bytesAt, List.length_map, List.length_range] using hil
+        simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range]
+        refine hi.frame.bytes (R := ⟨blkAddr (wideCore d) B 0, 4 * (wideCore d).bw⟩) (fun r h => ?_)
+          (by show 4 * (wideCore d).bw ≤ 2 ^ 64; cases d <;> decide) hi'
+        simp only [List.mem_singleton] at h; subst h
+        unfold blkAddr slotA
+        rw [Offset.add_add]
+        exact Offset.disjoint B (.inl (by cases d <;> decide)) (by cases d <;> decide) (by cases d <;> decide)
 
 theorem wideOne_ok (d : Direction) : OneOk (wideCoreSpec d) (wideOne d) := fun hB hS hR =>
   wideOne_wp d hB hS hR

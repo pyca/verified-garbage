@@ -545,16 +545,16 @@ abbrev HalvRun (Ex : List Region → List Region → Prop) (base : Addr) (bytes 
 
 /-- Runs for the same modulus `w` prepare it alike. -/
 theorem prepPhase_trace {j w : Nat} (hj9 : 9 ≤ j) (hj : j ≤ 10) (hc : PrepHeadCk j) (hw3 : 3 ≤ w)
-    (hodd : w % 2 = 1) {P : State → Prop}
+    (hodd : w % 2 = 1) (RF : RoomF sp base bytes) {P : State → Prop}
     (hP : ∀ x, P x → Run Ex base bytes len args sp x ∧ sv x.mem base len .wide j = w) :
     RelCT isa (Both P) (prepPhase j) (Both (Run Ex base bytes len args sp)) := by
   unfold prepPhase
   have trace : RelCT isa (Both P) (prepHead j) fun _ _ => True :=
-    RelCT.seq (aRel (F := Run Ex base bytes len args sp) (fun x h => (hP x h).1) hc.1 fun x h =>
-      copyDown_run hj9 (by omega_using [hj]) (by decide) (hP x h).1)
-      (RelCT.seq (prepare_relCT .wide) (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) hc.2))
+    RelCT.seq (aRel (F := fun x => Run Ex base bytes len args sp x ∧ RoomF sp base bytes) (fun x h => (hP x h).1)
+      hc.1 fun x h => WP.mono (copyDown_run hj9 (by omega_using [hj]) (by decide) (hP x h).1) fun _ r => ⟨r, RF⟩)
+      (RelCT.seq prepCall_relCT (RelCT.taint (A := taint) τA (fun _ _ h => h.1.agree h.2) hc.2))
   refine RelCT.seq (relCT_both (F := HalvRun Ex base bytes len args sp w 0) trace fun x h =>
-    WP.mono (prepHead_ok (hP x h).1.1 hj9 hj (hP x h).2 hw3 hodd) fun v H => ⟨x, (hP x h).1, H⟩) ?_
+    WP.mono (prepHead_ok (hP x h).1.1 (by rw [(hP x h).1.2.2]; exact RF) hj9 hj (hP x h).2 hw3 hodd) fun v H => ⟨x, (hP x h).1, H⟩) ?_
   refine (RelCT.loop (I := fun m x y => ∃ k, m = (w - 1) / 2 ^ k ∧ m % 2 = 0 ∧ 0 < m ∧
       HalvRun Ex base bytes len args sp w k x ∧ HalvRun Ex base bytes len args sp w k y) (fun m => ?_) (w - 1)).mono
     (fun x y h => ⟨0, by simp, by omega_using [hodd], by omega_using [hw3], h.1, h.2⟩) fun _ _ h => h
@@ -635,7 +635,7 @@ theorem phase_trace {j w n c : Nat} {T : List Byte} (hj9 : 9 ≤ j) (hj : j ≤ 
     omega_arith
   unfold phase
   refine RelCT.assoc (RelCT.seq (relCT_both (F := DrawRun Ex base bytes len args sp w T n c)
-    (RelCT.seq (prepPhase_trace hj9 hj hck hw3 hodd fun x h => ⟨(hP x h).1, (hP x h).2.2.1⟩)
+    (RelCT.seq (prepPhase_trace hj9 hj hck hw3 hodd G.room fun x h => ⟨(hP x h).1, (hP x h).2.2.1⟩)
       (aEnd (fun _ h => h) setSt0_check)) fun x h => ?_)
     (RelCT.seq (drawLoop_trace G hw3 hodd hwl hn1 hcT) (aEnd (fun _ h => h) readSt_check)))
   obtain ⟨R, hT, hw, ho, hk, hn, hc⟩ := hP x h
@@ -1471,7 +1471,7 @@ theorem MAt.regs {up Tb : BitVec 32} {T : List Byte} {bits g : Nat} {x u : State
   obtain ⟨C, b, gg, TT⟩ := A
   refine ⟨C.regs m K, by rw [m, b], by rw [m, gg], ?_⟩
   refine ⟨by rw [sy]; exact TT.sym, fun i hi d hd => by rw [K.2.1, K.2.2]; exact TT.read i hi d hd,
-    fun i hi => by rw [m]; exact TT.words i hi, TT.fit, TT.far⟩
+    fun i hi => by rw [m]; exact TT.words i hi, TT.fit, TT.far, TT.wide⟩
 
 /-- p in wide slot 9 and the cursor past its octets. -/
 abbrev PAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)
@@ -1628,7 +1628,7 @@ theorem body_trace {T : List Byte} {up Tb : BitVec 32} {bits g : Nat} (hbl : len
   refine RelCT.seq (aRel (F := fun u => MAt Ex base bytes len args sp up T bits g Tb u ∧
       u.cf = some (decide (T.length < len))) (fun x h => h.1) bodyHead_check fun x ⟨R, F⟩ => ?_) ?_
   · have Gx : TapeGeo Ex args base bytes (x.gpr .esp) T.length := by rw [R.2.2]; exact G
-    exact VG.X86.WP.mono_syms (bodyHead_ok R.1 G.len G.small h3 F.rb F.rg F.ru F.dws (by rw [R.2.2]; exact F.d40)
+    exact VG.X86.WP.mono_syms (bodyHead_ok R.1 G.len G.small h3 F.rb F.rg F.ru F.dws (by rw [R.2.2]; exact F.d40) (by rw [R.2.2]; exact F.d176)
       hb2 hg25) fun u ⟨S, B, Gn, Us, _, c⟩ sy => by
         refine ⟨⟨⟨run_step R S, F.Ox.keep rfl S.keeps, Us, by rw [tape_keep Gx S, F.hT]⟩, B, Gn, ?_⟩, c⟩
         have := Table.step (by rw [R.2.2]; exact F.TT) S sy TA
@@ -1689,7 +1689,7 @@ theorem narrowed_facts {s f : State} (A : CandABI s) (Bf : BodyAt (Rd s) Impl.Ff
         (narrowed (wsBase Impl.Ffdh.X86.Candidate.args s) (wsSize Impl.Ffdh.X86.Candidate.args s) f
           [outR s, usedR s]) := by
   have low := A.stackLow
-  have st' : stack = 172 := rfl
+  have st' : stack = 252 := rfl
   have FA : frameAt s = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 argsFrame :=
     VG.X86.Taint.sub_setWidth (by simp only [argsFrame]; omega_using [low, st'])
   have sub : Region.Sub ⟨frameAt s, argsFrame⟩ (belowR s) := by
